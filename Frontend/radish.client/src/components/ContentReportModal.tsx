@@ -38,6 +38,8 @@ export const ContentReportModal = ({
     switch (targetType) {
       case 'Comment':
         return t('report.target.comment');
+      case 'PostQuickReply':
+        return t('report.target.quickReply');
       case 'ChatMessage':
         return t('report.target.chatMessage');
       case 'Product':

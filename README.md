@@ -8,16 +8,19 @@ Radish 是一个自研分层架构的现代化内容社区：后端基于 ASP.NE
 
 ## 当前状态
 
-- **当前主线**：`M12 收口与后续规划校准`
-- **最新结论（2026-03-16）**：
-  - `P5 论坛抽奖 MVP + 个人中心浏览记录优化` 已完成本轮收口，当前状态为“可演示、可联调、可回归、可转维护”
-  - 下一阶段不会直接沿用旧版 `M13` 定义开工，而是以“验证基线与回归资产工程化”为入口重整当前验证能力
+- **当前主线**：`第二开发阶段：社区深化与多端化`
+- **当前阶段**：`Phase 2-1 社区深化第一批`
+- **最新结论（2026-04-07）**：
+  - `v26.3.2-release` 已于 `2026-04-06` 完成首版真实发布，第一开发阶段正式结束
+  - 发布治理、验证留痕、部署回滚与宿主运行基线继续保留，但已降为并行维护线，不再占用产品主线
+  - 当前规划已正式切换到第二开发阶段，第一条功能主线固定为“论坛轻回应墙 Phase 1”
+  - WebOS 会继续保留，但角色正式收束为“桌面工作台”；公开内容与移动端不再强制先进入窗口系统
+  - 移动 Web 形态与 Flutter 客户端是第二阶段两条独立建设线，不再把移动端理解为桌面窗口系统的简单压缩版
 - **当前验证基线**：
-  - 后端：`dotnet build/test`
-  - 前端：`npm run type-check`、`npm run test --workspace=radish.client`
-  - 联调与回归：`Radish.Api.Tests/HttpTest`
-  - 专题扫描：`npm run check:console-permissions`
-  - 数据/配置只读自检：`Radish.DbMigrate doctor`、`verify`
+  - 快速基线：`npm run validate:baseline:quick`
+  - 完整基线：`npm run validate:baseline`
+  - 宿主 / 配置基线：`npm run validate:baseline:host`
+  - 发布、部署与回滚维护线：`Docs/guide/m14-*`、`Docs/guide/m15-*`、`Docs/guide/post-m15-quality-baseline.md`
 
 ## 技术栈
 
@@ -102,12 +105,12 @@ powershell -ExecutionPolicy Bypass -File Scripts\dotnet-local.ps1 build Radish.s
 powershell -ExecutionPolicy Bypass -File Scripts\dotnet-local.ps1 test Radish.Api.Tests
 ```
 
-当前更推荐的“最小验证顺序”是：
+当前更推荐的统一验证入口是：
 
 ```bash
-npm run type-check
-npm run test --workspace=radish.client
-npm run check:console-permissions
+npm run validate:baseline:quick
+npm run validate:baseline
+npm run validate:baseline:host
 ```
 
 ## 项目结构
@@ -142,7 +145,11 @@ Radish/
 ### 核心文档
 - 📘 [**开发规范**](Docs/architecture/specifications.md) - 目录职责、分层依赖、代码约定
 - 📗 [**架构设计**](Docs/architecture/framework.md) - 技术选型、分层架构、数据持久化
-- 📙 [**开发计划**](Docs/development-plan.md) - 里程碑与迭代计划
+- 📙 [**开发路线图**](Docs/development-plan.md) - 第二开发阶段主线、下一顺位与维护线
+- 📒 [**第二开发阶段路线图**](Docs/planning/phase-two-community-multiplatform.md) - 社区深化与多端化拆分
+- 📗 [**前端多壳层策略**](Docs/frontend/shell-strategy.md) - 公开内容、桌面工作台与 Flutter 客户端分工
+- 📓 [**当前进行中**](Docs/planning/current.md) - 当前正式主线与并行维护项
+- 📔 [**已完成摘要**](Docs/planning/archive.md) - 第一开发阶段与历史里程碑收口
 - 📕 [**开发日志**](Docs/changelog/) - 按月份/周记录的开发历程
 - ✅ [**验证基线**](Docs/guide/validation-baseline.md) - 当前统一验证入口、分层使用建议与边界说明
 

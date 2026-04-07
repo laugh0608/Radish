@@ -12,6 +12,7 @@ import {
   answerQuestion,
   acceptQuestionAnswer,
   createComment,
+  createPostQuickReply,
   likePost,
   toggleCommentLike,
   updatePost,
@@ -19,12 +20,14 @@ import {
   updateComment,
   deletePost,
   deleteComment,
+  deletePostQuickReply,
   getChildComments,
   getPostEditHistory,
   getCommentEditHistory,
   type CommentNode,
   type CommentReplyTarget,
   type PostDetail,
+  type PostQuickReply,
   type CreatePollRequest,
   type CreateLotteryRequest,
   type PostQuestion,
@@ -99,6 +102,8 @@ export interface ForumActionsHandlers {
   cancelDeletePost: () => void;
 
   // 评论操作
+  handleCreateQuickReply: (content: string) => Promise<void>;
+  handleDeleteQuickReply: (quickReplyId: number) => Promise<void>;
   handleCreateComment: (content: string) => Promise<void>;
   handleReplyComment: (target: CommentReplyTarget) => void;
   handleCancelReply: () => void;
@@ -138,6 +143,8 @@ interface UseForumActionsParams {
   selectedPost: PostDetail | null;
   setSelectedPost: Dispatch<SetStateAction<PostDetail | null>>;
   setComments: Dispatch<SetStateAction<CommentNode[]>>;
+  setQuickReplies: Dispatch<SetStateAction<PostQuickReply[]>>;
+  setQuickReplyTotal: Dispatch<SetStateAction<number>>;
   setCommentTotal: Dispatch<SetStateAction<number>>;
   setCurrentPage: (page: number) => void;
   setSortBy: (sortBy: ForumPostSortBy) => void;
@@ -148,6 +155,7 @@ interface UseForumActionsParams {
   setError: (error: string | null) => void;
   loadPostDetail: (postId: number, answerSortOverride?: QuestionAnswerSort) => Promise<void>;
   loadComments: (postId: number, pageCount?: number) => Promise<void>;
+  loadQuickReplies: (postId: number) => Promise<void>;
   loadPosts: () => Promise<void>;
   resetCommentSort: () => void;
 }
@@ -163,6 +171,8 @@ export const useForumActions = (
     selectedPost,
     setSelectedPost,
     setComments,
+    setQuickReplies,
+    setQuickReplyTotal,
     setCommentTotal,
     setCurrentPage,
     setSortBy,
@@ -173,6 +183,7 @@ export const useForumActions = (
     setError,
     loadPostDetail,
     loadComments,
+    loadQuickReplies,
     loadPosts,
     resetCommentSort,
     commentSortBy
@@ -292,8 +303,11 @@ export const useForumActions = (
     resetCommentSort();
     setQuestionAnswerSort('default');
     setQuestionAnswerFilter('all');
-    await loadPostDetail(postId, 'default');
-    await loadComments(postId, 1);
+    await Promise.all([
+      loadPostDetail(postId, 'default'),
+      loadComments(postId, 1),
+      loadQuickReplies(postId)
+    ]);
   };
 
   const handleQuestionAnswerSortChange = async (sortBy: QuestionAnswerSort) => {
@@ -687,6 +701,8 @@ export const useForumActions = (
       setPostToDelete(null);
       setSelectedPost(null);
       setComments([]);
+      setQuickReplies([]);
+      setQuickReplyTotal(0);
       await loadPosts();
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -698,6 +714,63 @@ export const useForumActions = (
   const cancelDeletePost = () => {
     setIsDeleteDialogOpen(false);
     setPostToDelete(null);
+  };
+
+  const handleCreateQuickReply = async (content: string) => {
+    if (!selectedPost?.voId) {
+      setError('请先选择要回应的帖子');
+      throw new Error('未选择帖子');
+    }
+
+    if (!isAuthenticated) {
+      setError('请先登录后再发布轻回应');
+      throw new Error('未登录');
+    }
+
+    const normalizedContent = content.trim().replace(/\s+/g, ' ');
+    if (!normalizedContent) {
+      setError('轻回应内容不能为空');
+      throw new Error('内容为空');
+    }
+
+    setError(null);
+    try {
+      const quickReply = await createPostQuickReply(
+        {
+          postId: selectedPost.voId,
+          content: normalizedContent
+        },
+        t
+      );
+
+      setQuickReplies(prev => {
+        const next = [quickReply, ...prev.filter(item => item.voId !== quickReply.voId)];
+        return next.slice(0, 30);
+      });
+      setQuickReplyTotal(prev => prev + 1);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      throw err;
+    }
+  };
+
+  const handleDeleteQuickReply = async (quickReplyId: number) => {
+    if (!selectedPost?.voId) {
+      setError('请先选择帖子');
+      throw new Error('未选择帖子');
+    }
+
+    setError(null);
+    try {
+      await deletePostQuickReply(quickReplyId, t);
+      setQuickReplies(prev => prev.filter(item => item.voId !== quickReplyId));
+      setQuickReplyTotal(prev => Math.max(0, prev - 1));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      throw err;
+    }
   };
 
   // 创建评论
@@ -1014,6 +1087,8 @@ export const useForumActions = (
     handleDeletePost,
     confirmDeletePost,
     cancelDeletePost,
+    handleCreateQuickReply,
+    handleDeleteQuickReply,
     handleCreateComment,
     handleReplyComment,
     handleCancelReply,

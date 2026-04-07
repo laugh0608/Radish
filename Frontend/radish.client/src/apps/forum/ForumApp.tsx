@@ -228,6 +228,8 @@ export const ForumApp = () => {
     selectedPost: dataState.selectedPost,
     setSelectedPost: dataState.setSelectedPost,
     setComments: dataState.setComments,
+    setQuickReplies: dataState.setQuickReplies,
+    setQuickReplyTotal: dataState.setQuickReplyTotal,
     setCommentTotal: dataState.setCommentTotal,
     setCurrentPage: dataState.setCurrentPage,
     setSortBy: dataState.setSortBy,
@@ -238,6 +240,7 @@ export const ForumApp = () => {
     setError: dataState.setError,
     loadPostDetail: dataState.loadPostDetail,
     loadComments: dataState.loadComments,
+    loadQuickReplies: dataState.loadQuickReplies,
     loadPosts: dataState.loadPosts,
     resetCommentSort: dataState.resetCommentSort
   });
@@ -447,6 +450,8 @@ export const ForumApp = () => {
     setIsSearchView(false);
     dataState.setSelectedTagName(null);
     dataState.setSelectedCategoryId(null);
+    dataState.setQuickReplies([]);
+    dataState.setQuickReplyTotal(0);
     dataState.setSelectedPost(null);
     dataState.setComments([]);
     dataState.resetCommentSort();
@@ -470,6 +475,8 @@ export const ForumApp = () => {
     const normalizedKeyword = keyword.trim();
     dataState.setSelectedPost(null);
     dataState.setComments([]);
+    dataState.setQuickReplies([]);
+    dataState.setQuickReplyTotal(0);
     dataState.resetCommentSort();
     dataState.setError(null);
 
@@ -527,10 +534,13 @@ export const ForumApp = () => {
               <PostDetailContentView
                 post={dataState.selectedPost}
                 comments={dataState.comments}
+                quickReplies={dataState.quickReplies}
+                quickReplyTotal={dataState.quickReplyTotal}
                 commentTotal={dataState.commentTotal}
                 commentPageSize={dataState.commentPageSize}
                 loadingPostDetail={dataState.loadingPostDetail}
                 loadingComments={dataState.loadingComments}
+                loadingQuickReplies={dataState.loadingQuickReplies}
                 loadingMoreComments={dataState.loadingMoreComments}
                 displayTimeZone={displayTimeZone}
                 isLiked={actionsState.likedPosts.has(dataState.selectedPost.voId)}
@@ -546,6 +556,8 @@ export const ForumApp = () => {
                 onBack={() => {
                   dataState.setSelectedPost(null);
                   dataState.setComments([]);
+                  dataState.setQuickReplies([]);
+                  dataState.setQuickReplyTotal(0);
                   dataState.resetCommentSort();
                 }}
                 onLike={actionsState.handleLikePost}
@@ -561,6 +573,8 @@ export const ForumApp = () => {
                 onEdit={actionsState.handleEditPost}
                 onViewPostHistory={actionsState.handleViewPostHistory}
                 onDelete={actionsState.handleDeletePost}
+                onCreateQuickReply={actionsState.handleCreateQuickReply}
+                onDeleteQuickReply={actionsState.handleDeleteQuickReply}
                 onCommentSortChange={actionsState.handleCommentSortChange}
                 onDeleteComment={actionsState.handleDeleteComment}
                 onEditComment={actionsState.handleEditComment}
@@ -575,6 +589,7 @@ export const ForumApp = () => {
                 onToggleFollow={handleToggleFollow}
                 onAuthorClick={handleOpenUserProfile}
                 onReportPost={(postId) => handleOpenReport('Post', postId)}
+                onReportQuickReply={(quickReplyId) => handleOpenReport('PostQuickReply', quickReplyId)}
                 onReportComment={(commentId) => handleOpenReport('Comment', commentId)}
               />
             </Suspense>

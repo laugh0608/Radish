@@ -4,7 +4,7 @@
 >
 > **版本**: v26.3.2
 >
-> **最后更新**: 2026.04.01
+> **最后更新**: 2026.04.07
 
 ---
 
@@ -43,6 +43,7 @@ Radish 论坛应用是一个基于 WebOS 架构的现代化社区讨论平台，
 - **评论编辑历史落地**：帖子/评论编辑历史查询与前端历史弹窗已完成（详见专题文档）。
 - **神评预览稳定性增强**：帖子列表批量神评查询增加重试与退避，并补充失败日志观测，降低 dev 重启后首屏偶发不展示神评的问题。
 - **回应面板交互修复**：评论区 `ReactionBar` 快捷面板改为浮层展示，避免撑开评论卡片；Forum 场景统一为浅色主题。
+- **轻回应墙 Phase 1 进入实现**：帖子详情页当前正式进入“正文 -> 轻回应墙 -> 评论区”的三段式结构；轻回应使用独立模型与接口，支持纯文本和系统默认 Unicode emoji，不支持贴纸、表情包、附件、Markdown 与 `@提及`。
 
 ## M12-P0 社区主线收口快照（2026-03-07）
 
@@ -1877,7 +1878,7 @@ GET http://localhost:5100/api/v1/CommentHighlight/GetCurrentGodComments?postId=1
    - ✅ 神评/沙发功能（已完成）
    - ✅ 评论区 `@提及` 用户搜索下拉框（已完成）
    - ✅ 评论区粘贴图片上传（已完成）
-   - ⏳ 帖子正文下轻回应墙（设计中，详见 [论坛轻回应墙设计草案](./forum-quick-reaction-wall.md)）
+   - 🚧 帖子正文下轻回应墙 Phase 1（实现中，详见 [论坛轻回应墙 Phase 1 设计](./forum-quick-reaction-wall.md)）
    - ⏳ @提及高亮显示（待优化 - 修复 MarkdownRenderer）
    - ✅ 评论编辑功能（含时间窗口与编辑历史查询）
 
@@ -1910,7 +1911,7 @@ GET http://localhost:5100/api/v1/CommentHighlight/GetCurrentGodComments?postId=1
 - [论坛架构评估](./forum-assessment.md)
 - [论坛帖子分类与标签（专题）](./forum-category-tag.md)
 - [论坛重构方案](./forum-refactoring.md)
-- [论坛轻回应墙设计草案](./forum-quick-reaction-wall.md)
+- [论坛轻回应墙 Phase 1 设计](./forum-quick-reaction-wall.md)
 - [神评/沙发功能详细文档](./comment-highlight.md)
 - [开放平台规划](./open-platform.md)
 - [前端设计文档](/frontend/design)

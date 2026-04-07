@@ -5,7 +5,7 @@ configureApiClient({
   baseUrl: getApiBaseUrl(),
 });
 
-export type ContentReportTargetType = 'Post' | 'Comment' | 'ChatMessage' | 'Product';
+export type ContentReportTargetType = 'Post' | 'Comment' | 'PostQuickReply' | 'ChatMessage' | 'Product';
 
 export interface SubmitContentReportRequest {
   targetType: ContentReportTargetType;

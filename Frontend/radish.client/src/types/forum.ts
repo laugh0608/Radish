@@ -347,6 +347,28 @@ export interface CommentReplyTarget {
 }
 
 /**
+ * 帖子轻回应 Vo
+ */
+export interface PostQuickReply {
+  voId: number;
+  voPostId: number;
+  voAuthorId: number;
+  voAuthorName: string;
+  voAuthorAvatarUrl?: string | null;
+  voContent: string;
+  voStatus: number;
+  voCreateTime: string;
+}
+
+/**
+ * 帖子轻回应墙 Vo
+ */
+export interface PostQuickReplyWall {
+  voItems: PostQuickReply[];
+  voTotal: number;
+}
+
+/**
  * 帖子编辑历史
  */
 export interface PostEditHistory {
@@ -496,4 +518,12 @@ export interface CreateCommentRequest {
   parentId?: number | null;
   replyToUserId?: number | null;
   replyToUserName?: string | null;
+}
+
+/**
+ * 创建轻回应请求
+ */
+export interface CreatePostQuickReplyRequest {
+  postId: number;
+  content: string;
 }

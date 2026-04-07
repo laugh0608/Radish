@@ -19,6 +19,7 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
     private readonly IBaseRepository<Comment> _commentRepository;
     private readonly IBaseRepository<ChannelMessage> _channelMessageRepository;
     private readonly IBaseRepository<Product> _productRepository;
+    private readonly IBaseRepository<PostQuickReply> _postQuickReplyRepository;
     private readonly IBaseRepository<User> _userRepository;
 
     public ContentModerationService(
@@ -29,6 +30,7 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
         IBaseRepository<Comment> commentRepository,
         IBaseRepository<ChannelMessage> channelMessageRepository,
         IBaseRepository<Product> productRepository,
+        IBaseRepository<PostQuickReply> postQuickReplyRepository,
         IBaseRepository<User> userRepository)
         : base(mapper, baseRepository)
     {
@@ -38,6 +40,7 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
         _commentRepository = commentRepository;
         _channelMessageRepository = channelMessageRepository;
         _productRepository = productRepository;
+        _postQuickReplyRepository = postQuickReplyRepository;
         _userRepository = userRepository;
     }
 
@@ -531,6 +534,7 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             ContentReportTargetTypeEnum.Comment => await ResolveCommentTargetAsync(targetContentId),
             ContentReportTargetTypeEnum.ChatMessage => await ResolveChatMessageTargetAsync(targetContentId),
             ContentReportTargetTypeEnum.Product => await ResolveProductTargetAsync(targetContentId),
+            ContentReportTargetTypeEnum.PostQuickReply => await ResolvePostQuickReplyTargetAsync(targetContentId),
             _ => throw new ArgumentException("不支持的举报目标类型")
         };
     }
@@ -580,6 +584,17 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
         return (targetUserId, product.CreateBy);
     }
 
+    private async Task<(long targetUserId, string? targetUserName)> ResolvePostQuickReplyTargetAsync(long quickReplyId)
+    {
+        var quickReply = await _postQuickReplyRepository.QueryFirstAsync(reply => reply.Id == quickReplyId && !reply.IsDeleted);
+        if (quickReply == null)
+        {
+            throw new InvalidOperationException("目标轻回应不存在");
+        }
+
+        return (quickReply.AuthorId, quickReply.AuthorName);
+    }
+
     private static ContentReportTargetTypeEnum ParseTargetType(string? targetType)
     {
         if (string.IsNullOrWhiteSpace(targetType))
@@ -593,7 +608,8 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             "comment" => ContentReportTargetTypeEnum.Comment,
             "chatmessage" => ContentReportTargetTypeEnum.ChatMessage,
             "product" => ContentReportTargetTypeEnum.Product,
-            _ => throw new ArgumentException("举报目标类型仅支持 Post、Comment、ChatMessage 或 Product")
+            "postquickreply" => ContentReportTargetTypeEnum.PostQuickReply,
+            _ => throw new ArgumentException("举报目标类型仅支持 Post、Comment、ChatMessage、Product 或 PostQuickReply")
         };
     }
 
@@ -655,6 +671,7 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             (int)ContentReportTargetTypeEnum.Comment => "Comment",
             (int)ContentReportTargetTypeEnum.ChatMessage => "ChatMessage",
             (int)ContentReportTargetTypeEnum.Product => "Product",
+            (int)ContentReportTargetTypeEnum.PostQuickReply => "PostQuickReply",
             _ => "Unknown"
         };
     }

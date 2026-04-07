@@ -1,50 +1,58 @@
 # 开发路线图（总览）
 
-> 本页只保留 **当前里程碑、下一主线入口、后置池**。
+> 本页只保留 **当前阶段、当前主线、下一顺位、并行维护线与后置池**。
 >
-> 当前执行细节见 [当前进行中](/planning/current)，历史过程见 [开发日志](/changelog/)。
+> 当前执行细节见 [当前进行中](/planning/current)，已完成阶段见 [已完成摘要](/planning/archive)。
 
 ## 当前状态
 
-- **当前里程碑**：`M15 最小交付与部署基线`
-- **当前主线**：`M15 最小交付与部署基线`
-- **当前阶段**：`M14` 已完成首轮真实闭环；`M15` 已完成单一入口、固定 tag 口径、测试环境真实回滚演练、生产环境最小回滚预案与首份真实发布记录。当前继续维持“发版 / 部署 / 发布后最小复核 / 回滚”的默认顺序，不扩张到自动回滚、workflow 改造或 Gateway & BFF。`
+- **当前里程碑**：`第二开发阶段：社区深化与多端化`
+- **当前主线**：`Phase 2-1 社区深化第一批`
+- **当前阶段**：`2026-04-06` 已完成首版真实发布 `v26.3.2-release`，第一开发阶段正式结束；`2026-04-07` 已完成阶段口径重置与多壳层策略冻结，发布治理、部署回滚与验证留痕继续保留，但已降为并行维护线。当前产品主线正式切回社区深化，WebOS 角色收束为“桌面工作台”，第一功能入口固定为“论坛轻回应墙 Phase 1”。`
 
 ## 当前主线入口
 
-- [M15 最小交付与部署基线](/guide/m15-delivery-baseline)
-- [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist)
-- [验证基线说明](/guide/validation-baseline)
+- [第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform)
+- [前端多壳层策略](/frontend/shell-strategy)
+- [当前进行中](/planning/current)
+- [论坛轻回应墙设计草案](/features/forum-quick-reaction-wall)
+- [论坛应用功能说明](/features/forum-features)
 
 ## 下一主线入口
 
-- `M15` 之后，当前唯一建议入口为 [M15 后发布质量基线与回归治理（第一批）](/guide/post-m15-quality-baseline)
-- 该阶段不是新业务主线，而是把仓库从“首轮可发布、可部署”推进到“后续每次发布都可稳定验证、稳定留痕、稳定追溯”
-- 该阶段默认复用现有 `baseline / host / ci / identity / deployment review / release record / rollback facts` 资产，不再另起并行体系
+- 当前第一功能入口固定为 `论坛轻回应墙 Phase 1`
+- 社区深化第一批完成后，下一顺位切到 `Phase 2-2 移动 Web 形态`，并从公开内容壳层开始增量迁移
+- Flutter 客户端固定进入 `Phase 2-3`，不再与移动 Web 混成一条建设线
 
-## 可转维护
+## 并行维护
 
-- 身份语义 `Phase 4`
-- `DbMigrate doctor / verify`
-- 社区主链 MVP 与相关收口补丁
-- 通知中心、认证 / OIDC / Gateway 基础入口
-- 桌面壳层、主题切换、`radish.client` i18n 首轮覆盖
+- `M14` 宿主运行与最小可观测性基线
+- `M15` 最小交付与部署基线
+- 发布记录、最小回滚预案、回归留痕与 `validate:baseline / validate:baseline:host / validate:ci`
+- 已收口的一期能力稳定维护，例如桌面壳层、窗口几何记忆、主题切换、聊天室 `P1`、通知中心、商城等
 
 ## 明确后置
 
-- `P3-ext / P4-ext / P5-ext / Console-ext Phase 2+`
-- `P2-ext Auto` 开源软件清单自动生成 / 发布物公告
 - `Gateway & BFF` 深化
+- `Console-ext Phase 2+`
+- 开放平台第三方接入 / SDK
 - 邮件通知系统
-- 完整 E2E / Playwright 平台
+- 完整 `PWA / Service Worker / 离线能力`
+- 完整 Playwright / E2E 平台
 - 完整可观测性平台、Tracing / Metrics 大阶段
 
 ## 阶段文档规则
 
 - 阶段定义只以：
-  - [当前进行中](/planning/current)
   - [开发路线图](/development-plan)
-  - [M15 最小交付与部署基线](/guide/m15-delivery-baseline)
-  - [M15 后发布质量基线与回归治理（第一批）](/guide/post-m15-quality-baseline)
+  - [当前进行中](/planning/current)
+  - [第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform)
+  - [前端多壳层策略](/frontend/shell-strategy)
+  - [已完成摘要](/planning/archive)
   为准
-- 其余模板、记录、样例与专项页面不再承担阶段定义职责
+- `M14 / M15 / post-m15` 相关文档继续有效，但只承担维护线说明，不再承担“当前产品主线”定义
+- 第一开发阶段的范围与结果，继续以：
+  - [首版 dev 边界](/planning/dev-first-scope)
+  - [首版 dev 功能矩阵状态表](/planning/dev-first-status-matrix)
+  - [已完成摘要](/planning/archive)
+  作为归档依据

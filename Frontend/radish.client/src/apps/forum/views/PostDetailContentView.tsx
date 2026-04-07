@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { Icon } from '@radish/ui/icon';
-import type { PostDetail, CommentNode, CommentReplyTarget, QuestionAnswerSort, QuestionAnswerFilter } from '@/api/forum';
+import type { PostDetail, CommentNode, CommentReplyTarget, PostQuickReply, QuestionAnswerSort, QuestionAnswerFilter } from '@/api/forum';
 import type { UserFollowStatus } from '@/api/userFollow';
 import { FORUM_DETAIL_TOOL_EVENT, type ForumDetailToolAction } from '../constants/detailTools';
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
@@ -17,6 +17,10 @@ const CommentTree = lazy(() =>
   import('../components/CommentTree').then((module) => ({ default: module.CommentTree }))
 );
 
+const PostQuickReplyWall = lazy(() =>
+  import('../components/PostQuickReplyWall').then((module) => ({ default: module.PostQuickReplyWall }))
+);
+
 const CreateCommentForm = lazy(() =>
   import('../components/CreateCommentForm').then((module) => ({ default: module.CreateCommentForm }))
 );
@@ -24,10 +28,13 @@ const CreateCommentForm = lazy(() =>
 interface PostDetailContentViewProps {
   post: PostDetail;
   comments: CommentNode[];
+  quickReplies: PostQuickReply[];
+  quickReplyTotal: number;
   commentTotal: number;
   commentPageSize: number;
   loadingPostDetail: boolean;
   loadingComments: boolean;
+  loadingQuickReplies: boolean;
   loadingMoreComments: boolean;
   displayTimeZone: string;
   isLiked: boolean;
@@ -55,6 +62,8 @@ interface PostDetailContentViewProps {
   onEdit: (postId: number) => void;
   onViewPostHistory: (postId: number) => void;
   onDelete: (postId: number) => void;
+  onCreateQuickReply: (content: string) => Promise<void>;
+  onDeleteQuickReply: (quickReplyId: number) => Promise<void>;
   onCommentSortChange: (sortBy: 'newest' | 'hottest') => void;
   onDeleteComment: (commentId: number) => void;
   onEditComment: (commentId: number, newContent: string) => Promise<void>;
@@ -73,6 +82,7 @@ interface PostDetailContentViewProps {
   onToggleFollow: (targetUserId: number, isFollowing: boolean) => Promise<void>;
   onAuthorClick: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
   onReportPost: (postId: number) => void;
+  onReportQuickReply: (quickReplyId: number) => void;
   onReportComment: (commentId: number) => void;
 }
 
@@ -98,10 +108,13 @@ const collectCommentIds = (nodes: CommentNode[]): number[] => {
 export const PostDetailContentView = ({
   post,
   comments,
+  quickReplies,
+  quickReplyTotal,
   commentTotal,
   commentPageSize,
   loadingPostDetail,
   loadingComments,
+  loadingQuickReplies,
   loadingMoreComments,
   displayTimeZone,
   isLiked,
@@ -128,6 +141,8 @@ export const PostDetailContentView = ({
   onEdit,
   onViewPostHistory,
   onDelete,
+  onCreateQuickReply,
+  onDeleteQuickReply,
   onCommentSortChange,
   onDeleteComment,
   onEditComment,
@@ -142,6 +157,7 @@ export const PostDetailContentView = ({
   onToggleFollow,
   onAuthorClick,
   onReportPost,
+  onReportQuickReply,
   onReportComment,
 }: PostDetailContentViewProps) => {
   const { t } = useTranslation();
@@ -285,6 +301,29 @@ export const PostDetailContentView = ({
             />
           </Suspense>
 
+          <Suspense fallback={<p className={styles.loadingText}>{t('forum.quickReply.loading')}</p>}>
+            <PostQuickReplyWall
+              replies={quickReplies}
+              total={quickReplyTotal}
+              loading={loadingQuickReplies}
+              isAuthenticated={isAuthenticated}
+              currentUserId={currentUserId}
+              onCreate={onCreateQuickReply}
+              onDelete={onDeleteQuickReply}
+              onReport={onReportQuickReply}
+            />
+          </Suspense>
+
+          <div className={styles.discussionHeader}>
+            <div>
+              <h3 className={styles.discussionTitle}>{t('forum.quickReply.discussionTitle')}</h3>
+              <p className={styles.discussionSubtitle}>{t('forum.quickReply.discussionSubtitle')}</p>
+            </div>
+            <button className={styles.commentButton} onClick={handleOpenCommentSheet}>
+              {t('forum.quickReply.openDiscussion')}
+            </button>
+          </div>
+
           <Suspense fallback={<p className={styles.loadingText}>{t('forum.loadingDiscussion')}</p>}>
             <CommentTree
               comments={comments}
@@ -320,12 +359,6 @@ export const PostDetailContentView = ({
               onReportComment={onReportComment}
             />
           </Suspense>
-
-          <div className={styles.commentCta}>
-            <button className={styles.commentButton} onClick={handleOpenCommentSheet}>
-              {t('forum.joinDiscussion')}
-            </button>
-          </div>
         </div>
 
         {showFloatingTools && (

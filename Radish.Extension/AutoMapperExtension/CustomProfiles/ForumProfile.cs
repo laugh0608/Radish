@@ -76,6 +76,14 @@ public class ForumProfile : Profile
         CreateMap<CommentVo, Comment>()
             .ForMember(dest => dest.TenantId, opt => opt.Ignore()); // 避免从 VO 覆盖租户 ID
 
+        // PostQuickReply -> PostQuickReplyVo
+        RecognizeDestinationPrefixes("Vo");
+        CreateMap<PostQuickReply, PostQuickReplyVo>()
+            .ForMember(dest => dest.VoAuthorAvatarUrl, opt => opt.Ignore());
+        RecognizePrefixes("Vo");
+        CreateMap<PostQuickReplyVo, PostQuickReply>()
+            .ForMember(dest => dest.TenantId, opt => opt.Ignore());
+
         // UserCommentLike -> UserCommentLikeVo
         CreateMap<UserCommentLike, UserCommentLikeVo>();
         CreateMap<UserCommentLikeVo, UserCommentLike>();

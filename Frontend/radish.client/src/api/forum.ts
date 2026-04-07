@@ -18,6 +18,8 @@ import type {
   PostDetail,
   CommentNode,
   CommentReplyTarget,
+  PostQuickReply,
+  PostQuickReplyWall,
   CommentHighlight,
   PostEditHistory,
   CommentEditHistory,
@@ -46,6 +48,7 @@ import type {
   PostQuestion,
   PostAnswer,
   CreateCommentRequest,
+  CreatePostQuickReplyRequest,
   CommentLikeResult,
   PostLikeResult,
   SetPostTopRequest,
@@ -73,6 +76,8 @@ export type {
   PostDetail,
   CommentNode,
   CommentReplyTarget,
+  PostQuickReply,
+  PostQuickReplyWall,
   CommentHighlight,
   PostEditHistory,
   CommentEditHistory,
@@ -101,6 +106,7 @@ export type {
   PostQuestion,
   PostAnswer,
   CreateCommentRequest,
+  CreatePostQuickReplyRequest,
   CommentLikeResult,
   PostLikeResult,
   SetPostTopRequest,
@@ -399,6 +405,63 @@ export async function createComment(request: CreateCommentRequest, t: TFunction)
   }
 
   return response.data;
+}
+
+/**
+ * 获取帖子轻回应墙
+ */
+export async function getPostQuickReplyWall(
+  postId: number,
+  t: TFunction,
+  take: number = 30
+): Promise<PostQuickReplyWall> {
+  void t;
+  const response = await apiGet<PostQuickReplyWall>(
+    `/api/v1/PostQuickReply/GetRecentByPostId?postId=${postId}&take=${take}`,
+    { timeout: FORUM_READ_TIMEOUT_MS }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '加载轻回应失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 创建帖子轻回应
+ */
+export async function createPostQuickReply(
+  request: CreatePostQuickReplyRequest,
+  t: TFunction
+): Promise<PostQuickReply> {
+  void t;
+  const response = await apiPost<PostQuickReply>(
+    '/api/v1/PostQuickReply/Create',
+    request,
+    { withAuth: true }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '发布轻回应失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 删除帖子轻回应
+ */
+export async function deletePostQuickReply(quickReplyId: number, t: TFunction): Promise<void> {
+  void t;
+  const response = await apiDelete<null>(
+    `/api/v1/PostQuickReply/Delete?quickReplyId=${quickReplyId}`,
+    { withAuth: true }
+  );
+
+  if (!response.ok) {
+    throw new Error(response.message || '删除轻回应失败');
+  }
 }
 
 /**
