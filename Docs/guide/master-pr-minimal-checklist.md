@@ -54,6 +54,18 @@ npm run validate:baseline
 npm run validate:ci
 ```
 
+如果需要把这一层结果直接贴进 PR 或批次级回归记录，可直接使用：
+
+```bash
+npm run validate:ci -- --report
+```
+
+如果希望脚本直接把报告落盘，再粘贴或沉淀到批次级记录，可使用：
+
+```bash
+npm run validate:ci -- --report-file .tmp/validate-ci-report.md
+```
+
 ### 3. 只在命中条件时追加专题验证
 
 - 命中身份语义影响面：补 `npm run validate:identity`

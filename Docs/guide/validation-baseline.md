@@ -127,6 +127,7 @@ npm run validate:ci
   - 依次运行 `check:repo-hygiene:changed`、`lint:changed`、`validate:baseline:quick`
   - 再按 `check:identity-impact` 的同源规则决定是否追加 `validate:identity`
   - 当前其本地门禁定义也已改为复用同一份 Repo Quality contract，避免 workflow / ruleset / 本地入口继续各自维护
+  - 当前也已支持 `--report` / `--report-file <path>`，可把批次级本地门禁结论直接收成固定 Markdown 报告，回写到 `PR -> master` 的回归记录或 PR 描述
 
 ## 分层使用建议
 
@@ -207,6 +208,18 @@ npm run check:repo-hygiene
 
 ```bash
 npm run validate:ci
+```
+
+如果需要把本轮 `Repo Quality` 本地复现结果直接回写到 PR 或批次级回归记录，可执行：
+
+```bash
+npm run validate:ci -- --report
+```
+
+如果希望报告直接落盘，可执行：
+
+```bash
+npm run validate:ci -- --report-file .tmp/validate-ci-report.md
 ```
 
 说明：
