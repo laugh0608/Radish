@@ -9,7 +9,7 @@
 > - [开发路线图](/development-plan)
 > - [当前进行中](/planning/current)
 > - [未来规划 / Backlog](/planning/backlog)
-> - [论坛轻回应墙设计草案](/features/forum-quick-reaction-wall)
+> - [论坛轻回应墙 Phase 1 设计](/features/forum-quick-reaction-wall)
 > - [前端设计文档](/frontend/design)
 > - [前端多壳层策略](/frontend/shell-strategy)
 
@@ -71,6 +71,13 @@
 3. **论坛相关回流链路补齐**
    - 为轻回应、通知跳转、个人内容回看预留最小联动能力
    - 目标是让社区互动能回流，而不是只留在一次性页面行为里
+
+当前进度：
+
+- 截至 `2026-04-07`，论坛轻回应墙 `Phase 1` 已从专题设计进入实现
+- 当前已完成独立模型、独立服务 / 控制器、帖子详情页插入位、举报目标扩展与基础展示交互
+- 当前帖子详情页结构已固定为“正文 -> 轻回应墙 -> 评论区”
+- 治理边界已按配置集中收口，默认支持纯文本与系统默认 Unicode emoji，不支持贴纸、表情包、附件、Markdown 与 `@提及`
 
 ### Phase 2-2：移动 Web 形态 `下一顺位`
 
