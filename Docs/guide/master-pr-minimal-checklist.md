@@ -66,6 +66,14 @@ npm run validate:ci -- --report
 npm run validate:ci -- --report-file .tmp/validate-ci-report.md
 ```
 
+如果本轮还希望把自动化报告与身份影响面统一收成一份批次级记录，可继续执行：
+
+```bash
+npm run collect:change-regression-record -- --title "当前批次" --scope "当前 PR / 改动批次"
+```
+
+若还要把 baseline 或 `M14` 记录并入同一份批次级说明，请显式传入对应报告路径，避免误混入历史 `.tmp` 文件。
+
 ### 3. 只在命中条件时追加专题验证
 
 - 命中身份语义影响面：补 `npm run validate:identity`

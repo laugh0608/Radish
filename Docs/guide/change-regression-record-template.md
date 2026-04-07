@@ -213,3 +213,20 @@
 - [M14 部署后最小复核记录模板](/guide/m14-deployment-review-record-template)
 
 所以下一步优先不是继续补更多模板，而是让实际变更开始按本页结构输出记录，并把 `check:identity-impact` 的命中原因与 `Repo Quality` 失败归类默认写进记录。
+
+当前也可以直接用命令先生成一份自动化初稿，再按本页补齐人工信息：
+
+```bash
+npm run collect:change-regression-record -- --title "当前批次" --scope "当前 PR / 改动批次"
+```
+
+该脚本当前会优先收口：
+
+- `validate:ci` 的批次级报告
+- 显式传入的 `validate:baseline` / `validate:baseline:host` 固定报告
+- 显式传入的 `M14` 宿主维护记录
+- 当前 changed files 的身份语义影响面命中原因
+
+默认只自动读取 `.tmp/validate-ci-report.md`；其余报告需要通过参数显式传入，避免把历史残留 `.tmp` 文件误带进当前批次记录。
+
+人工验收、专题回归摘要与最终工程判断仍需按本轮真实情况补充，不要把自动生成内容原样当成最终结论。

@@ -17,6 +17,7 @@
     "check:console-permissions": "node Scripts/check-console-permissions.mjs",
     "check:host-runtime": "node Scripts/check-host-runtime.mjs",
     "collect:m14-host-record": "node Scripts/collect-m14-host-record.mjs",
+    "collect:change-regression-record": "node Scripts/collect-change-regression-record.mjs",
     "collect:changed": "node Scripts/collect-changed-files.mjs",
     "collect:changed:staged": "node Scripts/collect-changed-files.mjs --mode=staged",
     "collect:tracked": "node Scripts/collect-changed-files.mjs --mode=tracked",

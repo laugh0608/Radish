@@ -44,6 +44,12 @@ npm run validate:identity
 npm run validate:ci
 ```
 
+如本轮准备发起 `PR -> master`，并希望把自动化报告直接收成批次级记录，再补：
+
+```bash
+npm run collect:change-regression-record -- --title "当前批次" --scope "当前 PR / 改动批次"
+```
+
 ### 宿主 / 配置 / 部署相关改动
 
 默认执行：

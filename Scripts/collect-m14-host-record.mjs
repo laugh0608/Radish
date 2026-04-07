@@ -3,6 +3,7 @@ import path from 'node:path';
 import process from 'node:process';
 
 import { writeSummaryActionReport } from './m14-reporting.mjs';
+import { parseSummaryActionReport } from './summary-action-report.mjs';
 
 const args = process.argv.slice(2);
 
@@ -38,54 +39,6 @@ function printUsage() {
   console.log('  --runtime-report <path>   指定运行态报告路径');
   console.log('  --output <path>           指定汇总记录输出路径');
   console.log('  --print                   同时把汇总记录打印到终端');
-}
-
-function normalizeLineEndings(text) {
-  return text.replace(/\r\n/g, '\n');
-}
-
-function extractSection(lines, heading) {
-  const startIndex = lines.indexOf(heading);
-  if (startIndex < 0) {
-    return [];
-  }
-
-  const sectionLines = [];
-  for (let index = startIndex + 1; index < lines.length; index += 1) {
-    const line = lines[index];
-    if (line.startsWith('#### ')) {
-      break;
-    }
-
-    if (sectionLines.length === 0 && line.trim() === '') {
-      continue;
-    }
-
-    sectionLines.push(line);
-  }
-
-  while (sectionLines.length > 0 && sectionLines.at(-1)?.trim() === '') {
-    sectionLines.pop();
-  }
-
-  return sectionLines;
-}
-
-function getFieldValue(lines, fieldName) {
-  const prefix = `- ${fieldName}:`;
-  const line = lines.find((item) => item.startsWith(prefix));
-  return line ? line.slice(prefix.length).trim() : '';
-}
-
-function splitFieldValues(value) {
-  if (!value || value === 'none') {
-    return [];
-  }
-
-  return value
-    .split(',')
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0);
 }
 
 function uniqueValues(values) {
@@ -171,24 +124,7 @@ function buildReportSection(title, lines) {
 }
 
 function parseReport(markdown, sourcePath) {
-  const lines = normalizeLineEndings(markdown).split('\n');
-  const summaryLines = extractSection(lines, '#### Summary');
-  const actionLines = extractSection(lines, '#### Actions');
-
-  if (summaryLines.length === 0 || actionLines.length === 0) {
-    throw new Error(`无法从报告中识别 Summary / Actions：${sourcePath}`);
-  }
-
-  return {
-    sourcePath: path.resolve(sourcePath),
-    summary: summaryLines,
-    actions: actionLines,
-    route: getFieldValue(summaryLines, 'Route'),
-    overall: getFieldValue(summaryLines, 'Overall'),
-    nextStage: getFieldValue(summaryLines, 'NextStage'),
-    triageScope: splitFieldValues(getFieldValue(summaryLines, 'TriageScope')),
-    triageCode: splitFieldValues(getFieldValue(summaryLines, 'TriageCode')),
-  };
+  return parseSummaryActionReport(markdown, sourcePath);
 }
 
 function buildMergedMarkdownReport({ executedAtUtc, reports }) {

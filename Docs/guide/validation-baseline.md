@@ -27,6 +27,7 @@ npm run collect:changed
 npm run collect:changed:staged
 npm run collect:tracked
 npm run collect:m14-host-record
+npm run collect:change-regression-record
 npm run check:identity-impact
 npm run check:identity-impact:staged
 npm run validate:baseline
@@ -71,6 +72,12 @@ npm run validate:ci
   - 默认读取 `.tmp/baseline-host-report.md` 与 `.tmp/host-runtime-report.md`
   - 默认输出 `.tmp/m14-host-maintenance-record.md`
   - 适合把启动前与启动后的 `M14` 结论直接沉淀成一份维护记录
+- `collect:change-regression-record`
+  - 汇总批次级自动化报告，生成一份可直接贴进 PR 或回归记录的 Markdown
+  - 默认读取 `.tmp/validate-ci-report.md`
+  - `baseline / host / M14` 报告需显式通过参数传入，避免误吃到历史残留的 `.tmp` 文件
+  - 默认输出 `.tmp/change-regression-record.md`
+  - 会同时复用当前 changed files 判定身份语义影响面，把命中原因与失败归类一并写进记录
 - `check:identity-impact`
   - 只判定“当前变更是否命中身份语义影响面”
   - 默认同时输出命中文件与命中原因类别，便于直接回写 PR / 维护记录
@@ -220,6 +227,18 @@ npm run validate:ci -- --report
 
 ```bash
 npm run validate:ci -- --report-file .tmp/validate-ci-report.md
+```
+
+如需把当前批次已生成的自动化报告进一步收成一份变更回归记录，可执行：
+
+```bash
+npm run collect:change-regression-record -- --title "当前批次" --scope "当前 PR / 改动批次"
+```
+
+如果本轮还要一并带上 baseline 或 `M14` 记录，请显式传入对应报告路径，例如：
+
+```bash
+npm run collect:change-regression-record -- --title "当前批次" --scope "当前 PR / 改动批次" --baseline-report .tmp/baseline-report.md --host-record .tmp/m14-host-maintenance-record.md
 ```
 
 说明：
