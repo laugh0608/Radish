@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useWindowStore } from '@/stores/windowStore';
 import { getAppById } from '@/desktop/AppRegistry';
 import { CurrentWindowProvider } from '@/desktop/CurrentWindowContext';
+import { WINDOW_MIN_HEIGHT, WINDOW_MIN_WIDTH } from '@/desktop/windowGeometry';
 import type { WindowState } from '@/desktop/types';
 import styles from './DesktopWindow.module.css';
 
@@ -37,8 +38,8 @@ export const DesktopWindow = ({ window }: DesktopWindowProps) => {
     <Rnd
       size={window.isMaximized ? { width: "100%", height: "100%" } : window.size}
       position={window.isMaximized ? { x: 0, y: 0 } : window.position}
-      minWidth={400}
-      minHeight={300}
+      minWidth={WINDOW_MIN_WIDTH}
+      minHeight={WINDOW_MIN_HEIGHT}
       bounds={window.isMaximized ? undefined : "parent"}
       dragHandleClassName="window-drag-handle"
       style={{ zIndex: window.zIndex }}

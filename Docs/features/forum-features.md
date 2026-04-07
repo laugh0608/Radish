@@ -1877,6 +1877,7 @@ GET http://localhost:5100/api/v1/CommentHighlight/GetCurrentGodComments?postId=1
    - ✅ 神评/沙发功能（已完成）
    - ✅ 评论区 `@提及` 用户搜索下拉框（已完成）
    - ✅ 评论区粘贴图片上传（已完成）
+   - ⏳ 帖子正文下轻回应墙（设计中，详见 [论坛轻回应墙设计草案](./forum-quick-reaction-wall.md)）
    - ⏳ @提及高亮显示（待优化 - 修复 MarkdownRenderer）
    - ✅ 评论编辑功能（含时间窗口与编辑历史查询）
 
@@ -1909,6 +1910,7 @@ GET http://localhost:5100/api/v1/CommentHighlight/GetCurrentGodComments?postId=1
 - [论坛架构评估](./forum-assessment.md)
 - [论坛帖子分类与标签（专题）](./forum-category-tag.md)
 - [论坛重构方案](./forum-refactoring.md)
+- [论坛轻回应墙设计草案](./forum-quick-reaction-wall.md)
 - [神评/沙发功能详细文档](./comment-highlight.md)
 - [开放平台规划](./open-platform.md)
 - [前端设计文档](/frontend/design)

@@ -2,6 +2,13 @@ import { create } from 'zustand';
 import type { WindowState } from '@/desktop/types';
 import { getAppById } from '@/desktop/AppRegistry';
 import { canAccessApp } from '@/desktop/appAccess';
+import {
+  buildWindowPersistenceKey,
+  clampWindowGeometry,
+  loadPersistedWindowGeometry,
+  resolveInitialWindowGeometry,
+  savePersistedWindowGeometry
+} from '@/desktop/windowGeometry';
 import { hasAuthenticatedSession } from '@/services/authSession';
 import { useAuthStore } from './authStore';
 import { useUserStore } from './userStore';
@@ -45,6 +52,28 @@ interface WindowStore {
   /** 退出最大化 */
   unmaximizeWindow: (windowId: string) => void;
 }
+
+const resolveWindowGeometryForPersistence = (windowState: WindowState) => {
+  if (windowState.isMaximized) {
+    if (windowState.prevPosition && windowState.prevSize) {
+      return clampWindowGeometry({
+        position: windowState.prevPosition,
+        size: windowState.prevSize
+      });
+    }
+
+    return null;
+  }
+
+  if (!windowState.position || !windowState.size) {
+    return null;
+  }
+
+  return clampWindowGeometry({
+    position: windowState.position,
+    size: windowState.size
+  });
+};
 
 export const useWindowStore = create<WindowStore>((set, get) => ({
   openWindows: [],
@@ -90,40 +119,30 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
       return;
     }
 
-    // 获取视口尺寸
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-
     // 获取应用定义以获取默认尺寸
     const defaultWidth = app.defaultSize?.width || 800;
     const defaultHeight = app.defaultSize?.height || 600;
-
-    // 根据视口大小计算窗口尺寸
-    // 窗口最大不超过视口的 80% 宽度和 85% 高度（留空间给状态栏和 Dock）
-    const maxWidth = viewportWidth * 0.80;
-    const maxHeight = viewportHeight * 0.85;
-
-    const finalWidth = Math.min(defaultWidth, maxWidth);
-    const finalHeight = Math.min(defaultHeight, maxHeight);
+    const persistenceKey = buildWindowPersistenceKey(appId, appParams);
+    const initialGeometry = resolveInitialWindowGeometry(
+      {
+        width: defaultWidth,
+        height: defaultHeight
+      },
+      loadPersistedWindowGeometry(persistenceKey)
+    );
 
     // 创建新窗口，设置初始位置和大小
     const maxZIndex = Math.max(0, ...openWindows.map(w => w.zIndex));
-    const offsetIndex = openWindows.length; // 用于错开窗口位置
     const newWindow: WindowState = {
       id: `win-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       appId,
+      persistenceKey,
       appParams,
       zIndex: maxZIndex + 1,
       isMinimized: false,
       isMaximized: false,
-      position: {
-        x: 100 + offsetIndex * 30,
-        y: 80 + offsetIndex * 30
-      },
-      size: {
-        width: finalWidth,
-        height: finalHeight
-      }
+      position: initialGeometry.position,
+      size: initialGeometry.size
     };
 
     set({ openWindows: [...openWindows, newWindow] });
@@ -154,6 +173,12 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
   },
 
   closeWindow: (windowId: string) => {
+    const targetWindow = get().openWindows.find(w => w.id === windowId);
+    const geometry = targetWindow ? resolveWindowGeometryForPersistence(targetWindow) : null;
+    if (targetWindow && geometry) {
+      savePersistedWindowGeometry(targetWindow.persistenceKey || targetWindow.appId, geometry);
+    }
+
     set(state => ({
       openWindows: state.openWindows.filter(w => w.id !== windowId)
     }));
@@ -198,25 +223,70 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
   },
 
   updateWindowAppParams: (windowId: string, appParams?: Record<string, unknown>) => {
+    const targetWindow = get().openWindows.find(w => w.id === windowId);
+    if (!targetWindow) {
+      return;
+    }
+
+    const persistenceKey = buildWindowPersistenceKey(targetWindow.appId, appParams);
+    const geometry = resolveWindowGeometryForPersistence(targetWindow);
+    if (geometry) {
+      savePersistedWindowGeometry(persistenceKey, geometry);
+    }
+
     set(state => ({
       openWindows: state.openWindows.map(w =>
-        w.id === windowId ? { ...w, appParams } : w
+        w.id === windowId ? { ...w, appParams, persistenceKey } : w
       )
     }));
   },
 
   updateWindowPosition: (windowId: string, position: { x: number; y: number }) => {
+    const targetWindow = get().openWindows.find(w => w.id === windowId);
+    if (!targetWindow?.size) {
+      return;
+    }
+
+    const geometry = clampWindowGeometry({
+      position,
+      size: targetWindow.size
+    });
+
+    if (!targetWindow.isMaximized) {
+      savePersistedWindowGeometry(targetWindow.persistenceKey || targetWindow.appId, geometry);
+    }
+
     set(state => ({
       openWindows: state.openWindows.map(w =>
-        w.id === windowId ? { ...w, position } : w
+        w.id === windowId ? { ...w, position: geometry.position } : w
       )
     }));
   },
 
   updateWindowSize: (windowId: string, size: { width: number; height: number }) => {
+    const targetWindow = get().openWindows.find(w => w.id === windowId);
+    if (!targetWindow?.position) {
+      return;
+    }
+
+    const geometry = clampWindowGeometry({
+      position: targetWindow.position,
+      size
+    });
+
+    if (!targetWindow.isMaximized) {
+      savePersistedWindowGeometry(targetWindow.persistenceKey || targetWindow.appId, geometry);
+    }
+
     set(state => ({
       openWindows: state.openWindows.map(w =>
-        w.id === windowId ? { ...w, size } : w
+        w.id === windowId
+          ? {
+              ...w,
+              position: geometry.position,
+              size: geometry.size
+            }
+          : w
       )
     }));
   },
@@ -244,6 +314,21 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
   unmaximizeWindow: (windowId: string) => {
     const { openWindows } = get();
     const maxZIndex = Math.max(0, ...openWindows.map(w => w.zIndex));
+    const targetWindow = openWindows.find(w => w.id === windowId);
+    if (!targetWindow) {
+      return;
+    }
+
+    const app = getAppById(targetWindow.appId);
+    const restoredGeometry = clampWindowGeometry({
+      position: targetWindow.prevPosition ?? targetWindow.position ?? { x: 0, y: 0 },
+      size: targetWindow.prevSize ?? targetWindow.size ?? {
+        width: app?.defaultSize?.width || 800,
+        height: app?.defaultSize?.height || 600
+      }
+    });
+
+    savePersistedWindowGeometry(targetWindow.persistenceKey || targetWindow.appId, restoredGeometry);
 
     set(state => ({
       openWindows: state.openWindows.map(w =>
@@ -251,8 +336,8 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
           ? {
               ...w,
               isMaximized: false,
-              position: w.prevPosition ?? w.position,
-              size: w.prevSize ?? w.size,
+              position: restoredGeometry.position,
+              size: restoredGeometry.size,
               zIndex: maxZIndex + 1
             }
           : w
