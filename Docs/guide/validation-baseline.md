@@ -6,6 +6,7 @@
 >
 > - [Repo Quality 故障分诊手册](/guide/repo-quality-troubleshooting)
 > - [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist)
+> - [`PR -> master` 最小执行清单](/guide/master-pr-minimal-checklist)
 
 ## 当前目标
 
@@ -129,6 +130,28 @@ npm run validate:ci
 
 ## 分层使用建议
 
+### 0. 执行粒度约定
+
+当前仓库的验证与留痕，默认按“开发中 / 准备合并 / 发布部署”三种粒度区分，而不是把同一套重流程压到每一次本地提交：
+
+- 开发中的本地连续提交：
+  - 目标是快速发现明显回归
+  - 默认只做必要验证，不要求每次都补回归记录
+- 准备发起 `PR -> master` 的改动批次：
+  - 目标是给出“这一批内容是否具备合并条件”的工程结论
+  - 此时再补批次级回归记录、门禁对齐与必要的专题说明
+- 正式发布 / 部署 / 回滚：
+  - 目标是形成真实可追溯事实
+  - 必须保留发布记录、部署后最小复核记录，以及回滚事实或回滚预案
+
+换句话说：
+
+- `commit` 是开发粒度，不等于交付粒度
+- 回归记录默认对应“准备合并的一批改动”
+- 发布 / 部署留痕默认对应真实环境动作
+
+不要把“每次本地提交都补完整记录”当成默认要求，否则会明显拖慢日常开发效率。
+
 ### 1. 日常提交前
 
 优先运行：
@@ -142,6 +165,7 @@ npm run validate:baseline:quick
 
 - 前端页面、共享组件、Console 权限链路调整
 - 纯文档之外、但又不需要完整后端回归的日常提交前检查
+- 开发中的中间态小提交、本地保存点、连续修正批次
 
 补充说明：
 
@@ -170,6 +194,7 @@ npm run validate:baseline
 - 涉及后端 Service / Repository / API 契约
 - 涉及前后端联动字段、权限或路由
 - 需要给出最小“本地可构建、可测试”结论时
+- 准备发起 `PR -> master`，需要对这一批改动形成合并判断时
 
 如果准备发起到 `master` 的 PR，再补一轮：
 
@@ -187,6 +212,7 @@ npm run validate:ci
 说明：
 
 - `master` 当前受规则保护，只允许通过 PR 合并
+- 批次级回归记录默认放在这一层补，不要求绑定每一个本地 commit
 - GitHub Actions 中的 `Repo Hygiene` 与 `Frontend Lint` 当前仅检查“本次变更文件”，用于先拦新增问题，避免被历史债务拖死
 - `Identity Guard` 当前也已改为按变更文件触发：先用 `check:identity-impact` 判定是否命中身份语义影响面，再决定是否执行 `validate:identity`
 - 当前 changed-only 入口与 `Repo Quality` 的变更文件收集逻辑已统一复用 `Scripts/collect-changed-files.mjs`
