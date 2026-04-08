@@ -30,6 +30,16 @@
 - 平板与大屏移动混合形态专门适配
 - Flutter Desktop 深化与更多平台扩展
 
+### 标识体系与社区联邦预研
+
+- `ID Architecture`：为核心聚合引入 `InternalId / PublicId / FederationId` 分层，冻结新接口继续暴露 `long` 主键的扩散
+- `PublicId Rollout`：优先为 `User / Post / Comment / Attachment / Channel / Notification / WikiDocument` 设计并落地 `PublicId`
+- `Snowflake Exit Strategy`：待外部契约完成 `PublicId` 化后，再评估内部 Snowflake 主键向数据库 `sequence / identity` 的迁移窗口
+- `Federation Readiness`：为未来联邦预留本地对象 / 远端对象、canonical URI、收发队列、签名与重试边界
+- `ActivityPub / WebFinger`：作为未来公开社区联邦首选方向预研，不纳入第二阶段前半程主线
+- `Tenant Semantics Convergence`：保持当前多租户实现可用，但逐步把公开社区语义从 `tenant` 收敛到 `instance / node / space`
+- 详细口径见：[标识体系与社区联邦长期路线](/architecture/id-and-federation-roadmap)
+
 ## 平台与治理后置项
 
 ### `Console-ext Phase 2+`

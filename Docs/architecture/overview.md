@@ -7,6 +7,7 @@
 - **想快速理解系统怎么组成**：本页（架构总览）
 - **想知道代码分层/约束/规范**：[开发规范](/architecture/specifications)
 - **想看更细的后端/网关实现要点**：[开发框架说明](/architecture/framework)
+- **想看长期 ID 体系与社区联邦方向**：[标识体系与社区联邦长期路线](/architecture/id-and-federation-roadmap)
 - **想看当前迭代计划与进度**：[开发路线图](/development-plan) / [开发日志](/changelog/)
 - **想理解桌面化前端（WebOS）**：[前端设计](/frontend/design)
 - **想理解统一入口与路由转发**：[Gateway 服务网关](/guide/gateway)

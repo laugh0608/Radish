@@ -1,8 +1,8 @@
 # 论坛轻回应墙 Phase 1 设计
 
-> 状态：开发中
+> 状态：联调收口中
 >
-> 最后更新：2026-04-07（Asia/Shanghai）
+> 最后更新：2026-04-08（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -30,7 +30,30 @@
 
 ## 2. 当前代码事实
 
-截至 `2026-04-07`，仓库中的实际结构如下：
+截至 `2026-04-08`，论坛轻回应墙的基础链路已经落地，仓库中的实际结构如下：
+
+- 帖子轻回应后端独立链路已存在：
+  - `Radish.Model/PostQuickReply.cs`
+  - `Radish.Model/DtoModels/PostQuickReplyDto.cs`
+  - `Radish.Model/ViewModels/PostQuickReplyVo.cs`
+  - `Radish.Model/ViewModels/PostQuickReplyWallVo.cs`
+  - `Radish.IService/IPostQuickReplyService.cs`
+  - `Radish.Service/PostQuickReplyService.cs`
+  - `Radish.Api/Controllers/PostQuickReplyController.cs`
+- 轻回应治理与配置已接入：
+  - `Radish.Api/appsettings.json` 中的 `ForumQuickReply`
+  - `Radish.Service/ContentModerationService.cs`
+  - `Frontend/radish.client/src/components/ContentReportModal.tsx`
+- 前端帖子详情页已接入轻回应墙：
+  - `Frontend/radish.client/src/apps/forum/views/PostDetailContentView.tsx`
+  - `Frontend/radish.client/src/apps/forum/components/PostQuickReplyWall.tsx`
+  - `Frontend/radish.client/src/apps/forum/hooks/useForumData.ts`
+  - `Frontend/radish.client/src/apps/forum/hooks/useForumActions.ts`
+  - `Frontend/radish.client/src/api/forum.ts`
+  - `Frontend/radish.client/src/types/forum.ts`
+  - `Frontend/radish.client/src/i18n.ts`
+
+现有评论、Reaction 与举报相关链路仍是轻回应墙需要兼容但不复用的既有边界：
 
 - 帖子详情主视图位于 `Frontend/radish.client/src/apps/forum/views/PostDetailContentView.tsx`
 - 帖子正文与帖子主互动区位于 `Frontend/radish.client/src/apps/forum/components/PostDetail.tsx`
@@ -53,17 +76,26 @@
 
 ### 2.1 当前详情页结构判断
 
-当前详情页已经基本符合承接轻回应墙的结构条件：
+当前详情页已经不再停留在“是否适合插入轻回应墙”的判断阶段，而是已经形成稳定结构：
 
 1. 帖子正文区和评论区已经分离，不需要推翻整个详情页。
-2. 轻回应墙可以直接放在“帖子正文区之后、评论区之前”。
-3. 当前真正需要收口的，不是根布局，而是互动层次的顺序表达。
+2. 轻回应墙已经插入“帖子正文区之后、评论区之前”。
+3. 当前真正需要继续收口的，不是根布局，而是联调细节和互动回流链路。
 
 当前建议将帖子详情页的互动结构固定为：
 
 1. 正文与帖子主互动区
 2. 轻回应墙
 3. 正式评论区
+
+### 2.2 当前阶段判断
+
+截至 `2026-04-08`，轻回应墙 `Phase 1` 的当前判断为：
+
+- “独立建模 / 独立接口 / 独立治理边界 / 三段式插入位”已经成立；
+- 当前不再讨论“是否继续复用 Comment / Reaction 临时拼装”；
+- 当前主线重心已从“基础实现”转向“联调收口 + 最小回流链路补齐”；
+- 其中最值得优先补齐的回流项，是“个人内容回看 -> 跳回帖子详情”的最小闭环；通知跳转继续保留为同批次预留项。
 
 ## 3. 目标
 
@@ -368,9 +400,11 @@ PostQuickReply
   - 举报队列
   - 管理端审核
 
-## 13. 计划修改范围
+## 13. 已落地范围与当前后续范围
 
-### 13.1 前端
+### 13.1 已落地范围
+
+前端已落地：
 
 - `Frontend/radish.client/src/apps/forum/views/PostDetailContentView.tsx`
 - `Frontend/radish.client/src/apps/forum/views/PostDetailContentView.module.css`
@@ -381,15 +415,10 @@ PostQuickReply
 - `Frontend/radish.client/src/api/contentModeration.ts`
 - `Frontend/radish.client/src/components/ContentReportModal.tsx`
 - `Frontend/radish.client/src/i18n.ts`
-
-新增：
-
 - `Frontend/radish.client/src/apps/forum/components/PostQuickReplyWall.tsx`
 - `Frontend/radish.client/src/apps/forum/components/PostQuickReplyWall.module.css`
 
-### 13.2 后端
-
-新增：
+后端已落地：
 
 - `Radish.Model/PostQuickReply.cs`
 - `Radish.Model/ViewModels/PostQuickReplyVo.cs`
@@ -398,14 +427,25 @@ PostQuickReply
 - `Radish.IService/IPostQuickReplyService.cs`
 - `Radish.Service/PostQuickReplyService.cs`
 - `Radish.Api/Controllers/PostQuickReplyController.cs`
-
-修改：
-
 - `Radish.Extension/AutoMapperExtension/CustomProfiles/ForumProfile.cs`
 - `Radish.Service/ContentModerationService.cs`
 - `Radish.Api/Controllers/ContentModerationController.cs`
 - `Radish.Model/DtoModels/ContentModerationDto.cs`
 - `Radish.Shared/CustomEnum/ContentModerationEnums.cs`
+
+### 13.2 当前后续范围
+
+当前批次的后续重点不再是继续证明“轻回应墙能否独立成立”，而是：
+
+1. 联调收口：
+   - 空态、加载态、报错态、登录引导、删除与举报链路是否一致
+   - 少量内容静态铺排、超宽轨道才漂移的视觉表现是否稳定
+   - 移动端降级形态是否自然，不把桌面交互硬搬到小屏
+2. 最小回流链路：
+   - 优先补齐“个人内容回看 -> 跳回帖子详情”
+   - 为轻回应相关通知跳转保留最小接口与路由边界，但不立即扩张成完整通知体系改造
+3. 验收与留痕：
+   - 把当前已落地的基础链路从“实现完成”推进到“主线可验收”
 
 ## 14. 最小验证方案
 
@@ -430,10 +470,12 @@ PostQuickReply
 - 默认 emoji 输入是否正常展示
 - 贴纸 / 表情包入口是否未暴露
 - 少量内容是否静态铺排，只有实际超宽轨道才开始漂移
+- 删除 / 举报 / 登录引导链路是否与论坛其他轻交互能力一致
+- 若补“个人内容回看”或通知跳转，还应额外确认是否能稳定回到对应帖子详情
 
 ## 15. 当前决定
 
-截至 `2026-04-07`，论坛轻回应墙 Phase 1 的正式口径固定为：
+截至 `2026-04-08`，论坛轻回应墙 Phase 1 的正式口径固定为：
 
 - 独立数据模型
 - 独立接口
@@ -441,5 +483,6 @@ PostQuickReply
 - 放在帖子正文之后、评论区之前
 - 支持纯文本和默认 Unicode emoji
 - 不支持贴纸、表情包、附件、Markdown、`@提及`
+- 基础链路已落地，当前执行重点转向联调收口与最小回流链路补齐
 
 后续若要支持贴纸型轻回应，应进入后续阶段单独评估，不并入当前 Phase 1。

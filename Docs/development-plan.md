@@ -24,6 +24,21 @@
 - 社区深化第一批完成后，下一顺位切到 `Phase 2-2 移动 Web 形态`，并从公开内容壳层开始增量迁移
 - Flutter 客户端固定进入 `Phase 2-3`，不再与移动 Web 混成一条建设线
 
+## 已确认的长期方向（暂不进入当前主线）
+
+- **标识体系升级**
+  - 长期方向已从“继续把 `Snowflake long` 作为统一对象标识”切换为“`InternalId / PublicId / FederationId` 分层”
+  - `InternalId` 面向数据库内部主键；`PublicId` 面向 API、前端路由、公开链接与跨端契约；`FederationId` 面向未来联邦 canonical URI
+  - `PublicId` 的长期底层标准优先采用 `UUIDv7`，而不是继续扩大 Snowflake 的外部暴露面
+- **社区联邦化**
+  - 这是确定会进入未来阶段的方向，但当前不纳入第二阶段前半程主线
+  - 联邦节点默认按“一个公开域名 / 一个部署实例”定义，不按 `Tenant` 定义
+  - 公开社区对象联邦优先按 `ActivityPub + WebFinger` 方向预留，聊天室跨节点互通作为独立后续议题
+- **租户语义调整**
+  - 当前多租户实现继续保留，用于数据库隔离、权限与历史兼容
+  - 长期社区产品语义不再以“租户”为中心，未来公开社区与联邦口径转向 `instance / node / space / group / category`
+- 详细方案见：[标识体系与社区联邦长期路线](/architecture/id-and-federation-roadmap)
+
 ## 并行维护
 
 - `M14` 宿主运行与最小可观测性基线

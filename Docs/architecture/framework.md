@@ -2,7 +2,7 @@
 
 > 本文是 Radish 的“架构与工程实现细节”说明，聚焦：技术栈基线、分层边界、关键中间件/宿主配置、演进与落地约定。
 >
-> 如果你只想快速建立全局认知，请先读 [架构总览](/architecture/overview)。若你在看当前进度与计划，请跳到 [开发路线图](/development-plan)。前端交互范式与 WebOS 细节见 [前端设计](/frontend/design)。
+> 如果你只想快速建立全局认知，请先读 [架构总览](/architecture/overview)。若你在看当前进度与计划，请跳到 [开发路线图](/development-plan)。前端交互范式与 WebOS 细节见 [前端设计](/frontend/design)。若你在看长期对象标识与社区联邦方向，请读 [标识体系与社区联邦长期路线](/architecture/id-and-federation-roadmap)。
 
 ## 功能期望与范围
 
@@ -37,6 +37,17 @@
   - 第三方支付、发票、合规认证（GDPR/等保）。
   - 大文件转码与 CDN；多端（小程序/Native App）。
   - 大规模分布式（消息队列、CQRS、多租户），当前阶段聚焦单体 + 水平扩展预留。
+
+## 长期标识与联邦方向
+
+- 当前系统仍保留 `Snowflake + long` 主键、多租户字段隔离与相关运行时兼容，但它们不再代表 Radish 的长期公共语义。
+- 长期对象标识正式按 `InternalId / PublicId / FederationId` 分层：
+  - `InternalId`：数据库内部主键，优先面向 `bigint` 关联与 join 性能。
+  - `PublicId`：面向 API、前端路由、分享链接与跨端契约的稳定字符串标识。
+  - `FederationId`：面向未来联邦协议的 canonical URI，不等同于数据库主键。
+- 长期社区语义不再以“租户”作为默认核心概念；`tenant` 保留为当前实现阶段的数据隔离能力，未来公开社区与联邦语义转向 `instance / node / space / group / category`。
+- 未来联邦的默认节点定义为“一个公开域名 / 一个部署实例”，而不是一个 `Tenant`。
+- 详细路线、选型对比与迁移原则见：[标识体系与社区联邦长期路线](/architecture/id-and-federation-roadmap)。
 
 ## 技术与架构基线
 
