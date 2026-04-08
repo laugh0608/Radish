@@ -369,6 +369,17 @@ export interface PostQuickReplyWall {
 }
 
 /**
+ * 个人主页轻回应列表项
+ */
+export interface UserPostQuickReply {
+  voId: number;
+  voPostId: number;
+  voPostTitle: string;
+  voContent: string;
+  voCreateTime: string;
+}
+
+/**
  * 帖子编辑历史
  */
 export interface PostEditHistory {

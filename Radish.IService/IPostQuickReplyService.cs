@@ -11,6 +11,9 @@ public interface IPostQuickReplyService : IBaseService<PostQuickReply, PostQuick
     /// <summary>获取帖子最近的轻回应</summary>
     Task<PostQuickReplyWallVo> GetRecentByPostIdAsync(long postId, int take);
 
+    /// <summary>获取当前用户的轻回应分页</summary>
+    Task<(List<UserPostQuickReplyVo> items, int total)> GetMinePageAsync(long userId, int pageIndex, int pageSize);
+
     /// <summary>创建轻回应</summary>
     Task<PostQuickReplyVo> CreateAsync(CreatePostQuickReplyDto request, long userId, string userName, long tenantId);
 

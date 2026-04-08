@@ -5,6 +5,7 @@ using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
+using Radish.Model.ViewModels;
 using Radish.Shared;
 using Radish.Shared.CustomEnum;
 
@@ -70,6 +71,32 @@ public class PostQuickReplyController : ControllerBase
                 MessageInfo = ex.Message
             };
         }
+    }
+
+    /// <summary>获取当前登录用户的轻回应分页</summary>
+    [HttpGet]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    public async Task<MessageModel> GetMine(int pageIndex = 1, int pageSize = 20)
+    {
+        var safePageIndex = pageIndex < 1 ? 1 : pageIndex;
+        var safePageSize = pageSize <= 0 ? 20 : Math.Min(pageSize, 100);
+
+        var (items, total) = await _postQuickReplyService.GetMinePageAsync(Current.UserId, safePageIndex, safePageSize);
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = new VoPagedResult<UserPostQuickReplyVo>
+            {
+                VoItems = items,
+                VoTotal = total,
+                VoPageIndex = safePageIndex,
+                VoPageSize = safePageSize
+            }
+        };
     }
 
     /// <summary>创建轻回应</summary>

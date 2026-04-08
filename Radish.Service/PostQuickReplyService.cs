@@ -74,6 +74,58 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
         };
     }
 
+    public async Task<(List<UserPostQuickReplyVo> items, int total)> GetMinePageAsync(long userId, int pageIndex, int pageSize)
+    {
+        EnsureFeatureEnabled();
+
+        if (userId <= 0)
+        {
+            throw new ArgumentException("用户ID必须大于0");
+        }
+
+        var safePageIndex = pageIndex < 1 ? 1 : pageIndex;
+        var safePageSize = pageSize <= 0 ? 20 : Math.Min(pageSize, 100);
+
+        var (items, total) = await _postQuickReplyRepository.QueryPageAsync(
+            reply => reply.AuthorId == userId && !reply.IsDeleted,
+            safePageIndex,
+            safePageSize,
+            reply => reply.CreateTime,
+            SqlSugar.OrderByType.Desc,
+            reply => reply.Id,
+            SqlSugar.OrderByType.Desc);
+
+        if (items.Count == 0)
+        {
+            return ([], total);
+        }
+
+        var postIds = items
+            .Select(item => item.PostId)
+            .Where(postId => postId > 0)
+            .Distinct()
+            .ToList();
+
+        var postTitleMap = postIds.Count == 0
+            ? new Dictionary<long, string>()
+            : (await _postRepository.QueryAsync(post => postIds.Contains(post.Id)))
+                .GroupBy(post => post.Id)
+                .ToDictionary(group => group.Key, group => group.First().Title?.Trim() ?? string.Empty);
+
+        var result = items.Select(item => new UserPostQuickReplyVo
+        {
+            VoId = item.Id,
+            VoPostId = item.PostId,
+            VoPostTitle = postTitleMap.TryGetValue(item.PostId, out var title) && !string.IsNullOrWhiteSpace(title)
+                ? title
+                : $"帖子 {item.PostId}",
+            VoContent = item.Content,
+            VoCreateTime = item.CreateTime
+        }).ToList();
+
+        return (result, total);
+    }
+
     [UseTran]
     public async Task<PostQuickReplyVo> CreateAsync(CreatePostQuickReplyDto request, long userId, string userName, long tenantId)
     {

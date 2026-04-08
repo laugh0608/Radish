@@ -20,6 +20,7 @@ import type {
   CommentReplyTarget,
   PostQuickReply,
   PostQuickReplyWall,
+  UserPostQuickReply,
   CommentHighlight,
   PostEditHistory,
   CommentEditHistory,
@@ -78,6 +79,7 @@ export type {
   CommentReplyTarget,
   PostQuickReply,
   PostQuickReplyWall,
+  UserPostQuickReply,
   CommentHighlight,
   PostEditHistory,
   CommentEditHistory,
@@ -419,6 +421,25 @@ export async function getPostQuickReplyWall(
   const response = await apiGet<PostQuickReplyWall>(
     `/api/v1/PostQuickReply/GetRecentByPostId?postId=${postId}&take=${take}`,
     { timeout: FORUM_READ_TIMEOUT_MS }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '加载轻回应失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 获取当前登录用户的轻回应分页
+ */
+export async function getMyQuickReplies(
+  pageIndex: number = 1,
+  pageSize: number = 10
+): Promise<VoPagedResult<UserPostQuickReply>> {
+  const response = await apiGet<VoPagedResult<UserPostQuickReply>>(
+    `/api/v1/PostQuickReply/GetMine?pageIndex=${pageIndex}&pageSize=${pageSize}`,
+    { withAuth: true, timeout: FORUM_READ_TIMEOUT_MS }
   );
 
   if (!response.ok || !response.data) {

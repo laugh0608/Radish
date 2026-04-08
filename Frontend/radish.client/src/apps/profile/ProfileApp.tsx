@@ -35,6 +35,9 @@ const UserFollowPanel = lazy(() =>
 const UserBrowseHistoryList = lazy(() =>
   import('./components/UserBrowseHistoryList').then((module) => ({ default: module.UserBrowseHistoryList }))
 );
+const UserQuickReplyList = lazy(() =>
+  import('./components/UserQuickReplyList').then((module) => ({ default: module.UserQuickReplyList }))
+);
 
 interface UserStats {
   voPostCount: number;
@@ -194,7 +197,7 @@ export const ProfileApp = () => {
   const viewingUserId = params.userId && params.userId > 0 ? params.userId : userId;
   const isOwnProfile = viewingUserId === userId;
   const loggedIn = isAuthenticated();
-  const [activeTab, setActiveTab] = useState<'posts' | 'comments' | 'browse-history' | 'attachments' | 'social'>('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'comments' | 'quick-replies' | 'browse-history' | 'attachments' | 'social'>('posts');
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
   const [systemTimeZone, setSystemTimeZone] = useState(DEFAULT_TIME_ZONE);
@@ -218,7 +221,7 @@ export const ProfileApp = () => {
   );
 
   useEffect(() => {
-    if (!isOwnProfile && (activeTab === 'browse-history' || activeTab === 'attachments' || activeTab === 'social')) {
+    if (!isOwnProfile && (activeTab === 'quick-replies' || activeTab === 'browse-history' || activeTab === 'attachments' || activeTab === 'social')) {
       setActiveTab('posts');
     }
   }, [activeTab, isOwnProfile]);
@@ -276,12 +279,12 @@ export const ProfileApp = () => {
   }, [apiBaseUrl, isOwnProfile, loggedIn, viewingUserId]);
 
   const handlePostClick = (postId: number) => {
-    openApp('forum');
+    openApp('forum', { postId });
     log.debug('ProfileApp', `打开帖子: ${postId}`);
   };
 
   const handleCommentClick = (postId: number, commentId: number) => {
-    openApp('forum');
+    openApp('forum', { postId, commentId });
     log.debug('ProfileApp', `打开帖子 ${postId} 的评论 ${commentId}`);
   };
 
@@ -569,6 +572,12 @@ export const ProfileApp = () => {
           {isOwnProfile ? (
             <>
               <button
+                className={`${styles.tab} ${activeTab === 'quick-replies' ? styles.active : ''}`}
+                onClick={() => setActiveTab('quick-replies')}
+              >
+                {t('profile.tab.quickReplies')}
+              </button>
+              <button
                 className={`${styles.tab} ${activeTab === 'browse-history' ? styles.active : ''}`}
                 onClick={() => setActiveTab('browse-history')}
               >
@@ -606,6 +615,12 @@ export const ProfileApp = () => {
                 apiBaseUrl={apiBaseUrl}
                 onCommentClick={handleCommentClick}
                 displayTimeZone={displayTimeZone}
+              />
+            )}
+            {isOwnProfile && activeTab === 'quick-replies' && (
+              <UserQuickReplyList
+                displayTimeZone={displayTimeZone}
+                onItemClick={handlePostClick}
               />
             )}
             {isOwnProfile && activeTab === 'browse-history' && (
