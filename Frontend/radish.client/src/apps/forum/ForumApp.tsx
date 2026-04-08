@@ -47,7 +47,7 @@ const EditHistoryModal = lazy(() =>
 
 const SEARCH_PAGE_SIZE = 20;
 
-function parseForumWindowParams(appParams?: Record<string, unknown> | null): { postId?: number; navigationKey?: string } {
+function parseForumWindowParams(appParams?: Record<string, unknown> | null): { postId?: number; commentId?: number; navigationKey?: string } {
   if (!appParams) {
     return {};
   }
@@ -63,10 +63,21 @@ function parseForumWindowParams(appParams?: Record<string, unknown> | null): { p
     return {};
   }
 
+  const rawCommentId = appParams.commentId;
+  const commentId = typeof rawCommentId === 'number'
+    ? rawCommentId
+    : typeof rawCommentId === 'string'
+      ? Number(rawCommentId)
+      : 0;
+
   const rawNavigationKey = appParams.__navigationKey;
   const navigationKey = rawNavigationKey == null ? undefined : String(rawNavigationKey);
 
-  return { postId, navigationKey };
+  return {
+    postId,
+    commentId: Number.isFinite(commentId) && commentId > 0 ? commentId : undefined,
+    navigationKey
+  };
 }
 
 export const ForumApp = () => {
@@ -250,7 +261,7 @@ export const ForumApp = () => {
       return;
     }
 
-    const routeSignature = `${windowParams.postId}:${windowParams.navigationKey ?? 'initial'}`;
+    const routeSignature = `${windowParams.postId}:${windowParams.commentId ?? 'none'}:${windowParams.navigationKey ?? 'initial'}`;
     if (handledWindowRouteRef.current === routeSignature) {
       return;
     }
@@ -263,6 +274,7 @@ export const ForumApp = () => {
     void actionsState.handleSelectPost(windowParams.postId);
   }, [
     actionsState.handleSelectPost,
+    windowParams.commentId,
     windowParams.navigationKey,
     windowParams.postId,
     dataState.setSelectedCategoryId,

@@ -32,6 +32,8 @@ export interface NotificationItem {
   triggerName?: string | null;
   /** 触发者头像 */
   triggerAvatar?: string | null;
+  /** 扩展数据（JSON 字符串） */
+  extData?: string | null;
 }
 
 /** 连接状态 */

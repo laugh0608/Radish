@@ -30,6 +30,8 @@ export interface NotificationItemData {
   triggerName?: string | null;
   /** 触发者头像 */
   triggerAvatar?: string | null;
+  /** 扩展数据（JSON 字符串） */
+  extData?: string | null;
   /** 是否已读 */
   isRead: boolean;
   /** 创建时间 */

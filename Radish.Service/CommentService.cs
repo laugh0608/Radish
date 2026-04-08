@@ -191,7 +191,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                                 TriggerId = comment.AuthorId,
                                 TriggerName = comment.AuthorName,
                                 TriggerAvatar = null, // 头像字段可以后续从用户表查询
-                                ReceiverUserIds = new List<long> { parentAuthorId.Value }
+                                ReceiverUserIds = new List<long> { parentAuthorId.Value },
+                                ExtData = NotificationNavigationHelper.BuildForumNavigationExtData(comment.PostId, commentId)
                             });
                             Log.Information("评论回复通知发送成功：CommentId={CommentId}, 接收者={ReceiverId}",
                                 commentId, parentAuthorId.Value);
@@ -222,7 +223,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                                 TriggerId = comment.AuthorId,
                                 TriggerName = comment.AuthorName,
                                 TriggerAvatar = null,
-                                ReceiverUserIds = new List<long> { post.VoAuthorId }
+                                ReceiverUserIds = new List<long> { post.VoAuthorId },
+                                ExtData = NotificationNavigationHelper.BuildForumNavigationExtData(comment.PostId, commentId)
                             });
                             Log.Information("帖子评论通知发送成功：PostId={PostId}, CommentId={CommentId}, 接收者={ReceiverId}",
                                 comment.PostId, commentId, post.VoAuthorId);
@@ -461,7 +463,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                                     TriggerId = userId,
                                     TriggerName = null, // TODO: 从用户上下文获取用户名
                                     TriggerAvatar = null, // TODO: 从用户表查询头像
-                                    ReceiverUserIds = new List<long> { comment.AuthorId }
+                                    ReceiverUserIds = new List<long> { comment.AuthorId },
+                                    ExtData = NotificationNavigationHelper.BuildForumNavigationExtData(comment.PostId, commentId)
                                 });
 
                                 // 记录去重键（5分钟内不重复通知）

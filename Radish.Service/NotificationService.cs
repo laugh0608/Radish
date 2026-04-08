@@ -122,7 +122,8 @@ public class NotificationService : INotificationService
                             businessType = notification.BusinessType,
                             triggerId = notification.TriggerId,
                             triggerName = notification.TriggerName,
-                            triggerAvatar = notification.TriggerAvatar
+                            triggerAvatar = notification.TriggerAvatar,
+                            extData = notification.ExtData
                         };
 
                         await _pushService.PushNotificationAsync(userId, payload);

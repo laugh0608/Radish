@@ -13,6 +13,7 @@ import { useWindowStore } from '@/stores/windowStore';
 import { useUserStore } from '@/stores/userStore';
 import { tokenService } from '@/services/tokenService';
 import { toast } from '@radish/ui/toast';
+import { parseForumNotificationNavigation } from '@/utils/notificationNavigation';
 import styles from './NotificationApp.module.css';
 
 /**
@@ -90,7 +91,8 @@ export const NotificationApp = () => {
       businessType: notification?.voBusinessType,
       triggerId: notification?.voTriggerId,
       triggerName: notification?.voTriggerName,
-      triggerAvatar: resolveNotificationAvatar(notification?.voTriggerAvatar)
+      triggerAvatar: resolveNotificationAvatar(notification?.voTriggerAvatar),
+      extData: notification?.voExtData
     };
   };
 
@@ -108,6 +110,7 @@ export const NotificationApp = () => {
       triggerId: notification?.voTriggerId,
       triggerName: notification?.voTriggerName,
       triggerAvatar: resolveNotificationAvatar(notification?.voTriggerAvatar),
+      extData: notification?.voExtData,
       isRead: n.voIsRead,
       createdAt: n.voCreateTime
     };
@@ -126,6 +129,7 @@ export const NotificationApp = () => {
       triggerId: n.triggerId,
       triggerName: n.triggerName,
       triggerAvatar: resolveNotificationAvatar(n.triggerAvatar),
+      extData: n.extData,
       isRead: n.isRead,
       createdAt: n.createdAt
     }));
@@ -390,6 +394,14 @@ export const NotificationApp = () => {
     }
 
     const businessType = notification.businessType?.trim();
+    const forumNavigation = parseForumNotificationNavigation(notification.extData);
+
+    if (forumNavigation) {
+      openOrReuseApp('forum', forumNavigation.commentId
+        ? { postId: forumNavigation.postId, commentId: forumNavigation.commentId }
+        : { postId: forumNavigation.postId });
+      return;
+    }
 
     if (businessType === 'Post' && notification.businessId) {
       openOrReuseApp('forum', { postId: notification.businessId });
