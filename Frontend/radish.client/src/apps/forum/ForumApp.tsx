@@ -23,6 +23,7 @@ import {
 } from '@/api/userFollow';
 import { getMyTimePreference, getTimeSettings } from '@/api/time';
 import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId, resolveTimeZoneId } from '@/utils/dateTime';
+import { parseForumWindowParams } from '@/utils/forumNavigation';
 import { CategoryList } from './components/CategoryList';
 import { TagSection } from './components/TagSection';
 import { TrendingSidebar } from './components/TrendingSidebar';
@@ -74,39 +75,6 @@ function mergeCommentChildren(
       voChildrenTotal: totalChildren
     };
   });
-}
-
-function parseForumWindowParams(appParams?: Record<string, unknown> | null): { postId?: number; commentId?: number; navigationKey?: string } {
-  if (!appParams) {
-    return {};
-  }
-
-  const rawPostId = appParams.postId;
-  const postId = typeof rawPostId === 'number'
-    ? rawPostId
-    : typeof rawPostId === 'string'
-      ? Number(rawPostId)
-      : 0;
-
-  if (!Number.isFinite(postId) || postId <= 0) {
-    return {};
-  }
-
-  const rawCommentId = appParams.commentId;
-  const commentId = typeof rawCommentId === 'number'
-    ? rawCommentId
-    : typeof rawCommentId === 'string'
-      ? Number(rawCommentId)
-      : 0;
-
-  const rawNavigationKey = appParams.__navigationKey;
-  const navigationKey = rawNavigationKey == null ? undefined : String(rawNavigationKey);
-
-  return {
-    postId,
-    commentId: Number.isFinite(commentId) && commentId > 0 ? commentId : undefined,
-    navigationKey
-  };
 }
 
 export const ForumApp = () => {

@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
+import { ConfirmDialog } from '@radish/ui/confirm-dialog';
 import { toast } from '@radish/ui/toast';
 import { getOidcLoginUrl, type PostQuickReply } from '@/api/forum';
 import { resolveMediaUrl } from '@/utils/media';
@@ -83,6 +84,7 @@ export const PostQuickReplyWall = ({
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
   const [wallWidth, setWallWidth] = useState(0);
   const [measuredWidths, setMeasuredWidths] = useState<Record<number, number>>({});
   const wallRef = useRef<HTMLDivElement>(null);
@@ -233,19 +235,20 @@ export const PostQuickReplyWall = ({
     }
   };
 
-  const handleDelete = async (quickReplyId: number) => {
-    if (!window.confirm(t('forum.quickReply.deleteConfirm'))) {
+  const handleDelete = async () => {
+    if (!pendingDeleteId) {
       return;
     }
 
-    setDeletingId(quickReplyId);
+    setDeletingId(pendingDeleteId);
     try {
-      await onDelete(quickReplyId);
+      await onDelete(pendingDeleteId);
       toast.success(t('forum.quickReply.deleteSuccess'));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t('forum.quickReply.deleteFailed'));
     } finally {
       setDeletingId(null);
+      setPendingDeleteId(null);
     }
   };
 
@@ -359,7 +362,7 @@ export const PostQuickReplyWall = ({
                             type="button"
                             className={styles.actionButton}
                             onClick={() => {
-                              void handleDelete(reply.voId);
+                              setPendingDeleteId(reply.voId);
                             }}
                             disabled={deletingId === reply.voId}
                             title={t('common.delete')}
@@ -418,6 +421,23 @@ export const PostQuickReplyWall = ({
           );
         })}
       </div>
+
+      <ConfirmDialog
+        isOpen={pendingDeleteId !== null}
+        title={t('forum.confirmDeleteTitle')}
+        message={t('forum.quickReply.deleteConfirm')}
+        confirmText={t('common.delete')}
+        cancelText={t('common.cancel')}
+        danger={true}
+        onConfirm={() => {
+          void handleDelete();
+        }}
+        onCancel={() => {
+          if (deletingId === null) {
+            setPendingDeleteId(null);
+          }
+        }}
+      />
     </section>
   );
 };

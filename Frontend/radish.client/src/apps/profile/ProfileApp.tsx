@@ -17,6 +17,7 @@ import {
   getBrowserTimeZoneId,
   resolveTimeZoneId,
 } from '@/utils/dateTime';
+import { buildForumAppParams, parseForumRoutePath } from '@/utils/forumNavigation';
 import { reuseInFlightRequest } from './requestDedup';
 import styles from './ProfileApp.module.css';
 
@@ -279,12 +280,12 @@ export const ProfileApp = () => {
   }, [apiBaseUrl, isOwnProfile, loggedIn, viewingUserId]);
 
   const handlePostClick = (postId: number) => {
-    openApp('forum', { postId });
+    openApp('forum', buildForumAppParams({ postId }));
     log.debug('ProfileApp', `打开帖子: ${postId}`);
   };
 
   const handleCommentClick = (postId: number, commentId: number) => {
-    openApp('forum', { postId, commentId });
+    openApp('forum', buildForumAppParams({ postId, commentId }));
     log.debug('ProfileApp', `打开帖子 ${postId} 的评论 ${commentId}`);
   };
 
@@ -292,12 +293,10 @@ export const ProfileApp = () => {
     const routePath = item.voRoutePath?.trim() || '';
     const targetId = normalizePositiveId(item.voTargetId);
 
-    if (routePath.startsWith('/forum/post/')) {
-      const postId = normalizePositiveId(getRouteTailSegment(routePath));
-      if (postId) {
-        openApp('forum', { postId });
-        return;
-      }
+    const forumNavigation = parseForumRoutePath(routePath);
+    if (forumNavigation) {
+      openApp('forum', buildForumAppParams(forumNavigation));
+      return;
     }
 
     if (routePath.startsWith('/shop/product/')) {
@@ -323,7 +322,7 @@ export const ProfileApp = () => {
     }
 
     if (item.voTargetType === 'Post' && targetId) {
-      openApp('forum', { postId: targetId });
+      openApp('forum', buildForumAppParams({ postId: targetId }));
       return;
     }
 

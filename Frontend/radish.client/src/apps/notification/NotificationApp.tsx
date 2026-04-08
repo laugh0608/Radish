@@ -13,7 +13,7 @@ import { useWindowStore } from '@/stores/windowStore';
 import { useUserStore } from '@/stores/userStore';
 import { tokenService } from '@/services/tokenService';
 import { toast } from '@radish/ui/toast';
-import { parseForumNotificationNavigation } from '@/utils/notificationNavigation';
+import { buildForumAppParams, parseForumNotificationNavigation } from '@/utils/forumNavigation';
 import styles from './NotificationApp.module.css';
 
 /**
@@ -397,14 +397,12 @@ export const NotificationApp = () => {
     const forumNavigation = parseForumNotificationNavigation(notification.extData);
 
     if (forumNavigation) {
-      openOrReuseApp('forum', forumNavigation.commentId
-        ? { postId: forumNavigation.postId, commentId: forumNavigation.commentId }
-        : { postId: forumNavigation.postId });
+      openOrReuseApp('forum', buildForumAppParams(forumNavigation));
       return;
     }
 
     if (businessType === 'Post' && notification.businessId) {
-      openOrReuseApp('forum', { postId: notification.businessId });
+      openOrReuseApp('forum', buildForumAppParams({ postId: notification.businessId }));
       return;
     }
 
