@@ -232,9 +232,10 @@ export async function getPostById(
   answerSort: QuestionAnswerSort = 'default'
 ): Promise<PostDetail> {
   void t;
+  const hasToken = Boolean(tokenService.getAccessToken());
   const response = await apiGet<PostDetail>(
     `/api/v1/Post/GetById/${postId}?answerSort=${answerSort}`,
-    { timeout: FORUM_READ_TIMEOUT_MS, withAuth: true }
+    { timeout: FORUM_READ_TIMEOUT_MS, withAuth: hasToken }
   );
 
   if (!response.ok || !response.data) {

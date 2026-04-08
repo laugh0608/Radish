@@ -13,12 +13,8 @@ import {
 } from '@radish/ui';
 import { ReactionBar, type ReactionTogglePayload } from '@radish/ui/reaction-bar';
 import type { StickerPickerGroup } from '@radish/ui/sticker-picker';
-import type { MarkdownStickerMap } from '@radish/ui/markdown-renderer';
+import { MarkdownRenderer, type MarkdownStickerMap } from '@radish/ui/markdown-renderer';
 import styles from './PostDetail.module.css';
-
-const MarkdownRenderer = lazy(() =>
-  import('@radish/ui/markdown-renderer').then((module) => ({ default: module.MarkdownRenderer }))
-);
 
 const MarkdownEditor = lazy(() =>
   import('@radish/ui/markdown-editor').then((module) => ({ default: module.MarkdownEditor }))
@@ -28,6 +24,7 @@ interface PostDetailProps {
   post: PostDetailType | null;
   loading?: boolean;
   displayTimeZone: string;
+  mode?: 'interactive' | 'readOnly';
   isLiked?: boolean;
   onLike?: (postId: number) => void;
   onVotePoll?: (optionId: number) => Promise<void>;
@@ -63,6 +60,7 @@ export const PostDetail = ({
   post,
   loading = false,
   displayTimeZone,
+  mode = 'interactive',
   isLiked = false,
   onLike,
   onVotePoll,
@@ -94,6 +92,7 @@ export const PostDetail = ({
   onReport,
 }: PostDetailProps) => {
   const { t } = useTranslation();
+  const isReadOnly = mode === 'readOnly';
   const anonymousUserLabel = t('forum.postCard.anonymousUser');
   const unknownTimeLabel = t('forum.postCard.unknownTime');
   const parsedTags = post?.voTags
@@ -388,9 +387,7 @@ export const PostDetail = ({
           {post.voCreateTime && <span> · {formatDateTimeByTimeZone(post.voCreateTime, displayTimeZone)}</span>}
           {post.voViewCount !== undefined && <span> · {t('forum.postDetail.views', { count: post.voViewCount })}</span>}
         </div>
-        <Suspense fallback={<div className={styles.postBody}>{t('forum.postDetail.rendering')}</div>}>
-          <MarkdownRenderer content={post.voContent} className={styles.postBody} stickerMap={stickerMap} />
-        </Suspense>
+        <MarkdownRenderer content={post.voContent} className={styles.postBody} stickerMap={stickerMap} />
         {tagList.length > 0 && (
           <div className={styles.postTags}>
             {tagList.map((tag, index) => (
@@ -463,28 +460,30 @@ export const PostDetail = ({
 
             <div className={styles.pollFooter}>
               <span className={styles.pollHint}>{pollStatusText}</span>
-              <div className={styles.pollActionButtons}>
-                {canClosePoll && (
+              {!isReadOnly && (
+                <div className={styles.pollActionButtons}>
+                  {canClosePoll && (
+                    <button
+                      type="button"
+                      className={styles.pollCloseButton}
+                      onClick={() => {
+                        void handleClosePoll();
+                      }}
+                      disabled={isClosingPoll}
+                    >
+                      {isClosingPoll ? t('forum.postDetail.poll.closeLoading') : t('forum.postDetail.poll.close')}
+                    </button>
+                  )}
                   <button
                     type="button"
-                    className={styles.pollCloseButton}
-                    onClick={() => {
-                      void handleClosePoll();
-                    }}
-                    disabled={isClosingPoll}
+                    className={styles.pollSubmitButton}
+                    onClick={handleVoteSubmit}
+                    disabled={!canSubmitPoll || !selectedOptionId || isVoting}
                   >
-                    {isClosingPoll ? t('forum.postDetail.poll.closeLoading') : t('forum.postDetail.poll.close')}
+                    {isVoting ? t('forum.postDetail.poll.submitLoading') : t('forum.postDetail.poll.submit')}
                   </button>
-                )}
-                <button
-                  type="button"
-                  className={styles.pollSubmitButton}
-                  onClick={handleVoteSubmit}
-                  disabled={!canSubmitPoll || !selectedOptionId || isVoting}
-                >
-                  {isVoting ? t('forum.postDetail.poll.submitLoading') : t('forum.postDetail.poll.submit')}
-                </button>
-              </div>
+                </div>
+              )}
             </div>
           </section>
         )}
@@ -533,7 +532,7 @@ export const PostDetail = ({
                       : t('forum.postDetail.lottery.hint.authorWaiting')
                     : t('forum.postDetail.lottery.hint.visitor')}
               </span>
-              {canDrawLottery && (
+              {!isReadOnly && canDrawLottery && (
                 <button
                   type="button"
                   className={styles.lotteryDrawButton}
@@ -728,13 +727,11 @@ export const PostDetail = ({
                         </div>
                       </div>
 
-                      <Suspense fallback={<div className={styles.answerBody}>{t('forum.postDetail.question.renderingAnswer')}</div>}>
-                        <MarkdownRenderer
-                          content={answer.voContent}
-                          className={styles.answerBody}
-                          stickerMap={stickerMap}
-                        />
-                      </Suspense>
+                      <MarkdownRenderer
+                        content={answer.voContent}
+                        className={styles.answerBody}
+                        stickerMap={stickerMap}
+                      />
                     </article>
                   );
                 })}
@@ -743,71 +740,79 @@ export const PostDetail = ({
               <p className={styles.questionEmpty}>{questionEmptyText}</p>
             )}
 
-            <div className={styles.answerComposer}>
-              <label className={styles.answerLabel}>
-                {t('forum.postDetail.question.composeLabel')}
-              </label>
-              <Suspense fallback={<div className={styles.answerEditorLoading}>{t('forum.postDetail.question.editorLoading')}</div>}>
-                <MarkdownEditor
-                  value={answerContent}
-                  onChange={setAnswerContent}
-                  placeholder={isAuthenticated
-                    ? t('forum.postDetail.question.placeholderLoggedIn')
-                    : t('forum.postDetail.question.placeholderLoggedOut')}
-                  minHeight={180}
-                  disabled={!canAnswerQuestion}
-                  showToolbar={true}
-                  theme="light"
-                  className={styles.answerEditor}
-                  onImageUpload={handleAnswerImageUpload}
-                  onDocumentUpload={handleAnswerDocumentUpload}
-                  stickerGroups={stickerGroups}
-                  stickerMap={stickerMap}
-                />
-              </Suspense>
-              <div className={styles.answerComposerFooter}>
-                <span className={styles.answerHint}>
-                  {question?.voIsSolved
-                    ? t('forum.postDetail.question.hintSolved')
-                    : isAuthenticated
-                      ? t('forum.postDetail.question.hintLoggedIn')
-                      : t('forum.postDetail.question.hintLoggedOut')}
-                </span>
-                <button
-                  type="button"
-                  className={styles.answerSubmitButton}
-                  onClick={() => {
-                    void handleAnswerSubmit();
-                  }}
-                  disabled={!isAuthenticated || !answerContent.trim() || isSubmittingAnswer}
-                >
-                  {isSubmittingAnswer ? t('forum.postDetail.question.submitLoading') : t('forum.postDetail.question.submit')}
-                </button>
+            {!isReadOnly && (
+              <div className={styles.answerComposer}>
+                <label className={styles.answerLabel}>
+                  {t('forum.postDetail.question.composeLabel')}
+                </label>
+                <Suspense fallback={<div className={styles.answerEditorLoading}>{t('forum.postDetail.question.editorLoading')}</div>}>
+                  <MarkdownEditor
+                    value={answerContent}
+                    onChange={setAnswerContent}
+                    placeholder={isAuthenticated
+                      ? t('forum.postDetail.question.placeholderLoggedIn')
+                      : t('forum.postDetail.question.placeholderLoggedOut')}
+                    minHeight={180}
+                    disabled={!canAnswerQuestion}
+                    showToolbar={true}
+                    theme="light"
+                    className={styles.answerEditor}
+                    onImageUpload={handleAnswerImageUpload}
+                    onDocumentUpload={handleAnswerDocumentUpload}
+                    stickerGroups={stickerGroups}
+                    stickerMap={stickerMap}
+                  />
+                </Suspense>
+                <div className={styles.answerComposerFooter}>
+                  <span className={styles.answerHint}>
+                    {question?.voIsSolved
+                      ? t('forum.postDetail.question.hintSolved')
+                      : isAuthenticated
+                        ? t('forum.postDetail.question.hintLoggedIn')
+                        : t('forum.postDetail.question.hintLoggedOut')}
+                  </span>
+                  <button
+                    type="button"
+                    className={styles.answerSubmitButton}
+                    onClick={() => {
+                      void handleAnswerSubmit();
+                    }}
+                    disabled={!isAuthenticated || !answerContent.trim() || isSubmittingAnswer}
+                  >
+                    {isSubmittingAnswer ? t('forum.postDetail.question.submitLoading') : t('forum.postDetail.question.submit')}
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </section>
         )}
 
         <div className={styles.actions}>
-          <button
-            type="button"
-            onClick={() => onLike?.(post.voId)}
-            className={`${styles.likeButton} ${isLiked ? styles.liked : ''}`}
-            disabled={!isAuthenticated}
-            title={!isAuthenticated
-              ? t('forum.postDetail.like.login')
-              : isLiked
-                ? t('forum.postDetail.like.unlike')
-                : t('forum.postDetail.like.like')}
-          >
-            <span className={styles.likeIcon}>{isLiked ? '❤️' : '🤍'}</span>
-            <span className={styles.likeCount}>{post.voLikeCount || 0}</span>
-          </button>
+          {!isReadOnly ? (
+            <button
+              type="button"
+              onClick={() => onLike?.(post.voId)}
+              className={`${styles.likeButton} ${isLiked ? styles.liked : ''}`}
+              disabled={!isAuthenticated}
+              title={!isAuthenticated
+                ? t('forum.postDetail.like.login')
+                : isLiked
+                  ? t('forum.postDetail.like.unlike')
+                  : t('forum.postDetail.like.like')}
+            >
+              <span className={styles.likeIcon}>{isLiked ? '❤️' : '🤍'}</span>
+              <span className={styles.likeCount}>{post.voLikeCount || 0}</span>
+            </button>
+          ) : (
+            <span className={styles.commentCount}>
+              ❤️ {post.voLikeCount || 0}
+            </span>
+          )}
           <span className={styles.commentCount}>
             💬 {t('forum.postDetail.commentCount', { count: post.voCommentCount || 0 })}
           </span>
 
-          {!!onReport && !isAuthor && (
+          {!isReadOnly && !!onReport && !isAuthor && (
             <button
               type="button"
               onClick={() => onReport(post.voId)}
@@ -819,7 +824,7 @@ export const PostDetail = ({
             </button>
           )}
 
-          {showFollowAction && (
+          {!isReadOnly && showFollowAction && (
             <div className={styles.relationActions}>
               <span className={styles.relationInfo}>
                 {t('forum.postDetail.followStats', {
@@ -845,7 +850,7 @@ export const PostDetail = ({
             </div>
           )}
 
-          {onToggleReaction && (
+          {!isReadOnly && onToggleReaction && (
             <ReactionBar
               targetType="Post"
               targetId={post.voId}
@@ -858,7 +863,7 @@ export const PostDetail = ({
             />
           )}
 
-          {(canToggleTop || isAuthor) && (
+          {!isReadOnly && (canToggleTop || isAuthor) && (
             <div className={styles.authorActions}>
               {canToggleTop && (
                 <button

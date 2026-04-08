@@ -21,9 +21,10 @@ interface PostQuickReplyWallProps {
   loading: boolean;
   isAuthenticated: boolean;
   currentUserId: number;
-  onCreate: (content: string) => Promise<void>;
-  onDelete: (quickReplyId: number) => Promise<void>;
-  onReport: (quickReplyId: number) => void;
+  mode?: 'interactive' | 'readOnly';
+  onCreate?: (content: string) => Promise<void>;
+  onDelete?: (quickReplyId: number) => Promise<void>;
+  onReport?: (quickReplyId: number) => void;
 }
 
 interface QuickReplyLaneLayout {
@@ -76,11 +77,13 @@ export const PostQuickReplyWall = ({
   loading,
   isAuthenticated,
   currentUserId,
+  mode = 'interactive',
   onCreate,
   onDelete,
   onReport,
 }: PostQuickReplyWallProps) => {
   const { t } = useTranslation();
+  const isReadOnly = mode === 'readOnly';
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -219,7 +222,7 @@ export const PostQuickReplyWall = ({
   };
 
   const handleSubmit = async () => {
-    if (!normalizedContent || submitting || !isAuthenticated) {
+    if (!normalizedContent || submitting || !isAuthenticated || !onCreate) {
       return;
     }
 
@@ -236,7 +239,7 @@ export const PostQuickReplyWall = ({
   };
 
   const handleDelete = async () => {
-    if (!pendingDeleteId) {
+    if (!pendingDeleteId || !onDelete) {
       return;
     }
 
@@ -273,52 +276,54 @@ export const PostQuickReplyWall = ({
         </div>
       </div>
 
-      <div className={styles.composer}>
-        <div className={styles.composerShell}>
-          <textarea
-            className={styles.textarea}
-            placeholder={isAuthenticated ? t('forum.quickReply.placeholder') : t('forum.quickReply.loginPrompt')}
-            value={content}
-            onChange={(event) => setContent(event.target.value.slice(0, MAX_LENGTH))}
-            onKeyDown={handleComposerKeyDown}
-            rows={1}
-            maxLength={MAX_LENGTH}
-            readOnly={!isAuthenticated}
-            onFocus={() => {
-              if (!isAuthenticated) {
-                handleLogin();
-              }
-            }}
-            onClick={() => {
-              if (!isAuthenticated) {
-                handleLogin();
-              }
-            }}
-          />
-
-          {isAuthenticated ? (
-            <button
-              type="button"
-              className={styles.submitButton}
-              onClick={() => {
-                void handleSubmit();
+      {!isReadOnly && (
+        <div className={styles.composer}>
+          <div className={styles.composerShell}>
+            <textarea
+              className={styles.textarea}
+              placeholder={isAuthenticated ? t('forum.quickReply.placeholder') : t('forum.quickReply.loginPrompt')}
+              value={content}
+              onChange={(event) => setContent(event.target.value.slice(0, MAX_LENGTH))}
+              onKeyDown={handleComposerKeyDown}
+              rows={1}
+              maxLength={MAX_LENGTH}
+              readOnly={!isAuthenticated}
+              onFocus={() => {
+                if (!isAuthenticated) {
+                  handleLogin();
+                }
               }}
-              disabled={submitting || !normalizedContent}
-            >
-              {submitting ? t('forum.quickReply.submitting') : t('forum.quickReply.submit')}
-            </button>
-          ) : (
-            <button type="button" className={styles.loginButton} onClick={handleLogin}>
-              {t('forum.quickReply.loginButton')}
-            </button>
-          )}
-        </div>
+              onClick={() => {
+                if (!isAuthenticated) {
+                  handleLogin();
+                }
+              }}
+            />
 
-        <div className={styles.composerMeta}>
-          <span className={styles.hint}>{t('forum.quickReply.inputHint')}</span>
-          <span className={styles.count}>{t('forum.quickReply.charCount', { count: normalizedContent.length, max: MAX_LENGTH })}</span>
+            {isAuthenticated ? (
+              <button
+                type="button"
+                className={styles.submitButton}
+                onClick={() => {
+                  void handleSubmit();
+                }}
+                disabled={submitting || !normalizedContent}
+              >
+                {submitting ? t('forum.quickReply.submitting') : t('forum.quickReply.submit')}
+              </button>
+            ) : (
+              <button type="button" className={styles.loginButton} onClick={handleLogin}>
+                {t('forum.quickReply.loginButton')}
+              </button>
+            )}
+          </div>
+
+          <div className={styles.composerMeta}>
+            <span className={styles.hint}>{t('forum.quickReply.inputHint')}</span>
+            <span className={styles.count}>{t('forum.quickReply.charCount', { count: normalizedContent.length, max: MAX_LENGTH })}</span>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className={styles.wall} ref={wallRef}>
         {loading ? (
@@ -357,7 +362,7 @@ export const PostQuickReplyWall = ({
                         <span className={styles.author}>{authorName}</span>
                         <span className={styles.content}>{reply.voContent}</span>
 
-                        {isOwner ? (
+                        {!isReadOnly && isOwner ? (
                           <button
                             type="button"
                             className={styles.actionButton}
@@ -369,7 +374,7 @@ export const PostQuickReplyWall = ({
                           >
                             <Icon icon={deletingId === reply.voId ? 'mdi:loading' : 'mdi:trash-can-outline'} size={15} />
                           </button>
-                        ) : (
+                        ) : !isReadOnly && onReport ? (
                           <button
                             type="button"
                             className={styles.actionButton}
@@ -378,7 +383,7 @@ export const PostQuickReplyWall = ({
                           >
                             <Icon icon="mdi:alert-circle-outline" size={15} />
                           </button>
-                        )}
+                        ) : null}
                       </article>
                     );
                   })}
@@ -414,30 +419,34 @@ export const PostQuickReplyWall = ({
               </div>
               <span className={styles.author}>{authorName}</span>
               <span className={styles.content}>{reply.voContent}</span>
-              <button type="button" className={styles.actionButton} tabIndex={-1}>
-                <Icon icon={isOwner ? 'mdi:trash-can-outline' : 'mdi:alert-circle-outline'} size={15} />
-              </button>
+              {!isReadOnly && (
+                <button type="button" className={styles.actionButton} tabIndex={-1}>
+                  <Icon icon={isOwner ? 'mdi:trash-can-outline' : 'mdi:alert-circle-outline'} size={15} />
+                </button>
+              )}
             </div>
           );
         })}
       </div>
 
-      <ConfirmDialog
-        isOpen={pendingDeleteId !== null}
-        title={t('forum.confirmDeleteTitle')}
-        message={t('forum.quickReply.deleteConfirm')}
-        confirmText={t('common.delete')}
-        cancelText={t('common.cancel')}
-        danger={true}
-        onConfirm={() => {
-          void handleDelete();
-        }}
-        onCancel={() => {
-          if (deletingId === null) {
-            setPendingDeleteId(null);
-          }
-        }}
-      />
+      {!isReadOnly && (
+        <ConfirmDialog
+          isOpen={pendingDeleteId !== null}
+          title={t('forum.confirmDeleteTitle')}
+          message={t('forum.quickReply.deleteConfirm')}
+          confirmText={t('common.delete')}
+          cancelText={t('common.cancel')}
+          danger={true}
+          onConfirm={() => {
+            void handleDelete();
+          }}
+          onCancel={() => {
+            if (deletingId === null) {
+              setPendingDeleteId(null);
+            }
+          }}
+        />
+      )}
     </section>
   );
 };

@@ -13,14 +13,16 @@ import 'highlight.js/styles/github-dark.css';
 
 const App = lazy(() => import('./App.tsx'));
 const Shell = lazy(() => import('./desktop/Shell.tsx').then((module) => ({ default: module.Shell })));
+const PublicEntry = lazy(() => import('./public/PublicEntry.tsx').then((module) => ({ default: module.PublicEntry })));
 
 const isBrowser = typeof window !== 'undefined';
 const isOidcCallback = isBrowser && window.location.pathname === '/oidc/callback';
+const isPublicForumRoute = isBrowser && (window.location.pathname === '/forum' || window.location.pathname.startsWith('/forum/'));
 
 const params = new URLSearchParams(window.location.search);
 const isDemo = params.has('demo');
 
-const Page = isOidcCallback || isDemo ? App : Shell;
+const Page = isOidcCallback || isDemo ? App : isPublicForumRoute ? PublicEntry : Shell;
 
 initializeTheme();
 void applySiteBranding(getApiBaseUrl());
