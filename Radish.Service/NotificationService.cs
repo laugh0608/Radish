@@ -154,6 +154,7 @@ public class NotificationService : INotificationService
         {
             "CommentReply" => "reply",
             NotificationType.CommentReplied => "reply",
+            NotificationType.PostQuickReplied => "reply",
             NotificationType.CommentLiked => "like",
             NotificationType.PostLiked => "like",
             "Mention" => "mention",

@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using AutoMapper;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 using Radish.Common.AttributeTool;
 using Radish.Common.CacheTool;
 using Radish.Common.OptionTool;
@@ -24,6 +25,8 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
     private readonly ICaching _caching;
     private readonly IAttachmentService? _attachmentService;
     private readonly ForumQuickReplyOptions _options;
+    private readonly INotificationService? _notificationService;
+    private readonly ILogger<PostQuickReplyService>? _logger;
 
     public PostQuickReplyService(
         IMapper mapper,
@@ -31,7 +34,9 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
         IBaseRepository<Post> postRepository,
         ICaching caching,
         IOptions<ForumQuickReplyOptions> options,
-        IAttachmentService? attachmentService = null)
+        IAttachmentService? attachmentService = null,
+        INotificationService? notificationService = null,
+        ILogger<PostQuickReplyService>? logger = null)
         : base(mapper, baseRepository)
     {
         _postQuickReplyRepository = baseRepository;
@@ -39,6 +44,8 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
         _caching = caching;
         _options = options.Value;
         _attachmentService = attachmentService;
+        _notificationService = notificationService;
+        _logger = logger;
     }
 
     public async Task<PostQuickReplyWallVo> GetRecentByPostIdAsync(long postId, int take)
@@ -177,6 +184,7 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
         };
 
         var quickReplyId = await _postQuickReplyRepository.AddAsync(entity);
+        entity.Id = quickReplyId;
 
         await _caching.SetStringAsync(
             BuildCooldownCacheKey(userId, request.PostId),
@@ -190,6 +198,7 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
         var replyVo = Mapper.Map<PostQuickReplyVo>(entity);
         replyVo.VoId = quickReplyId;
         await FillAuthorAvatarUrlsAsync([replyVo]);
+        await TrySendPostQuickReplyNotificationAsync(post, entity, replyVo.VoAuthorAvatarUrl);
 
         return replyVo;
     }
@@ -301,6 +310,41 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
             {
                 reply.VoAuthorAvatarUrl = avatarUrl;
             }
+        }
+    }
+
+    private async Task TrySendPostQuickReplyNotificationAsync(Post post, PostQuickReply quickReply, string? triggerAvatar)
+    {
+        if (_notificationService == null || post.AuthorId <= 0 || post.AuthorId == quickReply.AuthorId)
+        {
+            return;
+        }
+
+        try
+        {
+            await _notificationService.CreateNotificationAsync(new CreateNotificationDto
+            {
+                Type = NotificationType.PostQuickReplied,
+                Title = "帖子收到轻回应",
+                Content = quickReply.Content,
+                Priority = (int)NotificationPriority.Normal,
+                BusinessType = BusinessType.Post,
+                BusinessId = post.Id,
+                TriggerId = quickReply.AuthorId,
+                TriggerName = quickReply.AuthorName,
+                TriggerAvatar = triggerAvatar,
+                ReceiverUserIds = new List<long> { post.AuthorId },
+                ExtData = NotificationNavigationHelper.BuildForumNavigationExtData(post.Id),
+                TenantId = quickReply.TenantId
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex,
+                "[PostQuickReplyService] 发送轻回应通知失败，PostId={PostId}, QuickReplyId={QuickReplyId}, ReceiverUserId={ReceiverUserId}",
+                post.Id,
+                quickReply.Id,
+                post.AuthorId);
         }
     }
 

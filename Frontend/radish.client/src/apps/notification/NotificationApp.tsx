@@ -563,6 +563,7 @@ function mapNotificationTypeToStore(type: string): 'system' | 'reply' | 'mention
     'System': 'system',
     'CommentReply': 'reply',
     'CommentReplied': 'reply',
+    'PostQuickReplied': 'reply',
     'Mention': 'mention',
     'Mentioned': 'mention',
     'PostLiked': 'like',
