@@ -82,3 +82,18 @@
 - **帖子详情结构已切到三段式**：当前详情页已固定为“正文 -> 轻回应墙 -> 评论区”，轻互动不再继续压到评论树里。
 - **前端展示已改为真实内容先铺排、超宽才漂移**：轻回应墙当前会先按 2 到 3 条轨道横向铺排真实内容，只有实际超出可视承载后才进入缓慢漂移，不再复制同一条内容制造假滚动。
 - **事务异常链路顺手完成一次根因修正**：在联调轻回应发布时，当前同步修正了事务切面对异步业务异常的包装与反射空引用问题，避免频率限制等业务错误继续炸成未处理异常。
+
+## 2026-04-08 (周三)
+
+### `Phase 2-2` forum 公开移动入口首批落地
+
+- **公开内容壳层首批已从 forum 开始落地**：`radish.client` 当前已新增公开入口分流；命中 `/forum` 与 `/forum/post/:postId` 时，会进入公开内容壳层，而不是继续先进入桌面 `Shell`。
+- **首批范围当前已按冻结口径实现**：公开 forum 首批当前只包含公开帖子列表与帖子详情；帖子详情首批只承载正文、轻回应墙展示与评论阅读，不扩到“移动版 WebOS”、发帖创作器或完整通知中心。
+- **帖子详情读取已补匿名访问链路**：帖子详情接口当前改为“有 token 则带、无 token 则匿名读”，公开外链与移动浏览场景可以直接读取现有帖子详情，而不要求先建立桌面登录态。
+- **桌面 forum 组件已收口出只读复用能力**：帖子详情与轻回应墙组件当前已补齐只读模式，公开内容壳层优先复用现有 forum 能力，而不是再做一套并行详情实现。
+
+### forum 前端构建切块与 warning 收口
+
+- **forum 相关 manual chunks 已重新收口**：`vite.config.ts` 当前已把 forum 打包从统一 `app-forum` 大包拆分为 `forum-shell / forum-list-view / forum-detail-view / forum-detail-post / forum-detail-comments / forum-publish-modal / forum-history-modal / public-forum` 等更细粒度分块，原本反复出现的大 chunk warning 当前已消失。
+- **`MarkdownRenderer` 混合导入 warning 已修复**：forum 帖子详情与 `radish.ui` 编辑器当前已统一改为静态引用 `MarkdownRenderer`，移除了动态/静态混用导致的构建 warning。
+- **本批最小前端验证已通过**：`npm run type-check --workspace=radish.client` 与 `npm run build --workspace=radish.client` 当前均已通过；本轮构建里 forum 大 chunk warning 与 `MarkdownRenderer` warning 均未再出现。
