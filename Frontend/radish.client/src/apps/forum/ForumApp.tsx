@@ -8,8 +8,11 @@ import { ContentReportModal } from '@/components/ContentReportModal';
 import {
   getPostList,
   getCurrentGodCommentsBatch,
+  getChildComments,
+  getCommentNavigation,
   type PostItem,
-  type CommentHighlight
+  type CommentHighlight,
+  type CommentNode,
 } from '@/api/forum';
 import type { ContentReportTargetType } from '@/api/contentModeration';
 import {
@@ -46,6 +49,32 @@ const EditHistoryModal = lazy(() =>
 );
 
 const SEARCH_PAGE_SIZE = 20;
+const COMMENT_NAVIGATION_CHILD_PAGE_SIZE = 5;
+
+interface ForumCommentNavigationTarget {
+  commentId: number;
+  expandedRootCommentId?: number;
+  navigationKey: string;
+}
+
+function mergeCommentChildren(
+  comments: CommentNode[],
+  parentCommentId: number,
+  children: CommentNode[],
+  totalChildren: number
+): CommentNode[] {
+  return comments.map((comment) => {
+    if (comment.voId !== parentCommentId) {
+      return comment;
+    }
+
+    return {
+      ...comment,
+      voChildren: children,
+      voChildrenTotal: totalChildren
+    };
+  });
+}
 
 function parseForumWindowParams(appParams?: Record<string, unknown> | null): { postId?: number; commentId?: number; navigationKey?: string } {
   if (!appParams) {
@@ -106,6 +135,7 @@ export const ForumApp = () => {
   const [searchPostGodComments, setSearchPostGodComments] = useState<Map<number, CommentHighlight>>(new Map());
   const [loadingSearchPosts, setLoadingSearchPosts] = useState(false);
   const [reportTarget, setReportTarget] = useState<{ targetType: ContentReportTargetType; targetId: number } | null>(null);
+  const [commentNavigationTarget, setCommentNavigationTarget] = useState<ForumCommentNavigationTarget | null>(null);
   const searchRequestIdRef = useRef(0);
   const [followStatus, setFollowStatus] = useState<UserFollowStatus | null>(null);
   const [followLoading, setFollowLoading] = useState(false);
@@ -258,6 +288,7 @@ export const ForumApp = () => {
 
   useEffect(() => {
     if (!windowParams.postId) {
+      setCommentNavigationTarget(null);
       return;
     }
 
@@ -268,17 +299,107 @@ export const ForumApp = () => {
 
     handledWindowRouteRef.current = routeSignature;
 
-    setIsSearchView(false);
-    dataState.setSelectedTagName(null);
-    dataState.setSelectedCategoryId(null);
-    void actionsState.handleSelectPost(windowParams.postId);
+    let cancelled = false;
+
+    const openPostFromWindow = async () => {
+      setIsSearchView(false);
+      dataState.setSelectedTagName(null);
+      dataState.setSelectedCategoryId(null);
+      setCommentNavigationTarget(null);
+
+      await actionsState.handleSelectPost(windowParams.postId as number);
+      if (cancelled || !windowParams.commentId) {
+        return;
+      }
+
+      try {
+        const navigation = await getCommentNavigation(
+          windowParams.postId as number,
+          windowParams.commentId,
+          dataState.commentPageSize,
+          COMMENT_NAVIGATION_CHILD_PAGE_SIZE,
+          t
+        );
+
+        if (cancelled) {
+          return;
+        }
+
+        if (navigation.voRootPageIndex > 1) {
+          await dataState.loadComments(windowParams.postId as number, navigation.voRootPageIndex);
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        if (!navigation.voIsRootComment && navigation.voParentCommentId && navigation.voChildPageIndex) {
+          const aggregatedChildren: CommentNode[] = [];
+          let totalChildren = 0;
+
+          for (let pageIndex = 1; pageIndex <= navigation.voChildPageIndex; pageIndex += 1) {
+            const pageData = await getChildComments(
+              navigation.voParentCommentId,
+              pageIndex,
+              COMMENT_NAVIGATION_CHILD_PAGE_SIZE,
+              t
+            );
+
+            if (cancelled) {
+              return;
+            }
+
+            totalChildren = pageData.voTotal ?? totalChildren;
+            aggregatedChildren.push(...(pageData.voItems ?? []));
+          }
+
+          const deduplicatedChildren = aggregatedChildren.filter((child, index, source) =>
+            source.findIndex((item) => item.voId === child.voId) === index
+          );
+
+          dataState.setComments((prev) =>
+            mergeCommentChildren(prev, navigation.voParentCommentId as number, deduplicatedChildren, totalChildren)
+          );
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        setCommentNavigationTarget({
+          commentId: navigation.voCommentId,
+          expandedRootCommentId: navigation.voIsRootComment
+            ? undefined
+            : navigation.voParentCommentId ?? navigation.voRootCommentId,
+          navigationKey: routeSignature
+        });
+      } catch (err) {
+        if (cancelled) {
+          return;
+        }
+
+        const message = err instanceof Error ? err.message : String(err);
+        dataState.setError(message);
+      }
+    };
+
+    void openPostFromWindow();
+
+    return () => {
+      cancelled = true;
+    };
   }, [
     actionsState.handleSelectPost,
+    dataState.commentPageSize,
+    dataState.loadComments,
+    dataState.setComments,
+    dataState.setError,
     windowParams.commentId,
     windowParams.navigationKey,
     windowParams.postId,
     dataState.setSelectedCategoryId,
     dataState.setSelectedTagName,
+    t,
   ]);
 
   useEffect(() => {
@@ -460,6 +581,7 @@ export const ForumApp = () => {
 
   const handleShowAllPosts = () => {
     setIsSearchView(false);
+    setCommentNavigationTarget(null);
     dataState.setSelectedTagName(null);
     dataState.setSelectedCategoryId(null);
     dataState.setQuickReplies([]);
@@ -471,12 +593,14 @@ export const ForumApp = () => {
 
   const handleSelectCategory = (categoryId: number) => {
     setIsSearchView(false);
+    setCommentNavigationTarget(null);
     dataState.setSelectedTagName(null);
     dataState.setSelectedCategoryId(categoryId);
   };
 
   const handleSelectTag = (tagName: string | null) => {
     setIsSearchView(false);
+    setCommentNavigationTarget(null);
     dataState.setSelectedTagName(tagName);
     if (tagName) {
       dataState.setSelectedCategoryId(null);
@@ -485,6 +609,7 @@ export const ForumApp = () => {
 
   const handleOpenSearchView = (keyword: string) => {
     const normalizedKeyword = keyword.trim();
+    setCommentNavigationTarget(null);
     dataState.setSelectedPost(null);
     dataState.setComments([]);
     dataState.setQuickReplies([]);
@@ -565,7 +690,9 @@ export const ForumApp = () => {
                 replyTo={actionsState.replyTo}
                 followStatus={followStatus}
                 followLoading={followLoading}
+                commentNavigationTarget={commentNavigationTarget}
                 onBack={() => {
+                  setCommentNavigationTarget(null);
                   dataState.setSelectedPost(null);
                   dataState.setComments([]);
                   dataState.setQuickReplies([]);

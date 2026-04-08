@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { Icon } from '@radish/ui/icon';
@@ -48,6 +48,11 @@ interface PostDetailContentViewProps {
   replyTo: CommentReplyTarget | null;
   followStatus: UserFollowStatus | null;
   followLoading: boolean;
+  commentNavigationTarget?: {
+    commentId: number;
+    expandedRootCommentId?: number;
+    navigationKey: string;
+  } | null;
 
   onBack: () => void;
   onLike: (postId: number) => void;
@@ -128,6 +133,7 @@ export const PostDetailContentView = ({
   replyTo,
   followStatus,
   followLoading,
+  commentNavigationTarget = null,
   onBack,
   onLike,
   onVotePoll,
@@ -162,9 +168,26 @@ export const PostDetailContentView = ({
 }: PostDetailContentViewProps) => {
   const { t } = useTranslation();
   const [isCommentSheetOpen, setIsCommentSheetOpen] = useState(false);
+  const [highlightedCommentId, setHighlightedCommentId] = useState<number | null>(null);
+  const [commentAnchorVersion, setCommentAnchorVersion] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
+  const handledCommentNavigationRef = useRef<string | null>(null);
+  const highlightTimeoutRef = useRef<number | null>(null);
+  const commentAnchorMapRef = useRef(new Map<number, HTMLDivElement>());
   const { stickerGroups, stickerMap, handleStickerSelect } = useStickerCatalog();
   const reactionsState = useReactions({ onError: onReactionError });
+
+  const registerCommentAnchor = useCallback((commentId: number, element: HTMLDivElement | null) => {
+    if (element) {
+      commentAnchorMapRef.current.set(commentId, element);
+    } else {
+      commentAnchorMapRef.current.delete(commentId);
+    }
+
+    if (commentId === commentNavigationTarget?.commentId) {
+      setCommentAnchorVersion((prev) => prev + 1);
+    }
+  }, [commentNavigationTarget?.commentId]);
 
   useEffect(() => {
     if (replyTo) {
@@ -206,6 +229,55 @@ export const PostDetailContentView = ({
     const commentIds = collectCommentIds(comments);
     void reactionsState.loadCommentReactions(commentIds, { replace: true });
   }, [comments]);
+
+  useEffect(() => {
+    return () => {
+      if (highlightTimeoutRef.current !== null) {
+        window.clearTimeout(highlightTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!commentNavigationTarget?.commentId || !contentRef.current) {
+      return;
+    }
+
+    const navigationSignature = `${commentNavigationTarget.navigationKey}:${commentNavigationTarget.commentId}`;
+    if (handledCommentNavigationRef.current === navigationSignature) {
+      return;
+    }
+
+    const targetElement = commentAnchorMapRef.current.get(commentNavigationTarget.commentId);
+    if (!targetElement) {
+      return;
+    }
+
+    handledCommentNavigationRef.current = navigationSignature;
+
+    const container = contentRef.current;
+    const containerRect = container.getBoundingClientRect();
+    const targetRect = targetElement.getBoundingClientRect();
+    const offsetTop = Math.max(24, Math.round(container.clientHeight * 0.18));
+    const nextTop = container.scrollTop + (targetRect.top - containerRect.top) - offsetTop;
+
+    container.scrollTo({
+      top: Math.max(0, nextTop),
+      behavior: 'smooth'
+    });
+
+    setHighlightedCommentId(commentNavigationTarget.commentId);
+    if (highlightTimeoutRef.current !== null) {
+      window.clearTimeout(highlightTimeoutRef.current);
+    }
+    highlightTimeoutRef.current = window.setTimeout(() => {
+      setHighlightedCommentId((current) => (
+        current === commentNavigationTarget.commentId
+          ? null
+          : current
+      ));
+    }, 3200);
+  }, [commentAnchorVersion, commentNavigationTarget, comments]);
 
   const handleScrollTop = () => {
     contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
@@ -332,10 +404,13 @@ export const PostDetailContentView = ({
               hasPost={true}
               displayTimeZone={displayTimeZone}
               currentUserId={currentUserId}
+              highlightedCommentId={highlightedCommentId}
+              expandedRootCommentId={commentNavigationTarget?.expandedRootCommentId}
               pageSize={5}
               rootCommentTotal={commentTotal}
               loadedRootCommentCount={comments.length}
               rootCommentPageSize={commentPageSize}
+              registerCommentAnchor={registerCommentAnchor}
               sortBy={commentSortBy}
               onSortChange={onCommentSortChange}
               onDeleteComment={onDeleteComment}

@@ -79,6 +79,16 @@ public interface ICommentService : IBaseService<Comment, CommentVo>
     Task<(List<CommentVo> comments, int total)> GetChildCommentsPageAsync(long parentId, int pageIndex, int pageSize, long? userId = null);
 
     /// <summary>
+    /// 获取评论精确定位信息
+    /// </summary>
+    /// <param name="postId">帖子 Id</param>
+    /// <param name="commentId">评论 Id</param>
+    /// <param name="rootPageSize">根评论页大小</param>
+    /// <param name="childPageSize">子评论页大小</param>
+    /// <returns>定位信息，不存在时返回 null</returns>
+    Task<CommentNavigationVo?> GetCommentNavigationAsync(long postId, long commentId, int rootPageSize, int childPageSize);
+
+    /// <summary>
     /// 更新评论内容
     /// </summary>
     /// <param name="commentId">评论 Id</param>

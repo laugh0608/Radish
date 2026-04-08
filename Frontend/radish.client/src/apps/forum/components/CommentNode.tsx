@@ -17,6 +17,8 @@ interface CommentNodeProps {
   level: number;
   displayTimeZone: string;
   currentUserId?: number;
+  highlightedCommentId?: number | null;
+  expandedRootCommentId?: number;
   pageSize?: number; // 每次加载子评论数量
   isGodComment?: boolean; // 是否是神评
   onDelete?: (commentId: number) => void;
@@ -34,6 +36,7 @@ interface CommentNodeProps {
   onRequireReactionLogin?: () => void;
   onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
   onReport?: (commentId: number) => void;
+  registerCommentAnchor?: (commentId: number, element: HTMLDivElement | null) => void;
 }
 
 /**
@@ -233,6 +236,8 @@ export const CommentNode = ({
   level,
   displayTimeZone,
   currentUserId = 0,
+  highlightedCommentId = null,
+  expandedRootCommentId,
   pageSize = 10,
   isGodComment = false,
   onDelete,
@@ -250,6 +255,7 @@ export const CommentNode = ({
   onRequireReactionLogin,
   onAuthorClick,
   onReport,
+  registerCommentAnchor,
 }: CommentNodeProps) => {
   const { t } = useTranslation();
   // 判断是否是作者本人
@@ -325,6 +331,14 @@ export const CommentNode = ({
     setCurrentPage(sorted.length > 0 ? 1 : 0);
     setHasPreloadedChildren(sorted.length > 0);
   }, [node.voChildren, node.voChildrenTotal, node.voId]);
+
+  useEffect(() => {
+    if (level !== 0 || expandedRootCommentId !== node.voId) {
+      return;
+    }
+
+    setIsExpanded(true);
+  }, [expandedRootCommentId, level, node.voId]);
 
   // 若后端只返回 childrenTotal（不带 children 列表），为了“收起态也能看到一条回复”，这里自动预加载第一页子评论
   useEffect(() => {
@@ -520,7 +534,11 @@ export const CommentNode = ({
   })();
 
   return (
-    <div className={styles.container} style={{ marginLeft: level * 16 }}>
+    <div
+      ref={(element) => registerCommentAnchor?.(node.voId, element)}
+      className={`${styles.container} ${highlightedCommentId === node.voId ? styles.containerHighlighted : ''}`}
+      style={{ marginLeft: level * 16 }}
+    >
       <div className={styles.header}>
         <button
           type="button"
@@ -755,6 +773,7 @@ export const CommentNode = ({
                   level={1}
                   displayTimeZone={displayTimeZone}
                   currentUserId={currentUserId}
+                  highlightedCommentId={highlightedCommentId}
                   pageSize={pageSize}
                   isGodComment={false} // 子评论不可能是神评，沙发标识通过 node.voIsSofa 判断
                   onDelete={onDelete}
@@ -771,6 +790,7 @@ export const CommentNode = ({
                   onRequireReactionLogin={onRequireReactionLogin}
                   onAuthorClick={onAuthorClick}
                   onReport={onReport}
+                  registerCommentAnchor={registerCommentAnchor}
                 />
               ))}
             </div>

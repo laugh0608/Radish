@@ -225,6 +225,54 @@ public class CommentController : ControllerBase
     }
 
     /// <summary>
+    /// 获取评论精确定位信息
+    /// </summary>
+    /// <param name="postId">帖子 ID</param>
+    /// <param name="commentId">评论 ID</param>
+    /// <param name="rootPageSize">根评论分页大小</param>
+    /// <param name="childPageSize">子评论分页大小</param>
+    /// <returns>评论定位信息</returns>
+    [HttpGet]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    public async Task<MessageModel> GetNavigation(
+        long postId,
+        long commentId,
+        int rootPageSize = 20,
+        int childPageSize = 5)
+    {
+        if (rootPageSize < 1 || rootPageSize > 100)
+        {
+            rootPageSize = 20;
+        }
+
+        if (childPageSize < 1 || childPageSize > 100)
+        {
+            childPageSize = 5;
+        }
+
+        var navigation = await _commentService.GetCommentNavigationAsync(postId, commentId, rootPageSize, childPageSize);
+        if (navigation == null)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = "评论不存在或已被删除"
+            };
+        }
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = navigation
+        };
+    }
+
+    /// <summary>
     /// 获取指定用户的评论列表
     /// </summary>
     /// <param name="userId">用户 ID</param>

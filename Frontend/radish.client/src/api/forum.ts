@@ -22,6 +22,7 @@ import type {
   PostQuickReplyWall,
   UserPostQuickReply,
   CommentHighlight,
+  CommentNavigationLocation,
   PostEditHistory,
   CommentEditHistory,
   ForumPostViewMode,
@@ -81,6 +82,7 @@ export type {
   PostQuickReplyWall,
   UserPostQuickReply,
   CommentHighlight,
+  CommentNavigationLocation,
   PostEditHistory,
   CommentEditHistory,
   ForumPostViewMode,
@@ -673,6 +675,29 @@ export async function getChildComments(
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '获取子评论失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 获取评论精确定位信息
+ */
+export async function getCommentNavigation(
+  postId: number,
+  commentId: number,
+  rootPageSize: number,
+  childPageSize: number,
+  t: TFunction
+): Promise<CommentNavigationLocation> {
+  void t;
+  const response = await apiGet<CommentNavigationLocation>(
+    `/api/v1/Comment/GetNavigation?postId=${postId}&commentId=${commentId}&rootPageSize=${rootPageSize}&childPageSize=${childPageSize}`,
+    { timeout: FORUM_READ_TIMEOUT_MS }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '获取评论定位信息失败');
   }
 
   return response.data;

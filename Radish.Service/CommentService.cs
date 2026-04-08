@@ -717,6 +717,75 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
     }
 
     /// <summary>
+    /// 获取评论精确定位信息
+    /// </summary>
+    public async Task<CommentNavigationVo?> GetCommentNavigationAsync(long postId, long commentId, int rootPageSize, int childPageSize)
+    {
+        var safeRootPageSize = rootPageSize <= 0 ? 20 : Math.Min(rootPageSize, 100);
+        var safeChildPageSize = childPageSize <= 0 ? 5 : Math.Min(childPageSize, 100);
+
+        var targetComment = await _commentRepository.QueryByIdAsync(commentId);
+        if (targetComment == null ||
+            targetComment.PostId != postId ||
+            targetComment.IsDeleted ||
+            !targetComment.IsEnabled)
+        {
+            return null;
+        }
+
+        var isRootComment = !targetComment.ParentId.HasValue;
+        var rootCommentId = isRootComment
+            ? targetComment.Id
+            : targetComment.RootId ?? targetComment.ParentId!.Value;
+
+        var rootComment = isRootComment
+            ? targetComment
+            : await _commentRepository.QueryByIdAsync(rootCommentId);
+
+        if (rootComment == null || rootComment.IsDeleted || !rootComment.IsEnabled)
+        {
+            return null;
+        }
+
+        var rootPrecedingCount = await _commentRepository.QueryCountAsync(comment =>
+            comment.PostId == postId &&
+            comment.ParentId == null &&
+            comment.IsEnabled &&
+            !comment.IsDeleted &&
+            (
+                (comment.IsTop && !rootComment.IsTop) ||
+                (comment.IsTop == rootComment.IsTop && comment.CreateTime < rootComment.CreateTime)
+            ));
+
+        int? childPageIndex = null;
+        if (!isRootComment && targetComment.ParentId.HasValue)
+        {
+            var parentCommentId = targetComment.ParentId.Value;
+            var childPrecedingCount = await _commentRepository.QueryCountAsync(comment =>
+                comment.ParentId == parentCommentId &&
+                comment.IsEnabled &&
+                !comment.IsDeleted &&
+                (
+                    comment.LikeCount > targetComment.LikeCount ||
+                    (comment.LikeCount == targetComment.LikeCount && comment.CreateTime > targetComment.CreateTime)
+                ));
+
+            childPageIndex = (childPrecedingCount / safeChildPageSize) + 1;
+        }
+
+        return new CommentNavigationVo
+        {
+            VoCommentId = targetComment.Id,
+            VoPostId = targetComment.PostId,
+            VoRootCommentId = rootCommentId,
+            VoParentCommentId = targetComment.ParentId,
+            VoIsRootComment = isRootComment,
+            VoRootPageIndex = (rootPrecedingCount / safeRootPageSize) + 1,
+            VoChildPageIndex = childPageIndex
+        };
+    }
+
+    /// <summary>
     /// 更新评论内容
     /// </summary>
     public async Task<(bool success, string message)> UpdateCommentAsync(long commentId, string newContent, long userId, string userName, bool isAdmin = false)

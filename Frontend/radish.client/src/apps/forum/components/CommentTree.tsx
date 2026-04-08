@@ -14,6 +14,8 @@ interface CommentTreeProps {
   hasPost?: boolean;
   displayTimeZone: string;
   currentUserId?: number;
+  highlightedCommentId?: number | null;
+  expandedRootCommentId?: number;
   pageSize?: number;
   rootCommentTotal?: number;
   loadedRootCommentCount?: number;
@@ -36,6 +38,7 @@ interface CommentTreeProps {
   onRequireReactionLogin?: () => void;
   onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
   onReportComment?: (commentId: number) => void;
+  registerCommentAnchor?: (commentId: number, element: HTMLDivElement | null) => void;
 }
 
 export const CommentTree = ({
@@ -45,6 +48,8 @@ export const CommentTree = ({
   hasPost = false,
   displayTimeZone,
   currentUserId = 0,
+  highlightedCommentId = null,
+  expandedRootCommentId,
   pageSize = 10,
   rootCommentTotal = 0,
   loadedRootCommentCount = 0,
@@ -67,6 +72,7 @@ export const CommentTree = ({
   onRequireReactionLogin,
   onAuthorClick,
   onReportComment,
+  registerCommentAnchor,
 }: CommentTreeProps) => {
   const { t } = useTranslation();
   // 找出所有神评（后端标记的）
@@ -140,6 +146,8 @@ export const CommentTree = ({
             level={0}
             displayTimeZone={displayTimeZone}
             currentUserId={currentUserId}
+            highlightedCommentId={highlightedCommentId}
+            expandedRootCommentId={expandedRootCommentId}
             pageSize={pageSize}
             isGodComment={comment.voIsGodComment || false}
             onDelete={onDeleteComment}
@@ -157,6 +165,7 @@ export const CommentTree = ({
             onRequireReactionLogin={onRequireReactionLogin}
             onAuthorClick={onAuthorClick}
             onReport={onReportComment}
+            registerCommentAnchor={registerCommentAnchor}
           />
         ))}
       </div>

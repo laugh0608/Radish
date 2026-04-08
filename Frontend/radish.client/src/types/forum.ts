@@ -442,6 +442,19 @@ export interface CommentHighlight {
 }
 
 /**
+ * 评论精确定位结果
+ */
+export interface CommentNavigationLocation {
+  voCommentId: number;
+  voPostId: number;
+  voRootCommentId: number;
+  voParentCommentId?: number | null;
+  voIsRootComment: boolean;
+  voRootPageIndex: number;
+  voChildPageIndex?: number | null;
+}
+
+/**
  * 评论点赞操作结果
  * 注意：后端返回字段为 isLiked / likeCount
  */
