@@ -136,6 +136,7 @@ export const ForumApp = () => {
   const [loadingSearchPosts, setLoadingSearchPosts] = useState(false);
   const [reportTarget, setReportTarget] = useState<{ targetType: ContentReportTargetType; targetId: number } | null>(null);
   const [commentNavigationTarget, setCommentNavigationTarget] = useState<ForumCommentNavigationTarget | null>(null);
+  const [commentNavigationNotice, setCommentNavigationNotice] = useState<string | null>(null);
   const searchRequestIdRef = useRef(0);
   const [followStatus, setFollowStatus] = useState<UserFollowStatus | null>(null);
   const [followLoading, setFollowLoading] = useState(false);
@@ -289,6 +290,7 @@ export const ForumApp = () => {
   useEffect(() => {
     if (!windowParams.postId) {
       setCommentNavigationTarget(null);
+      setCommentNavigationNotice(null);
       return;
     }
 
@@ -306,6 +308,7 @@ export const ForumApp = () => {
       dataState.setSelectedTagName(null);
       dataState.setSelectedCategoryId(null);
       setCommentNavigationTarget(null);
+      setCommentNavigationNotice(null);
 
       await actionsState.handleSelectPost(windowParams.postId as number);
       if (cancelled || !windowParams.commentId) {
@@ -373,13 +376,14 @@ export const ForumApp = () => {
             : navigation.voParentCommentId ?? navigation.voRootCommentId,
           navigationKey: routeSignature
         });
+        setCommentNavigationNotice(null);
       } catch (err) {
         if (cancelled) {
           return;
         }
 
-        const message = err instanceof Error ? err.message : String(err);
-        dataState.setError(message);
+        setCommentNavigationTarget(null);
+        setCommentNavigationNotice(t('forum.commentNavigation.notice'));
       }
     };
 
@@ -582,6 +586,7 @@ export const ForumApp = () => {
   const handleShowAllPosts = () => {
     setIsSearchView(false);
     setCommentNavigationTarget(null);
+    setCommentNavigationNotice(null);
     dataState.setSelectedTagName(null);
     dataState.setSelectedCategoryId(null);
     dataState.setQuickReplies([]);
@@ -594,6 +599,7 @@ export const ForumApp = () => {
   const handleSelectCategory = (categoryId: number) => {
     setIsSearchView(false);
     setCommentNavigationTarget(null);
+    setCommentNavigationNotice(null);
     dataState.setSelectedTagName(null);
     dataState.setSelectedCategoryId(categoryId);
   };
@@ -601,6 +607,7 @@ export const ForumApp = () => {
   const handleSelectTag = (tagName: string | null) => {
     setIsSearchView(false);
     setCommentNavigationTarget(null);
+    setCommentNavigationNotice(null);
     dataState.setSelectedTagName(tagName);
     if (tagName) {
       dataState.setSelectedCategoryId(null);
@@ -610,6 +617,7 @@ export const ForumApp = () => {
   const handleOpenSearchView = (keyword: string) => {
     const normalizedKeyword = keyword.trim();
     setCommentNavigationTarget(null);
+    setCommentNavigationNotice(null);
     dataState.setSelectedPost(null);
     dataState.setComments([]);
     dataState.setQuickReplies([]);
@@ -693,6 +701,7 @@ export const ForumApp = () => {
                 commentNavigationTarget={commentNavigationTarget}
                 onBack={() => {
                   setCommentNavigationTarget(null);
+                  setCommentNavigationNotice(null);
                   dataState.setSelectedPost(null);
                   dataState.setComments([]);
                   dataState.setQuickReplies([]);
@@ -933,6 +942,7 @@ export const ForumApp = () => {
           />
         )}
 
+        {commentNavigationNotice && <p className={styles.noticeText}>{commentNavigationNotice}</p>}
         {/* 错误提示 */}
         {dataState.error && <p className={styles.errorText}>{t('common.errorPrefix')}{dataState.error}</p>}
       </div>
