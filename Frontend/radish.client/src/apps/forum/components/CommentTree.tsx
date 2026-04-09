@@ -12,6 +12,7 @@ interface CommentTreeProps {
   loading?: boolean;
   loadingMoreRootComments?: boolean;
   hasPost?: boolean;
+  showTitle?: boolean;
   displayTimeZone: string;
   currentUserId?: number;
   highlightedCommentId?: number | null;
@@ -46,6 +47,7 @@ export const CommentTree = ({
   loading = false,
   loadingMoreRootComments = false,
   hasPost = false,
+  showTitle = true,
   displayTimeZone,
   currentUserId = 0,
   highlightedCommentId = null,
@@ -110,27 +112,29 @@ export const CommentTree = ({
 
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <h4 className={styles.title}>{t('forum.commentTree.title')}</h4>
-        {hasPost && comments.length > 0 && (
-          <div className={styles.sortButtons}>
-            <button
-              type="button"
-              className={`${styles.sortButton} ${sortBy === 'newest' ? styles.active : ''}`}
-              onClick={() => onSortChange?.('newest')}
-            >
-              {t('forum.sort.newest')}
-            </button>
-            <button
-              type="button"
-              className={`${styles.sortButton} ${sortBy === 'hottest' ? styles.active : ''}`}
-              onClick={() => onSortChange?.('hottest')}
-            >
-              {t('forum.sort.hottest')}
-            </button>
-          </div>
-        )}
-      </div>
+      {(showTitle || (hasPost && comments.length > 0)) && (
+        <div className={`${styles.header} ${!showTitle ? styles.headerTitleHidden : ''}`}>
+          {showTitle && <h4 className={styles.title}>{t('forum.commentTree.title')}</h4>}
+          {hasPost && comments.length > 0 && (
+            <div className={styles.sortButtons}>
+              <button
+                type="button"
+                className={`${styles.sortButton} ${sortBy === 'newest' ? styles.active : ''}`}
+                onClick={() => onSortChange?.('newest')}
+              >
+                {t('forum.sort.newest')}
+              </button>
+              <button
+                type="button"
+                className={`${styles.sortButton} ${sortBy === 'hottest' ? styles.active : ''}`}
+                onClick={() => onSortChange?.('hottest')}
+              >
+                {t('forum.sort.hottest')}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
       {loading && <p className={styles.loadingText}>{t('forum.loadingDiscussion')}</p>}
       {!loading && comments.length === 0 && hasPost && (
         <p className={styles.emptyText}>{t('forum.commentTree.empty')}</p>

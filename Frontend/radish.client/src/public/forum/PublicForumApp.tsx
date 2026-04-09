@@ -20,15 +20,15 @@ import { PostCard } from '@/apps/forum/components/PostCard';
 import { PostDetail as ForumPostDetail } from '@/apps/forum/components/PostDetail';
 import { PostQuickReplyWall } from '@/apps/forum/components/PostQuickReplyWall';
 import { CommentTree } from '@/apps/forum/components/CommentTree';
-import type { PublicForumRoute } from '../PublicEntry';
+import type { PublicForumListRoute, PublicForumRoute, PublicListSort } from '../PublicEntry';
 import styles from './PublicForumApp.module.css';
 
 interface PublicForumAppProps {
   route: PublicForumRoute;
+  fallbackListRoute: PublicForumListRoute;
   onNavigate: (route: PublicForumRoute, options?: { replace?: boolean }) => void;
 }
 
-type PublicListSort = 'newest' | 'hottest';
 type RootCommentSort = 'newest' | 'hottest' | null;
 
 function buildActiveSectionTitle(categories: Category[], selectedCategoryId: number | null, fallback: string): string {
@@ -39,9 +39,27 @@ function buildActiveSectionTitle(categories: Category[], selectedCategoryId: num
   return categories.find((item) => item.voId === selectedCategoryId)?.voName || fallback;
 }
 
-export const PublicForumApp = ({ route, onNavigate }: PublicForumAppProps) => {
+function buildVisiblePages(currentPage: number, totalPages: number, maxVisible: number): number[] {
+  if (totalPages <= maxVisible) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  const half = Math.floor(maxVisible / 2);
+  if (currentPage <= half + 1) {
+    return Array.from({ length: maxVisible }, (_, index) => index + 1);
+  }
+
+  if (currentPage >= totalPages - half) {
+    return Array.from({ length: maxVisible }, (_, index) => totalPages - maxVisible + 1 + index);
+  }
+
+  return Array.from({ length: maxVisible }, (_, index) => currentPage - half + index);
+}
+
+export const PublicForumApp = ({ route, fallbackListRoute, onNavigate }: PublicForumAppProps) => {
   const { t } = useTranslation();
   const [displayTimeZone] = useState(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE));
+  const pageRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const nextTitle = route.kind === 'detail'
@@ -51,14 +69,23 @@ export const PublicForumApp = ({ route, onNavigate }: PublicForumAppProps) => {
     document.title = nextTitle;
   }, [route.kind, t]);
 
+  useEffect(() => {
+    pageRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+  }, [
+    route.kind,
+    route.kind === 'detail' ? route.postId : route.categoryId,
+    route.kind === 'list' ? route.sortBy : null,
+    route.kind === 'list' ? route.page : null
+  ]);
+
   return (
-    <div className={styles.page}>
+    <div className={styles.page} ref={pageRef}>
       <header className={styles.hero}>
         <div className={styles.heroInner}>
           <button
             type="button"
             className={styles.brand}
-            onClick={() => onNavigate({ kind: 'list' })}
+            onClick={() => onNavigate({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 })}
           >
             <span className={styles.brandMark}>R</span>
             <span className={styles.brandText}>
@@ -74,17 +101,19 @@ export const PublicForumApp = ({ route, onNavigate }: PublicForumAppProps) => {
       </header>
 
       <main className={styles.main}>
-        {route.kind === 'detail' && route.postId ? (
+        {route.kind === 'detail' ? (
           <PublicForumDetail
             key={`detail-${route.postId}`}
             postId={route.postId}
             displayTimeZone={displayTimeZone}
-            onBack={() => onNavigate({ kind: 'list' })}
+            onBack={() => onNavigate(fallbackListRoute)}
           />
         ) : (
           <PublicForumList
             key="list"
+            routeState={route}
             displayTimeZone={displayTimeZone}
+            onRouteStateChange={onNavigate}
             onOpenPost={(postId) => onNavigate({ kind: 'detail', postId })}
           />
         )}
@@ -94,22 +123,27 @@ export const PublicForumApp = ({ route, onNavigate }: PublicForumAppProps) => {
 };
 
 interface PublicForumListProps {
+  routeState: PublicForumListRoute;
   displayTimeZone: string;
+  onRouteStateChange: (route: PublicForumListRoute, options?: { replace?: boolean }) => void;
   onOpenPost: (postId: number) => void;
 }
 
-const PublicForumList = ({ displayTimeZone, onOpenPost }: PublicForumListProps) => {
+const PublicForumList = ({ routeState, displayTimeZone, onRouteStateChange, onOpenPost }: PublicForumListProps) => {
   const { t } = useTranslation();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
-  const [sortBy, setSortBy] = useState<PublicListSort>('newest');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(routeState.categoryId);
+  const [sortBy, setSortBy] = useState<PublicListSort>(routeState.sortBy);
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [postGodComments, setPostGodComments] = useState<Map<number, CommentHighlight>>(new Map());
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(routeState.page);
   const [totalPages, setTotalPages] = useState(0);
   const [loadingCategories, setLoadingCategories] = useState(false);
   const [loadingPosts, setLoadingPosts] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isCompactViewport, setIsCompactViewport] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth <= 720 : false
+  );
   const postsRequestIdRef = useRef(0);
 
   useEffect(() => {
@@ -141,6 +175,37 @@ const PublicForumList = ({ displayTimeZone, onOpenPost }: PublicForumListProps) 
   }, [t]);
 
   useEffect(() => {
+    setSelectedCategoryId(routeState.categoryId);
+    setSortBy(routeState.sortBy);
+    setCurrentPage(routeState.page);
+  }, [routeState.categoryId, routeState.page, routeState.sortBy]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const handleResize = () => {
+      setIsCompactViewport(window.innerWidth <= 720);
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  useEffect(() => {
+    onRouteStateChange({
+      kind: 'list',
+      categoryId: selectedCategoryId,
+      sortBy,
+      page: currentPage
+    }, { replace: true });
+  }, [currentPage, onRouteStateChange, selectedCategoryId, sortBy]);
+
+  useEffect(() => {
     const requestId = ++postsRequestIdRef.current;
 
     const loadPosts = async () => {
@@ -156,6 +221,11 @@ const PublicForumList = ({ displayTimeZone, onOpenPost }: PublicForumListProps) 
         );
 
         if (requestId !== postsRequestIdRef.current) {
+          return;
+        }
+
+        if (pageModel.pageCount > 0 && currentPage > pageModel.pageCount) {
+          setCurrentPage(pageModel.pageCount);
           return;
         }
 
@@ -206,20 +276,8 @@ const PublicForumList = ({ displayTimeZone, onOpenPost }: PublicForumListProps) 
   );
 
   const visiblePages = useMemo(() => {
-    if (totalPages <= 7) {
-      return Array.from({ length: totalPages }, (_, index) => index + 1);
-    }
-
-    if (currentPage <= 4) {
-      return [1, 2, 3, 4, 5, 6, 7];
-    }
-
-    if (currentPage >= totalPages - 3) {
-      return Array.from({ length: 7 }, (_, index) => totalPages - 6 + index);
-    }
-
-    return Array.from({ length: 7 }, (_, index) => currentPage - 3 + index);
-  }, [currentPage, totalPages]);
+    return buildVisiblePages(currentPage, totalPages, isCompactViewport ? 5 : 7);
+  }, [currentPage, isCompactViewport, totalPages]);
 
   return (
     <section className={styles.sectionCard}>
@@ -464,12 +522,21 @@ const PublicForumDetail = ({ postId, displayTimeZone, onBack }: PublicForumDetai
       {error && <p className={styles.errorText}>{t('common.errorPrefix')}{error}</p>}
 
       <div className={styles.detailStack}>
+        {post && (
+          <div className={styles.detailMetaRail}>
+            <span className={styles.detailMetaChip}>{t('forum.postDetail.views', { count: post.voViewCount ?? 0 })}</span>
+            <span className={styles.detailMetaChip}>{t('forum.quickReply.total', { count: quickReplyTotal })}</span>
+            <span className={styles.detailMetaChip}>{t('forum.postDetail.commentCount', { count: commentTotal })}</span>
+          </div>
+        )}
+
         <ForumPostDetail
           post={post}
           loading={loadingPost}
           displayTimeZone={displayTimeZone}
           mode="readOnly"
           isAuthenticated={false}
+          showSectionTitle={false}
         />
 
         {post && (
@@ -502,6 +569,7 @@ const PublicForumDetail = ({ postId, displayTimeZone, onBack }: PublicForumDetai
                 sortBy={commentSortBy}
                 onSortChange={setCommentSortBy}
                 onLoadMoreRootComments={handleLoadMoreComments}
+                showTitle={false}
               />
             </section>
           </>

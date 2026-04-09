@@ -25,6 +25,7 @@ interface PostDetailProps {
   loading?: boolean;
   displayTimeZone: string;
   mode?: 'interactive' | 'readOnly';
+  showSectionTitle?: boolean;
   isLiked?: boolean;
   onLike?: (postId: number) => void;
   onVotePoll?: (optionId: number) => Promise<void>;
@@ -61,6 +62,7 @@ export const PostDetail = ({
   loading = false,
   displayTimeZone,
   mode = 'interactive',
+  showSectionTitle = true,
   isLiked = false,
   onLike,
   onVotePoll,
@@ -206,7 +208,7 @@ export const PostDetail = ({
   if (loading) {
     return (
       <div className={styles.container}>
-        <h3 className={styles.title}>{t('forum.postDetail.title')}</h3>
+        {showSectionTitle && <h3 className={styles.title}>{t('forum.postDetail.title')}</h3>}
         <p className={styles.loadingText}>{t('forum.postDetail.loading')}</p>
       </div>
     );
@@ -215,7 +217,7 @@ export const PostDetail = ({
   if (!post) {
     return (
       <div className={styles.container}>
-        <h3 className={styles.title}>{t('forum.postDetail.title')}</h3>
+        {showSectionTitle && <h3 className={styles.title}>{t('forum.postDetail.title')}</h3>}
         <p className={styles.emptyText}>{t('forum.postDetail.empty')}</p>
       </div>
     );
@@ -344,7 +346,7 @@ export const PostDetail = ({
 
   return (
     <div className={styles.container}>
-      <h3 className={styles.title}>{t('forum.postDetail.title')}</h3>
+      {showSectionTitle && <h3 className={styles.title}>{t('forum.postDetail.title')}</h3>}
       <div className={styles.postContent}>
         <h4 className={styles.postTitle}>{post.voTitle}</h4>
         {isQuestionPost && (
