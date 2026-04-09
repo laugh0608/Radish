@@ -364,6 +364,7 @@ const PublicForumList = ({ routeState, displayTimeZone, onRouteStateChange, onOp
                 post={post}
                 displayTimeZone={displayTimeZone}
                 onClick={() => onOpenPost(post.voId)}
+                variant="publicCompact"
                 godComment={godComment ? {
                   authorName: godComment.voAuthorName,
                   content: godComment.voContentSnapshot

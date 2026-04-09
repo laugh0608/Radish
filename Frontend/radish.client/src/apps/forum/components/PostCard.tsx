@@ -1,4 +1,5 @@
 import type { PostItem } from '@/api/forum';
+import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import styles from './PostCard.module.css';
@@ -7,6 +8,7 @@ interface PostCardProps {
   post: PostItem;
   displayTimeZone: string;
   onClick: () => void;
+  variant?: 'default' | 'publicCompact';
   onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
   godComment?: {
     authorName: string;
@@ -14,8 +16,16 @@ interface PostCardProps {
   } | null;
 }
 
-export const PostCard = ({ post, displayTimeZone, onClick, onAuthorClick, godComment }: PostCardProps) => {
+export const PostCard = ({
+  post,
+  displayTimeZone,
+  onClick,
+  variant = 'default',
+  onAuthorClick,
+  godComment
+}: PostCardProps) => {
   const { t } = useTranslation();
+  const isPublicCompact = variant === 'publicCompact';
   const allTags = post.voTags
     ? post.voTags
         .split(',')
@@ -82,6 +92,11 @@ export const PostCard = ({ post, displayTimeZone, onClick, onAuthorClick, godCom
   const godCommentPreview = godComment?.content?.trim() ?? '';
   const godCommentAuthor = godComment?.authorName?.trim() || t('forum.postCard.anonymousUser');
 
+  const handleAuthorClick = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    onAuthorClick?.(post.voAuthorId, post.voAuthorName, post.voAuthorAvatarUrl);
+  };
+
   const renderAvatar = (
     name: string,
     avatarUrl: string | null | undefined,
@@ -104,13 +119,98 @@ export const PostCard = ({ post, displayTimeZone, onClick, onAuthorClick, godCom
     );
   };
 
+  const statsContent = (
+    <div className={`${styles.statsRow} ${isPublicCompact ? styles.statsRowCompact : ''}`}>
+      <div className={styles.statItem}>
+        <span className={styles.statLabel}>{t('forum.postCard.stat.like')}</span>
+        <span className={styles.statValue}>{post.voLikeCount || 0}</span>
+      </div>
+      <div className={styles.statItem}>
+        <span className={styles.statLabel}>{t('forum.postCard.stat.comment')}</span>
+        <span className={styles.statValue}>{post.voCommentCount || 0}</span>
+      </div>
+      <div className={styles.statItem}>
+        <span className={styles.statLabel}>{t('forum.postCard.stat.view')}</span>
+        <span className={styles.statValue}>{post.voViewCount || 0}</span>
+      </div>
+      {post.voHasPoll && (
+        <div className={styles.statItem}>
+          <span className={styles.statLabel}>{t('forum.postCard.stat.vote')}</span>
+          <span className={styles.statValue}>{post.voPollTotalVoteCount || 0}</span>
+        </div>
+      )}
+      {post.voIsQuestion && (
+        <div className={styles.statItem}>
+          <span className={styles.statLabel}>{t('forum.postCard.stat.answer')}</span>
+          <span className={styles.statValue}>{post.voAnswerCount || 0}</span>
+        </div>
+      )}
+      {post.voHasLottery && (
+        <div className={styles.statItem}>
+          <span className={styles.statLabel}>{t('forum.postCard.stat.lottery')}</span>
+          <span className={styles.statValue}>{post.voLotteryParticipantCount || 0}</span>
+        </div>
+      )}
+    </div>
+  );
+
+  const interactionContent = (
+    <div className={`${styles.interactionRow} ${isPublicCompact ? styles.interactionRowCompact : ''}`}>
+      <span className={styles.interactionLabel}>{t('forum.postCard.interaction')}</span>
+      <div className={styles.avatarGroup}>
+        {fallbackInteractors.length > 0 ? (
+          fallbackInteractors.map((item, index) => (
+            <span key={`${post.voId}-${item.id}-${item.name}-${index}`} className={styles.miniAvatarWrap}>
+              {renderAvatar(
+                item.name,
+                item.avatarUrl,
+                styles.miniAvatar,
+                item.name === t('forum.postCard.stat.comment') ? t('forum.postCard.recentCommentInteraction') : item.name
+              )}
+            </span>
+          ))
+        ) : (
+          <span className={styles.noInteraction}>{t('forum.postCard.noInteraction')}</span>
+        )}
+        {remainingInteractions > 0 && (
+          <span className={styles.moreCount}>+{remainingInteractions}</span>
+        )}
+      </div>
+    </div>
+  );
+
+  const authorContent = onAuthorClick ? (
+    <button
+      type="button"
+      className={`${styles.authorLink} ${isPublicCompact ? styles.authorLinkCompact : ''}`}
+      onClick={handleAuthorClick}
+      title={t('forum.comment.authorProfileTitle', { name: authorName })}
+    >
+      {renderAvatar(authorName, post.voAuthorAvatarUrl, styles.avatar, authorName)}
+      <span className={styles.authorName}>{authorName}</span>
+    </button>
+  ) : (
+    <div className={`${styles.authorStatic} ${isPublicCompact ? styles.authorLinkCompact : ''}`}>
+      {renderAvatar(authorName, post.voAuthorAvatarUrl, styles.avatar, authorName)}
+      <span className={styles.authorName}>{authorName}</span>
+    </div>
+  );
+
   return (
-    <article className={styles.card} onClick={onClick}>
-      <div className={styles.layout}>
+    <article className={`${styles.card} ${isPublicCompact ? styles.cardPublicCompact : ''}`} onClick={onClick}>
+      <div className={`${styles.layout} ${isPublicCompact ? styles.layoutPublicCompact : ''}`}>
         <div
-          className={`${styles.main} ${!godCommentPreview ? styles.mainWithoutGodComment : ''}`}
+          className={`${styles.main} ${!godCommentPreview ? styles.mainWithoutGodComment : ''} ${isPublicCompact ? styles.mainPublicCompact : ''}`}
         >
-          {/* 帖子标题 */}
+          {isPublicCompact && (
+            <div className={styles.publicMetaTopRow}>
+              <div className={styles.authorBlock}>
+                {authorContent}
+              </div>
+              <div className={`${styles.time} ${styles.timeCompact}`}>{publishedTime}</div>
+            </div>
+          )}
+
           <h3 className={styles.title}>{post.voTitle}</h3>
 
           <div className={styles.metaRow}>
@@ -156,82 +256,25 @@ export const PostCard = ({ post, displayTimeZone, onClick, onAuthorClick, godCom
               </span>
             </div>
           ) : null}
+
+          {isPublicCompact && (
+            <div className={styles.publicMetaBottom}>
+              {statsContent}
+              {interactionContent}
+            </div>
+          )}
         </div>
 
-        <aside className={styles.side}>
+        <aside className={`${styles.side} ${isPublicCompact ? styles.sideHidden : ''}`}>
           <div className={styles.metaTopRow}>
             <div className={styles.authorBlock}>
-              <button
-                type="button"
-                className={styles.authorLink}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onAuthorClick?.(post.voAuthorId, post.voAuthorName, post.voAuthorAvatarUrl);
-                }}
-                title={t('forum.comment.authorProfileTitle', { name: authorName })}
-              >
-                {renderAvatar(authorName, post.voAuthorAvatarUrl, styles.avatar, authorName)}
-                <span className={styles.authorName}>{authorName}</span>
-              </button>
+              {authorContent}
             </div>
             <div className={styles.time}>{publishedTime}</div>
           </div>
 
-          <div className={styles.statsRow}>
-            <div className={styles.statItem}>
-              <span className={styles.statLabel}>{t('forum.postCard.stat.like')}</span>
-              <span className={styles.statValue}>{post.voLikeCount || 0}</span>
-            </div>
-            <div className={styles.statItem}>
-              <span className={styles.statLabel}>{t('forum.postCard.stat.comment')}</span>
-              <span className={styles.statValue}>{post.voCommentCount || 0}</span>
-            </div>
-            <div className={styles.statItem}>
-              <span className={styles.statLabel}>{t('forum.postCard.stat.view')}</span>
-              <span className={styles.statValue}>{post.voViewCount || 0}</span>
-            </div>
-            {post.voHasPoll && (
-              <div className={styles.statItem}>
-                <span className={styles.statLabel}>{t('forum.postCard.stat.vote')}</span>
-                <span className={styles.statValue}>{post.voPollTotalVoteCount || 0}</span>
-              </div>
-            )}
-            {post.voIsQuestion && (
-              <div className={styles.statItem}>
-                <span className={styles.statLabel}>{t('forum.postCard.stat.answer')}</span>
-                <span className={styles.statValue}>{post.voAnswerCount || 0}</span>
-              </div>
-            )}
-            {post.voHasLottery && (
-              <div className={styles.statItem}>
-                <span className={styles.statLabel}>{t('forum.postCard.stat.lottery')}</span>
-                <span className={styles.statValue}>{post.voLotteryParticipantCount || 0}</span>
-              </div>
-            )}
-          </div>
-
-          <div className={styles.interactionRow}>
-            <span className={styles.interactionLabel}>{t('forum.postCard.interaction')}</span>
-            <div className={styles.avatarGroup}>
-              {fallbackInteractors.length > 0 ? (
-                fallbackInteractors.map((item, index) => (
-                  <span key={`${post.voId}-${item.id}-${item.name}-${index}`} className={styles.miniAvatarWrap}>
-                    {renderAvatar(
-                      item.name,
-                      item.avatarUrl,
-                      styles.miniAvatar,
-                      item.name === t('forum.postCard.stat.comment') ? t('forum.postCard.recentCommentInteraction') : item.name
-                    )}
-                  </span>
-                ))
-              ) : (
-                <span className={styles.noInteraction}>{t('forum.postCard.noInteraction')}</span>
-              )}
-              {remainingInteractions > 0 && (
-                <span className={styles.moreCount}>+{remainingInteractions}</span>
-              )}
-            </div>
-          </div>
+          {statsContent}
+          {interactionContent}
         </aside>
       </div>
     </article>

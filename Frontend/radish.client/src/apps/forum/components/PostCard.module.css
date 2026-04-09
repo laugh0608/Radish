@@ -9,6 +9,11 @@
   box-shadow: var(--theme-shadow-soft);
 }
 
+.cardPublicCompact {
+  border-radius: 20px;
+  padding: 16px 16px 14px;
+}
+
 .card:hover {
   background-color: color-mix(in srgb, var(--theme-brand-soft) 16%, var(--theme-bg-surface) 84%);
   border-color: var(--theme-border-strong);
@@ -23,6 +28,10 @@
   gap: 14px;
 }
 
+.layoutPublicCompact {
+  display: block;
+}
+
 .main {
   flex: 1;
   min-width: 0;
@@ -31,8 +40,19 @@
   gap: 8px;
 }
 
+.mainPublicCompact {
+  gap: 10px;
+}
+
 .mainWithoutGodComment {
   justify-content: center;
+}
+
+.publicMetaTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .title {
@@ -55,6 +75,13 @@
   gap: 6px;
   min-width: 0;
   overflow: hidden;
+}
+
+.publicMetaBottom {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 2px;
 }
 
 .categoryChip {
@@ -194,6 +221,10 @@
   gap: 8px;
 }
 
+.sideHidden {
+  display: none;
+}
+
 .metaTopRow {
   display: flex;
   align-items: center;
@@ -220,6 +251,18 @@
   background: transparent;
   cursor: pointer;
   text-align: left;
+}
+
+.authorStatic {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.authorLinkCompact {
+  flex: 0 1 auto;
 }
 
 .authorLink:hover .authorName {
@@ -264,6 +307,10 @@
   flex-wrap: wrap;
 }
 
+.statsRowCompact {
+  gap: 8px;
+}
+
 .statItem {
   display: inline-flex;
   align-items: center;
@@ -291,6 +338,11 @@
   align-items: center;
   justify-content: space-between;
   gap: 6px;
+}
+
+.interactionRowCompact {
+  justify-content: flex-start;
+  flex-wrap: wrap;
 }
 
 .interactionLabel {
@@ -342,6 +394,10 @@
   flex-shrink: 0;
 }
 
+.timeCompact {
+  font-size: 12px;
+}
+
 @media (max-width: 1080px) {
   .side {
     width: 198px;
@@ -350,6 +406,15 @@
 }
 
 @media (max-width: 860px) {
+  .cardPublicCompact {
+    padding: 14px;
+  }
+
+  .publicMetaTopRow {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
   .layout {
     flex-direction: column;
     gap: 14px;
@@ -378,7 +443,15 @@
     overflow: visible;
   }
 
+  .statsRowCompact {
+    gap: 6px;
+  }
+
   .time {
     white-space: normal;
+  }
+
+  .timeCompact {
+    width: 100%;
   }
 }
