@@ -97,3 +97,18 @@
 - **forum 相关 manual chunks 已重新收口**：`vite.config.ts` 当前已把 forum 打包从统一 `app-forum` 大包拆分为 `forum-shell / forum-list-view / forum-detail-view / forum-detail-post / forum-detail-comments / forum-publish-modal / forum-history-modal / public-forum` 等更细粒度分块，原本反复出现的大 chunk warning 当前已消失。
 - **`MarkdownRenderer` 混合导入 warning 已修复**：forum 帖子详情与 `radish.ui` 编辑器当前已统一改为静态引用 `MarkdownRenderer`，移除了动态/静态混用导致的构建 warning。
 - **本批最小前端验证已通过**：`npm run type-check --workspace=radish.client` 与 `npm run build --workspace=radish.client` 当前均已通过；本轮构建里 forum 大 chunk warning 与 `MarkdownRenderer` warning 均未再出现。
+
+## 2026-04-09 (周四)
+
+### forum 公开移动阅读体验首轮收口
+
+- **公开列表状态当前已具备 URL 回写与上下文保留**：`/forum` 当前会把分类、排序与分页状态回写到查询参数；从公开帖子详情返回列表后，也会尽量回到原来的列表上下文，而不是每次退回默认第一页。
+- **公开详情页阅读节奏已补一轮只读收口**：帖子详情当前已移除重复的节标题展示，并补入浏览量、轻回应数与讨论数的摘要胶囊；评论区排序按钮与“加载更多”在窄屏下也已调整为更自然的纵向排布。
+- **公开列表卡片已新增 `publicCompact` 变体**：`PostCard` 当前已支持仅用于公开内容壳层的紧凑展示模式；作者、时间、统计和最近互动会回收到主内容流中，手机上不再继续依赖桌面 forum 的右侧信息栏。
+- **桌面 forum 布局当前保持不受影响**：`publicCompact` 变体当前只在公开 forum 列表启用，桌面工作台壳层继续沿用原来的卡片布局，避免移动收口反向污染桌面信息结构。
+- **本轮前端验证已完成**：`npm run type-check --workspace=radish.client` 与 `npm run build --workspace=radish.client` 当前均已通过；构建验证在受限环境下需要提权绕过 `spawn EPERM` 子进程限制，但当前未发现公开 forum 相关的新增编译回归。
+
+### forum 公开移动入口人工验收入口补齐
+
+- **公开壳层最小人工验收清单已补文档入口**：当前已新增 [forum 公开移动入口人工验收清单](/guide/forum-public-mobile-acceptance)，把适用改动范围、前置条件、最小人工验收顺序、预期结果与记录格式收束到同一页。
+- **专题回归索引已新增公开移动入口条目**：`regression-index.md` 当前已把 `/forum`、`/forum/post/:postId` 的公开壳层路由与移动阅读体验纳入独立回归主题，后续这条链路不再需要依赖会话上下文解释“改完后该跑什么”。
