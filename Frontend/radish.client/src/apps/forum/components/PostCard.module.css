@@ -84,6 +84,10 @@
   padding-top: 2px;
 }
 
+.publicMetaAsideTop {
+  display: none;
+}
+
 .categoryChip {
   display: inline-flex;
   align-items: center;
@@ -398,6 +402,90 @@
   font-size: 12px;
 }
 
+@media (min-width: 480px) {
+  .mainPublicCompact {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(168px, 38%);
+    grid-template-areas:
+      "top top"
+      "title side"
+      "meta side"
+      "god side";
+    column-gap: 14px;
+    row-gap: 10px;
+    align-items: start;
+  }
+
+  .mainPublicCompact.mainWithoutGodComment {
+    grid-template-areas:
+      "top top"
+      "title side"
+      "meta side";
+  }
+
+  .mainPublicCompact > .publicMetaTopRow {
+    grid-area: top;
+  }
+
+  .mainPublicCompact > .title {
+    grid-area: title;
+  }
+
+  .mainPublicCompact > .metaRow {
+    grid-area: meta;
+    align-self: start;
+  }
+
+  .mainPublicCompact > .godCommentCompact {
+    grid-area: god;
+    align-self: start;
+  }
+
+  .mainPublicCompact > .publicMetaBottom {
+    grid-area: side;
+    align-self: stretch;
+    justify-content: space-between;
+    min-width: 0;
+    gap: 12px;
+    padding: 12px 0 0 14px;
+    border-left: 1px solid color-mix(in srgb, var(--theme-border-soft) 88%, transparent);
+  }
+
+  .mainPublicCompact > .publicMetaBottom > .publicMetaAsideTop {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+
+  .timeCompactTop {
+    display: none;
+  }
+
+  .timeCompactSide {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--theme-bg-muted) 74%, var(--theme-bg-surface) 26%);
+    color: var(--theme-text-secondary);
+  }
+
+  .mainPublicCompact .statsRowCompact {
+    gap: 6px;
+  }
+
+  .mainPublicCompact .interactionRowCompact {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .mainPublicCompact .avatarGroup {
+    justify-content: flex-start;
+  }
+}
+
 @media (max-width: 1080px) {
   .side {
     width: 198px;
@@ -453,5 +541,12 @@
 
   .timeCompact {
     width: 100%;
+  }
+}
+
+@media (max-width: 559px) {
+  .mainPublicCompact {
+    display: flex;
+    flex-direction: column;
   }
 }

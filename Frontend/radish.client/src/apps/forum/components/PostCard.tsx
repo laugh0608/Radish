@@ -207,7 +207,7 @@ export const PostCard = ({
               <div className={styles.authorBlock}>
                 {authorContent}
               </div>
-              <div className={`${styles.time} ${styles.timeCompact}`}>{publishedTime}</div>
+              <div className={`${styles.time} ${styles.timeCompact} ${styles.timeCompactTop}`}>{publishedTime}</div>
             </div>
           )}
 
@@ -259,6 +259,9 @@ export const PostCard = ({
 
           {isPublicCompact && (
             <div className={styles.publicMetaBottom}>
+              <div className={styles.publicMetaAsideTop}>
+                <div className={`${styles.time} ${styles.timeCompact} ${styles.timeCompactSide}`}>{publishedTime}</div>
+              </div>
               {statsContent}
               {interactionContent}
             </div>

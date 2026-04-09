@@ -122,13 +122,12 @@ export const PostQuickReplyWall = ({
 
   useLayoutEffect(() => {
     if (replies.length === 0) {
-      setMeasuredWidths({});
       measureRefs.current = {};
+      setMeasuredWidths((current) => (Object.keys(current).length === 0 ? current : {}));
       return;
     }
 
     const nextWidths: Record<number, number> = {};
-    let changed = false;
     const nextReplyIds = new Set<number>();
 
     replies.forEach((reply) => {
@@ -146,16 +145,22 @@ export const PostQuickReplyWall = ({
       }
     });
 
-    if (Object.keys(nextWidths).length !== Object.keys(measuredWidths).length) {
-      changed = true;
-    } else {
-      changed = replies.some((reply) => measuredWidths[reply.voId] !== nextWidths[reply.voId]);
-    }
+    setMeasuredWidths((current) => {
+      const currentKeys = Object.keys(current);
+      const nextKeys = Object.keys(nextWidths);
 
-    if (changed) {
-      setMeasuredWidths(nextWidths);
-    }
-  }, [replies, measuredWidths]);
+      if (nextKeys.length === 0) {
+        return currentKeys.length === 0 ? current : {};
+      }
+
+      if (currentKeys.length !== nextKeys.length) {
+        return nextWidths;
+      }
+
+      const changed = replies.some((reply) => current[reply.voId] !== nextWidths[reply.voId]);
+      return changed ? nextWidths : current;
+    });
+  }, [replies, wallWidth]);
 
   const laneLayouts = useMemo<QuickReplyLaneLayout[]>(() => {
     if (replies.length === 0) {

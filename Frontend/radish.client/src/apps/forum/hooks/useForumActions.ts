@@ -138,6 +138,7 @@ interface UseForumActionsParams {
   userId: number;
   commentSortBy: 'newest' | 'hottest' | null;
   loadedCommentPages: number;
+  questionAnswerSort: QuestionAnswerSort;
   selectedCategoryId: number | null;
   selectedTagName: string | null;
   selectedPost: PostDetail | null;
@@ -168,6 +169,7 @@ export const useForumActions = (
     isAuthenticated,
     userId,
     loadedCommentPages,
+    questionAnswerSort,
     selectedPost,
     setSelectedPost,
     setComments,
@@ -251,20 +253,6 @@ export const useForumActions = (
 
     return normalized;
   };
-
-  const applyQuestionState = useCallback((question: PostQuestion) => {
-    setSelectedPost((current) =>
-      current && current.voId === question.voPostId
-        ? {
-            ...current,
-            voIsQuestion: true,
-            voIsSolved: question.voIsSolved,
-            voAnswerCount: question.voAnswerCount,
-            voQuestion: question
-          }
-        : current
-    );
-  }, [setSelectedPost]);
 
   const loadPostHistory = async (postId: number, pageIndex: number) => {
     setPostHistoryLoading(true);
@@ -523,7 +511,7 @@ export const useForumActions = (
 
     setError(null);
     try {
-      const latestQuestion = await answerQuestion(
+      await answerQuestion(
         {
           postId: selectedPost.voId,
           content: trimmedContent
@@ -531,9 +519,11 @@ export const useForumActions = (
         t
       );
 
-      applyQuestionState(latestQuestion);
       toast.success('回答已发布');
-      await loadPosts();
+      await Promise.all([
+        loadPostDetail(selectedPost.voId, questionAnswerSort),
+        loadPosts()
+      ]);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
@@ -557,7 +547,7 @@ export const useForumActions = (
 
     setError(null);
     try {
-      const latestQuestion = await acceptQuestionAnswer(
+      await acceptQuestionAnswer(
         {
           postId: selectedPost.voId,
           answerId
@@ -565,9 +555,11 @@ export const useForumActions = (
         t
       );
 
-      applyQuestionState(latestQuestion);
       toast.success('答案已采纳');
-      await loadPosts();
+      await Promise.all([
+        loadPostDetail(selectedPost.voId, questionAnswerSort),
+        loadPosts()
+      ]);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);

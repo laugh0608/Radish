@@ -233,6 +233,7 @@ export const ForumApp = () => {
     userId: userId ?? 0,
     commentSortBy: dataState.commentSortBy,
     loadedCommentPages: dataState.loadedCommentPages,
+    questionAnswerSort: dataState.questionAnswerSort,
     selectedCategoryId: dataState.selectedCategoryId,
     selectedTagName: dataState.selectedTagName,
     selectedPost: dataState.selectedPost,

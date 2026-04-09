@@ -280,7 +280,7 @@ const PublicForumList = ({ routeState, displayTimeZone, onRouteStateChange, onOp
   }, [currentPage, isCompactViewport, totalPages]);
 
   return (
-    <section className={styles.sectionCard}>
+    <section className={`${styles.sectionCard} ${styles.listSectionCard}`}>
       <div className={styles.sectionHeader}>
         <div className={styles.sectionHeading}>
           <p className={styles.kicker}>Phase 2-2</p>
@@ -512,7 +512,7 @@ const PublicForumDetail = ({ postId, displayTimeZone, onBack }: PublicForumDetai
   };
 
   return (
-    <section className={styles.sectionCard}>
+    <section className={`${styles.sectionCard} ${styles.detailSectionCard}`}>
       <div className={styles.detailTopbar}>
         <button type="button" className={styles.backButton} onClick={onBack}>
           <Icon icon="mdi:arrow-left" size={18} />

@@ -754,6 +754,7 @@ export const PostDetail = ({
                     placeholder={isAuthenticated
                       ? t('forum.postDetail.question.placeholderLoggedIn')
                       : t('forum.postDetail.question.placeholderLoggedOut')}
+                    defaultMode="edit"
                     minHeight={180}
                     disabled={!canAnswerQuestion}
                     showToolbar={true}
