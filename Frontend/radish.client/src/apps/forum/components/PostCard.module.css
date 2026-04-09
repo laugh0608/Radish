@@ -405,14 +405,14 @@
 @media (min-width: 480px) {
   .mainPublicCompact {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(156px, 40%);
+    grid-template-columns: minmax(0, 1fr) minmax(144px, 34%);
     grid-template-areas:
       "top top"
       "title side"
       "meta side"
       "god side";
-    column-gap: 14px;
-    row-gap: 10px;
+    column-gap: 12px;
+    row-gap: 8px;
     align-items: start;
   }
 
@@ -443,12 +443,12 @@
 
   .mainPublicCompact > .publicMetaBottom {
     grid-area: side;
-    align-self: stretch;
-    justify-content: space-between;
+    align-self: start;
+    justify-content: flex-start;
     min-width: 0;
-    gap: 12px;
-    padding: 12px 0 0 14px;
-    border-left: 1px solid color-mix(in srgb, var(--theme-border-soft) 88%, transparent);
+    gap: 10px;
+    padding: 6px 0 0 10px;
+    border-left: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
   }
 
   .mainPublicCompact > .publicMetaBottom > .publicMetaAsideTop {
@@ -479,7 +479,7 @@
   .mainPublicCompact .interactionRowCompact {
     align-items: flex-start;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
   }
 
   .mainPublicCompact .avatarGroup {

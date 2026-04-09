@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  getChildComments,
   getCurrentGodCommentsBatch,
   getPostById,
   getPostList,
@@ -511,6 +512,21 @@ const PublicForumDetail = ({ postId, displayTimeZone, onBack }: PublicForumDetai
     }
   };
 
+  const handleLoadMoreChildren = async (
+    parentId: number,
+    pageIndex: number,
+    pageSize: number
+  ): Promise<CommentNode[]> => {
+    try {
+      const result = await getChildComments(parentId, pageIndex, pageSize, t);
+      return result.voItems ?? [];
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      return [];
+    }
+  };
+
   return (
     <section className={`${styles.sectionCard} ${styles.detailSectionCard}`}>
       <div className={styles.detailTopbar}>
@@ -569,6 +585,7 @@ const PublicForumDetail = ({ postId, displayTimeZone, onBack }: PublicForumDetai
                 rootCommentPageSize={commentPageSize}
                 sortBy={commentSortBy}
                 onSortChange={setCommentSortBy}
+                onLoadMoreChildren={handleLoadMoreChildren}
                 onLoadMoreRootComments={handleLoadMoreComments}
                 showTitle={false}
               />
