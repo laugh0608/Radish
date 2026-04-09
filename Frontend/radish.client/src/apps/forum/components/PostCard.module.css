@@ -405,7 +405,7 @@
 @media (min-width: 480px) {
   .mainPublicCompact {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(168px, 38%);
+    grid-template-columns: minmax(0, 1fr) minmax(156px, 40%);
     grid-template-areas:
       "top top"
       "title side"
@@ -465,6 +465,7 @@
     display: inline-flex;
     align-items: center;
     min-height: 28px;
+    width: auto;
     padding: 4px 10px;
     border-radius: 999px;
     background: color-mix(in srgb, var(--theme-bg-muted) 74%, var(--theme-bg-surface) 26%);
@@ -544,7 +545,7 @@
   }
 }
 
-@media (max-width: 559px) {
+@media (max-width: 479px) {
   .mainPublicCompact {
     display: flex;
     flex-direction: column;
