@@ -89,6 +89,7 @@ interface PostDetailContentViewProps {
   onReportPost: (postId: number) => void;
   onReportQuickReply: (quickReplyId: number) => void;
   onReportComment: (commentId: number) => void;
+  onNavigateToComment: (commentId: number) => Promise<void> | void;
 }
 
 const collectCommentIds = (nodes: CommentNode[]): number[] => {
@@ -165,6 +166,7 @@ export const PostDetailContentView = ({
   onReportPost,
   onReportQuickReply,
   onReportComment,
+  onNavigateToComment,
 }: PostDetailContentViewProps) => {
   const { t } = useTranslation();
   const [isCommentSheetOpen, setIsCommentSheetOpen] = useState(false);
@@ -432,6 +434,7 @@ export const PostDetailContentView = ({
               onRequireReactionLogin={handleRequireReactionLogin}
               onAuthorClick={onAuthorClick}
               onReportComment={onReportComment}
+              onNavigateToComment={onNavigateToComment}
             />
           </Suspense>
         </div>

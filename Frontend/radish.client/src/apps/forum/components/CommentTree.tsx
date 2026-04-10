@@ -40,6 +40,7 @@ interface CommentTreeProps {
   onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
   onReportComment?: (commentId: number) => void;
   registerCommentAnchor?: (commentId: number, element: HTMLDivElement | null) => void;
+  onNavigateToComment?: (commentId: number) => Promise<void> | void;
 }
 
 export const CommentTree = ({
@@ -75,6 +76,7 @@ export const CommentTree = ({
   onAuthorClick,
   onReportComment,
   registerCommentAnchor,
+  onNavigateToComment,
 }: CommentTreeProps) => {
   const { t } = useTranslation();
   // 找出所有神评（后端标记的）
@@ -170,6 +172,7 @@ export const CommentTree = ({
             onAuthorClick={onAuthorClick}
             onReport={onReportComment}
             registerCommentAnchor={registerCommentAnchor}
+            onNavigateToComment={onNavigateToComment}
           />
         ))}
       </div>

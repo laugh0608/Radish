@@ -1234,15 +1234,6 @@ export const ChatApp = () => {
               )}
             </div>
 
-            {activeChannelId !== null && (
-              <button
-                type="button"
-                className={styles.memberToggleButton}
-                onClick={() => setMemberPanelCollapsed((current) => !current)}
-              >
-                {memberPanelCollapsed ? t('chat.expandMembers') : t('chat.collapseMembers')}
-              </button>
-            )}
           </div>
 
           {activeChannelId !== null && connectionHint && (
@@ -1611,19 +1602,24 @@ export const ChatApp = () => {
 
           {activeChannelId !== null && (
             <aside className={`${styles.memberPanel} ${memberPanelCollapsed ? styles.memberPanelCollapsed : ''}`}>
-              <div className={styles.memberPanelHeader}>
-                <div className={styles.memberPanelTitle}>
-                  {t('chat.members')}
-                  {!memberPanelCollapsed && <span className={styles.memberCount}>{onlineMembers.length}</span>}
-                </div>
-                <button
-                  type="button"
-                  className={styles.memberCollapseButton}
-                  onClick={() => setMemberPanelCollapsed((current) => !current)}
-                >
+              <button
+                type="button"
+                className={styles.memberPanelHeader}
+                onClick={() => setMemberPanelCollapsed((current) => !current)}
+                aria-expanded={!memberPanelCollapsed}
+                aria-label={memberPanelCollapsed ? t('chat.expandMembers') : t('chat.collapseMembers')}
+                title={memberPanelCollapsed ? t('chat.expandMembers') : t('chat.collapseMembers')}
+              >
+                {!memberPanelCollapsed && (
+                  <div className={styles.memberPanelTitle}>
+                    {t('chat.members')}
+                    <span className={styles.memberCount}>{onlineMembers.length}</span>
+                  </div>
+                )}
+                <span className={styles.memberCollapseIndicator} aria-hidden="true">
                   {memberPanelCollapsed ? '>' : '<'}
-                </button>
-              </div>
+                </span>
+              </button>
 
               {!memberPanelCollapsed && (
                 <div className={styles.memberPanelBody}>

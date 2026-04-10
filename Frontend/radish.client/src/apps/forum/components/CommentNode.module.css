@@ -190,6 +190,38 @@
   font-weight: 600;
 }
 
+.replyQuoteButton {
+  width: fit-content;
+  max-width: min(100%, 420px);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 18%, var(--theme-border-soft) 82%);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--theme-brand-soft) 42%, var(--theme-bg-surface) 58%);
+  color: var(--theme-text-secondary);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.replyQuoteButton:hover {
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 32%, var(--theme-border-strong) 68%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 58%, var(--theme-bg-surface) 42%);
+  color: var(--theme-text-primary);
+  transform: translateY(-1px);
+}
+
+.replyQuoteText {
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .imageGrid {
   display: flex;
   flex-wrap: wrap;

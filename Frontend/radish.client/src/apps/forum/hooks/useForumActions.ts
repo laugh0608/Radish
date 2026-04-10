@@ -779,6 +779,8 @@ export const useForumActions = (
           postId: selectedPost.voId,
           content,
           parentId: replyTo?.parentCommentId ?? null,
+          replyToCommentId: replyTo?.targetCommentId ?? null,
+          replyToCommentSnapshot: replyTo?.contentSnapshot ?? null,
           replyToUserId: null,
           replyToUserName: replyTo?.authorName ?? null
         },
@@ -843,6 +845,8 @@ export const useForumActions = (
         voAuthorAvatarUrl: authorAvatarUrl,
         voParentId: parentId,
         voRootId: parentId,
+        voReplyToCommentId: replyTo?.targetCommentId ?? null,
+        voReplyToCommentSnapshot: replyTo?.contentSnapshot ?? null,
         voReplyToUserId: null,
         voReplyToUserName: replyTo?.authorName ?? null,
         voLevel: parentId ? 1 : 0,

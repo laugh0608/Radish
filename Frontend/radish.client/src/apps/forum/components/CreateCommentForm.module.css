@@ -140,9 +140,31 @@
   min-width: 0;
 }
 
+.replyMetaBody {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
 .replyTarget {
   color: var(--theme-brand-primary);
   font-weight: 700;
+}
+
+.replyQuote {
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-brand-soft) 58%, var(--theme-bg-surface) 42%);
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cancelReplyButton {

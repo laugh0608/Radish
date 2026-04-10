@@ -18,7 +18,8 @@ internal static class DbMigrateInspection
     private static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> RequiredColumnsByTable =
         new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase)
         {
-            ["WikiDocument"] = ["Visibility", "AllowedRoles", "AllowedPermissions"]
+            ["WikiDocument"] = ["Visibility", "AllowedRoles", "AllowedPermissions"],
+            ["Comment"] = ["ReplyToCommentId", "ReplyToCommentSnapshot"]
         };
 
     public static SeedInspectionResult InspectSeedReadiness(IServiceProvider services, string? mainDbConnId)

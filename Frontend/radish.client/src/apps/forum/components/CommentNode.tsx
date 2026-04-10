@@ -10,6 +10,7 @@ import { Icon } from '@radish/ui/icon';
 import { ImageLightbox } from '@radish/ui/image-lightbox';
 import { ReactionBar, type ReactionTogglePayload } from '@radish/ui/reaction-bar';
 import type { StickerPickerGroup } from '@radish/ui/sticker-picker';
+import { buildCommentReplyPreview } from '../utils/commentReplyPreview';
 import styles from './CommentNode.module.css';
 
 interface CommentNodeProps {
@@ -37,6 +38,7 @@ interface CommentNodeProps {
   onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
   onReport?: (commentId: number) => void;
   registerCommentAnchor?: (commentId: number, element: HTMLDivElement | null) => void;
+  onNavigateToComment?: (commentId: number) => void | Promise<void>;
 }
 
 /**
@@ -256,6 +258,7 @@ export const CommentNode = ({
   onAuthorClick,
   onReport,
   registerCommentAnchor,
+  onNavigateToComment,
 }: CommentNodeProps) => {
   const { t } = useTranslation();
   // 判断是否是作者本人
@@ -287,6 +290,11 @@ export const CommentNode = ({
   const commentImages = useMemo(() => extractCommentImages(node.voContent), [node.voContent]);
   const commentHtml = useMemo(() => renderCommentHtml(node.voContent, stickerMap), [node.voContent, stickerMap]);
   const replyToUserName = useMemo(() => node.voReplyToUserName?.trim() || '', [node.voReplyToUserName]);
+  const replyToCommentId = useMemo(() => node.voReplyToCommentId ?? null, [node.voReplyToCommentId]);
+  const replyToCommentSnapshot = useMemo(
+    () => node.voReplyToCommentSnapshot?.trim() || '',
+    [node.voReplyToCommentSnapshot]
+  );
   const authorAvatarUrl = useMemo(() => resolveMediaUrl(node.voAuthorAvatarUrl), [node.voAuthorAvatarUrl]);
 
   // 初始化已加载的子评论（默认时间升序）
@@ -393,7 +401,8 @@ export const CommentNode = ({
       onReply({
         parentCommentId,
         targetCommentId: node.voId,
-        authorName: node.voAuthorName
+        authorName: node.voAuthorName,
+        contentSnapshot: buildCommentReplyPreview(node.voContent)
       });
     }
   };
@@ -654,8 +663,23 @@ export const CommentNode = ({
           {replyToUserName && (
             <div className={styles.replyMeta}>
               {t('forum.comment.replyPrefix')}
-              <span className={styles.replyTarget}>@{replyToUserName}</span>
+              <span className={styles.replyTarget}>{replyToUserName}</span>
             </div>
+          )}
+          {replyToCommentId && replyToCommentSnapshot && (
+            <button
+              type="button"
+              className={styles.replyQuoteButton}
+              onClick={() => {
+                if (replyToCommentId > 0) {
+                  void onNavigateToComment?.(replyToCommentId);
+                }
+              }}
+              title={t('forum.comment.viewReplySource')}
+            >
+              <Icon icon="mdi:reply-outline" size={14} />
+              <span className={styles.replyQuoteText}>{replyToCommentSnapshot}</span>
+            </button>
           )}
           {commentHtml && (
             <div
@@ -791,6 +815,7 @@ export const CommentNode = ({
                   onAuthorClick={onAuthorClick}
                   onReport={onReport}
                   registerCommentAnchor={registerCommentAnchor}
+                  onNavigateToComment={onNavigateToComment}
                 />
               ))}
             </div>

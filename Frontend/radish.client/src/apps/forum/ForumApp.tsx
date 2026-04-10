@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCurrentWindow } from '@/desktop/useCurrentWindow';
 import { useUserStore } from '@/stores/userStore';
@@ -256,6 +256,71 @@ export const ForumApp = () => {
     resetCommentSort: dataState.resetCommentSort
   });
 
+  const navigateToComment = useCallback(async (
+    postId: number,
+    commentId: number,
+    navigationKey: string
+  ) => {
+    const navigation = await getCommentNavigation(
+      postId,
+      commentId,
+      dataState.commentPageSize,
+      COMMENT_NAVIGATION_CHILD_PAGE_SIZE,
+      t
+    );
+
+    if (navigation.voRootPageIndex > 1) {
+      await dataState.loadComments(postId, navigation.voRootPageIndex);
+    }
+
+    if (!navigation.voIsRootComment && navigation.voParentCommentId && navigation.voChildPageIndex) {
+      const aggregatedChildren: CommentNode[] = [];
+      let totalChildren = 0;
+
+      for (let pageIndex = 1; pageIndex <= navigation.voChildPageIndex; pageIndex += 1) {
+        const pageData = await getChildComments(
+          navigation.voParentCommentId,
+          pageIndex,
+          COMMENT_NAVIGATION_CHILD_PAGE_SIZE,
+          t
+        );
+
+        totalChildren = pageData.voTotal ?? totalChildren;
+        aggregatedChildren.push(...(pageData.voItems ?? []));
+      }
+
+      const deduplicatedChildren = aggregatedChildren.filter((child, index, source) =>
+        source.findIndex((item) => item.voId === child.voId) === index
+      );
+
+      dataState.setComments((prev) =>
+        mergeCommentChildren(prev, navigation.voParentCommentId as number, deduplicatedChildren, totalChildren)
+      );
+    }
+
+    setCommentNavigationTarget({
+      commentId: navigation.voCommentId,
+      expandedRootCommentId: navigation.voIsRootComment
+        ? undefined
+        : navigation.voParentCommentId ?? navigation.voRootCommentId,
+      navigationKey
+    });
+    setCommentNavigationNotice(null);
+  }, [dataState.commentPageSize, dataState.loadComments, dataState.setComments, t]);
+
+  const handleNavigateToComment = useCallback(async (commentId: number) => {
+    const postId = dataState.selectedPost?.voId;
+    if (!postId || commentId <= 0) {
+      return;
+    }
+
+    try {
+      await navigateToComment(postId, commentId, `inline:${postId}:${commentId}:${Date.now()}`);
+    } catch {
+      setCommentNavigationNotice(t('forum.commentNavigation.notice'));
+    }
+  }, [dataState.selectedPost?.voId, navigateToComment, t]);
+
   useEffect(() => {
     if (!windowParams.postId) {
       setCommentNavigationTarget(null);
@@ -285,67 +350,11 @@ export const ForumApp = () => {
       }
 
       try {
-        const navigation = await getCommentNavigation(
-          windowParams.postId as number,
-          windowParams.commentId,
-          dataState.commentPageSize,
-          COMMENT_NAVIGATION_CHILD_PAGE_SIZE,
-          t
-        );
-
         if (cancelled) {
           return;
         }
 
-        if (navigation.voRootPageIndex > 1) {
-          await dataState.loadComments(windowParams.postId as number, navigation.voRootPageIndex);
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        if (!navigation.voIsRootComment && navigation.voParentCommentId && navigation.voChildPageIndex) {
-          const aggregatedChildren: CommentNode[] = [];
-          let totalChildren = 0;
-
-          for (let pageIndex = 1; pageIndex <= navigation.voChildPageIndex; pageIndex += 1) {
-            const pageData = await getChildComments(
-              navigation.voParentCommentId,
-              pageIndex,
-              COMMENT_NAVIGATION_CHILD_PAGE_SIZE,
-              t
-            );
-
-            if (cancelled) {
-              return;
-            }
-
-            totalChildren = pageData.voTotal ?? totalChildren;
-            aggregatedChildren.push(...(pageData.voItems ?? []));
-          }
-
-          const deduplicatedChildren = aggregatedChildren.filter((child, index, source) =>
-            source.findIndex((item) => item.voId === child.voId) === index
-          );
-
-          dataState.setComments((prev) =>
-            mergeCommentChildren(prev, navigation.voParentCommentId as number, deduplicatedChildren, totalChildren)
-          );
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        setCommentNavigationTarget({
-          commentId: navigation.voCommentId,
-          expandedRootCommentId: navigation.voIsRootComment
-            ? undefined
-            : navigation.voParentCommentId ?? navigation.voRootCommentId,
-          navigationKey: routeSignature
-        });
-        setCommentNavigationNotice(null);
+        await navigateToComment(windowParams.postId as number, windowParams.commentId, routeSignature);
       } catch (err) {
         if (cancelled) {
           return;
@@ -373,6 +382,7 @@ export const ForumApp = () => {
     dataState.setSelectedCategoryId,
     dataState.setSelectedTagName,
     t,
+    navigateToComment,
   ]);
 
   useEffect(() => {
@@ -708,6 +718,7 @@ export const ForumApp = () => {
                 onReportPost={(postId) => handleOpenReport('Post', postId)}
                 onReportQuickReply={(quickReplyId) => handleOpenReport('PostQuickReply', quickReplyId)}
                 onReportComment={(commentId) => handleOpenReport('Comment', commentId)}
+                onNavigateToComment={handleNavigateToComment}
               />
             </Suspense>
           ) : (

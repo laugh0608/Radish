@@ -19,6 +19,13 @@ public class CreateCommentDto
     /// <summary>父评论 ID（回复评论时使用）</summary>
     public long? ParentId { get; set; }
 
+    /// <summary>被回复评论 ID</summary>
+    public long? ReplyToCommentId { get; set; }
+
+    /// <summary>被回复评论摘要</summary>
+    [StringLength(160, ErrorMessage = "被回复评论摘要不能超过160个字符")]
+    public string? ReplyToCommentSnapshot { get; set; }
+
     /// <summary>被回复用户 ID（@某人时使用）</summary>
     public long? ReplyToUserId { get; set; }
 

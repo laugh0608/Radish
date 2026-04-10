@@ -495,9 +495,15 @@ export const CreateCommentForm = ({
           <div className={styles.editorMeta}>
             {replyTo ? (
               <div className={styles.replyMeta}>
-                <span className={styles.replyText}>
-                  回复给 <span className={styles.replyTarget}>@{replyTo.authorName}</span>
-                </span>
+                <div className={styles.replyMetaBody}>
+                  <span className={styles.replyText}>
+                    {t('forum.comment.replyingPrefix')}
+                    <span className={styles.replyTarget}>{replyTo.authorName}</span>
+                  </span>
+                  {replyTo.contentSnapshot ? (
+                    <span className={styles.replyQuote}>{replyTo.contentSnapshot}</span>
+                  ) : null}
+                </div>
                 {onCancelReply && (
                   <button
                     type="button"

@@ -120,6 +120,8 @@ public class CommentController : ControllerBase
         {
             PostId = request.PostId,
             ParentId = request.ParentId,
+            ReplyToCommentId = request.ReplyToCommentId,
+            ReplyToCommentSnapshot = request.ReplyToCommentSnapshot,
             ReplyToUserId = request.ReplyToUserId,
             ReplyToUserName = request.ReplyToUserName,
             AuthorId = Current.UserId,

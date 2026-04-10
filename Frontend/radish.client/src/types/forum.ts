@@ -319,6 +319,8 @@ export interface CommentNode {
   voAuthorAvatarUrl?: string | null;
   voParentId?: number | null;
   voRootId?: number | null;
+  voReplyToCommentId?: number | null;
+  voReplyToCommentSnapshot?: string | null;
   voReplyToUserId?: number | null;
   voReplyToUserName?: string | null;
   voLevel?: number;
@@ -344,6 +346,7 @@ export interface CommentReplyTarget {
   parentCommentId: number;
   targetCommentId: number;
   authorName: string;
+  contentSnapshot?: string | null;
 }
 
 /**
@@ -540,6 +543,8 @@ export interface CreateCommentRequest {
   postId: number;
   content: string;
   parentId?: number | null;
+  replyToCommentId?: number | null;
+  replyToCommentSnapshot?: string | null;
   replyToUserId?: number | null;
   replyToUserName?: string | null;
 }

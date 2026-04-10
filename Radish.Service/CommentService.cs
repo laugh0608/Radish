@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using System.Text.RegularExpressions;
 using AutoMapper;
 using Microsoft.Extensions.Options;
 using Radish.Common.CacheTool;
@@ -18,6 +19,12 @@ namespace Radish.Service;
 /// <summary>评论服务实现</summary>
 public class CommentService : BaseService<Comment, CommentVo>, ICommentService
 {
+    private static readonly Regex MarkdownImagePattern = new(@"!\[[^\]]*\]\(([^)]+)\)", RegexOptions.Compiled);
+    private static readonly Regex MarkdownLinkPattern = new(@"\[([^\]]+)\]\(([^)]+)\)", RegexOptions.Compiled);
+    private static readonly Regex AttachmentUriPattern = new(@"attachment://\S+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex StickerUriPattern = new(@"sticker://\S+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex MultiWhitespacePattern = new(@"\s+", RegexOptions.Compiled);
+
     private readonly IBaseRepository<Comment> _commentRepository;
     private readonly IBaseRepository<UserCommentLike> _userCommentLikeRepository;
     private readonly IBaseRepository<CommentHighlight> _highlightRepository;
@@ -72,7 +79,16 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
     /// </summary>
     public async Task<long> AddCommentAsync(Comment comment)
     {
-        long? parentAuthorId = null;
+        Comment? replyTargetComment = null;
+
+        if (!comment.ParentId.HasValue)
+        {
+            comment.RootId = null;
+            comment.ReplyToCommentId = null;
+            comment.ReplyToCommentSnapshot = string.Empty;
+            comment.ReplyToUserId = null;
+            comment.ReplyToUserName = string.Empty;
+        }
 
         // 1. 计算层级和路径
         if (comment.ParentId.HasValue)
@@ -86,8 +102,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                     : $"{parentComment.Path}-{parentComment.Id}";
                 comment.RootId = parentComment.RootId ?? parentComment.Id;
 
-                // 记录父评论作者ID，用于奖励发放
-                parentAuthorId = parentComment.AuthorId;
+                // 记录真实回复目标（不等同于两层结构中的 ParentId）
+                replyTargetComment = await ResolveReplyTargetCommentAsync(comment, parentComment);
 
                 // 更新父评论的回复数
                 await UpdateReplyCountAsync(parentComment.Id, 1);
@@ -166,17 +182,17 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                 }
 
                 // 4.4 评论被回复奖励（如果是回复评论）
-                if (comment.ParentId.HasValue && parentAuthorId.HasValue)
+                if (replyTargetComment != null)
                 {
                     await _coinRewardService.GrantCommentReplyRewardAsync(
-                        comment.ParentId.Value,
-                        parentAuthorId.Value,
+                        replyTargetComment.Id,
+                        replyTargetComment.AuthorId,
                         commentId);
-                    Log.Information("评论被回复奖励发放成功：ParentCommentId={ParentCommentId}, ParentAuthorId={ParentAuthorId}",
-                        comment.ParentId.Value, parentAuthorId.Value);
+                    Log.Information("评论被回复奖励发放成功：ReplyTargetCommentId={ReplyTargetCommentId}, ReplyTargetAuthorId={ReplyTargetAuthorId}",
+                        replyTargetComment.Id, replyTargetComment.AuthorId);
 
                     // 4.5 发送评论回复通知（不给自己发通知）
-                    if (parentAuthorId.Value != comment.AuthorId)
+                    if (replyTargetComment.AuthorId != comment.AuthorId)
                     {
                         try
                         {
@@ -191,16 +207,16 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                                 TriggerId = comment.AuthorId,
                                 TriggerName = comment.AuthorName,
                                 TriggerAvatar = null, // 头像字段可以后续从用户表查询
-                                ReceiverUserIds = new List<long> { parentAuthorId.Value },
+                                ReceiverUserIds = new List<long> { replyTargetComment.AuthorId },
                                 ExtData = NotificationNavigationHelper.BuildForumNavigationExtData(comment.PostId, commentId)
                             });
-                            Log.Information("评论回复通知发送成功：CommentId={CommentId}, 接收者={ReceiverId}",
-                                commentId, parentAuthorId.Value);
+                            Log.Information("评论回复通知发送成功：CommentId={CommentId}, ReplyTargetCommentId={ReplyTargetCommentId}, 接收者={ReceiverId}",
+                                commentId, replyTargetComment.Id, replyTargetComment.AuthorId);
                         }
                         catch (Exception notifyEx)
                         {
-                            Log.Error(notifyEx, "发送评论回复通知失败：CommentId={CommentId}, 接收者={ReceiverId}",
-                                commentId, parentAuthorId.Value);
+                            Log.Error(notifyEx, "发送评论回复通知失败：CommentId={CommentId}, ReplyTargetCommentId={ReplyTargetCommentId}, 接收者={ReceiverId}",
+                                commentId, replyTargetComment.Id, replyTargetComment.AuthorId);
                         }
                     }
                 }
@@ -248,6 +264,79 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         await TriggerHighlightRecheckAsync(comment.PostId, comment.ParentId);
 
         return commentId;
+    }
+
+    private async Task<Comment> ResolveReplyTargetCommentAsync(Comment comment, Comment parentComment)
+    {
+        var replyTargetComment = parentComment;
+        if (!comment.ReplyToCommentId.HasValue)
+        {
+            comment.ReplyToCommentId = parentComment.Id;
+            comment.ReplyToCommentSnapshot = BuildReplySnapshot(parentComment.Content);
+            comment.ReplyToUserId = parentComment.AuthorId;
+            comment.ReplyToUserName = parentComment.AuthorName;
+            return replyTargetComment;
+        }
+
+        if (comment.ReplyToCommentId.Value != parentComment.Id)
+        {
+            var requestedTarget = await _commentRepository.QueryByIdAsync(comment.ReplyToCommentId.Value);
+            if (requestedTarget != null &&
+                requestedTarget.PostId == comment.PostId &&
+                requestedTarget.IsEnabled &&
+                !requestedTarget.IsDeleted &&
+                (requestedTarget.Id == parentComment.Id ||
+                 requestedTarget.ParentId == parentComment.Id ||
+                 requestedTarget.RootId == parentComment.Id))
+            {
+                replyTargetComment = requestedTarget;
+            }
+        }
+
+        comment.ReplyToCommentId = replyTargetComment.Id;
+        comment.ReplyToCommentSnapshot = BuildReplySnapshot(replyTargetComment.Content);
+        comment.ReplyToUserId = replyTargetComment.AuthorId;
+        comment.ReplyToUserName = replyTargetComment.AuthorName;
+        return replyTargetComment;
+    }
+
+    private static string BuildReplySnapshot(string? content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return string.Empty;
+        }
+
+        var normalized = MarkdownImagePattern.Replace(content, match =>
+        {
+            var source = match.Groups.Count > 1 ? match.Groups[1].Value : string.Empty;
+            if (source.StartsWith("sticker://", StringComparison.OrdinalIgnoreCase))
+            {
+                return "[表情]";
+            }
+
+            return "[图片]";
+        });
+
+        normalized = MarkdownLinkPattern.Replace(normalized, match =>
+        {
+            var label = match.Groups.Count > 1 ? match.Groups[1].Value.Trim() : string.Empty;
+            return string.IsNullOrWhiteSpace(label) ? "[附件]" : label;
+        });
+
+        normalized = AttachmentUriPattern.Replace(normalized, "[附件]");
+        normalized = StickerUriPattern.Replace(normalized, "[表情]");
+        normalized = MultiWhitespacePattern.Replace(normalized, " ").Trim();
+
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return string.Empty;
+        }
+
+        const int maxLength = 30;
+        return normalized.Length <= maxLength
+            ? normalized
+            : $"{normalized[..(maxLength - 3)]}...";
     }
 
     /// <summary>
