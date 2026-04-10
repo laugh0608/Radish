@@ -123,14 +123,22 @@ export const PostDetail = ({
   const canViewQuestionHistory = isQuestionPost && !!onViewHistory;
   const totalAnswerCount = question?.voAnswerCount ?? post?.voAnswerCount ?? 0;
   const drawTimeValue = lottery?.voDrawTime ? new Date(lottery.voDrawTime) : null;
-  const isDrawTimeReached = !drawTimeValue || Number.isNaN(drawTimeValue.getTime()) || drawTimeValue.getTime() <= Date.now();
+  const postCreateTimeValue = post?.voCreateTime ? new Date(post.voCreateTime) : null;
+  const manualDrawAvailableAt = postCreateTimeValue && !Number.isNaN(postCreateTimeValue.getTime())
+    ? postCreateTimeValue.getTime() + 60 * 60 * 1000
+    : null;
+  const isManualDrawWindowOpen = manualDrawAvailableAt == null || manualDrawAvailableAt <= Date.now();
+  const isBeforeDrawDeadline = drawTimeValue != null
+    && !Number.isNaN(drawTimeValue.getTime())
+    && Date.now() < drawTimeValue.getTime();
   const authorAvatarUrl = resolveMediaUrl(post?.voAuthorAvatarUrl);
   const canDrawLottery = Boolean(
     isLotteryPost &&
     isAuthenticated &&
     isAuthor &&
     !lottery?.voIsDrawn &&
-    isDrawTimeReached &&
+    isManualDrawWindowOpen &&
+    isBeforeDrawDeadline &&
     onDrawLottery
   );
   const lotteryStatusText = !lottery
@@ -138,10 +146,14 @@ export const PostDetail = ({
     : lottery.voIsDrawn
       ? t('forum.postDetail.lottery.status.drawn')
       : isAuthor
-        ? isDrawTimeReached
-          ? t('forum.postDetail.lottery.status.canDraw')
-          : t('forum.postDetail.lottery.status.waitTime')
-        : t('forum.postDetail.lottery.status.waitAuthor');
+        ? !isManualDrawWindowOpen
+          ? t('forum.postDetail.lottery.status.waitManualWindow')
+          : isBeforeDrawDeadline
+            ? t('forum.postDetail.lottery.status.canDraw')
+            : t('forum.postDetail.lottery.status.waitAutoDraw')
+        : isBeforeDrawDeadline
+          ? t('forum.postDetail.lottery.status.waitAuthor')
+          : t('forum.postDetail.lottery.status.waitAutoDraw');
   const sortedAnswers = !question?.voAnswers
     ? []
     : [...question.voAnswers].sort((left, right) => {
@@ -171,6 +183,7 @@ export const PostDetail = ({
     t('forum.postDetail.lottery.rule.reply'),
     t('forum.postDetail.lottery.rule.unique'),
     t('forum.postDetail.lottery.rule.author'),
+    t('forum.postDetail.lottery.rule.manualWindow'),
   ];
 
   const buildAvatarText = (name: string) => {
@@ -524,15 +537,19 @@ export const PostDetail = ({
 
             <div className={styles.lotteryFooter}>
               <span className={styles.lotteryHint}>
-                {lottery.voIsDrawn
-                  ? lottery.voDrawnAt
-                    ? t('forum.postDetail.lottery.hint.drawnAt', { time: formatDateTimeByTimeZone(lottery.voDrawnAt, displayTimeZone) })
-                    : t('forum.postDetail.lottery.hint.drawnDone')
+                  {lottery.voIsDrawn
+                    ? lottery.voDrawnAt
+                      ? t('forum.postDetail.lottery.hint.drawnAt', { time: formatDateTimeByTimeZone(lottery.voDrawnAt, displayTimeZone) })
+                      : t('forum.postDetail.lottery.hint.drawnDone')
                   : isAuthor
-                    ? isDrawTimeReached
-                      ? t('forum.postDetail.lottery.hint.authorReady')
-                      : t('forum.postDetail.lottery.hint.authorWaiting')
-                    : t('forum.postDetail.lottery.hint.visitor')}
+                    ? !isManualDrawWindowOpen
+                      ? t('forum.postDetail.lottery.hint.authorWaitingManualWindow')
+                      : isBeforeDrawDeadline
+                        ? t('forum.postDetail.lottery.hint.authorReady')
+                        : t('forum.postDetail.lottery.hint.autoDrawing')
+                    : isBeforeDrawDeadline
+                      ? t('forum.postDetail.lottery.hint.visitor')
+                      : t('forum.postDetail.lottery.hint.autoDrawing')}
               </span>
               {!isReadOnly && canDrawLottery && (
                 <button

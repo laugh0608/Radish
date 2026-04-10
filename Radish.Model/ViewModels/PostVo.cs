@@ -141,6 +141,21 @@ public class PostVo
     public List<PostInteractorVo> VoLatestInteractors { get; set; } = new();
 
     /// <summary>
+    /// 当前神评评论 ID
+    /// </summary>
+    public long? VoGodCommentId { get; set; }
+
+    /// <summary>
+    /// 当前神评作者名
+    /// </summary>
+    public string? VoGodCommentAuthorName { get; set; }
+
+    /// <summary>
+    /// 当前神评内容快照
+    /// </summary>
+    public string? VoGodCommentContentSnapshot { get; set; }
+
+    /// <summary>
     /// 是否问答帖
     /// </summary>
     public bool VoIsQuestion { get; set; }

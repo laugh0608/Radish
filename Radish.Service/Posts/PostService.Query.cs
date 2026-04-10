@@ -83,6 +83,8 @@ public partial class PostService
             postVo.VoLottery = lotteryVo;
         }
 
+        await FillPostGodCommentPreviewAsync(new List<PostVo> { postVo });
+
         postVo.VoQuestion = await BuildPostQuestionVoAsync(postId, answerSort);
         FillPostQuestionSummary(postVo, postVo.VoQuestion);
 
@@ -283,6 +285,7 @@ public partial class PostService
             .GroupBy(post => post.VoId)
             .ToDictionary(group => group.Key, group => group.First().VoAuthorId);
         var lotteryParticipantCountMap = await BuildLotteryParticipantCountMapAsync(postAuthorMap, lotteryMap);
+        var godCommentPreviewMap = await BuildGodCommentPreviewMapAsync(postIds);
 
         foreach (var post in posts)
         {
@@ -321,6 +324,19 @@ public partial class PostService
                 post.VoHasLottery = true;
                 post.VoLotteryParticipantCount = lotteryParticipantCountMap.GetValueOrDefault(post.VoId, lottery.ParticipantCount);
                 post.VoLotteryIsDrawn = lottery.IsDrawn;
+            }
+
+            if (godCommentPreviewMap.TryGetValue(post.VoId, out var highlight))
+            {
+                post.VoGodCommentId = highlight.CommentId;
+                post.VoGodCommentAuthorName = highlight.AuthorName;
+                post.VoGodCommentContentSnapshot = highlight.ContentSnapshot;
+            }
+            else
+            {
+                post.VoGodCommentId = null;
+                post.VoGodCommentAuthorName = null;
+                post.VoGodCommentContentSnapshot = null;
             }
 
             FillPostQuestionSummary(post, questionMap.GetValueOrDefault(post.VoId));
@@ -745,5 +761,63 @@ public partial class PostService
             comment.IsEnabled &&
             !comment.IsDeleted &&
             (!hasCutoff || comment.CreateTime <= cutoffValue));
+    }
+
+    private async Task FillPostGodCommentPreviewAsync(List<PostVo> posts)
+    {
+        if (posts.Count == 0)
+        {
+            return;
+        }
+
+        var postIds = posts
+            .Select(post => post.VoId)
+            .Where(postId => postId > 0)
+            .Distinct()
+            .ToList();
+
+        if (postIds.Count == 0)
+        {
+            return;
+        }
+
+        var previewMap = await BuildGodCommentPreviewMapAsync(postIds);
+        foreach (var post in posts)
+        {
+            if (previewMap.TryGetValue(post.VoId, out var highlight))
+            {
+                post.VoGodCommentId = highlight.CommentId;
+                post.VoGodCommentAuthorName = highlight.AuthorName;
+                post.VoGodCommentContentSnapshot = highlight.ContentSnapshot;
+            }
+            else
+            {
+                post.VoGodCommentId = null;
+                post.VoGodCommentAuthorName = null;
+                post.VoGodCommentContentSnapshot = null;
+            }
+        }
+    }
+
+    private async Task<Dictionary<long, CommentHighlight>> BuildGodCommentPreviewMapAsync(List<long> postIds)
+    {
+        if (_commentHighlightRepository == null || postIds.Count == 0)
+        {
+            return new Dictionary<long, CommentHighlight>();
+        }
+
+        var highlights = await _commentHighlightRepository.QueryAsync(highlight =>
+            postIds.Contains(highlight.PostId) &&
+            highlight.HighlightType == 1 &&
+            highlight.IsCurrent);
+
+        return highlights
+            .GroupBy(highlight => highlight.PostId)
+            .ToDictionary(
+                group => group.Key,
+                group => group
+                    .OrderBy(highlight => highlight.Rank)
+                    .ThenBy(highlight => highlight.Id)
+                    .First());
     }
 }

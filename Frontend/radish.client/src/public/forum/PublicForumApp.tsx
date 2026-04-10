@@ -16,6 +16,7 @@ import {
   type PostQuickReply,
 } from '@/api/forum';
 import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId } from '@/utils/dateTime';
+import { log } from '@/utils/logger';
 import { Icon } from '@radish/ui/icon';
 import { PostCard } from '@/apps/forum/components/PostCard';
 import { PostDetail as ForumPostDetail } from '@/apps/forum/components/PostDetail';
@@ -238,19 +239,29 @@ const PublicForumList = ({ routeState, displayTimeZone, onRouteStateChange, onOp
           return;
         }
 
-        const highlights = await getCurrentGodCommentsBatch(pageModel.data.map((item) => item.voId), t);
-        if (requestId !== postsRequestIdRef.current) {
-          return;
-        }
-
-        const nextMap = new Map<number, CommentHighlight>();
-        for (const [postIdText, highlight] of Object.entries(highlights)) {
-          const postId = Number(postIdText);
-          if (!Number.isNaN(postId) && highlight) {
-            nextMap.set(postId, highlight);
+        try {
+          const highlights = await getCurrentGodCommentsBatch(pageModel.data.map((item) => item.voId), t);
+          if (requestId !== postsRequestIdRef.current) {
+            return;
           }
+
+          const nextMap = new Map<number, CommentHighlight>();
+          for (const [postIdText, highlight] of Object.entries(highlights)) {
+            const postId = Number(postIdText);
+            if (!Number.isNaN(postId) && highlight) {
+              nextMap.set(postId, highlight);
+            }
+          }
+
+          setPostGodComments(nextMap);
+        } catch (highlightError) {
+          if (requestId !== postsRequestIdRef.current) {
+            return;
+          }
+
+          log.warn('公开论坛神评预览补查失败，已降级使用帖子主数据:', highlightError);
+          setPostGodComments(new Map());
         }
-        setPostGodComments(nextMap);
       } catch (err) {
         if (requestId !== postsRequestIdRef.current) {
           return;

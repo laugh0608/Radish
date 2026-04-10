@@ -795,6 +795,25 @@ if (retentionRewardConfig.GetValue<bool>("Enable", true))
     Log.Information("[Hangfire] 已注册定时任务: retention-reward (计划: {Schedule})", schedule);
 }
 
+// 论坛抽奖自动开奖任务
+var postLotteryConfig = builder.Configuration.GetSection("Hangfire:PostLottery");
+if (postLotteryConfig.GetValue<bool>("Enable", true))
+{
+    var schedule = postLotteryConfig["Schedule"] ?? "*/1 * * * *";
+    var batchSize = postLotteryConfig.GetValue<int>("BatchSize", 20);
+
+    RecurringJob.AddOrUpdate<PostLotteryJob>(
+        "forum-post-lottery-auto-draw",
+        job => job.ExecuteAutoDrawAsync(batchSize),
+        schedule,
+        new RecurringJobOptions
+        {
+            TimeZone = appDefaultTimeZone
+        });
+
+    Log.Information("[Hangfire] 已注册定时任务: forum-post-lottery-auto-draw (批次: {BatchSize}, 计划: {Schedule})", batchSize, schedule);
+}
+
 // 商城订单超时取消任务
 var shopConfig = builder.Configuration.GetSection("Hangfire:Shop");
 if (shopConfig.GetValue<bool>("TimeoutOrders:Enable", true))

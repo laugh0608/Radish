@@ -2107,6 +2107,55 @@ public class PostServiceTest
     }
 
     [Fact]
+    public async Task PublishPostAsync_Should_Reject_When_LotteryDrawTime_IsLessThanOneHourAway()
+    {
+        var service = new PostService(
+            new Mock<IMapper>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<Post>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<UserPostLike>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<PostTag>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<Category>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<Tag>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<PostPoll>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<PostPollOption>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<PostPollVote>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<PostQuestion>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<PostAnswer>>(MockBehavior.Strict).Object,
+            new Mock<ITagService>(MockBehavior.Strict).Object,
+            new Mock<ICoinRewardService>(MockBehavior.Strict).Object,
+            new Mock<INotificationService>(MockBehavior.Strict).Object,
+            new Mock<INotificationDedupService>(MockBehavior.Strict).Object,
+            new Mock<IExperienceService>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<PostEditHistory>>(MockBehavior.Strict).Object,
+            Options.Create(new ForumEditHistoryOptions()),
+            postLotteryRepository: new Mock<IBaseRepository<PostLottery>>(MockBehavior.Strict).Object);
+
+        var post = new Post(new PostInitializationOptions("抽奖帖", "评论参与抽奖"))
+        {
+            AuthorId = 9527,
+            AuthorName = "Tester",
+            TenantId = 9,
+            IsPublished = true
+        };
+
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() => service.PublishPostAsync(
+            post,
+            null,
+            new CreateLotteryDto
+            {
+                PrizeName = "萝卜周边",
+                PrizeDescription = "抽一个小礼包",
+                WinnerCount = 1,
+                DrawTime = DateTime.UtcNow.AddMinutes(30)
+            },
+            false,
+            ["抽奖"],
+            allowCreateTag: false));
+
+        Assert.Equal("抽奖截止时间必须至少晚于发帖时间 1 小时 (Parameter 'lottery')", exception.Message);
+    }
+
+    [Fact]
     public async Task PublishPostAsync_Should_Reject_When_LotteryAndQuestionAreBothEnabled()
     {
         var service = new PostService(

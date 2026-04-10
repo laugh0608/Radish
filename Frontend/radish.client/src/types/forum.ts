@@ -248,6 +248,9 @@ export interface PostItem {
   voAuthorName?: string | null;
   voAuthorAvatarUrl?: string | null;
   voLatestInteractors?: PostInteractor[];
+  voGodCommentId?: number | null;
+  voGodCommentAuthorName?: string | null;
+  voGodCommentContentSnapshot?: string | null;
   voViewCount?: number;
   voLikeCount?: number;
   voCommentCount?: number;
@@ -285,6 +288,9 @@ export interface PostDetail {
   voAuthorAvatarUrl?: string | null;
   voTags?: string;
   voTagNames?: string[];
+  voGodCommentId?: number | null;
+  voGodCommentAuthorName?: string | null;
+  voGodCommentContentSnapshot?: string | null;
   voViewCount?: number;
   voLikeCount?: number;
   voCommentCount?: number;

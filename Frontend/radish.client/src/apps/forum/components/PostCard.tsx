@@ -72,8 +72,9 @@ export const PostCard = ({
             name: item.voUserName.trim(),
             avatarUrl: item.voAvatarUrl?.trim() || null
           }))
-      : [godComment?.authorName]
+      : [post.voGodCommentAuthorName, godComment?.authorName]
           .filter((name): name is string => Boolean(name && name.trim()))
+          .filter((name, index, source) => source.findIndex(item => item.trim() === name.trim()) === index)
           .map(name => ({
             id: 0,
             name: name.trim(),
@@ -89,8 +90,10 @@ export const PostCard = ({
   const displayedInteractorsCount = fallbackInteractors.length > 0 ? fallbackInteractors.length : 0;
   const remainingInteractions = Math.max((post.voCommentCount ?? 0) - displayedInteractorsCount, 0);
   const publishedTime = formatDateTimeByTimeZone(post.voCreateTime, displayTimeZone, t('forum.postCard.unknownTime'));
-  const godCommentPreview = godComment?.content?.trim() ?? '';
-  const godCommentAuthor = godComment?.authorName?.trim() || t('forum.postCard.anonymousUser');
+  const godCommentPreview = post.voGodCommentContentSnapshot?.trim() || godComment?.content?.trim() || '';
+  const godCommentAuthor = post.voGodCommentAuthorName?.trim()
+    || godComment?.authorName?.trim()
+    || t('forum.postCard.anonymousUser');
 
   const handleAuthorClick = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();

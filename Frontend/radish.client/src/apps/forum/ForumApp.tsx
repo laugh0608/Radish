@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useCurrentWindow } from '@/desktop/useCurrentWindow';
 import { useUserStore } from '@/stores/userStore';
 import { useWindowStore } from '@/stores/windowStore';
+import { log } from '@/utils/logger';
 import { ConfirmDialog } from '@radish/ui/confirm-dialog';
 import { ContentReportModal } from '@/components/ContentReportModal';
 import {
@@ -421,19 +422,29 @@ export const ForumApp = () => {
         }
 
         const postIds = result.data.map(post => post.voId);
-        const highlights = await getCurrentGodCommentsBatch(postIds, t);
-        if (requestId !== searchRequestIdRef.current) {
-          return;
-        }
-
-        const highlightsMap = new Map<number, CommentHighlight>();
-        for (const [postIdStr, highlight] of Object.entries(highlights)) {
-          const postId = Number(postIdStr);
-          if (!Number.isNaN(postId) && highlight) {
-            highlightsMap.set(postId, highlight);
+        try {
+          const highlights = await getCurrentGodCommentsBatch(postIds, t);
+          if (requestId !== searchRequestIdRef.current) {
+            return;
           }
+
+          const highlightsMap = new Map<number, CommentHighlight>();
+          for (const [postIdStr, highlight] of Object.entries(highlights)) {
+            const postId = Number(postIdStr);
+            if (!Number.isNaN(postId) && highlight) {
+              highlightsMap.set(postId, highlight);
+            }
+          }
+
+          setSearchPostGodComments(highlightsMap);
+        } catch (highlightError) {
+          if (requestId !== searchRequestIdRef.current) {
+            return;
+          }
+
+          log.warn('搜索结果神评预览补查失败，已降级使用帖子主数据:', highlightError);
+          setSearchPostGodComments(new Map());
         }
-        setSearchPostGodComments(highlightsMap);
       } catch (err) {
         if (requestId !== searchRequestIdRef.current) {
           return;
