@@ -140,6 +140,14 @@ test('parsePublicDocsRoute 应兼容 __documents__ 旧路径', () => {
   });
 });
 
+test('parsePublicDocsRoute 应兼容 __documents__ 旧列表路径', () => {
+  const route = parsePublicDocsRoute('/__documents__', '');
+
+  assert.deepEqual(route, {
+    kind: 'list',
+  });
+});
+
 test('buildPublicDocsPath 应按 slug 和 anchor 回写公开文档路径', () => {
   const path = buildPublicDocsPath({
     kind: 'detail',

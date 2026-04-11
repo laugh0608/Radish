@@ -32,6 +32,16 @@ interface PublicDocsTreeRow {
   childCount: number;
 }
 
+interface PublicDocsCollectionState {
+  tree: WikiDocumentTreeNodeVo[];
+  documents: WikiDocumentVo[];
+  totalDocuments: number;
+  loadingTree: boolean;
+  loadingDocuments: boolean;
+  treeError: string | null;
+  listError: string | null;
+}
+
 interface PublicStatusCardProps {
   tone: 'loading' | 'empty' | 'error' | 'notFound';
   title: string;
@@ -155,6 +165,16 @@ export const PublicDocsApp = ({ route, fallbackListRoute, onNavigate }: PublicDo
   const previousRouteRef = useRef<PublicDocsRoute>(route);
   const listScrollSnapshotRef = useRef<{ routeKey: string; scrollTop: number } | null>(null);
   const [pendingRestoreScrollTop, setPendingRestoreScrollTop] = useState<number | null>(null);
+  const [collectionReloadToken, setCollectionReloadToken] = useState(0);
+  const [collectionState, setCollectionState] = useState<PublicDocsCollectionState>({
+    tree: [],
+    documents: [],
+    totalDocuments: 0,
+    loadingTree: true,
+    loadingDocuments: true,
+    treeError: null,
+    listError: null
+  });
 
   useEffect(() => {
     const nextTitle = route.kind === 'list'
@@ -195,6 +215,58 @@ export const PublicDocsApp = ({ route, fallbackListRoute, onNavigate }: PublicDo
     previousRouteRef.current = route;
   }, [route]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadCollections = async () => {
+      setCollectionState((current) => ({
+        ...current,
+        loadingTree: true,
+        loadingDocuments: true,
+        treeError: null,
+        listError: null
+      }));
+
+      const [treeResult, listResult] = await Promise.allSettled([
+        getPublicWikiTree(),
+        getPublicWikiList({
+          pageIndex: 1,
+          pageSize: 100
+        })
+      ]);
+
+      if (cancelled) {
+        return;
+      }
+
+      setCollectionState((current) => ({
+        ...current,
+        tree: treeResult.status === 'fulfilled' ? treeResult.value : [],
+        documents: listResult.status === 'fulfilled' ? (listResult.value.data || []) : [],
+        totalDocuments: listResult.status === 'fulfilled'
+          ? (listResult.value.dataCount || listResult.value.data?.length || 0)
+          : 0,
+        treeError: treeResult.status === 'fulfilled'
+          ? null
+          : treeResult.reason instanceof Error
+            ? treeResult.reason.message
+            : String(treeResult.reason),
+        listError: listResult.status === 'fulfilled'
+          ? null
+          : listResult.reason instanceof Error
+            ? listResult.reason.message
+            : String(listResult.reason),
+        loadingTree: false,
+        loadingDocuments: false
+      }));
+    };
+
+    void loadCollections();
+    return () => {
+      cancelled = true;
+    };
+  }, [collectionReloadToken]);
+
   return (
     <div className={styles.page} ref={pageRef}>
       <header className={styles.hero}>
@@ -229,9 +301,11 @@ export const PublicDocsApp = ({ route, fallbackListRoute, onNavigate }: PublicDo
         ) : (
           <PublicDocsList
             displayTimeZone={displayTimeZone}
+            collectionState={collectionState}
             scrollContainerRef={pageRef}
             restoreScrollTop={pendingRestoreScrollTop}
             onScrollRestored={() => setPendingRestoreScrollTop(null)}
+            onReload={() => setCollectionReloadToken((current) => current + 1)}
             onOpenDocument={(slug) => onNavigate({ kind: 'detail', slug })}
           />
         )}
@@ -242,28 +316,33 @@ export const PublicDocsApp = ({ route, fallbackListRoute, onNavigate }: PublicDo
 
 interface PublicDocsListProps {
   displayTimeZone: string;
+  collectionState: PublicDocsCollectionState;
   scrollContainerRef: RefObject<HTMLDivElement | null>;
   restoreScrollTop: number | null;
   onScrollRestored: () => void;
+  onReload: () => void;
   onOpenDocument: (slug: string) => void;
 }
 
 const PublicDocsList = ({
   displayTimeZone,
+  collectionState,
   scrollContainerRef,
   restoreScrollTop,
   onScrollRestored,
+  onReload,
   onOpenDocument
 }: PublicDocsListProps) => {
   const { t } = useTranslation();
-  const [tree, setTree] = useState<WikiDocumentTreeNodeVo[]>([]);
-  const [documents, setDocuments] = useState<WikiDocumentVo[]>([]);
-  const [totalDocuments, setTotalDocuments] = useState(0);
-  const [loadingTree, setLoadingTree] = useState(false);
-  const [loadingDocuments, setLoadingDocuments] = useState(false);
-  const [treeError, setTreeError] = useState<string | null>(null);
-  const [listError, setListError] = useState<string | null>(null);
-  const [reloadToken, setReloadToken] = useState(0);
+  const {
+    tree,
+    documents,
+    totalDocuments,
+    loadingTree,
+    loadingDocuments,
+    treeError,
+    listError
+  } = collectionState;
 
   useEffect(() => {
     if (restoreScrollTop == null || loadingTree || loadingDocuments) {
@@ -305,53 +384,6 @@ const PublicDocsList = ({
     };
   }, [loadingDocuments, loadingTree, onScrollRestored, restoreScrollTop, scrollContainerRef]);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const load = async () => {
-      setLoadingTree(true);
-      setLoadingDocuments(true);
-      setTreeError(null);
-      setListError(null);
-
-      const [treeResult, listResult] = await Promise.allSettled([
-        getPublicWikiTree(),
-        getPublicWikiList({
-          pageIndex: 1,
-          pageSize: 100
-        })
-      ]);
-
-      if (cancelled) {
-        return;
-      }
-
-      if (treeResult.status === 'fulfilled') {
-        setTree(treeResult.value);
-      } else {
-        setTree([]);
-        setTreeError(treeResult.reason instanceof Error ? treeResult.reason.message : String(treeResult.reason));
-      }
-
-      if (listResult.status === 'fulfilled') {
-        setDocuments(listResult.value.data || []);
-        setTotalDocuments(listResult.value.dataCount || listResult.value.data?.length || 0);
-      } else {
-        setDocuments([]);
-        setTotalDocuments(0);
-        setListError(listResult.reason instanceof Error ? listResult.reason.message : String(listResult.reason));
-      }
-
-      setLoadingTree(false);
-      setLoadingDocuments(false);
-    };
-
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [reloadToken]);
-
   const treeRows = useMemo(() => flattenPublicDocsTree(tree), [tree]);
   const listCards = useMemo(() => documents.slice(0, 12), [documents]);
   const hasAnyContent = treeRows.length > 0 || listCards.length > 0;
@@ -385,7 +417,7 @@ const PublicDocsList = ({
             description={treeError || listError || t('wiki.public.loadingDescription')}
             primaryAction={{
               label: t('common.retry'),
-              onClick: () => setReloadToken((current) => current + 1)
+              onClick: onReload
             }}
           />
         </div>
@@ -408,7 +440,7 @@ const PublicDocsList = ({
                     ? t('wiki.public.partialTreeFailed')
                     : t('wiki.public.partialListFailed')}
               </span>
-              <button type="button" className={styles.inlineTextButton} onClick={() => setReloadToken((current) => current + 1)}>
+              <button type="button" className={styles.inlineTextButton} onClick={onReload}>
                 {t('common.retry')}
               </button>
             </div>
