@@ -155,7 +155,10 @@ public class PostLotteryServiceTest
                 dto.BusinessId == 1001 &&
                 dto.ReceiverUserIds.Count == 2 &&
                 dto.ReceiverUserIds.Contains(1101) &&
-                dto.ReceiverUserIds.Contains(1102))))
+                dto.ReceiverUserIds.Contains(1102) &&
+                dto.ExtData != null &&
+                dto.ExtData.Contains("\"postId\":\"1001\"") &&
+                dto.ExtData.Contains("\"lotteryId\":\"2001\""))))
             .ReturnsAsync(1);
 
         var service = new PostLotteryService(

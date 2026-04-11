@@ -172,8 +172,8 @@ public class PostLotteryService : IPostLotteryService
             TenantId = lottery.TenantId,
             ExtData = JsonSerializer.Serialize(new
             {
-                postId = post.Id,
-                lotteryId = lottery.Id,
+                postId = post.Id.ToString(),
+                lotteryId = lottery.Id.ToString(),
                 prizeName = normalizedPrizeName,
                 winnerCount = actualWinnerCount
             })
