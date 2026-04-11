@@ -75,7 +75,7 @@ export interface ForumActionsHandlers {
   setIsEditModalOpen: (open: boolean) => void;
 
   // 帖子操作
-  handleSelectPost: (postId: number) => Promise<void>;
+  handleSelectPost: (postId: string | number) => Promise<void>;
   handlePublishPost: (
     title: string,
     content: string,
@@ -154,9 +154,9 @@ interface UseForumActionsParams {
   setQuestionAnswerFilter: (filterBy: QuestionAnswerFilter) => void;
   setSearchKeyword: (keyword: string) => void;
   setError: (error: string | null) => void;
-  loadPostDetail: (postId: number, answerSortOverride?: QuestionAnswerSort) => Promise<void>;
-  loadComments: (postId: number, pageCount?: number) => Promise<void>;
-  loadQuickReplies: (postId: number) => Promise<void>;
+  loadPostDetail: (postId: string | number, answerSortOverride?: QuestionAnswerSort) => Promise<void>;
+  loadComments: (postId: string | number, pageCount?: number) => Promise<void>;
+  loadQuickReplies: (postId: string | number) => Promise<void>;
   loadPosts: () => Promise<void>;
   resetCommentSort: () => void;
 }
@@ -287,7 +287,7 @@ export const useForumActions = (
   };
 
   // 选择帖子
-  const handleSelectPost = async (postId: number) => {
+  const handleSelectPost = async (postId: string | number) => {
     resetCommentSort();
     setQuestionAnswerSort('default');
     setQuestionAnswerFilter('all');

@@ -685,8 +685,8 @@ export async function getChildComments(
  * 获取评论精确定位信息
  */
 export async function getCommentNavigation(
-  postId: number,
-  commentId: number,
+  postId: string | number,
+  commentId: string | number,
   rootPageSize: number,
   childPageSize: number,
   t: TFunction

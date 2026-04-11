@@ -258,8 +258,8 @@ export const ForumApp = () => {
   });
 
   const navigateToComment = useCallback(async (
-    postId: number,
-    commentId: number,
+    postId: string | number,
+    commentId: string | number,
     navigationKey: string
   ) => {
     const navigation = await getCommentNavigation(
@@ -345,7 +345,7 @@ export const ForumApp = () => {
       setCommentNavigationTarget(null);
       setCommentNavigationNotice(null);
 
-      await actionsState.handleSelectPost(windowParams.postId as number);
+      await actionsState.handleSelectPost(windowParams.postId);
       if (cancelled || !windowParams.commentId) {
         return;
       }
@@ -355,7 +355,7 @@ export const ForumApp = () => {
           return;
         }
 
-        await navigateToComment(windowParams.postId as number, windowParams.commentId, routeSignature);
+        await navigateToComment(windowParams.postId, windowParams.commentId, routeSignature);
       } catch (err) {
         if (cancelled) {
           return;

@@ -1,32 +1,51 @@
 export interface ForumNavigationTarget {
-  postId: number;
-  commentId?: number;
+  postId: string;
+  commentId?: string;
 }
 
 export interface ForumWindowParams {
-  postId?: number;
-  commentId?: number;
+  postId?: string;
+  commentId?: string;
   navigationKey?: string;
 }
 
-function normalizePositiveNumber(value: unknown): number | undefined {
-  const numeric = typeof value === 'number'
-    ? value
-    : typeof value === 'string'
-      ? Number(value)
-      : NaN;
+export interface ForumAppParamTarget {
+  postId: string | number;
+  commentId?: string | number;
+}
 
-  if (!Number.isFinite(numeric) || numeric <= 0) {
+function normalizePositiveIntegerString(value: unknown): string | undefined {
+  if (typeof value === 'number') {
+    if (!Number.isSafeInteger(value) || value <= 0) {
+      return undefined;
+    }
+
+    return String(value);
+  }
+
+  if (typeof value !== 'string') {
     return undefined;
   }
 
-  return numeric;
+  const trimmed = value.trim();
+  if (!/^\d+$/.test(trimmed)) {
+    return undefined;
+  }
+
+  const normalized = trimmed.replace(/^0+/, '');
+  return normalized || undefined;
 }
 
-export function buildForumAppParams(target: ForumNavigationTarget): Record<string, unknown> {
-  return target.commentId
-    ? { postId: target.postId, commentId: target.commentId }
-    : { postId: target.postId };
+export function buildForumAppParams(target: ForumAppParamTarget): Record<string, unknown> {
+  const postId = normalizePositiveIntegerString(target.postId);
+  if (!postId) {
+    return {};
+  }
+
+  const commentId = normalizePositiveIntegerString(target.commentId);
+  return commentId
+    ? { postId, commentId }
+    : { postId };
 }
 
 export function parseForumWindowParams(appParams?: Record<string, unknown> | null): ForumWindowParams {
@@ -34,12 +53,12 @@ export function parseForumWindowParams(appParams?: Record<string, unknown> | nul
     return {};
   }
 
-  const postId = normalizePositiveNumber(appParams.postId);
+  const postId = normalizePositiveIntegerString(appParams.postId);
   if (!postId) {
     return {};
   }
 
-  const commentId = normalizePositiveNumber(appParams.commentId);
+  const commentId = normalizePositiveIntegerString(appParams.commentId);
   const rawNavigationKey = appParams.__navigationKey;
   const navigationKey = rawNavigationKey == null ? undefined : String(rawNavigationKey);
 
@@ -62,12 +81,12 @@ export function parseForumNotificationNavigation(extData?: string | null): Forum
       return null;
     }
 
-    const postId = normalizePositiveNumber(parsed.postId);
+    const postId = normalizePositiveIntegerString(parsed.postId);
     if (!postId) {
       return null;
     }
 
-    const commentId = normalizePositiveNumber(parsed.commentId);
+    const commentId = normalizePositiveIntegerString(parsed.commentId);
     return commentId
       ? { postId, commentId }
       : { postId };
@@ -88,12 +107,12 @@ export function parseForumRoutePath(routePath?: string | null): ForumNavigationT
     return null;
   }
 
-  const postId = normalizePositiveNumber(pathname.split('/').pop());
+  const postId = normalizePositiveIntegerString(pathname.split('/').pop());
   if (!postId) {
     return null;
   }
 
-  const commentId = normalizePositiveNumber(new URLSearchParams(queryString).get('commentId'));
+  const commentId = normalizePositiveIntegerString(new URLSearchParams(queryString).get('commentId'));
   return commentId
     ? { postId, commentId }
     : { postId };

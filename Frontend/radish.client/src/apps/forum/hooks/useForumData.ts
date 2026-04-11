@@ -135,10 +135,10 @@ export interface ForumDataActions {
   loadHotTags: () => Promise<void>;
   loadPosts: () => Promise<void>;
   loadTrendingContent: () => Promise<void>;
-  loadPostDetail: (postId: number, answerSortOverride?: QuestionAnswerSort) => Promise<void>;
-  loadComments: (postId: number, pageCount?: number) => Promise<void>;
-  loadQuickReplies: (postId: number) => Promise<void>;
-  loadMoreComments: (postId: number) => Promise<void>;
+  loadPostDetail: (postId: string | number, answerSortOverride?: QuestionAnswerSort) => Promise<void>;
+  loadComments: (postId: string | number, pageCount?: number) => Promise<void>;
+  loadQuickReplies: (postId: string | number) => Promise<void>;
+  loadMoreComments: (postId: string | number) => Promise<void>;
   resetCommentSort: () => void;
 }
 
@@ -404,7 +404,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   };
 
   // 加载帖子详情
-  const loadPostDetail = async (postId: number, answerSortOverride?: QuestionAnswerSort) => {
+  const loadPostDetail = async (postId: string | number, answerSortOverride?: QuestionAnswerSort) => {
     setLoadingPostDetail(true);
     setError(null);
     try {
@@ -425,7 +425,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   };
 
   // 加载评论列表
-  const loadComments = async (postId: number, pageCount = 1) => {
+  const loadComments = async (postId: string | number, pageCount = 1) => {
     setLoadingComments(true);
     setError(null);
     try {
@@ -463,7 +463,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   };
 
   // 加载轻回应墙
-  const loadQuickReplies = async (postId: number) => {
+  const loadQuickReplies = async (postId: string | number) => {
     setLoadingQuickReplies(true);
     setError(null);
     try {
@@ -480,7 +480,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     }
   };
 
-  const loadMoreComments = async (postId: number) => {
+  const loadMoreComments = async (postId: string | number) => {
     if (loadingComments || loadingMoreComments) {
       return;
     }
