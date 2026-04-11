@@ -9,7 +9,12 @@ import type {
   WikiDocumentVo,
 } from '@/apps/wiki/types/wiki';
 import { WikiDocumentStatus, WikiDocumentVisibility } from '@/apps/wiki/types/wiki';
-import type { PublicDocsListRoute, PublicDocsRoute } from '../docsRouteState';
+import {
+  rewritePublicDocsHref,
+  resolvePublicDocsRouteFromHref,
+  type PublicDocsListRoute,
+  type PublicDocsRoute,
+} from '../docsRouteState';
 import { getPublicWikiDocumentBySlug, getPublicWikiList, getPublicWikiTree } from './publicDocsApi';
 import styles from './PublicDocsApp.module.css';
 
@@ -90,6 +95,14 @@ function toStatusText(t: (key: string) => string, status?: number): string {
 
 function buildListRouteKey(): string {
   return 'docs:list';
+}
+
+function getCurrentOrigin(): string {
+  if (typeof window !== 'undefined' && window.location.origin) {
+    return window.location.origin;
+  }
+
+  return 'https://localhost:5000';
 }
 
 function PublicStatusCard({
@@ -257,11 +270,35 @@ const PublicDocsList = ({
       return;
     }
 
-    const scrollTop = restoreScrollTop;
-    const frameId = window.requestAnimationFrame(() => {
-      scrollContainerRef.current?.scrollTo({ top: scrollTop, behavior: 'auto' });
-      onScrollRestored();
-    });
+    let frameId = 0;
+    let attempt = 0;
+    const maxAttempts = 12;
+    const targetScrollTop = restoreScrollTop;
+
+    const restoreScroll = () => {
+      const container = scrollContainerRef.current;
+      if (!container) {
+        onScrollRestored();
+        return;
+      }
+
+      const maxScrollTop = Math.max(container.scrollHeight - container.clientHeight, 0);
+      const nextScrollTop = Math.min(targetScrollTop, maxScrollTop);
+      container.scrollTo({ top: nextScrollTop, behavior: 'auto' });
+
+      const restored = Math.abs(container.scrollTop - nextScrollTop) <= 2;
+      const needsMoreLayout = maxScrollTop + 2 < targetScrollTop;
+
+      if ((!needsMoreLayout && restored) || attempt >= maxAttempts) {
+        onScrollRestored();
+        return;
+      }
+
+      attempt += 1;
+      frameId = window.requestAnimationFrame(restoreScroll);
+    };
+
+    frameId = window.requestAnimationFrame(restoreScroll);
 
     return () => {
       window.cancelAnimationFrame(frameId);
@@ -478,6 +515,7 @@ const PublicDocsDetail = ({ route, displayTimeZone, onBack, onNavigate }: Public
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+  const articleBodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -517,31 +555,53 @@ const PublicDocsDetail = ({ route, displayTimeZone, onBack, onNavigate }: Public
     globalThis.document.title = `${documentDetail.voTitle} · ${t('desktop.apps.document.name')}`;
   }, [documentDetail?.voTitle, t]);
 
+  useEffect(() => {
+    const container = articleBodyRef.current;
+    if (!container) {
+      return;
+    }
+
+    const currentOrigin = getCurrentOrigin();
+    container.querySelectorAll<HTMLAnchorElement>('a[href]').forEach((anchor) => {
+      const href = anchor.getAttribute('href') ?? anchor.href;
+      if (!href) {
+        return;
+      }
+
+      const rewrittenHref = rewritePublicDocsHref(href, currentOrigin);
+      if (rewrittenHref) {
+        anchor.setAttribute('href', rewrittenHref);
+      }
+    });
+  }, [documentDetail?.voId, documentDetail?.voMarkdownContent]);
+
   const handleMarkdownLinkClick = (event: MouseEvent<HTMLDivElement>) => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+      return;
+    }
+
     const target = event.target;
     if (!(target instanceof Element)) {
       return;
     }
 
-    const anchor = target.closest('a');
-    const href = anchor?.getAttribute('href');
-    if (!href || !href.startsWith('/__documents__/')) {
+    const anchor = target.closest<HTMLAnchorElement>('a[href]');
+    if (!anchor || (anchor.target && anchor.target !== '_self')) {
+      return;
+    }
+
+    const href = anchor.getAttribute('href') ?? anchor.href;
+    if (!href) {
+      return;
+    }
+
+    const nextRoute = resolvePublicDocsRouteFromHref(href, getCurrentOrigin());
+    if (!nextRoute) {
       return;
     }
 
     event.preventDefault();
-
-    const [slugPart, anchorPart] = href.replace('/__documents__/', '').split('#');
-    const slug = decodeURIComponent(slugPart || '').trim();
-    if (!slug) {
-      return;
-    }
-
-    onNavigate({
-      kind: 'detail',
-      slug,
-      anchor: anchorPart ? decodeURIComponent(anchorPart) : undefined
-    });
+    onNavigate(nextRoute);
   };
 
   const detailState = loading
@@ -627,7 +687,7 @@ const PublicDocsDetail = ({ route, displayTimeZone, onBack, onNavigate }: Public
               </span>
             </div>
 
-            <div className={styles.articleBody} onClick={handleMarkdownLinkClick}>
+            <div ref={articleBodyRef} className={styles.articleBody} onClick={handleMarkdownLinkClick}>
               <MarkdownRenderer content={documentDetail.voMarkdownContent} className={styles.markdownContent} />
             </div>
           </article>

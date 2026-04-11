@@ -10,6 +10,8 @@ import {
 import {
   buildPublicDocsPath,
   parsePublicDocsRoute,
+  resolvePublicDocsRouteFromHref,
+  rewritePublicDocsHref,
 } from '../src/public/docsRouteState.ts';
 import type { WikiDocumentTreeNodeVo } from '../src/apps/wiki/types/wiki.ts';
 
@@ -128,6 +130,16 @@ test('parsePublicDocsRoute 应按 slug 解析公开文档详情路由并保留 h
   });
 });
 
+test('parsePublicDocsRoute 应兼容 __documents__ 旧路径', () => {
+  const route = parsePublicDocsRoute('/__documents__/changelog', '#v2');
+
+  assert.deepEqual(route, {
+    kind: 'detail',
+    slug: 'changelog',
+    anchor: 'v2'
+  });
+});
+
 test('buildPublicDocsPath 应按 slug 和 anchor 回写公开文档路径', () => {
   const path = buildPublicDocsPath({
     kind: 'detail',
@@ -136,4 +148,23 @@ test('buildPublicDocsPath 应按 slug 和 anchor 回写公开文档路径', () =
   });
 
   assert.equal(path, '/docs/getting-started#intro');
+});
+
+test('resolvePublicDocsRouteFromHref 应兼容绝对 URL 文档内链', () => {
+  const route = resolvePublicDocsRouteFromHref(
+    'https://localhost:5000/__documents__/changelog#release-notes',
+    'https://localhost:5000'
+  );
+
+  assert.deepEqual(route, {
+    kind: 'detail',
+    slug: 'changelog',
+    anchor: 'release-notes'
+  });
+});
+
+test('rewritePublicDocsHref 应把旧文档链接改写为公开 docs 路由', () => {
+  const href = rewritePublicDocsHref('/__documents__/changelog#release-notes', 'https://localhost:5000');
+
+  assert.equal(href, '/docs/changelog#release-notes');
 });

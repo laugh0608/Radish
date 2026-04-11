@@ -38,22 +38,70 @@ function normalizeAnchor(value: string | undefined): string | undefined {
   return normalized || undefined;
 }
 
+function isPublicDocsListPath(pathname: string): boolean {
+  return pathname === '/docs'
+    || pathname === '/docs/'
+    || pathname === '/__documents__'
+    || pathname === '/__documents__/';
+}
+
+function parsePublicDocsDetailRoute(pathname: string, hash: string): PublicDocsDetailRoute | null {
+  const matched = pathname.match(/^\/(?:docs|__documents__)\/([^/?#]+)\/?$/);
+  const slug = normalizeSlug(matched?.[1]);
+  if (!slug) {
+    return null;
+  }
+
+  return {
+    kind: 'detail',
+    slug,
+    anchor: normalizeAnchor(hash)
+  };
+}
+
 export function parsePublicDocsRoute(pathname: string, hash: string): PublicDocsRoute {
-  if (pathname === '/docs' || pathname === '/docs/') {
+  if (isPublicDocsListPath(pathname)) {
     return createDefaultDocsListRoute();
   }
 
-  const matched = pathname.match(/^\/docs\/([^/?#]+)\/?$/);
-  const slug = normalizeSlug(matched?.[1]);
-  if (slug) {
-    return {
-      kind: 'detail',
-      slug,
-      anchor: normalizeAnchor(hash)
-    };
+  const detailRoute = parsePublicDocsDetailRoute(pathname, hash);
+  if (detailRoute) {
+    return detailRoute;
   }
 
   return createDefaultDocsListRoute();
+}
+
+export function resolvePublicDocsRouteFromHref(href: string, currentOrigin: string): PublicDocsRoute | null {
+  const trimmedHref = href.trim();
+  if (!trimmedHref) {
+    return null;
+  }
+
+  try {
+    const baseUrl = new URL(currentOrigin);
+    const resolvedUrl = new URL(trimmedHref, baseUrl);
+    if (resolvedUrl.origin !== baseUrl.origin) {
+      return null;
+    }
+
+    if (isPublicDocsListPath(resolvedUrl.pathname)) {
+      return createDefaultDocsListRoute();
+    }
+
+    return parsePublicDocsDetailRoute(resolvedUrl.pathname, resolvedUrl.hash);
+  } catch {
+    return null;
+  }
+}
+
+export function rewritePublicDocsHref(href: string, currentOrigin: string): string | null {
+  const route = resolvePublicDocsRouteFromHref(href, currentOrigin);
+  if (!route) {
+    return null;
+  }
+
+  return buildPublicDocsPath(route);
 }
 
 export function buildPublicDocsPath(route: PublicDocsRoute): string {

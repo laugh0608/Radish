@@ -28,7 +28,12 @@ type PublicRoute =
   | { app: 'docs'; route: PublicDocsRoute };
 
 function parsePublicRoute(): PublicRoute {
-  if (window.location.pathname === '/docs' || window.location.pathname.startsWith('/docs/')) {
+  if (
+    window.location.pathname === '/docs'
+    || window.location.pathname.startsWith('/docs/')
+    || window.location.pathname === '/__documents__'
+    || window.location.pathname.startsWith('/__documents__/')
+  ) {
     return {
       app: 'docs',
       route: parsePublicDocsRoute(window.location.pathname, window.location.hash)

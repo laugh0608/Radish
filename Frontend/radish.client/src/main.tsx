@@ -22,6 +22,8 @@ const isPublicContentRoute = isBrowser && (
   || window.location.pathname.startsWith('/forum/')
   || window.location.pathname === '/docs'
   || window.location.pathname.startsWith('/docs/')
+  || window.location.pathname === '/__documents__'
+  || window.location.pathname.startsWith('/__documents__/')
 );
 
 const params = new URLSearchParams(window.location.search);
