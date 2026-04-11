@@ -321,9 +321,12 @@ export const ProfileApp = () => {
       }
     }
 
-    if (item.voTargetType === 'Post' && targetId) {
-      openApp('forum', buildForumAppParams({ postId: targetId }));
-      return;
+    if (item.voTargetType === 'Post') {
+      const forumParams = buildForumAppParams({ postId: item.voTargetId });
+      if ('postId' in forumParams) {
+        openApp('forum', forumParams);
+        return;
+      }
     }
 
     if (item.voTargetType === 'Product' && targetId) {

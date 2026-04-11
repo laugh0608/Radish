@@ -401,9 +401,12 @@ export const NotificationApp = () => {
       return;
     }
 
-    if (businessType === 'Post' && notification.businessId) {
-      openOrReuseApp('forum', buildForumAppParams({ postId: notification.businessId }));
-      return;
+    if (businessType === 'Post' && notification.businessId != null) {
+      const forumParams = buildForumAppParams({ postId: notification.businessId });
+      if ('postId' in forumParams) {
+        openOrReuseApp('forum', forumParams);
+        return;
+      }
     }
 
     if (businessType === 'Comment') {

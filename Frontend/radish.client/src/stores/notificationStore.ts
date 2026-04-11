@@ -23,7 +23,7 @@ export interface NotificationItem {
   /** 创建时间 */
   createdAt: string;
   /** 业务 ID */
-  businessId?: number | null;
+  businessId?: number | string | null;
   /** 业务类型 */
   businessType?: string | null;
   /** 触发者 ID */

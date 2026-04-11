@@ -14,8 +14,8 @@ internal static class NotificationNavigationHelper
         return JsonSerializer.Serialize(new
         {
             app = "forum",
-            postId,
-            commentId = commentId > 0 ? commentId : null
+            postId = postId.ToString(),
+            commentId = commentId > 0 ? commentId.Value.ToString() : null
         });
     }
 }

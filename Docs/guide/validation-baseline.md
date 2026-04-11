@@ -166,7 +166,15 @@ npm run validate:ci
 
 - 对外对象 ID 是否仍被解析为前端 `number`
 - 大整数 ID 是否在解析、序列化、回写 URL 或透传 app params 时保持原始字符串
+- 若导航 JSON 由服务端内部自行 `JsonSerializer` 生成，需额外确认其中的对象 ID 是否已显式写成字符串；不能默认依赖 API / SignalR 的全局 `long -> string` converter
 - forum 当前主线相关入口若命中上述场景，默认按阻断级回归处理，因为仓库里已经发生过 Snowflake 大整数被截断导致“对象存在但打开失败”的真实故障
+
+当前批次与 forum 主线直接相关的人工确认面：
+
+- 公开阅读：`/forum/post/:postId` 直链在移动公开壳层下打开时，帖子 ID 保持原始字符串
+- 通知跳转：通知中心点击 forum 相关通知时，优先走字符串化 `extData`，不因大整数 ID 被前端当作 `number` 拒绝
+- 浏览回跳：个人主页浏览记录命中 forum 帖子时，`routePath / targetId` 回跳不再经过 `Number(...)` 降精度
+- 深链 / 窗口参数：`openOrReuseApp('forum', appParams)` 与 forum 窗口首屏解析对 `postId / commentId` 继续保持字符串口径
 
 ### 1. 日常提交前
 

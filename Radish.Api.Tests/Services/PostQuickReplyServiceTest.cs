@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.Extensions.Logging;
@@ -49,7 +48,7 @@ public class PostQuickReplyServiceTest
         };
 
         postRepository
-            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<Post, bool>>?>()))
+            .Setup(repository => repository.QueryByIdAsync(1001))
             .ReturnsAsync(post);
 
         quickReplyRepository
@@ -105,7 +104,7 @@ public class PostQuickReplyServiceTest
                 dto.ReceiverUserIds.Contains(2001) &&
                 dto.ExtData != null &&
                 dto.ExtData.Contains("\"app\":\"forum\"") &&
-                dto.ExtData.Contains("\"postId\":1001"))))
+                dto.ExtData.Contains("\"postId\":\"1001\""))))
             .ReturnsAsync(7001);
 
         var service = CreateService(
@@ -154,7 +153,7 @@ public class PostQuickReplyServiceTest
         };
 
         postRepository
-            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<Post, bool>>?>()))
+            .Setup(repository => repository.QueryByIdAsync(1002))
             .ReturnsAsync(post);
 
         quickReplyRepository
