@@ -17,12 +17,17 @@ const PublicEntry = lazy(() => import('./public/PublicEntry.tsx').then((module) 
 
 const isBrowser = typeof window !== 'undefined';
 const isOidcCallback = isBrowser && window.location.pathname === '/oidc/callback';
-const isPublicForumRoute = isBrowser && (window.location.pathname === '/forum' || window.location.pathname.startsWith('/forum/'));
+const isPublicContentRoute = isBrowser && (
+  window.location.pathname === '/forum'
+  || window.location.pathname.startsWith('/forum/')
+  || window.location.pathname === '/docs'
+  || window.location.pathname.startsWith('/docs/')
+);
 
 const params = new URLSearchParams(window.location.search);
 const isDemo = params.has('demo');
 
-const Page = isOidcCallback || isDemo ? App : isPublicForumRoute ? PublicEntry : Shell;
+const Page = isOidcCallback || isDemo ? App : isPublicContentRoute ? PublicEntry : Shell;
 
 initializeTheme();
 void applySiteBranding(getApiBaseUrl());

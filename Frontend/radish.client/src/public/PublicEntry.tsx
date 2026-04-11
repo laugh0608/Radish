@@ -1,120 +1,72 @@
 import { useCallback, useEffect, useState } from 'react';
 import { PublicForumApp } from './forum/PublicForumApp';
+import { PublicDocsApp } from './docs/PublicDocsApp';
+import {
+  buildPublicForumPath,
+  createDefaultListRoute,
+  parsePublicForumRoute,
+} from './forumRouteState';
+import {
+  buildPublicDocsPath,
+  createDefaultDocsListRoute,
+  parsePublicDocsRoute,
+} from './docsRouteState';
+import type {
+  PublicForumListRoute,
+  PublicForumRoute,
+} from './forumRouteState';
+import type {
+  PublicDocsListRoute,
+  PublicDocsRoute,
+} from './docsRouteState';
+export type {
+  PublicListSort,
+} from './forumRouteState';
 
-export type PublicListSort = 'newest' | 'hottest';
+type PublicRoute =
+  | { app: 'forum'; route: PublicForumRoute }
+  | { app: 'docs'; route: PublicDocsRoute };
 
-export interface PublicForumListRoute {
-  kind: 'list';
-  categoryId: number | null;
-  sortBy: PublicListSort;
-  page: number;
-}
+function parsePublicRoute(): PublicRoute {
+  if (window.location.pathname === '/docs' || window.location.pathname.startsWith('/docs/')) {
+    return {
+      app: 'docs',
+      route: parsePublicDocsRoute(window.location.pathname, window.location.hash)
+    };
+  }
 
-export interface PublicForumDetailRoute {
-  kind: 'detail';
-  postId: string;
-}
-
-export type PublicForumRoute = PublicForumListRoute | PublicForumDetailRoute;
-
-function createDefaultListRoute(): PublicForumListRoute {
   return {
-    kind: 'list',
-    categoryId: null,
-    sortBy: 'newest',
-    page: 1
+    app: 'forum',
+    route: parsePublicForumRoute(window.location.pathname, window.location.search)
   };
 }
 
-function normalizePositiveInteger(value: string | undefined): number | undefined {
-  if (!value) {
-    return undefined;
-  }
-
-  const parsed = Number(value);
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    return undefined;
-  }
-
-  return parsed;
-}
-
-function normalizePositiveIntegerString(value: string | undefined): string | undefined {
-  if (!value) {
-    return undefined;
-  }
-
-  const normalized = value.trim();
-  if (!/^[1-9]\d*$/.test(normalized)) {
-    return undefined;
-  }
-
-  return normalized;
-}
-
-function normalizeSortBy(value: string | null): PublicListSort {
-  return value === 'hottest' ? 'hottest' : 'newest';
-}
-
-function parseListRoute(search: string): PublicForumListRoute {
-  const params = new URLSearchParams(search);
-  return {
-    kind: 'list',
-    categoryId: normalizePositiveInteger(params.get('category') ?? undefined) ?? null,
-    sortBy: normalizeSortBy(params.get('sort')),
-    page: normalizePositiveInteger(params.get('page') ?? undefined) ?? 1
-  };
-}
-
-function parsePublicForumRoute(pathname: string, search: string): PublicForumRoute {
-  if (pathname === '/forum' || pathname === '/forum/') {
-    return parseListRoute(search);
-  }
-
-  const matched = pathname.match(/^\/forum\/post\/(\d+)\/?$/);
-  const postId = normalizePositiveIntegerString(matched?.[1]);
-  if (postId) {
-    return { kind: 'detail', postId };
-  }
-
-  return parseListRoute(search);
-}
-
-function buildPublicForumPath(route: PublicForumRoute): string {
-  if (route.kind === 'detail') {
-    return `/forum/post/${route.postId}`;
-  }
-
-  const search = new URLSearchParams();
-  if (route.categoryId) {
-    search.set('category', String(route.categoryId));
-  }
-  if (route.sortBy !== 'newest') {
-    search.set('sort', route.sortBy);
-  }
-  if (route.page > 1) {
-    search.set('page', String(route.page));
-  }
-
-  const queryString = search.toString();
-  return queryString ? `/forum?${queryString}` : '/forum';
+function buildPublicPath(nextRoute: PublicRoute): string {
+  return nextRoute.app === 'docs'
+    ? buildPublicDocsPath(nextRoute.route)
+    : buildPublicForumPath(nextRoute.route);
 }
 
 export const PublicEntry = () => {
-  const [route, setRoute] = useState<PublicForumRoute>(() =>
-    parsePublicForumRoute(window.location.pathname, window.location.search)
-  );
+  const [route, setRoute] = useState<PublicRoute>(() => parsePublicRoute());
   const [lastListRoute, setLastListRoute] = useState<PublicForumListRoute>(() => {
     const parsedRoute = parsePublicForumRoute(window.location.pathname, window.location.search);
     return parsedRoute.kind === 'list' ? parsedRoute : createDefaultListRoute();
   });
+  const [lastDocsListRoute, setLastDocsListRoute] = useState<PublicDocsListRoute>(() => {
+    const parsedRoute = parsePublicDocsRoute(window.location.pathname, window.location.hash);
+    return parsedRoute.kind === 'list' ? parsedRoute : createDefaultDocsListRoute();
+  });
 
   useEffect(() => {
     const handlePopState = () => {
-      const nextRoute = parsePublicForumRoute(window.location.pathname, window.location.search);
+      const nextRoute = parsePublicRoute();
       setRoute(nextRoute);
-      if (nextRoute.kind === 'list') {
-        setLastListRoute(nextRoute);
+      if (nextRoute.app === 'forum' && nextRoute.route.kind === 'list') {
+        setLastListRoute(nextRoute.route);
+      }
+      if (nextRoute.app === 'docs' && nextRoute.route.kind === 'list') {
+        setLastDocsListRoute(nextRoute.route);
       }
     };
 
@@ -124,26 +76,35 @@ export const PublicEntry = () => {
     };
   }, []);
 
-  const navigateToRoute = useCallback((nextRoute: PublicForumRoute, options?: { replace?: boolean }) => {
-    const nextPath = buildPublicForumPath(nextRoute);
-    const currentPath = `${window.location.pathname}${window.location.search}`;
+  const navigateToRoute = useCallback((nextRoute: PublicRoute, options?: { replace?: boolean }) => {
+    const nextPath = buildPublicPath(nextRoute);
+    const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
     if (options?.replace) {
       window.history.replaceState({}, '', nextPath);
     } else if (currentPath !== nextPath) {
       window.history.pushState({}, '', nextPath);
     }
 
-    if (nextRoute.kind === 'list') {
-      setLastListRoute(nextRoute);
+    if (nextRoute.app === 'forum' && nextRoute.route.kind === 'list') {
+      setLastListRoute(nextRoute.route);
+    }
+    if (nextRoute.app === 'docs' && nextRoute.route.kind === 'list') {
+      setLastDocsListRoute(nextRoute.route);
     }
     setRoute(nextRoute);
   }, []);
 
-  return (
+  return route.app === 'docs' ? (
+    <PublicDocsApp
+      route={route.route}
+      fallbackListRoute={lastDocsListRoute}
+      onNavigate={(nextRoute, options) => navigateToRoute({ app: 'docs', route: nextRoute }, options)}
+    />
+  ) : (
     <PublicForumApp
-      route={route}
+      route={route.route}
       fallbackListRoute={lastListRoute}
-      onNavigate={navigateToRoute}
+      onNavigate={(nextRoute, options) => navigateToRoute({ app: 'forum', route: nextRoute }, options)}
     />
   );
 };

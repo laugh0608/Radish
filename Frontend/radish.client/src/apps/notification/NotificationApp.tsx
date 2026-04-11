@@ -418,8 +418,11 @@ export const NotificationApp = () => {
       const targetUserId = notification.type === 'follow'
         ? (notification.triggerId ?? notification.businessId ?? 0)
         : (notification.businessId ?? notification.triggerId ?? 0);
+      const hasTargetUserId = typeof targetUserId === 'string'
+        ? targetUserId.trim().length > 0
+        : targetUserId > 0;
 
-      if (targetUserId > 0) {
+      if (hasTargetUserId) {
         if (String(targetUserId) === String(currentUserId ?? 0)) {
           openApp('profile');
         } else {

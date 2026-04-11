@@ -7,6 +7,10 @@ import {
   flattenTreeOptions,
   getSuggestedSortValue,
 } from '../src/apps/wiki/wikiApp.helpers.ts';
+import {
+  buildPublicDocsPath,
+  parsePublicDocsRoute,
+} from '../src/public/docsRouteState.ts';
 import type { WikiDocumentTreeNodeVo } from '../src/apps/wiki/types/wiki.ts';
 
 const mockTree: WikiDocumentTreeNodeVo[] = [
@@ -112,4 +116,24 @@ test('buildWikiListUrl 应按回收站筛选拼接参数', () => {
     url,
     '/api/v1/Wiki/GetList?pageIndex=1&pageSize=100&keyword=guide&status=1&includeDeleted=true&deletedOnly=true'
   );
+});
+
+test('parsePublicDocsRoute 应按 slug 解析公开文档详情路由并保留 hash anchor', () => {
+  const route = parsePublicDocsRoute('/docs/getting-started', '#intro');
+
+  assert.deepEqual(route, {
+    kind: 'detail',
+    slug: 'getting-started',
+    anchor: 'intro'
+  });
+});
+
+test('buildPublicDocsPath 应按 slug 和 anchor 回写公开文档路径', () => {
+  const path = buildPublicDocsPath({
+    kind: 'detail',
+    slug: 'getting-started',
+    anchor: 'intro'
+  });
+
+  assert.equal(path, '/docs/getting-started#intro');
 });

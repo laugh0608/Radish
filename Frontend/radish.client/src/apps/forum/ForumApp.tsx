@@ -340,6 +340,10 @@ export const ForumApp = () => {
     let cancelled = false;
 
     const openPostFromWindow = async () => {
+      if (!windowParams.postId) {
+        return;
+      }
+
       setIsSearchView(false);
       dataState.setSelectedTagName(null);
       dataState.setSelectedCategoryId(null);

@@ -23,7 +23,11 @@ import { PostCard } from '@/apps/forum/components/PostCard';
 import { PostDetail as ForumPostDetail } from '@/apps/forum/components/PostDetail';
 import { PostQuickReplyWall } from '@/apps/forum/components/PostQuickReplyWall';
 import { CommentTree } from '@/apps/forum/components/CommentTree';
-import type { PublicForumListRoute, PublicForumRoute, PublicListSort } from '../PublicEntry';
+import type { PublicForumListRoute, PublicForumRoute, PublicListSort } from '../forumRouteState';
+import {
+  resolvePublicForumDetailLoadState,
+  resolvePublicForumReadSectionState,
+} from './publicForumViewState';
 import styles from './PublicForumApp.module.css';
 
 interface PublicForumAppProps {
@@ -61,6 +65,71 @@ function buildVisiblePages(currentPage: number, totalPages: number, maxVisible: 
 
 function buildListRouteKey(route: PublicForumListRoute): string {
   return `${route.categoryId ?? 'all'}:${route.sortBy}:${route.page}`;
+}
+
+type PublicStatusTone = 'loading' | 'empty' | 'error' | 'notFound' | 'info';
+
+interface PublicStatusCardProps {
+  tone: PublicStatusTone;
+  title: string;
+  description: string;
+  compact?: boolean;
+  primaryAction?: {
+    label: string;
+    onClick: () => void;
+  };
+  secondaryAction?: {
+    label: string;
+    onClick: () => void;
+  };
+}
+
+function PublicStatusCard({
+  tone,
+  title,
+  description,
+  compact = false,
+  primaryAction,
+  secondaryAction
+}: PublicStatusCardProps) {
+  const icon = tone === 'loading'
+    ? 'mdi:progress-clock'
+    : tone === 'empty'
+      ? 'mdi:text-box-search-outline'
+      : tone === 'notFound'
+        ? 'mdi:file-search-outline'
+        : tone === 'info'
+          ? 'mdi:information-outline'
+          : 'mdi:alert-circle-outline';
+
+  return (
+    <div
+      className={`${styles.statusCard} ${compact ? styles.statusCardCompact : ''}`}
+      data-tone={tone}
+    >
+      <div className={styles.statusIcon}>
+        <Icon icon={icon} size={compact ? 18 : 22} />
+      </div>
+      <div className={styles.statusBody}>
+        <h2 className={styles.statusTitle}>{title}</h2>
+        <p className={styles.statusDescription}>{description}</p>
+        {(primaryAction || secondaryAction) && (
+          <div className={styles.statusActions}>
+            {primaryAction && (
+              <button type="button" className={styles.retryButton} onClick={primaryAction.onClick}>
+                {primaryAction.label}
+              </button>
+            )}
+            {secondaryAction && (
+              <button type="button" className={styles.secondaryButton} onClick={secondaryAction.onClick}>
+                {secondaryAction.label}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export const PublicForumApp = ({ route, fallbackListRoute, onNavigate }: PublicForumAppProps) => {
@@ -189,10 +258,12 @@ const PublicForumList = ({
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [postGodComments, setPostGodComments] = useState<Map<string, CommentHighlight>>(new Map());
   const [currentPage, setCurrentPage] = useState(routeState.page);
+  const [totalPosts, setTotalPosts] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [loadingCategories, setLoadingCategories] = useState(false);
   const [loadingPosts, setLoadingPosts] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [categoryError, setCategoryError] = useState<string | null>(null);
+  const [postError, setPostError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const [isCompactViewport, setIsCompactViewport] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth <= 720 : false
@@ -204,6 +275,7 @@ const PublicForumList = ({
 
     const loadCategories = async () => {
       setLoadingCategories(true);
+      setCategoryError(null);
       try {
         const data = await getTopCategories(t);
         if (!cancelled) {
@@ -212,7 +284,7 @@ const PublicForumList = ({
       } catch (err) {
         if (!cancelled) {
           const message = err instanceof Error ? err.message : String(err);
-          setError(message);
+          setCategoryError(message);
         }
       } finally {
         if (!cancelled) {
@@ -225,7 +297,7 @@ const PublicForumList = ({
     return () => {
       cancelled = true;
     };
-  }, [t]);
+  }, [reloadToken, t]);
 
   useEffect(() => {
     setSelectedCategoryId(routeState.categoryId);
@@ -279,7 +351,7 @@ const PublicForumList = ({
 
     const loadPosts = async () => {
       setLoadingPosts(true);
-      setError(null);
+      setPostError(null);
       try {
         const pageModel = await getPostList(
           selectedCategoryId,
@@ -299,6 +371,7 @@ const PublicForumList = ({
         }
 
         setPosts(pageModel.data);
+        setTotalPosts(pageModel.dataCount ?? 0);
         setTotalPages(pageModel.pageCount);
 
         if (!pageModel.data.length) {
@@ -329,8 +402,9 @@ const PublicForumList = ({
         const message = err instanceof Error ? err.message : String(err);
         setPosts([]);
         setPostGodComments(new Map());
+        setTotalPosts(0);
         setTotalPages(0);
-        setError(message);
+        setPostError(message);
       } finally {
         if (requestId === postsRequestIdRef.current) {
           setLoadingPosts(false);
@@ -349,6 +423,12 @@ const PublicForumList = ({
   const visiblePages = useMemo(() => {
     return buildVisiblePages(currentPage, totalPages, isCompactViewport ? 5 : 7);
   }, [currentPage, isCompactViewport, totalPages]);
+  const listState = resolvePublicForumReadSectionState({
+    loading: loadingPosts,
+    error: postError,
+    itemCount: posts.length,
+    totalCount: totalPosts
+  });
 
   return (
     <section className={`${styles.sectionCard} ${styles.listSectionCard}`}>
@@ -400,6 +480,17 @@ const PublicForumList = ({
       <div className={styles.categoryRail}>
         {loadingCategories ? (
           <span className={styles.categoryHint}>{t('forum.category.loading')}</span>
+        ) : categoryError ? (
+          <div className={styles.inlineNotice} data-tone="warning">
+            <span className={styles.inlineNoticeText}>{t('forum.public.categoryFallback')}</span>
+            <button
+              type="button"
+              className={styles.inlineTextButton}
+              onClick={() => setReloadToken((current) => current + 1)}
+            >
+              {t('common.retry')}
+            </button>
+          </div>
         ) : categories.length === 0 ? (
           <span className={styles.categoryHint}>{t('forum.category.empty')}</span>
         ) : (
@@ -419,26 +510,29 @@ const PublicForumList = ({
         )}
       </div>
 
-      {error && (
-        <div className={styles.errorBlock}>
-          <p className={styles.errorText}>{t('common.errorPrefix')}{error}</p>
-          <div className={styles.errorActions}>
-            <button
-              type="button"
-              className={styles.retryButton}
-              onClick={() => setReloadToken((current) => current + 1)}
-            >
-              {t('common.retry')}
-            </button>
-          </div>
-        </div>
-      )}
-
       <div className={styles.postList}>
-        {loadingPosts ? (
-          <p className={styles.placeholder}>{t('forum.loadingPosts')}</p>
-        ) : posts.length === 0 ? (
-          <p className={styles.placeholder}>{t('forum.emptyPosts')}</p>
+        {listState === 'loading' ? (
+          <PublicStatusCard
+            tone="loading"
+            title={t('forum.public.loadingTitle')}
+            description={t('forum.public.loadingDescription')}
+          />
+        ) : listState === 'error' ? (
+          <PublicStatusCard
+            tone="error"
+            title={t('forum.public.listErrorTitle')}
+            description={postError || t('forum.public.loadingDescription')}
+            primaryAction={{
+              label: t('common.retry'),
+              onClick: () => setReloadToken((current) => current + 1)
+            }}
+          />
+        ) : listState === 'empty' ? (
+          <PublicStatusCard
+            tone="empty"
+            title={t('forum.public.emptyTitle')}
+            description={t('forum.public.emptyDescription')}
+          />
         ) : (
           posts.map((post) => {
             const godComment = getForumCommentHighlight(postGodComments, post.voId);
@@ -464,7 +558,7 @@ const PublicForumList = ({
           <button
             type="button"
             className={styles.paginationButton}
-            onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+            onClick={() => setCurrentPage((page: number) => Math.max(1, page - 1))}
             disabled={currentPage === 1}
           >
             ‹
@@ -482,7 +576,7 @@ const PublicForumList = ({
           <button
             type="button"
             className={styles.paginationButton}
-            onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+            onClick={() => setCurrentPage((page: number) => Math.min(totalPages, page + 1))}
             disabled={currentPage === totalPages}
           >
             ›
@@ -512,7 +606,10 @@ const PublicForumDetail = ({ postId, displayTimeZone, onBack }: PublicForumDetai
   const [loadingComments, setLoadingComments] = useState(false);
   const [loadingQuickReplies, setLoadingQuickReplies] = useState(false);
   const [loadingMoreComments, setLoadingMoreComments] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [postError, setPostError] = useState<string | null>(null);
+  const [commentError, setCommentError] = useState<string | null>(null);
+  const [quickReplyError, setQuickReplyError] = useState<string | null>(null);
+  const [commentPagingError, setCommentPagingError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const requestIdRef = useRef(0);
   const commentPageSize = 20;
@@ -524,7 +621,10 @@ const PublicForumDetail = ({ postId, displayTimeZone, onBack }: PublicForumDetai
       setLoadingPost(true);
       setLoadingComments(true);
       setLoadingQuickReplies(true);
-      setError(null);
+      setPostError(null);
+      setCommentError(null);
+      setQuickReplyError(null);
+      setCommentPagingError(null);
 
       try {
         const postDetail = await getPostById(postId, t);
@@ -545,7 +645,7 @@ const PublicForumDetail = ({ postId, displayTimeZone, onBack }: PublicForumDetai
         setQuickReplyTotal(0);
         setCommentTotal(0);
         setLoadedCommentPages(0);
-        setError(message);
+        setPostError(message);
         return;
       } finally {
         if (requestId === requestIdRef.current) {
@@ -568,6 +668,7 @@ const PublicForumDetail = ({ postId, displayTimeZone, onBack }: PublicForumDetai
           setComments(rootComments.voItems ?? []);
           setCommentTotal(rootComments.voTotal ?? 0);
           setLoadedCommentPages((rootComments.voItems?.length ?? 0) > 0 ? 1 : 0);
+          setCommentError(null);
         } else {
           setComments([]);
           setCommentTotal(0);
@@ -575,20 +676,21 @@ const PublicForumDetail = ({ postId, displayTimeZone, onBack }: PublicForumDetai
           const message = rootCommentsResult.reason instanceof Error
             ? rootCommentsResult.reason.message
             : String(rootCommentsResult.reason);
-          setError((current) => current ?? message);
+          setCommentError(message);
         }
 
         if (replyWallResult.status === 'fulfilled') {
           const replyWall = replyWallResult.value;
           setQuickReplies(replyWall.voItems ?? []);
           setQuickReplyTotal(replyWall.voTotal ?? 0);
+          setQuickReplyError(null);
         } else {
           setQuickReplies([]);
           setQuickReplyTotal(0);
           const message = replyWallResult.reason instanceof Error
             ? replyWallResult.reason.message
             : String(replyWallResult.reason);
-          setError((current) => current ?? message);
+          setQuickReplyError(message);
         }
       } finally {
         if (requestId === requestIdRef.current) {
@@ -615,6 +717,7 @@ const PublicForumDetail = ({ postId, displayTimeZone, onBack }: PublicForumDetai
     }
 
     setLoadingMoreComments(true);
+    setCommentPagingError(null);
     try {
       const nextPage = loadedCommentPages + 1;
       const pageData = await getRootCommentsPage(postId, nextPage, commentPageSize, commentSortBy || 'default', t);
@@ -631,7 +734,7 @@ const PublicForumDetail = ({ postId, displayTimeZone, onBack }: PublicForumDetai
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      setError(message);
+      setCommentPagingError(message);
     } finally {
       setLoadingMoreComments(false);
     }
@@ -643,14 +746,37 @@ const PublicForumDetail = ({ postId, displayTimeZone, onBack }: PublicForumDetai
     pageSize: number
   ): Promise<CommentNode[]> => {
     try {
+      setCommentPagingError(null);
       const result = await getChildComments(parentId, pageIndex, pageSize, t);
       return result.voItems ?? [];
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      setError(message);
+      setCommentPagingError(message);
       return [];
     }
   };
+  const detailState = resolvePublicForumDetailLoadState({
+    loadingPost,
+    hasPost: !!post,
+    postError
+  });
+  const quickReplySectionState = resolvePublicForumReadSectionState({
+    loading: loadingQuickReplies,
+    error: quickReplyError,
+    itemCount: quickReplies.length,
+    totalCount: quickReplyTotal
+  });
+  const commentSectionState = resolvePublicForumReadSectionState({
+    loading: loadingComments,
+    error: commentError,
+    itemCount: comments.length,
+    totalCount: commentTotal
+  });
+  const commentSortLabel = commentSortBy === 'newest'
+    ? t('forum.sort.newest')
+    : commentSortBy === 'hottest'
+      ? t('forum.sort.hottest')
+      : t('forum.public.commentSortDefault');
 
   return (
     <section className={`${styles.sectionCard} ${styles.detailSectionCard}`}>
@@ -661,72 +787,162 @@ const PublicForumDetail = ({ postId, displayTimeZone, onBack }: PublicForumDetai
         </button>
       </div>
 
-      {error && (
-        <div className={styles.errorBlock}>
-          <p className={styles.errorText}>{t('common.errorPrefix')}{error}</p>
-          <div className={styles.errorActions}>
-            <button
-              type="button"
-              className={styles.retryButton}
-              onClick={() => setReloadToken((current) => current + 1)}
-            >
-              {t('common.retry')}
-            </button>
-          </div>
-        </div>
-      )}
-
       <div className={styles.detailStack}>
-        {post && (
+        {detailState.kind === 'loading' && (
+          <PublicStatusCard
+            tone="loading"
+            title={t('forum.public.loadingTitle')}
+            description={t('forum.public.loadingDescription')}
+          />
+        )}
+
+        {detailState.kind === 'notFound' && (
+          <PublicStatusCard
+            tone="notFound"
+            title={t('forum.public.postNotFoundTitle')}
+            description={t('forum.public.postNotFoundDescription')}
+            secondaryAction={{
+              label: t('forum.backToList'),
+              onClick: onBack
+            }}
+          />
+        )}
+
+        {detailState.kind === 'error' && (
+          <PublicStatusCard
+            tone="error"
+            title={t('forum.public.postErrorTitle')}
+            description={detailState.message}
+            primaryAction={{
+              label: t('common.retry'),
+              onClick: () => setReloadToken((current) => current + 1)
+            }}
+            secondaryAction={{
+              label: t('forum.backToList'),
+              onClick: onBack
+            }}
+          />
+        )}
+
+        {detailState.kind === 'ready' && post && (
           <div className={styles.detailMetaRail}>
+            <span className={styles.readOnlyBadge}>{t('forum.public.readOnlyBadge')}</span>
             <span className={styles.detailMetaChip}>{t('forum.postDetail.views', { count: post.voViewCount ?? 0 })}</span>
             <span className={styles.detailMetaChip}>{t('forum.quickReply.total', { count: quickReplyTotal })}</span>
             <span className={styles.detailMetaChip}>{t('forum.postDetail.commentCount', { count: commentTotal })}</span>
           </div>
         )}
 
-        <ForumPostDetail
-          post={post}
-          loading={loadingPost}
-          displayTimeZone={displayTimeZone}
-          mode="readOnly"
-          isAuthenticated={false}
-          showSectionTitle={false}
-        />
-
-        {post && (
+        {detailState.kind === 'ready' && (
           <>
-            <PostQuickReplyWall
-              replies={quickReplies}
-              total={quickReplyTotal}
-              loading={loadingQuickReplies}
-              isAuthenticated={false}
-              currentUserId={0}
+            <div className={styles.detailContext}>
+              <p className={styles.detailContextText}>{t('forum.public.readOnlyDescription')}</p>
+            </div>
+
+            <ForumPostDetail
+              post={post}
+              loading={false}
+              displayTimeZone={displayTimeZone}
               mode="readOnly"
+              isAuthenticated={false}
+              showSectionTitle={false}
             />
+
+            {quickReplySectionState === 'error' ? (
+              <section className={styles.sectionShell}>
+                <div className={styles.sectionShellHeader}>
+                  <h2 className={styles.sectionShellTitle}>{t('forum.quickReply.title')}</h2>
+                  <span className={styles.detailMetaChip}>{t('forum.quickReply.total', { count: quickReplyTotal })}</span>
+                </div>
+                <PublicStatusCard
+                  tone="error"
+                  compact={true}
+                  title={t('forum.public.partialErrorTitle')}
+                  description={quickReplyError || t('forum.public.quickRepliesErrorDescription')}
+                  primaryAction={{
+                    label: t('common.retry'),
+                    onClick: () => setReloadToken((current) => current + 1)
+                  }}
+                />
+              </section>
+            ) : (
+              <>
+                {quickReplyError && (
+                  <div className={styles.inlineNotice} data-tone="warning">
+                    <span className={styles.inlineNoticeText}>{t('forum.public.quickRepliesErrorDescription')}</span>
+                  </div>
+                )}
+                <PostQuickReplyWall
+                  replies={quickReplies}
+                  total={quickReplyTotal}
+                  loading={loadingQuickReplies}
+                  isAuthenticated={false}
+                  currentUserId={0}
+                  mode="readOnly"
+                />
+              </>
+            )}
 
             <section className={styles.commentSection}>
               <div className={styles.commentHeading}>
-                <h2 className={styles.commentTitle}>{t('forum.commentTree.title')}</h2>
-                <p className={styles.commentIntro}>{t('forum.quickReply.discussionSubtitle')}</p>
+                <div>
+                  <h2 className={styles.commentTitle}>{t('forum.commentTree.title')}</h2>
+                  <p className={styles.commentIntro}>{t('forum.quickReply.discussionSubtitle')}</p>
+                </div>
+                <div className={styles.commentSummary}>
+                  <span className={styles.commentSummaryChip}>
+                    {t('forum.public.loadedComments', { loaded: comments.length, total: commentTotal })}
+                  </span>
+                  <span className={styles.commentSummaryChip}>
+                    {t('forum.public.commentOrder', { label: commentSortLabel })}
+                  </span>
+                </div>
               </div>
 
-              <CommentTree
-                comments={comments}
-                loading={loadingComments}
-                loadingMoreRootComments={loadingMoreComments}
-                hasPost={true}
-                displayTimeZone={displayTimeZone}
-                currentUserId={0}
-                rootCommentTotal={commentTotal}
-                loadedRootCommentCount={comments.length}
-                rootCommentPageSize={commentPageSize}
-                sortBy={commentSortBy}
-                onSortChange={setCommentSortBy}
-                onLoadMoreChildren={handleLoadMoreChildren}
-                onLoadMoreRootComments={handleLoadMoreComments}
-                showTitle={false}
-              />
+              {commentPagingError && (
+                <div className={styles.inlineNotice} data-tone="warning">
+                  <span className={styles.inlineNoticeText}>
+                    {t('forum.public.commentPagingErrorDescription')}
+                  </span>
+                </div>
+              )}
+
+              {commentSectionState === 'error' ? (
+                <PublicStatusCard
+                  tone="error"
+                  compact={true}
+                  title={t('forum.public.partialErrorTitle')}
+                  description={commentError || t('forum.public.commentsErrorDescription')}
+                  primaryAction={{
+                    label: t('common.retry'),
+                    onClick: () => setReloadToken((current) => current + 1)
+                  }}
+                />
+              ) : (
+                <>
+                  {commentError && (
+                    <div className={styles.inlineNotice} data-tone="warning">
+                      <span className={styles.inlineNoticeText}>{t('forum.public.commentsErrorDescription')}</span>
+                    </div>
+                  )}
+                  <CommentTree
+                    comments={comments}
+                    loading={loadingComments}
+                    loadingMoreRootComments={loadingMoreComments}
+                    hasPost={true}
+                    displayTimeZone={displayTimeZone}
+                    currentUserId={0}
+                    rootCommentTotal={commentTotal}
+                    loadedRootCommentCount={comments.length}
+                    rootCommentPageSize={commentPageSize}
+                    sortBy={commentSortBy}
+                    onSortChange={setCommentSortBy}
+                    onLoadMoreChildren={handleLoadMoreChildren}
+                    onLoadMoreRootComments={handleLoadMoreComments}
+                    showTitle={false}
+                  />
+                </>
+              )}
             </section>
           </>
         )}
