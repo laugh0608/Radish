@@ -247,8 +247,11 @@ export const PublicDocsApp = ({ route, fallbackListRoute, onNavigate }: PublicDo
     }
 
     if (previousRoute.kind === 'list' && route.kind === 'detail') {
-      captureListScrollSnapshot();
-      setPendingRestoreScrollTop(null);
+      if (!listScrollSnapshotRef.current || listScrollSnapshotRef.current.routeKey !== buildListRouteKey()) {
+        captureListScrollSnapshot();
+      } else {
+        setPendingRestoreScrollTop(null);
+      }
       writePublicDocsScrollTop(page, 0);
     } else if (route.kind === 'list') {
       if (listScrollSnapshotRef.current?.routeKey === buildListRouteKey()) {
