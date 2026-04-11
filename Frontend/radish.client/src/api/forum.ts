@@ -227,7 +227,7 @@ export async function getPostList(
  * 获取帖子详情
  */
 export async function getPostById(
-  postId: number,
+  postId: string | number,
   t: TFunction,
   answerSort: QuestionAnswerSort = 'default'
 ): Promise<PostDetail> {
@@ -361,7 +361,7 @@ export async function acceptQuestionAnswer(request: AcceptAnswerRequest, t: TFun
  * 分页获取帖子的根评论（自动包含当前用户的点赞状态）
  */
 export async function getRootCommentsPage(
-  postId: number,
+  postId: string | number,
   pageIndex: number,
   pageSize: number,
   sortBy: 'newest' | 'hottest' | 'default',
@@ -416,7 +416,7 @@ export async function createComment(request: CreateCommentRequest, t: TFunction)
  * 获取帖子轻回应墙
  */
 export async function getPostQuickReplyWall(
-  postId: number,
+  postId: string | number,
   t: TFunction,
   take: number = 30
 ): Promise<PostQuickReplyWall> {

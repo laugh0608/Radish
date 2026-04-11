@@ -245,13 +245,9 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
 
     private async Task<Post> EnsurePostExistsAsync(long postId)
     {
-        var post = await _postRepository.QueryFirstAsync(
-            item => item.Id == postId &&
-                    item.IsEnabled &&
-                    item.IsPublished &&
-                    !item.IsDeleted);
+        var post = await _postRepository.QueryByIdAsync(postId);
 
-        if (post == null)
+        if (post == null || post.IsDeleted)
         {
             throw new InvalidOperationException("帖子不存在或不可访问");
         }

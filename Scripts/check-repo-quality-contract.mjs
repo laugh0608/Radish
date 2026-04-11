@@ -135,12 +135,24 @@ function assertValidateCiContract(validateCiSource, failures) {
     'IDENTITY_GUARD_VALIDATE_ARGS',
     'IDENTITY_GUARD_CHECK_NAME',
     'collectIdentityImpactMatches',
-    'runNpm(step.title, step.npmArgs);',
     "runCommand('npm', args, {",
     "runCommand('node', commandArgs, {",
   ];
 
   const missingFragments = requiredFragments.filter((fragment) => !validateCiSource.includes(fragment));
+
+  const runNpmCallVariants = [
+    'runNpm(step.title, step.npmArgs);',
+    '...runNpm(step.title, step.npmArgs),',
+  ];
+
+  const hasValidRunNpmInvocation = runNpmCallVariants.some((fragment) =>
+    validateCiSource.includes(fragment)
+  );
+
+  if (!hasValidRunNpmInvocation) {
+    missingFragments.push(runNpmCallVariants.join(' 或 '));
+  }
 
   if (missingFragments.length > 0) {
     failures.push(

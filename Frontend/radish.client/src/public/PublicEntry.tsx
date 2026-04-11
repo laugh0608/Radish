@@ -12,7 +12,7 @@ export interface PublicForumListRoute {
 
 export interface PublicForumDetailRoute {
   kind: 'detail';
-  postId: number;
+  postId: string;
 }
 
 export type PublicForumRoute = PublicForumListRoute | PublicForumDetailRoute;
@@ -39,6 +39,19 @@ function normalizePositiveInteger(value: string | undefined): number | undefined
   return parsed;
 }
 
+function normalizePositiveIntegerString(value: string | undefined): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const normalized = value.trim();
+  if (!/^[1-9]\d*$/.test(normalized)) {
+    return undefined;
+  }
+
+  return normalized;
+}
+
 function normalizeSortBy(value: string | null): PublicListSort {
   return value === 'hottest' ? 'hottest' : 'newest';
 }
@@ -59,7 +72,7 @@ function parsePublicForumRoute(pathname: string, search: string): PublicForumRou
   }
 
   const matched = pathname.match(/^\/forum\/post\/(\d+)\/?$/);
-  const postId = normalizePositiveInteger(matched?.[1]);
+  const postId = normalizePositiveIntegerString(matched?.[1]);
   if (postId) {
     return { kind: 'detail', postId };
   }

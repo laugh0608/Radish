@@ -230,6 +230,38 @@
   border: 1px solid color-mix(in srgb, var(--theme-state-danger) 18%, transparent);
 }
 
+.errorBlock {
+  display: flex;
+  flex-direction: column;
+}
+
+.errorActions {
+  display: flex;
+  justify-content: flex-start;
+  padding: 12px 28px 0;
+}
+
+.retryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 9px 16px;
+  border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 28%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-brand-soft) 76%, white 24%);
+  color: var(--theme-brand-primary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform var(--theme-transition-standard), box-shadow var(--theme-transition-standard), background var(--theme-transition-standard);
+}
+
+.retryButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 18px color-mix(in srgb, var(--theme-brand-primary) 14%, transparent);
+}
+
 .postList {
   padding: 20px 20px 24px;
   flex: 1 0 auto;
@@ -365,6 +397,16 @@
 
   .categoryRail {
     padding: 14px 18px 0;
+  }
+
+  .errorText {
+    margin-left: 18px;
+    margin-right: 18px;
+  }
+
+  .errorActions {
+    padding-left: 18px;
+    padding-right: 18px;
   }
 
   .listSectionCard {

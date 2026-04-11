@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   getChildComments,
@@ -58,21 +58,56 @@ function buildVisiblePages(currentPage: number, totalPages: number, maxVisible: 
   return Array.from({ length: maxVisible }, (_, index) => currentPage - half + index);
 }
 
+function buildListRouteKey(route: PublicForumListRoute): string {
+  return `${route.categoryId ?? 'all'}:${route.sortBy}:${route.page}`;
+}
+
 export const PublicForumApp = ({ route, fallbackListRoute, onNavigate }: PublicForumAppProps) => {
   const { t } = useTranslation();
   const [displayTimeZone] = useState(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE));
   const pageRef = useRef<HTMLDivElement>(null);
+  const previousRouteRef = useRef<PublicForumRoute>(route);
+  const listScrollSnapshotRef = useRef<{ routeKey: string; scrollTop: number } | null>(null);
+  const [pendingRestoreScrollTop, setPendingRestoreScrollTop] = useState<number | null>(null);
 
   useEffect(() => {
-    const nextTitle = route.kind === 'detail'
-      ? `${t('desktop.apps.forum.name')} · ${t('forum.postDetail.title')}`
-      : `${t('desktop.apps.forum.name')} · ${t('forum.allPosts')}`;
+    const nextTitle = route.kind === 'list'
+      ? `${t('desktop.apps.forum.name')} · ${t('forum.allPosts')}`
+      : `${t('desktop.apps.forum.name')} · ${t('forum.postDetail.title')}`;
 
     document.title = nextTitle;
   }, [route.kind, t]);
 
   useEffect(() => {
-    pageRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+    const page = pageRef.current;
+    const previousRoute = previousRouteRef.current;
+
+    if (!page) {
+      previousRouteRef.current = route;
+      return;
+    }
+
+    if (previousRoute.kind === 'list' && route.kind === 'detail') {
+      listScrollSnapshotRef.current = {
+        routeKey: buildListRouteKey(previousRoute),
+        scrollTop: page.scrollTop
+      };
+      setPendingRestoreScrollTop(null);
+      page.scrollTo({ top: 0, behavior: 'auto' });
+    } else if (route.kind === 'list') {
+      const nextRouteKey = buildListRouteKey(route);
+      if (listScrollSnapshotRef.current?.routeKey === nextRouteKey) {
+        setPendingRestoreScrollTop(listScrollSnapshotRef.current.scrollTop);
+      } else {
+        setPendingRestoreScrollTop(null);
+        page.scrollTo({ top: 0, behavior: 'auto' });
+      }
+    } else {
+      setPendingRestoreScrollTop(null);
+      page.scrollTo({ top: 0, behavior: 'auto' });
+    }
+
+    previousRouteRef.current = route;
   }, [
     route.kind,
     route.kind === 'detail' ? route.postId : route.categoryId,
@@ -115,6 +150,9 @@ export const PublicForumApp = ({ route, fallbackListRoute, onNavigate }: PublicF
             key="list"
             routeState={route}
             displayTimeZone={displayTimeZone}
+            scrollContainerRef={pageRef}
+            restoreScrollTop={pendingRestoreScrollTop}
+            onScrollRestored={() => setPendingRestoreScrollTop(null)}
             onRouteStateChange={onNavigate}
             onOpenPost={(postId) => onNavigate({ kind: 'detail', postId })}
           />
@@ -127,11 +165,22 @@ export const PublicForumApp = ({ route, fallbackListRoute, onNavigate }: PublicF
 interface PublicForumListProps {
   routeState: PublicForumListRoute;
   displayTimeZone: string;
+  scrollContainerRef: RefObject<HTMLDivElement | null>;
+  restoreScrollTop: number | null;
+  onScrollRestored: () => void;
   onRouteStateChange: (route: PublicForumListRoute, options?: { replace?: boolean }) => void;
-  onOpenPost: (postId: number) => void;
+  onOpenPost: (postId: string) => void;
 }
 
-const PublicForumList = ({ routeState, displayTimeZone, onRouteStateChange, onOpenPost }: PublicForumListProps) => {
+const PublicForumList = ({
+  routeState,
+  displayTimeZone,
+  scrollContainerRef,
+  restoreScrollTop,
+  onScrollRestored,
+  onRouteStateChange,
+  onOpenPost
+}: PublicForumListProps) => {
   const { t } = useTranslation();
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(routeState.categoryId);
@@ -143,6 +192,7 @@ const PublicForumList = ({ routeState, displayTimeZone, onRouteStateChange, onOp
   const [loadingCategories, setLoadingCategories] = useState(false);
   const [loadingPosts, setLoadingPosts] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
   const [isCompactViewport, setIsCompactViewport] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth <= 720 : false
   );
@@ -206,6 +256,22 @@ const PublicForumList = ({ routeState, displayTimeZone, onRouteStateChange, onOp
       page: currentPage
     }, { replace: true });
   }, [currentPage, onRouteStateChange, selectedCategoryId, sortBy]);
+
+  useEffect(() => {
+    if (restoreScrollTop == null || loadingPosts) {
+      return;
+    }
+
+    const scrollTop = restoreScrollTop;
+    const frameId = window.requestAnimationFrame(() => {
+      scrollContainerRef.current?.scrollTo({ top: scrollTop, behavior: 'auto' });
+      onScrollRestored();
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [loadingPosts, onScrollRestored, restoreScrollTop, scrollContainerRef]);
 
   useEffect(() => {
     const requestId = ++postsRequestIdRef.current;
@@ -280,7 +346,7 @@ const PublicForumList = ({ routeState, displayTimeZone, onRouteStateChange, onOp
     };
 
     void loadPosts();
-  }, [currentPage, selectedCategoryId, sortBy, t]);
+  }, [currentPage, reloadToken, selectedCategoryId, sortBy, t]);
 
   const activeTitle = useMemo(
     () => buildActiveSectionTitle(categories, selectedCategoryId, t('forum.allPosts')),
@@ -360,7 +426,20 @@ const PublicForumList = ({ routeState, displayTimeZone, onRouteStateChange, onOp
         )}
       </div>
 
-      {error && <p className={styles.errorText}>{t('common.errorPrefix')}{error}</p>}
+      {error && (
+        <div className={styles.errorBlock}>
+          <p className={styles.errorText}>{t('common.errorPrefix')}{error}</p>
+          <div className={styles.errorActions}>
+            <button
+              type="button"
+              className={styles.retryButton}
+              onClick={() => setReloadToken((current) => current + 1)}
+            >
+              {t('common.retry')}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className={styles.postList}>
         {loadingPosts ? (
@@ -375,7 +454,7 @@ const PublicForumList = ({ routeState, displayTimeZone, onRouteStateChange, onOp
                 key={post.voId}
                 post={post}
                 displayTimeZone={displayTimeZone}
-                onClick={() => onOpenPost(post.voId)}
+                onClick={() => onOpenPost(String(post.voId))}
                 variant="publicCompact"
                 godComment={godComment ? {
                   authorName: godComment.voAuthorName,
@@ -422,7 +501,7 @@ const PublicForumList = ({ routeState, displayTimeZone, onRouteStateChange, onOp
 };
 
 interface PublicForumDetailProps {
-  postId: number;
+  postId: string;
   displayTimeZone: string;
   onBack: () => void;
 }
@@ -441,6 +520,7 @@ const PublicForumDetail = ({ postId, displayTimeZone, onBack }: PublicForumDetai
   const [loadingQuickReplies, setLoadingQuickReplies] = useState(false);
   const [loadingMoreComments, setLoadingMoreComments] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
   const requestIdRef = useRef(0);
   const commentPageSize = 20;
 
@@ -454,22 +534,12 @@ const PublicForumDetail = ({ postId, displayTimeZone, onBack }: PublicForumDetai
       setError(null);
 
       try {
-        const [postDetail, rootComments, replyWall] = await Promise.all([
-          getPostById(postId, t),
-          getRootCommentsPage(postId, 1, commentPageSize, commentSortBy || 'default', t),
-          getPostQuickReplyWall(postId, t)
-        ]);
-
+        const postDetail = await getPostById(postId, t);
         if (requestId !== requestIdRef.current) {
           return;
         }
 
         setPost(postDetail);
-        setComments(rootComments.voItems ?? []);
-        setCommentTotal(rootComments.voTotal ?? 0);
-        setLoadedCommentPages((rootComments.voItems?.length ?? 0) > 0 ? 1 : 0);
-        setQuickReplies(replyWall.voItems ?? []);
-        setQuickReplyTotal(replyWall.voTotal ?? 0);
       } catch (err) {
         if (requestId !== requestIdRef.current) {
           return;
@@ -483,9 +553,52 @@ const PublicForumDetail = ({ postId, displayTimeZone, onBack }: PublicForumDetai
         setCommentTotal(0);
         setLoadedCommentPages(0);
         setError(message);
+        return;
       } finally {
         if (requestId === requestIdRef.current) {
           setLoadingPost(false);
+        }
+      }
+
+      try {
+        const [rootCommentsResult, replyWallResult] = await Promise.allSettled([
+          getRootCommentsPage(postId, 1, commentPageSize, commentSortBy || 'default', t),
+          getPostQuickReplyWall(postId, t)
+        ]);
+
+        if (requestId !== requestIdRef.current) {
+          return;
+        }
+
+        if (rootCommentsResult.status === 'fulfilled') {
+          const rootComments = rootCommentsResult.value;
+          setComments(rootComments.voItems ?? []);
+          setCommentTotal(rootComments.voTotal ?? 0);
+          setLoadedCommentPages((rootComments.voItems?.length ?? 0) > 0 ? 1 : 0);
+        } else {
+          setComments([]);
+          setCommentTotal(0);
+          setLoadedCommentPages(0);
+          const message = rootCommentsResult.reason instanceof Error
+            ? rootCommentsResult.reason.message
+            : String(rootCommentsResult.reason);
+          setError((current) => current ?? message);
+        }
+
+        if (replyWallResult.status === 'fulfilled') {
+          const replyWall = replyWallResult.value;
+          setQuickReplies(replyWall.voItems ?? []);
+          setQuickReplyTotal(replyWall.voTotal ?? 0);
+        } else {
+          setQuickReplies([]);
+          setQuickReplyTotal(0);
+          const message = replyWallResult.reason instanceof Error
+            ? replyWallResult.reason.message
+            : String(replyWallResult.reason);
+          setError((current) => current ?? message);
+        }
+      } finally {
+        if (requestId === requestIdRef.current) {
           setLoadingComments(false);
           setLoadingQuickReplies(false);
         }
@@ -493,7 +606,15 @@ const PublicForumDetail = ({ postId, displayTimeZone, onBack }: PublicForumDetai
     };
 
     void loadDetail();
-  }, [commentSortBy, postId, t]);
+  }, [commentSortBy, postId, reloadToken, t]);
+
+  useEffect(() => {
+    if (!post?.voTitle) {
+      return;
+    }
+
+    document.title = `${post.voTitle} · ${t('desktop.apps.forum.name')}`;
+  }, [post?.voTitle, t]);
 
   const handleLoadMoreComments = async () => {
     if (loadingMoreComments || loadingComments || comments.length >= commentTotal) {
@@ -547,7 +668,20 @@ const PublicForumDetail = ({ postId, displayTimeZone, onBack }: PublicForumDetai
         </button>
       </div>
 
-      {error && <p className={styles.errorText}>{t('common.errorPrefix')}{error}</p>}
+      {error && (
+        <div className={styles.errorBlock}>
+          <p className={styles.errorText}>{t('common.errorPrefix')}{error}</p>
+          <div className={styles.errorActions}>
+            <button
+              type="button"
+              className={styles.retryButton}
+              onClick={() => setReloadToken((current) => current + 1)}
+            >
+              {t('common.retry')}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className={styles.detailStack}>
         {post && (
