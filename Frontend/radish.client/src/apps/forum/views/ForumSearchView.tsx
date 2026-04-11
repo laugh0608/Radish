@@ -1,5 +1,6 @@
 import { useMemo, useRef } from 'react';
 import type { PostItem, CommentHighlight } from '@/api/forum';
+import { getForumCommentHighlight } from '@/utils/forumCommentHighlights';
 import { PostCard } from '../components/PostCard';
 import styles from './ForumSearchView.module.css';
 
@@ -17,7 +18,7 @@ interface ForumSearchViewProps {
   appliedEndDate: string;
   isCustomRangeDirty: boolean;
   posts: PostItem[];
-  postGodComments: Map<number, CommentHighlight>;
+  postGodComments: Map<string, CommentHighlight>;
   loading: boolean;
   currentPage: number;
   totalPages: number;
@@ -261,7 +262,7 @@ export const ForumSearchView = ({
           <p className={styles.emptyText}>暂无匹配结果，请尝试调整关键词或时间范围</p>
         ) : (
           posts.map((post) => {
-            const godComment = postGodComments.get(post.voId);
+            const godComment = getForumCommentHighlight(postGodComments, post.voId);
             return (
               <PostCard
                 key={post.voId}

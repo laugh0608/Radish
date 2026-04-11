@@ -735,7 +735,7 @@ export async function getCurrentGodComments(
 export async function getCurrentGodCommentsBatch(
   postIds: number[],
   t: TFunction
-): Promise<Record<number, CommentHighlight>> {
+): Promise<Record<string, CommentHighlight>> {
   void t;
   if (!postIds.length) {
     return {};
@@ -745,7 +745,7 @@ export async function getCurrentGodCommentsBatch(
   let lastError: Error | null = null;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    const response = await apiPost<Record<number, CommentHighlight>>(
+    const response = await apiPost<Record<string, CommentHighlight>>(
       '/api/v1/CommentHighlight/GetCurrentGodCommentsBatch',
       postIds,
       { timeout: FORUM_READ_TIMEOUT_MS }

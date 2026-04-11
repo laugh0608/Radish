@@ -175,6 +175,7 @@ npm run validate:ci
 - 通知跳转：通知中心点击 forum 相关通知时，优先走字符串化 `extData`，不因大整数 ID 被前端当作 `number` 拒绝
 - 浏览回跳：个人主页浏览记录命中 forum 帖子时，`routePath / targetId` 回跳不再经过 `Number(...)` 降精度
 - 深链 / 窗口参数：`openOrReuseApp('forum', appParams)` 与 forum 窗口首屏解析对 `postId / commentId` 继续保持字符串口径
+- 列表补查：公开列表、桌面列表与搜索结果若批量补查 forum 神评预览，返回对象的 `postId` 键不得再经 `Number(...)` 转回前端映射，否则大整数帖子会出现“帖子可读但神评摘要丢失”的隐性回归
 
 ### 1. 日常提交前
 

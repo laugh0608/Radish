@@ -6,6 +6,10 @@ import {
   parseForumRoutePath,
   parseForumWindowParams,
 } from '../src/utils/forumNavigation.ts';
+import {
+  createForumCommentHighlightMap,
+  getForumCommentHighlight,
+} from '../src/utils/forumCommentHighlights.ts';
 
 test('parseForumRoutePath 应保留大整数帖子与评论 ID 的字符串精度', () => {
   const navigation = parseForumRoutePath('/forum/post/2042219067430928384?commentId=2042219067430928385');
@@ -72,4 +76,34 @@ test('buildForumAppParams 应保留浏览回跳里的大整数字符串 ID', () 
   assert.deepEqual(params, {
     postId: '2042219067430928384',
   });
+});
+
+test('createForumCommentHighlightMap 应保留大整数字符串帖子键', () => {
+  const highlights = createForumCommentHighlightMap({
+    '2042219067430928384': {
+      voCommentId: 1,
+      voAuthorId: 2,
+      voAuthorName: 'Tester',
+      voContentSnapshot: 'hello',
+      voLikeCount: 3,
+      voCreateTime: '2026-04-11T00:00:00Z',
+    },
+  });
+
+  assert.equal(highlights.has('2042219067430928384'), true);
+});
+
+test('getForumCommentHighlight 应按字符串键读取 number 型帖子 ID', () => {
+  const highlights = createForumCommentHighlightMap({
+    '123': {
+      voCommentId: 1,
+      voAuthorId: 2,
+      voAuthorName: 'Tester',
+      voContentSnapshot: 'hello',
+      voLikeCount: 3,
+      voCreateTime: '2026-04-11T00:00:00Z',
+    },
+  });
+
+  assert.equal(getForumCommentHighlight(highlights, 123)?.voAuthorName, 'Tester');
 });

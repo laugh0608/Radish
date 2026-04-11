@@ -17,6 +17,7 @@ import {
 } from '@/api/forum';
 import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { log } from '@/utils/logger';
+import { createForumCommentHighlightMap, getForumCommentHighlight } from '@/utils/forumCommentHighlights';
 import { Icon } from '@radish/ui/icon';
 import { PostCard } from '@/apps/forum/components/PostCard';
 import { PostDetail as ForumPostDetail } from '@/apps/forum/components/PostDetail';
@@ -186,7 +187,7 @@ const PublicForumList = ({
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(routeState.categoryId);
   const [sortBy, setSortBy] = useState<PublicListSort>(routeState.sortBy);
   const [posts, setPosts] = useState<PostItem[]>([]);
-  const [postGodComments, setPostGodComments] = useState<Map<number, CommentHighlight>>(new Map());
+  const [postGodComments, setPostGodComments] = useState<Map<string, CommentHighlight>>(new Map());
   const [currentPage, setCurrentPage] = useState(routeState.page);
   const [totalPages, setTotalPages] = useState(0);
   const [loadingCategories, setLoadingCategories] = useState(false);
@@ -311,15 +312,7 @@ const PublicForumList = ({
             return;
           }
 
-          const nextMap = new Map<number, CommentHighlight>();
-          for (const [postIdText, highlight] of Object.entries(highlights)) {
-            const postId = Number(postIdText);
-            if (!Number.isNaN(postId) && highlight) {
-              nextMap.set(postId, highlight);
-            }
-          }
-
-          setPostGodComments(nextMap);
+          setPostGodComments(createForumCommentHighlightMap(highlights));
         } catch (highlightError) {
           if (requestId !== postsRequestIdRef.current) {
             return;
@@ -448,7 +441,7 @@ const PublicForumList = ({
           <p className={styles.placeholder}>{t('forum.emptyPosts')}</p>
         ) : (
           posts.map((post) => {
-            const godComment = postGodComments.get(post.voId);
+            const godComment = getForumCommentHighlight(postGodComments, post.voId);
             return (
               <PostCard
                 key={post.voId}

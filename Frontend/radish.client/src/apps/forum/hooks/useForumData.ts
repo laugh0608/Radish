@@ -25,6 +25,7 @@ import {
   type QuestionAnswerSort,
   type QuestionAnswerFilter
 } from '@/api/forum';
+import { createForumCommentHighlightMap } from '@/utils/forumCommentHighlights';
 
 function isAbortError(error: unknown): boolean {
   if (typeof DOMException !== 'undefined' && error instanceof DOMException) {
@@ -79,7 +80,7 @@ export interface ForumDataState {
   loadedCommentPages: number;
   hotPosts: PostItem[];
   trendingGodComments: CommentNode[];
-  postGodComments: Map<number, CommentHighlight>;
+  postGodComments: Map<string, CommentHighlight>;
 
   // 分页状态
   currentPage: number;
@@ -160,7 +161,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   // 热门内容
   const [hotPosts, setHotPosts] = useState<PostItem[]>([]);
   const [trendingGodComments, setTrendingGodComments] = useState<CommentNode[]>([]);
-  const [postGodComments, setPostGodComments] = useState<Map<number, CommentHighlight>>(new Map());
+  const [postGodComments, setPostGodComments] = useState<Map<string, CommentHighlight>>(new Map());
 
   // 分页状态
   const [currentPage, setCurrentPage] = useState(1);
@@ -322,9 +323,9 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
       try {
         const batchResult = await getCurrentGodCommentsBatch(hotPostIds, t);
         for (const postId of hotPostIds) {
-          const topGodComment = batchResult[postId];
+          const topGodComment = batchResult[String(postId)];
           if (!topGodComment) continue;
-          godCommentsMap.set(postId, topGodComment);
+          godCommentsMap.set(String(postId), topGodComment);
           allGodComments.push({
             voId: topGodComment.voCommentId,
             voContent: topGodComment.voContentSnapshot || '',
@@ -372,7 +373,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   const loadGodCommentsForPosts = async (postList: PostItem[]) => {
     const godCommentsMap = new Map(postGodComments);
     const missingPostIds = postList
-      .filter(post => !godCommentsMap.has(post.voId) && !inFlightGodCommentsRef.current.has(post.voId))
+      .filter(post => !godCommentsMap.has(String(post.voId)) && !inFlightGodCommentsRef.current.has(post.voId))
       .map(post => post.voId);
 
     if (missingPostIds.length === 0) {
@@ -382,11 +383,8 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     try {
       missingPostIds.forEach(postId => inFlightGodCommentsRef.current.add(postId));
       const batchResult = await getCurrentGodCommentsBatch(missingPostIds, t);
-      for (const [postIdStr, highlight] of Object.entries(batchResult)) {
-        const postId = Number(postIdStr);
-        if (!Number.isNaN(postId) && highlight) {
-          godCommentsMap.set(postId, highlight);
-        }
+      for (const [postId, highlight] of createForumCommentHighlightMap(batchResult)) {
+        godCommentsMap.set(postId, highlight);
       }
     } catch (err) {
       log.warn('加载帖子神评预览失败:', err);

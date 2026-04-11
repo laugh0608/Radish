@@ -4,6 +4,7 @@ import { useCurrentWindow } from '@/desktop/useCurrentWindow';
 import { useUserStore } from '@/stores/userStore';
 import { useWindowStore } from '@/stores/windowStore';
 import { log } from '@/utils/logger';
+import { createForumCommentHighlightMap } from '@/utils/forumCommentHighlights';
 import { ConfirmDialog } from '@radish/ui/confirm-dialog';
 import { ContentReportModal } from '@/components/ContentReportModal';
 import {
@@ -101,7 +102,7 @@ export const ForumApp = () => {
   const [searchTotalCount, setSearchTotalCount] = useState(0);
   const [searchTotalPages, setSearchTotalPages] = useState(0);
   const [searchPosts, setSearchPosts] = useState<PostItem[]>([]);
-  const [searchPostGodComments, setSearchPostGodComments] = useState<Map<number, CommentHighlight>>(new Map());
+  const [searchPostGodComments, setSearchPostGodComments] = useState<Map<string, CommentHighlight>>(new Map());
   const [loadingSearchPosts, setLoadingSearchPosts] = useState(false);
   const [reportTarget, setReportTarget] = useState<{ targetType: ContentReportTargetType; targetId: number } | null>(null);
   const [commentNavigationTarget, setCommentNavigationTarget] = useState<ForumCommentNavigationTarget | null>(null);
@@ -428,15 +429,7 @@ export const ForumApp = () => {
             return;
           }
 
-          const highlightsMap = new Map<number, CommentHighlight>();
-          for (const [postIdStr, highlight] of Object.entries(highlights)) {
-            const postId = Number(postIdStr);
-            if (!Number.isNaN(postId) && highlight) {
-              highlightsMap.set(postId, highlight);
-            }
-          }
-
-          setSearchPostGodComments(highlightsMap);
+          setSearchPostGodComments(createForumCommentHighlightMap(highlights));
         } catch (highlightError) {
           if (requestId !== searchRequestIdRef.current) {
             return;
