@@ -115,6 +115,51 @@ function getCurrentOrigin(): string {
   return 'https://localhost:5000';
 }
 
+function getDocumentScrollElement(): HTMLElement | null {
+  if (typeof document === 'undefined') {
+    return null;
+  }
+
+  if (document.scrollingElement instanceof HTMLElement) {
+    return document.scrollingElement;
+  }
+
+  return document.documentElement instanceof HTMLElement ? document.documentElement : null;
+}
+
+function readPublicDocsScrollTop(container: HTMLDivElement | null): number {
+  const containerTop = container?.scrollTop ?? 0;
+  const windowTop = typeof window !== 'undefined' ? window.scrollY : 0;
+  const documentTop = getDocumentScrollElement()?.scrollTop ?? 0;
+  return Math.max(containerTop, windowTop, documentTop, 0);
+}
+
+function getPublicDocsMaxScrollTop(container: HTMLDivElement | null): number {
+  const containerMax = container
+    ? Math.max(container.scrollHeight - container.clientHeight, 0)
+    : 0;
+  const documentElement = getDocumentScrollElement();
+  const documentMax = typeof window !== 'undefined' && documentElement
+    ? Math.max(documentElement.scrollHeight - window.innerHeight, 0)
+    : 0;
+  return Math.max(containerMax, documentMax, 0);
+}
+
+function writePublicDocsScrollTop(container: HTMLDivElement | null, top: number): void {
+  const nextTop = Math.max(top, 0);
+
+  container?.scrollTo({ top: nextTop, behavior: 'auto' });
+
+  const documentElement = getDocumentScrollElement();
+  if (documentElement) {
+    documentElement.scrollTop = nextTop;
+  }
+
+  if (typeof window !== 'undefined') {
+    window.scrollTo({ top: nextTop, behavior: 'auto' });
+  }
+}
+
 function PublicStatusCard({
   tone,
   title,
@@ -176,6 +221,14 @@ export const PublicDocsApp = ({ route, fallbackListRoute, onNavigate }: PublicDo
     listError: null
   });
 
+  const captureListScrollSnapshot = () => {
+    listScrollSnapshotRef.current = {
+      routeKey: buildListRouteKey(),
+      scrollTop: readPublicDocsScrollTop(pageRef.current)
+    };
+    setPendingRestoreScrollTop(null);
+  };
+
   useEffect(() => {
     const nextTitle = route.kind === 'list'
       ? `${t('desktop.apps.document.name')} · ${t('wiki.public.pageTitle')}`
@@ -194,22 +247,19 @@ export const PublicDocsApp = ({ route, fallbackListRoute, onNavigate }: PublicDo
     }
 
     if (previousRoute.kind === 'list' && route.kind === 'detail') {
-      listScrollSnapshotRef.current = {
-        routeKey: buildListRouteKey(),
-        scrollTop: page.scrollTop
-      };
+      captureListScrollSnapshot();
       setPendingRestoreScrollTop(null);
-      page.scrollTo({ top: 0, behavior: 'auto' });
+      writePublicDocsScrollTop(page, 0);
     } else if (route.kind === 'list') {
       if (listScrollSnapshotRef.current?.routeKey === buildListRouteKey()) {
         setPendingRestoreScrollTop(listScrollSnapshotRef.current.scrollTop);
       } else {
         setPendingRestoreScrollTop(null);
-        page.scrollTo({ top: 0, behavior: 'auto' });
+        writePublicDocsScrollTop(page, 0);
       }
     } else {
       setPendingRestoreScrollTop(null);
-      page.scrollTo({ top: 0, behavior: 'auto' });
+      writePublicDocsScrollTop(page, 0);
     }
 
     previousRouteRef.current = route;
@@ -306,7 +356,10 @@ export const PublicDocsApp = ({ route, fallbackListRoute, onNavigate }: PublicDo
             restoreScrollTop={pendingRestoreScrollTop}
             onScrollRestored={() => setPendingRestoreScrollTop(null)}
             onReload={() => setCollectionReloadToken((current) => current + 1)}
-            onOpenDocument={(slug) => onNavigate({ kind: 'detail', slug })}
+            onOpenDocument={(slug) => {
+              captureListScrollSnapshot();
+              onNavigate({ kind: 'detail', slug });
+            }}
           />
         )}
       </main>
@@ -361,11 +414,11 @@ const PublicDocsList = ({
         return;
       }
 
-      const maxScrollTop = Math.max(container.scrollHeight - container.clientHeight, 0);
+      const maxScrollTop = getPublicDocsMaxScrollTop(container);
       const nextScrollTop = Math.min(targetScrollTop, maxScrollTop);
-      container.scrollTo({ top: nextScrollTop, behavior: 'auto' });
+      writePublicDocsScrollTop(container, nextScrollTop);
 
-      const restored = Math.abs(container.scrollTop - nextScrollTop) <= 2;
+      const restored = Math.abs(readPublicDocsScrollTop(container) - nextScrollTop) <= 2;
       const needsMoreLayout = maxScrollTop + 2 < targetScrollTop;
 
       if ((!needsMoreLayout && restored) || attempt >= maxAttempts) {
