@@ -11,6 +11,9 @@ interface PostCardProps {
   variant?: 'default' | 'publicCompact';
   onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
   onTagClick?: (tagName: string, tagSlug: string) => void;
+  onQuestionClick?: () => void;
+  onPollClick?: () => void;
+  onLotteryClick?: () => void;
   godComment?: {
     authorName: string;
     content?: string | null;
@@ -24,6 +27,9 @@ export const PostCard = ({
   variant = 'default',
   onAuthorClick,
   onTagClick,
+  onQuestionClick,
+  onPollClick,
+  onLotteryClick,
   godComment
 }: PostCardProps) => {
   const { t } = useTranslation();
@@ -110,6 +116,11 @@ export const PostCard = ({
     }
 
     onTagClick?.(tagName, tagSlug);
+  };
+
+  const handleStatusClick = (event: MouseEvent<HTMLButtonElement>, onClick?: () => void) => {
+    event.stopPropagation();
+    onClick?.();
   };
 
   const renderAvatar = (
@@ -255,18 +266,48 @@ export const PostCard = ({
             {post.voIsTop && <span className={styles.statusChip}>{t('forum.postCard.top')}</span>}
             {post.voIsQuestion && (
               <>
-                <span className={`${styles.statusChip} ${styles.questionChip}`}>{t('forum.postCard.question')}</span>
+                {onQuestionClick ? (
+                  <button
+                    type="button"
+                    className={`${styles.statusChip} ${styles.interactiveChip} ${styles.questionChip}`}
+                    onClick={(event) => handleStatusClick(event, onQuestionClick)}
+                  >
+                    {t('forum.postCard.question')}
+                  </button>
+                ) : (
+                  <span className={`${styles.statusChip} ${styles.questionChip}`}>{t('forum.postCard.question')}</span>
+                )}
                 <span className={`${styles.statusChip} ${post.voIsSolved ? styles.solvedChip : styles.pendingChip}`}>
                   {post.voIsSolved ? t('forum.filter.solved') : t('forum.filter.pending')}
                 </span>
               </>
             )}
             {post.voHasPoll && (
-              <span className={`${styles.statusChip} ${styles.pollChip}`}>{t('forum.postCard.poll')}</span>
+              onPollClick ? (
+                <button
+                  type="button"
+                  className={`${styles.statusChip} ${styles.interactiveChip} ${styles.pollChip}`}
+                  onClick={(event) => handleStatusClick(event, onPollClick)}
+                >
+                  {t('forum.postCard.poll')}
+                </button>
+              ) : (
+                <span className={`${styles.statusChip} ${styles.pollChip}`}>{t('forum.postCard.poll')}</span>
+              )
             )}
             {post.voHasLottery && (
               <>
-                <span className={`${styles.statusChip} ${styles.lotteryChip}`}>{t('forum.postCard.lottery')}</span>
+                {onLotteryClick ? (
+                  <button
+                    type="button"
+                    className={`${styles.statusChip} ${styles.interactiveChip} ${styles.lotteryChip}`}
+                    onClick={(event) => handleStatusClick(event, onLotteryClick)}
+                  >
+                    {t('forum.postCard.lottery')}
+                  </button>
+                ) : (
+                  <span className={`${styles.statusChip} ${styles.lotteryChip}`}>{t('forum.postCard.lottery')}</span>
+                )}
                 {post.voLotteryIsDrawn && (
                   <span className={`${styles.statusChip} ${styles.lotteryDoneChip}`}>{t('forum.postCard.lotteryDrawn')}</span>
                 )}

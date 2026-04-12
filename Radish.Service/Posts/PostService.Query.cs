@@ -72,7 +72,7 @@ public partial class PostService
             var tags = await _tagService.QueryAsync(t => tagIds.Contains(t.Id) && t.IsEnabled && !t.IsDeleted);
             postVo.VoTags = string.Join(", ", tags.Select(t => t.VoName));
             postVo.VoTagSlugs = tags
-                .Select(t => t.VoSlug)
+                .Select(t => TagSlugHelper.BuildCanonicalSlug(t.VoName, t.VoSlug))
                 .Where(tagSlugItem => !string.IsNullOrWhiteSpace(tagSlugItem))
                 .ToList();
         }
@@ -234,6 +234,98 @@ public partial class PostService
     }
 
     /// <summary>
+    /// 分页获取抽奖帖子列表
+    /// </summary>
+    public async Task<(List<PostVo> data, int totalCount)> GetLotteryPostPageAsync(
+        long? categoryId = null,
+        int pageIndex = 1,
+        int pageSize = 20,
+        string sortBy = "newest",
+        string? keyword = null,
+        DateTime? startTime = null,
+        DateTime? endTime = null,
+        string? tagSlug = null)
+    {
+        if (_postLotteryRepository == null)
+        {
+            throw new InvalidOperationException("抽奖仓储未配置，无法查询抽奖帖子列表");
+        }
+
+        var lotteries = await _postLotteryRepository.QueryAsync(lottery => !lottery.IsDeleted);
+        var lotteryPostIds = lotteries
+            .Select(lottery => lottery.PostId)
+            .Distinct()
+            .ToList();
+
+        var tagId = await ResolvePublicTagIdAsync(tagSlug);
+        if (!string.IsNullOrWhiteSpace(tagSlug) && !tagId.HasValue)
+        {
+            return (new List<PostVo>(), 0);
+        }
+
+        if (tagId.HasValue)
+        {
+            var taggedPostIds = (await _postTagRepository.QueryAsync(postTag => postTag.TagId == tagId.Value))
+                .Select(postTag => postTag.PostId)
+                .Distinct()
+                .ToHashSet();
+            lotteryPostIds = lotteryPostIds
+                .Where(postId => taggedPostIds.Contains(postId))
+                .ToList();
+        }
+
+        if (lotteryPostIds.Count == 0)
+        {
+            return (new List<PostVo>(), 0);
+        }
+
+        var normalizedKeyword = keyword ?? string.Empty;
+        var hasKeyword = !string.IsNullOrWhiteSpace(normalizedKeyword);
+        var hasCategory = categoryId.HasValue;
+        var categoryValue = categoryId ?? 0;
+        var hasStartTime = startTime.HasValue;
+        var hasEndTime = endTime.HasValue;
+        var startTimeValue = startTime ?? DateTime.MinValue;
+        var endTimeValue = endTime ?? DateTime.MaxValue;
+
+        Expression<Func<Post, bool>> baseCondition = post =>
+            lotteryPostIds.Contains(post.Id) &&
+            post.IsPublished &&
+            !post.IsDeleted &&
+            (!hasCategory || post.CategoryId == categoryValue) &&
+            (!hasKeyword || post.Title.Contains(normalizedKeyword) || post.Content.Contains(normalizedKeyword)) &&
+            (!hasStartTime || post.CreateTime >= startTimeValue) &&
+            (!hasEndTime || post.CreateTime <= endTimeValue);
+
+        return sortBy switch
+        {
+            "hottest" => await QueryPageAsync(
+                baseCondition,
+                pageIndex,
+                pageSize,
+                post => new
+                {
+                    post.IsTop,
+                    HotScore = post.ViewCount + post.LikeCount * 2 + post.CommentCount * 3,
+                    post.CreateTime
+                },
+                SqlSugar.OrderByType.Desc),
+            "essence" => await QueryPageAsync(
+                baseCondition,
+                pageIndex,
+                pageSize,
+                post => new { post.IsTop, post.IsEssence, post.CreateTime },
+                SqlSugar.OrderByType.Desc),
+            _ => await QueryPageAsync(
+                baseCondition,
+                pageIndex,
+                pageSize,
+                post => new { post.IsTop, post.CreateTime },
+                SqlSugar.OrderByType.Desc)
+        };
+    }
+
+    /// <summary>
     /// 批量回填帖子列表所需的轻量元数据
     /// </summary>
     public async Task FillPostListMetadataAsync(List<PostVo> posts)
@@ -288,7 +380,9 @@ public partial class PostService
                 .GroupBy(tag => tag.Id)
                 .ToDictionary(group => group.Key, group => group.First());
             tagNameMap = enabledTags.ToDictionary(entry => entry.Key, entry => entry.Value.Name);
-            tagSlugMap = enabledTags.ToDictionary(entry => entry.Key, entry => entry.Value.Slug);
+            tagSlugMap = enabledTags.ToDictionary(
+                entry => entry.Key,
+                entry => TagSlugHelper.BuildCanonicalSlug(entry.Value.Name, entry.Value.Slug));
         }
 
         var tagTextMap = postTags
@@ -703,13 +797,8 @@ public partial class PostService
             return null;
         }
 
-        var normalizedSlug = tagSlug.Trim().ToLowerInvariant();
-        var tag = await _tagRepository.QueryFirstAsync(item =>
-            item.Slug == normalizedSlug &&
-            item.IsEnabled &&
-            !item.IsDeleted);
-
-        return tag?.Id;
+        var tag = await _tagService.GetPublicTagBySlugAsync(tagSlug);
+        return tag?.VoId;
     }
 
     private static int GetPollDeadlineGroup(PostPoll? poll)

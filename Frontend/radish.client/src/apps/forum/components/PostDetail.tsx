@@ -55,6 +55,9 @@ interface PostDetailProps {
   onToggleFollow?: (targetUserId: number, isFollowing: boolean) => Promise<void>;
   onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
   onTagClick?: (tagName: string, tagSlug: string) => void;
+  onQuestionClick?: () => void;
+  onPollClick?: () => void;
+  onLotteryClick?: () => void;
   onReport?: (postId: number) => void;
 }
 
@@ -93,6 +96,9 @@ export const PostDetail = ({
   onToggleFollow,
   onAuthorClick,
   onTagClick,
+  onQuestionClick,
+  onPollClick,
+  onLotteryClick,
   onReport,
 }: PostDetailProps) => {
   const { t } = useTranslation();
@@ -367,7 +373,17 @@ export const PostDetail = ({
         <h4 className={styles.postTitle}>{post.voTitle}</h4>
         {isQuestionPost && (
           <div className={styles.statusRow}>
-            <span className={`${styles.statusBadge} ${styles.questionBadge}`}>{t('forum.postDetail.questionBadge')}</span>
+            {onQuestionClick ? (
+              <button
+                type="button"
+                className={`${styles.statusBadge} ${styles.interactiveBadge} ${styles.questionBadge}`}
+                onClick={onQuestionClick}
+              >
+                {t('forum.postDetail.questionBadge')}
+              </button>
+            ) : (
+              <span className={`${styles.statusBadge} ${styles.questionBadge}`}>{t('forum.postDetail.questionBadge')}</span>
+            )}
             <span className={`${styles.statusBadge} ${post.voIsSolved ? styles.solvedBadge : styles.pendingBadge}`}>
               {post.voIsSolved ? t('forum.postDetail.statusSolved') : t('forum.postDetail.statusPending')}
             </span>
@@ -432,7 +448,17 @@ export const PostDetail = ({
             <div className={styles.pollHeader}>
               <div>
                 <div className={styles.pollTitleRow}>
-                  <span className={styles.pollBadge}>{t('forum.postDetail.poll.badge')}</span>
+                  {onPollClick ? (
+                    <button
+                      type="button"
+                      className={`${styles.pollBadge} ${styles.interactiveBadge}`}
+                      onClick={onPollClick}
+                    >
+                      {t('forum.postDetail.poll.badge')}
+                    </button>
+                  ) : (
+                    <span className={styles.pollBadge}>{t('forum.postDetail.poll.badge')}</span>
+                  )}
                   <h5 className={styles.pollQuestion}>{poll.voQuestion}</h5>
                 </div>
                 <p className={styles.pollMeta}>
@@ -522,7 +548,17 @@ export const PostDetail = ({
             <div className={styles.lotteryHeader}>
               <div>
                 <div className={styles.lotteryTitleRow}>
-                  <span className={styles.lotteryBadge}>{t('forum.postDetail.lottery.badge')}</span>
+                  {onLotteryClick ? (
+                    <button
+                      type="button"
+                      className={`${styles.lotteryBadge} ${styles.interactiveBadge}`}
+                      onClick={onLotteryClick}
+                    >
+                      {t('forum.postDetail.lottery.badge')}
+                    </button>
+                  ) : (
+                    <span className={styles.lotteryBadge}>{t('forum.postDetail.lottery.badge')}</span>
+                  )}
                   <h5 className={styles.lotteryTitle}>{lottery.voPrizeName}</h5>
                 </div>
                 <p className={styles.lotteryMeta}>

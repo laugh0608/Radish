@@ -13,7 +13,7 @@
 ## 1. 适用改动范围
 
 - `Frontend/radish.client/src/public/` 下公开内容壳层入口、路由或状态回退逻辑改动后
-- `/forum`、`/forum/category/:categoryId`、`/forum/tag/:tagSlug`、`/forum/search`、`/forum/post/:postId` 的移动阅读布局、分类 / 标签上下文、搜索过滤、列表卡片密度、分页或返回链路改动后
+- `/forum`、`/forum/category/:categoryId`、`/forum/tag/:tagSlug`、`/forum/question`、`/forum/poll`、`/forum/lottery`、`/forum/search`、`/forum/post/:postId` 的移动阅读布局、分类 / 标签 / 类型上下文、搜索过滤、列表卡片密度、分页或返回链路改动后
 - 公开 forum 列表 / 详情对桌面 forum 组件的只读复用方式改动后
 
 ## 2. 前置条件
@@ -25,6 +25,9 @@
   - `/forum`
   - `/forum/category/:categoryId`
   - `/forum/tag/:tagSlug`
+  - `/forum/question`
+  - `/forum/poll`
+  - `/forum/lottery`
   - `/forum/search`
   - `/forum/post/:postId`
 - 浏览器已切到手机尺寸，优先覆盖 `390 x 844` 与 `430 x 932` 两档窄屏视口
@@ -56,7 +59,7 @@
 3. 直接打开 `/forum/tag/:tagSlug`，确认页面会进入公开标签阅读页，并显示标签名称、简介或兜底描述、帖子数等只读上下文。
 4. 直接打开 `/forum/search`，确认页面会进入公开搜索页，而不是静默退回全部帖子列表；首屏会展示只读搜索说明、关键词输入、时间范围和排序过滤。
 5. 在窄屏下检查分类页、标签页、全部帖子页与搜索页首屏，确认头部说明、分类 rail、搜索过滤区、列表卡片标题、分类、标签、作者、时间、统计和最近互动没有重叠、截断异常或明显挤压。
-6. 切换分类、标签页与“最新 / 最热”，确认列表刷新后 URL 会稳定回写到 `/forum`、`/forum/category/:categoryId` 或 `/forum/tag/:tagSlug`，并继续带上分页 / 排序查询参数；刷新页面后状态仍能恢复。
+6. 切换分类、标签页、类型页与“最新 / 最热 / 结构化排序”，确认列表刷新后 URL 会稳定回写到 `/forum`、`/forum/category/:categoryId`、`/forum/tag/:tagSlug`、`/forum/question`、`/forum/poll` 或 `/forum/lottery`，并继续带上分页 / 排序查询参数；刷新页面后状态仍能恢复。
 7. 在 `/forum/search` 输入关键词，并分别切换时间范围、排序和分页，确认 URL 会稳定回写 `q / sort / range / start / end / page`，刷新后仍能恢复搜索上下文。
 8. 切到第 `2` 页及之后任意一页，分别从分类列表、标签列表和搜索结果进入帖子详情，确认返回后不会丢失原来的分类 / 标签 / 搜索 / 排序 / 分页状态。
 9. 打开一条普通帖子详情，确认详情页首批仍只承载正文、轻回应墙展示与评论阅读，没有误带入桌面工作台交互。
@@ -64,15 +67,18 @@
 11. 分别检查一条长标题帖子和一条多标签帖子，确认分类页、标签页、搜索结果卡片与详情页都没有出现文本溢出、标签顶破或关键信息被完全挤没。
 12. 抽查一个不存在或不可访问的 `categoryId`，确认公开壳层会给出只读状态页，而不是静默退回全部帖子或空白页。
 13. 抽查一个不存在或不可访问的 `tagSlug`，确认公开壳层会给出只读状态页，而不是静默退回全部帖子或空白页。
-14. 再检查一条问答 / 投票 / 抽奖帖子，确认结构化状态标签、正文和只读详情块在公开壳层下仍可阅读，未误暴露编辑 / 提交类操作。
+14. 通过帖子卡片或帖子详情里的“问答 / 投票 / 抽奖”徽标进入 `/forum/question`、`/forum/poll` 与 `/forum/lottery`，确认会落到对应公开类型列表，而不是停留在静态徽标。
+15. 再检查一条问答 / 投票 / 抽奖帖子，确认结构化状态标签、正文和只读详情块在公开壳层下仍可阅读，未误暴露编辑 / 提交类操作。
 
 ## 5. 预期结果
 
-- `/forum`、`/forum/category/:categoryId`、`/forum/tag/:tagSlug`、`/forum/search` 与 `/forum/post/:postId` 都以公开内容壳层直达，不绕回桌面入口。
+- `/forum`、`/forum/category/:categoryId`、`/forum/tag/:tagSlug`、`/forum/question`、`/forum/poll`、`/forum/lottery`、`/forum/search` 与 `/forum/post/:postId` 都以公开内容壳层直达，不绕回桌面入口。
 - 公开列表在手机上保持“标题优先、作者和统计辅助、互动信息可扫读”的阅读节奏。
 - 公开搜索页会保留关键词、时间范围、排序与分页上下文，详情返回后不会掉回普通列表。
 - 公开分类页会补齐最小分类上下文，旧 `?category=` 链接会兼容并收口到分类直达路径。
 - 公开标签页会补齐最小标签上下文，帖子卡片 / 详情内的标签点击会统一收口到标签直达路径。
+- 公开标签页会在旧中文标签名等非 canonical 链接进入后回写到稳定的 ASCII canonical slug。
+- 问答 / 投票 / 抽奖徽标会回落到对应公开类型列表，不再停留在静态展示。
 - 列表状态可被 URL 保存，刷新与“详情 -> 返回列表”都不会丢失上下文。
 - 公开详情页只承载首批冻结范围：正文、轻回应墙展示、评论阅读。
 - 公开壳层没有误暴露标签关注、发帖、评论提交、投票提交或其他桌面交互动作。
@@ -89,7 +95,7 @@
 - 验收日期：2026-04-09
 - 验收人：<name>
 - 验收范围：forum 公开移动入口
-- 执行入口：/forum、/forum/category/:categoryId、/forum/tag/:tagSlug、/forum/search、/forum/post/:postId
+- 执行入口：/forum、/forum/category/:categoryId、/forum/tag/:tagSlug、/forum/question、/forum/poll、/forum/lottery、/forum/search、/forum/post/:postId
 - 结果：通过 / 阻塞
 - 备注：<如有问题，记录帖子类型、视口尺寸和复现步骤>
 ```

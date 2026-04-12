@@ -105,12 +105,24 @@
   display: inline-flex;
   align-items: center;
   padding: 2px 7px;
+  border: none;
   border-radius: 999px;
   background: color-mix(in srgb, var(--theme-accent-earth) 16%, var(--theme-bg-surface) 84%);
   color: var(--theme-accent-earth);
   font-size: 11px;
   font-weight: 600;
   flex-shrink: 0;
+}
+
+.interactiveChip {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.interactiveChip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px color-mix(in srgb, var(--theme-brand-primary) 14%, transparent);
+  filter: brightness(0.98);
 }
 
 .pollChip {

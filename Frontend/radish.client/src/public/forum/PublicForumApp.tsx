@@ -32,7 +32,9 @@ import type {
   PublicForumRoute,
   PublicForumSearchRoute,
   PublicForumTagRoute,
+  PublicForumTypeRoute,
   PublicListSort,
+  PublicForumRouteSort,
   PublicSearchTimeRange,
 } from '../forumRouteState';
 import { createDefaultSearchRoute } from '../forumRouteState';
@@ -51,6 +53,9 @@ interface PublicForumAppProps {
   onNavigateToProfile?: (userId: string) => void;
   onNavigateToSearch?: (keyword?: string) => void;
   onNavigateToTag?: (tagSlug: string) => void;
+  onNavigateToQuestion?: () => void;
+  onNavigateToPoll?: () => void;
+  onNavigateToLottery?: () => void;
 }
 
 type RootCommentSort = 'newest' | 'hottest' | null;
@@ -121,12 +126,18 @@ function buildSearchRouteKey(route: PublicForumSearchRoute): string {
   return `${route.keyword}:${route.sortBy}:${route.timeRange}:${route.startDate ?? ''}:${route.endDate ?? ''}:${route.page}`;
 }
 
+function buildTypeRouteKey(route: PublicForumTypeRoute): string {
+  return `${route.kind}:${route.sortBy}:${route.page}`;
+}
+
 function buildBrowseRouteKey(route: PublicForumBrowseRoute): string {
   return route.kind === 'list'
     ? buildListRouteKey(route)
     : route.kind === 'tag'
       ? buildTagRouteKey(route)
-      : buildSearchRouteKey(route);
+      : route.kind === 'search'
+        ? buildSearchRouteKey(route)
+        : buildTypeRouteKey(route);
 }
 
 function buildSearchTimeRange(route: PublicForumSearchRoute): { startTime?: string; endTime?: string } {
@@ -249,7 +260,10 @@ export const PublicForumApp = ({
   onNavigate,
   onNavigateToProfile,
   onNavigateToSearch,
-  onNavigateToTag
+  onNavigateToTag,
+  onNavigateToQuestion,
+  onNavigateToPoll,
+  onNavigateToLottery
 }: PublicForumAppProps) => {
   const { t } = useTranslation();
   const [displayTimeZone] = useState(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE));
@@ -259,13 +273,20 @@ export const PublicForumApp = ({
   const [pendingRestoreScrollTop, setPendingRestoreScrollTop] = useState<number | null>(null);
 
   useEffect(() => {
-    const nextTitle = route.kind === 'detail'
-      ? `${t('desktop.apps.forum.name')} · ${t('forum.postDetail.title')}`
+    const titleKey = route.kind === 'detail'
+      ? 'forum.postDetail.title'
       : route.kind === 'search'
-        ? `${t('desktop.apps.forum.name')} · ${t('forum.public.searchTitle')}`
+        ? 'forum.public.searchTitle'
         : route.kind === 'tag'
-          ? `${t('desktop.apps.forum.name')} · ${t('forum.public.tagTitle')}`
-        : `${t('desktop.apps.forum.name')} · ${t('forum.allPosts')}`;
+          ? 'forum.public.tagTitle'
+          : route.kind === 'question'
+            ? 'forum.public.questionTitle'
+            : route.kind === 'poll'
+              ? 'forum.public.pollTitle'
+              : route.kind === 'lottery'
+                ? 'forum.public.lotteryTitle'
+                : 'forum.allPosts';
+    const nextTitle = `${t('desktop.apps.forum.name')} · ${t(titleKey)}`;
 
     document.title = nextTitle;
   }, [route.kind, t]);
@@ -308,6 +329,8 @@ export const PublicForumApp = ({
         ? route.categoryId
         : route.kind === 'tag'
           ? route.tagSlug
+          : route.kind === 'question' || route.kind === 'poll' || route.kind === 'lottery'
+            ? route.kind
           : null,
     route.kind !== 'detail' ? route.sortBy : null,
     route.kind === 'search' ? route.keyword : null,
@@ -348,6 +371,9 @@ export const PublicForumApp = ({
             onBack={() => onNavigate(fallbackBrowseRoute)}
             onOpenAuthorProfile={onNavigateToProfile}
             onOpenTag={onNavigateToTag}
+            onOpenQuestion={onNavigateToQuestion}
+            onOpenPoll={onNavigateToPoll}
+            onOpenLottery={onNavigateToLottery}
           />
         ) : route.kind === 'search' ? (
           <PublicForumSearch
@@ -362,6 +388,9 @@ export const PublicForumApp = ({
             onBackToList={() => onNavigate({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 })}
             onOpenAuthorProfile={onNavigateToProfile}
             onOpenTag={onNavigateToTag}
+            onOpenQuestion={onNavigateToQuestion}
+            onOpenPoll={onNavigateToPoll}
+            onOpenLottery={onNavigateToLottery}
           />
         ) : route.kind === 'tag' ? (
           <PublicForumTag
@@ -377,8 +406,29 @@ export const PublicForumApp = ({
             onOpenAuthorProfile={onNavigateToProfile}
             onOpenSearch={onNavigateToSearch}
             onOpenTag={onNavigateToTag}
+            onOpenQuestion={onNavigateToQuestion}
+            onOpenPoll={onNavigateToPoll}
+            onOpenLottery={onNavigateToLottery}
           />
-        ) : (
+        ) : route.kind === 'question' || route.kind === 'poll' || route.kind === 'lottery' ? (
+          <PublicForumTypeFeed
+            key={`${route.kind}-${route.sortBy}-${route.page}`}
+            routeState={route}
+            displayTimeZone={displayTimeZone}
+            scrollContainerRef={pageRef}
+            restoreScrollTop={pendingRestoreScrollTop}
+            onScrollRestored={() => setPendingRestoreScrollTop(null)}
+            onRouteStateChange={onNavigate}
+            onOpenPost={(postId) => onNavigate({ kind: 'detail', postId })}
+            onBackToList={() => onNavigate({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 })}
+            onOpenAuthorProfile={onNavigateToProfile}
+            onOpenSearch={onNavigateToSearch}
+            onOpenTag={onNavigateToTag}
+            onOpenQuestion={onNavigateToQuestion}
+            onOpenPoll={onNavigateToPoll}
+            onOpenLottery={onNavigateToLottery}
+          />
+        ) : route.kind === 'list' ? (
           <PublicForumList
             key="list"
             routeState={route}
@@ -391,8 +441,11 @@ export const PublicForumApp = ({
             onOpenAuthorProfile={onNavigateToProfile}
             onOpenSearch={onNavigateToSearch}
             onOpenTag={onNavigateToTag}
+            onOpenQuestion={onNavigateToQuestion}
+            onOpenPoll={onNavigateToPoll}
+            onOpenLottery={onNavigateToLottery}
           />
-        )}
+        ) : null}
       </main>
     </div>
   );
@@ -409,6 +462,9 @@ interface PublicForumListProps {
   onOpenAuthorProfile?: (userId: string) => void;
   onOpenSearch?: (keyword?: string) => void;
   onOpenTag?: (tagSlug: string) => void;
+  onOpenQuestion?: () => void;
+  onOpenPoll?: () => void;
+  onOpenLottery?: () => void;
 }
 
 const PublicForumList = ({
@@ -421,7 +477,10 @@ const PublicForumList = ({
   onOpenPost,
   onOpenAuthorProfile,
   onOpenSearch,
-  onOpenTag
+  onOpenTag,
+  onOpenQuestion,
+  onOpenPoll,
+  onOpenLottery
 }: PublicForumListProps) => {
   const { t } = useTranslation();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -884,6 +943,9 @@ const PublicForumList = ({
                 variant="publicCompact"
                 onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
                 onTagClick={(_, tagSlug) => onOpenTag?.(tagSlug)}
+                onQuestionClick={onOpenQuestion}
+                onPollClick={onOpenPoll}
+                onLotteryClick={onOpenLottery}
                 godComment={godComment ? {
                   authorName: godComment.voAuthorName,
                   content: godComment.voContentSnapshot
@@ -940,6 +1002,9 @@ interface PublicForumTagProps {
   onOpenAuthorProfile?: (userId: string) => void;
   onOpenSearch?: (keyword?: string) => void;
   onOpenTag?: (tagSlug: string) => void;
+  onOpenQuestion?: () => void;
+  onOpenPoll?: () => void;
+  onOpenLottery?: () => void;
 }
 
 const PublicForumTag = ({
@@ -953,7 +1018,10 @@ const PublicForumTag = ({
   onBackToList,
   onOpenAuthorProfile,
   onOpenSearch,
-  onOpenTag
+  onOpenTag,
+  onOpenQuestion,
+  onOpenPoll,
+  onOpenLottery
 }: PublicForumTagProps) => {
   const { t } = useTranslation();
   const [selectedTag, setSelectedTag] = useState<Tag | null>(null);
@@ -1050,6 +1118,23 @@ const PublicForumTag = ({
 
     void loadTag();
   }, [reloadToken, routeState.tagSlug, t]);
+
+  useEffect(() => {
+    if (!selectedTag?.voSlug) {
+      return;
+    }
+
+    if (selectedTag.voSlug === routeState.tagSlug) {
+      return;
+    }
+
+    onRouteStateChange({
+      kind: 'tag',
+      tagSlug: selectedTag.voSlug,
+      sortBy,
+      page: currentPage
+    }, { replace: true });
+  }, [currentPage, onRouteStateChange, routeState.tagSlug, selectedTag?.voSlug, sortBy]);
 
   useEffect(() => {
     const requestId = ++postsRequestIdRef.current;
@@ -1305,6 +1390,9 @@ const PublicForumTag = ({
                 variant="publicCompact"
                 onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
                 onTagClick={(_, tagSlug) => onOpenTag?.(tagSlug)}
+                onQuestionClick={onOpenQuestion}
+                onPollClick={onOpenPoll}
+                onLotteryClick={onOpenLottery}
                 godComment={godComment ? {
                   authorName: godComment.voAuthorName,
                   content: godComment.voContentSnapshot
@@ -1349,6 +1437,382 @@ const PublicForumTag = ({
   );
 };
 
+interface PublicForumTypeFeedProps {
+  routeState: PublicForumTypeRoute;
+  displayTimeZone: string;
+  scrollContainerRef: RefObject<HTMLDivElement | null>;
+  restoreScrollTop: number | null;
+  onScrollRestored: () => void;
+  onRouteStateChange: (route: PublicForumTypeRoute, options?: { replace?: boolean }) => void;
+  onOpenPost: (postId: string) => void;
+  onBackToList: () => void;
+  onOpenAuthorProfile?: (userId: string) => void;
+  onOpenSearch?: (keyword?: string) => void;
+  onOpenTag?: (tagSlug: string) => void;
+  onOpenQuestion?: () => void;
+  onOpenPoll?: () => void;
+  onOpenLottery?: () => void;
+}
+
+function getTypeRouteHeader(
+  kind: PublicForumTypeRoute['kind'],
+  t: ReturnType<typeof useTranslation>['t']
+): {
+  title: string;
+  intro: string;
+  emptyTitle: string;
+  emptyDescription: string;
+  countLabel: (count: number) => string;
+  sortOptions: Array<{ value: PublicForumRouteSort; label: string }>;
+} {
+  if (kind === 'question') {
+    return {
+      title: t('forum.public.questionTitle'),
+      intro: t('forum.public.questionIntro'),
+      emptyTitle: t('forum.public.questionEmptyTitle'),
+      emptyDescription: t('forum.public.questionEmptyDescription'),
+      countLabel: (count) => t('forum.public.questionCount', { count }),
+      sortOptions: [
+        { value: 'newest', label: t('forum.sort.newest') },
+        { value: 'pending', label: t('forum.filter.pending') },
+        { value: 'answers', label: t('forum.postCard.stat.answer') }
+      ]
+    };
+  }
+
+  if (kind === 'poll') {
+    return {
+      title: t('forum.public.pollTitle'),
+      intro: t('forum.public.pollIntro'),
+      emptyTitle: t('forum.public.pollEmptyTitle'),
+      emptyDescription: t('forum.public.pollEmptyDescription'),
+      countLabel: (count) => t('forum.public.pollCount', { count }),
+      sortOptions: [
+        { value: 'newest', label: t('forum.sort.newest') },
+        { value: 'hottest', label: t('forum.sort.hottest') },
+        { value: 'votes', label: t('forum.postCard.stat.vote') },
+        { value: 'deadline', label: t('forum.public.pollDeadlineSortLabel') }
+      ]
+    };
+  }
+
+  return {
+    title: t('forum.public.lotteryTitle'),
+    intro: t('forum.public.lotteryIntro'),
+    emptyTitle: t('forum.public.lotteryEmptyTitle'),
+    emptyDescription: t('forum.public.lotteryEmptyDescription'),
+    countLabel: (count) => t('forum.public.lotteryCount', { count }),
+    sortOptions: [
+      { value: 'newest', label: t('forum.sort.newest') },
+      { value: 'hottest', label: t('forum.sort.hottest') }
+    ]
+  };
+}
+
+const PublicForumTypeFeed = ({
+  routeState,
+  displayTimeZone,
+  scrollContainerRef,
+  restoreScrollTop,
+  onScrollRestored,
+  onRouteStateChange,
+  onOpenPost,
+  onBackToList,
+  onOpenAuthorProfile,
+  onOpenSearch,
+  onOpenTag,
+  onOpenQuestion,
+  onOpenPoll,
+  onOpenLottery
+}: PublicForumTypeFeedProps) => {
+  const { t } = useTranslation();
+  const [sortBy, setSortBy] = useState<PublicForumRouteSort>(routeState.sortBy);
+  const [currentPage, setCurrentPage] = useState(routeState.page);
+  const [posts, setPosts] = useState<PostItem[]>([]);
+  const [postGodComments, setPostGodComments] = useState<Map<string, CommentHighlight>>(new Map());
+  const [totalPosts, setTotalPosts] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [loadingPosts, setLoadingPosts] = useState(false);
+  const [postError, setPostError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
+  const [isCompactViewport, setIsCompactViewport] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth <= 720 : false
+  );
+  const postsRequestIdRef = useRef(0);
+  const header = useMemo(() => getTypeRouteHeader(routeState.kind, t), [routeState.kind, t]);
+
+  useEffect(() => {
+    setSortBy(routeState.sortBy);
+    setCurrentPage(routeState.page);
+  }, [routeState.kind, routeState.page, routeState.sortBy]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const handleResize = () => {
+      setIsCompactViewport(window.innerWidth <= 720);
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  useEffect(() => {
+    onRouteStateChange({
+      kind: routeState.kind,
+      sortBy,
+      page: currentPage
+    }, { replace: true });
+  }, [currentPage, onRouteStateChange, routeState.kind, sortBy]);
+
+  useEffect(() => {
+    if (restoreScrollTop == null || loadingPosts) {
+      return;
+    }
+
+    const scrollTop = restoreScrollTop;
+    const frameId = window.requestAnimationFrame(() => {
+      scrollContainerRef.current?.scrollTo({ top: scrollTop, behavior: 'auto' });
+      onScrollRestored();
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [loadingPosts, onScrollRestored, restoreScrollTop, scrollContainerRef]);
+
+  useEffect(() => {
+    const requestId = ++postsRequestIdRef.current;
+
+    const loadPosts = async () => {
+      setLoadingPosts(true);
+      setPostError(null);
+      try {
+        const pageModel = await getPostList(
+          null,
+          t,
+          currentPage,
+          20,
+          sortBy,
+          '',
+          undefined,
+          undefined,
+          routeState.kind,
+          'all',
+          'all'
+        );
+
+        if (requestId !== postsRequestIdRef.current) {
+          return;
+        }
+
+        if (pageModel.pageCount > 0 && currentPage > pageModel.pageCount) {
+          setCurrentPage(pageModel.pageCount);
+          return;
+        }
+
+        setPosts(pageModel.data);
+        setTotalPosts(pageModel.dataCount ?? 0);
+        setTotalPages(pageModel.pageCount);
+
+        if (!pageModel.data.length) {
+          setPostGodComments(new Map());
+          return;
+        }
+
+        try {
+          const highlights = await getCurrentGodCommentsBatch(pageModel.data.map((item) => item.voId), t);
+          if (requestId !== postsRequestIdRef.current) {
+            return;
+          }
+
+          setPostGodComments(createForumCommentHighlightMap(highlights));
+        } catch (highlightError) {
+          if (requestId !== postsRequestIdRef.current) {
+            return;
+          }
+
+          log.warn(`公开论坛 ${routeState.kind} 列表神评预览补查失败，已降级使用帖子主数据:`, highlightError);
+          setPostGodComments(new Map());
+        }
+      } catch (err) {
+        if (requestId !== postsRequestIdRef.current) {
+          return;
+        }
+
+        const message = err instanceof Error ? err.message : String(err);
+        setPosts([]);
+        setPostGodComments(new Map());
+        setTotalPosts(0);
+        setTotalPages(0);
+        setPostError(message);
+      } finally {
+        if (requestId === postsRequestIdRef.current) {
+          setLoadingPosts(false);
+        }
+      }
+    };
+
+    void loadPosts();
+  }, [currentPage, reloadToken, routeState.kind, sortBy, t]);
+
+  useEffect(() => {
+    document.title = `${t('desktop.apps.forum.name')} · ${header.title}`;
+  }, [header.title, t]);
+
+  const visiblePages = useMemo(() => {
+    return buildVisiblePages(currentPage, totalPages, isCompactViewport ? 5 : 7);
+  }, [currentPage, isCompactViewport, totalPages]);
+
+  const listState = resolvePublicForumReadSectionState({
+    loading: loadingPosts,
+    error: postError,
+    itemCount: posts.length,
+    totalCount: totalPosts
+  });
+
+  return (
+    <section className={`${styles.sectionCard} ${styles.listSectionCard}`}>
+      <div className={styles.sectionHeader}>
+        <div className={styles.sectionHeading}>
+          <p className={styles.kicker}>Phase 2-2</p>
+          <div className={styles.searchTopbar}>
+            <button type="button" className={styles.backButton} onClick={onBackToList}>
+              <Icon icon="mdi:arrow-left" size={18} />
+              <span>{t('forum.backToList')}</span>
+            </button>
+            <span className={styles.readOnlyBadge}>{t('forum.public.readOnlyBadge')}</span>
+          </div>
+          <h1 className={styles.pageTitle}>{header.title}</h1>
+          <p className={styles.pageIntro}>{header.intro}</p>
+          {totalPosts > 0 && (
+            <div className={styles.searchSummaryRail}>
+              <span className={styles.detailMetaChip}>{header.countLabel(totalPosts)}</span>
+            </div>
+          )}
+        </div>
+
+        <div className={styles.toolbar}>
+          <div className={styles.segmented}>
+            <button
+              type="button"
+              className={styles.segmentButton}
+              onClick={() => onOpenSearch?.()}
+            >
+              <Icon icon="mdi:magnify" size={16} />
+              <span>{t('forum.public.searchAction')}</span>
+            </button>
+            <button
+              type="button"
+              className={styles.segmentButton}
+              onClick={onBackToList}
+            >
+              {t('forum.allPosts')}
+            </button>
+            {header.sortOptions.map((option) => (
+              <button
+                key={`${routeState.kind}-${option.value}`}
+                type="button"
+                className={`${styles.segmentButton} ${sortBy === option.value ? styles.segmentButtonActive : ''}`}
+                onClick={() => {
+                  setSortBy(option.value);
+                  setCurrentPage(1);
+                }}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className={styles.postList}>
+        {listState === 'loading' ? (
+          <PublicStatusCard
+            tone="loading"
+            title={t('forum.public.loadingTitle')}
+            description={t('forum.public.loadingDescription')}
+          />
+        ) : listState === 'error' ? (
+          <PublicStatusCard
+            tone="error"
+            title={t('forum.public.listErrorTitle')}
+            description={postError || t('forum.public.loadingDescription')}
+            primaryAction={{
+              label: t('common.retry'),
+              onClick: () => setReloadToken((current) => current + 1)
+            }}
+          />
+        ) : listState === 'empty' ? (
+          <PublicStatusCard
+            tone="empty"
+            title={header.emptyTitle}
+            description={header.emptyDescription}
+          />
+        ) : (
+          posts.map((post) => {
+            const godComment = getForumCommentHighlight(postGodComments, post.voId);
+            return (
+              <PostCard
+                key={post.voId}
+                post={post}
+                displayTimeZone={displayTimeZone}
+                onClick={() => onOpenPost(String(post.voId))}
+                variant="publicCompact"
+                onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
+                onTagClick={(_, tagSlug) => onOpenTag?.(tagSlug)}
+                onQuestionClick={onOpenQuestion}
+                onPollClick={onOpenPoll}
+                onLotteryClick={onOpenLottery}
+                godComment={godComment ? {
+                  authorName: godComment.voAuthorName,
+                  content: godComment.voContentSnapshot
+                } : null}
+              />
+            );
+          })
+        )}
+      </div>
+
+      {totalPages > 1 && (
+        <div className={styles.pagination}>
+          <button
+            type="button"
+            className={styles.paginationButton}
+            onClick={() => setCurrentPage((page: number) => Math.max(1, page - 1))}
+            disabled={currentPage === 1}
+          >
+            ‹
+          </button>
+          {visiblePages.map((page) => (
+            <button
+              key={page}
+              type="button"
+              className={`${styles.paginationButton} ${page === currentPage ? styles.paginationButtonActive : ''}`}
+              onClick={() => setCurrentPage(page)}
+            >
+              {page}
+            </button>
+          ))}
+          <button
+            type="button"
+            className={styles.paginationButton}
+            onClick={() => setCurrentPage((page: number) => Math.min(totalPages, page + 1))}
+            disabled={currentPage === totalPages}
+          >
+            ›
+          </button>
+        </div>
+      )}
+    </section>
+  );
+};
+
 interface PublicForumSearchProps {
   routeState: PublicForumSearchRoute;
   displayTimeZone: string;
@@ -1360,6 +1824,9 @@ interface PublicForumSearchProps {
   onBackToList: () => void;
   onOpenAuthorProfile?: (userId: string) => void;
   onOpenTag?: (tagSlug: string) => void;
+  onOpenQuestion?: () => void;
+  onOpenPoll?: () => void;
+  onOpenLottery?: () => void;
 }
 
 const PublicForumSearch = ({
@@ -1372,7 +1839,10 @@ const PublicForumSearch = ({
   onOpenPost,
   onBackToList,
   onOpenAuthorProfile,
-  onOpenTag
+  onOpenTag,
+  onOpenQuestion,
+  onOpenPoll,
+  onOpenLottery
 }: PublicForumSearchProps) => {
   const { t } = useTranslation();
   const [draftKeyword, setDraftKeyword] = useState(routeState.keyword);
@@ -1782,6 +2252,9 @@ const PublicForumSearch = ({
                 variant="publicCompact"
                 onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
                 onTagClick={(_, tagSlug) => onOpenTag?.(tagSlug)}
+                onQuestionClick={onOpenQuestion}
+                onPollClick={onOpenPoll}
+                onLotteryClick={onOpenLottery}
                 godComment={godComment ? {
                   authorName: godComment.voAuthorName,
                   content: godComment.voContentSnapshot
@@ -1832,9 +2305,21 @@ interface PublicForumDetailProps {
   onBack: () => void;
   onOpenAuthorProfile?: (userId: string) => void;
   onOpenTag?: (tagSlug: string) => void;
+  onOpenQuestion?: () => void;
+  onOpenPoll?: () => void;
+  onOpenLottery?: () => void;
 }
 
-const PublicForumDetail = ({ postId, displayTimeZone, onBack, onOpenAuthorProfile, onOpenTag }: PublicForumDetailProps) => {
+const PublicForumDetail = ({
+  postId,
+  displayTimeZone,
+  onBack,
+  onOpenAuthorProfile,
+  onOpenTag,
+  onOpenQuestion,
+  onOpenPoll,
+  onOpenLottery
+}: PublicForumDetailProps) => {
   const { t } = useTranslation();
   const [post, setPost] = useState<PostDetail | null>(null);
   const [comments, setComments] = useState<CommentNode[]>([]);
@@ -2089,6 +2574,9 @@ const PublicForumDetail = ({ postId, displayTimeZone, onBack, onOpenAuthorProfil
               showSectionTitle={false}
               onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
               onTagClick={(_, tagSlug) => onOpenTag?.(tagSlug)}
+              onQuestionClick={onOpenQuestion}
+              onPollClick={onOpenPoll}
+              onLotteryClick={onOpenLottery}
             />
 
             {quickReplySectionState === 'error' ? (

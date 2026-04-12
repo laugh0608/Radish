@@ -555,6 +555,72 @@ public class PostControllerTest
     }
 
     [Fact]
+    public async Task GetList_Should_Use_Lottery_Query_When_PostTypeIsLottery()
+    {
+        var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
+        var moderationServiceMock = new Mock<IContentModerationService>(MockBehavior.Strict);
+        var attachmentServiceMock = new Mock<IBaseService<Attachment, AttachmentVo>>(MockBehavior.Strict);
+        var commentServiceMock = new Mock<IBaseService<Comment, CommentVo>>(MockBehavior.Strict);
+
+        var lotteryPosts = new List<PostVo>
+        {
+            new()
+            {
+                VoId = 9534,
+                VoTitle = "抽奖公开帖",
+                VoHasLottery = true,
+                VoLotteryParticipantCount = 32,
+                VoAuthorId = 0,
+                VoCreateTime = DateTime.UtcNow
+            }
+        };
+
+        postServiceMock
+            .Setup(service => service.GetLotteryPostPageAsync(
+                null,
+                1,
+                20,
+                "hottest",
+                null,
+                null,
+                null,
+                null))
+            .ReturnsAsync((lotteryPosts, 1));
+        postServiceMock
+            .Setup(service => service.FillPostListMetadataAsync(It.Is<List<PostVo>>(items => ReferenceEquals(items, lotteryPosts))))
+            .Returns(Task.CompletedTask);
+        commentServiceMock
+            .Setup(service => service.QueryAsync(It.IsAny<Expression<Func<Comment, bool>>>()))
+            .ReturnsAsync(new List<CommentVo>());
+
+        var controller = CreateController(
+            postServiceMock.Object,
+            moderationServiceMock.Object,
+            attachmentServiceMock.Object,
+            commentServiceMock.Object);
+
+        var result = await controller.GetList(postType: "lottery", sortBy: "hottest");
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(200, result.StatusCode);
+
+        var pageModel = Assert.IsType<PageModel<PostVo>>(result.ResponseData);
+        var post = Assert.Single(pageModel.Data);
+        Assert.True(post.VoHasLottery);
+        Assert.Equal(32, post.VoLotteryParticipantCount);
+
+        postServiceMock.Verify(service => service.GetLotteryPostPageAsync(
+            null,
+            1,
+            20,
+            "hottest",
+            null,
+            null,
+            null,
+            null), Times.Once);
+    }
+
+    [Fact]
     public async Task GetList_Should_Pass_Deadline_Sort_When_PostTypeIsPoll()
     {
         var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);

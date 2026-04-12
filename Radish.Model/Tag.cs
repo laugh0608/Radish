@@ -57,16 +57,7 @@ public class Tag : RootEntityTKey<long>, IDeleteFilter
     private void ApplyBasicInformation(TagInitializationOptions options)
     {
         Name = NormalizeRequired(options.Name, nameof(options.Name));
-
-        if (!string.IsNullOrWhiteSpace(options.Slug))
-        {
-            Slug = options.Slug.Trim().ToLowerInvariant();
-        }
-        else
-        {
-            // 默认使用名称生成 slug
-            Slug = Name.ToLowerInvariant().Replace(" ", "-");
-        }
+        Slug = TagSlugHelper.BuildCanonicalSlug(Name, options.Slug);
 
         if (!string.IsNullOrWhiteSpace(options.Description))
         {

@@ -10,6 +10,7 @@ import {
   buildPublicForumPath,
   createDefaultListRoute,
   createDefaultSearchRoute,
+  createDefaultTypeRoute,
   parsePublicForumRoute,
 } from './forumRouteState';
 import {
@@ -222,6 +223,18 @@ export const PublicEntry = () => {
     navigateToForumRoute({ kind: 'tag', tagSlug, sortBy: 'newest', page: 1 });
   }, [navigateToForumRoute]);
 
+  const navigateToForumQuestion = useCallback(() => {
+    navigateToForumRoute(createDefaultTypeRoute('question'));
+  }, [navigateToForumRoute]);
+
+  const navigateToForumPoll = useCallback(() => {
+    navigateToForumRoute(createDefaultTypeRoute('poll'));
+  }, [navigateToForumRoute]);
+
+  const navigateToForumLottery = useCallback(() => {
+    navigateToForumRoute(createDefaultTypeRoute('lottery'));
+  }, [navigateToForumRoute]);
+
   const navigateToProfileFromForum = useCallback((userId: string) => {
     navigateToProfileRoute({ kind: 'detail', userId, tab: 'posts', page: 1 });
   }, [navigateToProfileRoute]);
@@ -259,6 +272,9 @@ export const PublicEntry = () => {
       onNavigateToProfile={navigateToProfileFromForum}
       onNavigateToSearch={navigateToPublicForumSearch}
       onNavigateToTag={navigateToForumTag}
+      onNavigateToQuestion={navigateToForumQuestion}
+      onNavigateToPoll={navigateToForumPoll}
+      onNavigateToLottery={navigateToForumLottery}
     />
   );
 };

@@ -113,7 +113,7 @@ public class PostController : ControllerBase
     /// <param name="startTime">筛选起始时间（可选，基于帖子创建时间）</param>
     /// <param name="endTime">筛选结束时间（可选，基于帖子创建时间）</param>
     /// <param name="tagSlug">标签 slug（可选）</param>
-    /// <param name="postType">帖子视图：all（默认）/ question（问答）/ poll（投票）</param>
+    /// <param name="postType">帖子视图：all（默认）/ question（问答）/ poll（投票）/ lottery（抽奖）</param>
     /// <param name="questionStatus">问答状态：all（默认）/ pending / solved</param>
     /// <param name="pollStatus">投票状态：all（默认）/ active / closed</param>
     /// <returns>分页帖子列表</returns>
@@ -148,6 +148,7 @@ public class PostController : ControllerBase
         pollStatus = pollStatus?.Trim().ToLowerInvariant() ?? "all";
         var isQuestionView = postType == "question";
         var isPollView = postType == "poll";
+        var isLotteryView = postType == "lottery";
         bool? isSolvedFilter = questionStatus switch
         {
             "pending" => false,
@@ -204,6 +205,25 @@ public class PostController : ControllerBase
                 startTime,
                 endTime,
                 isPollClosedFilter,
+                tagSlug);
+        }
+        else if (isLotteryView)
+        {
+            var normalizedLotterySort = sortBy switch
+            {
+                "hottest" => "hottest",
+                "essence" => "essence",
+                _ => "newest"
+            };
+
+            (data, totalCount) = await _postService.GetLotteryPostPageAsync(
+                categoryId,
+                pageIndex,
+                pageSize,
+                normalizedLotterySort,
+                keyword,
+                startTime,
+                endTime,
                 tagSlug);
         }
         else

@@ -48,7 +48,8 @@ public class TagService : BaseService<Tag, TagVo>, ITagService
             SortOrder = 999,
             IsEnabled = true,
             IsFixed = false,
-            IsDeleted = false
+            IsDeleted = false,
+            Slug = await BuildUniqueSlugAsync(tagName.Trim())
         };
 
         var tagId = await _tagRepository.AddAsync(newTag);
@@ -67,6 +68,7 @@ public class TagService : BaseService<Tag, TagVo>, ITagService
             t => t.SortOrder,
             OrderByType.Asc);
 
+        NormalizeVoSlugs(query);
         return query;
     }
 
@@ -86,6 +88,7 @@ public class TagService : BaseService<Tag, TagVo>, ITagService
             thenByExpression: t => t.SortOrder,
             thenByType: OrderByType.Asc);
 
+        NormalizeVoSlugs(data);
         return data;
     }
 
@@ -94,13 +97,17 @@ public class TagService : BaseService<Tag, TagVo>, ITagService
     /// </summary>
     public async Task<TagVo?> GetPublicTagBySlugAsync(string slug)
     {
-        var normalizedSlug = slug?.Trim().ToLowerInvariant();
-        if (string.IsNullOrWhiteSpace(normalizedSlug))
+        var resolvedTag = await ResolvePublicTagAsync(slug);
+        if (resolvedTag == null)
         {
             return null;
         }
 
-        return await QueryFirstAsync(t => t.Slug == normalizedSlug && t.IsEnabled && !t.IsDeleted);
+        await EnsureCanonicalSlugAsync(resolvedTag);
+
+        var tagVo = Mapper.Map<TagVo>(resolvedTag);
+        tagVo.VoSlug = TagSlugHelper.BuildCanonicalSlug(resolvedTag.Name, resolvedTag.Slug);
+        return tagVo;
     }
 
     /// <summary>
@@ -156,6 +163,7 @@ public class TagService : BaseService<Tag, TagVo>, ITagService
             thenByExpression: t => t.Id,
             thenByType: OrderByType.Asc);
 
+        NormalizeVoSlugs(data);
         return new PageModel<TagVo>
         {
             Page = pageIndex,
@@ -190,7 +198,7 @@ public class TagService : BaseService<Tag, TagVo>, ITagService
 
         var tag = new Tag(new TagInitializationOptions(normalizedName)
         {
-            Slug = createDto.Slug,
+            Slug = await BuildUniqueSlugAsync(normalizedName, createDto.Slug),
             Description = createDto.Description,
             Color = createDto.Color,
             SortOrder = createDto.SortOrder,
@@ -237,9 +245,7 @@ public class TagService : BaseService<Tag, TagVo>, ITagService
         }
 
         existingTag.Name = normalizedName;
-        existingTag.Slug = string.IsNullOrWhiteSpace(updateDto.Slug)
-            ? normalizedName.ToLowerInvariant().Replace(" ", "-")
-            : updateDto.Slug.Trim().ToLowerInvariant();
+        existingTag.Slug = await BuildUniqueSlugAsync(normalizedName, updateDto.Slug, id);
         existingTag.Description = updateDto.Description?.Trim() ?? string.Empty;
         existingTag.Color = updateDto.Color?.Trim() ?? string.Empty;
         existingTag.SortOrder = updateDto.SortOrder;
@@ -373,5 +379,112 @@ public class TagService : BaseService<Tag, TagVo>, ITagService
             t => t.Id == id);
 
         return true;
+    }
+
+    private async Task<Tag?> ResolvePublicTagAsync(string? slug)
+    {
+        var rawInput = slug?.Trim();
+        if (string.IsNullOrWhiteSpace(rawInput))
+        {
+            return null;
+        }
+
+        var normalizedSlug = rawInput.ToLowerInvariant();
+
+        var exactSlugMatch = await _tagRepository.QueryFirstAsync(t =>
+            t.Slug == normalizedSlug &&
+            t.IsEnabled &&
+            !t.IsDeleted);
+        if (exactSlugMatch != null)
+        {
+            return exactSlugMatch;
+        }
+
+        var exactNameMatch = await _tagRepository.QueryFirstAsync(t =>
+            t.Name == rawInput &&
+            t.IsEnabled &&
+            !t.IsDeleted);
+        if (exactNameMatch != null)
+        {
+            return exactNameMatch;
+        }
+
+        if (TagSlugHelper.TryGetFixedTagNameBySlug(normalizedSlug, out var fixedTagName))
+        {
+            var fixedTag = await _tagRepository.QueryFirstAsync(t =>
+                t.Name == fixedTagName &&
+                t.IsEnabled &&
+                !t.IsDeleted);
+            if (fixedTag != null)
+            {
+                return fixedTag;
+            }
+        }
+
+        var candidates = await _tagRepository.QueryAsync(t => t.IsEnabled && !t.IsDeleted);
+        return candidates.FirstOrDefault(tag =>
+            string.Equals(
+                TagSlugHelper.BuildCanonicalSlug(tag.Name, tag.Slug),
+                normalizedSlug,
+                StringComparison.OrdinalIgnoreCase));
+    }
+
+    private async Task EnsureCanonicalSlugAsync(Tag tag)
+    {
+        var canonicalSlug = await BuildUniqueSlugAsync(tag.Name, tag.Slug, tag.Id);
+        if (string.Equals(tag.Slug, canonicalSlug, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        tag.Slug = canonicalSlug;
+        tag.ModifyTime = DateTime.Now;
+        tag.ModifyBy = string.IsNullOrWhiteSpace(tag.ModifyBy) ? "System" : tag.ModifyBy;
+
+        await _tagRepository.UpdateColumnsAsync(
+            item => new Tag
+            {
+                Slug = canonicalSlug,
+                ModifyTime = tag.ModifyTime,
+                ModifyBy = tag.ModifyBy
+            },
+            item => item.Id == tag.Id);
+    }
+
+    private async Task<string> BuildUniqueSlugAsync(string name, string? requestedSlug = null, long? excludeTagId = null)
+    {
+        var baseSlug = TagSlugHelper.BuildCanonicalSlug(name, requestedSlug);
+        if (string.IsNullOrWhiteSpace(baseSlug))
+        {
+            baseSlug = "tag";
+        }
+
+        var candidate = baseSlug;
+        var suffix = 2;
+
+        while (await _tagRepository.QueryExistsAsync(t =>
+                   t.Slug == candidate &&
+                   !t.IsDeleted &&
+                   (!excludeTagId.HasValue || t.Id != excludeTagId.Value)))
+        {
+            var suffixText = $"-{suffix}";
+            var maxBaseLength = Math.Max(1, TagSlugHelper.MaxSlugLength - suffixText.Length);
+            var trimmedBase = baseSlug.Length > maxBaseLength
+                ? baseSlug[..maxBaseLength].TrimEnd('-')
+                : baseSlug;
+
+            candidate = $"{(string.IsNullOrWhiteSpace(trimmedBase) ? "tag" : trimmedBase)}{suffixText}";
+            suffix += 1;
+        }
+
+        return candidate;
+    }
+
+    private static void NormalizeVoSlugs(IEnumerable<TagVo> tags)
+    {
+        foreach (var tag in tags)
+        {
+            tag.VoSlug = TagSlugHelper.BuildCanonicalSlug(tag.VoName, tag.VoSlug);
+        }
     }
 }

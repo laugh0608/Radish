@@ -84,6 +84,16 @@ public interface IPostService : IBaseService<Post, PostVo>
         bool? isClosed = null,
         string? tagSlug = null);
 
+    Task<(List<PostVo> data, int totalCount)> GetLotteryPostPageAsync(
+        long? categoryId = null,
+        int pageIndex = 1,
+        int pageSize = 20,
+        string sortBy = "newest",
+        string? keyword = null,
+        DateTime? startTime = null,
+        DateTime? endTime = null,
+        string? tagSlug = null);
+
     /// <summary>
     /// 批量回填帖子列表所需的轻量元数据
     /// </summary>

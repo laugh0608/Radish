@@ -45,9 +45,21 @@
   display: inline-flex;
   align-items: center;
   padding: 4px 10px;
+  border: none;
   border-radius: 999px;
   font-size: 12px;
   font-weight: 700;
+}
+
+.interactiveBadge {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.interactiveBadge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px color-mix(in srgb, var(--theme-brand-primary) 14%, transparent);
+  filter: brightness(0.98);
 }
 
 .questionBadge {

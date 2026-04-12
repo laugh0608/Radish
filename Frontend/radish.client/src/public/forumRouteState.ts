@@ -1,4 +1,5 @@
 export type PublicListSort = 'newest' | 'hottest';
+export type PublicForumRouteSort = 'newest' | 'hottest' | 'pending' | 'answers' | 'votes' | 'deadline';
 export type PublicSearchTimeRange = 'all' | '24h' | '7d' | '30d' | 'custom';
 
 export interface PublicForumListRoute {
@@ -12,6 +13,12 @@ export interface PublicForumTagRoute {
   kind: 'tag';
   tagSlug: string;
   sortBy: PublicListSort;
+  page: number;
+}
+
+export interface PublicForumTypeRoute {
+  kind: 'question' | 'poll' | 'lottery';
+  sortBy: PublicForumRouteSort;
   page: number;
 }
 
@@ -30,7 +37,11 @@ export interface PublicForumDetailRoute {
   postId: string;
 }
 
-export type PublicForumBrowseRoute = PublicForumListRoute | PublicForumTagRoute | PublicForumSearchRoute;
+export type PublicForumBrowseRoute =
+  | PublicForumListRoute
+  | PublicForumTagRoute
+  | PublicForumSearchRoute
+  | PublicForumTypeRoute;
 export type PublicForumRoute = PublicForumBrowseRoute | PublicForumDetailRoute;
 
 export function createDefaultListRoute(): PublicForumListRoute {
@@ -52,13 +63,21 @@ export function createDefaultSearchRoute(): PublicForumSearchRoute {
   };
 }
 
+export function createDefaultTypeRoute(kind: PublicForumTypeRoute['kind']): PublicForumTypeRoute {
+  return {
+    kind,
+    sortBy: 'newest',
+    page: 1
+  };
+}
+
 function normalizeTagSlug(value: string | undefined): string | undefined {
   if (!value) {
     return undefined;
   }
 
   const normalized = value.trim().toLowerCase();
-  return /^[a-z0-9-]+$/.test(normalized) ? normalized : undefined;
+  return normalized.length > 0 ? normalized : undefined;
 }
 
 function normalizePositiveInteger(value: string | undefined): number | undefined {
@@ -88,6 +107,18 @@ function normalizePositiveIntegerString(value: string | undefined): string | und
 }
 
 function normalizeSortBy(value: string | null): PublicListSort {
+  return value === 'hottest' ? 'hottest' : 'newest';
+}
+
+function normalizeTypeSort(kind: PublicForumTypeRoute['kind'], value: string | null): PublicForumRouteSort {
+  if (kind === 'question') {
+    return value === 'pending' || value === 'answers' ? value : 'newest';
+  }
+
+  if (kind === 'poll') {
+    return value === 'hottest' || value === 'votes' || value === 'deadline' ? value : 'newest';
+  }
+
   return value === 'hottest' ? 'hottest' : 'newest';
 }
 
@@ -138,9 +169,30 @@ function parseSearchRoute(search: string): PublicForumSearchRoute {
   };
 }
 
+function parseTypeRoute(kind: PublicForumTypeRoute['kind'], search: string): PublicForumTypeRoute {
+  const params = new URLSearchParams(search);
+  return {
+    kind,
+    sortBy: normalizeTypeSort(kind, params.get('sort')),
+    page: normalizePositiveInteger(params.get('page') ?? undefined) ?? 1
+  };
+}
+
 export function parsePublicForumRoute(pathname: string, search: string): PublicForumRoute {
   if (pathname === '/forum' || pathname === '/forum/') {
     return parseListRoute(search);
+  }
+
+  if (pathname === '/forum/question' || pathname === '/forum/question/') {
+    return parseTypeRoute('question', search);
+  }
+
+  if (pathname === '/forum/poll' || pathname === '/forum/poll/') {
+    return parseTypeRoute('poll', search);
+  }
+
+  if (pathname === '/forum/lottery' || pathname === '/forum/lottery/') {
+    return parseTypeRoute('lottery', search);
   }
 
   if (pathname === '/forum/search' || pathname === '/forum/search/') {
@@ -181,6 +233,20 @@ export function parsePublicForumRoute(pathname: string, search: string): PublicF
 export function buildPublicForumPath(route: PublicForumRoute): string {
   if (route.kind === 'detail') {
     return `/forum/post/${route.postId}`;
+  }
+
+  if (route.kind === 'question' || route.kind === 'poll' || route.kind === 'lottery') {
+    const search = new URLSearchParams();
+    if (route.sortBy !== 'newest') {
+      search.set('sort', route.sortBy);
+    }
+    if (route.page > 1) {
+      search.set('page', String(route.page));
+    }
+
+    const queryString = search.toString();
+    const basePath = `/forum/${route.kind}`;
+    return queryString ? `${basePath}?${queryString}` : basePath;
   }
 
   if (route.kind === 'search') {
@@ -224,18 +290,22 @@ export function buildPublicForumPath(route: PublicForumRoute): string {
     return queryString ? `${basePath}?${queryString}` : basePath;
   }
 
-  const search = new URLSearchParams();
-  if (route.categoryId) {
-    search.set('category', String(route.categoryId));
-  }
-  if (route.sortBy !== 'newest') {
-    search.set('sort', route.sortBy);
-  }
-  if (route.page > 1) {
-    search.set('page', String(route.page));
+  if (route.kind === 'list') {
+    const search = new URLSearchParams();
+    if (route.categoryId) {
+      search.set('category', String(route.categoryId));
+    }
+    if (route.sortBy !== 'newest') {
+      search.set('sort', route.sortBy);
+    }
+    if (route.page > 1) {
+      search.set('page', String(route.page));
+    }
+
+    const queryString = search.toString();
+    const basePath = route.categoryId ? `/forum/category/${route.categoryId}` : '/forum';
+    return queryString ? `${basePath}?${queryString}` : basePath;
   }
 
-  const queryString = search.toString();
-  const basePath = route.categoryId ? `/forum/category/${route.categoryId}` : '/forum';
-  return queryString ? `${basePath}?${queryString}` : basePath;
+  return '/forum';
 }
