@@ -566,6 +566,32 @@
 
 .detailTopbar {
   padding: 18px 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.detailTopbarActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.shareFeedback {
+  margin: 0;
+  color: var(--theme-text-secondary);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.shareFeedback[data-state='success'] {
+  color: var(--theme-brand-primary);
+}
+
+.shareFeedback[data-state='error'] {
+  color: var(--theme-state-danger);
 }
 
 .articleHeaderMain {
@@ -694,6 +720,10 @@
   .detailTopbar {
     padding-left: 14px;
     padding-right: 14px;
+  }
+
+  .detailTopbarActions {
+    width: 100%;
   }
 
   .panel,

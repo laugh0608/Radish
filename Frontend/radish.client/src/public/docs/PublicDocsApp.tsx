@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { MarkdownRenderer } from '@radish/ui/markdown-renderer';
 import { Icon } from '@radish/ui/icon';
 import { DEFAULT_TIME_ZONE, formatDateTimeByTimeZone, getBrowserTimeZoneId } from '@/utils/dateTime';
+import { copyToClipboard } from '@/utils/clipboard';
 import type {
   WikiDocumentDetailVo,
   WikiDocumentTreeNodeVo,
@@ -968,6 +969,8 @@ const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigat
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+  const [shareState, setShareState] = useState<'idle' | 'success' | 'error'>('idle');
+  const [shareBusy, setShareBusy] = useState(false);
   const articleBodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -1064,16 +1067,55 @@ const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigat
       : isPublicDocumentNotFound(error)
         ? 'notFound'
         : error
-          ? 'error'
+        ? 'error'
           : 'loading';
+
+  useEffect(() => {
+    if (shareState === 'idle') {
+      return;
+    }
+
+    const timerId = window.setTimeout(() => {
+      setShareState('idle');
+    }, 2200);
+
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [shareState]);
+
+  const handleShare = async () => {
+    setShareBusy(true);
+
+    try {
+      const shareUrl = new URL(buildPublicDocsPath(route), getCurrentOrigin()).toString();
+      await copyToClipboard(shareUrl);
+      setShareState('success');
+    } catch {
+      setShareState('error');
+    } finally {
+      setShareBusy(false);
+    }
+  };
 
   return (
     <section className={styles.sectionCard}>
       <div className={styles.detailTopbar}>
-        <button type="button" className={styles.secondaryButton} onClick={onBack}>
-          <Icon icon="mdi:arrow-left" size={18} />
-          <span>{backLabel}</span>
-        </button>
+        <div className={styles.detailTopbarActions}>
+          <button type="button" className={styles.secondaryButton} onClick={onBack}>
+            <Icon icon="mdi:arrow-left" size={18} />
+            <span>{backLabel}</span>
+          </button>
+          <button type="button" className={styles.secondaryButton} onClick={() => void handleShare()} disabled={shareBusy}>
+            <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={18} />
+            <span>{shareBusy ? t('wiki.public.shareSubmitting') : t('wiki.public.shareAction')}</span>
+          </button>
+        </div>
+        {shareState !== 'idle' && (
+          <p className={styles.shareFeedback} data-state={shareState}>
+            {shareState === 'success' ? t('wiki.public.shareSuccess') : t('wiki.public.shareFailed')}
+          </p>
+        )}
       </div>
 
       <div className={styles.contentWrap}>
