@@ -462,10 +462,7 @@ public class TagService : BaseService<Tag, TagVo>, ITagService
         var candidate = baseSlug;
         var suffix = 2;
 
-        while (await _tagRepository.QueryExistsAsync(t =>
-                   t.Slug == candidate &&
-                   !t.IsDeleted &&
-                   (!excludeTagId.HasValue || t.Id != excludeTagId.Value)))
+        while (await SlugExistsAsync(candidate, excludeTagId))
         {
             var suffixText = $"-{suffix}";
             var maxBaseLength = Math.Max(1, TagSlugHelper.MaxSlugLength - suffixText.Length);
@@ -478,6 +475,22 @@ public class TagService : BaseService<Tag, TagVo>, ITagService
         }
 
         return candidate;
+    }
+
+    private Task<bool> SlugExistsAsync(string slug, long? excludeTagId)
+    {
+        if (excludeTagId.HasValue)
+        {
+            var tagId = excludeTagId.Value;
+            return _tagRepository.QueryExistsAsync(t =>
+                t.Slug == slug &&
+                !t.IsDeleted &&
+                t.Id != tagId);
+        }
+
+        return _tagRepository.QueryExistsAsync(t =>
+            t.Slug == slug &&
+            !t.IsDeleted);
     }
 
     private static void NormalizeVoSlugs(IEnumerable<TagVo> tags)
