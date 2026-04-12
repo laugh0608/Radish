@@ -4,6 +4,7 @@ import { bootstrapAuth } from '@/services/authBootstrap';
 import { PublicForumApp } from './forum/PublicForumApp';
 import { PublicDocsApp } from './docs/PublicDocsApp';
 import { PublicProfileApp } from './profile/PublicProfileApp';
+import { PublicLeaderboardApp } from './leaderboard/PublicLeaderboardApp';
 import {
   buildPublicForumPath,
   createDefaultListRoute,
@@ -18,6 +19,10 @@ import {
   buildPublicProfilePath,
   parsePublicProfileRoute,
 } from './profileRouteState';
+import {
+  buildPublicLeaderboardPath,
+  parsePublicLeaderboardRoute,
+} from './leaderboardRouteState';
 import type {
   PublicForumListRoute,
   PublicForumRoute,
@@ -29,6 +34,9 @@ import type {
 import type {
   PublicProfileRoute,
 } from './profileRouteState';
+import type {
+  PublicLeaderboardRoute,
+} from './leaderboardRouteState';
 export type {
   PublicListSort,
 } from './forumRouteState';
@@ -36,7 +44,8 @@ export type {
 type PublicRoute =
   | { app: 'forum'; route: PublicForumRoute }
   | { app: 'docs'; route: PublicDocsRoute }
-  | { app: 'profile'; route: PublicProfileRoute };
+  | { app: 'profile'; route: PublicProfileRoute }
+  | { app: 'leaderboard'; route: PublicLeaderboardRoute };
 
 function parsePublicRoute(): PublicRoute {
   const profileRoute = parsePublicProfileRoute(window.location.pathname, window.location.search);
@@ -44,6 +53,13 @@ function parsePublicRoute(): PublicRoute {
     return {
       app: 'profile',
       route: profileRoute
+    };
+  }
+
+  if (window.location.pathname === '/leaderboard' || window.location.pathname.startsWith('/leaderboard/')) {
+    return {
+      app: 'leaderboard',
+      route: parsePublicLeaderboardRoute(window.location.pathname, window.location.search)
     };
   }
 
@@ -68,6 +84,10 @@ function parsePublicRoute(): PublicRoute {
 function buildPublicPath(nextRoute: PublicRoute): string {
   if (nextRoute.app === 'profile') {
     return buildPublicProfilePath(nextRoute.route);
+  }
+
+  if (nextRoute.app === 'leaderboard') {
+    return buildPublicLeaderboardPath(nextRoute.route);
   }
 
   return nextRoute.app === 'docs'
@@ -142,6 +162,10 @@ export const PublicEntry = () => {
     navigateToRoute({ app: 'profile', route: nextRoute }, options);
   }, [navigateToRoute]);
 
+  const navigateToLeaderboardRoute = useCallback((nextRoute: PublicLeaderboardRoute, options?: { replace?: boolean }) => {
+    navigateToRoute({ app: 'leaderboard', route: nextRoute }, options);
+  }, [navigateToRoute]);
+
   const navigateToDefaultForumList = useCallback(() => {
     navigateToForumRoute(createDefaultListRoute());
   }, [navigateToForumRoute]);
@@ -154,7 +178,13 @@ export const PublicEntry = () => {
     navigateToProfileRoute({ kind: 'detail', userId, tab: 'posts', page: 1 });
   }, [navigateToProfileRoute]);
 
-  return route.app === 'docs' ? (
+  return route.app === 'leaderboard' ? (
+    <PublicLeaderboardApp
+      route={route.route}
+      onNavigate={navigateToLeaderboardRoute}
+      onNavigateToProfile={(userId) => navigateToProfileRoute({ kind: 'detail', userId, tab: 'posts', page: 1 })}
+    />
+  ) : route.app === 'docs' ? (
     <PublicDocsApp
       route={route.route}
       fallbackListRoute={lastDocsListRoute}

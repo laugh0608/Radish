@@ -20,6 +20,8 @@ const isOidcCallback = isBrowser && window.location.pathname === '/oidc/callback
 const isPublicContentRoute = isBrowser && (
   window.location.pathname === '/forum'
   || window.location.pathname.startsWith('/forum/')
+  || window.location.pathname === '/leaderboard'
+  || window.location.pathname.startsWith('/leaderboard/')
   || window.location.pathname === '/docs'
   || window.location.pathname.startsWith('/docs/')
   || /^\/u\/[1-9]\d*\/?$/.test(window.location.pathname)
