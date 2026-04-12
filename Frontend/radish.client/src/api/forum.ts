@@ -178,6 +178,27 @@ export async function getTopCategories(t: TFunction): Promise<Category[]> {
 }
 
 /**
+ * 按 ID 获取分类详情
+ */
+export async function getCategoryById(categoryId: number | string, t: TFunction): Promise<Category> {
+  void t;
+  const response = await apiGet<Category>(
+    `/api/v1/Category/GetById/${categoryId}`,
+    { timeout: FORUM_READ_TIMEOUT_MS }
+  );
+
+  if (!response.ok || !response.data) {
+    if (!response.ok && (response.statusCode === 404 || response.statusCode === 410)) {
+      throw new Error(response.message || '分类不存在或已不可用');
+    }
+
+    throw new Error(response.message || '加载分类详情失败');
+  }
+
+  return response.data;
+}
+
+/**
  * 获取帖子列表（支持分页、排序和搜索）
  * @param categoryId 可选的分类 ID，不传则获取所有帖子
  * @param pageIndex 页码（从 1 开始）

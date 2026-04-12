@@ -4,11 +4,26 @@ export type PublicForumDetailLoadState =
   | { kind: 'notFound'; message: string }
   | { kind: 'error'; message: string };
 
+export type PublicForumCategoryLoadState =
+  | { kind: 'idle' }
+  | { kind: 'loading' }
+  | { kind: 'ready' }
+  | { kind: 'notFound'; message: string }
+  | { kind: 'error'; message: string };
+
 export type PublicForumReadSectionState = 'loading' | 'ready' | 'empty' | 'error';
 
 const PUBLIC_FORUM_NOT_FOUND_PATTERNS = [
   /帖子不存在/i,
   /已被删除/i,
+  /not\s+found/i,
+  /\b404\b/,
+  /\b410\b/
+];
+
+const PUBLIC_FORUM_CATEGORY_NOT_FOUND_PATTERNS = [
+  /分类不存在/i,
+  /分类.*不可用/i,
   /not\s+found/i,
   /\b404\b/,
   /\b410\b/
@@ -48,6 +63,51 @@ export function resolvePublicForumDetailLoadState(input: {
     return {
       kind: 'error',
       message: postError
+    };
+  }
+
+  return { kind: 'loading' };
+}
+
+export function isPublicForumCategoryNotFoundError(message: string | null | undefined): boolean {
+  if (!message) {
+    return false;
+  }
+
+  return PUBLIC_FORUM_CATEGORY_NOT_FOUND_PATTERNS.some((pattern) => pattern.test(message));
+}
+
+export function resolvePublicForumCategoryLoadState(input: {
+  categoryId: number | null;
+  loadingCategory: boolean;
+  hasCategory: boolean;
+  categoryError: string | null;
+}): PublicForumCategoryLoadState {
+  const { categoryId, loadingCategory, hasCategory, categoryError } = input;
+
+  if (!categoryId) {
+    return { kind: 'idle' };
+  }
+
+  if (loadingCategory && !hasCategory) {
+    return { kind: 'loading' };
+  }
+
+  if (hasCategory) {
+    return { kind: 'ready' };
+  }
+
+  if (isPublicForumCategoryNotFoundError(categoryError)) {
+    return {
+      kind: 'notFound',
+      message: categoryError || '分类不存在或已不可用'
+    };
+  }
+
+  if (categoryError) {
+    return {
+      kind: 'error',
+      message: categoryError
     };
   }
 

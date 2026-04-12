@@ -26,6 +26,7 @@ Radish 论坛应用是一个基于 WebOS 架构的现代化社区讨论平台，
 ## 近期增量更新（2026-02 ~ 2026-04）
 
 - **公开 forum 移动入口首批已落地**：`radish.client` 当前已新增面向公开内容壳层的 forum 入口；命中 `/forum` 时进入公开帖子列表，命中 `/forum/post/:postId` 时进入公开帖子详情，不再强制先进入桌面 `Shell`。
+- **公开 forum 搜索首批已落地**：`radish.client` 当前已新增 `/forum/search` 公开搜索入口；首批只承载关键词检索、时间范围过滤、排序分页与帖子详情阅读，并保持“详情 -> 返回搜索结果”上下文。
 - **公开帖子详情首批承载范围已冻结**：公开详情页当前只承载正文、轻回应墙只读展示与评论阅读，不复刻桌面工作台交互，也不在本批次接入发帖、评论发布或完整通知中心。
 - **帖子详情读取已补匿名优先链路**：帖子详情当前改为“有 token 则带、无 token 则匿名读”，公开详情入口可以直接消费既有帖子详情接口，同时保留登录态下的既有读取能力。
 - **发帖创作器重构**：发帖入口已从传统表单弹窗重构为正文优先的创作器工作区，支持 `Markdown / 富文本` 双模式、右侧帖子设置区、全屏创作与本地草稿自动保存。
@@ -109,7 +110,7 @@ Frontend/radish.client/src/apps/forum/
 Frontend/radish.client/src/public/
 ├── PublicEntry.tsx              # 公开内容壳层总入口
 └── forum/
-    ├── PublicForumApp.tsx       # forum 公开移动列表 / 详情应用
+    ├── PublicForumApp.tsx       # forum 公开移动列表 / 搜索 / 详情应用
     └── PublicForumApp.module.css
 ```
 
