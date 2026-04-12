@@ -35,7 +35,7 @@ import type {
   PublicForumRoute,
 } from './forumRouteState';
 import type {
-  PublicDocsListRoute,
+  PublicDocsBrowseRoute,
   PublicDocsRoute,
 } from './docsRouteState';
 import type {
@@ -90,7 +90,7 @@ function parsePublicRoute(): PublicRoute {
   ) {
     return {
       app: 'docs',
-      route: parsePublicDocsRoute(window.location.pathname, window.location.hash)
+      route: parsePublicDocsRoute(window.location.pathname, window.location.search, window.location.hash)
     };
   }
 
@@ -125,9 +125,9 @@ export const PublicEntry = () => {
     const parsedRoute = parsePublicForumRoute(window.location.pathname, window.location.search);
     return parsedRoute.kind === 'detail' ? createDefaultListRoute() : parsedRoute;
   });
-  const [lastDocsListRoute, setLastDocsListRoute] = useState<PublicDocsListRoute>(() => {
-    const parsedRoute = parsePublicDocsRoute(window.location.pathname, window.location.hash);
-    return parsedRoute.kind === 'list' ? parsedRoute : createDefaultDocsListRoute();
+  const [lastDocsBrowseRoute, setLastDocsBrowseRoute] = useState<PublicDocsBrowseRoute>(() => {
+    const parsedRoute = parsePublicDocsRoute(window.location.pathname, window.location.search, window.location.hash);
+    return parsedRoute.kind === 'detail' ? createDefaultDocsListRoute() : parsedRoute;
   });
   const [lastShopProductsRoute, setLastShopProductsRoute] = useState<PublicShopProductsRoute>(() => {
     const parsedRoute = parsePublicShopRoute(window.location.pathname, window.location.search);
@@ -148,8 +148,8 @@ export const PublicEntry = () => {
       if (nextRoute.app === 'forum' && nextRoute.route.kind !== 'detail') {
         setLastForumBrowseRoute(nextRoute.route);
       }
-      if (nextRoute.app === 'docs' && nextRoute.route.kind === 'list') {
-        setLastDocsListRoute(nextRoute.route);
+      if (nextRoute.app === 'docs' && nextRoute.route.kind !== 'detail') {
+        setLastDocsBrowseRoute(nextRoute.route);
       }
       if (nextRoute.app === 'shop' && nextRoute.route.kind === 'products') {
         setLastShopProductsRoute(nextRoute.route);
@@ -174,8 +174,8 @@ export const PublicEntry = () => {
     if (nextRoute.app === 'forum' && nextRoute.route.kind !== 'detail') {
       setLastForumBrowseRoute(nextRoute.route);
     }
-    if (nextRoute.app === 'docs' && nextRoute.route.kind === 'list') {
-      setLastDocsListRoute(nextRoute.route);
+    if (nextRoute.app === 'docs' && nextRoute.route.kind !== 'detail') {
+      setLastDocsBrowseRoute(nextRoute.route);
     }
     if (nextRoute.app === 'shop' && nextRoute.route.kind === 'products') {
       setLastShopProductsRoute(nextRoute.route);
@@ -237,7 +237,7 @@ export const PublicEntry = () => {
   ) : route.app === 'docs' ? (
     <PublicDocsApp
       route={route.route}
-      fallbackListRoute={lastDocsListRoute}
+      fallbackBrowseRoute={lastDocsBrowseRoute}
       onNavigate={navigateToDocsRoute}
     />
   ) : route.app === 'profile' ? (

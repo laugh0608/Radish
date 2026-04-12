@@ -47,7 +47,7 @@
 ### 1.4 当前边界
 
 - 当前代码事实仍然以 `Desktop Shell + WindowManager` 为主
-- 公开内容壳层当前已完成 forum、docs、个人公开页、公开榜单与公开商城浏览五个首批入口，并继续补到 forum 公开分类与公开搜索首批：`/forum`、`/forum/category/:categoryId`、`/forum/search`、`/forum/post/:postId`、`/docs`、`/docs/:slug`、`/u/:id`、`/leaderboard`、`/leaderboard/:type`、`/shop`、`/shop/products` 与 `/shop/product/:productId` 都已可直接进入公开阅读壳层
+- 公开内容壳层当前已完成 forum、docs、个人公开页、公开榜单与公开商城浏览五个首批入口，并继续补到 forum 公开分类、forum 公开搜索与 docs 公开搜索首批：`/forum`、`/forum/category/:categoryId`、`/forum/search`、`/forum/post/:postId`、`/docs`、`/docs/search`、`/docs/:slug`、`/u/:id`、`/leaderboard`、`/leaderboard/:type`、`/shop`、`/shop/products` 与 `/shop/product/:productId` 都已可直接进入公开阅读壳层
 - 公开内容壳层当前仍保持分批只读阅读边界：forum 不承载发帖、评论提交、投票提交，文档阅读不承载编辑、发布、回收站或版本历史等桌面治理交互
 - forum 公开分类与公开搜索首批当前只承载分类简介、关键词检索、帖子列表阅读、排序分页与详情回跳上下文；标签独立直达与标签 SEO 仍放在后续规划
 - 个人公开页首批当前只承载公开资料、公开统计、公开帖子与公开评论阅读；不把编辑资料、浏览记录、附件管理或完整关系链治理搬进公开壳层
@@ -448,7 +448,7 @@ export const AdminApp = () => {
 - 当前主入口仍然是桌面 Shell、Dock 与窗口系统
 - 公开内容壳层当前已完成 forum、docs、个人公开页、公开榜单与公开商城浏览五个首批入口落地；帖子列表、分类直达、搜索直达、帖子详情、公开文档目录、个人公开页、公开榜单与公开商城入口都可以绕开桌面 Shell 直接进入公开阅读形态
 - 公开 forum 当前只冻结“列表 + 分类 + 搜索 + 详情 + 轻回应墙展示 + 评论阅读”，并明确保持只读阅读边界
-- 公开文档阅读当前只冻结“目录 + 正文阅读 + 返回目录 + 文档内链跳转”，并明确保持只读阅读边界；当前已补齐返回目录滚动位置保持，以及旧 `__documents__` 文档链接继续落入公开 docs 壳层
+- 公开文档阅读当前只冻结“目录 + 搜索 + 正文阅读 + 返回浏览态 + 文档内链跳转”，并明确保持只读阅读边界；当前已补齐返回目录滚动位置保持、搜索结果上下文回跳，以及旧 `__documents__` 文档链接继续落入公开 docs 壳层
 - 如果直接把完整窗口系统压缩到手机宽度，交互成本和信息密度都会失衡
 
 ### 6.2 规划策略

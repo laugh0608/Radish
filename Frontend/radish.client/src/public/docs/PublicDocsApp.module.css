@@ -110,11 +110,22 @@
   padding: 28px 28px 18px;
   background: linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-surface) 86%, white 14%) 0%, color-mix(in srgb, var(--theme-bg-surface) 96%, transparent) 100%);
   border-bottom: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .sectionHeading {
   display: flex;
   flex-direction: column;
+  gap: 10px;
+}
+
+.sectionActions {
+  display: inline-flex;
+  align-items: center;
   gap: 10px;
 }
 
@@ -151,6 +162,106 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.searchPanel,
+.searchResultsSection {
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 78%, transparent);
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+}
+
+.searchPanel {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.searchForm {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.searchInputWrap {
+  flex: 1 1 320px;
+  min-width: min(100%, 280px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 0 14px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 86%, transparent);
+  background: color-mix(in srgb, var(--theme-bg-surface) 88%, white 12%);
+  color: var(--theme-text-secondary);
+}
+
+.searchInput {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--theme-text-primary);
+  font-size: 14px;
+}
+
+.searchInput::placeholder {
+  color: var(--theme-text-secondary);
+}
+
+.searchSummaryRail,
+.searchResultMeta,
+.paginationBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.searchResultMeta {
+  color: var(--theme-text-secondary);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.searchResultsHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
+}
+
+.searchResultList {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+}
+
+.searchResultCard {
+  gap: 14px;
+}
+
+.searchResultTitle {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.35;
+}
+
+.paginationBar {
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px 18px;
+}
+
+.paginationInfo {
+  color: var(--theme-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .statusCard {
@@ -263,6 +374,13 @@
 .docCard:hover,
 .inlineTextButton:hover {
   transform: translateY(-1px);
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .inlineNotice {
@@ -551,6 +669,20 @@
     align-items: flex-start;
   }
 
+  .sectionActions,
+  .searchForm {
+    width: 100%;
+  }
+
+  .searchInputWrap {
+    flex-basis: 100%;
+  }
+
+  .searchResultsHeader {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
   .panelHeader,
   .articleHeader {
     padding-left: 14px;
@@ -565,7 +697,9 @@
   }
 
   .panel,
-  .articleCard {
+  .articleCard,
+  .searchPanel,
+  .searchResultsSection {
     border-radius: 20px;
   }
 }

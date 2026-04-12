@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type MouseEvent, type RefObject } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MarkdownRenderer } from '@radish/ui/markdown-renderer';
 import { Icon } from '@radish/ui/icon';
@@ -10,17 +10,23 @@ import type {
 } from '@/apps/wiki/types/wiki';
 import { WikiDocumentStatus, WikiDocumentVisibility } from '@/apps/wiki/types/wiki';
 import {
+  buildPublicDocsPath,
+  createDefaultDocsListRoute,
+  createDefaultDocsSearchRoute,
   rewritePublicDocsHref,
   resolvePublicDocsRouteFromHref,
-  type PublicDocsListRoute,
+  type PublicDocsBrowseRoute,
   type PublicDocsRoute,
+  type PublicDocsSearchRoute,
 } from '../docsRouteState';
 import { getPublicWikiDocumentBySlug, getPublicWikiList, getPublicWikiTree } from './publicDocsApi';
 import styles from './PublicDocsApp.module.css';
 
+const PUBLIC_DOCS_SEARCH_PAGE_SIZE = 10;
+
 interface PublicDocsAppProps {
   route: PublicDocsRoute;
-  fallbackListRoute: PublicDocsListRoute;
+  fallbackBrowseRoute: PublicDocsBrowseRoute;
   onNavigate: (route: PublicDocsRoute, options?: { replace?: boolean }) => void;
 }
 
@@ -40,6 +46,14 @@ interface PublicDocsCollectionState {
   loadingDocuments: boolean;
   treeError: string | null;
   listError: string | null;
+}
+
+interface PublicDocsSearchState {
+  documents: WikiDocumentVo[];
+  totalDocuments: number;
+  totalPages: number;
+  loading: boolean;
+  error: string | null;
 }
 
 interface PublicStatusCardProps {
@@ -81,7 +95,7 @@ function isPublicDocumentNotFound(message: string | null | undefined): boolean {
   return /文档不存在|无权访问|not\s+found|404/i.test(message);
 }
 
-function toVisibilityText(t: (key: string) => string, visibility?: number): string {
+function toVisibilityText(t: (key: string, options?: Record<string, unknown>) => string, visibility?: number): string {
   switch (visibility) {
     case WikiDocumentVisibility.Public:
       return t('wiki.visibility.public');
@@ -92,7 +106,7 @@ function toVisibilityText(t: (key: string) => string, visibility?: number): stri
   }
 }
 
-function toStatusText(t: (key: string) => string, status?: number): string {
+function toStatusText(t: (key: string, options?: Record<string, unknown>) => string, status?: number): string {
   switch (status) {
     case WikiDocumentStatus.Published:
       return t('wiki.status.published');
@@ -103,8 +117,8 @@ function toStatusText(t: (key: string) => string, status?: number): string {
   }
 }
 
-function buildListRouteKey(): string {
-  return 'docs:list';
+function buildBrowseRouteKey(route: PublicDocsBrowseRoute): string {
+  return buildPublicDocsPath(route);
 }
 
 function getCurrentOrigin(): string {
@@ -160,6 +174,58 @@ function writePublicDocsScrollTop(container: HTMLDivElement | null, top: number)
   }
 }
 
+function usePublicDocsScrollRestore({
+  isReady,
+  restoreScrollTop,
+  scrollContainerRef,
+  onScrollRestored
+}: {
+  isReady: boolean;
+  restoreScrollTop: number | null;
+  scrollContainerRef: RefObject<HTMLDivElement | null>;
+  onScrollRestored: () => void;
+}) {
+  useEffect(() => {
+    if (restoreScrollTop == null || !isReady) {
+      return;
+    }
+
+    let frameId = 0;
+    let attempt = 0;
+    const maxAttempts = 12;
+    const targetScrollTop = restoreScrollTop;
+
+    const restoreScroll = () => {
+      const container = scrollContainerRef.current;
+      if (!container) {
+        onScrollRestored();
+        return;
+      }
+
+      const maxScrollTop = getPublicDocsMaxScrollTop(container);
+      const nextScrollTop = Math.min(targetScrollTop, maxScrollTop);
+      writePublicDocsScrollTop(container, nextScrollTop);
+
+      const restored = Math.abs(readPublicDocsScrollTop(container) - nextScrollTop) <= 2;
+      const needsMoreLayout = maxScrollTop + 2 < targetScrollTop;
+
+      if ((!needsMoreLayout && restored) || attempt >= maxAttempts) {
+        onScrollRestored();
+        return;
+      }
+
+      attempt += 1;
+      frameId = window.requestAnimationFrame(restoreScroll);
+    };
+
+    frameId = window.requestAnimationFrame(restoreScroll);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [isReady, onScrollRestored, restoreScrollTop, scrollContainerRef]);
+}
+
 function PublicStatusCard({
   tone,
   title,
@@ -203,12 +269,12 @@ function PublicStatusCard({
   );
 }
 
-export const PublicDocsApp = ({ route, fallbackListRoute, onNavigate }: PublicDocsAppProps) => {
+export const PublicDocsApp = ({ route, fallbackBrowseRoute, onNavigate }: PublicDocsAppProps) => {
   const { t } = useTranslation();
   const [displayTimeZone] = useState(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE));
   const pageRef = useRef<HTMLDivElement>(null);
   const previousRouteRef = useRef<PublicDocsRoute>(route);
-  const listScrollSnapshotRef = useRef<{ routeKey: string; scrollTop: number } | null>(null);
+  const browseScrollSnapshotRef = useRef<{ routeKey: string; scrollTop: number } | null>(null);
   const [pendingRestoreScrollTop, setPendingRestoreScrollTop] = useState<number | null>(null);
   const [collectionReloadToken, setCollectionReloadToken] = useState(0);
   const [collectionState, setCollectionState] = useState<PublicDocsCollectionState>({
@@ -221,9 +287,9 @@ export const PublicDocsApp = ({ route, fallbackListRoute, onNavigate }: PublicDo
     listError: null
   });
 
-  const captureListScrollSnapshot = () => {
-    listScrollSnapshotRef.current = {
-      routeKey: buildListRouteKey(),
+  const captureBrowseScrollSnapshot = (browseRoute: PublicDocsBrowseRoute) => {
+    browseScrollSnapshotRef.current = {
+      routeKey: buildBrowseRouteKey(browseRoute),
       scrollTop: readPublicDocsScrollTop(pageRef.current)
     };
     setPendingRestoreScrollTop(null);
@@ -232,10 +298,12 @@ export const PublicDocsApp = ({ route, fallbackListRoute, onNavigate }: PublicDo
   useEffect(() => {
     const nextTitle = route.kind === 'list'
       ? `${t('desktop.apps.document.name')} · ${t('wiki.public.pageTitle')}`
-      : `${t('desktop.apps.document.name')} · ${t('wiki.public.detailTitle')}`;
+      : route.kind === 'search'
+        ? `${t('desktop.apps.document.name')} · ${route.keyword ? t('wiki.public.searchResultTitle', { keyword: route.keyword }) : t('wiki.public.searchTitle')}`
+        : `${t('desktop.apps.document.name')} · ${t('wiki.public.detailTitle')}`;
 
     document.title = nextTitle;
-  }, [route.kind, t]);
+  }, [route, t]);
 
   useEffect(() => {
     const page = pageRef.current;
@@ -246,16 +314,18 @@ export const PublicDocsApp = ({ route, fallbackListRoute, onNavigate }: PublicDo
       return;
     }
 
-    if (previousRoute.kind === 'list' && route.kind === 'detail') {
-      if (!listScrollSnapshotRef.current || listScrollSnapshotRef.current.routeKey !== buildListRouteKey()) {
-        captureListScrollSnapshot();
+    if (previousRoute.kind !== 'detail' && route.kind === 'detail') {
+      const previousRouteKey = buildBrowseRouteKey(previousRoute);
+      if (!browseScrollSnapshotRef.current || browseScrollSnapshotRef.current.routeKey !== previousRouteKey) {
+        captureBrowseScrollSnapshot(previousRoute);
       } else {
         setPendingRestoreScrollTop(null);
       }
       writePublicDocsScrollTop(page, 0);
-    } else if (route.kind === 'list') {
-      if (listScrollSnapshotRef.current?.routeKey === buildListRouteKey()) {
-        setPendingRestoreScrollTop(listScrollSnapshotRef.current.scrollTop);
+    } else if (route.kind !== 'detail') {
+      const nextRouteKey = buildBrowseRouteKey(route);
+      if (previousRoute.kind === 'detail' && browseScrollSnapshotRef.current?.routeKey === nextRouteKey) {
+        setPendingRestoreScrollTop(browseScrollSnapshotRef.current.scrollTop);
       } else {
         setPendingRestoreScrollTop(null);
         writePublicDocsScrollTop(page, 0);
@@ -320,6 +390,10 @@ export const PublicDocsApp = ({ route, fallbackListRoute, onNavigate }: PublicDo
     };
   }, [collectionReloadToken]);
 
+  const backLabel = fallbackBrowseRoute.kind === 'search'
+    ? t('wiki.public.backToSearch')
+    : t('wiki.public.backToList');
+
   return (
     <div className={styles.page} ref={pageRef}>
       <header className={styles.hero}>
@@ -327,7 +401,7 @@ export const PublicDocsApp = ({ route, fallbackListRoute, onNavigate }: PublicDo
           <button
             type="button"
             className={styles.brand}
-            onClick={() => onNavigate({ kind: 'list' })}
+            onClick={() => onNavigate(createDefaultDocsListRoute())}
           >
             <span className={styles.brandMark}>文</span>
             <span className={styles.brandText}>
@@ -348,8 +422,23 @@ export const PublicDocsApp = ({ route, fallbackListRoute, onNavigate }: PublicDo
             key={`docs-${route.slug}-${route.anchor ?? 'root'}`}
             route={route}
             displayTimeZone={displayTimeZone}
-            onBack={() => onNavigate(fallbackListRoute)}
+            backLabel={backLabel}
+            onBack={() => onNavigate(fallbackBrowseRoute)}
             onNavigate={onNavigate}
+          />
+        ) : route.kind === 'search' ? (
+          <PublicDocsSearch
+            route={route}
+            displayTimeZone={displayTimeZone}
+            scrollContainerRef={pageRef}
+            restoreScrollTop={pendingRestoreScrollTop}
+            onScrollRestored={() => setPendingRestoreScrollTop(null)}
+            onNavigate={onNavigate}
+            onBrowseDirectory={() => onNavigate(createDefaultDocsListRoute())}
+            onOpenDocument={(slug) => {
+              captureBrowseScrollSnapshot(route);
+              onNavigate({ kind: 'detail', slug });
+            }}
           />
         ) : (
           <PublicDocsList
@@ -359,8 +448,9 @@ export const PublicDocsApp = ({ route, fallbackListRoute, onNavigate }: PublicDo
             restoreScrollTop={pendingRestoreScrollTop}
             onScrollRestored={() => setPendingRestoreScrollTop(null)}
             onReload={() => setCollectionReloadToken((current) => current + 1)}
+            onOpenSearch={() => onNavigate(createDefaultDocsSearchRoute())}
             onOpenDocument={(slug) => {
-              captureListScrollSnapshot();
+              captureBrowseScrollSnapshot(route);
               onNavigate({ kind: 'detail', slug });
             }}
           />
@@ -377,6 +467,7 @@ interface PublicDocsListProps {
   restoreScrollTop: number | null;
   onScrollRestored: () => void;
   onReload: () => void;
+  onOpenSearch: () => void;
   onOpenDocument: (slug: string) => void;
 }
 
@@ -387,6 +478,7 @@ const PublicDocsList = ({
   restoreScrollTop,
   onScrollRestored,
   onReload,
+  onOpenSearch,
   onOpenDocument
 }: PublicDocsListProps) => {
   const { t } = useTranslation();
@@ -400,45 +492,12 @@ const PublicDocsList = ({
     listError
   } = collectionState;
 
-  useEffect(() => {
-    if (restoreScrollTop == null || loadingTree || loadingDocuments) {
-      return;
-    }
-
-    let frameId = 0;
-    let attempt = 0;
-    const maxAttempts = 12;
-    const targetScrollTop = restoreScrollTop;
-
-    const restoreScroll = () => {
-      const container = scrollContainerRef.current;
-      if (!container) {
-        onScrollRestored();
-        return;
-      }
-
-      const maxScrollTop = getPublicDocsMaxScrollTop(container);
-      const nextScrollTop = Math.min(targetScrollTop, maxScrollTop);
-      writePublicDocsScrollTop(container, nextScrollTop);
-
-      const restored = Math.abs(readPublicDocsScrollTop(container) - nextScrollTop) <= 2;
-      const needsMoreLayout = maxScrollTop + 2 < targetScrollTop;
-
-      if ((!needsMoreLayout && restored) || attempt >= maxAttempts) {
-        onScrollRestored();
-        return;
-      }
-
-      attempt += 1;
-      frameId = window.requestAnimationFrame(restoreScroll);
-    };
-
-    frameId = window.requestAnimationFrame(restoreScroll);
-
-    return () => {
-      window.cancelAnimationFrame(frameId);
-    };
-  }, [loadingDocuments, loadingTree, onScrollRestored, restoreScrollTop, scrollContainerRef]);
+  usePublicDocsScrollRestore({
+    isReady: !loadingTree && !loadingDocuments,
+    restoreScrollTop,
+    scrollContainerRef,
+    onScrollRestored
+  });
 
   const treeRows = useMemo(() => flattenPublicDocsTree(tree), [tree]);
   const listCards = useMemo(() => documents.slice(0, 12), [documents]);
@@ -454,6 +513,12 @@ const PublicDocsList = ({
           <p className={styles.kicker}>Phase 2-2</p>
           <h1 className={styles.pageTitle}>{t('wiki.public.pageTitle')}</h1>
           <p className={styles.pageIntro}>{t('wiki.public.pageIntro')}</p>
+        </div>
+        <div className={styles.sectionActions}>
+          <button type="button" className={styles.secondaryButton} onClick={onOpenSearch}>
+            <Icon icon="mdi:magnify" size={18} />
+            <span>{t('wiki.public.searchAction')}</span>
+          </button>
         </div>
       </div>
 
@@ -590,14 +655,314 @@ const PublicDocsList = ({
   );
 };
 
+interface PublicDocsSearchProps {
+  route: PublicDocsSearchRoute;
+  displayTimeZone: string;
+  scrollContainerRef: RefObject<HTMLDivElement | null>;
+  restoreScrollTop: number | null;
+  onScrollRestored: () => void;
+  onNavigate: (route: PublicDocsRoute, options?: { replace?: boolean }) => void;
+  onBrowseDirectory: () => void;
+  onOpenDocument: (slug: string) => void;
+}
+
+const PublicDocsSearch = ({
+  route,
+  displayTimeZone,
+  scrollContainerRef,
+  restoreScrollTop,
+  onScrollRestored,
+  onNavigate,
+  onBrowseDirectory,
+  onOpenDocument
+}: PublicDocsSearchProps) => {
+  const { t } = useTranslation();
+  const [draftKeyword, setDraftKeyword] = useState(route.keyword);
+  const [reloadToken, setReloadToken] = useState(0);
+  const [searchState, setSearchState] = useState<PublicDocsSearchState>({
+    documents: [],
+    totalDocuments: 0,
+    totalPages: 1,
+    loading: false,
+    error: null
+  });
+
+  useEffect(() => {
+    setDraftKeyword(route.keyword);
+  }, [route.keyword]);
+
+  useEffect(() => {
+    const appliedKeyword = route.keyword.trim();
+    if (!appliedKeyword) {
+      setSearchState({
+        documents: [],
+        totalDocuments: 0,
+        totalPages: 1,
+        loading: false,
+        error: null
+      });
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadSearchResults = async () => {
+      setSearchState((current) => ({
+        ...current,
+        loading: true,
+        error: null
+      }));
+
+      try {
+        const result = await getPublicWikiList({
+          keyword: appliedKeyword,
+          pageIndex: route.page,
+          pageSize: PUBLIC_DOCS_SEARCH_PAGE_SIZE
+        });
+
+        if (cancelled) {
+          return;
+        }
+
+        setSearchState({
+          documents: result.data || [],
+          totalDocuments: result.dataCount || 0,
+          totalPages: Math.max(result.pageCount || 1, 1),
+          loading: false,
+          error: null
+        });
+      } catch (err) {
+        if (cancelled) {
+          return;
+        }
+
+        setSearchState({
+          documents: [],
+          totalDocuments: 0,
+          totalPages: 1,
+          loading: false,
+          error: err instanceof Error ? err.message : String(err)
+        });
+      }
+    };
+
+    void loadSearchResults();
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadToken, route.keyword, route.page]);
+
+  usePublicDocsScrollRestore({
+    isReady: !searchState.loading,
+    restoreScrollTop,
+    scrollContainerRef,
+    onScrollRestored
+  });
+
+  const appliedKeyword = route.keyword.trim();
+  const hasKeyword = Boolean(appliedKeyword);
+  const hasResults = searchState.documents.length > 0;
+  const isLoading = hasKeyword && searchState.loading && !hasResults;
+  const isError = hasKeyword && !searchState.loading && !hasResults && Boolean(searchState.error);
+  const isEmpty = hasKeyword && !searchState.loading && !hasResults && !searchState.error;
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    onNavigate({
+      kind: 'search',
+      keyword: draftKeyword.trim(),
+      page: 1
+    });
+  };
+
+  const handleReset = () => {
+    setDraftKeyword('');
+    onNavigate(createDefaultDocsSearchRoute());
+  };
+
+  const handleChangePage = (page: number) => {
+    if (!hasKeyword || page === route.page || page < 1 || page > searchState.totalPages) {
+      return;
+    }
+
+    onNavigate({
+      ...route,
+      page
+    });
+  };
+
+  return (
+    <section className={styles.sectionCard}>
+      <div className={styles.sectionHeader}>
+        <div className={styles.sectionHeading}>
+          <p className={styles.kicker}>Phase 2-2</p>
+          <h1 className={styles.pageTitle}>
+            {hasKeyword ? t('wiki.public.searchResultTitle', { keyword: appliedKeyword }) : t('wiki.public.searchTitle')}
+          </h1>
+          <p className={styles.pageIntro}>
+            {hasKeyword ? t('wiki.public.searchResultIntro') : t('wiki.public.searchIntro')}
+          </p>
+        </div>
+        <div className={styles.sectionActions}>
+          <button type="button" className={styles.secondaryButton} onClick={onBrowseDirectory}>
+            <Icon icon="mdi:arrow-left" size={18} />
+            <span>{t('wiki.public.backToList')}</span>
+          </button>
+        </div>
+      </div>
+
+      <div className={styles.contentWrap}>
+        <section className={styles.searchPanel}>
+          <form className={styles.searchForm} onSubmit={handleSubmit}>
+            <div className={styles.searchInputWrap}>
+              <Icon icon="mdi:magnify" size={18} />
+              <input
+                type="search"
+                value={draftKeyword}
+                onChange={(event) => setDraftKeyword(event.target.value)}
+                className={styles.searchInput}
+                placeholder={t('wiki.public.searchPlaceholder')}
+              />
+            </div>
+            <button type="submit" className={styles.primaryButton}>
+              {t('wiki.public.searchSubmit')}
+            </button>
+            <button type="button" className={styles.secondaryButton} onClick={handleReset}>
+              {t('wiki.public.searchReset')}
+            </button>
+          </form>
+
+          <div className={styles.searchSummaryRail}>
+            <span className={styles.metaChip}>
+              {hasKeyword
+                ? t('wiki.public.searchKeywordSummary', { keyword: appliedKeyword })
+                : t('wiki.public.searchIdleSummary')}
+            </span>
+            {hasKeyword && (
+              <span className={styles.metaChip}>{t('wiki.public.searchResultCount', { count: searchState.totalDocuments })}</span>
+            )}
+            {hasKeyword && searchState.totalPages > 1 && (
+              <span className={styles.metaChip}>
+                {t('common.pageInfo', { current: route.page, total: searchState.totalPages })}
+              </span>
+            )}
+          </div>
+        </section>
+
+        {!hasKeyword ? (
+          <PublicStatusCard
+            tone="empty"
+            title={t('wiki.public.searchIdleTitle')}
+            description={t('wiki.public.searchIdleDescription')}
+            secondaryAction={{
+              label: t('wiki.public.backToList'),
+              onClick: onBrowseDirectory
+            }}
+          />
+        ) : isLoading ? (
+          <PublicStatusCard
+            tone="loading"
+            title={t('wiki.public.searchLoadingTitle')}
+            description={t('wiki.public.searchLoadingDescription')}
+          />
+        ) : isError ? (
+          <PublicStatusCard
+            tone="error"
+            title={t('wiki.public.searchErrorTitle')}
+            description={searchState.error || t('wiki.public.searchLoadingDescription')}
+            primaryAction={{
+              label: t('common.retry'),
+              onClick: () => setReloadToken((current) => current + 1)
+            }}
+            secondaryAction={{
+              label: t('wiki.public.backToList'),
+              onClick: onBrowseDirectory
+            }}
+          />
+        ) : isEmpty ? (
+          <PublicStatusCard
+            tone="empty"
+            title={t('wiki.public.searchEmptyTitle')}
+            description={t('wiki.public.searchEmptyDescription')}
+          />
+        ) : (
+          <section className={styles.searchResultsSection}>
+            <div className={styles.searchResultsHeader}>
+              <div>
+                <h2 className={styles.panelTitle}>{t('wiki.public.searchResultsTitle')}</h2>
+                <p className={styles.panelHint}>{t('wiki.public.searchResultsHint')}</p>
+              </div>
+              <span className={styles.panelStat}>{t('wiki.public.searchResultCount', { count: searchState.totalDocuments })}</span>
+            </div>
+
+            <div className={styles.searchResultList}>
+              {searchState.documents.map((document) => (
+                <button
+                  key={document.voId}
+                  type="button"
+                  className={`${styles.docCard} ${styles.searchResultCard}`}
+                  onClick={() => onOpenDocument(document.voSlug)}
+                >
+                  <div className={styles.docCardMeta}>
+                    <span className={styles.metaChip}>{toVisibilityText(t, document.voVisibility)}</span>
+                    <span className={styles.metaChip}>{toStatusText(t, document.voStatus)}</span>
+                    <span className={styles.metaChip}>{t('wiki.meta.slug', { value: document.voSlug })}</span>
+                  </div>
+                  <h2 className={styles.searchResultTitle}>{document.voTitle}</h2>
+                  <p className={styles.docCardSummary}>
+                    {document.voSummary?.trim() || t('wiki.public.summaryFallback')}
+                  </p>
+                  <div className={styles.searchResultMeta}>
+                    <span>{t('wiki.meta.source', { value: document.voSourceType })}</span>
+                    <span>{formatDateTimeByTimeZone(document.voModifyTime || document.voCreateTime, displayTimeZone)}</span>
+                  </div>
+                  <div className={styles.docCardFooter}>
+                    <span>{t('wiki.public.searchOpenHint')}</span>
+                    <span className={styles.docCardAction}>{t('wiki.public.openDocument')}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {searchState.totalPages > 1 && (
+              <div className={styles.paginationBar}>
+                <button
+                  type="button"
+                  className={styles.secondaryButton}
+                  onClick={() => handleChangePage(route.page - 1)}
+                  disabled={route.page <= 1}
+                >
+                  {t('common.previousPage')}
+                </button>
+                <span className={styles.paginationInfo}>
+                  {t('common.pageInfo', { current: route.page, total: searchState.totalPages })}
+                </span>
+                <button
+                  type="button"
+                  className={styles.secondaryButton}
+                  onClick={() => handleChangePage(route.page + 1)}
+                  disabled={route.page >= searchState.totalPages}
+                >
+                  {t('common.nextPage')}
+                </button>
+              </div>
+            )}
+          </section>
+        )}
+      </div>
+    </section>
+  );
+};
+
 interface PublicDocsDetailProps {
   route: PublicDocsRoute & { kind: 'detail' };
   displayTimeZone: string;
+  backLabel: string;
   onBack: () => void;
   onNavigate: (route: PublicDocsRoute, options?: { replace?: boolean }) => void;
 }
 
-const PublicDocsDetail = ({ route, displayTimeZone, onBack, onNavigate }: PublicDocsDetailProps) => {
+const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigate }: PublicDocsDetailProps) => {
   const { t } = useTranslation();
   const [documentDetail, setDocumentDetail] = useState<WikiDocumentDetailVo | null>(null);
   const [loading, setLoading] = useState(false);
@@ -707,7 +1072,7 @@ const PublicDocsDetail = ({ route, displayTimeZone, onBack, onNavigate }: Public
       <div className={styles.detailTopbar}>
         <button type="button" className={styles.secondaryButton} onClick={onBack}>
           <Icon icon="mdi:arrow-left" size={18} />
-          <span>{t('wiki.public.backToList')}</span>
+          <span>{backLabel}</span>
         </button>
       </div>
 
@@ -726,7 +1091,7 @@ const PublicDocsDetail = ({ route, displayTimeZone, onBack, onNavigate }: Public
             title={t('wiki.public.notFoundTitle')}
             description={t('wiki.public.notFoundDescription')}
             secondaryAction={{
-              label: t('wiki.public.backToList'),
+              label: backLabel,
               onClick: onBack
             }}
           />
@@ -742,7 +1107,7 @@ const PublicDocsDetail = ({ route, displayTimeZone, onBack, onNavigate }: Public
               onClick: () => setReloadToken((current) => current + 1)
             }}
             secondaryAction={{
-              label: t('wiki.public.backToList'),
+              label: backLabel,
               onClick: onBack
             }}
           />
