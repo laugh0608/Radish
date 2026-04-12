@@ -1,13 +1,14 @@
 import { apiGet, apiPost, configureApiClient } from '@radish/http';
 import { getApiBaseUrl } from '@/config/env';
 import type { PostItem, VoPagedResult } from '@/types/forum';
+import type { LongId } from './user';
 
 configureApiClient({
   baseUrl: getApiBaseUrl(),
 });
 
 export interface UserFollowStatus {
-  voTargetUserId: number;
+  voTargetUserId: LongId;
   voIsFollowing: boolean;
   voIsFollower: boolean;
   voFollowerCount: number;
@@ -20,7 +21,7 @@ export interface UserFollowSummary {
 }
 
 export interface UserFollowUser {
-  voUserId: number;
+  voUserId: LongId;
   voUserName: string;
   voDisplayName?: string | null;
   voAvatarUrl?: string | null;
@@ -30,7 +31,7 @@ export interface UserFollowUser {
 
 export type DistributionStreamType = 'recommend' | 'hot' | 'newest';
 
-export async function followUser(targetUserId: number): Promise<UserFollowStatus> {
+export async function followUser(targetUserId: LongId): Promise<UserFollowStatus> {
   const response = await apiPost<UserFollowStatus>(
     '/api/v1/UserFollow/Follow',
     { targetUserId },
@@ -44,7 +45,7 @@ export async function followUser(targetUserId: number): Promise<UserFollowStatus
   return response.data;
 }
 
-export async function unfollowUser(targetUserId: number): Promise<UserFollowStatus> {
+export async function unfollowUser(targetUserId: LongId): Promise<UserFollowStatus> {
   const response = await apiPost<UserFollowStatus>(
     '/api/v1/UserFollow/Unfollow',
     { targetUserId },
@@ -58,9 +59,9 @@ export async function unfollowUser(targetUserId: number): Promise<UserFollowStat
   return response.data;
 }
 
-export async function getFollowStatus(targetUserId: number): Promise<UserFollowStatus> {
+export async function getFollowStatus(targetUserId: LongId): Promise<UserFollowStatus> {
   const response = await apiGet<UserFollowStatus>(
-    `/api/v1/UserFollow/GetFollowStatus?targetUserId=${targetUserId}`,
+    `/api/v1/UserFollow/GetFollowStatus?targetUserId=${encodeURIComponent(String(targetUserId))}`,
     { withAuth: true }
   );
 

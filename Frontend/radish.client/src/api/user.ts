@@ -31,6 +31,14 @@ export interface VoPagedResult<T> {
 
 export type LongId = number | string;
 
+export interface PageModel<T> {
+  page: number;
+  pageSize: number;
+  dataCount: number;
+  pageCount: number;
+  data: T[];
+}
+
 export interface UserBrowseHistoryItem {
   voId: LongId;
   voTargetType: 'Post' | 'Product' | 'Wiki' | string;
@@ -46,12 +54,42 @@ export interface UserBrowseHistoryItem {
 }
 
 export interface PublicUserProfile {
-  voUserId: number;
+  voUserId: LongId;
   voUserName: string;
   voDisplayName?: string | null;
   voCreateTime: string;
   voAvatarUrl?: string | null;
   voAvatarThumbnailUrl?: string | null;
+}
+
+export interface PublicUserStats {
+  voPostCount: number;
+  voCommentCount: number;
+  voTotalLikeCount: number;
+  voPostLikeCount: number;
+  voCommentLikeCount: number;
+}
+
+export interface PublicUserPost {
+  voId: LongId;
+  voTitle: string;
+  voSummary?: string | null;
+  voContent: string;
+  voCategoryName?: string | null;
+  voViewCount: number;
+  voLikeCount: number;
+  voCommentCount: number;
+  voCreateTime: string;
+}
+
+export interface PublicUserComment {
+  voId: LongId;
+  voPostId: LongId;
+  voContent: string;
+  voLikeCount: number;
+  voCreateTime: string;
+  voReplyToUserName?: string | null;
+  voReplyToCommentSnapshot?: string | null;
 }
 
 /**
@@ -101,13 +139,57 @@ export async function getMyBrowseHistory(
   return response.data;
 }
 
-export async function getPublicProfile(userId: number): Promise<PublicUserProfile> {
+export async function getPublicProfile(userId: LongId): Promise<PublicUserProfile> {
   const response = await apiGet<PublicUserProfile>(
-    `/api/v1/User/GetPublicProfile?userId=${userId}`
+    `/api/v1/User/GetPublicProfile?userId=${encodeURIComponent(String(userId))}`
   );
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '加载公开资料失败');
+  }
+
+  return response.data;
+}
+
+export async function getPublicUserStats(userId: LongId): Promise<PublicUserStats> {
+  const response = await apiGet<PublicUserStats>(
+    `/api/v1/User/GetUserStats?userId=${encodeURIComponent(String(userId))}`
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '加载用户统计失败');
+  }
+
+  return response.data;
+}
+
+export async function getPublicUserPosts(
+  userId: LongId,
+  pageIndex: number = 1,
+  pageSize: number = 10
+): Promise<PageModel<PublicUserPost>> {
+  const response = await apiGet<PageModel<PublicUserPost>>(
+    `/api/v1/Post/GetUserPosts?userId=${encodeURIComponent(String(userId))}&pageIndex=${pageIndex}&pageSize=${pageSize}`
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '加载用户帖子失败');
+  }
+
+  return response.data;
+}
+
+export async function getPublicUserComments(
+  userId: LongId,
+  pageIndex: number = 1,
+  pageSize: number = 10
+): Promise<PageModel<PublicUserComment>> {
+  const response = await apiGet<PageModel<PublicUserComment>>(
+    `/api/v1/Comment/GetUserComments?userId=${encodeURIComponent(String(userId))}&pageIndex=${pageIndex}&pageSize=${pageSize}`
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '加载用户评论失败');
   }
 
   return response.data;

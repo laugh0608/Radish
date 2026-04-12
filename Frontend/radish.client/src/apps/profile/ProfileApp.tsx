@@ -346,8 +346,8 @@ export const ProfileApp = () => {
     }
   };
 
-  const handleUserClick = (targetUserId: number, targetUserName: string, avatarUrl?: string | null, displayName?: string | null) => {
-    if (targetUserId === userId) {
+  const handleUserClick = (targetUserId: LongId, targetUserName: string, avatarUrl?: string | null, displayName?: string | null) => {
+    if (String(targetUserId) === String(userId)) {
       openApp('profile');
       return;
     }

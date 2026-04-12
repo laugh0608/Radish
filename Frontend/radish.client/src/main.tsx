@@ -22,6 +22,7 @@ const isPublicContentRoute = isBrowser && (
   || window.location.pathname.startsWith('/forum/')
   || window.location.pathname === '/docs'
   || window.location.pathname.startsWith('/docs/')
+  || /^\/u\/[1-9]\d*\/?$/.test(window.location.pathname)
   || window.location.pathname === '/__documents__'
   || window.location.pathname.startsWith('/__documents__/')
 );

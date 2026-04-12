@@ -34,6 +34,7 @@ interface PublicForumAppProps {
   route: PublicForumRoute;
   fallbackListRoute: PublicForumListRoute;
   onNavigate: (route: PublicForumRoute, options?: { replace?: boolean }) => void;
+  onNavigateToProfile?: (userId: string) => void;
 }
 
 type RootCommentSort = 'newest' | 'hottest' | null;
@@ -132,7 +133,7 @@ function PublicStatusCard({
   );
 }
 
-export const PublicForumApp = ({ route, fallbackListRoute, onNavigate }: PublicForumAppProps) => {
+export const PublicForumApp = ({ route, fallbackListRoute, onNavigate, onNavigateToProfile }: PublicForumAppProps) => {
   const { t } = useTranslation();
   const [displayTimeZone] = useState(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE));
   const pageRef = useRef<HTMLDivElement>(null);
@@ -214,6 +215,7 @@ export const PublicForumApp = ({ route, fallbackListRoute, onNavigate }: PublicF
             postId={route.postId}
             displayTimeZone={displayTimeZone}
             onBack={() => onNavigate(fallbackListRoute)}
+            onOpenAuthorProfile={onNavigateToProfile}
           />
         ) : (
           <PublicForumList
@@ -225,6 +227,7 @@ export const PublicForumApp = ({ route, fallbackListRoute, onNavigate }: PublicF
             onScrollRestored={() => setPendingRestoreScrollTop(null)}
             onRouteStateChange={onNavigate}
             onOpenPost={(postId) => onNavigate({ kind: 'detail', postId })}
+            onOpenAuthorProfile={onNavigateToProfile}
           />
         )}
       </main>
@@ -240,6 +243,7 @@ interface PublicForumListProps {
   onScrollRestored: () => void;
   onRouteStateChange: (route: PublicForumListRoute, options?: { replace?: boolean }) => void;
   onOpenPost: (postId: string) => void;
+  onOpenAuthorProfile?: (userId: string) => void;
 }
 
 const PublicForumList = ({
@@ -249,7 +253,8 @@ const PublicForumList = ({
   restoreScrollTop,
   onScrollRestored,
   onRouteStateChange,
-  onOpenPost
+  onOpenPost,
+  onOpenAuthorProfile
 }: PublicForumListProps) => {
   const { t } = useTranslation();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -543,6 +548,7 @@ const PublicForumList = ({
                 displayTimeZone={displayTimeZone}
                 onClick={() => onOpenPost(String(post.voId))}
                 variant="publicCompact"
+                onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
                 godComment={godComment ? {
                   authorName: godComment.voAuthorName,
                   content: godComment.voContentSnapshot
@@ -591,9 +597,10 @@ interface PublicForumDetailProps {
   postId: string;
   displayTimeZone: string;
   onBack: () => void;
+  onOpenAuthorProfile?: (userId: string) => void;
 }
 
-const PublicForumDetail = ({ postId, displayTimeZone, onBack }: PublicForumDetailProps) => {
+const PublicForumDetail = ({ postId, displayTimeZone, onBack, onOpenAuthorProfile }: PublicForumDetailProps) => {
   const { t } = useTranslation();
   const [post, setPost] = useState<PostDetail | null>(null);
   const [comments, setComments] = useState<CommentNode[]>([]);
@@ -846,6 +853,7 @@ const PublicForumDetail = ({ postId, displayTimeZone, onBack }: PublicForumDetai
               mode="readOnly"
               isAuthenticated={false}
               showSectionTitle={false}
+              onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
             />
 
             {quickReplySectionState === 'error' ? (
@@ -940,6 +948,7 @@ const PublicForumDetail = ({ postId, displayTimeZone, onBack }: PublicForumDetai
                     onLoadMoreChildren={handleLoadMoreChildren}
                     onLoadMoreRootComments={handleLoadMoreComments}
                     showTitle={false}
+                    onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
                   />
                 </>
               )}

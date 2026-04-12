@@ -4,6 +4,7 @@ import { Icon } from '@radish/ui/icon';
 import { getApiBaseUrl } from '@/config/env';
 import { log } from '@/utils/logger';
 import type { PostItem } from '@/types/forum';
+import type { LongId } from '@/api/user';
 import {
   getMyFollowers,
   getMyFollowing,
@@ -24,7 +25,7 @@ type FeedViewType = 'following' | DistributionStreamType;
 interface UserFollowPanelProps {
   displayTimeZone: string;
   onPostClick?: (postId: number) => void;
-  onUserClick?: (userId: number, userName: string, avatarUrl?: string | null, displayName?: string | null) => void;
+  onUserClick?: (userId: LongId, userName: string, avatarUrl?: string | null, displayName?: string | null) => void;
 }
 
 const PAGE_SIZE = 10;
@@ -37,7 +38,7 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
   const [summary, setSummary] = useState<UserFollowSummary>({ voFollowerCount: 0, voFollowingCount: 0 });
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [avatarErrorUserIds, setAvatarErrorUserIds] = useState<Set<number>>(new Set());
+  const [avatarErrorUserIds, setAvatarErrorUserIds] = useState<Set<string>>(new Set());
   const [feedItems, setFeedItems] = useState<PostItem[]>([]);
   const [followerItems, setFollowerItems] = useState<UserFollowUser[]>([]);
   const [followingItems, setFollowingItems] = useState<UserFollowUser[]>([]);
@@ -192,7 +193,8 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
 
   const renderUserAvatar = (user: UserFollowUser) => {
     const name = user.voDisplayName?.trim() || user.voUserName.trim() || t('common.unknownUser');
-    const avatarUrl = avatarErrorUserIds.has(user.voUserId) ? null : resolveMediaUrl(user.voAvatarUrl, apiBaseUrl);
+    const userIdKey = String(user.voUserId);
+    const avatarUrl = avatarErrorUserIds.has(userIdKey) ? null : resolveMediaUrl(user.voAvatarUrl, apiBaseUrl);
 
     return (
       <span
@@ -209,7 +211,7 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
             onError={() => {
               setAvatarErrorUserIds((current) => {
                 const next = new Set(current);
-                next.add(user.voUserId);
+                next.add(userIdKey);
                 return next;
               });
             }}
