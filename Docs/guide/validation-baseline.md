@@ -227,6 +227,7 @@ npm run validate:ci
 - 标签异常态：不存在或不可公开访问的 `tagSlug` 会给出只读状态页，而不是静默回退到全部帖子列表
 - 标签跳转：公开列表卡片、帖子详情中的标签点击会统一跳到 `/forum/tag/:tagSlug`，不再停留在纯展示文本
 - 结构化类型直达：公开列表卡片、帖子详情中的“问答 / 投票 / 抽奖”徽标当前会统一跳到 `/forum/question`、`/forum/poll` 与 `/forum/lottery`
+- SQLite 本地稳定性：若本轮同时改到公开标签 slug 解析、仓储通用读查询或后台作业读取链路，宿主重启后需额外确认 `ShopJob / PostLotteryJob` 不再出现 `reader is closed / FieldCount when reader is closed`，并确认公开标签直链不会再触发 `near \"(\": syntax error`
 - 范围边界：公开标签首批当前只承载标签上下文、帖子列表阅读、排序分页与帖子详情阅读，不开放标签关注、标签订阅、发帖、评论提交、点赞、投票或其他桌面互动动作
 
 当前批次与 docs 公开搜索首批直接相关的人工确认面：
