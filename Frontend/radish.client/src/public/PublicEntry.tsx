@@ -218,6 +218,10 @@ export const PublicEntry = () => {
     navigateToForumRoute({ kind: 'detail', postId });
   }, [navigateToForumRoute]);
 
+  const navigateToForumTag = useCallback((tagSlug: string) => {
+    navigateToForumRoute({ kind: 'tag', tagSlug, sortBy: 'newest', page: 1 });
+  }, [navigateToForumRoute]);
+
   const navigateToProfileFromForum = useCallback((userId: string) => {
     navigateToProfileRoute({ kind: 'detail', userId, tab: 'posts', page: 1 });
   }, [navigateToProfileRoute]);
@@ -254,6 +258,7 @@ export const PublicEntry = () => {
       onNavigate={navigateToForumRoute}
       onNavigateToProfile={navigateToProfileFromForum}
       onNavigateToSearch={navigateToPublicForumSearch}
+      onNavigateToTag={navigateToForumTag}
     />
   );
 };

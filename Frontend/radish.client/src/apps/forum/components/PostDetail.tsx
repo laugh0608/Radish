@@ -54,6 +54,7 @@ interface PostDetailProps {
   followLoading?: boolean;
   onToggleFollow?: (targetUserId: number, isFollowing: boolean) => Promise<void>;
   onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
+  onTagClick?: (tagName: string, tagSlug: string) => void;
   onReport?: (postId: number) => void;
 }
 
@@ -91,6 +92,7 @@ export const PostDetail = ({
   followLoading = false,
   onToggleFollow,
   onAuthorClick,
+  onTagClick,
   onReport,
 }: PostDetailProps) => {
   const { t } = useTranslation();
@@ -104,6 +106,7 @@ export const PostDetail = ({
         .filter(Boolean)
     : [];
   const tagList = post?.voTagNames && post.voTagNames.length > 0 ? post.voTagNames : parsedTags;
+  const tagSlugList = post?.voTagSlugs ?? [];
   const [selectedOptionId, setSelectedOptionId] = useState<number | null>(post?.voPoll?.voSelectedOptionId ?? null);
   const [isVoting, setIsVoting] = useState(false);
   const [answerContent, setAnswerContent] = useState('');
@@ -406,9 +409,20 @@ export const PostDetail = ({
         {tagList.length > 0 && (
           <div className={styles.postTags}>
             {tagList.map((tag, index) => (
-              <span key={index} className={styles.tag}>
-                {tag}
-              </span>
+              onTagClick && tagSlugList[index] ? (
+                <button
+                  key={`${tag}-${tagSlugList[index]}`}
+                  type="button"
+                  className={styles.tag}
+                  onClick={() => onTagClick(tag, tagSlugList[index])}
+                >
+                  {tag}
+                </button>
+              ) : (
+                <span key={index} className={styles.tag}>
+                  {tag}
+                </span>
+              )
             ))}
           </div>
         )}

@@ -46,6 +46,7 @@ public class PostControllerTest
                 "newest",
                 null,
                 null,
+                null,
                 null))
             .ReturnsAsync((posts, 1));
         postServiceMock
@@ -88,6 +89,7 @@ public class PostControllerTest
             1,
             20,
             "newest",
+            null,
             null,
             null,
             null), Times.Once);
@@ -199,6 +201,64 @@ public class PostControllerTest
     }
 
     [Fact]
+    public async Task GetList_Should_Pass_TagSlug_To_ForumQuery()
+    {
+        var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
+        var moderationServiceMock = new Mock<IContentModerationService>(MockBehavior.Strict);
+        var attachmentServiceMock = new Mock<IBaseService<Attachment, AttachmentVo>>(MockBehavior.Strict);
+        var commentServiceMock = new Mock<IBaseService<Comment, CommentVo>>(MockBehavior.Strict);
+
+        var taggedPosts = new List<PostVo>
+        {
+            new()
+            {
+                VoId = 9601,
+                VoTitle = "标签公开帖",
+                VoAuthorId = 0,
+                VoCreateTime = DateTime.UtcNow
+            }
+        };
+
+        postServiceMock
+            .Setup(service => service.GetForumPostPageAsync(
+                null,
+                1,
+                20,
+                "newest",
+                null,
+                null,
+                null,
+                "community-news"))
+            .ReturnsAsync((taggedPosts, 1));
+        postServiceMock
+            .Setup(service => service.FillPostListMetadataAsync(It.Is<List<PostVo>>(items => ReferenceEquals(items, taggedPosts))))
+            .Returns(Task.CompletedTask);
+        commentServiceMock
+            .Setup(service => service.QueryAsync(It.IsAny<Expression<Func<Comment, bool>>>()))
+            .ReturnsAsync(new List<CommentVo>());
+
+        var controller = CreateController(
+            postServiceMock.Object,
+            moderationServiceMock.Object,
+            attachmentServiceMock.Object,
+            commentServiceMock.Object);
+
+        var result = await controller.GetList(tagSlug: "community-news");
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(200, result.StatusCode);
+        postServiceMock.Verify(service => service.GetForumPostPageAsync(
+            null,
+            1,
+            20,
+            "newest",
+            null,
+            null,
+            null,
+            "community-news"), Times.Once);
+    }
+
+    [Fact]
     public async Task GetList_Should_Use_Question_Query_When_PostTypeIsQuestion()
     {
         var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
@@ -229,7 +289,8 @@ public class PostControllerTest
                 null,
                 null,
                 null,
-                false))
+                false,
+                null))
             .ReturnsAsync((questionPosts, 1));
         postServiceMock
             .Setup(service => service.FillPostListMetadataAsync(It.Is<List<PostVo>>(items => ReferenceEquals(items, questionPosts))))
@@ -263,7 +324,8 @@ public class PostControllerTest
             null,
             null,
             null,
-            false), Times.Once);
+            false,
+            null), Times.Once);
         postServiceMock.Verify(service => service.QueryPageAsync(
             It.IsAny<Expression<Func<Post, bool>>>(),
             It.IsAny<int>(),
@@ -302,6 +364,7 @@ public class PostControllerTest
                 null,
                 null,
                 null,
+                null,
                 null))
             .ReturnsAsync((pollPosts, 1));
         postServiceMock
@@ -335,6 +398,7 @@ public class PostControllerTest
             null,
             null,
             null,
+            null,
             null), Times.Once);
         postServiceMock.Verify(service => service.GetQuestionPostPageAsync(
             It.IsAny<long?>(),
@@ -344,7 +408,8 @@ public class PostControllerTest
             It.IsAny<string?>(),
             It.IsAny<DateTime?>(),
             It.IsAny<DateTime?>(),
-            It.IsAny<bool?>()), Times.Never);
+            It.IsAny<bool?>(),
+            It.IsAny<string?>()), Times.Never);
         postServiceMock.Verify(service => service.QueryPageAsync(
             It.IsAny<Expression<Func<Post, bool>>>(),
             It.IsAny<int>(),
@@ -383,7 +448,8 @@ public class PostControllerTest
                 null,
                 null,
                 null,
-                true))
+                true,
+                null))
             .ReturnsAsync((pollPosts, 1));
         postServiceMock
             .Setup(service => service.FillPostListMetadataAsync(It.Is<List<PostVo>>(items => ReferenceEquals(items, pollPosts))))
@@ -416,7 +482,8 @@ public class PostControllerTest
             null,
             null,
             null,
-            true), Times.Once);
+            true,
+            null), Times.Once);
     }
 
     [Fact]
@@ -446,6 +513,7 @@ public class PostControllerTest
                 1,
                 20,
                 "votes",
+                null,
                 null,
                 null,
                 null,
@@ -482,6 +550,7 @@ public class PostControllerTest
             null,
             null,
             null,
+            null,
             null), Times.Once);
     }
 
@@ -515,6 +584,7 @@ public class PostControllerTest
                 null,
                 null,
                 null,
+                null,
                 null))
             .ReturnsAsync((pollPosts, 1));
         postServiceMock
@@ -545,6 +615,7 @@ public class PostControllerTest
             1,
             20,
             "deadline",
+            null,
             null,
             null,
             null,

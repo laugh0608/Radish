@@ -16,15 +16,23 @@ public partial class PostService
         string sortBy = "newest",
         string? keyword = null,
         DateTime? startTime = null,
-        DateTime? endTime = null)
+        DateTime? endTime = null,
+        string? tagSlug = null)
     {
         if (_postCustomRepository == null)
         {
             throw new InvalidOperationException("帖子仓储未配置，无法查询论坛帖子列表");
         }
 
+        var tagId = await ResolvePublicTagIdAsync(tagSlug);
+        if (!string.IsNullOrWhiteSpace(tagSlug) && !tagId.HasValue)
+        {
+            return (new List<PostVo>(), 0);
+        }
+
         var (posts, totalCount) = await _postCustomRepository.QueryForumPostPageAsync(
             categoryId,
+            tagId,
             keyword,
             startTime,
             endTime,
@@ -63,6 +71,10 @@ public partial class PostService
             var tagIds = postTags.Select(pt => pt.TagId).ToList();
             var tags = await _tagService.QueryAsync(t => tagIds.Contains(t.Id) && t.IsEnabled && !t.IsDeleted);
             postVo.VoTags = string.Join(", ", tags.Select(t => t.VoName));
+            postVo.VoTagSlugs = tags
+                .Select(t => t.VoSlug)
+                .Where(tagSlugItem => !string.IsNullOrWhiteSpace(tagSlugItem))
+                .ToList();
         }
 
         var pollVo = await BuildPostPollVoAsync(postId, viewerUserId);
@@ -102,15 +114,23 @@ public partial class PostService
         string? keyword = null,
         DateTime? startTime = null,
         DateTime? endTime = null,
-        bool? isSolved = null)
+        bool? isSolved = null,
+        string? tagSlug = null)
     {
         if (_postCustomRepository == null)
         {
             throw new InvalidOperationException("帖子仓储未配置，无法查询问答帖子列表");
         }
 
+        var tagId = await ResolvePublicTagIdAsync(tagSlug);
+        if (!string.IsNullOrWhiteSpace(tagSlug) && !tagId.HasValue)
+        {
+            return (new List<PostVo>(), 0);
+        }
+
         var (posts, totalCount) = await _postCustomRepository.QueryQuestionPostPageAsync(
             categoryId,
+            tagId,
             keyword,
             startTime,
             endTime,
@@ -133,7 +153,8 @@ public partial class PostService
         string? keyword = null,
         DateTime? startTime = null,
         DateTime? endTime = null,
-        bool? isClosed = null)
+        bool? isClosed = null,
+        string? tagSlug = null)
     {
         var utcNow = DateTime.UtcNow;
         Expression<Func<PostPoll, bool>> pollCondition = isClosed switch
@@ -151,6 +172,23 @@ public partial class PostService
             .Select(poll => poll.PostId)
             .Distinct()
             .ToList();
+
+        var tagId = await ResolvePublicTagIdAsync(tagSlug);
+        if (!string.IsNullOrWhiteSpace(tagSlug) && !tagId.HasValue)
+        {
+            return (new List<PostVo>(), 0);
+        }
+
+        if (tagId.HasValue)
+        {
+            var taggedPostIds = (await _postTagRepository.QueryAsync(postTag => postTag.TagId == tagId.Value))
+                .Select(postTag => postTag.PostId)
+                .Distinct()
+                .ToHashSet();
+            pollPostIds = pollPostIds
+                .Where(postId => taggedPostIds.Contains(postId))
+                .ToList();
+        }
 
         if (pollPostIds.Count == 0)
         {
@@ -240,14 +278,17 @@ public partial class PostService
             .ToList();
 
         Dictionary<long, string> tagNameMap = new();
+        Dictionary<long, string> tagSlugMap = new();
         if (tagIds.Count > 0)
         {
-            tagNameMap = (await _tagRepository.QueryAsync(tag =>
+            var enabledTags = (await _tagRepository.QueryAsync(tag =>
                     tagIds.Contains(tag.Id) &&
                     tag.IsEnabled &&
                     !tag.IsDeleted))
                 .GroupBy(tag => tag.Id)
-                .ToDictionary(group => group.Key, group => group.First().Name);
+                .ToDictionary(group => group.Key, group => group.First());
+            tagNameMap = enabledTags.ToDictionary(entry => entry.Key, entry => entry.Value.Name);
+            tagSlugMap = enabledTags.ToDictionary(entry => entry.Key, entry => entry.Value.Slug);
         }
 
         var tagTextMap = postTags
@@ -299,6 +340,12 @@ public partial class PostService
             {
                 post.VoTags = tags;
             }
+
+            post.VoTagSlugs = postTags
+                .Where(postTag => postTag.PostId == post.VoId)
+                .Select(postTag => tagSlugMap.GetValueOrDefault(postTag.TagId))
+                .Where(tagSlugItem => !string.IsNullOrWhiteSpace(tagSlugItem))
+                .ToList()!;
 
             if (!pollMap.TryGetValue(post.VoId, out var poll))
             {
@@ -647,6 +694,22 @@ public partial class PostService
     private static bool IsPollClosed(PostPoll poll)
     {
         return poll.IsClosed || (poll.EndTime.HasValue && poll.EndTime.Value <= DateTime.UtcNow);
+    }
+
+    private async Task<long?> ResolvePublicTagIdAsync(string? tagSlug)
+    {
+        if (string.IsNullOrWhiteSpace(tagSlug))
+        {
+            return null;
+        }
+
+        var normalizedSlug = tagSlug.Trim().ToLowerInvariant();
+        var tag = await _tagRepository.QueryFirstAsync(item =>
+            item.Slug == normalizedSlug &&
+            item.IsEnabled &&
+            !item.IsDeleted);
+
+        return tag?.Id;
     }
 
     private static int GetPollDeadlineGroup(PostPoll? poll)

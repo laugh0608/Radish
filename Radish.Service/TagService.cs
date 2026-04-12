@@ -90,6 +90,20 @@ public class TagService : BaseService<Tag, TagVo>, ITagService
     }
 
     /// <summary>
+    /// 根据 slug 获取公开标签详情
+    /// </summary>
+    public async Task<TagVo?> GetPublicTagBySlugAsync(string slug)
+    {
+        var normalizedSlug = slug?.Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(normalizedSlug))
+        {
+            return null;
+        }
+
+        return await QueryFirstAsync(t => t.Slug == normalizedSlug && t.IsEnabled && !t.IsDeleted);
+    }
+
+    /// <summary>
     /// 分页查询标签（后台管理）
     /// </summary>
     public async Task<PageModel<TagVo>> GetTagPageAsync(

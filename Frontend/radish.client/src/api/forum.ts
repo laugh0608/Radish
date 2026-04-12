@@ -164,6 +164,27 @@ export async function getHotTags(t: TFunction, topCount: number = 20): Promise<T
 }
 
 /**
+ * 按 slug 获取公开标签详情
+ */
+export async function getTagBySlug(tagSlug: string, t: TFunction): Promise<Tag> {
+  void t;
+  const response = await apiGet<Tag>(
+    `/api/v1/Tag/GetBySlug/${encodeURIComponent(tagSlug)}`,
+    { timeout: FORUM_READ_TIMEOUT_MS }
+  );
+
+  if (!response.ok || !response.data) {
+    if (!response.ok && (response.statusCode === 404 || response.statusCode === 410)) {
+      throw new Error(response.message || '标签不存在或已不可用');
+    }
+
+    throw new Error(response.message || '加载标签详情失败');
+  }
+
+  return response.data;
+}
+
+/**
  * 获取顶级分类列表
  */
 export async function getTopCategories(t: TFunction): Promise<Category[]> {
@@ -217,7 +238,10 @@ export async function getPostList(
   endTime?: string,
   postType: ForumPostViewMode = 'all',
   questionStatus: QuestionStatusFilter = 'all',
-  pollStatus: PollStatusFilter = 'all'
+  pollStatus: PollStatusFilter = 'all',
+  options?: {
+    tagSlug?: string;
+  }
 ): Promise<PageModel<PostItem>> {
   void t;
   const params = new URLSearchParams();
@@ -231,6 +255,7 @@ export async function getPostList(
   if (keyword.trim()) params.set('keyword', keyword.trim());
   if (startTime) params.set('startTime', startTime);
   if (endTime) params.set('endTime', endTime);
+  if (options?.tagSlug?.trim()) params.set('tagSlug', options.tagSlug.trim());
 
   const response = await apiGet<PageModel<PostItem>>(
     `/api/v1/Post/GetList?${params.toString()}`,

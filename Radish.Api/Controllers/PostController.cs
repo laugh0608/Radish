@@ -112,6 +112,7 @@ public class PostController : ControllerBase
     /// <param name="keyword">搜索关键词（搜索标题和内容）</param>
     /// <param name="startTime">筛选起始时间（可选，基于帖子创建时间）</param>
     /// <param name="endTime">筛选结束时间（可选，基于帖子创建时间）</param>
+    /// <param name="tagSlug">标签 slug（可选）</param>
     /// <param name="postType">帖子视图：all（默认）/ question（问答）/ poll（投票）</param>
     /// <param name="questionStatus">问答状态：all（默认）/ pending / solved</param>
     /// <param name="pollStatus">投票状态：all（默认）/ active / closed</param>
@@ -127,6 +128,7 @@ public class PostController : ControllerBase
         string? keyword = null,
         DateTime? startTime = null,
         DateTime? endTime = null,
+        string? tagSlug = null,
         string postType = "all",
         string questionStatus = "all",
         string pollStatus = "all")
@@ -179,7 +181,8 @@ public class PostController : ControllerBase
                 keyword,
                 startTime,
                 endTime,
-                isSolvedFilter);
+                isSolvedFilter,
+                tagSlug);
         }
         else if (isPollView)
         {
@@ -200,7 +203,8 @@ public class PostController : ControllerBase
                 keyword,
                 startTime,
                 endTime,
-                isPollClosedFilter);
+                isPollClosedFilter,
+                tagSlug);
         }
         else
         {
@@ -211,7 +215,8 @@ public class PostController : ControllerBase
                 sortBy,
                 keyword,
                 startTime,
-                endTime);
+                endTime,
+                tagSlug);
         }
 
         // 构建分页模型

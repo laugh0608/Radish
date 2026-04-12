@@ -8,6 +8,13 @@ export interface PublicForumListRoute {
   page: number;
 }
 
+export interface PublicForumTagRoute {
+  kind: 'tag';
+  tagSlug: string;
+  sortBy: PublicListSort;
+  page: number;
+}
+
 export interface PublicForumSearchRoute {
   kind: 'search';
   keyword: string;
@@ -23,7 +30,7 @@ export interface PublicForumDetailRoute {
   postId: string;
 }
 
-export type PublicForumBrowseRoute = PublicForumListRoute | PublicForumSearchRoute;
+export type PublicForumBrowseRoute = PublicForumListRoute | PublicForumTagRoute | PublicForumSearchRoute;
 export type PublicForumRoute = PublicForumBrowseRoute | PublicForumDetailRoute;
 
 export function createDefaultListRoute(): PublicForumListRoute {
@@ -43,6 +50,15 @@ export function createDefaultSearchRoute(): PublicForumSearchRoute {
     timeRange: 'all',
     page: 1
   };
+}
+
+function normalizeTagSlug(value: string | undefined): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  return /^[a-z0-9-]+$/.test(normalized) ? normalized : undefined;
 }
 
 function normalizePositiveInteger(value: string | undefined): number | undefined {
@@ -141,6 +157,18 @@ export function parsePublicForumRoute(pathname: string, search: string): PublicF
     };
   }
 
+  const tagMatched = pathname.match(/^\/forum\/tag\/([^/?#]+)\/?$/);
+  const tagSlug = normalizeTagSlug(tagMatched?.[1] ? decodeURIComponent(tagMatched[1]) : undefined);
+  if (tagSlug) {
+    const params = new URLSearchParams(search);
+    return {
+      kind: 'tag',
+      tagSlug,
+      sortBy: normalizeSortBy(params.get('sort')),
+      page: normalizePositiveInteger(params.get('page') ?? undefined) ?? 1
+    };
+  }
+
   const matched = pathname.match(/^\/forum\/post\/(\d+)\/?$/);
   const postId = normalizePositiveIntegerString(matched?.[1]);
   if (postId) {
@@ -180,6 +208,20 @@ export function buildPublicForumPath(route: PublicForumRoute): string {
 
     const queryString = search.toString();
     return queryString ? `/forum/search?${queryString}` : '/forum/search';
+  }
+
+  if (route.kind === 'tag') {
+    const search = new URLSearchParams();
+    if (route.sortBy !== 'newest') {
+      search.set('sort', route.sortBy);
+    }
+    if (route.page > 1) {
+      search.set('page', String(route.page));
+    }
+
+    const queryString = search.toString();
+    const basePath = `/forum/tag/${encodeURIComponent(route.tagSlug)}`;
+    return queryString ? `${basePath}?${queryString}` : basePath;
   }
 
   const search = new URLSearchParams();

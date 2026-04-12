@@ -76,6 +76,11 @@ public class PostVo
     public string? VoTags { get; set; }
 
     /// <summary>
+    /// 标签 slug 列表（顺序与标签名一致）
+    /// </summary>
+    public List<string> VoTagSlugs { get; set; } = new();
+
+    /// <summary>
     /// 是否置顶
     /// </summary>
     public bool VoIsTop { get; set; }

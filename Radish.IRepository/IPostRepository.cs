@@ -18,6 +18,7 @@ public interface IPostRepository
     /// <returns>分页帖子实体和总数</returns>
     Task<(List<Post> data, int totalCount)> QueryForumPostPageAsync(
         long? categoryId,
+        long? tagId,
         string? keyword,
         DateTime? startTime,
         DateTime? endTime,
@@ -39,6 +40,7 @@ public interface IPostRepository
     /// <returns>分页帖子实体和总数</returns>
     Task<(List<Post> data, int totalCount)> QueryQuestionPostPageAsync(
         long? categoryId,
+        long? tagId,
         string? keyword,
         DateTime? startTime,
         DateTime? endTime,

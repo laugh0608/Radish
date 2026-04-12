@@ -66,12 +66,14 @@ public class PostServiceTest
                 new Tag("投票")
                 {
                     Id = 501,
+                    Slug = "poll",
                     IsEnabled = true,
                     IsDeleted = false
                 },
                 new Tag("社区")
                 {
                     Id = 502,
+                    Slug = "community",
                     IsEnabled = true,
                     IsDeleted = false
                 }
@@ -142,6 +144,7 @@ public class PostServiceTest
 
         Assert.Equal("综合讨论", posts[0].VoCategoryName);
         Assert.Equal("投票, 社区", posts[0].VoTags);
+        Assert.Equal(["poll", "community"], posts[0].VoTagSlugs);
         Assert.True(posts[0].VoHasPoll);
         Assert.Equal(9, posts[0].VoPollTotalVoteCount);
         Assert.False(posts[0].VoPollIsClosed);

@@ -30,6 +30,13 @@ public interface ITagService : IBaseService<Tag, TagVo>
     Task<List<TagVo>> GetHotTagsAsync(int topCount = 20);
 
     /// <summary>
+    /// 根据 slug 获取公开标签详情
+    /// </summary>
+    /// <param name="slug">标签 slug</param>
+    /// <returns>标签详情；不存在或不可公开访问时返回 null</returns>
+    Task<TagVo?> GetPublicTagBySlugAsync(string slug);
+
+    /// <summary>
     /// 分页查询标签（后台管理）
     /// </summary>
     /// <param name="pageIndex">页码（从1开始）</param>

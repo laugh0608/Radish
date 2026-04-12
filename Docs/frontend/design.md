@@ -49,7 +49,7 @@
 - 当前代码事实仍然以 `Desktop Shell + WindowManager` 为主
 - 公开内容壳层当前已完成 forum、docs、个人公开页、公开榜单与公开商城浏览五个首批入口，并继续补到 forum 公开分类、forum 公开搜索与 docs 公开搜索首批：`/forum`、`/forum/category/:categoryId`、`/forum/search`、`/forum/post/:postId`、`/docs`、`/docs/search`、`/docs/:slug`、`/u/:id`、`/leaderboard`、`/leaderboard/:type`、`/shop`、`/shop/products` 与 `/shop/product/:productId` 都已可直接进入公开阅读壳层
 - 公开内容壳层当前仍保持分批只读阅读边界：forum 不承载发帖、评论提交、投票提交，文档阅读不承载编辑、发布、回收站或版本历史等桌面治理交互
-- forum 公开分类与公开搜索首批当前只承载分类简介、关键词检索、帖子列表阅读、排序分页与详情回跳上下文；标签独立直达与标签 SEO 仍放在后续规划
+- forum 公开分类、公开标签与公开搜索首批当前只承载分类 / 标签上下文、关键词检索、帖子列表阅读、排序分页与详情回跳上下文；标签 SEO 深化仍放在后续规划
 - 个人公开页首批当前只承载公开资料、公开统计、公开帖子与公开评论阅读；不把编辑资料、浏览记录、附件管理或完整关系链治理搬进公开壳层
 - 公开榜单首批当前只承载榜单切换、分页、登录用户“我的排名”增强，以及用户榜单跳转个人公开页；不把经验明细、商城详情、购买链路或其他工作台动作搬进公开壳层
 - 公开商城浏览首批当前只承载首页、商品列表与商品详情阅读；不把购买确认、订单、背包、举报或其他“我的”动作搬进公开壳层
@@ -440,14 +440,14 @@ export const AdminApp = () => {
 
 ## 6. 移动端适配（执行中：公开内容壳层首批已落地，完整移动壳层尚未实现）
 
-> 截至 `2026-04-12`，仓库中的 `radish.client` 仍然是桌面 / WebOS 优先架构，当前并没有真正落地的完整 `MobileShell` 实现；但 forum 公开内容壳层已继续落到 `/forum`、`/forum/category/:categoryId`、`/forum/search` 与 `/forum/post/:postId`。本节描述的是“已落地事实 + 后续移动 Web 规划方向”的组合口径。
+> 截至 `2026-04-12`，仓库中的 `radish.client` 仍然是桌面 / WebOS 优先架构，当前并没有真正落地的完整 `MobileShell` 实现；但 forum 公开内容壳层已继续落到 `/forum`、`/forum/category/:categoryId`、`/forum/tag/:tagSlug`、`/forum/search` 与 `/forum/post/:postId`。本节描述的是“已落地事实 + 后续移动 Web 规划方向”的组合口径。
 
 ### 6.1 当前现实
 
 - 论坛等个别页面已有窗口内响应式处理，但这不等于真正的移动端产品形态
 - 当前主入口仍然是桌面 Shell、Dock 与窗口系统
 - 公开内容壳层当前已完成 forum、docs、个人公开页、公开榜单与公开商城浏览五个首批入口落地；帖子列表、分类直达、搜索直达、帖子详情、公开文档目录、个人公开页、公开榜单与公开商城入口都可以绕开桌面 Shell 直接进入公开阅读形态
-- 公开 forum 当前只冻结“列表 + 分类 + 搜索 + 详情 + 轻回应墙展示 + 评论阅读”，并明确保持只读阅读边界
+- 公开 forum 当前只冻结“列表 + 分类 + 标签 + 搜索 + 详情 + 轻回应墙展示 + 评论阅读”，并明确保持只读阅读边界
 - 公开文档阅读当前只冻结“目录 + 搜索 + 正文阅读 + 复制公开链接 + 返回浏览态 + 文档内链跳转”，并明确保持只读阅读边界；当前已补齐返回目录滚动位置保持、搜索结果上下文回跳、详情页复制链接入口，以及旧 `__documents__` 文档链接继续落入公开 docs 壳层
 - 如果直接把完整窗口系统压缩到手机宽度，交互成本和信息密度都会失衡
 
@@ -923,6 +923,7 @@ eventBus.on('new-message', ({ count }) => {
 示例：
 / - 桌面
 /forum - 论坛首页
+/forum/tag/community-news - 公开标签页
 /forum/post/123 - 论坛帖子详情
 /docs - 文档目录
 /docs/getting-started - 文档详情
@@ -1102,7 +1103,7 @@ Client  Console   Shop    Document
 #### 10.5.1 URL 与路由规划
 
 - 公开内容（需 SEO）：
-  - 帖子列表：`/forum`、`/forum/category/{id}`、`/forum/tag/{tag}`
+  - 帖子列表：`/forum`、`/forum/category/{id}`、`/forum/tag/{tagSlug}`
   - 帖子详情：`/forum/post/{id}` 或 `/forum/post/{id}-{slug}`
 
 > 论坛分类与标签能力边界、实现现状与后续计划请参考：
@@ -1112,7 +1113,7 @@ Client  Console   Shop    Document
   - 用户中心：`/me`、`/settings` 等
 - 桌面 Shell 与应用路由关系：
   - 桌面仍然挂在 `/` 路径；
-- 对于搜索引擎访问 `/forum`、`/forum/search`、`/forum/post/*`、`/docs`、`/docs/*` 等路径时，可以直接渲染公开内容壳层而不是完整桌面壳，以减少噪音并提升首屏内容密度。
+- 对于搜索引擎访问 `/forum`、`/forum/tag/*`、`/forum/search`、`/forum/post/*`、`/docs`、`/docs/*` 等路径时，可以直接渲染公开内容壳层而不是完整桌面壳，以减少噪音并提升首屏内容密度。
 
 #### 10.5.2 SSR/SSG 与 hydrate 策略（前端视角）
 

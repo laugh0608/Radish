@@ -11,6 +11,12 @@ export type PublicForumCategoryLoadState =
   | { kind: 'notFound'; message: string }
   | { kind: 'error'; message: string };
 
+export type PublicForumTagLoadState =
+  | { kind: 'loading' }
+  | { kind: 'ready' }
+  | { kind: 'notFound'; message: string }
+  | { kind: 'error'; message: string };
+
 export type PublicForumReadSectionState = 'loading' | 'ready' | 'empty' | 'error';
 
 const PUBLIC_FORUM_NOT_FOUND_PATTERNS = [
@@ -24,6 +30,14 @@ const PUBLIC_FORUM_NOT_FOUND_PATTERNS = [
 const PUBLIC_FORUM_CATEGORY_NOT_FOUND_PATTERNS = [
   /分类不存在/i,
   /分类.*不可用/i,
+  /not\s+found/i,
+  /\b404\b/,
+  /\b410\b/
+];
+
+const PUBLIC_FORUM_TAG_NOT_FOUND_PATTERNS = [
+  /标签不存在/i,
+  /标签.*不可用/i,
   /not\s+found/i,
   /\b404\b/,
   /\b410\b/
@@ -108,6 +122,46 @@ export function resolvePublicForumCategoryLoadState(input: {
     return {
       kind: 'error',
       message: categoryError
+    };
+  }
+
+  return { kind: 'loading' };
+}
+
+export function isPublicForumTagNotFoundError(message: string | null | undefined): boolean {
+  if (!message) {
+    return false;
+  }
+
+  return PUBLIC_FORUM_TAG_NOT_FOUND_PATTERNS.some((pattern) => pattern.test(message));
+}
+
+export function resolvePublicForumTagLoadState(input: {
+  loadingTag: boolean;
+  hasTag: boolean;
+  tagError: string | null;
+}): PublicForumTagLoadState {
+  const { loadingTag, hasTag, tagError } = input;
+
+  if (loadingTag && !hasTag) {
+    return { kind: 'loading' };
+  }
+
+  if (hasTag) {
+    return { kind: 'ready' };
+  }
+
+  if (isPublicForumTagNotFoundError(tagError)) {
+    return {
+      kind: 'notFound',
+      message: tagError || '标签不存在或已不可用'
+    };
+  }
+
+  if (tagError) {
+    return {
+      kind: 'error',
+      message: tagError
     };
   }
 

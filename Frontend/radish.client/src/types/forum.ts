@@ -242,6 +242,7 @@ export interface PostItem {
   voSlug?: string;
   voSummary?: string | null;
   voTags?: string;
+  voTagSlugs?: string[];
   voCategoryId: number;
   voCategoryName?: string | null;
   voAuthorId: number;
@@ -288,6 +289,7 @@ export interface PostDetail {
   voAuthorAvatarUrl?: string | null;
   voTags?: string;
   voTagNames?: string[];
+  voTagSlugs?: string[];
   voGodCommentId?: number | null;
   voGodCommentAuthorName?: string | null;
   voGodCommentContentSnapshot?: string | null;

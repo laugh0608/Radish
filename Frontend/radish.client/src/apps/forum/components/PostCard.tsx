@@ -10,6 +10,7 @@ interface PostCardProps {
   onClick: () => void;
   variant?: 'default' | 'publicCompact';
   onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
+  onTagClick?: (tagName: string, tagSlug: string) => void;
   godComment?: {
     authorName: string;
     content?: string | null;
@@ -22,6 +23,7 @@ export const PostCard = ({
   onClick,
   variant = 'default',
   onAuthorClick,
+  onTagClick,
   godComment
 }: PostCardProps) => {
   const { t } = useTranslation();
@@ -34,6 +36,7 @@ export const PostCard = ({
     : [];
   const tagList = allTags.slice(0, 2);
   const remainingTagCount = Math.max(allTags.length - tagList.length, 0);
+  const tagSlugList = post.voTagSlugs?.slice(0, 2) ?? [];
 
   const authorName = post.voAuthorName?.trim() || t('forum.postCard.unknownUser');
   const categoryName = post.voCategoryName?.trim() || t('forum.postCard.uncategorized');
@@ -98,6 +101,15 @@ export const PostCard = ({
   const handleAuthorClick = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     onAuthorClick?.(post.voAuthorId, post.voAuthorName, post.voAuthorAvatarUrl);
+  };
+
+  const handleTagClick = (event: MouseEvent<HTMLButtonElement>, tagName: string, tagSlug?: string) => {
+    event.stopPropagation();
+    if (!tagSlug) {
+      return;
+    }
+
+    onTagClick?.(tagName, tagSlug);
   };
 
   const renderAvatar = (
@@ -219,10 +231,21 @@ export const PostCard = ({
           <div className={styles.metaRow}>
             <span className={styles.categoryChip}>{categoryName}</span>
             {tagList.length > 0 ? (
-              tagList.map(tag => (
-                <span key={`${post.voId}-${tag}`} className={styles.tagChip}>
-                  #{tag}
-                </span>
+              tagList.map((tag, index) => (
+                onTagClick && tagSlugList[index] ? (
+                  <button
+                    key={`${post.voId}-${tag}`}
+                    type="button"
+                    className={styles.tagChip}
+                    onClick={(event) => handleTagClick(event, tag, tagSlugList[index])}
+                  >
+                    #{tag}
+                  </button>
+                ) : (
+                  <span key={`${post.voId}-${tag}`} className={styles.tagChip}>
+                    #{tag}
+                  </span>
+                )
               ))
             ) : (
               <span className={styles.emptyTag}>{t('forum.postCard.noTags')}</span>
