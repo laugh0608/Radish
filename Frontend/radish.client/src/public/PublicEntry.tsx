@@ -130,25 +130,49 @@ export const PublicEntry = () => {
     setRoute(nextRoute);
   }, []);
 
+  const navigateToDocsRoute = useCallback((nextRoute: PublicDocsRoute, options?: { replace?: boolean }) => {
+    navigateToRoute({ app: 'docs', route: nextRoute }, options);
+  }, [navigateToRoute]);
+
+  const navigateToForumRoute = useCallback((nextRoute: PublicForumRoute, options?: { replace?: boolean }) => {
+    navigateToRoute({ app: 'forum', route: nextRoute }, options);
+  }, [navigateToRoute]);
+
+  const navigateToProfileRoute = useCallback((nextRoute: PublicProfileRoute, options?: { replace?: boolean }) => {
+    navigateToRoute({ app: 'profile', route: nextRoute }, options);
+  }, [navigateToRoute]);
+
+  const navigateToDefaultForumList = useCallback(() => {
+    navigateToForumRoute(createDefaultListRoute());
+  }, [navigateToForumRoute]);
+
+  const navigateToForumPost = useCallback((postId: string) => {
+    navigateToForumRoute({ kind: 'detail', postId });
+  }, [navigateToForumRoute]);
+
+  const navigateToProfileFromForum = useCallback((userId: string) => {
+    navigateToProfileRoute({ kind: 'detail', userId, tab: 'posts', page: 1 });
+  }, [navigateToProfileRoute]);
+
   return route.app === 'docs' ? (
     <PublicDocsApp
       route={route.route}
       fallbackListRoute={lastDocsListRoute}
-      onNavigate={(nextRoute, options) => navigateToRoute({ app: 'docs', route: nextRoute }, options)}
+      onNavigate={navigateToDocsRoute}
     />
   ) : route.app === 'profile' ? (
     <PublicProfileApp
       route={route.route}
-      onNavigate={(nextRoute, options) => navigateToRoute({ app: 'profile', route: nextRoute }, options)}
-      onNavigateToForumList={() => navigateToRoute({ app: 'forum', route: createDefaultListRoute() })}
-      onNavigateToForumPost={(postId) => navigateToRoute({ app: 'forum', route: { kind: 'detail', postId } })}
+      onNavigate={navigateToProfileRoute}
+      onNavigateToForumList={navigateToDefaultForumList}
+      onNavigateToForumPost={navigateToForumPost}
     />
   ) : (
     <PublicForumApp
       route={route.route}
       fallbackListRoute={lastListRoute}
-      onNavigate={(nextRoute, options) => navigateToRoute({ app: 'forum', route: nextRoute }, options)}
-      onNavigateToProfile={(userId) => navigateToRoute({ app: 'profile', route: { kind: 'detail', userId, tab: 'posts', page: 1 } })}
+      onNavigate={navigateToForumRoute}
+      onNavigateToProfile={navigateToProfileFromForum}
     />
   );
 };

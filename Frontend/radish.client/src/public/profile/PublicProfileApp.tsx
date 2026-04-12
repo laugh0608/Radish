@@ -152,18 +152,27 @@ export const PublicProfileApp = ({
   const [contentReloadToken, setContentReloadToken] = useState(0);
 
   useEffect(() => {
-    setActiveTab(route.tab);
-    setCurrentPage(route.page);
+    if (route.tab !== activeTab) {
+      setActiveTab(route.tab);
+    }
+
+    if (route.page !== currentPage) {
+      setCurrentPage(route.page);
+    }
   }, [route.page, route.tab, route.userId]);
 
   useEffect(() => {
+    if (route.tab === activeTab && route.page === currentPage) {
+      return;
+    }
+
     onNavigate({
       kind: 'detail',
       userId: route.userId,
       tab: activeTab,
       page: currentPage
     }, { replace: true });
-  }, [activeTab, currentPage, onNavigate, route.userId]);
+  }, [activeTab, currentPage, onNavigate, route.page, route.tab, route.userId]);
 
   useEffect(() => {
     pageRef.current?.scrollTo({ top: 0, behavior: 'auto' });
@@ -310,18 +319,14 @@ export const PublicProfileApp = ({
     <div className={styles.page} ref={pageRef}>
       <header className={styles.hero}>
         <div className={styles.heroInner}>
-          <button type="button" className={styles.brand} onClick={onNavigateToForumList}>
+          <div className={styles.heroLead}>
             <span className={styles.brandMark}>R</span>
             <span className={styles.brandText}>
               <span className={styles.brandName}>{t('profile.public.title')}</span>
-              <span className={styles.brandSubline}>Public Content Shell</span>
+              <span className={styles.brandSubline}>{t('profile.public.shellLabel')}</span>
             </span>
-          </button>
+          </div>
           <div className={styles.heroActions}>
-            <button type="button" className={styles.linkButton} onClick={onNavigateToForumList}>
-              <Icon icon="mdi:forum-outline" size={18} />
-              <span>{t('profile.public.backToForum')}</span>
-            </button>
             <a className={styles.desktopLink} href="/">
               <Icon icon="mdi:view-dashboard-outline" size={18} />
               <span>WebOS</span>
@@ -358,8 +363,12 @@ export const PublicProfileApp = ({
             <section className={styles.summaryCard}>
               <div className={styles.summaryHeader}>
                 <span className={styles.readOnlyBadge}>{t('profile.public.readOnlyBadge')}</span>
-                <p className={styles.summaryIntro}>{t('profile.public.intro')}</p>
               </div>
+              <button type="button" className={styles.summaryBackLink} onClick={onNavigateToForumList}>
+                <Icon icon="mdi:arrow-left" size={16} />
+                <span>{t('profile.public.backToForum')}</span>
+              </button>
+              <p className={styles.summaryIntro}>{t('profile.public.intro')}</p>
 
               <div className={styles.identityRow}>
                 <div
