@@ -5,6 +5,7 @@ import { PublicForumApp } from './forum/PublicForumApp';
 import { PublicDocsApp } from './docs/PublicDocsApp';
 import { PublicProfileApp } from './profile/PublicProfileApp';
 import { PublicLeaderboardApp } from './leaderboard/PublicLeaderboardApp';
+import { PublicShopApp } from './shop/PublicShopApp';
 import {
   buildPublicForumPath,
   createDefaultListRoute,
@@ -23,6 +24,11 @@ import {
   buildPublicLeaderboardPath,
   parsePublicLeaderboardRoute,
 } from './leaderboardRouteState';
+import {
+  buildPublicShopPath,
+  createDefaultPublicShopProductsRoute,
+  parsePublicShopRoute,
+} from './shopRouteState';
 import type {
   PublicForumListRoute,
   PublicForumRoute,
@@ -37,6 +43,10 @@ import type {
 import type {
   PublicLeaderboardRoute,
 } from './leaderboardRouteState';
+import type {
+  PublicShopProductsRoute,
+  PublicShopRoute,
+} from './shopRouteState';
 export type {
   PublicListSort,
 } from './forumRouteState';
@@ -45,7 +55,8 @@ type PublicRoute =
   | { app: 'forum'; route: PublicForumRoute }
   | { app: 'docs'; route: PublicDocsRoute }
   | { app: 'profile'; route: PublicProfileRoute }
-  | { app: 'leaderboard'; route: PublicLeaderboardRoute };
+  | { app: 'leaderboard'; route: PublicLeaderboardRoute }
+  | { app: 'shop'; route: PublicShopRoute };
 
 function parsePublicRoute(): PublicRoute {
   const profileRoute = parsePublicProfileRoute(window.location.pathname, window.location.search);
@@ -60,6 +71,13 @@ function parsePublicRoute(): PublicRoute {
     return {
       app: 'leaderboard',
       route: parsePublicLeaderboardRoute(window.location.pathname, window.location.search)
+    };
+  }
+
+  if (window.location.pathname === '/shop' || window.location.pathname.startsWith('/shop/')) {
+    return {
+      app: 'shop',
+      route: parsePublicShopRoute(window.location.pathname, window.location.search)
     };
   }
 
@@ -90,6 +108,10 @@ function buildPublicPath(nextRoute: PublicRoute): string {
     return buildPublicLeaderboardPath(nextRoute.route);
   }
 
+  if (nextRoute.app === 'shop') {
+    return buildPublicShopPath(nextRoute.route);
+  }
+
   return nextRoute.app === 'docs'
     ? buildPublicDocsPath(nextRoute.route)
     : buildPublicForumPath(nextRoute.route);
@@ -105,6 +127,10 @@ export const PublicEntry = () => {
   const [lastDocsListRoute, setLastDocsListRoute] = useState<PublicDocsListRoute>(() => {
     const parsedRoute = parsePublicDocsRoute(window.location.pathname, window.location.hash);
     return parsedRoute.kind === 'list' ? parsedRoute : createDefaultDocsListRoute();
+  });
+  const [lastShopProductsRoute, setLastShopProductsRoute] = useState<PublicShopProductsRoute>(() => {
+    const parsedRoute = parsePublicShopRoute(window.location.pathname, window.location.search);
+    return parsedRoute.kind === 'products' ? parsedRoute : createDefaultPublicShopProductsRoute();
   });
 
   useEffect(() => {
@@ -123,6 +149,9 @@ export const PublicEntry = () => {
       }
       if (nextRoute.app === 'docs' && nextRoute.route.kind === 'list') {
         setLastDocsListRoute(nextRoute.route);
+      }
+      if (nextRoute.app === 'shop' && nextRoute.route.kind === 'products') {
+        setLastShopProductsRoute(nextRoute.route);
       }
     };
 
@@ -147,6 +176,9 @@ export const PublicEntry = () => {
     if (nextRoute.app === 'docs' && nextRoute.route.kind === 'list') {
       setLastDocsListRoute(nextRoute.route);
     }
+    if (nextRoute.app === 'shop' && nextRoute.route.kind === 'products') {
+      setLastShopProductsRoute(nextRoute.route);
+    }
     setRoute(nextRoute);
   }, []);
 
@@ -166,6 +198,10 @@ export const PublicEntry = () => {
     navigateToRoute({ app: 'leaderboard', route: nextRoute }, options);
   }, [navigateToRoute]);
 
+  const navigateToShopRoute = useCallback((nextRoute: PublicShopRoute, options?: { replace?: boolean }) => {
+    navigateToRoute({ app: 'shop', route: nextRoute }, options);
+  }, [navigateToRoute]);
+
   const navigateToDefaultForumList = useCallback(() => {
     navigateToForumRoute(createDefaultListRoute());
   }, [navigateToForumRoute]);
@@ -183,6 +219,12 @@ export const PublicEntry = () => {
       route={route.route}
       onNavigate={navigateToLeaderboardRoute}
       onNavigateToProfile={(userId) => navigateToProfileRoute({ kind: 'detail', userId, tab: 'posts', page: 1 })}
+    />
+  ) : route.app === 'shop' ? (
+    <PublicShopApp
+      route={route.route}
+      fallbackProductsRoute={lastShopProductsRoute}
+      onNavigate={navigateToShopRoute}
     />
   ) : route.app === 'docs' ? (
     <PublicDocsApp
