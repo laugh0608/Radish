@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { getApiBaseUrl } from '@/config/env';
+import { bootstrapAuth } from '@/services/authBootstrap';
 import { PublicForumApp } from './forum/PublicForumApp';
 import { PublicDocsApp } from './docs/PublicDocsApp';
 import { PublicProfileApp } from './profile/PublicProfileApp';
@@ -74,6 +76,7 @@ function buildPublicPath(nextRoute: PublicRoute): string {
 }
 
 export const PublicEntry = () => {
+  const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
   const [route, setRoute] = useState<PublicRoute>(() => parsePublicRoute());
   const [lastListRoute, setLastListRoute] = useState<PublicForumListRoute>(() => {
     const parsedRoute = parsePublicForumRoute(window.location.pathname, window.location.search);
@@ -83,6 +86,13 @@ export const PublicEntry = () => {
     const parsedRoute = parsePublicDocsRoute(window.location.pathname, window.location.hash);
     return parsedRoute.kind === 'list' ? parsedRoute : createDefaultDocsListRoute();
   });
+
+  useEffect(() => {
+    const cleanup = bootstrapAuth({ apiBaseUrl });
+    return () => {
+      cleanup();
+    };
+  }, [apiBaseUrl]);
 
   useEffect(() => {
     const handlePopState = () => {
