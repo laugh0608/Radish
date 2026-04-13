@@ -297,6 +297,7 @@ export const PublicEntry = () => {
     <PublicProfileApp
       route={route.route}
       onNavigate={navigateToProfileRoute}
+      onNavigateToDiscover={navigateToDiscoverRoute}
       onNavigateToForumList={navigateToDefaultForumList}
       onNavigateToForumPost={navigateToForumPost}
     />

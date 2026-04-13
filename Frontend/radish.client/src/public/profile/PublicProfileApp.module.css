@@ -77,6 +77,20 @@
   gap: 10px;
 }
 
+.discoverLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 26%, transparent);
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--theme-brand-soft) 56%, white 44%);
+  color: var(--theme-brand-primary);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .desktopLink {
   display: inline-flex;
   align-items: center;
@@ -509,6 +523,7 @@
     align-items: flex-start;
   }
 
+  .discoverLink,
   .desktopLink {
     padding: 9px 12px;
   }

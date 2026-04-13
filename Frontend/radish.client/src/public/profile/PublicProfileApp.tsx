@@ -21,6 +21,7 @@ import styles from './PublicProfileApp.module.css';
 interface PublicProfileAppProps {
   route: PublicProfileRoute;
   onNavigate: (route: PublicProfileRoute, options?: { replace?: boolean }) => void;
+  onNavigateToDiscover?: () => void;
   onNavigateToForumList: () => void;
   onNavigateToForumPost: (postId: string) => void;
 }
@@ -122,6 +123,7 @@ function buildExcerpt(post: PublicUserPost): string {
 export const PublicProfileApp = ({
   route,
   onNavigate,
+  onNavigateToDiscover,
   onNavigateToForumList,
   onNavigateToForumPost
 }: PublicProfileAppProps) => {
@@ -159,7 +161,7 @@ export const PublicProfileApp = ({
     if (route.page !== currentPage) {
       setCurrentPage(route.page);
     }
-  }, [route.page, route.tab, route.userId]);
+  }, [activeTab, currentPage, route.page, route.tab, route.userId]);
 
   useEffect(() => {
     if (route.tab === activeTab && route.page === currentPage) {
@@ -327,6 +329,10 @@ export const PublicProfileApp = ({
             </span>
           </div>
           <div className={styles.heroActions}>
+            <button type="button" className={styles.discoverLink} onClick={onNavigateToDiscover}>
+              <Icon icon="mdi:compass-outline" size={18} />
+              <span>{t('public.shell.discoverAction')}</span>
+            </button>
             <a className={styles.desktopLink} href="/">
               <Icon icon="mdi:view-dashboard-outline" size={18} />
               <span>WebOS</span>
