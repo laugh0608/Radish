@@ -1,11 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getApiBaseUrl } from '@/config/env';
 import { bootstrapAuth } from '@/services/authBootstrap';
+import { PublicDiscoverApp } from './discover/PublicDiscoverApp';
 import { PublicForumApp } from './forum/PublicForumApp';
 import { PublicDocsApp } from './docs/PublicDocsApp';
 import { PublicProfileApp } from './profile/PublicProfileApp';
 import { PublicLeaderboardApp } from './leaderboard/PublicLeaderboardApp';
 import { PublicShopApp } from './shop/PublicShopApp';
+import {
+  buildPublicDiscoverPath,
+  parsePublicDiscoverRoute,
+} from './discoverRouteState';
 import {
   buildPublicForumPath,
   createDefaultListRoute,
@@ -32,6 +37,9 @@ import {
   parsePublicShopRoute,
 } from './shopRouteState';
 import type {
+  PublicDiscoverRoute,
+} from './discoverRouteState';
+import type {
   PublicForumBrowseRoute,
   PublicForumRoute,
 } from './forumRouteState';
@@ -54,6 +62,7 @@ export type {
 } from './forumRouteState';
 
 type PublicRoute =
+  | { app: 'discover'; route: PublicDiscoverRoute }
   | { app: 'forum'; route: PublicForumRoute }
   | { app: 'docs'; route: PublicDocsRoute }
   | { app: 'profile'; route: PublicProfileRoute }
@@ -61,6 +70,14 @@ type PublicRoute =
   | { app: 'shop'; route: PublicShopRoute };
 
 function parsePublicRoute(): PublicRoute {
+  const discoverRoute = parsePublicDiscoverRoute(window.location.pathname);
+  if (discoverRoute) {
+    return {
+      app: 'discover',
+      route: discoverRoute
+    };
+  }
+
   const profileRoute = parsePublicProfileRoute(window.location.pathname, window.location.search);
   if (profileRoute) {
     return {
@@ -102,6 +119,10 @@ function parsePublicRoute(): PublicRoute {
 }
 
 function buildPublicPath(nextRoute: PublicRoute): string {
+  if (nextRoute.app === 'discover') {
+    return buildPublicDiscoverPath(nextRoute.route);
+  }
+
   if (nextRoute.app === 'profile') {
     return buildPublicProfilePath(nextRoute.route);
   }
@@ -239,7 +260,14 @@ export const PublicEntry = () => {
     navigateToProfileRoute({ kind: 'detail', userId, tab: 'posts', page: 1 });
   }, [navigateToProfileRoute]);
 
-  return route.app === 'leaderboard' ? (
+  return route.app === 'discover' ? (
+    <PublicDiscoverApp
+      onNavigateToForum={navigateToForumRoute}
+      onNavigateToDocs={navigateToDocsRoute}
+      onNavigateToLeaderboard={navigateToLeaderboardRoute}
+      onNavigateToShop={navigateToShopRoute}
+    />
+  ) : route.app === 'leaderboard' ? (
     <PublicLeaderboardApp
       route={route.route}
       onNavigate={navigateToLeaderboardRoute}

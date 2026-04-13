@@ -18,7 +18,9 @@ const PublicEntry = lazy(() => import('./public/PublicEntry.tsx').then((module) 
 const isBrowser = typeof window !== 'undefined';
 const isOidcCallback = isBrowser && window.location.pathname === '/oidc/callback';
 const isPublicContentRoute = isBrowser && (
-  window.location.pathname === '/forum'
+  window.location.pathname === '/discover'
+  || window.location.pathname.startsWith('/discover/')
+  || window.location.pathname === '/forum'
   || window.location.pathname.startsWith('/forum/')
   || window.location.pathname === '/shop'
   || window.location.pathname.startsWith('/shop/')
