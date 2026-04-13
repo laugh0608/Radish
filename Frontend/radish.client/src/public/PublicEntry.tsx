@@ -9,6 +9,7 @@ import { PublicLeaderboardApp } from './leaderboard/PublicLeaderboardApp';
 import { PublicShopApp } from './shop/PublicShopApp';
 import {
   buildPublicDiscoverPath,
+  createDefaultPublicDiscoverRoute,
   parsePublicDiscoverRoute,
 } from './discoverRouteState';
 import {
@@ -209,6 +210,10 @@ export const PublicEntry = () => {
     navigateToRoute({ app: 'docs', route: nextRoute }, options);
   }, [navigateToRoute]);
 
+  const navigateToDiscoverRoute = useCallback((options?: { replace?: boolean }) => {
+    navigateToRoute({ app: 'discover', route: createDefaultPublicDiscoverRoute() }, options);
+  }, [navigateToRoute]);
+
   const navigateToForumRoute = useCallback((nextRoute: PublicForumRoute, options?: { replace?: boolean }) => {
     navigateToRoute({ app: 'forum', route: nextRoute }, options);
   }, [navigateToRoute]);
@@ -271,6 +276,7 @@ export const PublicEntry = () => {
     <PublicLeaderboardApp
       route={route.route}
       onNavigate={navigateToLeaderboardRoute}
+      onNavigateToDiscover={navigateToDiscoverRoute}
       onNavigateToProfile={(userId) => navigateToProfileRoute({ kind: 'detail', userId, tab: 'posts', page: 1 })}
     />
   ) : route.app === 'shop' ? (
@@ -278,12 +284,14 @@ export const PublicEntry = () => {
       route={route.route}
       fallbackProductsRoute={lastShopProductsRoute}
       onNavigate={navigateToShopRoute}
+      onNavigateToDiscover={navigateToDiscoverRoute}
     />
   ) : route.app === 'docs' ? (
     <PublicDocsApp
       route={route.route}
       fallbackBrowseRoute={lastDocsBrowseRoute}
       onNavigate={navigateToDocsRoute}
+      onNavigateToDiscover={navigateToDiscoverRoute}
     />
   ) : route.app === 'profile' ? (
     <PublicProfileApp
@@ -297,6 +305,7 @@ export const PublicEntry = () => {
       route={route.route}
       fallbackBrowseRoute={lastForumBrowseRoute}
       onNavigate={navigateToForumRoute}
+      onNavigateToDiscover={navigateToDiscoverRoute}
       onNavigateToProfile={navigateToProfileFromForum}
       onNavigateToSearch={navigateToPublicForumSearch}
       onNavigateToTag={navigateToForumTag}

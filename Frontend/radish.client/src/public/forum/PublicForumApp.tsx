@@ -50,6 +50,7 @@ interface PublicForumAppProps {
   route: PublicForumRoute;
   fallbackBrowseRoute: PublicForumBrowseRoute;
   onNavigate: (route: PublicForumRoute, options?: { replace?: boolean }) => void;
+  onNavigateToDiscover?: () => void;
   onNavigateToProfile?: (userId: string) => void;
   onNavigateToSearch?: (keyword?: string) => void;
   onNavigateToTag?: (tagSlug: string) => void;
@@ -258,6 +259,7 @@ export const PublicForumApp = ({
   route,
   fallbackBrowseRoute,
   onNavigate,
+  onNavigateToDiscover,
   onNavigateToProfile,
   onNavigateToSearch,
   onNavigateToTag,
@@ -355,10 +357,16 @@ export const PublicForumApp = ({
               <span className={styles.brandSubline}>Public Content Shell</span>
             </span>
           </button>
-          <a className={styles.desktopLink} href="/">
-            <Icon icon="mdi:view-dashboard-outline" size={18} />
-            <span>WebOS</span>
-          </a>
+          <div className={styles.heroActions}>
+            <button type="button" className={styles.discoverLink} onClick={onNavigateToDiscover}>
+              <Icon icon="mdi:compass-outline" size={18} />
+              <span>{t('public.shell.discoverAction')}</span>
+            </button>
+            <a className={styles.desktopLink} href="/">
+              <Icon icon="mdi:view-dashboard-outline" size={18} />
+              <span>WebOS</span>
+            </a>
+          </div>
         </div>
       </header>
 

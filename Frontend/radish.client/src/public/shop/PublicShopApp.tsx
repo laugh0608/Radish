@@ -23,6 +23,7 @@ interface PublicShopAppProps {
   route: PublicShopRoute;
   fallbackProductsRoute: PublicShopProductsRoute;
   onNavigate: (route: PublicShopRoute, options?: { replace?: boolean }) => void;
+  onNavigateToDiscover?: () => void;
 }
 
 type PublicStatusTone = 'loading' | 'empty' | 'error' | 'notFound';
@@ -89,7 +90,7 @@ function formatProductPrice(value: number): string {
   return value.toLocaleString();
 }
 
-export const PublicShopApp = ({ route, fallbackProductsRoute, onNavigate }: PublicShopAppProps) => {
+export const PublicShopApp = ({ route, fallbackProductsRoute, onNavigate, onNavigateToDiscover }: PublicShopAppProps) => {
   const { t } = useTranslation();
   const pageRef = useRef<HTMLDivElement>(null);
   const categoryRequestIdRef = useRef(0);
@@ -631,10 +632,16 @@ export const PublicShopApp = ({ route, fallbackProductsRoute, onNavigate }: Publ
               <span className={styles.brandSubline}>{t('shop.public.shellLabel')}</span>
             </span>
           </button>
-          <a className={styles.desktopLink} href="/">
-            <Icon icon="mdi:view-dashboard-outline" size={18} />
-            <span>WebOS</span>
-          </a>
+          <div className={styles.heroActions}>
+            <button type="button" className={styles.discoverLink} onClick={onNavigateToDiscover}>
+              <Icon icon="mdi:compass-outline" size={18} />
+              <span>{t('public.shell.discoverAction')}</span>
+            </button>
+            <a className={styles.desktopLink} href="/">
+              <Icon icon="mdi:view-dashboard-outline" size={18} />
+              <span>WebOS</span>
+            </a>
+          </div>
         </div>
       </header>
 

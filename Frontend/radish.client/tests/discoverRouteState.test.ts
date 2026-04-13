@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
   buildPublicDiscoverPath,
   createDefaultPublicDiscoverRoute,
+  isPublicDiscoverPathname,
   parsePublicDiscoverRoute,
 } from '../src/public/discoverRouteState.ts';
 
@@ -24,6 +25,12 @@ test('parsePublicDiscoverRoute 应兼容尾随斜杠', () => {
 
 test('parsePublicDiscoverRoute 对非 discover 路径返回 null', () => {
   assert.equal(parsePublicDiscoverRoute('/discover/forum'), null);
+});
+
+test('isPublicDiscoverPathname 仅识别公开社区分发页根路径', () => {
+  assert.equal(isPublicDiscoverPathname('/discover'), true);
+  assert.equal(isPublicDiscoverPathname('/discover/'), true);
+  assert.equal(isPublicDiscoverPathname('/discover/forum'), false);
 });
 
 test('buildPublicDiscoverPath 应稳定回写公开社区分发页路径', () => {

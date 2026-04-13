@@ -21,6 +21,7 @@ import styles from './PublicLeaderboardApp.module.css';
 interface PublicLeaderboardAppProps {
   route: PublicLeaderboardRoute;
   onNavigate: (route: PublicLeaderboardRoute, options?: { replace?: boolean }) => void;
+  onNavigateToDiscover?: () => void;
   onNavigateToProfile?: (userId: string) => void;
 }
 
@@ -178,6 +179,7 @@ function buildVisiblePages(currentPage: number, totalPages: number, maxVisible: 
 export const PublicLeaderboardApp = ({
   route,
   onNavigate,
+  onNavigateToDiscover,
   onNavigateToProfile,
 }: PublicLeaderboardAppProps) => {
   const { t } = useTranslation();
@@ -371,10 +373,16 @@ export const PublicLeaderboardApp = ({
               <span className={styles.brandSubline}>{t('leaderboard.public.shellLabel')}</span>
             </span>
           </button>
-          <a className={styles.desktopLink} href="/">
-            <Icon icon="mdi:view-dashboard-outline" size={18} />
-            <span>WebOS</span>
-          </a>
+          <div className={styles.heroActions}>
+            <button type="button" className={styles.discoverLink} onClick={onNavigateToDiscover}>
+              <Icon icon="mdi:compass-outline" size={18} />
+              <span>{t('public.shell.discoverAction')}</span>
+            </button>
+            <a className={styles.desktopLink} href="/">
+              <Icon icon="mdi:view-dashboard-outline" size={18} />
+              <span>WebOS</span>
+            </a>
+          </div>
         </div>
       </header>
 

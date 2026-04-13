@@ -29,6 +29,7 @@ interface PublicDocsAppProps {
   route: PublicDocsRoute;
   fallbackBrowseRoute: PublicDocsBrowseRoute;
   onNavigate: (route: PublicDocsRoute, options?: { replace?: boolean }) => void;
+  onNavigateToDiscover?: () => void;
 }
 
 interface PublicDocsTreeRow {
@@ -270,7 +271,7 @@ function PublicStatusCard({
   );
 }
 
-export const PublicDocsApp = ({ route, fallbackBrowseRoute, onNavigate }: PublicDocsAppProps) => {
+export const PublicDocsApp = ({ route, fallbackBrowseRoute, onNavigate, onNavigateToDiscover }: PublicDocsAppProps) => {
   const { t } = useTranslation();
   const [displayTimeZone] = useState(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE));
   const pageRef = useRef<HTMLDivElement>(null);
@@ -410,10 +411,16 @@ export const PublicDocsApp = ({ route, fallbackBrowseRoute, onNavigate }: Public
               <span className={styles.brandSubline}>{t('wiki.public.shellLabel')}</span>
             </span>
           </button>
-          <a className={styles.desktopLink} href="/">
-            <Icon icon="mdi:view-dashboard-outline" size={18} />
-            <span>WebOS</span>
-          </a>
+          <div className={styles.heroActions}>
+            <button type="button" className={styles.discoverLink} onClick={onNavigateToDiscover}>
+              <Icon icon="mdi:compass-outline" size={18} />
+              <span>{t('public.shell.discoverAction')}</span>
+            </button>
+            <a className={styles.desktopLink} href="/">
+              <Icon icon="mdi:view-dashboard-outline" size={18} />
+              <span>WebOS</span>
+            </a>
+          </div>
         </div>
       </header>
 

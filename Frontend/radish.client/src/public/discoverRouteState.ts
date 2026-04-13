@@ -8,8 +8,12 @@ export function createDefaultPublicDiscoverRoute(): PublicDiscoverRoute {
   };
 }
 
+export function isPublicDiscoverPathname(pathname: string): boolean {
+  return pathname === '/discover' || pathname === '/discover/';
+}
+
 export function parsePublicDiscoverRoute(pathname: string): PublicDiscoverRoute | null {
-  if (pathname === '/discover' || pathname === '/discover/') {
+  if (isPublicDiscoverPathname(pathname)) {
     return createDefaultPublicDiscoverRoute();
   }
 

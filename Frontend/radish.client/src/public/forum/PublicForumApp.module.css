@@ -89,6 +89,28 @@
   font-weight: 600;
 }
 
+.heroActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.discoverLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 26%, transparent);
+  background: color-mix(in srgb, var(--theme-brand-soft) 58%, white 42%);
+  color: var(--theme-brand-primary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .main {
   flex: 1 0 auto;
   width: min(1040px, calc(100vw - 24px));
@@ -687,6 +709,12 @@
     align-items: flex-start;
   }
 
+  .heroActions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .discoverLink,
   .desktopLink {
     padding: 9px 12px;
   }
