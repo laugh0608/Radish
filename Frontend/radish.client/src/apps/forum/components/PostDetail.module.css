@@ -45,9 +45,21 @@
   display: inline-flex;
   align-items: center;
   padding: 4px 10px;
+  border: none;
   border-radius: 999px;
   font-size: 12px;
   font-weight: 700;
+}
+
+.interactiveBadge {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.interactiveBadge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px color-mix(in srgb, var(--theme-brand-primary) 14%, transparent);
+  filter: brightness(0.98);
 }
 
 .questionBadge {
@@ -159,10 +171,12 @@
 .tag {
   display: inline-block;
   padding: 4px 12px;
+  border: none;
   background-color: var(--theme-brand-soft);
   color: var(--theme-brand-primary);
   border-radius: 12px;
   font-size: 12px;
+  cursor: pointer;
 }
 
 .pollCard {
@@ -894,6 +908,9 @@
 }
 
 .answerEditor {
+  min-height: 220px;
+  background: color-mix(in srgb, var(--theme-accent-earth) 6%, var(--theme-bg-surface) 94%);
+  border-color: color-mix(in srgb, var(--theme-border-soft) 86%, transparent);
   border-radius: 12px;
   overflow: hidden;
 }
@@ -905,14 +922,17 @@
 .answerComposerFooter {
   margin-top: 10px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .answerHint {
   font-size: 12px;
   color: var(--theme-text-secondary);
+  flex: 1 1 220px;
+  line-height: 1.6;
 }
 
 .answerSubmitButton {
@@ -928,6 +948,7 @@
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .answerSubmitButton:disabled {
@@ -1165,5 +1186,9 @@
   .authorActions {
     margin-left: 0;
     flex-wrap: wrap;
+  }
+
+  .answerEditor {
+    min-height: 200px;
   }
 }

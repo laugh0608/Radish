@@ -33,7 +33,9 @@ public class PostLotteryServiceTest
             AuthorId = 9527,
             AuthorName = "Author",
             TenantId = 9,
-            IsPublished = true
+            IsPublished = true,
+            CreateTime = DateTime.UtcNow.AddHours(-2),
+            PublishTime = DateTime.UtcNow.AddHours(-2)
         };
         var lottery = new PostLottery
         {
@@ -42,7 +44,7 @@ public class PostLotteryServiceTest
             TenantId = 9,
             PrizeName = "周边礼包",
             WinnerCount = 2,
-            DrawTime = DateTime.UtcNow.AddMinutes(-5),
+            DrawTime = DateTime.UtcNow.AddMinutes(10),
             IsDrawn = false
         };
         var comments = new List<Comment>
@@ -153,7 +155,10 @@ public class PostLotteryServiceTest
                 dto.BusinessId == 1001 &&
                 dto.ReceiverUserIds.Count == 2 &&
                 dto.ReceiverUserIds.Contains(1101) &&
-                dto.ReceiverUserIds.Contains(1102))))
+                dto.ReceiverUserIds.Contains(1102) &&
+                dto.ExtData != null &&
+                dto.ExtData.Contains("\"postId\":\"1001\"") &&
+                dto.ExtData.Contains("\"lotteryId\":\"2001\""))))
             .ReturnsAsync(1);
 
         var service = new PostLotteryService(
@@ -178,7 +183,7 @@ public class PostLotteryServiceTest
     }
 
     [Fact]
-    public async Task DrawAsync_Should_Reject_When_DrawTime_NotReached()
+    public async Task DrawAsync_Should_Reject_When_PostIsNotOldEnoughForManualDraw()
     {
         var postService = new Mock<IPostService>(MockBehavior.Strict);
         var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
@@ -195,7 +200,9 @@ public class PostLotteryServiceTest
                 Id = 1001,
                 AuthorId = 9527,
                 AuthorName = "Author",
-                IsPublished = true
+                IsPublished = true,
+                CreateTime = DateTime.UtcNow.AddMinutes(-20),
+                PublishTime = DateTime.UtcNow.AddMinutes(-20)
             });
         lotteryRepository
             .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<PostLottery, bool>>?>()))
@@ -220,7 +227,147 @@ public class PostLotteryServiceTest
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.DrawAsync(1001, 9527, "Author"));
 
-        Assert.Equal("未到可开奖时间", exception.Message);
+        Assert.Equal("发帖满 1 小时后才可提前开奖", exception.Message);
         winnerRepository.Verify(repository => repository.AddRangeAsync(It.IsAny<List<PostLotteryWinner>>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task DrawAsync_Should_Reject_When_AutoDrawDeadlineAlreadyReached()
+    {
+        var postService = new Mock<IPostService>(MockBehavior.Strict);
+        var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
+        var lotteryRepository = new Mock<IBaseRepository<PostLottery>>(MockBehavior.Strict);
+        var winnerRepository = new Mock<IBaseRepository<PostLotteryWinner>>(MockBehavior.Strict);
+        var commentRepository = new Mock<IBaseRepository<Comment>>(MockBehavior.Strict);
+        var notificationService = new Mock<INotificationService>(MockBehavior.Strict);
+        var logger = new Mock<ILogger<PostLotteryService>>();
+
+        postRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<Post, bool>>?>()))
+            .ReturnsAsync(new Post(new PostInitializationOptions("抽奖帖", "正文"))
+            {
+                Id = 1001,
+                AuthorId = 9527,
+                AuthorName = "Author",
+                IsPublished = true,
+                CreateTime = DateTime.UtcNow.AddHours(-2),
+                PublishTime = DateTime.UtcNow.AddHours(-2)
+            });
+        lotteryRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<PostLottery, bool>>?>()))
+            .ReturnsAsync(new PostLottery
+            {
+                Id = 2001,
+                PostId = 1001,
+                PrizeName = "周边礼包",
+                WinnerCount = 1,
+                DrawTime = DateTime.UtcNow.AddMinutes(-1),
+                IsDrawn = false
+            });
+
+        var service = new PostLotteryService(
+            postService.Object,
+            postRepository.Object,
+            lotteryRepository.Object,
+            winnerRepository.Object,
+            commentRepository.Object,
+            notificationService.Object,
+            logger.Object);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.DrawAsync(1001, 9527, "Author"));
+
+        Assert.Equal("已到自动开奖时间，请等待系统开奖", exception.Message);
+        winnerRepository.Verify(repository => repository.AddRangeAsync(It.IsAny<List<PostLotteryWinner>>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AutoDrawByPostIdAsync_Should_CloseLottery_When_NoParticipants()
+    {
+        var postService = new Mock<IPostService>(MockBehavior.Strict);
+        var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
+        var lotteryRepository = new Mock<IBaseRepository<PostLottery>>(MockBehavior.Strict);
+        var winnerRepository = new Mock<IBaseRepository<PostLotteryWinner>>(MockBehavior.Strict);
+        var commentRepository = new Mock<IBaseRepository<Comment>>(MockBehavior.Strict);
+        var notificationService = new Mock<INotificationService>(MockBehavior.Strict);
+        var logger = new Mock<ILogger<PostLotteryService>>();
+
+        var post = new Post(new PostInitializationOptions("自动开奖帖", "正文"))
+        {
+            Id = 2001,
+            AuthorId = 9527,
+            AuthorName = "Author",
+            TenantId = 9,
+            IsPublished = true,
+            CreateTime = DateTime.UtcNow.AddHours(-2),
+            PublishTime = DateTime.UtcNow.AddHours(-2)
+        };
+        var drawTime = DateTime.UtcNow.AddMinutes(-3);
+        var lottery = new PostLottery
+        {
+            Id = 3001,
+            PostId = 2001,
+            TenantId = 9,
+            PrizeName = "空池自动开奖",
+            WinnerCount = 1,
+            DrawTime = drawTime,
+            IsDrawn = false
+        };
+
+        postRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<Post, bool>>?>()))
+            .ReturnsAsync(post);
+        lotteryRepository
+            .SetupSequence(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<PostLottery, bool>>?>()))
+            .ReturnsAsync(lottery)
+            .ReturnsAsync(lottery);
+        commentRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<Comment, bool>>?>()))
+            .ReturnsAsync(new List<Comment>());
+        lotteryRepository
+            .Setup(repository => repository.UpdateAsync(It.Is<PostLottery>(entity =>
+                entity.Id == 3001 &&
+                entity.IsDrawn &&
+                entity.ParticipantCount == 0 &&
+                entity.DrawnAt == drawTime &&
+                entity.ModifyBy == "LotteryAutoDrawJob" &&
+                entity.ModifyId == null)))
+            .ReturnsAsync(true);
+        postService
+            .Setup(service => service.GetPostDetailAsync(2001, null, "default"))
+            .ReturnsAsync(new PostVo
+            {
+                VoId = 2001,
+                VoHasLottery = true,
+                VoLottery = new PostLotteryVo
+                {
+                    VoLotteryId = 3001,
+                    VoPostId = 2001,
+                    VoPrizeName = "空池自动开奖",
+                    VoParticipantCount = 0,
+                    VoIsDrawn = true,
+                    VoDrawnAt = drawTime,
+                    VoWinners = []
+                }
+            });
+
+        var service = new PostLotteryService(
+            postService.Object,
+            postRepository.Object,
+            lotteryRepository.Object,
+            winnerRepository.Object,
+            commentRepository.Object,
+            notificationService.Object,
+            logger.Object);
+
+        var result = await service.AutoDrawByPostIdAsync(2001);
+
+        Assert.True(result.VoIsDrawn);
+        Assert.Equal(0, result.VoParticipantCount);
+        Assert.Empty(result.VoWinners);
+
+        winnerRepository.Verify(repository => repository.AddRangeAsync(It.IsAny<List<PostLotteryWinner>>()), Times.Never);
+        notificationService.Verify(service => service.CreateNotificationAsync(It.IsAny<Model.DtoModels.CreateNotificationDto>()), Times.Never);
+        lotteryRepository.VerifyAll();
+        postService.VerifyAll();
     }
 }

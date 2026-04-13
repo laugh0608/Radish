@@ -3,6 +3,15 @@
 ## 目标
 本指南面向需要在本地或服务器上快速部署 Radish 的维护者，说明如何使用 `Radish.Api/Dockerfile`、`Radish.Auth/Dockerfile`、`Radish.Gateway/Dockerfile` 与 `Frontend/Dockerfile` 构建首版最小镜像链，并通过 `Deploy/docker-compose.yml` 及其环境覆盖文件组织 `gateway / api / auth / frontend` 四个容器。当前部署口径已经收束为“开发环境直接 IDE / 宿主机运行，测试与生产环境统一拉取预构建镜像部署”；其中测试环境采用“Gateway 容器内 HTTPS”，生产环境采用“外部反代 HTTPS、容器内 HTTP”。
 
+当前若要按仓库现实执行发版、部署、发布后最小复核与回滚，请优先参考：
+
+- [M15 最小交付与部署基线](/guide/m15-delivery-baseline)
+- [M15 发布记录（v26.3.2-release，2026-04-06）](/guide/m15-release-record-2026-04-06)
+- [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)
+- [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist)
+
+其中本页继续保留环境口径、Compose 细节与部署注意事项；最小发布顺序、最小复核顺序与最小回滚基线统一收口到 `M15` 单一入口。
+
 ## 环境口径
 
 当前仓库把部署与运行形态收束为四类：
@@ -76,6 +85,7 @@
   - `Repo Hygiene`
   - `Frontend Lint`
   - `Baseline Quick`
+  - `Identity Guard`
 - 合并前需至少完成 1 次审批，并解决全部 review 对话
 - 管理员当前仅允许“通过 Pull Request 绕过”，不开放直接 push
 
@@ -84,7 +94,7 @@
 - 日常开发：在 `dev` 或功能分支完成开发与自检
 - 准备发版：从 `dev` 向 `master` 发起 Pull Request
 - 合并发布：PR 检查通过后，以 `squash` 或 `rebase` 方式合并到 `master`
-- 发布记录：合并完成后创建 Git tag，并在 GitHub Release 中补发布说明
+- 发布记录：合并完成后创建 Git tag，并补一份仓库内发布记录；如需 GitHub Release，可复用同一套发布事实
 
 ### 最小发版顺序
 
@@ -96,7 +106,7 @@
    ```
 
 3. 发起 `dev -> master` 的 PR
-4. 等待 GitHub Actions 中的 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick` 全部通过
+4. 等待 GitHub Actions 中的 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Identity Guard` 全部通过
 5. 完成审批与会话收束后合并到 `master`
 6. 合并后创建版本标签，例如：
 
@@ -114,7 +124,11 @@
    - `ghcr.io/<owner>/radish-gateway:<tag>` / `latest`
    - `ghcr.io/<owner>/radish-frontend:<tag>` / `latest`
 
-8. 在 GitHub Release 中补齐本次发布说明、已知风险与回滚信息
+8. 补一份仓库内发布记录；如需 GitHub Release，可同步复用同一套说明、已知风险与回滚信息
+
+当前真实样例见：
+
+- [M15 发布记录（v26.3.2-release，2026-04-06）](/guide/m15-release-record-2026-04-06)
 
 ### 现阶段说明
 
@@ -277,7 +291,7 @@ docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.local.yml u
 
 ### `base + test`：测试部署 / 客户试用
 
-先复制 `Deploy/.env.test.example` 为 `Deploy/.env.test`。当前样例默认指向 `ghcr.io/laugh0608/...:test-latest`，用于快速体验测试轨道；若要锁定具体测试版本，仍建议把镜像 tag 改成明确的 `v*-test`。并替换至少以下真实值：
+先复制 `Deploy/.env.test.example` 为 `Deploy/.env.test`。当前样例默认使用明确版本占位 `ghcr.io/laugh0608/...:v26.3.2-test`；如果只是想故意跟随测试轨道的最新镜像，可手动改回 `test-latest`。并替换至少以下真实值：
 
 - `RADISH_FRONTEND_IMAGE`
 - `RADISH_DBMIGRATE_IMAGE`
@@ -311,7 +325,7 @@ docker compose --env-file Deploy/.env.test -f Deploy/docker-compose.yml -f Deplo
 
 ### `base + prod`：生产 / 外部反向代理
 
-先复制 `Deploy/.env.prod.example` 为 `Deploy/.env.prod`。当前样例默认指向 `ghcr.io/laugh0608/...:latest`，用于和正式发布轨道保持一致；如果要做可追溯发布，仍建议把镜像 tag 固定到明确的 `v*-release`。并替换至少以下真实值：
+先复制 `Deploy/.env.prod.example` 为 `Deploy/.env.prod`。当前样例默认使用明确版本占位 `ghcr.io/laugh0608/...:v26.3.2-release`；生产部署如无特殊原因，不建议改回 `latest`。并替换至少以下真实值：
 
 - `RADISH_FRONTEND_IMAGE`
 - `RADISH_DBMIGRATE_IMAGE`
@@ -347,6 +361,15 @@ docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deplo
 - 若 `RADISH_AUTH_CERT_AUTO_GENERATE=true` 且目标证书文件不存在，`Auth` 会在首次启动时自动生成 OIDC 证书并写入挂载目录；后续启动直接复用同一组证书
 - TLS 由外部 Nginx / Traefik / Caddy 终止，再转发到容器内 HTTP 端口；仓库已提供可直接落地的 `Deploy/nginx.prod.conf`
 - 不要再额外覆盖 `Cors__AllowedOrigins__0` 之类的单索引数组项；部署态统一以 `RADISH_PUBLIC_URL` 为准，避免旧 `localhost` 端口残留
+
+### 最小回滚入口
+
+当前仓库默认不提供自动回滚脚本；测试与生产环境都统一按 [M15 最小交付与部署基线](/guide/m15-delivery-baseline) 执行最小回滚：
+
+1. 找到上一版已知可用的 `v*-test` 或 `v*-release` tag
+2. 把 `Deploy/.env.test` 或 `Deploy/.env.prod` 中的 `RADISH_*_IMAGE` 改回该 tag
+3. 重新执行对应环境的 `pull + up -d`
+4. 按 `M14` 顺序复跑 `check:host-runtime`、维护记录汇总与部署后最小复核
 
 **文件上传目录挂载（生产环境建议）**：
 - 本地存储模式下，上传文件存放在 `DataBases/Uploads/`
@@ -597,9 +620,10 @@ HTTP (5000/5100) → ASP.NET Core 应用
 
 ### 进入条件
 
-- 最新一次 `master` PR 已完成 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`
+- 当前 `master` 最小门禁已收敛为 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Identity Guard` 四项
 - `npm run validate:baseline` 已通过
 - 如本轮触达宿主 / 配置 / `DbMigrate` / 部署链，`npm run validate:baseline:host` 已通过
+  - 当前它也是 `M14` 的默认宿主验证入口，失败时优先回到 [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist) 按顺序分诊
 - 当前没有阻塞主线的已知 `P0 / P1` 问题
 - 已具备真实外部 HTTPS 域名，可为 `Deploy/.env.prod` 提供真实 `RADISH_PUBLIC_URL`
 - 已具备可挂载到 Auth 容器的正式证书，或至少已具备可持久化写入的正式证书目录 / 卷
@@ -648,6 +672,7 @@ HTTP (5000/5100) → ASP.NET Core 应用
      - `/` 可打开 WebOS
      - `/console/` 可打开 Console
      - Auth / Gateway / Api 容器日志中没有证书加载失败、Issuer 不匹配或重定向异常
+   - 若这里失败，不要直接扩大排查范围，优先回到 [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist) 确认是 `doctor/verify`、宿主日志还是网关 / 反代链路的问题
 
 5. **做真实外部域名链路验证**
    - 使用与 `RADISH_PUBLIC_URL` 完全一致的域名访问，不要混用 `localhost`
@@ -661,24 +686,26 @@ HTTP (5000/5100) → ASP.NET Core 应用
      - `OpenIddict__Server__Issuer` 是否已跟随 `RADISH_PUBLIC_URL`
      - 外层反代是否正确传递 `X-Forwarded-Proto` 与 `Host`
 
-### 最小记录模板
+### 记录模板
 
-- 记录日期：YYYY-MM-DD
-- 记录范围：上线前交付复核
-- 外部域名：<domain>
-- Compose 组合：`base + prod`
-- 证书来源：<path or secret name>
-- 静态展开：通过 / 阻塞
-- 最小运行态：通过 / 阻塞
-- OIDC 回调链路：通过 / 阻塞
-- 结论：可进入更大范围部署 / 仍需修复
+上线前交付复核不再建议临时手写字段，统一复用：
+
+- [M14 部署后最小复核记录模板](/guide/m14-deployment-review-record-template)
+
+最少应明确记录：
+
+- `base + prod` 组合、外部域名、镜像版本与证书来源
+- `validate:baseline:host`、`check:host-runtime` 与 `collect:m14-host-record` 的执行结果
+- `RADISH_PUBLIC_URL`、Issuer、反代头、`/health`、`/`、`/console/`、`/scalar`
+- `radish-client / radish-console / radish-scalar` 登录、回调、登出，以及 `userinfo` / 受保护接口结论
 
 ### 当前说明
 
 - 本清单属于“上线前交付复核”，不阻塞当前“可发内部开发版”的判断
 - 当前阶段若尚不具备真实 `RADISH_PUBLIC_URL`、Auth 证书或 Docker 镜像推送 / 部署条件，可先暂缓本清单；这表示“当前不阻塞”，不表示“真实外部联调已完成”
-- 当前下一阶段主线应先补齐 `CI/CD` 与 Docker 镜像推送链路；待条件具备后，再按本清单正式执行并补记录
+- 截至 `2026-04-06`，仓库已进入 `M15` 第一批；发布、部署、发布后最小复核与回滚的默认顺序统一以 [M15 最小交付与部署基线](/guide/m15-delivery-baseline) 为准
 - 若后续只是常规功能迭代，仍优先使用 `validate:baseline` 与 `master` PR 质量门禁，不需要每次都执行本清单
+- 若本轮问题已经落到宿主运行、自检或最小排障层，统一按 [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist) 的顺序处理，不要把部署问题与代码回归问题混在一起排
 - 若未来把 `Auth` 扩为多实例部署，OIDC 证书必须来自共享挂载目录、共享卷或外部密钥服务，不能让每个实例各自自动生成一套
 
 ## 文档系统部署

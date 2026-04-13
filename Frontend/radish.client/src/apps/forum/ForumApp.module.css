@@ -417,6 +417,16 @@
   font-size: 14px;
 }
 
+.noticeText {
+  color: var(--theme-state-info);
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: color-mix(in srgb, var(--theme-state-info) 14%, var(--theme-bg-surface) 86%);
+  border: 1px solid color-mix(in srgb, var(--theme-state-info) 26%, transparent 74%);
+  border-radius: 6px;
+  font-size: 14px;
+}
+
 /* 帖子详情容器 */
 .postDetailContainer {
   display: flex;

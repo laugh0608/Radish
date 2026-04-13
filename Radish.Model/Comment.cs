@@ -45,6 +45,8 @@ public class Comment : RootEntityTKey<long>, ITenantEntity
         PostId = 0;
         ParentId = null;
         RootId = null;
+        ReplyToCommentId = null;
+        ReplyToCommentSnapshot = string.Empty;
         ReplyToUserId = null;
         ReplyToUserName = string.Empty;
         Level = 0;
@@ -85,6 +87,16 @@ public class Comment : RootEntityTKey<long>, ITenantEntity
         if (options.RootId.HasValue)
         {
             RootId = options.RootId.Value;
+        }
+
+        if (options.ReplyToCommentId.HasValue)
+        {
+            ReplyToCommentId = options.ReplyToCommentId.Value;
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.ReplyToCommentSnapshot))
+        {
+            ReplyToCommentSnapshot = options.ReplyToCommentSnapshot.Trim();
         }
 
         if (options.ReplyToUserId.HasValue)
@@ -198,6 +210,16 @@ public class Comment : RootEntityTKey<long>, ITenantEntity
     /// <remarks>可空，用于 @某人</remarks>
     [SugarColumn(IsNullable = true)]
     public long? ReplyToUserId { get; set; }
+
+    /// <summary>回复目标评论 Id</summary>
+    /// <remarks>可空，用于表达当前评论真正回应的是哪一条评论</remarks>
+    [SugarColumn(IsNullable = true)]
+    public long? ReplyToCommentId { get; set; }
+
+    /// <summary>回复目标评论摘要</summary>
+    /// <remarks>可空，最大 160 字符，用于两层评论中的回复锚点展示</remarks>
+    [SugarColumn(Length = 160, IsNullable = true)]
+    public string ReplyToCommentSnapshot { get; set; } = string.Empty;
 
     /// <summary>回复目标用户名称</summary>
     /// <remarks>可空，最大 100 字符，冗余字段便于查询</remarks>
@@ -335,6 +357,12 @@ public sealed class CommentInitializationOptions
 
     /// <summary>根评论 Id</summary>
     public long? RootId { get; set; }
+
+    /// <summary>回复目标评论 Id</summary>
+    public long? ReplyToCommentId { get; set; }
+
+    /// <summary>回复目标评论摘要</summary>
+    public string? ReplyToCommentSnapshot { get; set; }
 
     /// <summary>回复目标用户 Id</summary>
     public long? ReplyToUserId { get; set; }

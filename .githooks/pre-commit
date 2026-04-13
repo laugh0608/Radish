@@ -8,11 +8,11 @@ if [ -z "$repo_root" ]; then
 fi
 
 cd "$repo_root" || exit 1
-git diff --cached --name-only --diff-filter=ACMR -z | node Scripts/check-repo-hygiene.mjs --stdin-z
+npm run check:repo-hygiene:staged
 status=$?
 
 if [ $status -ne 0 ]; then
   exit $status
 fi
 
-git diff --cached --name-only --diff-filter=ACMR -z | node Scripts/lint-frontend-changed.mjs --stdin-z
+npm run lint:staged

@@ -1,15 +1,20 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCurrentWindow } from '@/desktop/useCurrentWindow';
 import { useUserStore } from '@/stores/userStore';
 import { useWindowStore } from '@/stores/windowStore';
+import { log } from '@/utils/logger';
+import { createForumCommentHighlightMap } from '@/utils/forumCommentHighlights';
 import { ConfirmDialog } from '@radish/ui/confirm-dialog';
 import { ContentReportModal } from '@/components/ContentReportModal';
 import {
   getPostList,
   getCurrentGodCommentsBatch,
+  getChildComments,
+  getCommentNavigation,
   type PostItem,
-  type CommentHighlight
+  type CommentHighlight,
+  type CommentNode,
 } from '@/api/forum';
 import type { ContentReportTargetType } from '@/api/contentModeration';
 import {
@@ -20,6 +25,7 @@ import {
 } from '@/api/userFollow';
 import { getMyTimePreference, getTimeSettings } from '@/api/time';
 import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId, resolveTimeZoneId } from '@/utils/dateTime';
+import { parseForumWindowParams } from '@/utils/forumNavigation';
 import { CategoryList } from './components/CategoryList';
 import { TagSection } from './components/TagSection';
 import { TrendingSidebar } from './components/TrendingSidebar';
@@ -46,27 +52,31 @@ const EditHistoryModal = lazy(() =>
 );
 
 const SEARCH_PAGE_SIZE = 20;
+const COMMENT_NAVIGATION_CHILD_PAGE_SIZE = 5;
 
-function parseForumWindowParams(appParams?: Record<string, unknown> | null): { postId?: number; navigationKey?: string } {
-  if (!appParams) {
-    return {};
-  }
+interface ForumCommentNavigationTarget {
+  commentId: number;
+  expandedRootCommentId?: number;
+  navigationKey: string;
+}
 
-  const rawPostId = appParams.postId;
-  const postId = typeof rawPostId === 'number'
-    ? rawPostId
-    : typeof rawPostId === 'string'
-      ? Number(rawPostId)
-      : 0;
+function mergeCommentChildren(
+  comments: CommentNode[],
+  parentCommentId: number,
+  children: CommentNode[],
+  totalChildren: number
+): CommentNode[] {
+  return comments.map((comment) => {
+    if (comment.voId !== parentCommentId) {
+      return comment;
+    }
 
-  if (!Number.isFinite(postId) || postId <= 0) {
-    return {};
-  }
-
-  const rawNavigationKey = appParams.__navigationKey;
-  const navigationKey = rawNavigationKey == null ? undefined : String(rawNavigationKey);
-
-  return { postId, navigationKey };
+    return {
+      ...comment,
+      voChildren: children,
+      voChildrenTotal: totalChildren
+    };
+  });
 }
 
 export const ForumApp = () => {
@@ -92,9 +102,11 @@ export const ForumApp = () => {
   const [searchTotalCount, setSearchTotalCount] = useState(0);
   const [searchTotalPages, setSearchTotalPages] = useState(0);
   const [searchPosts, setSearchPosts] = useState<PostItem[]>([]);
-  const [searchPostGodComments, setSearchPostGodComments] = useState<Map<number, CommentHighlight>>(new Map());
+  const [searchPostGodComments, setSearchPostGodComments] = useState<Map<string, CommentHighlight>>(new Map());
   const [loadingSearchPosts, setLoadingSearchPosts] = useState(false);
   const [reportTarget, setReportTarget] = useState<{ targetType: ContentReportTargetType; targetId: number } | null>(null);
+  const [commentNavigationTarget, setCommentNavigationTarget] = useState<ForumCommentNavigationTarget | null>(null);
+  const [commentNavigationNotice, setCommentNavigationNotice] = useState<string | null>(null);
   const searchRequestIdRef = useRef(0);
   const [followStatus, setFollowStatus] = useState<UserFollowStatus | null>(null);
   const [followLoading, setFollowLoading] = useState(false);
@@ -223,11 +235,14 @@ export const ForumApp = () => {
     userId: userId ?? 0,
     commentSortBy: dataState.commentSortBy,
     loadedCommentPages: dataState.loadedCommentPages,
+    questionAnswerSort: dataState.questionAnswerSort,
     selectedCategoryId: dataState.selectedCategoryId,
     selectedTagName: dataState.selectedTagName,
     selectedPost: dataState.selectedPost,
     setSelectedPost: dataState.setSelectedPost,
     setComments: dataState.setComments,
+    setQuickReplies: dataState.setQuickReplies,
+    setQuickReplyTotal: dataState.setQuickReplyTotal,
     setCommentTotal: dataState.setCommentTotal,
     setCurrentPage: dataState.setCurrentPage,
     setSortBy: dataState.setSortBy,
@@ -238,32 +253,142 @@ export const ForumApp = () => {
     setError: dataState.setError,
     loadPostDetail: dataState.loadPostDetail,
     loadComments: dataState.loadComments,
+    loadQuickReplies: dataState.loadQuickReplies,
     loadPosts: dataState.loadPosts,
     resetCommentSort: dataState.resetCommentSort
   });
 
-  useEffect(() => {
-    if (!windowParams.postId) {
+  const navigateToComment = useCallback(async (
+    postId: string | number,
+    commentId: string | number,
+    navigationKey: string
+  ) => {
+    const navigation = await getCommentNavigation(
+      postId,
+      commentId,
+      dataState.commentPageSize,
+      COMMENT_NAVIGATION_CHILD_PAGE_SIZE,
+      t
+    );
+
+    if (navigation.voRootPageIndex > 1) {
+      await dataState.loadComments(postId, navigation.voRootPageIndex);
+    }
+
+    if (!navigation.voIsRootComment && navigation.voParentCommentId && navigation.voChildPageIndex) {
+      const aggregatedChildren: CommentNode[] = [];
+      let totalChildren = 0;
+
+      for (let pageIndex = 1; pageIndex <= navigation.voChildPageIndex; pageIndex += 1) {
+        const pageData = await getChildComments(
+          navigation.voParentCommentId,
+          pageIndex,
+          COMMENT_NAVIGATION_CHILD_PAGE_SIZE,
+          t
+        );
+
+        totalChildren = pageData.voTotal ?? totalChildren;
+        aggregatedChildren.push(...(pageData.voItems ?? []));
+      }
+
+      const deduplicatedChildren = aggregatedChildren.filter((child, index, source) =>
+        source.findIndex((item) => item.voId === child.voId) === index
+      );
+
+      dataState.setComments((prev) =>
+        mergeCommentChildren(prev, navigation.voParentCommentId as number, deduplicatedChildren, totalChildren)
+      );
+    }
+
+    setCommentNavigationTarget({
+      commentId: navigation.voCommentId,
+      expandedRootCommentId: navigation.voIsRootComment
+        ? undefined
+        : navigation.voParentCommentId ?? navigation.voRootCommentId,
+      navigationKey
+    });
+    setCommentNavigationNotice(null);
+  }, [dataState.commentPageSize, dataState.loadComments, dataState.setComments, t]);
+
+  const handleNavigateToComment = useCallback(async (commentId: number) => {
+    const postId = dataState.selectedPost?.voId;
+    if (!postId || commentId <= 0) {
       return;
     }
 
-    const routeSignature = `${windowParams.postId}:${windowParams.navigationKey ?? 'initial'}`;
+    try {
+      await navigateToComment(postId, commentId, `inline:${postId}:${commentId}:${Date.now()}`);
+    } catch {
+      setCommentNavigationNotice(t('forum.commentNavigation.notice'));
+    }
+  }, [dataState.selectedPost?.voId, navigateToComment, t]);
+
+  useEffect(() => {
+    if (!windowParams.postId) {
+      setCommentNavigationTarget(null);
+      setCommentNavigationNotice(null);
+      return;
+    }
+
+    const routeSignature = `${windowParams.postId}:${windowParams.commentId ?? 'none'}:${windowParams.navigationKey ?? 'initial'}`;
     if (handledWindowRouteRef.current === routeSignature) {
       return;
     }
 
     handledWindowRouteRef.current = routeSignature;
 
-    setIsSearchView(false);
-    dataState.setSelectedTagName(null);
-    dataState.setSelectedCategoryId(null);
-    void actionsState.handleSelectPost(windowParams.postId);
+    let cancelled = false;
+
+    const openPostFromWindow = async () => {
+      if (!windowParams.postId) {
+        return;
+      }
+
+      setIsSearchView(false);
+      dataState.setSelectedTagName(null);
+      dataState.setSelectedCategoryId(null);
+      setCommentNavigationTarget(null);
+      setCommentNavigationNotice(null);
+
+      await actionsState.handleSelectPost(windowParams.postId);
+      if (cancelled || !windowParams.commentId) {
+        return;
+      }
+
+      try {
+        if (cancelled) {
+          return;
+        }
+
+        await navigateToComment(windowParams.postId, windowParams.commentId, routeSignature);
+      } catch {
+        if (cancelled) {
+          return;
+        }
+
+        setCommentNavigationTarget(null);
+        setCommentNavigationNotice(t('forum.commentNavigation.notice'));
+      }
+    };
+
+    void openPostFromWindow();
+
+    return () => {
+      cancelled = true;
+    };
   }, [
     actionsState.handleSelectPost,
+    dataState.commentPageSize,
+    dataState.loadComments,
+    dataState.setComments,
+    dataState.setError,
+    windowParams.commentId,
     windowParams.navigationKey,
     windowParams.postId,
     dataState.setSelectedCategoryId,
     dataState.setSelectedTagName,
+    t,
+    navigateToComment,
   ]);
 
   useEffect(() => {
@@ -302,19 +427,21 @@ export const ForumApp = () => {
         }
 
         const postIds = result.data.map(post => post.voId);
-        const highlights = await getCurrentGodCommentsBatch(postIds, t);
-        if (requestId !== searchRequestIdRef.current) {
-          return;
-        }
-
-        const highlightsMap = new Map<number, CommentHighlight>();
-        for (const [postIdStr, highlight] of Object.entries(highlights)) {
-          const postId = Number(postIdStr);
-          if (!Number.isNaN(postId) && highlight) {
-            highlightsMap.set(postId, highlight);
+        try {
+          const highlights = await getCurrentGodCommentsBatch(postIds, t);
+          if (requestId !== searchRequestIdRef.current) {
+            return;
           }
+
+          setSearchPostGodComments(createForumCommentHighlightMap(highlights));
+        } catch (highlightError) {
+          if (requestId !== searchRequestIdRef.current) {
+            return;
+          }
+
+          log.warn('搜索结果神评预览补查失败，已降级使用帖子主数据:', highlightError);
+          setSearchPostGodComments(new Map());
         }
-        setSearchPostGodComments(highlightsMap);
       } catch (err) {
         if (requestId !== searchRequestIdRef.current) {
           return;
@@ -445,8 +572,12 @@ export const ForumApp = () => {
 
   const handleShowAllPosts = () => {
     setIsSearchView(false);
+    setCommentNavigationTarget(null);
+    setCommentNavigationNotice(null);
     dataState.setSelectedTagName(null);
     dataState.setSelectedCategoryId(null);
+    dataState.setQuickReplies([]);
+    dataState.setQuickReplyTotal(0);
     dataState.setSelectedPost(null);
     dataState.setComments([]);
     dataState.resetCommentSort();
@@ -454,12 +585,16 @@ export const ForumApp = () => {
 
   const handleSelectCategory = (categoryId: number) => {
     setIsSearchView(false);
+    setCommentNavigationTarget(null);
+    setCommentNavigationNotice(null);
     dataState.setSelectedTagName(null);
     dataState.setSelectedCategoryId(categoryId);
   };
 
   const handleSelectTag = (tagName: string | null) => {
     setIsSearchView(false);
+    setCommentNavigationTarget(null);
+    setCommentNavigationNotice(null);
     dataState.setSelectedTagName(tagName);
     if (tagName) {
       dataState.setSelectedCategoryId(null);
@@ -468,8 +603,12 @@ export const ForumApp = () => {
 
   const handleOpenSearchView = (keyword: string) => {
     const normalizedKeyword = keyword.trim();
+    setCommentNavigationTarget(null);
+    setCommentNavigationNotice(null);
     dataState.setSelectedPost(null);
     dataState.setComments([]);
+    dataState.setQuickReplies([]);
+    dataState.setQuickReplyTotal(0);
     dataState.resetCommentSort();
     dataState.setError(null);
 
@@ -527,10 +666,13 @@ export const ForumApp = () => {
               <PostDetailContentView
                 post={dataState.selectedPost}
                 comments={dataState.comments}
+                quickReplies={dataState.quickReplies}
+                quickReplyTotal={dataState.quickReplyTotal}
                 commentTotal={dataState.commentTotal}
                 commentPageSize={dataState.commentPageSize}
                 loadingPostDetail={dataState.loadingPostDetail}
                 loadingComments={dataState.loadingComments}
+                loadingQuickReplies={dataState.loadingQuickReplies}
                 loadingMoreComments={dataState.loadingMoreComments}
                 displayTimeZone={displayTimeZone}
                 isLiked={actionsState.likedPosts.has(dataState.selectedPost.voId)}
@@ -543,9 +685,14 @@ export const ForumApp = () => {
                 replyTo={actionsState.replyTo}
                 followStatus={followStatus}
                 followLoading={followLoading}
+                commentNavigationTarget={commentNavigationTarget}
                 onBack={() => {
+                  setCommentNavigationTarget(null);
+                  setCommentNavigationNotice(null);
                   dataState.setSelectedPost(null);
                   dataState.setComments([]);
+                  dataState.setQuickReplies([]);
+                  dataState.setQuickReplyTotal(0);
                   dataState.resetCommentSort();
                 }}
                 onLike={actionsState.handleLikePost}
@@ -561,6 +708,8 @@ export const ForumApp = () => {
                 onEdit={actionsState.handleEditPost}
                 onViewPostHistory={actionsState.handleViewPostHistory}
                 onDelete={actionsState.handleDeletePost}
+                onCreateQuickReply={actionsState.handleCreateQuickReply}
+                onDeleteQuickReply={actionsState.handleDeleteQuickReply}
                 onCommentSortChange={actionsState.handleCommentSortChange}
                 onDeleteComment={actionsState.handleDeleteComment}
                 onEditComment={actionsState.handleEditComment}
@@ -575,7 +724,9 @@ export const ForumApp = () => {
                 onToggleFollow={handleToggleFollow}
                 onAuthorClick={handleOpenUserProfile}
                 onReportPost={(postId) => handleOpenReport('Post', postId)}
+                onReportQuickReply={(quickReplyId) => handleOpenReport('PostQuickReply', quickReplyId)}
                 onReportComment={(commentId) => handleOpenReport('Comment', commentId)}
+                onNavigateToComment={handleNavigateToComment}
               />
             </Suspense>
           ) : (
@@ -779,6 +930,7 @@ export const ForumApp = () => {
           />
         )}
 
+        {commentNavigationNotice && <p className={styles.noticeText}>{commentNavigationNotice}</p>}
         {/* 错误提示 */}
         {dataState.error && <p className={styles.errorText}>{t('common.errorPrefix')}{dataState.error}</p>}
       </div>

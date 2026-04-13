@@ -37,15 +37,18 @@ features:
 - [架构总览](/architecture/overview) - 系统拓扑、项目职责与关键约定
 - [开发规范](/architecture/specifications) - 分层约束、编码规范与协作规则
 - [前端设计](/frontend/design) - WebOS 架构与应用集成方式
+- [前端多壳层策略](/frontend/shell-strategy) - 第二阶段前端演进方向
 
 ## 当前协作
 
-- [开发路线图总览](/development-plan) - 当前里程碑、主线与里程碑表
-- [首版 dev 边界](/planning/dev-first-scope) - 首版 dev 的范围、完成标准与明确后置项
-- [首版 dev 功能矩阵状态表](/planning/dev-first-status-matrix) - 首版范围内每条主线当前处于什么状态
-- [首版 dev 总回归与发布前检查单](/guide/dev-first-regression-checklist) - 首版收官阶段按什么顺序做总回归与发布前确认
-- [当前进行中](/planning/current) - 现在真正要做的事
-- [未来规划](/planning/backlog) - 后续候选节点与进入条件
+- [开发路线图总览](/development-plan) - 第二开发阶段的主线、下一顺位与维护线
+- [第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform) - 当前阶段总目标、拆分与优先级
+- [前端多壳层策略](/frontend/shell-strategy) - 公开内容、桌面工作台与 Flutter 客户端的职责分工
+- [当前进行中](/planning/current) - 现在真正要做的正式主线
+- [未来规划](/planning/backlog) - 当前明确后置的事项
+- [已完成摘要](/planning/archive) - 第一开发阶段与历史里程碑结论
+- [首版 dev 边界](/planning/dev-first-scope) - 第一开发阶段归档参考
+- [首版 dev 功能矩阵状态表](/planning/dev-first-status-matrix) - 第一开发阶段归档参考
 - [开发日志总索引](/changelog/) - 年度 / 月度 / 周志入口
 
 ## 常用专题

@@ -16,15 +16,23 @@ public partial class PostService
         string sortBy = "newest",
         string? keyword = null,
         DateTime? startTime = null,
-        DateTime? endTime = null)
+        DateTime? endTime = null,
+        string? tagSlug = null)
     {
         if (_postCustomRepository == null)
         {
             throw new InvalidOperationException("帖子仓储未配置，无法查询论坛帖子列表");
         }
 
+        var tagId = await ResolvePublicTagIdAsync(tagSlug);
+        if (!string.IsNullOrWhiteSpace(tagSlug) && !tagId.HasValue)
+        {
+            return (new List<PostVo>(), 0);
+        }
+
         var (posts, totalCount) = await _postCustomRepository.QueryForumPostPageAsync(
             categoryId,
+            tagId,
             keyword,
             startTime,
             endTime,
@@ -63,6 +71,10 @@ public partial class PostService
             var tagIds = postTags.Select(pt => pt.TagId).ToList();
             var tags = await _tagService.QueryAsync(t => tagIds.Contains(t.Id) && t.IsEnabled && !t.IsDeleted);
             postVo.VoTags = string.Join(", ", tags.Select(t => t.VoName));
+            postVo.VoTagSlugs = tags
+                .Select(t => TagSlugHelper.BuildCanonicalSlug(t.VoName, t.VoSlug))
+                .Where(tagSlugItem => !string.IsNullOrWhiteSpace(tagSlugItem))
+                .ToList();
         }
 
         var pollVo = await BuildPostPollVoAsync(postId, viewerUserId);
@@ -83,6 +95,8 @@ public partial class PostService
             postVo.VoLottery = lotteryVo;
         }
 
+        await FillPostGodCommentPreviewAsync(new List<PostVo> { postVo });
+
         postVo.VoQuestion = await BuildPostQuestionVoAsync(postId, answerSort);
         FillPostQuestionSummary(postVo, postVo.VoQuestion);
 
@@ -100,15 +114,23 @@ public partial class PostService
         string? keyword = null,
         DateTime? startTime = null,
         DateTime? endTime = null,
-        bool? isSolved = null)
+        bool? isSolved = null,
+        string? tagSlug = null)
     {
         if (_postCustomRepository == null)
         {
             throw new InvalidOperationException("帖子仓储未配置，无法查询问答帖子列表");
         }
 
+        var tagId = await ResolvePublicTagIdAsync(tagSlug);
+        if (!string.IsNullOrWhiteSpace(tagSlug) && !tagId.HasValue)
+        {
+            return (new List<PostVo>(), 0);
+        }
+
         var (posts, totalCount) = await _postCustomRepository.QueryQuestionPostPageAsync(
             categoryId,
+            tagId,
             keyword,
             startTime,
             endTime,
@@ -131,7 +153,8 @@ public partial class PostService
         string? keyword = null,
         DateTime? startTime = null,
         DateTime? endTime = null,
-        bool? isClosed = null)
+        bool? isClosed = null,
+        string? tagSlug = null)
     {
         var utcNow = DateTime.UtcNow;
         Expression<Func<PostPoll, bool>> pollCondition = isClosed switch
@@ -149,6 +172,23 @@ public partial class PostService
             .Select(poll => poll.PostId)
             .Distinct()
             .ToList();
+
+        var tagId = await ResolvePublicTagIdAsync(tagSlug);
+        if (!string.IsNullOrWhiteSpace(tagSlug) && !tagId.HasValue)
+        {
+            return (new List<PostVo>(), 0);
+        }
+
+        if (tagId.HasValue)
+        {
+            var taggedPostIds = (await _postTagRepository.QueryAsync(postTag => postTag.TagId == tagId.Value))
+                .Select(postTag => postTag.PostId)
+                .Distinct()
+                .ToHashSet();
+            pollPostIds = pollPostIds
+                .Where(postId => taggedPostIds.Contains(postId))
+                .ToList();
+        }
 
         if (pollPostIds.Count == 0)
         {
@@ -178,6 +218,98 @@ public partial class PostService
             "deadline" => await QueryPollPostsByDeadlineAsync(baseCondition, polls, pageIndex, pageSize),
             "votes" => await QueryPollPostsByVotesAsync(baseCondition, polls, pageIndex, pageSize),
             "hottest" => await QueryPollPostsByHottestAsync(baseCondition, pageIndex, pageSize),
+            "essence" => await QueryPageAsync(
+                baseCondition,
+                pageIndex,
+                pageSize,
+                post => new { post.IsTop, post.IsEssence, post.CreateTime },
+                SqlSugar.OrderByType.Desc),
+            _ => await QueryPageAsync(
+                baseCondition,
+                pageIndex,
+                pageSize,
+                post => new { post.IsTop, post.CreateTime },
+                SqlSugar.OrderByType.Desc)
+        };
+    }
+
+    /// <summary>
+    /// 分页获取抽奖帖子列表
+    /// </summary>
+    public async Task<(List<PostVo> data, int totalCount)> GetLotteryPostPageAsync(
+        long? categoryId = null,
+        int pageIndex = 1,
+        int pageSize = 20,
+        string sortBy = "newest",
+        string? keyword = null,
+        DateTime? startTime = null,
+        DateTime? endTime = null,
+        string? tagSlug = null)
+    {
+        if (_postLotteryRepository == null)
+        {
+            throw new InvalidOperationException("抽奖仓储未配置，无法查询抽奖帖子列表");
+        }
+
+        var lotteries = await _postLotteryRepository.QueryAsync(lottery => !lottery.IsDeleted);
+        var lotteryPostIds = lotteries
+            .Select(lottery => lottery.PostId)
+            .Distinct()
+            .ToList();
+
+        var tagId = await ResolvePublicTagIdAsync(tagSlug);
+        if (!string.IsNullOrWhiteSpace(tagSlug) && !tagId.HasValue)
+        {
+            return (new List<PostVo>(), 0);
+        }
+
+        if (tagId.HasValue)
+        {
+            var taggedPostIds = (await _postTagRepository.QueryAsync(postTag => postTag.TagId == tagId.Value))
+                .Select(postTag => postTag.PostId)
+                .Distinct()
+                .ToHashSet();
+            lotteryPostIds = lotteryPostIds
+                .Where(postId => taggedPostIds.Contains(postId))
+                .ToList();
+        }
+
+        if (lotteryPostIds.Count == 0)
+        {
+            return (new List<PostVo>(), 0);
+        }
+
+        var normalizedKeyword = keyword ?? string.Empty;
+        var hasKeyword = !string.IsNullOrWhiteSpace(normalizedKeyword);
+        var hasCategory = categoryId.HasValue;
+        var categoryValue = categoryId ?? 0;
+        var hasStartTime = startTime.HasValue;
+        var hasEndTime = endTime.HasValue;
+        var startTimeValue = startTime ?? DateTime.MinValue;
+        var endTimeValue = endTime ?? DateTime.MaxValue;
+
+        Expression<Func<Post, bool>> baseCondition = post =>
+            lotteryPostIds.Contains(post.Id) &&
+            post.IsPublished &&
+            !post.IsDeleted &&
+            (!hasCategory || post.CategoryId == categoryValue) &&
+            (!hasKeyword || post.Title.Contains(normalizedKeyword) || post.Content.Contains(normalizedKeyword)) &&
+            (!hasStartTime || post.CreateTime >= startTimeValue) &&
+            (!hasEndTime || post.CreateTime <= endTimeValue);
+
+        return sortBy switch
+        {
+            "hottest" => await QueryPageAsync(
+                baseCondition,
+                pageIndex,
+                pageSize,
+                post => new
+                {
+                    post.IsTop,
+                    HotScore = post.ViewCount + post.LikeCount * 2 + post.CommentCount * 3,
+                    post.CreateTime
+                },
+                SqlSugar.OrderByType.Desc),
             "essence" => await QueryPageAsync(
                 baseCondition,
                 pageIndex,
@@ -238,14 +370,19 @@ public partial class PostService
             .ToList();
 
         Dictionary<long, string> tagNameMap = new();
+        Dictionary<long, string> tagSlugMap = new();
         if (tagIds.Count > 0)
         {
-            tagNameMap = (await _tagRepository.QueryAsync(tag =>
+            var enabledTags = (await _tagRepository.QueryAsync(tag =>
                     tagIds.Contains(tag.Id) &&
                     tag.IsEnabled &&
                     !tag.IsDeleted))
                 .GroupBy(tag => tag.Id)
-                .ToDictionary(group => group.Key, group => group.First().Name);
+                .ToDictionary(group => group.Key, group => group.First());
+            tagNameMap = enabledTags.ToDictionary(entry => entry.Key, entry => entry.Value.Name);
+            tagSlugMap = enabledTags.ToDictionary(
+                entry => entry.Key,
+                entry => TagSlugHelper.BuildCanonicalSlug(entry.Value.Name, entry.Value.Slug));
         }
 
         var tagTextMap = postTags
@@ -283,6 +420,7 @@ public partial class PostService
             .GroupBy(post => post.VoId)
             .ToDictionary(group => group.Key, group => group.First().VoAuthorId);
         var lotteryParticipantCountMap = await BuildLotteryParticipantCountMapAsync(postAuthorMap, lotteryMap);
+        var godCommentPreviewMap = await BuildGodCommentPreviewMapAsync(postIds);
 
         foreach (var post in posts)
         {
@@ -296,6 +434,12 @@ public partial class PostService
             {
                 post.VoTags = tags;
             }
+
+            post.VoTagSlugs = postTags
+                .Where(postTag => postTag.PostId == post.VoId)
+                .Select(postTag => tagSlugMap.GetValueOrDefault(postTag.TagId))
+                .Where(tagSlugItem => !string.IsNullOrWhiteSpace(tagSlugItem))
+                .ToList()!;
 
             if (!pollMap.TryGetValue(post.VoId, out var poll))
             {
@@ -321,6 +465,19 @@ public partial class PostService
                 post.VoHasLottery = true;
                 post.VoLotteryParticipantCount = lotteryParticipantCountMap.GetValueOrDefault(post.VoId, lottery.ParticipantCount);
                 post.VoLotteryIsDrawn = lottery.IsDrawn;
+            }
+
+            if (godCommentPreviewMap.TryGetValue(post.VoId, out var highlight))
+            {
+                post.VoGodCommentId = highlight.CommentId;
+                post.VoGodCommentAuthorName = highlight.AuthorName;
+                post.VoGodCommentContentSnapshot = highlight.ContentSnapshot;
+            }
+            else
+            {
+                post.VoGodCommentId = null;
+                post.VoGodCommentAuthorName = null;
+                post.VoGodCommentContentSnapshot = null;
             }
 
             FillPostQuestionSummary(post, questionMap.GetValueOrDefault(post.VoId));
@@ -633,6 +790,17 @@ public partial class PostService
         return poll.IsClosed || (poll.EndTime.HasValue && poll.EndTime.Value <= DateTime.UtcNow);
     }
 
+    private async Task<long?> ResolvePublicTagIdAsync(string? tagSlug)
+    {
+        if (string.IsNullOrWhiteSpace(tagSlug))
+        {
+            return null;
+        }
+
+        var tag = await _tagService.GetPublicTagBySlugAsync(tagSlug);
+        return tag?.VoId;
+    }
+
     private static int GetPollDeadlineGroup(PostPoll? poll)
     {
         if (poll == null)
@@ -745,5 +913,63 @@ public partial class PostService
             comment.IsEnabled &&
             !comment.IsDeleted &&
             (!hasCutoff || comment.CreateTime <= cutoffValue));
+    }
+
+    private async Task FillPostGodCommentPreviewAsync(List<PostVo> posts)
+    {
+        if (posts.Count == 0)
+        {
+            return;
+        }
+
+        var postIds = posts
+            .Select(post => post.VoId)
+            .Where(postId => postId > 0)
+            .Distinct()
+            .ToList();
+
+        if (postIds.Count == 0)
+        {
+            return;
+        }
+
+        var previewMap = await BuildGodCommentPreviewMapAsync(postIds);
+        foreach (var post in posts)
+        {
+            if (previewMap.TryGetValue(post.VoId, out var highlight))
+            {
+                post.VoGodCommentId = highlight.CommentId;
+                post.VoGodCommentAuthorName = highlight.AuthorName;
+                post.VoGodCommentContentSnapshot = highlight.ContentSnapshot;
+            }
+            else
+            {
+                post.VoGodCommentId = null;
+                post.VoGodCommentAuthorName = null;
+                post.VoGodCommentContentSnapshot = null;
+            }
+        }
+    }
+
+    private async Task<Dictionary<long, CommentHighlight>> BuildGodCommentPreviewMapAsync(List<long> postIds)
+    {
+        if (_commentHighlightRepository == null || postIds.Count == 0)
+        {
+            return new Dictionary<long, CommentHighlight>();
+        }
+
+        var highlights = await _commentHighlightRepository.QueryAsync(highlight =>
+            postIds.Contains(highlight.PostId) &&
+            highlight.HighlightType == 1 &&
+            highlight.IsCurrent);
+
+        return highlights
+            .GroupBy(highlight => highlight.PostId)
+            .ToDictionary(
+                group => group.Key,
+                group => group
+                    .OrderBy(highlight => highlight.Rank)
+                    .ThenBy(highlight => highlight.Id)
+                    .First());
     }
 }

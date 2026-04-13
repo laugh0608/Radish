@@ -1,8 +1,12 @@
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Radish.Common;
 using Radish.Common.CoreTool;
+using Radish.Common.HealthTool;
+using Radish.Gateway.HealthChecks;
 using Radish.Extension.Log;
 using Serilog;
 using Yarp.ReverseProxy;
@@ -108,35 +112,11 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 });
 
 // ===== 健康检查配置 =====
-var downstreamSection = builder.Configuration.GetSection("DownstreamServices:ApiService");
-var apiBaseUrl = downstreamSection["BaseUrl"];
-var apiHealthPath = downstreamSection["HealthCheckPath"];
-
-var healthChecksBuilder = builder.Services.AddHealthChecks();
-
-// 添加下游 API 服务健康检查
-if (!string.IsNullOrEmpty(apiBaseUrl) && !string.IsNullOrEmpty(apiHealthPath))
-{
-    var apiHealthUrl = $"{apiBaseUrl.TrimEnd('/')}{apiHealthPath}";
-    healthChecksBuilder.AddUrlGroup(
-        new Uri(apiHealthUrl),
-        name: "api-service",
-        tags: ["downstream", "api"]);
-}
-
-// 直接通过 console 下游服务地址添加健康检查，避免本地自签 HTTPS 导致回环检查证书失败
-var consoleBaseUrl = builder.Configuration["ReverseProxy:Clusters:consoleCluster:Destinations:console:Address"];
-if (!string.IsNullOrEmpty(consoleBaseUrl))
-{
-    var consoleBase = consoleBaseUrl.TrimEnd('/');
-    var consoleRequestPath = "/console";
-
-    var consoleHealthUrl = $"{consoleBase}{consoleRequestPath}";
-    healthChecksBuilder.AddUrlGroup(
-        new Uri(consoleHealthUrl),
-        name: "console-service",
-        tags: ["downstream", "console"]);
-}
+var apiBaseUrl = builder.Configuration["DownstreamServices:ApiService:BaseUrl"];
+var authBaseUrl = builder.Configuration["DownstreamServices:AuthService:BaseUrl"];
+var gatewayHealthTargets = GatewayHostHealthChecks.CreateHealthTargets(builder.Configuration);
+var healthCheckTags = GatewayHostHealthChecks.CreateTags(builder.Configuration);
+builder.Services.AddGatewayHostHealthChecks(builder.Configuration, healthCheckTags);
 
 // ===== AppSettings 工具初始化 =====
 builder.Services.AddSingleton(new AppSettingsTool(builder.Configuration));
@@ -195,8 +175,14 @@ app.MapReverseProxy();
 app.MapRazorPages();
 
 // 健康检查端点
-app.MapHealthChecks("/health");
-app.MapHealthChecks("/healthz");
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    Predicate = GatewayHostHealthChecks.IsMinimal,
+});
+app.MapHealthChecks("/healthz", new HealthCheckOptions
+{
+    ResponseWriter = (context, report) => StructuredHealthCheckResponseWriter.WriteJsonAsync(context, report, healthCheckTags),
+});
 
 // 默认路由到门户页
 app.MapFallbackToPage("/Index");
@@ -226,6 +212,16 @@ app.Lifetime.ApplicationStarted.Register(() =>
     if (!string.IsNullOrEmpty(apiBaseUrl))
     {
         Log.Information("下游 API 服务: {ApiUrl}", apiBaseUrl);
+    }
+
+    foreach (var target in gatewayHealthTargets)
+    {
+        var scope = target.Tags.Contains("minimal") ? "最小探活" : "扩展观测";
+        Log.Information("{Scope}[{TargetName}]: {TargetUrl} | failureStatus={FailureStatus}",
+            scope,
+            target.Name,
+            target.Url,
+            target.FailureStatus);
     }
 });
 

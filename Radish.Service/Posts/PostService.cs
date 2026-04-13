@@ -30,6 +30,7 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
     private readonly IBaseRepository<PostLottery>? _postLotteryRepository;
     private readonly IBaseRepository<PostLotteryWinner>? _postLotteryWinnerRepository;
     private readonly IBaseRepository<Comment>? _commentRepository;
+    private readonly IBaseRepository<CommentHighlight>? _commentHighlightRepository;
     private readonly ICommentRepository? _commentCustomRepository;
     private readonly ITagService _tagService;
     private readonly IAttachmentService? _attachmentService;
@@ -66,7 +67,8 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
         IBaseRepository<Attachment>? attachmentRepository = null,
         IBaseRepository<PostLottery>? postLotteryRepository = null,
         IBaseRepository<PostLotteryWinner>? postLotteryWinnerRepository = null,
-        IBaseRepository<Comment>? commentRepository = null)
+        IBaseRepository<Comment>? commentRepository = null,
+        IBaseRepository<CommentHighlight>? commentHighlightRepository = null)
         : base(mapper, baseRepository)
     {
         _postRepository = baseRepository;
@@ -83,6 +85,7 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
         _postLotteryRepository = postLotteryRepository;
         _postLotteryWinnerRepository = postLotteryWinnerRepository;
         _commentRepository = commentRepository;
+        _commentHighlightRepository = commentHighlightRepository;
         _commentCustomRepository = commentCustomRepository;
         _tagService = tagService;
         _attachmentService = attachmentService;

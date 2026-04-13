@@ -1,11 +1,15 @@
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Radish.Common;
 using Radish.Common.CoreTool;
+using Radish.Common.HealthTool;
 using Radish.Auth.OpenIddict;
+using Radish.Auth.HealthChecks;
 using Radish.Extension;
 using Radish.Extension.AutofacExtension;
 using Radish.Extension.AutoMapperExtension;
@@ -187,6 +191,9 @@ builder.Services.AddControllersWithViews()
         // 🚀 配置 JSON 序列化使用 camelCase 命名策略（保持与 API 一致）
         options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
     });
+
+var authHealthCheckTags = AuthHostHealthChecks.Tags;
+builder.Services.AddAuthHostHealthChecks(builder.Configuration, builder.Environment);
 
 // OpenIddict 初始化种子数据（使用 EF Core 存储）
 builder.Services.AddHostedService<OpenIddictSeedHostedService>();
@@ -391,11 +398,20 @@ app.UseRateLimitSetup();
 
 // 控制器路由
 app.MapControllers();
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    Predicate = AuthHostHealthChecks.IsMinimal,
+});
+app.MapHealthChecks("/healthz", new HealthCheckOptions
+{
+    ResponseWriter = (context, report) => StructuredHealthCheckResponseWriter.WriteJsonAsync(context, report, authHealthCheckTags),
+});
 
 // 启动提示（使用 Serilog，与 Gateway/API 风格统一）
 app.Lifetime.ApplicationStarted.Register(() =>
 {
     var urls = app.Urls.Count > 0 ? string.Join(", ", app.Urls) : "未配置";
+    var oidcRuntimeSummary = AuthOidcRuntimeProfile.BuildStartupSummary(builder.Configuration, builder.Environment);
 
     Log.Information("====================================");
     Log.Information("  ____            _ _     _          _         _   _     ");
@@ -409,6 +425,10 @@ app.Lifetime.ApplicationStarted.Register(() =>
     Log.Information("环境: {Environment}", app.Environment.EnvironmentName);
     Log.Information("监听地址: {Urls}", urls);
     Log.Information("CORS 允许来源: {Origins}", string.Join(", ", corsOrigins));
+    Log.Information("OIDC Issuer: {Issuer}", oidcRuntimeSummary.IssuerSummary);
+    Log.Information("OIDC 密钥模式: {KeyMode}", oidcRuntimeSummary.KeyMode);
+    Log.Information("OIDC Signing 证书: {SigningCertificate}", oidcRuntimeSummary.SigningCertificateSummary);
+    Log.Information("OIDC Encryption 证书: {EncryptionCertificate}", oidcRuntimeSummary.EncryptionCertificateSummary);
 });
 
 #endregion

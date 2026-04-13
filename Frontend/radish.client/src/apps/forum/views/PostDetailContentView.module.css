@@ -63,14 +63,30 @@
   padding-right: 84px;
 }
 
-.commentCta {
-  margin-top: 8px;
-  padding: 14px;
-  background: var(--theme-bg-component);
-  border-radius: 14px;
-  border: 1px solid var(--theme-border-soft);
+.discussionHeader {
   display: flex;
-  justify-content: center;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 84%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%) 0%, color-mix(in srgb, var(--theme-bg-component) 78%, var(--theme-bg-surface) 22%) 100%);
+}
+
+.discussionTitle {
+  margin: 0;
+  color: var(--theme-text-primary);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.discussionSubtitle {
+  margin: 6px 0 0;
+  color: var(--theme-text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 .commentButton {
@@ -89,6 +105,13 @@
 .commentButton:hover {
   transform: translateY(-1px);
   box-shadow: 0 14px 26px rgba(96, 165, 250, 0.28);
+}
+
+.loadingText {
+  margin: 0;
+  padding: 16px 18px;
+  color: var(--theme-text-secondary);
+  font-size: 13px;
 }
 
 .floatingTools {
@@ -240,6 +263,15 @@
 }
 
 @media (max-width: 640px) {
+  .discussionHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .commentButton {
+    width: 100%;
+  }
+
   .floatingTools {
     flex-direction: row;
     top: auto;

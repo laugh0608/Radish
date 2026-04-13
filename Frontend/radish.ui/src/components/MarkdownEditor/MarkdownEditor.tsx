@@ -1,10 +1,10 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { KeyboardEvent, ChangeEvent, ClipboardEvent, DragEvent } from 'react';
 import { Icon } from '../Icon/Icon';
 import { StickerPicker } from '../StickerPicker/StickerPicker';
 import type { StickerPickerGroup, StickerPickerSelection } from '../StickerPicker/StickerPicker';
-import type { MarkdownStickerMap } from '../MarkdownRenderer/MarkdownRenderer';
+import { MarkdownRenderer, type MarkdownStickerMap } from '../MarkdownRenderer/MarkdownRenderer';
 import { UserMention } from '../UserMention/UserMention';
 import type { UserMentionOption } from '../UserMention/UserMention';
 import {
@@ -13,10 +13,6 @@ import {
   type MarkdownImageUploadResult,
 } from '../../utils';
 import styles from './MarkdownEditor.module.css';
-
-const MarkdownRenderer = lazy(() =>
-  import('../MarkdownRenderer/MarkdownRenderer').then((module) => ({ default: module.MarkdownRenderer }))
-);
 
 const MENTION_PANEL_WIDTH = 320;
 const MENTION_PANEL_HEIGHT = 220;
@@ -894,9 +890,7 @@ export const MarkdownEditor = ({
         {(mode === 'preview' || mode === 'split') && (
           <div className={`${styles.previewPane} ${mode === 'split' ? styles.paneSplit : ''}`}>
             {value ? (
-              <Suspense fallback={<p className={styles.previewEmpty}>预览加载中...</p>}>
-                <MarkdownRenderer content={value} stickerMap={mergedStickerMap} />
-              </Suspense>
+              <MarkdownRenderer content={value} stickerMap={mergedStickerMap} />
             ) : (
               <p className={styles.previewEmpty}>没有内容可预览</p>
             )}

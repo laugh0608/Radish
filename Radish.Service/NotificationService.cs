@@ -122,7 +122,8 @@ public class NotificationService : INotificationService
                             businessType = notification.BusinessType,
                             triggerId = notification.TriggerId,
                             triggerName = notification.TriggerName,
-                            triggerAvatar = notification.TriggerAvatar
+                            triggerAvatar = notification.TriggerAvatar,
+                            extData = notification.ExtData
                         };
 
                         await _pushService.PushNotificationAsync(userId, payload);
@@ -153,6 +154,7 @@ public class NotificationService : INotificationService
         {
             "CommentReply" => "reply",
             NotificationType.CommentReplied => "reply",
+            NotificationType.PostQuickReplied => "reply",
             NotificationType.CommentLiked => "like",
             NotificationType.PostLiked => "like",
             "Mention" => "mention",

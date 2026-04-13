@@ -11,4 +11,7 @@ public interface IPostLotteryService
 
     /// <summary>手动开奖</summary>
     Task<PostLotteryVo> DrawAsync(long postId, long userId, string userName);
+
+    /// <summary>按帖子自动开奖</summary>
+    Task<PostLotteryVo> AutoDrawByPostIdAsync(long postId);
 }

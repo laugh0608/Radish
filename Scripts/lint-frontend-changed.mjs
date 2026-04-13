@@ -1,7 +1,8 @@
-import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+
+import { runCommand } from './process-runner.mjs';
 
 const args = new Set(process.argv.slice(2));
 const repoRoot = process.cwd();
@@ -73,15 +74,10 @@ function runLint(workspace) {
   console.log(`\n[frontend-lint] ${workspace.name}`);
   console.log(`[frontend-lint] 文件数：${workspace.files.length}`);
 
-  const result = spawnSync(
-    'npm',
-    ['exec', '--workspace', workspace.name, 'eslint', '--', ...workspace.files],
-    {
-      cwd: repoRoot,
-      stdio: 'inherit',
-      shell: process.platform === 'win32'
-    }
-  );
+  const result = runCommand('npm', ['exec', '--workspace', workspace.name, 'eslint', '--', ...workspace.files], {
+    cwd: repoRoot,
+    stdio: 'inherit',
+  });
 
   if (result.error) {
     console.error(`[frontend-lint] ${workspace.name} 执行失败：${result.error.message}`);

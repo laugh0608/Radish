@@ -99,11 +99,11 @@ internal static partial class InitialDataSeeder
 
         var fixedTags = new[]
         {
-            new { Id = 90100L, Name = "社区新闻", Color = "#1677FF", SortOrder = 1 },
-            new { Id = 90101L, Name = "社区活动", Color = "#52C41A", SortOrder = 2 },
-            new { Id = 90102L, Name = "精华帖", Color = "#FAAD14", SortOrder = 3 },
-            new { Id = 90103L, Name = "碎碎念", Color = "#722ED1", SortOrder = 4 },
-            new { Id = 90104L, Name = "公告", Color = "#F5222D", SortOrder = 5 }
+            new { Id = 90100L, Name = "社区新闻", Slug = "community-news", Color = "#1677FF", SortOrder = 1 },
+            new { Id = 90101L, Name = "社区活动", Slug = "community-events", Color = "#52C41A", SortOrder = 2 },
+            new { Id = 90102L, Name = "精华帖", Slug = "featured-posts", Color = "#FAAD14", SortOrder = 3 },
+            new { Id = 90103L, Name = "碎碎念", Slug = "random-thoughts", Color = "#722ED1", SortOrder = 4 },
+            new { Id = 90104L, Name = "公告", Slug = "announcements", Color = "#F5222D", SortOrder = 5 }
         };
 
         foreach (var meta in fixedTags)
@@ -114,6 +114,7 @@ internal static partial class InitialDataSeeder
             if (existingByName != null)
             {
                 existingByName.Color = meta.Color;
+                existingByName.Slug = meta.Slug;
                 existingByName.SortOrder = meta.SortOrder;
                 existingByName.IsEnabled = true;
                 existingByName.IsFixed = true;
@@ -139,6 +140,7 @@ internal static partial class InitialDataSeeder
 
             var tag = new Tag(new TagInitializationOptions(meta.Name)
             {
+                Slug = meta.Slug,
                 Color = meta.Color,
                 SortOrder = meta.SortOrder,
                 IsEnabled = true,

@@ -19,6 +19,9 @@
 - [ ] 本次改动符合当前阶段主线，或已明确说明为何属于例外
 - [ ] 已优先从根因、长期维护性和系统一致性出发处理问题，而不是仅做最小修补
 - [ ] 已执行与本次改动匹配的最小验证
+- [ ] 若目标分支为 `master`，本轮已按 [`PR -> master` 最小执行清单](Docs/guide/master-pr-minimal-checklist.md) 收口，而不是沿用开发中间态口径
+- [ ] 如需在本地复现当前 `Repo Quality` 最小门禁，已按需执行 `npm run validate:ci`
+- [ ] 如触达身份语义 / Claim / Auth 协议输出 / Token 解析，已补 `npm run validate:identity`，并按需记录 `Radish.Api.AuthFlow.http` 与官方顺序回归结果
 - [ ] 如修改了架构、规则、接口、流程、视觉口径或协作规范，已同步更新 `Docs/` 与相关协作文件
 - [ ] 如修改了宿主、配置、数据库结构、种子或 `DbMigrate`，已说明影响范围与处理方式
 - [ ] 未直接向 `master` 提交常规功能改动
@@ -26,17 +29,50 @@
 
 ## 验证记录
 
-请列出实际执行过的命令，并只保留真实跑过的内容，例如：
+请列出实际执行过的命令，并只保留真实跑过的内容。开发中的本地小提交不要求在这里堆叠完整重验证；当目标分支为 `master` 时，再按批次级口径收口，例如：
 
 ```text
 npm run validate:baseline:quick
 npm run validate:baseline
 npm run validate:baseline:host
+npm run validate:ci
+npm run validate:identity
 dotnet build Radish.slnx -c Debug
 dotnet test Radish.Api.Tests
 npm run build --workspace=radish.client
 npm run build --workspace=radish.console
 ```
+
+如本轮触达身份语义 / Claim / Auth 协议输出，请再补记：
+
+```text
+Radish.Api.Tests/HttpTest/Radish.Api.AuthFlow.http
+radish-client -> radish-console -> Radish.Api.AuthFlow.http -> radish-scalar
+```
+
+## Phase 5 维护记录（按需）
+
+如本轮命中 `Identity Guard`、追加了 `validate:identity`，或需要说明 `validate:ci` / `Repo Quality` 的失败归类，请按需补记：
+
+### 身份语义影响面命中原因
+
+- [ ] 未命中身份语义影响面
+- [ ] 身份运行时入口
+- [ ] Auth 协议输出
+- [ ] 官方协议消费者 / Token 解析
+- [ ] 默认执行面文档 / 门禁资产
+
+说明：可直接参考 `npm run check:identity-impact` 的输出填写。
+
+### 失败归类 / 环境边界
+
+- [ ] 无
+- [ ] contract 漂移
+- [ ] 默认执行面失败
+- [ ] 身份语义专题失败
+- [ ] 受限环境边界
+
+- 补充说明：
 
 ## 影响评估
 

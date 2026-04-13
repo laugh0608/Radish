@@ -13,12 +13,8 @@ import {
 } from '@radish/ui';
 import { ReactionBar, type ReactionTogglePayload } from '@radish/ui/reaction-bar';
 import type { StickerPickerGroup } from '@radish/ui/sticker-picker';
-import type { MarkdownStickerMap } from '@radish/ui/markdown-renderer';
+import { MarkdownRenderer, type MarkdownStickerMap } from '@radish/ui/markdown-renderer';
 import styles from './PostDetail.module.css';
-
-const MarkdownRenderer = lazy(() =>
-  import('@radish/ui/markdown-renderer').then((module) => ({ default: module.MarkdownRenderer }))
-);
 
 const MarkdownEditor = lazy(() =>
   import('@radish/ui/markdown-editor').then((module) => ({ default: module.MarkdownEditor }))
@@ -28,6 +24,8 @@ interface PostDetailProps {
   post: PostDetailType | null;
   loading?: boolean;
   displayTimeZone: string;
+  mode?: 'interactive' | 'readOnly';
+  showSectionTitle?: boolean;
   isLiked?: boolean;
   onLike?: (postId: number) => void;
   onVotePoll?: (optionId: number) => Promise<void>;
@@ -56,6 +54,10 @@ interface PostDetailProps {
   followLoading?: boolean;
   onToggleFollow?: (targetUserId: number, isFollowing: boolean) => Promise<void>;
   onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
+  onTagClick?: (tagName: string, tagSlug: string) => void;
+  onQuestionClick?: () => void;
+  onPollClick?: () => void;
+  onLotteryClick?: () => void;
   onReport?: (postId: number) => void;
 }
 
@@ -63,6 +65,8 @@ export const PostDetail = ({
   post,
   loading = false,
   displayTimeZone,
+  mode = 'interactive',
+  showSectionTitle = true,
   isLiked = false,
   onLike,
   onVotePoll,
@@ -91,9 +95,14 @@ export const PostDetail = ({
   followLoading = false,
   onToggleFollow,
   onAuthorClick,
+  onTagClick,
+  onQuestionClick,
+  onPollClick,
+  onLotteryClick,
   onReport,
 }: PostDetailProps) => {
   const { t } = useTranslation();
+  const isReadOnly = mode === 'readOnly';
   const anonymousUserLabel = t('forum.postCard.anonymousUser');
   const unknownTimeLabel = t('forum.postCard.unknownTime');
   const parsedTags = post?.voTags
@@ -103,6 +112,7 @@ export const PostDetail = ({
         .filter(Boolean)
     : [];
   const tagList = post?.voTagNames && post.voTagNames.length > 0 ? post.voTagNames : parsedTags;
+  const tagSlugList = post?.voTagSlugs ?? [];
   const [selectedOptionId, setSelectedOptionId] = useState<number | null>(post?.voPoll?.voSelectedOptionId ?? null);
   const [isVoting, setIsVoting] = useState(false);
   const [answerContent, setAnswerContent] = useState('');
@@ -122,14 +132,22 @@ export const PostDetail = ({
   const canViewQuestionHistory = isQuestionPost && !!onViewHistory;
   const totalAnswerCount = question?.voAnswerCount ?? post?.voAnswerCount ?? 0;
   const drawTimeValue = lottery?.voDrawTime ? new Date(lottery.voDrawTime) : null;
-  const isDrawTimeReached = !drawTimeValue || Number.isNaN(drawTimeValue.getTime()) || drawTimeValue.getTime() <= Date.now();
+  const postCreateTimeValue = post?.voCreateTime ? new Date(post.voCreateTime) : null;
+  const manualDrawAvailableAt = postCreateTimeValue && !Number.isNaN(postCreateTimeValue.getTime())
+    ? postCreateTimeValue.getTime() + 60 * 60 * 1000
+    : null;
+  const isManualDrawWindowOpen = manualDrawAvailableAt == null || manualDrawAvailableAt <= Date.now();
+  const isBeforeDrawDeadline = drawTimeValue != null
+    && !Number.isNaN(drawTimeValue.getTime())
+    && Date.now() < drawTimeValue.getTime();
   const authorAvatarUrl = resolveMediaUrl(post?.voAuthorAvatarUrl);
   const canDrawLottery = Boolean(
     isLotteryPost &&
     isAuthenticated &&
     isAuthor &&
     !lottery?.voIsDrawn &&
-    isDrawTimeReached &&
+    isManualDrawWindowOpen &&
+    isBeforeDrawDeadline &&
     onDrawLottery
   );
   const lotteryStatusText = !lottery
@@ -137,10 +155,14 @@ export const PostDetail = ({
     : lottery.voIsDrawn
       ? t('forum.postDetail.lottery.status.drawn')
       : isAuthor
-        ? isDrawTimeReached
-          ? t('forum.postDetail.lottery.status.canDraw')
-          : t('forum.postDetail.lottery.status.waitTime')
-        : t('forum.postDetail.lottery.status.waitAuthor');
+        ? !isManualDrawWindowOpen
+          ? t('forum.postDetail.lottery.status.waitManualWindow')
+          : isBeforeDrawDeadline
+            ? t('forum.postDetail.lottery.status.canDraw')
+            : t('forum.postDetail.lottery.status.waitAutoDraw')
+        : isBeforeDrawDeadline
+          ? t('forum.postDetail.lottery.status.waitAuthor')
+          : t('forum.postDetail.lottery.status.waitAutoDraw');
   const sortedAnswers = !question?.voAnswers
     ? []
     : [...question.voAnswers].sort((left, right) => {
@@ -170,6 +192,7 @@ export const PostDetail = ({
     t('forum.postDetail.lottery.rule.reply'),
     t('forum.postDetail.lottery.rule.unique'),
     t('forum.postDetail.lottery.rule.author'),
+    t('forum.postDetail.lottery.rule.manualWindow'),
   ];
 
   const buildAvatarText = (name: string) => {
@@ -207,7 +230,7 @@ export const PostDetail = ({
   if (loading) {
     return (
       <div className={styles.container}>
-        <h3 className={styles.title}>{t('forum.postDetail.title')}</h3>
+        {showSectionTitle && <h3 className={styles.title}>{t('forum.postDetail.title')}</h3>}
         <p className={styles.loadingText}>{t('forum.postDetail.loading')}</p>
       </div>
     );
@@ -216,7 +239,7 @@ export const PostDetail = ({
   if (!post) {
     return (
       <div className={styles.container}>
-        <h3 className={styles.title}>{t('forum.postDetail.title')}</h3>
+        {showSectionTitle && <h3 className={styles.title}>{t('forum.postDetail.title')}</h3>}
         <p className={styles.emptyText}>{t('forum.postDetail.empty')}</p>
       </div>
     );
@@ -345,12 +368,22 @@ export const PostDetail = ({
 
   return (
     <div className={styles.container}>
-      <h3 className={styles.title}>{t('forum.postDetail.title')}</h3>
+      {showSectionTitle && <h3 className={styles.title}>{t('forum.postDetail.title')}</h3>}
       <div className={styles.postContent}>
         <h4 className={styles.postTitle}>{post.voTitle}</h4>
         {isQuestionPost && (
           <div className={styles.statusRow}>
-            <span className={`${styles.statusBadge} ${styles.questionBadge}`}>{t('forum.postDetail.questionBadge')}</span>
+            {onQuestionClick ? (
+              <button
+                type="button"
+                className={`${styles.statusBadge} ${styles.interactiveBadge} ${styles.questionBadge}`}
+                onClick={onQuestionClick}
+              >
+                {t('forum.postDetail.questionBadge')}
+              </button>
+            ) : (
+              <span className={`${styles.statusBadge} ${styles.questionBadge}`}>{t('forum.postDetail.questionBadge')}</span>
+            )}
             <span className={`${styles.statusBadge} ${post.voIsSolved ? styles.solvedBadge : styles.pendingBadge}`}>
               {post.voIsSolved ? t('forum.postDetail.statusSolved') : t('forum.postDetail.statusPending')}
             </span>
@@ -388,15 +421,24 @@ export const PostDetail = ({
           {post.voCreateTime && <span> · {formatDateTimeByTimeZone(post.voCreateTime, displayTimeZone)}</span>}
           {post.voViewCount !== undefined && <span> · {t('forum.postDetail.views', { count: post.voViewCount })}</span>}
         </div>
-        <Suspense fallback={<div className={styles.postBody}>{t('forum.postDetail.rendering')}</div>}>
-          <MarkdownRenderer content={post.voContent} className={styles.postBody} stickerMap={stickerMap} />
-        </Suspense>
+        <MarkdownRenderer content={post.voContent} className={styles.postBody} stickerMap={stickerMap} />
         {tagList.length > 0 && (
           <div className={styles.postTags}>
             {tagList.map((tag, index) => (
-              <span key={index} className={styles.tag}>
-                {tag}
-              </span>
+              onTagClick && tagSlugList[index] ? (
+                <button
+                  key={`${tag}-${tagSlugList[index]}`}
+                  type="button"
+                  className={styles.tag}
+                  onClick={() => onTagClick(tag, tagSlugList[index])}
+                >
+                  {tag}
+                </button>
+              ) : (
+                <span key={index} className={styles.tag}>
+                  {tag}
+                </span>
+              )
             ))}
           </div>
         )}
@@ -406,7 +448,17 @@ export const PostDetail = ({
             <div className={styles.pollHeader}>
               <div>
                 <div className={styles.pollTitleRow}>
-                  <span className={styles.pollBadge}>{t('forum.postDetail.poll.badge')}</span>
+                  {onPollClick ? (
+                    <button
+                      type="button"
+                      className={`${styles.pollBadge} ${styles.interactiveBadge}`}
+                      onClick={onPollClick}
+                    >
+                      {t('forum.postDetail.poll.badge')}
+                    </button>
+                  ) : (
+                    <span className={styles.pollBadge}>{t('forum.postDetail.poll.badge')}</span>
+                  )}
                   <h5 className={styles.pollQuestion}>{poll.voQuestion}</h5>
                 </div>
                 <p className={styles.pollMeta}>
@@ -463,28 +515,30 @@ export const PostDetail = ({
 
             <div className={styles.pollFooter}>
               <span className={styles.pollHint}>{pollStatusText}</span>
-              <div className={styles.pollActionButtons}>
-                {canClosePoll && (
+              {!isReadOnly && (
+                <div className={styles.pollActionButtons}>
+                  {canClosePoll && (
+                    <button
+                      type="button"
+                      className={styles.pollCloseButton}
+                      onClick={() => {
+                        void handleClosePoll();
+                      }}
+                      disabled={isClosingPoll}
+                    >
+                      {isClosingPoll ? t('forum.postDetail.poll.closeLoading') : t('forum.postDetail.poll.close')}
+                    </button>
+                  )}
                   <button
                     type="button"
-                    className={styles.pollCloseButton}
-                    onClick={() => {
-                      void handleClosePoll();
-                    }}
-                    disabled={isClosingPoll}
+                    className={styles.pollSubmitButton}
+                    onClick={handleVoteSubmit}
+                    disabled={!canSubmitPoll || !selectedOptionId || isVoting}
                   >
-                    {isClosingPoll ? t('forum.postDetail.poll.closeLoading') : t('forum.postDetail.poll.close')}
+                    {isVoting ? t('forum.postDetail.poll.submitLoading') : t('forum.postDetail.poll.submit')}
                   </button>
-                )}
-                <button
-                  type="button"
-                  className={styles.pollSubmitButton}
-                  onClick={handleVoteSubmit}
-                  disabled={!canSubmitPoll || !selectedOptionId || isVoting}
-                >
-                  {isVoting ? t('forum.postDetail.poll.submitLoading') : t('forum.postDetail.poll.submit')}
-                </button>
-              </div>
+                </div>
+              )}
             </div>
           </section>
         )}
@@ -494,7 +548,17 @@ export const PostDetail = ({
             <div className={styles.lotteryHeader}>
               <div>
                 <div className={styles.lotteryTitleRow}>
-                  <span className={styles.lotteryBadge}>{t('forum.postDetail.lottery.badge')}</span>
+                  {onLotteryClick ? (
+                    <button
+                      type="button"
+                      className={`${styles.lotteryBadge} ${styles.interactiveBadge}`}
+                      onClick={onLotteryClick}
+                    >
+                      {t('forum.postDetail.lottery.badge')}
+                    </button>
+                  ) : (
+                    <span className={styles.lotteryBadge}>{t('forum.postDetail.lottery.badge')}</span>
+                  )}
                   <h5 className={styles.lotteryTitle}>{lottery.voPrizeName}</h5>
                 </div>
                 <p className={styles.lotteryMeta}>
@@ -523,17 +587,21 @@ export const PostDetail = ({
 
             <div className={styles.lotteryFooter}>
               <span className={styles.lotteryHint}>
-                {lottery.voIsDrawn
-                  ? lottery.voDrawnAt
-                    ? t('forum.postDetail.lottery.hint.drawnAt', { time: formatDateTimeByTimeZone(lottery.voDrawnAt, displayTimeZone) })
-                    : t('forum.postDetail.lottery.hint.drawnDone')
+                  {lottery.voIsDrawn
+                    ? lottery.voDrawnAt
+                      ? t('forum.postDetail.lottery.hint.drawnAt', { time: formatDateTimeByTimeZone(lottery.voDrawnAt, displayTimeZone) })
+                      : t('forum.postDetail.lottery.hint.drawnDone')
                   : isAuthor
-                    ? isDrawTimeReached
-                      ? t('forum.postDetail.lottery.hint.authorReady')
-                      : t('forum.postDetail.lottery.hint.authorWaiting')
-                    : t('forum.postDetail.lottery.hint.visitor')}
+                    ? !isManualDrawWindowOpen
+                      ? t('forum.postDetail.lottery.hint.authorWaitingManualWindow')
+                      : isBeforeDrawDeadline
+                        ? t('forum.postDetail.lottery.hint.authorReady')
+                        : t('forum.postDetail.lottery.hint.autoDrawing')
+                    : isBeforeDrawDeadline
+                      ? t('forum.postDetail.lottery.hint.visitor')
+                      : t('forum.postDetail.lottery.hint.autoDrawing')}
               </span>
-              {canDrawLottery && (
+              {!isReadOnly && canDrawLottery && (
                 <button
                   type="button"
                   className={styles.lotteryDrawButton}
@@ -728,13 +796,11 @@ export const PostDetail = ({
                         </div>
                       </div>
 
-                      <Suspense fallback={<div className={styles.answerBody}>{t('forum.postDetail.question.renderingAnswer')}</div>}>
-                        <MarkdownRenderer
-                          content={answer.voContent}
-                          className={styles.answerBody}
-                          stickerMap={stickerMap}
-                        />
-                      </Suspense>
+                      <MarkdownRenderer
+                        content={answer.voContent}
+                        className={styles.answerBody}
+                        stickerMap={stickerMap}
+                      />
                     </article>
                   );
                 })}
@@ -743,71 +809,80 @@ export const PostDetail = ({
               <p className={styles.questionEmpty}>{questionEmptyText}</p>
             )}
 
-            <div className={styles.answerComposer}>
-              <label className={styles.answerLabel}>
-                {t('forum.postDetail.question.composeLabel')}
-              </label>
-              <Suspense fallback={<div className={styles.answerEditorLoading}>{t('forum.postDetail.question.editorLoading')}</div>}>
-                <MarkdownEditor
-                  value={answerContent}
-                  onChange={setAnswerContent}
-                  placeholder={isAuthenticated
-                    ? t('forum.postDetail.question.placeholderLoggedIn')
-                    : t('forum.postDetail.question.placeholderLoggedOut')}
-                  minHeight={180}
-                  disabled={!canAnswerQuestion}
-                  showToolbar={true}
-                  theme="light"
-                  className={styles.answerEditor}
-                  onImageUpload={handleAnswerImageUpload}
-                  onDocumentUpload={handleAnswerDocumentUpload}
-                  stickerGroups={stickerGroups}
-                  stickerMap={stickerMap}
-                />
-              </Suspense>
-              <div className={styles.answerComposerFooter}>
-                <span className={styles.answerHint}>
-                  {question?.voIsSolved
-                    ? t('forum.postDetail.question.hintSolved')
-                    : isAuthenticated
-                      ? t('forum.postDetail.question.hintLoggedIn')
-                      : t('forum.postDetail.question.hintLoggedOut')}
-                </span>
-                <button
-                  type="button"
-                  className={styles.answerSubmitButton}
-                  onClick={() => {
-                    void handleAnswerSubmit();
-                  }}
-                  disabled={!isAuthenticated || !answerContent.trim() || isSubmittingAnswer}
-                >
-                  {isSubmittingAnswer ? t('forum.postDetail.question.submitLoading') : t('forum.postDetail.question.submit')}
-                </button>
+            {!isReadOnly && (
+              <div className={styles.answerComposer}>
+                <label className={styles.answerLabel}>
+                  {t('forum.postDetail.question.composeLabel')}
+                </label>
+                <Suspense fallback={<div className={styles.answerEditorLoading}>{t('forum.postDetail.question.editorLoading')}</div>}>
+                  <MarkdownEditor
+                    value={answerContent}
+                    onChange={setAnswerContent}
+                    placeholder={isAuthenticated
+                      ? t('forum.postDetail.question.placeholderLoggedIn')
+                      : t('forum.postDetail.question.placeholderLoggedOut')}
+                    defaultMode="edit"
+                    minHeight={180}
+                    disabled={!canAnswerQuestion}
+                    showToolbar={true}
+                    theme="light"
+                    className={styles.answerEditor}
+                    onImageUpload={handleAnswerImageUpload}
+                    onDocumentUpload={handleAnswerDocumentUpload}
+                    stickerGroups={stickerGroups}
+                    stickerMap={stickerMap}
+                  />
+                </Suspense>
+                <div className={styles.answerComposerFooter}>
+                  <span className={styles.answerHint}>
+                    {question?.voIsSolved
+                      ? t('forum.postDetail.question.hintSolved')
+                      : isAuthenticated
+                        ? t('forum.postDetail.question.hintLoggedIn')
+                        : t('forum.postDetail.question.hintLoggedOut')}
+                  </span>
+                  <button
+                    type="button"
+                    className={styles.answerSubmitButton}
+                    onClick={() => {
+                      void handleAnswerSubmit();
+                    }}
+                    disabled={!isAuthenticated || !answerContent.trim() || isSubmittingAnswer}
+                  >
+                    {isSubmittingAnswer ? t('forum.postDetail.question.submitLoading') : t('forum.postDetail.question.submit')}
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </section>
         )}
 
         <div className={styles.actions}>
-          <button
-            type="button"
-            onClick={() => onLike?.(post.voId)}
-            className={`${styles.likeButton} ${isLiked ? styles.liked : ''}`}
-            disabled={!isAuthenticated}
-            title={!isAuthenticated
-              ? t('forum.postDetail.like.login')
-              : isLiked
-                ? t('forum.postDetail.like.unlike')
-                : t('forum.postDetail.like.like')}
-          >
-            <span className={styles.likeIcon}>{isLiked ? '❤️' : '🤍'}</span>
-            <span className={styles.likeCount}>{post.voLikeCount || 0}</span>
-          </button>
+          {!isReadOnly ? (
+            <button
+              type="button"
+              onClick={() => onLike?.(post.voId)}
+              className={`${styles.likeButton} ${isLiked ? styles.liked : ''}`}
+              disabled={!isAuthenticated}
+              title={!isAuthenticated
+                ? t('forum.postDetail.like.login')
+                : isLiked
+                  ? t('forum.postDetail.like.unlike')
+                  : t('forum.postDetail.like.like')}
+            >
+              <span className={styles.likeIcon}>{isLiked ? '❤️' : '🤍'}</span>
+              <span className={styles.likeCount}>{post.voLikeCount || 0}</span>
+            </button>
+          ) : (
+            <span className={styles.commentCount}>
+              ❤️ {post.voLikeCount || 0}
+            </span>
+          )}
           <span className={styles.commentCount}>
             💬 {t('forum.postDetail.commentCount', { count: post.voCommentCount || 0 })}
           </span>
 
-          {!!onReport && !isAuthor && (
+          {!isReadOnly && !!onReport && !isAuthor && (
             <button
               type="button"
               onClick={() => onReport(post.voId)}
@@ -819,7 +894,7 @@ export const PostDetail = ({
             </button>
           )}
 
-          {showFollowAction && (
+          {!isReadOnly && showFollowAction && (
             <div className={styles.relationActions}>
               <span className={styles.relationInfo}>
                 {t('forum.postDetail.followStats', {
@@ -845,7 +920,7 @@ export const PostDetail = ({
             </div>
           )}
 
-          {onToggleReaction && (
+          {!isReadOnly && onToggleReaction && (
             <ReactionBar
               targetType="Post"
               targetId={post.voId}
@@ -858,7 +933,7 @@ export const PostDetail = ({
             />
           )}
 
-          {(canToggleTop || isAuthor) && (
+          {!isReadOnly && (canToggleTop || isAuthor) && (
             <div className={styles.authorActions}>
               {canToggleTop && (
                 <button

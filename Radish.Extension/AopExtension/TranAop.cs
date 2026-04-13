@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 using Castle.DynamicProxy;
 using Microsoft.Extensions.Logging;
 using Radish.Common.AttributeTool;
@@ -34,22 +35,33 @@ public class TranAop : IInterceptor
 
                 invocation.Proceed();
 
-                // 异步获取异常，先执行
-                if (IsAsyncMethod(invocation.Method))
+                // 异步方法必须返回包装后的 Task，不能同步 Wait，否则会把业务异常包装成 AggregateException。
+                if (IsAsyncMethod(method))
                 {
-                    var result = invocation.ReturnValue;
-                    if (result is Task)
+                    if (method.ReturnType == typeof(Task))
                     {
-                        Task.WaitAll(result as Task);
+                        invocation.ReturnValue = InterceptAsync((Task)invocation.ReturnValue, method);
                     }
+                    else
+                    {
+                        invocation.ReturnValue = TranAsyncHelper.CallInterceptAsyncWithResult(
+                            method.ReturnType.GenericTypeArguments[0],
+                            invocation.ReturnValue,
+                            this,
+                            method);
+                    }
+
+                    return;
                 }
 
                 After(method);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex.ToString());
+                var resolvedException = UnwrapException(ex);
+                _logger.LogError(resolvedException, resolvedException.ToString());
                 AfterException(method);
+                ExceptionDispatchInfo.Capture(resolvedException).Throw();
                 throw;
             }
         }
@@ -133,5 +145,84 @@ public class TranAop : IInterceptor
     private async Task TestActionAsync(IInvocation invocation)
     {
         await Task.Run(null);
+    }
+
+    internal async Task InterceptAsync(Task task, MethodInfo method)
+    {
+        try
+        {
+            await task.ConfigureAwait(false);
+            After(method);
+        }
+        catch (Exception ex)
+        {
+            var resolvedException = UnwrapException(ex);
+            _logger.LogError(resolvedException, resolvedException.ToString());
+            AfterException(method);
+            ExceptionDispatchInfo.Capture(resolvedException).Throw();
+            throw;
+        }
+    }
+
+    internal async Task<T> InterceptAsync<T>(Task<T> task, MethodInfo method)
+    {
+        try
+        {
+            var result = await task.ConfigureAwait(false);
+            After(method);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            var resolvedException = UnwrapException(ex);
+            _logger.LogError(resolvedException, resolvedException.ToString());
+            AfterException(method);
+            ExceptionDispatchInfo.Capture(resolvedException).Throw();
+            throw;
+        }
+    }
+
+    private static Exception UnwrapException(Exception exception)
+    {
+        if (exception is AggregateException aggregateException)
+        {
+            var flattened = aggregateException.Flatten();
+            if (flattened.InnerExceptions.Count == 1 && flattened.InnerException != null)
+            {
+                return flattened.InnerException;
+            }
+        }
+
+        return exception;
+    }
+}
+
+internal static class TranAsyncHelper
+{
+    public static object CallInterceptAsyncWithResult(
+        Type taskReturnType,
+        object actualReturnValue,
+        TranAop interceptor,
+        MethodInfo method)
+    {
+        var helperMethod = typeof(TranAsyncHelper)
+            .GetMethod(nameof(InterceptAsyncWithResult), BindingFlags.Public | BindingFlags.Static);
+
+        if (helperMethod == null)
+        {
+            throw new InvalidOperationException("未找到 TranAsyncHelper.InterceptAsyncWithResult 方法");
+        }
+
+        return helperMethod
+            .MakeGenericMethod(taskReturnType)
+            .Invoke(null, [actualReturnValue, interceptor, method])!;
+    }
+
+    public static Task<T> InterceptAsyncWithResult<T>(
+        Task<T> actualReturnValue,
+        TranAop interceptor,
+        MethodInfo method)
+    {
+        return interceptor.InterceptAsync(actualReturnValue, method);
     }
 }

@@ -14,7 +14,7 @@ public class CreateLotteryDto
     [StringLength(500, ErrorMessage = "奖品说明长度不能超过500个字符")]
     public string? PrizeDescription { get; set; }
 
-    /// <summary>可开奖时间</summary>
+    /// <summary>截止/自动开奖时间</summary>
     public DateTime? DrawTime { get; set; }
 
     /// <summary>中奖人数</summary>

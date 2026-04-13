@@ -134,6 +134,38 @@ public class TagController : ControllerBase
     }
 
     /// <summary>
+    /// 根据 slug 获取公开标签详情
+    /// </summary>
+    /// <param name="slug">标签 slug</param>
+    /// <returns>标签详情</returns>
+    [HttpGet("{slug}")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    public async Task<MessageModel> GetBySlug(string slug)
+    {
+        var tag = await _tagService.GetPublicTagBySlugAsync(slug);
+
+        if (tag == null)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = "标签不存在或已不可用"
+            };
+        }
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = tag
+        };
+    }
+
+    /// <summary>
     /// 获取标签分页（管理端）
     /// </summary>
     [HttpGet]

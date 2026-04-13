@@ -47,6 +47,8 @@ export const LeaderboardCategory = {
 
 export type LeaderboardCategory = (typeof LeaderboardCategory)[keyof typeof LeaderboardCategory];
 
+export type LeaderboardLongId = number | string;
+
 /**
  * 排行榜类型 Vo
  */
@@ -70,7 +72,7 @@ export interface UnifiedLeaderboardItemData {
   voRank: number;
 
   // 用户信息（用户类排行榜）
-  voUserId?: number;
+  voUserId?: LeaderboardLongId;
   voUserName?: string;
   voAvatarUrl?: string;
   voCurrentLevel?: number;
@@ -79,7 +81,7 @@ export interface UnifiedLeaderboardItemData {
   voIsCurrentUser: boolean;
 
   // 商品信息（商品类排行榜）
-  voProductId?: number;
+  voProductId?: LeaderboardLongId;
   voProductName?: string;
   voProductIcon?: string;
   voProductPrice?: number;

@@ -1,6 +1,12 @@
 # 验证基线说明
 
 > 本页说明当前仓库认可的最小验证基线，以及 `M13` 首轮统一入口的使用方式。
+>
+> 关联维护入口：
+>
+> - [Repo Quality 故障分诊手册](/guide/repo-quality-troubleshooting)
+> - [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist)
+> - [`PR -> master` 最小执行清单](/guide/master-pr-minimal-checklist)
 
 ## 当前目标
 
@@ -13,10 +19,23 @@
 ```bash
 npm run setup:hooks
 npm run check:repo-hygiene
+npm run check:repo-hygiene:changed
+npm run check:repo-quality-contract
 npm run lint:changed
+npm run lint:staged
+npm run collect:changed
+npm run collect:changed:staged
+npm run collect:tracked
+npm run collect:m14-host-record
+npm run collect:change-regression-record
+npm run check:identity-impact
+npm run check:identity-impact:staged
 npm run validate:baseline
 npm run validate:baseline:quick
 npm run validate:baseline:host
+npm run check:host-runtime
+npm run validate:identity
+npm run validate:ci
 ```
 
 对应关系：
@@ -27,26 +46,206 @@ npm run validate:baseline:host
 - `check:repo-hygiene`
   - 全量检查仓库已跟踪文本文件的 UTF-8 / BOM / 换行符 / 末尾换行 / 尾随空格
   - 适合治理历史文本问题时使用
+- `check:repo-hygiene:changed`
+  - 只检查当前 worktree 变更文件的文本卫生
+  - 适合与 GitHub Actions 的 `Repo Hygiene` changed-only 行为对齐
+- `check:repo-quality-contract`
+  - 校验 `.github/workflows/repo-quality.yml`、`.github/rulesets/master-protection.json` 与本地 `validate:ci` 的门禁契约是否仍然一致
+  - 适合在调整 workflow job、ruleset required checks 或本地 `Repo Quality` 复现入口时先做轻量自校验
 - `lint:changed`
   - 只对当前变更中的前端脚本文件执行 `eslint`
   - 适合与 GitHub Actions 的 `Frontend Lint` 对齐
+- `lint:staged`
+  - 只对 staged 变更中的前端脚本文件执行 `eslint`
+  - 适合提交前先看“这次准备提交的文件”是否通过
+- `collect:changed`
+  - 统一输出当前变更文件列表
+  - 适合排查“当前 CI / changed-only 脚本到底看到了哪些文件”
+- `collect:changed:staged`
+  - 统一输出 staged 变更文件列表
+  - 适合与本地 hooks、提交前自检对齐
+- `collect:tracked`
+  - 统一输出仓库当前所有 tracked files
+  - 适合排查全量文本卫生或脚本命中范围
+- `collect:m14-host-record`
+  - 汇总 `validate:baseline:host` 与 `check:host-runtime` 已落盘的 Markdown 报告
+  - 默认读取 `.tmp/baseline-host-report.md` 与 `.tmp/host-runtime-report.md`
+  - 默认输出 `.tmp/m14-host-maintenance-record.md`
+  - 适合把启动前与启动后的 `M14` 结论直接沉淀成一份维护记录
+- `collect:change-regression-record`
+  - 汇总批次级自动化报告，生成一份可直接贴进 PR 或回归记录的 Markdown
+  - 默认读取 `.tmp/validate-ci-report.md`
+  - `baseline / host / M14` 报告需显式通过参数传入，避免误吃到历史残留的 `.tmp` 文件
+  - 默认输出 `.tmp/change-regression-record.md`
+  - 会同时复用当前 changed files 判定身份语义影响面，把命中原因与失败归类一并写进记录
+- `check:identity-impact`
+  - 只判定“当前变更是否命中身份语义影响面”
+  - 默认同时输出命中文件与命中原因类别，便于直接回写 PR / 维护记录
+  - 适合与 GitHub Actions 的 `Identity Guard` 按改动范围触发逻辑对齐
+- `check:identity-impact:staged`
+  - 只判定 staged 变更是否命中身份语义影响面
+  - 适合提交前先判断“本次准备提交的内容”是否需要追加 `validate:identity`
 - `validate:baseline`
   - 运行前端 `type-check`
   - 运行 `radish.client` 现有 `node --test`（当前以 `--test-isolation=none` 兼容受限环境）
   - 运行 `Console` 权限链路扫描
+  - 运行 Repo Quality contract 自校验
+    - 确保 workflow job 名、ruleset required checks 与本地 `validate:ci` 没有再次分叉
+  - 运行身份语义 impact 判定自校验
+    - 确保 `check:identity-impact` 与 `Identity Guard` 的命中规则未因脚本或文档入口调整而漂移
   - 运行身份语义防回归扫描
+    - 运行时代码是否重新散落 `FindFirst/FindAll/ClaimTypes/User.IsInRole` 等原始 Claim 读取
+    - `Radish.Auth` 协议输出侧是否试图恢复 `ClaimTypes.NameIdentifier / ClaimTypes.Name / ClaimTypes.Role / TenantId / jti` 等历史双写承诺
   - 运行后端 `build`
   - 运行后端 `test`
 - `validate:baseline:quick`
   - 只运行前端 `type-check`
   - `radish.client` 最小测试
   - `Console` 权限链路扫描
+  - Repo Quality contract 自校验
+  - 身份语义 impact 判定自校验
   - 身份语义防回归扫描
 - `validate:baseline:host`
   - 等同于 `validate:baseline`
   - 额外追加 `DbMigrate doctor` / `verify` 只读自检（复用前序构建产物，不重复 build）
+  - 当前也是 `M14` 的默认宿主验证入口
+  - 当前已补启动前分流提示：若失败落在默认基线 / `doctor` / `verify` 任一层，会分别提示先修代码回归、配置连接定义或数据库前置，而不是直接跳到运行态排障
+  - 当前也已支持 `--report` / `--report-file <path>`，可把启动前验证结果收敛为固定 Markdown 报告或直接落盘
+  - 当前其 `Summary` 会固定补 `Route / TriageScope / TriageCode / NextStage` 四个摘要字段，便于与启动后报告直接串联
+- `check:host-runtime`
+  - 运行态健康检查入口
+  - 默认检查 `Gateway / Api / Auth` 的 `/health`
+  - 适合在宿主已经启动后，快速判断问题是“宿主没起来”还是“已起来但链路异常”
+  - 当前失败时会附带分类提示，例如端口未监听、TLS、超时、宿主自报 `Unhealthy` 或一般 HTTP 状态异常
+  - 当前三个宿主都保持“`/health` 只做最小探活，`/healthz` 提供结构化明细”的分层语义
+  - `Gateway / Api / Auth` 当前都已提供结构化 `/healthz`，其中 `Api / Auth` 还会补充 JWT / OIDC Issuer 与证书前提明细，适合宿主启动后继续人工分诊具体下游项
+  - 当前宿主启动日志也会同步打印关键运行摘要，便于在健康检查前先核对 JWT / OIDC / Gateway 探活模式是否符合当前配置
+  - 如需在失败时顺手带出失败宿主的 `/healthz` 关键摘要，可执行 `npm run check:host-runtime -- --details`
+  - 如需输出可直接回写到回归记录或 PR 的固定 Markdown 报告，可执行 `npm run check:host-runtime -- --report`
+  - 如需把 Markdown 报告直接落到文件，可执行 `npm run check:host-runtime -- --report-file <path>`；当前会自动启用 `--report`，并在必要时自动创建目标目录
+  - 当前 `--report` 已拆成 `Summary / Actions` 两段；前者记录事实，后者按 `Gateway / Api / Auth` 与扩展下游条目直接给出下一步建议
+  - 当前其 `Summary` 也会固定补 `Route / TriageScope / TriageCode / NextStage` 四个摘要字段，和 `validate:baseline:host` 保持同一套分诊摘要口径
+- `validate:identity`
+  - 身份语义专题聚合入口，不替代默认 baseline
+  - 分别执行运行时散点 Claim 读取扫描与协议输出回退扫描
+  - 运行身份语义后端定向测试，覆盖 `ClaimsPrincipalNormalizer`、`HttpContextUser`、`AccountController`、`AuthorizationController`、`UserInfoController`
+- `validate:ci`
+  - 本地复现当前 `Repo Quality` 的最小执行面
+  - 依次运行 `check:repo-hygiene:changed`、`lint:changed`、`validate:baseline:quick`
+  - 再按 `check:identity-impact` 的同源规则决定是否追加 `validate:identity`
+  - 当前其本地门禁定义也已改为复用同一份 Repo Quality contract，避免 workflow / ruleset / 本地入口继续各自维护
+  - 当前也已支持 `--report` / `--report-file <path>`，可把批次级本地门禁结论直接收成固定 Markdown 报告，回写到 `PR -> master` 的回归记录或 PR 描述
 
 ## 分层使用建议
+
+### 0. 执行粒度约定
+
+当前仓库的验证与留痕，默认按“开发中 / 准备合并 / 发布部署”三种粒度区分，而不是把同一套重流程压到每一次本地提交：
+
+- 开发中的本地连续提交：
+  - 目标是快速发现明显回归
+  - 默认只做必要验证，不要求每次都补回归记录
+- 准备发起 `PR -> master` 的改动批次：
+  - 目标是给出“这一批内容是否具备合并条件”的工程结论
+  - 此时再补批次级回归记录、门禁对齐与必要的专题说明
+- 正式发布 / 部署 / 回滚：
+  - 目标是形成真实可追溯事实
+  - 必须保留发布记录、部署后最小复核记录，以及回滚事实或回滚预案
+
+换句话说：
+
+- `commit` 是开发粒度，不等于交付粒度
+- 回归记录默认对应“准备合并的一批改动”
+- 发布 / 部署留痕默认对应真实环境动作
+
+不要把“每次本地提交都补完整记录”当成默认要求，否则会明显拖慢日常开发效率。
+
+### 0.1 对外 ID 参数额外检查
+
+涉及公开路由、通知 `extData`、窗口参数、分享链接、浏览记录回跳或其他深链参数时，除默认自动化外，当前还应额外人工确认：
+
+- 对外对象 ID 是否仍被解析为前端 `number`
+- 大整数 ID 是否在解析、序列化、回写 URL 或透传 app params 时保持原始字符串
+- 若导航 JSON 由服务端内部自行 `JsonSerializer` 生成，需额外确认其中的对象 ID 是否已显式写成字符串；不能默认依赖 API / SignalR 的全局 `long -> string` converter
+- forum 当前主线相关入口若命中上述场景，默认按阻断级回归处理，因为仓库里已经发生过 Snowflake 大整数被截断导致“对象存在但打开失败”的真实故障
+
+当前批次与 forum 主线直接相关的人工确认面：
+
+- 公开阅读：`/forum/post/:postId` 直链在移动公开壳层下打开时，帖子 ID 保持原始字符串
+- 通知跳转：通知中心点击 forum 相关通知时，优先走字符串化 `extData`，不因大整数 ID 被前端当作 `number` 拒绝
+- 浏览回跳：个人主页浏览记录命中 forum 帖子时，`routePath / targetId` 回跳不再经过 `Number(...)` 降精度
+- 深链 / 窗口参数：`openOrReuseApp('forum', appParams)` 与 forum 窗口首屏解析对 `postId / commentId` 继续保持字符串口径
+- 列表补查：公开列表、桌面列表与搜索结果若批量补查 forum 神评预览，返回对象的 `postId` 键不得再经 `Number(...)` 转回前端映射，否则大整数帖子会出现“帖子可读但神评摘要丢失”的隐性回归
+- 通知附加对象：forum 相关通知若在 `extData` 里附带额外业务对象 ID（如 `lotteryId`），这些字段也必须由服务端显式序列化为字符串，不能只保证主 `postId` 正确而让附加 ID 继续落成 JSON number
+
+当前批次与个人公开页首批直接相关的人工确认面：
+
+- 公开个人页：`/u/:id` 直链在公开壳层下打开时，`userId` 保持原始字符串
+- forum 作者跳转：公开 forum 列表、帖子详情与评论作者入口跳到 `/u/:id` 时，不因大整数用户 ID 被前端当作 `number` 而打开失败
+- 公开个人页回跳：从公开个人页点击帖子 / 评论对应入口跳回 `/forum/post/:postId` 时，`postId` 继续保持字符串口径
+- 登录态识别：直接打开 `/u/:id` 时，公开壳层也会完成认证初始化；登录用户查看自己主页时，不会因为 `userStore` 未预热而误显示关注按钮
+
+当前批次与公开榜单首批直接相关的人工确认面：
+
+- 公开榜单：`/leaderboard` 与 `/leaderboard/:type` 直链在公开壳层下打开时，会直接进入榜单阅读页，而不是回到桌面 `Shell`
+- 类型切换：切换不同榜单类型后，URL 会稳定回写到 `/leaderboard/:type`，刷新后仍能恢复当前榜单
+- 用户跳转：用户类榜单点击排行项时，会跳到 `/u/:id`，不因大整数用户 ID 被前端当作 `number` 而打开失败
+- 登录增强：直接打开 `/leaderboard` 时，公开壳层也会完成认证初始化；登录用户在用户类榜单下可见“我的排名”，未登录或商品类榜单不会误显示该信息
+- 商品只读边界：热门商品榜单当前只做公开展示，不会误跳商城详情、订单、背包或其他桌面工作台能力
+
+当前批次与公开商城浏览首批直接相关的人工确认面：
+
+- 公开商城首页：`/shop` 直链在公开壳层下打开时，会直接进入公开商城首页，而不是回到桌面 `Shell`
+- 列表状态：`/shop/products` 的 `category / q / page` 会稳定回写到 URL，刷新后仍能恢复商品列表上下文
+- 详情直链：`/shop/product/:productId` 直链在公开壳层下打开时，会直接进入只读商品详情，而不是要求先登录或回落桌面窗口
+- 外部 ID：公开商品详情路由与前端读取链路不会把外部 `productId` 强制扩大成前端 `number`，刷新和回跳时保持原始字符串口径
+- 只读边界：公开商品详情当前不会误触购买确认、订单、背包、权益使用、举报或其他“我的”能力；如需继续操作，会明确导向桌面工作台
+
+当前批次与 forum 公开分类首批直接相关的人工确认面：
+
+- 分类直链：`/forum/category/:categoryId` 直链在公开壳层下打开时，会直接进入公开分类阅读页，而不是回到桌面 `Shell`
+- 路由收口：旧 `/forum?category=...` 链接继续兼容，但会稳定收口到 `/forum/category/:categoryId`，刷新后仍能恢复当前分类、排序与分页状态
+- 分类上下文：公开分类页会展示分类标题、简介或兜底描述，以及帖子数等只读上下文；分类资料读取失败时会给出只读降级提示
+- 分类异常态：不存在或不可访问的 `categoryId` 会给出公开壳层状态页，而不是静默回退到全部帖子或空白页
+- 范围边界：公开分类首批当前只承载分类阅读；标签点击会继续回落到公开标签直达，但不开放发帖、评论提交、点赞或其他桌面互动动作
+
+当前批次与 forum 公开搜索首批直接相关的人工确认面：
+
+- 搜索直链：`/forum/search` 直链在公开壳层下打开时，会直接进入公开搜索页，而不是回到桌面 `Shell`
+- URL 回写：关键词、排序、时间范围与分页会稳定回写到 `q / sort / range / start / end / page`，刷新后仍能恢复当前搜索上下文
+- 返回链路：从公开搜索结果进入 `/forum/post/:postId` 后，返回时会回到原来的搜索结果，而不是丢失到默认列表
+- 外部 ID：公开搜索结果点击帖子、作者与详情内回跳时，`postId / userId` 继续保持字符串口径，不因大整数被前端当作 `number` 而打开失败
+- 列表补查：公开搜索结果读取批量神评预览返回值时，帖子 ID 键不会再经 `Number(...)` 转回前端映射，避免大整数帖子出现“搜索结果可读但神评摘要丢失”
+- 范围边界：公开搜索首批当前只承载关键词检索、时间范围过滤、排序分页与帖子详情阅读；标签点击会继续回落到公开标签直达，但不开放发帖、评论提交、点赞或其他桌面互动动作
+
+当前批次与 forum 公开标签首批直接相关的人工确认面：
+
+- 标签直链：`/forum/tag/:tagSlug` 直链在公开壳层下打开时，会直接进入公开标签阅读页，而不是回到桌面 `Shell`
+- 标签 canonical：若通过旧中文标签名或其他非 canonical slug 打开公开标签页，当前会在读取成功后回写到稳定的 ASCII canonical 路径
+- URL 回写：标签页的 `sort / page` 会稳定回写到 URL，刷新后仍能恢复当前标签上下文
+- 返回链路：从公开标签列表进入 `/forum/post/:postId` 后，返回时会回到原来的标签结果，而不是丢失到默认列表
+- 标签异常态：不存在或不可公开访问的 `tagSlug` 会给出只读状态页，而不是静默回退到全部帖子列表
+- 标签跳转：公开列表卡片、帖子详情中的标签点击会统一跳到 `/forum/tag/:tagSlug`，不再停留在纯展示文本
+- 结构化类型直达：公开列表卡片、帖子详情中的“问答 / 投票 / 抽奖”徽标当前会统一跳到 `/forum/question`、`/forum/poll` 与 `/forum/lottery`
+- SQLite 本地稳定性：若本轮同时改到公开标签 slug 解析、仓储通用读查询或后台作业读取链路，宿主重启后需额外确认 `ShopJob / PostLotteryJob` 不再出现 `reader is closed / FieldCount when reader is closed`，并确认公开标签直链不会再触发 `near \"(\": syntax error`
+- 范围边界：公开标签首批当前只承载标签上下文、帖子列表阅读、排序分页与帖子详情阅读，不开放标签关注、标签订阅、发帖、评论提交、点赞、投票或其他桌面互动动作
+
+当前批次与 docs 公开搜索首批直接相关的人工确认面：
+
+- 搜索直链：`/docs/search` 直链在公开壳层下打开时，会直接进入公开搜索页，而不是回到桌面 `Shell`
+- URL 回写：关键词与分页会稳定回写到 `q / page`，刷新后仍能恢复当前搜索上下文
+- 返回链路：从公开搜索结果进入 `/docs/:slug` 后，返回时会回到原来的搜索结果，而不是丢失到默认目录
+- 文档详情：搜索结果点击进入详情后，正文、元信息与只读边界保持和公开阅读首批一致，不误出现编辑、发布、回收站或版本历史入口
+- 内链兼容：正文里的 docs 内链继续优先落在公开 docs 壳层；若命中保留字冲突，仍能通过兼容路径进入正确文档
+- 范围边界：docs 公开搜索首批当前只承载关键词检索、结果分页与正文阅读，不开放分享入口、管理态筛选或其他桌面治理动作
+
+当前批次与 docs 公开分享入口首批直接相关的人工确认面：
+
+- 分享入口：打开 `/docs/:slug` 时，公开详情页会展示“复制链接”入口，但不会出现桌面文档应用里的编辑、发布、回收站或版本历史动作
+- 复制结果：点击分享入口后，会复制当前公开文档链接，而不是桌面窗口路由、内部 API 地址或兼容重写前的错误地址
+- 反馈提示：复制成功与失败时，都有轻量反馈文案；失败不会打断当前阅读
+- 搜索回跳：从 `/docs/search` 进入详情后执行复制，再返回，仍会回到原搜索结果，不会因为分享动作丢失浏览上下文
+- 范围边界：首批当前只提供复制公开链接，不开放海报生成、社交卡片编辑、分享统计或其他治理能力
 
 ### 1. 日常提交前
 
@@ -61,13 +260,20 @@ npm run validate:baseline:quick
 
 - 前端页面、共享组件、Console 权限链路调整
 - 纯文档之外、但又不需要完整后端回归的日常提交前检查
+- 开发中的中间态小提交、本地保存点、连续修正批次
 
 补充说明：
 
 - `setup:hooks` 只需首次执行一次；之后提交时会自动运行：
-  - staged 文件的文本卫生检查
-  - staged 变更中的前端脚本 lint
+  - `check:repo-hygiene:staged`
+  - `lint:staged`
   - Conventional Commits 提交标题校验
+- 如果只想看“本次准备提交的内容”是否会命中身份语义专题，可先运行：
+
+```bash
+npm run check:identity-impact:staged
+```
+
 - 如果提交被 hooks 拦截，优先先修正本次变更，不要绕过 hooks 强行提交
 
 ### 2. 合并前 / 跨层改动后
@@ -83,6 +289,7 @@ npm run validate:baseline
 - 涉及后端 Service / Repository / API 契约
 - 涉及前后端联动字段、权限或路由
 - 需要给出最小“本地可构建、可测试”结论时
+- 准备发起 `PR -> master`，需要对这一批改动形成合并判断时
 
 如果准备发起到 `master` 的 PR，再补一轮：
 
@@ -91,13 +298,71 @@ npm run lint:changed
 npm run check:repo-hygiene
 ```
 
+如果想在本地先复现当前 `Repo Quality` 的最小门禁，也可直接运行：
+
+```bash
+npm run validate:ci
+```
+
+如果需要把本轮 `Repo Quality` 本地复现结果直接回写到 PR 或批次级回归记录，可执行：
+
+```bash
+npm run validate:ci -- --report
+```
+
+如果希望报告直接落盘，可执行：
+
+```bash
+npm run validate:ci -- --report-file .tmp/validate-ci-report.md
+```
+
+如需把当前批次已生成的自动化报告进一步收成一份变更回归记录，可执行：
+
+```bash
+npm run collect:change-regression-record -- --title "当前批次" --scope "当前 PR / 改动批次"
+```
+
+如果本轮还要一并带上 baseline 或 `M14` 记录，请显式传入对应报告路径，例如：
+
+```bash
+npm run collect:change-regression-record -- --title "当前批次" --scope "当前 PR / 改动批次" --baseline-report .tmp/baseline-report.md --host-record .tmp/m14-host-maintenance-record.md
+```
+
 说明：
 
 - `master` 当前受规则保护，只允许通过 PR 合并
+- 批次级回归记录默认放在这一层补，不要求绑定每一个本地 commit
 - GitHub Actions 中的 `Repo Hygiene` 与 `Frontend Lint` 当前仅检查“本次变更文件”，用于先拦新增问题，避免被历史债务拖死
+- `Identity Guard` 当前也已改为按变更文件触发：先用 `check:identity-impact` 判定是否命中身份语义影响面，再决定是否执行 `validate:identity`
+- 当前 changed-only 入口与 `Repo Quality` 的变更文件收集逻辑已统一复用 `Scripts/collect-changed-files.mjs`
+- `check:repo-hygiene:changed` 与 `check:repo-hygiene:staged` 当前也已切到统一 collector，不再单独维护 `git diff` 口径
+- `check:repo-quality-contract` 当前会先校验 workflow、ruleset 与本地 `validate:ci` 的 required checks 契约，避免门禁名称或执行面无声漂移
+- `check:identity-impact` 的命中范围当前已收口到单一规则源，除身份语义代码、Auth 协议输出、前端 Token 解析与 `AuthFlow` 入口外，也覆盖 `validation-baseline / regression-index / repo-quality-troubleshooting / change-regression-record-template / regression-result-template / dev-first-regression-record / development-plan / planning/current / PR template / repo-quality contract / validate:ci` 等默认执行面文档与门禁资产
+- 工作区级 changed-only 默认使用 `collect:changed`
+- 提交前只看 staged 内容时，优先使用 `collect:changed:staged`、`lint:staged` 与 `check:identity-impact:staged`
 - `check:repo-hygiene` 本地全量扫描仍建议按需人工执行，适合做历史清理批次时使用
 
-### 3. 宿主或配置相关改动后
+### 3. 身份语义相关改动后
+
+再追加：
+
+```bash
+npm run validate:identity
+```
+
+适用场景：
+
+- `CurrentUser` / `IHttpContextUser` / `UserClaimReader` / `ClaimsPrincipalNormalizer`
+- `UserClaimTypes`、角色 / Scope / 授权策略常量
+- `Radish.Auth` 的 `AccountController`、`AuthorizationController`、`UserInfoController`
+- 前端 Token 解析、OIDC 回调、`userinfo` 契约说明
+
+补充说明：
+
+- `validate:identity` 是身份语义专题入口，不替代 `validate:baseline`
+- 若本轮触达 Auth 输出、`userinfo`、官方客户端 Token 解析或 `Radish.Api.AuthFlow.http`，再按 [身份语义防回归回归手册](/guide/identity-claim-regression-playbook) 补 `AuthFlow` 与官方顺序回归
+
+### 4. 宿主或配置相关改动后
 
 再追加：
 
@@ -110,6 +375,69 @@ npm run validate:baseline:host
 - `DbMigrate`
 - 连接定义、种子前置状态
 - 宿主配置与最小部署自检链路
+
+补充说明：
+
+- 当前默认先从 [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist) 开始，按 `validate:baseline:host -> doctor/verify -> 健康检查/日志 -> 网关与部署链路` 的顺序排障
+- 当前主路径已经明确收束为：启动前先跑 `npm run validate:baseline:host`，宿主启动后再跑 `npm run check:host-runtime`
+- 不要跳过 `doctor` / `verify` 直接把问题归因到宿主代码或外层反代
+- 如果需要把启动前这轮验证直接回写到维护记录、回归记录或 PR，可执行：
+
+```bash
+npm run validate:baseline:host -- --report
+```
+
+- 如果希望直接把启动前验证报告落盘，可执行：
+
+```bash
+npm run validate:baseline:host -- --report-file .tmp/baseline-host-report.md
+```
+
+- 如果宿主已经启动，再补一轮：
+
+```bash
+npm run check:host-runtime
+```
+
+- 这一轮通过后，再继续看更上层的 Gateway / 反代 / OIDC 问题
+- 如果需要继续判断 `console` 等扩展下游状态，再直接查看 `https://localhost:5000/healthz`
+- 如果默认检查失败，且希望脚本顺手把失败宿主的 `/healthz` 摘要一起打出来，可追加：
+
+```bash
+npm run check:host-runtime -- --details
+```
+
+- 如果你需要把这轮运行态结论直接回写到维护记录、回归记录或 PR，可追加：
+
+```bash
+npm run check:host-runtime -- --report
+```
+
+- 如果你希望脚本直接把报告写到文件，而不是从终端复制，可追加：
+
+```bash
+npm run check:host-runtime -- --report-file .tmp/host-runtime-report.md
+```
+
+- 如果两段报告都已生成，想把它们直接汇总成一份 `M14` 维护记录，可执行：
+
+```bash
+npm run collect:m14-host-record
+```
+
+- 默认会读取 `.tmp/baseline-host-report.md` 与 `.tmp/host-runtime-report.md`，并输出 `.tmp/m14-host-maintenance-record.md`
+
+- 如果既要终端分诊，又要固定格式回写，可直接组合：
+
+```bash
+npm run check:host-runtime -- --details --report
+```
+
+- 如果既要终端分诊，又要把固定格式报告直接落盘，可直接组合：
+
+```bash
+npm run check:host-runtime -- --details --report-file .tmp/host-runtime-report.md
+```
 
 ## 当前仍保留为专题回归的资产
 
@@ -125,13 +453,19 @@ npm run validate:baseline:host
 
 ## 失败时先看哪里
 
+如果你现在面对的是 `Repo Quality`、`validate:ci`、`check:repo-quality-contract`、身份语义条件触发或受限环境边界提示，优先先看：[Repo Quality 故障分诊手册](/guide/repo-quality-troubleshooting)。
+
 - 前端类型错误：优先看对应 workspace 的 `tsc` 输出
 - `radish.client` 最小测试失败：优先看 `Frontend/radish.client/tests/`
 - 权限扫描失败：优先看 `Scripts/check-console-permissions.mjs` 输出中的四层对齐差异
 - 身份语义扫描失败：优先看 `Scripts/check-identity-claims.mjs` 输出中的命中位置，确认是否回退到原始 Claim 解析或直接字符串判断
+- 若命中 `AccountController / AuthorizationController / UserInfoController`：优先按 Phase 4 口径确认是否误恢复了历史输出承诺，而不是直接放宽白名单
 - 后端构建 / 测试失败：优先看 `Scripts/dotnet-local.ps1` 包装后的 `dotnet` 输出
 - `doctor` / `verify` 失败：优先核对当前环境配置、`MainDb` / `Databases` 与关键 `ConnId`
 - 如果是 Wiki / 文档链路，额外确认 `doctor` 是否已报告 `WikiDocument.Visibility`、`AllowedRoles`、`AllowedPermissions` 等缺列；旧 SQLite 库需要重新执行 `DbMigrate apply` 触发自动补齐
+- `check:repo-quality-contract` 失败：优先回到 workflow / ruleset / 本地 `validate:ci` contract，而不是先改业务代码
+- `validate:ci` 失败：优先拆成 `Repo Hygiene changed-only`、`Frontend Lint changed-only`、`Baseline Quick`、条件 `validate:identity` 四类
+- 若需要把本轮判断回写到 PR 或维护记录，优先直接复用 `check:identity-impact` 的命中原因类别，以及 `Repo Quality 故障分诊手册` 的失败归类
 
 ## 边界说明
 
@@ -149,3 +483,16 @@ npm run validate:baseline:host
 1. 优先停止本机运行中的宿主或调试进程，再执行默认的构建与测试验证。
 2. 如果这轮只是做必要的编译 / 测试确认，且暂时不方便停宿主，可改用隔离输出目录完成验证，避免覆盖正在运行的宿主产物。
 3. 自动化验证与真实联调尽量拆开执行，不要长时间共用同一个默认输出目录反复覆盖。
+
+## 受限环境说明
+
+在某些受限 Windows 沙盒中，顶层 shell 可以执行 `npm run ...`，但 Node 脚本内部再次拉起 `node / npm / powershell` 子进程可能被系统直接拒绝。
+
+当前仓库脚本已经尽量减少对 `cmd.exe /c` 的依赖，并统一走共享执行层；但如果仍看到“当前受限环境禁止从 Node 脚本再拉起外部进程”这类提示，说明问题不在业务脚本逻辑，而在当前运行环境的子进程边界。
+
+这种情况下，优先做法是：
+
+1. 直接在外层 shell 执行目标入口，例如 `npm run validate:ci`
+2. 或在允许子进程的本机 / 提权环境中执行同一命令
+
+不要把这类失败误判为 `Repo Quality`、`Identity Guard` 或 changed-only 规则本身回归。

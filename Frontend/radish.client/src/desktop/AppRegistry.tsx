@@ -164,6 +164,18 @@ export const appRegistry: AppDefinition[] = [
     category: 'system',
   },
   {
+    id: 'scalar',
+    name: 'Scalar',
+    nameKey: 'desktop.apps.scalar.name',
+    icon: 'mdi:api',
+    description: 'Radish API 文档与调试入口',
+    descriptionKey: 'desktop.apps.scalar.description',
+    component: () => null,
+    type: 'external',
+    externalUrl: isAccessingViaGateway() ? '/scalar?auto=1' : 'http://localhost:5100/scalar?auto=1',
+    category: 'system',
+  },
+  {
     id: 'document',
     name: '文档',
     nameKey: 'desktop.apps.document.name',

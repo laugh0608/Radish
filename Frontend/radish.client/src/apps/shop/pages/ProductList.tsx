@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ProductCategory, ProductListItem } from '@/types/shop';
 import { getProductTypeDisplay } from '@/api/shop';
@@ -35,6 +35,10 @@ export const ProductList = ({
 }: ProductListProps) => {
   const { t } = useTranslation();
   const [searchInput, setSearchInput] = useState(searchKeyword || '');
+
+  useEffect(() => {
+    setSearchInput(searchKeyword || '');
+  }, [searchKeyword]);
 
   // 处理搜索
   const handleSearch = () => {

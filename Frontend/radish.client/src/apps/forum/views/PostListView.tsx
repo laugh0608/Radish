@@ -9,6 +9,7 @@ import type {
   PollStatusFilter,
   ForumPostSortBy
 } from '@/api/forum';
+import { getForumCommentHighlight } from '@/utils/forumCommentHighlights';
 import { Icon } from '@radish/ui/icon';
 import { PostCard } from '../components/PostCard';
 import styles from './PostListView.module.css';
@@ -19,7 +20,7 @@ interface PostListViewProps {
   selectedCategoryId: number | null;
   selectedTagName?: string | null;
   posts: PostItem[];
-  postGodComments: Map<number, CommentHighlight>;
+  postGodComments: Map<string, CommentHighlight>;
   displayTimeZone: string;
   currentPage: number;
   totalPages: number;
@@ -297,7 +298,7 @@ export const PostListView = ({
           <p className={styles.emptyText}>{t('forum.emptyPosts')}</p>
         ) : (
           posts.map((post) => {
-            const godComment = postGodComments.get(post.voId);
+            const godComment = getForumCommentHighlight(postGodComments, post.voId);
             return (
               <PostCard
                 key={post.voId}

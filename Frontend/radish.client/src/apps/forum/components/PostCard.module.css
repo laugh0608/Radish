@@ -9,6 +9,11 @@
   box-shadow: var(--theme-shadow-soft);
 }
 
+.cardPublicCompact {
+  border-radius: 20px;
+  padding: 16px 16px 14px;
+}
+
 .card:hover {
   background-color: color-mix(in srgb, var(--theme-brand-soft) 16%, var(--theme-bg-surface) 84%);
   border-color: var(--theme-border-strong);
@@ -23,6 +28,10 @@
   gap: 14px;
 }
 
+.layoutPublicCompact {
+  display: block;
+}
+
 .main {
   flex: 1;
   min-width: 0;
@@ -31,8 +40,19 @@
   gap: 8px;
 }
 
+.mainPublicCompact {
+  gap: 10px;
+}
+
 .mainWithoutGodComment {
   justify-content: center;
+}
+
+.publicMetaTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .title {
@@ -57,6 +77,17 @@
   overflow: hidden;
 }
 
+.publicMetaBottom {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 2px;
+}
+
+.publicMetaAsideTop {
+  display: none;
+}
+
 .categoryChip {
   display: inline-flex;
   align-items: center;
@@ -74,12 +105,24 @@
   display: inline-flex;
   align-items: center;
   padding: 2px 7px;
+  border: none;
   border-radius: 999px;
   background: color-mix(in srgb, var(--theme-accent-earth) 16%, var(--theme-bg-surface) 84%);
   color: var(--theme-accent-earth);
   font-size: 11px;
   font-weight: 600;
   flex-shrink: 0;
+}
+
+.interactiveChip {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.interactiveChip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px color-mix(in srgb, var(--theme-brand-primary) 14%, transparent);
+  filter: brightness(0.98);
 }
 
 .pollChip {
@@ -116,6 +159,7 @@
   display: inline-flex;
   align-items: center;
   padding: 2px 8px;
+  border: none;
   border-radius: 999px;
   background: color-mix(in srgb, var(--theme-bg-muted) 76%, var(--theme-bg-surface) 24%);
   color: var(--theme-text-secondary);
@@ -123,6 +167,7 @@
   line-height: 1.4;
   white-space: nowrap;
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .emptyTag {
@@ -194,6 +239,10 @@
   gap: 8px;
 }
 
+.sideHidden {
+  display: none;
+}
+
 .metaTopRow {
   display: flex;
   align-items: center;
@@ -220,6 +269,18 @@
   background: transparent;
   cursor: pointer;
   text-align: left;
+}
+
+.authorStatic {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.authorLinkCompact {
+  flex: 0 1 auto;
 }
 
 .authorLink:hover .authorName {
@@ -264,6 +325,10 @@
   flex-wrap: wrap;
 }
 
+.statsRowCompact {
+  gap: 8px;
+}
+
 .statItem {
   display: inline-flex;
   align-items: center;
@@ -291,6 +356,11 @@
   align-items: center;
   justify-content: space-between;
   gap: 6px;
+}
+
+.interactionRowCompact {
+  justify-content: flex-start;
+  flex-wrap: wrap;
 }
 
 .interactionLabel {
@@ -342,6 +412,95 @@
   flex-shrink: 0;
 }
 
+.timeCompact {
+  font-size: 12px;
+}
+
+@media (min-width: 480px) {
+  .mainPublicCompact {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(144px, 34%);
+    grid-template-areas:
+      "top top"
+      "title side"
+      "meta side"
+      "god side";
+    column-gap: 12px;
+    row-gap: 8px;
+    align-items: start;
+  }
+
+  .mainPublicCompact.mainWithoutGodComment {
+    grid-template-areas:
+      "top top"
+      "title side"
+      "meta side";
+  }
+
+  .mainPublicCompact > .publicMetaTopRow {
+    grid-area: top;
+  }
+
+  .mainPublicCompact > .title {
+    grid-area: title;
+  }
+
+  .mainPublicCompact > .metaRow {
+    grid-area: meta;
+    align-self: start;
+  }
+
+  .mainPublicCompact > .godCommentCompact {
+    grid-area: god;
+    align-self: start;
+  }
+
+  .mainPublicCompact > .publicMetaBottom {
+    grid-area: side;
+    align-self: start;
+    justify-content: flex-start;
+    min-width: 0;
+    gap: 10px;
+    padding: 6px 0 0 10px;
+    border-left: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
+  }
+
+  .mainPublicCompact > .publicMetaBottom > .publicMetaAsideTop {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+
+  .timeCompactTop {
+    display: none;
+  }
+
+  .timeCompactSide {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    width: auto;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--theme-bg-muted) 74%, var(--theme-bg-surface) 26%);
+    color: var(--theme-text-secondary);
+  }
+
+  .mainPublicCompact .statsRowCompact {
+    gap: 6px;
+  }
+
+  .mainPublicCompact .interactionRowCompact {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .mainPublicCompact .avatarGroup {
+    justify-content: flex-start;
+  }
+}
+
 @media (max-width: 1080px) {
   .side {
     width: 198px;
@@ -350,6 +509,15 @@
 }
 
 @media (max-width: 860px) {
+  .cardPublicCompact {
+    padding: 14px;
+  }
+
+  .publicMetaTopRow {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
   .layout {
     flex-direction: column;
     gap: 14px;
@@ -378,7 +546,22 @@
     overflow: visible;
   }
 
+  .statsRowCompact {
+    gap: 6px;
+  }
+
   .time {
     white-space: normal;
+  }
+
+  .timeCompact {
+    width: 100%;
+  }
+}
+
+@media (max-width: 479px) {
+  .mainPublicCompact {
+    display: flex;
+    flex-direction: column;
   }
 }

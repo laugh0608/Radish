@@ -13,6 +13,7 @@ import { useWindowStore } from '@/stores/windowStore';
 import { useUserStore } from '@/stores/userStore';
 import { tokenService } from '@/services/tokenService';
 import { toast } from '@radish/ui/toast';
+import { buildForumAppParams, parseForumNotificationNavigation } from '@/utils/forumNavigation';
 import styles from './NotificationApp.module.css';
 
 /**
@@ -90,7 +91,8 @@ export const NotificationApp = () => {
       businessType: notification?.voBusinessType,
       triggerId: notification?.voTriggerId,
       triggerName: notification?.voTriggerName,
-      triggerAvatar: resolveNotificationAvatar(notification?.voTriggerAvatar)
+      triggerAvatar: resolveNotificationAvatar(notification?.voTriggerAvatar),
+      extData: notification?.voExtData
     };
   };
 
@@ -108,6 +110,7 @@ export const NotificationApp = () => {
       triggerId: notification?.voTriggerId,
       triggerName: notification?.voTriggerName,
       triggerAvatar: resolveNotificationAvatar(notification?.voTriggerAvatar),
+      extData: notification?.voExtData,
       isRead: n.voIsRead,
       createdAt: n.voCreateTime
     };
@@ -126,6 +129,7 @@ export const NotificationApp = () => {
       triggerId: n.triggerId,
       triggerName: n.triggerName,
       triggerAvatar: resolveNotificationAvatar(n.triggerAvatar),
+      extData: n.extData,
       isRead: n.isRead,
       createdAt: n.createdAt
     }));
@@ -390,10 +394,19 @@ export const NotificationApp = () => {
     }
 
     const businessType = notification.businessType?.trim();
+    const forumNavigation = parseForumNotificationNavigation(notification.extData);
 
-    if (businessType === 'Post' && notification.businessId) {
-      openOrReuseApp('forum', { postId: notification.businessId });
+    if (forumNavigation) {
+      openOrReuseApp('forum', buildForumAppParams(forumNavigation));
       return;
+    }
+
+    if (businessType === 'Post' && notification.businessId != null) {
+      const forumParams = buildForumAppParams({ postId: notification.businessId });
+      if ('postId' in forumParams) {
+        openOrReuseApp('forum', forumParams);
+        return;
+      }
     }
 
     if (businessType === 'Comment') {
@@ -405,8 +418,11 @@ export const NotificationApp = () => {
       const targetUserId = notification.type === 'follow'
         ? (notification.triggerId ?? notification.businessId ?? 0)
         : (notification.businessId ?? notification.triggerId ?? 0);
+      const hasTargetUserId = typeof targetUserId === 'string'
+        ? targetUserId.trim().length > 0
+        : targetUserId > 0;
 
-      if (targetUserId > 0) {
+      if (hasTargetUserId) {
         if (String(targetUserId) === String(currentUserId ?? 0)) {
           openApp('profile');
         } else {
@@ -553,6 +569,7 @@ function mapNotificationTypeToStore(type: string): 'system' | 'reply' | 'mention
     'System': 'system',
     'CommentReply': 'reply',
     'CommentReplied': 'reply',
+    'PostQuickReplied': 'reply',
     'Mention': 'mention',
     'Mentioned': 'mention',
     'PostLiked': 'like',

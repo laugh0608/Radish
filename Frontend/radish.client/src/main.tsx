@@ -13,14 +13,28 @@ import 'highlight.js/styles/github-dark.css';
 
 const App = lazy(() => import('./App.tsx'));
 const Shell = lazy(() => import('./desktop/Shell.tsx').then((module) => ({ default: module.Shell })));
+const PublicEntry = lazy(() => import('./public/PublicEntry.tsx').then((module) => ({ default: module.PublicEntry })));
 
 const isBrowser = typeof window !== 'undefined';
 const isOidcCallback = isBrowser && window.location.pathname === '/oidc/callback';
+const isPublicContentRoute = isBrowser && (
+  window.location.pathname === '/forum'
+  || window.location.pathname.startsWith('/forum/')
+  || window.location.pathname === '/shop'
+  || window.location.pathname.startsWith('/shop/')
+  || window.location.pathname === '/leaderboard'
+  || window.location.pathname.startsWith('/leaderboard/')
+  || window.location.pathname === '/docs'
+  || window.location.pathname.startsWith('/docs/')
+  || /^\/u\/[1-9]\d*\/?$/.test(window.location.pathname)
+  || window.location.pathname === '/__documents__'
+  || window.location.pathname.startsWith('/__documents__/')
+);
 
 const params = new URLSearchParams(window.location.search);
 const isDemo = params.has('demo');
 
-const Page = isOidcCallback || isDemo ? App : Shell;
+const Page = isOidcCallback || isDemo ? App : isPublicContentRoute ? PublicEntry : Shell;
 
 initializeTheme();
 void applySiteBranding(getApiBaseUrl());

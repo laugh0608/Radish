@@ -19,7 +19,7 @@ export interface PageModel<T> {
   data: T[];
 }
 
-export type ForumPostViewMode = 'all' | 'question' | 'poll';
+export type ForumPostViewMode = 'all' | 'question' | 'poll' | 'lottery';
 
 export type QuestionStatusFilter = 'all' | 'pending' | 'solved';
 
@@ -242,12 +242,16 @@ export interface PostItem {
   voSlug?: string;
   voSummary?: string | null;
   voTags?: string;
+  voTagSlugs?: string[];
   voCategoryId: number;
   voCategoryName?: string | null;
   voAuthorId: number;
   voAuthorName?: string | null;
   voAuthorAvatarUrl?: string | null;
   voLatestInteractors?: PostInteractor[];
+  voGodCommentId?: number | null;
+  voGodCommentAuthorName?: string | null;
+  voGodCommentContentSnapshot?: string | null;
   voViewCount?: number;
   voLikeCount?: number;
   voCommentCount?: number;
@@ -285,6 +289,10 @@ export interface PostDetail {
   voAuthorAvatarUrl?: string | null;
   voTags?: string;
   voTagNames?: string[];
+  voTagSlugs?: string[];
+  voGodCommentId?: number | null;
+  voGodCommentAuthorName?: string | null;
+  voGodCommentContentSnapshot?: string | null;
   voViewCount?: number;
   voLikeCount?: number;
   voCommentCount?: number;
@@ -319,6 +327,8 @@ export interface CommentNode {
   voAuthorAvatarUrl?: string | null;
   voParentId?: number | null;
   voRootId?: number | null;
+  voReplyToCommentId?: number | null;
+  voReplyToCommentSnapshot?: string | null;
   voReplyToUserId?: number | null;
   voReplyToUserName?: string | null;
   voLevel?: number;
@@ -333,6 +343,51 @@ export interface CommentNode {
   voIsGodComment?: boolean;
   voIsSofa?: boolean;
   voHighlightRank?: number;
+}
+
+/**
+ * 评论回复目标
+ * 当前论坛 UI 仅展示两级评论，因此提交时始终挂到根评论下，
+ * 但仍保留实际点击的回复目标，用于“回复 @某人”的展示。
+ */
+export interface CommentReplyTarget {
+  parentCommentId: number;
+  targetCommentId: number;
+  authorName: string;
+  contentSnapshot?: string | null;
+}
+
+/**
+ * 帖子轻回应 Vo
+ */
+export interface PostQuickReply {
+  voId: number;
+  voPostId: number;
+  voAuthorId: number;
+  voAuthorName: string;
+  voAuthorAvatarUrl?: string | null;
+  voContent: string;
+  voStatus: number;
+  voCreateTime: string;
+}
+
+/**
+ * 帖子轻回应墙 Vo
+ */
+export interface PostQuickReplyWall {
+  voItems: PostQuickReply[];
+  voTotal: number;
+}
+
+/**
+ * 个人主页轻回应列表项
+ */
+export interface UserPostQuickReply {
+  voId: number;
+  voPostId: number;
+  voPostTitle: string;
+  voContent: string;
+  voCreateTime: string;
 }
 
 /**
@@ -395,6 +450,19 @@ export interface CommentHighlight {
   voAuthorName: string;
   voIsCurrent: boolean;
   voCreateTime: string;
+}
+
+/**
+ * 评论精确定位结果
+ */
+export interface CommentNavigationLocation {
+  voCommentId: number;
+  voPostId: number;
+  voRootCommentId: number;
+  voParentCommentId?: number | null;
+  voIsRootComment: boolean;
+  voRootPageIndex: number;
+  voChildPageIndex?: number | null;
 }
 
 /**
@@ -483,6 +551,16 @@ export interface CreateCommentRequest {
   postId: number;
   content: string;
   parentId?: number | null;
+  replyToCommentId?: number | null;
+  replyToCommentSnapshot?: string | null;
   replyToUserId?: number | null;
   replyToUserName?: string | null;
+}
+
+/**
+ * 创建轻回应请求
+ */
+export interface CreatePostQuickReplyRequest {
+  postId: number;
+  content: string;
 }

@@ -7,7 +7,8 @@ public enum ContentReportTargetTypeEnum
     Post = 1,
     Comment = 2,
     ChatMessage = 3,
-    Product = 4
+    Product = 4,
+    PostQuickReply = 5
 }
 
 /// <summary>举报处理状态</summary>

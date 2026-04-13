@@ -76,6 +76,11 @@ public class PostVo
     public string? VoTags { get; set; }
 
     /// <summary>
+    /// 标签 slug 列表（顺序与标签名一致）
+    /// </summary>
+    public List<string> VoTagSlugs { get; set; } = new();
+
+    /// <summary>
     /// 是否置顶
     /// </summary>
     public bool VoIsTop { get; set; }
@@ -139,6 +144,21 @@ public class PostVo
     /// 最新互动用户（按最新评论时间倒序，最多 3 个）
     /// </summary>
     public List<PostInteractorVo> VoLatestInteractors { get; set; } = new();
+
+    /// <summary>
+    /// 当前神评评论 ID
+    /// </summary>
+    public long? VoGodCommentId { get; set; }
+
+    /// <summary>
+    /// 当前神评作者名
+    /// </summary>
+    public string? VoGodCommentAuthorName { get; set; }
+
+    /// <summary>
+    /// 当前神评内容快照
+    /// </summary>
+    public string? VoGodCommentContentSnapshot { get; set; }
 
     /// <summary>
     /// 是否问答帖

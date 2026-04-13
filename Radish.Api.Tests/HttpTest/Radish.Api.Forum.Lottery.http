@@ -2,8 +2,10 @@
 @Second_Access_Token = 可选：在这里粘贴第二个账号的 access_token，用于验证“非发帖者不能开奖”
 @Gateway_HostAddress = https://localhost:5000
 
-@Lottery_DrawTime = 在这里填一个晚于当前时间的 RFC3339 时间，例如 2026-03-16T23:59:00+08:00
+@Lottery_DrawTime = 在这里填一个至少晚于当前时间 1 小时的 RFC3339 时间，例如 2026-04-10T23:59:00+08:00
+@Lottery_AutoDrawTime = 在这里填一个用于自动开奖验证的 RFC3339 时间，建议设置为当前时间后 65-75 分钟
 @ForumLottery_PostId = 在这里填入带抽奖帖子的 postId
+@ForumLottery_AutoDrawPostId = 在这里填入自动开奖验证帖的 postId
 @ForumLottery_RootCommentId = 在这里填入参与抽奖的父评论 commentId
 
 ### 发布带抽奖帖子
@@ -13,7 +15,7 @@ Authorization: Bearer {{Access_Token}}
 
 {
   "title": "论坛抽奖 MVP 验收帖",
-  "content": "用于串联论坛抽奖 MVP 验收：列表识别、父评论参与、开奖与中奖名单回显。",
+  "content": "用于串联论坛抽奖 MVP 验收：列表识别、父评论参与、提前开奖与中奖名单回显。",
   "categoryId": 1,
   "tagNames": ["抽奖", "验收"],
   "lottery": {
@@ -75,17 +77,12 @@ GET {{Gateway_HostAddress}}/api/v1/Comment/GetChildComments?parentId={{ForumLott
 Accept: application/json
 Authorization: Bearer {{Access_Token}}
 
-### 兼容入口：获取整棵评论树（仅用于观察旧调用）
-GET {{Gateway_HostAddress}}/api/v1/Comment/GetCommentTree?postId={{ForumLottery_PostId}}
-Accept: application/json
-Authorization: Bearer {{Access_Token}}
-
 ### 再次获取抽奖详情（预期：父评论计入，回复不计入）
 GET {{Gateway_HostAddress}}/api/v1/Lottery/GetByPostId?postId={{ForumLottery_PostId}}
 Accept: application/json
 Authorization: Bearer {{Access_Token}}
 
-### 未到开奖时间时尝试开奖（预期失败）
+### 发帖未满 1 小时时尝试提前开奖（预期失败）
 POST {{Gateway_HostAddress}}/api/v1/Lottery/Draw
 Content-Type: application/json
 Authorization: Bearer {{Access_Token}}
@@ -103,7 +100,7 @@ Authorization: Bearer {{Second_Access_Token}}
   "postId": {{ForumLottery_PostId}}
 }
 
-### 到开奖时间后由发帖者手动开奖
+### 发帖满 1 小时后、截止时间前由发帖者提前开奖
 POST {{Gateway_HostAddress}}/api/v1/Lottery/Draw
 Content-Type: application/json
 Authorization: Bearer {{Access_Token}}
@@ -119,5 +116,51 @@ Authorization: Bearer {{Access_Token}}
 
 ### 开奖后再次获取帖子详情，确认中奖名单与抽奖状态回显
 GET {{Gateway_HostAddress}}/api/v1/Post/GetById/{{ForumLottery_PostId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 发布自动开奖验证帖
+POST {{Gateway_HostAddress}}/api/v1/Post/Publish
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "title": "论坛抽奖自动开奖验收帖",
+  "content": "用于验证截止时间到达后系统自动开奖，以及未提前开奖时的截止候选池收口。",
+  "categoryId": 1,
+  "tagNames": ["抽奖", "自动开奖"],
+  "lottery": {
+    "prizeName": "自动开奖礼包",
+    "prizeDescription": "用于验证自动开奖链路。",
+    "drawTime": "{{Lottery_AutoDrawTime}}",
+    "winnerCount": 1
+  }
+}
+
+### 给自动开奖验证帖发布父评论参与抽奖
+POST {{Gateway_HostAddress}}/api/v1/Comment/Create
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "postId": {{ForumLottery_AutoDrawPostId}},
+  "content": "用于验证自动开奖的参与父评论。",
+  "parentId": null,
+  "replyToUserId": null,
+  "replyToUserName": null
+}
+
+### 截止时间前查看自动开奖帖抽奖详情
+GET {{Gateway_HostAddress}}/api/v1/Lottery/GetByPostId?postId={{ForumLottery_AutoDrawPostId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 等待截止时间与 Hangfire 下一轮执行后，再次查看自动开奖帖抽奖详情（预期：已自动开奖）
+GET {{Gateway_HostAddress}}/api/v1/Lottery/GetByPostId?postId={{ForumLottery_AutoDrawPostId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 自动开奖后查看帖子详情，确认中奖名单与已开奖状态回显
+GET {{Gateway_HostAddress}}/api/v1/Post/GetById/{{ForumLottery_AutoDrawPostId}}
 Accept: application/json
 Authorization: Bearer {{Access_Token}}

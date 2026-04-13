@@ -9,13 +9,6 @@ namespace Radish.IService;
 public interface ICommentService : IBaseService<Comment, CommentVo>
 {
     /// <summary>
-    /// 获取帖子的评论树
-    /// </summary>
-    /// <param name="postId">帖子 Id</param>
-    /// <returns>评论树（顶级评论及其子评论）</returns>
-    Task<List<CommentVo>> GetCommentTreeAsync(long postId);
-
-    /// <summary>
     /// 添加评论
     /// </summary>
     /// <param name="comment">评论实体</param>
@@ -60,15 +53,6 @@ public interface ICommentService : IBaseService<Comment, CommentVo>
     Task<Dictionary<long, bool>> GetUserLikeStatusAsync(long userId, List<long> commentIds);
 
     /// <summary>
-    /// 获取帖子的评论树（带点赞状态）
-    /// </summary>
-    /// <param name="postId">帖子 Id</param>
-    /// <param name="userId">用户 Id（可选，用于填充点赞状态）</param>
-    /// <param name="sortBy">排序方式：newest=最新，hottest=最热（默认：newest）</param>
-    /// <returns>评论树（包含点赞状态）</returns>
-    Task<List<CommentVo>> GetCommentTreeWithLikeStatusAsync(long postId, long? userId = null, string sortBy = "newest");
-
-    /// <summary>
     /// 分页获取根评论（带点赞状态）
     /// </summary>
     /// <param name="postId">帖子 Id</param>
@@ -93,6 +77,16 @@ public interface ICommentService : IBaseService<Comment, CommentVo>
     /// <param name="userId">用户 Id（可选，用于填充点赞状态）</param>
     /// <returns>子评论列表和总数</returns>
     Task<(List<CommentVo> comments, int total)> GetChildCommentsPageAsync(long parentId, int pageIndex, int pageSize, long? userId = null);
+
+    /// <summary>
+    /// 获取评论精确定位信息
+    /// </summary>
+    /// <param name="postId">帖子 Id</param>
+    /// <param name="commentId">评论 Id</param>
+    /// <param name="rootPageSize">根评论页大小</param>
+    /// <param name="childPageSize">子评论页大小</param>
+    /// <returns>定位信息，不存在时返回 null</returns>
+    Task<CommentNavigationVo?> GetCommentNavigationAsync(long postId, long commentId, int rootPageSize, int childPageSize);
 
     /// <summary>
     /// 更新评论内容

@@ -4,12 +4,13 @@
 >
 > **版本**: v26.3.5
 >
-> **最后更新**: 2026.04.01
+> **最后更新**: 2026.04.10
 >
 > **关联文档**：
 > [聊天室 App 文档总览](./chat-app-index.md) ·
 > [聊天室系统 - 前端架构与组件设计](./chat-frontend.md) ·
-> [聊天室 App 实时与同步设计](./chat-app-realtime.md)
+> [聊天室 App 实时与同步设计](./chat-app-realtime.md) ·
+> [社区讨论与聊天室侧栏 UI 治理方案](./community-discussion-and-chat-ui-governance.md)
 
 ---
 
@@ -47,6 +48,7 @@
 4. `MemberList`
 - 展示在线成员与状态。
 - 支持收起/展开，移动端默认隐藏。
+- 当前按“单入口收口”治理：右栏只保留成员栏标题行这一个展开 / 收起入口，不再在频道头部重复放置“收起成员”按钮。
 
 5. `PinnedMessageBar`（Phase 2）
 - 展示在消息区顶部（消息历史上方，频道标题下方）。

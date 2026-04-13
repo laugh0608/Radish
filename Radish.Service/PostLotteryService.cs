@@ -4,13 +4,14 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Microsoft.Extensions.Logging;
-using System.Text.Json;
 
 namespace Radish.Service;
 
 /// <summary>帖子抽奖服务</summary>
 public class PostLotteryService : IPostLotteryService
 {
+    private static readonly TimeSpan MinManualDrawLeadTime = TimeSpan.FromHours(1);
+
     private readonly IPostService _postService;
     private readonly IBaseRepository<Post> _postRepository;
     private readonly IBaseRepository<PostLottery> _postLotteryRepository;
@@ -77,102 +78,44 @@ public class PostLotteryService : IPostLotteryService
             throw new ArgumentException("帖子ID必须大于0", nameof(postId));
         }
 
-        var post = await _postRepository.QueryFirstAsync(p => p.Id == postId && !p.IsDeleted && p.IsPublished);
-        if (post == null)
-        {
-            throw new InvalidOperationException("帖子不存在");
-        }
-
+        var post = await GetPostOrThrowAsync(postId);
         if (post.AuthorId != userId)
         {
             throw new InvalidOperationException("只有发帖者可以开奖");
         }
 
-        var lottery = await _postLotteryRepository.QueryFirstAsync(l => l.PostId == postId && !l.IsDeleted);
-        if (lottery == null)
+        var lottery = await GetLotteryOrThrowAsync(postId);
+        EnsureManualDrawAllowed(post, lottery);
+
+        return await ExecuteDrawAsync(
+            post,
+            lottery,
+            DateTime.UtcNow,
+            NormalizeOperatorName(userId, userName),
+            userId,
+            allowEmptyParticipants: false);
+    }
+
+    /// <summary>按帖子自动开奖</summary>
+    [UseTran]
+    public async Task<PostLotteryVo> AutoDrawByPostIdAsync(long postId)
+    {
+        if (postId <= 0)
         {
-            throw new InvalidOperationException("当前帖子未配置抽奖");
+            throw new ArgumentException("帖子ID必须大于0", nameof(postId));
         }
 
-        if (lottery.IsDrawn)
-        {
-            throw new InvalidOperationException("该抽奖已经开过奖");
-        }
+        var post = await GetPostOrThrowAsync(postId);
+        var lottery = await GetLotteryOrThrowAsync(postId);
+        EnsureAutoDrawAllowed(lottery);
 
-        var now = DateTime.UtcNow;
-        if (lottery.DrawTime.HasValue && lottery.DrawTime.Value > now)
-        {
-            throw new InvalidOperationException("未到可开奖时间");
-        }
-
-        var candidateComments = await LoadCandidateCommentsAsync(postId, post.AuthorId, now);
-        if (candidateComments.Count == 0)
-        {
-            throw new InvalidOperationException("当前还没有符合条件的参与者");
-        }
-
-        var candidates = candidateComments
-            .GroupBy(comment => comment.AuthorId)
-            .Select(group => group
-                .OrderBy(comment => comment.CreateTime)
-                .ThenBy(comment => comment.Id)
-                .First())
-            .ToList();
-
-        var safeOperatorName = string.IsNullOrWhiteSpace(userName) ? $"User-{userId}" : userName.Trim();
-        var actualWinnerCount = Math.Min(Math.Max(1, lottery.WinnerCount), candidates.Count);
-        var winnerCandidates = candidates
-            .OrderBy(_ => Guid.NewGuid())
-            .Take(actualWinnerCount)
-            .ToList();
-
-        var winners = winnerCandidates
-            .Select(candidate => new PostLotteryWinner
-            {
-                LotteryId = lottery.Id,
-                PostId = postId,
-                UserId = candidate.AuthorId,
-                UserName = string.IsNullOrWhiteSpace(candidate.AuthorName) ? $"User-{candidate.AuthorId}" : candidate.AuthorName.Trim(),
-                CommentId = candidate.Id,
-                CommentContentSnapshot = string.IsNullOrWhiteSpace(candidate.Content)
-                    ? null
-                    : candidate.Content.Trim()[..Math.Min(candidate.Content.Trim().Length, 500)],
-                DrawnAt = now,
-                TenantId = lottery.TenantId,
-                CreateTime = DateTime.Now,
-                CreateBy = safeOperatorName,
-                CreateId = userId
-            })
-            .ToList();
-
-        await _postLotteryWinnerRepository.AddRangeAsync(winners);
-
-        lottery.IsDrawn = true;
-        lottery.DrawnAt = now;
-        lottery.ParticipantCount = candidates.Count;
-        lottery.ModifyTime = DateTime.Now;
-        lottery.ModifyBy = safeOperatorName;
-        lottery.ModifyId = userId;
-        await _postLotteryRepository.UpdateAsync(lottery);
-
-        try
-        {
-            await NotifyWinnersAsync(post, lottery, winners, safeOperatorName, userId, actualWinnerCount);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex,
-                "[PostLotteryService] 开奖成功，但发送中奖通知失败：PostId={PostId}, LotteryId={LotteryId}",
-                postId, lottery.Id);
-        }
-
-        var result = await GetByPostIdAsync(postId, userId);
-        if (result.VoLottery == null)
-        {
-            throw new InvalidOperationException("抽奖结果刷新失败");
-        }
-
-        return result.VoLottery;
+        return await ExecuteDrawAsync(
+            post,
+            lottery,
+            lottery.DrawTime!.Value,
+            "LotteryAutoDrawJob",
+            0,
+            allowEmptyParticipants: true);
     }
 
     private async Task<List<Comment>> LoadCandidateCommentsAsync(long postId, long postAuthorId, DateTime cutoffTimeUtc)
@@ -226,13 +169,170 @@ public class PostLotteryService : IPostLotteryService
             TriggerAvatar = null,
             ReceiverUserIds = receiverUserIds,
             TenantId = lottery.TenantId,
-            ExtData = JsonSerializer.Serialize(new
-            {
-                postId = post.Id,
-                lotteryId = lottery.Id,
-                prizeName = normalizedPrizeName,
-                winnerCount = actualWinnerCount
-            })
+            ExtData = NotificationNavigationHelper.BuildForumLotteryNavigationExtData(
+                post.Id,
+                lottery.Id,
+                normalizedPrizeName,
+                actualWinnerCount)
         });
+    }
+
+    private async Task<Post> GetPostOrThrowAsync(long postId)
+    {
+        var post = await _postRepository.QueryFirstAsync(p => p.Id == postId && !p.IsDeleted && p.IsPublished);
+        if (post == null)
+        {
+            throw new InvalidOperationException("帖子不存在");
+        }
+
+        return post;
+    }
+
+    private async Task<PostLottery> GetLotteryOrThrowAsync(long postId)
+    {
+        var lottery = await _postLotteryRepository.QueryFirstAsync(l => l.PostId == postId && !l.IsDeleted);
+        if (lottery == null)
+        {
+            throw new InvalidOperationException("当前帖子未配置抽奖");
+        }
+
+        if (lottery.IsDrawn)
+        {
+            throw new InvalidOperationException("该抽奖已经开过奖");
+        }
+
+        if (!lottery.DrawTime.HasValue)
+        {
+            throw new InvalidOperationException("当前抽奖未配置截止时间");
+        }
+
+        return lottery;
+    }
+
+    private void EnsureManualDrawAllowed(Post post, PostLottery lottery)
+    {
+        var publishTimeUtc = NormalizeToUtc(post.PublishTime ?? post.CreateTime);
+        var manualDrawAvailableAt = publishTimeUtc.Add(MinManualDrawLeadTime);
+        if (DateTime.UtcNow < manualDrawAvailableAt)
+        {
+            throw new InvalidOperationException("发帖满 1 小时后才可提前开奖");
+        }
+
+        if (DateTime.UtcNow >= lottery.DrawTime!.Value)
+        {
+            throw new InvalidOperationException("已到自动开奖时间，请等待系统开奖");
+        }
+    }
+
+    private void EnsureAutoDrawAllowed(PostLottery lottery)
+    {
+        if (DateTime.UtcNow < lottery.DrawTime!.Value)
+        {
+            throw new InvalidOperationException("未到自动开奖时间");
+        }
+    }
+
+    private async Task<PostLotteryVo> ExecuteDrawAsync(
+        Post post,
+        PostLottery lottery,
+        DateTime drawAtUtc,
+        string operatorName,
+        long operatorUserId,
+        bool allowEmptyParticipants)
+    {
+        var candidateComments = await LoadCandidateCommentsAsync(post.Id, post.AuthorId, drawAtUtc);
+        var candidates = candidateComments
+            .GroupBy(comment => comment.AuthorId)
+            .Select(group => group
+                .OrderBy(comment => comment.CreateTime)
+                .ThenBy(comment => comment.Id)
+                .First())
+            .ToList();
+
+        if (candidates.Count == 0 && !allowEmptyParticipants)
+        {
+            throw new InvalidOperationException("当前还没有符合条件的参与者");
+        }
+
+        var actualWinnerCount = candidates.Count == 0
+            ? 0
+            : Math.Min(Math.Max(1, lottery.WinnerCount), candidates.Count);
+        var winnerCandidates = actualWinnerCount == 0
+            ? new List<Comment>()
+            : candidates
+                .OrderBy(_ => Guid.NewGuid())
+                .Take(actualWinnerCount)
+                .ToList();
+
+        var winners = winnerCandidates
+            .Select(candidate => new PostLotteryWinner
+            {
+                LotteryId = lottery.Id,
+                PostId = post.Id,
+                UserId = candidate.AuthorId,
+                UserName = string.IsNullOrWhiteSpace(candidate.AuthorName) ? $"User-{candidate.AuthorId}" : candidate.AuthorName.Trim(),
+                CommentId = candidate.Id,
+                CommentContentSnapshot = string.IsNullOrWhiteSpace(candidate.Content)
+                    ? null
+                    : candidate.Content.Trim()[..Math.Min(candidate.Content.Trim().Length, 500)],
+                DrawnAt = drawAtUtc,
+                TenantId = lottery.TenantId,
+                CreateTime = DateTime.Now,
+                CreateBy = operatorName,
+                CreateId = operatorUserId > 0 ? operatorUserId : 0
+            })
+            .ToList();
+
+        if (winners.Count > 0)
+        {
+            await _postLotteryWinnerRepository.AddRangeAsync(winners);
+        }
+
+        lottery.IsDrawn = true;
+        lottery.DrawnAt = drawAtUtc;
+        lottery.ParticipantCount = candidates.Count;
+        lottery.ModifyTime = DateTime.Now;
+        lottery.ModifyBy = operatorName;
+        lottery.ModifyId = operatorUserId > 0 ? operatorUserId : null;
+        await _postLotteryRepository.UpdateAsync(lottery);
+
+        try
+        {
+            await NotifyWinnersAsync(post, lottery, winners, operatorName, operatorUserId, actualWinnerCount);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "[PostLotteryService] 开奖成功，但发送中奖通知失败：PostId={PostId}, LotteryId={LotteryId}",
+                post.Id, lottery.Id);
+        }
+
+        var result = await GetByPostIdAsync(post.Id, operatorUserId > 0 ? operatorUserId : null);
+        if (result.VoLottery == null)
+        {
+            throw new InvalidOperationException("抽奖结果刷新失败");
+        }
+
+        return result.VoLottery;
+    }
+
+    private static string NormalizeOperatorName(long operatorUserId, string? operatorName)
+    {
+        if (!string.IsNullOrWhiteSpace(operatorName))
+        {
+            return operatorName.Trim();
+        }
+
+        return operatorUserId > 0 ? $"User-{operatorUserId}" : "System";
+    }
+
+    private static DateTime NormalizeToUtc(DateTime value)
+    {
+        return value.Kind switch
+        {
+            DateTimeKind.Utc => value,
+            DateTimeKind.Local => value.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
+        };
     }
 }

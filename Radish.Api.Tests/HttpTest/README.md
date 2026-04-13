@@ -10,6 +10,7 @@
 
 - 本目录不再维护服务启动命令，默认你已经按仓库根目录的当前约定启动了本地 `Radish.Api`、`Radish.Auth`、`Radish.Gateway`。
 - 需要认证的接口，统一先从 `Radish.Api.AuthFlow.http` 获取 `access_token`，再粘贴到对应文件顶部变量。
+- 若本轮改动触达身份语义 / Claim / Auth 协议输出 / Token 解析，除了先跑 `validate:baseline` 外，优先再按 [身份语义防回归回归手册](/guide/identity-claim-regression-playbook) 补 `validate:identity`、`Radish.Api.AuthFlow.http` 与官方顺序回归记录。
 - 附件相关脚本依赖 `test-files/` 里的示例文件；如需更真实的图片/大文件/分片文件，可在该目录补充。
 - 构建与测试请继续使用仓库统一脚本：
   - `powershell -ExecutionPolicy Bypass -File Scripts\dotnet-local.ps1 build ...`

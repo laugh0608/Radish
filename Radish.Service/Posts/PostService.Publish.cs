@@ -6,6 +6,8 @@ namespace Radish.Service;
 
 public partial class PostService
 {
+    private static readonly TimeSpan MinLotteryLeadTime = TimeSpan.FromHours(1);
+
     /// <summary>
     /// 发布帖子
     /// </summary>
@@ -26,6 +28,16 @@ public partial class PostService
 
         var normalizedTagNames = NormalizeTagNamesOrThrow(tagNames, nameof(tagNames), "发布帖子时至少需要一个标签");
         var operatorName = string.IsNullOrWhiteSpace(post.AuthorName) ? "System" : post.AuthorName;
+
+        if (poll != null)
+        {
+            ValidatePollDefinitionOrThrow(poll);
+        }
+
+        if (lottery != null)
+        {
+            ValidateLotteryDefinitionOrThrow(lottery);
+        }
 
         var postId = await AddAsync(post);
 
@@ -125,16 +137,8 @@ public partial class PostService
 
     private async Task CreatePostPollAsync(Post post, long postId, CreatePollDto poll, string operatorName)
     {
-        var question = poll.Question?.Trim();
-        if (string.IsNullOrWhiteSpace(question))
-        {
-            throw new ArgumentException("投票问题不能为空", nameof(poll));
-        }
-
-        if (poll.EndTime.HasValue && poll.EndTime.Value <= DateTime.UtcNow)
-        {
-            throw new ArgumentException("投票截止时间必须晚于当前时间", nameof(poll));
-        }
+        ValidatePollDefinitionOrThrow(poll);
+        var question = poll.Question!.Trim();
 
         var normalizedOptions = NormalizePollOptionsOrThrow(poll.Options);
 
@@ -188,7 +192,47 @@ public partial class PostService
         {
             throw new InvalidOperationException("抽奖仓储未配置");
         }
+        ValidateLotteryDefinitionOrThrow(lottery);
 
+        var prizeName = lottery.PrizeName!.Trim();
+        var prizeDescription = string.IsNullOrWhiteSpace(lottery.PrizeDescription)
+            ? null
+            : lottery.PrizeDescription.Trim();
+        var drawTime = lottery.DrawTime;
+
+        var winnerCount = Math.Clamp(lottery.WinnerCount, 1, 20);
+        await _postLotteryRepository.AddAsync(new PostLottery
+        {
+            PostId = postId,
+            PrizeName = prizeName,
+            PrizeDescription = prizeDescription,
+            DrawTime = drawTime,
+            WinnerCount = winnerCount,
+            ParticipantCount = 0,
+            IsDrawn = false,
+            TenantId = post.TenantId,
+            CreateTime = DateTime.Now,
+            CreateBy = operatorName,
+            CreateId = post.AuthorId
+        });
+    }
+
+    private static void ValidatePollDefinitionOrThrow(CreatePollDto poll)
+    {
+        var question = poll.Question?.Trim();
+        if (string.IsNullOrWhiteSpace(question))
+        {
+            throw new ArgumentException("投票问题不能为空", nameof(poll));
+        }
+
+        if (poll.EndTime.HasValue && poll.EndTime.Value <= DateTime.UtcNow)
+        {
+            throw new ArgumentException("投票截止时间必须晚于当前时间", nameof(poll));
+        }
+    }
+
+    private static void ValidateLotteryDefinitionOrThrow(CreateLotteryDto lottery)
+    {
         var prizeName = lottery.PrizeName?.Trim();
         if (string.IsNullOrWhiteSpace(prizeName))
         {
@@ -209,26 +253,16 @@ public partial class PostService
         }
 
         var drawTime = lottery.DrawTime;
-        if (drawTime.HasValue && drawTime.Value <= DateTime.UtcNow)
+        if (!drawTime.HasValue)
         {
-            throw new ArgumentException("抽奖可开奖时间必须晚于当前时间", nameof(lottery));
+            throw new ArgumentException("抽奖截止时间不能为空", nameof(lottery));
         }
 
-        var winnerCount = Math.Clamp(lottery.WinnerCount, 1, 20);
-        await _postLotteryRepository.AddAsync(new PostLottery
+        var minimumDrawTime = DateTime.UtcNow.Add(MinLotteryLeadTime);
+        if (drawTime.Value < minimumDrawTime)
         {
-            PostId = postId,
-            PrizeName = prizeName,
-            PrizeDescription = prizeDescription,
-            DrawTime = drawTime,
-            WinnerCount = winnerCount,
-            ParticipantCount = 0,
-            IsDrawn = false,
-            TenantId = post.TenantId,
-            CreateTime = DateTime.Now,
-            CreateBy = operatorName,
-            CreateId = post.AuthorId
-        });
+            throw new ArgumentException("抽奖截止时间必须至少晚于发帖时间 1 小时", nameof(lottery));
+        }
     }
 
     private static List<PollOptionDto> NormalizePollOptionsOrThrow(List<PollOptionDto>? options)

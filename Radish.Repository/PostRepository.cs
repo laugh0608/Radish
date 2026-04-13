@@ -15,6 +15,7 @@ public class PostRepository : BaseRepository<Post>, IPostRepository
 
     public async Task<(List<Post> data, int totalCount)> QueryForumPostPageAsync(
         long? categoryId,
+        long? tagId,
         string? keyword,
         DateTime? startTime,
         DateTime? endTime,
@@ -27,14 +28,31 @@ public class PostRepository : BaseRepository<Post>, IPostRepository
         var hasCategory = categoryId.HasValue && categoryId.Value > 0;
         var hasStartTime = startTime.HasValue;
         var hasEndTime = endTime.HasValue;
+        var hasTag = tagId.HasValue && tagId.Value > 0;
         var categoryValue = categoryId ?? 0;
+        var tagValue = tagId ?? 0;
         var startTimeValue = startTime ?? DateTime.MinValue;
         var endTimeValue = endTime ?? DateTime.MaxValue;
 
         RefAsync<int> totalCount = 0;
 
+        HashSet<long> taggedPostIds = [];
+        if (hasTag)
+        {
+            taggedPostIds = (await CreateTenantQueryableFor<PostTag>()
+                .Where(postTag => postTag.TagId == tagValue)
+                .Select(postTag => postTag.PostId)
+                .ToListAsync())
+                .ToHashSet();
+
+            if (taggedPostIds.Count == 0)
+            {
+                return (new List<Post>(), 0);
+            }
+        }
+
         var query = CreateTenantQueryableFor<Post>()
-            .Where(post => post.IsPublished && !post.IsDeleted);
+            .Where(post => post.IsPublished && !post.IsDeleted && (!hasTag || taggedPostIds.Contains(post.Id)));
 
         if (hasCategory)
         {
@@ -113,6 +131,7 @@ public class PostRepository : BaseRepository<Post>, IPostRepository
 
     public async Task<(List<Post> data, int totalCount)> QueryQuestionPostPageAsync(
         long? categoryId,
+        long? tagId,
         string? keyword,
         DateTime? startTime,
         DateTime? endTime,
@@ -131,8 +150,25 @@ public class PostRepository : BaseRepository<Post>, IPostRepository
         var endTimeValue = endTime ?? DateTime.MaxValue;
         var hasSolvedFilter = isSolved.HasValue;
         var solvedValue = isSolved ?? false;
+        var hasTag = tagId.HasValue && tagId.Value > 0;
+        var tagValue = tagId ?? 0;
 
         RefAsync<int> totalCount = 0;
+
+        HashSet<long> taggedPostIds = [];
+        if (hasTag)
+        {
+            taggedPostIds = (await CreateTenantQueryableFor<PostTag>()
+                .Where(postTag => postTag.TagId == tagValue)
+                .Select(postTag => postTag.PostId)
+                .ToListAsync())
+                .ToHashSet();
+
+            if (taggedPostIds.Count == 0)
+            {
+                return (new List<Post>(), 0);
+            }
+        }
 
         var query = CreateTenantQueryableFor<PostQuestion>()
             .InnerJoin<Post>((question, post) =>
@@ -141,6 +177,7 @@ public class PostRepository : BaseRepository<Post>, IPostRepository
                 post.IsPublished &&
                 !post.IsDeleted)
             .Where((question, post) =>
+                (!hasTag || taggedPostIds.Contains(post.Id)) &&
                 (!hasCategory || post.CategoryId == categoryValue) &&
                 (!hasKeyword || post.Title.Contains(normalizedKeyword) || post.Content.Contains(normalizedKeyword)) &&
                 (!hasStartTime || post.CreateTime >= startTimeValue) &&

@@ -1,6 +1,6 @@
 # ADR 0001: Branch And PR Governance
 
-更新时间：2026-03-31
+更新时间：2026-04-04
 
 ## 状态
 
@@ -72,7 +72,7 @@ Accepted
 1. 确保远端存在 `dev` 分支，并作为当前默认开发集成面
 2. 默认开发 PR 目标分支保持为 `dev`
 3. 对 `master` 启用 branch protection / ruleset
-4. 对 `master` 要求通过 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick` 三个状态检查
+4. 对 `master` 要求通过 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Identity Guard` 四个状态检查
 5. 对 `master` 开启 “Require a pull request before merging”
 6. 限制 `master` 的合并方式为 `squash` / `rebase`
 7. 管理员仅通过 Pull Request 方式绕过规则，不开放直接 push
@@ -90,7 +90,8 @@ Accepted
   - `.github/rulesets/README.md`
 - GitHub Actions PR 检查工作流
   - `.github/workflows/repo-quality.yml`
-  - 当前包含 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick` 三个 job
+  - 当前包含 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Identity Guard` 四个 job
+  - `Identity Guard` 会先按 impact 判定决定是否执行 `validate:identity`，但 job 本身保持独立可见并作为 required check
   - 当前在 `pull_request -> master/dev` 上触发，其中 `master` ruleset 使用的 required check 名称按 job 名配置
 - 统一验证基线说明
   - `Docs/guide/validation-baseline.md`
@@ -120,3 +121,4 @@ Accepted
 - 若后续调整分支角色、PR 目标分支、required checks 或 `master` 保护策略，应同步更新本 ADR
 - 若验证基线、协作文件或 PR 模板发生影响分支治理口径的变化，也应评估是否需要同步修订本 ADR
 - 新增同类治理规则时，优先延续“仓库文件声明 + GitHub 设置落地 + ADR 固化”的三层收口方式，避免重新回到只靠口头约定的状态
+- 验证与留痕的默认粒度保持为“开发中 / `PR -> master` / 发布部署”三层：开发中的本地连续提交只做必要验证，不把批次级回归记录和发布级留痕前置到每一个 commit。

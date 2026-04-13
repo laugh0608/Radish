@@ -9,12 +9,14 @@ import {
   getPostList,
   getPostById,
   getRootCommentsPage,
+  getPostQuickReplyWall,
   getCurrentGodCommentsBatch,
   type Category,
   type Tag,
   type PostItem,
   type PostDetail,
   type CommentNode,
+  type PostQuickReply,
   type CommentHighlight,
   type ForumPostViewMode,
   type QuestionStatusFilter,
@@ -23,6 +25,7 @@ import {
   type QuestionAnswerSort,
   type QuestionAnswerFilter
 } from '@/api/forum';
+import { createForumCommentHighlightMap } from '@/utils/forumCommentHighlights';
 
 function isAbortError(error: unknown): boolean {
   if (typeof DOMException !== 'undefined' && error instanceof DOMException) {
@@ -70,12 +73,14 @@ export interface ForumDataState {
   posts: PostItem[];
   selectedPost: PostDetail | null;
   comments: CommentNode[];
+  quickReplies: PostQuickReply[];
+  quickReplyTotal: number;
   commentTotal: number;
   commentPageSize: number;
   loadedCommentPages: number;
   hotPosts: PostItem[];
   trendingGodComments: CommentNode[];
-  postGodComments: Map<number, CommentHighlight>;
+  postGodComments: Map<string, CommentHighlight>;
 
   // 分页状态
   currentPage: number;
@@ -100,6 +105,7 @@ export interface ForumDataState {
   loadingPosts: boolean;
   loadingPostDetail: boolean;
   loadingComments: boolean;
+  loadingQuickReplies: boolean;
   loadingMoreComments: boolean;
   loadingTrending: boolean;
 
@@ -112,6 +118,8 @@ export interface ForumDataActions {
   setSelectedTagName: (tagName: string | null) => void;
   setSelectedPost: Dispatch<SetStateAction<PostDetail | null>>;
   setComments: Dispatch<SetStateAction<CommentNode[]>>;
+  setQuickReplies: Dispatch<SetStateAction<PostQuickReply[]>>;
+  setQuickReplyTotal: Dispatch<SetStateAction<number>>;
   setCommentTotal: Dispatch<SetStateAction<number>>;
   setCurrentPage: (page: number) => void;
   setSortBy: (sortBy: ForumPostSortBy) => void;
@@ -128,9 +136,10 @@ export interface ForumDataActions {
   loadHotTags: () => Promise<void>;
   loadPosts: () => Promise<void>;
   loadTrendingContent: () => Promise<void>;
-  loadPostDetail: (postId: number, answerSortOverride?: QuestionAnswerSort) => Promise<void>;
-  loadComments: (postId: number, pageCount?: number) => Promise<void>;
-  loadMoreComments: (postId: number) => Promise<void>;
+  loadPostDetail: (postId: string | number, answerSortOverride?: QuestionAnswerSort) => Promise<void>;
+  loadComments: (postId: string | number, pageCount?: number) => Promise<void>;
+  loadQuickReplies: (postId: string | number) => Promise<void>;
+  loadMoreComments: (postId: string | number) => Promise<void>;
   resetCommentSort: () => void;
 }
 
@@ -144,13 +153,15 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [selectedPost, setSelectedPost] = useState<PostDetail | null>(null);
   const [comments, setComments] = useState<CommentNode[]>([]);
+  const [quickReplies, setQuickReplies] = useState<PostQuickReply[]>([]);
+  const [quickReplyTotal, setQuickReplyTotal] = useState(0);
   const [commentTotal, setCommentTotal] = useState(0);
   const [loadedCommentPages, setLoadedCommentPages] = useState(0);
 
   // 热门内容
   const [hotPosts, setHotPosts] = useState<PostItem[]>([]);
   const [trendingGodComments, setTrendingGodComments] = useState<CommentNode[]>([]);
-  const [postGodComments, setPostGodComments] = useState<Map<number, CommentHighlight>>(new Map());
+  const [postGodComments, setPostGodComments] = useState<Map<string, CommentHighlight>>(new Map());
 
   // 分页状态
   const [currentPage, setCurrentPage] = useState(1);
@@ -175,6 +186,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   const [loadingPosts, setLoadingPosts] = useState(false);
   const [loadingPostDetail, setLoadingPostDetail] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
+  const [loadingQuickReplies, setLoadingQuickReplies] = useState(false);
   const [loadingMoreComments, setLoadingMoreComments] = useState(false);
   const [loadingTrending, setLoadingTrending] = useState(false);
   const commentPageSize = 20;
@@ -311,9 +323,9 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
       try {
         const batchResult = await getCurrentGodCommentsBatch(hotPostIds, t);
         for (const postId of hotPostIds) {
-          const topGodComment = batchResult[postId];
+          const topGodComment = batchResult[String(postId)];
           if (!topGodComment) continue;
-          godCommentsMap.set(postId, topGodComment);
+          godCommentsMap.set(String(postId), topGodComment);
           allGodComments.push({
             voId: topGodComment.voCommentId,
             voContent: topGodComment.voContentSnapshot || '',
@@ -361,7 +373,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   const loadGodCommentsForPosts = async (postList: PostItem[]) => {
     const godCommentsMap = new Map(postGodComments);
     const missingPostIds = postList
-      .filter(post => !godCommentsMap.has(post.voId) && !inFlightGodCommentsRef.current.has(post.voId))
+      .filter(post => !godCommentsMap.has(String(post.voId)) && !inFlightGodCommentsRef.current.has(post.voId))
       .map(post => post.voId);
 
     if (missingPostIds.length === 0) {
@@ -371,11 +383,8 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     try {
       missingPostIds.forEach(postId => inFlightGodCommentsRef.current.add(postId));
       const batchResult = await getCurrentGodCommentsBatch(missingPostIds, t);
-      for (const [postIdStr, highlight] of Object.entries(batchResult)) {
-        const postId = Number(postIdStr);
-        if (!Number.isNaN(postId) && highlight) {
-          godCommentsMap.set(postId, highlight);
-        }
+      for (const [postId, highlight] of createForumCommentHighlightMap(batchResult)) {
+        godCommentsMap.set(postId, highlight);
       }
     } catch (err) {
       log.warn('加载帖子神评预览失败:', err);
@@ -393,7 +402,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   };
 
   // 加载帖子详情
-  const loadPostDetail = async (postId: number, answerSortOverride?: QuestionAnswerSort) => {
+  const loadPostDetail = async (postId: string | number, answerSortOverride?: QuestionAnswerSort) => {
     setLoadingPostDetail(true);
     setError(null);
     try {
@@ -404,6 +413,8 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
       setError(message);
       setSelectedPost(null);
       setComments([]);
+      setQuickReplies([]);
+      setQuickReplyTotal(0);
       setCommentTotal(0);
       setLoadedCommentPages(0);
     } finally {
@@ -412,7 +423,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   };
 
   // 加载评论列表
-  const loadComments = async (postId: number, pageCount = 1) => {
+  const loadComments = async (postId: string | number, pageCount = 1) => {
     setLoadingComments(true);
     setError(null);
     try {
@@ -449,7 +460,25 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     }
   };
 
-  const loadMoreComments = async (postId: number) => {
+  // 加载轻回应墙
+  const loadQuickReplies = async (postId: string | number) => {
+    setLoadingQuickReplies(true);
+    setError(null);
+    try {
+      const wall = await getPostQuickReplyWall(postId, t);
+      setQuickReplies(wall.voItems ?? []);
+      setQuickReplyTotal(wall.voTotal ?? 0);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      setQuickReplies([]);
+      setQuickReplyTotal(0);
+    } finally {
+      setLoadingQuickReplies(false);
+    }
+  };
+
+  const loadMoreComments = async (postId: string | number) => {
     if (loadingComments || loadingMoreComments) {
       return;
     }
@@ -541,6 +570,8 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     posts,
     selectedPost,
     comments,
+    quickReplies,
+    quickReplyTotal,
     commentTotal,
     commentPageSize,
     loadedCommentPages,
@@ -563,6 +594,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     loadingPosts,
     loadingPostDetail,
     loadingComments,
+    loadingQuickReplies,
     loadingMoreComments,
     loadingTrending,
     error,
@@ -572,6 +604,8 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     setSelectedTagName,
     setSelectedPost,
     setComments,
+    setQuickReplies,
+    setQuickReplyTotal,
     setCommentTotal,
     setCurrentPage,
     setSortBy,
@@ -590,6 +624,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     loadTrendingContent,
     loadPostDetail,
     loadComments,
+    loadQuickReplies,
     loadMoreComments,
     resetCommentSort
   };

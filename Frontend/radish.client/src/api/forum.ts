@@ -17,7 +17,12 @@ import type {
   PostItem,
   PostDetail,
   CommentNode,
+  CommentReplyTarget,
+  PostQuickReply,
+  PostQuickReplyWall,
+  UserPostQuickReply,
   CommentHighlight,
+  CommentNavigationLocation,
   PostEditHistory,
   CommentEditHistory,
   ForumPostViewMode,
@@ -45,6 +50,7 @@ import type {
   PostQuestion,
   PostAnswer,
   CreateCommentRequest,
+  CreatePostQuickReplyRequest,
   CommentLikeResult,
   PostLikeResult,
   SetPostTopRequest,
@@ -71,7 +77,12 @@ export type {
   PostItem,
   PostDetail,
   CommentNode,
+  CommentReplyTarget,
+  PostQuickReply,
+  PostQuickReplyWall,
+  UserPostQuickReply,
   CommentHighlight,
+  CommentNavigationLocation,
   PostEditHistory,
   CommentEditHistory,
   ForumPostViewMode,
@@ -99,6 +110,7 @@ export type {
   PostQuestion,
   PostAnswer,
   CreateCommentRequest,
+  CreatePostQuickReplyRequest,
   CommentLikeResult,
   PostLikeResult,
   SetPostTopRequest,
@@ -152,6 +164,27 @@ export async function getHotTags(t: TFunction, topCount: number = 20): Promise<T
 }
 
 /**
+ * 按 slug 获取公开标签详情
+ */
+export async function getTagBySlug(tagSlug: string, t: TFunction): Promise<Tag> {
+  void t;
+  const response = await apiGet<Tag>(
+    `/api/v1/Tag/GetBySlug/${encodeURIComponent(tagSlug)}`,
+    { timeout: FORUM_READ_TIMEOUT_MS }
+  );
+
+  if (!response.ok || !response.data) {
+    if (!response.ok && (response.statusCode === 404 || response.statusCode === 410)) {
+      throw new Error(response.message || '标签不存在或已不可用');
+    }
+
+    throw new Error(response.message || '加载标签详情失败');
+  }
+
+  return response.data;
+}
+
+/**
  * 获取顶级分类列表
  */
 export async function getTopCategories(t: TFunction): Promise<Category[]> {
@@ -160,6 +193,27 @@ export async function getTopCategories(t: TFunction): Promise<Category[]> {
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '加载分类失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 按 ID 获取分类详情
+ */
+export async function getCategoryById(categoryId: number | string, t: TFunction): Promise<Category> {
+  void t;
+  const response = await apiGet<Category>(
+    `/api/v1/Category/GetById/${categoryId}`,
+    { timeout: FORUM_READ_TIMEOUT_MS }
+  );
+
+  if (!response.ok || !response.data) {
+    if (!response.ok && (response.statusCode === 404 || response.statusCode === 410)) {
+      throw new Error(response.message || '分类不存在或已不可用');
+    }
+
+    throw new Error(response.message || '加载分类详情失败');
   }
 
   return response.data;
@@ -184,7 +238,10 @@ export async function getPostList(
   endTime?: string,
   postType: ForumPostViewMode = 'all',
   questionStatus: QuestionStatusFilter = 'all',
-  pollStatus: PollStatusFilter = 'all'
+  pollStatus: PollStatusFilter = 'all',
+  options?: {
+    tagSlug?: string;
+  }
 ): Promise<PageModel<PostItem>> {
   void t;
   const params = new URLSearchParams();
@@ -198,6 +255,7 @@ export async function getPostList(
   if (keyword.trim()) params.set('keyword', keyword.trim());
   if (startTime) params.set('startTime', startTime);
   if (endTime) params.set('endTime', endTime);
+  if (options?.tagSlug?.trim()) params.set('tagSlug', options.tagSlug.trim());
 
   const response = await apiGet<PageModel<PostItem>>(
     `/api/v1/Post/GetList?${params.toString()}`,
@@ -215,14 +273,15 @@ export async function getPostList(
  * 获取帖子详情
  */
 export async function getPostById(
-  postId: number,
+  postId: string | number,
   t: TFunction,
   answerSort: QuestionAnswerSort = 'default'
 ): Promise<PostDetail> {
   void t;
+  const hasToken = Boolean(tokenService.getAccessToken());
   const response = await apiGet<PostDetail>(
     `/api/v1/Post/GetById/${postId}?answerSort=${answerSort}`,
-    { timeout: FORUM_READ_TIMEOUT_MS, withAuth: true }
+    { timeout: FORUM_READ_TIMEOUT_MS, withAuth: hasToken }
   );
 
   if (!response.ok || !response.data) {
@@ -348,7 +407,7 @@ export async function acceptQuestionAnswer(request: AcceptAnswerRequest, t: TFun
  * 分页获取帖子的根评论（自动包含当前用户的点赞状态）
  */
 export async function getRootCommentsPage(
-  postId: number,
+  postId: string | number,
   pageIndex: number,
   pageSize: number,
   sortBy: 'newest' | 'hottest' | 'default',
@@ -397,6 +456,82 @@ export async function createComment(request: CreateCommentRequest, t: TFunction)
   }
 
   return response.data;
+}
+
+/**
+ * 获取帖子轻回应墙
+ */
+export async function getPostQuickReplyWall(
+  postId: string | number,
+  t: TFunction,
+  take: number = 30
+): Promise<PostQuickReplyWall> {
+  void t;
+  const response = await apiGet<PostQuickReplyWall>(
+    `/api/v1/PostQuickReply/GetRecentByPostId?postId=${postId}&take=${take}`,
+    { timeout: FORUM_READ_TIMEOUT_MS }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '加载轻回应失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 获取当前登录用户的轻回应分页
+ */
+export async function getMyQuickReplies(
+  pageIndex: number = 1,
+  pageSize: number = 10
+): Promise<VoPagedResult<UserPostQuickReply>> {
+  const response = await apiGet<VoPagedResult<UserPostQuickReply>>(
+    `/api/v1/PostQuickReply/GetMine?pageIndex=${pageIndex}&pageSize=${pageSize}`,
+    { withAuth: true, timeout: FORUM_READ_TIMEOUT_MS }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '加载轻回应失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 创建帖子轻回应
+ */
+export async function createPostQuickReply(
+  request: CreatePostQuickReplyRequest,
+  t: TFunction
+): Promise<PostQuickReply> {
+  void t;
+  const response = await apiPost<PostQuickReply>(
+    '/api/v1/PostQuickReply/Create',
+    request,
+    { withAuth: true }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '发布轻回应失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 删除帖子轻回应
+ */
+export async function deletePostQuickReply(quickReplyId: number, t: TFunction): Promise<void> {
+  void t;
+  const response = await apiDelete<null>(
+    `/api/v1/PostQuickReply/Delete?quickReplyId=${quickReplyId}`,
+    { withAuth: true }
+  );
+
+  if (!response.ok) {
+    throw new Error(response.message || '删除轻回应失败');
+  }
 }
 
 /**
@@ -593,6 +728,29 @@ export async function getChildComments(
 }
 
 /**
+ * 获取评论精确定位信息
+ */
+export async function getCommentNavigation(
+  postId: string | number,
+  commentId: string | number,
+  rootPageSize: number,
+  childPageSize: number,
+  t: TFunction
+): Promise<CommentNavigationLocation> {
+  void t;
+  const response = await apiGet<CommentNavigationLocation>(
+    `/api/v1/Comment/GetNavigation?postId=${postId}&commentId=${commentId}&rootPageSize=${rootPageSize}&childPageSize=${childPageSize}`,
+    { timeout: FORUM_READ_TIMEOUT_MS }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '获取评论定位信息失败');
+  }
+
+  return response.data;
+}
+
+/**
  * 获取帖子的当前神评列表
  * @param postId 帖子 ID
  * @param t i18n 翻译函数
@@ -623,7 +781,7 @@ export async function getCurrentGodComments(
 export async function getCurrentGodCommentsBatch(
   postIds: number[],
   t: TFunction
-): Promise<Record<number, CommentHighlight>> {
+): Promise<Record<string, CommentHighlight>> {
   void t;
   if (!postIds.length) {
     return {};
@@ -633,7 +791,7 @@ export async function getCurrentGodCommentsBatch(
   let lastError: Error | null = null;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    const response = await apiPost<Record<number, CommentHighlight>>(
+    const response = await apiPost<Record<string, CommentHighlight>>(
       '/api/v1/CommentHighlight/GetCurrentGodCommentsBatch',
       postIds,
       { timeout: FORUM_READ_TIMEOUT_MS }

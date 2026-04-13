@@ -35,7 +35,8 @@ public interface IPostService : IBaseService<Post, PostVo>
         string sortBy = "newest",
         string? keyword = null,
         DateTime? startTime = null,
-        DateTime? endTime = null);
+        DateTime? endTime = null,
+        string? tagSlug = null);
 
     /// <summary>
     /// 分页获取问答帖子列表
@@ -57,7 +58,8 @@ public interface IPostService : IBaseService<Post, PostVo>
         string? keyword = null,
         DateTime? startTime = null,
         DateTime? endTime = null,
-        bool? isSolved = null);
+        bool? isSolved = null,
+        string? tagSlug = null);
 
     /// <summary>
     /// 分页获取投票帖子列表
@@ -79,7 +81,18 @@ public interface IPostService : IBaseService<Post, PostVo>
         string? keyword = null,
         DateTime? startTime = null,
         DateTime? endTime = null,
-        bool? isClosed = null);
+        bool? isClosed = null,
+        string? tagSlug = null);
+
+    Task<(List<PostVo> data, int totalCount)> GetLotteryPostPageAsync(
+        long? categoryId = null,
+        int pageIndex = 1,
+        int pageSize = 20,
+        string sortBy = "newest",
+        string? keyword = null,
+        DateTime? startTime = null,
+        DateTime? endTime = null,
+        string? tagSlug = null);
 
     /// <summary>
     /// 批量回填帖子列表所需的轻量元数据

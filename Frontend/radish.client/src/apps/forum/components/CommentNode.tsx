@@ -3,13 +3,14 @@ import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import { buildAttachmentAssetUrl, parseAttachmentMarkdownUrl, resolveConfiguredMediaUrl } from '@radish/ui';
 import type { MarkdownStickerMap } from '@radish/ui/markdown-renderer';
-import type { CommentNode as CommentNodeType, ReactionSummaryVo } from '@/api/forum';
+import type { CommentNode as CommentNodeType, CommentReplyTarget, ReactionSummaryVo } from '@/api/forum';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
 import { Icon } from '@radish/ui/icon';
 import { ImageLightbox } from '@radish/ui/image-lightbox';
 import { ReactionBar, type ReactionTogglePayload } from '@radish/ui/reaction-bar';
 import type { StickerPickerGroup } from '@radish/ui/sticker-picker';
+import { buildCommentReplyPreview } from '../utils/commentReplyPreview';
 import styles from './CommentNode.module.css';
 
 interface CommentNodeProps {
@@ -17,13 +18,15 @@ interface CommentNodeProps {
   level: number;
   displayTimeZone: string;
   currentUserId?: number;
+  highlightedCommentId?: number | null;
+  expandedRootCommentId?: number;
   pageSize?: number; // 每次加载子评论数量
   isGodComment?: boolean; // 是否是神评
   onDelete?: (commentId: number) => void;
   onEdit?: (commentId: number, newContent: string) => Promise<void>;
   onViewHistory?: (commentId: number) => void;
   onLike?: (commentId: number) => Promise<{ isLiked: boolean; likeCount: number }>;
-  onReply?: (commentId: number, authorName: string) => void;
+  onReply?: (target: CommentReplyTarget) => void;
   onLoadMoreChildren?: (parentId: number, pageIndex: number, pageSize: number) => Promise<CommentNodeType[]>;
   stickerMap?: MarkdownStickerMap;
   reactionMap?: Record<number, ReactionSummaryVo[]>;
@@ -34,6 +37,8 @@ interface CommentNodeProps {
   onRequireReactionLogin?: () => void;
   onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
   onReport?: (commentId: number) => void;
+  registerCommentAnchor?: (commentId: number, element: HTMLDivElement | null) => void;
+  onNavigateToComment?: (commentId: number) => void | Promise<void>;
 }
 
 /**
@@ -233,6 +238,8 @@ export const CommentNode = ({
   level,
   displayTimeZone,
   currentUserId = 0,
+  highlightedCommentId = null,
+  expandedRootCommentId,
   pageSize = 10,
   isGodComment = false,
   onDelete,
@@ -250,6 +257,8 @@ export const CommentNode = ({
   onRequireReactionLogin,
   onAuthorClick,
   onReport,
+  registerCommentAnchor,
+  onNavigateToComment,
 }: CommentNodeProps) => {
   const { t } = useTranslation();
   // 判断是否是作者本人
@@ -281,6 +290,11 @@ export const CommentNode = ({
   const commentImages = useMemo(() => extractCommentImages(node.voContent), [node.voContent]);
   const commentHtml = useMemo(() => renderCommentHtml(node.voContent, stickerMap), [node.voContent, stickerMap]);
   const replyToUserName = useMemo(() => node.voReplyToUserName?.trim() || '', [node.voReplyToUserName]);
+  const replyToCommentId = useMemo(() => node.voReplyToCommentId ?? null, [node.voReplyToCommentId]);
+  const replyToCommentSnapshot = useMemo(
+    () => node.voReplyToCommentSnapshot?.trim() || '',
+    [node.voReplyToCommentSnapshot]
+  );
   const authorAvatarUrl = useMemo(() => resolveMediaUrl(node.voAuthorAvatarUrl), [node.voAuthorAvatarUrl]);
 
   // 初始化已加载的子评论（默认时间升序）
@@ -322,12 +336,17 @@ export const CommentNode = ({
     );
     setLoadedChildren(sorted);
     setChildSortBy(null); // 重置排序方式为默认值
-  }, [node.voChildren]);
+    setCurrentPage(sorted.length > 0 ? 1 : 0);
+    setHasPreloadedChildren(sorted.length > 0);
+  }, [node.voChildren, node.voChildrenTotal, node.voId]);
 
-  // 父评论或子评论总数变化时，重置预加载状态
   useEffect(() => {
-    setHasPreloadedChildren(false);
-  }, [node.voId, node.voChildrenTotal]);
+    if (level !== 0 || expandedRootCommentId !== node.voId) {
+      return;
+    }
+
+    setIsExpanded(true);
+  }, [expandedRootCommentId, level, node.voId]);
 
   // 若后端只返回 childrenTotal（不带 children 列表），为了“收起态也能看到一条回复”，这里自动预加载第一页子评论
   useEffect(() => {
@@ -375,7 +394,16 @@ export const CommentNode = ({
   // 处理回复
   const handleReply = () => {
     if (onReply) {
-      onReply(node.voId, node.voAuthorName);
+      const parentCommentId = level === 0
+        ? node.voId
+        : node.voRootId ?? node.voParentId ?? node.voId;
+
+      onReply({
+        parentCommentId,
+        targetCommentId: node.voId,
+        authorName: node.voAuthorName,
+        contentSnapshot: buildCommentReplyPreview(node.voContent)
+      });
     }
   };
 
@@ -441,11 +469,20 @@ export const CommentNode = ({
 
     setIsLoadingMore(true);
     try {
-      const nextPage = currentPage + 1;
+      const nextPage = loadedChildren.length === 0 ? 1 : currentPage + 1;
       const moreChildren = await onLoadMoreChildren(node.voId, nextPage, pageSize);
       const normalized = Array.isArray(moreChildren) ? moreChildren : [];
-      setLoadedChildren([...loadedChildren, ...normalized]);
+      setLoadedChildren((prev) => {
+        if (nextPage === 1) {
+          return normalized;
+        }
+
+        const existingIds = new Set(prev.map(child => child.voId));
+        const appended = normalized.filter(child => !existingIds.has(child.voId));
+        return [...prev, ...appended];
+      });
       setCurrentPage(nextPage);
+      setHasPreloadedChildren(normalized.length > 0 || nextPage > 1);
     } catch (error) {
       log.error(t('forum.comment.loadMoreChildrenFailed'), error);
     } finally {
@@ -506,7 +543,11 @@ export const CommentNode = ({
   })();
 
   return (
-    <div className={styles.container} style={{ marginLeft: level * 16 }}>
+    <div
+      ref={(element) => registerCommentAnchor?.(node.voId, element)}
+      className={`${styles.container} ${highlightedCommentId === node.voId ? styles.containerHighlighted : ''}`}
+      style={{ marginLeft: level * 16 }}
+    >
       <div className={styles.header}>
         <button
           type="button"
@@ -622,8 +663,23 @@ export const CommentNode = ({
           {replyToUserName && (
             <div className={styles.replyMeta}>
               {t('forum.comment.replyPrefix')}
-              <span className={styles.replyTarget}>@{replyToUserName}</span>
+              <span className={styles.replyTarget}>{replyToUserName}</span>
             </div>
+          )}
+          {replyToCommentId && replyToCommentSnapshot && (
+            <button
+              type="button"
+              className={styles.replyQuoteButton}
+              onClick={() => {
+                if (replyToCommentId > 0) {
+                  void onNavigateToComment?.(replyToCommentId);
+                }
+              }}
+              title={t('forum.comment.viewReplySource')}
+            >
+              <Icon icon="mdi:reply-outline" size={14} />
+              <span className={styles.replyQuoteText}>{replyToCommentSnapshot}</span>
+            </button>
           )}
           {commentHtml && (
             <div
@@ -741,6 +797,7 @@ export const CommentNode = ({
                   level={1}
                   displayTimeZone={displayTimeZone}
                   currentUserId={currentUserId}
+                  highlightedCommentId={highlightedCommentId}
                   pageSize={pageSize}
                   isGodComment={false} // 子评论不可能是神评，沙发标识通过 node.voIsSofa 判断
                   onDelete={onDelete}
@@ -757,6 +814,8 @@ export const CommentNode = ({
                   onRequireReactionLogin={onRequireReactionLogin}
                   onAuthorClick={onAuthorClick}
                   onReport={onReport}
+                  registerCommentAnchor={registerCommentAnchor}
+                  onNavigateToComment={onNavigateToComment}
                 />
               ))}
             </div>

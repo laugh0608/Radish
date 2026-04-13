@@ -84,6 +84,7 @@ const MIN_POLL_OPTION_COUNT = 2;
 const MAX_POLL_OPTION_COUNT = 6;
 const MIN_LOTTERY_WINNER_COUNT = 1;
 const MAX_LOTTERY_WINNER_COUNT = 20;
+const MIN_LOTTERY_LEAD_TIME_MS = 60 * 60 * 1000;
 const IMAGE_SCALE_OPTIONS = [30, 50, 70, 75, 100] as const;
 const DEFAULT_POLL_OPTIONS = ['', ''];
 
@@ -626,8 +627,8 @@ export const PublishPostModal = ({
       }
 
       const drawTime = new Date(lotteryDrawTime);
-      if (Number.isNaN(drawTime.getTime()) || drawTime.getTime() <= Date.now()) {
-        setLotteryError('开奖时间必须晚于当前时间');
+      if (Number.isNaN(drawTime.getTime()) || drawTime.getTime() < Date.now() + MIN_LOTTERY_LEAD_TIME_MS) {
+        setLotteryError('截止开奖时间必须至少晚于当前时间 1 小时');
         return;
       }
 
@@ -1300,7 +1301,7 @@ export const PublishPostModal = ({
                     />
                     <div className={styles.inlineMetaRow}>
                       <label className={styles.fieldLabel}>
-                        <span>开奖时间</span>
+                        <span>截止开奖时间</span>
                         <input
                           type="datetime-local"
                           value={lotteryDrawTime}
@@ -1326,7 +1327,7 @@ export const PublishPostModal = ({
                         />
                       </label>
                     </div>
-                    <p className={styles.helperText}>发布一条顶级评论即可参与抽奖，发帖者本人不进入中奖池。</p>
+                    <p className={styles.helperText}>截止时间至少晚于当前 1 小时；发帖满 1 小时后可提前开奖，到了截止时间系统会自动开奖。</p>
                     {lotteryError && <p className={styles.errorText}>{lotteryError}</p>}
                   </div>
                 )}

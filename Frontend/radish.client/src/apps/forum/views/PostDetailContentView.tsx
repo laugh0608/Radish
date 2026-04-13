@@ -1,8 +1,8 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { Icon } from '@radish/ui/icon';
-import type { PostDetail, CommentNode, QuestionAnswerSort, QuestionAnswerFilter } from '@/api/forum';
+import type { PostDetail, CommentNode, CommentReplyTarget, PostQuickReply, QuestionAnswerSort, QuestionAnswerFilter } from '@/api/forum';
 import type { UserFollowStatus } from '@/api/userFollow';
 import { FORUM_DETAIL_TOOL_EVENT, type ForumDetailToolAction } from '../constants/detailTools';
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
@@ -17,6 +17,10 @@ const CommentTree = lazy(() =>
   import('../components/CommentTree').then((module) => ({ default: module.CommentTree }))
 );
 
+const PostQuickReplyWall = lazy(() =>
+  import('../components/PostQuickReplyWall').then((module) => ({ default: module.PostQuickReplyWall }))
+);
+
 const CreateCommentForm = lazy(() =>
   import('../components/CreateCommentForm').then((module) => ({ default: module.CreateCommentForm }))
 );
@@ -24,10 +28,13 @@ const CreateCommentForm = lazy(() =>
 interface PostDetailContentViewProps {
   post: PostDetail;
   comments: CommentNode[];
+  quickReplies: PostQuickReply[];
+  quickReplyTotal: number;
   commentTotal: number;
   commentPageSize: number;
   loadingPostDetail: boolean;
   loadingComments: boolean;
+  loadingQuickReplies: boolean;
   loadingMoreComments: boolean;
   displayTimeZone: string;
   isLiked: boolean;
@@ -38,9 +45,14 @@ interface PostDetailContentViewProps {
   commentSortBy: 'newest' | 'hottest' | null;
   questionAnswerSort: QuestionAnswerSort;
   questionAnswerFilter: QuestionAnswerFilter;
-  replyTo: { commentId: number; authorName: string } | null;
+  replyTo: CommentReplyTarget | null;
   followStatus: UserFollowStatus | null;
   followLoading: boolean;
+  commentNavigationTarget?: {
+    commentId: number;
+    expandedRootCommentId?: number;
+    navigationKey: string;
+  } | null;
 
   onBack: () => void;
   onLike: (postId: number) => void;
@@ -55,12 +67,14 @@ interface PostDetailContentViewProps {
   onEdit: (postId: number) => void;
   onViewPostHistory: (postId: number) => void;
   onDelete: (postId: number) => void;
+  onCreateQuickReply: (content: string) => Promise<void>;
+  onDeleteQuickReply: (quickReplyId: number) => Promise<void>;
   onCommentSortChange: (sortBy: 'newest' | 'hottest') => void;
   onDeleteComment: (commentId: number) => void;
   onEditComment: (commentId: number, newContent: string) => Promise<void>;
   onViewCommentHistory: (commentId: number) => void;
   onLikeComment: (commentId: number) => Promise<{ isLiked: boolean; likeCount: number }>;
-  onReplyComment: (commentId: number, authorName: string) => void;
+  onReplyComment: (target: CommentReplyTarget) => void;
   onLoadMoreChildren: (
     parentId: number,
     pageIndex: number,
@@ -73,7 +87,9 @@ interface PostDetailContentViewProps {
   onToggleFollow: (targetUserId: number, isFollowing: boolean) => Promise<void>;
   onAuthorClick: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
   onReportPost: (postId: number) => void;
+  onReportQuickReply: (quickReplyId: number) => void;
   onReportComment: (commentId: number) => void;
+  onNavigateToComment: (commentId: number) => Promise<void> | void;
 }
 
 const collectCommentIds = (nodes: CommentNode[]): number[] => {
@@ -98,10 +114,13 @@ const collectCommentIds = (nodes: CommentNode[]): number[] => {
 export const PostDetailContentView = ({
   post,
   comments,
+  quickReplies,
+  quickReplyTotal,
   commentTotal,
   commentPageSize,
   loadingPostDetail,
   loadingComments,
+  loadingQuickReplies,
   loadingMoreComments,
   displayTimeZone,
   isLiked,
@@ -115,6 +134,7 @@ export const PostDetailContentView = ({
   replyTo,
   followStatus,
   followLoading,
+  commentNavigationTarget = null,
   onBack,
   onLike,
   onVotePoll,
@@ -128,6 +148,8 @@ export const PostDetailContentView = ({
   onEdit,
   onViewPostHistory,
   onDelete,
+  onCreateQuickReply,
+  onDeleteQuickReply,
   onCommentSortChange,
   onDeleteComment,
   onEditComment,
@@ -142,13 +164,32 @@ export const PostDetailContentView = ({
   onToggleFollow,
   onAuthorClick,
   onReportPost,
+  onReportQuickReply,
   onReportComment,
+  onNavigateToComment,
 }: PostDetailContentViewProps) => {
   const { t } = useTranslation();
   const [isCommentSheetOpen, setIsCommentSheetOpen] = useState(false);
+  const [highlightedCommentId, setHighlightedCommentId] = useState<number | null>(null);
+  const [commentAnchorVersion, setCommentAnchorVersion] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
+  const handledCommentNavigationRef = useRef<string | null>(null);
+  const highlightTimeoutRef = useRef<number | null>(null);
+  const commentAnchorMapRef = useRef(new Map<number, HTMLDivElement>());
   const { stickerGroups, stickerMap, handleStickerSelect } = useStickerCatalog();
   const reactionsState = useReactions({ onError: onReactionError });
+
+  const registerCommentAnchor = useCallback((commentId: number, element: HTMLDivElement | null) => {
+    if (element) {
+      commentAnchorMapRef.current.set(commentId, element);
+    } else {
+      commentAnchorMapRef.current.delete(commentId);
+    }
+
+    if (commentId === commentNavigationTarget?.commentId) {
+      setCommentAnchorVersion((prev) => prev + 1);
+    }
+  }, [commentNavigationTarget?.commentId]);
 
   useEffect(() => {
     if (replyTo) {
@@ -190,6 +231,55 @@ export const PostDetailContentView = ({
     const commentIds = collectCommentIds(comments);
     void reactionsState.loadCommentReactions(commentIds, { replace: true });
   }, [comments]);
+
+  useEffect(() => {
+    return () => {
+      if (highlightTimeoutRef.current !== null) {
+        window.clearTimeout(highlightTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!commentNavigationTarget?.commentId || !contentRef.current) {
+      return;
+    }
+
+    const navigationSignature = `${commentNavigationTarget.navigationKey}:${commentNavigationTarget.commentId}`;
+    if (handledCommentNavigationRef.current === navigationSignature) {
+      return;
+    }
+
+    const targetElement = commentAnchorMapRef.current.get(commentNavigationTarget.commentId);
+    if (!targetElement) {
+      return;
+    }
+
+    handledCommentNavigationRef.current = navigationSignature;
+
+    const container = contentRef.current;
+    const containerRect = container.getBoundingClientRect();
+    const targetRect = targetElement.getBoundingClientRect();
+    const offsetTop = Math.max(24, Math.round(container.clientHeight * 0.18));
+    const nextTop = container.scrollTop + (targetRect.top - containerRect.top) - offsetTop;
+
+    container.scrollTo({
+      top: Math.max(0, nextTop),
+      behavior: 'smooth'
+    });
+
+    setHighlightedCommentId(commentNavigationTarget.commentId);
+    if (highlightTimeoutRef.current !== null) {
+      window.clearTimeout(highlightTimeoutRef.current);
+    }
+    highlightTimeoutRef.current = window.setTimeout(() => {
+      setHighlightedCommentId((current) => (
+        current === commentNavigationTarget.commentId
+          ? null
+          : current
+      ));
+    }, 3200);
+  }, [commentAnchorVersion, commentNavigationTarget, comments]);
 
   const handleScrollTop = () => {
     contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
@@ -285,6 +375,29 @@ export const PostDetailContentView = ({
             />
           </Suspense>
 
+          <Suspense fallback={<p className={styles.loadingText}>{t('forum.quickReply.loading')}</p>}>
+            <PostQuickReplyWall
+              replies={quickReplies}
+              total={quickReplyTotal}
+              loading={loadingQuickReplies}
+              isAuthenticated={isAuthenticated}
+              currentUserId={currentUserId}
+              onCreate={onCreateQuickReply}
+              onDelete={onDeleteQuickReply}
+              onReport={onReportQuickReply}
+            />
+          </Suspense>
+
+          <div className={styles.discussionHeader}>
+            <div>
+              <h3 className={styles.discussionTitle}>{t('forum.quickReply.discussionTitle')}</h3>
+              <p className={styles.discussionSubtitle}>{t('forum.quickReply.discussionSubtitle')}</p>
+            </div>
+            <button className={styles.commentButton} onClick={handleOpenCommentSheet}>
+              {t('forum.quickReply.openDiscussion')}
+            </button>
+          </div>
+
           <Suspense fallback={<p className={styles.loadingText}>{t('forum.loadingDiscussion')}</p>}>
             <CommentTree
               comments={comments}
@@ -293,18 +406,21 @@ export const PostDetailContentView = ({
               hasPost={true}
               displayTimeZone={displayTimeZone}
               currentUserId={currentUserId}
+              highlightedCommentId={highlightedCommentId}
+              expandedRootCommentId={commentNavigationTarget?.expandedRootCommentId}
               pageSize={5}
               rootCommentTotal={commentTotal}
               loadedRootCommentCount={comments.length}
               rootCommentPageSize={commentPageSize}
+              registerCommentAnchor={registerCommentAnchor}
               sortBy={commentSortBy}
               onSortChange={onCommentSortChange}
               onDeleteComment={onDeleteComment}
               onEditComment={onEditComment}
               onViewCommentHistory={onViewCommentHistory}
               onLikeComment={onLikeComment}
-              onReplyComment={(commentId, authorName) => {
-                onReplyComment(commentId, authorName);
+              onReplyComment={(target) => {
+                onReplyComment(target);
                 setIsCommentSheetOpen(true);
               }}
               onLoadMoreChildren={handleLoadMoreChildren}
@@ -318,14 +434,9 @@ export const PostDetailContentView = ({
               onRequireReactionLogin={handleRequireReactionLogin}
               onAuthorClick={onAuthorClick}
               onReportComment={onReportComment}
+              onNavigateToComment={onNavigateToComment}
             />
           </Suspense>
-
-          <div className={styles.commentCta}>
-            <button className={styles.commentButton} onClick={handleOpenCommentSheet}>
-              {t('forum.joinDiscussion')}
-            </button>
-          </div>
         </div>
 
         {showFloatingTools && (

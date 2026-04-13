@@ -2,7 +2,7 @@
 
 > 本文是 Radish 的“架构与工程实现细节”说明，聚焦：技术栈基线、分层边界、关键中间件/宿主配置、演进与落地约定。
 >
-> 如果你只想快速建立全局认知，请先读 [架构总览](/architecture/overview)。若你在看当前进度与计划，请跳到 [开发路线图](/development-plan)。前端交互范式与 WebOS 细节见 [前端设计](/frontend/design)。
+> 如果你只想快速建立全局认知，请先读 [架构总览](/architecture/overview)。若你在看当前进度与计划，请跳到 [开发路线图](/development-plan)。前端交互范式与 WebOS 细节见 [前端设计](/frontend/design)。若你在看长期对象标识与社区联邦方向，请读 [标识体系与社区联邦长期路线](/architecture/id-and-federation-roadmap)。
 
 ## 功能期望与范围
 
@@ -19,7 +19,7 @@
 - **非功能性要求**
   - 安全：所有外部访问统一收口到 Gateway 公共入口并以 HTTPS 对外暴露；测试部署可由 Gateway 容器直接提供 TLS，生产部署则由外部 `Nginx / Traefik / Caddy` 终止 TLS。前端不做自定义“二次加密”（不做 RSA 前端加密）。结合 JWT + Refresh、基于角色的授权、CSP/CORS、参数验证与敏感信息集中管控。开发阶段 Radish.Api 保留 HTTPS 端口便于直接调试，但在完成 Gateway/OIDC 接入并进入生产环境前，应关闭或限制直接暴露的 API HTTPS 端口，仅通过 Gateway/反向代理对外提供服务。
   - 性能：关键查询 P95 ≤ 200ms；SQLSugar Profile + PostgreSQL EXPLAIN 校验索引；读多写少场景可使用内存缓存。
-  - 可用性：健康检查 `/health`, `/ready`; SQLSugar 迁移幂等；容器探针。
+  - 可用性：健康检查 `/health`, `/healthz`; SQLSugar 迁移幂等；容器探针。
   - 可观测性：Serilog 结构化日志、请求跟踪 ID、PostgreSQL 慢查询日志、前端监控埋点；宿主侧当前按 [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline) 收束最小运行观测边界。
   - 国际化：后端资源文件（zh-Hans 基线）+ `MessageModel` 三件套，前端 i18n（React i18next），详见 [国际化指南](/architecture/i18n)。
   - 质量：后端以 xUnit + Shouldly + Moq 为当前基线；前端当前以 `type-check`、`node --test`、`HttpTest` 与最小人工验收为主，Vitest / RTL / Playwright 仍属于后续增强方向。
@@ -37,6 +37,17 @@
   - 第三方支付、发票、合规认证（GDPR/等保）。
   - 大文件转码与 CDN；多端（小程序/Native App）。
   - 大规模分布式（消息队列、CQRS、多租户），当前阶段聚焦单体 + 水平扩展预留。
+
+## 长期标识与联邦方向
+
+- 当前系统仍保留 `Snowflake + long` 主键、多租户字段隔离与相关运行时兼容，但它们不再代表 Radish 的长期公共语义。
+- 长期对象标识正式按 `InternalId / PublicId / FederationId` 分层：
+  - `InternalId`：数据库内部主键，优先面向 `bigint` 关联与 join 性能。
+  - `PublicId`：面向 API、前端路由、分享链接与跨端契约的稳定字符串标识。
+  - `FederationId`：面向未来联邦协议的 canonical URI，不等同于数据库主键。
+- 长期社区语义不再以“租户”作为默认核心概念；`tenant` 保留为当前实现阶段的数据隔离能力，未来公开社区与联邦语义转向 `instance / node / space / group / category`。
+- 未来联邦的默认节点定义为“一个公开域名 / 一个部署实例”，而不是一个 `Tenant`。
+- 详细路线、选型对比与迁移原则见：[标识体系与社区联邦长期路线](/architecture/id-and-federation-roadmap)。
 
 ## 技术与架构基线
 
@@ -117,7 +128,7 @@ PostgreSQL / SQLite
   - **Phase 0 职责**：承载 `/server` 欢迎页面（Razor Pages）、提供基础健康检查透传与文档入口链接，静态资源服务。服务总览与多服务健康状态表已迁移到 Console（`/console`）。
   - **依赖**：复用 `Radish.Common`（配置工具）和 `Radish.Extension`（日志扩展），保持与 `Radish.Api` 一致的配置加载和日志输出方式。
   - **监听端口**：`https://localhost:5000`（主要对外入口）和 `http://localhost:5001`（HTTP 仅用于重定向到 5000）。
-  - **健康检查**：自身暴露 `/health`、`/healthz`，下游 `Radish.Api` 健康通过 `/api/health` 统一对外；Gateway 聚合首页、`/api/health`、`/console` 等关键入口状态。
+  - **健康检查**：自身暴露 `/health`、`/healthz`；`/health` 用于最小后端宿主链探活，`/healthz` 返回结构化下游明细；当前扩展观测会继续纳入 `console-service`，但其探活目标已收束为前端健康端点而非页面路由。
   - **架构演进**：Phase 0 为简化门户，已实现 YARP 路由转发、统一入口规划等核心功能。详见 [Gateway 服务网关](/guide/gateway)。
 - 配置与服务访问：Program.cs 依次调用 `hostingContext.Configuration.ConfigureApplication()` → `builder.ConfigureApplication()` → `app.ConfigureApplication()` → `app.UseApplicationSetup()`，把 Configuration/HostEnvironment/RootServices 注入到 `Radish.Common.Core.App`；在非 DI 管道下可使用 `App.GetService*`、`App.GetOptions*` 手动解析服务或配置。常规字符串读取仍统一使用 `AppSettings.RadishApp("Section", ...)`，批量强类型配置通过 `ConfigurableOptions + AddAllOptionRegister` 自动绑定 `IConfigurableOptions`。
 - `Radish.Service`

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { MarkdownStickerMap } from '@radish/ui/markdown-renderer';
-import type { CommentNode as CommentNodeType, ReactionSummaryVo } from '@/api/forum';
+import type { CommentNode as CommentNodeType, CommentReplyTarget, ReactionSummaryVo } from '@/api/forum';
 import type { ReactionTogglePayload } from '@radish/ui/reaction-bar';
 import type { StickerPickerGroup } from '@radish/ui/sticker-picker';
 import { CommentNode } from './CommentNode';
@@ -12,8 +12,11 @@ interface CommentTreeProps {
   loading?: boolean;
   loadingMoreRootComments?: boolean;
   hasPost?: boolean;
+  showTitle?: boolean;
   displayTimeZone: string;
   currentUserId?: number;
+  highlightedCommentId?: number | null;
+  expandedRootCommentId?: number;
   pageSize?: number;
   rootCommentTotal?: number;
   loadedRootCommentCount?: number;
@@ -23,7 +26,7 @@ interface CommentTreeProps {
   onEditComment?: (commentId: number, newContent: string) => Promise<void>;
   onViewCommentHistory?: (commentId: number) => void;
   onLikeComment?: (commentId: number) => Promise<{ isLiked: boolean; likeCount: number }>;
-  onReplyComment?: (commentId: number, authorName: string) => void;
+  onReplyComment?: (target: CommentReplyTarget) => void;
   onLoadMoreChildren?: (parentId: number, pageIndex: number, pageSize: number) => Promise<CommentNodeType[]>;
   onLoadMoreRootComments?: () => Promise<void>;
   onSortChange?: (sortBy: 'newest' | 'hottest') => void;
@@ -36,6 +39,8 @@ interface CommentTreeProps {
   onRequireReactionLogin?: () => void;
   onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
   onReportComment?: (commentId: number) => void;
+  registerCommentAnchor?: (commentId: number, element: HTMLDivElement | null) => void;
+  onNavigateToComment?: (commentId: number) => Promise<void> | void;
 }
 
 export const CommentTree = ({
@@ -43,8 +48,11 @@ export const CommentTree = ({
   loading = false,
   loadingMoreRootComments = false,
   hasPost = false,
+  showTitle = true,
   displayTimeZone,
   currentUserId = 0,
+  highlightedCommentId = null,
+  expandedRootCommentId,
   pageSize = 10,
   rootCommentTotal = 0,
   loadedRootCommentCount = 0,
@@ -67,6 +75,8 @@ export const CommentTree = ({
   onRequireReactionLogin,
   onAuthorClick,
   onReportComment,
+  registerCommentAnchor,
+  onNavigateToComment,
 }: CommentTreeProps) => {
   const { t } = useTranslation();
   // 找出所有神评（后端标记的）
@@ -104,27 +114,29 @@ export const CommentTree = ({
 
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <h4 className={styles.title}>{t('forum.commentTree.title')}</h4>
-        {hasPost && comments.length > 0 && (
-          <div className={styles.sortButtons}>
-            <button
-              type="button"
-              className={`${styles.sortButton} ${sortBy === 'newest' ? styles.active : ''}`}
-              onClick={() => onSortChange?.('newest')}
-            >
-              {t('forum.sort.newest')}
-            </button>
-            <button
-              type="button"
-              className={`${styles.sortButton} ${sortBy === 'hottest' ? styles.active : ''}`}
-              onClick={() => onSortChange?.('hottest')}
-            >
-              {t('forum.sort.hottest')}
-            </button>
-          </div>
-        )}
-      </div>
+      {(showTitle || (hasPost && comments.length > 0)) && (
+        <div className={`${styles.header} ${!showTitle ? styles.headerTitleHidden : ''}`}>
+          {showTitle && <h4 className={styles.title}>{t('forum.commentTree.title')}</h4>}
+          {hasPost && comments.length > 0 && (
+            <div className={styles.sortButtons}>
+              <button
+                type="button"
+                className={`${styles.sortButton} ${sortBy === 'newest' ? styles.active : ''}`}
+                onClick={() => onSortChange?.('newest')}
+              >
+                {t('forum.sort.newest')}
+              </button>
+              <button
+                type="button"
+                className={`${styles.sortButton} ${sortBy === 'hottest' ? styles.active : ''}`}
+                onClick={() => onSortChange?.('hottest')}
+              >
+                {t('forum.sort.hottest')}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
       {loading && <p className={styles.loadingText}>{t('forum.loadingDiscussion')}</p>}
       {!loading && comments.length === 0 && hasPost && (
         <p className={styles.emptyText}>{t('forum.commentTree.empty')}</p>
@@ -140,6 +152,8 @@ export const CommentTree = ({
             level={0}
             displayTimeZone={displayTimeZone}
             currentUserId={currentUserId}
+            highlightedCommentId={highlightedCommentId}
+            expandedRootCommentId={expandedRootCommentId}
             pageSize={pageSize}
             isGodComment={comment.voIsGodComment || false}
             onDelete={onDeleteComment}
@@ -157,6 +171,8 @@ export const CommentTree = ({
             onRequireReactionLogin={onRequireReactionLogin}
             onAuthorClick={onAuthorClick}
             onReport={onReportComment}
+            registerCommentAnchor={registerCommentAnchor}
+            onNavigateToComment={onNavigateToComment}
           />
         ))}
       </div>

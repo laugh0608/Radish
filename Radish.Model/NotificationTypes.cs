@@ -29,6 +29,10 @@ public static class NotificationType
     /// <remarks>优先级：普通（2）</remarks>
     public const string Followed = "Followed";
 
+    /// <summary>帖子收到轻回应</summary>
+    /// <remarks>优先级：普通（2）</remarks>
+    public const string PostQuickReplied = "PostQuickReplied";
+
     #endregion
 
     #region 成就类通知（P2 后续实现）

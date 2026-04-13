@@ -142,6 +142,8 @@ public static class ScalarSetup
                 .PreserveSchemaPropertyOrder()
                 // 设置默认 HTTP 客户端为 Axios
                 .WithDefaultHttpClient(ScalarTarget.Node, ScalarClient.Axios)
+                // 挂载自定义前端模块，用于补充 Scalar 轻量交互增强
+                .WithJavaScriptConfiguration("/scalar/config.js")
                 // 配置 OAuth2/OIDC 认证（启用 Authorize 按钮）
                 .AddPreferredSecuritySchemes("oauth2")
                 .AddOAuth2Flows("oauth2", flows =>

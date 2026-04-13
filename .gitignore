@@ -310,3 +310,7 @@ DataBases/**
 
 # Local .NET CLI cache
 .dotnet/
+
+# Codex
+.codex/
+.codex

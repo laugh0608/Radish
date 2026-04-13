@@ -23,13 +23,15 @@ export interface NotificationItemData {
   /** 业务类型 */
   businessType?: string | null;
   /** 业务 ID */
-  businessId?: number | null;
+  businessId?: number | string | null;
   /** 触发者 ID */
   triggerId?: number | null;
   /** 触发者名称 */
   triggerName?: string | null;
   /** 触发者头像 */
   triggerAvatar?: string | null;
+  /** 扩展数据（JSON 字符串） */
+  extData?: string | null;
   /** 是否已读 */
   isRead: boolean;
   /** 创建时间 */

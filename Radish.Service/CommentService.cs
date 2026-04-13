@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using System.Text.RegularExpressions;
 using AutoMapper;
 using Microsoft.Extensions.Options;
 using Radish.Common.CacheTool;
@@ -18,6 +19,12 @@ namespace Radish.Service;
 /// <summary>评论服务实现</summary>
 public class CommentService : BaseService<Comment, CommentVo>, ICommentService
 {
+    private static readonly Regex MarkdownImagePattern = new(@"!\[[^\]]*\]\(([^)]+)\)", RegexOptions.Compiled);
+    private static readonly Regex MarkdownLinkPattern = new(@"\[([^\]]+)\]\(([^)]+)\)", RegexOptions.Compiled);
+    private static readonly Regex AttachmentUriPattern = new(@"attachment://\S+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex StickerUriPattern = new(@"sticker://\S+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex MultiWhitespacePattern = new(@"\s+", RegexOptions.Compiled);
+
     private readonly IBaseRepository<Comment> _commentRepository;
     private readonly IBaseRepository<UserCommentLike> _userCommentLikeRepository;
     private readonly IBaseRepository<CommentHighlight> _highlightRepository;
@@ -68,47 +75,20 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
     }
 
     /// <summary>
-    /// 获取帖子的评论树
-    /// </summary>
-    public async Task<List<CommentVo>> GetCommentTreeAsync(long postId)
-    {
-        // 获取所有评论
-        var comments = await QueryAsync(c => c.PostId == postId && c.IsEnabled && !c.IsDeleted);
-
-        // 构建树形结构
-        var commentMap = comments.ToDictionary(c => c.VoId);
-        var rootComments = new List<CommentVo>();
-
-        foreach (var comment in comments)
-        {
-            if (comment.VoParentId == null)
-            {
-                // 顶级评论
-                rootComments.Add(comment);
-            }
-            else if (commentMap.TryGetValue(comment.VoParentId.Value, out var parent))
-            {
-                // 子评论
-                parent.VoChildren ??= new List<CommentVo>();
-                parent.VoChildren.Add(comment);
-            }
-        }
-
-        // 按时间排序
-        rootComments = rootComments.OrderByDescending(c => c.VoIsTop)
-            .ThenBy(c => c.VoCreateTime)
-            .ToList();
-
-        await FillAuthorAvatarUrlsAsync(rootComments);
-        return rootComments;
-    }
-
-    /// <summary>
     /// 添加评论
     /// </summary>
     public async Task<long> AddCommentAsync(Comment comment)
     {
-        long? parentAuthorId = null;
+        Comment? replyTargetComment = null;
+
+        if (!comment.ParentId.HasValue)
+        {
+            comment.RootId = null;
+            comment.ReplyToCommentId = null;
+            comment.ReplyToCommentSnapshot = string.Empty;
+            comment.ReplyToUserId = null;
+            comment.ReplyToUserName = string.Empty;
+        }
 
         // 1. 计算层级和路径
         if (comment.ParentId.HasValue)
@@ -122,8 +102,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                     : $"{parentComment.Path}-{parentComment.Id}";
                 comment.RootId = parentComment.RootId ?? parentComment.Id;
 
-                // 记录父评论作者ID，用于奖励发放
-                parentAuthorId = parentComment.AuthorId;
+                // 记录真实回复目标（不等同于两层结构中的 ParentId）
+                replyTargetComment = await ResolveReplyTargetCommentAsync(comment, parentComment);
 
                 // 更新父评论的回复数
                 await UpdateReplyCountAsync(parentComment.Id, 1);
@@ -202,17 +182,17 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                 }
 
                 // 4.4 评论被回复奖励（如果是回复评论）
-                if (comment.ParentId.HasValue && parentAuthorId.HasValue)
+                if (replyTargetComment != null)
                 {
                     await _coinRewardService.GrantCommentReplyRewardAsync(
-                        comment.ParentId.Value,
-                        parentAuthorId.Value,
+                        replyTargetComment.Id,
+                        replyTargetComment.AuthorId,
                         commentId);
-                    Log.Information("评论被回复奖励发放成功：ParentCommentId={ParentCommentId}, ParentAuthorId={ParentAuthorId}",
-                        comment.ParentId.Value, parentAuthorId.Value);
+                    Log.Information("评论被回复奖励发放成功：ReplyTargetCommentId={ReplyTargetCommentId}, ReplyTargetAuthorId={ReplyTargetAuthorId}",
+                        replyTargetComment.Id, replyTargetComment.AuthorId);
 
                     // 4.5 发送评论回复通知（不给自己发通知）
-                    if (parentAuthorId.Value != comment.AuthorId)
+                    if (replyTargetComment.AuthorId != comment.AuthorId)
                     {
                         try
                         {
@@ -227,15 +207,16 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                                 TriggerId = comment.AuthorId,
                                 TriggerName = comment.AuthorName,
                                 TriggerAvatar = null, // 头像字段可以后续从用户表查询
-                                ReceiverUserIds = new List<long> { parentAuthorId.Value }
+                                ReceiverUserIds = new List<long> { replyTargetComment.AuthorId },
+                                ExtData = NotificationNavigationHelper.BuildForumNavigationExtData(comment.PostId, commentId)
                             });
-                            Log.Information("评论回复通知发送成功：CommentId={CommentId}, 接收者={ReceiverId}",
-                                commentId, parentAuthorId.Value);
+                            Log.Information("评论回复通知发送成功：CommentId={CommentId}, ReplyTargetCommentId={ReplyTargetCommentId}, 接收者={ReceiverId}",
+                                commentId, replyTargetComment.Id, replyTargetComment.AuthorId);
                         }
                         catch (Exception notifyEx)
                         {
-                            Log.Error(notifyEx, "发送评论回复通知失败：CommentId={CommentId}, 接收者={ReceiverId}",
-                                commentId, parentAuthorId.Value);
+                            Log.Error(notifyEx, "发送评论回复通知失败：CommentId={CommentId}, ReplyTargetCommentId={ReplyTargetCommentId}, 接收者={ReceiverId}",
+                                commentId, replyTargetComment.Id, replyTargetComment.AuthorId);
                         }
                     }
                 }
@@ -258,7 +239,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                                 TriggerId = comment.AuthorId,
                                 TriggerName = comment.AuthorName,
                                 TriggerAvatar = null,
-                                ReceiverUserIds = new List<long> { post.VoAuthorId }
+                                ReceiverUserIds = new List<long> { post.VoAuthorId },
+                                ExtData = NotificationNavigationHelper.BuildForumNavigationExtData(comment.PostId, commentId)
                             });
                             Log.Information("帖子评论通知发送成功：PostId={PostId}, CommentId={CommentId}, 接收者={ReceiverId}",
                                 comment.PostId, commentId, post.VoAuthorId);
@@ -282,6 +264,79 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         await TriggerHighlightRecheckAsync(comment.PostId, comment.ParentId);
 
         return commentId;
+    }
+
+    private async Task<Comment> ResolveReplyTargetCommentAsync(Comment comment, Comment parentComment)
+    {
+        var replyTargetComment = parentComment;
+        if (!comment.ReplyToCommentId.HasValue)
+        {
+            comment.ReplyToCommentId = parentComment.Id;
+            comment.ReplyToCommentSnapshot = BuildReplySnapshot(parentComment.Content);
+            comment.ReplyToUserId = parentComment.AuthorId;
+            comment.ReplyToUserName = parentComment.AuthorName;
+            return replyTargetComment;
+        }
+
+        if (comment.ReplyToCommentId.Value != parentComment.Id)
+        {
+            var requestedTarget = await _commentRepository.QueryByIdAsync(comment.ReplyToCommentId.Value);
+            if (requestedTarget != null &&
+                requestedTarget.PostId == comment.PostId &&
+                requestedTarget.IsEnabled &&
+                !requestedTarget.IsDeleted &&
+                (requestedTarget.Id == parentComment.Id ||
+                 requestedTarget.ParentId == parentComment.Id ||
+                 requestedTarget.RootId == parentComment.Id))
+            {
+                replyTargetComment = requestedTarget;
+            }
+        }
+
+        comment.ReplyToCommentId = replyTargetComment.Id;
+        comment.ReplyToCommentSnapshot = BuildReplySnapshot(replyTargetComment.Content);
+        comment.ReplyToUserId = replyTargetComment.AuthorId;
+        comment.ReplyToUserName = replyTargetComment.AuthorName;
+        return replyTargetComment;
+    }
+
+    private static string BuildReplySnapshot(string? content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return string.Empty;
+        }
+
+        var normalized = MarkdownImagePattern.Replace(content, match =>
+        {
+            var source = match.Groups.Count > 1 ? match.Groups[1].Value : string.Empty;
+            if (source.StartsWith("sticker://", StringComparison.OrdinalIgnoreCase))
+            {
+                return "[表情]";
+            }
+
+            return "[图片]";
+        });
+
+        normalized = MarkdownLinkPattern.Replace(normalized, match =>
+        {
+            var label = match.Groups.Count > 1 ? match.Groups[1].Value.Trim() : string.Empty;
+            return string.IsNullOrWhiteSpace(label) ? "[附件]" : label;
+        });
+
+        normalized = AttachmentUriPattern.Replace(normalized, "[附件]");
+        normalized = StickerUriPattern.Replace(normalized, "[表情]");
+        normalized = MultiWhitespacePattern.Replace(normalized, " ").Trim();
+
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return string.Empty;
+        }
+
+        const int maxLength = 30;
+        return normalized.Length <= maxLength
+            ? normalized
+            : $"{normalized[..(maxLength - 3)]}...";
     }
 
     /// <summary>
@@ -497,7 +552,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                                     TriggerId = userId,
                                     TriggerName = null, // TODO: 从用户上下文获取用户名
                                     TriggerAvatar = null, // TODO: 从用户表查询头像
-                                    ReceiverUserIds = new List<long> { comment.AuthorId }
+                                    ReceiverUserIds = new List<long> { comment.AuthorId },
+                                    ExtData = NotificationNavigationHelper.BuildForumNavigationExtData(comment.PostId, commentId)
                                 });
 
                                 // 记录去重键（5分钟内不重复通知）
@@ -645,154 +701,6 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         return (commentVos, total);
     }
 
-    /// <summary>
-    /// 获取帖子的评论树（带点赞状态和排序）
-    /// </summary>
-    public async Task<List<CommentVo>> GetCommentTreeWithLikeStatusAsync(long postId, long? userId = null, string sortBy = "newest")
-    {
-        // 1. 获取所有评论
-        var comments = await QueryAsync(c => c.PostId == postId && c.IsEnabled && !c.IsDeleted);
-
-        // 2. 构建2级树形结构（父评论 + 所有子评论都挂在根评论下）
-        var commentMap = comments.ToDictionary(c => c.VoId);
-        var rootComments = new List<CommentVo>();
-
-        foreach (var comment in comments)
-        {
-            if (comment.VoParentId == null)
-            {
-                // 顶级评论
-                rootComments.Add(comment);
-            }
-            else
-            {
-                // 子评论：找到根评论，挂到根评论的Children下
-                var rootId = comment.VoRootId ?? comment.VoParentId!.Value;
-
-                if (commentMap.TryGetValue(rootId, out var root))
-                {
-                    root.VoChildren ??= new List<CommentVo>();
-                    root.VoChildren.Add(comment);
-
-                    // 填充 ChildrenTotal
-                    root.VoChildrenTotal = (root.VoChildrenTotal ?? 0) + 1;
-                }
-            }
-        }
-
-        // 3. 根据排序方式排序父评论和子评论
-        if (sortBy == "newest")
-        {
-            // 最新排序：按创建时间降序
-            rootComments = rootComments
-                .OrderByDescending(c => c.VoIsTop)
-                .ThenByDescending(c => c.VoCreateTime)
-                .ToList();
-
-            // 子评论也按时间降序
-            foreach (var root in rootComments)
-            {
-                if (root.VoChildren?.Any() == true)
-                {
-                    root.VoChildren = root.VoChildren
-                        .OrderByDescending(c => c.VoCreateTime)
-                        .ToList();
-                }
-            }
-        }
-        else if (sortBy == "hottest")
-        {
-            // 最热排序：按点赞数降序
-            rootComments = rootComments
-                .OrderByDescending(c => c.VoIsTop)
-                .ThenByDescending(c => c.VoLikeCount)
-                .ThenByDescending(c => c.VoCreateTime)
-                .ToList();
-
-            // 子评论也按点赞数降序
-            foreach (var root in rootComments)
-            {
-                if (root.VoChildren?.Any() == true)
-                {
-                    root.VoChildren = root.VoChildren
-                        .OrderByDescending(c => c.VoLikeCount)
-                        .ThenByDescending(c => c.VoCreateTime)
-                        .ToList();
-                }
-            }
-        }
-        else
-        {
-            // 默认排序：按创建时间升序（oldest first）
-            rootComments = rootComments
-                .OrderByDescending(c => c.VoIsTop)
-                .ThenBy(c => c.VoCreateTime)
-                .ToList();
-
-            // 子评论也按时间升序
-            foreach (var root in rootComments)
-            {
-                if (root.VoChildren?.Any() == true)
-                {
-                    root.VoChildren = root.VoChildren
-                        .OrderBy(c => c.VoCreateTime)
-                        .ToList();
-                }
-            }
-        }
-
-        // 4. 如果用户已登录，批量查询点赞状态
-        if (userId.HasValue && rootComments.Any())
-        {
-            var allCommentIds = GetAllCommentIds(rootComments);
-            var likeStatus = await GetUserLikeStatusAsync(userId.Value, allCommentIds);
-
-            // 5. 递归填充点赞状态
-            FillLikeStatus(rootComments, likeStatus);
-        }
-
-        // 6. 填充神评/沙发标识
-        if (rootComments.Any())
-        {
-            await FillHighlightStatusAsync(postId, rootComments);
-        }
-
-        await FillAuthorAvatarUrlsAsync(rootComments);
-        return rootComments;
-    }
-
-    /// <summary>
-    /// 递归获取评论树中的所有评论ID
-    /// </summary>
-    private List<long> GetAllCommentIds(List<CommentVo> comments)
-    {
-        var ids = new List<long>();
-        foreach (var comment in comments)
-        {
-            ids.Add(comment.VoId);
-            if (comment.VoChildren?.Any() == true)
-            {
-                ids.AddRange(GetAllCommentIds(comment.VoChildren));
-            }
-        }
-        return ids;
-    }
-
-    /// <summary>
-    /// 递归填充评论树的点赞状态
-    /// </summary>
-    private void FillLikeStatus(List<CommentVo> comments, Dictionary<long, bool> likeStatus)
-    {
-        foreach (var comment in comments)
-        {
-            comment.VoIsLiked = likeStatus.GetValueOrDefault(comment.VoId, false);
-            if (comment.VoChildren?.Any() == true)
-            {
-                FillLikeStatus(comment.VoChildren, likeStatus);
-            }
-        }
-    }
-
     private async Task FillAuthorAvatarUrlsAsync(List<CommentVo> comments)
     {
         if (_attachmentRepository == null || comments.Count <= 0)
@@ -895,6 +803,75 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
 
         await FillAuthorAvatarUrlsAsync(commentVos);
         return (commentVos, total);
+    }
+
+    /// <summary>
+    /// 获取评论精确定位信息
+    /// </summary>
+    public async Task<CommentNavigationVo?> GetCommentNavigationAsync(long postId, long commentId, int rootPageSize, int childPageSize)
+    {
+        var safeRootPageSize = rootPageSize <= 0 ? 20 : Math.Min(rootPageSize, 100);
+        var safeChildPageSize = childPageSize <= 0 ? 5 : Math.Min(childPageSize, 100);
+
+        var targetComment = await _commentRepository.QueryByIdAsync(commentId);
+        if (targetComment == null ||
+            targetComment.PostId != postId ||
+            targetComment.IsDeleted ||
+            !targetComment.IsEnabled)
+        {
+            return null;
+        }
+
+        var isRootComment = !targetComment.ParentId.HasValue;
+        var rootCommentId = isRootComment
+            ? targetComment.Id
+            : targetComment.RootId ?? targetComment.ParentId!.Value;
+
+        var rootComment = isRootComment
+            ? targetComment
+            : await _commentRepository.QueryByIdAsync(rootCommentId);
+
+        if (rootComment == null || rootComment.IsDeleted || !rootComment.IsEnabled)
+        {
+            return null;
+        }
+
+        var rootPrecedingCount = await _commentRepository.QueryCountAsync(comment =>
+            comment.PostId == postId &&
+            comment.ParentId == null &&
+            comment.IsEnabled &&
+            !comment.IsDeleted &&
+            (
+                (comment.IsTop && !rootComment.IsTop) ||
+                (comment.IsTop == rootComment.IsTop && comment.CreateTime < rootComment.CreateTime)
+            ));
+
+        int? childPageIndex = null;
+        if (!isRootComment && targetComment.ParentId.HasValue)
+        {
+            var parentCommentId = targetComment.ParentId.Value;
+            var childPrecedingCount = await _commentRepository.QueryCountAsync(comment =>
+                comment.ParentId == parentCommentId &&
+                comment.IsEnabled &&
+                !comment.IsDeleted &&
+                (
+                    comment.LikeCount > targetComment.LikeCount ||
+                    (comment.LikeCount == targetComment.LikeCount && comment.CreateTime > targetComment.CreateTime)
+                ));
+
+            childPageIndex = (childPrecedingCount / safeChildPageSize) + 1;
+        }
+
+        return new CommentNavigationVo
+        {
+            VoCommentId = targetComment.Id,
+            VoPostId = targetComment.PostId,
+            VoRootCommentId = rootCommentId,
+            VoParentCommentId = targetComment.ParentId,
+            VoIsRootComment = isRootComment,
+            VoRootPageIndex = (rootPrecedingCount / safeRootPageSize) + 1,
+            VoChildPageIndex = childPageIndex
+        };
     }
 
     /// <summary>

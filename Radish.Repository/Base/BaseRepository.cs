@@ -50,7 +50,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             var mta = typeof(TEntity).GetCustomAttribute<MultiTenantAttribute>();
             if (mta is { TenantType: TenantTypeEnum.DataBases })
             {
-                // 获取租户信息，租户信息可以提前缓存下来 
+                // 获取租户信息，租户信息可以提前缓存下来
                 if (App.CurrentUser is { TenantId: > 0 })
                 {
                     // .WithCache() 走缓存查询
@@ -138,6 +138,11 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
                 }
             }
         }
+    }
+
+    private bool UseSqliteSyncReadFallback()
+    {
+        return DbClientBase.CurrentConnectionConfig?.DbType == DbType.Sqlite;
     }
 
     private ISugarQueryable<TEntity> CreateTenantQueryable(bool includeDeleted = false)
@@ -722,6 +727,11 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             query = query.Where(whereExpression);
         }
 
+        if (UseSqliteSyncReadFallback())
+        {
+            return query.ToList();
+        }
+
         return await query.ToListAsync();
     }
 
@@ -770,6 +780,13 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
                 : query.OrderByDescending(orderByExpression);
         }
 
+        if (UseSqliteSyncReadFallback())
+        {
+            var syncTotalCount = 0;
+            var syncData = query.ToPageList(pageIndex, pageSize, ref syncTotalCount);
+            return (syncData, syncTotalCount);
+        }
+
         var data = await query.ToPageListAsync(pageIndex, pageSize, totalCount);
 
         return (data, totalCount);
@@ -806,6 +823,13 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             query = query.OrderBy(thenByExpression, thenByType);
         }
 
+        if (UseSqliteSyncReadFallback())
+        {
+            var syncTotalCount = 0;
+            var syncData = query.ToPageList(pageIndex, pageSize, ref syncTotalCount);
+            return (syncData, syncTotalCount);
+        }
+
         var data = await query.ToPageListAsync(pageIndex, pageSize, totalCount);
 
         return (data, totalCount);
@@ -822,6 +846,11 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             query = query.Where(whereExpression);
         }
 
+        if (UseSqliteSyncReadFallback())
+        {
+            return query.Count();
+        }
+
         return await query.CountAsync();
     }
 
@@ -830,7 +859,13 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <returns>是否存在</returns>
     public async Task<bool> QueryExistsAsync(Expression<Func<TEntity, bool>> whereExpression)
     {
-        return await CreateTenantQueryable().AnyAsync(whereExpression);
+        var query = CreateTenantQueryable();
+        if (UseSqliteSyncReadFallback())
+        {
+            return query.Any(whereExpression);
+        }
+
+        return await query.AnyAsync(whereExpression);
     }
 
     /// <summary>

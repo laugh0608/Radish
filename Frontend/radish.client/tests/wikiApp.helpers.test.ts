@@ -7,6 +7,12 @@ import {
   flattenTreeOptions,
   getSuggestedSortValue,
 } from '../src/apps/wiki/wikiApp.helpers.ts';
+import {
+  buildPublicDocsPath,
+  parsePublicDocsRoute,
+  resolvePublicDocsRouteFromHref,
+  rewritePublicDocsHref,
+} from '../src/public/docsRouteState.ts';
 import type { WikiDocumentTreeNodeVo } from '../src/apps/wiki/types/wiki.ts';
 
 const mockTree: WikiDocumentTreeNodeVo[] = [
@@ -112,4 +118,61 @@ test('buildWikiListUrl 应按回收站筛选拼接参数', () => {
     url,
     '/api/v1/Wiki/GetList?pageIndex=1&pageSize=100&keyword=guide&status=1&includeDeleted=true&deletedOnly=true'
   );
+});
+
+test('parsePublicDocsRoute 应按 slug 解析公开文档详情路由并保留 hash anchor', () => {
+  const route = parsePublicDocsRoute('/docs/getting-started', '#intro');
+
+  assert.deepEqual(route, {
+    kind: 'detail',
+    slug: 'getting-started',
+    anchor: 'intro'
+  });
+});
+
+test('parsePublicDocsRoute 应兼容 __documents__ 旧路径', () => {
+  const route = parsePublicDocsRoute('/__documents__/changelog', '#v2');
+
+  assert.deepEqual(route, {
+    kind: 'detail',
+    slug: 'changelog',
+    anchor: 'v2'
+  });
+});
+
+test('parsePublicDocsRoute 应兼容 __documents__ 旧列表路径', () => {
+  const route = parsePublicDocsRoute('/__documents__', '');
+
+  assert.deepEqual(route, {
+    kind: 'list',
+  });
+});
+
+test('buildPublicDocsPath 应按 slug 和 anchor 回写公开文档路径', () => {
+  const path = buildPublicDocsPath({
+    kind: 'detail',
+    slug: 'getting-started',
+    anchor: 'intro'
+  });
+
+  assert.equal(path, '/docs/getting-started#intro');
+});
+
+test('resolvePublicDocsRouteFromHref 应兼容绝对 URL 文档内链', () => {
+  const route = resolvePublicDocsRouteFromHref(
+    'https://localhost:5000/__documents__/changelog#release-notes',
+    'https://localhost:5000'
+  );
+
+  assert.deepEqual(route, {
+    kind: 'detail',
+    slug: 'changelog',
+    anchor: 'release-notes'
+  });
+});
+
+test('rewritePublicDocsHref 应把旧文档链接改写为公开 docs 路由', () => {
+  const href = rewritePublicDocsHref('/__documents__/changelog#release-notes', 'https://localhost:5000');
+
+  assert.equal(href, '/docs/changelog#release-notes');
 });

@@ -1,10 +1,10 @@
 # 前端设计文档
 
-> Radish 采用 **超级应用（Super App）/ WebOS** 架构，提供类似操作系统的桌面体验。用户进入 `radish.client` 后即可看到桌面，公开内容可匿名浏览，登录后再解锁聊天室、个人中心等私有能力。本文档描述整体架构、技术栈和实现方案。
+> Radish 第一开发阶段以前端 **WebOS / 超级应用** 为主入口完成首版交付；第二开发阶段开始，前端策略正式演进为“公开内容壳层 + 桌面工作台壳层 + 未来原生客户端壳层”的多壳层分工。本文档描述当前桌面事实、演进方向与相关实现约束。
 
 ## 1. 设计理念
 
-### 1.1 核心概念：WebOS
+### 1.1 第一阶段核心概念：WebOS
 
 **Radish 不是一个网站，而是一个运行在浏览器中的操作系统。**
 
@@ -23,15 +23,41 @@
 [控制台] → 外部应用
 ```
 
-### 1.2 设计目标
+### 1.2 第二阶段定位：多壳层分工
 
-1. **统一入口**：所有功能通过桌面访问，无需记忆多个 URL
+截至 `2026-04-07`，当前官方定位已经从“所有能力统一走桌面入口”调整为：
+
+- **公开内容壳层**
+  - 面向公开浏览、分享传播、搜索流量与移动端访问
+- **桌面工作台壳层**
+  - 面向桌面端、已登录用户与高交互场景
+- **未来原生客户端壳层**
+  - 面向 Flutter 客户端，不复刻 WebOS 窗口系统
+
+当前决策以 [前端多壳层策略](/frontend/shell-strategy) 为准。
+
+### 1.3 设计目标
+
+1. **统一产品身份**：保持一个 Radish，而不是分裂成互不相认的多套前端
 2. **权限控制**：公开应用匿名可访问，私有能力按登录态与权限分层控制
-3. **沉浸体验**：桌面化交互（状态栏、Dock、窗口系统）
-4. **无缝切换**：应用间切换无需重新登录
-5. **扩展性强**：新增功能只需注册新应用
+3. **桌面沉浸体验**：在需要工作台语义的场景保留桌面化交互（状态栏、Dock、窗口系统）
+4. **内容直达能力**：公开内容不强制要求先进入桌面再打开窗口
+5. **多端扩展性**：移动 Web 与 Flutter 可以复用数据、认证和主题语义，但不强求界面结构一致
+
+### 1.4 当前边界
+
+- 当前代码事实仍然以 `Desktop Shell + WindowManager` 为主
+- 公开内容壳层当前已完成 forum、docs、个人公开页、公开榜单与公开商城浏览五个首批入口，并继续补到 forum 公开分类、forum 公开搜索与 docs 公开搜索首批：`/forum`、`/forum/category/:categoryId`、`/forum/search`、`/forum/post/:postId`、`/docs`、`/docs/search`、`/docs/:slug`、`/u/:id`、`/leaderboard`、`/leaderboard/:type`、`/shop`、`/shop/products` 与 `/shop/product/:productId` 都已可直接进入公开阅读壳层
+- 公开内容壳层当前仍保持分批只读阅读边界：forum 不承载发帖、评论提交、投票提交，文档阅读不承载编辑、发布、回收站或版本历史等桌面治理交互
+- forum 公开分类、公开标签、公开结构化类型与公开搜索首批当前只承载分类 / 标签 / 类型上下文、关键词检索、帖子列表阅读、排序分页与详情回跳上下文；标签 SEO 深化仍放在后续规划
+- 个人公开页首批当前只承载公开资料、公开统计、公开帖子与公开评论阅读；不把编辑资料、浏览记录、附件管理或完整关系链治理搬进公开壳层
+- 公开榜单首批当前只承载榜单切换、分页、登录用户“我的排名”增强，以及用户榜单跳转个人公开页；不把经验明细、商城详情、购买链路或其他工作台动作搬进公开壳层
+- 公开商城浏览首批当前只承载首页、商品列表与商品详情阅读；不把购买确认、订单、背包、举报或其他“我的”动作搬进公开壳层
+- 第二阶段前半程不立即推翻现有 WebOS 路由，而是采用增量迁移
 
 ## 2. 系统架构
+
+> 说明：本节的大部分代码与结构图仍然描述 **当前桌面工作台壳层的真实实现**。公开内容壳层与未来 Flutter 客户端壳层的职责分工，请优先参考 [前端多壳层策略](/frontend/shell-strategy)。
 
 ### 2.1 整体结构
 
@@ -333,6 +359,14 @@ export const useWindowStore = create<WindowStore>((set) => ({
 }));
 ```
 
+当前实际行为在上述基础上已经进一步收口为：
+
+- 新开窗口会按当前视口与应用默认尺寸自动居中，而不是固定偏移开窗。
+- 普通窗口在拖动、缩放、关闭、参数切换和最大化恢复时，都会把“正常态”的位置与尺寸持久化到本地存储。
+- 窗口持久化键默认按 `appId` 生成；若窗口携带业务定位参数，则按 `appId + 稳定业务参数` 生成独立记忆位。
+- `__navigationKey` 等纯导航刷新参数不会参与持久化键计算，避免通知跳转或内容刷新污染同类窗口布局。
+- 历史位置在当前分辨率下越界时，会先做边界压缩后再恢复，确保窗口始终落在可见区域内。
+
 ## 5. 子应用开发
 
 ### 5.1 论坛应用示例
@@ -404,12 +438,30 @@ export const AdminApp = () => {
 };
 ```
 
-## 6. 移动端适配
+## 6. 移动端适配（执行中：公开内容壳层首批已落地，完整移动壳层尚未实现）
 
-### 6.1 响应式策略
+> 截至 `2026-04-12`，仓库中的 `radish.client` 仍然是桌面 / WebOS 优先架构，当前并没有真正落地的完整 `MobileShell` 实现；但 forum 公开内容壳层已继续落到 `/forum`、`/forum/category/:categoryId`、`/forum/tag/:tagSlug`、`/forum/question`、`/forum/poll`、`/forum/lottery`、`/forum/search` 与 `/forum/post/:postId`。本节描述的是“已落地事实 + 后续移动 Web 规划方向”的组合口径。
+
+### 6.1 当前现实
+
+- 论坛等个别页面已有窗口内响应式处理，但这不等于真正的移动端产品形态
+- 当前主入口仍然是桌面 Shell、Dock 与窗口系统
+- 公开内容壳层当前已完成 forum、docs、个人公开页、公开榜单与公开商城浏览五个首批入口落地；帖子列表、分类直达、搜索直达、帖子详情、公开文档目录、个人公开页、公开榜单与公开商城入口都可以绕开桌面 Shell 直接进入公开阅读形态
+- 公开 forum 当前只冻结“列表 + 分类 + 标签 + 结构化类型列表 + 搜索 + 详情 + 轻回应墙展示 + 评论阅读”，并明确保持只读阅读边界
+- 公开文档阅读当前只冻结“目录 + 搜索 + 正文阅读 + 复制公开链接 + 返回浏览态 + 文档内链跳转”，并明确保持只读阅读边界；当前已补齐返回目录滚动位置保持、搜索结果上下文回跳、详情页复制链接入口，以及旧 `__documents__` 文档链接继续落入公开 docs 壳层
+- 如果直接把完整窗口系统压缩到手机宽度，交互成本和信息密度都会失衡
+
+### 6.2 规划策略
+
+- 移动端应进入独立的移动壳层或移动路由模式，而不是直接复用桌面窗口交互
+- 第一批已先从公开内容浏览起步：forum 列表、分类直达、搜索直达、帖子详情、轻回应墙展示与评论阅读当前已进入公开内容壳层
+- 个人公开页、公开榜单与公开商城浏览首批当前都已先接入公开内容壳层，更深的轻互动能力与商城购买链路仍按价值逐步接入，不一次性照搬桌面 App
+- 登录后的重交互能力按价值逐步接入，不一次性照搬全部桌面 App
+
+### 6.3 规划示意
 
 ```typescript
-// desktop/Shell.tsx
+// 规划示意，非当前仓库实现
 const Shell = () => {
   const isMobile = useMediaQuery('(max-width: 768px)');
 
@@ -421,27 +473,27 @@ const Shell = () => {
 };
 ```
 
-### 6.2 移动端布局
+### 6.4 移动端布局（规划）
 
 ```
-移动端自动转换为 Tab 导航：
+移动端目标形态：
 
 ┌────────────────────────┐
-│ 状态栏                  │
+│ 状态栏 / 顶部导航        │
 ├────────────────────────┤
 │                        │
-│   当前应用内容           │
-│                        │
+│   当前内容页面           │
+│   （论坛 / 文档 / 我）   │
 │                        │
 ├────────────────────────┤
-│ Tab: 论坛|聊天|商城|我  │
+│ Tab: 首页|论坛|消息|我   │
 └────────────────────────┘
 ```
 
 ```typescript
-// desktop/MobileShell.tsx
+// 规划示意，非当前仓库实现
 const MobileShell = () => {
-  const visibleApps = getVisibleAppsForUser(appRegistry, {
+  const mobileRoutes = getMobileRoutes({
     isAuthenticated,
     userRoles,
     userPermissions
@@ -450,16 +502,8 @@ const MobileShell = () => {
   return (
     <div className="mobile-shell">
       <StatusBar />
-      <Routes>
-        {visibleApps.map(app => (
-          <Route
-            key={app.id}
-            path={`/${app.id}/*`}
-            element={<app.component />}
-          />
-        ))}
-      </Routes>
-      <MobileTabBar apps={visibleApps} />
+      <Routes>{mobileRoutes}</Routes>
+      <MobileTabBar />
     </div>
   );
 };
@@ -879,7 +923,20 @@ eventBus.on('new-message', ({ count }) => {
 示例：
 / - 桌面
 /forum - 论坛首页
+/forum/tag/community-news - 公开标签页（canonical slug）
+/forum/question - 公开问答列表
+/forum/poll - 公开投票列表
+/forum/lottery - 公开抽奖列表
 /forum/post/123 - 论坛帖子详情
+/docs - 文档目录
+/docs/getting-started - 文档详情
+/u/123 - 公开个人页
+/leaderboard - 公开榜单首页
+/leaderboard/experience - 公开榜单类型页
+/forum/category/12 - 公开分类页
+/shop - 公开商城首页
+/shop/products - 公开商品列表
+/shop/product/123 - 公开商品详情
 /chat - 聊天室
 /admin/apps - 后台应用管理
 ```
@@ -1049,7 +1106,7 @@ Client  Console   Shop    Document
 #### 10.5.1 URL 与路由规划
 
 - 公开内容（需 SEO）：
-  - 帖子列表：`/forum`、`/forum/category/{id}`、`/forum/tag/{tag}`
+  - 帖子列表：`/forum`、`/forum/category/{id}`、`/forum/tag/{tagSlug}`、`/forum/question`、`/forum/poll`、`/forum/lottery`
   - 帖子详情：`/forum/post/{id}` 或 `/forum/post/{id}-{slug}`
 
 > 论坛分类与标签能力边界、实现现状与后续计划请参考：
@@ -1059,7 +1116,7 @@ Client  Console   Shop    Document
   - 用户中心：`/me`、`/settings` 等
 - 桌面 Shell 与应用路由关系：
   - 桌面仍然挂在 `/` 路径；
-  - 对于搜索引擎访问 `/forum`、`/forum/post/*` 等路径时，可以直接渲染论坛应用而不是完整桌面壳，以减少噪音并提升首屏内容密度。
+- 对于搜索引擎访问 `/forum`、`/forum/tag/*`、`/forum/question`、`/forum/poll`、`/forum/lottery`、`/forum/search`、`/forum/post/*`、`/docs`、`/docs/*` 等路径时，可以直接渲染公开内容壳层而不是完整桌面壳，以减少噪音并提升首屏内容密度。
 
 #### 10.5.2 SSR/SSG 与 hydrate 策略（前端视角）
 

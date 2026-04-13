@@ -8,7 +8,6 @@ using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Shared;
 using Radish.Shared.CustomEnum;
-using Serilog;
 
 namespace Radish.Api.Controllers;
 
@@ -40,40 +39,6 @@ public class CommentController : ControllerBase
     }
 
     private CurrentUser Current => _currentUserAccessor.Current;
-
-    /// <summary>
-    /// 获取帖子的评论树（兼容入口，带点赞状态）
-    /// </summary>
-    /// <param name="postId">帖子 ID</param>
-    /// <param name="sortBy">排序方式：newest=最新，hottest=最热（默认：newest）</param>
-    /// <returns>评论树（树形结构，包含当前用户的点赞状态）</returns>
-    /// <remarks>
-    /// 该接口仅用于兼容旧调用方。
-    /// 论坛主链当前已改用 GetRootComments + GetChildComments 的分页模式。
-    /// </remarks>
-    [HttpGet]
-    [AllowAnonymous]
-    [ApiExplorerSettings(IgnoreApi = true)]
-    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
-    public async Task<MessageModel> GetCommentTree(long postId, string sortBy = "newest")
-    {
-        Response.Headers.Append("X-Radish-Deprecated", "GetCommentTree is compatibility-only; use GetRootComments instead.");
-        Log.Information("[CommentController] legacy GetCommentTree invoked for PostId={PostId}, SortBy={SortBy}", postId, sortBy);
-
-        // 获取当前用户ID（如果已登录）
-        long? userId = Current.UserId > 0 ? Current.UserId : null;
-
-        // 获取带点赞状态的评论树
-        var comments = await _commentService.GetCommentTreeWithLikeStatusAsync(postId, userId, sortBy);
-
-        return new MessageModel
-        {
-            IsSuccess = true,
-            StatusCode = (int)HttpStatusCodeEnum.Success,
-            MessageInfo = "获取成功",
-            ResponseData = comments
-        };
-    }
 
     /// <summary>
     /// 分页获取帖子的根评论（带点赞状态）
@@ -155,6 +120,8 @@ public class CommentController : ControllerBase
         {
             PostId = request.PostId,
             ParentId = request.ParentId,
+            ReplyToCommentId = request.ReplyToCommentId,
+            ReplyToCommentSnapshot = request.ReplyToCommentSnapshot,
             ReplyToUserId = request.ReplyToUserId,
             ReplyToUserName = request.ReplyToUserName,
             AuthorId = Current.UserId,
@@ -256,6 +223,54 @@ public class CommentController : ControllerBase
                 VoPageIndex = pageIndex,
                 VoPageSize = pageSize
             }
+        };
+    }
+
+    /// <summary>
+    /// 获取评论精确定位信息
+    /// </summary>
+    /// <param name="postId">帖子 ID</param>
+    /// <param name="commentId">评论 ID</param>
+    /// <param name="rootPageSize">根评论分页大小</param>
+    /// <param name="childPageSize">子评论分页大小</param>
+    /// <returns>评论定位信息</returns>
+    [HttpGet]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    public async Task<MessageModel> GetNavigation(
+        long postId,
+        long commentId,
+        int rootPageSize = 20,
+        int childPageSize = 5)
+    {
+        if (rootPageSize < 1 || rootPageSize > 100)
+        {
+            rootPageSize = 20;
+        }
+
+        if (childPageSize < 1 || childPageSize > 100)
+        {
+            childPageSize = 5;
+        }
+
+        var navigation = await _commentService.GetCommentNavigationAsync(postId, commentId, rootPageSize, childPageSize);
+        if (navigation == null)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = "评论不存在或已被删除"
+            };
+        }
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = navigation
         };
     }
 

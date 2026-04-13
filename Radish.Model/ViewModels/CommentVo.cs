@@ -36,6 +36,16 @@ public class CommentVo
     public long? VoReplyToUserId { get; set; }
 
     /// <summary>
+    /// 回复目标评论 Id
+    /// </summary>
+    public long? VoReplyToCommentId { get; set; }
+
+    /// <summary>
+    /// 回复目标评论摘要
+    /// </summary>
+    public string? VoReplyToCommentSnapshot { get; set; }
+
+    /// <summary>
     /// 回复目标用户名称
     /// </summary>
     public string? VoReplyToUserName { get; set; }

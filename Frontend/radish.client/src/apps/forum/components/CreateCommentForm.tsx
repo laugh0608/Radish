@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { buildAttachmentMarkdownUrl } from '@radish/ui';
 import { StickerPicker, type StickerPickerGroup, type StickerPickerSelection } from '@radish/ui/sticker-picker';
+import type { CommentReplyTarget } from '@/api/forum';
 import { getOidcLoginUrl } from '@/api/forum';
 import { searchUsersForMention } from '@/api/user';
 import { UserMention, type UserMentionOption as UiUserMentionOption } from '@radish/ui/user-mention';
@@ -16,7 +17,7 @@ interface CreateCommentFormProps {
   hasPost: boolean;
   onSubmit: (content: string) => void;
   disabled?: boolean;
-  replyTo?: { commentId: number; authorName: string } | null;
+  replyTo?: CommentReplyTarget | null;
   onCancelReply?: () => void;
   variant?: 'inline' | 'sheet';
   stickerGroups?: StickerPickerGroup[];
@@ -494,9 +495,15 @@ export const CreateCommentForm = ({
           <div className={styles.editorMeta}>
             {replyTo ? (
               <div className={styles.replyMeta}>
-                <span className={styles.replyText}>
-                  回复给 <span className={styles.replyTarget}>@{replyTo.authorName}</span>
-                </span>
+                <div className={styles.replyMetaBody}>
+                  <span className={styles.replyText}>
+                    {t('forum.comment.replyingPrefix')}
+                    <span className={styles.replyTarget}>{replyTo.authorName}</span>
+                  </span>
+                  {replyTo.contentSnapshot ? (
+                    <span className={styles.replyQuote}>{replyTo.contentSnapshot}</span>
+                  ) : null}
+                </div>
                 {onCancelReply && (
                   <button
                     type="button"
