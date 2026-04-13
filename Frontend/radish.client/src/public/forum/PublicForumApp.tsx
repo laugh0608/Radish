@@ -37,6 +37,7 @@ import type {
   PublicForumRouteSort,
   PublicSearchTimeRange,
 } from '../forumRouteState';
+import type { PublicDetailBackMode } from '../publicRouteNavigation';
 import { createDefaultSearchRoute } from '../forumRouteState';
 import {
   resolvePublicForumCategoryLoadState,
@@ -49,6 +50,10 @@ import styles from './PublicForumApp.module.css';
 interface PublicForumAppProps {
   route: PublicForumRoute;
   fallbackBrowseRoute: PublicForumBrowseRoute;
+  detailBackAction?: {
+    mode: PublicDetailBackMode;
+    onBack: () => void;
+  } | null;
   onNavigate: (route: PublicForumRoute, options?: { replace?: boolean }) => void;
   onNavigateToDiscover?: () => void;
   onNavigateToProfile?: (userId: string) => void;
@@ -258,6 +263,7 @@ function PublicStatusCard({
 export const PublicForumApp = ({
   route,
   fallbackBrowseRoute,
+  detailBackAction,
   onNavigate,
   onNavigateToDiscover,
   onNavigateToProfile,
@@ -273,6 +279,12 @@ export const PublicForumApp = ({
   const previousRouteRef = useRef<PublicForumRoute>(route);
   const browseScrollSnapshotRef = useRef<{ routeKey: string; scrollTop: number } | null>(null);
   const [pendingRestoreScrollTop, setPendingRestoreScrollTop] = useState<number | null>(null);
+  const detailBackLabel = detailBackAction?.mode === 'discover'
+    ? t('public.shell.backToDiscover')
+    : detailBackAction
+      ? t('public.shell.backToSource')
+      : t('forum.backToList');
+  const handleForumDetailBack = detailBackAction?.onBack ?? (() => onNavigate(fallbackBrowseRoute));
 
   useEffect(() => {
     const titleKey = route.kind === 'detail'
@@ -376,7 +388,8 @@ export const PublicForumApp = ({
             key={`detail-${route.postId}`}
             postId={route.postId}
             displayTimeZone={displayTimeZone}
-            onBack={() => onNavigate(fallbackBrowseRoute)}
+            backLabel={detailBackLabel}
+            onBack={handleForumDetailBack}
             onOpenAuthorProfile={onNavigateToProfile}
             onOpenTag={onNavigateToTag}
             onOpenQuestion={onNavigateToQuestion}
@@ -2310,6 +2323,7 @@ const PublicForumSearch = ({
 interface PublicForumDetailProps {
   postId: string;
   displayTimeZone: string;
+  backLabel: string;
   onBack: () => void;
   onOpenAuthorProfile?: (userId: string) => void;
   onOpenTag?: (tagSlug: string) => void;
@@ -2321,6 +2335,7 @@ interface PublicForumDetailProps {
 const PublicForumDetail = ({
   postId,
   displayTimeZone,
+  backLabel,
   onBack,
   onOpenAuthorProfile,
   onOpenTag,
@@ -2517,7 +2532,7 @@ const PublicForumDetail = ({
       <div className={styles.detailTopbar}>
         <button type="button" className={styles.backButton} onClick={onBack}>
           <Icon icon="mdi:arrow-left" size={18} />
-          <span>{t('forum.backToList')}</span>
+          <span>{backLabel}</span>
         </button>
       </div>
 
@@ -2536,7 +2551,7 @@ const PublicForumDetail = ({
             title={t('forum.public.postNotFoundTitle')}
             description={t('forum.public.postNotFoundDescription')}
             secondaryAction={{
-              label: t('forum.backToList'),
+              label: backLabel,
               onClick: onBack
             }}
           />
@@ -2552,7 +2567,7 @@ const PublicForumDetail = ({
               onClick: () => setReloadToken((current) => current + 1)
             }}
             secondaryAction={{
-              label: t('forum.backToList'),
+              label: backLabel,
               onClick: onBack
             }}
           />

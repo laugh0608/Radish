@@ -38,9 +38,6 @@ import {
   parsePublicShopRoute,
 } from './shopRouteState';
 import type {
-  PublicDiscoverRoute,
-} from './discoverRouteState';
-import type {
   PublicForumBrowseRoute,
   PublicForumRoute,
 } from './forumRouteState';
@@ -58,19 +55,26 @@ import type {
   PublicShopProductsRoute,
   PublicShopRoute,
 } from './shopRouteState';
+import {
+  resolveDocsDetailBackMode,
+  resolveForumDetailBackMode,
+  resolveProfileBackMode,
+  shouldCaptureDocsDetailSource,
+  shouldCaptureForumDetailSource,
+  shouldCaptureProfileDetailSource,
+  type PublicDetailBackMode,
+  type PublicRouteDescriptor,
+} from './publicRouteNavigation';
 export type {
   PublicListSort,
 } from './forumRouteState';
 
-type PublicRoute =
-  | { app: 'discover'; route: PublicDiscoverRoute }
-  | { app: 'forum'; route: PublicForumRoute }
-  | { app: 'docs'; route: PublicDocsRoute }
-  | { app: 'profile'; route: PublicProfileRoute }
-  | { app: 'leaderboard'; route: PublicLeaderboardRoute }
-  | { app: 'shop'; route: PublicShopRoute };
+interface PublicBackAction {
+  mode: PublicDetailBackMode;
+  onBack: () => void;
+}
 
-function parsePublicRoute(): PublicRoute {
+function parsePublicRoute(): PublicRouteDescriptor {
   const discoverRoute = parsePublicDiscoverRoute(window.location.pathname);
   if (discoverRoute) {
     return {
@@ -119,7 +123,7 @@ function parsePublicRoute(): PublicRoute {
   };
 }
 
-function buildPublicPath(nextRoute: PublicRoute): string {
+function buildPublicPath(nextRoute: PublicRouteDescriptor): string {
   if (nextRoute.app === 'discover') {
     return buildPublicDiscoverPath(nextRoute.route);
   }
@@ -143,7 +147,7 @@ function buildPublicPath(nextRoute: PublicRoute): string {
 
 export const PublicEntry = () => {
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
-  const [route, setRoute] = useState<PublicRoute>(() => parsePublicRoute());
+  const [route, setRoute] = useState<PublicRouteDescriptor>(() => parsePublicRoute());
   const [lastForumBrowseRoute, setLastForumBrowseRoute] = useState<PublicForumBrowseRoute>(() => {
     const parsedRoute = parsePublicForumRoute(window.location.pathname, window.location.search);
     return parsedRoute.kind === 'detail' ? createDefaultListRoute() : parsedRoute;
@@ -156,6 +160,9 @@ export const PublicEntry = () => {
     const parsedRoute = parsePublicShopRoute(window.location.pathname, window.location.search);
     return parsedRoute.kind === 'products' ? parsedRoute : createDefaultPublicShopProductsRoute();
   });
+  const [forumDetailSourceRoute, setForumDetailSourceRoute] = useState<PublicRouteDescriptor | null>(null);
+  const [docsDetailSourceRoute, setDocsDetailSourceRoute] = useState<PublicRouteDescriptor | null>(null);
+  const [profileSourceRoute, setProfileSourceRoute] = useState<PublicRouteDescriptor | null>(null);
 
   useEffect(() => {
     const cleanup = bootstrapAuth({ apiBaseUrl });
@@ -185,9 +192,20 @@ export const PublicEntry = () => {
     };
   }, []);
 
-  const navigateToRoute = useCallback((nextRoute: PublicRoute, options?: { replace?: boolean }) => {
+  const navigateToRoute = useCallback((nextRoute: PublicRouteDescriptor, options?: { replace?: boolean }) => {
     const nextPath = buildPublicPath(nextRoute);
     const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+
+    if (shouldCaptureForumDetailSource(route, nextRoute)) {
+      setForumDetailSourceRoute(route);
+    }
+    if (shouldCaptureDocsDetailSource(route, nextRoute)) {
+      setDocsDetailSourceRoute(route);
+    }
+    if (shouldCaptureProfileDetailSource(route, nextRoute)) {
+      setProfileSourceRoute(route);
+    }
+
     if (options?.replace) {
       window.history.replaceState({}, '', nextPath);
     } else if (currentPath !== nextPath) {
@@ -204,7 +222,7 @@ export const PublicEntry = () => {
       setLastShopProductsRoute(nextRoute.route);
     }
     setRoute(nextRoute);
-  }, []);
+  }, [route]);
 
   const navigateToDocsRoute = useCallback((nextRoute: PublicDocsRoute, options?: { replace?: boolean }) => {
     navigateToRoute({ app: 'docs', route: nextRoute }, options);
@@ -265,6 +283,42 @@ export const PublicEntry = () => {
     navigateToProfileRoute({ kind: 'detail', userId, tab: 'posts', page: 1 });
   }, [navigateToProfileRoute]);
 
+  const forumDetailBackAction = useMemo<PublicBackAction | null>(() => {
+    const mode = resolveForumDetailBackMode(forumDetailSourceRoute);
+    if (!mode || !forumDetailSourceRoute) {
+      return null;
+    }
+
+    return {
+      mode,
+      onBack: () => navigateToRoute(forumDetailSourceRoute)
+    };
+  }, [forumDetailSourceRoute, navigateToRoute]);
+
+  const docsDetailBackAction = useMemo<PublicBackAction | null>(() => {
+    const mode = resolveDocsDetailBackMode(docsDetailSourceRoute);
+    if (!mode || !docsDetailSourceRoute) {
+      return null;
+    }
+
+    return {
+      mode,
+      onBack: () => navigateToRoute(docsDetailSourceRoute)
+    };
+  }, [docsDetailSourceRoute, navigateToRoute]);
+
+  const profileBackAction = useMemo<PublicBackAction | null>(() => {
+    const mode = resolveProfileBackMode(profileSourceRoute);
+    if (!mode || !profileSourceRoute) {
+      return null;
+    }
+
+    return {
+      mode,
+      onBack: () => navigateToRoute(profileSourceRoute)
+    };
+  }, [navigateToRoute, profileSourceRoute]);
+
   return route.app === 'discover' ? (
     <PublicDiscoverApp
       onNavigateToForum={navigateToForumRoute}
@@ -290,12 +344,14 @@ export const PublicEntry = () => {
     <PublicDocsApp
       route={route.route}
       fallbackBrowseRoute={lastDocsBrowseRoute}
+      detailBackAction={docsDetailBackAction}
       onNavigate={navigateToDocsRoute}
       onNavigateToDiscover={navigateToDiscoverRoute}
     />
   ) : route.app === 'profile' ? (
     <PublicProfileApp
       route={route.route}
+      backAction={profileBackAction}
       onNavigate={navigateToProfileRoute}
       onNavigateToDiscover={navigateToDiscoverRoute}
       onNavigateToForumList={navigateToDefaultForumList}
@@ -305,6 +361,7 @@ export const PublicEntry = () => {
     <PublicForumApp
       route={route.route}
       fallbackBrowseRoute={lastForumBrowseRoute}
+      detailBackAction={forumDetailBackAction}
       onNavigate={navigateToForumRoute}
       onNavigateToDiscover={navigateToDiscoverRoute}
       onNavigateToProfile={navigateToProfileFromForum}

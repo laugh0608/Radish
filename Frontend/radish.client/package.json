@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "test": "node --test --test-isolation=none ./tests/wikiApp.helpers.test.ts ./tests/appAccess.test.ts ./tests/authSession.test.ts ./tests/tokenClaims.test.ts ./tests/windowGeometry.test.ts ./tests/forumNavigation.test.ts ./tests/discoverRouteState.test.ts",
+    "test": "node --test --test-isolation=none ./tests/wikiApp.helpers.test.ts ./tests/appAccess.test.ts ./tests/authSession.test.ts ./tests/tokenClaims.test.ts ./tests/windowGeometry.test.ts ./tests/forumNavigation.test.ts ./tests/discoverRouteState.test.ts ./tests/publicRouteNavigation.test.ts",
     "type-check": "tsc --noEmit",
     "lint": "eslint .",
     "preview": "vite preview"

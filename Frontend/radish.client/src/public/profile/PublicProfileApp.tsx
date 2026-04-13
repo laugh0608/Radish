@@ -16,10 +16,15 @@ import { useUserStore } from '@/stores/userStore';
 import { DEFAULT_TIME_ZONE, formatDateTimeByTimeZone, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
 import type { PublicProfileRoute, PublicProfileTab } from '../profileRouteState';
+import type { PublicDetailBackMode } from '../publicRouteNavigation';
 import styles from './PublicProfileApp.module.css';
 
 interface PublicProfileAppProps {
   route: PublicProfileRoute;
+  backAction?: {
+    mode: PublicDetailBackMode;
+    onBack: () => void;
+  } | null;
   onNavigate: (route: PublicProfileRoute, options?: { replace?: boolean }) => void;
   onNavigateToDiscover?: () => void;
   onNavigateToForumList: () => void;
@@ -122,6 +127,7 @@ function buildExcerpt(post: PublicUserPost): string {
 
 export const PublicProfileApp = ({
   route,
+  backAction,
   onNavigate,
   onNavigateToDiscover,
   onNavigateToForumList,
@@ -293,6 +299,12 @@ export const PublicProfileApp = ({
   const displayName = profile?.voDisplayName?.trim() || null;
   const userName = profile?.voUserName?.trim() || t('common.userFallback', { id: route.userId });
   const canToggleFollow = isLoggedIn && !isOwnProfile && !!profile;
+  const backLabel = backAction?.mode === 'discover'
+    ? t('public.shell.backToDiscover')
+    : backAction
+      ? t('public.shell.backToSource')
+      : t('profile.public.backToForum');
+  const handleBack = backAction?.onBack ?? onNavigateToForumList;
 
   const handleToggleFollow = async () => {
     if (!canToggleFollow || togglingFollow) {
@@ -360,8 +372,8 @@ export const PublicProfileApp = ({
                   onClick: () => setProfileReloadToken((current) => current + 1)
                 }}
             secondaryAction={{
-              label: t('profile.public.backToForum'),
-              onClick: onNavigateToForumList
+              label: backLabel,
+              onClick: handleBack
             }}
           />
         ) : (
@@ -370,9 +382,9 @@ export const PublicProfileApp = ({
               <div className={styles.summaryHeader}>
                 <span className={styles.readOnlyBadge}>{t('profile.public.readOnlyBadge')}</span>
               </div>
-              <button type="button" className={styles.summaryBackLink} onClick={onNavigateToForumList}>
+              <button type="button" className={styles.summaryBackLink} onClick={handleBack}>
                 <Icon icon="mdi:arrow-left" size={16} />
-                <span>{t('profile.public.backToForum')}</span>
+                <span>{backLabel}</span>
               </button>
               <p className={styles.summaryIntro}>{t('profile.public.intro')}</p>
 

@@ -216,6 +216,8 @@ const resources = {
             'discover.public.shopEmptyDescription': 'There are no public products available for this distribution surface right now.',
             'discover.public.productFallbackSummary': 'Open the product detail page to continue reading this public product.',
             'public.shell.discoverAction': 'Community discover',
+            'public.shell.backToDiscover': 'Back to discover',
+            'public.shell.backToSource': 'Back to previous entry',
             ...welcomeEn,
             ...welcomeOpenSourceEn,
 
@@ -1405,6 +1407,8 @@ const resources = {
             'discover.public.shopEmptyDescription': '当前公开分发页还没有可展示的商品内容。',
             'discover.public.productFallbackSummary': '打开详情页继续阅读这件公开商品。',
             'public.shell.discoverAction': '社区发现',
+            'public.shell.backToDiscover': '返回社区发现',
+            'public.shell.backToSource': '返回上一入口',
             ...welcomeZh,
             ...welcomeOpenSourceZh,
 

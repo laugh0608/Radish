@@ -20,6 +20,7 @@ import {
   type PublicDocsRoute,
   type PublicDocsSearchRoute,
 } from '../docsRouteState';
+import type { PublicDetailBackMode } from '../publicRouteNavigation';
 import { getPublicWikiDocumentBySlug, getPublicWikiList, getPublicWikiTree } from './publicDocsApi';
 import styles from './PublicDocsApp.module.css';
 
@@ -28,6 +29,10 @@ const PUBLIC_DOCS_SEARCH_PAGE_SIZE = 10;
 interface PublicDocsAppProps {
   route: PublicDocsRoute;
   fallbackBrowseRoute: PublicDocsBrowseRoute;
+  detailBackAction?: {
+    mode: PublicDetailBackMode;
+    onBack: () => void;
+  } | null;
   onNavigate: (route: PublicDocsRoute, options?: { replace?: boolean }) => void;
   onNavigateToDiscover?: () => void;
 }
@@ -271,7 +276,13 @@ function PublicStatusCard({
   );
 }
 
-export const PublicDocsApp = ({ route, fallbackBrowseRoute, onNavigate, onNavigateToDiscover }: PublicDocsAppProps) => {
+export const PublicDocsApp = ({
+  route,
+  fallbackBrowseRoute,
+  detailBackAction,
+  onNavigate,
+  onNavigateToDiscover
+}: PublicDocsAppProps) => {
   const { t } = useTranslation();
   const [displayTimeZone] = useState(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE));
   const pageRef = useRef<HTMLDivElement>(null);
@@ -392,9 +403,14 @@ export const PublicDocsApp = ({ route, fallbackBrowseRoute, onNavigate, onNaviga
     };
   }, [collectionReloadToken]);
 
-  const backLabel = fallbackBrowseRoute.kind === 'search'
-    ? t('wiki.public.backToSearch')
-    : t('wiki.public.backToList');
+  const backLabel = detailBackAction?.mode === 'discover'
+    ? t('public.shell.backToDiscover')
+    : detailBackAction
+      ? t('public.shell.backToSource')
+      : fallbackBrowseRoute.kind === 'search'
+        ? t('wiki.public.backToSearch')
+        : t('wiki.public.backToList');
+  const handleDocsDetailBack = detailBackAction?.onBack ?? (() => onNavigate(fallbackBrowseRoute));
 
   return (
     <div className={styles.page} ref={pageRef}>
@@ -431,7 +447,7 @@ export const PublicDocsApp = ({ route, fallbackBrowseRoute, onNavigate, onNaviga
             route={route}
             displayTimeZone={displayTimeZone}
             backLabel={backLabel}
-            onBack={() => onNavigate(fallbackBrowseRoute)}
+            onBack={handleDocsDetailBack}
             onNavigate={onNavigate}
           />
         ) : route.kind === 'search' ? (
