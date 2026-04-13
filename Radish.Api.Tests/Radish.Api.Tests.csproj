@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net10.0</TargetFrameworks>
-    
+
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
@@ -23,5 +23,5 @@
     <ProjectReference Include="..\Radish.Repository\Radish.Repository.csproj" />
     <ProjectReference Include="..\Radish.Model\Radish.Model.csproj" />
   </ItemGroup>
-  
+
 </Project>

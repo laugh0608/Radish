@@ -361,7 +361,7 @@ export const ForumApp = () => {
         }
 
         await navigateToComment(windowParams.postId, windowParams.commentId, routeSignature);
-      } catch (err) {
+      } catch {
         if (cancelled) {
           return;
         }

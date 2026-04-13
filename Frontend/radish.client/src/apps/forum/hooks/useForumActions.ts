@@ -30,7 +30,6 @@ import {
   type PostQuickReply,
   type CreatePollRequest,
   type CreateLotteryRequest,
-  type PostQuestion,
   type PostLottery,
   type PostEditHistory,
   type CommentEditHistory,

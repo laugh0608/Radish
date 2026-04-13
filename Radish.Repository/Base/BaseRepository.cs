@@ -50,7 +50,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             var mta = typeof(TEntity).GetCustomAttribute<MultiTenantAttribute>();
             if (mta is { TenantType: TenantTypeEnum.DataBases })
             {
-                // 获取租户信息，租户信息可以提前缓存下来 
+                // 获取租户信息，租户信息可以提前缓存下来
                 if (App.CurrentUser is { TenantId: > 0 })
                 {
                     // .WithCache() 走缓存查询

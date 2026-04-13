@@ -397,7 +397,7 @@ const resources = {
             'shop.public.homeTitle': 'Public shop',
             'shop.public.productsTitle': 'Public products',
             'shop.public.detailTitle': 'Product details',
-            'shop.public.pageIntro': 'The shop becomes the next public content entry in Phase 2-2. This shell currently keeps only home, product list, and product detail browsing, while purchase, orders, inventory, and all \"my\" actions stay in the desktop workspace shell.',
+            'shop.public.pageIntro': 'The shop becomes the next public content entry in Phase 2-2. This shell currently keeps only home, product list, and product detail browsing, while purchase, orders, inventory, and all "my" actions stay in the desktop workspace shell.',
             'shop.public.browseProducts': 'Browse products',
             'shop.public.backToHome': 'Back to shop home',
             'shop.public.backToProducts': 'Back to product list',

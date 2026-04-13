@@ -94,6 +94,20 @@ function parsePublicDocsSearchRoute(search: string): PublicDocsSearchRoute {
   };
 }
 
+function normalizeDocsRouteArgs(searchOrHash = '', hash = ''): { search: string; hash: string } {
+  if (!hash && searchOrHash.startsWith('#')) {
+    return {
+      search: '',
+      hash: searchOrHash
+    };
+  }
+
+  return {
+    search: searchOrHash,
+    hash
+  };
+}
+
 function parsePublicDocsDetailRoute(pathname: string, hash: string): PublicDocsDetailRoute | null {
   const matched = pathname.match(/^\/(?:docs|__documents__)\/([^/?#]+)\/?$/);
   const slug = normalizeSlug(matched?.[1]);
@@ -108,16 +122,18 @@ function parsePublicDocsDetailRoute(pathname: string, hash: string): PublicDocsD
   };
 }
 
-export function parsePublicDocsRoute(pathname: string, search: string, hash: string): PublicDocsRoute {
+export function parsePublicDocsRoute(pathname: string, searchOrHash = '', hash = ''): PublicDocsRoute {
+  const normalizedArgs = normalizeDocsRouteArgs(searchOrHash, hash);
+
   if (isPublicDocsListPath(pathname)) {
     return createDefaultDocsListRoute();
   }
 
   if (isPublicDocsSearchPath(pathname)) {
-    return parsePublicDocsSearchRoute(search);
+    return parsePublicDocsSearchRoute(normalizedArgs.search);
   }
 
-  const detailRoute = parsePublicDocsDetailRoute(pathname, hash);
+  const detailRoute = parsePublicDocsDetailRoute(pathname, normalizedArgs.hash);
   if (detailRoute) {
     return detailRoute;
   }
