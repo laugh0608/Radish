@@ -118,7 +118,8 @@ public class AttachmentReferenceInspectorTest
                 new()
                 {
                     Id = 10,
-                    PostId = 11,
+                    TargetType = "Post",
+                    TargetId = 11,
                     StickerAttachmentId = 84001
                 }
             }),
@@ -138,10 +139,11 @@ public class AttachmentReferenceInspectorTest
                 {
                     Id = 13,
                     UserId = 9527,
-                    BusinessType = "Shop",
-                    BusinessId = "100001",
+                    TargetType = "Product",
+                    TargetId = 100001,
                     Title = "浏览记录",
-                    CoverAttachmentId = 86001
+                    CoverAttachmentId = 86001,
+                    LastViewTime = DateTime.UtcNow
                 }
             }),
             userBenefitRepository: CreateRepositoryMock(new List<UserBenefit>
@@ -161,8 +163,8 @@ public class AttachmentReferenceInspectorTest
                 {
                     Id = 15,
                     UserId = 9527,
-                    ItemType = ProductType.Consumable,
-                    ItemId = 100061,
+                    ConsumableType = ConsumableType.RenameCard,
+                    SourceProductId = 100061,
                     ItemName = "库存项",
                     ItemIconAttachmentId = 88001
                 }

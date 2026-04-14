@@ -2,22 +2,20 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  backdrop-filter: blur(18px);
-  background:
-    linear-gradient(180deg, rgb(255 252 246 / 94%), rgb(255 252 246 / 88%)),
-    linear-gradient(120deg, rgb(184 139 84 / 0.08), rgb(107 133 74 / 0.06));
-  border-bottom: 1px solid rgb(131 94 53 / 0.12);
+  backdrop-filter: blur(16px);
+  background: color-mix(in srgb, var(--theme-bg-surface) 84%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--theme-border-soft) 80%, transparent);
 }
 
 .heroInner {
-  width: min(1120px, calc(100% - 32px));
+  width: min(1040px, calc(100vw - 24px));
   margin: 0 auto;
-  min-height: 72px;
+  padding: 14px 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 14px 0;
+  flex-wrap: wrap;
 }
 
 .brand {
@@ -31,45 +29,43 @@
   color: inherit;
   cursor: pointer;
   text-align: left;
+  flex: 1 1 auto;
 }
 
 .brandMark {
   width: 40px;
   height: 40px;
-  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 14px;
-  background:
-    linear-gradient(135deg, rgb(138 84 43 / 0.18), rgb(197 161 112 / 0.26));
-  color: rgb(105 56 22);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.45),
-    0 10px 26px rgb(120 80 38 / 0.12);
-  font-size: 1.35rem;
+  background: linear-gradient(135deg, var(--theme-brand-primary) 0%, color-mix(in srgb, var(--theme-accent-earth) 62%, var(--theme-brand-primary) 38%) 100%);
+  color: #fff;
+  box-shadow: var(--theme-shadow-soft);
+  font-family: var(--theme-font-serif);
+  font-size: 22px;
   font-weight: 700;
-  line-height: 1;
 }
 
 .brandText {
   min-width: 0;
-  display: inline-flex;
+  display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 2px;
 }
 
 .brandName {
-  color: rgb(77 44 20);
-  font-size: 1rem;
+  font-family: var(--theme-font-serif);
+  font-size: 18px;
   font-weight: 700;
-  line-height: 1.3;
 }
 
 .brandSubline {
-  color: rgb(119 91 62);
-  font-size: 0.85rem;
-  line-height: 1.35;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--theme-text-secondary);
 }
 
 .heroActions {
@@ -78,6 +74,7 @@
   justify-content: flex-end;
   gap: 10px;
   flex-wrap: wrap;
+  margin-left: auto;
 }
 
 .heroActionsSolo {
@@ -86,34 +83,37 @@
 
 .actionButton,
 .desktopLink {
-  min-height: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  min-height: 40px;
   padding: 0 14px;
   border-radius: 999px;
-  border: 1px solid rgb(131 94 53 / 0.14);
-  color: rgb(92 59 30);
-  background: rgb(255 250 242 / 0.76);
   text-decoration: none;
   white-space: nowrap;
-  transition:
-    background-color 0.18s ease,
-    border-color 0.18s ease,
-    color 0.18s ease,
-    transform 0.18s ease;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
 }
 
 .actionButton {
+  border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 26%, transparent);
+  background: color-mix(in srgb, var(--theme-brand-soft) 58%, white 42%);
+  color: var(--theme-brand-primary);
+  font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
+}
+
+.desktopLink {
+  border: 1px solid var(--theme-border-strong);
+  background: color-mix(in srgb, var(--theme-bg-surface) 84%, white 16%);
+  color: var(--theme-text-primary);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .actionButton:hover,
 .desktopLink:hover {
-  background: rgb(255 246 232 / 0.98);
-  border-color: rgb(131 94 53 / 0.2);
-  color: rgb(72 40 18);
   transform: translateY(-1px);
 }
 
@@ -124,12 +124,9 @@
 
 @media (max-width: 720px) {
   .heroInner {
-    width: min(100%, calc(100% - 24px));
-    min-height: auto;
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 12px;
+    width: calc(100vw - 20px);
     padding: 12px 0;
+    align-items: center;
   }
 
   .heroActions {
@@ -156,6 +153,10 @@
     min-width: 42px;
     padding: 0;
     border-radius: 999px;
+  }
+
+  .brand {
+    width: 100%;
   }
 
   .desktopLink span {
