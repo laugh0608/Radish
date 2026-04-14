@@ -1,8 +1,7 @@
-using System.Linq.Expressions;
 using Radish.Common.CoreTool;
 using Radish.Infrastructure.FileStorage;
-using Radish.IRepository;
 using Radish.IRepository.Base;
+using Radish.IService;
 using Radish.Model;
 using Serilog;
 
@@ -17,31 +16,19 @@ namespace Radish.Service.Jobs;
 public class FileCleanupJob
 {
     private readonly IBaseRepository<Attachment> _attachmentRepository;
-    private readonly IBaseRepository<Sticker> _stickerRepository;
-    private readonly IBaseRepository<Post>? _postRepository;
-    private readonly IBaseRepository<Comment>? _commentRepository;
-    private readonly IBaseRepository<PostAnswer>? _postAnswerRepository;
-    private readonly IBaseRepository<ChannelMessage>? _channelMessageRepository;
+    private readonly IAttachmentReferenceInspector _attachmentReferenceInspector;
     private readonly IFileStorage _fileStorage;
     private readonly string _tempPath;
     private readonly string _recycleBinPath;
 
     public FileCleanupJob(
         IBaseRepository<Attachment> attachmentRepository,
-        IBaseRepository<Sticker> stickerRepository,
-        IFileStorage fileStorage,
-        IBaseRepository<Post>? postRepository = null,
-        IBaseRepository<Comment>? commentRepository = null,
-        IBaseRepository<PostAnswer>? postAnswerRepository = null,
-        IBaseRepository<ChannelMessage>? channelMessageRepository = null)
+        IAttachmentReferenceInspector attachmentReferenceInspector,
+        IFileStorage fileStorage)
     {
         _attachmentRepository = attachmentRepository;
-        _stickerRepository = stickerRepository;
+        _attachmentReferenceInspector = attachmentReferenceInspector;
         _fileStorage = fileStorage;
-        _postRepository = postRepository;
-        _commentRepository = commentRepository;
-        _postAnswerRepository = postAnswerRepository;
-        _channelMessageRepository = channelMessageRepository;
 
         var dataBasesPath = AppPathTool.GetDataBasesPath();
         _tempPath = Path.Combine(dataBasesPath, "Temp");
@@ -275,53 +262,8 @@ public class FileCleanupJob
                 return 0;
             }
 
-            var referencedAttachmentIds = new HashSet<long>();
             var orphanAttachmentIds = orphanAttachments.Select(a => a.Id).ToList();
-            if (orphanAttachmentIds.Count > 0)
-            {
-                var referencedStickers = await _stickerRepository.QueryAsync(s =>
-                    s.AttachmentId.HasValue &&
-                    orphanAttachmentIds.Contains(s.AttachmentId.Value) &&
-                    !s.IsDeleted);
-
-                referencedAttachmentIds.UnionWith(referencedStickers
-                    .Where(s => s.AttachmentId.HasValue)
-                    .Select(s => s.AttachmentId!.Value)
-                    .ToHashSet());
-
-                if (_channelMessageRepository != null)
-                {
-                    var referencedMessages = await _channelMessageRepository.QueryAsync(m =>
-                        !m.IsDeleted &&
-                        m.AttachmentId.HasValue &&
-                        orphanAttachmentIds.Contains(m.AttachmentId.Value));
-
-                    referencedAttachmentIds.UnionWith(referencedMessages
-                        .Where(m => m.AttachmentId.HasValue)
-                        .Select(m => m.AttachmentId!.Value));
-                }
-
-                if (orphanAttachmentIds.Count > 0)
-                {
-                    await UnionReferencedAttachmentIdsFromContentAsync(
-                        referencedAttachmentIds,
-                        _postRepository,
-                        static post => post.Content,
-                        static post => !post.IsDeleted && post.Content != null && post.Content != string.Empty);
-
-                    await UnionReferencedAttachmentIdsFromContentAsync(
-                        referencedAttachmentIds,
-                        _commentRepository,
-                        static comment => comment.Content,
-                        static comment => !comment.IsDeleted && comment.Content != null && comment.Content != string.Empty);
-
-                    await UnionReferencedAttachmentIdsFromContentAsync(
-                        referencedAttachmentIds,
-                        _postAnswerRepository,
-                        static answer => answer.Content,
-                        static answer => !answer.IsDeleted && answer.Content != null && answer.Content != string.Empty);
-                }
-            }
+            var referencedAttachmentIds = await _attachmentReferenceInspector.GetReferencedAttachmentIdsAsync(orphanAttachmentIds);
 
             var safeToCleanupAttachments = orphanAttachments
                 .Where(a => !referencedAttachmentIds.Contains(a.Id))
@@ -460,29 +402,5 @@ public class FileCleanupJob
             Log.Warning(ex, "[FileCleanup] 清理空目录时发生异常");
         }
     }
-
-    private static async Task UnionReferencedAttachmentIdsFromContentAsync<TEntity>(
-        ISet<long> referencedAttachmentIds,
-        IBaseRepository<TEntity>? repository,
-        Func<TEntity, string?> contentSelector,
-        Expression<Func<TEntity, bool>> predicate)
-        where TEntity : class, new()
-    {
-        if (repository == null)
-        {
-            return;
-        }
-
-        var records = await repository.QueryAsync(predicate);
-        foreach (var record in records)
-        {
-            var contentAttachmentIds = AttachmentReferenceHelper.ExtractAttachmentIds(contentSelector(record));
-            foreach (var attachmentId in contentAttachmentIds)
-            {
-                referencedAttachmentIds.Add(attachmentId);
-            }
-        }
-    }
-
     #endregion
 }

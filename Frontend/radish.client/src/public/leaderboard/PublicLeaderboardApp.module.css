@@ -298,9 +298,9 @@
 
 .listItem {
   display: grid;
-  grid-template-columns: auto auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) minmax(136px, 0.72fr);
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   width: 100%;
   padding: 16px 18px;
   border-radius: 22px;
@@ -355,25 +355,40 @@
   font-weight: 700;
 }
 
-.avatar,
-.productIcon {
-  width: 48px;
-  height: 48px;
-  border-radius: 16px;
+.productMedia,
+.productImage,
+.productImageFallback {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+}
+
+.productMedia {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
-  font-size: 18px;
-  font-weight: 700;
 }
 
-.productIcon {
+.productImage {
+  object-fit: cover;
+  background: color-mix(in srgb, var(--theme-bg-muted) 76%, var(--theme-bg-surface) 24%);
+}
+
+.productImageFallback {
   background: color-mix(in srgb, var(--theme-brand-soft) 58%, white 42%);
   color: var(--theme-brand-primary);
 }
 
 .itemBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(112px, 0.72fr);
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+}
+
+.itemPrimary {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -415,12 +430,41 @@
   font-size: 13px;
 }
 
+.itemSideInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--theme-bg-muted) 80%, var(--theme-bg-surface) 20%);
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
+  text-align: left;
+}
+
+.sideInfoLabel {
+  color: var(--theme-text-tertiary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.sideInfoValue {
+  color: var(--theme-text-primary);
+  font-size: 13px;
+  line-height: 1.55;
+  font-weight: 700;
+}
+
 .itemMetric {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 2px;
-  min-width: 110px;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  padding-left: 16px;
+  border-left: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
 }
 
 .metricValue {
@@ -556,11 +600,21 @@
 
   .itemBody {
     grid-column: 1 / -1;
+    grid-template-columns: 1fr;
   }
 
   .itemMetric {
     grid-column: 1 / -1;
     align-items: flex-start;
+    min-width: 0;
+    padding-left: 0;
+    border-left: none;
+    padding-top: 4px;
+  }
+
+  .itemSideInfo {
+    align-items: flex-start;
+    text-align: left;
     min-width: 0;
   }
 }

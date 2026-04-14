@@ -17,6 +17,7 @@ import {
   type PublicLeaderboardTypeSlug,
 } from '../leaderboardRouteState';
 import { PublicShellHeader } from '../components/PublicShellHeader';
+import { resolveMediaUrl } from '@/utils/media';
 import styles from './PublicLeaderboardApp.module.css';
 
 interface PublicLeaderboardAppProps {
@@ -136,28 +137,6 @@ function createFallbackLeaderboardTypes(t: (key: string) => string): Leaderboard
       voSortOrder: index + 1,
     };
   });
-}
-
-function buildAvatarText(name: string): string {
-  const source = name.trim();
-  if (!source) {
-    return '?';
-  }
-
-  return source.charAt(0).toUpperCase();
-}
-
-function buildAvatarStyle(seed: string) {
-  let hash = 0;
-  for (let index = 0; index < seed.length; index += 1) {
-    hash = seed.charCodeAt(index) + ((hash << 5) - hash);
-  }
-
-  const hue = Math.abs(hash) % 360;
-  return {
-    backgroundColor: `hsl(${hue} 80% 92%)`,
-    color: `hsl(${hue} 45% 30%)`,
-  };
 }
 
 function buildVisiblePages(currentPage: number, totalPages: number, maxVisible: number): number[] {
@@ -461,76 +440,87 @@ export const PublicLeaderboardApp = ({
                         <span className={styles.rankNumber}>#{item.voRank}</span>
                       )}
                     </div>
-                    <div
-                      className={styles.avatar}
-                      style={buildAvatarStyle(item.voUserName?.trim() || String(item.voUserId || ''))}
-                      aria-hidden="true"
-                    >
-                      {buildAvatarText(item.voUserName?.trim() || t('common.userFallback', { id: item.voUserId || '?' }))}
-                    </div>
                     <div className={styles.itemBody}>
-                      <div className={styles.itemTitleRow}>
-                        <span className={styles.itemTitle}>
-                          {item.voUserName?.trim() || t('common.userFallback', { id: item.voUserId || '?' })}
-                        </span>
-                        {item.voIsCurrentUser && (
-                          <span className={styles.currentUserBadge}>{t('leaderboard.public.currentUser')}</span>
-                        )}
+                      <div className={styles.itemPrimary}>
+                        <div className={styles.itemTitleRow}>
+                          <span className={styles.itemTitle}>
+                            {item.voUserName?.trim() || t('common.userFallback', { id: item.voUserId || '?' })}
+                          </span>
+                          {item.voIsCurrentUser && (
+                            <span className={styles.currentUserBadge}>{t('leaderboard.public.currentUser')}</span>
+                          )}
+                        </div>
+                        <p
+                          className={styles.itemMeta}
+                          style={item.voThemeColor ? { color: item.voThemeColor } : undefined}
+                        >
+                          {t('leaderboard.public.levelLabel', {
+                            level: item.voCurrentLevel ?? 0,
+                            levelName: item.voCurrentLevelName?.trim() || t('leaderboard.public.levelFallback'),
+                          })}
+                        </p>
                       </div>
-                      <p
-                        className={styles.itemMeta}
-                        style={item.voThemeColor ? { color: item.voThemeColor } : undefined}
-                      >
-                        {t('leaderboard.public.levelLabel', {
-                          level: item.voCurrentLevel ?? 0,
-                          levelName: item.voCurrentLevelName?.trim() || t('leaderboard.public.levelFallback'),
-                        })}
-                      </p>
+                      {item.voSecondaryValue !== undefined && item.voSecondaryLabel && (
+                        <div className={styles.itemSideInfo}>
+                          <span className={styles.sideInfoLabel}>{item.voSecondaryLabel}</span>
+                          <span className={styles.sideInfoValue}>{Number(item.voSecondaryValue).toLocaleString()}</span>
+                        </div>
+                      )}
                     </div>
                     <div className={styles.itemMetric}>
                       <span className={styles.metricValue}>{Number(item.voPrimaryValue || 0).toLocaleString()}</span>
                       <span className={styles.metricLabel}>{item.voPrimaryLabel || activeTypeConfig.voPrimaryLabel}</span>
-                      {item.voSecondaryValue !== undefined && item.voSecondaryLabel && (
-                        <span className={styles.metricSecondary}>
-                          {Number(item.voSecondaryValue).toLocaleString()} {item.voSecondaryLabel}
-                        </span>
-                      )}
                     </div>
                   </button>
-                ) : (
-                  <article
-                    key={`${item.voLeaderboardType}-${String(item.voProductId)}-${item.voRank}`}
-                    className={styles.listItem}
-                  >
-                    <div className={styles.rankBadge} data-rank={item.voRank <= 3 ? item.voRank : undefined}>
-                      {item.voRank <= 3 ? (
-                        <span className={styles.rankMedal}>
-                          {item.voRank === 1 ? '🥇' : item.voRank === 2 ? '🥈' : '🥉'}
-                        </span>
-                      ) : (
-                        <span className={styles.rankNumber}>#{item.voRank}</span>
-                      )}
-                    </div>
-                    <div className={styles.productIcon}>
-                      <Icon icon={item.voProductIcon || 'mdi:gift-outline'} size={24} />
-                    </div>
-                    <div className={styles.itemBody}>
-                      <div className={styles.itemTitleRow}>
-                        <span className={styles.itemTitle}>{item.voProductName || t('leaderboard.public.productFallback')}</span>
-                        <span className={styles.productReadonly}>{t('leaderboard.public.productReadOnly')}</span>
+                ) : (() => {
+                  const productIconUrl = resolveMediaUrl(item.voProductIcon);
+                  return (
+                    <article
+                      key={`${item.voLeaderboardType}-${String(item.voProductId)}-${item.voRank}`}
+                      className={styles.listItem}
+                    >
+                      <div className={styles.rankBadge} data-rank={item.voRank <= 3 ? item.voRank : undefined}>
+                        {item.voRank <= 3 ? (
+                          <span className={styles.rankMedal}>
+                            {item.voRank === 1 ? '🥇' : item.voRank === 2 ? '🥈' : '🥉'}
+                          </span>
+                        ) : (
+                          <span className={styles.rankNumber}>#{item.voRank}</span>
+                        )}
                       </div>
-                      <p className={styles.itemMeta}>
-                        {t('leaderboard.public.productPrice', {
-                          price: Number(item.voProductPrice || 0).toLocaleString(),
-                        })}
-                      </p>
-                    </div>
-                    <div className={styles.itemMetric}>
-                      <span className={styles.metricValue}>{Number(item.voPrimaryValue || 0).toLocaleString()}</span>
-                      <span className={styles.metricLabel}>{item.voPrimaryLabel || activeTypeConfig.voPrimaryLabel}</span>
-                    </div>
-                  </article>
-                ))}
+                      <div className={styles.productMedia}>
+                        {productIconUrl ? (
+                          <img className={styles.productImage} src={productIconUrl} alt={item.voProductName || t('leaderboard.public.productFallback')} />
+                        ) : (
+                          <span className={styles.productImageFallback}>
+                            <Icon icon="mdi:gift-outline" size={24} />
+                          </span>
+                        )}
+                      </div>
+                      <div className={styles.itemBody}>
+                        <div className={styles.itemPrimary}>
+                          <div className={styles.itemTitleRow}>
+                            <span className={styles.itemTitle}>{item.voProductName || t('leaderboard.public.productFallback')}</span>
+                            <span className={styles.productReadonly}>{t('leaderboard.public.productReadOnly')}</span>
+                          </div>
+                          <p className={styles.itemMeta}>{t('leaderboard.public.productReadOnly')}</p>
+                        </div>
+                        <div className={styles.itemSideInfo}>
+                          <span className={styles.sideInfoLabel}>{t('shop.meta.price')}</span>
+                          <span className={styles.sideInfoValue}>
+                            {t('leaderboard.public.productPrice', {
+                              price: Number(item.voProductPrice || 0).toLocaleString(),
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                      <div className={styles.itemMetric}>
+                        <span className={styles.metricValue}>{Number(item.voPrimaryValue || 0).toLocaleString()}</span>
+                        <span className={styles.metricLabel}>{item.voPrimaryLabel || activeTypeConfig.voPrimaryLabel}</span>
+                      </div>
+                    </article>
+                  );
+                })())}
               </div>
             )}
           </div>

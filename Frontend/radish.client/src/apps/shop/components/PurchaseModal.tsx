@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Product } from '@/types/shop';
 import { getProductTypeDisplay } from '@/api/shop';
+import { resolveMediaUrl } from '@/utils/media';
 import styles from './PurchaseModal.module.css';
 
 interface PurchaseModalProps {
@@ -37,6 +38,8 @@ export const PurchaseModal = ({
   };
 
   const totalPrice = product.voPrice * quantity;
+  const coverImageUrl = resolveMediaUrl(product.voCoverImage);
+  const iconImageUrl = resolveMediaUrl(product.voIcon);
 
   return (
     <div className={styles.overlay} onClick={onClose}>
@@ -52,10 +55,10 @@ export const PurchaseModal = ({
           {/* 商品信息 */}
           <div className={styles.productInfo}>
             <div className={styles.productImage}>
-              {product.voCoverImage ? (
-                <img src={product.voCoverImage} alt={product.voName} />
-              ) : product.voIcon ? (
-                <img src={product.voIcon} alt={product.voName} />
+              {coverImageUrl ? (
+                <img src={coverImageUrl} alt={product.voName} />
+              ) : iconImageUrl ? (
+                <img src={iconImageUrl} alt={product.voName} />
               ) : (
                 <div className={styles.defaultImage}>🎁</div>
               )}

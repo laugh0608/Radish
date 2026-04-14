@@ -1,9 +1,15 @@
 .page {
-  min-height: 100vh;
+  min-height: 100dvh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
   background:
-    radial-gradient(circle at top, color-mix(in srgb, var(--theme-primary) 8%, transparent) 0%, transparent 48%),
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg) 96%, #fff 4%) 0%, var(--theme-bg) 100%);
+    radial-gradient(circle at top left, color-mix(in srgb, var(--theme-brand-soft) 48%, transparent) 0%, transparent 32%),
+    radial-gradient(circle at top right, color-mix(in srgb, var(--theme-accent-jade) 16%, transparent) 0%, transparent 24%),
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-app) 92%, white 8%) 0%, var(--theme-bg-app) 100%);
   color: var(--theme-text-primary);
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .hero {
@@ -76,9 +82,9 @@
 }
 
 .main {
-  width: min(1120px, calc(100% - 32px));
+  width: min(1040px, calc(100vw - 24px));
   margin: 0 auto;
-  padding: 28px 0 40px;
+  padding: 24px 0 40px;
 }
 
 .heroCard {
@@ -87,9 +93,9 @@
   border-radius: 28px;
   padding: 28px;
   background:
-    linear-gradient(145deg, color-mix(in srgb, var(--theme-surface) 92%, #fff 8%) 0%, color-mix(in srgb, var(--theme-surface-2) 92%, #f7ecd2 8%) 100%);
-  border: 1px solid color-mix(in srgb, var(--theme-border) 72%, transparent);
-  box-shadow: 0 22px 52px color-mix(in srgb, var(--theme-primary) 12%, transparent);
+    linear-gradient(145deg, color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%) 0%, color-mix(in srgb, var(--theme-brand-soft) 34%, var(--theme-bg-surface) 66%) 100%);
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
+  box-shadow: var(--theme-shadow-soft);
 }
 
 .heroCard::after {
@@ -99,7 +105,7 @@
   width: 220px;
   height: 220px;
   border-radius: 999px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--theme-primary) 20%, transparent) 0%, transparent 72%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--theme-brand-primary) 20%, transparent) 0%, transparent 72%);
   pointer-events: none;
 }
 
@@ -116,7 +122,7 @@
   font-size: 0.78rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--theme-primary);
+  color: var(--theme-brand-primary);
   font-weight: 700;
 }
 
@@ -127,8 +133,8 @@
   min-height: 28px;
   padding: 0 12px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--theme-primary) 12%, transparent);
-  color: var(--theme-primary);
+  background: color-mix(in srgb, var(--theme-brand-soft) 78%, white 22%);
+  color: var(--theme-brand-primary);
   font-size: 0.82rem;
   font-weight: 600;
 }
@@ -177,15 +183,15 @@
 }
 
 .primaryButton {
-  background: var(--theme-primary);
+  background: linear-gradient(135deg, var(--theme-brand-primary) 0%, color-mix(in srgb, var(--theme-accent-earth) 44%, var(--theme-brand-primary) 56%) 100%);
   color: #fffaf0;
-  box-shadow: 0 12px 28px color-mix(in srgb, var(--theme-primary) 22%, transparent);
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--theme-brand-primary) 22%, transparent);
 }
 
 .secondaryButton {
-  background: color-mix(in srgb, var(--theme-surface-2) 92%, #fff 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
   color: var(--theme-text-primary);
-  border: 1px solid color-mix(in srgb, var(--theme-border) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
 }
 
 .primaryButton:hover,
@@ -205,8 +211,8 @@
 .summaryCard {
   border-radius: 20px;
   padding: 16px;
-  background: color-mix(in srgb, var(--theme-surface) 88%, #fff 12%);
-  border: 1px solid color-mix(in srgb, var(--theme-border) 68%, transparent);
+  background: color-mix(in srgb, var(--theme-bg-surface) 88%, white 12%);
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
 }
 
 .summaryLabel {
@@ -232,9 +238,9 @@
 .sectionCard {
   border-radius: 24px;
   padding: 22px;
-  background: color-mix(in srgb, var(--theme-surface) 94%, #fff 6%);
-  border: 1px solid color-mix(in srgb, var(--theme-border) 72%, transparent);
-  box-shadow: 0 16px 40px color-mix(in srgb, #1f2430 6%, transparent);
+  background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
+  box-shadow: var(--theme-shadow-soft);
 }
 
 .sectionHeader {
@@ -267,8 +273,8 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: color-mix(in srgb, var(--theme-primary) 10%, transparent);
-  color: var(--theme-primary);
+  background: color-mix(in srgb, var(--theme-brand-soft) 52%, white 48%);
+  color: var(--theme-brand-primary);
   font-size: 0.88rem;
   font-weight: 600;
 }
@@ -304,8 +310,8 @@
 .leaderboardItem {
   border-radius: 18px;
   padding: 16px;
-  background: color-mix(in srgb, var(--theme-surface-2) 86%, #fff 14%);
-  border: 1px solid color-mix(in srgb, var(--theme-border) 68%, transparent);
+  background: color-mix(in srgb, var(--theme-bg-surface) 90%, white 10%);
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
 }
 
 .docsButton,
@@ -355,8 +361,8 @@
 .routeButton {
   border-radius: 18px;
   padding: 16px;
-  background: color-mix(in srgb, var(--theme-surface-2) 84%, #fff 16%);
-  border: 1px solid color-mix(in srgb, var(--theme-border) 68%, transparent);
+  background: color-mix(in srgb, var(--theme-bg-surface) 90%, white 10%);
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
   text-align: left;
   color: inherit;
 }
@@ -368,8 +374,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: color-mix(in srgb, var(--theme-primary) 12%, transparent);
-  color: var(--theme-primary);
+  background: color-mix(in srgb, var(--theme-brand-soft) 68%, white 32%);
+  color: var(--theme-brand-primary);
 }
 
 .routeLabel {
@@ -400,8 +406,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: color-mix(in srgb, var(--theme-primary) 12%, transparent);
-  color: var(--theme-primary);
+  background: color-mix(in srgb, var(--theme-brand-soft) 68%, white 32%);
+  color: var(--theme-brand-primary);
 }
 
 .leaderboardButton {
@@ -424,15 +430,15 @@
 
 .productImage {
   object-fit: cover;
-  background: color-mix(in srgb, var(--theme-surface-2) 92%, #fff 8%);
+  background: color-mix(in srgb, var(--theme-bg-muted) 80%, var(--theme-bg-surface) 20%);
 }
 
 .productImageFallback {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: color-mix(in srgb, var(--theme-primary) 12%, transparent);
-  color: var(--theme-primary);
+  background: color-mix(in srgb, var(--theme-brand-soft) 68%, white 32%);
+  color: var(--theme-brand-primary);
 }
 
 .productPrice {
@@ -442,7 +448,7 @@
   margin-top: 12px;
   font-size: 0.92rem;
   font-weight: 700;
-  color: var(--theme-primary);
+  color: var(--theme-brand-primary);
 }
 
 .statusCard {
@@ -451,8 +457,8 @@
   display: flex;
   align-items: flex-start;
   gap: 14px;
-  background: color-mix(in srgb, var(--theme-surface-2) 88%, #fff 12%);
-  border: 1px solid color-mix(in srgb, var(--theme-border) 68%, transparent);
+  background: color-mix(in srgb, var(--theme-bg-surface) 90%, white 10%);
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
 }
 
 .statusCard[data-tone='error'] {
@@ -466,8 +472,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: color-mix(in srgb, var(--theme-primary) 12%, transparent);
-  color: var(--theme-primary);
+  background: color-mix(in srgb, var(--theme-brand-soft) 68%, white 32%);
+  color: var(--theme-brand-primary);
   flex: none;
 }
 
@@ -497,7 +503,7 @@
 @media (max-width: 720px) {
   .heroInner,
   .main {
-    width: min(100% - 24px, 100%);
+    width: calc(100vw - 20px);
   }
 
   .heroCard,

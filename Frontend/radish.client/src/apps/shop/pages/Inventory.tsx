@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { UserBenefit, UserInventoryItem } from '@/types/shop';
+import { resolveMediaUrl } from '@/utils/media';
 import styles from './Inventory.module.css';
 
 interface InventoryProps {
@@ -55,6 +56,7 @@ export const Inventory = ({
   const [selectedItem, setSelectedItem] = useState<UserInventoryItem | null>(null);
   const [useQuantity, setUseQuantity] = useState(1);
   const [showUseModal, setShowUseModal] = useState(false);
+  const selectedItemIconUrl = resolveMediaUrl(selectedItem?.voItemIcon);
 
   const formatTime = (timeStr?: string | null) => {
     if (!timeStr) return '-';
@@ -132,63 +134,67 @@ export const Inventory = ({
                 <p className={styles.emptyHint}>{t('shop.inventory.emptyBenefitsHint')}</p>
               </div>
             ) : (
-              benefits.map((benefit) => (
-                <div
-                  key={benefit.voId}
-                  className={`${styles.benefitCard} ${benefit.voIsExpired ? styles.expired : ''}`}
-                >
-                  <div className={styles.benefitIcon}>
-                    {benefit.voBenefitIcon ? (
-                      <img src={benefit.voBenefitIcon} alt={benefit.voBenefitName || ''} />
-                    ) : (
-                      <span>{getBenefitTypeIcon(benefit.voBenefitType)}</span>
-                    )}
-                  </div>
-                  <div className={styles.benefitInfo}>
-                    <div className={styles.benefitHeader}>
-                      <span className={styles.benefitName}>
-                        {benefit.voBenefitName || benefit.voBenefitTypeDisplay}
-                      </span>
-                      <span className={`${styles.benefitStatus} ${benefit.voIsActive ? styles.active : ''}`}>
-                        {benefit.voIsExpired
-                          ? t('shop.inventory.status.expired')
-                          : benefit.voIsActive
-                            ? t('shop.inventory.status.active')
-                            : t('shop.inventory.status.inactive')}
-                      </span>
-                    </div>
-                    <div className={styles.benefitType}>{benefit.voBenefitTypeDisplay ?? ''}</div>
-                    <div className={styles.benefitMeta}>
-                      <span>{t('shop.inventory.source', { value: benefit.voSourceTypeDisplay ?? '' })}</span>
-                      <span>{t('shop.inventory.duration', { value: benefit.voDurationDisplay ?? '' })}</span>
-                    </div>
-                    {benefit.voExpiresAt && !benefit.voIsExpired && (
-                      <div className={styles.benefitExpiry}>
-                        {t('shop.inventory.expireAt', { value: formatTime(benefit.voExpiresAt) })}
-                      </div>
-                    )}
-                  </div>
-                  <div className={styles.benefitActions}>
-                    {!benefit.voIsExpired && (
-                      benefit.voIsActive ? (
-                        <button
-                          className={styles.deactivateButton}
-                          onClick={() => onDeactivateBenefit(benefit.voId)}
-                        >
-                          {t('shop.inventory.deactivate')}
-                        </button>
+              benefits.map((benefit) => {
+                const benefitIconUrl = resolveMediaUrl(benefit.voBenefitIcon);
+
+                return (
+                  <div
+                    key={benefit.voId}
+                    className={`${styles.benefitCard} ${benefit.voIsExpired ? styles.expired : ''}`}
+                  >
+                    <div className={styles.benefitIcon}>
+                      {benefitIconUrl ? (
+                        <img src={benefitIconUrl} alt={benefit.voBenefitName || ''} />
                       ) : (
-                        <button
-                          className={styles.activateButton}
-                          onClick={() => onActivateBenefit(benefit.voId)}
-                        >
-                          {t('shop.inventory.activate')}
-                        </button>
-                      )
-                    )}
+                        <span>{getBenefitTypeIcon(benefit.voBenefitType)}</span>
+                      )}
+                    </div>
+                    <div className={styles.benefitInfo}>
+                      <div className={styles.benefitHeader}>
+                        <span className={styles.benefitName}>
+                          {benefit.voBenefitName || benefit.voBenefitTypeDisplay}
+                        </span>
+                        <span className={`${styles.benefitStatus} ${benefit.voIsActive ? styles.active : ''}`}>
+                          {benefit.voIsExpired
+                            ? t('shop.inventory.status.expired')
+                            : benefit.voIsActive
+                              ? t('shop.inventory.status.active')
+                              : t('shop.inventory.status.inactive')}
+                        </span>
+                      </div>
+                      <div className={styles.benefitType}>{benefit.voBenefitTypeDisplay ?? ''}</div>
+                      <div className={styles.benefitMeta}>
+                        <span>{t('shop.inventory.source', { value: benefit.voSourceTypeDisplay ?? '' })}</span>
+                        <span>{t('shop.inventory.duration', { value: benefit.voDurationDisplay ?? '' })}</span>
+                      </div>
+                      {benefit.voExpiresAt && !benefit.voIsExpired && (
+                        <div className={styles.benefitExpiry}>
+                          {t('shop.inventory.expireAt', { value: formatTime(benefit.voExpiresAt) })}
+                        </div>
+                      )}
+                    </div>
+                    <div className={styles.benefitActions}>
+                      {!benefit.voIsExpired && (
+                        benefit.voIsActive ? (
+                          <button
+                            className={styles.deactivateButton}
+                            onClick={() => onDeactivateBenefit(benefit.voId)}
+                          >
+                            {t('shop.inventory.deactivate')}
+                          </button>
+                        ) : (
+                          <button
+                            className={styles.activateButton}
+                            onClick={() => onActivateBenefit(benefit.voId)}
+                          >
+                            {t('shop.inventory.activate')}
+                          </button>
+                        )
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         ) : (
@@ -200,35 +206,39 @@ export const Inventory = ({
                 <p className={styles.emptyHint}>{t('shop.inventory.emptyItemsHint')}</p>
               </div>
             ) : (
-              inventory.map((item) => (
-                <div key={item.voId} className={styles.consumableCard}>
-                  <div className={styles.consumableIcon}>
-                    {item.voItemIcon ? (
-                      <img src={item.voItemIcon} alt={item.voItemName || ''} />
-                    ) : (
-                      <span>{getConsumableTypeIcon(item.voConsumableType)}</span>
-                    )}
-                  </div>
-                  <div className={styles.consumableInfo}>
-                    <div className={styles.consumableName}>
-                      {item.voItemName || item.voConsumableTypeDisplay}
+              inventory.map((item) => {
+                const itemIconUrl = resolveMediaUrl(item.voItemIcon);
+
+                return (
+                  <div key={item.voId} className={styles.consumableCard}>
+                    <div className={styles.consumableIcon}>
+                      {itemIconUrl ? (
+                        <img src={itemIconUrl} alt={item.voItemName || ''} />
+                      ) : (
+                        <span>{getConsumableTypeIcon(item.voConsumableType)}</span>
+                      )}
                     </div>
-                    <div className={styles.consumableType}>{item.voConsumableTypeDisplay ?? ''}</div>
-                    <div className={styles.consumableQuantity}>
-                      {t('shop.inventory.quantity')}<span className={styles.quantity}>{item.voQuantity}</span>
+                    <div className={styles.consumableInfo}>
+                      <div className={styles.consumableName}>
+                        {item.voItemName || item.voConsumableTypeDisplay}
+                      </div>
+                      <div className={styles.consumableType}>{item.voConsumableTypeDisplay ?? ''}</div>
+                      <div className={styles.consumableQuantity}>
+                        {t('shop.inventory.quantity')}<span className={styles.quantity}>{item.voQuantity}</span>
+                      </div>
+                    </div>
+                    <div className={styles.consumableActions}>
+                      <button
+                        className={styles.useButton}
+                        onClick={() => handleUseItemClick(item)}
+                        disabled={item.voQuantity <= 0}
+                      >
+                        {t('shop.inventory.use')}
+                      </button>
                     </div>
                   </div>
-                  <div className={styles.consumableActions}>
-                    <button
-                      className={styles.useButton}
-                      onClick={() => handleUseItemClick(item)}
-                      disabled={item.voQuantity <= 0}
-                    >
-                      {t('shop.inventory.use')}
-                    </button>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         )}
@@ -246,8 +256,8 @@ export const Inventory = ({
             <div className={styles.modalContent}>
               <div className={styles.modalItem}>
                 <div className={styles.modalItemIcon}>
-                  {selectedItem.voItemIcon ? (
-                    <img src={selectedItem.voItemIcon} alt={selectedItem.voItemName || ''} />
+                  {selectedItemIconUrl ? (
+                    <img src={selectedItemIconUrl} alt={selectedItem.voItemName || ''} />
                   ) : (
                     <span>{getConsumableTypeIcon(selectedItem.voConsumableType)}</span>
                   )}

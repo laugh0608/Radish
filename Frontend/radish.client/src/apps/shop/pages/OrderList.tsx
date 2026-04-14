@@ -1,6 +1,7 @@
 import type { OrderListItem } from '@/types/shop';
 import { useTranslation } from 'react-i18next';
 import { getOrderStatusColor } from '@/api/shop';
+import { resolveMediaUrl } from '@/utils/media';
 import styles from './OrderList.module.css';
 
 interface OrderListProps {
@@ -41,46 +42,50 @@ export const OrderList = ({
       ) : orders.length > 0 ? (
         <>
           <div className={styles.orderList}>
-            {orders.map((order) => (
-              <div
-                key={order.voId}
-                className={styles.orderCard}
-                onClick={() => onOrderClick(order.voId)}
-              >
-                <div className={styles.orderHeader}>
-                  <span className={styles.orderNo}>{t('shop.orders.orderNo', { orderNo: order.voOrderNo })}</span>
-                  <span
-                    className={styles.orderStatus}
-                    style={{ color: getOrderStatusColor(order.voStatus) }}
-                  >
-                    {order.voStatusDisplay ?? ''}
-                  </span>
-                </div>
+            {orders.map((order) => {
+              const productIconUrl = resolveMediaUrl(order.voProductIcon);
 
-                <div className={styles.orderContent}>
-                  <div className={styles.productInfo}>
-                    {order.voProductIcon && (
-                      <img
-                        src={order.voProductIcon}
-                        alt={order.voProductName}
-                        className={styles.productIcon}
-                      />
-                    )}
-                    <div className={styles.productDetails}>
-                      <h3 className={styles.productName}>{order.voProductName}</h3>
-                      <div className={styles.orderMeta}>
-                        <span>{t('shop.orders.quantity', { count: order.voQuantity })}</span>
-                        <span>{t('shop.orders.totalPrice', { price: order.voTotalPrice.toLocaleString() })}</span>
+              return (
+                <div
+                  key={order.voId}
+                  className={styles.orderCard}
+                  onClick={() => onOrderClick(order.voId)}
+                >
+                  <div className={styles.orderHeader}>
+                    <span className={styles.orderNo}>{t('shop.orders.orderNo', { orderNo: order.voOrderNo })}</span>
+                    <span
+                      className={styles.orderStatus}
+                      style={{ color: getOrderStatusColor(order.voStatus) }}
+                    >
+                      {order.voStatusDisplay ?? ''}
+                    </span>
+                  </div>
+
+                  <div className={styles.orderContent}>
+                    <div className={styles.productInfo}>
+                      {productIconUrl && (
+                        <img
+                          src={productIconUrl}
+                          alt={order.voProductName}
+                          className={styles.productIcon}
+                        />
+                      )}
+                      <div className={styles.productDetails}>
+                        <h3 className={styles.productName}>{order.voProductName}</h3>
+                        <div className={styles.orderMeta}>
+                          <span>{t('shop.orders.quantity', { count: order.voQuantity })}</span>
+                          <span>{t('shop.orders.totalPrice', { price: order.voTotalPrice.toLocaleString() })}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className={styles.orderTime}>
-                    {order.voCreateTime ? new Date(order.voCreateTime).toLocaleString() : ''}
+                    <div className={styles.orderTime}>
+                      {order.voCreateTime ? new Date(order.voCreateTime).toLocaleString() : ''}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {totalPages > 1 && (
