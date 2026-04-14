@@ -21,6 +21,7 @@ import {
   type PublicDocsSearchRoute,
 } from '../docsRouteState';
 import type { PublicDetailBackMode } from '../publicRouteNavigation';
+import { PublicShellHeader } from '../components/PublicShellHeader';
 import { getPublicWikiDocumentBySlug, getPublicWikiList, getPublicWikiTree } from './publicDocsApi';
 import styles from './PublicDocsApp.module.css';
 
@@ -414,31 +415,14 @@ export const PublicDocsApp = ({
 
   return (
     <div className={styles.page} ref={pageRef}>
-      <header className={styles.hero}>
-        <div className={styles.heroInner}>
-          <button
-            type="button"
-            className={styles.brand}
-            onClick={() => onNavigate(createDefaultDocsListRoute())}
-          >
-            <span className={styles.brandMark}>文</span>
-            <span className={styles.brandText}>
-              <span className={styles.brandName}>{t('desktop.apps.document.name')}</span>
-              <span className={styles.brandSubline}>{t('wiki.public.shellLabel')}</span>
-            </span>
-          </button>
-          <div className={styles.heroActions}>
-            <button type="button" className={styles.discoverLink} onClick={onNavigateToDiscover}>
-              <Icon icon="mdi:compass-outline" size={18} />
-              <span>{t('public.shell.discoverAction')}</span>
-            </button>
-            <a className={styles.desktopLink} href="/">
-              <Icon icon="mdi:view-dashboard-outline" size={18} />
-              <span>WebOS</span>
-            </a>
-          </div>
-        </div>
-      </header>
+      <PublicShellHeader
+        brandMark="文"
+        brandName={t('desktop.apps.document.name')}
+        brandSubline={t('wiki.public.shellLabel')}
+        onBrandClick={() => onNavigate(createDefaultDocsListRoute())}
+        onNavigateToDiscover={onNavigateToDiscover}
+        discoverLabel={t('public.shell.discoverAction')}
+      />
 
       <main className={styles.main}>
         {route.kind === 'detail' ? (
@@ -748,10 +732,20 @@ const PublicDocsSearch = ({
           return;
         }
 
+        const nextTotalPages = Math.max(result.pageCount || 1, 1);
+        if (route.page > nextTotalPages) {
+          onNavigate({
+            kind: 'search',
+            keyword: appliedKeyword,
+            page: nextTotalPages
+          }, { replace: true });
+          return;
+        }
+
         setSearchState({
           documents: result.data || [],
           totalDocuments: result.dataCount || 0,
-          totalPages: Math.max(result.pageCount || 1, 1),
+          totalPages: nextTotalPages,
           loading: false,
           error: null
         });
@@ -774,7 +768,7 @@ const PublicDocsSearch = ({
     return () => {
       cancelled = true;
     };
-  }, [reloadToken, route.keyword, route.page]);
+  }, [onNavigate, reloadToken, route.keyword, route.page]);
 
   usePublicDocsScrollRestore({
     isReady: !searchState.loading,

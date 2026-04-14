@@ -18,6 +18,7 @@ import { createDefaultPublicLeaderboardRoute, type PublicLeaderboardRoute } from
 import type { PublicForumRoute } from '../forumRouteState';
 import type { PublicShopRoute } from '../shopRouteState';
 import { createDefaultPublicShopProductsRoute } from '../shopRouteState';
+import { PublicShellHeader } from '../components/PublicShellHeader';
 import styles from './PublicDiscoverApp.module.css';
 
 interface PublicDiscoverAppProps {
@@ -238,21 +239,12 @@ export const PublicDiscoverApp = ({
 
   return (
     <div className={styles.page}>
-      <header className={styles.hero}>
-        <div className={styles.heroInner}>
-          <button type="button" className={styles.brand} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-            <span className={styles.brandMark}>览</span>
-            <span className={styles.brandText}>
-              <span className={styles.brandName}>{t('discover.public.pageTitle')}</span>
-              <span className={styles.brandSubline}>{t('discover.public.shellLabel')}</span>
-            </span>
-          </button>
-          <a className={styles.desktopLink} href="/">
-            <Icon icon="mdi:view-dashboard-outline" size={18} />
-            <span>WebOS</span>
-          </a>
-        </div>
-      </header>
+      <PublicShellHeader
+        brandMark="览"
+        brandName={t('discover.public.pageTitle')}
+        brandSubline={t('discover.public.shellLabel')}
+        onBrandClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+      />
 
       <main className={styles.main}>
         <section className={styles.heroCard}>

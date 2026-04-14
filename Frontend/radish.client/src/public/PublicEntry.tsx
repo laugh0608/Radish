@@ -59,10 +59,12 @@ import {
   resolveDocsDetailBackMode,
   resolveForumDetailBackMode,
   resolveProfileBackMode,
+  resolveShopDetailBackMode,
   shouldCommitPublicRouteUpdate,
   shouldCaptureDocsDetailSource,
   shouldCaptureForumDetailSource,
   shouldCaptureProfileDetailSource,
+  shouldCaptureShopDetailSource,
   type PublicDetailBackMode,
   type PublicRouteDescriptor,
 } from './publicRouteNavigation';
@@ -164,6 +166,7 @@ export const PublicEntry = () => {
   const [forumDetailSourceRoute, setForumDetailSourceRoute] = useState<PublicRouteDescriptor | null>(null);
   const [docsDetailSourceRoute, setDocsDetailSourceRoute] = useState<PublicRouteDescriptor | null>(null);
   const [profileSourceRoute, setProfileSourceRoute] = useState<PublicRouteDescriptor | null>(null);
+  const [shopDetailSourceRoute, setShopDetailSourceRoute] = useState<PublicRouteDescriptor | null>(null);
 
   useEffect(() => {
     const cleanup = bootstrapAuth({ apiBaseUrl });
@@ -171,6 +174,16 @@ export const PublicEntry = () => {
       cleanup();
     };
   }, [apiBaseUrl]);
+
+  useEffect(() => {
+    const canonicalPath = buildPublicPath(route);
+    const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (currentPath === canonicalPath) {
+      return;
+    }
+
+    window.history.replaceState({}, '', canonicalPath);
+  }, [route]);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -209,6 +222,9 @@ export const PublicEntry = () => {
     }
     if (shouldCaptureProfileDetailSource(route, nextRoute)) {
       setProfileSourceRoute(route);
+    }
+    if (shouldCaptureShopDetailSource(route, nextRoute)) {
+      setShopDetailSourceRoute(route);
     }
 
     if (options?.replace) {
@@ -326,6 +342,18 @@ export const PublicEntry = () => {
     };
   }, [navigateToRoute, profileSourceRoute]);
 
+  const shopDetailBackAction = useMemo<PublicBackAction | null>(() => {
+    const mode = resolveShopDetailBackMode(shopDetailSourceRoute);
+    if (!mode || !shopDetailSourceRoute) {
+      return null;
+    }
+
+    return {
+      mode,
+      onBack: () => navigateToRoute(shopDetailSourceRoute)
+    };
+  }, [navigateToRoute, shopDetailSourceRoute]);
+
   return route.app === 'discover' ? (
     <PublicDiscoverApp
       onNavigateToForum={navigateToForumRoute}
@@ -344,6 +372,7 @@ export const PublicEntry = () => {
     <PublicShopApp
       route={route.route}
       fallbackProductsRoute={lastShopProductsRoute}
+      detailBackAction={shopDetailBackAction}
       onNavigate={navigateToShopRoute}
       onNavigateToDiscover={navigateToDiscoverRoute}
     />

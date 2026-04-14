@@ -16,6 +16,7 @@ import {
   type PublicLeaderboardRoute,
   type PublicLeaderboardTypeSlug,
 } from '../leaderboardRouteState';
+import { PublicShellHeader } from '../components/PublicShellHeader';
 import styles from './PublicLeaderboardApp.module.css';
 
 interface PublicLeaderboardAppProps {
@@ -360,31 +361,14 @@ export const PublicLeaderboardApp = ({
 
   return (
     <div className={styles.page} ref={pageRef}>
-      <header className={styles.hero}>
-        <div className={styles.heroInner}>
-          <button
-            type="button"
-            className={styles.brand}
-            onClick={() => onNavigate(createDefaultPublicLeaderboardRoute())}
-          >
-            <span className={styles.brandMark}>榜</span>
-            <span className={styles.brandText}>
-              <span className={styles.brandName}>{t('desktop.apps.leaderboard.name')}</span>
-              <span className={styles.brandSubline}>{t('leaderboard.public.shellLabel')}</span>
-            </span>
-          </button>
-          <div className={styles.heroActions}>
-            <button type="button" className={styles.discoverLink} onClick={onNavigateToDiscover}>
-              <Icon icon="mdi:compass-outline" size={18} />
-              <span>{t('public.shell.discoverAction')}</span>
-            </button>
-            <a className={styles.desktopLink} href="/">
-              <Icon icon="mdi:view-dashboard-outline" size={18} />
-              <span>WebOS</span>
-            </a>
-          </div>
-        </div>
-      </header>
+      <PublicShellHeader
+        brandMark="榜"
+        brandName={t('desktop.apps.leaderboard.name')}
+        brandSubline={t('leaderboard.public.shellLabel')}
+        onBrandClick={() => onNavigate(createDefaultPublicLeaderboardRoute())}
+        onNavigateToDiscover={onNavigateToDiscover}
+        discoverLabel={t('public.shell.discoverAction')}
+      />
 
       <main className={styles.main}>
         <section className={styles.sectionCard}>

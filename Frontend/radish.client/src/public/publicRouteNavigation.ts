@@ -3,7 +3,7 @@ import type { PublicDocsBrowseRoute, PublicDocsRoute } from './docsRouteState';
 import type { PublicForumBrowseRoute, PublicForumRoute } from './forumRouteState';
 import type { PublicLeaderboardRoute } from './leaderboardRouteState';
 import type { PublicProfileRoute } from './profileRouteState';
-import type { PublicShopRoute } from './shopRouteState';
+import type { PublicShopRoute, PublicShopProductsRoute } from './shopRouteState';
 
 export type PublicRouteDescriptor =
   | { app: 'discover'; route: PublicDiscoverRoute }
@@ -25,6 +25,12 @@ function isDocsBrowseDescriptor(
   route: PublicRouteDescriptor | null
 ): route is { app: 'docs'; route: PublicDocsBrowseRoute } {
   return !!route && route.app === 'docs' && route.route.kind !== 'detail';
+}
+
+function isShopBrowseDescriptor(
+  route: PublicRouteDescriptor | null
+): route is { app: 'shop'; route: PublicShopProductsRoute | { kind: 'home' } } {
+  return !!route && route.app === 'shop' && route.route.kind !== 'detail';
 }
 
 function resolveBackMode(route: PublicRouteDescriptor | null): PublicDetailBackMode | null {
@@ -74,6 +80,19 @@ export function shouldCaptureProfileDetailSource(
     || currentRoute.route.userId !== nextRoute.route.userId;
 }
 
+export function shouldCaptureShopDetailSource(
+  currentRoute: PublicRouteDescriptor,
+  nextRoute: PublicRouteDescriptor
+): boolean {
+  if (nextRoute.app !== 'shop' || nextRoute.route.kind !== 'detail') {
+    return false;
+  }
+
+  return currentRoute.app !== 'shop'
+    || currentRoute.route.kind !== 'detail'
+    || currentRoute.route.productId !== nextRoute.route.productId;
+}
+
 export function shouldCommitPublicRouteUpdate(
   currentRoute: PublicRouteDescriptor,
   nextRoute: PublicRouteDescriptor,
@@ -104,5 +123,13 @@ export function resolveDocsDetailBackMode(sourceRoute: PublicRouteDescriptor | n
 }
 
 export function resolveProfileBackMode(sourceRoute: PublicRouteDescriptor | null): PublicDetailBackMode | null {
+  return resolveBackMode(sourceRoute);
+}
+
+export function resolveShopDetailBackMode(sourceRoute: PublicRouteDescriptor | null): PublicDetailBackMode | null {
+  if (!sourceRoute || isShopBrowseDescriptor(sourceRoute)) {
+    return sourceRoute ? 'source' : null;
+  }
+
   return resolveBackMode(sourceRoute);
 }

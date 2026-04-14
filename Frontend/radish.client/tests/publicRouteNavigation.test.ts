@@ -4,10 +4,12 @@ import {
   resolveDocsDetailBackMode,
   resolveForumDetailBackMode,
   resolveProfileBackMode,
+  resolveShopDetailBackMode,
   shouldCommitPublicRouteUpdate,
   shouldCaptureDocsDetailSource,
   shouldCaptureForumDetailSource,
   shouldCaptureProfileDetailSource,
+  shouldCaptureShopDetailSource,
   type PublicRouteDescriptor,
 } from '../src/public/publicRouteNavigation.ts';
 
@@ -76,6 +78,37 @@ test('shouldCaptureProfileDetailSource 不应在同一用户公开页切换 tab 
   assert.equal(shouldCaptureProfileDetailSource(currentRoute, nextRoute), false);
 });
 
+test('shouldCaptureShopDetailSource 应在从 discover 或商城列表进入商品详情时记录来源', () => {
+  const discoverRoute: PublicRouteDescriptor = {
+    app: 'discover',
+    route: { kind: 'home' }
+  };
+  const productsRoute: PublicRouteDescriptor = {
+    app: 'shop',
+    route: { kind: 'products', categoryId: 'digital', keyword: 'vip', page: 2 }
+  };
+  const detailRoute: PublicRouteDescriptor = {
+    app: 'shop',
+    route: { kind: 'detail', productId: '2042219067430928384' }
+  };
+
+  assert.equal(shouldCaptureShopDetailSource(discoverRoute, detailRoute), true);
+  assert.equal(shouldCaptureShopDetailSource(productsRoute, detailRoute), true);
+});
+
+test('shouldCaptureShopDetailSource 不应在同一商品详情内重复覆盖来源', () => {
+  const currentRoute: PublicRouteDescriptor = {
+    app: 'shop',
+    route: { kind: 'detail', productId: '2042219067430928384' }
+  };
+  const nextRoute: PublicRouteDescriptor = {
+    app: 'shop',
+    route: { kind: 'detail', productId: '2042219067430928384' }
+  };
+
+  assert.equal(shouldCaptureShopDetailSource(currentRoute, nextRoute), false);
+});
+
 test('resolveForumDetailBackMode 对 forum 列表来源不覆盖默认返回，对 discover 来源回 discover', () => {
   const forumBrowseSource: PublicRouteDescriptor = {
     app: 'forum',
@@ -129,6 +162,20 @@ test('resolveProfileBackMode 应把 discover 与其他公开来源区分为不�
 
   assert.equal(resolveProfileBackMode(discoverSource), 'discover');
   assert.equal(resolveProfileBackMode(forumDetailSource), 'source');
+});
+
+test('resolveShopDetailBackMode 应对 discover 回 discover，对商城内部来源保留来源返回', () => {
+  const discoverSource: PublicRouteDescriptor = {
+    app: 'discover',
+    route: { kind: 'home' }
+  };
+  const shopProductsSource: PublicRouteDescriptor = {
+    app: 'shop',
+    route: { kind: 'products', categoryId: 'digital', keyword: 'vip', page: 2 }
+  };
+
+  assert.equal(resolveShopDetailBackMode(discoverSource), 'discover');
+  assert.equal(resolveShopDetailBackMode(shopProductsSource), 'source');
 });
 
 test('shouldCommitPublicRouteUpdate 对同 app 同路径的 replace 导航返回 false', () => {

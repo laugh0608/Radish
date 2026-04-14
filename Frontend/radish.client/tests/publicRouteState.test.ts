@@ -29,6 +29,16 @@ test('parsePublicDocsRoute 应解析 docs 搜索与分页参数', () => {
   });
 });
 
+test('parsePublicDocsRoute 应把空关键词与非法页码规范化到稳定搜索路由', () => {
+  const route = parsePublicDocsRoute('/docs/search', '?q=%20&page=0');
+
+  assert.deepEqual(route, {
+    kind: 'search',
+    keyword: '',
+    page: 1,
+  });
+});
+
 test('parsePublicDocsRoute 应兼容旧 __documents__ 详情与锚点', () => {
   const route = parsePublicDocsRoute('/__documents__/Getting-Started', '#install');
 
@@ -93,6 +103,17 @@ test('parsePublicShopRoute 应解析公开商城列表上下文', () => {
   });
 });
 
+test('parsePublicShopRoute 应规范化空查询参数与非法页码', () => {
+  const route = parsePublicShopRoute('/shop/products', '?category=%20&q=%20&page=0');
+
+  assert.deepEqual(route, {
+    kind: 'products',
+    categoryId: undefined,
+    keyword: undefined,
+    page: 1,
+  });
+});
+
 test('parsePublicShopRoute 应保留商品详情的大整数字符串 ID', () => {
   const route = parsePublicShopRoute('/shop/product/2042219067430928384', '');
 
@@ -125,6 +146,16 @@ test('parsePublicLeaderboardRoute 应解析类型与分页状态', () => {
     kind: 'list',
     typeSlug: 'post-count',
     page: 3,
+  });
+});
+
+test('parsePublicLeaderboardRoute 应把非法榜单类型与页码回落到默认值', () => {
+  const route = parsePublicLeaderboardRoute('/leaderboard/unknown', '?page=0');
+
+  assert.deepEqual(route, {
+    kind: 'list',
+    typeSlug: 'experience',
+    page: 1,
   });
 });
 

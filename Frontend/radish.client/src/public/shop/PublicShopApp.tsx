@@ -17,11 +17,17 @@ import {
   createDefaultPublicShopProductsRoute,
   createDefaultPublicShopRoute,
 } from '../shopRouteState';
+import type { PublicDetailBackMode } from '../publicRouteNavigation';
+import { PublicShellHeader } from '../components/PublicShellHeader';
 import styles from './PublicShopApp.module.css';
 
 interface PublicShopAppProps {
   route: PublicShopRoute;
   fallbackProductsRoute: PublicShopProductsRoute;
+  detailBackAction?: {
+    mode: PublicDetailBackMode;
+    onBack: () => void;
+  } | null;
   onNavigate: (route: PublicShopRoute, options?: { replace?: boolean }) => void;
   onNavigateToDiscover?: () => void;
 }
@@ -90,7 +96,13 @@ function formatProductPrice(value: number): string {
   return value.toLocaleString();
 }
 
-export const PublicShopApp = ({ route, fallbackProductsRoute, onNavigate, onNavigateToDiscover }: PublicShopAppProps) => {
+export const PublicShopApp = ({
+  route,
+  fallbackProductsRoute,
+  detailBackAction,
+  onNavigate,
+  onNavigateToDiscover
+}: PublicShopAppProps) => {
   const { t } = useTranslation();
   const pageRef = useRef<HTMLDivElement>(null);
   const categoryRequestIdRef = useRef(0);
@@ -316,6 +328,23 @@ export const PublicShopApp = ({ route, fallbackProductsRoute, onNavigate, onNavi
     void loadProductDetail();
   }, [reloadToken, route, t]);
 
+  useEffect(() => {
+    if (route.kind !== 'products' || categoriesLoading || Boolean(categoriesError) || !route.categoryId) {
+      return;
+    }
+
+    const hasMatchedCategory = categories.some((category) => String(category.voId) === route.categoryId);
+    if (hasMatchedCategory) {
+      return;
+    }
+
+    onNavigate({
+      kind: 'products',
+      keyword: route.keyword,
+      page: route.page
+    }, { replace: true });
+  }, [categories, categoriesError, categoriesLoading, onNavigate, route]);
+
   const handleOpenProducts = (categoryId?: string) => {
     onNavigate({
       kind: 'products',
@@ -332,8 +361,19 @@ export const PublicShopApp = ({ route, fallbackProductsRoute, onNavigate, onNavi
   };
 
   const handleBackFromDetail = () => {
+    if (detailBackAction) {
+      detailBackAction.onBack();
+      return;
+    }
+
     onNavigate(fallbackProductsRoute);
   };
+
+  const detailBackLabel = detailBackAction?.mode === 'discover'
+    ? t('public.shell.backToDiscover')
+    : detailBackAction
+      ? t('public.shell.backToSource')
+      : t('shop.public.backToProducts');
 
   const renderHome = () => {
     if (categoriesError && featuredError && categories.length === 0 && featuredProducts.length === 0 && !categoriesLoading && !featuredLoading) {
@@ -478,7 +518,7 @@ export const PublicShopApp = ({ route, fallbackProductsRoute, onNavigate, onNavi
                 onClick: () => setReloadToken((current) => current + 1)
               }}
           secondaryAction={{
-            label: t('shop.public.backToProducts'),
+            label: detailBackLabel,
             onClick: handleBackFromDetail
           }}
         />
@@ -492,7 +532,7 @@ export const PublicShopApp = ({ route, fallbackProductsRoute, onNavigate, onNavi
           title={t('shop.public.notFoundTitle')}
           description={t('shop.public.notFoundDescription')}
           secondaryAction={{
-            label: t('shop.public.backToProducts'),
+            label: detailBackLabel,
             onClick: handleBackFromDetail
           }}
         />
@@ -513,7 +553,7 @@ export const PublicShopApp = ({ route, fallbackProductsRoute, onNavigate, onNavi
         <div className={styles.detailTopbar}>
           <button type="button" className={styles.secondaryButton} onClick={handleBackFromDetail}>
             <Icon icon="mdi:arrow-left" size={18} />
-            <span>{t('shop.public.backToProducts')}</span>
+            <span>{detailBackLabel}</span>
           </button>
           <span className={styles.readOnlyBadge}>{t('shop.public.readOnlyBadge')}</span>
         </div>
@@ -619,31 +659,14 @@ export const PublicShopApp = ({ route, fallbackProductsRoute, onNavigate, onNavi
 
   return (
     <div className={styles.page} ref={pageRef}>
-      <header className={styles.hero}>
-        <div className={styles.heroInner}>
-          <button
-            type="button"
-            className={styles.brand}
-            onClick={() => onNavigate(createDefaultPublicShopRoute())}
-          >
-            <span className={styles.brandMark}>商</span>
-            <span className={styles.brandText}>
-              <span className={styles.brandName}>{t('desktop.apps.shop.name')}</span>
-              <span className={styles.brandSubline}>{t('shop.public.shellLabel')}</span>
-            </span>
-          </button>
-          <div className={styles.heroActions}>
-            <button type="button" className={styles.discoverLink} onClick={onNavigateToDiscover}>
-              <Icon icon="mdi:compass-outline" size={18} />
-              <span>{t('public.shell.discoverAction')}</span>
-            </button>
-            <a className={styles.desktopLink} href="/">
-              <Icon icon="mdi:view-dashboard-outline" size={18} />
-              <span>WebOS</span>
-            </a>
-          </div>
-        </div>
-      </header>
+      <PublicShellHeader
+        brandMark="商"
+        brandName={t('desktop.apps.shop.name')}
+        brandSubline={t('shop.public.shellLabel')}
+        onBrandClick={() => onNavigate(createDefaultPublicShopRoute())}
+        onNavigateToDiscover={onNavigateToDiscover}
+        discoverLabel={t('public.shell.discoverAction')}
+      />
 
       <main className={styles.main}>
         <section className={styles.sectionCard}>
