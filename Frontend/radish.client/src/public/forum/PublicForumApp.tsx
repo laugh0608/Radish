@@ -2397,7 +2397,7 @@ const PublicForumDetail = ({
   const commentAnchorMapRef = useRef(new Map<number, HTMLDivElement>());
   const handledCommentNavigationRef = useRef<string | null>(null);
   const highlightTimeoutRef = useRef<number | null>(null);
-  const [commentAnchorVersion, setCommentAnchorVersion] = useState(0);
+  const commentNoticeRef = useRef<HTMLDivElement | null>(null);
   const commentPageSize = 20;
 
   useEffect(() => {
@@ -2659,10 +2659,6 @@ const PublicForumDetail = ({
     } else {
       commentAnchorMapRef.current.delete(targetCommentId);
     }
-
-    if (targetCommentId === commentNavigationTarget?.commentId) {
-      setCommentAnchorVersion((current) => current + 1);
-    }
   };
 
   useEffect(() => {
@@ -2697,7 +2693,24 @@ const PublicForumDetail = ({
           : current
       ));
     }, 3200);
-  }, [commentAnchorVersion, commentNavigationTarget, comments]);
+  }, [commentNavigationTarget, comments]);
+
+  useEffect(() => {
+    if (!commentNavigationNotice) {
+      return;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      commentNoticeRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [commentNavigationNotice]);
 
   const handleLoadMoreComments = async () => {
     if (loadingMoreComments || loadingComments || comments.length >= commentTotal) {
@@ -2901,7 +2914,7 @@ const PublicForumDetail = ({
               )}
 
               {commentNavigationNotice && (
-                <div className={styles.inlineNotice} data-tone="warning">
+                <div ref={commentNoticeRef} className={styles.inlineNotice} data-tone="warning">
                   <span className={styles.inlineNoticeText}>{commentNavigationNotice}</span>
                 </div>
               )}
