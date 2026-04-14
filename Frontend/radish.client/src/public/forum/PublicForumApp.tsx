@@ -46,6 +46,7 @@ import {
   resolvePublicForumReadSectionState,
   resolvePublicForumTagLoadState,
 } from './publicForumViewState';
+import { usePublicReplaceRouteSync } from '../usePublicReplaceRouteSync';
 import styles from './PublicForumApp.module.css';
 
 interface PublicForumAppProps {
@@ -654,14 +655,18 @@ const PublicForumList = ({
     };
   }, []);
 
-  useEffect(() => {
-    onRouteStateChange({
-      kind: 'list',
-      categoryId: selectedCategoryId,
-      sortBy,
-      page: currentPage
-    }, { replace: true });
-  }, [currentPage, onRouteStateChange, selectedCategoryId, sortBy]);
+  const nextListRoute = useMemo<PublicForumListRoute>(() => ({
+    kind: 'list',
+    categoryId: selectedCategoryId,
+    sortBy,
+    page: currentPage
+  }), [currentPage, selectedCategoryId, sortBy]);
+  usePublicReplaceRouteSync({
+    currentRouteKey: buildListRouteKey(routeState),
+    nextRoute: nextListRoute,
+    nextRouteKey: buildListRouteKey(nextListRoute),
+    onRouteStateChange
+  });
 
   useEffect(() => {
     if (restoreScrollTop == null || loadingPosts) {
@@ -1112,14 +1117,18 @@ const PublicForumTag = ({
     };
   }, []);
 
-  useEffect(() => {
-    onRouteStateChange({
-      kind: 'tag',
-      tagSlug: routeState.tagSlug,
-      sortBy,
-      page: currentPage
-    }, { replace: true });
-  }, [currentPage, onRouteStateChange, routeState.tagSlug, sortBy]);
+  const nextTagRoute = useMemo<PublicForumTagRoute>(() => ({
+    kind: 'tag',
+    tagSlug: routeState.tagSlug,
+    sortBy,
+    page: currentPage
+  }), [currentPage, routeState.tagSlug, sortBy]);
+  usePublicReplaceRouteSync({
+    currentRouteKey: buildTagRouteKey(routeState),
+    nextRoute: nextTagRoute,
+    nextRouteKey: buildTagRouteKey(nextTagRoute),
+    onRouteStateChange
+  });
 
   useEffect(() => {
     if (restoreScrollTop == null || loadingPosts) {
@@ -1168,22 +1177,18 @@ const PublicForumTag = ({
     void loadTag();
   }, [reloadToken, routeState.tagSlug, t]);
 
-  useEffect(() => {
-    if (!selectedTag?.voSlug) {
-      return;
-    }
-
-    if (selectedTag.voSlug === routeState.tagSlug) {
-      return;
-    }
-
-    onRouteStateChange({
-      kind: 'tag',
-      tagSlug: selectedTag.voSlug,
-      sortBy,
-      page: currentPage
-    }, { replace: true });
-  }, [currentPage, onRouteStateChange, routeState.tagSlug, selectedTag?.voSlug, sortBy]);
+  const canonicalTagRoute = useMemo<PublicForumTagRoute>(() => ({
+    kind: 'tag',
+    tagSlug: selectedTag?.voSlug ?? routeState.tagSlug,
+    sortBy,
+    page: currentPage
+  }), [currentPage, routeState.tagSlug, selectedTag?.voSlug, sortBy]);
+  usePublicReplaceRouteSync({
+    currentRouteKey: buildTagRouteKey(routeState),
+    nextRoute: canonicalTagRoute,
+    nextRouteKey: buildTagRouteKey(canonicalTagRoute),
+    onRouteStateChange
+  });
 
   useEffect(() => {
     const requestId = ++postsRequestIdRef.current;
@@ -1611,13 +1616,17 @@ const PublicForumTypeFeed = ({
     };
   }, []);
 
-  useEffect(() => {
-    onRouteStateChange({
-      kind: routeState.kind,
-      sortBy,
-      page: currentPage
-    }, { replace: true });
-  }, [currentPage, onRouteStateChange, routeState.kind, sortBy]);
+  const nextTypeRoute = useMemo<PublicForumTypeRoute>(() => ({
+    kind: routeState.kind,
+    sortBy,
+    page: currentPage
+  }), [currentPage, routeState.kind, sortBy]);
+  usePublicReplaceRouteSync({
+    currentRouteKey: buildTypeRouteKey(routeState),
+    nextRoute: nextTypeRoute,
+    nextRouteKey: buildTypeRouteKey(nextTypeRoute),
+    onRouteStateChange
+  });
 
   useEffect(() => {
     if (restoreScrollTop == null || loadingPosts) {
@@ -1945,17 +1954,21 @@ const PublicForumSearch = ({
     };
   }, []);
 
-  useEffect(() => {
-    onRouteStateChange({
-      kind: 'search',
-      keyword,
-      sortBy,
-      timeRange,
-      startDate: timeRange === 'custom' ? appliedStartDate || undefined : undefined,
-      endDate: timeRange === 'custom' ? appliedEndDate || undefined : undefined,
-      page: currentPage
-    }, { replace: true });
-  }, [appliedEndDate, appliedStartDate, currentPage, keyword, onRouteStateChange, sortBy, timeRange]);
+  const nextSearchRoute = useMemo<PublicForumSearchRoute>(() => ({
+    kind: 'search',
+    keyword,
+    sortBy,
+    timeRange,
+    startDate: timeRange === 'custom' ? appliedStartDate || undefined : undefined,
+    endDate: timeRange === 'custom' ? appliedEndDate || undefined : undefined,
+    page: currentPage
+  }), [appliedEndDate, appliedStartDate, currentPage, keyword, sortBy, timeRange]);
+  usePublicReplaceRouteSync({
+    currentRouteKey: buildSearchRouteKey(routeState),
+    nextRoute: nextSearchRoute,
+    nextRouteKey: buildSearchRouteKey(nextSearchRoute),
+    onRouteStateChange
+  });
 
   useEffect(() => {
     if (restoreScrollTop == null || loadingPosts) {
