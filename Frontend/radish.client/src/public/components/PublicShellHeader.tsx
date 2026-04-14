@@ -30,7 +30,7 @@ export const PublicShellHeader = ({
             <span className={styles.brandSubline}>{brandSubline}</span>
           </span>
         </button>
-        <div className={styles.heroActions}>
+        <div className={`${styles.heroActions} ${onNavigateToDiscover ? '' : styles.heroActionsSolo}`}>
           {onNavigateToDiscover ? (
             <button type="button" className={styles.actionButton} onClick={onNavigateToDiscover}>
               <Icon icon="mdi:compass-outline" size={18} />

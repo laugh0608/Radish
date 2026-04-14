@@ -80,6 +80,10 @@
   flex-wrap: wrap;
 }
 
+.heroActionsSolo {
+  justify-content: flex-end;
+}
+
 .actionButton,
 .desktopLink {
   min-height: 40px;
@@ -130,16 +134,35 @@
 
   .heroActions {
     width: 100%;
-    justify-content: stretch;
+    justify-content: space-between;
+  }
+
+  .heroActionsSolo {
+    justify-content: flex-end;
   }
 
   .actionButton,
   .desktopLink {
-    flex: 1 1 calc(50% - 5px);
+    flex: 0 0 auto;
     padding: 0 12px;
   }
 
+  .actionButton {
+    min-width: fit-content;
+  }
+
+  .desktopLink {
+    width: 42px;
+    min-width: 42px;
+    padding: 0;
+    border-radius: 999px;
+  }
+
   .desktopLink span {
+    display: none;
+  }
+
+  .brandSubline {
     display: none;
   }
 }

@@ -210,9 +210,13 @@
 
 .summaryCard {
   border-radius: 20px;
-  padding: 16px;
+  padding: 14px 16px;
   background: color-mix(in srgb, var(--theme-bg-surface) 88%, white 12%);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
+  min-height: 110px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .summaryLabel {
@@ -223,8 +227,9 @@
 
 .summaryValue {
   display: block;
-  margin-top: 10px;
-  font-size: 1.25rem;
+  margin-top: 8px;
+  font-size: 1.85rem;
+  line-height: 1.1;
   font-weight: 700;
 }
 
@@ -512,7 +517,10 @@
     border-radius: 22px;
   }
 
-  .summaryGrid,
+  .summaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .routeGrid {
     grid-template-columns: 1fr;
   }
@@ -527,5 +535,11 @@
 
   .pageTitle {
     font-size: 1.9rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .summaryGrid {
+    grid-template-columns: 1fr;
   }
 }
