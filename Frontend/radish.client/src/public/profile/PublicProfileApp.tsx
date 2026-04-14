@@ -142,8 +142,6 @@ export const PublicProfileApp = ({
   const isLoggedIn = isAuthenticated();
   const currentUserIdKey = String(userId || 0);
   const isOwnProfile = currentUserIdKey !== '0' && currentUserIdKey === route.userId;
-  const [activeTab, setActiveTab] = useState<PublicProfileTab>(route.tab);
-  const [currentPage, setCurrentPage] = useState(route.page);
   const [profile, setProfile] = useState<PublicUserProfile | null>(null);
   const [stats, setStats] = useState<PublicUserStats | null>(null);
   const [followStatus, setFollowStatus] = useState<UserFollowStatus | null>(null);
@@ -160,31 +158,8 @@ export const PublicProfileApp = ({
   const [contentReloadToken, setContentReloadToken] = useState(0);
 
   useEffect(() => {
-    if (route.tab !== activeTab) {
-      setActiveTab(route.tab);
-    }
-
-    if (route.page !== currentPage) {
-      setCurrentPage(route.page);
-    }
-  }, [activeTab, currentPage, route.page, route.tab, route.userId]);
-
-  useEffect(() => {
-    if (route.tab === activeTab && route.page === currentPage) {
-      return;
-    }
-
-    onNavigate({
-      kind: 'detail',
-      userId: route.userId,
-      tab: activeTab,
-      page: currentPage
-    }, { replace: true });
-  }, [activeTab, currentPage, onNavigate, route.page, route.tab, route.userId]);
-
-  useEffect(() => {
     pageRef.current?.scrollTo({ top: 0, behavior: 'auto' });
-  }, [activeTab, currentPage, route.userId]);
+  }, [route.page, route.tab, route.userId]);
 
   useEffect(() => {
     const requestId = ++profileRequestIdRef.current;
@@ -239,8 +214,8 @@ export const PublicProfileApp = ({
       setContentError(null);
 
       try {
-        if (activeTab === 'posts') {
-          const pageModel = await getPublicUserPosts(route.userId, currentPage, 10);
+        if (route.tab === 'posts') {
+          const pageModel = await getPublicUserPosts(route.userId, route.page, 10);
           if (requestId !== contentRequestIdRef.current) {
             return;
           }
@@ -251,7 +226,7 @@ export const PublicProfileApp = ({
           return;
         }
 
-        const pageModel = await getPublicUserComments(route.userId, currentPage, 10);
+        const pageModel = await getPublicUserComments(route.userId, route.page, 10);
         if (requestId !== contentRequestIdRef.current) {
           return;
         }
@@ -277,7 +252,7 @@ export const PublicProfileApp = ({
     };
 
     void loadContent();
-  }, [activeTab, contentReloadToken, currentPage, route.userId]);
+  }, [contentReloadToken, route.page, route.tab, route.userId]);
 
   useEffect(() => {
     if (loadingProfile) {
@@ -325,8 +300,16 @@ export const PublicProfileApp = ({
   };
 
   const handleTabChange = (tab: PublicProfileTab) => {
-    setActiveTab(tab);
-    setCurrentPage(1);
+    if (tab === route.tab && route.page === 1) {
+      return;
+    }
+
+    onNavigate({
+      kind: 'detail',
+      userId: route.userId,
+      tab,
+      page: 1
+    }, { replace: true });
   };
 
   return (
@@ -468,14 +451,14 @@ export const PublicProfileApp = ({
                 <div className={styles.tabs}>
                   <button
                     type="button"
-                    className={`${styles.tabButton} ${activeTab === 'posts' ? styles.tabButtonActive : ''}`}
+                    className={`${styles.tabButton} ${route.tab === 'posts' ? styles.tabButtonActive : ''}`}
                     onClick={() => handleTabChange('posts')}
                   >
                     {t('profile.tab.userPosts')}
                   </button>
                   <button
                     type="button"
-                    className={`${styles.tabButton} ${activeTab === 'comments' ? styles.tabButtonActive : ''}`}
+                    className={`${styles.tabButton} ${route.tab === 'comments' ? styles.tabButtonActive : ''}`}
                     onClick={() => handleTabChange('comments')}
                   >
                     {t('profile.tab.userComments')}
@@ -487,7 +470,7 @@ export const PublicProfileApp = ({
                 <PublicStatusCard
                   tone="loading"
                   title={t('common.loading')}
-                  description={activeTab === 'posts' ? t('profile.public.postsDescription') : t('profile.public.commentsDescription')}
+                  description={route.tab === 'posts' ? t('profile.public.postsDescription') : t('profile.public.commentsDescription')}
                 />
               ) : contentError ? (
                 <PublicStatusCard
@@ -499,7 +482,7 @@ export const PublicProfileApp = ({
                     onClick: () => setContentReloadToken((current) => current + 1)
                   }}
                 />
-              ) : activeTab === 'posts' ? (
+              ) : route.tab === 'posts' ? (
                 posts.length === 0 ? (
                   <PublicStatusCard
                     tone="empty"
@@ -581,19 +564,29 @@ export const PublicProfileApp = ({
                   <button
                     type="button"
                     className={styles.paginationButton}
-                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                    disabled={currentPage === 1}
+                    onClick={() => onNavigate({
+                      kind: 'detail',
+                      userId: route.userId,
+                      tab: route.tab,
+                      page: Math.max(1, route.page - 1)
+                    }, { replace: true })}
+                    disabled={route.page === 1}
                   >
                     {t('common.previousPage')}
                   </button>
                   <span className={styles.pageInfo}>
-                    {t('common.pageInfo', { current: currentPage, total: totalPages })}
+                    {t('common.pageInfo', { current: route.page, total: totalPages })}
                   </span>
                   <button
                     type="button"
                     className={styles.paginationButton}
-                    onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                    disabled={currentPage === totalPages}
+                    onClick={() => onNavigate({
+                      kind: 'detail',
+                      userId: route.userId,
+                      tab: route.tab,
+                      page: Math.min(totalPages, route.page + 1)
+                    }, { replace: true })}
+                    disabled={route.page === totalPages}
                   >
                     {t('common.nextPage')}
                   </button>
