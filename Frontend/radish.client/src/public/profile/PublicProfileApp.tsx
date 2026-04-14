@@ -28,7 +28,7 @@ interface PublicProfileAppProps {
   onNavigate: (route: PublicProfileRoute, options?: { replace?: boolean }) => void;
   onNavigateToDiscover?: () => void;
   onNavigateToForumList: () => void;
-  onNavigateToForumPost: (postId: string) => void;
+  onNavigateToForumPost: (postId: string, commentId?: string) => void;
 }
 
 type PublicStatusTone = 'loading' | 'empty' | 'error' | 'notFound';
@@ -509,10 +509,10 @@ export const PublicProfileApp = ({
                 ) : (
                   <div className={styles.list}>
                     {posts.map((post) => (
-                      <article
-                        key={String(post.voId)}
-                        className={styles.contentItem}
-                        onClick={() => onNavigateToForumPost(String(post.voId))}
+                    <article
+                      key={String(post.voId)}
+                      className={styles.contentItem}
+                      onClick={() => onNavigateToForumPost(String(post.voId))}
                       >
                         <div className={styles.itemTopRow}>
                           <span className={styles.itemType}>{t('profile.tab.userPosts')}</span>
@@ -543,7 +543,7 @@ export const PublicProfileApp = ({
                     <article
                       key={String(comment.voId)}
                       className={styles.contentItem}
-                      onClick={() => onNavigateToForumPost(String(comment.voPostId))}
+                      onClick={() => onNavigateToForumPost(String(comment.voPostId), String(comment.voId))}
                     >
                       <div className={styles.itemTopRow}>
                         <span className={styles.itemType}>{t('profile.tab.userComments')}</span>
@@ -565,7 +565,7 @@ export const PublicProfileApp = ({
                           className={styles.inlineLinkButton}
                           onClick={(event) => {
                             event.stopPropagation();
-                            onNavigateToForumPost(String(comment.voPostId));
+                            onNavigateToForumPost(String(comment.voPostId), String(comment.voId));
                           }}
                         >
                           {t('profile.public.openPost')}

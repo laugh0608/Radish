@@ -259,8 +259,10 @@ export const PublicEntry = () => {
     });
   }, [navigateToForumRoute]);
 
-  const navigateToForumPost = useCallback((postId: string) => {
-    navigateToForumRoute({ kind: 'detail', postId });
+  const navigateToForumPost = useCallback((postId: string, commentId?: string) => {
+    navigateToForumRoute(commentId
+      ? { kind: 'detail', postId, commentId }
+      : { kind: 'detail', postId });
   }, [navigateToForumRoute]);
 
   const navigateToForumTag = useCallback((tagSlug: string) => {

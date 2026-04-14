@@ -62,6 +62,19 @@ test('shouldCaptureProfileDetailSource 应在从榜单进入公开个人页时�
   assert.equal(shouldCaptureProfileDetailSource(currentRoute, nextRoute), true);
 });
 
+test('shouldCaptureProfileDetailSource 不应在同一用户公开页切换 tab 时覆盖来源', () => {
+  const currentRoute: PublicRouteDescriptor = {
+    app: 'profile',
+    route: { kind: 'detail', userId: '7', tab: 'posts', page: 1 }
+  };
+  const nextRoute: PublicRouteDescriptor = {
+    app: 'profile',
+    route: { kind: 'detail', userId: '7', tab: 'comments', page: 2 }
+  };
+
+  assert.equal(shouldCaptureProfileDetailSource(currentRoute, nextRoute), false);
+});
+
 test('resolveForumDetailBackMode 对 forum 列表来源不覆盖默认返回，对 discover 来源回 discover', () => {
   const forumBrowseSource: PublicRouteDescriptor = {
     app: 'forum',
@@ -88,6 +101,19 @@ test('resolveDocsDetailBackMode 对 docs 搜索来源不覆盖默认返回，对
 
   assert.equal(resolveDocsDetailBackMode(docsSearchSource), null);
   assert.equal(resolveDocsDetailBackMode(profileSource), 'source');
+});
+
+test('shouldCaptureDocsDetailSource 应在同一文档锚点变化时更新来源判断', () => {
+  const currentRoute: PublicRouteDescriptor = {
+    app: 'docs',
+    route: { kind: 'detail', slug: 'guide', anchor: 'intro' }
+  };
+  const nextRoute: PublicRouteDescriptor = {
+    app: 'docs',
+    route: { kind: 'detail', slug: 'guide', anchor: 'install' }
+  };
+
+  assert.equal(shouldCaptureDocsDetailSource(currentRoute, nextRoute), true);
 });
 
 test('resolveProfileBackMode 应把 discover 与其他公开来源区分为不同返回模式', () => {

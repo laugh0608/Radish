@@ -3,7 +3,7 @@ import {
   LeaderboardType,
   type LeaderboardCategory as LeaderboardCategoryValue,
   type LeaderboardType as LeaderboardTypeValue,
-} from '@/api/leaderboard';
+} from '../api/leaderboard.contract.ts';
 
 export type PublicLeaderboardTypeSlug =
   | 'experience'

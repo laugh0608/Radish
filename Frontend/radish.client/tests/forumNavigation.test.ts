@@ -158,6 +158,16 @@ test('parsePublicForumRoute 应保留公开阅读直链的大整数字符串 ID'
   });
 });
 
+test('parsePublicForumRoute 应解析公开评论定位所需的 commentId', () => {
+  const route = parsePublicForumRoute('/forum/post/2042219067430928384', '?commentId=2042219067430928385');
+
+  assert.deepEqual(route, {
+    kind: 'detail',
+    postId: '2042219067430928384',
+    commentId: '2042219067430928385',
+  });
+});
+
 test('buildPublicForumPath 应按原始字符串回写公开阅读直链', () => {
   const path = buildPublicForumPath({
     kind: 'detail',
@@ -165,6 +175,16 @@ test('buildPublicForumPath 应按原始字符串回写公开阅读直链', () =>
   });
 
   assert.equal(path, '/forum/post/2042219067430928384');
+});
+
+test('buildPublicForumPath 应为公开评论定位回写 commentId 参数', () => {
+  const path = buildPublicForumPath({
+    kind: 'detail',
+    postId: '2042219067430928384',
+    commentId: '2042219067430928385',
+  });
+
+  assert.equal(path, '/forum/post/2042219067430928384?commentId=2042219067430928385');
 });
 
 test('createForumCommentHighlightMap 应保留大整数字符串帖子键', () => {

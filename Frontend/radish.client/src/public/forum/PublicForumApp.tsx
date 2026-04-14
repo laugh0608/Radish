@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   getCategoryById,
+  getCommentNavigation,
   getChildComments,
   getCurrentGodCommentsBatch,
   getPostById,
@@ -65,6 +66,32 @@ interface PublicForumAppProps {
 }
 
 type RootCommentSort = 'newest' | 'hottest' | null;
+const COMMENT_NAVIGATION_CHILD_PAGE_SIZE = 5;
+
+interface PublicForumCommentNavigationTarget {
+  commentId: number;
+  expandedRootCommentId?: number;
+  navigationKey: string;
+}
+
+function mergeCommentChildren(
+  comments: CommentNode[],
+  parentCommentId: number,
+  children: CommentNode[],
+  totalChildren: number
+): CommentNode[] {
+  return comments.map((comment) => {
+    if (comment.voId !== parentCommentId) {
+      return comment;
+    }
+
+    return {
+      ...comment,
+      voChildren: children,
+      voChildrenTotal: totalChildren
+    };
+  });
+}
 
 function buildActiveSectionTitle(categories: Category[], selectedCategoryId: number | null, fallback: string): string {
   if (!selectedCategoryId) {
@@ -385,8 +412,9 @@ export const PublicForumApp = ({
       <main className={styles.main}>
         {route.kind === 'detail' ? (
           <PublicForumDetail
-            key={`detail-${route.postId}`}
+            key={`detail-${route.postId}-${route.commentId ?? 'none'}`}
             postId={route.postId}
+            commentId={route.commentId}
             displayTimeZone={displayTimeZone}
             backLabel={detailBackLabel}
             onBack={handleForumDetailBack}
@@ -2322,6 +2350,7 @@ const PublicForumSearch = ({
 
 interface PublicForumDetailProps {
   postId: string;
+  commentId?: string;
   displayTimeZone: string;
   backLabel: string;
   onBack: () => void;
@@ -2334,6 +2363,7 @@ interface PublicForumDetailProps {
 
 const PublicForumDetail = ({
   postId,
+  commentId,
   displayTimeZone,
   backLabel,
   onBack,
@@ -2359,8 +2389,15 @@ const PublicForumDetail = ({
   const [commentError, setCommentError] = useState<string | null>(null);
   const [quickReplyError, setQuickReplyError] = useState<string | null>(null);
   const [commentPagingError, setCommentPagingError] = useState<string | null>(null);
+  const [commentNavigationTarget, setCommentNavigationTarget] = useState<PublicForumCommentNavigationTarget | null>(null);
+  const [commentNavigationNotice, setCommentNavigationNotice] = useState<string | null>(null);
+  const [highlightedCommentId, setHighlightedCommentId] = useState<number | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const requestIdRef = useRef(0);
+  const commentAnchorMapRef = useRef(new Map<number, HTMLDivElement>());
+  const handledCommentNavigationRef = useRef<string | null>(null);
+  const highlightTimeoutRef = useRef<number | null>(null);
+  const [commentAnchorVersion, setCommentAnchorVersion] = useState(0);
   const commentPageSize = 20;
 
   useEffect(() => {
@@ -2374,6 +2411,9 @@ const PublicForumDetail = ({
       setCommentError(null);
       setQuickReplyError(null);
       setCommentPagingError(null);
+      setCommentNavigationTarget(null);
+      setCommentNavigationNotice(null);
+      setHighlightedCommentId(null);
 
       try {
         const postDetail = await getPostById(postId, t);
@@ -2403,8 +2443,28 @@ const PublicForumDetail = ({
       }
 
       try {
+        let navigation: Awaited<ReturnType<typeof getCommentNavigation>> | null = null;
+        if (commentId) {
+          try {
+            navigation = await getCommentNavigation(
+              postId,
+              commentId,
+              commentPageSize,
+              COMMENT_NAVIGATION_CHILD_PAGE_SIZE,
+              t
+            );
+          } catch (navigationError) {
+            if (requestId !== requestIdRef.current) {
+              return;
+            }
+
+            log.warn('公开论坛评论定位失败，已降级为普通帖子阅读:', navigationError);
+            setCommentNavigationNotice(t('forum.commentNavigation.notice'));
+          }
+        }
+
         const [rootCommentsResult, replyWallResult] = await Promise.allSettled([
-          getRootCommentsPage(postId, 1, commentPageSize, commentSortBy || 'default', t),
+          getRootCommentsPage(postId, navigation?.voRootPageIndex ?? 1, commentPageSize, commentSortBy || 'default', t),
           getPostQuickReplyWall(postId, t)
         ]);
 
@@ -2414,10 +2474,61 @@ const PublicForumDetail = ({
 
         if (rootCommentsResult.status === 'fulfilled') {
           const rootComments = rootCommentsResult.value;
-          setComments(rootComments.voItems ?? []);
+          let nextComments = rootComments.voItems ?? [];
+
+          if (!navigation) {
+            setCommentNavigationTarget(null);
+          } else if (!navigation.voIsRootComment && navigation.voParentCommentId && navigation.voChildPageIndex) {
+            try {
+              const aggregatedChildren: CommentNode[] = [];
+              let totalChildren = 0;
+
+              for (let pageIndex = 1; pageIndex <= navigation.voChildPageIndex; pageIndex += 1) {
+                const pageData = await getChildComments(
+                  navigation.voParentCommentId,
+                  pageIndex,
+                  COMMENT_NAVIGATION_CHILD_PAGE_SIZE,
+                  t
+                );
+
+                if (requestId !== requestIdRef.current) {
+                  return;
+                }
+
+                totalChildren = pageData.voTotal ?? totalChildren;
+                aggregatedChildren.push(...(pageData.voItems ?? []));
+              }
+
+              const deduplicatedChildren = aggregatedChildren.filter((child, index, source) =>
+                source.findIndex((item) => item.voId === child.voId) === index
+              );
+              nextComments = mergeCommentChildren(
+                nextComments,
+                navigation.voParentCommentId,
+                deduplicatedChildren,
+                totalChildren
+              );
+            } catch (childLoadError) {
+              if (requestId !== requestIdRef.current) {
+                return;
+              }
+
+              log.warn('公开论坛评论定位补载子评论失败，已保留当前评论页:', childLoadError);
+              setCommentNavigationNotice(t('forum.commentNavigation.notice'));
+            }
+          }
+
+          setComments(nextComments);
           setCommentTotal(rootComments.voTotal ?? 0);
-          setLoadedCommentPages((rootComments.voItems?.length ?? 0) > 0 ? 1 : 0);
+          setLoadedCommentPages((rootComments.voItems?.length ?? 0) > 0 ? (rootComments.voPageIndex ?? 1) : 0);
           setCommentError(null);
+          setCommentNavigationTarget(navigation ? {
+            commentId: navigation.voCommentId,
+            expandedRootCommentId: navigation.voIsRootComment
+              ? undefined
+              : navigation.voParentCommentId ?? navigation.voRootCommentId,
+            navigationKey: `${postId}:${commentId ?? navigation.voCommentId}:${commentSortBy ?? 'default'}:${reloadToken}`
+          } : null);
         } else {
           setComments([]);
           setCommentTotal(0);
@@ -2426,6 +2537,7 @@ const PublicForumDetail = ({
             ? rootCommentsResult.reason.message
             : String(rootCommentsResult.reason);
           setCommentError(message);
+          setCommentNavigationTarget(null);
         }
 
         if (replyWallResult.status === 'fulfilled') {
@@ -2450,7 +2562,15 @@ const PublicForumDetail = ({
     };
 
     void loadDetail();
-  }, [commentSortBy, postId, reloadToken, t]);
+  }, [commentId, commentSortBy, postId, reloadToken, t]);
+
+  useEffect(() => {
+    return () => {
+      if (highlightTimeoutRef.current !== null) {
+        window.clearTimeout(highlightTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!post?.voTitle) {
@@ -2459,6 +2579,125 @@ const PublicForumDetail = ({
 
     document.title = `${post.voTitle} · ${t('desktop.apps.forum.name')}`;
   }, [post?.voTitle, t]);
+
+  const navigateToComment = useCallback(async (
+    targetCommentId: number | string,
+    navigationKey: string
+  ) => {
+    try {
+      setCommentPagingError(null);
+      setCommentNavigationNotice(null);
+
+      const navigation = await getCommentNavigation(
+        postId,
+        targetCommentId,
+        commentPageSize,
+        COMMENT_NAVIGATION_CHILD_PAGE_SIZE,
+        t
+      );
+
+      let nextComments = comments;
+
+      if (loadedCommentPages !== navigation.voRootPageIndex || !comments.some((item) => item.voId === navigation.voRootCommentId)) {
+        const rootComments = await getRootCommentsPage(
+          postId,
+          navigation.voRootPageIndex,
+          commentPageSize,
+          commentSortBy || 'default',
+          t
+        );
+
+        nextComments = rootComments.voItems ?? [];
+        setComments(nextComments);
+        setCommentTotal(rootComments.voTotal ?? 0);
+        setLoadedCommentPages((rootComments.voItems?.length ?? 0) > 0 ? (rootComments.voPageIndex ?? navigation.voRootPageIndex) : 0);
+      }
+
+      if (!navigation.voIsRootComment && navigation.voParentCommentId && navigation.voChildPageIndex) {
+        const aggregatedChildren: CommentNode[] = [];
+        let totalChildren = 0;
+
+        for (let pageIndex = 1; pageIndex <= navigation.voChildPageIndex; pageIndex += 1) {
+          const pageData = await getChildComments(
+            navigation.voParentCommentId,
+            pageIndex,
+            COMMENT_NAVIGATION_CHILD_PAGE_SIZE,
+            t
+          );
+
+          totalChildren = pageData.voTotal ?? totalChildren;
+          aggregatedChildren.push(...(pageData.voItems ?? []));
+        }
+
+        const deduplicatedChildren = aggregatedChildren.filter((child, index, source) =>
+          source.findIndex((item) => item.voId === child.voId) === index
+        );
+        nextComments = mergeCommentChildren(
+          nextComments,
+          navigation.voParentCommentId,
+          deduplicatedChildren,
+          totalChildren
+        );
+        setComments(nextComments);
+      }
+
+      setCommentNavigationTarget({
+        commentId: navigation.voCommentId,
+        expandedRootCommentId: navigation.voIsRootComment
+          ? undefined
+          : navigation.voParentCommentId ?? navigation.voRootCommentId,
+        navigationKey
+      });
+    } catch {
+      setCommentNavigationNotice(t('forum.commentNavigation.notice'));
+    }
+  }, [commentPageSize, commentSortBy, comments, loadedCommentPages, postId, t]);
+
+  const registerCommentAnchor = (targetCommentId: number, element: HTMLDivElement | null) => {
+    if (element) {
+      commentAnchorMapRef.current.set(targetCommentId, element);
+    } else {
+      commentAnchorMapRef.current.delete(targetCommentId);
+    }
+
+    if (targetCommentId === commentNavigationTarget?.commentId) {
+      setCommentAnchorVersion((current) => current + 1);
+    }
+  };
+
+  useEffect(() => {
+    if (!commentNavigationTarget?.commentId) {
+      return;
+    }
+
+    const navigationSignature = `${commentNavigationTarget.navigationKey}:${commentNavigationTarget.commentId}`;
+    if (handledCommentNavigationRef.current === navigationSignature) {
+      return;
+    }
+
+    const targetElement = commentAnchorMapRef.current.get(commentNavigationTarget.commentId);
+    if (!targetElement) {
+      return;
+    }
+
+    handledCommentNavigationRef.current = navigationSignature;
+    targetElement.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center'
+    });
+
+    setHighlightedCommentId(commentNavigationTarget.commentId);
+    if (highlightTimeoutRef.current !== null) {
+      window.clearTimeout(highlightTimeoutRef.current);
+    }
+    highlightTimeoutRef.current = window.setTimeout(() => {
+      setHighlightedCommentId((current) => (
+        current === commentNavigationTarget.commentId
+          ? null
+          : current
+      ));
+    }, 3200);
+  }, [commentAnchorVersion, commentNavigationTarget, comments]);
 
   const handleLoadMoreComments = async () => {
     if (loadingMoreComments || loadingComments || comments.length >= commentTotal) {
@@ -2661,6 +2900,12 @@ const PublicForumDetail = ({
                 </div>
               )}
 
+              {commentNavigationNotice && (
+                <div className={styles.inlineNotice} data-tone="warning">
+                  <span className={styles.inlineNoticeText}>{commentNavigationNotice}</span>
+                </div>
+              )}
+
               {commentSectionState === 'error' ? (
                 <PublicStatusCard
                   tone="error"
@@ -2686,15 +2931,22 @@ const PublicForumDetail = ({
                     hasPost={true}
                     displayTimeZone={displayTimeZone}
                     currentUserId={0}
+                    highlightedCommentId={highlightedCommentId}
+                    expandedRootCommentId={commentNavigationTarget?.expandedRootCommentId}
                     rootCommentTotal={commentTotal}
                     loadedRootCommentCount={comments.length}
                     rootCommentPageSize={commentPageSize}
+                    registerCommentAnchor={registerCommentAnchor}
                     sortBy={commentSortBy}
                     onSortChange={setCommentSortBy}
                     onLoadMoreChildren={handleLoadMoreChildren}
                     onLoadMoreRootComments={handleLoadMoreComments}
                     showTitle={false}
                     onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
+                    onNavigateToComment={(targetCommentId) => void navigateToComment(
+                      targetCommentId,
+                      `inline:${postId}:${targetCommentId}:${Date.now()}`
+                    )}
                   />
                 </>
               )}
