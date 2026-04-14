@@ -4,6 +4,7 @@ import {
   resolveDocsDetailBackMode,
   resolveForumDetailBackMode,
   resolveProfileBackMode,
+  shouldCommitPublicRouteUpdate,
   shouldCaptureDocsDetailSource,
   shouldCaptureForumDetailSource,
   shouldCaptureProfileDetailSource,
@@ -128,4 +129,36 @@ test('resolveProfileBackMode 应把 discover 与其他公开来源区分为不�
 
   assert.equal(resolveProfileBackMode(discoverSource), 'discover');
   assert.equal(resolveProfileBackMode(forumDetailSource), 'source');
+});
+
+test('shouldCommitPublicRouteUpdate 对同 app 同路径的 replace 导航返回 false', () => {
+  const currentRoute: PublicRouteDescriptor = {
+    app: 'forum',
+    route: { kind: 'search', keyword: '', sortBy: 'newest', timeRange: 'all', page: 1 }
+  };
+  const nextRoute: PublicRouteDescriptor = {
+    app: 'forum',
+    route: { kind: 'search', keyword: '', sortBy: 'newest', timeRange: 'all', page: 1 }
+  };
+
+  assert.equal(
+    shouldCommitPublicRouteUpdate(currentRoute, nextRoute, '/forum/search', '/forum/search'),
+    false
+  );
+});
+
+test('shouldCommitPublicRouteUpdate 对路径变化的公开导航返回 true', () => {
+  const currentRoute: PublicRouteDescriptor = {
+    app: 'forum',
+    route: { kind: 'search', keyword: '', sortBy: 'newest', timeRange: 'all', page: 1 }
+  };
+  const nextRoute: PublicRouteDescriptor = {
+    app: 'forum',
+    route: { kind: 'search', keyword: 'radish', sortBy: 'newest', timeRange: 'all', page: 1 }
+  };
+
+  assert.equal(
+    shouldCommitPublicRouteUpdate(currentRoute, nextRoute, '/forum/search', '/forum/search?q=radish'),
+    true
+  );
 });

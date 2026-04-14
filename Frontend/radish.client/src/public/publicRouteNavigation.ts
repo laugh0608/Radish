@@ -74,6 +74,19 @@ export function shouldCaptureProfileDetailSource(
     || currentRoute.route.userId !== nextRoute.route.userId;
 }
 
+export function shouldCommitPublicRouteUpdate(
+  currentRoute: PublicRouteDescriptor,
+  nextRoute: PublicRouteDescriptor,
+  currentPath: string,
+  nextPath: string
+): boolean {
+  if (currentPath !== nextPath) {
+    return true;
+  }
+
+  return currentRoute.app !== nextRoute.app;
+}
+
 export function resolveForumDetailBackMode(sourceRoute: PublicRouteDescriptor | null): PublicDetailBackMode | null {
   if (!sourceRoute || isForumBrowseDescriptor(sourceRoute)) {
     return null;

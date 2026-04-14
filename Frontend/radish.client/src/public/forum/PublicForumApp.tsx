@@ -390,7 +390,7 @@ export const PublicForumApp = ({
             className={styles.brand}
             onClick={() => onNavigate({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 })}
           >
-            <span className={styles.brandMark}>R</span>
+            <span className={styles.brandMark}>论</span>
             <span className={styles.brandText}>
               <span className={styles.brandName}>{t('desktop.apps.forum.name')}</span>
               <span className={styles.brandSubline}>Public Content Shell</span>

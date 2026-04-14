@@ -59,6 +59,7 @@ import {
   resolveDocsDetailBackMode,
   resolveForumDetailBackMode,
   resolveProfileBackMode,
+  shouldCommitPublicRouteUpdate,
   shouldCaptureDocsDetailSource,
   shouldCaptureForumDetailSource,
   shouldCaptureProfileDetailSource,
@@ -195,6 +196,10 @@ export const PublicEntry = () => {
   const navigateToRoute = useCallback((nextRoute: PublicRouteDescriptor, options?: { replace?: boolean }) => {
     const nextPath = buildPublicPath(nextRoute);
     const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+
+    if (!shouldCommitPublicRouteUpdate(route, nextRoute, currentPath, nextPath)) {
+      return;
+    }
 
     if (shouldCaptureForumDetailSource(route, nextRoute)) {
       setForumDetailSourceRoute(route);

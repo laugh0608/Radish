@@ -316,8 +316,8 @@ export const PublicProfileApp = ({
     <div className={styles.page} ref={pageRef}>
       <header className={styles.hero}>
         <div className={styles.heroInner}>
-          <div className={styles.heroLead}>
-            <span className={styles.brandMark}>R</span>
+          <div className={styles.brand}>
+            <span className={styles.brandMark}>人</span>
             <span className={styles.brandText}>
               <span className={styles.brandName}>{t('profile.public.title')}</span>
               <span className={styles.brandSubline}>{t('profile.public.shellLabel')}</span>
