@@ -304,9 +304,6 @@ export function buildPublicForumPath(route: PublicForumRoute): string {
 
   if (route.kind === 'list') {
     const search = new URLSearchParams();
-    if (route.categoryId) {
-      search.set('category', String(route.categoryId));
-    }
     if (route.sortBy !== 'newest') {
       search.set('sort', route.sortBy);
     }

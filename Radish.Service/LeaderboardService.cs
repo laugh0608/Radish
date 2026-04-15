@@ -19,6 +19,7 @@ public class LeaderboardService : ILeaderboardService
     private readonly IBaseRepository<User> _userRepository;
     private readonly IBaseRepository<LevelConfig> _levelConfigRepository;
     private readonly ILeaderboardRepository _leaderboardRepository;
+    private readonly IAttachmentService _attachmentService;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
     private readonly IMapper _mapper;
 
@@ -115,6 +116,7 @@ public class LeaderboardService : ILeaderboardService
         IBaseRepository<User> userRepository,
         IBaseRepository<LevelConfig> levelConfigRepository,
         ILeaderboardRepository leaderboardRepository,
+        IAttachmentService attachmentService,
         IAttachmentUrlResolver attachmentUrlResolver)
     {
         _mapper = mapper;
@@ -124,6 +126,7 @@ public class LeaderboardService : ILeaderboardService
         _userRepository = userRepository;
         _levelConfigRepository = levelConfigRepository;
         _leaderboardRepository = leaderboardRepository;
+        _attachmentService = attachmentService;
         _attachmentUrlResolver = attachmentUrlResolver;
     }
 
@@ -214,6 +217,7 @@ public class LeaderboardService : ILeaderboardService
         var userIds = pagedData.Select(e => e.UserId).ToList();
         var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id));
         var userDict = users.ToDictionary(u => u.Id);
+        var avatarUrlMap = await LoadUserAvatarUrlMapAsync(userIds);
 
         var levels = pagedData.Select(e => e.CurrentLevel).Distinct().ToList();
         var levelConfigs = await _levelConfigRepository.QueryAsync(l => levels.Contains(l.Level));
@@ -237,6 +241,7 @@ public class LeaderboardService : ILeaderboardService
                 VoRank = rank,
                 VoUserId = exp.UserId,
                 VoUserName = user.UserName,
+                VoAvatarUrl = avatarUrlMap.GetValueOrDefault(exp.UserId),
                 VoCurrentLevel = exp.CurrentLevel,
                 VoCurrentLevelName = levelConfigDict.TryGetValue(exp.CurrentLevel, out var config)
                     ? config.LevelName
@@ -288,6 +293,7 @@ public class LeaderboardService : ILeaderboardService
         var userIds = pagedData.Select(b => b.UserId).ToList();
         var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id));
         var userDict = users.ToDictionary(u => u.Id);
+        var avatarUrlMap = await LoadUserAvatarUrlMapAsync(userIds);
 
         // 获取用户等级信息
         var userExps = await _userExpRepository.QueryAsync(e => userIds.Contains(e.UserId) && !e.IsDeleted);
@@ -318,6 +324,7 @@ public class LeaderboardService : ILeaderboardService
                 VoRank = rank,
                 VoUserId = balance.UserId,
                 VoUserName = user.UserName,
+                VoAvatarUrl = avatarUrlMap.GetValueOrDefault(balance.UserId),
                 VoCurrentLevel = level,
                 VoCurrentLevelName = levelConfigDict.TryGetValue(level, out var config)
                     ? config.LevelName
@@ -369,6 +376,7 @@ public class LeaderboardService : ILeaderboardService
         var userIds = pagedData.Select(b => b.UserId).ToList();
         var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id));
         var userDict = users.ToDictionary(u => u.Id);
+        var avatarUrlMap = await LoadUserAvatarUrlMapAsync(userIds);
 
         // 获取用户等级信息
         var userExps = await _userExpRepository.QueryAsync(e => userIds.Contains(e.UserId) && !e.IsDeleted);
@@ -399,6 +407,7 @@ public class LeaderboardService : ILeaderboardService
                 VoRank = rank,
                 VoUserId = balance.UserId,
                 VoUserName = user.UserName,
+                VoAvatarUrl = avatarUrlMap.GetValueOrDefault(balance.UserId),
                 VoCurrentLevel = level,
                 VoCurrentLevelName = levelConfigDict.TryGetValue(level, out var config)
                     ? config.LevelName
@@ -443,6 +452,7 @@ public class LeaderboardService : ILeaderboardService
         var userIds = rankingData.Select(r => r.UserId).ToList();
         var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id));
         var userDict = users.ToDictionary(u => u.Id);
+        var avatarUrlMap = await LoadUserAvatarUrlMapAsync(userIds);
 
         // 获取用户等级信息
         var userExps = await _userExpRepository.QueryAsync(e => userIds.Contains(e.UserId) && !e.IsDeleted);
@@ -473,6 +483,7 @@ public class LeaderboardService : ILeaderboardService
                 VoRank = rank,
                 VoUserId = userId,
                 VoUserName = user.UserName,
+                VoAvatarUrl = avatarUrlMap.GetValueOrDefault(userId),
                 VoCurrentLevel = level,
                 VoCurrentLevelName = levelConfigDict.TryGetValue(level, out var config)
                     ? config.LevelName
@@ -617,6 +628,7 @@ public class LeaderboardService : ILeaderboardService
         var userIds = rankingData.Select(r => r.UserId).ToList();
         var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id));
         var userDict = users.ToDictionary(u => u.Id);
+        var avatarUrlMap = await LoadUserAvatarUrlMapAsync(userIds);
 
         // 获取用户等级信息
         var userExps = await _userExpRepository.QueryAsync(e => userIds.Contains(e.UserId) && !e.IsDeleted);
@@ -647,6 +659,7 @@ public class LeaderboardService : ILeaderboardService
                 VoRank = rank,
                 VoUserId = userId,
                 VoUserName = user.UserName,
+                VoAvatarUrl = avatarUrlMap.GetValueOrDefault(userId),
                 VoCurrentLevel = level,
                 VoCurrentLevelName = levelConfigDict.TryGetValue(level, out var config)
                     ? config.LevelName
@@ -685,6 +698,20 @@ public class LeaderboardService : ILeaderboardService
             PageCount = pageCount,
             Data = data
         };
+    }
+
+    private async Task<Dictionary<long, string>> LoadUserAvatarUrlMapAsync(IReadOnlyCollection<long> userIds)
+    {
+        if (userIds.Count == 0)
+        {
+            return new Dictionary<long, string>();
+        }
+
+        var avatarMap = await _attachmentService.GetLatestAvatarAssetMapAsync(userIds);
+
+        return avatarMap
+            .Where(item => !string.IsNullOrWhiteSpace(item.Value.Url))
+            .ToDictionary(item => item.Key, item => item.Value.Url);
     }
 
     private string? ResolveAttachmentUrl(long? attachmentId)

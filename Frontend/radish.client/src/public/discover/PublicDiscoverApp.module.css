@@ -213,10 +213,11 @@
   padding: 14px 16px;
   background: color-mix(in srgb, var(--theme-bg-surface) 88%, white 12%);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
-  min-height: 110px;
+  min-height: 96px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 10px;
 }
 
 .summaryLabel {
@@ -536,10 +537,21 @@
   .pageTitle {
     font-size: 1.9rem;
   }
+
+  .summaryCard {
+    min-height: 88px;
+    padding: 12px 14px;
+    gap: 8px;
+  }
+
+  .summaryValue {
+    margin-top: 0;
+    font-size: 1.6rem;
+  }
 }
 
 @media (max-width: 420px) {
   .summaryGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

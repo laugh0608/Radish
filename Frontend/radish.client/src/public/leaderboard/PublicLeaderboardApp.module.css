@@ -298,7 +298,7 @@
 
 .listItem {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) minmax(136px, 0.72fr);
+  grid-template-columns: auto auto minmax(0, 1fr) minmax(136px, 0.72fr);
   align-items: center;
   gap: 16px;
   width: 100%;
@@ -325,10 +325,47 @@
   border-color: color-mix(in srgb, var(--theme-brand-primary) 20%, transparent);
 }
 
+.userListItem {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  padding: 18px 20px;
+}
+
+.userHeaderRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
+}
+
+.userIdentityCluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  flex: none;
+}
+
+.userTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+}
+
+.userName {
+  font-size: 20px;
+  line-height: 1.25;
+}
+
 .rankBadge {
-  width: 58px;
-  height: 58px;
-  border-radius: 18px;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -351,19 +388,23 @@
 
 .rankMedal,
 .rankNumber {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
 }
 
 .productMedia,
+.userMedia,
 .productImage,
-.productImageFallback {
+.productImageFallback,
+.userAvatar,
+.userAvatarFallback {
   width: 56px;
   height: 56px;
   border-radius: 18px;
 }
 
-.productMedia {
+.productMedia,
+.userMedia {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -380,10 +421,45 @@
   color: var(--theme-brand-primary);
 }
 
+.userAvatar {
+  object-fit: cover;
+  background: color-mix(in srgb, var(--theme-bg-muted) 76%, var(--theme-bg-surface) 24%);
+}
+
+.userAvatarFallback {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--theme-brand-soft) 50%, white 50%) 0%, color-mix(in srgb, var(--theme-bg-muted) 82%, var(--theme-bg-surface) 18%) 100%);
+  color: var(--theme-brand-primary);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.userListItem .rankBadge {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+}
+
+.userListItem .rankMedal,
+.userListItem .rankNumber {
+  font-size: 24px;
+}
+
+.userListItem .userMedia,
+.userListItem .userAvatar,
+.userListItem .userAvatarFallback {
+  width: 60px;
+  height: 60px;
+  border-radius: 20px;
+}
+
+.userListItem .userAvatarFallback {
+  font-size: 22px;
+}
+
 .itemBody {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(112px, 0.72fr);
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 18px;
   min-width: 0;
 }
@@ -393,6 +469,7 @@
   flex-direction: column;
   gap: 6px;
   min-width: 0;
+  flex: 1 1 auto;
 }
 
 .itemTitleRow {
@@ -430,6 +507,45 @@
   font-size: 13px;
 }
 
+.userStatsRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.userStatChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-bg-muted) 80%, var(--theme-bg-surface) 20%);
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
+  color: var(--theme-text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.userLevelNameChip {
+  font-weight: 700;
+}
+
+.userMetricChip {
+  color: var(--theme-brand-primary);
+  font-weight: 700;
+  background: color-mix(in srgb, var(--theme-brand-soft) 34%, white 66%);
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 16%, transparent);
+}
+
+.userTitleGroup .currentUserBadge {
+  min-height: 30px;
+  padding: 5px 12px;
+}
+
 .itemSideInfo {
   display: flex;
   flex-direction: column;
@@ -459,12 +575,14 @@
 .itemMetric {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 4px;
-  min-width: 0;
-  padding-left: 16px;
-  border-left: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 132px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--theme-bg-muted) 78%, var(--theme-bg-surface) 22%);
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
 }
 
 .metricValue {
@@ -594,24 +712,24 @@
 
 @media (max-width: 760px) {
   .listItem {
-    grid-template-columns: 52px minmax(0, 1fr) minmax(90px, auto);
+    grid-template-columns: 52px 48px minmax(0, 1fr) minmax(90px, auto);
     align-items: stretch;
     gap: 12px;
   }
 
+  .userListItem {
+    gap: 10px;
+    padding: 16px 18px;
+  }
+
   .itemBody {
-    grid-column: auto;
-    grid-template-columns: minmax(0, 1fr) minmax(84px, auto);
+    flex-direction: column;
     align-items: stretch;
     gap: 12px;
   }
 
   .itemMetric {
-    grid-column: auto;
-    align-items: flex-end;
     min-width: 0;
-    padding-left: 12px;
-    border-left: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
   }
 
   .itemSideInfo {
@@ -625,6 +743,22 @@
     font-size: 16px;
   }
 
+  .userHeaderRow {
+    gap: 12px;
+  }
+
+  .userIdentityCluster {
+    gap: 10px;
+  }
+
+  .userTitleGroup {
+    gap: 8px;
+  }
+
+  .userName {
+    font-size: 18px;
+  }
+
   .metricValue {
     font-size: 20px;
   }
@@ -632,25 +766,74 @@
 
 @media (max-width: 480px) {
   .listItem {
-    grid-template-columns: 52px minmax(0, 1fr);
+    grid-template-columns: 52px 48px minmax(0, 1fr);
     align-items: start;
   }
 
-  .itemBody {
-    grid-column: 2;
-    grid-template-columns: minmax(0, 1fr) minmax(76px, auto);
+  .userListItem {
+    gap: 9px;
+    padding: 14px 16px;
+  }
+
+  .productListItem .itemMetric {
+    grid-column: 3;
+  }
+
+  .userHeaderRow {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .userIdentityCluster {
+    gap: 8px;
+  }
+
+  .userStatsRow {
+    gap: 6px;
+  }
+
+  .userStatChip {
+    min-height: 30px;
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+
+  .userName {
+    font-size: 17px;
   }
 
   .itemMetric {
-    grid-column: 2;
     align-items: flex-start;
-    padding-left: 0;
-    padding-top: 2px;
-    border-left: none;
   }
 
   .itemSideInfo {
     text-align: left;
+  }
+
+  .rankBadge {
+    width: 48px;
+    height: 48px;
+  }
+
+  .productMedia,
+  .productImage,
+  .productImageFallback {
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+  }
+
+  .userListItem .rankBadge {
+    width: 50px;
+    height: 50px;
+  }
+
+  .userListItem .userMedia,
+  .userListItem .userAvatar,
+  .userListItem .userAvatarFallback {
+    width: 52px;
+    height: 52px;
+    border-radius: 18px;
   }
 }
 

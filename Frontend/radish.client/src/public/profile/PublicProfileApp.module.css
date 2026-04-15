@@ -509,7 +509,8 @@
   }
 
   .statsGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.7rem;
   }
 
   .tabs {
@@ -553,5 +554,24 @@
 
   .desktopLink span {
     display: none;
+  }
+
+  .statCard {
+    padding: 0.85rem 0.9rem;
+    border-radius: 1rem;
+  }
+
+  .statLabel {
+    font-size: 0.82rem;
+  }
+
+  .statValue {
+    font-size: 1.45rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .statsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

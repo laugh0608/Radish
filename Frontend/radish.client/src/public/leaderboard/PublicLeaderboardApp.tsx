@@ -156,6 +156,15 @@ function buildVisiblePages(currentPage: number, totalPages: number, maxVisible: 
   return Array.from({ length: maxVisible }, (_, index) => currentPage - half + index);
 }
 
+function buildAvatarText(name: string | undefined, fallback: string): string {
+  const source = name?.trim() || fallback.trim();
+  if (!source) {
+    return '?';
+  }
+
+  return source.charAt(0).toUpperCase();
+}
+
 export const PublicLeaderboardApp = ({
   route,
   onNavigate,
@@ -424,60 +433,66 @@ export const PublicLeaderboardApp = ({
             ) : (
               <div className={styles.list}>
                 {items.map((item) => item.voCategory === LeaderboardCategory.User ? (
-                  <button
-                    key={`${item.voLeaderboardType}-${String(item.voUserId)}-${item.voRank}`}
-                    type="button"
-                    className={`${styles.listItem} ${item.voIsCurrentUser ? styles.listItemCurrentUser : ''}`}
-                    onClick={() => handleOpenUserProfile(item)}
-                    disabled={!item.voUserId}
-                  >
-                    <div className={styles.rankBadge} data-rank={item.voRank <= 3 ? item.voRank : undefined}>
-                      {item.voRank <= 3 ? (
-                        <span className={styles.rankMedal}>
-                          {item.voRank === 1 ? '🥇' : item.voRank === 2 ? '🥈' : '🥉'}
-                        </span>
-                      ) : (
-                        <span className={styles.rankNumber}>#{item.voRank}</span>
-                      )}
-                    </div>
-                    <div className={styles.itemBody}>
-                      <div className={styles.itemPrimary}>
-                        <div className={styles.itemTitleRow}>
-                          <span className={styles.itemTitle}>
-                            {item.voUserName?.trim() || t('common.userFallback', { id: item.voUserId || '?' })}
+                  (() => {
+                    const userName = item.voUserName?.trim() || t('common.userFallback', { id: item.voUserId || '?' });
+                    const avatarUrl = resolveMediaUrl(item.voAvatarUrl);
+                    return (
+                      <button
+                        key={`${item.voLeaderboardType}-${String(item.voUserId)}-${item.voRank}`}
+                        type="button"
+                        className={`${styles.listItem} ${styles.userListItem} ${item.voIsCurrentUser ? styles.listItemCurrentUser : ''}`}
+                        onClick={() => handleOpenUserProfile(item)}
+                        disabled={!item.voUserId}
+                      >
+                        <div className={styles.userHeaderRow}>
+                          <div className={styles.userIdentityCluster}>
+                            <div className={styles.rankBadge} data-rank={item.voRank <= 3 ? item.voRank : undefined}>
+                              {item.voRank <= 3 ? (
+                                <span className={styles.rankMedal}>
+                                  {item.voRank === 1 ? '🥇' : item.voRank === 2 ? '🥈' : '🥉'}
+                                </span>
+                              ) : (
+                                <span className={styles.rankNumber}>#{item.voRank}</span>
+                              )}
+                            </div>
+                            <div className={styles.userMedia}>
+                              {avatarUrl ? (
+                                <img className={styles.userAvatar} src={avatarUrl} alt={userName} />
+                              ) : (
+                                <span className={styles.userAvatarFallback} aria-hidden="true">
+                                  {buildAvatarText(item.voUserName, userName)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className={styles.userTitleGroup}>
+                            <span className={`${styles.itemTitle} ${styles.userName}`}>{userName}</span>
+                            {item.voIsCurrentUser && (
+                              <span className={styles.currentUserBadge}>{t('leaderboard.public.currentUser')}</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className={styles.userStatsRow}>
+                          <span className={styles.userStatChip}>Lv.{item.voCurrentLevel ?? 0}</span>
+                          <span
+                            className={`${styles.userStatChip} ${styles.userLevelNameChip}`}
+                            style={item.voThemeColor ? { color: item.voThemeColor } : undefined}
+                          >
+                            {item.voCurrentLevelName?.trim() || t('leaderboard.public.levelFallback')}
                           </span>
-                          {item.voIsCurrentUser && (
-                            <span className={styles.currentUserBadge}>{t('leaderboard.public.currentUser')}</span>
-                          )}
+                          <span className={`${styles.userStatChip} ${styles.userMetricChip}`}>
+                            {Number(item.voPrimaryValue || 0).toLocaleString()} {item.voPrimaryLabel || activeTypeConfig.voPrimaryLabel}
+                          </span>
                         </div>
-                        <p
-                          className={styles.itemMeta}
-                          style={item.voThemeColor ? { color: item.voThemeColor } : undefined}
-                        >
-                          {t('leaderboard.public.levelLabel', {
-                            level: item.voCurrentLevel ?? 0,
-                            levelName: item.voCurrentLevelName?.trim() || t('leaderboard.public.levelFallback'),
-                          })}
-                        </p>
-                      </div>
-                      {item.voSecondaryValue !== undefined && item.voSecondaryLabel && (
-                        <div className={styles.itemSideInfo}>
-                          <span className={styles.sideInfoLabel}>{item.voSecondaryLabel}</span>
-                          <span className={styles.sideInfoValue}>{Number(item.voSecondaryValue).toLocaleString()}</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className={styles.itemMetric}>
-                      <span className={styles.metricValue}>{Number(item.voPrimaryValue || 0).toLocaleString()}</span>
-                      <span className={styles.metricLabel}>{item.voPrimaryLabel || activeTypeConfig.voPrimaryLabel}</span>
-                    </div>
-                  </button>
+                      </button>
+                    );
+                  })()
                 ) : (() => {
                   const productIconUrl = resolveMediaUrl(item.voProductIcon);
                   return (
                     <article
                       key={`${item.voLeaderboardType}-${String(item.voProductId)}-${item.voRank}`}
-                      className={styles.listItem}
+                      className={`${styles.listItem} ${styles.productListItem}`}
                     >
                       <div className={styles.rankBadge} data-rank={item.voRank <= 3 ? item.voRank : undefined}>
                         {item.voRank <= 3 ? (
