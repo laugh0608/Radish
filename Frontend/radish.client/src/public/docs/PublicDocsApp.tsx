@@ -1029,6 +1029,24 @@ const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigat
   }, [documentDetail?.voTitle, t]);
 
   useEffect(() => {
+    if (!documentDetail?.voSlug) {
+      return;
+    }
+
+    const canonicalRoute: PublicDocsRoute = {
+      kind: 'detail',
+      slug: documentDetail.voSlug,
+      anchor: route.anchor
+    };
+
+    if (buildPublicDocsPath(route) === buildPublicDocsPath(canonicalRoute)) {
+      return;
+    }
+
+    onNavigate(canonicalRoute, { replace: true });
+  }, [documentDetail?.voSlug, onNavigate, route]);
+
+  useEffect(() => {
     const container = articleBodyRef.current;
     if (!container) {
       return;
@@ -1105,7 +1123,12 @@ const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigat
     setShareBusy(true);
 
     try {
-      const shareUrl = new URL(buildPublicDocsPath(route), getCurrentOrigin()).toString();
+      const shareRoute: PublicDocsRoute = {
+        kind: 'detail',
+        slug: documentDetail?.voSlug || route.slug,
+        anchor: route.anchor
+      };
+      const shareUrl = new URL(buildPublicDocsPath(shareRoute), getCurrentOrigin()).toString();
       await copyToClipboard(shareUrl);
       setShareState('success');
     } catch {
