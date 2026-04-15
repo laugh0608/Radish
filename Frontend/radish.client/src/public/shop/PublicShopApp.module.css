@@ -259,6 +259,14 @@
   flex-wrap: wrap;
 }
 
+.detailBackHint {
+  margin: -8px 0 0;
+  padding: 0 2px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--theme-text-secondary);
+}
+
 .detailHero {
   display: grid;
   grid-template-columns: minmax(280px, 0.95fr) minmax(0, 1.1fr);
@@ -461,6 +469,7 @@
   }
 
   .pageIntro,
+  .detailBackHint,
   .detailSummary,
   .statusDescription,
   .readOnlyDescription,

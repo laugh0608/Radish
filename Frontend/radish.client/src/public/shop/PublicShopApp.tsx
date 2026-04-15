@@ -411,6 +411,11 @@ export const PublicShopApp = ({
     : detailBackAction
       ? t('public.shell.backToSource')
       : t('shop.public.backToProducts');
+  const detailBackHint = detailBackAction?.mode === 'discover'
+    ? t('shop.public.detailBackHintDiscover')
+    : detailBackAction
+      ? t('shop.public.detailBackHintSource')
+      : t('shop.public.detailBackHintDefault');
 
   const renderHome = () => {
     if (categoriesError && featuredError && categories.length === 0 && featuredProducts.length === 0 && !categoriesLoading && !featuredLoading) {
@@ -594,6 +599,7 @@ export const PublicShopApp = ({
           </button>
           <span className={styles.readOnlyBadge}>{t('shop.public.readOnlyBadge')}</span>
         </div>
+        <p className={styles.detailBackHint}>{detailBackHint}</p>
 
         <div className={styles.detailHero}>
           <div className={styles.detailImagePanel}>
