@@ -264,6 +264,106 @@
   line-height: 1.7;
 }
 
+.experienceGuideSection {
+  margin: 18px 24px 0;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 12%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-brand-soft) 26%, white 74%) 0%, color-mix(in srgb, var(--theme-bg-surface) 96%, white 4%) 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.experienceGuideHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.experienceGuideHeading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.experienceGuideKicker {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--theme-brand-primary);
+}
+
+.experienceGuideTitle {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.35;
+  font-weight: 700;
+  color: var(--theme-text-primary);
+}
+
+.experienceGuideIntro,
+.experienceGuideCardDescription {
+  margin: 0;
+  color: var(--theme-text-secondary);
+  line-height: 1.7;
+  font-size: 13px;
+}
+
+.experienceGuideIntro {
+  max-width: 520px;
+}
+
+.experienceGuideGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.experienceGuideCard {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  min-width: 0;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
+  background: color-mix(in srgb, var(--theme-bg-surface) 90%, white 10%);
+}
+
+.experienceGuideIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  background: color-mix(in srgb, var(--theme-brand-soft) 52%, white 48%);
+  color: var(--theme-brand-primary);
+}
+
+.experienceGuideBody {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.experienceGuideCardTitle {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+  font-weight: 700;
+  color: var(--theme-text-primary);
+}
+
 .inlineNotice {
   display: flex;
   align-items: center;
@@ -711,6 +811,15 @@
 }
 
 @media (max-width: 760px) {
+  .experienceGuideSection {
+    margin: 16px 16px 0;
+    padding: 16px;
+  }
+
+  .experienceGuideGrid {
+    grid-template-columns: 1fr;
+  }
+
   .listItem {
     grid-template-columns: 52px 48px minmax(0, 1fr) minmax(90px, auto);
     align-items: stretch;

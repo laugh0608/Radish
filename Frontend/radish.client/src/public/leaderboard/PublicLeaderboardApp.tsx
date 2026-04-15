@@ -46,6 +46,12 @@ interface PublicLeaderboardFallbackTypeDefinition {
   primaryLabelKey: string;
 }
 
+interface ExperienceGuideItemDefinition {
+  icon: string;
+  titleKey: string;
+  descriptionKey: string;
+}
+
 const publicLeaderboardFallbackTypes: Record<PublicLeaderboardTypeSlug, PublicLeaderboardFallbackTypeDefinition> = {
   experience: {
     icon: 'mdi:star-circle',
@@ -96,6 +102,24 @@ const publicLeaderboardFallbackTypes: Record<PublicLeaderboardTypeSlug, PublicLe
     primaryLabelKey: 'leaderboard.public.types.popularity.primaryLabel',
   },
 };
+
+const experienceGuideItems: ExperienceGuideItemDefinition[] = [
+  {
+    icon: 'mdi:trophy-outline',
+    titleKey: 'leaderboard.public.experienceGuide.rankingTitle',
+    descriptionKey: 'leaderboard.public.experienceGuide.rankingDescription',
+  },
+  {
+    icon: 'mdi:star-circle-outline',
+    titleKey: 'leaderboard.public.experienceGuide.levelTitle',
+    descriptionKey: 'leaderboard.public.experienceGuide.levelDescription',
+  },
+  {
+    icon: 'mdi:shield-half-full',
+    titleKey: 'leaderboard.public.experienceGuide.boundaryTitle',
+    descriptionKey: 'leaderboard.public.experienceGuide.boundaryDescription',
+  },
+];
 
 function PublicStatusCard({ tone, title, description, primaryAction }: PublicStatusCardProps) {
   const icon = tone === 'loading'
@@ -331,6 +355,7 @@ export const PublicLeaderboardApp = ({
     () => buildVisiblePages(route.page, totalPages, isCompactViewport ? 5 : 7),
     [isCompactViewport, route.page, totalPages]
   );
+  const showExperienceGuide = route.typeSlug === 'experience';
 
   const handleTypeChange = (typeSlug: PublicLeaderboardTypeSlug) => {
     onNavigate({
@@ -397,6 +422,32 @@ export const PublicLeaderboardApp = ({
             </div>
             <p className={styles.toolbarHint}>{activeTypeConfig.voDescription}</p>
           </div>
+
+          {showExperienceGuide && (
+            <section className={styles.experienceGuideSection} aria-label={t('leaderboard.public.experienceGuide.title')}>
+              <div className={styles.experienceGuideHeader}>
+                <div className={styles.experienceGuideHeading}>
+                  <p className={styles.experienceGuideKicker}>{t('leaderboard.public.experienceGuide.kicker')}</p>
+                  <h2 className={styles.experienceGuideTitle}>{t('leaderboard.public.experienceGuide.title')}</h2>
+                </div>
+                <p className={styles.experienceGuideIntro}>{t('leaderboard.public.experienceGuide.intro')}</p>
+              </div>
+
+              <div className={styles.experienceGuideGrid}>
+                {experienceGuideItems.map((item) => (
+                  <article key={item.titleKey} className={styles.experienceGuideCard}>
+                    <span className={styles.experienceGuideIcon} aria-hidden="true">
+                      <Icon icon={item.icon} size={18} />
+                    </span>
+                    <div className={styles.experienceGuideBody}>
+                      <h3 className={styles.experienceGuideCardTitle}>{t(item.titleKey)}</h3>
+                      <p className={styles.experienceGuideCardDescription}>{t(item.descriptionKey)}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
 
           {typesError && (
             <div className={styles.inlineNotice}>
