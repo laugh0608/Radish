@@ -76,7 +76,7 @@ export function parsePublicShopRoute(pathname: string, search: string): PublicSh
     const params = new URLSearchParams(search);
     return {
       kind: 'products',
-      categoryId: normalizeKeyword(params.get('category')),
+      categoryId: normalizePositiveIntegerString(params.get('category') ?? undefined),
       keyword: normalizeKeyword(params.get('q')),
       page: normalizePositiveInteger(params.get('page') ?? undefined) ?? 1
     };

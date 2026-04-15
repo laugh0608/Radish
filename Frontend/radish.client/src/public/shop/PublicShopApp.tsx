@@ -14,11 +14,13 @@ import type { Product, ProductCategory, ProductListItem } from '@/types/shop';
 import { resolveMediaUrl } from '@/utils/media';
 import type { PublicShopProductsRoute, PublicShopRoute } from '../shopRouteState';
 import {
+  buildPublicShopPath,
   createDefaultPublicShopProductsRoute,
   createDefaultPublicShopRoute,
 } from '../shopRouteState';
 import type { PublicDetailBackMode } from '../publicRouteNavigation';
 import { PublicShellHeader } from '../components/PublicShellHeader';
+import { usePublicReplaceRouteSync } from '../usePublicReplaceRouteSync';
 import styles from './PublicShopApp.module.css';
 
 interface PublicShopAppProps {
@@ -96,6 +98,10 @@ function formatProductPrice(value: number): string {
   return value.toLocaleString();
 }
 
+function buildProductsRouteKey(route: PublicShopProductsRoute): string {
+  return buildPublicShopPath(route);
+}
+
 export const PublicShopApp = ({
   route,
   fallbackProductsRoute,
@@ -120,7 +126,7 @@ export const PublicShopApp = ({
   const [featuredError, setFeaturedError] = useState<string | null>(null);
   const [productsError, setProductsError] = useState<string | null>(null);
   const [productError, setProductError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(() => route.kind === 'products' ? route.page : 1);
   const [totalPages, setTotalPages] = useState(1);
   const [reloadToken, setReloadToken] = useState(0);
 
@@ -151,6 +157,42 @@ export const PublicShopApp = ({
 
     return null;
   }, [categoriesError, featuredError, route.kind, t]);
+
+  const productsRouteState = route.kind === 'products' ? route : null;
+
+  const validatedCategoryId = useMemo(() => {
+    if (!productsRouteState?.categoryId) {
+      return undefined;
+    }
+
+    if (categoriesLoading || categoriesError) {
+      return productsRouteState.categoryId;
+    }
+
+    return categories.some((category) => String(category.voId) === productsRouteState.categoryId)
+      ? productsRouteState.categoryId
+      : undefined;
+  }, [categories, categoriesError, categoriesLoading, productsRouteState]);
+
+  const canonicalProductsRoute = useMemo<PublicShopProductsRoute>(() => {
+    if (!productsRouteState) {
+      return createDefaultPublicShopProductsRoute();
+    }
+
+    return {
+      kind: 'products',
+      categoryId: validatedCategoryId,
+      keyword: productsRouteState.keyword,
+      page: currentPage
+    };
+  }, [currentPage, productsRouteState, validatedCategoryId]);
+
+  usePublicReplaceRouteSync({
+    currentRouteKey: productsRouteState ? buildProductsRouteKey(productsRouteState) : '__shop-products-noop__',
+    nextRoute: canonicalProductsRoute,
+    nextRouteKey: productsRouteState ? buildProductsRouteKey(canonicalProductsRoute) : '__shop-products-noop__',
+    onRouteStateChange: onNavigate
+  });
 
   useEffect(() => {
     pageRef.current?.scrollTo({ top: 0, behavior: 'auto' });
@@ -235,7 +277,24 @@ export const PublicShopApp = ({
   }, [reloadToken, route.kind, t]);
 
   useEffect(() => {
-    if (route.kind !== 'products') {
+    if (!productsRouteState) {
+      setCurrentPage(1);
+      return;
+    }
+
+    setCurrentPage(productsRouteState.page);
+  }, [productsRouteState]);
+
+  useEffect(() => {
+    if (!productsRouteState) {
+      return;
+    }
+
+    if (productsRouteState.categoryId && categoriesLoading) {
+      return;
+    }
+
+    if (productsRouteState.categoryId && !categoriesError && validatedCategoryId !== productsRouteState.categoryId) {
       return;
     }
 
@@ -246,7 +305,7 @@ export const PublicShopApp = ({
       setProductsError(null);
 
       try {
-        const result = await getProducts(t, route.categoryId, undefined, route.keyword, route.page, 20);
+        const result = await getProducts(t, validatedCategoryId, undefined, productsRouteState.keyword, currentPage, 20);
         if (requestId !== listRequestIdRef.current) {
           return;
         }
@@ -256,13 +315,8 @@ export const PublicShopApp = ({
         }
 
         const nextTotalPages = Math.max(result.data.pageCount || 1, 1);
-        if (route.page > nextTotalPages) {
-          onNavigate({
-            kind: 'products',
-            categoryId: route.categoryId,
-            keyword: route.keyword,
-            page: nextTotalPages
-          }, { replace: true });
+        if (currentPage > nextTotalPages) {
+          setCurrentPage(nextTotalPages);
           return;
         }
 
@@ -286,7 +340,7 @@ export const PublicShopApp = ({
     };
 
     void loadProductList();
-  }, [onNavigate, reloadToken, route, t]);
+  }, [categoriesError, categoriesLoading, currentPage, productsRouteState, reloadToken, t, validatedCategoryId]);
 
   useEffect(() => {
     if (route.kind !== 'detail') {
@@ -327,23 +381,6 @@ export const PublicShopApp = ({
 
     void loadProductDetail();
   }, [reloadToken, route, t]);
-
-  useEffect(() => {
-    if (route.kind !== 'products' || categoriesLoading || Boolean(categoriesError) || !route.categoryId) {
-      return;
-    }
-
-    const hasMatchedCategory = categories.some((category) => String(category.voId) === route.categoryId);
-    if (hasMatchedCategory) {
-      return;
-    }
-
-    onNavigate({
-      kind: 'products',
-      keyword: route.keyword,
-      page: route.page
-    }, { replace: true });
-  }, [categories, categoriesError, categoriesLoading, onNavigate, route]);
 
   const handleOpenProducts = (categoryId?: string) => {
     onNavigate({
