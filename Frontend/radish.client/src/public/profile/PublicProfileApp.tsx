@@ -220,9 +220,20 @@ export const PublicProfileApp = ({
             return;
           }
 
+          const nextTotalPages = Math.max(pageModel.pageCount || 1, 1);
+          if (route.page > nextTotalPages) {
+            onNavigate({
+              kind: 'detail',
+              userId: route.userId,
+              tab: route.tab,
+              page: nextTotalPages
+            }, { replace: true });
+            return;
+          }
+
           setPosts(pageModel.data ?? []);
           setComments([]);
-          setTotalPages(pageModel.pageCount || 1);
+          setTotalPages(nextTotalPages);
           return;
         }
 
@@ -231,9 +242,20 @@ export const PublicProfileApp = ({
           return;
         }
 
+        const nextTotalPages = Math.max(pageModel.pageCount || 1, 1);
+        if (route.page > nextTotalPages) {
+          onNavigate({
+            kind: 'detail',
+            userId: route.userId,
+            tab: route.tab,
+            page: nextTotalPages
+          }, { replace: true });
+          return;
+        }
+
         setComments(pageModel.data ?? []);
         setPosts([]);
-        setTotalPages(pageModel.pageCount || 1);
+        setTotalPages(nextTotalPages);
       } catch (error) {
         if (requestId !== contentRequestIdRef.current) {
           return;
@@ -252,7 +274,7 @@ export const PublicProfileApp = ({
     };
 
     void loadContent();
-  }, [contentReloadToken, route.page, route.tab, route.userId]);
+  }, [contentReloadToken, onNavigate, route.page, route.tab, route.userId]);
 
   useEffect(() => {
     if (loadingProfile) {
