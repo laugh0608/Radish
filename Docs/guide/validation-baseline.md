@@ -232,6 +232,15 @@ npm run validate:ci
 - SQLite 本地稳定性：若本轮同时改到公开标签 slug 解析、仓储通用读查询或后台作业读取链路，宿主重启后需额外确认 `ShopJob / PostLotteryJob` 不再出现 `reader is closed / FieldCount when reader is closed`，并确认公开标签直链不会再触发 `near \"(\": syntax error`
 - 范围边界：公开标签首批当前只承载标签上下文、帖子列表阅读、排序分页与帖子详情阅读，不开放标签关注、标签订阅、发帖、评论提交、点赞、投票或其他桌面互动动作
 
+当前批次与 forum 公开结构化类型直达直接相关的人工确认面：
+
+- 类型直链：`/forum/question`、`/forum/poll` 与 `/forum/lottery` 直链在公开壳层下打开时，会直接进入对应公开类型列表，而不是回到桌面 `Shell`
+- 排序规范：类型页 `sort` 参数会按类型约束自动规范化；问答页仅接受 `newest / pending / answers`，投票页仅接受 `newest / hottest / votes / deadline`，抽奖页仅接受 `newest / hottest`，非法排序值会 replace 收口到对应默认值
+- 分页规范化：类型页 `page` 会稳定回写到 URL；若直接打开越界页码，当前会 replace 收口到最后一页，而不是停留在空页 URL
+- 返回链路：从公开类型列表进入 `/forum/post/:postId` 后，返回时会回到原来的类型结果，并保留 `sort / page` 上下文，而不是丢失到默认列表
+- 类型跳转：公开列表卡片、帖子详情中的“问答 / 投票 / 抽奖”徽标会统一跳到对应公开类型列表，不再停留在纯展示徽标
+- 范围边界：公开类型页首批当前只承载结构化帖子列表阅读、排序分页与帖子详情阅读，不开放提问、发起投票、参与抽奖、评论提交、点赞、投票提交或其他桌面互动动作
+
 当前批次与 docs 公开搜索首批直接相关的人工确认面：
 
 - 搜索直链：`/docs/search` 直链在公开壳层下打开时，会直接进入公开搜索页，而不是回到桌面 `Shell`
