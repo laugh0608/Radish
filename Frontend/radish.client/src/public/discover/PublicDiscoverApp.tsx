@@ -32,8 +32,20 @@ interface SectionStatusCardProps {
   tone: 'loading' | 'error' | 'empty';
   title: string;
   description: string;
-  actionLabel?: string;
-  onAction?: () => void;
+  guideLabel?: string;
+  guideText?: string;
+  destinationLabel?: string;
+  destinationText?: string;
+  boundaryLabel?: string;
+  boundaryText?: string;
+  primaryAction?: {
+    label: string;
+    onClick: () => void;
+  };
+  secondaryAction?: {
+    label: string;
+    onClick: () => void;
+  };
 }
 
 interface DiscoverGuideItemDefinition {
@@ -65,6 +77,8 @@ interface DiscoverSummaryCardDefinition {
   icon: string;
   label: string;
   value: string;
+  state: 'ready' | 'loading' | 'error' | 'empty';
+  statusLabel: string;
   meaning: string;
   destination: string;
   onClick: () => void;
@@ -223,7 +237,19 @@ const leaderboardSectionCueDefinitions: DiscoverSectionCueDefinition[] = [
   { key: 'boundary', labelKey: 'discover.public.leaderboardCueBoundary' },
 ] as const;
 
-function SectionStatusCard({ tone, title, description, actionLabel, onAction }: SectionStatusCardProps) {
+function SectionStatusCard({
+  tone,
+  title,
+  description,
+  guideLabel,
+  guideText,
+  destinationLabel,
+  destinationText,
+  boundaryLabel,
+  boundaryText,
+  primaryAction,
+  secondaryAction
+}: SectionStatusCardProps) {
   const icon = tone === 'loading'
     ? 'mdi:progress-clock'
     : tone === 'empty'
@@ -235,13 +261,44 @@ function SectionStatusCard({ tone, title, description, actionLabel, onAction }: 
       <div className={styles.statusIcon}>
         <Icon icon={icon} size={20} />
       </div>
-      <div>
+      <div className={styles.statusBody}>
         <h3 className={styles.statusTitle}>{title}</h3>
         <p className={styles.statusDescription}>{description}</p>
-        {actionLabel && onAction && (
-          <button type="button" className={styles.secondaryButton} onClick={onAction}>
-            {actionLabel}
-          </button>
+        {(guideText || destinationText || boundaryText) && (
+          <div className={styles.statusMetaList}>
+            {guideText && guideLabel && (
+              <div className={styles.statusMetaRow}>
+                <span className={styles.statusMetaLabel}>{guideLabel}</span>
+                <span className={styles.statusMetaText}>{guideText}</span>
+              </div>
+            )}
+            {destinationText && destinationLabel && (
+              <div className={styles.statusMetaRow}>
+                <span className={styles.statusMetaLabel}>{destinationLabel}</span>
+                <span className={styles.statusMetaText}>{destinationText}</span>
+              </div>
+            )}
+            {boundaryText && boundaryLabel && (
+              <div className={styles.statusMetaRow}>
+                <span className={styles.statusMetaLabel}>{boundaryLabel}</span>
+                <span className={styles.statusMetaText}>{boundaryText}</span>
+              </div>
+            )}
+          </div>
+        )}
+        {(primaryAction || secondaryAction) && (
+          <div className={styles.statusActions}>
+            {primaryAction && (
+              <button type="button" className={styles.secondaryButton} onClick={primaryAction.onClick}>
+                {primaryAction.label}
+              </button>
+            )}
+            {secondaryAction && (
+              <button type="button" className={styles.secondaryButton} onClick={secondaryAction.onClick}>
+                {secondaryAction.label}
+              </button>
+            )}
+          </div>
         )}
       </div>
     </div>
@@ -446,8 +503,22 @@ export const PublicDiscoverApp = ({
       key: 'forum',
       icon: 'mdi:forum-outline',
       label: t('discover.public.summaryForumLabel'),
-      value: String(forumPosts.length),
-      meaning: t('discover.public.summaryForumMeaning', { count: forumPosts.length }),
+      value: loadingForum ? '...' : forumError ? '--' : String(forumPosts.length),
+      state: loadingForum ? 'loading' : forumError ? 'error' : forumPosts.length === 0 ? 'empty' : 'ready',
+      statusLabel: loadingForum
+        ? t('discover.public.summaryStateLoading')
+        : forumError
+          ? t('discover.public.summaryStateError')
+          : forumPosts.length === 0
+            ? t('discover.public.summaryStateEmpty')
+            : t('discover.public.summaryStateReady'),
+      meaning: loadingForum
+        ? t('discover.public.summaryForumMeaningLoading')
+        : forumError
+          ? t('discover.public.summaryForumMeaningError')
+          : forumPosts.length === 0
+            ? t('discover.public.summaryForumMeaningEmpty')
+            : t('discover.public.summaryForumMeaning', { count: forumPosts.length }),
       destination: t('discover.public.summaryForumDestination'),
       onClick: () => onNavigateToForum({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 })
     },
@@ -455,8 +526,22 @@ export const PublicDiscoverApp = ({
       key: 'docs',
       icon: 'mdi:file-document-outline',
       label: t('discover.public.summaryDocsLabel'),
-      value: String(docs.length),
-      meaning: t('discover.public.summaryDocsMeaning', { count: docs.length }),
+      value: loadingDocs ? '...' : docsError ? '--' : String(docs.length),
+      state: loadingDocs ? 'loading' : docsError ? 'error' : docs.length === 0 ? 'empty' : 'ready',
+      statusLabel: loadingDocs
+        ? t('discover.public.summaryStateLoading')
+        : docsError
+          ? t('discover.public.summaryStateError')
+          : docs.length === 0
+            ? t('discover.public.summaryStateEmpty')
+            : t('discover.public.summaryStateReady'),
+      meaning: loadingDocs
+        ? t('discover.public.summaryDocsMeaningLoading')
+        : docsError
+          ? t('discover.public.summaryDocsMeaningError')
+          : docs.length === 0
+            ? t('discover.public.summaryDocsMeaningEmpty')
+            : t('discover.public.summaryDocsMeaning', { count: docs.length }),
       destination: t('discover.public.summaryDocsDestination'),
       onClick: () => onNavigateToDocs({ kind: 'list' })
     },
@@ -465,6 +550,8 @@ export const PublicDiscoverApp = ({
       icon: 'mdi:trophy-outline',
       label: t('discover.public.summaryLeaderboardLabel'),
       value: String(featuredLeaderboardConfigs.length),
+      state: 'ready',
+      statusLabel: t('discover.public.summaryStateReady'),
       meaning: t('discover.public.summaryLeaderboardMeaning', { count: featuredLeaderboardConfigs.length }),
       destination: t('discover.public.summaryLeaderboardDestination'),
       onClick: () => onNavigateToLeaderboard(createDefaultPublicLeaderboardRoute())
@@ -473,12 +560,26 @@ export const PublicDiscoverApp = ({
       key: 'shop',
       icon: 'mdi:storefront-outline',
       label: t('discover.public.summaryShopLabel'),
-      value: String(products.length),
-      meaning: t('discover.public.summaryShopMeaning', { count: products.length }),
+      value: loadingShop ? '...' : shopError ? '--' : String(products.length),
+      state: loadingShop ? 'loading' : shopError ? 'error' : products.length === 0 ? 'empty' : 'ready',
+      statusLabel: loadingShop
+        ? t('discover.public.summaryStateLoading')
+        : shopError
+          ? t('discover.public.summaryStateError')
+          : products.length === 0
+            ? t('discover.public.summaryStateEmpty')
+            : t('discover.public.summaryStateReady'),
+      meaning: loadingShop
+        ? t('discover.public.summaryShopMeaningLoading')
+        : shopError
+          ? t('discover.public.summaryShopMeaningError')
+          : products.length === 0
+            ? t('discover.public.summaryShopMeaningEmpty')
+            : t('discover.public.summaryShopMeaning', { count: products.length }),
       destination: t('discover.public.summaryShopDestination'),
       onClick: () => onNavigateToShop({ kind: 'home' })
     }
-  ]), [docs.length, forumPosts.length, onNavigateToDocs, onNavigateToForum, onNavigateToLeaderboard, onNavigateToShop, products.length, t]);
+  ]), [docs.length, docsError, featuredLeaderboardConfigs.length, forumError, forumPosts.length, loadingDocs, loadingForum, loadingShop, onNavigateToDocs, onNavigateToForum, onNavigateToLeaderboard, onNavigateToShop, products.length, shopError, t]);
 
   const routeGuideCards = useMemo(() => (
     discoverRouteGuideDefinitions.map((item) => ({
@@ -501,6 +602,13 @@ export const PublicDiscoverApp = ({
       }
     }))
   ), [onNavigateToDocs, onNavigateToForum, onNavigateToLeaderboard, onNavigateToShop]);
+
+  const routeGuideMap = useMemo(() => ({
+    forum: routeGuideCards.find((item) => item.key === 'forum') ?? routeGuideCards[0],
+    docs: routeGuideCards.find((item) => item.key === 'docs') ?? routeGuideCards[0],
+    leaderboard: routeGuideCards.find((item) => item.key === 'leaderboard') ?? routeGuideCards[0],
+    shop: routeGuideCards.find((item) => item.key === 'shop') ?? routeGuideCards[0]
+  }), [routeGuideCards]);
 
   return (
     <div className={styles.page}>
@@ -573,7 +681,10 @@ export const PublicDiscoverApp = ({
                   <span className={styles.summaryIcon}>
                     <Icon icon={item.icon} size={18} />
                   </span>
-                  <span className={styles.summaryLabel}>{item.label}</span>
+                  <div className={styles.summaryHeading}>
+                    <span className={styles.summaryLabel}>{item.label}</span>
+                    <span className={styles.summaryStatus} data-state={item.state}>{item.statusLabel}</span>
+                  </div>
                 </div>
                 <span className={styles.summaryValue}>{item.value}</span>
                 <p className={styles.summaryMeaning}>{item.meaning}</p>
@@ -666,20 +777,52 @@ export const PublicDiscoverApp = ({
                 tone="loading"
                 title={t('discover.public.forumLoadingTitle')}
                 description={t('discover.public.forumLoadingDescription')}
+                guideLabel={t(routeGuideMap.forum.valueLabelKey)}
+                guideText={t(routeGuideMap.forum.valueTextKey)}
+                destinationLabel={t(routeGuideMap.forum.destinationLabelKey)}
+                destinationText={t(routeGuideMap.forum.destinationTextKey)}
+                boundaryLabel={t(routeGuideMap.forum.boundaryLabelKey)}
+                boundaryText={t(routeGuideMap.forum.boundaryTextKey)}
+                primaryAction={{
+                  label: t('discover.public.viewAllForum'),
+                  onClick: () => onNavigateToForum({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 })
+                }}
               />
             ) : forumError ? (
               <SectionStatusCard
                 tone="error"
                 title={t('discover.public.forumLoadFailedTitle')}
                 description={forumError}
-                actionLabel={t('common.retry')}
-                onAction={() => setReloadToken((current) => current + 1)}
+                guideLabel={t(routeGuideMap.forum.valueLabelKey)}
+                guideText={t(routeGuideMap.forum.valueTextKey)}
+                destinationLabel={t(routeGuideMap.forum.destinationLabelKey)}
+                destinationText={t(routeGuideMap.forum.destinationTextKey)}
+                boundaryLabel={t(routeGuideMap.forum.boundaryLabelKey)}
+                boundaryText={t(routeGuideMap.forum.boundaryTextKey)}
+                primaryAction={{
+                  label: t('discover.public.viewAllForum'),
+                  onClick: () => onNavigateToForum({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 })
+                }}
+                secondaryAction={{
+                  label: t('common.retry'),
+                  onClick: () => setReloadToken((current) => current + 1)
+                }}
               />
             ) : forumPosts.length === 0 ? (
               <SectionStatusCard
                 tone="empty"
                 title={t('discover.public.forumEmptyTitle')}
                 description={t('discover.public.forumEmptyDescription')}
+                guideLabel={t(routeGuideMap.forum.valueLabelKey)}
+                guideText={t(routeGuideMap.forum.valueTextKey)}
+                destinationLabel={t(routeGuideMap.forum.destinationLabelKey)}
+                destinationText={t(routeGuideMap.forum.destinationTextKey)}
+                boundaryLabel={t(routeGuideMap.forum.boundaryLabelKey)}
+                boundaryText={t(routeGuideMap.forum.boundaryTextKey)}
+                primaryAction={{
+                  label: t('discover.public.viewAllForum'),
+                  onClick: () => onNavigateToForum({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 })
+                }}
               />
             ) : (
               <>
@@ -740,20 +883,52 @@ export const PublicDiscoverApp = ({
                 tone="loading"
                 title={t('discover.public.docsLoadingTitle')}
                 description={t('discover.public.docsLoadingDescription')}
+                guideLabel={t(routeGuideMap.docs.valueLabelKey)}
+                guideText={t(routeGuideMap.docs.valueTextKey)}
+                destinationLabel={t(routeGuideMap.docs.destinationLabelKey)}
+                destinationText={t(routeGuideMap.docs.destinationTextKey)}
+                boundaryLabel={t(routeGuideMap.docs.boundaryLabelKey)}
+                boundaryText={t(routeGuideMap.docs.boundaryTextKey)}
+                primaryAction={{
+                  label: t('discover.public.viewAllDocs'),
+                  onClick: () => onNavigateToDocs({ kind: 'list' })
+                }}
               />
             ) : docsError ? (
               <SectionStatusCard
                 tone="error"
                 title={t('discover.public.docsLoadFailedTitle')}
                 description={docsError}
-                actionLabel={t('common.retry')}
-                onAction={() => setReloadToken((current) => current + 1)}
+                guideLabel={t(routeGuideMap.docs.valueLabelKey)}
+                guideText={t(routeGuideMap.docs.valueTextKey)}
+                destinationLabel={t(routeGuideMap.docs.destinationLabelKey)}
+                destinationText={t(routeGuideMap.docs.destinationTextKey)}
+                boundaryLabel={t(routeGuideMap.docs.boundaryLabelKey)}
+                boundaryText={t(routeGuideMap.docs.boundaryTextKey)}
+                primaryAction={{
+                  label: t('discover.public.viewAllDocs'),
+                  onClick: () => onNavigateToDocs({ kind: 'list' })
+                }}
+                secondaryAction={{
+                  label: t('common.retry'),
+                  onClick: () => setReloadToken((current) => current + 1)
+                }}
               />
             ) : docs.length === 0 ? (
               <SectionStatusCard
                 tone="empty"
                 title={t('discover.public.docsEmptyTitle')}
                 description={t('discover.public.docsEmptyDescription')}
+                guideLabel={t(routeGuideMap.docs.valueLabelKey)}
+                guideText={t(routeGuideMap.docs.valueTextKey)}
+                destinationLabel={t(routeGuideMap.docs.destinationLabelKey)}
+                destinationText={t(routeGuideMap.docs.destinationTextKey)}
+                boundaryLabel={t(routeGuideMap.docs.boundaryLabelKey)}
+                boundaryText={t(routeGuideMap.docs.boundaryTextKey)}
+                primaryAction={{
+                  label: t('discover.public.viewAllDocs'),
+                  onClick: () => onNavigateToDocs({ kind: 'list' })
+                }}
               />
             ) : (
               <div className={styles.docsList}>
@@ -878,20 +1053,52 @@ export const PublicDiscoverApp = ({
               tone="loading"
               title={t('discover.public.shopLoadingTitle')}
               description={t('discover.public.shopLoadingDescription')}
+              guideLabel={t(routeGuideMap.shop.valueLabelKey)}
+              guideText={t(routeGuideMap.shop.valueTextKey)}
+              destinationLabel={t(routeGuideMap.shop.destinationLabelKey)}
+              destinationText={t(routeGuideMap.shop.destinationTextKey)}
+              boundaryLabel={t(routeGuideMap.shop.boundaryLabelKey)}
+              boundaryText={t(routeGuideMap.shop.boundaryTextKey)}
+              primaryAction={{
+                label: t('discover.public.viewAllShop'),
+                onClick: () => onNavigateToShop(createDefaultPublicShopProductsRoute())
+              }}
             />
           ) : shopError ? (
             <SectionStatusCard
               tone="error"
               title={t('discover.public.shopLoadFailedTitle')}
               description={shopError}
-              actionLabel={t('common.retry')}
-              onAction={() => setReloadToken((current) => current + 1)}
+              guideLabel={t(routeGuideMap.shop.valueLabelKey)}
+              guideText={t(routeGuideMap.shop.valueTextKey)}
+              destinationLabel={t(routeGuideMap.shop.destinationLabelKey)}
+              destinationText={t(routeGuideMap.shop.destinationTextKey)}
+              boundaryLabel={t(routeGuideMap.shop.boundaryLabelKey)}
+              boundaryText={t(routeGuideMap.shop.boundaryTextKey)}
+              primaryAction={{
+                label: t('discover.public.viewAllShop'),
+                onClick: () => onNavigateToShop(createDefaultPublicShopProductsRoute())
+              }}
+              secondaryAction={{
+                label: t('common.retry'),
+                onClick: () => setReloadToken((current) => current + 1)
+              }}
             />
           ) : products.length === 0 ? (
             <SectionStatusCard
               tone="empty"
               title={t('discover.public.shopEmptyTitle')}
               description={t('discover.public.shopEmptyDescription')}
+              guideLabel={t(routeGuideMap.shop.valueLabelKey)}
+              guideText={t(routeGuideMap.shop.valueTextKey)}
+              destinationLabel={t(routeGuideMap.shop.destinationLabelKey)}
+              destinationText={t(routeGuideMap.shop.destinationTextKey)}
+              boundaryLabel={t(routeGuideMap.shop.boundaryLabelKey)}
+              boundaryText={t(routeGuideMap.shop.boundaryTextKey)}
+              primaryAction={{
+                label: t('discover.public.viewAllShop'),
+                onClick: () => onNavigateToShop(createDefaultPublicShopProductsRoute())
+              }}
             />
           ) : (
             <div className={styles.productList}>
