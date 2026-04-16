@@ -22,6 +22,7 @@
    - 当前已统一模板的样板专题见：[人工验收模板](/guide/manual-acceptance-template)
    - 若本轮是首轮收口或补丁复验，建议再补一条 [回归结论记录模板](/guide/regression-result-template) 对应的结果记录
    - 若需要给周志、PR 或评审补一页完整记录，优先按 [变更回归记录模板](/guide/change-regression-record-template) 整理
+   - 当前公开壳层的批次级记录样例见：[公开壳层首轮收口与真实联调复核变更回归记录（2026-04-16）](/guide/public-shell-change-regression-record-2026-04-16)
    - 若本轮涉及 `Identity Guard` 或 `validate:ci` 分流，记录时默认补清“身份语义命中原因”和“失败归类 / 受限环境边界”
 
 ## 按改动主题选择回归
