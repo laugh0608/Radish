@@ -23,6 +23,7 @@
 
 .heroInner {
   width: min(1120px, calc(100% - 32px));
+  max-width: 100%;
   margin: 0 auto;
   min-height: 72px;
   display: flex;
@@ -82,9 +83,11 @@
 }
 
 .main {
-  width: min(1040px, calc(100vw - 24px));
+  width: min(1040px, calc(100% - 24px));
+  max-width: 100%;
   margin: 0 auto;
   padding: 24px 0 40px;
+  box-sizing: border-box;
 }
 
 .heroCard {
@@ -151,6 +154,51 @@
   color: var(--theme-text-secondary);
   font-size: 1rem;
   line-height: 1.75;
+}
+
+.heroGuideGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 22px;
+}
+
+.heroGuideCard {
+  border-radius: 20px;
+  padding: 16px;
+  background: color-mix(in srgb, var(--theme-bg-surface) 88%, white 12%);
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.heroGuideIcon {
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  background: color-mix(in srgb, var(--theme-brand-soft) 70%, white 30%);
+  color: var(--theme-brand-primary);
+}
+
+.heroGuideBody {
+  min-width: 0;
+}
+
+.heroGuideTitle {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.heroGuideDescription {
+  margin: 8px 0 0;
+  color: var(--theme-text-secondary);
+  line-height: 1.65;
+  font-size: 0.88rem;
 }
 
 .heroActions {
@@ -241,12 +289,18 @@
   margin-top: 18px;
 }
 
+.sectionGrid + .sectionCard {
+  margin-top: 18px;
+}
+
 .sectionCard {
+  min-width: 0;
   border-radius: 24px;
   padding: 22px;
   background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
   box-shadow: var(--theme-shadow-soft);
+  box-sizing: border-box;
 }
 
 .sectionHeader {
@@ -362,15 +416,32 @@
   display: grid;
   gap: 12px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
 }
 
 .routeButton {
+  min-width: 0;
   border-radius: 18px;
   padding: 16px;
   background: color-mix(in srgb, var(--theme-bg-surface) 90%, white 10%);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
   text-align: left;
   color: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+}
+
+.routeTop {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.routeHeading {
+  min-width: 0;
 }
 
 .routeIcon {
@@ -386,17 +457,59 @@
 
 .routeLabel {
   display: block;
-  margin-top: 12px;
   font-size: 0.98rem;
   font-weight: 700;
 }
 
 .routeDescription {
   display: block;
-  margin-top: 6px;
+  margin-top: 4px;
   color: var(--theme-text-secondary);
   font-size: 0.88rem;
   line-height: 1.6;
+}
+
+.routeMetaList {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.routeMetaRow {
+  min-width: 0;
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--theme-bg-muted) 72%, var(--theme-bg-surface) 28%);
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 56%, transparent);
+  box-sizing: border-box;
+}
+
+.routeMetaLabel {
+  display: block;
+  color: var(--theme-text-tertiary);
+  font-size: 0.76rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.routeMetaText {
+  display: block;
+  margin-top: 6px;
+  color: var(--theme-text-primary);
+  font-size: 0.88rem;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.routeActionHint {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--theme-brand-primary);
+  font-size: 0.86rem;
+  font-weight: 600;
 }
 
 .leaderboardTop {
@@ -496,6 +609,7 @@
 }
 
 @media (max-width: 960px) {
+  .heroGuideGrid,
   .summaryGrid,
   .routeGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -509,7 +623,7 @@
 @media (max-width: 720px) {
   .heroInner,
   .main {
-    width: calc(100vw - 20px);
+    width: calc(100% - 20px);
   }
 
   .heroCard,
@@ -518,6 +632,7 @@
     border-radius: 22px;
   }
 
+  .heroGuideGrid,
   .summaryGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -551,7 +666,19 @@
 }
 
 @media (max-width: 420px) {
+  .heroGuideGrid,
   .summaryGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .heroGuideCard,
+  .routeMetaRow {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 560px) {
+  .heroGuideGrid {
+    grid-template-columns: 1fr;
   }
 }

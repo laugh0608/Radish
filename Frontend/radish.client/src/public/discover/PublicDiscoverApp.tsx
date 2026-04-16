@@ -36,6 +36,25 @@ interface SectionStatusCardProps {
   onAction?: () => void;
 }
 
+interface DiscoverGuideItemDefinition {
+  icon: string;
+  titleKey: string;
+  descriptionKey: string;
+}
+
+interface DiscoverRouteGuideDefinition {
+  key: 'forum' | 'docs' | 'leaderboard' | 'shop';
+  icon: string;
+  titleKey: string;
+  descriptionKey: string;
+  valueLabelKey: string;
+  valueTextKey: string;
+  destinationLabelKey: string;
+  destinationTextKey: string;
+  boundaryLabelKey: string;
+  boundaryTextKey: string;
+}
+
 const featuredLeaderboardConfigs = [
   {
     key: 'experience',
@@ -54,6 +73,75 @@ const featuredLeaderboardConfigs = [
     icon: 'mdi:gift-outline',
     nameKey: 'leaderboard.public.types.hotProduct.name',
     descriptionKey: 'leaderboard.public.types.hotProduct.description',
+  },
+] as const;
+
+const discoverGuideItems: DiscoverGuideItemDefinition[] = [
+  {
+    icon: 'mdi:compass-outline',
+    titleKey: 'discover.public.heroGuideValueTitle',
+    descriptionKey: 'discover.public.heroGuideValueDescription',
+  },
+  {
+    icon: 'mdi:source-branch',
+    titleKey: 'discover.public.heroGuideReturnTitle',
+    descriptionKey: 'discover.public.heroGuideReturnDescription',
+  },
+  {
+    icon: 'mdi:shield-half-full',
+    titleKey: 'discover.public.heroGuideBoundaryTitle',
+    descriptionKey: 'discover.public.heroGuideBoundaryDescription',
+  },
+] as const;
+
+const discoverRouteGuideDefinitions: DiscoverRouteGuideDefinition[] = [
+  {
+    key: 'forum',
+    icon: 'mdi:forum-outline',
+    titleKey: 'discover.public.routeForumTitle',
+    descriptionKey: 'discover.public.routeForumDescription',
+    valueLabelKey: 'discover.public.routeValueLabel',
+    valueTextKey: 'discover.public.routeForumValue',
+    destinationLabelKey: 'discover.public.routeDestinationLabel',
+    destinationTextKey: 'discover.public.routeForumDestination',
+    boundaryLabelKey: 'discover.public.routeBoundaryLabel',
+    boundaryTextKey: 'discover.public.routeForumBoundary',
+  },
+  {
+    key: 'docs',
+    icon: 'mdi:file-document-outline',
+    titleKey: 'discover.public.routeDocsTitle',
+    descriptionKey: 'discover.public.routeDocsDescription',
+    valueLabelKey: 'discover.public.routeValueLabel',
+    valueTextKey: 'discover.public.routeDocsValue',
+    destinationLabelKey: 'discover.public.routeDestinationLabel',
+    destinationTextKey: 'discover.public.routeDocsDestination',
+    boundaryLabelKey: 'discover.public.routeBoundaryLabel',
+    boundaryTextKey: 'discover.public.routeDocsBoundary',
+  },
+  {
+    key: 'leaderboard',
+    icon: 'mdi:trophy-outline',
+    titleKey: 'discover.public.routeLeaderboardTitle',
+    descriptionKey: 'discover.public.routeLeaderboardDescription',
+    valueLabelKey: 'discover.public.routeValueLabel',
+    valueTextKey: 'discover.public.routeLeaderboardValue',
+    destinationLabelKey: 'discover.public.routeDestinationLabel',
+    destinationTextKey: 'discover.public.routeLeaderboardDestination',
+    boundaryLabelKey: 'discover.public.routeBoundaryLabel',
+    boundaryTextKey: 'discover.public.routeLeaderboardBoundary',
+  },
+  {
+    key: 'shop',
+    icon: 'mdi:storefront-outline',
+    titleKey: 'discover.public.routeShopTitle',
+    descriptionKey: 'discover.public.routeShopDescription',
+    valueLabelKey: 'discover.public.routeValueLabel',
+    valueTextKey: 'discover.public.routeShopValue',
+    destinationLabelKey: 'discover.public.routeDestinationLabel',
+    destinationTextKey: 'discover.public.routeShopDestination',
+    boundaryLabelKey: 'discover.public.routeBoundaryLabel',
+    boundaryTextKey: 'discover.public.routeShopBoundary',
   },
 ] as const;
 
@@ -237,6 +325,28 @@ export const PublicDiscoverApp = ({
     }
   ]), [docs.length, forumPosts.length, hotTags.length, products.length, t]);
 
+  const routeGuideCards = useMemo(() => (
+    discoverRouteGuideDefinitions.map((item) => ({
+      ...item,
+      onClick: () => {
+        switch (item.key) {
+          case 'forum':
+            onNavigateToForum({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 });
+            return;
+          case 'docs':
+            onNavigateToDocs({ kind: 'list' });
+            return;
+          case 'leaderboard':
+            onNavigateToLeaderboard(createDefaultPublicLeaderboardRoute());
+            return;
+          case 'shop':
+            onNavigateToShop({ kind: 'home' });
+            return;
+        }
+      }
+    }))
+  ), [onNavigateToDocs, onNavigateToForum, onNavigateToLeaderboard, onNavigateToShop]);
+
   return (
     <div className={styles.page}>
       <PublicShellHeader
@@ -254,6 +364,20 @@ export const PublicDiscoverApp = ({
           </div>
           <h1 className={styles.pageTitle}>{t('discover.public.pageTitle')}</h1>
           <p className={styles.pageIntro}>{t('discover.public.pageIntro')}</p>
+
+          <div className={styles.heroGuideGrid}>
+            {discoverGuideItems.map((item) => (
+              <article key={item.titleKey} className={styles.heroGuideCard}>
+                <span className={styles.heroGuideIcon} aria-hidden="true">
+                  <Icon icon={item.icon} size={18} />
+                </span>
+                <div className={styles.heroGuideBody}>
+                  <h2 className={styles.heroGuideTitle}>{t(item.titleKey)}</h2>
+                  <p className={styles.heroGuideDescription}>{t(item.descriptionKey)}</p>
+                </div>
+              </article>
+            ))}
+          </div>
 
           <div className={styles.heroActions}>
             <button
@@ -293,6 +417,56 @@ export const PublicDiscoverApp = ({
         </section>
 
         <div className={styles.sectionGrid}>
+          <section className={styles.sectionCard}>
+            <div className={styles.sectionHeader}>
+              <div className={styles.sectionHeading}>
+                <h2 className={styles.sectionTitle}>{t('discover.public.routeSectionTitle')}</h2>
+                <p className={styles.sectionDescription}>{t('discover.public.routeSectionDescription')}</p>
+              </div>
+            </div>
+
+            <div className={styles.routeGrid}>
+              {routeGuideCards.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  className={styles.routeButton}
+                  onClick={item.onClick}
+                >
+                  <div className={styles.routeTop}>
+                    <span className={styles.routeIcon}>
+                      <Icon icon={item.icon} size={20} />
+                    </span>
+                    <div className={styles.routeHeading}>
+                      <span className={styles.routeLabel}>{t(item.titleKey)}</span>
+                      <span className={styles.routeDescription}>{t(item.descriptionKey)}</span>
+                    </div>
+                  </div>
+
+                  <div className={styles.routeMetaList}>
+                    <div className={styles.routeMetaRow}>
+                      <span className={styles.routeMetaLabel}>{t(item.valueLabelKey)}</span>
+                      <span className={styles.routeMetaText}>{t(item.valueTextKey)}</span>
+                    </div>
+                    <div className={styles.routeMetaRow}>
+                      <span className={styles.routeMetaLabel}>{t(item.destinationLabelKey)}</span>
+                      <span className={styles.routeMetaText}>{t(item.destinationTextKey)}</span>
+                    </div>
+                    <div className={styles.routeMetaRow}>
+                      <span className={styles.routeMetaLabel}>{t(item.boundaryLabelKey)}</span>
+                      <span className={styles.routeMetaText}>{t(item.boundaryTextKey)}</span>
+                    </div>
+                  </div>
+
+                  <span className={styles.routeActionHint}>
+                    {t('discover.public.routeActionHint')}
+                    <Icon icon="mdi:arrow-right" size={16} />
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+
           <section className={styles.sectionCard}>
             <div className={styles.sectionHeader}>
               <div className={styles.sectionHeading}>
@@ -362,54 +536,6 @@ export const PublicDiscoverApp = ({
                 )}
               </>
             )}
-          </section>
-
-          <section className={styles.sectionCard}>
-            <div className={styles.sectionHeader}>
-              <div className={styles.sectionHeading}>
-                <h2 className={styles.sectionTitle}>{t('discover.public.routeSectionTitle')}</h2>
-                <p className={styles.sectionDescription}>{t('discover.public.routeSectionDescription')}</p>
-              </div>
-            </div>
-
-            <div className={styles.routeGrid}>
-              <button
-                type="button"
-                className={styles.routeButton}
-                onClick={() => onNavigateToForum({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 })}
-              >
-                <span className={styles.routeIcon}>
-                  <Icon icon="mdi:forum-outline" size={20} />
-                </span>
-                <span className={styles.routeLabel}>{t('discover.public.routeForumTitle')}</span>
-                <span className={styles.routeDescription}>{t('discover.public.routeForumDescription')}</span>
-              </button>
-              <button type="button" className={styles.routeButton} onClick={() => onNavigateToDocs({ kind: 'list' })}>
-                <span className={styles.routeIcon}>
-                  <Icon icon="mdi:file-document-outline" size={20} />
-                </span>
-                <span className={styles.routeLabel}>{t('discover.public.routeDocsTitle')}</span>
-                <span className={styles.routeDescription}>{t('discover.public.routeDocsDescription')}</span>
-              </button>
-              <button
-                type="button"
-                className={styles.routeButton}
-                onClick={() => onNavigateToLeaderboard(createDefaultPublicLeaderboardRoute())}
-              >
-                <span className={styles.routeIcon}>
-                  <Icon icon="mdi:trophy-outline" size={20} />
-                </span>
-                <span className={styles.routeLabel}>{t('discover.public.routeLeaderboardTitle')}</span>
-                <span className={styles.routeDescription}>{t('discover.public.routeLeaderboardDescription')}</span>
-              </button>
-              <button type="button" className={styles.routeButton} onClick={() => onNavigateToShop({ kind: 'home' })}>
-                <span className={styles.routeIcon}>
-                  <Icon icon="mdi:storefront-outline" size={20} />
-                </span>
-                <span className={styles.routeLabel}>{t('discover.public.routeShopTitle')}</span>
-                <span className={styles.routeDescription}>{t('discover.public.routeShopDescription')}</span>
-              </button>
-            </div>
           </section>
         </div>
 
