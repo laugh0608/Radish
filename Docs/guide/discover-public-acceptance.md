@@ -26,6 +26,7 @@
   - `/forum`
   - `/docs`
   - `/leaderboard`
+  - `/u/:id`
   - `/shop`
 - 浏览器优先覆盖 `390 x 844` 与 `430 x 932` 两档窄屏视口
 - 环境中至少存在：
@@ -42,6 +43,7 @@
 - forum 公开读取：`Frontend/radish.client/src/api/forum.ts`
 - docs 公开读取：`Frontend/radish.client/src/public/docs/publicDocsApi.ts`
 - leaderboard 公开入口：`Frontend/radish.client/src/public/leaderboard/PublicLeaderboardApp.tsx`
+- profile 公开入口：`Frontend/radish.client/src/public/profile/PublicProfileApp.tsx`
 - shop 公开入口：`Frontend/radish.client/src/public/shop/PublicShopApp.tsx`
 
 说明：
@@ -58,7 +60,7 @@
 5. 检查 docs 推荐区，确认能打开 `/docs/:slug`；再点击详情页返回按钮，确认能稳定回到 `/discover`。
 6. 点击榜单快捷入口，确认会进入 `/leaderboard` 或 `/leaderboard/:type`，而不是绕回桌面工作台。
 7. 从榜单入口继续点击任一用户榜单项进入 `/u/:id`，再执行返回，确认会优先回到原榜单与 `/discover` 来源链路，而不是异常跳桌面或丢失公开上下文。
-8. 点击商城推荐区任一商品，确认会进入 `/shop/product/:productId`，并继续保持只读商品阅读，不误带入购买、订单或背包动作。
+8. 点击商城推荐区任一商品，确认会进入 `/shop/product/:productId`，并继续保持只读商品阅读，不误带入购买、订单或背包动作；再点击详情页返回按钮，确认会优先回到 `/discover`，而不是丢失到商城默认列表。
 9. 人工抽查任一“查看全部”按钮，确认 forum / docs / leaderboard / shop 都仍然落在 Public Content Shell，不跳桌面、不带多窗口语义。
 10. 从 `/forum`、`/docs`、`/leaderboard`、`/shop` 任一公开页顶部点击“社区发现”，确认能稳定回到 `/discover`，且不触发整页跳桌面或异常丢失公开壳层样式。
 11. 从 `/discover` 进入 forum 帖子详情或 docs 详情后，确认详情页返回动作会优先回到 `/discover`，而不是回退成专题默认列表。
@@ -71,7 +73,7 @@
 - 公开分发页与各公开入口之间的前进 / 回退关系稳定，不出现异常跳桌面或上下文丢失。
 - forum / docs / leaderboard / shop 公开页顶部都存在统一的“社区发现”轻入口，可把用户重新收口回 `/discover`。
 - 从 `/discover` 进入榜单，再跳到 `/u/:id` 时，返回链路仍会优先保留原公开来源，不会在榜单或个人页之间丢失上下文。
-- 从 `/discover` 进入 forum / docs 详情时，返回动作会优先回到 `/discover`，不会退回专题默认列表。
+- 从 `/discover` 进入 forum / docs / shop 详情时，返回动作会优先回到 `/discover`，不会退回专题默认列表。
 - 移动端用户能先进入“内容分发页”，而不是被迫从桌面工作台语义进入社区。
 
 ## 6. 可跳过项
@@ -86,7 +88,7 @@
 - 验收日期：2026-04-13
 - 验收人：<name>
 - 验收范围：公开社区分发页首批
-- 执行入口：/discover、/forum、/docs、/leaderboard、/shop
+- 执行入口：/discover、/forum、/docs、/leaderboard、/u/:id、/shop
 - 结果：通过 / 阻塞
 - 备注：<如有问题，记录区块、目标路由、视口尺寸与复现步骤>
 ```

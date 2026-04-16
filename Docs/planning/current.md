@@ -43,7 +43,7 @@
 - forum 公开结构化类型列表当前也已接入 `/forum/question`、`/forum/poll` 与 `/forum/lottery`，公开卡片与详情里的结构化徽标会统一回落到对应只读类型列表
 - forum 公开搜索首批当前已接入 `/forum/search`：公开壳层会承载关键词检索、时间范围过滤、排序分页与“详情 -> 返回搜索结果”上下文，继续保持只读阅读边界
 - 公开社区分发页首批当前已接入 `/discover`：首批会把 forum、docs、leaderboard 与 shop 的高价值公开入口收口到同一条移动分发路径中，继续保持只读边界，不回头扩桌面工作台语义
-- 公开内容壳层当前已完成一轮“总入口 + 回流入口 + 来源返回”收口：forum / docs / leaderboard / shop / `u/:id` 顶部都已补齐回到 `/discover` 的轻入口；从 `/discover`、`/u/:id` 与其他公开来源进入 forum / docs 详情后，返回动作会优先回到原来源页，而不是退回专题默认列表
+- 公开内容壳层当前已完成一轮“总入口 + 回流入口 + 来源返回”收口：forum / docs / leaderboard / shop / `u/:id` 顶部都已补齐回到 `/discover` 的轻入口；从 `/discover`、`/u/:id`、`/leaderboard` 与其他公开来源进入 forum / docs / shop 详情或公开个人页后，返回动作会优先回到原来源页，而不是退回专题默认列表
 - 公开内容壳层首批当前已完成一轮批量稳定性验收：`/docs/search`、`/leaderboard`、`/shop/products` 与 `/discover` 的 replace 路由同步、越界参数规范化、来源返回与窄屏头部当前都已收口到统一口径，不再继续放大循环更新与回写抖动
 - 公开内容壳层当前已形成共享头部品牌口径：forum / docs / discover / leaderboard / shop / `u/:id` 在窄屏下统一使用同一套品牌字、图标与按钮 token，不再出现“同一公开壳层、不同专题各自一套主题色”的割裂
 - forum 公开阅读首批当前已完成一轮人工验收：公开列表、帖子详情、返回上下文、只读状态页、评论分页与子评论分页阅读当前已达到可收口状态；通知/浏览回跳等跨入口联调项后续再按入口条件补验
