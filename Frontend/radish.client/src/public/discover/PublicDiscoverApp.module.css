@@ -326,6 +326,25 @@
   line-height: 1.7;
 }
 
+.sectionCueRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.sectionCueChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-brand-soft) 60%, white 40%);
+  color: var(--theme-brand-primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
 .sectionLink {
   min-height: 38px;
   padding: 0 14px;
@@ -410,6 +429,30 @@
   gap: 8px;
   color: var(--theme-text-tertiary);
   font-size: 0.82rem;
+}
+
+.itemChipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.itemChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-bg-muted) 72%, var(--theme-bg-surface) 28%);
+  color: var(--theme-text-secondary);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.itemChipAccent {
+  background: color-mix(in srgb, var(--theme-brand-soft) 64%, white 36%);
+  color: var(--theme-brand-primary);
 }
 
 .routeGrid {
@@ -537,6 +580,10 @@
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.productContent {
+  min-width: 0;
 }
 
 .productImage,

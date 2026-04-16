@@ -9,7 +9,7 @@ import {
   type PostItem,
   type Tag,
 } from '@/api/forum';
-import { getProducts, type ProductListItem } from '@/api/shop';
+import { getProductTypeDisplay, getProducts, type ProductListItem } from '@/api/shop';
 import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
 import { getPublicWikiList } from '../docs/publicDocsApi';
@@ -53,6 +53,11 @@ interface DiscoverRouteGuideDefinition {
   destinationTextKey: string;
   boundaryLabelKey: string;
   boundaryTextKey: string;
+}
+
+interface DiscoverSectionCueDefinition {
+  key: string;
+  labelKey: string;
 }
 
 const featuredLeaderboardConfigs = [
@@ -145,6 +150,24 @@ const discoverRouteGuideDefinitions: DiscoverRouteGuideDefinition[] = [
   },
 ] as const;
 
+const forumSectionCueDefinitions: DiscoverSectionCueDefinition[] = [
+  { key: 'latest', labelKey: 'discover.public.forumCueLatest' },
+  { key: 'tags', labelKey: 'discover.public.forumCueTags' },
+  { key: 'return', labelKey: 'discover.public.forumCueReturn' },
+] as const;
+
+const docsSectionCueDefinitions: DiscoverSectionCueDefinition[] = [
+  { key: 'directory', labelKey: 'discover.public.docsCueDirectory' },
+  { key: 'search', labelKey: 'discover.public.docsCueSearch' },
+  { key: 'detail', labelKey: 'discover.public.docsCueDetail' },
+] as const;
+
+const shopSectionCueDefinitions: DiscoverSectionCueDefinition[] = [
+  { key: 'browse', labelKey: 'discover.public.shopCueBrowse' },
+  { key: 'detail', labelKey: 'discover.public.shopCueDetail' },
+  { key: 'workspace', labelKey: 'discover.public.shopCueWorkspace' },
+] as const;
+
 function SectionStatusCard({ tone, title, description, actionLabel, onAction }: SectionStatusCardProps) {
   const icon = tone === 'loading'
     ? 'mdi:progress-clock'
@@ -186,6 +209,63 @@ function formatDocumentMeta(document: WikiDocumentVo, locale: string, fallback: 
     month: 'short',
     day: 'numeric'
   });
+}
+
+function isRecentDocument(document: WikiDocumentVo): boolean {
+  const source = document.voPublishedAt || document.voModifyTime || document.voCreateTime;
+  if (!source) {
+    return false;
+  }
+
+  const parsed = new Date(source);
+  if (Number.isNaN(parsed.getTime())) {
+    return false;
+  }
+
+  const ageMs = Date.now() - parsed.getTime();
+  return ageMs >= 0 && ageMs <= 1000 * 60 * 60 * 24 * 30;
+}
+
+function buildDocumentSummary(document: WikiDocumentVo, locale: string, t: (key: string, options?: Record<string, unknown>) => string): string {
+  const summary = document.voSummary?.trim();
+  if (summary) {
+    return summary;
+  }
+
+  const source = document.voPublishedAt || document.voModifyTime || document.voCreateTime;
+  if (source) {
+    const parsed = new Date(source);
+    if (!Number.isNaN(parsed.getTime())) {
+      const formattedDate = parsed.toLocaleDateString(locale, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+      return t('discover.public.documentFallbackSummaryWithDate', { date: formattedDate });
+    }
+  }
+
+  return t('discover.public.documentFallbackSummary');
+}
+
+function buildProductSummary(product: ProductListItem, t: (key: string, options?: Record<string, unknown>) => string): string {
+  const productType = getProductTypeDisplay(product.voProductType);
+  const duration = product.voDurationDisplay?.trim();
+  const soldCount = product.voSoldCount ?? 0;
+
+  if (duration) {
+    return t('discover.public.productDurationSummary', { type: productType, duration });
+  }
+
+  if (product.voHasDiscount) {
+    return t('discover.public.productDiscountSummary', { type: productType });
+  }
+
+  if (soldCount > 0) {
+    return t('discover.public.productSoldSummary', { type: productType, count: soldCount });
+  }
+
+  return t('discover.public.productFallbackSummary');
 }
 
 export const PublicDiscoverApp = ({
@@ -472,6 +552,11 @@ export const PublicDiscoverApp = ({
               <div className={styles.sectionHeading}>
                 <h2 className={styles.sectionTitle}>{t('discover.public.forumTitle')}</h2>
                 <p className={styles.sectionDescription}>{t('discover.public.forumDescription')}</p>
+                <div className={styles.sectionCueRow}>
+                  {forumSectionCueDefinitions.map((item) => (
+                    <span key={item.key} className={styles.sectionCueChip}>{t(item.labelKey)}</span>
+                  ))}
+                </div>
               </div>
               <button
                 type="button"
@@ -545,6 +630,11 @@ export const PublicDiscoverApp = ({
               <div className={styles.sectionHeading}>
                 <h2 className={styles.sectionTitle}>{t('discover.public.docsTitle')}</h2>
                 <p className={styles.sectionDescription}>{t('discover.public.docsDescription')}</p>
+                <div className={styles.sectionCueRow}>
+                  {docsSectionCueDefinitions.map((item) => (
+                    <span key={item.key} className={styles.sectionCueChip}>{t(item.labelKey)}</span>
+                  ))}
+                </div>
               </div>
               <button type="button" className={styles.sectionLink} onClick={() => onNavigateToDocs({ kind: 'list' })}>
                 <span>{t('discover.public.viewAllDocs')}</span>
@@ -581,9 +671,17 @@ export const PublicDiscoverApp = ({
                       className={styles.docsButton}
                       onClick={() => onNavigateToDocs({ kind: 'detail', slug: document.voSlug })}
                     >
+                      <div className={styles.itemChipRow}>
+                        <span className={styles.itemChip}>{t('discover.public.docsItemReadable')}</span>
+                        <span className={styles.itemChip}>
+                          {isRecentDocument(document)
+                            ? t('discover.public.docsItemRecent')
+                            : t('discover.public.docsItemSearchable')}
+                        </span>
+                      </div>
                       <h3 className={styles.docsTitle}>{document.voTitle}</h3>
                       <p className={styles.docsSummary}>
-                        {document.voSummary?.trim() || t('discover.public.documentFallbackSummary')}
+                        {buildDocumentSummary(document, i18n.language, t)}
                       </p>
                       <span className={styles.docsMeta}>
                         <Icon icon="mdi:calendar-blank-outline" size={16} />
@@ -646,6 +744,11 @@ export const PublicDiscoverApp = ({
             <div className={styles.sectionHeading}>
               <h2 className={styles.sectionTitle}>{t('discover.public.shopTitle')}</h2>
               <p className={styles.sectionDescription}>{t('discover.public.shopDescription')}</p>
+              <div className={styles.sectionCueRow}>
+                {shopSectionCueDefinitions.map((item) => (
+                  <span key={item.key} className={styles.sectionCueChip}>{t(item.labelKey)}</span>
+                ))}
+              </div>
             </div>
             <button
               type="button"
@@ -696,9 +799,24 @@ export const PublicDiscoverApp = ({
                             <Icon icon="mdi:gift-outline" size={24} />
                           </span>
                         )}
-                        <div>
+                        <div className={styles.productContent}>
+                          <div className={styles.itemChipRow}>
+                            <span className={styles.itemChip}>{getProductTypeDisplay(product.voProductType)}</span>
+                            {product.voDurationDisplay?.trim() ? (
+                              <span className={styles.itemChip}>{product.voDurationDisplay.trim()}</span>
+                            ) : product.voHasDiscount ? (
+                              <span className={`${styles.itemChip} ${styles.itemChipAccent}`}>
+                                {t('discover.public.shopItemDiscount')}
+                              </span>
+                            ) : null}
+                            {(product.voSoldCount ?? 0) > 0 && (
+                              <span className={styles.itemChip}>
+                                {t('shop.soldCount', { count: product.voSoldCount ?? 0 })}
+                              </span>
+                            )}
+                          </div>
                           <h3 className={styles.productTitle}>{product.voName}</h3>
-                          <p className={styles.productSummary}>{product.voDurationDisplay || t('discover.public.productFallbackSummary')}</p>
+                          <p className={styles.productSummary}>{buildProductSummary(product, t)}</p>
                         </div>
                       </div>
                       <span className={styles.productPrice}>
