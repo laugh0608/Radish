@@ -52,6 +52,11 @@ interface ExperienceGuideItemDefinition {
   descriptionKey: string;
 }
 
+interface ExperienceGuideFocusDefinition {
+  labelKey: string;
+  valueKey: string;
+}
+
 const publicLeaderboardFallbackTypes: Record<PublicLeaderboardTypeSlug, PublicLeaderboardFallbackTypeDefinition> = {
   experience: {
     icon: 'mdi:star-circle',
@@ -120,6 +125,27 @@ const experienceGuideItems: ExperienceGuideItemDefinition[] = [
     descriptionKey: 'leaderboard.public.experienceGuide.boundaryDescription',
   },
 ];
+
+const experienceGuideFocusItems: ExperienceGuideFocusDefinition[] = [
+  {
+    labelKey: 'leaderboard.public.experienceGuide.focusRankingLabel',
+    valueKey: 'leaderboard.public.experienceGuide.focusRankingValue',
+  },
+  {
+    labelKey: 'leaderboard.public.experienceGuide.focusLevelLabel',
+    valueKey: 'leaderboard.public.experienceGuide.focusLevelValue',
+  },
+  {
+    labelKey: 'leaderboard.public.experienceGuide.focusBoundaryLabel',
+    valueKey: 'leaderboard.public.experienceGuide.focusBoundaryValue',
+  },
+];
+
+const experienceGuideBoundaryItems = [
+  'leaderboard.public.experienceGuide.boundaryItemDetail',
+  'leaderboard.public.experienceGuide.boundaryItemHistory',
+  'leaderboard.public.experienceGuide.boundaryItemWorkspace',
+] as const;
 
 function PublicStatusCard({ tone, title, description, primaryAction }: PublicStatusCardProps) {
   const icon = tone === 'loading'
@@ -431,6 +457,50 @@ export const PublicLeaderboardApp = ({
                   <h2 className={styles.experienceGuideTitle}>{t('leaderboard.public.experienceGuide.title')}</h2>
                 </div>
                 <p className={styles.experienceGuideIntro}>{t('leaderboard.public.experienceGuide.intro')}</p>
+              </div>
+
+              <div className={styles.experienceGuideSummary}>
+                <div className={styles.experienceGuideSummaryCard}>
+                  <div className={styles.experienceGuideSummaryHeading}>
+                    <span className={styles.experienceGuideSummaryLabel}>
+                      {t('leaderboard.public.experienceGuide.summaryLabel')}
+                    </span>
+                    <h3 className={styles.experienceGuideSummaryTitle}>
+                      {t('leaderboard.public.experienceGuide.summaryTitle')}
+                    </h3>
+                  </div>
+                  <p className={styles.experienceGuideSummaryDescription}>
+                    {t('leaderboard.public.experienceGuide.summaryDescription')}
+                  </p>
+
+                  <div className={styles.experienceGuideFocusRow}>
+                    {experienceGuideFocusItems.map((item) => (
+                      <article key={item.labelKey} className={styles.experienceGuideFocusChip}>
+                        <span className={styles.experienceGuideFocusLabel}>{t(item.labelKey)}</span>
+                        <span className={styles.experienceGuideFocusValue}>{t(item.valueKey)}</span>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+
+                <aside className={styles.experienceGuideBoundaryPanel}>
+                  <span className={styles.experienceGuideBoundaryLabel}>
+                    {t('leaderboard.public.experienceGuide.boundaryPanelLabel')}
+                  </span>
+                  <h3 className={styles.experienceGuideBoundaryTitle}>
+                    {t('leaderboard.public.experienceGuide.boundaryPanelTitle')}
+                  </h3>
+                  <p className={styles.experienceGuideBoundaryDescription}>
+                    {t('leaderboard.public.experienceGuide.boundaryPanelDescription')}
+                  </p>
+                  <ul className={styles.experienceGuideBoundaryList}>
+                    {experienceGuideBoundaryItems.map((itemKey) => (
+                      <li key={itemKey} className={styles.experienceGuideBoundaryItem}>
+                        {t(itemKey)}
+                      </li>
+                    ))}
+                  </ul>
+                </aside>
               </div>
 
               <div className={styles.experienceGuideGrid}>

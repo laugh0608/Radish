@@ -164,7 +164,7 @@ export function resolveProfileBackMode(sourceRoute: PublicRouteDescriptor | null
 
 export function resolveShopDetailBackMode(sourceRoute: PublicRouteDescriptor | null): PublicDetailBackMode | null {
   if (!sourceRoute || isShopBrowseDescriptor(sourceRoute)) {
-    return sourceRoute ? 'source' : null;
+    return sourceRoute ? resolveBackMode(sourceRoute) : null;
   }
 
   return resolveBackMode(sourceRoute);
