@@ -258,14 +258,14 @@
 
 .summaryCard {
   border-radius: 20px;
-  padding: 14px 16px;
   background: color-mix(in srgb, var(--theme-bg-surface) 88%, white 12%);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
   min-height: 164px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
-  gap: 10px;
+  justify-content: stretch;
+  gap: 0;
+  overflow: hidden;
 }
 
 .summaryButton {
@@ -273,12 +273,34 @@
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
   color: inherit;
   text-align: left;
-  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
 }
 
 .summaryButton:hover {
   transform: translateY(-1px);
   box-shadow: 0 14px 28px color-mix(in srgb, var(--theme-brand-primary) 10%, transparent);
+}
+
+.summaryButton[data-state='error'] {
+  border-color: color-mix(in srgb, var(--theme-state-danger) 28%, transparent);
+}
+
+.summaryButton[data-state='loading'] {
+  border-color: color-mix(in srgb, var(--theme-accent-jade) 28%, transparent);
+}
+
+.summaryPreviewButton {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 14px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
 }
 
 .summaryTop {
@@ -381,6 +403,35 @@
   color: var(--theme-brand-primary);
   font-size: 0.85rem;
   font-weight: 600;
+}
+
+.summaryActionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 16px 14px;
+}
+
+.summaryActionButton {
+  min-height: 34px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  color: var(--theme-text-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: transform 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
+}
+
+.summaryActionButton:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 32%, transparent);
+  background: color-mix(in srgb, var(--theme-brand-soft) 46%, white 54%);
 }
 
 .sectionGrid {
@@ -879,8 +930,6 @@
 
   .summaryCard {
     min-height: 152px;
-    padding: 12px 14px;
-    gap: 8px;
   }
 
   .summaryValue {
@@ -890,6 +939,20 @@
 
   .summaryMeaning {
     font-size: 0.84rem;
+  }
+
+  .summaryPreviewButton {
+    padding: 12px 14px 10px;
+    gap: 8px;
+  }
+
+  .summaryActionRow {
+    padding: 0 14px 12px;
+  }
+
+  .summaryActionButton {
+    width: 100%;
+    justify-content: center;
   }
 }
 

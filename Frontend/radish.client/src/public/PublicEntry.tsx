@@ -38,6 +38,9 @@ import {
   parsePublicShopRoute,
 } from './shopRouteState';
 import type {
+  PublicDiscoverRoute,
+} from './discoverRouteState';
+import type {
   PublicForumBrowseRoute,
   PublicForumRoute,
 } from './forumRouteState';
@@ -78,7 +81,7 @@ interface PublicBackAction {
 }
 
 function parsePublicRoute(): PublicRouteDescriptor {
-  const discoverRoute = parsePublicDiscoverRoute(window.location.pathname);
+  const discoverRoute = parsePublicDiscoverRoute(window.location.pathname, window.location.search);
   if (discoverRoute) {
     return {
       app: 'discover',
@@ -151,6 +154,10 @@ function buildPublicPath(nextRoute: PublicRouteDescriptor): string {
 export const PublicEntry = () => {
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
   const [route, setRoute] = useState<PublicRouteDescriptor>(() => parsePublicRoute());
+  const [lastDiscoverRoute, setLastDiscoverRoute] = useState<PublicDiscoverRoute>(() => {
+    const parsedRoute = parsePublicDiscoverRoute(window.location.pathname, window.location.search);
+    return parsedRoute ?? createDefaultPublicDiscoverRoute();
+  });
   const [lastForumBrowseRoute, setLastForumBrowseRoute] = useState<PublicForumBrowseRoute>(() => {
     const parsedRoute = parsePublicForumRoute(window.location.pathname, window.location.search);
     return parsedRoute.kind === 'detail' ? createDefaultListRoute() : parsedRoute;
@@ -189,6 +196,9 @@ export const PublicEntry = () => {
     const handlePopState = () => {
       const nextRoute = parsePublicRoute();
       setRoute(nextRoute);
+      if (nextRoute.app === 'discover') {
+        setLastDiscoverRoute(nextRoute.route);
+      }
       if (nextRoute.app === 'forum' && nextRoute.route.kind !== 'detail') {
         setLastForumBrowseRoute(nextRoute.route);
       }
@@ -233,6 +243,9 @@ export const PublicEntry = () => {
       window.history.pushState({}, '', nextPath);
     }
 
+    if (nextRoute.app === 'discover') {
+      setLastDiscoverRoute(nextRoute.route);
+    }
     if (nextRoute.app === 'forum' && nextRoute.route.kind !== 'detail') {
       setLastForumBrowseRoute(nextRoute.route);
     }
@@ -249,9 +262,9 @@ export const PublicEntry = () => {
     navigateToRoute({ app: 'docs', route: nextRoute }, options);
   }, [navigateToRoute]);
 
-  const navigateToDiscoverRoute = useCallback((options?: { replace?: boolean }) => {
-    navigateToRoute({ app: 'discover', route: createDefaultPublicDiscoverRoute() }, options);
-  }, [navigateToRoute]);
+  const navigateToDiscoverRoute = useCallback((nextRoute?: PublicDiscoverRoute, options?: { replace?: boolean }) => {
+    navigateToRoute({ app: 'discover', route: nextRoute ?? lastDiscoverRoute }, options);
+  }, [lastDiscoverRoute, navigateToRoute]);
 
   const navigateToForumRoute = useCallback((nextRoute: PublicForumRoute, options?: { replace?: boolean }) => {
     navigateToRoute({ app: 'forum', route: nextRoute }, options);
@@ -356,6 +369,8 @@ export const PublicEntry = () => {
 
   return route.app === 'discover' ? (
     <PublicDiscoverApp
+      route={route.route}
+      onNavigate={navigateToDiscoverRoute}
       onNavigateToForum={navigateToForumRoute}
       onNavigateToDocs={navigateToDocsRoute}
       onNavigateToLeaderboard={navigateToLeaderboardRoute}

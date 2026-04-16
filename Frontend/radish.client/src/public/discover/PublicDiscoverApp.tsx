@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { PostCard } from '@/apps/forum/components/PostCard';
@@ -13,6 +13,7 @@ import { getProductTypeDisplay, getProducts, type ProductListItem } from '@/api/
 import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
 import { getPublicWikiList } from '../docs/publicDocsApi';
+import type { PublicDiscoverRoute } from '../discoverRouteState';
 import type { PublicDocsRoute } from '../docsRouteState';
 import { createDefaultPublicLeaderboardRoute, type PublicLeaderboardRoute } from '../leaderboardRouteState';
 import type { PublicForumRoute } from '../forumRouteState';
@@ -21,7 +22,11 @@ import { createDefaultPublicShopProductsRoute } from '../shopRouteState';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import styles from './PublicDiscoverApp.module.css';
 
+type DiscoverRouteKey = 'forum' | 'docs' | 'leaderboard' | 'shop';
+
 interface PublicDiscoverAppProps {
+  route: PublicDiscoverRoute;
+  onNavigate: (route?: PublicDiscoverRoute, options?: { replace?: boolean }) => void;
   onNavigateToForum: (route: PublicForumRoute, options?: { replace?: boolean }) => void;
   onNavigateToDocs: (route: PublicDocsRoute, options?: { replace?: boolean }) => void;
   onNavigateToLeaderboard: (route: PublicLeaderboardRoute, options?: { replace?: boolean }) => void;
@@ -55,7 +60,7 @@ interface DiscoverGuideItemDefinition {
 }
 
 interface DiscoverRouteGuideDefinition {
-  key: 'forum' | 'docs' | 'leaderboard' | 'shop';
+  key: DiscoverRouteKey;
   icon: string;
   titleKey: string;
   descriptionKey: string;
@@ -73,7 +78,7 @@ interface DiscoverSectionCueDefinition {
 }
 
 interface DiscoverSummaryCardDefinition {
-  key: 'forum' | 'docs' | 'leaderboard' | 'shop';
+  key: DiscoverRouteKey;
   icon: string;
   label: string;
   value: string;
@@ -81,7 +86,8 @@ interface DiscoverSummaryCardDefinition {
   statusLabel: string;
   meaning: string;
   destination: string;
-  onClick: () => void;
+  onPreview: () => void;
+  onOpen: () => void;
 }
 
 interface DiscoverLeaderboardCardDefinition {
@@ -237,6 +243,8 @@ const leaderboardSectionCueDefinitions: DiscoverSectionCueDefinition[] = [
   { key: 'boundary', labelKey: 'discover.public.leaderboardCueBoundary' },
 ] as const;
 
+const PUBLIC_SECTION_SCROLL_OFFSET = 88;
+
 function SectionStatusCard({
   tone,
   title,
@@ -381,12 +389,21 @@ function buildProductSummary(product: ProductListItem, t: (key: string, options?
 }
 
 export const PublicDiscoverApp = ({
+  route,
+  onNavigate,
   onNavigateToForum,
   onNavigateToDocs,
   onNavigateToLeaderboard,
   onNavigateToShop
 }: PublicDiscoverAppProps) => {
   const { t, i18n } = useTranslation();
+  const routeScrollBehaviorRef = useRef<ScrollBehavior>('auto');
+  const sectionRefs = useState(() => ({
+    forum: { current: null as HTMLElement | null },
+    docs: { current: null as HTMLElement | null },
+    leaderboard: { current: null as HTMLElement | null },
+    shop: { current: null as HTMLElement | null }
+  }))[0];
   const [forumPosts, setForumPosts] = useState<PostItem[]>([]);
   const [hotTags, setHotTags] = useState<Tag[]>([]);
   const [docs, setDocs] = useState<WikiDocumentVo[]>([]);
@@ -498,6 +515,59 @@ export const PublicDiscoverApp = ({
     };
   }, [reloadToken, t]);
 
+  const scrollToSection = (key: DiscoverRouteKey, behavior: ScrollBehavior) => {
+    const element = sectionRefs[key].current;
+    if (!element) {
+      return;
+    }
+
+    const nextTop = window.scrollY + element.getBoundingClientRect().top - PUBLIC_SECTION_SCROLL_OFFSET;
+    window.scrollTo({
+      top: Math.max(nextTop, 0),
+      behavior
+    });
+  };
+
+  useEffect(() => {
+    const section = route.section;
+    if (!section) {
+      return;
+    }
+
+    const behavior = routeScrollBehaviorRef.current;
+    routeScrollBehaviorRef.current = 'auto';
+    const frameId = window.requestAnimationFrame(() => {
+      scrollToSection(section, behavior);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [route.section, sectionRefs]);
+
+  const previewSection = (key: DiscoverRouteKey) => {
+    if (route.section === key) {
+      scrollToSection(key, 'smooth');
+      return;
+    }
+
+    routeScrollBehaviorRef.current = 'smooth';
+    onNavigate({ kind: 'home', section: key }, { replace: true });
+  };
+
+  const rememberSection = (key: DiscoverRouteKey) => {
+    if (route.section === key) {
+      return;
+    }
+
+    onNavigate({ kind: 'home', section: key }, { replace: true });
+  };
+
+  const runFromSection = (key: DiscoverRouteKey, action: () => void) => {
+    rememberSection(key);
+    action();
+  };
+
   const summaryCards = useMemo<DiscoverSummaryCardDefinition[]>(() => ([
     {
       key: 'forum',
@@ -520,7 +590,8 @@ export const PublicDiscoverApp = ({
             ? t('discover.public.summaryForumMeaningEmpty')
             : t('discover.public.summaryForumMeaning', { count: forumPosts.length }),
       destination: t('discover.public.summaryForumDestination'),
-      onClick: () => onNavigateToForum({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 })
+      onPreview: () => previewSection('forum'),
+      onOpen: () => runFromSection('forum', () => onNavigateToForum({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 }))
     },
     {
       key: 'docs',
@@ -543,7 +614,8 @@ export const PublicDiscoverApp = ({
             ? t('discover.public.summaryDocsMeaningEmpty')
             : t('discover.public.summaryDocsMeaning', { count: docs.length }),
       destination: t('discover.public.summaryDocsDestination'),
-      onClick: () => onNavigateToDocs({ kind: 'list' })
+      onPreview: () => previewSection('docs'),
+      onOpen: () => runFromSection('docs', () => onNavigateToDocs({ kind: 'list' }))
     },
     {
       key: 'leaderboard',
@@ -554,7 +626,8 @@ export const PublicDiscoverApp = ({
       statusLabel: t('discover.public.summaryStateReady'),
       meaning: t('discover.public.summaryLeaderboardMeaning', { count: featuredLeaderboardConfigs.length }),
       destination: t('discover.public.summaryLeaderboardDestination'),
-      onClick: () => onNavigateToLeaderboard(createDefaultPublicLeaderboardRoute())
+      onPreview: () => previewSection('leaderboard'),
+      onOpen: () => runFromSection('leaderboard', () => onNavigateToLeaderboard(createDefaultPublicLeaderboardRoute()))
     },
     {
       key: 'shop',
@@ -577,9 +650,10 @@ export const PublicDiscoverApp = ({
             ? t('discover.public.summaryShopMeaningEmpty')
             : t('discover.public.summaryShopMeaning', { count: products.length }),
       destination: t('discover.public.summaryShopDestination'),
-      onClick: () => onNavigateToShop({ kind: 'home' })
+      onPreview: () => previewSection('shop'),
+      onOpen: () => runFromSection('shop', () => onNavigateToShop({ kind: 'home' }))
     }
-  ]), [docs.length, docsError, featuredLeaderboardConfigs.length, forumError, forumPosts.length, loadingDocs, loadingForum, loadingShop, onNavigateToDocs, onNavigateToForum, onNavigateToLeaderboard, onNavigateToShop, products.length, shopError, t]);
+  ]), [docs.length, docsError, featuredLeaderboardConfigs.length, forumError, forumPosts.length, loadingDocs, loadingForum, loadingShop, onNavigateToDocs, onNavigateToForum, onNavigateToLeaderboard, onNavigateToShop, previewSection, products.length, runFromSection, shopError, t]);
 
   const routeGuideCards = useMemo(() => (
     discoverRouteGuideDefinitions.map((item) => ({
@@ -587,21 +661,21 @@ export const PublicDiscoverApp = ({
       onClick: () => {
         switch (item.key) {
           case 'forum':
-            onNavigateToForum({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 });
+            runFromSection('forum', () => onNavigateToForum({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 }));
             return;
           case 'docs':
-            onNavigateToDocs({ kind: 'list' });
+            runFromSection('docs', () => onNavigateToDocs({ kind: 'list' }));
             return;
           case 'leaderboard':
-            onNavigateToLeaderboard(createDefaultPublicLeaderboardRoute());
+            runFromSection('leaderboard', () => onNavigateToLeaderboard(createDefaultPublicLeaderboardRoute()));
             return;
           case 'shop':
-            onNavigateToShop({ kind: 'home' });
+            runFromSection('shop', () => onNavigateToShop({ kind: 'home' }));
             return;
         }
       }
     }))
-  ), [onNavigateToDocs, onNavigateToForum, onNavigateToLeaderboard, onNavigateToShop]);
+  ), [onNavigateToDocs, onNavigateToForum, onNavigateToLeaderboard, onNavigateToShop, runFromSection]);
 
   const routeGuideMap = useMemo(() => ({
     forum: routeGuideCards.find((item) => item.key === 'forum') ?? routeGuideCards[0],
@@ -616,7 +690,10 @@ export const PublicDiscoverApp = ({
         brandMark="览"
         brandName={t('discover.public.pageTitle')}
         brandSubline={t('discover.public.shellLabel')}
-        onBrandClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        onBrandClick={() => {
+          onNavigate({ kind: 'home' }, { replace: true });
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
       />
 
       <main className={styles.main}>
@@ -646,7 +723,7 @@ export const PublicDiscoverApp = ({
             <button
               type="button"
               className={styles.primaryButton}
-              onClick={() => onNavigateToForum({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 })}
+              onClick={() => runFromSection('forum', () => onNavigateToForum({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 }))}
             >
               <Icon icon="mdi:forum-outline" size={18} />
               <span>{t('discover.public.openForum')}</span>
@@ -654,7 +731,7 @@ export const PublicDiscoverApp = ({
             <button
               type="button"
               className={styles.secondaryButton}
-              onClick={() => onNavigateToDocs({ kind: 'search', keyword: '', page: 1 })}
+              onClick={() => runFromSection('docs', () => onNavigateToDocs({ kind: 'search', keyword: '', page: 1 }))}
             >
               <Icon icon="mdi:file-search-outline" size={18} />
               <span>{t('discover.public.searchDocs')}</span>
@@ -662,7 +739,7 @@ export const PublicDiscoverApp = ({
             <button
               type="button"
               className={styles.secondaryButton}
-              onClick={() => onNavigateToShop(createDefaultPublicShopProductsRoute())}
+              onClick={() => runFromSection('shop', () => onNavigateToShop(createDefaultPublicShopProductsRoute()))}
             >
               <Icon icon="mdi:store-search-outline" size={18} />
               <span>{t('discover.public.browseShop')}</span>
@@ -671,31 +748,42 @@ export const PublicDiscoverApp = ({
 
           <div className={styles.summaryGrid}>
             {summaryCards.map((item) => (
-              <button
+              <article
                 key={item.key}
-                type="button"
                 className={`${styles.summaryCard} ${styles.summaryButton}`}
-                onClick={item.onClick}
+                data-state={item.state}
               >
-                <div className={styles.summaryTop}>
-                  <span className={styles.summaryIcon}>
-                    <Icon icon={item.icon} size={18} />
-                  </span>
-                  <div className={styles.summaryHeading}>
-                    <span className={styles.summaryLabel}>{item.label}</span>
-                    <span className={styles.summaryStatus} data-state={item.state}>{item.statusLabel}</span>
+                <button type="button" className={styles.summaryPreviewButton} onClick={item.onPreview}>
+                  <div className={styles.summaryTop}>
+                    <span className={styles.summaryIcon}>
+                      <Icon icon={item.icon} size={18} />
+                    </span>
+                    <div className={styles.summaryHeading}>
+                      <span className={styles.summaryLabel}>{item.label}</span>
+                      <span className={styles.summaryStatus} data-state={item.state}>{item.statusLabel}</span>
+                    </div>
                   </div>
-                </div>
-                <span className={styles.summaryValue}>{item.value}</span>
-                <p className={styles.summaryMeaning}>{item.meaning}</p>
-                <span className={styles.summaryDestination}>
-                  <span className={styles.summaryDestinationLabel}>{t('discover.public.summaryDestinationLabel')}</span>
-                  <span className={styles.summaryDestinationText}>
-                    {item.destination}
-                    <Icon icon="mdi:arrow-right" size={14} />
+                  <span className={styles.summaryValue}>{item.value}</span>
+                  <p className={styles.summaryMeaning}>{item.meaning}</p>
+                  <span className={styles.summaryDestination}>
+                    <span className={styles.summaryDestinationLabel}>{t('discover.public.summaryDestinationLabel')}</span>
+                    <span className={styles.summaryDestinationText}>
+                      {item.destination}
+                      <Icon icon="mdi:arrow-down" size={14} />
+                    </span>
                   </span>
-                </span>
-              </button>
+                </button>
+                <div className={styles.summaryActionRow}>
+                  <button type="button" className={styles.summaryActionButton} onClick={item.onPreview}>
+                    <Icon icon="mdi:arrow-down-circle-outline" size={16} />
+                    <span>{t('discover.public.summaryPreviewAction')}</span>
+                  </button>
+                  <button type="button" className={styles.summaryActionButton} onClick={item.onOpen}>
+                    <Icon icon="mdi:arrow-right-circle-outline" size={16} />
+                    <span>{t('discover.public.summaryOpenAction')}</span>
+                  </button>
+                </div>
+              </article>
             ))}
           </div>
         </section>
@@ -751,7 +839,7 @@ export const PublicDiscoverApp = ({
             </div>
           </section>
 
-          <section className={styles.sectionCard}>
+          <section className={styles.sectionCard} ref={(element) => { sectionRefs.forum.current = element; }}>
             <div className={styles.sectionHeader}>
               <div className={styles.sectionHeading}>
                 <h2 className={styles.sectionTitle}>{t('discover.public.forumTitle')}</h2>
@@ -765,7 +853,7 @@ export const PublicDiscoverApp = ({
               <button
                 type="button"
                 className={styles.sectionLink}
-                onClick={() => onNavigateToForum({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 })}
+                onClick={() => runFromSection('forum', () => onNavigateToForum({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 }))}
               >
                 <span>{t('discover.public.viewAllForum')}</span>
                 <Icon icon="mdi:arrow-right" size={16} />
@@ -785,7 +873,7 @@ export const PublicDiscoverApp = ({
                 boundaryText={t(routeGuideMap.forum.boundaryTextKey)}
                 primaryAction={{
                   label: t('discover.public.viewAllForum'),
-                  onClick: () => onNavigateToForum({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 })
+                  onClick: () => runFromSection('forum', () => onNavigateToForum({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 }))
                 }}
               />
             ) : forumError ? (
@@ -801,7 +889,7 @@ export const PublicDiscoverApp = ({
                 boundaryText={t(routeGuideMap.forum.boundaryTextKey)}
                 primaryAction={{
                   label: t('discover.public.viewAllForum'),
-                  onClick: () => onNavigateToForum({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 })
+                  onClick: () => runFromSection('forum', () => onNavigateToForum({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 }))
                 }}
                 secondaryAction={{
                   label: t('common.retry'),
@@ -821,7 +909,7 @@ export const PublicDiscoverApp = ({
                 boundaryText={t(routeGuideMap.forum.boundaryTextKey)}
                 primaryAction={{
                   label: t('discover.public.viewAllForum'),
-                  onClick: () => onNavigateToForum({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 })
+                  onClick: () => runFromSection('forum', () => onNavigateToForum({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 }))
                 }}
               />
             ) : (
@@ -832,12 +920,12 @@ export const PublicDiscoverApp = ({
                       key={post.voId}
                       post={post}
                       displayTimeZone={displayTimeZone}
-                      onClick={() => onNavigateToForum({ kind: 'detail', postId: String(post.voId) })}
+                      onClick={() => runFromSection('forum', () => onNavigateToForum({ kind: 'detail', postId: String(post.voId) }))}
                       variant="publicCompact"
-                      onTagClick={(_, tagSlug) => onNavigateToForum({ kind: 'tag', tagSlug, sortBy: 'newest', page: 1 })}
-                      onQuestionClick={() => onNavigateToForum({ kind: 'question', sortBy: 'newest', page: 1 })}
-                      onPollClick={() => onNavigateToForum({ kind: 'poll', sortBy: 'newest', page: 1 })}
-                      onLotteryClick={() => onNavigateToForum({ kind: 'lottery', sortBy: 'newest', page: 1 })}
+                      onTagClick={(_, tagSlug) => runFromSection('forum', () => onNavigateToForum({ kind: 'tag', tagSlug, sortBy: 'newest', page: 1 }))}
+                      onQuestionClick={() => runFromSection('forum', () => onNavigateToForum({ kind: 'question', sortBy: 'newest', page: 1 }))}
+                      onPollClick={() => runFromSection('forum', () => onNavigateToForum({ kind: 'poll', sortBy: 'newest', page: 1 }))}
+                      onLotteryClick={() => runFromSection('forum', () => onNavigateToForum({ kind: 'lottery', sortBy: 'newest', page: 1 }))}
                     />
                   ))}
                 </div>
@@ -848,7 +936,7 @@ export const PublicDiscoverApp = ({
                         key={tag.voId}
                         type="button"
                         className={styles.tagChip}
-                        onClick={() => onNavigateToForum({ kind: 'tag', tagSlug: tag.voSlug, sortBy: 'newest', page: 1 })}
+                        onClick={() => runFromSection('forum', () => onNavigateToForum({ kind: 'tag', tagSlug: tag.voSlug, sortBy: 'newest', page: 1 }))}
                       >
                         #{tag.voName}
                       </button>
@@ -861,7 +949,7 @@ export const PublicDiscoverApp = ({
         </div>
 
         <div className={styles.sectionGrid}>
-          <section className={styles.sectionCard}>
+          <section className={styles.sectionCard} ref={(element) => { sectionRefs.docs.current = element; }}>
             <div className={styles.sectionHeader}>
               <div className={styles.sectionHeading}>
                 <h2 className={styles.sectionTitle}>{t('discover.public.docsTitle')}</h2>
@@ -872,7 +960,7 @@ export const PublicDiscoverApp = ({
                   ))}
                 </div>
               </div>
-              <button type="button" className={styles.sectionLink} onClick={() => onNavigateToDocs({ kind: 'list' })}>
+              <button type="button" className={styles.sectionLink} onClick={() => runFromSection('docs', () => onNavigateToDocs({ kind: 'list' }))}>
                 <span>{t('discover.public.viewAllDocs')}</span>
                 <Icon icon="mdi:arrow-right" size={16} />
               </button>
@@ -891,7 +979,7 @@ export const PublicDiscoverApp = ({
                 boundaryText={t(routeGuideMap.docs.boundaryTextKey)}
                 primaryAction={{
                   label: t('discover.public.viewAllDocs'),
-                  onClick: () => onNavigateToDocs({ kind: 'list' })
+                  onClick: () => runFromSection('docs', () => onNavigateToDocs({ kind: 'list' }))
                 }}
               />
             ) : docsError ? (
@@ -907,7 +995,7 @@ export const PublicDiscoverApp = ({
                 boundaryText={t(routeGuideMap.docs.boundaryTextKey)}
                 primaryAction={{
                   label: t('discover.public.viewAllDocs'),
-                  onClick: () => onNavigateToDocs({ kind: 'list' })
+                  onClick: () => runFromSection('docs', () => onNavigateToDocs({ kind: 'list' }))
                 }}
                 secondaryAction={{
                   label: t('common.retry'),
@@ -927,7 +1015,7 @@ export const PublicDiscoverApp = ({
                 boundaryText={t(routeGuideMap.docs.boundaryTextKey)}
                 primaryAction={{
                   label: t('discover.public.viewAllDocs'),
-                  onClick: () => onNavigateToDocs({ kind: 'list' })
+                  onClick: () => runFromSection('docs', () => onNavigateToDocs({ kind: 'list' }))
                 }}
               />
             ) : (
@@ -937,7 +1025,7 @@ export const PublicDiscoverApp = ({
                     <button
                       type="button"
                       className={styles.docsButton}
-                      onClick={() => onNavigateToDocs({ kind: 'detail', slug: document.voSlug })}
+                      onClick={() => runFromSection('docs', () => onNavigateToDocs({ kind: 'detail', slug: document.voSlug }))}
                     >
                       <div className={styles.itemChipRow}>
                         <span className={styles.itemChip}>{t('discover.public.docsItemReadable')}</span>
@@ -962,7 +1050,7 @@ export const PublicDiscoverApp = ({
             )}
           </section>
 
-          <section className={styles.sectionCard}>
+          <section className={styles.sectionCard} ref={(element) => { sectionRefs.leaderboard.current = element; }}>
             <div className={styles.sectionHeader}>
               <div className={styles.sectionHeading}>
                 <h2 className={styles.sectionTitle}>{t('discover.public.leaderboardTitle')}</h2>
@@ -976,7 +1064,7 @@ export const PublicDiscoverApp = ({
               <button
                 type="button"
                 className={styles.sectionLink}
-                onClick={() => onNavigateToLeaderboard(createDefaultPublicLeaderboardRoute())}
+                onClick={() => runFromSection('leaderboard', () => onNavigateToLeaderboard(createDefaultPublicLeaderboardRoute()))}
               >
                 <span>{t('discover.public.viewAllLeaderboard')}</span>
                 <Icon icon="mdi:arrow-right" size={16} />
@@ -1013,9 +1101,11 @@ export const PublicDiscoverApp = ({
                     className={`${styles.secondaryButton} ${styles.leaderboardButton}`}
                     onClick={() => {
                       const defaultRoute = createDefaultPublicLeaderboardRoute();
-                      onNavigateToLeaderboard({
-                        ...defaultRoute,
-                        typeSlug: item.key
+                      runFromSection('leaderboard', () => {
+                        onNavigateToLeaderboard({
+                          ...defaultRoute,
+                          typeSlug: item.key
+                        });
                       });
                     }}
                   >
@@ -1027,7 +1117,7 @@ export const PublicDiscoverApp = ({
           </section>
         </div>
 
-        <section className={styles.sectionCard}>
+        <section className={styles.sectionCard} ref={(element) => { sectionRefs.shop.current = element; }}>
           <div className={styles.sectionHeader}>
             <div className={styles.sectionHeading}>
               <h2 className={styles.sectionTitle}>{t('discover.public.shopTitle')}</h2>
@@ -1041,7 +1131,7 @@ export const PublicDiscoverApp = ({
             <button
               type="button"
               className={styles.sectionLink}
-              onClick={() => onNavigateToShop(createDefaultPublicShopProductsRoute())}
+              onClick={() => runFromSection('shop', () => onNavigateToShop(createDefaultPublicShopProductsRoute()))}
             >
               <span>{t('discover.public.viewAllShop')}</span>
               <Icon icon="mdi:arrow-right" size={16} />
@@ -1061,7 +1151,7 @@ export const PublicDiscoverApp = ({
               boundaryText={t(routeGuideMap.shop.boundaryTextKey)}
               primaryAction={{
                 label: t('discover.public.viewAllShop'),
-                onClick: () => onNavigateToShop(createDefaultPublicShopProductsRoute())
+                onClick: () => runFromSection('shop', () => onNavigateToShop(createDefaultPublicShopProductsRoute()))
               }}
             />
           ) : shopError ? (
@@ -1077,7 +1167,7 @@ export const PublicDiscoverApp = ({
               boundaryText={t(routeGuideMap.shop.boundaryTextKey)}
               primaryAction={{
                 label: t('discover.public.viewAllShop'),
-                onClick: () => onNavigateToShop(createDefaultPublicShopProductsRoute())
+                onClick: () => runFromSection('shop', () => onNavigateToShop(createDefaultPublicShopProductsRoute()))
               }}
               secondaryAction={{
                 label: t('common.retry'),
@@ -1097,7 +1187,7 @@ export const PublicDiscoverApp = ({
               boundaryText={t(routeGuideMap.shop.boundaryTextKey)}
               primaryAction={{
                 label: t('discover.public.viewAllShop'),
-                onClick: () => onNavigateToShop(createDefaultPublicShopProductsRoute())
+                onClick: () => runFromSection('shop', () => onNavigateToShop(createDefaultPublicShopProductsRoute()))
               }}
             />
           ) : (
@@ -1109,7 +1199,7 @@ export const PublicDiscoverApp = ({
                     <button
                       type="button"
                       className={styles.productButton}
-                      onClick={() => onNavigateToShop({ kind: 'detail', productId: String(product.voId) })}
+                      onClick={() => runFromSection('shop', () => onNavigateToShop({ kind: 'detail', productId: String(product.voId) }))}
                     >
                       <div className={styles.productCardHead}>
                         {imageUrl ? (
