@@ -38,7 +38,10 @@ import type {
   PublicForumRouteSort,
   PublicSearchTimeRange,
 } from '../forumRouteState';
-import type { PublicDetailBackMode } from '../publicRouteNavigation';
+import {
+  getPublicDetailBackLabelKey,
+  type PublicDetailBackMode,
+} from '../publicRouteNavigation';
 import { createDefaultSearchRoute } from '../forumRouteState';
 import {
   resolvePublicForumCategoryLoadState,
@@ -307,11 +310,8 @@ export const PublicForumApp = ({
   const previousRouteRef = useRef<PublicForumRoute>(route);
   const browseScrollSnapshotRef = useRef<{ routeKey: string; scrollTop: number } | null>(null);
   const [pendingRestoreScrollTop, setPendingRestoreScrollTop] = useState<number | null>(null);
-  const detailBackLabel = detailBackAction?.mode === 'discover'
-    ? t('public.shell.backToDiscover')
-    : detailBackAction
-      ? t('public.shell.backToSource')
-      : t('forum.backToList');
+  const detailBackLabelKey = getPublicDetailBackLabelKey(detailBackAction?.mode);
+  const detailBackLabel = detailBackLabelKey ? t(detailBackLabelKey) : t('forum.backToList');
   const handleForumDetailBack = detailBackAction?.onBack ?? (() => onNavigate(fallbackBrowseRoute));
 
   useEffect(() => {

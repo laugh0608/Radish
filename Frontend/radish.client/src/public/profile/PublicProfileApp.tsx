@@ -16,7 +16,10 @@ import { useUserStore } from '@/stores/userStore';
 import { DEFAULT_TIME_ZONE, formatDateTimeByTimeZone, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
 import type { PublicProfileRoute, PublicProfileTab } from '../profileRouteState';
-import type { PublicDetailBackMode } from '../publicRouteNavigation';
+import {
+  getPublicDetailBackLabelKey,
+  type PublicDetailBackMode,
+} from '../publicRouteNavigation';
 import styles from './PublicProfileApp.module.css';
 
 interface PublicProfileAppProps {
@@ -296,11 +299,8 @@ export const PublicProfileApp = ({
   const displayName = profile?.voDisplayName?.trim() || null;
   const userName = profile?.voUserName?.trim() || t('common.userFallback', { id: route.userId });
   const canToggleFollow = isLoggedIn && !isOwnProfile && !!profile;
-  const backLabel = backAction?.mode === 'discover'
-    ? t('public.shell.backToDiscover')
-    : backAction
-      ? t('public.shell.backToSource')
-      : t('profile.public.backToForum');
+  const backLabelKey = getPublicDetailBackLabelKey(backAction?.mode);
+  const backLabel = backLabelKey ? t(backLabelKey) : t('profile.public.backToForum');
   const handleBack = backAction?.onBack ?? onNavigateToForumList;
 
   const handleToggleFollow = async () => {

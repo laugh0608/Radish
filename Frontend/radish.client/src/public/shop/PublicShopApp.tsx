@@ -18,7 +18,10 @@ import {
   createDefaultPublicShopProductsRoute,
   createDefaultPublicShopRoute,
 } from '../shopRouteState';
-import type { PublicDetailBackMode } from '../publicRouteNavigation';
+import {
+  getPublicDetailBackLabelKey,
+  type PublicDetailBackMode,
+} from '../publicRouteNavigation';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { usePublicReplaceRouteSync } from '../usePublicReplaceRouteSync';
 import styles from './PublicShopApp.module.css';
@@ -406,15 +409,12 @@ export const PublicShopApp = ({
     onNavigate(fallbackProductsRoute);
   };
 
-  const detailBackLabel = detailBackAction?.mode === 'discover'
-    ? t('public.shell.backToDiscover')
-    : detailBackAction
-      ? t('public.shell.backToSource')
-      : t('shop.public.backToProducts');
+  const detailBackLabelKey = getPublicDetailBackLabelKey(detailBackAction?.mode);
+  const detailBackLabel = detailBackLabelKey ? t(detailBackLabelKey) : t('shop.public.backToProducts');
   const detailBackHint = detailBackAction?.mode === 'discover'
     ? t('shop.public.detailBackHintDiscover')
     : detailBackAction
-      ? t('shop.public.detailBackHintSource')
+      ? t('shop.public.detailBackHintSpecific', { target: detailBackLabel })
       : t('shop.public.detailBackHintDefault');
 
   const renderHome = () => {

@@ -20,7 +20,10 @@ import {
   type PublicDocsRoute,
   type PublicDocsSearchRoute,
 } from '../docsRouteState';
-import type { PublicDetailBackMode } from '../publicRouteNavigation';
+import {
+  getPublicDetailBackLabelKey,
+  type PublicDetailBackMode,
+} from '../publicRouteNavigation';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { getPublicWikiDocumentBySlug, getPublicWikiList, getPublicWikiTree } from './publicDocsApi';
 import styles from './PublicDocsApp.module.css';
@@ -404,13 +407,12 @@ export const PublicDocsApp = ({
     };
   }, [collectionReloadToken]);
 
-  const backLabel = detailBackAction?.mode === 'discover'
-    ? t('public.shell.backToDiscover')
-    : detailBackAction
-      ? t('public.shell.backToSource')
-      : fallbackBrowseRoute.kind === 'search'
-        ? t('wiki.public.backToSearch')
-        : t('wiki.public.backToList');
+  const detailBackLabelKey = getPublicDetailBackLabelKey(detailBackAction?.mode);
+  const backLabel = detailBackLabelKey
+    ? t(detailBackLabelKey)
+    : fallbackBrowseRoute.kind === 'search'
+      ? t('wiki.public.backToSearch')
+      : t('wiki.public.backToList');
   const handleDocsDetailBack = detailBackAction?.onBack ?? (() => onNavigate(fallbackBrowseRoute));
 
   return (

@@ -13,7 +13,14 @@ export type PublicRouteDescriptor =
   | { app: 'leaderboard'; route: PublicLeaderboardRoute }
   | { app: 'shop'; route: PublicShopRoute };
 
-export type PublicDetailBackMode = 'discover' | 'source';
+export type PublicDetailBackMode =
+  | 'discover'
+  | 'forum'
+  | 'docs'
+  | 'profile'
+  | 'leaderboard'
+  | 'shop'
+  | 'shopProducts';
 
 function isForumBrowseDescriptor(
   route: PublicRouteDescriptor | null
@@ -38,7 +45,36 @@ function resolveBackMode(route: PublicRouteDescriptor | null): PublicDetailBackM
     return null;
   }
 
-  return route.app === 'discover' ? 'discover' : 'source';
+  if (route.app === 'discover') {
+    return 'discover';
+  }
+
+  if (route.app === 'shop') {
+    return route.route.kind === 'products' ? 'shopProducts' : 'shop';
+  }
+
+  return route.app;
+}
+
+export function getPublicDetailBackLabelKey(mode: PublicDetailBackMode | null | undefined): string | null {
+  switch (mode) {
+    case 'discover':
+      return 'public.shell.backToDiscover';
+    case 'forum':
+      return 'public.shell.backToForum';
+    case 'docs':
+      return 'public.shell.backToDocs';
+    case 'profile':
+      return 'public.shell.backToProfile';
+    case 'leaderboard':
+      return 'public.shell.backToLeaderboard';
+    case 'shop':
+      return 'public.shell.backToShop';
+    case 'shopProducts':
+      return 'public.shell.backToShopProducts';
+    default:
+      return null;
+  }
 }
 
 export function shouldCaptureForumDetailSource(
