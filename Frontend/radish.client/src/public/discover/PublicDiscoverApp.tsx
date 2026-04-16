@@ -60,24 +60,63 @@ interface DiscoverSectionCueDefinition {
   labelKey: string;
 }
 
-const featuredLeaderboardConfigs = [
+interface DiscoverLeaderboardCardDefinition {
+  key: 'experience' | 'post-count' | 'hot-product';
+  icon: string;
+  nameKey: string;
+  descriptionKey: string;
+  cueLabelKeys: readonly string[];
+  focusLabelKey: string;
+  focusTextKey: string;
+  boundaryLabelKey: string;
+  boundaryTextKey: string;
+}
+
+const featuredLeaderboardConfigs: DiscoverLeaderboardCardDefinition[] = [
   {
     key: 'experience',
     icon: 'mdi:star-circle',
     nameKey: 'leaderboard.public.types.experience.name',
     descriptionKey: 'leaderboard.public.types.experience.description',
+    cueLabelKeys: [
+      'discover.public.leaderboardItemExperienceCueRanking',
+      'discover.public.leaderboardItemExperienceCueLevel',
+      'discover.public.leaderboardItemExperienceCueBoundary',
+    ],
+    focusLabelKey: 'discover.public.leaderboardItemFocusLabel',
+    focusTextKey: 'discover.public.leaderboardItemExperienceFocus',
+    boundaryLabelKey: 'discover.public.leaderboardItemBoundaryLabel',
+    boundaryTextKey: 'discover.public.leaderboardItemExperienceBoundary',
   },
   {
     key: 'post-count',
     icon: 'mdi:file-document-outline',
     nameKey: 'leaderboard.public.types.postCount.name',
     descriptionKey: 'leaderboard.public.types.postCount.description',
+    cueLabelKeys: [
+      'discover.public.leaderboardItemPostCueAuthors',
+      'discover.public.leaderboardItemPostCueProfiles',
+      'discover.public.leaderboardItemPostCueReadOnly',
+    ],
+    focusLabelKey: 'discover.public.leaderboardItemFocusLabel',
+    focusTextKey: 'discover.public.leaderboardItemPostFocus',
+    boundaryLabelKey: 'discover.public.leaderboardItemBoundaryLabel',
+    boundaryTextKey: 'discover.public.leaderboardItemPostBoundary',
   },
   {
     key: 'hot-product',
     icon: 'mdi:gift-outline',
     nameKey: 'leaderboard.public.types.hotProduct.name',
     descriptionKey: 'leaderboard.public.types.hotProduct.description',
+    cueLabelKeys: [
+      'discover.public.leaderboardItemProductCuePopularity',
+      'discover.public.leaderboardItemProductCueReadOnly',
+      'discover.public.leaderboardItemProductCueShopBoundary',
+    ],
+    focusLabelKey: 'discover.public.leaderboardItemFocusLabel',
+    focusTextKey: 'discover.public.leaderboardItemProductFocus',
+    boundaryLabelKey: 'discover.public.leaderboardItemBoundaryLabel',
+    boundaryTextKey: 'discover.public.leaderboardItemProductBoundary',
   },
 ] as const;
 
@@ -166,6 +205,12 @@ const shopSectionCueDefinitions: DiscoverSectionCueDefinition[] = [
   { key: 'browse', labelKey: 'discover.public.shopCueBrowse' },
   { key: 'detail', labelKey: 'discover.public.shopCueDetail' },
   { key: 'workspace', labelKey: 'discover.public.shopCueWorkspace' },
+] as const;
+
+const leaderboardSectionCueDefinitions: DiscoverSectionCueDefinition[] = [
+  { key: 'ranking', labelKey: 'discover.public.leaderboardCueRanking' },
+  { key: 'profile', labelKey: 'discover.public.leaderboardCueProfile' },
+  { key: 'boundary', labelKey: 'discover.public.leaderboardCueBoundary' },
 ] as const;
 
 function SectionStatusCard({ tone, title, description, actionLabel, onAction }: SectionStatusCardProps) {
@@ -699,6 +744,11 @@ export const PublicDiscoverApp = ({
               <div className={styles.sectionHeading}>
                 <h2 className={styles.sectionTitle}>{t('discover.public.leaderboardTitle')}</h2>
                 <p className={styles.sectionDescription}>{t('discover.public.leaderboardDescription')}</p>
+                <div className={styles.sectionCueRow}>
+                  {leaderboardSectionCueDefinitions.map((item) => (
+                    <span key={item.key} className={styles.sectionCueChip}>{t(item.labelKey)}</span>
+                  ))}
+                </div>
               </div>
               <button
                 type="button"
@@ -713,6 +763,11 @@ export const PublicDiscoverApp = ({
             <div className={styles.leaderboardList}>
               {featuredLeaderboardConfigs.map((item) => (
                 <article key={item.key} className={styles.leaderboardItem}>
+                  <div className={styles.itemChipRow}>
+                    {item.cueLabelKeys.map((labelKey) => (
+                      <span key={labelKey} className={styles.itemChip}>{t(labelKey)}</span>
+                    ))}
+                  </div>
                   <div className={styles.leaderboardTop}>
                     <span className={styles.leaderboardIcon}>
                       <Icon icon={item.icon} size={20} />
@@ -720,6 +775,16 @@ export const PublicDiscoverApp = ({
                     <h3 className={styles.leaderboardTitle}>{t(item.nameKey)}</h3>
                   </div>
                   <p className={styles.leaderboardSummary}>{t(item.descriptionKey)}</p>
+                  <div className={styles.leaderboardMetaList}>
+                    <div className={styles.leaderboardMetaRow}>
+                      <span className={styles.leaderboardMetaLabel}>{t(item.focusLabelKey)}</span>
+                      <span className={styles.leaderboardMetaText}>{t(item.focusTextKey)}</span>
+                    </div>
+                    <div className={styles.leaderboardMetaRow}>
+                      <span className={styles.leaderboardMetaLabel}>{t(item.boundaryLabelKey)}</span>
+                      <span className={styles.leaderboardMetaText}>{t(item.boundaryTextKey)}</span>
+                    </div>
+                  </div>
                   <button
                     type="button"
                     className={`${styles.secondaryButton} ${styles.leaderboardButton}`}
