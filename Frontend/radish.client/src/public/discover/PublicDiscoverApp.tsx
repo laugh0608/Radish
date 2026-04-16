@@ -60,6 +60,16 @@ interface DiscoverSectionCueDefinition {
   labelKey: string;
 }
 
+interface DiscoverSummaryCardDefinition {
+  key: 'forum' | 'docs' | 'leaderboard' | 'shop';
+  icon: string;
+  label: string;
+  value: string;
+  meaning: string;
+  destination: string;
+  onClick: () => void;
+}
+
 interface DiscoverLeaderboardCardDefinition {
   key: 'experience' | 'post-count' | 'hot-product';
   icon: string;
@@ -431,24 +441,44 @@ export const PublicDiscoverApp = ({
     };
   }, [reloadToken, t]);
 
-  const summaryCards = useMemo(() => ([
+  const summaryCards = useMemo<DiscoverSummaryCardDefinition[]>(() => ([
     {
+      key: 'forum',
+      icon: 'mdi:forum-outline',
       label: t('discover.public.summaryForumLabel'),
-      value: String(forumPosts.length)
+      value: String(forumPosts.length),
+      meaning: t('discover.public.summaryForumMeaning', { count: forumPosts.length }),
+      destination: t('discover.public.summaryForumDestination'),
+      onClick: () => onNavigateToForum({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 })
     },
     {
+      key: 'docs',
+      icon: 'mdi:file-document-outline',
       label: t('discover.public.summaryDocsLabel'),
-      value: String(docs.length)
+      value: String(docs.length),
+      meaning: t('discover.public.summaryDocsMeaning', { count: docs.length }),
+      destination: t('discover.public.summaryDocsDestination'),
+      onClick: () => onNavigateToDocs({ kind: 'list' })
     },
     {
-      label: t('discover.public.summaryTagsLabel'),
-      value: String(hotTags.length)
+      key: 'leaderboard',
+      icon: 'mdi:trophy-outline',
+      label: t('discover.public.summaryLeaderboardLabel'),
+      value: String(featuredLeaderboardConfigs.length),
+      meaning: t('discover.public.summaryLeaderboardMeaning', { count: featuredLeaderboardConfigs.length }),
+      destination: t('discover.public.summaryLeaderboardDestination'),
+      onClick: () => onNavigateToLeaderboard(createDefaultPublicLeaderboardRoute())
     },
     {
+      key: 'shop',
+      icon: 'mdi:storefront-outline',
       label: t('discover.public.summaryShopLabel'),
-      value: String(products.length)
+      value: String(products.length),
+      meaning: t('discover.public.summaryShopMeaning', { count: products.length }),
+      destination: t('discover.public.summaryShopDestination'),
+      onClick: () => onNavigateToShop({ kind: 'home' })
     }
-  ]), [docs.length, forumPosts.length, hotTags.length, products.length, t]);
+  ]), [docs.length, forumPosts.length, onNavigateToDocs, onNavigateToForum, onNavigateToLeaderboard, onNavigateToShop, products.length, t]);
 
   const routeGuideCards = useMemo(() => (
     discoverRouteGuideDefinitions.map((item) => ({
@@ -533,10 +563,28 @@ export const PublicDiscoverApp = ({
 
           <div className={styles.summaryGrid}>
             {summaryCards.map((item) => (
-              <div key={item.label} className={styles.summaryCard}>
-                <span className={styles.summaryLabel}>{item.label}</span>
+              <button
+                key={item.key}
+                type="button"
+                className={`${styles.summaryCard} ${styles.summaryButton}`}
+                onClick={item.onClick}
+              >
+                <div className={styles.summaryTop}>
+                  <span className={styles.summaryIcon}>
+                    <Icon icon={item.icon} size={18} />
+                  </span>
+                  <span className={styles.summaryLabel}>{item.label}</span>
+                </div>
                 <span className={styles.summaryValue}>{item.value}</span>
-              </div>
+                <p className={styles.summaryMeaning}>{item.meaning}</p>
+                <span className={styles.summaryDestination}>
+                  <span className={styles.summaryDestinationLabel}>{t('discover.public.summaryDestinationLabel')}</span>
+                  <span className={styles.summaryDestinationText}>
+                    {item.destination}
+                    <Icon icon="mdi:arrow-right" size={14} />
+                  </span>
+                </span>
+              </button>
             ))}
           </div>
         </section>

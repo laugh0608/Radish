@@ -261,11 +261,42 @@
   padding: 14px 16px;
   background: color-mix(in srgb, var(--theme-bg-surface) 88%, white 12%);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
-  min-height: 96px;
+  min-height: 164px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   gap: 10px;
+}
+
+.summaryButton {
+  width: 100%;
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.summaryButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px color-mix(in srgb, var(--theme-brand-primary) 10%, transparent);
+}
+
+.summaryTop {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.summaryIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  background: color-mix(in srgb, var(--theme-brand-soft) 64%, white 36%);
+  color: var(--theme-brand-primary);
 }
 
 .summaryLabel {
@@ -280,6 +311,36 @@
   font-size: 1.85rem;
   line-height: 1.1;
   font-weight: 700;
+}
+
+.summaryMeaning {
+  margin: 0;
+  color: var(--theme-text-secondary);
+  font-size: 0.88rem;
+  line-height: 1.65;
+}
+
+.summaryDestination {
+  margin-top: auto;
+  display: grid;
+  gap: 6px;
+}
+
+.summaryDestinationLabel {
+  display: block;
+  color: var(--theme-text-tertiary);
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.summaryDestinationText {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--theme-brand-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
 .sectionGrid {
@@ -730,7 +791,7 @@
   }
 
   .summaryCard {
-    min-height: 88px;
+    min-height: 152px;
     padding: 12px 14px;
     gap: 8px;
   }
@@ -738,6 +799,10 @@
   .summaryValue {
     margin-top: 0;
     font-size: 1.6rem;
+  }
+
+  .summaryMeaning {
+    font-size: 0.84rem;
   }
 }
 
