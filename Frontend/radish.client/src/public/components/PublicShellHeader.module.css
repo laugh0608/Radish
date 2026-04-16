@@ -59,6 +59,10 @@
   font-family: var(--theme-font-serif);
   font-size: 18px;
   font-weight: 700;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .brandSubline {
@@ -125,38 +129,60 @@
 @media (max-width: 720px) {
   .heroInner {
     width: calc(100vw - 20px);
-    padding: 12px 0;
+    padding: 10px 0;
     align-items: center;
+    gap: 10px;
+    flex-wrap: nowrap;
   }
 
   .heroActions {
-    width: 100%;
-    justify-content: space-between;
+    width: auto;
+    max-width: 100%;
+    justify-content: flex-end;
+    gap: 8px;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
   }
 
   .heroActionsSolo {
     justify-content: flex-end;
   }
 
+  .brand {
+    width: auto;
+    gap: 10px;
+  }
+
+  .brandMark {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    font-size: 20px;
+    flex: 0 0 auto;
+  }
+
+  .brandName {
+    font-size: 16px;
+  }
+
   .actionButton,
   .desktopLink {
     flex: 0 0 auto;
-    padding: 0 12px;
+    min-height: 36px;
+    padding: 0 10px;
+    gap: 6px;
+    font-size: 12px;
   }
 
   .actionButton {
-    min-width: fit-content;
+    min-width: 0;
   }
 
   .desktopLink {
-    width: 42px;
-    min-width: 42px;
+    width: 36px;
+    min-width: 36px;
     padding: 0;
     border-radius: 999px;
-  }
-
-  .brand {
-    width: 100%;
   }
 
   .desktopLink span {
@@ -165,5 +191,31 @@
 
   .brandSubline {
     display: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .heroInner {
+    gap: 8px;
+  }
+
+  .brand {
+    gap: 8px;
+  }
+
+  .brandMark {
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+    font-size: 18px;
+  }
+
+  .brandName {
+    font-size: 15px;
+  }
+
+  .actionButton,
+  .desktopLink {
+    min-height: 34px;
   }
 }

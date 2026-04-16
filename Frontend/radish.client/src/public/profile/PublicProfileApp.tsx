@@ -20,6 +20,7 @@ import {
   getPublicDetailBackLabelKey,
   type PublicDetailBackMode,
 } from '../publicRouteNavigation';
+import { PublicShellHeader } from '../components/PublicShellHeader';
 import styles from './PublicProfileApp.module.css';
 
 interface PublicProfileAppProps {
@@ -336,27 +337,14 @@ export const PublicProfileApp = ({
 
   return (
     <div className={styles.page} ref={pageRef}>
-      <header className={styles.hero}>
-        <div className={styles.heroInner}>
-          <div className={styles.brand}>
-            <span className={styles.brandMark}>人</span>
-            <span className={styles.brandText}>
-              <span className={styles.brandName}>{t('profile.public.title')}</span>
-              <span className={styles.brandSubline}>{t('profile.public.shellLabel')}</span>
-            </span>
-          </div>
-          <div className={styles.heroActions}>
-            <button type="button" className={styles.discoverLink} onClick={onNavigateToDiscover}>
-              <Icon icon="mdi:compass-outline" size={18} />
-              <span>{t('public.shell.discoverAction')}</span>
-            </button>
-            <a className={styles.desktopLink} href="/">
-              <Icon icon="mdi:view-dashboard-outline" size={18} />
-              <span>WebOS</span>
-            </a>
-          </div>
-        </div>
-      </header>
+      <PublicShellHeader
+        brandMark="人"
+        brandName={t('profile.public.title')}
+        brandSubline={t('profile.public.shellLabel')}
+        onBrandClick={() => pageRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+        onNavigateToDiscover={onNavigateToDiscover}
+        discoverLabel={t('public.shell.discoverAction')}
+      />
 
       <main className={styles.main}>
         {loadingProfile ? (
