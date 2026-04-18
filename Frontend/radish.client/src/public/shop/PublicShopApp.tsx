@@ -173,6 +173,7 @@ export const PublicShopApp = ({
   const [currentPage, setCurrentPage] = useState(() => route.kind === 'products' ? route.page : 1);
   const [totalPages, setTotalPages] = useState(1);
   const [reloadToken, setReloadToken] = useState(0);
+  const [categoriesResolved, setCategoriesResolved] = useState(false);
 
   const pageTitle = route.kind === 'detail'
     ? t('shop.public.detailTitle')
@@ -222,7 +223,7 @@ export const PublicShopApp = ({
       return undefined;
     }
 
-    if (categoriesLoading || categoriesError) {
+    if (!categoriesResolved || categoriesLoading || categoriesError) {
       return productsRouteState.categoryId;
     }
 
@@ -265,6 +266,7 @@ export const PublicShopApp = ({
     const loadCategories = async () => {
       setCategoriesLoading(true);
       setCategoriesError(null);
+      setCategoriesResolved(false);
 
       try {
         const result = await getCategories(t);
@@ -287,6 +289,7 @@ export const PublicShopApp = ({
       } finally {
         if (requestId === categoryRequestIdRef.current) {
           setCategoriesLoading(false);
+          setCategoriesResolved(true);
         }
       }
     };
