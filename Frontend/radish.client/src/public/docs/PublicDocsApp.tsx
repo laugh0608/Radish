@@ -30,6 +30,21 @@ import styles from './PublicDocsApp.module.css';
 
 const PUBLIC_DOCS_SEARCH_PAGE_SIZE = 10;
 
+const searchGuideItems = [
+  {
+    labelKey: 'wiki.public.searchGuideFocusLabel',
+    valueKey: 'wiki.public.searchGuideFocusValue',
+  },
+  {
+    labelKey: 'wiki.public.searchGuideNextLabel',
+    valueKey: 'wiki.public.searchGuideNextValue',
+  },
+  {
+    labelKey: 'wiki.public.searchGuideBoundaryLabel',
+    valueKey: 'wiki.public.searchGuideBoundaryValue',
+  },
+] as const;
+
 interface PublicDocsAppProps {
   route: PublicDocsRoute;
   fallbackBrowseRoute: PublicDocsBrowseRoute;
@@ -832,6 +847,24 @@ const PublicDocsSearch = ({
       </div>
 
       <div className={styles.contentWrap}>
+        <section className={styles.searchGuideSection}>
+          <div className={styles.searchGuideHeader}>
+            <div className={styles.searchGuideHeading}>
+              <span className={styles.searchGuideLabel}>{t('wiki.public.searchGuideKicker')}</span>
+              <h2 className={styles.searchGuideTitle}>{t('wiki.public.searchGuideTitle')}</h2>
+            </div>
+            <p className={styles.searchGuideDescription}>{t('wiki.public.searchGuideDescription')}</p>
+          </div>
+          <div className={styles.searchGuideGrid}>
+            {searchGuideItems.map((item) => (
+              <article key={item.labelKey} className={styles.searchGuideItem}>
+                <span className={styles.searchGuideItemLabel}>{t(item.labelKey)}</span>
+                <span className={styles.searchGuideItemValue}>{t(item.valueKey)}</span>
+              </article>
+            ))}
+          </div>
+        </section>
+
         <section className={styles.searchPanel}>
           <form className={styles.searchForm} onSubmit={handleSubmit}>
             <div className={styles.searchInputWrap}>
