@@ -53,6 +53,17 @@ interface PublicStatusCardProps {
   };
 }
 
+interface PublicGuideItemDefinition {
+  labelKey: string;
+  valueKey: string;
+}
+
+interface PublicGuideDefinition {
+  titleKey: string;
+  descriptionKey: string;
+  items: readonly PublicGuideItemDefinition[];
+}
+
 function PublicStatusCard({ tone, title, description, primaryAction, secondaryAction }: PublicStatusCardProps) {
   const icon = tone === 'loading'
     ? 'mdi:progress-clock'
@@ -105,6 +116,36 @@ function buildProductsRouteKey(route: PublicShopProductsRoute): string {
   return buildPublicShopPath(route);
 }
 
+const publicBrowseGuideItems: readonly PublicGuideItemDefinition[] = [
+  {
+    labelKey: 'shop.public.guideBrowseLabel',
+    valueKey: 'shop.public.guideBrowseValue',
+  },
+  {
+    labelKey: 'shop.public.guideNextLabel',
+    valueKey: 'shop.public.guideNextValue',
+  },
+  {
+    labelKey: 'shop.public.guideBoundaryLabel',
+    valueKey: 'shop.public.guideBoundaryValue',
+  },
+] as const;
+
+const publicDetailGuideItems: readonly PublicGuideItemDefinition[] = [
+  {
+    labelKey: 'shop.public.detailGuideFocusLabel',
+    valueKey: 'shop.public.detailGuideFocusValue',
+  },
+  {
+    labelKey: 'shop.public.detailGuideNextLabel',
+    valueKey: 'shop.public.detailGuideNextValue',
+  },
+  {
+    labelKey: 'shop.public.detailGuideBoundaryLabel',
+    valueKey: 'shop.public.detailGuideBoundaryValue',
+  },
+] as const;
+
 export const PublicShopApp = ({
   route,
   fallbackProductsRoute,
@@ -138,6 +179,19 @@ export const PublicShopApp = ({
     : route.kind === 'products'
       ? t('shop.public.productsTitle')
       : t('shop.public.homeTitle');
+  const guideDefinition = useMemo<PublicGuideDefinition>(() => (
+    route.kind === 'detail'
+      ? {
+          titleKey: 'shop.public.detailGuideTitle',
+          descriptionKey: 'shop.public.detailGuideDescription',
+          items: publicDetailGuideItems,
+        }
+      : {
+          titleKey: 'shop.public.guideTitle',
+          descriptionKey: 'shop.public.guideDescription',
+          items: publicBrowseGuideItems,
+        }
+  ), [route.kind]);
 
   const listNotice = useMemo(() => {
     if (categoriesError && featuredError && route.kind === 'home') {
@@ -658,6 +712,14 @@ export const PublicShopApp = ({
             <div className={styles.readOnlyPanel}>
               <h2 className={styles.readOnlyTitle}>{t('shop.public.purchaseTitle')}</h2>
               <p className={styles.readOnlyDescription}>{t('shop.public.purchaseDescription')}</p>
+              <div className={styles.readOnlyMetaList}>
+                {publicDetailGuideItems.map((item) => (
+                  <div key={item.labelKey} className={styles.readOnlyMetaItem}>
+                    <span className={styles.readOnlyMetaLabel}>{t(item.labelKey)}</span>
+                    <span className={styles.readOnlyMetaValue}>{t(item.valueKey)}</span>
+                  </div>
+                ))}
+              </div>
               <a className={styles.primaryLink} href="/">
                 <Icon icon="mdi:view-dashboard-outline" size={18} />
                 <span>{t('shop.public.openDesktop')}</span>
@@ -730,6 +792,24 @@ export const PublicShopApp = ({
               >
                 {t('shop.public.browseProducts')}
               </button>
+            </div>
+          </div>
+
+          <div className={styles.guideSection}>
+            <div className={styles.guideHeader}>
+              <div className={styles.guideHeading}>
+                <span className={styles.guideLabel}>{t('shop.public.guideKicker')}</span>
+                <h2 className={styles.guideTitle}>{t(guideDefinition.titleKey)}</h2>
+              </div>
+              <p className={styles.guideDescription}>{t(guideDefinition.descriptionKey)}</p>
+            </div>
+            <div className={styles.guideGrid}>
+              {guideDefinition.items.map((item) => (
+                <article key={item.labelKey} className={styles.guideItem}>
+                  <span className={styles.guideItemLabel}>{t(item.labelKey)}</span>
+                  <span className={styles.guideItemValue}>{t(item.valueKey)}</span>
+                </article>
+              ))}
             </div>
           </div>
 
