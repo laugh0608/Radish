@@ -1,0 +1,11 @@
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+build/
+
+android/.gradle/
+android/local.properties
+windows/flutter/ephemeral/
+linux/flutter/ephemeral/
