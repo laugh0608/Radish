@@ -37,6 +37,32 @@ interface PublicProfileAppProps {
 
 type PublicStatusTone = 'loading' | 'empty' | 'error' | 'notFound';
 
+interface ProfileGuideFocusDefinition {
+  labelKey: string;
+  valueKey: string;
+}
+
+const profileGuideFocusItems: ProfileGuideFocusDefinition[] = [
+  {
+    labelKey: 'profile.public.readingGuide.focusProfileLabel',
+    valueKey: 'profile.public.readingGuide.focusProfileValue',
+  },
+  {
+    labelKey: 'profile.public.readingGuide.focusContentLabel',
+    valueKey: 'profile.public.readingGuide.focusContentValue',
+  },
+  {
+    labelKey: 'profile.public.readingGuide.focusBoundaryLabel',
+    valueKey: 'profile.public.readingGuide.focusBoundaryValue',
+  },
+];
+
+const profileGuideBoundaryItems = [
+  'profile.public.readingGuide.boundaryItemEdit',
+  'profile.public.readingGuide.boundaryItemHistory',
+  'profile.public.readingGuide.boundaryItemWorkspace',
+] as const;
+
 interface PublicStatusCardProps {
   tone: PublicStatusTone;
   title: string;
@@ -420,7 +446,7 @@ export const PublicProfileApp = ({
                       )}
                       <button
                         type="button"
-                        className={`${styles.primaryButton} ${followStatus?.voIsFollowing ? styles.followingButton : ''}`}
+                        className={`${styles.primaryButton} ${styles.followActionButton} ${followStatus?.voIsFollowing ? styles.followingButton : ''}`}
                         onClick={() => void handleToggleFollow()}
                         disabled={loadingFollowStatus || togglingFollow}
                         title={followStatus?.voIsFollowing ? t('forum.postDetail.follow.unfollowTitle') : t('forum.postDetail.follow.followTitle')}
@@ -450,6 +476,51 @@ export const PublicProfileApp = ({
                   <span className={styles.statValue}>{stats?.voTotalLikeCount ?? 0}</span>
                 </div>
               </div>
+
+              <section className={styles.readingGuideSection} aria-label={t('profile.public.readingGuide.title')}>
+                <div className={styles.readingGuideSummary}>
+                  <div className={styles.readingGuideSummaryCard}>
+                    <div className={styles.readingGuideSummaryHeading}>
+                      <span className={styles.readingGuideSummaryLabel}>
+                        {t('profile.public.readingGuide.summaryLabel')}
+                      </span>
+                      <h2 className={styles.readingGuideSummaryTitle}>
+                        {t('profile.public.readingGuide.summaryTitle')}
+                      </h2>
+                    </div>
+                    <p className={styles.readingGuideSummaryDescription}>
+                      {t('profile.public.readingGuide.summaryDescription')}
+                    </p>
+                    <div className={styles.readingGuideFocusRow}>
+                      {profileGuideFocusItems.map((item) => (
+                        <article key={item.labelKey} className={styles.readingGuideFocusChip}>
+                          <span className={styles.readingGuideFocusLabel}>{t(item.labelKey)}</span>
+                          <span className={styles.readingGuideFocusValue}>{t(item.valueKey)}</span>
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+
+                  <aside className={styles.readingGuideBoundaryPanel}>
+                    <span className={styles.readingGuideBoundaryLabel}>
+                      {t('profile.public.readingGuide.boundaryLabel')}
+                    </span>
+                    <h2 className={styles.readingGuideBoundaryTitle}>
+                      {t('profile.public.readingGuide.boundaryTitle')}
+                    </h2>
+                    <p className={styles.readingGuideBoundaryDescription}>
+                      {t('profile.public.readingGuide.boundaryDescription')}
+                    </p>
+                    <ul className={styles.readingGuideBoundaryList}>
+                      {profileGuideBoundaryItems.map((itemKey) => (
+                        <li key={itemKey} className={styles.readingGuideBoundaryItem}>
+                          {t(itemKey)}
+                        </li>
+                      ))}
+                    </ul>
+                  </aside>
+                </div>
+              </section>
             </section>
 
             <section className={styles.contentCard}>
