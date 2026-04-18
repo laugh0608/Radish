@@ -57,6 +57,12 @@ interface ExperienceGuideFocusDefinition {
   valueKey: string;
 }
 
+interface LightweightGuideDefinition {
+  titleKey: string;
+  descriptionKey: string;
+  focusItems: ExperienceGuideFocusDefinition[];
+}
+
 const publicLeaderboardFallbackTypes: Record<PublicLeaderboardTypeSlug, PublicLeaderboardFallbackTypeDefinition> = {
   experience: {
     icon: 'mdi:star-circle',
@@ -146,6 +152,36 @@ const experienceGuideBoundaryItems = [
   'leaderboard.public.experienceGuide.boundaryItemHistory',
   'leaderboard.public.experienceGuide.boundaryItemWorkspace',
 ] as const;
+
+const userLeaderboardGuideFocusItems: ExperienceGuideFocusDefinition[] = [
+  {
+    labelKey: 'leaderboard.public.userGuide.focusCompareLabel',
+    valueKey: 'leaderboard.public.userGuide.focusCompareValue',
+  },
+  {
+    labelKey: 'leaderboard.public.userGuide.focusProfileLabel',
+    valueKey: 'leaderboard.public.userGuide.focusProfileValue',
+  },
+  {
+    labelKey: 'leaderboard.public.userGuide.focusBoundaryLabel',
+    valueKey: 'leaderboard.public.userGuide.focusBoundaryValue',
+  },
+];
+
+const productLeaderboardGuideFocusItems: ExperienceGuideFocusDefinition[] = [
+  {
+    labelKey: 'leaderboard.public.productGuide.focusDisplayLabel',
+    valueKey: 'leaderboard.public.productGuide.focusDisplayValue',
+  },
+  {
+    labelKey: 'leaderboard.public.productGuide.focusCompareLabel',
+    valueKey: 'leaderboard.public.productGuide.focusCompareValue',
+  },
+  {
+    labelKey: 'leaderboard.public.productGuide.focusBoundaryLabel',
+    valueKey: 'leaderboard.public.productGuide.focusBoundaryValue',
+  },
+];
 
 function PublicStatusCard({ tone, title, description, primaryAction }: PublicStatusCardProps) {
   const icon = tone === 'loading'
@@ -382,6 +418,29 @@ export const PublicLeaderboardApp = ({
     [isCompactViewport, route.page, totalPages]
   );
   const showExperienceGuide = route.typeSlug === 'experience';
+  const lightweightGuide = useMemo<LightweightGuideDefinition | null>(() => {
+    if (showExperienceGuide) {
+      return null;
+    }
+
+    if (activeTypeConfig.voCategory === LeaderboardCategory.User) {
+      return {
+        titleKey: 'leaderboard.public.userGuide.title',
+        descriptionKey: 'leaderboard.public.userGuide.description',
+        focusItems: userLeaderboardGuideFocusItems,
+      };
+    }
+
+    if (activeTypeConfig.voCategory === LeaderboardCategory.Product) {
+      return {
+        titleKey: 'leaderboard.public.productGuide.title',
+        descriptionKey: 'leaderboard.public.productGuide.description',
+        focusItems: productLeaderboardGuideFocusItems,
+      };
+    }
+
+    return null;
+  }, [activeTypeConfig.voCategory, showExperienceGuide]);
 
   const handleTypeChange = (typeSlug: PublicLeaderboardTypeSlug) => {
     onNavigate({
@@ -513,6 +572,27 @@ export const PublicLeaderboardApp = ({
                       <h3 className={styles.experienceGuideCardTitle}>{t(item.titleKey)}</h3>
                       <p className={styles.experienceGuideCardDescription}>{t(item.descriptionKey)}</p>
                     </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {lightweightGuide && (
+            <section className={styles.lightweightGuideSection} aria-label={t(lightweightGuide.titleKey)}>
+              <div className={styles.lightweightGuideHeader}>
+                <div className={styles.lightweightGuideHeading}>
+                  <span className={styles.lightweightGuideLabel}>{t('leaderboard.public.lightweightGuide.label')}</span>
+                  <h2 className={styles.lightweightGuideTitle}>{t(lightweightGuide.titleKey)}</h2>
+                </div>
+                <p className={styles.lightweightGuideDescription}>{t(lightweightGuide.descriptionKey)}</p>
+              </div>
+
+              <div className={styles.lightweightGuideFocusRow}>
+                {lightweightGuide.focusItems.map((item) => (
+                  <article key={item.labelKey} className={styles.lightweightGuideFocusChip}>
+                    <span className={styles.lightweightGuideFocusLabel}>{t(item.labelKey)}</span>
+                    <span className={styles.lightweightGuideFocusValue}>{t(item.valueKey)}</span>
                   </article>
                 ))}
               </div>

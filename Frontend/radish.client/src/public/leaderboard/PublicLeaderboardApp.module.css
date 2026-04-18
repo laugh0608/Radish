@@ -326,6 +326,98 @@
   gap: 12px;
 }
 
+.lightweightGuideSection {
+  margin: 18px 24px 0;
+  padding: 16px 18px;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-bg-muted) 78%, var(--theme-bg-surface) 22%) 0%,
+      color-mix(in srgb, var(--theme-bg-surface) 96%, white 4%) 100%
+    );
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.lightweightGuideHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.lightweightGuideHeading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.lightweightGuideLabel {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-brand-soft) 58%, white 42%);
+  color: var(--theme-brand-primary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lightweightGuideTitle {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.4;
+  font-weight: 700;
+  color: var(--theme-text-primary);
+}
+
+.lightweightGuideDescription {
+  margin: 0;
+  max-width: 520px;
+  color: var(--theme-text-secondary);
+  line-height: 1.72;
+  font-size: 13px;
+}
+
+.lightweightGuideFocusRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.lightweightGuideFocusChip {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--theme-bg-surface) 90%, white 10%);
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
+}
+
+.lightweightGuideFocusLabel {
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.lightweightGuideFocusValue {
+  color: var(--theme-text-primary);
+  font-size: 14px;
+  line-height: 1.6;
+  font-weight: 700;
+}
+
 .experienceGuideSummary {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.9fr);
@@ -939,7 +1031,13 @@
     padding: 16px;
   }
 
+  .lightweightGuideSection {
+    margin: 16px 16px 0;
+    padding: 14px 16px;
+  }
+
   .experienceGuideSummary,
+  .lightweightGuideFocusRow,
   .experienceGuideFocusRow,
   .experienceGuideGrid {
     grid-template-columns: 1fr;
