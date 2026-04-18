@@ -4,6 +4,8 @@ import 'package:radish_flutter/app/app.dart';
 import 'package:radish_flutter/core/auth/session_controller.dart';
 import 'package:radish_flutter/core/auth/session_store.dart';
 import 'package:radish_flutter/core/config/app_environment.dart';
+import 'package:radish_flutter/features/forum/data/forum_models.dart';
+import 'package:radish_flutter/features/forum/data/forum_repository.dart';
 
 void main() {
   testWidgets('restores into guest shell when no session exists', (tester) async {
@@ -15,6 +17,7 @@ void main() {
       RadishApp(
         environment: const AppEnvironment.development(),
         sessionController: sessionController,
+        forumRepository: _FakeForumRepository(),
       ),
     );
 
@@ -44,6 +47,7 @@ void main() {
       RadishApp(
         environment: const AppEnvironment.development(),
         sessionController: sessionController,
+        forumRepository: _FakeForumRepository(),
       ),
     );
 
@@ -54,4 +58,21 @@ void main() {
     expect(find.text('Signed in'), findsOneWidget);
     expect(find.text('Restored session for user user-42'), findsOneWidget);
   });
+}
+
+class _FakeForumRepository implements ForumRepository {
+  @override
+  Future<ForumPostPage> getPostPage({
+    required int pageIndex,
+    required int pageSize,
+    required ForumFeedSort sort,
+  }) async {
+    return const ForumPostPage(
+      page: 1,
+      pageSize: 20,
+      dataCount: 0,
+      pageCount: 1,
+      posts: [],
+    );
+  }
 }

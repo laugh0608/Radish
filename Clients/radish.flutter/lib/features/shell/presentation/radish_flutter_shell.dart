@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/auth/session_controller.dart';
 import '../../../core/config/app_environment.dart';
+import '../../../features/forum/data/forum_repository.dart';
 import '../../../features/discover/presentation/discover_page.dart';
 import '../../../features/docs/presentation/docs_page.dart';
 import '../../../features/forum/presentation/forum_page.dart';
@@ -11,11 +12,13 @@ class RadishFlutterShell extends StatefulWidget {
   const RadishFlutterShell({
     required this.environment,
     required this.sessionController,
+    required this.forumRepository,
     super.key,
   });
 
   final AppEnvironment environment;
   final SessionController sessionController;
+  final ForumRepository forumRepository;
 
   @override
   State<RadishFlutterShell> createState() => _RadishFlutterShellState();
@@ -35,7 +38,10 @@ class _RadishFlutterShellState extends State<RadishFlutterShell> {
             environment: widget.environment,
             sessionState: sessionState,
           ),
-          ForumPage(environment: widget.environment),
+          ForumPage(
+            environment: widget.environment,
+            repository: widget.forumRepository,
+          ),
           DocsPage(environment: widget.environment),
           ProfilePage(sessionController: widget.sessionController),
         ];
