@@ -774,10 +774,10 @@ export const PublicDiscoverApp = ({
                   </span>
                 </button>
                 <div className={styles.summaryActionRow}>
-                  <button type="button" className={styles.summaryActionButton} onClick={item.onPreview}>
+                  <span className={styles.summaryActionHint}>
                     <Icon icon="mdi:arrow-down-circle-outline" size={16} />
                     <span>{t('discover.public.summaryPreviewAction')}</span>
-                  </button>
+                  </span>
                   <button type="button" className={styles.summaryActionButton} onClick={item.onOpen}>
                     <Icon icon="mdi:arrow-right-circle-outline" size={16} />
                     <span>{t('discover.public.summaryOpenAction')}</span>

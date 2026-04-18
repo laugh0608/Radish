@@ -251,16 +251,16 @@
 
 .summaryGrid {
   display: grid;
-  gap: 16px;
+  gap: 14px;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-top: 24px;
 }
 
 .summaryCard {
-  border-radius: 20px;
+  border-radius: 22px;
   background: color-mix(in srgb, var(--theme-bg-surface) 88%, white 12%);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
-  min-height: 164px;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   justify-content: stretch;
@@ -293,14 +293,15 @@
   width: 100%;
   border: none;
   background: transparent;
-  padding: 14px 16px 12px;
+  padding: 16px 16px 10px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 10px;
+  gap: 8px;
   text-align: left;
   color: inherit;
   cursor: pointer;
+  flex: 1 1 auto;
 }
 
 .summaryTop {
@@ -331,6 +332,7 @@
   display: block;
   font-size: 0.8rem;
   color: var(--theme-text-secondary);
+  line-height: 1.4;
 }
 
 .summaryStatus {
@@ -369,7 +371,7 @@
 
 .summaryValue {
   display: block;
-  margin-top: 8px;
+  margin-top: 2px;
   font-size: 1.85rem;
   line-height: 1.1;
   font-weight: 700;
@@ -379,13 +381,14 @@
   margin: 0;
   color: var(--theme-text-secondary);
   font-size: 0.88rem;
-  line-height: 1.65;
+  line-height: 1.6;
 }
 
 .summaryDestination {
   margin-top: auto;
   display: grid;
-  gap: 6px;
+  gap: 4px;
+  padding-top: 4px;
 }
 
 .summaryDestinationLabel {
@@ -407,9 +410,22 @@
 
 .summaryActionRow {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 0 16px 14px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 16px 14px;
+  border-top: 1px solid color-mix(in srgb, var(--theme-border-soft) 56%, transparent);
+}
+
+.summaryActionHint {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--theme-text-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.4;
 }
 
 .summaryActionButton {
@@ -426,6 +442,7 @@
   font-size: 0.8rem;
   font-weight: 600;
   transition: transform 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
+  flex: none;
 }
 
 .summaryActionButton:hover {
@@ -437,7 +454,7 @@
 .sectionGrid {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.9fr);
-  gap: 18px;
+  gap: 16px;
   margin-top: 18px;
 }
 
@@ -447,8 +464,8 @@
 
 .sectionCard {
   min-width: 0;
-  border-radius: 24px;
-  padding: 22px;
+  border-radius: 22px;
+  padding: 20px;
   background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
   box-shadow: var(--theme-shadow-soft);
@@ -459,8 +476,8 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
+  gap: 14px;
+  margin-bottom: 14px;
 }
 
 .sectionHeading {
@@ -473,16 +490,16 @@
 }
 
 .sectionDescription {
-  margin: 8px 0 0;
+  margin: 6px 0 0;
   color: var(--theme-text-secondary);
-  line-height: 1.7;
+  line-height: 1.65;
 }
 
 .sectionCueRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 6px;
+  margin-top: 10px;
 }
 
 .sectionCueChip {
@@ -515,14 +532,14 @@
 .productList,
 .leaderboardList {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .tagRail {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 18px;
+  gap: 8px;
+  margin-top: 14px;
 }
 
 .tagChip {
@@ -540,7 +557,7 @@
 .productItem,
 .leaderboardItem {
   border-radius: 18px;
-  padding: 16px;
+  padding: 14px;
   background: color-mix(in srgb, var(--theme-bg-surface) 90%, white 10%);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
 }
@@ -567,15 +584,15 @@
 .docsSummary,
 .productSummary,
 .leaderboardSummary {
-  margin: 8px 0 0;
+  margin: 6px 0 0;
   color: var(--theme-text-secondary);
-  line-height: 1.65;
+  line-height: 1.6;
   font-size: 0.92rem;
 }
 
 .docsMeta,
 .productMeta {
-  margin-top: 12px;
+  margin-top: 10px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -586,8 +603,8 @@
 .itemChipRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 10px;
+  gap: 6px;
+  margin-bottom: 8px;
 }
 
 .itemChip {
@@ -609,7 +626,7 @@
 
 .routeGrid {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   min-width: 0;
 }
@@ -617,7 +634,7 @@
 .routeButton {
   min-width: 0;
   border-radius: 18px;
-  padding: 16px;
+  padding: 14px;
   background: color-mix(in srgb, var(--theme-bg-surface) 90%, white 10%);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
   text-align: left;
@@ -661,19 +678,19 @@
   margin-top: 4px;
   color: var(--theme-text-secondary);
   font-size: 0.88rem;
-  line-height: 1.6;
+  line-height: 1.55;
 }
 
 .routeMetaList {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
 .routeMetaRow {
   min-width: 0;
   border-radius: 14px;
-  padding: 12px 14px;
+  padding: 10px 12px;
   background: color-mix(in srgb, var(--theme-bg-muted) 72%, var(--theme-bg-surface) 28%);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 56%, transparent);
   box-sizing: border-box;
@@ -725,18 +742,18 @@
 }
 
 .leaderboardButton {
-  margin-top: 12px;
+  margin-top: 10px;
 }
 
 .leaderboardMetaList {
   display: grid;
-  gap: 10px;
-  margin-top: 12px;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 .leaderboardMetaRow {
   border-radius: 14px;
-  padding: 12px 14px;
+  padding: 10px 12px;
   background: color-mix(in srgb, var(--theme-bg-muted) 72%, var(--theme-bg-surface) 28%);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 56%, transparent);
 }
@@ -759,7 +776,7 @@
 
 .productCardHead {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
 }
 
@@ -800,7 +817,7 @@
 
 .statusCard {
   border-radius: 18px;
-  padding: 16px;
+  padding: 14px;
   display: flex;
   align-items: flex-start;
   gap: 14px;
@@ -845,12 +862,12 @@
 
 .statusMetaList {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .statusMetaRow {
   border-radius: 14px;
-  padding: 12px 14px;
+  padding: 10px 12px;
   background: color-mix(in srgb, var(--theme-bg-muted) 72%, var(--theme-bg-surface) 28%);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 56%, transparent);
 }
@@ -899,7 +916,7 @@
 
   .heroCard,
   .sectionCard {
-    padding: 18px;
+    padding: 16px;
     border-radius: 22px;
   }
 
@@ -929,7 +946,7 @@
   }
 
   .summaryCard {
-    min-height: 152px;
+    min-height: 0;
   }
 
   .summaryValue {
@@ -942,16 +959,22 @@
   }
 
   .summaryPreviewButton {
-    padding: 12px 14px 10px;
+    padding: 14px 14px 10px;
     gap: 8px;
   }
 
   .summaryActionRow {
-    padding: 0 14px 12px;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 10px 14px 12px;
   }
 
   .summaryActionButton {
     width: 100%;
+    justify-content: center;
+  }
+
+  .summaryActionHint {
     justify-content: center;
   }
 }
