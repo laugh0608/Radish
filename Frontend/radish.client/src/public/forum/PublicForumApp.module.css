@@ -81,6 +81,10 @@
   margin-top: 18px;
 }
 
+.readingGuide {
+  margin-top: 18px;
+}
+
 .searchTopbar {
   display: flex;
   align-items: center;
@@ -517,17 +521,6 @@
   padding: 18px 20px 24px;
 }
 
-.detailContext {
-  margin-top: -6px;
-}
-
-.detailContextText {
-  margin: 0;
-  color: var(--theme-text-secondary);
-  font-size: 14px;
-  line-height: 1.75;
-}
-
 .sectionShell {
   display: flex;
   flex-direction: column;
@@ -626,6 +619,10 @@
   .pageIntro {
     font-size: 13px;
     line-height: 1.7;
+  }
+
+  .readingGuide {
+    margin-top: 16px;
   }
 
   .categorySpotlight {

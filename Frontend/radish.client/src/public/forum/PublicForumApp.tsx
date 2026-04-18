@@ -50,6 +50,7 @@ import {
   resolvePublicForumTagLoadState,
 } from './publicForumViewState';
 import { usePublicReplaceRouteSync } from '../usePublicReplaceRouteSync';
+import { PublicReadingGuide, type PublicReadingGuideItem } from '../components/PublicReadingGuide';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import styles from './PublicForumApp.module.css';
 
@@ -77,6 +78,108 @@ interface PublicForumCommentNavigationTarget {
   commentId: number;
   expandedRootCommentId?: number;
   navigationKey: string;
+}
+
+interface PublicGuideDefinition {
+  titleKey: string;
+  descriptionKey: string;
+  readingValueKey: string;
+  nextValueKey: string;
+  boundaryValueKey: string;
+}
+
+const listGuideDefinition: PublicGuideDefinition = {
+  titleKey: 'forum.public.listGuide.title',
+  descriptionKey: 'forum.public.listGuide.description',
+  readingValueKey: 'forum.public.listGuide.readingValue',
+  nextValueKey: 'forum.public.listGuide.nextValue',
+  boundaryValueKey: 'forum.public.listGuide.boundaryValue'
+};
+
+const categoryGuideDefinition: PublicGuideDefinition = {
+  titleKey: 'forum.public.categoryGuide.title',
+  descriptionKey: 'forum.public.categoryGuide.description',
+  readingValueKey: 'forum.public.categoryGuide.readingValue',
+  nextValueKey: 'forum.public.categoryGuide.nextValue',
+  boundaryValueKey: 'forum.public.categoryGuide.boundaryValue'
+};
+
+const tagGuideDefinition: PublicGuideDefinition = {
+  titleKey: 'forum.public.tagGuide.title',
+  descriptionKey: 'forum.public.tagGuide.description',
+  readingValueKey: 'forum.public.tagGuide.readingValue',
+  nextValueKey: 'forum.public.tagGuide.nextValue',
+  boundaryValueKey: 'forum.public.tagGuide.boundaryValue'
+};
+
+const questionGuideDefinition: PublicGuideDefinition = {
+  titleKey: 'forum.public.questionGuide.title',
+  descriptionKey: 'forum.public.questionGuide.description',
+  readingValueKey: 'forum.public.questionGuide.readingValue',
+  nextValueKey: 'forum.public.questionGuide.nextValue',
+  boundaryValueKey: 'forum.public.questionGuide.boundaryValue'
+};
+
+const pollGuideDefinition: PublicGuideDefinition = {
+  titleKey: 'forum.public.pollGuide.title',
+  descriptionKey: 'forum.public.pollGuide.description',
+  readingValueKey: 'forum.public.pollGuide.readingValue',
+  nextValueKey: 'forum.public.pollGuide.nextValue',
+  boundaryValueKey: 'forum.public.pollGuide.boundaryValue'
+};
+
+const lotteryGuideDefinition: PublicGuideDefinition = {
+  titleKey: 'forum.public.lotteryGuide.title',
+  descriptionKey: 'forum.public.lotteryGuide.description',
+  readingValueKey: 'forum.public.lotteryGuide.readingValue',
+  nextValueKey: 'forum.public.lotteryGuide.nextValue',
+  boundaryValueKey: 'forum.public.lotteryGuide.boundaryValue'
+};
+
+const searchGuideDefinition: PublicGuideDefinition = {
+  titleKey: 'forum.public.searchGuide.title',
+  descriptionKey: 'forum.public.searchGuide.description',
+  readingValueKey: 'forum.public.searchGuide.readingValue',
+  nextValueKey: 'forum.public.searchGuide.nextValue',
+  boundaryValueKey: 'forum.public.searchGuide.boundaryValue'
+};
+
+const detailGuideDefinition: PublicGuideDefinition = {
+  titleKey: 'forum.public.detailGuide.title',
+  descriptionKey: 'forum.public.detailGuide.description',
+  readingValueKey: 'forum.public.detailGuide.readingValue',
+  nextValueKey: 'forum.public.detailGuide.nextValue',
+  boundaryValueKey: 'forum.public.detailGuide.boundaryValue'
+};
+
+function createForumReadingGuide(
+  t: ReturnType<typeof useTranslation>['t'],
+  definition: PublicGuideDefinition
+): {
+  label: string;
+  title: string;
+  description: string;
+  items: PublicReadingGuideItem[];
+} {
+  return {
+    label: t('forum.public.guide.label'),
+    title: t(definition.titleKey),
+    description: t(definition.descriptionKey),
+    items: [
+      {
+        label: t('forum.public.guide.readingLabel'),
+        value: t(definition.readingValueKey)
+      },
+      {
+        label: t('forum.public.guide.nextLabel'),
+        value: t(definition.nextValueKey)
+      },
+      {
+        label: t('forum.public.guide.boundaryLabel'),
+        value: t(definition.boundaryValueKey)
+      }
+    ]
+  };
 }
 
 function mergeCommentChildren(
@@ -776,6 +879,10 @@ const PublicForumList = ({
     () => formatCategoryPostCount(activeCategory, t),
     [activeCategory, t]
   );
+  const readingGuide = useMemo(
+    () => createForumReadingGuide(t, selectedCategoryId ? categoryGuideDefinition : listGuideDefinition),
+    [selectedCategoryId, t]
+  );
 
   const visiblePages = useMemo(() => {
     return buildVisiblePages(currentPage, totalPages, isCompactViewport ? 5 : 7);
@@ -860,6 +967,14 @@ const PublicForumList = ({
             </button>
           </div>
         </div>
+
+        <PublicReadingGuide
+          className={styles.readingGuide}
+          label={readingGuide.label}
+          title={readingGuide.title}
+          description={readingGuide.description}
+          items={readingGuide.items}
+        />
       </div>
 
       <div className={styles.categoryRail}>
@@ -1262,6 +1377,10 @@ const PublicForumTag = ({
       ? t('forum.public.tagUnavailableDescription')
       : t('forum.public.tagDescriptionFallback'));
   const tagPostCount = useMemo(() => formatTagPostCount(selectedTag, t), [selectedTag, t]);
+  const readingGuide = useMemo(
+    () => createForumReadingGuide(t, tagGuideDefinition),
+    [t]
+  );
 
   useEffect(() => {
     document.title = `${t('desktop.apps.forum.name')} · ${pageTitle}`;
@@ -1348,6 +1467,14 @@ const PublicForumTag = ({
             </button>
           </div>
         </div>
+
+        <PublicReadingGuide
+          className={styles.readingGuide}
+          label={readingGuide.label}
+          title={readingGuide.title}
+          description={readingGuide.description}
+          items={readingGuide.items}
+        />
       </div>
 
       {tagState.kind === 'error' && selectedTag && (
@@ -1710,6 +1837,15 @@ const PublicForumTypeFeed = ({
   const visiblePages = useMemo(() => {
     return buildVisiblePages(currentPage, totalPages, isCompactViewport ? 5 : 7);
   }, [currentPage, isCompactViewport, totalPages]);
+  const readingGuide = useMemo(() => {
+    const guideDefinition = routeState.kind === 'question'
+      ? questionGuideDefinition
+      : routeState.kind === 'poll'
+        ? pollGuideDefinition
+        : lotteryGuideDefinition;
+
+    return createForumReadingGuide(t, guideDefinition);
+  }, [routeState.kind, t]);
 
   const listState = resolvePublicForumReadSectionState({
     loading: loadingPosts,
@@ -1771,6 +1907,14 @@ const PublicForumTypeFeed = ({
             ))}
           </div>
         </div>
+
+        <PublicReadingGuide
+          className={styles.readingGuide}
+          label={readingGuide.label}
+          title={readingGuide.title}
+          description={readingGuide.description}
+          items={readingGuide.items}
+        />
       </div>
 
       <div className={styles.postList}>
@@ -2103,6 +2247,10 @@ const PublicForumSearch = ({
   const resultIntro = hasActiveFilters
     ? t('forum.public.searchResultIntro')
     : t('forum.public.searchIntro');
+  const readingGuide = useMemo(
+    () => createForumReadingGuide(t, searchGuideDefinition),
+    [t]
+  );
 
   const submitSearch = () => {
     setKeyword(draftKeyword.trim());
@@ -2145,6 +2293,14 @@ const PublicForumSearch = ({
             )}
           </div>
         </div>
+
+        <PublicReadingGuide
+          className={styles.readingGuide}
+          label={readingGuide.label}
+          title={readingGuide.title}
+          description={readingGuide.description}
+          items={readingGuide.items}
+        />
 
         <div className={styles.searchPanel}>
           <div className={styles.searchForm}>
@@ -2775,6 +2931,10 @@ const PublicForumDetail = ({
     : commentSortBy === 'hottest'
       ? t('forum.sort.hottest')
       : t('forum.public.commentSortDefault');
+  const readingGuide = useMemo(
+    () => createForumReadingGuide(t, detailGuideDefinition),
+    [t]
+  );
 
   return (
     <section className={`${styles.sectionCard} ${styles.detailSectionCard}`}>
@@ -2833,9 +2993,12 @@ const PublicForumDetail = ({
 
         {detailState.kind === 'ready' && (
           <>
-            <div className={styles.detailContext}>
-              <p className={styles.detailContextText}>{t('forum.public.readOnlyDescription')}</p>
-            </div>
+            <PublicReadingGuide
+              label={readingGuide.label}
+              title={readingGuide.title}
+              description={readingGuide.description}
+              items={readingGuide.items}
+            />
 
             <ForumPostDetail
               post={post}

@@ -22,6 +22,7 @@ import {
   getPublicDetailBackLabelKey,
   type PublicDetailBackMode,
 } from '../publicRouteNavigation';
+import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { usePublicReplaceRouteSync } from '../usePublicReplaceRouteSync';
 import styles from './PublicShopApp.module.css';
@@ -715,14 +716,6 @@ export const PublicShopApp = ({
             <div className={styles.readOnlyPanel}>
               <h2 className={styles.readOnlyTitle}>{t('shop.public.purchaseTitle')}</h2>
               <p className={styles.readOnlyDescription}>{t('shop.public.purchaseDescription')}</p>
-              <div className={styles.readOnlyMetaList}>
-                {publicDetailGuideItems.map((item) => (
-                  <div key={item.labelKey} className={styles.readOnlyMetaItem}>
-                    <span className={styles.readOnlyMetaLabel}>{t(item.labelKey)}</span>
-                    <span className={styles.readOnlyMetaValue}>{t(item.valueKey)}</span>
-                  </div>
-                ))}
-              </div>
               <a className={styles.primaryLink} href="/">
                 <Icon icon="mdi:view-dashboard-outline" size={18} />
                 <span>{t('shop.public.openDesktop')}</span>
@@ -799,21 +792,15 @@ export const PublicShopApp = ({
           </div>
 
           <div className={styles.guideSection}>
-            <div className={styles.guideHeader}>
-              <div className={styles.guideHeading}>
-                <span className={styles.guideLabel}>{t('shop.public.guideKicker')}</span>
-                <h2 className={styles.guideTitle}>{t(guideDefinition.titleKey)}</h2>
-              </div>
-              <p className={styles.guideDescription}>{t(guideDefinition.descriptionKey)}</p>
-            </div>
-            <div className={styles.guideGrid}>
-              {guideDefinition.items.map((item) => (
-                <article key={item.labelKey} className={styles.guideItem}>
-                  <span className={styles.guideItemLabel}>{t(item.labelKey)}</span>
-                  <span className={styles.guideItemValue}>{t(item.valueKey)}</span>
-                </article>
-              ))}
-            </div>
+            <PublicReadingGuide
+              label={t('shop.public.guideKicker')}
+              title={t(guideDefinition.titleKey)}
+              description={t(guideDefinition.descriptionKey)}
+              items={guideDefinition.items.map((item) => ({
+                label: t(item.labelKey),
+                value: t(item.valueKey),
+              }))}
+            />
           </div>
 
           <div className={styles.contentWrap}>

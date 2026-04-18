@@ -24,6 +24,7 @@ import {
   getPublicDetailBackLabelKey,
   type PublicDetailBackMode,
 } from '../publicRouteNavigation';
+import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { getPublicWikiDocumentBySlug, getPublicWikiList, getPublicWikiTree } from './publicDocsApi';
 import styles from './PublicDocsApp.module.css';
@@ -42,6 +43,36 @@ const searchGuideItems = [
   {
     labelKey: 'wiki.public.searchGuideBoundaryLabel',
     valueKey: 'wiki.public.searchGuideBoundaryValue',
+  },
+] as const;
+
+const listGuideItems = [
+  {
+    labelKey: 'wiki.public.listGuideFocusLabel',
+    valueKey: 'wiki.public.listGuideFocusValue',
+  },
+  {
+    labelKey: 'wiki.public.listGuideNextLabel',
+    valueKey: 'wiki.public.listGuideNextValue',
+  },
+  {
+    labelKey: 'wiki.public.listGuideBoundaryLabel',
+    valueKey: 'wiki.public.listGuideBoundaryValue',
+  },
+] as const;
+
+const detailGuideItems = [
+  {
+    labelKey: 'wiki.public.detailGuideFocusLabel',
+    valueKey: 'wiki.public.detailGuideFocusValue',
+  },
+  {
+    labelKey: 'wiki.public.detailGuideNextLabel',
+    valueKey: 'wiki.public.detailGuideNextValue',
+  },
+  {
+    labelKey: 'wiki.public.detailGuideBoundaryLabel',
+    valueKey: 'wiki.public.detailGuideBoundaryValue',
   },
 ] as const;
 
@@ -547,16 +578,24 @@ const PublicDocsList = ({
         </div>
       </div>
 
-      {isLoading ? (
-        <div className={styles.contentWrap}>
+      <div className={styles.contentWrap}>
+        <PublicReadingGuide
+          label={t('wiki.public.listGuideKicker')}
+          title={t('wiki.public.listGuideTitle')}
+          description={t('wiki.public.listGuideDescription')}
+          items={listGuideItems.map((item) => ({
+            label: t(item.labelKey),
+            value: t(item.valueKey),
+          }))}
+        />
+
+        {isLoading ? (
           <PublicStatusCard
             tone="loading"
             title={t('wiki.public.loadingTitle')}
             description={t('wiki.public.loadingDescription')}
           />
-        </div>
-      ) : isError ? (
-        <div className={styles.contentWrap}>
+        ) : isError ? (
           <PublicStatusCard
             tone="error"
             title={t('wiki.public.listErrorTitle')}
@@ -566,116 +605,114 @@ const PublicDocsList = ({
               onClick: onReload
             }}
           />
-        </div>
-      ) : isEmpty ? (
-        <div className={styles.contentWrap}>
+        ) : isEmpty ? (
           <PublicStatusCard
             tone="empty"
             title={t('wiki.public.emptyTitle')}
             description={t('wiki.public.emptyDescription')}
           />
-        </div>
-      ) : (
-        <div className={styles.contentWrap}>
-          {(treeError || listError) && (
-            <div className={styles.inlineNotice}>
-              <span className={styles.inlineNoticeText}>
-                {treeError && listError
-                  ? t('wiki.public.partialBothFailed')
-                  : treeError
-                    ? t('wiki.public.partialTreeFailed')
-                    : t('wiki.public.partialListFailed')}
-              </span>
-              <button type="button" className={styles.inlineTextButton} onClick={onReload}>
-                {t('common.retry')}
-              </button>
+        ) : (
+          <>
+            {(treeError || listError) && (
+              <div className={styles.inlineNotice}>
+                <span className={styles.inlineNoticeText}>
+                  {treeError && listError
+                    ? t('wiki.public.partialBothFailed')
+                    : treeError
+                      ? t('wiki.public.partialTreeFailed')
+                      : t('wiki.public.partialListFailed')}
+                </span>
+                <button type="button" className={styles.inlineTextButton} onClick={onReload}>
+                  {t('common.retry')}
+                </button>
+              </div>
+            )}
+
+            <div className={styles.listLayout}>
+              <section className={styles.panel}>
+                <div className={styles.panelHeader}>
+                  <div>
+                    <h2 className={styles.panelTitle}>{t('wiki.public.directoryTitle')}</h2>
+                    <p className={styles.panelHint}>{t('wiki.public.directoryHint')}</p>
+                  </div>
+                  <span className={styles.panelStat}>{t('wiki.public.directoryCount', { count: treeRows.length })}</span>
+                </div>
+
+                {treeRows.length === 0 ? (
+                  <PublicStatusCard
+                    tone="empty"
+                    compact={true}
+                    title={t('wiki.public.directoryEmptyTitle')}
+                    description={t('wiki.public.directoryEmptyDescription')}
+                  />
+                ) : (
+                  <div className={styles.directoryList}>
+                    {treeRows.map((row) => (
+                      <button
+                        key={row.id}
+                        type="button"
+                        className={styles.directoryItem}
+                        onClick={() => onOpenDocument(row.slug)}
+                      >
+                        <span className={styles.directoryPrefix} style={{ marginLeft: `${row.depth * 14}px` }}>
+                          {row.depth > 0 ? '└' : '•'}
+                        </span>
+                        <span className={styles.directoryTitle}>{row.title}</span>
+                        {row.childCount > 0 && (
+                          <span className={styles.directoryMeta}>{t('wiki.public.childCount', { count: row.childCount })}</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              <section className={styles.panel}>
+                <div className={styles.panelHeader}>
+                  <div>
+                    <h2 className={styles.panelTitle}>{t('wiki.public.latestTitle')}</h2>
+                    <p className={styles.panelHint}>{t('wiki.public.latestHint')}</p>
+                  </div>
+                  <span className={styles.panelStat}>{t('wiki.public.documentCount', { count: totalDocuments })}</span>
+                </div>
+
+                {listCards.length === 0 ? (
+                  <PublicStatusCard
+                    tone="empty"
+                    compact={true}
+                    title={t('wiki.public.cardsEmptyTitle')}
+                    description={t('wiki.public.cardsEmptyDescription')}
+                  />
+                ) : (
+                  <div className={styles.cardList}>
+                    {listCards.map((document) => (
+                      <button
+                        key={document.voId}
+                        type="button"
+                        className={styles.docCard}
+                        onClick={() => onOpenDocument(document.voSlug)}
+                      >
+                        <div className={styles.docCardMeta}>
+                          <span className={styles.metaChip}>{toVisibilityText(t, document.voVisibility)}</span>
+                          <span className={styles.metaChip}>{toStatusText(t, document.voStatus)}</span>
+                        </div>
+                        <h3 className={styles.docCardTitle}>{document.voTitle}</h3>
+                        <p className={styles.docCardSummary}>
+                          {document.voSummary?.trim() || t('wiki.public.summaryFallback')}
+                        </p>
+                        <div className={styles.docCardFooter}>
+                          <span>{formatDateTimeByTimeZone(document.voModifyTime || document.voCreateTime, displayTimeZone)}</span>
+                          <span className={styles.docCardAction}>{t('wiki.public.openDocument')}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </section>
             </div>
-          )}
-
-          <div className={styles.listLayout}>
-            <section className={styles.panel}>
-              <div className={styles.panelHeader}>
-                <div>
-                  <h2 className={styles.panelTitle}>{t('wiki.public.directoryTitle')}</h2>
-                  <p className={styles.panelHint}>{t('wiki.public.directoryHint')}</p>
-                </div>
-                <span className={styles.panelStat}>{t('wiki.public.directoryCount', { count: treeRows.length })}</span>
-              </div>
-
-              {treeRows.length === 0 ? (
-                <PublicStatusCard
-                  tone="empty"
-                  compact={true}
-                  title={t('wiki.public.directoryEmptyTitle')}
-                  description={t('wiki.public.directoryEmptyDescription')}
-                />
-              ) : (
-                <div className={styles.directoryList}>
-                  {treeRows.map((row) => (
-                    <button
-                      key={row.id}
-                      type="button"
-                      className={styles.directoryItem}
-                      onClick={() => onOpenDocument(row.slug)}
-                    >
-                      <span className={styles.directoryPrefix} style={{ marginLeft: `${row.depth * 14}px` }}>
-                        {row.depth > 0 ? '└' : '•'}
-                      </span>
-                      <span className={styles.directoryTitle}>{row.title}</span>
-                      {row.childCount > 0 && (
-                        <span className={styles.directoryMeta}>{t('wiki.public.childCount', { count: row.childCount })}</span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </section>
-
-            <section className={styles.panel}>
-              <div className={styles.panelHeader}>
-                <div>
-                  <h2 className={styles.panelTitle}>{t('wiki.public.latestTitle')}</h2>
-                  <p className={styles.panelHint}>{t('wiki.public.latestHint')}</p>
-                </div>
-                <span className={styles.panelStat}>{t('wiki.public.documentCount', { count: totalDocuments })}</span>
-              </div>
-
-              {listCards.length === 0 ? (
-                <PublicStatusCard
-                  tone="empty"
-                  compact={true}
-                  title={t('wiki.public.cardsEmptyTitle')}
-                  description={t('wiki.public.cardsEmptyDescription')}
-                />
-              ) : (
-                <div className={styles.cardList}>
-                  {listCards.map((document) => (
-                    <button
-                      key={document.voId}
-                      type="button"
-                      className={styles.docCard}
-                      onClick={() => onOpenDocument(document.voSlug)}
-                    >
-                      <div className={styles.docCardMeta}>
-                        <span className={styles.metaChip}>{toVisibilityText(t, document.voVisibility)}</span>
-                        <span className={styles.metaChip}>{toStatusText(t, document.voStatus)}</span>
-                      </div>
-                      <h3 className={styles.docCardTitle}>{document.voTitle}</h3>
-                      <p className={styles.docCardSummary}>
-                        {document.voSummary?.trim() || t('wiki.public.summaryFallback')}
-                      </p>
-                      <div className={styles.docCardFooter}>
-                        <span>{formatDateTimeByTimeZone(document.voModifyTime || document.voCreateTime, displayTimeZone)}</span>
-                        <span className={styles.docCardAction}>{t('wiki.public.openDocument')}</span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </section>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </div>
     </section>
   );
 };
@@ -847,23 +884,15 @@ const PublicDocsSearch = ({
       </div>
 
       <div className={styles.contentWrap}>
-        <section className={styles.searchGuideSection}>
-          <div className={styles.searchGuideHeader}>
-            <div className={styles.searchGuideHeading}>
-              <span className={styles.searchGuideLabel}>{t('wiki.public.searchGuideKicker')}</span>
-              <h2 className={styles.searchGuideTitle}>{t('wiki.public.searchGuideTitle')}</h2>
-            </div>
-            <p className={styles.searchGuideDescription}>{t('wiki.public.searchGuideDescription')}</p>
-          </div>
-          <div className={styles.searchGuideGrid}>
-            {searchGuideItems.map((item) => (
-              <article key={item.labelKey} className={styles.searchGuideItem}>
-                <span className={styles.searchGuideItemLabel}>{t(item.labelKey)}</span>
-                <span className={styles.searchGuideItemValue}>{t(item.valueKey)}</span>
-              </article>
-            ))}
-          </div>
-        </section>
+        <PublicReadingGuide
+          label={t('wiki.public.searchGuideKicker')}
+          title={t('wiki.public.searchGuideTitle')}
+          description={t('wiki.public.searchGuideDescription')}
+          items={searchGuideItems.map((item) => ({
+            label: t(item.labelKey),
+            value: t(item.valueKey),
+          }))}
+        />
 
         <section className={styles.searchPanel}>
           <form className={styles.searchForm} onSubmit={handleSubmit}>
@@ -1231,36 +1260,48 @@ const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigat
         )}
 
         {detailState === 'ready' && documentDetail && (
-          <article className={styles.articleCard}>
-            <div className={styles.articleHeader}>
-              <div className={styles.articleHeaderMain}>
-                <p className={styles.kicker}>{t('wiki.public.readingKicker')}</p>
-                <h1 className={styles.articleTitle}>{documentDetail.voTitle}</h1>
-                {documentDetail.voSummary?.trim() ? (
-                  <p className={styles.articleSummary}>{documentDetail.voSummary}</p>
-                ) : null}
-              </div>
-              <div className={styles.articleMetaRail}>
-                <span className={styles.metaChip}>{toVisibilityText(t, documentDetail.voVisibility)}</span>
-                <span className={styles.metaChip}>{toStatusText(t, documentDetail.voStatus)}</span>
-                <span className={styles.metaChip}>{t('wiki.meta.slug', { value: documentDetail.voSlug })}</span>
-              </div>
-            </div>
+          <>
+            <PublicReadingGuide
+              label={t('wiki.public.detailGuideKicker')}
+              title={t('wiki.public.detailGuideTitle')}
+              description={t('wiki.public.detailGuideDescription')}
+              items={detailGuideItems.map((item) => ({
+                label: t(item.labelKey),
+                value: t(item.valueKey),
+              }))}
+            />
 
-            <div className={styles.articleMetaGrid}>
-              <span className={styles.metaChip}>{t('wiki.meta.source', { value: documentDetail.voSourceType })}</span>
-              <span className={styles.metaChip}>
-                {t('wiki.meta.updated', { value: formatDateTimeByTimeZone(documentDetail.voModifyTime || documentDetail.voCreateTime, displayTimeZone) })}
-              </span>
-              <span className={styles.metaChip}>
-                {t('wiki.meta.created', { value: formatDateTimeByTimeZone(documentDetail.voCreateTime, displayTimeZone) })}
-              </span>
-            </div>
+            <article className={styles.articleCard}>
+              <div className={styles.articleHeader}>
+                <div className={styles.articleHeaderMain}>
+                  <p className={styles.kicker}>{t('wiki.public.readingKicker')}</p>
+                  <h1 className={styles.articleTitle}>{documentDetail.voTitle}</h1>
+                  {documentDetail.voSummary?.trim() ? (
+                    <p className={styles.articleSummary}>{documentDetail.voSummary}</p>
+                  ) : null}
+                </div>
+                <div className={styles.articleMetaRail}>
+                  <span className={styles.metaChip}>{toVisibilityText(t, documentDetail.voVisibility)}</span>
+                  <span className={styles.metaChip}>{toStatusText(t, documentDetail.voStatus)}</span>
+                  <span className={styles.metaChip}>{t('wiki.meta.slug', { value: documentDetail.voSlug })}</span>
+                </div>
+              </div>
 
-            <div ref={articleBodyRef} className={styles.articleBody} onClick={handleMarkdownLinkClick}>
-              <MarkdownRenderer content={documentDetail.voMarkdownContent} className={styles.markdownContent} />
-            </div>
-          </article>
+              <div className={styles.articleMetaGrid}>
+                <span className={styles.metaChip}>{t('wiki.meta.source', { value: documentDetail.voSourceType })}</span>
+                <span className={styles.metaChip}>
+                  {t('wiki.meta.updated', { value: formatDateTimeByTimeZone(documentDetail.voModifyTime || documentDetail.voCreateTime, displayTimeZone) })}
+                </span>
+                <span className={styles.metaChip}>
+                  {t('wiki.meta.created', { value: formatDateTimeByTimeZone(documentDetail.voCreateTime, displayTimeZone) })}
+                </span>
+              </div>
+
+              <div ref={articleBodyRef} className={styles.articleBody} onClick={handleMarkdownLinkClick}>
+                <MarkdownRenderer content={documentDetail.voMarkdownContent} className={styles.markdownContent} />
+              </div>
+            </article>
+          </>
         )}
       </div>
     </section>

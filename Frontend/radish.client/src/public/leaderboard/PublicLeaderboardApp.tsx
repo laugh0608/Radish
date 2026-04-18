@@ -16,6 +16,7 @@ import {
   type PublicLeaderboardRoute,
   type PublicLeaderboardTypeSlug,
 } from '../leaderboardRouteState';
+import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { resolveMediaUrl } from '@/utils/media';
 import styles from './PublicLeaderboardApp.module.css';
@@ -579,24 +580,17 @@ export const PublicLeaderboardApp = ({
           )}
 
           {lightweightGuide && (
-            <section className={styles.lightweightGuideSection} aria-label={t(lightweightGuide.titleKey)}>
-              <div className={styles.lightweightGuideHeader}>
-                <div className={styles.lightweightGuideHeading}>
-                  <span className={styles.lightweightGuideLabel}>{t('leaderboard.public.lightweightGuide.label')}</span>
-                  <h2 className={styles.lightweightGuideTitle}>{t(lightweightGuide.titleKey)}</h2>
-                </div>
-                <p className={styles.lightweightGuideDescription}>{t(lightweightGuide.descriptionKey)}</p>
-              </div>
-
-              <div className={styles.lightweightGuideFocusRow}>
-                {lightweightGuide.focusItems.map((item) => (
-                  <article key={item.labelKey} className={styles.lightweightGuideFocusChip}>
-                    <span className={styles.lightweightGuideFocusLabel}>{t(item.labelKey)}</span>
-                    <span className={styles.lightweightGuideFocusValue}>{t(item.valueKey)}</span>
-                  </article>
-                ))}
-              </div>
-            </section>
+            <div className={styles.lightweightGuideSection}>
+              <PublicReadingGuide
+                label={t('leaderboard.public.lightweightGuide.label')}
+                title={t(lightweightGuide.titleKey)}
+                description={t(lightweightGuide.descriptionKey)}
+                items={lightweightGuide.focusItems.map((item) => ({
+                  label: t(item.labelKey),
+                  value: t(item.valueKey),
+                }))}
+              />
+            </div>
           )}
 
           {typesError && (

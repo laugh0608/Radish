@@ -164,86 +164,8 @@
 }
 
 .guideSection {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  margin: 0 28px;
-  padding: 0 0 20px;
+  padding: 0 28px 20px;
   border-bottom: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
-}
-
-.guideHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-
-.guideHeading {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-
-.guideLabel {
-  display: inline-flex;
-  align-items: center;
-  align-self: flex-start;
-  min-height: 28px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--theme-brand-soft) 64%, white 36%);
-  color: var(--theme-brand-primary);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.guideTitle {
-  margin: 0;
-  font-size: 18px;
-  line-height: 1.4;
-}
-
-.guideDescription {
-  margin: 0;
-  max-width: 560px;
-  color: var(--theme-text-secondary);
-  font-size: 13px;
-  line-height: 1.72;
-}
-
-.guideGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.guideItem {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-  padding: 12px 14px;
-  border-radius: 18px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
-  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
-}
-
-.guideItemLabel {
-  color: var(--theme-text-secondary);
-  font-size: 12px;
-  line-height: 1.4;
-}
-
-.guideItemValue {
-  color: var(--theme-text-primary);
-  font-size: 14px;
-  line-height: 1.65;
-  font-weight: 700;
 }
 
 .inlineNotice {
@@ -483,34 +405,6 @@
   border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 14%, transparent);
 }
 
-.readOnlyMetaList {
-  display: grid;
-  gap: 8px;
-}
-
-.readOnlyMetaItem {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 10px 12px;
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 90%, white 10%);
-  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 62%, transparent);
-}
-
-.readOnlyMetaLabel {
-  color: var(--theme-text-secondary);
-  font-size: 12px;
-  line-height: 1.4;
-}
-
-.readOnlyMetaValue {
-  color: var(--theme-text-primary);
-  font-size: 13px;
-  line-height: 1.65;
-  font-weight: 700;
-}
-
 .detailSection {
   padding: 22px;
 }
@@ -543,14 +437,9 @@
   }
 
   .sectionHeader,
-  .guideHeader,
   .detailTopbar {
     flex-direction: column;
     align-items: flex-start;
-  }
-
-  .guideGrid {
-    grid-template-columns: 1fr;
   }
 }
 
@@ -564,9 +453,7 @@
   }
 
   .guideSection {
-    margin: 0 18px;
-    padding: 0 0 16px;
-    gap: 12px;
+    padding: 0 18px 16px;
   }
 
   .contentWrap {
