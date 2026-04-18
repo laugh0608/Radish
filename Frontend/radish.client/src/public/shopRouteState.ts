@@ -58,6 +58,15 @@ function normalizePositiveIntegerString(value: string | undefined): string | und
   return normalized;
 }
 
+function normalizeCategoryKey(value: string | undefined): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const normalized = value.trim();
+  return normalized || undefined;
+}
+
 function normalizeKeyword(value: string | null): string | undefined {
   if (!value) {
     return undefined;
@@ -76,7 +85,7 @@ export function parsePublicShopRoute(pathname: string, search: string): PublicSh
     const params = new URLSearchParams(search);
     return {
       kind: 'products',
-      categoryId: normalizePositiveIntegerString(params.get('category') ?? undefined),
+      categoryId: normalizeCategoryKey(params.get('category') ?? undefined),
       keyword: normalizeKeyword(params.get('q')),
       page: normalizePositiveInteger(params.get('page') ?? undefined) ?? 1
     };
