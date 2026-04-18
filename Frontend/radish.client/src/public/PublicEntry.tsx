@@ -217,24 +217,25 @@ export const PublicEntry = () => {
   }, []);
 
   const navigateToRoute = useCallback((nextRoute: PublicRouteDescriptor, options?: { replace?: boolean }) => {
+    const currentRoute = parsePublicRoute();
     const nextPath = buildPublicPath(nextRoute);
     const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
-    if (!shouldCommitPublicRouteUpdate(route, nextRoute, currentPath, nextPath)) {
+    if (!shouldCommitPublicRouteUpdate(currentRoute, nextRoute, currentPath, nextPath)) {
       return;
     }
 
-    if (shouldCaptureForumDetailSource(route, nextRoute)) {
-      setForumDetailSourceRoute(route);
+    if (shouldCaptureForumDetailSource(currentRoute, nextRoute)) {
+      setForumDetailSourceRoute(currentRoute);
     }
-    if (shouldCaptureDocsDetailSource(route, nextRoute)) {
-      setDocsDetailSourceRoute(route);
+    if (shouldCaptureDocsDetailSource(currentRoute, nextRoute)) {
+      setDocsDetailSourceRoute(currentRoute);
     }
-    if (shouldCaptureProfileDetailSource(route, nextRoute)) {
-      setProfileSourceRoute(route);
+    if (shouldCaptureProfileDetailSource(currentRoute, nextRoute)) {
+      setProfileSourceRoute(currentRoute);
     }
-    if (shouldCaptureShopDetailSource(route, nextRoute)) {
-      setShopDetailSourceRoute(route);
+    if (shouldCaptureShopDetailSource(currentRoute, nextRoute)) {
+      setShopDetailSourceRoute(currentRoute);
     }
 
     if (options?.replace) {
@@ -256,7 +257,7 @@ export const PublicEntry = () => {
       setLastShopProductsRoute(nextRoute.route);
     }
     setRoute(nextRoute);
-  }, [route]);
+  }, []);
 
   const navigateToDocsRoute = useCallback((nextRoute: PublicDocsRoute, options?: { replace?: boolean }) => {
     navigateToRoute({ app: 'docs', route: nextRoute }, options);
