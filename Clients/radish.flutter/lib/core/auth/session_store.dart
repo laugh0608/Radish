@@ -19,6 +19,10 @@ abstract class SessionStore {
 }
 
 class InMemorySessionStore implements SessionStore {
+  InMemorySessionStore({
+    AuthSession? initialSession,
+  }) : _session = initialSession;
+
   AuthSession? _session;
 
   @override

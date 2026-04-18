@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/auth/session_controller.dart';
 import '../../../core/config/app_environment.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
 
 class DiscoverPage extends StatelessWidget {
   const DiscoverPage({
     required this.environment,
+    required this.sessionState,
     super.key,
   });
 
   final AppEnvironment environment;
+  final SessionState sessionState;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +35,9 @@ class DiscoverPage extends StatelessWidget {
             'Environment: ${environment.name}',
             'API base: ${environment.apiBaseUrl}',
             'Discover shell and destination placeholders',
-            'Shared contract and auth storage boundaries',
+            sessionState.isAuthenticated
+                ? 'Recovered session for user ${sessionState.session!.userId}'
+                : 'App entered guest mode after session restore',
           ],
         ),
         const SizedBox(height: 16),

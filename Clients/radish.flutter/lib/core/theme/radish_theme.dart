@@ -16,7 +16,7 @@ ThemeData buildRadishTheme() {
       centerTitle: false,
       surfaceTintColor: Colors.transparent,
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       elevation: 0,
       color: colorScheme.surface,
       margin: EdgeInsets.zero,
@@ -28,7 +28,7 @@ ThemeData buildRadishTheme() {
       ),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      labelTextStyle: MaterialStateProperty.all(
+      labelTextStyle: WidgetStateProperty.all(
         const TextStyle(
           fontWeight: FontWeight.w600,
         ),
