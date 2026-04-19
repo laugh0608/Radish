@@ -414,6 +414,9 @@ export const PublicForumApp = ({
   const previousRouteRef = useRef<PublicForumRoute>(route);
   const browseScrollSnapshotRef = useRef<{ routeKey: string; scrollTop: number } | null>(null);
   const [pendingRestoreScrollTop, setPendingRestoreScrollTop] = useState<number | null>(null);
+  const routeBrowseKey = useMemo(() => (
+    route.kind !== 'detail' ? buildBrowseRouteKey(route) : null
+  ), [route]);
   const detailBackLabelKey = getPublicDetailBackLabelKey(detailBackAction?.mode);
   const detailBackLabel = detailBackLabelKey ? t(detailBackLabelKey) : t('forum.backToList');
   const handleForumDetailBack = detailBackAction?.onBack ?? (() => onNavigate(fallbackBrowseRoute));
@@ -454,8 +457,7 @@ export const PublicForumApp = ({
       setPendingRestoreScrollTop(null);
       page.scrollTo({ top: 0, behavior: 'auto' });
     } else if (route.kind !== 'detail') {
-      const nextRouteKey = buildBrowseRouteKey(route);
-      if (browseScrollSnapshotRef.current?.routeKey === nextRouteKey) {
+      if (routeBrowseKey && browseScrollSnapshotRef.current?.routeKey === routeBrowseKey) {
         setPendingRestoreScrollTop(browseScrollSnapshotRef.current.scrollTop);
       } else {
         setPendingRestoreScrollTop(null);
@@ -467,24 +469,7 @@ export const PublicForumApp = ({
     }
 
     previousRouteRef.current = route;
-  }, [
-    route.kind,
-    route.kind === 'detail'
-      ? route.postId
-      : route.kind === 'list'
-        ? route.categoryId
-        : route.kind === 'tag'
-          ? route.tagSlug
-          : route.kind === 'question' || route.kind === 'poll' || route.kind === 'lottery'
-            ? route.kind
-          : null,
-    route.kind !== 'detail' ? route.sortBy : null,
-    route.kind === 'search' ? route.keyword : null,
-    route.kind === 'search' ? route.timeRange : null,
-    route.kind === 'search' ? route.startDate : null,
-    route.kind === 'search' ? route.endDate : null,
-    route.kind !== 'detail' ? route.page : null
-  ]);
+  }, [route, routeBrowseKey]);
 
   return (
     <div className={styles.page} ref={pageRef}>

@@ -6,7 +6,6 @@
 import { apiGet, configureApiClient, type PagedResponse } from '@radish/http';
 import { getApiBaseUrl } from '@/config/env';
 import {
-  LeaderboardCategory,
   LeaderboardType,
   type LeaderboardTypeData,
   type UnifiedLeaderboardItemData,

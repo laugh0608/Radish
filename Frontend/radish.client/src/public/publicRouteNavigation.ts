@@ -15,6 +15,7 @@ export type PublicRouteDescriptor =
 
 export type PublicDetailBackMode =
   | 'discover'
+  | 'source'
   | 'forum'
   | 'docs'
   | 'profile'
@@ -60,6 +61,8 @@ export function getPublicDetailBackLabelKey(mode: PublicDetailBackMode | null | 
   switch (mode) {
     case 'discover':
       return 'public.shell.backToDiscover';
+    case 'source':
+      return 'public.shell.backToSource';
     case 'forum':
       return 'public.shell.backToForum';
     case 'docs':
@@ -155,17 +158,21 @@ export function resolveDocsDetailBackMode(sourceRoute: PublicRouteDescriptor | n
     return null;
   }
 
-  return resolveBackMode(sourceRoute);
+  return sourceRoute.app === 'discover' ? 'discover' : 'source';
 }
 
 export function resolveProfileBackMode(sourceRoute: PublicRouteDescriptor | null): PublicDetailBackMode | null {
-  return resolveBackMode(sourceRoute);
+  if (!sourceRoute) {
+    return null;
+  }
+
+  return sourceRoute.app === 'discover' ? 'discover' : 'source';
 }
 
 export function resolveShopDetailBackMode(sourceRoute: PublicRouteDescriptor | null): PublicDetailBackMode | null {
   if (!sourceRoute || isShopBrowseDescriptor(sourceRoute)) {
-    return sourceRoute ? resolveBackMode(sourceRoute) : null;
+    return sourceRoute?.app === 'discover' ? 'discover' : 'source';
   }
 
-  return resolveBackMode(sourceRoute);
+  return sourceRoute.app === 'discover' ? 'discover' : 'source';
 }

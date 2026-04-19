@@ -26,10 +26,15 @@ export function isPublicDiscoverPathname(pathname: string): boolean {
 export function parsePublicDiscoverRoute(pathname: string, search = ''): PublicDiscoverRoute | null {
   if (isPublicDiscoverPathname(pathname)) {
     const params = new URLSearchParams(search);
-    return {
-      kind: 'home',
-      section: normalizeDiscoverSection(params.get('section'))
-    };
+    const section = normalizeDiscoverSection(params.get('section'));
+    return section
+      ? {
+          kind: 'home',
+          section
+        }
+      : {
+          kind: 'home'
+        };
   }
 
   return null;

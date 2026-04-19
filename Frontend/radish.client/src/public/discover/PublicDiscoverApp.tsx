@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { PostCard } from '@/apps/forum/components/PostCard';
@@ -515,7 +515,7 @@ export const PublicDiscoverApp = ({
     };
   }, [reloadToken, t]);
 
-  const scrollToSection = (key: DiscoverRouteKey, behavior: ScrollBehavior) => {
+  const scrollToSection = useCallback((key: DiscoverRouteKey, behavior: ScrollBehavior) => {
     const element = sectionRefs[key].current;
     if (!element) {
       return;
@@ -526,7 +526,7 @@ export const PublicDiscoverApp = ({
       top: Math.max(nextTop, 0),
       behavior
     });
-  };
+  }, [sectionRefs]);
 
   useEffect(() => {
     const section = route.section;
@@ -543,9 +543,9 @@ export const PublicDiscoverApp = ({
     return () => {
       window.cancelAnimationFrame(frameId);
     };
-  }, [route.section, sectionRefs]);
+  }, [route.section, scrollToSection]);
 
-  const previewSection = (key: DiscoverRouteKey) => {
+  const previewSection = useCallback((key: DiscoverRouteKey) => {
     if (route.section === key) {
       scrollToSection(key, 'smooth');
       return;
@@ -553,20 +553,20 @@ export const PublicDiscoverApp = ({
 
     routeScrollBehaviorRef.current = 'smooth';
     onNavigate({ kind: 'home', section: key }, { replace: true });
-  };
+  }, [onNavigate, route.section, scrollToSection]);
 
-  const rememberSection = (key: DiscoverRouteKey) => {
+  const rememberSection = useCallback((key: DiscoverRouteKey) => {
     if (route.section === key) {
       return;
     }
 
     onNavigate({ kind: 'home', section: key }, { replace: true });
-  };
+  }, [onNavigate, route.section]);
 
-  const runFromSection = (key: DiscoverRouteKey, action: () => void) => {
+  const runFromSection = useCallback((key: DiscoverRouteKey, action: () => void) => {
     rememberSection(key);
     action();
-  };
+  }, [rememberSection]);
 
   const summaryCards = useMemo<DiscoverSummaryCardDefinition[]>(() => ([
     {
@@ -653,7 +653,7 @@ export const PublicDiscoverApp = ({
       onPreview: () => previewSection('shop'),
       onOpen: () => runFromSection('shop', () => onNavigateToShop({ kind: 'home' }))
     }
-  ]), [docs.length, docsError, featuredLeaderboardConfigs.length, forumError, forumPosts.length, loadingDocs, loadingForum, loadingShop, onNavigateToDocs, onNavigateToForum, onNavigateToLeaderboard, onNavigateToShop, previewSection, products.length, runFromSection, shopError, t]);
+  ]), [docs.length, docsError, forumError, forumPosts.length, loadingDocs, loadingForum, loadingShop, onNavigateToDocs, onNavigateToForum, onNavigateToLeaderboard, onNavigateToShop, previewSection, products.length, runFromSection, shopError, t]);
 
   const routeGuideCards = useMemo(() => (
     discoverRouteGuideDefinitions.map((item) => ({

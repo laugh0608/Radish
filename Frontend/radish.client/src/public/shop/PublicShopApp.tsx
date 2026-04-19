@@ -231,7 +231,7 @@ export const PublicShopApp = ({
     return categories.some((category) => String(category.voId) === productsRouteState.categoryId)
       ? productsRouteState.categoryId
       : undefined;
-  }, [categories, categoriesError, categoriesLoading, productsRouteState]);
+  }, [categories, categoriesError, categoriesLoading, categoriesResolved, productsRouteState]);
 
   const canonicalProductsRoute = useMemo<PublicShopProductsRoute>(() => {
     if (!productsRouteState) {
