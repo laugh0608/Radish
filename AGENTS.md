@@ -28,6 +28,8 @@
 - 共享组件：`radish.ui` 为源码直连的共享 UI 组件库，无需单独构建
 - HTTP 客户端：`radish.http` 为统一 API 客户端 workspace
 - 协作分支：`dev`
+- `master` 仅作为稳定主线，只通过 Pull Request 合并
+- `master` 当前允许 `merge commit` 与 `rebase merge`，禁用 `squash merge`
 - 文档源：`Docs/` 为项目文档唯一真相源
 
 ## AI 执行边界

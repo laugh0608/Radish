@@ -6,7 +6,7 @@
 
 1. 日常开发提交到 `dev` 或功能分支。
 2. 发版时从 `dev` 发起到默认分支（当前为 `master`，如切换可适配 `main`）的 Pull Request。
-3. PR 需通过仓库质量检查，再执行 `rebase` 合并。
+3. PR 需通过仓库质量检查，再按 `merge` 或 `rebase` 方式合并。
 4. 合并到默认分支后再创建版本标签或发布 Release。
 
 ## 默认分支规则说明
@@ -17,7 +17,7 @@
 - 仅允许通过 Pull Request 合并
 - 要求 1 个审批和已解决会话
 - 要求 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Identity Guard` 四个检查通过
-- 限制合并方式为 `rebase`
+- 允许 `merge` 与 `rebase` 两种合并方式，禁用 `squash`
 - 管理员仅可通过 Pull Request 方式绕过规则，不开放直接 push
 
 ## 现阶段策略
@@ -46,7 +46,7 @@ gh api repos/<owner>/<repo>/rulesets --method POST --input .github/rulesets/mast
 
 ## 配套仓库设置
 
-- 仓库 Merge options 中仅启用 `Rebase merging`
+- 仓库 Merge options 中启用 `Rebase merging`
+- 仓库 Merge options 中启用 `Merge commits`
 - 关闭 `Squash merging`
-- 关闭 `Merge commits`
 - 如果后续增加 CODEOWNERS，再把 ruleset 中 `require_code_owner_review` 调整为 `true`

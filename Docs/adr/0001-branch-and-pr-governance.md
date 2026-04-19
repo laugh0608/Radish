@@ -55,7 +55,7 @@ Accepted
 - 必须通过 PR 合并
 - 必须通过仓库检查
 - 管理员仅可通过 PR 方式绕过规则，不开放直接 push
-- 合并方式限制为 `squash` / `rebase`
+- 当前允许 `merge commit` 与 `rebase merge`，禁用 `squash merge`
 - 提交信息需符合 Conventional Commits
 
 ### `dev` 规则
@@ -74,7 +74,7 @@ Accepted
 3. 对 `master` 启用 branch protection / ruleset
 4. 对 `master` 要求通过 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Identity Guard` 四个状态检查
 5. 对 `master` 开启 “Require a pull request before merging”
-6. 限制 `master` 的合并方式为 `squash` / `rebase`
+6. 仓库 Merge options 中启用 `Merge commits` 与 `Rebase merging`，关闭 `Squash merging`
 7. 管理员仅通过 Pull Request 方式绕过规则，不开放直接 push
 8. `dev` 当前不作为强保护分支处理
 

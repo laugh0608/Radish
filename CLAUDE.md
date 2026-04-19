@@ -30,6 +30,8 @@
 - HTTP 客户端：`@radish/http`，统一 API 客户端与相关类型封装
 - Rust 扩展：`Lib/radish.lib/`
 - 主要协作分支：`dev`
+- `master` 仅作为稳定主线，只通过 Pull Request 合并
+- `master` 当前允许 `merge commit` 与 `rebase merge`，禁用 `squash merge`
 - 文档唯一真相源：`Docs/`
 
 ## AI 执行边界
