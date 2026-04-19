@@ -1,0 +1,221 @@
+.hero {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(16px);
+  background: color-mix(in srgb, var(--theme-bg-surface) 84%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--theme-border-soft) 80%, transparent);
+}
+
+.heroInner {
+  width: min(1040px, calc(100vw - 24px));
+  margin: 0 auto;
+  padding: 14px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.brand {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  flex: 1 1 auto;
+}
+
+.brandMark {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--theme-brand-primary) 0%, color-mix(in srgb, var(--theme-accent-earth) 62%, var(--theme-brand-primary) 38%) 100%);
+  color: #fff;
+  box-shadow: var(--theme-shadow-soft);
+  font-family: var(--theme-font-serif);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.brandText {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.brandName {
+  font-family: var(--theme-font-serif);
+  font-size: 18px;
+  font-weight: 700;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.brandSubline {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--theme-text-secondary);
+}
+
+.heroActions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.heroActionsSolo {
+  justify-content: flex-end;
+}
+
+.actionButton,
+.desktopLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.actionButton {
+  border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 26%, transparent);
+  background: color-mix(in srgb, var(--theme-brand-soft) 58%, white 42%);
+  color: var(--theme-brand-primary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.desktopLink {
+  border: 1px solid var(--theme-border-strong);
+  background: color-mix(in srgb, var(--theme-bg-surface) 84%, white 16%);
+  color: var(--theme-text-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.actionButton:hover,
+.desktopLink:hover {
+  transform: translateY(-1px);
+}
+
+.actionButton:active,
+.desktopLink:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 720px) {
+  .heroInner {
+    width: calc(100vw - 20px);
+    padding: 10px 0;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: nowrap;
+  }
+
+  .heroActions {
+    width: auto;
+    max-width: 100%;
+    justify-content: flex-end;
+    gap: 8px;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+  }
+
+  .heroActionsSolo {
+    justify-content: flex-end;
+  }
+
+  .brand {
+    width: auto;
+    gap: 10px;
+  }
+
+  .brandMark {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    font-size: 20px;
+    flex: 0 0 auto;
+  }
+
+  .brandName {
+    font-size: 16px;
+  }
+
+  .actionButton,
+  .desktopLink {
+    flex: 0 0 auto;
+    min-height: 36px;
+    padding: 0 10px;
+    gap: 6px;
+    font-size: 12px;
+  }
+
+  .actionButton {
+    min-width: 0;
+  }
+
+  .desktopLink {
+    width: 36px;
+    min-width: 36px;
+    padding: 0;
+    border-radius: 999px;
+  }
+
+  .desktopLink span {
+    display: none;
+  }
+
+  .brandSubline {
+    display: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .heroInner {
+    gap: 8px;
+  }
+
+  .brand {
+    gap: 8px;
+  }
+
+  .brandMark {
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+    font-size: 18px;
+  }
+
+  .brandName {
+    font-size: 15px;
+  }
+
+  .actionButton,
+  .desktopLink {
+    min-height: 34px;
+  }
+}

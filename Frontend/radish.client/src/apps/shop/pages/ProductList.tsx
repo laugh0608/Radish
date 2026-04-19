@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ProductCategory, ProductListItem } from '@/types/shop';
 import { getProductTypeDisplay } from '@/api/shop';
+import { resolveMediaUrl } from '@/utils/media';
 import styles from './ProductList.module.css';
 
 interface ProductListProps {
@@ -131,65 +132,70 @@ export const ProductList = ({
         ) : products.length > 0 ? (
           <>
             <div className={styles.productsGrid}>
-              {products.map((product) => (
-                <div
-                  key={product.voId}
-                  className={styles.productCard}
-                  onClick={() => onProductClick(product.voId)}
-                >
-                  <div className={styles.productImage}>
-                    {product.voCoverImage ? (
-                      <img src={product.voCoverImage} alt={product.voName} />
-                    ) : product.voIcon ? (
-                      <img src={product.voIcon} alt={product.voName} />
-                    ) : (
-                      <div className={styles.defaultProductImage}>
-                        <span>🎁</span>
-                      </div>
-                    )}
+              {products.map((product) => {
+                const coverImageUrl = resolveMediaUrl(product.voCoverImage);
+                const iconImageUrl = resolveMediaUrl(product.voIcon);
 
-                    {product.voHasDiscount && (
-                      <div className={styles.discountBadge}>
-                        {t('shop.discount')}
-                      </div>
-                    )}
+                return (
+                  <div
+                    key={product.voId}
+                    className={styles.productCard}
+                    onClick={() => onProductClick(product.voId)}
+                  >
+                    <div className={styles.productImage}>
+                      {coverImageUrl ? (
+                        <img src={coverImageUrl} alt={product.voName} />
+                      ) : iconImageUrl ? (
+                        <img src={iconImageUrl} alt={product.voName} />
+                      ) : (
+                        <div className={styles.defaultProductImage}>
+                          <span>🎁</span>
+                        </div>
+                      )}
 
-                    {!product.voInStock && (
-                      <div className={styles.outOfStockOverlay}>
-                        <span>{t('shop.outOfStock')}</span>
-                      </div>
-                    )}
-                  </div>
+                      {product.voHasDiscount && (
+                        <div className={styles.discountBadge}>
+                          {t('shop.discount')}
+                        </div>
+                      )}
 
-                  <div className={styles.productInfo}>
-                    <div className={styles.productType}>
-                      {getProductTypeDisplay(product.voProductType)}
-                    </div>
-
-                    <h3 className={styles.productName}>{product.voName}</h3>
-
-                    <div className={styles.productPrice}>
-                      <span className={styles.currentPrice}>
-                        {product.voPrice.toLocaleString()} {t('shop.currency.carrot')}
-                      </span>
-                      {product.voOriginalPrice && product.voOriginalPrice > product.voPrice && (
-                        <span className={styles.originalPrice}>
-                          {product.voOriginalPrice.toLocaleString()}
-                        </span>
+                      {!product.voInStock && (
+                        <div className={styles.outOfStockOverlay}>
+                          <span>{t('shop.outOfStock')}</span>
+                        </div>
                       )}
                     </div>
 
-                    <div className={styles.productMeta}>
-                      <span className={styles.soldCount}>
-                        {t('shop.soldCount', { count: product.voSoldCount ?? 0 })}
-                      </span>
-                      <span className={styles.duration}>
-                        {product.voDurationDisplay ?? ''}
-                      </span>
+                    <div className={styles.productInfo}>
+                      <div className={styles.productType}>
+                        {getProductTypeDisplay(product.voProductType)}
+                      </div>
+
+                      <h3 className={styles.productName}>{product.voName}</h3>
+
+                      <div className={styles.productPrice}>
+                        <span className={styles.currentPrice}>
+                          {product.voPrice.toLocaleString()} {t('shop.currency.carrot')}
+                        </span>
+                        {product.voOriginalPrice && product.voOriginalPrice > product.voPrice && (
+                          <span className={styles.originalPrice}>
+                            {product.voOriginalPrice.toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className={styles.productMeta}>
+                        <span className={styles.soldCount}>
+                          {t('shop.soldCount', { count: product.voSoldCount ?? 0 })}
+                        </span>
+                        <span className={styles.duration}>
+                          {product.voDurationDisplay ?? ''}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* 分页 */}

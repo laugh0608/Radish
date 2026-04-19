@@ -22,13 +22,14 @@
 }
 
 .heroInner {
-  width: min(1080px, calc(100vw - 24px));
+  width: min(1040px, calc(100vw - 24px));
   margin: 0 auto;
   padding: 14px 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  flex-wrap: wrap;
 }
 
 .brand {
@@ -40,6 +41,8 @@
   padding: 0;
   cursor: pointer;
   color: inherit;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .brandMark {
@@ -50,7 +53,7 @@
   align-items: center;
   justify-content: center;
   font-family: var(--theme-font-serif);
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
   color: #fff;
   background: linear-gradient(135deg, var(--theme-brand-primary) 0%, color-mix(in srgb, var(--theme-accent-earth) 58%, var(--theme-brand-primary) 42%) 100%);
@@ -61,6 +64,8 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  min-width: 0;
+  gap: 2px;
 }
 
 .brandName {
@@ -74,6 +79,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--theme-text-secondary);
+  line-height: 1.35;
 }
 
 .desktopLink {
@@ -87,6 +93,30 @@
   color: var(--theme-text-primary);
   font-size: 13px;
   font-weight: 600;
+}
+
+.heroActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.discoverLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 26%, transparent);
+  background: color-mix(in srgb, var(--theme-brand-soft) 56%, white 44%);
+  color: var(--theme-brand-primary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
 .main {
@@ -172,10 +202,10 @@
 }
 
 .searchPanel {
-  padding: 18px;
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .searchForm {
@@ -217,7 +247,7 @@
 .paginationBar {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .searchResultMeta {
@@ -232,18 +262,18 @@
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  padding: 18px 20px 14px;
+  padding: 16px 18px 12px;
   border-bottom: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
 }
 
 .searchResultList {
   display: grid;
-  gap: 14px;
-  padding: 14px;
+  gap: 12px;
+  padding: 12px;
 }
 
 .searchResultCard {
-  gap: 14px;
+  gap: 12px;
 }
 
 .searchResultTitle {
@@ -255,7 +285,7 @@
 .paginationBar {
   align-items: center;
   justify-content: center;
-  padding: 0 14px 18px;
+  padding: 0 12px 16px;
 }
 
 .paginationInfo {
@@ -644,9 +674,23 @@
 
   .heroInner {
     padding: 12px 0;
-    align-items: flex-start;
+    align-items: center;
   }
 
+  .heroActions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .brand {
+    width: 100%;
+  }
+
+  .brandSubline {
+    display: none;
+  }
+
+  .discoverLink,
   .desktopLink {
     padding: 9px 12px;
   }

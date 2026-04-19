@@ -25,6 +25,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     private readonly IFileStorage _fileStorage;
     private readonly IImageProcessor _imageProcessor;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
+    private readonly IAttachmentReferenceInspector _attachmentReferenceInspector;
     private readonly FileStorageOptions _fileStorageOptions;
     private readonly string _tempPath;
 
@@ -34,6 +35,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         IFileStorage fileStorage,
         IImageProcessor imageProcessor,
         IAttachmentUrlResolver attachmentUrlResolver,
+        IAttachmentReferenceInspector attachmentReferenceInspector,
         IOptions<FileStorageOptions> fileStorageOptions)
         : base(mapper, baseRepository)
     {
@@ -41,6 +43,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         _fileStorage = fileStorage;
         _imageProcessor = imageProcessor;
         _attachmentUrlResolver = attachmentUrlResolver;
+        _attachmentReferenceInspector = attachmentReferenceInspector;
         _fileStorageOptions = fileStorageOptions.Value;
         _tempPath = Path.Combine(AppPathTool.GetDataBasesPath(), "Temp");
 
@@ -443,7 +446,13 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         {
             // 1. 查询附件信息
             var attachment = await _attachmentRepository.QueryByIdAsync(attachmentId);
-            if (attachment == null || attachment.IsDeleted || !attachment.IsEnabled)
+            if (attachment == null)
+            {
+                return (null, null);
+            }
+
+            if ((attachment.IsDeleted || !attachment.IsEnabled) &&
+                !await TryRestoreReferencedAttachmentAsync(attachment))
             {
                 return (null, null);
             }
@@ -508,6 +517,41 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         }
 
         return attachment.StoragePath;
+    }
+
+    private async Task<bool> TryRestoreReferencedAttachmentAsync(Attachment attachment)
+    {
+        if (attachment.Id <= 0)
+        {
+            return false;
+        }
+
+        if (!await _attachmentReferenceInspector.IsReferencedAsync(attachment.Id))
+        {
+            return false;
+        }
+
+        if (!await _fileStorage.ExistsAsync(attachment.StoragePath))
+        {
+            return false;
+        }
+
+        attachment.IsDeleted = false;
+        attachment.IsEnabled = true;
+        attachment.ModifyTime = DateTime.Now;
+        attachment.ModifyBy = "System";
+        attachment.ModifyId = 0;
+
+        var restored = await _attachmentRepository.UpdateAsync(attachment);
+        if (restored)
+        {
+            Log.Warning(
+                "检测到已被业务引用但状态异常的附件，已自动恢复：{AttachmentId}, 路径：{StoragePath}",
+                attachment.Id,
+                attachment.StoragePath);
+        }
+
+        return restored;
     }
 
     private AttachmentAssetDto MapToAssetDto(Attachment attachment)

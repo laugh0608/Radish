@@ -268,6 +268,7 @@ builder.Services.AddScoped<IImageProcessor>(sp =>
     return factory.Create();
 });
 builder.Services.AddSingleton<IAttachmentUrlResolver, AttachmentUrlResolver>();
+builder.Services.AddScoped<IAttachmentReferenceInspector, AttachmentReferenceInspector>();
 // 注册缓存相关服务
 builder.Services.AddCacheSetup();
 // 注册速率限制服务

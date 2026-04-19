@@ -6,6 +6,7 @@ import { getApiBaseUrl } from '@/config/env';
 import { applySiteBranding } from '@/services/siteBranding';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { initializeTheme } from '@/theme/theme';
+import { isPublicDiscoverPathname } from './public/discoverRouteState';
 import './theme/theme-tokens.css';
 import './index.css';
 import './i18n';
@@ -18,7 +19,8 @@ const PublicEntry = lazy(() => import('./public/PublicEntry.tsx').then((module) 
 const isBrowser = typeof window !== 'undefined';
 const isOidcCallback = isBrowser && window.location.pathname === '/oidc/callback';
 const isPublicContentRoute = isBrowser && (
-  window.location.pathname === '/forum'
+  isPublicDiscoverPathname(window.location.pathname)
+  || window.location.pathname === '/forum'
   || window.location.pathname.startsWith('/forum/')
   || window.location.pathname === '/shop'
   || window.location.pathname.startsWith('/shop/')

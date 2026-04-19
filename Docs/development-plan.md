@@ -7,22 +7,24 @@
 ## 当前状态
 
 - **当前里程碑**：`第二开发阶段：社区深化与多端化`
-- **当前主线**：`Phase 2-2 移动 Web 形态`
-- **当前阶段**：`2026-04-06` 已完成首版真实发布 `v26.3.2-release`，第一开发阶段正式结束；`2026-04-07` 已完成阶段口径重置与多壳层策略冻结；截至 `2026-04-08`，`Phase 2-1 社区深化第一批` 已完成论坛轻回应墙 `Phase 1` 与最小回流链路收口，当前产品主线正式切到 `Phase 2-2 移动 Web 形态`。后续重点不再是继续打磨论坛回跳细节，而是从公开内容壳层开始建立自然的移动访问形态。`
+- **当前主线**：`Phase 2-3 Flutter 客户端 MVP`
+- **当前阶段**：`2026-04-06` 已完成首版真实发布 `v26.3.2-release`，第一开发阶段正式结束；`2026-04-07` 已完成阶段口径重置与多壳层策略冻结；截至 `2026-04-18`，`Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口并转入稳定维护，当前产品主线正式切到 `Phase 2-3 Flutter 客户端 MVP`。当前第一批范围定义、真相源文档与工程骨架已完成；第二批已开始补最小会话恢复与 forum 首条真实只读读取链路。`
 
 ## 当前主线入口
 
 - [第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform)
+- [Phase 2-3 Flutter 客户端 MVP](/planning/phase-two-flutter-client-mvp)
 - [前端多壳层策略](/frontend/shell-strategy)
 - [当前进行中](/planning/current)
 - [论坛轻回应墙设计草案](/features/forum-quick-reaction-wall)
 - [论坛应用功能说明](/features/forum-features)
 
-## 下一主线入口
+## 当前批次范围
 
-- 当前主线第一功能入口固定为 `公开内容壳层下的 forum 移动 Web 首批入口`
-- `Phase 2-2` 首批范围固定为：forum 公开列表与帖子详情的移动访问形态
-- Flutter 客户端固定进入 `Phase 2-3`，不与移动 Web 混成一条建设线
+- 当前主线当前已从“Flutter 客户端 Android MVP 的范围定义与工程骨架”进入“第二批真实业务接线”
+- `Phase 2-3` 第二批当前已落地：最小会话恢复链路、壳层登录态分发与 forum 首条真实公开只读 feed 读取
+- 下一步优先把 `discover` 从占位页升级为真实分发入口，再补 `docs / profile` 的最小真实页面
+- `Phase 2-2` 公开内容壳层固定转入稳定维护，不再与 Flutter 混成一条建设线
 
 ## 已确认的长期方向（暂不进入当前主线）
 

@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Moq;
 using Radish.Infrastructure.FileStorage;
+using Radish.IService;
 using Radish.IRepository.Base;
 using Radish.Model;
 using Radish.Service.Jobs;
@@ -27,28 +27,18 @@ public class FileCleanupJobTest
             BusinessId = null
         };
 
-        var sticker = new Sticker
-        {
-            Id = 2001,
-            GroupId = 1,
-            Code = "test_sticker",
-            Name = "Test Sticker",
-            AttachmentId = orphanAttachment.Id,
-            IsDeleted = false
-        };
-
         var attachmentRepository = new Mock<IBaseRepository<Attachment>>(MockBehavior.Strict);
         attachmentRepository
-            .Setup(r => r.QueryAsync(It.IsAny<Expression<Func<Attachment, bool>>>()))
+            .Setup(r => r.QueryAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Attachment, bool>>>()))
             .ReturnsAsync(new List<Attachment> { orphanAttachment });
 
-        var stickerRepository = new Mock<IBaseRepository<Sticker>>(MockBehavior.Strict);
-        stickerRepository
-            .Setup(r => r.QueryAsync(It.IsAny<Expression<Func<Sticker, bool>>>()))
-            .ReturnsAsync(new List<Sticker> { sticker });
+        var attachmentReferenceInspector = new Mock<IAttachmentReferenceInspector>(MockBehavior.Strict);
+        attachmentReferenceInspector
+            .Setup(inspector => inspector.GetReferencedAttachmentIdsAsync(It.IsAny<IReadOnlyCollection<long>>()))
+            .ReturnsAsync(new HashSet<long> { orphanAttachment.Id });
 
         var fileStorage = new Mock<IFileStorage>(MockBehavior.Loose);
-        var job = new FileCleanupJob(attachmentRepository.Object, stickerRepository.Object, fileStorage.Object);
+        var job = new FileCleanupJob(attachmentRepository.Object, attachmentReferenceInspector.Object, fileStorage.Object);
 
         var cleanedCount = await job.CleanupOrphanAttachmentsAsync(24);
 
@@ -57,7 +47,7 @@ public class FileCleanupJobTest
         fileStorage.Verify(s => s.GetFullPath(It.IsAny<string>()), Times.Never);
 
         attachmentRepository.VerifyAll();
-        stickerRepository.VerifyAll();
+        attachmentReferenceInspector.VerifyAll();
     }
 
     [Fact]
@@ -84,66 +74,16 @@ public class FileCleanupJobTest
 
         var attachmentRepository = new Mock<IBaseRepository<Attachment>>(MockBehavior.Strict);
         attachmentRepository
-            .Setup(r => r.QueryAsync(It.IsAny<Expression<Func<Attachment, bool>>>()))
+            .Setup(r => r.QueryAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Attachment, bool>>>()))
             .ReturnsAsync(new List<Attachment> { chatAttachment, answerAttachment });
 
-        var stickerRepository = new Mock<IBaseRepository<Sticker>>(MockBehavior.Strict);
-        stickerRepository
-            .Setup(r => r.QueryAsync(It.IsAny<Expression<Func<Sticker, bool>>>()))
-            .ReturnsAsync(new List<Sticker>());
-
-        var channelMessageRepository = new Mock<IBaseRepository<ChannelMessage>>(MockBehavior.Strict);
-        channelMessageRepository
-            .Setup(r => r.QueryAsync(It.IsAny<Expression<Func<ChannelMessage, bool>>>()))
-            .ReturnsAsync(new List<ChannelMessage>
-            {
-                new()
-                {
-                    Id = 2002,
-                    ChannelId = 1,
-                    UserId = 9527,
-                    UserName = "tester",
-                    Type = MessageType.Image,
-                    AttachmentId = chatAttachment.Id,
-                    CreateTime = now
-                }
-            });
-
-        var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
-        postRepository
-            .Setup(r => r.QueryAsync(It.IsAny<Expression<Func<Post, bool>>>()))
-            .ReturnsAsync(new List<Post>());
-
-        var commentRepository = new Mock<IBaseRepository<Comment>>(MockBehavior.Strict);
-        commentRepository
-            .Setup(r => r.QueryAsync(It.IsAny<Expression<Func<Comment, bool>>>()))
-            .ReturnsAsync(new List<Comment>());
-
-        var postAnswerRepository = new Mock<IBaseRepository<PostAnswer>>(MockBehavior.Strict);
-        postAnswerRepository
-            .Setup(r => r.QueryAsync(It.IsAny<Expression<Func<PostAnswer, bool>>>()))
-            .ReturnsAsync(new List<PostAnswer>
-            {
-                new()
-                {
-                    Id = 3003,
-                    PostId = 4004,
-                    AuthorId = 9527,
-                    AuthorName = "tester",
-                    Content = "![answer](attachment://1003#radish:display=thumbnail)",
-                    CreateTime = now
-                }
-            });
+        var attachmentReferenceInspector = new Mock<IAttachmentReferenceInspector>(MockBehavior.Strict);
+        attachmentReferenceInspector
+            .Setup(inspector => inspector.GetReferencedAttachmentIdsAsync(It.IsAny<IReadOnlyCollection<long>>()))
+            .ReturnsAsync(new HashSet<long> { chatAttachment.Id, answerAttachment.Id });
 
         var fileStorage = new Mock<IFileStorage>(MockBehavior.Loose);
-        var job = new FileCleanupJob(
-            attachmentRepository.Object,
-            stickerRepository.Object,
-            fileStorage.Object,
-            postRepository.Object,
-            commentRepository.Object,
-            postAnswerRepository.Object,
-            channelMessageRepository.Object);
+        var job = new FileCleanupJob(attachmentRepository.Object, attachmentReferenceInspector.Object, fileStorage.Object);
 
         var cleanedCount = await job.CleanupOrphanAttachmentsAsync(24);
 
@@ -152,10 +92,6 @@ public class FileCleanupJobTest
         fileStorage.Verify(s => s.GetFullPath(It.IsAny<string>()), Times.Never);
 
         attachmentRepository.VerifyAll();
-        stickerRepository.VerifyAll();
-        channelMessageRepository.VerifyAll();
-        postRepository.VerifyAll();
-        commentRepository.VerifyAll();
-        postAnswerRepository.VerifyAll();
+        attachmentReferenceInspector.VerifyAll();
     }
 }

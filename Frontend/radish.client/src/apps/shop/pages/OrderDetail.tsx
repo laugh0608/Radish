@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
+import { resolveMediaUrl } from '@/utils/media';
 import type { Order } from '@/types/shop';
 import { getOrderStatusColor, OrderStatus } from '@/api/shop';
 import styles from './OrderDetail.module.css';
@@ -71,6 +72,8 @@ export const OrderDetail = ({
     setCancelReason('');
   };
 
+  const productIconUrl = resolveMediaUrl(order.voProductIcon);
+
   // 判断是否可以取消订单
   const canCancel = order.voStatus === OrderStatus.Pending || order.voStatus === OrderStatus.Paid;
 
@@ -114,8 +117,8 @@ export const OrderDetail = ({
           <h2 className={styles.sectionTitle}>{t('shop.orderDetail.productInfo')}</h2>
           <div className={styles.productInfo}>
             <div className={styles.productImage}>
-              {order.voProductIcon ? (
-                <img src={order.voProductIcon} alt={order.voProductName} />
+              {productIconUrl ? (
+                <img src={productIconUrl} alt={order.voProductName} />
               ) : (
                 <div className={styles.defaultImage}>🎁</div>
               )}

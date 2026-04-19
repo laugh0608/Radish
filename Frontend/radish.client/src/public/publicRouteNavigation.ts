@@ -1,0 +1,178 @@
+import type { PublicDiscoverRoute } from './discoverRouteState';
+import type { PublicDocsBrowseRoute, PublicDocsRoute } from './docsRouteState';
+import type { PublicForumBrowseRoute, PublicForumRoute } from './forumRouteState';
+import type { PublicLeaderboardRoute } from './leaderboardRouteState';
+import type { PublicProfileRoute } from './profileRouteState';
+import type { PublicShopRoute, PublicShopProductsRoute } from './shopRouteState';
+
+export type PublicRouteDescriptor =
+  | { app: 'discover'; route: PublicDiscoverRoute }
+  | { app: 'forum'; route: PublicForumRoute }
+  | { app: 'docs'; route: PublicDocsRoute }
+  | { app: 'profile'; route: PublicProfileRoute }
+  | { app: 'leaderboard'; route: PublicLeaderboardRoute }
+  | { app: 'shop'; route: PublicShopRoute };
+
+export type PublicDetailBackMode =
+  | 'discover'
+  | 'source'
+  | 'forum'
+  | 'docs'
+  | 'profile'
+  | 'leaderboard'
+  | 'shop'
+  | 'shopProducts';
+
+function isForumBrowseDescriptor(
+  route: PublicRouteDescriptor | null
+): route is { app: 'forum'; route: PublicForumBrowseRoute } {
+  return !!route && route.app === 'forum' && route.route.kind !== 'detail';
+}
+
+function isDocsBrowseDescriptor(
+  route: PublicRouteDescriptor | null
+): route is { app: 'docs'; route: PublicDocsBrowseRoute } {
+  return !!route && route.app === 'docs' && route.route.kind !== 'detail';
+}
+
+function isShopBrowseDescriptor(
+  route: PublicRouteDescriptor | null
+): route is { app: 'shop'; route: PublicShopProductsRoute | { kind: 'home' } } {
+  return !!route && route.app === 'shop' && route.route.kind !== 'detail';
+}
+
+function resolveBackMode(route: PublicRouteDescriptor | null): PublicDetailBackMode | null {
+  if (!route) {
+    return null;
+  }
+
+  if (route.app === 'discover') {
+    return 'discover';
+  }
+
+  if (route.app === 'shop') {
+    return route.route.kind === 'products' ? 'shopProducts' : 'shop';
+  }
+
+  return route.app;
+}
+
+export function getPublicDetailBackLabelKey(mode: PublicDetailBackMode | null | undefined): string | null {
+  switch (mode) {
+    case 'discover':
+      return 'public.shell.backToDiscover';
+    case 'source':
+      return 'public.shell.backToSource';
+    case 'forum':
+      return 'public.shell.backToForum';
+    case 'docs':
+      return 'public.shell.backToDocs';
+    case 'profile':
+      return 'public.shell.backToProfile';
+    case 'leaderboard':
+      return 'public.shell.backToLeaderboard';
+    case 'shop':
+      return 'public.shell.backToShop';
+    case 'shopProducts':
+      return 'public.shell.backToShopProducts';
+    default:
+      return null;
+  }
+}
+
+export function shouldCaptureForumDetailSource(
+  currentRoute: PublicRouteDescriptor,
+  nextRoute: PublicRouteDescriptor
+): boolean {
+  if (nextRoute.app !== 'forum' || nextRoute.route.kind !== 'detail') {
+    return false;
+  }
+
+  return currentRoute.app !== 'forum'
+    || currentRoute.route.kind !== 'detail'
+    || currentRoute.route.postId !== nextRoute.route.postId;
+}
+
+export function shouldCaptureDocsDetailSource(
+  currentRoute: PublicRouteDescriptor,
+  nextRoute: PublicRouteDescriptor
+): boolean {
+  if (nextRoute.app !== 'docs' || nextRoute.route.kind !== 'detail') {
+    return false;
+  }
+
+  return currentRoute.app !== 'docs'
+    || currentRoute.route.kind !== 'detail'
+    || currentRoute.route.slug !== nextRoute.route.slug
+    || currentRoute.route.anchor !== nextRoute.route.anchor;
+}
+
+export function shouldCaptureProfileDetailSource(
+  currentRoute: PublicRouteDescriptor,
+  nextRoute: PublicRouteDescriptor
+): boolean {
+  if (nextRoute.app !== 'profile') {
+    return false;
+  }
+
+  return currentRoute.app !== 'profile'
+    || currentRoute.route.userId !== nextRoute.route.userId;
+}
+
+export function shouldCaptureShopDetailSource(
+  currentRoute: PublicRouteDescriptor,
+  nextRoute: PublicRouteDescriptor
+): boolean {
+  if (nextRoute.app !== 'shop' || nextRoute.route.kind !== 'detail') {
+    return false;
+  }
+
+  return currentRoute.app !== 'shop'
+    || currentRoute.route.kind !== 'detail'
+    || currentRoute.route.productId !== nextRoute.route.productId;
+}
+
+export function shouldCommitPublicRouteUpdate(
+  currentRoute: PublicRouteDescriptor,
+  nextRoute: PublicRouteDescriptor,
+  currentPath: string,
+  nextPath: string
+): boolean {
+  if (currentPath !== nextPath) {
+    return true;
+  }
+
+  return currentRoute.app !== nextRoute.app;
+}
+
+export function resolveForumDetailBackMode(sourceRoute: PublicRouteDescriptor | null): PublicDetailBackMode | null {
+  if (!sourceRoute || isForumBrowseDescriptor(sourceRoute)) {
+    return null;
+  }
+
+  return resolveBackMode(sourceRoute);
+}
+
+export function resolveDocsDetailBackMode(sourceRoute: PublicRouteDescriptor | null): PublicDetailBackMode | null {
+  if (!sourceRoute || isDocsBrowseDescriptor(sourceRoute)) {
+    return null;
+  }
+
+  return sourceRoute.app === 'discover' ? 'discover' : 'source';
+}
+
+export function resolveProfileBackMode(sourceRoute: PublicRouteDescriptor | null): PublicDetailBackMode | null {
+  if (!sourceRoute) {
+    return null;
+  }
+
+  return sourceRoute.app === 'discover' ? 'discover' : 'source';
+}
+
+export function resolveShopDetailBackMode(sourceRoute: PublicRouteDescriptor | null): PublicDetailBackMode | null {
+  if (!sourceRoute || isShopBrowseDescriptor(sourceRoute)) {
+    return sourceRoute?.app === 'discover' ? 'discover' : 'source';
+  }
+
+  return sourceRoute.app === 'discover' ? 'discover' : 'source';
+}

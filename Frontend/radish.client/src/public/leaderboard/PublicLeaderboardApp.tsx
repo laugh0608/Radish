@@ -16,11 +16,15 @@ import {
   type PublicLeaderboardRoute,
   type PublicLeaderboardTypeSlug,
 } from '../leaderboardRouteState';
+import { PublicReadingGuide } from '../components/PublicReadingGuide';
+import { PublicShellHeader } from '../components/PublicShellHeader';
+import { resolveMediaUrl } from '@/utils/media';
 import styles from './PublicLeaderboardApp.module.css';
 
 interface PublicLeaderboardAppProps {
   route: PublicLeaderboardRoute;
   onNavigate: (route: PublicLeaderboardRoute, options?: { replace?: boolean }) => void;
+  onNavigateToDiscover?: () => void;
   onNavigateToProfile?: (userId: string) => void;
 }
 
@@ -41,6 +45,23 @@ interface PublicLeaderboardFallbackTypeDefinition {
   nameKey: string;
   descriptionKey: string;
   primaryLabelKey: string;
+}
+
+interface ExperienceGuideItemDefinition {
+  icon: string;
+  titleKey: string;
+  descriptionKey: string;
+}
+
+interface ExperienceGuideFocusDefinition {
+  labelKey: string;
+  valueKey: string;
+}
+
+interface LightweightGuideDefinition {
+  titleKey: string;
+  descriptionKey: string;
+  focusItems: ExperienceGuideFocusDefinition[];
 }
 
 const publicLeaderboardFallbackTypes: Record<PublicLeaderboardTypeSlug, PublicLeaderboardFallbackTypeDefinition> = {
@@ -94,6 +115,75 @@ const publicLeaderboardFallbackTypes: Record<PublicLeaderboardTypeSlug, PublicLe
   },
 };
 
+const experienceGuideItems: ExperienceGuideItemDefinition[] = [
+  {
+    icon: 'mdi:trophy-outline',
+    titleKey: 'leaderboard.public.experienceGuide.rankingTitle',
+    descriptionKey: 'leaderboard.public.experienceGuide.rankingDescription',
+  },
+  {
+    icon: 'mdi:star-circle-outline',
+    titleKey: 'leaderboard.public.experienceGuide.levelTitle',
+    descriptionKey: 'leaderboard.public.experienceGuide.levelDescription',
+  },
+  {
+    icon: 'mdi:shield-half-full',
+    titleKey: 'leaderboard.public.experienceGuide.boundaryTitle',
+    descriptionKey: 'leaderboard.public.experienceGuide.boundaryDescription',
+  },
+];
+
+const experienceGuideFocusItems: ExperienceGuideFocusDefinition[] = [
+  {
+    labelKey: 'leaderboard.public.experienceGuide.focusRankingLabel',
+    valueKey: 'leaderboard.public.experienceGuide.focusRankingValue',
+  },
+  {
+    labelKey: 'leaderboard.public.experienceGuide.focusLevelLabel',
+    valueKey: 'leaderboard.public.experienceGuide.focusLevelValue',
+  },
+  {
+    labelKey: 'leaderboard.public.experienceGuide.focusBoundaryLabel',
+    valueKey: 'leaderboard.public.experienceGuide.focusBoundaryValue',
+  },
+];
+
+const experienceGuideBoundaryItems = [
+  'leaderboard.public.experienceGuide.boundaryItemDetail',
+  'leaderboard.public.experienceGuide.boundaryItemHistory',
+  'leaderboard.public.experienceGuide.boundaryItemWorkspace',
+] as const;
+
+const userLeaderboardGuideFocusItems: ExperienceGuideFocusDefinition[] = [
+  {
+    labelKey: 'leaderboard.public.userGuide.focusCompareLabel',
+    valueKey: 'leaderboard.public.userGuide.focusCompareValue',
+  },
+  {
+    labelKey: 'leaderboard.public.userGuide.focusProfileLabel',
+    valueKey: 'leaderboard.public.userGuide.focusProfileValue',
+  },
+  {
+    labelKey: 'leaderboard.public.userGuide.focusBoundaryLabel',
+    valueKey: 'leaderboard.public.userGuide.focusBoundaryValue',
+  },
+];
+
+const productLeaderboardGuideFocusItems: ExperienceGuideFocusDefinition[] = [
+  {
+    labelKey: 'leaderboard.public.productGuide.focusDisplayLabel',
+    valueKey: 'leaderboard.public.productGuide.focusDisplayValue',
+  },
+  {
+    labelKey: 'leaderboard.public.productGuide.focusCompareLabel',
+    valueKey: 'leaderboard.public.productGuide.focusCompareValue',
+  },
+  {
+    labelKey: 'leaderboard.public.productGuide.focusBoundaryLabel',
+    valueKey: 'leaderboard.public.productGuide.focusBoundaryValue',
+  },
+];
+
 function PublicStatusCard({ tone, title, description, primaryAction }: PublicStatusCardProps) {
   const icon = tone === 'loading'
     ? 'mdi:progress-clock'
@@ -136,28 +226,6 @@ function createFallbackLeaderboardTypes(t: (key: string) => string): Leaderboard
   });
 }
 
-function buildAvatarText(name: string): string {
-  const source = name.trim();
-  if (!source) {
-    return '?';
-  }
-
-  return source.charAt(0).toUpperCase();
-}
-
-function buildAvatarStyle(seed: string) {
-  let hash = 0;
-  for (let index = 0; index < seed.length; index += 1) {
-    hash = seed.charCodeAt(index) + ((hash << 5) - hash);
-  }
-
-  const hue = Math.abs(hash) % 360;
-  return {
-    backgroundColor: `hsl(${hue} 80% 92%)`,
-    color: `hsl(${hue} 45% 30%)`,
-  };
-}
-
 function buildVisiblePages(currentPage: number, totalPages: number, maxVisible: number): number[] {
   if (totalPages <= maxVisible) {
     return Array.from({ length: totalPages }, (_, index) => index + 1);
@@ -175,9 +243,19 @@ function buildVisiblePages(currentPage: number, totalPages: number, maxVisible: 
   return Array.from({ length: maxVisible }, (_, index) => currentPage - half + index);
 }
 
+function buildAvatarText(name: string | undefined, fallback: string): string {
+  const source = name?.trim() || fallback.trim();
+  if (!source) {
+    return '?';
+  }
+
+  return source.charAt(0).toUpperCase();
+}
+
 export const PublicLeaderboardApp = ({
   route,
   onNavigate,
+  onNavigateToDiscover,
   onNavigateToProfile,
 }: PublicLeaderboardAppProps) => {
   const { t } = useTranslation();
@@ -340,6 +418,30 @@ export const PublicLeaderboardApp = ({
     () => buildVisiblePages(route.page, totalPages, isCompactViewport ? 5 : 7),
     [isCompactViewport, route.page, totalPages]
   );
+  const showExperienceGuide = route.typeSlug === 'experience';
+  const lightweightGuide = useMemo<LightweightGuideDefinition | null>(() => {
+    if (showExperienceGuide) {
+      return null;
+    }
+
+    if (activeTypeConfig.voCategory === LeaderboardCategory.User) {
+      return {
+        titleKey: 'leaderboard.public.userGuide.title',
+        descriptionKey: 'leaderboard.public.userGuide.description',
+        focusItems: userLeaderboardGuideFocusItems,
+      };
+    }
+
+    if (activeTypeConfig.voCategory === LeaderboardCategory.Product) {
+      return {
+        titleKey: 'leaderboard.public.productGuide.title',
+        descriptionKey: 'leaderboard.public.productGuide.description',
+        focusItems: productLeaderboardGuideFocusItems,
+      };
+    }
+
+    return null;
+  }, [activeTypeConfig.voCategory, showExperienceGuide]);
 
   const handleTypeChange = (typeSlug: PublicLeaderboardTypeSlug) => {
     onNavigate({
@@ -358,25 +460,14 @@ export const PublicLeaderboardApp = ({
 
   return (
     <div className={styles.page} ref={pageRef}>
-      <header className={styles.hero}>
-        <div className={styles.heroInner}>
-          <button
-            type="button"
-            className={styles.brand}
-            onClick={() => onNavigate(createDefaultPublicLeaderboardRoute())}
-          >
-            <span className={styles.brandMark}>榜</span>
-            <span className={styles.brandText}>
-              <span className={styles.brandName}>{t('desktop.apps.leaderboard.name')}</span>
-              <span className={styles.brandSubline}>{t('leaderboard.public.shellLabel')}</span>
-            </span>
-          </button>
-          <a className={styles.desktopLink} href="/">
-            <Icon icon="mdi:view-dashboard-outline" size={18} />
-            <span>WebOS</span>
-          </a>
-        </div>
-      </header>
+      <PublicShellHeader
+        brandMark="榜"
+        brandName={t('desktop.apps.leaderboard.name')}
+        brandSubline={t('leaderboard.public.shellLabel')}
+        onBrandClick={() => onNavigate(createDefaultPublicLeaderboardRoute())}
+        onNavigateToDiscover={onNavigateToDiscover}
+        discoverLabel={t('public.shell.discoverAction')}
+      />
 
       <main className={styles.main}>
         <section className={styles.sectionCard}>
@@ -418,6 +509,90 @@ export const PublicLeaderboardApp = ({
             <p className={styles.toolbarHint}>{activeTypeConfig.voDescription}</p>
           </div>
 
+          {showExperienceGuide && (
+            <section className={styles.experienceGuideSection} aria-label={t('leaderboard.public.experienceGuide.title')}>
+              <div className={styles.experienceGuideHeader}>
+                <div className={styles.experienceGuideHeading}>
+                  <p className={styles.experienceGuideKicker}>{t('leaderboard.public.experienceGuide.kicker')}</p>
+                  <h2 className={styles.experienceGuideTitle}>{t('leaderboard.public.experienceGuide.title')}</h2>
+                </div>
+                <p className={styles.experienceGuideIntro}>{t('leaderboard.public.experienceGuide.intro')}</p>
+              </div>
+
+              <div className={styles.experienceGuideSummary}>
+                <div className={styles.experienceGuideSummaryCard}>
+                  <div className={styles.experienceGuideSummaryHeading}>
+                    <span className={styles.experienceGuideSummaryLabel}>
+                      {t('leaderboard.public.experienceGuide.summaryLabel')}
+                    </span>
+                    <h3 className={styles.experienceGuideSummaryTitle}>
+                      {t('leaderboard.public.experienceGuide.summaryTitle')}
+                    </h3>
+                  </div>
+                  <p className={styles.experienceGuideSummaryDescription}>
+                    {t('leaderboard.public.experienceGuide.summaryDescription')}
+                  </p>
+
+                  <div className={styles.experienceGuideFocusRow}>
+                    {experienceGuideFocusItems.map((item) => (
+                      <article key={item.labelKey} className={styles.experienceGuideFocusChip}>
+                        <span className={styles.experienceGuideFocusLabel}>{t(item.labelKey)}</span>
+                        <span className={styles.experienceGuideFocusValue}>{t(item.valueKey)}</span>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+
+                <aside className={styles.experienceGuideBoundaryPanel}>
+                  <span className={styles.experienceGuideBoundaryLabel}>
+                    {t('leaderboard.public.experienceGuide.boundaryPanelLabel')}
+                  </span>
+                  <h3 className={styles.experienceGuideBoundaryTitle}>
+                    {t('leaderboard.public.experienceGuide.boundaryPanelTitle')}
+                  </h3>
+                  <p className={styles.experienceGuideBoundaryDescription}>
+                    {t('leaderboard.public.experienceGuide.boundaryPanelDescription')}
+                  </p>
+                  <ul className={styles.experienceGuideBoundaryList}>
+                    {experienceGuideBoundaryItems.map((itemKey) => (
+                      <li key={itemKey} className={styles.experienceGuideBoundaryItem}>
+                        {t(itemKey)}
+                      </li>
+                    ))}
+                  </ul>
+                </aside>
+              </div>
+
+              <div className={styles.experienceGuideGrid}>
+                {experienceGuideItems.map((item) => (
+                  <article key={item.titleKey} className={styles.experienceGuideCard}>
+                    <span className={styles.experienceGuideIcon} aria-hidden="true">
+                      <Icon icon={item.icon} size={18} />
+                    </span>
+                    <div className={styles.experienceGuideBody}>
+                      <h3 className={styles.experienceGuideCardTitle}>{t(item.titleKey)}</h3>
+                      <p className={styles.experienceGuideCardDescription}>{t(item.descriptionKey)}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {lightweightGuide && (
+            <div className={styles.lightweightGuideSection}>
+              <PublicReadingGuide
+                label={t('leaderboard.public.lightweightGuide.label')}
+                title={t(lightweightGuide.titleKey)}
+                description={t(lightweightGuide.descriptionKey)}
+                items={lightweightGuide.focusItems.map((item) => ({
+                  label: t(item.labelKey),
+                  value: t(item.valueKey),
+                }))}
+              />
+            </div>
+          )}
+
           {typesError && (
             <div className={styles.inlineNotice}>
               <span className={styles.inlineNoticeText}>{t('leaderboard.public.typesFallback')}</span>
@@ -453,92 +628,109 @@ export const PublicLeaderboardApp = ({
             ) : (
               <div className={styles.list}>
                 {items.map((item) => item.voCategory === LeaderboardCategory.User ? (
-                  <button
-                    key={`${item.voLeaderboardType}-${String(item.voUserId)}-${item.voRank}`}
-                    type="button"
-                    className={`${styles.listItem} ${item.voIsCurrentUser ? styles.listItemCurrentUser : ''}`}
-                    onClick={() => handleOpenUserProfile(item)}
-                    disabled={!item.voUserId}
-                  >
-                    <div className={styles.rankBadge} data-rank={item.voRank <= 3 ? item.voRank : undefined}>
-                      {item.voRank <= 3 ? (
-                        <span className={styles.rankMedal}>
-                          {item.voRank === 1 ? '🥇' : item.voRank === 2 ? '🥈' : '🥉'}
-                        </span>
-                      ) : (
-                        <span className={styles.rankNumber}>#{item.voRank}</span>
-                      )}
-                    </div>
-                    <div
-                      className={styles.avatar}
-                      style={buildAvatarStyle(item.voUserName?.trim() || String(item.voUserId || ''))}
-                      aria-hidden="true"
+                  (() => {
+                    const userName = item.voUserName?.trim() || t('common.userFallback', { id: item.voUserId || '?' });
+                    const avatarUrl = resolveMediaUrl(item.voAvatarUrl);
+                    return (
+                      <button
+                        key={`${item.voLeaderboardType}-${String(item.voUserId)}-${item.voRank}`}
+                        type="button"
+                        className={`${styles.listItem} ${styles.userListItem} ${item.voIsCurrentUser ? styles.listItemCurrentUser : ''}`}
+                        onClick={() => handleOpenUserProfile(item)}
+                        disabled={!item.voUserId}
+                      >
+                        <div className={styles.userHeaderRow}>
+                          <div className={styles.userIdentityCluster}>
+                            <div className={styles.rankBadge} data-rank={item.voRank <= 3 ? item.voRank : undefined}>
+                              {item.voRank <= 3 ? (
+                                <span className={styles.rankMedal}>
+                                  {item.voRank === 1 ? '🥇' : item.voRank === 2 ? '🥈' : '🥉'}
+                                </span>
+                              ) : (
+                                <span className={styles.rankNumber}>#{item.voRank}</span>
+                              )}
+                            </div>
+                            <div className={styles.userMedia}>
+                              {avatarUrl ? (
+                                <img className={styles.userAvatar} src={avatarUrl} alt={userName} />
+                              ) : (
+                                <span className={styles.userAvatarFallback} aria-hidden="true">
+                                  {buildAvatarText(item.voUserName, userName)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className={styles.userTitleGroup}>
+                            <span className={`${styles.itemTitle} ${styles.userName}`}>{userName}</span>
+                            {item.voIsCurrentUser && (
+                              <span className={styles.currentUserBadge}>{t('leaderboard.public.currentUser')}</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className={styles.userStatsRow}>
+                          <span className={styles.userStatChip}>Lv.{item.voCurrentLevel ?? 0}</span>
+                          <span
+                            className={`${styles.userStatChip} ${styles.userLevelNameChip}`}
+                            style={item.voThemeColor ? { color: item.voThemeColor } : undefined}
+                          >
+                            {item.voCurrentLevelName?.trim() || t('leaderboard.public.levelFallback')}
+                          </span>
+                          <span className={`${styles.userStatChip} ${styles.userMetricChip}`}>
+                            {Number(item.voPrimaryValue || 0).toLocaleString()} {item.voPrimaryLabel || activeTypeConfig.voPrimaryLabel}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })()
+                ) : (() => {
+                  const productIconUrl = resolveMediaUrl(item.voProductIcon);
+                  return (
+                    <article
+                      key={`${item.voLeaderboardType}-${String(item.voProductId)}-${item.voRank}`}
+                      className={`${styles.listItem} ${styles.productListItem}`}
                     >
-                      {buildAvatarText(item.voUserName?.trim() || t('common.userFallback', { id: item.voUserId || '?' }))}
-                    </div>
-                    <div className={styles.itemBody}>
-                      <div className={styles.itemTitleRow}>
-                        <span className={styles.itemTitle}>
-                          {item.voUserName?.trim() || t('common.userFallback', { id: item.voUserId || '?' })}
-                        </span>
-                        {item.voIsCurrentUser && (
-                          <span className={styles.currentUserBadge}>{t('leaderboard.public.currentUser')}</span>
+                      <div className={styles.rankBadge} data-rank={item.voRank <= 3 ? item.voRank : undefined}>
+                        {item.voRank <= 3 ? (
+                          <span className={styles.rankMedal}>
+                            {item.voRank === 1 ? '🥇' : item.voRank === 2 ? '🥈' : '🥉'}
+                          </span>
+                        ) : (
+                          <span className={styles.rankNumber}>#{item.voRank}</span>
                         )}
                       </div>
-                      <p
-                        className={styles.itemMeta}
-                        style={item.voThemeColor ? { color: item.voThemeColor } : undefined}
-                      >
-                        {t('leaderboard.public.levelLabel', {
-                          level: item.voCurrentLevel ?? 0,
-                          levelName: item.voCurrentLevelName?.trim() || t('leaderboard.public.levelFallback'),
-                        })}
-                      </p>
-                    </div>
-                    <div className={styles.itemMetric}>
-                      <span className={styles.metricValue}>{Number(item.voPrimaryValue || 0).toLocaleString()}</span>
-                      <span className={styles.metricLabel}>{item.voPrimaryLabel || activeTypeConfig.voPrimaryLabel}</span>
-                      {item.voSecondaryValue !== undefined && item.voSecondaryLabel && (
-                        <span className={styles.metricSecondary}>
-                          {Number(item.voSecondaryValue).toLocaleString()} {item.voSecondaryLabel}
-                        </span>
-                      )}
-                    </div>
-                  </button>
-                ) : (
-                  <article
-                    key={`${item.voLeaderboardType}-${String(item.voProductId)}-${item.voRank}`}
-                    className={styles.listItem}
-                  >
-                    <div className={styles.rankBadge} data-rank={item.voRank <= 3 ? item.voRank : undefined}>
-                      {item.voRank <= 3 ? (
-                        <span className={styles.rankMedal}>
-                          {item.voRank === 1 ? '🥇' : item.voRank === 2 ? '🥈' : '🥉'}
-                        </span>
-                      ) : (
-                        <span className={styles.rankNumber}>#{item.voRank}</span>
-                      )}
-                    </div>
-                    <div className={styles.productIcon}>
-                      <Icon icon={item.voProductIcon || 'mdi:gift-outline'} size={24} />
-                    </div>
-                    <div className={styles.itemBody}>
-                      <div className={styles.itemTitleRow}>
-                        <span className={styles.itemTitle}>{item.voProductName || t('leaderboard.public.productFallback')}</span>
-                        <span className={styles.productReadonly}>{t('leaderboard.public.productReadOnly')}</span>
+                      <div className={styles.productMedia}>
+                        {productIconUrl ? (
+                          <img className={styles.productImage} src={productIconUrl} alt={item.voProductName || t('leaderboard.public.productFallback')} />
+                        ) : (
+                          <span className={styles.productImageFallback}>
+                            <Icon icon="mdi:gift-outline" size={24} />
+                          </span>
+                        )}
                       </div>
-                      <p className={styles.itemMeta}>
-                        {t('leaderboard.public.productPrice', {
-                          price: Number(item.voProductPrice || 0).toLocaleString(),
-                        })}
-                      </p>
-                    </div>
-                    <div className={styles.itemMetric}>
-                      <span className={styles.metricValue}>{Number(item.voPrimaryValue || 0).toLocaleString()}</span>
-                      <span className={styles.metricLabel}>{item.voPrimaryLabel || activeTypeConfig.voPrimaryLabel}</span>
-                    </div>
-                  </article>
-                ))}
+                      <div className={styles.itemBody}>
+                        <div className={styles.itemPrimary}>
+                          <div className={styles.itemTitleRow}>
+                            <span className={styles.itemTitle}>{item.voProductName || t('leaderboard.public.productFallback')}</span>
+                            <span className={styles.productReadonly}>{t('leaderboard.public.productReadOnly')}</span>
+                          </div>
+                          <p className={styles.itemMeta}>{t('leaderboard.public.productReadOnly')}</p>
+                        </div>
+                        <div className={styles.itemSideInfo}>
+                          <span className={styles.sideInfoLabel}>{t('shop.meta.price')}</span>
+                          <span className={styles.sideInfoValue}>
+                            {t('leaderboard.public.productPrice', {
+                              price: Number(item.voProductPrice || 0).toLocaleString(),
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                      <div className={styles.itemMetric}>
+                        <span className={styles.metricValue}>{Number(item.voPrimaryValue || 0).toLocaleString()}</span>
+                        <span className={styles.metricLabel}>{item.voPrimaryLabel || activeTypeConfig.voPrimaryLabel}</span>
+                      </div>
+                    </article>
+                  );
+                })())}
               </div>
             )}
           </div>

@@ -22,6 +22,7 @@
    - 当前已统一模板的样板专题见：[人工验收模板](/guide/manual-acceptance-template)
    - 若本轮是首轮收口或补丁复验，建议再补一条 [回归结论记录模板](/guide/regression-result-template) 对应的结果记录
    - 若需要给周志、PR 或评审补一页完整记录，优先按 [变更回归记录模板](/guide/change-regression-record-template) 整理
+   - 当前公开壳层的批次级记录样例见：[公开壳层首轮收口与真实联调复核变更回归记录（2026-04-16）](/guide/public-shell-change-regression-record-2026-04-16)
    - 若本轮涉及 `Identity Guard` 或 `validate:ci` 分流，记录时默认补清“身份语义命中原因”和“失败归类 / 受限环境边界”
 
 ## 按改动主题选择回归
@@ -29,7 +30,7 @@
 | 改动主题 | 什么时候补跑 | `HttpTest` / 脚本入口 | 专题文档 / 人工验收入口 | 说明 |
 | --- | --- | --- | --- | --- |
 | forum 公开移动入口 / 公开内容壳层 | `/forum`、`/forum/category/:categoryId`、`/forum/search`、`/forum/post/:postId` 的公开壳层路由、搜索过滤、列表卡片、分类上下文、详情阅读节奏、返回链路、分页状态改动后 | `npm run type-check --workspace=radish.client`、`npm run build --workspace=radish.client` | [forum 公开移动入口人工验收清单](/guide/forum-public-mobile-acceptance)、[前端多壳层策略](/frontend/shell-strategy) | 当前以前端 UI / 路由人工验收为主；若同时触达论坛读取接口，再并行补 `Forum.Core / Forum.Comment` |
-| docs 公开阅读 / 公开搜索 / 公开分享首批 / 公开内容壳层 | `/docs`、`/docs/search`、`/docs/:slug` 的公开壳层路由、关键词搜索、分页、目录/搜索回跳、复制公开链接、正文阅读或文档内链跳转改动后 | `npm run type-check --workspace=radish.client`、`npm run build --workspace=radish.client` | [文档系统](/guide/document-system)、[前端多壳层策略](/frontend/shell-strategy) | 当前以公开壳层 UI / 路由人工验收为主；若同时触达桌面文档治理或 Wiki 读取接口，再并行补 `Radish.Api.Wiki.http` |
+| docs 公开阅读 / 公开搜索 / 公开分享首批 / 公开内容壳层 | `/docs`、`/docs/search`、`/docs/:slug` 的公开壳层路由、关键词搜索、分页、目录/搜索回跳、复制公开链接、正文阅读或文档内链跳转改动后 | `npm run type-check --workspace=radish.client`、`npm run build --workspace=radish.client` | [docs 公开阅读首批人工验收清单](/guide/docs-public-acceptance)、[前端多壳层策略](/frontend/shell-strategy) | 当前以公开壳层 UI / 路由人工验收为主；若同时触达桌面文档治理或 Wiki 读取接口，再并行补 `Radish.Api.Wiki.http` |
 | 个人公开页首批 / 公开内容壳层 | `/u/:id` 的公开壳层路由、资料首屏、页签分页、作者跳转、登录态识别或关注按钮显示改动后 | `npm run type-check --workspace=radish.client`、`npm run build --workspace=radish.client` | [个人公开页首批人工验收清单](/guide/profile-public-acceptance)、[前端多壳层策略](/frontend/shell-strategy) | 当前以公开壳层 UI / 路由人工验收为主；若同时触达关系链接口或桌面个人主页，再并行补 `Community / User.Profile` |
 | 公开榜单首批 / 公开内容壳层 | `/leaderboard`、`/leaderboard/:type` 的公开壳层路由、榜单切换、分页、“我的排名”显示或用户榜单跳转改动后 | `npm run type-check --workspace=radish.client`、`npm run build --workspace=radish.client` | [公开榜单首批人工验收清单](/guide/leaderboard-public-acceptance)、[前端多壳层策略](/frontend/shell-strategy) | 当前以公开壳层 UI / 路由人工验收为主；若同时触达排行榜接口或桌面排行榜，再并行补 `Leaderboard / Experience` |
 | 公开商城浏览首批 / 公开内容壳层 | `/shop`、`/shop/products`、`/shop/product/:productId` 的公开壳层路由、列表筛选分页、详情阅读或只读边界改动后 | `npm run type-check --workspace=radish.client`、`npm run build --workspace=radish.client` | [公开商城浏览首批人工验收清单](/guide/shop-public-acceptance)、[前端多壳层策略](/frontend/shell-strategy) | 当前以公开壳层 UI / 路由人工验收为主；若同时触达商城接口或桌面商城，再并行补商城专题回归 |

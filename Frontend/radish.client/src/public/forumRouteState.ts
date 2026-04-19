@@ -35,6 +35,7 @@ export interface PublicForumSearchRoute {
 export interface PublicForumDetailRoute {
   kind: 'detail';
   postId: string;
+  commentId?: string;
 }
 
 export type PublicForumBrowseRoute =
@@ -224,7 +225,11 @@ export function parsePublicForumRoute(pathname: string, search: string): PublicF
   const matched = pathname.match(/^\/forum\/post\/(\d+)\/?$/);
   const postId = normalizePositiveIntegerString(matched?.[1]);
   if (postId) {
-    return { kind: 'detail', postId };
+    const params = new URLSearchParams(search);
+    const commentId = normalizePositiveIntegerString(params.get('commentId') ?? undefined);
+    return commentId
+      ? { kind: 'detail', postId, commentId }
+      : { kind: 'detail', postId };
   }
 
   return parseListRoute(search);
@@ -232,7 +237,14 @@ export function parsePublicForumRoute(pathname: string, search: string): PublicF
 
 export function buildPublicForumPath(route: PublicForumRoute): string {
   if (route.kind === 'detail') {
-    return `/forum/post/${route.postId}`;
+    const search = new URLSearchParams();
+    if (route.commentId) {
+      search.set('commentId', route.commentId);
+    }
+
+    const queryString = search.toString();
+    const basePath = `/forum/post/${route.postId}`;
+    return queryString ? `${basePath}?${queryString}` : basePath;
   }
 
   if (route.kind === 'question' || route.kind === 'poll' || route.kind === 'lottery') {
@@ -292,9 +304,6 @@ export function buildPublicForumPath(route: PublicForumRoute): string {
 
   if (route.kind === 'list') {
     const search = new URLSearchParams();
-    if (route.categoryId) {
-      search.set('category', String(route.categoryId));
-    }
     if (route.sortBy !== 'newest') {
       search.set('sort', route.sortBy);
     }

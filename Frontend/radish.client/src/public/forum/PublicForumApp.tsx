@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   getCategoryById,
+  getCommentNavigation,
   getChildComments,
   getCurrentGodCommentsBatch,
   getPostById,
@@ -37,6 +38,10 @@ import type {
   PublicForumRouteSort,
   PublicSearchTimeRange,
 } from '../forumRouteState';
+import {
+  getPublicDetailBackLabelKey,
+  type PublicDetailBackMode,
+} from '../publicRouteNavigation';
 import { createDefaultSearchRoute } from '../forumRouteState';
 import {
   resolvePublicForumCategoryLoadState,
@@ -44,12 +49,20 @@ import {
   resolvePublicForumReadSectionState,
   resolvePublicForumTagLoadState,
 } from './publicForumViewState';
+import { usePublicReplaceRouteSync } from '../usePublicReplaceRouteSync';
+import { PublicReadingGuide, type PublicReadingGuideItem } from '../components/PublicReadingGuide';
+import { PublicShellHeader } from '../components/PublicShellHeader';
 import styles from './PublicForumApp.module.css';
 
 interface PublicForumAppProps {
   route: PublicForumRoute;
   fallbackBrowseRoute: PublicForumBrowseRoute;
+  detailBackAction?: {
+    mode: PublicDetailBackMode;
+    onBack: () => void;
+  } | null;
   onNavigate: (route: PublicForumRoute, options?: { replace?: boolean }) => void;
+  onNavigateToDiscover?: () => void;
   onNavigateToProfile?: (userId: string) => void;
   onNavigateToSearch?: (keyword?: string) => void;
   onNavigateToTag?: (tagSlug: string) => void;
@@ -59,6 +72,134 @@ interface PublicForumAppProps {
 }
 
 type RootCommentSort = 'newest' | 'hottest' | null;
+const COMMENT_NAVIGATION_CHILD_PAGE_SIZE = 5;
+
+interface PublicForumCommentNavigationTarget {
+  commentId: number;
+  expandedRootCommentId?: number;
+  navigationKey: string;
+}
+
+interface PublicGuideDefinition {
+  titleKey: string;
+  descriptionKey: string;
+  readingValueKey: string;
+  nextValueKey: string;
+  boundaryValueKey: string;
+}
+
+const listGuideDefinition: PublicGuideDefinition = {
+  titleKey: 'forum.public.listGuide.title',
+  descriptionKey: 'forum.public.listGuide.description',
+  readingValueKey: 'forum.public.listGuide.readingValue',
+  nextValueKey: 'forum.public.listGuide.nextValue',
+  boundaryValueKey: 'forum.public.listGuide.boundaryValue'
+};
+
+const categoryGuideDefinition: PublicGuideDefinition = {
+  titleKey: 'forum.public.categoryGuide.title',
+  descriptionKey: 'forum.public.categoryGuide.description',
+  readingValueKey: 'forum.public.categoryGuide.readingValue',
+  nextValueKey: 'forum.public.categoryGuide.nextValue',
+  boundaryValueKey: 'forum.public.categoryGuide.boundaryValue'
+};
+
+const tagGuideDefinition: PublicGuideDefinition = {
+  titleKey: 'forum.public.tagGuide.title',
+  descriptionKey: 'forum.public.tagGuide.description',
+  readingValueKey: 'forum.public.tagGuide.readingValue',
+  nextValueKey: 'forum.public.tagGuide.nextValue',
+  boundaryValueKey: 'forum.public.tagGuide.boundaryValue'
+};
+
+const questionGuideDefinition: PublicGuideDefinition = {
+  titleKey: 'forum.public.questionGuide.title',
+  descriptionKey: 'forum.public.questionGuide.description',
+  readingValueKey: 'forum.public.questionGuide.readingValue',
+  nextValueKey: 'forum.public.questionGuide.nextValue',
+  boundaryValueKey: 'forum.public.questionGuide.boundaryValue'
+};
+
+const pollGuideDefinition: PublicGuideDefinition = {
+  titleKey: 'forum.public.pollGuide.title',
+  descriptionKey: 'forum.public.pollGuide.description',
+  readingValueKey: 'forum.public.pollGuide.readingValue',
+  nextValueKey: 'forum.public.pollGuide.nextValue',
+  boundaryValueKey: 'forum.public.pollGuide.boundaryValue'
+};
+
+const lotteryGuideDefinition: PublicGuideDefinition = {
+  titleKey: 'forum.public.lotteryGuide.title',
+  descriptionKey: 'forum.public.lotteryGuide.description',
+  readingValueKey: 'forum.public.lotteryGuide.readingValue',
+  nextValueKey: 'forum.public.lotteryGuide.nextValue',
+  boundaryValueKey: 'forum.public.lotteryGuide.boundaryValue'
+};
+
+const searchGuideDefinition: PublicGuideDefinition = {
+  titleKey: 'forum.public.searchGuide.title',
+  descriptionKey: 'forum.public.searchGuide.description',
+  readingValueKey: 'forum.public.searchGuide.readingValue',
+  nextValueKey: 'forum.public.searchGuide.nextValue',
+  boundaryValueKey: 'forum.public.searchGuide.boundaryValue'
+};
+
+const detailGuideDefinition: PublicGuideDefinition = {
+  titleKey: 'forum.public.detailGuide.title',
+  descriptionKey: 'forum.public.detailGuide.description',
+  readingValueKey: 'forum.public.detailGuide.readingValue',
+  nextValueKey: 'forum.public.detailGuide.nextValue',
+  boundaryValueKey: 'forum.public.detailGuide.boundaryValue'
+};
+
+function createForumReadingGuide(
+  t: ReturnType<typeof useTranslation>['t'],
+  definition: PublicGuideDefinition
+): {
+  label: string;
+  title: string;
+  description: string;
+  items: PublicReadingGuideItem[];
+} {
+  return {
+    label: t('forum.public.guide.label'),
+    title: t(definition.titleKey),
+    description: t(definition.descriptionKey),
+    items: [
+      {
+        label: t('forum.public.guide.readingLabel'),
+        value: t(definition.readingValueKey)
+      },
+      {
+        label: t('forum.public.guide.nextLabel'),
+        value: t(definition.nextValueKey)
+      },
+      {
+        label: t('forum.public.guide.boundaryLabel'),
+        value: t(definition.boundaryValueKey)
+      }
+    ]
+  };
+}
+
+function mergeCommentChildren(
+  comments: CommentNode[],
+  parentCommentId: number,
+  children: CommentNode[],
+  totalChildren: number
+): CommentNode[] {
+  return comments.map((comment) => {
+    if (comment.voId !== parentCommentId) {
+      return comment;
+    }
+
+    return {
+      ...comment,
+      voChildren: children,
+      voChildrenTotal: totalChildren
+    };
+  });
+}
 
 function buildActiveSectionTitle(categories: Category[], selectedCategoryId: number | null, fallback: string): string {
   if (!selectedCategoryId) {
@@ -257,7 +398,9 @@ function PublicStatusCard({
 export const PublicForumApp = ({
   route,
   fallbackBrowseRoute,
+  detailBackAction,
   onNavigate,
+  onNavigateToDiscover,
   onNavigateToProfile,
   onNavigateToSearch,
   onNavigateToTag,
@@ -271,6 +414,12 @@ export const PublicForumApp = ({
   const previousRouteRef = useRef<PublicForumRoute>(route);
   const browseScrollSnapshotRef = useRef<{ routeKey: string; scrollTop: number } | null>(null);
   const [pendingRestoreScrollTop, setPendingRestoreScrollTop] = useState<number | null>(null);
+  const routeBrowseKey = useMemo(() => (
+    route.kind !== 'detail' ? buildBrowseRouteKey(route) : null
+  ), [route]);
+  const detailBackLabelKey = getPublicDetailBackLabelKey(detailBackAction?.mode);
+  const detailBackLabel = detailBackLabelKey ? t(detailBackLabelKey) : t('forum.backToList');
+  const handleForumDetailBack = detailBackAction?.onBack ?? (() => onNavigate(fallbackBrowseRoute));
 
   useEffect(() => {
     const titleKey = route.kind === 'detail'
@@ -308,8 +457,7 @@ export const PublicForumApp = ({
       setPendingRestoreScrollTop(null);
       page.scrollTo({ top: 0, behavior: 'auto' });
     } else if (route.kind !== 'detail') {
-      const nextRouteKey = buildBrowseRouteKey(route);
-      if (browseScrollSnapshotRef.current?.routeKey === nextRouteKey) {
+      if (routeBrowseKey && browseScrollSnapshotRef.current?.routeKey === routeBrowseKey) {
         setPendingRestoreScrollTop(browseScrollSnapshotRef.current.scrollTop);
       } else {
         setPendingRestoreScrollTop(null);
@@ -321,54 +469,28 @@ export const PublicForumApp = ({
     }
 
     previousRouteRef.current = route;
-  }, [
-    route.kind,
-    route.kind === 'detail'
-      ? route.postId
-      : route.kind === 'list'
-        ? route.categoryId
-        : route.kind === 'tag'
-          ? route.tagSlug
-          : route.kind === 'question' || route.kind === 'poll' || route.kind === 'lottery'
-            ? route.kind
-          : null,
-    route.kind !== 'detail' ? route.sortBy : null,
-    route.kind === 'search' ? route.keyword : null,
-    route.kind === 'search' ? route.timeRange : null,
-    route.kind === 'search' ? route.startDate : null,
-    route.kind === 'search' ? route.endDate : null,
-    route.kind !== 'detail' ? route.page : null
-  ]);
+  }, [route, routeBrowseKey]);
 
   return (
     <div className={styles.page} ref={pageRef}>
-      <header className={styles.hero}>
-        <div className={styles.heroInner}>
-          <button
-            type="button"
-            className={styles.brand}
-            onClick={() => onNavigate({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 })}
-          >
-            <span className={styles.brandMark}>R</span>
-            <span className={styles.brandText}>
-              <span className={styles.brandName}>{t('desktop.apps.forum.name')}</span>
-              <span className={styles.brandSubline}>Public Content Shell</span>
-            </span>
-          </button>
-          <a className={styles.desktopLink} href="/">
-            <Icon icon="mdi:view-dashboard-outline" size={18} />
-            <span>WebOS</span>
-          </a>
-        </div>
-      </header>
+      <PublicShellHeader
+        brandMark="论"
+        brandName={t('desktop.apps.forum.name')}
+        brandSubline="Public Content Shell"
+        onBrandClick={() => onNavigate({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 })}
+        onNavigateToDiscover={onNavigateToDiscover}
+        discoverLabel={t('public.shell.discoverAction')}
+      />
 
       <main className={styles.main}>
         {route.kind === 'detail' ? (
           <PublicForumDetail
-            key={`detail-${route.postId}`}
+            key={`detail-${route.postId}-${route.commentId ?? 'none'}`}
             postId={route.postId}
+            commentId={route.commentId}
             displayTimeZone={displayTimeZone}
-            onBack={() => onNavigate(fallbackBrowseRoute)}
+            backLabel={detailBackLabel}
+            onBack={handleForumDetailBack}
             onOpenAuthorProfile={onNavigateToProfile}
             onOpenTag={onNavigateToTag}
             onOpenQuestion={onNavigateToQuestion}
@@ -605,14 +727,18 @@ const PublicForumList = ({
     };
   }, []);
 
-  useEffect(() => {
-    onRouteStateChange({
-      kind: 'list',
-      categoryId: selectedCategoryId,
-      sortBy,
-      page: currentPage
-    }, { replace: true });
-  }, [currentPage, onRouteStateChange, selectedCategoryId, sortBy]);
+  const nextListRoute = useMemo<PublicForumListRoute>(() => ({
+    kind: 'list',
+    categoryId: selectedCategoryId,
+    sortBy,
+    page: currentPage
+  }), [currentPage, selectedCategoryId, sortBy]);
+  usePublicReplaceRouteSync({
+    currentRouteKey: buildListRouteKey(routeState),
+    nextRoute: nextListRoute,
+    nextRouteKey: buildListRouteKey(nextListRoute),
+    onRouteStateChange
+  });
 
   useEffect(() => {
     if (restoreScrollTop == null || loadingPosts) {
@@ -738,6 +864,10 @@ const PublicForumList = ({
     () => formatCategoryPostCount(activeCategory, t),
     [activeCategory, t]
   );
+  const readingGuide = useMemo(
+    () => createForumReadingGuide(t, selectedCategoryId ? categoryGuideDefinition : listGuideDefinition),
+    [selectedCategoryId, t]
+  );
 
   const visiblePages = useMemo(() => {
     return buildVisiblePages(currentPage, totalPages, isCompactViewport ? 5 : 7);
@@ -822,6 +952,14 @@ const PublicForumList = ({
             </button>
           </div>
         </div>
+
+        <PublicReadingGuide
+          className={styles.readingGuide}
+          label={readingGuide.label}
+          title={readingGuide.title}
+          description={readingGuide.description}
+          items={readingGuide.items}
+        />
       </div>
 
       <div className={styles.categoryRail}>
@@ -1063,14 +1201,18 @@ const PublicForumTag = ({
     };
   }, []);
 
-  useEffect(() => {
-    onRouteStateChange({
-      kind: 'tag',
-      tagSlug: routeState.tagSlug,
-      sortBy,
-      page: currentPage
-    }, { replace: true });
-  }, [currentPage, onRouteStateChange, routeState.tagSlug, sortBy]);
+  const nextTagRoute = useMemo<PublicForumTagRoute>(() => ({
+    kind: 'tag',
+    tagSlug: routeState.tagSlug,
+    sortBy,
+    page: currentPage
+  }), [currentPage, routeState.tagSlug, sortBy]);
+  usePublicReplaceRouteSync({
+    currentRouteKey: buildTagRouteKey(routeState),
+    nextRoute: nextTagRoute,
+    nextRouteKey: buildTagRouteKey(nextTagRoute),
+    onRouteStateChange
+  });
 
   useEffect(() => {
     if (restoreScrollTop == null || loadingPosts) {
@@ -1119,22 +1261,18 @@ const PublicForumTag = ({
     void loadTag();
   }, [reloadToken, routeState.tagSlug, t]);
 
-  useEffect(() => {
-    if (!selectedTag?.voSlug) {
-      return;
-    }
-
-    if (selectedTag.voSlug === routeState.tagSlug) {
-      return;
-    }
-
-    onRouteStateChange({
-      kind: 'tag',
-      tagSlug: selectedTag.voSlug,
-      sortBy,
-      page: currentPage
-    }, { replace: true });
-  }, [currentPage, onRouteStateChange, routeState.tagSlug, selectedTag?.voSlug, sortBy]);
+  const canonicalTagRoute = useMemo<PublicForumTagRoute>(() => ({
+    kind: 'tag',
+    tagSlug: selectedTag?.voSlug ?? routeState.tagSlug,
+    sortBy,
+    page: currentPage
+  }), [currentPage, routeState.tagSlug, selectedTag?.voSlug, sortBy]);
+  usePublicReplaceRouteSync({
+    currentRouteKey: buildTagRouteKey(routeState),
+    nextRoute: canonicalTagRoute,
+    nextRouteKey: buildTagRouteKey(canonicalTagRoute),
+    onRouteStateChange
+  });
 
   useEffect(() => {
     const requestId = ++postsRequestIdRef.current;
@@ -1224,6 +1362,10 @@ const PublicForumTag = ({
       ? t('forum.public.tagUnavailableDescription')
       : t('forum.public.tagDescriptionFallback'));
   const tagPostCount = useMemo(() => formatTagPostCount(selectedTag, t), [selectedTag, t]);
+  const readingGuide = useMemo(
+    () => createForumReadingGuide(t, tagGuideDefinition),
+    [t]
+  );
 
   useEffect(() => {
     document.title = `${t('desktop.apps.forum.name')} · ${pageTitle}`;
@@ -1310,6 +1452,14 @@ const PublicForumTag = ({
             </button>
           </div>
         </div>
+
+        <PublicReadingGuide
+          className={styles.readingGuide}
+          label={readingGuide.label}
+          title={readingGuide.title}
+          description={readingGuide.description}
+          items={readingGuide.items}
+        />
       </div>
 
       {tagState.kind === 'error' && selectedTag && (
@@ -1562,13 +1712,17 @@ const PublicForumTypeFeed = ({
     };
   }, []);
 
-  useEffect(() => {
-    onRouteStateChange({
-      kind: routeState.kind,
-      sortBy,
-      page: currentPage
-    }, { replace: true });
-  }, [currentPage, onRouteStateChange, routeState.kind, sortBy]);
+  const nextTypeRoute = useMemo<PublicForumTypeRoute>(() => ({
+    kind: routeState.kind,
+    sortBy,
+    page: currentPage
+  }), [currentPage, routeState.kind, sortBy]);
+  usePublicReplaceRouteSync({
+    currentRouteKey: buildTypeRouteKey(routeState),
+    nextRoute: nextTypeRoute,
+    nextRouteKey: buildTypeRouteKey(nextTypeRoute),
+    onRouteStateChange
+  });
 
   useEffect(() => {
     if (restoreScrollTop == null || loadingPosts) {
@@ -1668,6 +1822,15 @@ const PublicForumTypeFeed = ({
   const visiblePages = useMemo(() => {
     return buildVisiblePages(currentPage, totalPages, isCompactViewport ? 5 : 7);
   }, [currentPage, isCompactViewport, totalPages]);
+  const readingGuide = useMemo(() => {
+    const guideDefinition = routeState.kind === 'question'
+      ? questionGuideDefinition
+      : routeState.kind === 'poll'
+        ? pollGuideDefinition
+        : lotteryGuideDefinition;
+
+    return createForumReadingGuide(t, guideDefinition);
+  }, [routeState.kind, t]);
 
   const listState = resolvePublicForumReadSectionState({
     loading: loadingPosts,
@@ -1729,6 +1892,14 @@ const PublicForumTypeFeed = ({
             ))}
           </div>
         </div>
+
+        <PublicReadingGuide
+          className={styles.readingGuide}
+          label={readingGuide.label}
+          title={readingGuide.title}
+          description={readingGuide.description}
+          items={readingGuide.items}
+        />
       </div>
 
       <div className={styles.postList}>
@@ -1896,17 +2067,21 @@ const PublicForumSearch = ({
     };
   }, []);
 
-  useEffect(() => {
-    onRouteStateChange({
-      kind: 'search',
-      keyword,
-      sortBy,
-      timeRange,
-      startDate: timeRange === 'custom' ? appliedStartDate || undefined : undefined,
-      endDate: timeRange === 'custom' ? appliedEndDate || undefined : undefined,
-      page: currentPage
-    }, { replace: true });
-  }, [appliedEndDate, appliedStartDate, currentPage, keyword, onRouteStateChange, sortBy, timeRange]);
+  const nextSearchRoute = useMemo<PublicForumSearchRoute>(() => ({
+    kind: 'search',
+    keyword,
+    sortBy,
+    timeRange,
+    startDate: timeRange === 'custom' ? appliedStartDate || undefined : undefined,
+    endDate: timeRange === 'custom' ? appliedEndDate || undefined : undefined,
+    page: currentPage
+  }), [appliedEndDate, appliedStartDate, currentPage, keyword, sortBy, timeRange]);
+  usePublicReplaceRouteSync({
+    currentRouteKey: buildSearchRouteKey(routeState),
+    nextRoute: nextSearchRoute,
+    nextRouteKey: buildSearchRouteKey(nextSearchRoute),
+    onRouteStateChange
+  });
 
   useEffect(() => {
     if (restoreScrollTop == null || loadingPosts) {
@@ -2057,6 +2232,10 @@ const PublicForumSearch = ({
   const resultIntro = hasActiveFilters
     ? t('forum.public.searchResultIntro')
     : t('forum.public.searchIntro');
+  const readingGuide = useMemo(
+    () => createForumReadingGuide(t, searchGuideDefinition),
+    [t]
+  );
 
   const submitSearch = () => {
     setKeyword(draftKeyword.trim());
@@ -2099,6 +2278,14 @@ const PublicForumSearch = ({
             )}
           </div>
         </div>
+
+        <PublicReadingGuide
+          className={styles.readingGuide}
+          label={readingGuide.label}
+          title={readingGuide.title}
+          description={readingGuide.description}
+          items={readingGuide.items}
+        />
 
         <div className={styles.searchPanel}>
           <div className={styles.searchForm}>
@@ -2301,7 +2488,9 @@ const PublicForumSearch = ({
 
 interface PublicForumDetailProps {
   postId: string;
+  commentId?: string;
   displayTimeZone: string;
+  backLabel: string;
   onBack: () => void;
   onOpenAuthorProfile?: (userId: string) => void;
   onOpenTag?: (tagSlug: string) => void;
@@ -2312,7 +2501,9 @@ interface PublicForumDetailProps {
 
 const PublicForumDetail = ({
   postId,
+  commentId,
   displayTimeZone,
+  backLabel,
   onBack,
   onOpenAuthorProfile,
   onOpenTag,
@@ -2336,8 +2527,15 @@ const PublicForumDetail = ({
   const [commentError, setCommentError] = useState<string | null>(null);
   const [quickReplyError, setQuickReplyError] = useState<string | null>(null);
   const [commentPagingError, setCommentPagingError] = useState<string | null>(null);
+  const [commentNavigationTarget, setCommentNavigationTarget] = useState<PublicForumCommentNavigationTarget | null>(null);
+  const [commentNavigationNotice, setCommentNavigationNotice] = useState<string | null>(null);
+  const [highlightedCommentId, setHighlightedCommentId] = useState<number | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const requestIdRef = useRef(0);
+  const commentAnchorMapRef = useRef(new Map<number, HTMLDivElement>());
+  const handledCommentNavigationRef = useRef<string | null>(null);
+  const highlightTimeoutRef = useRef<number | null>(null);
+  const commentNoticeRef = useRef<HTMLDivElement | null>(null);
   const commentPageSize = 20;
 
   useEffect(() => {
@@ -2351,6 +2549,9 @@ const PublicForumDetail = ({
       setCommentError(null);
       setQuickReplyError(null);
       setCommentPagingError(null);
+      setCommentNavigationTarget(null);
+      setCommentNavigationNotice(null);
+      setHighlightedCommentId(null);
 
       try {
         const postDetail = await getPostById(postId, t);
@@ -2380,8 +2581,28 @@ const PublicForumDetail = ({
       }
 
       try {
+        let navigation: Awaited<ReturnType<typeof getCommentNavigation>> | null = null;
+        if (commentId) {
+          try {
+            navigation = await getCommentNavigation(
+              postId,
+              commentId,
+              commentPageSize,
+              COMMENT_NAVIGATION_CHILD_PAGE_SIZE,
+              t
+            );
+          } catch (navigationError) {
+            if (requestId !== requestIdRef.current) {
+              return;
+            }
+
+            log.warn('公开论坛评论定位失败，已降级为普通帖子阅读:', navigationError);
+            setCommentNavigationNotice(t('forum.commentNavigation.notice'));
+          }
+        }
+
         const [rootCommentsResult, replyWallResult] = await Promise.allSettled([
-          getRootCommentsPage(postId, 1, commentPageSize, commentSortBy || 'default', t),
+          getRootCommentsPage(postId, navigation?.voRootPageIndex ?? 1, commentPageSize, commentSortBy || 'default', t),
           getPostQuickReplyWall(postId, t)
         ]);
 
@@ -2391,10 +2612,61 @@ const PublicForumDetail = ({
 
         if (rootCommentsResult.status === 'fulfilled') {
           const rootComments = rootCommentsResult.value;
-          setComments(rootComments.voItems ?? []);
+          let nextComments = rootComments.voItems ?? [];
+
+          if (!navigation) {
+            setCommentNavigationTarget(null);
+          } else if (!navigation.voIsRootComment && navigation.voParentCommentId && navigation.voChildPageIndex) {
+            try {
+              const aggregatedChildren: CommentNode[] = [];
+              let totalChildren = 0;
+
+              for (let pageIndex = 1; pageIndex <= navigation.voChildPageIndex; pageIndex += 1) {
+                const pageData = await getChildComments(
+                  navigation.voParentCommentId,
+                  pageIndex,
+                  COMMENT_NAVIGATION_CHILD_PAGE_SIZE,
+                  t
+                );
+
+                if (requestId !== requestIdRef.current) {
+                  return;
+                }
+
+                totalChildren = pageData.voTotal ?? totalChildren;
+                aggregatedChildren.push(...(pageData.voItems ?? []));
+              }
+
+              const deduplicatedChildren = aggregatedChildren.filter((child, index, source) =>
+                source.findIndex((item) => item.voId === child.voId) === index
+              );
+              nextComments = mergeCommentChildren(
+                nextComments,
+                navigation.voParentCommentId,
+                deduplicatedChildren,
+                totalChildren
+              );
+            } catch (childLoadError) {
+              if (requestId !== requestIdRef.current) {
+                return;
+              }
+
+              log.warn('公开论坛评论定位补载子评论失败，已保留当前评论页:', childLoadError);
+              setCommentNavigationNotice(t('forum.commentNavigation.notice'));
+            }
+          }
+
+          setComments(nextComments);
           setCommentTotal(rootComments.voTotal ?? 0);
-          setLoadedCommentPages((rootComments.voItems?.length ?? 0) > 0 ? 1 : 0);
+          setLoadedCommentPages((rootComments.voItems?.length ?? 0) > 0 ? (rootComments.voPageIndex ?? 1) : 0);
           setCommentError(null);
+          setCommentNavigationTarget(navigation ? {
+            commentId: navigation.voCommentId,
+            expandedRootCommentId: navigation.voIsRootComment
+              ? undefined
+              : navigation.voParentCommentId ?? navigation.voRootCommentId,
+            navigationKey: `${postId}:${commentId ?? navigation.voCommentId}:${commentSortBy ?? 'default'}:${reloadToken}`
+          } : null);
         } else {
           setComments([]);
           setCommentTotal(0);
@@ -2403,6 +2675,7 @@ const PublicForumDetail = ({
             ? rootCommentsResult.reason.message
             : String(rootCommentsResult.reason);
           setCommentError(message);
+          setCommentNavigationTarget(null);
         }
 
         if (replyWallResult.status === 'fulfilled') {
@@ -2427,7 +2700,15 @@ const PublicForumDetail = ({
     };
 
     void loadDetail();
-  }, [commentSortBy, postId, reloadToken, t]);
+  }, [commentId, commentSortBy, postId, reloadToken, t]);
+
+  useEffect(() => {
+    return () => {
+      if (highlightTimeoutRef.current !== null) {
+        window.clearTimeout(highlightTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!post?.voTitle) {
@@ -2436,6 +2717,138 @@ const PublicForumDetail = ({
 
     document.title = `${post.voTitle} · ${t('desktop.apps.forum.name')}`;
   }, [post?.voTitle, t]);
+
+  const navigateToComment = useCallback(async (
+    targetCommentId: number | string,
+    navigationKey: string
+  ) => {
+    try {
+      setCommentPagingError(null);
+      setCommentNavigationNotice(null);
+
+      const navigation = await getCommentNavigation(
+        postId,
+        targetCommentId,
+        commentPageSize,
+        COMMENT_NAVIGATION_CHILD_PAGE_SIZE,
+        t
+      );
+
+      let nextComments = comments;
+
+      if (loadedCommentPages !== navigation.voRootPageIndex || !comments.some((item) => item.voId === navigation.voRootCommentId)) {
+        const rootComments = await getRootCommentsPage(
+          postId,
+          navigation.voRootPageIndex,
+          commentPageSize,
+          commentSortBy || 'default',
+          t
+        );
+
+        nextComments = rootComments.voItems ?? [];
+        setComments(nextComments);
+        setCommentTotal(rootComments.voTotal ?? 0);
+        setLoadedCommentPages((rootComments.voItems?.length ?? 0) > 0 ? (rootComments.voPageIndex ?? navigation.voRootPageIndex) : 0);
+      }
+
+      if (!navigation.voIsRootComment && navigation.voParentCommentId && navigation.voChildPageIndex) {
+        const aggregatedChildren: CommentNode[] = [];
+        let totalChildren = 0;
+
+        for (let pageIndex = 1; pageIndex <= navigation.voChildPageIndex; pageIndex += 1) {
+          const pageData = await getChildComments(
+            navigation.voParentCommentId,
+            pageIndex,
+            COMMENT_NAVIGATION_CHILD_PAGE_SIZE,
+            t
+          );
+
+          totalChildren = pageData.voTotal ?? totalChildren;
+          aggregatedChildren.push(...(pageData.voItems ?? []));
+        }
+
+        const deduplicatedChildren = aggregatedChildren.filter((child, index, source) =>
+          source.findIndex((item) => item.voId === child.voId) === index
+        );
+        nextComments = mergeCommentChildren(
+          nextComments,
+          navigation.voParentCommentId,
+          deduplicatedChildren,
+          totalChildren
+        );
+        setComments(nextComments);
+      }
+
+      setCommentNavigationTarget({
+        commentId: navigation.voCommentId,
+        expandedRootCommentId: navigation.voIsRootComment
+          ? undefined
+          : navigation.voParentCommentId ?? navigation.voRootCommentId,
+        navigationKey
+      });
+    } catch {
+      setCommentNavigationNotice(t('forum.commentNavigation.notice'));
+    }
+  }, [commentPageSize, commentSortBy, comments, loadedCommentPages, postId, t]);
+
+  const registerCommentAnchor = (targetCommentId: number, element: HTMLDivElement | null) => {
+    if (element) {
+      commentAnchorMapRef.current.set(targetCommentId, element);
+    } else {
+      commentAnchorMapRef.current.delete(targetCommentId);
+    }
+  };
+
+  useEffect(() => {
+    if (!commentNavigationTarget?.commentId) {
+      return;
+    }
+
+    const navigationSignature = `${commentNavigationTarget.navigationKey}:${commentNavigationTarget.commentId}`;
+    if (handledCommentNavigationRef.current === navigationSignature) {
+      return;
+    }
+
+    const targetElement = commentAnchorMapRef.current.get(commentNavigationTarget.commentId);
+    if (!targetElement) {
+      return;
+    }
+
+    handledCommentNavigationRef.current = navigationSignature;
+    targetElement.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center'
+    });
+
+    setHighlightedCommentId(commentNavigationTarget.commentId);
+    if (highlightTimeoutRef.current !== null) {
+      window.clearTimeout(highlightTimeoutRef.current);
+    }
+    highlightTimeoutRef.current = window.setTimeout(() => {
+      setHighlightedCommentId((current) => (
+        current === commentNavigationTarget.commentId
+          ? null
+          : current
+      ));
+    }, 3200);
+  }, [commentNavigationTarget, comments]);
+
+  useEffect(() => {
+    if (!commentNavigationNotice) {
+      return;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      commentNoticeRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [commentNavigationNotice]);
 
   const handleLoadMoreComments = async () => {
     if (loadingMoreComments || loadingComments || comments.length >= commentTotal) {
@@ -2503,13 +2916,17 @@ const PublicForumDetail = ({
     : commentSortBy === 'hottest'
       ? t('forum.sort.hottest')
       : t('forum.public.commentSortDefault');
+  const readingGuide = useMemo(
+    () => createForumReadingGuide(t, detailGuideDefinition),
+    [t]
+  );
 
   return (
     <section className={`${styles.sectionCard} ${styles.detailSectionCard}`}>
       <div className={styles.detailTopbar}>
         <button type="button" className={styles.backButton} onClick={onBack}>
           <Icon icon="mdi:arrow-left" size={18} />
-          <span>{t('forum.backToList')}</span>
+          <span>{backLabel}</span>
         </button>
       </div>
 
@@ -2528,7 +2945,7 @@ const PublicForumDetail = ({
             title={t('forum.public.postNotFoundTitle')}
             description={t('forum.public.postNotFoundDescription')}
             secondaryAction={{
-              label: t('forum.backToList'),
+              label: backLabel,
               onClick: onBack
             }}
           />
@@ -2544,7 +2961,7 @@ const PublicForumDetail = ({
               onClick: () => setReloadToken((current) => current + 1)
             }}
             secondaryAction={{
-              label: t('forum.backToList'),
+              label: backLabel,
               onClick: onBack
             }}
           />
@@ -2561,9 +2978,12 @@ const PublicForumDetail = ({
 
         {detailState.kind === 'ready' && (
           <>
-            <div className={styles.detailContext}>
-              <p className={styles.detailContextText}>{t('forum.public.readOnlyDescription')}</p>
-            </div>
+            <PublicReadingGuide
+              label={readingGuide.label}
+              title={readingGuide.title}
+              description={readingGuide.description}
+              items={readingGuide.items}
+            />
 
             <ForumPostDetail
               post={post}
@@ -2638,6 +3058,12 @@ const PublicForumDetail = ({
                 </div>
               )}
 
+              {commentNavigationNotice && (
+                <div ref={commentNoticeRef} className={styles.inlineNotice} data-tone="warning">
+                  <span className={styles.inlineNoticeText}>{commentNavigationNotice}</span>
+                </div>
+              )}
+
               {commentSectionState === 'error' ? (
                 <PublicStatusCard
                   tone="error"
@@ -2663,15 +3089,22 @@ const PublicForumDetail = ({
                     hasPost={true}
                     displayTimeZone={displayTimeZone}
                     currentUserId={0}
+                    highlightedCommentId={highlightedCommentId}
+                    expandedRootCommentId={commentNavigationTarget?.expandedRootCommentId}
                     rootCommentTotal={commentTotal}
                     loadedRootCommentCount={comments.length}
                     rootCommentPageSize={commentPageSize}
+                    registerCommentAnchor={registerCommentAnchor}
                     sortBy={commentSortBy}
                     onSortChange={setCommentSortBy}
                     onLoadMoreChildren={handleLoadMoreChildren}
                     onLoadMoreRootComments={handleLoadMoreComments}
                     showTitle={false}
                     onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
+                    onNavigateToComment={(targetCommentId) => void navigateToComment(
+                      targetCommentId,
+                      `inline:${postId}:${targetCommentId}:${Date.now()}`
+                    )}
                   />
                 </>
               )}

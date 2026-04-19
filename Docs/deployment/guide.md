@@ -93,7 +93,7 @@
 
 - 日常开发：在 `dev` 或功能分支完成开发与自检
 - 准备发版：从 `dev` 向 `master` 发起 Pull Request
-- 合并发布：PR 检查通过后，以 `squash` 或 `rebase` 方式合并到 `master`
+- 合并发布：PR 检查通过后，以 `merge` 或 `rebase` 方式合并到 `master`
 - 发布记录：合并完成后创建 Git tag，并补一份仓库内发布记录；如需 GitHub Release，可复用同一套发布事实
 
 ### 最小发版顺序

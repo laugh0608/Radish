@@ -1,6 +1,7 @@
 import type { SyntheticEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ProductCategory, ProductListItem } from '@/types/shop';
+import { resolveMediaUrl } from '@/utils/media';
 import styles from './ShopHome.module.css';
 
 interface ShopHomeProps {
@@ -21,6 +22,7 @@ export const ShopHome = ({
   onViewAllProducts
 }: ShopHomeProps) => {
   const { t } = useTranslation();
+
   const handleCategoryImageError = (event: SyntheticEvent<HTMLImageElement>) => {
     event.currentTarget.style.display = 'none';
   };
@@ -56,30 +58,34 @@ export const ShopHome = ({
         </div>
 
         <div className={styles.categoriesGrid}>
-          {categories.map((category) => (
-            <div
-              key={category.voId}
-              className={styles.categoryCard}
-              onClick={() => onCategoryClick(String(category.voId))}
-            >
-              <div className={styles.categoryIcon}>
-                {category.voIcon ? (
-                  <img src={category.voIcon} alt={category.voName} onError={handleCategoryImageError} />
-                ) : (
-                  <span className={styles.defaultIcon}>📦</span>
-                )}
+          {categories.map((category) => {
+            const categoryIconUrl = resolveMediaUrl(category.voIcon);
+
+            return (
+              <div
+                key={category.voId}
+                className={styles.categoryCard}
+                onClick={() => onCategoryClick(String(category.voId))}
+              >
+                <div className={styles.categoryIcon}>
+                  {categoryIconUrl ? (
+                    <img src={categoryIconUrl} alt={category.voName} onError={handleCategoryImageError} />
+                  ) : (
+                    <span className={styles.defaultIcon}>📦</span>
+                  )}
+                </div>
+                <div className={styles.categoryInfo}>
+                  <h3 className={styles.categoryName}>{category.voName}</h3>
+                  <p className={styles.categoryDescription}>
+                    {category.voDescription || t('shop.categoryFallbackDescription')}
+                  </p>
+                  <span className={styles.categoryCount}>
+                    {t('shop.productCount', { count: category.voProductCount ?? 0 })}
+                  </span>
+                </div>
               </div>
-              <div className={styles.categoryInfo}>
-                <h3 className={styles.categoryName}>{category.voName}</h3>
-                <p className={styles.categoryDescription}>
-                  {category.voDescription || t('shop.categoryFallbackDescription')}
-                </p>
-                <span className={styles.categoryCount}>
-                  {t('shop.productCount', { count: category.voProductCount ?? 0 })}
-                </span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -93,61 +99,66 @@ export const ShopHome = ({
         </div>
 
         <div className={styles.productsGrid}>
-          {featuredProducts.map((product) => (
-            <div
-              key={product.voId}
-              className={styles.productCard}
-              onClick={() => onProductClick(product.voId)}
-            >
-              <div className={styles.productImage}>
-                {product.voCoverImage ? (
-                  <img src={product.voCoverImage} alt={product.voName} />
-                ) : product.voIcon ? (
-                  <img src={product.voIcon} alt={product.voName} />
-                ) : (
-                  <div className={styles.defaultProductImage}>
-                    <span>🎁</span>
-                  </div>
-                )}
+          {featuredProducts.map((product) => {
+            const coverImageUrl = resolveMediaUrl(product.voCoverImage);
+            const iconImageUrl = resolveMediaUrl(product.voIcon);
 
-                {product.voHasDiscount && (
-                  <div className={styles.discountBadge}>
-                    {t('shop.discount')}
-                  </div>
-                )}
+            return (
+              <div
+                key={product.voId}
+                className={styles.productCard}
+                onClick={() => onProductClick(product.voId)}
+              >
+                <div className={styles.productImage}>
+                  {coverImageUrl ? (
+                    <img src={coverImageUrl} alt={product.voName} />
+                  ) : iconImageUrl ? (
+                    <img src={iconImageUrl} alt={product.voName} />
+                  ) : (
+                    <div className={styles.defaultProductImage}>
+                      <span>🎁</span>
+                    </div>
+                  )}
 
-                {!product.voInStock && (
-                  <div className={styles.outOfStockOverlay}>
-                    <span>{t('shop.outOfStock')}</span>
-                  </div>
-                )}
-              </div>
+                  {product.voHasDiscount && (
+                    <div className={styles.discountBadge}>
+                      {t('shop.discount')}
+                    </div>
+                  )}
 
-              <div className={styles.productInfo}>
-                <h3 className={styles.productName}>{product.voName}</h3>
-
-                <div className={styles.productPrice}>
-                  <span className={styles.currentPrice}>
-                    {product.voPrice.toLocaleString()} {t('shop.currency.carrot')}
-                  </span>
-                  {product.voOriginalPrice && product.voOriginalPrice > product.voPrice && (
-                    <span className={styles.originalPrice}>
-                      {product.voOriginalPrice.toLocaleString()}
-                    </span>
+                  {!product.voInStock && (
+                    <div className={styles.outOfStockOverlay}>
+                      <span>{t('shop.outOfStock')}</span>
+                    </div>
                   )}
                 </div>
 
-                <div className={styles.productMeta}>
-                  <span className={styles.soldCount}>
-                    {t('shop.soldCount', { count: product.voSoldCount ?? 0 })}
-                  </span>
-                  <span className={styles.duration}>
-                    {product.voDurationDisplay ?? ''}
-                  </span>
+                <div className={styles.productInfo}>
+                  <h3 className={styles.productName}>{product.voName}</h3>
+
+                  <div className={styles.productPrice}>
+                    <span className={styles.currentPrice}>
+                      {product.voPrice.toLocaleString()} {t('shop.currency.carrot')}
+                    </span>
+                    {product.voOriginalPrice && product.voOriginalPrice > product.voPrice && (
+                      <span className={styles.originalPrice}>
+                        {product.voOriginalPrice.toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className={styles.productMeta}>
+                    <span className={styles.soldCount}>
+                      {t('shop.soldCount', { count: product.voSoldCount ?? 0 })}
+                    </span>
+                    <span className={styles.duration}>
+                      {product.voDurationDisplay ?? ''}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {featuredProducts.length === 0 && (

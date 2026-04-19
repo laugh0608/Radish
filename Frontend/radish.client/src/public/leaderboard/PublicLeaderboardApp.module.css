@@ -89,6 +89,28 @@
   font-weight: 600;
 }
 
+.heroActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.discoverLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 24%, transparent);
+  background: color-mix(in srgb, var(--theme-brand-soft) 52%, white 48%);
+  color: var(--theme-brand-primary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .main {
   flex: 1 0 auto;
   width: min(1040px, calc(100vw - 24px));
@@ -242,6 +264,233 @@
   line-height: 1.7;
 }
 
+.experienceGuideSection {
+  margin: 18px 24px 0;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 12%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-brand-soft) 26%, white 74%) 0%, color-mix(in srgb, var(--theme-bg-surface) 96%, white 4%) 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.experienceGuideHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.experienceGuideHeading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.experienceGuideKicker {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--theme-brand-primary);
+}
+
+.experienceGuideTitle {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.35;
+  font-weight: 700;
+  color: var(--theme-text-primary);
+}
+
+.experienceGuideIntro,
+.experienceGuideCardDescription {
+  margin: 0;
+  color: var(--theme-text-secondary);
+  line-height: 1.7;
+  font-size: 13px;
+}
+
+.experienceGuideIntro {
+  max-width: 520px;
+}
+
+.experienceGuideGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.lightweightGuideSection {
+  margin: 18px 24px 0;
+}
+
+.experienceGuideSummary {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.9fr);
+  gap: 14px;
+}
+
+.experienceGuideSummaryCard,
+.experienceGuideBoundaryPanel {
+  min-width: 0;
+  padding: 18px;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+}
+
+.experienceGuideSummaryCard {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.experienceGuideSummaryHeading,
+.experienceGuideBoundaryPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.experienceGuideSummaryLabel,
+.experienceGuideBoundaryLabel {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-brand-soft) 58%, white 42%);
+  color: var(--theme-brand-primary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.experienceGuideSummaryTitle,
+.experienceGuideBoundaryTitle {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.4;
+  font-weight: 700;
+  color: var(--theme-text-primary);
+}
+
+.experienceGuideSummaryDescription,
+.experienceGuideBoundaryDescription {
+  margin: 0;
+  color: var(--theme-text-secondary);
+  line-height: 1.75;
+  font-size: 13px;
+}
+
+.experienceGuideFocusRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.experienceGuideFocusChip {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-brand-soft) 34%, white 66%) 0%,
+    color-mix(in srgb, var(--theme-bg-surface) 96%, white 4%) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 10%, transparent);
+}
+
+.experienceGuideFocusLabel {
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.experienceGuideFocusValue {
+  color: var(--theme-text-primary);
+  font-size: 14px;
+  line-height: 1.6;
+  font-weight: 700;
+}
+
+.experienceGuideBoundaryList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.experienceGuideBoundaryItem {
+  position: relative;
+  padding-left: 18px;
+  color: var(--theme-text-secondary);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.experienceGuideBoundaryItem::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--theme-brand-primary);
+}
+
+.experienceGuideCard {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  min-width: 0;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
+  background: color-mix(in srgb, var(--theme-bg-surface) 90%, white 10%);
+}
+
+.experienceGuideIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  background: color-mix(in srgb, var(--theme-brand-soft) 52%, white 48%);
+  color: var(--theme-brand-primary);
+}
+
+.experienceGuideBody {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.experienceGuideCardTitle {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+  font-weight: 700;
+  color: var(--theme-text-primary);
+}
+
 .inlineNotice {
   display: flex;
   align-items: center;
@@ -276,9 +525,9 @@
 
 .listItem {
   display: grid;
-  grid-template-columns: auto auto 1fr auto;
+  grid-template-columns: auto auto minmax(0, 1fr) minmax(136px, 0.72fr);
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   width: 100%;
   padding: 16px 18px;
   border-radius: 22px;
@@ -303,10 +552,47 @@
   border-color: color-mix(in srgb, var(--theme-brand-primary) 20%, transparent);
 }
 
+.userListItem {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  padding: 18px 20px;
+}
+
+.userHeaderRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
+}
+
+.userIdentityCluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  flex: none;
+}
+
+.userTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+}
+
+.userName {
+  font-size: 20px;
+  line-height: 1.25;
+}
+
 .rankBadge {
-  width: 58px;
-  height: 58px;
-  border-radius: 18px;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -329,33 +615,88 @@
 
 .rankMedal,
 .rankNumber {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
 }
 
-.avatar,
-.productIcon {
-  width: 48px;
-  height: 48px;
-  border-radius: 16px;
+.productMedia,
+.userMedia,
+.productImage,
+.productImageFallback,
+.userAvatar,
+.userAvatarFallback {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+}
+
+.productMedia,
+.userMedia {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
-  font-size: 18px;
-  font-weight: 700;
 }
 
-.productIcon {
+.productImage {
+  object-fit: cover;
+  background: color-mix(in srgb, var(--theme-bg-muted) 76%, var(--theme-bg-surface) 24%);
+}
+
+.productImageFallback {
   background: color-mix(in srgb, var(--theme-brand-soft) 58%, white 42%);
   color: var(--theme-brand-primary);
 }
 
+.userAvatar {
+  object-fit: cover;
+  background: color-mix(in srgb, var(--theme-bg-muted) 76%, var(--theme-bg-surface) 24%);
+}
+
+.userAvatarFallback {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--theme-brand-soft) 50%, white 50%) 0%, color-mix(in srgb, var(--theme-bg-muted) 82%, var(--theme-bg-surface) 18%) 100%);
+  color: var(--theme-brand-primary);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.userListItem .rankBadge {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+}
+
+.userListItem .rankMedal,
+.userListItem .rankNumber {
+  font-size: 24px;
+}
+
+.userListItem .userMedia,
+.userListItem .userAvatar,
+.userListItem .userAvatarFallback {
+  width: 60px;
+  height: 60px;
+  border-radius: 20px;
+}
+
+.userListItem .userAvatarFallback {
+  font-size: 22px;
+}
+
 .itemBody {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-width: 0;
+}
+
+.itemPrimary {
   display: flex;
   flex-direction: column;
   gap: 6px;
   min-width: 0;
+  flex: 1 1 auto;
 }
 
 .itemTitleRow {
@@ -393,12 +734,82 @@
   font-size: 13px;
 }
 
+.userStatsRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.userStatChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-bg-muted) 80%, var(--theme-bg-surface) 20%);
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
+  color: var(--theme-text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.userLevelNameChip {
+  font-weight: 700;
+}
+
+.userMetricChip {
+  color: var(--theme-brand-primary);
+  font-weight: 700;
+  background: color-mix(in srgb, var(--theme-brand-soft) 34%, white 66%);
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 16%, transparent);
+}
+
+.userTitleGroup .currentUserBadge {
+  min-height: 30px;
+  padding: 5px 12px;
+}
+
+.itemSideInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--theme-bg-muted) 80%, var(--theme-bg-surface) 20%);
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
+  text-align: left;
+}
+
+.sideInfoLabel {
+  color: var(--theme-text-tertiary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.sideInfoValue {
+  color: var(--theme-text-primary);
+  font-size: 13px;
+  line-height: 1.55;
+  font-weight: 700;
+}
+
 .itemMetric {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  min-width: 110px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 132px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--theme-bg-muted) 78%, var(--theme-bg-surface) 22%);
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
 }
 
 .metricValue {
@@ -527,19 +938,144 @@
 }
 
 @media (max-width: 760px) {
+  .experienceGuideSection {
+    margin: 16px 16px 0;
+    padding: 16px;
+  }
+
+  .lightweightGuideSection {
+    margin: 16px 16px 0;
+  }
+
+  .experienceGuideSummary,
+  .experienceGuideFocusRow,
+  .experienceGuideGrid {
+    grid-template-columns: 1fr;
+  }
+
   .listItem {
-    grid-template-columns: auto 1fr;
-    align-items: flex-start;
+    grid-template-columns: 52px 48px minmax(0, 1fr) minmax(90px, auto);
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .userListItem {
+    gap: 10px;
+    padding: 16px 18px;
   }
 
   .itemBody {
-    grid-column: 1 / -1;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
   }
 
   .itemMetric {
-    grid-column: 1 / -1;
-    align-items: flex-start;
     min-width: 0;
+  }
+
+  .itemSideInfo {
+    justify-content: center;
+    padding: 8px 10px;
+    min-width: 0;
+  }
+
+  .itemTitle,
+  .statusTitle {
+    font-size: 16px;
+  }
+
+  .userHeaderRow {
+    gap: 12px;
+  }
+
+  .userIdentityCluster {
+    gap: 10px;
+  }
+
+  .userTitleGroup {
+    gap: 8px;
+  }
+
+  .userName {
+    font-size: 18px;
+  }
+
+  .metricValue {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .listItem {
+    grid-template-columns: 52px 48px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .userListItem {
+    gap: 9px;
+    padding: 14px 16px;
+  }
+
+  .productListItem .itemMetric {
+    grid-column: 3;
+  }
+
+  .userHeaderRow {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .userIdentityCluster {
+    gap: 8px;
+  }
+
+  .userStatsRow {
+    gap: 6px;
+  }
+
+  .userStatChip {
+    min-height: 30px;
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+
+  .userName {
+    font-size: 17px;
+  }
+
+  .itemMetric {
+    align-items: flex-start;
+  }
+
+  .itemSideInfo {
+    text-align: left;
+  }
+
+  .rankBadge {
+    width: 48px;
+    height: 48px;
+  }
+
+  .productMedia,
+  .productImage,
+  .productImageFallback {
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+  }
+
+  .userListItem .rankBadge {
+    width: 50px;
+    height: 50px;
+  }
+
+  .userListItem .userMedia,
+  .userListItem .userAvatar,
+  .userListItem .userAvatarFallback {
+    width: 52px;
+    height: 52px;
+    border-radius: 18px;
   }
 }
 
@@ -554,6 +1090,12 @@
     align-items: flex-start;
   }
 
+  .heroActions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .discoverLink,
   .desktopLink {
     padding: 9px 12px;
   }
