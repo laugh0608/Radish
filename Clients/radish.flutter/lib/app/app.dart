@@ -8,6 +8,7 @@ import '../core/theme/radish_theme.dart';
 import '../features/discover/data/discover_repository.dart';
 import '../features/docs/data/docs_repository.dart';
 import '../features/forum/data/forum_repository.dart';
+import '../features/profile/data/profile_repository.dart';
 import '../features/shell/presentation/radish_flutter_shell.dart';
 
 class RadishApp extends StatefulWidget {
@@ -17,6 +18,7 @@ class RadishApp extends StatefulWidget {
     required this.discoverRepository,
     required this.docsRepository,
     required this.forumRepository,
+    required this.profileRepository,
     super.key,
   });
 
@@ -25,6 +27,7 @@ class RadishApp extends StatefulWidget {
   final DiscoverRepository discoverRepository;
   final DocsRepository docsRepository;
   final ForumRepository forumRepository;
+  final ProfileRepository profileRepository;
 
   @override
   State<RadishApp> createState() => _RadishAppState();
@@ -65,6 +68,7 @@ class _RadishAppState extends State<RadishApp> {
                   discoverRepository: widget.discoverRepository,
                   docsRepository: widget.docsRepository,
                   forumRepository: widget.forumRepository,
+                  profileRepository: widget.profileRepository,
                 ),
         );
       },

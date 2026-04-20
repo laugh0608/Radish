@@ -5,6 +5,7 @@ import '../../../core/config/app_environment.dart';
 import '../../../features/discover/data/discover_repository.dart';
 import '../../../features/docs/data/docs_repository.dart';
 import '../../../features/forum/data/forum_repository.dart';
+import '../../../features/profile/data/profile_repository.dart';
 import '../../../features/discover/presentation/discover_page.dart';
 import '../../../features/docs/presentation/docs_page.dart';
 import '../../../features/forum/presentation/forum_page.dart';
@@ -17,6 +18,7 @@ class RadishFlutterShell extends StatefulWidget {
     required this.discoverRepository,
     required this.docsRepository,
     required this.forumRepository,
+    required this.profileRepository,
     super.key,
   });
 
@@ -25,6 +27,7 @@ class RadishFlutterShell extends StatefulWidget {
   final DiscoverRepository discoverRepository;
   final DocsRepository docsRepository;
   final ForumRepository forumRepository;
+  final ProfileRepository profileRepository;
 
   @override
   State<RadishFlutterShell> createState() => _RadishFlutterShellState();
@@ -53,7 +56,10 @@ class _RadishFlutterShellState extends State<RadishFlutterShell> {
             environment: widget.environment,
             repository: widget.docsRepository,
           ),
-          ProfilePage(sessionController: widget.sessionController),
+          ProfilePage(
+            sessionController: widget.sessionController,
+            repository: widget.profileRepository,
+          ),
         ];
 
         return Scaffold(

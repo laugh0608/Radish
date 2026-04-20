@@ -10,6 +10,8 @@ import 'package:radish_flutter/features/docs/data/docs_models.dart';
 import 'package:radish_flutter/features/docs/data/docs_repository.dart';
 import 'package:radish_flutter/features/forum/data/forum_models.dart';
 import 'package:radish_flutter/features/forum/data/forum_repository.dart';
+import 'package:radish_flutter/features/profile/data/profile_models.dart';
+import 'package:radish_flutter/features/profile/data/profile_repository.dart';
 
 void main() {
   testWidgets('restores into guest shell when no session exists',
@@ -25,6 +27,7 @@ void main() {
         discoverRepository: _FakeDiscoverRepository(),
         docsRepository: _FakeDocsRepository(),
         forumRepository: _FakeForumRepository(),
+        profileRepository: _FakeProfileRepository(),
       ),
     );
 
@@ -57,6 +60,7 @@ void main() {
         discoverRepository: _FakeDiscoverRepository(),
         docsRepository: _FakeDocsRepository(),
         forumRepository: _FakeForumRepository(),
+        profileRepository: _FakeProfileRepository(),
       ),
     );
 
@@ -111,6 +115,20 @@ class _FakeForumRepository implements ForumRepository {
       dataCount: 0,
       pageCount: 1,
       posts: [],
+    );
+  }
+}
+
+class _FakeProfileRepository implements ProfileRepository {
+  @override
+  Future<PublicProfileSummary> getPublicProfile({
+    required String userId,
+  }) async {
+    return PublicProfileSummary(
+      userId: userId,
+      userName: 'user-$userId',
+      displayName: 'User $userId',
+      createTime: '2026-04-20T08:00:00Z',
     );
   }
 }

@@ -8,6 +8,7 @@ import '../core/network/radish_api_endpoints.dart';
 import '../features/discover/data/discover_repository.dart';
 import '../features/docs/data/docs_repository.dart';
 import '../features/forum/data/forum_repository.dart';
+import '../features/profile/data/profile_repository.dart';
 import 'app.dart';
 
 class RadishBootstrap {
@@ -33,6 +34,10 @@ class RadishBootstrap {
       apiClient: apiClient,
       endpoints: apiEndpoints,
     );
+    const profileRepository = HttpProfileRepository(
+      apiClient: apiClient,
+      endpoints: apiEndpoints,
+    );
 
     runApp(
       RadishApp(
@@ -41,6 +46,7 @@ class RadishBootstrap {
         discoverRepository: discoverRepository,
         docsRepository: docsRepository,
         forumRepository: forumRepository,
+        profileRepository: profileRepository,
       ),
     );
   }
