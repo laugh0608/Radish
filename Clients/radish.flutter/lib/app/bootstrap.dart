@@ -17,24 +17,24 @@ class RadishBootstrap {
   Future<void> run() async {
     WidgetsFlutterBinding.ensureInitialized();
 
-    const environment = AppEnvironment.development();
+    final environment = AppEnvironment.developmentForCurrentPlatform();
     final sessionStore = InMemorySessionStore();
     final sessionController = SessionController(sessionStore: sessionStore);
-    const apiClient = HttpRadishApiClient();
-    const apiEndpoints = RadishApiEndpoints(environment);
+    final apiClient = HttpRadishApiClient(environment: environment);
+    final apiEndpoints = RadishApiEndpoints(environment);
     final discoverRepository = HttpDiscoverRepository(
       apiClient: apiClient,
       endpoints: apiEndpoints,
     );
-    const docsRepository = HttpDocsRepository(
+    final docsRepository = HttpDocsRepository(
       apiClient: apiClient,
       endpoints: apiEndpoints,
     );
-    const forumRepository = HttpForumRepository(
+    final forumRepository = HttpForumRepository(
       apiClient: apiClient,
       endpoints: apiEndpoints,
     );
-    const profileRepository = HttpProfileRepository(
+    final profileRepository = HttpProfileRepository(
       apiClient: apiClient,
       endpoints: apiEndpoints,
     );

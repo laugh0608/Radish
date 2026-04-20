@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import '../config/app_environment.dart';
+
 typedef JsonFactory<T> = T Function(Object? json);
 
 class RadishApiClientException implements Exception {
@@ -28,7 +30,11 @@ abstract class RadishApiClient {
 }
 
 class HttpRadishApiClient implements RadishApiClient {
-  const HttpRadishApiClient();
+  const HttpRadishApiClient({
+    required this.environment,
+  });
+
+  final AppEnvironment environment;
 
   @override
   Future<T> get<T>({
@@ -36,6 +42,13 @@ class HttpRadishApiClient implements RadishApiClient {
     required JsonFactory<T> decode,
   }) async {
     final client = HttpClient();
+    if (environment.allowLocalDevelopmentCertificates) {
+      client.badCertificateCallback = (certificate, host, port) {
+        return environment.name == 'development' &&
+            host == '10.0.2.2' &&
+            port == 5000;
+      };
+    }
 
     try {
       final request = await client.getUrl(uri);
@@ -52,11 +65,12 @@ class HttpRadishApiClient implements RadishApiClient {
         );
       }
 
-      final envelope = Map<String, Object?>.from(payload.cast<Object?, Object?>());
+      final envelope =
+          Map<String, Object?>.from(payload.cast<Object?, Object?>());
       final isSuccess = envelope['isSuccess'] == true;
-      final statusCode = _readInt(envelope['statusCode']) ?? response.statusCode;
-      final message =
-          envelope['messageInfo']?.toString() ?? 'Request failed';
+      final statusCode =
+          _readInt(envelope['statusCode']) ?? response.statusCode;
+      final message = envelope['messageInfo']?.toString() ?? 'Request failed';
       final code = envelope['code']?.toString();
 
       if (!isSuccess) {
