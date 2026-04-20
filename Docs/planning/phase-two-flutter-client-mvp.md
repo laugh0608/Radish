@@ -2,7 +2,7 @@
 
 > 状态：当前主线
 >
-> 最后更新：2026-04-18（Asia/Shanghai）
+> 最后更新：2026-04-20（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -92,6 +92,12 @@ Flutter 客户端第一批固定遵循以下约束：
 - 第一批骨架当前已完成，`Clients/radish.flutter/` 已建立独立入口、壳层导航、环境配置与最小 Theme 基线
 - 第二批当前已开始进入真实业务接线：应用启动会话恢复 gate、匿名态 / 已登录态三态，以及 `forum` 首条真实公开只读 feed 读取链路均已落地
 - 当前 forum 原生读取链路明确复用现有 `/api/v1/Post/GetList` 契约，只承载匿名列表阅读、`latest / hottest` 排序、基础分页、加载态与错误态
+
+截至 `2026-04-20` 的 Android 联调补充：
+
+- Android 平台目录当前已生成并纳入仓库，Flutter Android Debug APK 构建已通过
+- Android 模拟器最小联调已确认可通过 Gateway `https://localhost:5000` 访问公开只读接口
+- Android 模拟器联调前需要执行 `adb reverse tcp:5000 tcp:5000`，以保持模拟器侧 `localhost:5000` 映射到宿主机 Gateway，同时避免 `10.0.2.2` 与本地开发 HTTPS 证书主机名不一致导致 TLS 握手失败
 
 ## 7. 当前第二批范围
 
