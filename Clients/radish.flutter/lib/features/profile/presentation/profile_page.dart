@@ -84,7 +84,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Profile now attaches the restored session to the existing public profile contract. Account editing, sign-out, and token refresh remain outside this native batch.',
+              'Profile now attaches the restored session to the existing public profile contract. This batch includes persisted session recovery and refresh fallback, while account editing, explicit sign-out, and full login UI remain deferred.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 20),
@@ -93,10 +93,15 @@ class _ProfilePageState extends State<ProfilePage> {
               items: [
                 sessionState.isAuthenticated
                     ? 'Restored session for user ${session!.userId}'
-                    : 'No reusable session was found, profile stays in guest mode',
+                    : sessionState.lastErrorMessage == null
+                        ? 'No reusable session was found, profile stays in guest mode'
+                        : 'Stored session expired and refresh failed, profile returned to guest mode',
                 sessionState.isAuthenticated
                     ? 'Source API: /api/v1/User/GetPublicProfile?userId=${session!.userId}'
                     : 'Public profile reading is available once a target user id is provided',
+                if (sessionState.lastErrorMessage != null &&
+                    sessionState.lastErrorMessage!.isNotEmpty)
+                  'Last restore error: ${sessionState.lastErrorMessage}',
                 'Scope: public profile summary only, no account governance actions',
               ],
             ),
@@ -113,7 +118,9 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             if (sessionState.isAuthenticated) const SizedBox(height: 16),
             if (!sessionState.isAuthenticated)
-              const _ProfileGuestBoundary()
+              _ProfileGuestBoundary(
+                lastErrorMessage: sessionState.lastErrorMessage,
+              )
             else if (profileState.isLoading)
               const _ProfileLoadingState()
             else if (profileState.isError)
@@ -134,15 +141,21 @@ class _ProfilePageState extends State<ProfilePage> {
 }
 
 class _ProfileGuestBoundary extends StatelessWidget {
-  const _ProfileGuestBoundary();
+  const _ProfileGuestBoundary({
+    this.lastErrorMessage,
+  });
+
+  final String? lastErrorMessage;
 
   @override
   Widget build(BuildContext context) {
-    return const PhaseScopeCard(
+    return PhaseScopeCard(
       title: 'Guest boundary',
       items: [
         'Anonymous users can read public profiles when a route provides a user id',
         'The Flutter shell does not invent a default public profile target',
+        if (lastErrorMessage != null && lastErrorMessage!.isNotEmpty)
+          'Restore fallback: $lastErrorMessage',
         'Real sign-in UI and account governance remain deferred',
       ],
     );

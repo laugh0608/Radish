@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/widgets.dart';
 
 import '../core/auth/session_controller.dart';
+import '../core/auth/session_refresh_service.dart';
 import '../core/auth/session_store.dart';
 import '../core/config/app_environment.dart';
 import '../core/network/radish_api_client.dart';
@@ -18,8 +21,12 @@ class RadishBootstrap {
     WidgetsFlutterBinding.ensureInitialized();
 
     final environment = AppEnvironment.developmentForCurrentPlatform();
-    final sessionStore = InMemorySessionStore();
-    final sessionController = SessionController(sessionStore: sessionStore);
+    final sessionStore =
+        Platform.isAndroid ? PlatformSessionStore() : InMemorySessionStore();
+    final sessionController = SessionController(
+      sessionStore: sessionStore,
+      refreshService: SessionRefreshService(environment: environment),
+    );
     final apiClient = HttpRadishApiClient(environment: environment);
     final apiEndpoints = RadishApiEndpoints(environment);
     final discoverRepository = HttpDiscoverRepository(

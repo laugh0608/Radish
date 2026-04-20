@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:radish_flutter/core/auth/session_controller.dart';
+import 'package:radish_flutter/core/auth/session_refresh_service.dart';
 import 'package:radish_flutter/core/auth/session_store.dart';
+import 'package:radish_flutter/core/config/app_environment.dart';
 import 'package:radish_flutter/core/network/radish_api_client.dart';
 import 'package:radish_flutter/features/profile/data/profile_models.dart';
 import 'package:radish_flutter/features/profile/data/profile_repository.dart';
@@ -13,6 +17,7 @@ void main() {
   ) async {
     final sessionController = SessionController(
       sessionStore: InMemorySessionStore(),
+      refreshService: _NoopSessionRefreshService(),
     );
     await sessionController.restore();
 
@@ -34,12 +39,17 @@ void main() {
   ) async {
     final sessionController = SessionController(
       sessionStore: InMemorySessionStore(
-        initialSession: const AuthSession(
-          accessToken: 'access-token',
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: '2042219067430928384',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
           refreshToken: 'refresh-token',
           userId: '2042219067430928384',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
         ),
       ),
+      refreshService: _NoopSessionRefreshService(),
     );
     await sessionController.restore();
 
@@ -67,12 +77,17 @@ void main() {
   ) async {
     final sessionController = SessionController(
       sessionStore: InMemorySessionStore(
-        initialSession: const AuthSession(
-          accessToken: 'access-token',
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: '2042219067430928384',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
           refreshToken: 'refresh-token',
           userId: '2042219067430928384',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
         ),
       ),
+      refreshService: _NoopSessionRefreshService(),
     );
     await sessionController.restore();
 
@@ -114,4 +129,27 @@ class _FailingProfileRepository implements ProfileRepository {
   }) {
     throw const RadishApiClientException('Profile API is unreachable');
   }
+}
+
+class _NoopSessionRefreshService extends SessionRefreshService {
+  _NoopSessionRefreshService()
+      : super(environment: const AppEnvironment.development());
+
+  @override
+  Future<AuthSession> refresh(AuthSession session) async {
+    return session;
+  }
+}
+
+String _buildJwt({
+  required String userId,
+  required DateTime expiresAt,
+}) {
+  final header = base64Url.encode(utf8.encode('{"alg":"none","typ":"JWT"}'));
+  final payload = base64Url.encode(
+    utf8.encode(
+      '{"sub":"$userId","exp":${expiresAt.toUtc().millisecondsSinceEpoch ~/ 1000}}',
+    ),
+  );
+  return '$header.$payload.signature';
 }

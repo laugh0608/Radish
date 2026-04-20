@@ -87,11 +87,14 @@ Flutter 客户端第一批固定遵循以下约束：
 - 壳层导航、环境配置、认证存储、Theme 与页面占位
 - Flutter MVP 规划文档本页
 
-截至 `2026-04-18` 的已落地事实补充：
+截至 `2026-04-20` 的已落地事实补充：
 
 - 第一批骨架当前已完成，`Clients/radish.flutter/` 已建立独立入口、壳层导航、环境配置与最小 Theme 基线
 - 第二批当前已开始进入真实业务接线：应用启动会话恢复 gate、匿名态 / 已登录态三态，以及 `forum` 首条真实公开只读 feed 读取链路均已落地
 - 当前 forum 原生读取链路明确复用现有 `/api/v1/Post/GetList` 契约，只承载匿名列表阅读、`latest / hottest` 排序、基础分页、加载态与错误态
+- Android 平台目录当前已生成并纳入仓库，Flutter Android Debug APK 构建已通过
+- Android 模拟器最小联调已确认可通过 Gateway `https://localhost:5000` 访问公开只读接口；联调前需要先执行 `adb reverse tcp:5000 tcp:5000`
+- Flutter 当前已补齐真实会话恢复基础能力：Android 本地会话持久化、启动恢复、Access Token 过期判断，以及 refresh token 刷新失败后的匿名回落
 
 截至 `2026-04-20` 的 Android 联调补充：
 
@@ -104,8 +107,8 @@ Flutter 客户端第一批固定遵循以下约束：
 第二批当前固定收口到两类事情：
 
 1. **最小登录 / 会话恢复边界**
-   - 先完成启动恢复、匿名态 / 已登录态建模与壳层级状态分发
-   - 暂不进入完整登录 UI、登出治理、refresh token 策略与真实持久化实现
+   - 当前已完成启动恢复、匿名态 / 已登录态建模、Android 本地会话持久化与 refresh token 恢复回落
+   - 暂不进入完整登录 UI、显式登出治理与完整浏览器 OIDC 回调接线
 2. **首批真实页面接线**
    - forum 当前先跑通首条真实只读读取链路
    - `discover / docs / profile` 继续按价值顺序补最小真实页面，不同时大铺完整业务树

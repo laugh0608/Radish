@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:radish_flutter/app/app.dart';
 import 'package:radish_flutter/core/auth/session_controller.dart';
+import 'package:radish_flutter/core/auth/session_refresh_service.dart';
 import 'package:radish_flutter/core/auth/session_store.dart';
 import 'package:radish_flutter/core/config/app_environment.dart';
 import 'package:radish_flutter/features/discover/data/discover_models.dart';
@@ -18,6 +21,7 @@ void main() {
       (tester) async {
     final sessionController = SessionController(
       sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
     );
 
     await tester.pumpWidget(
@@ -40,17 +44,21 @@ void main() {
     expect(find.text('Guest'), findsOneWidget);
   });
 
-  testWidgets('restores authenticated session into profile boundary', (
-    tester,
-  ) async {
+  testWidgets('restores authenticated session into profile boundary',
+      (tester) async {
     final sessionController = SessionController(
       sessionStore: InMemorySessionStore(
-        initialSession: const AuthSession(
-          accessToken: 'access-token',
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: 'user-42',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
           refreshToken: 'refresh-token',
           userId: 'user-42',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
         ),
       ),
+      refreshService: _FakeSessionRefreshService.missing(),
     );
 
     await tester.pumpWidget(
@@ -70,6 +78,88 @@ void main() {
 
     expect(find.text('Signed in'), findsOneWidget);
     expect(find.text('Restored session for user user-42'), findsOneWidget);
+  });
+
+  testWidgets('refreshes expired session before entering shell',
+      (tester) async {
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: 'user-42',
+            expiresAt:
+                DateTime.now().toUtc().subtract(const Duration(minutes: 5)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: 'user-42',
+          expiresAt:
+              DateTime.now().toUtc().subtract(const Duration(minutes: 5)),
+        ),
+      ),
+      refreshService: _FakeSessionRefreshService.success(
+        AuthSession(
+          accessToken: _buildJwt(
+            userId: 'user-42',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 2)),
+          ),
+          refreshToken: 'refresh-token-next',
+          userId: 'user-42',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 2)),
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _FakeForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+      ),
+    );
+
+    await tester.pump();
+
+    expect(find.text('Signed in'), findsOneWidget);
+    expect(find.text('Guest'), findsNothing);
+  });
+
+  testWidgets('falls back to guest shell when refresh fails', (tester) async {
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: 'user-42',
+            expiresAt:
+                DateTime.now().toUtc().subtract(const Duration(minutes: 5)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: 'user-42',
+          expiresAt:
+              DateTime.now().toUtc().subtract(const Duration(minutes: 5)),
+        ),
+      ),
+      refreshService:
+          _FakeSessionRefreshService.failure('refresh token expired'),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _FakeForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+      ),
+    );
+
+    await tester.pump();
+
+    expect(find.text('Guest'), findsOneWidget);
+    expect(find.text('Session expired'), findsOneWidget);
   });
 }
 
@@ -131,4 +221,52 @@ class _FakeProfileRepository implements ProfileRepository {
       createTime: '2026-04-20T08:00:00Z',
     );
   }
+}
+
+class _FakeSessionRefreshService extends SessionRefreshService {
+  _FakeSessionRefreshService.missing()
+      : _nextSession = null,
+        _failureMessage = null,
+        super(environment: const AppEnvironment.development());
+
+  _FakeSessionRefreshService.success(AuthSession nextSession)
+      : _nextSession = nextSession,
+        _failureMessage = null,
+        super(environment: const AppEnvironment.development());
+
+  _FakeSessionRefreshService.failure(String failureMessage)
+      : _nextSession = null,
+        _failureMessage = failureMessage,
+        super(environment: const AppEnvironment.development());
+
+  final AuthSession? _nextSession;
+  final String? _failureMessage;
+
+  @override
+  Future<AuthSession> refresh(AuthSession session) async {
+    final failureMessage = _failureMessage;
+    if (failureMessage != null) {
+      throw SessionRefreshException(failureMessage);
+    }
+
+    final nextSession = _nextSession;
+    if (nextSession != null) {
+      return nextSession;
+    }
+
+    return session;
+  }
+}
+
+String _buildJwt({
+  required String userId,
+  required DateTime expiresAt,
+}) {
+  final header = base64Url.encode(utf8.encode('{"alg":"none","typ":"JWT"}'));
+  final payload = base64Url.encode(
+    utf8.encode(
+      '{"sub":"$userId","exp":${expiresAt.toUtc().millisecondsSinceEpoch ~/ 1000}}',
+    ),
+  );
+  return '$header.$payload.signature';
 }

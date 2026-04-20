@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import 'session_refresh_service.dart';
 import 'session_store.dart';
 
 enum SessionStatus {
@@ -12,6 +13,7 @@ class SessionState {
   const SessionState._({
     required this.status,
     this.session,
+    this.lastErrorMessage,
   });
 
   const SessionState.restoring()
@@ -19,9 +21,11 @@ class SessionState {
           status: SessionStatus.restoring,
         );
 
-  const SessionState.anonymous()
-      : this._(
+  const SessionState.anonymous({
+    String? lastErrorMessage,
+  }) : this._(
           status: SessionStatus.anonymous,
+          lastErrorMessage: lastErrorMessage,
         );
 
   const SessionState.authenticated(AuthSession session)
@@ -32,6 +36,7 @@ class SessionState {
 
   final SessionStatus status;
   final AuthSession? session;
+  final String? lastErrorMessage;
 
   bool get isRestoring => status == SessionStatus.restoring;
 
@@ -43,9 +48,12 @@ class SessionState {
 class SessionController extends ChangeNotifier {
   SessionController({
     required SessionStore sessionStore,
-  }) : _sessionStore = sessionStore;
+    required SessionRefreshService refreshService,
+  })  : _sessionStore = sessionStore,
+        _refreshService = refreshService;
 
   final SessionStore _sessionStore;
+  final SessionRefreshService _refreshService;
 
   SessionState _state = const SessionState.restoring();
   Future<void>? _restoreFuture;
@@ -77,7 +85,21 @@ class SessionController extends ChangeNotifier {
       return;
     }
 
-    _state = SessionState.authenticated(session);
-    notifyListeners();
+    if (!session.isExpired) {
+      _state = SessionState.authenticated(session);
+      notifyListeners();
+      return;
+    }
+
+    try {
+      final refreshedSession = await _refreshService.refresh(session);
+      await _sessionStore.write(refreshedSession);
+      _state = SessionState.authenticated(refreshedSession);
+      notifyListeners();
+    } on SessionRefreshException catch (error) {
+      await _sessionStore.clear();
+      _state = SessionState.anonymous(lastErrorMessage: error.message);
+      notifyListeners();
+    }
   }
 }

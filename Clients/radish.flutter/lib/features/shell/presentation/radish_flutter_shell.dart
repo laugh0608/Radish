@@ -86,6 +86,16 @@ class _RadishFlutterShellState extends State<RadishFlutterShell> {
                         sessionState.isAuthenticated ? 'Signed in' : 'Guest',
                       ),
                     ),
+                    if (sessionState.isAnonymous &&
+                        sessionState.lastErrorMessage != null &&
+                        sessionState.lastErrorMessage!.isNotEmpty)
+                      Tooltip(
+                        message: sessionState.lastErrorMessage!,
+                        child: const Chip(
+                          avatar: Icon(Icons.warning_amber_outlined, size: 18),
+                          label: Text('Session expired'),
+                        ),
+                      ),
                   ],
                 ),
               ),
