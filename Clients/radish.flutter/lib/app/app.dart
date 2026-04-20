@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../core/auth/session_controller.dart';
 import '../core/config/app_environment.dart';
 import '../core/theme/radish_theme.dart';
+import '../features/discover/data/discover_repository.dart';
 import '../features/forum/data/forum_repository.dart';
 import '../features/shell/presentation/radish_flutter_shell.dart';
 
@@ -12,12 +13,14 @@ class RadishApp extends StatefulWidget {
   const RadishApp({
     required this.environment,
     required this.sessionController,
+    required this.discoverRepository,
     required this.forumRepository,
     super.key,
   });
 
   final AppEnvironment environment;
   final SessionController sessionController;
+  final DiscoverRepository discoverRepository;
   final ForumRepository forumRepository;
 
   @override
@@ -56,6 +59,7 @@ class _RadishAppState extends State<RadishApp> {
               : RadishFlutterShell(
                   environment: widget.environment,
                   sessionController: widget.sessionController,
+                  discoverRepository: widget.discoverRepository,
                   forumRepository: widget.forumRepository,
                 ),
         );

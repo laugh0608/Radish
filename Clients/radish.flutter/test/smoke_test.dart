@@ -4,11 +4,14 @@ import 'package:radish_flutter/app/app.dart';
 import 'package:radish_flutter/core/auth/session_controller.dart';
 import 'package:radish_flutter/core/auth/session_store.dart';
 import 'package:radish_flutter/core/config/app_environment.dart';
+import 'package:radish_flutter/features/discover/data/discover_models.dart';
+import 'package:radish_flutter/features/discover/data/discover_repository.dart';
 import 'package:radish_flutter/features/forum/data/forum_models.dart';
 import 'package:radish_flutter/features/forum/data/forum_repository.dart';
 
 void main() {
-  testWidgets('restores into guest shell when no session exists', (tester) async {
+  testWidgets('restores into guest shell when no session exists',
+      (tester) async {
     final sessionController = SessionController(
       sessionStore: InMemorySessionStore(),
     );
@@ -17,6 +20,7 @@ void main() {
       RadishApp(
         environment: const AppEnvironment.development(),
         sessionController: sessionController,
+        discoverRepository: _FakeDiscoverRepository(),
         forumRepository: _FakeForumRepository(),
       ),
     );
@@ -47,6 +51,7 @@ void main() {
       RadishApp(
         environment: const AppEnvironment.development(),
         sessionController: sessionController,
+        discoverRepository: _FakeDiscoverRepository(),
         forumRepository: _FakeForumRepository(),
       ),
     );
@@ -58,6 +63,19 @@ void main() {
     expect(find.text('Signed in'), findsOneWidget);
     expect(find.text('Restored session for user user-42'), findsOneWidget);
   });
+}
+
+class _FakeDiscoverRepository implements DiscoverRepository {
+  @override
+  Future<DiscoverSnapshot> getSnapshot({
+    required int pageSize,
+  }) async {
+    return const DiscoverSnapshot(
+      forumPosts: [],
+      documents: [],
+      products: [],
+    );
+  }
 }
 
 class _FakeForumRepository implements ForumRepository {
