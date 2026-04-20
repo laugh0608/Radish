@@ -43,7 +43,9 @@ class AppEnvironment {
 
   static String _resolveDevelopmentHost() {
     if (Platform.isAndroid) {
-      return '10.0.2.2';
+      // Keep the TLS host aligned with the local Gateway development certificate.
+      // Run `adb reverse tcp:5000 tcp:5000` before Android emulator debugging.
+      return 'localhost';
     }
 
     return 'localhost';

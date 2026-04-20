@@ -45,7 +45,7 @@ class HttpRadishApiClient implements RadishApiClient {
     if (environment.allowLocalDevelopmentCertificates) {
       client.badCertificateCallback = (certificate, host, port) {
         return environment.name == 'development' &&
-            host == '10.0.2.2' &&
+            host == 'localhost' &&
             port == 5000;
       };
     }
