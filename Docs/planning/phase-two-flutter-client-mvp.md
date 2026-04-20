@@ -96,12 +96,6 @@ Flutter 客户端第一批固定遵循以下约束：
 - Android 模拟器最小联调已确认可通过 Gateway `https://localhost:5000` 访问公开只读接口；联调前需要先执行 `adb reverse tcp:5000 tcp:5000`
 - Flutter 当前已补齐真实会话恢复基础能力：Android 本地会话持久化、启动恢复、Access Token 过期判断，以及 refresh token 刷新失败后的匿名回落
 
-截至 `2026-04-20` 的 Android 联调补充：
-
-- Android 平台目录当前已生成并纳入仓库，Flutter Android Debug APK 构建已通过
-- Android 模拟器最小联调已确认可通过 Gateway `https://localhost:5000` 访问公开只读接口
-- Android 模拟器联调前需要执行 `adb reverse tcp:5000 tcp:5000`，以保持模拟器侧 `localhost:5000` 映射到宿主机 Gateway，同时避免 `10.0.2.2` 与本地开发 HTTPS 证书主机名不一致导致 TLS 握手失败
-
 ## 7. 当前第二批范围
 
 第二批当前固定收口到两类事情：
