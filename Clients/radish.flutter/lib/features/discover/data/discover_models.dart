@@ -1,4 +1,5 @@
 import '../../forum/data/forum_models.dart';
+import '../../docs/data/docs_models.dart';
 
 class DiscoverSnapshot {
   const DiscoverSnapshot({
@@ -8,66 +9,11 @@ class DiscoverSnapshot {
   });
 
   final List<ForumPostSummary> forumPosts;
-  final List<DiscoverDocumentSummary> documents;
+  final List<DocsDocumentSummary> documents;
   final List<DiscoverProductSummary> products;
 
   bool get isEmpty =>
       forumPosts.isEmpty && documents.isEmpty && products.isEmpty;
-}
-
-class DiscoverDocumentSummary {
-  const DiscoverDocumentSummary({
-    required this.id,
-    required this.title,
-    required this.slug,
-    this.summary,
-    this.publishedAt,
-    this.modifyTime,
-    this.createTime,
-  });
-
-  factory DiscoverDocumentSummary.fromJson(Object? json) {
-    final map = _readJsonMap(json);
-
-    return DiscoverDocumentSummary(
-      id: _readRequiredId(map, 'voId'),
-      title: _readString(map['voTitle']) ?? 'Untitled document',
-      slug: _readString(map['voSlug']) ?? '',
-      summary: _readString(map['voSummary']),
-      publishedAt: _readString(map['voPublishedAt']),
-      modifyTime: _readString(map['voModifyTime']),
-      createTime: _readString(map['voCreateTime']),
-    );
-  }
-
-  final String id;
-  final String title;
-  final String slug;
-  final String? summary;
-  final String? publishedAt;
-  final String? modifyTime;
-  final String? createTime;
-
-  String? get displayTime => publishedAt ?? modifyTime ?? createTime;
-}
-
-class DiscoverDocumentPage {
-  const DiscoverDocumentPage({
-    required this.documents,
-  });
-
-  factory DiscoverDocumentPage.fromJson(Object? json) {
-    final map = _readJsonMap(json);
-    final data = map['data'];
-
-    return DiscoverDocumentPage(
-      documents: data is List
-          ? data.map(DiscoverDocumentSummary.fromJson).toList()
-          : const <DiscoverDocumentSummary>[],
-    );
-  }
-
-  final List<DiscoverDocumentSummary> documents;
 }
 
 class DiscoverProductSummary {

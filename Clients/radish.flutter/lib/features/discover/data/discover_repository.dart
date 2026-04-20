@@ -1,5 +1,7 @@
 import '../../../core/network/radish_api_client.dart';
 import '../../../core/network/radish_api_endpoints.dart';
+import '../../docs/data/docs_models.dart';
+import '../../docs/data/docs_repository.dart';
 import '../../forum/data/forum_models.dart';
 import 'discover_models.dart';
 
@@ -10,13 +12,17 @@ abstract class DiscoverRepository {
 }
 
 class HttpDiscoverRepository implements DiscoverRepository {
-  const HttpDiscoverRepository({
+  HttpDiscoverRepository({
     required this.apiClient,
     required this.endpoints,
-  });
+  }) : _docsRepository = HttpDocsRepository(
+          apiClient: apiClient,
+          endpoints: endpoints,
+        );
 
   final RadishApiClient apiClient;
   final RadishApiEndpoints endpoints;
+  final HttpDocsRepository _docsRepository;
 
   @override
   Future<DiscoverSnapshot> getSnapshot({
@@ -51,19 +57,12 @@ class HttpDiscoverRepository implements DiscoverRepository {
     return page.posts;
   }
 
-  Future<List<DiscoverDocumentSummary>> _getDocuments(int pageSize) async {
-    final uri = endpoints.resolveApi(
-      '/api/v1/Wiki/GetList',
-      queryParameters: {
-        'pageIndex': '1',
-        'pageSize': pageSize.toString(),
-      },
+  Future<List<DocsDocumentSummary>> _getDocuments(int pageSize) async {
+    final page = await _docsRepository.getDocumentPage(
+      pageIndex: 1,
+      pageSize: pageSize,
     );
 
-    final page = await apiClient.get(
-      uri: uri,
-      decode: DiscoverDocumentPage.fromJson,
-    );
     return page.documents;
   }
 

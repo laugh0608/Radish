@@ -6,6 +6,8 @@ import 'package:radish_flutter/core/auth/session_store.dart';
 import 'package:radish_flutter/core/config/app_environment.dart';
 import 'package:radish_flutter/features/discover/data/discover_models.dart';
 import 'package:radish_flutter/features/discover/data/discover_repository.dart';
+import 'package:radish_flutter/features/docs/data/docs_models.dart';
+import 'package:radish_flutter/features/docs/data/docs_repository.dart';
 import 'package:radish_flutter/features/forum/data/forum_models.dart';
 import 'package:radish_flutter/features/forum/data/forum_repository.dart';
 
@@ -21,6 +23,7 @@ void main() {
         environment: const AppEnvironment.development(),
         sessionController: sessionController,
         discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
         forumRepository: _FakeForumRepository(),
       ),
     );
@@ -52,6 +55,7 @@ void main() {
         environment: const AppEnvironment.development(),
         sessionController: sessionController,
         discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
         forumRepository: _FakeForumRepository(),
       ),
     );
@@ -74,6 +78,22 @@ class _FakeDiscoverRepository implements DiscoverRepository {
       forumPosts: [],
       documents: [],
       products: [],
+    );
+  }
+}
+
+class _FakeDocsRepository implements DocsRepository {
+  @override
+  Future<DocsDocumentPage> getDocumentPage({
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const DocsDocumentPage(
+      page: 1,
+      pageSize: 20,
+      dataCount: 0,
+      pageCount: 1,
+      documents: [],
     );
   }
 }

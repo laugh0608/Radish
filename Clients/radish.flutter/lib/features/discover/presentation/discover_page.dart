@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/auth/session_controller.dart';
 import '../../../core/config/app_environment.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
+import '../../docs/data/docs_models.dart';
 import '../../forum/data/forum_models.dart';
 import '../data/discover_models.dart';
 import '../data/discover_repository.dart';
@@ -243,7 +244,7 @@ class _DocsSection extends StatelessWidget {
     required this.documents,
   });
 
-  final List<DiscoverDocumentSummary> documents;
+  final List<DocsDocumentSummary> documents;
 
   @override
   Widget build(BuildContext context) {

@@ -5,6 +5,7 @@ import 'package:radish_flutter/core/config/app_environment.dart';
 import 'package:radish_flutter/core/network/radish_api_client.dart';
 import 'package:radish_flutter/features/discover/data/discover_models.dart';
 import 'package:radish_flutter/features/discover/data/discover_repository.dart';
+import 'package:radish_flutter/features/docs/data/docs_models.dart';
 import 'package:radish_flutter/features/discover/presentation/discover_page.dart';
 import 'package:radish_flutter/features/forum/data/forum_models.dart';
 
@@ -74,7 +75,7 @@ class _SuccessDiscoverRepository implements DiscoverRepository {
         ),
       ],
       documents: [
-        DiscoverDocumentSummary(
+        DocsDocumentSummary(
           id: '3001',
           title: 'Flutter MVP overview',
           slug: 'flutter-mvp-overview',
