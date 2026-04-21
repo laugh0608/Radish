@@ -4,6 +4,7 @@ import '../../../core/auth/session_controller.dart';
 import '../../../core/config/app_environment.dart';
 import '../../../features/discover/data/discover_repository.dart';
 import '../../../features/docs/data/docs_repository.dart';
+import '../../../features/forum/data/forum_models.dart';
 import '../../../features/forum/data/forum_repository.dart';
 import '../../../features/profile/data/profile_repository.dart';
 import '../../../features/discover/presentation/discover_page.dart';
@@ -19,6 +20,7 @@ class RadishFlutterShell extends StatefulWidget {
     required this.docsRepository,
     required this.forumRepository,
     required this.profileRepository,
+    this.initialForumHandoffTarget,
     super.key,
   });
 
@@ -28,6 +30,7 @@ class RadishFlutterShell extends StatefulWidget {
   final DocsRepository docsRepository;
   final ForumRepository forumRepository;
   final ProfileRepository profileRepository;
+  final ForumDetailHandoffTarget? initialForumHandoffTarget;
 
   @override
   State<RadishFlutterShell> createState() => _RadishFlutterShellState();
@@ -36,6 +39,38 @@ class RadishFlutterShell extends StatefulWidget {
 class _RadishFlutterShellState extends State<RadishFlutterShell> {
   int _currentIndex = 0;
   String? _guestProfileUserId;
+  ForumDetailHandoffTarget? _forumHandoffTarget;
+
+  @override
+  void initState() {
+    super.initState();
+    _forumHandoffTarget = _normalizeForumHandoffTarget(
+      widget.initialForumHandoffTarget,
+    );
+
+    if (_forumHandoffTarget != null) {
+      _currentIndex = 1;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant RadishFlutterShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.initialForumHandoffTarget != widget.initialForumHandoffTarget) {
+      final nextTarget = _normalizeForumHandoffTarget(
+        widget.initialForumHandoffTarget,
+      );
+      if (nextTarget == null) {
+        return;
+      }
+
+      setState(() {
+        _forumHandoffTarget = nextTarget;
+        _currentIndex = 1;
+      });
+    }
+  }
 
   void _selectTab(int index) {
     setState(() {
@@ -53,6 +88,30 @@ class _RadishFlutterShellState extends State<RadishFlutterShell> {
       _guestProfileUserId = normalizedUserId;
       _currentIndex = 3;
     });
+  }
+
+  void _consumeForumHandoffTarget() {
+    if (_forumHandoffTarget == null) {
+      return;
+    }
+
+    setState(() {
+      _forumHandoffTarget = null;
+    });
+  }
+
+  ForumDetailHandoffTarget? _normalizeForumHandoffTarget(
+    ForumDetailHandoffTarget? target,
+  ) {
+    if (target == null || !target.hasValidPostId) {
+      return null;
+    }
+
+    return ForumDetailHandoffTarget(
+      postId: target.normalizedPostId,
+      initialTitle: target.normalizedInitialTitle,
+      commentId: target.normalizedCommentId,
+    );
   }
 
   @override
@@ -74,6 +133,8 @@ class _RadishFlutterShellState extends State<RadishFlutterShell> {
             environment: widget.environment,
             repository: widget.forumRepository,
             onOpenProfileUser: _openProfileUser,
+            handoffTarget: _forumHandoffTarget,
+            onConsumeHandoffTarget: _consumeForumHandoffTarget,
           ),
           DocsPage(
             environment: widget.environment,

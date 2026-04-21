@@ -209,6 +209,26 @@ class ForumPostDetail {
   }
 }
 
+class ForumDetailHandoffTarget {
+  const ForumDetailHandoffTarget({
+    required this.postId,
+    this.initialTitle,
+    this.commentId,
+  });
+
+  final String postId;
+  final String? initialTitle;
+  final String? commentId;
+
+  String get normalizedPostId => postId.trim();
+
+  String? get normalizedInitialTitle => _readString(initialTitle);
+
+  String? get normalizedCommentId => _readString(commentId);
+
+  bool get hasValidPostId => normalizedPostId.isNotEmpty;
+}
+
 class ForumCommentSummary {
   const ForumCommentSummary({
     required this.id,

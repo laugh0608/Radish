@@ -7,6 +7,7 @@ import '../core/config/app_environment.dart';
 import '../core/theme/radish_theme.dart';
 import '../features/discover/data/discover_repository.dart';
 import '../features/docs/data/docs_repository.dart';
+import '../features/forum/data/forum_models.dart';
 import '../features/forum/data/forum_repository.dart';
 import '../features/profile/data/profile_repository.dart';
 import '../features/shell/presentation/radish_flutter_shell.dart';
@@ -19,6 +20,7 @@ class RadishApp extends StatefulWidget {
     required this.docsRepository,
     required this.forumRepository,
     required this.profileRepository,
+    this.initialForumHandoffTarget,
     super.key,
   });
 
@@ -28,6 +30,7 @@ class RadishApp extends StatefulWidget {
   final DocsRepository docsRepository;
   final ForumRepository forumRepository;
   final ProfileRepository profileRepository;
+  final ForumDetailHandoffTarget? initialForumHandoffTarget;
 
   @override
   State<RadishApp> createState() => _RadishAppState();
@@ -66,10 +69,11 @@ class _RadishAppState extends State<RadishApp> {
                   environment: widget.environment,
                   sessionController: widget.sessionController,
                   discoverRepository: widget.discoverRepository,
-                  docsRepository: widget.docsRepository,
-                  forumRepository: widget.forumRepository,
-                  profileRepository: widget.profileRepository,
-                ),
+                docsRepository: widget.docsRepository,
+                forumRepository: widget.forumRepository,
+                profileRepository: widget.profileRepository,
+                initialForumHandoffTarget: widget.initialForumHandoffTarget,
+              ),
         );
       },
     );

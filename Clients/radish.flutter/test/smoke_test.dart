@@ -295,6 +295,42 @@ void main() {
         findsOneWidget);
     expect(find.text('User user-9'), findsWidgets);
   });
+
+  testWidgets('shell forum handoff opens native detail and targets comment',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _SeededForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        initialForumHandoffTarget: const ForumDetailHandoffTarget(
+          postId: 'post-42',
+          initialTitle: 'Forum detail handoff',
+          commentId: 'reply-1',
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Forum detail'), findsWidgets);
+    expect(find.text('/forum/post/post-42'), findsOneWidget);
+    expect(find.text('First public child comment'), findsOneWidget);
+  });
 }
 
 class _FakeDiscoverRepository implements DiscoverRepository {
@@ -517,6 +553,8 @@ class _SeededForumRepository implements ForumRepository {
             authorId: 'user-9',
             authorName: 'luobo',
             likeCount: 2,
+            replyCount: 1,
+            childrenTotal: 1,
             createTime: '2026-04-20T11:00:00Z',
           ),
           ForumCommentSummary(

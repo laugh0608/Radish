@@ -73,6 +73,41 @@ void main() {
 
     expect(openedUserId, '1024');
   });
+
+  testWidgets('opens forum detail handoff target from external shell state',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    var consumed = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumPage(
+          environment: const AppEnvironment.development(),
+          repository: _SuccessForumRepository(),
+          handoffTarget: const ForumDetailHandoffTarget(
+            postId: '2042219067430928384',
+            initialTitle: 'How to wire Radish Flutter forum reading',
+            commentId: 'comment-2048',
+          ),
+          onConsumeHandoffTarget: () {
+            consumed += 1;
+          },
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(consumed, 1);
+    expect(find.text('Forum detail'), findsWidgets);
+    expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
+    expect(find.text('Comments'), findsOneWidget);
+  });
 }
 
 class _SuccessForumRepository implements ForumRepository {
@@ -142,9 +177,18 @@ class _SuccessForumRepository implements ForumRepository {
     return const ForumCommentPage(
       page: 1,
       pageSize: 20,
-      dataCount: 0,
-      pageCount: 0,
-      comments: [],
+      dataCount: 1,
+      pageCount: 1,
+      comments: [
+        ForumCommentSummary(
+          id: 'comment-2048',
+          postId: '2042219067430928384',
+          content: 'Pinned target comment for handoff verification.',
+          authorId: '1025',
+          authorName: 'Reader',
+          createTime: '2026-04-18T12:00:00Z',
+        ),
+      ],
     );
   }
 

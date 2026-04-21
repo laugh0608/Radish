@@ -12,12 +12,16 @@ class ForumPage extends StatefulWidget {
     required this.environment,
     required this.repository,
     this.onOpenProfileUser,
+    this.handoffTarget,
+    this.onConsumeHandoffTarget,
     super.key,
   });
 
   final AppEnvironment environment;
   final ForumRepository repository;
   final ValueChanged<String>? onOpenProfileUser;
+  final ForumDetailHandoffTarget? handoffTarget;
+  final VoidCallback? onConsumeHandoffTarget;
 
   @override
   State<ForumPage> createState() => _ForumPageState();
@@ -25,6 +29,7 @@ class ForumPage extends StatefulWidget {
 
 class _ForumPageState extends State<ForumPage> {
   late ForumFeedController _controller;
+  String? _handledHandoffSignature;
 
   @override
   void initState() {
@@ -33,6 +38,9 @@ class _ForumPageState extends State<ForumPage> {
       repository: widget.repository,
     );
     _controller.loadInitial();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _openHandoffTargetIfNeeded();
+    });
   }
 
   @override
@@ -45,6 +53,13 @@ class _ForumPageState extends State<ForumPage> {
         repository: widget.repository,
       );
       _controller.loadInitial();
+      _handledHandoffSignature = null;
+    }
+
+    if (oldWidget.handoffTarget != widget.handoffTarget) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _openHandoffTargetIfNeeded();
+      });
     }
   }
 
@@ -114,6 +129,39 @@ class _ForumPageState extends State<ForumPage> {
           ],
         );
       },
+    );
+  }
+
+  void _openHandoffTargetIfNeeded() {
+    if (!mounted) {
+      return;
+    }
+
+    final target = widget.handoffTarget;
+    if (target == null || !target.hasValidPostId) {
+      return;
+    }
+
+    final signature =
+        '${target.normalizedPostId}:${target.normalizedCommentId ?? ''}';
+    if (_handledHandoffSignature == signature) {
+      return;
+    }
+
+    _handledHandoffSignature = signature;
+    widget.onConsumeHandoffTarget?.call();
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => ForumDetailPage(
+          environment: widget.environment,
+          repository: widget.repository,
+          postId: target.normalizedPostId,
+          initialTitle: target.normalizedInitialTitle,
+          commentId: target.normalizedCommentId,
+          onOpenProfileUser: widget.onOpenProfileUser,
+        ),
+      ),
     );
   }
 }
