@@ -21,13 +21,15 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('How to wire Radish Flutter forum reading'), findsOneWidget);
+    expect(
+        find.text('How to wire Radish Flutter forum reading'), findsOneWidget);
     expect(find.text('Top'), findsOneWidget);
     expect(find.text('Question'), findsOneWidget);
     expect(find.text('42 comments'), findsOneWidget);
   });
 
-  testWidgets('renders forum error state when repository fails', (tester) async {
+  testWidgets('renders forum error state when repository fails',
+      (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: ForumPage(
@@ -61,7 +63,8 @@ class _SuccessForumRepository implements ForumRepository {
         ForumPostSummary(
           id: '2042219067430928384',
           title: 'How to wire Radish Flutter forum reading',
-          summary: 'Use the public read-only feed contract first, then expand into detail.',
+          summary:
+              'Use the public read-only feed contract first, then expand into detail.',
           categoryId: '9',
           categoryName: 'Engineering',
           authorId: '1024',
@@ -77,6 +80,29 @@ class _SuccessForumRepository implements ForumRepository {
       ],
     );
   }
+
+  @override
+  Future<ForumPostDetail> getPostDetail({
+    required String postId,
+  }) async {
+    return ForumPostDetail(
+      id: postId,
+      title: 'How to wire Radish Flutter forum reading',
+      summary:
+          'Use the public read-only feed contract first, then expand into detail.',
+      content: '# Detail\n\nForum detail body.',
+      contentType: 'Markdown',
+      categoryId: '9',
+      categoryName: 'Engineering',
+      authorId: '1024',
+      authorName: 'Luobo',
+      commentCount: 42,
+      answerCount: 3,
+      isTop: true,
+      isQuestion: true,
+      createTime: '2026-04-18T10:00:00Z',
+    );
+  }
 }
 
 class _FailingForumRepository implements ForumRepository {
@@ -87,5 +113,12 @@ class _FailingForumRepository implements ForumRepository {
     required ForumFeedSort sort,
   }) {
     throw const RadishApiClientException('Forum API is unreachable');
+  }
+
+  @override
+  Future<ForumPostDetail> getPostDetail({
+    required String postId,
+  }) {
+    throw const RadishApiClientException('Forum detail API is unreachable');
   }
 }

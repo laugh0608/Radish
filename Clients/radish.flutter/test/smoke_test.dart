@@ -222,6 +222,43 @@ void main() {
     expect(find.text('Guest'), findsOneWidget);
     expect(find.text('Session expired'), findsOneWidget);
   });
+
+  testWidgets('forum feed opens native public detail page', (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _SeededForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.tap(find.text('Forum'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Forum detail handoff'), findsOneWidget);
+
+    await tester.tap(find.text('Open detail'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Forum detail'), findsWidgets);
+    expect(find.text('/forum/post/post-42'), findsOneWidget);
+    expect(find.text('Post body'), findsOneWidget);
+  });
 }
 
 class _FakeDiscoverRepository implements DiscoverRepository {
@@ -305,6 +342,75 @@ class _FakeForumRepository implements ForumRepository {
       dataCount: 0,
       pageCount: 1,
       posts: [],
+    );
+  }
+
+  @override
+  Future<ForumPostDetail> getPostDetail({
+    required String postId,
+  }) async {
+    return ForumPostDetail(
+      id: postId,
+      title: 'Post $postId',
+      summary: 'Summary for $postId',
+      content: '# Post $postId\n\nBody content',
+      contentType: 'Markdown',
+      categoryId: 'category-1',
+      categoryName: 'General',
+      authorId: 'user-1',
+      authorName: 'tester',
+      tagNames: const ['flutter'],
+      createTime: '2026-04-20T08:00:00Z',
+    );
+  }
+}
+
+class _SeededForumRepository implements ForumRepository {
+  @override
+  Future<ForumPostPage> getPostPage({
+    required int pageIndex,
+    required int pageSize,
+    required ForumFeedSort sort,
+  }) async {
+    return const ForumPostPage(
+      page: 1,
+      pageSize: 20,
+      dataCount: 1,
+      pageCount: 1,
+      posts: [
+        ForumPostSummary(
+          id: 'post-42',
+          title: 'Forum detail handoff',
+          summary: 'Tap through to the public native detail page.',
+          categoryId: 'category-1',
+          categoryName: 'General',
+          authorId: 'user-9',
+          authorName: 'luobo',
+          commentCount: 3,
+        ),
+      ],
+    );
+  }
+
+  @override
+  Future<ForumPostDetail> getPostDetail({
+    required String postId,
+  }) async {
+    return ForumPostDetail(
+      id: postId,
+      title: 'Forum detail handoff',
+      summary: 'Tap through to the public native detail page.',
+      content:
+          '# Native detail\n\n- author metadata\n- body content\n- back navigation',
+      contentType: 'Markdown',
+      categoryId: 'category-1',
+      categoryName: 'General',
+      authorId: 'user-9',
+      authorName: 'luobo',
+      tagNames: const ['android', 'flutter'],
+      commentCount: 3,
+      createTime: '2026-04-20T08:00:00Z',
+      updateTime: '2026-04-20T10:30:00Z',
     );
   }
 }

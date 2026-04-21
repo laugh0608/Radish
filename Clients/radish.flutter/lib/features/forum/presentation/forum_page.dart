@@ -4,6 +4,7 @@ import '../../../core/config/app_environment.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
 import '../data/forum_models.dart';
 import '../data/forum_repository.dart';
+import 'forum_detail_page.dart';
 import 'forum_feed_controller.dart';
 
 class ForumPage extends StatefulWidget {
@@ -75,8 +76,8 @@ class _ForumPageState extends State<ForumPage> {
               title: 'Feed contract',
               items: [
                 'Environment: ${widget.environment.name}',
-                'Source API: ${widget.environment.apiBaseUrl}/api/v1/Post/GetList',
-                'Scope: anonymous read-only list, latest/hottest sort, first-page navigation',
+                'Source APIs: ${widget.environment.apiBaseUrl}/api/v1/Post/GetList + /api/v1/Post/GetById/{postId}',
+                'Scope: anonymous read-only list/detail, latest/hottest sort, native handoff into post reading',
                 state.page == null
                     ? 'Feed state: ${state.status.name}'
                     : 'Loaded ${state.page!.posts.length} posts from ${state.page!.dataCount} total records',
@@ -97,6 +98,8 @@ class _ForumPageState extends State<ForumPage> {
               ),
             if (state.isReady && state.page != null)
               _ForumFeedContent(
+                environment: widget.environment,
+                repository: widget.repository,
                 state: state,
                 onPreviousPage: state.hasPreviousPage
                     ? () => _controller.goToPage(state.pageIndex - 1)
@@ -216,11 +219,15 @@ class _ForumErrorState extends StatelessWidget {
 
 class _ForumFeedContent extends StatelessWidget {
   const _ForumFeedContent({
+    required this.environment,
+    required this.repository,
     required this.state,
     required this.onPreviousPage,
     required this.onNextPage,
   });
 
+  final AppEnvironment environment;
+  final ForumRepository repository;
   final ForumFeedState state;
   final VoidCallback? onPreviousPage;
   final VoidCallback? onNextPage;
@@ -255,7 +262,21 @@ class _ForumFeedContent extends StatelessWidget {
             ),
           ),
         for (final post in page.posts) ...[
-          _ForumPostCard(post: post),
+          _ForumPostCard(
+            post: post,
+            onOpen: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (context) => ForumDetailPage(
+                    environment: environment,
+                    repository: repository,
+                    postId: post.id,
+                    initialTitle: post.title,
+                  ),
+                ),
+              );
+            },
+          ),
           const SizedBox(height: 12),
         ],
         const SizedBox(height: 8),
@@ -283,90 +304,107 @@ class _ForumFeedContent extends StatelessWidget {
 class _ForumPostCard extends StatelessWidget {
   const _ForumPostCard({
     required this.post,
+    required this.onOpen,
   });
 
   final ForumPostSummary post;
+  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (post.badges.isNotEmpty) ...[
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: post.badges
-                    .map(
-                      (badge) => Chip(
-                        label: Text(badge),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    )
-                    .toList(),
-              ),
-              const SizedBox(height: 12),
-            ],
-            Text(
-              post.title,
-              style: textTheme.titleLarge,
-            ),
-            if (post.summary != null) ...[
-              const SizedBox(height: 12),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onOpen,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (post.badges.isNotEmpty) ...[
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: post.badges
+                      .map(
+                        (badge) => Chip(
+                          label: Text(badge),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      )
+                      .toList(),
+                ),
+                const SizedBox(height: 12),
+              ],
               Text(
-                post.summary!,
-                style: textTheme.bodyMedium,
+                post.title,
+                style: textTheme.titleLarge,
+              ),
+              if (post.summary != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  post.summary!,
+                  style: textTheme.bodyMedium,
+                ),
+              ],
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 16,
+                runSpacing: 8,
+                children: [
+                  _ForumMetaText(
+                    icon: Icons.person_outline,
+                    text: post.authorName ?? 'User ${post.authorId}',
+                  ),
+                  _ForumMetaText(
+                    icon: Icons.folder_outlined,
+                    text: post.categoryName ?? 'Category ${post.categoryId}',
+                  ),
+                  _ForumMetaText(
+                    icon: Icons.schedule_outlined,
+                    text: _formatCreateTime(post.createTime),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 16,
+                runSpacing: 8,
+                children: [
+                  _ForumMetaText(
+                    icon: Icons.visibility_outlined,
+                    text: '${post.viewCount} views',
+                  ),
+                  _ForumMetaText(
+                    icon: Icons.thumb_up_alt_outlined,
+                    text: '${post.likeCount} likes',
+                  ),
+                  _ForumMetaText(
+                    icon: Icons.chat_bubble_outline,
+                    text: '${post.commentCount} comments',
+                  ),
+                  if (post.isQuestion)
+                    _ForumMetaText(
+                      icon: Icons.question_answer_outlined,
+                      text: '${post.answerCount} answers',
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Text(
+                    'Open detail',
+                    style: textTheme.labelLarge,
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.arrow_forward, size: 18),
+                ],
               ),
             ],
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 16,
-              runSpacing: 8,
-              children: [
-                _ForumMetaText(
-                  icon: Icons.person_outline,
-                  text: post.authorName ?? 'User ${post.authorId}',
-                ),
-                _ForumMetaText(
-                  icon: Icons.folder_outlined,
-                  text: post.categoryName ?? 'Category ${post.categoryId}',
-                ),
-                _ForumMetaText(
-                  icon: Icons.schedule_outlined,
-                  text: _formatCreateTime(post.createTime),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 16,
-              runSpacing: 8,
-              children: [
-                _ForumMetaText(
-                  icon: Icons.visibility_outlined,
-                  text: '${post.viewCount} views',
-                ),
-                _ForumMetaText(
-                  icon: Icons.thumb_up_alt_outlined,
-                  text: '${post.likeCount} likes',
-                ),
-                _ForumMetaText(
-                  icon: Icons.chat_bubble_outline,
-                  text: '${post.commentCount} comments',
-                ),
-                if (post.isQuestion)
-                  _ForumMetaText(
-                    icon: Icons.question_answer_outlined,
-                    text: '${post.answerCount} answers',
-                  ),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
     );

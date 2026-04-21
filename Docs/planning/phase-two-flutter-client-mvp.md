@@ -2,7 +2,7 @@
 
 > 状态：当前主线
 >
-> 最后更新：2026-04-20（Asia/Shanghai）
+> 最后更新：2026-04-21（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -94,7 +94,9 @@ Flutter 客户端第一批固定遵循以下约束：
 - 当前 forum 原生读取链路明确复用现有 `/api/v1/Post/GetList` 契约，只承载匿名列表阅读、`latest / hottest` 排序、基础分页、加载态与错误态
 - Android 平台目录当前已生成并纳入仓库，Flutter Android Debug APK 构建已通过
 - Android 模拟器最小联调已确认可通过 Gateway `https://localhost:5000` 访问公开只读接口；联调前需要先执行 `adb reverse tcp:5000 tcp:5000`
+- Android 真机最小联调当前也已完成一轮人工收口：`discover / forum / docs / profile` 四个主 tab 已可进入，`discover -> docs` 与 `discover -> profile` 的公开跳转当前可正常完成；期间暴露的 `Profile` 统计卡与壳层状态区窄屏溢出已修复并通过复测
 - Flutter 当前已补齐真实会话恢复基础能力：Android 本地会话持久化、启动恢复、Access Token 过期判断，以及 refresh token 刷新失败后的匿名回落
+- Flutter forum 当前已继续从“公开只读 feed”推进到“公开只读帖子详情”最小链路：列表卡片可原生 handoff 到详情页，详情页当前承载正文、作者/分类/时间、基础统计与原生返回，不同时接入评论、互动提交与编辑治理
 
 ## 7. 当前第二批范围
 
@@ -104,14 +106,14 @@ Flutter 客户端第一批固定遵循以下约束：
    - 当前已完成启动恢复、匿名态 / 已登录态建模、Android 本地会话持久化与 refresh token 恢复回落
    - 暂不进入完整登录 UI、显式登出治理与完整浏览器 OIDC 回调接线
 2. **首批真实页面接线**
-   - forum 当前先跑通首条真实只读读取链路
-   - `discover / docs / profile` 继续按价值顺序补最小真实页面，不同时大铺完整业务树
+   - forum 当前已从公开列表继续收口到公开详情只读阅读
+   - `discover / docs / profile` 首批最小真实页面接线与 Android 真机联调当前都已完成，后续优先继续补 forum 高价值阅读链路，而不是回头扩壳层占位
 
 ## 8. 下一顺位
 
 当前第二批继续推进时，优先顺序建议为：
 
-1. `discover` 真实分发入口接线
-2. `docs` 公开阅读与 `profile` 公开页最小接线
-3. Android 真机构建与最小联调
+1. forum 公开只读帖子详情之后的下一条高价值阅读链路，例如评论只读分页或最小作者跳转
+2. 最小登录 UI、显式登出治理与后续浏览器 OIDC 回调接线评估
+3. Android MVP 稳定性回归与更多真机联调
 4. 在 Android MVP 稳定后再评估平台目录与更深原生能力

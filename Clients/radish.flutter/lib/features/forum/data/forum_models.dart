@@ -96,13 +96,116 @@ class ForumPostSummary {
   final String? createTime;
 
   List<String> get badges {
-    return [
-      if (isTop) 'Top',
-      if (isEssence) 'Essence',
-      if (isQuestion) isSolved ? 'Solved' : 'Question',
-      if (hasPoll) pollIsClosed ? 'Poll closed' : 'Poll',
-      if (hasLottery) lotteryIsDrawn ? 'Lottery drawn' : 'Lottery',
-    ];
+    return _buildForumBadges(
+      isTop: isTop,
+      isEssence: isEssence,
+      isQuestion: isQuestion,
+      isSolved: isSolved,
+      hasPoll: hasPoll,
+      pollIsClosed: pollIsClosed,
+      hasLottery: hasLottery,
+      lotteryIsDrawn: lotteryIsDrawn,
+    );
+  }
+}
+
+class ForumPostDetail {
+  const ForumPostDetail({
+    required this.id,
+    required this.title,
+    required this.content,
+    required this.categoryId,
+    required this.authorId,
+    this.summary,
+    this.contentType,
+    this.categoryName,
+    this.authorName,
+    this.tagNames = const <String>[],
+    this.viewCount = 0,
+    this.likeCount = 0,
+    this.commentCount = 0,
+    this.answerCount = 0,
+    this.isTop = false,
+    this.isEssence = false,
+    this.isQuestion = false,
+    this.isSolved = false,
+    this.hasPoll = false,
+    this.pollIsClosed = false,
+    this.hasLottery = false,
+    this.lotteryIsDrawn = false,
+    this.createTime,
+    this.updateTime,
+  });
+
+  factory ForumPostDetail.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+    final parsedTagNames = _readStringList(map['voTagNames']);
+    final fallbackTags = _readCsvList(map['voTags']);
+
+    return ForumPostDetail(
+      id: _readRequiredId(map, 'voId'),
+      title: _readString(map['voTitle']) ?? 'Untitled post',
+      summary: _readString(map['voSummary']),
+      content: _readString(map['voContent']) ?? '',
+      contentType: _readString(map['voContentType']),
+      categoryId: _readRequiredId(map, 'voCategoryId'),
+      categoryName: _readString(map['voCategoryName']),
+      authorId: _readRequiredId(map, 'voAuthorId'),
+      authorName: _readString(map['voAuthorName']),
+      tagNames: parsedTagNames.isEmpty ? fallbackTags : parsedTagNames,
+      viewCount: _readInt(map['voViewCount']) ?? 0,
+      likeCount: _readInt(map['voLikeCount']) ?? 0,
+      commentCount: _readInt(map['voCommentCount']) ?? 0,
+      answerCount: _readInt(map['voAnswerCount']) ?? 0,
+      isTop: _readBool(map['voIsTop']),
+      isEssence: _readBool(map['voIsEssence']),
+      isQuestion: _readBool(map['voIsQuestion']),
+      isSolved: _readBool(map['voIsSolved']),
+      hasPoll: _readBool(map['voHasPoll']),
+      pollIsClosed: _readBool(map['voPollIsClosed']),
+      hasLottery: _readBool(map['voHasLottery']),
+      lotteryIsDrawn: _readBool(map['voLotteryIsDrawn']),
+      createTime: _readString(map['voCreateTime']),
+      updateTime: _readString(map['voUpdateTime']),
+    );
+  }
+
+  final String id;
+  final String title;
+  final String? summary;
+  final String content;
+  final String? contentType;
+  final String categoryId;
+  final String? categoryName;
+  final String authorId;
+  final String? authorName;
+  final List<String> tagNames;
+  final int viewCount;
+  final int likeCount;
+  final int commentCount;
+  final int answerCount;
+  final bool isTop;
+  final bool isEssence;
+  final bool isQuestion;
+  final bool isSolved;
+  final bool hasPoll;
+  final bool pollIsClosed;
+  final bool hasLottery;
+  final bool lotteryIsDrawn;
+  final String? createTime;
+  final String? updateTime;
+
+  List<String> get badges {
+    return _buildForumBadges(
+      isTop: isTop,
+      isEssence: isEssence,
+      isQuestion: isQuestion,
+      isSolved: isSolved,
+      hasPoll: hasPoll,
+      pollIsClosed: pollIsClosed,
+      hasLottery: hasLottery,
+      lotteryIsDrawn: lotteryIsDrawn,
+    );
   }
 }
 
@@ -183,4 +286,49 @@ bool _readBool(Object? value) {
 
   final text = value?.toString().trim().toLowerCase();
   return text == 'true' || text == '1';
+}
+
+List<String> _readStringList(Object? value) {
+  if (value is! List) {
+    return const <String>[];
+  }
+
+  return value
+      .map(_readString)
+      .whereType<String>()
+      .map((item) => item.trim())
+      .where((item) => item.isNotEmpty)
+      .toList(growable: false);
+}
+
+List<String> _readCsvList(Object? value) {
+  final text = _readString(value);
+  if (text == null || text.isEmpty) {
+    return const <String>[];
+  }
+
+  return text
+      .split(',')
+      .map((item) => item.trim())
+      .where((item) => item.isNotEmpty)
+      .toList(growable: false);
+}
+
+List<String> _buildForumBadges({
+  required bool isTop,
+  required bool isEssence,
+  required bool isQuestion,
+  required bool isSolved,
+  required bool hasPoll,
+  required bool pollIsClosed,
+  required bool hasLottery,
+  required bool lotteryIsDrawn,
+}) {
+  return [
+    if (isTop) 'Top',
+    if (isEssence) 'Essence',
+    if (isQuestion) isSolved ? 'Solved' : 'Question',
+    if (hasPoll) pollIsClosed ? 'Poll closed' : 'Poll',
+    if (hasLottery) lotteryIsDrawn ? 'Lottery drawn' : 'Lottery',
+  ];
 }

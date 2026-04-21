@@ -8,6 +8,10 @@ abstract class ForumRepository {
     required int pageSize,
     required ForumFeedSort sort,
   });
+
+  Future<ForumPostDetail> getPostDetail({
+    required String postId,
+  });
 }
 
 class HttpForumRepository implements ForumRepository {
@@ -38,6 +42,24 @@ class HttpForumRepository implements ForumRepository {
     return apiClient.get(
       uri: uri,
       decode: ForumPostPage.fromJson,
+    );
+  }
+
+  @override
+  Future<ForumPostDetail> getPostDetail({
+    required String postId,
+  }) {
+    final normalizedPostId = postId.trim();
+    final uri = endpoints.resolveApi(
+      '/api/v1/Post/GetById/${Uri.encodeComponent(normalizedPostId)}',
+      queryParameters: const {
+        'answerSort': 'default',
+      },
+    );
+
+    return apiClient.get(
+      uri: uri,
+      decode: ForumPostDetail.fromJson,
     );
   }
 }
