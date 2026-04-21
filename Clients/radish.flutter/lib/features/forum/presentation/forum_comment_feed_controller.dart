@@ -129,6 +129,18 @@ class ForumCommentFeedController extends ChangeNotifier {
     await _loadInitial(postId);
   }
 
+  Future<void> loadPage(int pageIndex) async {
+    final postId = _state.postId;
+    if (postId == null || postId.isEmpty || pageIndex < 1) {
+      return;
+    }
+
+    await _loadInitial(
+      postId,
+      pageIndex: pageIndex,
+    );
+  }
+
   Future<void> loadMore() async {
     final postId = _state.postId;
     if (postId == null ||
@@ -186,12 +198,12 @@ class ForumCommentFeedController extends ChangeNotifier {
     }
   }
 
-  Future<void> _loadInitial(String postId) async {
+  Future<void> _loadInitial(String postId, {int pageIndex = 1}) async {
     final requestVersion = ++_requestVersion;
     _state = _state.copyWith(
       status: ForumCommentFeedStatus.loading,
       postId: postId,
-      pageIndex: 0,
+      pageIndex: pageIndex > 1 ? pageIndex : 0,
       pageCount: 0,
       totalCount: 0,
       comments: const <ForumCommentSummary>[],
@@ -204,7 +216,7 @@ class ForumCommentFeedController extends ChangeNotifier {
     try {
       final page = await _repository.getRootCommentsPage(
         postId: postId,
-        pageIndex: 1,
+        pageIndex: pageIndex,
         pageSize: _state.pageSize,
       );
 

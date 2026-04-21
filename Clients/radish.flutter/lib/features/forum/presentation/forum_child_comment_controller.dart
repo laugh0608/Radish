@@ -130,6 +130,69 @@ class ForumChildCommentController extends ChangeNotifier {
     await _loadInitial();
   }
 
+  Future<void> loadPage(int pageIndex) async {
+    if (pageIndex < 1) {
+      return;
+    }
+
+    final requestVersion = ++_requestVersion;
+    _state = _state.copyWith(
+      status: ForumChildCommentStatus.loading,
+      parentId: parentId,
+      pageIndex: pageIndex > 1 ? pageIndex : 0,
+      comments: const <ForumCommentSummary>[],
+      clearError: true,
+      isLoadingMore: false,
+      clearLoadMoreError: true,
+    );
+    notifyListeners();
+
+    try {
+      final aggregatedComments = <ForumCommentSummary>[];
+      var totalCount = 0;
+      var lastLoadedPageIndex = 0;
+
+      for (var currentPage = 1; currentPage <= pageIndex; currentPage += 1) {
+        final page = await _repository.getChildCommentsPage(
+          parentId: parentId,
+          pageIndex: currentPage,
+          pageSize: _state.pageSize,
+        );
+
+        if (requestVersion != _requestVersion) {
+          return;
+        }
+
+        totalCount = page.totalCount;
+        lastLoadedPageIndex = page.pageIndex;
+        final existingIds = aggregatedComments.map((item) => item.id).toSet();
+        final appended = page.comments
+            .where((item) => !existingIds.contains(item.id))
+            .toList(growable: false);
+        aggregatedComments.addAll(appended);
+      }
+
+      _state = _state.copyWith(
+        status: ForumChildCommentStatus.ready,
+        parentId: parentId,
+        pageIndex: aggregatedComments.isEmpty ? 0 : lastLoadedPageIndex,
+        totalCount: totalCount,
+        comments: aggregatedComments,
+        clearError: true,
+        isLoadingMore: false,
+        clearLoadMoreError: true,
+      );
+      notifyListeners();
+    } on RadishApiClientException catch (error) {
+      _setInitialError(requestVersion, error.message);
+    } on FormatException catch (error) {
+      _setInitialError(
+        requestVersion,
+        'Unexpected child comments payload: ${error.message}',
+      );
+    }
+  }
+
   Future<void> loadMore() async {
     if (_state.isLoading ||
         !_state.isReady ||
@@ -185,12 +248,12 @@ class ForumChildCommentController extends ChangeNotifier {
     }
   }
 
-  Future<void> _loadInitial() async {
+  Future<void> _loadInitial({int pageIndex = 1}) async {
     final requestVersion = ++_requestVersion;
     _state = _state.copyWith(
       status: ForumChildCommentStatus.loading,
       parentId: parentId,
-      pageIndex: 0,
+      pageIndex: pageIndex > 1 ? pageIndex : 0,
       comments: const <ForumCommentSummary>[],
       clearError: true,
       isLoadingMore: false,
@@ -201,7 +264,7 @@ class ForumChildCommentController extends ChangeNotifier {
     try {
       final page = await _repository.getChildCommentsPage(
         parentId: parentId,
-        pageIndex: 1,
+        pageIndex: pageIndex,
         pageSize: _state.pageSize,
       );
 

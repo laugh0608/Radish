@@ -329,6 +329,40 @@ class ForumChildCommentPage {
   final List<ForumCommentSummary> comments;
 }
 
+class ForumCommentNavigationLocation {
+  const ForumCommentNavigationLocation({
+    required this.commentId,
+    required this.postId,
+    required this.rootCommentId,
+    required this.isRootComment,
+    required this.rootPageIndex,
+    this.parentCommentId,
+    this.childPageIndex,
+  });
+
+  factory ForumCommentNavigationLocation.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+
+    return ForumCommentNavigationLocation(
+      commentId: _readRequiredId(map, 'voCommentId'),
+      postId: _readRequiredId(map, 'voPostId'),
+      rootCommentId: _readRequiredId(map, 'voRootCommentId'),
+      parentCommentId: _readString(map['voParentCommentId']),
+      isRootComment: _readBool(map['voIsRootComment']),
+      rootPageIndex: _readInt(map['voRootPageIndex']) ?? 1,
+      childPageIndex: _readInt(map['voChildPageIndex']),
+    );
+  }
+
+  final String commentId;
+  final String postId;
+  final String rootCommentId;
+  final String? parentCommentId;
+  final bool isRootComment;
+  final int rootPageIndex;
+  final int? childPageIndex;
+}
+
 class ForumCommentPage {
   const ForumCommentPage({
     required this.page,

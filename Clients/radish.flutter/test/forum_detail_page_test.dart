@@ -167,6 +167,38 @@ void main() {
     await tester.pumpAndSettle();
     expect(openedUserId, 'user-1');
   });
+
+  testWidgets('navigates directly to target child comment by commentId',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: _PagedForumRepository(),
+          postId: 'post-42',
+          commentId: 'reply-2',
+          initialTitle: 'Forum detail handoff',
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+    final scrollable = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(
+      find.text('Child comment two'),
+      200,
+      scrollable: scrollable,
+    );
+
+    expect(find.text('Loaded 2 / 2 replies'), findsOneWidget);
+    expect(find.text('Child comment two'), findsOneWidget);
+  });
 }
 
 abstract class _BaseForumRepository implements ForumRepository {
@@ -216,6 +248,24 @@ abstract class _BaseForumRepository implements ForumRepository {
       pageSize: 5,
       totalCount: 0,
       comments: [],
+    );
+  }
+
+  @override
+  Future<ForumCommentNavigationLocation> getCommentNavigation({
+    required String postId,
+    required String commentId,
+    required int rootPageSize,
+    required int childPageSize,
+  }) async {
+    return ForumCommentNavigationLocation(
+      commentId: commentId,
+      postId: postId,
+      rootCommentId: 'comment-1',
+      parentCommentId: 'comment-1',
+      isRootComment: false,
+      rootPageIndex: 1,
+      childPageIndex: 2,
     );
   }
 }

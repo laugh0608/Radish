@@ -429,6 +429,22 @@ class _FakeForumRepository implements ForumRepository {
       comments: [],
     );
   }
+
+  @override
+  Future<ForumCommentNavigationLocation> getCommentNavigation({
+    required String postId,
+    required String commentId,
+    required int rootPageSize,
+    required int childPageSize,
+  }) async {
+    return ForumCommentNavigationLocation(
+      commentId: commentId,
+      postId: postId,
+      rootCommentId: commentId,
+      isRootComment: true,
+      rootPageIndex: 1,
+    );
+  }
 }
 
 class _SeededForumRepository implements ForumRepository {
@@ -559,6 +575,34 @@ class _SeededForumRepository implements ForumRepository {
       pageSize: 5,
       totalCount: 0,
       comments: [],
+    );
+  }
+
+  @override
+  Future<ForumCommentNavigationLocation> getCommentNavigation({
+    required String postId,
+    required String commentId,
+    required int rootPageSize,
+    required int childPageSize,
+  }) async {
+    if (commentId == 'reply-1') {
+      return const ForumCommentNavigationLocation(
+        commentId: 'reply-1',
+        postId: 'post-42',
+        rootCommentId: 'comment-1',
+        parentCommentId: 'comment-1',
+        isRootComment: false,
+        rootPageIndex: 1,
+        childPageIndex: 1,
+      );
+    }
+
+    return ForumCommentNavigationLocation(
+      commentId: commentId,
+      postId: postId,
+      rootCommentId: 'comment-1',
+      isRootComment: true,
+      rootPageIndex: 1,
     );
   }
 }

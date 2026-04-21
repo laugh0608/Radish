@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/config/app_environment.dart';
+import '../../../core/network/radish_api_client.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
 import '../../../shared/widgets/read_only_markdown_view.dart';
 import '../data/forum_models.dart';
@@ -15,6 +16,7 @@ class ForumDetailPage extends StatefulWidget {
     required this.repository,
     required this.postId,
     this.initialTitle,
+    this.commentId,
     this.onOpenProfileUser,
     super.key,
   });
@@ -23,6 +25,7 @@ class ForumDetailPage extends StatefulWidget {
   final ForumRepository repository;
   final String postId;
   final String? initialTitle;
+  final String? commentId;
   final ValueChanged<String>? onOpenProfileUser;
 
   @override
@@ -32,6 +35,14 @@ class ForumDetailPage extends StatefulWidget {
 class _ForumDetailPageState extends State<ForumDetailPage> {
   late ForumDetailController _controller;
   late ForumCommentFeedController _commentController;
+  final ScrollController _scrollController = ScrollController();
+  final Map<String, GlobalKey> _commentKeys = <String, GlobalKey>{};
+  String? _targetCommentId;
+  String? _expandedRootCommentId;
+  int? _expandedChildPageIndex;
+  String? _navigationNotice;
+  String? _pendingNavigationSignature;
+  bool _isNavigatingToComment = false;
 
   @override
   void initState() {
@@ -44,6 +55,12 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
     );
     _controller.openPost(widget.postId);
     _commentController.openPost(widget.postId);
+    _targetCommentId = widget.commentId?.trim().isEmpty == true
+        ? null
+        : widget.commentId?.trim();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startCommentNavigationIfNeeded();
+    });
   }
 
   @override
@@ -68,12 +85,27 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
       _controller.openPost(widget.postId);
       _commentController.openPost(widget.postId);
     }
+
+    final nextCommentId = widget.commentId?.trim();
+    if (oldWidget.commentId != widget.commentId) {
+      _targetCommentId = (nextCommentId == null || nextCommentId.isEmpty)
+          ? null
+          : nextCommentId;
+      _expandedRootCommentId = null;
+      _expandedChildPageIndex = null;
+      _navigationNotice = null;
+      _pendingNavigationSignature = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _startCommentNavigationIfNeeded();
+      });
+    }
   }
 
   @override
   void dispose() {
     _controller.dispose();
     _commentController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -87,12 +119,17 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
         final title = detail?.title ?? widget.initialTitle ?? 'Forum detail';
         final commentState = _commentController.state;
 
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _scrollToPendingCommentIfNeeded();
+        });
+
         return Scaffold(
           appBar: AppBar(
             title: Text(title),
           ),
           body: SafeArea(
             child: ListView(
+              controller: _scrollController,
               padding: const EdgeInsets.all(20),
               children: [
                 Text(
@@ -124,6 +161,11 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                   ],
                 ),
                 const SizedBox(height: 16),
+                if (_navigationNotice != null &&
+                    _navigationNotice!.isNotEmpty) ...[
+                  _ForumNavigationNotice(message: _navigationNotice!),
+                  const SizedBox(height: 16),
+                ],
                 Align(
                   alignment: Alignment.centerLeft,
                   child: FilledButton.tonalIcon(
@@ -147,6 +189,10 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                     commentState: commentState,
                     onRetryComments: _commentController.refresh,
                     onLoadMoreComments: _commentController.loadMore,
+                    targetCommentId: _targetCommentId,
+                    expandedRootCommentId: _expandedRootCommentId,
+                    expandedChildPageIndex: _expandedChildPageIndex,
+                    registerCommentKey: _registerCommentKey,
                     onOpenProfileUser: widget.onOpenProfileUser,
                   ),
               ],
@@ -155,6 +201,111 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
         );
       },
     );
+  }
+
+  void _registerCommentKey(String commentId, GlobalKey key) {
+    _commentKeys[commentId] = key;
+  }
+
+  Future<void> _startCommentNavigationIfNeeded() async {
+    final commentId = _targetCommentId;
+    if (!mounted ||
+        commentId == null ||
+        commentId.isEmpty ||
+        _isNavigatingToComment) {
+      return;
+    }
+
+    final postId = widget.postId.trim();
+    if (postId.isEmpty) {
+      return;
+    }
+
+    _isNavigatingToComment = true;
+    try {
+      final navigation = await widget.repository.getCommentNavigation(
+        postId: postId,
+        commentId: commentId,
+        rootPageSize: _commentController.state.pageSize,
+        childPageSize: 5,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      await _commentController.loadPage(navigation.rootPageIndex);
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _expandedRootCommentId = navigation.isRootComment
+            ? navigation.rootCommentId
+            : (navigation.parentCommentId ?? navigation.rootCommentId);
+        _expandedChildPageIndex =
+            navigation.isRootComment ? null : navigation.childPageIndex;
+        _targetCommentId = navigation.commentId;
+        _navigationNotice = null;
+        _pendingNavigationSignature =
+            '${navigation.commentId}:${navigation.rootPageIndex}:${navigation.childPageIndex ?? 0}';
+      });
+    } on RadishApiClientException {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _navigationNotice =
+            'Target comment could not be located yet. The post detail is open instead.';
+        _expandedRootCommentId = null;
+        _expandedChildPageIndex = null;
+        _pendingNavigationSignature = null;
+      });
+    } on FormatException {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _navigationNotice =
+            'Target comment could not be located yet. The post detail is open instead.';
+        _expandedRootCommentId = null;
+        _expandedChildPageIndex = null;
+        _pendingNavigationSignature = null;
+      });
+    } finally {
+      _isNavigatingToComment = false;
+    }
+  }
+
+  void _scrollToPendingCommentIfNeeded() {
+    final signature = _pendingNavigationSignature;
+    final targetCommentId = _targetCommentId;
+    if (!mounted ||
+        signature == null ||
+        signature.isEmpty ||
+        targetCommentId == null ||
+        targetCommentId.isEmpty) {
+      return;
+    }
+
+    final key = _commentKeys[targetCommentId];
+    final context = key?.currentContext;
+    if (context == null) {
+      return;
+    }
+
+    Scrollable.ensureVisible(
+      context,
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeInOut,
+      alignment: 0.25,
+    );
+
+    setState(() {
+      _pendingNavigationSignature = null;
+    });
   }
 }
 
@@ -224,6 +375,10 @@ class _ForumDetailContent extends StatelessWidget {
     required this.commentState,
     required this.onRetryComments,
     required this.onLoadMoreComments,
+    required this.targetCommentId,
+    required this.expandedRootCommentId,
+    required this.expandedChildPageIndex,
+    required this.registerCommentKey,
     required this.onOpenProfileUser,
   });
 
@@ -232,6 +387,10 @@ class _ForumDetailContent extends StatelessWidget {
   final ForumCommentFeedState commentState;
   final VoidCallback onRetryComments;
   final VoidCallback onLoadMoreComments;
+  final String? targetCommentId;
+  final String? expandedRootCommentId;
+  final int? expandedChildPageIndex;
+  final void Function(String commentId, GlobalKey key) registerCommentKey;
   final ValueChanged<String>? onOpenProfileUser;
 
   @override
@@ -363,6 +522,10 @@ class _ForumDetailContent extends StatelessWidget {
               state: commentState,
               onRetry: onRetryComments,
               onLoadMore: onLoadMoreComments,
+              targetCommentId: targetCommentId,
+              expandedRootCommentId: expandedRootCommentId,
+              expandedChildPageIndex: expandedChildPageIndex,
+              registerCommentKey: registerCommentKey,
               onOpenProfileUser: onOpenProfileUser,
             ),
           ],
@@ -378,6 +541,10 @@ class _ForumCommentSection extends StatelessWidget {
     required this.state,
     required this.onRetry,
     required this.onLoadMore,
+    required this.targetCommentId,
+    required this.expandedRootCommentId,
+    required this.expandedChildPageIndex,
+    required this.registerCommentKey,
     required this.onOpenProfileUser,
   });
 
@@ -385,6 +552,10 @@ class _ForumCommentSection extends StatelessWidget {
   final ForumCommentFeedState state;
   final VoidCallback onRetry;
   final VoidCallback onLoadMore;
+  final String? targetCommentId;
+  final String? expandedRootCommentId;
+  final int? expandedChildPageIndex;
+  final void Function(String commentId, GlobalKey key) registerCommentKey;
   final ValueChanged<String>? onOpenProfileUser;
 
   @override
@@ -428,6 +599,10 @@ class _ForumCommentSection extends StatelessWidget {
             _ForumCommentCard(
               repository: repository,
               comment: comment,
+              targetCommentId: targetCommentId,
+              expandedRootCommentId: expandedRootCommentId,
+              expandedChildPageIndex: expandedChildPageIndex,
+              registerCommentKey: registerCommentKey,
               onOpenProfileUser: onOpenProfileUser,
             ),
             const SizedBox(height: 12),
@@ -533,18 +708,30 @@ class _ForumCommentCard extends StatelessWidget {
   const _ForumCommentCard({
     required this.repository,
     required this.comment,
+    required this.targetCommentId,
+    required this.expandedRootCommentId,
+    required this.expandedChildPageIndex,
+    required this.registerCommentKey,
     required this.onOpenProfileUser,
   });
 
   final ForumRepository repository;
   final ForumCommentSummary comment;
+  final String? targetCommentId;
+  final String? expandedRootCommentId;
+  final int? expandedChildPageIndex;
+  final void Function(String commentId, GlobalKey key) registerCommentKey;
   final ValueChanged<String>? onOpenProfileUser;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
+    final key = GlobalKey();
+    registerCommentKey(comment.id, key);
+
     return Card(
+      key: key,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -625,6 +812,12 @@ class _ForumCommentCard extends StatelessWidget {
               _ForumChildCommentSection(
                 repository: repository,
                 parentComment: comment,
+                targetCommentId: targetCommentId,
+                forceExpanded: expandedRootCommentId == comment.id,
+                initialChildPageIndex: expandedRootCommentId == comment.id
+                    ? expandedChildPageIndex
+                    : null,
+                registerCommentKey: registerCommentKey,
                 onOpenProfileUser: onOpenProfileUser,
               ),
             ],
@@ -639,11 +832,19 @@ class _ForumChildCommentSection extends StatefulWidget {
   const _ForumChildCommentSection({
     required this.repository,
     required this.parentComment,
+    required this.targetCommentId,
+    required this.forceExpanded,
+    required this.initialChildPageIndex,
+    required this.registerCommentKey,
     required this.onOpenProfileUser,
   });
 
   final ForumRepository repository;
   final ForumCommentSummary parentComment;
+  final String? targetCommentId;
+  final bool forceExpanded;
+  final int? initialChildPageIndex;
+  final void Function(String commentId, GlobalKey key) registerCommentKey;
   final ValueChanged<String>? onOpenProfileUser;
 
   @override
@@ -659,7 +860,13 @@ class _ForumChildCommentSectionState extends State<_ForumChildCommentSection> {
   void initState() {
     super.initState();
     _controller = _buildController();
-    _isExpanded = widget.parentComment.children.isNotEmpty;
+    _isExpanded =
+        widget.forceExpanded || widget.parentComment.children.isNotEmpty;
+    if (_isExpanded) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadInitialChildPageIfNeeded();
+      });
+    }
   }
 
   @override
@@ -671,10 +878,18 @@ class _ForumChildCommentSectionState extends State<_ForumChildCommentSection> {
         oldWidget.parentComment.childrenTotal !=
             widget.parentComment.childrenTotal ||
         oldWidget.parentComment.children.length !=
-            widget.parentComment.children.length) {
+            widget.parentComment.children.length ||
+        oldWidget.forceExpanded != widget.forceExpanded ||
+        oldWidget.initialChildPageIndex != widget.initialChildPageIndex) {
       _controller.dispose();
       _controller = _buildController();
-      _isExpanded = widget.parentComment.children.isNotEmpty;
+      _isExpanded =
+          widget.forceExpanded || widget.parentComment.children.isNotEmpty;
+      if (_isExpanded) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _loadInitialChildPageIfNeeded();
+        });
+      }
     }
   }
 
@@ -701,8 +916,18 @@ class _ForumChildCommentSectionState extends State<_ForumChildCommentSection> {
     });
 
     if (nextExpanded) {
-      await _controller.loadInitialIfNeeded();
+      await _loadInitialChildPageIfNeeded();
     }
+  }
+
+  Future<void> _loadInitialChildPageIfNeeded() async {
+    final targetPage = widget.initialChildPageIndex;
+    if (targetPage != null && targetPage > 1) {
+      await _controller.loadPage(targetPage);
+      return;
+    }
+
+    await _controller.loadInitialIfNeeded();
   }
 
   @override
@@ -764,6 +989,8 @@ class _ForumChildCommentSectionState extends State<_ForumChildCommentSection> {
                   for (final reply in state.comments) ...[
                     _ForumChildCommentCard(
                       comment: reply,
+                      targetCommentId: widget.targetCommentId,
+                      registerCommentKey: widget.registerCommentKey,
                       onOpenProfileUser: widget.onOpenProfileUser,
                     ),
                     const SizedBox(height: 12),
@@ -817,15 +1044,23 @@ class _ForumChildCommentSectionState extends State<_ForumChildCommentSection> {
 class _ForumChildCommentCard extends StatelessWidget {
   const _ForumChildCommentCard({
     required this.comment,
+    required this.targetCommentId,
+    required this.registerCommentKey,
     required this.onOpenProfileUser,
   });
 
   final ForumCommentSummary comment;
+  final String? targetCommentId;
+  final void Function(String commentId, GlobalKey key) registerCommentKey;
   final ValueChanged<String>? onOpenProfileUser;
 
   @override
   Widget build(BuildContext context) {
+    final key = GlobalKey();
+    registerCommentKey(comment.id, key);
+
     return DecoratedBox(
+      key: key,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
@@ -882,6 +1117,31 @@ class _ForumChildCommentCard extends StatelessWidget {
             ],
             const SizedBox(height: 10),
             SelectableText(comment.content),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ForumNavigationNotice extends StatelessWidget {
+  const _ForumNavigationNotice({
+    required this.message,
+  });
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Theme.of(context).colorScheme.secondaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            const Icon(Icons.info_outline),
+            const SizedBox(width: 12),
+            Expanded(child: Text(message)),
           ],
         ),
       ),

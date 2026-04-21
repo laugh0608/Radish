@@ -25,6 +25,13 @@ abstract class ForumRepository {
     required int pageIndex,
     required int pageSize,
   });
+
+  Future<ForumCommentNavigationLocation> getCommentNavigation({
+    required String postId,
+    required String commentId,
+    required int rootPageSize,
+    required int childPageSize,
+  });
 }
 
 class HttpForumRepository implements ForumRepository {
@@ -120,6 +127,31 @@ class HttpForumRepository implements ForumRepository {
     return apiClient.get(
       uri: uri,
       decode: ForumChildCommentPage.fromJson,
+    );
+  }
+
+  @override
+  Future<ForumCommentNavigationLocation> getCommentNavigation({
+    required String postId,
+    required String commentId,
+    required int rootPageSize,
+    required int childPageSize,
+  }) {
+    final normalizedPostId = postId.trim();
+    final normalizedCommentId = commentId.trim();
+    final uri = endpoints.resolveApi(
+      '/api/v1/Comment/GetNavigation',
+      queryParameters: {
+        'postId': normalizedPostId,
+        'commentId': normalizedCommentId,
+        'rootPageSize': rootPageSize.toString(),
+        'childPageSize': childPageSize.toString(),
+      },
+    );
+
+    return apiClient.get(
+      uri: uri,
+      decode: ForumCommentNavigationLocation.fromJson,
     );
   }
 }

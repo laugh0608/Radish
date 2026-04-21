@@ -161,6 +161,22 @@ class _SuccessForumRepository implements ForumRepository {
       comments: [],
     );
   }
+
+  @override
+  Future<ForumCommentNavigationLocation> getCommentNavigation({
+    required String postId,
+    required String commentId,
+    required int rootPageSize,
+    required int childPageSize,
+  }) async {
+    return ForumCommentNavigationLocation(
+      commentId: commentId,
+      postId: postId,
+      rootCommentId: commentId,
+      isRootComment: true,
+      rootPageIndex: 1,
+    );
+  }
 }
 
 class _FailingForumRepository implements ForumRepository {
@@ -197,5 +213,16 @@ class _FailingForumRepository implements ForumRepository {
     required int pageSize,
   }) {
     throw const RadishApiClientException('Replies API is unreachable');
+  }
+
+  @override
+  Future<ForumCommentNavigationLocation> getCommentNavigation({
+    required String postId,
+    required String commentId,
+    required int rootPageSize,
+    required int childPageSize,
+  }) {
+    throw const RadishApiClientException(
+        'Comment navigation API is unreachable');
   }
 }
