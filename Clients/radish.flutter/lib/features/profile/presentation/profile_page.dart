@@ -77,22 +77,24 @@ class _ProfilePageState extends State<ProfilePage> {
         final sessionState = widget.sessionController.state;
         final session = sessionState.session;
         final profileState = _controller.state;
+        final hasTargetUser = sessionState.isAuthenticated ||
+            (widget.guestUserId != null && widget.guestUserId!.isNotEmpty);
 
         return ListView(
           padding: const EdgeInsets.all(20),
           children: [
             Text(
-              'Profile feed',
+              'Profile',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
             Text(
-              'Profile now attaches the restored session to the existing public profile contract. This batch includes persisted session recovery and refresh fallback, while account editing, explicit sign-out, and full login UI remain deferred.',
+              'Profile now reads the existing public profile, stats, and latest public content contracts inside the Flutter shell. Editing, follow management, and full account workflows stay outside this batch.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 20),
             PhaseScopeCard(
-              title: 'Session status',
+              title: 'Profile contract',
               items: [
                 sessionState.isAuthenticated
                     ? 'Restored session for user ${session!.userId}'
@@ -102,21 +104,17 @@ class _ProfilePageState extends State<ProfilePage> {
                         : sessionState.lastErrorMessage == null
                             ? 'No reusable session was found, profile stays in guest mode'
                             : 'Stored session expired and refresh failed, profile returned to guest mode',
-                sessionState.isAuthenticated
-                    ? 'Source API: /api/v1/User/GetPublicProfile?userId=${session!.userId}'
-                    : widget.guestUserId != null &&
-                            widget.guestUserId!.trim().isNotEmpty
-                        ? 'Source API: /api/v1/User/GetPublicProfile?userId=${widget.guestUserId}'
-                        : 'Public profile reading is available once a target user id is provided',
+                hasTargetUser
+                    ? 'Source APIs: /api/v1/User/GetPublicProfile, /api/v1/User/GetUserStats, /api/v1/Post/GetUserPosts, /api/v1/Comment/GetUserComments'
+                    : 'Public profile reading is available once a target user id is provided',
                 if (sessionState.lastErrorMessage != null &&
                     sessionState.lastErrorMessage!.isNotEmpty)
                   'Last restore error: ${sessionState.lastErrorMessage}',
-                'Scope: public profile summary only, no account governance actions',
+                'Scope: public profile, public stats, and recent public posts/comments only',
               ],
             ),
             const SizedBox(height: 16),
-            if (sessionState.isAuthenticated ||
-                (widget.guestUserId != null && widget.guestUserId!.isNotEmpty))
+            if (hasTargetUser)
               Align(
                 alignment: Alignment.centerLeft,
                 child: FilledButton.tonalIcon(
@@ -126,11 +124,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   label: const Text('Refresh profile'),
                 ),
               ),
-            if (sessionState.isAuthenticated ||
-                (widget.guestUserId != null && widget.guestUserId!.isNotEmpty))
-              const SizedBox(height: 16),
-            if (!sessionState.isAuthenticated &&
-                (widget.guestUserId == null || widget.guestUserId!.isEmpty))
+            if (hasTargetUser) const SizedBox(height: 16),
+            if (!hasTargetUser)
               _ProfileGuestBoundary(
                 lastErrorMessage: sessionState.lastErrorMessage,
               )
@@ -143,7 +138,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 onRetry: _controller.refresh,
               )
             else if (profileState.isReady && profileState.profile != null)
-              _PublicProfileCard(profile: profileState.profile!)
+              _PublicProfileContent(
+                profile: profileState.profile!,
+                stats: profileState.stats,
+                posts: profileState.posts,
+                comments: profileState.comments,
+              )
             else
               const _ProfileLoadingState(),
           ],
@@ -234,8 +234,39 @@ class _ProfileErrorState extends StatelessWidget {
   }
 }
 
-class _PublicProfileCard extends StatelessWidget {
-  const _PublicProfileCard({
+class _PublicProfileContent extends StatelessWidget {
+  const _PublicProfileContent({
+    required this.profile,
+    required this.stats,
+    required this.posts,
+    required this.comments,
+  });
+
+  final PublicProfileSummary profile;
+  final PublicProfileStats? stats;
+  final List<PublicProfilePostSummary> posts;
+  final List<PublicProfileCommentSummary> comments;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _PublicProfileHero(profile: profile),
+        const SizedBox(height: 16),
+        _ProfileStatsCard(stats: stats),
+        const SizedBox(height: 16),
+        const _ProfileReadingGuide(),
+        const SizedBox(height: 16),
+        _RecentPostsCard(posts: posts),
+        const SizedBox(height: 16),
+        _RecentCommentsCard(comments: comments),
+      ],
+    );
+  }
+}
+
+class _PublicProfileHero extends StatelessWidget {
+  const _PublicProfileHero({
     required this.profile,
   });
 
@@ -252,11 +283,16 @@ class _PublicProfileCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const Chip(
+              label: Text('Read-only public profile'),
+              visualDensity: VisualDensity.compact,
+            ),
+            const SizedBox(height: 16),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 CircleAvatar(
-                  radius: 30,
+                  radius: 32,
                   backgroundImage:
                       avatarUrl == null ? null : NetworkImage(avatarUrl),
                   child: avatarUrl == null
@@ -270,11 +306,16 @@ class _PublicProfileCard extends StatelessWidget {
                     children: [
                       Text(
                         profile.displayTitle,
-                        style: textTheme.titleLarge,
+                        style: textTheme.headlineSmall,
                       ),
                       const SizedBox(height: 6),
                       Text(
                         '@${profile.userName}',
+                        style: textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Joined ${_formatDate(profile.createTime)}',
                         style: textTheme.bodyMedium,
                       ),
                     ],
@@ -291,13 +332,13 @@ class _PublicProfileCard extends StatelessWidget {
                   icon: Icons.badge_outlined,
                   text: 'User ${profile.userId}',
                 ),
-                _ProfileMetaText(
-                  icon: Icons.schedule_outlined,
-                  text: 'Joined ${_formatDate(profile.createTime)}',
-                ),
                 const _ProfileMetaText(
                   icon: Icons.visibility_outlined,
                   text: 'Public profile only',
+                ),
+                const _ProfileMetaText(
+                  icon: Icons.person_search_outlined,
+                  text: 'No follow or edit action in this batch',
                 ),
               ],
             ),
@@ -315,22 +356,357 @@ class _PublicProfileCard extends StatelessWidget {
 
     return trimmed.characters.first.toUpperCase();
   }
+}
 
-  String _formatDate(String value) {
-    if (value.isEmpty) {
-      return 'unknown time';
+class _ProfileStatsCard extends StatelessWidget {
+  const _ProfileStatsCard({
+    required this.stats,
+  });
+
+  final PublicProfileStats? stats;
+
+  @override
+  Widget build(BuildContext context) {
+    final stats = this.stats;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Public activity',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Keep public reading focused on visible participation signals before deeper account-only actions.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            GridView.count(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              childAspectRatio: 1.7,
+              children: [
+                _StatTile(
+                  label: 'Posts',
+                  value: '${stats?.postCount ?? 0}',
+                ),
+                _StatTile(
+                  label: 'Comments',
+                  value: '${stats?.commentCount ?? 0}',
+                ),
+                _StatTile(
+                  label: 'Total likes',
+                  value: '${stats?.totalLikeCount ?? 0}',
+                ),
+                _StatTile(
+                  label: 'Post vs comment likes',
+                  value:
+                      '${stats?.postLikeCount ?? 0} / ${stats?.commentLikeCount ?? 0}',
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatTile extends StatelessWidget {
+  const _StatTile({
+    required this.label,
+    required this.value,
+  });
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileReadingGuide extends StatelessWidget {
+  const _ProfileReadingGuide();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Reading guide',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 12),
+            const _GuideRow(
+              title: 'Read here first',
+              body:
+                  'Basic identity, join time, public counts, and recent visible activity.',
+            ),
+            const SizedBox(height: 10),
+            const _GuideRow(
+              title: 'Continue next',
+              body:
+                  'Forum tab and deeper public reading flows stay separate from this profile surface.',
+            ),
+            const SizedBox(height: 10),
+            const _GuideRow(
+              title: 'Boundary',
+              body:
+                  'Edit profile, follow management, browse history, and workspace actions remain outside this batch.',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GuideRow extends StatelessWidget {
+  const _GuideRow({
+    required this.title,
+    required this.body,
+  });
+
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(top: 6),
+          child: Icon(Icons.circle, size: 8),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 4),
+              Text(body),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RecentPostsCard extends StatelessWidget {
+  const _RecentPostsCard({
+    required this.posts,
+  });
+
+  final List<PublicProfilePostSummary> posts;
+
+  @override
+  Widget build(BuildContext context) {
+    return _ProfileSectionCard(
+      title: 'Recent public posts',
+      description:
+          'This batch only previews the latest readable posts. Post detail jumps can be wired after the profile page stabilizes.',
+      emptyText: 'No public posts are available for this user yet.',
+      children: posts
+          .map(
+            (post) => _ContentPreviewTile(
+              title: post.title,
+              subtitle: _buildPostExcerpt(post),
+              meta:
+                  '${post.likeCount} likes · ${post.commentCount} comments · ${post.viewCount} views',
+              chips: [
+                if (post.categoryName != null && post.categoryName!.isNotEmpty)
+                  post.categoryName!,
+                _formatDate(post.createTime),
+              ],
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  String _buildPostExcerpt(PublicProfilePostSummary post) {
+    final summary = post.summary?.trim();
+    if (summary != null && summary.isNotEmpty) {
+      return summary;
     }
 
-    final parsed = DateTime.tryParse(value);
-    if (parsed == null) {
-      return value;
+    final content = post.content.replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (content.isEmpty) {
+      return 'Public post without summary.';
     }
 
-    final local = parsed.toLocal();
-    final year = local.year.toString().padLeft(4, '0');
-    final month = local.month.toString().padLeft(2, '0');
-    final day = local.day.toString().padLeft(2, '0');
-    return '$year-$month-$day';
+    return content.length > 120 ? '${content.substring(0, 120)}...' : content;
+  }
+}
+
+class _RecentCommentsCard extends StatelessWidget {
+  const _RecentCommentsCard({
+    required this.comments,
+  });
+
+  final List<PublicProfileCommentSummary> comments;
+
+  @override
+  Widget build(BuildContext context) {
+    return _ProfileSectionCard(
+      title: 'Recent public comments',
+      description:
+          'Comment previews stay read-only in this batch and keep reply context lightweight.',
+      emptyText: 'No public comments are available for this user yet.',
+      children: comments
+          .map(
+            (comment) => _ContentPreviewTile(
+              title: comment.replyToUserName == null ||
+                      comment.replyToUserName!.isEmpty
+                  ? 'Comment ${comment.id}'
+                  : 'Reply to @${comment.replyToUserName}',
+              subtitle: comment.content,
+              meta: '${comment.likeCount} likes',
+              chips: [
+                if (comment.replyToCommentSnapshot != null &&
+                    comment.replyToCommentSnapshot!.isNotEmpty)
+                  comment.replyToCommentSnapshot!,
+                _formatDate(comment.createTime),
+              ],
+            ),
+          )
+          .toList(),
+    );
+  }
+}
+
+class _ProfileSectionCard extends StatelessWidget {
+  const _ProfileSectionCard({
+    required this.title,
+    required this.description,
+    required this.emptyText,
+    required this.children,
+  });
+
+  final String title;
+  final String description;
+  final String emptyText;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            Text(description),
+            const SizedBox(height: 16),
+            if (children.isEmpty)
+              Text(emptyText)
+            else
+              for (final child in children) ...[
+                child,
+                if (child != children.last) const Divider(height: 24),
+              ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ContentPreviewTile extends StatelessWidget {
+  const _ContentPreviewTile({
+    required this.title,
+    required this.subtitle,
+    required this.meta,
+    required this.chips,
+  });
+
+  final String title;
+  final String subtitle;
+  final String meta;
+  final List<String> chips;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 6),
+        Text(subtitle),
+        const SizedBox(height: 8),
+        Text(
+          meta,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        if (chips.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: chips
+                .map(
+                  (chip) => Chip(
+                    label: Text(chip),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                )
+                .toList(),
+          ),
+        ],
+      ],
+    );
   }
 }
 
@@ -354,4 +730,21 @@ class _ProfileMetaText extends StatelessWidget {
       ],
     );
   }
+}
+
+String _formatDate(String value) {
+  if (value.isEmpty) {
+    return 'unknown time';
+  }
+
+  final parsed = DateTime.tryParse(value);
+  if (parsed == null) {
+    return value;
+  }
+
+  final local = parsed.toLocal();
+  final year = local.year.toString().padLeft(4, '0');
+  final month = local.month.toString().padLeft(2, '0');
+  final day = local.day.toString().padLeft(2, '0');
+  return '$year-$month-$day';
 }

@@ -321,6 +321,49 @@ class _FakeProfileRepository implements ProfileRepository {
       createTime: '2026-04-20T08:00:00Z',
     );
   }
+
+  @override
+  Future<PublicProfileStats> getPublicStats({
+    required String userId,
+  }) async {
+    return const PublicProfileStats(
+      postCount: 0,
+      commentCount: 0,
+      totalLikeCount: 0,
+      postLikeCount: 0,
+      commentLikeCount: 0,
+    );
+  }
+
+  @override
+  Future<PublicProfilePostPage> getPublicPosts({
+    required String userId,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const PublicProfilePostPage(
+      page: 1,
+      pageSize: 3,
+      dataCount: 0,
+      pageCount: 1,
+      posts: [],
+    );
+  }
+
+  @override
+  Future<PublicProfileCommentPage> getPublicComments({
+    required String userId,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const PublicProfileCommentPage(
+      page: 1,
+      pageSize: 3,
+      dataCount: 0,
+      pageCount: 1,
+      comments: [],
+    );
+  }
 }
 
 class _FakeSessionRefreshService extends SessionRefreshService {

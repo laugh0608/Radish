@@ -16,6 +16,9 @@ class ProfileState {
     required this.status,
     this.userId,
     this.profile,
+    this.stats,
+    this.posts = const <PublicProfilePostSummary>[],
+    this.comments = const <PublicProfileCommentSummary>[],
     this.errorMessage,
   });
 
@@ -27,6 +30,9 @@ class ProfileState {
   final ProfileStatus status;
   final String? userId;
   final PublicProfileSummary? profile;
+  final PublicProfileStats? stats;
+  final List<PublicProfilePostSummary> posts;
+  final List<PublicProfileCommentSummary> comments;
   final String? errorMessage;
 
   bool get isIdle => status == ProfileStatus.idle;
@@ -43,6 +49,12 @@ class ProfileState {
     bool clearUserId = false,
     PublicProfileSummary? profile,
     bool clearProfile = false,
+    PublicProfileStats? stats,
+    bool clearStats = false,
+    List<PublicProfilePostSummary>? posts,
+    bool clearPosts = false,
+    List<PublicProfileCommentSummary>? comments,
+    bool clearComments = false,
     String? errorMessage,
     bool clearError = false,
   }) {
@@ -50,6 +62,13 @@ class ProfileState {
       status: status ?? this.status,
       userId: clearUserId ? null : (userId ?? this.userId),
       profile: clearProfile ? null : (profile ?? this.profile),
+      stats: clearStats ? null : (stats ?? this.stats),
+      posts: clearPosts
+          ? const <PublicProfilePostSummary>[]
+          : (posts ?? this.posts),
+      comments: clearComments
+          ? const <PublicProfileCommentSummary>[]
+          : (comments ?? this.comments),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
@@ -97,21 +116,45 @@ class ProfileController extends ChangeNotifier {
     _state = _state.copyWith(
       status: ProfileStatus.loading,
       userId: userId,
+      clearStats: true,
+      clearPosts: true,
+      clearComments: true,
       clearError: true,
     );
     notifyListeners();
 
     try {
-      final profile = await _repository.getPublicProfile(userId: userId);
+      final results = await Future.wait<Object>([
+        _repository.getPublicProfile(userId: userId),
+        _repository.getPublicStats(userId: userId),
+        _repository.getPublicPosts(
+          userId: userId,
+          pageIndex: 1,
+          pageSize: 3,
+        ),
+        _repository.getPublicComments(
+          userId: userId,
+          pageIndex: 1,
+          pageSize: 3,
+        ),
+      ]);
 
       if (requestVersion != _requestVersion) {
         return;
       }
 
+      final profile = results[0] as PublicProfileSummary;
+      final stats = results[1] as PublicProfileStats;
+      final posts = (results[2] as PublicProfilePostPage).posts;
+      final comments = (results[3] as PublicProfileCommentPage).comments;
+
       _state = _state.copyWith(
         status: ProfileStatus.ready,
         userId: userId,
         profile: profile,
+        stats: stats,
+        posts: posts,
+        comments: comments,
         clearError: true,
       );
       notifyListeners();
