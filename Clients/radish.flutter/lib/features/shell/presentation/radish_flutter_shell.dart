@@ -73,6 +73,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell> {
           ForumPage(
             environment: widget.environment,
             repository: widget.forumRepository,
+            onOpenProfileUser: _openProfileUser,
           ),
           DocsPage(
             environment: widget.environment,

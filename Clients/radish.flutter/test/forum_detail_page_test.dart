@@ -110,6 +110,47 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('opens profile handoff from detail author and comment author',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    String? openedUserId;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: _PagedForumRepository(),
+          postId: 'post-42',
+          initialTitle: 'Forum detail handoff',
+          onOpenProfileUser: (userId) {
+            openedUserId = userId;
+          },
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('luobo').first);
+    await tester.pumpAndSettle();
+    expect(openedUserId, 'user-9');
+
+    final scrollable = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(
+      find.text('radish'),
+      200,
+      scrollable: scrollable,
+    );
+
+    await tester.tap(find.text('radish'));
+    await tester.pumpAndSettle();
+    expect(openedUserId, 'user-1');
+  });
 }
 
 abstract class _BaseForumRepository implements ForumRepository {

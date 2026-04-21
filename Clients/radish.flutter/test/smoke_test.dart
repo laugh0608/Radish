@@ -259,6 +259,42 @@ void main() {
     expect(find.text('/forum/post/post-42'), findsOneWidget);
     expect(find.text('Post body'), findsOneWidget);
   });
+
+  testWidgets('forum author handoff opens native public profile tab',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _SeededForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.tap(find.text('Forum'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('luobo').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Profile'), findsWidgets);
+    expect(find.text('Guest mode is reading public profile user-9'),
+        findsOneWidget);
+    expect(find.text('User user-9'), findsWidgets);
+  });
 }
 
 class _FakeDiscoverRepository implements DiscoverRepository {

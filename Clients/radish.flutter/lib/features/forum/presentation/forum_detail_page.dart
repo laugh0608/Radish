@@ -14,6 +14,7 @@ class ForumDetailPage extends StatefulWidget {
     required this.repository,
     required this.postId,
     this.initialTitle,
+    this.onOpenProfileUser,
     super.key,
   });
 
@@ -21,6 +22,7 @@ class ForumDetailPage extends StatefulWidget {
   final ForumRepository repository;
   final String postId;
   final String? initialTitle;
+  final ValueChanged<String>? onOpenProfileUser;
 
   @override
   State<ForumDetailPage> createState() => _ForumDetailPageState();
@@ -143,6 +145,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                     commentState: commentState,
                     onRetryComments: _commentController.refresh,
                     onLoadMoreComments: _commentController.loadMore,
+                    onOpenProfileUser: widget.onOpenProfileUser,
                   ),
               ],
             ),
@@ -218,12 +221,14 @@ class _ForumDetailContent extends StatelessWidget {
     required this.commentState,
     required this.onRetryComments,
     required this.onLoadMoreComments,
+    required this.onOpenProfileUser,
   });
 
   final ForumPostDetail detail;
   final ForumCommentFeedState commentState;
   final VoidCallback onRetryComments;
   final VoidCallback onLoadMoreComments;
+  final ValueChanged<String>? onOpenProfileUser;
 
   @override
   Widget build(BuildContext context) {
@@ -280,6 +285,9 @@ class _ForumDetailContent extends StatelessWidget {
                 _ForumDetailMetaText(
                   icon: Icons.person_outline,
                   text: detail.authorName ?? 'User ${detail.authorId}',
+                  onTap: onOpenProfileUser == null
+                      ? null
+                      : () => onOpenProfileUser!(detail.authorId),
                 ),
                 _ForumDetailMetaText(
                   icon: Icons.folder_outlined,
@@ -350,6 +358,7 @@ class _ForumDetailContent extends StatelessWidget {
               state: commentState,
               onRetry: onRetryComments,
               onLoadMore: onLoadMoreComments,
+              onOpenProfileUser: onOpenProfileUser,
             ),
           ],
         ),
@@ -363,11 +372,13 @@ class _ForumCommentSection extends StatelessWidget {
     required this.state,
     required this.onRetry,
     required this.onLoadMore,
+    required this.onOpenProfileUser,
   });
 
   final ForumCommentFeedState state;
   final VoidCallback onRetry;
   final VoidCallback onLoadMore;
+  final ValueChanged<String>? onOpenProfileUser;
 
   @override
   Widget build(BuildContext context) {
@@ -407,7 +418,10 @@ class _ForumCommentSection extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           for (final comment in state.comments) ...[
-            _ForumCommentCard(comment: comment),
+            _ForumCommentCard(
+              comment: comment,
+              onOpenProfileUser: onOpenProfileUser,
+            ),
             const SizedBox(height: 12),
           ],
           if (state.loadMoreErrorMessage != null &&
@@ -510,9 +524,11 @@ class _ForumCommentErrorState extends StatelessWidget {
 class _ForumCommentCard extends StatelessWidget {
   const _ForumCommentCard({
     required this.comment,
+    required this.onOpenProfileUser,
   });
 
   final ForumCommentSummary comment;
+  final ValueChanged<String>? onOpenProfileUser;
 
   @override
   Widget build(BuildContext context) {
@@ -531,6 +547,9 @@ class _ForumCommentCard extends StatelessWidget {
                 _ForumDetailMetaText(
                   icon: Icons.person_outline,
                   text: comment.authorName,
+                  onTap: onOpenProfileUser == null
+                      ? null
+                      : () => onOpenProfileUser!(comment.authorId),
                 ),
                 _ForumDetailMetaText(
                   icon: Icons.schedule_outlined,
@@ -602,20 +621,35 @@ class _ForumDetailMetaText extends StatelessWidget {
   const _ForumDetailMetaText({
     required this.icon,
     required this.text,
+    this.onTap,
   });
 
   final IconData icon;
   final String text;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final child = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 18),
         const SizedBox(width: 6),
         Text(text),
       ],
+    );
+
+    if (onTap == null) {
+      return child;
+    }
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(999),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        child: child,
+      ),
     );
   }
 }
