@@ -147,6 +147,20 @@ class _SuccessForumRepository implements ForumRepository {
       comments: [],
     );
   }
+
+  @override
+  Future<ForumChildCommentPage> getChildCommentsPage({
+    required String parentId,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const ForumChildCommentPage(
+      pageIndex: 1,
+      pageSize: 5,
+      totalCount: 0,
+      comments: [],
+    );
+  }
 }
 
 class _FailingForumRepository implements ForumRepository {
@@ -174,5 +188,14 @@ class _FailingForumRepository implements ForumRepository {
     String sortBy = 'default',
   }) {
     throw const RadishApiClientException('Comments API is unreachable');
+  }
+
+  @override
+  Future<ForumChildCommentPage> getChildCommentsPage({
+    required String parentId,
+    required int pageIndex,
+    required int pageSize,
+  }) {
+    throw const RadishApiClientException('Replies API is unreachable');
   }
 }

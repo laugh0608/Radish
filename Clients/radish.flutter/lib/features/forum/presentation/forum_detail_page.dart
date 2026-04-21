@@ -5,6 +5,7 @@ import '../../../shared/widgets/phase_scope_card.dart';
 import '../../../shared/widgets/read_only_markdown_view.dart';
 import '../data/forum_models.dart';
 import '../data/forum_repository.dart';
+import 'forum_child_comment_controller.dart';
 import 'forum_comment_feed_controller.dart';
 import 'forum_detail_controller.dart';
 
@@ -108,8 +109,8 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                   title: 'Forum detail contract',
                   items: [
                     'Environment: ${widget.environment.name}',
-                    'Source APIs: ${widget.environment.apiBaseUrl}/api/v1/Post/GetList + /api/v1/Post/GetById/{postId} + /api/v1/Comment/GetRootComments',
-                    'Scope: anonymous read-only detail, root comment pagination, native back navigation, no interaction submission',
+                    'Source APIs: ${widget.environment.apiBaseUrl}/api/v1/Post/GetList + /api/v1/Post/GetById/{postId} + /api/v1/Comment/GetRootComments + /api/v1/Comment/GetChildComments',
+                    'Scope: anonymous read-only detail, root/child comment pagination, native back navigation, no interaction submission',
                     detail == null
                         ? 'Detail state: ${state.status.name}'
                         : 'Reading /forum/post/${detail.id}',
@@ -141,6 +142,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                   ),
                 if (state.isReady && detail != null)
                   _ForumDetailContent(
+                    repository: widget.repository,
                     detail: detail,
                     commentState: commentState,
                     onRetryComments: _commentController.refresh,
@@ -217,6 +219,7 @@ class _ForumDetailErrorState extends StatelessWidget {
 
 class _ForumDetailContent extends StatelessWidget {
   const _ForumDetailContent({
+    required this.repository,
     required this.detail,
     required this.commentState,
     required this.onRetryComments,
@@ -224,6 +227,7 @@ class _ForumDetailContent extends StatelessWidget {
     required this.onOpenProfileUser,
   });
 
+  final ForumRepository repository;
   final ForumPostDetail detail;
   final ForumCommentFeedState commentState;
   final VoidCallback onRetryComments;
@@ -282,23 +286,23 @@ class _ForumDetailContent extends StatelessWidget {
               spacing: 16,
               runSpacing: 8,
               children: [
-                _ForumDetailMetaText(
+                _ForumMetaText(
                   icon: Icons.person_outline,
                   text: detail.authorName ?? 'User ${detail.authorId}',
                   onTap: onOpenProfileUser == null
                       ? null
                       : () => onOpenProfileUser!(detail.authorId),
                 ),
-                _ForumDetailMetaText(
+                _ForumMetaText(
                   icon: Icons.folder_outlined,
                   text: detail.categoryName ?? 'Category ${detail.categoryId}',
                 ),
-                _ForumDetailMetaText(
+                _ForumMetaText(
                   icon: Icons.schedule_outlined,
                   text: _formatDetailTime(detail.createTime),
                 ),
                 if (detail.updateTime != null && detail.updateTime!.isNotEmpty)
-                  _ForumDetailMetaText(
+                  _ForumMetaText(
                     icon: Icons.update_outlined,
                     text: 'Updated ${_formatDetailTime(detail.updateTime)}',
                   ),
@@ -309,20 +313,20 @@ class _ForumDetailContent extends StatelessWidget {
               spacing: 16,
               runSpacing: 8,
               children: [
-                _ForumDetailMetaText(
+                _ForumMetaText(
                   icon: Icons.visibility_outlined,
                   text: '${detail.viewCount} views',
                 ),
-                _ForumDetailMetaText(
+                _ForumMetaText(
                   icon: Icons.thumb_up_alt_outlined,
                   text: '${detail.likeCount} likes',
                 ),
-                _ForumDetailMetaText(
+                _ForumMetaText(
                   icon: Icons.chat_bubble_outline,
                   text: '${detail.commentCount} comments',
                 ),
                 if (detail.isQuestion)
-                  _ForumDetailMetaText(
+                  _ForumMetaText(
                     icon: Icons.question_answer_outlined,
                     text: '${detail.answerCount} answers',
                   ),
@@ -355,6 +359,7 @@ class _ForumDetailContent extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             _ForumCommentSection(
+              repository: repository,
               state: commentState,
               onRetry: onRetryComments,
               onLoadMore: onLoadMoreComments,
@@ -369,12 +374,14 @@ class _ForumDetailContent extends StatelessWidget {
 
 class _ForumCommentSection extends StatelessWidget {
   const _ForumCommentSection({
+    required this.repository,
     required this.state,
     required this.onRetry,
     required this.onLoadMore,
     required this.onOpenProfileUser,
   });
 
+  final ForumRepository repository;
   final ForumCommentFeedState state;
   final VoidCallback onRetry;
   final VoidCallback onLoadMore;
@@ -393,7 +400,7 @@ class _ForumCommentSection extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'This native slice keeps comment reading read-only: root comments, pagination, and lightweight reply context only.',
+          'This native slice keeps comment reading read-only: root comments, child comment pagination, and lightweight reply context only.',
           style: textTheme.bodyMedium,
         ),
         const SizedBox(height: 12),
@@ -419,6 +426,7 @@ class _ForumCommentSection extends StatelessWidget {
           const SizedBox(height: 12),
           for (final comment in state.comments) ...[
             _ForumCommentCard(
+              repository: repository,
               comment: comment,
               onOpenProfileUser: onOpenProfileUser,
             ),
@@ -523,10 +531,12 @@ class _ForumCommentErrorState extends StatelessWidget {
 
 class _ForumCommentCard extends StatelessWidget {
   const _ForumCommentCard({
+    required this.repository,
     required this.comment,
     required this.onOpenProfileUser,
   });
 
+  final ForumRepository repository;
   final ForumCommentSummary comment;
   final ValueChanged<String>? onOpenProfileUser;
 
@@ -544,23 +554,23 @@ class _ForumCommentCard extends StatelessWidget {
               spacing: 12,
               runSpacing: 8,
               children: [
-                _ForumDetailMetaText(
+                _ForumMetaText(
                   icon: Icons.person_outline,
                   text: comment.authorName,
                   onTap: onOpenProfileUser == null
                       ? null
                       : () => onOpenProfileUser!(comment.authorId),
                 ),
-                _ForumDetailMetaText(
+                _ForumMetaText(
                   icon: Icons.schedule_outlined,
                   text: _formatDetailTime(comment.createTime),
                 ),
-                _ForumDetailMetaText(
+                _ForumMetaText(
                   icon: Icons.thumb_up_alt_outlined,
                   text: '${comment.likeCount} likes',
                 ),
                 if (comment.replyCount > 0)
-                  _ForumDetailMetaText(
+                  _ForumMetaText(
                     icon: Icons.chat_bubble_outline,
                     text: '${comment.replyCount} replies',
                   ),
@@ -610,6 +620,14 @@ class _ForumCommentCard extends StatelessWidget {
               comment.content,
               style: textTheme.bodyMedium,
             ),
+            if (comment.childrenTotal > 0) ...[
+              const SizedBox(height: 16),
+              _ForumChildCommentSection(
+                repository: repository,
+                parentComment: comment,
+                onOpenProfileUser: onOpenProfileUser,
+              ),
+            ],
           ],
         ),
       ),
@@ -617,8 +635,302 @@ class _ForumCommentCard extends StatelessWidget {
   }
 }
 
-class _ForumDetailMetaText extends StatelessWidget {
-  const _ForumDetailMetaText({
+class _ForumChildCommentSection extends StatefulWidget {
+  const _ForumChildCommentSection({
+    required this.repository,
+    required this.parentComment,
+    required this.onOpenProfileUser,
+  });
+
+  final ForumRepository repository;
+  final ForumCommentSummary parentComment;
+  final ValueChanged<String>? onOpenProfileUser;
+
+  @override
+  State<_ForumChildCommentSection> createState() =>
+      _ForumChildCommentSectionState();
+}
+
+class _ForumChildCommentSectionState extends State<_ForumChildCommentSection> {
+  late ForumChildCommentController _controller;
+  late bool _isExpanded;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = _buildController();
+    _isExpanded = widget.parentComment.children.isNotEmpty;
+  }
+
+  @override
+  void didUpdateWidget(covariant _ForumChildCommentSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.repository != widget.repository ||
+        oldWidget.parentComment.id != widget.parentComment.id ||
+        oldWidget.parentComment.childrenTotal !=
+            widget.parentComment.childrenTotal ||
+        oldWidget.parentComment.children.length !=
+            widget.parentComment.children.length) {
+      _controller.dispose();
+      _controller = _buildController();
+      _isExpanded = widget.parentComment.children.isNotEmpty;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  ForumChildCommentController _buildController() {
+    return ForumChildCommentController(
+      repository: widget.repository,
+      parentId: widget.parentComment.id,
+      pageSize: 5,
+      seededComments: widget.parentComment.children,
+      seededTotalCount: widget.parentComment.childrenTotal,
+    );
+  }
+
+  Future<void> _toggleExpanded() async {
+    final nextExpanded = !_isExpanded;
+    setState(() {
+      _isExpanded = nextExpanded;
+    });
+
+    if (nextExpanded) {
+      await _controller.loadInitialIfNeeded();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final state = _controller.state;
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text(
+                    'Replies ${widget.parentComment.childrenTotal}',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: _toggleExpanded,
+                    icon: Icon(
+                      _isExpanded ? Icons.expand_less : Icons.expand_more,
+                    ),
+                    label: Text(_isExpanded ? 'Hide replies' : 'Show replies'),
+                  ),
+                ],
+              ),
+              if (_isExpanded) ...[
+                const SizedBox(height: 12),
+                if (state.isLoading)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Text('Loading replies...'),
+                  ),
+                if (state.isError)
+                  _ForumInlineErrorCard(
+                    title: 'Replies unavailable',
+                    message:
+                        state.errorMessage ?? 'Failed to load child comments.',
+                    retryLabel: 'Retry replies',
+                    onRetry: _controller.refresh,
+                  ),
+                if (state.isReady && state.comments.isNotEmpty) ...[
+                  Text(
+                    'Loaded ${state.comments.length} / ${state.totalCount} replies',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 12),
+                  for (final reply in state.comments) ...[
+                    _ForumChildCommentCard(
+                      comment: reply,
+                      onOpenProfileUser: widget.onOpenProfileUser,
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                ],
+                if (state.isReady &&
+                    state.comments.isEmpty &&
+                    widget.parentComment.childrenTotal == 0)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Text('No public replies are available yet.'),
+                  ),
+                if (state.loadMoreErrorMessage != null &&
+                    state.loadMoreErrorMessage!.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  _ForumInlineErrorCard(
+                    title: 'More replies unavailable',
+                    message: state.loadMoreErrorMessage!,
+                    retryLabel: 'Retry loading more',
+                    onRetry: _controller.loadMore,
+                  ),
+                ],
+                if (state.hasMore || state.isLoadingMore) ...[
+                  const SizedBox(height: 8),
+                  FilledButton.tonalIcon(
+                    onPressed:
+                        state.isLoadingMore ? null : _controller.loadMore,
+                    icon: state.isLoadingMore
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.expand_more),
+                    label: Text(
+                      state.isLoadingMore
+                          ? 'Loading more replies...'
+                          : 'Load more replies',
+                    ),
+                  ),
+                ],
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ForumChildCommentCard extends StatelessWidget {
+  const _ForumChildCommentCard({
+    required this.comment,
+    required this.onOpenProfileUser,
+  });
+
+  final ForumCommentSummary comment;
+  final ValueChanged<String>? onOpenProfileUser;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                _ForumMetaText(
+                  icon: Icons.person_outline,
+                  text: comment.authorName,
+                  onTap: onOpenProfileUser == null
+                      ? null
+                      : () => onOpenProfileUser!(comment.authorId),
+                ),
+                _ForumMetaText(
+                  icon: Icons.schedule_outlined,
+                  text: _formatDetailTime(comment.createTime),
+                ),
+                _ForumMetaText(
+                  icon: Icons.thumb_up_alt_outlined,
+                  text: '${comment.likeCount} likes',
+                ),
+              ],
+            ),
+            if (comment.replyToUserName != null &&
+                comment.replyToUserName!.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Text(
+                'Reply to @${comment.replyToUserName}',
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+            ],
+            if (comment.replyToCommentSnapshot != null &&
+                comment.replyToCommentSnapshot!.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  comment.replyToCommentSnapshot!,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+            ],
+            const SizedBox(height: 10),
+            SelectableText(comment.content),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ForumInlineErrorCard extends StatelessWidget {
+  const _ForumInlineErrorCard({
+    required this.title,
+    required this.message,
+    required this.retryLabel,
+    required this.onRetry,
+  });
+
+  final String title;
+  final String message;
+  final String retryLabel;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 8),
+            Text(message),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: Text(retryLabel),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ForumMetaText extends StatelessWidget {
+  const _ForumMetaText({
     required this.icon,
     required this.text,
     this.onTap,

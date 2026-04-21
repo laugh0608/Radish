@@ -46,6 +46,22 @@ void main() {
     expect(find.text('Loaded 3 / 3 root comments'), findsWidgets);
     expect(find.text('Root comment three'), findsOneWidget);
     expect(find.text('Load more comments'), findsNothing);
+
+    await tester.tap(find.text('Show replies'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Loaded 1 / 2 replies'), findsOneWidget);
+    expect(find.text('Child comment one'), findsOneWidget);
+    expect(find.text('Load more replies'), findsOneWidget);
+
+    await tester.tap(find.text('Load more replies'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Loaded 2 / 2 replies'), findsOneWidget);
+    expect(find.text('Child comment two'), findsOneWidget);
+    expect(find.text('Load more replies'), findsNothing);
   });
 
   testWidgets('renders comment error state separately from detail',
@@ -188,6 +204,20 @@ abstract class _BaseForumRepository implements ForumRepository {
       updateTime: '2026-04-20T10:30:00Z',
     );
   }
+
+  @override
+  Future<ForumChildCommentPage> getChildCommentsPage({
+    required String parentId,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const ForumChildCommentPage(
+      pageIndex: 1,
+      pageSize: 5,
+      totalCount: 0,
+      comments: [],
+    );
+  }
 }
 
 class _PagedForumRepository extends _BaseForumRepository {
@@ -215,6 +245,7 @@ class _PagedForumRepository extends _BaseForumRepository {
             replyCount: 1,
             isSofa: true,
             createTime: '2026-04-20T08:05:00Z',
+            childrenTotal: 2,
           ),
           ForumCommentSummary(
             id: 'comment-2',
@@ -249,6 +280,62 @@ class _PagedForumRepository extends _BaseForumRepository {
       ],
     );
   }
+
+  @override
+  Future<ForumChildCommentPage> getChildCommentsPage({
+    required String parentId,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    if (parentId != 'comment-1') {
+      return const ForumChildCommentPage(
+        pageIndex: 1,
+        pageSize: 5,
+        totalCount: 0,
+        comments: [],
+      );
+    }
+
+    if (pageIndex == 1) {
+      return const ForumChildCommentPage(
+        pageIndex: 1,
+        pageSize: 5,
+        totalCount: 2,
+        comments: [
+          ForumCommentSummary(
+            id: 'reply-1',
+            postId: 'post-42',
+            content: 'Child comment one',
+            authorId: 'user-4',
+            authorName: 'child-a',
+            parentId: 'comment-1',
+            rootId: 'comment-1',
+            replyToUserName: 'radish',
+            replyToCommentSnapshot: 'Root comment one',
+            createTime: '2026-04-20T08:06:00Z',
+          ),
+        ],
+      );
+    }
+
+    return const ForumChildCommentPage(
+      pageIndex: 2,
+      pageSize: 5,
+      totalCount: 2,
+      comments: [
+        ForumCommentSummary(
+          id: 'reply-2',
+          postId: 'post-42',
+          content: 'Child comment two',
+          authorId: 'user-5',
+          authorName: 'child-b',
+          parentId: 'comment-1',
+          rootId: 'comment-1',
+          createTime: '2026-04-20T08:07:00Z',
+        ),
+      ],
+    );
+  }
 }
 
 class _CommentFailingForumRepository extends _BaseForumRepository {
@@ -260,6 +347,15 @@ class _CommentFailingForumRepository extends _BaseForumRepository {
     String sortBy = 'default',
   }) {
     throw const RadishApiClientException('Comments API is unreachable');
+  }
+
+  @override
+  Future<ForumChildCommentPage> getChildCommentsPage({
+    required String parentId,
+    required int pageIndex,
+    required int pageSize,
+  }) {
+    throw const RadishApiClientException('Replies API is unreachable');
   }
 }
 

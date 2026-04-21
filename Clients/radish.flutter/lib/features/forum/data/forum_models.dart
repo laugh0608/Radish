@@ -231,10 +231,16 @@ class ForumCommentSummary {
     this.isSofa = false,
     this.createTime,
     this.updateTime,
+    this.children = const <ForumCommentSummary>[],
+    this.childrenTotal = 0,
   });
 
   factory ForumCommentSummary.fromJson(Object? json) {
     final map = _readJsonMap(json);
+    final rawChildren = map['voChildren'];
+    final parsedChildren = rawChildren is List
+        ? rawChildren.map(ForumCommentSummary.fromJson).toList()
+        : const <ForumCommentSummary>[];
 
     return ForumCommentSummary(
       id: _readRequiredId(map, 'voId'),
@@ -257,6 +263,8 @@ class ForumCommentSummary {
       isSofa: _readBool(map['voIsSofa']),
       createTime: _readString(map['voCreateTime']),
       updateTime: _readString(map['voUpdateTime']),
+      children: parsedChildren,
+      childrenTotal: _readInt(map['voChildrenTotal']) ?? parsedChildren.length,
     );
   }
 
@@ -280,6 +288,8 @@ class ForumCommentSummary {
   final bool isSofa;
   final String? createTime;
   final String? updateTime;
+  final List<ForumCommentSummary> children;
+  final int childrenTotal;
 
   List<String> get badges {
     return [
@@ -288,6 +298,35 @@ class ForumCommentSummary {
       if (isSofa) 'First reply',
     ];
   }
+}
+
+class ForumChildCommentPage {
+  const ForumChildCommentPage({
+    required this.pageIndex,
+    required this.pageSize,
+    required this.totalCount,
+    required this.comments,
+  });
+
+  factory ForumChildCommentPage.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+    final items = map['voItems'];
+    final comments = items is List
+        ? items.map(ForumCommentSummary.fromJson).toList()
+        : const <ForumCommentSummary>[];
+
+    return ForumChildCommentPage(
+      pageIndex: _readInt(map['voPageIndex']) ?? 1,
+      pageSize: _readInt(map['voPageSize']) ?? comments.length,
+      totalCount: _readInt(map['voTotal']) ?? comments.length,
+      comments: comments,
+    );
+  }
+
+  final int pageIndex;
+  final int pageSize;
+  final int totalCount;
+  final List<ForumCommentSummary> comments;
 }
 
 class ForumCommentPage {

@@ -19,6 +19,12 @@ abstract class ForumRepository {
     required int pageSize,
     String sortBy = 'default',
   });
+
+  Future<ForumChildCommentPage> getChildCommentsPage({
+    required String parentId,
+    required int pageIndex,
+    required int pageSize,
+  });
 }
 
 class HttpForumRepository implements ForumRepository {
@@ -92,6 +98,28 @@ class HttpForumRepository implements ForumRepository {
     return apiClient.get(
       uri: uri,
       decode: ForumCommentPage.fromJson,
+    );
+  }
+
+  @override
+  Future<ForumChildCommentPage> getChildCommentsPage({
+    required String parentId,
+    required int pageIndex,
+    required int pageSize,
+  }) {
+    final normalizedParentId = parentId.trim();
+    final uri = endpoints.resolveApi(
+      '/api/v1/Comment/GetChildComments',
+      queryParameters: {
+        'parentId': normalizedParentId,
+        'pageIndex': pageIndex.toString(),
+        'pageSize': pageSize.toString(),
+      },
+    );
+
+    return apiClient.get(
+      uri: uri,
+      decode: ForumChildCommentPage.fromJson,
     );
   }
 }

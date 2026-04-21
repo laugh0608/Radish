@@ -415,6 +415,20 @@ class _FakeForumRepository implements ForumRepository {
       comments: [],
     );
   }
+
+  @override
+  Future<ForumChildCommentPage> getChildCommentsPage({
+    required String parentId,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const ForumChildCommentPage(
+      pageIndex: 1,
+      pageSize: 5,
+      totalCount: 0,
+      comments: [],
+    );
+  }
 }
 
 class _SeededForumRepository implements ForumRepository {
@@ -508,6 +522,42 @@ class _SeededForumRepository implements ForumRepository {
       pageSize: 20,
       dataCount: 2,
       pageCount: 1,
+      comments: [],
+    );
+  }
+
+  @override
+  Future<ForumChildCommentPage> getChildCommentsPage({
+    required String parentId,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    if (parentId == 'comment-1') {
+      return const ForumChildCommentPage(
+        pageIndex: 1,
+        pageSize: 5,
+        totalCount: 1,
+        comments: [
+          ForumCommentSummary(
+            id: 'reply-1',
+            postId: 'post-42',
+            content: 'First public child comment',
+            authorId: 'user-11',
+            authorName: 'guest-child',
+            parentId: 'comment-1',
+            rootId: 'comment-1',
+            replyToUserName: 'luobo',
+            replyToCommentSnapshot: 'First public root comment',
+            createTime: '2026-04-20T11:10:00Z',
+          ),
+        ],
+      );
+    }
+
+    return const ForumChildCommentPage(
+      pageIndex: 1,
+      pageSize: 5,
+      totalCount: 0,
       comments: [],
     );
   }
