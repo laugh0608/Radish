@@ -10,11 +10,13 @@ class ProfilePage extends StatefulWidget {
   const ProfilePage({
     required this.sessionController,
     required this.repository,
+    this.guestUserId,
     super.key,
   });
 
   final SessionController sessionController;
   final ProfileRepository repository;
+  final String? guestUserId;
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -61,8 +63,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void _syncSessionProfile() {
     final sessionState = widget.sessionController.state;
-    final userId =
-        sessionState.isAuthenticated ? sessionState.session?.userId : null;
+    final userId = sessionState.isAuthenticated
+        ? sessionState.session?.userId
+        : widget.guestUserId;
     _controller.loadForUser(userId);
   }
 
@@ -93,12 +96,18 @@ class _ProfilePageState extends State<ProfilePage> {
               items: [
                 sessionState.isAuthenticated
                     ? 'Restored session for user ${session!.userId}'
-                    : sessionState.lastErrorMessage == null
-                        ? 'No reusable session was found, profile stays in guest mode'
-                        : 'Stored session expired and refresh failed, profile returned to guest mode',
+                    : widget.guestUserId != null &&
+                            widget.guestUserId!.trim().isNotEmpty
+                        ? 'Guest mode is reading public profile ${widget.guestUserId}'
+                        : sessionState.lastErrorMessage == null
+                            ? 'No reusable session was found, profile stays in guest mode'
+                            : 'Stored session expired and refresh failed, profile returned to guest mode',
                 sessionState.isAuthenticated
                     ? 'Source API: /api/v1/User/GetPublicProfile?userId=${session!.userId}'
-                    : 'Public profile reading is available once a target user id is provided',
+                    : widget.guestUserId != null &&
+                            widget.guestUserId!.trim().isNotEmpty
+                        ? 'Source API: /api/v1/User/GetPublicProfile?userId=${widget.guestUserId}'
+                        : 'Public profile reading is available once a target user id is provided',
                 if (sessionState.lastErrorMessage != null &&
                     sessionState.lastErrorMessage!.isNotEmpty)
                   'Last restore error: ${sessionState.lastErrorMessage}',
@@ -106,7 +115,8 @@ class _ProfilePageState extends State<ProfilePage> {
               ],
             ),
             const SizedBox(height: 16),
-            if (sessionState.isAuthenticated)
+            if (sessionState.isAuthenticated ||
+                (widget.guestUserId != null && widget.guestUserId!.isNotEmpty))
               Align(
                 alignment: Alignment.centerLeft,
                 child: FilledButton.tonalIcon(
@@ -116,8 +126,11 @@ class _ProfilePageState extends State<ProfilePage> {
                   label: const Text('Refresh profile'),
                 ),
               ),
-            if (sessionState.isAuthenticated) const SizedBox(height: 16),
-            if (!sessionState.isAuthenticated)
+            if (sessionState.isAuthenticated ||
+                (widget.guestUserId != null && widget.guestUserId!.isNotEmpty))
+              const SizedBox(height: 16),
+            if (!sessionState.isAuthenticated &&
+                (widget.guestUserId == null || widget.guestUserId!.isEmpty))
               _ProfileGuestBoundary(
                 lastErrorMessage: sessionState.lastErrorMessage,
               )
@@ -152,8 +165,8 @@ class _ProfileGuestBoundary extends StatelessWidget {
     return PhaseScopeCard(
       title: 'Guest boundary',
       items: [
-        'Anonymous users can read public profiles when a route provides a user id',
-        'The Flutter shell does not invent a default public profile target',
+        'Anonymous users can read public profiles when discover or a future route provides a user id',
+        'The Flutter shell does not invent a default public profile target when no session or discover handoff exists',
         if (lastErrorMessage != null && lastErrorMessage!.isNotEmpty)
           'Restore fallback: $lastErrorMessage',
         'Real sign-in UI and account governance remain deferred',

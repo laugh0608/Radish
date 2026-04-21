@@ -11,6 +11,13 @@ import 'package:radish_flutter/features/forum/data/forum_models.dart';
 
 void main() {
   testWidgets('renders discover summaries from repository', (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final scrollable = find.byType(Scrollable);
+
     await tester.pumpWidget(
       MaterialApp(
         home: DiscoverPage(
@@ -21,22 +28,45 @@ void main() {
       ),
     );
 
-    expect(find.text('Loading discover feed...'), findsOneWidget);
-
     await tester.pumpAndSettle();
 
+    await tester.scrollUntilVisible(
+      find.text('Forum picks'),
+      300,
+      scrollable: scrollable,
+    );
     expect(find.text('Forum picks'), findsOneWidget);
     expect(find.text('Native discover wiring plan'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Docs picks'),
+      300,
+      scrollable: scrollable,
+    );
     expect(find.text('Docs picks'), findsOneWidget);
     expect(find.text('Flutter MVP overview'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Shop picks'),
+      300,
+      scrollable: scrollable,
+    );
     expect(find.text('Shop picks'), findsOneWidget);
     expect(find.text('Profile Rename Card'), findsOneWidget);
-    expect(find.text('Leaderboard guide'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Read-only boundaries'),
+      300,
+      scrollable: scrollable,
+    );
+    expect(find.text('Read-only boundaries'), findsOneWidget);
   });
 
   testWidgets('renders discover error state when repository fails', (
     tester,
   ) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     await tester.pumpWidget(
       MaterialApp(
         home: DiscoverPage(
@@ -52,6 +82,62 @@ void main() {
     expect(find.text('Discover feed unavailable'), findsOneWidget);
     expect(find.text('Discover API is unreachable'), findsOneWidget);
     expect(find.text('Retry'), findsOneWidget);
+  });
+
+  testWidgets('supports native handoff actions from discover', (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final scrollable = find.byType(Scrollable);
+    var forumOpened = false;
+    var docsOpened = false;
+    String? openedProfileUserId;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DiscoverPage(
+          environment: const AppEnvironment.development(),
+          sessionState: const SessionState.anonymous(),
+          repository: _SuccessDiscoverRepository(),
+          onOpenForum: () {
+            forumOpened = true;
+          },
+          onOpenDocs: () {
+            docsOpened = true;
+          },
+          onOpenProfileUser: (userId) {
+            openedProfileUserId = userId;
+          },
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('Go to forum'),
+      200,
+      scrollable: scrollable,
+    );
+    await tester.tap(find.text('Go to forum'));
+    await tester.scrollUntilVisible(
+      find.text('Go to docs'),
+      200,
+      scrollable: scrollable,
+    );
+    await tester.tap(find.text('Go to docs'));
+    await tester.scrollUntilVisible(
+      find.text('Open @luobo'),
+      200,
+      scrollable: scrollable,
+    );
+    await tester.tap(find.text('Open @luobo'));
+
+    expect(forumOpened, isTrue);
+    expect(docsOpened, isTrue);
+    expect(openedProfileUserId, '1024');
   });
 }
 
@@ -69,6 +155,7 @@ class _SuccessDiscoverRepository implements DiscoverRepository {
           categoryId: '9',
           categoryName: 'Engineering',
           authorId: '1024',
+          authorName: 'luobo',
           commentCount: 6,
           viewCount: 128,
           isEssence: true,

@@ -72,6 +72,29 @@ void main() {
     expect(find.text('Public profile only'), findsOneWidget);
   });
 
+  testWidgets('renders guest-selected public profile target', (tester) async {
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          repository: _SuccessProfileRepository(),
+          guestUserId: 'guest-42',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Radish Author'), findsOneWidget);
+    expect(find.text('User guest-42'), findsOneWidget);
+  });
+
   testWidgets('renders profile error state when repository fails', (
     tester,
   ) async {

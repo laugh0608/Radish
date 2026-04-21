@@ -14,12 +14,18 @@ class DiscoverPage extends StatefulWidget {
     required this.environment,
     required this.sessionState,
     required this.repository,
+    this.onOpenForum,
+    this.onOpenDocs,
+    this.onOpenProfileUser,
     super.key,
   });
 
   final AppEnvironment environment;
   final SessionState sessionState;
   final DiscoverRepository repository;
+  final VoidCallback? onOpenForum;
+  final VoidCallback? onOpenDocs;
+  final ValueChanged<String>? onOpenProfileUser;
 
   @override
   State<DiscoverPage> createState() => _DiscoverPageState();
@@ -63,17 +69,19 @@ class _DiscoverPageState extends State<DiscoverPage> {
       builder: (context, child) {
         final state = _controller.state;
         final snapshot = state.snapshot;
+        final profileTargetUserId = _resolveProfileTargetUserId(snapshot);
+        final profileActionLabel = _resolveProfileActionLabel(snapshot);
 
         return ListView(
           padding: const EdgeInsets.all(20),
           children: [
             Text(
-              'Discover feed',
+              'Discover',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
             Text(
-              'A native distribution surface for high-value public content. This batch reads real forum, docs, and shop summaries while keeping the shell read-only.',
+              'A native distribution surface for high-value public content. This batch reads real forum, docs, and shop summaries and hands users over to the live read-only tabs without recreating the desktop workspace.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 20),
@@ -91,6 +99,19 @@ class _DiscoverPageState extends State<DiscoverPage> {
                     : 'Loaded ${snapshot.forumPosts.length} posts, ${snapshot.documents.length} documents, ${snapshot.products.length} products',
               ],
             ),
+            if (!state.isError) ...[
+              const SizedBox(height: 16),
+              _DiscoverHeroCard(
+                snapshot: snapshot,
+                onOpenForum: widget.onOpenForum,
+                onOpenDocs: widget.onOpenDocs,
+                onOpenProfile: profileTargetUserId == null ||
+                        widget.onOpenProfileUser == null
+                    ? null
+                    : () => widget.onOpenProfileUser!(profileTargetUserId),
+                profileActionLabel: profileActionLabel,
+              ),
+            ],
             const SizedBox(height: 16),
             Align(
               alignment: Alignment.centerLeft,
@@ -108,10 +129,116 @@ class _DiscoverPageState extends State<DiscoverPage> {
                 onRetry: _controller.refresh,
               ),
             if (state.isReady && snapshot != null)
-              _DiscoverContent(snapshot: snapshot),
+              _DiscoverContent(
+                snapshot: snapshot,
+                onOpenForum: widget.onOpenForum,
+                onOpenDocs: widget.onOpenDocs,
+              ),
           ],
         );
       },
+    );
+  }
+
+  String? _resolveProfileTargetUserId(DiscoverSnapshot? snapshot) {
+    if (widget.sessionState.isAuthenticated) {
+      return widget.sessionState.session?.userId;
+    }
+
+    if (snapshot == null) {
+      return null;
+    }
+
+    for (final post in snapshot.forumPosts) {
+      if (post.authorId.trim().isNotEmpty) {
+        return post.authorId;
+      }
+    }
+
+    return null;
+  }
+
+  String? _resolveProfileActionLabel(DiscoverSnapshot? snapshot) {
+    if (widget.sessionState.isAuthenticated) {
+      return 'Open my profile';
+    }
+
+    if (snapshot == null) {
+      return null;
+    }
+
+    for (final post in snapshot.forumPosts) {
+      final authorName = post.authorName?.trim();
+      if (authorName != null && authorName.isNotEmpty) {
+        return 'Open @$authorName';
+      }
+    }
+
+    return snapshot.forumPosts.isEmpty ? null : 'Open public profile';
+  }
+}
+
+class _DiscoverHeroCard extends StatelessWidget {
+  const _DiscoverHeroCard({
+    required this.snapshot,
+    required this.onOpenForum,
+    required this.onOpenDocs,
+    required this.onOpenProfile,
+    required this.profileActionLabel,
+  });
+
+  final DiscoverSnapshot? snapshot;
+  final VoidCallback? onOpenForum;
+  final VoidCallback? onOpenDocs;
+  final VoidCallback? onOpenProfile;
+  final String? profileActionLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final snapshot = this.snapshot;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Native handoff',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              snapshot == null
+                  ? 'Discover is preparing live public summaries before handing over to the dedicated tabs.'
+                  : 'Discover is now the public front door: preview high-value content here, then continue into forum, docs, or profile without leaving the native shell.',
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                FilledButton.icon(
+                  onPressed: onOpenForum,
+                  icon: const Icon(Icons.forum_outlined),
+                  label: const Text('Go to forum'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: onOpenDocs,
+                  icon: const Icon(Icons.description_outlined),
+                  label: const Text('Go to docs'),
+                ),
+                if (profileActionLabel != null)
+                  OutlinedButton.icon(
+                    onPressed: onOpenProfile,
+                    icon: const Icon(Icons.person_outline),
+                    label: Text(profileActionLabel!),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -178,9 +305,13 @@ class _DiscoverErrorState extends StatelessWidget {
 class _DiscoverContent extends StatelessWidget {
   const _DiscoverContent({
     required this.snapshot,
+    required this.onOpenForum,
+    required this.onOpenDocs,
   });
 
   final DiscoverSnapshot snapshot;
+  final VoidCallback? onOpenForum;
+  final VoidCallback? onOpenDocs;
 
   @override
   Widget build(BuildContext context) {
@@ -197,13 +328,19 @@ class _DiscoverContent extends StatelessWidget {
 
     return Column(
       children: [
-        _ForumSection(posts: snapshot.forumPosts),
+        _ForumSection(
+          posts: snapshot.forumPosts,
+          onOpenForum: onOpenForum,
+        ),
         const SizedBox(height: 16),
-        _DocsSection(documents: snapshot.documents),
+        _DocsSection(
+          documents: snapshot.documents,
+          onOpenDocs: onOpenDocs,
+        ),
         const SizedBox(height: 16),
         _ShopSection(products: snapshot.products),
         const SizedBox(height: 16),
-        const _LeaderboardGuideSection(),
+        const _DiscoverBoundarySection(),
       ],
     );
   }
@@ -212,9 +349,11 @@ class _DiscoverContent extends StatelessWidget {
 class _ForumSection extends StatelessWidget {
   const _ForumSection({
     required this.posts,
+    required this.onOpenForum,
   });
 
   final List<ForumPostSummary> posts;
+  final VoidCallback? onOpenForum;
 
   @override
   Widget build(BuildContext context) {
@@ -223,6 +362,8 @@ class _ForumSection extends StatelessWidget {
       description:
           'Latest public posts are surfaced here before the user opens the full forum tab.',
       emptyText: 'No forum posts are available for discover right now.',
+      actionLabel: onOpenForum == null ? null : 'See all in forum',
+      onAction: onOpenForum,
       children: posts
           .map(
             (post) => _SummaryTile(
@@ -242,9 +383,11 @@ class _ForumSection extends StatelessWidget {
 class _DocsSection extends StatelessWidget {
   const _DocsSection({
     required this.documents,
+    required this.onOpenDocs,
   });
 
   final List<DocsDocumentSummary> documents;
+  final VoidCallback? onOpenDocs;
 
   @override
   Widget build(BuildContext context) {
@@ -253,6 +396,8 @@ class _DocsSection extends StatelessWidget {
       description:
           'Published public documents can be previewed without entering the desktop wiki app.',
       emptyText: 'No public documents are available for discover right now.',
+      actionLabel: onOpenDocs == null ? null : 'See all in docs',
+      onAction: onOpenDocs,
       children: documents
           .map(
             (document) => _SummaryTile(
@@ -305,24 +450,24 @@ class _ShopSection extends StatelessWidget {
   }
 }
 
-class _LeaderboardGuideSection extends StatelessWidget {
-  const _LeaderboardGuideSection();
+class _DiscoverBoundarySection extends StatelessWidget {
+  const _DiscoverBoundarySection();
 
   @override
   Widget build(BuildContext context) {
     return const _DiscoverSectionCard(
-      title: 'Leaderboard guide',
+      title: 'Read-only boundaries',
       description:
-          'Leaderboard remains a lightweight native guide in this batch. Real ranking data can be connected after discover, docs, and profile summaries stabilize.',
+          'This batch keeps discover focused on public reading and tab handoff. Leaderboard detail, purchase flow, and workspace actions stay outside the native MVP for now.',
       emptyText: '',
       children: [
         _SummaryTile(
           icon: Icons.emoji_events_outlined,
-          title: 'Experience and community ranking',
+          title: 'Leaderboard and deeper shop flows',
           subtitle:
-              'Keep ranking reading, public comparison, and profile jumps separate from account-only details.',
-          meta: 'Read-only guide',
-          chips: ['Deferred real feed', 'No account detail'],
+              'Keep ranking reading, public comparison, purchase confirmation, orders, and account-only actions out of the first native slice.',
+          meta: 'Still routed to later batches',
+          chips: ['Read-only discover', 'No workspace actions'],
         ),
       ],
     );
@@ -335,12 +480,16 @@ class _DiscoverSectionCard extends StatelessWidget {
     required this.description,
     required this.emptyText,
     required this.children,
+    this.actionLabel,
+    this.onAction,
   });
 
   final String title;
   final String description;
   final String emptyText;
   final List<Widget> children;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -350,9 +499,20 @@ class _DiscoverSectionCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleLarge,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+                if (actionLabel != null)
+                  TextButton(
+                    onPressed: onAction,
+                    child: Text(actionLabel!),
+                  ),
+              ],
             ),
             const SizedBox(height: 8),
             Text(

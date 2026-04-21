@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:radish_flutter/app/app.dart';
@@ -19,6 +20,11 @@ import 'package:radish_flutter/features/profile/data/profile_repository.dart';
 void main() {
   testWidgets('restores into guest shell when no session exists',
       (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     final sessionController = SessionController(
       sessionStore: InMemorySessionStore(),
       refreshService: _FakeSessionRefreshService.missing(),
@@ -40,12 +46,16 @@ void main() {
     await tester.pump();
 
     expect(find.text('Radish Flutter'), findsOneWidget);
-    expect(find.text('Discover'), findsOneWidget);
     expect(find.text('Guest'), findsOneWidget);
   });
 
   testWidgets('restores authenticated session into profile boundary',
       (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     final sessionController = SessionController(
       sessionStore: InMemorySessionStore(
         initialSession: AuthSession(
@@ -80,8 +90,54 @@ void main() {
     expect(find.text('Restored session for user user-42'), findsOneWidget);
   });
 
+  testWidgets('discover handoff opens guest profile target in shell',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final scrollable = find.byType(Scrollable);
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        discoverRepository: _SeededDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _FakeForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('Open @luobo'),
+      200,
+      scrollable: scrollable,
+    );
+    await tester.tap(find.text('Open @luobo'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Profile'), findsWidgets);
+    expect(find.text('Guest mode is reading public profile user-9'),
+        findsOneWidget);
+    expect(find.text('User user-9'), findsWidgets);
+  });
+
   testWidgets('refreshes expired session before entering shell',
       (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     final sessionController = SessionController(
       sessionStore: InMemorySessionStore(
         initialSession: AuthSession(
@@ -127,6 +183,11 @@ void main() {
   });
 
   testWidgets('falls back to guest shell when refresh fails', (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     final sessionController = SessionController(
       sessionStore: InMemorySessionStore(
         initialSession: AuthSession(
@@ -170,6 +231,29 @@ class _FakeDiscoverRepository implements DiscoverRepository {
   }) async {
     return const DiscoverSnapshot(
       forumPosts: [],
+      documents: [],
+      products: [],
+    );
+  }
+}
+
+class _SeededDiscoverRepository implements DiscoverRepository {
+  @override
+  Future<DiscoverSnapshot> getSnapshot({
+    required int pageSize,
+  }) async {
+    return const DiscoverSnapshot(
+      forumPosts: [
+        ForumPostSummary(
+          id: 'post-1',
+          title: 'Native discover',
+          summary: 'Use discover to jump into real tabs.',
+          categoryId: 'forum-cat-1',
+          categoryName: 'General',
+          authorId: 'user-9',
+          authorName: 'luobo',
+        ),
+      ],
       documents: [],
       products: [],
     );

@@ -35,6 +35,25 @@ class RadishFlutterShell extends StatefulWidget {
 
 class _RadishFlutterShellState extends State<RadishFlutterShell> {
   int _currentIndex = 0;
+  String? _guestProfileUserId;
+
+  void _selectTab(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
+  void _openProfileUser(String userId) {
+    final normalizedUserId = userId.trim();
+    if (normalizedUserId.isEmpty) {
+      return;
+    }
+
+    setState(() {
+      _guestProfileUserId = normalizedUserId;
+      _currentIndex = 3;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,6 +66,9 @@ class _RadishFlutterShellState extends State<RadishFlutterShell> {
             environment: widget.environment,
             sessionState: sessionState,
             repository: widget.discoverRepository,
+            onOpenForum: () => _selectTab(1),
+            onOpenDocs: () => _selectTab(2),
+            onOpenProfileUser: _openProfileUser,
           ),
           ForumPage(
             environment: widget.environment,
@@ -59,6 +81,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell> {
           ProfilePage(
             sessionController: widget.sessionController,
             repository: widget.profileRepository,
+            guestUserId: _guestProfileUserId,
           ),
         ];
 
@@ -109,11 +132,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell> {
           ),
           bottomNavigationBar: NavigationBar(
             selectedIndex: _currentIndex,
-            onDestinationSelected: (index) {
-              setState(() {
-                _currentIndex = index;
-              });
-            },
+            onDestinationSelected: _selectTab,
             destinations: const [
               NavigationDestination(
                 icon: Icon(Icons.explore_outlined),
