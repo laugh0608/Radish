@@ -91,35 +91,37 @@ class _RadishFlutterShellState extends State<RadishFlutterShell> {
             actions: [
               Padding(
                 padding: const EdgeInsets.only(right: 12),
-                child: Wrap(
-                  spacing: 8,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Chip(
-                      label: Text(widget.environment.name.toUpperCase()),
-                    ),
-                    Chip(
-                      avatar: Icon(
-                        sessionState.isAuthenticated
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _ShellStatusChip(
+                        label: widget.environment.name.toUpperCase(),
+                      ),
+                      const SizedBox(width: 8),
+                      _ShellStatusChip(
+                        icon: sessionState.isAuthenticated
                             ? Icons.verified_user_outlined
                             : Icons.person_outline,
-                        size: 18,
+                        label: sessionState.isAuthenticated
+                            ? 'Signed in'
+                            : 'Guest',
                       ),
-                      label: Text(
-                        sessionState.isAuthenticated ? 'Signed in' : 'Guest',
-                      ),
-                    ),
-                    if (sessionState.isAnonymous &&
-                        sessionState.lastErrorMessage != null &&
-                        sessionState.lastErrorMessage!.isNotEmpty)
-                      Tooltip(
-                        message: sessionState.lastErrorMessage!,
-                        child: const Chip(
-                          avatar: Icon(Icons.warning_amber_outlined, size: 18),
-                          label: Text('Session expired'),
+                      if (sessionState.isAnonymous &&
+                          sessionState.lastErrorMessage != null &&
+                          sessionState.lastErrorMessage!.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        Tooltip(
+                          message: sessionState.lastErrorMessage!,
+                          child: const _ShellStatusChip(
+                            icon: Icons.warning_amber_outlined,
+                            label: 'Session expired',
+                          ),
                         ),
-                      ),
-                  ],
+                      ],
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -158,6 +160,47 @@ class _RadishFlutterShellState extends State<RadishFlutterShell> {
           ),
         );
       },
+    );
+  }
+}
+
+class _ShellStatusChip extends StatelessWidget {
+  const _ShellStatusChip({
+    required this.label,
+    this.icon,
+  });
+
+  final String label;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: colorScheme.outlineVariant,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 16),
+              const SizedBox(width: 6),
+            ],
+            Text(
+              label,
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

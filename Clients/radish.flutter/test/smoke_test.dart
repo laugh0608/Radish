@@ -97,7 +97,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final scrollable = find.byType(Scrollable);
+    final scrollable = find.byType(Scrollable).first;
     final sessionController = SessionController(
       sessionStore: InMemorySessionStore(),
       refreshService: _FakeSessionRefreshService.missing(),

@@ -385,32 +385,50 @@ class _ProfileStatsCard extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
-            GridView.count(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              childAspectRatio: 1.7,
-              children: [
-                _StatTile(
-                  label: 'Posts',
-                  value: '${stats?.postCount ?? 0}',
-                ),
-                _StatTile(
-                  label: 'Comments',
-                  value: '${stats?.commentCount ?? 0}',
-                ),
-                _StatTile(
-                  label: 'Total likes',
-                  value: '${stats?.totalLikeCount ?? 0}',
-                ),
-                _StatTile(
-                  label: 'Post vs comment likes',
-                  value:
-                      '${stats?.postLikeCount ?? 0} / ${stats?.commentLikeCount ?? 0}',
-                ),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final spacing = 12.0;
+                final useTwoColumns = constraints.maxWidth >= 520;
+                final tileWidth = useTwoColumns
+                    ? (constraints.maxWidth - spacing) / 2
+                    : constraints.maxWidth;
+
+                return Wrap(
+                  spacing: spacing,
+                  runSpacing: spacing,
+                  children: [
+                    SizedBox(
+                      width: tileWidth,
+                      child: _StatTile(
+                        label: 'Posts',
+                        value: '${stats?.postCount ?? 0}',
+                      ),
+                    ),
+                    SizedBox(
+                      width: tileWidth,
+                      child: _StatTile(
+                        label: 'Comments',
+                        value: '${stats?.commentCount ?? 0}',
+                      ),
+                    ),
+                    SizedBox(
+                      width: tileWidth,
+                      child: _StatTile(
+                        label: 'Total likes',
+                        value: '${stats?.totalLikeCount ?? 0}',
+                      ),
+                    ),
+                    SizedBox(
+                      width: tileWidth,
+                      child: _StatTile(
+                        label: 'Post vs comment likes',
+                        value:
+                            '${stats?.postLikeCount ?? 0} / ${stats?.commentLikeCount ?? 0}',
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ],
         ),
@@ -441,16 +459,20 @@ class _StatTile extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               label,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 8),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.titleLarge,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                value,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
             ),
           ],
         ),
