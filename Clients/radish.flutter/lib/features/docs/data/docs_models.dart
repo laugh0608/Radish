@@ -34,6 +34,54 @@ class DocsDocumentSummary {
   String? get displayTime => publishedAt ?? modifyTime ?? createTime;
 }
 
+class DocsDocumentDetail {
+  const DocsDocumentDetail({
+    required this.id,
+    required this.title,
+    required this.slug,
+    required this.markdownContent,
+    this.summary,
+    this.sourceType,
+    this.visibility,
+    this.status,
+    this.publishedAt,
+    this.modifyTime,
+    this.createTime,
+  });
+
+  factory DocsDocumentDetail.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+
+    return DocsDocumentDetail(
+      id: _readRequiredId(map, 'voId'),
+      title: _readString(map['voTitle']) ?? 'Untitled document',
+      slug: _readString(map['voSlug']) ?? '',
+      markdownContent: _readString(map['voMarkdownContent']) ?? '',
+      summary: _readString(map['voSummary']),
+      sourceType: _readString(map['voSourceType']),
+      visibility: _readInt(map['voVisibility']),
+      status: _readInt(map['voStatus']),
+      publishedAt: _readString(map['voPublishedAt']),
+      modifyTime: _readString(map['voModifyTime']),
+      createTime: _readString(map['voCreateTime']),
+    );
+  }
+
+  final String id;
+  final String title;
+  final String slug;
+  final String markdownContent;
+  final String? summary;
+  final String? sourceType;
+  final int? visibility;
+  final int? status;
+  final String? publishedAt;
+  final String? modifyTime;
+  final String? createTime;
+
+  String? get displayTime => publishedAt ?? modifyTime ?? createTime;
+}
+
 class DocsDocumentPage {
   const DocsDocumentPage({
     required this.page,

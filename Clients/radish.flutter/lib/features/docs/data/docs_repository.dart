@@ -7,6 +7,10 @@ abstract class DocsRepository {
     required int pageIndex,
     required int pageSize,
   });
+
+  Future<DocsDocumentDetail> getDocumentDetail({
+    required String slug,
+  });
 }
 
 class HttpDocsRepository implements DocsRepository {
@@ -34,6 +38,20 @@ class HttpDocsRepository implements DocsRepository {
     return apiClient.get(
       uri: uri,
       decode: DocsDocumentPage.fromJson,
+    );
+  }
+
+  @override
+  Future<DocsDocumentDetail> getDocumentDetail({
+    required String slug,
+  }) {
+    final uri = endpoints.resolveApi(
+      '/api/v1/Wiki/GetBySlug/${Uri.encodeComponent(slug)}',
+    );
+
+    return apiClient.get(
+      uri: uri,
+      decode: DocsDocumentDetail.fromJson,
     );
   }
 }

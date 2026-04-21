@@ -274,6 +274,22 @@ class _FakeDocsRepository implements DocsRepository {
       documents: [],
     );
   }
+
+  @override
+  Future<DocsDocumentDetail> getDocumentDetail({
+    required String slug,
+  }) async {
+    return DocsDocumentDetail(
+      id: 'doc-$slug',
+      title: 'Doc $slug',
+      slug: slug,
+      markdownContent: '# $slug',
+      sourceType: 'Markdown',
+      visibility: 1,
+      status: 1,
+      createTime: '2026-04-20T08:00:00Z',
+    );
+  }
 }
 
 class _FakeForumRepository implements ForumRepository {
