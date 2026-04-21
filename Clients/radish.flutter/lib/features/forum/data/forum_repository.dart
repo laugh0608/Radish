@@ -12,6 +12,13 @@ abstract class ForumRepository {
   Future<ForumPostDetail> getPostDetail({
     required String postId,
   });
+
+  Future<ForumCommentPage> getRootCommentsPage({
+    required String postId,
+    required int pageIndex,
+    required int pageSize,
+    String sortBy = 'default',
+  });
 }
 
 class HttpForumRepository implements ForumRepository {
@@ -60,6 +67,31 @@ class HttpForumRepository implements ForumRepository {
     return apiClient.get(
       uri: uri,
       decode: ForumPostDetail.fromJson,
+    );
+  }
+
+  @override
+  Future<ForumCommentPage> getRootCommentsPage({
+    required String postId,
+    required int pageIndex,
+    required int pageSize,
+    String sortBy = 'default',
+  }) {
+    final normalizedPostId = postId.trim();
+    final normalizedSortBy = sortBy.trim().isEmpty ? 'default' : sortBy.trim();
+    final uri = endpoints.resolveApi(
+      '/api/v1/Comment/GetRootComments',
+      queryParameters: {
+        'postId': normalizedPostId,
+        'pageIndex': pageIndex.toString(),
+        'pageSize': pageSize.toString(),
+        'sortBy': normalizedSortBy,
+      },
+    );
+
+    return apiClient.get(
+      uri: uri,
+      decode: ForumCommentPage.fromJson,
     );
   }
 }

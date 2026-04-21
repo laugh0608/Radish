@@ -363,6 +363,22 @@ class _FakeForumRepository implements ForumRepository {
       createTime: '2026-04-20T08:00:00Z',
     );
   }
+
+  @override
+  Future<ForumCommentPage> getRootCommentsPage({
+    required String postId,
+    required int pageIndex,
+    required int pageSize,
+    String sortBy = 'default',
+  }) async {
+    return const ForumCommentPage(
+      page: 1,
+      pageSize: 20,
+      dataCount: 0,
+      pageCount: 0,
+      comments: [],
+    );
+  }
 }
 
 class _SeededForumRepository implements ForumRepository {
@@ -411,6 +427,52 @@ class _SeededForumRepository implements ForumRepository {
       commentCount: 3,
       createTime: '2026-04-20T08:00:00Z',
       updateTime: '2026-04-20T10:30:00Z',
+    );
+  }
+
+  @override
+  Future<ForumCommentPage> getRootCommentsPage({
+    required String postId,
+    required int pageIndex,
+    required int pageSize,
+    String sortBy = 'default',
+  }) async {
+    if (pageIndex == 1) {
+      return const ForumCommentPage(
+        page: 1,
+        pageSize: 20,
+        dataCount: 2,
+        pageCount: 1,
+        comments: [
+          ForumCommentSummary(
+            id: 'comment-1',
+            postId: 'post-42',
+            content: 'First public root comment',
+            authorId: 'user-9',
+            authorName: 'luobo',
+            likeCount: 2,
+            createTime: '2026-04-20T11:00:00Z',
+          ),
+          ForumCommentSummary(
+            id: 'comment-2',
+            postId: 'post-42',
+            content: 'Second public root comment',
+            authorId: 'user-10',
+            authorName: 'reader',
+            replyToUserName: 'luobo',
+            replyToCommentSnapshot: 'First public root comment',
+            createTime: '2026-04-20T11:05:00Z',
+          ),
+        ],
+      );
+    }
+
+    return const ForumCommentPage(
+      page: 1,
+      pageSize: 20,
+      dataCount: 2,
+      pageCount: 1,
+      comments: [],
     );
   }
 }

@@ -5,6 +5,7 @@ import '../../../shared/widgets/phase_scope_card.dart';
 import '../../../shared/widgets/read_only_markdown_view.dart';
 import '../data/forum_models.dart';
 import '../data/forum_repository.dart';
+import 'forum_comment_feed_controller.dart';
 import 'forum_detail_controller.dart';
 
 class ForumDetailPage extends StatefulWidget {
@@ -27,6 +28,7 @@ class ForumDetailPage extends StatefulWidget {
 
 class _ForumDetailPageState extends State<ForumDetailPage> {
   late ForumDetailController _controller;
+  late ForumCommentFeedController _commentController;
 
   @override
   void initState() {
@@ -34,7 +36,11 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
     _controller = ForumDetailController(
       repository: widget.repository,
     );
+    _commentController = ForumCommentFeedController(
+      repository: widget.repository,
+    );
     _controller.openPost(widget.postId);
+    _commentController.openPost(widget.postId);
   }
 
   @override
@@ -43,32 +49,40 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
 
     if (oldWidget.repository != widget.repository) {
       _controller.dispose();
+      _commentController.dispose();
       _controller = ForumDetailController(
         repository: widget.repository,
       );
+      _commentController = ForumCommentFeedController(
+        repository: widget.repository,
+      );
       _controller.openPost(widget.postId);
+      _commentController.openPost(widget.postId);
       return;
     }
 
     if (oldWidget.postId != widget.postId) {
       _controller.openPost(widget.postId);
+      _commentController.openPost(widget.postId);
     }
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _commentController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: _controller,
+      animation: Listenable.merge([_controller, _commentController]),
       builder: (context, child) {
         final state = _controller.state;
         final detail = state.detail;
         final title = detail?.title ?? widget.initialTitle ?? 'Forum detail';
+        final commentState = _commentController.state;
 
         return Scaffold(
           appBar: AppBar(
@@ -92,11 +106,18 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                   title: 'Forum detail contract',
                   items: [
                     'Environment: ${widget.environment.name}',
-                    'Source APIs: ${widget.environment.apiBaseUrl}/api/v1/Post/GetList + /api/v1/Post/GetById/{postId}',
-                    'Scope: anonymous read-only detail, native back navigation, no comments or interaction submission',
+                    'Source APIs: ${widget.environment.apiBaseUrl}/api/v1/Post/GetList + /api/v1/Post/GetById/{postId} + /api/v1/Comment/GetRootComments',
+                    'Scope: anonymous read-only detail, root comment pagination, native back navigation, no interaction submission',
                     detail == null
                         ? 'Detail state: ${state.status.name}'
                         : 'Reading /forum/post/${detail.id}',
+                    commentState.isIdle
+                        ? 'Comment state: idle'
+                        : commentState.isLoading
+                            ? 'Comment state: loading'
+                            : commentState.isError
+                                ? 'Comment state: error'
+                                : 'Loaded ${commentState.comments.length} / ${commentState.totalCount} root comments',
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -119,6 +140,9 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                 if (state.isReady && detail != null)
                   _ForumDetailContent(
                     detail: detail,
+                    commentState: commentState,
+                    onRetryComments: _commentController.refresh,
+                    onLoadMoreComments: _commentController.loadMore,
                   ),
               ],
             ),
@@ -191,9 +215,15 @@ class _ForumDetailErrorState extends StatelessWidget {
 class _ForumDetailContent extends StatelessWidget {
   const _ForumDetailContent({
     required this.detail,
+    required this.commentState,
+    required this.onRetryComments,
+    required this.onLoadMoreComments,
   });
 
   final ForumPostDetail detail;
+  final ForumCommentFeedState commentState;
+  final VoidCallback onRetryComments;
+  final VoidCallback onLoadMoreComments;
 
   @override
   Widget build(BuildContext context) {
@@ -314,6 +344,252 @@ class _ForumDetailContent extends StatelessWidget {
             ReadOnlyMarkdownView(
               content: detail.content,
               emptyText: 'No public content is available for this post.',
+            ),
+            const SizedBox(height: 24),
+            _ForumCommentSection(
+              state: commentState,
+              onRetry: onRetryComments,
+              onLoadMore: onLoadMoreComments,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ForumCommentSection extends StatelessWidget {
+  const _ForumCommentSection({
+    required this.state,
+    required this.onRetry,
+    required this.onLoadMore,
+  });
+
+  final ForumCommentFeedState state;
+  final VoidCallback onRetry;
+  final VoidCallback onLoadMore;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Comments',
+          style: textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'This native slice keeps comment reading read-only: root comments, pagination, and lightweight reply context only.',
+          style: textTheme.bodyMedium,
+        ),
+        const SizedBox(height: 12),
+        if (state.isLoading) const _ForumCommentLoadingState(),
+        if (state.isError)
+          _ForumCommentErrorState(
+            message: state.errorMessage ?? 'Failed to load forum comments.',
+            onRetry: onRetry,
+          ),
+        if (state.isReady && state.comments.isEmpty)
+          const Card(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child:
+                  Text('No public comments are available for this post yet.'),
+            ),
+          ),
+        if (state.isReady && state.comments.isNotEmpty) ...[
+          Text(
+            'Loaded ${state.comments.length} / ${state.totalCount} root comments',
+            style: textTheme.bodySmall,
+          ),
+          const SizedBox(height: 12),
+          for (final comment in state.comments) ...[
+            _ForumCommentCard(comment: comment),
+            const SizedBox(height: 12),
+          ],
+          if (state.loadMoreErrorMessage != null &&
+              state.loadMoreErrorMessage!.isNotEmpty) ...[
+            Card(
+              color: Theme.of(context).colorScheme.errorContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(state.loadMoreErrorMessage!),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+          if (state.hasMore || state.isLoadingMore)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton.tonalIcon(
+                onPressed: state.isLoadingMore ? null : onLoadMore,
+                icon: state.isLoadingMore
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.expand_more),
+                label: Text(
+                  state.isLoadingMore
+                      ? 'Loading more comments...'
+                      : 'Load more comments',
+                ),
+              ),
+            ),
+        ],
+      ],
+    );
+  }
+}
+
+class _ForumCommentLoadingState extends StatelessWidget {
+  const _ForumCommentLoadingState();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Card(
+      child: Padding(
+        padding: EdgeInsets.all(20),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            SizedBox(width: 12),
+            Text('Loading comments...'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ForumCommentErrorState extends StatelessWidget {
+  const _ForumCommentErrorState({
+    required this.message,
+    required this.onRetry,
+  });
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Comments unavailable',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            Text(message),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry comments'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ForumCommentCard extends StatelessWidget {
+  const _ForumCommentCard({
+    required this.comment,
+  });
+
+  final ForumCommentSummary comment;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                _ForumDetailMetaText(
+                  icon: Icons.person_outline,
+                  text: comment.authorName,
+                ),
+                _ForumDetailMetaText(
+                  icon: Icons.schedule_outlined,
+                  text: _formatDetailTime(comment.createTime),
+                ),
+                _ForumDetailMetaText(
+                  icon: Icons.thumb_up_alt_outlined,
+                  text: '${comment.likeCount} likes',
+                ),
+                if (comment.replyCount > 0)
+                  _ForumDetailMetaText(
+                    icon: Icons.chat_bubble_outline,
+                    text: '${comment.replyCount} replies',
+                  ),
+              ],
+            ),
+            if (comment.badges.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: comment.badges
+                    .map(
+                      (badge) => Chip(
+                        label: Text(badge),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    )
+                    .toList(),
+              ),
+            ],
+            if (comment.replyToUserName != null &&
+                comment.replyToUserName!.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                'Reply to @${comment.replyToUserName}',
+                style: textTheme.labelMedium,
+              ),
+            ],
+            if (comment.replyToCommentSnapshot != null &&
+                comment.replyToCommentSnapshot!.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  comment.replyToCommentSnapshot!,
+                  style: textTheme.bodySmall,
+                ),
+              ),
+            ],
+            const SizedBox(height: 12),
+            SelectableText(
+              comment.content,
+              style: textTheme.bodyMedium,
             ),
           ],
         ),

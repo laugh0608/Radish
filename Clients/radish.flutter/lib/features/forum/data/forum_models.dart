@@ -209,6 +209,119 @@ class ForumPostDetail {
   }
 }
 
+class ForumCommentSummary {
+  const ForumCommentSummary({
+    required this.id,
+    required this.postId,
+    required this.content,
+    required this.authorId,
+    required this.authorName,
+    this.parentId,
+    this.rootId,
+    this.replyToCommentId,
+    this.replyToCommentSnapshot,
+    this.replyToUserId,
+    this.replyToUserName,
+    this.level = 1,
+    this.likeCount = 0,
+    this.replyCount = 0,
+    this.isTop = false,
+    this.isLiked = false,
+    this.isGodComment = false,
+    this.isSofa = false,
+    this.createTime,
+    this.updateTime,
+  });
+
+  factory ForumCommentSummary.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+
+    return ForumCommentSummary(
+      id: _readRequiredId(map, 'voId'),
+      postId: _readRequiredId(map, 'voPostId'),
+      content: _readString(map['voContent']) ?? '',
+      authorId: _readRequiredId(map, 'voAuthorId'),
+      authorName: _readString(map['voAuthorName']) ?? 'Unknown user',
+      parentId: _readString(map['voParentId']),
+      rootId: _readString(map['voRootId']),
+      replyToCommentId: _readString(map['voReplyToCommentId']),
+      replyToCommentSnapshot: _readString(map['voReplyToCommentSnapshot']),
+      replyToUserId: _readString(map['voReplyToUserId']),
+      replyToUserName: _readString(map['voReplyToUserName']),
+      level: _readInt(map['voLevel']) ?? 1,
+      likeCount: _readInt(map['voLikeCount']) ?? 0,
+      replyCount: _readInt(map['voReplyCount']) ?? 0,
+      isTop: _readBool(map['voIsTop']),
+      isLiked: _readBool(map['voIsLiked']),
+      isGodComment: _readBool(map['voIsGodComment']),
+      isSofa: _readBool(map['voIsSofa']),
+      createTime: _readString(map['voCreateTime']),
+      updateTime: _readString(map['voUpdateTime']),
+    );
+  }
+
+  final String id;
+  final String postId;
+  final String content;
+  final String authorId;
+  final String authorName;
+  final String? parentId;
+  final String? rootId;
+  final String? replyToCommentId;
+  final String? replyToCommentSnapshot;
+  final String? replyToUserId;
+  final String? replyToUserName;
+  final int level;
+  final int likeCount;
+  final int replyCount;
+  final bool isTop;
+  final bool isLiked;
+  final bool isGodComment;
+  final bool isSofa;
+  final String? createTime;
+  final String? updateTime;
+
+  List<String> get badges {
+    return [
+      if (isTop) 'Top',
+      if (isGodComment) 'God comment',
+      if (isSofa) 'First reply',
+    ];
+  }
+}
+
+class ForumCommentPage {
+  const ForumCommentPage({
+    required this.page,
+    required this.pageSize,
+    required this.dataCount,
+    required this.pageCount,
+    required this.comments,
+  });
+
+  factory ForumCommentPage.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+    final data = map['data'];
+    final comments = data is List
+        ? data.map(ForumCommentSummary.fromJson).toList()
+        : const <ForumCommentSummary>[];
+
+    return ForumCommentPage(
+      page: _readInt(map['page']) ?? 1,
+      pageSize: _readInt(map['pageSize']) ?? comments.length,
+      dataCount: _readInt(map['dataCount']) ?? comments.length,
+      pageCount: _readInt(map['pageCount']) ?? 1,
+      comments: comments,
+    );
+  }
+
+  final int page;
+  final int pageSize;
+  final int dataCount;
+  final int pageCount;
+  final List<ForumCommentSummary> comments;
+}
+
 class ForumPostPage {
   const ForumPostPage({
     required this.page,

@@ -103,6 +103,22 @@ class _SuccessForumRepository implements ForumRepository {
       createTime: '2026-04-18T10:00:00Z',
     );
   }
+
+  @override
+  Future<ForumCommentPage> getRootCommentsPage({
+    required String postId,
+    required int pageIndex,
+    required int pageSize,
+    String sortBy = 'default',
+  }) async {
+    return const ForumCommentPage(
+      page: 1,
+      pageSize: 20,
+      dataCount: 0,
+      pageCount: 0,
+      comments: [],
+    );
+  }
 }
 
 class _FailingForumRepository implements ForumRepository {
@@ -120,5 +136,15 @@ class _FailingForumRepository implements ForumRepository {
     required String postId,
   }) {
     throw const RadishApiClientException('Forum detail API is unreachable');
+  }
+
+  @override
+  Future<ForumCommentPage> getRootCommentsPage({
+    required String postId,
+    required int pageIndex,
+    required int pageSize,
+    String sortBy = 'default',
+  }) {
+    throw const RadishApiClientException('Comments API is unreachable');
   }
 }
