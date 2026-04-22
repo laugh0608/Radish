@@ -9,7 +9,7 @@
 - **阶段**：`第二开发阶段：社区深化与多端化`
 - **当前主线**：`Phase 2-3 Flutter 客户端 MVP`
 - **当前阶段**：`截至 2026-04-18，第一开发阶段已于 2026-04-06 通过 v26.3.2-release 完成真实发布收口；第二开发阶段现已正式启动。`Phase 2-1 社区深化第一批` 已完成论坛轻回应墙 Phase 1 与最小回流链路收口；`Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口，并转入稳定维护。当前产品主线正式切到 `Phase 2-3 Flutter 客户端 MVP`：第一批范围定义、真相源文档切换与仓库工程骨架已完成；第二批当前已开始接入最小登录 / 会话恢复链路与 forum 首条真实只读读取链路，不继续沿公开壳层扩页面细节，也不回头把桌面工作台搬进原生端。`
-- **复核日期**：`2026-04-21`
+- **复核日期**：`2026-04-22`
 
 ## 当前执行入口
 
@@ -81,6 +81,10 @@
 - Flutter forum 当前已继续从“帖子详情只读阅读”推进到“评论链路只读阅读”：根评论分页、子评论分页、作者 / 评论作者原生公开 profile 跳转都已落地，仍明确保持不开放评论提交、点赞、投票、编辑或登录治理
 - Flutter forum 评论精确定位最小闭环当前也已落地：带 `commentId` 打开帖子详情后，原生端会先解析公开评论定位信息，再自动补载目标根评论页与子评论页并滚动到目标评论
 - Flutter forum 外部详情 handoff 当前已完成最小收口：原生壳层已经可以从 shell 层直接透传 `postId + commentId` 打开 forum 详情，并复用现有评论定位链路落到目标评论，而不需要重新设计独立路由系统
+- Flutter forum 外部 handoff 当前已继续先收口到 `public profile` 的最近帖子 / 最近评论：原生 profile 页不再自带独立详情跳转，而是统一复用共享 `ForumDetailHandoffTarget` 打开帖子详情；`postId / commentId` 继续保持字符串口径
+- Flutter forum 真实来源接线当前已进一步从 discover 的最小演示入口推进到更接近真实来源的壳层 / 宿主层：Android 宿主当前已支持以启动 handoff 透传 forum 通知来源，原生壳层也已支持基于最近阅读记录续接 forum 浏览回跳
+- Flutter forum detail 打开路径当前也已完成一轮统一回收：forum feed、public profile、notification 宿主 handoff 与 browse history 壳层续接当前都已统一接到同一套原生 handoff 目标，不再并存多套 detail 打开路径
+- Flutter discover 当前已不再承担 `notification / browseHistory` 的长期伪来源入口：此前最小入口卡只作为过渡验证手段，现已在原生端收口回宿主 / 壳层真实接线
 
 ## 当前批次目标
 
@@ -91,7 +95,7 @@
    - Flutter forum 当前已开始真实读取公开帖子列表，并继续补到公开帖子详情只读阅读
    - 当前范围收口到匿名列表阅读、详情正文阅读、排序分页、加载态与错误态，不同时进入评论与互动提交
 3. **后续真实页面继续按价值推进**
-   - `discover / docs / profile` 的最小真实接线与 Android 真机联调当前已完成，下一步优先继续补 forum 的高价值阅读链路
+   - `discover / docs / profile` 的最小真实接线与 Android 真机联调当前已完成；forum 的高价值阅读链路与首批真实来源 handoff 当前也已完成一轮收口
    - 当前仍不为 Flutter 单独设计新的 BFF，也不复刻 WebOS 窗口交互
 4. **范围明确收紧**
    - 当前不同时进入聊天、完整通知中心、完整商城工作台和创作器
@@ -101,9 +105,8 @@
 ## 下一顺位
 
 - `Phase 2-3` 第二批业务链路
-  - forum 当前已从公开列表推进到公开帖子详情、评论分页、子评论分页、作者跳转、评论精确定位与外部详情 handoff 收口；下一步优先把通知 / 浏览回跳 / 公开 profile 评论入口等真实来源统一接到同一套原生 handoff 目标
-  - 最小登录 UI、显式登出治理与浏览器 OIDC 回调接线继续保持在 forum 阅读链路之后
-  - Android 真机联调已完成首轮收口，后续转入增量回归与稳定性复核
+  - forum 当前已从公开列表推进到公开帖子详情、评论分页、子评论分页、作者跳转、评论精确定位、public profile 详情回跳，以及 `notification / browseHistory` 的首批壳层 / 宿主 handoff 收口；下一步优先转向最小登录 UI、显式登出治理与浏览器 OIDC 回调接线
+  - Android 真机联调已完成首轮收口，后续转入基于现有宿主 / 壳层 handoff 的增量回归与稳定性复核
 
 - `Phase 2-2` 稳定维护项
   - 公开内容壳层保留必要联调复核与问题修复，但不再继续新增公开入口或细节增强
