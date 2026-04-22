@@ -143,7 +143,7 @@ class _ForumPageState extends State<ForumPage> {
     }
 
     final signature =
-        '${target.normalizedPostId}:${target.normalizedCommentId ?? ''}';
+        '${target.source.name}:${target.normalizedPostId}:${target.normalizedCommentId ?? ''}';
     if (_handledHandoffSignature == signature) {
       return;
     }
@@ -157,6 +157,7 @@ class _ForumPageState extends State<ForumPage> {
           environment: widget.environment,
           repository: widget.repository,
           postId: target.normalizedPostId,
+          handoffSource: target.source,
           initialTitle: target.normalizedInitialTitle,
           commentId: target.normalizedCommentId,
           onOpenProfileUser: widget.onOpenProfileUser,

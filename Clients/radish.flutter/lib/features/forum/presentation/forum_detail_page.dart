@@ -15,6 +15,7 @@ class ForumDetailPage extends StatefulWidget {
     required this.environment,
     required this.repository,
     required this.postId,
+    this.handoffSource = ForumDetailHandoffSource.shell,
     this.initialTitle,
     this.commentId,
     this.onOpenProfileUser,
@@ -24,6 +25,7 @@ class ForumDetailPage extends StatefulWidget {
   final AppEnvironment environment;
   final ForumRepository repository;
   final String postId;
+  final ForumDetailHandoffSource handoffSource;
   final String? initialTitle;
   final String? commentId;
   final ValueChanged<String>? onOpenProfileUser;
@@ -147,6 +149,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                   items: [
                     'Environment: ${widget.environment.name}',
                     'Source APIs: ${widget.environment.apiBaseUrl}/api/v1/Post/GetList + /api/v1/Post/GetById/{postId} + /api/v1/Comment/GetRootComments + /api/v1/Comment/GetChildComments',
+                    'Handoff source: ${widget.handoffSource.label}',
                     'Scope: anonymous read-only detail, root/child comment pagination, native back navigation, no interaction submission',
                     detail == null
                         ? 'Detail state: ${state.status.name}'
@@ -185,6 +188,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                 if (state.isReady && detail != null)
                   _ForumDetailContent(
                     repository: widget.repository,
+                    handoffSource: widget.handoffSource,
                     detail: detail,
                     commentState: commentState,
                     onRetryComments: _commentController.refresh,
@@ -371,6 +375,7 @@ class _ForumDetailErrorState extends StatelessWidget {
 class _ForumDetailContent extends StatelessWidget {
   const _ForumDetailContent({
     required this.repository,
+    required this.handoffSource,
     required this.detail,
     required this.commentState,
     required this.onRetryComments,
@@ -383,6 +388,7 @@ class _ForumDetailContent extends StatelessWidget {
   });
 
   final ForumRepository repository;
+  final ForumDetailHandoffSource handoffSource;
   final ForumPostDetail detail;
   final ForumCommentFeedState commentState;
   final VoidCallback onRetryComments;
@@ -409,6 +415,10 @@ class _ForumDetailContent extends StatelessWidget {
               children: [
                 const Chip(
                   label: Text('Public forum detail'),
+                  visualDensity: VisualDensity.compact,
+                ),
+                Chip(
+                  label: Text(handoffSource.label),
                   visualDensity: VisualDensity.compact,
                 ),
                 Chip(

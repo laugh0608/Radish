@@ -57,7 +57,8 @@ class _RadishFlutterShellState extends State<RadishFlutterShell> {
   void didUpdateWidget(covariant RadishFlutterShell oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (oldWidget.initialForumHandoffTarget != widget.initialForumHandoffTarget) {
+    if (oldWidget.initialForumHandoffTarget !=
+        widget.initialForumHandoffTarget) {
       final nextTarget = _normalizeForumHandoffTarget(
         widget.initialForumHandoffTarget,
       );
@@ -90,6 +91,18 @@ class _RadishFlutterShellState extends State<RadishFlutterShell> {
     });
   }
 
+  void _openForumDetailTarget(ForumDetailHandoffTarget target) {
+    final normalizedTarget = _normalizeForumHandoffTarget(target);
+    if (normalizedTarget == null) {
+      return;
+    }
+
+    setState(() {
+      _forumHandoffTarget = normalizedTarget;
+      _currentIndex = 1;
+    });
+  }
+
   void _consumeForumHandoffTarget() {
     if (_forumHandoffTarget == null) {
       return;
@@ -109,6 +122,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell> {
 
     return ForumDetailHandoffTarget(
       postId: target.normalizedPostId,
+      source: target.source,
       initialTitle: target.normalizedInitialTitle,
       commentId: target.normalizedCommentId,
     );
@@ -144,6 +158,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell> {
             sessionController: widget.sessionController,
             repository: widget.profileRepository,
             guestUserId: _guestProfileUserId,
+            onOpenForumDetailTarget: _openForumDetailTarget,
           ),
         ];
 

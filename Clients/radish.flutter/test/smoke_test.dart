@@ -97,7 +97,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final scrollable = find.byType(Scrollable).first;
+    final scrollable = find.byType(Scrollable).last;
     final sessionController = SessionController(
       sessionStore: InMemorySessionStore(),
       refreshService: _FakeSessionRefreshService.missing(),
@@ -329,6 +329,60 @@ void main() {
 
     expect(find.text('Forum detail'), findsWidgets);
     expect(find.text('/forum/post/post-42'), findsOneWidget);
+    expect(find.text('First public child comment'), findsOneWidget);
+  });
+
+  testWidgets(
+      'profile comment handoff reuses shared native forum detail target',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: 'user-42',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: 'user-42',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _SeededForumRepository(),
+        profileRepository: _SeededProfileRepository(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.tap(find.text('Profile'));
+    await tester.pumpAndSettle();
+
+    final scrollable = find.byType(Scrollable).last;
+    await tester.scrollUntilVisible(
+      find.text('Open comment context'),
+      200,
+      scrollable: scrollable,
+    );
+    await tester.tap(find.text('Open comment context'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Forum detail'), findsWidgets);
+    expect(find.text('/forum/post/post-42'), findsOneWidget);
+    expect(find.text('Public profile comment handoff'), findsWidgets);
     expect(find.text('First public child comment'), findsOneWidget);
   });
 }
@@ -698,6 +752,85 @@ class _FakeProfileRepository implements ProfileRepository {
       dataCount: 0,
       pageCount: 1,
       comments: [],
+    );
+  }
+}
+
+class _SeededProfileRepository implements ProfileRepository {
+  @override
+  Future<PublicProfileSummary> getPublicProfile({
+    required String userId,
+  }) async {
+    return PublicProfileSummary(
+      userId: userId,
+      userName: 'user-$userId',
+      displayName: 'User $userId',
+      createTime: '2026-04-20T08:00:00Z',
+    );
+  }
+
+  @override
+  Future<PublicProfileStats> getPublicStats({
+    required String userId,
+  }) async {
+    return const PublicProfileStats(
+      postCount: 1,
+      commentCount: 1,
+      totalLikeCount: 3,
+      postLikeCount: 1,
+      commentLikeCount: 2,
+    );
+  }
+
+  @override
+  Future<PublicProfilePostPage> getPublicPosts({
+    required String userId,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const PublicProfilePostPage(
+      page: 1,
+      pageSize: 3,
+      dataCount: 1,
+      pageCount: 1,
+      posts: [
+        PublicProfilePostSummary(
+          id: 'post-42',
+          title: 'Forum detail handoff',
+          summary: 'Tap through to the public native detail page.',
+          content: 'Tap through to the public native detail page.',
+          categoryName: 'General',
+          viewCount: 128,
+          likeCount: 16,
+          commentCount: 3,
+          createTime: '2026-04-20T08:00:00Z',
+        ),
+      ],
+    );
+  }
+
+  @override
+  Future<PublicProfileCommentPage> getPublicComments({
+    required String userId,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const PublicProfileCommentPage(
+      page: 1,
+      pageSize: 3,
+      dataCount: 1,
+      pageCount: 1,
+      comments: [
+        PublicProfileCommentSummary(
+          id: 'reply-1',
+          postId: 'post-42',
+          content: 'Recent public comments should stay readable in the shell.',
+          likeCount: 5,
+          createTime: '2026-04-20T09:00:00Z',
+          replyToUserName: 'luobo',
+          replyToCommentSnapshot: 'First public root comment',
+        ),
+      ],
     );
   }
 }

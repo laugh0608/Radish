@@ -9,6 +9,7 @@ import 'package:radish_flutter/core/config/app_environment.dart';
 import 'package:radish_flutter/core/network/radish_api_client.dart';
 import 'package:radish_flutter/features/profile/data/profile_models.dart';
 import 'package:radish_flutter/features/profile/data/profile_repository.dart';
+import 'package:radish_flutter/features/forum/data/forum_models.dart';
 import 'package:radish_flutter/features/profile/presentation/profile_page.dart';
 
 void main() {
@@ -125,6 +126,76 @@ void main() {
       scrollable: scrollable,
     );
     expect(find.text('Recent public posts'), findsOneWidget);
+  });
+
+  testWidgets(
+      'opens shared forum handoff targets from profile post and comment',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final scrollable = find.byType(Scrollable).first;
+    final openedTargets = <ForumDetailHandoffTarget>[];
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: '2042219067430928384',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: '2042219067430928384',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          repository: _SuccessProfileRepository(),
+          onOpenForumDetailTarget: openedTargets.add,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('Open post'),
+      200,
+      scrollable: scrollable,
+    );
+    await tester.tap(find.text('Open post'));
+    await tester.pumpAndSettle();
+
+    expect(openedTargets, hasLength(1));
+    expect(openedTargets.first.postId, 'post-1');
+    expect(
+      openedTargets.first.source,
+      ForumDetailHandoffSource.publicProfilePost,
+    );
+
+    await tester.scrollUntilVisible(
+      find.text('Open comment context'),
+      200,
+      scrollable: scrollable,
+    );
+    await tester.tap(find.text('Open comment context'));
+    await tester.pumpAndSettle();
+
+    expect(openedTargets, hasLength(2));
+    expect(openedTargets.last.postId, 'post-1');
+    expect(openedTargets.last.commentId, 'comment-1');
+    expect(
+      openedTargets.last.source,
+      ForumDetailHandoffSource.publicProfileComment,
+    );
   });
 
   testWidgets('renders profile error state when repository fails', (

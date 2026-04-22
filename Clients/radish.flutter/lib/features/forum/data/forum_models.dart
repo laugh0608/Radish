@@ -1,3 +1,28 @@
+enum ForumDetailHandoffSource {
+  shell,
+  notification,
+  browseHistory,
+  publicProfilePost,
+  publicProfileComment,
+}
+
+extension ForumDetailHandoffSourceLabel on ForumDetailHandoffSource {
+  String get label {
+    switch (this) {
+      case ForumDetailHandoffSource.shell:
+        return 'Shell handoff';
+      case ForumDetailHandoffSource.notification:
+        return 'Notification handoff';
+      case ForumDetailHandoffSource.browseHistory:
+        return 'Browse history handoff';
+      case ForumDetailHandoffSource.publicProfilePost:
+        return 'Public profile post handoff';
+      case ForumDetailHandoffSource.publicProfileComment:
+        return 'Public profile comment handoff';
+    }
+  }
+}
+
 enum ForumFeedSort {
   newest,
   hottest,
@@ -212,11 +237,13 @@ class ForumPostDetail {
 class ForumDetailHandoffTarget {
   const ForumDetailHandoffTarget({
     required this.postId,
+    this.source = ForumDetailHandoffSource.shell,
     this.initialTitle,
     this.commentId,
   });
 
   final String postId;
+  final ForumDetailHandoffSource source;
   final String? initialTitle;
   final String? commentId;
 
@@ -227,6 +254,20 @@ class ForumDetailHandoffTarget {
   String? get normalizedCommentId => _readString(commentId);
 
   bool get hasValidPostId => normalizedPostId.isNotEmpty;
+
+  ForumDetailHandoffTarget copyWith({
+    String? postId,
+    ForumDetailHandoffSource? source,
+    String? initialTitle,
+    String? commentId,
+  }) {
+    return ForumDetailHandoffTarget(
+      postId: postId ?? this.postId,
+      source: source ?? this.source,
+      initialTitle: initialTitle ?? this.initialTitle,
+      commentId: commentId ?? this.commentId,
+    );
+  }
 }
 
 class ForumCommentSummary {

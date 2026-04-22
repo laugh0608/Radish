@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/auth/session_controller.dart';
+import '../../../features/forum/data/forum_models.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
 import '../data/profile_models.dart';
 import '../data/profile_repository.dart';
@@ -11,12 +12,14 @@ class ProfilePage extends StatefulWidget {
     required this.sessionController,
     required this.repository,
     this.guestUserId,
+    this.onOpenForumDetailTarget,
     super.key,
   });
 
   final SessionController sessionController;
   final ProfileRepository repository;
   final String? guestUserId;
+  final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -143,6 +146,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 stats: profileState.stats,
                 posts: profileState.posts,
                 comments: profileState.comments,
+                onOpenForumDetailTarget: widget.onOpenForumDetailTarget,
               )
             else
               const _ProfileLoadingState(),
@@ -240,12 +244,14 @@ class _PublicProfileContent extends StatelessWidget {
     required this.stats,
     required this.posts,
     required this.comments,
+    required this.onOpenForumDetailTarget,
   });
 
   final PublicProfileSummary profile;
   final PublicProfileStats? stats;
   final List<PublicProfilePostSummary> posts;
   final List<PublicProfileCommentSummary> comments;
+  final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
 
   @override
   Widget build(BuildContext context) {
@@ -257,9 +263,15 @@ class _PublicProfileContent extends StatelessWidget {
         const SizedBox(height: 16),
         const _ProfileReadingGuide(),
         const SizedBox(height: 16),
-        _RecentPostsCard(posts: posts),
+        _RecentPostsCard(
+          posts: posts,
+          onOpenForumDetailTarget: onOpenForumDetailTarget,
+        ),
         const SizedBox(height: 16),
-        _RecentCommentsCard(comments: comments),
+        _RecentCommentsCard(
+          comments: comments,
+          onOpenForumDetailTarget: onOpenForumDetailTarget,
+        ),
       ],
     );
   }
@@ -561,16 +573,18 @@ class _GuideRow extends StatelessWidget {
 class _RecentPostsCard extends StatelessWidget {
   const _RecentPostsCard({
     required this.posts,
+    required this.onOpenForumDetailTarget,
   });
 
   final List<PublicProfilePostSummary> posts;
+  final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
 
   @override
   Widget build(BuildContext context) {
     return _ProfileSectionCard(
       title: 'Recent public posts',
       description:
-          'This batch only previews the latest readable posts. Post detail jumps can be wired after the profile page stabilizes.',
+          'Recent readable posts now reuse the same native forum detail handoff target as the forum tab, instead of inventing a separate profile-only route.',
       emptyText: 'No public posts are available for this user yet.',
       children: posts
           .map(
@@ -584,6 +598,16 @@ class _RecentPostsCard extends StatelessWidget {
                   post.categoryName!,
                 _formatDate(post.createTime),
               ],
+              actionLabel: onOpenForumDetailTarget == null ? null : 'Open post',
+              onAction: onOpenForumDetailTarget == null
+                  ? null
+                  : () => onOpenForumDetailTarget!(
+                        ForumDetailHandoffTarget(
+                          postId: post.id,
+                          source: ForumDetailHandoffSource.publicProfilePost,
+                          initialTitle: post.title,
+                        ),
+                      ),
             ),
           )
           .toList(),
@@ -608,16 +632,18 @@ class _RecentPostsCard extends StatelessWidget {
 class _RecentCommentsCard extends StatelessWidget {
   const _RecentCommentsCard({
     required this.comments,
+    required this.onOpenForumDetailTarget,
   });
 
   final List<PublicProfileCommentSummary> comments;
+  final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
 
   @override
   Widget build(BuildContext context) {
     return _ProfileSectionCard(
       title: 'Recent public comments',
       description:
-          'Comment previews stay read-only in this batch and keep reply context lightweight.',
+          'Comment previews stay read-only, but they now hand off into the shared native forum detail target with commentId so profile and forum stop diverging.',
       emptyText: 'No public comments are available for this user yet.',
       children: comments
           .map(
@@ -634,6 +660,18 @@ class _RecentCommentsCard extends StatelessWidget {
                   comment.replyToCommentSnapshot!,
                 _formatDate(comment.createTime),
               ],
+              actionLabel: onOpenForumDetailTarget == null
+                  ? null
+                  : 'Open comment context',
+              onAction: onOpenForumDetailTarget == null
+                  ? null
+                  : () => onOpenForumDetailTarget!(
+                        ForumDetailHandoffTarget(
+                          postId: comment.postId,
+                          source: ForumDetailHandoffSource.publicProfileComment,
+                          commentId: comment.id,
+                        ),
+                      ),
             ),
           )
           .toList(),
@@ -689,12 +727,16 @@ class _ContentPreviewTile extends StatelessWidget {
     required this.subtitle,
     required this.meta,
     required this.chips,
+    this.actionLabel,
+    this.onAction,
   });
 
   final String title;
   final String subtitle;
   final String meta;
   final List<String> chips;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -712,6 +754,14 @@ class _ContentPreviewTile extends StatelessWidget {
           meta,
           style: Theme.of(context).textTheme.bodySmall,
         ),
+        if (actionLabel != null && onAction != null) ...[
+          const SizedBox(height: 12),
+          FilledButton.tonalIcon(
+            onPressed: onAction,
+            icon: const Icon(Icons.arrow_forward),
+            label: Text(actionLabel!),
+          ),
+        ],
         if (chips.isNotEmpty) ...[
           const SizedBox(height: 8),
           Wrap(
