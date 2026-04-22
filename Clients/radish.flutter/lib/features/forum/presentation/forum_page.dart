@@ -12,6 +12,7 @@ class ForumPage extends StatefulWidget {
     required this.environment,
     required this.repository,
     this.onOpenProfileUser,
+    this.onOpenForumDetailTarget,
     this.handoffTarget,
     this.onConsumeHandoffTarget,
     super.key,
@@ -20,6 +21,7 @@ class ForumPage extends StatefulWidget {
   final AppEnvironment environment;
   final ForumRepository repository;
   final ValueChanged<String>? onOpenProfileUser;
+  final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
   final ForumDetailHandoffTarget? handoffTarget;
   final VoidCallback? onConsumeHandoffTarget;
 
@@ -118,6 +120,7 @@ class _ForumPageState extends State<ForumPage> {
                 environment: widget.environment,
                 repository: widget.repository,
                 onOpenProfileUser: widget.onOpenProfileUser,
+                onOpenForumDetailTarget: widget.onOpenForumDetailTarget,
                 state: state,
                 onPreviousPage: state.hasPreviousPage
                     ? () => _controller.goToPage(state.pageIndex - 1)
@@ -274,6 +277,7 @@ class _ForumFeedContent extends StatelessWidget {
     required this.environment,
     required this.repository,
     required this.onOpenProfileUser,
+    required this.onOpenForumDetailTarget,
     required this.state,
     required this.onPreviousPage,
     required this.onNextPage,
@@ -282,6 +286,7 @@ class _ForumFeedContent extends StatelessWidget {
   final AppEnvironment environment;
   final ForumRepository repository;
   final ValueChanged<String>? onOpenProfileUser;
+  final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
   final ForumFeedState state;
   final VoidCallback? onPreviousPage;
   final VoidCallback? onNextPage;
@@ -320,6 +325,16 @@ class _ForumFeedContent extends StatelessWidget {
             post: post,
             onOpenProfileUser: onOpenProfileUser,
             onOpen: () {
+              if (onOpenForumDetailTarget != null) {
+                onOpenForumDetailTarget!(
+                  ForumDetailHandoffTarget(
+                    postId: post.id,
+                    initialTitle: post.title,
+                  ),
+                );
+                return;
+              }
+
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (context) => ForumDetailPage(

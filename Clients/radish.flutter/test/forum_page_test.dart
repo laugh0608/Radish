@@ -74,6 +74,38 @@ void main() {
     expect(openedUserId, '1024');
   });
 
+  testWidgets('uses shared shell handoff when opening detail from forum feed',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final openedTargets = <ForumDetailHandoffTarget>[];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumPage(
+          environment: const AppEnvironment.development(),
+          repository: _SuccessForumRepository(),
+          onOpenForumDetailTarget: openedTargets.add,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Open detail'));
+    await tester.pumpAndSettle();
+
+    expect(openedTargets, hasLength(1));
+    expect(openedTargets.first.postId, '2042219067430928384');
+    expect(openedTargets.first.initialTitle,
+        'How to wire Radish Flutter forum reading');
+    expect(openedTargets.first.source, ForumDetailHandoffSource.shell);
+    expect(find.text('Forum detail'), findsNothing);
+  });
+
   testWidgets('opens forum detail handoff target from external shell state',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);

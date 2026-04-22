@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/auth/session_controller.dart';
 import '../../../core/config/app_environment.dart';
 import '../../../features/discover/data/discover_repository.dart';
 import '../../../features/docs/data/docs_repository.dart';
+import '../../../features/forum/data/forum_follow_up_store.dart';
 import '../../../features/forum/data/forum_models.dart';
 import '../../../features/forum/data/forum_repository.dart';
 import '../../../features/profile/data/profile_repository.dart';
@@ -20,6 +23,7 @@ class RadishFlutterShell extends StatefulWidget {
     required this.docsRepository,
     required this.forumRepository,
     required this.profileRepository,
+    required this.followUpStore,
     this.initialForumHandoffTarget,
     super.key,
   });
@@ -30,20 +34,24 @@ class RadishFlutterShell extends StatefulWidget {
   final DocsRepository docsRepository;
   final ForumRepository forumRepository;
   final ProfileRepository profileRepository;
+  final ForumFollowUpStore followUpStore;
   final ForumDetailHandoffTarget? initialForumHandoffTarget;
 
   @override
   State<RadishFlutterShell> createState() => _RadishFlutterShellState();
 }
 
-class _RadishFlutterShellState extends State<RadishFlutterShell> {
+class _RadishFlutterShellState extends State<RadishFlutterShell>
+    with WidgetsBindingObserver {
   int _currentIndex = 0;
   String? _guestProfileUserId;
   ForumDetailHandoffTarget? _forumHandoffTarget;
+  ForumDetailHandoffTarget? _recentBrowseHandoffTarget;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _forumHandoffTarget = _normalizeForumHandoffTarget(
       widget.initialForumHandoffTarget,
     );
@@ -51,6 +59,8 @@ class _RadishFlutterShellState extends State<RadishFlutterShell> {
     if (_forumHandoffTarget != null) {
       _currentIndex = 1;
     }
+
+    unawaited(_loadFollowUps());
   }
 
   @override
@@ -71,6 +81,23 @@ class _RadishFlutterShellState extends State<RadishFlutterShell> {
         _currentIndex = 1;
       });
     }
+
+    if (oldWidget.followUpStore != widget.followUpStore) {
+      unawaited(_loadFollowUps());
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_loadPendingHandoff());
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   void _selectTab(int index) {
@@ -97,10 +124,15 @@ class _RadishFlutterShellState extends State<RadishFlutterShell> {
       return;
     }
 
+    final recentTarget = _buildRecentBrowseTarget(normalizedTarget);
+
     setState(() {
       _forumHandoffTarget = normalizedTarget;
+      _recentBrowseHandoffTarget = recentTarget;
       _currentIndex = 1;
     });
+
+    unawaited(widget.followUpStore.writeRecentBrowseHandoff(recentTarget));
   }
 
   void _consumeForumHandoffTarget() {
@@ -111,6 +143,59 @@ class _RadishFlutterShellState extends State<RadishFlutterShell> {
     setState(() {
       _forumHandoffTarget = null;
     });
+  }
+
+  void _resumeRecentBrowseHandoff() {
+    final target = _recentBrowseHandoffTarget;
+    if (target == null) {
+      return;
+    }
+
+    _openForumDetailTarget(target);
+  }
+
+  Future<void> _loadFollowUps() async {
+    await _loadPendingHandoff();
+
+    final recentTarget = _normalizeForumHandoffTarget(
+      await widget.followUpStore.readRecentBrowseHandoff(),
+    );
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _recentBrowseHandoffTarget = recentTarget;
+    });
+  }
+
+  Future<void> _loadPendingHandoff() async {
+    final pendingTarget = _normalizeForumHandoffTarget(
+      await widget.followUpStore.takePendingHandoff(),
+    );
+    if (!mounted || pendingTarget == null) {
+      return;
+    }
+
+    final recentTarget = _buildRecentBrowseTarget(pendingTarget);
+    setState(() {
+      _forumHandoffTarget = pendingTarget;
+      _recentBrowseHandoffTarget = recentTarget;
+      _currentIndex = 1;
+    });
+
+    unawaited(widget.followUpStore.writeRecentBrowseHandoff(recentTarget));
+  }
+
+  ForumDetailHandoffTarget _buildRecentBrowseTarget(
+    ForumDetailHandoffTarget target,
+  ) {
+    return ForumDetailHandoffTarget(
+      postId: target.normalizedPostId,
+      source: ForumDetailHandoffSource.browseHistory,
+      initialTitle: target.normalizedInitialTitle,
+      commentId: target.normalizedCommentId,
+    );
   }
 
   ForumDetailHandoffTarget? _normalizeForumHandoffTarget(
@@ -142,12 +227,12 @@ class _RadishFlutterShellState extends State<RadishFlutterShell> {
             onOpenForum: () => _selectTab(1),
             onOpenDocs: () => _selectTab(2),
             onOpenProfileUser: _openProfileUser,
-            onOpenForumDetailTarget: _openForumDetailTarget,
           ),
           ForumPage(
             environment: widget.environment,
             repository: widget.forumRepository,
             onOpenProfileUser: _openProfileUser,
+            onOpenForumDetailTarget: _openForumDetailTarget,
             handoffTarget: _forumHandoffTarget,
             onConsumeHandoffTarget: _consumeForumHandoffTarget,
           ),
@@ -174,6 +259,14 @@ class _RadishFlutterShellState extends State<RadishFlutterShell> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      if (_recentBrowseHandoffTarget != null) ...[
+                        _ShellStatusChip(
+                          icon: Icons.history_outlined,
+                          label: 'Resume forum',
+                          onTap: _resumeRecentBrowseHandoff,
+                        ),
+                        const SizedBox(width: 8),
+                      ],
                       _ShellStatusChip(
                         label: widget.environment.name.toUpperCase(),
                       ),
@@ -246,16 +339,18 @@ class _ShellStatusChip extends StatelessWidget {
   const _ShellStatusChip({
     required this.label,
     this.icon,
+    this.onTap,
   });
 
   final String label;
   final IconData? icon;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return DecoratedBox(
+    final child = DecoratedBox(
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(999),
@@ -279,6 +374,16 @@ class _ShellStatusChip extends StatelessWidget {
           ],
         ),
       ),
+    );
+
+    if (onTap == null) {
+      return child;
+    }
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(999),
+      onTap: onTap,
+      child: child,
     );
   }
 }

@@ -10,6 +10,7 @@ import '../core/network/radish_api_client.dart';
 import '../core/network/radish_api_endpoints.dart';
 import '../features/discover/data/discover_repository.dart';
 import '../features/docs/data/docs_repository.dart';
+import '../features/forum/data/forum_follow_up_store.dart';
 import '../features/forum/data/forum_repository.dart';
 import '../features/profile/data/profile_repository.dart';
 import 'app.dart';
@@ -23,6 +24,9 @@ class RadishBootstrap {
     final environment = AppEnvironment.developmentForCurrentPlatform();
     final sessionStore =
         Platform.isAndroid ? PlatformSessionStore() : InMemorySessionStore();
+    final followUpStore = Platform.isAndroid
+        ? PlatformForumFollowUpStore()
+        : InMemoryForumFollowUpStore();
     final sessionController = SessionController(
       sessionStore: sessionStore,
       refreshService: SessionRefreshService(environment: environment),
@@ -54,6 +58,7 @@ class RadishBootstrap {
         docsRepository: docsRepository,
         forumRepository: forumRepository,
         profileRepository: profileRepository,
+        followUpStore: followUpStore,
       ),
     );
   }

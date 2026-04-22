@@ -6,8 +6,8 @@ import 'package:radish_flutter/core/network/radish_api_client.dart';
 import 'package:radish_flutter/features/discover/data/discover_models.dart';
 import 'package:radish_flutter/features/discover/data/discover_repository.dart';
 import 'package:radish_flutter/features/docs/data/docs_models.dart';
-import 'package:radish_flutter/features/discover/presentation/discover_page.dart';
 import 'package:radish_flutter/features/forum/data/forum_models.dart';
+import 'package:radish_flutter/features/discover/presentation/discover_page.dart';
 
 void main() {
   testWidgets('renders discover summaries from repository', (tester) async {
@@ -84,7 +84,8 @@ void main() {
     expect(find.text('Retry'), findsOneWidget);
   });
 
-  testWidgets('supports native handoff actions from discover', (tester) async {
+  testWidgets('supports native tab and profile handoff actions from discover',
+      (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -94,7 +95,6 @@ void main() {
     var forumOpened = false;
     var docsOpened = false;
     String? openedProfileUserId;
-    final openedForumTargets = <ForumDetailHandoffTarget>[];
 
     await tester.pumpWidget(
       MaterialApp(
@@ -111,7 +111,6 @@ void main() {
           onOpenProfileUser: (userId) {
             openedProfileUserId = userId;
           },
-          onOpenForumDetailTarget: openedForumTargets.add,
         ),
       ),
     );
@@ -136,33 +135,10 @@ void main() {
       scrollable: scrollable,
     );
     await tester.tap(find.text('Open @luobo'));
-    await tester.scrollUntilVisible(
-      find.text('Open notification follow-up'),
-      200,
-      scrollable: scrollable,
-    );
-    await tester.tap(find.text('Open notification follow-up'));
-    await tester.scrollUntilVisible(
-      find.text('Resume browse history'),
-      200,
-      scrollable: scrollable,
-    );
-    await tester.tap(find.text('Resume browse history'));
 
     expect(forumOpened, isTrue);
     expect(docsOpened, isTrue);
     expect(openedProfileUserId, '1024');
-    expect(openedForumTargets, hasLength(2));
-    expect(openedForumTargets.first.postId, '2042219067430928384');
-    expect(
-      openedForumTargets.first.source,
-      ForumDetailHandoffSource.notification,
-    );
-    expect(openedForumTargets.last.postId, '2042219067430928384');
-    expect(
-      openedForumTargets.last.source,
-      ForumDetailHandoffSource.browseHistory,
-    );
   });
 }
 

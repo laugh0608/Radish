@@ -12,6 +12,7 @@ import 'package:radish_flutter/features/discover/data/discover_models.dart';
 import 'package:radish_flutter/features/discover/data/discover_repository.dart';
 import 'package:radish_flutter/features/docs/data/docs_models.dart';
 import 'package:radish_flutter/features/docs/data/docs_repository.dart';
+import 'package:radish_flutter/features/forum/data/forum_follow_up_store.dart';
 import 'package:radish_flutter/features/forum/data/forum_models.dart';
 import 'package:radish_flutter/features/forum/data/forum_repository.dart';
 import 'package:radish_flutter/features/profile/data/profile_models.dart';
@@ -38,6 +39,7 @@ void main() {
         docsRepository: _FakeDocsRepository(),
         forumRepository: _FakeForumRepository(),
         profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
       ),
     );
 
@@ -79,6 +81,7 @@ void main() {
         docsRepository: _FakeDocsRepository(),
         forumRepository: _FakeForumRepository(),
         profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
       ),
     );
 
@@ -111,6 +114,7 @@ void main() {
         docsRepository: _FakeDocsRepository(),
         forumRepository: _FakeForumRepository(),
         profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
       ),
     );
 
@@ -173,6 +177,7 @@ void main() {
         docsRepository: _FakeDocsRepository(),
         forumRepository: _FakeForumRepository(),
         profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
       ),
     );
 
@@ -214,6 +219,7 @@ void main() {
         docsRepository: _FakeDocsRepository(),
         forumRepository: _FakeForumRepository(),
         profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
       ),
     );
 
@@ -242,6 +248,7 @@ void main() {
         docsRepository: _FakeDocsRepository(),
         forumRepository: _SeededForumRepository(),
         profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
       ),
     );
 
@@ -280,6 +287,7 @@ void main() {
         docsRepository: _FakeDocsRepository(),
         forumRepository: _SeededForumRepository(),
         profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
       ),
     );
 
@@ -316,6 +324,7 @@ void main() {
         docsRepository: _FakeDocsRepository(),
         forumRepository: _SeededForumRepository(),
         profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
         initialForumHandoffTarget: const ForumDetailHandoffTarget(
           postId: 'post-42',
           initialTitle: 'Forum detail handoff',
@@ -363,6 +372,7 @@ void main() {
         docsRepository: _FakeDocsRepository(),
         forumRepository: _SeededForumRepository(),
         profileRepository: _SeededProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
       ),
     );
 
@@ -386,14 +396,20 @@ void main() {
     expect(find.text('First public child comment'), findsOneWidget);
   });
 
-  testWidgets(
-      'discover follow-up sources open shared native forum detail target',
+  testWidgets('pending notification handoff opens shared native forum detail',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
+    final followUpStore = InMemoryForumFollowUpStore(
+      initialPendingHandoff: const ForumDetailHandoffTarget(
+        postId: '2042219067430928384',
+        source: ForumDetailHandoffSource.notification,
+        initialTitle: 'Native discover wiring plan',
+      ),
+    );
     final sessionController = SessionController(
       sessionStore: InMemorySessionStore(),
       refreshService: _FakeSessionRefreshService.missing(),
@@ -407,39 +423,57 @@ void main() {
         docsRepository: _FakeDocsRepository(),
         forumRepository: _SeededBigIdForumRepository(),
         profileRepository: _FakeProfileRepository(),
+        followUpStore: followUpStore,
       ),
     );
 
     await tester.pump();
     await tester.pumpAndSettle();
 
-    final scrollable = find.byType(Scrollable).last;
-    await tester.scrollUntilVisible(
-      find.text('Open notification follow-up'),
-      200,
-      scrollable: scrollable,
-    );
-    await tester.tap(find.text('Open notification follow-up'));
-    await tester.pump();
-    await tester.pumpAndSettle();
-
     expect(find.text('Forum detail'), findsWidgets);
     expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
     expect(find.text('Notification handoff'), findsWidgets);
+  });
 
+  testWidgets('recent browse handoff resumes forum detail from shell chip',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final followUpStore = InMemoryForumFollowUpStore();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _SeededBigIdForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        followUpStore: followUpStore,
+      ),
+    );
+
+    await tester.pump();
+    await tester.tap(find.text('Forum'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Open detail'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
     await tester.pageBack();
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Discover'));
-    await tester.pumpAndSettle();
-
-    final discoverScrollable = find.byType(Scrollable).last;
-    await tester.scrollUntilVisible(
-      find.text('Resume browse history'),
-      200,
-      scrollable: discoverScrollable,
-    );
-    await tester.tap(find.text('Resume browse history'));
+    expect(find.text('Resume forum'), findsOneWidget);
+    await tester.tap(find.text('Resume forum'));
     await tester.pump();
     await tester.pumpAndSettle();
 

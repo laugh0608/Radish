@@ -255,6 +255,34 @@ class ForumDetailHandoffTarget {
 
   bool get hasValidPostId => normalizedPostId.isNotEmpty;
 
+  Map<String, Object?> toJson() {
+    return {
+      'postId': normalizedPostId,
+      'source': source.name,
+      'initialTitle': normalizedInitialTitle,
+      'commentId': normalizedCommentId,
+    };
+  }
+
+  static ForumDetailHandoffTarget? fromJson(Object? json) {
+    final map = _tryReadJsonMap(json);
+    if (map == null) {
+      return null;
+    }
+
+    final postId = _readString(map['postId']);
+    if (postId == null || postId.isEmpty) {
+      return null;
+    }
+
+    return ForumDetailHandoffTarget(
+      postId: postId,
+      source: _readHandoffSource(map['source']),
+      initialTitle: _readString(map['initialTitle']),
+      commentId: _readString(map['commentId']),
+    );
+  }
+
   ForumDetailHandoffTarget copyWith({
     String? postId,
     ForumDetailHandoffSource? source,
@@ -496,6 +524,14 @@ Map<String, Object?> _readJsonMap(Object? json) {
   throw const FormatException('Expected a JSON object.');
 }
 
+Map<String, Object?>? _tryReadJsonMap(Object? json) {
+  if (json is! Map) {
+    return null;
+  }
+
+  return Map<String, Object?>.from(json.cast<Object?, Object?>());
+}
+
 String _readRequiredId(Map<String, Object?> map, String key) {
   final value = _readString(map[key]);
   if (value == null || value.isEmpty) {
@@ -533,6 +569,21 @@ bool _readBool(Object? value) {
 
   final text = value?.toString().trim().toLowerCase();
   return text == 'true' || text == '1';
+}
+
+ForumDetailHandoffSource _readHandoffSource(Object? value) {
+  final text = _readString(value);
+  if (text == null) {
+    return ForumDetailHandoffSource.shell;
+  }
+
+  for (final source in ForumDetailHandoffSource.values) {
+    if (source.name == text) {
+      return source;
+    }
+  }
+
+  return ForumDetailHandoffSource.shell;
 }
 
 List<String> _readStringList(Object? value) {
