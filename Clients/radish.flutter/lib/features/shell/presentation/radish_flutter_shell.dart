@@ -142,6 +142,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell> {
             onOpenForum: () => _selectTab(1),
             onOpenDocs: () => _selectTab(2),
             onOpenProfileUser: _openProfileUser,
+            onOpenForumDetailTarget: _openForumDetailTarget,
           ),
           ForumPage(
             environment: widget.environment,

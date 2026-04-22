@@ -94,6 +94,7 @@ void main() {
     var forumOpened = false;
     var docsOpened = false;
     String? openedProfileUserId;
+    final openedForumTargets = <ForumDetailHandoffTarget>[];
 
     await tester.pumpWidget(
       MaterialApp(
@@ -110,6 +111,7 @@ void main() {
           onOpenProfileUser: (userId) {
             openedProfileUserId = userId;
           },
+          onOpenForumDetailTarget: openedForumTargets.add,
         ),
       ),
     );
@@ -134,10 +136,33 @@ void main() {
       scrollable: scrollable,
     );
     await tester.tap(find.text('Open @luobo'));
+    await tester.scrollUntilVisible(
+      find.text('Open notification follow-up'),
+      200,
+      scrollable: scrollable,
+    );
+    await tester.tap(find.text('Open notification follow-up'));
+    await tester.scrollUntilVisible(
+      find.text('Resume browse history'),
+      200,
+      scrollable: scrollable,
+    );
+    await tester.tap(find.text('Resume browse history'));
 
     expect(forumOpened, isTrue);
     expect(docsOpened, isTrue);
     expect(openedProfileUserId, '1024');
+    expect(openedForumTargets, hasLength(2));
+    expect(openedForumTargets.first.postId, '2042219067430928384');
+    expect(
+      openedForumTargets.first.source,
+      ForumDetailHandoffSource.notification,
+    );
+    expect(openedForumTargets.last.postId, '2042219067430928384');
+    expect(
+      openedForumTargets.last.source,
+      ForumDetailHandoffSource.browseHistory,
+    );
   });
 }
 

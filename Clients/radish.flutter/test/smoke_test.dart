@@ -385,6 +385,67 @@ void main() {
     expect(find.text('Public profile comment handoff'), findsWidgets);
     expect(find.text('First public child comment'), findsOneWidget);
   });
+
+  testWidgets(
+      'discover follow-up sources open shared native forum detail target',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        discoverRepository: _SeededBigIdDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _SeededBigIdForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    final scrollable = find.byType(Scrollable).last;
+    await tester.scrollUntilVisible(
+      find.text('Open notification follow-up'),
+      200,
+      scrollable: scrollable,
+    );
+    await tester.tap(find.text('Open notification follow-up'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Forum detail'), findsWidgets);
+    expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
+    expect(find.text('Notification handoff'), findsWidgets);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Discover'));
+    await tester.pumpAndSettle();
+
+    final discoverScrollable = find.byType(Scrollable).last;
+    await tester.scrollUntilVisible(
+      find.text('Resume browse history'),
+      200,
+      scrollable: discoverScrollable,
+    );
+    await tester.tap(find.text('Resume browse history'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
+    expect(find.text('Browse history handoff'), findsWidgets);
+  });
 }
 
 class _FakeDiscoverRepository implements DiscoverRepository {
@@ -410,6 +471,29 @@ class _SeededDiscoverRepository implements DiscoverRepository {
         ForumPostSummary(
           id: 'post-1',
           title: 'Native discover',
+          summary: 'Use discover to jump into real tabs.',
+          categoryId: 'forum-cat-1',
+          categoryName: 'General',
+          authorId: 'user-9',
+          authorName: 'luobo',
+        ),
+      ],
+      documents: [],
+      products: [],
+    );
+  }
+}
+
+class _SeededBigIdDiscoverRepository implements DiscoverRepository {
+  @override
+  Future<DiscoverSnapshot> getSnapshot({
+    required int pageSize,
+  }) async {
+    return const DiscoverSnapshot(
+      forumPosts: [
+        ForumPostSummary(
+          id: '2042219067430928384',
+          title: 'Native discover wiring plan',
           summary: 'Use discover to jump into real tabs.',
           categoryId: 'forum-cat-1',
           categoryName: 'General',
@@ -693,6 +777,112 @@ class _SeededForumRepository implements ForumRepository {
       commentId: commentId,
       postId: postId,
       rootCommentId: 'comment-1',
+      isRootComment: true,
+      rootPageIndex: 1,
+    );
+  }
+}
+
+class _SeededBigIdForumRepository implements ForumRepository {
+  @override
+  Future<ForumPostPage> getPostPage({
+    required int pageIndex,
+    required int pageSize,
+    required ForumFeedSort sort,
+  }) async {
+    return const ForumPostPage(
+      page: 1,
+      pageSize: 20,
+      dataCount: 1,
+      pageCount: 1,
+      posts: [
+        ForumPostSummary(
+          id: '2042219067430928384',
+          title: 'Native discover wiring plan',
+          summary: 'Connect real summaries without expanding into details.',
+          categoryId: '9',
+          categoryName: 'Engineering',
+          authorId: '1024',
+          authorName: 'luobo',
+          commentCount: 6,
+          viewCount: 128,
+          isEssence: true,
+        ),
+      ],
+    );
+  }
+
+  @override
+  Future<ForumPostDetail> getPostDetail({
+    required String postId,
+  }) async {
+    return ForumPostDetail(
+      id: postId,
+      title: 'Native discover wiring plan',
+      summary: 'Connect real summaries without expanding into details.',
+      content: '# Big id detail\n\nPreserve string ids through native handoff.',
+      contentType: 'Markdown',
+      categoryId: '9',
+      categoryName: 'Engineering',
+      authorId: '1024',
+      authorName: 'luobo',
+      commentCount: 6,
+      viewCount: 128,
+      isEssence: true,
+      createTime: '2026-04-18T10:00:00Z',
+    );
+  }
+
+  @override
+  Future<ForumCommentPage> getRootCommentsPage({
+    required String postId,
+    required int pageIndex,
+    required int pageSize,
+    String sortBy = 'default',
+  }) async {
+    return const ForumCommentPage(
+      page: 1,
+      pageSize: 20,
+      dataCount: 1,
+      pageCount: 1,
+      comments: [
+        ForumCommentSummary(
+          id: 'comment-big-1',
+          postId: '2042219067430928384',
+          content: 'Big id root comment',
+          authorId: '2048',
+          authorName: 'reader',
+          createTime: '2026-04-18T12:00:00Z',
+        ),
+      ],
+    );
+  }
+
+  @override
+  Future<ForumChildCommentPage> getChildCommentsPage({
+    required String parentId,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const ForumChildCommentPage(
+      pageIndex: 1,
+      pageSize: 5,
+      totalCount: 0,
+      comments: [],
+    );
+  }
+
+  @override
+  Future<ForumCommentNavigationLocation> getCommentNavigation({
+    required String postId,
+    required String commentId,
+    required int rootPageSize,
+    required int childPageSize,
+  }) async {
+    return ForumCommentNavigationLocation(
+      commentId: commentId,
+      postId: postId,
+      rootCommentId: commentId,
       isRootComment: true,
       rootPageIndex: 1,
     );

@@ -17,6 +17,7 @@ class DiscoverPage extends StatefulWidget {
     this.onOpenForum,
     this.onOpenDocs,
     this.onOpenProfileUser,
+    this.onOpenForumDetailTarget,
     super.key,
   });
 
@@ -26,6 +27,7 @@ class DiscoverPage extends StatefulWidget {
   final VoidCallback? onOpenForum;
   final VoidCallback? onOpenDocs;
   final ValueChanged<String>? onOpenProfileUser;
+  final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
 
   @override
   State<DiscoverPage> createState() => _DiscoverPageState();
@@ -71,6 +73,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
         final snapshot = state.snapshot;
         final profileTargetUserId = _resolveProfileTargetUserId(snapshot);
         final profileActionLabel = _resolveProfileActionLabel(snapshot);
+        final forumSeedPost = _resolveForumSeedPost(snapshot);
 
         return ListView(
           padding: const EdgeInsets.all(20),
@@ -111,6 +114,29 @@ class _DiscoverPageState extends State<DiscoverPage> {
                     : () => widget.onOpenProfileUser!(profileTargetUserId),
                 profileActionLabel: profileActionLabel,
               ),
+              if (forumSeedPost != null &&
+                  widget.onOpenForumDetailTarget != null) ...[
+                const SizedBox(height: 16),
+                _ForumFollowUpSourceCard(
+                  post: forumSeedPost,
+                  onOpenNotificationHandoff: () =>
+                      widget.onOpenForumDetailTarget!(
+                    ForumDetailHandoffTarget(
+                      postId: forumSeedPost.id,
+                      source: ForumDetailHandoffSource.notification,
+                      initialTitle: forumSeedPost.title,
+                    ),
+                  ),
+                  onOpenBrowseHistoryHandoff: () =>
+                      widget.onOpenForumDetailTarget!(
+                    ForumDetailHandoffTarget(
+                      postId: forumSeedPost.id,
+                      source: ForumDetailHandoffSource.browseHistory,
+                      initialTitle: forumSeedPost.title,
+                    ),
+                  ),
+                ),
+              ],
             ],
             const SizedBox(height: 16),
             Align(
@@ -176,6 +202,20 @@ class _DiscoverPageState extends State<DiscoverPage> {
 
     return snapshot.forumPosts.isEmpty ? null : 'Open public profile';
   }
+
+  ForumPostSummary? _resolveForumSeedPost(DiscoverSnapshot? snapshot) {
+    if (snapshot == null) {
+      return null;
+    }
+
+    for (final post in snapshot.forumPosts) {
+      if (post.id.trim().isNotEmpty) {
+        return post;
+      }
+    }
+
+    return null;
+  }
 }
 
 class _DiscoverHeroCard extends StatelessWidget {
@@ -234,6 +274,72 @@ class _DiscoverHeroCard extends StatelessWidget {
                     icon: const Icon(Icons.person_outline),
                     label: Text(profileActionLabel!),
                   ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ForumFollowUpSourceCard extends StatelessWidget {
+  const _ForumFollowUpSourceCard({
+    required this.post,
+    required this.onOpenNotificationHandoff,
+    required this.onOpenBrowseHistoryHandoff,
+  });
+
+  final ForumPostSummary post;
+  final VoidCallback onOpenNotificationHandoff;
+  final VoidCallback onOpenBrowseHistoryHandoff;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Forum follow-up sources',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'This batch still does not ship a full native notification center or browse history page, but discover now exposes the shared follow-up entry points so those sources can reuse one forum detail handoff target.',
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                FilledButton.tonalIcon(
+                  onPressed: onOpenNotificationHandoff,
+                  icon: const Icon(Icons.notifications_outlined),
+                  label: const Text('Open notification follow-up'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: onOpenBrowseHistoryHandoff,
+                  icon: const Icon(Icons.history_outlined),
+                  label: const Text('Resume browse history'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                Chip(
+                  label: Text('/forum/post/${post.id}'),
+                  visualDensity: VisualDensity.compact,
+                ),
+                Chip(
+                  label: Text(post.title),
+                  visualDensity: VisualDensity.compact,
+                ),
               ],
             ),
           ],
