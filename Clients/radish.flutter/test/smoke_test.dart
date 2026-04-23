@@ -55,6 +55,41 @@ void main() {
     expect(find.text('Guest'), findsOneWidget);
   });
 
+  testWidgets('renders shell status strip on narrow screens without overflow',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _FakeForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Radish Flutter'), findsOneWidget);
+    expect(find.text('DEVELOPMENT'), findsOneWidget);
+    expect(find.text('Guest'), findsOneWidget);
+    expect(find.text('Sign in'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('restores authenticated session into profile boundary',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
@@ -285,6 +320,239 @@ void main() {
 
     expect(find.text('Signed in'), findsOneWidget);
     expect(find.text('Restored session for user user-88'), findsOneWidget);
+  });
+
+  testWidgets('shows a visible shell notice when browser sign-in is canceled',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+    final authController = _buildAuthController(sessionController);
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: authController,
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _FakeForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+      ),
+    );
+
+    await tester.pump();
+    await authController.startLogin();
+    await authController.consumePendingCallback();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sign-in needs attention'), findsOneWidget);
+    expect(
+      find.text(
+        'Sign-in was canceled before the browser returned to the app.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Retry sign-in'), findsOneWidget);
+  });
+
+  testWidgets('maps access_denied callback into a friendly auth notice',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+    final authController = _buildAuthController(
+      sessionController,
+      pendingCallback: const NativeAuthCallbackPayload(
+        type: NativeAuthCallbackType.login,
+        error: 'access_denied',
+      ),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: authController,
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _FakeForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sign-in needs attention'), findsOneWidget);
+    expect(
+      find.text('Sign-in was canceled from the browser.'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Dismiss'));
+    await tester.pumpAndSettle();
+    expect(find.text('Sign-in needs attention'), findsNothing);
+  });
+
+  testWidgets('profile sign-in returns to the original profile tab',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+    final gateway = InMemoryNativeAuthGateway();
+    final authController = NativeAuthController(
+      environment: const AppEnvironment.development(),
+      sessionController: sessionController,
+      gateway: gateway,
+      exchangeService: _FakeAuthorizationCodeExchangeService(
+        nextSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: 'user-108',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: 'user-108',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: authController,
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _FakeForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.tap(find.text('Profile'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Guest boundary'), findsOneWidget);
+    await tester.tap(find.text('Sign in with OIDC'));
+    await tester.pumpAndSettle();
+
+    gateway.setPendingCallback(
+      const NativeAuthCallbackPayload(
+        type: NativeAuthCallbackType.login,
+        code: 'profile-login-code',
+      ),
+    );
+    await authController.consumePendingCallback();
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Profile'), findsWidgets);
+    expect(find.text('Restored session for user user-108'), findsOneWidget);
+    expect(find.text('Signed in'), findsOneWidget);
+  });
+
+  testWidgets('retry sign-in resumes forum detail target after cancellation',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+    final gateway = InMemoryNativeAuthGateway();
+    final authController = NativeAuthController(
+      environment: const AppEnvironment.development(),
+      sessionController: sessionController,
+      gateway: gateway,
+      exchangeService: _FakeAuthorizationCodeExchangeService(
+        nextSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: 'user-109',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: 'user-109',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: authController,
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _SeededBigIdForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.tap(find.text('Forum'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Open detail'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Sign in'));
+    await tester.pumpAndSettle();
+    await authController.consumePendingCallback();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sign-in needs attention'), findsOneWidget);
+    expect(
+      find.text('Sign-in was canceled before the browser returned to the app.'),
+      findsOneWidget,
+    );
+
+    gateway.setPendingCallback(
+      const NativeAuthCallbackPayload(
+        type: NativeAuthCallbackType.login,
+        code: 'forum-login-code',
+      ),
+    );
+    await tester.tap(find.text('Retry sign-in'));
+    await tester.pumpAndSettle();
+    await authController.consumePendingCallback();
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
+    expect(find.text('Browse history handoff'), findsWidgets);
+    expect(find.text('Restored session for user user-109'), findsNothing);
   });
 
   testWidgets('forum feed opens native public detail page', (tester) async {

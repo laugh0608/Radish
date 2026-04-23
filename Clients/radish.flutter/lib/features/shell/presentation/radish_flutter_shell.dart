@@ -50,11 +50,15 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
   String? _guestProfileUserId;
   ForumDetailHandoffTarget? _forumHandoffTarget;
   ForumDetailHandoffTarget? _recentBrowseHandoffTarget;
+  _ShellPostLoginTarget? _pendingPostLoginTarget;
+  late bool _wasAuthenticated;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    widget.sessionController.addListener(_handleSessionStateChanged);
+    _wasAuthenticated = widget.sessionController.state.isAuthenticated;
     _forumHandoffTarget = _normalizeForumHandoffTarget(
       widget.initialForumHandoffTarget,
     );
@@ -70,6 +74,12 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
   @override
   void didUpdateWidget(covariant RadishFlutterShell oldWidget) {
     super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.sessionController != widget.sessionController) {
+      oldWidget.sessionController.removeListener(_handleSessionStateChanged);
+      widget.sessionController.addListener(_handleSessionStateChanged);
+      _wasAuthenticated = widget.sessionController.state.isAuthenticated;
+    }
 
     if (oldWidget.initialForumHandoffTarget !=
         widget.initialForumHandoffTarget) {
@@ -102,6 +112,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    widget.sessionController.removeListener(_handleSessionStateChanged);
     super.dispose();
   }
 
@@ -138,6 +149,63 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     });
 
     unawaited(widget.followUpStore.writeRecentBrowseHandoff(recentTarget));
+  }
+
+  void _handleSessionStateChanged() {
+    final isAuthenticated = widget.sessionController.state.isAuthenticated;
+    if (!_wasAuthenticated && isAuthenticated) {
+      _consumePendingPostLoginTarget();
+    }
+    _wasAuthenticated = isAuthenticated;
+  }
+
+  Future<void> _startLoginForCurrentContext() async {
+    _pendingPostLoginTarget ??= _buildPostLoginTargetForCurrentContext();
+    await widget.authController.startLogin();
+  }
+
+  Future<void> _startLoginForProfile() async {
+    _pendingPostLoginTarget = const _ShellPostLoginTarget(
+      tabIndex: 3,
+    );
+    await widget.authController.startLogin();
+  }
+
+  _ShellPostLoginTarget _buildPostLoginTargetForCurrentContext() {
+    if (_currentIndex == 1) {
+      return _ShellPostLoginTarget(
+        tabIndex: 1,
+        forumTarget: _normalizeForumHandoffTarget(
+          _forumHandoffTarget ?? _recentBrowseHandoffTarget,
+        ),
+      );
+    }
+
+    return _ShellPostLoginTarget(
+      tabIndex: _currentIndex,
+    );
+  }
+
+  void _consumePendingPostLoginTarget() {
+    final target = _pendingPostLoginTarget;
+    if (target == null) {
+      return;
+    }
+
+    _pendingPostLoginTarget = null;
+    final forumTarget = target.forumTarget;
+    if (forumTarget != null) {
+      _openForumDetailTarget(forumTarget);
+      return;
+    }
+
+    if (_currentIndex == target.tabIndex) {
+      return;
+    }
+
+    setState(() {
+      _currentIndex = target.tabIndex;
+    });
   }
 
   void _consumeForumHandoffTarget() {
@@ -228,6 +296,15 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       builder: (context, child) {
         final sessionState = widget.sessionController.state;
         final authState = widget.authController.state;
+        final statusStrip = _buildShellStatusStrip(
+          sessionState: sessionState,
+          authState: authState,
+        );
+        final authNotice = _buildAuthNotice(
+          context,
+          sessionState: sessionState,
+          authState: authState,
+        );
         final pages = <Widget>[
           DiscoverPage(
             environment: widget.environment,
@@ -255,97 +332,26 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
             repository: widget.profileRepository,
             guestUserId: _guestProfileUserId,
             onOpenForumDetailTarget: _openForumDetailTarget,
+            onRequestSignIn: _startLoginForProfile,
           ),
         ];
 
         return Scaffold(
           appBar: AppBar(
             title: const Text('Radish Flutter'),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (_recentBrowseHandoffTarget != null) ...[
-                        _ShellStatusChip(
-                          icon: Icons.history_outlined,
-                          label: 'Resume forum',
-                          onTap: _resumeRecentBrowseHandoff,
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                      _ShellStatusChip(
-                        label: widget.environment.name.toUpperCase(),
-                      ),
-                      const SizedBox(width: 8),
-                      _ShellStatusChip(
-                        icon: sessionState.isAuthenticated
-                            ? Icons.verified_user_outlined
-                            : Icons.person_outline,
-                        label: sessionState.isAuthenticated
-                            ? 'Signed in'
-                            : 'Guest',
-                      ),
-                      const SizedBox(width: 8),
-                      _ShellStatusChip(
-                        icon: authState.isOpeningLogout
-                            ? Icons.logout
-                            : authState.isBusy
-                                ? Icons.hourglass_top_outlined
-                                : sessionState.isAuthenticated
-                                    ? Icons.logout_outlined
-                                    : Icons.login_outlined,
-                        label: authState.isOpeningLogin
-                            ? 'Opening sign-in'
-                            : authState.isRedeemingCode
-                                ? 'Completing sign-in'
-                                : authState.isOpeningLogout
-                                    ? 'Signing out'
-                                    : sessionState.isAuthenticated
-                                        ? 'Sign out'
-                                        : 'Sign in',
-                        onTap: authState.isBusy
-                            ? null
-                            : sessionState.isAuthenticated
-                                ? widget.authController.startLogout
-                                : widget.authController.startLogin,
-                      ),
-                      if (sessionState.isAnonymous &&
-                          sessionState.lastErrorMessage != null &&
-                          sessionState.lastErrorMessage!.isNotEmpty) ...[
-                        const SizedBox(width: 8),
-                        Tooltip(
-                          message: sessionState.lastErrorMessage!,
-                          child: const _ShellStatusChip(
-                            icon: Icons.warning_amber_outlined,
-                            label: 'Session expired',
-                          ),
-                        ),
-                      ],
-                      if (authState.lastErrorMessage != null &&
-                          authState.lastErrorMessage!.isNotEmpty) ...[
-                        const SizedBox(width: 8),
-                        Tooltip(
-                          message: authState.lastErrorMessage!,
-                          child: const _ShellStatusChip(
-                            icon: Icons.error_outline,
-                            label: 'Auth issue',
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            ],
           ),
           body: SafeArea(
-            child: IndexedStack(
-              index: _currentIndex,
-              children: pages,
+            child: Column(
+              children: [
+                statusStrip,
+                if (authNotice != null) authNotice,
+                Expanded(
+                  child: IndexedStack(
+                    index: _currentIndex,
+                    children: pages,
+                  ),
+                ),
+              ],
             ),
           ),
           bottomNavigationBar: NavigationBar(
@@ -377,6 +383,130 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
         );
       },
     );
+  }
+
+  Widget _buildShellStatusStrip({
+    required SessionState sessionState,
+    required NativeAuthState authState,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            if (_recentBrowseHandoffTarget != null)
+              _ShellStatusChip(
+                icon: Icons.history_outlined,
+                label: 'Resume forum',
+                onTap: _resumeRecentBrowseHandoff,
+              ),
+            _ShellStatusChip(
+              label: widget.environment.name.toUpperCase(),
+            ),
+            _ShellStatusChip(
+              icon: sessionState.isAuthenticated
+                  ? Icons.verified_user_outlined
+                  : Icons.person_outline,
+              label: sessionState.isAuthenticated ? 'Signed in' : 'Guest',
+            ),
+            _ShellStatusChip(
+              icon: authState.isOpeningLogout
+                  ? Icons.logout
+                  : authState.isBusy
+                      ? Icons.hourglass_top_outlined
+                      : sessionState.isAuthenticated
+                          ? Icons.logout_outlined
+                          : Icons.login_outlined,
+              label: authState.isOpeningLogin
+                  ? 'Opening sign-in'
+                  : authState.isRedeemingCode
+                      ? 'Completing sign-in'
+                      : authState.isOpeningLogout
+                          ? 'Signing out'
+                          : sessionState.isAuthenticated
+                              ? 'Sign out'
+                              : 'Sign in',
+              onTap: authState.isBusy
+                  ? null
+                  : sessionState.isAuthenticated
+                      ? widget.authController.startLogout
+                      : _startLoginForCurrentContext,
+            ),
+            if (sessionState.isAnonymous &&
+                sessionState.lastErrorMessage != null &&
+                sessionState.lastErrorMessage!.isNotEmpty)
+              Tooltip(
+                message: sessionState.lastErrorMessage!,
+                child: const _ShellStatusChip(
+                  icon: Icons.warning_amber_outlined,
+                  label: 'Session expired',
+                ),
+              ),
+            if (authState.lastErrorMessage != null &&
+                authState.lastErrorMessage!.isNotEmpty)
+              Tooltip(
+                message: authState.lastErrorMessage!,
+                child: const _ShellStatusChip(
+                  icon: Icons.error_outline,
+                  label: 'Auth issue',
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget? _buildAuthNotice(
+    BuildContext context, {
+    required SessionState sessionState,
+    required NativeAuthState authState,
+  }) {
+    if (authState.isOpeningLogin) {
+      return _ShellNoticeBanner(
+        severity: _ShellNoticeSeverity.info,
+        title: 'Complete sign-in in the browser',
+        message:
+            'The native shell is waiting for the browser to finish OIDC sign-in and return to the app.',
+      );
+    }
+
+    if (authState.isRedeemingCode) {
+      return _ShellNoticeBanner(
+        severity: _ShellNoticeSeverity.info,
+        title: 'Completing sign-in',
+        message:
+            'The native shell is redeeming the authorization code and restoring the authenticated session.',
+      );
+    }
+
+    final authErrorMessage = authState.lastErrorMessage;
+    if (authErrorMessage != null && authErrorMessage.isNotEmpty) {
+      return _ShellNoticeBanner(
+        severity: _ShellNoticeSeverity.error,
+        title: 'Sign-in needs attention',
+        message: authErrorMessage,
+        actions: [
+          TextButton(
+            onPressed: widget.authController.dismissError,
+            child: const Text('Dismiss'),
+          ),
+          FilledButton.tonal(
+            onPressed: sessionState.isAuthenticated
+                ? widget.authController.startLogout
+                : _startLoginForCurrentContext,
+            child: Text(
+              sessionState.isAuthenticated ? 'Retry sign-out' : 'Retry sign-in',
+            ),
+          ),
+        ],
+      );
+    }
+
+    return null;
   }
 }
 
@@ -431,4 +561,99 @@ class _ShellStatusChip extends StatelessWidget {
       child: child,
     );
   }
+}
+
+enum _ShellNoticeSeverity {
+  info,
+  error,
+}
+
+class _ShellNoticeBanner extends StatelessWidget {
+  const _ShellNoticeBanner({
+    required this.severity,
+    required this.title,
+    required this.message,
+    this.actions = const [],
+  });
+
+  final _ShellNoticeSeverity severity;
+  final String title;
+  final String message;
+  final List<Widget> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final (backgroundColor, borderColor, icon, iconColor) = switch (severity) {
+      _ShellNoticeSeverity.info => (
+          colorScheme.secondaryContainer,
+          colorScheme.secondary,
+          Icons.open_in_browser_outlined,
+          colorScheme.onSecondaryContainer,
+        ),
+      _ShellNoticeSeverity.error => (
+          colorScheme.errorContainer,
+          colorScheme.error,
+          Icons.error_outline,
+          colorScheme.onErrorContainer,
+        ),
+    };
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: borderColor),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(icon, color: iconColor),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(message),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              if (actions.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: actions,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ShellPostLoginTarget {
+  const _ShellPostLoginTarget({
+    required this.tabIndex,
+    this.forumTarget,
+  });
+
+  final int tabIndex;
+  final ForumDetailHandoffTarget? forumTarget;
 }

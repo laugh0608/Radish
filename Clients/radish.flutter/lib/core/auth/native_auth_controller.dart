@@ -75,6 +75,15 @@ class NativeAuthController extends ChangeNotifier {
 
   NativeAuthState get state => _state;
 
+  void dismissError() {
+    if (_state.lastErrorMessage == null || _state.lastErrorMessage!.isEmpty) {
+      return;
+    }
+
+    _state = const NativeAuthState.idle();
+    notifyListeners();
+  }
+
   Future<void> startLogin() async {
     if (_state.isBusy) {
       return;
@@ -122,7 +131,16 @@ class NativeAuthController extends ChangeNotifier {
   Future<void> _consumePendingCallback() async {
     final callback = await _gateway.takePendingCallback();
     if (callback == null) {
-      if (_state.isOpeningLogin || _state.isOpeningLogout) {
+      if (_state.isOpeningLogin) {
+        _state = const NativeAuthState.idle(
+          lastErrorMessage:
+              'Sign-in was canceled before the browser returned to the app.',
+        );
+        notifyListeners();
+        return;
+      }
+
+      if (_state.isOpeningLogout) {
         _state = const NativeAuthState.idle();
         notifyListeners();
       }
@@ -141,9 +159,10 @@ class NativeAuthController extends ChangeNotifier {
     if (callbackError != null && callbackError.isNotEmpty) {
       final description = callback.errorDescription?.trim();
       _state = NativeAuthState.idle(
-        lastErrorMessage: description != null && description.isNotEmpty
-            ? description
-            : callbackError,
+        lastErrorMessage: _buildCallbackErrorMessage(
+          callbackError,
+          description,
+        ),
       );
       notifyListeners();
       return;
@@ -204,5 +223,25 @@ class NativeAuthController extends ChangeNotifier {
             _environment.nativeOidcPostLogoutRedirectUri,
       },
     );
+  }
+
+  String _buildCallbackErrorMessage(
+    String error,
+    String? description,
+  ) {
+    final normalizedError = error.trim();
+    final normalizedDescription = description?.trim();
+    if (normalizedDescription != null && normalizedDescription.isNotEmpty) {
+      return normalizedDescription;
+    }
+
+    return switch (normalizedError) {
+      'access_denied' => 'Sign-in was canceled from the browser.',
+      'login_required' =>
+        'The browser sign-in session expired. Please start sign-in again.',
+      'server_error' =>
+        'The identity server could not complete sign-in. Please retry.',
+      _ => normalizedError,
+    };
   }
 }

@@ -15,6 +15,7 @@ class ProfilePage extends StatefulWidget {
     required this.repository,
     this.guestUserId,
     this.onOpenForumDetailTarget,
+    this.onRequestSignIn,
     super.key,
   });
 
@@ -23,6 +24,7 @@ class ProfilePage extends StatefulWidget {
   final ProfileRepository repository;
   final String? guestUserId;
   final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
+  final Future<void> Function()? onRequestSignIn;
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -151,7 +153,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   FilledButton.icon(
                     onPressed: authState.isBusy
                         ? null
-                        : widget.authController.startLogin,
+                        : widget.onRequestSignIn ??
+                            widget.authController.startLogin,
                     icon: Icon(
                       authState.isOpeningLogin || authState.isRedeemingCode
                           ? Icons.hourglass_top_outlined

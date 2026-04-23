@@ -61,6 +61,10 @@ class InMemoryNativeAuthGateway implements NativeAuthGateway {
   Uri? lastAuthorizeUri;
   Uri? lastLogoutUri;
 
+  void setPendingCallback(NativeAuthCallbackPayload? callback) {
+    _pendingCallback = callback;
+  }
+
   @override
   Future<void> openAuthorizeUrl(Uri authorizeUri) async {
     lastAuthorizeUri = authorizeUri;
