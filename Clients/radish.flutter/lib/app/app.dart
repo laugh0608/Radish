@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../core/auth/session_controller.dart';
+import '../core/auth/native_auth_controller.dart';
 import '../core/config/app_environment.dart';
 import '../core/theme/radish_theme.dart';
 import '../features/discover/data/discover_repository.dart';
@@ -17,6 +18,7 @@ class RadishApp extends StatefulWidget {
   const RadishApp({
     required this.environment,
     required this.sessionController,
+    required this.authController,
     required this.discoverRepository,
     required this.docsRepository,
     required this.forumRepository,
@@ -28,6 +30,7 @@ class RadishApp extends StatefulWidget {
 
   final AppEnvironment environment;
   final SessionController sessionController;
+  final NativeAuthController authController;
   final DiscoverRepository discoverRepository;
   final DocsRepository docsRepository;
   final ForumRepository forumRepository;
@@ -71,6 +74,7 @@ class _RadishAppState extends State<RadishApp> {
               : RadishFlutterShell(
                   environment: widget.environment,
                   sessionController: widget.sessionController,
+                  authController: widget.authController,
                   discoverRepository: widget.discoverRepository,
                   docsRepository: widget.docsRepository,
                   forumRepository: widget.forumRepository,

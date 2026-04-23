@@ -9,7 +9,7 @@
 - **阶段**：`第二开发阶段：社区深化与多端化`
 - **当前主线**：`Phase 2-3 Flutter 客户端 MVP`
 - **当前阶段**：`截至 2026-04-18，第一开发阶段已于 2026-04-06 通过 v26.3.2-release 完成真实发布收口；第二开发阶段现已正式启动。`Phase 2-1 社区深化第一批` 已完成论坛轻回应墙 Phase 1 与最小回流链路收口；`Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口，并转入稳定维护。当前产品主线正式切到 `Phase 2-3 Flutter 客户端 MVP`：第一批范围定义、真相源文档切换与仓库工程骨架已完成；第二批当前已开始接入最小登录 / 会话恢复链路与 forum 首条真实只读读取链路，不继续沿公开壳层扩页面细节，也不回头把桌面工作台搬进原生端。`
-- **复核日期**：`2026-04-22`
+- **复核日期**：`2026-04-23`
 
 ## 当前执行入口
 
@@ -85,12 +85,13 @@
 - Flutter forum 真实来源接线当前已进一步从 discover 的最小演示入口推进到更接近真实来源的壳层 / 宿主层：Android 宿主当前已支持以启动 handoff 透传 forum 通知来源，原生壳层也已支持基于最近阅读记录续接 forum 浏览回跳
 - Flutter forum detail 打开路径当前也已完成一轮统一回收：forum feed、public profile、notification 宿主 handoff 与 browse history 壳层续接当前都已统一接到同一套原生 handoff 目标，不再并存多套 detail 打开路径
 - Flutter discover 当前已不再承担 `notification / browseHistory` 的长期伪来源入口：此前最小入口卡只作为过渡验证手段，现已在原生端收口回宿主 / 壳层真实接线
+- Flutter 当前已补齐最小登录 UI、显式登出与 Android 浏览器 OIDC 回调闭环：原生壳层会通过系统浏览器发起登录，以 `radish://oidc/callback` 回跳并完成授权码换 Token；显式登出当前也已统一走 `/connect/endsession` + `radish://oidc/logout-complete`
 
 ## 当前批次目标
 
 1. **Flutter MVP 第二批最小认证边界**
-   - 当前已完成应用启动会话恢复 gate、匿名态 / 已登录态三态收口、Android 本地会话持久化与 refresh token 恢复回落
-   - 当前仍未进入完整登录 UI、显式登出治理与完整浏览器 OIDC 回调接线
+   - 当前已完成应用启动会话恢复 gate、匿名态 / 已登录态三态收口、Android 本地会话持久化、refresh token 恢复回落，以及最小登录 UI / 显式登出 / 浏览器 OIDC 回调闭环
+   - 当前仍未进入更完整的账户治理、浏览器 OIDC 异常细分提示、多平台原生登录深化与通知中心登录回流联调
 2. **forum 首条真实只读读取链路**
    - Flutter forum 当前已开始真实读取公开帖子列表，并继续补到公开帖子详情只读阅读
    - 当前范围收口到匿名列表阅读、详情正文阅读、排序分页、加载态与错误态，不同时进入评论与互动提交
@@ -105,7 +106,7 @@
 ## 下一顺位
 
 - `Phase 2-3` 第二批业务链路
-  - forum 当前已从公开列表推进到公开帖子详情、评论分页、子评论分页、作者跳转、评论精确定位、public profile 详情回跳，以及 `notification / browseHistory` 的首批壳层 / 宿主 handoff 收口；下一步优先转向最小登录 UI、显式登出治理与浏览器 OIDC 回调接线
+  - forum 当前已从公开列表推进到公开帖子详情、评论分页、子评论分页、作者跳转、评论精确定位、public profile 详情回跳，以及 `notification / browseHistory` 的首批壳层 / 宿主 handoff 收口；下一步优先转向基于现有登录 / 登出 / 回调闭环的 Android 稳定性复核与更多真实来源补线
   - Android 真机联调已完成首轮收口，后续转入基于现有宿主 / 壳层 handoff 的增量回归与稳定性复核
 
 - `Phase 2-2` 稳定维护项

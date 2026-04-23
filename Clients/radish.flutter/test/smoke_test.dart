@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:radish_flutter/app/app.dart';
+import 'package:radish_flutter/core/auth/authorization_code_exchange_service.dart';
+import 'package:radish_flutter/core/auth/native_auth_controller.dart';
+import 'package:radish_flutter/core/auth/native_auth_gateway.dart';
 import 'package:radish_flutter/core/auth/session_controller.dart';
 import 'package:radish_flutter/core/auth/session_refresh_service.dart';
 import 'package:radish_flutter/core/auth/session_store.dart';
@@ -35,6 +38,7 @@ void main() {
       RadishApp(
         environment: const AppEnvironment.development(),
         sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
         discoverRepository: _FakeDiscoverRepository(),
         docsRepository: _FakeDocsRepository(),
         forumRepository: _FakeForumRepository(),
@@ -77,6 +81,7 @@ void main() {
       RadishApp(
         environment: const AppEnvironment.development(),
         sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
         discoverRepository: _FakeDiscoverRepository(),
         docsRepository: _FakeDocsRepository(),
         forumRepository: _FakeForumRepository(),
@@ -110,6 +115,7 @@ void main() {
       RadishApp(
         environment: const AppEnvironment.development(),
         sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
         discoverRepository: _SeededDiscoverRepository(),
         docsRepository: _FakeDocsRepository(),
         forumRepository: _FakeForumRepository(),
@@ -173,6 +179,7 @@ void main() {
       RadishApp(
         environment: const AppEnvironment.development(),
         sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
         discoverRepository: _FakeDiscoverRepository(),
         docsRepository: _FakeDocsRepository(),
         forumRepository: _FakeForumRepository(),
@@ -215,6 +222,7 @@ void main() {
       RadishApp(
         environment: const AppEnvironment.development(),
         sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
         discoverRepository: _FakeDiscoverRepository(),
         docsRepository: _FakeDocsRepository(),
         forumRepository: _FakeForumRepository(),
@@ -227,6 +235,56 @@ void main() {
 
     expect(find.text('Guest'), findsOneWidget);
     expect(find.text('Session expired'), findsOneWidget);
+  });
+
+  testWidgets('native OIDC callback redeems a session into the shell',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+    final authController = _buildAuthController(
+      sessionController,
+      pendingCallback: const NativeAuthCallbackPayload(
+        type: NativeAuthCallbackType.login,
+        code: 'native-code-1',
+      ),
+      nextSession: AuthSession(
+        accessToken: _buildJwt(
+          userId: 'user-88',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+        refreshToken: 'refresh-token',
+        userId: 'user-88',
+        expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+      ),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: authController,
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _FakeForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump();
+    await tester.tap(find.text('Profile'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Signed in'), findsOneWidget);
+    expect(find.text('Restored session for user user-88'), findsOneWidget);
   });
 
   testWidgets('forum feed opens native public detail page', (tester) async {
@@ -244,6 +302,7 @@ void main() {
       RadishApp(
         environment: const AppEnvironment.development(),
         sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
         discoverRepository: _FakeDiscoverRepository(),
         docsRepository: _FakeDocsRepository(),
         forumRepository: _SeededForumRepository(),
@@ -283,6 +342,7 @@ void main() {
       RadishApp(
         environment: const AppEnvironment.development(),
         sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
         discoverRepository: _FakeDiscoverRepository(),
         docsRepository: _FakeDocsRepository(),
         forumRepository: _SeededForumRepository(),
@@ -320,6 +380,7 @@ void main() {
       RadishApp(
         environment: const AppEnvironment.development(),
         sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
         discoverRepository: _FakeDiscoverRepository(),
         docsRepository: _FakeDocsRepository(),
         forumRepository: _SeededForumRepository(),
@@ -368,6 +429,7 @@ void main() {
       RadishApp(
         environment: const AppEnvironment.development(),
         sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
         discoverRepository: _FakeDiscoverRepository(),
         docsRepository: _FakeDocsRepository(),
         forumRepository: _SeededForumRepository(),
@@ -419,6 +481,7 @@ void main() {
       RadishApp(
         environment: const AppEnvironment.development(),
         sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
         discoverRepository: _SeededBigIdDiscoverRepository(),
         docsRepository: _FakeDocsRepository(),
         forumRepository: _SeededBigIdForumRepository(),
@@ -452,6 +515,7 @@ void main() {
       RadishApp(
         environment: const AppEnvironment.development(),
         sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
         discoverRepository: _FakeDiscoverRepository(),
         docsRepository: _FakeDocsRepository(),
         forumRepository: _SeededBigIdForumRepository(),
@@ -480,6 +544,25 @@ void main() {
     expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
     expect(find.text('Browse history handoff'), findsWidgets);
   });
+}
+
+NativeAuthController _buildAuthController(
+  SessionController sessionController, {
+  NativeAuthCallbackPayload? pendingCallback,
+  AuthSession? nextSession,
+  String? exchangeFailureMessage,
+}) {
+  return NativeAuthController(
+    environment: const AppEnvironment.development(),
+    sessionController: sessionController,
+    gateway: InMemoryNativeAuthGateway(
+      initialPendingCallback: pendingCallback,
+    ),
+    exchangeService: _FakeAuthorizationCodeExchangeService(
+      nextSession: nextSession,
+      failureMessage: exchangeFailureMessage,
+    ),
+  );
 }
 
 class _FakeDiscoverRepository implements DiscoverRepository {
@@ -1091,6 +1174,37 @@ class _FakeSessionRefreshService extends SessionRefreshService {
     }
 
     return session;
+  }
+}
+
+class _FakeAuthorizationCodeExchangeService
+    implements AuthorizationCodeExchangeService {
+  const _FakeAuthorizationCodeExchangeService({
+    this.nextSession,
+    this.failureMessage,
+  });
+
+  final AuthSession? nextSession;
+  final String? failureMessage;
+
+  @override
+  Future<AuthSession> redeemAuthorizationCode({
+    required String code,
+    required String redirectUri,
+  }) async {
+    final failureMessage = this.failureMessage;
+    if (failureMessage != null) {
+      throw AuthorizationCodeExchangeException(failureMessage);
+    }
+
+    final nextSession = this.nextSession;
+    if (nextSession == null) {
+      throw const AuthorizationCodeExchangeException(
+        'No fake authorization-code session was configured.',
+      );
+    }
+
+    return nextSession;
   }
 }
 

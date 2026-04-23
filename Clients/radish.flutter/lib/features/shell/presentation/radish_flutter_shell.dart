@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../core/auth/session_controller.dart';
+import '../../../core/auth/native_auth_controller.dart';
 import '../../../core/config/app_environment.dart';
 import '../../../features/discover/data/discover_repository.dart';
 import '../../../features/docs/data/docs_repository.dart';
@@ -19,6 +20,7 @@ class RadishFlutterShell extends StatefulWidget {
   const RadishFlutterShell({
     required this.environment,
     required this.sessionController,
+    required this.authController,
     required this.discoverRepository,
     required this.docsRepository,
     required this.forumRepository,
@@ -30,6 +32,7 @@ class RadishFlutterShell extends StatefulWidget {
 
   final AppEnvironment environment;
   final SessionController sessionController;
+  final NativeAuthController authController;
   final DiscoverRepository discoverRepository;
   final DocsRepository docsRepository;
   final ForumRepository forumRepository;
@@ -60,6 +63,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       _currentIndex = 1;
     }
 
+    unawaited(widget.authController.consumePendingCallback());
     unawaited(_loadFollowUps());
   }
 
@@ -90,6 +94,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      unawaited(widget.authController.consumePendingCallback());
       unawaited(_loadPendingHandoff());
     }
   }
@@ -216,9 +221,13 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: widget.sessionController,
+      animation: Listenable.merge([
+        widget.sessionController,
+        widget.authController,
+      ]),
       builder: (context, child) {
         final sessionState = widget.sessionController.state;
+        final authState = widget.authController.state;
         final pages = <Widget>[
           DiscoverPage(
             environment: widget.environment,
@@ -242,6 +251,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
           ),
           ProfilePage(
             sessionController: widget.sessionController,
+            authController: widget.authController,
             repository: widget.profileRepository,
             guestUserId: _guestProfileUserId,
             onOpenForumDetailTarget: _openForumDetailTarget,
@@ -279,6 +289,30 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
                             ? 'Signed in'
                             : 'Guest',
                       ),
+                      const SizedBox(width: 8),
+                      _ShellStatusChip(
+                        icon: authState.isOpeningLogout
+                            ? Icons.logout
+                            : authState.isBusy
+                                ? Icons.hourglass_top_outlined
+                                : sessionState.isAuthenticated
+                                    ? Icons.logout_outlined
+                                    : Icons.login_outlined,
+                        label: authState.isOpeningLogin
+                            ? 'Opening sign-in'
+                            : authState.isRedeemingCode
+                                ? 'Completing sign-in'
+                                : authState.isOpeningLogout
+                                    ? 'Signing out'
+                                    : sessionState.isAuthenticated
+                                        ? 'Sign out'
+                                        : 'Sign in',
+                        onTap: authState.isBusy
+                            ? null
+                            : sessionState.isAuthenticated
+                                ? widget.authController.startLogout
+                                : widget.authController.startLogin,
+                      ),
                       if (sessionState.isAnonymous &&
                           sessionState.lastErrorMessage != null &&
                           sessionState.lastErrorMessage!.isNotEmpty) ...[
@@ -288,6 +322,17 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
                           child: const _ShellStatusChip(
                             icon: Icons.warning_amber_outlined,
                             label: 'Session expired',
+                          ),
+                        ),
+                      ],
+                      if (authState.lastErrorMessage != null &&
+                          authState.lastErrorMessage!.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        Tooltip(
+                          message: authState.lastErrorMessage!,
+                          child: const _ShellStatusChip(
+                            icon: Icons.error_outline,
+                            label: 'Auth issue',
                           ),
                         ),
                       ],

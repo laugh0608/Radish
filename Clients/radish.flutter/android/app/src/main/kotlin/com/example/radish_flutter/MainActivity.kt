@@ -2,6 +2,7 @@ package com.example.radish_flutter
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -9,11 +10,13 @@ import org.json.JSONObject
 
 class MainActivity : FlutterActivity() {
     private var pendingForumHandoffPayload: String? = null
+    private var pendingAuthCallbackPayload: String? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
         pendingForumHandoffPayload = resolvePendingHandoffPayload(intent)
+        pendingAuthCallbackPayload = resolvePendingAuthCallbackPayload(intent)
 
         val preferences = getSharedPreferences(SESSION_STORE_PREFERENCES, Context.MODE_PRIVATE)
 
@@ -71,12 +74,47 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            AUTH_FLOW_CHANNEL,
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "openAuthorizeUrl" -> {
+                    val rawUrl = call.arguments as? String
+                    if (rawUrl.isNullOrBlank()) {
+                        result.error("invalid_url", "Authorize URL must be a non-empty string.", null)
+                        return@setMethodCallHandler
+                    }
+
+                    openExternalUrl(rawUrl)
+                    result.success(null)
+                }
+                "openLogoutUrl" -> {
+                    val rawUrl = call.arguments as? String
+                    if (rawUrl.isNullOrBlank()) {
+                        result.error("invalid_url", "Logout URL must be a non-empty string.", null)
+                        return@setMethodCallHandler
+                    }
+
+                    openExternalUrl(rawUrl)
+                    result.success(null)
+                }
+                "takePendingCallback" -> {
+                    val payload = pendingAuthCallbackPayload
+                    pendingAuthCallbackPayload = null
+                    result.success(payload)
+                }
+                else -> result.notImplemented()
+            }
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         pendingForumHandoffPayload = resolvePendingHandoffPayload(intent)
+        pendingAuthCallbackPayload = resolvePendingAuthCallbackPayload(intent)
     }
 
     private fun resolvePendingHandoffPayload(intent: Intent?): String? {
@@ -103,11 +141,52 @@ class MainActivity : FlutterActivity() {
         }.toString()
     }
 
+    private fun resolvePendingAuthCallbackPayload(intent: Intent?): String? {
+        val data = intent?.data ?: return null
+        if (!data.isRadishOidcCallback()) {
+            return null
+        }
+
+        return JSONObject().apply {
+            when (data.path?.trim()) {
+                "/callback" -> {
+                    put("type", "login")
+                    data.getQueryParameter("code")?.trim()?.takeUnless { it.isBlank() }?.let {
+                        put("code", it)
+                    }
+                    data.getQueryParameter("error")?.trim()?.takeUnless { it.isBlank() }?.let {
+                        put("error", it)
+                    }
+                    data.getQueryParameter("error_description")?.trim()?.takeUnless { it.isBlank() }?.let {
+                        put("errorDescription", it)
+                    }
+                }
+                "/logout-complete" -> {
+                    put("type", "logout")
+                }
+                else -> return null
+            }
+        }.toString()
+    }
+
+    private fun openExternalUrl(rawUrl: String) {
+        val uri = Uri.parse(rawUrl)
+        val intent = Intent(Intent.ACTION_VIEW, uri).apply {
+            addCategory(Intent.CATEGORY_BROWSABLE)
+        }
+        startActivity(intent)
+    }
+
+    private fun Uri.isRadishOidcCallback(): Boolean {
+        return scheme == "radish" && host == "oidc"
+    }
+
     companion object {
         private const val SESSION_STORE_CHANNEL = "radish.flutter/session_store"
         private const val SESSION_STORE_PREFERENCES = "radish_flutter_session_store"
         private const val SESSION_STORE_KEY = "auth_session"
         private const val FORUM_FOLLOW_UP_CHANNEL = "radish.flutter/forum_follow_up"
+        private const val AUTH_FLOW_CHANNEL = "radish.flutter/native_auth"
         private const val FORUM_RECENT_BROWSE_KEY = "forum_recent_browse_handoff"
         private const val EXTRA_FORUM_POST_ID = "forum_post_id"
         private const val EXTRA_FORUM_COMMENT_ID = "forum_comment_id"

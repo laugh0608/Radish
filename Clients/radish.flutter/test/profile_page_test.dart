@@ -2,6 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:radish_flutter/core/auth/authorization_code_exchange_service.dart';
+import 'package:radish_flutter/core/auth/native_auth_controller.dart';
+import 'package:radish_flutter/core/auth/native_auth_gateway.dart';
 import 'package:radish_flutter/core/auth/session_controller.dart';
 import 'package:radish_flutter/core/auth/session_refresh_service.dart';
 import 'package:radish_flutter/core/auth/session_store.dart';
@@ -20,12 +23,14 @@ void main() {
       sessionStore: InMemorySessionStore(),
       refreshService: _NoopSessionRefreshService(),
     );
+    final authController = _buildAuthController(sessionController);
     await sessionController.restore();
 
     await tester.pumpWidget(
       MaterialApp(
         home: ProfilePage(
           sessionController: sessionController,
+          authController: authController,
           repository: _SuccessProfileRepository(),
         ),
       ),
@@ -58,12 +63,14 @@ void main() {
       ),
       refreshService: _NoopSessionRefreshService(),
     );
+    final authController = _buildAuthController(sessionController);
     await sessionController.restore();
 
     await tester.pumpWidget(
       MaterialApp(
         home: ProfilePage(
           sessionController: sessionController,
+          authController: authController,
           repository: _SuccessProfileRepository(),
         ),
       ),
@@ -105,12 +112,14 @@ void main() {
       sessionStore: InMemorySessionStore(),
       refreshService: _NoopSessionRefreshService(),
     );
+    final authController = _buildAuthController(sessionController);
     await sessionController.restore();
 
     await tester.pumpWidget(
       MaterialApp(
         home: ProfilePage(
           sessionController: sessionController,
+          authController: authController,
           repository: _SuccessProfileRepository(),
           guestUserId: 'guest-42',
         ),
@@ -152,12 +161,14 @@ void main() {
       ),
       refreshService: _NoopSessionRefreshService(),
     );
+    final authController = _buildAuthController(sessionController);
     await sessionController.restore();
 
     await tester.pumpWidget(
       MaterialApp(
         home: ProfilePage(
           sessionController: sessionController,
+          authController: authController,
           repository: _SuccessProfileRepository(),
           onOpenForumDetailTarget: openedTargets.add,
         ),
@@ -215,12 +226,14 @@ void main() {
       ),
       refreshService: _NoopSessionRefreshService(),
     );
+    final authController = _buildAuthController(sessionController);
     await sessionController.restore();
 
     await tester.pumpWidget(
       MaterialApp(
         home: ProfilePage(
           sessionController: sessionController,
+          authController: authController,
           repository: _FailingProfileRepository(),
         ),
       ),
@@ -232,6 +245,109 @@ void main() {
     expect(find.text('Profile API is unreachable'), findsOneWidget);
     expect(find.text('Retry'), findsOneWidget);
   });
+
+  testWidgets('guest profile can start the native sign-in flow',
+      (tester) async {
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authGateway = InMemoryNativeAuthGateway();
+    final authController = _buildAuthController(
+      sessionController,
+      gateway: authGateway,
+    );
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: _SuccessProfileRepository(),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Sign in with OIDC'));
+    await tester.pump();
+
+    final authorizeUri = authGateway.lastAuthorizeUri;
+    expect(authorizeUri, isNotNull);
+    expect(authorizeUri!.path, '/connect/authorize');
+    expect(authorizeUri.queryParameters['client_id'], 'radish-client');
+    expect(
+        authorizeUri.queryParameters['redirect_uri'], 'radish://oidc/callback');
+    expect(
+      authorizeUri.queryParameters['scope'],
+      'openid profile offline_access radish-api',
+    );
+  });
+
+  testWidgets('authenticated profile can sign out through native OIDC flow', (
+    tester,
+  ) async {
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: '2042219067430928384',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: '2042219067430928384',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authGateway = InMemoryNativeAuthGateway();
+    final authController = _buildAuthController(
+      sessionController,
+      gateway: authGateway,
+    );
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: _SuccessProfileRepository(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sign out'));
+    await tester.pump();
+
+    final logoutUri = authGateway.lastLogoutUri;
+    expect(logoutUri, isNotNull);
+    expect(logoutUri!.path, '/connect/endsession');
+    expect(
+      logoutUri.queryParameters['post_logout_redirect_uri'],
+      'radish://oidc/logout-complete',
+    );
+    expect(sessionController.state.isAnonymous, isTrue);
+  });
+}
+
+NativeAuthController _buildAuthController(
+  SessionController sessionController, {
+  InMemoryNativeAuthGateway? gateway,
+  AuthSession? nextSession,
+  String? exchangeFailureMessage,
+}) {
+  return NativeAuthController(
+    environment: const AppEnvironment.development(),
+    sessionController: sessionController,
+    gateway: gateway ?? InMemoryNativeAuthGateway(),
+    exchangeService: _FakeAuthorizationCodeExchangeService(
+      nextSession: nextSession,
+      failureMessage: exchangeFailureMessage,
+    ),
+  );
 }
 
 class _SuccessProfileRepository implements ProfileRepository {
@@ -354,6 +470,37 @@ class _NoopSessionRefreshService extends SessionRefreshService {
   @override
   Future<AuthSession> refresh(AuthSession session) async {
     return session;
+  }
+}
+
+class _FakeAuthorizationCodeExchangeService
+    implements AuthorizationCodeExchangeService {
+  const _FakeAuthorizationCodeExchangeService({
+    this.nextSession,
+    this.failureMessage,
+  });
+
+  final AuthSession? nextSession;
+  final String? failureMessage;
+
+  @override
+  Future<AuthSession> redeemAuthorizationCode({
+    required String code,
+    required String redirectUri,
+  }) async {
+    final failureMessage = this.failureMessage;
+    if (failureMessage != null) {
+      throw AuthorizationCodeExchangeException(failureMessage);
+    }
+
+    final nextSession = this.nextSession;
+    if (nextSession == null) {
+      throw const AuthorizationCodeExchangeException(
+        'No fake authorization-code session was configured.',
+      );
+    }
+
+    return nextSession;
   }
 }
 

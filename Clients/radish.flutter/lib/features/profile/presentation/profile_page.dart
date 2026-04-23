@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/auth/native_auth_controller.dart';
 import '../../../core/auth/session_controller.dart';
 import '../../../features/forum/data/forum_models.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
@@ -10,6 +11,7 @@ import 'profile_controller.dart';
 class ProfilePage extends StatefulWidget {
   const ProfilePage({
     required this.sessionController,
+    required this.authController,
     required this.repository,
     this.guestUserId,
     this.onOpenForumDetailTarget,
@@ -17,6 +19,7 @@ class ProfilePage extends StatefulWidget {
   });
 
   final SessionController sessionController;
+  final NativeAuthController authController;
   final ProfileRepository repository;
   final String? guestUserId;
   final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
@@ -75,10 +78,15 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge([widget.sessionController, _controller]),
+      animation: Listenable.merge([
+        widget.sessionController,
+        widget.authController,
+        _controller,
+      ]),
       builder: (context, child) {
         final sessionState = widget.sessionController.state;
         final session = sessionState.session;
+        final authState = widget.authController.state;
         final profileState = _controller.state;
         final hasTargetUser = sessionState.isAuthenticated ||
             (widget.guestUserId != null && widget.guestUserId!.isNotEmpty);
@@ -113,24 +121,64 @@ class _ProfilePageState extends State<ProfilePage> {
                 if (sessionState.lastErrorMessage != null &&
                     sessionState.lastErrorMessage!.isNotEmpty)
                   'Last restore error: ${sessionState.lastErrorMessage}',
+                if (authState.lastErrorMessage != null &&
+                    authState.lastErrorMessage!.isNotEmpty)
+                  'Last native auth error: ${authState.lastErrorMessage}',
                 'Scope: public profile, public stats, and recent public posts/comments only',
+                'Native auth handoff: browser OIDC -> radish://oidc/callback -> /connect/token',
               ],
             ),
             const SizedBox(height: 16),
-            if (hasTargetUser)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: FilledButton.tonalIcon(
-                  onPressed:
-                      profileState.isLoading ? null : _controller.refresh,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Refresh profile'),
-                ),
-              ),
-            if (hasTargetUser) const SizedBox(height: 16),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                if (sessionState.isAuthenticated)
+                  OutlinedButton.icon(
+                    onPressed: authState.isBusy
+                        ? null
+                        : widget.authController.startLogout,
+                    icon: Icon(
+                      authState.isOpeningLogout
+                          ? Icons.hourglass_top_outlined
+                          : Icons.logout_outlined,
+                    ),
+                    label: Text(
+                      authState.isOpeningLogout ? 'Signing out...' : 'Sign out',
+                    ),
+                  )
+                else
+                  FilledButton.icon(
+                    onPressed: authState.isBusy
+                        ? null
+                        : widget.authController.startLogin,
+                    icon: Icon(
+                      authState.isOpeningLogin || authState.isRedeemingCode
+                          ? Icons.hourglass_top_outlined
+                          : Icons.login_outlined,
+                    ),
+                    label: Text(
+                      authState.isOpeningLogin
+                          ? 'Opening sign-in...'
+                          : authState.isRedeemingCode
+                              ? 'Completing sign-in...'
+                              : 'Sign in with OIDC',
+                    ),
+                  ),
+                if (hasTargetUser)
+                  FilledButton.tonalIcon(
+                    onPressed:
+                        profileState.isLoading ? null : _controller.refresh,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Refresh profile'),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
             if (!hasTargetUser)
               _ProfileGuestBoundary(
                 lastErrorMessage: sessionState.lastErrorMessage,
+                authErrorMessage: authState.lastErrorMessage,
               )
             else if (profileState.isLoading)
               const _ProfileLoadingState()
@@ -160,9 +208,11 @@ class _ProfilePageState extends State<ProfilePage> {
 class _ProfileGuestBoundary extends StatelessWidget {
   const _ProfileGuestBoundary({
     this.lastErrorMessage,
+    this.authErrorMessage,
   });
 
   final String? lastErrorMessage;
+  final String? authErrorMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -173,7 +223,9 @@ class _ProfileGuestBoundary extends StatelessWidget {
         'The Flutter shell does not invent a default public profile target when no session or discover handoff exists',
         if (lastErrorMessage != null && lastErrorMessage!.isNotEmpty)
           'Restore fallback: $lastErrorMessage',
-        'Real sign-in UI and account governance remain deferred',
+        if (authErrorMessage != null && authErrorMessage!.isNotEmpty)
+          'Native auth fallback: $authErrorMessage',
+        'Sign-in now uses the browser OIDC flow and a native callback handoff',
       ],
     );
   }

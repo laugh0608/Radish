@@ -2,7 +2,7 @@
 
 > 状态：当前主线
 >
-> 最后更新：2026-04-22（Asia/Shanghai）
+> 最后更新：2026-04-23（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -104,14 +104,15 @@ Flutter 客户端第一批固定遵循以下约束：
 - Flutter forum 外部 handoff 当前已继续先收口到 `public profile` 的最近帖子 / 最近评论：profile 不再发散出独立详情跳转，而是统一复用共享 `ForumDetailHandoffTarget`
 - Flutter forum 真实来源接线当前已进一步从 discover 的最小演示入口推进到更接近真实来源的原生壳层 / 宿主层：Android 宿主当前可在启动时透传 forum 通知来源，壳层当前也已支持“最近阅读继续”这一条 browse history 续接能力
 - Flutter forum detail 打开路径当前也已统一收口：forum feed、public profile、notification 宿主 handoff 与 browse history 壳层续接当前都已接到同一套原生 handoff 目标，继续保持 `postId / commentId` 的字符串口径
+- Flutter 当前已补齐最小登录 UI、显式登出与 Android 浏览器 OIDC 回调闭环：原生壳层当前会通过系统浏览器发起 `/connect/authorize`，以 `radish://oidc/callback` 回跳并完成授权码换 Token；登出当前也已统一走 `/connect/endsession` + `radish://oidc/logout-complete`
 
 ## 7. 当前第二批范围
 
 第二批当前固定收口到两类事情：
 
 1. **最小登录 / 会话恢复边界**
-   - 当前已完成启动恢复、匿名态 / 已登录态建模、Android 本地会话持久化与 refresh token 恢复回落
-   - 暂不进入完整登录 UI、显式登出治理与完整浏览器 OIDC 回调接线
+   - 当前已完成启动恢复、匿名态 / 已登录态建模、Android 本地会话持久化、refresh token 恢复回落，以及最小登录 UI / 显式登出 / 浏览器 OIDC 回调闭环
+   - 当前仍未进入更完整的账户治理、浏览器 OIDC 异常细分提示、多平台原生登录深化与通知中心登录回流联调
 2. **首批真实页面接线**
    - forum 当前已从公开列表继续收口到公开详情、评论分页、子评论分页、作者跳转、评论精确定位、public profile 详情回跳，以及 `notification / browseHistory` 的首批壳层 / 宿主 handoff
    - `discover / docs / profile` 首批最小真实页面接线与 Android 真机联调当前都已完成；forum 的首批真实来源接线当前也已完成一轮收口，后续优先转向登录边界与 Android 稳定性复核，而不是回头扩壳层占位
@@ -121,6 +122,6 @@ Flutter 客户端第一批固定遵循以下约束：
 当前第二批继续推进时，优先顺序建议为：
 
 1. 最小登录 UI、显式登出治理与后续浏览器 OIDC 回调接线评估
-2. 基于现有宿主 / 壳层 handoff 的 Android MVP 稳定性回归与更多真机联调
+2. 基于现有登录 / 登出 / 回调闭环的 Android MVP 稳定性回归与更多真机联调
 3. 在现有统一 handoff 目标基础上继续补剩余高价值真实来源，而不是回头保留 discover 演示入口
 4. 在 Android MVP 稳定后再评估平台目录与更深原生能力

@@ -3,6 +3,9 @@ import 'dart:io';
 import 'package:flutter/widgets.dart';
 
 import '../core/auth/session_controller.dart';
+import '../core/auth/native_auth_controller.dart';
+import '../core/auth/native_auth_gateway.dart';
+import '../core/auth/authorization_code_exchange_service.dart';
 import '../core/auth/session_refresh_service.dart';
 import '../core/auth/session_store.dart';
 import '../core/config/app_environment.dart';
@@ -24,12 +27,23 @@ class RadishBootstrap {
     final environment = AppEnvironment.developmentForCurrentPlatform();
     final sessionStore =
         Platform.isAndroid ? PlatformSessionStore() : InMemorySessionStore();
+    final authGateway = Platform.isAndroid
+        ? PlatformNativeAuthGateway()
+        : InMemoryNativeAuthGateway();
     final followUpStore = Platform.isAndroid
         ? PlatformForumFollowUpStore()
         : InMemoryForumFollowUpStore();
     final sessionController = SessionController(
       sessionStore: sessionStore,
       refreshService: SessionRefreshService(environment: environment),
+    );
+    final authController = NativeAuthController(
+      environment: environment,
+      sessionController: sessionController,
+      gateway: authGateway,
+      exchangeService: HttpAuthorizationCodeExchangeService(
+        environment: environment,
+      ),
     );
     final apiClient = HttpRadishApiClient(environment: environment);
     final apiEndpoints = RadishApiEndpoints(environment);
@@ -54,6 +68,7 @@ class RadishBootstrap {
       RadishApp(
         environment: environment,
         sessionController: sessionController,
+        authController: authController,
         discoverRepository: discoverRepository,
         docsRepository: docsRepository,
         forumRepository: forumRepository,
