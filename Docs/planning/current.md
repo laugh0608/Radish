@@ -86,12 +86,14 @@
 - Flutter forum detail 打开路径当前也已完成一轮统一回收：forum feed、public profile、notification 宿主 handoff 与 browse history 壳层续接当前都已统一接到同一套原生 handoff 目标，不再并存多套 detail 打开路径
 - Flutter discover 当前已不再承担 `notification / browseHistory` 的长期伪来源入口：此前最小入口卡只作为过渡验证手段，现已在原生端收口回宿主 / 壳层真实接线
 - Flutter 当前已补齐最小登录 UI、显式登出与 Android 浏览器 OIDC 回调闭环：原生壳层会通过系统浏览器发起登录，以 `radish://oidc/callback` 回跳并完成授权码换 Token；显式登出当前也已统一走 `/connect/endsession` + `radish://oidc/logout-complete`
+- Flutter Android 最小登录连续性当前也已完成一轮收口：浏览器取消登录后，原生壳层会显式提示 `Sign-in needs attention`，壳层状态区已从 `AppBar` 收口到可换行状态条，`profile` 与 forum 详情来源下的登录发起当前也会在成功后自动续接回原始 tab / handoff 目标
 
 ## 当前批次目标
 
 1. **Flutter MVP 第二批最小认证边界**
    - 当前已完成应用启动会话恢复 gate、匿名态 / 已登录态三态收口、Android 本地会话持久化、refresh token 恢复回落，以及最小登录 UI / 显式登出 / 浏览器 OIDC 回调闭环
-   - 当前仍未进入更完整的账户治理、浏览器 OIDC 异常细分提示、多平台原生登录深化与通知中心登录回流联调
+   - 当前也已补齐最小登录取消提示、壳层窄屏状态区收口，以及 `profile / forum detail` 两类原始目标的登录后续接
+   - 当前仍未进入更完整的账户治理、多平台原生登录深化与通知中心登录回流联调
 2. **forum 首条真实只读读取链路**
    - Flutter forum 当前已开始真实读取公开帖子列表，并继续补到公开帖子详情只读阅读
    - 当前范围收口到匿名列表阅读、详情正文阅读、排序分页、加载态与错误态，不同时进入评论与互动提交
@@ -106,8 +108,8 @@
 ## 下一顺位
 
 - `Phase 2-3` 第二批业务链路
-  - forum 当前已从公开列表推进到公开帖子详情、评论分页、子评论分页、作者跳转、评论精确定位、public profile 详情回跳，以及 `notification / browseHistory` 的首批壳层 / 宿主 handoff 收口；下一步优先转向基于现有登录 / 登出 / 回调闭环的 Android 稳定性复核与更多真实来源补线
-  - Android 真机联调已完成首轮收口，后续转入基于现有宿主 / 壳层 handoff 的增量回归与稳定性复核
+  - forum 当前已从公开列表推进到公开帖子详情、评论分页、子评论分页、作者跳转、评论精确定位、public profile 详情回跳，以及 `notification / browseHistory` 的首批壳层 / 宿主 handoff 收口；下一步优先转向基于现有登录 / 登出 / 回调闭环的宿主真实来源登录回流联调
+  - Android 真机联调已完成首轮收口，后续转入基于现有宿主 / 壳层 handoff 与登录后续接边界的增量回归和稳定性复核
 
 - `Phase 2-2` 稳定维护项
   - 公开内容壳层保留必要联调复核与问题修复，但不再继续新增公开入口或细节增强

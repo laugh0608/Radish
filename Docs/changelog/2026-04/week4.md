@@ -61,3 +61,20 @@
 - **今日 Flutter 提交当前形成三段式收口**：`85d22f66` 已统一 profile 的 forum handoff，`98131dc3` 已补 discover 的最小来源验证入口，后续代码批次当前已进一步把 notification / browseHistory 从 discover 演示层推进到宿主 / 壳层真实接线。
 - **规划与日志文档当前已按最终收口状态同步**：`planning/current`、`development-plan`、`phase-two-flutter-client-mvp` 与本周 / 本月 changelog 当前都已回写“profile 统一 handoff、discover 过渡验证、宿主 / 壳层真实接线收口”的最新事实。
 - **当日验证当前已通过**：在 `Clients/radish.flutter` 下执行 `flutter test test/discover_page_test.dart test/profile_page_test.dart test/forum_page_test.dart test/forum_detail_page_test.dart test/smoke_test.dart` 与 `flutter build apk --debug` 当前均已通过。
+
+## 2026-04-23 (周四)
+
+### Flutter Android 原生 OIDC 闭环进入可人工收口状态
+
+- **Flutter 当前已完成最小原生 OIDC 登录 / 登出闭环**：`58305fa7` 当前已补齐 Android 浏览器授权码登录、`radish://oidc/callback` 回跳换 Token、显式登出与 `radish://oidc/logout-complete` 回跳，原生端不再只停留在“能恢复已有会话”的阶段。
+- **Android 模拟器人工联调当前已完成一轮真实收口**：登录成功、退出登录、浏览器取消登录、登录后杀后台重启会话恢复，以及登录后的用户信息读取当前都已验证通过；过程中暴露的模拟器 `Lost connection to device` 当前确认属于虚拟机侧瞬态问题，重启模拟器后已恢复。
+
+### 壳层认证连续性与窄屏稳定性继续收口
+
+- **Flutter 壳层当前已补齐登录取消提示与登录后原始目标续接**：`ccbfc890` 当前已让浏览器取消登录后显式展示 `Sign-in needs attention`；从 `profile` 或 forum detail 来源发起登录后，成功返回时会自动续接回原始 tab / handoff 目标，不再把登录做成孤立动作。
+- **窄屏 Android 壳层状态区当前已完成一轮结构性修复**：登录状态、环境标识、`Resume forum` 与认证动作当前都已从 `AppBar.actions` 收口到页面顶部可换行状态条，避免再次出现 `RenderFlex overflow`。
+
+### 文档与验证留痕
+
+- **规划、鉴权说明与变更日志当前已按同一口径同步**：`planning/current`、`phase-two-flutter-client-mvp`、`guide/authentication` 与本周 changelog 当前都已回写“原生 OIDC 闭环、登录取消提示、窄屏壳层收口、登录后续接原目标”的最新事实。
+- **当日验证当前已通过**：`Clients/radish.flutter` 下 `flutter test` 当前已通过；新增 smoke tests 也已覆盖 `profile` 登录后回原 tab 与 forum detail 登录取消后重试回原目标这两条关键路径。
