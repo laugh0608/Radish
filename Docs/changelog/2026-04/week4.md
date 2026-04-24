@@ -78,3 +78,21 @@
 
 - **规划、鉴权说明与变更日志当前已按同一口径同步**：`planning/current`、`phase-two-flutter-client-mvp`、`guide/authentication` 与本周 changelog 当前都已回写“原生 OIDC 闭环、登录取消提示、窄屏壳层收口、登录后续接原目标”的最新事实。
 - **当日验证当前已通过**：`Clients/radish.flutter` 下 `flutter test` 当前已通过；新增 smoke tests 也已覆盖 `profile` 登录后回原 tab 与 forum detail 登录取消后重试回原目标这两条关键路径。
+
+## 2026-04-24 (周五)
+
+### Flutter forum detail 最小原地登录入口落地
+
+- **Flutter forum detail 当前已补齐可手工触发的最小原地登录入口**：匿名用户当前可直接在详情页发起 OIDC 登录，不再只能依赖壳层状态条或 profile 页间接触发登录。
+- **详情来源登录目标当前也已提升为可持久化续接状态**：forum detail 发起登录时，原生壳层会把 `postId / commentId` 收口到持久化 follow-up 目标；浏览器往返、应用 `resume` 或壳层重建后，当前都能继续回到原帖子 / 原评论上下文。
+- **原地登录与壳层续接之间的职责边界当前也已收口**：若详情页仍在前台，登录成功后会在原 detail 内完成状态切换并清理待续接目标，避免壳层重复再推入一层详情页。
+
+### Android 真机人工联调收口
+
+- **Android 真机当前已完成一轮围绕 detail 登录入口的手工联调**：forum detail 内登录、取消登录后的 `Sign-in needs attention` 提示、重试登录，以及成功后继续停留在当前 detail 上下文这几条主路径当前均已通过。
+- **本轮人工联调当前也已额外确认大整数详情上下文未回退**：`postId / commentId` 当前继续保持字符串口径，登录往返后不会因对象 ID 被错误当作前端数值而丢失当前 detail 目标。
+
+### 文档与验证留痕
+
+- **规划、设计与进度文档当前已按同一口径同步**：`planning/current`、`development-plan`、`phase-two-flutter-client-mvp` 与 `frontend/design` 当前都已回写“forum detail 原地登录入口、持久化续接目标与真机联调通过”的最新事实。
+- **当日验证当前已通过**：`Clients/radish.flutter` 下执行 `flutter test test/smoke_test.dart` 当前已通过；新增 smoke test 已覆盖 forum detail 内登录、取消后重试、成功回到当前帖子上下文这条关键路径。

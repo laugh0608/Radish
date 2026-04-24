@@ -47,6 +47,7 @@
 ### 1.4 当前边界
 
 - 当前代码事实仍然以 `Desktop Shell + WindowManager` 为主
+- `Clients/radish.flutter` 当前已进入 Android MVP 第二批真实业务接线：壳层登录态分发、公开 forum / docs / profile 读取，以及 forum detail / comment 只读阅读已落地；forum detail 当前也已具备最小原地登录入口，但仍明确保持只读阅读边界
 - 公开内容壳层当前已完成 forum、docs、个人公开页、公开榜单与公开商城浏览五个首批入口，并继续补到 forum 公开分类、forum 公开搜索与 docs 公开搜索首批：`/forum`、`/forum/category/:categoryId`、`/forum/search`、`/forum/post/:postId`、`/docs`、`/docs/search`、`/docs/:slug`、`/u/:id`、`/leaderboard`、`/leaderboard/:type`、`/shop`、`/shop/products` 与 `/shop/product/:productId` 都已可直接进入公开阅读壳层
 - 公开内容壳层当前已形成共享头部视觉基线：forum / docs / discover / leaderboard / shop / `u/:id` 在窄屏下统一使用品牌字、图标与按钮 token，避免同一公开壳层内继续出现专题主题色、图标色和主按钮色各自漂移
 - `/discover` 当前已形成更明确的公开分发节奏：forum / docs / leaderboard / shop 四张摘要卡默认优先预览本页对应区块，同时保留明确的“直接进入公开页”动作，不再把整卡点击简单等同为专题直跳
@@ -62,6 +63,7 @@
 - 公开 docs 搜索当前也已开始补结构化只读导览：`/docs/search` 会强调“先看结果 / 继续进入 / 不在这里”，把关键词检索、结果回跳与桌面治理边界拆清楚
 - 公开入口的图片展示当前继续沿附件运行时 URL 口径：商品、榜单与社区分发页若引用仍有效的业务附件，不应再因后台清理误删而退化成前端 404 坏图
 - `/discover` 首屏摘要卡当前优先表达“整卡预览本页区块 + 独立按钮直达公开页”的双层动作关系；forum / docs / leaderboard / shop 分区推荐项在窄屏下也要保持一致的信息密度与留白节奏
+- Flutter forum 当前的最小登录语义也已进一步明确：详情页允许匿名用户原地发起 OIDC 登录，并在浏览器回跳后继续保留当前 `postId / commentId` 上下文；但评论提交、点赞、投票、编辑与通知中心等完整登录后能力仍不在当前批次内
 - 第二阶段前半程不立即推翻现有 WebOS 路由，而是采用增量迁移
 
 ## 2. 系统架构

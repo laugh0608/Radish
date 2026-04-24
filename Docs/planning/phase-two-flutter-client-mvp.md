@@ -2,7 +2,7 @@
 
 > 状态：当前主线
 >
-> 最后更新：2026-04-23（Asia/Shanghai）
+> 最后更新：2026-04-24（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -106,6 +106,8 @@ Flutter 客户端第一批固定遵循以下约束：
 - Flutter forum detail 打开路径当前也已统一收口：forum feed、public profile、notification 宿主 handoff 与 browse history 壳层续接当前都已接到同一套原生 handoff 目标，继续保持 `postId / commentId` 的字符串口径
 - Flutter 当前已补齐最小登录 UI、显式登出与 Android 浏览器 OIDC 回调闭环：原生壳层当前会通过系统浏览器发起 `/connect/authorize`，以 `radish://oidc/callback` 回跳并完成授权码换 Token；登出当前也已统一走 `/connect/endsession` + `radish://oidc/logout-complete`
 - Flutter Android 最小登录连续性当前也已补齐：浏览器取消登录后，壳层会显式展示原生认证提示；`AppBar` 状态区当前已收口到可换行的壳层状态条；从 `profile` 或 forum 详情来源发起登录后，成功返回时也会自动续接回原始 tab / handoff 目标
+- Flutter forum detail 当前也已补齐最小原地登录入口：匿名用户可直接在详情页发起登录，登录目标会以可持久化 follow-up 状态保留 `postId / commentId`，浏览器往返或壳层重建后仍能回到当前帖子 / 评论上下文
+- Android 真机当前也已完成一轮围绕 forum detail 登录入口的人工联调：详情页登录、取消登录后的显式提示、重试登录与成功回到当前 detail 上下文这几条主路径均已通过
 
 ## 7. 当前第二批范围
 
@@ -113,7 +115,7 @@ Flutter 客户端第一批固定遵循以下约束：
 
 1. **最小登录 / 会话恢复边界**
    - 当前已完成启动恢复、匿名态 / 已登录态建模、Android 本地会话持久化、refresh token 恢复回落，以及最小登录 UI / 显式登出 / 浏览器 OIDC 回调闭环
-   - 当前也已补齐登录取消后的显式提示、窄屏壳层状态区收口，以及 `profile / forum detail` 两类最小登录后续接
+   - 当前也已补齐登录取消后的显式提示、窄屏壳层状态区收口，以及 `profile / forum detail` 两类最小登录后续接；forum detail 内也已具备可手工触发的最小原地登录入口
    - 当前仍未进入更完整的账户治理、多平台原生登录深化与通知中心登录回流联调
 2. **首批真实页面接线**
    - forum 当前已从公开列表继续收口到公开详情、评论分页、子评论分页、作者跳转、评论精确定位、public profile 详情回跳，以及 `notification / browseHistory` 的首批壳层 / 宿主 handoff
@@ -123,7 +125,7 @@ Flutter 客户端第一批固定遵循以下约束：
 
 当前第二批继续推进时，优先顺序建议为：
 
-1. 在现有登录 / 登出 / 回调闭环基础上，补宿主真实来源的登录回流联调与原始目标续接
-2. 基于现有登录连续性与统一 handoff 目标，继续做 Android MVP 稳定性回归与更多真机联调
+1. 在现有壳层 / detail 内登录入口与统一 handoff 目标基础上，继续补宿主真实来源的登录回流联调与原始目标续接
+2. 基于现有登录连续性、detail 内登录入口与持久化 follow-up 目标，继续做 Android MVP 稳定性回归与更多真机联调
 3. 在现有统一 handoff 目标基础上继续补剩余高价值真实来源，而不是回头保留 discover 演示入口
 4. 在 Android MVP 稳定后再评估平台目录与更深原生能力

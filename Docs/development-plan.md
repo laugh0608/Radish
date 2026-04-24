@@ -23,8 +23,9 @@
 
 - 当前主线当前已从“Flutter 客户端 Android MVP 的范围定义与工程骨架”进入“第二批真实业务接线”
 - `Phase 2-3` 第二批当前已落地：最小会话恢复链路、壳层登录态分发，以及 forum 从公开 feed 到帖子详情、评论分页、子评论分页、作者跳转、评论精确定位、public profile 详情回跳与首批壳层 / 宿主 handoff 的收口
+- forum detail 内最小原地登录入口、登录目标持久化续接，以及围绕该入口的一轮 Android 真机人工联调当前也已完成；detail 来源登录不再只能依赖壳层状态条或 profile 入口间接触发
 - `discover / docs / profile` 当前也都已完成首批真实只读页面接线，不再停留在统一占位页
-- Android 宿主通知 handoff、壳层最近阅读续接与 public profile 评论入口当前都已统一接到 Flutter forum 的原生 handoff 目标；下一步优先转向最小登录 UI、显式登出治理与浏览器 OIDC 回调接线评估
+- Android 宿主通知 handoff、壳层最近阅读续接与 public profile 评论入口当前都已统一接到 Flutter forum 的原生 handoff 目标；下一步优先转向基于现有登录 / 登出 / 回调闭环与 detail 内登录入口的宿主真实来源回流联调
 - `Phase 2-2` 公开内容壳层固定转入稳定维护，不再与 Flutter 混成一条建设线
 
 ## 已确认的长期方向（暂不进入当前主线）
