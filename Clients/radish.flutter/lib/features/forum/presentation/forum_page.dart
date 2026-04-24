@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/auth/native_auth_controller.dart';
+import '../../../core/auth/session_controller.dart';
 import '../../../core/config/app_environment.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
 import '../data/forum_models.dart';
@@ -11,8 +13,12 @@ class ForumPage extends StatefulWidget {
   const ForumPage({
     required this.environment,
     required this.repository,
+    this.sessionController,
+    this.authController,
     this.onOpenProfileUser,
     this.onOpenForumDetailTarget,
+    this.onRequestSignInForDetail,
+    this.onConsumeActiveDetailLoginTarget,
     this.handoffTarget,
     this.onConsumeHandoffTarget,
     super.key,
@@ -20,8 +26,13 @@ class ForumPage extends StatefulWidget {
 
   final AppEnvironment environment;
   final ForumRepository repository;
+  final SessionController? sessionController;
+  final NativeAuthController? authController;
   final ValueChanged<String>? onOpenProfileUser;
   final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
+  final Future<void> Function(ForumDetailHandoffTarget target)?
+      onRequestSignInForDetail;
+  final Future<void> Function()? onConsumeActiveDetailLoginTarget;
   final ForumDetailHandoffTarget? handoffTarget;
   final VoidCallback? onConsumeHandoffTarget;
 
@@ -119,8 +130,13 @@ class _ForumPageState extends State<ForumPage> {
               _ForumFeedContent(
                 environment: widget.environment,
                 repository: widget.repository,
+                sessionController: widget.sessionController,
+                authController: widget.authController,
                 onOpenProfileUser: widget.onOpenProfileUser,
                 onOpenForumDetailTarget: widget.onOpenForumDetailTarget,
+                onRequestSignInForDetail: widget.onRequestSignInForDetail,
+                onConsumeActiveDetailLoginTarget:
+                    widget.onConsumeActiveDetailLoginTarget,
                 state: state,
                 onPreviousPage: state.hasPreviousPage
                     ? () => _controller.goToPage(state.pageIndex - 1)
@@ -163,6 +179,11 @@ class _ForumPageState extends State<ForumPage> {
           handoffSource: target.source,
           initialTitle: target.normalizedInitialTitle,
           commentId: target.normalizedCommentId,
+          sessionController: widget.sessionController,
+          authController: widget.authController,
+          onRequestSignIn: widget.onRequestSignInForDetail,
+          onConsumeActiveDetailLoginTarget:
+              widget.onConsumeActiveDetailLoginTarget,
           onOpenProfileUser: widget.onOpenProfileUser,
         ),
       ),
@@ -276,8 +297,12 @@ class _ForumFeedContent extends StatelessWidget {
   const _ForumFeedContent({
     required this.environment,
     required this.repository,
+    required this.sessionController,
+    required this.authController,
     required this.onOpenProfileUser,
     required this.onOpenForumDetailTarget,
+    required this.onRequestSignInForDetail,
+    required this.onConsumeActiveDetailLoginTarget,
     required this.state,
     required this.onPreviousPage,
     required this.onNextPage,
@@ -285,8 +310,13 @@ class _ForumFeedContent extends StatelessWidget {
 
   final AppEnvironment environment;
   final ForumRepository repository;
+  final SessionController? sessionController;
+  final NativeAuthController? authController;
   final ValueChanged<String>? onOpenProfileUser;
   final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
+  final Future<void> Function(ForumDetailHandoffTarget target)?
+      onRequestSignInForDetail;
+  final Future<void> Function()? onConsumeActiveDetailLoginTarget;
   final ForumFeedState state;
   final VoidCallback? onPreviousPage;
   final VoidCallback? onNextPage;
@@ -342,6 +372,11 @@ class _ForumFeedContent extends StatelessWidget {
                     repository: repository,
                     postId: post.id,
                     initialTitle: post.title,
+                    sessionController: sessionController,
+                    authController: authController,
+                    onRequestSignIn: onRequestSignInForDetail,
+                    onConsumeActiveDetailLoginTarget:
+                        onConsumeActiveDetailLoginTarget,
                     onOpenProfileUser: onOpenProfileUser,
                   ),
                 ),

@@ -57,6 +57,9 @@ class MainActivity : FlutterActivity() {
                 "readRecentBrowseHandoff" -> {
                     result.success(preferences.getString(FORUM_RECENT_BROWSE_KEY, null))
                 }
+                "readPendingPostLoginTarget" -> {
+                    result.success(preferences.getString(SHELL_PENDING_POST_LOGIN_TARGET_KEY, null))
+                }
                 "writeRecentBrowseHandoff" -> {
                     val payload = call.arguments as? String
                     if (payload.isNullOrBlank()) {
@@ -67,8 +70,22 @@ class MainActivity : FlutterActivity() {
                     preferences.edit().putString(FORUM_RECENT_BROWSE_KEY, payload).apply()
                     result.success(null)
                 }
+                "writePendingPostLoginTarget" -> {
+                    val payload = call.arguments as? String
+                    if (payload.isNullOrBlank()) {
+                        result.error("invalid_payload", "Shell post-login payload must be a non-empty string.", null)
+                        return@setMethodCallHandler
+                    }
+
+                    preferences.edit().putString(SHELL_PENDING_POST_LOGIN_TARGET_KEY, payload).apply()
+                    result.success(null)
+                }
                 "clearRecentBrowseHandoff" -> {
                     preferences.edit().remove(FORUM_RECENT_BROWSE_KEY).apply()
+                    result.success(null)
+                }
+                "clearPendingPostLoginTarget" -> {
+                    preferences.edit().remove(SHELL_PENDING_POST_LOGIN_TARGET_KEY).apply()
                     result.success(null)
                 }
                 else -> result.notImplemented()
@@ -188,6 +205,7 @@ class MainActivity : FlutterActivity() {
         private const val FORUM_FOLLOW_UP_CHANNEL = "radish.flutter/forum_follow_up"
         private const val AUTH_FLOW_CHANNEL = "radish.flutter/native_auth"
         private const val FORUM_RECENT_BROWSE_KEY = "forum_recent_browse_handoff"
+        private const val SHELL_PENDING_POST_LOGIN_TARGET_KEY = "shell_pending_post_login_target"
         private const val EXTRA_FORUM_POST_ID = "forum_post_id"
         private const val EXTRA_FORUM_COMMENT_ID = "forum_comment_id"
         private const val EXTRA_FORUM_INITIAL_TITLE = "forum_initial_title"

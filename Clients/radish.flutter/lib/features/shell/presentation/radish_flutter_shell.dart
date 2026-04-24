@@ -50,7 +50,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
   String? _guestProfileUserId;
   ForumDetailHandoffTarget? _forumHandoffTarget;
   ForumDetailHandoffTarget? _recentBrowseHandoffTarget;
-  _ShellPostLoginTarget? _pendingPostLoginTarget;
+  ShellPostLoginTarget? _pendingPostLoginTarget;
   late bool _wasAuthenticated;
 
   @override
@@ -69,6 +69,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
 
     unawaited(widget.authController.consumePendingCallback());
     unawaited(_loadFollowUps());
+    unawaited(_loadPendingPostLoginTarget());
   }
 
   @override
@@ -98,6 +99,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
 
     if (oldWidget.followUpStore != widget.followUpStore) {
       unawaited(_loadFollowUps());
+      unawaited(_loadPendingPostLoginTarget());
     }
   }
 
@@ -153,27 +155,70 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
 
   void _handleSessionStateChanged() {
     final isAuthenticated = widget.sessionController.state.isAuthenticated;
-    if (!_wasAuthenticated && isAuthenticated) {
-      _consumePendingPostLoginTarget();
+    if (!_wasAuthenticated &&
+        isAuthenticated &&
+        (ModalRoute.of(context)?.isCurrent ?? true)) {
+      unawaited(_consumePendingPostLoginTarget());
     }
     _wasAuthenticated = isAuthenticated;
   }
 
   Future<void> _startLoginForCurrentContext() async {
-    _pendingPostLoginTarget ??= _buildPostLoginTargetForCurrentContext();
-    await widget.authController.startLogin();
+    await _startLoginForTarget(
+      _pendingPostLoginTarget ?? _buildPostLoginTargetForCurrentContext(),
+    );
   }
 
   Future<void> _startLoginForProfile() async {
-    _pendingPostLoginTarget = const _ShellPostLoginTarget(
-      tabIndex: 3,
+    await _startLoginForTarget(
+      const ShellPostLoginTarget(
+        tabIndex: 3,
+      ),
+    );
+  }
+
+  Future<void> _startLoginForForumDetail(
+    ForumDetailHandoffTarget target,
+  ) async {
+    final normalizedTarget = _normalizeForumHandoffTarget(target);
+    if (normalizedTarget == null) {
+      return;
+    }
+
+    await _startLoginForTarget(
+      ShellPostLoginTarget(
+        tabIndex: 1,
+        forumTarget: normalizedTarget,
+      ),
+    );
+  }
+
+  Future<void> _startLoginForTarget(
+    ShellPostLoginTarget target,
+  ) async {
+    _pendingPostLoginTarget = target;
+    await widget.followUpStore.writePendingPostLoginTarget(
+      target,
     );
     await widget.authController.startLogin();
   }
 
-  _ShellPostLoginTarget _buildPostLoginTargetForCurrentContext() {
+  Future<void> _clearPendingPostLoginTarget() async {
+    _pendingPostLoginTarget = null;
+    await widget.followUpStore.clearPendingPostLoginTarget();
+  }
+
+  Future<void> _clearInPlaceForumDetailLoginTarget() async {
+    if (_pendingPostLoginTarget?.forumTarget == null) {
+      return;
+    }
+
+    await _clearPendingPostLoginTarget();
+  }
+
+  ShellPostLoginTarget _buildPostLoginTargetForCurrentContext() {
     if (_currentIndex == 1) {
-      return _ShellPostLoginTarget(
+      return ShellPostLoginTarget(
         tabIndex: 1,
         forumTarget: _normalizeForumHandoffTarget(
           _forumHandoffTarget ?? _recentBrowseHandoffTarget,
@@ -181,18 +226,18 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       );
     }
 
-    return _ShellPostLoginTarget(
+    return ShellPostLoginTarget(
       tabIndex: _currentIndex,
     );
   }
 
-  void _consumePendingPostLoginTarget() {
+  Future<void> _consumePendingPostLoginTarget() async {
     final target = _pendingPostLoginTarget;
     if (target == null) {
       return;
     }
 
-    _pendingPostLoginTarget = null;
+    await _clearPendingPostLoginTarget();
     final forumTarget = target.forumTarget;
     if (forumTarget != null) {
       _openForumDetailTarget(forumTarget);
@@ -225,6 +270,21 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     }
 
     _openForumDetailTarget(target);
+  }
+
+  Future<void> _loadPendingPostLoginTarget() async {
+    final pendingTarget = await widget.followUpStore.readPendingPostLoginTarget();
+    if (!mounted || pendingTarget == null) {
+      return;
+    }
+
+    setState(() {
+      _pendingPostLoginTarget = pendingTarget;
+    });
+
+    if (widget.sessionController.state.isAuthenticated) {
+      await _consumePendingPostLoginTarget();
+    }
   }
 
   Future<void> _loadFollowUps() async {
@@ -317,8 +377,13 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
           ForumPage(
             environment: widget.environment,
             repository: widget.forumRepository,
+            sessionController: widget.sessionController,
+            authController: widget.authController,
             onOpenProfileUser: _openProfileUser,
             onOpenForumDetailTarget: _openForumDetailTarget,
+            onRequestSignInForDetail: _startLoginForForumDetail,
+            onConsumeActiveDetailLoginTarget:
+                _clearInPlaceForumDetailLoginTarget,
             handoffTarget: _forumHandoffTarget,
             onConsumeHandoffTarget: _consumeForumHandoffTarget,
           ),
@@ -646,14 +711,4 @@ class _ShellNoticeBanner extends StatelessWidget {
       ),
     );
   }
-}
-
-class _ShellPostLoginTarget {
-  const _ShellPostLoginTarget({
-    required this.tabIndex,
-    this.forumTarget,
-  });
-
-  final int tabIndex;
-  final ForumDetailHandoffTarget? forumTarget;
 }

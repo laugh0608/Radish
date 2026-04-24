@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/auth/native_auth_controller.dart';
+import '../../../core/auth/session_controller.dart';
 import '../../../core/config/app_environment.dart';
 import '../../../core/network/radish_api_client.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
@@ -18,6 +20,10 @@ class ForumDetailPage extends StatefulWidget {
     this.handoffSource = ForumDetailHandoffSource.shell,
     this.initialTitle,
     this.commentId,
+    this.sessionController,
+    this.authController,
+    this.onRequestSignIn,
+    this.onConsumeActiveDetailLoginTarget,
     this.onOpenProfileUser,
     super.key,
   });
@@ -28,6 +34,10 @@ class ForumDetailPage extends StatefulWidget {
   final ForumDetailHandoffSource handoffSource;
   final String? initialTitle;
   final String? commentId;
+  final SessionController? sessionController;
+  final NativeAuthController? authController;
+  final Future<void> Function(ForumDetailHandoffTarget target)? onRequestSignIn;
+  final Future<void> Function()? onConsumeActiveDetailLoginTarget;
   final ValueChanged<String>? onOpenProfileUser;
 
   @override
@@ -45,6 +55,8 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
   String? _navigationNotice;
   String? _pendingNavigationSignature;
   bool _isNavigatingToComment = false;
+  bool _wasAuthenticated = false;
+  bool _requestedSignInFromDetail = false;
 
   @override
   void initState() {
@@ -60,6 +72,8 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
     _targetCommentId = widget.commentId?.trim().isEmpty == true
         ? null
         : widget.commentId?.trim();
+    widget.sessionController?.addListener(_handleSessionStateChanged);
+    _wasAuthenticated = widget.sessionController?.state.isAuthenticated ?? false;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startCommentNavigationIfNeeded();
     });
@@ -81,6 +95,12 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
       _controller.openPost(widget.postId);
       _commentController.openPost(widget.postId);
       return;
+    }
+
+    if (oldWidget.sessionController != widget.sessionController) {
+      oldWidget.sessionController?.removeListener(_handleSessionStateChanged);
+      widget.sessionController?.addListener(_handleSessionStateChanged);
+      _wasAuthenticated = widget.sessionController?.state.isAuthenticated ?? false;
     }
 
     if (oldWidget.postId != widget.postId) {
@@ -105,6 +125,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
 
   @override
   void dispose() {
+    widget.sessionController?.removeListener(_handleSessionStateChanged);
     _controller.dispose();
     _commentController.dispose();
     _scrollController.dispose();
@@ -114,12 +135,28 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge([_controller, _commentController]),
+      animation: Listenable.merge([
+        _controller,
+        _commentController,
+        if (widget.sessionController != null) widget.sessionController!,
+        if (widget.authController != null) widget.authController!,
+      ]),
       builder: (context, child) {
         final state = _controller.state;
         final detail = state.detail;
         final title = detail?.title ?? widget.initialTitle ?? 'Forum detail';
         final commentState = _commentController.state;
+        final sessionState = widget.sessionController?.state;
+        final authState = widget.authController?.state;
+        final canRequestSignIn = widget.onRequestSignIn != null &&
+            sessionState != null &&
+            authState != null;
+        final currentDetailTarget = ForumDetailHandoffTarget(
+          postId: widget.postId,
+          source: widget.handoffSource,
+          initialTitle: detail?.title ?? widget.initialTitle,
+          commentId: widget.commentId,
+        );
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _scrollToPendingCommentIfNeeded();
@@ -169,6 +206,25 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                   _ForumNavigationNotice(message: _navigationNotice!),
                   const SizedBox(height: 16),
                 ],
+                if (canRequestSignIn &&
+                    sessionState.isAnonymous &&
+                    authState.lastErrorMessage != null &&
+                    authState.lastErrorMessage!.isNotEmpty) ...[
+                  _ForumDetailAuthNotice(
+                    message: authState.lastErrorMessage!,
+                    onDismiss: widget.authController!.dismissError,
+                    onRetry: () => _requestSignIn(currentDetailTarget),
+                    isBusy: authState.isBusy,
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                if (canRequestSignIn && sessionState.isAnonymous) ...[
+                  _ForumDetailSignInCard(
+                    isBusy: authState!.isBusy,
+                    onRequestSignIn: () => _requestSignIn(currentDetailTarget),
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 Align(
                   alignment: Alignment.centerLeft,
                   child: FilledButton.tonalIcon(
@@ -190,6 +246,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                     repository: widget.repository,
                     handoffSource: widget.handoffSource,
                     detail: detail,
+                    isAuthenticated: sessionState?.isAuthenticated ?? false,
                     commentState: commentState,
                     onRetryComments: _commentController.refresh,
                     onLoadMoreComments: _commentController.loadMore,
@@ -205,6 +262,36 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
         );
       },
     );
+  }
+
+  void _handleSessionStateChanged() {
+    final isAuthenticated = widget.sessionController?.state.isAuthenticated ?? false;
+    if (!_wasAuthenticated && isAuthenticated && _requestedSignInFromDetail) {
+      _requestedSignInFromDetail = false;
+      final onConsume = widget.onConsumeActiveDetailLoginTarget;
+      if (onConsume != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) {
+            return;
+          }
+
+          onConsume();
+        });
+      }
+    }
+
+    _wasAuthenticated = isAuthenticated;
+  }
+
+  Future<void> _requestSignIn(ForumDetailHandoffTarget target) async {
+    final onRequestSignIn = widget.onRequestSignIn;
+    if (onRequestSignIn == null) {
+      await widget.authController?.startLogin();
+      return;
+    }
+
+    _requestedSignInFromDetail = true;
+    await onRequestSignIn(target);
   }
 
   void _registerCommentKey(String commentId, GlobalKey key) {
@@ -372,11 +459,110 @@ class _ForumDetailErrorState extends StatelessWidget {
   }
 }
 
+class _ForumDetailSignInCard extends StatelessWidget {
+  const _ForumDetailSignInCard({
+    required this.isBusy,
+    required this.onRequestSignIn,
+  });
+
+  final bool isBusy;
+  final VoidCallback onRequestSignIn;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Sign in from this detail',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Forum detail stays read-only for now, but sign-in should keep the current post and comment context so native handoff does not break after the browser returns.',
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: isBusy ? null : onRequestSignIn,
+              icon: Icon(
+                isBusy
+                    ? Icons.hourglass_top_outlined
+                    : Icons.login_outlined,
+              ),
+              label: Text(
+                isBusy ? 'Opening sign-in...' : 'Sign in to keep this context',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ForumDetailAuthNotice extends StatelessWidget {
+  const _ForumDetailAuthNotice({
+    required this.message,
+    required this.onDismiss,
+    required this.onRetry,
+    required this.isBusy,
+  });
+
+  final String message;
+  final VoidCallback onDismiss;
+  final VoidCallback onRetry;
+  final bool isBusy;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Card(
+      color: colorScheme.errorContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Sign-in needs attention',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 10),
+            Text(message),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                TextButton(
+                  onPressed: onDismiss,
+                  child: const Text('Dismiss'),
+                ),
+                FilledButton.tonal(
+                  onPressed: isBusy ? null : onRetry,
+                  child: Text(
+                    isBusy ? 'Opening sign-in...' : 'Retry sign-in',
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ForumDetailContent extends StatelessWidget {
   const _ForumDetailContent({
     required this.repository,
     required this.handoffSource,
     required this.detail,
+    required this.isAuthenticated,
     required this.commentState,
     required this.onRetryComments,
     required this.onLoadMoreComments,
@@ -390,6 +576,7 @@ class _ForumDetailContent extends StatelessWidget {
   final ForumRepository repository;
   final ForumDetailHandoffSource handoffSource;
   final ForumPostDetail detail;
+  final bool isAuthenticated;
   final ForumCommentFeedState commentState;
   final VoidCallback onRetryComments;
   final VoidCallback onLoadMoreComments;
@@ -434,6 +621,11 @@ class _ForumDetailContent extends StatelessWidget {
                 for (final badge in detail.badges)
                   Chip(
                     label: Text(badge),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                if (isAuthenticated)
+                  const Chip(
+                    label: Text('Signed in'),
                     visualDensity: VisualDensity.compact,
                   ),
               ],
