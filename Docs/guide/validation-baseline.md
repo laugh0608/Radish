@@ -534,6 +534,12 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 
 如果 Android Studio 安装路径不同，使用对应安装目录下的 `jbr`。不要为了这条测试链路改用 Oracle / 系统默认 JDK，也不要把该失败误判为 Flutter handoff 或 OIDC 业务代码回归。
 
+## Flutter Android 人工验收分层
+
+Flutter Android MVP 当前人工验收优先覆盖已经具备真实入口、真实数据或可稳定手工触发的链路：登录、退出、会话恢复、`discover / docs / profile` 首批真实只读读取、forum feed、forum detail、评论阅读、评论分页与 detail 原地登录续接。
+
+`notification / commentId` 宿主深链当前已有原生 handoff 与自动化边界覆盖，但现阶段如果没有真实 notification 入口，不要求作为当前 Android MVP 的人工阻断项；待出现可稳定触发的真实通知来源后，再补宿主来源登录回流与评论精确定位人工验收。具体 checklist 以 `Clients/radish.flutter/README.md` 为准。
+
 ## 受限环境说明
 
 在某些受限 Windows 沙盒中，顶层 shell 可以执行 `npm run ...`，但 Node 脚本内部再次拉起 `node / npm / powershell` 子进程可能被系统直接拒绝。

@@ -9,7 +9,7 @@
 - **阶段**：`第二开发阶段：社区深化与多端化`
 - **当前主线**：`Phase 2-3 Flutter 客户端 MVP`
 - **当前阶段**：`截至 2026-04-18，第一开发阶段已于 2026-04-06 通过 v26.3.2-release 完成真实发布收口；第二开发阶段现已正式启动。`Phase 2-1 社区深化第一批` 已完成论坛轻回应墙 Phase 1 与最小回流链路收口；`Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口，并转入稳定维护。当前产品主线正式切到 `Phase 2-3 Flutter 客户端 MVP`：第一批范围定义、真相源文档切换与仓库工程骨架已完成；第二批当前已开始接入最小登录 / 会话恢复链路与 forum 首条真实只读读取链路，不继续沿公开壳层扩页面细节，也不回头把桌面工作台搬进原生端。`
-- **复核日期**：`2026-04-24`
+- **复核日期**：`2026-04-25`
 
 ## 当前执行入口
 
@@ -89,6 +89,7 @@
 - Flutter Android 最小登录连续性当前也已完成一轮收口：浏览器取消登录后，原生壳层会显式提示 `Sign-in needs attention`，壳层状态区已从 `AppBar` 收口到可换行状态条，`profile` 与 forum 详情来源下的登录发起当前也会在成功后自动续接回原始 tab / handoff 目标
 - Flutter forum detail 当前也已补齐最小原地登录入口：匿名用户可直接在详情页发起登录，登录目标会以可持久化 follow-up 状态保留 `postId / commentId`，浏览器往返或壳层重建后仍能回到当前帖子 / 评论上下文
 - Flutter forum detail 登录链路当前也已完成一轮 Android 真机人工联调：详情页登录、取消登录后的显式提示、重试登录与成功回到当前 detail 上下文这几条主路径当前均已通过
+- Android MVP 当前人工验证范围已收口到真实可测链路：登录、退出、会话恢复、`discover / docs / profile` 基础读取、forum feed、forum detail、评论阅读、评论分页与 detail 原地登录续接优先作为当前可验收面；现阶段没有真实通知入口时，`notification / commentId` 宿主深链只保留为入口条件满足后补验项，不再阻断当前 Android MVP 稳定性复核
 
 ## 当前批次目标
 
@@ -110,8 +111,8 @@
 ## 下一顺位
 
 - `Phase 2-3` 第二批业务链路
-  - forum 当前已从公开列表推进到公开帖子详情、评论分页、子评论分页、作者跳转、评论精确定位、public profile 详情回跳，以及 `notification / browseHistory` 的首批壳层 / 宿主 handoff 收口；detail 内最小原地登录入口与目标持久化续接当前也已落地，下一步优先转向基于现有登录 / 登出 / 回调闭环的宿主真实来源登录回流联调
-  - Android 真机联调已完成首轮收口；forum detail 登录入口当前也已完成一轮手工联调通过，后续转入基于现有宿主 / 壳层 handoff 与登录后续接边界的增量回归和稳定性复核
+  - forum 当前已从公开列表推进到公开帖子详情、评论分页、子评论分页、作者跳转、评论精确定位、public profile 详情回跳，以及 `notification / browseHistory` 的首批壳层 / 宿主 handoff 收口；detail 内最小原地登录入口与目标持久化续接当前也已落地，下一步优先转向 Android MVP 当前可测链路的稳定性复核
+  - Android 真机联调已完成首轮收口；forum detail 登录入口当前也已完成一轮手工联调通过，后续人工验收优先固定在登录 / 退出 / 会话恢复、四个主 tab 真实读取、forum feed / detail / 评论阅读与 detail 原地登录续接；`notification / commentId` 宿主深链待有真实通知入口后补验，不作为当前阻断项
 
 - `Phase 2-2` 稳定维护项
   - 公开内容壳层保留必要联调复核与问题修复，但不再继续新增公开入口或细节增强

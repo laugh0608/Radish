@@ -2,7 +2,7 @@
 
 > 状态：当前主线
 >
-> 最后更新：2026-04-24（Asia/Shanghai）
+> 最后更新：2026-04-25（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -108,6 +108,7 @@ Flutter 客户端第一批固定遵循以下约束：
 - Flutter Android 最小登录连续性当前也已补齐：浏览器取消登录后，壳层会显式展示原生认证提示；`AppBar` 状态区当前已收口到可换行的壳层状态条；从 `profile` 或 forum 详情来源发起登录后，成功返回时也会自动续接回原始 tab / handoff 目标
 - Flutter forum detail 当前也已补齐最小原地登录入口：匿名用户可直接在详情页发起登录，登录目标会以可持久化 follow-up 状态保留 `postId / commentId`，浏览器往返或壳层重建后仍能回到当前帖子 / 评论上下文
 - Android 真机当前也已完成一轮围绕 forum detail 登录入口的人工联调：详情页登录、取消登录后的显式提示、重试登录与成功回到当前 detail 上下文这几条主路径均已通过
+- Android MVP 当前人工验证范围已收口到真实可测链路：登录、退出、会话恢复、`discover / docs / profile` 基础读取、forum feed、forum detail、评论阅读、评论分页与 detail 原地登录续接优先作为当前可验收面；现阶段没有真实通知入口时，`notification / commentId` 宿主深链只保留为入口条件满足后补验项，不再阻断当前 Android MVP 稳定性复核
 
 ## 7. 当前第二批范围
 
@@ -119,13 +120,14 @@ Flutter 客户端第一批固定遵循以下约束：
    - 当前仍未进入更完整的账户治理、多平台原生登录深化与通知中心登录回流联调
 2. **首批真实页面接线**
    - forum 当前已从公开列表继续收口到公开详情、评论分页、子评论分页、作者跳转、评论精确定位、public profile 详情回跳，以及 `notification / browseHistory` 的首批壳层 / 宿主 handoff
-   - `discover / docs / profile` 首批最小真实页面接线与 Android 真机联调当前都已完成；forum 的首批真实来源接线当前也已完成一轮收口，后续优先转向宿主真实来源登录回流联调与 Android 稳定性复核，而不是回头扩壳层占位
+   - `discover / docs / profile` 首批最小真实页面接线与 Android 真机联调当前都已完成；forum 的首批真实来源接线当前也已完成一轮收口，后续优先转向 Android MVP 当前可测链路的稳定性复核，而不是回头扩壳层占位
+   - `notification / commentId` 这类依赖真实通知来源的宿主深链联调，当前保留既有代码与自动化覆盖，待出现可稳定触发的真实通知入口后再补人工验收，不作为当前批次阻断项
 
 ## 8. 下一顺位
 
 当前第二批继续推进时，优先顺序建议为：
 
-1. 在现有壳层 / detail 内登录入口与统一 handoff 目标基础上，继续补宿主真实来源的登录回流联调与原始目标续接
-2. 基于现有登录连续性、detail 内登录入口与持久化 follow-up 目标，继续做 Android MVP 稳定性回归与更多真机联调
-3. 在现有统一 handoff 目标基础上继续补剩余高价值真实来源，而不是回头保留 discover 演示入口
+1. 基于现有登录连续性、detail 内登录入口与持久化 follow-up 目标，继续做 Android MVP 当前可测链路的稳定性回归与更多真机联调
+2. 把当前 Android 人工验收优先固定在登录 / 退出 / 会话恢复、四个主 tab 真实读取、forum feed / detail / 评论阅读与 detail 原地登录续接
+3. 在出现真实 notification 入口后，再补宿主来源登录回流与 `commentId` 深链人工验收；没有真实入口时不把这条链路作为当前阻断项
 4. 在 Android MVP 稳定后再评估平台目录与更深原生能力

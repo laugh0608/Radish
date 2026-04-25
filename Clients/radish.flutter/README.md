@@ -2,13 +2,15 @@
 
 `radish.flutter` 是 `Phase 2-3 Flutter 客户端 MVP` 的仓库落点。
 
-当前批次只提交最小客户端骨架，不直接铺完整业务页，也不复刻 WebOS 桌面工作台。
+当前主线是 `Phase 2-3 Flutter 客户端 MVP`。Android MVP 当前优先验证已经接通的真实可测链路，不复刻 WebOS 桌面工作台。
 
 ## 当前范围
 
 - Android 起步的原生客户端壳层
-- `discover / forum / docs / profile` 四个高价值入口占位
-- 环境配置、认证存储占位与主题基线
+- `discover / forum / docs / profile` 四个高价值入口的首批真实只读页面
+- 最小登录、退出、会话恢复、Android 本地会话持久化与浏览器 OIDC 回调
+- forum feed、forum detail、评论分页、子评论分页、作者跳转与 detail 原地登录续接
+- 环境配置、认证存储与主题基线
 - 与现有 Web / API 契约一致的复用边界
 - Android 模拟器经 Gateway `https://localhost:5000` 的最小联调入口
 
@@ -36,10 +38,9 @@ Clients/radish.flutter/
 
 ## 后续接线顺序
 
-1. 登录 / 会话恢复
-2. `discover` 首批真实页面
-3. `forum / docs / profile` API 接线
-4. Android 真机构建与最小联调复核
+1. Android MVP 当前可测链路稳定性复核
+2. 真实 notification 入口具备后，再补 `notification / commentId` 宿主深链人工验收
+3. Android MVP 稳定后，再评估 Windows / Linux 平台目录与更深原生能力
 
 ## 平台目录生成说明
 
@@ -70,6 +71,34 @@ D:\MyKits\android\platform-tools\adb.exe reverse tcp:5000 tcp:5000
 ```
 
 不要把 Flutter 默认开发入口改成 `https://10.0.2.2:5000`。该地址虽然能指向宿主机，但会让请求主机名从 `localhost` 变成 `10.0.2.2`，与本地 Gateway 开发 HTTPS 证书不一致，容易在 TLS 握手阶段出现 `HandshakeException`。
+
+## Android 真机人工验证 checklist
+
+当前 Android MVP 人工验证只覆盖已经具备真实入口、真实数据或可稳定手工触发的链路。现阶段没有真实 notification 时，`notification / commentId` 宿主深链不作为阻断项。
+
+前置条件：
+
+- 后端宿主、Gateway 与 Auth 已由人工按项目启动命令启动；不要由 AI 直接执行 `dotnet run` 或 `npm run dev`
+- Android 设备能访问 `https://localhost:5000` 对应的本地 Gateway；模拟器联调前已执行 `adb reverse tcp:5000 tcp:5000`
+- 测试账号可完成浏览器 OIDC 登录，并能从 `radish://oidc/callback` 回到应用
+- 当前环境中至少存在可公开读取的 forum 帖子；评论链路验证需要选择一条已有根评论或子评论的帖子
+
+建议按以下顺序验收：
+
+1. 启动应用，确认启动恢复 gate 后进入匿名态或已恢复会话态，壳层状态条不溢出
+2. 进入 `discover / docs / profile`，确认首批真实只读内容可读取，基础跳转可返回原 tab
+3. 进入 forum feed，确认 `latest / hottest`、分页加载、空态或错误态文案正常
+4. 从 forum feed 打开帖子详情，确认正文、作者、分类、时间与基础统计可读，原生返回正常
+5. 在帖子详情读取评论区，确认根评论分页、子评论展开、评论作者跳转公开 profile 可用；没有评论时应显示明确空态
+6. 匿名态在帖子详情发起登录，取消登录后应出现显式提示；重试登录成功后应回到原帖子上下文
+7. 已登录态执行退出，确认浏览器登出回调后回到匿名态，后续重新进入 profile 或 detail 登录入口仍可用
+8. 关闭并重启应用，确认会话恢复或匿名回落符合当前 token 状态
+
+暂不作为当前阻断项：
+
+- 真实通知中心或系统通知触发的 `notification` handoff
+- 依赖真实通知 payload 的 `commentId` 精确深链人工验收
+- 完整通知中心、聊天、商城工作台、创作器、评论提交、点赞、投票、编辑或其他桌面治理能力
 
 ## Android 平台测试 JDK 约束
 
