@@ -90,6 +90,7 @@
 - Flutter forum detail 当前也已补齐最小原地登录入口：匿名用户可直接在详情页发起登录，登录目标会以可持久化 follow-up 状态保留 `postId / commentId`，浏览器往返或壳层重建后仍能回到当前帖子 / 评论上下文
 - Flutter forum detail 登录链路当前也已完成一轮 Android 真机人工联调：详情页登录、取消登录后的显式提示、重试登录与成功回到当前 detail 上下文这几条主路径当前均已通过
 - Android MVP 当前人工验证范围已收口到真实可测链路：登录、退出、会话恢复、`discover / docs / profile` 基础读取、forum feed、forum detail、评论阅读、评论分页与 detail 原地登录续接优先作为当前可验收面；现阶段没有真实通知入口时，`notification / commentId` 宿主深链只保留为入口条件满足后补验项，不再阻断当前 Android MVP 稳定性复核
+- Android MVP 当前可测链路已完成一轮人工验收：登录和退出逻辑确认正常，forum 评论区显示问题已修复并在真机确认；当前无真实 notification 入口，因此 notification 来源 handoff 与 `commentId` 深链继续作为后续补验项
 
 ## 当前批次目标
 
@@ -111,8 +112,8 @@
 ## 下一顺位
 
 - `Phase 2-3` 第二批业务链路
-  - forum 当前已从公开列表推进到公开帖子详情、评论分页、子评论分页、作者跳转、评论精确定位、public profile 详情回跳，以及 `notification / browseHistory` 的首批壳层 / 宿主 handoff 收口；detail 内最小原地登录入口与目标持久化续接当前也已落地，下一步优先转向 Android MVP 当前可测链路的稳定性复核
-  - Android 真机联调已完成首轮收口；forum detail 登录入口当前也已完成一轮手工联调通过，后续人工验收优先固定在登录 / 退出 / 会话恢复、四个主 tab 真实读取、forum feed / detail / 评论阅读与 detail 原地登录续接；`notification / commentId` 宿主深链待有真实通知入口后补验，不作为当前阻断项
+  - forum 当前已从公开列表推进到公开帖子详情、评论分页、子评论分页、作者跳转、评论精确定位、public profile 详情回跳，以及 `notification / browseHistory` 的首批壳层 / 宿主 handoff 收口；detail 内最小原地登录入口与目标持久化续接当前也已落地，Android MVP 当前可测链路已完成一轮人工验收
+  - 下一步优先定义 `Phase 2-3` 第三批主线：在“补一个可稳定触发的 notification 来源”“扩展下一个高价值只读原生页面”“进入 Android MVP 打包 / 发布候选收口”之间择一，不继续把当前已通过 checklist 作为主线反复扩项
 
 - `Phase 2-2` 稳定维护项
   - 公开内容壳层保留必要联调复核与问题修复，但不再继续新增公开入口或细节增强
