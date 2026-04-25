@@ -102,12 +102,12 @@
 ### Android MVP 当前可测链路完成一轮人工验收
 
 - **Android MVP 当前人工验证范围已正式收口到真实可测链路**：登录、退出、会话恢复、`discover / docs / profile` 基础读取、forum feed、forum detail、评论阅读、评论分页与 detail 原地登录续接当前都纳入本轮验收。
-- **本轮 Android 人工联调当前已通过**：用户侧确认登录和退出逻辑正常，forum 评论不显示的问题已修复并在真机确认；当前没有真实 notification 入口，因此 `notification / commentId` 宿主深链保留为入口条件满足后补验项，不作为当前阻断项。
-- **Android MVP 当前可测面已从“继续修主链问题”转入“定义下一批主线”**：后续不再继续沿当前 checklist 反复扩项，下一步应先明确第三批是补可测 notification 来源、扩展高价值只读页面，还是进入 Android MVP 打包 / 发布候选收口。
+- **本轮 Android 人工联调当前已通过**：用户侧确认登录和退出逻辑正常，forum 评论不显示的问题已修复并在真机确认；`notification / commentId` 宿主深链在本轮先从阻断项降级，随后已补最小 forum notification 来源并完成真机联调。
+- **Android MVP 当前可测面已从“继续修主链问题”转入“选择下一批主线”**：后续不再继续沿当前 checklist 反复扩项，下一步应在扩展高价值只读页面与 Android MVP 打包 / 发布候选收口之间择一。
 
 ### 文档与验证留痕
 
-- **Flutter Android 人工验收口径当前已回写到文档**：`Clients/radish.flutter/README.md` 已补当前真机 checklist，`planning/current`、`phase-two-flutter-client-mvp` 与 `validation-baseline` 已同步将 `notification / commentId` 深链降级为入口具备后补验。
+- **Flutter Android 人工验收口径当前已回写到文档**：`Clients/radish.flutter/README.md` 已补当前真机 checklist，`planning/current`、`phase-two-flutter-client-mvp` 与 `validation-baseline` 已同步记录 Android MVP 当前可测链路与最小 forum notification 回流的验收口径。
 - **本轮文档提交已完成**：`b61f22a0` 已提交 `docs(flutter): 收口 Android MVP 人工验证范围`，用于沉淀 Android MVP 当前可测链路与待补验边界。
 
 ### 最小 forum notification 来源开始接入

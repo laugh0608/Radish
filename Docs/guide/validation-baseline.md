@@ -536,9 +536,9 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 
 ## Flutter Android 人工验收分层
 
-Flutter Android MVP 当前人工验收优先覆盖已经具备真实入口、真实数据或可稳定手工触发的链路：登录、退出、会话恢复、`discover / docs / profile` 首批真实只读读取、forum feed、forum detail、评论阅读、评论分页与 detail 原地登录续接。
+Flutter Android MVP 当前人工验收优先覆盖已经具备真实入口、真实数据或可稳定手工触发的链路：登录、退出、会话恢复、`discover / docs / profile` 首批真实只读读取、forum feed、forum detail、评论阅读、评论分页、detail 原地登录续接，以及已登录壳层的最小 forum notification 回流。
 
-`notification / commentId` 宿主深链当前已有原生 handoff 与自动化边界覆盖，但现阶段如果没有真实 notification 入口，不要求作为当前 Android MVP 的人工阻断项；待出现可稳定触发的真实通知来源后，再补宿主来源登录回流与评论精确定位人工验收。具体 checklist 以 `Clients/radish.flutter/README.md` 为准。
+最小 forum notification 回流当前使用站内通知列表作为可测来源：用另一个账号在 Web / 桌面端评论或回复目标用户的帖子 / 评论，接收账号登录 Flutter 后点击 `Forum notification`，应能回到对应 forum detail，并在通知携带 `commentId` 时落到评论上下文。系统通知栏推送、完整通知中心、标记已读、删除通知和通知设置仍不属于当前 Android MVP 阻断项。具体 checklist 以 `Clients/radish.flutter/README.md` 为准。
 
 ## 受限环境说明
 

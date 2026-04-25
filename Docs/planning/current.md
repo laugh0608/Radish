@@ -89,8 +89,8 @@
 - Flutter Android 最小登录连续性当前也已完成一轮收口：浏览器取消登录后，原生壳层会显式提示 `Sign-in needs attention`，壳层状态区已从 `AppBar` 收口到可换行状态条，`profile` 与 forum 详情来源下的登录发起当前也会在成功后自动续接回原始 tab / handoff 目标
 - Flutter forum detail 当前也已补齐最小原地登录入口：匿名用户可直接在详情页发起登录，登录目标会以可持久化 follow-up 状态保留 `postId / commentId`，浏览器往返或壳层重建后仍能回到当前帖子 / 评论上下文
 - Flutter forum detail 登录链路当前也已完成一轮 Android 真机人工联调：详情页登录、取消登录后的显式提示、重试登录与成功回到当前 detail 上下文这几条主路径当前均已通过
-- Android MVP 当前人工验证范围已收口到真实可测链路：登录、退出、会话恢复、`discover / docs / profile` 基础读取、forum feed、forum detail、评论阅读、评论分页与 detail 原地登录续接优先作为当前可验收面；现阶段没有真实通知入口时，`notification / commentId` 宿主深链只保留为入口条件满足后补验项，不再阻断当前 Android MVP 稳定性复核
-- Android MVP 当前可测链路已完成一轮人工验收：登录和退出逻辑确认正常，forum 评论区显示问题已修复并在真机确认；当前无真实 notification 入口，因此 notification 来源 handoff 与 `commentId` 深链继续作为后续补验项
+- Android MVP 当前人工验证范围已收口到真实可测链路：登录、退出、会话恢复、`discover / docs / profile` 基础读取、forum feed、forum detail、评论阅读、评论分页与 detail 原地登录续接，以及已登录壳层最小 forum notification 回流都已纳入当前可验收面
+- Android MVP 当前可测链路已完成一轮人工验收：登录和退出逻辑确认正常，forum 评论区显示问题已修复并在真机确认；最小 forum notification 回流也已完成真机人工联调
 - Flutter 当前已补齐一个最小可测 forum notification 来源：已登录壳层会读取当前用户最新可跳 forum 的通知，解析 `voExtData` 中字符串化的 `postId / commentId`，并通过既有 `ForumDetailHandoffTarget(source: notification)` 打开原生 forum detail
 - 最小 forum notification 回流当前已完成真机人工联调：`Forum notification` 入口回到 forum detail / 评论上下文的逻辑确认正常，系统通知栏推送与完整通知中心继续不纳入当前批次
 
