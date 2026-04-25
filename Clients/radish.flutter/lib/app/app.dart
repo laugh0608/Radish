@@ -11,6 +11,7 @@ import '../features/docs/data/docs_repository.dart';
 import '../features/forum/data/forum_follow_up_store.dart';
 import '../features/forum/data/forum_models.dart';
 import '../features/forum/data/forum_repository.dart';
+import '../features/notifications/data/notification_repository.dart';
 import '../features/profile/data/profile_repository.dart';
 import '../features/shell/presentation/radish_flutter_shell.dart';
 
@@ -24,6 +25,7 @@ class RadishApp extends StatefulWidget {
     required this.forumRepository,
     required this.profileRepository,
     required this.followUpStore,
+    this.notificationRepository = const EmptyNotificationRepository(),
     this.initialForumHandoffTarget,
     super.key,
   });
@@ -36,6 +38,7 @@ class RadishApp extends StatefulWidget {
   final ForumRepository forumRepository;
   final ProfileRepository profileRepository;
   final ForumFollowUpStore followUpStore;
+  final NotificationRepository notificationRepository;
   final ForumDetailHandoffTarget? initialForumHandoffTarget;
 
   @override
@@ -80,6 +83,7 @@ class _RadishAppState extends State<RadishApp> {
                   forumRepository: widget.forumRepository,
                   profileRepository: widget.profileRepository,
                   followUpStore: widget.followUpStore,
+                  notificationRepository: widget.notificationRepository,
                   initialForumHandoffTarget: widget.initialForumHandoffTarget,
                 ),
         );

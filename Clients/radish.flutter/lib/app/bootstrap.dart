@@ -15,6 +15,7 @@ import '../features/discover/data/discover_repository.dart';
 import '../features/docs/data/docs_repository.dart';
 import '../features/forum/data/forum_follow_up_store.dart';
 import '../features/forum/data/forum_repository.dart';
+import '../features/notifications/data/notification_repository.dart';
 import '../features/profile/data/profile_repository.dart';
 import 'app.dart';
 
@@ -63,6 +64,10 @@ class RadishBootstrap {
       apiClient: apiClient,
       endpoints: apiEndpoints,
     );
+    final notificationRepository = HttpNotificationRepository(
+      apiClient: apiClient,
+      endpoints: apiEndpoints,
+    );
 
     runApp(
       RadishApp(
@@ -74,6 +79,7 @@ class RadishBootstrap {
         forumRepository: forumRepository,
         profileRepository: profileRepository,
         followUpStore: followUpStore,
+        notificationRepository: notificationRepository,
       ),
     );
   }

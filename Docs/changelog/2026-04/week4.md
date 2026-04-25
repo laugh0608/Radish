@@ -109,3 +109,9 @@
 
 - **Flutter Android 人工验收口径当前已回写到文档**：`Clients/radish.flutter/README.md` 已补当前真机 checklist，`planning/current`、`phase-two-flutter-client-mvp` 与 `validation-baseline` 已同步将 `notification / commentId` 深链降级为入口具备后补验。
 - **本轮文档提交已完成**：`b61f22a0` 已提交 `docs(flutter): 收口 Android MVP 人工验证范围`，用于沉淀 Android MVP 当前可测链路与待补验边界。
+
+### 最小 forum notification 来源开始接入
+
+- **Flutter 已登录壳层当前已补齐一个最小 forum notification 来源**：原生端会读取当前用户最新通知列表，筛出 `voExtData.app = forum` 的通知，并把字符串化 `postId / commentId` 转成既有 `ForumDetailHandoffTarget(source: notification)`。
+- **本轮继续保持“可测来源”边界，不扩完整通知中心**：当前只提供壳层轻入口 `Forum notification`，点击后打开 forum detail 与评论上下文；系统通知栏推送、通知列表管理、标记已读、删除通知和通知设置仍不纳入本批。
+- **最小验证与人工联调当前已通过**：`Clients/radish.flutter` 下 `flutter test` 已通过；Android 平台侧使用 Android Studio JBR 执行 `.\gradlew.bat :app:testDebugUnitTest` 已通过；真机人工联调已确认 `Forum notification` 回到 forum detail / 评论上下文的逻辑正常。

@@ -18,6 +18,7 @@ import 'package:radish_flutter/features/docs/data/docs_repository.dart';
 import 'package:radish_flutter/features/forum/data/forum_follow_up_store.dart';
 import 'package:radish_flutter/features/forum/data/forum_models.dart';
 import 'package:radish_flutter/features/forum/data/forum_repository.dart';
+import 'package:radish_flutter/features/notifications/data/notification_repository.dart';
 import 'package:radish_flutter/features/profile/data/profile_models.dart';
 import 'package:radish_flutter/features/profile/data/profile_repository.dart';
 
@@ -1092,6 +1093,56 @@ void main() {
     expect(find.text('Notification handoff'), findsWidgets);
   });
 
+  testWidgets('latest forum notification opens shared native detail',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: 'user-42',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: 'user-42',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _SeededBigIdForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+        notificationRepository: const _FakeForumNotificationRepository(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Forum notification'), findsOneWidget);
+
+    await tester.tap(find.text('Forum notification'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Forum detail'), findsWidgets);
+    expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
+    expect(find.text('Notification handoff'), findsWidgets);
+    expect(find.text('Big id root comment'), findsOneWidget);
+  });
+
   testWidgets('recent browse handoff resumes forum detail from shell chip',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
@@ -1653,6 +1704,23 @@ class _FakeProfileRepository implements ProfileRepository {
       dataCount: 0,
       pageCount: 1,
       comments: [],
+    );
+  }
+}
+
+class _FakeForumNotificationRepository implements NotificationRepository {
+  const _FakeForumNotificationRepository();
+
+  @override
+  Future<ForumDetailHandoffTarget?> getLatestForumTarget({
+    required String accessToken,
+    int pageSize = 20,
+  }) async {
+    return const ForumDetailHandoffTarget(
+      postId: '2042219067430928384',
+      source: ForumDetailHandoffSource.notification,
+      initialTitle: '帖子被评论',
+      commentId: 'comment-big-1',
     );
   }
 }

@@ -110,6 +110,8 @@ Flutter 客户端第一批固定遵循以下约束：
 - Android 真机当前也已完成一轮围绕 forum detail 登录入口的人工联调：详情页登录、取消登录后的显式提示、重试登录与成功回到当前 detail 上下文这几条主路径均已通过
 - Android MVP 当前人工验证范围已收口到真实可测链路：登录、退出、会话恢复、`discover / docs / profile` 基础读取、forum feed、forum detail、评论阅读、评论分页与 detail 原地登录续接优先作为当前可验收面；现阶段没有真实通知入口时，`notification / commentId` 宿主深链只保留为入口条件满足后补验项，不再阻断当前 Android MVP 稳定性复核
 - Android MVP 当前可测链路已完成一轮人工验收：登录和退出逻辑确认正常，forum 评论区显示问题已修复并在真机确认；当前无真实 notification 入口，因此 notification 来源 handoff 与 `commentId` 深链继续作为后续补验项
+- Flutter 当前已补齐一个最小可测 forum notification 来源：已登录壳层会读取当前用户最新可跳 forum 的通知，解析 `voExtData` 中字符串化的 `postId / commentId`，并通过既有 `ForumDetailHandoffTarget(source: notification)` 打开原生 forum detail
+- 最小 forum notification 回流当前已完成真机人工联调：`Forum notification` 入口回到 forum detail / 评论上下文的逻辑确认正常，系统通知栏推送与完整通知中心继续不纳入当前批次
 
 ## 7. 当前第二批范围
 
@@ -122,13 +124,13 @@ Flutter 客户端第一批固定遵循以下约束：
 2. **首批真实页面接线**
    - forum 当前已从公开列表继续收口到公开详情、评论分页、子评论分页、作者跳转、评论精确定位、public profile 详情回跳，以及 `notification / browseHistory` 的首批壳层 / 宿主 handoff
    - `discover / docs / profile` 首批最小真实页面接线与 Android 真机联调当前都已完成；forum 的首批真实来源接线当前也已完成一轮收口，后续优先转向 Android MVP 当前可测链路的稳定性复核，而不是回头扩壳层占位
-   - `notification / commentId` 这类依赖真实通知来源的宿主深链联调，当前保留既有代码与自动化覆盖，待出现可稳定触发的真实通知入口后再补人工验收，不作为当前批次阻断项
+   - `notification / commentId` 这类依赖真实通知来源的宿主深链联调，当前已补最小可测来源并完成真机人工联调：已登录壳层读取最新 forum 通知并打开原生 detail；系统通知栏推送、完整通知中心与通知管理继续不纳入本批
 
 ## 8. 下一顺位
 
 当前第二批继续推进时，优先顺序建议为：
 
 1. 第二批当前可测链路已完成一轮人工验收，后续不再把重复执行当前 checklist 作为主线扩项
-2. 下一步优先定义第三批主线：可选方向包括补一个可稳定触发的 notification 来源、扩展下一个高价值只读原生页面，或进入 Android MVP 打包 / 发布候选收口
-3. 在出现真实 notification 入口后，再补宿主来源登录回流与 `commentId` 深链人工验收；没有真实入口时不把这条链路作为当前阻断项
+2. 最小 forum notification 来源已完成真机人工联调，后续不再以补可测 notification 入口作为阻断项
+3. 下一步在扩展下一个高价值只读原生页面与 Android MVP 打包 / 发布候选收口之间择一
 4. 第三批方向明确并完成 Android MVP 稳定后，再评估 Windows / Linux 平台目录与更深原生能力

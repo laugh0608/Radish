@@ -10,6 +10,7 @@ import '../../../features/docs/data/docs_repository.dart';
 import '../../../features/forum/data/forum_follow_up_store.dart';
 import '../../../features/forum/data/forum_models.dart';
 import '../../../features/forum/data/forum_repository.dart';
+import '../../../features/notifications/data/notification_repository.dart';
 import '../../../features/profile/data/profile_repository.dart';
 import '../../../features/discover/presentation/discover_page.dart';
 import '../../../features/docs/presentation/docs_page.dart';
@@ -26,6 +27,7 @@ class RadishFlutterShell extends StatefulWidget {
     required this.forumRepository,
     required this.profileRepository,
     required this.followUpStore,
+    this.notificationRepository = const EmptyNotificationRepository(),
     this.initialForumHandoffTarget,
     super.key,
   });
@@ -38,6 +40,7 @@ class RadishFlutterShell extends StatefulWidget {
   final ForumRepository forumRepository;
   final ProfileRepository profileRepository;
   final ForumFollowUpStore followUpStore;
+  final NotificationRepository notificationRepository;
   final ForumDetailHandoffTarget? initialForumHandoffTarget;
 
   @override
@@ -50,6 +53,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
   String? _guestProfileUserId;
   ForumDetailHandoffTarget? _forumHandoffTarget;
   ForumDetailHandoffTarget? _recentBrowseHandoffTarget;
+  ForumDetailHandoffTarget? _latestForumNotificationTarget;
   ShellPostLoginTarget? _pendingPostLoginTarget;
   late bool _wasAuthenticated;
 
@@ -70,6 +74,9 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     unawaited(widget.authController.consumePendingCallback());
     unawaited(_loadFollowUps());
     unawaited(_loadPendingPostLoginTarget());
+    if (_wasAuthenticated) {
+      unawaited(_loadLatestForumNotificationTarget());
+    }
   }
 
   @override
@@ -101,6 +108,11 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       unawaited(_loadFollowUps());
       unawaited(_loadPendingPostLoginTarget());
     }
+
+    if (oldWidget.notificationRepository != widget.notificationRepository &&
+        widget.sessionController.state.isAuthenticated) {
+      unawaited(_loadLatestForumNotificationTarget());
+    }
   }
 
   @override
@@ -108,6 +120,9 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     if (state == AppLifecycleState.resumed) {
       unawaited(widget.authController.consumePendingCallback());
       unawaited(_loadPendingHandoff());
+      if (widget.sessionController.state.isAuthenticated) {
+        unawaited(_loadLatestForumNotificationTarget());
+      }
     }
   }
 
@@ -159,6 +174,12 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
         isAuthenticated &&
         (ModalRoute.of(context)?.isCurrent ?? true)) {
       unawaited(_consumePendingPostLoginTarget());
+      unawaited(_loadLatestForumNotificationTarget());
+    }
+    if (_wasAuthenticated && !isAuthenticated) {
+      setState(() {
+        _latestForumNotificationTarget = null;
+      });
     }
     _wasAuthenticated = isAuthenticated;
   }
@@ -272,8 +293,52 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     _openForumDetailTarget(target);
   }
 
+  void _openLatestForumNotification() {
+    final target = _latestForumNotificationTarget;
+    if (target == null) {
+      return;
+    }
+
+    _openForumDetailTarget(target);
+  }
+
+  Future<void> _loadLatestForumNotificationTarget() async {
+    final accessToken =
+        widget.sessionController.state.session?.accessToken.trim();
+    if (accessToken == null || accessToken.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _latestForumNotificationTarget = null;
+        });
+      }
+      return;
+    }
+
+    try {
+      final target = await widget.notificationRepository.getLatestForumTarget(
+        accessToken: accessToken,
+      );
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _latestForumNotificationTarget = _normalizeForumHandoffTarget(target);
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _latestForumNotificationTarget = null;
+      });
+    }
+  }
+
   Future<void> _loadPendingPostLoginTarget() async {
-    final pendingTarget = await widget.followUpStore.readPendingPostLoginTarget();
+    final pendingTarget =
+        await widget.followUpStore.readPendingPostLoginTarget();
     if (!mounted || pendingTarget == null) {
       return;
     }
@@ -467,6 +532,12 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
                 icon: Icons.history_outlined,
                 label: 'Resume forum',
                 onTap: _resumeRecentBrowseHandoff,
+              ),
+            if (_latestForumNotificationTarget != null)
+              _ShellStatusChip(
+                icon: Icons.notifications_outlined,
+                label: 'Forum notification',
+                onTap: _openLatestForumNotification,
               ),
             _ShellStatusChip(
               label: widget.environment.name.toUpperCase(),

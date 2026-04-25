@@ -26,6 +26,7 @@ abstract class RadishApiClient {
   Future<T> get<T>({
     required Uri uri,
     required JsonFactory<T> decode,
+    String? bearerToken,
   });
 }
 
@@ -40,6 +41,7 @@ class HttpRadishApiClient implements RadishApiClient {
   Future<T> get<T>({
     required Uri uri,
     required JsonFactory<T> decode,
+    String? bearerToken,
   }) async {
     final client = HttpClient();
     if (environment.allowLocalDevelopmentCertificates) {
@@ -53,6 +55,12 @@ class HttpRadishApiClient implements RadishApiClient {
     try {
       final request = await client.getUrl(uri);
       request.headers.set(HttpHeaders.acceptHeader, 'application/json');
+      if (bearerToken != null && bearerToken.trim().isNotEmpty) {
+        request.headers.set(
+          HttpHeaders.authorizationHeader,
+          'Bearer ${bearerToken.trim()}',
+        );
+      }
 
       final response = await request.close();
       final body = await response.transform(utf8.decoder).join();
