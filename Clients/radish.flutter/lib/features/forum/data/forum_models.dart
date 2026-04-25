@@ -463,16 +463,25 @@ class ForumCommentPage {
 
   factory ForumCommentPage.fromJson(Object? json) {
     final map = _readJsonMap(json);
-    final data = map['data'];
+    final data = map['voItems'] ?? map['data'];
     final comments = data is List
         ? data.map(ForumCommentSummary.fromJson).toList()
         : const <ForumCommentSummary>[];
+    final page = _readInt(map['voPageIndex']) ?? _readInt(map['page']) ?? 1;
+    final pageSize = _readInt(map['voPageSize']) ??
+        _readInt(map['pageSize']) ??
+        comments.length;
+    final dataCount = _readInt(map['voTotal']) ??
+        _readInt(map['dataCount']) ??
+        comments.length;
+    final explicitPageCount = _readInt(map['voPageCount']) ??
+        _readInt(map['pageCount']);
 
     return ForumCommentPage(
-      page: _readInt(map['page']) ?? 1,
-      pageSize: _readInt(map['pageSize']) ?? comments.length,
-      dataCount: _readInt(map['dataCount']) ?? comments.length,
-      pageCount: _readInt(map['pageCount']) ?? 1,
+      page: page,
+      pageSize: pageSize,
+      dataCount: dataCount,
+      pageCount: explicitPageCount ?? _calculatePageCount(dataCount, pageSize),
       comments: comments,
     );
   }
@@ -569,6 +578,18 @@ bool _readBool(Object? value) {
 
   final text = value?.toString().trim().toLowerCase();
   return text == 'true' || text == '1';
+}
+
+int _calculatePageCount(int totalCount, int pageSize) {
+  if (totalCount <= 0) {
+    return 0;
+  }
+
+  if (pageSize <= 0) {
+    return 1;
+  }
+
+  return ((totalCount + pageSize - 1) ~/ pageSize).clamp(1, totalCount);
 }
 
 ForumDetailHandoffSource _readHandoffSource(Object? value) {

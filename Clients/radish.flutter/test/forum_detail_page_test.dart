@@ -279,56 +279,54 @@ class _PagedForumRepository extends _BaseForumRepository {
     String sortBy = 'default',
   }) async {
     if (pageIndex == 1) {
-      return ForumCommentPage(
-        page: 1,
-        pageSize: pageSize,
-        dataCount: 3,
-        pageCount: 2,
-        comments: const [
-          ForumCommentSummary(
-            id: 'comment-1',
-            postId: 'post-42',
-            content: 'Root comment one',
-            authorId: 'user-1',
-            authorName: 'radish',
-            likeCount: 3,
-            replyCount: 1,
-            isSofa: true,
-            createTime: '2026-04-20T08:05:00Z',
-            childrenTotal: 2,
-          ),
-          ForumCommentSummary(
-            id: 'comment-2',
-            postId: 'post-42',
-            content: 'Root comment two',
-            authorId: 'user-2',
-            authorName: 'guest',
-            likeCount: 1,
-            replyToUserName: 'luobo',
-            replyToCommentSnapshot: 'Original point from the author.',
-            createTime: '2026-04-20T08:08:00Z',
-          ),
+      return ForumCommentPage.fromJson({
+        'voPageIndex': 1,
+        'voPageSize': 2,
+        'voTotal': 3,
+        'voItems': const [
+          {
+            'voId': 'comment-1',
+            'voPostId': 'post-42',
+            'voContent': 'Root comment one',
+            'voAuthorId': 'user-1',
+            'voAuthorName': 'radish',
+            'voLikeCount': 3,
+            'voReplyCount': 1,
+            'voIsSofa': true,
+            'voCreateTime': '2026-04-20T08:05:00Z',
+            'voChildrenTotal': 2,
+          },
+          {
+            'voId': 'comment-2',
+            'voPostId': 'post-42',
+            'voContent': 'Root comment two',
+            'voAuthorId': 'user-2',
+            'voAuthorName': 'guest',
+            'voLikeCount': 1,
+            'voReplyToUserName': 'luobo',
+            'voReplyToCommentSnapshot': 'Original point from the author.',
+            'voCreateTime': '2026-04-20T08:08:00Z',
+          },
         ],
-      );
+      });
     }
 
-    return ForumCommentPage(
-      page: 2,
-      pageSize: pageSize,
-      dataCount: 3,
-      pageCount: 2,
-      comments: const [
-        ForumCommentSummary(
-          id: 'comment-3',
-          postId: 'post-42',
-          content: 'Root comment three',
-          authorId: 'user-3',
-          authorName: 'reader',
-          likeCount: 0,
-          createTime: '2026-04-20T08:10:00Z',
-        ),
+    return ForumCommentPage.fromJson({
+      'voPageIndex': 2,
+      'voPageSize': 2,
+      'voTotal': 3,
+      'voItems': const [
+        {
+          'voId': 'comment-3',
+          'voPostId': 'post-42',
+          'voContent': 'Root comment three',
+          'voAuthorId': 'user-3',
+          'voAuthorName': 'reader',
+          'voLikeCount': 0,
+          'voCreateTime': '2026-04-20T08:10:00Z',
+        },
       ],
-    );
+    });
   }
 
   @override
@@ -417,12 +415,11 @@ class _EmptyCommentForumRepository extends _BaseForumRepository {
     required int pageSize,
     String sortBy = 'default',
   }) async {
-    return const ForumCommentPage(
-      page: 1,
-      pageSize: 20,
-      dataCount: 0,
-      pageCount: 0,
-      comments: [],
-    );
+    return ForumCommentPage.fromJson({
+      'voPageIndex': 1,
+      'voPageSize': pageSize,
+      'voTotal': 0,
+      'voItems': const [],
+    });
   }
 }
