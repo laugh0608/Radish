@@ -70,3 +70,21 @@ D:\MyKits\android\platform-tools\adb.exe reverse tcp:5000 tcp:5000
 ```
 
 不要把 Flutter 默认开发入口改成 `https://10.0.2.2:5000`。该地址虽然能指向宿主机，但会让请求主机名从 `localhost` 变成 `10.0.2.2`，与本地 Gateway 开发 HTTPS 证书不一致，容易在 TLS 握手阶段出现 `HandshakeException`。
+
+## Android 平台测试 JDK 约束
+
+Flutter Dart 层测试继续在本目录执行：
+
+```powershell
+flutter test
+```
+
+Android 平台侧 JVM 单元测试不要直接使用本机默认 `java`。当前 Windows 本机默认 JDK 可能是过新的 `25.x`，Gradle / Kotlin DSL 会在解析阶段失败。执行 Android 平台测试时固定使用 Android Studio 自带 JBR：
+
+```powershell
+cd android
+$env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
+.\gradlew.bat :app:testDebugUnitTest
+```
+
+如果 Android Studio 安装路径不同，先把 `JAVA_HOME` 指向对应安装目录下的 `jbr`，不要改用 Oracle / 系统默认 JDK。

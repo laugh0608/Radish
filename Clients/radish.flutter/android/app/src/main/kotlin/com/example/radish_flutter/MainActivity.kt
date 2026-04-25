@@ -6,7 +6,6 @@ import android.net.Uri
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
-import org.json.JSONObject
 
 class MainActivity : FlutterActivity() {
     private var pendingForumHandoffPayload: String? = null
@@ -135,55 +134,16 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun resolvePendingHandoffPayload(intent: Intent?): String? {
-        val postId = intent?.getStringExtra(EXTRA_FORUM_POST_ID)?.trim().orEmpty()
-        if (postId.isBlank()) {
-            return null
-        }
-
-        return JSONObject().apply {
-            put("postId", postId)
-            put(
-                "source",
-                intent?.getStringExtra(EXTRA_FORUM_SOURCE)?.trim().takeUnless { it.isNullOrBlank() }
-                    ?: "notification",
-            )
-
-            intent?.getStringExtra(EXTRA_FORUM_INITIAL_TITLE)?.trim()?.takeUnless { it.isBlank() }?.let {
-                put("initialTitle", it)
-            }
-
-            intent?.getStringExtra(EXTRA_FORUM_COMMENT_ID)?.trim()?.takeUnless { it.isBlank() }?.let {
-                put("commentId", it)
-            }
-        }.toString()
+        return RadishNativeIntentPayloads.forumHandoffPayload(
+            postId = intent?.getStringExtra(EXTRA_FORUM_POST_ID),
+            commentId = intent?.getStringExtra(EXTRA_FORUM_COMMENT_ID),
+            initialTitle = intent?.getStringExtra(EXTRA_FORUM_INITIAL_TITLE),
+            source = intent?.getStringExtra(EXTRA_FORUM_SOURCE),
+        )
     }
 
     private fun resolvePendingAuthCallbackPayload(intent: Intent?): String? {
-        val data = intent?.data ?: return null
-        if (!data.isRadishOidcCallback()) {
-            return null
-        }
-
-        return JSONObject().apply {
-            when (data.path?.trim()) {
-                "/callback" -> {
-                    put("type", "login")
-                    data.getQueryParameter("code")?.trim()?.takeUnless { it.isBlank() }?.let {
-                        put("code", it)
-                    }
-                    data.getQueryParameter("error")?.trim()?.takeUnless { it.isBlank() }?.let {
-                        put("error", it)
-                    }
-                    data.getQueryParameter("error_description")?.trim()?.takeUnless { it.isBlank() }?.let {
-                        put("errorDescription", it)
-                    }
-                }
-                "/logout-complete" -> {
-                    put("type", "logout")
-                }
-                else -> return null
-            }
-        }.toString()
+        return RadishNativeIntentPayloads.authCallbackPayload(intent?.data?.toString())
     }
 
     private fun openExternalUrl(rawUrl: String) {
@@ -192,10 +152,6 @@ class MainActivity : FlutterActivity() {
             addCategory(Intent.CATEGORY_BROWSABLE)
         }
         startActivity(intent)
-    }
-
-    private fun Uri.isRadishOidcCallback(): Boolean {
-        return scheme == "radish" && host == "oidc"
     }
 
     companion object {

@@ -792,6 +792,95 @@ void main() {
     expect(find.text('Sign in to keep this context'), findsNothing);
   });
 
+  testWidgets(
+      'notification detail sign-in keeps source and comment target after retry',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+    final gateway = InMemoryNativeAuthGateway();
+    final authController = NativeAuthController(
+      environment: const AppEnvironment.development(),
+      sessionController: sessionController,
+      gateway: gateway,
+      exchangeService: _FakeAuthorizationCodeExchangeService(
+        nextSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: 'user-211',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: 'user-211',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+    );
+    final followUpStore = InMemoryForumFollowUpStore(
+      initialPendingHandoff: const ForumDetailHandoffTarget(
+        postId: '2042219067430928384',
+        source: ForumDetailHandoffSource.notification,
+        initialTitle: 'Native discover wiring plan',
+        commentId: 'comment-big-1',
+      ),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: authController,
+        discoverRepository: _SeededBigIdDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _SeededBigIdForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        followUpStore: followUpStore,
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
+    expect(find.text('Notification handoff'), findsWidgets);
+    expect(find.text('Big id root comment'), findsOneWidget);
+    expect(find.text('Sign in to keep this context'), findsOneWidget);
+
+    await tester.tap(find.text('Sign in to keep this context'));
+    await tester.pumpAndSettle();
+    await authController.consumePendingCallback();
+    await tester.pumpAndSettle();
+
+    expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
+    expect(find.text('Notification handoff'), findsWidgets);
+    expect(find.text('Big id root comment'), findsOneWidget);
+    expect(find.text('Sign-in needs attention'), findsWidgets);
+    expect(find.text('Retry sign-in'), findsWidgets);
+
+    gateway.setPendingCallback(
+      const NativeAuthCallbackPayload(
+        type: NativeAuthCallbackType.login,
+        code: 'notification-detail-login-code',
+      ),
+    );
+    await tester.tap(find.text('Retry sign-in').first);
+    await tester.pumpAndSettle();
+    await authController.consumePendingCallback();
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
+    expect(find.text('Notification handoff'), findsWidgets);
+    expect(find.text('Big id root comment'), findsOneWidget);
+    expect(find.text('Signed in'), findsWidgets);
+    expect(find.text('Sign in to keep this context'), findsNothing);
+  });
+
   testWidgets('forum feed opens native public detail page', (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
     tester.view.devicePixelRatio = 1.0;

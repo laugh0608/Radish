@@ -514,6 +514,26 @@ npm run check:host-runtime -- --details --report-file .tmp/host-runtime-report.m
 2. 如果这轮只是做必要的编译 / 测试确认，且暂时不方便停宿主，可改用隔离输出目录完成验证，避免覆盖正在运行的宿主产物。
 3. 自动化验证与真实联调尽量拆开执行，不要长时间共用同一个默认输出目录反复覆盖。
 
+## Flutter Android 平台测试 JDK 说明
+
+`Clients/radish.flutter` 的 Dart 层回归继续使用：
+
+```bash
+flutter test
+```
+
+Android 平台侧 JVM 单元测试用于覆盖 `MainActivity` 附近的原生 handoff、OIDC callback 与外部 ID 字符串化边界。Windows 本机执行这类测试时，不要使用系统默认 `java`。如果默认 JDK 是 `25.x`，当前 Gradle / Kotlin DSL 可能会在脚本解析阶段失败。
+
+本机执行 Android 平台单测时，固定先把 `JAVA_HOME` 指向 Android Studio 自带 JBR，再运行 Gradle：
+
+```powershell
+cd Clients/radish.flutter/android
+$env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
+.\gradlew.bat :app:testDebugUnitTest
+```
+
+如果 Android Studio 安装路径不同，使用对应安装目录下的 `jbr`。不要为了这条测试链路改用 Oracle / 系统默认 JDK，也不要把该失败误判为 Flutter handoff 或 OIDC 业务代码回归。
+
 ## 受限环境说明
 
 在某些受限 Windows 沙盒中，顶层 shell 可以执行 `npm run ...`，但 Node 脚本内部再次拉起 `node / npm / powershell` 子进程可能被系统直接拒绝。
