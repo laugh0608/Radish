@@ -47,7 +47,7 @@
 ### 1.4 当前边界
 
 - 当前代码事实仍然以 `Desktop Shell + WindowManager` 为主
-- `Clients/radish.flutter` 当前已进入 Android MVP 第二批真实业务接线：壳层登录态分发、公开 forum / docs / profile 读取、forum detail / comment 只读阅读、detail 原地登录续接，以及已登录态最小 forum notification 回流均已落地；当前仍明确保持只读阅读边界，不扩完整通知中心、系统通知栏推送或桌面治理能力
+- `Clients/radish.flutter` 当前已完成 Android MVP 第二批真实业务接线与本地 release APK 发布候选首轮收口：壳层登录态分发、公开 forum / docs / profile 读取、forum detail / comment 只读阅读、detail 原地登录续接、已登录态最小 forum notification 回流、`com.radish.client` / `Radish` 包身份与真机 release APK 安装联调均已落地；当前仍明确保持只读阅读边界，不扩完整通知中心、系统通知栏推送或桌面治理能力
 - 公开内容壳层当前已完成 forum、docs、个人公开页、公开榜单与公开商城浏览五个首批入口，并继续补到 forum 公开分类、forum 公开搜索与 docs 公开搜索首批：`/forum`、`/forum/category/:categoryId`、`/forum/search`、`/forum/post/:postId`、`/docs`、`/docs/search`、`/docs/:slug`、`/u/:id`、`/leaderboard`、`/leaderboard/:type`、`/shop`、`/shop/products` 与 `/shop/product/:productId` 都已可直接进入公开阅读壳层
 - 公开内容壳层当前已形成共享头部视觉基线：forum / docs / discover / leaderboard / shop / `u/:id` 在窄屏下统一使用品牌字、图标与按钮 token，避免同一公开壳层内继续出现专题主题色、图标色和主按钮色各自漂移
 - `/discover` 当前已形成更明确的公开分发节奏：forum / docs / leaderboard / shop 四张摘要卡默认优先预览本页对应区块，同时保留明确的“直接进入公开页”动作，不再把整卡点击简单等同为专题直跳

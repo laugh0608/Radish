@@ -2,7 +2,7 @@
 
 > 状态：当前主线
 >
-> 最后更新：2026-04-25（Asia/Shanghai）
+> 最后更新：2026-04-26（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -90,7 +90,7 @@ Flutter 客户端第一批固定遵循以下约束：
 截至 `2026-04-22` 的已落地事实补充：
 
 - 第一批骨架当前已完成，`Clients/radish.flutter/` 已建立独立入口、壳层导航、环境配置与最小 Theme 基线
-- 第二批当前已开始进入真实业务接线：应用启动会话恢复 gate、匿名态 / 已登录态三态，以及 `forum` 首条真实公开只读 feed 读取链路均已落地
+- 第二批当前已完成一轮真实业务接线收口：应用启动会话恢复 gate、匿名态 / 已登录态三态、最小登录 / 登出 / OIDC 回调、`forum` 公开只读阅读链路与最小来源回流均已落地
 - 当前 forum 原生读取链路明确复用现有 `/api/v1/Post/GetList` 契约，只承载匿名列表阅读、`latest / hottest` 排序、基础分页、加载态与错误态
 - Android 平台目录当前已生成并纳入仓库，Flutter Android Debug APK 构建已通过
 - Android 模拟器最小联调已确认可通过 Gateway `https://localhost:5000` 访问公开只读接口；联调前需要先执行 `adb reverse tcp:5000 tcp:5000`
@@ -112,6 +112,8 @@ Flutter 客户端第一批固定遵循以下约束：
 - Android MVP 当前可测链路已完成一轮人工验收：登录和退出逻辑确认正常，forum 评论区显示问题已修复并在真机确认；最小 forum notification 回流也已完成真机人工联调
 - Flutter 当前已补齐一个最小可测 forum notification 来源：已登录壳层会读取当前用户最新可跳 forum 的通知，解析 `voExtData` 中字符串化的 `postId / commentId`，并通过既有 `ForumDetailHandoffTarget(source: notification)` 打开原生 forum detail
 - 最小 forum notification 回流当前已完成真机人工联调：`Forum notification` 入口回到 forum detail / 评论上下文的逻辑确认正常，系统通知栏推送与完整通知中心继续不纳入当前批次
+- Android MVP 本地 release APK 发布候选当前已完成首轮收口：Android 包身份为 `com.radish.client`，应用显示名为 `Radish`，release signing 读取逻辑与密钥忽略边界已落地，release 包已补齐 `INTERNET` 权限并完成真机安装联调
+- 当前 release APK 真机复核已确认登录、基础读取与样式显示正常；本轮自动化验证覆盖 `flutter analyze`、`flutter test`、Android Studio JBR 下的 `.\gradlew.bat :app:testDebugUnitTest` 与 `flutter build apk --release`
 
 ## 7. 当前第二批范围
 
@@ -132,5 +134,6 @@ Flutter 客户端第一批固定遵循以下约束：
 
 1. 第二批当前可测链路已完成一轮人工验收，后续不再把重复执行当前 checklist 作为主线扩项
 2. 最小 forum notification 来源已完成真机人工联调，后续不再以补可测 notification 入口作为阻断项
-3. 下一步在扩展下一个高价值只读原生页面与 Android MVP 打包 / 发布候选收口之间择一
-4. 第三批方向明确并完成 Android MVP 稳定后，再评估 Windows / Linux 平台目录与更深原生能力
+3. Android MVP 本地 release APK 发布候选首轮已完成，后续不再把“能否打出可安装 RC 包”作为主线阻断项
+4. 下一步优先补环境切换能力、正式签名材料准备与测试环境 / 外部分发前置；若继续扩业务页，应先确认其价值高于 RC 分发准备
+5. 第三批方向明确并完成 Android MVP 稳定后，再评估 Windows / Linux 平台目录与更深原生能力

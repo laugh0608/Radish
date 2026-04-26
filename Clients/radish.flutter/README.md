@@ -39,8 +39,8 @@ Clients/radish.flutter/
 
 ## 后续接线顺序
 
-1. Android MVP 当前可测链路稳定性复核
-2. 最小 forum notification 来源读取与 `commentId` 回流人工验收
+1. Flutter 环境切换能力：支持通过构建参数指定本机 / 测试 / 正式 Gateway
+2. Android 正式签名材料与外部分发前置准备
 3. Android MVP 稳定后，再评估 Windows / Linux 平台目录与更深原生能力
 
 ## 平台目录生成说明

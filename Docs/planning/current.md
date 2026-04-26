@@ -8,8 +8,8 @@
 
 - **阶段**：`第二开发阶段：社区深化与多端化`
 - **当前主线**：`Phase 2-3 Flutter 客户端 MVP`
-- **当前阶段**：`截至 2026-04-18，第一开发阶段已于 2026-04-06 通过 v26.3.2-release 完成真实发布收口；第二开发阶段现已正式启动。`Phase 2-1 社区深化第一批` 已完成论坛轻回应墙 Phase 1 与最小回流链路收口；`Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口，并转入稳定维护。当前产品主线正式切到 `Phase 2-3 Flutter 客户端 MVP`：第一批范围定义、真相源文档切换与仓库工程骨架已完成；第二批当前已开始接入最小登录 / 会话恢复链路与 forum 首条真实只读读取链路，不继续沿公开壳层扩页面细节，也不回头把桌面工作台搬进原生端。`
-- **复核日期**：`2026-04-25`
+- **当前阶段**：`截至 2026-04-26，第一开发阶段已于 2026-04-06 通过 v26.3.2-release 完成真实发布收口；第二开发阶段现已正式启动。`Phase 2-1 社区深化第一批` 已完成论坛轻回应墙 Phase 1 与最小回流链路收口；`Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口，并转入稳定维护。当前产品主线仍为 `Phase 2-3 Flutter 客户端 MVP`：第一批范围定义、真相源文档切换与仓库工程骨架已完成；第二批当前已完成最小登录 / 会话恢复链路、forum 高价值只读读取链路、最小 forum notification 回流，以及 Android 本地 release APK 发布候选首轮收口，不继续沿公开壳层扩页面细节，也不回头把桌面工作台搬进原生端。`
+- **复核日期**：`2026-04-26`
 
 ## 当前执行入口
 
@@ -93,6 +93,9 @@
 - Android MVP 当前可测链路已完成一轮人工验收：登录和退出逻辑确认正常，forum 评论区显示问题已修复并在真机确认；最小 forum notification 回流也已完成真机人工联调
 - Flutter 当前已补齐一个最小可测 forum notification 来源：已登录壳层会读取当前用户最新可跳 forum 的通知，解析 `voExtData` 中字符串化的 `postId / commentId`，并通过既有 `ForumDetailHandoffTarget(source: notification)` 打开原生 forum detail
 - 最小 forum notification 回流当前已完成真机人工联调：`Forum notification` 入口回到 forum detail / 评论上下文的逻辑确认正常，系统通知栏推送与完整通知中心继续不纳入当前批次
+- Flutter Android release 身份当前已从模板值收口到 `com.radish.client` / `Radish`，Kotlin 原生代码与平台单测 package 也已同步到正式包身份
+- Flutter Android release signing 当前已完成安全边界收口：Gradle 会读取 `android/key.properties` 配置正式签名，未配置时回落到 debug signing 以保留本地 RC 构建能力；真实 `key.properties`、`.jks` 与 `.keystore` 不进入版本库
+- Flutter Android release APK 当前已补齐 main manifest 的 `INTERNET` 权限，并完成一轮真机安装与本机 Gateway 联调复核；登录、基础读取与样式显示均已确认正常
 
 ## 当前批次目标
 
@@ -101,8 +104,8 @@
    - 当前也已补齐最小登录取消提示、壳层窄屏状态区收口，以及 `profile / forum detail` 两类原始目标的登录后续接；forum detail 内当前也已具备可手工触发的最小原地登录入口
    - 当前仍未进入更完整的账户治理、多平台原生登录深化与通知中心登录回流联调
 2. **forum 首条真实只读读取链路**
-   - Flutter forum 当前已开始真实读取公开帖子列表，并继续补到公开帖子详情只读阅读
-   - 当前范围收口到匿名列表阅读、详情正文阅读、排序分页、加载态与错误态，不同时进入评论与互动提交
+   - Flutter forum 当前已从真实公开帖子列表推进到详情正文、评论分页、子评论分页、作者跳转、评论精确定位、public profile 详情回跳与首批来源 handoff
+   - 当前范围仍收口到只读阅读与来源回流，不同时进入评论提交、点赞、投票、编辑或完整通知中心
 3. **后续真实页面继续按价值推进**
    - `discover / docs / profile` 的最小真实接线与 Android 真机联调当前已完成；forum 的高价值阅读链路与首批真实来源 handoff 当前也已完成一轮收口
    - 当前仍不为 Flutter 单独设计新的 BFF，也不复刻 WebOS 窗口交互
@@ -110,13 +113,16 @@
    - 当前不同时进入聊天、完整通知中心、完整商城工作台和创作器
    - 当前不把 Flutter 理解为“移动版 WebOS”
    - 当前不把 Windows / Linux 平台工程与 Android 起步批次绑定
+5. **Android MVP 发布候选首轮收口**
+   - 当前已完成 release 包身份、签名配置边界、联网权限、自动化验证与真机安装联调的首轮收口
+   - 当前仍未进入正式签名材料入库外管理、测试环境分发、商店发布或系统通知栏推送闭环
 
 ## 下一顺位
 
 - `Phase 2-3` 第二批业务链路
   - forum 当前已从公开列表推进到公开帖子详情、评论分页、子评论分页、作者跳转、评论精确定位、public profile 详情回跳，以及 `notification / browseHistory` 的首批壳层 / 宿主 handoff 收口；detail 内最小原地登录入口与目标持久化续接当前也已落地，Android MVP 当前可测链路已完成一轮人工验收
   - 最小可测 forum notification 来源已完成真机人工联调：已登录壳层可读取当前用户最新 forum 通知并复用既有 detail handoff，不扩完整通知中心、系统推送或通知管理
-  - 下一步在“扩展下一个高价值只读原生页面”与“进入 Android MVP 打包 / 发布候选收口”之间择一
+  - Android MVP 本地 release APK 发布候选首轮已完成；下一步优先补 Flutter 环境切换能力（例如 `--dart-define` 指定 Gateway）、正式签名材料准备与测试环境 / 外部分发前置
 
 - `Phase 2-2` 稳定维护项
   - 公开内容壳层保留必要联调复核与问题修复，但不再继续新增公开入口或细节增强

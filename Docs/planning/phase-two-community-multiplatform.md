@@ -152,12 +152,14 @@
 - Windows / Linux 客户端在 Android MVP 跑通后再进入同批次扩展
 - Flutter 工程当前固定落在 `Clients/radish.flutter/`
 
-截至 `2026-04-18` 的当前进度补充：
+截至 `2026-04-26` 的当前进度补充：
 
 - 第一批范围定义、真相源文档切换与仓库工程骨架当前已完成，不再停留在“只有规划没有仓库落点”的状态
-- 第二批当前已开始进入真实业务接线：应用启动会话恢复 gate、匿名态 / 已登录态三态、Android 本地会话持久化与 refresh token 恢复回落已落地
+- 第二批当前已完成一轮真实业务接线收口：应用启动会话恢复 gate、匿名态 / 已登录态三态、Android 本地会话持久化、refresh token 恢复回落、最小登录 / 登出 / OIDC 回调与登录后续接均已落地
 - Flutter forum 当前也已完成首条真实公开只读读取链路：复用现有 `/api/v1/Post/GetList` 契约，支持匿名列表阅读、`latest / hottest` 排序、基础分页、加载态与错误态
-- 当前下一步更适合继续把 `discover / docs / profile` 从占位页推进到最小真实页面，再做 Android 真机构建与最小联调，而不是回头继续扩 Flutter 占位说明页或公开壳层细节
+- Flutter `discover / docs / profile` 首批真实页面、forum 详情 / 评论阅读、评论精确定位、最小原地登录、最小 forum notification 回流与 Android 真机人工验收当前均已完成一轮收口
+- Android MVP 本地 release APK 发布候选当前已完成首轮收口：包身份为 `com.radish.client` / `Radish`，release signing 读取逻辑、密钥忽略边界、release 包联网权限与真机安装联调均已落地
+- 当前下一步更适合补 Flutter 环境切换能力、正式签名材料准备与测试环境 / 外部分发前置，而不是回头继续扩 Flutter 占位说明页、公开壳层细节或桌面工作台语义
 
 ## 6. 并行维护线
 
