@@ -125,6 +125,8 @@ keyPassword=<key-password>
 当前结果：
 
 - Android 真机已确认 `Forum notification` 回到 forum detail / 评论上下文逻辑正常
+- Android release APK 已完成一轮真机安装与本机 Gateway 联调复核，登录、基础读取与样式显示均正常
+- Android release 包身份当前为 `com.radish.client` / `Radish`
 - 该入口只验证站内最新 forum 通知读取，不代表完整通知中心或系统通知栏推送已纳入 Android MVP
 
 暂不作为当前阻断项：

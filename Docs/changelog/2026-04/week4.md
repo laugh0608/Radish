@@ -115,3 +115,17 @@
 - **Flutter 已登录壳层当前已补齐一个最小 forum notification 来源**：原生端会读取当前用户最新通知列表，筛出 `voExtData.app = forum` 的通知，并把字符串化 `postId / commentId` 转成既有 `ForumDetailHandoffTarget(source: notification)`。
 - **本轮继续保持“可测来源”边界，不扩完整通知中心**：当前只提供壳层轻入口 `Forum notification`，点击后打开 forum detail 与评论上下文；系统通知栏推送、通知列表管理、标记已读、删除通知和通知设置仍不纳入本批。
 - **最小验证与人工联调当前已通过**：`Clients/radish.flutter` 下 `flutter test` 已通过；Android 平台侧使用 Android Studio JBR 执行 `.\gradlew.bat :app:testDebugUnitTest` 已通过；真机人工联调已确认 `Forum notification` 回到 forum detail / 评论上下文的逻辑正常。
+
+## 2026-04-26 (周日)
+
+### Android MVP 发布候选配置完成首轮收口
+
+- **Flutter Android release 身份当前已从模板值切换到 Radish 正式口径**：Android `namespace / applicationId` 已收口为 `com.radish.client`，应用显示名已收口为 `Radish`，Kotlin 原生代码与平台单测 package 也已同步调整，不再保留 `com.example.radish_flutter` 作为 Android 包身份。
+- **release signing 配置当前已完成安全边界收口**：Gradle 当前会读取 `android/key.properties` 配置正式签名；未配置时继续回落到 debug signing，保证本地 RC 构建验证不断。仓库只提交 `key.properties.example` 与读取逻辑，真实 `key.properties`、`.jks` 与 `.keystore` 已被忽略，不进入版本库。
+- **release 包联网权限缺口已完成根因修复**：`INTERNET` 权限已补入 main `AndroidManifest.xml`，避免 release APK 只依赖 profile manifest 导致真机安装后无法访问本机 Gateway。
+
+### Android release APK 真机验收通过
+
+- **本轮 Android release APK 已完成真机安装与联调复核**：在真机安装当前 `app-release.apk` 后，配合 `adb reverse tcp:5000 tcp:5000` 访问本机最新 Gateway，登录、基础读取与样式显示均已确认正常。
+- **本轮验证已覆盖自动化与构建级检查**：`flutter analyze`、`flutter test`、Android Studio JBR 下的 `.\gradlew.bat :app:testDebugUnitTest` 与 `flutter build apk --release` 均已通过；release APK 产物大小约 `46.3MB`。
+- **当前 Android MVP 已从“可测链路通过”推进到“本地 RC 包可安装、可登录、可读内容”**：后续若进入外部分发或测试环境 RC，应优先补环境切换能力与正式签名材料，而不是继续扩大当前 Android MVP 的业务范围。
