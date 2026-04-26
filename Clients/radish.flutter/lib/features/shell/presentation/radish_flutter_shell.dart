@@ -602,7 +602,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     required NativeAuthState authState,
   }) {
     if (authState.isOpeningLogin) {
-      return _ShellNoticeBanner(
+      return const _ShellNoticeBanner(
         severity: _ShellNoticeSeverity.info,
         title: 'Complete sign-in in the browser',
         message:
@@ -611,7 +611,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     }
 
     if (authState.isRedeemingCode) {
-      return _ShellNoticeBanner(
+      return const _ShellNoticeBanner(
         severity: _ShellNoticeSeverity.info,
         title: 'Completing sign-in',
         message:

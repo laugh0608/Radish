@@ -454,7 +454,7 @@ class _ProfileStatsCard extends StatelessWidget {
             const SizedBox(height: 16),
             LayoutBuilder(
               builder: (context, constraints) {
-                final spacing = 12.0;
+                const spacing = 12.0;
                 final useTwoColumns = constraints.maxWidth >= 520;
                 final tileWidth = useTwoColumns
                     ? (constraints.maxWidth - spacing) / 2

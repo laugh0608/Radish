@@ -220,7 +220,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                 ],
                 if (canRequestSignIn && sessionState.isAnonymous) ...[
                   _ForumDetailSignInCard(
-                    isBusy: authState!.isBusy,
+                    isBusy: authState.isBusy,
                     onRequestSignIn: () => _requestSignIn(currentDetailTarget),
                   ),
                   const SizedBox(height: 16),
