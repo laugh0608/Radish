@@ -1,4 +1,4 @@
-package com.example.radish_flutter
+package com.radish.client
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

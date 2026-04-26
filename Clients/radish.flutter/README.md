@@ -73,6 +73,31 @@ D:\MyKits\android\platform-tools\adb.exe reverse tcp:5000 tcp:5000
 
 不要把 Flutter 默认开发入口改成 `https://10.0.2.2:5000`。该地址虽然能指向宿主机，但会让请求主机名从 `localhost` 变成 `10.0.2.2`，与本地 Gateway 开发 HTTPS 证书不一致，容易在 TLS 握手阶段出现 `HandshakeException`。
 
+## Android release 签名配置
+
+Android MVP RC 构建当前允许在未配置正式签名时回落到 debug signing，以便本地继续执行：
+
+```powershell
+flutter build apk --release
+```
+
+正式分发前，需要在 `Clients/radish.flutter/android/` 下复制示例配置：
+
+```powershell
+Copy-Item key.properties.example key.properties
+```
+
+并填写真实签名信息：
+
+```properties
+storeFile=upload-keystore.jks
+storePassword=<keystore-password>
+keyAlias=<key-alias>
+keyPassword=<key-password>
+```
+
+`storeFile` 路径相对 `Clients/radish.flutter/android/` 解析。真实 `key.properties`、`.jks` 与 `.keystore` 文件不得提交到仓库。
+
 ## Android 真机人工验证 checklist
 
 当前 Android MVP 人工验证只覆盖已经具备真实入口、真实数据或可稳定手工触发的链路。已登录态当前具备一个最小 forum notification 来源入口，可用于验证通知来源回到 forum detail 与 `commentId` 定位。

@@ -1,4 +1,4 @@
-package com.example.radish_flutter
+package com.radish.client
 
 import java.net.URI
 import java.net.URLDecoder
