@@ -159,7 +159,7 @@
 - Flutter forum 当前也已完成首条真实公开只读读取链路：复用现有 `/api/v1/Post/GetList` 契约，支持匿名列表阅读、`latest / hottest` 排序、基础分页、加载态与错误态
 - Flutter `discover / docs / profile` 首批真实页面、forum 详情 / 评论阅读、评论精确定位、最小原地登录、最小 forum notification 回流与 Android 真机人工验收当前均已完成一轮收口
 - Android MVP 本地 release APK 发布候选当前已完成首轮收口：包身份为 `com.radish.client` / `Radish`，release signing 读取逻辑、密钥忽略边界、release 包联网权限与真机安装联调均已落地
-- 当前下一步更适合补 Flutter 环境切换能力、正式签名材料准备与测试环境 / 外部分发前置，而不是回头继续扩 Flutter 占位说明页、公开壳层细节或桌面工作台语义
+- 当前 Flutter 环境切换能力、Android RC 签名配置诊断与分发前置清单已完成首轮收口；下一步更适合推进真实签名材料入库外管理与测试环境实际分发复核，而不是回头继续扩 Flutter 占位说明页、公开壳层细节或桌面工作台语义
 
 ## 6. 并行维护线
 

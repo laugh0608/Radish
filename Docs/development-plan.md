@@ -8,7 +8,7 @@
 
 - **当前里程碑**：`第二开发阶段：社区深化与多端化`
 - **当前主线**：`Phase 2-3 Flutter 客户端 MVP`
-- **当前阶段**：`2026-04-06` 已完成首版真实发布 `v26.3.2-release`，第一开发阶段正式结束；`2026-04-07` 已完成阶段口径重置与多壳层策略冻结；截至 `2026-04-18`，`Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口并转入稳定维护，当前产品主线正式切到 `Phase 2-3 Flutter 客户端 MVP`。当前第一批范围定义、真相源文档与工程骨架已完成；第二批已完成最小会话恢复、forum 高价值只读链路、最小登录 / 登出 / OIDC 回调、最小 forum notification 回流、Android 本地 release APK 发布候选首轮收口，以及 Flutter `--dart-define` Gateway 环境切换能力。`
+- **当前阶段**：`2026-04-06` 已完成首版真实发布 `v26.3.2-release`，第一开发阶段正式结束；`2026-04-07` 已完成阶段口径重置与多壳层策略冻结；截至 `2026-04-18`，`Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口并转入稳定维护，当前产品主线正式切到 `Phase 2-3 Flutter 客户端 MVP`。当前第一批范围定义、真相源文档与工程骨架已完成；第二批已完成最小会话恢复、forum 高价值只读链路、最小登录 / 登出 / OIDC 回调、最小 forum notification 回流、Android 本地 release APK 发布候选首轮收口、Flutter `--dart-define` Gateway 环境切换能力，以及 Android RC 签名配置诊断与分发前置清单。`
 
 ## 当前主线入口
 
@@ -28,7 +28,8 @@
 - Android MVP 当前可测链路已完成一轮人工验收；登录、退出、会话恢复、四个主 tab 真实读取、forum feed / detail / 评论阅读与 detail 原地登录续接当前都可作为第二批已验收事实
 - Android 宿主通知 handoff、壳层最近阅读续接与 public profile 评论入口当前都已统一接到 Flutter forum 的原生 handoff 目标；Flutter 已登录壳层当前也已补一个最小可测 forum notification 来源，可从当前用户最新通知读取字符串化 `postId / commentId` 并回到原生 forum detail
 - Android MVP 本地 release APK 发布候选当前已完成首轮收口：包身份为 `com.radish.client` / `Radish`，release signing 读取逻辑与密钥忽略边界已落地，release 包联网权限已补齐，真机安装后登录、基础读取与样式显示均已确认正常
-- 下一步若继续推进 Android RC，应优先推进正式签名材料与测试环境 / 外部分发前置，而不是继续扩大当前 Android MVP 的业务范围；Flutter `--dart-define` Gateway 环境切换能力当前已完成首轮收口
+- Android RC 签名配置诊断与分发前置清单当前已完成首轮收口：Gradle 提供 `:app:checkReleaseSigningConfig` 检查正式签名材料，清单见 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution)
+- 下一步若继续推进 Android RC，应优先推进真实签名材料入库外管理与测试环境实际分发复核，而不是继续扩大当前 Android MVP 的业务范围
 - `Phase 2-2` 公开内容壳层固定转入稳定维护，不再与 Flutter 混成一条建设线
 
 ## 已确认的长期方向（暂不进入当前主线）

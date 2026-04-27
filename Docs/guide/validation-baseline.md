@@ -546,6 +546,7 @@ Android MVP 本地 release APK 发布候选当前已完成首轮收口。涉及 
 - release 包包含 main manifest 的 `INTERNET` 权限
 - Android 包身份保持 `com.radish.client`，应用显示名保持 `Radish`
 - 未配置正式签名时仍可回落到 debug signing 完成本地 RC 构建验证
+- 若准备外部分发，`.\gradlew.bat :app:checkReleaseSigningConfig` 应通过；该检查只验证签名材料前置，不提交真实密钥
 - 真实 `android/key.properties`、`.jks` 与 `.keystore` 不进入版本库
 - 真机通过 `adb reverse tcp:5000 tcp:5000` 访问本机 Gateway 时，登录、基础读取与关键样式显示正常
 

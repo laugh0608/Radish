@@ -115,6 +115,7 @@ Flutter 客户端第一批固定遵循以下约束：
 - Android MVP 本地 release APK 发布候选当前已完成首轮收口：Android 包身份为 `com.radish.client`，应用显示名为 `Radish`，release signing 读取逻辑与密钥忽略边界已落地，release 包已补齐 `INTERNET` 权限并完成真机安装联调
 - 当前 release APK 真机复核已确认登录、基础读取与样式显示正常；本轮自动化验证覆盖 `flutter analyze`、`flutter test`、Android Studio JBR 下的 `.\gradlew.bat :app:testDebugUnitTest` 与 `flutter build apk --release`
 - Flutter 环境切换能力当前已完成首轮收口：客户端启动配置会读取 `RADISH_ENVIRONMENT` 与 `RADISH_GATEWAY_BASE_URL` 这组 `--dart-define` 构建参数，并继续保持 API / Auth / Gateway 同源；本机 Android + `localhost` Gateway 会保留本地开发证书放行边界，测试 / 正式 Gateway 默认不放宽证书校验
+- Android RC 签名配置诊断与分发前置清单当前已完成首轮收口：Gradle 当前提供 `:app:checkReleaseSigningConfig` 检查正式签名材料，`key.properties` 不存在时本地 release 构建仍回落 debug signing；若 `key.properties` 存在但缺字段、仍是示例值或找不到 keystore，会快速失败并提示修正；清单见 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution)
 
 ## 7. 当前第二批范围
 
@@ -136,5 +137,5 @@ Flutter 客户端第一批固定遵循以下约束：
 1. 第二批当前可测链路已完成一轮人工验收，后续不再把重复执行当前 checklist 作为主线扩项
 2. 最小 forum notification 来源已完成真机人工联调，后续不再以补可测 notification 入口作为阻断项
 3. Android MVP 本地 release APK 发布候选首轮已完成，后续不再把“能否打出可安装 RC 包”作为主线阻断项
-4. Flutter `--dart-define` Gateway 环境切换能力已完成首轮收口；下一步优先推进正式签名材料准备与测试环境 / 外部分发前置，若继续扩业务页，应先确认其价值高于 RC 分发准备
+4. Flutter `--dart-define` Gateway 环境切换能力、Android RC 签名配置诊断与分发前置清单已完成首轮收口；下一步优先推进真实签名材料入库外管理与测试环境实际分发复核，若继续扩业务页，应先确认其价值高于 RC 分发准备
 5. 第三批方向明确并完成 Android MVP 稳定后，再评估 Windows / Linux 平台目录与更深原生能力

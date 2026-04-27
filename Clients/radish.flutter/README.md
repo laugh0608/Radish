@@ -40,7 +40,7 @@ Clients/radish.flutter/
 ## 后续接线顺序
 
 1. Flutter 环境切换能力：支持通过构建参数指定本机 / 测试 / 正式 Gateway
-2. Android 正式签名材料与外部分发前置准备
+2. Android 正式签名材料与外部分发前置准备：详见 [Flutter Android RC 分发前置清单](../../Docs/guide/flutter-android-rc-distribution.md)
 3. Android MVP 稳定后，再评估 Windows / Linux 平台目录与更深原生能力
 
 ## Flutter 环境切换
@@ -131,6 +131,16 @@ keyPassword=<key-password>
 ```
 
 `storeFile` 路径相对 `Clients/radish.flutter/android/` 解析。真实 `key.properties`、`.jks` 与 `.keystore` 文件不得提交到仓库。
+
+一旦 `key.properties` 存在，Gradle 会要求字段完整、不能使用示例占位值，并确认 `storeFile` 指向的 keystore 文件存在。仅检查签名材料是否已具备外部分发前置条件时，执行：
+
+```powershell
+cd android
+$env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
+.\gradlew.bat :app:checkReleaseSigningConfig
+```
+
+若暂未准备正式签名材料，请不要保留半成品 `key.properties`；删除该文件后，本地 `flutter build apk --release` 会继续回落到 debug signing。
 
 ## Android 真机人工验证 checklist
 
