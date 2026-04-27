@@ -95,7 +95,7 @@ class DiscoverFeedController extends ChangeNotifier {
     } on FormatException catch (error) {
       _setError(
         requestVersion,
-        'Unexpected discover payload: ${error.message}',
+        '发现内容返回格式异常：${error.message}',
       );
     }
   }

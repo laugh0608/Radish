@@ -26,7 +26,7 @@ void main() {
 
     expect(find.text('Radish Flutter docs scope'), findsOneWidget);
     expect(find.text('/docs/flutter-docs-scope'), findsWidgets);
-    expect(find.text('2 documents'), findsOneWidget);
+    expect(find.text('共 2 篇文档'), findsOneWidget);
   });
 
   testWidgets('opens docs detail and returns to docs list', (tester) async {
@@ -49,23 +49,23 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(
-      find.text('Open document').first,
+      find.text('打开文档').first,
       200,
       scrollable: scrollable,
     );
-    await tester.tap(find.text('Open document').first);
+    await tester.tap(find.text('打开文档').first);
     await tester.pumpAndSettle();
 
-    expect(find.text('Docs detail'), findsOneWidget);
-    expect(find.text('Back to docs list'), findsOneWidget);
-    expect(find.text('Markdown body'), findsOneWidget);
+    expect(find.text('文档详情'), findsOneWidget);
+    expect(find.text('返回文档列表'), findsOneWidget);
+    expect(find.text('正文'), findsOneWidget);
     expect(find.text('Overview'), findsOneWidget);
     expect(find.text('Read docs in Flutter.'), findsOneWidget);
 
-    await tester.tap(find.text('Back to docs list'));
+    await tester.tap(find.text('返回文档列表'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Docs feed'), findsOneWidget);
+    expect(find.text('文档'), findsOneWidget);
     expect(find.text('Radish Flutter docs scope'), findsOneWidget);
   });
 
@@ -86,9 +86,9 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Docs feed unavailable'), findsOneWidget);
-    expect(find.text('Docs API is unreachable'), findsOneWidget);
-    expect(find.text('Retry'), findsOneWidget);
+    expect(find.text('暂时无法加载文档'), findsOneWidget);
+    expect(find.text('文档服务暂时不可用'), findsOneWidget);
+    expect(find.text('重试'), findsOneWidget);
   });
 
   testWidgets('renders docs detail error state when detail request fails', (
@@ -113,15 +113,15 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(
-      find.text('Open document').first,
+      find.text('打开文档').first,
       200,
       scrollable: scrollable,
     );
-    await tester.tap(find.text('Open document').first);
+    await tester.tap(find.text('打开文档').first);
     await tester.pumpAndSettle();
 
-    expect(find.text('Docs detail unavailable'), findsOneWidget);
-    expect(find.text('Docs detail API is unreachable'), findsOneWidget);
+    expect(find.text('暂时无法加载文档详情'), findsOneWidget);
+    expect(find.text('文档详情服务暂时不可用'), findsOneWidget);
   });
 }
 
@@ -181,14 +181,14 @@ class _FailingDocsRepository implements DocsRepository {
     required int pageIndex,
     required int pageSize,
   }) {
-    throw const RadishApiClientException('Docs API is unreachable');
+    throw const RadishApiClientException('文档服务暂时不可用');
   }
 
   @override
   Future<DocsDocumentDetail> getDocumentDetail({
     required String slug,
   }) {
-    throw const RadishApiClientException('Docs API is unreachable');
+    throw const RadishApiClientException('文档服务暂时不可用');
   }
 }
 
@@ -197,6 +197,6 @@ class _DetailFailingDocsRepository extends _SuccessDocsRepository {
   Future<DocsDocumentDetail> getDocumentDetail({
     required String slug,
   }) {
-    throw const RadishApiClientException('Docs detail API is unreachable');
+    throw const RadishApiClientException('文档详情服务暂时不可用');
   }
 }

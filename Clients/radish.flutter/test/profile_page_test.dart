@@ -36,8 +36,8 @@ void main() {
       ),
     );
 
-    expect(find.text('Guest boundary'), findsOneWidget);
-    expect(find.text('Loading public profile...'), findsNothing);
+    expect(find.text('游客模式'), findsOneWidget);
+    expect(find.text('正在加载公开资料...'), findsNothing);
   });
 
   testWidgets('renders public profile, stats, posts, and comments', (
@@ -80,25 +80,25 @@ void main() {
 
     expect(find.text('Radish Author'), findsOneWidget);
     expect(find.text('@luobo'), findsOneWidget);
-    expect(find.text('Public activity'), findsOneWidget);
-    expect(find.text('Posts'), findsOneWidget);
-    expect(find.text('Comments'), findsOneWidget);
+    expect(find.text('公开动态'), findsOneWidget);
+    expect(find.text('帖子'), findsOneWidget);
+    expect(find.text('评论'), findsOneWidget);
 
     await tester.scrollUntilVisible(
-      find.text('Recent public posts'),
+      find.text('最近公开帖子'),
       200,
       scrollable: scrollable,
     );
-    expect(find.text('Recent public posts'), findsOneWidget);
+    expect(find.text('最近公开帖子'), findsOneWidget);
     expect(find.text('Native profile follow-up'), findsOneWidget);
 
     await tester.scrollUntilVisible(
-      find.text('Recent public comments'),
+      find.text('最近公开评论'),
       200,
       scrollable: scrollable,
     );
-    expect(find.text('Recent public comments'), findsOneWidget);
-    expect(find.text('Reply to @radish'), findsOneWidget);
+    expect(find.text('最近公开评论'), findsOneWidget);
+    expect(find.text('回复 @radish'), findsOneWidget);
   });
 
   testWidgets('renders guest-selected public profile target', (tester) async {
@@ -130,11 +130,11 @@ void main() {
 
     expect(find.text('Radish Author'), findsOneWidget);
     await tester.scrollUntilVisible(
-      find.text('Recent public posts'),
+      find.text('最近公开帖子'),
       200,
       scrollable: scrollable,
     );
-    expect(find.text('Recent public posts'), findsOneWidget);
+    expect(find.text('最近公开帖子'), findsOneWidget);
   });
 
   testWidgets(
@@ -178,11 +178,11 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(
-      find.text('Open post'),
+      find.text('打开帖子'),
       200,
       scrollable: scrollable,
     );
-    await tester.tap(find.text('Open post'));
+    await tester.tap(find.text('打开帖子'));
     await tester.pumpAndSettle();
 
     expect(openedTargets, hasLength(1));
@@ -193,11 +193,11 @@ void main() {
     );
 
     await tester.scrollUntilVisible(
-      find.text('Open comment context'),
+      find.text('打开评论上下文'),
       200,
       scrollable: scrollable,
     );
-    await tester.tap(find.text('Open comment context'));
+    await tester.tap(find.text('打开评论上下文'));
     await tester.pumpAndSettle();
 
     expect(openedTargets, hasLength(2));
@@ -241,9 +241,9 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Public profile unavailable'), findsOneWidget);
-    expect(find.text('Profile API is unreachable'), findsOneWidget);
-    expect(find.text('Retry'), findsOneWidget);
+    expect(find.text('暂时无法加载公开资料'), findsOneWidget);
+    expect(find.text('公开资料服务暂时不可用'), findsOneWidget);
+    expect(find.text('重试'), findsOneWidget);
   });
 
   testWidgets('guest profile can start the native sign-in flow',
@@ -269,7 +269,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('Sign in with OIDC'));
+    await tester.tap(find.text('登录'));
     await tester.pump();
 
     final authorizeUri = authGateway.lastAuthorizeUri;
@@ -319,7 +319,7 @@ void main() {
     );
 
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Sign out'));
+    await tester.tap(find.text('退出登录'));
     await tester.pump();
 
     final logoutUri = authGateway.lastLogoutUri;
@@ -434,14 +434,14 @@ class _FailingProfileRepository implements ProfileRepository {
   Future<PublicProfileSummary> getPublicProfile({
     required String userId,
   }) {
-    throw const RadishApiClientException('Profile API is unreachable');
+    throw const RadishApiClientException('公开资料服务暂时不可用');
   }
 
   @override
   Future<PublicProfileStats> getPublicStats({
     required String userId,
   }) {
-    throw const RadishApiClientException('Profile API is unreachable');
+    throw const RadishApiClientException('公开资料服务暂时不可用');
   }
 
   @override
@@ -450,7 +450,7 @@ class _FailingProfileRepository implements ProfileRepository {
     required int pageIndex,
     required int pageSize,
   }) {
-    throw const RadishApiClientException('Profile API is unreachable');
+    throw const RadishApiClientException('公开资料服务暂时不可用');
   }
 
   @override
@@ -459,7 +459,7 @@ class _FailingProfileRepository implements ProfileRepository {
     required int pageIndex,
     required int pageSize,
   }) {
-    throw const RadishApiClientException('Profile API is unreachable');
+    throw const RadishApiClientException('公开资料服务暂时不可用');
   }
 }
 

@@ -14,7 +14,7 @@ class DocsDocumentSummary {
 
     return DocsDocumentSummary(
       id: _readRequiredId(map, 'voId'),
-      title: _readString(map['voTitle']) ?? 'Untitled document',
+      title: _readString(map['voTitle']) ?? '未命名文档',
       slug: _readString(map['voSlug']) ?? '',
       summary: _readString(map['voSummary']),
       publishedAt: _readString(map['voPublishedAt']),
@@ -54,7 +54,7 @@ class DocsDocumentDetail {
 
     return DocsDocumentDetail(
       id: _readRequiredId(map, 'voId'),
-      title: _readString(map['voTitle']) ?? 'Untitled document',
+      title: _readString(map['voTitle']) ?? '未命名文档',
       slug: _readString(map['voSlug']) ?? '',
       markdownContent: _readString(map['voMarkdownContent']) ?? '',
       summary: _readString(map['voSummary']),

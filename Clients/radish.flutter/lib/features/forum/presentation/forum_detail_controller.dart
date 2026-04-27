@@ -118,7 +118,7 @@ class ForumDetailController extends ChangeNotifier {
       _setError(
         requestVersion,
         postId,
-        'Unexpected forum detail payload: ${error.message}',
+        '帖子详情返回格式异常：${error.message}',
       );
     }
   }

@@ -97,37 +97,36 @@ class _ProfilePageState extends State<ProfilePage> {
           padding: const EdgeInsets.all(20),
           children: [
             Text(
-              'Profile',
+              '我的',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
             Text(
-              'Profile now reads the existing public profile, stats, and latest public content contracts inside the Flutter shell. Editing, follow management, and full account workflows stay outside this batch.',
+              '查看公开资料、公开统计和最近公开内容。当前不开放资料编辑、关注管理和完整账号设置。',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 20),
             PhaseScopeCard(
-              title: 'Profile contract',
+              title: '当前能力',
               items: [
                 sessionState.isAuthenticated
-                    ? 'Restored session for user ${session!.userId}'
+                    ? '已登录用户 ${session!.userId}'
                     : widget.guestUserId != null &&
                             widget.guestUserId!.trim().isNotEmpty
-                        ? 'Guest mode is reading public profile ${widget.guestUserId}'
+                        ? '正在以游客身份阅读公开主页 ${widget.guestUserId}'
                         : sessionState.lastErrorMessage == null
-                            ? 'No reusable session was found, profile stays in guest mode'
-                            : 'Stored session expired and refresh failed, profile returned to guest mode',
+                            ? '当前为游客模式，可从发现或论坛进入公开主页'
+                            : '本地会话已失效，已回到游客模式',
                 hasTargetUser
-                    ? 'Source APIs: /api/v1/User/GetPublicProfile, /api/v1/User/GetUserStats, /api/v1/Post/GetUserPosts, /api/v1/Comment/GetUserComments'
-                    : 'Public profile reading is available once a target user id is provided',
+                    ? '支持公开资料、公开统计、最近公开帖子和评论'
+                    : '登录或从公开内容进入用户主页后可查看资料',
                 if (sessionState.lastErrorMessage != null &&
                     sessionState.lastErrorMessage!.isNotEmpty)
-                  'Last restore error: ${sessionState.lastErrorMessage}',
+                  '会话恢复提示：${sessionState.lastErrorMessage}',
                 if (authState.lastErrorMessage != null &&
                     authState.lastErrorMessage!.isNotEmpty)
-                  'Last native auth error: ${authState.lastErrorMessage}',
-                'Scope: public profile, public stats, and recent public posts/comments only',
-                'Native auth handoff: browser OIDC -> radish://oidc/callback -> /connect/token',
+                  '认证提示：${authState.lastErrorMessage}',
+                '当前不支持编辑资料、关注管理、浏览记录或工作台操作',
               ],
             ),
             const SizedBox(height: 16),
@@ -146,7 +145,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           : Icons.logout_outlined,
                     ),
                     label: Text(
-                      authState.isOpeningLogout ? 'Signing out...' : 'Sign out',
+                      authState.isOpeningLogout ? '正在退出...' : '退出登录',
                     ),
                   )
                 else
@@ -162,10 +161,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     label: Text(
                       authState.isOpeningLogin
-                          ? 'Opening sign-in...'
+                          ? '正在打开登录...'
                           : authState.isRedeemingCode
-                              ? 'Completing sign-in...'
-                              : 'Sign in with OIDC',
+                              ? '正在完成登录...'
+                              : '登录',
                     ),
                   ),
                 if (hasTargetUser)
@@ -173,7 +172,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     onPressed:
                         profileState.isLoading ? null : _controller.refresh,
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Refresh profile'),
+                    label: const Text('刷新资料'),
                   ),
               ],
             ),
@@ -187,8 +186,7 @@ class _ProfilePageState extends State<ProfilePage> {
               const _ProfileLoadingState()
             else if (profileState.isError)
               _ProfileErrorState(
-                message: profileState.errorMessage ??
-                    'Failed to load public profile.',
+                message: profileState.errorMessage ?? '无法加载公开资料。',
                 onRetry: _controller.refresh,
               )
             else if (profileState.isReady && profileState.profile != null)
@@ -220,15 +218,15 @@ class _ProfileGuestBoundary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PhaseScopeCard(
-      title: 'Guest boundary',
+      title: '游客模式',
       items: [
-        'Anonymous users can read public profiles when discover or a future route provides a user id',
-        'The Flutter shell does not invent a default public profile target when no session or discover handoff exists',
+        '游客可以从发现、论坛或后续入口阅读公开主页',
+        '没有登录会话或目标用户时，不默认展示任意用户资料',
         if (lastErrorMessage != null && lastErrorMessage!.isNotEmpty)
-          'Restore fallback: $lastErrorMessage',
+          '会话恢复提示：$lastErrorMessage',
         if (authErrorMessage != null && authErrorMessage!.isNotEmpty)
-          'Native auth fallback: $authErrorMessage',
-        'Sign-in now uses the browser OIDC flow and a native callback handoff',
+          '认证提示：$authErrorMessage',
+        '登录会通过浏览器完成，并在完成后返回应用',
       ],
     );
   }
@@ -248,7 +246,7 @@ class _ProfileLoadingState extends StatelessWidget {
             children: [
               CircularProgressIndicator(),
               SizedBox(height: 16),
-              Text('Loading public profile...'),
+              Text('正在加载公开资料...'),
             ],
           ),
         ),
@@ -275,7 +273,7 @@ class _ProfileErrorState extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Public profile unavailable',
+              '暂时无法加载公开资料',
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 12),
@@ -284,7 +282,7 @@ class _ProfileErrorState extends StatelessWidget {
             FilledButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              label: const Text('重试'),
             ),
           ],
         ),
@@ -351,7 +349,7 @@ class _PublicProfileHero extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Chip(
-              label: Text('Read-only public profile'),
+              label: Text('公开资料'),
               visualDensity: VisualDensity.compact,
             ),
             const SizedBox(height: 16),
@@ -382,7 +380,7 @@ class _PublicProfileHero extends StatelessWidget {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        'Joined ${_formatDate(profile.createTime)}',
+                        '加入于 ${_formatDate(profile.createTime)}',
                         style: textTheme.bodyMedium,
                       ),
                     ],
@@ -397,15 +395,15 @@ class _PublicProfileHero extends StatelessWidget {
               children: [
                 _ProfileMetaText(
                   icon: Icons.badge_outlined,
-                  text: 'User ${profile.userId}',
+                  text: '用户 ${profile.userId}',
                 ),
                 const _ProfileMetaText(
                   icon: Icons.visibility_outlined,
-                  text: 'Public profile only',
+                  text: '仅公开资料',
                 ),
                 const _ProfileMetaText(
                   icon: Icons.person_search_outlined,
-                  text: 'No follow or edit action in this batch',
+                  text: '当前不支持关注或编辑',
                 ),
               ],
             ),
@@ -443,12 +441,12 @@ class _ProfileStatsCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Public activity',
+              '公开动态',
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
             Text(
-              'Keep public reading focused on visible participation signals before deeper account-only actions.',
+              '这里展示公开可见的参与数据，更完整的账号能力后续再进入原生端。',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
@@ -467,28 +465,28 @@ class _ProfileStatsCard extends StatelessWidget {
                     SizedBox(
                       width: tileWidth,
                       child: _StatTile(
-                        label: 'Posts',
+                        label: '帖子',
                         value: '${stats?.postCount ?? 0}',
                       ),
                     ),
                     SizedBox(
                       width: tileWidth,
                       child: _StatTile(
-                        label: 'Comments',
+                        label: '评论',
                         value: '${stats?.commentCount ?? 0}',
                       ),
                     ),
                     SizedBox(
                       width: tileWidth,
                       child: _StatTile(
-                        label: 'Total likes',
+                        label: '获赞总数',
                         value: '${stats?.totalLikeCount ?? 0}',
                       ),
                     ),
                     SizedBox(
                       width: tileWidth,
                       child: _StatTile(
-                        label: 'Post vs comment likes',
+                        label: '帖子 / 评论获赞',
                         value:
                             '${stats?.postLikeCount ?? 0} / ${stats?.commentLikeCount ?? 0}',
                       ),
@@ -560,26 +558,23 @@ class _ProfileReadingGuide extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Reading guide',
+              '阅读提示',
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 12),
             const _GuideRow(
-              title: 'Read here first',
-              body:
-                  'Basic identity, join time, public counts, and recent visible activity.',
+              title: '先看资料',
+              body: '基础身份、加入时间、公开统计和最近可见动态。',
             ),
             const SizedBox(height: 10),
             const _GuideRow(
-              title: 'Continue next',
-              body:
-                  'Forum tab and deeper public reading flows stay separate from this profile surface.',
+              title: '继续阅读',
+              body: '帖子和评论会继续回到论坛详情阅读。',
             ),
             const SizedBox(height: 10),
             const _GuideRow(
-              title: 'Boundary',
-              body:
-                  'Edit profile, follow management, browse history, and workspace actions remain outside this batch.',
+              title: '当前边界',
+              body: '编辑资料、关注管理、浏览记录和工作台操作暂不开放。',
             ),
           ],
         ),
@@ -637,23 +632,22 @@ class _RecentPostsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _ProfileSectionCard(
-      title: 'Recent public posts',
-      description:
-          'Recent readable posts now reuse the same native forum detail handoff target as the forum tab, instead of inventing a separate profile-only route.',
-      emptyText: 'No public posts are available for this user yet.',
+      title: '最近公开帖子',
+      description: '这些帖子会打开同一套原生论坛详情，避免个人页和论坛页路径分叉。',
+      emptyText: '这个用户暂无公开帖子。',
       children: posts
           .map(
             (post) => _ContentPreviewTile(
               title: post.title,
               subtitle: _buildPostExcerpt(post),
               meta:
-                  '${post.likeCount} likes · ${post.commentCount} comments · ${post.viewCount} views',
+                  '${post.likeCount} 个赞 · ${post.commentCount} 条评论 · ${post.viewCount} 次浏览',
               chips: [
                 if (post.categoryName != null && post.categoryName!.isNotEmpty)
                   post.categoryName!,
                 _formatDate(post.createTime),
               ],
-              actionLabel: onOpenForumDetailTarget == null ? null : 'Open post',
+              actionLabel: onOpenForumDetailTarget == null ? null : '打开帖子',
               onAction: onOpenForumDetailTarget == null
                   ? null
                   : () => onOpenForumDetailTarget!(
@@ -677,7 +671,7 @@ class _RecentPostsCard extends StatelessWidget {
 
     final content = post.content.replaceAll(RegExp(r'\s+'), ' ').trim();
     if (content.isEmpty) {
-      return 'Public post without summary.';
+      return '这篇公开帖子暂无摘要。';
     }
 
     return content.length > 120 ? '${content.substring(0, 120)}...' : content;
@@ -696,28 +690,25 @@ class _RecentCommentsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _ProfileSectionCard(
-      title: 'Recent public comments',
-      description:
-          'Comment previews stay read-only, but they now hand off into the shared native forum detail target with commentId so profile and forum stop diverging.',
-      emptyText: 'No public comments are available for this user yet.',
+      title: '最近公开评论',
+      description: '评论预览保持只读，点击后会回到对应帖子和评论上下文。',
+      emptyText: '这个用户暂无公开评论。',
       children: comments
           .map(
             (comment) => _ContentPreviewTile(
               title: comment.replyToUserName == null ||
                       comment.replyToUserName!.isEmpty
-                  ? 'Comment ${comment.id}'
-                  : 'Reply to @${comment.replyToUserName}',
+                  ? '评论 ${comment.id}'
+                  : '回复 @${comment.replyToUserName}',
               subtitle: comment.content,
-              meta: '${comment.likeCount} likes',
+              meta: '${comment.likeCount} 个赞',
               chips: [
                 if (comment.replyToCommentSnapshot != null &&
                     comment.replyToCommentSnapshot!.isNotEmpty)
                   comment.replyToCommentSnapshot!,
                 _formatDate(comment.createTime),
               ],
-              actionLabel: onOpenForumDetailTarget == null
-                  ? null
-                  : 'Open comment context',
+              actionLabel: onOpenForumDetailTarget == null ? null : '打开评论上下文',
               onAction: onOpenForumDetailTarget == null
                   ? null
                   : () => onOpenForumDetailTarget!(
@@ -861,7 +852,7 @@ class _ProfileMetaText extends StatelessWidget {
 
 String _formatDate(String value) {
   if (value.isEmpty) {
-    return 'unknown time';
+    return '时间未知';
   }
 
   final parsed = DateTime.tryParse(value);

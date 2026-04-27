@@ -164,7 +164,7 @@ class ProfileController extends ChangeNotifier {
       _setError(
         requestVersion,
         userId,
-        'Unexpected profile payload: ${error.message}',
+        '公开资料返回格式异常：${error.message}',
       );
     }
   }

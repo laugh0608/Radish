@@ -73,15 +73,13 @@ class HttpAuthorizationCodeExchangeService
             .where((item) => item.isNotEmpty)
             .join(': ');
         throw AuthorizationCodeExchangeException(
-          detail.isEmpty
-              ? 'Authorization code exchange failed with status ${response.statusCode}'
-              : detail,
+          detail.isEmpty ? '登录授权码换取会话失败，状态码 ${response.statusCode}' : detail,
         );
       }
 
       if (payload is! Map) {
         throw const AuthorizationCodeExchangeException(
-          'Authorization code response payload is invalid.',
+          '登录授权码响应内容无效。',
         );
       }
 
@@ -89,19 +87,19 @@ class HttpAuthorizationCodeExchangeService
       final refreshToken = payload['refresh_token']?.toString();
       if (accessToken == null || accessToken.isEmpty) {
         throw const AuthorizationCodeExchangeException(
-          'Authorization code response is missing access_token.',
+          '登录授权码响应缺少 access_token。',
         );
       }
       if (refreshToken == null || refreshToken.isEmpty) {
         throw const AuthorizationCodeExchangeException(
-          'Authorization code response is missing refresh_token.',
+          '登录授权码响应缺少 refresh_token。',
         );
       }
 
       final decoded = decodeAccessToken(accessToken);
       if (decoded == null) {
         throw const AuthorizationCodeExchangeException(
-          'Failed to decode authorization code access token.',
+          '无法解析登录返回的 access token。',
         );
       }
 
@@ -113,11 +111,11 @@ class HttpAuthorizationCodeExchangeService
       );
     } on SocketException catch (error) {
       throw AuthorizationCodeExchangeException(
-        'Network error: ${error.message}',
+        '网络错误：${error.message}',
       );
     } on FormatException catch (error) {
       throw AuthorizationCodeExchangeException(
-        'Failed to decode authorization code response: ${error.message}',
+        '无法解析登录授权码响应：${error.message}',
       );
     } finally {
       client.close(force: true);

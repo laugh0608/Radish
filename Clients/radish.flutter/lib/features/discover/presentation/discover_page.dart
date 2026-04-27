@@ -76,27 +76,27 @@ class _DiscoverPageState extends State<DiscoverPage> {
           padding: const EdgeInsets.all(20),
           children: [
             Text(
-              'Discover',
+              '发现',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
             Text(
-              'A native distribution surface for high-value public content. This batch reads real forum, docs, and shop summaries and hands users over to the live read-only tabs without recreating the desktop workspace.',
+              '浏览社区里的公开内容摘要，并继续进入论坛、文档或公开个人页阅读。',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 20),
             PhaseScopeCard(
-              title: 'Distribution contract',
+              title: '当前能力',
               items: [
-                'Environment: ${widget.environment.name}',
-                'Source APIs: Post/GetList, Wiki/GetList, Shop/GetProducts',
-                'Scope: anonymous summary reading, no create, purchase, or workspace actions',
+                '当前环境：${widget.environment.name}',
+                '展示论坛、文档和公开商品的只读摘要',
+                '当前不支持创建、购买或桌面工作台操作',
                 widget.sessionState.isAuthenticated
-                    ? 'Recovered session for user ${widget.sessionState.session!.userId}'
-                    : 'Guest mode keeps public content readable',
+                    ? '已登录用户 ${widget.sessionState.session!.userId}'
+                    : '游客也可以阅读公开内容',
                 snapshot == null
-                    ? 'Discover state: ${state.status.name}'
-                    : 'Loaded ${snapshot.forumPosts.length} posts, ${snapshot.documents.length} documents, ${snapshot.products.length} products',
+                    ? '正在准备发现内容'
+                    : '已加载 ${snapshot.forumPosts.length} 条帖子、${snapshot.documents.length} 篇文档、${snapshot.products.length} 个商品',
               ],
             ),
             if (!state.isError) ...[
@@ -118,14 +118,14 @@ class _DiscoverPageState extends State<DiscoverPage> {
               child: FilledButton.tonalIcon(
                 onPressed: state.isLoading ? null : _controller.refresh,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Refresh discover'),
+                label: const Text('刷新发现'),
               ),
             ),
             const SizedBox(height: 16),
             if (state.isLoading) const _DiscoverLoadingState(),
             if (state.isError)
               _DiscoverErrorState(
-                message: state.errorMessage ?? 'Failed to load discover feed.',
+                message: state.errorMessage ?? '无法加载发现内容。',
                 onRetry: _controller.refresh,
               ),
             if (state.isReady && snapshot != null)
@@ -160,7 +160,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
 
   String? _resolveProfileActionLabel(DiscoverSnapshot? snapshot) {
     if (widget.sessionState.isAuthenticated) {
-      return 'Open my profile';
+      return '打开我的主页';
     }
 
     if (snapshot == null) {
@@ -170,11 +170,11 @@ class _DiscoverPageState extends State<DiscoverPage> {
     for (final post in snapshot.forumPosts) {
       final authorName = post.authorName?.trim();
       if (authorName != null && authorName.isNotEmpty) {
-        return 'Open @$authorName';
+        return '打开 @$authorName';
       }
     }
 
-    return snapshot.forumPosts.isEmpty ? null : 'Open public profile';
+    return snapshot.forumPosts.isEmpty ? null : '打开公开主页';
   }
 }
 
@@ -204,14 +204,14 @@ class _DiscoverHeroCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Native handoff',
+              '继续阅读',
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
             Text(
               snapshot == null
-                  ? 'Discover is preparing live public summaries before handing over to the dedicated tabs.'
-                  : 'Discover is now the public front door: preview high-value content here, then continue into forum, docs, or profile without leaving the native shell.',
+                  ? '正在准备公开内容摘要。'
+                  : '在这里预览高价值内容，再继续进入论坛、文档或公开主页阅读。',
             ),
             const SizedBox(height: 16),
             Wrap(
@@ -221,12 +221,12 @@ class _DiscoverHeroCard extends StatelessWidget {
                 FilledButton.icon(
                   onPressed: onOpenForum,
                   icon: const Icon(Icons.forum_outlined),
-                  label: const Text('Go to forum'),
+                  label: const Text('进入论坛'),
                 ),
                 OutlinedButton.icon(
                   onPressed: onOpenDocs,
                   icon: const Icon(Icons.description_outlined),
-                  label: const Text('Go to docs'),
+                  label: const Text('进入文档'),
                 ),
                 if (profileActionLabel != null)
                   OutlinedButton.icon(
@@ -257,7 +257,7 @@ class _DiscoverLoadingState extends StatelessWidget {
             children: [
               CircularProgressIndicator(),
               SizedBox(height: 16),
-              Text('Loading discover feed...'),
+              Text('正在加载发现内容...'),
             ],
           ),
         ),
@@ -284,7 +284,7 @@ class _DiscoverErrorState extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Discover feed unavailable',
+              '暂时无法加载发现内容',
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 12),
@@ -293,7 +293,7 @@ class _DiscoverErrorState extends StatelessWidget {
             FilledButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              label: const Text('重试'),
             ),
           ],
         ),
@@ -320,7 +320,7 @@ class _DiscoverContent extends StatelessWidget {
         child: Padding(
           padding: EdgeInsets.all(24),
           child: Text(
-            'No public content is available for the discover surface yet.',
+            '发现页暂无可公开阅读的内容。',
           ),
         ),
       );
@@ -358,20 +358,18 @@ class _ForumSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _DiscoverSectionCard(
-      title: 'Forum picks',
-      description:
-          'Latest public posts are surfaced here before the user opens the full forum tab.',
-      emptyText: 'No forum posts are available for discover right now.',
-      actionLabel: onOpenForum == null ? null : 'See all in forum',
+      title: '论坛精选',
+      description: '预览最新公开帖子，进入论坛后可继续浏览完整列表。',
+      emptyText: '当前暂无可展示的论坛帖子。',
+      actionLabel: onOpenForum == null ? null : '查看全部帖子',
       onAction: onOpenForum,
       children: posts
           .map(
             (post) => _SummaryTile(
               icon: Icons.forum_outlined,
               title: post.title,
-              subtitle:
-                  post.summary ?? post.categoryName ?? 'Public forum post',
-              meta: '${post.commentCount} comments · ${post.viewCount} views',
+              subtitle: post.summary ?? post.categoryName ?? '公开论坛帖子',
+              meta: '${post.commentCount} 条评论 · ${post.viewCount} 次浏览',
               chips: post.badges,
             ),
           )
@@ -392,21 +390,20 @@ class _DocsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _DiscoverSectionCard(
-      title: 'Docs picks',
-      description:
-          'Published public documents can be previewed without entering the desktop wiki app.',
-      emptyText: 'No public documents are available for discover right now.',
-      actionLabel: onOpenDocs == null ? null : 'See all in docs',
+      title: '文档精选',
+      description: '预览已发布的公开文档，不需要进入桌面文档应用。',
+      emptyText: '当前暂无可展示的公开文档。',
+      actionLabel: onOpenDocs == null ? null : '查看全部文档',
       onAction: onOpenDocs,
       children: documents
           .map(
             (document) => _SummaryTile(
               icon: Icons.description_outlined,
               title: document.title,
-              subtitle: document.summary ?? 'Readable public document',
+              subtitle: document.summary ?? '可公开阅读的文档',
               meta: document.displayTime == null
-                  ? 'Public docs'
-                  : 'Updated ${_formatDateTime(document.displayTime)}',
+                  ? '公开文档'
+                  : '更新于 ${_formatDateTime(document.displayTime)}',
               chips: [
                 if (document.slug.isNotEmpty) '/docs/${document.slug}',
               ],
@@ -427,21 +424,20 @@ class _ShopSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _DiscoverSectionCard(
-      title: 'Shop picks',
-      description:
-          'Public product summaries stay read-only; purchase, orders, and inventory remain workspace-only.',
-      emptyText: 'No public products are available for discover right now.',
+      title: '商城精选',
+      description: '这里只展示公开商品摘要，购买、订单和背包仍留在桌面工作台。',
+      emptyText: '当前暂无可展示的公开商品。',
       children: products
           .map(
             (product) => _SummaryTile(
               icon: Icons.local_mall_outlined,
               title: product.name,
               subtitle: _buildProductSummary(product),
-              meta: '${product.price} carrots',
+              meta: '${product.price} 胡萝卜',
               chips: [
                 _formatProductType(product.productType),
-                if (product.hasDiscount) 'Discount',
-                if (!product.inStock) 'Out of stock',
+                if (product.hasDiscount) '有折扣',
+                if (!product.inStock) '暂时缺货',
               ],
             ),
           )
@@ -456,18 +452,16 @@ class _DiscoverBoundarySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const _DiscoverSectionCard(
-      title: 'Read-only boundaries',
-      description:
-          'This batch keeps discover focused on public reading and tab handoff. Leaderboard detail, purchase flow, and workspace actions stay outside the native MVP for now.',
+      title: '只读边界',
+      description: '当前发现页聚焦公开阅读和入口跳转，榜单详情、购买流程和工作台操作暂不进入原生 MVP。',
       emptyText: '',
       children: [
         _SummaryTile(
           icon: Icons.emoji_events_outlined,
-          title: 'Leaderboard and deeper shop flows',
-          subtitle:
-              'Keep ranking reading, public comparison, purchase confirmation, orders, and account-only actions out of the first native slice.',
-          meta: 'Still routed to later batches',
-          chips: ['Read-only discover', 'No workspace actions'],
+          title: '榜单和更深商城流程',
+          subtitle: '排名阅读、公开比较、购买确认、订单和账号专属操作会在后续批次再评估。',
+          meta: '后续批次推进',
+          chips: ['只读发现', '不含工作台操作'],
         ),
       ],
     );
@@ -605,23 +599,23 @@ String _buildProductSummary(DiscoverProductSummary product) {
   }
 
   if (product.soldCount > 0) {
-    return '${_formatProductType(product.productType)} · ${product.soldCount} sold';
+    return '${_formatProductType(product.productType)} · 已售 ${product.soldCount}';
   }
 
-  return '${_formatProductType(product.productType)} · Public product';
+  return '${_formatProductType(product.productType)} · 公开商品';
 }
 
 String _formatProductType(String value) {
   switch (value) {
     case 'Benefit':
     case '1':
-      return 'Benefit';
+      return '权益';
     case 'Consumable':
     case '2':
-      return 'Consumable';
+      return '消耗品';
     case 'Physical':
     case '99':
-      return 'Physical';
+      return '实物';
     default:
       return value;
   }
@@ -629,7 +623,7 @@ String _formatProductType(String value) {
 
 String _formatDateTime(String? value) {
   if (value == null || value.isEmpty) {
-    return 'unknown time';
+    return '时间未知';
   }
 
   final parsed = DateTime.tryParse(value);

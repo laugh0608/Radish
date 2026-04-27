@@ -96,7 +96,7 @@ class NativeAuthController extends ChangeNotifier {
       await _gateway.openAuthorizeUrl(_buildAuthorizeUri());
     } catch (_) {
       _state = const NativeAuthState.idle(
-        lastErrorMessage: 'Failed to open the browser sign-in flow.',
+        lastErrorMessage: '无法打开浏览器登录流程。',
       );
       notifyListeners();
     }
@@ -116,7 +116,7 @@ class NativeAuthController extends ChangeNotifier {
       _state = const NativeAuthState.idle();
     } catch (_) {
       _state = const NativeAuthState.idle(
-        lastErrorMessage: 'Failed to open the browser sign-out flow.',
+        lastErrorMessage: '无法打开浏览器退出流程。',
       );
     }
 
@@ -133,8 +133,7 @@ class NativeAuthController extends ChangeNotifier {
     if (callback == null) {
       if (_state.isOpeningLogin) {
         _state = const NativeAuthState.idle(
-          lastErrorMessage:
-              'Sign-in was canceled before the browser returned to the app.',
+          lastErrorMessage: '浏览器返回应用前，登录已取消。',
         );
         notifyListeners();
         return;
@@ -171,7 +170,7 @@ class NativeAuthController extends ChangeNotifier {
     final code = callback.code?.trim();
     if (code == null || code.isEmpty) {
       _state = const NativeAuthState.idle(
-        lastErrorMessage: 'OIDC callback is missing the authorization code.',
+        lastErrorMessage: '登录回调缺少授权码。',
       );
       notifyListeners();
       return;
@@ -193,7 +192,7 @@ class NativeAuthController extends ChangeNotifier {
       );
     } catch (_) {
       _state = const NativeAuthState.idle(
-        lastErrorMessage: 'The native sign-in callback could not be completed.',
+        lastErrorMessage: '无法完成本次登录回调。',
       );
     }
 
@@ -236,11 +235,9 @@ class NativeAuthController extends ChangeNotifier {
     }
 
     return switch (normalizedError) {
-      'access_denied' => 'Sign-in was canceled from the browser.',
-      'login_required' =>
-        'The browser sign-in session expired. Please start sign-in again.',
-      'server_error' =>
-        'The identity server could not complete sign-in. Please retry.',
+      'access_denied' => '已在浏览器中取消登录。',
+      'login_required' => '浏览器登录会话已失效，请重新登录。',
+      'server_error' => '身份服务暂时无法完成登录，请重试。',
       _ => normalizedError,
     };
   }

@@ -10,15 +10,15 @@ extension ForumDetailHandoffSourceLabel on ForumDetailHandoffSource {
   String get label {
     switch (this) {
       case ForumDetailHandoffSource.shell:
-        return 'Shell handoff';
+        return '应用内打开';
       case ForumDetailHandoffSource.notification:
-        return 'Notification handoff';
+        return '通知回流';
       case ForumDetailHandoffSource.browseHistory:
-        return 'Browse history handoff';
+        return '继续阅读';
       case ForumDetailHandoffSource.publicProfilePost:
-        return 'Public profile post handoff';
+        return '个人主页帖子';
       case ForumDetailHandoffSource.publicProfileComment:
-        return 'Public profile comment handoff';
+        return '个人主页评论';
     }
   }
 }
@@ -41,9 +41,9 @@ extension ForumFeedSortApiValue on ForumFeedSort {
   String get label {
     switch (this) {
       case ForumFeedSort.newest:
-        return 'Latest';
+        return '最新';
       case ForumFeedSort.hottest:
-        return 'Hottest';
+        return '热门';
     }
   }
 }
@@ -77,7 +77,7 @@ class ForumPostSummary {
 
     return ForumPostSummary(
       id: _readRequiredId(map, 'voId'),
-      title: _readString(map['voTitle']) ?? 'Untitled post',
+      title: _readString(map['voTitle']) ?? '未命名帖子',
       summary: _readString(map['voSummary']),
       categoryId: _readRequiredId(map, 'voCategoryId'),
       categoryName: _readString(map['voCategoryName']),
@@ -169,7 +169,7 @@ class ForumPostDetail {
 
     return ForumPostDetail(
       id: _readRequiredId(map, 'voId'),
-      title: _readString(map['voTitle']) ?? 'Untitled post',
+      title: _readString(map['voTitle']) ?? '未命名帖子',
       summary: _readString(map['voSummary']),
       content: _readString(map['voContent']) ?? '',
       contentType: _readString(map['voContentType']),
@@ -336,7 +336,7 @@ class ForumCommentSummary {
       postId: _readRequiredId(map, 'voPostId'),
       content: _readString(map['voContent']) ?? '',
       authorId: _readRequiredId(map, 'voAuthorId'),
-      authorName: _readString(map['voAuthorName']) ?? 'Unknown user',
+      authorName: _readString(map['voAuthorName']) ?? '未知用户',
       parentId: _readString(map['voParentId']),
       rootId: _readString(map['voRootId']),
       replyToCommentId: _readString(map['voReplyToCommentId']),
@@ -382,9 +382,9 @@ class ForumCommentSummary {
 
   List<String> get badges {
     return [
-      if (isTop) 'Top',
-      if (isGodComment) 'God comment',
-      if (isSofa) 'First reply',
+      if (isTop) '置顶',
+      if (isGodComment) '神评',
+      if (isSofa) '首条回复',
     ];
   }
 }
@@ -474,8 +474,8 @@ class ForumCommentPage {
     final dataCount = _readInt(map['voTotal']) ??
         _readInt(map['dataCount']) ??
         comments.length;
-    final explicitPageCount = _readInt(map['voPageCount']) ??
-        _readInt(map['pageCount']);
+    final explicitPageCount =
+        _readInt(map['voPageCount']) ?? _readInt(map['pageCount']);
 
     return ForumCommentPage(
       page: page,
@@ -644,10 +644,10 @@ List<String> _buildForumBadges({
   required bool lotteryIsDrawn,
 }) {
   return [
-    if (isTop) 'Top',
-    if (isEssence) 'Essence',
-    if (isQuestion) isSolved ? 'Solved' : 'Question',
-    if (hasPoll) pollIsClosed ? 'Poll closed' : 'Poll',
-    if (hasLottery) lotteryIsDrawn ? 'Lottery drawn' : 'Lottery',
+    if (isTop) '置顶',
+    if (isEssence) '精华',
+    if (isQuestion) isSolved ? '已解决' : '提问',
+    if (hasPoll) pollIsClosed ? '投票已结束' : '投票',
+    if (hasLottery) lotteryIsDrawn ? '抽奖已开奖' : '抽奖',
   ];
 }

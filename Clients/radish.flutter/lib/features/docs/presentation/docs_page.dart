@@ -75,35 +75,31 @@ class _DocsPageState extends State<DocsPage> {
           padding: const EdgeInsets.all(20),
           children: [
             Text(
-              isDetailMode ? 'Docs detail' : 'Docs feed',
+              isDetailMode ? '文档详情' : '文档',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
             Text(
               isDetailMode
-                  ? 'The native docs tab now supports minimal public reading detail inside the same shell. Editing, publishing, and governance still stay out of the first native batch.'
-                  : 'The native docs tab now reads the public document list instead of a placeholder. Editing, publishing, and governance still stay out of the first native batch.',
+                  ? '在应用内阅读公开文档详情。当前不开放编辑、发布和治理操作。'
+                  : '浏览公开文档列表。当前不开放编辑、发布和治理操作。',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 20),
             PhaseScopeCard(
-              title: isDetailMode ? 'Docs detail contract' : 'Docs contract',
+              title: '当前能力',
               items: [
-                'Environment: ${widget.environment.name}',
-                isDetailMode
-                    ? 'Source APIs: ${widget.environment.apiBaseUrl}/api/v1/Wiki/GetList + /api/v1/Wiki/GetBySlug/{slug}'
-                    : 'Source API: ${widget.environment.apiBaseUrl}/api/v1/Wiki/GetList',
-                isDetailMode
-                    ? 'Scope: anonymous read-only detail, in-tab handoff, no edit, publish, or governance actions'
-                    : 'Scope: anonymous read-only list, pagination, loading and error states',
+                '当前环境：${widget.environment.name}',
+                isDetailMode ? '支持公开文档详情阅读和返回列表' : '支持公开文档列表、分页、加载和错误状态',
+                '当前不支持编辑、发布、回收站或版本治理',
                 if (!isDetailMode)
                   feedState.page == null
-                      ? 'Docs state: ${feedState.status.name}'
-                      : 'Loaded ${feedState.page!.documents.length} documents from ${feedState.page!.dataCount} total records',
+                      ? '正在准备文档列表'
+                      : '已加载 ${feedState.page!.documents.length} 篇文档，共 ${feedState.page!.dataCount} 篇',
                 if (isDetailMode)
                   detailState.detail == null
-                      ? 'Detail state: ${detailState.status.name}'
-                      : 'Reading /docs/${detailState.detail!.slug}',
+                      ? '正在准备文档详情'
+                      : '正在阅读 /docs/${detailState.detail!.slug}',
               ],
             ),
             const SizedBox(height: 16),
@@ -116,7 +112,7 @@ class _DocsPageState extends State<DocsPage> {
                     onPressed:
                         detailState.isLoading ? null : _detailController.close,
                     icon: const Icon(Icons.arrow_back),
-                    label: const Text('Back to docs list'),
+                    label: const Text('返回文档列表'),
                   ),
                 FilledButton.tonalIcon(
                   onPressed: isDetailMode
@@ -125,7 +121,7 @@ class _DocsPageState extends State<DocsPage> {
                           : _detailController.refresh)
                       : (feedState.isLoading ? null : _feedController.refresh),
                   icon: const Icon(Icons.refresh),
-                  label: Text(isDetailMode ? 'Refresh detail' : 'Refresh docs'),
+                  label: Text(isDetailMode ? '刷新详情' : '刷新文档'),
                 ),
               ],
             ),
@@ -133,8 +129,8 @@ class _DocsPageState extends State<DocsPage> {
             if (!isDetailMode && feedState.isLoading) const _DocsLoadingState(),
             if (!isDetailMode && feedState.isError)
               _DocsErrorState(
-                title: 'Docs feed unavailable',
-                message: feedState.errorMessage ?? 'Failed to load docs feed.',
+                title: '暂时无法加载文档',
+                message: feedState.errorMessage ?? '无法加载文档列表。',
                 onRetry: _feedController.refresh,
               ),
             if (!isDetailMode && feedState.isReady && feedState.page != null)
@@ -150,13 +146,12 @@ class _DocsPageState extends State<DocsPage> {
               ),
             if (isDetailMode && detailState.isLoading)
               const _DocsLoadingState(
-                message: 'Loading public document...',
+                message: '正在加载公开文档...',
               ),
             if (isDetailMode && detailState.isError)
               _DocsErrorState(
-                title: 'Docs detail unavailable',
-                message:
-                    detailState.errorMessage ?? 'Failed to load docs detail.',
+                title: '暂时无法加载文档详情',
+                message: detailState.errorMessage ?? '无法加载文档详情。',
                 onRetry: _detailController.refresh,
               ),
             if (isDetailMode &&
@@ -174,7 +169,7 @@ class _DocsPageState extends State<DocsPage> {
 
 class _DocsLoadingState extends StatelessWidget {
   const _DocsLoadingState({
-    this.message = 'Loading docs feed...',
+    this.message = '正在加载文档列表...',
   });
 
   final String message;
@@ -228,7 +223,7 @@ class _DocsErrorState extends StatelessWidget {
             FilledButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              label: const Text('重试'),
             ),
           ],
         ),
@@ -261,12 +256,12 @@ class _DocsFeedContent extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                'Page ${page.page} of ${page.pageCount}',
+                '第 ${page.page} / ${page.pageCount} 页',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
             ),
             Text(
-              '${page.dataCount} documents',
+              '共 ${page.dataCount} 篇文档',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],
@@ -277,7 +272,7 @@ class _DocsFeedContent extends StatelessWidget {
             child: Padding(
               padding: EdgeInsets.all(24),
               child: Text(
-                'No public documents are available for this slice yet.',
+                '当前没有可公开阅读的文档。',
               ),
             ),
           ),
@@ -296,12 +291,12 @@ class _DocsFeedContent extends StatelessWidget {
             OutlinedButton.icon(
               onPressed: onPreviousPage,
               icon: const Icon(Icons.arrow_back),
-              label: const Text('Previous'),
+              label: const Text('上一页'),
             ),
             FilledButton.tonalIcon(
               onPressed: onNextPage,
               icon: const Icon(Icons.arrow_forward),
-              label: const Text('Next'),
+              label: const Text('下一页'),
             ),
           ],
         ),
@@ -337,7 +332,7 @@ class _DocsDocumentCard extends StatelessWidget {
                 runSpacing: 8,
                 children: [
                   const Chip(
-                    label: Text('Public docs'),
+                    label: Text('公开文档'),
                     visualDensity: VisualDensity.compact,
                   ),
                   if (document.slug.isNotEmpty)
@@ -367,7 +362,7 @@ class _DocsDocumentCard extends StatelessWidget {
                   _DocsMetaText(
                     icon: Icons.link_outlined,
                     text: document.slug.isEmpty
-                        ? 'Slug unavailable'
+                        ? '文档地址不可用'
                         : '/docs/${document.slug}',
                   ),
                   _DocsMetaText(
@@ -380,7 +375,7 @@ class _DocsDocumentCard extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    document.slug.isEmpty ? 'Unavailable' : 'Open document',
+                    document.slug.isEmpty ? '暂不可用' : '打开文档',
                     style: textTheme.labelLarge,
                   ),
                   const SizedBox(width: 8),
@@ -417,7 +412,7 @@ class _DocsDetailContent extends StatelessWidget {
               runSpacing: 8,
               children: [
                 const Chip(
-                  label: Text('Public docs detail'),
+                  label: Text('公开文档详情'),
                   visualDensity: VisualDensity.compact,
                 ),
                 Chip(
@@ -464,13 +459,13 @@ class _DocsDetailContent extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              'Markdown body',
+              '正文',
               style: textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
             ReadOnlyMarkdownView(
               content: detail.markdownContent,
-              emptyText: 'No markdown content is available for this document.',
+              emptyText: '这篇文档暂无正文内容。',
             ),
           ],
         ),
@@ -503,7 +498,7 @@ class _DocsMetaText extends StatelessWidget {
 
 String _formatDate(String? value) {
   if (value == null || value.isEmpty) {
-    return 'Unknown time';
+    return '时间未知';
   }
 
   final parsed = DateTime.tryParse(value);
@@ -521,7 +516,7 @@ String _formatDate(String? value) {
 String _formatDetailTime(DocsDocumentDetail detail) {
   final value = detail.displayTime;
   if (value == null || value.isEmpty) {
-    return 'Unknown time';
+    return '时间未知';
   }
 
   final parsed = DateTime.tryParse(value);
@@ -541,25 +536,25 @@ String _formatDetailTime(DocsDocumentDetail detail) {
 String _formatVisibility(int? visibility) {
   switch (visibility) {
     case 1:
-      return 'Public';
+      return '公开';
     case 2:
-      return 'Authenticated';
+      return '登录可见';
     case 3:
-      return 'Restricted';
+      return '受限';
     default:
-      return 'Unknown visibility';
+      return '可见性未知';
   }
 }
 
 String _formatStatus(int? status) {
   switch (status) {
     case 0:
-      return 'Draft';
+      return '草稿';
     case 1:
-      return 'Published';
+      return '已发布';
     case 2:
-      return 'Archived';
+      return '已归档';
     default:
-      return 'Unknown status';
+      return '状态未知';
   }
 }

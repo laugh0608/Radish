@@ -193,7 +193,7 @@ class ForumCommentFeedController extends ChangeNotifier {
     } on FormatException catch (error) {
       _setLoadMoreError(
         requestVersion,
-        'Unexpected forum comments payload: ${error.message}',
+        '评论列表返回格式异常：${error.message}',
       );
     }
   }
@@ -242,7 +242,7 @@ class ForumCommentFeedController extends ChangeNotifier {
       _setInitialError(
         requestVersion,
         postId,
-        'Unexpected forum comments payload: ${error.message}',
+        '评论列表返回格式异常：${error.message}',
       );
     }
   }

@@ -20,7 +20,7 @@ void main() {
           environment: const AppEnvironment.development(),
           repository: _PagedForumRepository(),
           postId: 'post-42',
-          initialTitle: 'Forum detail handoff',
+          initialTitle: '论坛详情回流',
         ),
       ),
     );
@@ -28,40 +28,40 @@ void main() {
     await tester.pumpAndSettle();
     final scrollable = find.byType(Scrollable).first;
     await tester.scrollUntilVisible(
-      find.text('Comments'),
+      find.text('评论'),
       200,
       scrollable: scrollable,
     );
 
-    expect(find.text('Comments'), findsOneWidget);
-    expect(find.text('Loaded 2 / 3 root comments'), findsWidgets);
+    expect(find.text('评论'), findsOneWidget);
+    expect(find.text('已加载 2 / 3 条根评论'), findsWidgets);
     expect(find.text('Root comment one'), findsOneWidget);
-    expect(find.text('Reply to @luobo'), findsOneWidget);
-    expect(find.text('Load more comments'), findsOneWidget);
+    expect(find.text('回复 @luobo'), findsOneWidget);
+    expect(find.text('加载更多评论'), findsOneWidget);
 
-    await tester.tap(find.text('Load more comments'));
+    await tester.tap(find.text('加载更多评论'));
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('Loaded 3 / 3 root comments'), findsWidgets);
+    expect(find.text('已加载 3 / 3 条根评论'), findsWidgets);
     expect(find.text('Root comment three'), findsOneWidget);
-    expect(find.text('Load more comments'), findsNothing);
+    expect(find.text('加载更多评论'), findsNothing);
 
-    await tester.tap(find.text('Show replies'));
+    await tester.tap(find.text('查看回复'));
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('Loaded 1 / 2 replies'), findsOneWidget);
+    expect(find.text('已加载 1 / 2 条回复'), findsOneWidget);
     expect(find.text('Child comment one'), findsOneWidget);
-    expect(find.text('Load more replies'), findsOneWidget);
+    expect(find.text('加载更多回复'), findsOneWidget);
 
-    await tester.tap(find.text('Load more replies'));
+    await tester.tap(find.text('加载更多回复'));
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('Loaded 2 / 2 replies'), findsOneWidget);
+    expect(find.text('已加载 2 / 2 条回复'), findsOneWidget);
     expect(find.text('Child comment two'), findsOneWidget);
-    expect(find.text('Load more replies'), findsNothing);
+    expect(find.text('加载更多回复'), findsNothing);
   });
 
   testWidgets('renders comment error state separately from detail',
@@ -77,7 +77,7 @@ void main() {
           environment: const AppEnvironment.development(),
           repository: _CommentFailingForumRepository(),
           postId: 'post-42',
-          initialTitle: 'Forum detail handoff',
+          initialTitle: '论坛详情回流',
         ),
       ),
     );
@@ -85,15 +85,15 @@ void main() {
     await tester.pumpAndSettle();
     final scrollable = find.byType(Scrollable).first;
     await tester.scrollUntilVisible(
-      find.text('Comments unavailable'),
+      find.text('暂时无法加载评论'),
       200,
       scrollable: scrollable,
     );
 
-    expect(find.text('Forum detail handoff'), findsWidgets);
-    expect(find.text('Comments unavailable'), findsOneWidget);
-    expect(find.text('Comments API is unreachable'), findsOneWidget);
-    expect(find.text('Retry comments'), findsOneWidget);
+    expect(find.text('论坛详情回流'), findsWidgets);
+    expect(find.text('暂时无法加载评论'), findsOneWidget);
+    expect(find.text('评论服务暂时不可用'), findsOneWidget);
+    expect(find.text('重试评论'), findsOneWidget);
   });
 
   testWidgets('renders empty comment state', (tester) async {
@@ -108,7 +108,7 @@ void main() {
           environment: const AppEnvironment.development(),
           repository: _EmptyCommentForumRepository(),
           postId: 'post-42',
-          initialTitle: 'Forum detail handoff',
+          initialTitle: '论坛详情回流',
         ),
       ),
     );
@@ -116,13 +116,13 @@ void main() {
     await tester.pumpAndSettle();
     final scrollable = find.byType(Scrollable).first;
     await tester.scrollUntilVisible(
-      find.text('No public comments are available for this post yet.'),
+      find.text('这篇帖子暂无公开评论。'),
       200,
       scrollable: scrollable,
     );
 
     expect(
-      find.text('No public comments are available for this post yet.'),
+      find.text('这篇帖子暂无公开评论。'),
       findsOneWidget,
     );
   });
@@ -142,7 +142,7 @@ void main() {
           environment: const AppEnvironment.development(),
           repository: _PagedForumRepository(),
           postId: 'post-42',
-          initialTitle: 'Forum detail handoff',
+          initialTitle: '论坛详情回流',
           onOpenProfileUser: (userId) {
             openedUserId = userId;
           },
@@ -182,7 +182,7 @@ void main() {
           repository: _PagedForumRepository(),
           postId: 'post-42',
           commentId: 'reply-2',
-          initialTitle: 'Forum detail handoff',
+          initialTitle: '论坛详情回流',
         ),
       ),
     );
@@ -196,7 +196,7 @@ void main() {
       scrollable: scrollable,
     );
 
-    expect(find.text('Loaded 2 / 2 replies'), findsOneWidget);
+    expect(find.text('已加载 2 / 2 条回复'), findsOneWidget);
     expect(find.text('Child comment two'), findsOneWidget);
   });
 }
@@ -223,7 +223,7 @@ abstract class _BaseForumRepository implements ForumRepository {
   }) async {
     return ForumPostDetail(
       id: postId,
-      title: 'Forum detail handoff',
+      title: '论坛详情回流',
       summary: 'Tap through to the public native detail page.',
       content: '# Native detail\n\nForum detail body.',
       contentType: 'Markdown',
@@ -394,7 +394,7 @@ class _CommentFailingForumRepository extends _BaseForumRepository {
     required int pageSize,
     String sortBy = 'default',
   }) {
-    throw const RadishApiClientException('Comments API is unreachable');
+    throw const RadishApiClientException('评论服务暂时不可用');
   }
 
   @override
@@ -403,7 +403,7 @@ class _CommentFailingForumRepository extends _BaseForumRepository {
     required int pageIndex,
     required int pageSize,
   }) {
-    throw const RadishApiClientException('Replies API is unreachable');
+    throw const RadishApiClientException('回复服务暂时不可用');
   }
 }
 

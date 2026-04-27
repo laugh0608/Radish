@@ -188,7 +188,7 @@ class ForumChildCommentController extends ChangeNotifier {
     } on FormatException catch (error) {
       _setInitialError(
         requestVersion,
-        'Unexpected child comments payload: ${error.message}',
+        '回复列表返回格式异常：${error.message}',
       );
     }
   }
@@ -243,7 +243,7 @@ class ForumChildCommentController extends ChangeNotifier {
     } on FormatException catch (error) {
       _setLoadMoreError(
         requestVersion,
-        'Unexpected child comments payload: ${error.message}',
+        '回复列表返回格式异常：${error.message}',
       );
     }
   }
@@ -288,7 +288,7 @@ class ForumChildCommentController extends ChangeNotifier {
     } on FormatException catch (error) {
       _setInitialError(
         requestVersion,
-        'Unexpected child comments payload: ${error.message}',
+        '回复列表返回格式异常：${error.message}',
       );
     }
   }

@@ -31,32 +31,32 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(
-      find.text('Forum picks'),
+      find.text('论坛精选'),
       300,
       scrollable: scrollable,
     );
-    expect(find.text('Forum picks'), findsOneWidget);
+    expect(find.text('论坛精选'), findsOneWidget);
     expect(find.text('Native discover wiring plan'), findsOneWidget);
     await tester.scrollUntilVisible(
-      find.text('Docs picks'),
+      find.text('文档精选'),
       300,
       scrollable: scrollable,
     );
-    expect(find.text('Docs picks'), findsOneWidget);
+    expect(find.text('文档精选'), findsOneWidget);
     expect(find.text('Flutter MVP overview'), findsOneWidget);
     await tester.scrollUntilVisible(
-      find.text('Shop picks'),
+      find.text('商城精选'),
       300,
       scrollable: scrollable,
     );
-    expect(find.text('Shop picks'), findsOneWidget);
+    expect(find.text('商城精选'), findsOneWidget);
     expect(find.text('Profile Rename Card'), findsOneWidget);
     await tester.scrollUntilVisible(
-      find.text('Read-only boundaries'),
+      find.text('只读边界'),
       300,
       scrollable: scrollable,
     );
-    expect(find.text('Read-only boundaries'), findsOneWidget);
+    expect(find.text('只读边界'), findsOneWidget);
   });
 
   testWidgets('renders discover error state when repository fails', (
@@ -79,9 +79,9 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Discover feed unavailable'), findsOneWidget);
-    expect(find.text('Discover API is unreachable'), findsOneWidget);
-    expect(find.text('Retry'), findsOneWidget);
+    expect(find.text('暂时无法加载发现内容'), findsOneWidget);
+    expect(find.text('发现内容服务暂时不可用'), findsOneWidget);
+    expect(find.text('重试'), findsOneWidget);
   });
 
   testWidgets('supports native tab and profile handoff actions from discover',
@@ -118,23 +118,23 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(
-      find.text('Go to forum'),
+      find.text('进入论坛'),
       200,
       scrollable: scrollable,
     );
-    await tester.tap(find.text('Go to forum'));
+    await tester.tap(find.text('进入论坛'));
     await tester.scrollUntilVisible(
-      find.text('Go to docs'),
+      find.text('进入文档'),
       200,
       scrollable: scrollable,
     );
-    await tester.tap(find.text('Go to docs'));
+    await tester.tap(find.text('进入文档'));
     await tester.scrollUntilVisible(
-      find.text('Open @luobo'),
+      find.text('打开 @luobo'),
       200,
       scrollable: scrollable,
     );
-    await tester.tap(find.text('Open @luobo'));
+    await tester.tap(find.text('打开 @luobo'));
 
     expect(forumOpened, isTrue);
     expect(docsOpened, isTrue);
@@ -189,6 +189,6 @@ class _FailingDiscoverRepository implements DiscoverRepository {
   Future<DiscoverSnapshot> getSnapshot({
     required int pageSize,
   }) {
-    throw const RadishApiClientException('Discover API is unreachable');
+    throw const RadishApiClientException('发现内容服务暂时不可用');
   }
 }

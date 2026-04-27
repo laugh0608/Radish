@@ -17,15 +17,15 @@ void main() {
       ),
     );
 
-    expect(find.text('Loading forum feed...'), findsOneWidget);
+    expect(find.text('正在加载论坛内容...'), findsOneWidget);
 
     await tester.pumpAndSettle();
 
     expect(
         find.text('How to wire Radish Flutter forum reading'), findsOneWidget);
-    expect(find.text('Top'), findsOneWidget);
-    expect(find.text('Question'), findsOneWidget);
-    expect(find.text('42 comments'), findsOneWidget);
+    expect(find.text('置顶'), findsOneWidget);
+    expect(find.text('提问'), findsOneWidget);
+    expect(find.text('42 条评论'), findsOneWidget);
   });
 
   testWidgets('renders forum error state when repository fails',
@@ -41,9 +41,9 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Forum feed unavailable'), findsOneWidget);
-    expect(find.text('Forum API is unreachable'), findsOneWidget);
-    expect(find.text('Retry'), findsOneWidget);
+    expect(find.text('暂时无法加载论坛'), findsOneWidget);
+    expect(find.text('论坛服务暂时不可用'), findsOneWidget);
+    expect(find.text('重试'), findsOneWidget);
   });
 
   testWidgets('opens author profile handoff from forum feed', (tester) async {
@@ -95,7 +95,7 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Open detail'));
+    await tester.tap(find.text('查看详情'));
     await tester.pumpAndSettle();
 
     expect(openedTargets, hasLength(1));
@@ -103,7 +103,7 @@ void main() {
     expect(openedTargets.first.initialTitle,
         'How to wire Radish Flutter forum reading');
     expect(openedTargets.first.source, ForumDetailHandoffSource.shell);
-    expect(find.text('Forum detail'), findsNothing);
+    expect(find.text('帖子详情'), findsNothing);
   });
 
   testWidgets('opens forum detail handoff target from external shell state',
@@ -136,9 +136,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(consumed, 1);
-    expect(find.text('Forum detail'), findsWidgets);
+    expect(find.text('帖子详情'), findsWidgets);
     expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
-    expect(find.text('Comments'), findsOneWidget);
+    expect(find.text('评论'), findsOneWidget);
   });
 }
 
@@ -262,14 +262,14 @@ class _FailingForumRepository implements ForumRepository {
     required int pageSize,
     required ForumFeedSort sort,
   }) {
-    throw const RadishApiClientException('Forum API is unreachable');
+    throw const RadishApiClientException('论坛服务暂时不可用');
   }
 
   @override
   Future<ForumPostDetail> getPostDetail({
     required String postId,
   }) {
-    throw const RadishApiClientException('Forum detail API is unreachable');
+    throw const RadishApiClientException('帖子详情服务暂时不可用');
   }
 
   @override
@@ -279,7 +279,7 @@ class _FailingForumRepository implements ForumRepository {
     required int pageSize,
     String sortBy = 'default',
   }) {
-    throw const RadishApiClientException('Comments API is unreachable');
+    throw const RadishApiClientException('评论服务暂时不可用');
   }
 
   @override
@@ -288,7 +288,7 @@ class _FailingForumRepository implements ForumRepository {
     required int pageIndex,
     required int pageSize,
   }) {
-    throw const RadishApiClientException('Replies API is unreachable');
+    throw const RadishApiClientException('回复服务暂时不可用');
   }
 
   @override
@@ -298,7 +298,6 @@ class _FailingForumRepository implements ForumRepository {
     required int rootPageSize,
     required int childPageSize,
   }) {
-    throw const RadishApiClientException(
-        'Comment navigation API is unreachable');
+    throw const RadishApiClientException('评论定位服务暂时不可用');
   }
 }

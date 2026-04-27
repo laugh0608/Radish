@@ -73,7 +73,8 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
         ? null
         : widget.commentId?.trim();
     widget.sessionController?.addListener(_handleSessionStateChanged);
-    _wasAuthenticated = widget.sessionController?.state.isAuthenticated ?? false;
+    _wasAuthenticated =
+        widget.sessionController?.state.isAuthenticated ?? false;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startCommentNavigationIfNeeded();
     });
@@ -100,7 +101,8 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
     if (oldWidget.sessionController != widget.sessionController) {
       oldWidget.sessionController?.removeListener(_handleSessionStateChanged);
       widget.sessionController?.addListener(_handleSessionStateChanged);
-      _wasAuthenticated = widget.sessionController?.state.isAuthenticated ?? false;
+      _wasAuthenticated =
+          widget.sessionController?.state.isAuthenticated ?? false;
     }
 
     if (oldWidget.postId != widget.postId) {
@@ -144,7 +146,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
       builder: (context, child) {
         final state = _controller.state;
         final detail = state.detail;
-        final title = detail?.title ?? widget.initialTitle ?? 'Forum detail';
+        final title = detail?.title ?? widget.initialTitle ?? '帖子详情';
         final commentState = _commentController.state;
         final sessionState = widget.sessionController?.state;
         final authState = widget.authController?.state;
@@ -172,32 +174,30 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
               padding: const EdgeInsets.all(20),
               children: [
                 Text(
-                  'Forum detail',
+                  '帖子详情',
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'This batch extends the Flutter forum tab from public feed reading into public post detail reading. Comments, reactions, and author workflows stay outside the current native slice.',
+                  '阅读帖子正文、基础信息和公开评论。当前阶段保持只读，不开放评论提交或互动操作。',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 20),
                 PhaseScopeCard(
-                  title: 'Forum detail contract',
+                  title: '当前能力',
                   items: [
-                    'Environment: ${widget.environment.name}',
-                    'Source APIs: ${widget.environment.apiBaseUrl}/api/v1/Post/GetList + /api/v1/Post/GetById/{postId} + /api/v1/Comment/GetRootComments + /api/v1/Comment/GetChildComments',
-                    'Handoff source: ${widget.handoffSource.label}',
-                    'Scope: anonymous read-only detail, root/child comment pagination, native back navigation, no interaction submission',
-                    detail == null
-                        ? 'Detail state: ${state.status.name}'
-                        : 'Reading /forum/post/${detail.id}',
+                    '当前环境：${widget.environment.name}',
+                    '打开来源：${widget.handoffSource.label}',
+                    '支持帖子正文、根评论、子评论分页和原生返回',
+                    '当前不支持评论提交、点赞、投票或编辑',
+                    detail == null ? '正在准备帖子详情' : '正在阅读帖子 ${detail.id}',
                     commentState.isIdle
-                        ? 'Comment state: idle'
+                        ? '评论暂未加载'
                         : commentState.isLoading
-                            ? 'Comment state: loading'
+                            ? '正在加载评论'
                             : commentState.isError
-                                ? 'Comment state: error'
-                                : 'Loaded ${commentState.comments.length} / ${commentState.totalCount} root comments',
+                                ? '评论加载失败'
+                                : '已加载 ${commentState.comments.length} / ${commentState.totalCount} 条根评论',
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -230,15 +230,14 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                   child: FilledButton.tonalIcon(
                     onPressed: state.isLoading ? null : _controller.refresh,
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Refresh detail'),
+                    label: const Text('刷新详情'),
                   ),
                 ),
                 const SizedBox(height: 16),
                 if (state.isLoading) const _ForumDetailLoadingState(),
                 if (state.isError)
                   _ForumDetailErrorState(
-                    message:
-                        state.errorMessage ?? 'Failed to load forum detail.',
+                    message: state.errorMessage ?? '无法加载帖子详情。',
                     onRetry: _controller.refresh,
                   ),
                 if (state.isReady && detail != null)
@@ -265,7 +264,8 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
   }
 
   void _handleSessionStateChanged() {
-    final isAuthenticated = widget.sessionController?.state.isAuthenticated ?? false;
+    final isAuthenticated =
+        widget.sessionController?.state.isAuthenticated ?? false;
     if (!_wasAuthenticated && isAuthenticated && _requestedSignInFromDetail) {
       _requestedSignInFromDetail = false;
       final onConsume = widget.onConsumeActiveDetailLoginTarget;
@@ -347,8 +347,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
       }
 
       setState(() {
-        _navigationNotice =
-            'Target comment could not be located yet. The post detail is open instead.';
+        _navigationNotice = '暂时无法定位目标评论，已先打开帖子详情。';
         _expandedRootCommentId = null;
         _expandedChildPageIndex = null;
         _pendingNavigationSignature = null;
@@ -359,8 +358,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
       }
 
       setState(() {
-        _navigationNotice =
-            'Target comment could not be located yet. The post detail is open instead.';
+        _navigationNotice = '暂时无法定位目标评论，已先打开帖子详情。';
         _expandedRootCommentId = null;
         _expandedChildPageIndex = null;
         _pendingNavigationSignature = null;
@@ -414,7 +412,7 @@ class _ForumDetailLoadingState extends StatelessWidget {
             children: [
               CircularProgressIndicator(),
               SizedBox(height: 16),
-              Text('Loading forum detail...'),
+              Text('正在加载帖子详情...'),
             ],
           ),
         ),
@@ -441,7 +439,7 @@ class _ForumDetailErrorState extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Forum detail unavailable',
+              '暂时无法加载帖子详情',
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 12),
@@ -450,7 +448,7 @@ class _ForumDetailErrorState extends StatelessWidget {
             FilledButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              label: const Text('重试'),
             ),
           ],
         ),
@@ -477,23 +475,21 @@ class _ForumDetailSignInCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Sign in from this detail',
+              '登录后继续阅读',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 10),
             const Text(
-              'Forum detail stays read-only for now, but sign-in should keep the current post and comment context so native handoff does not break after the browser returns.',
+              '登录会保留当前帖子和评论位置，浏览器返回后可继续当前上下文。',
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: isBusy ? null : onRequestSignIn,
               icon: Icon(
-                isBusy
-                    ? Icons.hourglass_top_outlined
-                    : Icons.login_outlined,
+                isBusy ? Icons.hourglass_top_outlined : Icons.login_outlined,
               ),
               label: Text(
-                isBusy ? 'Opening sign-in...' : 'Sign in to keep this context',
+                isBusy ? '正在打开登录...' : '登录并保留当前位置',
               ),
             ),
           ],
@@ -528,7 +524,7 @@ class _ForumDetailAuthNotice extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Sign-in needs attention',
+              '登录需要处理',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 10),
@@ -540,12 +536,12 @@ class _ForumDetailAuthNotice extends StatelessWidget {
               children: [
                 TextButton(
                   onPressed: onDismiss,
-                  child: const Text('Dismiss'),
+                  child: const Text('关闭'),
                 ),
                 FilledButton.tonal(
                   onPressed: isBusy ? null : onRetry,
                   child: Text(
-                    isBusy ? 'Opening sign-in...' : 'Retry sign-in',
+                    isBusy ? '正在打开登录...' : '重试登录',
                   ),
                 ),
               ],
@@ -601,7 +597,7 @@ class _ForumDetailContent extends StatelessWidget {
               runSpacing: 8,
               children: [
                 const Chip(
-                  label: Text('Public forum detail'),
+                  label: Text('公开帖子'),
                   visualDensity: VisualDensity.compact,
                 ),
                 Chip(
@@ -625,7 +621,7 @@ class _ForumDetailContent extends StatelessWidget {
                   ),
                 if (isAuthenticated)
                   const Chip(
-                    label: Text('Signed in'),
+                    label: Text('已登录'),
                     visualDensity: VisualDensity.compact,
                   ),
               ],
@@ -649,14 +645,14 @@ class _ForumDetailContent extends StatelessWidget {
               children: [
                 _ForumMetaText(
                   icon: Icons.person_outline,
-                  text: detail.authorName ?? 'User ${detail.authorId}',
+                  text: detail.authorName ?? '用户 ${detail.authorId}',
                   onTap: onOpenProfileUser == null
                       ? null
                       : () => onOpenProfileUser!(detail.authorId),
                 ),
                 _ForumMetaText(
                   icon: Icons.folder_outlined,
-                  text: detail.categoryName ?? 'Category ${detail.categoryId}',
+                  text: detail.categoryName ?? '分类 ${detail.categoryId}',
                 ),
                 _ForumMetaText(
                   icon: Icons.schedule_outlined,
@@ -665,7 +661,7 @@ class _ForumDetailContent extends StatelessWidget {
                 if (detail.updateTime != null && detail.updateTime!.isNotEmpty)
                   _ForumMetaText(
                     icon: Icons.update_outlined,
-                    text: 'Updated ${_formatDetailTime(detail.updateTime)}',
+                    text: '更新于 ${_formatDetailTime(detail.updateTime)}',
                   ),
               ],
             ),
@@ -676,20 +672,20 @@ class _ForumDetailContent extends StatelessWidget {
               children: [
                 _ForumMetaText(
                   icon: Icons.visibility_outlined,
-                  text: '${detail.viewCount} views',
+                  text: '${detail.viewCount} 次浏览',
                 ),
                 _ForumMetaText(
                   icon: Icons.thumb_up_alt_outlined,
-                  text: '${detail.likeCount} likes',
+                  text: '${detail.likeCount} 个赞',
                 ),
                 _ForumMetaText(
                   icon: Icons.chat_bubble_outline,
-                  text: '${detail.commentCount} comments',
+                  text: '${detail.commentCount} 条评论',
                 ),
                 if (detail.isQuestion)
                   _ForumMetaText(
                     icon: Icons.question_answer_outlined,
-                    text: '${detail.answerCount} answers',
+                    text: '${detail.answerCount} 个回答',
                   ),
               ],
             ),
@@ -710,13 +706,13 @@ class _ForumDetailContent extends StatelessWidget {
             ],
             const SizedBox(height: 20),
             Text(
-              'Post body',
+              '正文',
               style: textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
             ReadOnlyMarkdownView(
               content: detail.content,
-              emptyText: 'No public content is available for this post.',
+              emptyText: '这篇帖子暂无公开正文。',
             ),
             const SizedBox(height: 24),
             _ForumCommentSection(
@@ -768,32 +764,31 @@ class _ForumCommentSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Comments',
+          '评论',
           style: textTheme.titleMedium,
         ),
         const SizedBox(height: 8),
         Text(
-          'This native slice keeps comment reading read-only: root comments, child comment pagination, and lightweight reply context only.',
+          '当前仅支持阅读评论和回复，不支持提交、点赞或编辑。',
           style: textTheme.bodyMedium,
         ),
         const SizedBox(height: 12),
         if (state.isLoading) const _ForumCommentLoadingState(),
         if (state.isError)
           _ForumCommentErrorState(
-            message: state.errorMessage ?? 'Failed to load forum comments.',
+            message: state.errorMessage ?? '无法加载帖子评论。',
             onRetry: onRetry,
           ),
         if (state.isReady && state.comments.isEmpty)
           const Card(
             child: Padding(
               padding: EdgeInsets.all(20),
-              child:
-                  Text('No public comments are available for this post yet.'),
+              child: Text('这篇帖子暂无公开评论。'),
             ),
           ),
         if (state.isReady && state.comments.isNotEmpty) ...[
           Text(
-            'Loaded ${state.comments.length} / ${state.totalCount} root comments',
+            '已加载 ${state.comments.length} / ${state.totalCount} 条根评论',
             style: textTheme.bodySmall,
           ),
           const SizedBox(height: 12),
@@ -833,9 +828,7 @@ class _ForumCommentSection extends StatelessWidget {
                       )
                     : const Icon(Icons.expand_more),
                 label: Text(
-                  state.isLoadingMore
-                      ? 'Loading more comments...'
-                      : 'Load more comments',
+                  state.isLoadingMore ? '正在加载更多评论...' : '加载更多评论',
                 ),
               ),
             ),
@@ -862,7 +855,7 @@ class _ForumCommentLoadingState extends StatelessWidget {
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
             SizedBox(width: 12),
-            Text('Loading comments...'),
+            Text('正在加载评论...'),
           ],
         ),
       ),
@@ -888,7 +881,7 @@ class _ForumCommentErrorState extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Comments unavailable',
+              '暂时无法加载评论',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
@@ -897,7 +890,7 @@ class _ForumCommentErrorState extends StatelessWidget {
             FilledButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
-              label: const Text('Retry comments'),
+              label: const Text('重试评论'),
             ),
           ],
         ),
@@ -956,12 +949,12 @@ class _ForumCommentCard extends StatelessWidget {
                 ),
                 _ForumMetaText(
                   icon: Icons.thumb_up_alt_outlined,
-                  text: '${comment.likeCount} likes',
+                  text: '${comment.likeCount} 个赞',
                 ),
                 if (comment.replyCount > 0)
                   _ForumMetaText(
                     icon: Icons.chat_bubble_outline,
-                    text: '${comment.replyCount} replies',
+                    text: '${comment.replyCount} 条回复',
                   ),
               ],
             ),
@@ -984,7 +977,7 @@ class _ForumCommentCard extends StatelessWidget {
                 comment.replyToUserName!.isNotEmpty) ...[
               const SizedBox(height: 12),
               Text(
-                'Reply to @${comment.replyToUserName}',
+                '回复 @${comment.replyToUserName}',
                 style: textTheme.labelMedium,
               ),
             ],
@@ -1155,7 +1148,7 @@ class _ForumChildCommentSectionState extends State<_ForumChildCommentSection> {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Text(
-                    'Replies ${widget.parentComment.childrenTotal}',
+                    '回复 ${widget.parentComment.childrenTotal}',
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                   OutlinedButton.icon(
@@ -1163,7 +1156,7 @@ class _ForumChildCommentSectionState extends State<_ForumChildCommentSection> {
                     icon: Icon(
                       _isExpanded ? Icons.expand_less : Icons.expand_more,
                     ),
-                    label: Text(_isExpanded ? 'Hide replies' : 'Show replies'),
+                    label: Text(_isExpanded ? '收起回复' : '查看回复'),
                   ),
                 ],
               ),
@@ -1172,19 +1165,18 @@ class _ForumChildCommentSectionState extends State<_ForumChildCommentSection> {
                 if (state.isLoading)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 8),
-                    child: Text('Loading replies...'),
+                    child: Text('正在加载回复...'),
                   ),
                 if (state.isError)
                   _ForumInlineErrorCard(
-                    title: 'Replies unavailable',
-                    message:
-                        state.errorMessage ?? 'Failed to load child comments.',
-                    retryLabel: 'Retry replies',
+                    title: '暂时无法加载回复',
+                    message: state.errorMessage ?? '无法加载子评论。',
+                    retryLabel: '重试回复',
                     onRetry: _controller.refresh,
                   ),
                 if (state.isReady && state.comments.isNotEmpty) ...[
                   Text(
-                    'Loaded ${state.comments.length} / ${state.totalCount} replies',
+                    '已加载 ${state.comments.length} / ${state.totalCount} 条回复',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   const SizedBox(height: 12),
@@ -1203,15 +1195,15 @@ class _ForumChildCommentSectionState extends State<_ForumChildCommentSection> {
                     widget.parentComment.childrenTotal == 0)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 8),
-                    child: Text('No public replies are available yet.'),
+                    child: Text('暂无公开回复。'),
                   ),
                 if (state.loadMoreErrorMessage != null &&
                     state.loadMoreErrorMessage!.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   _ForumInlineErrorCard(
-                    title: 'More replies unavailable',
+                    title: '暂时无法加载更多回复',
                     message: state.loadMoreErrorMessage!,
-                    retryLabel: 'Retry loading more',
+                    retryLabel: '重试加载更多',
                     onRetry: _controller.loadMore,
                   ),
                 ],
@@ -1228,9 +1220,7 @@ class _ForumChildCommentSectionState extends State<_ForumChildCommentSection> {
                           )
                         : const Icon(Icons.expand_more),
                     label: Text(
-                      state.isLoadingMore
-                          ? 'Loading more replies...'
-                          : 'Load more replies',
+                      state.isLoadingMore ? '正在加载更多回复...' : '加载更多回复',
                     ),
                   ),
                 ],
@@ -1289,7 +1279,7 @@ class _ForumChildCommentCard extends StatelessWidget {
                 ),
                 _ForumMetaText(
                   icon: Icons.thumb_up_alt_outlined,
-                  text: '${comment.likeCount} likes',
+                  text: '${comment.likeCount} 个赞',
                 ),
               ],
             ),
@@ -1297,7 +1287,7 @@ class _ForumChildCommentCard extends StatelessWidget {
                 comment.replyToUserName!.isNotEmpty) ...[
               const SizedBox(height: 10),
               Text(
-                'Reply to @${comment.replyToUserName}',
+                '回复 @${comment.replyToUserName}',
                 style: Theme.of(context).textTheme.labelMedium,
               ),
             ],
@@ -1430,7 +1420,7 @@ class _ForumMetaText extends StatelessWidget {
 
 String _formatDetailTime(String? value) {
   if (value == null || value.isEmpty) {
-    return 'Unknown time';
+    return '时间未知';
   }
 
   final parsed = DateTime.tryParse(value);

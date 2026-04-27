@@ -66,7 +66,7 @@ class HttpRadishApiClient implements RadishApiClient {
 
       if (payload is! Map) {
         throw RadishApiClientException(
-          'Unexpected response payload from ${uri.path}',
+          '接口返回格式异常：${uri.path}',
           statusCode: response.statusCode,
         );
       }
@@ -76,7 +76,7 @@ class HttpRadishApiClient implements RadishApiClient {
       final isSuccess = envelope['isSuccess'] == true;
       final statusCode =
           _readInt(envelope['statusCode']) ?? response.statusCode;
-      final message = envelope['messageInfo']?.toString() ?? 'Request failed';
+      final message = envelope['messageInfo']?.toString() ?? '请求失败';
       final code = envelope['code']?.toString();
 
       if (!isSuccess) {
@@ -90,11 +90,11 @@ class HttpRadishApiClient implements RadishApiClient {
       return decode(envelope['responseData']);
     } on SocketException catch (error) {
       throw RadishApiClientException(
-        'Network error: ${error.message}',
+        '网络连接失败：${error.message}',
       );
     } on FormatException catch (error) {
       throw RadishApiClientException(
-        'Failed to decode response: ${error.message}',
+        '响应解析失败：${error.message}',
       );
     } finally {
       client.close(force: true);

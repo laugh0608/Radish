@@ -60,15 +60,13 @@ class SessionRefreshService {
             .where((item) => item.isNotEmpty)
             .join(': ');
         throw SessionRefreshException(
-          detail.isEmpty
-              ? 'Refresh token request failed with status ${response.statusCode}'
-              : detail,
+          detail.isEmpty ? '刷新登录会话失败，状态码 ${response.statusCode}' : detail,
         );
       }
 
       if (payload is! Map) {
         throw const SessionRefreshException(
-          'Refresh token response payload is invalid.',
+          '刷新登录会话返回内容无效。',
         );
       }
 
@@ -77,14 +75,14 @@ class SessionRefreshService {
           payload['refresh_token']?.toString() ?? session.refreshToken;
       if (accessToken == null || accessToken.isEmpty) {
         throw const SessionRefreshException(
-          'Refresh token response is missing access_token.',
+          '刷新登录会话返回内容缺少 access_token。',
         );
       }
 
       final decoded = decodeAccessToken(accessToken);
       if (decoded == null) {
         throw const SessionRefreshException(
-          'Failed to decode refreshed access token.',
+          '无法解析刷新后的 access token。',
         );
       }
 
@@ -95,10 +93,10 @@ class SessionRefreshService {
         expiresAt: decoded.expiresAt,
       );
     } on SocketException catch (error) {
-      throw SessionRefreshException('Network error: ${error.message}');
+      throw SessionRefreshException('网络错误：${error.message}');
     } on FormatException catch (error) {
       throw SessionRefreshException(
-        'Failed to decode refresh token response: ${error.message}',
+        '无法解析登录刷新响应：${error.message}',
       );
     } finally {
       client.close(force: true);

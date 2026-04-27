@@ -108,12 +108,12 @@ class _RadishLaunchGate extends StatelessWidget {
                 const CircularProgressIndicator(),
                 const SizedBox(height: 24),
                 Text(
-                  'Restoring session',
+                  '正在恢复会话',
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'The native shell is checking whether a reusable session is already available before entering the app.',
+                  '进入应用前，正在检查本地是否已有可复用的登录会话。',
                   style: Theme.of(context).textTheme.bodyMedium,
                   textAlign: TextAlign.center,
                 ),

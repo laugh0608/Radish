@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class ReadOnlyMarkdownView extends StatelessWidget {
   const ReadOnlyMarkdownView({
     required this.content,
-    this.emptyText = 'No content is available.',
+    this.emptyText = '暂无内容。',
     super.key,
   });
 

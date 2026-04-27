@@ -126,7 +126,7 @@ class DocsFeedController extends ChangeNotifier {
       _setError(
         requestVersion,
         pageIndex,
-        'Unexpected docs payload: ${error.message}',
+        '文档列表返回格式异常：${error.message}',
       );
     }
   }

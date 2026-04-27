@@ -491,22 +491,22 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
               NavigationDestination(
                 icon: Icon(Icons.explore_outlined),
                 selectedIcon: Icon(Icons.explore),
-                label: 'Discover',
+                label: '发现',
               ),
               NavigationDestination(
                 icon: Icon(Icons.forum_outlined),
                 selectedIcon: Icon(Icons.forum),
-                label: 'Forum',
+                label: '论坛',
               ),
               NavigationDestination(
                 icon: Icon(Icons.description_outlined),
                 selectedIcon: Icon(Icons.description),
-                label: 'Docs',
+                label: '文档',
               ),
               NavigationDestination(
                 icon: Icon(Icons.person_outline),
                 selectedIcon: Icon(Icons.person),
-                label: 'Profile',
+                label: '我的',
               ),
             ],
           ),
@@ -530,13 +530,13 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
             if (_recentBrowseHandoffTarget != null)
               _ShellStatusChip(
                 icon: Icons.history_outlined,
-                label: 'Resume forum',
+                label: '继续阅读论坛',
                 onTap: _resumeRecentBrowseHandoff,
               ),
             if (_latestForumNotificationTarget != null)
               _ShellStatusChip(
                 icon: Icons.notifications_outlined,
-                label: 'Forum notification',
+                label: '查看论坛通知',
                 onTap: _openLatestForumNotification,
               ),
             _ShellStatusChip(
@@ -546,7 +546,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
               icon: sessionState.isAuthenticated
                   ? Icons.verified_user_outlined
                   : Icons.person_outline,
-              label: sessionState.isAuthenticated ? 'Signed in' : 'Guest',
+              label: sessionState.isAuthenticated ? '已登录' : '游客',
             ),
             _ShellStatusChip(
               icon: authState.isOpeningLogout
@@ -557,14 +557,14 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
                           ? Icons.logout_outlined
                           : Icons.login_outlined,
               label: authState.isOpeningLogin
-                  ? 'Opening sign-in'
+                  ? '正在打开登录'
                   : authState.isRedeemingCode
-                      ? 'Completing sign-in'
+                      ? '正在完成登录'
                       : authState.isOpeningLogout
-                          ? 'Signing out'
+                          ? '正在退出'
                           : sessionState.isAuthenticated
-                              ? 'Sign out'
-                              : 'Sign in',
+                              ? '退出登录'
+                              : '登录',
               onTap: authState.isBusy
                   ? null
                   : sessionState.isAuthenticated
@@ -578,7 +578,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
                 message: sessionState.lastErrorMessage!,
                 child: const _ShellStatusChip(
                   icon: Icons.warning_amber_outlined,
-                  label: 'Session expired',
+                  label: '会话已失效',
                 ),
               ),
             if (authState.lastErrorMessage != null &&
@@ -587,7 +587,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
                 message: authState.lastErrorMessage!,
                 child: const _ShellStatusChip(
                   icon: Icons.error_outline,
-                  label: 'Auth issue',
+                  label: '认证异常',
                 ),
               ),
           ],
@@ -604,18 +604,16 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     if (authState.isOpeningLogin) {
       return const _ShellNoticeBanner(
         severity: _ShellNoticeSeverity.info,
-        title: 'Complete sign-in in the browser',
-        message:
-            'The native shell is waiting for the browser to finish OIDC sign-in and return to the app.',
+        title: '请在浏览器中完成登录',
+        message: '应用正在等待浏览器完成登录并返回 Radish。',
       );
     }
 
     if (authState.isRedeemingCode) {
       return const _ShellNoticeBanner(
         severity: _ShellNoticeSeverity.info,
-        title: 'Completing sign-in',
-        message:
-            'The native shell is redeeming the authorization code and restoring the authenticated session.',
+        title: '正在完成登录',
+        message: '应用正在恢复登录会话，请稍候。',
       );
     }
 
@@ -623,19 +621,19 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     if (authErrorMessage != null && authErrorMessage.isNotEmpty) {
       return _ShellNoticeBanner(
         severity: _ShellNoticeSeverity.error,
-        title: 'Sign-in needs attention',
+        title: '登录需要处理',
         message: authErrorMessage,
         actions: [
           TextButton(
             onPressed: widget.authController.dismissError,
-            child: const Text('Dismiss'),
+            child: const Text('关闭'),
           ),
           FilledButton.tonal(
             onPressed: sessionState.isAuthenticated
                 ? widget.authController.startLogout
                 : _startLoginForCurrentContext,
             child: Text(
-              sessionState.isAuthenticated ? 'Retry sign-out' : 'Retry sign-in',
+              sessionState.isAuthenticated ? '重试退出' : '重试登录',
             ),
           ),
         ],

@@ -48,12 +48,12 @@ void main() {
       ),
     );
 
-    expect(find.text('Restoring session'), findsOneWidget);
+    expect(find.text('正在恢复会话'), findsOneWidget);
 
     await tester.pump();
 
     expect(find.text('Radish Flutter'), findsOneWidget);
-    expect(find.text('Guest'), findsOneWidget);
+    expect(find.text('游客'), findsOneWidget);
   });
 
   testWidgets('renders shell status strip on narrow screens without overflow',
@@ -86,8 +86,8 @@ void main() {
 
     expect(find.text('Radish Flutter'), findsOneWidget);
     expect(find.text('DEVELOPMENT'), findsOneWidget);
-    expect(find.text('Guest'), findsOneWidget);
-    expect(find.text('Sign in'), findsOneWidget);
+    expect(find.text('游客'), findsOneWidget);
+    expect(find.text('登录'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -127,11 +127,11 @@ void main() {
     );
 
     await tester.pump();
-    await tester.tap(find.text('Profile'));
+    await tester.tap(find.text('我的'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Signed in'), findsOneWidget);
-    expect(find.text('Restored session for user user-42'), findsOneWidget);
+    expect(find.text('已登录'), findsOneWidget);
+    expect(find.text('已登录用户 user-42'), findsOneWidget);
   });
 
   testWidgets('discover handoff opens guest profile target in shell',
@@ -164,17 +164,16 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(
-      find.text('Open @luobo'),
+      find.text('打开 @luobo'),
       200,
       scrollable: scrollable,
     );
-    await tester.tap(find.text('Open @luobo'));
+    await tester.tap(find.text('打开 @luobo'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Profile'), findsWidgets);
-    expect(find.text('Guest mode is reading public profile user-9'),
-        findsOneWidget);
-    expect(find.text('User user-9'), findsWidgets);
+    expect(find.text('我的'), findsWidgets);
+    expect(find.text('正在以游客身份阅读公开主页 user-9'), findsOneWidget);
+    expect(find.text('用户 user-9'), findsWidgets);
   });
 
   testWidgets('refreshes expired session before entering shell',
@@ -226,8 +225,8 @@ void main() {
 
     await tester.pump();
 
-    expect(find.text('Signed in'), findsOneWidget);
-    expect(find.text('Guest'), findsNothing);
+    expect(find.text('已登录'), findsOneWidget);
+    expect(find.text('游客'), findsNothing);
   });
 
   testWidgets('falls back to guest shell when refresh fails', (tester) async {
@@ -269,8 +268,8 @@ void main() {
 
     await tester.pump();
 
-    expect(find.text('Guest'), findsOneWidget);
-    expect(find.text('Session expired'), findsOneWidget);
+    expect(find.text('游客'), findsOneWidget);
+    expect(find.text('会话已失效'), findsOneWidget);
   });
 
   testWidgets('native OIDC callback redeems a session into the shell',
@@ -316,11 +315,11 @@ void main() {
 
     await tester.pump();
     await tester.pump();
-    await tester.tap(find.text('Profile'));
+    await tester.tap(find.text('我的'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Signed in'), findsOneWidget);
-    expect(find.text('Restored session for user user-88'), findsOneWidget);
+    expect(find.text('已登录'), findsOneWidget);
+    expect(find.text('已登录用户 user-88'), findsOneWidget);
   });
 
   testWidgets('shows a visible shell notice when browser sign-in is canceled',
@@ -354,14 +353,14 @@ void main() {
     await authController.consumePendingCallback();
     await tester.pumpAndSettle();
 
-    expect(find.text('Sign-in needs attention'), findsOneWidget);
+    expect(find.text('登录需要处理'), findsOneWidget);
     expect(
       find.text(
-        'Sign-in was canceled before the browser returned to the app.',
+        '浏览器返回应用前，登录已取消。',
       ),
       findsOneWidget,
     );
-    expect(find.text('Retry sign-in'), findsOneWidget);
+    expect(find.text('重试登录'), findsOneWidget);
   });
 
   testWidgets('maps access_denied callback into a friendly auth notice',
@@ -399,14 +398,14 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('Sign-in needs attention'), findsOneWidget);
+    expect(find.text('登录需要处理'), findsOneWidget);
     expect(
-      find.text('Sign-in was canceled from the browser.'),
+      find.text('已在浏览器中取消登录。'),
       findsOneWidget,
     );
-    await tester.tap(find.text('Dismiss'));
+    await tester.tap(find.text('关闭'));
     await tester.pumpAndSettle();
-    expect(find.text('Sign-in needs attention'), findsNothing);
+    expect(find.text('登录需要处理'), findsNothing);
   });
 
   testWidgets('profile sign-in returns to the original profile tab',
@@ -452,11 +451,11 @@ void main() {
     );
 
     await tester.pump();
-    await tester.tap(find.text('Profile'));
+    await tester.tap(find.text('我的'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Guest boundary'), findsOneWidget);
-    await tester.tap(find.text('Sign in with OIDC'));
+    expect(find.text('游客模式'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, '登录'));
     await tester.pumpAndSettle();
 
     gateway.setPendingCallback(
@@ -469,9 +468,9 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('Profile'), findsWidgets);
-    expect(find.text('Restored session for user user-108'), findsOneWidget);
-    expect(find.text('Signed in'), findsOneWidget);
+    expect(find.text('我的'), findsWidgets);
+    expect(find.text('已登录用户 user-108'), findsOneWidget);
+    expect(find.text('已登录'), findsOneWidget);
   });
 
   testWidgets('persisted profile sign-in target survives shell rebuild',
@@ -522,10 +521,10 @@ void main() {
     await pumpApp();
 
     await tester.pump();
-    await tester.tap(find.text('Profile'));
+    await tester.tap(find.text('我的'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Sign in with OIDC'));
+    await tester.tap(find.widgetWithText(FilledButton, '登录'));
     await tester.pumpAndSettle();
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -545,9 +544,9 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('Profile'), findsWidgets);
-    expect(find.text('Restored session for user user-208'), findsOneWidget);
-    expect(find.text('Signed in'), findsOneWidget);
+    expect(find.text('我的'), findsWidgets);
+    expect(find.text('已登录用户 user-208'), findsOneWidget);
+    expect(find.text('已登录'), findsOneWidget);
   });
 
   testWidgets('retry sign-in resumes forum detail target after cancellation',
@@ -593,10 +592,10 @@ void main() {
     );
 
     await tester.pump();
-    await tester.tap(find.text('Forum'));
+    await tester.tap(find.text('论坛'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Open detail'));
+    await tester.tap(find.text('查看详情'));
     await tester.pump();
     await tester.pumpAndSettle();
 
@@ -604,14 +603,14 @@ void main() {
     await tester.pageBack();
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Sign in'));
+    await tester.tap(find.text('登录'));
     await tester.pumpAndSettle();
     await authController.consumePendingCallback();
     await tester.pumpAndSettle();
 
-    expect(find.text('Sign-in needs attention'), findsOneWidget);
+    expect(find.text('登录需要处理'), findsOneWidget);
     expect(
-      find.text('Sign-in was canceled before the browser returned to the app.'),
+      find.text('浏览器返回应用前，登录已取消。'),
       findsOneWidget,
     );
 
@@ -621,15 +620,15 @@ void main() {
         code: 'forum-login-code',
       ),
     );
-    await tester.tap(find.text('Retry sign-in'));
+    await tester.tap(find.text('重试登录'));
     await tester.pumpAndSettle();
     await authController.consumePendingCallback();
     await tester.pump();
     await tester.pumpAndSettle();
 
     expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
-    expect(find.text('Browse history handoff'), findsWidgets);
-    expect(find.text('Restored session for user user-109'), findsNothing);
+    expect(find.text('继续阅读'), findsWidgets);
+    expect(find.text('已登录用户 user-109'), findsNothing);
   });
 
   testWidgets('persisted forum sign-in target survives shell rebuild',
@@ -680,10 +679,10 @@ void main() {
     await pumpApp();
 
     await tester.pump();
-    await tester.tap(find.text('Forum'));
+    await tester.tap(find.text('论坛'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Open detail'));
+    await tester.tap(find.text('查看详情'));
     await tester.pump();
     await tester.pumpAndSettle();
 
@@ -691,7 +690,7 @@ void main() {
     await tester.pageBack();
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Sign in'));
+    await tester.tap(find.text('登录'));
     await tester.pumpAndSettle();
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -712,7 +711,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
-    expect(find.text('Browse history handoff'), findsWidgets);
+    expect(find.text('继续阅读'), findsWidgets);
   });
 
   testWidgets('forum detail sign-in keeps current detail context',
@@ -758,23 +757,23 @@ void main() {
     );
 
     await tester.pump();
-    await tester.tap(find.text('Forum'));
+    await tester.tap(find.text('论坛'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Open detail'));
+    await tester.tap(find.text('查看详情'));
     await tester.pump();
     await tester.pumpAndSettle();
 
     expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
-    expect(find.text('Sign in to keep this context'), findsOneWidget);
+    expect(find.text('登录并保留当前位置'), findsOneWidget);
 
-    await tester.tap(find.text('Sign in to keep this context'));
+    await tester.tap(find.text('登录并保留当前位置'));
     await tester.pumpAndSettle();
     await authController.consumePendingCallback();
     await tester.pumpAndSettle();
 
-    expect(find.text('Sign-in needs attention'), findsOneWidget);
-    expect(find.text('Retry sign-in'), findsOneWidget);
+    expect(find.text('登录需要处理'), findsOneWidget);
+    expect(find.text('重试登录'), findsOneWidget);
 
     gateway.setPendingCallback(
       const NativeAuthCallbackPayload(
@@ -782,15 +781,15 @@ void main() {
         code: 'forum-detail-login-code',
       ),
     );
-    await tester.tap(find.text('Retry sign-in'));
+    await tester.tap(find.text('重试登录'));
     await tester.pumpAndSettle();
     await authController.consumePendingCallback();
     await tester.pump();
     await tester.pumpAndSettle();
 
     expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
-    expect(find.text('Signed in'), findsWidgets);
-    expect(find.text('Sign in to keep this context'), findsNothing);
+    expect(find.text('已登录'), findsWidgets);
+    expect(find.text('登录并保留当前位置'), findsNothing);
   });
 
   testWidgets(
@@ -848,20 +847,20 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
-    expect(find.text('Notification handoff'), findsWidgets);
+    expect(find.text('通知回流'), findsWidgets);
     expect(find.text('Big id root comment'), findsOneWidget);
-    expect(find.text('Sign in to keep this context'), findsOneWidget);
+    expect(find.text('登录并保留当前位置'), findsOneWidget);
 
-    await tester.tap(find.text('Sign in to keep this context'));
+    await tester.tap(find.text('登录并保留当前位置'));
     await tester.pumpAndSettle();
     await authController.consumePendingCallback();
     await tester.pumpAndSettle();
 
     expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
-    expect(find.text('Notification handoff'), findsWidgets);
+    expect(find.text('通知回流'), findsWidgets);
     expect(find.text('Big id root comment'), findsOneWidget);
-    expect(find.text('Sign-in needs attention'), findsWidgets);
-    expect(find.text('Retry sign-in'), findsWidgets);
+    expect(find.text('登录需要处理'), findsWidgets);
+    expect(find.text('重试登录'), findsWidgets);
 
     gateway.setPendingCallback(
       const NativeAuthCallbackPayload(
@@ -869,17 +868,17 @@ void main() {
         code: 'notification-detail-login-code',
       ),
     );
-    await tester.tap(find.text('Retry sign-in').first);
+    await tester.tap(find.text('重试登录').first);
     await tester.pumpAndSettle();
     await authController.consumePendingCallback();
     await tester.pump();
     await tester.pumpAndSettle();
 
     expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
-    expect(find.text('Notification handoff'), findsWidgets);
+    expect(find.text('通知回流'), findsWidgets);
     expect(find.text('Big id root comment'), findsOneWidget);
-    expect(find.text('Signed in'), findsWidgets);
-    expect(find.text('Sign in to keep this context'), findsNothing);
+    expect(find.text('已登录'), findsWidgets);
+    expect(find.text('登录并保留当前位置'), findsNothing);
   });
 
   testWidgets('forum feed opens native public detail page', (tester) async {
@@ -907,18 +906,18 @@ void main() {
     );
 
     await tester.pump();
-    await tester.tap(find.text('Forum'));
+    await tester.tap(find.text('论坛'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Forum detail handoff'), findsOneWidget);
+    expect(find.text('论坛详情回流'), findsOneWidget);
 
-    await tester.tap(find.text('Open detail'));
+    await tester.tap(find.text('查看详情'));
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('Forum detail'), findsWidgets);
+    expect(find.text('帖子详情'), findsWidgets);
     expect(find.text('/forum/post/post-42'), findsOneWidget);
-    expect(find.text('Post body'), findsOneWidget);
+    expect(find.text('正文'), findsOneWidget);
   });
 
   testWidgets('forum author handoff opens native public profile tab',
@@ -947,16 +946,15 @@ void main() {
     );
 
     await tester.pump();
-    await tester.tap(find.text('Forum'));
+    await tester.tap(find.text('论坛'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('luobo').first);
     await tester.pumpAndSettle();
 
-    expect(find.text('Profile'), findsWidgets);
-    expect(find.text('Guest mode is reading public profile user-9'),
-        findsOneWidget);
-    expect(find.text('User user-9'), findsWidgets);
+    expect(find.text('我的'), findsWidgets);
+    expect(find.text('正在以游客身份阅读公开主页 user-9'), findsOneWidget);
+    expect(find.text('用户 user-9'), findsWidgets);
   });
 
   testWidgets('shell forum handoff opens native detail and targets comment',
@@ -983,7 +981,7 @@ void main() {
         followUpStore: InMemoryForumFollowUpStore(),
         initialForumHandoffTarget: const ForumDetailHandoffTarget(
           postId: 'post-42',
-          initialTitle: 'Forum detail handoff',
+          initialTitle: '论坛详情回流',
           commentId: 'reply-1',
         ),
       ),
@@ -992,7 +990,7 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('Forum detail'), findsWidgets);
+    expect(find.text('帖子详情'), findsWidgets);
     expect(find.text('/forum/post/post-42'), findsOneWidget);
     expect(find.text('First public child comment'), findsOneWidget);
   });
@@ -1034,22 +1032,22 @@ void main() {
     );
 
     await tester.pump();
-    await tester.tap(find.text('Profile'));
+    await tester.tap(find.text('我的'));
     await tester.pumpAndSettle();
 
     final scrollable = find.byType(Scrollable).last;
     await tester.scrollUntilVisible(
-      find.text('Open comment context'),
+      find.text('打开评论上下文'),
       200,
       scrollable: scrollable,
     );
-    await tester.tap(find.text('Open comment context'));
+    await tester.tap(find.text('打开评论上下文'));
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('Forum detail'), findsWidgets);
+    expect(find.text('帖子详情'), findsWidgets);
     expect(find.text('/forum/post/post-42'), findsOneWidget);
-    expect(find.text('Public profile comment handoff'), findsWidgets);
+    expect(find.text('个人主页评论'), findsWidgets);
     expect(find.text('First public child comment'), findsOneWidget);
   });
 
@@ -1088,9 +1086,9 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('Forum detail'), findsWidgets);
+    expect(find.text('帖子详情'), findsWidgets);
     expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
-    expect(find.text('Notification handoff'), findsWidgets);
+    expect(find.text('通知回流'), findsWidgets);
   });
 
   testWidgets('latest forum notification opens shared native detail',
@@ -1132,14 +1130,14 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('Forum notification'), findsOneWidget);
+    expect(find.text('查看论坛通知'), findsOneWidget);
 
-    await tester.tap(find.text('Forum notification'));
+    await tester.tap(find.text('查看论坛通知'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Forum detail'), findsWidgets);
+    expect(find.text('帖子详情'), findsWidgets);
     expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
-    expect(find.text('Notification handoff'), findsWidgets);
+    expect(find.text('通知回流'), findsWidgets);
     expect(find.text('Big id root comment'), findsOneWidget);
   });
 
@@ -1170,10 +1168,10 @@ void main() {
     );
 
     await tester.pump();
-    await tester.tap(find.text('Forum'));
+    await tester.tap(find.text('论坛'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Open detail'));
+    await tester.tap(find.text('查看详情'));
     await tester.pump();
     await tester.pumpAndSettle();
 
@@ -1181,13 +1179,13 @@ void main() {
     await tester.pageBack();
     await tester.pumpAndSettle();
 
-    expect(find.text('Resume forum'), findsOneWidget);
-    await tester.tap(find.text('Resume forum'));
+    expect(find.text('继续阅读论坛'), findsOneWidget);
+    await tester.tap(find.text('继续阅读论坛'));
     await tester.pump();
     await tester.pumpAndSettle();
 
     expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
-    expect(find.text('Browse history handoff'), findsWidgets);
+    expect(find.text('继续阅读'), findsWidgets);
   });
 }
 
@@ -1398,7 +1396,7 @@ class _SeededForumRepository implements ForumRepository {
       posts: [
         ForumPostSummary(
           id: 'post-42',
-          title: 'Forum detail handoff',
+          title: '论坛详情回流',
           summary: 'Tap through to the public native detail page.',
           categoryId: 'category-1',
           categoryName: 'General',
@@ -1416,7 +1414,7 @@ class _SeededForumRepository implements ForumRepository {
   }) async {
     return ForumPostDetail(
       id: postId,
-      title: 'Forum detail handoff',
+      title: '论坛详情回流',
       summary: 'Tap through to the public native detail page.',
       content:
           '# Native detail\n\n- author metadata\n- body content\n- back navigation',
@@ -1765,7 +1763,7 @@ class _SeededProfileRepository implements ProfileRepository {
       posts: [
         PublicProfilePostSummary(
           id: 'post-42',
-          title: 'Forum detail handoff',
+          title: '论坛详情回流',
           summary: 'Tap through to the public native detail page.',
           content: 'Tap through to the public native detail page.',
           categoryName: 'General',

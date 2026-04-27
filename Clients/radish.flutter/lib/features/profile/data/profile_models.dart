@@ -13,7 +13,7 @@ class PublicProfileSummary {
 
     return PublicProfileSummary(
       userId: _readRequiredId(map, 'voUserId'),
-      userName: _readString(map['voUserName']) ?? 'Unknown user',
+      userName: _readString(map['voUserName']) ?? '未知用户',
       displayName: _readString(map['voDisplayName']),
       createTime: _readString(map['voCreateTime']) ?? '',
       avatarUrl: _readString(map['voAvatarUrl']),
@@ -77,7 +77,7 @@ class PublicProfilePostSummary {
 
     return PublicProfilePostSummary(
       id: _readRequiredId(map, 'voId'),
-      title: _readString(map['voTitle']) ?? 'Untitled post',
+      title: _readString(map['voTitle']) ?? '未命名帖子',
       summary: _readString(map['voSummary']),
       content: _readString(map['voContent']) ?? '',
       categoryName: _readString(map['voCategoryName']),

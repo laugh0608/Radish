@@ -123,7 +123,7 @@ class DocsDetailController extends ChangeNotifier {
       _setError(
         requestVersion,
         slug,
-        'Unexpected docs detail payload: ${error.message}',
+        '文档详情返回格式异常：${error.message}',
       );
     }
   }
