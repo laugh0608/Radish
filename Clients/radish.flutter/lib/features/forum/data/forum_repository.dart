@@ -32,6 +32,17 @@ abstract class ForumRepository {
     required int rootPageSize,
     required int childPageSize,
   });
+
+  Future<ForumQuickReplyWall> getQuickReplyWall({
+    required String postId,
+    int take = 30,
+  });
+
+  Future<ForumQuickReplySummary> createQuickReply({
+    required String postId,
+    required String content,
+    required String accessToken,
+  });
 }
 
 class HttpForumRepository implements ForumRepository {
@@ -152,6 +163,47 @@ class HttpForumRepository implements ForumRepository {
     return apiClient.get(
       uri: uri,
       decode: ForumCommentNavigationLocation.fromJson,
+    );
+  }
+
+  @override
+  Future<ForumQuickReplyWall> getQuickReplyWall({
+    required String postId,
+    int take = 30,
+  }) {
+    final normalizedPostId = postId.trim();
+    final uri = endpoints.resolveApi(
+      '/api/v1/PostQuickReply/GetRecentByPostId',
+      queryParameters: {
+        'postId': normalizedPostId,
+        'take': take.toString(),
+      },
+    );
+
+    return apiClient.get(
+      uri: uri,
+      decode: ForumQuickReplyWall.fromJson,
+    );
+  }
+
+  @override
+  Future<ForumQuickReplySummary> createQuickReply({
+    required String postId,
+    required String content,
+    required String accessToken,
+  }) {
+    final normalizedPostId = postId.trim();
+    final normalizedContent = content.trim();
+    final uri = endpoints.resolveApi('/api/v1/PostQuickReply/Create');
+
+    return apiClient.post(
+      uri: uri,
+      body: {
+        'postId': int.tryParse(normalizedPostId) ?? normalizedPostId,
+        'content': normalizedContent,
+      },
+      bearerToken: accessToken,
+      decode: ForumQuickReplySummary.fromJson,
     );
   }
 }

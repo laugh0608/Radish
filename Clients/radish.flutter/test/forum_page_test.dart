@@ -253,6 +253,42 @@ class _SuccessForumRepository implements ForumRepository {
       rootPageIndex: 1,
     );
   }
+
+  @override
+  Future<ForumQuickReplyWall> getQuickReplyWall({
+    required String postId,
+    int take = 30,
+  }) async {
+    return const ForumQuickReplyWall(
+      total: 1,
+      items: [
+        ForumQuickReplySummary(
+          id: 'quick-1',
+          postId: '2042219067430928384',
+          authorId: '1025',
+          authorName: 'Reader',
+          content: '学到了',
+          createTime: '2026-04-18T12:10:00Z',
+        ),
+      ],
+    );
+  }
+
+  @override
+  Future<ForumQuickReplySummary> createQuickReply({
+    required String postId,
+    required String content,
+    required String accessToken,
+  }) async {
+    return ForumQuickReplySummary(
+      id: 'quick-created',
+      postId: postId,
+      authorId: 'current-user',
+      authorName: 'current',
+      content: content,
+      createTime: '2026-04-18T12:15:00Z',
+    );
+  }
 }
 
 class _FailingForumRepository implements ForumRepository {
@@ -299,5 +335,22 @@ class _FailingForumRepository implements ForumRepository {
     required int childPageSize,
   }) {
     throw const RadishApiClientException('评论定位服务暂时不可用');
+  }
+
+  @override
+  Future<ForumQuickReplyWall> getQuickReplyWall({
+    required String postId,
+    int take = 30,
+  }) {
+    throw const RadishApiClientException('轻回应服务暂时不可用');
+  }
+
+  @override
+  Future<ForumQuickReplySummary> createQuickReply({
+    required String postId,
+    required String content,
+    required String accessToken,
+  }) {
+    throw const RadishApiClientException('轻回应发布服务暂时不可用');
   }
 }

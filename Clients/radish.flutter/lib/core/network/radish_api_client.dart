@@ -28,6 +28,13 @@ abstract class RadishApiClient {
     required JsonFactory<T> decode,
     String? bearerToken,
   });
+
+  Future<T> post<T>({
+    required Uri uri,
+    required Object? body,
+    required JsonFactory<T> decode,
+    String? bearerToken,
+  });
 }
 
 class HttpRadishApiClient implements RadishApiClient {
@@ -43,6 +50,37 @@ class HttpRadishApiClient implements RadishApiClient {
     required JsonFactory<T> decode,
     String? bearerToken,
   }) async {
+    return _send(
+      method: 'GET',
+      uri: uri,
+      decode: decode,
+      bearerToken: bearerToken,
+    );
+  }
+
+  @override
+  Future<T> post<T>({
+    required Uri uri,
+    required Object? body,
+    required JsonFactory<T> decode,
+    String? bearerToken,
+  }) async {
+    return _send(
+      method: 'POST',
+      uri: uri,
+      decode: decode,
+      bearerToken: bearerToken,
+      body: body,
+    );
+  }
+
+  Future<T> _send<T>({
+    required String method,
+    required Uri uri,
+    required JsonFactory<T> decode,
+    String? bearerToken,
+    Object? body,
+  }) async {
     final client = HttpClient();
     if (environment.allowLocalDevelopmentCertificates) {
       client.badCertificateCallback = (certificate, host, port) {
@@ -51,7 +89,9 @@ class HttpRadishApiClient implements RadishApiClient {
     }
 
     try {
-      final request = await client.getUrl(uri);
+      final request = method == 'POST'
+          ? await client.postUrl(uri)
+          : await client.getUrl(uri);
       request.headers.set(HttpHeaders.acceptHeader, 'application/json');
       if (bearerToken != null && bearerToken.trim().isNotEmpty) {
         request.headers.set(
@@ -59,10 +99,14 @@ class HttpRadishApiClient implements RadishApiClient {
           'Bearer ${bearerToken.trim()}',
         );
       }
+      if (method == 'POST') {
+        request.headers.contentType = ContentType.json;
+        request.write(jsonEncode(body ?? const <String, Object?>{}));
+      }
 
       final response = await request.close();
-      final body = await response.transform(utf8.decoder).join();
-      final payload = body.isEmpty ? null : jsonDecode(body);
+      final responseBody = await response.transform(utf8.decoder).join();
+      final payload = responseBody.isEmpty ? null : jsonDecode(responseBody);
 
       if (payload is! Map) {
         throw RadishApiClientException(

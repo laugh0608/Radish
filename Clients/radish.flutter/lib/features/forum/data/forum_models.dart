@@ -493,6 +493,65 @@ class ForumCommentPage {
   final List<ForumCommentSummary> comments;
 }
 
+class ForumQuickReplySummary {
+  const ForumQuickReplySummary({
+    required this.id,
+    required this.postId,
+    required this.authorId,
+    required this.authorName,
+    required this.content,
+    this.authorAvatarUrl,
+    this.status = 0,
+    this.createTime,
+  });
+
+  factory ForumQuickReplySummary.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+
+    return ForumQuickReplySummary(
+      id: _readRequiredId(map, 'voId'),
+      postId: _readRequiredId(map, 'voPostId'),
+      authorId: _readRequiredId(map, 'voAuthorId'),
+      authorName: _readString(map['voAuthorName']) ?? '未知用户',
+      authorAvatarUrl: _readString(map['voAuthorAvatarUrl']),
+      content: _readString(map['voContent']) ?? '',
+      status: _readInt(map['voStatus']) ?? 0,
+      createTime: _readString(map['voCreateTime']),
+    );
+  }
+
+  final String id;
+  final String postId;
+  final String authorId;
+  final String authorName;
+  final String? authorAvatarUrl;
+  final String content;
+  final int status;
+  final String? createTime;
+}
+
+class ForumQuickReplyWall {
+  const ForumQuickReplyWall({
+    required this.items,
+    required this.total,
+  });
+
+  factory ForumQuickReplyWall.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+    final items = map['voItems'];
+
+    return ForumQuickReplyWall(
+      items: items is List
+          ? items.map(ForumQuickReplySummary.fromJson).toList()
+          : const <ForumQuickReplySummary>[],
+      total: _readInt(map['voTotal']) ?? 0,
+    );
+  }
+
+  final List<ForumQuickReplySummary> items;
+  final int total;
+}
+
 class ForumPostPage {
   const ForumPostPage({
     required this.page,

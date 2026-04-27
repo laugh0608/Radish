@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:radish_flutter/core/auth/session_controller.dart';
+import 'package:radish_flutter/core/auth/session_refresh_service.dart';
+import 'package:radish_flutter/core/auth/session_store.dart';
 import 'package:radish_flutter/core/config/app_environment.dart';
 import 'package:radish_flutter/core/network/radish_api_client.dart';
 import 'package:radish_flutter/features/forum/data/forum_models.dart';
@@ -34,6 +37,8 @@ void main() {
     );
 
     expect(find.text('评论'), findsOneWidget);
+    expect(find.text('共 2 条轻回应'), findsOneWidget);
+    expect(find.text('radish：学到了'), findsOneWidget);
     expect(find.text('已加载 2 / 3 条根评论'), findsWidgets);
     expect(find.text('Root comment one'), findsOneWidget);
     expect(find.text('回复 @luobo'), findsOneWidget);
@@ -125,6 +130,56 @@ void main() {
       find.text('这篇帖子暂无公开评论。'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('submits quick reply when session is authenticated',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: const SessionRefreshService(
+        environment: AppEnvironment.development(),
+      ),
+    );
+    await sessionController.setSession(
+      AuthSession(
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+        userId: 'user-current',
+        expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: _PagedForumRepository(),
+          postId: 'post-42',
+          initialTitle: '论坛详情回流',
+          sessionController: sessionController,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    final scrollable = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(
+      find.text('发布轻回应'),
+      200,
+      scrollable: scrollable,
+    );
+
+    await tester.enterText(find.byType(TextField).last, '同感');
+    await tester.tap(find.text('发布轻回应'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('current：同感'), findsOneWidget);
+    expect(find.text('共 3 条轻回应'), findsOneWidget);
   });
 
   testWidgets('opens profile handoff from detail author and comment author',
@@ -266,6 +321,50 @@ abstract class _BaseForumRepository implements ForumRepository {
       isRootComment: false,
       rootPageIndex: 1,
       childPageIndex: 2,
+    );
+  }
+
+  @override
+  Future<ForumQuickReplyWall> getQuickReplyWall({
+    required String postId,
+    int take = 30,
+  }) async {
+    return const ForumQuickReplyWall(
+      total: 2,
+      items: [
+        ForumQuickReplySummary(
+          id: 'quick-1',
+          postId: 'post-42',
+          authorId: 'user-1',
+          authorName: 'radish',
+          content: '学到了',
+          createTime: '2026-04-20T08:11:00Z',
+        ),
+        ForumQuickReplySummary(
+          id: 'quick-2',
+          postId: 'post-42',
+          authorId: 'user-2',
+          authorName: 'guest',
+          content: '好耶 🙂',
+          createTime: '2026-04-20T08:12:00Z',
+        ),
+      ],
+    );
+  }
+
+  @override
+  Future<ForumQuickReplySummary> createQuickReply({
+    required String postId,
+    required String content,
+    required String accessToken,
+  }) async {
+    return ForumQuickReplySummary(
+      id: 'quick-created',
+      postId: postId,
+      authorId: 'user-current',
+      authorName: 'current',
+      content: content,
+      createTime: '2026-04-20T08:13:00Z',
     );
   }
 }

@@ -1440,6 +1440,33 @@ class _FakeForumRepository implements ForumRepository {
       rootPageIndex: 1,
     );
   }
+
+  @override
+  Future<ForumQuickReplyWall> getQuickReplyWall({
+    required String postId,
+    int take = 30,
+  }) async {
+    return const ForumQuickReplyWall(
+      total: 0,
+      items: [],
+    );
+  }
+
+  @override
+  Future<ForumQuickReplySummary> createQuickReply({
+    required String postId,
+    required String content,
+    required String accessToken,
+  }) async {
+    return ForumQuickReplySummary(
+      id: 'quick-created',
+      postId: postId,
+      authorId: 'user-current',
+      authorName: 'current',
+      content: content,
+      createTime: '2026-04-20T08:13:00Z',
+    );
+  }
 }
 
 class _SeededForumRepository implements ForumRepository {
@@ -1602,6 +1629,50 @@ class _SeededForumRepository implements ForumRepository {
       rootPageIndex: 1,
     );
   }
+
+  @override
+  Future<ForumQuickReplyWall> getQuickReplyWall({
+    required String postId,
+    int take = 30,
+  }) async {
+    return const ForumQuickReplyWall(
+      total: 2,
+      items: [
+        ForumQuickReplySummary(
+          id: 'quick-1',
+          postId: 'post-42',
+          authorId: 'user-9',
+          authorName: 'luobo',
+          content: '学到了',
+          createTime: '2026-04-20T11:20:00Z',
+        ),
+        ForumQuickReplySummary(
+          id: 'quick-2',
+          postId: 'post-42',
+          authorId: 'user-10',
+          authorName: 'reader',
+          content: '同感',
+          createTime: '2026-04-20T11:25:00Z',
+        ),
+      ],
+    );
+  }
+
+  @override
+  Future<ForumQuickReplySummary> createQuickReply({
+    required String postId,
+    required String content,
+    required String accessToken,
+  }) async {
+    return ForumQuickReplySummary(
+      id: 'quick-created',
+      postId: postId,
+      authorId: 'user-current',
+      authorName: 'current',
+      content: content,
+      createTime: '2026-04-20T11:30:00Z',
+    );
+  }
 }
 
 class _SeededBigIdForumRepository implements ForumRepository {
@@ -1706,6 +1777,42 @@ class _SeededBigIdForumRepository implements ForumRepository {
       rootCommentId: commentId,
       isRootComment: true,
       rootPageIndex: 1,
+    );
+  }
+
+  @override
+  Future<ForumQuickReplyWall> getQuickReplyWall({
+    required String postId,
+    int take = 30,
+  }) async {
+    return const ForumQuickReplyWall(
+      total: 1,
+      items: [
+        ForumQuickReplySummary(
+          id: 'quick-big-1',
+          postId: '2042219067430928384',
+          authorId: '2048',
+          authorName: 'reader',
+          content: '已读',
+          createTime: '2026-04-18T12:05:00Z',
+        ),
+      ],
+    );
+  }
+
+  @override
+  Future<ForumQuickReplySummary> createQuickReply({
+    required String postId,
+    required String content,
+    required String accessToken,
+  }) async {
+    return ForumQuickReplySummary(
+      id: 'quick-big-created',
+      postId: postId,
+      authorId: 'current-user',
+      authorName: 'current',
+      content: content,
+      createTime: '2026-04-18T12:20:00Z',
     );
   }
 }
