@@ -43,6 +43,40 @@ Clients/radish.flutter/
 2. Android 正式签名材料与外部分发前置准备
 3. Android MVP 稳定后，再评估 Windows / Linux 平台目录与更深原生能力
 
+## Flutter 环境切换
+
+客户端默认使用本机开发 Gateway：
+
+```text
+https://localhost:5000
+```
+
+构建或运行时可通过 `--dart-define` 指定目标环境。当前保持 API / Auth / Gateway 同源，统一由 `RADISH_GATEWAY_BASE_URL` 派生，不额外引入 Flutter 专属 BFF。
+
+可用参数：
+
+- `RADISH_ENVIRONMENT`：环境名称，默认 `development`，常用值为 `development` / `testing` / `production`
+- `RADISH_GATEWAY_BASE_URL`：Gateway 基址，需包含 `https://` 或 `http://`，末尾 `/` 会自动收口
+- `RADISH_ALLOW_LOCAL_DEVELOPMENT_CERTIFICATES`：是否允许本机开发证书，默认仅 Android + `localhost` Gateway 自动开启
+
+本机 Android 开发态示例：
+
+```powershell
+flutter run --dart-define=RADISH_ENVIRONMENT=development --dart-define=RADISH_GATEWAY_BASE_URL=https://localhost:5000
+```
+
+测试环境 RC 构建示例：
+
+```powershell
+flutter build apk --release --dart-define=RADISH_ENVIRONMENT=testing --dart-define=RADISH_GATEWAY_BASE_URL=https://test-gateway.example
+```
+
+正式环境 RC 构建示例：
+
+```powershell
+flutter build apk --release --dart-define=RADISH_ENVIRONMENT=production --dart-define=RADISH_GATEWAY_BASE_URL=https://gateway.example
+```
+
 ## 平台目录生成说明
 
 Android 平台目录已经生成。后续如需补齐 Windows / Linux 平台工程，可在本目录执行：

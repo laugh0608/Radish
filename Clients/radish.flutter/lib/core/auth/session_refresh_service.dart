@@ -25,9 +25,7 @@ class SessionRefreshService {
     final client = HttpClient();
     if (environment.allowLocalDevelopmentCertificates) {
       client.badCertificateCallback = (certificate, host, port) {
-        return environment.name == 'development' &&
-            host == 'localhost' &&
-            port == 5000;
+        return environment.allowsBadCertificate(host, port);
       };
     }
 

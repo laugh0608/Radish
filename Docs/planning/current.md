@@ -8,8 +8,8 @@
 
 - **阶段**：`第二开发阶段：社区深化与多端化`
 - **当前主线**：`Phase 2-3 Flutter 客户端 MVP`
-- **当前阶段**：`截至 2026-04-26，第一开发阶段已于 2026-04-06 通过 v26.3.2-release 完成真实发布收口；第二开发阶段现已正式启动。`Phase 2-1 社区深化第一批` 已完成论坛轻回应墙 Phase 1 与最小回流链路收口；`Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口，并转入稳定维护。当前产品主线仍为 `Phase 2-3 Flutter 客户端 MVP`：第一批范围定义、真相源文档切换与仓库工程骨架已完成；第二批当前已完成最小登录 / 会话恢复链路、forum 高价值只读读取链路、最小 forum notification 回流，以及 Android 本地 release APK 发布候选首轮收口，不继续沿公开壳层扩页面细节，也不回头把桌面工作台搬进原生端。`
-- **复核日期**：`2026-04-26`
+- **当前阶段**：`截至 2026-04-27，第一开发阶段已于 2026-04-06 通过 v26.3.2-release 完成真实发布收口；第二开发阶段现已正式启动。`Phase 2-1 社区深化第一批` 已完成论坛轻回应墙 Phase 1 与最小回流链路收口；`Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口，并转入稳定维护。当前产品主线仍为 `Phase 2-3 Flutter 客户端 MVP`：第一批范围定义、真相源文档切换与仓库工程骨架已完成；第二批当前已完成最小登录 / 会话恢复链路、forum 高价值只读读取链路、最小 forum notification 回流、Android 本地 release APK 发布候选首轮收口，以及 Flutter `--dart-define` Gateway 环境切换能力，不继续沿公开壳层扩页面细节，也不回头把桌面工作台搬进原生端。`
+- **复核日期**：`2026-04-27`
 
 ## 当前执行入口
 
@@ -96,6 +96,7 @@
 - Flutter Android release 身份当前已从模板值收口到 `com.radish.client` / `Radish`，Kotlin 原生代码与平台单测 package 也已同步到正式包身份
 - Flutter Android release signing 当前已完成安全边界收口：Gradle 会读取 `android/key.properties` 配置正式签名，未配置时回落到 debug signing 以保留本地 RC 构建能力；真实 `key.properties`、`.jks` 与 `.keystore` 不进入版本库
 - Flutter Android release APK 当前已补齐 main manifest 的 `INTERNET` 权限，并完成一轮真机安装与本机 Gateway 联调复核；登录、基础读取与样式显示均已确认正常
+- Flutter 环境切换能力当前已完成首轮收口：原生客户端可通过 `--dart-define=RADISH_ENVIRONMENT=...` 与 `--dart-define=RADISH_GATEWAY_BASE_URL=...` 指定本机 / 测试 / 正式 Gateway，API / Auth / Gateway 继续保持同源，不引入 Flutter 专属 BFF
 
 ## 当前批次目标
 
@@ -115,14 +116,14 @@
    - 当前不把 Windows / Linux 平台工程与 Android 起步批次绑定
 5. **Android MVP 发布候选首轮收口**
    - 当前已完成 release 包身份、签名配置边界、联网权限、自动化验证与真机安装联调的首轮收口
-   - 当前仍未进入正式签名材料入库外管理、测试环境分发、商店发布或系统通知栏推送闭环
+   - 当前已补齐 `--dart-define` Gateway 环境切换能力；仍未进入正式签名材料入库外管理、测试环境分发、商店发布或系统通知栏推送闭环
 
 ## 下一顺位
 
 - `Phase 2-3` 第二批业务链路
   - forum 当前已从公开列表推进到公开帖子详情、评论分页、子评论分页、作者跳转、评论精确定位、public profile 详情回跳，以及 `notification / browseHistory` 的首批壳层 / 宿主 handoff 收口；detail 内最小原地登录入口与目标持久化续接当前也已落地，Android MVP 当前可测链路已完成一轮人工验收
   - 最小可测 forum notification 来源已完成真机人工联调：已登录壳层可读取当前用户最新 forum 通知并复用既有 detail handoff，不扩完整通知中心、系统推送或通知管理
-  - Android MVP 本地 release APK 发布候选首轮已完成；下一步优先补 Flutter 环境切换能力（例如 `--dart-define` 指定 Gateway）、正式签名材料准备与测试环境 / 外部分发前置
+  - Android MVP 本地 release APK 发布候选首轮与 Flutter `--dart-define` Gateway 环境切换能力已完成；下一步优先推进正式签名材料准备与测试环境 / 外部分发前置
 
 - `Phase 2-2` 稳定维护项
   - 公开内容壳层保留必要联调复核与问题修复，但不再继续新增公开入口或细节增强
