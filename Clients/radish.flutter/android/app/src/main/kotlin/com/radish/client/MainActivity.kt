@@ -56,6 +56,9 @@ class MainActivity : FlutterActivity() {
                 "readRecentBrowseHandoff" -> {
                     result.success(preferences.getString(FORUM_RECENT_BROWSE_KEY, null))
                 }
+                "readRecentProfileUserId" -> {
+                    result.success(preferences.getString(PROFILE_RECENT_USER_ID_KEY, null))
+                }
                 "readPendingPostLoginTarget" -> {
                     result.success(preferences.getString(SHELL_PENDING_POST_LOGIN_TARGET_KEY, null))
                 }
@@ -67,6 +70,16 @@ class MainActivity : FlutterActivity() {
                     }
 
                     preferences.edit().putString(FORUM_RECENT_BROWSE_KEY, payload).apply()
+                    result.success(null)
+                }
+                "writeRecentProfileUserId" -> {
+                    val userId = call.arguments as? String
+                    if (userId.isNullOrBlank()) {
+                        result.error("invalid_user_id", "Profile user id must be a non-empty string.", null)
+                        return@setMethodCallHandler
+                    }
+
+                    preferences.edit().putString(PROFILE_RECENT_USER_ID_KEY, userId.trim()).apply()
                     result.success(null)
                 }
                 "writePendingPostLoginTarget" -> {
@@ -81,6 +94,10 @@ class MainActivity : FlutterActivity() {
                 }
                 "clearRecentBrowseHandoff" -> {
                     preferences.edit().remove(FORUM_RECENT_BROWSE_KEY).apply()
+                    result.success(null)
+                }
+                "clearRecentProfileUserId" -> {
+                    preferences.edit().remove(PROFILE_RECENT_USER_ID_KEY).apply()
                     result.success(null)
                 }
                 "clearPendingPostLoginTarget" -> {
@@ -161,6 +178,7 @@ class MainActivity : FlutterActivity() {
         private const val FORUM_FOLLOW_UP_CHANNEL = "radish.flutter/forum_follow_up"
         private const val AUTH_FLOW_CHANNEL = "radish.flutter/native_auth"
         private const val FORUM_RECENT_BROWSE_KEY = "forum_recent_browse_handoff"
+        private const val PROFILE_RECENT_USER_ID_KEY = "profile_recent_user_id"
         private const val SHELL_PENDING_POST_LOGIN_TARGET_KEY = "shell_pending_post_login_target"
         private const val EXTRA_FORUM_POST_ID = "forum_post_id"
         private const val EXTRA_FORUM_COMMENT_ID = "forum_comment_id"

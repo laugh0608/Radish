@@ -172,8 +172,69 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('我的'), findsWidgets);
-    expect(find.text('正在以游客身份阅读公开主页 user-9'), findsOneWidget);
+    expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
     expect(find.text('用户 user-9'), findsWidgets);
+  });
+
+  testWidgets('recent public profile target survives shell rebuild',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final followUpStore = InMemoryForumFollowUpStore();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+    final authController = _buildAuthController(sessionController);
+
+    Future<void> pumpApp() async {
+      await tester.pumpWidget(
+        RadishApp(
+          environment: const AppEnvironment.development(),
+          sessionController: sessionController,
+          authController: authController,
+          discoverRepository: _SeededDiscoverRepository(),
+          docsRepository: _FakeDocsRepository(),
+          forumRepository: _FakeForumRepository(),
+          profileRepository: _FakeProfileRepository(),
+          followUpStore: followUpStore,
+        ),
+      );
+    }
+
+    await pumpApp();
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('打开 @luobo'),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.tap(find.text('打开 @luobo'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+
+    await pumpApp();
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('我的'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('继续看公开主页'), findsOneWidget);
+
+    await tester.tap(find.text('继续看公开主页'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
   });
 
   testWidgets('refreshes expired session before entering shell',
@@ -953,7 +1014,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('我的'), findsWidgets);
-    expect(find.text('正在以游客身份阅读公开主页 user-9'), findsOneWidget);
+    expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
     expect(find.text('用户 user-9'), findsWidgets);
   });
 

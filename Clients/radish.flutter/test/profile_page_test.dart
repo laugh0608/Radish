@@ -121,7 +121,7 @@ void main() {
           sessionController: sessionController,
           authController: authController,
           repository: _SuccessProfileRepository(),
-          guestUserId: 'guest-42',
+          publicUserId: 'guest-42',
         ),
       ),
     );
@@ -135,6 +135,85 @@ void main() {
       scrollable: scrollable,
     );
     expect(find.text('最近公开帖子'), findsOneWidget);
+  });
+
+  testWidgets('renders recent public profile revisit action', (tester) async {
+    var openedRecentProfile = false;
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: _SuccessProfileRepository(),
+          recentPublicUserId: 'recent-user-1',
+          onOpenRecentPublicProfile: () {
+            openedRecentProfile = true;
+          },
+        ),
+      ),
+    );
+
+    expect(find.text('游客模式'), findsOneWidget);
+    expect(find.text('继续看公开主页'), findsOneWidget);
+
+    await tester.tap(find.text('继续看公开主页'));
+    await tester.pump();
+
+    expect(openedRecentProfile, isTrue);
+  });
+
+  testWidgets('authenticated public profile can return to my profile', (
+    tester,
+  ) async {
+    var openedMyProfile = false;
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: '2042219067430928384',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: '2042219067430928384',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: _SuccessProfileRepository(),
+          publicUserId: 'public-user-2',
+          onOpenMyProfile: () {
+            openedMyProfile = true;
+          },
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('公开主页'), findsOneWidget);
+    expect(find.text('正在阅读公开主页 public-user-2'), findsOneWidget);
+    expect(find.text('回到我的主页'), findsOneWidget);
+
+    await tester.tap(find.text('回到我的主页'));
+    await tester.pump();
+
+    expect(openedMyProfile, isTrue);
   });
 
   testWidgets(

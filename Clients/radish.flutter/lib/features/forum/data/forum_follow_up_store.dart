@@ -13,6 +13,12 @@ abstract class ForumFollowUpStore {
 
   Future<void> clearRecentBrowseHandoff();
 
+  Future<String?> readRecentProfileUserId();
+
+  Future<void> writeRecentProfileUserId(String userId);
+
+  Future<void> clearRecentProfileUserId();
+
   Future<ShellPostLoginTarget?> readPendingPostLoginTarget();
 
   Future<void> writePendingPostLoginTarget(ShellPostLoginTarget target);
@@ -66,18 +72,26 @@ class InMemoryForumFollowUpStore implements ForumFollowUpStore {
   InMemoryForumFollowUpStore({
     ForumDetailHandoffTarget? initialPendingHandoff,
     ForumDetailHandoffTarget? initialRecentBrowseHandoff,
+    String? initialRecentProfileUserId,
     ShellPostLoginTarget? initialPendingPostLoginTarget,
   })  : _pendingHandoff = initialPendingHandoff,
         _recentBrowseHandoff = initialRecentBrowseHandoff,
+        _recentProfileUserId = _normalizeUserId(initialRecentProfileUserId),
         _pendingPostLoginTarget = initialPendingPostLoginTarget;
 
   ForumDetailHandoffTarget? _pendingHandoff;
   ForumDetailHandoffTarget? _recentBrowseHandoff;
+  String? _recentProfileUserId;
   ShellPostLoginTarget? _pendingPostLoginTarget;
 
   @override
   Future<void> clearRecentBrowseHandoff() async {
     _recentBrowseHandoff = null;
+  }
+
+  @override
+  Future<void> clearRecentProfileUserId() async {
+    _recentProfileUserId = null;
   }
 
   @override
@@ -88,6 +102,11 @@ class InMemoryForumFollowUpStore implements ForumFollowUpStore {
   @override
   Future<ForumDetailHandoffTarget?> readRecentBrowseHandoff() async {
     return _recentBrowseHandoff;
+  }
+
+  @override
+  Future<String?> readRecentProfileUserId() async {
+    return _recentProfileUserId;
   }
 
   @override
@@ -110,6 +129,11 @@ class InMemoryForumFollowUpStore implements ForumFollowUpStore {
       initialTitle: target.normalizedInitialTitle,
       commentId: target.normalizedCommentId,
     );
+  }
+
+  @override
+  Future<void> writeRecentProfileUserId(String userId) async {
+    _recentProfileUserId = _normalizeUserId(userId);
   }
 
   @override
@@ -142,6 +166,11 @@ class PlatformForumFollowUpStore implements ForumFollowUpStore {
   }
 
   @override
+  Future<void> clearRecentProfileUserId() async {
+    await _channel.invokeMethod<void>('clearRecentProfileUserId');
+  }
+
+  @override
   Future<void> clearPendingPostLoginTarget() async {
     await _channel.invokeMethod<void>('clearPendingPostLoginTarget');
   }
@@ -151,6 +180,14 @@ class PlatformForumFollowUpStore implements ForumFollowUpStore {
     final payload =
         await _channel.invokeMethod<String>('readRecentBrowseHandoff');
     return _decodeTarget(payload);
+  }
+
+  @override
+  Future<String?> readRecentProfileUserId() async {
+    final userId = await _channel.invokeMethod<String>(
+      'readRecentProfileUserId',
+    );
+    return _normalizeUserId(userId);
   }
 
   @override
@@ -182,6 +219,20 @@ class PlatformForumFollowUpStore implements ForumFollowUpStore {
   }
 
   @override
+  Future<void> writeRecentProfileUserId(String userId) async {
+    final normalizedUserId = _normalizeUserId(userId);
+    if (normalizedUserId == null) {
+      await clearRecentProfileUserId();
+      return;
+    }
+
+    await _channel.invokeMethod<void>(
+      'writeRecentProfileUserId',
+      normalizedUserId,
+    );
+  }
+
+  @override
   Future<void> writePendingPostLoginTarget(ShellPostLoginTarget target) async {
     await _channel.invokeMethod<void>(
       'writePendingPostLoginTarget',
@@ -204,4 +255,13 @@ class PlatformForumFollowUpStore implements ForumFollowUpStore {
 
     return ShellPostLoginTarget.fromJson(jsonDecode(payload));
   }
+}
+
+String? _normalizeUserId(String? userId) {
+  final normalizedUserId = userId?.trim();
+  if (normalizedUserId == null || normalizedUserId.isEmpty) {
+    return null;
+  }
+
+  return normalizedUserId;
 }

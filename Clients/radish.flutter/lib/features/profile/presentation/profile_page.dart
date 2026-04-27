@@ -13,8 +13,11 @@ class ProfilePage extends StatefulWidget {
     required this.sessionController,
     required this.authController,
     required this.repository,
-    this.guestUserId,
+    this.publicUserId,
+    this.recentPublicUserId,
     this.onOpenForumDetailTarget,
+    this.onOpenRecentPublicProfile,
+    this.onOpenMyProfile,
     this.onRequestSignIn,
     super.key,
   });
@@ -22,8 +25,11 @@ class ProfilePage extends StatefulWidget {
   final SessionController sessionController;
   final NativeAuthController authController;
   final ProfileRepository repository;
-  final String? guestUserId;
+  final String? publicUserId;
+  final String? recentPublicUserId;
   final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
+  final VoidCallback? onOpenRecentPublicProfile;
+  final VoidCallback? onOpenMyProfile;
   final Future<void> Function()? onRequestSignIn;
 
   @override
@@ -71,10 +77,21 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void _syncSessionProfile() {
     final sessionState = widget.sessionController.state;
-    final userId = sessionState.isAuthenticated
-        ? sessionState.session?.userId
-        : widget.guestUserId;
+    final userId = _resolveTargetUserId(sessionState);
     _controller.loadForUser(userId);
+  }
+
+  String? _resolveTargetUserId(SessionState sessionState) {
+    final publicUserId = _normalizeUserId(widget.publicUserId);
+    if (publicUserId != null) {
+      return publicUserId;
+    }
+
+    if (sessionState.isAuthenticated) {
+      return sessionState.session?.userId;
+    }
+
+    return null;
   }
 
   @override
@@ -90,30 +107,36 @@ class _ProfilePageState extends State<ProfilePage> {
         final session = sessionState.session;
         final authState = widget.authController.state;
         final profileState = _controller.state;
-        final hasTargetUser = sessionState.isAuthenticated ||
-            (widget.guestUserId != null && widget.guestUserId!.isNotEmpty);
+        final publicUserId = _normalizeUserId(widget.publicUserId);
+        final recentPublicUserId = _normalizeUserId(widget.recentPublicUserId);
+        final isViewingPublicProfile = publicUserId != null;
+        final hasRecentPublicProfile =
+            recentPublicUserId != null && recentPublicUserId != publicUserId;
+        final targetUserId = _resolveTargetUserId(sessionState);
+        final hasTargetUser = targetUserId != null && targetUserId.isNotEmpty;
 
         return ListView(
           padding: const EdgeInsets.all(20),
           children: [
             Text(
-              '我的',
+              isViewingPublicProfile ? '公开主页' : '我的',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
             Text(
-              '查看公开资料、公开统计和最近公开内容。当前不开放资料编辑、关注管理和完整账号设置。',
+              isViewingPublicProfile
+                  ? '查看这个用户的公开资料、公开统计和最近公开内容。当前不开放关注、私信或资料治理操作。'
+                  : '查看我的公开资料、公开统计和最近公开内容。当前不开放资料编辑、关注管理和完整账号设置。',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 20),
             PhaseScopeCard(
               title: '当前能力',
               items: [
-                sessionState.isAuthenticated
-                    ? '已登录用户 ${session!.userId}'
-                    : widget.guestUserId != null &&
-                            widget.guestUserId!.trim().isNotEmpty
-                        ? '正在以游客身份阅读公开主页 ${widget.guestUserId}'
+                isViewingPublicProfile
+                    ? '正在阅读公开主页 $publicUserId'
+                    : sessionState.isAuthenticated
+                        ? '已登录用户 ${session!.userId}'
                         : sessionState.lastErrorMessage == null
                             ? '当前为游客模式，可从发现或论坛进入公开主页'
                             : '本地会话已失效，已回到游客模式',
@@ -166,6 +189,22 @@ class _ProfilePageState extends State<ProfilePage> {
                               ? '正在完成登录...'
                               : '登录',
                     ),
+                  ),
+                if (isViewingPublicProfile &&
+                    sessionState.isAuthenticated &&
+                    widget.onOpenMyProfile != null)
+                  FilledButton.tonalIcon(
+                    onPressed: widget.onOpenMyProfile,
+                    icon: const Icon(Icons.person_outline),
+                    label: const Text('回到我的主页'),
+                  ),
+                if (!isViewingPublicProfile &&
+                    hasRecentPublicProfile &&
+                    widget.onOpenRecentPublicProfile != null)
+                  FilledButton.tonalIcon(
+                    onPressed: widget.onOpenRecentPublicProfile,
+                    icon: const Icon(Icons.history_outlined),
+                    label: const Text('继续看公开主页'),
                   ),
                 if (hasTargetUser)
                   FilledButton.tonalIcon(
@@ -221,6 +260,7 @@ class _ProfileGuestBoundary extends StatelessWidget {
       title: '游客模式',
       items: [
         '游客可以从发现、论坛或后续入口阅读公开主页',
+        '最近看过的公开主页会在“我的”页保留一个轻入口',
         '没有登录会话或目标用户时，不默认展示任意用户资料',
         if (lastErrorMessage != null && lastErrorMessage!.isNotEmpty)
           '会话恢复提示：$lastErrorMessage',
@@ -865,4 +905,13 @@ String _formatDate(String value) {
   final month = local.month.toString().padLeft(2, '0');
   final day = local.day.toString().padLeft(2, '0');
   return '$year-$month-$day';
+}
+
+String? _normalizeUserId(String? userId) {
+  final normalizedUserId = userId?.trim();
+  if (normalizedUserId == null || normalizedUserId.isEmpty) {
+    return null;
+  }
+
+  return normalizedUserId;
 }

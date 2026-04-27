@@ -50,7 +50,8 @@ class RadishFlutterShell extends StatefulWidget {
 class _RadishFlutterShellState extends State<RadishFlutterShell>
     with WidgetsBindingObserver {
   int _currentIndex = 0;
-  String? _guestProfileUserId;
+  String? _publicProfileUserId;
+  String? _recentProfileUserId;
   ForumDetailHandoffTarget? _forumHandoffTarget;
   ForumDetailHandoffTarget? _recentBrowseHandoffTarget;
   ForumDetailHandoffTarget? _latestForumNotificationTarget;
@@ -146,7 +147,29 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     }
 
     setState(() {
-      _guestProfileUserId = normalizedUserId;
+      _publicProfileUserId = normalizedUserId;
+      _recentProfileUserId = normalizedUserId;
+      _currentIndex = 3;
+    });
+
+    unawaited(widget.followUpStore.writeRecentProfileUserId(normalizedUserId));
+  }
+
+  void _openRecentProfileUser() {
+    final normalizedUserId = _recentProfileUserId?.trim();
+    if (normalizedUserId == null || normalizedUserId.isEmpty) {
+      return;
+    }
+
+    setState(() {
+      _publicProfileUserId = normalizedUserId;
+      _currentIndex = 3;
+    });
+  }
+
+  void _openMyProfile() {
+    setState(() {
+      _publicProfileUserId = null;
       _currentIndex = 3;
     });
   }
@@ -358,12 +381,16 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     final recentTarget = _normalizeForumHandoffTarget(
       await widget.followUpStore.readRecentBrowseHandoff(),
     );
+    final recentProfileUserId = _normalizeUserId(
+      await widget.followUpStore.readRecentProfileUserId(),
+    );
     if (!mounted) {
       return;
     }
 
     setState(() {
       _recentBrowseHandoffTarget = recentTarget;
+      _recentProfileUserId = recentProfileUserId;
     });
   }
 
@@ -460,8 +487,11 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
             sessionController: widget.sessionController,
             authController: widget.authController,
             repository: widget.profileRepository,
-            guestUserId: _guestProfileUserId,
+            publicUserId: _publicProfileUserId,
+            recentPublicUserId: _recentProfileUserId,
             onOpenForumDetailTarget: _openForumDetailTarget,
+            onOpenRecentPublicProfile: _openRecentProfileUser,
+            onOpenMyProfile: _openMyProfile,
             onRequestSignIn: _startLoginForProfile,
           ),
         ];
@@ -642,6 +672,15 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
 
     return null;
   }
+}
+
+String? _normalizeUserId(String? userId) {
+  final normalizedUserId = userId?.trim();
+  if (normalizedUserId == null || normalizedUserId.isEmpty) {
+    return null;
+  }
+
+  return normalizedUserId;
 }
 
 class _ShellStatusChip extends StatelessWidget {
