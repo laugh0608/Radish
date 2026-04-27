@@ -8,7 +8,7 @@
 
 - **阶段**：`第二开发阶段：社区深化与多端化`
 - **当前主线**：`Phase 2-3 Flutter 客户端 MVP`
-- **当前阶段**：`截至 2026-04-27，第一开发阶段已于 2026-04-06 通过 v26.3.2-release 完成真实发布收口；第二开发阶段现已正式启动。`Phase 2-1 社区深化第一批` 已完成论坛轻回应墙 Phase 1 与最小回流链路收口；`Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口，并转入稳定维护。当前产品主线仍为 `Phase 2-3 Flutter 客户端 MVP`：第一批范围定义、真相源文档切换与仓库工程骨架已完成；第二批当前已完成最小登录 / 会话恢复链路、forum 高价值只读读取链路、最小 forum notification 回流、Android 本地 release APK 发布候选首轮收口、Flutter `--dart-define` Gateway 环境切换能力，以及 Android RC 签名配置诊断与分发前置清单，不继续沿公开壳层扩页面细节，也不回头把桌面工作台搬进原生端。`
+- **当前阶段**：`截至 2026-04-27，第一开发阶段已于 2026-04-06 通过 v26.3.2-release 完成真实发布收口；第二开发阶段现已正式启动。`Phase 2-1 社区深化第一批` 已完成论坛轻回应墙 Phase 1 与最小回流链路收口；`Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口，并转入稳定维护。当前产品主线仍为 `Phase 2-3 Flutter 客户端 MVP`：第一批范围定义、真相源文档切换与仓库工程骨架已完成；第二批已完成 Android MVP 可测链路、最小 forum notification 回流、Android 本地 release APK 发布候选首轮收口、Flutter `--dart-define` Gateway 环境切换能力，以及 Android RC 签名配置诊断与分发前置清单；第三批当前已完成中文文案基线、个人复访入口产品化与 forum detail 轻回应最小读写闭环，不继续沿公开壳层扩页面细节，也不回头把桌面工作台搬进原生端。`
 - **复核日期**：`2026-04-27`
 
 ## 当前执行入口
@@ -98,33 +98,28 @@
 - Flutter Android release APK 当前已补齐 main manifest 的 `INTERNET` 权限，并完成一轮真机安装与本机 Gateway 联调复核；登录、基础读取与样式显示均已确认正常
 - Flutter 环境切换能力当前已完成首轮收口：原生客户端可通过 `--dart-define=RADISH_ENVIRONMENT=...` 与 `--dart-define=RADISH_GATEWAY_BASE_URL=...` 指定本机 / 测试 / 正式 Gateway，API / Auth / Gateway 继续保持同源，不引入 Flutter 专属 BFF
 - Android RC 签名配置诊断当前已完成首轮收口：`key.properties` 不存在时本地 release 构建继续回落 debug signing；一旦存在签名配置，Gradle 会检查必填字段、示例占位值与 keystore 文件存在性，并提供 `:app:checkReleaseSigningConfig` 作为外部分发前置检查入口；对应清单见 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution)
+- Flutter 第三批中文文案基线当前已完成：`discover / forum / docs / profile` 主 tab、壳层登录态、登录提示、forum / docs / profile / discover 的标题、空态与错误态已统一到中文主文案，不引入完整 i18n 框架
+- Flutter 个人复访入口当前已产品化：`profile` 不再只展示开发态回流信息，而是承载最近 forum 阅读与公开主页复访入口，继续复用既有 handoff 和 follow-up 状态
+- Flutter forum detail 当前已接入轻回应墙最小闭环：详情页按“正文 -> 轻回应 -> 评论区”展示，支持匿名读取最近轻回应、已登录发布一句轻回应，并复用详情页原地登录续接；删除、举报、完整评论提交、点赞、投票与通知中心仍不纳入当前批次
 
 ## 当前批次目标
 
-1. **Flutter MVP 第二批最小认证边界**
-   - 当前已完成应用启动会话恢复 gate、匿名态 / 已登录态三态收口、Android 本地会话持久化、refresh token 恢复回落，以及最小登录 UI / 显式登出 / 浏览器 OIDC 回调闭环
-   - 当前也已补齐最小登录取消提示、壳层窄屏状态区收口，以及 `profile / forum detail` 两类原始目标的登录后续接；forum detail 内当前也已具备可手工触发的最小原地登录入口
-   - 当前仍未进入更完整的账户治理、多平台原生登录深化与通知中心登录回流联调
-2. **forum 首条真实只读读取链路**
-   - Flutter forum 当前已从真实公开帖子列表推进到详情正文、评论分页、子评论分页、作者跳转、评论精确定位、public profile 详情回跳与首批来源 handoff
-   - 当前范围仍收口到只读阅读与来源回流，不同时进入评论提交、点赞、投票、编辑或完整通知中心
+1. **Flutter MVP 第三批产品层回补**
+   - 中文文案基线、个人复访入口产品化与 forum detail 轻回应最小读写闭环当前均已完成
+   - 当前仍不引入完整 i18n、文案运营配置、完整通知中心、系统通知栏推送、发帖、完整评论提交、点赞、投票、编辑治理或 Flutter 专属 BFF
+2. **Android MVP 稳定维护**
+   - Android 本地 release APK、Gateway 环境切换、签名配置诊断与分发前置清单继续保留为 RC 分发前置能力
+   - 因缺少真实签名材料、测试 Gateway 与外部分发对象，Android RC 外部分发线暂时冻结，不作为当前产品扩项阻断
 3. **后续真实页面继续按价值推进**
-   - `discover / docs / profile` 的最小真实接线与 Android 真机联调当前已完成；forum 的高价值阅读链路与首批真实来源 handoff 当前也已完成一轮收口
-   - 当前仍不为 Flutter 单独设计新的 BFF，也不复刻 WebOS 窗口交互
-4. **范围明确收紧**
-   - 当前不同时进入聊天、完整通知中心、完整商城工作台和创作器
-   - 当前不把 Flutter 理解为“移动版 WebOS”
-   - 当前不把 Windows / Linux 平台工程与 Android 起步批次绑定
-5. **Android MVP 发布候选首轮收口**
-   - 当前已完成 release 包身份、签名配置边界、联网权限、自动化验证与真机安装联调的首轮收口
-   - 当前已补齐 `--dart-define` Gateway 环境切换能力、签名配置诊断任务与 RC 分发前置清单；仍未进入真实签名材料入库外管理、测试环境实际分发、商店发布或系统通知栏推送闭环
+   - 若继续扩 Flutter，应优先围绕已接通的 `forum / docs / profile / discover` 高价值路径补复访、轻互动与真实联调，而不是复制 WebOS 工作台能力
+   - 当前仍不把 Windows / Linux 平台工程与 Android MVP 产品批次绑定
 
 ## 下一顺位
 
-- `Phase 2-3` 第二批业务链路
-  - forum 当前已从公开列表推进到公开帖子详情、评论分页、子评论分页、作者跳转、评论精确定位、public profile 详情回跳，以及 `notification / browseHistory` 的首批壳层 / 宿主 handoff 收口；detail 内最小原地登录入口与目标持久化续接当前也已落地，Android MVP 当前可测链路已完成一轮人工验收
-  - 最小可测 forum notification 来源已完成真机人工联调：已登录壳层可读取当前用户最新 forum 通知并复用既有 detail handoff，不扩完整通知中心、系统推送或通知管理
-  - Android MVP 本地 release APK 发布候选首轮、Flutter `--dart-define` Gateway 环境切换能力、签名配置诊断任务与 RC 分发前置清单已完成；下一步优先推进真实签名材料入库外管理与测试环境实际分发复核
+- `Phase 2-3` 第三批后续判断
+  - 第三批三项产品层回补已落地，下一步应先做一轮 Android 真机人工复核，确认中文文案、个人复访入口与轻回应发布在真实 Gateway 下体验成立
+  - 若继续推进第四批，优先从“已登录后的高价值轻互动 / 复访深化”中择一小闭环；仍不扩完整通知中心、系统推送、发帖、完整评论提交、点赞、投票或编辑治理
+  - Android RC 外部分发继续等待真实签名材料、测试 Gateway 与外部分发对象，不把发布线冻结误判为业务功能阻塞
 
 - `Phase 2-2` 稳定维护项
   - 公开内容壳层保留必要联调复核与问题修复，但不再继续新增公开入口或细节增强

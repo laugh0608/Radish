@@ -116,8 +116,11 @@ Flutter 客户端第一批固定遵循以下约束：
 - 当前 release APK 真机复核已确认登录、基础读取与样式显示正常；本轮自动化验证覆盖 `flutter analyze`、`flutter test`、Android Studio JBR 下的 `.\gradlew.bat :app:testDebugUnitTest` 与 `flutter build apk --release`
 - Flutter 环境切换能力当前已完成首轮收口：客户端启动配置会读取 `RADISH_ENVIRONMENT` 与 `RADISH_GATEWAY_BASE_URL` 这组 `--dart-define` 构建参数，并继续保持 API / Auth / Gateway 同源；本机 Android + `localhost` Gateway 会保留本地开发证书放行边界，测试 / 正式 Gateway 默认不放宽证书校验
 - Android RC 签名配置诊断与分发前置清单当前已完成首轮收口：Gradle 当前提供 `:app:checkReleaseSigningConfig` 检查正式签名材料，`key.properties` 不存在时本地 release 构建仍回落 debug signing；若 `key.properties` 存在但缺字段、仍是示例值或找不到 keystore，会快速失败并提示修正；清单见 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution)
+- Flutter 第三批中文文案基线当前已完成：主 tab、壳层登录态、登录提示、forum / docs / profile / discover 首批真实页面的标题、摘要、空态与错误态已统一到中文主文案；当前不引入完整 i18n 框架
+- Flutter 第三批个人复访入口当前已产品化：`profile` 承载最近 forum 阅读与公开主页复访入口，继续复用既有 `ForumDetailHandoffTarget` 与 follow-up 状态，不把开发态来源说明当作正式用户文案
+- Flutter forum detail 当前已接入轻回应墙最小读写闭环：详情页按“正文 -> 轻回应 -> 评论区”展示，匿名可读取最近轻回应，已登录可发布一句轻回应，并复用详情页原地登录续接；删除、举报、完整评论提交、点赞、投票、编辑治理与完整通知中心继续不纳入本批
 
-## 7. 当前第二批范围
+## 7. 第二批范围（已收口）
 
 第二批当前固定收口到两类事情：
 
@@ -130,12 +133,25 @@ Flutter 客户端第一批固定遵循以下约束：
    - `discover / docs / profile` 首批最小真实页面接线与 Android 真机联调当前都已完成；forum 的首批真实来源接线当前也已完成一轮收口，后续优先转向 Android MVP 当前可测链路的稳定性复核，而不是回头扩壳层占位
    - `notification / commentId` 这类依赖真实通知来源的宿主深链联调，当前已补最小可测来源并完成真机人工联调：已登录壳层读取最新 forum 通知并打开原生 detail；系统通知栏推送、完整通知中心与通知管理继续不纳入本批
 
-## 8. 下一顺位
+## 8. 当前第三批范围
 
-当前第二批继续推进时，优先顺序建议为：
+第三批固定收口到产品层回补，不扩完整社区互动：
 
-1. 第二批当前可测链路已完成一轮人工验收，后续不再把重复执行当前 checklist 作为主线扩项
-2. 最小 forum notification 来源已完成真机人工联调，后续不再以补可测 notification 入口作为阻断项
-3. Android MVP 本地 release APK 发布候选首轮已完成，后续不再把“能否打出可安装 RC 包”作为主线阻断项
-4. Flutter `--dart-define` Gateway 环境切换能力、Android RC 签名配置诊断与分发前置清单已完成首轮收口；下一步优先推进真实签名材料入库外管理与测试环境实际分发复核，若继续扩业务页，应先确认其价值高于 RC 分发准备
-5. 第三批方向明确并完成 Android MVP 稳定后，再评估 Windows / Linux 平台目录与更深原生能力
+1. **中文文案基线**
+   - 当前已完成中文主文案基线，保留代码标识、API 字段、日志、测试名与技术路径英文
+   - 当前不引入完整多语言资源体系、文案运营配置或大规模视觉改版
+2. **个人复访入口产品化**
+   - 当前已把 profile 内最近 forum 阅读与公开主页复访入口转成正式用户入口
+   - 当前不扩完整浏览历史中心、通知中心或跨端同步治理
+3. **一个最小轻互动闭环**
+   - 当前已选择 forum detail 轻回应墙作为最小闭环，复用既有后端 / Web 侧 `PostQuickReply` 契约
+   - 当前只做最近轻回应读取、已登录发布与匿名原地登录引导，不做删除、举报、完整评论提交、点赞、投票或编辑治理
+
+## 9. 下一顺位
+
+当前第三批完成后，优先顺序建议为：
+
+1. 先做第三批 Android 真机人工复核，确认中文文案、个人复访入口与轻回应发布在真实 Gateway 下体验成立
+2. Android RC 外部分发继续等待真实签名材料、测试 Gateway 与外部分发对象；在条件缺失前，不把外部分发作为业务开发阻断项
+3. 若继续进入第四批，优先从“已登录后的高价值轻互动 / 复访深化”中择一小闭环，不同时扩完整通知中心、系统推送、发帖、完整评论提交、点赞、投票或编辑治理
+4. Windows / Linux 平台目录与更深原生能力继续后置，需等 Android MVP 产品闭环与分发条件更稳定后再评估

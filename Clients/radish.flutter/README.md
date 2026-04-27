@@ -144,14 +144,14 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 
 ## Android 真机人工验证 checklist
 
-当前 Android MVP 人工验证只覆盖已经具备真实入口、真实数据或可稳定手工触发的链路。已登录态当前具备一个最小 forum notification 来源入口，可用于验证通知来源回到 forum detail 与 `commentId` 定位。
+当前 Android MVP 人工验证只覆盖已经具备真实入口、真实数据或可稳定手工触发的链路。已登录态当前具备一个最小 forum notification 来源入口，可用于验证通知来源回到 forum detail 与 `commentId` 定位；第三批新增的中文文案、个人复访入口与 forum 轻回应最小闭环也纳入下一轮真机复核。
 
 前置条件：
 
 - 后端宿主、Gateway 与 Auth 已由人工按项目启动命令启动；不要由 AI 直接执行 `dotnet run` 或 `npm run dev`
 - Android 设备能访问 `https://localhost:5000` 对应的本地 Gateway；模拟器联调前已执行 `adb reverse tcp:5000 tcp:5000`
 - 测试账号可完成浏览器 OIDC 登录，并能从 `radish://oidc/callback` 回到应用
-- 当前环境中至少存在可公开读取的 forum 帖子；评论链路验证需要选择一条已有根评论或子评论的帖子
+- 当前环境中至少存在可公开读取的 forum 帖子；评论链路验证需要选择一条已有根评论或子评论的帖子；轻回应验证需要选择一条可发布轻回应的帖子
 - 若验证 notification 回流，需要使用另一个账号在 Web / 桌面端评论或回复目标用户的帖子 / 评论，确保接收账号产生一条 forum 相关通知
 
 建议按以下顺序验收：
@@ -161,16 +161,19 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 3. 进入 forum feed，确认 `latest / hottest`、分页加载、空态或错误态文案正常
 4. 从 forum feed 打开帖子详情，确认正文、作者、分类、时间与基础统计可读，原生返回正常
 5. 在帖子详情读取评论区，确认根评论分页、子评论展开、评论作者跳转公开 profile 可用；没有评论时应显示明确空态
-6. 匿名态在帖子详情发起登录，取消登录后应出现显式提示；重试登录成功后应回到原帖子上下文
-7. 已登录态执行退出，确认浏览器登出回调后回到匿名态，后续重新进入 profile 或 detail 登录入口仍可用
-8. 接收账号登录 Flutter 后，确认壳层出现 `Forum notification` 入口；点击后应打开对应帖子，并在通知包含 `commentId` 时落到目标评论上下文
-9. 关闭并重启应用，确认会话恢复或匿名回落符合当前 token 状态
+6. 在帖子详情确认轻回应位于正文之后、评论区之前；匿名态可读取最近轻回应，已登录态可发布一句轻回应
+7. 匿名态在帖子详情发起登录，取消登录后应出现显式提示；重试登录成功后应回到原帖子上下文，并可继续发布轻回应
+8. 进入 profile，确认最近 forum 阅读和公开主页复访入口是正式用户文案，可回到对应详情或公开主页
+9. 已登录态执行退出，确认浏览器登出回调后回到匿名态，后续重新进入 profile 或 detail 登录入口仍可用
+10. 接收账号登录 Flutter 后，确认壳层出现 `Forum notification` 入口；点击后应打开对应帖子，并在通知包含 `commentId` 时落到目标评论上下文
+11. 关闭并重启应用，确认会话恢复或匿名回落符合当前 token 状态，复访入口仍符合最近状态
 
 当前结果：
 
 - Android 真机已确认 `Forum notification` 回到 forum detail / 评论上下文逻辑正常
 - Android release APK 已完成一轮真机安装与本机 Gateway 联调复核，登录、基础读取与样式显示均正常
 - Android release 包身份当前为 `com.radish.client` / `Radish`
+- 第三批中文文案、个人复访入口与轻回应发布真机复核尚未执行，顺延到下一轮人工联调
 - 该入口只验证站内最新 forum 通知读取，不代表完整通知中心或系统通知栏推送已纳入 Android MVP
 
 暂不作为当前阻断项：
