@@ -288,6 +288,111 @@ void main() {
     );
   });
 
+  testWidgets('loads more public comments and opens appended comment handoff', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repository = _PagedCommentProfileRepository();
+    final scrollable = find.byType(Scrollable).first;
+    final openedTargets = <ForumDetailHandoffTarget>[];
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: repository,
+          publicUserId: 'public-user-2',
+          onOpenForumDetailTarget: openedTargets.add,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('加载更多评论'),
+      200,
+      scrollable: scrollable,
+    );
+    expect(find.text('已显示 3 / 4 条评论'), findsOneWidget);
+
+    await tester.tap(find.text('加载更多评论'));
+    await tester.pumpAndSettle();
+
+    expect(repository.commentPages, [1, 2]);
+    expect(find.text('第四条公开评论上下文'), findsOneWidget);
+    expect(find.text('已显示 4 / 4 条评论'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('打开评论上下文').last,
+      200,
+      scrollable: scrollable,
+    );
+    await tester.tap(find.text('打开评论上下文').last);
+    await tester.pumpAndSettle();
+
+    expect(openedTargets, hasLength(1));
+    expect(openedTargets.single.postId, 'post-4');
+    expect(openedTargets.single.commentId, 'comment-page-4');
+    expect(
+      openedTargets.single.source,
+      ForumDetailHandoffSource.publicProfileComment,
+    );
+  });
+
+  testWidgets('keeps loaded public comments when loading more fails', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final scrollable = find.byType(Scrollable).first;
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: _PagedCommentLoadMoreFailingProfileRepository(),
+          publicUserId: 'public-user-2',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('加载更多评论'),
+      200,
+      scrollable: scrollable,
+    );
+    await tester.tap(find.text('加载更多评论'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('第一页公开评论 1'), findsOneWidget);
+    expect(find.text('加载更多公开评论失败'), findsOneWidget);
+    expect(find.text('暂时无法加载公开资料'), findsNothing);
+  });
+
   testWidgets('renders my quick replies and opens their forum handoff', (
     tester,
   ) async {
@@ -344,6 +449,112 @@ void main() {
     expect(openedTargets.single.postId, 'post-1');
     expect(openedTargets.single.initialTitle, 'Native profile follow-up');
     expect(openedTargets.single.source, ForumDetailHandoffSource.myQuickReply);
+  });
+
+  testWidgets('loads more my quick replies without leaving profile', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repository = _PagedQuickReplyProfileRepository();
+    final scrollable = find.byType(Scrollable).first;
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: '2042219067430928384',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: '2042219067430928384',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: repository,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('加载更多轻回应'),
+      200,
+      scrollable: scrollable,
+    );
+    expect(find.text('已显示 3 / 4 条轻回应'), findsOneWidget);
+
+    await tester.tap(find.text('加载更多轻回应'));
+    await tester.pumpAndSettle();
+
+    expect(repository.quickReplyPages, [1, 2]);
+    expect(find.text('第四条回看上下文'), findsOneWidget);
+    expect(find.text('已显示 4 / 4 条轻回应'), findsOneWidget);
+    expect(find.text('暂时无法加载公开资料'), findsNothing);
+  });
+
+  testWidgets('keeps loaded my quick replies when loading more fails', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final scrollable = find.byType(Scrollable).first;
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: '2042219067430928384',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: '2042219067430928384',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: _PagedQuickReplyLoadMoreFailingProfileRepository(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('加载更多轻回应'),
+      200,
+      scrollable: scrollable,
+    );
+    await tester.tap(find.text('加载更多轻回应'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('第一页轻回应 1'), findsOneWidget);
+    expect(find.text('加载更多轻回应失败'), findsOneWidget);
+    expect(find.text('暂时无法加载公开资料'), findsNothing);
   });
 
   testWidgets('does not render my quick replies on public profile target', (
@@ -730,6 +941,166 @@ class _QuickReplyFailingProfileRepository extends _SuccessProfileRepository {
     required String accessToken,
   }) {
     throw const RadishApiClientException('轻回应服务暂时不可用');
+  }
+}
+
+class _PagedCommentProfileRepository extends _SuccessProfileRepository {
+  final List<int> commentPages = <int>[];
+
+  @override
+  Future<PublicProfileCommentPage> getPublicComments({
+    required String userId,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    commentPages.add(pageIndex);
+
+    if (pageIndex == 1) {
+      return const PublicProfileCommentPage(
+        page: 1,
+        pageSize: 3,
+        dataCount: 4,
+        pageCount: 2,
+        comments: [
+          PublicProfileCommentSummary(
+            id: 'comment-page-1',
+            postId: 'post-1',
+            content: '第一页公开评论 1',
+            likeCount: 1,
+            createTime: '2026-04-20T09:00:00Z',
+          ),
+          PublicProfileCommentSummary(
+            id: 'comment-page-2',
+            postId: 'post-2',
+            content: '第一页公开评论 2',
+            likeCount: 2,
+            createTime: '2026-04-20T09:02:00Z',
+          ),
+          PublicProfileCommentSummary(
+            id: 'comment-page-3',
+            postId: 'post-3',
+            content: '第一页公开评论 3',
+            likeCount: 3,
+            createTime: '2026-04-20T09:04:00Z',
+          ),
+        ],
+      );
+    }
+
+    return const PublicProfileCommentPage(
+      page: 2,
+      pageSize: 3,
+      dataCount: 4,
+      pageCount: 2,
+      comments: [
+        PublicProfileCommentSummary(
+          id: 'comment-page-4',
+          postId: 'post-4',
+          content: '第四条公开评论上下文',
+          likeCount: 4,
+          createTime: '2026-04-20T09:06:00Z',
+        ),
+      ],
+    );
+  }
+}
+
+class _PagedCommentLoadMoreFailingProfileRepository
+    extends _PagedCommentProfileRepository {
+  @override
+  Future<PublicProfileCommentPage> getPublicComments({
+    required String userId,
+    required int pageIndex,
+    required int pageSize,
+  }) {
+    if (pageIndex == 1) {
+      return super.getPublicComments(
+        userId: userId,
+        pageIndex: pageIndex,
+        pageSize: pageSize,
+      );
+    }
+
+    throw const RadishApiClientException('加载更多公开评论失败');
+  }
+}
+
+class _PagedQuickReplyProfileRepository extends _SuccessProfileRepository {
+  final List<int> quickReplyPages = <int>[];
+
+  @override
+  Future<UserQuickReplyPage> getMyQuickReplies({
+    required int pageIndex,
+    required int pageSize,
+    required String accessToken,
+  }) async {
+    quickReplyPages.add(pageIndex);
+
+    if (pageIndex == 1) {
+      return const UserQuickReplyPage(
+        page: 1,
+        pageSize: 3,
+        total: 4,
+        items: [
+          UserQuickReplySummary(
+            id: 'quick-page-1',
+            postId: 'post-1',
+            postTitle: 'Native profile follow-up',
+            content: '第一页轻回应 1',
+            createTime: '2026-04-20T09:10:00Z',
+          ),
+          UserQuickReplySummary(
+            id: 'quick-page-2',
+            postId: 'post-2',
+            postTitle: 'Second native follow-up',
+            content: '第一页轻回应 2',
+            createTime: '2026-04-20T09:12:00Z',
+          ),
+          UserQuickReplySummary(
+            id: 'quick-page-3',
+            postId: 'post-3',
+            postTitle: 'Third native follow-up',
+            content: '第一页轻回应 3',
+            createTime: '2026-04-20T09:14:00Z',
+          ),
+        ],
+      );
+    }
+
+    return const UserQuickReplyPage(
+      page: 2,
+      pageSize: 3,
+      total: 4,
+      items: [
+        UserQuickReplySummary(
+          id: 'quick-page-4',
+          postId: 'post-4',
+          postTitle: 'Fourth native follow-up',
+          content: '第四条回看上下文',
+          createTime: '2026-04-20T09:16:00Z',
+        ),
+      ],
+    );
+  }
+}
+
+class _PagedQuickReplyLoadMoreFailingProfileRepository
+    extends _PagedQuickReplyProfileRepository {
+  @override
+  Future<UserQuickReplyPage> getMyQuickReplies({
+    required int pageIndex,
+    required int pageSize,
+    required String accessToken,
+  }) {
+    if (pageIndex == 1) {
+      return super.getMyQuickReplies(
+        pageIndex: pageIndex,
+        pageSize: pageSize,
+        accessToken: accessToken,
+      );
+    }
+
+    throw const RadishApiClientException('加载更多轻回应失败');
   }
 }
 

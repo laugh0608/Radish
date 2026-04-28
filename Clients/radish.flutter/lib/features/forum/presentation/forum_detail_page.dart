@@ -56,9 +56,12 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
   int? _expandedChildPageIndex;
   String? _navigationNotice;
   String? _pendingNavigationSignature;
+  int _pendingNavigationScrollAttempts = 0;
+  bool _isPendingNavigationScrollScheduled = false;
   bool _isNavigatingToComment = false;
   bool _wasAuthenticated = false;
   bool _requestedSignInFromDetail = false;
+  static const int _maxPendingNavigationScrollAttempts = 12;
 
   @override
   void initState() {
@@ -131,6 +134,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
       _expandedChildPageIndex = null;
       _navigationNotice = null;
       _pendingNavigationSignature = null;
+      _pendingNavigationScrollAttempts = 0;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _startCommentNavigationIfNeeded();
       });
@@ -175,9 +179,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
           commentId: widget.commentId,
         );
 
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _scrollToPendingCommentIfNeeded();
-        });
+        _schedulePendingCommentScroll();
 
         return Scaffold(
           appBar: AppBar(
@@ -324,6 +326,9 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
 
   void _registerCommentKey(String commentId, GlobalKey key) {
     _commentKeys[commentId] = key;
+    if (commentId == _targetCommentId && _pendingNavigationSignature != null) {
+      _schedulePendingCommentScroll();
+    }
   }
 
   Future<void> _startCommentNavigationIfNeeded() async {
@@ -368,7 +373,9 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
         _navigationNotice = null;
         _pendingNavigationSignature =
             '${navigation.commentId}:${navigation.rootPageIndex}:${navigation.childPageIndex ?? 0}';
+        _pendingNavigationScrollAttempts = 0;
       });
+      _schedulePendingCommentScroll();
     } on RadishApiClientException {
       if (!mounted) {
         return;
@@ -379,6 +386,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
         _expandedRootCommentId = null;
         _expandedChildPageIndex = null;
         _pendingNavigationSignature = null;
+        _pendingNavigationScrollAttempts = 0;
       });
     } on FormatException {
       if (!mounted) {
@@ -390,6 +398,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
         _expandedRootCommentId = null;
         _expandedChildPageIndex = null;
         _pendingNavigationSignature = null;
+        _pendingNavigationScrollAttempts = 0;
       });
     } finally {
       _isNavigatingToComment = false;
@@ -410,6 +419,13 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
     final key = _commentKeys[targetCommentId];
     final context = key?.currentContext;
     if (context == null) {
+      if (_pendingNavigationScrollAttempts <
+          _maxPendingNavigationScrollAttempts) {
+        _pendingNavigationScrollAttempts++;
+        _schedulePendingCommentScroll(
+          delay: const Duration(milliseconds: 80),
+        );
+      }
       return;
     }
 
@@ -422,6 +438,27 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
 
     setState(() {
       _pendingNavigationSignature = null;
+      _pendingNavigationScrollAttempts = 0;
+    });
+  }
+
+  void _schedulePendingCommentScroll({
+    Duration delay = Duration.zero,
+  }) {
+    if (_isPendingNavigationScrollScheduled) {
+      return;
+    }
+
+    _isPendingNavigationScrollScheduled = true;
+    Future<void>.delayed(delay, () {
+      if (!mounted) {
+        return;
+      }
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _isPendingNavigationScrollScheduled = false;
+        _scrollToPendingCommentIfNeeded();
+      });
     });
   }
 }

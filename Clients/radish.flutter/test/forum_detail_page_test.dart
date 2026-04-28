@@ -225,7 +225,7 @@ void main() {
 
   testWidgets('navigates directly to target child comment by commentId',
       (tester) async {
-    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.physicalSize = const Size(1200, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -244,6 +244,11 @@ void main() {
 
     await tester.pump();
     await tester.pumpAndSettle();
+
+    final scrollableState =
+        tester.state<ScrollableState>(find.byType(Scrollable).first);
+    expect(scrollableState.position.pixels, greaterThan(0));
+
     final scrollable = find.byType(Scrollable).first;
     await tester.scrollUntilVisible(
       find.text('Child comment two'),

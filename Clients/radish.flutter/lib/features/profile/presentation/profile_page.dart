@@ -247,10 +247,27 @@ class _ProfilePageState extends State<ProfilePage> {
                 stats: profileState.stats,
                 posts: profileState.posts,
                 comments: profileState.comments,
+                commentsTotal: profileState.commentsTotal,
+                hasMoreComments: profileState.hasMoreComments,
+                isLoadingMoreComments: profileState.isLoadingMoreComments,
+                commentsLoadMoreErrorMessage:
+                    profileState.commentsLoadMoreErrorMessage,
+                onLoadMoreComments: _controller.loadMoreComments,
                 myQuickReplies: profileState.myQuickReplies,
+                myQuickRepliesTotal: profileState.myQuickRepliesTotal,
+                hasMoreMyQuickReplies: profileState.hasMoreMyQuickReplies,
+                isLoadingMoreMyQuickReplies:
+                    profileState.isLoadingMoreMyQuickReplies,
                 showMyQuickReplies: profileState.includesMyQuickReplies,
                 myQuickRepliesErrorMessage:
                     profileState.myQuickRepliesErrorMessage,
+                myQuickRepliesLoadMoreErrorMessage:
+                    profileState.myQuickRepliesLoadMoreErrorMessage,
+                onLoadMoreMyQuickReplies: isMyProfile
+                    ? () => _controller.loadMoreMyQuickReplies(
+                          accessToken: session.accessToken,
+                        )
+                    : null,
                 onOpenForumDetailTarget: widget.onOpenForumDetailTarget,
               )
             else
@@ -354,9 +371,19 @@ class _PublicProfileContent extends StatelessWidget {
     required this.stats,
     required this.posts,
     required this.comments,
+    required this.commentsTotal,
+    required this.hasMoreComments,
+    required this.isLoadingMoreComments,
+    required this.commentsLoadMoreErrorMessage,
+    required this.onLoadMoreComments,
     required this.myQuickReplies,
+    required this.myQuickRepliesTotal,
+    required this.hasMoreMyQuickReplies,
+    required this.isLoadingMoreMyQuickReplies,
     required this.showMyQuickReplies,
     required this.myQuickRepliesErrorMessage,
+    required this.myQuickRepliesLoadMoreErrorMessage,
+    required this.onLoadMoreMyQuickReplies,
     required this.onOpenForumDetailTarget,
   });
 
@@ -364,9 +391,19 @@ class _PublicProfileContent extends StatelessWidget {
   final PublicProfileStats? stats;
   final List<PublicProfilePostSummary> posts;
   final List<PublicProfileCommentSummary> comments;
+  final int commentsTotal;
+  final bool hasMoreComments;
+  final bool isLoadingMoreComments;
+  final String? commentsLoadMoreErrorMessage;
+  final VoidCallback onLoadMoreComments;
   final List<UserQuickReplySummary> myQuickReplies;
+  final int myQuickRepliesTotal;
+  final bool hasMoreMyQuickReplies;
+  final bool isLoadingMoreMyQuickReplies;
   final bool showMyQuickReplies;
   final String? myQuickRepliesErrorMessage;
+  final String? myQuickRepliesLoadMoreErrorMessage;
+  final VoidCallback? onLoadMoreMyQuickReplies;
   final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
 
   @override
@@ -382,7 +419,12 @@ class _PublicProfileContent extends StatelessWidget {
         if (showMyQuickReplies) ...[
           _MyQuickRepliesCard(
             quickReplies: myQuickReplies,
+            total: myQuickRepliesTotal,
+            hasMore: hasMoreMyQuickReplies,
+            isLoadingMore: isLoadingMoreMyQuickReplies,
             errorMessage: myQuickRepliesErrorMessage,
+            loadMoreErrorMessage: myQuickRepliesLoadMoreErrorMessage,
+            onLoadMore: onLoadMoreMyQuickReplies,
             onOpenForumDetailTarget: onOpenForumDetailTarget,
           ),
           const SizedBox(height: 16),
@@ -394,6 +436,11 @@ class _PublicProfileContent extends StatelessWidget {
         const SizedBox(height: 16),
         _RecentCommentsCard(
           comments: comments,
+          total: commentsTotal,
+          hasMore: hasMoreComments,
+          isLoadingMore: isLoadingMoreComments,
+          loadMoreErrorMessage: commentsLoadMoreErrorMessage,
+          onLoadMore: onLoadMoreComments,
           onOpenForumDetailTarget: onOpenForumDetailTarget,
         ),
       ],
@@ -752,12 +799,22 @@ class _RecentPostsCard extends StatelessWidget {
 class _MyQuickRepliesCard extends StatelessWidget {
   const _MyQuickRepliesCard({
     required this.quickReplies,
+    required this.total,
+    required this.hasMore,
+    required this.isLoadingMore,
     required this.errorMessage,
+    required this.loadMoreErrorMessage,
+    required this.onLoadMore,
     required this.onOpenForumDetailTarget,
   });
 
   final List<UserQuickReplySummary> quickReplies;
+  final int total;
+  final bool hasMore;
+  final bool isLoadingMore;
   final String? errorMessage;
+  final String? loadMoreErrorMessage;
+  final VoidCallback? onLoadMore;
   final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
 
   @override
@@ -768,32 +825,117 @@ class _MyQuickRepliesCard extends StatelessWidget {
       title: '我的轻回应',
       description: '回看我最近留下的短反馈，并继续回到原帖上下文。',
       emptyText: errorMessage ?? '你还没有发表过轻回应。',
-      children: errorMessage == null
-          ? quickReplies
-              .map(
-                (quickReply) => _ContentPreviewTile(
-                  title: quickReply.postTitle,
-                  subtitle: quickReply.content.isEmpty
-                      ? '这条轻回应暂无内容。'
-                      : quickReply.content,
-                  meta: '轻回应 ${quickReply.id}',
-                  chips: [
-                    _formatDate(quickReply.createTime),
-                  ],
-                  actionLabel: onOpenForumDetailTarget == null ? null : '回到原帖',
-                  onAction: onOpenForumDetailTarget == null
-                      ? null
-                      : () => onOpenForumDetailTarget!(
-                            ForumDetailHandoffTarget(
-                              postId: quickReply.postId,
-                              source: ForumDetailHandoffSource.myQuickReply,
-                              initialTitle: quickReply.postTitle,
-                            ),
-                          ),
-                ),
-              )
-              .toList()
-          : const <Widget>[],
+      children: errorMessage == null ? _buildChildren(context) : const [],
+    );
+  }
+
+  List<Widget> _buildChildren(BuildContext context) {
+    final children = <Widget>[
+      ...quickReplies.map(
+        (quickReply) => _ContentPreviewTile(
+          title: quickReply.postTitle,
+          subtitle:
+              quickReply.content.isEmpty ? '这条轻回应暂无内容。' : quickReply.content,
+          meta: '轻回应 ${quickReply.id}',
+          chips: [
+            _formatDate(quickReply.createTime),
+          ],
+          actionLabel: onOpenForumDetailTarget == null ? null : '回到原帖',
+          onAction: onOpenForumDetailTarget == null
+              ? null
+              : () => onOpenForumDetailTarget!(
+                    ForumDetailHandoffTarget(
+                      postId: quickReply.postId,
+                      source: ForumDetailHandoffSource.myQuickReply,
+                      initialTitle: quickReply.postTitle,
+                    ),
+                  ),
+        ),
+      ),
+    ];
+
+    if (quickReplies.isNotEmpty) {
+      children.add(
+        _ProfileLoadMoreFooter(
+          loadedCount: quickReplies.length,
+          total: total,
+          unitLabel: '条轻回应',
+          hasMore: hasMore,
+          isLoadingMore: isLoadingMore,
+          errorMessage: loadMoreErrorMessage,
+          loadingLabel: '正在加载更多轻回应...',
+          actionLabel: '加载更多轻回应',
+          onLoadMore: onLoadMore,
+        ),
+      );
+    }
+
+    return children;
+  }
+}
+
+class _ProfileLoadMoreFooter extends StatelessWidget {
+  const _ProfileLoadMoreFooter({
+    required this.loadedCount,
+    required this.total,
+    required this.unitLabel,
+    required this.hasMore,
+    required this.isLoadingMore,
+    required this.errorMessage,
+    required this.loadingLabel,
+    required this.actionLabel,
+    required this.onLoadMore,
+  });
+
+  final int loadedCount;
+  final int total;
+  final String unitLabel;
+  final bool hasMore;
+  final bool isLoadingMore;
+  final String? errorMessage;
+  final String loadingLabel;
+  final String actionLabel;
+  final VoidCallback? onLoadMore;
+
+  @override
+  Widget build(BuildContext context) {
+    final normalizedTotal = total <= 0 ? loadedCount : total;
+    final errorMessage = this.errorMessage;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('已显示 $loadedCount / $normalizedTotal $unitLabel'),
+        if (errorMessage != null && errorMessage.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.errorContainer,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Text(errorMessage),
+            ),
+          ),
+        ],
+        if (hasMore || isLoadingMore) ...[
+          const SizedBox(height: 12),
+          FilledButton.tonalIcon(
+            onPressed: isLoadingMore ? null : onLoadMore,
+            icon: isLoadingMore
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.expand_more),
+            label: Text(
+              isLoadingMore ? loadingLabel : actionLabel,
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
@@ -801,10 +943,20 @@ class _MyQuickRepliesCard extends StatelessWidget {
 class _RecentCommentsCard extends StatelessWidget {
   const _RecentCommentsCard({
     required this.comments,
+    required this.total,
+    required this.hasMore,
+    required this.isLoadingMore,
+    required this.loadMoreErrorMessage,
+    required this.onLoadMore,
     required this.onOpenForumDetailTarget,
   });
 
   final List<PublicProfileCommentSummary> comments;
+  final int total;
+  final bool hasMore;
+  final bool isLoadingMore;
+  final String? loadMoreErrorMessage;
+  final VoidCallback onLoadMore;
   final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
 
   @override
@@ -813,35 +965,57 @@ class _RecentCommentsCard extends StatelessWidget {
       title: '最近公开评论',
       description: '评论预览保持只读，点击后会回到对应帖子和评论上下文。',
       emptyText: '这个用户暂无公开评论。',
-      children: comments
-          .map(
-            (comment) => _ContentPreviewTile(
-              title: comment.replyToUserName == null ||
-                      comment.replyToUserName!.isEmpty
-                  ? '评论 ${comment.id}'
-                  : '回复 @${comment.replyToUserName}',
-              subtitle: comment.content,
-              meta: '${comment.likeCount} 个赞',
-              chips: [
-                if (comment.replyToCommentSnapshot != null &&
-                    comment.replyToCommentSnapshot!.isNotEmpty)
-                  comment.replyToCommentSnapshot!,
-                _formatDate(comment.createTime),
-              ],
-              actionLabel: onOpenForumDetailTarget == null ? null : '打开评论上下文',
-              onAction: onOpenForumDetailTarget == null
-                  ? null
-                  : () => onOpenForumDetailTarget!(
-                        ForumDetailHandoffTarget(
-                          postId: comment.postId,
-                          source: ForumDetailHandoffSource.publicProfileComment,
-                          commentId: comment.id,
-                        ),
-                      ),
-            ),
-          )
-          .toList(),
+      children: _buildChildren(context),
     );
+  }
+
+  List<Widget> _buildChildren(BuildContext context) {
+    final children = <Widget>[
+      ...comments.map(
+        (comment) => _ContentPreviewTile(
+          title: comment.replyToUserName == null ||
+                  comment.replyToUserName!.isEmpty
+              ? '评论 ${comment.id}'
+              : '回复 @${comment.replyToUserName}',
+          subtitle: comment.content,
+          meta: '${comment.likeCount} 个赞',
+          chips: [
+            if (comment.replyToCommentSnapshot != null &&
+                comment.replyToCommentSnapshot!.isNotEmpty)
+              comment.replyToCommentSnapshot!,
+            _formatDate(comment.createTime),
+          ],
+          actionLabel: onOpenForumDetailTarget == null ? null : '打开评论上下文',
+          onAction: onOpenForumDetailTarget == null
+              ? null
+              : () => onOpenForumDetailTarget!(
+                    ForumDetailHandoffTarget(
+                      postId: comment.postId,
+                      source: ForumDetailHandoffSource.publicProfileComment,
+                      commentId: comment.id,
+                    ),
+                  ),
+        ),
+      ),
+    ];
+
+    if (comments.isNotEmpty) {
+      children.add(
+        _ProfileLoadMoreFooter(
+          loadedCount: comments.length,
+          total: total,
+          unitLabel: '条评论',
+          hasMore: hasMore,
+          isLoadingMore: isLoadingMore,
+          errorMessage: loadMoreErrorMessage,
+          loadingLabel: '正在加载更多评论...',
+          actionLabel: '加载更多评论',
+          onLoadMore: onLoadMore,
+        ),
+      );
+    }
+
+    return children;
   }
 }
 
