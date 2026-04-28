@@ -25,3 +25,18 @@
 - **我的轻回应当前复用既有 forum detail handoff 回到原帖**：轻回应条目不新建独立详情页，不复制 WebOS 工作台逻辑，而是新增 `myQuickReply` 来源标签后继续打开同一套原生帖子详情。
 - **本轮边界继续收紧**：第四批首个小闭环只做回看与回到上下文，不开放删除、举报、完整评论提交、点赞、投票、编辑治理、完整通知中心或系统通知栏推送。
 - **本轮验证已通过**：`Clients/radish.flutter` 下执行 `flutter test` 与 `flutter analyze` 均已通过；Android 真机复核也已确认我的轻回应读取、公开主页隐藏与回到原帖 handoff 正常。
+
+### Flutter 第四批我的轻回应分页复访
+
+- **我的轻回应回看已从首屏预览推进到分页复访**：已登录用户查看我的 `profile` 时，原生端仍复用 `/api/v1/PostQuickReply/GetMine`，当前可在“我的轻回应”区块继续加载更多轻回应。
+- **分页失败保持区块内降级**：加载更多失败时只在“我的轻回应”区块展示局部错误，公开资料、公开帖子与公开评论仍保持 ready 状态。
+- **回到原帖路径继续复用既有 handoff**：分页加载出的轻回应条目仍通过 `ForumDetailHandoffSource.myQuickReply` 回到同一套原生 forum detail，不新增独立详情页。
+- **本轮验证已通过**：`Clients/radish.flutter` 下执行 `flutter test`、`flutter analyze` 与仓库根目录 `git diff --check` 均已通过；Android 真机复核也已确认分页复访、公开主页隐藏与回到原帖 handoff 正常。
+
+### Flutter 第四批最近公开评论分页复访
+
+- **profile 最近公开评论已补齐分页复访**：公开主页与我的主页的“最近公开评论”区块当前可继续加载更多公开评论，仍复用现有 `/api/v1/Comment/GetUserComments` 契约。
+- **评论回看继续落到原生 forum detail**：分页追加出的评论条目仍通过 `ForumDetailHandoffSource.publicProfileComment` 回到对应帖子与评论上下文，不新增独立评论详情页。
+- **目标评论定位已补异步渲染重试**：真机复核发现 profile 评论条目能打开对应帖子但默认停在顶部；本轮修复 forum detail 在目标根评论页 / 子评论页异步补载完成后的滚动时机，不改 profile handoff 与后端契约。
+- **分页失败保持区块内降级**：加载更多评论失败时只在“最近公开评论”区块展示局部错误，不拖垮公开资料、最近公开帖子或我的轻回应区块。
+- **本轮验证已通过**：`Clients/radish.flutter` 下执行 `flutter test`、`flutter analyze` 与仓库根目录 `git diff --check` 均已通过；Android 真机复核也已确认公开评论条目可打开对应帖子，并自动定位到目标根评论或子评论位置。
