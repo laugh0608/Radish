@@ -8,7 +8,7 @@
 
 - **当前里程碑**：`第二开发阶段：社区深化与多端化`
 - **当前主线**：`Phase 2-3 Flutter 客户端 MVP`
-- **当前阶段**：`2026-04-06` 已完成首版真实发布 `v26.3.2-release`，第一开发阶段正式结束；`2026-04-07` 已完成阶段口径重置与多壳层策略冻结；截至 `2026-04-18`，`Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口并转入稳定维护，当前产品主线正式切到 `Phase 2-3 Flutter 客户端 MVP`。当前第一批范围定义、真相源文档与工程骨架已完成；第二批已完成 Android MVP 可测链路、最小 forum notification 回流、Android 本地 release APK 发布候选首轮收口、Flutter `--dart-define` Gateway 环境切换能力，以及 Android RC 签名配置诊断与分发前置清单；第三批已完成中文文案基线、个人复访入口产品化与 forum detail 轻回应最小读写闭环。`
+- **当前阶段**：`2026-04-06` 已完成首版真实发布 `v26.3.2-release`，第一开发阶段正式结束；`2026-04-07` 已完成阶段口径重置与多壳层策略冻结；截至 `2026-04-18`，`Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口并转入稳定维护，当前产品主线正式切到 `Phase 2-3 Flutter 客户端 MVP`。当前第一批范围定义、真相源文档与工程骨架已完成；第二批已完成 Android MVP 可测链路、最小 forum notification 回流、Android 本地 release APK 发布候选首轮收口、Flutter `--dart-define` Gateway 环境切换能力，以及 Android RC 签名配置诊断与分发前置清单；第三批已完成中文文案基线、个人复访入口产品化与 forum detail 轻回应最小读写闭环，并已通过一轮 Android 真机人工复核。`
 
 ## 当前主线入口
 
@@ -30,7 +30,7 @@
 - Android 宿主通知 handoff、壳层最近阅读续接与 public profile 评论入口当前都已统一接到 Flutter forum 的原生 handoff 目标；Flutter 已登录壳层当前也已补一个最小可测 forum notification 来源，可从当前用户最新通知读取字符串化 `postId / commentId` 并回到原生 forum detail
 - Android MVP 本地 release APK 发布候选当前已完成首轮收口：包身份为 `com.radish.client` / `Radish`，release signing 读取逻辑与密钥忽略边界已落地，release 包联网权限已补齐，真机安装后登录、基础读取与样式显示均已确认正常
 - Android RC 签名配置诊断与分发前置清单当前已完成首轮收口：Gradle 提供 `:app:checkReleaseSigningConfig` 检查正式签名材料，清单见 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution)
-- 下一步应先做第三批 Android 真机复核；Android RC 外部分发继续等待真实签名材料、测试 Gateway 与外部分发对象，不把发布线冻结误判为业务功能阻塞
+- 第三批 Android 真机复核当前已通过；复核中发现的同一帖子详情返回列表后无法再次打开的问题已完成 handoff 状态修复与定向测试覆盖；Android RC 外部分发继续等待真实签名材料、测试 Gateway 与外部分发对象，不把发布线冻结误判为业务功能阻塞
 - `Phase 2-2` 公开内容壳层固定转入稳定维护，不再与 Flutter 混成一条建设线
 
 ## 已确认的长期方向（暂不进入当前主线）

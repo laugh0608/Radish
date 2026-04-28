@@ -173,7 +173,8 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 - Android 真机已确认 `Forum notification` 回到 forum detail / 评论上下文逻辑正常
 - Android release APK 已完成一轮真机安装与本机 Gateway 联调复核，登录、基础读取与样式显示均正常
 - Android release 包身份当前为 `com.radish.client` / `Radish`
-- 第三批中文文案、个人复访入口与轻回应发布真机复核尚未执行，顺延到下一轮人工联调
+- 第三批中文文案、个人复访入口与轻回应发布已完成一轮 Android 真机复核，真实 Gateway 下确认正常
+- 本轮复核发现并修复同一帖子详情返回列表后无法再次打开的问题；当前已补 `forum_page_test.dart` 定向回归测试
 - 该入口只验证站内最新 forum 通知读取，不代表完整通知中心或系统通知栏推送已纳入 Android MVP
 
 暂不作为当前阻断项：

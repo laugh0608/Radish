@@ -69,6 +69,10 @@ class _ForumPageState extends State<ForumPage> {
       _handledHandoffSignature = null;
     }
 
+    if (oldWidget.handoffTarget != null && widget.handoffTarget == null) {
+      _handledHandoffSignature = null;
+    }
+
     if (oldWidget.handoffTarget != widget.handoffTarget) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _openHandoffTargetIfNeeded();
