@@ -1872,6 +1872,20 @@ class _FakeProfileRepository implements ProfileRepository {
       comments: [],
     );
   }
+
+  @override
+  Future<UserQuickReplyPage> getMyQuickReplies({
+    required int pageIndex,
+    required int pageSize,
+    required String accessToken,
+  }) async {
+    return const UserQuickReplyPage(
+      page: 1,
+      pageSize: 3,
+      total: 0,
+      items: [],
+    );
+  }
 }
 
 class _FakeForumNotificationRepository implements NotificationRepository {
@@ -1964,6 +1978,28 @@ class _SeededProfileRepository implements ProfileRepository {
           createTime: '2026-04-20T09:00:00Z',
           replyToUserName: 'luobo',
           replyToCommentSnapshot: 'First public root comment',
+        ),
+      ],
+    );
+  }
+
+  @override
+  Future<UserQuickReplyPage> getMyQuickReplies({
+    required int pageIndex,
+    required int pageSize,
+    required String accessToken,
+  }) async {
+    return const UserQuickReplyPage(
+      page: 1,
+      pageSize: 3,
+      total: 1,
+      items: [
+        UserQuickReplySummary(
+          id: 'quick-42',
+          postId: 'post-42',
+          postTitle: '论坛详情回流',
+          content: '这个回流很好用',
+          createTime: '2026-04-20T09:10:00Z',
         ),
       ],
     );

@@ -19,6 +19,9 @@ class ProfileState {
     this.stats,
     this.posts = const <PublicProfilePostSummary>[],
     this.comments = const <PublicProfileCommentSummary>[],
+    this.myQuickReplies = const <UserQuickReplySummary>[],
+    this.includesMyQuickReplies = false,
+    this.myQuickRepliesErrorMessage,
     this.errorMessage,
   });
 
@@ -33,6 +36,9 @@ class ProfileState {
   final PublicProfileStats? stats;
   final List<PublicProfilePostSummary> posts;
   final List<PublicProfileCommentSummary> comments;
+  final List<UserQuickReplySummary> myQuickReplies;
+  final bool includesMyQuickReplies;
+  final String? myQuickRepliesErrorMessage;
   final String? errorMessage;
 
   bool get isIdle => status == ProfileStatus.idle;
@@ -55,6 +61,11 @@ class ProfileState {
     bool clearPosts = false,
     List<PublicProfileCommentSummary>? comments,
     bool clearComments = false,
+    List<UserQuickReplySummary>? myQuickReplies,
+    bool clearMyQuickReplies = false,
+    bool? includesMyQuickReplies,
+    String? myQuickRepliesErrorMessage,
+    bool clearMyQuickRepliesError = false,
     String? errorMessage,
     bool clearError = false,
   }) {
@@ -69,6 +80,14 @@ class ProfileState {
       comments: clearComments
           ? const <PublicProfileCommentSummary>[]
           : (comments ?? this.comments),
+      myQuickReplies: clearMyQuickReplies
+          ? const <UserQuickReplySummary>[]
+          : (myQuickReplies ?? this.myQuickReplies),
+      includesMyQuickReplies:
+          includesMyQuickReplies ?? this.includesMyQuickReplies,
+      myQuickRepliesErrorMessage: clearMyQuickRepliesError
+          ? null
+          : (myQuickRepliesErrorMessage ?? this.myQuickRepliesErrorMessage),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
@@ -85,7 +104,11 @@ class ProfileController extends ChangeNotifier {
 
   ProfileState get state => _state;
 
-  Future<void> loadForUser(String? userId) async {
+  Future<void> loadForUser(
+    String? userId, {
+    bool includeMyQuickReplies = false,
+    String? accessToken,
+  }) async {
     final normalizedUserId = userId?.trim();
     if (normalizedUserId == null || normalizedUserId.isEmpty) {
       _requestVersion++;
@@ -95,30 +118,48 @@ class ProfileController extends ChangeNotifier {
     }
 
     if (_state.userId == normalizedUserId &&
+        _state.includesMyQuickReplies == includeMyQuickReplies &&
         (_state.isLoading || _state.isReady)) {
       return;
     }
 
-    await _load(normalizedUserId);
+    await _load(
+      normalizedUserId,
+      includeMyQuickReplies: includeMyQuickReplies,
+      accessToken: accessToken,
+    );
   }
 
-  Future<void> refresh() async {
+  Future<void> refresh({
+    String? accessToken,
+  }) async {
     final userId = _state.userId;
     if (userId == null || userId.isEmpty) {
       return;
     }
 
-    await _load(userId);
+    await _load(
+      userId,
+      includeMyQuickReplies: _state.includesMyQuickReplies,
+      accessToken: accessToken,
+    );
   }
 
-  Future<void> _load(String userId) async {
+  Future<void> _load(
+    String userId, {
+    required bool includeMyQuickReplies,
+    String? accessToken,
+  }) async {
     final requestVersion = ++_requestVersion;
     _state = _state.copyWith(
       status: ProfileStatus.loading,
       userId: userId,
+      includesMyQuickReplies: includeMyQuickReplies,
       clearStats: true,
       clearPosts: true,
       clearComments: true,
+      clearMyQuickReplies: true,
+      clearMyQuickRepliesError: true,
       clearError: true,
     );
     notifyListeners();
@@ -147,6 +188,30 @@ class ProfileController extends ChangeNotifier {
       final stats = results[1] as PublicProfileStats;
       final posts = (results[2] as PublicProfilePostPage).posts;
       final comments = (results[3] as PublicProfileCommentPage).comments;
+      var myQuickReplies = const <UserQuickReplySummary>[];
+      String? myQuickRepliesErrorMessage;
+
+      final normalizedAccessToken = accessToken?.trim();
+      if (includeMyQuickReplies &&
+          normalizedAccessToken != null &&
+          normalizedAccessToken.isNotEmpty) {
+        try {
+          final quickReplyPage = await _repository.getMyQuickReplies(
+            pageIndex: 1,
+            pageSize: 3,
+            accessToken: normalizedAccessToken,
+          );
+          myQuickReplies = quickReplyPage.items;
+        } on RadishApiClientException catch (error) {
+          myQuickRepliesErrorMessage = error.message;
+        } on FormatException catch (error) {
+          myQuickRepliesErrorMessage = '我的轻回应返回格式异常：${error.message}';
+        }
+      }
+
+      if (requestVersion != _requestVersion) {
+        return;
+      }
 
       _state = _state.copyWith(
         status: ProfileStatus.ready,
@@ -155,6 +220,10 @@ class ProfileController extends ChangeNotifier {
         stats: stats,
         posts: posts,
         comments: comments,
+        myQuickReplies: myQuickReplies,
+        includesMyQuickReplies: includeMyQuickReplies,
+        myQuickRepliesErrorMessage: myQuickRepliesErrorMessage,
+        clearMyQuickRepliesError: myQuickRepliesErrorMessage == null,
         clearError: true,
       );
       notifyListeners();

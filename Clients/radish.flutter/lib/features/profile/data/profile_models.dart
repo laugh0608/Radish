@@ -197,6 +197,63 @@ class PublicProfileCommentPage {
   final List<PublicProfileCommentSummary> comments;
 }
 
+class UserQuickReplySummary {
+  const UserQuickReplySummary({
+    required this.id,
+    required this.postId,
+    required this.postTitle,
+    required this.content,
+    required this.createTime,
+  });
+
+  factory UserQuickReplySummary.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+
+    return UserQuickReplySummary(
+      id: _readRequiredId(map, 'voId'),
+      postId: _readRequiredId(map, 'voPostId'),
+      postTitle: _readString(map['voPostTitle']) ?? '未命名帖子',
+      content: _readString(map['voContent']) ?? '',
+      createTime: _readString(map['voCreateTime']) ?? '',
+    );
+  }
+
+  final String id;
+  final String postId;
+  final String postTitle;
+  final String content;
+  final String createTime;
+}
+
+class UserQuickReplyPage {
+  const UserQuickReplyPage({
+    required this.page,
+    required this.pageSize,
+    required this.total,
+    required this.items,
+  });
+
+  factory UserQuickReplyPage.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+    final data = map['voItems'];
+    final items = data is List
+        ? data.map(UserQuickReplySummary.fromJson).toList()
+        : const <UserQuickReplySummary>[];
+
+    return UserQuickReplyPage(
+      page: _readInt(map['voPageIndex']) ?? 1,
+      pageSize: _readInt(map['voPageSize']) ?? items.length,
+      total: _readInt(map['voTotal']) ?? items.length,
+      items: items,
+    );
+  }
+
+  final int page;
+  final int pageSize;
+  final int total;
+  final List<UserQuickReplySummary> items;
+}
+
 Map<String, Object?> _readJsonMap(Object? json) {
   if (json is Map) {
     return Map<String, Object?>.from(json.cast<Object?, Object?>());

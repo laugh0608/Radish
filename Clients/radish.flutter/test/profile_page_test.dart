@@ -90,7 +90,7 @@ void main() {
       scrollable: scrollable,
     );
     expect(find.text('最近公开帖子'), findsOneWidget);
-    expect(find.text('Native profile follow-up'), findsOneWidget);
+    expect(find.text('Native profile follow-up'), findsWidgets);
 
     await tester.scrollUntilVisible(
       find.text('最近公开评论'),
@@ -286,6 +286,155 @@ void main() {
       openedTargets.last.source,
       ForumDetailHandoffSource.publicProfileComment,
     );
+  });
+
+  testWidgets('renders my quick replies and opens their forum handoff', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final scrollable = find.byType(Scrollable).first;
+    final openedTargets = <ForumDetailHandoffTarget>[];
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: '2042219067430928384',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: '2042219067430928384',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: _SuccessProfileRepository(),
+          onOpenForumDetailTarget: openedTargets.add,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('我的轻回应'),
+      200,
+      scrollable: scrollable,
+    );
+    expect(find.text('我的轻回应'), findsOneWidget);
+    expect(find.text('这个原生回看入口不错'), findsOneWidget);
+    expect(find.text('Native profile follow-up'), findsWidgets);
+
+    await tester.tap(find.text('回到原帖'));
+    await tester.pumpAndSettle();
+
+    expect(openedTargets, hasLength(1));
+    expect(openedTargets.single.postId, 'post-1');
+    expect(openedTargets.single.initialTitle, 'Native profile follow-up');
+    expect(openedTargets.single.source, ForumDetailHandoffSource.myQuickReply);
+  });
+
+  testWidgets('does not render my quick replies on public profile target', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: '2042219067430928384',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: '2042219067430928384',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: _SuccessProfileRepository(),
+          publicUserId: 'public-user-2',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('公开主页'), findsOneWidget);
+    expect(find.text('我的轻回应'), findsNothing);
+  });
+
+  testWidgets('keeps profile ready when my quick replies fail', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final scrollable = find.byType(Scrollable).first;
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: '2042219067430928384',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: '2042219067430928384',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: _QuickReplyFailingProfileRepository(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Radish Author'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('我的轻回应'),
+      200,
+      scrollable: scrollable,
+    );
+    expect(find.text('我的轻回应'), findsOneWidget);
+    expect(find.text('轻回应服务暂时不可用'), findsOneWidget);
+    expect(find.text('暂时无法加载公开资料'), findsNothing);
   });
 
   testWidgets('renders profile error state when repository fails', (
@@ -506,6 +655,28 @@ class _SuccessProfileRepository implements ProfileRepository {
       ],
     );
   }
+
+  @override
+  Future<UserQuickReplyPage> getMyQuickReplies({
+    required int pageIndex,
+    required int pageSize,
+    required String accessToken,
+  }) async {
+    return const UserQuickReplyPage(
+      page: 1,
+      pageSize: 3,
+      total: 1,
+      items: [
+        UserQuickReplySummary(
+          id: 'quick-1',
+          postId: 'post-1',
+          postTitle: 'Native profile follow-up',
+          content: '这个原生回看入口不错',
+          createTime: '2026-04-20T09:10:00Z',
+        ),
+      ],
+    );
+  }
 }
 
 class _FailingProfileRepository implements ProfileRepository {
@@ -539,6 +710,26 @@ class _FailingProfileRepository implements ProfileRepository {
     required int pageSize,
   }) {
     throw const RadishApiClientException('公开资料服务暂时不可用');
+  }
+
+  @override
+  Future<UserQuickReplyPage> getMyQuickReplies({
+    required int pageIndex,
+    required int pageSize,
+    required String accessToken,
+  }) {
+    throw const RadishApiClientException('轻回应服务暂时不可用');
+  }
+}
+
+class _QuickReplyFailingProfileRepository extends _SuccessProfileRepository {
+  @override
+  Future<UserQuickReplyPage> getMyQuickReplies({
+    required int pageIndex,
+    required int pageSize,
+    required String accessToken,
+  }) {
+    throw const RadishApiClientException('轻回应服务暂时不可用');
   }
 }
 

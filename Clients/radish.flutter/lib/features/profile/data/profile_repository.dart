@@ -22,6 +22,12 @@ abstract class ProfileRepository {
     required int pageIndex,
     required int pageSize,
   });
+
+  Future<UserQuickReplyPage> getMyQuickReplies({
+    required int pageIndex,
+    required int pageSize,
+    required String accessToken,
+  });
 }
 
 class HttpProfileRepository implements ProfileRepository {
@@ -106,6 +112,27 @@ class HttpProfileRepository implements ProfileRepository {
     return apiClient.get(
       uri: uri,
       decode: PublicProfileCommentPage.fromJson,
+    );
+  }
+
+  @override
+  Future<UserQuickReplyPage> getMyQuickReplies({
+    required int pageIndex,
+    required int pageSize,
+    required String accessToken,
+  }) {
+    final uri = endpoints.resolveApi(
+      '/api/v1/PostQuickReply/GetMine',
+      queryParameters: {
+        'pageIndex': pageIndex.toString(),
+        'pageSize': pageSize.toString(),
+      },
+    );
+
+    return apiClient.get(
+      uri: uri,
+      bearerToken: accessToken,
+      decode: UserQuickReplyPage.fromJson,
     );
   }
 }

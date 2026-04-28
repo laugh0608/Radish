@@ -18,3 +18,10 @@
 
 - **本轮定向验证已通过**：`Clients/radish.flutter` 下执行 `flutter test test/forum_page_test.dart` 已通过。
 - **第四批当前建议从复访深化切入**：优先围绕个人页承载我发布的轻回应 / 最近轻回应上下文，并继续复用现有 forum detail handoff 回到原帖；不同时扩完整通知中心、系统通知栏推送、发帖、完整评论提交、点赞、投票或编辑治理。
+
+### Flutter 第四批复访深化开始落地
+
+- **Flutter 第四批当前已从“我的轻回应回看”切入**：已登录用户查看我的 `profile` 时，原生端会读取现有 `/api/v1/PostQuickReply/GetMine` 契约，展示最近轻回应、原帖标题和发布时间；公开主页不展示该个人区块。
+- **我的轻回应当前复用既有 forum detail handoff 回到原帖**：轻回应条目不新建独立详情页，不复制 WebOS 工作台逻辑，而是新增 `myQuickReply` 来源标签后继续打开同一套原生帖子详情。
+- **本轮边界继续收紧**：第四批首个小闭环只做回看与回到上下文，不开放删除、举报、完整评论提交、点赞、投票、编辑治理、完整通知中心或系统通知栏推送。
+- **本轮验证已通过**：`Clients/radish.flutter` 下执行 `flutter test` 与 `flutter analyze` 均已通过；Android 真机复核也已确认我的轻回应读取、公开主页隐藏与回到原帖 handoff 正常。

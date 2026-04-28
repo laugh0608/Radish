@@ -78,7 +78,13 @@ class _ProfilePageState extends State<ProfilePage> {
   void _syncSessionProfile() {
     final sessionState = widget.sessionController.state;
     final userId = _resolveTargetUserId(sessionState);
-    _controller.loadForUser(userId);
+    final isMyProfile = _normalizeUserId(widget.publicUserId) == null &&
+        sessionState.isAuthenticated;
+    _controller.loadForUser(
+      userId,
+      includeMyQuickReplies: isMyProfile,
+      accessToken: isMyProfile ? sessionState.session?.accessToken : null,
+    );
   }
 
   String? _resolveTargetUserId(SessionState sessionState) {
@@ -114,6 +120,9 @@ class _ProfilePageState extends State<ProfilePage> {
             recentPublicUserId != null && recentPublicUserId != publicUserId;
         final targetUserId = _resolveTargetUserId(sessionState);
         final hasTargetUser = targetUserId != null && targetUserId.isNotEmpty;
+        final isMyProfile = !isViewingPublicProfile &&
+            sessionState.isAuthenticated &&
+            session != null;
 
         return ListView(
           padding: const EdgeInsets.all(20),
@@ -208,8 +217,12 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 if (hasTargetUser)
                   FilledButton.tonalIcon(
-                    onPressed:
-                        profileState.isLoading ? null : _controller.refresh,
+                    onPressed: profileState.isLoading
+                        ? null
+                        : () => _controller.refresh(
+                              accessToken:
+                                  isMyProfile ? session.accessToken : null,
+                            ),
                     icon: const Icon(Icons.refresh),
                     label: const Text('刷新资料'),
                   ),
@@ -234,6 +247,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 stats: profileState.stats,
                 posts: profileState.posts,
                 comments: profileState.comments,
+                myQuickReplies: profileState.myQuickReplies,
+                showMyQuickReplies: profileState.includesMyQuickReplies,
+                myQuickRepliesErrorMessage:
+                    profileState.myQuickRepliesErrorMessage,
                 onOpenForumDetailTarget: widget.onOpenForumDetailTarget,
               )
             else
@@ -337,6 +354,9 @@ class _PublicProfileContent extends StatelessWidget {
     required this.stats,
     required this.posts,
     required this.comments,
+    required this.myQuickReplies,
+    required this.showMyQuickReplies,
+    required this.myQuickRepliesErrorMessage,
     required this.onOpenForumDetailTarget,
   });
 
@@ -344,6 +364,9 @@ class _PublicProfileContent extends StatelessWidget {
   final PublicProfileStats? stats;
   final List<PublicProfilePostSummary> posts;
   final List<PublicProfileCommentSummary> comments;
+  final List<UserQuickReplySummary> myQuickReplies;
+  final bool showMyQuickReplies;
+  final String? myQuickRepliesErrorMessage;
   final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
 
   @override
@@ -356,6 +379,14 @@ class _PublicProfileContent extends StatelessWidget {
         const SizedBox(height: 16),
         const _ProfileReadingGuide(),
         const SizedBox(height: 16),
+        if (showMyQuickReplies) ...[
+          _MyQuickRepliesCard(
+            quickReplies: myQuickReplies,
+            errorMessage: myQuickRepliesErrorMessage,
+            onOpenForumDetailTarget: onOpenForumDetailTarget,
+          ),
+          const SizedBox(height: 16),
+        ],
         _RecentPostsCard(
           posts: posts,
           onOpenForumDetailTarget: onOpenForumDetailTarget,
@@ -715,6 +746,55 @@ class _RecentPostsCard extends StatelessWidget {
     }
 
     return content.length > 120 ? '${content.substring(0, 120)}...' : content;
+  }
+}
+
+class _MyQuickRepliesCard extends StatelessWidget {
+  const _MyQuickRepliesCard({
+    required this.quickReplies,
+    required this.errorMessage,
+    required this.onOpenForumDetailTarget,
+  });
+
+  final List<UserQuickReplySummary> quickReplies;
+  final String? errorMessage;
+  final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
+
+  @override
+  Widget build(BuildContext context) {
+    final errorMessage = this.errorMessage;
+
+    return _ProfileSectionCard(
+      title: '我的轻回应',
+      description: '回看我最近留下的短反馈，并继续回到原帖上下文。',
+      emptyText: errorMessage ?? '你还没有发表过轻回应。',
+      children: errorMessage == null
+          ? quickReplies
+              .map(
+                (quickReply) => _ContentPreviewTile(
+                  title: quickReply.postTitle,
+                  subtitle: quickReply.content.isEmpty
+                      ? '这条轻回应暂无内容。'
+                      : quickReply.content,
+                  meta: '轻回应 ${quickReply.id}',
+                  chips: [
+                    _formatDate(quickReply.createTime),
+                  ],
+                  actionLabel: onOpenForumDetailTarget == null ? null : '回到原帖',
+                  onAction: onOpenForumDetailTarget == null
+                      ? null
+                      : () => onOpenForumDetailTarget!(
+                            ForumDetailHandoffTarget(
+                              postId: quickReply.postId,
+                              source: ForumDetailHandoffSource.myQuickReply,
+                              initialTitle: quickReply.postTitle,
+                            ),
+                          ),
+                ),
+              )
+              .toList()
+          : const <Widget>[],
+    );
   }
 }
 
