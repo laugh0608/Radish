@@ -49,5 +49,6 @@
 - **帖子回看继续落到原生 forum detail**：分页追加出的帖子条目仍通过 `ForumDetailHandoffSource.publicProfilePost` 回到同一套原生帖子详情，不新增独立详情页或个人页专属打开路径。
 - **分页失败保持区块内降级**：加载更多帖子失败时只在“最近公开帖子”区块展示局部错误，不拖垮公开资料、最近公开评论或我的轻回应区块。
 - **profile 来源返回栈已收口**：从“最近公开帖子 / 最近公开评论 / 我的轻回应”打开原生帖子详情时，Shell 当前保留“我的”tab 上下文；详情返回后会回到 profile，而不是落到论坛首页。
+- **三块复访区 footer 行为已对齐**：最近公开帖子、最近公开评论和我的轻回应当前只在还有更多、正在加载或局部失败时展示加载 footer；加载到最后一页后不再保留无动作的“已显示 x / x”尾巴。
 - **本轮边界继续收紧**：仍只做“回看 + 继续加载 + 回到上下文”的复访闭环，不开放发帖、评论提交、点赞、删除、举报、编辑治理、完整通知中心或系统通知栏推送。
-- **本轮验证已通过**：`Clients/radish.flutter` 下执行 `flutter test` 与 `flutter analyze` 均已通过；仓库根目录 `git diff --check` 已通过。Android 真机复核留到下一轮人工确认。
+- **本轮验证已通过**：`Clients/radish.flutter` 下执行 `flutter test` 与 `flutter analyze` 均已通过；仓库根目录 `git diff --check` 已通过。Android 真机复核已确认最近公开帖子、最近公开评论与我的轻回应三条 profile 复访路线均可从详情返回到 profile。

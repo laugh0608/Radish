@@ -437,7 +437,7 @@ void main() {
 
     expect(repository.commentPages, [1, 2]);
     expect(find.text('第四条公开评论上下文'), findsOneWidget);
-    expect(find.text('已显示 4 / 4 条评论'), findsOneWidget);
+    expect(find.text('加载更多评论'), findsNothing);
 
     await tester.scrollUntilVisible(
       find.text('打开评论上下文').last,
@@ -607,7 +607,7 @@ void main() {
 
     expect(repository.quickReplyPages, [1, 2]);
     expect(find.text('第四条回看上下文'), findsOneWidget);
-    expect(find.text('已显示 4 / 4 条轻回应'), findsOneWidget);
+    expect(find.text('加载更多轻回应'), findsNothing);
     expect(find.text('暂时无法加载公开资料'), findsNothing);
   });
 

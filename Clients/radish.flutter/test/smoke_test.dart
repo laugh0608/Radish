@@ -1172,6 +1172,66 @@ void main() {
     expect(find.text('帖子详情'), findsNothing);
   });
 
+  testWidgets('profile quick reply handoff returns to profile after detail pop',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: 'user-42',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: 'user-42',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _SeededForumRepository(),
+        profileRepository: _SeededProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.tap(find.text('我的'));
+    await tester.pumpAndSettle();
+
+    final scrollable = find.byType(Scrollable).last;
+    await tester.scrollUntilVisible(
+      find.text('回到原帖'),
+      200,
+      scrollable: scrollable,
+    );
+    await tester.tap(find.text('回到原帖'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('帖子详情'), findsWidgets);
+    expect(find.text('我的轻回应'), findsWidgets);
+
+    Navigator.of(tester.element(find.text('帖子详情').first)).pop();
+    await tester.pumpAndSettle();
+
+    expect(find.text('我的轻回应'), findsOneWidget);
+    expect(find.text('User user-42'), findsOneWidget);
+    expect(find.text('帖子详情'), findsNothing);
+  });
+
   testWidgets('pending notification handoff opens shared native forum detail',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);

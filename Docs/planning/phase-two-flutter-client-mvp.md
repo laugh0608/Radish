@@ -185,4 +185,4 @@ Flutter 客户端第一批固定遵循以下约束：
 2. 分页加载出的帖子继续复用 `ForumDetailHandoffSource.publicProfilePost` 回到同一套原生 forum detail，不新增独立帖子详情页或个人页专属打开路径
 3. 加载更多失败只在“最近公开帖子”区块内提示，不拖垮公开资料、最近公开评论或我的轻回应区块
 4. 本轮仍保持只读复访边界，不开放发帖、评论提交、点赞、删除、举报、编辑治理、完整通知中心或系统通知栏推送
-5. 当前自动化验证已通过 `flutter test`、`flutter analyze` 与 `git diff --check`；Android 真机复核待下一轮确认
+5. 当前自动化验证已通过 `flutter test`、`flutter analyze` 与 `git diff --check`；Android 真机复核已确认最近公开帖子、最近公开评论与我的轻回应三条 profile 复访路线从详情返回后都会回到 profile

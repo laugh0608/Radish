@@ -815,12 +815,12 @@ class _RecentPostsCard extends StatelessWidget {
       ),
     ];
 
-    final hasFooter = posts.isNotEmpty &&
-        (hasMore ||
-            isLoadingMore ||
-            (loadMoreErrorMessage != null && loadMoreErrorMessage!.isNotEmpty));
-
-    if (hasFooter) {
+    if (_shouldShowProfileLoadMoreFooter(
+      loadedCount: posts.length,
+      hasMore: hasMore,
+      isLoadingMore: isLoadingMore,
+      errorMessage: loadMoreErrorMessage,
+    )) {
       children.add(
         _ProfileLoadMoreFooter(
           loadedCount: posts.length,
@@ -912,7 +912,12 @@ class _MyQuickRepliesCard extends StatelessWidget {
       ),
     ];
 
-    if (quickReplies.isNotEmpty) {
+    if (_shouldShowProfileLoadMoreFooter(
+      loadedCount: quickReplies.length,
+      hasMore: hasMore,
+      isLoadingMore: isLoadingMore,
+      errorMessage: loadMoreErrorMessage,
+    )) {
       children.add(
         _ProfileLoadMoreFooter(
           loadedCount: quickReplies.length,
@@ -1057,7 +1062,12 @@ class _RecentCommentsCard extends StatelessWidget {
       ),
     ];
 
-    if (comments.isNotEmpty) {
+    if (_shouldShowProfileLoadMoreFooter(
+      loadedCount: comments.length,
+      hasMore: hasMore,
+      isLoadingMore: isLoadingMore,
+      errorMessage: loadMoreErrorMessage,
+    )) {
       children.add(
         _ProfileLoadMoreFooter(
           loadedCount: comments.length,
@@ -1075,6 +1085,18 @@ class _RecentCommentsCard extends StatelessWidget {
 
     return children;
   }
+}
+
+bool _shouldShowProfileLoadMoreFooter({
+  required int loadedCount,
+  required bool hasMore,
+  required bool isLoadingMore,
+  required String? errorMessage,
+}) {
+  return loadedCount > 0 &&
+      (hasMore ||
+          isLoadingMore ||
+          (errorMessage != null && errorMessage.isNotEmpty));
 }
 
 class _ProfileSectionCard extends StatelessWidget {
