@@ -246,6 +246,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 profile: profileState.profile!,
                 stats: profileState.stats,
                 posts: profileState.posts,
+                postsTotal: profileState.postsTotal,
+                hasMorePosts: profileState.hasMorePosts,
+                isLoadingMorePosts: profileState.isLoadingMorePosts,
+                postsLoadMoreErrorMessage:
+                    profileState.postsLoadMoreErrorMessage,
+                onLoadMorePosts: _controller.loadMorePosts,
                 comments: profileState.comments,
                 commentsTotal: profileState.commentsTotal,
                 hasMoreComments: profileState.hasMoreComments,
@@ -370,6 +376,11 @@ class _PublicProfileContent extends StatelessWidget {
     required this.profile,
     required this.stats,
     required this.posts,
+    required this.postsTotal,
+    required this.hasMorePosts,
+    required this.isLoadingMorePosts,
+    required this.postsLoadMoreErrorMessage,
+    required this.onLoadMorePosts,
     required this.comments,
     required this.commentsTotal,
     required this.hasMoreComments,
@@ -390,6 +401,11 @@ class _PublicProfileContent extends StatelessWidget {
   final PublicProfileSummary profile;
   final PublicProfileStats? stats;
   final List<PublicProfilePostSummary> posts;
+  final int postsTotal;
+  final bool hasMorePosts;
+  final bool isLoadingMorePosts;
+  final String? postsLoadMoreErrorMessage;
+  final VoidCallback onLoadMorePosts;
   final List<PublicProfileCommentSummary> comments;
   final int commentsTotal;
   final bool hasMoreComments;
@@ -431,6 +447,11 @@ class _PublicProfileContent extends StatelessWidget {
         ],
         _RecentPostsCard(
           posts: posts,
+          total: postsTotal,
+          hasMore: hasMorePosts,
+          isLoadingMore: isLoadingMorePosts,
+          loadMoreErrorMessage: postsLoadMoreErrorMessage,
+          onLoadMore: onLoadMorePosts,
           onOpenForumDetailTarget: onOpenForumDetailTarget,
         ),
         const SizedBox(height: 16),
@@ -741,10 +762,20 @@ class _GuideRow extends StatelessWidget {
 class _RecentPostsCard extends StatelessWidget {
   const _RecentPostsCard({
     required this.posts,
+    required this.total,
+    required this.hasMore,
+    required this.isLoadingMore,
+    required this.loadMoreErrorMessage,
+    required this.onLoadMore,
     required this.onOpenForumDetailTarget,
   });
 
   final List<PublicProfilePostSummary> posts;
+  final int total;
+  final bool hasMore;
+  final bool isLoadingMore;
+  final String? loadMoreErrorMessage;
+  final VoidCallback onLoadMore;
   final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
 
   @override
@@ -753,32 +784,59 @@ class _RecentPostsCard extends StatelessWidget {
       title: '最近公开帖子',
       description: '这些帖子会打开同一套原生论坛详情，避免个人页和论坛页路径分叉。',
       emptyText: '这个用户暂无公开帖子。',
-      children: posts
-          .map(
-            (post) => _ContentPreviewTile(
-              title: post.title,
-              subtitle: _buildPostExcerpt(post),
-              meta:
-                  '${post.likeCount} 个赞 · ${post.commentCount} 条评论 · ${post.viewCount} 次浏览',
-              chips: [
-                if (post.categoryName != null && post.categoryName!.isNotEmpty)
-                  post.categoryName!,
-                _formatDate(post.createTime),
-              ],
-              actionLabel: onOpenForumDetailTarget == null ? null : '打开帖子',
-              onAction: onOpenForumDetailTarget == null
-                  ? null
-                  : () => onOpenForumDetailTarget!(
-                        ForumDetailHandoffTarget(
-                          postId: post.id,
-                          source: ForumDetailHandoffSource.publicProfilePost,
-                          initialTitle: post.title,
-                        ),
-                      ),
-            ),
-          )
-          .toList(),
+      children: _buildChildren(context),
     );
+  }
+
+  List<Widget> _buildChildren(BuildContext context) {
+    final children = <Widget>[
+      ...posts.map(
+        (post) => _ContentPreviewTile(
+          title: post.title,
+          subtitle: _buildPostExcerpt(post),
+          meta:
+              '${post.likeCount} 个赞 · ${post.commentCount} 条评论 · ${post.viewCount} 次浏览',
+          chips: [
+            if (post.categoryName != null && post.categoryName!.isNotEmpty)
+              post.categoryName!,
+            _formatDate(post.createTime),
+          ],
+          actionLabel: onOpenForumDetailTarget == null ? null : '打开帖子',
+          onAction: onOpenForumDetailTarget == null
+              ? null
+              : () => onOpenForumDetailTarget!(
+                    ForumDetailHandoffTarget(
+                      postId: post.id,
+                      source: ForumDetailHandoffSource.publicProfilePost,
+                      initialTitle: post.title,
+                    ),
+                  ),
+        ),
+      ),
+    ];
+
+    final hasFooter = posts.isNotEmpty &&
+        (hasMore ||
+            isLoadingMore ||
+            (loadMoreErrorMessage != null && loadMoreErrorMessage!.isNotEmpty));
+
+    if (hasFooter) {
+      children.add(
+        _ProfileLoadMoreFooter(
+          loadedCount: posts.length,
+          total: total,
+          unitLabel: '条帖子',
+          hasMore: hasMore,
+          isLoadingMore: isLoadingMore,
+          errorMessage: loadMoreErrorMessage,
+          loadingLabel: '正在加载更多帖子...',
+          actionLabel: '加载更多帖子',
+          onLoadMore: onLoadMore,
+        ),
+      );
+    }
+
+    return children;
   }
 
   String _buildPostExcerpt(PublicProfilePostSummary post) {

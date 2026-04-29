@@ -288,6 +288,111 @@ void main() {
     );
   });
 
+  testWidgets('loads more public posts and opens appended post handoff', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repository = _PagedPostProfileRepository();
+    final scrollable = find.byType(Scrollable).first;
+    final openedTargets = <ForumDetailHandoffTarget>[];
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: repository,
+          publicUserId: 'public-user-2',
+          onOpenForumDetailTarget: openedTargets.add,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('加载更多帖子'),
+      200,
+      scrollable: scrollable,
+    );
+    expect(find.text('已显示 3 / 4 条帖子'), findsOneWidget);
+
+    await tester.tap(find.text('加载更多帖子'));
+    await tester.pumpAndSettle();
+
+    expect(repository.postPages, [1, 2]);
+    expect(find.text('第四篇公开帖子'), findsOneWidget);
+    expect(find.text('加载更多帖子'), findsNothing);
+
+    await tester.scrollUntilVisible(
+      find.text('打开帖子').last,
+      200,
+      scrollable: scrollable,
+    );
+    await tester.tap(find.text('打开帖子').last);
+    await tester.pumpAndSettle();
+
+    expect(openedTargets, hasLength(1));
+    expect(openedTargets.single.postId, 'post-page-4');
+    expect(openedTargets.single.initialTitle, '第四篇公开帖子');
+    expect(
+      openedTargets.single.source,
+      ForumDetailHandoffSource.publicProfilePost,
+    );
+  });
+
+  testWidgets('keeps loaded public posts when loading more fails', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final scrollable = find.byType(Scrollable).first;
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: _PagedPostLoadMoreFailingProfileRepository(),
+          publicUserId: 'public-user-2',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('加载更多帖子'),
+      200,
+      scrollable: scrollable,
+    );
+    await tester.tap(find.text('加载更多帖子'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('第一页公开帖子 1'), findsOneWidget);
+    expect(find.text('加载更多公开帖子失败'), findsOneWidget);
+    expect(find.text('暂时无法加载公开资料'), findsNothing);
+  });
+
   testWidgets('loads more public comments and opens appended comment handoff', (
     tester,
   ) async {
@@ -941,6 +1046,103 @@ class _QuickReplyFailingProfileRepository extends _SuccessProfileRepository {
     required String accessToken,
   }) {
     throw const RadishApiClientException('轻回应服务暂时不可用');
+  }
+}
+
+class _PagedPostProfileRepository extends _SuccessProfileRepository {
+  final List<int> postPages = <int>[];
+
+  @override
+  Future<PublicProfilePostPage> getPublicPosts({
+    required String userId,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    postPages.add(pageIndex);
+
+    if (pageIndex == 1) {
+      return const PublicProfilePostPage(
+        page: 1,
+        pageSize: 3,
+        dataCount: 4,
+        pageCount: 2,
+        posts: [
+          PublicProfilePostSummary(
+            id: 'post-page-1',
+            title: '第一页公开帖子 1',
+            summary: '第一页帖子摘要 1',
+            content: '第一页帖子正文 1',
+            categoryName: 'Engineering',
+            viewCount: 11,
+            likeCount: 1,
+            commentCount: 2,
+            createTime: '2026-04-20T08:00:00Z',
+          ),
+          PublicProfilePostSummary(
+            id: 'post-page-2',
+            title: '第一页公开帖子 2',
+            summary: '第一页帖子摘要 2',
+            content: '第一页帖子正文 2',
+            categoryName: 'Community',
+            viewCount: 12,
+            likeCount: 2,
+            commentCount: 3,
+            createTime: '2026-04-20T08:02:00Z',
+          ),
+          PublicProfilePostSummary(
+            id: 'post-page-3',
+            title: '第一页公开帖子 3',
+            summary: '第一页帖子摘要 3',
+            content: '第一页帖子正文 3',
+            categoryName: 'Design',
+            viewCount: 13,
+            likeCount: 3,
+            commentCount: 4,
+            createTime: '2026-04-20T08:04:00Z',
+          ),
+        ],
+      );
+    }
+
+    return const PublicProfilePostPage(
+      page: 2,
+      pageSize: 3,
+      dataCount: 4,
+      pageCount: 2,
+      posts: [
+        PublicProfilePostSummary(
+          id: 'post-page-4',
+          title: '第四篇公开帖子',
+          summary: '第四篇公开帖子摘要',
+          content: '第四篇公开帖子正文',
+          categoryName: 'Flutter',
+          viewCount: 14,
+          likeCount: 4,
+          commentCount: 5,
+          createTime: '2026-04-20T08:06:00Z',
+        ),
+      ],
+    );
+  }
+}
+
+class _PagedPostLoadMoreFailingProfileRepository
+    extends _PagedPostProfileRepository {
+  @override
+  Future<PublicProfilePostPage> getPublicPosts({
+    required String userId,
+    required int pageIndex,
+    required int pageSize,
+  }) {
+    if (pageIndex == 1) {
+      return super.getPublicPosts(
+        userId: userId,
+        pageIndex: pageIndex,
+        pageSize: pageSize,
+      );
+    }
+
+    throw const RadishApiClientException('加载更多公开帖子失败');
   }
 }
 

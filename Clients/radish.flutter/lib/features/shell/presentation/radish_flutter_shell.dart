@@ -181,11 +181,14 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     }
 
     final recentTarget = _buildRecentBrowseTarget(normalizedTarget);
+    final nextIndex = _shouldKeepCurrentTabForForumDetail(normalizedTarget)
+        ? _currentIndex
+        : 1;
 
     setState(() {
       _forumHandoffTarget = normalizedTarget;
       _recentBrowseHandoffTarget = recentTarget;
-      _currentIndex = 1;
+      _currentIndex = nextIndex;
     });
 
     unawaited(widget.followUpStore.writeRecentBrowseHandoff(recentTarget));
@@ -231,7 +234,9 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
 
     await _startLoginForTarget(
       ShellPostLoginTarget(
-        tabIndex: 1,
+        tabIndex: _shouldKeepCurrentTabForForumDetail(normalizedTarget)
+            ? _currentIndex
+            : 1,
         forumTarget: normalizedTarget,
       ),
     );
@@ -436,6 +441,25 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       initialTitle: target.normalizedInitialTitle,
       commentId: target.normalizedCommentId,
     );
+  }
+
+  bool _shouldKeepCurrentTabForForumDetail(
+    ForumDetailHandoffTarget target,
+  ) {
+    if (_currentIndex != 3) {
+      return false;
+    }
+
+    switch (target.source) {
+      case ForumDetailHandoffSource.publicProfilePost:
+      case ForumDetailHandoffSource.publicProfileComment:
+      case ForumDetailHandoffSource.myQuickReply:
+        return true;
+      case ForumDetailHandoffSource.shell:
+      case ForumDetailHandoffSource.notification:
+      case ForumDetailHandoffSource.browseHistory:
+        return false;
+    }
   }
 
   @override

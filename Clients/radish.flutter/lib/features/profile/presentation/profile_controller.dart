@@ -18,6 +18,11 @@ class ProfileState {
     this.profile,
     this.stats,
     this.posts = const <PublicProfilePostSummary>[],
+    this.postsPage = 1,
+    this.postsPageSize = 3,
+    this.postsTotal = 0,
+    this.isLoadingMorePosts = false,
+    this.postsLoadMoreErrorMessage,
     this.comments = const <PublicProfileCommentSummary>[],
     this.commentsPage = 1,
     this.commentsPageSize = 3,
@@ -45,6 +50,11 @@ class ProfileState {
   final PublicProfileSummary? profile;
   final PublicProfileStats? stats;
   final List<PublicProfilePostSummary> posts;
+  final int postsPage;
+  final int postsPageSize;
+  final int postsTotal;
+  final bool isLoadingMorePosts;
+  final String? postsLoadMoreErrorMessage;
   final List<PublicProfileCommentSummary> comments;
   final int commentsPage;
   final int commentsPageSize;
@@ -74,6 +84,8 @@ class ProfileState {
       myQuickRepliesTotal > myQuickReplies.length &&
       myQuickRepliesPageSize > 0;
 
+  bool get hasMorePosts => postsTotal > posts.length && postsPageSize > 0;
+
   bool get hasMoreComments =>
       commentsTotal > comments.length && commentsPageSize > 0;
 
@@ -87,6 +99,12 @@ class ProfileState {
     bool clearStats = false,
     List<PublicProfilePostSummary>? posts,
     bool clearPosts = false,
+    int? postsPage,
+    int? postsPageSize,
+    int? postsTotal,
+    bool? isLoadingMorePosts,
+    String? postsLoadMoreErrorMessage,
+    bool clearPostsLoadMoreError = false,
     List<PublicProfileCommentSummary>? comments,
     bool clearComments = false,
     int? commentsPage,
@@ -117,6 +135,13 @@ class ProfileState {
       posts: clearPosts
           ? const <PublicProfilePostSummary>[]
           : (posts ?? this.posts),
+      postsPage: postsPage ?? this.postsPage,
+      postsPageSize: postsPageSize ?? this.postsPageSize,
+      postsTotal: postsTotal ?? this.postsTotal,
+      isLoadingMorePosts: isLoadingMorePosts ?? this.isLoadingMorePosts,
+      postsLoadMoreErrorMessage: clearPostsLoadMoreError
+          ? null
+          : (postsLoadMoreErrorMessage ?? this.postsLoadMoreErrorMessage),
       comments: clearComments
           ? const <PublicProfileCommentSummary>[]
           : (comments ?? this.comments),
@@ -201,6 +226,61 @@ class ProfileController extends ChangeNotifier {
       includeMyQuickReplies: _state.includesMyQuickReplies,
       accessToken: accessToken,
     );
+  }
+
+  Future<void> loadMorePosts() async {
+    final userId = _state.userId;
+    if (!_state.isReady ||
+        userId == null ||
+        userId.isEmpty ||
+        !_state.hasMorePosts ||
+        _state.isLoadingMorePosts) {
+      return;
+    }
+
+    final requestVersion = ++_requestVersion;
+    final nextPage = _state.postsPage + 1;
+    final pageSize = _state.postsPageSize <= 0 ? 3 : _state.postsPageSize;
+    _state = _state.copyWith(
+      isLoadingMorePosts: true,
+      clearPostsLoadMoreError: true,
+    );
+    notifyListeners();
+
+    try {
+      final postPage = await _repository.getPublicPosts(
+        userId: userId,
+        pageIndex: nextPage,
+        pageSize: pageSize,
+      );
+
+      if (requestVersion != _requestVersion) {
+        return;
+      }
+
+      final existingIds = _state.posts.map((item) => item.id).toSet();
+      final nextPosts = <PublicProfilePostSummary>[
+        ..._state.posts,
+        ...postPage.posts.where((item) => !existingIds.contains(item.id)),
+      ];
+
+      _state = _state.copyWith(
+        posts: nextPosts,
+        postsPage: postPage.page,
+        postsPageSize: postPage.pageSize,
+        postsTotal: postPage.dataCount,
+        isLoadingMorePosts: false,
+        clearPostsLoadMoreError: true,
+      );
+      notifyListeners();
+    } on RadishApiClientException catch (error) {
+      _setPostsLoadMoreError(requestVersion, error.message);
+    } on FormatException catch (error) {
+      _setPostsLoadMoreError(
+        requestVersion,
+        '公开帖子返回格式异常：${error.message}',
+      );
+    }
   }
 
   Future<void> loadMoreComments() async {
@@ -328,6 +408,11 @@ class ProfileController extends ChangeNotifier {
       includesMyQuickReplies: includeMyQuickReplies,
       clearStats: true,
       clearPosts: true,
+      postsPage: 1,
+      postsPageSize: 3,
+      postsTotal: 0,
+      isLoadingMorePosts: false,
+      clearPostsLoadMoreError: true,
       clearComments: true,
       commentsPage: 1,
       commentsPageSize: 3,
@@ -367,7 +452,8 @@ class ProfileController extends ChangeNotifier {
 
       final profile = results[0] as PublicProfileSummary;
       final stats = results[1] as PublicProfileStats;
-      final posts = (results[2] as PublicProfilePostPage).posts;
+      final postPage = results[2] as PublicProfilePostPage;
+      final posts = postPage.posts;
       final commentPage = results[3] as PublicProfileCommentPage;
       final comments = commentPage.comments;
       var myQuickReplies = const <UserQuickReplySummary>[];
@@ -407,6 +493,11 @@ class ProfileController extends ChangeNotifier {
         profile: profile,
         stats: stats,
         posts: posts,
+        postsPage: postPage.page,
+        postsPageSize: postPage.pageSize,
+        postsTotal: postPage.dataCount,
+        isLoadingMorePosts: false,
+        clearPostsLoadMoreError: true,
         comments: comments,
         commentsPage: commentPage.page,
         commentsPageSize: commentPage.pageSize,
@@ -460,6 +551,21 @@ class ProfileController extends ChangeNotifier {
     _state = _state.copyWith(
       isLoadingMoreComments: false,
       commentsLoadMoreErrorMessage: message,
+    );
+    notifyListeners();
+  }
+
+  void _setPostsLoadMoreError(
+    int requestVersion,
+    String message,
+  ) {
+    if (requestVersion != _requestVersion) {
+      return;
+    }
+
+    _state = _state.copyWith(
+      isLoadingMorePosts: false,
+      postsLoadMoreErrorMessage: message,
     );
     notifyListeners();
   }
