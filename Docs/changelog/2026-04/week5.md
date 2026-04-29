@@ -59,3 +59,18 @@
 - **最近阅读继续复用既有 handoff 与存储**：本轮不新增存储协议，仍复用壳层已有最近阅读目标；从 profile 内点击时会临时使用 `profileRecentBrowse` 来源，以便详情返回后仍回到 profile。
 - **本轮边界继续收紧**：最近阅读只保留单个上下文入口，不扩展完整浏览历史中心、多条记录列表、删除、清空、同步治理或系统通知栏能力。
 - **本轮验证已通过**：`Clients/radish.flutter` 下执行 `flutter test`、`flutter analyze` 与仓库根目录 `git diff --check` 均已通过；Android 真机复核已确认最近阅读入口可回到对应详情，返回后仍留在 profile。
+
+### Flutter 第四批 docs 最近阅读与直达复访
+
+- **docs 最近阅读已接入原生壳层**：`discover` 文档精选可直接打开 Flutter 原生 docs 详情，我的 `profile` 当前也会展示单个最近公开文档入口，方便继续阅读。
+- **docs 详情来源返回栈已补齐**：从 discover 打开文档会返回 discover，从 profile 最近文档打开会返回 profile，从 docs 列表打开仍回到 docs 列表；最近文档 target 已在 Android 侧持久化。
+- **本轮边界继续保持只读**：不扩展文档搜索增强、目录树、编辑、发布、回收站、版本历史、完整浏览历史中心、多条记录列表或删除 / 清空治理。
+- **本轮验证已通过**：`Clients/radish.flutter` 下执行 `flutter test`、`flutter analyze` 与仓库根目录 `git diff --check` 均已通过；Android 真机复核确认 discover 文档直达、docs 列表详情返回、profile 最近文档复访与重启恢复正常。
+
+### Flutter 第四批 docs 正文内链与关键词搜索复访
+
+- **docs 正文内公开文档链接已接入原生跳转**：公开文档正文里的 Markdown 文档链接与裸 `/docs/:slug` 路径会继续打开 Flutter 原生 docs 详情；代码块里的文本仍保持只读，不参与内链跳转。
+- **docs tab 已接入关键词搜索复访**：原生 docs 列表当前通过现有 `/api/v1/Wiki/GetList?keyword=...` 查询公开文档，搜索结果继续复用原生卡片、分页、刷新与详情打开路径。
+- **搜索与详情返回真机问题已完成修复**：Android 真机复核发现搜索结果长 slug 在窄屏溢出、搜索详情返回会退出到桌面；本轮已补长 slug 省略展示、docs 内联详情系统返回拦截与回归测试，复测确认搜索 -> 详情 -> 返回可回到搜索结果。
+- **调试态根层返回已按原生生命周期收口**：Flutter Android debug 期间，根层按返回键回桌面后再次点图标曾卡在原生启动页；本轮新增 `app_lifecycle` platform channel，将根层 Back 收口为 Android `moveTaskToBack(true)`，避免直接 finish Activity。
+- **本轮验证已通过**：`Clients/radish.flutter` 下执行 `flutter test test/docs_page_test.dart test/smoke_test.dart`、`flutter analyze`、`flutter test`、仓库根目录 `git diff --check` 与 Android 平台 `.\gradlew.bat :app:testDebugUnitTest` 均已通过。
