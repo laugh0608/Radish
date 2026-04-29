@@ -35,7 +35,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final scrollable = find.byType(Scrollable);
+    final scrollable = find.byType(Scrollable).first;
 
     await tester.pumpWidget(
       MaterialApp(
@@ -69,6 +69,48 @@ void main() {
     expect(find.text('Radish Flutter docs scope'), findsOneWidget);
   });
 
+  testWidgets('searches docs and opens result detail', (tester) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final recordedTargets = <DocsDetailHandoffTarget>[];
+    final scrollable = find.byType(Scrollable).first;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DocsPage(
+          environment: const AppEnvironment.development(),
+          repository: _SuccessDocsRepository(),
+          onRecordDocumentTarget: recordedTargets.add,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'boundary');
+    await tester.tap(find.text('搜索文档'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('“boundary” 共 1 篇文档'), findsOneWidget);
+    expect(find.text('Public docs reading boundary'), findsOneWidget);
+    expect(find.text('Radish Flutter docs scope'), findsNothing);
+
+    await tester.scrollUntilVisible(
+      find.text('打开文档').first,
+      200,
+      scrollable: scrollable,
+    );
+    await tester.tap(find.text('打开文档').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Public docs reading boundary detail'), findsOneWidget);
+    expect(recordedTargets.last.slug, 'public-docs-reading-boundary');
+    expect(recordedTargets.last.source, DocsDetailHandoffSource.docsList);
+  });
+
   testWidgets('opens linked docs from inline docs detail', (tester) async {
     tester.view.physicalSize = const Size(1200, 2400);
     tester.view.devicePixelRatio = 1.0;
@@ -76,7 +118,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     final recordedTargets = <DocsDetailHandoffTarget>[];
-    final scrollable = find.byType(Scrollable);
+    final scrollable = find.byType(Scrollable).first;
 
     await tester.pumpWidget(
       MaterialApp(
@@ -222,7 +264,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final scrollable = find.byType(Scrollable);
+    final scrollable = find.byType(Scrollable).first;
 
     await tester.pumpWidget(
       MaterialApp(
@@ -253,29 +295,26 @@ class _SuccessDocsRepository implements DocsRepository {
   Future<DocsDocumentPage> getDocumentPage({
     required int pageIndex,
     required int pageSize,
+    String? keyword,
   }) async {
+    final normalizedKeyword = keyword?.trim().toLowerCase();
+    final documents = _documents.where((document) {
+      if (normalizedKeyword == null || normalizedKeyword.isEmpty) {
+        return true;
+      }
+
+      return document.title.toLowerCase().contains(normalizedKeyword) ||
+          document.slug.toLowerCase().contains(normalizedKeyword) ||
+          (document.summary?.toLowerCase().contains(normalizedKeyword) ??
+              false);
+    }).toList();
+
     return DocsDocumentPage(
       page: pageIndex,
       pageSize: pageSize,
-      dataCount: 2,
+      dataCount: documents.length,
       pageCount: 1,
-      documents: const [
-        DocsDocumentSummary(
-          id: '3001',
-          title: 'Radish Flutter docs scope',
-          slug: 'flutter-docs-scope',
-          summary: 'Read-only docs list wiring for the native client.',
-          modifyTime: '2026-04-20T08:00:00Z',
-        ),
-        DocsDocumentSummary(
-          id: '3002',
-          title: 'Public docs reading boundary',
-          slug: 'public-docs-reading-boundary',
-          summary:
-              'Keep editing and governance outside the first native batch.',
-          publishedAt: '2026-04-19T08:00:00Z',
-        ),
-      ],
+      documents: documents,
     );
   }
 
@@ -312,11 +351,29 @@ class _SuccessDocsRepository implements DocsRepository {
   }
 }
 
+const _documents = [
+  DocsDocumentSummary(
+    id: '3001',
+    title: 'Radish Flutter docs scope',
+    slug: 'flutter-docs-scope',
+    summary: 'Read-only docs list wiring for the native client.',
+    modifyTime: '2026-04-20T08:00:00Z',
+  ),
+  DocsDocumentSummary(
+    id: '3002',
+    title: 'Public docs reading boundary',
+    slug: 'public-docs-reading-boundary',
+    summary: 'Keep editing and governance outside the first native batch.',
+    publishedAt: '2026-04-19T08:00:00Z',
+  ),
+];
+
 class _FailingDocsRepository implements DocsRepository {
   @override
   Future<DocsDocumentPage> getDocumentPage({
     required int pageIndex,
     required int pageSize,
+    String? keyword,
   }) {
     throw const RadishApiClientException('文档服务暂时不可用');
   }

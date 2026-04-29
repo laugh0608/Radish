@@ -1408,6 +1408,54 @@ void main() {
     expect(find.text('Doc flutter-docs-scope'), findsWidgets);
   });
 
+  testWidgets('docs tab search opens native docs detail', (tester) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _SearchableDocsRepository(),
+        forumRepository: _FakeForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+        docsFollowUpStore: InMemoryDocsFollowUpStore(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.tap(find.text('文档'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'boundary');
+    await tester.tap(find.text('搜索文档'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('“boundary” 共 1 篇文档'), findsOneWidget);
+    expect(find.text('Public docs reading boundary'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('打开文档'),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.tap(find.text('打开文档'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('文档详情'), findsWidgets);
+    expect(find.text('Doc public-docs-reading-boundary'), findsWidgets);
+  });
+
   testWidgets('profile recent document handoff returns to profile after pop',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2400);
@@ -1720,6 +1768,7 @@ class _FakeDocsRepository implements DocsRepository {
   Future<DocsDocumentPage> getDocumentPage({
     required int pageIndex,
     required int pageSize,
+    String? keyword,
   }) async {
     return const DocsDocumentPage(
       page: 1,
@@ -1743,6 +1792,50 @@ class _FakeDocsRepository implements DocsRepository {
       visibility: 1,
       status: 1,
       createTime: '2026-04-20T08:00:00Z',
+    );
+  }
+}
+
+class _SearchableDocsRepository extends _FakeDocsRepository {
+  static const _documents = [
+    DocsDocumentSummary(
+      id: 'doc-flutter-docs-scope',
+      title: 'Radish Flutter docs scope',
+      slug: 'flutter-docs-scope',
+      summary: 'Native Flutter docs wiring.',
+    ),
+    DocsDocumentSummary(
+      id: 'doc-public-docs-reading-boundary',
+      title: 'Public docs reading boundary',
+      slug: 'public-docs-reading-boundary',
+      summary: 'Keep editing outside the native docs search batch.',
+    ),
+  ];
+
+  @override
+  Future<DocsDocumentPage> getDocumentPage({
+    required int pageIndex,
+    required int pageSize,
+    String? keyword,
+  }) async {
+    final normalizedKeyword = keyword?.trim().toLowerCase();
+    final documents = _documents.where((document) {
+      if (normalizedKeyword == null || normalizedKeyword.isEmpty) {
+        return true;
+      }
+
+      return document.title.toLowerCase().contains(normalizedKeyword) ||
+          document.slug.toLowerCase().contains(normalizedKeyword) ||
+          (document.summary?.toLowerCase().contains(normalizedKeyword) ??
+              false);
+    }).toList();
+
+    return DocsDocumentPage(
+      page: pageIndex,
+      pageSize: pageSize,
+      dataCount: documents.length,
+      pageCount: 1,
+      documents: documents,
     );
   }
 }

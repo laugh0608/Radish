@@ -31,6 +31,7 @@ class DocsPage extends StatefulWidget {
 class _DocsPageState extends State<DocsPage> {
   late DocsFeedController _feedController;
   late DocsDetailController _detailController;
+  late TextEditingController _searchController;
   String? _handledHandoffSignature;
 
   @override
@@ -42,6 +43,7 @@ class _DocsPageState extends State<DocsPage> {
     _detailController = DocsDetailController(
       repository: widget.repository,
     );
+    _searchController = TextEditingController();
     _feedController.loadInitial();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _openHandoffTargetIfNeeded();
@@ -61,6 +63,7 @@ class _DocsPageState extends State<DocsPage> {
       _detailController = DocsDetailController(
         repository: widget.repository,
       );
+      _searchController.text = '';
       _feedController.loadInitial();
       _handledHandoffSignature = null;
     }
@@ -80,6 +83,7 @@ class _DocsPageState extends State<DocsPage> {
   void dispose() {
     _feedController.dispose();
     _detailController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -117,6 +121,8 @@ class _DocsPageState extends State<DocsPage> {
                   feedState.page == null
                       ? '正在准备文档列表'
                       : '已加载 ${feedState.page!.documents.length} 篇文档，共 ${feedState.page!.dataCount} 篇',
+                if (!isDetailMode && feedState.hasKeyword)
+                  '当前搜索：${feedState.keyword}',
                 if (isDetailMode)
                   detailState.detail == null
                       ? '正在准备文档详情'
@@ -124,6 +130,16 @@ class _DocsPageState extends State<DocsPage> {
               ],
             ),
             const SizedBox(height: 16),
+            if (!isDetailMode) ...[
+              _DocsSearchCard(
+                controller: _searchController,
+                keyword: feedState.keyword,
+                isLoading: feedState.isLoading,
+                onSearch: _searchDocs,
+                onClear: _clearDocsSearch,
+              ),
+              const SizedBox(height: 16),
+            ],
             Wrap(
               spacing: 12,
               runSpacing: 12,
@@ -203,6 +219,15 @@ class _DocsPageState extends State<DocsPage> {
     _detailController.openDocument(document.slug);
   }
 
+  void _searchDocs() {
+    _feedController.search(_searchController.text);
+  }
+
+  void _clearDocsSearch() {
+    _searchController.clear();
+    _feedController.clearSearch();
+  }
+
   void _openHandoffTargetIfNeeded() {
     if (!mounted) {
       return;
@@ -241,6 +266,70 @@ class _DocsPageState extends State<DocsPage> {
     );
     widget.onRecordDocumentTarget?.call(target);
     _detailController.openDocument(slug);
+  }
+}
+
+class _DocsSearchCard extends StatelessWidget {
+  const _DocsSearchCard({
+    required this.controller,
+    required this.keyword,
+    required this.isLoading,
+    required this.onSearch,
+    required this.onClear,
+  });
+
+  final TextEditingController controller;
+  final String keyword;
+  final bool isLoading;
+  final VoidCallback onSearch;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '搜索公开文档',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              enabled: !isLoading,
+              textInputAction: TextInputAction.search,
+              decoration: const InputDecoration(
+                labelText: '关键词',
+                hintText: '输入标题、摘要或正文关键词',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.search),
+              ),
+              onSubmitted: (_) => onSearch(),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                FilledButton.icon(
+                  onPressed: isLoading ? null : onSearch,
+                  icon: const Icon(Icons.search),
+                  label: const Text('搜索文档'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: isLoading || keyword.isEmpty ? null : onClear,
+                  icon: const Icon(Icons.clear),
+                  label: const Text('清除搜索'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -325,6 +414,7 @@ class _DocsFeedContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final page = state.page!;
+    final keyword = state.keyword;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -338,18 +428,20 @@ class _DocsFeedContent extends StatelessWidget {
               ),
             ),
             Text(
-              '共 ${page.dataCount} 篇文档',
+              keyword.isEmpty
+                  ? '共 ${page.dataCount} 篇文档'
+                  : '“$keyword” 共 ${page.dataCount} 篇文档',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],
         ),
         const SizedBox(height: 12),
         if (page.documents.isEmpty)
-          const Card(
+          Card(
             child: Padding(
-              padding: EdgeInsets.all(24),
+              padding: const EdgeInsets.all(24),
               child: Text(
-                '当前没有可公开阅读的文档。',
+                keyword.isEmpty ? '当前没有可公开阅读的文档。' : '没有找到匹配“$keyword”的公开文档。',
               ),
             ),
           ),

@@ -15,6 +15,7 @@ class DocsFeedState {
     required this.status,
     required this.pageIndex,
     required this.pageSize,
+    this.keyword = '',
     this.page,
     this.errorMessage,
   });
@@ -29,6 +30,7 @@ class DocsFeedState {
   final DocsFeedStatus status;
   final int pageIndex;
   final int pageSize;
+  final String keyword;
   final DocsDocumentPage? page;
   final String? errorMessage;
 
@@ -42,10 +44,13 @@ class DocsFeedState {
 
   bool get hasNextPage => page != null && pageIndex < page!.pageCount;
 
+  bool get hasKeyword => keyword.isNotEmpty;
+
   DocsFeedState copyWith({
     DocsFeedStatus? status,
     int? pageIndex,
     int? pageSize,
+    String? keyword,
     DocsDocumentPage? page,
     bool clearPage = false,
     String? errorMessage,
@@ -55,6 +60,7 @@ class DocsFeedState {
       status: status ?? this.status,
       pageIndex: pageIndex ?? this.pageIndex,
       pageSize: pageSize ?? this.pageSize,
+      keyword: keyword ?? this.keyword,
       page: clearPage ? null : (page ?? this.page),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
@@ -92,13 +98,39 @@ class DocsFeedController extends ChangeNotifier {
     await _load(pageIndex: pageIndex);
   }
 
+  Future<void> search(String keyword) async {
+    final normalizedKeyword = _normalizeKeyword(keyword);
+    if (normalizedKeyword == _state.keyword && _state.page != null) {
+      return;
+    }
+
+    await _load(
+      pageIndex: 1,
+      keyword: normalizedKeyword,
+    );
+  }
+
+  Future<void> clearSearch() async {
+    if (_state.keyword.isEmpty && _state.page != null) {
+      return;
+    }
+
+    await _load(
+      pageIndex: 1,
+      keyword: '',
+    );
+  }
+
   Future<void> _load({
     required int pageIndex,
+    String? keyword,
   }) async {
+    final normalizedKeyword = keyword ?? _state.keyword;
     final requestVersion = ++_requestVersion;
     _state = _state.copyWith(
       status: DocsFeedStatus.loading,
       pageIndex: pageIndex,
+      keyword: normalizedKeyword,
       clearError: true,
     );
     notifyListeners();
@@ -107,6 +139,7 @@ class DocsFeedController extends ChangeNotifier {
       final page = await _repository.getDocumentPage(
         pageIndex: pageIndex,
         pageSize: _state.pageSize,
+        keyword: normalizedKeyword,
       );
 
       if (requestVersion != _requestVersion) {
@@ -143,4 +176,8 @@ class DocsFeedController extends ChangeNotifier {
     );
     notifyListeners();
   }
+}
+
+String _normalizeKeyword(String keyword) {
+  return keyword.trim();
 }

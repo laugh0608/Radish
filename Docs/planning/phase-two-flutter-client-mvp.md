@@ -209,3 +209,11 @@ Flutter 客户端第一批固定遵循以下约束：
 3. 本轮新增 `DocsDetailHandoffSource.docsLink` 来源标签，用于标记文档内链打开路径；正文代码块仍按只读文本渲染，不参与 docs 链接跳转
 4. 本轮仍保持公开只读边界，不扩展外部浏览器打开、完整 Markdown 引擎、目录树、编辑、发布、回收站、版本历史、完整浏览历史中心、多条记录列表、删除、清空或跨端同步治理
 5. 当前自动化验证已通过 `flutter test`、`flutter analyze` 与定向 `flutter test test/docs_page_test.dart test/smoke_test.dart`；Android 真机待补验
+
+截至 `2026-04-29` 的第四批第七个落地事实：
+
+1. Flutter docs 关键词搜索复访已接入原生 docs tab：列表页当前可输入关键词，并通过现有 `/api/v1/Wiki/GetList?keyword=...` 查询公开文档
+2. 搜索结果继续复用原生 docs 列表卡、分页、刷新与详情打开路径；从搜索结果打开文档仍以 `DocsDetailHandoffSource.docsList` 记录最近文档上下文
+3. 搜索状态会保留在当前 docs 列表的分页与刷新中，清除搜索后回到公开文档列表；空结果只在 docs 列表内提示，不影响 discover / profile 的最近文档直达
+4. 本轮仍保持公开只读边界，不扩展搜索建议、历史搜索、全文高亮、目录树、编辑、发布、回收站、版本历史、完整浏览历史中心、多条记录列表、删除、清空或后端搜索改造
+5. 当前自动化验证已通过 `flutter test`、`flutter analyze` 与定向 `flutter test test/docs_page_test.dart test/smoke_test.dart`；Android 真机待补验

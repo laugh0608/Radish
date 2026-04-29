@@ -6,6 +6,7 @@ abstract class DocsRepository {
   Future<DocsDocumentPage> getDocumentPage({
     required int pageIndex,
     required int pageSize,
+    String? keyword,
   });
 
   Future<DocsDocumentDetail> getDocumentDetail({
@@ -26,12 +27,16 @@ class HttpDocsRepository implements DocsRepository {
   Future<DocsDocumentPage> getDocumentPage({
     required int pageIndex,
     required int pageSize,
+    String? keyword,
   }) {
+    final normalizedKeyword = keyword?.trim();
     final uri = endpoints.resolveApi(
       '/api/v1/Wiki/GetList',
       queryParameters: {
         'pageIndex': pageIndex.toString(),
         'pageSize': pageSize.toString(),
+        if (normalizedKeyword != null && normalizedKeyword.isNotEmpty)
+          'keyword': normalizedKeyword,
       },
     );
 
