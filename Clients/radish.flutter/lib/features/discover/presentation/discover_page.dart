@@ -16,6 +16,7 @@ class DiscoverPage extends StatefulWidget {
     required this.repository,
     this.onOpenForum,
     this.onOpenDocs,
+    this.onOpenDocument,
     this.onOpenProfileUser,
     super.key,
   });
@@ -25,6 +26,7 @@ class DiscoverPage extends StatefulWidget {
   final DiscoverRepository repository;
   final VoidCallback? onOpenForum;
   final VoidCallback? onOpenDocs;
+  final ValueChanged<DocsDocumentSummary>? onOpenDocument;
   final ValueChanged<String>? onOpenProfileUser;
 
   @override
@@ -133,6 +135,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                 snapshot: snapshot,
                 onOpenForum: widget.onOpenForum,
                 onOpenDocs: widget.onOpenDocs,
+                onOpenDocument: widget.onOpenDocument,
               ),
           ],
         );
@@ -307,11 +310,13 @@ class _DiscoverContent extends StatelessWidget {
     required this.snapshot,
     required this.onOpenForum,
     required this.onOpenDocs,
+    required this.onOpenDocument,
   });
 
   final DiscoverSnapshot snapshot;
   final VoidCallback? onOpenForum;
   final VoidCallback? onOpenDocs;
+  final ValueChanged<DocsDocumentSummary>? onOpenDocument;
 
   @override
   Widget build(BuildContext context) {
@@ -336,6 +341,7 @@ class _DiscoverContent extends StatelessWidget {
         _DocsSection(
           documents: snapshot.documents,
           onOpenDocs: onOpenDocs,
+          onOpenDocument: onOpenDocument,
         ),
         const SizedBox(height: 16),
         _ShopSection(products: snapshot.products),
@@ -382,10 +388,12 @@ class _DocsSection extends StatelessWidget {
   const _DocsSection({
     required this.documents,
     required this.onOpenDocs,
+    required this.onOpenDocument,
   });
 
   final List<DocsDocumentSummary> documents;
   final VoidCallback? onOpenDocs;
+  final ValueChanged<DocsDocumentSummary>? onOpenDocument;
 
   @override
   Widget build(BuildContext context) {
@@ -407,6 +415,12 @@ class _DocsSection extends StatelessWidget {
               chips: [
                 if (document.slug.isNotEmpty) '/docs/${document.slug}',
               ],
+              actionLabel: onOpenDocument == null || document.slug.isEmpty
+                  ? null
+                  : '打开文档',
+              onAction: onOpenDocument == null || document.slug.isEmpty
+                  ? null
+                  : () => onOpenDocument!(document),
             ),
           )
           .toList(),
@@ -535,6 +549,8 @@ class _SummaryTile extends StatelessWidget {
     required this.subtitle,
     required this.meta,
     required this.chips,
+    this.actionLabel,
+    this.onAction,
   });
 
   final IconData icon;
@@ -542,6 +558,8 @@ class _SummaryTile extends StatelessWidget {
   final String subtitle;
   final String meta;
   final List<String> chips;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -583,6 +601,14 @@ class _SummaryTile extends StatelessWidget {
                         ),
                       )
                       .toList(),
+                ),
+              ],
+              if (actionLabel != null && onAction != null) ...[
+                const SizedBox(height: 12),
+                FilledButton.tonalIcon(
+                  onPressed: onAction,
+                  icon: const Icon(Icons.arrow_forward),
+                  label: Text(actionLabel!),
                 ),
               ],
             ],

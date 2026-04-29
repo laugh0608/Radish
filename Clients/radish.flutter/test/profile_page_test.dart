@@ -10,6 +10,7 @@ import 'package:radish_flutter/core/auth/session_refresh_service.dart';
 import 'package:radish_flutter/core/auth/session_store.dart';
 import 'package:radish_flutter/core/config/app_environment.dart';
 import 'package:radish_flutter/core/network/radish_api_client.dart';
+import 'package:radish_flutter/features/docs/data/docs_models.dart';
 import 'package:radish_flutter/features/profile/data/profile_models.dart';
 import 'package:radish_flutter/features/profile/data/profile_repository.dart';
 import 'package:radish_flutter/features/forum/data/forum_models.dart';
@@ -349,6 +350,70 @@ void main() {
     expect(
       openedTargets.single.source,
       ForumDetailHandoffSource.profileRecentBrowse,
+    );
+  });
+
+  testWidgets('opens recent document target from my profile', (tester) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final scrollable = find.byType(Scrollable).first;
+    final openedTargets = <DocsDetailHandoffTarget>[];
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: '2042219067430928384',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: '2042219067430928384',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: _SuccessProfileRepository(),
+          recentDocumentTarget: const DocsDetailHandoffTarget(
+            slug: 'flutter-docs-scope',
+            source: DocsDetailHandoffSource.browseHistory,
+            initialTitle: 'Radish Flutter docs scope',
+          ),
+          onOpenDocsDetailTarget: openedTargets.add,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    final recentDocumentButton =
+        find.widgetWithText(FilledButton, '继续阅读文档').last;
+    await tester.scrollUntilVisible(
+      recentDocumentButton,
+      200,
+      scrollable: scrollable,
+    );
+    expect(find.text('最近文档'), findsWidgets);
+    expect(find.text('/docs/flutter-docs-scope'), findsOneWidget);
+
+    await tester.tap(recentDocumentButton);
+    await tester.pumpAndSettle();
+
+    expect(openedTargets, hasLength(1));
+    expect(openedTargets.single.slug, 'flutter-docs-scope');
+    expect(
+      openedTargets.single.source,
+      DocsDetailHandoffSource.profileRecentDocument,
     );
   });
 

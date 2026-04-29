@@ -94,6 +94,7 @@ void main() {
     final scrollable = find.byType(Scrollable);
     var forumOpened = false;
     var docsOpened = false;
+    DocsDocumentSummary? openedDocument;
     String? openedProfileUserId;
 
     await tester.pumpWidget(
@@ -107,6 +108,9 @@ void main() {
           },
           onOpenDocs: () {
             docsOpened = true;
+          },
+          onOpenDocument: (document) {
+            openedDocument = document;
           },
           onOpenProfileUser: (userId) {
             openedProfileUserId = userId;
@@ -130,6 +134,12 @@ void main() {
     );
     await tester.tap(find.text('进入文档'));
     await tester.scrollUntilVisible(
+      find.text('打开文档'),
+      200,
+      scrollable: scrollable,
+    );
+    await tester.tap(find.text('打开文档'));
+    await tester.scrollUntilVisible(
       find.text('打开 @luobo'),
       200,
       scrollable: scrollable,
@@ -138,6 +148,7 @@ void main() {
 
     expect(forumOpened, isTrue);
     expect(docsOpened, isTrue);
+    expect(openedDocument?.slug, 'flutter-mvp-overview');
     expect(openedProfileUserId, '1024');
   });
 }

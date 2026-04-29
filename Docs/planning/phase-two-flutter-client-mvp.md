@@ -2,7 +2,7 @@
 
 > 状态：当前主线
 >
-> 最后更新：2026-04-28（Asia/Shanghai）
+> 最后更新：2026-04-29（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -193,3 +193,11 @@ Flutter 客户端第一批固定遵循以下约束：
 2. 该入口复用现有 `ForumDetailHandoffTarget` 与最近阅读存储，不新增存储协议；从 profile 内点击时会临时使用 `profileRecentBrowse` 来源保留 profile 返回上下文
 3. 本轮仍只承载单个最近阅读上下文，不扩展完整浏览历史中心、多条记录列表、删除、清空或跨端同步治理
 4. 当前自动化验证已通过 `flutter test`、`flutter analyze` 与 `git diff --check`；Android 真机复核已确认最近阅读入口可回到对应详情，返回后仍留在 profile
+
+截至 `2026-04-29` 的第四批第五个落地事实：
+
+1. Flutter docs 最近阅读与直达复访已接入原生壳层：`discover` 文档精选可直接打开 docs 详情，不再只能先进入文档列表
+2. docs 详情新增轻量 `DocsDetailHandoffTarget` 来源语义：从 discover 打开后返回 discover，从我的 `profile` 最近文档打开后返回 profile，从 docs 列表打开后仍回到 docs 列表
+3. Android 侧新增单条最近文档 target 本地持久化，shell 状态条与我的 `profile` 均可继续打开最近公开文档
+4. 本轮仍保持公开只读边界，不扩展文档搜索增强、目录树、编辑、发布、回收站、版本历史、完整浏览历史中心、多条记录列表、删除、清空或跨端同步治理
+5. 当前自动化验证已通过 `flutter test`、`flutter analyze` 与 `git diff --check`；Android 真机复核已确认 discover 文档直达、docs 列表详情返回、profile 最近文档复访与重启恢复均正常

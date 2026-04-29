@@ -1,3 +1,89 @@
+enum DocsDetailHandoffSource {
+  shell,
+  discover,
+  docsList,
+  browseHistory,
+  profileRecentDocument,
+}
+
+extension DocsDetailHandoffSourceLabel on DocsDetailHandoffSource {
+  String get label {
+    switch (this) {
+      case DocsDetailHandoffSource.shell:
+        return '文档入口';
+      case DocsDetailHandoffSource.discover:
+        return '发现';
+      case DocsDetailHandoffSource.docsList:
+        return '文档列表';
+      case DocsDetailHandoffSource.browseHistory:
+        return '最近文档';
+      case DocsDetailHandoffSource.profileRecentDocument:
+        return '我的最近文档';
+    }
+  }
+}
+
+class DocsDetailHandoffTarget {
+  const DocsDetailHandoffTarget({
+    required this.slug,
+    this.source = DocsDetailHandoffSource.shell,
+    this.initialTitle,
+  });
+
+  final String slug;
+  final DocsDetailHandoffSource source;
+  final String? initialTitle;
+
+  String get normalizedSlug => slug.trim();
+
+  String? get normalizedInitialTitle {
+    final normalizedTitle = initialTitle?.trim();
+    return normalizedTitle == null || normalizedTitle.isEmpty
+        ? null
+        : normalizedTitle;
+  }
+
+  bool get hasValidSlug => normalizedSlug.isNotEmpty;
+
+  DocsDetailHandoffTarget copyWith({
+    String? slug,
+    DocsDetailHandoffSource? source,
+    String? initialTitle,
+  }) {
+    return DocsDetailHandoffTarget(
+      slug: slug ?? this.slug,
+      source: source ?? this.source,
+      initialTitle: initialTitle ?? this.initialTitle,
+    );
+  }
+
+  Map<String, Object?> toJson() {
+    return {
+      'slug': normalizedSlug,
+      'source': source.name,
+      'initialTitle': normalizedInitialTitle,
+    };
+  }
+
+  static DocsDetailHandoffTarget? fromJson(Object? json) {
+    if (json is! Map) {
+      return null;
+    }
+
+    final map = Map<String, Object?>.from(json.cast<Object?, Object?>());
+    final slug = _readString(map['slug']);
+    if (slug == null || slug.isEmpty) {
+      return null;
+    }
+
+    return DocsDetailHandoffTarget(
+      slug: slug,
+      source: _readDocsHandoffSource(map['source']),
+      initialTitle: _readString(map['initialTitle']),
+    );
+  }
+}
+
 class DocsDocumentSummary {
   const DocsDocumentSummary({
     required this.id,
@@ -150,4 +236,19 @@ int? _readInt(Object? value) {
   }
 
   return int.tryParse(value?.toString() ?? '');
+}
+
+DocsDetailHandoffSource _readDocsHandoffSource(Object? value) {
+  final sourceName = _readString(value);
+  if (sourceName == null) {
+    return DocsDetailHandoffSource.shell;
+  }
+
+  for (final source in DocsDetailHandoffSource.values) {
+    if (source.name == sourceName) {
+      return source;
+    }
+  }
+
+  return DocsDetailHandoffSource.shell;
 }

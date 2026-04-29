@@ -69,6 +69,47 @@ void main() {
     expect(find.text('Radish Flutter docs scope'), findsOneWidget);
   });
 
+  testWidgets('opens handoff docs detail as route and records recent target', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final recordedTargets = <DocsDetailHandoffTarget>[];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DocsPage(
+          environment: const AppEnvironment.development(),
+          repository: _SuccessDocsRepository(),
+          handoffTarget: const DocsDetailHandoffTarget(
+            slug: 'flutter-docs-scope',
+            source: DocsDetailHandoffSource.discover,
+            initialTitle: 'Radish Flutter docs scope',
+          ),
+          onRecordDocumentTarget: recordedTargets.add,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('打开来源：发现'), findsOneWidget);
+    expect(find.text('返回来源'), findsOneWidget);
+    expect(find.text('Read docs in Flutter.'), findsOneWidget);
+    expect(recordedTargets, hasLength(1));
+    expect(recordedTargets.single.slug, 'flutter-docs-scope');
+    expect(recordedTargets.single.source, DocsDetailHandoffSource.discover);
+
+    await tester.tap(find.text('返回来源'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('文档'), findsOneWidget);
+    expect(find.text('Radish Flutter docs scope'), findsOneWidget);
+  });
+
   testWidgets('renders docs error state when repository fails', (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
     tester.view.devicePixelRatio = 1.0;

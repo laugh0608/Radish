@@ -12,11 +12,17 @@ class DocsPage extends StatefulWidget {
   const DocsPage({
     required this.environment,
     required this.repository,
+    this.handoffTarget,
+    this.onConsumeHandoffTarget,
+    this.onRecordDocumentTarget,
     super.key,
   });
 
   final AppEnvironment environment;
   final DocsRepository repository;
+  final DocsDetailHandoffTarget? handoffTarget;
+  final VoidCallback? onConsumeHandoffTarget;
+  final ValueChanged<DocsDetailHandoffTarget>? onRecordDocumentTarget;
 
   @override
   State<DocsPage> createState() => _DocsPageState();
@@ -25,6 +31,7 @@ class DocsPage extends StatefulWidget {
 class _DocsPageState extends State<DocsPage> {
   late DocsFeedController _feedController;
   late DocsDetailController _detailController;
+  String? _handledHandoffSignature;
 
   @override
   void initState() {
@@ -36,6 +43,9 @@ class _DocsPageState extends State<DocsPage> {
       repository: widget.repository,
     );
     _feedController.loadInitial();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _openHandoffTargetIfNeeded();
+    });
   }
 
   @override
@@ -52,6 +62,17 @@ class _DocsPageState extends State<DocsPage> {
         repository: widget.repository,
       );
       _feedController.loadInitial();
+      _handledHandoffSignature = null;
+    }
+
+    if (oldWidget.handoffTarget != null && widget.handoffTarget == null) {
+      _handledHandoffSignature = null;
+    }
+
+    if (oldWidget.handoffTarget != widget.handoffTarget) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _openHandoffTargetIfNeeded();
+      });
     }
   }
 
@@ -136,7 +157,7 @@ class _DocsPageState extends State<DocsPage> {
             if (!isDetailMode && feedState.isReady && feedState.page != null)
               _DocsFeedContent(
                 state: feedState,
-                onOpenDocument: _detailController.openDocument,
+                onOpenDocument: _openDocumentFromList,
                 onPreviousPage: feedState.hasPreviousPage
                     ? () => _feedController.goToPage(feedState.pageIndex - 1)
                     : null,
@@ -163,6 +184,51 @@ class _DocsPageState extends State<DocsPage> {
           ],
         );
       },
+    );
+  }
+
+  void _openDocumentFromList(DocsDocumentSummary document) {
+    if (document.slug.trim().isEmpty) {
+      return;
+    }
+
+    widget.onRecordDocumentTarget?.call(
+      DocsDetailHandoffTarget(
+        slug: document.slug,
+        source: DocsDetailHandoffSource.docsList,
+        initialTitle: document.title,
+      ),
+    );
+    _detailController.openDocument(document.slug);
+  }
+
+  void _openHandoffTargetIfNeeded() {
+    if (!mounted) {
+      return;
+    }
+
+    final target = widget.handoffTarget;
+    if (target == null || !target.hasValidSlug) {
+      return;
+    }
+
+    final signature = '${target.source.name}:${target.normalizedSlug}';
+    if (_handledHandoffSignature == signature) {
+      return;
+    }
+
+    _handledHandoffSignature = signature;
+    widget.onConsumeHandoffTarget?.call();
+    widget.onRecordDocumentTarget?.call(target);
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => _DocsDetailRoutePage(
+          environment: widget.environment,
+          repository: widget.repository,
+          target: target,
+        ),
+      ),
     );
   }
 }
@@ -241,7 +307,7 @@ class _DocsFeedContent extends StatelessWidget {
   });
 
   final DocsFeedState state;
-  final ValueChanged<String> onOpenDocument;
+  final ValueChanged<DocsDocumentSummary> onOpenDocument;
   final VoidCallback? onPreviousPage;
   final VoidCallback? onNextPage;
 
@@ -279,7 +345,7 @@ class _DocsFeedContent extends StatelessWidget {
         for (final document in page.documents) ...[
           _DocsDocumentCard(
             document: document,
-            onOpen: () => onOpenDocument(document.slug),
+            onOpen: () => onOpenDocument(document),
           ),
           const SizedBox(height: 12),
         ],
@@ -301,6 +367,129 @@ class _DocsFeedContent extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+class _DocsDetailRoutePage extends StatefulWidget {
+  const _DocsDetailRoutePage({
+    required this.environment,
+    required this.repository,
+    required this.target,
+  });
+
+  final AppEnvironment environment;
+  final DocsRepository repository;
+  final DocsDetailHandoffTarget target;
+
+  @override
+  State<_DocsDetailRoutePage> createState() => _DocsDetailRoutePageState();
+}
+
+class _DocsDetailRoutePageState extends State<_DocsDetailRoutePage> {
+  late DocsDetailController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = DocsDetailController(
+      repository: widget.repository,
+    );
+    _controller.openDocument(widget.target.normalizedSlug);
+  }
+
+  @override
+  void didUpdateWidget(covariant _DocsDetailRoutePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.repository != widget.repository ||
+        oldWidget.target.normalizedSlug != widget.target.normalizedSlug) {
+      _controller.dispose();
+      _controller = DocsDetailController(
+        repository: widget.repository,
+      );
+      _controller.openDocument(widget.target.normalizedSlug);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.target.normalizedInitialTitle ?? '文档详情'),
+      ),
+      body: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          final state = _controller.state;
+
+          return ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              Text(
+                '文档详情',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '在应用内阅读公开文档详情。当前不开放编辑、发布和治理操作。',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 20),
+              PhaseScopeCard(
+                title: '当前能力',
+                items: [
+                  '当前环境：${widget.environment.name}',
+                  '打开来源：${widget.target.source.label}',
+                  state.detail == null
+                      ? '正在准备 /docs/${widget.target.normalizedSlug}'
+                      : '正在阅读 /docs/${state.detail!.slug}',
+                  '当前不支持编辑、发布、回收站或版本治理',
+                ],
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: () => Navigator.of(context).maybePop(),
+                    icon: const Icon(Icons.arrow_back),
+                    label: const Text('返回来源'),
+                  ),
+                  FilledButton.tonalIcon(
+                    onPressed: state.isLoading ? null : _controller.refresh,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('刷新详情'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (state.isLoading)
+                const _DocsLoadingState(
+                  message: '正在加载公开文档...',
+                ),
+              if (state.isError)
+                _DocsErrorState(
+                  title: '暂时无法加载文档详情',
+                  message: state.errorMessage ?? '无法加载文档详情。',
+                  onRetry: _controller.refresh,
+                ),
+              if (state.isReady && state.detail != null)
+                _DocsDetailContent(
+                  detail: state.detail!,
+                  source: widget.target.source,
+                ),
+            ],
+          );
+        },
+      ),
     );
   }
 }
@@ -393,9 +582,11 @@ class _DocsDocumentCard extends StatelessWidget {
 class _DocsDetailContent extends StatelessWidget {
   const _DocsDetailContent({
     required this.detail,
+    this.source,
   });
 
   final DocsDocumentDetail detail;
+  final DocsDetailHandoffSource? source;
 
   @override
   Widget build(BuildContext context) {
@@ -422,6 +613,11 @@ class _DocsDetailContent extends StatelessWidget {
                 if (detail.sourceType != null && detail.sourceType!.isNotEmpty)
                   Chip(
                     label: Text(detail.sourceType!),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                if (source != null)
+                  Chip(
+                    label: Text(source!.label),
                     visualDensity: VisualDensity.compact,
                   ),
               ],

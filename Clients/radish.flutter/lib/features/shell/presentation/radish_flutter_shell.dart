@@ -6,6 +6,8 @@ import '../../../core/auth/session_controller.dart';
 import '../../../core/auth/native_auth_controller.dart';
 import '../../../core/config/app_environment.dart';
 import '../../../features/discover/data/discover_repository.dart';
+import '../../../features/docs/data/docs_follow_up_store.dart';
+import '../../../features/docs/data/docs_models.dart';
 import '../../../features/docs/data/docs_repository.dart';
 import '../../../features/forum/data/forum_follow_up_store.dart';
 import '../../../features/forum/data/forum_models.dart';
@@ -27,6 +29,7 @@ class RadishFlutterShell extends StatefulWidget {
     required this.forumRepository,
     required this.profileRepository,
     required this.followUpStore,
+    this.docsFollowUpStore = const EmptyDocsFollowUpStore(),
     this.notificationRepository = const EmptyNotificationRepository(),
     this.initialForumHandoffTarget,
     super.key,
@@ -40,6 +43,7 @@ class RadishFlutterShell extends StatefulWidget {
   final ForumRepository forumRepository;
   final ProfileRepository profileRepository;
   final ForumFollowUpStore followUpStore;
+  final DocsFollowUpStore docsFollowUpStore;
   final NotificationRepository notificationRepository;
   final ForumDetailHandoffTarget? initialForumHandoffTarget;
 
@@ -54,6 +58,8 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
   String? _recentProfileUserId;
   ForumDetailHandoffTarget? _forumHandoffTarget;
   ForumDetailHandoffTarget? _recentBrowseHandoffTarget;
+  DocsDetailHandoffTarget? _docsHandoffTarget;
+  DocsDetailHandoffTarget? _recentDocumentTarget;
   ForumDetailHandoffTarget? _latestForumNotificationTarget;
   ShellPostLoginTarget? _pendingPostLoginTarget;
   late bool _wasAuthenticated;
@@ -108,6 +114,10 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     if (oldWidget.followUpStore != widget.followUpStore) {
       unawaited(_loadFollowUps());
       unawaited(_loadPendingPostLoginTarget());
+    }
+
+    if (oldWidget.docsFollowUpStore != widget.docsFollowUpStore) {
+      unawaited(_loadDocsFollowUps());
     }
 
     if (oldWidget.notificationRepository != widget.notificationRepository &&
@@ -192,6 +202,35 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     });
 
     unawaited(widget.followUpStore.writeRecentBrowseHandoff(recentTarget));
+  }
+
+  void _openDocsDetailTarget(DocsDetailHandoffTarget target) {
+    final normalizedTarget = _normalizeDocsHandoffTarget(target);
+    if (normalizedTarget == null) {
+      return;
+    }
+
+    final recentTarget = _buildRecentDocumentTarget(normalizedTarget);
+    setState(() {
+      _docsHandoffTarget = normalizedTarget;
+      _recentDocumentTarget = recentTarget;
+    });
+
+    unawaited(widget.docsFollowUpStore.writeRecentDocumentTarget(recentTarget));
+  }
+
+  void _recordRecentDocumentTarget(DocsDetailHandoffTarget target) {
+    final normalizedTarget = _normalizeDocsHandoffTarget(target);
+    if (normalizedTarget == null) {
+      return;
+    }
+
+    final recentTarget = _buildRecentDocumentTarget(normalizedTarget);
+    setState(() {
+      _recentDocumentTarget = recentTarget;
+    });
+
+    unawaited(widget.docsFollowUpStore.writeRecentDocumentTarget(recentTarget));
   }
 
   void _handleSessionStateChanged() {
@@ -312,6 +351,16 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     });
   }
 
+  void _consumeDocsHandoffTarget() {
+    if (_docsHandoffTarget == null) {
+      return;
+    }
+
+    setState(() {
+      _docsHandoffTarget = null;
+    });
+  }
+
   void _resumeRecentBrowseHandoff() {
     final target = _recentBrowseHandoffTarget;
     if (target == null) {
@@ -328,6 +377,15 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     }
 
     _openForumDetailTarget(target);
+  }
+
+  void _resumeRecentDocumentTarget() {
+    final target = _recentDocumentTarget;
+    if (target == null) {
+      return;
+    }
+
+    _openDocsDetailTarget(target);
   }
 
   Future<void> _loadLatestForumNotificationTarget() async {
@@ -397,6 +455,21 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       _recentBrowseHandoffTarget = recentTarget;
       _recentProfileUserId = recentProfileUserId;
     });
+
+    await _loadDocsFollowUps();
+  }
+
+  Future<void> _loadDocsFollowUps() async {
+    final recentDocumentTarget = _normalizeDocsHandoffTarget(
+      await widget.docsFollowUpStore.readRecentDocumentTarget(),
+    );
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _recentDocumentTarget = recentDocumentTarget;
+    });
   }
 
   Future<void> _loadPendingHandoff() async {
@@ -428,6 +501,16 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     );
   }
 
+  DocsDetailHandoffTarget _buildRecentDocumentTarget(
+    DocsDetailHandoffTarget target,
+  ) {
+    return DocsDetailHandoffTarget(
+      slug: target.normalizedSlug,
+      source: DocsDetailHandoffSource.browseHistory,
+      initialTitle: target.normalizedInitialTitle,
+    );
+  }
+
   ForumDetailHandoffTarget? _normalizeForumHandoffTarget(
     ForumDetailHandoffTarget? target,
   ) {
@@ -440,6 +523,20 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       source: target.source,
       initialTitle: target.normalizedInitialTitle,
       commentId: target.normalizedCommentId,
+    );
+  }
+
+  DocsDetailHandoffTarget? _normalizeDocsHandoffTarget(
+    DocsDetailHandoffTarget? target,
+  ) {
+    if (target == null || !target.hasValidSlug) {
+      return null;
+    }
+
+    return DocsDetailHandoffTarget(
+      slug: target.normalizedSlug,
+      source: target.source,
+      initialTitle: target.normalizedInitialTitle,
     );
   }
 
@@ -489,6 +586,13 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
             repository: widget.discoverRepository,
             onOpenForum: () => _selectTab(1),
             onOpenDocs: () => _selectTab(2),
+            onOpenDocument: (document) => _openDocsDetailTarget(
+              DocsDetailHandoffTarget(
+                slug: document.slug,
+                source: DocsDetailHandoffSource.discover,
+                initialTitle: document.title,
+              ),
+            ),
             onOpenProfileUser: _openProfileUser,
           ),
           ForumPage(
@@ -507,6 +611,9 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
           DocsPage(
             environment: widget.environment,
             repository: widget.docsRepository,
+            handoffTarget: _docsHandoffTarget,
+            onConsumeHandoffTarget: _consumeDocsHandoffTarget,
+            onRecordDocumentTarget: _recordRecentDocumentTarget,
           ),
           ProfilePage(
             sessionController: widget.sessionController,
@@ -515,7 +622,9 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
             publicUserId: _publicProfileUserId,
             recentPublicUserId: _recentProfileUserId,
             recentBrowseHandoffTarget: _recentBrowseHandoffTarget,
+            recentDocumentTarget: _recentDocumentTarget,
             onOpenForumDetailTarget: _openForumDetailTarget,
+            onOpenDocsDetailTarget: _openDocsDetailTarget,
             onOpenRecentPublicProfile: _openRecentProfileUser,
             onOpenMyProfile: _openMyProfile,
             onRequestSignIn: _startLoginForProfile,
@@ -588,6 +697,12 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
                 icon: Icons.history_outlined,
                 label: '继续阅读论坛',
                 onTap: _resumeRecentBrowseHandoff,
+              ),
+            if (_recentDocumentTarget != null)
+              _ShellStatusChip(
+                icon: Icons.description_outlined,
+                label: '继续阅读文档',
+                onTap: _resumeRecentDocumentTarget,
               ),
             if (_latestForumNotificationTarget != null)
               _ShellStatusChip(

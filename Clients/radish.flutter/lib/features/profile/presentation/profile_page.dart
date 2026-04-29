@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/auth/native_auth_controller.dart';
 import '../../../core/auth/session_controller.dart';
+import '../../../features/docs/data/docs_models.dart';
 import '../../../features/forum/data/forum_models.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
 import '../data/profile_models.dart';
@@ -16,7 +17,9 @@ class ProfilePage extends StatefulWidget {
     this.publicUserId,
     this.recentPublicUserId,
     this.recentBrowseHandoffTarget,
+    this.recentDocumentTarget,
     this.onOpenForumDetailTarget,
+    this.onOpenDocsDetailTarget,
     this.onOpenRecentPublicProfile,
     this.onOpenMyProfile,
     this.onRequestSignIn,
@@ -29,7 +32,9 @@ class ProfilePage extends StatefulWidget {
   final String? publicUserId;
   final String? recentPublicUserId;
   final ForumDetailHandoffTarget? recentBrowseHandoffTarget;
+  final DocsDetailHandoffTarget? recentDocumentTarget;
   final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
+  final ValueChanged<DocsDetailHandoffTarget>? onOpenDocsDetailTarget;
   final VoidCallback? onOpenRecentPublicProfile;
   final VoidCallback? onOpenMyProfile;
   final Future<void> Function()? onRequestSignIn;
@@ -249,6 +254,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 stats: profileState.stats,
                 recentBrowseHandoffTarget:
                     isMyProfile ? widget.recentBrowseHandoffTarget : null,
+                recentDocumentTarget:
+                    isMyProfile ? widget.recentDocumentTarget : null,
                 posts: profileState.posts,
                 postsTotal: profileState.postsTotal,
                 hasMorePosts: profileState.hasMorePosts,
@@ -279,6 +286,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         )
                     : null,
                 onOpenForumDetailTarget: widget.onOpenForumDetailTarget,
+                onOpenDocsDetailTarget: widget.onOpenDocsDetailTarget,
               )
             else
               const _ProfileLoadingState(),
@@ -380,6 +388,7 @@ class _PublicProfileContent extends StatelessWidget {
     required this.profile,
     required this.stats,
     required this.recentBrowseHandoffTarget,
+    required this.recentDocumentTarget,
     required this.posts,
     required this.postsTotal,
     required this.hasMorePosts,
@@ -401,11 +410,13 @@ class _PublicProfileContent extends StatelessWidget {
     required this.myQuickRepliesLoadMoreErrorMessage,
     required this.onLoadMoreMyQuickReplies,
     required this.onOpenForumDetailTarget,
+    required this.onOpenDocsDetailTarget,
   });
 
   final PublicProfileSummary profile;
   final PublicProfileStats? stats;
   final ForumDetailHandoffTarget? recentBrowseHandoffTarget;
+  final DocsDetailHandoffTarget? recentDocumentTarget;
   final List<PublicProfilePostSummary> posts;
   final int postsTotal;
   final bool hasMorePosts;
@@ -427,6 +438,7 @@ class _PublicProfileContent extends StatelessWidget {
   final String? myQuickRepliesLoadMoreErrorMessage;
   final VoidCallback? onLoadMoreMyQuickReplies;
   final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
+  final ValueChanged<DocsDetailHandoffTarget>? onOpenDocsDetailTarget;
 
   @override
   Widget build(BuildContext context) {
@@ -438,6 +450,14 @@ class _PublicProfileContent extends StatelessWidget {
         const SizedBox(height: 16),
         const _ProfileReadingGuide(),
         const SizedBox(height: 16),
+        if (recentDocumentTarget != null &&
+            recentDocumentTarget!.hasValidSlug) ...[
+          _RecentDocumentCard(
+            target: recentDocumentTarget!,
+            onOpenDocsDetailTarget: onOpenDocsDetailTarget,
+          ),
+          const SizedBox(height: 16),
+        ],
         if (recentBrowseHandoffTarget != null &&
             recentBrowseHandoffTarget!.hasValidPostId) ...[
           _RecentBrowseCard(
@@ -805,6 +825,44 @@ class _RecentBrowseCard extends StatelessWidget {
               : () => onOpenForumDetailTarget!(
                     target.copyWith(
                       source: ForumDetailHandoffSource.profileRecentBrowse,
+                    ),
+                  ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RecentDocumentCard extends StatelessWidget {
+  const _RecentDocumentCard({
+    required this.target,
+    required this.onOpenDocsDetailTarget,
+  });
+
+  final DocsDetailHandoffTarget target;
+  final ValueChanged<DocsDetailHandoffTarget>? onOpenDocsDetailTarget;
+
+  @override
+  Widget build(BuildContext context) {
+    return _ProfileSectionCard(
+      title: '最近文档',
+      description: '保留一个最近文档阅读上下文，方便从我的页面继续阅读公开文档。',
+      emptyText: '暂无最近文档。',
+      children: [
+        _ContentPreviewTile(
+          title: target.normalizedInitialTitle ?? '继续阅读公开文档',
+          subtitle: '继续阅读上次打开的公开文档详情。',
+          meta: '/docs/${target.normalizedSlug}',
+          chips: [
+            target.source.label,
+            '公开文档',
+          ],
+          actionLabel: onOpenDocsDetailTarget == null ? null : '继续阅读文档',
+          onAction: onOpenDocsDetailTarget == null
+              ? null
+              : () => onOpenDocsDetailTarget!(
+                    target.copyWith(
+                      source: DocsDetailHandoffSource.profileRecentDocument,
                     ),
                   ),
         ),

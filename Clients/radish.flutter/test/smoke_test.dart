@@ -13,6 +13,7 @@ import 'package:radish_flutter/core/auth/session_store.dart';
 import 'package:radish_flutter/core/config/app_environment.dart';
 import 'package:radish_flutter/features/discover/data/discover_models.dart';
 import 'package:radish_flutter/features/discover/data/discover_repository.dart';
+import 'package:radish_flutter/features/docs/data/docs_follow_up_store.dart';
 import 'package:radish_flutter/features/docs/data/docs_models.dart';
 import 'package:radish_flutter/features/docs/data/docs_repository.dart';
 import 'package:radish_flutter/features/forum/data/forum_follow_up_store.dart';
@@ -1300,6 +1301,131 @@ void main() {
     expect(find.text('帖子详情'), findsNothing);
   });
 
+  testWidgets('discover document handoff returns to discover after detail pop',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final docsFollowUpStore = InMemoryDocsFollowUpStore();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _SeededDocumentDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _FakeForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+        docsFollowUpStore: docsFollowUpStore,
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('打开文档'),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.tap(find.text('打开文档'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('文档详情'), findsWidgets);
+    expect(find.text('打开来源：发现'), findsOneWidget);
+    expect(find.text('Doc flutter-docs-scope'), findsWidgets);
+
+    Navigator.of(tester.element(find.text('文档详情').first)).pop();
+    await tester.pumpAndSettle();
+
+    expect(find.text('发现'), findsWidgets);
+    expect(find.text('文档精选'), findsOneWidget);
+    expect(find.text('文档详情'), findsNothing);
+
+    final recentTarget = await docsFollowUpStore.readRecentDocumentTarget();
+    expect(recentTarget?.slug, 'flutter-docs-scope');
+    expect(recentTarget?.source, DocsDetailHandoffSource.browseHistory);
+  });
+
+  testWidgets('profile recent document handoff returns to profile after pop',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: 'user-42',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: 'user-42',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _FakeForumRepository(),
+        profileRepository: _SeededProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+        docsFollowUpStore: InMemoryDocsFollowUpStore(
+          initialRecentDocumentTarget: const DocsDetailHandoffTarget(
+            slug: 'flutter-docs-scope',
+            source: DocsDetailHandoffSource.browseHistory,
+            initialTitle: 'Radish Flutter docs scope',
+          ),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('我的'));
+    await tester.pumpAndSettle();
+
+    final recentDocumentButton =
+        find.widgetWithText(FilledButton, '继续阅读文档').last;
+    await tester.scrollUntilVisible(
+      recentDocumentButton,
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.tap(recentDocumentButton);
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('文档详情'), findsWidgets);
+    expect(find.text('我的最近文档'), findsWidgets);
+    expect(find.text('Doc flutter-docs-scope'), findsWidgets);
+
+    Navigator.of(tester.element(find.text('文档详情').first)).pop();
+    await tester.pumpAndSettle();
+
+    expect(find.text('最近文档'), findsWidgets);
+    expect(find.text('User user-42'), findsOneWidget);
+    expect(find.text('文档详情'), findsNothing);
+  });
+
   testWidgets('pending notification handoff opens shared native forum detail',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
@@ -1488,6 +1614,27 @@ class _SeededDiscoverRepository implements DiscoverRepository {
         ),
       ],
       documents: [],
+      products: [],
+    );
+  }
+}
+
+class _SeededDocumentDiscoverRepository implements DiscoverRepository {
+  @override
+  Future<DiscoverSnapshot> getSnapshot({
+    required int pageSize,
+  }) async {
+    return const DiscoverSnapshot(
+      forumPosts: [],
+      documents: [
+        DocsDocumentSummary(
+          id: 'doc-3001',
+          title: 'Radish Flutter docs scope',
+          slug: 'flutter-docs-scope',
+          summary: 'Read-only docs route handoff.',
+          modifyTime: '2026-04-20T08:00:00Z',
+        ),
+      ],
       products: [],
     );
   }

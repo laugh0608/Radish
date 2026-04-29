@@ -110,6 +110,32 @@ class MainActivity : FlutterActivity() {
 
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
+            DOCS_FOLLOW_UP_CHANNEL,
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "readRecentDocumentTarget" -> {
+                    result.success(preferences.getString(DOCS_RECENT_DOCUMENT_KEY, null))
+                }
+                "writeRecentDocumentTarget" -> {
+                    val payload = call.arguments as? String
+                    if (payload.isNullOrBlank()) {
+                        result.error("invalid_payload", "Docs follow-up payload must be a non-empty string.", null)
+                        return@setMethodCallHandler
+                    }
+
+                    preferences.edit().putString(DOCS_RECENT_DOCUMENT_KEY, payload).apply()
+                    result.success(null)
+                }
+                "clearRecentDocumentTarget" -> {
+                    preferences.edit().remove(DOCS_RECENT_DOCUMENT_KEY).apply()
+                    result.success(null)
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
             AUTH_FLOW_CHANNEL,
         ).setMethodCallHandler { call, result ->
             when (call.method) {
@@ -176,8 +202,10 @@ class MainActivity : FlutterActivity() {
         private const val SESSION_STORE_PREFERENCES = "radish_flutter_session_store"
         private const val SESSION_STORE_KEY = "auth_session"
         private const val FORUM_FOLLOW_UP_CHANNEL = "radish.flutter/forum_follow_up"
+        private const val DOCS_FOLLOW_UP_CHANNEL = "radish.flutter/docs_follow_up"
         private const val AUTH_FLOW_CHANNEL = "radish.flutter/native_auth"
         private const val FORUM_RECENT_BROWSE_KEY = "forum_recent_browse_handoff"
+        private const val DOCS_RECENT_DOCUMENT_KEY = "docs_recent_document_target"
         private const val PROFILE_RECENT_USER_ID_KEY = "profile_recent_user_id"
         private const val SHELL_PENDING_POST_LOGIN_TARGET_KEY = "shell_pending_post_login_target"
         private const val EXTRA_FORUM_POST_ID = "forum_post_id"
