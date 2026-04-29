@@ -4,11 +4,13 @@ class ReadOnlyMarkdownView extends StatelessWidget {
   const ReadOnlyMarkdownView({
     required this.content,
     this.emptyText = '暂无内容。',
+    this.onOpenDocumentSlug,
     super.key,
   });
 
   final String content;
   final String emptyText;
+  final ValueChanged<String>? onOpenDocumentSlug;
 
   @override
   Widget build(BuildContext context) {
@@ -120,8 +122,9 @@ class ReadOnlyMarkdownView extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: SelectableText(
+                  child: _MarkdownInlineText(
                     trimmed.substring(2),
+                    onOpenDocumentSlug: onOpenDocumentSlug,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           height: 1.5,
                         ),
@@ -137,8 +140,9 @@ class ReadOnlyMarkdownView extends StatelessWidget {
       children.add(
         Padding(
           padding: const EdgeInsets.only(bottom: 12),
-          child: SelectableText(
+          child: _MarkdownInlineText(
             line,
+            onOpenDocumentSlug: onOpenDocumentSlug,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   height: 1.6,
                 ),
@@ -160,4 +164,193 @@ class ReadOnlyMarkdownView extends StatelessWidget {
       children: children,
     );
   }
+}
+
+class _MarkdownInlineText extends StatelessWidget {
+  const _MarkdownInlineText(
+    this.text, {
+    required this.style,
+    required this.onOpenDocumentSlug,
+  });
+
+  final String text;
+  final TextStyle? style;
+  final ValueChanged<String>? onOpenDocumentSlug;
+
+  @override
+  Widget build(BuildContext context) {
+    final onOpenDocumentSlug = this.onOpenDocumentSlug;
+    if (onOpenDocumentSlug == null) {
+      return SelectableText(
+        text,
+        style: style,
+      );
+    }
+
+    final segments = _parseDocsLinkSegments(text);
+    final hasLink = segments.any((segment) => segment.slug != null);
+    if (!hasLink) {
+      return SelectableText(
+        text,
+        style: style,
+      );
+    }
+
+    final linkStyle = style?.copyWith(
+          color: Theme.of(context).colorScheme.primary,
+          decoration: TextDecoration.underline,
+          decorationColor: Theme.of(context).colorScheme.primary,
+        ) ??
+        TextStyle(
+          color: Theme.of(context).colorScheme.primary,
+          decoration: TextDecoration.underline,
+          decorationColor: Theme.of(context).colorScheme.primary,
+        );
+
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: segments.map((segment) {
+        final slug = segment.slug;
+        if (slug == null) {
+          return Text(
+            segment.text,
+            style: style,
+          );
+        }
+
+        return InkWell(
+          borderRadius: BorderRadius.circular(6),
+          onTap: () => onOpenDocumentSlug(slug),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 1),
+            child: Text(
+              segment.text,
+              style: linkStyle,
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _InlineSegment {
+  const _InlineSegment({
+    required this.text,
+    this.slug,
+  });
+
+  final String text;
+  final String? slug;
+}
+
+final RegExp _markdownLinkPattern = RegExp(r'\[([^\]]+)\]\(([^)]+)\)');
+final RegExp _rawDocsPathPattern = RegExp(
+  r'(^|[\s(])(/docs/([A-Za-z0-9._~-]+)(?:[?#][^\s)]*)?)',
+);
+
+List<_InlineSegment> _parseDocsLinkSegments(String text) {
+  final segments = <_InlineSegment>[];
+  var index = 0;
+
+  while (index < text.length) {
+    final markdownMatch = _firstMatchFrom(_markdownLinkPattern, text, index);
+    final rawMatch = _firstMatchFrom(_rawDocsPathPattern, text, index);
+    final nextMatch = _nearestMatch(markdownMatch, rawMatch);
+
+    if (nextMatch == null) {
+      segments.add(_InlineSegment(text: text.substring(index)));
+      break;
+    }
+
+    final isMarkdownMatch = identical(nextMatch, markdownMatch);
+    final linkStart =
+        isMarkdownMatch ? nextMatch.start : _rawLinkStart(nextMatch);
+    if (linkStart > index) {
+      segments.add(_InlineSegment(text: text.substring(index, linkStart)));
+    }
+
+    if (isMarkdownMatch) {
+      final markdownDocsMatch = markdownMatch!;
+      final label = markdownDocsMatch.group(1) ?? '';
+      final slug = _extractDocsSlug(markdownDocsMatch.group(2));
+      if (slug != null && label.trim().isNotEmpty) {
+        segments.add(_InlineSegment(text: label, slug: slug));
+      } else {
+        segments.add(_InlineSegment(text: markdownDocsMatch.group(0) ?? ''));
+      }
+      index = markdownDocsMatch.end;
+      continue;
+    }
+
+    final rawDocsMatch = rawMatch!;
+    final path = rawDocsMatch.group(2) ?? '';
+    final slug = _extractDocsSlug(path);
+    if (slug == null) {
+      segments.add(_InlineSegment(text: path));
+    } else {
+      segments.add(_InlineSegment(text: path, slug: slug));
+    }
+    index = rawDocsMatch.end;
+  }
+
+  return _mergePlainSegments(segments);
+}
+
+RegExpMatch? _firstMatchFrom(RegExp pattern, String text, int start) {
+  final matches = pattern.allMatches(text, start);
+  return matches.isEmpty ? null : matches.first;
+}
+
+RegExpMatch? _nearestMatch(RegExpMatch? markdownMatch, RegExpMatch? rawMatch) {
+  if (markdownMatch == null) {
+    return rawMatch;
+  }
+
+  if (rawMatch == null) {
+    return markdownMatch;
+  }
+
+  return markdownMatch.start <= _rawLinkStart(rawMatch)
+      ? markdownMatch
+      : rawMatch;
+}
+
+int _rawLinkStart(RegExpMatch match) {
+  return match.start + (match.group(1) ?? '').length;
+}
+
+List<_InlineSegment> _mergePlainSegments(List<_InlineSegment> segments) {
+  final merged = <_InlineSegment>[];
+  for (final segment in segments) {
+    if (segment.text.isEmpty) {
+      continue;
+    }
+
+    if (segment.slug == null && merged.isNotEmpty && merged.last.slug == null) {
+      final previous = merged.removeLast();
+      merged.add(_InlineSegment(text: '${previous.text}${segment.text}'));
+      continue;
+    }
+
+    merged.add(segment);
+  }
+
+  return merged;
+}
+
+String? _extractDocsSlug(String? value) {
+  final normalized = value?.trim();
+  if (normalized == null || normalized.isEmpty) {
+    return null;
+  }
+
+  final uri = Uri.tryParse(normalized);
+  final segments = uri?.pathSegments ?? const <String>[];
+  if (segments.length < 2 || segments.first != 'docs') {
+    return null;
+  }
+
+  final slug = segments[1].trim();
+  return slug.isEmpty ? null : Uri.decodeComponent(slug);
 }

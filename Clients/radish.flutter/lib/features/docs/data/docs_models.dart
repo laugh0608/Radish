@@ -2,6 +2,7 @@ enum DocsDetailHandoffSource {
   shell,
   discover,
   docsList,
+  docsLink,
   browseHistory,
   profileRecentDocument,
 }
@@ -15,6 +16,8 @@ extension DocsDetailHandoffSourceLabel on DocsDetailHandoffSource {
         return '发现';
       case DocsDetailHandoffSource.docsList:
         return '文档列表';
+      case DocsDetailHandoffSource.docsLink:
+        return '文档内链';
       case DocsDetailHandoffSource.browseHistory:
         return '最近文档';
       case DocsDetailHandoffSource.profileRecentDocument:

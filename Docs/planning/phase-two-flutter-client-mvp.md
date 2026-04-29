@@ -201,3 +201,11 @@ Flutter 客户端第一批固定遵循以下约束：
 3. Android 侧新增单条最近文档 target 本地持久化，shell 状态条与我的 `profile` 均可继续打开最近公开文档
 4. 本轮仍保持公开只读边界，不扩展文档搜索增强、目录树、编辑、发布、回收站、版本历史、完整浏览历史中心、多条记录列表、删除、清空或跨端同步治理
 5. 当前自动化验证已通过 `flutter test`、`flutter analyze` 与 `git diff --check`；Android 真机复核已确认 discover 文档直达、docs 列表详情返回、profile 最近文档复访与重启恢复均正常
+
+截至 `2026-04-29` 的第四批第六个落地事实：
+
+1. Flutter docs 正文内公开文档链接已接入原生详情跳转：正文中的 Markdown 文档链接与裸 `/docs/:slug` 路径会继续打开 Flutter docs 详情
+2. 从 docs 列表内联详情点击文档内链时，会在当前 docs 页切换到目标文档；从 discover / profile 最近文档等 route 详情点击文档内链时，会 push 新的 docs 详情 route，返回后回到上一层来源详情
+3. 本轮新增 `DocsDetailHandoffSource.docsLink` 来源标签，用于标记文档内链打开路径；正文代码块仍按只读文本渲染，不参与 docs 链接跳转
+4. 本轮仍保持公开只读边界，不扩展外部浏览器打开、完整 Markdown 引擎、目录树、编辑、发布、回收站、版本历史、完整浏览历史中心、多条记录列表、删除、清空或跨端同步治理
+5. 当前自动化验证已通过 `flutter test`、`flutter analyze` 与定向 `flutter test test/docs_page_test.dart test/smoke_test.dart`；Android 真机待补验

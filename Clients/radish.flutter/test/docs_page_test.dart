@@ -69,6 +69,46 @@ void main() {
     expect(find.text('Radish Flutter docs scope'), findsOneWidget);
   });
 
+  testWidgets('opens linked docs from inline docs detail', (tester) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final recordedTargets = <DocsDetailHandoffTarget>[];
+    final scrollable = find.byType(Scrollable);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DocsPage(
+          environment: const AppEnvironment.development(),
+          repository: _SuccessDocsRepository(),
+          onRecordDocumentTarget: recordedTargets.add,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('打开文档').first,
+      200,
+      scrollable: scrollable,
+    );
+    await tester.tap(find.text('打开文档').first);
+    await tester.pumpAndSettle();
+
+    final linkedDocsAction = find.text('公开阅读边界').last;
+    await tester.ensureVisible(linkedDocsAction);
+    await tester.tap(linkedDocsAction);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Public docs reading boundary detail'), findsOneWidget);
+    expect(find.text('Boundary body.'), findsOneWidget);
+    expect(recordedTargets.last.slug, 'public-docs-reading-boundary');
+    expect(recordedTargets.last.source, DocsDetailHandoffSource.docsLink);
+  });
+
   testWidgets('opens handoff docs detail as route and records recent target', (
     tester,
   ) async {
@@ -108,6 +148,48 @@ void main() {
 
     expect(find.text('文档'), findsOneWidget);
     expect(find.text('Radish Flutter docs scope'), findsOneWidget);
+  });
+
+  testWidgets('opens linked docs from handoff detail route', (tester) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final recordedTargets = <DocsDetailHandoffTarget>[];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DocsPage(
+          environment: const AppEnvironment.development(),
+          repository: _SuccessDocsRepository(),
+          handoffTarget: const DocsDetailHandoffTarget(
+            slug: 'flutter-docs-scope',
+            source: DocsDetailHandoffSource.discover,
+            initialTitle: 'Radish Flutter docs scope',
+          ),
+          onRecordDocumentTarget: recordedTargets.add,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    final linkedDocsAction = find.text('公开阅读边界').last;
+    await tester.ensureVisible(linkedDocsAction);
+    await tester.tap(linkedDocsAction);
+    await tester.pumpAndSettle();
+
+    expect(find.text('打开来源：文档内链'), findsOneWidget);
+    expect(find.text('Public docs reading boundary detail'), findsOneWidget);
+    expect(recordedTargets.last.slug, 'public-docs-reading-boundary');
+    expect(recordedTargets.last.source, DocsDetailHandoffSource.docsLink);
+
+    await tester.tap(find.text('返回来源').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('打开来源：发现'), findsOneWidget);
+    expect(find.text('Radish Flutter docs scope'), findsWidgets);
   });
 
   testWidgets('renders docs error state when repository fails', (tester) async {
@@ -201,6 +283,20 @@ class _SuccessDocsRepository implements DocsRepository {
   Future<DocsDocumentDetail> getDocumentDetail({
     required String slug,
   }) async {
+    if (slug == 'public-docs-reading-boundary') {
+      return const DocsDocumentDetail(
+        id: '3002',
+        title: 'Public docs reading boundary detail',
+        slug: 'public-docs-reading-boundary',
+        summary: 'Keep editing and governance outside the first native batch.',
+        sourceType: 'Markdown',
+        visibility: 1,
+        status: 1,
+        publishedAt: '2026-04-19T08:00:00Z',
+        markdownContent: '# Boundary detail\nBoundary body.',
+      );
+    }
+
     return DocsDocumentDetail(
       id: '3001',
       title: 'Radish Flutter docs scope',
@@ -211,7 +307,7 @@ class _SuccessDocsRepository implements DocsRepository {
       status: 1,
       modifyTime: '2026-04-20T08:00:00Z',
       markdownContent:
-          '# Overview\nRead docs in Flutter.\n\n- Keep it read-only\n```txt\npublic detail\n```',
+          '# Overview\nRead docs in Flutter.\n\n- Keep it read-only\n- 继续阅读 [公开阅读边界](/docs/public-docs-reading-boundary)\n```txt\npublic detail\n/docs/not-a-link-in-code\n```',
     );
   }
 }

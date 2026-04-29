@@ -180,6 +180,7 @@ class _DocsPageState extends State<DocsPage> {
                 detailState.detail != null)
               _DocsDetailContent(
                 detail: detailState.detail!,
+                onOpenDocumentSlug: _openLinkedDocumentFromListDetail,
               ),
           ],
         );
@@ -227,9 +228,19 @@ class _DocsPageState extends State<DocsPage> {
           environment: widget.environment,
           repository: widget.repository,
           target: target,
+          onRecordDocumentTarget: widget.onRecordDocumentTarget,
         ),
       ),
     );
+  }
+
+  void _openLinkedDocumentFromListDetail(String slug) {
+    final target = DocsDetailHandoffTarget(
+      slug: slug,
+      source: DocsDetailHandoffSource.docsLink,
+    );
+    widget.onRecordDocumentTarget?.call(target);
+    _detailController.openDocument(slug);
   }
 }
 
@@ -376,11 +387,13 @@ class _DocsDetailRoutePage extends StatefulWidget {
     required this.environment,
     required this.repository,
     required this.target,
+    this.onRecordDocumentTarget,
   });
 
   final AppEnvironment environment;
   final DocsRepository repository;
   final DocsDetailHandoffTarget target;
+  final ValueChanged<DocsDetailHandoffTarget>? onRecordDocumentTarget;
 
   @override
   State<_DocsDetailRoutePage> createState() => _DocsDetailRoutePageState();
@@ -485,10 +498,30 @@ class _DocsDetailRoutePageState extends State<_DocsDetailRoutePage> {
                 _DocsDetailContent(
                   detail: state.detail!,
                   source: widget.target.source,
+                  onOpenDocumentSlug: _openLinkedDocument,
                 ),
             ],
           );
         },
+      ),
+    );
+  }
+
+  void _openLinkedDocument(String slug) {
+    final target = DocsDetailHandoffTarget(
+      slug: slug,
+      source: DocsDetailHandoffSource.docsLink,
+    );
+    widget.onRecordDocumentTarget?.call(target);
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => _DocsDetailRoutePage(
+          environment: widget.environment,
+          repository: widget.repository,
+          target: target,
+          onRecordDocumentTarget: widget.onRecordDocumentTarget,
+        ),
       ),
     );
   }
@@ -583,10 +616,12 @@ class _DocsDetailContent extends StatelessWidget {
   const _DocsDetailContent({
     required this.detail,
     this.source,
+    this.onOpenDocumentSlug,
   });
 
   final DocsDocumentDetail detail;
   final DocsDetailHandoffSource? source;
+  final ValueChanged<String>? onOpenDocumentSlug;
 
   @override
   Widget build(BuildContext context) {
@@ -662,6 +697,7 @@ class _DocsDetailContent extends StatelessWidget {
             ReadOnlyMarkdownView(
               content: detail.markdownContent,
               emptyText: '这篇文档暂无正文内容。',
+              onOpenDocumentSlug: onOpenDocumentSlug,
             ),
           ],
         ),
