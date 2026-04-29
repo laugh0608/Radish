@@ -288,6 +288,117 @@ void main() {
     );
   });
 
+  testWidgets('opens recent browse target from my profile', (tester) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final scrollable = find.byType(Scrollable).first;
+    final openedTargets = <ForumDetailHandoffTarget>[];
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: '2042219067430928384',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: '2042219067430928384',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: _SuccessProfileRepository(),
+          recentBrowseHandoffTarget: const ForumDetailHandoffTarget(
+            postId: 'post-1',
+            source: ForumDetailHandoffSource.browseHistory,
+            initialTitle: 'Native profile follow-up',
+            commentId: 'comment-1',
+          ),
+          onOpenForumDetailTarget: openedTargets.add,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('最近阅读'),
+      200,
+      scrollable: scrollable,
+    );
+    expect(find.text('最近阅读'), findsOneWidget);
+    expect(find.text('继续回到上次打开的评论上下文。'), findsOneWidget);
+
+    await tester.tap(find.text('继续阅读帖子'));
+    await tester.pumpAndSettle();
+
+    expect(openedTargets, hasLength(1));
+    expect(openedTargets.single.postId, 'post-1');
+    expect(openedTargets.single.commentId, 'comment-1');
+    expect(
+      openedTargets.single.source,
+      ForumDetailHandoffSource.profileRecentBrowse,
+    );
+  });
+
+  testWidgets('does not render recent browse target on public profile', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: '2042219067430928384',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: '2042219067430928384',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: _SuccessProfileRepository(),
+          publicUserId: 'public-user-2',
+          recentBrowseHandoffTarget: const ForumDetailHandoffTarget(
+            postId: 'post-1',
+            source: ForumDetailHandoffSource.browseHistory,
+            initialTitle: 'Native profile follow-up',
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('公开主页'), findsOneWidget);
+    expect(find.text('最近阅读'), findsNothing);
+  });
+
   testWidgets('loads more public posts and opens appended post handoff', (
     tester,
   ) async {

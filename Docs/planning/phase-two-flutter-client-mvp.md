@@ -186,3 +186,10 @@ Flutter 客户端第一批固定遵循以下约束：
 3. 加载更多失败只在“最近公开帖子”区块内提示，不拖垮公开资料、最近公开评论或我的轻回应区块
 4. 本轮仍保持只读复访边界，不开放发帖、评论提交、点赞、删除、举报、编辑治理、完整通知中心或系统通知栏推送
 5. 当前自动化验证已通过 `flutter test`、`flutter analyze` 与 `git diff --check`；Android 真机复核已确认最近公开帖子、最近公开评论与我的轻回应三条 profile 复访路线从详情返回后都会回到 profile
+
+截至 `2026-04-29` 的第四批第四个落地事实：
+
+1. `profile` 最近阅读上下文已接入我的主页：已登录态可从我的主页继续打开最近一次 forum 阅读目标
+2. 该入口复用现有 `ForumDetailHandoffTarget` 与最近阅读存储，不新增存储协议；从 profile 内点击时会临时使用 `profileRecentBrowse` 来源保留 profile 返回上下文
+3. 本轮仍只承载单个最近阅读上下文，不扩展完整浏览历史中心、多条记录列表、删除、清空或跨端同步治理
+4. 当前自动化验证已通过 `flutter test`、`flutter analyze` 与 `git diff --check`；Android 真机复核已确认最近阅读入口可回到对应详情，返回后仍留在 profile

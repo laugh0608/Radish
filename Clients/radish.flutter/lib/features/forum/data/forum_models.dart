@@ -5,6 +5,7 @@ enum ForumDetailHandoffSource {
   publicProfilePost,
   publicProfileComment,
   myQuickReply,
+  profileRecentBrowse,
 }
 
 extension ForumDetailHandoffSourceLabel on ForumDetailHandoffSource {
@@ -22,6 +23,8 @@ extension ForumDetailHandoffSourceLabel on ForumDetailHandoffSource {
         return '个人主页评论';
       case ForumDetailHandoffSource.myQuickReply:
         return '我的轻回应';
+      case ForumDetailHandoffSource.profileRecentBrowse:
+        return '我的最近阅读';
     }
   }
 }

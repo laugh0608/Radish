@@ -15,6 +15,7 @@ class ProfilePage extends StatefulWidget {
     required this.repository,
     this.publicUserId,
     this.recentPublicUserId,
+    this.recentBrowseHandoffTarget,
     this.onOpenForumDetailTarget,
     this.onOpenRecentPublicProfile,
     this.onOpenMyProfile,
@@ -27,6 +28,7 @@ class ProfilePage extends StatefulWidget {
   final ProfileRepository repository;
   final String? publicUserId;
   final String? recentPublicUserId;
+  final ForumDetailHandoffTarget? recentBrowseHandoffTarget;
   final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
   final VoidCallback? onOpenRecentPublicProfile;
   final VoidCallback? onOpenMyProfile;
@@ -245,6 +247,8 @@ class _ProfilePageState extends State<ProfilePage> {
               _PublicProfileContent(
                 profile: profileState.profile!,
                 stats: profileState.stats,
+                recentBrowseHandoffTarget:
+                    isMyProfile ? widget.recentBrowseHandoffTarget : null,
                 posts: profileState.posts,
                 postsTotal: profileState.postsTotal,
                 hasMorePosts: profileState.hasMorePosts,
@@ -375,6 +379,7 @@ class _PublicProfileContent extends StatelessWidget {
   const _PublicProfileContent({
     required this.profile,
     required this.stats,
+    required this.recentBrowseHandoffTarget,
     required this.posts,
     required this.postsTotal,
     required this.hasMorePosts,
@@ -400,6 +405,7 @@ class _PublicProfileContent extends StatelessWidget {
 
   final PublicProfileSummary profile;
   final PublicProfileStats? stats;
+  final ForumDetailHandoffTarget? recentBrowseHandoffTarget;
   final List<PublicProfilePostSummary> posts;
   final int postsTotal;
   final bool hasMorePosts;
@@ -432,6 +438,14 @@ class _PublicProfileContent extends StatelessWidget {
         const SizedBox(height: 16),
         const _ProfileReadingGuide(),
         const SizedBox(height: 16),
+        if (recentBrowseHandoffTarget != null &&
+            recentBrowseHandoffTarget!.hasValidPostId) ...[
+          _RecentBrowseCard(
+            target: recentBrowseHandoffTarget!,
+            onOpenForumDetailTarget: onOpenForumDetailTarget,
+          ),
+          const SizedBox(height: 16),
+        ],
         if (showMyQuickReplies) ...[
           _MyQuickRepliesCard(
             quickReplies: myQuickReplies,
@@ -753,6 +767,46 @@ class _GuideRow extends StatelessWidget {
               Text(body),
             ],
           ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RecentBrowseCard extends StatelessWidget {
+  const _RecentBrowseCard({
+    required this.target,
+    required this.onOpenForumDetailTarget,
+  });
+
+  final ForumDetailHandoffTarget target;
+  final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
+
+  @override
+  Widget build(BuildContext context) {
+    return _ProfileSectionCard(
+      title: '最近阅读',
+      description: '保留一个最近论坛阅读上下文，方便从我的页面继续回到原帖。',
+      emptyText: '暂无最近阅读。',
+      children: [
+        _ContentPreviewTile(
+          title: target.normalizedInitialTitle ?? '继续阅读论坛帖子',
+          subtitle: target.normalizedCommentId == null
+              ? '继续阅读上次打开的论坛帖子。'
+              : '继续回到上次打开的评论上下文。',
+          meta: '帖子 ${target.normalizedPostId}',
+          chips: [
+            target.normalizedCommentId == null ? '帖子上下文' : '评论上下文',
+            target.source.label,
+          ],
+          actionLabel: onOpenForumDetailTarget == null ? null : '继续阅读帖子',
+          onAction: onOpenForumDetailTarget == null
+              ? null
+              : () => onOpenForumDetailTarget!(
+                    target.copyWith(
+                      source: ForumDetailHandoffSource.profileRecentBrowse,
+                    ),
+                  ),
         ),
       ],
     );

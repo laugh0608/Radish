@@ -454,6 +454,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       case ForumDetailHandoffSource.publicProfilePost:
       case ForumDetailHandoffSource.publicProfileComment:
       case ForumDetailHandoffSource.myQuickReply:
+      case ForumDetailHandoffSource.profileRecentBrowse:
         return true;
       case ForumDetailHandoffSource.shell:
       case ForumDetailHandoffSource.notification:
@@ -513,6 +514,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
             repository: widget.profileRepository,
             publicUserId: _publicProfileUserId,
             recentPublicUserId: _recentProfileUserId,
+            recentBrowseHandoffTarget: _recentBrowseHandoffTarget,
             onOpenForumDetailTarget: _openForumDetailTarget,
             onOpenRecentPublicProfile: _openRecentProfileUser,
             onOpenMyProfile: _openMyProfile,
