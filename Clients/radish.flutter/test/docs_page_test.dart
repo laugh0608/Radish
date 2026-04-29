@@ -111,6 +111,76 @@ void main() {
     expect(recordedTargets.last.source, DocsDetailHandoffSource.docsList);
   });
 
+  testWidgets('system back from searched detail returns to search results', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final scrollable = find.byType(Scrollable).first;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DocsPage(
+          environment: const AppEnvironment.development(),
+          repository: _SuccessDocsRepository(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'boundary');
+    await tester.tap(find.text('搜索文档'));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('打开文档').first,
+      200,
+      scrollable: scrollable,
+    );
+    await tester.tap(find.text('打开文档').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Public docs reading boundary detail'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('文档'), findsOneWidget);
+    expect(find.text('“boundary” 共 1 篇文档'), findsOneWidget);
+    expect(find.text('Public docs reading boundary'), findsOneWidget);
+    expect(find.text('Public docs reading boundary detail'), findsNothing);
+  });
+
+  testWidgets('long docs slugs do not overflow on narrow screens', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DocsPage(
+          environment: const AppEnvironment.development(),
+          repository: _LongSlugDocsRepository(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('A very long public docs slug card'),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('opens linked docs from inline docs detail', (tester) async {
     tester.view.physicalSize = const Size(1200, 2400);
     tester.view.devicePixelRatio = 1.0;
@@ -392,5 +462,44 @@ class _DetailFailingDocsRepository extends _SuccessDocsRepository {
     required String slug,
   }) {
     throw const RadishApiClientException('文档详情服务暂时不可用');
+  }
+}
+
+class _LongSlugDocsRepository implements DocsRepository {
+  @override
+  Future<DocsDocumentPage> getDocumentPage({
+    required int pageIndex,
+    required int pageSize,
+    String? keyword,
+  }) async {
+    return const DocsDocumentPage(
+      page: 1,
+      pageSize: 20,
+      dataCount: 1,
+      pageCount: 1,
+      documents: [
+        DocsDocumentSummary(
+          id: '9001',
+          title: 'A very long public docs slug card',
+          slug:
+              'guide-m15-test-rollback-rehearsal-2026-04-06-with-extra-native-client-overflow-check',
+          summary:
+              'This document intentionally uses a long slug for narrow screens.',
+          publishedAt: '2026-04-19T08:00:00Z',
+        ),
+      ],
+    );
+  }
+
+  @override
+  Future<DocsDocumentDetail> getDocumentDetail({
+    required String slug,
+  }) async {
+    return DocsDocumentDetail(
+      id: '9001',
+      title: 'A very long public docs slug card',
+      slug: slug,
+      markdownContent: '# Long slug',
+    );
   }
 }

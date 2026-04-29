@@ -96,109 +96,123 @@ class _DocsPageState extends State<DocsPage> {
         final detailState = _detailController.state;
         final isDetailMode = !detailState.isIdle;
 
-        return ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            Text(
-              isDetailMode ? '文档详情' : '文档',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              isDetailMode
-                  ? '在应用内阅读公开文档详情。当前不开放编辑、发布和治理操作。'
-                  : '浏览公开文档列表。当前不开放编辑、发布和治理操作。',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 20),
-            PhaseScopeCard(
-              title: '当前能力',
-              items: [
-                '当前环境：${widget.environment.name}',
-                isDetailMode ? '支持公开文档详情阅读和返回列表' : '支持公开文档列表、分页、加载和错误状态',
-                '当前不支持编辑、发布、回收站或版本治理',
-                if (!isDetailMode)
-                  feedState.page == null
-                      ? '正在准备文档列表'
-                      : '已加载 ${feedState.page!.documents.length} 篇文档，共 ${feedState.page!.dataCount} 篇',
-                if (!isDetailMode && feedState.hasKeyword)
-                  '当前搜索：${feedState.keyword}',
-                if (isDetailMode)
-                  detailState.detail == null
-                      ? '正在准备文档详情'
-                      : '正在阅读 /docs/${detailState.detail!.slug}',
-              ],
-            ),
-            const SizedBox(height: 16),
-            if (!isDetailMode) ...[
-              _DocsSearchCard(
-                controller: _searchController,
-                keyword: feedState.keyword,
-                isLoading: feedState.isLoading,
-                onSearch: _searchDocs,
-                onClear: _clearDocsSearch,
+        return PopScope<void>(
+          canPop: !isDetailMode,
+          onPopInvokedWithResult: (didPop, result) {
+            if (didPop || !isDetailMode) {
+              return;
+            }
+
+            _detailController.close();
+          },
+          child: ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              Text(
+                isDetailMode ? '文档详情' : '文档',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                isDetailMode
+                    ? '在应用内阅读公开文档详情。当前不开放编辑、发布和治理操作。'
+                    : '浏览公开文档列表。当前不开放编辑、发布和治理操作。',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 20),
+              PhaseScopeCard(
+                title: '当前能力',
+                items: [
+                  '当前环境：${widget.environment.name}',
+                  isDetailMode ? '支持公开文档详情阅读和返回列表' : '支持公开文档列表、分页、加载和错误状态',
+                  '当前不支持编辑、发布、回收站或版本治理',
+                  if (!isDetailMode)
+                    feedState.page == null
+                        ? '正在准备文档列表'
+                        : '已加载 ${feedState.page!.documents.length} 篇文档，共 ${feedState.page!.dataCount} 篇',
+                  if (!isDetailMode && feedState.hasKeyword)
+                    '当前搜索：${feedState.keyword}',
+                  if (isDetailMode)
+                    detailState.detail == null
+                        ? '正在准备文档详情'
+                        : '正在阅读 /docs/${detailState.detail!.slug}',
+                ],
               ),
               const SizedBox(height: 16),
-            ],
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                if (isDetailMode)
-                  OutlinedButton.icon(
-                    onPressed:
-                        detailState.isLoading ? null : _detailController.close,
-                    icon: const Icon(Icons.arrow_back),
-                    label: const Text('返回文档列表'),
-                  ),
-                FilledButton.tonalIcon(
-                  onPressed: isDetailMode
-                      ? (detailState.isLoading
-                          ? null
-                          : _detailController.refresh)
-                      : (feedState.isLoading ? null : _feedController.refresh),
-                  icon: const Icon(Icons.refresh),
-                  label: Text(isDetailMode ? '刷新详情' : '刷新文档'),
+              if (!isDetailMode) ...[
+                _DocsSearchCard(
+                  controller: _searchController,
+                  keyword: feedState.keyword,
+                  isLoading: feedState.isLoading,
+                  onSearch: _searchDocs,
+                  onClear: _clearDocsSearch,
                 ),
+                const SizedBox(height: 16),
               ],
-            ),
-            const SizedBox(height: 16),
-            if (!isDetailMode && feedState.isLoading) const _DocsLoadingState(),
-            if (!isDetailMode && feedState.isError)
-              _DocsErrorState(
-                title: '暂时无法加载文档',
-                message: feedState.errorMessage ?? '无法加载文档列表。',
-                onRetry: _feedController.refresh,
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  if (isDetailMode)
+                    OutlinedButton.icon(
+                      onPressed: detailState.isLoading
+                          ? null
+                          : _detailController.close,
+                      icon: const Icon(Icons.arrow_back),
+                      label: const Text('返回文档列表'),
+                    ),
+                  FilledButton.tonalIcon(
+                    onPressed: isDetailMode
+                        ? (detailState.isLoading
+                            ? null
+                            : _detailController.refresh)
+                        : (feedState.isLoading
+                            ? null
+                            : _feedController.refresh),
+                    icon: const Icon(Icons.refresh),
+                    label: Text(isDetailMode ? '刷新详情' : '刷新文档'),
+                  ),
+                ],
               ),
-            if (!isDetailMode && feedState.isReady && feedState.page != null)
-              _DocsFeedContent(
-                state: feedState,
-                onOpenDocument: _openDocumentFromList,
-                onPreviousPage: feedState.hasPreviousPage
-                    ? () => _feedController.goToPage(feedState.pageIndex - 1)
-                    : null,
-                onNextPage: feedState.hasNextPage
-                    ? () => _feedController.goToPage(feedState.pageIndex + 1)
-                    : null,
-              ),
-            if (isDetailMode && detailState.isLoading)
-              const _DocsLoadingState(
-                message: '正在加载公开文档...',
-              ),
-            if (isDetailMode && detailState.isError)
-              _DocsErrorState(
-                title: '暂时无法加载文档详情',
-                message: detailState.errorMessage ?? '无法加载文档详情。',
-                onRetry: _detailController.refresh,
-              ),
-            if (isDetailMode &&
-                detailState.isReady &&
-                detailState.detail != null)
-              _DocsDetailContent(
-                detail: detailState.detail!,
-                onOpenDocumentSlug: _openLinkedDocumentFromListDetail,
-              ),
-          ],
+              const SizedBox(height: 16),
+              if (!isDetailMode && feedState.isLoading)
+                const _DocsLoadingState(),
+              if (!isDetailMode && feedState.isError)
+                _DocsErrorState(
+                  title: '暂时无法加载文档',
+                  message: feedState.errorMessage ?? '无法加载文档列表。',
+                  onRetry: _feedController.refresh,
+                ),
+              if (!isDetailMode && feedState.isReady && feedState.page != null)
+                _DocsFeedContent(
+                  state: feedState,
+                  onOpenDocument: _openDocumentFromList,
+                  onPreviousPage: feedState.hasPreviousPage
+                      ? () => _feedController.goToPage(feedState.pageIndex - 1)
+                      : null,
+                  onNextPage: feedState.hasNextPage
+                      ? () => _feedController.goToPage(feedState.pageIndex + 1)
+                      : null,
+                ),
+              if (isDetailMode && detailState.isLoading)
+                const _DocsLoadingState(
+                  message: '正在加载公开文档...',
+                ),
+              if (isDetailMode && detailState.isError)
+                _DocsErrorState(
+                  title: '暂时无法加载文档详情',
+                  message: detailState.errorMessage ?? '无法加载文档详情。',
+                  onRetry: _detailController.refresh,
+                ),
+              if (isDetailMode &&
+                  detailState.isReady &&
+                  detailState.detail != null)
+                _DocsDetailContent(
+                  detail: detailState.detail!,
+                  onOpenDocumentSlug: _openLinkedDocumentFromListDetail,
+                ),
+            ],
+          ),
         );
       },
     );
@@ -651,7 +665,7 @@ class _DocsDocumentCard extends StatelessWidget {
                   ),
                   if (document.slug.isNotEmpty)
                     Chip(
-                      label: Text('/docs/${document.slug}'),
+                      label: _DocsBoundedInlineText('/docs/${document.slug}'),
                       visualDensity: VisualDensity.compact,
                     ),
                 ],
@@ -809,15 +823,48 @@ class _DocsMetaText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 18),
-        const SizedBox(width: 6),
-        Text(text),
-      ],
+    return SizedBox(
+      width: _inlineMaxWidth(context),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
     );
   }
+}
+
+class _DocsBoundedInlineText extends StatelessWidget {
+  const _DocsBoundedInlineText(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxWidth: _inlineMaxWidth(context),
+      ),
+      child: Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+}
+
+double _inlineMaxWidth(BuildContext context) {
+  return (MediaQuery.sizeOf(context).width - 80).clamp(160.0, 420.0);
 }
 
 String _formatDate(String? value) {

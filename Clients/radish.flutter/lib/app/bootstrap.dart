@@ -11,6 +11,7 @@ import '../core/auth/session_store.dart';
 import '../core/config/app_environment.dart';
 import '../core/network/radish_api_client.dart';
 import '../core/network/radish_api_endpoints.dart';
+import '../core/platform/app_lifecycle_gateway.dart';
 import '../features/discover/data/discover_repository.dart';
 import '../features/docs/data/docs_follow_up_store.dart';
 import '../features/docs/data/docs_repository.dart';
@@ -38,6 +39,9 @@ class RadishBootstrap {
     final docsFollowUpStore = Platform.isAndroid
         ? PlatformDocsFollowUpStore()
         : InMemoryDocsFollowUpStore();
+    final appLifecycleGateway = Platform.isAndroid
+        ? PlatformAppLifecycleGateway()
+        : const EmptyAppLifecycleGateway();
     final sessionController = SessionController(
       sessionStore: sessionStore,
       refreshService: SessionRefreshService(environment: environment),
@@ -85,6 +89,7 @@ class RadishBootstrap {
         followUpStore: followUpStore,
         docsFollowUpStore: docsFollowUpStore,
         notificationRepository: notificationRepository,
+        appLifecycleGateway: appLifecycleGateway,
       ),
     );
   }

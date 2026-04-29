@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../core/auth/session_controller.dart';
 import '../core/auth/native_auth_controller.dart';
 import '../core/config/app_environment.dart';
+import '../core/platform/app_lifecycle_gateway.dart';
 import '../core/theme/radish_theme.dart';
 import '../features/discover/data/discover_repository.dart';
 import '../features/docs/data/docs_follow_up_store.dart';
@@ -28,6 +29,7 @@ class RadishApp extends StatefulWidget {
     required this.followUpStore,
     this.docsFollowUpStore = const EmptyDocsFollowUpStore(),
     this.notificationRepository = const EmptyNotificationRepository(),
+    this.appLifecycleGateway = const EmptyAppLifecycleGateway(),
     this.initialForumHandoffTarget,
     super.key,
   });
@@ -42,6 +44,7 @@ class RadishApp extends StatefulWidget {
   final ForumFollowUpStore followUpStore;
   final DocsFollowUpStore docsFollowUpStore;
   final NotificationRepository notificationRepository;
+  final AppLifecycleGateway appLifecycleGateway;
   final ForumDetailHandoffTarget? initialForumHandoffTarget;
 
   @override
@@ -88,6 +91,7 @@ class _RadishAppState extends State<RadishApp> {
                   followUpStore: widget.followUpStore,
                   docsFollowUpStore: widget.docsFollowUpStore,
                   notificationRepository: widget.notificationRepository,
+                  appLifecycleGateway: widget.appLifecycleGateway,
                   initialForumHandoffTarget: widget.initialForumHandoffTarget,
                 ),
         );

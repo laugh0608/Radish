@@ -11,6 +11,7 @@ import 'package:radish_flutter/core/auth/session_controller.dart';
 import 'package:radish_flutter/core/auth/session_refresh_service.dart';
 import 'package:radish_flutter/core/auth/session_store.dart';
 import 'package:radish_flutter/core/config/app_environment.dart';
+import 'package:radish_flutter/core/platform/app_lifecycle_gateway.dart';
 import 'package:radish_flutter/features/discover/data/discover_models.dart';
 import 'package:radish_flutter/features/discover/data/discover_repository.dart';
 import 'package:radish_flutter/features/docs/data/docs_follow_up_store.dart';
@@ -90,6 +91,45 @@ void main() {
     expect(find.text('游客'), findsOneWidget);
     expect(find.text('登录'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('root Android back moves the app task to background',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final lifecycleGateway = _RecordingAppLifecycleGateway();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _FakeForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+        appLifecycleGateway: lifecycleGateway,
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Radish Flutter'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(lifecycleGateway.moveTaskToBackCallCount, 1);
+    expect(find.text('Radish Flutter'), findsOneWidget);
   });
 
   testWidgets('restores authenticated session into profile boundary',
@@ -2405,6 +2445,15 @@ class _FakeForumNotificationRepository implements NotificationRepository {
       initialTitle: '帖子被评论',
       commentId: 'comment-big-1',
     );
+  }
+}
+
+class _RecordingAppLifecycleGateway implements AppLifecycleGateway {
+  int moveTaskToBackCallCount = 0;
+
+  @override
+  Future<void> moveTaskToBack() async {
+    moveTaskToBackCallCount += 1;
   }
 }
 

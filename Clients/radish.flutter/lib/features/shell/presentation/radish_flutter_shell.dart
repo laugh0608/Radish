@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../core/auth/session_controller.dart';
 import '../../../core/auth/native_auth_controller.dart';
 import '../../../core/config/app_environment.dart';
+import '../../../core/platform/app_lifecycle_gateway.dart';
 import '../../../features/discover/data/discover_repository.dart';
 import '../../../features/docs/data/docs_follow_up_store.dart';
 import '../../../features/docs/data/docs_models.dart';
@@ -31,6 +32,7 @@ class RadishFlutterShell extends StatefulWidget {
     required this.followUpStore,
     this.docsFollowUpStore = const EmptyDocsFollowUpStore(),
     this.notificationRepository = const EmptyNotificationRepository(),
+    this.appLifecycleGateway = const EmptyAppLifecycleGateway(),
     this.initialForumHandoffTarget,
     super.key,
   });
@@ -45,6 +47,7 @@ class RadishFlutterShell extends StatefulWidget {
   final ForumFollowUpStore followUpStore;
   final DocsFollowUpStore docsFollowUpStore;
   final NotificationRepository notificationRepository;
+  final AppLifecycleGateway appLifecycleGateway;
   final ForumDetailHandoffTarget? initialForumHandoffTarget;
 
   @override
@@ -631,49 +634,59 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
           ),
         ];
 
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Radish Flutter'),
-          ),
-          body: SafeArea(
-            child: Column(
-              children: [
-                statusStrip,
-                if (authNotice != null) authNotice,
-                Expanded(
-                  child: IndexedStack(
-                    index: _currentIndex,
-                    children: pages,
+        return PopScope<void>(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, result) {
+            if (didPop) {
+              return;
+            }
+
+            unawaited(widget.appLifecycleGateway.moveTaskToBack());
+          },
+          child: Scaffold(
+            appBar: AppBar(
+              title: const Text('Radish Flutter'),
+            ),
+            body: SafeArea(
+              child: Column(
+                children: [
+                  statusStrip,
+                  if (authNotice != null) authNotice,
+                  Expanded(
+                    child: IndexedStack(
+                      index: _currentIndex,
+                      children: pages,
+                    ),
                   ),
+                ],
+              ),
+            ),
+            bottomNavigationBar: NavigationBar(
+              selectedIndex: _currentIndex,
+              onDestinationSelected: _selectTab,
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.explore_outlined),
+                  selectedIcon: Icon(Icons.explore),
+                  label: '发现',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.forum_outlined),
+                  selectedIcon: Icon(Icons.forum),
+                  label: '论坛',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.description_outlined),
+                  selectedIcon: Icon(Icons.description),
+                  label: '文档',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.person_outline),
+                  selectedIcon: Icon(Icons.person),
+                  label: '我的',
                 ),
               ],
             ),
-          ),
-          bottomNavigationBar: NavigationBar(
-            selectedIndex: _currentIndex,
-            onDestinationSelected: _selectTab,
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.explore_outlined),
-                selectedIcon: Icon(Icons.explore),
-                label: '发现',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.forum_outlined),
-                selectedIcon: Icon(Icons.forum),
-                label: '论坛',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.description_outlined),
-                selectedIcon: Icon(Icons.description),
-                label: '文档',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.person_outline),
-                selectedIcon: Icon(Icons.person),
-                label: '我的',
-              ),
-            ],
           ),
         );
       },

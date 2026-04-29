@@ -167,6 +167,19 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            APP_LIFECYCLE_CHANNEL,
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "moveTaskToBack" -> {
+                    moveTaskToBack(true)
+                    result.success(null)
+                }
+                else -> result.notImplemented()
+            }
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -204,6 +217,7 @@ class MainActivity : FlutterActivity() {
         private const val FORUM_FOLLOW_UP_CHANNEL = "radish.flutter/forum_follow_up"
         private const val DOCS_FOLLOW_UP_CHANNEL = "radish.flutter/docs_follow_up"
         private const val AUTH_FLOW_CHANNEL = "radish.flutter/native_auth"
+        private const val APP_LIFECYCLE_CHANNEL = "radish.flutter/app_lifecycle"
         private const val FORUM_RECENT_BROWSE_KEY = "forum_recent_browse_handoff"
         private const val DOCS_RECENT_DOCUMENT_KEY = "docs_recent_document_target"
         private const val PROFILE_RECENT_USER_ID_KEY = "profile_recent_user_id"
