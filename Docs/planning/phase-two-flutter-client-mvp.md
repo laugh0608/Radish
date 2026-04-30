@@ -250,3 +250,12 @@ Flutter 客户端第一批固定遵循以下约束：
 4. 从 profile 内打开任意最近阅读条目时继续使用 `profileRecentBrowse` 来源，详情返回后仍回到 profile，不落到论坛首页
 5. 本轮仍不扩展完整浏览历史中心、删除、清空、筛选、跨端同步治理、docs / forum 混合时间线、系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理
 6. 当前验证已通过 `flutter test test/profile_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter test`、`flutter analyze`、`git diff --check`、Android 平台 `.\gradlew.bat :app:testDebugUnitTest` 与 Android 真机人工复核；该小闭环可作为第五批首个落点收口
+
+截至 `2026-04-30` 的第六批落地事实：
+
+1. `forum detail` 轻回应发布后局部体验补强已完成代码与自动化验证：已登录用户发布轻回应成功后，不再通过整页刷新确认结果，也不重载帖子正文或评论列表
+2. 新发布的轻回应会使用 `PostQuickReply/Create` 返回值即时前插到轻回应墙顶部，并在轻回应区展示“轻回应已发布，已显示在轻回应墙顶部。”的局部成功反馈
+3. 发布失败继续只落在轻回应区内提示，正文、评论阅读与已有轻回应不会被错误态拖垮；用户输入保留，可直接重试
+4. 本轮继续复用现有 `PostQuickReply` 契约、`ForumDetailHandoffTarget`、forum detail 原地登录续接与最近阅读语义，不新增后端 API、Flutter 专属 BFF 或独立互动系统
+5. 本轮仍不开放删除、举报、完整评论提交、点赞、投票、编辑治理、完整通知中心或系统通知栏推送
+6. 当前验证已通过 `flutter test test/forum_detail_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter test`、`flutter analyze`、`git diff --check` 与 Android 真机人工复核；该小闭环可作为第六批落点收口

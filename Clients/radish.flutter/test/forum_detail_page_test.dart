@@ -180,6 +180,122 @@ void main() {
 
     expect(find.text('current：同感'), findsOneWidget);
     expect(find.text('共 3 条轻回应'), findsOneWidget);
+    expect(find.text('轻回应已发布，已显示在轻回应墙顶部。'), findsOneWidget);
+  });
+
+  testWidgets('submits quick reply without reloading detail or comments',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repository = _CountingQuickReplyForumRepository();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: const SessionRefreshService(
+        environment: AppEnvironment.development(),
+      ),
+    );
+    await sessionController.setSession(
+      AuthSession(
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+        userId: 'user-current',
+        expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: repository,
+          postId: 'post-42',
+          initialTitle: '论坛详情回流',
+          sessionController: sessionController,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    final scrollable = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(
+      find.text('发布轻回应'),
+      200,
+      scrollable: scrollable,
+    );
+
+    final scrollableState = tester.state<ScrollableState>(scrollable);
+    final positionBeforeSubmit = scrollableState.position.pixels;
+    expect(positionBeforeSubmit, greaterThan(0));
+    expect(repository.detailRequests, 1);
+    expect(repository.rootCommentRequests, 1);
+
+    await tester.enterText(find.byType(TextField).last, '我也来一句');
+    await tester.tap(find.text('发布轻回应'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('current：我也来一句'), findsOneWidget);
+    expect(find.text('轻回应已发布，已显示在轻回应墙顶部。'), findsOneWidget);
+    expect(repository.detailRequests, 1);
+    expect(repository.rootCommentRequests, 1);
+    expect(repository.createQuickReplyRequests, 1);
+    expect(scrollableState.position.pixels, greaterThan(0));
+  });
+
+  testWidgets('quick reply submit failure stays inside quick reply section',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: const SessionRefreshService(
+        environment: AppEnvironment.development(),
+      ),
+    );
+    await sessionController.setSession(
+      AuthSession(
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+        userId: 'user-current',
+        expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: _QuickReplySubmitFailingForumRepository(),
+          postId: 'post-42',
+          initialTitle: '论坛详情回流',
+          sessionController: sessionController,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    final scrollable = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(
+      find.text('发布轻回应'),
+      200,
+      scrollable: scrollable,
+    );
+
+    await tester.enterText(find.byType(TextField).last, '发不出去的轻回应');
+    await tester.tap(find.text('发布轻回应'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('轻回应发布失败'), findsOneWidget);
+    expect(find.text('轻回应服务暂时不可用'), findsOneWidget);
+    expect(find.text('current：发不出去的轻回应'), findsNothing);
+    expect(find.text('论坛详情回流'), findsWidgets);
+    expect(find.text('Root comment one'), findsOneWidget);
+    expect(find.text('radish：学到了'), findsOneWidget);
   });
 
   testWidgets('opens profile handoff from detail author and comment author',
@@ -487,6 +603,61 @@ class _PagedForumRepository extends _BaseForumRepository {
         ),
       ],
     );
+  }
+}
+
+class _CountingQuickReplyForumRepository extends _PagedForumRepository {
+  int detailRequests = 0;
+  int rootCommentRequests = 0;
+  int createQuickReplyRequests = 0;
+
+  @override
+  Future<ForumPostDetail> getPostDetail({
+    required String postId,
+  }) {
+    detailRequests += 1;
+    return super.getPostDetail(postId: postId);
+  }
+
+  @override
+  Future<ForumCommentPage> getRootCommentsPage({
+    required String postId,
+    required int pageIndex,
+    required int pageSize,
+    String sortBy = 'default',
+  }) {
+    rootCommentRequests += 1;
+    return super.getRootCommentsPage(
+      postId: postId,
+      pageIndex: pageIndex,
+      pageSize: pageSize,
+      sortBy: sortBy,
+    );
+  }
+
+  @override
+  Future<ForumQuickReplySummary> createQuickReply({
+    required String postId,
+    required String content,
+    required String accessToken,
+  }) {
+    createQuickReplyRequests += 1;
+    return super.createQuickReply(
+      postId: postId,
+      content: content,
+      accessToken: accessToken,
+    );
+  }
+}
+
+class _QuickReplySubmitFailingForumRepository extends _PagedForumRepository {
+  @override
+  Future<ForumQuickReplySummary> createQuickReply({
+    required String postId,
+    required String content,
+    required String accessToken,
+  }) {
+    throw const RadishApiClientException('轻回应服务暂时不可用');
   }
 }
 

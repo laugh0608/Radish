@@ -20,6 +20,7 @@ class ForumQuickReplyState {
     this.errorMessage,
     this.isSubmitting = false,
     this.submitErrorMessage,
+    this.submitSuccessMessage,
   });
 
   const ForumQuickReplyState.initial()
@@ -36,6 +37,7 @@ class ForumQuickReplyState {
   final String? errorMessage;
   final bool isSubmitting;
   final String? submitErrorMessage;
+  final String? submitSuccessMessage;
 
   bool get isIdle => status == ForumQuickReplyStatus.idle;
 
@@ -56,6 +58,8 @@ class ForumQuickReplyState {
     bool? isSubmitting,
     String? submitErrorMessage,
     bool clearSubmitError = false,
+    String? submitSuccessMessage,
+    bool clearSubmitSuccess = false,
   }) {
     return ForumQuickReplyState(
       status: status ?? this.status,
@@ -67,6 +71,9 @@ class ForumQuickReplyState {
       submitErrorMessage: clearSubmitError
           ? null
           : (submitErrorMessage ?? this.submitErrorMessage),
+      submitSuccessMessage: clearSubmitSuccess
+          ? null
+          : (submitSuccessMessage ?? this.submitSuccessMessage),
     );
   }
 }
@@ -124,6 +131,7 @@ class ForumQuickReplyController extends ChangeNotifier {
     _state = _state.copyWith(
       isSubmitting: true,
       clearSubmitError: true,
+      clearSubmitSuccess: true,
     );
     notifyListeners();
 
@@ -154,6 +162,9 @@ class ForumQuickReplyController extends ChangeNotifier {
         isSubmitting: false,
         clearError: true,
         clearSubmitError: true,
+        submitSuccessMessage: existingIds.contains(quickReply.id)
+            ? '轻回应已发布。'
+            : '轻回应已发布，已显示在轻回应墙顶部。',
       );
       notifyListeners();
       return true;
@@ -176,6 +187,7 @@ class ForumQuickReplyController extends ChangeNotifier {
       postId: postId,
       clearError: true,
       clearSubmitError: true,
+      clearSubmitSuccess: true,
     );
     notifyListeners();
 
@@ -192,6 +204,7 @@ class ForumQuickReplyController extends ChangeNotifier {
         items: wall.items,
         total: wall.total,
         clearError: true,
+        clearSubmitSuccess: true,
       );
       notifyListeners();
     } on RadishApiClientException catch (error) {

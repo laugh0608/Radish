@@ -104,3 +104,11 @@
 - **Android 本地持久化已兼容旧单条记录**：新列表最多保留 5 条，按 `postId + commentId` 去重并保持最近打开优先；旧 `forum_recent_browse_handoff` 可作为列表首条回落，避免老安装状态直接丢失。
 - **本轮边界继续收紧**：只做轻量多条复访，不开放完整浏览历史中心、删除、清空、筛选、跨端同步治理、docs / forum 混合时间线、发帖、完整评论提交、点赞、投票、完整通知中心或系统通知栏推送。
 - **本轮验证已通过并可收口**：`Clients/radish.flutter` 下执行 `flutter test test/profile_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter test`、`flutter analyze`、仓库根目录 `git diff --check`、Android 平台 `.\gradlew.bat :app:testDebugUnitTest` 与 Android 真机人工复核均已通过；第五批首个小闭环可作为一个窄范围落点收口。
+
+### Flutter 第六批 forum detail 轻回应发布后局部体验补强
+
+- **轻回应发布成功反馈已收口到局部体验**：已登录用户在 forum detail 发布轻回应后，客户端不刷新帖子详情或评论列表，新轻回应会直接前插到轻回应墙顶部，并在轻回应区显示明确成功反馈。
+- **发布失败继续只影响轻回应区**：失败提示仍显示在轻回应区，正文、评论阅读与已有轻回应不被错误态拖垮；输入内容保留，方便用户直接重试。
+- **本轮继续复用现有契约和上下文语义**：发布仍走既有 `PostQuickReply/Create` 契约，详情打开、登录续接与最近阅读继续复用 `ForumDetailHandoffTarget`，不新增 Flutter 专属 BFF、独立详情页或完整互动系统。
+- **本轮边界继续收紧**：不开放删除、举报、完整评论提交、点赞、投票、编辑治理、完整通知中心或系统通知栏推送。
+- **本轮验证已通过并可收口**：`Clients/radish.flutter` 下执行 `flutter test test/forum_detail_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter test`、`flutter analyze` 与仓库根目录 `git diff --check` 均已通过；Android 真机复核确认发布成功不回顶、新轻回应即时可见、失败只在轻回应区提示。

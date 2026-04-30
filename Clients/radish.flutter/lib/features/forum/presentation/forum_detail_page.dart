@@ -935,6 +935,11 @@ class _ForumQuickReplySectionState extends State<_ForumQuickReplySection> {
           ),
           const SizedBox(height: 12),
         ],
+        if (state.submitSuccessMessage != null &&
+            state.submitSuccessMessage!.isNotEmpty) ...[
+          _ForumInlineSuccessCard(message: state.submitSuccessMessage!),
+          const SizedBox(height: 12),
+        ],
         if (widget.isAuthenticated && widget.hasAccessToken)
           _ForumQuickReplyComposer(
             controller: _controller,
@@ -1727,6 +1732,41 @@ class _ForumInlineErrorCard extends StatelessWidget {
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
               label: Text(retryLabel),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ForumInlineSuccessCard extends StatelessWidget {
+  const _ForumInlineSuccessCard({
+    required this.message,
+  });
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Card(
+      color: colorScheme.tertiaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(
+              Icons.check_circle_outline,
+              color: colorScheme.onTertiaryContainer,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(color: colorScheme.onTertiaryContainer),
+              ),
             ),
           ],
         ),
