@@ -232,5 +232,12 @@ Flutter 客户端第一批固定遵循以下约束：
 1. 第四批“复访深化 + 已登录轻互动回看”当前已完成一个可收口小批次：`profile` 我的轻回应、最近公开评论、最近公开帖子、最近 forum 阅读、最近 docs 阅读、docs 正文内链、docs 关键词搜索、discover 文档直达、discover 论坛精选直达与 discover 快捷入口返回上下文均已完成代码、自动化验证与 Android 真机复核
 2. 第四批验证面已覆盖 `flutter test test/smoke_test.dart`、`flutter analyze`、`git diff --check` 与 Android 真机人工复核；真机复核中发现的问题均已回写为代码修复与定向测试
 3. 第四批不再继续追加功能项；发帖、完整评论提交、点赞、投票、编辑治理、完整通知中心、系统通知栏推送、完整浏览历史中心和多条记录治理继续后置
-4. 第五批候选仅进入判断池：`profile` 最近阅读轻量多条列表、docs 搜索体验小增强、forum detail 轻回应发布后局部体验补强、Android MVP 收口复核与 RC 前置清单整理
+4. 第五批候选仅进入判断池：`profile` 最近阅读轻量多条列表、docs 搜索体验小增强、forum detail 轻回应发布后局部体验补强
 5. 下一步若继续开发，应先从第五批候选中选择一个窄范围小闭环，并重新明确验证入口；不要把第四批收口误判为继续扩张完整社区互动能力的信号
+
+截至 `2026-04-30` 的 Android MVP 收口复核与 RC 前置整理：
+
+1. Android MVP 当前已具备内部 / 小范围 RC 候选链路：登录、退出、会话恢复、四个主 tab 真实读取、forum feed / detail / 评论阅读、轻回应最小闭环、最小 forum notification 回流、profile / docs / discover 复访与返回上下文均已纳入已验证面
+2. 外部分发仍依赖真实签名材料、测试 Gateway、外部分发对象与批次级回归留痕；这些前置条件缺失不应被误判为业务功能阻塞
+3. RC 前置判断已收口到 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution)，后续准备分发时按该清单执行，不在分发前置批次临时扩系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理
+4. Android MVP 收口复核与 RC 前置清单整理作为维护项已完成，不再作为第五批功能候选；第五批若启动，应另选一个窄范围产品小闭环

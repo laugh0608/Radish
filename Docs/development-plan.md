@@ -27,7 +27,8 @@
 - `discover / docs / profile` 当前也都已完成首批真实只读页面接线，不再停留在统一占位页
 - `Phase 2-3` 第三批当前已完成产品层回补：中文主文案基线已经覆盖主 tab、壳层状态、登录提示和首批真实页面状态；`profile` 已产品化最近 forum 阅读与公开主页复访入口；forum detail 已接入轻回应墙最小读写闭环
 - `Phase 2-3` 第四批当前已完成一轮复访深化并进入收口状态：`profile` 中我的轻回应、最近公开评论、最近公开帖子、最近 forum 阅读与最近 docs 阅读都已可回到原生上下文；docs tab 当前也已接入关键词搜索、正文内链原生跳转与来源返回栈复访；discover 文档 / 论坛精选当前也可直达原生详情并返回发现页
-- `Phase 2-3` 第五批暂不直接开工，候选方向优先限定为 `profile` 最近阅读轻量多条列表、docs 搜索体验小增强、forum detail 轻回应发布后局部体验补强、Android MVP 收口复核与 RC 前置清单整理
+- Android MVP 收口复核与 RC 前置判断已整理到 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution)；当前外部分发仍等待真实签名材料、测试 Gateway 与外部分发对象，不作为业务功能阻塞
+- `Phase 2-3` 第五批暂不直接开工，候选方向优先限定为 `profile` 最近阅读轻量多条列表、docs 搜索体验小增强、forum detail 轻回应发布后局部体验补强
 - Android MVP 当前可测链路已完成多轮人工验收；登录、退出、会话恢复、四个主 tab 真实读取、forum feed / detail / 评论阅读、detail 原地登录续接、profile 复访路线、docs 搜索 / 内链与根层返回退后台都已纳入当前可复核面
 - Android 宿主通知 handoff、壳层最近阅读续接与 public profile 评论入口当前都已统一接到 Flutter forum 的原生 handoff 目标；Flutter 已登录壳层当前也已补一个最小可测 forum notification 来源，可从当前用户最新通知读取字符串化 `postId / commentId` 并回到原生 forum detail
 - Android MVP 本地 release APK 发布候选当前已完成首轮收口：包身份为 `com.radish.client` / `Radish`，release signing 读取逻辑与密钥忽略边界已落地，release 包联网权限已补齐，真机安装后登录、基础读取与样式显示均已确认正常

@@ -119,6 +119,7 @@
    - 当前仍不引入完整 i18n、文案运营配置、完整通知中心、系统通知栏推送、发帖、完整评论提交、点赞、投票、编辑治理或 Flutter 专属 BFF
 2. **Android MVP 稳定维护**
    - Android 本地 release APK、Gateway 环境切换、签名配置诊断与分发前置清单继续保留为 RC 分发前置能力
+   - Android MVP 收口复核与 RC 前置判断已整理到 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution)，当前明确区分“已具备内部 RC 候选链路”和“外部分发仍缺真实签名材料、测试 Gateway 与分发对象”
    - 因缺少真实签名材料、测试 Gateway 与外部分发对象，Android RC 外部分发线暂时冻结，不作为当前产品扩项阻断
 3. **第四批收口与第五批候选**
    - Flutter 第四批“复访深化 + 已登录轻互动回看”当前已完成代码、自动化验证与 Android 真机复核，可作为一个小批次收口
@@ -130,7 +131,7 @@
 - `Phase 2-3` 第三批后续判断
   - 第三批三项产品层回补已落地并完成一轮 Android 真机人工复核，当前可进入第三批收口记录
   - 第四批“复访深化 + 已登录轻互动回看”已完成收口：我的轻回应、最近公开评论、最近公开帖子、最近 forum 阅读、最近 docs 阅读、docs 正文内链、docs 关键词搜索、discover 文档直达、discover 论坛精选直达与 discover 快捷入口返回上下文均已完成代码、自动化验证与 Android 真机复核
-  - 第五批候选方向仅进入判断池：`profile` 最近阅读轻量多条列表、docs 搜索体验小增强、forum detail 轻回应发布后局部体验补强、Android MVP 收口复核与 RC 前置清单整理；当前不直接启动其中任何一项
+  - 第五批候选方向仅进入判断池：`profile` 最近阅读轻量多条列表、docs 搜索体验小增强、forum detail 轻回应发布后局部体验补强；Android MVP 收口复核与 RC 前置清单整理已作为维护项完成，不再作为功能批次候选
   - Android RC 外部分发继续等待真实签名材料、测试 Gateway 与外部分发对象，不把发布线冻结误判为业务功能阻塞
 
 - `Phase 2-2` 稳定维护项
