@@ -84,3 +84,9 @@
 - **discover 快捷入口根层返回已补齐**：真机复核发现从 discover 点击“进入论坛 / 进入文档”后，在列表根层按 Android 返回键会直接退到桌面；本轮已为这两个 discover 快捷入口补轻量返回目标，Back 会先回 discover，底部导航手动切 tab 仍保持原行为。
 - **本轮边界继续收紧**：仍只做公开只读阅读复访，不开放发帖、评论提交、点赞、投票、编辑治理、完整通知中心或系统通知栏推送。
 - **本轮验证已通过**：已补 `discover_page_test.dart` 与 `smoke_test.dart` 定向覆盖；当前已通过 `flutter test test/smoke_test.dart`、`flutter analyze` 与仓库根目录 `git diff --check`。
+
+### Flutter 第四批收口结论
+
+- **第四批“复访深化 + 已登录轻互动回看”当前可收口**：`profile` 我的轻回应、最近公开评论、最近公开帖子、最近 forum 阅读、最近 docs 阅读、docs 正文内链、docs 关键词搜索、discover 文档直达、discover 论坛精选直达与 discover 快捷入口返回上下文均已完成代码、自动化验证与 Android 真机复核。
+- **本批真机问题已全部回写为修复与测试**：目标评论定位时机、docs 搜索详情返回、长 slug 溢出、调试态根层返回重开卡启动页，以及 discover 论坛 / 文档快捷入口根层 Back 直接退桌面问题，均已完成收口。
+- **第五批只进入候选判断池**：后续候选为 `profile` 最近阅读轻量多条列表、docs 搜索体验小增强、forum detail 轻回应发布后局部体验补强、Android MVP 收口复核与 RC 前置清单整理；当前不把发帖、完整评论提交、点赞、投票、编辑治理、完整通知中心或系统通知栏推送拉入下一批默认范围。

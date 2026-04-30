@@ -148,7 +148,7 @@ Flutter 客户端第一批固定遵循以下约束：
    - 当前已选择 forum detail 轻回应墙作为最小闭环，复用既有后端 / Web 侧 `PostQuickReply` 契约
    - 当前只做最近轻回应读取、已登录发布与匿名原地登录引导，不做删除、举报、完整评论提交、点赞、投票或编辑治理
 
-## 9. 下一顺位
+## 9. 第四批收口与下一顺位
 
 当前第三批完成并通过一轮 Android 真机复核后，优先顺序建议为：
 
@@ -226,3 +226,11 @@ Flutter 客户端第一批固定遵循以下约束：
 4. 论坛精选直达仍复用现有 `ForumDetailHandoffTarget` 与最近阅读记录，不新增 discover 专属详情页、独立路由系统或后端契约
 5. 本轮仍保持公开只读边界，不扩展发帖、评论提交、点赞、投票、编辑治理、完整通知中心或系统通知栏推送
 6. 当前已补 `discover_page_test.dart` 与 `smoke_test.dart` 定向覆盖，并通过 `flutter test test/smoke_test.dart`、`flutter analyze`、`git diff --check` 与 Android 真机复核
+
+截至 `2026-04-30` 的第四批收口结论：
+
+1. 第四批“复访深化 + 已登录轻互动回看”当前已完成一个可收口小批次：`profile` 我的轻回应、最近公开评论、最近公开帖子、最近 forum 阅读、最近 docs 阅读、docs 正文内链、docs 关键词搜索、discover 文档直达、discover 论坛精选直达与 discover 快捷入口返回上下文均已完成代码、自动化验证与 Android 真机复核
+2. 第四批验证面已覆盖 `flutter test test/smoke_test.dart`、`flutter analyze`、`git diff --check` 与 Android 真机人工复核；真机复核中发现的问题均已回写为代码修复与定向测试
+3. 第四批不再继续追加功能项；发帖、完整评论提交、点赞、投票、编辑治理、完整通知中心、系统通知栏推送、完整浏览历史中心和多条记录治理继续后置
+4. 第五批候选仅进入判断池：`profile` 最近阅读轻量多条列表、docs 搜索体验小增强、forum detail 轻回应发布后局部体验补强、Android MVP 收口复核与 RC 前置清单整理
+5. 下一步若继续开发，应先从第五批候选中选择一个窄范围小闭环，并重新明确验证入口；不要把第四批收口误判为继续扩张完整社区互动能力的信号

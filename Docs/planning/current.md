@@ -8,7 +8,7 @@
 
 - **阶段**：`第二开发阶段：社区深化与多端化`
 - **当前主线**：`Phase 2-3 Flutter 客户端 MVP`
-- **当前阶段**：`截至 2026-04-30，第一开发阶段已于 2026-04-06 通过 v26.3.2-release 完成真实发布收口；第二开发阶段现已正式启动。`Phase 2-1 社区深化第一批` 已完成论坛轻回应墙 Phase 1 与最小回流链路收口；`Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口，并转入稳定维护。当前产品主线仍为 `Phase 2-3 Flutter 客户端 MVP`：第一批范围定义、真相源文档切换与仓库工程骨架已完成；第二批已完成 Android MVP 可测链路、最小 forum notification 回流、Android 本地 release APK 发布候选首轮收口、Flutter `--dart-define` Gateway 环境切换能力，以及 Android RC 签名配置诊断与分发前置清单；第三批已完成中文文案基线、个人复访入口产品化与 forum detail 轻回应最小读写闭环，并已通过一轮 Android 真机人工复核；第四批当前已从“复访深化 + 已登录轻互动回看”切入，`profile` 我的轻回应回看、我的轻回应分页复访、最近公开评论分页复访、最近公开帖子分页复访、最近阅读上下文入口，以及 docs 最近阅读与 discover 文档直达复访均已完成代码、自动化验证与 Android 真机复核；docs 正文内公开文档链接原生跳转与 docs 关键词搜索复访已完成代码、自动化验证与 Android 真机复核，真机复核发现的长 slug 溢出、详情返回退出和调试态根层返回后重开卡启动页问题也已完成修复；discover 论坛精选直达 forum detail 与 discover 快捷入口返回发现页均已完成代码、自动化验证与 Android 真机复核。`
+- **当前阶段**：`截至 2026-04-30，第一开发阶段已于 2026-04-06 通过 v26.3.2-release 完成真实发布收口；第二开发阶段现已正式启动。`Phase 2-1 社区深化第一批` 已完成论坛轻回应墙 Phase 1 与最小回流链路收口；`Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口，并转入稳定维护。当前产品主线仍为 `Phase 2-3 Flutter 客户端 MVP`：第一批范围定义、真相源文档切换与仓库工程骨架已完成；第二批已完成 Android MVP 可测链路、最小 forum notification 回流、Android 本地 release APK 发布候选首轮收口、Flutter `--dart-define` Gateway 环境切换能力，以及 Android RC 签名配置诊断与分发前置清单；第三批已完成中文文案基线、个人复访入口产品化与 forum detail 轻回应最小读写闭环，并已通过一轮 Android 真机人工复核；第四批“复访深化 + 已登录轻互动回看”已完成收口：`profile` 我的轻回应回看、我的轻回应分页复访、最近公开评论分页复访、最近公开帖子分页复访、最近阅读上下文入口、docs 最近阅读与 discover 文档直达复访、docs 正文内公开文档链接原生跳转、docs 关键词搜索复访、discover 论坛精选直达 forum detail 与 discover 快捷入口返回发现页均已完成代码、自动化验证与 Android 真机复核。`
 - **复核日期**：`2026-04-30`
 
 ## 当前执行入口
@@ -120,16 +120,17 @@
 2. **Android MVP 稳定维护**
    - Android 本地 release APK、Gateway 环境切换、签名配置诊断与分发前置清单继续保留为 RC 分发前置能力
    - 因缺少真实签名材料、测试 Gateway 与外部分发对象，Android RC 外部分发线暂时冻结，不作为当前产品扩项阻断
-3. **后续真实页面继续按价值推进**
-   - Flutter 第四批当前已选择“复访深化 + 已登录轻互动回看”，已落地 `profile` 最近阅读上下文、我的轻回应回看、我的轻回应分页复访、最近公开评论分页复访、最近公开帖子分页复访、docs 最近阅读与 discover 文档直达复访、docs 正文内公开文档链接原生跳转、docs 关键词搜索复访，以及 discover 论坛精选直达 forum detail
-   - 若继续扩 Flutter，应优先围绕已接通的 `forum / docs / profile / discover` 高价值路径补复访、轻互动与真实联调，而不是复制 WebOS 工作台能力
+3. **第四批收口与第五批候选**
+   - Flutter 第四批“复访深化 + 已登录轻互动回看”当前已完成代码、自动化验证与 Android 真机复核，可作为一个小批次收口
+   - 第五批暂不直接开工；若继续扩 Flutter，应优先围绕已接通的 `forum / docs / profile / discover` 高价值路径补复访、轻互动与真实联调，而不是复制 WebOS 工作台能力
    - 当前仍不把 Windows / Linux 平台工程与 Android MVP 产品批次绑定
 
 ## 下一顺位
 
 - `Phase 2-3` 第三批后续判断
   - 第三批三项产品层回补已落地并完成一轮 Android 真机人工复核，当前可进入第三批收口记录
-  - 第四批已开始推进“复访深化 + 已登录轻互动回看”，“我的轻回应回看”及其分页复访已完成代码、自动化验证与 Android 真机复核；“最近公开评论回看”分页复访也已完成代码、自动化验证与 Android 真机定位复核；“最近公开帖子回看”分页复访与三条 profile 复访返回栈也已完成代码、自动化验证与 Android 真机复核；docs 最近阅读与 discover 文档直达复访也已完成代码、自动化验证与 Android 真机复核；docs 正文内公开文档链接原生跳转与 docs 关键词搜索复访已完成代码、自动化验证与 Android 真机复核；discover 论坛精选直达 forum detail 与 discover 快捷入口返回发现页已完成代码、自动化验证与 Android 真机复核；真机复核发现的长 slug 溢出、详情返回退出和调试态根层返回后重开卡启动页问题已完成修复；下一步若继续推进，应仍优先选择同类窄范围复访能力，而不是扩完整通知中心、发帖或评论提交
+  - 第四批“复访深化 + 已登录轻互动回看”已完成收口：我的轻回应、最近公开评论、最近公开帖子、最近 forum 阅读、最近 docs 阅读、docs 正文内链、docs 关键词搜索、discover 文档直达、discover 论坛精选直达与 discover 快捷入口返回上下文均已完成代码、自动化验证与 Android 真机复核
+  - 第五批候选方向仅进入判断池：`profile` 最近阅读轻量多条列表、docs 搜索体验小增强、forum detail 轻回应发布后局部体验补强、Android MVP 收口复核与 RC 前置清单整理；当前不直接启动其中任何一项
   - Android RC 外部分发继续等待真实签名材料、测试 Gateway 与外部分发对象，不把发布线冻结误判为业务功能阻塞
 
 - `Phase 2-2` 稳定维护项

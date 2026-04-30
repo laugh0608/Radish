@@ -8,7 +8,7 @@
 
 - **当前里程碑**：`第二开发阶段：社区深化与多端化`
 - **当前主线**：`Phase 2-3 Flutter 客户端 MVP`
-- **当前阶段**：`2026-04-06` 已完成首版真实发布 `v26.3.2-release`，第一开发阶段正式结束；`2026-04-07` 已完成阶段口径重置与多壳层策略冻结；截至 `2026-04-18`，`Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口并转入稳定维护，当前产品主线正式切到 `Phase 2-3 Flutter 客户端 MVP`。当前第一批范围定义、真相源文档与工程骨架已完成；第二批已完成 Android MVP 可测链路、最小 forum notification 回流、Android 本地 release APK 发布候选首轮收口、Flutter `--dart-define` Gateway 环境切换能力，以及 Android RC 签名配置诊断与分发前置清单；第三批已完成中文文案基线、个人复访入口产品化与 forum detail 轻回应最小读写闭环，并已通过一轮 Android 真机人工复核；第四批已从“复访深化 + 已登录轻互动回看”切入并完成 profile 公开帖子 / 评论 / 我的轻回应分页复访、最近 forum / docs 阅读复访、docs 正文内链与关键词搜索复访，以及 discover 论坛精选直达 forum detail，Android 真机复核发现的 docs 搜索详情返回、长 slug 溢出与调试态根层返回重开卡启动页问题也已完成修复。`
+- **当前阶段**：`2026-04-06` 已完成首版真实发布 `v26.3.2-release`，第一开发阶段正式结束；`2026-04-07` 已完成阶段口径重置与多壳层策略冻结；截至 `2026-04-18`，`Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口并转入稳定维护，当前产品主线正式切到 `Phase 2-3 Flutter 客户端 MVP`。当前第一批范围定义、真相源文档与工程骨架已完成；第二批已完成 Android MVP 可测链路、最小 forum notification 回流、Android 本地 release APK 发布候选首轮收口、Flutter `--dart-define` Gateway 环境切换能力，以及 Android RC 签名配置诊断与分发前置清单；第三批已完成中文文案基线、个人复访入口产品化与 forum detail 轻回应最小读写闭环，并已通过一轮 Android 真机人工复核；第四批“复访深化 + 已登录轻互动回看”已完成 profile 公开帖子 / 评论 / 我的轻回应分页复访、最近 forum / docs 阅读复访、docs 正文内链与关键词搜索复访、discover 文档 / 论坛直达与返回上下文收口，Android 真机复核发现的问题均已完成修复。`
 
 ## 当前主线入口
 
@@ -26,7 +26,8 @@
 - forum detail 内最小原地登录入口、登录目标持久化续接，以及围绕该入口的一轮 Android 真机人工联调当前也已完成；detail 来源登录不再只能依赖壳层状态条或 profile 入口间接触发
 - `discover / docs / profile` 当前也都已完成首批真实只读页面接线，不再停留在统一占位页
 - `Phase 2-3` 第三批当前已完成产品层回补：中文主文案基线已经覆盖主 tab、壳层状态、登录提示和首批真实页面状态；`profile` 已产品化最近 forum 阅读与公开主页复访入口；forum detail 已接入轻回应墙最小读写闭环
-- `Phase 2-3` 第四批当前已完成一轮复访深化：`profile` 中我的轻回应、最近公开评论、最近公开帖子、最近 forum 阅读与最近 docs 阅读都已可回到原生上下文；docs tab 当前也已接入关键词搜索、正文内链原生跳转与来源返回栈复访；discover 论坛精选当前也可直达原生 forum detail 并返回发现页
+- `Phase 2-3` 第四批当前已完成一轮复访深化并进入收口状态：`profile` 中我的轻回应、最近公开评论、最近公开帖子、最近 forum 阅读与最近 docs 阅读都已可回到原生上下文；docs tab 当前也已接入关键词搜索、正文内链原生跳转与来源返回栈复访；discover 文档 / 论坛精选当前也可直达原生详情并返回发现页
+- `Phase 2-3` 第五批暂不直接开工，候选方向优先限定为 `profile` 最近阅读轻量多条列表、docs 搜索体验小增强、forum detail 轻回应发布后局部体验补强、Android MVP 收口复核与 RC 前置清单整理
 - Android MVP 当前可测链路已完成多轮人工验收；登录、退出、会话恢复、四个主 tab 真实读取、forum feed / detail / 评论阅读、detail 原地登录续接、profile 复访路线、docs 搜索 / 内链与根层返回退后台都已纳入当前可复核面
 - Android 宿主通知 handoff、壳层最近阅读续接与 public profile 评论入口当前都已统一接到 Flutter forum 的原生 handoff 目标；Flutter 已登录壳层当前也已补一个最小可测 forum notification 来源，可从当前用户最新通知读取字符串化 `postId / commentId` 并回到原生 forum detail
 - Android MVP 本地 release APK 发布候选当前已完成首轮收口：包身份为 `com.radish.client` / `Radish`，release signing 读取逻辑与密钥忽略边界已落地，release 包联网权限已补齐，真机安装后登录、基础读取与样式显示均已确认正常
