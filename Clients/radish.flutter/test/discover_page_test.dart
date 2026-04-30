@@ -95,6 +95,7 @@ void main() {
     var forumOpened = false;
     var docsOpened = false;
     DocsDocumentSummary? openedDocument;
+    ForumDetailHandoffTarget? openedForumTarget;
     String? openedProfileUserId;
 
     await tester.pumpWidget(
@@ -111,6 +112,9 @@ void main() {
           },
           onOpenDocument: (document) {
             openedDocument = document;
+          },
+          onOpenForumDetailTarget: (target) {
+            openedForumTarget = target;
           },
           onOpenProfileUser: (userId) {
             openedProfileUserId = userId;
@@ -134,21 +138,30 @@ void main() {
     );
     await tester.tap(find.text('进入文档'));
     await tester.scrollUntilVisible(
-      find.text('打开文档'),
-      200,
-      scrollable: scrollable,
-    );
-    await tester.tap(find.text('打开文档'));
-    await tester.scrollUntilVisible(
       find.text('打开 @luobo'),
       200,
       scrollable: scrollable,
     );
     await tester.tap(find.text('打开 @luobo'));
+    await tester.scrollUntilVisible(
+      find.text('打开帖子'),
+      200,
+      scrollable: scrollable,
+    );
+    await tester.tap(find.text('打开帖子'));
+    await tester.scrollUntilVisible(
+      find.text('打开文档'),
+      200,
+      scrollable: scrollable,
+    );
+    await tester.tap(find.text('打开文档'));
 
     expect(forumOpened, isTrue);
     expect(docsOpened, isTrue);
     expect(openedDocument?.slug, 'flutter-mvp-overview');
+    expect(openedForumTarget?.postId, '2042219067430928384');
+    expect(openedForumTarget?.initialTitle, 'Native discover wiring plan');
+    expect(openedForumTarget?.source, ForumDetailHandoffSource.discover);
     expect(openedProfileUserId, '1024');
   });
 }

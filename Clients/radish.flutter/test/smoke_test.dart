@@ -217,6 +217,139 @@ void main() {
     expect(find.text('用户 user-9'), findsWidgets);
   });
 
+  testWidgets('discover forum card opens detail and returns to discover',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _SeededDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _FakeForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('打开帖子'),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.tap(find.text('打开帖子'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('帖子详情'), findsWidgets);
+    expect(find.text('/forum/post/post-1'), findsOneWidget);
+    expect(find.text('打开来源：发现'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('继续阅读'), findsOneWidget);
+    expect(find.text('Native discover'), findsOneWidget);
+  });
+
+  testWidgets('discover forum shortcut returns to discover on Android back',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final lifecycleGateway = _RecordingAppLifecycleGateway();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _SeededDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _FakeForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+        appLifecycleGateway: lifecycleGateway,
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('进入论坛'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('浏览公开帖子，支持最新和热门排序。当前阶段仅提供只读阅读。'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(lifecycleGateway.moveTaskToBackCallCount, 0);
+    expect(find.text('继续阅读'), findsOneWidget);
+    expect(find.text('Native discover'), findsOneWidget);
+  });
+
+  testWidgets('discover docs shortcut returns to discover on Android back',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final lifecycleGateway = _RecordingAppLifecycleGateway();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _SeededDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _FakeForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+        appLifecycleGateway: lifecycleGateway,
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('进入文档'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('浏览公开文档列表。当前不开放编辑、发布和治理操作。'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(lifecycleGateway.moveTaskToBackCallCount, 0);
+    expect(find.text('继续阅读'), findsOneWidget);
+    expect(find.text('Native discover'), findsOneWidget);
+  });
+
   testWidgets('recent public profile target survives shell rebuild',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);

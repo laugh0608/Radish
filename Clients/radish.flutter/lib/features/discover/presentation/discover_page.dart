@@ -17,6 +17,7 @@ class DiscoverPage extends StatefulWidget {
     this.onOpenForum,
     this.onOpenDocs,
     this.onOpenDocument,
+    this.onOpenForumDetailTarget,
     this.onOpenProfileUser,
     super.key,
   });
@@ -27,6 +28,7 @@ class DiscoverPage extends StatefulWidget {
   final VoidCallback? onOpenForum;
   final VoidCallback? onOpenDocs;
   final ValueChanged<DocsDocumentSummary>? onOpenDocument;
+  final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
   final ValueChanged<String>? onOpenProfileUser;
 
   @override
@@ -136,6 +138,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                 onOpenForum: widget.onOpenForum,
                 onOpenDocs: widget.onOpenDocs,
                 onOpenDocument: widget.onOpenDocument,
+                onOpenForumDetailTarget: widget.onOpenForumDetailTarget,
               ),
           ],
         );
@@ -311,12 +314,14 @@ class _DiscoverContent extends StatelessWidget {
     required this.onOpenForum,
     required this.onOpenDocs,
     required this.onOpenDocument,
+    required this.onOpenForumDetailTarget,
   });
 
   final DiscoverSnapshot snapshot;
   final VoidCallback? onOpenForum;
   final VoidCallback? onOpenDocs;
   final ValueChanged<DocsDocumentSummary>? onOpenDocument;
+  final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
 
   @override
   Widget build(BuildContext context) {
@@ -336,6 +341,7 @@ class _DiscoverContent extends StatelessWidget {
         _ForumSection(
           posts: snapshot.forumPosts,
           onOpenForum: onOpenForum,
+          onOpenForumDetailTarget: onOpenForumDetailTarget,
         ),
         const SizedBox(height: 16),
         _DocsSection(
@@ -356,10 +362,12 @@ class _ForumSection extends StatelessWidget {
   const _ForumSection({
     required this.posts,
     required this.onOpenForum,
+    required this.onOpenForumDetailTarget,
   });
 
   final List<ForumPostSummary> posts;
   final VoidCallback? onOpenForum;
+  final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
 
   @override
   Widget build(BuildContext context) {
@@ -377,6 +385,16 @@ class _ForumSection extends StatelessWidget {
               subtitle: post.summary ?? post.categoryName ?? '公开论坛帖子',
               meta: '${post.commentCount} 条评论 · ${post.viewCount} 次浏览',
               chips: post.badges,
+              actionLabel: onOpenForumDetailTarget == null ? null : '打开帖子',
+              onAction: onOpenForumDetailTarget == null
+                  ? null
+                  : () => onOpenForumDetailTarget!(
+                        ForumDetailHandoffTarget(
+                          postId: post.id,
+                          source: ForumDetailHandoffSource.discover,
+                          initialTitle: post.title,
+                        ),
+                      ),
             ),
           )
           .toList(),

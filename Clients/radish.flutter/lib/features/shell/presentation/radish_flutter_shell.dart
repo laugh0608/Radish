@@ -65,6 +65,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
   DocsDetailHandoffTarget? _recentDocumentTarget;
   ForumDetailHandoffTarget? _latestForumNotificationTarget;
   ShellPostLoginTarget? _pendingPostLoginTarget;
+  int? _tabReturnIndex;
   late bool _wasAuthenticated;
 
   @override
@@ -150,7 +151,32 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
   void _selectTab(int index) {
     setState(() {
       _currentIndex = index;
+      _tabReturnIndex = null;
     });
+  }
+
+  void _openTabFromDiscover(int index) {
+    if (_currentIndex == index) {
+      return;
+    }
+
+    setState(() {
+      _currentIndex = index;
+      _tabReturnIndex = 0;
+    });
+  }
+
+  Future<void> _handleRootBack() async {
+    final returnIndex = _tabReturnIndex;
+    if (returnIndex != null && returnIndex != _currentIndex) {
+      setState(() {
+        _currentIndex = returnIndex;
+        _tabReturnIndex = null;
+      });
+      return;
+    }
+
+    await widget.appLifecycleGateway.moveTaskToBack();
   }
 
   void _openProfileUser(String userId) {
@@ -163,6 +189,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       _publicProfileUserId = normalizedUserId;
       _recentProfileUserId = normalizedUserId;
       _currentIndex = 3;
+      _tabReturnIndex = null;
     });
 
     unawaited(widget.followUpStore.writeRecentProfileUserId(normalizedUserId));
@@ -177,6 +204,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     setState(() {
       _publicProfileUserId = normalizedUserId;
       _currentIndex = 3;
+      _tabReturnIndex = null;
     });
   }
 
@@ -184,6 +212,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     setState(() {
       _publicProfileUserId = null;
       _currentIndex = 3;
+      _tabReturnIndex = null;
     });
   }
 
@@ -202,6 +231,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       _forumHandoffTarget = normalizedTarget;
       _recentBrowseHandoffTarget = recentTarget;
       _currentIndex = nextIndex;
+      _tabReturnIndex = null;
     });
 
     unawaited(widget.followUpStore.writeRecentBrowseHandoff(recentTarget));
@@ -488,6 +518,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       _forumHandoffTarget = pendingTarget;
       _recentBrowseHandoffTarget = recentTarget;
       _currentIndex = 1;
+      _tabReturnIndex = null;
     });
 
     unawaited(widget.followUpStore.writeRecentBrowseHandoff(recentTarget));
@@ -546,6 +577,11 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
   bool _shouldKeepCurrentTabForForumDetail(
     ForumDetailHandoffTarget target,
   ) {
+    if (_currentIndex == 0 &&
+        target.source == ForumDetailHandoffSource.discover) {
+      return true;
+    }
+
     if (_currentIndex != 3) {
       return false;
     }
@@ -557,6 +593,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       case ForumDetailHandoffSource.profileRecentBrowse:
         return true;
       case ForumDetailHandoffSource.shell:
+      case ForumDetailHandoffSource.discover:
       case ForumDetailHandoffSource.notification:
       case ForumDetailHandoffSource.browseHistory:
         return false;
@@ -587,8 +624,8 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
             environment: widget.environment,
             sessionState: sessionState,
             repository: widget.discoverRepository,
-            onOpenForum: () => _selectTab(1),
-            onOpenDocs: () => _selectTab(2),
+            onOpenForum: () => _openTabFromDiscover(1),
+            onOpenDocs: () => _openTabFromDiscover(2),
             onOpenDocument: (document) => _openDocsDetailTarget(
               DocsDetailHandoffTarget(
                 slug: document.slug,
@@ -596,6 +633,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
                 initialTitle: document.title,
               ),
             ),
+            onOpenForumDetailTarget: _openForumDetailTarget,
             onOpenProfileUser: _openProfileUser,
           ),
           ForumPage(
@@ -641,7 +679,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
               return;
             }
 
-            unawaited(widget.appLifecycleGateway.moveTaskToBack());
+            unawaited(_handleRootBack());
           },
           child: Scaffold(
             appBar: AppBar(

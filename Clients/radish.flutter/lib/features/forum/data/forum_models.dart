@@ -1,5 +1,6 @@
 enum ForumDetailHandoffSource {
   shell,
+  discover,
   notification,
   browseHistory,
   publicProfilePost,
@@ -13,6 +14,8 @@ extension ForumDetailHandoffSourceLabel on ForumDetailHandoffSource {
     switch (this) {
       case ForumDetailHandoffSource.shell:
         return '应用内打开';
+      case ForumDetailHandoffSource.discover:
+        return '发现';
       case ForumDetailHandoffSource.notification:
         return '通知回流';
       case ForumDetailHandoffSource.browseHistory:

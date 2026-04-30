@@ -74,3 +74,13 @@
 - **搜索与详情返回真机问题已完成修复**：Android 真机复核发现搜索结果长 slug 在窄屏溢出、搜索详情返回会退出到桌面；本轮已补长 slug 省略展示、docs 内联详情系统返回拦截与回归测试，复测确认搜索 -> 详情 -> 返回可回到搜索结果。
 - **调试态根层返回已按原生生命周期收口**：Flutter Android debug 期间，根层按返回键回桌面后再次点图标曾卡在原生启动页；本轮新增 `app_lifecycle` platform channel，将根层 Back 收口为 Android `moveTaskToBack(true)`，避免直接 finish Activity。
 - **本轮验证已通过**：`Clients/radish.flutter` 下执行 `flutter test test/docs_page_test.dart test/smoke_test.dart`、`flutter analyze`、`flutter test`、仓库根目录 `git diff --check` 与 Android 平台 `.\gradlew.bat :app:testDebugUnitTest` 均已通过。
+
+## 2026-04-30 (周四)
+
+### Flutter 第四批 discover 论坛精选直达
+
+- **discover 论坛精选当前已可直达原生帖子详情**：发现页中的论坛精选帖子新增“打开帖子”动作，点击后会生成 `ForumDetailHandoffSource.discover` 来源的 `ForumDetailHandoffTarget`，继续复用同一套原生 forum detail，而不是新建 discover 专属详情页。
+- **发现页来源返回栈已对齐 docs 直达口径**：从 discover 打开 forum detail 时，Shell 会保留当前发现页 tab；详情返回后仍落回 discover，不会丢到论坛首页。
+- **discover 快捷入口根层返回已补齐**：真机复核发现从 discover 点击“进入论坛 / 进入文档”后，在列表根层按 Android 返回键会直接退到桌面；本轮已为这两个 discover 快捷入口补轻量返回目标，Back 会先回 discover，底部导航手动切 tab 仍保持原行为。
+- **本轮边界继续收紧**：仍只做公开只读阅读复访，不开放发帖、评论提交、点赞、投票、编辑治理、完整通知中心或系统通知栏推送。
+- **本轮验证已通过**：已补 `discover_page_test.dart` 与 `smoke_test.dart` 定向覆盖；当前已通过 `flutter test test/smoke_test.dart`、`flutter analyze` 与仓库根目录 `git diff --check`。

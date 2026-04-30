@@ -2,7 +2,7 @@
 
 > 状态：当前主线
 >
-> 最后更新：2026-04-29（Asia/Shanghai）
+> 最后更新：2026-04-30（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -217,3 +217,12 @@ Flutter 客户端第一批固定遵循以下约束：
 3. 搜索状态会保留在当前 docs 列表的分页与刷新中，清除搜索后回到公开文档列表；空结果只在 docs 列表内提示，不影响 discover / profile 的最近文档直达
 4. 本轮仍保持公开只读边界，不扩展搜索建议、历史搜索、全文高亮、目录树、编辑、发布、回收站、版本历史、完整浏览历史中心、多条记录列表、删除、清空或后端搜索改造
 5. 真机复核发现长 slug 窄屏溢出与搜索详情返回退出问题，当前已完成代码修复并复测通过；调试态根层返回后重新打开卡启动页的问题也已收口为 Android 根层 Back 退后台；当前已通过 `flutter test`、`flutter analyze`、`git diff --check` 与定向 `flutter test test/docs_page_test.dart test/smoke_test.dart`
+
+截至 `2026-04-30` 的第四批第八个落地事实：
+
+1. Flutter discover 论坛精选直达已接入原生壳层：发现页中的论坛精选帖子可直接打开同一套原生 forum detail
+2. 本轮新增 `ForumDetailHandoffSource.discover` 来源标签；从 discover 打开 forum detail 时会保留发现页 tab，详情返回后仍回到 discover，而不是落到论坛首页
+3. discover “进入论坛 / 进入文档”快捷入口也已补齐轻量返回目标：从 discover 切到论坛或文档列表后，在根层按 Android Back 会先回 discover，而不是直接退到桌面；底部导航手动切 tab 不建立该返回目标
+4. 论坛精选直达仍复用现有 `ForumDetailHandoffTarget` 与最近阅读记录，不新增 discover 专属详情页、独立路由系统或后端契约
+5. 本轮仍保持公开只读边界，不扩展发帖、评论提交、点赞、投票、编辑治理、完整通知中心或系统通知栏推送
+6. 当前已补 `discover_page_test.dart` 与 `smoke_test.dart` 定向覆盖，并通过 `flutter test test/smoke_test.dart`、`flutter analyze`、`git diff --check` 与 Android 真机复核
