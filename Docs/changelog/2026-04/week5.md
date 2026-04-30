@@ -103,4 +103,4 @@
 - **最近阅读继续复用既有 handoff 语义**：条目仍使用 `ForumDetailHandoffTarget` 打开同一套原生 forum detail，从 profile 内进入时继续以 `profileRecentBrowse` 来源返回 profile，不新增后端 API、独立详情页或 Flutter 专属 BFF。
 - **Android 本地持久化已兼容旧单条记录**：新列表最多保留 5 条，按 `postId + commentId` 去重并保持最近打开优先；旧 `forum_recent_browse_handoff` 可作为列表首条回落，避免老安装状态直接丢失。
 - **本轮边界继续收紧**：只做轻量多条复访，不开放完整浏览历史中心、删除、清空、筛选、跨端同步治理、docs / forum 混合时间线、发帖、完整评论提交、点赞、投票、完整通知中心或系统通知栏推送。
-- **本轮自动化验证已通过**：`Clients/radish.flutter` 下执行 `flutter test test/profile_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter test`、`flutter analyze`、仓库根目录 `git diff --check` 与 Android 平台 `.\gradlew.bat :app:testDebugUnitTest` 均已通过；Android 真机复核留到下一轮人工确认。
+- **本轮验证已通过并可收口**：`Clients/radish.flutter` 下执行 `flutter test test/profile_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter test`、`flutter analyze`、仓库根目录 `git diff --check`、Android 平台 `.\gradlew.bat :app:testDebugUnitTest` 与 Android 真机人工复核均已通过；第五批首个小闭环可作为一个窄范围落点收口。

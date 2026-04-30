@@ -249,4 +249,4 @@ Flutter 客户端第一批固定遵循以下约束：
 3. Android 本地持久化已兼容旧的单条 `forum_recent_browse_handoff`：新列表最多保留 5 条，按 `postId + commentId` 去重并保持最近打开优先；旧单条数据可作为列表首条回落
 4. 从 profile 内打开任意最近阅读条目时继续使用 `profileRecentBrowse` 来源，详情返回后仍回到 profile，不落到论坛首页
 5. 本轮仍不扩展完整浏览历史中心、删除、清空、筛选、跨端同步治理、docs / forum 混合时间线、系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理
-6. 当前自动化验证已通过 `flutter test test/profile_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter test`、`flutter analyze`、`git diff --check` 与 Android 平台 `.\gradlew.bat :app:testDebugUnitTest`；Android 真机复核待下一轮人工确认
+6. 当前验证已通过 `flutter test test/profile_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter test`、`flutter analyze`、`git diff --check`、Android 平台 `.\gradlew.bat :app:testDebugUnitTest` 与 Android 真机人工复核；该小闭环可作为第五批首个落点收口

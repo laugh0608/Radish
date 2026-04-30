@@ -195,7 +195,7 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 - 本轮复核发现并修复同一帖子详情返回列表后无法再次打开的问题；当前已补 `forum_page_test.dart` 定向回归测试
 - 第四批首个小闭环“我的轻回应回看”及分页复访已完成代码、自动化验证与 Android 真机复核，真实 Gateway 下确认正常
 - 第四批“最近阅读上下文”已接入我的 profile，并已完成代码、自动化验证与 Android 真机复核：第四批只承载最近一次 forum 阅读目标
-- 第五批首个小闭环“profile 最近阅读轻量多条列表”已完成代码与自动化验证：我的 profile 当前可展示最近多条 forum 阅读上下文，Android 本地持久化兼容旧单条记录并按 `postId + commentId` 去重；本轮仍不扩展完整浏览历史中心、删除、清空、同步治理或 docs / forum 混合时间线，Android 真机复核待下一轮人工确认
+- 第五批首个小闭环“profile 最近阅读轻量多条列表”已完成代码、自动化验证与 Android 真机复核：我的 profile 当前可展示最近多条 forum 阅读上下文，Android 本地持久化兼容旧单条记录并按 `postId + commentId` 去重；本轮仍不扩展完整浏览历史中心、删除、清空、同步治理或 docs / forum 混合时间线
 - 第四批“最近公开评论回看”分页复访已完成代码、自动化验证与 Android 真机复核；目标评论定位时机修复后，公开评论条目可打开对应帖子并落到目标根评论或子评论位置
 - 第四批“最近公开帖子回看”分页复访已完成代码、自动化验证与 Android 真机复核；最近公开帖子、最近公开评论与我的轻回应三条 profile 复访路线从详情返回后都会回到 profile
 - 第四批 docs 最近阅读与直达复访已完成代码、自动化验证与 Android 真机复核；discover 文档直达、docs 列表详情返回、profile 最近文档复访与重启恢复均确认正常
