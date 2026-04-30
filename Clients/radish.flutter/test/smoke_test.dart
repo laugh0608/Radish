@@ -1835,6 +1835,52 @@ void main() {
     expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
     expect(find.text('继续阅读'), findsWidgets);
   });
+
+  test('recent browse store keeps newest deduplicated targets', () async {
+    final followUpStore = InMemoryForumFollowUpStore();
+
+    await followUpStore.writeRecentBrowseHandoff(
+      const ForumDetailHandoffTarget(
+        postId: 'post-1',
+        source: ForumDetailHandoffSource.shell,
+        initialTitle: 'First post',
+      ),
+    );
+    await followUpStore.writeRecentBrowseHandoff(
+      const ForumDetailHandoffTarget(
+        postId: 'post-2',
+        source: ForumDetailHandoffSource.publicProfilePost,
+        initialTitle: 'Second post',
+      ),
+    );
+    await followUpStore.writeRecentBrowseHandoff(
+      const ForumDetailHandoffTarget(
+        postId: 'post-1',
+        source: ForumDetailHandoffSource.publicProfileComment,
+        initialTitle: 'First comment',
+        commentId: 'comment-1',
+      ),
+    );
+    await followUpStore.writeRecentBrowseHandoff(
+      const ForumDetailHandoffTarget(
+        postId: 'post-2',
+        source: ForumDetailHandoffSource.discover,
+        initialTitle: 'Second post refreshed',
+      ),
+    );
+
+    final targets = await followUpStore.readRecentBrowseHandoffs();
+
+    expect(targets.map((target) => target.postId), [
+      'post-2',
+      'post-1',
+      'post-1',
+    ]);
+    expect(targets.first.initialTitle, 'Second post refreshed');
+    expect(targets.first.source, ForumDetailHandoffSource.browseHistory);
+    expect(targets[1].commentId, 'comment-1');
+    expect(await followUpStore.readRecentBrowseHandoff(), targets.first);
+  });
 }
 
 NativeAuthController _buildAuthController(

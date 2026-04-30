@@ -9,6 +9,8 @@ abstract class ForumFollowUpStore {
 
   Future<ForumDetailHandoffTarget?> readRecentBrowseHandoff();
 
+  Future<List<ForumDetailHandoffTarget>> readRecentBrowseHandoffs();
+
   Future<void> writeRecentBrowseHandoff(ForumDetailHandoffTarget target);
 
   Future<void> clearRecentBrowseHandoff();
@@ -72,21 +74,28 @@ class InMemoryForumFollowUpStore implements ForumFollowUpStore {
   InMemoryForumFollowUpStore({
     ForumDetailHandoffTarget? initialPendingHandoff,
     ForumDetailHandoffTarget? initialRecentBrowseHandoff,
+    List<ForumDetailHandoffTarget> initialRecentBrowseHandoffTargets =
+        const <ForumDetailHandoffTarget>[],
     String? initialRecentProfileUserId,
     ShellPostLoginTarget? initialPendingPostLoginTarget,
   })  : _pendingHandoff = initialPendingHandoff,
-        _recentBrowseHandoff = initialRecentBrowseHandoff,
+        _recentBrowseHandoffTargets = _normalizeRecentBrowseTargets(
+          [
+            ...initialRecentBrowseHandoffTargets,
+            if (initialRecentBrowseHandoff != null) initialRecentBrowseHandoff,
+          ],
+        ),
         _recentProfileUserId = _normalizeUserId(initialRecentProfileUserId),
         _pendingPostLoginTarget = initialPendingPostLoginTarget;
 
   ForumDetailHandoffTarget? _pendingHandoff;
-  ForumDetailHandoffTarget? _recentBrowseHandoff;
+  List<ForumDetailHandoffTarget> _recentBrowseHandoffTargets;
   String? _recentProfileUserId;
   ShellPostLoginTarget? _pendingPostLoginTarget;
 
   @override
   Future<void> clearRecentBrowseHandoff() async {
-    _recentBrowseHandoff = null;
+    _recentBrowseHandoffTargets = const <ForumDetailHandoffTarget>[];
   }
 
   @override
@@ -101,7 +110,16 @@ class InMemoryForumFollowUpStore implements ForumFollowUpStore {
 
   @override
   Future<ForumDetailHandoffTarget?> readRecentBrowseHandoff() async {
-    return _recentBrowseHandoff;
+    return _recentBrowseHandoffTargets.isEmpty
+        ? null
+        : _recentBrowseHandoffTargets.first;
+  }
+
+  @override
+  Future<List<ForumDetailHandoffTarget>> readRecentBrowseHandoffs() async {
+    return List<ForumDetailHandoffTarget>.unmodifiable(
+      _recentBrowseHandoffTargets,
+    );
   }
 
   @override
@@ -123,11 +141,9 @@ class InMemoryForumFollowUpStore implements ForumFollowUpStore {
 
   @override
   Future<void> writeRecentBrowseHandoff(ForumDetailHandoffTarget target) async {
-    _recentBrowseHandoff = ForumDetailHandoffTarget(
-      postId: target.normalizedPostId,
-      source: ForumDetailHandoffSource.browseHistory,
-      initialTitle: target.normalizedInitialTitle,
-      commentId: target.normalizedCommentId,
+    _recentBrowseHandoffTargets = _upsertRecentBrowseTarget(
+      _recentBrowseHandoffTargets,
+      target,
     );
   }
 
@@ -177,9 +193,15 @@ class PlatformForumFollowUpStore implements ForumFollowUpStore {
 
   @override
   Future<ForumDetailHandoffTarget?> readRecentBrowseHandoff() async {
+    final targets = await readRecentBrowseHandoffs();
+    return targets.isEmpty ? null : targets.first;
+  }
+
+  @override
+  Future<List<ForumDetailHandoffTarget>> readRecentBrowseHandoffs() async {
     final payload =
-        await _channel.invokeMethod<String>('readRecentBrowseHandoff');
-    return _decodeTarget(payload);
+        await _channel.invokeMethod<String>('readRecentBrowseHandoffs');
+    return _decodeTargetList(payload);
   }
 
   @override
@@ -248,6 +270,23 @@ class PlatformForumFollowUpStore implements ForumFollowUpStore {
     return ForumDetailHandoffTarget.fromJson(jsonDecode(payload));
   }
 
+  List<ForumDetailHandoffTarget> _decodeTargetList(String? payload) {
+    if (payload == null || payload.trim().isEmpty) {
+      return const <ForumDetailHandoffTarget>[];
+    }
+
+    final decoded = jsonDecode(payload);
+    if (decoded is! List) {
+      return const <ForumDetailHandoffTarget>[];
+    }
+
+    return _normalizeRecentBrowseTargets(
+      decoded
+          .map(ForumDetailHandoffTarget.fromJson)
+          .whereType<ForumDetailHandoffTarget>(),
+    );
+  }
+
   ShellPostLoginTarget? _decodePostLoginTarget(String? payload) {
     if (payload == null || payload.trim().isEmpty) {
       return null;
@@ -264,4 +303,71 @@ String? _normalizeUserId(String? userId) {
   }
 
   return normalizedUserId;
+}
+
+const int _maxRecentBrowseTargetCount = 5;
+
+List<ForumDetailHandoffTarget> _upsertRecentBrowseTarget(
+  Iterable<ForumDetailHandoffTarget> targets,
+  ForumDetailHandoffTarget target,
+) {
+  final recentTarget = _normalizeRecentBrowseTarget(target);
+  if (recentTarget == null) {
+    return _normalizeRecentBrowseTargets(targets);
+  }
+
+  return _normalizeRecentBrowseTargets([
+    recentTarget,
+    ...targets.where(
+      (item) => !_isSameRecentBrowseTarget(item, recentTarget),
+    ),
+  ]);
+}
+
+List<ForumDetailHandoffTarget> _normalizeRecentBrowseTargets(
+  Iterable<ForumDetailHandoffTarget?> targets,
+) {
+  final normalizedTargets = <ForumDetailHandoffTarget>[];
+  for (final target in targets) {
+    final normalizedTarget = _normalizeRecentBrowseTarget(target);
+    if (normalizedTarget == null) {
+      continue;
+    }
+
+    if (normalizedTargets.any(
+      (item) => _isSameRecentBrowseTarget(item, normalizedTarget),
+    )) {
+      continue;
+    }
+
+    normalizedTargets.add(normalizedTarget);
+    if (normalizedTargets.length >= _maxRecentBrowseTargetCount) {
+      break;
+    }
+  }
+
+  return List<ForumDetailHandoffTarget>.unmodifiable(normalizedTargets);
+}
+
+ForumDetailHandoffTarget? _normalizeRecentBrowseTarget(
+  ForumDetailHandoffTarget? target,
+) {
+  if (target == null || !target.hasValidPostId) {
+    return null;
+  }
+
+  return ForumDetailHandoffTarget(
+    postId: target.normalizedPostId,
+    source: ForumDetailHandoffSource.browseHistory,
+    initialTitle: target.normalizedInitialTitle,
+    commentId: target.normalizedCommentId,
+  );
+}
+
+bool _isSameRecentBrowseTarget(
+  ForumDetailHandoffTarget left,
+  ForumDetailHandoffTarget right,
+) {
+  return left.normalizedPostId == right.normalizedPostId &&
+      left.normalizedCommentId == right.normalizedCommentId;
 }

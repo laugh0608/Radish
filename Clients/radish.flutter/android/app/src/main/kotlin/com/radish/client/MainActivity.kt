@@ -6,6 +6,8 @@ import android.net.Uri
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import org.json.JSONArray
+import org.json.JSONObject
 
 class MainActivity : FlutterActivity() {
     private var pendingForumHandoffPayload: String? = null
@@ -56,6 +58,9 @@ class MainActivity : FlutterActivity() {
                 "readRecentBrowseHandoff" -> {
                     result.success(preferences.getString(FORUM_RECENT_BROWSE_KEY, null))
                 }
+                "readRecentBrowseHandoffs" -> {
+                    result.success(readRecentBrowseHandoffs(preferences))
+                }
                 "readRecentProfileUserId" -> {
                     result.success(preferences.getString(PROFILE_RECENT_USER_ID_KEY, null))
                 }
@@ -70,6 +75,7 @@ class MainActivity : FlutterActivity() {
                     }
 
                     preferences.edit().putString(FORUM_RECENT_BROWSE_KEY, payload).apply()
+                    writeRecentBrowseHandoff(preferences, payload)
                     result.success(null)
                 }
                 "writeRecentProfileUserId" -> {
@@ -93,7 +99,10 @@ class MainActivity : FlutterActivity() {
                     result.success(null)
                 }
                 "clearRecentBrowseHandoff" -> {
-                    preferences.edit().remove(FORUM_RECENT_BROWSE_KEY).apply()
+                    preferences.edit()
+                        .remove(FORUM_RECENT_BROWSE_KEY)
+                        .remove(FORUM_RECENT_BROWSE_LIST_KEY)
+                        .apply()
                     result.success(null)
                 }
                 "clearRecentProfileUserId" -> {
@@ -210,6 +219,53 @@ class MainActivity : FlutterActivity() {
         startActivity(intent)
     }
 
+    private fun readRecentBrowseHandoffs(preferences: android.content.SharedPreferences): String {
+        val listPayload = preferences.getString(FORUM_RECENT_BROWSE_LIST_KEY, null)
+        if (!listPayload.isNullOrBlank()) {
+            return listPayload
+        }
+
+        val singlePayload = preferences.getString(FORUM_RECENT_BROWSE_KEY, null)
+        if (singlePayload.isNullOrBlank()) {
+            return JSONArray().toString()
+        }
+
+        return try {
+            JSONArray().put(JSONObject(singlePayload)).toString()
+        } catch (_: Exception) {
+            JSONArray().toString()
+        }
+    }
+
+    private fun writeRecentBrowseHandoff(
+        preferences: android.content.SharedPreferences,
+        payload: String,
+    ) {
+        val target = JSONObject(payload)
+        val current = try {
+            JSONArray(readRecentBrowseHandoffs(preferences))
+        } catch (_: Exception) {
+            JSONArray()
+        }
+        val next = JSONArray().put(target)
+        var index = 0
+
+        while (index < current.length() && next.length() < MAX_RECENT_BROWSE_TARGETS) {
+            val item = current.optJSONObject(index)
+            if (item != null && !isSameRecentBrowseTarget(item, target)) {
+                next.put(item)
+            }
+            index += 1
+        }
+
+        preferences.edit().putString(FORUM_RECENT_BROWSE_LIST_KEY, next.toString()).apply()
+    }
+
+    private fun isSameRecentBrowseTarget(left: JSONObject, right: JSONObject): Boolean {
+        return left.optString("postId").trim() == right.optString("postId").trim() &&
+            left.optString("commentId").trim() == right.optString("commentId").trim()
+    }
+
     companion object {
         private const val SESSION_STORE_CHANNEL = "radish.flutter/session_store"
         private const val SESSION_STORE_PREFERENCES = "radish_flutter_session_store"
@@ -219,9 +275,11 @@ class MainActivity : FlutterActivity() {
         private const val AUTH_FLOW_CHANNEL = "radish.flutter/native_auth"
         private const val APP_LIFECYCLE_CHANNEL = "radish.flutter/app_lifecycle"
         private const val FORUM_RECENT_BROWSE_KEY = "forum_recent_browse_handoff"
+        private const val FORUM_RECENT_BROWSE_LIST_KEY = "forum_recent_browse_handoffs"
         private const val DOCS_RECENT_DOCUMENT_KEY = "docs_recent_document_target"
         private const val PROFILE_RECENT_USER_ID_KEY = "profile_recent_user_id"
         private const val SHELL_PENDING_POST_LOGIN_TARGET_KEY = "shell_pending_post_login_target"
+        private const val MAX_RECENT_BROWSE_TARGETS = 5
         private const val EXTRA_FORUM_POST_ID = "forum_post_id"
         private const val EXTRA_FORUM_COMMENT_ID = "forum_comment_id"
         private const val EXTRA_FORUM_INITIAL_TITLE = "forum_initial_title"

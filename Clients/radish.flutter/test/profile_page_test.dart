@@ -353,6 +353,80 @@ void main() {
     );
   });
 
+  testWidgets('renders multiple recent browse targets from my profile', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final scrollable = find.byType(Scrollable).first;
+    final openedTargets = <ForumDetailHandoffTarget>[];
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: '2042219067430928384',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: '2042219067430928384',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: _SuccessProfileRepository(),
+          recentBrowseHandoffTargets: const [
+            ForumDetailHandoffTarget(
+              postId: 'post-2',
+              source: ForumDetailHandoffSource.browseHistory,
+              initialTitle: 'Second forum read',
+            ),
+            ForumDetailHandoffTarget(
+              postId: 'post-1',
+              source: ForumDetailHandoffSource.browseHistory,
+              initialTitle: 'First comment read',
+              commentId: 'comment-1',
+            ),
+          ],
+          onOpenForumDetailTarget: openedTargets.add,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('最近阅读'),
+      200,
+      scrollable: scrollable,
+    );
+    expect(find.text('Second forum read'), findsOneWidget);
+    expect(find.text('First comment read'), findsOneWidget);
+    expect(find.text('帖子 post-1 · 评论 comment-1'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilledButton, '继续阅读帖子').last);
+    await tester.pumpAndSettle();
+
+    expect(openedTargets, hasLength(1));
+    expect(openedTargets.single.postId, 'post-1');
+    expect(openedTargets.single.commentId, 'comment-1');
+    expect(
+      openedTargets.single.source,
+      ForumDetailHandoffSource.profileRecentBrowse,
+    );
+  });
+
   testWidgets('opens recent document target from my profile', (tester) async {
     tester.view.physicalSize = const Size(1200, 2400);
     tester.view.devicePixelRatio = 1.0;

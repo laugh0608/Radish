@@ -61,6 +61,8 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
   String? _recentProfileUserId;
   ForumDetailHandoffTarget? _forumHandoffTarget;
   ForumDetailHandoffTarget? _recentBrowseHandoffTarget;
+  List<ForumDetailHandoffTarget> _recentBrowseHandoffTargets =
+      const <ForumDetailHandoffTarget>[];
   DocsDetailHandoffTarget? _docsHandoffTarget;
   DocsDetailHandoffTarget? _recentDocumentTarget;
   ForumDetailHandoffTarget? _latestForumNotificationTarget;
@@ -230,6 +232,10 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     setState(() {
       _forumHandoffTarget = normalizedTarget;
       _recentBrowseHandoffTarget = recentTarget;
+      _recentBrowseHandoffTargets = _upsertRecentBrowseTarget(
+        _recentBrowseHandoffTargets,
+        recentTarget,
+      );
       _currentIndex = nextIndex;
       _tabReturnIndex = null;
     });
@@ -474,8 +480,8 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
   Future<void> _loadFollowUps() async {
     await _loadPendingHandoff();
 
-    final recentTarget = _normalizeForumHandoffTarget(
-      await widget.followUpStore.readRecentBrowseHandoff(),
+    final storedRecentTargets = _normalizeRecentBrowseTargets(
+      await widget.followUpStore.readRecentBrowseHandoffs(),
     );
     final recentProfileUserId = _normalizeUserId(
       await widget.followUpStore.readRecentProfileUserId(),
@@ -485,7 +491,13 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     }
 
     setState(() {
-      _recentBrowseHandoffTarget = recentTarget;
+      final recentTargets = _normalizeRecentBrowseTargets([
+        ..._recentBrowseHandoffTargets,
+        ...storedRecentTargets,
+      ]);
+      _recentBrowseHandoffTargets = recentTargets;
+      _recentBrowseHandoffTarget =
+          recentTargets.isEmpty ? null : recentTargets.first;
       _recentProfileUserId = recentProfileUserId;
     });
 
@@ -517,6 +529,10 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     setState(() {
       _forumHandoffTarget = pendingTarget;
       _recentBrowseHandoffTarget = recentTarget;
+      _recentBrowseHandoffTargets = _upsertRecentBrowseTarget(
+        _recentBrowseHandoffTargets,
+        recentTarget,
+      );
       _currentIndex = 1;
       _tabReturnIndex = null;
     });
@@ -572,6 +588,56 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       source: target.source,
       initialTitle: target.normalizedInitialTitle,
     );
+  }
+
+  List<ForumDetailHandoffTarget> _upsertRecentBrowseTarget(
+    Iterable<ForumDetailHandoffTarget> targets,
+    ForumDetailHandoffTarget target,
+  ) {
+    final recentTarget = _normalizeForumHandoffTarget(target);
+    if (recentTarget == null) {
+      return _normalizeRecentBrowseTargets(targets);
+    }
+
+    return _normalizeRecentBrowseTargets([
+      recentTarget,
+      ...targets.where(
+        (item) => !_isSameRecentBrowseTarget(item, recentTarget),
+      ),
+    ]);
+  }
+
+  List<ForumDetailHandoffTarget> _normalizeRecentBrowseTargets(
+    Iterable<ForumDetailHandoffTarget?> targets,
+  ) {
+    final normalizedTargets = <ForumDetailHandoffTarget>[];
+    for (final target in targets) {
+      final normalizedTarget = _normalizeForumHandoffTarget(target);
+      if (normalizedTarget == null) {
+        continue;
+      }
+
+      if (normalizedTargets.any(
+        (item) => _isSameRecentBrowseTarget(item, normalizedTarget),
+      )) {
+        continue;
+      }
+
+      normalizedTargets.add(normalizedTarget);
+      if (normalizedTargets.length >= 5) {
+        break;
+      }
+    }
+
+    return List<ForumDetailHandoffTarget>.unmodifiable(normalizedTargets);
+  }
+
+  bool _isSameRecentBrowseTarget(
+    ForumDetailHandoffTarget left,
+    ForumDetailHandoffTarget right,
+  ) {
+    return left.normalizedPostId == right.normalizedPostId &&
+        left.normalizedCommentId == right.normalizedCommentId;
   }
 
   bool _shouldKeepCurrentTabForForumDetail(
@@ -663,6 +729,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
             publicUserId: _publicProfileUserId,
             recentPublicUserId: _recentProfileUserId,
             recentBrowseHandoffTarget: _recentBrowseHandoffTarget,
+            recentBrowseHandoffTargets: _recentBrowseHandoffTargets,
             recentDocumentTarget: _recentDocumentTarget,
             onOpenForumDetailTarget: _openForumDetailTarget,
             onOpenDocsDetailTarget: _openDocsDetailTarget,

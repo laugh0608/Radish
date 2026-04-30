@@ -96,3 +96,11 @@
 - **Android MVP 当前已具备内部 / 小范围 RC 候选链路**：登录、退出、会话恢复、四个主 tab 真实读取、forum feed / detail / 评论阅读、轻回应最小闭环、最小 forum notification 回流、profile / docs / discover 复访与返回上下文均已纳入已验证面。
 - **RC 外部分发阻塞条件已重新归类**：真实签名材料、测试 Gateway、外部分发对象与批次级回归留痕才是当前外部分发前置；缺少这些条件不应被误判为 Flutter 业务功能阻塞。
 - **清单已同步收口**：[Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution) 当前补齐 Android MVP 收口状态、非阻断项、外部分发阻塞条件与建议执行顺序；系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票和编辑治理继续不纳入 RC 前置范围。
+
+### Flutter 第五批 profile 最近阅读轻量多条列表
+
+- **第五批首个小闭环已从 profile 最近阅读切入**：已登录用户查看我的 `profile` 时，当前可看到最近多条 forum 阅读上下文，而不是只保留单个最近帖子入口。
+- **最近阅读继续复用既有 handoff 语义**：条目仍使用 `ForumDetailHandoffTarget` 打开同一套原生 forum detail，从 profile 内进入时继续以 `profileRecentBrowse` 来源返回 profile，不新增后端 API、独立详情页或 Flutter 专属 BFF。
+- **Android 本地持久化已兼容旧单条记录**：新列表最多保留 5 条，按 `postId + commentId` 去重并保持最近打开优先；旧 `forum_recent_browse_handoff` 可作为列表首条回落，避免老安装状态直接丢失。
+- **本轮边界继续收紧**：只做轻量多条复访，不开放完整浏览历史中心、删除、清空、筛选、跨端同步治理、docs / forum 混合时间线、发帖、完整评论提交、点赞、投票、完整通知中心或系统通知栏推送。
+- **本轮自动化验证已通过**：`Clients/radish.flutter` 下执行 `flutter test test/profile_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter test`、`flutter analyze`、仓库根目录 `git diff --check` 与 Android 平台 `.\gradlew.bat :app:testDebugUnitTest` 均已通过；Android 真机复核留到下一轮人工确认。

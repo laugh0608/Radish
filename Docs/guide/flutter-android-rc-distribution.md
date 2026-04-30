@@ -20,7 +20,7 @@
 3. forum feed、forum detail、评论阅读、评论分页、子评论分页、作者跳转与评论精确定位
 4. forum detail 原地登录续接与轻回应最小读写闭环
 5. 已登录壳层最小 forum notification 回流
-6. `profile` 我的轻回应、最近公开帖子、最近公开评论、最近 forum 阅读与最近 docs 阅读复访
+6. `profile` 我的轻回应、最近公开帖子、最近公开评论、最近 forum 阅读轻量复访与最近 docs 阅读复访
 7. docs 最近阅读、discover 文档直达、docs 正文内链与 docs 关键词搜索复访
 8. discover 论坛精选直达 forum detail，以及 discover “进入论坛 / 进入文档”快捷入口的 Android Back 返回 discover 上下文
 
@@ -34,7 +34,7 @@
 - 完整通知中心、通知管理、标记已读与删除
 - 发帖、完整评论提交、点赞、投票、编辑治理
 - 聊天、完整商城工作台、创作器
-- 完整浏览历史中心、多条记录同步治理
+- 完整浏览历史中心、删除 / 清空与多条记录同步治理
 - Windows / Linux 平台目录与桌面端 Flutter 分发
 - 商店发布、AAB 上传、生产发布留痕
 

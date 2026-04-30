@@ -17,6 +17,7 @@ class ProfilePage extends StatefulWidget {
     this.publicUserId,
     this.recentPublicUserId,
     this.recentBrowseHandoffTarget,
+    this.recentBrowseHandoffTargets = const <ForumDetailHandoffTarget>[],
     this.recentDocumentTarget,
     this.onOpenForumDetailTarget,
     this.onOpenDocsDetailTarget,
@@ -32,6 +33,7 @@ class ProfilePage extends StatefulWidget {
   final String? publicUserId;
   final String? recentPublicUserId;
   final ForumDetailHandoffTarget? recentBrowseHandoffTarget;
+  final List<ForumDetailHandoffTarget> recentBrowseHandoffTargets;
   final DocsDetailHandoffTarget? recentDocumentTarget;
   final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
   final ValueChanged<DocsDetailHandoffTarget>? onOpenDocsDetailTarget;
@@ -130,6 +132,12 @@ class _ProfilePageState extends State<ProfilePage> {
         final isMyProfile = !isViewingPublicProfile &&
             sessionState.isAuthenticated &&
             session != null;
+        final recentBrowseTargets = isMyProfile
+            ? _normalizeRecentBrowseTargets([
+                ...widget.recentBrowseHandoffTargets,
+                widget.recentBrowseHandoffTarget,
+              ])
+            : const <ForumDetailHandoffTarget>[];
 
         return ListView(
           padding: const EdgeInsets.all(20),
@@ -165,7 +173,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 if (authState.lastErrorMessage != null &&
                     authState.lastErrorMessage!.isNotEmpty)
                   '认证提示：${authState.lastErrorMessage}',
-                '当前不支持编辑资料、关注管理、浏览记录或工作台操作',
+                '当前不支持编辑资料、关注管理、完整浏览记录或工作台操作',
               ],
             ),
             const SizedBox(height: 16),
@@ -252,8 +260,7 @@ class _ProfilePageState extends State<ProfilePage> {
               _PublicProfileContent(
                 profile: profileState.profile!,
                 stats: profileState.stats,
-                recentBrowseHandoffTarget:
-                    isMyProfile ? widget.recentBrowseHandoffTarget : null,
+                recentBrowseHandoffTargets: recentBrowseTargets,
                 recentDocumentTarget:
                     isMyProfile ? widget.recentDocumentTarget : null,
                 posts: profileState.posts,
@@ -387,7 +394,7 @@ class _PublicProfileContent extends StatelessWidget {
   const _PublicProfileContent({
     required this.profile,
     required this.stats,
-    required this.recentBrowseHandoffTarget,
+    required this.recentBrowseHandoffTargets,
     required this.recentDocumentTarget,
     required this.posts,
     required this.postsTotal,
@@ -415,7 +422,7 @@ class _PublicProfileContent extends StatelessWidget {
 
   final PublicProfileSummary profile;
   final PublicProfileStats? stats;
-  final ForumDetailHandoffTarget? recentBrowseHandoffTarget;
+  final List<ForumDetailHandoffTarget> recentBrowseHandoffTargets;
   final DocsDetailHandoffTarget? recentDocumentTarget;
   final List<PublicProfilePostSummary> posts;
   final int postsTotal;
@@ -458,10 +465,9 @@ class _PublicProfileContent extends StatelessWidget {
           ),
           const SizedBox(height: 16),
         ],
-        if (recentBrowseHandoffTarget != null &&
-            recentBrowseHandoffTarget!.hasValidPostId) ...[
-          _RecentBrowseCard(
-            target: recentBrowseHandoffTarget!,
+        if (recentBrowseHandoffTargets.isNotEmpty) ...[
+          _RecentBrowseListCard(
+            targets: recentBrowseHandoffTargets,
             onOpenForumDetailTarget: onOpenForumDetailTarget,
           ),
           const SizedBox(height: 16),
@@ -747,7 +753,7 @@ class _ProfileReadingGuide extends StatelessWidget {
             const SizedBox(height: 10),
             const _GuideRow(
               title: '当前边界',
-              body: '编辑资料、关注管理、浏览记录和工作台操作暂不开放。',
+              body: '编辑资料、关注管理、完整浏览记录和工作台操作暂不开放。',
             ),
           ],
         ),
@@ -793,42 +799,46 @@ class _GuideRow extends StatelessWidget {
   }
 }
 
-class _RecentBrowseCard extends StatelessWidget {
-  const _RecentBrowseCard({
-    required this.target,
+class _RecentBrowseListCard extends StatelessWidget {
+  const _RecentBrowseListCard({
+    required this.targets,
     required this.onOpenForumDetailTarget,
   });
 
-  final ForumDetailHandoffTarget target;
+  final List<ForumDetailHandoffTarget> targets;
   final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
 
   @override
   Widget build(BuildContext context) {
     return _ProfileSectionCard(
       title: '最近阅读',
-      description: '保留一个最近论坛阅读上下文，方便从我的页面继续回到原帖。',
+      description: '保留最近几条论坛阅读上下文，方便从我的页面继续回到原帖。',
       emptyText: '暂无最近阅读。',
-      children: [
-        _ContentPreviewTile(
-          title: target.normalizedInitialTitle ?? '继续阅读论坛帖子',
-          subtitle: target.normalizedCommentId == null
-              ? '继续阅读上次打开的论坛帖子。'
-              : '继续回到上次打开的评论上下文。',
-          meta: '帖子 ${target.normalizedPostId}',
-          chips: [
-            target.normalizedCommentId == null ? '帖子上下文' : '评论上下文',
-            target.source.label,
-          ],
-          actionLabel: onOpenForumDetailTarget == null ? null : '继续阅读帖子',
-          onAction: onOpenForumDetailTarget == null
-              ? null
-              : () => onOpenForumDetailTarget!(
-                    target.copyWith(
-                      source: ForumDetailHandoffSource.profileRecentBrowse,
-                    ),
-                  ),
-        ),
-      ],
+      children: targets
+          .map(
+            (target) => _ContentPreviewTile(
+              title: target.normalizedInitialTitle ?? '继续阅读论坛帖子',
+              subtitle: target.normalizedCommentId == null
+                  ? '继续阅读上次打开的论坛帖子。'
+                  : '继续回到上次打开的评论上下文。',
+              meta: target.normalizedCommentId == null
+                  ? '帖子 ${target.normalizedPostId}'
+                  : '帖子 ${target.normalizedPostId} · 评论 ${target.normalizedCommentId}',
+              chips: [
+                target.normalizedCommentId == null ? '帖子上下文' : '评论上下文',
+                target.source.label,
+              ],
+              actionLabel: onOpenForumDetailTarget == null ? null : '继续阅读帖子',
+              onAction: onOpenForumDetailTarget == null
+                  ? null
+                  : () => onOpenForumDetailTarget!(
+                        target.copyWith(
+                          source: ForumDetailHandoffSource.profileRecentBrowse,
+                        ),
+                      ),
+            ),
+          )
+          .toList(),
     );
   }
 }
@@ -1360,4 +1370,36 @@ String? _normalizeUserId(String? userId) {
   }
 
   return normalizedUserId;
+}
+
+List<ForumDetailHandoffTarget> _normalizeRecentBrowseTargets(
+  Iterable<ForumDetailHandoffTarget?> targets,
+) {
+  final normalizedTargets = <ForumDetailHandoffTarget>[];
+  for (final target in targets) {
+    if (target == null || !target.hasValidPostId) {
+      continue;
+    }
+
+    final normalizedTarget = ForumDetailHandoffTarget(
+      postId: target.normalizedPostId,
+      source: target.source,
+      initialTitle: target.normalizedInitialTitle,
+      commentId: target.normalizedCommentId,
+    );
+    if (normalizedTargets.any(
+      (item) =>
+          item.normalizedPostId == normalizedTarget.normalizedPostId &&
+          item.normalizedCommentId == normalizedTarget.normalizedCommentId,
+    )) {
+      continue;
+    }
+
+    normalizedTargets.add(normalizedTarget);
+    if (normalizedTargets.length >= 5) {
+      break;
+    }
+  }
+
+  return List<ForumDetailHandoffTarget>.unmodifiable(normalizedTargets);
 }

@@ -241,3 +241,12 @@ Flutter 客户端第一批固定遵循以下约束：
 2. 外部分发仍依赖真实签名材料、测试 Gateway、外部分发对象与批次级回归留痕；这些前置条件缺失不应被误判为业务功能阻塞
 3. RC 前置判断已收口到 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution)，后续准备分发时按该清单执行，不在分发前置批次临时扩系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理
 4. Android MVP 收口复核与 RC 前置清单整理作为维护项已完成，不再作为第五批功能候选；第五批若启动，应另选一个窄范围产品小闭环
+
+截至 `2026-04-30` 的第五批首个落地事实：
+
+1. `profile` 最近阅读轻量多条列表已接入我的主页：已登录态当前可在我的 `profile` 查看最近多条 forum 阅读上下文，而不是只保留单个最近帖子入口
+2. 最近阅读列表继续复用 `ForumDetailHandoffTarget` 与本地最近阅读语义，不新增后端 API、Flutter 专属 BFF 或独立详情页；壳层状态条仍只展示最新一条“继续阅读论坛”，profile 内展示轻量多条列表
+3. Android 本地持久化已兼容旧的单条 `forum_recent_browse_handoff`：新列表最多保留 5 条，按 `postId + commentId` 去重并保持最近打开优先；旧单条数据可作为列表首条回落
+4. 从 profile 内打开任意最近阅读条目时继续使用 `profileRecentBrowse` 来源，详情返回后仍回到 profile，不落到论坛首页
+5. 本轮仍不扩展完整浏览历史中心、删除、清空、筛选、跨端同步治理、docs / forum 混合时间线、系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理
+6. 当前自动化验证已通过 `flutter test test/profile_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter test`、`flutter analyze`、`git diff --check` 与 Android 平台 `.\gradlew.bat :app:testDebugUnitTest`；Android 真机复核待下一轮人工确认
