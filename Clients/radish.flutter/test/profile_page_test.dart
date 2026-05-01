@@ -102,6 +102,64 @@ void main() {
     expect(find.text('回复 @radish'), findsOneWidget);
   });
 
+  testWidgets('renders empty revisit sections on my profile', (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final scrollable = find.byType(Scrollable).first;
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: '2042219067430928384',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: '2042219067430928384',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: _SuccessProfileRepository(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('暂无最近文档。'),
+      200,
+      scrollable: scrollable,
+    );
+    expect(find.text('暂无最近文档。'), findsOneWidget);
+    expect(
+      find.text('打开公开文档后，这里会保留最多 5 条最近文档。'),
+      findsOneWidget,
+    );
+    await tester.scrollUntilVisible(
+      find.text('暂无最近阅读。'),
+      200,
+      scrollable: scrollable,
+    );
+    expect(find.text('暂无最近阅读。'), findsOneWidget);
+    expect(
+      find.text('打开论坛帖子后，这里会保留最多 5 条最近阅读上下文。'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('renders guest-selected public profile target', (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
     tester.view.devicePixelRatio = 1.0;
@@ -608,6 +666,7 @@ void main() {
 
     expect(find.text('公开主页'), findsOneWidget);
     expect(find.text('最近阅读'), findsNothing);
+    expect(find.text('最近文档'), findsNothing);
   });
 
   testWidgets('loads more public posts and opens appended post handoff', (

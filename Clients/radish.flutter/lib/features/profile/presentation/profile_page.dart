@@ -456,6 +456,10 @@ class _PublicProfileContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final showEmptyRevisitSections = showMyQuickReplies &&
+        recentDocumentTargets.isEmpty &&
+        recentBrowseHandoffTargets.isEmpty;
+
     return Column(
       children: [
         _PublicProfileHero(profile: profile),
@@ -510,6 +514,18 @@ class _PublicProfileContent extends StatelessWidget {
           onLoadMore: onLoadMoreComments,
           onOpenForumDetailTarget: onOpenForumDetailTarget,
         ),
+        if (showEmptyRevisitSections) ...[
+          const SizedBox(height: 16),
+          _RecentDocumentListCard(
+            targets: recentDocumentTargets,
+            onOpenDocsDetailTarget: onOpenDocsDetailTarget,
+          ),
+          const SizedBox(height: 16),
+          _RecentBrowseListCard(
+            targets: recentBrowseHandoffTargets,
+            onOpenForumDetailTarget: onOpenForumDetailTarget,
+          ),
+        ],
       ],
     );
   }
@@ -817,9 +833,11 @@ class _RecentBrowseListCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _ProfileSectionCard(
+      icon: Icons.forum_outlined,
       title: '最近阅读',
       description: '保留最近几条论坛阅读上下文，方便从我的页面继续回到原帖。',
       emptyText: '暂无最近阅读。',
+      emptyHelperText: '打开论坛帖子后，这里会保留最多 5 条最近阅读上下文。',
       children: targets
           .map(
             (target) => _ContentPreviewTile(
@@ -861,9 +879,11 @@ class _RecentDocumentListCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _ProfileSectionCard(
+      icon: Icons.article_outlined,
       title: '最近文档',
       description: '保留最近几篇公开文档阅读上下文，方便从我的页面继续阅读。',
       emptyText: '暂无最近文档。',
+      emptyHelperText: '打开公开文档后，这里会保留最多 5 条最近文档。',
       children: targets
           .map(
             (target) => _ContentPreviewTile(
@@ -911,9 +931,11 @@ class _RecentPostsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _ProfileSectionCard(
+      icon: Icons.notes_outlined,
       title: '最近公开帖子',
       description: '这些帖子会打开同一套原生论坛详情，避免个人页和论坛页路径分叉。',
       emptyText: '这个用户暂无公开帖子。',
+      emptyHelperText: '公开帖子会在这里以只读方式展示。',
       children: _buildChildren(context),
     );
   }
@@ -1010,9 +1032,15 @@ class _MyQuickRepliesCard extends StatelessWidget {
     final errorMessage = this.errorMessage;
 
     return _ProfileSectionCard(
+      icon: errorMessage == null
+          ? Icons.chat_bubble_outline
+          : Icons.error_outline,
       title: '我的轻回应',
       description: '回看我最近留下的短反馈，并继续回到原帖上下文。',
       emptyText: errorMessage ?? '你还没有发表过轻回应。',
+      emptyHelperText: errorMessage == null
+          ? '在帖子详情发布轻回应后，这里会保留最近回看入口。'
+          : '轻回应区块加载失败不会影响公开资料、公开帖子和公开评论。',
       children: errorMessage == null ? _buildChildren(context) : const [],
     );
   }
@@ -1101,15 +1129,10 @@ class _ProfileLoadMoreFooter extends StatelessWidget {
         Text('已显示 $loadedCount / $normalizedTotal $unitLabel'),
         if (errorMessage != null && errorMessage.isNotEmpty) ...[
           const SizedBox(height: 10),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.errorContainer,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Text(errorMessage),
-            ),
+          _ProfileInlineNotice(
+            icon: Icons.error_outline,
+            message: errorMessage,
+            isError: true,
           ),
         ],
         if (hasMore || isLoadingMore) ...[
@@ -1155,9 +1178,11 @@ class _RecentCommentsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _ProfileSectionCard(
+      icon: Icons.mode_comment_outlined,
       title: '最近公开评论',
       description: '评论预览保持只读，点击后会回到对应帖子和评论上下文。',
       emptyText: '这个用户暂无公开评论。',
+      emptyHelperText: '公开评论会在这里以只读方式展示。',
       children: _buildChildren(context),
     );
   }
@@ -1231,15 +1256,19 @@ bool _shouldShowProfileLoadMoreFooter({
 
 class _ProfileSectionCard extends StatelessWidget {
   const _ProfileSectionCard({
+    required this.icon,
     required this.title,
     required this.description,
     required this.emptyText,
+    required this.emptyHelperText,
     required this.children,
   });
 
+  final IconData icon;
   final String title;
   final String description;
   final String emptyText;
+  final String emptyHelperText;
   final List<Widget> children;
 
   @override
@@ -1250,20 +1279,115 @@ class _ProfileSectionCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleLarge,
+            Row(
+              children: [
+                Icon(icon, size: 22),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             Text(description),
             const SizedBox(height: 16),
             if (children.isEmpty)
-              Text(emptyText)
+              _ProfileSectionEmptyState(
+                icon: icon,
+                title: emptyText,
+                body: emptyHelperText,
+              )
             else
               for (final child in children) ...[
                 child,
                 if (child != children.last) const Divider(height: 24),
               ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileSectionEmptyState extends StatelessWidget {
+  const _ProfileSectionEmptyState({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+
+  final IconData icon;
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(body),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileInlineNotice extends StatelessWidget {
+  const _ProfileInlineNotice({
+    required this.icon,
+    required this.message,
+    this.isError = false,
+  });
+
+  final IconData icon;
+  final String message;
+  final bool isError;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color:
+            isError ? colorScheme.errorContainer : colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 18),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
           ],
         ),
       ),

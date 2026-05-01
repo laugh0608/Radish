@@ -285,3 +285,11 @@ Flutter 客户端第一批固定遵循以下约束：
 5. 本轮仍不扩展完整浏览历史中心、删除、清空、筛选、跨端同步治理、搜索历史、目录树、编辑、发布、版本历史、后端搜索改造、系统通知栏推送、完整通知中心或 Flutter 专属 BFF
 6. 当前验证已通过 `flutter test test/profile_page_test.dart test/smoke_test.dart`、`flutter test test/docs_page_test.dart`、`flutter test`、`flutter analyze`、`.\gradlew.bat :app:testDebugUnitTest` 与 `git diff --check`；后续收口复核已再次确认 profile / docs 定向测试、`flutter analyze` 与 Android JVM 单测通过；Android 真机安装按用户要求暂缓到正式 release 包发布前，该小闭环可作为第八批首个落点收口
 7. 下一步保持产品小闭环优先：个人开发阶段不再等待 testing Gateway、测试账号 / 测试数据、分发对象、反馈闭环、testing release APK 或真机验收；若继续功能，仍只从窄范围复访或只读体验补强中选择，不把暂缓分发验收误判为系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理的扩张信号
+
+截至 `2026-05-01` 的第九批首个落地事实：
+
+1. `profile` 复访区块体验整理已完成代码与自动化验证：最近文档、最近阅读、我的轻回应、最近公开帖子与最近公开评论区块统一使用图标标题、共享空态和局部提示样式
+2. 我的主页在没有最近 forum / docs 记录时，会在公开内容之后展示轻量空态，避免把公开帖子 / 评论回跳入口挤到过低位置；公开主页继续不显示个人复访区块
+3. 加载更多失败继续只在对应区块内提示，不拖垮 profile 公开资料、公开帖子、公开评论或我的轻回应回看
+4. 本轮仍不新增后端 API、Flutter 专属 BFF、完整浏览历史中心、删除、清空、筛选、跨端同步、系统通知栏推送或完整通知中心
+5. 当前验证已通过 `flutter test test/profile_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter analyze` 与 `git diff --check`；Android 真机 APK 安装按个人开发阶段口径暂缓到正式 release 包发布前
