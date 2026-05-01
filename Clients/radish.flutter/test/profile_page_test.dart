@@ -138,6 +138,7 @@ void main() {
 
     await tester.pumpAndSettle();
 
+    expect(find.text('最近复访'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('暂无最近文档。'),
       200,

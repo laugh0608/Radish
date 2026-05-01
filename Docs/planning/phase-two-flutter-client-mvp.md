@@ -293,3 +293,11 @@ Flutter 客户端第一批固定遵循以下约束：
 3. 加载更多失败继续只在对应区块内提示，不拖垮 profile 公开资料、公开帖子、公开评论或我的轻回应回看
 4. 本轮仍不新增后端 API、Flutter 专属 BFF、完整浏览历史中心、删除、清空、筛选、跨端同步、系统通知栏推送或完整通知中心
 5. 当前验证已通过 `flutter test test/profile_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter analyze` 与 `git diff --check`；Android 真机 APK 安装按个人开发阶段口径暂缓到正式 release 包发布前
+
+截至 `2026-05-01` 的第十批首个落地事实：
+
+1. `profile` 区块顺序与信息密度微调已完成代码与自动化验证：我的主页优先呈现最近复访 / 最近文档 / 最近阅读 / 我的轻回应，再进入最近公开帖子与最近公开评论；公开主页只展示最近公开帖子与最近公开评论
+2. 无最近 forum / docs 记录时，原先两个完整空态区块已收束为一个紧凑“最近复访”空态卡，减少对公开帖子和评论回跳入口的挤压
+3. 复访、轻回应、公开帖子与公开评论区块描述文案已收短，减少重复边界说明；边界仍通过公开只读口径、回跳来源与回归记录约束
+4. 本轮仍不新增后端 API、Flutter 专属 BFF、完整浏览历史中心、删除、清空、筛选、跨端同步、系统通知栏推送或完整通知中心
+5. 当前验证已通过 `flutter test test/profile_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter analyze` 与 `git diff --check`；Android 真机 APK 安装按个人开发阶段口径暂缓到正式 release 包发布前

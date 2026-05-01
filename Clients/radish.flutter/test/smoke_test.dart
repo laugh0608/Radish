@@ -1271,12 +1271,15 @@ void main() {
     await tester.pumpAndSettle();
 
     final scrollable = find.byType(Scrollable).last;
+    final openCommentButton = find.widgetWithText(FilledButton, '打开评论上下文');
     await tester.scrollUntilVisible(
-      find.text('打开评论上下文'),
+      openCommentButton,
       200,
       scrollable: scrollable,
     );
-    await tester.tap(find.text('打开评论上下文'));
+    await tester.drag(scrollable, const Offset(0, -240));
+    await tester.pumpAndSettle();
+    await tester.tap(openCommentButton);
     await tester.pump();
     await tester.pumpAndSettle();
 
@@ -1326,12 +1329,13 @@ void main() {
     await tester.pumpAndSettle();
 
     final scrollable = find.byType(Scrollable).last;
+    final openPostButton = find.widgetWithText(FilledButton, '打开帖子');
     await tester.scrollUntilVisible(
-      find.text('打开帖子'),
+      openPostButton,
       200,
       scrollable: scrollable,
     );
-    await tester.tap(find.text('打开帖子'));
+    await tester.tap(openPostButton);
     await tester.pump();
     await tester.pumpAndSettle();
 

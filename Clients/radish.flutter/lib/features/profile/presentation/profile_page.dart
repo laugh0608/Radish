@@ -468,6 +468,10 @@ class _PublicProfileContent extends StatelessWidget {
         const SizedBox(height: 16),
         const _ProfileReadingGuide(),
         const SizedBox(height: 16),
+        if (showEmptyRevisitSections) ...[
+          const _EmptyRevisitSummaryCard(),
+          const SizedBox(height: 16),
+        ],
         if (recentDocumentTargets.isNotEmpty) ...[
           _RecentDocumentListCard(
             targets: recentDocumentTargets,
@@ -514,18 +518,6 @@ class _PublicProfileContent extends StatelessWidget {
           onLoadMore: onLoadMoreComments,
           onOpenForumDetailTarget: onOpenForumDetailTarget,
         ),
-        if (showEmptyRevisitSections) ...[
-          const SizedBox(height: 16),
-          _RecentDocumentListCard(
-            targets: recentDocumentTargets,
-            onOpenDocsDetailTarget: onOpenDocsDetailTarget,
-          ),
-          const SizedBox(height: 16),
-          _RecentBrowseListCard(
-            targets: recentBrowseHandoffTargets,
-            onOpenForumDetailTarget: onOpenForumDetailTarget,
-          ),
-        ],
       ],
     );
   }
@@ -835,7 +827,7 @@ class _RecentBrowseListCard extends StatelessWidget {
     return _ProfileSectionCard(
       icon: Icons.forum_outlined,
       title: '最近阅读',
-      description: '保留最近几条论坛阅读上下文，方便从我的页面继续回到原帖。',
+      description: '继续回到最近打开的论坛帖子或评论上下文。',
       emptyText: '暂无最近阅读。',
       emptyHelperText: '打开论坛帖子后，这里会保留最多 5 条最近阅读上下文。',
       children: targets
@@ -881,7 +873,7 @@ class _RecentDocumentListCard extends StatelessWidget {
     return _ProfileSectionCard(
       icon: Icons.article_outlined,
       title: '最近文档',
-      description: '保留最近几篇公开文档阅读上下文，方便从我的页面继续阅读。',
+      description: '继续阅读最近打开的公开文档。',
       emptyText: '暂无最近文档。',
       emptyHelperText: '打开公开文档后，这里会保留最多 5 条最近文档。',
       children: targets
@@ -933,7 +925,7 @@ class _RecentPostsCard extends StatelessWidget {
     return _ProfileSectionCard(
       icon: Icons.notes_outlined,
       title: '最近公开帖子',
-      description: '这些帖子会打开同一套原生论坛详情，避免个人页和论坛页路径分叉。',
+      description: '只读展示公开帖子，点击后回到论坛详情。',
       emptyText: '这个用户暂无公开帖子。',
       emptyHelperText: '公开帖子会在这里以只读方式展示。',
       children: _buildChildren(context),
@@ -1036,7 +1028,7 @@ class _MyQuickRepliesCard extends StatelessWidget {
           ? Icons.chat_bubble_outline
           : Icons.error_outline,
       title: '我的轻回应',
-      description: '回看我最近留下的短反馈，并继续回到原帖上下文。',
+      description: '回看最近留下的短反馈，并继续回到原帖。',
       emptyText: errorMessage ?? '你还没有发表过轻回应。',
       emptyHelperText: errorMessage == null
           ? '在帖子详情发布轻回应后，这里会保留最近回看入口。'
@@ -1180,7 +1172,7 @@ class _RecentCommentsCard extends StatelessWidget {
     return _ProfileSectionCard(
       icon: Icons.mode_comment_outlined,
       title: '最近公开评论',
-      description: '评论预览保持只读，点击后会回到对应帖子和评论上下文。',
+      description: '只读展示公开评论，点击后回到评论上下文。',
       emptyText: '这个用户暂无公开评论。',
       emptyHelperText: '公开评论会在这里以只读方式展示。',
       children: _buildChildren(context),
@@ -1305,6 +1297,97 @@ class _ProfileSectionCard extends StatelessWidget {
                 child,
                 if (child != children.last) const Divider(height: 24),
               ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyRevisitSummaryCard extends StatelessWidget {
+  const _EmptyRevisitSummaryCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.history_outlined, size: 22),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '最近复访',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Text('最近文档和论坛阅读会在这里形成轻量回看入口。'),
+            const SizedBox(height: 14),
+            const _CompactEmptyRow(
+              icon: Icons.article_outlined,
+              title: '暂无最近文档。',
+              body: '打开公开文档后，这里会保留最多 5 条最近文档。',
+            ),
+            const SizedBox(height: 10),
+            const _CompactEmptyRow(
+              icon: Icons.forum_outlined,
+              title: '暂无最近阅读。',
+              body: '打开论坛帖子后，这里会保留最多 5 条最近阅读上下文。',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CompactEmptyRow extends StatelessWidget {
+  const _CompactEmptyRow({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+
+  final IconData icon;
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 18),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(body),
+                ],
+              ),
+            ),
           ],
         ),
       ),
