@@ -13,7 +13,7 @@
 
 ## Android MVP 收口状态
 
-截至 `2026-04-30`，Android MVP 已具备一条可复核的原生只读主链路：
+截至 `2026-05-01`，Android MVP 已具备一条可复核的原生只读主链路：
 
 1. 启动恢复、匿名态 / 已登录态、登录、退出与会话恢复
 2. `discover / forum / docs / profile` 四个主 tab 的真实读取
@@ -21,10 +21,11 @@
 4. forum detail 原地登录续接与轻回应最小读写闭环
 5. 已登录壳层最小 forum notification 回流
 6. `profile` 我的轻回应、最近公开帖子、最近公开评论、最近 forum 阅读轻量复访与最近 docs 阅读复访
-7. docs 最近阅读、discover 文档直达、docs 正文内链与 docs 关键词搜索复访
+7. docs 最近阅读、discover 文档直达、docs 正文内链、docs 关键词搜索复访与 docs 搜索体验增强
 8. discover 论坛精选直达 forum detail，以及 discover “进入论坛 / 进入文档”快捷入口的 Android Back 返回 discover 上下文
+9. docs 搜索结果进入内联详情后的 Android Back 返回搜索列表，不触发根层退到桌面
 
-当前 Android MVP 可作为“内部 / 小范围 RC 候选”继续准备，但外部分发仍需满足后续前置条件。
+当前 Android MVP 可作为“内部 / 小范围 RC 候选”继续准备，但外部分发仍需满足后续前置条件。当前批次回归记录见：[Flutter Android MVP 第七批首个小闭环变更回归记录（2026-05-01）](/guide/flutter-android-mvp-regression-record-2026-05-01)。
 
 ## 当前非阻断项
 

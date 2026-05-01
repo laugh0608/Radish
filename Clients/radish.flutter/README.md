@@ -202,6 +202,7 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 - 第四批“最近公开帖子回看”分页复访已完成代码、自动化验证与 Android 真机复核；最近公开帖子、最近公开评论与我的轻回应三条 profile 复访路线从详情返回后都会回到 profile
 - 第四批 docs 最近阅读与直达复访已完成代码、自动化验证与 Android 真机复核；discover 文档直达、docs 列表详情返回、profile 最近文档复访与重启恢复均确认正常
 - 第四批 docs 正文内链跳转与 docs 关键词搜索复访已完成代码、自动化验证与 Android 真机复核；真机复核发现长 slug 窄屏溢出与搜索详情返回退出问题后，已补代码修复与回归测试并复测通过；调试态根层返回后重新打开卡启动页的问题已收口为 Android 根层 Back 退后台；当前已通过 `flutter test`、`flutter analyze`、`git diff --check` 与定向 docs / smoke 回归
+- 第七批首个小闭环“docs 搜索体验增强”已完成代码、自动化验证与 Android 真机复核：搜索词会 trim 归一化，搜索 / 清除 / 翻页会回到结果顶部，从搜索结果打开内联详情后返回会恢复搜索列表上下文；真机复核发现的 Android Back 退桌面问题已修复并补 `docs_page_test.dart` 与 `smoke_test.dart` 覆盖；批次记录见 [Flutter Android MVP 第七批首个小闭环变更回归记录](../../Docs/guide/flutter-android-mvp-regression-record-2026-05-01.md)
 - 第四批 discover 论坛精选直达已完成代码与定向测试补齐：发现页论坛精选帖子可直接打开原生 forum detail，并以 `discover` 来源返回发现页；discover 的“进入论坛 / 进入文档”快捷入口也已补齐 Android Back 返回 discover 的轻量来源上下文；仍不开放发帖、评论提交、点赞、投票或编辑治理
 - 该入口只验证站内最新 forum 通知读取，不代表完整通知中心或系统通知栏推送已纳入 Android MVP
 
