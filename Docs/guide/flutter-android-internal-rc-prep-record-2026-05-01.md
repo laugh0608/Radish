@@ -81,14 +81,24 @@ APK 安装后，真机复核至少覆盖：
 
 ### 本轮执行情况
 
-- 自动化执行：未执行
-- release APK 构建：未执行
-- 签名配置检查：未执行
+- 自动化执行：已执行
+  - `flutter analyze`：通过
+  - `flutter test`：通过
+  - `.\gradlew.bat :app:testDebugUnitTest`：通过，使用 Android Studio JBR
+- release APK 构建：已执行本地 debug-signing release 构建
+  - 命令：`flutter build apk --release --dart-define=RADISH_ENVIRONMENT=development --dart-define=RADISH_GATEWAY_BASE_URL=https://localhost:5000`
+  - 结果：通过，产物为 `Clients/radish.flutter/build/app/outputs/flutter-apk/app-release.apk`
+  - 限制：该包因缺少正式 `android/key.properties` 而使用 debug signing 回落，只能作为本地 RC 构建链路预检，不满足外部分发签名要求
+- 签名配置检查：已执行
+  - 首次检查：未通过，原因是 `android/key.properties` 不存在
+  - 后续复核：用户本机补齐 `key.properties` 与 `upload-keystore.jks` 后，`.\gradlew.bat :app:checkReleaseSigningConfig` 通过，输出 `Android release signing material is ready: upload-keystore.jks`
 - Android 真机复核：未执行
-- 原因：本轮仅做第七批之后的内测分发前置文档整理，且真实签名材料、测试 Gateway 与分发对象尚未在本轮提供
+- 原因：测试 Gateway 与分发对象尚未在本轮提供，且用户确认暂时跳过真机安装；当前只完成可在本机环境执行的自动化预检、本地 release 构建预检与签名材料诊断
 
 ### 结论
 
-- Android MVP 当前可以继续按“内部 / 小范围 RC 候选”推进前置材料准备
-- 下一步若准备实际分发，应先补齐真实签名材料、测试 Gateway、测试对象与反馈闭环，再按 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution) 执行签名检查、自动化验证、release APK 构建与真机验收
+- Android MVP 当前可以继续按“内部 / 小范围 RC 候选”推进前置材料准备；Dart 层、Android 平台单测与本地 release 构建预检已通过
+- Android 正式签名材料当前已补齐并通过检查；真实密钥文件与 `key.properties` 只保留在本机，不进入版本库
+- 当前尚不能进入完整外部分发验收：testing Gateway、测试对象、反馈闭环与真机安装复核仍待提供
+- 下一步若准备实际分发，应先补齐测试 Gateway、测试对象与反馈闭环，再按 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution) 执行 testing Gateway release APK 构建与真机验收
 - 若前置材料仍缺失，应保持等待状态，不把等待分发材料误判为 Flutter 产品功能阻塞
