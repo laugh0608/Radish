@@ -19,6 +19,7 @@ class ProfilePage extends StatefulWidget {
     this.recentBrowseHandoffTarget,
     this.recentBrowseHandoffTargets = const <ForumDetailHandoffTarget>[],
     this.recentDocumentTarget,
+    this.recentDocumentTargets = const <DocsDetailHandoffTarget>[],
     this.onOpenForumDetailTarget,
     this.onOpenDocsDetailTarget,
     this.onOpenRecentPublicProfile,
@@ -35,6 +36,7 @@ class ProfilePage extends StatefulWidget {
   final ForumDetailHandoffTarget? recentBrowseHandoffTarget;
   final List<ForumDetailHandoffTarget> recentBrowseHandoffTargets;
   final DocsDetailHandoffTarget? recentDocumentTarget;
+  final List<DocsDetailHandoffTarget> recentDocumentTargets;
   final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
   final ValueChanged<DocsDetailHandoffTarget>? onOpenDocsDetailTarget;
   final VoidCallback? onOpenRecentPublicProfile;
@@ -138,6 +140,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 widget.recentBrowseHandoffTarget,
               ])
             : const <ForumDetailHandoffTarget>[];
+        final recentDocumentTargets = isMyProfile
+            ? _normalizeRecentDocumentTargets([
+                ...widget.recentDocumentTargets,
+                widget.recentDocumentTarget,
+              ])
+            : const <DocsDetailHandoffTarget>[];
 
         return ListView(
           padding: const EdgeInsets.all(20),
@@ -261,8 +269,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 profile: profileState.profile!,
                 stats: profileState.stats,
                 recentBrowseHandoffTargets: recentBrowseTargets,
-                recentDocumentTarget:
-                    isMyProfile ? widget.recentDocumentTarget : null,
+                recentDocumentTargets: recentDocumentTargets,
                 posts: profileState.posts,
                 postsTotal: profileState.postsTotal,
                 hasMorePosts: profileState.hasMorePosts,
@@ -395,7 +402,7 @@ class _PublicProfileContent extends StatelessWidget {
     required this.profile,
     required this.stats,
     required this.recentBrowseHandoffTargets,
-    required this.recentDocumentTarget,
+    required this.recentDocumentTargets,
     required this.posts,
     required this.postsTotal,
     required this.hasMorePosts,
@@ -423,7 +430,7 @@ class _PublicProfileContent extends StatelessWidget {
   final PublicProfileSummary profile;
   final PublicProfileStats? stats;
   final List<ForumDetailHandoffTarget> recentBrowseHandoffTargets;
-  final DocsDetailHandoffTarget? recentDocumentTarget;
+  final List<DocsDetailHandoffTarget> recentDocumentTargets;
   final List<PublicProfilePostSummary> posts;
   final int postsTotal;
   final bool hasMorePosts;
@@ -457,10 +464,9 @@ class _PublicProfileContent extends StatelessWidget {
         const SizedBox(height: 16),
         const _ProfileReadingGuide(),
         const SizedBox(height: 16),
-        if (recentDocumentTarget != null &&
-            recentDocumentTarget!.hasValidSlug) ...[
-          _RecentDocumentCard(
-            target: recentDocumentTarget!,
+        if (recentDocumentTargets.isNotEmpty) ...[
+          _RecentDocumentListCard(
+            targets: recentDocumentTargets,
             onOpenDocsDetailTarget: onOpenDocsDetailTarget,
           ),
           const SizedBox(height: 16),
@@ -843,40 +849,42 @@ class _RecentBrowseListCard extends StatelessWidget {
   }
 }
 
-class _RecentDocumentCard extends StatelessWidget {
-  const _RecentDocumentCard({
-    required this.target,
+class _RecentDocumentListCard extends StatelessWidget {
+  const _RecentDocumentListCard({
+    required this.targets,
     required this.onOpenDocsDetailTarget,
   });
 
-  final DocsDetailHandoffTarget target;
+  final List<DocsDetailHandoffTarget> targets;
   final ValueChanged<DocsDetailHandoffTarget>? onOpenDocsDetailTarget;
 
   @override
   Widget build(BuildContext context) {
     return _ProfileSectionCard(
       title: '最近文档',
-      description: '保留一个最近文档阅读上下文，方便从我的页面继续阅读公开文档。',
+      description: '保留最近几篇公开文档阅读上下文，方便从我的页面继续阅读。',
       emptyText: '暂无最近文档。',
-      children: [
-        _ContentPreviewTile(
-          title: target.normalizedInitialTitle ?? '继续阅读公开文档',
-          subtitle: '继续阅读上次打开的公开文档详情。',
-          meta: '/docs/${target.normalizedSlug}',
-          chips: [
-            target.source.label,
-            '公开文档',
-          ],
-          actionLabel: onOpenDocsDetailTarget == null ? null : '继续阅读文档',
-          onAction: onOpenDocsDetailTarget == null
-              ? null
-              : () => onOpenDocsDetailTarget!(
-                    target.copyWith(
-                      source: DocsDetailHandoffSource.profileRecentDocument,
-                    ),
-                  ),
-        ),
-      ],
+      children: targets
+          .map(
+            (target) => _ContentPreviewTile(
+              title: target.normalizedInitialTitle ?? '继续阅读公开文档',
+              subtitle: '继续阅读上次打开的公开文档详情。',
+              meta: '/docs/${target.normalizedSlug}',
+              chips: [
+                target.source.label,
+                '公开文档',
+              ],
+              actionLabel: onOpenDocsDetailTarget == null ? null : '继续阅读文档',
+              onAction: onOpenDocsDetailTarget == null
+                  ? null
+                  : () => onOpenDocsDetailTarget!(
+                        target.copyWith(
+                          source: DocsDetailHandoffSource.profileRecentDocument,
+                        ),
+                      ),
+            ),
+          )
+          .toList(),
     );
   }
 }
@@ -1402,4 +1410,33 @@ List<ForumDetailHandoffTarget> _normalizeRecentBrowseTargets(
   }
 
   return List<ForumDetailHandoffTarget>.unmodifiable(normalizedTargets);
+}
+
+List<DocsDetailHandoffTarget> _normalizeRecentDocumentTargets(
+  Iterable<DocsDetailHandoffTarget?> targets,
+) {
+  final normalizedTargets = <DocsDetailHandoffTarget>[];
+  for (final target in targets) {
+    if (target == null || !target.hasValidSlug) {
+      continue;
+    }
+
+    final normalizedTarget = DocsDetailHandoffTarget(
+      slug: target.normalizedSlug,
+      source: target.source,
+      initialTitle: target.normalizedInitialTitle,
+    );
+    if (normalizedTargets.any(
+      (item) => item.normalizedSlug == normalizedTarget.normalizedSlug,
+    )) {
+      continue;
+    }
+
+    normalizedTargets.add(normalizedTarget);
+    if (normalizedTargets.length >= 5) {
+      break;
+    }
+  }
+
+  return List<DocsDetailHandoffTarget>.unmodifiable(normalizedTargets);
 }

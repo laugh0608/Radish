@@ -65,6 +65,8 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       const <ForumDetailHandoffTarget>[];
   DocsDetailHandoffTarget? _docsHandoffTarget;
   DocsDetailHandoffTarget? _recentDocumentTarget;
+  List<DocsDetailHandoffTarget> _recentDocumentTargets =
+      const <DocsDetailHandoffTarget>[];
   ForumDetailHandoffTarget? _latestForumNotificationTarget;
   ShellPostLoginTarget? _pendingPostLoginTarget;
   VoidCallback? _docsInlineDetailBackHandler;
@@ -260,6 +262,10 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     setState(() {
       _docsHandoffTarget = normalizedTarget;
       _recentDocumentTarget = recentTarget;
+      _recentDocumentTargets = _upsertRecentDocumentTarget(
+        _recentDocumentTargets,
+        recentTarget,
+      );
     });
 
     unawaited(widget.docsFollowUpStore.writeRecentDocumentTarget(recentTarget));
@@ -274,6 +280,10 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     final recentTarget = _buildRecentDocumentTarget(normalizedTarget);
     setState(() {
       _recentDocumentTarget = recentTarget;
+      _recentDocumentTargets = _upsertRecentDocumentTarget(
+        _recentDocumentTargets,
+        recentTarget,
+      );
     });
 
     unawaited(widget.docsFollowUpStore.writeRecentDocumentTarget(recentTarget));
@@ -516,15 +526,21 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
   }
 
   Future<void> _loadDocsFollowUps() async {
-    final recentDocumentTarget = _normalizeDocsHandoffTarget(
-      await widget.docsFollowUpStore.readRecentDocumentTarget(),
+    final storedRecentDocumentTargets = _normalizeRecentDocumentTargets(
+      await widget.docsFollowUpStore.readRecentDocumentTargets(),
     );
     if (!mounted) {
       return;
     }
 
     setState(() {
-      _recentDocumentTarget = recentDocumentTarget;
+      final recentTargets = _normalizeRecentDocumentTargets([
+        ..._recentDocumentTargets,
+        ...storedRecentDocumentTargets,
+      ]);
+      _recentDocumentTargets = recentTargets;
+      _recentDocumentTarget =
+          recentTargets.isEmpty ? null : recentTargets.first;
     });
   }
 
@@ -643,6 +659,48 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     return List<ForumDetailHandoffTarget>.unmodifiable(normalizedTargets);
   }
 
+  List<DocsDetailHandoffTarget> _upsertRecentDocumentTarget(
+    Iterable<DocsDetailHandoffTarget> targets,
+    DocsDetailHandoffTarget target,
+  ) {
+    final recentTarget = _normalizeDocsHandoffTarget(target);
+    if (recentTarget == null) {
+      return _normalizeRecentDocumentTargets(targets);
+    }
+
+    return _normalizeRecentDocumentTargets([
+      recentTarget,
+      ...targets.where(
+        (item) => item.normalizedSlug != recentTarget.normalizedSlug,
+      ),
+    ]);
+  }
+
+  List<DocsDetailHandoffTarget> _normalizeRecentDocumentTargets(
+    Iterable<DocsDetailHandoffTarget?> targets,
+  ) {
+    final normalizedTargets = <DocsDetailHandoffTarget>[];
+    for (final target in targets) {
+      final normalizedTarget = _normalizeDocsHandoffTarget(target);
+      if (normalizedTarget == null) {
+        continue;
+      }
+
+      if (normalizedTargets.any(
+        (item) => item.normalizedSlug == normalizedTarget.normalizedSlug,
+      )) {
+        continue;
+      }
+
+      normalizedTargets.add(normalizedTarget);
+      if (normalizedTargets.length >= 5) {
+        break;
+      }
+    }
+
+    return List<DocsDetailHandoffTarget>.unmodifiable(normalizedTargets);
+  }
+
   bool _isSameRecentBrowseTarget(
     ForumDetailHandoffTarget left,
     ForumDetailHandoffTarget right,
@@ -743,6 +801,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
             recentBrowseHandoffTarget: _recentBrowseHandoffTarget,
             recentBrowseHandoffTargets: _recentBrowseHandoffTargets,
             recentDocumentTarget: _recentDocumentTarget,
+            recentDocumentTargets: _recentDocumentTargets,
             onOpenForumDetailTarget: _openForumDetailTarget,
             onOpenDocsDetailTarget: _openDocsDetailTarget,
             onOpenRecentPublicProfile: _openRecentProfileUser,

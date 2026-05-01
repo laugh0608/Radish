@@ -1891,6 +1891,42 @@ void main() {
     expect(targets[1].commentId, 'comment-1');
     expect(await followUpStore.readRecentBrowseHandoff(), targets.first);
   });
+
+  test('recent document store keeps newest deduplicated targets', () async {
+    final followUpStore = InMemoryDocsFollowUpStore();
+
+    await followUpStore.writeRecentDocumentTarget(
+      const DocsDetailHandoffTarget(
+        slug: 'flutter-docs-scope',
+        source: DocsDetailHandoffSource.discover,
+        initialTitle: 'Flutter docs scope',
+      ),
+    );
+    await followUpStore.writeRecentDocumentTarget(
+      const DocsDetailHandoffTarget(
+        slug: 'public-docs-reading-boundary',
+        source: DocsDetailHandoffSource.docsList,
+        initialTitle: 'Public docs reading boundary',
+      ),
+    );
+    await followUpStore.writeRecentDocumentTarget(
+      const DocsDetailHandoffTarget(
+        slug: 'flutter-docs-scope',
+        source: DocsDetailHandoffSource.docsLink,
+        initialTitle: 'Flutter docs scope refreshed',
+      ),
+    );
+
+    final targets = await followUpStore.readRecentDocumentTargets();
+
+    expect(targets.map((target) => target.slug), [
+      'flutter-docs-scope',
+      'public-docs-reading-boundary',
+    ]);
+    expect(targets.first.initialTitle, 'Flutter docs scope refreshed');
+    expect(targets.first.source, DocsDetailHandoffSource.browseHistory);
+    expect(await followUpStore.readRecentDocumentTarget(), targets.first);
+  });
 }
 
 NativeAuthController _buildAuthController(

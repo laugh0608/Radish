@@ -491,6 +491,78 @@ void main() {
     );
   });
 
+  testWidgets('renders multiple recent document targets from my profile', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final scrollable = find.byType(Scrollable).first;
+    final openedTargets = <DocsDetailHandoffTarget>[];
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: '2042219067430928384',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: '2042219067430928384',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: _SuccessProfileRepository(),
+          recentDocumentTargets: const [
+            DocsDetailHandoffTarget(
+              slug: 'public-docs-reading-boundary',
+              source: DocsDetailHandoffSource.browseHistory,
+              initialTitle: 'Public docs reading boundary',
+            ),
+            DocsDetailHandoffTarget(
+              slug: 'flutter-docs-scope',
+              source: DocsDetailHandoffSource.browseHistory,
+              initialTitle: 'Radish Flutter docs scope',
+            ),
+          ],
+          onOpenDocsDetailTarget: openedTargets.add,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('Public docs reading boundary'),
+      200,
+      scrollable: scrollable,
+    );
+    expect(find.text('Public docs reading boundary'), findsOneWidget);
+    expect(find.text('Radish Flutter docs scope'), findsOneWidget);
+    expect(find.text('/docs/flutter-docs-scope'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilledButton, '继续阅读文档').last);
+    await tester.pumpAndSettle();
+
+    expect(openedTargets, hasLength(1));
+    expect(openedTargets.single.slug, 'flutter-docs-scope');
+    expect(
+      openedTargets.single.source,
+      DocsDetailHandoffSource.profileRecentDocument,
+    );
+  });
+
   testWidgets('does not render recent browse target on public profile', (
     tester,
   ) async {

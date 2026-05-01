@@ -272,6 +272,15 @@ Flutter 客户端第一批固定遵循以下约束：
 
 1. 第七批首个小闭环收口后，当前下一步优先转向 Android MVP 内测分发前置整理，不启动第八批功能扩张
 2. Android MVP 内部 / 小范围 RC 候选链路继续成立：登录、退出、会话恢复、四个主 tab 真实读取、forum feed / detail / 评论阅读、轻回应最小闭环、最小 forum notification 回流、profile / docs / discover 复访与返回上下文均已纳入已有验证面
-3. 实际外部分发仍依赖真实签名材料、测试 Gateway、测试账号 / 测试数据、分发对象与反馈回收方式；这些前置缺失不构成当前业务功能阻塞
+3. 真实签名材料已由用户本机补齐并通过 `:app:checkReleaseSigningConfig`；实际外部分发仍依赖 testing Gateway、测试账号 / 测试数据、分发对象、反馈回收方式与真机安装复核，这些前置缺失不构成当前业务功能阻塞
 4. 本轮已补 [Flutter Android MVP 内测分发前置整理记录（2026-05-01）](/guide/flutter-android-internal-rc-prep-record-2026-05-01)，并同步 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution) 中的内测 RC 前置判断
-5. 后续若准备实际内测 APK，应按 RC 清单补齐签名检查、Dart / Android 自动化验证、testing Gateway release APK 构建、真机验收与批次级回归留痕；若材料仍缺失，则保持等待状态，不回头扩系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理
+5. 后续若准备实际内测 APK，应按 RC 清单补齐 testing Gateway release APK 构建、真机验收与批次级回归留痕；若材料仍缺失，则保持等待状态，不回头扩系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理
+
+截至 `2026-05-01` 的第八批首个落地事实：
+
+1. `profile` 最近文档轻量多条列表已完成代码与自动化验证：已登录态我的 `profile` 当前可展示最近多篇公开文档阅读上下文，而不是只保留单个最近文档入口
+2. 最近文档列表继续复用 `DocsDetailHandoffTarget` 与本地最近文档语义，不新增后端 API、Flutter 专属 BFF、独立文档详情页或完整浏览历史中心；壳层状态条仍只展示最新一条“继续阅读文档”
+3. Android 本地持久化已兼容旧的单条 `docs_recent_document_target`：新列表最多保留 5 条，按 `slug` 去重并保持最近打开优先
+4. 从 profile 内打开任意最近文档条目时继续使用 `DocsDetailHandoffSource.profileRecentDocument`，详情返回后仍回到 profile，不落到 docs 列表或 discover
+5. 本轮仍不扩展完整浏览历史中心、删除、清空、筛选、跨端同步治理、搜索历史、目录树、编辑、发布、版本历史、后端搜索改造、系统通知栏推送、完整通知中心或 Flutter 专属 BFF
+6. 当前验证已通过 `flutter test test/profile_page_test.dart test/smoke_test.dart`、`flutter test test/docs_page_test.dart`、`flutter test`、`flutter analyze`、`.\gradlew.bat :app:testDebugUnitTest` 与 `git diff --check`；Android 真机安装按用户要求暂缓，该小闭环可作为第八批首个落点收口
