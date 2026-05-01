@@ -199,7 +199,7 @@ void main() {
   testWidgets('long docs slugs do not overflow on narrow screens', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(360, 800);
+    tester.view.physicalSize = const Size(360, 1400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -219,6 +219,18 @@ void main() {
       find.text('A very long public docs slug card'),
       findsOneWidget,
     );
+    expect(tester.takeException(), isNull);
+
+    await tester.scrollUntilVisible(
+      find.text('打开文档'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('打开文档'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('只读上下文'), findsOneWidget);
+    expect(find.text('A very long public docs slug card'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
 
@@ -290,6 +302,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('打开来源：发现'), findsOneWidget);
+    expect(find.text('来源：发现'), findsOneWidget);
+    expect(find.text('只读上下文'), findsOneWidget);
+    expect(find.text('仅阅读，不提供编辑、发布或版本治理入口'), findsOneWidget);
     expect(find.text('返回来源'), findsOneWidget);
     expect(find.text('Read docs in Flutter.'), findsOneWidget);
     expect(recordedTargets, hasLength(1));
@@ -334,6 +349,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('打开来源：文档内链'), findsOneWidget);
+    expect(find.text('来源：文档内链'), findsOneWidget);
     expect(find.text('Public docs reading boundary detail'), findsOneWidget);
     expect(recordedTargets.last.slug, 'public-docs-reading-boundary');
     expect(recordedTargets.last.source, DocsDetailHandoffSource.docsLink);
@@ -398,6 +414,12 @@ void main() {
 
     expect(find.text('暂时无法加载文档详情'), findsOneWidget);
     expect(find.text('文档详情服务暂时不可用'), findsOneWidget);
+    expect(
+      find.text(
+        '目标地址：/docs/flutter-docs-scope。可以返回来源后重试，或稍后再次打开文档详情。',
+      ),
+      findsOneWidget,
+    );
   });
 }
 

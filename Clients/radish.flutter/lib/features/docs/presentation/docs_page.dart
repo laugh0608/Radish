@@ -222,6 +222,7 @@ class _DocsPageState extends State<DocsPage> {
                 _DocsErrorState(
                   title: '暂时无法加载文档详情',
                   message: detailState.errorMessage ?? '无法加载文档详情。',
+                  hint: _formatDetailErrorHint(detailState.slug),
                   onRetry: _detailController.refresh,
                 ),
               if (isDetailMode &&
@@ -473,11 +474,13 @@ class _DocsErrorState extends StatelessWidget {
     required this.title,
     required this.message,
     required this.onRetry,
+    this.hint,
   });
 
   final String title;
   final String message;
   final VoidCallback onRetry;
+  final String? hint;
 
   @override
   Widget build(BuildContext context) {
@@ -493,6 +496,13 @@ class _DocsErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(message),
+            if (hint != null && hint!.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                hint!,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: onRetry,
@@ -692,6 +702,7 @@ class _DocsDetailRoutePageState extends State<_DocsDetailRoutePage> {
                 _DocsErrorState(
                   title: '暂时无法加载文档详情',
                   message: state.errorMessage ?? '无法加载文档详情。',
+                  hint: _formatDetailErrorHint(widget.target.normalizedSlug),
                   onRetry: _controller.refresh,
                 ),
               if (state.isReady && state.detail != null)
@@ -842,20 +853,25 @@ class _DocsDetailContent extends StatelessWidget {
                   visualDensity: VisualDensity.compact,
                 ),
                 Chip(
-                  label: Text('/docs/${detail.slug}'),
+                  label: _DocsBoundedInlineText('/docs/${detail.slug}'),
                   visualDensity: VisualDensity.compact,
                 ),
                 if (detail.sourceType != null && detail.sourceType!.isNotEmpty)
                   Chip(
-                    label: Text(detail.sourceType!),
+                    label: _DocsBoundedInlineText(detail.sourceType!),
                     visualDensity: VisualDensity.compact,
                   ),
                 if (source != null)
                   Chip(
-                    label: Text(source!.label),
+                    label: Text('来源：${source!.label}'),
                     visualDensity: VisualDensity.compact,
                   ),
               ],
+            ),
+            const SizedBox(height: 16),
+            _DocsDetailContextPanel(
+              detail: detail,
+              source: source,
             ),
             const SizedBox(height: 16),
             Text(
@@ -902,6 +918,102 @@ class _DocsDetailContent extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _DocsDetailContextPanel extends StatelessWidget {
+  const _DocsDetailContextPanel({
+    required this.detail,
+    required this.source,
+  });
+
+  final DocsDocumentDetail detail;
+  final DocsDetailHandoffSource? source;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.8),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '只读上下文',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 12),
+            _DocsContextLine(
+              icon: Icons.route_outlined,
+              label: '来源',
+              value: source?.label ?? '文档列表',
+            ),
+            const SizedBox(height: 8),
+            _DocsContextLine(
+              icon: Icons.link_outlined,
+              label: '地址',
+              value: detail.slug.isEmpty ? '文档地址不可用' : '/docs/${detail.slug}',
+            ),
+            const SizedBox(height: 8),
+            const _DocsContextLine(
+              icon: Icons.lock_outline,
+              label: '边界',
+              value: '仅阅读，不提供编辑、发布或版本治理入口',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DocsContextLine extends StatelessWidget {
+  const _DocsContextLine({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 44,
+          child: Text(
+            label,
+            style: textTheme.labelMedium,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: textTheme.bodyMedium,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1022,4 +1134,13 @@ String _formatStatus(int? status) {
     default:
       return '状态未知';
   }
+}
+
+String? _formatDetailErrorHint(String? slug) {
+  final normalizedSlug = slug?.trim();
+  if (normalizedSlug == null || normalizedSlug.isEmpty) {
+    return '可以返回来源后重试，或稍后再次打开文档详情。';
+  }
+
+  return '目标地址：/docs/$normalizedSlug。可以返回来源后重试，或稍后再次打开文档详情。';
 }

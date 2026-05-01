@@ -301,3 +301,11 @@ Flutter 客户端第一批固定遵循以下约束：
 3. 复访、轻回应、公开帖子与公开评论区块描述文案已收短，减少重复边界说明；边界仍通过公开只读口径、回跳来源与回归记录约束
 4. 本轮仍不新增后端 API、Flutter 专属 BFF、完整浏览历史中心、删除、清空、筛选、跨端同步、系统通知栏推送或完整通知中心
 5. 当前验证已通过 `flutter test test/profile_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter analyze` 与 `git diff --check`；Android 真机 APK 安装按个人开发阶段口径暂缓到正式 release 包发布前
+
+截至 `2026-05-01` 的第十一批首个落地事实：
+
+1. Flutter docs 详情只读上下文补强已完成代码与自动化验证：详情正文顶部新增轻量只读上下文，明确来源、公开地址与“仅阅读，不提供编辑、发布或版本治理入口”的边界
+2. docs 详情 slug 与来源类型芯片改为受控宽度显示，长 slug 在窄屏详情页不再撑破布局；详情上下文中的公开地址也会限制为两行省略
+3. docs 详情错误态新增目标 `/docs/:slug` 提示，并明确可返回来源后重试，避免只显示服务错误而丢失用户当前要打开的文档上下文
+4. 本轮继续复用现有 docs 列表、docs detail、`DocsDetailHandoffTarget`、正文内链跳转与公开只读边界，不新增后端 API、Flutter 专属 BFF、目录树、编辑、发布、版本历史、完整 Markdown 引擎或完整浏览历史治理
+5. 当前验证已通过 `flutter test test/docs_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter analyze` 与 `git diff --check`；Android 真机 APK 安装按个人开发阶段口径暂缓到正式 release 包发布前
