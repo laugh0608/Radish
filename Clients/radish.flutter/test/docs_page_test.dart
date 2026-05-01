@@ -155,6 +155,47 @@ void main() {
     expect(find.text('Public docs reading boundary detail'), findsNothing);
   });
 
+  testWidgets('searched detail return restores list scroll context', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(420, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DocsPage(
+          environment: const AppEnvironment.development(),
+          repository: _ManySearchDocsRepository(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), ' guide ');
+    await tester.tap(find.text('搜索文档'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('“guide” 共 16 篇文档'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Guide doc 12'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Guide doc 12'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Guide doc 12 detail'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('“guide” 共 16 篇文档'), findsOneWidget);
+    expect(find.text('Guide doc 12'), findsOneWidget);
+    expect(tester.getTopLeft(find.text('Guide doc 12')).dy, lessThan(800));
+    expect(find.text('Guide doc 12 detail'), findsNothing);
+  });
+
   testWidgets('long docs slugs do not overflow on narrow screens', (
     tester,
   ) async {
@@ -500,6 +541,67 @@ class _LongSlugDocsRepository implements DocsRepository {
       title: 'A very long public docs slug card',
       slug: slug,
       markdownContent: '# Long slug',
+    );
+  }
+}
+
+class _ManySearchDocsRepository implements DocsRepository {
+  static final _documents = List<DocsDocumentSummary>.generate(
+    16,
+    (index) {
+      final number = index + 1;
+      return DocsDocumentSummary(
+        id: 'guide-$number',
+        title: 'Guide doc $number',
+        slug: 'guide-doc-$number',
+        summary: 'Searchable guide result $number.',
+        publishedAt: '2026-04-20T08:00:00Z',
+      );
+    },
+  );
+
+  @override
+  Future<DocsDocumentPage> getDocumentPage({
+    required int pageIndex,
+    required int pageSize,
+    String? keyword,
+  }) async {
+    final normalizedKeyword = keyword?.trim().toLowerCase();
+    final documents = _documents.where((document) {
+      if (normalizedKeyword == null || normalizedKeyword.isEmpty) {
+        return true;
+      }
+
+      return document.title.toLowerCase().contains(normalizedKeyword) ||
+          document.slug.toLowerCase().contains(normalizedKeyword) ||
+          (document.summary?.toLowerCase().contains(normalizedKeyword) ??
+              false);
+    }).toList();
+
+    return DocsDocumentPage(
+      page: 1,
+      pageSize: pageSize,
+      dataCount: documents.length,
+      pageCount: 1,
+      documents: documents,
+    );
+  }
+
+  @override
+  Future<DocsDocumentDetail> getDocumentDetail({
+    required String slug,
+  }) async {
+    final title =
+        _documents.firstWhere((document) => document.slug == slug).title;
+
+    return DocsDocumentDetail(
+      id: slug,
+      title: '$title detail',
+      slug: slug,
+      markdownContent: '# $title\nSearch result detail body.',
+      visibility: 1,
+      status: 1,
+      publishedAt: '2026-04-20T08:00:00Z',
     );
   }
 }

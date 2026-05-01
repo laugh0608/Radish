@@ -67,6 +67,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
   DocsDetailHandoffTarget? _recentDocumentTarget;
   ForumDetailHandoffTarget? _latestForumNotificationTarget;
   ShellPostLoginTarget? _pendingPostLoginTarget;
+  VoidCallback? _docsInlineDetailBackHandler;
   int? _tabReturnIndex;
   late bool _wasAuthenticated;
 
@@ -169,6 +170,12 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
   }
 
   Future<void> _handleRootBack() async {
+    final docsInlineDetailBackHandler = _docsInlineDetailBackHandler;
+    if (_currentIndex == 2 && docsInlineDetailBackHandler != null) {
+      docsInlineDetailBackHandler();
+      return;
+    }
+
     final returnIndex = _tabReturnIndex;
     if (returnIndex != null && returnIndex != _currentIndex) {
       setState(() {
@@ -398,6 +405,10 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     setState(() {
       _docsHandoffTarget = null;
     });
+  }
+
+  void _setDocsInlineDetailBackHandler(VoidCallback? handler) {
+    _docsInlineDetailBackHandler = handler;
   }
 
   void _resumeRecentBrowseHandoff() {
@@ -721,6 +732,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
             handoffTarget: _docsHandoffTarget,
             onConsumeHandoffTarget: _consumeDocsHandoffTarget,
             onRecordDocumentTarget: _recordRecentDocumentTarget,
+            onInlineDetailBackHandlerChanged: _setDocsInlineDetailBackHandler,
           ),
           ProfilePage(
             sessionController: widget.sessionController,

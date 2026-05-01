@@ -259,3 +259,11 @@ Flutter 客户端第一批固定遵循以下约束：
 4. 本轮继续复用现有 `PostQuickReply` 契约、`ForumDetailHandoffTarget`、forum detail 原地登录续接与最近阅读语义，不新增后端 API、Flutter 专属 BFF 或独立互动系统
 5. 本轮仍不开放删除、举报、完整评论提交、点赞、投票、编辑治理、完整通知中心或系统通知栏推送
 6. 当前验证已通过 `flutter test test/forum_detail_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter test`、`flutter analyze`、`git diff --check` 与 Android 真机人工复核；该小闭环可作为第六批落点收口
+
+截至 `2026-05-01` 的第七批首个落地事实：
+
+1. Flutter docs 搜索体验小增强已完成代码与自动化验证：从搜索结果滚动到较深位置并打开内联文档详情后，返回列表会恢复原搜索结果附近的滚动上下文，而不是回到不确定位置
+2. 搜索关键词提交时会先按现有 `Wiki/GetList?keyword=...` 契约做本地 trim 归一化，并把输入框同步为实际搜索词；清除搜索、切换分页与重新搜索时会回到结果顶部
+3. 本轮继续复用现有 docs 列表、docs detail、`DocsDetailHandoffTarget` 与公开只读边界，不新增后端 API、Flutter 专属 BFF、搜索建议、历史搜索、全文高亮、目录树、编辑、发布、版本历史或完整浏览历史治理
+4. 真机复核发现“从搜索结果进入文档详情后 Android Back 直接退到桌面”的壳层返回分流问题，当前已收口为 `DocsPage` 向 `RadishFlutterShell` 暴露内联详情返回处理器；文档 tab 处于内联详情态时，根层 Back 会优先回到搜索列表，不再触发退到桌面
+5. 当前验证已通过 `flutter test test/docs_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter analyze` 与 `git diff --check`；Android 真机复核已确认通过，该小闭环可作为第七批首个落点收口

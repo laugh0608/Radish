@@ -15,6 +15,7 @@ class DocsPage extends StatefulWidget {
     this.handoffTarget,
     this.onConsumeHandoffTarget,
     this.onRecordDocumentTarget,
+    this.onInlineDetailBackHandlerChanged,
     super.key,
   });
 
@@ -23,6 +24,7 @@ class DocsPage extends StatefulWidget {
   final DocsDetailHandoffTarget? handoffTarget;
   final VoidCallback? onConsumeHandoffTarget;
   final ValueChanged<DocsDetailHandoffTarget>? onRecordDocumentTarget;
+  final ValueChanged<VoidCallback?>? onInlineDetailBackHandlerChanged;
 
   @override
   State<DocsPage> createState() => _DocsPageState();
@@ -32,6 +34,9 @@ class _DocsPageState extends State<DocsPage> {
   late DocsFeedController _feedController;
   late DocsDetailController _detailController;
   late TextEditingController _searchController;
+  late ScrollController _scrollController;
+  double _feedScrollOffset = 0;
+  bool _reportedInlineDetailMode = false;
   String? _handledHandoffSignature;
 
   @override
@@ -43,7 +48,9 @@ class _DocsPageState extends State<DocsPage> {
     _detailController = DocsDetailController(
       repository: widget.repository,
     );
+    _detailController.addListener(_handleInlineDetailBackHandlerChanged);
     _searchController = TextEditingController();
+    _scrollController = ScrollController();
     _feedController.loadInitial();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _openHandoffTargetIfNeeded();
@@ -56,6 +63,7 @@ class _DocsPageState extends State<DocsPage> {
 
     if (oldWidget.repository != widget.repository) {
       _feedController.dispose();
+      _detailController.removeListener(_handleInlineDetailBackHandlerChanged);
       _detailController.dispose();
       _feedController = DocsFeedController(
         repository: widget.repository,
@@ -63,9 +71,18 @@ class _DocsPageState extends State<DocsPage> {
       _detailController = DocsDetailController(
         repository: widget.repository,
       );
+      _detailController.addListener(_handleInlineDetailBackHandlerChanged);
       _searchController.text = '';
+      _feedScrollOffset = 0;
+      _reportedInlineDetailMode = false;
+      _reportInlineDetailBackHandler(force: true);
       _feedController.loadInitial();
       _handledHandoffSignature = null;
+    }
+
+    if (oldWidget.onInlineDetailBackHandlerChanged !=
+        widget.onInlineDetailBackHandlerChanged) {
+      _reportInlineDetailBackHandler(force: true);
     }
 
     if (oldWidget.handoffTarget != null && widget.handoffTarget == null) {
@@ -82,8 +99,11 @@ class _DocsPageState extends State<DocsPage> {
   @override
   void dispose() {
     _feedController.dispose();
+    _detailController.removeListener(_handleInlineDetailBackHandlerChanged);
     _detailController.dispose();
     _searchController.dispose();
+    _scrollController.dispose();
+    widget.onInlineDetailBackHandlerChanged?.call(null);
     super.dispose();
   }
 
@@ -103,9 +123,10 @@ class _DocsPageState extends State<DocsPage> {
               return;
             }
 
-            _detailController.close();
+            _closeInlineDetail();
           },
           child: ListView(
+            controller: _scrollController,
             padding: const EdgeInsets.all(20),
             children: [
               Text(
@@ -155,9 +176,8 @@ class _DocsPageState extends State<DocsPage> {
                 children: [
                   if (isDetailMode)
                     OutlinedButton.icon(
-                      onPressed: detailState.isLoading
-                          ? null
-                          : _detailController.close,
+                      onPressed:
+                          detailState.isLoading ? null : _closeInlineDetail,
                       icon: const Icon(Icons.arrow_back),
                       label: const Text('返回文档列表'),
                     ),
@@ -188,10 +208,10 @@ class _DocsPageState extends State<DocsPage> {
                   state: feedState,
                   onOpenDocument: _openDocumentFromList,
                   onPreviousPage: feedState.hasPreviousPage
-                      ? () => _feedController.goToPage(feedState.pageIndex - 1)
+                      ? () => _goToDocsPage(feedState.pageIndex - 1)
                       : null,
                   onNextPage: feedState.hasNextPage
-                      ? () => _feedController.goToPage(feedState.pageIndex + 1)
+                      ? () => _goToDocsPage(feedState.pageIndex + 1)
                       : null,
                 ),
               if (isDetailMode && detailState.isLoading)
@@ -223,6 +243,7 @@ class _DocsPageState extends State<DocsPage> {
       return;
     }
 
+    _rememberFeedScrollOffset();
     widget.onRecordDocumentTarget?.call(
       DocsDetailHandoffTarget(
         slug: document.slug,
@@ -234,12 +255,85 @@ class _DocsPageState extends State<DocsPage> {
   }
 
   void _searchDocs() {
-    _feedController.search(_searchController.text);
+    final normalizedKeyword = _searchController.text.trim();
+    _syncSearchControllerText(normalizedKeyword);
+    _feedController.search(normalizedKeyword);
+    _scrollFeedToTopAfterFrame();
   }
 
   void _clearDocsSearch() {
     _searchController.clear();
     _feedController.clearSearch();
+    _scrollFeedToTopAfterFrame();
+  }
+
+  void _goToDocsPage(int pageIndex) {
+    _feedController.goToPage(pageIndex);
+    _scrollFeedToTopAfterFrame();
+  }
+
+  void _closeInlineDetail() {
+    _detailController.close();
+    _restoreFeedScrollOffset();
+  }
+
+  void _handleInlineDetailBackHandlerChanged() {
+    _reportInlineDetailBackHandler();
+  }
+
+  void _reportInlineDetailBackHandler({bool force = false}) {
+    final isDetailMode = !_detailController.state.isIdle;
+    if (!force && _reportedInlineDetailMode == isDetailMode) {
+      return;
+    }
+
+    _reportedInlineDetailMode = isDetailMode;
+    widget.onInlineDetailBackHandlerChanged?.call(
+      isDetailMode ? _closeInlineDetail : null,
+    );
+  }
+
+  void _rememberFeedScrollOffset() {
+    if (!_scrollController.hasClients) {
+      return;
+    }
+
+    _feedScrollOffset = _scrollController.offset;
+  }
+
+  void _restoreFeedScrollOffset() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) {
+        return;
+      }
+
+      final maxScrollExtent = _scrollController.position.maxScrollExtent;
+      final targetOffset =
+          _feedScrollOffset.clamp(0.0, maxScrollExtent).toDouble();
+      _scrollController.jumpTo(targetOffset);
+    });
+  }
+
+  void _scrollFeedToTopAfterFrame() {
+    _feedScrollOffset = 0;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) {
+        return;
+      }
+
+      _scrollController.jumpTo(0);
+    });
+  }
+
+  void _syncSearchControllerText(String keyword) {
+    if (_searchController.text == keyword) {
+      return;
+    }
+
+    _searchController.value = TextEditingValue(
+      text: keyword,
+      selection: TextSelection.collapsed(offset: keyword.length),
+    );
   }
 
   void _openHandoffTargetIfNeeded() {

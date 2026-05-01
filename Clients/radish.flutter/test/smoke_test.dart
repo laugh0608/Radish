@@ -1591,6 +1591,7 @@ void main() {
       sessionStore: InMemorySessionStore(),
       refreshService: _FakeSessionRefreshService.missing(),
     );
+    final lifecycleGateway = _RecordingAppLifecycleGateway();
 
     await tester.pumpWidget(
       RadishApp(
@@ -1603,6 +1604,7 @@ void main() {
         profileRepository: _FakeProfileRepository(),
         followUpStore: InMemoryForumFollowUpStore(),
         docsFollowUpStore: InMemoryDocsFollowUpStore(),
+        appLifecycleGateway: lifecycleGateway,
       ),
     );
 
@@ -1627,6 +1629,14 @@ void main() {
 
     expect(find.text('文档详情'), findsWidgets);
     expect(find.text('Doc public-docs-reading-boundary'), findsWidgets);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(lifecycleGateway.moveTaskToBackCallCount, 0);
+    expect(find.text('“boundary” 共 1 篇文档'), findsOneWidget);
+    expect(find.text('Public docs reading boundary'), findsOneWidget);
+    expect(find.text('Doc public-docs-reading-boundary'), findsNothing);
   });
 
   testWidgets('profile recent document handoff returns to profile after pop',
