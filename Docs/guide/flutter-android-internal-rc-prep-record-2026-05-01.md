@@ -10,6 +10,7 @@
 - 以内测 RC 前置为目标，整理当前已具备条件、仍缺材料、最小验收入口与非阻断项
 - Android MVP 当前仍可判断为内部 / 小范围 RC 候选链路成立
 - 外部分发在个人开发阶段暂缓；真实签名材料后续已由用户本机补齐并通过检查，testing Gateway、测试账号 / 测试数据、分发对象与反馈回收方式留到正式 release 包发布前再补
+- 暂缓真机 APK 安装与外部分发验收，不代表暂停开发中的模拟器功能验证；后续功能推进可继续使用 Android Studio 模拟器 / AVD 做页面、导航、登录回跳与 Gateway 接线验证
 - 缺少上述外部分发材料时，不回头扩张系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理
 
 ### 当前已具备条件
@@ -94,6 +95,7 @@ APK 安装后，真机复核至少覆盖：
   - 后续复核：用户本机补齐 `key.properties` 与 `upload-keystore.jks` 后，`.\gradlew.bat :app:checkReleaseSigningConfig` 通过，输出 `Android release signing material is ready: upload-keystore.jks`
 - Android 真机复核：未执行
 - 原因：测试 Gateway 与分发对象尚未在本轮提供，且用户确认暂时跳过真机安装；当前只完成可在本机环境执行的自动化预检、本地 release 构建预检与签名材料诊断
+- 说明：本轮跳过的是 Android 真机 APK 安装与外部分发验收；Android Studio 模拟器 / AVD 功能测试仍可作为后续开发中的人工验证入口，但不替代正式 release 包发布前的真机安装验收
 
 ### 结论
 
@@ -107,5 +109,6 @@ APK 安装后，真机复核至少覆盖：
 
 - 调整日期：2026-05-01
 - 个人开发阶段暂缓 testing Gateway、测试对象、反馈闭环、真机 APK 安装与外部分发验收
+- 上述暂缓不限制 Android Studio 模拟器 / AVD 在开发阶段继续用于功能测试；模拟器验证和真机 APK 安装 / release 分发验收应分开记录、分开判断
 - 上述动作统一留到正式 release 包发布前，再按 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution) 补齐
 - 暂缓分发线不构成当前产品功能阻塞，后续可继续选择窄范围复访或只读体验补强作为 Flutter MVP 产品小闭环

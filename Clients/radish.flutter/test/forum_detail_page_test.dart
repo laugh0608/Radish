@@ -37,6 +37,13 @@ void main() {
     );
 
     expect(find.text('评论'), findsOneWidget);
+    expect(find.text('只读上下文'), findsOneWidget);
+    expect(find.text('应用内打开'), findsWidgets);
+    expect(find.text('/forum/post/post-42'), findsWidgets);
+    expect(
+      find.text('仅阅读与最小轻回应，不提供评论提交、点赞、投票或编辑入口'),
+      findsOneWidget,
+    );
     expect(find.text('共 2 条轻回应'), findsOneWidget);
     expect(find.text('radish：学到了'), findsOneWidget);
     expect(find.text('已加载 2 / 3 条根评论'), findsWidgets);
@@ -67,6 +74,100 @@ void main() {
     expect(find.text('已加载 2 / 2 条回复'), findsOneWidget);
     expect(find.text('Child comment two'), findsOneWidget);
     expect(find.text('加载更多回复'), findsNothing);
+  });
+
+  testWidgets('renders handoff source and comment target context',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: _PagedForumRepository(),
+          postId: '2042219067430928384',
+          handoffSource: ForumDetailHandoffSource.notification,
+          commentId: 'reply-2',
+          initialTitle: '论坛详情回流',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('只读上下文'), findsOneWidget);
+    expect(find.text('通知回流'), findsWidgets);
+    expect(find.text('/forum/post/2042219067430928384'), findsWidgets);
+    expect(find.text('reply-2'), findsOneWidget);
+  });
+
+  testWidgets('detail error keeps target source and retry context',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: _DetailFailingForumRepository(),
+          postId: 'post-error-42',
+          handoffSource: ForumDetailHandoffSource.profileRecentBrowse,
+          commentId: 'comment-error-1',
+          initialTitle: '论坛详情回流',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('暂时无法加载帖子详情'), findsOneWidget);
+    expect(find.text('详情服务暂时不可用'), findsOneWidget);
+    expect(find.text('我的最近阅读'), findsWidgets);
+    expect(find.text('/forum/post/post-error-42'), findsOneWidget);
+    expect(find.text('comment-error-1'), findsOneWidget);
+    expect(
+      find.textContaining('目标评论：comment-error-1'),
+      findsOneWidget,
+    );
+    expect(find.text('重试'), findsOneWidget);
+  });
+
+  testWidgets('comment navigation failure keeps detail readable',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: _CommentNavigationFailingForumRepository(),
+          postId: 'post-42',
+          handoffSource: ForumDetailHandoffSource.publicProfileComment,
+          commentId: 'missing-comment-1',
+          initialTitle: '论坛详情回流',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('暂时无法定位目标评论 missing-comment-1，已先打开帖子详情。'),
+      findsOneWidget,
+    );
+    expect(find.text('论坛详情回流'), findsWidgets);
+    expect(find.text('Native detail'), findsOneWidget);
+    expect(find.text('个人主页评论'), findsWidgets);
+    expect(find.text('missing-comment-1'), findsOneWidget);
   });
 
   testWidgets('renders comment error state separately from detail',
@@ -658,6 +759,27 @@ class _QuickReplySubmitFailingForumRepository extends _PagedForumRepository {
     required String accessToken,
   }) {
     throw const RadishApiClientException('轻回应服务暂时不可用');
+  }
+}
+
+class _DetailFailingForumRepository extends _PagedForumRepository {
+  @override
+  Future<ForumPostDetail> getPostDetail({
+    required String postId,
+  }) {
+    throw const RadishApiClientException('详情服务暂时不可用');
+  }
+}
+
+class _CommentNavigationFailingForumRepository extends _PagedForumRepository {
+  @override
+  Future<ForumCommentNavigationLocation> getCommentNavigation({
+    required String postId,
+    required String commentId,
+    required int rootPageSize,
+    required int childPageSize,
+  }) {
+    throw const RadishApiClientException('评论定位服务暂时不可用');
   }
 }
 

@@ -275,6 +275,7 @@ Flutter 客户端第一批固定遵循以下约束：
 3. 真实签名材料已由用户本机补齐并通过 `:app:checkReleaseSigningConfig`；testing Gateway、测试账号 / 测试数据、分发对象、反馈回收方式与真机安装复核在个人开发阶段暂缓，正式 release 包发布前再补，这些前置缺失不构成当前业务功能阻塞
 4. 本轮已补 [Flutter Android MVP 内测分发前置整理记录（2026-05-01）](/guide/flutter-android-internal-rc-prep-record-2026-05-01)，并同步 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution) 中的内测 RC 前置判断
 5. 个人开发阶段暂缓 testing Gateway release APK 构建、真机验收与批次级外部分发回归留痕；上述动作统一留到正式 release 包发布前再按 RC 清单补齐，不回头扩系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理
+6. 暂缓真机 APK 安装与外部分发验收，不代表暂停开发中的模拟器功能测试；后续 Flutter MVP 功能推进仍可按需使用 Android Studio 模拟器 / AVD 验证页面、导航、登录回跳与 Gateway 接线，模拟器验证不替代正式 release 包发布前的真机安装验收
 
 截至 `2026-05-01` 的第八批首个落地事实：
 
@@ -284,7 +285,7 @@ Flutter 客户端第一批固定遵循以下约束：
 4. 从 profile 内打开任意最近文档条目时继续使用 `DocsDetailHandoffSource.profileRecentDocument`，详情返回后仍回到 profile，不落到 docs 列表或 discover
 5. 本轮仍不扩展完整浏览历史中心、删除、清空、筛选、跨端同步治理、搜索历史、目录树、编辑、发布、版本历史、后端搜索改造、系统通知栏推送、完整通知中心或 Flutter 专属 BFF
 6. 当前验证已通过 `flutter test test/profile_page_test.dart test/smoke_test.dart`、`flutter test test/docs_page_test.dart`、`flutter test`、`flutter analyze`、`.\gradlew.bat :app:testDebugUnitTest` 与 `git diff --check`；后续收口复核已再次确认 profile / docs 定向测试、`flutter analyze` 与 Android JVM 单测通过；Android 真机安装按用户要求暂缓到正式 release 包发布前，该小闭环可作为第八批首个落点收口
-7. 下一步保持产品小闭环优先：个人开发阶段不再等待 testing Gateway、测试账号 / 测试数据、分发对象、反馈闭环、testing release APK 或真机验收；若继续功能，仍只从窄范围复访或只读体验补强中选择，不把暂缓分发验收误判为系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理的扩张信号
+7. 下一步保持产品小闭环优先：个人开发阶段不再等待 testing Gateway、测试账号 / 测试数据、分发对象、反馈闭环、testing release APK 或真机验收；若继续功能，仍只从窄范围复访或只读体验补强中选择，不把暂缓分发验收误判为系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理的扩张信号；开发中可继续使用 Android Studio 模拟器 / AVD 做功能测试，但不写作 release 前真机安装验收结论
 
 截至 `2026-05-01` 的第九批首个落地事实：
 
@@ -309,3 +310,12 @@ Flutter 客户端第一批固定遵循以下约束：
 3. docs 详情错误态新增目标 `/docs/:slug` 提示，并明确可返回来源后重试，避免只显示服务错误而丢失用户当前要打开的文档上下文
 4. 本轮继续复用现有 docs 列表、docs detail、`DocsDetailHandoffTarget`、正文内链跳转与公开只读边界，不新增后端 API、Flutter 专属 BFF、目录树、编辑、发布、版本历史、完整 Markdown 引擎或完整浏览历史治理
 5. 当前验证已通过 `flutter test test/docs_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter analyze` 与 `git diff --check`；Android 真机 APK 安装按个人开发阶段口径暂缓到正式 release 包发布前
+
+截至 `2026-05-01` 的第十二批首个落地事实：
+
+1. Flutter forum detail 来源上下文与错误态补强已完成代码与自动化验证：详情正文顶部新增轻量只读上下文，明确来源、公开地址、可选评论定位目标与“仅阅读与最小轻回应，不提供评论提交、点赞、投票或编辑入口”的边界
+2. forum detail 详情错误态新增目标 `/forum/post/:postId`、来源与可选 `commentId` 提示，并明确可返回来源后重试，避免只显示服务错误而丢失用户当前要打开的帖子 / 评论上下文
+3. 评论定位失败提示会带出目标评论 ID，并继续作为局部提示保留帖子正文、轻回应和评论阅读，不把定位失败升级为整页失败
+4. forum detail 的公开地址 chip 与基础 meta 文本改为受控宽度显示，长帖子 ID、长分类或长时间文本在窄屏详情页不再撑破布局
+5. 本轮继续复用现有 forum detail、`ForumDetailHandoffTarget`、评论定位链路、轻回应墙与公开只读边界，不新增后端 API、Flutter 专属 BFF、完整通知中心、系统通知栏推送、发帖、完整评论提交、点赞、投票或编辑治理
+6. 当前验证已通过 `flutter test test/forum_detail_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter analyze` 与 `git diff --check`；Android 真机 APK 安装按个人开发阶段口径暂缓到正式 release 包发布前，开发中仍可按需补 Android Studio 模拟器 / AVD 功能测试

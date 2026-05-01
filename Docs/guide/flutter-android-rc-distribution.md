@@ -4,7 +4,7 @@
 >
 > 当前清单只处理 RC / release 前分发准备，不纳入商店发布、系统通知栏推送、完整通知中心或正式生产发布流程。
 >
-> 个人开发阶段暂缓 testing Gateway、真机 APK 安装与外部分发验收；这些动作统一留到正式 release 包发布前再执行。
+> 个人开发阶段暂缓 testing Gateway、真机 APK 安装与外部分发验收；这些动作统一留到正式 release 包发布前再执行。该暂缓只针对真实设备安装、release 包发布和外部分发验收，不禁止开发中继续使用 Android Studio 模拟器 / AVD 做功能验证。
 
 ## 前置边界
 
@@ -27,12 +27,13 @@
 8. discover 论坛精选直达 forum detail，以及 discover “进入论坛 / 进入文档”快捷入口的 Android Back 返回 discover 上下文
 9. docs 搜索结果进入内联详情后的 Android Back 返回搜索列表，不触发根层退到桌面
 
-当前 Android MVP 可作为“内部 / 小范围 RC 候选”继续准备，但个人开发阶段不强制推进外部分发验收。testing Gateway、真机 APK 安装、分发对象与反馈闭环统一留到正式 release 包发布前再补。当前批次回归记录见：[Flutter Android MVP 第七批首个小闭环变更回归记录（2026-05-01）](/guide/flutter-android-mvp-regression-record-2026-05-01)；内测分发前置整理见：[Flutter Android MVP 内测分发前置整理记录（2026-05-01）](/guide/flutter-android-internal-rc-prep-record-2026-05-01)。
+当前 Android MVP 可作为“内部 / 小范围 RC 候选”继续准备，但个人开发阶段不强制推进外部分发验收。testing Gateway、真机 APK 安装、分发对象与反馈闭环统一留到正式 release 包发布前再补。开发中仍可按需使用 Android Studio 模拟器 / AVD 连接本机或指定 Gateway 做功能验证；这类模拟器验证属于开发阶段验证，不等同于 release 前真机 APK 安装验收。当前批次回归记录见：[Flutter Android MVP 第七批首个小闭环变更回归记录（2026-05-01）](/guide/flutter-android-mvp-regression-record-2026-05-01)；内测分发前置整理见：[Flutter Android MVP 内测分发前置整理记录（2026-05-01）](/guide/flutter-android-internal-rc-prep-record-2026-05-01)。
 
 ## 个人开发阶段口径
 
 - 近期默认不部署 testing Gateway，不组织外部分发对象，也不要求每个产品小闭环后安装 APK 做真机验收
 - 本机自动化验证、Flutter analyzer、Android JVM 单测与必要的本地构建预检继续保留为开发阶段主要保障
+- Android Studio 模拟器 / AVD 功能测试可在开发中继续按需执行，用于验证页面、导航、登录回跳或 Gateway 接线；但它不替代正式 release 包发布前的真机 APK 安装验收
 - 真机 APK 安装、testing Gateway release 构建、测试账号 / 测试数据、分发对象、反馈闭环与批次级外部分发回归统一在正式 release 包发布前补齐
 - 这条分发线暂缓不构成 Flutter 产品功能阻塞，也不应被解释为需要提前扩系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理
 
@@ -57,6 +58,7 @@
 ### 暂缓时的处理
 
 - 个人开发阶段可暂缓 testing Gateway、分发对象、反馈闭环与真机安装，不判断为当前业务功能阻塞
+- 暂缓真机安装不等于暂停模拟器功能测试；Android Studio 模拟器 / AVD 可继续作为开发中人工验证入口，验证结果需按普通开发验证记录，不写作 release 真机验收结论
 - 若缺少真实签名材料，不判断为可外部分发；可继续做本地 debug-signing release 构建验证，但必须标注不能作为外部分发包
 - 若缺少测试 Gateway，不使用本机开发地址伪装测试环境；正式 release 包发布前再补测试环境或只记录本机联调结果
 - 若缺少分发对象与反馈闭环，不进入外部投放；正式 release 包发布前再明确测试范围与回收方式

@@ -179,7 +179,9 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
           commentId: widget.commentId,
         );
 
-        _schedulePendingCommentScroll();
+        if (state.isReady) {
+          _schedulePendingCommentScroll();
+        }
 
         return Scaffold(
           appBar: AppBar(
@@ -255,6 +257,9 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                 if (state.isError)
                   _ForumDetailErrorState(
                     message: state.errorMessage ?? '无法加载帖子详情。',
+                    postId: widget.postId,
+                    handoffSource: widget.handoffSource,
+                    commentId: _targetCommentId,
                     onRetry: _controller.refresh,
                   ),
                 if (state.isReady && detail != null)
@@ -375,14 +380,16 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
             '${navigation.commentId}:${navigation.rootPageIndex}:${navigation.childPageIndex ?? 0}';
         _pendingNavigationScrollAttempts = 0;
       });
-      _schedulePendingCommentScroll();
+      if (_controller.state.isReady) {
+        _schedulePendingCommentScroll();
+      }
     } on RadishApiClientException {
       if (!mounted) {
         return;
       }
 
       setState(() {
-        _navigationNotice = '暂时无法定位目标评论，已先打开帖子详情。';
+        _navigationNotice = '暂时无法定位目标评论 $commentId，已先打开帖子详情。';
         _expandedRootCommentId = null;
         _expandedChildPageIndex = null;
         _pendingNavigationSignature = null;
@@ -394,7 +401,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
       }
 
       setState(() {
-        _navigationNotice = '暂时无法定位目标评论，已先打开帖子详情。';
+        _navigationNotice = '暂时无法定位目标评论 $commentId，已先打开帖子详情。';
         _expandedRootCommentId = null;
         _expandedChildPageIndex = null;
         _pendingNavigationSignature = null;
@@ -489,14 +496,23 @@ class _ForumDetailLoadingState extends StatelessWidget {
 class _ForumDetailErrorState extends StatelessWidget {
   const _ForumDetailErrorState({
     required this.message,
+    required this.postId,
+    required this.handoffSource,
+    required this.commentId,
     required this.onRetry,
   });
 
   final String message;
+  final String postId;
+  final ForumDetailHandoffSource handoffSource;
+  final String? commentId;
   final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
+    final normalizedPostId = postId.trim();
+    final normalizedCommentId = commentId?.trim();
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -509,6 +525,37 @@ class _ForumDetailErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(message),
+            const SizedBox(height: 12),
+            _ForumContextLine(
+              icon: Icons.route_outlined,
+              label: '来源',
+              value: handoffSource.label,
+            ),
+            const SizedBox(height: 8),
+            _ForumContextLine(
+              icon: Icons.link_outlined,
+              label: '目标',
+              value: normalizedPostId.isEmpty
+                  ? '帖子地址不可用'
+                  : '/forum/post/$normalizedPostId',
+            ),
+            if (normalizedCommentId != null &&
+                normalizedCommentId.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              _ForumContextLine(
+                icon: Icons.comment_outlined,
+                label: '评论',
+                value: normalizedCommentId,
+              ),
+            ],
+            const SizedBox(height: 8),
+            Text(
+              _formatForumDetailErrorHint(
+                postId: normalizedPostId,
+                commentId: normalizedCommentId,
+              ),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: onRetry,
@@ -682,7 +729,7 @@ class _ForumDetailContent extends StatelessWidget {
                   visualDensity: VisualDensity.compact,
                 ),
                 Chip(
-                  label: Text('/forum/post/${detail.id}'),
+                  label: _ForumBoundedInlineText('/forum/post/${detail.id}'),
                   visualDensity: VisualDensity.compact,
                 ),
                 if (detail.contentType != null &&
@@ -702,6 +749,12 @@ class _ForumDetailContent extends StatelessWidget {
                     visualDensity: VisualDensity.compact,
                   ),
               ],
+            ),
+            const SizedBox(height: 16),
+            _ForumDetailContextPanel(
+              detail: detail,
+              source: handoffSource,
+              targetCommentId: targetCommentId,
             ),
             const SizedBox(height: 16),
             Text(
@@ -812,6 +865,75 @@ class _ForumDetailContent extends StatelessWidget {
               expandedChildPageIndex: expandedChildPageIndex,
               registerCommentKey: registerCommentKey,
               onOpenProfileUser: onOpenProfileUser,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ForumDetailContextPanel extends StatelessWidget {
+  const _ForumDetailContextPanel({
+    required this.detail,
+    required this.source,
+    required this.targetCommentId,
+  });
+
+  final ForumPostDetail detail;
+  final ForumDetailHandoffSource source;
+  final String? targetCommentId;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final normalizedCommentId = targetCommentId?.trim();
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.8),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '只读上下文',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 12),
+            _ForumContextLine(
+              icon: Icons.route_outlined,
+              label: '来源',
+              value: source.label,
+            ),
+            const SizedBox(height: 8),
+            _ForumContextLine(
+              icon: Icons.link_outlined,
+              label: '地址',
+              value: detail.id.isEmpty
+                  ? '帖子地址不可用'
+                  : '公开地址：/forum/post/${detail.id}',
+            ),
+            if (normalizedCommentId != null &&
+                normalizedCommentId.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              _ForumContextLine(
+                icon: Icons.comment_outlined,
+                label: '评论',
+                value: normalizedCommentId,
+              ),
+            ],
+            const SizedBox(height: 8),
+            const _ForumContextLine(
+              icon: Icons.lock_outline,
+              label: '边界',
+              value: '仅阅读与最小轻回应，不提供评论提交、点赞、投票或编辑入口',
             ),
           ],
         ),
@@ -1788,13 +1910,24 @@ class _ForumMetaText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final child = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 18),
-        const SizedBox(width: 6),
-        Text(text),
-      ],
+    final child = ConstrainedBox(
+      constraints: BoxConstraints(
+        maxWidth: _forumInlineMaxWidth(context),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
     );
 
     if (onTap == null) {
@@ -1810,6 +1943,71 @@ class _ForumMetaText extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ForumContextLine extends StatelessWidget {
+  const _ForumContextLine({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 44,
+          child: Text(
+            label,
+            style: textTheme.labelMedium,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: textTheme.bodyMedium,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ForumBoundedInlineText extends StatelessWidget {
+  const _ForumBoundedInlineText(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxWidth: _forumInlineMaxWidth(context),
+      ),
+      child: Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+}
+
+double _forumInlineMaxWidth(BuildContext context) {
+  return (MediaQuery.sizeOf(context).width - 80).clamp(160.0, 420.0);
 }
 
 String _formatDetailTime(String? value) {
@@ -1829,4 +2027,20 @@ String _formatDetailTime(String? value) {
   final hour = local.hour.toString().padLeft(2, '0');
   final minute = local.minute.toString().padLeft(2, '0');
   return '$year-$month-$day $hour:$minute';
+}
+
+String _formatForumDetailErrorHint({
+  required String postId,
+  required String? commentId,
+}) {
+  if (postId.isEmpty) {
+    return '可以返回来源后重试，或稍后再次打开帖子详情。';
+  }
+
+  final base = '目标地址：/forum/post/$postId。';
+  if (commentId == null || commentId.isEmpty) {
+    return '$base可以返回来源后重试，或稍后再次打开帖子详情。';
+  }
+
+  return '$base目标评论：$commentId。可以返回来源后重试，或稍后再次打开帖子详情。';
 }
