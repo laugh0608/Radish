@@ -2,7 +2,9 @@
 
 > 适用范围：`Phase 2-3 Flutter 客户端 MVP` 的 Android 测试环境 / 外部分发前置。
 >
-> 当前清单只处理 RC 分发准备，不纳入商店发布、系统通知栏推送、完整通知中心或正式生产发布流程。
+> 当前清单只处理 RC / release 前分发准备，不纳入商店发布、系统通知栏推送、完整通知中心或正式生产发布流程。
+>
+> 个人开发阶段暂缓 testing Gateway、真机 APK 安装与外部分发验收；这些动作统一留到正式 release 包发布前再执行。
 
 ## 前置边界
 
@@ -25,11 +27,18 @@
 8. discover 论坛精选直达 forum detail，以及 discover “进入论坛 / 进入文档”快捷入口的 Android Back 返回 discover 上下文
 9. docs 搜索结果进入内联详情后的 Android Back 返回搜索列表，不触发根层退到桌面
 
-当前 Android MVP 可作为“内部 / 小范围 RC 候选”继续准备，但外部分发仍需满足后续前置条件。当前批次回归记录见：[Flutter Android MVP 第七批首个小闭环变更回归记录（2026-05-01）](/guide/flutter-android-mvp-regression-record-2026-05-01)；内测分发前置整理见：[Flutter Android MVP 内测分发前置整理记录（2026-05-01）](/guide/flutter-android-internal-rc-prep-record-2026-05-01)。
+当前 Android MVP 可作为“内部 / 小范围 RC 候选”继续准备，但个人开发阶段不强制推进外部分发验收。testing Gateway、真机 APK 安装、分发对象与反馈闭环统一留到正式 release 包发布前再补。当前批次回归记录见：[Flutter Android MVP 第七批首个小闭环变更回归记录（2026-05-01）](/guide/flutter-android-mvp-regression-record-2026-05-01)；内测分发前置整理见：[Flutter Android MVP 内测分发前置整理记录（2026-05-01）](/guide/flutter-android-internal-rc-prep-record-2026-05-01)。
+
+## 个人开发阶段口径
+
+- 近期默认不部署 testing Gateway，不组织外部分发对象，也不要求每个产品小闭环后安装 APK 做真机验收
+- 本机自动化验证、Flutter analyzer、Android JVM 单测与必要的本地构建预检继续保留为开发阶段主要保障
+- 真机 APK 安装、testing Gateway release 构建、测试账号 / 测试数据、分发对象、反馈闭环与批次级外部分发回归统一在正式 release 包发布前补齐
+- 这条分发线暂缓不构成 Flutter 产品功能阻塞，也不应被解释为需要提前扩系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理
 
 ## 内测 RC 前置判断
 
-截至 `2026-05-01`，Android MVP 内部 / 小范围 RC 候选判断如下：
+截至 `2026-05-01`，Android MVP 内部 / 小范围 RC 候选判断如下；个人开发阶段暂不推进真实外部分发验收。
 
 ### 已具备
 
@@ -38,19 +47,20 @@
 - 当前客户端仍复用现有 API / Auth / Gateway 同源语义，不需要为 RC 分发临时新增 Flutter 专属 BFF
 - 当前非阻断功能边界已经明确，不把系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理拉入内测前置范围
 
-### 分发前必须补齐
+### 正式 release 包发布前必须补齐
 
 - 真实签名材料，并通过 `.\gradlew.bat :app:checkReleaseSigningConfig`
 - 稳定可访问的测试 Gateway，并在 release 构建时通过 `RADISH_GATEWAY_BASE_URL` 显式指定
 - 测试账号、测试数据、测试设备、分发对象、APK 交付方式与反馈回收方式
 - 一份批次级回归留痕，记录自动化结果、签名检查、release APK 构建参数、Gateway 基址、真机结论、已知非阻断项与未执行项
 
-### 缺失时的处理
+### 暂缓时的处理
 
-- 缺少真实签名材料时，不判断为可外部分发；可继续做本地 debug-signing release 构建验证，但必须标注不能作为外部分发包
-- 缺少测试 Gateway 时，不使用本机开发地址伪装测试环境；应等待测试环境或只记录本机联调结果
-- 缺少分发对象与反馈闭环时，不进入外部投放；应先明确测试范围与回收方式
-- 以上缺失均不构成当前业务功能阻塞，不应回头扩张 Flutter 产品范围
+- 个人开发阶段可暂缓 testing Gateway、分发对象、反馈闭环与真机安装，不判断为当前业务功能阻塞
+- 若缺少真实签名材料，不判断为可外部分发；可继续做本地 debug-signing release 构建验证，但必须标注不能作为外部分发包
+- 若缺少测试 Gateway，不使用本机开发地址伪装测试环境；正式 release 包发布前再补测试环境或只记录本机联调结果
+- 若缺少分发对象与反馈闭环，不进入外部投放；正式 release 包发布前再明确测试范围与回收方式
+- 以上暂缓均不应回头扩张 Flutter 产品范围
 
 ## 当前非阻断项
 
@@ -68,7 +78,7 @@
 
 ## 外部分发阻塞条件
 
-当前外部分发真正依赖以下条件，不应被误判为业务功能阻塞：
+正式 release 包发布前的外部分发真正依赖以下条件；个人开发阶段可暂缓，不应被误判为业务功能阻塞：
 
 1. **真实签名材料**
    - 需要安全准备 `key.properties` 与 keystore
@@ -137,7 +147,7 @@ flutter build apk --release --dart-define=RADISH_ENVIRONMENT=testing --dart-defi
 
 ## 分发前最小验收
 
-在准备外部分发前，至少确认：
+在正式 release 包发布前，至少确认：
 
 1. `flutter analyze` 通过
 2. `flutter test` 通过
@@ -150,7 +160,7 @@ flutter build apk --release --dart-define=RADISH_ENVIRONMENT=testing --dart-defi
 
 ## 建议执行顺序
 
-准备一次 Android MVP RC 外部分发时，建议按以下顺序执行：
+准备一次 Android MVP RC / release 外部分发时，建议按以下顺序执行：
 
 1. 确认测试 Gateway、测试账号、测试数据与外部分发对象已经就绪
 2. 准备正式签名材料，并执行 `.\gradlew.bat :app:checkReleaseSigningConfig`
@@ -159,4 +169,4 @@ flutter build apk --release --dart-define=RADISH_ENVIRONMENT=testing --dart-defi
 5. 在真机安装 APK，按 `Clients/radish.flutter/README.md` 的 Android 真机人工验证 checklist 复核
 6. 记录 APK 构建参数、Gateway 基址、自动化结果、真机结论与已知非阻断项
 
-如果任一前置条件缺失，应保持“RC 外部分发等待前置材料”的判断，不回头扩大 Flutter 功能范围。
+个人开发阶段可暂缓执行本节；正式 release 包发布前如果任一前置条件缺失，应保持“RC / release 外部分发等待前置材料”的判断，不回头扩大 Flutter 功能范围。

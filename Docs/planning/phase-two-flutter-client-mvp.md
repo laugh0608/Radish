@@ -153,7 +153,7 @@ Flutter 客户端第一批固定遵循以下约束：
 当前第三批完成并通过一轮 Android 真机复核后，优先顺序建议为：
 
 1. 先把第三批 Android 真机复核结论与 handoff 回归修复纳入收口记录
-2. Android RC 外部分发继续等待真实签名材料、测试 Gateway 与外部分发对象；在条件缺失前，不把外部分发作为业务开发阻断项
+2. Android RC 外部分发在个人开发阶段暂缓；正式 release 包发布前再补 testing Gateway、测试对象、反馈闭环与真机验收，不把分发线作为业务开发阻断项
 3. 若继续进入第四批，优先选择“复访深化 + 已登录轻互动回看”这一条小闭环，不同时扩完整通知中心、系统推送、发帖、完整评论提交、点赞、投票或编辑治理
 4. Windows / Linux 平台目录与更深原生能力继续后置，需等 Android MVP 产品闭环与分发条件更稳定后再评估
 
@@ -238,7 +238,7 @@ Flutter 客户端第一批固定遵循以下约束：
 截至 `2026-04-30` 的 Android MVP 收口复核与 RC 前置整理：
 
 1. Android MVP 当前已具备内部 / 小范围 RC 候选链路：登录、退出、会话恢复、四个主 tab 真实读取、forum feed / detail / 评论阅读、轻回应最小闭环、最小 forum notification 回流、profile / docs / discover 复访与返回上下文均已纳入已验证面
-2. 外部分发仍依赖真实签名材料、测试 Gateway、外部分发对象与批次级回归留痕；这些前置条件缺失不应被误判为业务功能阻塞
+2. 外部分发在正式 release 包发布前仍依赖 testing Gateway、外部分发对象、真机验收与批次级回归留痕；这些前置条件在个人开发阶段暂缓，不应被误判为业务功能阻塞
 3. RC 前置判断已收口到 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution)，后续准备分发时按该清单执行，不在分发前置批次临时扩系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理
 4. Android MVP 收口复核与 RC 前置清单整理作为维护项已完成，不再作为第五批功能候选；第五批若启动，应另选一个窄范围产品小闭环
 
@@ -272,9 +272,9 @@ Flutter 客户端第一批固定遵循以下约束：
 
 1. 第七批首个小闭环收口后，当前下一步优先转向 Android MVP 内测分发前置整理，不启动第八批功能扩张
 2. Android MVP 内部 / 小范围 RC 候选链路继续成立：登录、退出、会话恢复、四个主 tab 真实读取、forum feed / detail / 评论阅读、轻回应最小闭环、最小 forum notification 回流、profile / docs / discover 复访与返回上下文均已纳入已有验证面
-3. 真实签名材料已由用户本机补齐并通过 `:app:checkReleaseSigningConfig`；实际外部分发仍依赖 testing Gateway、测试账号 / 测试数据、分发对象、反馈回收方式与真机安装复核，这些前置缺失不构成当前业务功能阻塞
+3. 真实签名材料已由用户本机补齐并通过 `:app:checkReleaseSigningConfig`；testing Gateway、测试账号 / 测试数据、分发对象、反馈回收方式与真机安装复核在个人开发阶段暂缓，正式 release 包发布前再补，这些前置缺失不构成当前业务功能阻塞
 4. 本轮已补 [Flutter Android MVP 内测分发前置整理记录（2026-05-01）](/guide/flutter-android-internal-rc-prep-record-2026-05-01)，并同步 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution) 中的内测 RC 前置判断
-5. 后续若准备实际内测 APK，应按 RC 清单补齐 testing Gateway release APK 构建、真机验收与批次级回归留痕；若材料仍缺失，则保持等待状态，不回头扩系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理
+5. 个人开发阶段暂缓 testing Gateway release APK 构建、真机验收与批次级外部分发回归留痕；上述动作统一留到正式 release 包发布前再按 RC 清单补齐，不回头扩系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理
 
 截至 `2026-05-01` 的第八批首个落地事实：
 
@@ -283,4 +283,5 @@ Flutter 客户端第一批固定遵循以下约束：
 3. Android 本地持久化已兼容旧的单条 `docs_recent_document_target`：新列表最多保留 5 条，按 `slug` 去重并保持最近打开优先
 4. 从 profile 内打开任意最近文档条目时继续使用 `DocsDetailHandoffSource.profileRecentDocument`，详情返回后仍回到 profile，不落到 docs 列表或 discover
 5. 本轮仍不扩展完整浏览历史中心、删除、清空、筛选、跨端同步治理、搜索历史、目录树、编辑、发布、版本历史、后端搜索改造、系统通知栏推送、完整通知中心或 Flutter 专属 BFF
-6. 当前验证已通过 `flutter test test/profile_page_test.dart test/smoke_test.dart`、`flutter test test/docs_page_test.dart`、`flutter test`、`flutter analyze`、`.\gradlew.bat :app:testDebugUnitTest` 与 `git diff --check`；Android 真机安装按用户要求暂缓，该小闭环可作为第八批首个落点收口
+6. 当前验证已通过 `flutter test test/profile_page_test.dart test/smoke_test.dart`、`flutter test test/docs_page_test.dart`、`flutter test`、`flutter analyze`、`.\gradlew.bat :app:testDebugUnitTest` 与 `git diff --check`；后续收口复核已再次确认 profile / docs 定向测试、`flutter analyze` 与 Android JVM 单测通过；Android 真机安装按用户要求暂缓到正式 release 包发布前，该小闭环可作为第八批首个落点收口
+7. 下一步保持产品小闭环优先：个人开发阶段不再等待 testing Gateway、测试账号 / 测试数据、分发对象、反馈闭环、testing release APK 或真机验收；若继续功能，仍只从窄范围复访或只读体验补强中选择，不把暂缓分发验收误判为系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理的扩张信号

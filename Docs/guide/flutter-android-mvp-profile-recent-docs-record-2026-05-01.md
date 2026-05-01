@@ -35,6 +35,19 @@
 - 本轮触达 Android `MainActivity` 的 docs follow-up MethodChannel 存储桥，因此补充 Android 平台 JVM 单测
 - 本轮未触达后端接口契约、数据库迁移、身份协议输出或 Gateway 配置；身份影响门禁仅命中文档默认执行面，因此未追加后端 baseline、host baseline 或身份专题回归
 
+### 后续收口复核
+
+- 复核日期：2026-05-01
+- `flutter test test/profile_page_test.dart test/smoke_test.dart`：通过
+- `flutter test test/docs_page_test.dart`：通过
+- `flutter analyze`：通过
+- `.\gradlew.bat :app:testDebugUnitTest`：通过，使用 Android Studio JBR
+
+说明：
+
+- 本次复核只确认第八批小闭环的代码与自动化状态仍成立，不追加客户端功能
+- 本次仍不执行 testing Gateway release APK 构建、真机安装或外部分发验收；这些动作暂缓到正式 release 包发布前
+
 ### 人工验收
 
 - 执行情况：未执行
@@ -52,9 +65,9 @@
 
 - `profile` 最近文档轻量多条列表已完成代码与自动化验证，可作为第八批首个窄范围小闭环收口
 - 本轮继续保持公开只读边界，不扩展完整浏览历史中心、删除、清空、跨端同步、搜索历史、目录树、编辑、发布、版本历史或后端搜索改造
-- Android MVP RC 分发线继续保持前置材料等待状态：testing Gateway、测试对象、反馈闭环与真机安装复核仍后置
+- Android MVP RC 分发线在个人开发阶段暂缓：testing Gateway、测试对象、反馈闭环与真机安装复核统一留到正式 release 包发布前
 
 ### 风险 / 后置项
 
-- 真机安装与真实 Gateway 联调本轮按用户要求跳过，准备实际内测分发前仍需补齐
+- 真机安装与真实 Gateway 联调本轮按用户要求跳过，正式 release 包发布前再补齐
 - 系统通知栏推送、完整通知中心、完整浏览历史中心、发帖、完整评论提交、点赞、投票、编辑治理、Windows / Linux 平台工程与商店发布继续后置

@@ -9,8 +9,8 @@
 - 本轮不新增 Flutter / Android 业务功能，不改动客户端代码
 - 以内测 RC 前置为目标，整理当前已具备条件、仍缺材料、最小验收入口与非阻断项
 - Android MVP 当前仍可判断为内部 / 小范围 RC 候选链路成立
-- 外部分发仍等待真实签名材料、测试 Gateway、测试账号 / 测试数据、分发对象与反馈回收方式
-- 缺少上述外部分发材料时，应保持“等待前置材料”的判断，不回头扩张系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理
+- 外部分发在个人开发阶段暂缓；真实签名材料后续已由用户本机补齐并通过检查，testing Gateway、测试账号 / 测试数据、分发对象与反馈回收方式留到正式 release 包发布前再补
+- 缺少上述外部分发材料时，不回头扩张系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理
 
 ### 当前已具备条件
 
@@ -38,7 +38,7 @@
 
 ### 建议最小验证入口
 
-准备实际内测 RC APK 前，建议至少执行：
+正式 release 包发布前，建议至少执行：
 
 ```powershell
 cd Clients/radish.flutter
@@ -99,6 +99,13 @@ APK 安装后，真机复核至少覆盖：
 
 - Android MVP 当前可以继续按“内部 / 小范围 RC 候选”推进前置材料准备；Dart 层、Android 平台单测与本地 release 构建预检已通过
 - Android 正式签名材料当前已补齐并通过检查；真实密钥文件与 `key.properties` 只保留在本机，不进入版本库
-- 当前尚不能进入完整外部分发验收：testing Gateway、测试对象、反馈闭环与真机安装复核仍待提供
-- 下一步若准备实际分发，应先补齐测试 Gateway、测试对象与反馈闭环，再按 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution) 执行 testing Gateway release APK 构建与真机验收
-- 若前置材料仍缺失，应保持等待状态，不把等待分发材料误判为 Flutter 产品功能阻塞
+- 当前尚未进入完整外部分发验收：testing Gateway、测试对象、反馈闭环与真机安装复核按个人开发阶段口径暂缓
+- 后续若准备正式 release 包，应先补齐测试 Gateway、测试对象与反馈闭环，再按 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution) 执行 testing Gateway release APK 构建与真机验收
+- 若前置材料仍缺失，应保持暂缓状态，不把等待分发材料误判为 Flutter 产品功能阻塞
+
+### 后续口径调整
+
+- 调整日期：2026-05-01
+- 个人开发阶段暂缓 testing Gateway、测试对象、反馈闭环、真机 APK 安装与外部分发验收
+- 上述动作统一留到正式 release 包发布前，再按 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution) 补齐
+- 暂缓分发线不构成当前产品功能阻塞，后续可继续选择窄范围复访或只读体验补强作为 Flutter MVP 产品小闭环
