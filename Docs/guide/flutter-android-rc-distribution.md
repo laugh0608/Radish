@@ -25,7 +25,32 @@
 8. discover 论坛精选直达 forum detail，以及 discover “进入论坛 / 进入文档”快捷入口的 Android Back 返回 discover 上下文
 9. docs 搜索结果进入内联详情后的 Android Back 返回搜索列表，不触发根层退到桌面
 
-当前 Android MVP 可作为“内部 / 小范围 RC 候选”继续准备，但外部分发仍需满足后续前置条件。当前批次回归记录见：[Flutter Android MVP 第七批首个小闭环变更回归记录（2026-05-01）](/guide/flutter-android-mvp-regression-record-2026-05-01)。
+当前 Android MVP 可作为“内部 / 小范围 RC 候选”继续准备，但外部分发仍需满足后续前置条件。当前批次回归记录见：[Flutter Android MVP 第七批首个小闭环变更回归记录（2026-05-01）](/guide/flutter-android-mvp-regression-record-2026-05-01)；内测分发前置整理见：[Flutter Android MVP 内测分发前置整理记录（2026-05-01）](/guide/flutter-android-internal-rc-prep-record-2026-05-01)。
+
+## 内测 RC 前置判断
+
+截至 `2026-05-01`，Android MVP 内部 / 小范围 RC 候选判断如下：
+
+### 已具备
+
+- Android MVP 主链路已有连续批次验证记录，当前可作为内测候选继续准备
+- Android release 包身份、应用显示名、`INTERNET` 权限、Gateway 环境切换、release signing 读取逻辑与签名配置诊断入口已落地
+- 当前客户端仍复用现有 API / Auth / Gateway 同源语义，不需要为 RC 分发临时新增 Flutter 专属 BFF
+- 当前非阻断功能边界已经明确，不把系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理拉入内测前置范围
+
+### 分发前必须补齐
+
+- 真实签名材料，并通过 `.\gradlew.bat :app:checkReleaseSigningConfig`
+- 稳定可访问的测试 Gateway，并在 release 构建时通过 `RADISH_GATEWAY_BASE_URL` 显式指定
+- 测试账号、测试数据、测试设备、分发对象、APK 交付方式与反馈回收方式
+- 一份批次级回归留痕，记录自动化结果、签名检查、release APK 构建参数、Gateway 基址、真机结论、已知非阻断项与未执行项
+
+### 缺失时的处理
+
+- 缺少真实签名材料时，不判断为可外部分发；可继续做本地 debug-signing release 构建验证，但必须标注不能作为外部分发包
+- 缺少测试 Gateway 时，不使用本机开发地址伪装测试环境；应等待测试环境或只记录本机联调结果
+- 缺少分发对象与反馈闭环时，不进入外部投放；应先明确测试范围与回收方式
+- 以上缺失均不构成当前业务功能阻塞，不应回头扩张 Flutter 产品范围
 
 ## 当前非阻断项
 

@@ -2,7 +2,7 @@
 
 > 状态：当前主线
 >
-> 最后更新：2026-04-30（Asia/Shanghai）
+> 最后更新：2026-05-01（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -267,3 +267,11 @@ Flutter 客户端第一批固定遵循以下约束：
 3. 本轮继续复用现有 docs 列表、docs detail、`DocsDetailHandoffTarget` 与公开只读边界，不新增后端 API、Flutter 专属 BFF、搜索建议、历史搜索、全文高亮、目录树、编辑、发布、版本历史或完整浏览历史治理
 4. 真机复核发现“从搜索结果进入文档详情后 Android Back 直接退到桌面”的壳层返回分流问题，当前已收口为 `DocsPage` 向 `RadishFlutterShell` 暴露内联详情返回处理器；文档 tab 处于内联详情态时，根层 Back 会优先回到搜索列表，不再触发退到桌面
 5. 当前验证已通过 `flutter test test/docs_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter analyze` 与 `git diff --check`；Android 真机复核已确认通过，该小闭环可作为第七批首个落点收口
+
+截至 `2026-05-01` 的 Android MVP 内测分发前置整理：
+
+1. 第七批首个小闭环收口后，当前下一步优先转向 Android MVP 内测分发前置整理，不启动第八批功能扩张
+2. Android MVP 内部 / 小范围 RC 候选链路继续成立：登录、退出、会话恢复、四个主 tab 真实读取、forum feed / detail / 评论阅读、轻回应最小闭环、最小 forum notification 回流、profile / docs / discover 复访与返回上下文均已纳入已有验证面
+3. 实际外部分发仍依赖真实签名材料、测试 Gateway、测试账号 / 测试数据、分发对象与反馈回收方式；这些前置缺失不构成当前业务功能阻塞
+4. 本轮已补 [Flutter Android MVP 内测分发前置整理记录（2026-05-01）](/guide/flutter-android-internal-rc-prep-record-2026-05-01)，并同步 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution) 中的内测 RC 前置判断
+5. 后续若准备实际内测 APK，应按 RC 清单补齐签名检查、Dart / Android 自动化验证、testing Gateway release APK 构建、真机验收与批次级回归留痕；若材料仍缺失，则保持等待状态，不回头扩系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理
