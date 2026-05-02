@@ -373,3 +373,10 @@ Flutter 客户端第一批固定遵循以下约束：
 2. 公开主页继续保留第三人称空态，个人复访区块、公开主页边界、帖子 / 评论回跳与加载更多局部失败逻辑均不改变
 3. 同步修正 `Docs/planning/current.md` 中第十七批与第十八批说明错位，避免把 profile 主资料刷新体验的范围说明挂到第十八批文档收口下
 4. 本轮继续复用现有 `ProfilePage`、`ProfileController` 与公开资料契约，不新增后端 API、Flutter 专属 BFF、资料编辑、关注、完整浏览历史或治理能力
+
+截至 `2026-05-02` 的第二十批首个落地事实：
+
+1. Flutter profile 公开主页长文本窄屏显示复核已完成代码与自动化验证：公开资料标题、用户名、用户 ID、最近文档 slug、最近阅读 `postId + commentId`、公开帖子标题 / 摘要 / 分类与公开评论快照均已补受控行数或省略口径
+2. 新增窄屏 widget 测试，构造长 `displayName / userName / userId / slug / postId / commentId / title / category / comment snapshot`，确认 profile 页面在窄屏仍可渲染并保持核心区块可访问
+3. 本轮只处理文本显示约束，不改变 profile 数据读取、回跳来源、分页、刷新、空态人称或加载更多局部失败逻辑
+4. 本轮继续不新增后端 API、Flutter 专属 BFF、资料编辑、关注、完整浏览历史或治理能力

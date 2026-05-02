@@ -671,11 +671,15 @@ class _PublicProfileHero extends StatelessWidget {
                       Text(
                         profile.displayTitle,
                         style: textTheme.headlineSmall,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 6),
                       Text(
                         '@${profile.userName}',
                         style: textTheme.titleMedium,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 10),
                       Text(
@@ -1614,13 +1618,21 @@ class _ContentPreviewTile extends StatelessWidget {
         Text(
           title,
           style: Theme.of(context).textTheme.titleMedium,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: 6),
-        Text(subtitle),
+        Text(
+          subtitle,
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+        ),
         const SizedBox(height: 8),
         Text(
           meta,
           style: Theme.of(context).textTheme.bodySmall,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
         if (actionLabel != null && onAction != null) ...[
           const SizedBox(height: 12),
@@ -1638,7 +1650,11 @@ class _ContentPreviewTile extends StatelessWidget {
             children: chips
                 .map(
                   (chip) => Chip(
-                    label: Text(chip),
+                    label: Text(
+                      chip,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     visualDensity: VisualDensity.compact,
                   ),
                 )
@@ -1661,13 +1677,22 @@ class _ProfileMetaText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 18),
-        const SizedBox(width: 6),
-        Text(text),
-      ],
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 320),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

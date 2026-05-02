@@ -103,6 +103,97 @@ void main() {
     expect(find.text('回复 @radish'), findsOneWidget);
   });
 
+  testWidgets('keeps long profile text constrained on narrow screens', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final scrollable = find.byType(Scrollable).first;
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: _longUserId,
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: _longUserId,
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: _LongTextProfileRepository(),
+          recentBrowseHandoffTargets: const [
+            ForumDetailHandoffTarget(
+              postId: _longPostId,
+              commentId: _longCommentId,
+              source: ForumDetailHandoffSource.browseHistory,
+              initialTitle: _longRecentBrowseTitle,
+            ),
+          ],
+          recentDocumentTargets: const [
+            DocsDetailHandoffTarget(
+              slug: _longDocsSlug,
+              source: DocsDetailHandoffSource.browseHistory,
+              initialTitle: _longDocsTitle,
+            ),
+          ],
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text(_longDisplayName), findsOneWidget);
+    expect(find.text('@$_longUserName'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('/docs/$_longDocsSlug'),
+      200,
+      scrollable: scrollable,
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.text('/docs/$_longDocsSlug'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('帖子 $_longPostId · 评论 $_longCommentId'),
+      200,
+      scrollable: scrollable,
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.text('帖子 $_longPostId · 评论 $_longCommentId'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text(_longPostTitle),
+      200,
+      scrollable: scrollable,
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.text(_longPostTitle), findsOneWidget);
+    expect(find.text(_longCategoryName), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text(_longCommentSnapshot),
+      200,
+      scrollable: scrollable,
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.text(_longCommentSnapshot), findsOneWidget);
+  });
+
   testWidgets('keeps public profile visible while refresh is pending', (
     tester,
   ) async {
@@ -1459,6 +1550,31 @@ NativeAuthController _buildAuthController(
   );
 }
 
+const _longUserId =
+    'user-2042219067430928384-extra-long-public-profile-identifier-for-narrow-screen';
+const _longUserName =
+    'radish_native_profile_reader_with_a_very_long_public_handle_for_narrow_screen';
+const _longDisplayName =
+    'Radish Native Profile Reader With A Very Long Display Name For Narrow Screens';
+const _longDocsSlug =
+    'flutter-native-profile-long-document-slug-that-should-not-break-the-narrow-profile-card-layout';
+const _longDocsTitle =
+    'Flutter native profile long document title that should stay constrained';
+const _longPostId =
+    'post-2042219067430928384-extra-long-public-id-for-profile-preview';
+const _longCommentId =
+    'comment-2042219067430928384-extra-long-public-id-for-profile-preview';
+const _longRecentBrowseTitle =
+    'A very long recent forum reading title that should stay inside the profile card';
+const _longPostTitle =
+    'A very long public post title that should stay readable without pushing the profile page wider';
+const _longPostSummary =
+    'This public post summary is intentionally long so the native profile card can prove it keeps text constrained on narrow screens.';
+const _longCategoryName =
+    'extremely-long-category-name-for-profile-preview-chip';
+const _longCommentSnapshot =
+    'A very long quoted comment snapshot that should be constrained inside the profile comment chip on narrow screens';
+
 class _SuccessProfileRepository implements ProfileRepository {
   @override
   Future<PublicProfileSummary> getPublicProfile({
@@ -1554,6 +1670,74 @@ class _SuccessProfileRepository implements ProfileRepository {
           postTitle: 'Native profile follow-up',
           content: '这个原生回看入口不错',
           createTime: '2026-04-20T09:10:00Z',
+        ),
+      ],
+    );
+  }
+}
+
+class _LongTextProfileRepository extends _SuccessProfileRepository {
+  @override
+  Future<PublicProfileSummary> getPublicProfile({
+    required String userId,
+  }) async {
+    return const PublicProfileSummary(
+      userId: _longUserId,
+      userName: _longUserName,
+      displayName: _longDisplayName,
+      createTime: '2026-04-20T08:00:00Z',
+    );
+  }
+
+  @override
+  Future<PublicProfilePostPage> getPublicPosts({
+    required String userId,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const PublicProfilePostPage(
+      page: 1,
+      pageSize: 3,
+      dataCount: 1,
+      pageCount: 1,
+      posts: [
+        PublicProfilePostSummary(
+          id: _longPostId,
+          title: _longPostTitle,
+          summary: _longPostSummary,
+          content: _longPostSummary,
+          categoryName: _longCategoryName,
+          viewCount: 128,
+          likeCount: 16,
+          commentCount: 6,
+          createTime: '2026-04-20T08:00:00Z',
+        ),
+      ],
+    );
+  }
+
+  @override
+  Future<PublicProfileCommentPage> getPublicComments({
+    required String userId,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const PublicProfileCommentPage(
+      page: 1,
+      pageSize: 3,
+      dataCount: 1,
+      pageCount: 1,
+      comments: [
+        PublicProfileCommentSummary(
+          id: _longCommentId,
+          postId: _longPostId,
+          content:
+              'This long public comment should stay inside the profile preview tile on narrow screens.',
+          likeCount: 5,
+          createTime: '2026-04-20T09:00:00Z',
+          replyToUserName:
+              'reply_target_with_a_very_long_public_name_for_profile_preview',
+          replyToCommentSnapshot: _longCommentSnapshot,
         ),
       ],
     );
