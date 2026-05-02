@@ -33,6 +33,8 @@
 
 第二十批后已补 [Flutter Android MVP RC 补验评估记录（2026-05-02）](/guide/flutter-android-mvp-rc-supplemental-assessment-2026-05-02)：当前明确区分“已具备的 RC 候选能力”“开发阶段可先补的预检 / 材料整理”与“必须等 testing Gateway、release APK 和真机安装后才能完成的 release 前验收”。该评估不新增业务功能，也不改变系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理继续后置的范围判断。
 
+第二十一批后已补 [Flutter Android MVP 第八至第二十批验证索引（2026-05-02）](/guide/flutter-android-mvp-validation-index-2026-05-02)：该索引把第八至第二十批的 Dart 定向测试、`smoke_test`、`flutter analyze`、Android JVM 单测、文档型验证与 release 前缺口统一收口，便于正式 release 包发布前生成批次级回归留痕。
+
 ## 个人开发阶段口径
 
 - 近期默认不部署 testing Gateway，不组织外部分发对象，也不要求每个产品小闭环后安装 APK 做真机验收

@@ -26,7 +26,7 @@
 
 以下事项不依赖正式 testing Gateway 或外部分发对象，可在后续开发中按需继续补：
 
-1. 对第八批至第二十批做批次级验证索引整理，明确各批已执行的 Dart 定向测试、smoke、analyze、Android JVM 单测或文档验证状态
+1. 对第八批至第二十批做批次级验证索引整理，明确各批已执行的 Dart 定向测试、smoke、analyze、Android JVM 单测或文档验证状态；当前索引见 [Flutter Android MVP 第八至第二十批验证索引（2026-05-02）](/guide/flutter-android-mvp-validation-index-2026-05-02)
 2. 在本机或允许的提权验证环境中补跑 `flutter analyze`、`flutter test`、必要的定向测试和 Android Studio JBR 下的 `.\gradlew.bat :app:testDebugUnitTest`
 3. 在 Android Studio 模拟器 / AVD 中继续做开发阶段功能检查，尤其是刷新失败局部提示、返回上下文、长文本窄屏显示和公开只读读取
 4. 继续使用 `https://radishx.com` 做公开只读临时 smoke，但记录时必须标明服务端版本、验证范围与未覆盖项

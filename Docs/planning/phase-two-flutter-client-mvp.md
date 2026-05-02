@@ -387,3 +387,10 @@ Flutter 客户端第一批固定遵循以下约束：
 2. `https://radishx.com` 正式域名临时 smoke 结论已纳入 RC 评估：该域名服务端版本为 `v26.3.2-release`，Android Studio 虚拟机与 Android 真机均已确认帖子、文档和用户公开信息基础只读读取未见异常
 3. 本轮继续保持个人开发阶段口径：testing Gateway、release APK 构建、真机安装、登录 / 通知 / 写入链路与批次级外部分发回归仍留到正式 release 包发布前补齐
 4. 本轮不新增 Flutter / Android 业务代码，不改变 API、状态模型、签名配置或 Gateway 切换逻辑；系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票、编辑治理继续不纳入当前 RC 前置阻断
+
+截至 `2026-05-02` 的第二十二批文档收口事实：
+
+1. 第八至第二十批验证索引已完成文档口径收口：新增 [Flutter Android MVP 第八至第二十批验证索引（2026-05-02）](/guide/flutter-android-mvp-validation-index-2026-05-02)，按批次整理 Dart 定向测试、`smoke_test`、`flutter analyze`、Android JVM 单测、文档型验证与 release 前缺口
+2. 当前索引明确第八至第十七批已有命令级开发阶段验证记录，第十八批为文档型刷新体验清单收口，第十九批与第二十批仍建议在 release 前补命令级批次记录
+3. 本轮不新增 Flutter / Android 业务代码，不重新执行测试，不替代 testing Gateway、release APK 构建、真机安装或外部分发回归
+4. 后续若准备 release / RC 外部分发，应优先按该索引和 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution) 补齐批次级回归留痕
