@@ -31,6 +31,8 @@
 
 截至 `2026-05-02`，当前已补一轮正式域名临时 smoke：使用 `https://radishx.com`（服务端版本 `v26.3.2-release`）在 Android Studio 虚拟机与 Android 真机验证帖子、文档和用户公开信息基础只读读取，未见异常。该结论只作为正式 HTTPS 域名兼容性补充，不替代正式 release 包发布前的 testing Gateway、release APK 构建、真机安装、登录 / 通知 / 写入链路与批次级外部分发回归。记录见：[Flutter Android MVP 正式域名临时 smoke 记录（2026-05-02）](/guide/flutter-android-mvp-radishx-smoke-record-2026-05-02)。
 
+第二十批后已补 [Flutter Android MVP RC 补验评估记录（2026-05-02）](/guide/flutter-android-mvp-rc-supplemental-assessment-2026-05-02)：当前明确区分“已具备的 RC 候选能力”“开发阶段可先补的预检 / 材料整理”与“必须等 testing Gateway、release APK 和真机安装后才能完成的 release 前验收”。该评估不新增业务功能，也不改变系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理继续后置的范围判断。
+
 ## 个人开发阶段口径
 
 - 近期默认不部署 testing Gateway，不组织外部分发对象，也不要求每个产品小闭环后安装 APK 做真机验收

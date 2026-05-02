@@ -380,3 +380,10 @@ Flutter 客户端第一批固定遵循以下约束：
 2. 新增窄屏 widget 测试，构造长 `displayName / userName / userId / slug / postId / commentId / title / category / comment snapshot`，确认 profile 页面在窄屏仍可渲染并保持核心区块可访问
 3. 本轮只处理文本显示约束，不改变 profile 数据读取、回跳来源、分页、刷新、空态人称或加载更多局部失败逻辑
 4. 本轮继续不新增后端 API、Flutter 专属 BFF、资料编辑、关注、完整浏览历史或治理能力
+
+截至 `2026-05-02` 的第二十一批文档收口事实：
+
+1. Android MVP RC 补验评估已完成文档口径收口：第二十批后新增 [Flutter Android MVP RC 补验评估记录（2026-05-02）](/guide/flutter-android-mvp-rc-supplemental-assessment-2026-05-02)，明确已具备、开发阶段可先补与必须等 release 前真实环境补齐的事项
+2. `https://radishx.com` 正式域名临时 smoke 结论已纳入 RC 评估：该域名服务端版本为 `v26.3.2-release`，Android Studio 虚拟机与 Android 真机均已确认帖子、文档和用户公开信息基础只读读取未见异常
+3. 本轮继续保持个人开发阶段口径：testing Gateway、release APK 构建、真机安装、登录 / 通知 / 写入链路与批次级外部分发回归仍留到正式 release 包发布前补齐
+4. 本轮不新增 Flutter / Android 业务代码，不改变 API、状态模型、签名配置或 Gateway 切换逻辑；系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票、编辑治理继续不纳入当前 RC 前置阻断
