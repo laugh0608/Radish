@@ -16,8 +16,10 @@ class ForumFeedState {
     required this.sort,
     required this.pageIndex,
     required this.pageSize,
+    this.isRefreshing = false,
     this.page,
     this.errorMessage,
+    this.refreshIssueMessage,
   });
 
   const ForumFeedState.initial()
@@ -32,14 +34,18 @@ class ForumFeedState {
   final ForumFeedSort sort;
   final int pageIndex;
   final int pageSize;
+  final bool isRefreshing;
   final ForumPostPage? page;
   final String? errorMessage;
+  final String? refreshIssueMessage;
 
   bool get isLoading => status == ForumFeedStatus.loading;
 
   bool get isReady => status == ForumFeedStatus.ready;
 
   bool get isError => status == ForumFeedStatus.error;
+
+  bool get isBusy => isLoading || isRefreshing;
 
   bool get hasPreviousPage => pageIndex > 1;
 
@@ -50,18 +56,25 @@ class ForumFeedState {
     ForumFeedSort? sort,
     int? pageIndex,
     int? pageSize,
+    bool? isRefreshing,
     ForumPostPage? page,
     bool clearPage = false,
     String? errorMessage,
     bool clearError = false,
+    String? refreshIssueMessage,
+    bool clearRefreshIssue = false,
   }) {
     return ForumFeedState(
       status: status ?? this.status,
       sort: sort ?? this.sort,
       pageIndex: pageIndex ?? this.pageIndex,
       pageSize: pageSize ?? this.pageSize,
+      isRefreshing: isRefreshing ?? this.isRefreshing,
       page: clearPage ? null : (page ?? this.page),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      refreshIssueMessage: clearRefreshIssue
+          ? null
+          : (refreshIssueMessage ?? this.refreshIssueMessage),
     );
   }
 }
@@ -89,6 +102,7 @@ class ForumFeedController extends ChangeNotifier {
     await _load(
       pageIndex: _state.pageIndex,
       sort: _state.sort,
+      preserveCurrentPage: _state.page != null,
     );
   }
 
@@ -121,13 +135,17 @@ class ForumFeedController extends ChangeNotifier {
   Future<void> _load({
     required int pageIndex,
     required ForumFeedSort sort,
+    bool preserveCurrentPage = false,
   }) async {
     final requestVersion = ++_requestVersion;
     _state = _state.copyWith(
-      status: ForumFeedStatus.loading,
+      status:
+          preserveCurrentPage ? ForumFeedStatus.ready : ForumFeedStatus.loading,
       sort: sort,
       pageIndex: pageIndex,
+      isRefreshing: preserveCurrentPage,
       clearError: true,
+      clearRefreshIssue: true,
     );
     notifyListeners();
 
@@ -146,8 +164,10 @@ class ForumFeedController extends ChangeNotifier {
         status: ForumFeedStatus.ready,
         sort: sort,
         pageIndex: page.page,
+        isRefreshing: false,
         page: page,
         clearError: true,
+        clearRefreshIssue: true,
       );
       notifyListeners();
     } on RadishApiClientException catch (error) {
@@ -155,10 +175,16 @@ class ForumFeedController extends ChangeNotifier {
         return;
       }
 
+      if (preserveCurrentPage) {
+        _setRefreshIssue(requestVersion, error.message);
+        return;
+      }
+
       _state = _state.copyWith(
         status: ForumFeedStatus.error,
         sort: sort,
         pageIndex: pageIndex,
+        isRefreshing: false,
         errorMessage: error.message,
       );
       notifyListeners();
@@ -167,13 +193,33 @@ class ForumFeedController extends ChangeNotifier {
         return;
       }
 
+      final message = '论坛列表返回格式异常：${error.message}';
+      if (preserveCurrentPage) {
+        _setRefreshIssue(requestVersion, message);
+        return;
+      }
+
       _state = _state.copyWith(
         status: ForumFeedStatus.error,
         sort: sort,
         pageIndex: pageIndex,
-        errorMessage: '论坛列表返回格式异常：${error.message}',
+        isRefreshing: false,
+        errorMessage: message,
       );
       notifyListeners();
     }
+  }
+
+  void _setRefreshIssue(int requestVersion, String message) {
+    if (requestVersion != _requestVersion) {
+      return;
+    }
+
+    _state = _state.copyWith(
+      status: ForumFeedStatus.ready,
+      isRefreshing: false,
+      refreshIssueMessage: message,
+    );
+    notifyListeners();
   }
 }

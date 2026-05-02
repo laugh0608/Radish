@@ -124,6 +124,17 @@ class _ForumPageState extends State<ForumPage> {
               onRefresh: _controller.refresh,
             ),
             const SizedBox(height: 16),
+            if (state.isRefreshing) ...[
+              const _ForumRefreshingNotice(),
+              const SizedBox(height: 16),
+            ],
+            if (state.refreshIssueMessage != null &&
+                state.refreshIssueMessage!.isNotEmpty) ...[
+              _ForumRefreshIssueNotice(
+                message: state.refreshIssueMessage!,
+              ),
+              const SizedBox(height: 16),
+            ],
             if (state.isLoading) const _ForumLoadingState(),
             if (state.isError)
               _ForumErrorState(
@@ -229,11 +240,97 @@ class _ForumFeedControls extends StatelessWidget {
           },
         ),
         FilledButton.tonalIcon(
-          onPressed: state.isLoading ? null : onRefresh,
+          onPressed: state.isBusy ? null : onRefresh,
           icon: const Icon(Icons.refresh),
-          label: const Text('刷新'),
+          label: Text(state.isRefreshing ? '正在刷新' : '刷新'),
         ),
       ],
+    );
+  }
+}
+
+class _ForumRefreshingNotice extends StatelessWidget {
+  const _ForumRefreshingNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.secondary),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            SizedBox.square(
+              dimension: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: colorScheme.onSecondaryContainer,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text('正在刷新论坛列表，当前仍展示上次可用帖子。'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ForumRefreshIssueNotice extends StatelessWidget {
+  const _ForumRefreshIssueNotice({
+    required this.message,
+  });
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.error),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.error_outline,
+              color: colorScheme.onErrorContainer,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '刷新论坛失败',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    message,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

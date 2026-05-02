@@ -186,15 +186,31 @@ class _DocsPageState extends State<DocsPage> {
                         ? (detailState.isLoading
                             ? null
                             : _detailController.refresh)
-                        : (feedState.isLoading
-                            ? null
-                            : _feedController.refresh),
+                        : (feedState.isBusy ? null : _feedController.refresh),
                     icon: const Icon(Icons.refresh),
-                    label: Text(isDetailMode ? '刷新详情' : '刷新文档'),
+                    label: Text(
+                      isDetailMode
+                          ? '刷新详情'
+                          : feedState.isRefreshing
+                              ? '正在刷新'
+                              : '刷新文档',
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
+              if (!isDetailMode && feedState.isRefreshing) ...[
+                const _DocsFeedRefreshingNotice(),
+                const SizedBox(height: 16),
+              ],
+              if (!isDetailMode &&
+                  feedState.refreshIssueMessage != null &&
+                  feedState.refreshIssueMessage!.isNotEmpty) ...[
+                _DocsFeedRefreshIssueNotice(
+                  message: feedState.refreshIssueMessage!,
+                ),
+                const SizedBox(height: 16),
+              ],
               if (!isDetailMode && feedState.isLoading)
                 const _DocsLoadingState(),
               if (!isDetailMode && feedState.isError)
@@ -463,6 +479,92 @@ class _DocsLoadingState extends StatelessWidget {
               Text(message),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DocsFeedRefreshingNotice extends StatelessWidget {
+  const _DocsFeedRefreshingNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.secondary),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            SizedBox.square(
+              dimension: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: colorScheme.onSecondaryContainer,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text('正在刷新文档列表，当前仍展示上次可用文档。'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DocsFeedRefreshIssueNotice extends StatelessWidget {
+  const _DocsFeedRefreshIssueNotice({
+    required this.message,
+  });
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.error),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.error_outline,
+              color: colorScheme.onErrorContainer,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '刷新文档失败',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    message,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -343,3 +343,11 @@ Flutter 客户端第一批固定遵循以下约束：
 3. 成功刷新会以新 `DiscoverSnapshot` 为准清理旧 `sectionIssues`；当 forum / docs / shop 三路摘要全部降级时，页面仍展示“部分发现内容暂时不可用”与各区块空态，不误判为普通无内容
 4. 本轮继续复用现有 `DiscoverFeedController`、`DiscoverSnapshot` 与三路公开摘要契约，不新增后端 API、Flutter 专属 BFF、独立重试队列、下拉刷新体系或跨端同步治理
 5. 当前验证已通过 `flutter test test/discover_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter analyze` 与 `git diff --check`；Android 真机 APK 安装按个人开发阶段口径暂缓到正式 release 包发布前
+
+截至 `2026-05-02` 的第十六批首个落地事实：
+
+1. Flutter forum / docs 主列表刷新体验一致性已完成代码与自动化验证：forum feed 与 docs 列表已有内容时点击刷新会保留上次可用列表，并展示轻量刷新态，不再把页面切回整页 loading
+2. forum / docs 刷新失败会分别显示局部“刷新论坛失败”“刷新文档失败”，旧列表继续可读；首次加载失败仍保留原有整页错误态
+3. 成功刷新会替换为新列表并清理旧刷新失败提示；分页、搜索、排序切换仍保持原有加载语义，不与本轮刷新体验收口混在一起
+4. 本轮继续复用现有 `ForumFeedController`、`DocsFeedController` 与公开列表契约，不新增后端 API、Flutter 专属 BFF、下拉刷新体系或跨端同步治理
+5. 当前验证已通过 `flutter test test/forum_page_test.dart test/docs_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter analyze` 与 `git diff --check`；Android 真机 APK 安装按个人开发阶段口径暂缓到正式 release 包发布前

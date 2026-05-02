@@ -16,8 +16,10 @@ class DocsFeedState {
     required this.pageIndex,
     required this.pageSize,
     this.keyword = '',
+    this.isRefreshing = false,
     this.page,
     this.errorMessage,
+    this.refreshIssueMessage,
   });
 
   const DocsFeedState.initial()
@@ -31,14 +33,18 @@ class DocsFeedState {
   final int pageIndex;
   final int pageSize;
   final String keyword;
+  final bool isRefreshing;
   final DocsDocumentPage? page;
   final String? errorMessage;
+  final String? refreshIssueMessage;
 
   bool get isLoading => status == DocsFeedStatus.loading;
 
   bool get isReady => status == DocsFeedStatus.ready;
 
   bool get isError => status == DocsFeedStatus.error;
+
+  bool get isBusy => isLoading || isRefreshing;
 
   bool get hasPreviousPage => pageIndex > 1;
 
@@ -51,18 +57,25 @@ class DocsFeedState {
     int? pageIndex,
     int? pageSize,
     String? keyword,
+    bool? isRefreshing,
     DocsDocumentPage? page,
     bool clearPage = false,
     String? errorMessage,
     bool clearError = false,
+    String? refreshIssueMessage,
+    bool clearRefreshIssue = false,
   }) {
     return DocsFeedState(
       status: status ?? this.status,
       pageIndex: pageIndex ?? this.pageIndex,
       pageSize: pageSize ?? this.pageSize,
       keyword: keyword ?? this.keyword,
+      isRefreshing: isRefreshing ?? this.isRefreshing,
       page: clearPage ? null : (page ?? this.page),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      refreshIssueMessage: clearRefreshIssue
+          ? null
+          : (refreshIssueMessage ?? this.refreshIssueMessage),
     );
   }
 }
@@ -83,7 +96,10 @@ class DocsFeedController extends ChangeNotifier {
   }
 
   Future<void> refresh() async {
-    await _load(pageIndex: _state.pageIndex);
+    await _load(
+      pageIndex: _state.pageIndex,
+      preserveCurrentPage: _state.page != null,
+    );
   }
 
   Future<void> goToPage(int pageIndex) async {
@@ -124,14 +140,18 @@ class DocsFeedController extends ChangeNotifier {
   Future<void> _load({
     required int pageIndex,
     String? keyword,
+    bool preserveCurrentPage = false,
   }) async {
     final normalizedKeyword = keyword ?? _state.keyword;
     final requestVersion = ++_requestVersion;
     _state = _state.copyWith(
-      status: DocsFeedStatus.loading,
+      status:
+          preserveCurrentPage ? DocsFeedStatus.ready : DocsFeedStatus.loading,
       pageIndex: pageIndex,
       keyword: normalizedKeyword,
+      isRefreshing: preserveCurrentPage,
       clearError: true,
+      clearRefreshIssue: true,
     );
     notifyListeners();
 
@@ -149,18 +169,25 @@ class DocsFeedController extends ChangeNotifier {
       _state = _state.copyWith(
         status: DocsFeedStatus.ready,
         pageIndex: page.page,
+        isRefreshing: false,
         page: page,
         clearError: true,
+        clearRefreshIssue: true,
       );
       notifyListeners();
     } on RadishApiClientException catch (error) {
-      _setError(requestVersion, pageIndex, error.message);
+      if (preserveCurrentPage) {
+        _setRefreshIssue(requestVersion, error.message);
+      } else {
+        _setError(requestVersion, pageIndex, error.message);
+      }
     } on FormatException catch (error) {
-      _setError(
-        requestVersion,
-        pageIndex,
-        '文档列表返回格式异常：${error.message}',
-      );
+      final message = '文档列表返回格式异常：${error.message}';
+      if (preserveCurrentPage) {
+        _setRefreshIssue(requestVersion, message);
+      } else {
+        _setError(requestVersion, pageIndex, message);
+      }
     }
   }
 
@@ -172,7 +199,21 @@ class DocsFeedController extends ChangeNotifier {
     _state = _state.copyWith(
       status: DocsFeedStatus.error,
       pageIndex: pageIndex,
+      isRefreshing: false,
       errorMessage: message,
+    );
+    notifyListeners();
+  }
+
+  void _setRefreshIssue(int requestVersion, String message) {
+    if (requestVersion != _requestVersion) {
+      return;
+    }
+
+    _state = _state.copyWith(
+      status: DocsFeedStatus.ready,
+      isRefreshing: false,
+      refreshIssueMessage: message,
     );
     notifyListeners();
   }
