@@ -359,3 +359,10 @@ Flutter 客户端第一批固定遵循以下约束：
 3. 成功刷新会替换为新资料并清理旧刷新失败提示；公开帖子、公开评论和我的轻回应的加载更多局部失败逻辑保持不变
 4. 本轮继续复用现有 `ProfileController` 与公开资料契约，不新增后端 API、Flutter 专属 BFF、完整浏览历史、资料编辑、关注或治理能力
 5. 当前验证已通过 `flutter test test/profile_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter analyze` 与 `git diff --check`；Android 真机 APK 安装按个人开发阶段口径暂缓到正式 release 包发布前
+
+截至 `2026-05-02` 的第十八批首个落地事实：
+
+1. Flutter 刷新体验收口复核 / 模拟器验证清单整理已完成文档收口：`Clients/radish.flutter/README.md` 已补充 `discover / forum / docs / profile` 四个主 tab 的开发阶段刷新体验检查项
+2. 新增 [Flutter Android MVP 刷新体验开发阶段验证清单（2026-05-02）](/guide/flutter-android-mvp-refresh-experience-checklist-2026-05-02)，明确刷新中旧内容保留、刷新失败局部提示、刷新成功清理旧提示的模拟器检查顺序
+3. 本轮不新增 Dart 业务代码，不改变现有 API、状态模型或刷新语义；第十五至第十七批已有自动化验证继续作为代码层保障
+4. 本轮仍不执行 testing Gateway release APK 构建、真机 APK 安装或外部分发验收；开发阶段模拟器验证与正式 release 前真机验收继续分开记录、分开判断
