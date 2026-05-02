@@ -31,6 +31,13 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(
+      find.text('发现上下文'),
+      300,
+      scrollable: scrollable,
+    );
+    expect(find.text('发现上下文'), findsOneWidget);
+    expect(find.text('来源：/discover'), findsOneWidget);
+    await tester.scrollUntilVisible(
       find.text('论坛精选'),
       300,
       scrollable: scrollable,
@@ -82,6 +89,56 @@ void main() {
     expect(find.text('暂时无法加载发现内容'), findsOneWidget);
     expect(find.text('发现内容服务暂时不可用'), findsOneWidget);
     expect(find.text('重试'), findsOneWidget);
+  });
+
+  testWidgets('keeps discover summary text constrained on narrow screens', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final scrollable = find.byType(Scrollable);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DiscoverPage(
+          environment: const AppEnvironment.development(),
+          sessionState: const SessionState.anonymous(),
+          repository: _LongTextDiscoverRepository(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('发现上下文'),
+      250,
+      scrollable: scrollable,
+    );
+    expect(find.text('发现上下文'), findsOneWidget);
+    expect(find.text('公开只读'), findsWidgets);
+    await tester.scrollUntilVisible(
+      find.textContaining('A very long discover post title'),
+      250,
+      scrollable: scrollable,
+    );
+    expect(
+      find.textContaining('A very long discover post title'),
+      findsOneWidget,
+    );
+    await tester.scrollUntilVisible(
+      find.textContaining('/docs/flutter-mvp-overview-with-a-very-long-slug'),
+      250,
+      scrollable: scrollable,
+    );
+    expect(
+      find.textContaining('/docs/flutter-mvp-overview-with-a-very-long-slug'),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('supports native tab and profile handoff actions from discover',
@@ -214,5 +271,54 @@ class _FailingDiscoverRepository implements DiscoverRepository {
     required int pageSize,
   }) {
     throw const RadishApiClientException('发现内容服务暂时不可用');
+  }
+}
+
+class _LongTextDiscoverRepository implements DiscoverRepository {
+  @override
+  Future<DiscoverSnapshot> getSnapshot({
+    required int pageSize,
+  }) async {
+    return const DiscoverSnapshot(
+      forumPosts: [
+        ForumPostSummary(
+          id: '204221906743092838488888888888888888888',
+          title:
+              'A very long discover post title that should stay constrained on a narrow Android viewport',
+          summary:
+              'This summary intentionally keeps going so the native discover page can prove that long public previews do not break the summary card layout.',
+          categoryId: '9',
+          categoryName:
+              'Engineering-and-product-context-with-a-long-category-name',
+          authorId: '1024',
+          authorName: 'luobo',
+          commentCount: 6,
+          viewCount: 128,
+          isEssence: true,
+        ),
+      ],
+      documents: [
+        DocsDocumentSummary(
+          id: '3001',
+          title:
+              'Flutter MVP overview with a long title that stays inside the card',
+          slug:
+              'flutter-mvp-overview-with-a-very-long-slug-for-narrow-discover-cards',
+          summary:
+              'Current native client scope and boundaries with enough content to exercise truncation.',
+          modifyTime: '2026-04-18T10:00:00Z',
+        ),
+      ],
+      products: [
+        DiscoverProductSummary(
+          id: '4001',
+          name:
+              'Profile Rename Card With A Long Display Name For Discover Summary',
+          productType: 'Consumable',
+          price: 120,
+          soldCount: 3,
+        ),
+      ],
+    );
   }
 }

@@ -338,6 +338,8 @@ class _DiscoverContent extends StatelessWidget {
 
     return Column(
       children: [
+        const _DiscoverContextSection(),
+        const SizedBox(height: 16),
         _ForumSection(
           posts: snapshot.forumPosts,
           onOpenForum: onOpenForum,
@@ -353,6 +355,28 @@ class _DiscoverContent extends StatelessWidget {
         _ShopSection(products: snapshot.products),
         const SizedBox(height: 16),
         const _DiscoverBoundarySection(),
+      ],
+    );
+  }
+}
+
+class _DiscoverContextSection extends StatelessWidget {
+  const _DiscoverContextSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return const _DiscoverSectionCard(
+      title: '发现上下文',
+      description: '这里承载 /discover 的公开分发入口，继续把阅读目标带回论坛、文档或公开主页。',
+      emptyText: '',
+      children: [
+        _SummaryTile(
+          icon: Icons.explore_outlined,
+          title: '公开内容分发',
+          subtitle: '当前只做摘要预览和原生阅读跳转，不承载购买、发帖、完整评论、点赞、投票或编辑治理。',
+          meta: '来源：/discover',
+          chips: ['公开只读', '保留来源返回', '不含工作台操作'],
+        ),
       ],
     );
   }
@@ -595,16 +619,22 @@ class _SummaryTile extends StatelessWidget {
               Text(
                 title,
                 style: textTheme.titleMedium,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 6),
               Text(
                 subtitle,
                 style: textTheme.bodyMedium,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 8),
               Text(
                 meta,
                 style: textTheme.bodySmall,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
               if (chips.isNotEmpty) ...[
                 const SizedBox(height: 8),
@@ -614,7 +644,14 @@ class _SummaryTile extends StatelessWidget {
                   children: chips
                       .map(
                         (chip) => Chip(
-                          label: Text(chip),
+                          label: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 220),
+                            child: Text(
+                              chip,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                           visualDensity: VisualDensity.compact,
                         ),
                       )

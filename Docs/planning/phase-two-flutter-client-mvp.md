@@ -2,7 +2,7 @@
 
 > 状态：当前主线
 >
-> 最后更新：2026-05-01（Asia/Shanghai）
+> 最后更新：2026-05-02（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -319,3 +319,11 @@ Flutter 客户端第一批固定遵循以下约束：
 4. forum detail 的公开地址 chip 与基础 meta 文本改为受控宽度显示，长帖子 ID、长分类或长时间文本在窄屏详情页不再撑破布局
 5. 本轮继续复用现有 forum detail、`ForumDetailHandoffTarget`、评论定位链路、轻回应墙与公开只读边界，不新增后端 API、Flutter 专属 BFF、完整通知中心、系统通知栏推送、发帖、完整评论提交、点赞、投票或编辑治理
 6. 当前验证已通过 `flutter test test/forum_detail_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter analyze` 与 `git diff --check`；Android 真机 APK 安装按个人开发阶段口径暂缓到正式 release 包发布前，开发中仍可按需补 Android Studio 模拟器 / AVD 功能测试
+
+截至 `2026-05-02` 的第十三批首个落地事实：
+
+1. Flutter discover 只读分发上下文补强已完成代码与自动化验证：发现页内容区新增轻量“发现上下文”卡，明确来源 `/discover`、公开只读分发角色与继续进入 forum / docs / profile 的阅读边界
+2. discover 摘要条目的标题、摘要、meta 与 chip 已改为受控行数和受控宽度显示，长帖子标题、长文档 slug、长分类或长商品名在窄屏发现页不再撑破布局
+3. 本轮继续复用现有 `DiscoverSnapshot`、`ForumDetailHandoffTarget`、`DocsDetailHandoffTarget` 与原生来源返回语义，不新增后端 API、Flutter 专属 BFF、独立路由系统或完整工作台能力
+4. 本轮仍不扩完整通知中心、系统通知栏推送、发帖、完整评论提交、点赞、投票、编辑治理、购买、订单或背包能力
+5. 当前验证已通过 `flutter test test/discover_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter analyze` 与针对本次变更文件的 `git diff --check`；Android 真机 APK 安装按个人开发阶段口径暂缓到正式 release 包发布前
