@@ -287,6 +287,63 @@ void main() {
     );
   });
 
+  testWidgets('uses first-person empty public activity copy on my profile', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final scrollable = find.byType(Scrollable).first;
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: '2042219067430928384',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: '2042219067430928384',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: _EmptyPublicActivityProfileRepository(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('你还没有可公开展示的帖子。'),
+      200,
+      scrollable: scrollable,
+    );
+    expect(find.text('你还没有可公开展示的帖子。'), findsOneWidget);
+    expect(find.text('公开发布的帖子会在这里形成只读回看入口。'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('你还没有可公开展示的评论。'),
+      200,
+      scrollable: scrollable,
+    );
+    expect(find.text('你还没有可公开展示的评论。'), findsOneWidget);
+    expect(find.text('公开评论会在这里形成只读回看入口。'), findsOneWidget);
+    expect(find.text('这个用户暂无公开帖子。'), findsNothing);
+    expect(find.text('这个用户暂无公开评论。'), findsNothing);
+  });
+
   testWidgets('renders guest-selected public profile target', (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
     tester.view.devicePixelRatio = 1.0;
@@ -1554,6 +1611,51 @@ class _QuickReplyFailingProfileRepository extends _SuccessProfileRepository {
     required String accessToken,
   }) {
     throw const RadishApiClientException('轻回应服务暂时不可用');
+  }
+}
+
+class _EmptyPublicActivityProfileRepository extends _SuccessProfileRepository {
+  @override
+  Future<PublicProfileStats> getPublicStats({
+    required String userId,
+  }) async {
+    return const PublicProfileStats(
+      postCount: 0,
+      commentCount: 0,
+      totalLikeCount: 0,
+      postLikeCount: 0,
+      commentLikeCount: 0,
+    );
+  }
+
+  @override
+  Future<PublicProfilePostPage> getPublicPosts({
+    required String userId,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const PublicProfilePostPage(
+      page: 1,
+      pageSize: 3,
+      dataCount: 0,
+      pageCount: 0,
+      posts: [],
+    );
+  }
+
+  @override
+  Future<PublicProfileCommentPage> getPublicComments({
+    required String userId,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const PublicProfileCommentPage(
+      page: 1,
+      pageSize: 3,
+      dataCount: 0,
+      pageCount: 0,
+      comments: [],
+    );
   }
 }
 

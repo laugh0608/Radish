@@ -281,6 +281,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   _PublicProfileContent(
                     profile: profileState.profile!,
                     stats: profileState.stats,
+                    isMyProfile: isMyProfile,
                     recentBrowseHandoffTargets: recentBrowseTargets,
                     recentDocumentTargets: recentDocumentTargets,
                     posts: profileState.posts,
@@ -502,6 +503,7 @@ class _PublicProfileContent extends StatelessWidget {
   const _PublicProfileContent({
     required this.profile,
     required this.stats,
+    required this.isMyProfile,
     required this.recentBrowseHandoffTargets,
     required this.recentDocumentTargets,
     required this.posts,
@@ -530,6 +532,7 @@ class _PublicProfileContent extends StatelessWidget {
 
   final PublicProfileSummary profile;
   final PublicProfileStats? stats;
+  final bool isMyProfile;
   final List<ForumDetailHandoffTarget> recentBrowseHandoffTargets;
   final List<DocsDetailHandoffTarget> recentDocumentTargets;
   final List<PublicProfilePostSummary> posts;
@@ -601,6 +604,7 @@ class _PublicProfileContent extends StatelessWidget {
           const SizedBox(height: 16),
         ],
         _RecentPostsCard(
+          isMyProfile: isMyProfile,
           posts: posts,
           total: postsTotal,
           hasMore: hasMorePosts,
@@ -611,6 +615,7 @@ class _PublicProfileContent extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         _RecentCommentsCard(
+          isMyProfile: isMyProfile,
           comments: comments,
           total: commentsTotal,
           hasMore: hasMoreComments,
@@ -1004,6 +1009,7 @@ class _RecentDocumentListCard extends StatelessWidget {
 
 class _RecentPostsCard extends StatelessWidget {
   const _RecentPostsCard({
+    required this.isMyProfile,
     required this.posts,
     required this.total,
     required this.hasMore,
@@ -1013,6 +1019,7 @@ class _RecentPostsCard extends StatelessWidget {
     required this.onOpenForumDetailTarget,
   });
 
+  final bool isMyProfile;
   final List<PublicProfilePostSummary> posts;
   final int total;
   final bool hasMore;
@@ -1027,8 +1034,9 @@ class _RecentPostsCard extends StatelessWidget {
       icon: Icons.notes_outlined,
       title: '最近公开帖子',
       description: '只读展示公开帖子，点击后回到论坛详情。',
-      emptyText: '这个用户暂无公开帖子。',
-      emptyHelperText: '公开帖子会在这里以只读方式展示。',
+      emptyText: isMyProfile ? '你还没有可公开展示的帖子。' : '这个用户暂无公开帖子。',
+      emptyHelperText:
+          isMyProfile ? '公开发布的帖子会在这里形成只读回看入口。' : '公开帖子会在这里以只读方式展示。',
       children: _buildChildren(context),
     );
   }
@@ -1251,6 +1259,7 @@ class _ProfileLoadMoreFooter extends StatelessWidget {
 
 class _RecentCommentsCard extends StatelessWidget {
   const _RecentCommentsCard({
+    required this.isMyProfile,
     required this.comments,
     required this.total,
     required this.hasMore,
@@ -1260,6 +1269,7 @@ class _RecentCommentsCard extends StatelessWidget {
     required this.onOpenForumDetailTarget,
   });
 
+  final bool isMyProfile;
   final List<PublicProfileCommentSummary> comments;
   final int total;
   final bool hasMore;
@@ -1274,8 +1284,8 @@ class _RecentCommentsCard extends StatelessWidget {
       icon: Icons.mode_comment_outlined,
       title: '最近公开评论',
       description: '只读展示公开评论，点击后回到评论上下文。',
-      emptyText: '这个用户暂无公开评论。',
-      emptyHelperText: '公开评论会在这里以只读方式展示。',
+      emptyText: isMyProfile ? '你还没有可公开展示的评论。' : '这个用户暂无公开评论。',
+      emptyHelperText: isMyProfile ? '公开评论会在这里形成只读回看入口。' : '公开评论会在这里以只读方式展示。',
       children: _buildChildren(context),
     );
   }
