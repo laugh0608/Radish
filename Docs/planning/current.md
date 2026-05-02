@@ -8,8 +8,8 @@
 
 - **阶段**：`第二开发阶段：社区深化与多端化`
 - **当前主线**：`Phase 2-3 Flutter 客户端 MVP`
-- **当前阶段**：`截至 2026-04-18，第一开发阶段已于 2026-04-06 通过 v26.3.2-release 完成真实发布收口；第二开发阶段现已正式启动。`Phase 2-1 社区深化第一批` 已完成论坛轻回应墙 Phase 1 与最小回流链路收口；`Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口，并转入稳定维护。当前产品主线正式切到 `Phase 2-3 Flutter 客户端 MVP`：第一批范围定义、真相源文档切换与仓库工程骨架已完成；第二批当前已开始接入最小登录 / 会话恢复链路与 forum 首条真实只读读取链路，不继续沿公开壳层扩页面细节，也不回头把桌面工作台搬进原生端。`
-- **复核日期**：`2026-04-18`
+- **当前阶段**：`截至 2026-05-01，第一开发阶段已于 2026-04-06 通过 v26.3.2-release 完成真实发布收口；第二开发阶段现已正式启动。`Phase 2-1 社区深化第一批` 已完成论坛轻回应墙 Phase 1 与最小回流链路收口；`Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口，并转入稳定维护。当前产品主线仍为 `Phase 2-3 Flutter 客户端 MVP`：第一批范围定义、真相源文档切换与仓库工程骨架已完成；第二批已完成 Android MVP 可测链路、最小 forum notification 回流、Android 本地 release APK 发布候选首轮收口、Flutter `--dart-define` Gateway 环境切换能力，以及 Android RC 签名配置诊断与分发前置清单；第三批已完成中文文案基线、个人复访入口产品化与 forum detail 轻回应最小读写闭环，并已通过一轮 Android 真机人工复核；第四批“复访深化 + 已登录轻互动回看”已完成收口：`profile` 我的轻回应回看、我的轻回应分页复访、最近公开评论分页复访、最近公开帖子分页复访、最近阅读上下文入口、docs 最近阅读与 discover 文档直达复访、docs 正文内公开文档链接原生跳转、docs 关键词搜索复访、discover 论坛精选直达 forum detail 与 discover 快捷入口返回发现页均已完成代码、自动化验证与 Android 真机复核；第五批首个小闭环“profile 最近阅读轻量多条列表”已完成代码、自动化验证与 Android 真机复核，可作为一个小批次收口；第六批“forum detail 轻回应发布后局部体验补强”已完成代码、自动化验证与 Android 真机复核，可作为一个小批次收口；第七批首个小闭环“Flutter docs 搜索体验增强”已完成代码、自动化验证与 Android 真机复核，可作为一个小批次收口；Android MVP 内测分发前置整理已完成一轮文档与本机预检收口；第八批首个窄范围小闭环“profile 最近文档轻量多条列表”已完成代码、自动化验证与收口复核；第九批首个小闭环“profile 复访区块体验整理”已完成代码与自动化验证；第十批首个小闭环“profile 区块顺序与信息密度微调”已完成代码与自动化验证；第十一批首个小闭环“docs 详情只读上下文补强”已完成代码与自动化验证；第十二批首个小闭环“forum detail 来源上下文与错误态补强”已完成代码与自动化验证；个人开发阶段暂缓 testing Gateway、真机 APK 安装与外部分发验收，统一留到正式 release 包发布前再执行，但开发中仍可使用 Android Studio 模拟器 / AVD 继续做功能验证。`
+- **复核日期**：`2026-05-01`
 
 ## 当前执行入口
 
@@ -73,30 +73,103 @@
 - 当前仍保持增量迁移口径：`/` 与 `/desktop` 的根入口关系未调整，仓库里也仍没有真正实现的 `MobileShell`
 - `Phase 2-3 Flutter 客户端 MVP` 当前已正式进入主线；第一批真相源切换、范围定义与工程骨架已完成，第二批当前已开始接最小会话恢复与首条真实业务读取链路
 - `Clients/radish.flutter` 当前已具备应用启动会话恢复三态：原生壳层会先经过启动恢复 gate，再进入匿名态或已恢复会话态；`profile` 当前也已不再通过页面级临时读取会话存储来判断登录边界
+- Flutter 当前已补齐 Android 本地会话持久化、Access Token 过期判断与 refresh token 恢复回落；会话恢复不再停留在内存态占位
 - Flutter forum 当前已不再停留在占位页：原生壳层已开始复用现有 `/api/v1/Post/GetList` 公开只读契约，支持匿名读取 forum feed、`latest / hottest` 排序、基础分页、加载态与错误态
+- Flutter `discover / forum / docs / profile` 四个主 tab 当前已完成一轮 Android 真机人工联调；`discover -> docs` 与 `discover -> profile` 跳转链路当前可正常完成，期间暴露的 `Profile` 统计区与壳层状态区窄屏溢出也已完成修复和复测
+- Flutter forum 当前已继续从公开只读列表推进到公开只读帖子详情：列表卡片可原生进入详情页，详情页当前承载正文、作者/分类/时间、基础统计与原生返回，继续保持不开放评论提交、点赞、投票和编辑治理
+- Flutter `discover / docs / profile` 当前都已不再停留在占位页：原生壳层已分别接通公开分发摘要、公开文档阅读与公开个人资料读取，第二批真实业务接线已覆盖四个主 tab 的首批高价值只读页面
+- Flutter forum 当前已继续从“帖子详情只读阅读”推进到“评论链路只读阅读”：根评论分页、子评论分页、作者 / 评论作者原生公开 profile 跳转都已落地，仍明确保持不开放评论提交、点赞、投票、编辑或登录治理
+- Flutter forum 评论精确定位最小闭环当前也已落地：带 `commentId` 打开帖子详情后，原生端会先解析公开评论定位信息，再自动补载目标根评论页与子评论页并滚动到目标评论
+- Flutter forum 外部详情 handoff 当前已完成最小收口：原生壳层已经可以从 shell 层直接透传 `postId + commentId` 打开 forum 详情，并复用现有评论定位链路落到目标评论，而不需要重新设计独立路由系统
+- Flutter forum 外部 handoff 当前已继续先收口到 `public profile` 的最近帖子 / 最近评论：原生 profile 页不再自带独立详情跳转，而是统一复用共享 `ForumDetailHandoffTarget` 打开帖子详情；`postId / commentId` 继续保持字符串口径
+- Flutter forum 真实来源接线当前已进一步从 discover 的最小演示入口推进到更接近真实来源的壳层 / 宿主层：Android 宿主当前已支持以启动 handoff 透传 forum 通知来源，原生壳层也已支持基于最近阅读记录续接 forum 浏览回跳
+- Flutter forum detail 打开路径当前也已完成一轮统一回收：forum feed、public profile、notification 宿主 handoff 与 browse history 壳层续接当前都已统一接到同一套原生 handoff 目标，不再并存多套 detail 打开路径
+- Flutter discover 当前已不再承担 `notification / browseHistory` 的长期伪来源入口：此前最小入口卡只作为过渡验证手段，现已在原生端收口回宿主 / 壳层真实接线
+- Flutter 当前已补齐最小登录 UI、显式登出与 Android 浏览器 OIDC 回调闭环：原生壳层会通过系统浏览器发起登录，以 `radish://oidc/callback` 回跳并完成授权码换 Token；显式登出当前也已统一走 `/connect/endsession` + `radish://oidc/logout-complete`
+- Flutter Android 最小登录连续性当前也已完成一轮收口：浏览器取消登录后，原生壳层会显式提示 `Sign-in needs attention`，壳层状态区已从 `AppBar` 收口到可换行状态条，`profile` 与 forum 详情来源下的登录发起当前也会在成功后自动续接回原始 tab / handoff 目标
+- Flutter forum detail 当前也已补齐最小原地登录入口：匿名用户可直接在详情页发起登录，登录目标会以可持久化 follow-up 状态保留 `postId / commentId`，浏览器往返或壳层重建后仍能回到当前帖子 / 评论上下文
+- Flutter forum detail 登录链路当前也已完成一轮 Android 真机人工联调：详情页登录、取消登录后的显式提示、重试登录与成功回到当前 detail 上下文这几条主路径当前均已通过
+- Android MVP 当前人工验证范围已收口到真实可测链路：登录、退出、会话恢复、`discover / docs / profile` 基础读取、forum feed、forum detail、评论阅读、评论分页与 detail 原地登录续接，以及已登录壳层最小 forum notification 回流都已纳入当前可验收面
+- Android MVP 当前可测链路已完成一轮人工验收：登录和退出逻辑确认正常，forum 评论区显示问题已修复并在真机确认；最小 forum notification 回流也已完成真机人工联调
+- Flutter 当前已补齐一个最小可测 forum notification 来源：已登录壳层会读取当前用户最新可跳 forum 的通知，解析 `voExtData` 中字符串化的 `postId / commentId`，并通过既有 `ForumDetailHandoffTarget(source: notification)` 打开原生 forum detail
+- 最小 forum notification 回流当前已完成真机人工联调：`Forum notification` 入口回到 forum detail / 评论上下文的逻辑确认正常，系统通知栏推送与完整通知中心继续不纳入当前批次
+- Flutter Android release 身份当前已从模板值收口到 `com.radish.client` / `Radish`，Kotlin 原生代码与平台单测 package 也已同步到正式包身份
+- Flutter Android release signing 当前已完成安全边界收口：Gradle 会读取 `android/key.properties` 配置正式签名，未配置时回落到 debug signing 以保留本地 RC 构建能力；真实 `key.properties`、`.jks` 与 `.keystore` 不进入版本库
+- Flutter Android release APK 当前已补齐 main manifest 的 `INTERNET` 权限，并完成一轮真机安装与本机 Gateway 联调复核；登录、基础读取与样式显示均已确认正常
+- Flutter 环境切换能力当前已完成首轮收口：原生客户端可通过 `--dart-define=RADISH_ENVIRONMENT=...` 与 `--dart-define=RADISH_GATEWAY_BASE_URL=...` 指定本机 / 测试 / 正式 Gateway，API / Auth / Gateway 继续保持同源，不引入 Flutter 专属 BFF
+- Android RC 签名配置诊断当前已完成首轮收口：`key.properties` 不存在时本地 release 构建继续回落 debug signing；一旦存在签名配置，Gradle 会检查必填字段、示例占位值与 keystore 文件存在性，并提供 `:app:checkReleaseSigningConfig` 作为外部分发前置检查入口；对应清单见 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution)
+- Flutter 第三批中文文案基线当前已完成：`discover / forum / docs / profile` 主 tab、壳层登录态、登录提示、forum / docs / profile / discover 的标题、空态与错误态已统一到中文主文案，不引入完整 i18n 框架
+- Flutter 个人复访入口当前已产品化：`profile` 不再只展示开发态回流信息，而是承载最近 forum 阅读与公开主页复访入口，继续复用既有 handoff 和 follow-up 状态
+- Flutter forum detail 当前已接入轻回应墙最小闭环：详情页按“正文 -> 轻回应 -> 评论区”展示，支持匿名读取最近轻回应、已登录发布一句轻回应，并复用详情页原地登录续接；删除、举报、完整评论提交、点赞、投票与通知中心仍不纳入当前批次
+- Flutter 第三批 Android 真机复核当前已完成：中文主文案、个人复访入口与 forum detail 轻回应发布在真实 Gateway 下确认正常；同一帖子详情返回列表后再次点击无法进入的 handoff 去重问题已修复并补定向回归测试
+- Flutter 第四批首个小闭环当前已落到 `profile` 我的轻回应回看：已登录且查看我的主页时会读取 `/api/v1/PostQuickReply/GetMine`，展示最近轻回应与原帖标题，并复用既有 forum detail handoff 回到原帖；公开主页不展示该个人区块；本轮 Android 真机复核确认正常
+- Flutter 第四批“我的轻回应回看”已继续补齐分页复访：`profile` 中该区块当前支持继续加载更多轻回应，分页失败只在该区块内提示，不拖垮公开资料、公开帖子和公开评论读取；本轮 Android 真机复核已确认正常；仍不开放删除、举报、完整评论提交、点赞、投票或编辑治理
+- Flutter 第四批“最近公开评论回看”已补齐分页复访：`profile` 中最近公开评论当前支持继续加载更多，并继续通过 `publicProfileComment` handoff 回到对应帖子与评论上下文；真机复核发现的“能打开帖子但停在顶部”问题已收口到 forum detail 目标评论异步渲染后的滚动重试，当前自动化验证与 Android 真机定位复核均已通过；分页失败只在评论区块内提示，不拖垮公开资料、公开帖子或我的轻回应区块；仍不开放评论提交、点赞、删除、举报或编辑治理
+- Flutter 第四批“最近公开帖子回看”已补齐分页复访：`profile` 中最近公开帖子当前支持继续加载更多，并继续通过 `publicProfilePost` handoff 回到对应帖子详情；加载更多失败只在帖子区块内提示，不拖垮公开资料、最近公开评论或我的轻回应区块；三条 profile 复访路线从详情返回后均会回到 profile，不再落到论坛首页；当前已通过 `flutter test`、`flutter analyze`、`git diff --check` 与 Android 真机复核；仍不开放发帖、评论提交、点赞、删除、举报或编辑治理
+- Flutter 第四批“最近阅读上下文”已接入我的 `profile`：已登录态可在我的主页继续打开最近一次 forum 阅读目标，并以 `profileRecentBrowse` 来源保留 profile 返回上下文；当前已通过自动化验证与 Android 真机复核；该入口仍只承载单个最近阅读上下文，不扩展完整浏览历史中心、删除、清空、同步治理或多条记录列表
+- Flutter 第五批“profile 最近阅读轻量多条列表”已完成收口：已登录态我的 `profile` 当前可展示最近多条 forum 阅读上下文，继续复用 `ForumDetailHandoffTarget` 与本地最近阅读语义；Android 本地持久化兼容旧单条记录，新列表最多保留 5 条并按 `postId + commentId` 去重；壳层状态条仍只显示最新一条“继续阅读论坛”；当前已通过自动化验证与 Android 真机复核；仍不扩展完整浏览历史中心、删除、清空、筛选、跨端同步治理或 docs / forum 混合时间线
+- Flutter 第六批“forum detail 轻回应发布后局部体验补强”已完成收口：已登录用户发布轻回应成功后不刷新帖子详情或评论区，不打断当前阅读位置；新轻回应会即时前插到轻回应墙，并在轻回应区给出明确成功反馈；发布失败只在轻回应区局部提示，正文与评论阅读继续保留；仍复用现有 `PostQuickReply` 契约、`ForumDetailHandoffTarget`、detail 原地登录续接与最近阅读语义；当前已通过自动化验证与 Android 真机复核
+- Flutter 第七批首个小闭环“docs 搜索体验增强”已完成收口：搜索关键词提交会先 trim 并同步输入框为实际搜索词；搜索、清除与翻页会回到结果顶部；从搜索结果打开内联文档详情后返回会恢复原搜索结果附近的滚动上下文；真机复核发现的 Android Back 退到桌面问题已收口为 docs 内联详情优先消费根层返回；当前已通过自动化验证与 Android 真机复核
+- Android MVP 内测分发前置整理当前已完成文档与本机预检收口：内测 RC 候选链路成立，真实签名材料已由用户本机补齐并通过 `:app:checkReleaseSigningConfig`；个人开发阶段暂缓 testing Gateway、测试账号 / 测试数据、分发对象、反馈回收方式与真机安装复核，正式 release 包发布前再按 RC 清单补齐；对应记录见 [Flutter Android MVP 内测分发前置整理记录（2026-05-01）](/guide/flutter-android-internal-rc-prep-record-2026-05-01)
+- Flutter 第八批首个小闭环“profile 最近文档轻量多条列表”已完成代码、自动化验证与收口复核：我的 `profile` 中最近文档从单条入口扩展为最多 5 条的轻量列表，按 `slug` 去重并保留最新打开优先；Android 本地持久化兼容旧单条 `docs_recent_document_target` 并新增列表存储；壳层状态条仍只展示最新一条“继续阅读文档”；真机 APK 安装与 testing Gateway 验收暂缓到正式 release 包发布前
+- Flutter 第九批首个小闭环“profile 复访区块体验整理”已完成代码与自动化验证：`profile` 中最近文档、最近阅读、我的轻回应、最近公开帖子与最近公开评论区块已统一标题图标、空态和局部加载失败提示；我的主页在没有最近 forum / docs 记录时会在公开内容之后给出轻量空态，公开主页不会显示个人复访区块；仍不扩展完整浏览历史中心、删除、清空、跨端同步或新的后端 API
+- Flutter 第十批首个小闭环“profile 区块顺序与信息密度微调”已完成代码与自动化验证：我的主页复访顺序收口为最近复访 / 最近文档 / 最近阅读 / 我的轻回应 / 最近公开帖子 / 最近公开评论；公开主页只保留最近公开帖子与最近公开评论；无最近 forum / docs 记录时使用紧凑“最近复访”空态卡，避免挤压公开帖子与评论回跳入口；仍不扩完整浏览历史中心或新的治理动作
+- Flutter 第十一批首个小闭环“docs 详情只读上下文补强”已完成代码与自动化验证：docs 详情页当前补齐只读上下文、来源、公开地址与边界提示，长 slug 在详情芯片与上下文中保持窄屏受控显示，详情错误态会明确目标 `/docs/:slug` 与返回来源后重试口径；仍不扩目录树、编辑、发布、版本历史、完整 Markdown 引擎或新的后端 API
+- Flutter 第十二批首个小闭环“forum detail 来源上下文与错误态补强”已完成代码与自动化验证：forum detail 正文卡当前补齐只读上下文、来源、公开地址、可选评论定位目标与边界提示；详情错误态会明确目标 `/forum/post/:postId`、来源与可选 `commentId`，评论定位失败会作为局部提示保留帖子正文阅读；长帖子地址与 meta 文本在窄屏保持受控显示；仍不扩完整通知中心、系统通知栏推送、发帖、完整评论提交、点赞、投票、编辑治理或新的后端 API
+- Flutter 第四批“最近文档阅读”已接入原生壳层：`discover` 文档精选可直接打开 docs 详情，详情以来源 route 返回 discover / profile / docs 列表；我的 `profile` 可展示单个最近文档入口并继续打开公开文档详情；Android 侧已补本地最近文档 target 持久化；当前已通过 `flutter test`、`flutter analyze`、`git diff --check` 与 Android 真机复核；仍不扩展文档搜索增强、目录树、编辑、发布、回收站、版本历史、完整浏览历史中心或多条记录治理
+- Flutter 第四批“docs 正文内链跳转”已接入原生详情：docs 正文中的 `/docs/:slug` 与 Markdown 文档链接可继续打开 Flutter 原生 docs 详情；列表内联详情会在当前 docs 页切换文档，discover / profile 等来源 route 会继续 push 新详情页并保留返回上一层详情的上下文；真机复核发现的长 slug 窄屏溢出与搜索详情返回退出问题已完成修复并复测通过，当前已通过 `flutter test`、`flutter analyze`、`git diff --check` 与定向 docs / smoke 回归；仍不扩展外部浏览器打开、完整 Markdown 引擎、目录树、编辑、发布、版本历史或完整浏览历史治理
+- Flutter 第四批“docs 关键词搜索复访”已接入原生 docs 列表：docs tab 当前可通过现有 `/api/v1/Wiki/GetList?keyword=...` 搜索公开文档，搜索结果继续复用原生列表卡、分页、刷新与 docs 详情打开路径；真机复核发现的长 slug 窄屏溢出与搜索详情返回退出问题已完成修复并复测通过；调试态根层返回后重新打开卡启动页的问题已收口为 Android 根层 Back 退后台；当前已通过 `flutter test`、`flutter analyze`、`git diff --check` 与定向 docs / smoke 回归；仍不扩展搜索建议、历史搜索、全文高亮、目录树、编辑、发布、版本历史或后端搜索改造
+- Flutter 第四批“discover 论坛精选直达”已接入原生壳层：discover 中的论坛精选帖子可直接打开同一套原生 forum detail，并以 `discover` 来源保留返回发现页的上下文；真机复核发现的 discover “进入论坛 / 进入文档”列表根层 Back 直接退桌面问题已完成代码修复，当前这两个快捷入口会先返回 discover；当前已补 `discover_page_test.dart` 与 `smoke_test.dart` 定向覆盖，并通过 `flutter test test/smoke_test.dart`、`flutter analyze`、`git diff --check` 与 Android 真机复核；仍不开放发帖、评论提交、点赞、投票、编辑治理、完整通知中心或系统通知栏推送
 
 ## 当前批次目标
 
-1. **Flutter MVP 第二批最小认证边界**
-   - 当前已完成应用启动会话恢复 gate、匿名态 / 已登录态三态收口与壳层级状态展示
-   - 当前仍未进入完整登录 UI、登出治理、refresh token 流程与真实持久化实现
-2. **forum 首条真实只读读取链路**
-   - Flutter forum 当前已开始真实读取公开帖子列表，不再停留在占位说明页
-   - 当前范围先收口到匿名列表阅读、排序分页、加载态与错误态，不同时进入详情、评论与互动提交
-3. **后续真实页面继续按价值推进**
-   - 下一步优先把 `discover` 从占位页升级为真实分发入口，再补 `docs / profile` 的最小真实接线
-   - 当前仍不为 Flutter 单独设计新的 BFF，也不复刻 WebOS 窗口交互
-4. **范围明确收紧**
-   - 当前不同时进入聊天、完整通知中心、完整商城工作台和创作器
-   - 当前不把 Flutter 理解为“移动版 WebOS”
-   - 当前不把 Windows / Linux 平台工程与 Android 起步批次绑定
+1. **Flutter MVP 第三批产品层回补**
+   - 中文文案基线、个人复访入口产品化与 forum detail 轻回应最小读写闭环当前均已完成，并已通过一轮 Android 真机人工复核
+   - 当前仍不引入完整 i18n、文案运营配置、完整通知中心、系统通知栏推送、发帖、完整评论提交、点赞、投票、编辑治理或 Flutter 专属 BFF
+2. **Android MVP 稳定维护**
+   - Android 本地 release APK、Gateway 环境切换、签名配置诊断与分发前置清单继续保留为 RC 分发前置能力
+   - Android MVP 收口复核与 RC 前置判断已整理到 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution)，当前明确区分“已具备内部 RC 候选链路”和“个人开发阶段暂缓外部分发验收”
+   - testing Gateway、测试对象、反馈闭环、真机 APK 安装与外部分发回归统一暂缓到正式 release 包发布前，不作为近期产品扩项阻断
+   - 暂缓真机 APK 安装不等于暂停开发中的 Android Studio 模拟器 / AVD 功能测试；模拟器验证可按需执行，但不替代 release 前真机安装验收
+3. **第五批首个小闭环**
+   - Flutter 第四批“复访深化 + 已登录轻互动回看”当前已完成代码、自动化验证与 Android 真机复核，可作为一个小批次收口
+   - 第五批首个候选“profile 最近阅读轻量多条列表”已完成代码、自动化验证与 Android 真机复核，可作为一个小批次收口；当前不把它扩大为完整浏览历史中心
+   - 当前仍不把 Windows / Linux 平台工程与 Android MVP 产品批次绑定
+4. **第六批小闭环**
+   - `forum detail` 轻回应发布后局部体验补强已完成代码、自动化验证与 Android 真机复核，可作为一个小批次收口
+   - 本轮仍不开放删除、举报、完整评论提交、点赞、投票、编辑治理、完整通知中心、系统通知栏推送或 Flutter 专属 BFF
+5. **第七批首个小闭环**
+   - Flutter docs 搜索体验增强已完成代码、自动化验证与 Android 真机复核，可作为一个小批次收口
+   - 本轮仍不扩展搜索建议、历史搜索、全文高亮、目录树、编辑、发布、版本历史、完整浏览历史治理、后端搜索改造或 Flutter 专属 BFF
+6. **Android MVP RC / release 前置维护**
+   - 第七批首个小闭环后已完成一轮 Android MVP 内测分发前置整理与本机预检
+   - 个人开发阶段不再把 testing Gateway、测试账号 / 测试数据、分发对象、反馈回收方式或真机安装复核作为近期推进阻塞
+   - 上述 release 前验证统一留到正式 release 包发布前再补；当前仍不回头扩系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理
+7. **第八批首个小闭环**
+   - profile 最近文档轻量多条列表已完成代码、自动化验证与收口复核，可作为一个窄范围小批次收口
+   - 本轮仍不扩展完整浏览历史中心、删除、清空、跨端同步、搜索历史、目录树、编辑、发布、版本历史、后端搜索改造或 Flutter 专属 BFF
+   - Android 真机 APK 安装与 testing Gateway 验收按用户要求暂缓，正式 release 包发布前再补
+8. **第九批首个小闭环**
+   - profile 复访区块体验整理已完成代码与自动化验证，可作为一个窄范围小批次收口
+   - 本轮只统一区块标题图标、空态、局部错误提示与加载更多反馈，不新增 API、不扩完整浏览历史中心、删除 / 清空、筛选或跨端同步治理
+9. **第十批首个小闭环**
+   - profile 区块顺序与信息密度微调已完成代码与自动化验证，可作为一个窄范围小批次收口
+   - 本轮只调整我的主页 / 公开主页区块顺序、紧凑复访空态和描述文案，不新增 API、不改变回跳目标、不扩完整浏览历史中心或治理动作
+10. **第十一批首个小闭环**
+   - docs 详情只读上下文补强已完成代码与自动化验证，可作为一个窄范围小批次收口
+   - 本轮只补强详情页来源、公开地址、只读边界、长 slug 窄屏显示与详情错误态提示，不新增 API、不扩目录树、编辑、发布、版本历史或完整 Markdown 引擎
+11. **第十二批首个小闭环**
+   - forum detail 来源上下文与错误态补强已完成代码与自动化验证，可作为一个窄范围小批次收口
+   - 本轮只补强详情页来源、公开地址、可选评论定位目标、只读边界、长地址 / meta 窄屏显示与详情错误态提示，不新增 API、不扩完整通知中心、系统通知栏推送、发帖、完整评论提交、点赞、投票或编辑治理
 
 ## 下一顺位
 
-- `Phase 2-3` 第二批业务链路
-  - 下一步优先把 `discover` 升级为真实内容分发入口，并继续补 `docs / profile` 的最小真实页面接线
-  - forum 当前已完成首条真实只读读取链路，后续默认先不扩详情和互动提交，避免过早放大范围
-  - 在 `discover / docs / profile` 的最小真实页面接线稳定后，再做 Android 真机构建与最小联调
+- `Phase 2-3` 第三批后续判断
+  - 第三批三项产品层回补已落地并完成一轮 Android 真机人工复核，当前可进入第三批收口记录
+  - 第四批“复访深化 + 已登录轻互动回看”已完成收口：我的轻回应、最近公开评论、最近公开帖子、最近 forum 阅读、最近 docs 阅读、docs 正文内链、docs 关键词搜索、discover 文档直达、discover 论坛精选直达与 discover 快捷入口返回上下文均已完成代码、自动化验证与 Android 真机复核
+  - 第五批首个候选方向 `profile` 最近阅读轻量多条列表已完成收口；第六批 `forum detail` 轻回应发布后局部体验补强、第七批首个小闭环 `docs` 搜索体验增强、第八批首个小闭环 `profile` 最近文档轻量多条列表、第九批首个小闭环 `profile` 复访区块体验整理、第十批首个小闭环 `profile` 区块顺序与信息密度微调、第十一批首个小闭环 `docs` 详情只读上下文补强，以及第十二批首个小闭环 `forum detail` 来源上下文与错误态补强均已完成代码与自动化验证；其中第八批已补自动化收口复核，真机安装仍留到正式 release 包发布前补；后续若继续做功能，仍应选择窄范围复访或只读体验补强
+  - Android RC / 外部分发验收在个人开发阶段暂缓，不把 testing Gateway、分发对象或真机安装条件误判为当前业务功能阻塞
+  - Android Studio 模拟器 / AVD 功能测试仍可作为开发中验证入口，与正式 release 前真机 APK 安装验收分开记录、分开判断
 
 - `Phase 2-2` 稳定维护项
   - 公开内容壳层保留必要联调复核与问题修复，但不再继续新增公开入口或细节增强

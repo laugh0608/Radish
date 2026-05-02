@@ -2,7 +2,7 @@
 
 > 状态：执行中，作为第二开发阶段前置架构决策与首批落地依据
 >
-> 最后更新：2026-04-18（Asia/Shanghai）
+> 最后更新：2026-04-29（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -168,7 +168,11 @@ Flutter 不承担“把桌面工作台搬到原生端”的任务。
 - `/docs/search`、`/leaderboard`、`/shop/products` 与 `/discover` 当前已完成一轮公开入口稳定性批量验收：同路径 no-op、防抖 replace 路由同步、越界参数规范化与来源返回都已收口，避免继续把“路由状态抖动”当作局部样式问题处理
 - 当前这一批 forum / docs / `u/:id` / leaderboard / shop / discover 公开入口已完成稳定性收口并转入维护；`Phase 2-2` 后续默认只保留稳定维护，不再继续扩公开壳层页面细节
 - 当前仍保持增量迁移口径，`/` 与 `/desktop` 的根入口关系未调整
-- Flutter 第一批当前固定从 `Clients/radish.flutter` 起步：先落范围定义、工程骨架、导航壳层与复用约束，不同时进入完整业务页和多平台扩展
+- Flutter 第一批已从 `Clients/radish.flutter` 起步并进入 Android MVP 第二批真实业务接线；当前已完成最小登录 / 会话恢复、公开 forum / docs / profile 读取、forum detail / comment 只读阅读、最小 forum notification 回流，以及本地 release APK 发布候选首轮收口
+- Flutter 第三批已完成中文文案基线、个人复访入口产品化与 forum detail 轻回应最小读写闭环；第四批已继续沿“复访深化 + 已登录轻互动回看”推进到 profile 公开帖子 / 评论 / 我的轻回应分页复访、最近 forum / docs 阅读复访、docs 正文内链跳转与 docs 关键词搜索复访
+- Flutter Android 当前继续保持原生客户端壳层边界：高价值阅读、轻互动、复访和来源返回由原生导航承载；发帖、完整评论提交、点赞、投票、编辑治理、完整通知中心与桌面工作台能力仍不纳入 Android MVP 当前批次
+- Android 调试态根层 Back 当前已按原生生命周期口径收口为退后台而非直接 finish Activity，避免调试期间从桌面重新打开时卡在原生启动页；详情页等子路径仍按各页面来源返回栈处理
+- Flutter Android release 包身份当前为 `com.radish.client` / `Radish`；本地 RC 联调继续通过 Gateway `https://localhost:5000` 与 `adb reverse tcp:5000 tcp:5000` 验证；环境切换、签名配置诊断与 RC 分发前置清单已完成首轮收口，后续若进入外部分发应优先推进真实签名材料入库外管理与测试环境实际分发复核，而不是复刻桌面工作台
 
 ## 9. 当前明确不做
 

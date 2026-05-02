@@ -1,20 +1,40 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/auth/native_auth_controller.dart';
+import '../../../core/auth/session_controller.dart';
 import '../../../core/config/app_environment.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
 import '../data/forum_models.dart';
 import '../data/forum_repository.dart';
+import 'forum_detail_page.dart';
 import 'forum_feed_controller.dart';
 
 class ForumPage extends StatefulWidget {
   const ForumPage({
     required this.environment,
     required this.repository,
+    this.sessionController,
+    this.authController,
+    this.onOpenProfileUser,
+    this.onOpenForumDetailTarget,
+    this.onRequestSignInForDetail,
+    this.onConsumeActiveDetailLoginTarget,
+    this.handoffTarget,
+    this.onConsumeHandoffTarget,
     super.key,
   });
 
   final AppEnvironment environment;
   final ForumRepository repository;
+  final SessionController? sessionController;
+  final NativeAuthController? authController;
+  final ValueChanged<String>? onOpenProfileUser;
+  final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
+  final Future<void> Function(ForumDetailHandoffTarget target)?
+      onRequestSignInForDetail;
+  final Future<void> Function()? onConsumeActiveDetailLoginTarget;
+  final ForumDetailHandoffTarget? handoffTarget;
+  final VoidCallback? onConsumeHandoffTarget;
 
   @override
   State<ForumPage> createState() => _ForumPageState();
@@ -22,6 +42,7 @@ class ForumPage extends StatefulWidget {
 
 class _ForumPageState extends State<ForumPage> {
   late ForumFeedController _controller;
+  String? _handledHandoffSignature;
 
   @override
   void initState() {
@@ -30,6 +51,9 @@ class _ForumPageState extends State<ForumPage> {
       repository: widget.repository,
     );
     _controller.loadInitial();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _openHandoffTargetIfNeeded();
+    });
   }
 
   @override
@@ -42,6 +66,17 @@ class _ForumPageState extends State<ForumPage> {
         repository: widget.repository,
       );
       _controller.loadInitial();
+      _handledHandoffSignature = null;
+    }
+
+    if (oldWidget.handoffTarget != null && widget.handoffTarget == null) {
+      _handledHandoffSignature = null;
+    }
+
+    if (oldWidget.handoffTarget != widget.handoffTarget) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _openHandoffTargetIfNeeded();
+      });
     }
   }
 
@@ -62,24 +97,24 @@ class _ForumPageState extends State<ForumPage> {
           padding: const EdgeInsets.all(20),
           children: [
             Text(
-              'Forum feed',
+              '论坛',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
             Text(
-              'The Flutter shell now reads the real public forum feed instead of a placeholder. This batch keeps the boundary on anonymous, read-only browsing.',
+              '浏览公开帖子，支持最新和热门排序。当前阶段仅提供只读阅读。',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 20),
             PhaseScopeCard(
-              title: 'Feed contract',
+              title: '当前能力',
               items: [
-                'Environment: ${widget.environment.name}',
-                'Source API: ${widget.environment.apiBaseUrl}/api/v1/Post/GetList',
-                'Scope: anonymous read-only list, latest/hottest sort, first-page navigation',
+                '当前环境：${widget.environment.name}',
+                '支持公开帖子列表、帖子详情和评论阅读',
+                '当前不支持发帖、评论提交、点赞、投票或编辑',
                 state.page == null
-                    ? 'Feed state: ${state.status.name}'
-                    : 'Loaded ${state.page!.posts.length} posts from ${state.page!.dataCount} total records',
+                    ? '正在准备论坛内容'
+                    : '已加载 ${state.page!.posts.length} 条帖子，共 ${state.page!.dataCount} 条',
               ],
             ),
             const SizedBox(height: 16),
@@ -92,11 +127,20 @@ class _ForumPageState extends State<ForumPage> {
             if (state.isLoading) const _ForumLoadingState(),
             if (state.isError)
               _ForumErrorState(
-                message: state.errorMessage ?? 'Failed to load the forum feed.',
+                message: state.errorMessage ?? '无法加载论坛内容。',
                 onRetry: _controller.refresh,
               ),
             if (state.isReady && state.page != null)
               _ForumFeedContent(
+                environment: widget.environment,
+                repository: widget.repository,
+                sessionController: widget.sessionController,
+                authController: widget.authController,
+                onOpenProfileUser: widget.onOpenProfileUser,
+                onOpenForumDetailTarget: widget.onOpenForumDetailTarget,
+                onRequestSignInForDetail: widget.onRequestSignInForDetail,
+                onConsumeActiveDetailLoginTarget:
+                    widget.onConsumeActiveDetailLoginTarget,
                 state: state,
                 onPreviousPage: state.hasPreviousPage
                     ? () => _controller.goToPage(state.pageIndex - 1)
@@ -108,6 +152,45 @@ class _ForumPageState extends State<ForumPage> {
           ],
         );
       },
+    );
+  }
+
+  void _openHandoffTargetIfNeeded() {
+    if (!mounted) {
+      return;
+    }
+
+    final target = widget.handoffTarget;
+    if (target == null || !target.hasValidPostId) {
+      return;
+    }
+
+    final signature =
+        '${target.source.name}:${target.normalizedPostId}:${target.normalizedCommentId ?? ''}';
+    if (_handledHandoffSignature == signature) {
+      return;
+    }
+
+    _handledHandoffSignature = signature;
+    widget.onConsumeHandoffTarget?.call();
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => ForumDetailPage(
+          environment: widget.environment,
+          repository: widget.repository,
+          postId: target.normalizedPostId,
+          handoffSource: target.source,
+          initialTitle: target.normalizedInitialTitle,
+          commentId: target.normalizedCommentId,
+          sessionController: widget.sessionController,
+          authController: widget.authController,
+          onRequestSignIn: widget.onRequestSignInForDetail,
+          onConsumeActiveDetailLoginTarget:
+              widget.onConsumeActiveDetailLoginTarget,
+          onOpenProfileUser: widget.onOpenProfileUser,
+        ),
+      ),
     );
   }
 }
@@ -148,7 +231,7 @@ class _ForumFeedControls extends StatelessWidget {
         FilledButton.tonalIcon(
           onPressed: state.isLoading ? null : onRefresh,
           icon: const Icon(Icons.refresh),
-          label: const Text('Refresh'),
+          label: const Text('刷新'),
         ),
       ],
     );
@@ -169,7 +252,7 @@ class _ForumLoadingState extends StatelessWidget {
             children: [
               CircularProgressIndicator(),
               SizedBox(height: 16),
-              Text('Loading forum feed...'),
+              Text('正在加载论坛内容...'),
             ],
           ),
         ),
@@ -196,7 +279,7 @@ class _ForumErrorState extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Forum feed unavailable',
+              '暂时无法加载论坛',
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 12),
@@ -205,7 +288,7 @@ class _ForumErrorState extends StatelessWidget {
             FilledButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              label: const Text('重试'),
             ),
           ],
         ),
@@ -216,11 +299,28 @@ class _ForumErrorState extends StatelessWidget {
 
 class _ForumFeedContent extends StatelessWidget {
   const _ForumFeedContent({
+    required this.environment,
+    required this.repository,
+    required this.sessionController,
+    required this.authController,
+    required this.onOpenProfileUser,
+    required this.onOpenForumDetailTarget,
+    required this.onRequestSignInForDetail,
+    required this.onConsumeActiveDetailLoginTarget,
     required this.state,
     required this.onPreviousPage,
     required this.onNextPage,
   });
 
+  final AppEnvironment environment;
+  final ForumRepository repository;
+  final SessionController? sessionController;
+  final NativeAuthController? authController;
+  final ValueChanged<String>? onOpenProfileUser;
+  final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
+  final Future<void> Function(ForumDetailHandoffTarget target)?
+      onRequestSignInForDetail;
+  final Future<void> Function()? onConsumeActiveDetailLoginTarget;
   final ForumFeedState state;
   final VoidCallback? onPreviousPage;
   final VoidCallback? onNextPage;
@@ -236,12 +336,12 @@ class _ForumFeedContent extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                'Page ${page.page} of ${page.pageCount}',
+                '第 ${page.page} / ${page.pageCount} 页',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
             ),
             Text(
-              '${page.dataCount} posts',
+              '共 ${page.dataCount} 条帖子',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],
@@ -251,11 +351,42 @@ class _ForumFeedContent extends StatelessWidget {
           const Card(
             child: Padding(
               padding: EdgeInsets.all(24),
-              child: Text('No public posts are available for this slice yet.'),
+              child: Text('当前没有可公开阅读的帖子。'),
             ),
           ),
         for (final post in page.posts) ...[
-          _ForumPostCard(post: post),
+          _ForumPostCard(
+            post: post,
+            onOpenProfileUser: onOpenProfileUser,
+            onOpen: () {
+              if (onOpenForumDetailTarget != null) {
+                onOpenForumDetailTarget!(
+                  ForumDetailHandoffTarget(
+                    postId: post.id,
+                    initialTitle: post.title,
+                  ),
+                );
+                return;
+              }
+
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (context) => ForumDetailPage(
+                    environment: environment,
+                    repository: repository,
+                    postId: post.id,
+                    initialTitle: post.title,
+                    sessionController: sessionController,
+                    authController: authController,
+                    onRequestSignIn: onRequestSignInForDetail,
+                    onConsumeActiveDetailLoginTarget:
+                        onConsumeActiveDetailLoginTarget,
+                    onOpenProfileUser: onOpenProfileUser,
+                  ),
+                ),
+              );
+            },
+          ),
           const SizedBox(height: 12),
         ],
         const SizedBox(height: 8),
@@ -266,12 +397,12 @@ class _ForumFeedContent extends StatelessWidget {
             OutlinedButton.icon(
               onPressed: onPreviousPage,
               icon: const Icon(Icons.arrow_back),
-              label: const Text('Previous'),
+              label: const Text('上一页'),
             ),
             FilledButton.tonalIcon(
               onPressed: onNextPage,
               icon: const Icon(Icons.arrow_forward),
-              label: const Text('Next'),
+              label: const Text('下一页'),
             ),
           ],
         ),
@@ -283,90 +414,112 @@ class _ForumFeedContent extends StatelessWidget {
 class _ForumPostCard extends StatelessWidget {
   const _ForumPostCard({
     required this.post,
+    required this.onOpenProfileUser,
+    required this.onOpen,
   });
 
   final ForumPostSummary post;
+  final ValueChanged<String>? onOpenProfileUser;
+  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (post.badges.isNotEmpty) ...[
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: post.badges
-                    .map(
-                      (badge) => Chip(
-                        label: Text(badge),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    )
-                    .toList(),
-              ),
-              const SizedBox(height: 12),
-            ],
-            Text(
-              post.title,
-              style: textTheme.titleLarge,
-            ),
-            if (post.summary != null) ...[
-              const SizedBox(height: 12),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onOpen,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (post.badges.isNotEmpty) ...[
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: post.badges
+                      .map(
+                        (badge) => Chip(
+                          label: Text(badge),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      )
+                      .toList(),
+                ),
+                const SizedBox(height: 12),
+              ],
               Text(
-                post.summary!,
-                style: textTheme.bodyMedium,
+                post.title,
+                style: textTheme.titleLarge,
+              ),
+              if (post.summary != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  post.summary!,
+                  style: textTheme.bodyMedium,
+                ),
+              ],
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 16,
+                runSpacing: 8,
+                children: [
+                  _ForumMetaAction(
+                    icon: Icons.person_outline,
+                    text: post.authorName ?? '用户 ${post.authorId}',
+                    onTap: onOpenProfileUser == null
+                        ? null
+                        : () => onOpenProfileUser!(post.authorId),
+                  ),
+                  _ForumMetaText(
+                    icon: Icons.folder_outlined,
+                    text: post.categoryName ?? '分类 ${post.categoryId}',
+                  ),
+                  _ForumMetaText(
+                    icon: Icons.schedule_outlined,
+                    text: _formatCreateTime(post.createTime),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 16,
+                runSpacing: 8,
+                children: [
+                  _ForumMetaText(
+                    icon: Icons.visibility_outlined,
+                    text: '${post.viewCount} 次浏览',
+                  ),
+                  _ForumMetaText(
+                    icon: Icons.thumb_up_alt_outlined,
+                    text: '${post.likeCount} 个赞',
+                  ),
+                  _ForumMetaText(
+                    icon: Icons.chat_bubble_outline,
+                    text: '${post.commentCount} 条评论',
+                  ),
+                  if (post.isQuestion)
+                    _ForumMetaText(
+                      icon: Icons.question_answer_outlined,
+                      text: '${post.answerCount} 个回答',
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Text(
+                    '查看详情',
+                    style: textTheme.labelLarge,
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.arrow_forward, size: 18),
+                ],
               ),
             ],
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 16,
-              runSpacing: 8,
-              children: [
-                _ForumMetaText(
-                  icon: Icons.person_outline,
-                  text: post.authorName ?? 'User ${post.authorId}',
-                ),
-                _ForumMetaText(
-                  icon: Icons.folder_outlined,
-                  text: post.categoryName ?? 'Category ${post.categoryId}',
-                ),
-                _ForumMetaText(
-                  icon: Icons.schedule_outlined,
-                  text: _formatCreateTime(post.createTime),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 16,
-              runSpacing: 8,
-              children: [
-                _ForumMetaText(
-                  icon: Icons.visibility_outlined,
-                  text: '${post.viewCount} views',
-                ),
-                _ForumMetaText(
-                  icon: Icons.thumb_up_alt_outlined,
-                  text: '${post.likeCount} likes',
-                ),
-                _ForumMetaText(
-                  icon: Icons.chat_bubble_outline,
-                  text: '${post.commentCount} comments',
-                ),
-                if (post.isQuestion)
-                  _ForumMetaText(
-                    icon: Icons.question_answer_outlined,
-                    text: '${post.answerCount} answers',
-                  ),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -374,7 +527,7 @@ class _ForumPostCard extends StatelessWidget {
 
   String _formatCreateTime(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Unknown time';
+      return '时间未知';
     }
 
     final parsed = DateTime.tryParse(value);
@@ -410,6 +563,41 @@ class _ForumMetaText extends StatelessWidget {
         const SizedBox(width: 6),
         Text(text),
       ],
+    );
+  }
+}
+
+class _ForumMetaAction extends StatelessWidget {
+  const _ForumMetaAction({
+    required this.icon,
+    required this.text,
+    this.onTap,
+  });
+
+  final IconData icon;
+  final String text;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    if (onTap == null) {
+      return _ForumMetaText(icon: icon, text: text);
+    }
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(999),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18),
+            const SizedBox(width: 6),
+            Text(text),
+          ],
+        ),
+      ),
     );
   }
 }

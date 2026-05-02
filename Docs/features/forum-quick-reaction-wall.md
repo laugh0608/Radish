@@ -1,8 +1,8 @@
 # 论坛轻回应墙 Phase 1 设计
 
-> 状态：联调收口中
+> 状态：Flutter Android 最小闭环已接入，待真机复核
 >
-> 最后更新：2026-04-08（Asia/Shanghai）
+> 最后更新：2026-04-27（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -30,7 +30,7 @@
 
 ## 2. 当前代码事实
 
-截至 `2026-04-08`，论坛轻回应墙的基础链路已经落地，仓库中的实际结构如下：
+截至 `2026-04-27`，论坛轻回应墙的基础链路已经落地，仓库中的实际结构如下：
 
 - 帖子轻回应后端独立链路已存在：
   - `Radish.Model/PostQuickReply.cs`
@@ -52,6 +52,13 @@
   - `Frontend/radish.client/src/api/forum.ts`
   - `Frontend/radish.client/src/types/forum.ts`
   - `Frontend/radish.client/src/i18n.ts`
+- Flutter Android forum detail 已接入最小轻回应读写闭环：
+  - `Clients/radish.flutter/lib/core/network/radish_api_client.dart`
+  - `Clients/radish.flutter/lib/features/forum/data/forum_models.dart`
+  - `Clients/radish.flutter/lib/features/forum/data/forum_repository.dart`
+  - `Clients/radish.flutter/lib/features/forum/presentation/forum_quick_reply_controller.dart`
+  - `Clients/radish.flutter/lib/features/forum/presentation/forum_detail_page.dart`
+  - `Clients/radish.flutter/test/forum_detail_page_test.dart`
 
 现有评论、Reaction 与举报相关链路仍是轻回应墙需要兼容但不复用的既有边界：
 
@@ -90,7 +97,7 @@
 
 ### 2.2 当前阶段判断
 
-截至 `2026-04-08`，轻回应墙 `Phase 1` 的当前判断为：
+截至 `2026-04-27`，轻回应墙 `Phase 1` 的当前判断为：
 
 - “独立建模 / 独立接口 / 独立治理边界 / 三段式插入位”已经成立；
 - 当前不再讨论“是否继续复用 Comment / Reaction 临时拼装”；
@@ -100,6 +107,7 @@
 - 论坛现有帖子 / 评论类通知当前已完成统一导航载荷收口，可稳定跳回帖子详情。
 - 论坛评论精确定位最小闭环已落地：带 `commentId` 打开 forum 时，帖子详情页在评论加载完成后可自动滚动到目标评论，并给出一次性高亮提示；若目标评论不在当前首屏评论数据中，会按最小所需页数补齐根评论 / 子评论数据。
 - 轻回应专属通知最小闭环已落地：他人在你的帖子下发布轻回应时，当前会给帖子作者发送一条最小论坛通知，并支持从通知中心跳回帖子详情。
+- Flutter Android 当前已完成客户端最小闭环：详情页按“正文 -> 轻回应 -> 评论区”展示，匿名可读取最近轻回应，已登录可发布一句轻回应，并复用详情页原地登录续接；删除、举报、我的轻回应列表、完整评论提交、点赞、投票与编辑治理不进入当前 Flutter 批次。
 
 ## 3. 目标
 
@@ -445,19 +453,28 @@ PostQuickReply
    - 空态、加载态、报错态、登录引导、删除与举报链路是否一致
    - 少量内容静态铺排、超宽轨道才漂移的视觉表现是否稳定
    - 移动端降级形态是否自然，不把桌面交互硬搬到小屏
+   - Flutter Android 当前先验证最近轻回应读取、已登录发布与匿名登录引导，不扩删除 / 举报入口
 2. 最小回流链路：
    - “个人内容回看 -> 跳回帖子详情”已完成
    - 评论精确定位已完成最小闭环
    - 轻回应专属通知已完成“通知中心 -> 跳回帖子详情”的最小闭环，不继续扩张成完整通知体系改造
+   - Flutter Android 端复用 profile 复访、browse history 与 detail 原地登录续接，不新建独立通知中心
 3. 验收与留痕：
    - 把当前已落地的基础链路从“实现完成”推进到“主线可验收”
+   - Flutter Android 第三批先完成自动化验证，真机联调顺延到下一工作日
 
 ## 14. 最小验证方案
 
-开发批次最小验证建议：
+Web / 后端开发批次最小验证建议：
 
 - `dotnet build Radish.slnx -c Debug`
 - `npm run build --workspace=radish.client`
+
+Flutter Android 客户端最小验证建议：
+
+- `flutter analyze`
+- `flutter test`
+- Android 真机人工复核：在真实 Gateway 下确认中文文案、个人复访入口、轻回应读取 / 发布与匿名登录续接
 
 接口烟雾验证至少覆盖：
 
@@ -480,7 +497,7 @@ PostQuickReply
 
 ## 15. 当前决定
 
-截至 `2026-04-08`，论坛轻回应墙 Phase 1 的正式口径固定为：
+截至 `2026-04-27`，论坛轻回应墙 Phase 1 的正式口径固定为：
 
 - 独立数据模型
 - 独立接口
@@ -489,5 +506,6 @@ PostQuickReply
 - 支持纯文本和默认 Unicode emoji
 - 不支持贴纸、表情包、附件、Markdown、`@提及`
 - 基础链路已落地，当前执行重点转向联调收口与最小回流链路补齐
+- Flutter Android 先承载最小读写闭环，不把 Web / 桌面端完整治理能力一次性搬入原生客户端
 
 后续若要支持贴纸型轻回应，应进入后续阶段单独评估，不并入当前 Phase 1。

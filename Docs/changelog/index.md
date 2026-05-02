@@ -21,7 +21,7 @@
 ### 2026
 
 - 技术栈：`.NET 10 + React + SQLSugar + PostgreSQL/SQLite`
-- 主要阶段：消息通知、等级系统、商城、Console、论坛增强、表情包、聊天室、身份语义治理
+- 主要阶段：消息通知、等级系统、商城、Console、论坛增强、表情包、聊天室、身份语义治理、公开内容壳层与 Flutter Android MVP
 - 入口：[`2026.md`](./2026.md)
 
 ### 2025

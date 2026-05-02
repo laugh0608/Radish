@@ -8,7 +8,7 @@ namespace Radish.Auth.OpenIddict;
 
 /// <summary>
 /// 初始化 OpenIddict 所需的基础数据：
-/// - radish-client：前端 Web 客户端（授权码 + PKCE + refresh_token）
+/// - radish-client：官方客户端（Web / Flutter，共享授权码 + refresh_token）
 /// - radish-console：后台管理控制台（授权码 + refresh_token）
 /// - radish-scalar：API 文档和调试工具（授权码）
 /// - radish-api Scope：资源服务器标识
@@ -66,7 +66,7 @@ public class OpenIddictSeedHostedService : IHostedService
             var descriptor = new OpenIddictApplicationDescriptor
             {
                 ClientId = "radish-client",
-                DisplayName = "Radish Web Client",
+                DisplayName = "Radish Official Client",
                 ConsentType = OpenIddictConstants.ConsentTypes.Implicit // SSO: 无需显式授权
             };
 
@@ -79,6 +79,10 @@ public class OpenIddictSeedHostedService : IHostedService
             descriptor.RedirectUris.Add(new Uri("http://localhost:3000/oidc/callback"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3000"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3000/"));
+
+            // Flutter 原生客户端（Android 起步）
+            descriptor.RedirectUris.Add(new Uri("radish://oidc/callback"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("radish://oidc/logout-complete"));
 
             Console.WriteLine($"[OpenIddictSeed] PostLogoutRedirectUris 数量: {descriptor.PostLogoutRedirectUris.Count}");
 
@@ -95,7 +99,7 @@ public class OpenIddictSeedHostedService : IHostedService
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.RadishApi);
 
             // 扩展属性：客户端展示信息
-            ApplyOfficialMetadata(descriptor, "Radish 官方 Web 客户端，承载社区主站与 WebOS 入口。");
+            ApplyOfficialMetadata(descriptor, "Radish 官方客户端，承载社区主站、WebOS 与 Flutter 原生壳层。");
 
             //descriptor.Requirements.Add(OpenIddictConstants.Requirements.Features.ProofKeyForCodeExchange);
 
@@ -114,6 +118,8 @@ public class OpenIddictSeedHostedService : IHostedService
             descriptor.RedirectUris.Add(BuildPublicUri(publicBaseUri, "oidc/callback"));
             // 直接访问前端开发服务器（开发环境）
             descriptor.RedirectUris.Add(new Uri("http://localhost:3000/oidc/callback"));
+            // Flutter 原生客户端（Android 起步）
+            descriptor.RedirectUris.Add(new Uri("radish://oidc/callback"));
 
             descriptor.PostLogoutRedirectUris.Clear();
             // 通过 Gateway 访问（公开入口）
@@ -122,11 +128,13 @@ public class OpenIddictSeedHostedService : IHostedService
             // 直接访问前端开发服务器（开发环境）
             descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3000"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3000/"));
+            // Flutter 原生客户端（Android 起步）
+            descriptor.PostLogoutRedirectUris.Add(new Uri("radish://oidc/logout-complete"));
 
             Console.WriteLine($"[OpenIddictSeed] 更新后 PostLogoutRedirectUris 数量: {descriptor.PostLogoutRedirectUris.Count}");
 
             // 确保扩展属性存在
-            ApplyOfficialMetadata(descriptor, "Radish 官方 Web 客户端，承载社区主站与 WebOS 入口。");
+            ApplyOfficialMetadata(descriptor, "Radish 官方客户端，承载社区主站、WebOS 与 Flutter 原生壳层。");
 
             await _applicationManager.UpdateAsync(existingClient, descriptor, cancellationToken);
             Console.WriteLine("[OpenIddictSeed] radish-client 客户端更新完成");

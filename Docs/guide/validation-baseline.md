@@ -514,6 +514,42 @@ npm run check:host-runtime -- --details --report-file .tmp/host-runtime-report.m
 2. 如果这轮只是做必要的编译 / 测试确认，且暂时不方便停宿主，可改用隔离输出目录完成验证，避免覆盖正在运行的宿主产物。
 3. 自动化验证与真实联调尽量拆开执行，不要长时间共用同一个默认输出目录反复覆盖。
 
+## Flutter Android 平台测试 JDK 说明
+
+`Clients/radish.flutter` 的 Dart 层回归继续使用：
+
+```bash
+flutter test
+```
+
+Android 平台侧 JVM 单元测试用于覆盖 `MainActivity` 附近的原生 handoff、OIDC callback 与外部 ID 字符串化边界。Windows 本机执行这类测试时，不要使用系统默认 `java`。如果默认 JDK 是 `25.x`，当前 Gradle / Kotlin DSL 可能会在脚本解析阶段失败。
+
+本机执行 Android 平台单测时，固定先把 `JAVA_HOME` 指向 Android Studio 自带 JBR，再运行 Gradle：
+
+```powershell
+cd Clients/radish.flutter/android
+$env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
+.\gradlew.bat :app:testDebugUnitTest
+```
+
+如果 Android Studio 安装路径不同，使用对应安装目录下的 `jbr`。不要为了这条测试链路改用 Oracle / 系统默认 JDK，也不要把该失败误判为 Flutter handoff 或 OIDC 业务代码回归。
+
+## Flutter Android 人工验收分层
+
+Flutter Android MVP 当前人工验收优先覆盖已经具备真实入口、真实数据或可稳定手工触发的链路：登录、退出、会话恢复、`discover / docs / profile` 首批真实只读读取、forum feed、forum detail、评论阅读、评论分页、detail 原地登录续接，以及已登录壳层的最小 forum notification 回流。
+
+最小 forum notification 回流当前使用站内通知列表作为可测来源：用另一个账号在 Web / 桌面端评论或回复目标用户的帖子 / 评论，接收账号登录 Flutter 后点击 `Forum notification`，应能回到对应 forum detail，并在通知携带 `commentId` 时落到评论上下文。系统通知栏推送、完整通知中心、标记已读、删除通知和通知设置仍不属于当前 Android MVP 阻断项。具体 checklist 以 `Clients/radish.flutter/README.md` 为准。
+
+Android MVP 本地 release APK 发布候选当前已完成首轮收口。涉及 Android 包身份、release signing、main manifest 权限、Gateway 基址或 RC 构建脚本时，除 Dart / Android 平台自动化外，还应确认：
+
+- `flutter build apk --release` 可产出 APK
+- release 包包含 main manifest 的 `INTERNET` 权限
+- Android 包身份保持 `com.radish.client`，应用显示名保持 `Radish`
+- 未配置正式签名时仍可回落到 debug signing 完成本地 RC 构建验证
+- 若准备外部分发，`.\gradlew.bat :app:checkReleaseSigningConfig` 应通过；该检查只验证签名材料前置，不提交真实密钥
+- 真实 `android/key.properties`、`.jks` 与 `.keystore` 不进入版本库
+- 真机通过 `adb reverse tcp:5000 tcp:5000` 访问本机 Gateway 时，登录、基础读取与关键样式显示正常
+
 ## 受限环境说明
 
 在某些受限 Windows 沙盒中，顶层 shell 可以执行 `npm run ...`，但 Node 脚本内部再次拉起 `node / npm / powershell` 子进程可能被系统直接拒绝。

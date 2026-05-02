@@ -171,7 +171,7 @@ class ForumFeedController extends ChangeNotifier {
         status: ForumFeedStatus.error,
         sort: sort,
         pageIndex: pageIndex,
-        errorMessage: 'Unexpected forum payload: ${error.message}',
+        errorMessage: '论坛列表返回格式异常：${error.message}',
       );
       notifyListeners();
     }

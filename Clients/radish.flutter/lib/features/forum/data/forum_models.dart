@@ -1,3 +1,37 @@
+enum ForumDetailHandoffSource {
+  shell,
+  discover,
+  notification,
+  browseHistory,
+  publicProfilePost,
+  publicProfileComment,
+  myQuickReply,
+  profileRecentBrowse,
+}
+
+extension ForumDetailHandoffSourceLabel on ForumDetailHandoffSource {
+  String get label {
+    switch (this) {
+      case ForumDetailHandoffSource.shell:
+        return '应用内打开';
+      case ForumDetailHandoffSource.discover:
+        return '发现';
+      case ForumDetailHandoffSource.notification:
+        return '通知回流';
+      case ForumDetailHandoffSource.browseHistory:
+        return '继续阅读';
+      case ForumDetailHandoffSource.publicProfilePost:
+        return '个人主页帖子';
+      case ForumDetailHandoffSource.publicProfileComment:
+        return '个人主页评论';
+      case ForumDetailHandoffSource.myQuickReply:
+        return '我的轻回应';
+      case ForumDetailHandoffSource.profileRecentBrowse:
+        return '我的最近阅读';
+    }
+  }
+}
+
 enum ForumFeedSort {
   newest,
   hottest,
@@ -16,9 +50,9 @@ extension ForumFeedSortApiValue on ForumFeedSort {
   String get label {
     switch (this) {
       case ForumFeedSort.newest:
-        return 'Latest';
+        return '最新';
       case ForumFeedSort.hottest:
-        return 'Hottest';
+        return '热门';
     }
   }
 }
@@ -52,7 +86,7 @@ class ForumPostSummary {
 
     return ForumPostSummary(
       id: _readRequiredId(map, 'voId'),
-      title: _readString(map['voTitle']) ?? 'Untitled post',
+      title: _readString(map['voTitle']) ?? '未命名帖子',
       summary: _readString(map['voSummary']),
       categoryId: _readRequiredId(map, 'voCategoryId'),
       categoryName: _readString(map['voCategoryName']),
@@ -96,14 +130,435 @@ class ForumPostSummary {
   final String? createTime;
 
   List<String> get badges {
+    return _buildForumBadges(
+      isTop: isTop,
+      isEssence: isEssence,
+      isQuestion: isQuestion,
+      isSolved: isSolved,
+      hasPoll: hasPoll,
+      pollIsClosed: pollIsClosed,
+      hasLottery: hasLottery,
+      lotteryIsDrawn: lotteryIsDrawn,
+    );
+  }
+}
+
+class ForumPostDetail {
+  const ForumPostDetail({
+    required this.id,
+    required this.title,
+    required this.content,
+    required this.categoryId,
+    required this.authorId,
+    this.summary,
+    this.contentType,
+    this.categoryName,
+    this.authorName,
+    this.tagNames = const <String>[],
+    this.viewCount = 0,
+    this.likeCount = 0,
+    this.commentCount = 0,
+    this.answerCount = 0,
+    this.isTop = false,
+    this.isEssence = false,
+    this.isQuestion = false,
+    this.isSolved = false,
+    this.hasPoll = false,
+    this.pollIsClosed = false,
+    this.hasLottery = false,
+    this.lotteryIsDrawn = false,
+    this.createTime,
+    this.updateTime,
+  });
+
+  factory ForumPostDetail.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+    final parsedTagNames = _readStringList(map['voTagNames']);
+    final fallbackTags = _readCsvList(map['voTags']);
+
+    return ForumPostDetail(
+      id: _readRequiredId(map, 'voId'),
+      title: _readString(map['voTitle']) ?? '未命名帖子',
+      summary: _readString(map['voSummary']),
+      content: _readString(map['voContent']) ?? '',
+      contentType: _readString(map['voContentType']),
+      categoryId: _readRequiredId(map, 'voCategoryId'),
+      categoryName: _readString(map['voCategoryName']),
+      authorId: _readRequiredId(map, 'voAuthorId'),
+      authorName: _readString(map['voAuthorName']),
+      tagNames: parsedTagNames.isEmpty ? fallbackTags : parsedTagNames,
+      viewCount: _readInt(map['voViewCount']) ?? 0,
+      likeCount: _readInt(map['voLikeCount']) ?? 0,
+      commentCount: _readInt(map['voCommentCount']) ?? 0,
+      answerCount: _readInt(map['voAnswerCount']) ?? 0,
+      isTop: _readBool(map['voIsTop']),
+      isEssence: _readBool(map['voIsEssence']),
+      isQuestion: _readBool(map['voIsQuestion']),
+      isSolved: _readBool(map['voIsSolved']),
+      hasPoll: _readBool(map['voHasPoll']),
+      pollIsClosed: _readBool(map['voPollIsClosed']),
+      hasLottery: _readBool(map['voHasLottery']),
+      lotteryIsDrawn: _readBool(map['voLotteryIsDrawn']),
+      createTime: _readString(map['voCreateTime']),
+      updateTime: _readString(map['voUpdateTime']),
+    );
+  }
+
+  final String id;
+  final String title;
+  final String? summary;
+  final String content;
+  final String? contentType;
+  final String categoryId;
+  final String? categoryName;
+  final String authorId;
+  final String? authorName;
+  final List<String> tagNames;
+  final int viewCount;
+  final int likeCount;
+  final int commentCount;
+  final int answerCount;
+  final bool isTop;
+  final bool isEssence;
+  final bool isQuestion;
+  final bool isSolved;
+  final bool hasPoll;
+  final bool pollIsClosed;
+  final bool hasLottery;
+  final bool lotteryIsDrawn;
+  final String? createTime;
+  final String? updateTime;
+
+  List<String> get badges {
+    return _buildForumBadges(
+      isTop: isTop,
+      isEssence: isEssence,
+      isQuestion: isQuestion,
+      isSolved: isSolved,
+      hasPoll: hasPoll,
+      pollIsClosed: pollIsClosed,
+      hasLottery: hasLottery,
+      lotteryIsDrawn: lotteryIsDrawn,
+    );
+  }
+}
+
+class ForumDetailHandoffTarget {
+  const ForumDetailHandoffTarget({
+    required this.postId,
+    this.source = ForumDetailHandoffSource.shell,
+    this.initialTitle,
+    this.commentId,
+  });
+
+  final String postId;
+  final ForumDetailHandoffSource source;
+  final String? initialTitle;
+  final String? commentId;
+
+  String get normalizedPostId => postId.trim();
+
+  String? get normalizedInitialTitle => _readString(initialTitle);
+
+  String? get normalizedCommentId => _readString(commentId);
+
+  bool get hasValidPostId => normalizedPostId.isNotEmpty;
+
+  Map<String, Object?> toJson() {
+    return {
+      'postId': normalizedPostId,
+      'source': source.name,
+      'initialTitle': normalizedInitialTitle,
+      'commentId': normalizedCommentId,
+    };
+  }
+
+  static ForumDetailHandoffTarget? fromJson(Object? json) {
+    final map = _tryReadJsonMap(json);
+    if (map == null) {
+      return null;
+    }
+
+    final postId = _readString(map['postId']);
+    if (postId == null || postId.isEmpty) {
+      return null;
+    }
+
+    return ForumDetailHandoffTarget(
+      postId: postId,
+      source: _readHandoffSource(map['source']),
+      initialTitle: _readString(map['initialTitle']),
+      commentId: _readString(map['commentId']),
+    );
+  }
+
+  ForumDetailHandoffTarget copyWith({
+    String? postId,
+    ForumDetailHandoffSource? source,
+    String? initialTitle,
+    String? commentId,
+  }) {
+    return ForumDetailHandoffTarget(
+      postId: postId ?? this.postId,
+      source: source ?? this.source,
+      initialTitle: initialTitle ?? this.initialTitle,
+      commentId: commentId ?? this.commentId,
+    );
+  }
+}
+
+class ForumCommentSummary {
+  const ForumCommentSummary({
+    required this.id,
+    required this.postId,
+    required this.content,
+    required this.authorId,
+    required this.authorName,
+    this.parentId,
+    this.rootId,
+    this.replyToCommentId,
+    this.replyToCommentSnapshot,
+    this.replyToUserId,
+    this.replyToUserName,
+    this.level = 1,
+    this.likeCount = 0,
+    this.replyCount = 0,
+    this.isTop = false,
+    this.isLiked = false,
+    this.isGodComment = false,
+    this.isSofa = false,
+    this.createTime,
+    this.updateTime,
+    this.children = const <ForumCommentSummary>[],
+    this.childrenTotal = 0,
+  });
+
+  factory ForumCommentSummary.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+    final rawChildren = map['voChildren'];
+    final parsedChildren = rawChildren is List
+        ? rawChildren.map(ForumCommentSummary.fromJson).toList()
+        : const <ForumCommentSummary>[];
+
+    return ForumCommentSummary(
+      id: _readRequiredId(map, 'voId'),
+      postId: _readRequiredId(map, 'voPostId'),
+      content: _readString(map['voContent']) ?? '',
+      authorId: _readRequiredId(map, 'voAuthorId'),
+      authorName: _readString(map['voAuthorName']) ?? '未知用户',
+      parentId: _readString(map['voParentId']),
+      rootId: _readString(map['voRootId']),
+      replyToCommentId: _readString(map['voReplyToCommentId']),
+      replyToCommentSnapshot: _readString(map['voReplyToCommentSnapshot']),
+      replyToUserId: _readString(map['voReplyToUserId']),
+      replyToUserName: _readString(map['voReplyToUserName']),
+      level: _readInt(map['voLevel']) ?? 1,
+      likeCount: _readInt(map['voLikeCount']) ?? 0,
+      replyCount: _readInt(map['voReplyCount']) ?? 0,
+      isTop: _readBool(map['voIsTop']),
+      isLiked: _readBool(map['voIsLiked']),
+      isGodComment: _readBool(map['voIsGodComment']),
+      isSofa: _readBool(map['voIsSofa']),
+      createTime: _readString(map['voCreateTime']),
+      updateTime: _readString(map['voUpdateTime']),
+      children: parsedChildren,
+      childrenTotal: _readInt(map['voChildrenTotal']) ?? parsedChildren.length,
+    );
+  }
+
+  final String id;
+  final String postId;
+  final String content;
+  final String authorId;
+  final String authorName;
+  final String? parentId;
+  final String? rootId;
+  final String? replyToCommentId;
+  final String? replyToCommentSnapshot;
+  final String? replyToUserId;
+  final String? replyToUserName;
+  final int level;
+  final int likeCount;
+  final int replyCount;
+  final bool isTop;
+  final bool isLiked;
+  final bool isGodComment;
+  final bool isSofa;
+  final String? createTime;
+  final String? updateTime;
+  final List<ForumCommentSummary> children;
+  final int childrenTotal;
+
+  List<String> get badges {
     return [
-      if (isTop) 'Top',
-      if (isEssence) 'Essence',
-      if (isQuestion) isSolved ? 'Solved' : 'Question',
-      if (hasPoll) pollIsClosed ? 'Poll closed' : 'Poll',
-      if (hasLottery) lotteryIsDrawn ? 'Lottery drawn' : 'Lottery',
+      if (isTop) '置顶',
+      if (isGodComment) '神评',
+      if (isSofa) '首条回复',
     ];
   }
+}
+
+class ForumChildCommentPage {
+  const ForumChildCommentPage({
+    required this.pageIndex,
+    required this.pageSize,
+    required this.totalCount,
+    required this.comments,
+  });
+
+  factory ForumChildCommentPage.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+    final items = map['voItems'];
+    final comments = items is List
+        ? items.map(ForumCommentSummary.fromJson).toList()
+        : const <ForumCommentSummary>[];
+
+    return ForumChildCommentPage(
+      pageIndex: _readInt(map['voPageIndex']) ?? 1,
+      pageSize: _readInt(map['voPageSize']) ?? comments.length,
+      totalCount: _readInt(map['voTotal']) ?? comments.length,
+      comments: comments,
+    );
+  }
+
+  final int pageIndex;
+  final int pageSize;
+  final int totalCount;
+  final List<ForumCommentSummary> comments;
+}
+
+class ForumCommentNavigationLocation {
+  const ForumCommentNavigationLocation({
+    required this.commentId,
+    required this.postId,
+    required this.rootCommentId,
+    required this.isRootComment,
+    required this.rootPageIndex,
+    this.parentCommentId,
+    this.childPageIndex,
+  });
+
+  factory ForumCommentNavigationLocation.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+
+    return ForumCommentNavigationLocation(
+      commentId: _readRequiredId(map, 'voCommentId'),
+      postId: _readRequiredId(map, 'voPostId'),
+      rootCommentId: _readRequiredId(map, 'voRootCommentId'),
+      parentCommentId: _readString(map['voParentCommentId']),
+      isRootComment: _readBool(map['voIsRootComment']),
+      rootPageIndex: _readInt(map['voRootPageIndex']) ?? 1,
+      childPageIndex: _readInt(map['voChildPageIndex']),
+    );
+  }
+
+  final String commentId;
+  final String postId;
+  final String rootCommentId;
+  final String? parentCommentId;
+  final bool isRootComment;
+  final int rootPageIndex;
+  final int? childPageIndex;
+}
+
+class ForumCommentPage {
+  const ForumCommentPage({
+    required this.page,
+    required this.pageSize,
+    required this.dataCount,
+    required this.pageCount,
+    required this.comments,
+  });
+
+  factory ForumCommentPage.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+    final data = map['voItems'] ?? map['data'];
+    final comments = data is List
+        ? data.map(ForumCommentSummary.fromJson).toList()
+        : const <ForumCommentSummary>[];
+    final page = _readInt(map['voPageIndex']) ?? _readInt(map['page']) ?? 1;
+    final pageSize = _readInt(map['voPageSize']) ??
+        _readInt(map['pageSize']) ??
+        comments.length;
+    final dataCount = _readInt(map['voTotal']) ??
+        _readInt(map['dataCount']) ??
+        comments.length;
+    final explicitPageCount =
+        _readInt(map['voPageCount']) ?? _readInt(map['pageCount']);
+
+    return ForumCommentPage(
+      page: page,
+      pageSize: pageSize,
+      dataCount: dataCount,
+      pageCount: explicitPageCount ?? _calculatePageCount(dataCount, pageSize),
+      comments: comments,
+    );
+  }
+
+  final int page;
+  final int pageSize;
+  final int dataCount;
+  final int pageCount;
+  final List<ForumCommentSummary> comments;
+}
+
+class ForumQuickReplySummary {
+  const ForumQuickReplySummary({
+    required this.id,
+    required this.postId,
+    required this.authorId,
+    required this.authorName,
+    required this.content,
+    this.authorAvatarUrl,
+    this.status = 0,
+    this.createTime,
+  });
+
+  factory ForumQuickReplySummary.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+
+    return ForumQuickReplySummary(
+      id: _readRequiredId(map, 'voId'),
+      postId: _readRequiredId(map, 'voPostId'),
+      authorId: _readRequiredId(map, 'voAuthorId'),
+      authorName: _readString(map['voAuthorName']) ?? '未知用户',
+      authorAvatarUrl: _readString(map['voAuthorAvatarUrl']),
+      content: _readString(map['voContent']) ?? '',
+      status: _readInt(map['voStatus']) ?? 0,
+      createTime: _readString(map['voCreateTime']),
+    );
+  }
+
+  final String id;
+  final String postId;
+  final String authorId;
+  final String authorName;
+  final String? authorAvatarUrl;
+  final String content;
+  final int status;
+  final String? createTime;
+}
+
+class ForumQuickReplyWall {
+  const ForumQuickReplyWall({
+    required this.items,
+    required this.total,
+  });
+
+  factory ForumQuickReplyWall.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+    final items = map['voItems'];
+
+    return ForumQuickReplyWall(
+      items: items is List
+          ? items.map(ForumQuickReplySummary.fromJson).toList()
+          : const <ForumQuickReplySummary>[],
+      total: _readInt(map['voTotal']) ?? 0,
+    );
+  }
+
+  final List<ForumQuickReplySummary> items;
+  final int total;
 }
 
 class ForumPostPage {
@@ -146,6 +601,14 @@ Map<String, Object?> _readJsonMap(Object? json) {
   throw const FormatException('Expected a JSON object.');
 }
 
+Map<String, Object?>? _tryReadJsonMap(Object? json) {
+  if (json is! Map) {
+    return null;
+  }
+
+  return Map<String, Object?>.from(json.cast<Object?, Object?>());
+}
+
 String _readRequiredId(Map<String, Object?> map, String key) {
   final value = _readString(map[key]);
   if (value == null || value.isEmpty) {
@@ -183,4 +646,76 @@ bool _readBool(Object? value) {
 
   final text = value?.toString().trim().toLowerCase();
   return text == 'true' || text == '1';
+}
+
+int _calculatePageCount(int totalCount, int pageSize) {
+  if (totalCount <= 0) {
+    return 0;
+  }
+
+  if (pageSize <= 0) {
+    return 1;
+  }
+
+  return ((totalCount + pageSize - 1) ~/ pageSize).clamp(1, totalCount);
+}
+
+ForumDetailHandoffSource _readHandoffSource(Object? value) {
+  final text = _readString(value);
+  if (text == null) {
+    return ForumDetailHandoffSource.shell;
+  }
+
+  for (final source in ForumDetailHandoffSource.values) {
+    if (source.name == text) {
+      return source;
+    }
+  }
+
+  return ForumDetailHandoffSource.shell;
+}
+
+List<String> _readStringList(Object? value) {
+  if (value is! List) {
+    return const <String>[];
+  }
+
+  return value
+      .map(_readString)
+      .whereType<String>()
+      .map((item) => item.trim())
+      .where((item) => item.isNotEmpty)
+      .toList(growable: false);
+}
+
+List<String> _readCsvList(Object? value) {
+  final text = _readString(value);
+  if (text == null || text.isEmpty) {
+    return const <String>[];
+  }
+
+  return text
+      .split(',')
+      .map((item) => item.trim())
+      .where((item) => item.isNotEmpty)
+      .toList(growable: false);
+}
+
+List<String> _buildForumBadges({
+  required bool isTop,
+  required bool isEssence,
+  required bool isQuestion,
+  required bool isSolved,
+  required bool hasPoll,
+  required bool pollIsClosed,
+  required bool hasLottery,
+  required bool lotteryIsDrawn,
+}) {
+  return [
+    if (isTop) '置顶',
+    if (isEssence) '精华',
+    if (isQuestion) isSolved ? '已解决' : '提问',
+    if (hasPoll) pollIsClosed ? '投票已结束' : '投票',
+    if (hasLottery) lotteryIsDrawn ? '抽奖已开奖' : '抽奖',
+  ];
 }

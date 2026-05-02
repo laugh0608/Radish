@@ -513,6 +513,24 @@ dotnet watch --project Radish.Gateway/Radish.Gateway.csproj
 | 前端 dev | http://localhost:3000 | 前端开发服务器 |
 | Console dev | http://localhost:3100 | 控制台开发服务器 |
 
+### Android 模拟器访问 Gateway
+
+Flutter Android 开发态也应通过 Gateway 统一访问后端，默认入口保持为 `https://localhost:5000`，不要改成 API 直连 `http://localhost:5100`。
+
+Android 模拟器里的 `localhost` 默认指向模拟器自身。为了让模拟器访问宿主机 Gateway，同时保持本地开发 HTTPS 证书的 `localhost` 主机名一致，启动 Flutter Android 应用前需要执行 ADB 反向端口映射：
+
+```powershell
+adb reverse tcp:5000 tcp:5000
+```
+
+如果 `adb` 不在 `PATH` 中，可使用 Android SDK 的完整路径执行，例如：
+
+```powershell
+D:\MyKits\android\platform-tools\adb.exe reverse tcp:5000 tcp:5000
+```
+
+不建议把 Android 模拟器入口改成 `https://10.0.2.2:5000`。该地址虽然能指向宿主机，但请求主机名会变成 `10.0.2.2`，与 Gateway 本地开发证书默认的 `localhost` 主机名不一致，容易在 TLS 握手阶段出现 `HandshakeException` 或 `Connection terminated during handshake`。
+
 ### 添加新路由
 
 如果需要添加新的路由规则，编辑 `Radish.Gateway/appsettings.json`：
