@@ -394,3 +394,10 @@ Flutter 客户端第一批固定遵循以下约束：
 2. 当前索引明确第八至第十七批已有命令级开发阶段验证记录，第十八批为文档型刷新体验清单收口，第十九批与第二十批仍建议在 release 前补命令级批次记录
 3. 本轮不新增 Flutter / Android 业务代码，不重新执行测试，不替代 testing Gateway、release APK 构建、真机安装或外部分发回归
 4. 后续若准备 release / RC 外部分发，应优先按该索引和 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution) 补齐批次级回归留痕
+
+截至 `2026-05-02` 的第二十三批文档收口事实：
+
+1. 第十九批与第二十批命令级回归记录补洞已完成：新增 [profile 空态人称与文档口径复核记录（2026-05-02）](/guide/flutter-android-mvp-profile-empty-copy-record-2026-05-02) 与 [profile 公开主页长文本窄屏显示复核记录（2026-05-02）](/guide/flutter-android-mvp-profile-long-text-record-2026-05-02)
+2. 本轮补跑 `flutter test test/profile_page_test.dart test/smoke_test.dart`、`flutter analyze` 与 `git diff --check`，均已通过；Flutter 命令因当前 Windows 沙盒边界使用提权环境执行
+3. 本轮只补回归记录与索引引用，不新增 Flutter / Android 业务代码，不改变 API、状态模型、签名配置或 Gateway 切换逻辑
+4. testing Gateway、release APK 构建、真机安装、登录 / 通知 / 写入链路与批次级外部分发回归仍留到正式 release 包发布前补齐

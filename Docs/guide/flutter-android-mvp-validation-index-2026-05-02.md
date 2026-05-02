@@ -14,7 +14,7 @@
 1. 第八至第十七批均已有明确的 Dart 定向测试、`smoke_test`、`flutter analyze` 与 `git diff --check` 结论
 2. 第八批因触达 Android 本地存储桥，已额外覆盖 Android Studio JBR 下的 `.\gradlew.bat :app:testDebugUnitTest`
 3. 第十八批是文档型收口，验证资产是刷新体验开发阶段清单，不替代 release 前真机验收
-4. 第十九批与第二十批在规划文档中记录为已完成代码与自动化验证，但尚未沉淀独立批次级回归记录；release 前建议补齐命令级留痕
+4. 第十九批与第二十批已在第二十三批补齐独立命令级回归记录；release 前仍需基于最新代码重新执行完整 RC 验证
 5. 第八至第二十批均未执行 testing Gateway release APK 构建、真机 APK 安装或外部分发验收；这些仍按 RC 清单留到正式 release 包发布前补
 
 ## 验证索引
@@ -32,8 +32,8 @@
 | 第十六批 | forum / docs 主列表刷新体验一致性 | `flutter test test/forum_page_test.dart test/docs_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter analyze`、`git diff --check` | [Phase 2-3 Flutter 客户端 MVP](/planning/phase-two-flutter-client-mvp) | 独立批次级回归记录、testing Gateway、release APK、真机安装与外部分发回归 |
 | 第十七批 | profile 主资料刷新体验一致性 | `flutter test test/profile_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter analyze`、`git diff --check` | [Phase 2-3 Flutter 客户端 MVP](/planning/phase-two-flutter-client-mvp) | 独立批次级回归记录、testing Gateway、release APK、真机安装与外部分发回归 |
 | 第十八批 | 刷新体验收口复核 / 模拟器验证清单整理 | 文档型收口；新增刷新体验开发阶段验证清单，复用第十五至第十七批已有自动化作为代码层保障 | [刷新体验开发阶段验证清单](/guide/flutter-android-mvp-refresh-experience-checklist-2026-05-02)、[Phase 2-3 Flutter 客户端 MVP](/planning/phase-two-flutter-client-mvp) | 若 release 前仍需复核刷新体验，需在 testing Gateway + release APK + 真机安装后按清单执行 |
-| 第十九批 | profile 空态人称与文档口径复核 | 规划文档记录为已完成代码与自动化验证；未在 `Docs/guide` 下沉淀独立命令级记录 | [Phase 2-3 Flutter 客户端 MVP](/planning/phase-two-flutter-client-mvp)、[当前进行中](/planning/current) | 补命令级批次记录；testing Gateway、release APK、真机安装与外部分发回归 |
-| 第二十批 | profile 公开主页长文本窄屏显示复核 | 规划文档记录为已完成代码与自动化验证，新增窄屏 widget 测试；未在 `Docs/guide` 下沉淀独立命令级记录 | [Phase 2-3 Flutter 客户端 MVP](/planning/phase-two-flutter-client-mvp)、[当前进行中](/planning/current) | 补命令级批次记录；testing Gateway、release APK、真机安装与外部分发回归 |
+| 第十九批 | profile 空态人称与文档口径复核 | `flutter test test/profile_page_test.dart test/smoke_test.dart`、`flutter analyze`、`git diff --check` | [profile 空态人称与文档口径复核记录](/guide/flutter-android-mvp-profile-empty-copy-record-2026-05-02) | testing Gateway、release APK、真机安装与外部分发回归 |
+| 第二十批 | profile 公开主页长文本窄屏显示复核 | `flutter test test/profile_page_test.dart test/smoke_test.dart`、`flutter analyze`、`git diff --check` | [profile 公开主页长文本窄屏显示复核记录](/guide/flutter-android-mvp-profile-long-text-record-2026-05-02) | testing Gateway、release APK、真机安装与外部分发回归 |
 
 ## release 前建议补齐
 
