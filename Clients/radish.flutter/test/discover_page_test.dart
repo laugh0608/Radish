@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:radish_flutter/core/auth/session_controller.dart';
 import 'package:radish_flutter/core/config/app_environment.dart';
 import 'package:radish_flutter/core/network/radish_api_client.dart';
+import 'package:radish_flutter/core/network/radish_api_endpoints.dart';
 import 'package:radish_flutter/features/discover/data/discover_models.dart';
 import 'package:radish_flutter/features/discover/data/discover_repository.dart';
 import 'package:radish_flutter/features/docs/data/docs_models.dart';
@@ -89,6 +90,67 @@ void main() {
     expect(find.text('暂时无法加载发现内容'), findsOneWidget);
     expect(find.text('发现内容服务暂时不可用'), findsOneWidget);
     expect(find.text('重试'), findsOneWidget);
+  });
+
+  testWidgets('renders partial discover issues without hiding ready sections', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final scrollable = find.byType(Scrollable);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DiscoverPage(
+          environment: const AppEnvironment.development(),
+          sessionState: const SessionState.anonymous(),
+          repository: _PartialIssueDiscoverRepository(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('部分发现内容暂时不可用'), findsOneWidget);
+    expect(find.textContaining('商城精选暂时不可用'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Native discover wiring plan'),
+      300,
+      scrollable: scrollable,
+    );
+    expect(find.text('Native discover wiring plan'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Flutter MVP overview'),
+      300,
+      scrollable: scrollable,
+    );
+    expect(find.text('Flutter MVP overview'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('当前暂无可展示的公开商品。'),
+      300,
+      scrollable: scrollable,
+    );
+    expect(find.text('当前暂无可展示的公开商品。'), findsOneWidget);
+  });
+
+  test('http discover repository keeps ready sections when one section fails',
+      () async {
+    final repository = HttpDiscoverRepository(
+      apiClient: _SectionFailingApiClient(),
+      endpoints: const RadishApiEndpoints(AppEnvironment.development()),
+    );
+
+    final snapshot = await repository.getSnapshot(pageSize: 4);
+
+    expect(snapshot.forumPosts.single.id, '2042219067430928384');
+    expect(snapshot.documents.single.slug, 'flutter-mvp-overview');
+    expect(snapshot.products, isEmpty);
+    expect(snapshot.sectionIssues.single.section, DiscoverSection.shop);
+    expect(snapshot.sectionIssues.single.title, '商城精选暂时不可用');
+    expect(snapshot.sectionIssues.single.message, '商城服务暂时不可用');
   });
 
   testWidgets('keeps discover summary text constrained on narrow screens', (
@@ -274,6 +336,29 @@ class _FailingDiscoverRepository implements DiscoverRepository {
   }
 }
 
+class _PartialIssueDiscoverRepository implements DiscoverRepository {
+  @override
+  Future<DiscoverSnapshot> getSnapshot({
+    required int pageSize,
+  }) async {
+    final snapshot = await _SuccessDiscoverRepository().getSnapshot(
+      pageSize: pageSize,
+    );
+
+    return DiscoverSnapshot(
+      forumPosts: snapshot.forumPosts,
+      documents: snapshot.documents,
+      products: const <DiscoverProductSummary>[],
+      sectionIssues: const [
+        DiscoverSectionIssue(
+          section: DiscoverSection.shop,
+          message: '商城服务暂时不可用',
+        ),
+      ],
+    );
+  }
+}
+
 class _LongTextDiscoverRepository implements DiscoverRepository {
   @override
   Future<DiscoverSnapshot> getSnapshot({
@@ -320,5 +405,63 @@ class _LongTextDiscoverRepository implements DiscoverRepository {
         ),
       ],
     );
+  }
+}
+
+class _SectionFailingApiClient implements RadishApiClient {
+  @override
+  Future<T> get<T>({
+    required Uri uri,
+    required JsonFactory<T> decode,
+    String? bearerToken,
+  }) async {
+    final path = uri.path;
+    if (path == '/api/v1/Shop/GetProducts') {
+      throw const RadishApiClientException('商城服务暂时不可用');
+    }
+
+    if (path == '/api/v1/Post/GetList') {
+      return decode({
+        'data': [
+          {
+            'voId': '2042219067430928384',
+            'voTitle': 'Native discover wiring plan',
+            'voSummary': 'Connect real summaries.',
+            'voCategoryId': '9',
+            'voCategoryName': 'Engineering',
+            'voAuthorId': '1024',
+            'voAuthorName': 'luobo',
+            'voCommentCount': 6,
+            'voViewCount': 128,
+          },
+        ],
+      });
+    }
+
+    if (path == '/api/v1/Wiki/GetList') {
+      return decode({
+        'data': [
+          {
+            'voId': '3001',
+            'voTitle': 'Flutter MVP overview',
+            'voSlug': 'flutter-mvp-overview',
+            'voSummary': 'Current native client scope and boundaries.',
+            'voModifyTime': '2026-04-18T10:00:00Z',
+          },
+        ],
+      });
+    }
+
+    throw RadishApiClientException('Unexpected path: $path');
+  }
+
+  @override
+  Future<T> post<T>({
+    required Uri uri,
+    required Object? body,
+    required JsonFactory<T> decode,
+    String? bearerToken,
+  }) {
+    throw UnimplementedError();
   }
 }

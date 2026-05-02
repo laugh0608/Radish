@@ -327,3 +327,11 @@ Flutter 客户端第一批固定遵循以下约束：
 3. 本轮继续复用现有 `DiscoverSnapshot`、`ForumDetailHandoffTarget`、`DocsDetailHandoffTarget` 与原生来源返回语义，不新增后端 API、Flutter 专属 BFF、独立路由系统或完整工作台能力
 4. 本轮仍不扩完整通知中心、系统通知栏推送、发帖、完整评论提交、点赞、投票、编辑治理、购买、订单或背包能力
 5. 当前验证已通过 `flutter test test/discover_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter analyze` 与针对本次变更文件的 `git diff --check`；Android 真机 APK 安装按个人开发阶段口径暂缓到正式 release 包发布前
+
+截至 `2026-05-02` 的第十四批首个落地事实：
+
+1. Flutter discover 聚合摘要局部失败降级已完成代码与自动化验证：forum / docs / shop 三路摘要在原生聚合层独立保护，单一区块失败时不再拖垮整页发现页
+2. `DiscoverSnapshot` 新增轻量 `sectionIssues`，用于记录局部区块失败；页面会展示“部分发现内容暂时不可用”，可用区块继续展示，失败区块保留原有空态并可通过刷新重试
+3. 本轮继续复用现有 `Post/GetList`、`Wiki/GetList` 与 `Shop/GetProducts` 契约，不新增后端 API、Flutter 专属 BFF、独立重试队列或跨端同步治理
+4. 仓储整体抛错的整页错误态继续保留，用于覆盖启动配置、网络层或不可恢复聚合异常；局部失败只处理单个公开摘要区块的可降级问题
+5. 当前验证已通过 `flutter test test/discover_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter analyze` 与针对本次变更文件的 `git diff --check`；Android 真机 APK 安装按个人开发阶段口径暂缓到正式 release 包发布前

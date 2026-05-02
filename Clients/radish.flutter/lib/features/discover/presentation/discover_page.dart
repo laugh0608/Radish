@@ -339,6 +339,12 @@ class _DiscoverContent extends StatelessWidget {
     return Column(
       children: [
         const _DiscoverContextSection(),
+        if (snapshot.hasSectionIssues) ...[
+          const SizedBox(height: 16),
+          _DiscoverSectionIssueNotice(
+            issues: snapshot.sectionIssues,
+          ),
+        ],
         const SizedBox(height: 16),
         _ForumSection(
           posts: snapshot.forumPosts,
@@ -378,6 +384,65 @@ class _DiscoverContextSection extends StatelessWidget {
           chips: ['公开只读', '保留来源返回', '不含工作台操作'],
         ),
       ],
+    );
+  }
+}
+
+class _DiscoverSectionIssueNotice extends StatelessWidget {
+  const _DiscoverSectionIssueNotice({
+    required this.issues,
+  });
+
+  final List<DiscoverSectionIssue> issues;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.error),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  color: colorScheme.onErrorContainer,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '部分发现内容暂时不可用',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '可用区块会继续展示，失败区块会保留为空态，稍后可刷新重试。',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 12),
+            for (final issue in issues) ...[
+              Text(
+                '${issue.title}：${issue.message}',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (issue != issues.last) const SizedBox(height: 6),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
