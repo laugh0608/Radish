@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:radish_flutter/core/auth/session_controller.dart';
@@ -134,6 +136,132 @@ void main() {
       scrollable: scrollable,
     );
     expect(find.text('当前暂无可展示的公开商品。'), findsOneWidget);
+  });
+
+  testWidgets('keeps current summaries visible while refresh is pending', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repository = _PendingRefreshDiscoverRepository();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DiscoverPage(
+          environment: const AppEnvironment.development(),
+          sessionState: const SessionState.anonymous(),
+          repository: repository,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Native discover wiring plan'), findsOneWidget);
+
+    repository.refreshCompleter = Completer<DiscoverSnapshot>();
+    await tester.tap(find.text('刷新发现'));
+    await tester.pump();
+
+    expect(find.text('正在刷新发现内容，当前仍展示上次可用摘要。'), findsOneWidget);
+    expect(find.text('Native discover wiring plan'), findsOneWidget);
+    expect(find.text('正在刷新'), findsOneWidget);
+
+    repository.refreshCompleter!.complete(_updatedDiscoverSnapshot());
+    await tester.pumpAndSettle();
+
+    expect(find.text('正在刷新发现内容，当前仍展示上次可用摘要。'), findsNothing);
+    expect(find.text('Updated discover summary'), findsOneWidget);
+  });
+
+  testWidgets('clears partial discover issues after a successful refresh', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DiscoverPage(
+          environment: const AppEnvironment.development(),
+          sessionState: const SessionState.anonymous(),
+          repository: _IssueClearingDiscoverRepository(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('部分发现内容暂时不可用'), findsOneWidget);
+    expect(find.textContaining('商城精选暂时不可用'), findsOneWidget);
+
+    await tester.tap(find.text('刷新发现'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('部分发现内容暂时不可用'), findsNothing);
+    expect(find.textContaining('商城精选暂时不可用'), findsNothing);
+    expect(find.text('Profile Rename Card'), findsOneWidget);
+  });
+
+  testWidgets('renders section issues when every discover section fails', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DiscoverPage(
+          environment: const AppEnvironment.development(),
+          sessionState: const SessionState.anonymous(),
+          repository: _AllSectionsIssueDiscoverRepository(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('部分发现内容暂时不可用'), findsOneWidget);
+    expect(find.textContaining('论坛精选暂时不可用'), findsOneWidget);
+    expect(find.textContaining('文档精选暂时不可用'), findsOneWidget);
+    expect(find.textContaining('商城精选暂时不可用'), findsOneWidget);
+    expect(find.text('发现页暂无可公开阅读的内容。'), findsNothing);
+  });
+
+  testWidgets('keeps current summaries when refresh fails', (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DiscoverPage(
+          environment: const AppEnvironment.development(),
+          sessionState: const SessionState.anonymous(),
+          repository: _RefreshFailingDiscoverRepository(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Native discover wiring plan'), findsOneWidget);
+
+    await tester.tap(find.text('刷新发现'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('刷新发现失败'), findsOneWidget);
+    expect(find.text('刷新服务暂时不可用'), findsOneWidget);
+    expect(find.text('Native discover wiring plan'), findsOneWidget);
+    expect(find.text('暂时无法加载发现内容'), findsNothing);
   });
 
   test('http discover repository keeps ready sections when one section fails',
@@ -336,6 +464,87 @@ class _FailingDiscoverRepository implements DiscoverRepository {
   }
 }
 
+class _PendingRefreshDiscoverRepository implements DiscoverRepository {
+  int _calls = 0;
+  Completer<DiscoverSnapshot>? refreshCompleter;
+
+  @override
+  Future<DiscoverSnapshot> getSnapshot({
+    required int pageSize,
+  }) {
+    _calls += 1;
+    if (_calls == 1) {
+      return _SuccessDiscoverRepository().getSnapshot(pageSize: pageSize);
+    }
+
+    final completer = refreshCompleter;
+    if (completer == null) {
+      throw StateError('Missing refresh completer.');
+    }
+
+    return completer.future;
+  }
+}
+
+class _IssueClearingDiscoverRepository implements DiscoverRepository {
+  int _calls = 0;
+
+  @override
+  Future<DiscoverSnapshot> getSnapshot({
+    required int pageSize,
+  }) {
+    _calls += 1;
+    if (_calls == 1) {
+      return _PartialIssueDiscoverRepository().getSnapshot(pageSize: pageSize);
+    }
+
+    return _SuccessDiscoverRepository().getSnapshot(pageSize: pageSize);
+  }
+}
+
+class _AllSectionsIssueDiscoverRepository implements DiscoverRepository {
+  @override
+  Future<DiscoverSnapshot> getSnapshot({
+    required int pageSize,
+  }) async {
+    return const DiscoverSnapshot(
+      forumPosts: <ForumPostSummary>[],
+      documents: <DocsDocumentSummary>[],
+      products: <DiscoverProductSummary>[],
+      sectionIssues: [
+        DiscoverSectionIssue(
+          section: DiscoverSection.forum,
+          message: '论坛服务暂时不可用',
+        ),
+        DiscoverSectionIssue(
+          section: DiscoverSection.docs,
+          message: '文档服务暂时不可用',
+        ),
+        DiscoverSectionIssue(
+          section: DiscoverSection.shop,
+          message: '商城服务暂时不可用',
+        ),
+      ],
+    );
+  }
+}
+
+class _RefreshFailingDiscoverRepository implements DiscoverRepository {
+  int _calls = 0;
+
+  @override
+  Future<DiscoverSnapshot> getSnapshot({
+    required int pageSize,
+  }) {
+    _calls += 1;
+    if (_calls == 1) {
+      return _SuccessDiscoverRepository().getSnapshot(pageSize: pageSize);
+    }
+
+    throw const RadishApiClientException('刷新服务暂时不可用');
+  }
+}
+
 class _PartialIssueDiscoverRepository implements DiscoverRepository {
   @override
   Future<DiscoverSnapshot> getSnapshot({
@@ -357,6 +566,40 @@ class _PartialIssueDiscoverRepository implements DiscoverRepository {
       ],
     );
   }
+}
+
+DiscoverSnapshot _updatedDiscoverSnapshot() {
+  return const DiscoverSnapshot(
+    forumPosts: [
+      ForumPostSummary(
+        id: '2042219067430928385',
+        title: 'Updated discover summary',
+        summary: 'Updated public summary after refresh.',
+        categoryId: '9',
+        categoryName: 'Engineering',
+        authorId: '1024',
+        authorName: 'luobo',
+        commentCount: 8,
+        viewCount: 256,
+      ),
+    ],
+    documents: [
+      DocsDocumentSummary(
+        id: '3002',
+        title: 'Updated Flutter MVP overview',
+        slug: 'updated-flutter-mvp-overview',
+        summary: 'Updated native client scope and boundaries.',
+      ),
+    ],
+    products: [
+      DiscoverProductSummary(
+        id: '4002',
+        name: 'Updated Profile Rename Card',
+        productType: 'Consumable',
+        price: 160,
+      ),
+    ],
+  );
 }
 
 class _LongTextDiscoverRepository implements DiscoverRepository {

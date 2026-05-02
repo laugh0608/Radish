@@ -120,9 +120,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
             Align(
               alignment: Alignment.centerLeft,
               child: FilledButton.tonalIcon(
-                onPressed: state.isLoading ? null : _controller.refresh,
+                onPressed: state.isBusy ? null : _controller.refresh,
                 icon: const Icon(Icons.refresh),
-                label: const Text('刷新发现'),
+                label: Text(state.isRefreshing ? '正在刷新' : '刷新发现'),
               ),
             ),
             const SizedBox(height: 16),
@@ -132,7 +132,18 @@ class _DiscoverPageState extends State<DiscoverPage> {
                 message: state.errorMessage ?? '无法加载发现内容。',
                 onRetry: _controller.refresh,
               ),
-            if (state.isReady && snapshot != null)
+            if (state.isReady && snapshot != null) ...[
+              if (state.isRefreshing) ...[
+                const _DiscoverRefreshingNotice(),
+                const SizedBox(height: 16),
+              ],
+              if (state.refreshIssueMessage != null &&
+                  state.refreshIssueMessage!.isNotEmpty) ...[
+                _DiscoverRefreshIssueNotice(
+                  message: state.refreshIssueMessage!,
+                ),
+                const SizedBox(height: 16),
+              ],
               _DiscoverContent(
                 snapshot: snapshot,
                 onOpenForum: widget.onOpenForum,
@@ -140,6 +151,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                 onOpenDocument: widget.onOpenDocument,
                 onOpenForumDetailTarget: widget.onOpenForumDetailTarget,
               ),
+            ],
           ],
         );
       },
@@ -308,6 +320,92 @@ class _DiscoverErrorState extends StatelessWidget {
   }
 }
 
+class _DiscoverRefreshingNotice extends StatelessWidget {
+  const _DiscoverRefreshingNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.secondary),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            SizedBox.square(
+              dimension: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: colorScheme.onSecondaryContainer,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text('正在刷新发现内容，当前仍展示上次可用摘要。'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DiscoverRefreshIssueNotice extends StatelessWidget {
+  const _DiscoverRefreshIssueNotice({
+    required this.message,
+  });
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.error),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.error_outline,
+              color: colorScheme.onErrorContainer,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '刷新发现失败',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    message,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _DiscoverContent extends StatelessWidget {
   const _DiscoverContent({
     required this.snapshot,
@@ -325,7 +423,7 @@ class _DiscoverContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (snapshot.isEmpty) {
+    if (snapshot.isEmpty && !snapshot.hasSectionIssues) {
       return const Card(
         child: Padding(
           padding: EdgeInsets.all(24),

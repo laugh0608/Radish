@@ -335,3 +335,11 @@ Flutter 客户端第一批固定遵循以下约束：
 3. 本轮继续复用现有 `Post/GetList`、`Wiki/GetList` 与 `Shop/GetProducts` 契约，不新增后端 API、Flutter 专属 BFF、独立重试队列或跨端同步治理
 4. 仓储整体抛错的整页错误态继续保留，用于覆盖启动配置、网络层或不可恢复聚合异常；局部失败只处理单个公开摘要区块的可降级问题
 5. 当前验证已通过 `flutter test test/discover_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter analyze` 与针对本次变更文件的 `git diff --check`；Android 真机 APK 安装按个人开发阶段口径暂缓到正式 release 包发布前
+
+截至 `2026-05-02` 的第十五批首个落地事实：
+
+1. Flutter discover 刷新体验与局部 issue 清理复核已完成代码与自动化验证：发现页已有摘要时触发刷新会保留上次可用内容，并展示轻量“正在刷新发现内容”状态，不再把页面切回整页 loading
+2. 刷新失败会作为局部提示展示“刷新发现失败”，旧 snapshot 继续可读；首次加载失败仍保留原有整页错误态，用于覆盖启动配置、网络层或不可恢复聚合异常
+3. 成功刷新会以新 `DiscoverSnapshot` 为准清理旧 `sectionIssues`；当 forum / docs / shop 三路摘要全部降级时，页面仍展示“部分发现内容暂时不可用”与各区块空态，不误判为普通无内容
+4. 本轮继续复用现有 `DiscoverFeedController`、`DiscoverSnapshot` 与三路公开摘要契约，不新增后端 API、Flutter 专属 BFF、独立重试队列、下拉刷新体系或跨端同步治理
+5. 当前验证已通过 `flutter test test/discover_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter analyze` 与 `git diff --check`；Android 真机 APK 安装按个人开发阶段口径暂缓到正式 release 包发布前
