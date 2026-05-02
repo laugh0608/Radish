@@ -240,14 +240,14 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 if (hasTargetUser)
                   FilledButton.tonalIcon(
-                    onPressed: profileState.isLoading
+                    onPressed: profileState.isBusy
                         ? null
                         : () => _controller.refresh(
                               accessToken:
                                   isMyProfile ? session.accessToken : null,
                             ),
                     icon: const Icon(Icons.refresh),
-                    label: const Text('刷新资料'),
+                    label: Text(profileState.isRefreshing ? '正在刷新' : '刷新资料'),
                   ),
               ],
             ),
@@ -265,42 +265,57 @@ class _ProfilePageState extends State<ProfilePage> {
                 onRetry: _controller.refresh,
               )
             else if (profileState.isReady && profileState.profile != null)
-              _PublicProfileContent(
-                profile: profileState.profile!,
-                stats: profileState.stats,
-                recentBrowseHandoffTargets: recentBrowseTargets,
-                recentDocumentTargets: recentDocumentTargets,
-                posts: profileState.posts,
-                postsTotal: profileState.postsTotal,
-                hasMorePosts: profileState.hasMorePosts,
-                isLoadingMorePosts: profileState.isLoadingMorePosts,
-                postsLoadMoreErrorMessage:
-                    profileState.postsLoadMoreErrorMessage,
-                onLoadMorePosts: _controller.loadMorePosts,
-                comments: profileState.comments,
-                commentsTotal: profileState.commentsTotal,
-                hasMoreComments: profileState.hasMoreComments,
-                isLoadingMoreComments: profileState.isLoadingMoreComments,
-                commentsLoadMoreErrorMessage:
-                    profileState.commentsLoadMoreErrorMessage,
-                onLoadMoreComments: _controller.loadMoreComments,
-                myQuickReplies: profileState.myQuickReplies,
-                myQuickRepliesTotal: profileState.myQuickRepliesTotal,
-                hasMoreMyQuickReplies: profileState.hasMoreMyQuickReplies,
-                isLoadingMoreMyQuickReplies:
-                    profileState.isLoadingMoreMyQuickReplies,
-                showMyQuickReplies: profileState.includesMyQuickReplies,
-                myQuickRepliesErrorMessage:
-                    profileState.myQuickRepliesErrorMessage,
-                myQuickRepliesLoadMoreErrorMessage:
-                    profileState.myQuickRepliesLoadMoreErrorMessage,
-                onLoadMoreMyQuickReplies: isMyProfile
-                    ? () => _controller.loadMoreMyQuickReplies(
-                          accessToken: session.accessToken,
-                        )
-                    : null,
-                onOpenForumDetailTarget: widget.onOpenForumDetailTarget,
-                onOpenDocsDetailTarget: widget.onOpenDocsDetailTarget,
+              Column(
+                children: [
+                  if (profileState.isRefreshing) ...[
+                    const _ProfileRefreshingNotice(),
+                    const SizedBox(height: 16),
+                  ],
+                  if (profileState.refreshIssueMessage != null &&
+                      profileState.refreshIssueMessage!.isNotEmpty) ...[
+                    _ProfileRefreshIssueNotice(
+                      message: profileState.refreshIssueMessage!,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  _PublicProfileContent(
+                    profile: profileState.profile!,
+                    stats: profileState.stats,
+                    recentBrowseHandoffTargets: recentBrowseTargets,
+                    recentDocumentTargets: recentDocumentTargets,
+                    posts: profileState.posts,
+                    postsTotal: profileState.postsTotal,
+                    hasMorePosts: profileState.hasMorePosts,
+                    isLoadingMorePosts: profileState.isLoadingMorePosts,
+                    postsLoadMoreErrorMessage:
+                        profileState.postsLoadMoreErrorMessage,
+                    onLoadMorePosts: _controller.loadMorePosts,
+                    comments: profileState.comments,
+                    commentsTotal: profileState.commentsTotal,
+                    hasMoreComments: profileState.hasMoreComments,
+                    isLoadingMoreComments: profileState.isLoadingMoreComments,
+                    commentsLoadMoreErrorMessage:
+                        profileState.commentsLoadMoreErrorMessage,
+                    onLoadMoreComments: _controller.loadMoreComments,
+                    myQuickReplies: profileState.myQuickReplies,
+                    myQuickRepliesTotal: profileState.myQuickRepliesTotal,
+                    hasMoreMyQuickReplies: profileState.hasMoreMyQuickReplies,
+                    isLoadingMoreMyQuickReplies:
+                        profileState.isLoadingMoreMyQuickReplies,
+                    showMyQuickReplies: profileState.includesMyQuickReplies,
+                    myQuickRepliesErrorMessage:
+                        profileState.myQuickRepliesErrorMessage,
+                    myQuickRepliesLoadMoreErrorMessage:
+                        profileState.myQuickRepliesLoadMoreErrorMessage,
+                    onLoadMoreMyQuickReplies: isMyProfile
+                        ? () => _controller.loadMoreMyQuickReplies(
+                              accessToken: session.accessToken,
+                            )
+                        : null,
+                    onOpenForumDetailTarget: widget.onOpenForumDetailTarget,
+                    onOpenDocsDetailTarget: widget.onOpenDocsDetailTarget,
+                  ),
+                ],
               )
             else
               const _ProfileLoadingState(),
@@ -389,6 +404,92 @@ class _ProfileErrorState extends StatelessWidget {
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
               label: const Text('重试'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileRefreshingNotice extends StatelessWidget {
+  const _ProfileRefreshingNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.secondary),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            SizedBox.square(
+              dimension: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: colorScheme.onSecondaryContainer,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text('正在刷新公开资料，当前仍展示上次可用内容。'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileRefreshIssueNotice extends StatelessWidget {
+  const _ProfileRefreshIssueNotice({
+    required this.message,
+  });
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.error),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.error_outline,
+              color: colorScheme.onErrorContainer,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '刷新资料失败',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    message,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
           ],
         ),

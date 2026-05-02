@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -100,6 +101,131 @@ void main() {
     );
     expect(find.text('最近公开评论'), findsOneWidget);
     expect(find.text('回复 @radish'), findsOneWidget);
+  });
+
+  testWidgets('keeps public profile visible while refresh is pending', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repository = _PendingRefreshProfileRepository();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: repository,
+          publicUserId: 'guest-42',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Radish Author'), findsOneWidget);
+
+    repository.refreshCompleter = Completer<PublicProfileSummary>();
+    await tester.tap(find.text('刷新资料'));
+    await tester.pump();
+
+    expect(find.text('正在刷新公开资料，当前仍展示上次可用内容。'), findsOneWidget);
+    expect(find.text('Radish Author'), findsOneWidget);
+    expect(find.text('正在刷新'), findsOneWidget);
+
+    repository.refreshCompleter!.complete(_updatedProfileSummary('guest-42'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('正在刷新公开资料，当前仍展示上次可用内容。'), findsNothing);
+    expect(find.text('Updated Radish Author'), findsOneWidget);
+  });
+
+  testWidgets('keeps public profile visible when refresh fails', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: _RefreshFailingProfileRepository(),
+          publicUserId: 'guest-42',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Radish Author'), findsOneWidget);
+
+    await tester.tap(find.text('刷新资料'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('刷新资料失败'), findsOneWidget);
+    expect(find.text('公开资料刷新服务暂时不可用'), findsOneWidget);
+    expect(find.text('Radish Author'), findsOneWidget);
+    expect(find.text('暂时无法加载公开资料'), findsNothing);
+  });
+
+  testWidgets('clears profile refresh issue after successful refresh', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: _FailThenRecoverProfileRepository(),
+          publicUserId: 'guest-42',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('刷新资料'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('刷新资料失败'), findsOneWidget);
+
+    await tester.tap(find.text('刷新资料'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('刷新资料失败'), findsNothing);
+    expect(find.text('Updated Radish Author'), findsOneWidget);
   });
 
   testWidgets('renders empty revisit sections on my profile', (tester) async {
@@ -1429,6 +1555,73 @@ class _QuickReplyFailingProfileRepository extends _SuccessProfileRepository {
   }) {
     throw const RadishApiClientException('轻回应服务暂时不可用');
   }
+}
+
+class _PendingRefreshProfileRepository extends _SuccessProfileRepository {
+  int _profileCalls = 0;
+  Completer<PublicProfileSummary>? refreshCompleter;
+
+  @override
+  Future<PublicProfileSummary> getPublicProfile({
+    required String userId,
+  }) {
+    _profileCalls += 1;
+    if (_profileCalls == 1) {
+      return super.getPublicProfile(userId: userId);
+    }
+
+    final completer = refreshCompleter;
+    if (completer == null) {
+      throw StateError('Missing refresh completer.');
+    }
+
+    return completer.future;
+  }
+}
+
+class _RefreshFailingProfileRepository extends _SuccessProfileRepository {
+  int _profileCalls = 0;
+
+  @override
+  Future<PublicProfileSummary> getPublicProfile({
+    required String userId,
+  }) {
+    _profileCalls += 1;
+    if (_profileCalls == 1) {
+      return super.getPublicProfile(userId: userId);
+    }
+
+    throw const RadishApiClientException('公开资料刷新服务暂时不可用');
+  }
+}
+
+class _FailThenRecoverProfileRepository extends _SuccessProfileRepository {
+  int _profileCalls = 0;
+
+  @override
+  Future<PublicProfileSummary> getPublicProfile({
+    required String userId,
+  }) {
+    _profileCalls += 1;
+    if (_profileCalls == 1) {
+      return super.getPublicProfile(userId: userId);
+    }
+
+    if (_profileCalls == 2) {
+      throw const RadishApiClientException('公开资料刷新服务暂时不可用');
+    }
+
+    return Future.value(_updatedProfileSummary(userId));
+  }
+}
+
+PublicProfileSummary _updatedProfileSummary(String userId) {
+  return PublicProfileSummary(
+    userId: userId,
+    userName: 'luobo',
+    displayName: 'Updated Radish Author',
+    createTime: '2026-04-20T08:00:00Z',
+  );
 }
 
 class _PagedPostProfileRepository extends _SuccessProfileRepository {

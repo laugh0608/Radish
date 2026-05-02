@@ -351,3 +351,11 @@ Flutter 客户端第一批固定遵循以下约束：
 3. 成功刷新会替换为新列表并清理旧刷新失败提示；分页、搜索、排序切换仍保持原有加载语义，不与本轮刷新体验收口混在一起
 4. 本轮继续复用现有 `ForumFeedController`、`DocsFeedController` 与公开列表契约，不新增后端 API、Flutter 专属 BFF、下拉刷新体系或跨端同步治理
 5. 当前验证已通过 `flutter test test/forum_page_test.dart test/docs_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter analyze` 与 `git diff --check`；Android 真机 APK 安装按个人开发阶段口径暂缓到正式 release 包发布前
+
+截至 `2026-05-02` 的第十七批首个落地事实：
+
+1. Flutter profile 主资料刷新体验一致性已完成代码与自动化验证：已有公开资料时点击刷新会保留上次可用资料、公开帖子、公开评论、我的轻回应与复访区块，并展示轻量刷新态，不再把页面切回整页 loading
+2. profile 刷新失败会显示局部“刷新资料失败”，旧内容继续可读；首次加载失败仍保留原有整页错误态
+3. 成功刷新会替换为新资料并清理旧刷新失败提示；公开帖子、公开评论和我的轻回应的加载更多局部失败逻辑保持不变
+4. 本轮继续复用现有 `ProfileController` 与公开资料契约，不新增后端 API、Flutter 专属 BFF、完整浏览历史、资料编辑、关注或治理能力
+5. 当前验证已通过 `flutter test test/profile_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter analyze` 与 `git diff --check`；Android 真机 APK 安装按个人开发阶段口径暂缓到正式 release 包发布前
