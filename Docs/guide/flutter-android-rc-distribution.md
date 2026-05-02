@@ -29,11 +29,14 @@
 
 当前 Android MVP 可作为“内部 / 小范围 RC 候选”继续准备，但个人开发阶段不强制推进外部分发验收。testing Gateway、真机 APK 安装、分发对象与反馈闭环统一留到正式 release 包发布前再补。开发中仍可按需使用 Android Studio 模拟器 / AVD 连接本机或指定 Gateway 做功能验证；这类模拟器验证属于开发阶段验证，不等同于 release 前真机 APK 安装验收。当前批次回归记录见：[Flutter Android MVP 第七批首个小闭环变更回归记录（2026-05-01）](/guide/flutter-android-mvp-regression-record-2026-05-01)；内测分发前置整理见：[Flutter Android MVP 内测分发前置整理记录（2026-05-01）](/guide/flutter-android-internal-rc-prep-record-2026-05-01)。
 
+截至 `2026-05-02`，当前已补一轮正式域名临时 smoke：使用 `https://radishx.com`（服务端版本 `v26.3.2-release`）在 Android Studio 虚拟机与 Android 真机验证帖子、文档和用户公开信息基础只读读取，未见异常。该结论只作为正式 HTTPS 域名兼容性补充，不替代正式 release 包发布前的 testing Gateway、release APK 构建、真机安装、登录 / 通知 / 写入链路与批次级外部分发回归。记录见：[Flutter Android MVP 正式域名临时 smoke 记录（2026-05-02）](/guide/flutter-android-mvp-radishx-smoke-record-2026-05-02)。
+
 ## 个人开发阶段口径
 
 - 近期默认不部署 testing Gateway，不组织外部分发对象，也不要求每个产品小闭环后安装 APK 做真机验收
 - 本机自动化验证、Flutter analyzer、Android JVM 单测与必要的本地构建预检继续保留为开发阶段主要保障
 - Android Studio 模拟器 / AVD 功能测试可在开发中继续按需执行，用于验证页面、导航、登录回跳或 Gateway 接线；但它不替代正式 release 包发布前的真机 APK 安装验收
+- 使用既有正式域名做临时 smoke 时，需明确服务端版本、验证范围与未覆盖项；若服务端版本旧于当前 Flutter MVP，不把新链路失败直接判为客户端回归
 - 真机 APK 安装、testing Gateway release 构建、测试账号 / 测试数据、分发对象、反馈闭环与批次级外部分发回归统一在正式 release 包发布前补齐
 - 这条分发线暂缓不构成 Flutter 产品功能阻塞，也不应被解释为需要提前扩系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理
 
