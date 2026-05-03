@@ -2,7 +2,7 @@
 
 > 状态：进行中
 >
-> 最后更新：2026-04-18（Asia/Shanghai）
+> 最后更新：2026-05-03（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -160,9 +160,10 @@
 - Flutter `discover / docs / profile` 首批真实页面、forum 详情 / 评论阅读、评论精确定位、最小原地登录、最小 forum notification 回流与 Android 真机人工验收当前均已完成一轮收口
 - Android MVP 本地 release APK 发布候选当前已完成首轮收口：包身份为 `com.radish.client` / `Radish`，release signing 读取逻辑、密钥忽略边界、release 包联网权限与真机安装联调均已落地
 - 当前 Flutter 环境切换能力、Android RC 签名配置诊断与分发前置清单已完成首轮收口；真实签名材料已由用户本机补齐并通过检查
-- 第八批至第十二批继续沿窄范围产品小闭环推进：profile 最近文档列表、profile 复访区块整理、profile 区块信息密度、docs 详情只读上下文与 forum detail 来源上下文 / 错误态均已完成代码与自动化验证
-- 个人开发阶段暂缓 testing Gateway、真机 APK 安装与外部分发验收，上述动作留到正式 release 包发布前；但这不限制开发中继续使用 Android Studio 模拟器 / AVD 做功能测试
-- 后续仍应优先选择窄范围复访或只读体验补强，而不是回头继续扩 Flutter 占位说明页、公开壳层细节、完整通知中心、系统通知栏推送或桌面工作台语义
+- 第八批至第二十三批继续沿窄范围产品小闭环、刷新体验收口、RC 补验评估、验证索引整理与命令级回归记录补洞推进，当前已达到阶段性收口状态
+- 截至 `2026-05-03`，`Phase 2-3` 当前优先级已从“继续追加窄范围体验补强”切换为“Android MVP RC 验收批次”：当前执行入口固定为 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution) 与 [Flutter Android MVP RC 验收清单（2026-05-03）](/guide/flutter-android-mvp-rc-acceptance-checklist-2026-05-03)
+- 当前应优先补齐 testing Gateway、release APK、真机安装、关键链路复核与 go / no-go 记录；Android Studio 模拟器 / AVD 仍可作为开发中验证入口，但不替代本轮 release APK 真机安装验收
+- 除非 RC 验收暴露 `P0 / P1` 阻断，否则不再主动新增第 `24` 批及后续低增益 Flutter 微调，也不回头扩 Flutter 占位说明页、公开壳层细节、完整通知中心、系统通知栏推送或桌面工作台语义
 
 ## 6. 并行维护线
 
