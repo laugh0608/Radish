@@ -103,8 +103,8 @@
 ### 多端路线三端分工收口
 
 - **Capacitor Android 已退出移动端主线**：公开 `/docs` 只读页面可运行，但登录 / OIDC、本机 Gateway/Auth 调试、Android WebView 证书、端口代理与 deep link 原生桥耦合成本过高，不符合低成本移动复用目标。
-- **Tauri 桌面壳命令级 spike 已成立**：`radish.client` 可复用 React / Vite `dist`，Tauri 壳层可承接窗口生命周期、`radish://` deep link 桥接与 Windows release exe 构建；但 Tauri 不是原生 UI 重写路线。
-- **WebOS 继续作为桌面工作台核心**：后续桌面安装包若推进，应采用 `Tauri 壳 + WebOS 桌面工作台`，默认入口优先评估 `/desktop` 或 WebOS 专用入口，而不是 `/docs` 公开阅读页。
+- **Tauri 桌面壳命令级 spike 已成立**：`radish.client` 可复用 React / Vite `dist`，Tauri 壳层可承接窗口生命周期、系统浏览器 loopback 登录回跳、`radish://` deep link 兼容与 Windows release exe 构建；但 Tauri 不是原生 UI 重写路线。
+- **WebOS 继续作为桌面工作台核心**：后续桌面安装包若推进，应采用 `Tauri 壳 + WebOS 桌面工作台`；Tauri 默认入口已切到 `/desktop`，而不是 `/docs` 公开阅读页。
 - **三端开发口径已确认**：Web 浏览器使用公开内容壳层；Android / iOS 安装包使用 Flutter 移动原生路线；Windows / macOS / Linux 安装包优先评估 Tauri + WebOS。
 
 ### 当日收口判断

@@ -18,6 +18,8 @@ public class OpenIddictSeedHostedService : IHostedService
     private const string OfficialDeveloperName = "Radish 官方";
     private const string ActiveStatus = "Active";
     private const string InternalAppType = "Internal";
+    private static readonly Uri TauriLoopbackRedirectUri = new("http://127.0.0.1:48801/oidc/callback");
+    private static readonly Uri TauriLoopbackPostLogoutRedirectUri = new("http://127.0.0.1:48801/oidc/logout-complete");
 
     private readonly IOpenIddictApplicationManager _applicationManager;
     private readonly IOpenIddictScopeManager _scopeManager;
@@ -84,6 +86,10 @@ public class OpenIddictSeedHostedService : IHostedService
             descriptor.RedirectUris.Add(new Uri("radish://oidc/callback"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("radish://oidc/logout-complete"));
 
+            // Tauri 桌面客户端：系统浏览器登录后通过本机 loopback 回到桌面壳
+            descriptor.RedirectUris.Add(TauriLoopbackRedirectUri);
+            descriptor.PostLogoutRedirectUris.Add(TauriLoopbackPostLogoutRedirectUri);
+
             Console.WriteLine($"[OpenIddictSeed] PostLogoutRedirectUris 数量: {descriptor.PostLogoutRedirectUris.Count}");
 
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Authorization);
@@ -120,6 +126,8 @@ public class OpenIddictSeedHostedService : IHostedService
             descriptor.RedirectUris.Add(new Uri("http://localhost:3000/oidc/callback"));
             // Flutter 原生客户端（Android 起步）
             descriptor.RedirectUris.Add(new Uri("radish://oidc/callback"));
+            // Tauri 桌面客户端：系统浏览器登录后通过本机 loopback 回到桌面壳
+            descriptor.RedirectUris.Add(TauriLoopbackRedirectUri);
 
             descriptor.PostLogoutRedirectUris.Clear();
             // 通过 Gateway 访问（公开入口）
@@ -130,6 +138,8 @@ public class OpenIddictSeedHostedService : IHostedService
             descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3000/"));
             // Flutter 原生客户端（Android 起步）
             descriptor.PostLogoutRedirectUris.Add(new Uri("radish://oidc/logout-complete"));
+            // Tauri 桌面客户端：系统浏览器登出后通过本机 loopback 回到桌面壳
+            descriptor.PostLogoutRedirectUris.Add(TauriLoopbackPostLogoutRedirectUri);
 
             Console.WriteLine($"[OpenIddictSeed] 更新后 PostLogoutRedirectUris 数量: {descriptor.PostLogoutRedirectUris.Count}");
 

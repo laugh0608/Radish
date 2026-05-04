@@ -10,7 +10,10 @@ import {
   getPostLogoutRedirectUri,
   isTauriRuntime,
   openExternalUrl,
+  prepareOidcRedirectUri,
+  preparePostLogoutRedirectUri,
 } from '@/platform/tauriBridge';
+import { log } from '@/utils/logger';
 
 const CLIENT_ID = 'radish-client';
 
@@ -20,26 +23,32 @@ const CLIENT_ID = 'radish-client';
 export function redirectToLogin(): void {
   if (typeof window === 'undefined') return;
 
-  const redirectUri = getOidcRedirectUri();
-  const authServerBaseUrl = getAuthBaseUrl();
+  const startLogin = async () => {
+    const redirectUri = isTauriRuntime() ? await prepareOidcRedirectUri() : getOidcRedirectUri();
+    const authServerBaseUrl = getAuthBaseUrl();
 
-  const authorizeUrl = new URL(`${authServerBaseUrl}/connect/authorize`);
-  authorizeUrl.searchParams.set('client_id', CLIENT_ID);
-  authorizeUrl.searchParams.set('response_type', 'code');
-  authorizeUrl.searchParams.set('redirect_uri', redirectUri);
-  authorizeUrl.searchParams.set('scope', 'openid profile offline_access radish-api');
+    const authorizeUrl = new URL(`${authServerBaseUrl}/connect/authorize`);
+    authorizeUrl.searchParams.set('client_id', CLIENT_ID);
+    authorizeUrl.searchParams.set('response_type', 'code');
+    authorizeUrl.searchParams.set('redirect_uri', redirectUri);
+    authorizeUrl.searchParams.set('scope', 'openid profile offline_access radish-api');
 
-  // 传递当前语言设置
-  const currentLanguage = i18n.language || 'zh';
-  authorizeUrl.searchParams.set('culture', currentLanguage);
-  authorizeUrl.searchParams.set('ui-culture', currentLanguage);
+    // 传递当前语言设置
+    const currentLanguage = i18n.language || 'zh';
+    authorizeUrl.searchParams.set('culture', currentLanguage);
+    authorizeUrl.searchParams.set('ui-culture', currentLanguage);
 
-  if (isTauriRuntime()) {
-    void openExternalUrl(authorizeUrl.toString());
-    return;
-  }
+    if (isTauriRuntime()) {
+      await openExternalUrl(authorizeUrl.toString());
+      return;
+    }
 
-  window.location.href = authorizeUrl.toString();
+    window.location.href = authorizeUrl.toString();
+  };
+
+  void startLogin().catch((error: unknown) => {
+    log.error('auth', '启动 OIDC 登录失败', error);
+  });
 }
 
 /**
@@ -49,27 +58,35 @@ export function redirectToLogin(): void {
 export function logout(): void {
   if (typeof window === 'undefined') return;
 
-  // 清理本地 Token
-  tokenService.clearTokens();
+  const startLogout = async () => {
+    // 清理本地 Token
+    tokenService.clearTokens();
 
-  // 跳转到 OIDC endsession 端点
-  const postLogoutRedirectUri = getPostLogoutRedirectUri();
-  const authServerBaseUrl = getAuthBaseUrl();
+    // 跳转到 OIDC endsession 端点
+    const postLogoutRedirectUri = isTauriRuntime()
+      ? await preparePostLogoutRedirectUri()
+      : getPostLogoutRedirectUri();
+    const authServerBaseUrl = getAuthBaseUrl();
 
-  const logoutUrl = new URL(`${authServerBaseUrl}/connect/endsession`);
-  logoutUrl.searchParams.set('post_logout_redirect_uri', postLogoutRedirectUri);
-  logoutUrl.searchParams.set('client_id', CLIENT_ID);
+    const logoutUrl = new URL(`${authServerBaseUrl}/connect/endsession`);
+    logoutUrl.searchParams.set('post_logout_redirect_uri', postLogoutRedirectUri);
+    logoutUrl.searchParams.set('client_id', CLIENT_ID);
 
-  // 传递当前语言设置
-  const currentLanguage = i18n.language || 'zh';
-  logoutUrl.searchParams.set('culture', currentLanguage);
+    // 传递当前语言设置
+    const currentLanguage = i18n.language || 'zh';
+    logoutUrl.searchParams.set('culture', currentLanguage);
 
-  if (isTauriRuntime()) {
-    void openExternalUrl(logoutUrl.toString());
-    return;
-  }
+    if (isTauriRuntime()) {
+      await openExternalUrl(logoutUrl.toString());
+      return;
+    }
 
-  window.location.href = logoutUrl.toString();
+    window.location.href = logoutUrl.toString();
+  };
+
+  void startLogout().catch((error: unknown) => {
+    log.error('auth', '启动 OIDC 登出失败', error);
+  });
 }
 
 /**

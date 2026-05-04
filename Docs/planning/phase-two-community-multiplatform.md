@@ -174,9 +174,9 @@
 
 首批只评估：
 
-- Tauri 默认入口从 `/docs` 调整为 `/desktop` 或 WebOS 专用入口
+- Tauri 默认入口已从 `/docs` 调整为 `/desktop`
 - WebOS Dock、桌面图标、内部窗口、滚动区与系统窗口之间的关系
-- 桌面登录 / 登出回跳与 `radish://` deep link 注册
+- 桌面登录 / 登出回跳：优先验证系统浏览器 + `127.0.0.1:48801` loopback callback，`radish://` deep link 仅保留为兼容路径
 - Windows installer、签名、自动更新、托盘、菜单和外部链接的成本
 - 构建产物、启动速度、调试体验与发布链路
 

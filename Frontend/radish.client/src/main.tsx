@@ -10,7 +10,8 @@ import { initializeTheme } from '@/theme/theme';
 import {
   initializeTauriBridge,
   isTauriRuntime,
-  rewriteRadishDeepLinkToBrowserPath,
+  TAURI_DESKTOP_ENTRY_PATH,
+  rewriteDesktopOidcReturnToBrowserPath,
 } from '@/platform/tauriBridge';
 import { isPublicDiscoverPathname } from './public/discoverRouteState';
 import './theme/theme-tokens.css';
@@ -29,7 +30,7 @@ function handleTauriDeepLink(url: string): void {
     return;
   }
 
-  const nextPath = rewriteRadishDeepLinkToBrowserPath(url);
+  const nextPath = rewriteDesktopOidcReturnToBrowserPath(url);
   if (!nextPath) {
     return;
   }
@@ -43,7 +44,11 @@ if (isBrowser) {
   });
 }
 
-if (isBrowser && (Capacitor.isNativePlatform() || isTauriRuntime()) && window.location.pathname === '/') {
+if (isBrowser && isTauriRuntime() && window.location.pathname === '/') {
+  window.history.replaceState({}, '', TAURI_DESKTOP_ENTRY_PATH);
+}
+
+if (isBrowser && Capacitor.isNativePlatform() && window.location.pathname === '/') {
   window.history.replaceState({}, '', '/docs');
 }
 
