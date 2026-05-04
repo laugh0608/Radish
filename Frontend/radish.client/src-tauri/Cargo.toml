@@ -1,0 +1,26 @@
+[package]
+name = "radish-client-tauri-spike"
+version = "0.1.0"
+description = "Radish React reuse Tauri desktop shell spike"
+authors = ["laugh0608"]
+edition = "2021"
+
+[lib]
+name = "radish_client_tauri_spike_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+name = "radish-client-tauri-spike"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2" }
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "2" }
+tauri-plugin-deep-link = { version = "2" }
+tauri-plugin-opener = { version = "2" }
+tauri-plugin-single-instance = { version = "2" }
+url = "2"

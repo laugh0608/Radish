@@ -144,6 +144,7 @@
 2. **下一阶段优先级评估**
    - 优先执行 [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation)：冻结 Flutter 扩平台决策，用 `2-3` 天验证 `Capacitor + Tauri` 的 React 复用路线是否明显更优
    - Capacitor Android 已完成 `/docs` 与本机 Gateway 调试链路验证，但登录 / OIDC 回调评估因本机调试复杂度、Auth secure cookie、Android WebView 证书、`adb reverse`、runtime config 与 deep link 原生桥耦合成本过高而终止；相关临时代码与 Auth 开发态配置已回滚，Capacitor 不进入当前移动端产品化主线
+   - Tauri 桌面壳已完成首轮命令级 spike：`radish.client` 可复用 React / Vite `dist`，Tauri 壳层可接入窗口生命周期、`radish://` deep link 桥接与 Windows release exe 构建；真实 GUI 启动、桌面登录 / 登出回跳、installer、代码签名、自动更新和分发链路仍待后续人工验收与评估
    - 评估结束后再决定 Android 内测产品化深化、分发反馈闭环、Windows / Linux 平台扩展或 React 复用路线的下一条主线
 3. **维护线继续保留**
    - 若后续发现 `P0 / P1` 阻断，只按阻断项定点修复
@@ -152,7 +153,7 @@
 ## 下一顺位
 
 - `Phase 2-3` Android MVP 第一轮完成后的下一阶段评估
-  - 优先执行 [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation)，先用 React 复用 spike 验证 `Capacitor + Tauri` 是否比继续扩大 Flutter 更适合长期多端
+  - 优先执行 [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation)，当前 Capacitor Android 已终止，Tauri 桌面壳已完成首轮命令级 spike；下一步应补最终路线建议，或先补 Tauri GUI / 登录回跳 / 分发链路人工验收后再决策
   - Flutter 暂时只保留 Android MVP 完成线，不启动 iOS、Windows、macOS 或 Linux Flutter 扩平台
   - Android 深化若进入执行，应以测试对象、反馈回收、已知问题列表、版本说明和发布留痕为主，不默认扩完整通知中心、系统推送、发帖、完整评论提交、点赞、投票或编辑治理
   - Windows / Linux 若进入执行，应先评估平台目录生成、桌面登录回跳、窗口生命周期、构建产物与分发方式，不与 Android 已完成 MVP 混成一批

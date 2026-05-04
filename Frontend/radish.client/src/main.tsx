@@ -7,6 +7,11 @@ import { getApiBaseUrl } from '@/config/env';
 import { applySiteBranding } from '@/services/siteBranding';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { initializeTheme } from '@/theme/theme';
+import {
+  initializeTauriBridge,
+  isTauriRuntime,
+  rewriteRadishDeepLinkToBrowserPath,
+} from '@/platform/tauriBridge';
 import { isPublicDiscoverPathname } from './public/discoverRouteState';
 import './theme/theme-tokens.css';
 import './index.css';
@@ -19,7 +24,26 @@ const PublicEntry = lazy(() => import('./public/PublicEntry.tsx').then((module) 
 
 const isBrowser = typeof window !== 'undefined';
 
-if (isBrowser && Capacitor.isNativePlatform() && window.location.pathname === '/') {
+function handleTauriDeepLink(url: string): void {
+  if (!isBrowser) {
+    return;
+  }
+
+  const nextPath = rewriteRadishDeepLinkToBrowserPath(url);
+  if (!nextPath) {
+    return;
+  }
+
+  window.location.replace(nextPath);
+}
+
+if (isBrowser) {
+  initializeTauriBridge({
+    onDeepLink: handleTauriDeepLink,
+  });
+}
+
+if (isBrowser && (Capacitor.isNativePlatform() || isTauriRuntime()) && window.location.pathname === '/') {
   window.history.replaceState({}, '', '/docs');
 }
 

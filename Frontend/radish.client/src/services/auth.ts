@@ -5,6 +5,12 @@
 import i18n from '@/i18n';
 import { getAuthBaseUrl } from '@/config/env';
 import { tokenService } from '@/services/tokenService';
+import {
+  getOidcRedirectUri,
+  getPostLogoutRedirectUri,
+  isTauriRuntime,
+  openExternalUrl,
+} from '@/platform/tauriBridge';
 
 const CLIENT_ID = 'radish-client';
 
@@ -14,7 +20,7 @@ const CLIENT_ID = 'radish-client';
 export function redirectToLogin(): void {
   if (typeof window === 'undefined') return;
 
-  const redirectUri = `${window.location.origin}/oidc/callback`;
+  const redirectUri = getOidcRedirectUri();
   const authServerBaseUrl = getAuthBaseUrl();
 
   const authorizeUrl = new URL(`${authServerBaseUrl}/connect/authorize`);
@@ -27,6 +33,11 @@ export function redirectToLogin(): void {
   const currentLanguage = i18n.language || 'zh';
   authorizeUrl.searchParams.set('culture', currentLanguage);
   authorizeUrl.searchParams.set('ui-culture', currentLanguage);
+
+  if (isTauriRuntime()) {
+    void openExternalUrl(authorizeUrl.toString());
+    return;
+  }
 
   window.location.href = authorizeUrl.toString();
 }
@@ -42,7 +53,7 @@ export function logout(): void {
   tokenService.clearTokens();
 
   // 跳转到 OIDC endsession 端点
-  const postLogoutRedirectUri = window.location.origin;
+  const postLogoutRedirectUri = getPostLogoutRedirectUri();
   const authServerBaseUrl = getAuthBaseUrl();
 
   const logoutUrl = new URL(`${authServerBaseUrl}/connect/endsession`);
@@ -52,6 +63,11 @@ export function logout(): void {
   // 传递当前语言设置
   const currentLanguage = i18n.language || 'zh';
   logoutUrl.searchParams.set('culture', currentLanguage);
+
+  if (isTauriRuntime()) {
+    void openExternalUrl(logoutUrl.toString());
+    return;
+  }
 
   window.location.href = logoutUrl.toString();
 }

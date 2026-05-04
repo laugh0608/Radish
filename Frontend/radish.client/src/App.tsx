@@ -10,6 +10,7 @@ import { useLevelUpListener } from '@/hooks/useLevelUpListener';
 import { getApiBaseUrl, getAuthBaseUrl } from '@/config/env';
 import { bootstrapAuth, hydrateAuthUser, type CurrentUser } from '@/services/authBootstrap';
 import { tokenService } from '@/services/tokenService';
+import { getOidcRedirectUri } from '@/platform/tauriBridge';
 import './App.css';
 
 function App() {
@@ -166,7 +167,7 @@ function OidcCallback() {
             void i18n.changeLanguage(cultureParam);
         }
 
-        const redirectUri = `${window.location.origin}/oidc/callback`;
+        const redirectUri = getOidcRedirectUri();
         const authServerBaseUrl = getAuthBaseUrl();
         const apiBaseUrl = getApiBaseUrl();
 
