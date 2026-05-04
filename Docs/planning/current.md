@@ -19,6 +19,7 @@
 - [论坛轻回应墙 Phase 1 设计](/features/forum-quick-reaction-wall)
 - [论坛应用功能说明](/features/forum-features)
 - [前端设计文档](/frontend/design)
+- [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation)
 - [Flutter Android MVP RC 验收清单（2026-05-03）](/guide/flutter-android-mvp-rc-acceptance-checklist-2026-05-03)
 - [Flutter Android MVP RC 验收记录（2026-05-04）](/guide/flutter-android-mvp-rc-acceptance-record-2026-05-04)
 - [验证基线说明](/guide/validation-baseline)
@@ -141,8 +142,8 @@
    - Android MVP RC 验收已给出 Go 结论，`Phase 2-3 Android MVP` 当前可标记为“第一轮完成”
    - 后续不再默认追加第 `24` 批及以后低增益 Flutter 微体验修补
 2. **下一阶段优先级评估**
-   - 优先评估 Android 内测产品化深化、分发反馈闭环、或 Windows / Linux 平台扩展的下一步顺序
-   - 若进入 Android 内测深化，应围绕测试对象、反馈回收、已知问题治理、最小发布说明与版本留痕推进，而不是回头扩完整社区重交互
+   - 优先执行 [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation)：冻结 Flutter 扩平台决策，用 `2-3` 天验证 `Capacitor + Tauri` 的 React 复用路线是否明显更优
+   - 评估结束后再决定 Android 内测产品化深化、分发反馈闭环、Windows / Linux 平台扩展或 React 复用路线的下一条主线
 3. **维护线继续保留**
    - 若后续发现 `P0 / P1` 阻断，只按阻断项定点修复
    - 系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票、编辑治理、Flutter 专属 BFF、Windows / Linux 分发仍需重新评估后再进入建设
@@ -150,7 +151,8 @@
 ## 下一顺位
 
 - `Phase 2-3` Android MVP 第一轮完成后的下一阶段评估
-  - 优先从“Android 内测产品化深化 / 分发反馈闭环”和“Windows / Linux 平台扩展评估”之间选择下一条主线
+  - 优先执行 [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation)，先用 React 复用 spike 验证 `Capacitor + Tauri` 是否比继续扩大 Flutter 更适合长期多端
+  - Flutter 暂时只保留 Android MVP 完成线，不启动 iOS、Windows、macOS 或 Linux Flutter 扩平台
   - Android 深化若进入执行，应以测试对象、反馈回收、已知问题列表、版本说明和发布留痕为主，不默认扩完整通知中心、系统推送、发帖、完整评论提交、点赞、投票或编辑治理
   - Windows / Linux 若进入执行，应先评估平台目录生成、桌面登录回跳、窗口生命周期、构建产物与分发方式，不与 Android 已完成 MVP 混成一批
 
@@ -178,6 +180,7 @@
 
 - 继续沿 `Phase 2-1` 扩张论坛回跳、轻回应或通知尾项
 - 在 Android MVP 第一轮完成后未经重新评估主动开启 `第 24 批` 及以后低增益 Flutter 体验微调
+- 在多端路线评估完成前启动 Flutter iOS / Windows / macOS / Linux 产品化工程
 - “移动版 WebOS”
 - 在 `Phase 2-3` 第一批同时铺 Windows / Linux
 - 在 `Phase 2-3` 第一批复刻桌面工作台

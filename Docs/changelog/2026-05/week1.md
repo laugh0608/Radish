@@ -94,7 +94,13 @@
 - **真机人工复核已确认**：小米 15S Pro / Android 16 / `test` 账号下，登录、退出、会话恢复、四个主 tab 真实读取、forum detail、docs 搜索 / 内链、profile 复访、轻回应发布与最小 forum notification 回流均未发现问题。
 - **Go 结论已落文档**：新增 [Flutter Android MVP RC 验收记录（2026-05-04）](/guide/flutter-android-mvp-rc-acceptance-record-2026-05-04)，本轮未发现 `P0 / P1` 阻断，`Phase 2-3 Android MVP` 可标记为“第一轮完成”。
 
+### 多端客户端路线评估启动
+
+- **Flutter 扩平台决策已冻结**：Android MVP 第一轮完成后，不立刻推翻 Flutter，也不继续扩大 Flutter 到 iOS / Windows / macOS / Linux。
+- **React 复用路线 spike 已固化**：新增 [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation)，用 `2-3` 天验证 `Capacitor + Tauri` 是否能更低成本复用现有 React Web、`@radish/http`、登录态与 Gateway 配置。
+- **决策门槛已写清楚**：后续按 Flutter RC 结果、React spike 复用成本、原生能力接入成本、包体 / 启动 / 调试 / 发布体验决定继续 Flutter、Flutter 仅保留 Android MVP，或长期转向 `Capacitor + Tauri`。
+
 ### 当日收口判断
 
-- **不再默认追加第 24 批微调**：Android MVP 第一轮完成后，下一步应先评估 Android 内测产品化深化、分发反馈闭环或 Windows / Linux 平台扩展。
+- **不再默认追加第 24 批微调**：Android MVP 第一轮完成后，下一步先执行 React 复用路线 spike，再决定 Android 内测产品化深化、分发反馈闭环、Windows / Linux 平台扩展或 `Capacitor + Tauri` 长期路线。
 - **范围边界保持不变**：系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票、编辑治理、Flutter 专属 BFF 与 Windows / Linux 分发仍需重新评估后再进入建设。

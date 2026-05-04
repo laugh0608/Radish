@@ -14,6 +14,7 @@
 
 - [第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform)
 - [Phase 2-3 Flutter 客户端 MVP](/planning/phase-two-flutter-client-mvp)
+- [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation)
 - [前端多壳层策略](/frontend/shell-strategy)
 - [当前进行中](/planning/current)
 - [论坛轻回应墙设计草案](/features/forum-quick-reaction-wall)
@@ -24,7 +25,7 @@
 - 截至 `2026-05-04`，当前主线已从“Android MVP RC 验收批次”收口为“Android MVP 第一轮完成”
 - `Phase 2-3` 已完成从最小壳层、最小登录 / 会话恢复、forum / docs / profile / discover 真实读取，到复访、轻回应、刷新体验、只读上下文、验证留痕补洞与 RC 验收记录的阶段性收口
 - 当前 MVP 结束条件覆盖产品闭环、工程质量、真实交付形态与阻断标准；RC Go 记录见 [Flutter Android MVP RC 验收记录（2026-05-04）](/guide/flutter-android-mvp-rc-acceptance-record-2026-05-04)
-- 后续不再默认开启新的 Flutter 微体验批次；下一步应先评估 Android 内测产品化深化、分发反馈闭环或 Windows / Linux 平台扩展
+- 后续不再默认开启新的 Flutter 微体验批次；下一步先执行 [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation)，用 `2-3` 天验证 `Capacitor + Tauri` 的 React 复用路线是否明显优于继续扩大 Flutter
 - 若后续暴露 `P0 / P1` 阻断，则只做定点修复，不回头扩完整通知中心、系统推送、发帖、完整评论提交、点赞、投票、编辑治理或 Flutter 专属 BFF
 - `Phase 2-2` 公开内容壳层固定转入稳定维护，不再与 Flutter 混成一条建设线
 
