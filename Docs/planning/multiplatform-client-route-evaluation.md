@@ -1,6 +1,6 @@
 # 多端客户端路线评估方案
 
-> 状态：当前评估入口
+> 状态：路线评估进行中，Capacitor Android 已终止
 >
 > 最后更新：2026-05-04（Asia/Shanghai）
 >
@@ -18,11 +18,11 @@
 
 `Phase 2-3 Android MVP` 已完成第一轮 RC 验收并给出 Go 结论，说明 Flutter 线已经能稳定交付一条 Android 原生客户端 MVP。但这不自动等于“长期多端都必须继续用 Flutter”。
 
-下一步固定为一次低成本路线评估：
+下一步已进入低成本路线评估：
 
 1. Flutter 保持 Android MVP 已完成状态，不主动开启第 `24` 批体验微调
 2. 暂时冻结 Flutter iOS、Windows、macOS、Linux 扩平台决策
-3. 用 `2-3` 天做 React 复用路线 spike，重点验证 `Capacitor + Tauri` 是否明显降低长期多端成本
+3. React 复用路线先验证 `Capacitor + Tauri` 是否明显降低长期多端成本；当前 Capacitor Android `/docs` 可行，但登录 / OIDC 回调调试复杂度过高，已不进入移动端产品化主线
 
 ## 2. 已完成前置
 
@@ -96,13 +96,13 @@ React spike 完成后至少产出：
 
 | 维度 | Flutter Android MVP | Capacitor 移动壳 | Tauri 桌面壳 |
 | --- | --- | --- | --- |
-| 现有业务复用 | 已通过原生重写方式验证 | 待 spike | 待 spike |
-| `@radish/http` 复用 | 不能直接复用 TypeScript 客户端 | 待 spike | 待 spike |
-| 登录 / 深链 | Android 已跑通 | 待 spike | 待 spike |
-| 原生能力 | Android 已跑通最小链路 | 待 spike | 待 spike |
-| 包体 / 启动 | 已有 release APK 可测 | 待 spike | 待 spike |
-| 调试体验 | 已有 Flutter 工具链 | 待 spike | 待 spike |
-| 长期维护成本 | 需要维护 Dart 原生页面 | 待 spike | 待 spike |
+| 现有业务复用 | 已通过原生重写方式验证 | `/docs` 公开只读可复用 | 待 spike |
+| `@radish/http` 复用 | 不能直接复用 TypeScript 客户端 | 公开读取可复用 | 待 spike |
+| 登录 / 深链 | Android 已跑通 | 调试链路复杂，评估终止 | 待 spike |
+| 原生能力 | Android 已跑通最小链路 | 仅验证 WebView 壳层，不进入产品化 | 待 spike |
+| 包体 / 启动 | 已有 release APK 可测 | debug APK 可构建 | 待 spike |
+| 调试体验 | 已有 Flutter 工具链 | Gateway / Auth / WebView / 证书 / 端口代理耦合过高 | 待 spike |
+| 长期维护成本 | 需要维护 Dart 原生页面 | 对登录态移动端不合适 | 待 spike |
 
 ## 6. 决策门槛
 
@@ -123,11 +123,13 @@ React spike 完成后至少产出：
 
 当前实际状态已落在“Flutter RC 通过”。因此接下来只需要区分 React spike 是否明显更优。
 
+截至 2026-05-04，Capacitor Android 的阶段性结论是：公开只读页面复用成立，但一进入登录态、OIDC 回调、本机 Gateway/Auth 调试和 Android WebView 证书 / 端口代理，复杂度明显高于预期，不符合 Radish 当前“低成本 React 复用”的路线目标。Capacitor 因此不进入移动端产品化主线。
+
 ## 7. 建议执行顺序
 
 1. 新建 React 复用 spike 分支或临时目录，避免污染正式产品目录
-2. 先验证 Capacitor 移动壳，优先跑通一个公开内容读取入口
-3. 再验证 Tauri 桌面壳，优先跑通窗口生命周期和一个现有入口
+2. Capacitor 移动壳已完成 `/docs` 验证并在登录 / OIDC 回调评估后终止
+3. 后续若继续 React 复用路线，应转向 Tauri 桌面壳，优先跑通窗口生命周期和一个现有入口
 4. 整理对比表与结论
 5. 回到 [当前进行中](/planning/current) 更新下一阶段主线
 

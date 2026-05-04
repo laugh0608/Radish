@@ -143,6 +143,7 @@
    - 后续不再默认追加第 `24` 批及以后低增益 Flutter 微体验修补
 2. **下一阶段优先级评估**
    - 优先执行 [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation)：冻结 Flutter 扩平台决策，用 `2-3` 天验证 `Capacitor + Tauri` 的 React 复用路线是否明显更优
+   - Capacitor Android 已完成 `/docs` 与本机 Gateway 调试链路验证，但登录 / OIDC 回调评估因本机调试复杂度、Auth secure cookie、Android WebView 证书、`adb reverse`、runtime config 与 deep link 原生桥耦合成本过高而终止；相关临时代码与 Auth 开发态配置已回滚，Capacitor 不进入当前移动端产品化主线
    - 评估结束后再决定 Android 内测产品化深化、分发反馈闭环、Windows / Linux 平台扩展或 React 复用路线的下一条主线
 3. **维护线继续保留**
    - 若后续发现 `P0 / P1` 阻断，只按阻断项定点修复
