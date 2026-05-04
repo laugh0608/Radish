@@ -34,6 +34,6 @@ cargo build --release
 
 ## 后续评估重点
 
-- WebOS Dock、桌面图标、窗口系统在 Tauri 固定窗口中的布局与滚动行为人工验收
-- 桌面登录 / 登出回跳人工验收：当前优先使用 `http://127.0.0.1:48801/oidc/callback` loopback，不依赖 Windows URL Protocol 注册；`radish://` 仅保留为 deep link 兼容路径
+- WebOS Dock、桌面图标、窗口系统在 Tauri 固定窗口中的布局与滚动行为人工验收已通过，测试后暂未发现问题
+- 桌面登录 / 登出回跳人工验收已通过：当前优先使用 `http://127.0.0.1:48801/oidc/callback` loopback，不依赖 Windows URL Protocol 注册；`radish://` 仅保留为 deep link 兼容路径
 - installer、签名、自动更新、托盘与系统菜单
