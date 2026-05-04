@@ -57,6 +57,7 @@ $env:ANDROID_SDK_ROOT='D:\MyKits\android'
 - `npm run cap:sync --workspace=radish.client`：通过，Web 产物同步到 Android 工程
 - `.\gradlew.bat assembleDebug`：通过，临时使用 `D:\MyKits\android` 作为 `ANDROID_HOME` / `ANDROID_SDK_ROOT`
 - Debug APK 产物：`Frontend/radish.client/android/app/build/outputs/apk/debug/app-debug.apk`
+- Android Studio Pixel 9 Pro API 35 模拟器人工复核：通过，`/docs` 可通过本机 Gateway 正常加载公开文档内容
 
 ## 本机 Gateway 调试
 
@@ -101,6 +102,8 @@ Android `debug` 变体已加入调试专用 `networkSecurityConfig`：
 5. `/docs` 列表、详情、搜索和文档内链具备进一步真机验证条件
 
 当前自动化验证已覆盖第 1-3 项；第 4-5 项仍需安装到真机或模拟器后人工复核。
+
+2026-05-04 补充：第 4-5 项已通过 Android Studio Pixel 9 Pro API 35 模拟器人工复核。本轮 Capacitor Android `/docs` 本机 Gateway 调试链路可收口。
 
 ## 风险记录
 
