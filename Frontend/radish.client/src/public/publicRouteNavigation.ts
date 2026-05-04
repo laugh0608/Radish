@@ -170,8 +170,8 @@ export function resolveProfileBackMode(sourceRoute: PublicRouteDescriptor | null
 }
 
 export function resolveShopDetailBackMode(sourceRoute: PublicRouteDescriptor | null): PublicDetailBackMode | null {
-  if (!sourceRoute || isShopBrowseDescriptor(sourceRoute)) {
-    return sourceRoute?.app === 'discover' ? 'discover' : 'source';
+  if (!sourceRoute) {
+    return null;
   }
 
   return sourceRoute.app === 'discover' ? 'discover' : 'source';

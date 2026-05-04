@@ -1,5 +1,6 @@
 import { StrictMode, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
+import { Capacitor } from '@capacitor/core';
 import { configureApiClient } from '@radish/http';
 import { tokenService } from '@/services/tokenService';
 import { getApiBaseUrl } from '@/config/env';
@@ -17,6 +18,11 @@ const Shell = lazy(() => import('./desktop/Shell.tsx').then((module) => ({ defau
 const PublicEntry = lazy(() => import('./public/PublicEntry.tsx').then((module) => ({ default: module.PublicEntry })));
 
 const isBrowser = typeof window !== 'undefined';
+
+if (isBrowser && Capacitor.isNativePlatform() && window.location.pathname === '/') {
+  window.history.replaceState({}, '', '/docs');
+}
+
 const isOidcCallback = isBrowser && window.location.pathname === '/oidc/callback';
 const isPublicContentRoute = isBrowser && (
   isPublicDiscoverPathname(window.location.pathname)

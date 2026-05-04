@@ -6,12 +6,18 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "cap:add:android": "cap add android",
+    "cap:copy": "cap copy android",
+    "cap:open:android": "cap open android",
+    "cap:sync": "cap sync android",
     "test": "node --test --test-isolation=none ./tests/wikiApp.helpers.test.ts ./tests/appAccess.test.ts ./tests/authSession.test.ts ./tests/tokenClaims.test.ts ./tests/windowGeometry.test.ts ./tests/forumNavigation.test.ts ./tests/discoverRouteState.test.ts ./tests/publicRouteNavigation.test.ts ./tests/publicRouteState.test.ts ./tests/publicRouteSync.test.ts",
     "type-check": "tsc --noEmit",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor/android": "^8.3.1",
+    "@capacitor/core": "^8.3.1",
     "@iconify/react": "^6.0.2",
     "@microsoft/signalr": "^10.0.0",
     "@radish/http": "*",
@@ -31,6 +37,7 @@
     "zustand": "^5.0.9"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.3.1",
     "@eslint/js": "^9.36.0",
     "@types/node": "^24.6.0",
     "@types/react": "^19.1.16",
