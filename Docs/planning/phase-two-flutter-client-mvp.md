@@ -2,7 +2,7 @@
 
 > 状态：当前主线
 >
-> 最后更新：2026-05-03（Asia/Shanghai）
+> 最后更新：2026-05-04（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -150,13 +150,13 @@ Flutter 客户端第一批固定遵循以下约束：
 
 ## 9. 第四批后续收口、MVP 结束条件与下一顺位
 
-截至 `2026-05-03`，第四批及后续小闭环已完成阶段性收口，当前优先顺序调整为：
+截至 `2026-05-04`，第四批及后续小闭环已完成阶段性收口，Android MVP RC 验收已给出 Go 结论，当前优先顺序调整为：
 
-1. 冻结新的低增益体验微调，不再默认继续追加第 `24` 批及以后 Flutter 小闭环
-2. 以 Android MVP 结束条件判断当前版本是否具备“可交付候选”资格；结束条件固定覆盖产品闭环、工程质量、真实交付形态与阻断标准
-3. 按 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution) 与 [Flutter Android MVP RC 验收清单（2026-05-03）](/guide/flutter-android-mvp-rc-acceptance-checklist-2026-05-03) 补齐 testing Gateway、release APK、真机安装、关键链路复核与 go / no-go 记录
-4. RC 验收若未暴露 `P0 / P1` 阻断，则把 `Phase 2-3 Android MVP` 标记为“第一轮完成”；若暴露阻断，则只做定点修复，不回头扩完整通知中心、系统推送、发帖、完整评论提交、点赞、投票、编辑治理或 Flutter 专属 BFF
-5. Windows / Linux 平台目录与更深原生能力继续后置，需等 Android MVP 第一轮完成后再评估
+1. `Phase 2-3 Android MVP` 当前可标记为“第一轮完成”，RC Go 记录见 [Flutter Android MVP RC 验收记录（2026-05-04）](/guide/flutter-android-mvp-rc-acceptance-record-2026-05-04)
+2. 冻结新的低增益体验微调，不再默认继续追加第 `24` 批及以后 Flutter 小闭环
+3. 下一步先评估 Android 内测产品化深化、分发反馈闭环或 Windows / Linux 平台扩展
+4. 若后续暴露 `P0 / P1` 阻断，则只做定点修复，不回头扩完整通知中心、系统推送、发帖、完整评论提交、点赞、投票、编辑治理或 Flutter 专属 BFF
+5. Windows / Linux 平台目录与更深原生能力仍需单独定义批次，不与 Android MVP 第一轮完成结论混在同一批
 
 本轮明确不纳入 RC 阻断的范围：
 

@@ -1,4 +1,4 @@
-# 2026-05 第一周 (05-01 ~ 05-03)
+# 2026-05 第一周 (05-01 ~ 05-04)
 
 ## 2026-05-01 (周五)
 
@@ -84,3 +84,17 @@
 - **第十三至第二十三批均已完成代码或文档口径收口**：今天主线从 discover / forum / docs / profile 刷新体验和 profile 窄屏显示，推进到 RC 前置材料、验证索引与 profile 回归记录补洞。
 - **规划与日志已同步**：`development-plan.md`、`planning/current.md`、`phase-two-flutter-client-mvp.md`、RC 清单、回归索引与 5 月日志均已同步到第二十三批口径。
 - **下一步仍不切阶段**：若继续开发，优先选择窄范围复访或只读体验补强；若准备 release / RC 外部分发，应先补 testing Gateway、release APK、真机安装验收与批次级回归记录。
+
+## 2026-05-04 (周一)
+
+### Android MVP RC 验收 Go
+
+- **RC 验收口径已确认**：本轮接受 `https://radishx.com` 作为 Android MVP RC 验收 Gateway；前天人工验收使用的是同等参数 release APK。
+- **命令级验证已完成**：`flutter analyze`、`flutter test`、`flutter test test/smoke_test.dart`、Android Studio JBR 下的 `.\gradlew.bat :app:testDebugUnitTest`、`.\gradlew.bat :app:checkReleaseSigningConfig`、`flutter build apk --release --dart-define=RADISH_ENVIRONMENT=production --dart-define=RADISH_GATEWAY_BASE_URL=https://radishx.com` 与 `git diff --check` 均已通过。
+- **真机人工复核已确认**：小米 15S Pro / Android 16 / `test` 账号下，登录、退出、会话恢复、四个主 tab 真实读取、forum detail、docs 搜索 / 内链、profile 复访、轻回应发布与最小 forum notification 回流均未发现问题。
+- **Go 结论已落文档**：新增 [Flutter Android MVP RC 验收记录（2026-05-04）](/guide/flutter-android-mvp-rc-acceptance-record-2026-05-04)，本轮未发现 `P0 / P1` 阻断，`Phase 2-3 Android MVP` 可标记为“第一轮完成”。
+
+### 当日收口判断
+
+- **不再默认追加第 24 批微调**：Android MVP 第一轮完成后，下一步应先评估 Android 内测产品化深化、分发反馈闭环或 Windows / Linux 平台扩展。
+- **范围边界保持不变**：系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票、编辑治理、Flutter 专属 BFF 与 Windows / Linux 分发仍需重新评估后再进入建设。

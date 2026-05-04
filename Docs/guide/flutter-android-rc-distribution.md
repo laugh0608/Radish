@@ -6,7 +6,7 @@
 >
 > 当前执行入口见 [Flutter Android MVP RC 验收清单（2026-05-03）](/guide/flutter-android-mvp-rc-acceptance-checklist-2026-05-03)。
 >
-> 截至 `2026-05-03`，主线已切换到 `Android MVP RC 验收批次`：testing Gateway、release APK、真机安装与关键链路复核不再继续默认后置，当前应按本页与 RC 验收清单逐项补齐。若后续再回到功能小闭环开发，才恢复“不要求每批都做 release 验收”的口径。
+> 截至 `2026-05-04`，Android MVP RC 验收已完成并给出 Go 结论：本轮接受 `https://radishx.com` 作为 RC 验收 Gateway，release APK 命令级验证、签名检查、构建预检与小米 15S Pro / Android 16 真机人工复核均已通过。记录见 [Flutter Android MVP RC 验收记录（2026-05-04）](/guide/flutter-android-mvp-rc-acceptance-record-2026-05-04)。
 
 ## 前置边界
 
@@ -37,13 +37,15 @@
 
 第二十一批后已补 [Flutter Android MVP 第八至第二十批验证索引（2026-05-02）](/guide/flutter-android-mvp-validation-index-2026-05-02)：该索引把第八至第二十批的 Dart 定向测试、`smoke_test`、`flutter analyze`、Android JVM 单测、文档型验证与 release 前缺口统一收口，便于正式 release 包发布前生成批次级回归留痕。
 
+截至 `2026-05-04`，上述 release 前缺口已按本轮接受的 `radishx.com` RC 口径完成收口：`flutter analyze`、`flutter test`、`smoke_test`、Android JVM 单测、签名检查、release APK 构建、`git diff --check` 与小米 15S Pro / Android 16 真机人工复核均已通过。本页后续继续作为下一次 Android 内测、外部分发或生产发布前置清单使用，不再表示当前 Android MVP 第一轮仍未验收。
+
 ## 开发阶段与 RC 验收口径
 
-- 在功能小闭环开发阶段，不要求每个批次都部署 testing Gateway、安装 release APK 或组织外部分发对象；截至 `2026-05-03` 当前既然已进入 RC 验收批次，就应按本页与 RC 验收清单补齐这些动作
+- 在功能小闭环开发阶段，不要求每个批次都部署 testing Gateway、安装 release APK 或组织外部分发对象；截至 `2026-05-04`，Android MVP 第一轮 RC 已完成，后续若进入新的内测、外部分发或生产发布批次，再按本页清单补齐对应环境、对象与留痕
 - 本机自动化验证、Flutter analyzer、Android JVM 单测与必要的本地构建预检继续保留为开发阶段主要保障
 - Android Studio 模拟器 / AVD 功能测试可在开发中继续按需执行，用于验证页面、导航、登录回跳或 Gateway 接线；但它不替代正式 release 包发布前的真机 APK 安装验收
 - 使用既有正式域名做临时 smoke 时，需明确服务端版本、验证范围与未覆盖项；若服务端版本旧于当前 Flutter MVP，不把新链路失败直接判为客户端回归
-- 真机 APK 安装、testing Gateway release 构建、测试账号 / 测试数据、分发对象、反馈闭环与批次级外部分发回归在本轮 RC 验收中需要补齐；完成后再回到“维护线”口径
+- 真机 APK 安装、release 构建、测试账号 / 测试数据、分发对象、反馈闭环与批次级外部分发回归应按具体批次记录；Android MVP 第一轮 RC 已完成，后续外部分发或生产发布仍需重新记录对应 Gateway、APK、设备、对象与反馈闭环
 - 这条分发线当前是主线收口任务，不应被解释为需要趁机扩系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理
 
 ## 内测 RC 前置判断
