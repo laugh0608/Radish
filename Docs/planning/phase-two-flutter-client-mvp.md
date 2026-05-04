@@ -1,6 +1,6 @@
 # Phase 2-3 Flutter 客户端 MVP
 
-> 状态：当前主线
+> 状态：Android MVP 第一轮已完成，转入产品化与后续平台评估
 >
 > 最后更新：2026-05-04（Asia/Shanghai）
 >
@@ -18,7 +18,7 @@
 
 1. Radish 是否开始拥有独立于 WebOS 的原生客户端入口
 2. Android 高频路径是否能用原生导航、原生手势和原生生命周期承载
-3. 仓库是否为后续 Android / Windows / Linux 扩展建立清晰、可维护的 Flutter 基础
+3. 仓库是否为后续 Android / iOS 移动安装包建立清晰、可维护的 Flutter 基础
 
 ## 2. 第一批边界
 
@@ -35,7 +35,7 @@
 
 ### 2.2 首批不纳入
 
-- Windows / Linux 同批次落地
+- iOS / Windows / macOS / Linux 同批次落地
 - 聊天、完整通知中心、完整商城工作台、创作器
 - “移动版 WebOS”
 - 复刻桌面窗口系统
@@ -76,7 +76,7 @@ Flutter 客户端第一批固定遵循以下约束：
 1. 优先复用现有 API、认证契约与公开内容路由语义
 2. 不复刻 WebOS 窗口交互，不把桌面工作台直接搬进原生端
 3. 主题语义复用 Radish 品牌口径，但不强求与 Web 结构完全同形
-4. Android 跑通后，再评估 Windows / Linux 的平台扩展节奏
+4. Android 跑通后，iOS 作为移动端单独评估；Windows / macOS / Linux 桌面安装包优先走 Tauri + WebOS 路线
 
 ## 6. 本批交付物
 
@@ -154,9 +154,9 @@ Flutter 客户端第一批固定遵循以下约束：
 
 1. `Phase 2-3 Android MVP` 当前可标记为“第一轮完成”，RC Go 记录见 [Flutter Android MVP RC 验收记录（2026-05-04）](/guide/flutter-android-mvp-rc-acceptance-record-2026-05-04)
 2. 冻结新的低增益体验微调，不再默认继续追加第 `24` 批及以后 Flutter 小闭环
-3. 下一步先评估 Android 内测产品化深化、分发反馈闭环或 Windows / Linux 平台扩展
+3. 下一步先评估 Android 内测产品化深化、分发反馈闭环，或按 [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation) 进入 Tauri + WebOS 桌面安装包第二轮评估
 4. 若后续暴露 `P0 / P1` 阻断，则只做定点修复，不回头扩完整通知中心、系统推送、发帖、完整评论提交、点赞、投票、编辑治理或 Flutter 专属 BFF
-5. Windows / Linux 平台目录与更深原生能力仍需单独定义批次，不与 Android MVP 第一轮完成结论混在同一批
+5. Windows / macOS / Linux 不再作为 Flutter 默认扩平台方向；若进入桌面安装包，应优先走 Tauri + WebOS，并单独定义批次，不与 Android MVP 第一轮完成结论混在同一批
 
 本轮明确不纳入 RC 阻断的范围：
 
@@ -164,7 +164,7 @@ Flutter 客户端第一批固定遵循以下约束：
 - 发帖、完整评论提交、点赞、投票与编辑治理
 - 聊天、完整商城工作台、创作器
 - 完整浏览历史中心、删除 / 清空与跨端同步治理
-- Windows / Linux 平台分发与 Flutter 专属 BFF
+- iOS 移动端单独评估、Tauri + WebOS 桌面安装包评估与 Flutter 专属 BFF
 
 截至 `2026-04-28` 的第四批建议：
 

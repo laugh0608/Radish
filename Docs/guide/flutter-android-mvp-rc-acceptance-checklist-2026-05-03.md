@@ -63,7 +63,8 @@
 - 发帖、完整评论提交、点赞、投票与编辑治理
 - 聊天、完整商城工作台、创作器
 - 完整浏览历史中心、删除 / 清空与跨端同步治理
-- Windows / Linux 平台扩展
+- iOS 移动端评估
+- Tauri + WebOS 桌面安装包评估
 - Flutter 专属 BFF
 
 ## 3. 验收前记录项
@@ -168,7 +169,7 @@
 
 - Android MVP 高价值链路已通过 RC 验收
 - 当前可将 `Phase 2-3 Android MVP` 标记为“第一轮完成”
-- 后续只在下一阶段规划中决定是否继续做 Android 内测产品化深化或 Windows / Linux 扩展
+- 后续只在下一阶段规划中决定是否继续做 Android 内测产品化深化、iOS 移动端评估或 Tauri + WebOS 桌面安装包评估
 
 ### 8.2 No-Go
 

@@ -2,7 +2,7 @@
 
 > 状态：进行中
 >
-> 最后更新：2026-05-03（Asia/Shanghai）
+> 最后更新：2026-05-04（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -25,22 +25,25 @@
 
 1. 社区是否开始具备持续使用与持续互动的产品深度
 2. 用户是否可以在移动场景下自然访问，而不是被迫进入桌面窗口系统
-3. 仓库是否为 Flutter 客户端建立清晰、可复用、可迭代的第二入口
+3. 仓库是否为多端产品建立清晰分工：Web 公开阅读、Flutter 移动安装包、Tauri + WebOS 桌面安装包
 
 ## 3. 当前判断依据
 
 - 论坛、关系链、聊天、通知、商城、个人能力都已有一版基础，不需要重开一条从零到一主线
 - `radish.client` 当前仍是明显的桌面 / WebOS 优先架构，移动端不能简单理解为“把窗口缩小到手机里”
 - 仓库当前没有真正落地的 `MobileShell` 实现
-- 仓库当前也没有 Flutter 工程，因此 Flutter 必须作为独立产品线规划，而不是临时从 Web 侧分叉
+- Flutter 必须作为独立移动产品线规划，而不是临时从 Web 侧分叉
 - WebOS 的最佳角色是“桌面工作台”，而不是公开社区、移动端与原生客户端的唯一入口
+- Tauri 的最佳角色是“WebOS 桌面工作台的安装包壳”，而不是移动端替代方案或原生 UI 重写路线
+- 公开内容壳层继续面向 PC / 移动浏览器响应式阅读，不承担完整工作台治理
 
 ## 4. 优先级配比
 
-- `45%`：Flutter 客户端基础
-- `20%`：社区深化维护
-- `20%`：移动 Web 稳定维护
-- `15%`：维护线 / 文档 / 收口
+- `35%`：Flutter Android MVP 产品化深化与移动端后续评估
+- `25%`：Tauri + WebOS 桌面安装包第二轮评估
+- `20%`：公开内容壳层 PC / 移动浏览器稳定维护
+- `10%`：社区深化维护
+- `10%`：维护线 / 文档 / 发布收口
 
 ## 5. 分阶段拆分
 
@@ -49,7 +52,7 @@
 - 重写 `development-plan / planning/current / planning/backlog / README` 的阶段口径
 - 把“第一开发阶段已结束、第二开发阶段已启动”写成统一真相源
 - 把移动端相关文档改回“规划态”，不再假装 `MobileShell` 已实现
-- 冻结 [前端多壳层策略](/frontend/shell-strategy)，明确“公开内容壳层 / 桌面工作台壳层 / Flutter 客户端壳层”的职责分工
+- 冻结 [前端多壳层策略](/frontend/shell-strategy)，明确“公开内容壳层 / 桌面工作台壳层 / Flutter 移动客户端壳层 / Tauri 桌面安装包壳层”的职责分工
 
 **完成结论**：
 
@@ -126,9 +129,9 @@
 - 桌面端与移动端允许共享数据、主题和组件能力，但不强求 UI 结构一致
 - 公开内容壳层与桌面工作台壳层的边界，以 [前端多壳层策略](/frontend/shell-strategy) 为准
 
-### Phase 2-3：Flutter 客户端 MVP `当前主线`
+### Phase 2-3：Flutter 客户端 MVP `Android 第一轮已完成`
 
-目标：建立第二原生入口，优先覆盖 Android，再扩到 Windows / Linux。
+目标：建立移动原生入口，优先覆盖 Android；iOS 后续单独评估。Windows / macOS / Linux 不再作为 Flutter 默认扩平台方向。
 
 当前固定第一批范围：
 
@@ -140,7 +143,7 @@
 
 当前明确不在第一批同时进入：
 
-- Windows / Linux 平台工程
+- iOS 移动端产品化工程、Windows / macOS / Linux 桌面安装包工程
 - 聊天、完整通知中心、完整商城工作台、创作器
 - 复刻 WebOS 窗口系统
 - 为 Flutter 单独设计一套新接口体系
@@ -149,7 +152,7 @@
 
 - Flutter 不直接复刻 WebOS 桌面
 - Flutter 优先复用现有 API、认证契约和主题语义，而不是复刻前端实现细节
-- Windows / Linux 客户端在 Android MVP 跑通后再进入同批次扩展
+- iOS 后续按移动端价值单独评估；Windows / macOS / Linux 桌面安装包优先评估 Tauri + WebOS
 - Flutter 工程当前固定落在 `Clients/radish.flutter/`
 
 截至 `2026-05-01` 的当前进度补充：
@@ -162,8 +165,27 @@
 - 当前 Flutter 环境切换能力、Android RC 签名配置诊断与分发前置清单已完成首轮收口；真实签名材料已由用户本机补齐并通过检查
 - 第八批至第二十三批继续沿窄范围产品小闭环、刷新体验收口、RC 补验评估、验证索引整理与命令级回归记录补洞推进，当前已达到阶段性收口状态
 - 截至 `2026-05-04`，`Phase 2-3 Android MVP` 已完成第一轮 RC 验收并给出 Go 结论：本轮接受 `https://radishx.com` 作为 RC 验收 Gateway，release APK 命令级验证、签名检查、构建预检与小米 15S Pro / Android 16 真机人工复核均已通过；记录见 [Flutter Android MVP RC 验收记录（2026-05-04）](/guide/flutter-android-mvp-rc-acceptance-record-2026-05-04)
-- 当前可将 `Phase 2-3 Android MVP` 标记为“第一轮完成”，后续应先评估 Android 内测产品化深化、分发反馈闭环或 Windows / Linux 平台扩展，不再默认追加第 `24` 批及后续低增益 Flutter 微调
+- 当前可将 `Phase 2-3 Android MVP` 标记为“第一轮完成”，后续应先评估 Android 内测产品化深化、分发反馈闭环或 Tauri + WebOS 桌面安装包第二轮评估，不再默认追加第 `24` 批及后续低增益 Flutter 微调
 - 若后续暴露 `P0 / P1` 阻断，只做定点修复，不回头扩 Flutter 占位说明页、公开壳层细节、完整通知中心、系统通知栏推送或桌面工作台语义
+
+### Phase 2-4：Tauri + WebOS 桌面安装包评估 `候选下一阶段`
+
+目标：验证 WebOS 桌面工作台是否适合作为 Windows / macOS / Linux 安装包的默认 UI，并由 Tauri 承接桌面系统能力。
+
+首批只评估：
+
+- Tauri 默认入口从 `/docs` 调整为 `/desktop` 或 WebOS 专用入口
+- WebOS Dock、桌面图标、内部窗口、滚动区与系统窗口之间的关系
+- 桌面登录 / 登出回跳与 `radish://` deep link 注册
+- Windows installer、签名、自动更新、托盘、菜单和外部链接的成本
+- 构建产物、启动速度、调试体验与发布链路
+
+明确不做：
+
+- 用 Rust 重写 Radish UI
+- 把公开内容壳层作为桌面安装包正式主页
+- 与 Flutter Android / iOS 移动路线混成同一批
+- 把 Tauri 结论倒推到移动端
 
 ## 6. 并行维护线
 
@@ -189,4 +211,4 @@
 
 - 第二阶段的规划判断，以本页、[当前进行中](/planning/current)、[开发路线图](/development-plan) 与 [前端多壳层策略](/frontend/shell-strategy) 为准
 - `M14 / M15 / post-m15` 相关文档继续有效，但只承担维护线说明，不再承担“当前产品主线”定义
-- 若后续主线从社区深化切到移动 Web 或 Flutter，必须先更新本页、[当前进行中](/planning/current) 与 [前端多壳层策略](/frontend/shell-strategy)
+- 若后续主线切到移动 Web、Flutter 移动端或 Tauri + WebOS 桌面端，必须先更新本页、[当前进行中](/planning/current) 与 [前端多壳层策略](/frontend/shell-strategy)

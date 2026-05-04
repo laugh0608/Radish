@@ -118,6 +118,8 @@ npm run validate:baseline:host
 ```
 Radish/
 ├── Docs/                            # 📚 固定项目文档（开发规范、架构设计、部署指南等）
+├── Clients/radish.flutter/          # 📱 Flutter 移动原生客户端
+├── Clients/radish-tauri/            # 🖥️ Tauri 桌面安装包壳层
 ├── Frontend/radish.client/               # ⚛️ React 前端应用（WebOS 桌面环境）
 ├── Frontend/radish.console/              # 🎛️ 管理控制台前端
 ├── Frontend/radish.ui/                   # 🎨 UI 组件库（共享组件、Hooks、工具函数）

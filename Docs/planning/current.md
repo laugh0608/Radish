@@ -7,8 +7,8 @@
 ## 当前主线
 
 - **阶段**：`第二开发阶段：社区深化与多端化`
-- **当前主线**：`Phase 2-3 Flutter 客户端 MVP`
-- **当前阶段**：`截至 2026-05-04，第一开发阶段已于 2026-04-06 通过 v26.3.2-release 完成真实发布收口；第二开发阶段现已正式启动。`Phase 2-1 社区深化第一批` 已完成论坛轻回应墙 Phase 1 与最小回流链路收口；`Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口，并转入稳定维护。当前产品主线仍为 `Phase 2-3 Flutter 客户端 MVP`：第一批范围定义、真相源文档切换与仓库工程骨架已完成；第二批已完成 Android MVP 可测链路、最小 forum notification 回流、Android 本地 release APK 发布候选首轮收口、Flutter `--dart-define` Gateway 环境切换能力，以及 Android RC 签名配置诊断与分发前置清单；第三批已完成中文文案基线、个人复访入口产品化与 forum detail 轻回应最小读写闭环，并已通过一轮 Android 真机人工复核；第四批“复访深化 + 已登录轻互动回看”与第五批至第二十三批窄范围小闭环、刷新体验收口、RC 补验评估、验证索引整理和命令级回归记录补洞均已完成代码或文档口径收口。基于本轮 RC 收口，Android MVP 已接受 `https://radishx.com` 作为 RC 验收 Gateway，并完成 release APK 命令级验证、签名检查、构建预检与小米 15S Pro / Android 16 真机人工复核；本轮未发现 `P0 / P1` 阻断，`Phase 2-3 Android MVP` 可标记为“第一轮完成”。`
+- **当前主线**：`Phase 2-3 Android MVP 第一轮完成后的多端路线收口`
+- **当前阶段**：截至 `2026-05-04`，第一开发阶段已于 `2026-04-06` 通过 `v26.3.2-release` 完成真实发布收口；第二开发阶段现已正式启动。`Phase 2-1 社区深化第一批` 已完成论坛轻回应墙 Phase 1 与最小回流链路收口；`Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口，并转入稳定维护；`Phase 2-3 Android MVP` 已完成第一轮 RC 验收并给出 Go 结论。随后完成 React 复用路线评估：Capacitor Android 因登录 / OIDC 与本机调试复杂度终止，不进入移动端产品化主线；Tauri 桌面壳命令级 spike 成立，但其合理定位是 `Tauri 壳 + WebOS 桌面工作台`，不是移动端替代方案，也不是原生 UI 重写路线。当前多端开发口径收束为三条线：Web 浏览器使用公开内容壳层，Android / iOS 安装包使用 Flutter 移动原生路线，Windows / macOS / Linux 安装包优先评估 Tauri + WebOS。
 - **复核日期**：`2026-05-04`
 
 ## 当前执行入口
@@ -31,7 +31,9 @@
 - 发布、部署、回滚、验证和留痕仍然重要，但当前已降为并行维护线
 - `radish.client` 当前仍是桌面 / WebOS 优先架构，仓库里没有独立命名、完整扩展中的 `MobileShell` 实现
 - WebOS 当前继续保留，但角色已经明确收束为“桌面工作台”，不再承担所有场景唯一入口
-- 仓库当前已开始建立 `Clients/radish.flutter` Flutter 客户端骨架；Android / Windows / Linux 仍按独立产品线节奏推进
+- 仓库当前已建立 `Clients/radish.flutter` Flutter 客户端骨架并完成 Android MVP 第一轮；Flutter 当前作为 Android / iOS 移动安装包路线，不再默认承担 Windows / macOS / Linux 桌面安装包扩平台
+- Windows / macOS / Linux 桌面安装包当前优先评估 `Tauri 壳 + WebOS 桌面工作台`；Tauri 负责系统窗口、deep link、菜单、托盘、自动更新、文件系统与分发能力，WebOS 继续负责桌面 UI 与工作台业务体验
+- Web 浏览器继续使用公开内容壳层，覆盖 PC 浏览器与移动浏览器响应式阅读，不承担完整工作台治理能力
 - 论坛轻回应墙 `Phase 1` 当前已落下独立模型、独立接口、帖子详情页插入位、举报接入、配置化治理边界与首版前端展示闭环
 - 论坛轻回应墙当前已不再是“设计是否成立”的问题，而是“基础链路已落地，是否能形成回流与复访闭环”的问题
 - 轻回应相关的“个人内容回看 -> 跳回帖子详情”最小联动能力已落地到个人主页“我的轻回应”入口
@@ -74,7 +76,7 @@
 - 公开商城浏览首批当前明确保持只读边界：购买确认、订单、背包、权益使用、举报与其他“我的”能力继续留在桌面壳层；公开详情页只承载商品信息阅读与返回桌面工作台的导向
 - 附件公开资源读取当前已补齐引用检查与异常自愈：仍被商品、榜单与社区分发等业务引用的附件不会再被后台清理误删；若附件记录状态异常，下载链路也会按业务引用自动恢复公开访问
 - 当前仍保持增量迁移口径：`/` 与 `/desktop` 的根入口关系未调整，仓库里也仍没有真正实现的 `MobileShell`
-- `Phase 2-3 Flutter 客户端 MVP` 当前已正式进入主线；第一批真相源切换、范围定义与工程骨架已完成，第二批当前已开始接最小会话恢复与首条真实业务读取链路
+- `Phase 2-3 Flutter 客户端 MVP` 已完成 Android MVP 第一轮 RC 验收；Flutter 后续定位收束为 Android / iOS 移动安装包路线，Android 转入产品化深化，iOS 单独评估，Windows / macOS / Linux 不再作为 Flutter 默认扩平台方向
 - `Clients/radish.flutter` 当前已具备应用启动会话恢复三态：原生壳层会先经过启动恢复 gate，再进入匿名态或已恢复会话态；`profile` 当前也已不再通过页面级临时读取会话存储来判断登录边界
 - Flutter 当前已补齐 Android 本地会话持久化、Access Token 过期判断与 refresh token 恢复回落；会话恢复不再停留在内存态占位
 - Flutter forum 当前已不再停留在占位页：原生壳层已开始复用现有 `/api/v1/Post/GetList` 公开只读契约，支持匿名读取 forum feed、`latest / hottest` 排序、基础分页、加载态与错误态
@@ -142,21 +144,21 @@
    - Android MVP RC 验收已给出 Go 结论，`Phase 2-3 Android MVP` 当前可标记为“第一轮完成”
    - 后续不再默认追加第 `24` 批及以后低增益 Flutter 微体验修补
 2. **下一阶段优先级评估**
-   - 优先执行 [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation)：冻结 Flutter 扩平台决策，用 `2-3` 天验证 `Capacitor + Tauri` 的 React 复用路线是否明显更优
+   - [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation) 已收口到三端分工方案：Web 浏览器公开内容壳层、Android / iOS Flutter 移动安装包、Windows / macOS / Linux Tauri + WebOS 桌面安装包
    - Capacitor Android 已完成 `/docs` 与本机 Gateway 调试链路验证，但登录 / OIDC 回调评估因本机调试复杂度、Auth secure cookie、Android WebView 证书、`adb reverse`、runtime config 与 deep link 原生桥耦合成本过高而终止；相关临时代码与 Auth 开发态配置已回滚，Capacitor 不进入当前移动端产品化主线
-   - Tauri 桌面壳已完成首轮命令级 spike：`radish.client` 可复用 React / Vite `dist`，Tauri 壳层可接入窗口生命周期、`radish://` deep link 桥接与 Windows release exe 构建；真实 GUI 启动、桌面登录 / 登出回跳、installer、代码签名、自动更新和分发链路仍待后续人工验收与评估
-   - 评估结束后再决定 Android 内测产品化深化、分发反馈闭环、Windows / Linux 平台扩展或 React 复用路线的下一条主线
+   - Tauri 桌面壳已完成首轮命令级 spike：`radish.client` 可复用 React / Vite `dist`，Tauri 壳层可接入窗口生命周期、`radish://` deep link 桥接与 Windows release exe 构建；后续若继续桌面端，应改为 `Tauri + WebOS` 第二轮评估，而不是继续以 `/docs` 公开阅读页作为样例
+   - 下一步优先在 Android 内测产品化深化与 Tauri + WebOS 桌面安装包第二轮评估之间选择，不再按“Flutter 扩所有平台”或“React WebView 统一所有端”规划
 3. **维护线继续保留**
    - 若后续发现 `P0 / P1` 阻断，只按阻断项定点修复
-   - 系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票、编辑治理、Flutter 专属 BFF、Windows / Linux 分发仍需重新评估后再进入建设
+   - 系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票、编辑治理、Flutter 专属 BFF、Tauri 桌面分发仍需重新评估后再进入建设
 
 ## 下一顺位
 
 - `Phase 2-3` Android MVP 第一轮完成后的下一阶段评估
-  - 优先执行 [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation)，当前 Capacitor Android 已终止，Tauri 桌面壳已完成首轮命令级 spike；下一步应补最终路线建议，或先补 Tauri GUI / 登录回跳 / 分发链路人工验收后再决策
-  - Flutter 暂时只保留 Android MVP 完成线，不启动 iOS、Windows、macOS 或 Linux Flutter 扩平台
+  - 当前多端路线已收口为三端分工：Web 公开内容壳层、Flutter 移动安装包、Tauri + WebOS 桌面安装包
+  - Flutter 当前执行面只保留 Android MVP 完成线；iOS 后续按移动端价值单独评估，不启动 Windows / macOS / Linux Flutter 扩平台
   - Android 深化若进入执行，应以测试对象、反馈回收、已知问题列表、版本说明和发布留痕为主，不默认扩完整通知中心、系统推送、发帖、完整评论提交、点赞、投票或编辑治理
-  - Windows / Linux 若进入执行，应先评估平台目录生成、桌面登录回跳、窗口生命周期、构建产物与分发方式，不与 Android 已完成 MVP 混成一批
+  - Windows / macOS / Linux 若进入执行，应走 `Tauri + WebOS` 第二轮评估，先验证 WebOS 默认入口、桌面登录回跳、窗口生命周期、installer、签名、自动更新与分发方式，不与 Android 已完成 MVP 混成一批
 
 - `Phase 2-2` 稳定维护项
   - 公开内容壳层保留必要联调复核与问题修复，但不再继续新增公开入口或细节增强
@@ -172,7 +174,7 @@
 
 - 没有主线切换、优先级变化或新的关键事实，不改本页
 - 功能开发细节不在本页展开，统一回到对应专题文档
-- 若移动 Web 或 Flutter 成为正式主线，必须先同步：
+- 若移动 Web、Flutter 移动端或 Tauri + WebOS 桌面端成为正式主线，必须先同步：
   - [开发路线图](/development-plan)
   - [第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform)
   - [当前进行中](/planning/current)
@@ -182,9 +184,13 @@
 
 - 继续沿 `Phase 2-1` 扩张论坛回跳、轻回应或通知尾项
 - 在 Android MVP 第一轮完成后未经重新评估主动开启 `第 24 批` 及以后低增益 Flutter 体验微调
-- 在多端路线评估完成前启动 Flutter iOS / Windows / macOS / Linux 产品化工程
+- 未经单独评估启动 Flutter iOS 产品化工程
+- 把 Windows / macOS / Linux 作为 Flutter 默认扩平台方向
+- 继续扩大 Capacitor Android 登录态或移动端产品化能力
+- 把 Tauri 当作原生 UI 重写路线
+- 把 `/docs` 公开阅读页作为 Tauri 桌面安装包正式默认入口
 - “移动版 WebOS”
-- 在 `Phase 2-3` 第一批同时铺 Windows / Linux
+- 在 `Phase 2-3` 第一批以 Flutter 同时铺 Windows / Linux
 - 在 `Phase 2-3` 第一批复刻桌面工作台
 - `Gateway & BFF` 深化
 - `Console-ext Phase 2+`

@@ -2,11 +2,11 @@
 
 `radish.flutter` 是 `Phase 2-3 Flutter 客户端 MVP` 的仓库落点。
 
-当前主线是 `Phase 2-3 Flutter 客户端 MVP`。Android MVP 当前优先验证已经接通的真实可测链路，不复刻 WebOS 桌面工作台。
+当前状态是 Android MVP 第一轮已完成，Flutter 后续定位收束为 Android / iOS 移动原生安装包路线；Windows / macOS / Linux 桌面安装包不再按 Flutter 默认扩平台推进，优先走 `Tauri 壳 + WebOS 桌面工作台`。
 
 ## 当前范围
 
-- Android 起步的原生客户端壳层
+- Android 起步的原生客户端壳层；iOS 后续单独评估
 - `discover / forum / docs / profile` 四个高价值入口的首批真实只读页面
 - 最小登录、退出、会话恢复、Android 本地会话持久化与浏览器 OIDC 回调
 - forum feed、forum detail、评论分页、子评论分页、作者跳转与 detail 原地登录续接
@@ -26,7 +26,8 @@
 
 ## 当前不含
 
-- Windows / Linux 平台目录的完整生成文件
+- iOS 产品化工程
+- Windows / macOS / Linux 桌面安装包平台目录
 - 聊天、完整通知中心、完整商城工作台、创作器
 - “移动版 WebOS”
 
@@ -50,7 +51,9 @@ Clients/radish.flutter/
 
 1. Flutter 环境切换能力：支持通过构建参数指定本机 / 测试 / 正式 Gateway
 2. Android 正式签名材料与外部分发前置准备：详见 [Flutter Android RC 分发前置清单](../../Docs/guide/flutter-android-rc-distribution.md)
-3. Android MVP 稳定后，再评估 Windows / Linux 平台目录与更深原生能力
+3. Android MVP 产品化深化：测试对象、反馈回收、已知问题列表、版本说明、release 前验收与分发留痕
+4. iOS 作为移动安装包后续单独评估，不与 Android 第一轮完成结论混成同一批
+5. Windows / macOS / Linux 桌面安装包转入 `Tauri + WebOS` 第二轮评估，不在本目录生成 Flutter 桌面平台工程
 
 ## Flutter 环境切换
 
@@ -86,13 +89,9 @@ flutter build apk --release --dart-define=RADISH_ENVIRONMENT=testing --dart-defi
 flutter build apk --release --dart-define=RADISH_ENVIRONMENT=production --dart-define=RADISH_GATEWAY_BASE_URL=https://gateway.example
 ```
 
-## 平台目录生成说明
+## 平台目录说明
 
-Android 平台目录已经生成。后续如需补齐 Windows / Linux 平台工程，可在本目录执行：
-
-```bash
-flutter create --platforms=windows,linux .
-```
+Android 平台目录已经生成。当前不建议在本目录补齐 Windows / macOS / Linux 平台工程；桌面安装包路线以 `Frontend/radish.client` 的 WebOS 工作台复用和 Tauri 壳层能力评估为准。
 
 ## Android 模拟器联调
 

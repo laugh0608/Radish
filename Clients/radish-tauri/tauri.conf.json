@@ -1,20 +1,20 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Radish React Tauri Spike",
+  "productName": "Radish Tauri Spike",
   "version": "0.1.0",
-  "identifier": "com.radish.client.tauri.spike",
+  "identifier": "com.radish.tauri.spike",
   "build": {
     "beforeDevCommand": "",
     "beforeBuildCommand": "",
     "devUrl": "http://localhost:3000",
-    "frontendDist": "../dist"
+    "frontendDist": "../../Frontend/radish.client/dist"
   },
   "app": {
     "withGlobalTauri": true,
     "windows": [
       {
         "label": "main",
-        "title": "Radish React Tauri Spike",
+        "title": "Radish Tauri Spike",
         "width": 1280,
         "height": 800,
         "minWidth": 960,

@@ -1,6 +1,6 @@
 # 多端客户端路线评估方案
 
-> 状态：路线评估进行中，Capacitor Android 已终止，Tauri 桌面壳已完成首轮命令级 spike
+> 状态：路线评估收口，三端分工方案已确认
 >
 > 最后更新：2026-05-04（Asia/Shanghai）
 >
@@ -14,15 +14,17 @@
 
 ## 1. 当前结论
 
-当前不立刻推翻 Flutter，也不继续扩大 Flutter。
+当前不推翻 Flutter，也不把 React WebView 路线扩大到移动端。
 
 `Phase 2-3 Android MVP` 已完成第一轮 RC 验收并给出 Go 结论，说明 Flutter 线已经能稳定交付一条 Android 原生客户端 MVP。但这不自动等于“长期多端都必须继续用 Flutter”。
 
-下一步已进入低成本路线评估：
+本轮 React 复用 spike 后，多端路线收束为三条产品线：
 
-1. Flutter 保持 Android MVP 已完成状态，不主动开启第 `24` 批体验微调
-2. 暂时冻结 Flutter iOS、Windows、macOS、Linux 扩平台决策
-3. React 复用路线先验证 `Capacitor + Tauri` 是否明显降低长期多端成本；当前 Capacitor Android `/docs` 可行，但登录 / OIDC 回调调试复杂度过高，已不进入移动端产品化主线；Tauri 桌面壳首轮命令级 spike 已确认 React / Vite `dist` 复用、窗口生命周期事件、deep link 桥接和 Windows release exe 构建均可成立
+1. **Web 浏览器**：继续使用公开内容壳层，适配 PC 浏览器与移动浏览器，定位为公开阅读、分享、SEO 与轻交互
+2. **Android / iOS 安装包**：继续以 Flutter 作为移动原生客户端路线；Android MVP 已完成第一轮，iOS 后续单独评估
+3. **Windows / macOS / Linux 安装包**：优先评估 `Tauri 壳 + WebOS 桌面工作台`，Tauri 负责桌面系统能力与分发，WebOS 负责 Dock、窗口系统与工作台应用体验
+
+Capacitor Android 已确认不进入移动端产品化主线；Tauri 不再被理解为“原生重写”，而是 React/WebOS 桌面分发壳。
 
 ## 2. 已完成前置
 
@@ -36,13 +38,13 @@ Flutter Android MVP RC 已完成：
 - 命令级验证：`flutter analyze`、`flutter test`、`smoke_test`、Android JVM 单测、签名检查、release APK 构建与 `git diff --check` 均通过
 - 真机复核：登录、退出、会话恢复、`discover / forum / docs / profile`、forum detail、docs 搜索 / 内链、profile 复访、轻回应发布与最小 forum notification 回流均未发现 `P0 / P1`
 
-因此，React spike 的目的不是补救 Flutter 失败，而是判断长期多端路线是否应优先复用现有 React Web 资产。
+因此，React spike 的目的不是补救 Flutter 失败，而是判断哪些平台适合复用 React Web 资产。当前结论是：桌面安装包适合继续评估 React + Tauri，移动安装包不适合回到 WebView 壳路线。
 
 ## 3. 冻结边界
 
 评估期间固定不做：
 
-1. 不启动 Flutter iOS / Windows / macOS / Linux 产品化工程
+1. 不在本轮启动 Flutter iOS 产品化工程，也不启动 Flutter Windows / macOS / Linux 桌面扩平台工程
 2. 不继续追加 Flutter 第 `24` 批及以后低增益体验微调
 3. 不把 React spike 做成完整产品重写
 4. 不改后端 API、认证协议或 Gateway 架构来迁就某个壳层
@@ -52,12 +54,12 @@ Flutter Android MVP RC 已完成：
 
 ### 4.1 目标
 
-用最小样例验证现有 React Web 资产是否能低成本进入移动 App 壳与桌面原生壳。
+用最小样例验证现有 React Web 资产是否能低成本进入移动 App 壳与桌面安装包壳，并据此明确长期分工。
 
-推荐评估组合：
+本轮实际评估结果：
 
-- 移动端：`Capacitor`
-- 桌面端：`Tauri`
+- 移动端：`Capacitor` 可承载公开只读页面，但登录 / OIDC / 本机调试复杂度过高，退出移动端主线
+- 桌面端：`Tauri` 可承载 React 构建产物和桌面系统桥接，后续若继续应绑定 WebOS 工作台，而不是公开阅读页
 
 本轮只做技术风险验证，不做正式产品交付。
 
@@ -65,8 +67,8 @@ Flutter Android MVP RC 已完成：
 
 1. 现有 `React Web` 页面能否以较低改造成本跑在移动 App 壳里
 2. `@radish/http`、登录态、Gateway 配置、环境变量访问方式能否复用
-3. Android / iOS 的深链、登录回调、文件、分享、通知能力接入成本
-4. Windows / macOS 的窗口、托盘、自动更新、文件系统能力接入成本
+3. Android / iOS 的深链、登录回调、文件、分享、通知能力接入成本是否适合 WebView 复用
+4. Windows / macOS / Linux 的窗口、托盘、自动更新、文件系统能力是否适合由 Tauri 壳承接
 5. 打包体积、启动速度、调试体验与发布链路是否明显优于或劣于 Flutter 路线
 
 ### 4.3 最小样例范围
@@ -78,7 +80,7 @@ Flutter Android MVP RC 已完成：
 3. 验证登录回调或深链入口的最小闭环
 4. 记录 Android 包体、启动时间、调试体验与构建复杂度
 
-桌面原生壳只验证：
+桌面安装包壳只验证：
 
 1. 加载一个现有桌面或公开内容入口
 2. 验证窗口生命周期、托盘或文件系统能力中至少一项
@@ -86,59 +88,103 @@ Flutter Android MVP RC 已完成：
 
 ## 5. 评估输出
 
-React spike 完成后至少产出：
+React spike 完成后已产出：
 
-1. 一份 spike 记录，包含命令、环境、样例路径、结论与截图或关键输出摘要
+1. 一份 spike 记录，包含命令、环境、样例路径、结论与关键输出摘要
 2. 一张 Flutter 与 React 复用路线对比表
-3. 一份最终路线建议：继续 Flutter、Flutter 仅保留 Android、或转向 React 复用路线
+3. 一份最终路线建议：移动端继续 Flutter，桌面安装包优先 `Tauri + WebOS`，Web 浏览继续公开内容壳层
 
 对比维度固定包括：
 
 | 维度 | Flutter Android MVP | Capacitor 移动壳 | Tauri 桌面壳 |
 | --- | --- | --- | --- |
-| 现有业务复用 | 已通过原生重写方式验证 | `/docs` 公开只读可复用 | 复用 `radish.client` 的 Vite `dist`，根路径可收口到 `/docs` |
+| 现有业务复用 | 已通过原生重写方式验证 | `/docs` 公开只读可复用 | 可复用 `radish.client` 的 Vite `dist`；后续正式评估应改为 WebOS / `/desktop`，而不是 `/docs` |
 | `@radish/http` 复用 | 不能直接复用 TypeScript 客户端 | 公开读取可复用 | 可继续复用现有 TypeScript 客户端与运行时配置 |
 | 登录 / 深链 | Android 已跑通 | 调试链路复杂，评估终止 | 命令级桥接已完成：系统浏览器登录、`radish://oidc/callback` 转 `/oidc/callback`；真实 GUI 回跳待人工验收 |
 | 原生能力 | Android 已跑通最小链路 | 仅验证 WebView 壳层，不进入产品化 | 已接入 focus / resize / close requested 窗口生命周期事件；托盘、文件系统和自动更新待后续评估 |
 | 包体 / 启动 | 已有 release APK 可测 | debug APK 可构建 | `cargo build --release` 生成 Windows exe，约 `9.15 MiB`；Web `dist` 约 `2.75 MiB`；启动速度未做 GUI 实测 |
 | 调试体验 | 已有 Flutter 工具链 | Gateway / Auth / WebView / 证书 / 端口代理耦合过高 | 前端构建 + Cargo 编译链路清晰；首次依赖拉取需网络，沙盒内 crates.io 证书受限时需提权验证 |
-| 长期维护成本 | 需要维护 Dart 原生页面 | 对登录态移动端不合适 | 桌面壳层可集中承接原生窗口与 deep link，但正式采用前仍需补 installer、签名、自动更新与人工登录验收 |
+| 长期维护成本 | 需要维护 Dart 原生移动页面 | 对登录态移动端不合适 | 桌面壳层可集中承接原生窗口与 deep link，WebOS 继续承接桌面 UI；正式采用前仍需补 installer、签名、自动更新与人工登录验收 |
 
 ## 6. 决策门槛
 
 最终按以下规则判断：
 
-1. **Flutter RC 通过，维护成本可接受，React spike 不明显更优**
-   - 继续 Flutter 做 Android
-   - iOS 后续单独谨慎评估
-2. **Flutter RC 通过，但 React spike 明显低成本复用**
-   - Flutter 停在 Android MVP
-   - 长期多端转向 `Capacitor + Tauri`
-3. **Flutter RC 不通过，且问题来自 Flutter 技术线复杂度**
-   - 停止继续扩大 Flutter
-   - 转 React 复用路线
-4. **Flutter RC 不通过，但只是业务 bug 或环境问题**
-   - 修完再判断
-   - 不把普通缺陷误判为选型失败
+1. **移动安装包**
+   - Android 继续保留 Flutter MVP 成果
+   - iOS 后续按 Flutter 单独评估，不因 Tauri spike 改变移动端主线
+   - Capacitor 不进入移动端产品化主线
+2. **桌面安装包**
+   - 优先评估 `Tauri + WebOS`
+   - Tauri 负责系统壳能力，WebOS 负责桌面工作台体验
+   - 不把 `/docs` 公开阅读页作为正式桌面客户端默认体验
+3. **Web 浏览器**
+   - 公开内容壳层继续面向 PC / 移动浏览器做响应式阅读体验
+   - 不把 WebOS 压缩成移动 Web，也不把公开内容塞回窗口系统
 
-当前实际状态已落在“Flutter RC 通过”。因此接下来只需要区分 React spike 是否明显更优。
+当前实际状态已落在“三端分工”方案：公开 Web、Flutter 移动端、Tauri + WebOS 桌面端各自承担不同产品形态。
 
 截至 2026-05-04，Capacitor Android 的阶段性结论是：公开只读页面复用成立，但一进入登录态、OIDC 回调、本机 Gateway/Auth 调试和 Android WebView 证书 / 端口代理，复杂度明显高于预期，不符合 Radish 当前“低成本 React 复用”的路线目标。Capacitor 因此不进入移动端产品化主线。
 
-截至 2026-05-04，Tauri 桌面壳首轮命令级 spike 已成立：`Frontend/radish.client/src-tauri` 可复用既有 React 构建产物，`npm run type-check --workspace=radish.client`、`npm run test --workspace=radish.client`、`npm run build --workspace=radish.client`、`cargo build` 与 `cargo build --release` 均已通过；Windows release exe 可生成。Tauri 暂不直接切为桌面主线，仍需补 GUI 启动、真实登录 / 登出回跳、installer、代码签名、自动更新和分发链路验证。
+截至 2026-05-04，Tauri 桌面壳首轮命令级 spike 已成立：`Clients/radish-tauri` 可复用既有 React 构建产物，`npm run type-check --workspace=radish.client`、`npm run test --workspace=radish.client`、`npm run build --workspace=radish.client`、`cargo build` 与 `cargo build --release` 均已通过；Windows release exe 可生成。Tauri 暂不直接切为桌面主线，仍需补 WebOS 默认入口、GUI 启动、真实登录 / 登出回跳、installer、代码签名、自动更新和分发链路验证。
 
-## 7. 建议执行顺序
+## 7. 最终路线建议
 
-1. 新建 React 复用 spike 分支或临时目录，避免污染正式产品目录
-2. Capacitor 移动壳已完成 `/docs` 验证并在登录 / OIDC 回调评估后终止
-3. Tauri 桌面壳已完成首轮命令级 spike，后续若继续 React 复用路线，应优先补真实 GUI 启动、系统浏览器登录回跳、installer 与自动更新评估
-4. 整理最终路线建议
-5. 回到 [当前进行中](/planning/current) 更新下一阶段主线
+### 7.1 Web 浏览器：公开内容壳层
 
-## 8. 当前不做
+职责：
+
+- 面向匿名访问、外链分享、搜索流量、移动浏览器与 PC 浏览器
+- 重点承载 forum / docs / discover / leaderboard / shop / `u/:id` 的公开阅读
+- 继续做响应式适配，但保持轻交互、低治理、弱工作台语义
+
+不承担：
+
+- 完整通知中心、聊天、创作器、订单 / 背包、编辑 / 发布 / 版本治理
+- WebOS 多窗口、Dock 或桌面级应用组织
+
+### 7.2 Android / iOS：Flutter 原生安装包
+
+职责：
+
+- Android MVP 继续作为已完成移动主线保留
+- iOS 后续若进入，应基于 Flutter 单独评估，而不是回到 Capacitor WebView 路线
+- 移动端重点承载原生导航、原生生命周期、登录回跳、复访、轻互动和通知回流
+
+不承担：
+
+- 复刻 WebOS 桌面工作台
+- 复用 React 页面作为移动端主体
+- 在 Android MVP 完成后继续默认追加低增益微体验批次
+
+### 7.3 Windows / macOS / Linux：Tauri 壳 + WebOS 桌面工作台
+
+职责：
+
+- Tauri 负责桌面安装包、系统窗口、deep link、菜单、托盘、自动更新、文件系统、外部链接等原生桥能力
+- WebOS 负责 Dock、桌面图标、窗口系统、多应用容器、通知、商城、论坛、个人中心等桌面工作台体验
+- 默认入口应优先评估 `/desktop` 或 WebOS 专用入口，而不是 `/docs` 公开阅读页
+
+不承担：
+
+- 重新用 Rust 写原生 UI
+- 把公开内容壳层原样作为桌面 App 主页
+- 与 Flutter Windows / Linux 扩平台混成同一条路线
+
+## 8. 建议执行顺序
+
+1. 保持 Android MVP 第一轮完成状态，不默认开启 Flutter 第 `24` 批低增益微调
+2. 若继续移动端，优先做 Android 内测产品化深化、反馈闭环和 release 前验收材料；iOS 后续单独评估
+3. 若继续桌面端，优先做 `Tauri + WebOS` 第二轮 spike：默认入口、GUI 启动、桌面登录回跳、窗口生命周期、installer、自动更新与签名分发
+4. 公开内容壳层保持稳定维护，只做必要响应式问题修复和公开阅读质量补洞
+5. 不再推进 Capacitor Android 登录态能力
+
+## 9. 当前不做
 
 - 不把 Flutter Android MVP 回滚或废弃
-- 不立即生成 iOS / Windows / macOS / Linux Flutter 平台工程
+- 不立即生成 iOS Flutter 平台工程
+- 不把 Windows / macOS / Linux 作为 Flutter 默认扩平台目标
 - 不把 React spike 扩成完整移动端重构
-- 不提前承诺 `Capacitor + Tauri` 一定成为最终路线
+- 不把 Tauri 误判为原生 UI 重写路线
+- 不把 `/docs` 公开阅读页作为 Tauri 正式桌面体验
 - 不在路线评估期间扩完整通知中心、系统通知栏推送、发帖、完整评论提交、点赞、投票或编辑治理

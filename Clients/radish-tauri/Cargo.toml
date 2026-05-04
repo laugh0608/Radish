@@ -1,16 +1,16 @@
 [package]
-name = "radish-client-tauri-spike"
+name = "radish-tauri"
 version = "0.1.0"
-description = "Radish React reuse Tauri desktop shell spike"
+description = "Radish Tauri desktop shell spike"
 authors = ["laugh0608"]
 edition = "2021"
 
 [lib]
-name = "radish_client_tauri_spike_lib"
+name = "radish_tauri_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [[bin]]
-name = "radish-client-tauri-spike"
+name = "radish-tauri"
 path = "src/main.rs"
 
 [build-dependencies]

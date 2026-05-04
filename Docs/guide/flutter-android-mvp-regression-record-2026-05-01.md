@@ -85,5 +85,5 @@
 ### 风险 / 后置项
 
 - 未执行完整 `flutter test`、Android 平台 JVM 单测、release APK 构建或签名配置检查；准备外部分发前仍需按 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution) 补齐
-- 系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票、编辑治理、完整浏览历史中心、Windows / Linux 平台工程与商店发布继续后置
+- 系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票、编辑治理、完整浏览历史中心、iOS 移动端评估、Tauri + WebOS 桌面安装包评估与商店发布继续后置
 - 下一批若继续做功能，建议仍保持窄范围；若准备内测分发，应优先补签名材料、测试 Gateway 与 release APK 级回归留痕

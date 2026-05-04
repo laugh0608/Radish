@@ -52,10 +52,10 @@ Android JVM 单测与签名检查均使用 Android Studio JBR 执行。
 ## 已知问题
 
 - 本轮未发现 `P0 / P1` 阻断。
-- 系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票、编辑治理、聊天、完整商城工作台、Windows / Linux 平台扩展与 Flutter 专属 BFF 仍按既定范围后置，不作为本轮 RC 阻断项。
+- 系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票、编辑治理、聊天、完整商城工作台、iOS 移动安装包评估、Tauri + WebOS 桌面安装包评估与 Flutter 专属 BFF 仍按既定范围后置，不作为本轮 RC 阻断项。
 
 ## Go / No-Go
 
 Go。
 
-Android MVP 高价值链路已通过 RC 验收，当前可将 `Phase 2-3 Android MVP` 标记为“第一轮完成”。后续不再默认开启第 `24` 批低增益 Flutter 微体验补丁，应先评估 Android 内测产品化深化、分发反馈闭环或 Windows / Linux 平台扩展的下一阶段优先级。
+Android MVP 高价值链路已通过 RC 验收，当前可将 `Phase 2-3 Android MVP` 标记为“第一轮完成”。后续不再默认开启第 `24` 批低增益 Flutter 微体验补丁，应先评估 Android 内测产品化深化、分发反馈闭环、iOS 移动端单独评估或 Tauri + WebOS 桌面安装包第二轮评估的下一阶段优先级。

@@ -42,7 +42,7 @@ fn push_deep_links(app: &tauri::AppHandle, urls: Vec<String>) {
 #[tauri::command]
 fn get_tauri_spike_info() -> TauriSpikeInfo {
     TauriSpikeInfo {
-        app: "radish.client",
+        app: "radish-tauri",
         shell: "tauri-desktop-spike",
     }
 }

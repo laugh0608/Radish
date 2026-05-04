@@ -96,11 +96,18 @@
 
 ### 多端客户端路线评估启动
 
-- **Flutter 扩平台决策已冻结**：Android MVP 第一轮完成后，不立刻推翻 Flutter，也不继续扩大 Flutter 到 iOS / Windows / macOS / Linux。
-- **React 复用路线 spike 已固化**：新增 [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation)，用 `2-3` 天验证 `Capacitor + Tauri` 是否能更低成本复用现有 React Web、`@radish/http`、登录态与 Gateway 配置。
-- **决策门槛已写清楚**：后续按 Flutter RC 结果、React spike 复用成本、原生能力接入成本、包体 / 启动 / 调试 / 发布体验决定继续 Flutter、Flutter 仅保留 Android MVP，或长期转向 `Capacitor + Tauri`。
+- **Flutter 扩平台决策已冻结**：Android MVP 第一轮完成后，不立刻推翻 Flutter；iOS 后续按移动端价值单独评估，Windows / macOS / Linux 不再走 Flutter 默认扩平台。
+- **React 复用路线 spike 已固化**：新增 [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation)，验证 Capacitor 移动壳与 Tauri 桌面壳是否能更低成本复用现有 React Web、`@radish/http`、登录态与 Gateway 配置。
+- **决策门槛已写清楚**：后续按 Flutter RC 结果、React spike 复用成本、原生能力接入成本、包体 / 启动 / 调试 / 发布体验决定移动端是否继续 Flutter，以及桌面端是否进入 Tauri + WebOS 评估。
+
+### 多端路线三端分工收口
+
+- **Capacitor Android 已退出移动端主线**：公开 `/docs` 只读页面可运行，但登录 / OIDC、本机 Gateway/Auth 调试、Android WebView 证书、端口代理与 deep link 原生桥耦合成本过高，不符合低成本移动复用目标。
+- **Tauri 桌面壳命令级 spike 已成立**：`radish.client` 可复用 React / Vite `dist`，Tauri 壳层可承接窗口生命周期、`radish://` deep link 桥接与 Windows release exe 构建；但 Tauri 不是原生 UI 重写路线。
+- **WebOS 继续作为桌面工作台核心**：后续桌面安装包若推进，应采用 `Tauri 壳 + WebOS 桌面工作台`，默认入口优先评估 `/desktop` 或 WebOS 专用入口，而不是 `/docs` 公开阅读页。
+- **三端开发口径已确认**：Web 浏览器使用公开内容壳层；Android / iOS 安装包使用 Flutter 移动原生路线；Windows / macOS / Linux 安装包优先评估 Tauri + WebOS。
 
 ### 当日收口判断
 
-- **不再默认追加第 24 批微调**：Android MVP 第一轮完成后，下一步先执行 React 复用路线 spike，再决定 Android 内测产品化深化、分发反馈闭环、Windows / Linux 平台扩展或 `Capacitor + Tauri` 长期路线。
-- **范围边界保持不变**：系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票、编辑治理、Flutter 专属 BFF 与 Windows / Linux 分发仍需重新评估后再进入建设。
+- **不再默认追加第 24 批微调**：Android MVP 第一轮完成后，下一步在 Android 内测产品化深化、分发反馈闭环与 Tauri + WebOS 桌面安装包第二轮评估之间选择。
+- **范围边界保持不变**：系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票、编辑治理、Flutter 专属 BFF 与 Tauri 桌面分发仍需重新评估后再进入建设。

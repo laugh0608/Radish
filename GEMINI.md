@@ -26,6 +26,7 @@
 - 网关：`Radish.Gateway`，统一门户与 API 网关
 - 认证：`Radish.Auth`，基于 OpenIddict 的 OIDC 认证服务器
 - 前端：React 19 + Vite（Rolldown） + TypeScript，采用 WebOS 桌面化 UI
+- 桌面安装包：`Clients/radish-tauri`，Tauri 壳层复用 `Frontend/radish.client` 的 WebOS 构建产物
 - UI 组件库：`@radish/ui`，使用 npm workspaces 共享源码
 - HTTP 客户端：`@radish/http`，统一 API 客户端与相关类型封装
 - Rust 扩展：`Lib/radish.lib/`
@@ -115,6 +116,10 @@ npm run dev --workspace=radish.console
 - `Frontend/radish.client`：WebOS 桌面客户端
 - `Frontend/radish.console`：管理后台
 - `Frontend/radish.ui`：共享 UI 组件库，源码直连，无需单独构建
+
+### 客户端
+- `Clients/radish.flutter`：Flutter Android / iOS 移动原生安装包路线
+- `Clients/radish-tauri`：Tauri 桌面安装包壳层，复用 `Frontend/radish.client` 的 WebOS 构建产物
 
 ## 5. 配置与数据库
 

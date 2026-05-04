@@ -7,8 +7,8 @@
 ## 当前状态
 
 - **当前里程碑**：`第二开发阶段：社区深化与多端化`
-- **当前主线**：`Phase 2-3 Flutter 客户端 MVP`
-- **当前阶段**：`2026-04-06` 已完成首版真实发布 `v26.3.2-release`，第一开发阶段正式结束；`2026-04-07` 已完成阶段口径重置与多壳层策略冻结；截至 `2026-04-18`，`Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口并转入稳定维护，当前产品主线正式切到 `Phase 2-3 Flutter 客户端 MVP`。当前第一批范围定义、真相源文档与工程骨架已完成；第二批已完成 Android MVP 可测链路、最小 forum notification 回流、Android 本地 release APK 发布候选首轮收口、Flutter `--dart-define` Gateway 环境切换能力，以及 Android RC 签名配置诊断与分发前置清单；第三批已完成中文文案基线、个人复访入口产品化与 forum detail 轻回应最小读写闭环，并已通过一轮 Android 真机人工复核；第四批“复访深化 + 已登录轻互动回看”与第五批至第二十三批窄范围小闭环、刷新体验收口、RC 补验评估、验证索引整理和命令级回归记录补洞均已完成代码或文档口径收口。`截至 2026-05-04，Android MVP RC 验收已给出 Go 结论`：本轮接受 `https://radishx.com` 作为 RC 验收 Gateway，release APK 命令级验证、签名检查、构建预检与小米 15S Pro / Android 16 真机人工复核均已通过，当前可将 `Phase 2-3 Android MVP` 标记为“第一轮完成”。`
+- **当前主线**：`Phase 2-3 Android MVP 第一轮完成后的多端路线收口`
+- **当前阶段**：`2026-04-06` 已完成首版真实发布 `v26.3.2-release`，第一开发阶段正式结束；`2026-04-07` 已完成阶段口径重置与多壳层策略冻结；截至 `2026-04-18`，`Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口并转入稳定维护；截至 `2026-05-04`，`Phase 2-3 Android MVP` 已完成第一轮 RC 验收并给出 Go 结论。随后完成 React 复用路线 spike：Capacitor Android 因登录 / OIDC 与本机调试复杂度终止，不进入移动端产品化主线；Tauri 桌面壳命令级 spike 成立，但其合理定位是 `Tauri 壳 + WebOS 桌面工作台`，不是移动端替代方案，也不是原生 UI 重写路线。后续开发口径收束为三端分工：Web 浏览器使用公开内容壳层，Android / iOS 安装包使用 Flutter 移动原生路线，Windows / macOS / Linux 安装包优先评估 Tauri + WebOS。
 
 ## 当前主线入口
 
@@ -22,12 +22,40 @@
 
 ## 当前批次范围
 
-- 截至 `2026-05-04`，当前主线已从“Android MVP RC 验收批次”收口为“Android MVP 第一轮完成”
+- 截至 `2026-05-04`，当前主线已从“Android MVP RC 验收批次”收口为“Android MVP 第一轮完成后的多端路线定稿”
 - `Phase 2-3` 已完成从最小壳层、最小登录 / 会话恢复、forum / docs / profile / discover 真实读取，到复访、轻回应、刷新体验、只读上下文、验证留痕补洞与 RC 验收记录的阶段性收口
 - 当前 MVP 结束条件覆盖产品闭环、工程质量、真实交付形态与阻断标准；RC Go 记录见 [Flutter Android MVP RC 验收记录（2026-05-04）](/guide/flutter-android-mvp-rc-acceptance-record-2026-05-04)
-- 后续不再默认开启新的 Flutter 微体验批次；下一步先执行 [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation)，用 `2-3` 天验证 `Capacitor + Tauri` 的 React 复用路线是否明显优于继续扩大 Flutter
+- 后续不再默认开启新的 Flutter 微体验批次；[多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation) 当前已形成三端分工结论：Web 公开内容壳层、Flutter 移动安装包、Tauri + WebOS 桌面安装包
 - 若后续暴露 `P0 / P1` 阻断，则只做定点修复，不回头扩完整通知中心、系统推送、发帖、完整评论提交、点赞、投票、编辑治理或 Flutter 专属 BFF
 - `Phase 2-2` 公开内容壳层固定转入稳定维护，不再与 Flutter 混成一条建设线
+
+## 后续开发精力规划
+
+近期默认按以下比例安排精力，除非出现 `P0 / P1` 阻断或发布节点要求：
+
+- `35%`：Android MVP 产品化深化，包括测试对象、反馈回收、已知问题列表、版本说明、release 前验收与分发留痕
+- `25%`：Tauri + WebOS 桌面安装包第二轮评估，包括默认 WebOS 入口、桌面登录回跳、窗口生命周期、installer、签名、自动更新与托盘 / 菜单取舍
+- `20%`：公开内容壳层稳定维护，包括 PC / 移动浏览器响应式问题、公开阅读质量、来源返回与分享链路补洞
+- `10%`：社区深化维护，只处理已落地轻回应、通知回流、论坛阅读链路里的真实问题
+- `10%`：宿主运行、验证基线、文档同步、发布 / 回滚 / 可观测性维护线
+
+当前不再按“继续扩大 Flutter 到所有平台”或“React WebView 统一所有端”规划精力。
+
+## 已确认的多端方向
+
+1. **Web 浏览器**
+   - 使用公开内容壳层
+   - 同时适配 PC 浏览器与移动浏览器尺寸
+   - 重点是公开阅读、分享、SEO、轻互动和低门槛访问
+2. **Android / iOS**
+   - 使用 Flutter 单独开发原生安装包
+   - Android MVP 已完成第一轮；iOS 后续单独评估
+   - 不使用 Capacitor 作为登录态移动端产品化路线
+3. **Windows / macOS / Linux**
+   - 使用 `Tauri 壳 + WebOS 桌面工作台`
+   - Tauri 负责系统级桌面能力与安装包分发
+   - WebOS 继续负责 Dock、窗口系统、多应用容器和桌面业务体验
+   - 默认入口后续应评估 `/desktop` 或 WebOS 专用入口，而不是 `/docs` 公开阅读页
 
 ## 已确认的长期方向（暂不进入当前主线）
 
