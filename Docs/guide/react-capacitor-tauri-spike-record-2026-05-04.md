@@ -60,32 +60,35 @@ $env:ANDROID_SDK_ROOT='D:\MyKits\android'
 
 ## 本机 Gateway 调试
 
-Android Studio / 模拟器调试本机 Gateway 时，`adb reverse tcp:5000 tcp:5000` 只会影响设备侧访问 `https://localhost:5000` 的请求。若 Capacitor assets 中仍写入 `https://radishx.com` 或 `.env.production` 的占位域名，则端口反向代理不会生效。
+Android Studio / 模拟器调试本机 Gateway 时，`adb reverse` 只会影响设备侧访问对应端口的 `localhost` 请求。若 Capacitor assets 中仍写入 `https://radishx.com` 或 `.env.production` 的占位域名，则端口反向代理不会生效。
 
-本轮新增 `cap:sync:android:local`，用于在 `cap sync android` 后覆盖 Android assets 内的 `runtime-config.js`，让 debug 包访问本机 Gateway：
+本轮新增 `cap:sync:android:local`，用于在 `cap sync android` 后覆盖 Android assets 内的 `runtime-config.js`，让 debug 包通过 HTTP 访问本机 Gateway，避开 Android WebView 对 ASP.NET Core 本机开发证书的信任问题：
 
 ```powershell
 cd D:\Code\Radish
 
 npm run build --workspace=radish.client
-adb reverse tcp:5000 tcp:5000
+adb reverse tcp:5001 tcp:5001
 npm run cap:sync:android:local --workspace=radish.client
 ```
 
-默认本机 Gateway 地址为 `https://localhost:5000`。如需临时改用其他地址，可设置：
+默认本机 Gateway 地址为 `http://localhost:5001`。如需临时改用其他地址，可设置：
 
 ```powershell
-$env:CAPACITOR_LOCAL_GATEWAY_URL='https://localhost:5000'
+$env:CAPACITOR_LOCAL_GATEWAY_URL='http://localhost:5001'
 npm run cap:sync:android:local --workspace=radish.client
 ```
+
+Gateway 开发配置已在 `appsettings.Development.json` 中关闭 HTTPS 重定向，使 `http://localhost:5001` 不再自动跳到 `https://localhost:5000`。若 Gateway 已经启动，需要重启 Gateway 才会读取该配置。
 
 Android `debug` 变体已加入调试专用 `networkSecurityConfig`：
 
 - 允许 debug 包信任系统证书与用户安装证书
 - 允许 `localhost`、`127.0.0.1`、`10.0.2.2` 明文调试域
+- Capacitor Android 配置已开启 `android.allowMixedContent`，允许 `https://localhost` 壳层在 debug 调试中请求 `http://localhost:5001`
 - 不改变 `release` 变体安全口径
 
-若仍出现 `ERR_CERT_AUTHORITY_INVALID`，说明 Android 设备 / 模拟器仍未信任本机 ASP.NET Core 开发证书；此时应优先使用 `https://radishx.com` 验证真实环境，或单独把本机开发 CA 安装到调试设备。
+若改回 `https://localhost:5000` 后仍出现 `ERR_CERT_AUTHORITY_INVALID` 或 Chromium `net_error -202`，说明 Android 设备 / 模拟器仍未信任本机 ASP.NET Core 开发证书；此时应优先使用 `http://localhost:5001` 调试本机 Gateway，或使用 `https://radishx.com` 验证真实环境。
 
 ## 验收标准
 
@@ -102,7 +105,7 @@ Android `debug` 变体已加入调试专用 `networkSecurityConfig`：
 ## 风险记录
 
 1. 当前 `.env.production` 仍是 `https://your-domain.com` 占位，若要真机访问 `radishx.com`，需要为 spike 构建提供明确的 `VITE_API_BASE_URL / VITE_AUTH_BASE_URL / VITE_SIGNALR_HUB_URL`
-2. 本机 Gateway 调试依赖 Android 侧对本机开发证书的信任；`adb reverse` 只解决端口映射，不解决证书信任
+2. 本机 Gateway HTTPS 调试依赖 Android 侧对本机开发证书的信任；默认本机调试已改走 `http://localhost:5001`
 3. Capacitor Android WebView 的 OIDC 登录回调尚未验证，后续如果进入登录 spike，需要单独处理 redirect URI 与深链
 4. forum 公开页复用桌面论坛组件更多，不作为第一轮入口；docs 通过后再验证 forum
 5. Tauri 桌面壳仍未开始，本记录不能作为桌面路线结论

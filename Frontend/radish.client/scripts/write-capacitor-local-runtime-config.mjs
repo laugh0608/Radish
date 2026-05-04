@@ -6,7 +6,7 @@ const scriptDir = dirname(fileURLToPath(import.meta.url));
 const clientRoot = resolve(scriptDir, '..');
 const runtimeConfigPath = resolve(clientRoot, 'android/app/src/main/assets/public/runtime-config.js');
 
-const gatewayUrl = process.env.CAPACITOR_LOCAL_GATEWAY_URL?.trim() || 'https://localhost:5000';
+const gatewayUrl = process.env.CAPACITOR_LOCAL_GATEWAY_URL?.trim() || 'http://localhost:5001';
 
 if (!existsSync(runtimeConfigPath)) {
   throw new Error(
