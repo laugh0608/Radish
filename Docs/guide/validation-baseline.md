@@ -536,7 +536,9 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 
 ## Flutter Android 人工验收分层
 
-Flutter Android MVP 当前人工验收优先覆盖已经具备真实入口、真实数据或可稳定手工触发的链路：登录、退出、会话恢复、`discover / docs / profile` 首批真实只读读取、forum feed、forum detail、评论阅读、评论分页、detail 原地登录续接，以及已登录壳层的最小 forum notification 回流。
+截至 `2026-05-04`，Flutter Android MVP 第一轮 RC 已完成并给出 Go 结论。后续若改动 `Clients/radish.flutter` 下 Android 壳层、`discover / forum / docs / profile` 原生页面、handoff、Android Back、OIDC 回调、本地复访状态、签名配置或 release 构建脚本，仍应按本节补对应开发阶段或 release 前验证。
+
+Flutter Android MVP 当前人工验收优先覆盖已经具备真实入口、真实数据或可稳定手工触发的链路：登录、退出、会话恢复、`discover / forum / docs / profile` 真实只读读取、forum feed、forum detail、评论阅读、评论分页、detail 原地登录续接、docs 搜索 / 内链、profile 复访、轻回应发布，以及已登录壳层的最小 forum notification 回流。
 
 最小 forum notification 回流当前使用站内通知列表作为可测来源：用另一个账号在 Web / 桌面端评论或回复目标用户的帖子 / 评论，接收账号登录 Flutter 后点击 `Forum notification`，应能回到对应 forum detail，并在通知携带 `commentId` 时落到评论上下文。系统通知栏推送、完整通知中心、标记已读、删除通知和通知设置仍不属于当前 Android MVP 阻断项。具体 checklist 以 `Clients/radish.flutter/README.md` 为准。
 
@@ -549,6 +551,20 @@ Android MVP 本地 release APK 发布候选当前已完成首轮收口。涉及 
 - 若准备外部分发，`.\gradlew.bat :app:checkReleaseSigningConfig` 应通过；该检查只验证签名材料前置，不提交真实密钥
 - 真实 `android/key.properties`、`.jks` 与 `.keystore` 不进入版本库
 - 真机通过 `adb reverse tcp:5000 tcp:5000` 访问本机 Gateway 时，登录、基础读取与关键样式显示正常
+
+## Tauri + WebOS 桌面壳验证分层
+
+Tauri 桌面壳当前是 Windows / macOS / Linux 桌面安装包路线的候选下一阶段，默认 UI 入口为 `/desktop`，承载 WebOS 桌面工作台；`/docs` 只作为公开内容壳层和早期 spike 样例，不作为桌面安装包正式默认体验。
+
+涉及 `Clients/radish-tauri`、Tauri 配置、`Frontend/radish.client/src/platform/tauriBridge.ts`、桌面 OIDC 回跳、deep link、WebOS 默认入口或 Tauri 构建链路时，开发阶段至少确认：
+
+- `npm run type-check --workspace=radish.client`
+- `npm run test --workspace=radish.client`
+- `npm run build --workspace=radish.client`
+- 在 `Clients/radish-tauri` 下执行 `cargo build`
+- 涉及 release 产物时补 `cargo build --release`
+
+当前已通过 GUI 启动、WebOS 桌面布局、窗口生命周期观察、系统浏览器登录 / 登出 `127.0.0.1:48801` loopback 回跳人工验收，测试后暂未发现问题；但 installer bundle、代码签名、自动更新、Windows SmartScreen、托盘、菜单和正式分发体积仍未纳入已完成验收，不能用 `cargo build --release` 结论替代。
 
 ## 受限环境说明
 

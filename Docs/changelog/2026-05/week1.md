@@ -112,3 +112,4 @@
 
 - **不再默认追加第 24 批微调**：Android MVP 第一轮完成后，下一步在 Android 内测产品化深化、分发反馈闭环与 Tauri + WebOS 桌面安装包第二轮评估之间选择。
 - **范围边界保持不变**：系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票、编辑治理、Flutter 专属 BFF 与 Tauri 桌面分发仍需重新评估后再进入建设。
+- **设计与验证入口已补同步**：当日提交回顾后，补齐 [前端设计文档](/frontend/design)、[验证基线说明](/guide/validation-baseline) 与 [回归索引](/guide/regression-index) 的 RC Go、三端分工、Capacitor 终止和 Tauri + WebOS 验证入口口径；本次只做文档真相源同步，不新增功能代码。

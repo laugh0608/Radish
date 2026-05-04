@@ -47,7 +47,9 @@
 ### 1.4 当前边界
 
 - 当前代码事实仍然以 `Desktop Shell + WindowManager` 为主
-- `Clients/radish.flutter` 当前已完成 Android MVP 第二批真实业务接线、第三批产品层回补、第四批复访深化、第五批 profile 最近阅读轻量多条列表与第六批 forum detail 轻回应发布后局部体验补强：壳层登录态分发、公开 forum / docs / profile 读取、forum detail / comment 只读阅读、detail 原地登录续接、已登录态最小 forum notification 回流、profile 多条最近阅读、轻回应即时前插与局部成功 / 失败反馈均已落地；当前仍明确保持窄范围阅读与轻互动边界，不扩完整通知中心、系统通知栏推送、发帖、完整评论提交、点赞、投票或桌面治理能力
+- `Clients/radish.flutter` 当前已完成 Android MVP 第一轮 RC 验收并给出 Go 结论：壳层登录态分发、公开 forum / docs / discover / profile 读取、forum detail / comment 只读阅读、detail 原地登录续接、已登录态最小 forum notification 回流、profile 复访、docs 搜索 / 内链、轻回应即时前插与局部成功 / 失败反馈均已落地；当前仍明确保持窄范围阅读与轻互动边界，不扩完整通知中心、系统通知栏推送、发帖、完整评论提交、点赞、投票或桌面治理能力
+- Android / iOS 移动安装包继续以 Flutter 为主线；Capacitor Android 仅保留公开只读 React 页面复用的技术参考，不进入登录态移动端产品化路线
+- Windows / macOS / Linux 桌面安装包优先走 `Tauri 壳 + WebOS 桌面工作台`：Tauri 承接系统窗口、系统浏览器 loopback 登录回跳、deep link 兼容和后续分发能力，WebOS 继续承接 Dock、窗口系统和桌面业务体验；Tauri 不是移动端替代方案，也不是原生 UI 重写路线
 - 公开内容壳层当前已完成 forum、docs、个人公开页、公开榜单与公开商城浏览五个首批入口，并继续补到 forum 公开分类、forum 公开搜索与 docs 公开搜索首批：`/forum`、`/forum/category/:categoryId`、`/forum/search`、`/forum/post/:postId`、`/docs`、`/docs/search`、`/docs/:slug`、`/u/:id`、`/leaderboard`、`/leaderboard/:type`、`/shop`、`/shop/products` 与 `/shop/product/:productId` 都已可直接进入公开阅读壳层
 - 公开内容壳层当前已形成共享头部视觉基线：forum / docs / discover / leaderboard / shop / `u/:id` 在窄屏下统一使用品牌字、图标与按钮 token，避免同一公开壳层内继续出现专题主题色、图标色和主按钮色各自漂移
 - `/discover` 当前已形成更明确的公开分发节奏：forum / docs / leaderboard / shop 四张摘要卡默认优先预览本页对应区块，同时保留明确的“直接进入公开页”动作，不再把整卡点击简单等同为专题直跳
@@ -458,6 +460,8 @@ export const AdminApp = () => {
 - 论坛等个别页面已有窗口内响应式处理，但这不等于真正的移动端产品形态
 - 当前主入口仍然是桌面 Shell、Dock 与窗口系统
 - 公开内容壳层当前已完成 forum、docs、个人公开页、公开榜单与公开商城浏览五个首批入口落地；帖子列表、分类直达、搜索直达、帖子详情、公开文档目录、个人公开页、公开榜单与公开商城入口都可以绕开桌面 Shell 直接进入公开阅读形态
+- Android MVP 第一轮已完成后，前端多端形态不再按“Flutter 扩所有平台”或“React WebView 统一所有端”继续推进；当前设计分工固定为 Web 浏览器公开内容壳层、Flutter 移动原生安装包、Tauri + WebOS 桌面安装包
+- Tauri 桌面壳默认入口已切到 `/desktop`，用于承载 WebOS 桌面工作台；`/docs` 只作为公开内容壳层与早期 spike 样例，不作为桌面安装包正式默认体验
 - 公开 forum 当前只冻结“列表 + 分类 + 标签 + 结构化类型列表 + 搜索 + 详情 + 轻回应墙展示 + 评论阅读”，并明确保持只读阅读边界
 - 公开文档阅读当前只冻结“目录 + 搜索 + 正文阅读 + 复制公开链接 + 返回浏览态 + 文档内链跳转”，并明确保持只读阅读边界；当前已补齐返回目录滚动位置保持、搜索结果上下文回跳、详情页复制链接入口，以及旧 `__documents__` 文档链接继续落入公开 docs 壳层
 - 公开榜单当前已开始补“经验体系公开展示”这一类只读说明增强：优先解释排行依据、等级含义与公开边界，而不是直接把桌面里的“我的经验明细”搬进公开壳层
