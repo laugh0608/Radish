@@ -27,7 +27,7 @@ interface InitializeTauriBridgeOptions {
   onDeepLink: (url: string) => void;
 }
 
-interface TauriSpikeInfo {
+interface TauriDesktopInfo {
   app: string;
   shell: string;
 }
@@ -214,13 +214,13 @@ async function registerDeepLinkListener(onDeepLink: (url: string) => void): Prom
   });
 }
 
-async function probeTauriSpikeInfo(): Promise<void> {
+async function probeTauriDesktopInfo(): Promise<void> {
   const invoke = getTauriInvoke();
   if (!invoke) {
     return;
   }
 
-  await invoke<TauriSpikeInfo>('get_tauri_spike_info').catch(() => undefined);
+  await invoke<TauriDesktopInfo>('get_tauri_desktop_info').catch(() => undefined);
 }
 
 export function initializeTauriBridge(options: InitializeTauriBridgeOptions): void {
@@ -228,7 +228,7 @@ export function initializeTauriBridge(options: InitializeTauriBridgeOptions): vo
     return;
   }
 
-  void probeTauriSpikeInfo();
+  void probeTauriDesktopInfo();
   void registerDeepLinkListener(options.onDeepLink);
   void drainPendingDeepLinks(options.onDeepLink);
 }

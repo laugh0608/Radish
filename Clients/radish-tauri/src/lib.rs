@@ -12,6 +12,9 @@ use tauri_plugin_deep_link::DeepLinkExt;
 #[derive(Default)]
 struct PendingDeepLinks(Mutex<Vec<String>>);
 
+#[derive(Default)]
+struct OidcLoopbackState(Mutex<Option<String>>);
+
 #[derive(Serialize, Clone)]
 struct DeepLinkPayload {
     urls: Vec<String>,
@@ -29,7 +32,7 @@ struct OidcLoopbackListenerInfo {
 }
 
 #[derive(Serialize)]
-struct TauriSpikeInfo {
+struct TauriDesktopInfo {
     app: &'static str,
     shell: &'static str,
 }
@@ -74,11 +77,21 @@ fn push_oidc_loopback_urls(app: &tauri::AppHandle, urls: Vec<String>) {
     let _ = app.emit("radish-oidc-loopback", OidcLoopbackPayload { urls });
 }
 
+fn clear_oidc_loopback_state(app: &tauri::AppHandle, path: &str) {
+    if let Some(state) = app.try_state::<OidcLoopbackState>() {
+        if let Ok(mut active_path) = state.0.lock() {
+            if active_path.as_deref() == Some(path) {
+                *active_path = None;
+            }
+        }
+    }
+}
+
 #[tauri::command]
-fn get_tauri_spike_info() -> TauriSpikeInfo {
-    TauriSpikeInfo {
+fn get_tauri_desktop_info() -> TauriDesktopInfo {
+    TauriDesktopInfo {
         app: "radish-tauri",
-        shell: "tauri-desktop-spike",
+        shell: "tauri-desktop-shell",
     }
 }
 
@@ -196,19 +209,44 @@ fn accept_oidc_loopback_once(
 #[tauri::command]
 fn start_oidc_loopback_listener(
     app: tauri::AppHandle,
+    state: tauri::State<'_, OidcLoopbackState>,
     path: String,
 ) -> Result<OidcLoopbackListenerInfo, String> {
     let redirect_uri = build_loopback_redirect_uri(&path)?;
+
+    {
+        let mut active_path = state
+            .0
+            .lock()
+            .map_err(|_| "Failed to read OIDC loopback listener state.".to_string())?;
+
+        if let Some(active_path) = active_path.as_deref() {
+            if active_path == path {
+                return Ok(OidcLoopbackListenerInfo { redirect_uri });
+            }
+
+            return Err(format!(
+                "OIDC loopback listener is already waiting for {active_path}."
+            ));
+        }
+
+        *active_path = Some(path.clone());
+    }
+
     let listener = TcpListener::bind((OIDC_LOOPBACK_HOST, OIDC_LOOPBACK_PORT)).map_err(|err| {
+        clear_oidc_loopback_state(&app, &path);
         format!(
             "Failed to bind OIDC loopback listener on {OIDC_LOOPBACK_HOST}:{OIDC_LOOPBACK_PORT}: {err}"
         )
     })?;
 
     thread::spawn(move || {
-        if let Err(err) = accept_oidc_loopback_once(app, listener, path) {
-            eprintln!("[RadishTauriSpike] {err}");
+        let listener_app = app.clone();
+        let listener_path = path.clone();
+        if let Err(err) = accept_oidc_loopback_once(listener_app, listener, listener_path.clone()) {
+            eprintln!("[RadishDesktop] {err}");
         }
+        clear_oidc_loopback_state(&app, &listener_path);
     });
 
     Ok(OidcLoopbackListenerInfo { redirect_uri })
@@ -249,6 +287,7 @@ fn open_url_with_system_browser(_url: &str) -> Result<(), String> {
 pub fn run() {
     tauri::Builder::default()
         .manage(PendingDeepLinks::default())
+        .manage(OidcLoopbackState::default())
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             if let Some(window) = app.get_webview_window("main") {
                 let _ = window.unminimize();
@@ -271,17 +310,17 @@ pub fn run() {
         })
         .on_window_event(|window, event| match event {
             WindowEvent::CloseRequested { .. } => {
-                println!("[RadishTauriSpike] close requested: {}", window.label());
+                println!("[RadishDesktop] close requested: {}", window.label());
             }
             WindowEvent::Focused(focused) => {
                 println!(
-                    "[RadishTauriSpike] focus changed: {} focused={focused}",
+                    "[RadishDesktop] focus changed: {} focused={focused}",
                     window.label()
                 );
             }
             WindowEvent::Resized(size) => {
                 println!(
-                    "[RadishTauriSpike] resized: {} {}x{}",
+                    "[RadishDesktop] resized: {} {}x{}",
                     window.label(),
                     size.width,
                     size.height
@@ -290,11 +329,11 @@ pub fn run() {
             _ => {}
         })
         .invoke_handler(tauri::generate_handler![
-            get_tauri_spike_info,
+            get_tauri_desktop_info,
             open_external_url,
             start_oidc_loopback_listener,
             take_pending_deep_links
         ])
         .run(tauri::generate_context!())
-        .expect("failed to run Radish Tauri desktop spike");
+        .expect("failed to run Radish Tauri desktop shell");
 }

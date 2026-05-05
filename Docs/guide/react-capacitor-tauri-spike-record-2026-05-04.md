@@ -180,7 +180,7 @@ Tauri 桌面壳首轮命令级通过标准：
 
 ## 风险记录
 
-1. 当前 `.env.production` 仍是 `https://your-domain.com` 占位，若要真机访问 `radishx.com`，需要为 spike 构建提供明确的 `VITE_API_BASE_URL / VITE_AUTH_BASE_URL / VITE_SIGNALR_HUB_URL`
+1. 当时 `.env.production` 仍是 `https://your-domain.com` 占位，若要真机访问 `radishx.com`，需要为 spike 构建提供明确的 `VITE_API_BASE_URL / VITE_AUTH_BASE_URL / VITE_SIGNALR_HUB_URL`；该占位已在后续正式桌面包候选身份补验中收口为 `https://radishx.com`
 2. 本机 Gateway HTTPS 调试依赖 Android 侧对本机开发证书的信任；默认本机调试已改走 `http://localhost:5001`
 3. Capacitor Android WebView 的 OIDC 登录回调评估已终止：本机调试需要同时处理证书、Gateway HTTP 辅助端口、Auth secure cookie、`adb reverse`、runtime config 与 deep link 原生桥，长期维护成本不符合当前路线目标
 4. forum 公开页复用桌面论坛组件更多，不作为第一轮入口；docs 通过后再验证 forum

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:tauri-local": "tsc -b && vite build --mode tauri-local",
     "cap:add:android": "cap add android",
     "cap:copy": "cap copy android",
     "cap:open:android": "cap open android",

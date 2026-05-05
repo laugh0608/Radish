@@ -26,6 +26,14 @@ Tauri 配置中的 `frontendDist` 指向：
 npm run build --workspace=radish.client
 ```
 
+若要生成指向本机 Gateway / Auth 的桌面安装包，用于绕开生产 Auth 客户端注册未更新的问题，应改用本地验收构建模式：
+
+```powershell
+npm run build:tauri-local --workspace=radish.client
+```
+
+该模式使用 `Frontend/radish.client/.env.tauri-local`，默认 Gateway / Auth / SignalR 基址均为 `https://localhost:5000`。它只用于本机联调和安装包验收，不作为公开分发配置；生产候选构建仍使用 `.env.production` 的 `https://radishx.com`。
+
 再进入本目录执行 Rust / Tauri 侧验证：
 
 ```powershell
@@ -45,20 +53,24 @@ cargo tauri build
 
 ## 产品身份边界
 
-当前 `tauri.conf.json` 仍保留 spike 身份：
+当前 `tauri.conf.json` 已进入正式桌面包候选身份：
 
 ```text
-productName = Radish Tauri Spike
-identifier = com.radish.tauri.spike
+productName = Radish
+identifier = com.radish.desktop
 ```
 
-在卸载、升级、签名与 deep link 注册路径完成验证前，不建议提前改为正式桌面包身份，避免污染系统安装记录、协议注册和后续升级判断。
+该身份切换只用于验证安装目录、卸载项、同身份覆盖安装与 `radish://` 协议注册清理，不等同于公开发布版。代码签名、自动更新、公钥、发布源、托盘、菜单和后台驻留仍保持后置。
 
 ## 后续评估重点
 
 - WebOS Dock、桌面图标、窗口系统在 Tauri 固定窗口中的布局与滚动行为人工验收已通过，测试后暂未发现问题
 - 桌面登录 / 登出回跳人工验收已通过：当前优先使用 `http://127.0.0.1:48801/oidc/callback` loopback，不依赖 Windows URL Protocol 注册；`radish://` 仅保留为 deep link 兼容路径
+- 桌面候选包生产构建默认指向 `https://radishx.com`，避免 installer 继续使用 `https://your-domain.com` 占位地址
+- 本地 Auth 验收包可通过 `npm run build:tauri-local --workspace=radish.client` 指向 `https://localhost:5000`，用于配合本机 Gateway / Auth 验证 loopback 登录；该包不得作为公开分发候选
+- 浏览器登录页被关闭后，同一路径的后续登录点击会复用等待中的 loopback listener，并重新打开系统浏览器；listener 成功回跳或超时后释放
 - Windows NSIS installer 已完成首轮本机安装与启动验证；release 启动伴随命令行窗口的问题已通过 `windows_subsystem = "windows"` 修复
+- 正式身份候选包仍需补普通用户安装 / 启动 / 卸载、同身份覆盖安装、`radish://` 协议注册与卸载清理验证
 - 签名、Windows SmartScreen、自动更新、托盘与系统菜单
 
 分发评估清单见：[Tauri + WebOS 桌面安装包第二轮分发评估清单（2026-05-05）](../../Docs/guide/tauri-webos-desktop-distribution-evaluation-2026-05-05.md)。
