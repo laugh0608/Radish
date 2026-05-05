@@ -101,6 +101,8 @@ const resources = {
             'desktop.resume.loadFailed': 'Recent activity is temporarily unavailable',
             'desktop.resume.noSummary': 'No summary available',
             'desktop.resume.quickReplyMeta': 'My quick reply',
+            'desktop.resume.appMeta': 'Recent app',
+            'desktop.resume.appDescriptionFallback': 'Open this workspace app',
             'desktop.resume.openProfileTitle': 'Open profile activity',
 
             'desktop.apps.welcome.name': 'Welcome',
@@ -1539,6 +1541,8 @@ const resources = {
             'desktop.resume.loadFailed': '最近动态暂时不可用',
             'desktop.resume.noSummary': '暂无摘要',
             'desktop.resume.quickReplyMeta': '我的轻回应',
+            'desktop.resume.appMeta': '最近应用',
+            'desktop.resume.appDescriptionFallback': '打开这个工作台应用',
             'desktop.resume.openProfileTitle': '打开个人动态',
 
             'desktop.apps.welcome.name': '欢迎',

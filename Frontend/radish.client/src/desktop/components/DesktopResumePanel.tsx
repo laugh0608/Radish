@@ -1,10 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Icon } from '@radish/ui/icon';
 import { getMyBrowseHistory, type UserBrowseHistoryItem } from '@/api/user';
 import { getMyQuickReplies, type UserPostQuickReply } from '@/api/forum';
 import { useWindowStore } from '@/stores/windowStore';
 import { log } from '@/utils/logger';
+import { getAppById } from '@/desktop/AppRegistry';
+import {
+  readRecentDesktopApps,
+  RECENT_DESKTOP_APPS_CHANGED_EVENT,
+  type RecentDesktopAppItem,
+} from '@/utils/desktopRecentApps';
 import {
   openWorkspaceNavigationTarget,
   resolveBrowseHistoryWorkspaceTarget,
@@ -13,11 +20,12 @@ import {
 } from '@/utils/workspaceNavigation';
 import styles from './DesktopResumePanel.module.css';
 
-type ResumeItemKind = 'browse' | 'quick-reply';
+type ResumeItemKind = 'app' | 'browse' | 'quick-reply';
 
 interface ResumeItem {
   id: string;
   kind: ResumeItemKind;
+  appId?: string;
   icon: string;
   title: string;
   description: string;
@@ -36,6 +44,24 @@ const getBrowseIcon = (targetType: string): string => {
     default:
       return 'mdi:history';
   }
+};
+
+const buildAppResumeItem = (item: RecentDesktopAppItem, t: TFunction): ResumeItem | null => {
+  const app = getAppById(item.appId);
+  if (!app) {
+    return null;
+  }
+
+  return {
+    id: `app-${item.appId}`,
+    kind: 'app',
+    appId: item.appId,
+    icon: app.icon,
+    title: t(app.nameKey || app.name),
+    description: t(app.descriptionKey || app.description || 'desktop.resume.appDescriptionFallback'),
+    meta: t('desktop.resume.appMeta'),
+    target: null,
+  };
 };
 
 const buildBrowseResumeItem = (item: UserBrowseHistoryItem, fallbackSummary: string): ResumeItem => ({
@@ -60,11 +86,25 @@ const buildQuickReplyResumeItem = (item: UserPostQuickReply, meta: string): Resu
 
 export const DesktopResumePanel = () => {
   const { t } = useTranslation();
-  const { openApp } = useWindowStore();
+  const { openApp, openOrReuseApp } = useWindowStore();
+  const [recentApps, setRecentApps] = useState<RecentDesktopAppItem[]>([]);
   const [browseItems, setBrowseItems] = useState<UserBrowseHistoryItem[]>([]);
   const [quickReplyItems, setQuickReplyItems] = useState<UserPostQuickReply[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasIssue, setHasIssue] = useState(false);
+
+  useEffect(() => {
+    const refreshRecentApps = () => {
+      setRecentApps(readRecentDesktopApps());
+    };
+
+    refreshRecentApps();
+    window.addEventListener(RECENT_DESKTOP_APPS_CHANGED_EVENT, refreshRecentApps);
+
+    return () => {
+      window.removeEventListener(RECENT_DESKTOP_APPS_CHANGED_EVENT, refreshRecentApps);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -109,6 +149,10 @@ export const DesktopResumePanel = () => {
   }, []);
 
   const resumeItems = useMemo<ResumeItem[]>(() => {
+    const appResumeItems = recentApps
+      .map((item) => buildAppResumeItem(item, t))
+      .filter((item): item is ResumeItem => item !== null)
+      .slice(0, 3);
     const browseResumeItems = browseItems
       .map((item) => buildBrowseResumeItem(item, t('desktop.resume.noSummary')))
       .filter((item) => item.target);
@@ -116,10 +160,15 @@ export const DesktopResumePanel = () => {
       .map((item) => buildQuickReplyResumeItem(item, t('desktop.resume.quickReplyMeta')))
       .filter((item) => item.target);
 
-    return [...browseResumeItems, ...quickReplyResumeItems].slice(0, 5);
-  }, [browseItems, quickReplyItems, t]);
+    return [...appResumeItems, ...browseResumeItems, ...quickReplyResumeItems].slice(0, 5);
+  }, [browseItems, quickReplyItems, recentApps, t]);
 
   const handleOpenItem = (item: ResumeItem) => {
+    if (item.kind === 'app' && item.appId) {
+      openOrReuseApp(item.appId);
+      return;
+    }
+
     openWorkspaceNavigationTarget(openApp, item.target);
   };
 

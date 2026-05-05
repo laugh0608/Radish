@@ -14,6 +14,7 @@ import { useAuthStore } from './authStore';
 import { useUserStore } from './userStore';
 import { toast } from '@radish/ui/toast';
 import i18n from '@/i18n';
+import { recordRecentDesktopApp } from '@/utils/desktopRecentApps';
 
 interface WindowStore {
   /** 打开的窗口列表 */
@@ -107,6 +108,8 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
       return;
     }
 
+    recordRecentDesktopApp(appId);
+
     // 如果应用已打开，聚焦窗口
     const serializedParams = JSON.stringify(appParams ?? {});
     const existingWindow = openWindows.find(w => w.appId === appId && JSON.stringify(w.appParams ?? {}) === serializedParams);
@@ -163,6 +166,8 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
       get().openApp(appId, nextAppParams);
       return;
     }
+
+    recordRecentDesktopApp(appId);
 
     get().updateWindowAppParams(existingWindow.id, nextAppParams);
     get().focusWindow(existingWindow.id);
