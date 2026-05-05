@@ -33,6 +33,12 @@ interface ResumeItem {
   target: WorkspaceNavigationTarget | null;
 }
 
+interface ResumeSection {
+  id: string;
+  title: string;
+  items: ResumeItem[];
+}
+
 const getBrowseIcon = (targetType: string): string => {
   switch (targetType) {
     case 'Post':
@@ -148,20 +154,40 @@ export const DesktopResumePanel = () => {
     };
   }, []);
 
-  const resumeItems = useMemo<ResumeItem[]>(() => {
+  const resumeSections = useMemo<ResumeSection[]>(() => {
     const appResumeItems = recentApps
       .map((item) => buildAppResumeItem(item, t))
       .filter((item): item is ResumeItem => item !== null)
       .slice(0, 3);
     const browseResumeItems = browseItems
       .map((item) => buildBrowseResumeItem(item, t('desktop.resume.noSummary')))
-      .filter((item) => item.target);
+      .filter((item) => item.target)
+      .slice(0, 2);
     const quickReplyResumeItems = quickReplyItems
       .map((item) => buildQuickReplyResumeItem(item, t('desktop.resume.quickReplyMeta')))
-      .filter((item) => item.target);
+      .filter((item) => item.target)
+      .slice(0, 2);
 
-    return [...appResumeItems, ...browseResumeItems, ...quickReplyResumeItems].slice(0, 5);
+    return [
+      {
+        id: 'apps',
+        title: t('desktop.resume.sectionApps'),
+        items: appResumeItems,
+      },
+      {
+        id: 'browse',
+        title: t('desktop.resume.sectionBrowse'),
+        items: browseResumeItems,
+      },
+      {
+        id: 'quick-replies',
+        title: t('desktop.resume.sectionQuickReplies'),
+        items: quickReplyResumeItems,
+      },
+    ].filter((section) => section.items.length > 0);
   }, [browseItems, quickReplyItems, recentApps, t]);
+
+  const hasResumeContent = resumeSections.length > 0;
 
   const handleOpenItem = (item: ResumeItem) => {
     if (item.kind === 'app' && item.appId) {
@@ -191,30 +217,39 @@ export const DesktopResumePanel = () => {
         </button>
       </div>
 
-      {loading ? (
+      {!hasResumeContent && loading ? (
         <div className={styles.stateText}>{t('desktop.resume.loading')}</div>
-      ) : resumeItems.length === 0 ? (
+      ) : !hasResumeContent ? (
         <div className={styles.stateText}>{t(hasIssue ? 'desktop.resume.loadFailed' : 'desktop.resume.empty')}</div>
       ) : (
-        <div className={styles.list}>
-          {resumeItems.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={styles.item}
-              onClick={() => handleOpenItem(item)}
-            >
-              <span className={styles.itemIcon}>
-                <Icon icon={item.icon} size={18} />
-              </span>
-              <span className={styles.itemContent}>
-                <span className={styles.itemMeta}>{item.meta}</span>
-                <span className={styles.itemTitle}>{item.title}</span>
-                <span className={styles.itemDescription}>{item.description}</span>
-              </span>
-              <Icon icon="mdi:arrow-right" size={16} className={styles.itemArrow} />
-            </button>
+        <div className={styles.sections}>
+          {resumeSections.map((section) => (
+            <section key={section.id} className={styles.section}>
+              <div className={styles.sectionTitle}>{section.title}</div>
+              <div className={styles.list}>
+                {section.items.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={styles.item}
+                    onClick={() => handleOpenItem(item)}
+                  >
+                    <span className={styles.itemIcon}>
+                      <Icon icon={item.icon} size={18} />
+                    </span>
+                    <span className={styles.itemContent}>
+                      <span className={styles.itemMeta}>{item.meta}</span>
+                      <span className={styles.itemTitle}>{item.title}</span>
+                      <span className={styles.itemDescription}>{item.description}</span>
+                    </span>
+                    <Icon icon="mdi:arrow-right" size={16} className={styles.itemArrow} />
+                  </button>
+                ))}
+              </div>
+            </section>
           ))}
+          {loading ? <div className={styles.inlineState}>{t('desktop.resume.loading')}</div> : null}
+          {!loading && hasIssue ? <div className={styles.inlineState}>{t('desktop.resume.partialLoadFailed')}</div> : null}
         </div>
       )}
     </aside>
