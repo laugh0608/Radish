@@ -33,6 +33,8 @@
   - 面向桌面端、已登录用户与高交互场景
 - **未来原生客户端壳层**
   - 面向 Flutter 客户端，不复刻 WebOS 窗口系统
+- **桌面安装包壳层**
+  - 面向 Tauri + WebOS 桌面安装包，不重写原生 UI
 
 当前决策以 [前端多壳层策略](/frontend/shell-strategy) 为准。
 
@@ -49,7 +51,8 @@
 - 当前代码事实仍然以 `Desktop Shell + WindowManager` 为主
 - `Clients/radish.flutter` 当前已完成 Android MVP 第一轮 RC 验收并给出 Go 结论：壳层登录态分发、公开 forum / docs / discover / profile 读取、forum detail / comment 只读阅读、detail 原地登录续接、已登录态最小 forum notification 回流、profile 复访、docs 搜索 / 内链、轻回应即时前插与局部成功 / 失败反馈均已落地；当前仍明确保持窄范围阅读与轻互动边界，不扩完整通知中心、系统通知栏推送、发帖、完整评论提交、点赞、投票或桌面治理能力
 - Android / iOS 移动安装包继续以 Flutter 为主线；Capacitor Android 仅保留公开只读 React 页面复用的技术参考，不进入登录态移动端产品化路线
-- Windows / macOS / Linux 桌面安装包优先走 `Tauri 壳 + WebOS 桌面工作台`：Tauri 承接系统窗口、系统浏览器 loopback 登录回跳、deep link 兼容和后续分发能力，WebOS 继续承接 Dock、窗口系统和桌面业务体验；Tauri 不是移动端替代方案，也不是原生 UI 重写路线
+- Windows / macOS / Linux 桌面安装包走 `Tauri 壳 + WebOS 桌面工作台`：Tauri 承接系统窗口、系统浏览器 loopback 登录回跳、deep link 兼容和安装包承载，WebOS 继续承接 Dock、窗口系统和桌面业务体验；截至 `2026-05-05`，个人开发阶段安装、登录、覆盖安装、卸载与 `radish://` 协议注册清理已验证通过，签名、自动更新、生产 Auth、SmartScreen 与公开分发链路后置到真实对外分发前；Tauri 不是移动端替代方案，也不是原生 UI 重写路线
+- WebOS 桌面工作台当前已补首批“继续使用”复访面板：桌面首页按最近应用、最近浏览、我的轻回应分组承接已登录用户的回到工作台场景；最近应用使用本地轻量记录，最近浏览与我的轻回应复用既有 API 与工作台打开能力；该面板不等于完整历史中心，不扩删除 / 清空、跨端同步或新的后端 API
 - 公开内容壳层当前已完成 forum、docs、个人公开页、公开榜单与公开商城浏览五个首批入口，并继续补到 forum 公开分类、forum 公开搜索与 docs 公开搜索首批：`/forum`、`/forum/category/:categoryId`、`/forum/search`、`/forum/post/:postId`、`/docs`、`/docs/search`、`/docs/:slug`、`/u/:id`、`/leaderboard`、`/leaderboard/:type`、`/shop`、`/shop/products` 与 `/shop/product/:productId` 都已可直接进入公开阅读壳层
 - 公开内容壳层当前已形成共享头部视觉基线：forum / docs / discover / leaderboard / shop / `u/:id` 在窄屏下统一使用品牌字、图标与按钮 token，避免同一公开壳层内继续出现专题主题色、图标色和主按钮色各自漂移
 - `/discover` 当前已形成更明确的公开分发节奏：forum / docs / leaderboard / shop 四张摘要卡默认优先预览本页对应区块，同时保留明确的“直接进入公开页”动作，不再把整卡点击简单等同为专题直跳
@@ -92,6 +95,8 @@
 │  └─────┘  └─────┘                                 │
 │  ↑ 仅管理员可见                                      │
 │                                                     │
+│  继续使用：最近应用 | 最近浏览 | 我的轻回应          │
+│                                                     │
 │  ┌────────────────────────────────────────────┐    │
 │  │ Dock：论坛(运行中) | 聊天室(运行中)          │    │
 │  └────────────────────────────────────────────┘    │
@@ -107,6 +112,7 @@ Frontend/radish.client/
 │   │   ├── Shell.tsx         # 桌面外壳（容器）
 │   │   ├── StatusBar.tsx     # 顶部状态栏
 │   │   ├── Desktop.tsx       # 桌面图标网格
+│   │   ├── components/       # 桌面分区组件（继续使用等）
 │   │   ├── Dock.tsx          # 底部 Dock 栏
 │   │   ├── WindowManager.tsx # 窗口管理器
 │   │   ├── AppRegistry.tsx   # 应用注册表
@@ -269,6 +275,16 @@ const canOpen = canAccessApp(app, {
   userPermissions
 });
 ```
+
+### 3.3 桌面继续使用入口
+
+桌面首页当前不再只是应用图标启动器，还承担已登录用户回到工作台后的轻量续接入口：
+
+- **最近应用**：由工作台打开 / 复用应用时写入浏览器本地存储，只记录适合复访的业务应用，并排除欢迎页、组件展示、控制台、API 文档等非业务续接入口。
+- **最近浏览**：复用现有浏览记录接口与桌面打开能力，优先让用户回到最近 forum 阅读上下文。
+- **我的轻回应**：复用现有轻回应回看接口与帖子跳转能力，帮助用户从桌面回到已参与的社区内容。
+
+该入口的设计边界是“回到刚才的工作”，不是完整历史中心：当前不提供清空、删除、筛选、跨端同步、混合时间线或新的后端 API。
 
 ## 4. 窗口系统
 
@@ -461,7 +477,7 @@ export const AdminApp = () => {
 - 当前主入口仍然是桌面 Shell、Dock 与窗口系统
 - 公开内容壳层当前已完成 forum、docs、个人公开页、公开榜单与公开商城浏览五个首批入口落地；帖子列表、分类直达、搜索直达、帖子详情、公开文档目录、个人公开页、公开榜单与公开商城入口都可以绕开桌面 Shell 直接进入公开阅读形态
 - Android MVP 第一轮已完成后，前端多端形态不再按“Flutter 扩所有平台”或“React WebView 统一所有端”继续推进；当前设计分工固定为 Web 浏览器公开内容壳层、Flutter 移动原生安装包、Tauri + WebOS 桌面安装包
-- Tauri 桌面壳默认入口已切到 `/desktop`，用于承载 WebOS 桌面工作台；`/docs` 只作为公开内容壳层与早期 spike 样例，不作为桌面安装包正式默认体验
+- Tauri 桌面壳默认入口已切到 `/desktop`，用于承载 WebOS 桌面工作台；个人开发阶段安装包验证已通过，正式公开分发事项后置；`/docs` 只作为公开内容壳层与早期 spike 样例，不作为桌面安装包正式默认体验
 - 公开 forum 当前只冻结“列表 + 分类 + 标签 + 结构化类型列表 + 搜索 + 详情 + 轻回应墙展示 + 评论阅读”，并明确保持只读阅读边界
 - 公开文档阅读当前只冻结“目录 + 搜索 + 正文阅读 + 复制公开链接 + 返回浏览态 + 文档内链跳转”，并明确保持只读阅读边界；当前已补齐返回目录滚动位置保持、搜索结果上下文回跳、详情页复制链接入口，以及旧 `__documents__` 文档链接继续落入公开 docs 壳层
 - 公开榜单当前已开始补“经验体系公开展示”这一类只读说明增强：优先解释排行依据、等级含义与公开边界，而不是直接把桌面里的“我的经验明细”搬进公开壳层
@@ -714,6 +730,7 @@ Frontend/radish.client/src/stores/
 - `Shell`
 - `Dock`
 - `Desktop`
+- `DesktopResumePanel`
 - `DesktopWindow`
 - `WelcomeApp`（当前已完成主题 token 接入、内容口径重写与游客安全打开）
 

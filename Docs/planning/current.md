@@ -7,9 +7,9 @@
 ## 当前主线
 
 - **阶段**：`第二开发阶段：社区深化与多端化`
-- **当前主线**：`Phase 2-3 Android MVP 第一轮完成后的多端路线收口`
-- **当前阶段**：截至 `2026-05-04`，第一开发阶段已于 `2026-04-06` 通过 `v26.3.2-release` 完成真实发布收口；第二开发阶段现已正式启动。`Phase 2-1 社区深化第一批` 已完成论坛轻回应墙 Phase 1 与最小回流链路收口；`Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口，并转入稳定维护；`Phase 2-3 Android MVP` 已完成第一轮 RC 验收并给出 Go 结论。随后完成 React 复用路线评估：Capacitor Android 因登录 / OIDC 与本机调试复杂度终止，不进入移动端产品化主线；Tauri 桌面壳个人开发阶段验证通过，其合理定位是 `Tauri 壳 + WebOS 桌面工作台`，不是移动端替代方案，也不是原生 UI 重写路线。当前多端开发口径收束为三条线：Web 浏览器使用公开内容壳层，Android / iOS 安装包使用 Flutter 移动原生路线，Windows / macOS / Linux 安装包保留 Tauri + WebOS 路线。
-- **复核日期**：`2026-05-04`
+- **当前主线**：`多端路线收口后的产品功能开发推进`
+- **当前阶段**：截至 `2026-05-05`，第一开发阶段已于 `2026-04-06` 通过 `v26.3.2-release` 完成真实发布收口；第二开发阶段现已正式启动。`Phase 2-1 社区深化第一批` 已完成论坛轻回应墙 Phase 1 与最小回流链路收口；`Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口，并转入稳定维护；`Phase 2-3 Android MVP` 已完成第一轮 RC 验收并给出 Go 结论。随后完成 React 复用路线评估：Capacitor Android 因登录 / OIDC 与本机调试复杂度终止，不进入移动端产品化主线；Tauri 桌面安装包个人开发阶段验证通过，其合理定位是 `Tauri 壳 + WebOS 桌面工作台`，不是移动端替代方案，也不是原生 UI 重写路线；WebOS 桌面工作台已回到产品功能开发推进，并落地首批“继续使用”复访入口。当前多端开发口径收束为三条线：Web 浏览器使用公开内容壳层，Android / iOS 安装包使用 Flutter 移动原生路线，Windows / macOS / Linux 安装包保留 Tauri + WebOS 路线。
+- **复核日期**：`2026-05-05`
 
 ## 当前执行入口
 
@@ -33,6 +33,7 @@
 - WebOS 当前继续保留，但角色已经明确收束为“桌面工作台”，不再承担所有场景唯一入口
 - 仓库当前已建立 `Clients/radish.flutter` Flutter 客户端骨架并完成 Android MVP 第一轮；Flutter 当前作为 Android / iOS 移动安装包路线，不再默认承担 Windows / macOS / Linux 桌面安装包扩平台
 - Windows / macOS / Linux 桌面安装包当前保留 `Tauri 壳 + WebOS 桌面工作台` 路线；Tauri 负责系统窗口、系统浏览器 loopback 登录回跳、deep link 兼容与安装包承载，WebOS 继续负责桌面 UI 与工作台业务体验；菜单、托盘、自动更新、文件系统和正式公开分发能力后置到有明确需求时再评估
+- WebOS 桌面工作台当前已补首批“继续使用”复访入口：桌面首页展示最近应用、最近浏览与我的轻回应分组；最近应用使用浏览器本地存储记录并排除欢迎页、组件展示、控制台与 API 文档等非复访应用；最近浏览与我的轻回应复用既有 API 与工作台打开能力；该入口不扩完整历史中心、清空 / 删除、跨端同步或新的后端 API
 - Web 浏览器继续使用公开内容壳层，覆盖 PC 浏览器与移动浏览器响应式阅读，不承担完整工作台治理能力
 - 论坛轻回应墙 `Phase 1` 当前已落下独立模型、独立接口、帖子详情页插入位、举报接入、配置化治理边界与首版前端展示闭环
 - 论坛轻回应墙当前已不再是“设计是否成立”的问题，而是“基础链路已落地，是否能形成回流与复访闭环”的问题
@@ -147,7 +148,7 @@
    - [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation) 已收口到三端分工方案：Web 浏览器公开内容壳层、Android / iOS Flutter 移动安装包、Windows / macOS / Linux Tauri + WebOS 桌面安装包
    - Capacitor Android 已完成 `/docs` 与本机 Gateway 调试链路验证，但登录 / OIDC 回调评估因本机调试复杂度、Auth secure cookie、Android WebView 证书、`adb reverse`、runtime config 与 deep link 原生桥耦合成本过高而终止；相关临时代码与 Auth 开发态配置已回滚，Capacitor 不进入当前移动端产品化主线
    - Tauri 桌面壳已完成首轮命令级 spike、第二轮人工验收与 Windows NSIS installer 个人开发阶段验证：`radish.client` 可复用 React / Vite `dist`，Tauri 壳层可接入窗口生命周期、系统浏览器 loopback 登录回跳、`radish://` deep link 兼容、Windows release exe 与 NSIS installer 构建；默认入口已从 `/docs` 切到 `/desktop`，GUI 启动、WebOS 桌面布局、登录 / 登出浏览器回跳、installer 安装、启动、普通用户卸载与同身份覆盖安装测试后暂未发现问题；release 启动伴随命令行窗口的问题已通过 `windows_subsystem = "windows"` 修复；当前本机普通用户安装未出现“未知发布者 / SmartScreen”提示；管理员安装后用普通权限卸载可能残留安装文件，当前归类为权限上下文不一致风险；正式桌面包候选身份已完成补验，`productName` / 窗口标题为 `Radish`，`identifier` 为 `com.radish.desktop`，生产构建默认基址已收口到 `https://radishx.com`，并新增 `build:tauri-local` 本地 Auth 验收构建模式指向 `https://localhost:5000`；浏览器登录页关闭后同路径再次点击登录会复用等待中的 loopback listener，并已生成 `Radish_0.1.0_x64-setup.exe`；候选身份下安装、登录、已登录功能访问、关闭浏览器后重试登录、覆盖安装、卸载与 `radish://` 协议注册清理人工补验均未发现问题；个人开发阶段接受测试环境通过即可收口，签名、自动更新、生产 Auth、SmartScreen 与公开分发链路均后置到真实对外分发前再处理
-   - 下一步优先回到产品功能开发推进，不再围绕 installer、签名、自动更新或公开分发细节消耗当前主线精力
+   - 下一步已回到产品功能开发推进：WebOS 桌面首页首批补齐“继续使用”面板，按最近应用 / 最近浏览 / 我的轻回应分组承接登录后复访；当前仍保持小闭环，不扩完整历史中心、跨端同步、清空 / 删除治理或新的后端 API
 3. **维护线继续保留**
    - 若后续发现 `P0 / P1` 阻断，只按阻断项定点修复
    - 系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票、编辑治理、Flutter 专属 BFF、Tauri 正式公开分发仍需重新评估后再进入建设
@@ -159,6 +160,7 @@
   - Flutter 当前执行面只保留 Android MVP 完成线；iOS 后续按移动端价值单独评估，不启动 Windows / macOS / Linux Flutter 扩平台
   - Android 深化若进入执行，应以测试对象、反馈回收、已知问题列表、版本说明和发布留痕为主，不默认扩完整通知中心、系统推送、发帖、完整评论提交、点赞、投票或编辑治理
   - Windows / macOS / Linux 桌面安装包路线已完成个人开发阶段验证，后续只在真实对外分发前再处理签名、自动更新、SmartScreen、生产 Auth 与公开分发方式；当前不与 Android 已完成 MVP 混成一批，也不继续占用产品功能开发主线
+  - WebOS 桌面工作台后续若继续推进，优先选择已登录复访、工作台启动效率和高价值应用回流这类小闭环，不回到桌面安装包分发细节消耗主线
 
 - `Phase 2-2` 稳定维护项
   - 公开内容壳层保留必要联调复核与问题修复，但不再继续新增公开入口或细节增强

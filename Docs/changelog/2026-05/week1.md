@@ -1,4 +1,4 @@
-# 2026-05 第一周 (05-01 ~ 05-04)
+# 2026-05 第一周 (05-01 ~ 05-05)
 
 ## 2026-05-01 (周五)
 
@@ -105,11 +105,33 @@
 - **Capacitor Android 已退出移动端主线**：公开 `/docs` 只读页面可运行，但登录 / OIDC、本机 Gateway/Auth 调试、Android WebView 证书、端口代理与 deep link 原生桥耦合成本过高，不符合低成本移动复用目标。
 - **Tauri 桌面壳命令级 spike 已成立**：`radish.client` 可复用 React / Vite `dist`，Tauri 壳层可承接窗口生命周期、系统浏览器 loopback 登录回跳、`radish://` deep link 兼容与 Windows release exe 构建；但 Tauri 不是原生 UI 重写路线。
 - **WebOS 继续作为桌面工作台核心**：后续桌面安装包若推进，应采用 `Tauri 壳 + WebOS 桌面工作台`；Tauri 默认入口已切到 `/desktop`，而不是 `/docs` 公开阅读页。
-- **Tauri 第二轮人工验收已通过**：GUI 启动、WebOS 桌面布局、窗口生命周期观察、系统浏览器登录 / 登出 loopback 回跳测试后暂未发现问题；后续桌面端重点转向 installer、签名、自动更新与分发链路。
+- **Tauri 第二轮人工验收已通过**：GUI 启动、WebOS 桌面布局、窗口生命周期观察、系统浏览器登录 / 登出 loopback 回跳测试后暂未发现问题；当日桌面端下一步暂定转向 installer、签名、自动更新与分发链路，后续在 `2026-05-05` 收口为个人开发阶段通过后正式公开分发事项后置。
 - **三端开发口径已确认**：Web 浏览器使用公开内容壳层；Android / iOS 安装包使用 Flutter 移动原生路线；Windows / macOS / Linux 安装包优先评估 Tauri + WebOS。
 
 ### 当日收口判断
 
-- **不再默认追加第 24 批微调**：Android MVP 第一轮完成后，下一步在 Android 内测产品化深化、分发反馈闭环与 Tauri + WebOS 桌面安装包第二轮评估之间选择。
+- **不再默认追加第 24 批微调**：Android MVP 第一轮完成后，下一步在 Android 内测产品化深化、分发反馈闭环与 Tauri + WebOS 桌面安装包第二轮评估之间选择；后续 `2026-05-05` 已将 Tauri + WebOS 个人开发阶段验证收口，产品主线回到 WebOS 工作台体验补强。
 - **范围边界保持不变**：系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票、编辑治理、Flutter 专属 BFF 与 Tauri 桌面分发仍需重新评估后再进入建设。
 - **设计与验证入口已补同步**：当日提交回顾后，补齐 [前端设计文档](/frontend/design)、[验证基线说明](/guide/validation-baseline) 与 [回归索引](/guide/regression-index) 的 RC Go、三端分工、Capacitor 终止和 Tauri + WebOS 验证入口口径；本次只做文档真相源同步，不新增功能代码。
+
+## 2026-05-05 (周二)
+
+### Tauri + WebOS 桌面安装包个人开发阶段收口
+
+- **桌面安装包候选身份已确认**：`Radish` / `com.radish.desktop` 候选身份、生产构建默认 `https://radishx.com` 与本地 Auth 验收构建 `build:tauri-local` 均已落地。
+- **本地 Auth 与 loopback 登录已补齐**：桌面登录成功、客户端已登录功能访问、关闭浏览器后同路径重试登录、登出回跳与 Tauri CORS 口径均已完成验证；浏览器关闭后重试会复用等待中的 loopback listener。
+- **installer 人工补验已通过**：安装目录、开始菜单、卸载项、覆盖安装、普通卸载、重新安装与 `radish://` 协议注册 / 卸载清理均已由人工确认未发现问题。
+- **正式公开分发事项后置**：个人开发阶段接受测试环境通过即可收口；签名、自动更新、生产 Auth、SmartScreen、托盘、系统菜单与公开分发链路留到真实对外分发前再评估。
+
+### WebOS 桌面继续使用入口第一批
+
+- **桌面首页复访入口已落地**：新增“继续使用”面板，按最近应用、最近浏览、我的轻回应分组承接已登录用户回到工作台后的续接路径。
+- **最近应用使用本地轻量记录**：打开或复用业务应用时写入本地最近应用，排除欢迎页、组件展示、控制台、API 文档等非业务复访入口。
+- **最近浏览与我的轻回应复用既有能力**：面板通过已有 API 展示最近 forum 浏览与我的轻回应，并通过共享 workspace navigation 打回对应桌面应用上下文；`ProfileApp` 也已复用同一套跳转解析。
+- **局部降级边界已明确**：本地最近应用不被远程接口加载状态挡住；远程局部失败只在对应分组提示，不拖垮整个桌面首页。
+
+### 当日收口判断
+
+- **开发精力已回到产品功能推进**：Tauri + WebOS 桌面包不再继续围绕 installer、签名、自动更新或公开分发细节消耗当前主线。
+- **WebOS 复访入口保持小闭环**：本轮不新增后端 API，不扩完整历史中心、清空 / 删除、跨端同步、混合时间线或新的治理动作。
+- **验证已完成**：本轮功能提交已通过 `npm run test --workspace=radish.client`、`npm run type-check --workspace=radish.client`、`npm run build --workspace=radish.client` 与 `git diff --check`；当日文档收口另跑 `git diff --check`。
