@@ -26,7 +26,7 @@
 - 首轮命令级验证与第二轮人工验收已覆盖：`radish.client` 构建、`cargo build`、`cargo build --release`、GUI 启动、WebOS 布局、窗口生命周期观察、登录 / 登出回跳
 - 当前本机已安装 `cargo-tauri` CLI，`cargo tauri --version` 返回 `tauri-cli 2.11.0`
 - `cargo tauri build` 已生成 Windows NSIS installer：`Clients/radish-tauri/target/release/bundle/nsis/Radish Tauri Spike_0.1.0_x64-setup.exe`
-- installer 已完成一轮本机安装与启动验证：可安装、可打开 WebOS `/desktop`，修复 Windows release 启动伴随命令行窗口的问题后，启动不再出现额外控制台窗口
+- installer 已完成一轮本机安装、启动、普通用户卸载与同身份覆盖安装验证：可安装、可打开 WebOS `/desktop`、普通用户卸载无残留、同身份覆盖安装后仍可启动；修复 Windows release 启动伴随命令行窗口的问题后，启动不再出现额外控制台窗口
 
 ## 3. 当前不调整
 
@@ -43,7 +43,7 @@
 | 项目 | 当前状态 | 后续验证入口 | 判断口径 |
 | --- | --- | --- | --- |
 | Windows release exe | 已通过 `cargo build --release` 生成 | `cargo build --release` | 只能说明 Rust / Tauri 壳可编译，不代表 installer 可分发 |
-| Windows installer bundle | 首轮通过 | `cargo tauri build` | 已生成 NSIS installer 并完成本机安装 / 启动验证；卸载、升级路径仍待补验 |
+| Windows installer bundle | 首轮通过 | `cargo tauri build` | 已生成 NSIS installer，并完成本机安装 / 启动 / 普通用户卸载 / 同身份覆盖安装验证 |
 | 产品身份 | 仍为 spike | 修改 `productName` / `identifier` 前单独评审 | installer 真实可用前不切正式身份 |
 | 代码签名 | 未验证 | 准备证书后验证签名产物 | 个人开发阶段可暂缓；外部分发前必须明确未签名风险 |
 | Windows SmartScreen | 待记录 | 未签名 / 已签名 installer 分别人工安装 | 未签名包出现拦截属于预期风险，不应误判为 Tauri 构建失败 |
@@ -80,7 +80,7 @@ cd Clients/radish-tauri
 cargo tauri build
 ```
 
-说明：安装 Tauri CLI 属于依赖安装动作，应由开发者手动执行或明确批准后再执行。当前本机已经完成安装，并已执行 `cargo tauri build` 生成 NSIS installer；本轮仍不能给出代码签名、完整卸载、升级路径或自动更新结论。
+说明：安装 Tauri CLI 属于依赖安装动作，应由开发者手动执行或明确批准后再执行。当前本机已经完成安装，并已执行 `cargo tauri build` 生成 NSIS installer；本轮仍不能给出代码签名、Windows SmartScreen、deep link 协议注册或自动更新结论。
 
 ## 6. 首轮 installer 验证结果
 
@@ -90,8 +90,11 @@ cargo tauri build
 - installer 大小：`2,661,263 bytes`，约 `2.54 MiB`
 - 安装验证：通过
 - 启动验证：通过，可打开 WebOS `/desktop`
+- 普通用户卸载验证：通过，无残留
+- 同身份覆盖安装验证：通过，覆盖安装后仍可启动 `/desktop`，且不出现额外命令行窗口
+- 权限上下文备注：管理员权限安装后再用普通权限卸载，曾出现 `radish-tauri.exe` / `uninstall.exe` 残留；改用普通用户安装和普通用户卸载后无残留。该现象归类为安装 / 卸载权限上下文不一致风险，不作为当前 Tauri / NSIS 配置缺陷处理
 - 控制台窗口：已通过 `windows_subsystem = "windows"` 修复，release / installer 启动不再伴随命令行窗口
-- 仍待验证：卸载、升级路径、代码签名、Windows SmartScreen 表现、deep link 协议注册、自动更新
+- 仍待验证：代码签名、Windows SmartScreen 表现、deep link 协议注册、自动更新
 - 构建备注：当前 `cargo tauri build` 出现 `__TAURI_BUNDLE_TYPE variable not found in binary` 警告；项目尚未接入 updater，因此不影响本轮 installer 和启动验证。若后续接入自动更新，需要单独处理该警告。
 
 ## 7. 第二轮通过标准
@@ -105,8 +108,8 @@ cargo tauri build
 5. 明确自动更新是否后置，以及后置时桌面包如何提示版本更新
 6. 明确托盘 / 菜单是否进入首批桌面包，不进入时保持普通窗口应用语义
 
-当前第 1 项、安装启动验证和 installer 体积已完成；卸载、升级、SmartScreen、签名、自动更新与托盘 / 菜单取舍仍待后续补验。
+当前第 1 项、安装 / 启动 / 普通用户卸载 / 同身份覆盖安装验证和 installer 体积已完成；SmartScreen、签名、自动更新、deep link 协议注册与托盘 / 菜单取舍仍待后续补验。
 
 ## 8. 当前建议
 
-个人开发阶段建议先保持 Tauri 桌面壳为候选路线，不急于切正式产品身份。下一次若继续桌面端，应优先补卸载 / 升级 / SmartScreen 记录，再决定是否改 `productName`、`identifier`、代码签名、自动更新和托盘 / 菜单。
+个人开发阶段建议先保持 Tauri 桌面壳为候选路线，不急于切正式产品身份。下一次若继续桌面端，应优先补 SmartScreen 记录，再决定是否改 `productName`、`identifier`、代码签名、自动更新和托盘 / 菜单。

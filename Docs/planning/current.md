@@ -146,7 +146,7 @@
 2. **下一阶段优先级评估**
    - [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation) 已收口到三端分工方案：Web 浏览器公开内容壳层、Android / iOS Flutter 移动安装包、Windows / macOS / Linux Tauri + WebOS 桌面安装包
    - Capacitor Android 已完成 `/docs` 与本机 Gateway 调试链路验证，但登录 / OIDC 回调评估因本机调试复杂度、Auth secure cookie、Android WebView 证书、`adb reverse`、runtime config 与 deep link 原生桥耦合成本过高而终止；相关临时代码与 Auth 开发态配置已回滚，Capacitor 不进入当前移动端产品化主线
-   - Tauri 桌面壳已完成首轮命令级 spike、第二轮人工验收与 Windows NSIS installer 首轮验证：`radish.client` 可复用 React / Vite `dist`，Tauri 壳层可接入窗口生命周期、系统浏览器 loopback 登录回跳、`radish://` deep link 兼容、Windows release exe 与 NSIS installer 构建；默认入口已从 `/docs` 切到 `/desktop`，GUI 启动、WebOS 桌面布局、登录 / 登出浏览器回跳、installer 安装与启动测试后暂未发现问题；release 启动伴随命令行窗口的问题已通过 `windows_subsystem = "windows"` 修复；后续若继续桌面端，应转入签名、自动更新、SmartScreen、卸载 / 升级与分发链路评估
+   - Tauri 桌面壳已完成首轮命令级 spike、第二轮人工验收与 Windows NSIS installer 首轮验证：`radish.client` 可复用 React / Vite `dist`，Tauri 壳层可接入窗口生命周期、系统浏览器 loopback 登录回跳、`radish://` deep link 兼容、Windows release exe 与 NSIS installer 构建；默认入口已从 `/docs` 切到 `/desktop`，GUI 启动、WebOS 桌面布局、登录 / 登出浏览器回跳、installer 安装、启动、普通用户卸载与同身份覆盖安装测试后暂未发现问题；release 启动伴随命令行窗口的问题已通过 `windows_subsystem = "windows"` 修复；管理员安装后用普通权限卸载可能残留安装文件，当前归类为权限上下文不一致风险；后续若继续桌面端，应转入签名、自动更新、SmartScreen、deep link 协议注册与分发链路评估
    - 下一步优先在 Android 内测产品化深化与 Tauri + WebOS 桌面安装包第二轮评估之间选择，不再按“Flutter 扩所有平台”或“React WebView 统一所有端”规划
 3. **维护线继续保留**
    - 若后续发现 `P0 / P1` 阻断，只按阻断项定点修复
@@ -158,7 +158,7 @@
   - 当前多端路线已收口为三端分工：Web 公开内容壳层、Flutter 移动安装包、Tauri + WebOS 桌面安装包
   - Flutter 当前执行面只保留 Android MVP 完成线；iOS 后续按移动端价值单独评估，不启动 Windows / macOS / Linux Flutter 扩平台
   - Android 深化若进入执行，应以测试对象、反馈回收、已知问题列表、版本说明和发布留痕为主，不默认扩完整通知中心、系统推送、发帖、完整评论提交、点赞、投票或编辑治理
-  - Windows / macOS / Linux 若进入执行，应基于已通过的 `Tauri + WebOS` GUI / 登录回跳人工验收与 Windows NSIS installer 首轮验证，继续验证签名、自动更新、SmartScreen、卸载 / 升级与分发方式，不与 Android 已完成 MVP 混成一批
+  - Windows / macOS / Linux 若进入执行，应基于已通过的 `Tauri + WebOS` GUI / 登录回跳人工验收与 Windows NSIS installer 首轮验证，继续验证签名、自动更新、SmartScreen、deep link 协议注册与分发方式，不与 Android 已完成 MVP 混成一批
 
 - `Phase 2-2` 稳定维护项
   - 公开内容壳层保留必要联调复核与问题修复，但不再继续新增公开入口或细节增强

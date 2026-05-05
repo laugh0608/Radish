@@ -160,7 +160,7 @@ Tauri 不适合作为：
 
 1. WebOS Dock、桌面图标、窗口系统在 Tauri 固定窗口里的布局与滚动行为人工验收已通过，测试后暂未发现问题
 2. 桌面登录 / 登出回跳已通过：系统浏览器 + `127.0.0.1:48801` loopback callback 主路径可用，`radish://` deep link 仅保留为兼容路径
-3. Windows NSIS installer 首轮已通过；后续继续验证签名、Windows SmartScreen、自动更新、卸载 / 升级、托盘与系统菜单
+3. Windows NSIS installer 安装 / 启动 / 普通用户卸载 / 同身份覆盖安装首轮已通过；后续继续验证签名、Windows SmartScreen、自动更新、deep link 协议注册、托盘与系统菜单
 
 ## 9. 第二阶段执行顺序建议
 

@@ -104,7 +104,7 @@ React spike 完成后已产出：
 | 原生能力 | Android 已跑通最小链路 | 仅验证 WebView 壳层，不进入产品化 | 已接入 focus / resize / close requested 窗口生命周期事件；托盘、文件系统和自动更新待后续评估 |
 | 包体 / 启动 | 已有 release APK 可测 | debug APK 可构建 | `cargo build --release` 生成 Windows exe，约 `9.15 MiB`；Web `dist` 约 `2.75 MiB`；启动速度未做 GUI 实测 |
 | 调试体验 | 已有 Flutter 工具链 | Gateway / Auth / WebView / 证书 / 端口代理耦合过高 | 前端构建 + Cargo 编译链路清晰；首次依赖拉取需网络，沙盒内 crates.io 证书受限时需提权验证 |
-| 长期维护成本 | 需要维护 Dart 原生移动页面 | 对登录态移动端不合适 | 桌面壳层可集中承接原生窗口、loopback 登录回跳、deep link 兼容与分发能力，WebOS 继续承接桌面 UI；Windows NSIS installer 首轮已通过，正式采用前仍需补签名、自动更新、SmartScreen、卸载 / 升级与分发验收 |
+| 长期维护成本 | 需要维护 Dart 原生移动页面 | 对登录态移动端不合适 | 桌面壳层可集中承接原生窗口、loopback 登录回跳、deep link 兼容与分发能力，WebOS 继续承接桌面 UI；Windows NSIS installer 安装 / 启动 / 普通用户卸载 / 同身份覆盖安装首轮已通过，正式采用前仍需补签名、自动更新、SmartScreen、deep link 协议注册与分发验收 |
 
 ## 6. 决策门槛
 
@@ -126,7 +126,7 @@ React spike 完成后已产出：
 
 截至 2026-05-04，Capacitor Android 的阶段性结论是：公开只读页面复用成立，但一进入登录态、OIDC 回调、本机 Gateway/Auth 调试和 Android WebView 证书 / 端口代理，复杂度明显高于预期，不符合 Radish 当前“低成本 React 复用”的路线目标。Capacitor 因此不进入移动端产品化主线。
 
-截至 2026-05-05，Tauri 桌面壳首轮命令级 spike、第二轮人工验收与 Windows NSIS installer 首轮验证已成立：`Clients/radish-tauri` 可复用既有 React 构建产物，`npm run type-check --workspace=radish.client`、`npm run test --workspace=radish.client`、`npm run build --workspace=radish.client`、`cargo build`、`cargo build --release` 与 `cargo tauri build` 均已通过；Windows release exe 与 NSIS installer 可生成。Tauri 默认入口已从 `/docs` 切到 `/desktop`，桌面登录 / 登出优先改为系统浏览器 + `127.0.0.1:48801` loopback 回跳以复用浏览器登录态并避免依赖 Windows 注册表；GUI 启动、WebOS 桌面布局、窗口生命周期观察、真实登录 / 登出回跳、installer 安装与启动测试后暂未发现问题；release 启动伴随命令行窗口的问题已通过 `windows_subsystem = "windows"` 修复。但暂不直接切为桌面主线，仍需补代码签名、自动更新、Windows SmartScreen、卸载 / 升级和分发链路验证。
+截至 2026-05-05，Tauri 桌面壳首轮命令级 spike、第二轮人工验收与 Windows NSIS installer 首轮验证已成立：`Clients/radish-tauri` 可复用既有 React 构建产物，`npm run type-check --workspace=radish.client`、`npm run test --workspace=radish.client`、`npm run build --workspace=radish.client`、`cargo build`、`cargo build --release` 与 `cargo tauri build` 均已通过；Windows release exe 与 NSIS installer 可生成。Tauri 默认入口已从 `/docs` 切到 `/desktop`，桌面登录 / 登出优先改为系统浏览器 + `127.0.0.1:48801` loopback 回跳以复用浏览器登录态并避免依赖 Windows 注册表；GUI 启动、WebOS 桌面布局、窗口生命周期观察、真实登录 / 登出回跳、installer 安装、启动、普通用户卸载与同身份覆盖安装测试后暂未发现问题；release 启动伴随命令行窗口的问题已通过 `windows_subsystem = "windows"` 修复。管理员安装后用普通权限卸载可能残留安装文件，当前归类为权限上下文不一致风险。但暂不直接切为桌面主线，仍需补代码签名、自动更新、Windows SmartScreen、deep link 协议注册和分发链路验证。
 
 ## 7. 最终路线建议
 
@@ -175,7 +175,7 @@ React spike 完成后已产出：
 
 1. 保持 Android MVP 第一轮完成状态，不默认开启 Flutter 第 `24` 批低增益微调
 2. 若继续移动端，优先做 Android 内测产品化深化、反馈闭环和 release 前验收材料；iOS 后续单独评估
-3. 若继续桌面端，基于已通过的 `Tauri + WebOS` GUI / 登录回跳人工验收与 Windows NSIS installer 首轮验证，优先补签名、自动更新、SmartScreen、卸载 / 升级与分发链路
+3. 若继续桌面端，基于已通过的 `Tauri + WebOS` GUI / 登录回跳人工验收与 Windows NSIS installer 首轮验证，优先补签名、自动更新、SmartScreen、deep link 协议注册与分发链路
 4. 公开内容壳层保持稳定维护，只做必要响应式问题修复和公开阅读质量补洞
 5. 不再推进 Capacitor Android 登录态能力
 
