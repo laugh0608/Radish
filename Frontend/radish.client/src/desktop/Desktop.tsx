@@ -1,4 +1,3 @@
-
 import { useWindowStore } from '@/stores/windowStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
@@ -8,12 +7,8 @@ import { AppIcon } from '@/widgets/AppIcon';
 import { ContextMenu } from '@radish/ui/context-menu';
 import { Icon } from '@radish/ui/icon';
 import { useTheme } from '@/theme/useTheme';
+import { DesktopResumePanel } from './components/DesktopResumePanel';
 import styles from './Desktop.module.css';
-
-
-
-
-
 
 /**
  * 桌面组件
@@ -21,7 +16,6 @@ import styles from './Desktop.module.css';
  * 显示应用图标网格
  */
 export const Desktop = () => {
-  
   const { openApp } = useWindowStore();
   const authAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const { userId, roles, permissions } = useUserStore();
@@ -56,14 +50,17 @@ export const Desktop = () => {
   return (
     <ContextMenu items={contextMenuItems}>
       <div className={styles.desktop}>
-        {visibleApps.map(app => (
-          <AppIcon
-            key={app.id}
-            app={app}
-            onDoubleClick={() => openApp(app.id)}
-            onPointerEnter={() => prefetchAppComponent(app.id)}
-          />
-        ))}
+        <div className={styles.iconGrid}>
+          {visibleApps.map(app => (
+            <AppIcon
+              key={app.id}
+              app={app}
+              onDoubleClick={() => openApp(app.id)}
+              onPointerEnter={() => prefetchAppComponent(app.id)}
+            />
+          ))}
+        </div>
+        {isAuthenticated ? <DesktopResumePanel /> : null}
       </div>
     </ContextMenu>
   );
