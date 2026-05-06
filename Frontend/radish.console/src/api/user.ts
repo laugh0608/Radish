@@ -2,6 +2,46 @@ import { apiGet, apiPost } from '@radish/http';
 import type { ParsedApiResponse } from '@radish/http';
 import type { UserInfo } from '../types/user';
 
+export interface MyProfileInfo {
+  voUserId: number;
+  voUserName: string;
+  voUserEmail: string;
+  voRealName: string;
+  voSex: number;
+  voAge: number;
+  voBirth?: string | null;
+  voAddress: string;
+  voCreateTime: string;
+  voAvatarAttachmentId?: number | string | null;
+  voAvatarUrl?: string | null;
+  voAvatarThumbnailUrl?: string | null;
+}
+
+export interface UpdateMyProfileRequest {
+  userName?: string;
+  userEmail?: string;
+  realName?: string;
+  sex?: number;
+  age?: number;
+  birth?: string | null;
+  address?: string;
+}
+
+export interface UserTimePreferenceVo {
+  voUserId: number;
+  voTimeZoneId: string;
+  voIsCustomized: boolean;
+  voSystemDefaultTimeZoneId: string;
+  voDisplayFormat: string;
+  voModifyTime?: string | null;
+}
+
+export interface ChangeMyLoginPasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
 function toNumber(value: unknown): number {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return value;
@@ -41,6 +81,34 @@ function toPermissions(value: unknown): string[] | undefined {
     .filter((item) => item.length > 0);
 
   return permissions.length > 0 ? permissions : undefined;
+}
+
+function mapMyProfile(raw: any): MyProfileInfo {
+  return {
+    voUserId: toNumber(raw.voUserId ?? raw.VoUserId),
+    voUserName: raw.voUserName ?? raw.VoUserName ?? '',
+    voUserEmail: raw.voUserEmail ?? raw.VoUserEmail ?? '',
+    voRealName: raw.voRealName ?? raw.VoRealName ?? '',
+    voSex: toNumber(raw.voSex ?? raw.VoSex),
+    voAge: toNumber(raw.voAge ?? raw.VoAge),
+    voBirth: raw.voBirth ?? raw.VoBirth ?? null,
+    voAddress: raw.voAddress ?? raw.VoAddress ?? '',
+    voCreateTime: raw.voCreateTime ?? raw.VoCreateTime ?? '',
+    voAvatarAttachmentId: raw.voAvatarAttachmentId ?? raw.VoAvatarAttachmentId,
+    voAvatarUrl: raw.voAvatarUrl ?? raw.VoAvatarUrl,
+    voAvatarThumbnailUrl: raw.voAvatarThumbnailUrl ?? raw.VoAvatarThumbnailUrl,
+  };
+}
+
+function mapTimePreference(raw: any): UserTimePreferenceVo {
+  return {
+    voUserId: toNumber(raw.voUserId ?? raw.VoUserId),
+    voTimeZoneId: raw.voTimeZoneId ?? raw.VoTimeZoneId ?? '',
+    voIsCustomized: raw.voIsCustomized ?? raw.VoIsCustomized ?? false,
+    voSystemDefaultTimeZoneId: raw.voSystemDefaultTimeZoneId ?? raw.VoSystemDefaultTimeZoneId ?? 'Asia/Shanghai',
+    voDisplayFormat: raw.voDisplayFormat ?? raw.VoDisplayFormat ?? 'yyyy-MM-dd HH:mm:ss',
+    voModifyTime: raw.voModifyTime ?? raw.VoModifyTime ?? null,
+  };
 }
 
 /**
@@ -88,6 +156,72 @@ export const userApi = {
     }
 
     return response as ParsedApiResponse<UserInfo>;
+  },
+
+  /**
+   * 获取当前用户个人资料
+   */
+  async getMyProfile(): Promise<ParsedApiResponse<MyProfileInfo>> {
+    const response = await apiGet<any>('/api/v1/User/GetMyProfile', { withAuth: true });
+
+    if (response.ok && response.data) {
+      return {
+        ...response,
+        data: mapMyProfile(response.data),
+      };
+    }
+
+    return response as ParsedApiResponse<MyProfileInfo>;
+  },
+
+  /**
+   * 更新当前用户个人资料
+   */
+  async updateMyProfile(request: UpdateMyProfileRequest): Promise<ParsedApiResponse<null>> {
+    return await apiPost<null>('/api/v1/User/UpdateMyProfile', request, { withAuth: true });
+  },
+
+  /**
+   * 获取当前用户时区偏好
+   */
+  async getMyTimePreference(): Promise<ParsedApiResponse<UserTimePreferenceVo>> {
+    const response = await apiGet<any>('/api/v1/User/GetMyTimePreference', { withAuth: true });
+
+    if (response.ok && response.data) {
+      return {
+        ...response,
+        data: mapTimePreference(response.data),
+      };
+    }
+
+    return response as ParsedApiResponse<UserTimePreferenceVo>;
+  },
+
+  /**
+   * 更新当前用户时区偏好
+   */
+  async updateMyTimePreference(timeZoneId: string): Promise<ParsedApiResponse<UserTimePreferenceVo>> {
+    const response = await apiPost<any>(
+      '/api/v1/User/UpdateMyTimePreference',
+      { timeZoneId },
+      { withAuth: true }
+    );
+
+    if (response.ok && response.data) {
+      return {
+        ...response,
+        data: mapTimePreference(response.data),
+      };
+    }
+
+    return response as ParsedApiResponse<UserTimePreferenceVo>;
+  },
+
+  /**
+   * 修改当前用户登录密码
+   */
+  async changeMyLoginPassword(request: ChangeMyLoginPasswordRequest): Promise<ParsedApiResponse<null>> {
+    return await apiPost<null>('/api/v1/User/ChangeMyLoginPassword', request, { withAuth: true });
   },
 
   /**

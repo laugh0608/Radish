@@ -819,6 +819,50 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
+    /// 修改当前登录用户的登录密码
+    /// </summary>
+    [HttpPost]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    public async Task<MessageModel> ChangeMyLoginPassword([FromBody] ChangeMyLoginPasswordDto dto)
+    {
+        try
+        {
+            await _userService.ChangeMyLoginPasswordAsync(
+                Current.UserId,
+                dto.CurrentPassword,
+                dto.NewPassword,
+                dto.ConfirmPassword);
+
+            return new MessageModel
+            {
+                IsSuccess = true,
+                StatusCode = (int)HttpStatusCodeEnum.Success,
+                MessageInfo = "密码修改成功"
+            };
+        }
+        catch (ArgumentException ex)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = ex.Message
+            };
+        }
+        catch (InvalidOperationException ex)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = ex.Message
+            };
+        }
+    }
+
+    /// <summary>
     /// 设置当前用户头像（通过绑定 Avatar 附件）
     /// </summary>
     /// <param name="dto">附件 ID（0 表示清空头像）</param>

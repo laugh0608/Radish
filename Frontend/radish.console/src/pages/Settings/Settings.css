@@ -38,6 +38,14 @@
   font-weight: 600;
 }
 
+.settings-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: #8c8c8c;
+  font-size: 13px;
+}
+
 .password-section {
   background: #fafafa;
   padding: 16px;

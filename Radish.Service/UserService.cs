@@ -1,6 +1,7 @@
 using AutoMapper;
 using Radish.Common;
 using Radish.Common.AttributeTool;
+using Radish.Common.HelpTool;
 using Radish.Common.PermissionTool;
 using Radish.IRepository;
 using Radish.IRepository.Base;
@@ -128,6 +129,73 @@ public class UserService : BaseService<User, UserVo>, IUserService
     public async Task<List<string>> GetPermissionKeysByRolesAsync(IReadOnlyCollection<string> roleNames)
     {
         return await _consoleAuthorizationService.GetPermissionKeysByRolesAsync(roleNames);
+    }
+
+    /// <summary>
+    /// 修改当前用户登录密码。
+    /// </summary>
+    public async Task ChangeMyLoginPasswordAsync(long userId, string currentPassword, string newPassword, string confirmPassword)
+    {
+        if (userId <= 0)
+        {
+            throw new ArgumentException("用户 ID 无效", nameof(userId));
+        }
+
+        if (string.IsNullOrWhiteSpace(currentPassword))
+        {
+            throw new ArgumentException("当前密码不能为空", nameof(currentPassword));
+        }
+
+        ValidateNewLoginPassword(newPassword, confirmPassword);
+
+        var user = await QueryFirstAsync(u => u.Id == userId && !u.IsDeleted && u.IsEnable);
+        if (user == null)
+        {
+            throw new InvalidOperationException("用户不存在或已禁用");
+        }
+
+        if (!PasswordHasher.VerifyPassword(currentPassword, user.VoLoginPassword))
+        {
+            throw new InvalidOperationException("当前密码不正确");
+        }
+
+        var newPasswordHash = PasswordHasher.HashPassword(newPassword);
+        var affectedRows = await UpdateColumnsAsync(
+            u => new User
+            {
+                LoginPassword = newPasswordHash,
+                CriticalModifyTime = DateTime.Now,
+                UpdateTime = DateTime.Now
+            },
+            u => u.Id == userId && !u.IsDeleted && u.IsEnable);
+
+        if (affectedRows <= 0)
+        {
+            throw new InvalidOperationException("密码更新失败");
+        }
+    }
+
+    private static void ValidateNewLoginPassword(string newPassword, string confirmPassword)
+    {
+        if (string.IsNullOrWhiteSpace(newPassword))
+        {
+            throw new ArgumentException("新密码不能为空", nameof(newPassword));
+        }
+
+        if (newPassword != confirmPassword)
+        {
+            throw new ArgumentException("两次输入的密码不一致", nameof(confirmPassword));
+        }
+
+        if (newPassword.Length < 6)
+        {
+            throw new ArgumentException("密码长度至少 6 位", nameof(newPassword));
+        }
+
+        if (!newPassword.Any(char.IsLower) || !newPassword.Any(char.IsUpper) || !newPassword.Any(char.IsDigit))
+        {
+            throw new ArgumentException("密码必须包含大小写字母和数字", nameof(newPassword));
+        }
     }
 
     /// <summary>测试使用同事务</summary>
