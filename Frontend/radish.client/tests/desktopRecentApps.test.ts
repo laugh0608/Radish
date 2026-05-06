@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  findRecentDesktopApp,
   isTrackableDesktopApp,
   readRecentDesktopApps,
   recordRecentDesktopApp,
@@ -144,4 +145,32 @@ test('readRecentDesktopApps 应兼容不含窗口参数的旧数据', () => {
       openedAt: 100,
     },
   ]);
+});
+
+test('findRecentDesktopApp 应按 appId 返回最近应用上下文', () => {
+  const storage = new MemoryStorage();
+
+  recordRecentDesktopApp('forum', {
+    storage,
+    now: 100,
+    appParams: {
+      postId: '2042219067430928384',
+    },
+  });
+  recordRecentDesktopApp('document', {
+    storage,
+    now: 200,
+    appParams: {
+      slug: 'install-guide',
+    },
+  });
+
+  assert.deepEqual(findRecentDesktopApp('forum', storage), {
+    appId: 'forum',
+    openedAt: 100,
+    appParams: {
+      postId: '2042219067430928384',
+    },
+  });
+  assert.equal(findRecentDesktopApp('missing', storage), undefined);
 });

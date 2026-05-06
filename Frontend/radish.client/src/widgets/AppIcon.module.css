@@ -151,6 +151,39 @@
   color: white;
 }
 
+.resumeButton {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 34%, var(--theme-border-soft));
+  border-radius: 50%;
+  color: var(--theme-brand-primary);
+  background: color-mix(in srgb, var(--theme-bg-surface) 96%, transparent);
+  box-shadow: 0 6px 14px color-mix(in srgb, var(--theme-accent-earth) 18%, transparent);
+  cursor: pointer;
+  opacity: 0.92;
+  transition:
+    transform var(--theme-transition-standard),
+    color var(--theme-transition-standard),
+    border-color var(--theme-transition-standard),
+    background var(--theme-transition-standard),
+    opacity var(--theme-transition-standard);
+}
+
+.resumeButton:hover,
+.resumeButton:focus-visible {
+  transform: translateY(-1px) scale(1.06);
+  color: color-mix(in srgb, var(--theme-brand-primary) 82%, black 18%);
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 58%, var(--theme-border-soft));
+  background: color-mix(in srgb, var(--theme-brand-primary) 10%, var(--theme-bg-surface));
+  opacity: 1;
+}
+
 .icon:hover .iconName {
   background: color-mix(in srgb, var(--theme-brand-primary) 8%, transparent);
   color: var(--theme-brand-primary);

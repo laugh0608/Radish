@@ -143,6 +143,18 @@ export function readRecentDesktopApps(storage?: Storage | null): RecentDesktopAp
   }
 }
 
+export function findRecentDesktopApp(
+  appId: string,
+  storage?: Storage | null
+): RecentDesktopAppItem | undefined {
+  const normalizedAppId = appId.trim();
+  if (!normalizedAppId) {
+    return undefined;
+  }
+
+  return readRecentDesktopApps(storage).find((item) => item.appId === normalizedAppId);
+}
+
 export function recordRecentDesktopApp(
   appId: string,
   options: { storage?: Storage | null; now?: number; appParams?: Record<string, unknown> } = {}

@@ -10,12 +10,16 @@ export interface AppIconProps {
   onDoubleClick?: () => void;
   /** 指针移入事件 */
   onPointerEnter?: () => void;
+  /** 恢复最近上下文 */
+  onResumeClick?: () => void;
+  /** 恢复按钮提示 */
+  resumeTitle?: string;
 }
 
 /**
  * 桌面应用图标组件
  */
-export const AppIcon = ({ app, onDoubleClick, onPointerEnter }: AppIconProps) => {
+export const AppIcon = ({ app, onDoubleClick, onPointerEnter, onResumeClick, resumeTitle }: AppIconProps) => {
   const { t } = useTranslation();
   const appName = app.nameKey ? t(app.nameKey) : app.name;
   const appDescription = app.descriptionKey
@@ -46,6 +50,25 @@ export const AppIcon = ({ app, onDoubleClick, onPointerEnter }: AppIconProps) =>
           <Icon icon={app.icon} size={36} />
         ) : (
           <span className={styles.emoji}>{app.icon}</span>
+        )}
+        {onResumeClick && (
+          <button
+            type="button"
+            className={styles.resumeButton}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onResumeClick();
+            }}
+            onDoubleClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+            title={resumeTitle}
+            aria-label={resumeTitle}
+          >
+            <Icon icon="mdi:history" size={14} />
+          </button>
         )}
         {/* 外部应用显示外链图标标识 */}
         {app.type === 'external' && (
