@@ -7,12 +7,13 @@ import styles from './RecentTransactions.module.css';
 
 interface RecentTransactionsProps {
   displayMode: 'carrot' | 'white';
+  onViewAll: () => void;
 }
 
 /**
  * 最近交易组件
  */
-export const RecentTransactions = ({ displayMode }: RecentTransactionsProps) => {
+export const RecentTransactions = ({ displayMode, onViewAll }: RecentTransactionsProps) => {
   const [transactions, setTransactions] = useState<CoinTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +43,7 @@ export const RecentTransactions = ({ displayMode }: RecentTransactionsProps) => 
 
   const handleViewAll = () => {
     log.debug('RecentTransactions', '查看全部交易记录');
-    // TODO: 触发切换到交易记录标签页
+    onViewAll();
   };
 
   if (loading) {

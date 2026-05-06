@@ -2,6 +2,7 @@ import { formatDateTime } from '../../utils';
 import type { TransferResult as TransferResultType } from '../../types';
 import styles from './TransferResult.module.css';
 import { log } from '@/utils/logger';
+import { toast } from '@radish/ui/toast';
 
 interface TransferResultProps {
   result: TransferResultType;
@@ -18,11 +19,10 @@ export const TransferResult = ({ result, onStartNew }: TransferResultProps) => {
 
     try {
       await navigator.clipboard.writeText(result.transactionNo);
-      // TODO: 显示复制成功提示
-      alert('流水号已复制到剪贴板');
+      toast.success('流水号已复制到剪贴板');
     } catch (err) {
       log.error('TransferResult', '复制失败:', err);
-      alert('复制失败，请手动复制');
+      toast.error('复制失败，请手动复制');
     }
   };
 

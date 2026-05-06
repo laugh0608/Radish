@@ -247,3 +247,44 @@ public class PaymentPasswordStatsVo
     /// </summary>
     public double VoPasswordSetupRate { get; set; }
 }
+
+/// <summary>
+/// 支付密码安全日志视图模型
+/// </summary>
+public class PaymentPasswordSecurityLogVo
+{
+    /// <summary>
+    /// 日志ID
+    /// </summary>
+    public long VoId { get; set; }
+
+    /// <summary>
+    /// 安全操作类型
+    /// </summary>
+    public string VoType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 操作名称
+    /// </summary>
+    public string VoAction { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 操作结果
+    /// </summary>
+    public string VoResult { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 客户端 IP 地址
+    /// </summary>
+    public string? VoIpAddress { get; set; }
+
+    /// <summary>
+    /// User-Agent
+    /// </summary>
+    public string? VoUserAgent { get; set; }
+
+    /// <summary>
+    /// 创建时间
+    /// </summary>
+    public DateTime VoCreatedAt { get; set; }
+}

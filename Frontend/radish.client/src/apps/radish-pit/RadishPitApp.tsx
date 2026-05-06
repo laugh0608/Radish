@@ -47,7 +47,7 @@ export const RadishPitApp = () => {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'overview':
-        return <AccountOverview />;
+        return <AccountOverview onNavigate={handleTabChange} />;
       case 'transfer':
         return <Transfer />;
       case 'history':
@@ -57,7 +57,7 @@ export const RadishPitApp = () => {
       case 'statistics':
         return <Statistics />;
       default:
-        return <AccountOverview />;
+        return <AccountOverview onNavigate={handleTabChange} />;
     }
   };
 

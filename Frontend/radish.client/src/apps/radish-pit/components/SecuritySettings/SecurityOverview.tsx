@@ -7,12 +7,13 @@ interface SecurityOverviewProps {
   loading: boolean;
   error: string | null;
   onRefresh: () => void;
+  onNavigate: (tab: 'password' | 'log' | 'tips') => void;
 }
 
 /**
  * 安全概览组件
  */
-export const SecurityOverview = ({ status, loading, error, onRefresh }: SecurityOverviewProps) => {
+export const SecurityOverview = ({ status, loading, error, onRefresh, onNavigate }: SecurityOverviewProps) => {
   if (loading) {
     return (
       <div className={styles.container}>
@@ -120,7 +121,7 @@ export const SecurityOverview = ({ status, loading, error, onRefresh }: Security
             </div>
           </div>
           <div className={styles.cardAction}>
-            <button className={styles.actionButton}>
+            <button className={styles.actionButton} onClick={() => onNavigate('password')}>
               {status?.hasPaymentPassword ? '修改' : '设置'}
             </button>
           </div>
@@ -179,8 +180,8 @@ export const SecurityOverview = ({ status, loading, error, onRefresh }: Security
           <div className={styles.cardContent}>
             <div className={styles.cardTitle}>最后使用</div>
             <div className={styles.cardStatus}>
-              {status?.lastPasswordChangeTime
-                ? formatDateTime(status.lastPasswordChangeTime)
+              {status?.lastPasswordUsedTime
+                ? formatDateTime(status.lastPasswordUsedTime)
                 : '从未使用'}
             </div>
             <div className={styles.cardDescription}>
@@ -194,17 +195,17 @@ export const SecurityOverview = ({ status, loading, error, onRefresh }: Security
       <div className={styles.quickActions}>
         <h4 className={styles.actionsTitle}>快速操作</h4>
         <div className={styles.actionsList}>
-          <button className={styles.quickActionButton}>
+          <button className={styles.quickActionButton} onClick={() => onNavigate('password')}>
             <span className={styles.actionIcon}>🔑</span>
             <span className={styles.actionText}>
               {status?.hasPaymentPassword ? '修改支付密码' : '设置支付密码'}
             </span>
           </button>
-          <button className={styles.quickActionButton}>
+          <button className={styles.quickActionButton} onClick={() => onNavigate('log')}>
             <span className={styles.actionIcon}>📋</span>
             <span className={styles.actionText}>查看安全日志</span>
           </button>
-          <button className={styles.quickActionButton}>
+          <button className={styles.quickActionButton} onClick={() => onNavigate('tips')}>
             <span className={styles.actionIcon}>💡</span>
             <span className={styles.actionText}>查看安全建议</span>
           </button>

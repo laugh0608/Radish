@@ -34,9 +34,17 @@ export interface TransferResult {
 export interface SecurityStatus {
   hasPaymentPassword: boolean;
   lastPasswordChangeTime?: string;
+  lastPasswordChangeTimeDisplay?: string;
+  lastPasswordUsedTime?: string;
+  lastPasswordUsedTimeDisplay?: string;
   failedAttempts: number;
   isLocked: boolean;
   lockedUntil?: string;
+  lockedRemainingMinutes?: number;
+  strengthLevel?: number;
+  strengthLevelDisplay?: string;
+  securityStatus?: string;
+  securitySuggestions?: string[];
 }
 
 // 统计数据（直接使用后端 Vo 字段名）

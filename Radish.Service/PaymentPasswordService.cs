@@ -4,6 +4,7 @@ using Radish.Common.Utils;
 using Radish.Common;
 using Radish.IRepository;
 using Radish.IService;
+using Radish.Model;
 using Radish.Model.Models;
 using Radish.Model.ViewModels;
 using SqlSugar;
@@ -19,6 +20,7 @@ namespace Radish.Service;
 public class PaymentPasswordService : IPaymentPasswordService
 {
     private readonly IPaymentPasswordRepository _paymentPasswordRepository;
+    private readonly IAuditLogService _auditLogService;
     private readonly IMapper _mapper;
     private readonly ILogger<PaymentPasswordService> _logger;
 
@@ -30,10 +32,12 @@ public class PaymentPasswordService : IPaymentPasswordService
 
     public PaymentPasswordService(
         IPaymentPasswordRepository paymentPasswordRepository,
+        IAuditLogService auditLogService,
         IMapper mapper,
         ILogger<PaymentPasswordService> logger)
     {
         _paymentPasswordRepository = paymentPasswordRepository;
+        _auditLogService = auditLogService;
         _mapper = mapper;
         _logger = logger;
     }
@@ -539,6 +543,41 @@ public class PaymentPasswordService : IPaymentPasswordService
         return suggestions;
     }
 
+    /// <summary>
+    /// 获取当前用户支付密码安全日志
+    /// </summary>
+    /// <param name="userId">用户ID</param>
+    /// <param name="pageIndex">页码</param>
+    /// <param name="pageSize">每页数量</param>
+    /// <returns>支付密码安全日志分页结果</returns>
+    public async Task<PageModel<PaymentPasswordSecurityLogVo>> GetSecurityLogsAsync(long userId, int pageIndex = 1, int pageSize = 20)
+    {
+        var safePageIndex = Math.Max(1, pageIndex);
+        var safePageSize = Math.Clamp(pageSize, 1, 50);
+
+        var auditLogs = await _auditLogService.QueryPageAsync(new AuditLogQueryDto
+        {
+            UserId = userId,
+            RequestPath = "PaymentPassword",
+            PageIndex = safePageIndex,
+            PageSize = safePageSize,
+            OrderBy = "DateTime",
+            OrderDirection = "desc"
+        });
+
+        return new PageModel<PaymentPasswordSecurityLogVo>
+        {
+            Page = auditLogs.Page,
+            PageSize = auditLogs.PageSize,
+            DataCount = auditLogs.DataCount,
+            PageCount = auditLogs.PageCount,
+            Data = auditLogs.Data
+                .Where(log => !IsPaymentPasswordAdminPath(log.VoRequestPath))
+                .Select(MapPaymentPasswordSecurityLog)
+                .ToList()
+        };
+    }
+
     #region 私有方法
 
     /// <summary>
@@ -648,6 +687,55 @@ public class PaymentPasswordService : IPaymentPasswordService
             return "一般";
 
         return "较弱";
+    }
+
+    private static PaymentPasswordSecurityLogVo MapPaymentPasswordSecurityLog(AuditLogVo log)
+    {
+        var requestPath = log.VoRequestPath ?? string.Empty;
+
+        return new PaymentPasswordSecurityLogVo
+        {
+            VoId = log.VoId,
+            VoType = GetSecurityLogType(requestPath),
+            VoAction = GetSecurityLogAction(requestPath),
+            VoResult = log.VoIsSuccess ? "success" : "failed",
+            VoIpAddress = log.VoIpAddress,
+            VoUserAgent = log.VoUserAgent,
+            VoCreatedAt = log.VoDateTime
+        };
+    }
+
+    private static bool IsPaymentPasswordAdminPath(string? requestPath)
+    {
+        return requestPath?.Contains("/Admin/", StringComparison.OrdinalIgnoreCase) == true;
+    }
+
+    private static string GetSecurityLogType(string requestPath)
+    {
+        if (requestPath.Contains("VerifyPassword", StringComparison.OrdinalIgnoreCase))
+            return "password_verify";
+        if (requestPath.Contains("ChangePassword", StringComparison.OrdinalIgnoreCase))
+            return "password_change";
+        if (requestPath.Contains("SetPassword", StringComparison.OrdinalIgnoreCase))
+            return "password_set";
+        if (requestPath.Contains("UnlockPassword", StringComparison.OrdinalIgnoreCase))
+            return "account_unlock";
+
+        return "payment_password";
+    }
+
+    private static string GetSecurityLogAction(string requestPath)
+    {
+        if (requestPath.Contains("VerifyPassword", StringComparison.OrdinalIgnoreCase))
+            return "支付密码验证";
+        if (requestPath.Contains("ChangePassword", StringComparison.OrdinalIgnoreCase))
+            return "修改支付密码";
+        if (requestPath.Contains("SetPassword", StringComparison.OrdinalIgnoreCase))
+            return "设置支付密码";
+        if (requestPath.Contains("UnlockPassword", StringComparison.OrdinalIgnoreCase))
+            return "解锁支付密码";
+
+        return "支付密码操作";
     }
 
     #endregion

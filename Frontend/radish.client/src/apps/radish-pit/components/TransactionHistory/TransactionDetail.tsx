@@ -3,6 +3,7 @@ import { useUserStore } from '@/stores/userStore';
 import type { CoinTransaction } from '@/api/coin';
 import styles from './TransactionDetail.module.css';
 import { log } from '@/utils/logger';
+import { toast } from '@radish/ui/toast';
 
 interface TransactionDetailProps {
   transaction: CoinTransaction;
@@ -27,11 +28,10 @@ export const TransactionDetail = ({ transaction, displayMode, onClose }: Transac
   const handleCopyTransactionNo = async () => {
     try {
       await navigator.clipboard.writeText(transaction.voTransactionNo);
-      // TODO: 显示复制成功提示
-      alert('流水号已复制到剪贴板');
+      toast.success('流水号已复制到剪贴板');
     } catch (err) {
       log.error('TransactionDetail', '复制失败:', err);
-      alert('复制失败，请手动复制');
+      toast.error('复制失败，请手动复制');
     }
   };
 

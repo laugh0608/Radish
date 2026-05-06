@@ -2,7 +2,7 @@
  * 支付密码相关的 API 调用
  */
 
-import { apiGet, apiPost, configureApiClient } from '@radish/http';
+import { apiGet, apiPost, configureApiClient, type PagedResponse } from '@radish/http';
 import type { TFunction } from 'i18next';
 import { getApiBaseUrl } from '@/config/env';
 
@@ -20,9 +20,19 @@ export interface PaymentPasswordStatus {
   voFailedAttempts: number;
   voIsLocked: boolean;
   voLockedUntil?: string;
-  voLastPasswordChangeTime?: string;
-  voCreateTime: string;
-  voUpdateTime?: string;
+  voLockedRemainingMinutes: number;
+  voLastUsedTime?: string;
+  voLastUsedTimeDisplay: string;
+  voLastModifiedTime?: string;
+  voLastModifiedTimeDisplay: string;
+  voStrengthLevel: number;
+  voStrengthLevelDisplay: string;
+  voIsEnabled: boolean;
+  voHasPaymentPassword: boolean;
+  voSecurityStatus: string;
+  voSecuritySuggestions: string[];
+  voCreatedAt: string;
+  voCreatedAtDisplay: string;
 }
 
 /**
@@ -38,7 +48,7 @@ export interface PasswordStrength {
  * 设置支付密码请求
  */
 export interface SetPaymentPasswordRequest {
-  password: string;
+  newPassword: string;
   confirmPassword: string;
 }
 
@@ -46,7 +56,7 @@ export interface SetPaymentPasswordRequest {
  * 修改支付密码请求
  */
 export interface ChangePaymentPasswordRequest {
-  oldPassword: string;
+  currentPassword: string;
   newPassword: string;
   confirmPassword: string;
 }
@@ -66,7 +76,20 @@ export interface PaymentPasswordVerifyResult {
   errorMessage: string;
   remainingAttempts?: number;
   isLocked?: boolean;
-  lockedUntil?: string;
+  lockedRemainingMinutes?: number;
+}
+
+/**
+ * 支付密码安全日志
+ */
+export interface PaymentPasswordSecurityLog {
+  voId: number;
+  voType: 'password_verify' | 'password_change' | 'password_set' | 'account_lock' | 'account_unlock' | 'payment_password';
+  voAction: string;
+  voResult: 'success' | 'failed';
+  voIpAddress?: string;
+  voUserAgent?: string;
+  voCreatedAt: string;
 }
 
 /**
@@ -106,7 +129,7 @@ export async function setPaymentPassword(request: SetPaymentPasswordRequest, t?:
     throw new Error(response.message || '设置支付密码失败');
   }
 
-  return response.data;
+  return response.data ?? false;
 }
 
 /**
@@ -127,7 +150,7 @@ export async function changePaymentPassword(request: ChangePaymentPasswordReques
     throw new Error(response.message || '修改支付密码失败');
   }
 
-  return response.data;
+  return response.data ?? false;
 }
 
 /**
@@ -161,7 +184,7 @@ export async function checkPasswordStrength(password: string, t?: TFunction) {
   void t;
   const response = await apiPost<PasswordStrength>(
     '/api/v1/PaymentPassword/CheckStrength',
-    JSON.stringify(password),
+    password,
     {
       withAuth: true,
       headers: {
@@ -172,6 +195,36 @@ export async function checkPasswordStrength(password: string, t?: TFunction) {
 
   if (!response.ok) {
     throw new Error(response.message || '检查密码强度失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 获取当前用户支付密码安全日志
+ * @param pageIndex 页码（从 1 开始）
+ * @param pageSize 每页数量
+ * @param t i18n 翻译函数（可选）
+ * @returns 分页安全日志
+ */
+export async function getSecurityLogs(
+  pageIndex: number = 1,
+  pageSize: number = 20,
+  t?: TFunction
+): Promise<PagedResponse<PaymentPasswordSecurityLog>> {
+  void t;
+  const params = new URLSearchParams({
+    pageIndex: pageIndex.toString(),
+    pageSize: pageSize.toString(),
+  });
+
+  const response = await apiGet<PagedResponse<PaymentPasswordSecurityLog>>(
+    `/api/v1/PaymentPassword/GetSecurityLogs?${params.toString()}`,
+    { withAuth: true }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '获取安全日志失败');
   }
 
   return response.data;
@@ -206,4 +259,5 @@ export const paymentPasswordApi = {
   verifyPaymentPassword,
   checkPasswordStrength,
   getSecuritySuggestions,
+  getSecurityLogs,
 };

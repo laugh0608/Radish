@@ -112,6 +112,24 @@ public class PaymentPasswordController : ControllerBase
         return MessageModel<List<string>>.Success("查询成功", suggestions);
     }
 
+    /// <summary>
+    /// 获取当前用户支付密码安全日志
+    /// </summary>
+    /// <param name="pageIndex">页码</param>
+    /// <param name="pageSize">每页数量</param>
+    /// <returns>支付密码安全日志分页结果</returns>
+    [HttpGet("GetSecurityLogs")]
+    public async Task<MessageModel<PageModel<PaymentPasswordSecurityLogVo>>> GetSecurityLogs(
+        [FromQuery] int pageIndex = 1,
+        [FromQuery] int pageSize = 20)
+    {
+        var logs = await _paymentPasswordService.GetSecurityLogsAsync(
+            _currentUserAccessor.Current.UserId,
+            pageIndex,
+            pageSize);
+        return MessageModel<PageModel<PaymentPasswordSecurityLogVo>>.Success("查询成功", logs);
+    }
+
     #region 管理员接口
 
     /// <summary>

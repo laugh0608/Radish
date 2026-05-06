@@ -1,23 +1,14 @@
 import { useState, useEffect } from 'react';
 import { log } from '@/utils/logger';
+import { paymentPasswordApi, type PaymentPasswordSecurityLog } from '@/api/paymentPassword';
 import { formatDateTime } from '../../utils';
 import styles from './SecurityLog.module.css';
-
-interface SecurityLogItem {
-  id: string;
-  type: 'password_verify' | 'password_change' | 'account_lock' | 'account_unlock';
-  action: string;
-  result: 'success' | 'failed';
-  ipAddress?: string;
-  userAgent?: string;
-  createdAt: string;
-}
 
 /**
  * 安全日志组件
  */
 export const SecurityLog = () => {
-  const [logs, setLogs] = useState<SecurityLogItem[]>([]);
+  const [logs, setLogs] = useState<PaymentPasswordSecurityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'success' | 'failed'>('all');
@@ -31,41 +22,8 @@ export const SecurityLog = () => {
       setLoading(true);
       setError(null);
 
-      // TODO: 实现安全日志API调用
-      // 模拟数据
-      await new Promise(resolve => setTimeout(resolve, 800));
-
-      const mockLogs: SecurityLogItem[] = [
-        {
-          id: '1',
-          type: 'password_verify',
-          action: '支付密码验证',
-          result: 'success',
-          ipAddress: '192.168.1.100',
-          userAgent: 'Mozilla/5.0...',
-          createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: '2',
-          type: 'password_verify',
-          action: '支付密码验证',
-          result: 'failed',
-          ipAddress: '192.168.1.100',
-          userAgent: 'Mozilla/5.0...',
-          createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: '3',
-          type: 'password_change',
-          action: '修改支付密码',
-          result: 'success',
-          ipAddress: '192.168.1.100',
-          userAgent: 'Mozilla/5.0...',
-          createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-        }
-      ];
-
-      setLogs(mockLogs);
+      const response = await paymentPasswordApi.getSecurityLogs(1, 20);
+      setLogs(response.data);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '加载安全日志失败';
       setError(errorMessage);
@@ -89,7 +47,7 @@ export const SecurityLog = () => {
 
   const filteredLogs = logs.filter(logItem => {
     if (filter === 'all') return true;
-    return logItem.result === filter;
+    return logItem.voResult === filter;
   });
 
   if (loading) {
@@ -137,13 +95,13 @@ export const SecurityLog = () => {
             className={`${styles.filterButton} ${filter === 'success' ? styles.active : ''}`}
             onClick={() => setFilter('success')}
           >
-            成功 ({logs.filter(l => l.result === 'success').length})
+            成功 ({logs.filter(l => l.voResult === 'success').length})
           </button>
           <button
             className={`${styles.filterButton} ${filter === 'failed' ? styles.active : ''}`}
             onClick={() => setFilter('failed')}
           >
-            失败 ({logs.filter(l => l.result === 'failed').length})
+            失败 ({logs.filter(l => l.voResult === 'failed').length})
           </button>
         </div>
       </div>
@@ -158,26 +116,26 @@ export const SecurityLog = () => {
           </div>
         ) : (
           filteredLogs.map((logItem) => (
-            <div key={logItem.id} className={styles.logItem}>
+            <div key={logItem.voId} className={styles.logItem}>
               <div className={styles.logIcon}>
-                {getLogIcon(logItem.type, logItem.result)}
+                {getLogIcon(logItem.voType, logItem.voResult)}
               </div>
 
               <div className={styles.logContent}>
                 <div className={styles.logMain}>
-                  <div className={styles.logAction}>{logItem.action}</div>
-                  <div className={`${styles.logResult} ${styles[logItem.result]}`}>
-                    {logItem.result === 'success' ? '成功' : '失败'}
+                  <div className={styles.logAction}>{logItem.voAction}</div>
+                  <div className={`${styles.logResult} ${styles[logItem.voResult]}`}>
+                    {logItem.voResult === 'success' ? '成功' : '失败'}
                   </div>
                 </div>
 
                 <div className={styles.logDetails}>
                   <div className={styles.logTime}>
-                    {formatDateTime(logItem.createdAt)}
+                    {formatDateTime(logItem.voCreatedAt)}
                   </div>
-                  {logItem.ipAddress && (
+                  {logItem.voIpAddress && (
                     <div className={styles.logIp}>
-                      IP: {logItem.ipAddress}
+                      IP: {logItem.voIpAddress}
                     </div>
                   )}
                 </div>
