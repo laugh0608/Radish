@@ -194,7 +194,7 @@ Common → Shared → Model → Infrastructure → IRepository/Repository
 - React 组件默认使用 `const`
 - 避免 `var`，默认 `const`，需要重赋值时使用 `let`
 - React 中优先使用 `useState`、`useMemo`、`useEffect`
-- 单文件建议控制在 `500-1000` 行，硬上限 `1000` 行
+- 单文件建议控制在 `1000` 行左右，硬上限 `1500` 行
 
 ### 日志规范
 
