@@ -3,57 +3,37 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   Button,
-  Space,
   Tag,
   Table,
   message,
   type TableColumnsType,
 } from '@radish/ui';
-import { Card, Descriptions, Statistic, Tabs } from 'antd';
+import { Card, Descriptions, Empty, Statistic, Tabs } from 'antd';
 import {
   UserOutlined,
   TrophyOutlined,
   WalletOutlined,
-  ShoppingOutlined,
   LeftOutlined,
 } from '@radish/ui';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
+import { userManagementApi } from '@/api/userManagement';
+import { getBalanceByUserId, getTransactionsByUserId, type CoinTransactionVo, type UserBalanceVo } from '@/api/coinAdminApi';
+import { getUserExperience, type UserExperienceVo } from '@/api/experienceAdminApi';
+import { adminGetOrders, getOrderStatusColor, getOrderStatusDisplay } from '@/api/shopApi';
+import type { Order } from '@/api/types';
+import type { UserListItem } from '@/types/user';
 import './UserDetail.css';
 
 interface UserDetailData {
-  uuid: number;
+  uuid: string | number;
   userName: string;
   loginName: string;
   email: string;
-  phone?: string;
   isEnabled: boolean;
-  level: number;
-  levelName: string;
-  currentExp: number;
-  totalExp: number;
-  nextLevelExp: number;
-  coinBalance: number;
   createTime: string;
   lastLoginTime?: string;
-}
-
-interface CoinTransaction {
-  id: number;
-  amount: number;
-  type: string;
-  reason: string;
-  createTime: string;
-}
-
-interface Order {
-  id: number;
-  orderNo: string;
-  productName: string;
-  totalPrice: number;
-  status: string;
-  createTime: string;
 }
 
 export const UserDetail = () => {
@@ -61,103 +41,182 @@ export const UserDetail = () => {
   const navigate = useNavigate();
   useDocumentTitle('用户详情');
   const canViewUsers = usePermission(CONSOLE_PERMISSIONS.usersView);
+  const canViewCoins = usePermission(CONSOLE_PERMISSIONS.coinsView);
+  const canViewOrders = usePermission(CONSOLE_PERMISSIONS.ordersView);
+  const canViewExperience = usePermission(CONSOLE_PERMISSIONS.experienceView);
 
   const [loading, setLoading] = useState(false);
+  const [coinLoading, setCoinLoading] = useState(false);
+  const [orderLoading, setOrderLoading] = useState(false);
   const [user, setUser] = useState<UserDetailData | null>(null);
-  const [coinTransactions, setCoinTransactions] = useState<CoinTransaction[]>([]);
+  const [balance, setBalance] = useState<UserBalanceVo | null>(null);
+  const [experience, setExperience] = useState<UserExperienceVo | null>(null);
+  const [coinTransactions, setCoinTransactions] = useState<CoinTransactionVo[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+
+  const mapUserDetail = (item: UserListItem): UserDetailData => ({
+    uuid: item.uuid,
+    userName: item.voUserName || '-',
+    loginName: item.voLoginName || '-',
+    email: item.voUserEmail || '-',
+    isEnabled: item.voIsEnable,
+    createTime: item.voCreateTime,
+    lastLoginTime: item.voUpdateTime,
+  });
+
+  const formatDisplayTime = (time?: string | null) => {
+    if (!time) return '-';
+
+    const date = new Date(time);
+    if (Number.isNaN(date.getTime())) {
+      return time;
+    }
+
+    return date.toLocaleString('zh-CN');
+  };
+
+  const getSignedCoinAmount = (transaction: CoinTransactionVo) => {
+    const currentUserId = Number(userId);
+    if (Number.isFinite(currentUserId) && transaction.voFromUserId === currentUserId) {
+      return -transaction.voAmount;
+    }
+
+    return transaction.voAmount;
+  };
 
   // 加载用户详情
   const loadUserDetail = async () => {
+    if (!userId) return;
+
     try {
       setLoading(true);
-      // TODO: 调用用户详情 API
-      // 暂时使用模拟数据
-      setUser({
-        uuid: Number(userId),
-        userName: '测试用户',
-        loginName: 'testuser',
-        email: 'test@example.com',
-        phone: '13800138000',
-        isEnabled: true,
-        level: 5,
-        levelName: '筑基期',
-        currentExp: 1500,
-        totalExp: 5500,
-        nextLevelExp: 2000,
-        coinBalance: 12345,
-        createTime: '2024-01-01 10:00:00',
-        lastLoginTime: '2024-01-19 15:30:00',
-      });
+      const response = await userManagementApi.getUserById(userId);
+      if (!response.ok || !response.data) {
+        throw new Error(response.message || '加载用户详情失败');
+      }
+
+      setUser(mapUserDetail(response.data));
     } catch (error) {
       log.error('UserDetail', '加载用户详情失败:', error);
-      message.error('加载用户详情失败');
+      message.error(error instanceof Error ? error.message : '加载用户详情失败');
     } finally {
       setLoading(false);
     }
   };
 
+  const loadBalance = async () => {
+    if (!userId || !canViewCoins) return;
+
+    try {
+      const result = await getBalanceByUserId(userId);
+      setBalance(result);
+    } catch (error) {
+      log.error('UserDetail', '加载萝卜币余额失败:', error);
+      setBalance(null);
+    }
+  };
+
+  const loadExperience = async () => {
+    if (!userId || !canViewExperience) return;
+
+    try {
+      const result = await getUserExperience(userId);
+      setExperience(result);
+    } catch (error) {
+      log.error('UserDetail', '加载经验信息失败:', error);
+      setExperience(null);
+    }
+  };
+
   // 加载萝卜币流水
   const loadCoinTransactions = async () => {
+    if (!userId || !canViewCoins) return;
+
     try {
-      // TODO: 调用萝卜币流水 API
-      setCoinTransactions([
-        { id: 1, amount: 100, type: '收入', reason: '发帖奖励', createTime: '2024-01-19 10:00:00' },
-        { id: 2, amount: -50, type: '支出', reason: '购买商品', createTime: '2024-01-18 15:30:00' },
-      ]);
+      setCoinLoading(true);
+      const result = await getTransactionsByUserId({
+        userId,
+        pageIndex: 1,
+        pageSize: 10,
+      });
+      setCoinTransactions(result.data);
     } catch (error) {
       log.error('UserDetail', '加载萝卜币流水失败:', error);
+      setCoinTransactions([]);
+    } finally {
+      setCoinLoading(false);
     }
   };
 
   // 加载购买记录
   const loadOrders = async () => {
+    if (!userId || !canViewOrders) return;
+
     try {
-      // TODO: 调用订单列表 API
-      setOrders([
-        { id: 1, orderNo: 'ORD20240119001', productName: '测试商品', totalPrice: 100, status: 'Completed', createTime: '2024-01-19 10:00:00' },
-      ]);
+      setOrderLoading(true);
+      const result = await adminGetOrders({
+        userId,
+        pageIndex: 1,
+        pageSize: 10,
+      });
+      setOrders(result.data);
     } catch (error) {
       log.error('UserDetail', '加载购买记录失败:', error);
+      setOrders([]);
+    } finally {
+      setOrderLoading(false);
     }
   };
 
   useEffect(() => {
     if (userId && canViewUsers) {
       void loadUserDetail();
+    }
+  }, [userId, canViewUsers]);
+
+  useEffect(() => {
+    if (userId && canViewUsers) {
+      void loadBalance();
+      void loadExperience();
       void loadCoinTransactions();
       void loadOrders();
     }
-  }, [userId, canViewUsers]);
+  }, [userId, canViewUsers, canViewCoins, canViewExperience, canViewOrders]);
   // 萝卜币流水表格列
-  const coinColumns: TableColumnsType<CoinTransaction> = [
+  const coinColumns: TableColumnsType<CoinTransactionVo> = [
     {
       title: '金额',
-      dataIndex: 'amount',
-      key: 'amount',
+      dataIndex: 'voAmount',
+      key: 'voAmount',
       width: 120,
-      render: (amount: number) => (
-        <span style={{ color: amount > 0 ? '#52c41a' : '#ff4d4f', fontWeight: 'bold' }}>
-          {amount > 0 ? '+' : ''}{amount}
-        </span>
-      ),
+      render: (_amount: number, record) => {
+        const signedAmount = getSignedCoinAmount(record);
+
+        return (
+          <span style={{ color: signedAmount >= 0 ? '#52c41a' : '#ff4d4f', fontWeight: 'bold' }}>
+            {signedAmount >= 0 ? '+' : ''}{signedAmount}
+          </span>
+        );
+      },
     },
     {
       title: '类型',
-      dataIndex: 'type',
-      key: 'type',
-      width: 80,
+      dataIndex: 'voTransactionTypeDisplay',
+      key: 'voTransactionTypeDisplay',
+      width: 120,
     },
     {
-      title: '原因',
-      dataIndex: 'reason',
-      key: 'reason',
+      title: '备注',
+      dataIndex: 'voRemark',
+      key: 'voRemark',
+      render: (remark?: string | null) => remark || '-',
     },
     {
       title: '时间',
-      dataIndex: 'createTime',
-      key: 'createTime',
+      dataIndex: 'voCreateTime',
+      key: 'voCreateTime',
       width: 180,
+      render: (time: string) => formatDisplayTime(time),
     },
   ];
 
@@ -165,42 +224,47 @@ export const UserDetail = () => {
   const orderColumns: TableColumnsType<Order> = [
     {
       title: '订单号',
-      dataIndex: 'orderNo',
-      key: 'orderNo',
+      dataIndex: 'voOrderNo',
+      key: 'voOrderNo',
       width: 180,
     },
     {
       title: '商品',
-      dataIndex: 'productName',
-      key: 'productName',
+      dataIndex: 'voProductName',
+      key: 'voProductName',
     },
     {
       title: '金额',
-      dataIndex: 'totalPrice',
-      key: 'totalPrice',
+      dataIndex: 'voTotalPrice',
+      key: 'voTotalPrice',
       width: 120,
       render: (price: number) => `${price} 胡萝卜`,
     },
     {
       title: '状态',
-      dataIndex: 'status',
-      key: 'status',
+      dataIndex: 'voStatus',
+      key: 'voStatus',
       width: 100,
       render: (status: string) => (
-        <Tag color={status === 'Completed' ? 'success' : 'default'}>
-          {status === 'Completed' ? '已完成' : status}
+        <Tag color={getOrderStatusColor(status)}>
+          {getOrderStatusDisplay(status)}
         </Tag>
       ),
     },
     {
       title: '时间',
-      dataIndex: 'createTime',
-      key: 'createTime',
+      dataIndex: 'voCreateTime',
+      key: 'voCreateTime',
       width: 180,
+      render: (time: string) => formatDisplayTime(time),
     },
   ];
 
-  if (!user) {
+  if (!canViewUsers) {
+    return <div style={{ padding: '24px' }}>没有查看用户详情的权限</div>;
+  }
+
+  if (loading || !user) {
     return <div style={{ padding: '24px' }}>加载中...</div>;
   }
 
@@ -222,7 +286,7 @@ export const UserDetail = () => {
           <Descriptions.Item label="用户名">{user.userName}</Descriptions.Item>
           <Descriptions.Item label="登录名">{user.loginName}</Descriptions.Item>
           <Descriptions.Item label="邮箱">{user.email}</Descriptions.Item>
-          <Descriptions.Item label="手机">{user.phone || '-'}</Descriptions.Item>
+          <Descriptions.Item label="用户 ID">{user.uuid}</Descriptions.Item>
           <Descriptions.Item label="状态">
             <Tag color={user.isEnabled ? 'success' : 'error'}>
               {user.isEnabled ? '启用' : '禁用'}
@@ -238,8 +302,8 @@ export const UserDetail = () => {
         <Card>
           <Statistic
             title="等级"
-            value={user.level}
-            suffix={user.levelName}
+            value={experience?.voCurrentLevel ?? '-'}
+            suffix={experience?.voCurrentLevelName ?? ''}
             prefix={<TrophyOutlined />}
             styles={{ content: { color: '#722ed1' } }}
           />
@@ -247,8 +311,8 @@ export const UserDetail = () => {
         <Card>
           <Statistic
             title="当前经验"
-            value={user.currentExp}
-            suffix={`/ ${user.nextLevelExp}`}
+            value={experience?.voCurrentExp ?? '-'}
+            suffix={experience ? `/ ${experience.voExpToNextLevel}` : ''}
             prefix={<UserOutlined />}
             styles={{ content: { color: '#1890ff' } }}
           />
@@ -256,7 +320,7 @@ export const UserDetail = () => {
         <Card>
           <Statistic
             title="总经验"
-            value={user.totalExp}
+            value={experience?.voTotalExp ?? '-'}
             prefix={<TrophyOutlined />}
             styles={{ content: { color: '#52c41a' } }}
           />
@@ -264,7 +328,7 @@ export const UserDetail = () => {
         <Card>
           <Statistic
             title="萝卜币余额"
-            value={user.coinBalance}
+            value={balance?.voBalance ?? '-'}
             prefix={<WalletOutlined />}
             styles={{ content: { color: '#faad14' } }}
           />
@@ -279,24 +343,34 @@ export const UserDetail = () => {
               key: 'coins',
               label: '萝卜币流水',
               children: (
-                <Table
-                  columns={coinColumns}
-                  dataSource={coinTransactions}
-                  rowKey="id"
-                  pagination={{ pageSize: 10 }}
-                />
+                canViewCoins ? (
+                  <Table
+                    columns={coinColumns}
+                    dataSource={coinTransactions}
+                    rowKey="voId"
+                    loading={coinLoading}
+                    pagination={{ pageSize: 10 }}
+                  />
+                ) : (
+                  <Empty description="没有查看萝卜币流水的权限" />
+                )
               ),
             },
             {
               key: 'orders',
               label: '购买记录',
               children: (
-                <Table
-                  columns={orderColumns}
-                  dataSource={orders}
-                  rowKey="id"
-                  pagination={{ pageSize: 10 }}
-                />
+                canViewOrders ? (
+                  <Table
+                    columns={orderColumns}
+                    dataSource={orders}
+                    rowKey="voId"
+                    loading={orderLoading}
+                    pagination={{ pageSize: 10 }}
+                  />
+                ) : (
+                  <Empty description="没有查看购买记录的权限" />
+                )
               ),
             },
           ]}

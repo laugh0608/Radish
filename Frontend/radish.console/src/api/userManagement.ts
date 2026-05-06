@@ -111,12 +111,16 @@ export const userManagementApi = {
   /**
    * 获取用户详情
    */
-  async getUserById(id: number): Promise<ParsedApiResponse<UserListItem>> {
-    const response = await apiGet<any>(`/api/v1/User/GetUserById/${id}`, { withAuth: true });
+  async getUserById(id: string | number): Promise<ParsedApiResponse<UserListItem>> {
+    const response = await apiGet<any>(
+      `/api/v1/User/GetUserById/${encodeURIComponent(String(id))}`,
+      { withAuth: true }
+    );
     if (response.ok && response.data) {
+      const rawUser = Array.isArray(response.data) ? response.data[0] : response.data;
       return {
         ...response,
-        data: mapUserListItem(response.data),
+        data: mapUserListItem(rawUser),
       };
     }
 

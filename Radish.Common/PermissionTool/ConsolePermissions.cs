@@ -116,6 +116,7 @@ public static class ConsolePermissions
             ["/api/v1/ContentModeration/ApplyUserAction"] = new[] { ModerationReview },
             ["/api/v1/ContentModeration/GetActionLogs"] = new[] { ModerationView },
             ["/api/v1/Coin/GetBalanceByUserId"] = new[] { CoinsView },
+            ["/api/v1/Coin/AdminGetTransactions"] = new[] { CoinsView },
             ["/api/v1/Coin/AdminAdjustBalance"] = new[] { CoinsAdjust },
             ["/api/v1/Experience/GetUserExperience/.+"] = new[] { ExperienceView },
             ["/api/v1/Experience/GetLevelConfigs"] = new[] { ExperienceView },

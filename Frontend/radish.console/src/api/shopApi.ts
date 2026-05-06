@@ -174,7 +174,7 @@ export async function adminGetOrders(params: {
   endDate?: string;
   pageIndex?: number;
   pageSize?: number;
-  userId?: number;
+  userId?: string | number;
   productId?: number;
   orderNo?: string;
 }): Promise<PagedResponse<Order>> {

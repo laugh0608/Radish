@@ -192,6 +192,53 @@ public class CoinController : ControllerBase
         };
     }
 
+    /// <summary>
+    /// 管理端按用户获取交易记录（分页）
+    /// </summary>
+    /// <param name="userId">用户 ID</param>
+    /// <param name="pageIndex">页码（从 1 开始）</param>
+    /// <param name="pageSize">每页数量</param>
+    /// <param name="transactionType">交易类型（可选，用于筛选）</param>
+    /// <param name="status">交易状态（可选，用于筛选）</param>
+    /// <returns>分页交易记录</returns>
+    [HttpGet]
+    [RequireConsolePermission(ConsolePermissions.CoinsView)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
+    public async Task<MessageModel> AdminGetTransactions(
+        [FromQuery] long userId,
+        [FromQuery] int pageIndex = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? transactionType = null,
+        [FromQuery] string? status = null)
+    {
+        if (userId <= 0)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "用户 ID 无效"
+            };
+        }
+
+        var transactions = await _coinService.GetTransactionsAsync(
+            userId,
+            pageIndex,
+            pageSize,
+            transactionType,
+            status);
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取交易记录成功",
+            ResponseData = transactions
+        };
+    }
+
     #endregion
 
     #region 转账功能

@@ -37,8 +37,11 @@ export interface AdminAdjustExperienceRequest {
   reason?: string;
 }
 
-export async function getUserExperience(userId: number): Promise<UserExperienceVo> {
-  const response = await apiGet<UserExperienceVo>(`/api/v1/Experience/GetUserExperience/${userId}`, { withAuth: true });
+export async function getUserExperience(userId: string | number): Promise<UserExperienceVo> {
+  const response = await apiGet<UserExperienceVo>(
+    `/api/v1/Experience/GetUserExperience/${encodeURIComponent(String(userId))}`,
+    { withAuth: true }
+  );
   if (!response.ok || !response.data) {
     throw new Error(response.message || '获取用户经验失败');
   }

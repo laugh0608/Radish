@@ -195,36 +195,33 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status500InternalServerError)]
-    public async Task<MessageModel> GetUserById(long id)
+    public async Task<MessageModel<UserVo>> GetUserById(long id)
     {
         var localizer = HttpContext.RequestServices.GetRequiredService<IStringLocalizer<Errors>>();
 
-        var userInfo = await _userService.QueryAsync(d => d.Id == id && d.IsDeleted == false);
+        var userInfo = await _userService.QueryFirstAsync(d => d.Id == id && d.IsDeleted == false);
 
-        if (userInfo == null || userInfo.Count == 0)
+        if (userInfo == null)
         {
             var notFoundMessage = localizer["error.user.not_found"];
-            return new MessageModel
+            return new MessageModel<UserVo>
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.NotFound,
                 MessageInfo = notFoundMessage,
                 Code = "User.NotFound",
-                MessageKey = "error.user.not_found",
-                ResponseData = null
+                MessageKey = "error.user.not_found"
             };
         }
 
+        await FillUserAvatarUrlsAsync(new List<UserVo> { userInfo });
+
         var successMessage = localizer["info.user.get_by_id_success"];
-        return new MessageModel
-        {
-            IsSuccess = true,
-            StatusCode = (int)HttpStatusCodeEnum.Success,
-            MessageInfo = successMessage,
-            Code = "User.GetByIdSuccess",
-            MessageKey = "info.user.get_by_id_success",
-            ResponseData = userInfo
-        };
+        return MessageModel<UserVo>.Success(
+            successMessage,
+            userInfo,
+            "User.GetByIdSuccess",
+            "info.user.get_by_id_success");
     }
 
     /// <summary>
