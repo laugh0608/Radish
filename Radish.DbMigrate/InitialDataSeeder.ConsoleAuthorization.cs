@@ -83,6 +83,9 @@ internal static partial class InitialDataSeeder
     private static readonly ConsoleResourceApiSeed[] ConsoleResourceApiSeeds =
     [
         new(61000, "/api/v1/Statistics/GetDashboardStats", "View"),
+        new(61000, "/api/v1/Statistics/GetOrderTrend", "View"),
+        new(61000, "/api/v1/Statistics/GetProductSalesRanking", "View"),
+        new(61000, "/api/v1/Statistics/GetUserLevelDistribution", "View"),
         new(61010, "/api/v1/Client/GetClients", "View"),
         new(61010, "/api/v1/Client/GetClient/.+", "View"),
         new(61011, "/api/v1/Client/CreateClient", "Action"),

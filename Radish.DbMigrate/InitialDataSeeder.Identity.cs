@@ -379,6 +379,33 @@ internal static partial class InitialDataSeeder
             },
             new
             {
+                ApiModuleId = 500461L,
+                ApiModuleName = "Get order trend stats",
+                LinkUrl = "/api/v1/Statistics/GetOrderTrend",
+                ControllerName = "Statistics",
+                ActionName = "GetOrderTrend",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 500462L,
+                ApiModuleName = "Get product sales ranking stats",
+                LinkUrl = "/api/v1/Statistics/GetProductSalesRanking",
+                ControllerName = "Statistics",
+                ActionName = "GetProductSalesRanking",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 500463L,
+                ApiModuleName = "Get user level distribution stats",
+                LinkUrl = "/api/v1/Statistics/GetUserLevelDistribution",
+                ControllerName = "Statistics",
+                ActionName = "GetUserLevelDistribution",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
                 ApiModuleId = 50047L,
                 ApiModuleName = "Hangfire dashboard",
                 LinkUrl = "/hangfire(/.*)?",

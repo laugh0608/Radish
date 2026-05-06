@@ -129,6 +129,9 @@ public static class ConsolePermissions
             ["/api/v1/SystemConfig/UpdateConfig"] = new[] { SystemConfigEdit },
             ["/api/v1/SystemConfig/DeleteConfig"] = new[] { SystemConfigDelete },
             ["/api/v1/Statistics/GetDashboardStats"] = new[] { DashboardView },
+            ["/api/v1/Statistics/GetOrderTrend"] = new[] { DashboardView },
+            ["/api/v1/Statistics/GetProductSalesRanking"] = new[] { DashboardView },
+            ["/api/v1/Statistics/GetUserLevelDistribution"] = new[] { DashboardView },
             ["/hangfire(/.*)?"] = new[] { HangfireView },
         };
 

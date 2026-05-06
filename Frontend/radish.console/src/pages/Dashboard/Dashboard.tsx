@@ -53,12 +53,6 @@ export const Dashboard = () => {
     } catch (error) {
       log.error('Dashboard', '加载统计数据失败:', error);
       message.error('加载统计数据失败');
-      setStats({
-        voTotalUsers: 1234,
-        voTotalOrders: 567,
-        voTotalProducts: 89,
-        voTotalRevenue: 12345,
-      });
     } finally {
       setStatsLoading(false);
     }
