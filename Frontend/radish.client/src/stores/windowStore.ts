@@ -108,7 +108,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
       return;
     }
 
-    recordRecentDesktopApp(appId);
+    recordRecentDesktopApp(appId, { appParams });
 
     // 如果应用已打开，聚焦窗口
     const serializedParams = JSON.stringify(appParams ?? {});
@@ -167,7 +167,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
       return;
     }
 
-    recordRecentDesktopApp(appId);
+    recordRecentDesktopApp(appId, { appParams: nextAppParams });
 
     get().updateWindowAppParams(existingWindow.id, nextAppParams);
     get().focusWindow(existingWindow.id);

@@ -63,6 +63,24 @@ export const ShopApp = () => {
         currentView: 'home'
       });
 
+  useEffect(() => {
+    if (!initialWindowProductId) {
+      return;
+    }
+
+    setAppState((current) => {
+      if (current.currentView === 'product-detail' && current.selectedProductId === initialWindowProductId) {
+        return current;
+      }
+
+      return {
+        ...current,
+        currentView: 'product-detail',
+        selectedProductId: initialWindowProductId
+      };
+    });
+  }, [initialWindowProductId]);
+
   // 数据管理
   const dataState = useShopData(t);
 

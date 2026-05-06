@@ -1,6 +1,7 @@
 export interface RecentDesktopAppItem {
   appId: string;
   openedAt: number;
+  appParams?: RecentDesktopAppParams;
 }
 
 const RECENT_DESKTOP_APPS_STORAGE_KEY = 'radish.desktop.recentApps.v1';
@@ -8,6 +9,16 @@ export const RECENT_DESKTOP_APPS_CHANGED_EVENT = 'radish:desktop-recent-apps-cha
 
 const MAX_RECENT_DESKTOP_APPS = 5;
 const EXCLUDED_RECENT_APP_IDS = new Set(['welcome', 'showcase', 'console', 'scalar']);
+
+export type RecentDesktopAppParamValue =
+  | string
+  | number
+  | boolean
+  | null
+  | RecentDesktopAppParamValue[]
+  | { [key: string]: RecentDesktopAppParamValue };
+
+export type RecentDesktopAppParams = Record<string, RecentDesktopAppParamValue>;
 
 function resolveStorage(storage?: Storage | null): Storage | null {
   if (storage) {
@@ -19,6 +30,56 @@ function resolveStorage(storage?: Storage | null): Storage | null {
   }
 
   return window.localStorage;
+}
+
+function normalizeRecentDesktopAppParamValue(value: unknown): RecentDesktopAppParamValue | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value === null) {
+    return null;
+  }
+
+  if (typeof value === 'string' || typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : undefined;
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => normalizeRecentDesktopAppParamValue(item))
+      .filter((item): item is RecentDesktopAppParamValue => item !== undefined);
+  }
+
+  if (typeof value === 'object') {
+    const normalizedEntries = Object.entries(value as Record<string, unknown>)
+      .filter(([key]) => key.trim() && !key.startsWith('__'))
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, entryValue]) => [key, normalizeRecentDesktopAppParamValue(entryValue)] as const)
+      .filter(([, entryValue]) => entryValue !== undefined);
+
+    if (normalizedEntries.length === 0) {
+      return undefined;
+    }
+
+    return Object.fromEntries(normalizedEntries) as RecentDesktopAppParams;
+  }
+
+  return undefined;
+}
+
+function normalizeRecentDesktopAppParams(value: unknown): RecentDesktopAppParams | undefined {
+  const normalized = normalizeRecentDesktopAppParamValue(value);
+
+  if (!normalized || Array.isArray(normalized) || typeof normalized !== 'object') {
+    return undefined;
+  }
+
+  return Object.keys(normalized).length > 0 ? (normalized as RecentDesktopAppParams) : undefined;
 }
 
 function normalizeRecentDesktopAppItem(value: unknown): RecentDesktopAppItem | null {
@@ -36,7 +97,10 @@ function normalizeRecentDesktopAppItem(value: unknown): RecentDesktopAppItem | n
     return null;
   }
 
-  return { appId, openedAt };
+  const appParams = normalizeRecentDesktopAppParams(raw.appParams);
+  return appParams
+    ? { appId, openedAt, appParams }
+    : { appId, openedAt };
 }
 
 function emitRecentDesktopAppsChanged(): void {
@@ -81,7 +145,7 @@ export function readRecentDesktopApps(storage?: Storage | null): RecentDesktopAp
 
 export function recordRecentDesktopApp(
   appId: string,
-  options: { storage?: Storage | null; now?: number } = {}
+  options: { storage?: Storage | null; now?: number; appParams?: Record<string, unknown> } = {}
 ): RecentDesktopAppItem[] {
   const normalizedAppId = appId.trim();
   const targetStorage = resolveStorage(options.storage);
@@ -92,8 +156,12 @@ export function recordRecentDesktopApp(
   const now = typeof options.now === 'number' && Number.isFinite(options.now)
     ? options.now
     : Date.now();
+  const appParams = normalizeRecentDesktopAppParams(options.appParams);
+  const nextItem = appParams
+    ? { appId: normalizedAppId, openedAt: now, appParams }
+    : { appId: normalizedAppId, openedAt: now };
   const nextItems = [
-    { appId: normalizedAppId, openedAt: now },
+    nextItem,
     ...readRecentDesktopApps(targetStorage).filter((item) => item.appId !== normalizedAppId),
   ].slice(0, MAX_RECENT_DESKTOP_APPS);
 

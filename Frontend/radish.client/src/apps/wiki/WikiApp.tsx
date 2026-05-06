@@ -272,6 +272,7 @@ export const WikiApp = () => {
   const initialWindowRouteRef = useRef<{ documentId?: number; slug?: string } | null>(
     windowParams.documentId || windowParams.slug ? windowParams : null
   );
+  const handledWindowRouteRef = useRef<string | null>(null);
   const isAdmin = useMemo(
     () => roles.some((role) => ['admin', 'system'].includes(role.trim().toLowerCase())),
     [roles]
@@ -512,6 +513,29 @@ export const WikiApp = () => {
       void loadDocumentBySlug(initialWindowRoute.slug);
     }
   }, [loadDocumentBySlug]);
+
+  useEffect(() => {
+    const routeSignature = windowParams.documentId
+      ? `id:${windowParams.documentId}`
+      : windowParams.slug
+        ? `slug:${windowParams.slug}`
+        : '';
+
+    if (!routeSignature || handledWindowRouteRef.current === routeSignature) {
+      return;
+    }
+
+    handledWindowRouteRef.current = routeSignature;
+
+    if (windowParams.documentId) {
+      setSelectedDocumentId(windowParams.documentId);
+      return;
+    }
+
+    if (windowParams.slug) {
+      void loadDocumentBySlug(windowParams.slug);
+    }
+  }, [loadDocumentBySlug, windowParams.documentId, windowParams.slug]);
 
   useEffect(() => {
     selectedDocumentIdRef.current = selectedDocumentId;

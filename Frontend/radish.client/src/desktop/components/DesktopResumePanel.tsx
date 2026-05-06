@@ -10,6 +10,7 @@ import { getAppById } from '@/desktop/AppRegistry';
 import {
   readRecentDesktopApps,
   RECENT_DESKTOP_APPS_CHANGED_EVENT,
+  type RecentDesktopAppParams,
   type RecentDesktopAppItem,
 } from '@/utils/desktopRecentApps';
 import {
@@ -26,6 +27,7 @@ interface ResumeItem {
   id: string;
   kind: ResumeItemKind;
   appId?: string;
+  appParams?: RecentDesktopAppParams;
   icon: string;
   title: string;
   description: string;
@@ -62,6 +64,7 @@ const buildAppResumeItem = (item: RecentDesktopAppItem, t: TFunction): ResumeIte
     id: `app-${item.appId}`,
     kind: 'app',
     appId: item.appId,
+    appParams: item.appParams,
     icon: app.icon,
     title: t(app.nameKey || app.name),
     description: t(app.descriptionKey || app.description || 'desktop.resume.appDescriptionFallback'),
@@ -191,11 +194,11 @@ export const DesktopResumePanel = () => {
 
   const handleOpenItem = (item: ResumeItem) => {
     if (item.kind === 'app' && item.appId) {
-      openOrReuseApp(item.appId);
+      openOrReuseApp(item.appId, item.appParams);
       return;
     }
 
-    openWorkspaceNavigationTarget(openApp, item.target);
+    openWorkspaceNavigationTarget(openOrReuseApp, item.target);
   };
 
   return (

@@ -47,6 +47,55 @@ test('recordRecentDesktopApp 应按最近打开时间排序并按 appId 去重',
   ]);
 });
 
+test('recordRecentDesktopApp 应保存最近应用的可恢复窗口参数', () => {
+  const storage = new MemoryStorage();
+
+  recordRecentDesktopApp('forum', {
+    storage,
+    now: 100,
+    appParams: {
+      postId: '2042219067430928384',
+      commentId: '2042219067430928385',
+    },
+  });
+
+  assert.deepEqual(readRecentDesktopApps(storage), [
+    {
+      appId: 'forum',
+      openedAt: 100,
+      appParams: {
+        commentId: '2042219067430928385',
+        postId: '2042219067430928384',
+      },
+    },
+  ]);
+});
+
+test('recordRecentDesktopApp 应过滤临时导航参数和不可序列化参数', () => {
+  const storage = new MemoryStorage();
+
+  recordRecentDesktopApp('shop', {
+    storage,
+    now: 100,
+    appParams: {
+      productId: 12,
+      __navigationKey: 200,
+      ignored: undefined,
+      broken: Number.NaN,
+    },
+  });
+
+  assert.deepEqual(readRecentDesktopApps(storage), [
+    {
+      appId: 'shop',
+      openedAt: 100,
+      appParams: {
+        productId: 12,
+      },
+    },
+  ]);
+});
+
 test('recordRecentDesktopApp 应限制最多 5 条', () => {
   const storage = new MemoryStorage();
 
@@ -78,4 +127,21 @@ test('readRecentDesktopApps 应忽略损坏的本地存储内容', () => {
   storage.setItem('radish.desktop.recentApps.v1', '{broken');
 
   assert.deepEqual(readRecentDesktopApps(storage), []);
+});
+
+test('readRecentDesktopApps 应兼容不含窗口参数的旧数据', () => {
+  const storage = new MemoryStorage();
+  storage.setItem('radish.desktop.recentApps.v1', JSON.stringify([
+    {
+      appId: 'document',
+      openedAt: 100,
+    },
+  ]));
+
+  assert.deepEqual(readRecentDesktopApps(storage), [
+    {
+      appId: 'document',
+      openedAt: 100,
+    },
+  ]);
 });
