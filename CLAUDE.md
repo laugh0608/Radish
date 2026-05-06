@@ -14,6 +14,14 @@
 - 涉及当前阶段、优先级或范围判断时，优先查看 `Docs/planning/current.md`。
 - 涉及本地验证、CI 对齐或回归入口时，优先查看 `Docs/guide/validation-baseline.md`。
 - 验证与留痕默认按“开发中 / 准备合并到 `master` / 发布部署”三种粒度区分：开发中的本地连续提交只做必要验证，不要求每次都补完整回归记录；批次级回归记录默认在 `PR -> master` 前补，发布 / 部署节点再补正式留痕。
+- `Docs/` 的关键入口文档必须尽可能简约，只描述最近阶段、当前进度、执行入口和必要约束；历史批次、命令级验证流水、实现细节和长背景应写入日志、归档或专题文档，避免新会话读取无关背景浪费上下文。
+- 代码应接近对应语言和框架的良好实践，禁止新增不明意义的方法、空泛工具类、晦涩命名或为了“架构感”而增加的抽象封装；抽象必须服务于真实复用、边界隔离、复杂度下降或契约稳定。
+
+## 规划推进读取顺序
+- 当用户提出“根据项目规划和开发进度，今天要做什么以推进开发”这类问题时，默认只先读取 `Docs/planning/current.md`。
+- 若 `current.md` 不足以判断阶段边界或下一顺位，再读取 `Docs/development-plan.md`。
+- 只有涉及第二阶段边界、多端路线或壳层归属争议时，才继续读取 `Docs/planning/phase-two-community-multiplatform.md`、`Docs/frontend/shell-strategy.md` 或对应专题文档。
+- 不要默认展开 `Docs/changelog/`、`Docs/planning/archive.md`、RC 验收记录或命令级验证记录；这些只在需要追溯历史事实或验证证据时读取。
 
 ## Agent 协同文件
 - 仓库中面向不同 Agent 入口名的协作文件，应保持“基本复制”和长期同步。
@@ -199,6 +207,9 @@ Common → Shared → Model → Infrastructure → IRepository/Repository
 - 避免 `var`，优先 `const`，需要重赋值时使用 `let`
 - 常规 Hooks 以 `useState`、`useMemo`、`useEffect` 为主
 - 单文件建议控制在 `1000` 行左右，硬上限 `1500` 行
+- 命名必须表达业务意图和技术边界，避免 `handleData`、`processInfo`、`commonHelper`、`managerUtil` 这类空泛命名或只有作者能理解的缩写
+- 方法、Hook、组件和工具函数应有明确职责；不要拆出一串只转发参数、包同名调用或隐藏简单逻辑的私有方法
+- 异常、空态、兼容和兜底逻辑必须有清晰业务原因，禁止用层层 fallback 掩盖契约不清、数据模型错误或调用边界混乱
 
 ### 日志规范
 

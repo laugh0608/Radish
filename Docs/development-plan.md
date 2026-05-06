@@ -1,87 +1,72 @@
 # 开发路线图（总览）
 
-> 本页只保留 **当前阶段、当前主线、下一顺位、并行维护线与后置池**。
+> 本页是路线图入口，只保留 **当前阶段、当前主线、下一顺位、并行维护线与明确后置项**。
 >
-> 当前执行细节见 [当前进行中](/planning/current)，已完成阶段见 [已完成摘要](/planning/archive)。
+> 今日推进优先看 [当前进行中](/planning/current)。历史批次、命令级验证流水和实现细节写入 [开发日志](/changelog/)、[已完成摘要](/planning/archive) 或专题文档。
 
 ## 当前状态
 
 - **当前里程碑**：`第二开发阶段：社区深化与多端化`
 - **当前主线**：`多端路线收口后的产品功能开发推进`
-- **当前阶段**：`2026-04-06` 已完成首版真实发布 `v26.3.2-release`，第一开发阶段正式结束；`2026-04-07` 已完成阶段口径重置与多壳层策略冻结；截至 `2026-04-18`，`Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口并转入稳定维护；截至 `2026-05-04`，`Phase 2-3 Android MVP` 已完成第一轮 RC 验收并给出 Go 结论。随后完成 React 复用路线 spike：Capacitor Android 因登录 / OIDC 与本机调试复杂度终止，不进入移动端产品化主线；截至 `2026-05-05`，Tauri + WebOS 桌面安装包个人开发阶段验证通过，其合理定位是 `Tauri 壳 + WebOS 桌面工作台`，不是移动端替代方案，也不是原生 UI 重写路线；WebOS 桌面工作台已回到产品功能开发推进，并落地首批“继续使用”复访入口。后续开发口径收束为三端分工：Web 浏览器使用公开内容壳层，Android / iOS 安装包使用 Flutter 移动原生路线，Windows / macOS / Linux 安装包保留 Tauri + WebOS。
+- **最近结论**：
+  - `2026-04-06` 完成首版真实发布 `v26.3.2-release`，第一开发阶段结束
+  - `Phase 2-2 移动 Web 形态` 已完成公开内容壳层首批收口，转入稳定维护
+  - `Phase 2-3 Android MVP` 已完成第一轮 RC 验收并给出 Go 结论
+  - Capacitor Android 终止，不进入移动端产品化主线
+  - Tauri + WebOS 桌面安装包个人开发阶段验证通过
+  - WebOS 桌面工作台已回到产品功能开发推进，并落地首批“继续使用”复访入口
 
 ## 当前主线入口
 
-- [第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform)
-- [Phase 2-3 Flutter 客户端 MVP](/planning/phase-two-flutter-client-mvp)
-- [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation)
-- [前端多壳层策略](/frontend/shell-strategy)
 - [当前进行中](/planning/current)
-- [论坛轻回应墙设计草案](/features/forum-quick-reaction-wall)
-- [论坛应用功能说明](/features/forum-features)
+- [第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform)
+- [前端多壳层策略](/frontend/shell-strategy)
+- [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation)
+- [验证基线说明](/guide/validation-baseline)
 
-## 当前批次范围
+## 当前开发精力
 
-- 截至 `2026-05-05`，当前主线已从“Android MVP RC 验收批次”与“Tauri + WebOS 桌面安装包个人开发阶段验证”收口为“多端路线收口后的产品功能开发推进”
-- `Phase 2-3` 已完成从最小壳层、最小登录 / 会话恢复、forum / docs / profile / discover 真实读取，到复访、轻回应、刷新体验、只读上下文、验证留痕补洞与 RC 验收记录的阶段性收口
-- 当前 MVP 结束条件覆盖产品闭环、工程质量、真实交付形态与阻断标准；RC Go 记录见 [Flutter Android MVP RC 验收记录（2026-05-04）](/guide/flutter-android-mvp-rc-acceptance-record-2026-05-04)
-- 后续不再默认开启新的 Flutter 微体验批次；[多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation) 当前已形成三端分工结论：Web 公开内容壳层、Flutter 移动安装包、Tauri + WebOS 桌面安装包
-- Tauri + WebOS 桌面安装包个人开发阶段已验证通过，签名、自动更新、生产 Auth、SmartScreen 与公开分发链路后置到真实对外分发前；当前产品功能开发已回到 WebOS 桌面工作台体验补强
-- WebOS 桌面工作台首批“继续使用”复访入口已落地：最近应用、最近浏览与我的轻回应分组用于提升已登录用户回到工作台后的续接效率，仍不扩完整历史中心、清空 / 删除、跨端同步或新的后端 API
-- 若后续暴露 `P0 / P1` 阻断，则只做定点修复，不回头扩完整通知中心、系统推送、发帖、完整评论提交、点赞、投票、编辑治理或 Flutter 专属 BFF
-- `Phase 2-2` 公开内容壳层固定转入稳定维护，不再与 Flutter 混成一条建设线
-
-## 后续开发精力规划
-
-近期默认按以下比例安排精力，除非出现 `P0 / P1` 阻断或发布节点要求：
-
-- `35%`：产品功能开发推进，优先选择 WebOS 桌面工作台与已登录复访、启动续接、高价值应用回流这类小闭环
-- `20%`：Android MVP 产品化深化，包括测试对象、反馈回收、已知问题列表、版本说明、release 前验收与分发留痕
-- `20%`：公开内容壳层稳定维护，包括 PC / 移动浏览器响应式问题、公开阅读质量、来源返回与分享链路补洞
+- `35%`：产品功能开发推进，优先 WebOS 桌面工作台、已登录复访、启动续接、高价值应用回流
+- `20%`：Android MVP 产品化深化，重点是测试对象、反馈回收、已知问题列表、版本说明、release 前验收与分发留痕
+- `20%`：公开内容壳层稳定维护，处理 PC / 移动浏览器响应式、公开阅读质量、来源返回与分享链路问题
 - `10%`：社区深化维护，只处理已落地轻回应、通知回流、论坛阅读链路里的真实问题
 - `10%`：宿主运行、验证基线、文档同步、发布 / 回滚 / 可观测性维护线
-- `5%`：Tauri + WebOS 桌面安装包维护观察；正式签名、自动更新、生产 Auth、SmartScreen、托盘 / 菜单与公开分发方式只在真实对外分发前重新进入评估
-
-当前不再按“继续扩大 Flutter 到所有平台”或“React WebView 统一所有端”规划精力。
+- `5%`：Tauri + WebOS 桌面安装包维护观察；正式分发事项只在真实对外分发前重新评估
 
 ## 已确认的多端方向
 
 1. **Web 浏览器**
-   - 使用公开内容壳层
-   - 同时适配 PC 浏览器与移动浏览器尺寸
+   - 使用公开内容壳层，覆盖 PC 浏览器与移动浏览器
    - 重点是公开阅读、分享、SEO、轻互动和低门槛访问
 2. **Android / iOS**
-   - 使用 Flutter 单独开发原生安装包
+   - 使用 Flutter 移动原生安装包路线
    - Android MVP 已完成第一轮；iOS 后续单独评估
    - 不使用 Capacitor 作为登录态移动端产品化路线
 3. **Windows / macOS / Linux**
    - 使用 `Tauri 壳 + WebOS 桌面工作台`
-   - Tauri 负责系统级桌面能力与安装包分发
-   - WebOS 继续负责 Dock、窗口系统、多应用容器和桌面业务体验
-   - 默认入口当前已切到 `/desktop`，而不是 `/docs` 公开阅读页
-   - 个人开发阶段安装、登录、覆盖安装、卸载与 `radish://` 协议注册清理已通过；正式公开分发事项后置
+   - Tauri 承接系统窗口、登录回跳、deep link 兼容和安装包能力
+   - WebOS 继续承接 Dock、窗口系统、多应用容器和桌面业务体验
 
-## 已确认的长期方向（暂不进入当前主线）
+## 下一顺位
 
-- **标识体系升级**
-  - 长期方向已从“继续把 `Snowflake long` 作为统一对象标识”切换为“`InternalId / PublicId / FederationId` 分层”
-  - `InternalId` 面向数据库内部主键；`PublicId` 面向 API、前端路由、公开链接与跨端契约；`FederationId` 面向未来联邦 canonical URI
-  - `PublicId` 的长期底层标准优先采用 `UUIDv7`，而不是继续扩大 Snowflake 的外部暴露面
-- **社区联邦化**
-  - 这是确定会进入未来阶段的方向，但当前不纳入第二阶段前半程主线
-  - 联邦节点默认按“一个公开域名 / 一个部署实例”定义，不按 `Tenant` 定义
-  - 公开社区对象联邦优先按 `ActivityPub + WebFinger` 方向预留，聊天室跨节点互通作为独立后续议题
-- **租户语义调整**
-  - 当前多租户实现继续保留，用于数据库隔离、权限与历史兼容
-  - 长期社区产品语义不再以“租户”为中心，未来公开社区与联邦口径转向 `instance / node / space / group / category`
+- WebOS 桌面工作台：继续优先已登录复访、工作台启动效率、高价值应用回流
+- Android 产品化：优先测试分发、反馈闭环、版本说明和 release 前验收
+- 公开内容壳层：只做稳定维护和真实问题修复，不继续扩公开入口细节
+- Tauri 桌面安装包：签名、自动更新、生产 Auth、SmartScreen、托盘 / 菜单和公开分发方式后置到真实对外分发前
+
+## 长期方向（暂不进入当前主线）
+
+- 标识体系升级：`InternalId / PublicId / FederationId` 分层，`PublicId` 长期优先 `UUIDv7`
+- 社区联邦化：公开社区对象优先按 `ActivityPub + WebFinger` 方向预留
+- 租户语义调整：长期产品语义转向 `instance / node / space / group / category`
 - 详细方案见：[标识体系与社区联邦长期路线](/architecture/id-and-federation-roadmap)
 
 ## 并行维护
 
 - `M14` 宿主运行与最小可观测性基线
 - `M15` 最小交付与部署基线
-- 发布记录、最小回滚预案、回归留痕与 `validate:baseline / validate:baseline:host / validate:ci`
-- 已收口的一期能力稳定维护，例如桌面壳层、窗口几何记忆、主题切换、聊天室 `P1`、通知中心、商城等
+- 发布记录、回滚预案、回归留痕与 `validate:baseline / validate:baseline:host / validate:ci`
+- 桌面壳层、窗口几何记忆、主题切换、聊天室 `P1`、通知中心、商城等既有能力稳定维护
 
 ## 明确后置
 
@@ -95,16 +80,6 @@
 
 ## 阶段文档规则
 
-- 阶段定义只以：
-  - [开发路线图](/development-plan)
-  - [当前进行中](/planning/current)
-  - [第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform)
-  - [前端多壳层策略](/frontend/shell-strategy)
-  - [已完成摘要](/planning/archive)
-  为准
-- `M14 / M15 / post-m15` 相关文档继续有效，但只承担维护线说明，不再承担“当前产品主线”定义
-- 第一开发阶段的范围与结果，继续以：
-  - [首版 dev 边界](/planning/dev-first-scope)
-  - [首版 dev 功能矩阵状态表](/planning/dev-first-status-matrix)
-  - [已完成摘要](/planning/archive)
-  作为归档依据
+- `Docs/index.md`、`Docs/README.md`、`Docs/development-plan.md`、`Docs/planning/current.md` 等关键入口只描述最近阶段和进度，不承载长背景
+- 功能批次、验证命令、人工验收记录和历史事实默认写入 `Docs/changelog/`、`Docs/planning/archive.md` 或对应专题文档
+- 判断阶段定义时，以本页、[当前进行中](/planning/current)、[第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform)、[前端多壳层策略](/frontend/shell-strategy) 与 [已完成摘要](/planning/archive) 为准
