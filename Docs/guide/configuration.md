@@ -2,7 +2,7 @@
 
 ## 概述
 
-Radish 项目采用多层配置管理策略，以实现开发、测试、生产环境的配置隔离，确保敏感数据不会被提交到 Git 仓库。
+Radish 项目只保留三种配置文件：共享 `appsettings.Shared.json`、宿主默认 `appsettings.json`、本地覆盖 `appsettings.Local.json`。敏感数据不进入 Git，部署差异统一通过环境变量覆盖。
 
 ## 配置文件结构
 
@@ -13,42 +13,24 @@ Radish/
 └── appsettings.Shared.json               ✅ 提交到 Git（API/Auth/Gateway 共享默认配置）
 ```
 
-### Radish.Api 和 Radish.Auth（包含敏感信息）
+### Radish.Api、Radish.Auth、Radish.Gateway
 
 ```
 Radish.Api/
-├── appsettings.json                       ✅ 提交到 Git（完整配置模板，包含默认值和注释）
-├── appsettings.Development.json           ✅ 提交到 Git（开发环境特定配置，可选）
-├── appsettings.Production.json            ✅ 提交到 Git（生产环境特定配置，可选）
-├── appsettings.Local.json.example         ✅ 提交到 Git（精简配置示例，仅包含常见敏感项）
-└── appsettings.Local.json                 ❌ 不提交（本地敏感数据）
-```
-
-### Radish.Gateway（无敏感信息）
-
-```
-Radish.Gateway/
-├── appsettings.json                       ✅ 提交到 Git（完整配置，适用于开发和生产）
-├── appsettings.Development.json           ✅ 提交到 Git（可选）
-├── appsettings.Production.json            ✅ 提交到 Git（可选）
-└── README.md                              ✅ 配置说明（使用环境变量覆盖配置）
+├── appsettings.json                       ✅ 提交到 Git（宿主默认配置）
+└── appsettings.Local.json                 ❌ 不提交（本地覆盖配置）
 ```
 
 **重要说明**：
 
-**Radish.Api 和 Radish.Auth**：
-- `appsettings.json` - 完整的配置模板，包含所有配置项和详细注释，作为默认配置使用
-- `appsettings.Local.json.example` - **精简的配置示例**，仅包含常见需要修改的敏感配置项（推荐使用）
-- `appsettings.Local.json` - **只需包含你想要覆盖的配置项**，其他配置会自动继承 `appsettings.json`
-
-**Radish.Gateway**：
-- `appsettings.json` - 完整配置，开发和生产环境均可使用
-- **不需要 `appsettings.Local.json`** - Gateway 没有敏感信息（无数据库密码、API 密钥）
-- 生产环境通过**环境变量**覆盖配置（PublicUrl、服务地址等）
+- `appsettings.Shared.json` - 根目录共享默认项，只允许保留这一份共享配置
+- `appsettings.json` - 宿主默认配置，提交到 Git，作为稳定模板与默认值来源
+- `appsettings.Local.json` - 宿主本地覆盖配置，只写需要覆盖的项，禁止提交到 Git
+- **禁止新增或提交** `appsettings.Development.json`、`appsettings.Production.json`、`appsettings.*.json.example` 等额外变体
 
 **配置策略**：
-- ✅ **敏感信息放在 Local.json**（仅 API 和 Auth）：数据库密码、Redis 密码、API 密钥、加密密钥等
-- ✅ **Gateway 使用环境变量**：公开域名、内部服务地址等非敏感配置
+- ✅ **敏感信息放在 Local.json 或环境变量**：数据库密码、Redis 密码、API 密钥、加密密钥等
+- ✅ **部署差异使用环境变量**：公开域名、内部服务地址、证书路径、生产密钥等
 - ✅ **跨宿主非敏感配置放在 appsettings.Shared.json**：日志级别、`Snowflake.DataCenterId`、`MainDb/Databases`、Redis 开关与连接串默认值等
 - ✅ **宿主私有非敏感配置放在各自 appsettings.json**：CORS、端口、服务路由、`Snowflake.WorkId`、`Redis.InstanceName` 等
 - ✅ **利用深度合并**：Local.json 只写需要修改的配置项，其他自动继承
@@ -62,11 +44,9 @@ ASP.NET Core 按以下顺序加载配置（后面的会覆盖前面的）：
    ↓
 2. appsettings.json                     (宿主基础配置)
    ↓
-3. appsettings.{Environment}.json       (环境特定配置)
+3. appsettings.Local.json               (本地覆盖配置，最高优先级)
    ↓
-4. appsettings.Local.json               (本地敏感数据，最高优先级)
-   ↓
-5. 环境变量                              (可选，生产环境推荐)
+4. 环境变量                              (部署环境推荐，最终覆盖)
 ```
 
 ### 配置合并机制
@@ -230,12 +210,12 @@ dotnet run --project Radish.Gateway
 
 **Radish.Api 和 Radish.Auth（使用 Local.json）**
 
-方式一：使用精简配置示例（推荐）
+方式一：手动创建最小覆盖文件（推荐）
 
 ```bash
-# 1. 复制精简配置示例（仅包含常见的敏感配置项）
-cp Radish.Api/appsettings.Local.json.example Radish.Api/appsettings.Local.json
-cp Radish.Auth/appsettings.Local.json.example Radish.Auth/appsettings.Local.json
+# 1. 创建本地覆盖文件
+#    新建 Radish.Api/appsettings.Local.json
+#    新建 Radish.Auth/appsettings.Local.json
 
 # 2. 编辑 appsettings.Local.json
 #    取消注释并修改你需要的配置项：
@@ -279,9 +259,9 @@ touch Radish.Api/appsettings.Local.json
 }
 ```
 
-**Radish.Gateway（使用环境变量）**
+**Radish.Gateway（默认配置 + 环境变量）**
 
-Gateway 不需要 `appsettings.Local.json`。开发运行可直接使用默认配置；测试部署与生产部署优先通过 `Deploy/.env.test`、`Deploy/.env.prod` 及对应的 Compose 覆盖文件注入环境变量：
+Gateway 通常直接使用 `appsettings.json`；若本机需要临时覆盖，也应使用未提交的 `appsettings.Local.json`。测试部署与生产部署优先通过 `Deploy/.env.test`、`Deploy/.env.prod` 及对应的 Compose 覆盖文件注入环境变量：
 
 ```bash
 # Docker Compose 示例
@@ -315,8 +295,8 @@ services:
 - `appsettings.Local.json` 已被 Git 忽略，不会被提交到仓库
 - **只在 Local.json 中写需要覆盖的配置项**，利用深度合并机制自动继承其他配置
 - **敏感信息**（密码、密钥）必须放在 Local.json，**非敏感配置**应保留在 `appsettings.Shared.json` 或宿主 `appsettings.json`
-- `appsettings.Local.json.example` 提供了精简的配置模板，仅包含常见需要修改的项
 - `appsettings.Shared.json` + 宿主 `appsettings.json` 共同组成默认配置模板
+- 禁止把 `appsettings.Development.json`、`appsettings.Production.json` 或其他 `appsettings.*.json` 变体重新引回仓库
 
 ## 配置项说明
 
@@ -660,7 +640,7 @@ Gateway 门户页面需要配置服务的公开访问地址，用于页面展示
 }
 ```
 
-在本地开发环境下，Gateway 还通过 YARP 暴露若干常用路由（具体规则在 `Radish.Gateway/appsettings.Local.json` 中配置）：
+在本地开发环境下，Gateway 通过 YARP 暴露若干常用路由（默认规则位于 `Radish.Gateway/appsettings.json`，如需本机差异可放到未提交的 `appsettings.Local.json`）：
 
 - `/` → 前端 webOS（转发到 `http://localhost:3000`）
 - 固定文档源统一位于仓库 `Docs/`；API 启动后会自动同步到 WebOS“文档”应用
@@ -784,7 +764,6 @@ Radish 宿主在 `ConfigureAppConfiguration` 中显式按顺序加载配置：
 config.Sources.Clear();
 config.AddJsonFile("appsettings.Shared.json", optional: true, reloadOnChange: false);
 config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
-config.AddJsonFile($"appsettings.{Environment}.json", optional: true, reloadOnChange: false);
 config.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false);
 config.AddEnvironmentVariables();
 ```
@@ -838,13 +817,12 @@ config.AddEnvironmentVariables();
 
 ### Q0: appsettings.Local.json 一定会覆盖 Shared/宿主配置吗？
 
-**是的。** `appsettings.Local.json` 在 `appsettings.Shared.json`、`appsettings.json`、`appsettings.{Environment}.json` 之后加载；若同名键存在，会覆盖前面的值（最终仍可被环境变量覆盖）。
+**是的。** `appsettings.Local.json` 在 `appsettings.Shared.json`、`appsettings.json` 之后加载；若同名键存在，会覆盖前面的值（最终仍可被环境变量覆盖）。
 
 **配置加载代码**（在 `Program.cs` 中）：
 ```csharp
 config.AddJsonFile("appsettings.Shared.json", optional: true, reloadOnChange: false);
 config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
-config.AddJsonFile($"appsettings.{Environment}.json", optional: true, reloadOnChange: false);
 config.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false);  // 最后加载，最高优先级
 ```
 
@@ -965,10 +943,10 @@ dotnet run --project Radish.Gateway
 git clone https://github.com/your-org/Radish.git
 cd Radish
 
-# 2. 复制精简配置示例
-cp Radish.Api/appsettings.Local.json.example Radish.Api/appsettings.Local.json
-cp Radish.Auth/appsettings.Local.json.example Radish.Auth/appsettings.Local.json
-cp Radish.Gateway/appsettings.Local.json.example Radish.Gateway/appsettings.Local.json
+# 2. 创建本地覆盖文件
+#    新建 Radish.Api/appsettings.Local.json
+#    新建 Radish.Auth/appsettings.Local.json
+#    新建 Radish.Gateway/appsettings.Local.json
 
 # 3. 编辑 appsettings.Local.json，取消注释并修改需要的配置项
 #    - 数据库密码（切换到 PostgreSQL 时）
@@ -1005,9 +983,12 @@ git push origin --force --all
 
 ## 变更日志
 
+- **2026-05-07**：
+  - 正式收口为三种配置文件：`appsettings.Shared.json`、`appsettings.json`、`appsettings.Local.json`
+  - 移除 `appsettings.{Environment}.json` 口径，部署差异统一改为环境变量
+  - 明确禁止提交 `appsettings.Local.json` 与其他 `appsettings.*.json` 变体
 - **2025-12-08**：
   - 优化配置策略：Local.json 只需包含需要覆盖的配置项，利用深度合并自动继承其他配置
-  - 添加 `appsettings.Local.json.example` 精简配置示例，仅包含常见的敏感配置项
   - 补充配置优先级和合并机制说明
-  - 简化配置文件结构，移除冗余的 `.Local.example.json`，`appsettings.json` 现作为完整配置模板
+  - 简化配置文件结构，`appsettings.json` 现作为完整配置模板
 - **2025-11-27**：初始版本，引入 `appsettings.Local.json` 配置管理策略

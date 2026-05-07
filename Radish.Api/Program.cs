@@ -156,8 +156,6 @@ builder.Host
         config.Sources.Clear();
         config.AddJsonFile(sharedConfigPath, optional: true, reloadOnChange: false);
         config.AddJsonFile(Path.Combine(basePath, "appsettings.json"), optional: true, reloadOnChange: false);
-        config.AddJsonFile(Path.Combine(basePath, $"appsettings.{hostingContext.HostingEnvironment.EnvironmentName}.json"),
-            optional: true, reloadOnChange: false);
         config.AddJsonFile(Path.Combine(basePath, "appsettings.Local.json"), optional: true, reloadOnChange: false);
         config.AddEnvironmentVariables();
         // config.AddConfigurationApollo("appsettings.apollo.json");

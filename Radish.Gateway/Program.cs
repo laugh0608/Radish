@@ -73,8 +73,6 @@ builder.Host.ConfigureAppConfiguration((hostingContext, config) =>
     config.Sources.Clear();
     config.AddJsonFile(sharedConfigPath, optional: true, reloadOnChange: false);
     config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
-    config.AddJsonFile($"appsettings.{hostingContext.HostingEnvironment.EnvironmentName}.json",
-        optional: true, reloadOnChange: false);
     config.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false);
     config.AddEnvironmentVariables();
 });

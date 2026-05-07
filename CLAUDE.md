@@ -153,9 +153,12 @@ npm run dev --workspace=radish.console
 ### 配置优先级
 
 ```text
-appsettings.Shared.json → appsettings.json → appsettings.{Environment}.json
-→ appsettings.Local.json（不提交）→ 环境变量
+appsettings.Shared.json → appsettings.json
+→ appsettings.Local.json（仅本地使用，不提交）→ 环境变量
 ```
+
+- 配置文件只允许三种：共享 `appsettings.Shared.json`、宿主默认 `appsettings.json`、本地覆盖 `appsettings.Local.json`
+- 禁止新增或提交这三种之外的 `appsettings.*.json` 变体，避免配置来源和口径漂移
 
 ### 关键配置
 

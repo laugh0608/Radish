@@ -425,7 +425,7 @@ git push origin v26.1.1.3003
 
   - `MainDb` 指定默认主库的 `ConnId`；当配置多库/主从时，`BaseDbConfig.MutiConnectionString` 会把该连接放在集合首位。
   - `Databases` 中至少包含 `ConnId=Main` 与 `ConnId=Log` 两条记录，后者名称固定（`SqlSugarConst.LogConfigId`），缺失时启动会抛出异常；其余库可自定义 `DbType` 与从库 `Slaves` 列表。
-- `Snowflake` 段存放雪花 ID 的 `WorkId` 与 `DataCenterId`，本地/测试/生产必须配置为互不相同的整数（0~30），避免多节点冲突；`appsettings.json` 只保存兜底值，实际部署请在 `appsettings.{Environment}.json`（如 Development/Production）中覆盖，以便按服务器或容器分配固定编号。
+- `Snowflake` 段存放雪花 ID 的 `WorkId` 与 `DataCenterId`，本地/测试/生产必须配置为互不相同的整数（0~30），避免多节点冲突；`appsettings.json` 只保存兜底值，本地差异请放到 `appsettings.Local.json`，部署差异请通过环境变量覆盖，以便按服务器或容器分配固定编号。
 - Program 在调用 `builder.Services.AddSqlSugarSetup()` 后会立即读取 `Snowflake` 段并设置 `SnowFlakeSingle.WorkId/DatacenterId`，因此只要在环境配置中写好差异值即可，无需在扩展或仓储层重复配置；若服务器时间曾被回拨，务必同步调整新的 WorkId。
 - `BaseRepository` 通过 `IUnitOfWorkManage` 获取 `SqlSugarScope` 单例，内部根据泛型实体的 `[Tenant(configId)]` 特性切换连接；未标注特性的实体沿用 `MainDb`，标注了 `configId="Log"` 等值（大小写不敏感）的实体会自动访问对应库。需要写入日志库或其他独立库的模型务必显式添加 `TenantAttribute`，以免错写入主库；若实体启用了 `[MultiTenant(TenantTypeEnum.DataBases)]`，`BaseRepository` 会通过 `TenantUtil.GetConnectionConfig()` 在运行期动态添加租户库配置。
 - 使用 SQLite 时 `ConnectionString` 只需传数据库文件名，运行期会自动拼接 `Environment.CurrentDirectory`；对于 MySQL/SQLServer 等外部数据库，可通过 `dbCountPsw1_*.txt` 本地文件或环境变量隐藏真实连接串，`BaseDbConfig.SpecialDbString` 会优先读取文件值。
@@ -1071,7 +1071,7 @@ public class UserBalance : RootEntityTKey<long>, IDeleteFilter
 - `AutoMapperConfig.RegisterCustomProfile` 可以配置全局规则（例如识别属性前缀/后缀、通用转换器），之后的 `RegisterProfiles` 列表挂载业务 profile（`RoleProfile`、`UserProfile`、`AuditSqlLogProfile` 等）；保持两段式注册可以避免 profile 顺序造成的耦合。
 - `AuditSqlLogProfile` 已示范如何同时识别源和目标的 `Vo` 前缀：`RecognizeDestinationPrefixes("Vo")` + `RecognizePrefixes("Vo")` 使 `AuditSqlLog` 与 `AuditSqlLogVo` 能够双向自动映射，开发其他 Vo 模型时直接复用该写法即可。
 - AutoMapper 授权：
-  - 在 `appsettings.{Environment}.json` 中新增 `AutoMapper:LicenseKey`，严禁提交真实 key，可通过用户密钥或 Secret Manager 注入。
+  - 不要新增额外 `appsettings.*.json` 文件来存放 `AutoMapper:LicenseKey`；本地调试使用 `appsettings.Local.json`，部署环境通过环境变量或 Secret Manager 注入，严禁提交真实 key。
   - 运行时通过 `AppSettings.RadishApp(new[] { "AutoMapper", "LicenseKey" }).ObjToString()` 读取，并在 `expression.LicenseKey` 上设置；为空时自动跳过，避免影响本地调试。
 - `Radish.Common.AppSettings` 为自定义配置入口，Program.cs 使用 `builder.Services.AddSingleton(new AppSettings(builder.Configuration));` 注册后即可在任何层注入/静态调用。
   - 当需要分段读取配置时，统一调用 `AppSettings.RadishApp(params string[] sections)`，禁止在业务代码中自行 new ConfigurationBuilder，以保证配置来源一致。

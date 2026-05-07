@@ -122,6 +122,13 @@ npm run validate:baseline:host
 - 规则来源：仓库根 `.editorconfig`、`.gitattributes` 与 `Scripts/check-repo-hygiene.mjs`
 - 日常改动后优先运行 `npm run check:repo-hygiene:changed`；做历史文本治理时再运行 `npm run check:repo-hygiene`
 
+### 配置文件约束
+
+- 共享默认配置：根目录 `appsettings.Shared.json`
+- 宿主默认配置：各宿主自己的 `appsettings.json`
+- 本地覆盖配置：各宿主自己的 `appsettings.Local.json`（仅本地使用，禁止提交）
+- 禁止新增或提交这三种之外的 `appsettings.*.json` 配置文件；部署差异统一通过 `appsettings.Local.json` 或环境变量覆盖
+
 ## 项目结构
 
 ```
@@ -211,7 +218,7 @@ Radish/
 
 默认使用 SQLite（`Radish.db` 和 `Radish.Log.db`），首次运行自动创建。
 
-切换到 PostgreSQL：编辑 `Radish.Api/appsettings.Development.json`：
+切换到 PostgreSQL：在本地创建或编辑 `Radish.Api/appsettings.Local.json`：
 
 ```json
 {

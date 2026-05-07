@@ -200,6 +200,25 @@ function hasSuspiciousMojibake(text) {
   return suspiciousMojibakePatterns.some((pattern) => pattern.test(text));
 }
 
+function hasInvalidAppSettingsVariant(filePath) {
+  const normalizedPath = filePath.replace(/\\/g, '/');
+  const baseName = path.basename(normalizedPath);
+
+  if (baseName === 'appsettings.json') {
+    return false;
+  }
+
+  if (baseName === 'appsettings.Local.json') {
+    return false;
+  }
+
+  if (normalizedPath === 'appsettings.Shared.json') {
+    return false;
+  }
+
+  return /^appsettings\..+\.json$/iu.test(baseName);
+}
+
 function validateFile(filePath) {
   const absolutePath = path.join(repoRoot, filePath);
   const buffer = readFileSync(absolutePath);
@@ -209,6 +228,10 @@ function validateFile(filePath) {
   }
 
   const issues = [];
+
+  if (hasInvalidAppSettingsVariant(filePath)) {
+    issues.push('只允许使用 appsettings.Shared.json、宿主 appsettings.json 和本地未提交的 appsettings.Local.json；禁止新增其他 appsettings.*.json 变体。');
+  }
 
   if (buffer.length >= 3 && buffer[0] === 0xef && buffer[1] === 0xbb && buffer[2] === 0xbf) {
     issues.push('包含 UTF-8 BOM，请改为无 BOM UTF-8。');
