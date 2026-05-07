@@ -37,6 +37,8 @@ class ProfileState {
     this.isLoadingMoreMyQuickReplies = false,
     this.myQuickRepliesErrorMessage,
     this.myQuickRepliesLoadMoreErrorMessage,
+    this.isRefreshing = false,
+    this.refreshIssueMessage,
     this.errorMessage,
   });
 
@@ -69,6 +71,8 @@ class ProfileState {
   final bool isLoadingMoreMyQuickReplies;
   final String? myQuickRepliesErrorMessage;
   final String? myQuickRepliesLoadMoreErrorMessage;
+  final bool isRefreshing;
+  final String? refreshIssueMessage;
   final String? errorMessage;
 
   bool get isIdle => status == ProfileStatus.idle;
@@ -78,6 +82,8 @@ class ProfileState {
   bool get isReady => status == ProfileStatus.ready;
 
   bool get isError => status == ProfileStatus.error;
+
+  bool get isBusy => isLoading || isRefreshing;
 
   bool get hasMoreMyQuickReplies =>
       includesMyQuickReplies &&
@@ -124,6 +130,9 @@ class ProfileState {
     bool clearMyQuickRepliesError = false,
     String? myQuickRepliesLoadMoreErrorMessage,
     bool clearMyQuickRepliesLoadMoreError = false,
+    bool? isRefreshing,
+    String? refreshIssueMessage,
+    bool clearRefreshIssue = false,
     String? errorMessage,
     bool clearError = false,
   }) {
@@ -171,6 +180,10 @@ class ProfileState {
           ? null
           : (myQuickRepliesLoadMoreErrorMessage ??
               this.myQuickRepliesLoadMoreErrorMessage),
+      isRefreshing: isRefreshing ?? this.isRefreshing,
+      refreshIssueMessage: clearRefreshIssue
+          ? null
+          : (refreshIssueMessage ?? this.refreshIssueMessage),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
@@ -225,6 +238,7 @@ class ProfileController extends ChangeNotifier {
       userId,
       includeMyQuickReplies: _state.includesMyQuickReplies,
       accessToken: accessToken,
+      preserveCurrentProfile: _state.profile != null,
     );
   }
 
@@ -400,32 +414,36 @@ class ProfileController extends ChangeNotifier {
     String userId, {
     required bool includeMyQuickReplies,
     String? accessToken,
+    bool preserveCurrentProfile = false,
   }) async {
     final requestVersion = ++_requestVersion;
     _state = _state.copyWith(
-      status: ProfileStatus.loading,
+      status:
+          preserveCurrentProfile ? ProfileStatus.ready : ProfileStatus.loading,
       userId: userId,
       includesMyQuickReplies: includeMyQuickReplies,
-      clearStats: true,
-      clearPosts: true,
-      postsPage: 1,
-      postsPageSize: 3,
-      postsTotal: 0,
+      isRefreshing: preserveCurrentProfile,
+      clearStats: !preserveCurrentProfile,
+      clearPosts: !preserveCurrentProfile,
+      postsPage: preserveCurrentProfile ? null : 1,
+      postsPageSize: preserveCurrentProfile ? null : 3,
+      postsTotal: preserveCurrentProfile ? null : 0,
       isLoadingMorePosts: false,
       clearPostsLoadMoreError: true,
-      clearComments: true,
-      commentsPage: 1,
-      commentsPageSize: 3,
-      commentsTotal: 0,
+      clearComments: !preserveCurrentProfile,
+      commentsPage: preserveCurrentProfile ? null : 1,
+      commentsPageSize: preserveCurrentProfile ? null : 3,
+      commentsTotal: preserveCurrentProfile ? null : 0,
       isLoadingMoreComments: false,
       clearCommentsLoadMoreError: true,
-      clearMyQuickReplies: true,
-      myQuickRepliesPage: 1,
-      myQuickRepliesPageSize: 3,
-      myQuickRepliesTotal: 0,
+      clearMyQuickReplies: !preserveCurrentProfile,
+      myQuickRepliesPage: preserveCurrentProfile ? null : 1,
+      myQuickRepliesPageSize: preserveCurrentProfile ? null : 3,
+      myQuickRepliesTotal: preserveCurrentProfile ? null : 0,
       clearMyQuickRepliesError: true,
       isLoadingMoreMyQuickReplies: false,
       clearMyQuickRepliesLoadMoreError: true,
+      clearRefreshIssue: true,
       clearError: true,
     );
     notifyListeners();
@@ -490,6 +508,7 @@ class ProfileController extends ChangeNotifier {
       _state = _state.copyWith(
         status: ProfileStatus.ready,
         userId: userId,
+        isRefreshing: false,
         profile: profile,
         stats: stats,
         posts: posts,
@@ -513,17 +532,23 @@ class ProfileController extends ChangeNotifier {
         myQuickRepliesErrorMessage: myQuickRepliesErrorMessage,
         clearMyQuickRepliesError: myQuickRepliesErrorMessage == null,
         clearMyQuickRepliesLoadMoreError: true,
+        clearRefreshIssue: true,
         clearError: true,
       );
       notifyListeners();
     } on RadishApiClientException catch (error) {
-      _setError(requestVersion, userId, error.message);
+      if (preserveCurrentProfile) {
+        _setRefreshIssue(requestVersion, error.message);
+      } else {
+        _setError(requestVersion, userId, error.message);
+      }
     } on FormatException catch (error) {
-      _setError(
-        requestVersion,
-        userId,
-        '公开资料返回格式异常：${error.message}',
-      );
+      final message = '公开资料返回格式异常：${error.message}';
+      if (preserveCurrentProfile) {
+        _setRefreshIssue(requestVersion, message);
+      } else {
+        _setError(requestVersion, userId, message);
+      }
     }
   }
 
@@ -535,7 +560,21 @@ class ProfileController extends ChangeNotifier {
     _state = _state.copyWith(
       status: ProfileStatus.error,
       userId: userId,
+      isRefreshing: false,
       errorMessage: message,
+    );
+    notifyListeners();
+  }
+
+  void _setRefreshIssue(int requestVersion, String message) {
+    if (requestVersion != _requestVersion) {
+      return;
+    }
+
+    _state = _state.copyWith(
+      status: ProfileStatus.ready,
+      isRefreshing: false,
+      refreshIssueMessage: message,
     );
     notifyListeners();
   }

@@ -240,14 +240,14 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 if (hasTargetUser)
                   FilledButton.tonalIcon(
-                    onPressed: profileState.isLoading
+                    onPressed: profileState.isBusy
                         ? null
                         : () => _controller.refresh(
                               accessToken:
                                   isMyProfile ? session.accessToken : null,
                             ),
                     icon: const Icon(Icons.refresh),
-                    label: const Text('刷新资料'),
+                    label: Text(profileState.isRefreshing ? '正在刷新' : '刷新资料'),
                   ),
               ],
             ),
@@ -265,42 +265,58 @@ class _ProfilePageState extends State<ProfilePage> {
                 onRetry: _controller.refresh,
               )
             else if (profileState.isReady && profileState.profile != null)
-              _PublicProfileContent(
-                profile: profileState.profile!,
-                stats: profileState.stats,
-                recentBrowseHandoffTargets: recentBrowseTargets,
-                recentDocumentTargets: recentDocumentTargets,
-                posts: profileState.posts,
-                postsTotal: profileState.postsTotal,
-                hasMorePosts: profileState.hasMorePosts,
-                isLoadingMorePosts: profileState.isLoadingMorePosts,
-                postsLoadMoreErrorMessage:
-                    profileState.postsLoadMoreErrorMessage,
-                onLoadMorePosts: _controller.loadMorePosts,
-                comments: profileState.comments,
-                commentsTotal: profileState.commentsTotal,
-                hasMoreComments: profileState.hasMoreComments,
-                isLoadingMoreComments: profileState.isLoadingMoreComments,
-                commentsLoadMoreErrorMessage:
-                    profileState.commentsLoadMoreErrorMessage,
-                onLoadMoreComments: _controller.loadMoreComments,
-                myQuickReplies: profileState.myQuickReplies,
-                myQuickRepliesTotal: profileState.myQuickRepliesTotal,
-                hasMoreMyQuickReplies: profileState.hasMoreMyQuickReplies,
-                isLoadingMoreMyQuickReplies:
-                    profileState.isLoadingMoreMyQuickReplies,
-                showMyQuickReplies: profileState.includesMyQuickReplies,
-                myQuickRepliesErrorMessage:
-                    profileState.myQuickRepliesErrorMessage,
-                myQuickRepliesLoadMoreErrorMessage:
-                    profileState.myQuickRepliesLoadMoreErrorMessage,
-                onLoadMoreMyQuickReplies: isMyProfile
-                    ? () => _controller.loadMoreMyQuickReplies(
-                          accessToken: session.accessToken,
-                        )
-                    : null,
-                onOpenForumDetailTarget: widget.onOpenForumDetailTarget,
-                onOpenDocsDetailTarget: widget.onOpenDocsDetailTarget,
+              Column(
+                children: [
+                  if (profileState.isRefreshing) ...[
+                    const _ProfileRefreshingNotice(),
+                    const SizedBox(height: 16),
+                  ],
+                  if (profileState.refreshIssueMessage != null &&
+                      profileState.refreshIssueMessage!.isNotEmpty) ...[
+                    _ProfileRefreshIssueNotice(
+                      message: profileState.refreshIssueMessage!,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  _PublicProfileContent(
+                    profile: profileState.profile!,
+                    stats: profileState.stats,
+                    isMyProfile: isMyProfile,
+                    recentBrowseHandoffTargets: recentBrowseTargets,
+                    recentDocumentTargets: recentDocumentTargets,
+                    posts: profileState.posts,
+                    postsTotal: profileState.postsTotal,
+                    hasMorePosts: profileState.hasMorePosts,
+                    isLoadingMorePosts: profileState.isLoadingMorePosts,
+                    postsLoadMoreErrorMessage:
+                        profileState.postsLoadMoreErrorMessage,
+                    onLoadMorePosts: _controller.loadMorePosts,
+                    comments: profileState.comments,
+                    commentsTotal: profileState.commentsTotal,
+                    hasMoreComments: profileState.hasMoreComments,
+                    isLoadingMoreComments: profileState.isLoadingMoreComments,
+                    commentsLoadMoreErrorMessage:
+                        profileState.commentsLoadMoreErrorMessage,
+                    onLoadMoreComments: _controller.loadMoreComments,
+                    myQuickReplies: profileState.myQuickReplies,
+                    myQuickRepliesTotal: profileState.myQuickRepliesTotal,
+                    hasMoreMyQuickReplies: profileState.hasMoreMyQuickReplies,
+                    isLoadingMoreMyQuickReplies:
+                        profileState.isLoadingMoreMyQuickReplies,
+                    showMyQuickReplies: profileState.includesMyQuickReplies,
+                    myQuickRepliesErrorMessage:
+                        profileState.myQuickRepliesErrorMessage,
+                    myQuickRepliesLoadMoreErrorMessage:
+                        profileState.myQuickRepliesLoadMoreErrorMessage,
+                    onLoadMoreMyQuickReplies: isMyProfile
+                        ? () => _controller.loadMoreMyQuickReplies(
+                              accessToken: session.accessToken,
+                            )
+                        : null,
+                    onOpenForumDetailTarget: widget.onOpenForumDetailTarget,
+                    onOpenDocsDetailTarget: widget.onOpenDocsDetailTarget,
+                  ),
+                ],
               )
             else
               const _ProfileLoadingState(),
@@ -397,10 +413,97 @@ class _ProfileErrorState extends StatelessWidget {
   }
 }
 
+class _ProfileRefreshingNotice extends StatelessWidget {
+  const _ProfileRefreshingNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.secondary),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            SizedBox.square(
+              dimension: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: colorScheme.onSecondaryContainer,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text('正在刷新公开资料，当前仍展示上次可用内容。'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileRefreshIssueNotice extends StatelessWidget {
+  const _ProfileRefreshIssueNotice({
+    required this.message,
+  });
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.error),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.error_outline,
+              color: colorScheme.onErrorContainer,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '刷新资料失败',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    message,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _PublicProfileContent extends StatelessWidget {
   const _PublicProfileContent({
     required this.profile,
     required this.stats,
+    required this.isMyProfile,
     required this.recentBrowseHandoffTargets,
     required this.recentDocumentTargets,
     required this.posts,
@@ -429,6 +532,7 @@ class _PublicProfileContent extends StatelessWidget {
 
   final PublicProfileSummary profile;
   final PublicProfileStats? stats;
+  final bool isMyProfile;
   final List<ForumDetailHandoffTarget> recentBrowseHandoffTargets;
   final List<DocsDetailHandoffTarget> recentDocumentTargets;
   final List<PublicProfilePostSummary> posts;
@@ -500,6 +604,7 @@ class _PublicProfileContent extends StatelessWidget {
           const SizedBox(height: 16),
         ],
         _RecentPostsCard(
+          isMyProfile: isMyProfile,
           posts: posts,
           total: postsTotal,
           hasMore: hasMorePosts,
@@ -510,6 +615,7 @@ class _PublicProfileContent extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         _RecentCommentsCard(
+          isMyProfile: isMyProfile,
           comments: comments,
           total: commentsTotal,
           hasMore: hasMoreComments,
@@ -565,11 +671,15 @@ class _PublicProfileHero extends StatelessWidget {
                       Text(
                         profile.displayTitle,
                         style: textTheme.headlineSmall,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 6),
                       Text(
                         '@${profile.userName}',
                         style: textTheme.titleMedium,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 10),
                       Text(
@@ -903,6 +1013,7 @@ class _RecentDocumentListCard extends StatelessWidget {
 
 class _RecentPostsCard extends StatelessWidget {
   const _RecentPostsCard({
+    required this.isMyProfile,
     required this.posts,
     required this.total,
     required this.hasMore,
@@ -912,6 +1023,7 @@ class _RecentPostsCard extends StatelessWidget {
     required this.onOpenForumDetailTarget,
   });
 
+  final bool isMyProfile;
   final List<PublicProfilePostSummary> posts;
   final int total;
   final bool hasMore;
@@ -926,8 +1038,9 @@ class _RecentPostsCard extends StatelessWidget {
       icon: Icons.notes_outlined,
       title: '最近公开帖子',
       description: '只读展示公开帖子，点击后回到论坛详情。',
-      emptyText: '这个用户暂无公开帖子。',
-      emptyHelperText: '公开帖子会在这里以只读方式展示。',
+      emptyText: isMyProfile ? '你还没有可公开展示的帖子。' : '这个用户暂无公开帖子。',
+      emptyHelperText:
+          isMyProfile ? '公开发布的帖子会在这里形成只读回看入口。' : '公开帖子会在这里以只读方式展示。',
       children: _buildChildren(context),
     );
   }
@@ -1150,6 +1263,7 @@ class _ProfileLoadMoreFooter extends StatelessWidget {
 
 class _RecentCommentsCard extends StatelessWidget {
   const _RecentCommentsCard({
+    required this.isMyProfile,
     required this.comments,
     required this.total,
     required this.hasMore,
@@ -1159,6 +1273,7 @@ class _RecentCommentsCard extends StatelessWidget {
     required this.onOpenForumDetailTarget,
   });
 
+  final bool isMyProfile;
   final List<PublicProfileCommentSummary> comments;
   final int total;
   final bool hasMore;
@@ -1173,8 +1288,8 @@ class _RecentCommentsCard extends StatelessWidget {
       icon: Icons.mode_comment_outlined,
       title: '最近公开评论',
       description: '只读展示公开评论，点击后回到评论上下文。',
-      emptyText: '这个用户暂无公开评论。',
-      emptyHelperText: '公开评论会在这里以只读方式展示。',
+      emptyText: isMyProfile ? '你还没有可公开展示的评论。' : '这个用户暂无公开评论。',
+      emptyHelperText: isMyProfile ? '公开评论会在这里形成只读回看入口。' : '公开评论会在这里以只读方式展示。',
       children: _buildChildren(context),
     );
   }
@@ -1503,13 +1618,21 @@ class _ContentPreviewTile extends StatelessWidget {
         Text(
           title,
           style: Theme.of(context).textTheme.titleMedium,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: 6),
-        Text(subtitle),
+        Text(
+          subtitle,
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+        ),
         const SizedBox(height: 8),
         Text(
           meta,
           style: Theme.of(context).textTheme.bodySmall,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
         if (actionLabel != null && onAction != null) ...[
           const SizedBox(height: 12),
@@ -1527,7 +1650,11 @@ class _ContentPreviewTile extends StatelessWidget {
             children: chips
                 .map(
                   (chip) => Chip(
-                    label: Text(chip),
+                    label: Text(
+                      chip,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     visualDensity: VisualDensity.compact,
                   ),
                 )
@@ -1550,13 +1677,22 @@ class _ProfileMetaText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 18),
-        const SizedBox(width: 6),
-        Text(text),
-      ],
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 320),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

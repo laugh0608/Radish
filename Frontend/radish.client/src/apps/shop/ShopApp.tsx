@@ -63,23 +63,52 @@ export const ShopApp = () => {
         currentView: 'home'
       });
 
+  useEffect(() => {
+    if (!initialWindowProductId) {
+      return;
+    }
+
+    setAppState((current) => {
+      if (current.currentView === 'product-detail' && current.selectedProductId === initialWindowProductId) {
+        return current;
+      }
+
+      return {
+        ...current,
+        currentView: 'product-detail',
+        selectedProductId: initialWindowProductId
+      };
+    });
+  }, [initialWindowProductId]);
+
   // 数据管理
   const dataState = useShopData(t);
+  const {
+    setError,
+    loadProducts,
+    loadProductDetail,
+    checkCanBuy,
+    loadOrders,
+    loadOrderDetail,
+    loadInventory,
+    searchProducts,
+    selectedProduct
+  } = dataState;
 
   // 事件处理
   const actionsState = useShopActions({
     t,
     isAuthenticated: loggedIn,
     appState,
-    setError: dataState.setError,
-    loadProducts: dataState.loadProducts,
-    loadProductDetail: dataState.loadProductDetail,
-    checkCanBuy: dataState.checkCanBuy,
-    loadOrders: dataState.loadOrders,
-    loadOrderDetail: dataState.loadOrderDetail,
-    loadInventory: dataState.loadInventory,
-    searchProducts: dataState.searchProducts,
-    selectedProduct: dataState.selectedProduct
+    setError,
+    loadProducts,
+    loadProductDetail,
+    checkCanBuy,
+    loadOrders,
+    loadOrderDetail,
+    loadInventory,
+    searchProducts,
+    selectedProduct
   });
 
   // 导航方法
@@ -115,11 +144,11 @@ export const ShopApp = () => {
 
   const handleOpenProductReport = (productId: number) => {
     if (!loggedIn) {
-      dataState.setError(t('report.loginRequired'));
+      setError(t('report.loginRequired'));
       return;
     }
 
-    dataState.setError(null);
+    setError(null);
     setReportProductId(productId);
   };
 
@@ -128,32 +157,44 @@ export const ShopApp = () => {
     switch (appState.currentView) {
       case 'product-detail':
         if (appState.selectedProductId) {
-          dataState.loadProductDetail(appState.selectedProductId);
+          loadProductDetail(appState.selectedProductId);
           if (loggedIn) {
-            dataState.checkCanBuy(appState.selectedProductId);
+            checkCanBuy(appState.selectedProductId);
           }
         }
         break;
       case 'products':
-        dataState.loadProducts(appState.selectedCategoryId);
+        loadProducts(appState.selectedCategoryId);
         break;
       case 'orders':
         if (loggedIn) {
-          dataState.loadOrders();
+          loadOrders();
         }
         break;
       case 'order-detail':
         if (appState.selectedOrderId && loggedIn) {
-          dataState.loadOrderDetail(appState.selectedOrderId);
+          loadOrderDetail(appState.selectedOrderId);
         }
         break;
       case 'inventory':
         if (loggedIn) {
-          dataState.loadInventory();
+          loadInventory();
         }
         break;
     }
-  }, [appState.currentView, appState.selectedProductId, appState.selectedOrderId, appState.selectedCategoryId, loggedIn]);
+  }, [
+    appState.currentView,
+    appState.selectedProductId,
+    appState.selectedOrderId,
+    appState.selectedCategoryId,
+    loggedIn,
+    loadProductDetail,
+    checkCanBuy,
+    loadProducts,
+    loadOrders,
+    loadOrderDetail,
+    loadInventory
+  ]);
 
   // 渲染当前视图
   const renderCurrentView = () => {
@@ -182,12 +223,12 @@ export const ShopApp = () => {
             loading={dataState.loadingProducts}
             onCategoryChange={(categoryId) => {
               setAppState(prev => ({ ...prev, selectedCategoryId: categoryId }));
-              dataState.loadProducts(categoryId);
+              loadProducts(categoryId);
             }}
             onProductClick={navigate.toProductDetail}
             onSearchChange={(keyword) => {
               setAppState(prev => ({ ...prev, searchKeyword: keyword }));
-              dataState.searchProducts(keyword);
+              searchProducts(keyword);
             }}
             onPageChange={actionsState.handlePageChange}
             onBack={navigate.back}

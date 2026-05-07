@@ -35,6 +35,7 @@ export const SecuritySettings = () => {
             loading={loading}
             error={error}
             onRefresh={refetch}
+            onNavigate={handleTabChange}
           />
         );
       case 'password':

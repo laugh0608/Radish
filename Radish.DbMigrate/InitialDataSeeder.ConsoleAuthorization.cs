@@ -83,6 +83,9 @@ internal static partial class InitialDataSeeder
     private static readonly ConsoleResourceApiSeed[] ConsoleResourceApiSeeds =
     [
         new(61000, "/api/v1/Statistics/GetDashboardStats", "View"),
+        new(61000, "/api/v1/Statistics/GetOrderTrend", "View"),
+        new(61000, "/api/v1/Statistics/GetProductSalesRanking", "View"),
+        new(61000, "/api/v1/Statistics/GetUserLevelDistribution", "View"),
         new(61010, "/api/v1/Client/GetClients", "View"),
         new(61010, "/api/v1/Client/GetClient/.+", "View"),
         new(61011, "/api/v1/Client/CreateClient", "Action"),
@@ -143,6 +146,7 @@ internal static partial class InitialDataSeeder
         new(61111, "/api/v1/ContentModeration/Review", "Action"),
         new(61111, "/api/v1/ContentModeration/ApplyUserAction", "Action"),
         new(61120, "/api/v1/Coin/GetBalanceByUserId", "View"),
+        new(61120, "/api/v1/Coin/AdminGetTransactions", "View"),
         new(61121, "/api/v1/Coin/AdminAdjustBalance", "Action"),
         new(61130, "/api/v1/Experience/GetUserExperience/.+", "View"),
         new(61130, "/api/v1/Experience/GetLevelConfigs", "View"),

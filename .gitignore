@@ -285,6 +285,9 @@ tempkey.jwk
 # Local configuration files (contains sensitive data)
 **/appsettings.Local.json
 *.Local.json
+# Only allow Shared / default / Local appsettings files
+**/appsettings.*.json
+!appsettings.Shared.json
 
 # Database files (SQLite)
 *.db

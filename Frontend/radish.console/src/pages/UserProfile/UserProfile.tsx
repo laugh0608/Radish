@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
@@ -16,17 +16,11 @@ import {
 import { SaveOutlined, CameraOutlined } from '@ant-design/icons';
 import { getApiBaseUrl, getAvatarUrl } from '@/config/env';
 import { log } from '@/utils/logger';
-import { userApi } from '@/api/user';
+import { userApi, type MyProfileInfo } from '@/api/user';
 import { tokenService } from '@/services/tokenService';
 import './UserProfile.css';
 
-interface UserProfileData {
-  voId: number;
-  voUserName: string;
-  voEmail: string;
-  voAvatarUrl?: string;
-  voCreateTime: string;
-  voLastLoginTime?: string;
+interface UserProfileData extends MyProfileInfo {
   voRoles: string[];
 }
 
@@ -38,49 +32,86 @@ export const UserProfile = () => {
   const [editing, setEditing] = useState(false);
   const [profileData, setProfileData] = useState<UserProfileData | null>(null);
 
-  // 模拟加载用户详细信息
-  useEffect(() => {
-    if (user) {
-      const mockProfileData: UserProfileData = {
-        voId: user.voUserId,
-        voUserName: user.voUserName,
-        voEmail: 'admin@radish.com', // 模拟邮箱
-        voAvatarUrl: user.voAvatarUrl,
-        voCreateTime: '2024-01-01T00:00:00Z',
-        voLastLoginTime: new Date().toISOString(),
+  const setProfileFormValues = useCallback((profile: UserProfileData) => {
+    form.setFieldsValue({
+      voUserName: profile.voUserName,
+      voUserEmail: profile.voUserEmail,
+      voRealName: profile.voRealName,
+      voAge: profile.voAge || undefined,
+      voAddress: profile.voAddress,
+    });
+  }, [form]);
+
+  const loadProfile = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+      const response = await userApi.getMyProfile();
+      if (!response.ok || !response.data) {
+        throw new Error(response.message || '加载个人信息失败');
+      }
+
+      const nextProfile: UserProfileData = {
+        ...response.data,
         voRoles: user.roles || [],
       };
-      setProfileData(mockProfileData);
-      form.setFieldsValue({
-        voUserName: mockProfileData.voUserName,
-        voEmail: mockProfileData.voEmail,
-      });
+      setProfileData(nextProfile);
+      setProfileFormValues(nextProfile);
+    } catch (error) {
+      log.error('UserProfile', '加载个人信息失败:', error);
+      message.error(error instanceof Error ? error.message : '加载个人信息失败');
+      setProfileData(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, setProfileFormValues]);
+
+  useEffect(() => {
+    if (user) {
+      void loadProfile();
     } else if (!userLoading) {
-      // 如果用户加载完成但没有用户信息，显示错误状态
       setProfileData(null);
     }
-  }, [user, userLoading, form]);
+  }, [user, userLoading, loadProfile]);
 
   // 保存个人信息
   const handleSave = async () => {
     try {
       const values = await form.validateFields();
       setLoading(true);
+      const age = values.voAge === undefined || values.voAge === null || values.voAge === ''
+        ? undefined
+        : Number(values.voAge);
 
-      // TODO: 调用更新个人信息的 API
-      await new Promise(resolve => setTimeout(resolve, 1000)); // 模拟 API 调用
+      const response = await userApi.updateMyProfile({
+        userName: values.voUserName?.trim(),
+        userEmail: values.voUserEmail?.trim(),
+        realName: values.voRealName?.trim(),
+        age: Number.isFinite(age) ? age : undefined,
+        address: values.voAddress?.trim(),
+      });
+
+      if (!response.ok) {
+        throw new Error(response.message || '更新个人信息失败');
+      }
 
       setProfileData(prev => prev ? {
         ...prev,
         voUserName: values.voUserName,
-        voEmail: values.voEmail,
+        voUserEmail: values.voUserEmail,
+        voRealName: values.voRealName || '',
+        voAge: values.voAge || 0,
+        voAddress: values.voAddress || '',
       } : null);
 
+      await refreshUser();
+      await loadProfile();
       message.success('个人信息更新成功');
       setEditing(false);
     } catch (error) {
       log.error('UserProfile', '更新个人信息失败:', error);
-      message.error('更新个人信息失败');
+      message.error(error instanceof Error ? error.message : '更新个人信息失败');
     } finally {
       setLoading(false);
     }
@@ -89,10 +120,7 @@ export const UserProfile = () => {
   // 取消编辑
   const handleCancel = () => {
     if (profileData) {
-      form.setFieldsValue({
-        voUserName: profileData.voUserName,
-        voEmail: profileData.voEmail,
-      });
+      setProfileFormValues(profileData);
     }
     setEditing(false);
   };
@@ -147,7 +175,7 @@ export const UserProfile = () => {
                   } : null);
 
                   // 刷新UserContext中的用户信息，更新右上角导航栏头像
-                  refreshUser();
+                  void refreshUser();
 
                   message.success('头像更新成功');
                   log.debug('UserProfile', '头像已保存到数据库');
@@ -235,7 +263,7 @@ export const UserProfile = () => {
               角色: {profileData.voRoles.join(', ')}
             </p>
             <p className="profile-id">
-              用户ID: {profileData.voId}
+              用户ID: {profileData.voUserId}
             </p>
           </div>
           <div className="profile-actions">
@@ -283,7 +311,7 @@ export const UserProfile = () => {
           </Form.Item>
 
           <Form.Item
-            name="voEmail"
+            name="voUserEmail"
             label="邮箱"
             rules={[
               { required: true, message: '请输入邮箱' },
@@ -291,6 +319,45 @@ export const UserProfile = () => {
             ]}
           >
             <Input placeholder="请输入邮箱" />
+          </Form.Item>
+
+          <Form.Item
+            name="voRealName"
+            label="真实姓名"
+            rules={[{ max: 50, message: '真实姓名长度不能超过50个字符' }]}
+          >
+            <Input placeholder="请输入真实姓名" />
+          </Form.Item>
+
+          <Form.Item
+            name="voAge"
+            label="年龄"
+            rules={[
+              {
+                validator(_, value) {
+                  if (value === undefined || value === null || value === '') {
+                    return Promise.resolve();
+                  }
+
+                  const age = Number(value);
+                  if (Number.isInteger(age) && age >= 0) {
+                    return Promise.resolve();
+                  }
+
+                  return Promise.reject(new Error('年龄必须是非负整数'));
+                },
+              },
+            ]}
+          >
+            <Input placeholder="请输入年龄" />
+          </Form.Item>
+
+          <Form.Item
+            name="voAddress"
+            label="地址"
+            rules={[{ max: 2000, message: '地址长度不能超过2000个字符' }]}
+          >
+            <Input.TextArea rows={3} placeholder="请输入地址" />
           </Form.Item>
         </Form>
 
@@ -306,10 +373,7 @@ export const UserProfile = () => {
           <div className="stat-item">
             <span className="stat-label">最后登录:</span>
             <span className="stat-value">
-              {profileData.voLastLoginTime
-                ? new Date(profileData.voLastLoginTime).toLocaleString('zh-CN')
-                : '未知'
-              }
+              暂无记录
             </span>
           </div>
         </div>

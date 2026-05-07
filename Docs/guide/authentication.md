@@ -1007,7 +1007,7 @@ Auth 启动时会在 `Program.cs` 中调用 `LoadOpenIddictCertificate`，相对
 #### 部署与覆盖配置
 
 1. **放置证书**：将 `auth-signing.pfx`、`auth-encryption.pfx` 拷贝到宿主机安全目录（例如 `/etc/radish/certs/`），以 `600` 权限挂载到容器（`/app/certs`）。
-2. **覆盖配置**：在 `appsettings.Production.json` 或环境变量中设置：
+2. **覆盖配置**：在生产环境变量中设置（本地调试才使用 `appsettings.Local.json`）：
    ```
    RADISH_AUTH_CERT_AUTO_GENERATE=true
    OpenIddict__Encryption__UseDevelopmentKeys=false

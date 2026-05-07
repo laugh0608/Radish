@@ -4,6 +4,8 @@
 
 本文档详细描述萝卜坑应用的后端技术实现方案。
 
+> 实施记录：截至 2026-05-06，支付密码设置 / 修改已通过 `PaymentPasswordController` 接入真实 API；萝卜坑安全日志不再维护独立 `UserSecurityLog` 表，当前复用全局 `AuditLog` 并通过 `GET /api/v1/PaymentPassword/GetSecurityLogs` 向当前登录用户返回脱敏后的支付密码相关操作日志。
+
 ---
 
 ## 6. 数据库设计

@@ -1,62 +1,75 @@
 # 开发路线图（总览）
 
-> 本页只保留 **当前阶段、当前主线、下一顺位、并行维护线与后置池**。
+> 本页是路线图入口，只保留 **当前阶段、当前主线、下一顺位、并行维护线与明确后置项**。
 >
-> 当前执行细节见 [当前进行中](/planning/current)，已完成阶段见 [已完成摘要](/planning/archive)。
+> 今日推进优先看 [当前进行中](/planning/current)。历史批次、命令级验证流水和实现细节写入 [开发日志](/changelog/)、[已完成摘要](/planning/archive) 或专题文档。
 
 ## 当前状态
 
 - **当前里程碑**：`第二开发阶段：社区深化与多端化`
-- **当前主线**：`Phase 2-3 Flutter 客户端 MVP`
-- **当前阶段**：`2026-04-06` 已完成首版真实发布 `v26.3.2-release`，第一开发阶段正式结束；`2026-04-07` 已完成阶段口径重置与多壳层策略冻结；截至 `2026-04-18`，`Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口并转入稳定维护，当前产品主线正式切到 `Phase 2-3 Flutter 客户端 MVP`。当前第一批范围定义、真相源文档与工程骨架已完成；第二批已完成 Android MVP 可测链路、最小 forum notification 回流、Android 本地 release APK 发布候选首轮收口、Flutter `--dart-define` Gateway 环境切换能力，以及 Android RC 签名配置诊断与分发前置清单；第三批已完成中文文案基线、个人复访入口产品化与 forum detail 轻回应最小读写闭环，并已通过一轮 Android 真机人工复核；第四批“复访深化 + 已登录轻互动回看”已完成 profile 公开帖子 / 评论 / 我的轻回应分页复访、最近 forum / docs 阅读复访、docs 正文内链与关键词搜索复访、discover 文档 / 论坛直达与返回上下文收口；第五批“profile 最近阅读轻量多条列表”、第六批“forum detail 轻回应发布后局部体验补强”与第七批首个小闭环“Flutter docs 搜索体验增强”均已完成代码、自动化验证与 Android 真机复核；第八批“profile 最近文档轻量多条列表”、第九批“profile 复访区块体验整理”、第十批“profile 区块顺序与信息密度微调”、第十一批“docs 详情只读上下文补强”与第十二批“forum detail 来源上下文与错误态补强”也已完成代码与自动化验证，可作为窄范围小批次收口。`
+- **当前主线**：`多端路线收口后的产品功能开发推进`
+- **最近结论**：
+  - `2026-04-06` 完成首版真实发布 `v26.3.2-release`，第一开发阶段结束
+  - `Phase 2-2 移动 Web 形态` 已完成公开内容壳层首批收口，转入稳定维护
+  - `Phase 2-3 Android MVP` 已完成第一轮 RC 验收并给出 Go 结论
+  - Capacitor Android 终止，不进入移动端产品化主线
+  - Tauri + WebOS 桌面安装包个人开发阶段验证通过
+  - WebOS 桌面工作台已回到产品功能开发推进，并落地首批“继续使用”复访入口、桌面应用恢复入口与萝卜坑工作流补全
+  - Console 治理已完成用户详情、个人资料 / 设置真实化与仪表盘真实统计首轮补洞
+  - 当前主线进一步收束为“产品功能补全与多端任务重排”，后续优先经验 / 等级治理、商城权益效果与移动端高价值已登录链路
 
 ## 当前主线入口
 
-- [第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform)
-- [Phase 2-3 Flutter 客户端 MVP](/planning/phase-two-flutter-client-mvp)
-- [前端多壳层策略](/frontend/shell-strategy)
 - [当前进行中](/planning/current)
-- [论坛轻回应墙设计草案](/features/forum-quick-reaction-wall)
-- [论坛应用功能说明](/features/forum-features)
+- [第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform)
+- [第二阶段产品功能补全规划](/planning/phase-two-product-completion)
+- [前端多壳层策略](/frontend/shell-strategy)
+- [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation)
+- [验证基线说明](/guide/validation-baseline)
 
-## 当前批次范围
+## 当前开发精力
 
-- 当前主线当前已从“Flutter 客户端 Android MVP 的范围定义与工程骨架、第二批真实业务接线”继续推进到“复访深化与轻互动局部体验补强”的窄范围小批次收口
-- `Phase 2-3` 第二批当前已落地：最小会话恢复链路、壳层登录态分发，以及 forum 从公开 feed 到帖子详情、评论分页、子评论分页、作者跳转、评论精确定位、public profile 详情回跳与首批壳层 / 宿主 handoff 的收口
-- forum detail 内最小原地登录入口、登录目标持久化续接，以及围绕该入口的一轮 Android 真机人工联调当前也已完成；detail 来源登录不再只能依赖壳层状态条或 profile 入口间接触发
-- `discover / docs / profile` 当前也都已完成首批真实只读页面接线，不再停留在统一占位页
-- `Phase 2-3` 第三批当前已完成产品层回补：中文主文案基线已经覆盖主 tab、壳层状态、登录提示和首批真实页面状态；`profile` 已产品化最近 forum 阅读与公开主页复访入口；forum detail 已接入轻回应墙最小读写闭环
-- `Phase 2-3` 第四批当前已完成一轮复访深化并进入收口状态：`profile` 中我的轻回应、最近公开评论、最近公开帖子、最近 forum 阅读与最近 docs 阅读都已可回到原生上下文；docs tab 当前也已接入关键词搜索、正文内链原生跳转与来源返回栈复访；discover 文档 / 论坛精选当前也可直达原生详情并返回发现页
-- Android MVP 收口复核与 RC 前置判断已整理到 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution)；真实签名材料已由用户本机补齐并通过检查，testing Gateway、测试对象、反馈闭环、真机 APK 安装与外部分发验收统一留到正式 release 包发布前，不作为当前业务功能阻塞
-- `Phase 2-3` 第五批首个小闭环“profile 最近阅读轻量多条列表”已完成收口；第六批“forum detail 轻回应发布后局部体验补强”、第七批首个小闭环“Flutter docs 搜索体验增强”、第八批“profile 最近文档轻量多条列表”、第九批“profile 复访区块体验整理”、第十批“profile 区块顺序与信息密度微调”、第十一批“docs 详情只读上下文补强”与第十二批“forum detail 来源上下文与错误态补强”均已完成代码与自动化验证
-- Android MVP 当前可测链路已完成多轮人工验收；登录、退出、会话恢复、四个主 tab 真实读取、forum feed / detail / 评论阅读、detail 原地登录续接、profile 复访路线、docs 搜索 / 内链、根层返回退后台、最近阅读多条复访、轻回应发布局部体验、profile / docs 复访区块整理与 forum / docs 详情只读上下文都已纳入当前可复核面
-- Android 宿主通知 handoff、壳层最近阅读续接与 public profile 评论入口当前都已统一接到 Flutter forum 的原生 handoff 目标；Flutter 已登录壳层当前也已补一个最小可测 forum notification 来源，可从当前用户最新通知读取字符串化 `postId / commentId` 并回到原生 forum detail
-- Android MVP 本地 release APK 发布候选当前已完成首轮收口：包身份为 `com.radish.client` / `Radish`，release signing 读取逻辑与密钥忽略边界已落地，release 包联网权限已补齐，真机安装后登录、基础读取与样式显示均已确认正常
-- Android RC 签名配置诊断与分发前置清单当前已完成首轮收口：Gradle 提供 `:app:checkReleaseSigningConfig` 检查正式签名材料，清单见 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution)
-- 第三批至第七批首个小闭环 Android 真机复核当前均已通过；复核中发现的问题已回写为 handoff 状态修复、返回上下文修复、滚动定位重试、局部体验补强或 docs 内联详情返回分流修复与定向测试覆盖；第八批至第十二批当前以自动化验证收口。Android 真机 APK 安装与 testing Gateway release 验收继续留到正式 release 包发布前，开发中仍可按需使用 Android Studio 模拟器 / AVD 做功能验证
-- `Phase 2-2` 公开内容壳层固定转入稳定维护，不再与 Flutter 混成一条建设线
+- `45%`：WebOS / PC 工作台产品功能补全，优先萝卜坑、个人中心、通知、商城、论坛工作台交互与跨应用回流
+- `25%`：后端 + Console 治理，补后台管理、统计、权限、安全、经验治理、商城管理与运维可见性缺口
+- `15%`：Flutter 移动端高价值已登录链路，不复刻 WebOS，不默认转向分发产品化材料
+- `10%`：公开内容壳层稳定维护，处理真实阅读、分享、响应式和来源返回问题
+- `5%`：Tauri + WebOS 桌面安装包维护观察；正式分发事项只在真实对外分发前重新评估
 
-## 已确认的长期方向（暂不进入当前主线）
+## 已确认的多端方向
 
-- **标识体系升级**
-  - 长期方向已从“继续把 `Snowflake long` 作为统一对象标识”切换为“`InternalId / PublicId / FederationId` 分层”
-  - `InternalId` 面向数据库内部主键；`PublicId` 面向 API、前端路由、公开链接与跨端契约；`FederationId` 面向未来联邦 canonical URI
-  - `PublicId` 的长期底层标准优先采用 `UUIDv7`，而不是继续扩大 Snowflake 的外部暴露面
-- **社区联邦化**
-  - 这是确定会进入未来阶段的方向，但当前不纳入第二阶段前半程主线
-  - 联邦节点默认按“一个公开域名 / 一个部署实例”定义，不按 `Tenant` 定义
-  - 公开社区对象联邦优先按 `ActivityPub + WebFinger` 方向预留，聊天室跨节点互通作为独立后续议题
-- **租户语义调整**
-  - 当前多租户实现继续保留，用于数据库隔离、权限与历史兼容
-  - 长期社区产品语义不再以“租户”为中心，未来公开社区与联邦口径转向 `instance / node / space / group / category`
+1. **Web 浏览器**
+   - 使用公开内容壳层，覆盖 PC 浏览器与移动浏览器
+   - 重点是公开阅读、分享、SEO、轻互动和低门槛访问
+2. **Android / iOS**
+   - 使用 Flutter 移动原生安装包路线
+   - Android MVP 已完成第一轮；iOS 后续单独评估
+   - 不使用 Capacitor 作为登录态移动端产品化路线
+3. **Windows / macOS / Linux**
+   - 使用 `Tauri 壳 + WebOS 桌面工作台`
+   - Tauri 承接系统窗口、登录回跳、deep link 兼容和安装包能力
+   - WebOS 继续承接 Dock、窗口系统、多应用容器和桌面业务体验
+
+## 下一顺位
+
+- WebOS / PC 工作台：优先补用户能点到但不能真正完成的产品功能，已落地的复访和萝卜坑批次转入维护观察
+- 后端 + Console 治理：优先处理安全 / 经验治理、商城管理前端缺口和剩余历史构建警告
+- Flutter 移动端：优先高价值移动已登录链路，不默认追加低增益体验批次
+- 公开内容壳层：只做稳定维护和真实问题修复，不继续扩公开入口细节
+- Tauri 桌面安装包：签名、自动更新、生产 Auth、SmartScreen、托盘 / 菜单和公开分发方式后置到真实对外分发前
+
+## 长期方向（暂不进入当前主线）
+
+- 标识体系升级：`InternalId / PublicId / FederationId` 分层，`PublicId` 长期优先 `UUIDv7`
+- 社区联邦化：公开社区对象优先按 `ActivityPub + WebFinger` 方向预留
+- 租户语义调整：长期产品语义转向 `instance / node / space / group / category`
 - 详细方案见：[标识体系与社区联邦长期路线](/architecture/id-and-federation-roadmap)
 
 ## 并行维护
 
 - `M14` 宿主运行与最小可观测性基线
 - `M15` 最小交付与部署基线
-- 发布记录、最小回滚预案、回归留痕与 `validate:baseline / validate:baseline:host / validate:ci`
-- 已收口的一期能力稳定维护，例如桌面壳层、窗口几何记忆、主题切换、聊天室 `P1`、通知中心、商城等
+- 发布记录、回滚预案、回归留痕与 `validate:baseline / validate:baseline:host / validate:ci`
+- 桌面壳层、窗口几何记忆、主题切换、聊天室 `P1`、通知中心、商城等既有能力稳定维护
 
 ## 明确后置
 
@@ -70,16 +83,6 @@
 
 ## 阶段文档规则
 
-- 阶段定义只以：
-  - [开发路线图](/development-plan)
-  - [当前进行中](/planning/current)
-  - [第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform)
-  - [前端多壳层策略](/frontend/shell-strategy)
-  - [已完成摘要](/planning/archive)
-  为准
-- `M14 / M15 / post-m15` 相关文档继续有效，但只承担维护线说明，不再承担“当前产品主线”定义
-- 第一开发阶段的范围与结果，继续以：
-  - [首版 dev 边界](/planning/dev-first-scope)
-  - [首版 dev 功能矩阵状态表](/planning/dev-first-status-matrix)
-  - [已完成摘要](/planning/archive)
-  作为归档依据
+- `Docs/index.md`、`Docs/README.md`、`Docs/development-plan.md`、`Docs/planning/current.md` 等关键入口只描述最近阶段和进度，不承载长背景
+- 功能批次、验证命令、人工验收记录和历史事实默认写入 `Docs/changelog/`、`Docs/planning/archive.md` 或对应专题文档
+- 判断阶段定义时，以本页、[当前进行中](/planning/current)、[第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform)、[前端多壳层策略](/frontend/shell-strategy) 与 [已完成摘要](/planning/archive) 为准

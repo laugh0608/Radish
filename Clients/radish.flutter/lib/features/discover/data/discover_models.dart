@@ -6,14 +6,45 @@ class DiscoverSnapshot {
     required this.forumPosts,
     required this.documents,
     required this.products,
+    this.sectionIssues = const <DiscoverSectionIssue>[],
   });
 
   final List<ForumPostSummary> forumPosts;
   final List<DocsDocumentSummary> documents;
   final List<DiscoverProductSummary> products;
+  final List<DiscoverSectionIssue> sectionIssues;
 
   bool get isEmpty =>
       forumPosts.isEmpty && documents.isEmpty && products.isEmpty;
+
+  bool get hasSectionIssues => sectionIssues.isNotEmpty;
+}
+
+enum DiscoverSection {
+  forum,
+  docs,
+  shop,
+}
+
+class DiscoverSectionIssue {
+  const DiscoverSectionIssue({
+    required this.section,
+    required this.message,
+  });
+
+  final DiscoverSection section;
+  final String message;
+
+  String get title {
+    switch (section) {
+      case DiscoverSection.forum:
+        return '论坛精选暂时不可用';
+      case DiscoverSection.docs:
+        return '文档精选暂时不可用';
+      case DiscoverSection.shop:
+        return '商城精选暂时不可用';
+    }
+  }
 }
 
 class DiscoverProductSummary {

@@ -4,12 +4,17 @@ import { BalanceCard } from './BalanceCard';
 import { StatsCard } from './StatsCard';
 import { RecentTransactions } from './RecentTransactions';
 import { QuickActions } from './QuickActions';
+import type { TabType } from '../../types';
 import styles from './AccountOverview.module.css';
+
+interface AccountOverviewProps {
+  onNavigate: (tab: TabType) => void;
+}
 
 /**
  * 账户总览组件
  */
-export const AccountOverview = () => {
+export const AccountOverview = ({ onNavigate }: AccountOverviewProps) => {
   const [displayMode, setDisplayMode] = useState<'carrot' | 'white'>('carrot');
   const { balance, frozenBalance, loading: balanceLoading, error: balanceError, refetch: refetchBalance } = useCoinBalance();
   const { stats, loading: statsLoading, error: statsError, refetch: refetchStats } = useAccountStats();
@@ -92,12 +97,12 @@ export const AccountOverview = () => {
 
         {/* 快捷操作 */}
         <div className={styles.actionsSection}>
-          <QuickActions />
+          <QuickActions onNavigate={onNavigate} />
         </div>
 
         {/* 最近交易 */}
         <div className={styles.transactionsSection}>
-          <RecentTransactions displayMode={displayMode} />
+          <RecentTransactions displayMode={displayMode} onViewAll={() => onNavigate('history')} />
         </div>
       </div>
     </div>

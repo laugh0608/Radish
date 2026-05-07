@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -102,6 +103,222 @@ void main() {
     expect(find.text('回复 @radish'), findsOneWidget);
   });
 
+  testWidgets('keeps long profile text constrained on narrow screens', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final scrollable = find.byType(Scrollable).first;
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: _longUserId,
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: _longUserId,
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: _LongTextProfileRepository(),
+          recentBrowseHandoffTargets: const [
+            ForumDetailHandoffTarget(
+              postId: _longPostId,
+              commentId: _longCommentId,
+              source: ForumDetailHandoffSource.browseHistory,
+              initialTitle: _longRecentBrowseTitle,
+            ),
+          ],
+          recentDocumentTargets: const [
+            DocsDetailHandoffTarget(
+              slug: _longDocsSlug,
+              source: DocsDetailHandoffSource.browseHistory,
+              initialTitle: _longDocsTitle,
+            ),
+          ],
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text(_longDisplayName), findsOneWidget);
+    expect(find.text('@$_longUserName'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('/docs/$_longDocsSlug'),
+      200,
+      scrollable: scrollable,
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.text('/docs/$_longDocsSlug'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('帖子 $_longPostId · 评论 $_longCommentId'),
+      200,
+      scrollable: scrollable,
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.text('帖子 $_longPostId · 评论 $_longCommentId'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text(_longPostTitle),
+      200,
+      scrollable: scrollable,
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.text(_longPostTitle), findsOneWidget);
+    expect(find.text(_longCategoryName), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text(_longCommentSnapshot),
+      200,
+      scrollable: scrollable,
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.text(_longCommentSnapshot), findsOneWidget);
+  });
+
+  testWidgets('keeps public profile visible while refresh is pending', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repository = _PendingRefreshProfileRepository();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: repository,
+          publicUserId: 'guest-42',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Radish Author'), findsOneWidget);
+
+    repository.refreshCompleter = Completer<PublicProfileSummary>();
+    await tester.tap(find.text('刷新资料'));
+    await tester.pump();
+
+    expect(find.text('正在刷新公开资料，当前仍展示上次可用内容。'), findsOneWidget);
+    expect(find.text('Radish Author'), findsOneWidget);
+    expect(find.text('正在刷新'), findsOneWidget);
+
+    repository.refreshCompleter!.complete(_updatedProfileSummary('guest-42'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('正在刷新公开资料，当前仍展示上次可用内容。'), findsNothing);
+    expect(find.text('Updated Radish Author'), findsOneWidget);
+  });
+
+  testWidgets('keeps public profile visible when refresh fails', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: _RefreshFailingProfileRepository(),
+          publicUserId: 'guest-42',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Radish Author'), findsOneWidget);
+
+    await tester.tap(find.text('刷新资料'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('刷新资料失败'), findsOneWidget);
+    expect(find.text('公开资料刷新服务暂时不可用'), findsOneWidget);
+    expect(find.text('Radish Author'), findsOneWidget);
+    expect(find.text('暂时无法加载公开资料'), findsNothing);
+  });
+
+  testWidgets('clears profile refresh issue after successful refresh', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: _FailThenRecoverProfileRepository(),
+          publicUserId: 'guest-42',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('刷新资料'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('刷新资料失败'), findsOneWidget);
+
+    await tester.tap(find.text('刷新资料'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('刷新资料失败'), findsNothing);
+    expect(find.text('Updated Radish Author'), findsOneWidget);
+  });
+
   testWidgets('renders empty revisit sections on my profile', (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
     tester.view.devicePixelRatio = 1.0;
@@ -159,6 +376,63 @@ void main() {
       find.text('打开论坛帖子后，这里会保留最多 5 条最近阅读上下文。'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('uses first-person empty public activity copy on my profile', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final scrollable = find.byType(Scrollable).first;
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: '2042219067430928384',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: '2042219067430928384',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: _EmptyPublicActivityProfileRepository(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('你还没有可公开展示的帖子。'),
+      200,
+      scrollable: scrollable,
+    );
+    expect(find.text('你还没有可公开展示的帖子。'), findsOneWidget);
+    expect(find.text('公开发布的帖子会在这里形成只读回看入口。'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('你还没有可公开展示的评论。'),
+      200,
+      scrollable: scrollable,
+    );
+    expect(find.text('你还没有可公开展示的评论。'), findsOneWidget);
+    expect(find.text('公开评论会在这里形成只读回看入口。'), findsOneWidget);
+    expect(find.text('这个用户暂无公开帖子。'), findsNothing);
+    expect(find.text('这个用户暂无公开评论。'), findsNothing);
   });
 
   testWidgets('renders guest-selected public profile target', (tester) async {
@@ -1276,6 +1550,31 @@ NativeAuthController _buildAuthController(
   );
 }
 
+const _longUserId =
+    'user-2042219067430928384-extra-long-public-profile-identifier-for-narrow-screen';
+const _longUserName =
+    'radish_native_profile_reader_with_a_very_long_public_handle_for_narrow_screen';
+const _longDisplayName =
+    'Radish Native Profile Reader With A Very Long Display Name For Narrow Screens';
+const _longDocsSlug =
+    'flutter-native-profile-long-document-slug-that-should-not-break-the-narrow-profile-card-layout';
+const _longDocsTitle =
+    'Flutter native profile long document title that should stay constrained';
+const _longPostId =
+    'post-2042219067430928384-extra-long-public-id-for-profile-preview';
+const _longCommentId =
+    'comment-2042219067430928384-extra-long-public-id-for-profile-preview';
+const _longRecentBrowseTitle =
+    'A very long recent forum reading title that should stay inside the profile card';
+const _longPostTitle =
+    'A very long public post title that should stay readable without pushing the profile page wider';
+const _longPostSummary =
+    'This public post summary is intentionally long so the native profile card can prove it keeps text constrained on narrow screens.';
+const _longCategoryName =
+    'extremely-long-category-name-for-profile-preview-chip';
+const _longCommentSnapshot =
+    'A very long quoted comment snapshot that should be constrained inside the profile comment chip on narrow screens';
+
 class _SuccessProfileRepository implements ProfileRepository {
   @override
   Future<PublicProfileSummary> getPublicProfile({
@@ -1377,6 +1676,74 @@ class _SuccessProfileRepository implements ProfileRepository {
   }
 }
 
+class _LongTextProfileRepository extends _SuccessProfileRepository {
+  @override
+  Future<PublicProfileSummary> getPublicProfile({
+    required String userId,
+  }) async {
+    return const PublicProfileSummary(
+      userId: _longUserId,
+      userName: _longUserName,
+      displayName: _longDisplayName,
+      createTime: '2026-04-20T08:00:00Z',
+    );
+  }
+
+  @override
+  Future<PublicProfilePostPage> getPublicPosts({
+    required String userId,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const PublicProfilePostPage(
+      page: 1,
+      pageSize: 3,
+      dataCount: 1,
+      pageCount: 1,
+      posts: [
+        PublicProfilePostSummary(
+          id: _longPostId,
+          title: _longPostTitle,
+          summary: _longPostSummary,
+          content: _longPostSummary,
+          categoryName: _longCategoryName,
+          viewCount: 128,
+          likeCount: 16,
+          commentCount: 6,
+          createTime: '2026-04-20T08:00:00Z',
+        ),
+      ],
+    );
+  }
+
+  @override
+  Future<PublicProfileCommentPage> getPublicComments({
+    required String userId,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const PublicProfileCommentPage(
+      page: 1,
+      pageSize: 3,
+      dataCount: 1,
+      pageCount: 1,
+      comments: [
+        PublicProfileCommentSummary(
+          id: _longCommentId,
+          postId: _longPostId,
+          content:
+              'This long public comment should stay inside the profile preview tile on narrow screens.',
+          likeCount: 5,
+          createTime: '2026-04-20T09:00:00Z',
+          replyToUserName:
+              'reply_target_with_a_very_long_public_name_for_profile_preview',
+          replyToCommentSnapshot: _longCommentSnapshot,
+        ),
+      ],
+    );
+  }
+}
+
 class _FailingProfileRepository implements ProfileRepository {
   @override
   Future<PublicProfileSummary> getPublicProfile({
@@ -1429,6 +1796,118 @@ class _QuickReplyFailingProfileRepository extends _SuccessProfileRepository {
   }) {
     throw const RadishApiClientException('轻回应服务暂时不可用');
   }
+}
+
+class _EmptyPublicActivityProfileRepository extends _SuccessProfileRepository {
+  @override
+  Future<PublicProfileStats> getPublicStats({
+    required String userId,
+  }) async {
+    return const PublicProfileStats(
+      postCount: 0,
+      commentCount: 0,
+      totalLikeCount: 0,
+      postLikeCount: 0,
+      commentLikeCount: 0,
+    );
+  }
+
+  @override
+  Future<PublicProfilePostPage> getPublicPosts({
+    required String userId,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const PublicProfilePostPage(
+      page: 1,
+      pageSize: 3,
+      dataCount: 0,
+      pageCount: 0,
+      posts: [],
+    );
+  }
+
+  @override
+  Future<PublicProfileCommentPage> getPublicComments({
+    required String userId,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const PublicProfileCommentPage(
+      page: 1,
+      pageSize: 3,
+      dataCount: 0,
+      pageCount: 0,
+      comments: [],
+    );
+  }
+}
+
+class _PendingRefreshProfileRepository extends _SuccessProfileRepository {
+  int _profileCalls = 0;
+  Completer<PublicProfileSummary>? refreshCompleter;
+
+  @override
+  Future<PublicProfileSummary> getPublicProfile({
+    required String userId,
+  }) {
+    _profileCalls += 1;
+    if (_profileCalls == 1) {
+      return super.getPublicProfile(userId: userId);
+    }
+
+    final completer = refreshCompleter;
+    if (completer == null) {
+      throw StateError('Missing refresh completer.');
+    }
+
+    return completer.future;
+  }
+}
+
+class _RefreshFailingProfileRepository extends _SuccessProfileRepository {
+  int _profileCalls = 0;
+
+  @override
+  Future<PublicProfileSummary> getPublicProfile({
+    required String userId,
+  }) {
+    _profileCalls += 1;
+    if (_profileCalls == 1) {
+      return super.getPublicProfile(userId: userId);
+    }
+
+    throw const RadishApiClientException('公开资料刷新服务暂时不可用');
+  }
+}
+
+class _FailThenRecoverProfileRepository extends _SuccessProfileRepository {
+  int _profileCalls = 0;
+
+  @override
+  Future<PublicProfileSummary> getPublicProfile({
+    required String userId,
+  }) {
+    _profileCalls += 1;
+    if (_profileCalls == 1) {
+      return super.getPublicProfile(userId: userId);
+    }
+
+    if (_profileCalls == 2) {
+      throw const RadishApiClientException('公开资料刷新服务暂时不可用');
+    }
+
+    return Future.value(_updatedProfileSummary(userId));
+  }
+}
+
+PublicProfileSummary _updatedProfileSummary(String userId) {
+  return PublicProfileSummary(
+    userId: userId,
+    userName: 'luobo',
+    displayName: 'Updated Radish Author',
+    createTime: '2026-04-20T08:00:00Z',
+  );
 }
 
 class _PagedPostProfileRepository extends _SuccessProfileRepository {

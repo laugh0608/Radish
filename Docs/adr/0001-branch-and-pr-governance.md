@@ -16,7 +16,7 @@ Accepted
 - PR 模板
 - `Repo Quality` GitHub Actions 工作流
 - `Docs/guide/validation-baseline.md` 中统一的最小验证基线
-- `AGENTS.md`、`CLAUDE.md`、`GEMINI.md` 三份长期同步的 AI 协作文件
+- `AGENTS.md`、`CLAUDE.md` 两份长期同步的 AI 协作文件
 
 如果这些规则只零散存在于脚本、workflow、协作文件和口头约定中，而没有一份正式决策文档统一收口，后续容易出现以下问题：
 
@@ -97,8 +97,8 @@ Accepted
   - `Docs/guide/validation-baseline.md`
   - 已明确 `validate:baseline:quick`、`validate:baseline`、`validate:baseline:host` 的使用边界
 - 多入口 AI 协作文件
-  - `AGENTS.md`、`CLAUDE.md`、`GEMINI.md`
-  - 当前已明确要求三份文件保持“基本复制”和长期同步，避免协作规范分叉
+  - `AGENTS.md`、`CLAUDE.md`
+  - 当前已明确要求两份文件保持“基本复制”和长期同步，避免协作规范分叉
 
 ## 影响
 

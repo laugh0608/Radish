@@ -1,17 +1,27 @@
 import { log } from '@/utils/logger';
+import type { TabType } from '../../types';
 import styles from './QuickActions.module.css';
+
+interface QuickActionsProps {
+  onNavigate: (tab: TabType) => void;
+}
 
 /**
  * 快捷操作组件
  */
-export const QuickActions = () => {
-  const handleAction = (action: string) => {
+export const QuickActions = ({ onNavigate }: QuickActionsProps) => {
+  const handleAction = (action: TabType) => {
     log.debug('QuickActions', `执行快捷操作: ${action}`);
-    // TODO: 实现具体的快捷操作逻辑
-    // 这些操作可以触发父组件的标签页切换或打开模态框
+    onNavigate(action);
   };
 
-  const actions = [
+  const actions: Array<{
+    id: TabType;
+    icon: string;
+    title: string;
+    description: string;
+    color: string;
+  }> = [
     {
       id: 'transfer',
       icon: '💸',

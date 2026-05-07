@@ -1,4 +1,4 @@
-# 2026-05 第一周 (05-01 ~ 05-03)
+# 2026-05 第一周 (05-01 ~ 05-05)
 
 ## 2026-05-01 (周五)
 
@@ -54,3 +54,84 @@
 - **第八至第十二批均保持窄范围**：本日新增小闭环都围绕 profile 复访、docs 只读阅读或 forum detail 来源上下文，不新增后端 API、不新增 Flutter 专属 BFF，也不扩完整通知中心或完整社区互动。
 - **真机与模拟器边界已统一写明**：真机 APK 安装、testing Gateway release 构建与外部分发验收留到正式 release 包发布前；Android Studio 模拟器 / AVD 仍可作为开发中功能测试入口。
 - **下一步仍应沿小闭环推进**：后续若继续功能开发，仍优先选择窄范围复访或只读体验补强，不把暂缓分发验收误判为系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理的扩张信号。
+
+## 2026-05-02 (周六)
+
+### Flutter 第十三至第十七批刷新与降级体验收口
+
+- **discover 只读分发上下文已补强**：发现页补齐来源 `/discover`、公开只读分发边界和 forum / docs / profile 阅读入口上下文，长标题、长 slug、长 meta 与 chip 在窄屏保持受控显示。
+- **discover 聚合摘要局部失败已降级**：forum / docs / shop 三路摘要在原生聚合层独立保护，单一区块失败不再拖垮整页发现页。
+- **discover 刷新体验已收口**：已有摘要刷新时保留旧内容并展示轻量刷新态，刷新失败只作为局部提示，成功刷新后清理旧 issue。
+- **forum / docs 主列表刷新体验已统一**：已有列表刷新时保留旧内容，刷新失败只显示局部提示，分页、搜索、排序切换仍保持原加载语义。
+- **profile 主资料刷新体验已统一**：已有公开资料刷新时保留旧内容，刷新失败只显示局部提示，公开帖子、公开评论与我的轻回应加载更多局部失败逻辑保持不变。
+
+### Flutter 第十八至第二十批 profile 与验证清单收口
+
+- **刷新体验开发阶段清单已整理**：`Clients/radish.flutter/README.md` 与 [Flutter Android MVP 刷新体验开发阶段验证清单](/guide/flutter-android-mvp-refresh-experience-checklist-2026-05-02) 明确 `discover / forum / docs / profile` 四个主 tab 的刷新中旧内容保留、失败局部提示与成功清理旧提示检查口径。
+- **profile 空态人称已修正**：我的主页最近公开帖子 / 最近公开评论为空时改用第一人称空态，公开主页继续保留第三人称空态。
+- **profile 公开主页长文本窄屏显示已复核**：公开资料标题、用户名、用户 ID、最近文档 slug、最近阅读 `postId + commentId`、公开帖子标题 / 摘要 / 分类与公开评论快照均已补受控显示。
+- **命令级回归记录已补洞**：第十九批与第二十批已补 [profile 空态人称与文档口径复核记录](/guide/flutter-android-mvp-profile-empty-copy-record-2026-05-02) 和 [profile 公开主页长文本窄屏显示复核记录](/guide/flutter-android-mvp-profile-long-text-record-2026-05-02)，并补跑 `flutter test test/profile_page_test.dart test/smoke_test.dart`、`flutter analyze` 与 `git diff --check`，结果均通过。
+
+### Android MVP RC 前置材料整理
+
+- **正式域名临时 smoke 已记录**：使用 `https://radishx.com`（服务端版本 `v26.3.2-release`）在 Android Studio 虚拟机与 Android 真机验证帖子、文档和用户公开信息基础只读读取，未见异常；记录见 [Flutter Android MVP 正式域名临时 smoke 记录](/guide/flutter-android-mvp-radishx-smoke-record-2026-05-02)。
+- **RC 补验评估已完成**：[Flutter Android MVP RC 补验评估记录](/guide/flutter-android-mvp-rc-supplemental-assessment-2026-05-02) 已区分当前已具备能力、开发阶段可先补项，以及必须等 testing Gateway / release APK / 真机安装后补齐的 release 前验收。
+- **第八至第二十批验证索引已完成**：[Flutter Android MVP 第八至第二十批验证索引](/guide/flutter-android-mvp-validation-index-2026-05-02) 已按批次整理 Dart 定向测试、`smoke_test`、`flutter analyze`、Android JVM 单测、文档型验证与 release 前缺口。
+- **release 前置边界保持不变**：testing Gateway、release APK 构建、真机安装、登录 / 通知 / 写入链路和批次级外部分发回归仍留到正式 release 包发布前；系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理继续不纳入当前 RC 阻断项。
+
+### 当日收口判断
+
+- **第十三至第二十三批均已完成代码或文档口径收口**：今天主线从 discover / forum / docs / profile 刷新体验和 profile 窄屏显示，推进到 RC 前置材料、验证索引与 profile 回归记录补洞。
+- **规划与日志已同步**：`development-plan.md`、`planning/current.md`、`phase-two-flutter-client-mvp.md`、RC 清单、回归索引与 5 月日志均已同步到第二十三批口径。
+- **下一步仍不切阶段**：若继续开发，优先选择窄范围复访或只读体验补强；若准备 release / RC 外部分发，应先补 testing Gateway、release APK、真机安装验收与批次级回归记录。
+
+## 2026-05-04 (周一)
+
+### Android MVP RC 验收 Go
+
+- **RC 验收口径已确认**：本轮接受 `https://radishx.com` 作为 Android MVP RC 验收 Gateway；前天人工验收使用的是同等参数 release APK。
+- **命令级验证已完成**：`flutter analyze`、`flutter test`、`flutter test test/smoke_test.dart`、Android Studio JBR 下的 `.\gradlew.bat :app:testDebugUnitTest`、`.\gradlew.bat :app:checkReleaseSigningConfig`、`flutter build apk --release --dart-define=RADISH_ENVIRONMENT=production --dart-define=RADISH_GATEWAY_BASE_URL=https://radishx.com` 与 `git diff --check` 均已通过。
+- **真机人工复核已确认**：小米 15S Pro / Android 16 / `test` 账号下，登录、退出、会话恢复、四个主 tab 真实读取、forum detail、docs 搜索 / 内链、profile 复访、轻回应发布与最小 forum notification 回流均未发现问题。
+- **Go 结论已落文档**：新增 [Flutter Android MVP RC 验收记录（2026-05-04）](/guide/flutter-android-mvp-rc-acceptance-record-2026-05-04)，本轮未发现 `P0 / P1` 阻断，`Phase 2-3 Android MVP` 可标记为“第一轮完成”。
+
+### 多端客户端路线评估启动
+
+- **Flutter 扩平台决策已冻结**：Android MVP 第一轮完成后，不立刻推翻 Flutter；iOS 后续按移动端价值单独评估，Windows / macOS / Linux 不再走 Flutter 默认扩平台。
+- **React 复用路线 spike 已固化**：新增 [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation)，验证 Capacitor 移动壳与 Tauri 桌面壳是否能更低成本复用现有 React Web、`@radish/http`、登录态与 Gateway 配置。
+- **决策门槛已写清楚**：后续按 Flutter RC 结果、React spike 复用成本、原生能力接入成本、包体 / 启动 / 调试 / 发布体验决定移动端是否继续 Flutter，以及桌面端是否进入 Tauri + WebOS 评估。
+
+### 多端路线三端分工收口
+
+- **Capacitor Android 已退出移动端主线**：公开 `/docs` 只读页面可运行，但登录 / OIDC、本机 Gateway/Auth 调试、Android WebView 证书、端口代理与 deep link 原生桥耦合成本过高，不符合低成本移动复用目标。
+- **Tauri 桌面壳命令级 spike 已成立**：`radish.client` 可复用 React / Vite `dist`，Tauri 壳层可承接窗口生命周期、系统浏览器 loopback 登录回跳、`radish://` deep link 兼容与 Windows release exe 构建；但 Tauri 不是原生 UI 重写路线。
+- **WebOS 继续作为桌面工作台核心**：后续桌面安装包若推进，应采用 `Tauri 壳 + WebOS 桌面工作台`；Tauri 默认入口已切到 `/desktop`，而不是 `/docs` 公开阅读页。
+- **Tauri 第二轮人工验收已通过**：GUI 启动、WebOS 桌面布局、窗口生命周期观察、系统浏览器登录 / 登出 loopback 回跳测试后暂未发现问题；当日桌面端下一步暂定转向 installer、签名、自动更新与分发链路，后续在 `2026-05-05` 收口为个人开发阶段通过后正式公开分发事项后置。
+- **三端开发口径已确认**：Web 浏览器使用公开内容壳层；Android / iOS 安装包使用 Flutter 移动原生路线；Windows / macOS / Linux 安装包优先评估 Tauri + WebOS。
+
+### 当日收口判断
+
+- **不再默认追加第 24 批微调**：Android MVP 第一轮完成后，下一步在 Android 内测产品化深化、分发反馈闭环与 Tauri + WebOS 桌面安装包第二轮评估之间选择；后续 `2026-05-05` 已将 Tauri + WebOS 个人开发阶段验证收口，产品主线回到 WebOS 工作台体验补强。
+- **范围边界保持不变**：系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票、编辑治理、Flutter 专属 BFF 与 Tauri 桌面分发仍需重新评估后再进入建设。
+- **设计与验证入口已补同步**：当日提交回顾后，补齐 [前端设计文档](/frontend/design)、[验证基线说明](/guide/validation-baseline) 与 [回归索引](/guide/regression-index) 的 RC Go、三端分工、Capacitor 终止和 Tauri + WebOS 验证入口口径；本次只做文档真相源同步，不新增功能代码。
+
+## 2026-05-05 (周二)
+
+### Tauri + WebOS 桌面安装包个人开发阶段收口
+
+- **桌面安装包候选身份已确认**：`Radish` / `com.radish.desktop` 候选身份、生产构建默认 `https://radishx.com` 与本地 Auth 验收构建 `build:tauri-local` 均已落地。
+- **本地 Auth 与 loopback 登录已补齐**：桌面登录成功、客户端已登录功能访问、关闭浏览器后同路径重试登录、登出回跳与 Tauri CORS 口径均已完成验证；浏览器关闭后重试会复用等待中的 loopback listener。
+- **installer 人工补验已通过**：安装目录、开始菜单、卸载项、覆盖安装、普通卸载、重新安装与 `radish://` 协议注册 / 卸载清理均已由人工确认未发现问题。
+- **正式公开分发事项后置**：个人开发阶段接受测试环境通过即可收口；签名、自动更新、生产 Auth、SmartScreen、托盘、系统菜单与公开分发链路留到真实对外分发前再评估。
+
+### WebOS 桌面继续使用入口第一批
+
+- **桌面首页复访入口已落地**：新增“继续使用”面板，按最近应用、最近浏览、我的轻回应分组承接已登录用户回到工作台后的续接路径。
+- **最近应用使用本地轻量记录**：打开或复用业务应用时写入本地最近应用，排除欢迎页、组件展示、控制台、API 文档等非业务复访入口。
+- **最近浏览与我的轻回应复用既有能力**：面板通过已有 API 展示最近 forum 浏览与我的轻回应，并通过共享 workspace navigation 打回对应桌面应用上下文；`ProfileApp` 也已复用同一套跳转解析。
+- **局部降级边界已明确**：本地最近应用不被远程接口加载状态挡住；远程局部失败只在对应分组提示，不拖垮整个桌面首页。
+
+### 当日收口判断
+
+- **开发精力已回到产品功能推进**：Tauri + WebOS 桌面包不再继续围绕 installer、签名、自动更新或公开分发细节消耗当前主线。
+- **WebOS 复访入口保持小闭环**：本轮不新增后端 API，不扩完整历史中心、清空 / 删除、跨端同步、混合时间线或新的治理动作。
+- **验证已完成**：本轮功能提交已通过 `npm run test --workspace=radish.client`、`npm run type-check --workspace=radish.client`、`npm run build --workspace=radish.client` 与 `git diff --check`；当日文档收口另跑 `git diff --check`。

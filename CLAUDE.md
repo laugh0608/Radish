@@ -3,55 +3,74 @@
 本文件为 Claude Code 提供 Radish 项目的独立协作说明。
 
 ## 语言规范
+
 - 默认使用中文进行说明、讨论和文档编写。
 - 代码、技术标识、配置键、命令、路径和引用名保留原文。
 
 ## 协作流程
-- 编写任何代码之前，必须先说明方案并等待批准。
+
+- 涉及架构、规则、接口、依赖、运行时行为或范围不清的改动前，必须先说明方案并等待批准。
+- 小规模、低风险、需求明确的文档、配置或清理类变更，可直接实施，无需先单独描述方案并等待批准。
 - 如果需求不明确，必须先提出问题并澄清后再动手。
 - 新增功能、修复 bug 或处理其他任务时，默认先判断问题能否从根因上收口，优先选择可维护、可验证、能减少后续重复修补的方案，而不是先追求最小改动或继续叠加兜底兼容。
-- 修改架构、接口、主题规范或流程口径时，优先以 `Docs/` 中的当前事实为准。
+- 修改架构、接口、主题规范或流程口径时，优先以 `Docs/` 中的现行正式口径为准。
 - 涉及当前阶段、优先级或范围判断时，优先查看 `Docs/planning/current.md`。
 - 涉及本地验证、CI 对齐或回归入口时，优先查看 `Docs/guide/validation-baseline.md`。
 - 验证与留痕默认按“开发中 / 准备合并到 `master` / 发布部署”三种粒度区分：开发中的本地连续提交只做必要验证，不要求每次都补完整回归记录；批次级回归记录默认在 `PR -> master` 前补，发布 / 部署节点再补正式留痕。
+- `Docs/` 的关键入口文档必须尽可能简约，只描述最近阶段、当前进度、执行入口和必要约束；历史批次、命令级验证流水、实现细节和长背景应写入日志、归档或专题文档，避免新会话读取无关背景浪费上下文。
+- 代码应接近对应语言和框架的良好实践，禁止新增不明意义的方法、空泛工具类、晦涩命名或为了“架构感”而增加的抽象封装；抽象必须服务于真实复用、边界隔离、复杂度下降或契约稳定。
+
+## 规划推进读取顺序
+
+- 当用户提出“根据项目规划和开发进度，今天要做什么以推进开发”这类问题时，默认只先读取 `Docs/planning/current.md`。
+- 若 `current.md` 不足以判断阶段边界或下一顺位，再读取 `Docs/development-plan.md`。
+- 只有涉及阶段边界、多端路线或壳层归属争议时，才继续读取 `Docs/planning/phase-two-community-multiplatform.md`、`Docs/frontend/shell-strategy.md` 或对应专题文档。
+- 不要默认展开 `Docs/changelog/`、`Docs/planning/archive.md`、RC 验收记录或命令级验证记录；这些只在需要追溯历史事实或验证证据时读取。
 
 ## Agent 协同文件
+
 - 仓库中面向不同 Agent 入口名的协作文件，应保持“基本复制”和长期同步。
 - 这些同类协作文件不应演化出彼此冲突的规则口径。
 - 若某个同类协作文件更新了通用协作规则、执行边界、验证基线或阶段约束，其余同类文件也应尽快同步。
 - 同类协作文件只允许保留极少量与入口名称直接相关的表述差异，不应借此分叉实际协作规范。
 
 ## 项目概览
+
 - 后端：ASP.NET Core 10 + SQLSugar ORM + PostgreSQL（本地默认 SQLite）
 - 网关：`Radish.Gateway`，统一门户与 API 网关
 - 认证：`Radish.Auth`，基于 OpenIddict 的 OIDC 认证服务器
 - 前端：React 19 + Vite（Rolldown） + TypeScript，采用 WebOS 桌面化 UI
+- 桌面安装包：`Clients/radish-tauri`，Tauri 壳层复用 `Frontend/radish.client` 的 WebOS 构建产物
 - UI 组件库：`@radish/ui`，基于 npm workspaces 的共享组件库
 - HTTP 客户端：`@radish/http`，统一 API 客户端与相关类型封装
 - Rust 扩展：`Lib/radish.lib/`
 - 主要协作分支：`dev`
 - `master` 仅作为稳定主线，只通过 Pull Request 合并
-- `master` 当前允许 `merge commit` 与 `rebase merge`，禁用 `squash merge`
+- `master` 允许 `merge commit` 与 `rebase merge`，禁用 `squash merge`
 - 文档唯一真相源：`Docs/`
 
 ## AI 执行边界
 
 ### 禁止直接执行
+
 - `dotnet add package`
 - `npm install`
 - `dotnet run`
 - `npm run dev`
 
 ### 正确做法
+
 - 需要安装包时，直接告诉用户应执行的命令和版本
 - 需要启动服务时，直接告诉用户应执行的命令和访问端口
 
 ### 允许直接执行
+
 - 代码读写
 - 构建、测试、类型检查、Lint、静态分析
 - Git 操作
 
 ### 沙盒验证与提权规则
+
 - 默认优先在沙盒中执行构建、测试和最小验证。
 - 如果因沙盒限制、权限隔离、PATH 缺失、网络或证书问题，无法确认真实构建或测试结果，可直接申请提权。
 - 提权用途只能是“构建 / 测试 / 必要验证”，不得扩展到安装依赖、启动长期服务或其他高风险行为。
@@ -60,6 +79,7 @@
 ## 仓库结构
 
 ### 后端
+
 - 宿主：`Radish.Api`、`Radish.Gateway`、`Radish.Auth`
 - 初始化与只读自检：`Radish.DbMigrate`
 - 业务层：`Radish.Service`、`Radish.Repository`、`Radish.Core`、`Radish.Model`
@@ -69,19 +89,27 @@
 - 测试：`Radish.Api.Tests`
 
 ### 前端
+
 - `Frontend/radish.http`：统一 HTTP 客户端与相关类型封装
 - `Frontend/radish.client`：WebOS 桌面客户端
 - `Frontend/radish.console`：管理后台
 - `Frontend/radish.ui`：共享组件库，源码直连，无需独立构建
 
+### 客户端
+
+- `Clients/radish.flutter`：Flutter Android / iOS 移动原生安装包路线
+- `Clients/radish-tauri`：Tauri 桌面安装包壳层，复用 `Frontend/radish.client` 的 WebOS 构建产物
+
 ## 环境与命令
 
 ### 基础环境
+
 - .NET SDK 10
 - Node.js 24+
 - PostgreSQL 16+，或本地 SQLite
 
 ### 可直接执行的验证命令
+
 ```bash
 dotnet build Radish.slnx -c Debug
 dotnet test Radish.Api.Tests
@@ -97,6 +125,7 @@ npm run validate:baseline:host
 ```
 
 ### 供用户手动执行的启动命令
+
 ```bash
 pwsh ./start.ps1
 ./start.sh
@@ -110,6 +139,7 @@ npm run dev --workspace=radish.console
 ```
 
 ### 默认端口
+
 - API：`http://localhost:5100`
 - Auth：`http://localhost:5200`
 - Gateway：`https://localhost:5000`
@@ -121,12 +151,17 @@ npm run dev --workspace=radish.console
 ## 配置与数据库
 
 ### 配置优先级
+
 ```text
-appsettings.Shared.json → appsettings.json → appsettings.{Environment}.json
-→ appsettings.Local.json（不提交）→ 环境变量
+appsettings.Shared.json → appsettings.json
+→ appsettings.Local.json（仅本地使用，不提交）→ 环境变量
 ```
 
+- 配置文件只允许三种：共享 `appsettings.Shared.json`、宿主默认 `appsettings.json`、本地覆盖 `appsettings.Local.json`
+- 禁止新增或提交这三种之外的 `appsettings.*.json` 变体，避免配置来源和口径漂移
+
 ### 关键配置
+
 - `Snowflake.WorkId`：宿主差异配置，每实例唯一
 - `Snowflake.DataCenterId`：共享配置
 - `MainDb/Databases`：共享数据库配置
@@ -134,20 +169,24 @@ appsettings.Shared.json → appsettings.json → appsettings.{Environment}.json
 - `Redis.InstanceName`：宿主差异配置
 
 ### 数据库关系
+
 - API 与 Auth 共享 `Radish.db`、`Radish.Log.db`
 - Auth 独享 `Radish.OpenIddict.db`
 - 所有数据库位于 `DataBases/`
 
 ### 多租户模式
+
 - 字段级：`ITenantEntity`
 - 表级：`[MultiTenant(Tables)]`
 - 库级：`[MultiTenant(DataBases)]`
 
 ### 配置读取
+
 - `AppSettings.RadishApp("Section", "Key")`
 - 或实现 `IConfigurableOptions`
 
 ### 缓存策略
+
 ```csharp
 builder.Services.AddCacheSetup();
 ```
@@ -158,12 +197,14 @@ builder.Services.AddCacheSetup();
 ## 分层架构与约束
 
 ### 依赖流
+
 ```text
 Common → Shared → Model → Infrastructure → IRepository/Repository
 → Core → IService/Service → Extension → Api/Gateway/Auth
 ```
 
 ### 核心约束
+
 1. `Common` 仅引用外部 NuGet 包，需要访问业务层的工具放在 `Extension`
 2. `Repository` 只返回实体，`Service` 负责映射 DTO / Vo
 3. Controller 禁止直接注入 `IBaseRepository`
@@ -173,6 +214,7 @@ Common → Shared → Model → Infrastructure → IRepository/Repository
 7. 通用聚合优先扩展 `BaseRepository`，复杂查询再做实体专属仓储
 
 ### ViewModel / Vo 规范
+
 - 所有返回前端的 ViewModel 必须使用 `Vo` 后缀
 - 所有字段必须使用 `Vo` 前缀
 - `UserVo` 的混淆字段命名是安全设计，不允许要求后端改名
@@ -180,6 +222,7 @@ Common → Shared → Model → Infrastructure → IRepository/Repository
 - 优先使用 AutoMapper 前缀识别映射，仅在字段名、类型或逻辑不一致时手动映射
 
 ## 软删除规范
+
 - 业务数据优先使用软删除
 - 新实体应实现 `IDeleteFilter`
 - 查询自动过滤 `IsDeleted = true`
@@ -189,15 +232,28 @@ Common → Shared → Model → Infrastructure → IRepository/Repository
 ## 编码与前端规范
 
 ### 通用代码风格
+
 - C# 使用 4 空格、文件范围命名空间、nullable
 - React 组件默认使用 `const`
 - 避免 `var`，优先 `const`，需要重赋值时使用 `let`
 - 常规 Hooks 以 `useState`、`useMemo`、`useEffect` 为主
-- 单文件建议 `500-1000` 行，硬上限 `1000` 行
+- 单文件建议控制在 `1000` 行左右，硬上限 `1500` 行
+- 命名必须表达业务意图和技术边界，避免 `handleData`、`processInfo`、`commonHelper`、`managerUtil` 这类空泛命名或只有作者能理解的缩写
+- 方法、Hook、组件和工具函数应有明确职责；不要拆出一串只转发参数、包同名调用或隐藏简单逻辑的私有方法
+- 异常、空态、兼容和兜底逻辑必须有清晰业务原因，禁止用层层 fallback 掩盖契约不清、数据模型错误或调用边界混乱
+
+### 文本文件编码与换行
+
+- 仓库自有文本文件默认使用 `UTF-8` 无 `BOM`，避免引入乱码；如需保留外部参考资料或上游文件的特殊编码，必须有明确来源和理由
+- 换行符遵循仓库根 `.editorconfig` 与 `.gitattributes`：默认使用 `LF`，仅 `*.sln`、`*.slnx`、`*.ps1`、`*.psm1`、`*.psd1`、`*.bat`、`*.cmd` 等 Windows 文件使用 `CRLF`
+- 保持文件末尾换行；非 Markdown 文本避免尾随空格
+- 面向人工审阅的 JSON、配置文本和本地持久化文本优先保持 `UTF-8` 可读文本，中文默认直写，仅保留语法必需或序列化器仍要求保留的转义
+- 若怀疑当前修改引入乱码、换行漂移或 `BOM` 问题，优先执行 `npm run check:repo-hygiene:changed` 或 `npm run check:repo-hygiene:staged`
 
 ### 日志规范
 
 #### 后端
+
 ```csharp
 builder.Host.AddSerilogSetup();
 Log.Information("User {UserId} logged in", userId);
@@ -208,12 +264,14 @@ Log.Information("User {UserId} logged in", userId);
 - 审计日志：数据库 `AuditLog_YYYYMMDD`
 
 #### 前端
+
 - Client：`Frontend/radish.client/src/utils/logger.ts`
 - Console：`Frontend/radish.console/src/utils/logger.ts`
 - 禁止直接使用 `console.log/info/warn/error`
 - 必须使用统一 `log` 工具
 
 ### 前端环境配置
+
 - `.env.development`
 - `.env.production`
 - `.env.local`
@@ -225,12 +283,14 @@ Log.Information("User {UserId} logged in", userId);
 - 通过 `env.ts` 访问配置，禁止直接使用 `import.meta.env`
 
 ### API 客户端规范
+
 - 统一使用 `@radish/http` 提供的 API 客户端
 - 禁止自定义 fetch / axios 封装
 - 上传进度等特殊场景可使用 `XMLHttpRequest`
 - 特殊场景必须通过 `getApiClientConfig()` 获取统一配置，并在代码中注明原因
 
 ### 前端视觉与主题规范
+
 - 视觉口径以 `Docs/frontend/visual-theme-spec.md` 与 `Docs/frontend/visual-color-reference.md` 为准
 - `radish.client` 必须支持 `default / guofeng` 主题切换
 - 风格方向为淡雅新中式，保持留白、克制和阅读优先
@@ -240,12 +300,14 @@ Log.Information("User {UserId} logged in", userId);
 - 不得破坏 Dock、桌面图标、窗口容器和滚动区域等基础布局
 
 ### 前端架构补充
+
 - `@radish/ui` 无需单独构建，前端直接引用源码
 - 修改 `radish.ui` 时需保证 client / console 的热更新链路不被破坏
 
 ## 新增功能流程
 
 ### 后端
+
 1. 在 `Radish.Model/Models` 定义实体
 2. 在 `Radish.Model/ViewModels` 定义 Vo
 3. 在 `Radish.Extension/AutoMapperExtension/CustomProfiles` 增加映射
@@ -256,18 +318,22 @@ Log.Information("User {UserId} logged in", userId);
 8. 补充 `Radish.Api.http` 示例和测试
 
 ### 前端
+
 - 通用组件放 `@radish/ui`
 - API 调用与统一客户端能力优先复用 `@radish/http`
 - WebOS 组件放 `Frontend/radish.client/src/`
 
 ## Rust 原生扩展
+
 - 位置：`Lib/radish.lib/`
 - 构建：
+
 ```bash
 cd Lib/radish.lib
 cargo build --release
 ```
 - 配置：
+
 ```json
 {
   "ImageProcessor": {
@@ -277,6 +343,7 @@ cargo build --release
 ```
 
 ## 常见陷阱
+
 1. 不要把业务逻辑写进 Controller
 2. 不要直接暴露实体给前端
 3. 简单 CRUD 不要滥建 Service / Repository
@@ -289,12 +356,14 @@ cargo build --release
 10. `ApiModule.LinkUrl` 的参数路由需包含正则
 
 ## Git 提交规范
+
 - 必须遵循 Conventional Commits
 - 复杂提交建议补充 `2-5` 条简洁说明
 - 必须使用当前用户 Git 身份
 - 严禁任何 AI 协作者署名
 
 示例：
+
 ```text
 fix(client): 修复桌面窗口与 Dock 遮挡问题
 
@@ -304,6 +373,7 @@ fix(client): 修复桌面窗口与 Dock 遮挡问题
 ```
 
 ## 文档与更新要求
+
 - `Docs/` 是唯一真相源
 - 关键文档包括：
   - `Docs/architecture/specifications.md`

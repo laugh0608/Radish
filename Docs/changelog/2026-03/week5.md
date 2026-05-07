@@ -18,7 +18,7 @@
 
 ### 协作与提交流程治理
 
-- **多入口协作文件约束已对齐**：`AGENTS.md`、`CLAUDE.md`、`GEMINI.md` 当前已统一补入“同类协作文件保持基本复制与长期同步”的约束，避免多入口协作规范后续分叉。
+- **多入口协作文件约束已对齐**：`AGENTS.md`、`CLAUDE.md` 当前已统一补入“同类协作文件保持基本复制与长期同步”的约束，避免多入口协作规范后续分叉。
 - **PR 模板已落地**：仓库当前已补 `.github/PULL_REQUEST_TEMPLATE.md`，并按现阶段主线、验证基线与 `DbMigrate` 影响检查收口。
 - **分支与 PR 治理 ADR 已补齐**：新增 `Docs/adr/0001-branch-and-pr-governance.md`，统一沉淀 `master / dev` 角色、默认 PR 流向、规则来源与长期执行边界。
 

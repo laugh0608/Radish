@@ -146,7 +146,7 @@ public class ImageProcessorTest
         fileInfo.Length.ShouldBeGreaterThan(0, "输出文件大小为0");
 
         // 验证输出文件是有效的图片
-        using var outputImage = await Image.LoadAsync(outputPath);
+        using var outputImage = await Image.LoadAsync(outputPath, TestContext.Current.CancellationToken);
         outputImage.Width.ShouldBe(800);
         outputImage.Height.ShouldBe(600);
 
@@ -176,7 +176,7 @@ public class ImageProcessorTest
         File.Exists(outputPath).ShouldBeTrue("输出文件不存在");
 
         // 验证缩略图尺寸
-        using var outputImage = await Image.LoadAsync(outputPath);
+        using var outputImage = await Image.LoadAsync(outputPath, TestContext.Current.CancellationToken);
         outputImage.Width.ShouldBeLessThanOrEqualTo(150);
         outputImage.Height.ShouldBeLessThanOrEqualTo(150);
 
@@ -217,15 +217,15 @@ public class ImageProcessorTest
 
         // 验证文件尺寸
         var smallPath = Path.Combine(_testOutputPath, "multi_size_test_small.jpg");
-        using var smallImage = await Image.LoadAsync(smallPath);
+        using var smallImage = await Image.LoadAsync(smallPath, TestContext.Current.CancellationToken);
         smallImage.Width.ShouldBeLessThanOrEqualTo(400);
 
         var mediumPath = Path.Combine(_testOutputPath, "multi_size_test_medium.jpg");
-        using var mediumImage = await Image.LoadAsync(mediumPath);
+        using var mediumImage = await Image.LoadAsync(mediumPath, TestContext.Current.CancellationToken);
         mediumImage.Width.ShouldBeLessThanOrEqualTo(800);
 
         var largePath = Path.Combine(_testOutputPath, "multi_size_test_large.jpg");
-        using var largeImage = await Image.LoadAsync(largePath);
+        using var largeImage = await Image.LoadAsync(largePath, TestContext.Current.CancellationToken);
         largeImage.Width.ShouldBeLessThanOrEqualTo(1200);
 
         // 清理
@@ -305,7 +305,7 @@ public class ImageProcessorTest
         File.Exists(outputPath).ShouldBeTrue();
 
         // 验证 EXIF 已移除
-        using var outputImage = await Image.LoadAsync(outputPath);
+        using var outputImage = await Image.LoadAsync(outputPath, TestContext.Current.CancellationToken);
         outputImage.Metadata.ExifProfile.ShouldBeNull();
 
         // 清理

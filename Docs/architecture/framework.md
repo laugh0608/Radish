@@ -117,7 +117,7 @@ PostgreSQL / SQLite
 - `Radish.Api`
   - 负责 DI、配置、日志、全局异常、认证授权、Swagger/Scalar、HealthChecks。
   - 仅保留轻量 Controller/Endpoint，所有核心逻辑委派给 Service 层。
-  - 配置加载：`ConfigureAppConfiguration` 会先清空默认源，再依次加载 `appsettings.Shared.json`、`appsettings.json`、`appsettings.{Environment}.json` 与 `appsettings.Local.json`，保证共享默认值先落地、宿主差异后覆盖，本地敏感值最后生效。
+  - 配置加载：`ConfigureAppConfiguration` 会先清空默认源，再依次加载 `appsettings.Shared.json`、`appsettings.json` 与 `appsettings.Local.json`，保证共享默认值先落地、宿主差异后覆盖，本地敏感值最后生效；部署差异再通过环境变量覆盖，不再引入额外的 `appsettings.*.json` 变体。
   - 雪花 ID：`Program` 在注册 SqlSugar 之后从 `Snowflake` 节读取 `WorkId`、`DataCenterId` 并写入 `SnowFlakeSingle`；当前约定 `WorkId` 保留宿主差异配置，`DataCenterId` 放在 `appsettings.Shared.json` 统一维护。多实例部署必须保证 `WorkId` 唯一，禁止把生产与本地设置为同一个编号。
   - 日志：宿主调用 `builder.Host.AddSerilogSetup()`，由 `Radish.Extension.Log` 统一配置输出目标。Serilog 默认读取 appsettings，写入控制台与 `Logs/{ProjectName}/` 目录（普通日志 -> `Log.txt`，SqlSugar AOP 日志 -> `AopSql/AopSql.txt`），内部基于 `LogContextTool.LogSource` 区分日志类型并通过 `WriteTo.Async()` 异步落盘，避免阻塞请求线程；项目名解析当前优先依赖 `ContentRootPath` / `AppContext.BaseDirectory`，避免开发态把多个宿主统一误判到 `Logs/Radish/`。SQL AOP 生成策略由共享配置 `SqlAopLog` 控制，可按操作类型、表名、操作人和大文本字段做过滤或脱敏，当前默认跳过 `WikiDocument` 与 `WikiDocumentRevision` 两张文档同步表，且 `SkipTables` 已对 `INSERT / UPDATE / DELETE / SELECT` 统一生效；SQL 原文也改为结构化参数写入，避免花括号文本触发 Serilog 模板异常。业务代码默认直接使用 `Serilog.Log` 静态方法输出日志，仅在依赖外部框架时才注入 `ILogger<T>`。
   - API 文档：开发环境把 Scalar UI 映射到 `/scalar`（`/api/docs` 重定向到 `/scalar`），并通过 `builder.Services.AddOpenApi("v1|v2")` + `options.AddDocument(...)` 维护多版本；如需定制交互，可在 `Radish.Api/wwwroot/scalar/config.js` 中追加 JS 配置并在 `MapScalarApiReference` 中调用 `WithJavaScriptConfiguration`。
@@ -230,7 +230,7 @@ graph LR
 ## DevOps 与运维基线
 
 1. **配置与密钥**：
-   - `appsettings.json` 仅放默认值，环境差异通过 `appsettings.{Env}.json` + 环境变量。
+   - `appsettings.json` 仅放默认值；本地差异通过 `appsettings.Local.json`，部署差异通过环境变量。
    - 本地秘密写入 `dotnet user-secrets` 或 `.env.local`（被 .gitignore 忽略）。
 2. **日志与监控**：
    - Serilog 写入 Console + File；API / Gateway 已具备健康检查入口，当前以“日志 + 健康检查 + `DbMigrate doctor/verify`”作为最小自检基线，统一口径见 [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)。

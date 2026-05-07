@@ -45,3 +45,5 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - 固定文档会在 API 启动时自动同步到前端“文档”应用
 - 在线文档由用户或管理员在应用内新建，内容存储在数据库
 - 规划类文档已拆分为“总览 / 当前 / Backlog / 已完成摘要”，避免单页持续膨胀
+- `Docs/index.md`、`Docs/README.md`、`Docs/development-plan.md`、`Docs/planning/current.md` 等关键入口必须尽可能简约，只描述最近阶段、当前进度、执行入口和必要约束
+- 历史批次、命令级验证流水、实现细节和长背景应写入 `Docs/changelog/`、`Docs/planning/archive.md` 或对应专题文档，避免 AI / Agent 在新会话中读取无关背景浪费上下文

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:radish_flutter/core/config/app_environment.dart';
@@ -67,6 +69,103 @@ void main() {
 
     expect(find.text('文档'), findsOneWidget);
     expect(find.text('Radish Flutter docs scope'), findsOneWidget);
+  });
+
+  testWidgets('keeps docs list visible while refresh is pending', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repository = _PendingRefreshDocsRepository();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DocsPage(
+          environment: const AppEnvironment.development(),
+          repository: repository,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Radish Flutter docs scope'), findsOneWidget);
+
+    repository.refreshCompleter = Completer<DocsDocumentPage>();
+    await tester.tap(find.text('刷新文档'));
+    await tester.pump();
+
+    expect(find.text('正在刷新文档列表，当前仍展示上次可用文档。'), findsOneWidget);
+    expect(find.text('Radish Flutter docs scope'), findsOneWidget);
+    expect(find.text('正在刷新'), findsOneWidget);
+
+    repository.refreshCompleter!.complete(_updatedDocsDocumentPage());
+    await tester.pumpAndSettle();
+
+    expect(find.text('正在刷新文档列表，当前仍展示上次可用文档。'), findsNothing);
+    expect(find.text('Updated docs refresh summary'), findsOneWidget);
+  });
+
+  testWidgets('keeps docs list visible when refresh fails', (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DocsPage(
+          environment: const AppEnvironment.development(),
+          repository: _RefreshFailingDocsRepository(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Radish Flutter docs scope'), findsOneWidget);
+
+    await tester.tap(find.text('刷新文档'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('刷新文档失败'), findsOneWidget);
+    expect(find.text('文档刷新服务暂时不可用'), findsOneWidget);
+    expect(find.text('Radish Flutter docs scope'), findsOneWidget);
+    expect(find.text('暂时无法加载文档'), findsNothing);
+  });
+
+  testWidgets('clears docs refresh issue after successful refresh', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DocsPage(
+          environment: const AppEnvironment.development(),
+          repository: _FailThenRecoverDocsRepository(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('刷新文档'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('刷新文档失败'), findsOneWidget);
+
+    await tester.tap(find.text('刷新文档'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('刷新文档失败'), findsNothing);
+    expect(find.text('Updated docs refresh summary'), findsOneWidget);
   });
 
   testWidgets('searches docs and opens result detail', (tester) async {
@@ -517,6 +616,100 @@ class _FailingDocsRepository implements DocsRepository {
   }) {
     throw const RadishApiClientException('文档服务暂时不可用');
   }
+}
+
+class _PendingRefreshDocsRepository extends _SuccessDocsRepository {
+  int _calls = 0;
+  Completer<DocsDocumentPage>? refreshCompleter;
+
+  @override
+  Future<DocsDocumentPage> getDocumentPage({
+    required int pageIndex,
+    required int pageSize,
+    String? keyword,
+  }) {
+    _calls += 1;
+    if (_calls == 1) {
+      return super.getDocumentPage(
+        pageIndex: pageIndex,
+        pageSize: pageSize,
+        keyword: keyword,
+      );
+    }
+
+    final completer = refreshCompleter;
+    if (completer == null) {
+      throw StateError('Missing refresh completer.');
+    }
+
+    return completer.future;
+  }
+}
+
+class _RefreshFailingDocsRepository extends _SuccessDocsRepository {
+  int _calls = 0;
+
+  @override
+  Future<DocsDocumentPage> getDocumentPage({
+    required int pageIndex,
+    required int pageSize,
+    String? keyword,
+  }) {
+    _calls += 1;
+    if (_calls == 1) {
+      return super.getDocumentPage(
+        pageIndex: pageIndex,
+        pageSize: pageSize,
+        keyword: keyword,
+      );
+    }
+
+    throw const RadishApiClientException('文档刷新服务暂时不可用');
+  }
+}
+
+class _FailThenRecoverDocsRepository extends _SuccessDocsRepository {
+  int _calls = 0;
+
+  @override
+  Future<DocsDocumentPage> getDocumentPage({
+    required int pageIndex,
+    required int pageSize,
+    String? keyword,
+  }) {
+    _calls += 1;
+    if (_calls == 1) {
+      return super.getDocumentPage(
+        pageIndex: pageIndex,
+        pageSize: pageSize,
+        keyword: keyword,
+      );
+    }
+
+    if (_calls == 2) {
+      throw const RadishApiClientException('文档刷新服务暂时不可用');
+    }
+
+    return Future.value(_updatedDocsDocumentPage());
+  }
+}
+
+DocsDocumentPage _updatedDocsDocumentPage() {
+  return const DocsDocumentPage(
+    page: 1,
+    pageSize: 20,
+    dataCount: 1,
+    pageCount: 1,
+    documents: [
+      DocsDocumentSummary(
+        id: '3003',
+        title: 'Updated docs refresh summary',
+        slug: 'updated-docs-refresh-summary',
+        summary: 'Updated public docs summary after refresh.',
+        modifyTime: '2026-04-20T09:00:00Z',
+      ),
+    ],
+  );
 }
 
 class _DetailFailingDocsRepository extends _SuccessDocsRepository {

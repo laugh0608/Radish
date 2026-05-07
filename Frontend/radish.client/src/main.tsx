@@ -1,11 +1,18 @@
 import { StrictMode, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
+import { Capacitor } from '@capacitor/core';
 import { configureApiClient } from '@radish/http';
 import { tokenService } from '@/services/tokenService';
 import { getApiBaseUrl } from '@/config/env';
 import { applySiteBranding } from '@/services/siteBranding';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { initializeTheme } from '@/theme/theme';
+import {
+  initializeTauriBridge,
+  isTauriRuntime,
+  TAURI_DESKTOP_ENTRY_PATH,
+  rewriteDesktopOidcReturnToBrowserPath,
+} from '@/platform/tauriBridge';
 import { isPublicDiscoverPathname } from './public/discoverRouteState';
 import './theme/theme-tokens.css';
 import './index.css';
@@ -17,6 +24,34 @@ const Shell = lazy(() => import('./desktop/Shell.tsx').then((module) => ({ defau
 const PublicEntry = lazy(() => import('./public/PublicEntry.tsx').then((module) => ({ default: module.PublicEntry })));
 
 const isBrowser = typeof window !== 'undefined';
+
+function handleTauriDeepLink(url: string): void {
+  if (!isBrowser) {
+    return;
+  }
+
+  const nextPath = rewriteDesktopOidcReturnToBrowserPath(url);
+  if (!nextPath) {
+    return;
+  }
+
+  window.location.replace(nextPath);
+}
+
+if (isBrowser) {
+  initializeTauriBridge({
+    onDeepLink: handleTauriDeepLink,
+  });
+}
+
+if (isBrowser && isTauriRuntime() && window.location.pathname === '/') {
+  window.history.replaceState({}, '', TAURI_DESKTOP_ENTRY_PATH);
+}
+
+if (isBrowser && Capacitor.isNativePlatform() && window.location.pathname === '/') {
+  window.history.replaceState({}, '', '/docs');
+}
+
 const isOidcCallback = isBrowser && window.location.pathname === '/oidc/callback';
 const isPublicContentRoute = isBrowser && (
   isPublicDiscoverPathname(window.location.pathname)

@@ -2,11 +2,11 @@
 
 `radish.flutter` 是 `Phase 2-3 Flutter 客户端 MVP` 的仓库落点。
 
-当前主线是 `Phase 2-3 Flutter 客户端 MVP`。Android MVP 当前优先验证已经接通的真实可测链路，不复刻 WebOS 桌面工作台。
+当前状态是 Android MVP 第一轮已完成，Flutter 后续定位收束为 Android / iOS 移动原生安装包路线；Windows / macOS / Linux 桌面安装包不再按 Flutter 默认扩平台推进，优先走 `Tauri 壳 + WebOS 桌面工作台`。
 
 ## 当前范围
 
-- Android 起步的原生客户端壳层
+- Android 起步的原生客户端壳层；iOS 后续单独评估
 - `discover / forum / docs / profile` 四个高价值入口的首批真实只读页面
 - 最小登录、退出、会话恢复、Android 本地会话持久化与浏览器 OIDC 回调
 - forum feed、forum detail、评论分页、子评论分页、作者跳转与 detail 原地登录续接
@@ -26,7 +26,8 @@
 
 ## 当前不含
 
-- Windows / Linux 平台目录的完整生成文件
+- iOS 产品化工程
+- Windows / macOS / Linux 桌面安装包平台目录
 - 聊天、完整通知中心、完整商城工作台、创作器
 - “移动版 WebOS”
 
@@ -50,7 +51,9 @@ Clients/radish.flutter/
 
 1. Flutter 环境切换能力：支持通过构建参数指定本机 / 测试 / 正式 Gateway
 2. Android 正式签名材料与外部分发前置准备：详见 [Flutter Android RC 分发前置清单](../../Docs/guide/flutter-android-rc-distribution.md)
-3. Android MVP 稳定后，再评估 Windows / Linux 平台目录与更深原生能力
+3. Android MVP 产品化深化：测试对象、反馈回收、已知问题列表、版本说明、release 前验收与分发留痕
+4. iOS 作为移动安装包后续单独评估，不与 Android 第一轮完成结论混成同一批
+5. Windows / macOS / Linux 桌面安装包转入 `Tauri + WebOS` 第二轮评估，不在本目录生成 Flutter 桌面平台工程
 
 ## Flutter 环境切换
 
@@ -86,13 +89,9 @@ flutter build apk --release --dart-define=RADISH_ENVIRONMENT=testing --dart-defi
 flutter build apk --release --dart-define=RADISH_ENVIRONMENT=production --dart-define=RADISH_GATEWAY_BASE_URL=https://gateway.example
 ```
 
-## 平台目录生成说明
+## 平台目录说明
 
-Android 平台目录已经生成。后续如需补齐 Windows / Linux 平台工程，可在本目录执行：
-
-```bash
-flutter create --platforms=windows,linux .
-```
+Android 平台目录已经生成。当前不建议在本目录补齐 Windows / macOS / Linux 平台工程；桌面安装包路线以 `Frontend/radish.client` 的 WebOS 工作台复用和 Tauri 壳层能力评估为准。
 
 ## Android 模拟器联调
 
@@ -155,6 +154,8 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 
 当前 Android MVP 人工验证只覆盖已经具备真实入口、真实数据或可稳定手工触发的链路。已登录态当前具备一个最小 forum notification 来源入口，可用于验证通知来源回到 forum detail 与 `commentId` 定位；第三批新增的中文文案、个人复访入口与 forum 轻回应最小闭环也纳入下一轮真机复核。
 
+第十五批至第十七批已完成 `discover / forum / docs / profile` 主 tab 的刷新体验一致性收口。开发阶段可优先使用 Android Studio 模拟器 / AVD 做功能验证；若需要验证刷新失败局部提示，可在已有内容成功加载后临时断开 Gateway 或网络再点击刷新。该验证只记录为开发阶段人工检查，不替代正式 release 包发布前的真机 APK 安装验收。
+
 前置条件：
 
 - 后端宿主、Gateway 与 Auth 已由人工按项目启动命令启动；不要由 AI 直接执行 `dotnet run` 或 `npm run dev`
@@ -167,25 +168,26 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 
 1. 启动应用，确认启动恢复 gate 后进入匿名态或已恢复会话态，壳层状态条不溢出
 2. 进入 `discover / docs / profile`，确认首批真实只读内容可读取，基础跳转可返回原 tab
-3. 从 discover 点击“进入论坛”，确认可切到论坛列表；按 Android 返回键应先回到 discover，而不是退出到桌面
-4. 从 discover 点击“进入文档”，确认可切到文档列表；按 Android 返回键应先回到 discover，而不是退出到桌面
-5. 从 discover 的论坛精选帖子点击“打开帖子”，确认进入原生 forum detail，返回后仍回到 discover
-6. 进入 docs，确认关键词搜索、分页、刷新与清除搜索可用；从搜索结果打开文档详情后，返回仍保留搜索列表上下文
-7. 在 docs 详情正文中点击 `/docs/:slug` 或 Markdown 文档链接，确认会打开原生 docs 详情；从 docs 列表内联详情进入时应切换当前详情，从 discover / profile 来源详情进入时应 push 新详情并可逐层返回
-8. 在根层按 Android 返回键回到桌面，再点桌面图标打开应用，确认应用恢复到 Flutter 页面而不是卡在原生启动页
-9. 进入 forum feed，确认 `latest / hottest`、分页加载、空态或错误态文案正常
-10. 从 forum feed 打开帖子详情，确认正文、作者、分类、时间与基础统计可读，原生返回正常
-11. 在帖子详情读取评论区，确认根评论分页、子评论展开、评论作者跳转公开 profile 可用；没有评论时应显示明确空态
-12. 在帖子详情确认轻回应位于正文之后、评论区之前；匿名态可读取最近轻回应；已登录态发布一句轻回应后应保持当前位置，不刷新正文或评论，新轻回应应显示在轻回应墙顶部并出现局部成功提示
-13. 匿名态在帖子详情发起登录，取消登录后应出现显式提示；重试登录成功后应回到原帖子上下文，并可继续发布轻回应
-14. 进入 profile，确认最近 forum 阅读、最近文档和公开主页复访入口是正式用户文案，可回到对应详情或公开主页
-15. 在我的 profile 中确认“最近阅读”展示最近多条 forum 阅读上下文；重复打开同一帖子或评论应前置并去重；点击任意条目应回到对应帖子详情，返回后仍留在 profile
-16. 在 profile 中确认“最近公开帖子”可继续加载更多；点击任意帖子应回到对应帖子详情
-17. 在 profile 中确认“最近公开评论”可继续加载更多；点击任意评论应回到对应帖子，并自动定位到目标根评论或子评论位置，而不是停在帖子顶部
-18. 在我的 profile 中确认“我的轻回应”只在已登录我的主页展示，公开主页不展示；若有多页轻回应，可继续加载更多；点击任意条目应回到对应帖子详情
-19. 已登录态执行退出，确认浏览器登出回调后回到匿名态，后续重新进入 profile 或 detail 登录入口仍可用
-20. 接收账号登录 Flutter 后，确认壳层出现 `Forum notification` 入口；点击后应打开对应帖子，并在通知包含 `commentId` 时落到目标评论上下文
-21. 关闭并重启应用，确认会话恢复或匿名回落符合当前 token 状态，复访入口仍符合最近状态
+3. 在 discover 已有摘要时点击“刷新发现”，确认刷新中仍展示上次可用摘要；若刷新失败，应只显示“刷新发现失败”局部提示，不切到整页错误
+4. 从 discover 点击“进入论坛”，确认可切到论坛列表；按 Android 返回键应先回到 discover，而不是退出到桌面
+5. 从 discover 点击“进入文档”，确认可切到文档列表；按 Android 返回键应先回到 discover，而不是退出到桌面
+6. 从 discover 的论坛精选帖子点击“打开帖子”，确认进入原生 forum detail，返回后仍回到 discover
+7. 进入 docs，确认关键词搜索、分页、刷新与清除搜索可用；已有文档列表刷新时应保留旧列表，刷新失败只显示“刷新文档失败”局部提示；从搜索结果打开文档详情后，返回仍保留搜索列表上下文
+8. 在 docs 详情正文中点击 `/docs/:slug` 或 Markdown 文档链接，确认会打开原生 docs 详情；从 docs 列表内联详情进入时应切换当前详情，从 discover / profile 来源详情进入时应 push 新详情并可逐层返回
+9. 在根层按 Android 返回键回到桌面，再点桌面图标打开应用，确认应用恢复到 Flutter 页面而不是卡在原生启动页
+10. 进入 forum feed，确认 `latest / hottest`、分页加载、空态或错误态文案正常；已有帖子列表刷新时应保留旧列表，刷新失败只显示“刷新论坛失败”局部提示
+11. 从 forum feed 打开帖子详情，确认正文、作者、分类、时间与基础统计可读，原生返回正常
+12. 在帖子详情读取评论区，确认根评论分页、子评论展开、评论作者跳转公开 profile 可用；没有评论时应显示明确空态
+13. 在帖子详情确认轻回应位于正文之后、评论区之前；匿名态可读取最近轻回应；已登录态发布一句轻回应后应保持当前位置，不刷新正文或评论，新轻回应应显示在轻回应墙顶部并出现局部成功提示
+14. 匿名态在帖子详情发起登录，取消登录后应出现显式提示；重试登录成功后应回到原帖子上下文，并可继续发布轻回应
+15. 进入 profile，确认最近 forum 阅读、最近文档和公开主页复访入口是正式用户文案，可回到对应详情或公开主页；已有公开资料刷新时应保留公开资料、公开帖子、公开评论、我的轻回应与复访区块，刷新失败只显示“刷新资料失败”局部提示
+16. 在我的 profile 中确认“最近阅读”展示最近多条 forum 阅读上下文；重复打开同一帖子或评论应前置并去重；点击任意条目应回到对应帖子详情，返回后仍留在 profile
+17. 在 profile 中确认“最近公开帖子”可继续加载更多；点击任意帖子应回到对应帖子详情
+18. 在 profile 中确认“最近公开评论”可继续加载更多；点击任意评论应回到对应帖子，并自动定位到目标根评论或子评论位置，而不是停在帖子顶部
+19. 在我的 profile 中确认“我的轻回应”只在已登录我的主页展示，公开主页不展示；若有多页轻回应，可继续加载更多；点击任意条目应回到对应帖子详情
+20. 已登录态执行退出，确认浏览器登出回调后回到匿名态，后续重新进入 profile 或 detail 登录入口仍可用
+21. 接收账号登录 Flutter 后，确认壳层出现 `Forum notification` 入口；点击后应打开对应帖子，并在通知包含 `commentId` 时落到目标评论上下文
+22. 关闭并重启应用，确认会话恢复或匿名回落符合当前 token 状态，复访入口仍符合最近状态
 
 当前结果：
 
@@ -204,6 +206,7 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 - 第四批 docs 正文内链跳转与 docs 关键词搜索复访已完成代码、自动化验证与 Android 真机复核；真机复核发现长 slug 窄屏溢出与搜索详情返回退出问题后，已补代码修复与回归测试并复测通过；调试态根层返回后重新打开卡启动页的问题已收口为 Android 根层 Back 退后台；当前已通过 `flutter test`、`flutter analyze`、`git diff --check` 与定向 docs / smoke 回归
 - 第七批首个小闭环“docs 搜索体验增强”已完成代码、自动化验证与 Android 真机复核：搜索词会 trim 归一化，搜索 / 清除 / 翻页会回到结果顶部，从搜索结果打开内联详情后返回会恢复搜索列表上下文；真机复核发现的 Android Back 退桌面问题已修复并补 `docs_page_test.dart` 与 `smoke_test.dart` 覆盖；批次记录见 [Flutter Android MVP 第七批首个小闭环变更回归记录](../../Docs/guide/flutter-android-mvp-regression-record-2026-05-01.md)
 - 第四批 discover 论坛精选直达已完成代码与定向测试补齐：发现页论坛精选帖子可直接打开原生 forum detail，并以 `discover` 来源返回发现页；discover 的“进入论坛 / 进入文档”快捷入口也已补齐 Android Back 返回 discover 的轻量来源上下文；仍不开放发帖、评论提交、点赞、投票或编辑治理
+- 第十五批至第十七批刷新体验一致性已完成代码与自动化验证：`discover / forum / docs / profile` 在已有内容刷新时保留上次可用内容，刷新失败只显示局部提示，刷新成功后清理旧提示；模拟器验证清单见 [Flutter Android MVP 刷新体验开发阶段验证清单](../../Docs/guide/flutter-android-mvp-refresh-experience-checklist-2026-05-02.md)
 - 该入口只验证站内最新 forum 通知读取，不代表完整通知中心或系统通知栏推送已纳入 Android MVP
 
 暂不作为当前阻断项：

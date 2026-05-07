@@ -11,6 +11,32 @@ GET {{Gateway_HostAddress}}/api/v1/User/GetMyProfile
 Accept: application/json
 Authorization: Bearer {{Access_Token}}
 
+### 更新个人资料
+POST {{Gateway_HostAddress}}/api/v1/User/UpdateMyProfile
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "userName": "Radish User",
+  "userEmail": "user@example.com",
+  "realName": "Radish",
+  "age": 18,
+  "address": "Asia/Shanghai"
+}
+
+### 修改登录密码
+POST {{Gateway_HostAddress}}/api/v1/User/ChangeMyLoginPassword
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "currentPassword": "OldPassword1",
+  "newPassword": "NewPassword1",
+  "confirmPassword": "NewPassword1"
+}
+
 ### 访问帖子详情（预期写入 Post 浏览记录）
 GET {{Gateway_HostAddress}}/api/v1/Post/GetById/{{BrowseHistory_PostId}}
 Accept: application/json

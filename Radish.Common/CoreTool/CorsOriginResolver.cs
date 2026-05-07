@@ -4,21 +4,23 @@ namespace Radish.Common.CoreTool;
 
 /// <summary>
 /// 统一解析各宿主的 CORS 允许来源。
-/// 部署态优先使用 RADISH_PUBLIC_URL 收口到单一公开入口；
+/// 部署态优先使用 RADISH_PUBLIC_URL 收口到公开入口；
 /// 未提供时再回退到各宿主自己的开发默认配置。
+/// Cors:AdditionalAllowedOrigins 用于补充桌面壳等非公开入口来源。
 /// </summary>
 public static class CorsOriginResolver
 {
     public static string[] ResolveAllowedOrigins(IConfiguration configuration)
     {
         var publicUrlOrigin = NormalizeOrigin(configuration["RADISH_PUBLIC_URL"]);
-        if (!string.IsNullOrWhiteSpace(publicUrlOrigin))
-        {
-            return [publicUrlOrigin];
-        }
-
         var configuredOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-        return configuredOrigins
+        var additionalOrigins = configuration.GetSection("Cors:AdditionalAllowedOrigins").Get<string[]>() ?? [];
+        var primaryOrigins = !string.IsNullOrWhiteSpace(publicUrlOrigin)
+            ? [publicUrlOrigin]
+            : configuredOrigins;
+
+        return primaryOrigins
+            .Concat(additionalOrigins)
             .Select(NormalizeOrigin)
             .Where(origin => !string.IsNullOrWhiteSpace(origin))
             .Distinct(StringComparer.OrdinalIgnoreCase)

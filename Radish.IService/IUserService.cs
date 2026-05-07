@@ -1,4 +1,4 @@
-﻿using Radish.IService.Base;
+using Radish.IService.Base;
 using Radish.Model;
 using Radish.Model.ViewModels;
 
@@ -41,6 +41,15 @@ public interface IUserService : IBaseService<User, UserVo>
     /// <param name="roleNames">角色名列表</param>
     /// <returns>权限标识列表</returns>
     Task<List<string>> GetPermissionKeysByRolesAsync(IReadOnlyCollection<string> roleNames);
+
+    /// <summary>
+    /// 修改当前用户登录密码。
+    /// </summary>
+    /// <param name="userId">当前用户 ID</param>
+    /// <param name="currentPassword">当前密码</param>
+    /// <param name="newPassword">新密码</param>
+    /// <param name="confirmPassword">确认密码</param>
+    Task ChangeMyLoginPasswordAsync(long userId, string currentPassword, string newPassword, string confirmPassword);
 
     /// <summary>测试使用同事务</summary>
     /// <remarks>仅为示例，无任何作用</remarks>

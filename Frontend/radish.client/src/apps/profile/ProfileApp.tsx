@@ -17,7 +17,11 @@ import {
   getBrowserTimeZoneId,
   resolveTimeZoneId,
 } from '@/utils/dateTime';
-import { buildForumAppParams, parseForumRoutePath } from '@/utils/forumNavigation';
+import { buildForumAppParams } from '@/utils/forumNavigation';
+import {
+  openWorkspaceNavigationTarget,
+  resolveBrowseHistoryWorkspaceTarget,
+} from '@/utils/workspaceNavigation';
 import { reuseInFlightRequest } from './requestDedup';
 import styles from './ProfileApp.module.css';
 
@@ -95,16 +99,6 @@ function buildAvatarText(name: string): string {
   const source = name.trim();
   if (!source) return '?';
   return source.charAt(0).toUpperCase();
-}
-
-function normalizePositiveId(value: LongId | null | undefined): number | null {
-  const parsed = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : Number.NaN;
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-}
-
-function getRouteTailSegment(routePath: string): string {
-  const normalizedPath = routePath.split('?')[0]?.split('#')[0] || '';
-  return normalizedPath.split('/').pop() || '';
 }
 
 function buildAvatarStyle(seed: string) {
@@ -290,60 +284,7 @@ export const ProfileApp = () => {
   };
 
   const handleBrowseHistoryClick = (item: UserBrowseHistoryItem) => {
-    const routePath = item.voRoutePath?.trim() || '';
-    const targetId = normalizePositiveId(item.voTargetId);
-
-    const forumNavigation = parseForumRoutePath(routePath);
-    if (forumNavigation) {
-      openApp('forum', buildForumAppParams(forumNavigation));
-      return;
-    }
-
-    if (routePath.startsWith('/shop/product/')) {
-      const productId = normalizePositiveId(getRouteTailSegment(routePath));
-      if (productId) {
-        openApp('shop', { productId });
-        return;
-      }
-    }
-
-    if (routePath.startsWith('/wiki/doc/')) {
-      const routeTarget = decodeURIComponent(getRouteTailSegment(routePath));
-      const documentId = normalizePositiveId(routeTarget);
-      if (documentId) {
-        openApp('document', { documentId });
-        return;
-      }
-
-      if (routeTarget) {
-        openApp('document', { slug: routeTarget });
-        return;
-      }
-    }
-
-    if (item.voTargetType === 'Post') {
-      const forumParams = buildForumAppParams({ postId: item.voTargetId });
-      if ('postId' in forumParams) {
-        openApp('forum', forumParams);
-        return;
-      }
-    }
-
-    if (item.voTargetType === 'Product' && targetId) {
-      openApp('shop', { productId: targetId });
-      return;
-    }
-
-    if (item.voTargetType === 'Wiki') {
-      if (item.voTargetSlug?.trim()) {
-        openApp('document', { slug: item.voTargetSlug.trim() });
-        return;
-      }
-
-      if (targetId) {
-        openApp('document', { documentId: targetId });
-      }
-    }
+    openWorkspaceNavigationTarget(openApp, resolveBrowseHistoryWorkspaceTarget(item));
   };
 
   const handleUserClick = (targetUserId: LongId, targetUserName: string, avatarUrl?: string | null, displayName?: string | null) => {

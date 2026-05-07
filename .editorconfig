@@ -1,3 +1,4 @@
+# Repository text files default to UTF-8, LF, and a final newline.
 root = true
 
 [*]

@@ -185,11 +185,19 @@ export const useSecurityStatus = () => {
       // 转换为前端格式
       if (passwordStatus) {
         setStatus({
-          hasPaymentPassword: true,
-          lastPasswordChangeTime: passwordStatus.voLastPasswordChangeTime,
+          hasPaymentPassword: passwordStatus.voHasPaymentPassword,
+          lastPasswordChangeTime: passwordStatus.voLastModifiedTime,
+          lastPasswordChangeTimeDisplay: passwordStatus.voLastModifiedTimeDisplay,
+          lastPasswordUsedTime: passwordStatus.voLastUsedTime,
+          lastPasswordUsedTimeDisplay: passwordStatus.voLastUsedTimeDisplay,
           failedAttempts: passwordStatus.voFailedAttempts,
           isLocked: passwordStatus.voIsLocked,
-          lockedUntil: passwordStatus.voLockedUntil
+          lockedUntil: passwordStatus.voLockedUntil,
+          lockedRemainingMinutes: passwordStatus.voLockedRemainingMinutes,
+          strengthLevel: passwordStatus.voStrengthLevel,
+          strengthLevelDisplay: passwordStatus.voStrengthLevelDisplay,
+          securityStatus: passwordStatus.voSecurityStatus,
+          securitySuggestions: passwordStatus.voSecuritySuggestions
         });
       } else {
         // 未设置支付密码

@@ -650,12 +650,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             };
 
             // 修复文件锁问题：先读取源文件到内存，关闭文件流后再处理
-            byte[] fileBytes;
-            await using (var sourceStream = File.OpenRead(fullPath))
-            {
-                fileBytes = new byte[sourceStream.Length];
-                await sourceStream.ReadAsync(fileBytes, 0, fileBytes.Length);
-            }
+            var fileBytes = await File.ReadAllBytesAsync(fullPath);
 
             // 使用内存流处理图片
             await using (var memoryStream = new MemoryStream(fileBytes))
@@ -727,12 +722,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             var tempPath = Path.Combine(_tempPath, tempFileName);
 
             // 修复文件锁问题：先读取源文件到内存，关闭文件流后再处理
-            byte[] fileBytes;
-            await using (var sourceStream = File.OpenRead(fullPath))
-            {
-                fileBytes = new byte[sourceStream.Length];
-                await sourceStream.ReadAsync(fileBytes, 0, fileBytes.Length);
-            }
+            var fileBytes = await File.ReadAllBytesAsync(fullPath);
 
             // 使用内存流处理图片
             await using (var memoryStream = new MemoryStream(fileBytes))

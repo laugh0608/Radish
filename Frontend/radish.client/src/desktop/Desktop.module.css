@@ -6,41 +6,51 @@
   bottom: 0;
   padding: 2rem;
   padding-top: 80px;
+  overflow: hidden;
+}
+
+.iconGrid {
+  height: 100%;
+  max-width: calc(100% - 380px);
   display: flex;
   flex-direction: column;
   flex-wrap: wrap;
   align-content: flex-start;
   justify-content: flex-start;
   gap: 0.5rem 0.8rem;
-  overflow: hidden;
 }
 
-.desktop > * {
+.iconGrid > * {
   width: 80px;
   height: 96px;
   flex: 0 0 96px;
 }
 
 @media (max-width: 900px) {
-  .desktop {
+  .iconGrid {
+    max-width: 100%;
     gap: 0.85rem 0.95rem;
   }
 }
 
-.desktop::-webkit-scrollbar {
+.desktop::-webkit-scrollbar,
+.iconGrid::-webkit-scrollbar {
   width: 8px;
 }
 
-.desktop::-webkit-scrollbar-track {
+.desktop::-webkit-scrollbar-track,
+.iconGrid::-webkit-scrollbar-track {
   background: var(--theme-scrollbar-track);
   border-radius: 4px;
 }
 
-.desktop::-webkit-scrollbar-thumb {
+.desktop::-webkit-scrollbar-thumb,
+.iconGrid::-webkit-scrollbar-thumb {
   background: var(--theme-scrollbar-thumb);
   border-radius: 4px;
 }
 
-.desktop::-webkit-scrollbar-thumb:hover {
+.desktop::-webkit-scrollbar-thumb:hover,
+.iconGrid::-webkit-scrollbar-thumb:hover {
   background: var(--theme-scrollbar-thumb-hover);
 }

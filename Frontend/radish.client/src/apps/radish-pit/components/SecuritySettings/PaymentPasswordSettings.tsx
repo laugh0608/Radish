@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { log } from '@/utils/logger';
+import { paymentPasswordApi } from '@/api/paymentPassword';
+import { toast } from '@radish/ui/toast';
 import type { SecurityStatus } from '../../types';
 import styles from './PaymentPasswordSettings.module.css';
 
@@ -122,26 +124,20 @@ export const PaymentPasswordSettings = ({ status, onUpdate }: PaymentPasswordSet
     try {
       setLoading(true);
 
-      // TODO: 调用相应的API
       if (action === 'set') {
-        // 调用设置支付密码API
         log.debug('PaymentPasswordSettings', '设置支付密码');
-        // await paymentPasswordApi.setPassword({
-        //   newPassword: formData.newPassword,
-        //   confirmPassword: formData.confirmPassword
-        // });
+        await paymentPasswordApi.setPaymentPassword({
+          newPassword: formData.newPassword,
+          confirmPassword: formData.confirmPassword
+        });
       } else if (action === 'change') {
-        // 调用修改支付密码API
         log.debug('PaymentPasswordSettings', '修改支付密码');
-        // await paymentPasswordApi.changePassword({
-        //   currentPassword: formData.currentPassword!,
-        //   newPassword: formData.newPassword,
-        //   confirmPassword: formData.confirmPassword
-        // });
+        await paymentPasswordApi.changePaymentPassword({
+          currentPassword: formData.currentPassword!,
+          newPassword: formData.newPassword,
+          confirmPassword: formData.confirmPassword
+        });
       }
-
-      // 模拟API调用
-      await new Promise(resolve => setTimeout(resolve, 1000));
 
       // 重置表单
       setAction('none');
@@ -151,12 +147,10 @@ export const PaymentPasswordSettings = ({ status, onUpdate }: PaymentPasswordSet
       // 通知父组件更新状态
       onUpdate();
 
-      // TODO: 显示成功提示
-      alert(action === 'set' ? '支付密码设置成功' : '支付密码修改成功');
+      toast.success(action === 'set' ? '支付密码设置成功' : '支付密码修改成功');
     } catch (error) {
       log.error('支付密码操作失败:', error);
-      // TODO: 显示错误提示
-      alert('操作失败，请稍后重试');
+      toast.error(error instanceof Error ? error.message : '操作失败，请稍后重试');
     } finally {
       setLoading(false);
     }
@@ -205,15 +199,15 @@ export const PaymentPasswordSettings = ({ status, onUpdate }: PaymentPasswordSet
                 <div className={styles.infoItem}>
                   <div className={styles.infoLabel}>密码强度</div>
                   <div className={styles.infoValue}>
-                    <span className={`${styles.strengthBadge} ${styles[getPasswordStrengthColor(3)]}`}>
-                      中等
+                    <span className={`${styles.strengthBadge} ${styles[getPasswordStrengthColor(status.strengthLevel ?? 0)]}`}>
+                      {status.strengthLevelDisplay || '未知'}
                     </span>
                   </div>
                 </div>
                 <div className={styles.infoItem}>
                   <div className={styles.infoLabel}>最后修改</div>
                   <div className={styles.infoValue}>
-                    {status.lastPasswordChangeTime || '未知'}
+                    {status.lastPasswordChangeTimeDisplay || '未知'}
                   </div>
                 </div>
                 <div className={styles.infoItem}>

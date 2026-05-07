@@ -28,15 +28,60 @@ class HttpDiscoverRepository implements DiscoverRepository {
   Future<DiscoverSnapshot> getSnapshot({
     required int pageSize,
   }) async {
-    final forumPostsFuture = _getForumPosts(pageSize);
-    final documentsFuture = _getDocuments(pageSize);
-    final productsFuture = _getProducts(pageSize);
+    final forumPostsFuture = _loadSection(
+      section: DiscoverSection.forum,
+      load: () => _getForumPosts(pageSize),
+    );
+    final documentsFuture = _loadSection(
+      section: DiscoverSection.docs,
+      load: () => _getDocuments(pageSize),
+    );
+    final productsFuture = _loadSection(
+      section: DiscoverSection.shop,
+      load: () => _getProducts(pageSize),
+    );
+
+    final forumPostsResult = await forumPostsFuture;
+    final documentsResult = await documentsFuture;
+    final productsResult = await productsFuture;
 
     return DiscoverSnapshot(
-      forumPosts: await forumPostsFuture,
-      documents: await documentsFuture,
-      products: await productsFuture,
+      forumPosts: forumPostsResult.items,
+      documents: documentsResult.items,
+      products: productsResult.items,
+      sectionIssues: [
+        if (forumPostsResult.issue != null) forumPostsResult.issue!,
+        if (documentsResult.issue != null) documentsResult.issue!,
+        if (productsResult.issue != null) productsResult.issue!,
+      ],
     );
+  }
+
+  Future<_DiscoverSectionResult<T>> _loadSection<T>({
+    required DiscoverSection section,
+    required Future<List<T>> Function() load,
+  }) async {
+    try {
+      return _DiscoverSectionResult<T>(
+        items: await load(),
+      );
+    } on RadishApiClientException catch (error) {
+      return _DiscoverSectionResult<T>(
+        items: const [],
+        issue: DiscoverSectionIssue(
+          section: section,
+          message: error.message,
+        ),
+      );
+    } on FormatException catch (error) {
+      return _DiscoverSectionResult<T>(
+        items: const [],
+        issue: DiscoverSectionIssue(
+          section: section,
+          message: '返回格式异常：${error.message}',
+        ),
+      );
+    }
   }
 
   Future<List<ForumPostSummary>> _getForumPosts(int pageSize) async {
@@ -81,4 +126,14 @@ class HttpDiscoverRepository implements DiscoverRepository {
     );
     return page.products;
   }
+}
+
+class _DiscoverSectionResult<T> {
+  const _DiscoverSectionResult({
+    required this.items,
+    this.issue,
+  });
+
+  final List<T> items;
+  final DiscoverSectionIssue? issue;
 }

@@ -8,14 +8,15 @@ Radish 是一个自研分层架构的现代化内容社区：后端基于 ASP.NE
 
 ## 当前状态
 
-- **当前主线**：`第二开发阶段：社区深化与多端化`
-- **当前阶段**：`Phase 2-1 社区深化第一批`
-- **最新结论（2026-04-07）**：
-  - `v26.3.2-release` 已于 `2026-04-06` 完成首版真实发布，第一开发阶段正式结束
-  - 发布治理、验证留痕、部署回滚与宿主运行基线继续保留，但已降为并行维护线，不再占用产品主线
-  - 当前规划已正式切换到第二开发阶段，第一条功能主线固定为“论坛轻回应墙 Phase 1”
-  - WebOS 会继续保留，但角色正式收束为“桌面工作台”；公开内容与移动端不再强制先进入窗口系统
-  - 移动 Web 形态与 Flutter 客户端是第二阶段两条独立建设线，不再把移动端理解为桌面窗口系统的简单压缩版
+- **当前阶段**：`第二开发阶段：社区深化与多端化`
+- **当前主线**：`多端路线收口后的产品功能开发推进`
+- **复核日期**：`2026-05-06`
+- **当前结论**：
+  - `Phase 2-2 移动 Web 形态` 已完成公开内容壳层首批收口，转入稳定维护
+  - `Phase 2-3 Android MVP` 已完成第一轮 RC 验收并给出 Go 结论
+  - Tauri 桌面安装包个人开发阶段验证通过，当前定位为 `Tauri 壳 + WebOS 桌面工作台`
+  - WebOS / PC 工作台、后端与 Console 治理已回到真实产品功能补全主线
+  - 当前规划、优先级与范围以 `Docs/planning/current.md` 为准
 - **当前验证基线**：
   - 快速基线：`npm run validate:baseline:quick`
   - 完整基线：`npm run validate:baseline`
@@ -113,11 +114,28 @@ npm run validate:baseline
 npm run validate:baseline:host
 ```
 
+### 仓库文本规范
+
+- 仓库自有文本文件默认使用 `UTF-8` 无 `BOM`
+- 默认使用 `LF`；`*.sln`、`*.slnx`、`*.ps1`、`*.psm1`、`*.psd1`、`*.bat`、`*.cmd` 使用 `CRLF`
+- 保持文件末尾换行；Markdown 以外的文本避免尾随空格
+- 规则来源：仓库根 `.editorconfig`、`.gitattributes` 与 `Scripts/check-repo-hygiene.mjs`
+- 日常改动后优先运行 `npm run check:repo-hygiene:changed`；做历史文本治理时再运行 `npm run check:repo-hygiene`
+
+### 配置文件约束
+
+- 共享默认配置：根目录 `appsettings.Shared.json`
+- 宿主默认配置：各宿主自己的 `appsettings.json`
+- 本地覆盖配置：各宿主自己的 `appsettings.Local.json`（仅本地使用，禁止提交）
+- 禁止新增或提交这三种之外的 `appsettings.*.json` 配置文件；部署差异统一通过 `appsettings.Local.json` 或环境变量覆盖
+
 ## 项目结构
 
 ```
 Radish/
 ├── Docs/                            # 📚 固定项目文档（开发规范、架构设计、部署指南等）
+├── Clients/radish.flutter/          # 📱 Flutter 移动原生客户端
+├── Clients/radish-tauri/            # 🖥️ Tauri 桌面安装包壳层
 ├── Frontend/radish.client/               # ⚛️ React 前端应用（WebOS 桌面环境）
 ├── Frontend/radish.console/              # 🎛️ 管理控制台前端
 ├── Frontend/radish.ui/                   # 🎨 UI 组件库（共享组件、Hooks、工具函数）
@@ -200,7 +218,7 @@ Radish/
 
 默认使用 SQLite（`Radish.db` 和 `Radish.Log.db`），首次运行自动创建。
 
-切换到 PostgreSQL：编辑 `Radish.Api/appsettings.Development.json`：
+切换到 PostgreSQL：在本地创建或编辑 `Radish.Api/appsettings.Local.json`：
 
 ```json
 {

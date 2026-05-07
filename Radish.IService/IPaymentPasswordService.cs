@@ -1,4 +1,5 @@
 using Radish.Model.ViewModels;
+using Radish.Model;
 
 namespace Radish.IService;
 
@@ -80,4 +81,13 @@ public interface IPaymentPasswordService
     /// <param name="userId">用户ID</param>
     /// <returns>安全建议列表</returns>
     Task<List<string>> GenerateSecuritySuggestionsAsync(long userId);
+
+    /// <summary>
+    /// 获取当前用户支付密码安全日志
+    /// </summary>
+    /// <param name="userId">用户ID</param>
+    /// <param name="pageIndex">页码</param>
+    /// <param name="pageSize">每页数量</param>
+    /// <returns>支付密码安全日志分页结果</returns>
+    Task<PageModel<PaymentPasswordSecurityLogVo>> GetSecurityLogsAsync(long userId, int pageIndex = 1, int pageSize = 20);
 }

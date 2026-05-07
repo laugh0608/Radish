@@ -461,7 +461,7 @@ dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- apply
 
 如果您只需要创建表结构而不填充数据，可以单独使用 `init` 命令：
 
-1. 确认 `Radish.Api/appsettings.Local.json`（或对应环境的 `appsettings.{Environment}.json`）已配置好数据库连接：
+1. 确认 `Radish.Api/appsettings.Local.json` 或部署环境变量已配置好数据库连接：
    - SQLite 场景：只需指定数据库文件名（如 `Radish.db`）。
    - PostgreSQL 场景：配置好 `Host/Port/Database/Username/Password`。
 2. 在仓库根目录执行：

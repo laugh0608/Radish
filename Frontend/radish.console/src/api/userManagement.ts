@@ -2,7 +2,13 @@ import { apiGet } from '@radish/http';
 import type { ParsedApiResponse } from '@radish/http';
 import type { UserListItem } from '../types/user';
 
-function mapUserListItem(raw: any): UserListItem {
+type ApiRecord = Record<string, unknown>;
+
+function isApiRecord(value: unknown): value is ApiRecord {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function mapUserListItem(raw: ApiRecord): UserListItem {
   return {
     uuid: raw.uuid ?? raw.Uuid ?? 0,
     voLoginName: raw.voLoginName ?? raw.VoLoginName ?? '',
@@ -87,13 +93,19 @@ export const userManagementApi = {
     const queryString = searchParams.toString();
     const url = `/api/v1/User/GetUserList${queryString ? `?${queryString}` : ''}`;
 
-    const response = await apiGet<any>(url, { withAuth: true });
+    const response = await apiGet<ApiRecord>(url, { withAuth: true });
 
     // 处理后端返回的 VoPagedResult 结构
-    if (response.ok && response.data) {
+    if (response.ok && isApiRecord(response.data)) {
       const backendData = response.data;
+      const rawItems = Array.isArray(backendData.voItems)
+        ? backendData.voItems
+        : Array.isArray(backendData.VoItems)
+          ? backendData.VoItems
+          : [];
+
       const mappedData: UserListResponse = {
-        items: (backendData.voItems || backendData.VoItems || []).map((item: any) => mapUserListItem(item)),
+        items: rawItems.map((item) => mapUserListItem(isApiRecord(item) ? item : {})),
         total: backendData.voTotal || backendData.VoTotal || 0,
         pageIndex: backendData.voPageIndex || backendData.VoPageIndex || 1,
         pageSize: backendData.voPageSize || backendData.VoPageSize || 20,
@@ -111,12 +123,20 @@ export const userManagementApi = {
   /**
    * 获取用户详情
    */
-  async getUserById(id: number): Promise<ParsedApiResponse<UserListItem>> {
-    const response = await apiGet<any>(`/api/v1/User/GetUserById/${id}`, { withAuth: true });
+  async getUserById(id: string | number): Promise<ParsedApiResponse<UserListItem>> {
+    const response = await apiGet<ApiRecord | ApiRecord[]>(
+      `/api/v1/User/GetUserById/${encodeURIComponent(String(id))}`,
+      { withAuth: true }
+    );
     if (response.ok && response.data) {
+      const rawUser = Array.isArray(response.data) ? response.data[0] : response.data;
+      if (!isApiRecord(rawUser)) {
+        return response as ParsedApiResponse<UserListItem>;
+      }
+
       return {
         ...response,
-        data: mapUserListItem(response.data),
+        data: mapUserListItem(rawUser),
       };
     }
 
