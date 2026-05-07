@@ -2,7 +2,7 @@
 
 > 状态：已确认方向，暂不进入当前主线
 >
-> 最后更新：2026-04-11（Asia/Shanghai）
+> 最后更新：2026-05-07（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -224,6 +224,8 @@ Radish 未来联邦的最小公共节点定义为：
 - 新增核心聚合时优先预留 `PublicId`
 - 公开路由、分享链接、通知 `extData`、窗口参数、深链查询参数中的对象 ID，当前一律按字符串解析、传递和回写
 - forum 当前主线里如果服务端通过内部 `JsonSerializer` 直接拼导航 `extData`，也必须显式把对象 ID 写成字符串，不能误以为 API / SignalR 的全局 `long -> string` converter 会自动覆盖这类内部 JSON
+- 当前执行策略不是“立刻把外部契约全量切到 `PublicId`”，而是先把仍保留 `LongId` 的外部边界收口为字符串安全过渡契约
+- `2026-05-07` 已确认的首批治理面包括：通知 `extData`、window `appParams` / deep link、公开 DTO / 路由参数 / 回跳参数、`Profile / Shop / Wiki / Forum / Public Forum` 与 Console 用户 ID 入口；这些边界禁止提前 `Number(...)`
 - 上述冻结要求不是“远期优化建议”，而是当前主线稳定性约束；forum 公开阅读链路已经因大整数精度丢失发生过真实回归
 
 ### Phase B：核心聚合双标识

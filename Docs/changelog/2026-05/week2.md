@@ -58,3 +58,57 @@
 - 构建输出仍有历史 nullable、obsolete、XML 注释和 ASP.NET analyzer 警告，后续宜按模块继续治理，避免用全局抑制掩盖真实问题。
 - P2-C1 与 P2-C2 已完成首轮；下一顺位建议从 P2-C3 经验 / 等级治理、P2-C4 商城权益效果收口、P2-C5 移动端高价值已登录链路中选择。
 - Tauri 正式签名、自动更新、生产 Auth、SmartScreen、托盘 / 菜单和公开分发方式继续后置到真实对外分发前评估。
+
+## 2026-05-07
+
+### 主线判断
+
+- 当日主线仍是“产品功能补全与多端任务重排”，但执行面新增一条横向治理线：`ID Phase A`。
+- 本轮 `ID Phase A` 明确不做数据库主键迁移，也不做全量 `PublicId` 切换；先收口外部仍保留 `LongId` 的边界，避免继续在壳层、导航层、DTO、路由参数和回跳参数里提前 `Number(...)`。
+- 经验 / 等级治理继续与 Console 治理并行推进，优先补管理员可真实操作的冻结、查询和护栏能力。
+
+### 已完成提交
+
+- `8c104ea7 chore(repo): 收口协作入口与仓库治理`
+  - 对齐仓库协作入口与治理规则，减少入口文件口径漂移。
+- `44766a5e chore(config): 收口 appsettings 配置约束`
+  - 明确配置文件来源与允许提交的变体范围。
+- `8f9642bc fix(repo): 修复 PR 质量门禁失败`
+  - 修补仓库质量门禁与提交流水中的既有失败点。
+- `73974c7e feat(experience): add admin freeze controls and id guardrails`
+  - 补齐经验治理中的管理员冻结 / 解冻入口与 ID 护栏。
+- `6be84434 fix(console): harden user api response parsing`
+  - 加强 Console 用户接口响应解析，降低异常数据形态导致的前端误判。
+- `882553f0 refactor(client): preserve string-safe window ids`
+  - 先把桌面窗口 ID 与相关运行参数从 number 假设中剥离，避免大整数在壳层丢精度。
+- `30f11283 refactor(id): keep external ids string-safe at app boundaries`
+  - 收口通知 `extData`、公开 DTO / 路由参数 / 回跳参数，以及 `Profile / Shop / Wiki` 等应用边界的外部 ID。
+- `2bd67411 refactor(forum): keep forum ids string-safe across client views`
+  - 继续把 `Forum / Public Forum` 的 DTO、回调、评论锚点、Reaction 与公开阅读链路切到 `LongId` / 字符串安全口径。
+
+### 验证记录
+
+- `dotnet build D:\Code\Radish\Radish.Api\Radish.Api.csproj -c Debug -v minimal`
+  - 通过。
+  - 该结果承接当日批次中的后端 / Console 治理提交，没有发现本轮新增编译错误。
+- `npx tsc -b`
+  - `Frontend/radish.console` 通过。
+  - `Frontend/radish.client` 通过。
+- `npm run build --workspace=radish.client`
+  - 在提权环境通过。
+  - 说明沙盒中的 `vite [plugin externalize-deps] spawn EPERM` 仍属环境限制，不是本轮代码问题。
+- `npm run build --workspace=radish.console`
+  - 在提权环境通过。
+  - 仍保留既有 chunk size warning，但不是新增失败。
+
+### 文档与对齐结论
+
+- 当日提交已触达仓库治理、配置约束、经验治理与 `ID Phase A`，需要同步设计 / 规划 / 日志文档，而不应只留代码提交。
+- 规划入口已补一条当前关键事实：`ID Phase A` 当前只做外部 `LongId` / 字符串安全收口，不启动数据库主键迁移或全量 `PublicId` 切换。
+- 长期 ID 设计文档已补当前执行策略，明确通知 `extData`、window `appParams` / deep link、公开 DTO / 路由参数 / 回跳参数，以及 `Profile / Shop / Wiki / Forum / Public Forum` 与 Console 用户 ID 入口属于当前首批治理面。
+
+### 剩余风险与下一顺位
+
+- 当前已把外围暴露面大幅收口，但登录态 / 当前用户 ID 仍保留旧 `number` 口径，后续若继续推进 `ID Phase A`，应优先治理共享 `UserInfo / userStore` 与其直接消费者。
+- Console 构建的 chunk size warning 仍属既有问题，和本轮 ID 收口无直接关系，后续单独排序处理。
+- `PublicId Rollout`、数据库主键迁移与 Snowflake 退出策略继续保留在后置池，不应借当前 Phase A 护栏批次被提前拉成主线。
