@@ -51,6 +51,7 @@ public static class ConsolePermissions
     public const string CoinsAdjust = "console.coins.adjust";
     public const string ExperienceView = "console.experience.view";
     public const string ExperienceAdjust = "console.experience.adjust";
+    public const string ExperienceFreeze = "console.experience.freeze";
     public const string ExperienceRecalculate = "console.experience.recalculate";
     public const string SystemConfigView = "console.system-config.view";
     public const string SystemConfigCreate = "console.system-config.create";
@@ -121,6 +122,8 @@ public static class ConsolePermissions
             ["/api/v1/Experience/GetUserExperience/.+"] = new[] { ExperienceView },
             ["/api/v1/Experience/GetLevelConfigs"] = new[] { ExperienceView },
             ["/api/v1/Experience/AdminAdjustExperience"] = new[] { ExperienceAdjust },
+            ["/api/v1/Experience/AdminFreezeExperience"] = new[] { ExperienceFreeze },
+            ["/api/v1/Experience/AdminUnfreezeExperience"] = new[] { ExperienceFreeze },
             ["/api/v1/Experience/RecalculateLevelConfigs"] = new[] { ExperienceRecalculate },
             ["/api/v1/SystemConfig/GetSystemConfigs"] = new[] { SystemConfigView },
             ["/api/v1/SystemConfig/GetConfigCategories"] = new[] { SystemConfigView },
@@ -184,6 +187,7 @@ public static class ConsolePermissions
         CoinsAdjust,
         ExperienceView,
         ExperienceAdjust,
+        ExperienceFreeze,
         ExperienceRecalculate,
         SystemConfigView,
         SystemConfigCreate,

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   AntInput as Input,
   Button,
+  DatePicker,
   Form,
   InputNumber,
   Table,
@@ -12,6 +13,8 @@ import {
 import { ReloadOutlined } from '@radish/ui';
 import {
   adminAdjustExperience,
+  adminFreezeExperience,
+  adminUnfreezeExperience,
   getLevelConfigs,
   getUserExperience,
   recalculateLevelConfigs,
@@ -22,7 +25,14 @@ import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
+import dayjs, { type Dayjs } from 'dayjs';
 import '../adminFeature.css';
+
+interface FreezeFormValues {
+  userId: number;
+  reason: string;
+  frozenUntil?: Dayjs;
+}
 
 export const ExperienceAdminPage = () => {
   useDocumentTitle('经验等级');
@@ -33,10 +43,14 @@ export const ExperienceAdminPage = () => {
   const [loadingExperience, setLoadingExperience] = useState(false);
   const [loadingLevels, setLoadingLevels] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [freezing, setFreezing] = useState(false);
+  const [unfreezing, setUnfreezing] = useState(false);
   const [recalculating, setRecalculating] = useState(false);
   const [form] = Form.useForm();
+  const [freezeForm] = Form.useForm<FreezeFormValues>();
 
   const canAdjust = usePermission(CONSOLE_PERMISSIONS.experienceAdjust);
+  const canFreeze = usePermission(CONSOLE_PERMISSIONS.experienceFreeze);
   const canRecalculate = usePermission(CONSOLE_PERMISSIONS.experienceRecalculate);
 
   const loadLevels = async () => {
@@ -56,18 +70,29 @@ export const ExperienceAdminPage = () => {
     void loadLevels();
   }, []);
 
-  const loadExperience = async () => {
-    const userId = Number(queryUserId);
+  const loadExperience = async (
+    userIdOverride?: number,
+    options?: { showInvalidMessage?: boolean }
+  ) => {
+    const userId = userIdOverride ?? Number(queryUserId);
     if (!Number.isFinite(userId) || userId <= 0) {
-      message.error('请输入有效的用户 ID');
+      if (options?.showInvalidMessage ?? true) {
+        message.error('请输入有效的用户 ID');
+      }
       return;
     }
 
     try {
       setLoadingExperience(true);
       const result = await getUserExperience(userId);
+      setQueryUserId(String(userId));
       setExperience(result);
       form.setFieldValue('userId', userId);
+      freezeForm.setFieldsValue({
+        userId,
+        reason: result.voFrozenReason || '',
+        frozenUntil: result.voFrozenUntil ? dayjs(result.voFrozenUntil) : undefined,
+      });
     } catch (error) {
       log.error('ExperienceAdminPage', '加载用户经验失败:', error);
       message.error('加载用户经验失败');
@@ -87,14 +112,54 @@ export const ExperienceAdminPage = () => {
       });
 
       message.success('经验调整成功');
-      setQueryUserId(String(values.userId));
-      await loadExperience();
+      await loadExperience(values.userId, { showInvalidMessage: false });
       form.setFieldsValue({ deltaExp: 0, reason: '' });
     } catch (error) {
       log.error('ExperienceAdminPage', '调整经验失败:', error);
       message.error('调整经验失败');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleFreeze = async () => {
+    try {
+      const values = await freezeForm.validateFields();
+      setFreezing(true);
+      await adminFreezeExperience({
+        userId: values.userId,
+        reason: values.reason.trim(),
+        frozenUntil: values.frozenUntil ? values.frozenUntil.format('YYYY-MM-DD HH:mm:ss') : undefined,
+      });
+
+      message.success('经验已冻结');
+      await loadExperience(values.userId, { showInvalidMessage: false });
+    } catch (error) {
+      log.error('ExperienceAdminPage', '冻结经验失败:', error);
+      message.error('冻结经验失败');
+    } finally {
+      setFreezing(false);
+    }
+  };
+
+  const handleUnfreeze = async () => {
+    try {
+      const values = await freezeForm.validateFields(['userId']);
+      setUnfreezing(true);
+      await adminUnfreezeExperience(values.userId);
+
+      message.success('经验已解冻');
+      await loadExperience(values.userId, { showInvalidMessage: false });
+      freezeForm.setFieldsValue({
+        userId: values.userId,
+        reason: '',
+        frozenUntil: undefined,
+      });
+    } catch (error) {
+      log.error('ExperienceAdminPage', '解冻经验失败:', error);
+      message.error('解冻经验失败');
+    } finally {
+      setUnfreezing(false);
     }
   };
 
@@ -158,7 +223,10 @@ export const ExperienceAdminPage = () => {
             <p className="admin-feature-subtle">支持按用户查看经验等级、调经验，并回看当前等级配置。</p>
           </div>
           <Button icon={<ReloadOutlined />} onClick={() => {
-            void Promise.all([loadExperience(), loadLevels()]);
+            void Promise.all([
+              loadExperience(undefined, { showInvalidMessage: false }),
+              loadLevels(),
+            ]);
           }}>
             刷新
           </Button>
@@ -179,7 +247,7 @@ export const ExperienceAdminPage = () => {
               style={{ width: 220 }}
             />
             <Button variant="primary" onClick={() => {
-              void loadExperience();
+              void loadExperience(undefined, { showInvalidMessage: true });
             }} disabled={loadingExperience}>
               {loadingExperience ? '查询中...' : '查询'}
             </Button>
@@ -204,6 +272,13 @@ export const ExperienceAdminPage = () => {
             <strong>{experience ? (experience.voExpFrozen ? '经验冻结' : '正常') : '--'}</strong>
           </div>
         </div>
+        {experience?.voExpFrozen && (
+          <div style={{ marginTop: 16, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+            <Tag color="warning">冻结中</Tag>
+            <span>到期时间：{experience.voFrozenUntil || '永久冻结'}</span>
+            <span>原因：{experience.voFrozenReason || '未填写'}</span>
+          </div>
+        )}
       </section>
 
       <section className="admin-feature-card">
@@ -240,6 +315,55 @@ export const ExperienceAdminPage = () => {
               void handleAdjust();
             }}>
               {submitting ? '提交中...' : '提交调整'}
+            </Button>
+          </div>
+        </Form>
+      </section>
+
+      <section className="admin-feature-card">
+        <div className="admin-feature-header">
+          <div>
+            <h3>冻结 / 解冻经验</h3>
+            <p className="admin-feature-subtle">可设置临时冻结或永久冻结；冻结中的用户不会继续累计经验，也不会参与经验排行榜。</p>
+          </div>
+        </div>
+
+        <Form form={freezeForm} layout="vertical" className="admin-feature-form">
+          <Form.Item
+            name="userId"
+            label="用户 ID"
+            rules={[{ required: true, message: '请输入用户 ID' }]}
+          >
+            <InputNumber min={1} style={{ width: '100%' }} />
+          </Form.Item>
+
+          <Form.Item name="frozenUntil" label="冻结到期时间">
+            <DatePicker
+              showTime
+              allowClear
+              style={{ width: '100%' }}
+              placeholder="留空表示永久冻结"
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="reason"
+            label="冻结原因"
+            rules={[{ required: true, message: '请输入冻结原因' }]}
+          >
+            <Input.TextArea rows={4} maxLength={500} showCount placeholder="例如：异常刷经验、待人工复核" />
+          </Form.Item>
+
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <Button variant="primary" disabled={!canFreeze || freezing} onClick={() => {
+              void handleFreeze();
+            }}>
+              {freezing ? '冻结中...' : '提交冻结'}
+            </Button>
+            <Button disabled={!canFreeze || unfreezing || !experience?.voExpFrozen} onClick={() => {
+              void handleUnfreeze();
+            }}>
+              {unfreezing ? '解冻中...' : '解除冻结'}
             </Button>
           </div>
         </Form>

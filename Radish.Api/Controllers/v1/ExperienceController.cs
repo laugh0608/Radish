@@ -216,6 +216,61 @@ public class ExperienceController : ControllerBase
     }
 
     /// <summary>
+    /// 管理员冻结用户经验值
+    /// </summary>
+    /// <param name="request">冻结请求</param>
+    /// <returns>是否成功</returns>
+    [HttpPost]
+    [RequireConsolePermission(ConsolePermissions.ExperienceFreeze)]
+    public async Task<MessageModel<bool>> AdminFreezeExperience([FromBody] AdminFreezeExperienceDto request)
+    {
+        var operatorId = GetCurrentUserId();
+        if (operatorId <= 0)
+        {
+            return MessageModel<bool>.Message(false, "未登录", false);
+        }
+
+        if (request.FrozenUntil.HasValue && request.FrozenUntil.Value <= DateTime.Now)
+        {
+            return MessageModel<bool>.Message(false, "冻结到期时间必须晚于当前时间", false);
+        }
+
+        var result = await _experienceService.FreezeExperienceAsync(
+            request.UserId,
+            request.FrozenUntil,
+            request.Reason.Trim(),
+            operatorId,
+            GetCurrentOperatorName());
+        return result
+            ? MessageModel<bool>.Success("冻结成功", true)
+            : MessageModel<bool>.Message(false, "冻结失败", false);
+    }
+
+    /// <summary>
+    /// 管理员解冻用户经验值
+    /// </summary>
+    /// <param name="request">解冻请求</param>
+    /// <returns>是否成功</returns>
+    [HttpPost]
+    [RequireConsolePermission(ConsolePermissions.ExperienceFreeze)]
+    public async Task<MessageModel<bool>> AdminUnfreezeExperience([FromBody] AdminUnfreezeExperienceDto request)
+    {
+        var operatorId = GetCurrentUserId();
+        if (operatorId <= 0)
+        {
+            return MessageModel<bool>.Message(false, "未登录", false);
+        }
+
+        var result = await _experienceService.UnfreezeExperienceAsync(
+            request.UserId,
+            operatorId,
+            GetCurrentOperatorName());
+        return result
+            ? MessageModel<bool>.Success("解冻成功", true)
+            : MessageModel<bool>.Message(false, "解冻失败", false);
+    }
+
+    /// <summary>
     /// 管理员重新计算并更新所有等级配置
     /// </summary>
     /// <remarks>

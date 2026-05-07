@@ -90,6 +90,7 @@ namespace Radish.Service;
                 }
             }
 
+            userExp = await NormalizeFreezeStateAsync(userExp);
             return await MapToVoAsync(userExp);
         }
         catch (Exception ex)
@@ -114,10 +115,11 @@ namespace Radish.Service;
 
             foreach (var userExp in userExps)
             {
-                var vo = await MapToVoAsync(userExp);
+                var normalizedUserExp = await NormalizeFreezeStateAsync(userExp);
+                var vo = await MapToVoAsync(normalizedUserExp);
                 if (vo != null)
                 {
-                    result[userExp.UserId] = vo;
+                    result[normalizedUserExp.UserId] = vo;
                 }
             }
 
@@ -199,8 +201,10 @@ namespace Radish.Service;
             }
         }
 
+        userExp = await NormalizeFreezeStateAsync(userExp);
+
         // 2. 检查是否冻结
-        if (userExp.ExpFrozen && userExp.FrozenUntil.HasValue && userExp.FrozenUntil > DateTime.Now)
+        if (IsFreezeActive(userExp, DateTime.Now))
         {
             Log.Warning("用户 {UserId} 经验值已冻结，无法获得经验值", userId);
             return false;
@@ -516,10 +520,14 @@ namespace Radish.Service;
             if (pageSize > 100) pageSize = 100;
             if (pageSize < 1) pageSize = 50;
             if (pageIndex < 1) pageIndex = 1;
+            var now = DateTime.Now;
 
             // 查询排行榜（按 TotalExp 降序，CurrentLevel 降序）
             var (pagedData, totalCount) = await _userExpRepository.QueryPageAsync(
-                whereExpression: e => !e.ExpFrozen && e.UserId > 0 && !e.IsDeleted, // 排除冻结用户、无效 userId 和软删除记录
+                whereExpression: e =>
+                    (!e.ExpFrozen || (e.FrozenUntil != null && e.FrozenUntil <= now)) &&
+                    e.UserId > 0 &&
+                    !e.IsDeleted,
                 pageIndex: pageIndex,
                 pageSize: pageSize,
                 orderByExpression: e => e.TotalExp,
@@ -602,14 +610,26 @@ namespace Radish.Service;
             }
 
             var userExp = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId && !e.IsDeleted);
-            if (userExp == null || userExp.ExpFrozen)
+            if (userExp == null)
             {
-                return 0; // 未上榜或被冻结
+                return 0;
             }
+
+            userExp = await NormalizeFreezeStateAsync(userExp);
+            if (IsFreezeActive(userExp, DateTime.Now))
+            {
+                return 0; // 未上榜或仍处于冻结中
+            }
+
+            var now = DateTime.Now;
 
             // 统计比该用户经验值高的用户数量
             var higherCount = await _userExpRepository.QueryCountAsync(
-                e => !e.ExpFrozen && e.UserId > 0 && e.TotalExp > userExp.TotalExp && !e.IsDeleted
+                e =>
+                    (!e.ExpFrozen || (e.FrozenUntil != null && e.FrozenUntil <= now)) &&
+                    e.UserId > 0 &&
+                    e.TotalExp > userExp.TotalExp &&
+                    !e.IsDeleted
             );
 
             return (int)higherCount + 1; // 排名 = 比自己高的数量 + 1
@@ -635,32 +655,84 @@ namespace Radish.Service;
         long operatorId,
         string operatorName)
     {
-        // TODO P1: 实现管理员调整
-        return await GrantExperienceAsync(
-            userId,
-            Math.Abs(deltaExp),
-            deltaExp > 0 ? "ADMIN_ADJUST" : "PENALTY",
-            "User",
-            userId,
-            reason);
+        if (userId <= 0)
+        {
+            Log.Warning("管理员调整经验失败：userId 无效（{UserId}）", userId);
+            return false;
+        }
+
+        if (deltaExp == 0)
+        {
+            Log.Warning("管理员调整经验失败：变动量不能为 0，userId={UserId}", userId);
+            return false;
+        }
+
+        var normalizedReason = string.IsNullOrWhiteSpace(reason) ? "管理员调整" : reason.Trim();
+
+        try
+        {
+            return await ExecuteWithRetryAsync(async () =>
+                await AdminAdjustExperienceInternalAsync(userId, deltaExp, normalizedReason, operatorId, operatorName));
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "管理员调整用户 {UserId} 经验失败，deltaExp={DeltaExp}", userId, deltaExp);
+            return false;
+        }
     }
 
     /// <summary>
     /// 冻结用户经验值
     /// </summary>
-    public async Task<bool> FreezeExperienceAsync(long userId, DateTime? frozenUntil, string reason)
+    public async Task<bool> FreezeExperienceAsync(long userId, DateTime? frozenUntil, string reason, long operatorId, string operatorName)
     {
-        // TODO P1: 实现冻结功能
-        return false;
+        if (userId <= 0)
+        {
+            Log.Warning("冻结用户经验失败：userId 无效（{UserId}）", userId);
+            return false;
+        }
+
+        if (frozenUntil.HasValue && frozenUntil.Value <= DateTime.Now)
+        {
+            Log.Warning("冻结用户经验失败：冻结到期时间早于当前时间，userId={UserId}, frozenUntil={FrozenUntil}", userId, frozenUntil);
+            return false;
+        }
+
+        var normalizedReason = string.IsNullOrWhiteSpace(reason) ? "管理员冻结经验" : reason.Trim();
+
+        try
+        {
+            return await ExecuteWithRetryAsync(async () =>
+                await FreezeExperienceInternalAsync(userId, frozenUntil, normalizedReason, operatorId, operatorName));
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "冻结用户 {UserId} 经验失败", userId);
+            return false;
+        }
     }
 
     /// <summary>
     /// 解冻用户经验值
     /// </summary>
-    public async Task<bool> UnfreezeExperienceAsync(long userId)
+    public async Task<bool> UnfreezeExperienceAsync(long userId, long operatorId, string operatorName)
     {
-        // TODO P1: 实现解冻功能
-        return false;
+        if (userId <= 0)
+        {
+            Log.Warning("解冻用户经验失败：userId 无效（{UserId}）", userId);
+            return false;
+        }
+
+        try
+        {
+            return await ExecuteWithRetryAsync(async () =>
+                await UnfreezeExperienceInternalAsync(userId, operatorId, operatorName));
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "解冻用户 {UserId} 经验失败", userId);
+            return false;
+        }
     }
 
     /// <summary>
@@ -810,6 +882,206 @@ namespace Radish.Service;
         }
     }
 
+    [UseTran(Propagation = Propagation.Required)]
+    private async Task<bool> AdminAdjustExperienceInternalAsync(
+        long userId,
+        int deltaExp,
+        string reason,
+        long operatorId,
+        string operatorName)
+    {
+        var userExp = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId && !e.IsDeleted);
+        if (userExp == null)
+        {
+            userExp = await InitializeUserExperienceAsync(userId);
+            if (userExp == null)
+            {
+                Log.Error("管理员调整经验失败：用户 {UserId} 经验值记录初始化失败", userId);
+                return false;
+            }
+        }
+
+        userExp = await NormalizeFreezeStateAsync(userExp);
+
+        var levelConfigs = await GetLevelConfigsCacheAsync();
+        var oldTotalExp = userExp.TotalExp;
+        var oldLevel = userExp.CurrentLevel;
+        var newTotalExp = oldTotalExp + deltaExp;
+        var actualDelta = deltaExp;
+
+        if (newTotalExp < 0)
+        {
+            actualDelta = -(int)oldTotalExp;
+            newTotalExp = 0;
+        }
+
+        if (actualDelta == 0)
+        {
+            Log.Warning("管理员调整经验未生效：userId={UserId}, oldTotalExp={OldTotalExp}, deltaExp={DeltaExp}",
+                userId, oldTotalExp, deltaExp);
+            return false;
+        }
+
+        var (newLevel, newCurrentExp) = CalculateLevel(newTotalExp, levelConfigs);
+        var now = DateTime.Now;
+
+        var updatedRows = await _userExpRepository.UpdateColumnsAsync(
+            e => new UserExperience
+            {
+                CurrentLevel = newLevel,
+                CurrentExp = newCurrentExp,
+                TotalExp = newTotalExp,
+                LevelUpAt = newLevel > oldLevel ? now : e.LevelUpAt,
+                Version = e.Version + 1,
+                ModifyTime = now,
+                ModifyBy = operatorName,
+                ModifyId = operatorId
+            },
+            e => e.UserId == userId && e.Version == userExp.Version && !e.IsDeleted
+        );
+
+        if (updatedRows == 0)
+        {
+            throw new ConcurrencyException("乐观锁冲突：管理员调整经验时记录已被其他操作修改");
+        }
+
+        var transaction = new ExpTransaction
+        {
+            Id = SnowFlakeSingle.instance.getID(),
+            UserId = userId,
+            ExpType = actualDelta > 0 ? "ADMIN_ADJUST" : "PENALTY",
+            ExpAmount = actualDelta,
+            BusinessType = "User",
+            BusinessId = userId,
+            Remark = reason,
+            ExpBefore = oldTotalExp,
+            ExpAfter = newTotalExp,
+            LevelBefore = oldLevel,
+            LevelAfter = newLevel,
+            CreatedDate = DateTime.Today,
+            TenantId = userExp.TenantId,
+            CreateTime = now,
+            CreateBy = operatorName,
+            CreateId = operatorId
+        };
+        await _expTransactionRepository.AddAsync(transaction);
+
+        Log.Information(
+            "管理员 {OperatorName}({OperatorId}) 调整用户 {UserId} 经验成功，实际变动 {ActualDelta}，总经验 {OldTotalExp} -> {NewTotalExp}",
+            operatorName,
+            operatorId,
+            userId,
+            actualDelta,
+            oldTotalExp,
+            newTotalExp);
+
+        if (newLevel > oldLevel)
+        {
+            Log.Information("管理员调整触发升级：用户 {UserId} 从 Lv.{OldLevel} 升级到 Lv.{NewLevel}", userId, oldLevel, newLevel);
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await HandleLevelUpAsync(userId, oldLevel, newLevel);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "处理管理员调整后的升级事件失败：userId={UserId}, oldLevel={OldLevel}, newLevel={NewLevel}",
+                        userId, oldLevel, newLevel);
+                }
+            });
+        }
+
+        return true;
+    }
+
+    [UseTran(Propagation = Propagation.Required)]
+    private async Task<bool> FreezeExperienceInternalAsync(
+        long userId,
+        DateTime? frozenUntil,
+        string reason,
+        long operatorId,
+        string operatorName)
+    {
+        var userExp = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId && !e.IsDeleted);
+        if (userExp == null)
+        {
+            userExp = await InitializeUserExperienceAsync(userId);
+            if (userExp == null)
+            {
+                Log.Error("冻结经验失败：用户 {UserId} 经验值记录初始化失败", userId);
+                return false;
+            }
+        }
+
+        var now = DateTime.Now;
+        var updatedRows = await _userExpRepository.UpdateColumnsAsync(
+            e => new UserExperience
+            {
+                ExpFrozen = true,
+                FrozenUntil = frozenUntil,
+                FrozenReason = reason,
+                Version = e.Version + 1,
+                ModifyTime = now,
+                ModifyBy = operatorName,
+                ModifyId = operatorId
+            },
+            e => e.UserId == userId && e.Version == userExp.Version && !e.IsDeleted
+        );
+
+        if (updatedRows == 0)
+        {
+            throw new ConcurrencyException("乐观锁冲突：经验冻结状态已被其他操作修改");
+        }
+
+        Log.Information("用户 {UserId} 经验已冻结，frozenUntil={FrozenUntil}, reason={Reason}", userId, frozenUntil, reason);
+        return true;
+    }
+
+    [UseTran(Propagation = Propagation.Required)]
+    private async Task<bool> UnfreezeExperienceInternalAsync(long userId, long operatorId, string operatorName)
+    {
+        var userExp = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId && !e.IsDeleted);
+        if (userExp == null)
+        {
+            userExp = await InitializeUserExperienceAsync(userId);
+            if (userExp == null)
+            {
+                Log.Error("解冻经验失败：用户 {UserId} 经验值记录初始化失败", userId);
+                return false;
+            }
+        }
+
+        var needsReset = userExp.ExpFrozen || userExp.FrozenUntil.HasValue || !string.IsNullOrWhiteSpace(userExp.FrozenReason);
+        if (!needsReset)
+        {
+            return true;
+        }
+
+        var now = DateTime.Now;
+        var updatedRows = await _userExpRepository.UpdateColumnsAsync(
+            e => new UserExperience
+            {
+                ExpFrozen = false,
+                FrozenUntil = null,
+                FrozenReason = string.Empty,
+                Version = e.Version + 1,
+                ModifyTime = now,
+                ModifyBy = operatorName,
+                ModifyId = operatorId
+            },
+            e => e.UserId == userId && e.Version == userExp.Version && !e.IsDeleted
+        );
+
+        if (updatedRows == 0)
+        {
+            throw new ConcurrencyException("乐观锁冲突：经验解冻状态已被其他操作修改");
+        }
+
+        Log.Information("用户 {UserId} 经验已解冻", userId);
+        return true;
+    }
+
     /// <summary>
     /// 映射实体到 VO（包含额外信息）
     /// </summary>
@@ -904,6 +1176,51 @@ namespace Radish.Service;
         var configs = await _levelConfigRepository.QueryAsync(l => l.IsEnabled);
         return configs.OrderBy(l => l.Level).ToList();
     }
+
+    private async Task<UserExperience> NormalizeFreezeStateAsync(UserExperience userExp)
+    {
+        var now = DateTime.Now;
+        if (!IsFreezeExpired(userExp, now))
+        {
+            return userExp;
+        }
+
+        var updatedRows = await _userExpRepository.UpdateColumnsAsync(
+            e => new UserExperience
+            {
+                ExpFrozen = false,
+                FrozenUntil = null,
+                FrozenReason = string.Empty,
+                Version = e.Version + 1,
+                ModifyTime = now,
+                ModifyBy = "System",
+                ModifyId = 0
+            },
+            e => e.Id == userExp.Id && e.Version == userExp.Version && !e.IsDeleted
+        );
+
+        if (updatedRows > 0)
+        {
+            userExp.ExpFrozen = false;
+            userExp.FrozenUntil = null;
+            userExp.FrozenReason = string.Empty;
+            userExp.Version += 1;
+            userExp.ModifyTime = now;
+            userExp.ModifyBy = "System";
+            userExp.ModifyId = 0;
+            Log.Information("用户 {UserId} 的临时经验冻结已到期，自动释放", userExp.UserId);
+            return userExp;
+        }
+
+        var refreshed = await _userExpRepository.QueryFirstAsync(e => e.Id == userExp.Id && !e.IsDeleted);
+        return refreshed ?? userExp;
+    }
+
+    private static bool IsFreezeActive(UserExperience userExp, DateTime referenceTime)
+        => userExp.ExpFrozen && (!userExp.FrozenUntil.HasValue || userExp.FrozenUntil > referenceTime);
+
+    private static bool IsFreezeExpired(UserExperience userExp, DateTime referenceTime)
+        => userExp.ExpFrozen && userExp.FrozenUntil.HasValue && userExp.FrozenUntil.Value <= referenceTime;
 
     /// <summary>
     /// 根据总经验值计算等级（纯计算，不访问数据库）

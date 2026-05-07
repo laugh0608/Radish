@@ -169,14 +169,14 @@ public interface IExperienceService : IBaseService<UserExperience, UserExperienc
     /// <param name="frozenUntil">冻结到期时间（NULL 表示永久冻结）</param>
     /// <param name="reason">冻结原因</param>
     /// <returns>是否成功</returns>
-    Task<bool> FreezeExperienceAsync(long userId, DateTime? frozenUntil, string reason);
+    Task<bool> FreezeExperienceAsync(long userId, DateTime? frozenUntil, string reason, long operatorId, string operatorName);
 
     /// <summary>
     /// 解冻用户经验值
     /// </summary>
     /// <param name="userId">用户 ID</param>
     /// <returns>是否成功</returns>
-    Task<bool> UnfreezeExperienceAsync(long userId);
+    Task<bool> UnfreezeExperienceAsync(long userId, long operatorId, string operatorName);
 
     /// <summary>
     /// 管理员重新计算并更新所有等级配置（根据当前配置文件）

@@ -37,6 +37,12 @@ export interface AdminAdjustExperienceRequest {
   reason?: string;
 }
 
+export interface AdminFreezeExperienceRequest {
+  userId: number;
+  reason: string;
+  frozenUntil?: string;
+}
+
 export async function getUserExperience(userId: string | number): Promise<UserExperienceVo> {
   const response = await apiGet<UserExperienceVo>(
     `/api/v1/Experience/GetUserExperience/${encodeURIComponent(String(userId))}`,
@@ -62,6 +68,24 @@ export async function adminAdjustExperience(request: AdminAdjustExperienceReques
   const response = await apiPost('/api/v1/Experience/AdminAdjustExperience', request, { withAuth: true });
   if (!response.ok) {
     throw new Error(response.message || '调整经验失败');
+  }
+}
+
+export async function adminFreezeExperience(request: AdminFreezeExperienceRequest): Promise<void> {
+  const response = await apiPost('/api/v1/Experience/AdminFreezeExperience', request, { withAuth: true });
+  if (!response.ok) {
+    throw new Error(response.message || '冻结经验失败');
+  }
+}
+
+export async function adminUnfreezeExperience(userId: string | number): Promise<void> {
+  const response = await apiPost(
+    '/api/v1/Experience/AdminUnfreezeExperience',
+    { userId },
+    { withAuth: true }
+  );
+  if (!response.ok) {
+    throw new Error(response.message || '解冻经验失败');
   }
 }
 

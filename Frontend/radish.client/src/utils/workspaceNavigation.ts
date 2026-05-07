@@ -15,9 +15,21 @@ type BrowseHistoryNavigationInput = Pick<
   'voRoutePath' | 'voTargetType' | 'voTargetId' | 'voTargetSlug'
 >;
 
-function normalizePositiveNumber(value: LongId | null | undefined): number | null {
-  const parsed = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : Number.NaN;
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+function normalizePositiveIdString(value: LongId | null | undefined): string | null {
+  if (typeof value === 'number') {
+    return Number.isSafeInteger(value) && value > 0 ? String(value) : null;
+  }
+
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!/^[1-9]\d*$/.test(trimmed)) {
+    return null;
+  }
+
+  return trimmed;
 }
 
 function getRouteTailSegment(routePath: string): string {
@@ -37,7 +49,7 @@ export function resolveBrowseHistoryWorkspaceTarget(
   item: BrowseHistoryNavigationInput
 ): WorkspaceNavigationTarget | null {
   const routePath = item.voRoutePath?.trim() || '';
-  const targetId = normalizePositiveNumber(item.voTargetId);
+  const targetId = normalizePositiveIdString(item.voTargetId);
 
   const forumNavigation = parseForumRoutePath(routePath);
   if (forumNavigation) {
@@ -48,7 +60,7 @@ export function resolveBrowseHistoryWorkspaceTarget(
   }
 
   if (routePath.startsWith('/shop/product/')) {
-    const productId = normalizePositiveNumber(getRouteTailSegment(routePath));
+    const productId = normalizePositiveIdString(getRouteTailSegment(routePath));
     if (productId) {
       return {
         appId: 'shop',
@@ -59,7 +71,7 @@ export function resolveBrowseHistoryWorkspaceTarget(
 
   if (routePath.startsWith('/wiki/doc/') || routePath.startsWith('/docs/')) {
     const routeTarget = decodeRouteSegment(getRouteTailSegment(routePath));
-    const documentId = normalizePositiveNumber(routeTarget);
+    const documentId = normalizePositiveIdString(routeTarget);
     if (documentId) {
       return {
         appId: 'document',

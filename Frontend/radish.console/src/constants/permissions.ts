@@ -46,6 +46,7 @@ export const CONSOLE_PERMISSIONS = {
   coinsAdjust: 'console.coins.adjust',
   experienceView: 'console.experience.view',
   experienceAdjust: 'console.experience.adjust',
+  experienceFreeze: 'console.experience.freeze',
   experienceRecalculate: 'console.experience.recalculate',
   systemConfigView: 'console.system-config.view',
   systemConfigCreate: 'console.system-config.create',

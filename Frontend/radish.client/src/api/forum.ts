@@ -11,6 +11,7 @@ import {
   configureApiClient,
 } from '@radish/http';
 import type { TFunction } from 'i18next';
+import type { LongId } from './user';
 import type {
   Category,
   Tag,
@@ -298,7 +299,7 @@ export async function getPostById(
 /**
  * 按帖子获取投票详情
  */
-export async function getPollByPostId(postId: number, t: TFunction): Promise<PollVoteResult> {
+export async function getPollByPostId(postId: LongId, t: TFunction): Promise<PollVoteResult> {
   void t;
   const response = await apiGet<PollVoteResult>(
     `/api/v1/Poll/GetByPostId?postId=${postId}`,
@@ -315,7 +316,7 @@ export async function getPollByPostId(postId: number, t: TFunction): Promise<Pol
 /**
  * 按帖子获取抽奖详情
  */
-export async function getLotteryByPostId(postId: number, t: TFunction): Promise<LotteryResult> {
+export async function getLotteryByPostId(postId: LongId, t: TFunction): Promise<LotteryResult> {
   void t;
   const response = await apiGet<LotteryResult>(
     `/api/v1/Lottery/GetByPostId?postId=${postId}`,
@@ -332,7 +333,7 @@ export async function getLotteryByPostId(postId: number, t: TFunction): Promise<
 /**
  * 手动开奖
  */
-export async function drawLottery(postId: number, t: TFunction): Promise<PostLottery> {
+export async function drawLottery(postId: LongId, t: TFunction): Promise<PostLottery> {
   void t;
   const response = await apiPost<PostLottery>(
     '/api/v1/Lottery/Draw',
@@ -522,7 +523,7 @@ export async function createPostQuickReply(
 /**
  * 删除帖子轻回应
  */
-export async function deletePostQuickReply(quickReplyId: number, t: TFunction): Promise<void> {
+export async function deletePostQuickReply(quickReplyId: LongId, t: TFunction): Promise<void> {
   void t;
   const response = await apiDelete<null>(
     `/api/v1/PostQuickReply/Delete?quickReplyId=${quickReplyId}`,
@@ -539,7 +540,7 @@ export async function deletePostQuickReply(quickReplyId: number, t: TFunction): 
  * @param postId 帖子 ID
  * @returns 点赞操作结果（新的点赞状态和点赞总数）
  */
-export async function likePost(postId: number, t: TFunction): Promise<PostLikeResult> {
+export async function likePost(postId: LongId, t: TFunction): Promise<PostLikeResult> {
   void t;
   const response = await apiPost<PostLikeResult>(
     `/api/v1/Post/Like?postId=${postId}`,
@@ -559,7 +560,7 @@ export async function likePost(postId: number, t: TFunction): Promise<PostLikeRe
  * @param commentId 评论 ID
  * @returns 点赞操作结果（新的点赞状态和点赞总数）
  */
-export async function toggleCommentLike(commentId: number, t: TFunction): Promise<CommentLikeResult> {
+export async function toggleCommentLike(commentId: LongId, t: TFunction): Promise<CommentLikeResult> {
   void t;
   const response = await apiPost<CommentLikeResult>(
     `/api/v1/Comment/ToggleLike?commentId=${commentId}`,
@@ -604,7 +605,7 @@ export async function setPostTop(request: SetPostTopRequest, t: TFunction): Prom
  * 删除帖子（软删除）
  * @param postId 帖子 ID
  */
-export async function deletePost(postId: number, t: TFunction): Promise<void> {
+export async function deletePost(postId: LongId, t: TFunction): Promise<void> {
   void t;
   const response = await apiDelete<null>(`/api/v1/Post/Delete?postId=${postId}`, { withAuth: true });
 
@@ -640,7 +641,7 @@ export async function updateComment(
  * 获取帖子编辑历史
  */
 export async function getPostEditHistory(
-  postId: number,
+  postId: LongId,
   pageIndex: number,
   pageSize: number,
   t: TFunction
@@ -663,7 +664,7 @@ export async function getPostEditHistory(
  * 获取评论编辑历史
  */
 export async function getCommentEditHistory(
-  commentId: number,
+  commentId: LongId,
   pageIndex: number,
   pageSize: number,
   t: TFunction
@@ -686,7 +687,7 @@ export async function getCommentEditHistory(
  * 删除评论（软删除）
  * @param commentId 评论 ID
  */
-export async function deleteComment(commentId: number, t: TFunction): Promise<void> {
+export async function deleteComment(commentId: LongId, t: TFunction): Promise<void> {
   void t;
   const response = await apiDelete<null>(`/api/v1/Comment/Delete?commentId=${commentId}`, { withAuth: true });
 
@@ -757,7 +758,7 @@ export async function getCommentNavigation(
  * @returns 神评列表（按排名升序）
  */
 export async function getCurrentGodComments(
-  postId: number,
+  postId: LongId,
   t: TFunction
 ): Promise<CommentHighlight[]> {
   void t;
@@ -779,7 +780,7 @@ export async function getCurrentGodComments(
  * @param t i18n 翻译函数
  */
 export async function getCurrentGodCommentsBatch(
-  postIds: number[],
+  postIds: LongId[],
   t: TFunction
 ): Promise<Record<string, CommentHighlight>> {
   void t;
@@ -819,7 +820,7 @@ export async function getCurrentGodCommentsBatch(
  * @returns 沙发列表（按排名升序）
  */
 export async function getCurrentSofas(
-  parentCommentId: number,
+  parentCommentId: LongId,
   t: TFunction
 ): Promise<CommentHighlight[]> {
   void t;
@@ -840,7 +841,7 @@ export async function getCurrentSofas(
  */
 export async function getReactionSummary(
   targetType: 'Post' | 'Comment' | 'ChatMessage',
-  targetId: number
+  targetId: LongId
 ): Promise<ReactionSummaryVo[]> {
   const response = await apiGet<ReactionSummaryVo[]>(
     `/api/v1/Reaction/GetSummary?targetType=${encodeURIComponent(targetType)}&targetId=${targetId}`,

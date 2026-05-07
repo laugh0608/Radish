@@ -206,8 +206,12 @@ public class LeaderboardService : ILeaderboardService
     private async Task<PageModel<UnifiedLeaderboardItemVo>> GetExperienceLeaderboardAsync(
         int pageIndex, int pageSize, long? currentUserId)
     {
+        var now = DateTime.Now;
         var (pagedData, totalCount) = await _userExpRepository.QueryPageAsync(
-            whereExpression: e => !e.ExpFrozen && e.UserId > 0 && !e.IsDeleted,
+            whereExpression: e =>
+                (!e.ExpFrozen || (e.FrozenUntil != null && e.FrozenUntil <= now)) &&
+                e.UserId > 0 &&
+                !e.IsDeleted,
             pageIndex: pageIndex,
             pageSize: pageSize,
             orderByExpression: e => e.TotalExp,
@@ -266,10 +270,24 @@ public class LeaderboardService : ILeaderboardService
     private async Task<int> GetExperienceRankAsync(long userId)
     {
         var userExp = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId && !e.IsDeleted);
-        if (userExp == null || userExp.ExpFrozen) return 0;
+        if (userExp == null)
+        {
+            return 0;
+        }
+
+        var now = DateTime.Now;
+        var isFreezeActive = userExp.ExpFrozen && (!userExp.FrozenUntil.HasValue || userExp.FrozenUntil > now);
+        if (isFreezeActive)
+        {
+            return 0;
+        }
 
         var higherCount = await _userExpRepository.QueryCountAsync(
-            e => !e.ExpFrozen && e.UserId > 0 && e.TotalExp > userExp.TotalExp && !e.IsDeleted
+            e =>
+                (!e.ExpFrozen || (e.FrozenUntil != null && e.FrozenUntil <= now)) &&
+                e.UserId > 0 &&
+                e.TotalExp > userExp.TotalExp &&
+                !e.IsDeleted
         );
 
         return (int)higherCount + 1;
