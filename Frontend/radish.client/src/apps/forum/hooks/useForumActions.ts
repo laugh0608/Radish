@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
+import type { LongId } from '@/api/user';
 import { useUserStore } from '@/stores/userStore';
 import type { TFunction } from 'i18next';
 import { toast } from '@radish/ui/toast';
@@ -43,15 +44,15 @@ export interface ForumActionsState {
   isPublishModalOpen: boolean;
   isEditModalOpen: boolean;
   isDeleteDialogOpen: boolean;
-  postToDelete: number | null;
+  postToDelete: LongId | null;
   isDeleteCommentDialogOpen: boolean;
-  commentToDelete: number | null;
+  commentToDelete: LongId | null;
 
   // 回复状态
   replyTo: CommentReplyTarget | null;
 
   // 点赞状态
-  likedPosts: Set<number>;
+  likedPosts: Set<string>;
 
   // 历史弹窗状态
   isPostHistoryOpen: boolean;
@@ -88,32 +89,32 @@ export interface ForumActionsHandlers {
   handleVotePoll: (optionId: number) => Promise<void>;
   handleClosePoll: () => Promise<void>;
   handleAnswerQuestion: (content: string) => Promise<void>;
-  handleAcceptAnswer: (answerId: number) => Promise<void>;
+  handleAcceptAnswer: (answerId: LongId) => Promise<void>;
   handleQuestionAnswerSortChange: (sortBy: QuestionAnswerSort) => Promise<void>;
   handleQuestionAnswerFilterChange: (filterBy: QuestionAnswerFilter) => void;
-  handleLikePost: (postId: number) => Promise<void>;
-  handleEditPost: (postId: number) => void;
-  handleViewPostHistory: (postId: number) => Promise<void>;
-  handleSaveEdit: (postId: number, title: string, content: string, categoryId: number, tagNames: string[]) => Promise<void>;
+  handleLikePost: (postId: LongId) => Promise<void>;
+  handleEditPost: (postId: LongId) => void;
+  handleViewPostHistory: (postId: LongId) => Promise<void>;
+  handleSaveEdit: (postId: LongId, title: string, content: string, categoryId: number, tagNames: string[]) => Promise<void>;
   handleTogglePostTop: (isTop: boolean) => Promise<void>;
-  handleDeletePost: (postId: number) => void;
+  handleDeletePost: (postId: LongId) => void;
   confirmDeletePost: () => Promise<void>;
   cancelDeletePost: () => void;
 
   // 评论操作
   handleCreateQuickReply: (content: string) => Promise<void>;
-  handleDeleteQuickReply: (quickReplyId: number) => Promise<void>;
+  handleDeleteQuickReply: (quickReplyId: LongId) => Promise<void>;
   handleCreateComment: (content: string) => Promise<void>;
   handleReplyComment: (target: CommentReplyTarget) => void;
   handleCancelReply: () => void;
-  handleCommentLike: (commentId: number) => Promise<{ isLiked: boolean; likeCount: number }>;
-  handleEditComment: (commentId: number, newContent: string) => Promise<void>;
-  handleViewCommentHistory: (commentId: number) => Promise<void>;
-  handleDeleteComment: (commentId: number) => void;
+  handleCommentLike: (commentId: LongId) => Promise<{ isLiked: boolean; likeCount: number }>;
+  handleEditComment: (commentId: LongId, newContent: string) => Promise<void>;
+  handleViewCommentHistory: (commentId: LongId) => Promise<void>;
+  handleDeleteComment: (commentId: LongId) => void;
   confirmDeleteComment: () => Promise<void>;
   cancelDeleteComment: () => void;
   handleLoadMoreChildren: (
-    parentId: number,
+    parentId: LongId,
     pageIndex: number,
     pageSize: number
   ) => Promise<CommentNode[]>;
@@ -134,7 +135,7 @@ export interface ForumActionsHandlers {
 interface UseForumActionsParams {
   t: TFunction;
   isAuthenticated: boolean;
-  userId: number;
+  userId: LongId;
   commentSortBy: 'newest' | 'hottest' | null;
   loadedCommentPages: number;
   questionAnswerSort: QuestionAnswerSort;
@@ -196,18 +197,20 @@ export const useForumActions = (
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [postToDelete, setPostToDelete] = useState<number | null>(null);
+  const [postToDelete, setPostToDelete] = useState<LongId | null>(null);
   const [isDeleteCommentDialogOpen, setIsDeleteCommentDialogOpen] = useState(false);
-  const [commentToDelete, setCommentToDelete] = useState<number | null>(null);
+  const [commentToDelete, setCommentToDelete] = useState<LongId | null>(null);
 
   // 回复状态
   const [replyTo, setReplyTo] = useState<CommentReplyTarget | null>(null);
 
   // 点赞状态
-  const [likedPosts, setLikedPosts] = useState<Set<number>>(() => {
+  const [likedPosts, setLikedPosts] = useState<Set<string>>(() => {
     try {
       const stored = localStorage.getItem('forum_liked_posts');
-      return stored ? new Set(JSON.parse(stored)) : new Set();
+      return stored
+        ? new Set((JSON.parse(stored) as Array<string | number>).map((value) => String(value)))
+        : new Set();
     } catch {
       return new Set();
     }
@@ -228,8 +231,10 @@ export const useForumActions = (
 
   const postHistoryPageSize = 10;
   const commentHistoryPageSize = 10;
-  const [activePostHistoryPostId, setActivePostHistoryPostId] = useState<number | null>(null);
-  const [activeCommentHistoryCommentId, setActiveCommentHistoryCommentId] = useState<number | null>(null);
+  const [activePostHistoryPostId, setActivePostHistoryPostId] = useState<LongId | null>(null);
+  const [activeCommentHistoryCommentId, setActiveCommentHistoryCommentId] = useState<LongId | null>(null);
+
+  const toLongIdKey = (value: LongId): string => String(value);
 
   const normalizeTagNames = (tagNames: string[]): string[] => {
     const normalized: string[] = [];
@@ -253,7 +258,7 @@ export const useForumActions = (
     return normalized;
   };
 
-  const loadPostHistory = async (postId: number, pageIndex: number) => {
+  const loadPostHistory = async (postId: LongId, pageIndex: number) => {
     setPostHistoryLoading(true);
     setPostHistoryError(null);
     try {
@@ -269,7 +274,7 @@ export const useForumActions = (
     }
   };
 
-  const loadCommentHistory = async (commentId: number, pageIndex: number) => {
+  const loadCommentHistory = async (commentId: LongId, pageIndex: number) => {
     setCommentHistoryLoading(true);
     setCommentHistoryError(null);
     try {
@@ -366,7 +371,7 @@ export const useForumActions = (
 
   const applyLotteryState = useCallback((lottery: PostLottery) => {
     setSelectedPost((current) =>
-      current && current.voId === lottery.voPostId
+      current && String(current.voId) === String(lottery.voPostId)
         ? {
             ...current,
             voHasLottery: true,
@@ -384,7 +389,7 @@ export const useForumActions = (
     }
 
     setSelectedPost((current) =>
-      current && current.voId === poll.voPostId
+      current && String(current.voId) === String(poll.voPostId)
         ? {
             ...current,
             voHasPoll: true,
@@ -531,7 +536,7 @@ export const useForumActions = (
     }
   };
 
-  const handleAcceptAnswer = async (answerId: number) => {
+  const handleAcceptAnswer = async (answerId: LongId) => {
     if (!selectedPost?.voId) {
       const message = '请先选择要采纳的帖子';
       setError(message);
@@ -568,7 +573,7 @@ export const useForumActions = (
   };
 
   // 点赞帖子
-  const handleLikePost = async (postId: number) => {
+  const handleLikePost = async (postId: LongId) => {
     if (!isAuthenticated) {
       setError('请先登录后再点赞');
       return;
@@ -579,10 +584,11 @@ export const useForumActions = (
     try {
       // 乐观更新：先切换高亮状态
       const optimisticLikedPosts = new Set(previousLikedPosts);
-      if (optimisticLikedPosts.has(postId)) {
-        optimisticLikedPosts.delete(postId);
+      const postIdKey = toLongIdKey(postId);
+      if (optimisticLikedPosts.has(postIdKey)) {
+        optimisticLikedPosts.delete(postIdKey);
       } else {
-        optimisticLikedPosts.add(postId);
+        optimisticLikedPosts.add(postIdKey);
       }
       setLikedPosts(optimisticLikedPosts);
       localStorage.setItem('forum_liked_posts', JSON.stringify([...optimisticLikedPosts]));
@@ -591,15 +597,15 @@ export const useForumActions = (
       const result = await likePost(postId, t);
       const reconciledLikedPosts = new Set(optimisticLikedPosts);
       if (result.voIsLiked) {
-        reconciledLikedPosts.add(postId);
+        reconciledLikedPosts.add(postIdKey);
       } else {
-        reconciledLikedPosts.delete(postId);
+        reconciledLikedPosts.delete(postIdKey);
       }
       setLikedPosts(reconciledLikedPosts);
       localStorage.setItem('forum_liked_posts', JSON.stringify([...reconciledLikedPosts]));
 
       setSelectedPost((current) =>
-        current && current.voId === postId
+        current && String(current.voId) === String(postId)
           ? { ...current, voLikeCount: result.voLikeCount }
           : current
       );
@@ -613,8 +619,8 @@ export const useForumActions = (
   };
 
   // 编辑帖子
-  const handleEditPost = (postId: number) => {
-    if (selectedPost?.voId === postId) {
+  const handleEditPost = (postId: LongId) => {
+    if (selectedPost && String(selectedPost.voId) === String(postId)) {
       setError(null);
       setIsEditModalOpen(true);
       return;
@@ -631,14 +637,14 @@ export const useForumActions = (
       });
   };
 
-  const handleViewPostHistory = async (postId: number) => {
+  const handleViewPostHistory = async (postId: LongId) => {
     setActivePostHistoryPostId(postId);
     setIsPostHistoryOpen(true);
     await loadPostHistory(postId, 1);
   };
 
   // 保存编辑
-  const handleSaveEdit = async (postId: number, title: string, content: string, categoryId: number, tagNames: string[]) => {
+  const handleSaveEdit = async (postId: LongId, title: string, content: string, categoryId: number, tagNames: string[]) => {
     setError(null);
     try {
       await updatePost({ postId, title, content, categoryId, tagNames }, t);
@@ -677,7 +683,7 @@ export const useForumActions = (
   };
 
   // 删除帖子
-  const handleDeletePost = (postId: number) => {
+  const handleDeletePost = (postId: LongId) => {
     setPostToDelete(postId);
     setIsDeleteDialogOpen(true);
   };
@@ -735,7 +741,10 @@ export const useForumActions = (
       );
 
       setQuickReplies(prev => {
-        const next = [quickReply, ...prev.filter(item => item.voId !== quickReply.voId)];
+        const next = [
+          quickReply,
+          ...prev.filter(item => String(item.voId) !== String(quickReply.voId))
+        ];
         return next.slice(0, 30);
       });
       setQuickReplyTotal(prev => prev + 1);
@@ -746,7 +755,7 @@ export const useForumActions = (
     }
   };
 
-  const handleDeleteQuickReply = async (quickReplyId: number) => {
+  const handleDeleteQuickReply = async (quickReplyId: LongId) => {
     if (!selectedPost?.voId) {
       setError('请先选择帖子');
       throw new Error('未选择帖子');
@@ -755,7 +764,7 @@ export const useForumActions = (
     setError(null);
     try {
       await deletePostQuickReply(quickReplyId, t);
-      setQuickReplies(prev => prev.filter(item => item.voId !== quickReplyId));
+      setQuickReplies(prev => prev.filter(item => String(item.voId) !== String(quickReplyId)));
       setQuickReplyTotal(prev => Math.max(0, prev - 1));
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -893,7 +902,7 @@ export const useForumActions = (
 
   // 点赞评论
   const handleCommentLike = async (
-    commentId: number
+    commentId: LongId
   ): Promise<{ isLiked: boolean; likeCount: number }> => {
     if (!isAuthenticated) {
       setError('请先登录后再点赞');
@@ -913,7 +922,7 @@ export const useForumActions = (
   };
 
   // 编辑评论
-  const handleEditComment = async (commentId: number, newContent: string): Promise<void> => {
+  const handleEditComment = async (commentId: LongId, newContent: string): Promise<void> => {
     if (!selectedPost) {
       setError('请先选择帖子');
       throw new Error('未选择帖子');
@@ -930,14 +939,14 @@ export const useForumActions = (
     }
   };
 
-  const handleViewCommentHistory = async (commentId: number): Promise<void> => {
+  const handleViewCommentHistory = async (commentId: LongId): Promise<void> => {
     setActiveCommentHistoryCommentId(commentId);
     setIsCommentHistoryOpen(true);
     await loadCommentHistory(commentId, 1);
   };
 
   // 删除评论
-  const handleDeleteComment = (commentId: number) => {
+  const handleDeleteComment = (commentId: LongId) => {
     setCommentToDelete(commentId);
     setIsDeleteCommentDialogOpen(true);
   };
@@ -965,7 +974,7 @@ export const useForumActions = (
 
   // 加载更多子评论
   const handleLoadMoreChildren = async (
-    parentId: number,
+    parentId: LongId,
     pageIndex: number,
     pageSize: number
   ): Promise<CommentNode[]> => {

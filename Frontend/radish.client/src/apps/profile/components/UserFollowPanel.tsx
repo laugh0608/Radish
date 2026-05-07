@@ -24,7 +24,7 @@ type FeedViewType = 'following' | DistributionStreamType;
 
 interface UserFollowPanelProps {
   displayTimeZone: string;
-  onPostClick?: (postId: number) => void;
+  onPostClick?: (postId: LongId) => void;
   onUserClick?: (userId: LongId, userName: string, avatarUrl?: string | null, displayName?: string | null) => void;
 }
 

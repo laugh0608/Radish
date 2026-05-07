@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { PostDetail as PostDetailType, QuestionAnswerFilter, QuestionAnswerSort, ReactionSummaryVo } from '@/api/forum';
 import { uploadDocument, uploadImage } from '@/api/attachment';
+import type { LongId } from '@/api/user';
 import type { UserFollowStatus } from '@/api/userFollow';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
@@ -27,23 +28,23 @@ interface PostDetailProps {
   mode?: 'interactive' | 'readOnly';
   showSectionTitle?: boolean;
   isLiked?: boolean;
-  onLike?: (postId: number) => void;
+  onLike?: (postId: LongId) => void;
   onVotePoll?: (optionId: number) => Promise<void>;
   onClosePoll?: () => Promise<void>;
   onDrawLottery?: () => Promise<void>;
   onAnswerQuestion?: (content: string) => Promise<void>;
-  onAcceptAnswer?: (answerId: number) => Promise<void>;
+  onAcceptAnswer?: (answerId: LongId) => Promise<void>;
   answerSort?: QuestionAnswerSort;
   answerFilter?: QuestionAnswerFilter;
   onAnswerSortChange?: (sortBy: QuestionAnswerSort) => Promise<void>;
   onAnswerFilterChange?: (filterBy: QuestionAnswerFilter) => void;
   isAuthenticated?: boolean;
-  currentUserId?: number;
+  currentUserId?: LongId;
   canToggleTop?: boolean;
   onToggleTop?: (isTop: boolean) => Promise<void>;
-  onEdit?: (postId: number) => void;
-  onDelete?: (postId: number) => void;
-  onViewHistory?: (postId: number) => void;
+  onEdit?: (postId: LongId) => void;
+  onDelete?: (postId: LongId) => void;
+  onViewHistory?: (postId: LongId) => void;
   postReactions?: ReactionSummaryVo[];
   reactionLoading?: boolean;
   stickerGroups?: StickerPickerGroup[];
@@ -52,14 +53,22 @@ interface PostDetailProps {
   onRequireReactionLogin?: () => void;
   followStatus?: UserFollowStatus | null;
   followLoading?: boolean;
-  onToggleFollow?: (targetUserId: number, isFollowing: boolean) => Promise<void>;
-  onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
+  onToggleFollow?: (targetUserId: LongId, isFollowing: boolean) => Promise<void>;
+  onAuthorClick?: (userId: LongId, userName?: string | null, avatarUrl?: string | null) => void;
   onTagClick?: (tagName: string, tagSlug: string) => void;
   onQuestionClick?: () => void;
   onPollClick?: () => void;
   onLotteryClick?: () => void;
-  onReport?: (postId: number) => void;
+  onReport?: (postId: LongId) => void;
 }
+
+const isSameLongId = (left: LongId | null | undefined, right: LongId | null | undefined): boolean => {
+  if (left == null || right == null) {
+    return false;
+  }
+
+  return String(left) === String(right);
+};
 
 export const PostDetail = ({
   post,
@@ -117,13 +126,13 @@ export const PostDetail = ({
   const [isVoting, setIsVoting] = useState(false);
   const [answerContent, setAnswerContent] = useState('');
   const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
-  const [acceptingAnswerId, setAcceptingAnswerId] = useState<number | null>(null);
+  const [acceptingAnswerId, setAcceptingAnswerId] = useState<LongId | null>(null);
   const [isDrawingLottery, setIsDrawingLottery] = useState(false);
   const [isClosingPoll, setIsClosingPoll] = useState(false);
   const [isTogglingTop, setIsTogglingTop] = useState(false);
 
-  const isAuthor = !!post && currentUserId > 0 && String(post.voAuthorId) === String(currentUserId);
-  const showFollowAction = isAuthenticated && !!post && !isAuthor && post.voAuthorId > 0;
+  const isAuthor = !!post && isSameLongId(post.voAuthorId, currentUserId);
+  const showFollowAction = isAuthenticated && !!post && !isAuthor && String(post.voAuthorId) !== '0';
   const question = post?.voQuestion;
   const lottery = post?.voLottery;
   const isQuestionPost = !!post?.voIsQuestion;
@@ -179,7 +188,7 @@ export const PostDetail = ({
           return timeDiff;
         }
 
-        return left.voAnswerId - right.voAnswerId;
+        return String(left.voAnswerId).localeCompare(String(right.voAnswerId));
       });
   const displayedAnswers = answerFilter === 'accepted'
     ? sortedAnswers.filter(answer => answer.voIsAccepted)
@@ -340,7 +349,7 @@ export const PostDetail = ({
     };
   };
 
-  const handleAcceptAnswer = async (answerId: number) => {
+  const handleAcceptAnswer = async (answerId: LongId) => {
     if (!onAcceptAnswer) {
       return;
     }
@@ -736,7 +745,7 @@ export const PostDetail = ({
                     isAuthor &&
                     !question?.voIsSolved &&
                     !answer.voIsAccepted &&
-                    answer.voAuthorId !== currentUserId;
+                    !isSameLongId(answer.voAuthorId, currentUserId);
 
                   return (
                     <article
@@ -786,9 +795,9 @@ export const PostDetail = ({
                               onClick={() => {
                                 void handleAcceptAnswer(answer.voAnswerId);
                               }}
-                              disabled={acceptingAnswerId === answer.voAnswerId}
+                              disabled={isSameLongId(acceptingAnswerId, answer.voAnswerId)}
                             >
-                              {acceptingAnswerId === answer.voAnswerId
+                              {isSameLongId(acceptingAnswerId, answer.voAnswerId)
                                 ? t('forum.postDetail.question.acceptLoading')
                                 : t('forum.postDetail.question.accept')}
                             </button>

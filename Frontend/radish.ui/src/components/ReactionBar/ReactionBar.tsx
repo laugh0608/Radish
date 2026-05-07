@@ -28,7 +28,7 @@ export interface ReactionTogglePayload {
 
 export interface ReactionBarProps {
   targetType: ReactionTargetType;
-  targetId: number;
+  targetId: number | string;
   items: ReactionSummaryItem[];
   isLoggedIn: boolean;
   loading?: boolean;

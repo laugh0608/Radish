@@ -1,4 +1,5 @@
 import type { PostItem, CommentNode, PostDetail } from '@/api/forum';
+import type { LongId } from '@/api/user';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { FORUM_DETAIL_TOOL_EVENT, type ForumDetailToolAction } from '../constants/detailTools';
 import { PostInfoCard } from './PostInfoCard';
@@ -7,8 +8,8 @@ import styles from './TrendingSidebar.module.css';
 interface TrendingSidebarProps {
   hotPosts: PostItem[];
   godComments: CommentNode[];
-  onPostClick: (postId: number) => void;
-  onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
+  onPostClick: (postId: LongId) => void;
+  onAuthorClick?: (userId: LongId, userName?: string | null, avatarUrl?: string | null) => void;
   loading?: boolean;
   selectedPost?: PostDetail | null;
   displayTimeZone: string;

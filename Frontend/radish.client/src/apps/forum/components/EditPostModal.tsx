@@ -14,6 +14,7 @@ import { searchUsersForMention } from '@/api/user';
 import { log } from '@/utils/logger';
 import { useUserStore } from '@/stores/userStore';
 import { uploadDocument, uploadImage } from '@/api/attachment';
+import type { LongId } from '@/api/user';
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
 import styles from './EditPostModal.module.css';
 
@@ -22,7 +23,7 @@ interface EditPostModalProps {
   post: PostDetail | null;
   categories: Category[];
   onClose: () => void;
-  onSave: (postId: number, title: string, content: string, categoryId: number, tagNames: string[]) => Promise<void>;
+  onSave: (postId: LongId, title: string, content: string, categoryId: number, tagNames: string[]) => Promise<void>;
 }
 
 const IMAGE_SCALE_OPTIONS = [30, 50, 70, 75, 100] as const;

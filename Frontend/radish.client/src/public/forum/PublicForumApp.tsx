@@ -19,6 +19,7 @@ import {
   type PostQuickReply,
   type Tag,
 } from '@/api/forum';
+import type { LongId } from '@/api/user';
 import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { log } from '@/utils/logger';
 import { createForumCommentHighlightMap, getForumCommentHighlight } from '@/utils/forumCommentHighlights';
@@ -75,9 +76,17 @@ type RootCommentSort = 'newest' | 'hottest' | null;
 const COMMENT_NAVIGATION_CHILD_PAGE_SIZE = 5;
 
 interface PublicForumCommentNavigationTarget {
-  commentId: number;
-  expandedRootCommentId?: number;
+  commentId: LongId;
+  expandedRootCommentId?: LongId;
   navigationKey: string;
+}
+
+function isSameLongId(left: LongId | null | undefined, right: LongId | null | undefined): boolean {
+  if (left == null || right == null) {
+    return false;
+  }
+
+  return String(left) === String(right);
 }
 
 interface PublicGuideDefinition {
@@ -184,12 +193,12 @@ function createForumReadingGuide(
 
 function mergeCommentChildren(
   comments: CommentNode[],
-  parentCommentId: number,
+  parentCommentId: LongId,
   children: CommentNode[],
   totalChildren: number
 ): CommentNode[] {
   return comments.map((comment) => {
-    if (comment.voId !== parentCommentId) {
+    if (!isSameLongId(comment.voId, parentCommentId)) {
       return comment;
     }
 
@@ -2529,10 +2538,10 @@ const PublicForumDetail = ({
   const [commentPagingError, setCommentPagingError] = useState<string | null>(null);
   const [commentNavigationTarget, setCommentNavigationTarget] = useState<PublicForumCommentNavigationTarget | null>(null);
   const [commentNavigationNotice, setCommentNavigationNotice] = useState<string | null>(null);
-  const [highlightedCommentId, setHighlightedCommentId] = useState<number | null>(null);
+  const [highlightedCommentId, setHighlightedCommentId] = useState<LongId | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const requestIdRef = useRef(0);
-  const commentAnchorMapRef = useRef(new Map<number, HTMLDivElement>());
+  const commentAnchorMapRef = useRef(new Map<string, HTMLDivElement>());
   const handledCommentNavigationRef = useRef<string | null>(null);
   const highlightTimeoutRef = useRef<number | null>(null);
   const commentNoticeRef = useRef<HTMLDivElement | null>(null);
@@ -2638,7 +2647,7 @@ const PublicForumDetail = ({
               }
 
               const deduplicatedChildren = aggregatedChildren.filter((child, index, source) =>
-                source.findIndex((item) => item.voId === child.voId) === index
+                source.findIndex((item) => isSameLongId(item.voId, child.voId)) === index
               );
               nextComments = mergeCommentChildren(
                 nextComments,
@@ -2719,7 +2728,7 @@ const PublicForumDetail = ({
   }, [post?.voTitle, t]);
 
   const navigateToComment = useCallback(async (
-    targetCommentId: number | string,
+    targetCommentId: LongId,
     navigationKey: string
   ) => {
     try {
@@ -2736,7 +2745,10 @@ const PublicForumDetail = ({
 
       let nextComments = comments;
 
-      if (loadedCommentPages !== navigation.voRootPageIndex || !comments.some((item) => item.voId === navigation.voRootCommentId)) {
+      if (
+        loadedCommentPages !== navigation.voRootPageIndex
+        || !comments.some((item) => isSameLongId(item.voId, navigation.voRootCommentId))
+      ) {
         const rootComments = await getRootCommentsPage(
           postId,
           navigation.voRootPageIndex,
@@ -2768,7 +2780,7 @@ const PublicForumDetail = ({
         }
 
         const deduplicatedChildren = aggregatedChildren.filter((child, index, source) =>
-          source.findIndex((item) => item.voId === child.voId) === index
+          source.findIndex((item) => isSameLongId(item.voId, child.voId)) === index
         );
         nextComments = mergeCommentChildren(
           nextComments,
@@ -2791,11 +2803,12 @@ const PublicForumDetail = ({
     }
   }, [commentPageSize, commentSortBy, comments, loadedCommentPages, postId, t]);
 
-  const registerCommentAnchor = (targetCommentId: number, element: HTMLDivElement | null) => {
+  const registerCommentAnchor = (targetCommentId: LongId, element: HTMLDivElement | null) => {
+    const targetCommentIdKey = String(targetCommentId);
     if (element) {
-      commentAnchorMapRef.current.set(targetCommentId, element);
+      commentAnchorMapRef.current.set(targetCommentIdKey, element);
     } else {
-      commentAnchorMapRef.current.delete(targetCommentId);
+      commentAnchorMapRef.current.delete(targetCommentIdKey);
     }
   };
 
@@ -2809,7 +2822,7 @@ const PublicForumDetail = ({
       return;
     }
 
-    const targetElement = commentAnchorMapRef.current.get(commentNavigationTarget.commentId);
+    const targetElement = commentAnchorMapRef.current.get(String(commentNavigationTarget.commentId));
     if (!targetElement) {
       return;
     }
@@ -2880,7 +2893,7 @@ const PublicForumDetail = ({
   };
 
   const handleLoadMoreChildren = async (
-    parentId: number,
+    parentId: LongId,
     pageIndex: number,
     pageSize: number
   ): Promise<CommentNode[]> => {

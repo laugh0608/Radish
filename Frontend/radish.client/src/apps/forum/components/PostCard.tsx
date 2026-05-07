@@ -1,4 +1,5 @@
 import type { PostItem } from '@/api/forum';
+import type { LongId } from '@/api/user';
 import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
@@ -9,7 +10,7 @@ interface PostCardProps {
   displayTimeZone: string;
   onClick: () => void;
   variant?: 'default' | 'publicCompact';
-  onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
+  onAuthorClick?: (userId: LongId, userName?: string | null, avatarUrl?: string | null) => void;
   onTagClick?: (tagName: string, tagSlug: string) => void;
   onQuestionClick?: () => void;
   onPollClick?: () => void;
@@ -33,6 +34,8 @@ export const PostCard = ({
   godComment
 }: PostCardProps) => {
   const { t } = useTranslation();
+  const isSameLongId = (left: LongId | null | undefined, right: LongId | null | undefined): boolean =>
+    left != null && right != null && String(left) === String(right);
   const isPublicCompact = variant === 'publicCompact';
   const allTags = post.voTags
     ? post.voTags
@@ -74,7 +77,7 @@ export const PostCard = ({
   const interactorItems =
     interactorSource.length > 0
       ? interactorSource
-          .filter(item => item.voUserId !== post.voAuthorId && item.voUserName.trim() !== authorName)
+          .filter(item => !isSameLongId(item.voUserId, post.voAuthorId) && item.voUserName.trim() !== authorName)
           .slice(0, 3)
           .map(item => ({
             id: item.voUserId,

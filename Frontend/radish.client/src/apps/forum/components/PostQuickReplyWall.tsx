@@ -12,6 +12,7 @@ import { Icon } from '@radish/ui/icon';
 import { ConfirmDialog } from '@radish/ui/confirm-dialog';
 import { toast } from '@radish/ui/toast';
 import { getOidcLoginUrl, type PostQuickReply } from '@/api/forum';
+import type { LongId } from '@/api/user';
 import { resolveMediaUrl } from '@/utils/media';
 import styles from './PostQuickReplyWall.module.css';
 
@@ -20,11 +21,11 @@ interface PostQuickReplyWallProps {
   total: number;
   loading: boolean;
   isAuthenticated: boolean;
-  currentUserId: number;
+  currentUserId: LongId;
   mode?: 'interactive' | 'readOnly';
   onCreate?: (content: string) => Promise<void>;
-  onDelete?: (quickReplyId: number) => Promise<void>;
-  onReport?: (quickReplyId: number) => void;
+  onDelete?: (quickReplyId: LongId) => Promise<void>;
+  onReport?: (quickReplyId: LongId) => void;
 }
 
 interface QuickReplyLaneLayout {
@@ -86,12 +87,12 @@ export const PostQuickReplyWall = ({
   const isReadOnly = mode === 'readOnly';
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<LongId | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<LongId | null>(null);
   const [wallWidth, setWallWidth] = useState(0);
-  const [measuredWidths, setMeasuredWidths] = useState<Record<number, number>>({});
+  const [measuredWidths, setMeasuredWidths] = useState<Record<string, number>>({});
   const wallRef = useRef<HTMLDivElement>(null);
-  const measureRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const measureRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const normalizedContent = useMemo(
     () => content.trim().replace(/\s+/g, ' '),
@@ -127,21 +128,21 @@ export const PostQuickReplyWall = ({
       return;
     }
 
-    const nextWidths: Record<number, number> = {};
-    const nextReplyIds = new Set<number>();
+    const nextWidths: Record<string, number> = {};
+    const nextReplyIds = new Set<string>();
 
     replies.forEach((reply) => {
-      nextReplyIds.add(reply.voId);
-      const width = measureRefs.current[reply.voId]?.offsetWidth ?? 0;
+      const replyIdKey = String(reply.voId);
+      nextReplyIds.add(replyIdKey);
+      const width = measureRefs.current[replyIdKey]?.offsetWidth ?? 0;
       if (width > 0) {
-        nextWidths[reply.voId] = width;
+        nextWidths[replyIdKey] = width;
       }
     });
 
     Object.keys(measureRefs.current).forEach((key) => {
-      const replyId = Number(key);
-      if (!nextReplyIds.has(replyId)) {
-        delete measureRefs.current[replyId];
+      if (!nextReplyIds.has(key)) {
+        delete measureRefs.current[key];
       }
     });
 
@@ -157,7 +158,7 @@ export const PostQuickReplyWall = ({
         return nextWidths;
       }
 
-      const changed = replies.some((reply) => current[reply.voId] !== nextWidths[reply.voId]);
+      const changed = replies.some((reply) => current[String(reply.voId)] !== nextWidths[String(reply.voId)]);
       return changed ? nextWidths : current;
     });
   }, [replies, wallWidth]);
@@ -168,7 +169,7 @@ export const PostQuickReplyWall = ({
     }
 
     const availableWidth = wallWidth > 0 ? Math.max(320, wallWidth) : DEFAULT_WALL_WIDTH;
-    const replyWidths = replies.map((reply) => measuredWidths[reply.voId] ?? estimatePillWidth(reply));
+    const replyWidths = replies.map((reply) => measuredWidths[String(reply.voId)] ?? estimatePillWidth(reply));
 
     const lanes = Array.from({ length: LANE_COUNT }, () => [] as PostQuickReply[]);
     const laneWidths = Array.from({ length: LANE_COUNT }, () => 0);
@@ -374,10 +375,13 @@ export const PostQuickReplyWall = ({
                             onClick={() => {
                               setPendingDeleteId(reply.voId);
                             }}
-                            disabled={deletingId === reply.voId}
+                            disabled={String(deletingId ?? '') === String(reply.voId)}
                             title={t('common.delete')}
                           >
-                            <Icon icon={deletingId === reply.voId ? 'mdi:loading' : 'mdi:trash-can-outline'} size={15} />
+                            <Icon
+                              icon={String(deletingId ?? '') === String(reply.voId) ? 'mdi:loading' : 'mdi:trash-can-outline'}
+                              size={15}
+                            />
                           </button>
                         ) : !isReadOnly && onReport ? (
                           <button
@@ -409,7 +413,7 @@ export const PostQuickReplyWall = ({
             <div
               key={`measure-${reply.voId}`}
               ref={(node) => {
-                measureRefs.current[reply.voId] = node;
+                measureRefs.current[String(reply.voId)] = node;
               }}
               className={`${styles.pill} ${styles.measurePill}`}
             >

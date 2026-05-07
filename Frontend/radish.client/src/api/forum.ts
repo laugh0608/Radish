@@ -274,7 +274,7 @@ export async function getPostList(
  * 获取帖子详情
  */
 export async function getPostById(
-  postId: string | number,
+  postId: LongId,
   t: TFunction,
   answerSort: QuestionAnswerSort = 'default'
 ): Promise<PostDetail> {
@@ -408,7 +408,7 @@ export async function acceptQuestionAnswer(request: AcceptAnswerRequest, t: TFun
  * 分页获取帖子的根评论（自动包含当前用户的点赞状态）
  */
 export async function getRootCommentsPage(
-  postId: string | number,
+  postId: LongId,
   pageIndex: number,
   pageSize: number,
   sortBy: 'newest' | 'hottest' | 'default',
@@ -433,9 +433,9 @@ export async function getRootCommentsPage(
  * 发布新帖子
  * @returns 新帖子的 ID
  */
-export async function publishPost(request: PublishPostRequest, t: TFunction): Promise<number> {
+export async function publishPost(request: PublishPostRequest, t: TFunction): Promise<LongId> {
   void t;
-  const response = await apiPost<number>('/api/v1/Post/Publish', request, { withAuth: true });
+  const response = await apiPost<LongId>('/api/v1/Post/Publish', request, { withAuth: true });
 
   if (!response.ok || response.data === undefined) {
     throw new Error(response.message || '发布帖子失败');
@@ -448,9 +448,9 @@ export async function publishPost(request: PublishPostRequest, t: TFunction): Pr
  * 创建评论
  * @returns 新评论的 ID
  */
-export async function createComment(request: CreateCommentRequest, t: TFunction): Promise<number> {
+export async function createComment(request: CreateCommentRequest, t: TFunction): Promise<LongId> {
   void t;
-  const response = await apiPost<number>('/api/v1/Comment/Create', request, { withAuth: true });
+  const response = await apiPost<LongId>('/api/v1/Comment/Create', request, { withAuth: true });
 
   if (!response.ok || response.data === undefined) {
     throw new Error(response.message || '发表评论失败');
@@ -463,7 +463,7 @@ export async function createComment(request: CreateCommentRequest, t: TFunction)
  * 获取帖子轻回应墙
  */
 export async function getPostQuickReplyWall(
-  postId: string | number,
+  postId: LongId,
   t: TFunction,
   take: number = 30
 ): Promise<PostQuickReplyWall> {
@@ -619,7 +619,7 @@ export async function deletePost(postId: LongId, t: TFunction): Promise<void> {
  * @param request 编辑评论请求参数
  */
 export async function updateComment(
-  request: { commentId: number; content: string },
+  request: { commentId: LongId; content: string },
   t: TFunction
 ): Promise<void> {
   void t;
@@ -705,7 +705,7 @@ export async function deleteComment(commentId: LongId, t: TFunction): Promise<vo
  * @returns 子评论列表、总数、页码信息
  */
 export async function getChildComments(
-  parentId: number | string,
+  parentId: LongId,
   pageIndex: number,
   pageSize: number,
   t: TFunction
@@ -732,8 +732,8 @@ export async function getChildComments(
  * 获取评论精确定位信息
  */
 export async function getCommentNavigation(
-  postId: string | number,
-  commentId: string | number,
+  postId: LongId,
+  commentId: LongId,
   rootPageSize: number,
   childPageSize: number,
   t: TFunction

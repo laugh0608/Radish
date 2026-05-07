@@ -56,19 +56,27 @@ const SEARCH_PAGE_SIZE = 20;
 const COMMENT_NAVIGATION_CHILD_PAGE_SIZE = 5;
 
 interface ForumCommentNavigationTarget {
-  commentId: number;
-  expandedRootCommentId?: number;
+  commentId: LongId;
+  expandedRootCommentId?: LongId;
   navigationKey: string;
+}
+
+function isSameLongId(left: LongId | null | undefined, right: LongId | null | undefined): boolean {
+  if (left == null || right == null) {
+    return false;
+  }
+
+  return String(left) === String(right);
 }
 
 function mergeCommentChildren(
   comments: CommentNode[],
-  parentCommentId: number,
+  parentCommentId: LongId,
   children: CommentNode[],
   totalChildren: number
 ): CommentNode[] {
   return comments.map((comment) => {
-    if (comment.voId !== parentCommentId) {
+    if (!isSameLongId(comment.voId, parentCommentId)) {
       return comment;
     }
 
@@ -105,7 +113,7 @@ export const ForumApp = () => {
   const [searchPosts, setSearchPosts] = useState<PostItem[]>([]);
   const [searchPostGodComments, setSearchPostGodComments] = useState<Map<string, CommentHighlight>>(new Map());
   const [loadingSearchPosts, setLoadingSearchPosts] = useState(false);
-  const [reportTarget, setReportTarget] = useState<{ targetType: ContentReportTargetType; targetId: number } | null>(null);
+  const [reportTarget, setReportTarget] = useState<{ targetType: ContentReportTargetType; targetId: LongId } | null>(null);
   const [commentNavigationTarget, setCommentNavigationTarget] = useState<ForumCommentNavigationTarget | null>(null);
   const [commentNavigationNotice, setCommentNavigationNotice] = useState<string | null>(null);
   const searchRequestIdRef = useRef(0);
@@ -293,11 +301,11 @@ export const ForumApp = () => {
       }
 
       const deduplicatedChildren = aggregatedChildren.filter((child, index, source) =>
-        source.findIndex((item) => item.voId === child.voId) === index
+        source.findIndex((item) => isSameLongId(item.voId, child.voId)) === index
       );
 
       dataState.setComments((prev) =>
-        mergeCommentChildren(prev, navigation.voParentCommentId as number, deduplicatedChildren, totalChildren)
+        mergeCommentChildren(prev, navigation.voParentCommentId ?? navigation.voRootCommentId, deduplicatedChildren, totalChildren)
       );
     }
 
@@ -311,9 +319,9 @@ export const ForumApp = () => {
     setCommentNavigationNotice(null);
   }, [dataState.commentPageSize, dataState.loadComments, dataState.setComments, t]);
 
-  const handleNavigateToComment = useCallback(async (commentId: number) => {
+  const handleNavigateToComment = useCallback(async (commentId: LongId) => {
     const postId = dataState.selectedPost?.voId;
-    if (!postId || commentId <= 0) {
+    if (!postId || !commentId) {
       return;
     }
 
@@ -553,13 +561,13 @@ export const ForumApp = () => {
     });
   };
 
-  const handleOpenReport = (targetType: ContentReportTargetType, targetId: number) => {
+  const handleOpenReport = (targetType: ContentReportTargetType, targetId: LongId) => {
     if (!loggedIn) {
       dataState.setError(t('report.loginRequired'));
       return;
     }
 
-    if (targetId <= 0) {
+    if (!targetId) {
       return;
     }
 
@@ -676,7 +684,7 @@ export const ForumApp = () => {
                 loadingQuickReplies={dataState.loadingQuickReplies}
                 loadingMoreComments={dataState.loadingMoreComments}
                 displayTimeZone={displayTimeZone}
-                isLiked={actionsState.likedPosts.has(dataState.selectedPost.voId)}
+                isLiked={actionsState.likedPosts.has(String(dataState.selectedPost.voId))}
                 isAuthenticated={loggedIn}
                 showFloatingTools={showDetailFloatingTools}
                 currentUserId={userId ?? 0}

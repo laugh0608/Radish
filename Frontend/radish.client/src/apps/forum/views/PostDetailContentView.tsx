@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { Icon } from '@radish/ui/icon';
 import type { PostDetail, CommentNode, CommentReplyTarget, PostQuickReply, QuestionAnswerSort, QuestionAnswerFilter } from '@/api/forum';
+import type { LongId } from '@/api/user';
 import type { UserFollowStatus } from '@/api/userFollow';
 import { FORUM_DETAIL_TOOL_EVENT, type ForumDetailToolAction } from '../constants/detailTools';
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
@@ -40,7 +41,7 @@ interface PostDetailContentViewProps {
   isLiked: boolean;
   isAuthenticated: boolean;
   showFloatingTools?: boolean;
-  currentUserId: number;
+  currentUserId: LongId;
   canToggleTop: boolean;
   commentSortBy: 'newest' | 'hottest' | null;
   questionAnswerSort: QuestionAnswerSort;
@@ -49,51 +50,51 @@ interface PostDetailContentViewProps {
   followStatus: UserFollowStatus | null;
   followLoading: boolean;
   commentNavigationTarget?: {
-    commentId: number;
-    expandedRootCommentId?: number;
+    commentId: LongId;
+    expandedRootCommentId?: LongId;
     navigationKey: string;
   } | null;
 
   onBack: () => void;
-  onLike: (postId: number) => void;
+  onLike: (postId: LongId) => void;
   onVotePoll: (optionId: number) => Promise<void>;
   onClosePoll: () => Promise<void>;
   onDrawLottery: () => Promise<void>;
   onAnswerQuestion: (content: string) => Promise<void>;
-  onAcceptAnswer: (answerId: number) => Promise<void>;
+  onAcceptAnswer: (answerId: LongId) => Promise<void>;
   onQuestionAnswerSortChange: (sortBy: QuestionAnswerSort) => Promise<void>;
   onQuestionAnswerFilterChange: (filterBy: QuestionAnswerFilter) => void;
   onToggleTop: (isTop: boolean) => Promise<void>;
-  onEdit: (postId: number) => void;
-  onViewPostHistory: (postId: number) => void;
-  onDelete: (postId: number) => void;
+  onEdit: (postId: LongId) => void;
+  onViewPostHistory: (postId: LongId) => void;
+  onDelete: (postId: LongId) => void;
   onCreateQuickReply: (content: string) => Promise<void>;
-  onDeleteQuickReply: (quickReplyId: number) => Promise<void>;
+  onDeleteQuickReply: (quickReplyId: LongId) => Promise<void>;
   onCommentSortChange: (sortBy: 'newest' | 'hottest') => void;
-  onDeleteComment: (commentId: number) => void;
-  onEditComment: (commentId: number, newContent: string) => Promise<void>;
-  onViewCommentHistory: (commentId: number) => void;
-  onLikeComment: (commentId: number) => Promise<{ isLiked: boolean; likeCount: number }>;
+  onDeleteComment: (commentId: LongId) => void;
+  onEditComment: (commentId: LongId, newContent: string) => Promise<void>;
+  onViewCommentHistory: (commentId: LongId) => void;
+  onLikeComment: (commentId: LongId) => Promise<{ isLiked: boolean; likeCount: number }>;
   onReplyComment: (target: CommentReplyTarget) => void;
   onLoadMoreChildren: (
-    parentId: number,
+    parentId: LongId,
     pageIndex: number,
     pageSize: number
   ) => Promise<CommentNode[]>;
-  onLoadMoreComments: (postId: number) => Promise<void>;
+  onLoadMoreComments: (postId: LongId) => Promise<void>;
   onCreateComment: (content: string) => Promise<void>;
   onCancelReply: () => void;
   onReactionError?: (message: string) => void;
-  onToggleFollow: (targetUserId: number, isFollowing: boolean) => Promise<void>;
-  onAuthorClick: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
-  onReportPost: (postId: number) => void;
-  onReportQuickReply: (quickReplyId: number) => void;
-  onReportComment: (commentId: number) => void;
-  onNavigateToComment: (commentId: number) => Promise<void> | void;
+  onToggleFollow: (targetUserId: LongId, isFollowing: boolean) => Promise<void>;
+  onAuthorClick: (userId: LongId, userName?: string | null, avatarUrl?: string | null) => void;
+  onReportPost: (postId: LongId) => void;
+  onReportQuickReply: (quickReplyId: LongId) => void;
+  onReportComment: (commentId: LongId) => void;
+  onNavigateToComment: (commentId: LongId) => Promise<void> | void;
 }
 
-const collectCommentIds = (nodes: CommentNode[]): number[] => {
-  const ids: number[] = [];
+const collectCommentIds = (nodes: CommentNode[]): LongId[] => {
+  const ids: LongId[] = [];
   const stack = [...nodes];
 
   while (stack.length > 0) {
@@ -170,23 +171,24 @@ export const PostDetailContentView = ({
 }: PostDetailContentViewProps) => {
   const { t } = useTranslation();
   const [isCommentSheetOpen, setIsCommentSheetOpen] = useState(false);
-  const [highlightedCommentId, setHighlightedCommentId] = useState<number | null>(null);
+  const [highlightedCommentId, setHighlightedCommentId] = useState<LongId | null>(null);
   const [commentAnchorVersion, setCommentAnchorVersion] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
   const handledCommentNavigationRef = useRef<string | null>(null);
   const highlightTimeoutRef = useRef<number | null>(null);
-  const commentAnchorMapRef = useRef(new Map<number, HTMLDivElement>());
+  const commentAnchorMapRef = useRef(new Map<string, HTMLDivElement>());
   const { stickerGroups, stickerMap, handleStickerSelect } = useStickerCatalog();
   const reactionsState = useReactions({ onError: onReactionError });
 
-  const registerCommentAnchor = useCallback((commentId: number, element: HTMLDivElement | null) => {
+  const registerCommentAnchor = useCallback((commentId: LongId, element: HTMLDivElement | null) => {
+    const commentIdKey = String(commentId);
     if (element) {
-      commentAnchorMapRef.current.set(commentId, element);
+      commentAnchorMapRef.current.set(commentIdKey, element);
     } else {
-      commentAnchorMapRef.current.delete(commentId);
+      commentAnchorMapRef.current.delete(commentIdKey);
     }
 
-    if (commentId === commentNavigationTarget?.commentId) {
+    if (String(commentId) === String(commentNavigationTarget?.commentId ?? '')) {
       setCommentAnchorVersion((prev) => prev + 1);
     }
   }, [commentNavigationTarget?.commentId]);
@@ -250,7 +252,7 @@ export const PostDetailContentView = ({
       return;
     }
 
-    const targetElement = commentAnchorMapRef.current.get(commentNavigationTarget.commentId);
+    const targetElement = commentAnchorMapRef.current.get(String(commentNavigationTarget.commentId));
     if (!targetElement) {
       return;
     }
@@ -308,7 +310,7 @@ export const PostDetailContentView = ({
   };
 
   const handleLoadMoreChildren = async (
-    parentId: number,
+    parentId: LongId,
     pageIndex: number,
     pageSize: number
   ): Promise<CommentNode[]> => {
