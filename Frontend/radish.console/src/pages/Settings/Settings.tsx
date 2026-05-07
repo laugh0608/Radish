@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   AntInput as Input,
@@ -70,7 +70,7 @@ export const Settings = () => {
   const [timePreference, setTimePreference] = useState<UserTimePreferenceVo | null>(null);
   const [settings, setSettings] = useState<SettingsData>(DEFAULT_SETTINGS);
 
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     try {
       setInitializing(true);
       const response = await userApi.getMyTimePreference();
@@ -85,15 +85,14 @@ export const Settings = () => {
     } catch (error) {
       log.error('Settings', '加载设置失败:', error);
       message.error(error instanceof Error ? error.message : '加载设置失败');
-      form.setFieldsValue(settings);
     } finally {
       setInitializing(false);
     }
-  };
+  }, [form]);
 
   useEffect(() => {
     void loadSettings();
-  }, []);
+  }, [loadSettings]);
 
   const handleSave = async () => {
     try {

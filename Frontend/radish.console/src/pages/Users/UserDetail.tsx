@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
@@ -85,7 +85,7 @@ export const UserDetail = () => {
   };
 
   // 加载用户详情
-  const loadUserDetail = async () => {
+  const loadUserDetail = useCallback(async () => {
     if (!userId) return;
 
     try {
@@ -102,9 +102,9 @@ export const UserDetail = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
 
-  const loadBalance = async () => {
+  const loadBalance = useCallback(async () => {
     if (!userId || !canViewCoins) return;
 
     try {
@@ -114,9 +114,9 @@ export const UserDetail = () => {
       log.error('UserDetail', '加载萝卜币余额失败:', error);
       setBalance(null);
     }
-  };
+  }, [userId, canViewCoins]);
 
-  const loadExperience = async () => {
+  const loadExperience = useCallback(async () => {
     if (!userId || !canViewExperience) return;
 
     try {
@@ -126,10 +126,10 @@ export const UserDetail = () => {
       log.error('UserDetail', '加载经验信息失败:', error);
       setExperience(null);
     }
-  };
+  }, [userId, canViewExperience]);
 
   // 加载萝卜币流水
-  const loadCoinTransactions = async () => {
+  const loadCoinTransactions = useCallback(async () => {
     if (!userId || !canViewCoins) return;
 
     try {
@@ -146,10 +146,10 @@ export const UserDetail = () => {
     } finally {
       setCoinLoading(false);
     }
-  };
+  }, [userId, canViewCoins]);
 
   // 加载购买记录
-  const loadOrders = async () => {
+  const loadOrders = useCallback(async () => {
     if (!userId || !canViewOrders) return;
 
     try {
@@ -166,13 +166,13 @@ export const UserDetail = () => {
     } finally {
       setOrderLoading(false);
     }
-  };
+  }, [userId, canViewOrders]);
 
   useEffect(() => {
     if (userId && canViewUsers) {
       void loadUserDetail();
     }
-  }, [userId, canViewUsers]);
+  }, [userId, canViewUsers, loadUserDetail]);
 
   useEffect(() => {
     if (userId && canViewUsers) {
@@ -181,7 +181,7 @@ export const UserDetail = () => {
       void loadCoinTransactions();
       void loadOrders();
     }
-  }, [userId, canViewUsers, canViewCoins, canViewExperience, canViewOrders]);
+  }, [userId, canViewUsers, loadBalance, loadExperience, loadCoinTransactions, loadOrders]);
   // 萝卜币流水表格列
   const coinColumns: TableColumnsType<CoinTransactionVo> = [
     {

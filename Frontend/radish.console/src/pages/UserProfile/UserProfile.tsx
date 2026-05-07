@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
@@ -32,7 +32,7 @@ export const UserProfile = () => {
   const [editing, setEditing] = useState(false);
   const [profileData, setProfileData] = useState<UserProfileData | null>(null);
 
-  const setProfileFormValues = (profile: UserProfileData) => {
+  const setProfileFormValues = useCallback((profile: UserProfileData) => {
     form.setFieldsValue({
       voUserName: profile.voUserName,
       voUserEmail: profile.voUserEmail,
@@ -40,9 +40,9 @@ export const UserProfile = () => {
       voAge: profile.voAge || undefined,
       voAddress: profile.voAddress,
     });
-  };
+  }, [form]);
 
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -65,7 +65,7 @@ export const UserProfile = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, setProfileFormValues]);
 
   useEffect(() => {
     if (user) {
@@ -73,7 +73,7 @@ export const UserProfile = () => {
     } else if (!userLoading) {
       setProfileData(null);
     }
-  }, [user, userLoading]);
+  }, [user, userLoading, loadProfile]);
 
   // 保存个人信息
   const handleSave = async () => {

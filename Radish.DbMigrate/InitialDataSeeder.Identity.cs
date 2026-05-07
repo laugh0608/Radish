@@ -784,6 +784,15 @@ internal static partial class InitialDataSeeder
             },
             new
             {
+                ApiModuleId = 501205L,
+                ApiModuleName = "Admin get coin transactions",
+                LinkUrl = "/api/v1/Coin/AdminGetTransactions",
+                ControllerName = "Coin",
+                ActionName = "AdminGetTransactions",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
                 ApiModuleId = 50121L,
                 ApiModuleName = "Admin adjust coin balance",
                 LinkUrl = "/api/v1/Coin/AdminAdjustBalance",

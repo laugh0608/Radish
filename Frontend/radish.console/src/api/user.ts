@@ -2,6 +2,8 @@ import { apiGet, apiPost } from '@radish/http';
 import type { ParsedApiResponse } from '@radish/http';
 import type { UserInfo } from '../types/user';
 
+type ApiRecord = Record<string, unknown>;
+
 export interface MyProfileInfo {
   voUserId: number;
   voUserName: string;
@@ -83,7 +85,11 @@ function toPermissions(value: unknown): string[] | undefined {
   return permissions.length > 0 ? permissions : undefined;
 }
 
-function mapMyProfile(raw: any): MyProfileInfo {
+function isApiRecord(value: unknown): value is ApiRecord {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function mapMyProfile(raw: ApiRecord): MyProfileInfo {
   return {
     voUserId: toNumber(raw.voUserId ?? raw.VoUserId),
     voUserName: raw.voUserName ?? raw.VoUserName ?? '',
@@ -100,7 +106,7 @@ function mapMyProfile(raw: any): MyProfileInfo {
   };
 }
 
-function mapTimePreference(raw: any): UserTimePreferenceVo {
+function mapTimePreference(raw: ApiRecord): UserTimePreferenceVo {
   return {
     voUserId: toNumber(raw.voUserId ?? raw.VoUserId),
     voTimeZoneId: raw.voTimeZoneId ?? raw.VoTimeZoneId ?? '',
@@ -119,13 +125,13 @@ export const userApi = {
    * 获取当前登录用户信息
    */
   async getCurrentUser(): Promise<ParsedApiResponse<UserInfo>> {
-    const response = await apiGet<any>(
+    const response = await apiGet<ApiRecord>(
       '/api/v1/User/GetUserByHttpContext',
       { withAuth: true }
     );
 
     // 处理后端返回的 CurrentUserVo 结构，映射字段名
-    if (response.ok && response.data) {
+    if (response.ok && isApiRecord(response.data)) {
       const backendData = response.data;
       const resolvedRoles = toRoles(
         backendData.voRoles
@@ -162,9 +168,9 @@ export const userApi = {
    * 获取当前用户个人资料
    */
   async getMyProfile(): Promise<ParsedApiResponse<MyProfileInfo>> {
-    const response = await apiGet<any>('/api/v1/User/GetMyProfile', { withAuth: true });
+    const response = await apiGet<ApiRecord>('/api/v1/User/GetMyProfile', { withAuth: true });
 
-    if (response.ok && response.data) {
+    if (response.ok && isApiRecord(response.data)) {
       return {
         ...response,
         data: mapMyProfile(response.data),
@@ -185,9 +191,9 @@ export const userApi = {
    * 获取当前用户时区偏好
    */
   async getMyTimePreference(): Promise<ParsedApiResponse<UserTimePreferenceVo>> {
-    const response = await apiGet<any>('/api/v1/User/GetMyTimePreference', { withAuth: true });
+    const response = await apiGet<ApiRecord>('/api/v1/User/GetMyTimePreference', { withAuth: true });
 
-    if (response.ok && response.data) {
+    if (response.ok && isApiRecord(response.data)) {
       return {
         ...response,
         data: mapTimePreference(response.data),
@@ -201,13 +207,13 @@ export const userApi = {
    * 更新当前用户时区偏好
    */
   async updateMyTimePreference(timeZoneId: string): Promise<ParsedApiResponse<UserTimePreferenceVo>> {
-    const response = await apiPost<any>(
+    const response = await apiPost<ApiRecord>(
       '/api/v1/User/UpdateMyTimePreference',
       { timeZoneId },
       { withAuth: true }
     );
 
-    if (response.ok && response.data) {
+    if (response.ok && isApiRecord(response.data)) {
       return {
         ...response,
         data: mapTimePreference(response.data),

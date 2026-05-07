@@ -3,7 +3,7 @@ import type { PublicDocsBrowseRoute, PublicDocsRoute } from './docsRouteState';
 import type { PublicForumBrowseRoute, PublicForumRoute } from './forumRouteState';
 import type { PublicLeaderboardRoute } from './leaderboardRouteState';
 import type { PublicProfileRoute } from './profileRouteState';
-import type { PublicShopRoute, PublicShopProductsRoute } from './shopRouteState';
+import type { PublicShopRoute } from './shopRouteState';
 
 export type PublicRouteDescriptor =
   | { app: 'discover'; route: PublicDiscoverRoute }
@@ -33,12 +33,6 @@ function isDocsBrowseDescriptor(
   route: PublicRouteDescriptor | null
 ): route is { app: 'docs'; route: PublicDocsBrowseRoute } {
   return !!route && route.app === 'docs' && route.route.kind !== 'detail';
-}
-
-function isShopBrowseDescriptor(
-  route: PublicRouteDescriptor | null
-): route is { app: 'shop'; route: PublicShopProductsRoute | { kind: 'home' } } {
-  return !!route && route.app === 'shop' && route.route.kind !== 'detail';
 }
 
 function resolveBackMode(route: PublicRouteDescriptor | null): PublicDetailBackMode | null {
