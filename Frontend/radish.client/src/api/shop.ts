@@ -5,6 +5,7 @@
 
 import { apiGet, apiPost, configureApiClient, type ParsedApiResponse } from '@radish/http';
 import type { TFunction } from 'i18next';
+import type { LongId } from '@/api/user';
 import type {
   ProductCategory,
   ProductListItem,
@@ -133,7 +134,7 @@ export async function getProducts(
 /**
  * 获取商品详情
  */
-export async function getProduct(productId: number | string, t: TFunction): Promise<ParsedApiResponse<Product>> {
+export async function getProduct(productId: LongId, t: TFunction): Promise<ParsedApiResponse<Product>> {
   void t;
   return await apiGet<Product>(`/api/v1/Shop/GetProduct/${encodeURIComponent(String(productId))}`);
 }
@@ -141,10 +142,10 @@ export async function getProduct(productId: number | string, t: TFunction): Prom
 /**
  * 检查是否可以购买商品
  */
-export async function checkCanBuy(productId: number, quantity: number = 1, t: TFunction) {
+export async function checkCanBuy(productId: LongId, quantity: number = 1, t: TFunction) {
   void t;
   return await apiGet<{ canBuy: boolean; reason: string }>(
-    `/api/v1/Shop/CheckCanBuy/${productId}?quantity=${quantity}`,
+    `/api/v1/Shop/CheckCanBuy/${encodeURIComponent(String(productId))}?quantity=${quantity}`,
     { withAuth: true }
   );
 }

@@ -7,6 +7,7 @@ import {
   parseApiResponse,
   type ApiResponse,
 } from '@radish/http';
+import type { LongId } from '@/api/user';
 import { getApiBaseUrl } from '@/config/env';
 import { buildWikiListUrl } from '../wikiApp.helpers';
 import type {
@@ -43,9 +44,12 @@ export async function getWikiList(query: WikiListQuery = {}): Promise<WikiPageMo
   return await ensureOk(apiGet<WikiPageModel<WikiDocumentVo>>(buildWikiListUrl(query), { withAuth: true }), '加载文档列表失败');
 }
 
-export async function getWikiDocumentById(id: number, includeDeleted: boolean = false): Promise<WikiDocumentDetailVo> {
+export async function getWikiDocumentById(id: LongId, includeDeleted: boolean = false): Promise<WikiDocumentDetailVo> {
   const suffix = includeDeleted ? '?includeDeleted=true' : '';
-  return await ensureOk(apiGet<WikiDocumentDetailVo>(`/api/v1/Wiki/GetById/${id}${suffix}`, { withAuth: true }), '加载文档详情失败');
+  return await ensureOk(
+    apiGet<WikiDocumentDetailVo>(`/api/v1/Wiki/GetById/${encodeURIComponent(String(id))}${suffix}`, { withAuth: true }),
+    '加载文档详情失败'
+  );
 }
 
 export async function getWikiDocumentBySlug(slug: string): Promise<WikiDocumentDetailVo> {

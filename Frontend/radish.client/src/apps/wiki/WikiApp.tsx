@@ -16,6 +16,7 @@ import { uploadDocument, uploadImage } from '@/api/attachment';
 import { useCurrentWindow } from '@/desktop/useCurrentWindow';
 import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
+import type { LongId } from '@/api/user';
 import { log } from '@/utils/logger';
 import {
   archiveWikiDocument,
@@ -183,6 +184,19 @@ function normalizeOptionalNumber(value: string): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+function normalizePositiveLongId(value: unknown): LongId | undefined {
+  if (typeof value === 'number') {
+    return Number.isSafeInteger(value) && value > 0 ? value : undefined;
+  }
+
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  return /^[1-9]\d*$/.test(trimmed) ? trimmed : undefined;
+}
+
 function normalizeAccessList(value: string): string[] {
   return value
     .split(/[\n,，]/)
@@ -190,20 +204,16 @@ function normalizeAccessList(value: string): string[] {
     .filter(Boolean);
 }
 
-function parseWikiWindowParams(appParams?: Record<string, unknown> | null): { documentId?: number; slug?: string } {
+function parseWikiWindowParams(appParams?: Record<string, unknown> | null): { documentId?: LongId; slug?: string } {
   if (!appParams) {
     return {};
   }
 
-  const rawDocumentId = typeof appParams.documentId === 'number'
-    ? appParams.documentId
-    : typeof appParams.documentId === 'string'
-      ? Number(appParams.documentId)
-      : 0;
+  const documentId = normalizePositiveLongId(appParams.documentId);
   const slug = typeof appParams.slug === 'string' ? appParams.slug.trim() : '';
 
   return {
-    documentId: Number.isFinite(rawDocumentId) && rawDocumentId > 0 ? rawDocumentId : undefined,
+    documentId,
     slug: slug || undefined,
   };
 }
@@ -269,7 +279,7 @@ export const WikiApp = () => {
   const loggedIn = useAuthStore((state) => state.isAuthenticated);
   const roles = useUserStore((state) => state.roles || []);
   const windowParams = useMemo(() => parseWikiWindowParams(currentWindow?.appParams), [currentWindow?.appParams]);
-  const initialWindowRouteRef = useRef<{ documentId?: number; slug?: string } | null>(
+  const initialWindowRouteRef = useRef<{ documentId?: LongId; slug?: string } | null>(
     windowParams.documentId || windowParams.slug ? windowParams : null
   );
   const handledWindowRouteRef = useRef<string | null>(null);
@@ -414,6 +424,17 @@ export const WikiApp = () => {
     }
   }, [t]);
 
+  const loadDocumentByRouteId = useCallback(async (documentId: LongId) => {
+    try {
+      const detail = await getWikiDocumentById(documentId, showingDeleted);
+      setSelectedDocumentId(detail.voId);
+      setSelectedDocument(detail);
+    } catch (error) {
+      log.error('WikiApp', '按窗口参数 ID 加载文档失败:', error);
+      toast.error(error instanceof Error ? error.message : t('wiki.toast.loadDocumentFailed'));
+    }
+  }, [showingDeleted, t]);
+
   const loadRevisionList = useCallback(async (documentId: number, preserveSelection: boolean = true) => {
     if (!isAdmin) {
       setRevisionList([]);
@@ -505,14 +526,14 @@ export const WikiApp = () => {
     initialWindowRouteRef.current = null;
 
     if (initialWindowRoute.documentId) {
-      setSelectedDocumentId(initialWindowRoute.documentId);
+      void loadDocumentByRouteId(initialWindowRoute.documentId);
       return;
     }
 
     if (initialWindowRoute.slug) {
       void loadDocumentBySlug(initialWindowRoute.slug);
     }
-  }, [loadDocumentBySlug]);
+  }, [loadDocumentByRouteId, loadDocumentBySlug]);
 
   useEffect(() => {
     const routeSignature = windowParams.documentId
@@ -528,14 +549,14 @@ export const WikiApp = () => {
     handledWindowRouteRef.current = routeSignature;
 
     if (windowParams.documentId) {
-      setSelectedDocumentId(windowParams.documentId);
+      void loadDocumentByRouteId(windowParams.documentId);
       return;
     }
 
     if (windowParams.slug) {
       void loadDocumentBySlug(windowParams.slug);
     }
-  }, [loadDocumentBySlug, windowParams.documentId, windowParams.slug]);
+  }, [loadDocumentByRouteId, loadDocumentBySlug, windowParams.documentId, windowParams.slug]);
 
   useEffect(() => {
     selectedDocumentIdRef.current = selectedDocumentId;

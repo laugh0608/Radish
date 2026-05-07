@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { Icon } from '@radish/ui/icon';
+import type { LongId } from '@/api/user';
 import styles from './UserPostList.module.css';
 
 interface Post {
@@ -16,7 +17,7 @@ interface Post {
 }
 
 interface UserPostListProps {
-  userId: number;
+  userId: LongId;
   apiBaseUrl: string;
   displayTimeZone: string;
   onPostClick?: (postId: number) => void;
@@ -38,7 +39,7 @@ export const UserPostList = ({ userId, apiBaseUrl, displayTimeZone, onPostClick 
     setLoading(true);
     try {
       const response = await fetch(
-        `${apiBaseUrl}/api/v1/Post/GetUserPosts?userId=${userId}&pageIndex=${page}&pageSize=10`
+        `${apiBaseUrl}/api/v1/Post/GetUserPosts?userId=${encodeURIComponent(String(userId))}&pageIndex=${page}&pageSize=10`
       );
       const json = await response.json();
       if (json.isSuccess && json.responseData) {

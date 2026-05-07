@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { Icon } from '@radish/ui/icon';
+import type { LongId } from '@/api/user';
 import styles from './UserCommentList.module.css';
 
 interface Comment {
@@ -14,7 +15,7 @@ interface Comment {
 }
 
 interface UserCommentListProps {
-  userId: number;
+  userId: LongId;
   apiBaseUrl: string;
   displayTimeZone: string;
   onCommentClick?: (postId: number, commentId: number) => void;
@@ -36,7 +37,7 @@ export const UserCommentList = ({ userId, apiBaseUrl, displayTimeZone, onComment
     setLoading(true);
     try {
       const response = await fetch(
-        `${apiBaseUrl}/api/v1/Comment/GetUserComments?userId=${userId}&pageIndex=${page}&pageSize=10`
+        `${apiBaseUrl}/api/v1/Comment/GetUserComments?userId=${encodeURIComponent(String(userId))}&pageIndex=${page}&pageSize=10`
       );
       const json = await response.json();
       if (json.isSuccess && json.responseData) {

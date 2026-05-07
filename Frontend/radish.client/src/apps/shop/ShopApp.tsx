@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUserStore } from '@/stores/userStore';
 import { useCurrentWindow } from '@/desktop/useCurrentWindow';
+import type { LongId } from '@/api/user';
 import { ContentReportModal } from '@/components/ContentReportModal';
 import { ShopHome } from './pages/ShopHome';
 import { ProductList } from './pages/ProductList';
@@ -19,27 +20,30 @@ export type ShopView = 'home' | 'products' | 'product-detail' | 'orders' | 'orde
 export interface ShopAppState {
   currentView: ShopView;
   selectedCategoryId?: string;
-  selectedProductId?: number;
+  selectedProductId?: LongId;
   selectedOrderId?: number;
   searchKeyword?: string;
 }
 
-function parseShopWindowParams(appParams?: Record<string, unknown> | null): { productId?: number } {
+function normalizePositiveLongId(value: unknown): LongId | undefined {
+  if (typeof value === 'number') {
+    return Number.isSafeInteger(value) && value > 0 ? value : undefined;
+  }
+
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  return /^[1-9]\d*$/.test(trimmed) ? trimmed : undefined;
+}
+
+function parseShopWindowParams(appParams?: Record<string, unknown> | null): { productId?: LongId } {
   if (!appParams) {
     return {};
   }
 
-  const rawProductId = typeof appParams.productId === 'number'
-    ? appParams.productId
-    : typeof appParams.productId === 'string'
-      ? Number(appParams.productId)
-      : 0;
-
-  if (!Number.isFinite(rawProductId) || rawProductId <= 0) {
-    return {};
-  }
-
-  return { productId: rawProductId };
+  return { productId: normalizePositiveLongId(appParams.productId) };
 }
 
 export const ShopApp = () => {
@@ -69,7 +73,10 @@ export const ShopApp = () => {
     }
 
     setAppState((current) => {
-      if (current.currentView === 'product-detail' && current.selectedProductId === initialWindowProductId) {
+      if (
+        current.currentView === 'product-detail'
+        && String(current.selectedProductId) === String(initialWindowProductId)
+      ) {
         return current;
       }
 
@@ -118,7 +125,7 @@ export const ShopApp = () => {
       currentView: 'products',
       selectedCategoryId: categoryId
     }),
-    toProductDetail: (productId: number) => setAppState({
+    toProductDetail: (productId: LongId) => setAppState({
       currentView: 'product-detail',
       selectedProductId: productId
     }),

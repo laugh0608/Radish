@@ -1,18 +1,19 @@
 import type { Product } from '@/types/shop';
 import { useTranslation } from 'react-i18next';
 import { getProductTypeDisplay, StockType } from '@/api/shop';
+import type { LongId } from '@/api/user';
 import { resolveMediaUrl } from '@/utils/media';
 import styles from './ProductDetail.module.css';
 
 interface ProductDetailProps {
-  productId: number;
+  productId: LongId;
   product: Product | null;
   loading: boolean;
   canBuy: { canBuy: boolean; reason: string } | null;
   checkingCanBuy: boolean;
   isAuthenticated: boolean;
   onBack: () => void;
-  onPurchase: (productId: number) => void;
+  onPurchase: (productId: LongId) => void;
   onReport?: (productId: number) => void;
 }
 

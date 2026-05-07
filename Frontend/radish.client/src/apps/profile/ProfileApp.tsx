@@ -53,7 +53,7 @@ interface UserStats {
 }
 
 interface ProfileWindowParams {
-  userId?: number;
+  userId?: LongId;
   userName?: string;
   avatarUrl?: string | null;
   displayName?: string | null;
@@ -69,19 +69,26 @@ function buildProfileRequestKey(scope: string, ...parts: Array<string | number>)
   return [scope, ...parts].join('|');
 }
 
+function normalizePositiveLongId(value: unknown): LongId | undefined {
+  if (typeof value === 'number') {
+    return Number.isSafeInteger(value) && value > 0 ? value : undefined;
+  }
+
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  return /^[1-9]\d*$/.test(trimmed) ? trimmed : undefined;
+}
+
 function parseProfileWindowParams(input: Record<string, unknown> | undefined): ProfileWindowParams {
   if (!input) {
     return {};
   }
 
-  const rawUserId = typeof input.userId === 'number'
-    ? input.userId
-    : typeof input.userId === 'string'
-      ? Number(input.userId)
-      : undefined;
-
   return {
-    userId: rawUserId && Number.isFinite(rawUserId) ? rawUserId : undefined,
+    userId: normalizePositiveLongId(input.userId),
     userName: typeof input.userName === 'string' ? input.userName : undefined,
     avatarUrl: typeof input.avatarUrl === 'string' ? input.avatarUrl : null,
     displayName: typeof input.displayName === 'string' ? input.displayName : null,
@@ -114,8 +121,10 @@ function buildAvatarStyle(seed: string) {
   };
 }
 
-async function fetchProfileStats(apiBaseUrl: string, viewingUserId: number): Promise<UserStats | null> {
-  const response = await fetch(`${apiBaseUrl}/api/v1/User/GetUserStats?userId=${viewingUserId}`);
+async function fetchProfileStats(apiBaseUrl: string, viewingUserId: LongId): Promise<UserStats | null> {
+  const response = await fetch(
+    `${apiBaseUrl}/api/v1/User/GetUserStats?userId=${encodeURIComponent(String(viewingUserId))}`
+  );
   const json = await response.json() as { isSuccess?: boolean; responseData?: UserStats | null };
 
   if (json.isSuccess && json.responseData) {
@@ -189,8 +198,11 @@ export const ProfileApp = () => {
   const { openApp } = useWindowStore();
   const currentWindow = useCurrentWindow();
   const params = useMemo(() => parseProfileWindowParams(currentWindow?.appParams), [currentWindow?.appParams]);
-  const viewingUserId = params.userId && params.userId > 0 ? params.userId : userId;
-  const isOwnProfile = viewingUserId === userId;
+  const authenticatedUserId = userId > 0 ? userId : undefined;
+  const viewingUserId = params.userId ?? authenticatedUserId;
+  const viewingUserIdKey = viewingUserId ? String(viewingUserId) : '';
+  const authenticatedUserIdKey = authenticatedUserId ? String(authenticatedUserId) : '';
+  const isOwnProfile = viewingUserIdKey !== '' && viewingUserIdKey === authenticatedUserIdKey;
   const loggedIn = isAuthenticated();
   const [activeTab, setActiveTab] = useState<'posts' | 'comments' | 'quick-replies' | 'browse-history' | 'attachments' | 'social'>('posts');
   const [stats, setStats] = useState<UserStats | null>(null);
@@ -205,7 +217,10 @@ export const ProfileApp = () => {
   const [followLoading, setFollowLoading] = useState(false);
 
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
-  const viewingUserName = publicProfile?.voUserName?.trim() || params.userName?.trim() || userName || t('common.userFallback', { id: viewingUserId });
+  const viewingUserName = publicProfile?.voUserName?.trim()
+    || params.userName?.trim()
+    || userName
+    || t('common.userFallback', { id: viewingUserIdKey || 0 });
   const viewingDisplayName = publicProfile?.voDisplayName?.trim() || params.displayName?.trim() || null;
   const externalAvatarUrl = useMemo(
     () => resolveAvatarUrl(
@@ -222,7 +237,7 @@ export const ProfileApp = () => {
   }, [activeTab, isOwnProfile]);
 
   useEffect(() => {
-    if (isOwnProfile || !loggedIn || viewingUserId <= 0) {
+    if (isOwnProfile || !loggedIn || !viewingUserId) {
       setPublicProfile(null);
       setFollowStatus(null);
       setLoadingPublicProfile(false);
@@ -236,11 +251,11 @@ export const ProfileApp = () => {
 
       const [profileResult, followStatusResult] = await Promise.allSettled([
         reuseInFlightRequest(
-          buildProfileRequestKey('public-profile', apiBaseUrl, viewingUserId),
+          buildProfileRequestKey('public-profile', apiBaseUrl, viewingUserIdKey),
           () => getPublicProfile(viewingUserId)
         ),
         reuseInFlightRequest(
-          buildProfileRequestKey('follow-status', apiBaseUrl, viewingUserId),
+          buildProfileRequestKey('follow-status', apiBaseUrl, viewingUserIdKey),
           () => getFollowStatus(viewingUserId)
         ),
       ]);
@@ -271,7 +286,7 @@ export const ProfileApp = () => {
     return () => {
       cancelled = true;
     };
-  }, [apiBaseUrl, isOwnProfile, loggedIn, viewingUserId]);
+  }, [apiBaseUrl, isOwnProfile, loggedIn, viewingUserId, viewingUserIdKey]);
 
   const handlePostClick = (postId: number) => {
     openApp('forum', buildForumAppParams({ postId }));
@@ -302,7 +317,7 @@ export const ProfileApp = () => {
   };
 
   useEffect(() => {
-    if (!loggedIn || viewingUserId <= 0) {
+    if (!loggedIn || !viewingUserId || !authenticatedUserId) {
       setStats(null);
       setLoadingStats(false);
       return;
@@ -314,11 +329,11 @@ export const ProfileApp = () => {
 
       const [statsResult, timeStateResult] = await Promise.allSettled([
         reuseInFlightRequest(
-          buildProfileRequestKey('profile-stats', apiBaseUrl, viewingUserId),
+          buildProfileRequestKey('profile-stats', apiBaseUrl, viewingUserIdKey),
           () => fetchProfileStats(apiBaseUrl, viewingUserId)
         ),
         reuseInFlightRequest(
-          buildProfileRequestKey('profile-time-state', apiBaseUrl, userId),
+          buildProfileRequestKey('profile-time-state', apiBaseUrl, authenticatedUserId),
           () => fetchProfileTimeState()
         )
       ]);
@@ -350,7 +365,7 @@ export const ProfileApp = () => {
     return () => {
       cancelled = true;
     };
-  }, [apiBaseUrl, loggedIn, viewingUserId, userId]);
+  }, [apiBaseUrl, authenticatedUserId, loggedIn, viewingUserId, viewingUserIdKey]);
 
   const handleTimeZoneChange = async (timeZoneId: string) => {
     const resolvedTimeZone = resolveTimeZoneId(timeZoneId, systemTimeZone);
@@ -373,7 +388,7 @@ export const ProfileApp = () => {
   };
 
   const handleToggleFollow = async () => {
-    if (!loggedIn || isOwnProfile || viewingUserId <= 0 || followLoading) {
+    if (!loggedIn || isOwnProfile || !viewingUserId || followLoading) {
       return;
     }
 
@@ -411,7 +426,7 @@ export const ProfileApp = () => {
       <div className={styles.content}>
         {isOwnProfile ? (
           <UserInfoCard
-            userId={viewingUserId}
+            userId={authenticatedUserId!}
             userName={viewingUserName}
             stats={stats || undefined}
             loading={loadingStats}
@@ -544,7 +559,7 @@ export const ProfileApp = () => {
 
         <div className={styles.tabContent}>
           <Suspense fallback={<div className={styles.notLoggedIn}>{t('common.loading')}</div>}>
-            {activeTab === 'posts' && (
+            {activeTab === 'posts' && viewingUserId && (
               <UserPostList
                 userId={viewingUserId}
                 apiBaseUrl={apiBaseUrl}
@@ -552,7 +567,7 @@ export const ProfileApp = () => {
                 displayTimeZone={displayTimeZone}
               />
             )}
-            {activeTab === 'comments' && (
+            {activeTab === 'comments' && viewingUserId && (
               <UserCommentList
                 userId={viewingUserId}
                 apiBaseUrl={apiBaseUrl}

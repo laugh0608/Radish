@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { log } from '@/utils/logger';
 import type { TFunction } from 'i18next';
+import type { LongId } from '@/api/user';
 import type { Product } from '@/types/shop';
 import * as shopApi from '@/api/shop';
 import type { ShopAppState } from '../ShopApp';
@@ -11,8 +12,8 @@ interface UseShopActionsProps {
   appState: ShopAppState;
   setError: (error: string | null) => void;
   loadProducts: (categoryId?: string, productType?: shopApi.ProductTypeValue, keyword?: string, pageIndex?: number, pageSize?: number) => Promise<void>;
-  loadProductDetail: (productId: number) => Promise<void>;
-  checkCanBuy: (productId: number, quantity?: number) => Promise<void>;
+  loadProductDetail: (productId: LongId) => Promise<void>;
+  checkCanBuy: (productId: LongId, quantity?: number) => Promise<void>;
   loadOrders: (status?: shopApi.OrderStatusValue, pageIndex?: number, pageSize?: number) => Promise<void>;
   loadOrderDetail: (orderId: number) => Promise<void>;
   loadInventory: () => Promise<void>;
@@ -52,14 +53,14 @@ export const useShopActions = (props: UseShopActionsProps) => {
   }, [appState, loadProducts, loadOrders]);
 
   // 处理购买点击
-  const handlePurchaseClick = useCallback(async (productId: number) => {
+  const handlePurchaseClick = useCallback(async (productId: LongId) => {
     if (!isAuthenticated) {
       setError(t('shop.loginRequired'));
       return;
     }
 
     // 加载商品详情（如果还没有）
-    if (!selectedProduct || selectedProduct.voId !== productId) {
+    if (!selectedProduct || String(selectedProduct.voId) !== String(productId)) {
       await loadProductDetail(productId);
     }
 
