@@ -226,7 +226,7 @@ export const useShopData = (t: TFunction) => {
   }, [t, setError]);
 
   // 加载订单详情
-  const loadOrderDetail = useCallback(async (orderId: number) => {
+  const loadOrderDetail = useCallback(async (orderId: LongId) => {
     setState(prev => ({ ...prev, loadingOrderDetail: true, selectedOrder: null }));
     try {
       const result = await shopApi.getOrder(orderId, t);

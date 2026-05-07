@@ -10,7 +10,7 @@ import styles from './ContentReportModal.module.css';
 interface ContentReportModalProps {
   isOpen: boolean;
   targetType: ContentReportTargetType;
-  targetId: number;
+  targetId: number | string;
   onClose: () => void;
 }
 
@@ -24,6 +24,14 @@ export const ContentReportModal = ({
   const [reasonType, setReasonType] = useState('Spam');
   const [reasonDetail, setReasonDetail] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const normalizedTargetId = useMemo(() => {
+    if (typeof targetId === 'number') {
+      return Number.isSafeInteger(targetId) && targetId > 0 ? String(targetId) : null;
+    }
+
+    const trimmed = targetId.trim();
+    return /^[1-9]\d*$/.test(trimmed) ? trimmed : null;
+  }, [targetId]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -60,7 +68,7 @@ export const ContentReportModal = ({
   ]), [t]);
 
   const handleSubmit = async () => {
-    if (targetId <= 0 || submitting) {
+    if (!normalizedTargetId || submitting) {
       return;
     }
 
@@ -68,7 +76,7 @@ export const ContentReportModal = ({
     try {
       await submitContentReport({
         targetType,
-        targetContentId: targetId,
+        targetContentId: normalizedTargetId,
         reasonType,
         reasonDetail: reasonDetail.trim() || undefined,
       });
@@ -92,7 +100,7 @@ export const ContentReportModal = ({
           <Button variant="secondary" onClick={onClose} disabled={submitting}>
             {t('common.cancel')}
           </Button>
-          <Button variant="primary" onClick={handleSubmit} disabled={submitting || targetId <= 0}>
+          <Button variant="primary" onClick={handleSubmit} disabled={submitting || !normalizedTargetId}>
             {submitting ? t('report.submitting') : t('report.submit')}
           </Button>
         </div>

@@ -157,7 +157,7 @@ function formatTime(value: string | null | undefined, language?: string): string
   });
 }
 
-function pickInitialDocumentId(tree: WikiDocumentTreeNodeVo[], list: WikiDocumentVo[]): number | null {
+function pickInitialDocumentId(tree: WikiDocumentTreeNodeVo[], list: WikiDocumentVo[]): LongId | null {
   if (list.length > 0) {
     return list[0].voId;
   }
@@ -182,6 +182,11 @@ function normalizeOptionalNumber(value: string): number | undefined {
 
   const parsed = Number(trimmed);
   return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function normalizeOptionalLongId(value: string): LongId | undefined {
+  const trimmed = value.trim();
+  return /^[1-9]\d*$/.test(trimmed) ? trimmed : undefined;
 }
 
 function normalizePositiveLongId(value: unknown): LongId | undefined {
@@ -224,9 +229,9 @@ function buildCreateRequest(draft: EditorDraft): CreateWikiDocumentRequest {
     slug: normalizeOptionalString(draft.slug),
     summary: normalizeOptionalString(draft.summary),
     markdownContent: draft.markdownContent,
-    parentId: normalizeOptionalNumber(draft.parentId),
+    parentId: normalizeOptionalLongId(draft.parentId),
     sort: normalizeOptionalNumber(draft.sort) ?? 0,
-    coverAttachmentId: normalizeOptionalNumber(draft.coverAttachmentId),
+    coverAttachmentId: normalizeOptionalLongId(draft.coverAttachmentId),
     visibility: normalizeOptionalNumber(draft.visibility) ?? WikiDocumentVisibility.Authenticated,
     allowedRoles: normalizeAccessList(draft.allowedRoles),
     allowedPermissions: normalizeAccessList(draft.allowedPermissions),
@@ -248,7 +253,7 @@ function describeRevisionSummary(t: TFunction, revision: WikiDocumentRevisionIte
   return revision.voIsCurrent ? t('wiki.revision.currentSnapshot') : t('wiki.revision.noChangeSummary');
 }
 
-function collectExpandableNodeIds(nodes: WikiDocumentTreeNodeVo[]): number[] {
+function collectExpandableNodeIds(nodes: WikiDocumentTreeNodeVo[]): LongId[] {
   return nodes.flatMap((node) => {
     const children = node.voChildren || [];
     return children.length > 0
@@ -257,9 +262,10 @@ function collectExpandableNodeIds(nodes: WikiDocumentTreeNodeVo[]): number[] {
   });
 }
 
-function findAncestorIds(nodes: WikiDocumentTreeNodeVo[], targetId: number, trail: number[] = []): number[] {
+function findAncestorIds(nodes: WikiDocumentTreeNodeVo[], targetId: LongId, trail: LongId[] = []): LongId[] {
+  const targetIdKey = String(targetId);
   for (const node of nodes) {
-    if (node.voId === targetId) {
+    if (String(node.voId) === targetIdKey) {
       return trail;
     }
 
@@ -291,10 +297,10 @@ export const WikiApp = () => {
   const [tree, setTree] = useState<WikiDocumentTreeNodeVo[]>([]);
   const [documents, setDocuments] = useState<WikiDocumentVo[]>([]);
   const [totalResultsCount, setTotalResultsCount] = useState(0);
-  const [selectedDocumentId, setSelectedDocumentId] = useState<number | null>(null);
+  const [selectedDocumentId, setSelectedDocumentId] = useState<LongId | null>(null);
   const [selectedDocument, setSelectedDocument] = useState<WikiDocumentDetailVo | null>(null);
   const [revisionList, setRevisionList] = useState<WikiDocumentRevisionItemVo[]>([]);
-  const [selectedRevisionId, setSelectedRevisionId] = useState<number | null>(null);
+  const [selectedRevisionId, setSelectedRevisionId] = useState<LongId | null>(null);
   const [selectedRevision, setSelectedRevision] = useState<WikiDocumentRevisionDetailVo | null>(null);
   const [keyword, setKeyword] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -312,7 +318,7 @@ export const WikiApp = () => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [sidebarView, setSidebarView] = useState<SidebarView>('tree');
-  const [expandedNodeIds, setExpandedNodeIds] = useState<Set<number>>(new Set());
+  const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set());
   const [isCompactLayout, setIsCompactLayout] = useState(false);
   const [isReadingLayout, setIsReadingLayout] = useState(false);
   const [isSidebarSheetOpen, setIsSidebarSheetOpen] = useState(false);
@@ -321,11 +327,11 @@ export const WikiApp = () => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const initialLoadedRef = useRef(false);
-  const selectedDocumentIdRef = useRef<number | null>(null);
-  const selectedRevisionIdRef = useRef<number | null>(null);
-  const activeDocumentIds = useMemo(() => new Set(flattenTree(tree)), [tree]);
+  const selectedDocumentIdRef = useRef<LongId | null>(null);
+  const selectedRevisionIdRef = useRef<LongId | null>(null);
+  const activeDocumentIds = useMemo(() => new Set(flattenTree(tree).map(String)), [tree]);
   const treeOptions = useMemo(() => flattenTreeOptions(tree), [tree]);
-  const expandableNodeIds = useMemo(() => new Set(collectExpandableNodeIds(tree)), [tree]);
+  const expandableNodeIds = useMemo(() => new Set(collectExpandableNodeIds(tree).map(String)), [tree]);
   const showingDeleted = isAdmin && deletionFilter === 'deleted';
   const totalTreeDocuments = activeDocumentIds.size;
   const hasActiveFilters = keyword.trim().length > 0 || statusFilter !== '' || showingDeleted;
@@ -343,11 +349,11 @@ export const WikiApp = () => {
   const shouldUseSidebarOverlay = isReadingLayout && (editorVisible || Boolean(selectedDocumentId) || loadingDetail);
   const invalidParentIds = useMemo(() => {
     if (!selectedDocumentId) {
-      return new Set<number>();
+      return new Set<string>();
     }
 
-    const ids = collectDescendantIds(tree, selectedDocumentId);
-    ids.add(selectedDocumentId);
+    const ids = new Set(Array.from(collectDescendantIds(tree, selectedDocumentId), String));
+    ids.add(String(selectedDocumentId));
     return ids;
   }, [selectedDocumentId, tree]);
 
@@ -377,8 +383,9 @@ export const WikiApp = () => {
         return;
       }
 
-      const hasInTree = flattenTree(treeData).includes(selectedDocumentIdRef.current);
-      const hasInList = (pageData.data || []).some((item) => item.voId === selectedDocumentIdRef.current);
+      const selectedDocumentIdKey = String(selectedDocumentIdRef.current);
+      const hasInTree = flattenTree(treeData).some((id) => String(id) === selectedDocumentIdKey);
+      const hasInList = (pageData.data || []).some((item) => String(item.voId) === selectedDocumentIdKey);
 
       if (!hasInTree && !hasInList) {
         setSelectedDocumentId(pickInitialDocumentId(treeData, pageData.data || []));
@@ -393,7 +400,7 @@ export const WikiApp = () => {
     }
   }, [isAdmin, keyword, showingDeleted, statusFilter, t]);
 
-  const loadDocumentDetail = useCallback(async (documentId: number) => {
+  const loadDocumentDetail = useCallback(async (documentId: LongId) => {
     setLoadingDetail(true);
 
     try {
@@ -435,7 +442,7 @@ export const WikiApp = () => {
     }
   }, [showingDeleted, t]);
 
-  const loadRevisionList = useCallback(async (documentId: number, preserveSelection: boolean = true) => {
+  const loadRevisionList = useCallback(async (documentId: LongId, preserveSelection: boolean = true) => {
     if (!isAdmin) {
       setRevisionList([]);
       setSelectedRevisionId(null);
@@ -458,7 +465,7 @@ export const WikiApp = () => {
       if (
         preserveSelection &&
         selectedRevisionIdRef.current &&
-        revisions.some((item) => item.voId === selectedRevisionIdRef.current)
+        revisions.some((item) => String(item.voId) === String(selectedRevisionIdRef.current))
       ) {
         return;
       }
@@ -475,7 +482,7 @@ export const WikiApp = () => {
     }
   }, [isAdmin, t]);
 
-  const loadRevisionDetail = useCallback(async (revisionId: number) => {
+  const loadRevisionDetail = useCallback(async (revisionId: LongId) => {
     if (!isAdmin) {
       setSelectedRevision(null);
       return;
@@ -628,7 +635,7 @@ export const WikiApp = () => {
 
   useEffect(() => {
     setExpandedNodeIds((current) => {
-      const next = new Set<number>();
+      const next = new Set<string>();
 
       current.forEach((id) => {
         if (expandableNodeIds.has(id)) {
@@ -639,15 +646,16 @@ export const WikiApp = () => {
       if (next.size === 0) {
         tree.forEach((node) => {
           if ((node.voChildren || []).length > 0) {
-            next.add(node.voId);
+            next.add(String(node.voId));
           }
         });
       }
 
       if (selectedDocumentId) {
         findAncestorIds(tree, selectedDocumentId).forEach((id) => {
-          if (expandableNodeIds.has(id)) {
-            next.add(id);
+          const ancestorIdKey = String(id);
+          if (expandableNodeIds.has(ancestorIdKey)) {
+            next.add(ancestorIdKey);
           }
         });
       }
@@ -658,7 +666,7 @@ export const WikiApp = () => {
 
   const openCreateEditor = () => {
     const parentId = selectedDocument && !selectedDocument.voIsDeleted ? String(selectedDocument.voId) : '';
-    const suggestedSort = String(getSuggestedSortValue(tree, normalizeOptionalNumber(parentId)));
+    const suggestedSort = String(getSuggestedSortValue(tree, normalizeOptionalLongId(parentId)));
 
     setIsSidebarSheetOpen(false);
     setEditorMode('create');
@@ -703,7 +711,7 @@ export const WikiApp = () => {
     setSortSuggestion(EMPTY_DRAFT.sort);
   };
 
-  const handleSelectDocument = useCallback((documentId: number) => {
+  const handleSelectDocument = useCallback((documentId: LongId) => {
     setSelectedDocumentId(documentId);
     if (shouldUseSidebarOverlay) {
       setIsSidebarSheetOpen(false);
@@ -725,7 +733,7 @@ export const WikiApp = () => {
 
   const handleParentChange = (nextParentId: string) => {
     const currentDocumentId = editorMode === 'edit' ? selectedDocumentId ?? undefined : undefined;
-    const nextSuggestedSort = String(getSuggestedSortValue(tree, normalizeOptionalNumber(nextParentId), currentDocumentId));
+    const nextSuggestedSort = String(getSuggestedSortValue(tree, normalizeOptionalLongId(nextParentId), currentDocumentId));
 
     setDraft((current) => ({
       ...current,
@@ -735,7 +743,7 @@ export const WikiApp = () => {
     setSortSuggestion(nextSuggestedSort);
   };
 
-  const refreshDocumentWorkspace = useCallback(async (documentId: number, preserveRevisionSelection: boolean = true) => {
+  const refreshDocumentWorkspace = useCallback(async (documentId: LongId, preserveRevisionSelection: boolean = true) => {
     await refreshCollections(true);
     await loadDocumentDetail(documentId);
     await loadRevisionList(documentId, preserveRevisionSelection);
@@ -1039,13 +1047,14 @@ export const WikiApp = () => {
   const selectedStatusText = selectedDocument ? toStatusText(t, selectedDocument.voStatus) : t('wiki.status.unselected');
   const selectedStatusClass = selectedDocument ? toStatusClassName(selectedDocument.voStatus) : styles.statusDraft;
 
-  const toggleTreeNode = (nodeId: number) => {
+  const toggleTreeNode = (nodeId: LongId) => {
     setExpandedNodeIds((current) => {
       const next = new Set(current);
-      if (next.has(nodeId)) {
-        next.delete(nodeId);
+      const nodeIdKey = String(nodeId);
+      if (next.has(nodeIdKey)) {
+        next.delete(nodeIdKey);
       } else {
-        next.add(nodeId);
+        next.add(nodeIdKey);
       }
 
       return next;
@@ -1056,7 +1065,7 @@ export const WikiApp = () => {
     return nodes.map((node) => {
       const children = node.voChildren || [];
       const isExpandable = children.length > 0;
-      const isExpanded = expandedNodeIds.has(node.voId);
+      const isExpanded = expandedNodeIds.has(String(node.voId));
 
       return (
         <div key={node.voId} className={styles.treeNodeGroup}>
@@ -1085,11 +1094,11 @@ export const WikiApp = () => {
 
             <button
               type="button"
-              className={`${styles.treeNode} ${selectedDocumentId === node.voId ? styles.treeNodeActive : ''}`}
+              className={`${styles.treeNode} ${String(selectedDocumentId) === String(node.voId) ? styles.treeNodeActive : ''}`}
               onClick={() => {
                 handleSelectDocument(node.voId);
                 if (isExpandable) {
-                  setExpandedNodeIds((current) => new Set(current).add(node.voId));
+                  setExpandedNodeIds((current) => new Set(current).add(String(node.voId)));
                 }
               }}
             >
@@ -1147,7 +1156,7 @@ export const WikiApp = () => {
               <button
                 key={document.voId}
                 type="button"
-                className={`${styles.listItem} ${selectedDocumentId === document.voId ? styles.listItemActive : ''}`}
+                className={`${styles.listItem} ${String(selectedDocumentId) === String(document.voId) ? styles.listItemActive : ''}`}
                 onClick={() => handleSelectDocument(document.voId)}
               >
                 <div className={styles.listItemHeader}>
@@ -1408,10 +1417,10 @@ export const WikiApp = () => {
                       <option
                         key={option.id}
                         value={String(option.id)}
-                        disabled={editorMode === 'edit' && invalidParentIds.has(option.id)}
+                        disabled={editorMode === 'edit' && invalidParentIds.has(String(option.id))}
                       >
                         {option.label}
-                        {editorMode === 'edit' && invalidParentIds.has(option.id) ? t('wiki.form.parentDisabledSuffix') : ''}
+                        {editorMode === 'edit' && invalidParentIds.has(String(option.id)) ? t('wiki.form.parentDisabledSuffix') : ''}
                       </option>
                     ))}
                   </select>
@@ -1600,7 +1609,7 @@ export const WikiApp = () => {
             </div>
           )}
 
-          {!editorVisible && selectedDocumentId && !activeDocumentIds.has(selectedDocumentId) ? (
+          {!editorVisible && selectedDocumentId && !activeDocumentIds.has(String(selectedDocumentId)) ? (
             <div className={`${styles.errorText} ${styles.errorTextSpacing}`}>
               {t('wiki.empty.orphanWarning')}
             </div>
@@ -1662,7 +1671,7 @@ export const WikiApp = () => {
                   <button
                     key={revision.voId}
                     type="button"
-                    className={`${styles.revisionItem} ${selectedRevisionId === revision.voId ? styles.revisionItemActive : ''}`}
+                    className={`${styles.revisionItem} ${String(selectedRevisionId) === String(revision.voId) ? styles.revisionItemActive : ''}`}
                     onClick={() => setSelectedRevisionId(revision.voId)}
                   >
                     <div className={styles.revisionItemHeader}>

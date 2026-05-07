@@ -76,8 +76,7 @@ export const UserDetail = () => {
   };
 
   const getSignedCoinAmount = (transaction: CoinTransactionVo) => {
-    const currentUserId = Number(userId);
-    if (Number.isFinite(currentUserId) && transaction.voFromUserId === currentUserId) {
+    if (userId && String(transaction.voFromUserId ?? '') === userId) {
       return -transaction.voAmount;
     }
 

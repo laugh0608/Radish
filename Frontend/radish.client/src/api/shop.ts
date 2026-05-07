@@ -186,18 +186,18 @@ export async function getMyOrders(
 /**
  * 获取订单详情
  */
-export async function getOrder(orderId: number, t: TFunction): Promise<ParsedApiResponse<Order>> {
+export async function getOrder(orderId: LongId, t: TFunction): Promise<ParsedApiResponse<Order>> {
   void t;
-  return await apiGet<Order>(`/api/v1/Shop/GetOrder/${orderId}`, { withAuth: true });
+  return await apiGet<Order>(`/api/v1/Shop/GetOrder/${encodeURIComponent(String(orderId))}`, { withAuth: true });
 }
 
 /**
  * 取消订单
  */
-export async function cancelOrder(orderId: number, t: TFunction, reason?: string) {
+export async function cancelOrder(orderId: LongId, t: TFunction, reason?: string) {
   void t;
   const body = reason ? { reason } : undefined;
-  return await apiPost<boolean>(`/api/v1/Shop/CancelOrder/${orderId}`, body, { withAuth: true });
+  return await apiPost<boolean>(`/api/v1/Shop/CancelOrder/${encodeURIComponent(String(orderId))}`, body, { withAuth: true });
 }
 
 /**
@@ -222,17 +222,17 @@ export async function getMyActiveBenefits(t: TFunction): Promise<ParsedApiRespon
 /**
  * 激活权益
  */
-export async function activateBenefit(benefitId: number, t: TFunction) {
+export async function activateBenefit(benefitId: LongId, t: TFunction) {
   void t;
-  return await apiPost<boolean>(`/api/v1/Shop/ActivateBenefit/${benefitId}`, undefined, { withAuth: true });
+  return await apiPost<boolean>(`/api/v1/Shop/ActivateBenefit/${encodeURIComponent(String(benefitId))}`, undefined, { withAuth: true });
 }
 
 /**
  * 取消激活权益
  */
-export async function deactivateBenefit(benefitId: number, t: TFunction) {
+export async function deactivateBenefit(benefitId: LongId, t: TFunction) {
   void t;
-  return await apiPost<boolean>(`/api/v1/Shop/DeactivateBenefit/${benefitId}`, undefined, { withAuth: true });
+  return await apiPost<boolean>(`/api/v1/Shop/DeactivateBenefit/${encodeURIComponent(String(benefitId))}`, undefined, { withAuth: true });
 }
 
 /**
@@ -254,10 +254,10 @@ export async function useItem(request: UseItemRequest, t: TFunction) {
 /**
  * 使用改名卡
  */
-export async function useRenameCard(inventoryId: number, newNickname: string, t: TFunction) {
+export async function useRenameCard(inventoryId: LongId, newNickname: string, t: TFunction) {
   void t;
   return await apiPost<UseItemResult>(
-    `/api/v1/Shop/UseRenameCard/${inventoryId}?newNickname=${encodeURIComponent(newNickname)}`,
+    `/api/v1/Shop/UseRenameCard/${encodeURIComponent(String(inventoryId))}?newNickname=${encodeURIComponent(newNickname)}`,
     undefined,
     { withAuth: true }
   );

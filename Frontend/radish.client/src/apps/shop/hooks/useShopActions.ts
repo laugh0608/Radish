@@ -15,7 +15,7 @@ interface UseShopActionsProps {
   loadProductDetail: (productId: LongId) => Promise<void>;
   checkCanBuy: (productId: LongId, quantity?: number) => Promise<void>;
   loadOrders: (status?: shopApi.OrderStatusValue, pageIndex?: number, pageSize?: number) => Promise<void>;
-  loadOrderDetail: (orderId: number) => Promise<void>;
+  loadOrderDetail: (orderId: LongId) => Promise<void>;
   loadInventory: () => Promise<void>;
   searchProducts: (keyword: string) => Promise<void>;
   selectedProduct: Product | null;
@@ -76,7 +76,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
   }, []);
 
   // 确认购买
-  const handleConfirmPurchase = useCallback(async (productId: number, quantity: number = 1) => {
+  const handleConfirmPurchase = useCallback(async (productId: LongId, quantity: number = 1) => {
     if (!isAuthenticated) {
       setError(t('shop.loginRequired'));
       return;
@@ -117,7 +117,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
   }, [isAuthenticated, t, appState.currentView, checkCanBuy, setError]);
 
   // 取消订单
-  const handleCancelOrder = useCallback(async (orderId: number, reason?: string) => {
+  const handleCancelOrder = useCallback(async (orderId: LongId, reason?: string) => {
     try {
       const result = await shopApi.cancelOrder(orderId, t, reason);
       if (result.ok) {
@@ -134,7 +134,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
   }, [t, loadOrderDetail, setError]);
 
   // 激活权益
-  const handleActivateBenefit = useCallback(async (benefitId: number) => {
+  const handleActivateBenefit = useCallback(async (benefitId: LongId) => {
     try {
       const result = await shopApi.activateBenefit(benefitId, t);
       if (result.ok) {
@@ -151,7 +151,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
   }, [t, loadInventory, setError]);
 
   // 取消激活权益
-  const handleDeactivateBenefit = useCallback(async (benefitId: number) => {
+  const handleDeactivateBenefit = useCallback(async (benefitId: LongId) => {
     try {
       const result = await shopApi.deactivateBenefit(benefitId, t);
       if (result.ok) {
@@ -168,7 +168,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
   }, [t, loadInventory, setError]);
 
   // 使用道具
-  const handleUseItem = useCallback(async (inventoryId: number, quantity: number = 1, targetId?: number) => {
+  const handleUseItem = useCallback(async (inventoryId: LongId, quantity: number = 1, targetId?: LongId) => {
     try {
       const result = await shopApi.useItem({
         inventoryId,
@@ -195,7 +195,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
   }, [t, loadInventory, setError]);
 
   // 使用改名卡
-  const handleUseRenameCard = useCallback(async (inventoryId: number, newNickname: string) => {
+  const handleUseRenameCard = useCallback(async (inventoryId: LongId, newNickname: string) => {
     try {
       const result = await shopApi.useRenameCard(inventoryId, newNickname, t);
       if (result.ok && result.data?.success) {

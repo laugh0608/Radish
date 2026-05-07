@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Product } from '@/types/shop';
+import type { LongId } from '@/api/user';
 import { getProductTypeDisplay } from '@/api/shop';
 import { resolveMediaUrl } from '@/utils/media';
 import styles from './PurchaseModal.module.css';
@@ -10,7 +11,7 @@ interface PurchaseModalProps {
   product: Product | null;
   loading: boolean;
   onClose: () => void;
-  onConfirm: (productId: number, quantity: number) => void;
+  onConfirm: (productId: LongId, quantity: number) => void;
 }
 
 export const PurchaseModal = ({

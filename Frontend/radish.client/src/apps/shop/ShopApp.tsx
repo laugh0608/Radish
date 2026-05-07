@@ -21,7 +21,7 @@ export interface ShopAppState {
   currentView: ShopView;
   selectedCategoryId?: string;
   selectedProductId?: LongId;
-  selectedOrderId?: number;
+  selectedOrderId?: LongId;
   searchKeyword?: string;
 }
 
@@ -51,7 +51,7 @@ export const ShopApp = () => {
   const { isAuthenticated } = useUserStore();
   const currentWindow = useCurrentWindow();
   const loggedIn = isAuthenticated();
-  const [reportProductId, setReportProductId] = useState<number | null>(null);
+  const [reportProductId, setReportProductId] = useState<LongId | null>(null);
   const initialWindowProductId = useMemo(
     () => parseShopWindowParams(currentWindow?.appParams).productId,
     [currentWindow?.appParams]
@@ -130,7 +130,7 @@ export const ShopApp = () => {
       selectedProductId: productId
     }),
     toOrders: () => setAppState({ currentView: 'orders' }),
-    toOrderDetail: (orderId: number) => setAppState({
+    toOrderDetail: (orderId: LongId) => setAppState({
       currentView: 'order-detail',
       selectedOrderId: orderId
     }),
@@ -149,7 +149,7 @@ export const ShopApp = () => {
     }
   };
 
-  const handleOpenProductReport = (productId: number) => {
+  const handleOpenProductReport = (productId: LongId) => {
     if (!loggedIn) {
       setError(t('report.loginRequired'));
       return;

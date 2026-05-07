@@ -1,6 +1,7 @@
 import type { SyntheticEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ProductCategory, ProductListItem } from '@/types/shop';
+import type { LongId } from '@/api/user';
 import { resolveMediaUrl } from '@/utils/media';
 import styles from './ShopHome.module.css';
 
@@ -9,7 +10,7 @@ interface ShopHomeProps {
   featuredProducts: ProductListItem[];
   loading: boolean;
   onCategoryClick: (categoryId: string) => void;
-  onProductClick: (productId: number) => void;
+  onProductClick: (productId: LongId) => void;
   onViewAllProducts: () => void;
 }
 

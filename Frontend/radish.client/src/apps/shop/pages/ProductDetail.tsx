@@ -14,7 +14,7 @@ interface ProductDetailProps {
   isAuthenticated: boolean;
   onBack: () => void;
   onPurchase: (productId: LongId) => void;
-  onReport?: (productId: number) => void;
+  onReport?: (productId: LongId) => void;
 }
 
 export const ProductDetail = ({

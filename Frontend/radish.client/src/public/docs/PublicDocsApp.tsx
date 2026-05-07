@@ -88,7 +88,7 @@ interface PublicDocsAppProps {
 }
 
 interface PublicDocsTreeRow {
-  id: number;
+  id: number | string;
   slug: string;
   title: string;
   depth: number;

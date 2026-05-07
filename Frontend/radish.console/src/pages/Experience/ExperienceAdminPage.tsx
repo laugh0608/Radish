@@ -29,9 +29,20 @@ import dayjs, { type Dayjs } from 'dayjs';
 import '../adminFeature.css';
 
 interface FreezeFormValues {
-  userId: number;
+  userId: string;
   reason: string;
   frozenUntil?: Dayjs;
+}
+
+interface AdjustFormValues {
+  userId: string;
+  deltaExp: number;
+  reason?: string;
+}
+
+function normalizePositiveLongIdInput(value: string): string | undefined {
+  const trimmed = value.trim();
+  return /^[1-9]\d*$/.test(trimmed) ? trimmed : undefined;
 }
 
 export const ExperienceAdminPage = () => {
@@ -46,7 +57,7 @@ export const ExperienceAdminPage = () => {
   const [freezing, setFreezing] = useState(false);
   const [unfreezing, setUnfreezing] = useState(false);
   const [recalculating, setRecalculating] = useState(false);
-  const [form] = Form.useForm();
+  const [form] = Form.useForm<AdjustFormValues>();
   const [freezeForm] = Form.useForm<FreezeFormValues>();
 
   const canAdjust = usePermission(CONSOLE_PERMISSIONS.experienceAdjust);
@@ -71,11 +82,11 @@ export const ExperienceAdminPage = () => {
   }, []);
 
   const loadExperience = async (
-    userIdOverride?: number,
+    userIdOverride?: string,
     options?: { showInvalidMessage?: boolean }
   ) => {
-    const userId = userIdOverride ?? Number(queryUserId);
-    if (!Number.isFinite(userId) || userId <= 0) {
+    const userId = userIdOverride ?? normalizePositiveLongIdInput(queryUserId);
+    if (!userId) {
       if (options?.showInvalidMessage ?? true) {
         message.error('请输入有效的用户 ID');
       }
@@ -104,15 +115,21 @@ export const ExperienceAdminPage = () => {
   const handleAdjust = async () => {
     try {
       const values = await form.validateFields();
+      const normalizedUserId = normalizePositiveLongIdInput(values.userId);
+      if (!normalizedUserId) {
+        message.error('请输入有效的用户 ID');
+        return;
+      }
+
       setSubmitting(true);
       await adminAdjustExperience({
-        userId: values.userId,
+        userId: normalizedUserId,
         deltaExp: values.deltaExp,
         reason: values.reason,
       });
 
       message.success('经验调整成功');
-      await loadExperience(values.userId, { showInvalidMessage: false });
+      await loadExperience(normalizedUserId, { showInvalidMessage: false });
       form.setFieldsValue({ deltaExp: 0, reason: '' });
     } catch (error) {
       log.error('ExperienceAdminPage', '调整经验失败:', error);
@@ -125,15 +142,21 @@ export const ExperienceAdminPage = () => {
   const handleFreeze = async () => {
     try {
       const values = await freezeForm.validateFields();
+      const normalizedUserId = normalizePositiveLongIdInput(values.userId);
+      if (!normalizedUserId) {
+        message.error('请输入有效的用户 ID');
+        return;
+      }
+
       setFreezing(true);
       await adminFreezeExperience({
-        userId: values.userId,
+        userId: normalizedUserId,
         reason: values.reason.trim(),
         frozenUntil: values.frozenUntil ? values.frozenUntil.format('YYYY-MM-DD HH:mm:ss') : undefined,
       });
 
       message.success('经验已冻结');
-      await loadExperience(values.userId, { showInvalidMessage: false });
+      await loadExperience(normalizedUserId, { showInvalidMessage: false });
     } catch (error) {
       log.error('ExperienceAdminPage', '冻结经验失败:', error);
       message.error('冻结经验失败');
@@ -145,13 +168,19 @@ export const ExperienceAdminPage = () => {
   const handleUnfreeze = async () => {
     try {
       const values = await freezeForm.validateFields(['userId']);
+      const normalizedUserId = normalizePositiveLongIdInput(values.userId);
+      if (!normalizedUserId) {
+        message.error('请输入有效的用户 ID');
+        return;
+      }
+
       setUnfreezing(true);
-      await adminUnfreezeExperience(values.userId);
+      await adminUnfreezeExperience(normalizedUserId);
 
       message.success('经验已解冻');
-      await loadExperience(values.userId, { showInvalidMessage: false });
+      await loadExperience(normalizedUserId, { showInvalidMessage: false });
       freezeForm.setFieldsValue({
-        userId: values.userId,
+        userId: normalizedUserId,
         reason: '',
         frozenUntil: undefined,
       });
@@ -293,9 +322,12 @@ export const ExperienceAdminPage = () => {
           <Form.Item
             name="userId"
             label="用户 ID"
-            rules={[{ required: true, message: '请输入用户 ID' }]}
+            rules={[
+              { required: true, message: '请输入用户 ID' },
+              { pattern: /^[1-9]\d*$/, message: '请输入有效的用户 ID' }
+            ]}
           >
-            <InputNumber min={1} style={{ width: '100%' }} />
+            <Input style={{ width: '100%' }} />
           </Form.Item>
 
           <Form.Item
@@ -332,9 +364,12 @@ export const ExperienceAdminPage = () => {
           <Form.Item
             name="userId"
             label="用户 ID"
-            rules={[{ required: true, message: '请输入用户 ID' }]}
+            rules={[
+              { required: true, message: '请输入用户 ID' },
+              { pattern: /^[1-9]\d*$/, message: '请输入有效的用户 ID' }
+            ]}
           >
-            <InputNumber min={1} style={{ width: '100%' }} />
+            <Input style={{ width: '100%' }} />
           </Form.Item>
 
           <Form.Item name="frozenUntil" label="冻结到期时间">

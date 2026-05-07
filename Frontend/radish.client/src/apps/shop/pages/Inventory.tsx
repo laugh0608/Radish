@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { LongId } from '@/api/user';
 import type { UserBenefit, UserInventoryItem } from '@/types/shop';
 import { resolveMediaUrl } from '@/utils/media';
 import styles from './Inventory.module.css';
@@ -8,9 +9,9 @@ interface InventoryProps {
   benefits: UserBenefit[];
   inventory: UserInventoryItem[];
   loading: boolean;
-  onActivateBenefit: (benefitId: number) => void;
-  onDeactivateBenefit: (benefitId: number) => void;
-  onUseItem: (inventoryId: number, quantity?: number, targetId?: number) => void;
+  onActivateBenefit: (benefitId: LongId) => void;
+  onDeactivateBenefit: (benefitId: LongId) => void;
+  onUseItem: (inventoryId: LongId, quantity?: number, targetId?: LongId) => void;
   onBack: () => void;
 }
 

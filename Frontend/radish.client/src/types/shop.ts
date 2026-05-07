@@ -3,6 +3,8 @@
  * 直接使用后端 Vo 字段名，不进行映射
  */
 
+import type { LongId } from '@/api/user';
+
 /**
  * 分页响应
  */
@@ -31,7 +33,7 @@ export interface ProductCategory {
  * 商品列表项 Vo
  */
 export interface ProductListItem {
-  voId: number;
+  voId: LongId;
   voName: string;
   voIcon?: string | null;
   voCoverImage?: string | null;
@@ -49,7 +51,7 @@ export interface ProductListItem {
  * 商品详情 Vo
  */
 export interface Product {
-  voId: number;
+  voId: LongId;
   voName: string;
   voDescription?: string | null;
   voIcon?: string | null;
@@ -86,7 +88,7 @@ export interface Product {
  * 订单列表项 Vo
  */
 export interface OrderListItem {
-  voId: number;
+  voId: LongId;
   voOrderNo: string;
   voProductName: string;
   voProductIcon?: string | null;
@@ -101,11 +103,11 @@ export interface OrderListItem {
  * 订单详情 Vo
  */
 export interface Order {
-  voId: number;
+  voId: LongId;
   voOrderNo: string;
-  voUserId: number;
+  voUserId: LongId;
   voUserName?: string | null;
-  voProductId: number;
+  voProductId: LongId;
   voProductName: string;
   voProductIcon?: string | null;
   voProductType: string | number;
@@ -131,14 +133,14 @@ export interface Order {
  * 用户权益 Vo
  */
 export interface UserBenefit {
-  voId: number;
-  voUserId: number;
+  voId: LongId;
+  voUserId: LongId;
   voBenefitType: string;
   voBenefitTypeDisplay?: string;
   voBenefitValue?: string | null;
   voBenefitName?: string | null;
   voBenefitIcon?: string | null;
-  voSourceId: number;
+  voSourceId: LongId;
   voSourceType: string;
   voSourceTypeDisplay?: string;
   voDurationType: string;
@@ -154,8 +156,8 @@ export interface UserBenefit {
  * 用户背包项 Vo
  */
 export interface UserInventoryItem {
-  voId: number;
-  voUserId: number;
+  voId: LongId;
+  voUserId: LongId;
   voConsumableType: string;
   voConsumableTypeDisplay?: string;
   voItemValue?: string | null;
@@ -169,7 +171,7 @@ export interface UserInventoryItem {
  * 创建订单请求
  */
 export interface CreateOrderRequest {
-  productId: number;
+  productId: LongId;
   quantity?: number;
   userRemark?: string;
 }
@@ -179,10 +181,10 @@ export interface CreateOrderRequest {
  */
 export interface PurchaseResult {
   success: boolean;
-  orderId?: number;
+  orderId?: LongId;
   orderNo?: string;
   errorMessage?: string;
-  userBenefitId?: number;
+  userBenefitId?: LongId;
   deductedCoins?: number;
   remainingBalance?: number;
 }
@@ -191,9 +193,9 @@ export interface PurchaseResult {
  * 使用道具请求
  */
 export interface UseItemRequest {
-  inventoryId: number;
+  inventoryId: LongId;
   quantity?: number;
-  targetId?: number;
+  targetId?: LongId;
 }
 
 /**

@@ -9,7 +9,7 @@ export type ContentReportTargetType = 'Post' | 'Comment' | 'PostQuickReply' | 'C
 
 export interface SubmitContentReportRequest {
   targetType: ContentReportTargetType;
-  targetContentId: number;
+  targetContentId: number | string;
   reasonType: string;
   reasonDetail?: string;
 }

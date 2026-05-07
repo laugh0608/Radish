@@ -29,11 +29,24 @@ export const NotificationApp = () => {
   const currentUserId = useUserStore((state) => state.userId);
   const { unreadCount, recentNotifications } = useNotificationStore();
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
-  const triggerAvatarCacheRef = useRef(new Map<number, string | null>());
+  const triggerAvatarCacheRef = useRef(new Map<string, string | null>());
 
   interface NotificationListItem extends NotificationItemData {
     notificationId?: number;
   }
+
+  const normalizePositiveLongIdKey = useCallback((value: unknown): string | null => {
+    if (typeof value === 'number') {
+      return Number.isSafeInteger(value) && value > 0 ? String(value) : null;
+    }
+
+    if (typeof value !== 'string') {
+      return null;
+    }
+
+    const trimmed = value.trim();
+    return /^[1-9]\d*$/.test(trimmed) ? trimmed : null;
+  }, []);
 
   const resolveNotificationAvatar = useCallback((avatarUrl?: string | null) => {
     const normalized = avatarUrl?.trim();
@@ -135,7 +148,7 @@ export const NotificationApp = () => {
     }));
   };
 
-  const patchNotificationsWithResolvedAvatars = useCallback((avatarMap: Map<number, string | null>) => {
+  const patchNotificationsWithResolvedAvatars = useCallback((avatarMap: Map<string, string | null>) => {
     if (avatarMap.size === 0) {
       return;
     }
@@ -143,31 +156,34 @@ export const NotificationApp = () => {
     const store = useNotificationStore.getState();
 
     setNotifications((prev) => prev.map((item) => {
-      if (item.triggerAvatar || !item.triggerId) {
+      const triggerIdKey = normalizePositiveLongIdKey(item.triggerId);
+      if (item.triggerAvatar || !triggerIdKey) {
         return item;
       }
 
-      const resolvedAvatar = avatarMap.get(item.triggerId);
+      const resolvedAvatar = avatarMap.get(triggerIdKey);
       return resolvedAvatar ? { ...item, triggerAvatar: resolvedAvatar } : item;
     }));
 
     store.setRecentNotifications(
       store.recentNotifications.map((item) => {
-        if (item.triggerAvatar || !item.triggerId) {
+        const triggerIdKey = normalizePositiveLongIdKey(item.triggerId);
+        if (item.triggerAvatar || !triggerIdKey) {
           return item;
         }
 
-        const resolvedAvatar = avatarMap.get(item.triggerId);
+        const resolvedAvatar = avatarMap.get(triggerIdKey);
         return resolvedAvatar ? { ...item, triggerAvatar: resolvedAvatar } : item;
       })
     );
-  }, []);
+  }, [normalizePositiveLongIdKey]);
 
   const backfillTriggerAvatars = useCallback(async (items: NotificationListItem[]) => {
     const missingTriggerIds = Array.from(new Set(
       items
-        .filter((item) => !item.triggerAvatar && (item.triggerId ?? 0) > 0)
-        .map((item) => item.triggerId as number)
+        .map((item) => normalizePositiveLongIdKey(item.triggerId))
+        .filter((triggerId): triggerId is string => Boolean(triggerId))
+        .filter((triggerId, index, source) => source.indexOf(triggerId) === index)
     ));
 
     if (missingTriggerIds.length === 0) {
@@ -193,13 +209,13 @@ export const NotificationApp = () => {
       }
     }
 
-    const resolvedAvatarMap = new Map<number, string | null>();
+    const resolvedAvatarMap = new Map<string, string | null>();
     for (const triggerId of missingTriggerIds) {
       resolvedAvatarMap.set(triggerId, triggerAvatarCacheRef.current.get(triggerId) ?? null);
     }
 
     patchNotificationsWithResolvedAvatars(resolvedAvatarMap);
-  }, [patchNotificationsWithResolvedAvatars, resolveNotificationAvatar]);
+  }, [normalizePositiveLongIdKey, patchNotificationsWithResolvedAvatars, resolveNotificationAvatar]);
 
   const mergeNotifications = (
     base: NotificationListItem[],
@@ -415,14 +431,13 @@ export const NotificationApp = () => {
     }
 
     if (businessType === 'User' || notification.type === 'follow') {
-      const targetUserId = notification.type === 'follow'
-        ? (notification.triggerId ?? notification.businessId ?? 0)
-        : (notification.businessId ?? notification.triggerId ?? 0);
-      const hasTargetUserId = typeof targetUserId === 'string'
-        ? targetUserId.trim().length > 0
-        : targetUserId > 0;
+      const targetUserId = normalizePositiveLongIdKey(
+        notification.type === 'follow'
+          ? (notification.triggerId ?? notification.businessId)
+          : (notification.businessId ?? notification.triggerId)
+      );
 
-      if (hasTargetUserId) {
+      if (targetUserId) {
         if (String(targetUserId) === String(currentUserId ?? 0)) {
           openApp('profile');
         } else {

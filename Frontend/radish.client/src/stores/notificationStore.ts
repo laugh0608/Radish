@@ -27,7 +27,7 @@ export interface NotificationItem {
   /** 业务类型 */
   businessType?: string | null;
   /** 触发者 ID */
-  triggerId?: number | null;
+  triggerId?: number | string | null;
   /** 触发者名称 */
   triggerName?: string | null;
   /** 触发者头像 */

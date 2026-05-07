@@ -288,12 +288,12 @@ export const ProfileApp = () => {
     };
   }, [apiBaseUrl, isOwnProfile, loggedIn, viewingUserId, viewingUserIdKey]);
 
-  const handlePostClick = (postId: number) => {
+  const handlePostClick = (postId: LongId) => {
     openApp('forum', buildForumAppParams({ postId }));
     log.debug('ProfileApp', `打开帖子: ${postId}`);
   };
 
-  const handleCommentClick = (postId: number, commentId: number) => {
+  const handleCommentClick = (postId: LongId, commentId: LongId) => {
     openApp('forum', buildForumAppParams({ postId, commentId }));
     log.debug('ProfileApp', `打开帖子 ${postId} 的评论 ${commentId}`);
   };

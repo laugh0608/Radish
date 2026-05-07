@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { getMyQuickReplies, type UserPostQuickReply } from '@/api/forum';
+import type { LongId } from '@/api/user';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { log } from '@/utils/logger';
 import styles from './UserQuickReplyList.module.css';
 
 interface UserQuickReplyListProps {
   displayTimeZone: string;
-  onItemClick?: (postId: number) => void;
+  onItemClick?: (postId: LongId) => void;
 }
 
 export const UserQuickReplyList = ({

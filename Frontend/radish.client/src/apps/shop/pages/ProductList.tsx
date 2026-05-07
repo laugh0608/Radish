@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { LongId } from '@/api/user';
 import type { ProductCategory, ProductListItem } from '@/types/shop';
 import { getProductTypeDisplay } from '@/api/shop';
 import { resolveMediaUrl } from '@/utils/media';
@@ -14,7 +15,7 @@ interface ProductListProps {
   searchKeyword?: string;
   loading: boolean;
   onCategoryChange: (categoryId?: string) => void;
-  onProductClick: (productId: number) => void;
+  onProductClick: (productId: LongId) => void;
   onSearchChange: (keyword: string) => void;
   onPageChange: (page: number) => void;
   onBack: () => void;

@@ -1,7 +1,7 @@
 import { apiGet, apiPost, type PagedResponse } from '@radish/http';
 
 export interface UserBalanceVo {
-  voUserId: number;
+  voUserId: number | string;
   voBalance: number;
   voBalanceDisplay: string;
   voFrozenBalance: number;
@@ -17,9 +17,9 @@ export interface UserBalanceVo {
 export interface CoinTransactionVo {
   voId: number;
   voTransactionNo: string;
-  voFromUserId?: number | null;
+  voFromUserId?: number | string | null;
   voFromUserName?: string | null;
-  voToUserId?: number | null;
+  voToUserId?: number | string | null;
   voToUserName?: string | null;
   voAmount: number;
   voAmountDisplay: string;
@@ -30,13 +30,13 @@ export interface CoinTransactionVo {
   voStatus: string;
   voStatusDisplay: string;
   voBusinessType?: string | null;
-  voBusinessId?: number | null;
+  voBusinessId?: number | string | null;
   voRemark?: string | null;
   voCreateTime: string;
 }
 
 export interface AdminAdjustBalanceRequest {
-  userId: number;
+  userId: string | number;
   deltaAmount: number;
   reason: string;
 }

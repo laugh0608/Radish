@@ -14,6 +14,17 @@ import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
 import '../adminFeature.css';
 
+function normalizePositiveLongIdInput(value: string): string | undefined {
+  const trimmed = value.trim();
+  return /^[1-9]\d*$/.test(trimmed) ? trimmed : undefined;
+}
+
+interface CoinAdjustFormValues {
+  userId: string;
+  deltaAmount: number;
+  reason: string;
+}
+
 export const CoinAdminPage = () => {
   useDocumentTitle('胡萝卜管理');
 
@@ -21,12 +32,12 @@ export const CoinAdminPage = () => {
   const [balance, setBalance] = useState<UserBalanceVo | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [form] = Form.useForm();
+  const [form] = Form.useForm<CoinAdjustFormValues>();
   const canAdjust = usePermission(CONSOLE_PERMISSIONS.coinsAdjust);
 
   const loadBalance = async () => {
-    const userId = Number(queryUserId);
-    if (!Number.isFinite(userId) || userId <= 0) {
+    const userId = normalizePositiveLongIdInput(queryUserId);
+    if (!userId) {
       message.error('请输入有效的用户 ID');
       return;
     }
@@ -47,15 +58,21 @@ export const CoinAdminPage = () => {
   const handleAdjust = async () => {
     try {
       const values = await form.validateFields();
+      const normalizedUserId = normalizePositiveLongIdInput(values.userId);
+      if (!normalizedUserId) {
+        message.error('请输入有效的用户 ID');
+        return;
+      }
+
       setSubmitting(true);
       await adminAdjustBalance({
-        userId: values.userId,
+        userId: normalizedUserId,
         deltaAmount: values.deltaAmount,
         reason: values.reason,
       });
 
       message.success('胡萝卜余额调整成功');
-      setQueryUserId(String(values.userId));
+      setQueryUserId(normalizedUserId);
       await loadBalance();
       form.setFieldsValue({ deltaAmount: 0, reason: '' });
     } catch (error) {
@@ -135,9 +152,12 @@ export const CoinAdminPage = () => {
           <Form.Item
             name="userId"
             label="用户 ID"
-            rules={[{ required: true, message: '请输入用户 ID' }]}
+            rules={[
+              { required: true, message: '请输入用户 ID' },
+              { pattern: /^[1-9]\d*$/, message: '请输入有效的用户 ID' }
+            ]}
           >
-            <InputNumber min={1} style={{ width: '100%' }} />
+            <Input style={{ width: '100%' }} />
           </Form.Item>
 
           <Form.Item

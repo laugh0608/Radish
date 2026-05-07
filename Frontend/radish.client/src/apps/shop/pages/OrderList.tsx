@@ -1,4 +1,5 @@
 import type { OrderListItem } from '@/types/shop';
+import type { LongId } from '@/api/user';
 import { useTranslation } from 'react-i18next';
 import { getOrderStatusColor } from '@/api/shop';
 import { resolveMediaUrl } from '@/utils/media';
@@ -9,7 +10,7 @@ interface OrderListProps {
   currentPage: number;
   totalPages: number;
   loading: boolean;
-  onOrderClick: (orderId: number) => void;
+  onOrderClick: (orderId: LongId) => void;
   onPageChange: (page: number) => void;
   onBack: () => void;
 }

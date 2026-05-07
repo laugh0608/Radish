@@ -1,7 +1,7 @@
 import { apiGet, apiPost } from '@radish/http';
 
 export interface UserExperienceVo {
-  voUserId: number;
+  voUserId: number | string;
   voUserName?: string | null;
   voAvatarUrl?: string | null;
   voCurrentLevel: number;
@@ -32,13 +32,13 @@ export interface LevelConfigVo {
 }
 
 export interface AdminAdjustExperienceRequest {
-  userId: number;
+  userId: string | number;
   deltaExp: number;
   reason?: string;
 }
 
 export interface AdminFreezeExperienceRequest {
-  userId: number;
+  userId: string | number;
   reason: string;
   frozenUntil?: string;
 }

@@ -23,6 +23,7 @@ import {
   unfollowUser,
   type UserFollowStatus
 } from '@/api/userFollow';
+import type { LongId } from '@/api/user';
 import { getMyTimePreference, getTimeSettings } from '@/api/time';
 import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId, resolveTimeZoneId } from '@/utils/dateTime';
 import { parseForumWindowParams } from '@/utils/forumNavigation';
@@ -514,7 +515,7 @@ export const ForumApp = () => {
     dataState.setError
   ]);
 
-  const handleToggleFollow = async (targetUserId: number, isFollowing: boolean) => {
+  const handleToggleFollow = async (targetUserId: LongId, isFollowing: boolean) => {
     if (!loggedIn) {
       dataState.setError(t('forum.loginRequiredToFollow'));
       return;
@@ -535,7 +536,7 @@ export const ForumApp = () => {
     }
   };
 
-  const handleOpenUserProfile = (targetUserId: number, targetUserName?: string | null, avatarUrl?: string | null) => {
+  const handleOpenUserProfile = (targetUserId: LongId, targetUserName?: string | null, avatarUrl?: string | null) => {
     if (!targetUserId) {
       return;
     }

@@ -7,9 +7,9 @@ import type { LongId } from '@/api/user';
 import styles from './UserCommentList.module.css';
 
 interface Comment {
-  voId: number;
+  voId: LongId;
   voContent: string;
-  voPostId: number;
+  voPostId: LongId;
   voLikeCount: number;
   voCreateTime: string;
 }
@@ -18,7 +18,7 @@ interface UserCommentListProps {
   userId: LongId;
   apiBaseUrl: string;
   displayTimeZone: string;
-  onCommentClick?: (postId: number, commentId: number) => void;
+  onCommentClick?: (postId: LongId, commentId: LongId) => void;
 }
 
 export const UserCommentList = ({ userId, apiBaseUrl, displayTimeZone, onCommentClick }: UserCommentListProps) => {

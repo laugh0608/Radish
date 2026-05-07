@@ -7,7 +7,7 @@ import type { LongId } from '@/api/user';
 import styles from './UserPostList.module.css';
 
 interface Post {
-  voId: number;
+  voId: LongId;
   voTitle: string;
   voContent: string;
   voViewCount: number;
@@ -20,7 +20,7 @@ interface UserPostListProps {
   userId: LongId;
   apiBaseUrl: string;
   displayTimeZone: string;
-  onPostClick?: (postId: number) => void;
+  onPostClick?: (postId: LongId) => void;
 }
 
 export const UserPostList = ({ userId, apiBaseUrl, displayTimeZone, onPostClick }: UserPostListProps) => {

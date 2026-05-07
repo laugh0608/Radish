@@ -15,6 +15,7 @@ configureApiClient({
  * 通知详情 Vo（嵌套在 UserNotificationVo 中）
  */
 export type NotificationBusinessId = number | string;
+export type NotificationReferenceId = number | string;
 
 export interface NotificationVo {
   voId: number;
@@ -24,7 +25,7 @@ export interface NotificationVo {
   voContent: string;
   voBusinessType: string | null;
   voBusinessId: NotificationBusinessId | null;
-  voTriggerId: number | null;
+  voTriggerId: NotificationReferenceId | null;
   voTriggerName: string | null;
   voTriggerAvatar: string | null;
   voExtData: string | null;

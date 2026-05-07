@@ -5,6 +5,8 @@ export interface NotificationTextOverrides {
   delete?: string;
 }
 
+type NotificationReferenceId = number | string;
+
 /**
  * 通知项数据（纯 UI 接口，不依赖后端命名约定）
  * 业务层负责将后端 VO 转换为此接口
@@ -23,9 +25,9 @@ export interface NotificationItemData {
   /** 业务类型 */
   businessType?: string | null;
   /** 业务 ID */
-  businessId?: number | string | null;
+  businessId?: NotificationReferenceId | null;
   /** 触发者 ID */
-  triggerId?: number | null;
+  triggerId?: NotificationReferenceId | null;
   /** 触发者名称 */
   triggerName?: string | null;
   /** 触发者头像 */
