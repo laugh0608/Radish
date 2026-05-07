@@ -82,7 +82,6 @@ const explicitTextBasenames = new Set([
   '.gitignore',
   'AGENTS.md',
   'CLAUDE.md',
-  'COPYRIGHT',
   'Dockerfile',
   'LICENSE',
   'NuGet.Config',

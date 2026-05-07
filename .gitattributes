@@ -1,4 +1,5 @@
 ## Line endings normalization
+# UTF-8 validity and BOM hygiene are enforced by Scripts/check-repo-hygiene.mjs
 # Default to LF on checkout/commit for all text files
 * text=auto eol=lf
 
