@@ -8,12 +8,13 @@ interface TransferResultProps {
   result: TransferResultType;
   displayMode: 'carrot' | 'white';
   onStartNew: () => void;
+  onViewHistory: () => void;
 }
 
 /**
  * 转账结果组件
  */
-export const TransferResult = ({ result, onStartNew }: TransferResultProps) => {
+export const TransferResult = ({ result, onStartNew, onViewHistory }: TransferResultProps) => {
   const handleCopyTransactionNo = async () => {
     if (!result.transactionNo) return;
 
@@ -141,10 +142,7 @@ export const TransferResult = ({ result, onStartNew }: TransferResultProps) => {
               <button
                 type="button"
                 className={styles.secondaryButton}
-                onClick={() => {
-                  // TODO: 跳转到交易记录页面
-                  log.debug('TransferResult', '查看交易记录');
-                }}
+                onClick={onViewHistory}
               >
                 查看记录
               </button>

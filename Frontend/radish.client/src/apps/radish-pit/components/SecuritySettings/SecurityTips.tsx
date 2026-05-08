@@ -2,8 +2,11 @@ import type { SecurityStatus } from '../../types';
 import styles from './SecurityTips.module.css';
 import { log } from '@/utils/logger';
 
+type SecurityActionTab = 'overview' | 'password' | 'log';
+
 interface SecurityTipsProps {
   status: SecurityStatus | null;
+  onNavigate: (tab: SecurityActionTab) => void;
 }
 
 interface SecurityTip {
@@ -19,7 +22,12 @@ interface SecurityTip {
 /**
  * 安全建议组件
  */
-export const SecurityTips = ({ status }: SecurityTipsProps) => {
+export const SecurityTips = ({ status, onNavigate }: SecurityTipsProps) => {
+  const navigateTo = (tab: SecurityActionTab, source: string) => {
+    log.debug('SecurityTips', `从 ${source} 跳转到 ${tab}`);
+    onNavigate(tab);
+  };
+
   const generateTips = (): SecurityTip[] => {
     const tips: SecurityTip[] = [];
 
@@ -32,10 +40,7 @@ export const SecurityTips = ({ status }: SecurityTipsProps) => {
         description: '设置支付密码可以保护您的萝卜转移操作，防止未经授权的转移。',
         priority: 'high',
         actionText: '立即设置',
-        onAction: () => {
-          // TODO: 跳转到支付密码设置
-          log.debug('SecurityTips', '跳转到支付密码设置');
-        }
+        onAction: () => navigateTo('password', 'tip:set-password')
       });
     }
 
@@ -204,13 +209,21 @@ export const SecurityTips = ({ status }: SecurityTipsProps) => {
             <div className={styles.supportIcon}>🆘</div>
             <div className={styles.supportContent}>
               <h4>需要帮助？</h4>
-              <p>如果您遇到安全问题或需要技术支持，请及时联系我们的客服团队。</p>
+              <p>您可以先通过支付密码设置和安全日志自查常见安全问题；如仍发现异常，再联系支持处理。</p>
               <div className={styles.supportActions}>
-                <button className={styles.supportButton}>
-                  联系客服
+                <button
+                  type="button"
+                  className={styles.supportButton}
+                  onClick={() => navigateTo('password', 'support:password')}
+                >
+                  {status?.hasPaymentPassword ? '修改支付密码' : '设置支付密码'}
                 </button>
-                <button className={styles.supportButton}>
-                  查看帮助文档
+                <button
+                  type="button"
+                  className={styles.supportButton}
+                  onClick={() => navigateTo('log', 'support:log')}
+                >
+                  查看安全日志
                 </button>
               </div>
             </div>

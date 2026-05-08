@@ -68,21 +68,34 @@ export const ProductList = () => {
   const [formVisible, setFormVisible] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | undefined>();
 
-  // 筛选条件
-  const [categoryId, setCategoryId] = useState<string | undefined>();
-  const [productType, setProductType] = useState<ProductType | undefined>();
-  const [isOnSale, setIsOnSale] = useState<boolean | undefined>();
-  const [keyword, setKeyword] = useState<string>('');
+  // 草稿筛选条件
+  const [draftCategoryId, setDraftCategoryId] = useState<string | undefined>();
+  const [draftProductType, setDraftProductType] = useState<ProductType | undefined>();
+  const [draftIsOnSale, setDraftIsOnSale] = useState<boolean | undefined>();
+  const [draftKeyword, setDraftKeyword] = useState('');
+
+  // 已应用筛选条件
+  const [searchParams, setSearchParams] = useState<{
+    categoryId?: string;
+    productType?: ProductType;
+    isOnSale?: boolean;
+    keyword: string;
+  }>({
+    categoryId: undefined,
+    productType: undefined,
+    isOnSale: undefined,
+    keyword: '',
+  });
 
   // 加载商品列表
   const loadProducts = async () => {
     try {
       setLoading(true);
       const response = await adminGetProducts({
-        categoryId,
-        productType,
-        isOnSale,
-        keyword: keyword || undefined,
+        categoryId: searchParams.categoryId,
+        productType: searchParams.productType,
+        isOnSale: searchParams.isOnSale,
+        keyword: searchParams.keyword || undefined,
         pageIndex,
         pageSize,
       });
@@ -123,21 +136,32 @@ export const ProductList = () => {
     }
 
     void loadProducts();
-  }, [pageIndex, pageSize, categoryId, productType, isOnSale, canViewProducts]);
+  }, [pageIndex, pageSize, searchParams, canViewProducts]);
 
   // 搜索
   const handleSearch = () => {
     setPageIndex(1);
-    loadProducts();
+    setSearchParams({
+      categoryId: draftCategoryId,
+      productType: draftProductType,
+      isOnSale: draftIsOnSale,
+      keyword: draftKeyword.trim(),
+    });
   };
 
   // 重置筛选
   const handleReset = () => {
-    setCategoryId(undefined);
-    setProductType(undefined);
-    setIsOnSale(undefined);
-    setKeyword('');
+    setDraftCategoryId(undefined);
+    setDraftProductType(undefined);
+    setDraftIsOnSale(undefined);
+    setDraftKeyword('');
     setPageIndex(1);
+    setSearchParams({
+      categoryId: undefined,
+      productType: undefined,
+      isOnSale: undefined,
+      keyword: '',
+    });
   };
 
   // 上架/下架
@@ -348,8 +372,8 @@ export const ProductList = () => {
             placeholder="选择分类"
             style={{ width: 150 }}
             allowClear
-            value={categoryId}
-            onChange={setCategoryId}
+            value={draftCategoryId}
+            onChange={setDraftCategoryId}
           >
             {categories.map((cat) => (
               <Select.Option key={cat.voId} value={cat.voId}>
@@ -362,8 +386,8 @@ export const ProductList = () => {
             placeholder="商品类型"
             style={{ width: 120 }}
             allowClear
-            value={productType}
-            onChange={setProductType}
+            value={draftProductType}
+            onChange={setDraftProductType}
           >
             <Select.Option value={1}>权益</Select.Option>
             <Select.Option value={2}>消耗品</Select.Option>
@@ -374,8 +398,8 @@ export const ProductList = () => {
             placeholder="上架状态"
             style={{ width: 120 }}
             allowClear
-            value={isOnSale}
-            onChange={setIsOnSale}
+            value={draftIsOnSale}
+            onChange={setDraftIsOnSale}
           >
             <Select.Option value={true}>已上架</Select.Option>
             <Select.Option value={false}>已下架</Select.Option>
@@ -384,8 +408,8 @@ export const ProductList = () => {
           <Input
             placeholder="搜索商品名称"
             style={{ width: 200 }}
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
+            value={draftKeyword}
+            onChange={(e) => setDraftKeyword(e.target.value)}
             onPressEnter={handleSearch}
             suffix={<SearchOutlined />}
           />

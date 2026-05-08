@@ -48,7 +48,7 @@ export const SecuritySettings = () => {
       case 'log':
         return <SecurityLog />;
       case 'tips':
-        return <SecurityTips status={status} />;
+        return <SecurityTips status={status} onNavigate={handleTabChange} />;
       default:
         return null;
     }

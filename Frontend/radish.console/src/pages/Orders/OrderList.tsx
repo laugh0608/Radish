@@ -50,21 +50,34 @@ export const OrderList = () => {
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [retryOrder, setRetryOrder] = useState<Order | undefined>();
 
-  // 筛选条件
-  const [userId, setUserId] = useState<number | undefined>();
-  const [status, setStatus] = useState<OrderStatus | undefined>();
-  const [productId, setProductId] = useState<number | undefined>();
-  const [orderNo, setOrderNo] = useState<string>('');
+  // 草稿筛选条件
+  const [draftUserId, setDraftUserId] = useState<number | undefined>();
+  const [draftStatus, setDraftStatus] = useState<OrderStatus | undefined>();
+  const [draftProductId, setDraftProductId] = useState<number | undefined>();
+  const [draftOrderNo, setDraftOrderNo] = useState('');
+
+  // 已应用筛选条件
+  const [searchParams, setSearchParams] = useState<{
+    userId?: number;
+    status?: OrderStatus;
+    productId?: number;
+    orderNo: string;
+  }>({
+    userId: undefined,
+    status: undefined,
+    productId: undefined,
+    orderNo: '',
+  });
 
   // 加载订单列表
   const loadOrders = async () => {
     try {
       setLoading(true);
       const response = await adminGetOrders({
-        userId,
-        status,
-        productId,
-        orderNo: orderNo || undefined,
+        userId: searchParams.userId,
+        status: searchParams.status,
+        productId: searchParams.productId,
+        orderNo: searchParams.orderNo || undefined,
         pageIndex,
         pageSize,
       });
@@ -86,21 +99,32 @@ export const OrderList = () => {
     }
 
     void loadOrders();
-  }, [pageIndex, pageSize, userId, status, productId, canViewOrders]);
+  }, [pageIndex, pageSize, searchParams, canViewOrders]);
 
   // 搜索
   const handleSearch = () => {
     setPageIndex(1);
-    loadOrders();
+    setSearchParams({
+      userId: draftUserId,
+      status: draftStatus,
+      productId: draftProductId,
+      orderNo: draftOrderNo.trim(),
+    });
   };
 
   // 重置筛选
   const handleReset = () => {
-    setUserId(undefined);
-    setStatus(undefined);
-    setProductId(undefined);
-    setOrderNo('');
+    setDraftUserId(undefined);
+    setDraftStatus(undefined);
+    setDraftProductId(undefined);
+    setDraftOrderNo('');
     setPageIndex(1);
+    setSearchParams({
+      userId: undefined,
+      status: undefined,
+      productId: undefined,
+      orderNo: '',
+    });
   };
 
   // 查看详情
@@ -255,16 +279,17 @@ export const OrderList = () => {
             placeholder="用户 ID"
             style={{ width: 120 }}
             type="number"
-            value={userId}
-            onChange={(e) => setUserId(e.target.value ? Number(e.target.value) : undefined)}
+            value={draftUserId}
+            onChange={(e) => setDraftUserId(e.target.value ? Number(e.target.value) : undefined)}
+            onPressEnter={handleSearch}
           />
 
           <Select
             placeholder="订单状态"
             style={{ width: 120 }}
             allowClear
-            value={status}
-            onChange={setStatus}
+            value={draftStatus}
+            onChange={setDraftStatus}
           >
             <Select.Option value={0}>待支付</Select.Option>
             <Select.Option value={1}>已支付</Select.Option>
@@ -278,15 +303,16 @@ export const OrderList = () => {
             placeholder="商品 ID"
             style={{ width: 120 }}
             type="number"
-            value={productId}
-            onChange={(e) => setProductId(e.target.value ? Number(e.target.value) : undefined)}
+            value={draftProductId}
+            onChange={(e) => setDraftProductId(e.target.value ? Number(e.target.value) : undefined)}
+            onPressEnter={handleSearch}
           />
 
           <Input
             placeholder="订单号"
             style={{ width: 200 }}
-            value={orderNo}
-            onChange={(e) => setOrderNo(e.target.value)}
+            value={draftOrderNo}
+            onChange={(e) => setDraftOrderNo(e.target.value)}
             onPressEnter={handleSearch}
             suffix={<SearchOutlined />}
           />
