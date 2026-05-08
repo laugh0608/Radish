@@ -332,14 +332,19 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     }
 
     /// <summary>恢复库存</summary>
-    public async Task<bool> RestoreStockAsync(long productId, int quantity)
+    public async Task<bool> RestoreStockAsync(long productId, int quantity, StockType stockType)
     {
         try
         {
-            var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
-            if (product == null || product.StockType == StockType.Unlimited)
+            if (stockType == StockType.Unlimited)
             {
                 return true;
+            }
+
+            var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
+            if (product == null)
+            {
+                return false;
             }
 
             var affected = await _productRepository.UpdateColumnsAsync(

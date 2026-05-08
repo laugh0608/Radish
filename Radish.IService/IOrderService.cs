@@ -23,6 +23,12 @@ public interface IOrderService : IBaseService<Order, OrderVo>
     /// <returns>是否成功</returns>
     Task<bool> CancelOrderAsync(long userId, long orderId, string? reason = null);
 
+    /// <summary>系统取消订单</summary>
+    /// <param name="orderId">订单 ID</param>
+    /// <param name="reason">取消原因</param>
+    /// <returns>是否成功</returns>
+    Task<bool> CancelOrderBySystemAsync(long orderId, string reason);
+
     #endregion
 
     #region 订单查询

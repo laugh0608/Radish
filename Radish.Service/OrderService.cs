@@ -107,6 +107,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 UserId = userId,
                 ProductId = product.Id,
                 ProductName = product.Name,
+                StockType = product.StockType,
                 ProductIconAttachmentId = product.IconAttachmentId,
                 ProductType = product.ProductType,
                 BenefitType = product.BenefitType,
@@ -150,7 +151,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 // 恢复库存
                 if (product.StockType == StockType.Limited)
                 {
-                    await _productService.RestoreStockAsync(dto.ProductId, dto.Quantity);
+                    await _productService.RestoreStockAsync(dto.ProductId, dto.Quantity, product.StockType);
                 }
 
                 order.Status = OrderStatus.Failed;
@@ -238,6 +239,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     }
 
     /// <summary>取消订单</summary>
+    [UseTran]
     public async Task<bool> CancelOrderAsync(long userId, long orderId, string? reason = null)
     {
         try
@@ -248,28 +250,40 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 throw new InvalidOperationException("订单不存在");
             }
 
-            if (order.Status != OrderStatus.Pending)
-            {
-                throw new InvalidOperationException("只能取消待支付的订单");
-            }
-
-            order.Status = OrderStatus.Cancelled;
-            order.CancelledTime = DateTime.Now;
-            order.CancelReason = reason ?? "用户取消";
-            order.ModifyTime = DateTime.Now;
-
-            var result = await _orderRepository.UpdateAsync(order);
-
-            if (result)
-            {
-                Log.Information("订单 {OrderId} 已取消", orderId);
-            }
-
-            return result;
+            return await CancelPendingOrderAsync(
+                order,
+                string.IsNullOrWhiteSpace(reason) ? "用户取消" : reason.Trim(),
+                "User",
+                userId);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "取消订单 {OrderId} 失败", orderId);
+            throw;
+        }
+    }
+
+    /// <summary>系统取消订单</summary>
+    [UseTran]
+    public async Task<bool> CancelOrderBySystemAsync(long orderId, string reason)
+    {
+        try
+        {
+            var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && !o.IsDeleted);
+            if (order == null)
+            {
+                throw new InvalidOperationException("订单不存在");
+            }
+
+            return await CancelPendingOrderAsync(
+                order,
+                string.IsNullOrWhiteSpace(reason) ? "系统取消" : reason.Trim(),
+                "System",
+                0);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "系统取消订单 {OrderId} 失败", orderId);
             throw;
         }
     }
@@ -539,6 +553,50 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     private static long NormalizeTenantId(long tenantId)
     {
         return tenantId > 0 ? tenantId : 0;
+    }
+
+    private async Task<bool> CancelPendingOrderAsync(Order order, string cancelReason, string operatorName, long operatorId)
+    {
+        if (order.Status != OrderStatus.Pending)
+        {
+            throw new InvalidOperationException("只能取消待支付的订单");
+        }
+
+        var cancelledTime = DateTime.Now;
+        var affected = await _orderRepository.UpdateColumnsAsync(
+            o => new Order
+            {
+                Status = OrderStatus.Cancelled,
+                CancelledTime = cancelledTime,
+                CancelReason = cancelReason,
+                ModifyTime = cancelledTime,
+                ModifyBy = operatorName,
+                ModifyId = operatorId
+            },
+            o => o.Id == order.Id && o.UserId == order.UserId && o.Status == OrderStatus.Pending && !o.IsDeleted);
+
+        if (affected <= 0)
+        {
+            throw new InvalidOperationException("订单状态已变更，请刷新后重试");
+        }
+
+        if (order.StockType == StockType.Limited)
+        {
+            var stockRestored = await _productService.RestoreStockAsync(order.ProductId, order.Quantity, order.StockType);
+            if (!stockRestored)
+            {
+                throw new InvalidOperationException("取消订单失败，库存回补未完成");
+            }
+        }
+
+        Log.Information(
+            "订单 {OrderId} 已取消，用户={UserId}，数量={Quantity}，原因={Reason}",
+            order.Id,
+            order.UserId,
+            order.Quantity,
+            cancelReason);
+
+        return true;
     }
 
     private void FillOrderUrls(List<OrderVo> orders)

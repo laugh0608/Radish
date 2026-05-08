@@ -62,8 +62,9 @@ public interface IProductService : IBaseService<Product, ProductVo>
     /// <summary>恢复库存</summary>
     /// <param name="productId">商品 ID</param>
     /// <param name="quantity">恢复数量</param>
+    /// <param name="stockType">下单时的库存类型快照</param>
     /// <returns>是否成功</returns>
-    Task<bool> RestoreStockAsync(long productId, int quantity);
+    Task<bool> RestoreStockAsync(long productId, int quantity, StockType stockType);
 
     /// <summary>增加已售数量</summary>
     /// <param name="productId">商品 ID</param>

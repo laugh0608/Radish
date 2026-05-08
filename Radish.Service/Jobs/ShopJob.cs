@@ -1,3 +1,4 @@
+using Radish.IService;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.Model;
@@ -16,13 +17,16 @@ public class ShopJob
 {
     private readonly IBaseRepository<Order> _orderRepository;
     private readonly IBaseRepository<UserBenefit> _benefitRepository;
+    private readonly IOrderService _orderService;
 
     public ShopJob(
         IBaseRepository<Order> orderRepository,
-        IBaseRepository<UserBenefit> benefitRepository)
+        IBaseRepository<UserBenefit> benefitRepository,
+        IOrderService orderService)
     {
         _orderRepository = orderRepository;
         _benefitRepository = benefitRepository;
+        _orderService = orderService;
     }
 
     #region 订单超时取消
@@ -58,17 +62,16 @@ public class ShopJob
             {
                 try
                 {
-                    order.Status = OrderStatus.Cancelled;
-                    order.CancelledTime = DateTime.Now;
-                    order.CancelReason = $"订单超时自动取消（超过 {timeoutMinutes} 分钟未支付）";
-                    order.ModifyTime = DateTime.Now;
-                    order.ModifyBy = "System";
-
-                    await _orderRepository.UpdateAsync(order);
+                    var reason = $"订单超时自动取消（超过 {timeoutMinutes} 分钟未支付）";
+                    await _orderService.CancelOrderBySystemAsync(order.Id, reason);
                     cancelledCount++;
 
                     Log.Information("[ShopJob] 已取消超时订单：{OrderNo}，创建时间：{CreateTime}",
                         order.OrderNo, order.CreateTime);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    Log.Warning(ex, "[ShopJob] 订单状态已变化，跳过超时取消：{OrderNo}", order.OrderNo);
                 }
                 catch (Exception ex)
                 {
