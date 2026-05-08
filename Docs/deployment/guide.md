@@ -426,6 +426,8 @@ docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deplo
 ## 数据库初始化与迁移（Radish.DbMigrate）
 
 > 适用于：新环境第一次部署数据库，或在已有数据库上按版本执行结构迁移。
+>
+> 当前 `Radish.DbMigrate` 管辖范围内的数据库结构真相源是 `SqlSugar Code First + Radish.DbMigrate + 版本化差异 SQL`；完整协作边界见 [数据库结构变更协作口径](/guide/database-schema-change-governance)。
 
 ### 快速开始：一键初始化（推荐）
 

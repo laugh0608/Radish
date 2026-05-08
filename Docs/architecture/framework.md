@@ -209,10 +209,12 @@ graph LR
 - `SqlSugarExtension.SqlSugarSetup` 会为日志库之外的所有连接注册到 `BaseDbConfig.ValidConfig`，并将 `SqlSugarConst.Log` 标记的配置注入日志上下文；SqlSugar 内部缓存通过 `SqlSugarCache` 委托给现有 `ICaching`，AOP 事件统一写入 Serilog，便于分析 SQL。
 - 公共实体基类统一继承 `Radish.Model.Root.RootEntityTKey<TKey>`，并在派生类中补充审计字段（`CreatedAt/By`, `UpdatedAt/By`, `IsDeleted`, `ConcurrencyStamp` 等），保证主键类型可控且能被 SqlSugar 的 Attribute 正确识别。
 - 软删除通过 SQLSugar Filter 全局开启；必要时在仓储层提供 `IncludeDeleted` 选项。
+- `Radish.Auth` 的 OpenIddict 独立库继续由 `AuthOpenIddictDbContext` 按 EF Core 管理；以下迁移策略仅针对 `Radish.DbMigrate` 管辖的业务库。
+- 数据库结构变更的完整协作边界见：[数据库结构变更协作口径](/guide/database-schema-change-governance)。
 - 迁移策略：
-  - 开发：`db.DbMaintenance.CreateDatabase()` + `InitTables()`。
-  - 生产：通过 `Radish.Repository.Migrations` 导出 SQL 或在部署阶段运行迁移命令。
-- 数据初始化：`SeedRunner` 负责创建默认分类、管理员、积分规则。
+  - 开发：通过 `Radish.DbMigrate` 执行 `doctor / init / apply`，在开发库内走 `CreateDatabase()` + `InitTables()` 自动建表 / 补列。
+  - 测试 / 生产：先以 `DbMigrate init` 同步基线库，再生成并审核版本化差异 SQL（建议 `Deploy/sql/*.sql`），上线前显式执行。
+- 数据初始化：`Radish.DbMigrate/InitialDataSeeder.cs` 负责创建默认分类、管理员、积分规则及其他基础种子数据。
 - PostgreSQL 特性利用：JSONB 列（存储自定义配置）、`tsvector` 搜索、行级锁（积分/库存扣减）。
 
 ## 前端架构与规范
