@@ -23,6 +23,7 @@ export const ShopHome = ({
   onViewAllProducts
 }: ShopHomeProps) => {
   const { t } = useTranslation();
+  const visibleCategories = categories.filter((category) => (category.voProductCount ?? 0) > 0);
 
   const handleCategoryImageError = (event: SyntheticEvent<HTMLImageElement>) => {
     event.currentTarget.style.display = 'none';
@@ -59,7 +60,7 @@ export const ShopHome = ({
         </div>
 
         <div className={styles.categoriesGrid}>
-          {categories.map((category) => {
+          {visibleCategories.map((category) => {
             const categoryIconUrl = resolveMediaUrl(category.voIcon);
 
             return (

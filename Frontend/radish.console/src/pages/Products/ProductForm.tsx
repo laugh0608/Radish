@@ -50,6 +50,19 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
   const stockType = Form.useWatch('stockType', form);
   const durationType = Form.useWatch('durationType', form);
 
+  const normalizeEnumNumber = (value: unknown, mapping: Record<string, number>): number | undefined => {
+    const normalized = String(value ?? '').trim();
+    if (!normalized) {
+      return undefined;
+    }
+
+    if (/^\d+$/.test(normalized)) {
+      return Number.parseInt(normalized, 10);
+    }
+
+    return mapping[normalized];
+  };
+
   const normalizeOptionalAttachmentId = (value: unknown): string | null | undefined => {
     if (typeof value === 'string' && /^[1-9]\d*$/.test(value.trim())) {
       return value.trim();
@@ -116,15 +129,42 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
         iconAttachmentId: product.voIconAttachmentId ?? undefined,
         coverAttachmentId: product.voCoverAttachmentId ?? undefined,
         categoryId: product.voCategoryId,
-        productType: product.voProductType,
-        benefitType: product.voBenefitType,
-        consumableType: product.voConsumableType,
+        productType: normalizeEnumNumber(product.voProductType, {
+          Benefit: 1,
+          Consumable: 2,
+          Physical: 99,
+        }),
+        benefitType: normalizeEnumNumber(product.voBenefitType, {
+          Badge: 1,
+          AvatarFrame: 2,
+          Title: 3,
+          Theme: 4,
+          Signature: 5,
+          NameColor: 6,
+          LikeEffect: 7,
+        }),
+        consumableType: normalizeEnumNumber(product.voConsumableType, {
+          RenameCard: 1,
+          PostPinCard: 2,
+          PostHighlightCard: 3,
+          ExpCard: 4,
+          CoinCard: 5,
+          DoubleExpCard: 6,
+          LotteryTicket: 99,
+        }),
         price: product.voPrice,
         originalPrice: product.voOriginalPrice,
-        stockType: product.voStockType,
+        stockType: normalizeEnumNumber(product.voStockType, {
+          Unlimited: 0,
+          Limited: 1,
+        }),
         stock: product.voStock,
         limitPerUser: product.voLimitPerUser,
-        durationType: product.voDurationType,
+        durationType: normalizeEnumNumber(product.voDurationType, {
+          Permanent: 0,
+          Days: 1,
+          FixedDate: 2,
+        }),
         durationDays: product.voDurationDays,
         sortOrder: product.voSortOrder,
         isOnSale: product.voIsOnSale,
@@ -270,21 +310,26 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
         </Form.Item>
 
         {productType === 1 && (
-          <Form.Item
-            label="权益类型"
-            name="benefitType"
-            rules={[{ required: true, message: '请选择权益类型' }]}
-          >
-            <Select placeholder="请选择权益类型">
-              <Select.Option value={1}>徽章</Select.Option>
-              <Select.Option value={2}>头像框</Select.Option>
-              <Select.Option value={3}>称号</Select.Option>
-              <Select.Option value={4}>主题</Select.Option>
-              <Select.Option value={5}>签名档</Select.Option>
-              <Select.Option value={6}>用户名颜色</Select.Option>
-              <Select.Option value={7}>点赞特效</Select.Option>
-            </Select>
-          </Form.Item>
+          <>
+            <Form.Item
+              label="权益类型"
+              name="benefitType"
+              rules={[{ required: true, message: '请选择权益类型' }]}
+            >
+              <Select placeholder="请选择权益类型">
+                <Select.Option value={1} disabled>徽章（暂未开放）</Select.Option>
+                <Select.Option value={2} disabled>头像框（暂未开放）</Select.Option>
+                <Select.Option value={3} disabled>称号（暂未开放）</Select.Option>
+                <Select.Option value={4} disabled>主题（暂未开放）</Select.Option>
+                <Select.Option value={5} disabled>签名档（暂未开放）</Select.Option>
+                <Select.Option value={6} disabled>用户名颜色（暂未开放）</Select.Option>
+                <Select.Option value={7} disabled>点赞特效（暂未开放）</Select.Option>
+              </Select>
+            </Form.Item>
+            <div style={{ marginTop: -12, marginBottom: 16, color: 'var(--theme-text-placeholder)', fontSize: 12 }}>
+              当前权益效果尚未接入真实消费链路，不能上架销售。
+            </div>
+          </>
         )}
 
         {productType === 2 && (

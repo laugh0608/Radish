@@ -218,6 +218,10 @@ export const PublicShopApp = ({
   }, [categoriesError, featuredError, route.kind, t]);
 
   const productsRouteState = route.kind === 'products' ? route : null;
+  const visibleCategories = useMemo(
+    () => categories.filter((category) => (category.voProductCount ?? 0) > 0),
+    [categories]
+  );
 
   const validatedCategoryId = useMemo(() => {
     if (!productsRouteState?.categoryId) {
@@ -228,10 +232,10 @@ export const PublicShopApp = ({
       return productsRouteState.categoryId;
     }
 
-    return categories.some((category) => String(category.voId) === productsRouteState.categoryId)
+    return visibleCategories.some((category) => String(category.voId) === productsRouteState.categoryId)
       ? productsRouteState.categoryId
       : undefined;
-  }, [categories, categoriesError, categoriesLoading, categoriesResolved, productsRouteState]);
+  }, [categoriesError, categoriesLoading, categoriesResolved, productsRouteState, visibleCategories]);
 
   const canonicalProductsRoute = useMemo<PublicShopProductsRoute>(() => {
     if (!productsRouteState) {
@@ -556,9 +560,9 @@ export const PublicShopApp = ({
         )}
 
         <ProductList
-          categories={categories}
+          categories={visibleCategories}
           products={products}
-          selectedCategoryId={route.categoryId}
+          selectedCategoryId={validatedCategoryId}
           currentPage={currentPage}
           totalPages={totalPages}
           searchKeyword={route.keyword}
@@ -575,7 +579,7 @@ export const PublicShopApp = ({
           onSearchChange={(keyword) => {
             onNavigate({
               kind: 'products',
-              categoryId: route.categoryId,
+              categoryId: validatedCategoryId,
               keyword: keyword || undefined,
               page: 1
             });
@@ -583,7 +587,7 @@ export const PublicShopApp = ({
           onPageChange={(page) => {
             onNavigate({
               kind: 'products',
-              categoryId: route.categoryId,
+              categoryId: validatedCategoryId,
               keyword: route.keyword,
               page
             });

@@ -18,6 +18,27 @@ interface InventoryProps {
 
 type TabType = 'benefits' | 'consumables';
 
+const normalizeBenefitType = (type?: string | null): string => {
+  switch (String(type ?? '')) {
+    case '1':
+      return 'Badge';
+    case '2':
+      return 'AvatarFrame';
+    case '3':
+      return 'Title';
+    case '4':
+      return 'Theme';
+    case '5':
+      return 'Signature';
+    case '6':
+      return 'NameColor';
+    case '7':
+      return 'LikeEffect';
+    default:
+      return String(type ?? '');
+  }
+};
+
 const getBenefitTypeIcon = (type: string): string => {
   const icons: Record<string, string> = {
     'Badge': '🏅',
@@ -28,7 +49,7 @@ const getBenefitTypeIcon = (type: string): string => {
     'NameColor': '🌈',
     'LikeEffect': '❤️'
   };
-  return icons[type] || '🎁';
+  return icons[normalizeBenefitType(type)] || '🎁';
 };
 
 const getConsumableTypeIcon = (type: string): string => {
@@ -68,6 +89,17 @@ const normalizeConsumableType = (type?: string | null): string => {
 
 const isRenameCardItem = (item?: UserInventoryItem | null): boolean =>
   normalizeConsumableType(item?.voConsumableType) === 'RenameCard';
+
+const isUnavailableBenefitItem = (benefit?: UserBenefit | null): boolean => {
+  const normalizedType = normalizeBenefitType(benefit?.voBenefitType);
+  return normalizedType === 'Badge'
+    || normalizedType === 'AvatarFrame'
+    || normalizedType === 'Title'
+    || normalizedType === 'Theme'
+    || normalizedType === 'Signature'
+    || normalizedType === 'NameColor'
+    || normalizedType === 'LikeEffect';
+};
 
 const isUnavailableConsumableItem = (item?: UserInventoryItem | null): boolean => {
   const normalizedType = normalizeConsumableType(item?.voConsumableType);
@@ -230,6 +262,13 @@ export const Inventory = ({
                             onClick={() => onDeactivateBenefit(benefit.voId)}
                           >
                             {t('shop.inventory.deactivate')}
+                          </button>
+                        ) : isUnavailableBenefitItem(benefit) ? (
+                          <button
+                            className={styles.activateButton}
+                            disabled
+                          >
+                            {t('shop.inventory.unavailable')}
                           </button>
                         ) : (
                           <button

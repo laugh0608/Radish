@@ -23,6 +23,14 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
 #pragma warning disable CS0618
     private static readonly Expression<Func<Product, bool>> SupportedPublicProductExpression = p =>
+        !(p.ProductType == ProductType.Benefit && (
+            p.BenefitType == BenefitType.Badge ||
+            p.BenefitType == BenefitType.AvatarFrame ||
+            p.BenefitType == BenefitType.Title ||
+            p.BenefitType == BenefitType.Theme ||
+            p.BenefitType == BenefitType.Signature ||
+            p.BenefitType == BenefitType.NameColor ||
+            p.BenefitType == BenefitType.LikeEffect)) &&
         !(p.ProductType == ProductType.Consumable && (
             p.ConsumableType == ConsumableType.PostPinCard ||
             p.ConsumableType == ConsumableType.PostHighlightCard ||
@@ -32,6 +40,14 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
         p.IsEnabled &&
         p.IsOnSale &&
         !p.IsDeleted &&
+        !(p.ProductType == ProductType.Benefit && (
+            p.BenefitType == BenefitType.Badge ||
+            p.BenefitType == BenefitType.AvatarFrame ||
+            p.BenefitType == BenefitType.Title ||
+            p.BenefitType == BenefitType.Theme ||
+            p.BenefitType == BenefitType.Signature ||
+            p.BenefitType == BenefitType.NameColor ||
+            p.BenefitType == BenefitType.LikeEffect)) &&
         !(p.ProductType == ProductType.Consumable && (
             p.ConsumableType == ConsumableType.PostPinCard ||
             p.ConsumableType == ConsumableType.PostHighlightCard ||
@@ -218,9 +234,9 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                 return (false, "商品未上架");
             }
 
-            if (IsUnsupportedConsumableType(product.ConsumableType))
+            if (ShopProductAvailabilityPolicy.IsUnavailablePublicProduct(product.ProductType, product.BenefitType, product.ConsumableType))
             {
-                return (false, $"{GetConsumableTypeDisplayName(product.ConsumableType)}暂未开放，当前不可购买");
+                return (false, $"{ShopProductAvailabilityPolicy.GetUnavailableProductDisplayName(product.BenefitType, product.ConsumableType)}暂未开放，当前不可购买");
             }
 
             // 检查库存
@@ -380,7 +396,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     {
         try
         {
-            EnsureSupportedOnSaleConsumable(dto.ProductType, dto.ConsumableType, dto.IsOnSale);
+            EnsureSupportedOnSaleProduct(dto.ProductType, dto.BenefitType, dto.ConsumableType, dto.IsOnSale);
 
             var tenantId = NormalizeTenantId(App.CurrentUser.TenantId);
             var product = Mapper.Map<Product>(dto);
@@ -412,7 +428,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     {
         try
         {
-            EnsureSupportedOnSaleConsumable(dto.ProductType, dto.ConsumableType, dto.IsOnSale);
+            EnsureSupportedOnSaleProduct(dto.ProductType, dto.BenefitType, dto.ConsumableType, dto.IsOnSale);
 
             var product = await _productRepository.QueryFirstAsync(p => p.Id == dto.Id);
             if (product == null)
@@ -448,9 +464,9 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                 return false;
             }
 
-            if (IsUnsupportedConsumableType(product.ConsumableType))
+            if (ShopProductAvailabilityPolicy.IsUnavailablePublicProduct(product.ProductType, product.BenefitType, product.ConsumableType))
             {
-                throw new InvalidOperationException($"{GetConsumableTypeDisplayName(product.ConsumableType)}暂未开放，不能上架销售");
+                throw new InvalidOperationException($"{ShopProductAvailabilityPolicy.GetUnavailableProductDisplayName(product.BenefitType, product.ConsumableType)}暂未开放，不能上架销售");
             }
 
             var affected = await _productRepository.UpdateColumnsAsync(
@@ -476,40 +492,19 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
         }
     }
 
-#pragma warning disable CS0618
-    private static bool IsUnsupportedConsumableType(ConsumableType? consumableType)
-    {
-        return consumableType is ConsumableType.PostPinCard
-            or ConsumableType.PostHighlightCard
-            or ConsumableType.DoubleExpCard
-            or ConsumableType.LotteryTicket;
-    }
-
-    private static string GetConsumableTypeDisplayName(ConsumableType? consumableType)
-    {
-        return consumableType switch
-        {
-            ConsumableType.PostPinCard => "帖子置顶卡",
-            ConsumableType.PostHighlightCard => "帖子高亮卡",
-            ConsumableType.DoubleExpCard => "双倍经验卡",
-            ConsumableType.LotteryTicket => "抽奖券",
-            _ => "该消耗品"
-        };
-    }
-
-    private static void EnsureSupportedOnSaleConsumable(
+    private static void EnsureSupportedOnSaleProduct(
         ProductType productType,
+        BenefitType? benefitType,
         ConsumableType? consumableType,
         bool isOnSale)
     {
-        if (productType != ProductType.Consumable || !isOnSale || !IsUnsupportedConsumableType(consumableType))
+        if (!isOnSale || !ShopProductAvailabilityPolicy.IsUnavailablePublicProduct(productType, benefitType, consumableType))
         {
             return;
         }
 
-        throw new InvalidOperationException($"{GetConsumableTypeDisplayName(consumableType)}暂未开放，不能上架销售");
+        throw new InvalidOperationException($"{ShopProductAvailabilityPolicy.GetUnavailableProductDisplayName(benefitType, consumableType)}暂未开放，不能上架销售");
     }
-#pragma warning restore CS0618
 
     /// <summary>下架商品</summary>
     public async Task<bool> TakeOffSaleAsync(long productId)

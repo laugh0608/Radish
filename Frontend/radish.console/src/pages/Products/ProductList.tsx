@@ -37,13 +37,101 @@ import { log } from '../../utils/logger';
 import './ProductList.css';
 
 // 本地工具函数
-function getProductTypeDisplay(type: ProductType): string {
-  switch (type) {
-    case ProductType.Benefit:
+function normalizeProductType(type?: string | number | null): string {
+  switch (String(type ?? '')) {
+    case '1':
+      return 'Benefit';
+    case '2':
+      return 'Consumable';
+    case '99':
+      return 'Physical';
+    default:
+      return String(type ?? '');
+  }
+}
+
+function normalizeBenefitType(type?: string | number | null): string {
+  switch (String(type ?? '')) {
+    case '1':
+      return 'Badge';
+    case '2':
+      return 'AvatarFrame';
+    case '3':
+      return 'Title';
+    case '4':
+      return 'Theme';
+    case '5':
+      return 'Signature';
+    case '6':
+      return 'NameColor';
+    case '7':
+      return 'LikeEffect';
+    default:
+      return String(type ?? '');
+  }
+}
+
+function normalizeConsumableType(type?: string | number | null): string {
+  switch (String(type ?? '')) {
+    case '1':
+      return 'RenameCard';
+    case '2':
+      return 'PostPinCard';
+    case '3':
+      return 'PostHighlightCard';
+    case '4':
+      return 'ExpCard';
+    case '5':
+      return 'CoinCard';
+    case '6':
+      return 'DoubleExpCard';
+    case '7':
+    case '99':
+      return 'LotteryTicket';
+    default:
+      return String(type ?? '');
+  }
+}
+
+function getUnsupportedSaleReason(product: Product): string | null {
+  const productType = normalizeProductType(product.voProductType);
+  if (productType === 'Benefit') {
+    const benefitType = normalizeBenefitType(product.voBenefitType);
+    if (
+      benefitType === 'Badge'
+      || benefitType === 'AvatarFrame'
+      || benefitType === 'Title'
+      || benefitType === 'Theme'
+      || benefitType === 'Signature'
+      || benefitType === 'NameColor'
+      || benefitType === 'LikeEffect'
+    ) {
+      return '当前权益效果未开放，不能上架销售';
+    }
+  }
+
+  if (productType === 'Consumable') {
+    const consumableType = normalizeConsumableType(product.voConsumableType);
+    if (
+      consumableType === 'PostPinCard'
+      || consumableType === 'PostHighlightCard'
+      || consumableType === 'DoubleExpCard'
+      || consumableType === 'LotteryTicket'
+    ) {
+      return '当前道具未开放，不能上架销售';
+    }
+  }
+
+  return null;
+}
+
+function getProductTypeDisplay(type: ProductType | string | number): string {
+  switch (normalizeProductType(type)) {
+    case 'Benefit':
       return '权益';
-    case ProductType.Consumable:
+    case 'Consumable':
       return '消耗品';
-    case ProductType.Physical:
+    case 'Physical':
       return '实物';
     default:
       return '未知';
@@ -305,42 +393,48 @@ export const ProductList = () => {
       key: 'action',
       width: 200,
       fixed: 'right',
-      render: (_: unknown, record: Product) => (
-        <Space size="small">
-          {canEditProduct ? (
-            <Button
-              variant="ghost"
-              size="small"
-              icon={<EditOutlined />}
-              onClick={() => {
-                setEditingProduct(record);
-                setFormVisible(true);
-              }}
-            >
-              编辑
-            </Button>
-          ) : null}
-          {canToggleProductSale ? (
-            <Button
-              variant="ghost"
-              size="small"
-              onClick={() => handleToggleSale(record)}
-            >
-              {record.voIsOnSale ? '下架' : '上架'}
-            </Button>
-          ) : null}
-          {canDeleteProductPermission ? (
-            <Button
-              variant="danger"
-              size="small"
-              icon={<DeleteOutlined />}
-              onClick={() => handleDelete(record)}
-            >
-              删除
-            </Button>
-          ) : null}
-        </Space>
-      ),
+      render: (_: unknown, record: Product) => {
+        const saleBlockReason = !record.voIsOnSale ? getUnsupportedSaleReason(record) : null;
+
+        return (
+          <Space size="small">
+            {canEditProduct ? (
+              <Button
+                variant="ghost"
+                size="small"
+                icon={<EditOutlined />}
+                onClick={() => {
+                  setEditingProduct(record);
+                  setFormVisible(true);
+                }}
+              >
+                编辑
+              </Button>
+            ) : null}
+            {canToggleProductSale ? (
+              <Button
+                variant="ghost"
+                size="small"
+                onClick={() => handleToggleSale(record)}
+                disabled={!!saleBlockReason}
+                title={saleBlockReason ?? undefined}
+              >
+                {record.voIsOnSale ? '下架' : '上架'}
+              </Button>
+            ) : null}
+            {canDeleteProductPermission ? (
+              <Button
+                variant="danger"
+                size="small"
+                icon={<DeleteOutlined />}
+                onClick={() => handleDelete(record)}
+              >
+                删除
+              </Button>
+            ) : null}
+          </Space>
+        );
+      },
     },
   ];
   // 如果正在加载且没有数据，显示骨架屏

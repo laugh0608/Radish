@@ -325,6 +325,11 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
                 throw new InvalidOperationException("权益已过期");
             }
 
+            if (ShopProductAvailabilityPolicy.IsUnavailableBenefitType(benefit.BenefitType))
+            {
+                throw new InvalidOperationException($"{ShopProductAvailabilityPolicy.GetBenefitTypeDisplayName(benefit.BenefitType)}暂未开放，当前不可激活");
+            }
+
             // 取消同类型的其他激活权益
             var activeBenefits = await _userBenefitRepository.QueryAsync(
                 b => b.UserId == userId &&

@@ -38,9 +38,55 @@ public class ProductServiceTest
     }
 
     [Fact]
+    public async Task CheckCanBuyAsync_ShouldRejectBadgeBenefit()
+    {
+        var product = CreateBadgeProduct();
+        var productRepository = CreateProductRepository(product);
+        var categoryRepository = new Mock<IBaseRepository<ProductCategory>>(MockBehavior.Strict);
+        var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Strict);
+        var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
+        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+
+        var service = new ProductService(
+            mapper.Object,
+            productRepository.Object,
+            categoryRepository.Object,
+            orderRepository.Object,
+            attachmentUrlResolver.Object);
+
+        var (canBuy, reason) = await service.CheckCanBuyAsync(9527, product.Id, 1);
+
+        Assert.False(canBuy);
+        Assert.Equal("徽章暂未开放，当前不可购买", reason);
+    }
+
+    [Fact]
     public async Task GetProductDetailAsync_ShouldHideLotteryTicketFromPublicView()
     {
         var product = CreateLotteryTicketProduct();
+        var productRepository = CreateProductRepository(product);
+        var categoryRepository = new Mock<IBaseRepository<ProductCategory>>(MockBehavior.Strict);
+        var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Strict);
+        var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
+        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+
+        var service = new ProductService(
+            mapper.Object,
+            productRepository.Object,
+            categoryRepository.Object,
+            orderRepository.Object,
+            attachmentUrlResolver.Object);
+
+        var result = await service.GetProductDetailAsync(product.Id);
+
+        Assert.Null(result);
+        categoryRepository.Verify(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<ProductCategory, bool>>?>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetProductDetailAsync_ShouldHideBadgeBenefitFromPublicView()
+    {
+        var product = CreateBadgeProduct();
         var productRepository = CreateProductRepository(product);
         var categoryRepository = new Mock<IBaseRepository<ProductCategory>>(MockBehavior.Strict);
         var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Strict);
@@ -72,6 +118,25 @@ public class ProductServiceTest
             IsEnabled = true,
             IsOnSale = true,
             Price = 30,
+            StockType = StockType.Unlimited,
+            CreateTime = DateTime.Now,
+            CreateBy = "System"
+        };
+    }
+
+    private static Product CreateBadgeProduct()
+    {
+        return new Product
+        {
+            Id = 100001,
+            Name = "元老徽章",
+            CategoryId = "badge",
+            ProductType = ProductType.Benefit,
+            BenefitType = BenefitType.Badge,
+            BenefitValue = "badge-veteran",
+            IsEnabled = true,
+            IsOnSale = true,
+            Price = 500,
             StockType = StockType.Unlimited,
             CreateTime = DateTime.Now,
             CreateBy = "System"
