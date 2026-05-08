@@ -548,6 +548,86 @@ internal static partial class InitialDataSeeder
         Console.WriteLine($"[Radish.DbMigrate] 已按当前可用性策略下架历史商品 Id={existingProduct.Id}, Name={existingProduct.Name}。");
     }
 
+    private static async Task BackfillShopOrderStockTypesAsync(ISqlSugarClient db)
+    {
+        var orderEntity = db.EntityMaintenance.GetEntityInfo<Order>();
+        var productEntity = db.EntityMaintenance.GetEntityInfo<Product>();
+        var orderTable = orderEntity.DbTableName;
+        var productTable = productEntity.DbTableName;
+
+        if (!db.DbMaintenance.IsAnyTable(orderTable, false) || !db.DbMaintenance.IsAnyTable(productTable, false))
+        {
+            return;
+        }
+
+        var orderStockTypeColumn = GetColumnName(orderEntity, nameof(Order.StockType));
+        if (string.IsNullOrWhiteSpace(orderStockTypeColumn) || !db.DbMaintenance.IsAnyColumn(orderTable, orderStockTypeColumn, false))
+        {
+            Console.WriteLine("[Radish.DbMigrate] ShopOrder.StockType 列尚不存在，跳过历史订单快照回填。");
+            return;
+        }
+
+        var orderProductIdColumn = GetColumnName(orderEntity, nameof(Order.ProductId));
+        var productIdColumn = GetColumnName(productEntity, nameof(Product.Id));
+        var productStockTypeColumn = GetColumnName(productEntity, nameof(Product.StockType));
+
+        if (string.IsNullOrWhiteSpace(orderProductIdColumn) ||
+            string.IsNullOrWhiteSpace(productIdColumn) ||
+            string.IsNullOrWhiteSpace(productStockTypeColumn))
+        {
+            Console.WriteLine("[Radish.DbMigrate] 无法解析商城订单快照回填所需列名，跳过。");
+            return;
+        }
+
+        var unresolvedBefore = await db.Ado.GetIntAsync($"""
+            SELECT COUNT(1)
+            FROM {QuoteIdentifier(orderTable)}
+            WHERE {QuoteIdentifier(orderStockTypeColumn)} IS NULL
+            """);
+
+        if (unresolvedBefore <= 0)
+        {
+            Console.WriteLine("[Radish.DbMigrate] 商城历史订单无需回填 StockType。");
+            return;
+        }
+
+        var updated = await db.Ado.ExecuteCommandAsync($"""
+            UPDATE {QuoteIdentifier(orderTable)}
+            SET {QuoteIdentifier(orderStockTypeColumn)} = (
+                SELECT {QuoteIdentifier(productStockTypeColumn)}
+                FROM {QuoteIdentifier(productTable)}
+                WHERE {QuoteIdentifier(productTable)}.{QuoteIdentifier(productIdColumn)} =
+                      {QuoteIdentifier(orderTable)}.{QuoteIdentifier(orderProductIdColumn)}
+            )
+            WHERE {QuoteIdentifier(orderStockTypeColumn)} IS NULL
+              AND EXISTS (
+                  SELECT 1
+                  FROM {QuoteIdentifier(productTable)}
+                  WHERE {QuoteIdentifier(productTable)}.{QuoteIdentifier(productIdColumn)} =
+                        {QuoteIdentifier(orderTable)}.{QuoteIdentifier(orderProductIdColumn)}
+              )
+            """);
+
+        var unresolvedAfter = await db.Ado.GetIntAsync($"""
+            SELECT COUNT(1)
+            FROM {QuoteIdentifier(orderTable)}
+            WHERE {QuoteIdentifier(orderStockTypeColumn)} IS NULL
+            """);
+
+        Console.WriteLine($"[Radish.DbMigrate] 已回填商城历史订单 StockType，共 {updated} 条。");
+        if (unresolvedAfter > 0)
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 仍有 {unresolvedAfter} 条历史订单缺少 StockType，请检查关联商品是否存在。");
+        }
+    }
+
+    private static string? GetColumnName(EntityInfo entityInfo, string propertyName)
+    {
+        return entityInfo.Columns
+            .FirstOrDefault(column => string.Equals(column.PropertyName, propertyName, StringComparison.Ordinal))
+            ?.DbColumnName;
+    }
+
     /// <summary>补齐商城默认图片附件及商品/分类关联</summary>
     private static async Task SeedShopDefaultImagesAsync(ISqlSugarClient db)
     {
