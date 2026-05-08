@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Modal,
+  AntModal,
   Form,
   AntInput as Input,
   InputNumber,
@@ -48,6 +49,144 @@ function isUnsupportedSaleSelection(productType?: unknown, benefitType?: unknown
   return false;
 }
 
+const benefitCategoryMap: Record<number, string> = {
+  1: 'badge',
+  2: 'frame',
+  3: 'title',
+  4: 'theme',
+  5: 'signature',
+  6: 'effect',
+  7: 'effect',
+};
+
+const consumableCategoryMap: Record<number, string> = {
+  1: 'effect',
+  2: 'effect',
+  3: 'effect',
+  4: 'effect',
+  5: 'effect',
+  6: 'effect',
+  99: 'effect',
+};
+
+const benefitCategoryIds = ['badge', 'frame', 'title', 'signature', 'effect', 'theme'];
+
+interface BenefitValueFieldMeta {
+  label: string;
+  placeholder: string;
+  tooltip?: string;
+  help?: string;
+  required?: boolean;
+  positiveInteger?: boolean;
+}
+
+function getBenefitTypeDisplayName(benefitType?: unknown): string {
+  switch (Number(benefitType)) {
+    case 1:
+      return '徽章';
+    case 2:
+      return '头像框';
+    case 3:
+      return '称号';
+    case 4:
+      return '主题';
+    case 5:
+      return '签名档';
+    case 6:
+      return '用户名颜色';
+    case 7:
+      return '点赞特效';
+    default:
+      return '权益';
+  }
+}
+
+function resolveRecommendedCategoryId(productType?: unknown, benefitType?: unknown, consumableType?: unknown): string | undefined {
+  const normalizedProductType = Number(productType);
+
+  if (normalizedProductType === 1) {
+    return benefitCategoryMap[Number(benefitType)];
+  }
+
+  if (normalizedProductType === 2) {
+    return consumableCategoryMap[Number(consumableType)] ?? 'effect';
+  }
+
+  return undefined;
+}
+
+function getAllowedCategoryIds(productType?: unknown, benefitType?: unknown, consumableType?: unknown): string[] | undefined {
+  const normalizedProductType = Number(productType);
+
+  if (normalizedProductType === 1) {
+    const mappedCategoryId = benefitCategoryMap[Number(benefitType)];
+    return mappedCategoryId ? [mappedCategoryId] : benefitCategoryIds;
+  }
+
+  if (normalizedProductType === 2) {
+    return ['effect'];
+  }
+
+  return undefined;
+}
+
+function getBenefitValueFieldMeta(productType?: unknown, benefitType?: unknown, consumableType?: unknown): BenefitValueFieldMeta | null {
+  const normalizedProductType = Number(productType);
+
+  if (normalizedProductType === 1) {
+    const benefitTypeName = getBenefitTypeDisplayName(benefitType);
+    return {
+      label: `${benefitTypeName}资源值`,
+      placeholder: `请输入${benefitTypeName}资源标识或展示值`,
+      tooltip: '用于权益发放和展示，例如 badge-veteran、theme-sakura。',
+      help: '权益类商品需要可被客户端或运行时识别的资源值。',
+      required: true,
+    };
+  }
+
+  if (normalizedProductType !== 2) {
+    return null;
+  }
+
+  switch (Number(consumableType)) {
+    case 4:
+      return {
+        label: '经验值',
+        placeholder: '请输入经验值，例如 100',
+        tooltip: '购买后发放到背包，使用时按这里的数值增加经验。',
+        help: '仅支持正整数。',
+        required: true,
+        positiveInteger: true,
+      };
+    case 5:
+      return {
+        label: '红包面额',
+        placeholder: '请输入胡萝卜数量，例如 50',
+        tooltip: '购买后发放到背包，使用时按这里的数值发放胡萝卜。',
+        help: '仅支持正整数。',
+        required: true,
+        positiveInteger: true,
+      };
+    case 1:
+      return null;
+    default:
+      return {
+        label: '道具配置值',
+        placeholder: '如有需要请输入道具配置值',
+        tooltip: '当前道具类型如需额外数值配置，可在这里填写。',
+      };
+  }
+}
+
+function normalizeBenefitValue(value: unknown): string | undefined {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const normalized = value.trim();
+  return normalized ? normalized : undefined;
+}
+
 export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFormProps) => {
   const [form] = Form.useForm<CreateProductDto | UpdateProductDto>();
   const [categories, setCategories] = useState<ProductCategory[]>([]);
@@ -56,16 +195,47 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
   const [coverUploading, setCoverUploading] = useState(false);
   const [iconPreviewUrl, setIconPreviewUrl] = useState<string | undefined>(undefined);
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | undefined>(undefined);
+  const [isDirty, setIsDirty] = useState(false);
   const iconAttachmentId = Form.useWatch('iconAttachmentId', form);
   const coverAttachmentId = Form.useWatch('coverAttachmentId', form);
 
   // 监听商品类型变化
+  const categoryId = Form.useWatch('categoryId', form);
   const productType = Form.useWatch('productType', form);
   const benefitType = Form.useWatch('benefitType', form);
   const consumableType = Form.useWatch('consumableType', form);
   const stockType = Form.useWatch('stockType', form);
   const durationType = Form.useWatch('durationType', form);
   const unsupportedSaleSelection = isUnsupportedSaleSelection(productType, benefitType, consumableType);
+  const recommendedCategoryId = resolveRecommendedCategoryId(productType, benefitType, consumableType);
+  const allowedCategoryIds = getAllowedCategoryIds(productType, benefitType, consumableType);
+  const filteredCategories = allowedCategoryIds
+    ? categories.filter((cat) => allowedCategoryIds.includes(cat.voId))
+    : categories;
+  const categoryOptions = filteredCategories.length > 0 ? filteredCategories : categories;
+  const isCategoryLocked = Boolean(recommendedCategoryId) && categoryOptions.length === 1;
+  const recommendedCategoryName = categories.find((cat) => cat.voId === recommendedCategoryId)?.voName;
+  const benefitValueFieldMeta = getBenefitValueFieldMeta(productType, benefitType, consumableType);
+  const benefitValueRules = benefitValueFieldMeta
+    ? [
+        ...(benefitValueFieldMeta.required
+          ? [{ required: true, whitespace: true, message: `请输入${benefitValueFieldMeta.label}` }]
+          : []),
+        ...(benefitValueFieldMeta.positiveInteger
+          ? [{
+              validator: (_: unknown, value: unknown) => {
+                if (value === undefined || value === null || String(value).trim() === '') {
+                  return Promise.resolve();
+                }
+
+                return /^[1-9]\d*$/.test(String(value).trim())
+                  ? Promise.resolve()
+                  : Promise.reject(new Error(`${benefitValueFieldMeta.label}必须为正整数`));
+              }
+            }]
+          : [])
+      ]
+    : [];
 
   const normalizeEnumNumber = (value: unknown, mapping: Record<string, number>): number | undefined => {
     const normalized = String(value ?? '').trim();
@@ -86,6 +256,30 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
     }
 
     return null;
+  };
+
+  const handleRequestClose = () => {
+    if (loading || iconUploading || coverUploading) {
+      message.warning('当前仍有保存或上传任务，请稍候');
+      return;
+    }
+
+    if (!isDirty) {
+      onClose();
+      return;
+    }
+
+    AntModal.confirm({
+      title: '放弃未保存的商品资料？',
+      content: '当前表单内容尚未保存，关闭后会丢失已填写的资料。',
+      okText: '放弃并关闭',
+      cancelText: '继续编辑',
+      okButtonProps: { danger: true },
+      onOk: () => {
+        setIsDirty(false);
+        onClose();
+      },
+    });
   };
 
   const createUploadHandler = (
@@ -117,6 +311,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
       });
 
       form.setFieldValue(fieldName, uploaded.attachmentId);
+      setIsDirty(true);
       setPreview(getAvatarUrl(uploaded.thumbnailUrl || uploaded.url));
       options.onSuccess?.(uploaded);
       message.success('图片上传成功，已回填附件 ID');
@@ -169,6 +364,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
           DoubleExpCard: 6,
           LotteryTicket: 99,
         }),
+        benefitValue: product.voBenefitValue ?? undefined,
         price: product.voPrice,
         originalPrice: product.voOriginalPrice,
         stockType: normalizeEnumNumber(product.voStockType, {
@@ -189,6 +385,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
       } as any);
       setIconPreviewUrl(getAvatarUrl(product.voIcon));
       setCoverPreviewUrl(getAvatarUrl(product.voCoverImage));
+      setIsDirty(false);
     } else if (visible) {
       form.resetFields();
       // 设置默认值
@@ -203,10 +400,12 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
       } as any);
       setIconPreviewUrl(undefined);
       setCoverPreviewUrl(undefined);
+      setIsDirty(false);
     }
     if (!visible) {
       setIconPreviewUrl(undefined);
       setCoverPreviewUrl(undefined);
+      setIsDirty(false);
     }
   }, [visible, product, form]);
 
@@ -219,6 +418,42 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
       form.setFieldValue('isOnSale', false);
     }
   }, [form, unsupportedSaleSelection, visible]);
+
+  useEffect(() => {
+    if (!visible) {
+      return;
+    }
+
+    const normalizedProductType = Number(productType);
+
+    if (normalizedProductType === 1 && consumableType !== undefined) {
+      form.setFieldValue('consumableType', undefined);
+      return;
+    }
+
+    if (normalizedProductType === 2 && benefitType !== undefined) {
+      form.setFieldValue('benefitType', undefined);
+      return;
+    }
+
+    if (normalizedProductType === 99) {
+      if (benefitType !== undefined) {
+        form.setFieldValue('benefitType', undefined);
+      }
+
+      if (consumableType !== undefined) {
+        form.setFieldValue('consumableType', undefined);
+      }
+    }
+  }, [benefitType, consumableType, form, productType, visible]);
+
+  useEffect(() => {
+    if (!visible || !recommendedCategoryId || categoryId === recommendedCategoryId) {
+      return;
+    }
+
+    form.setFieldValue('categoryId', recommendedCategoryId);
+  }, [categoryId, form, recommendedCategoryId, visible]);
 
   const loadCategories = async () => {
     try {
@@ -239,12 +474,36 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
       const values = await form.validateFields();
       setLoading(true);
 
+      const normalizedProductType = Number(values.productType);
+      const normalizedConsumableType = Number(values.consumableType);
+      const normalizedDurationType = Number(values.durationType);
+      const normalizedStockType = Number(values.stockType);
+      const normalizedBenefitValue = normalizeBenefitValue(values.benefitValue);
+      const normalizedCategoryId =
+        resolveRecommendedCategoryId(values.productType, values.benefitType, values.consumableType)
+        ?? values.categoryId;
+
+      if ((normalizedConsumableType === 4 || normalizedConsumableType === 5) && !normalizedBenefitValue) {
+        message.error(`${normalizedConsumableType === 4 ? '经验卡' : '萝卜币红包'}必须配置正整数数值`);
+        return;
+      }
+
       // 处理日期字段
       const dto = {
         ...values,
+        categoryId: normalizedCategoryId,
+        benefitType: normalizedProductType === 1 ? values.benefitType : undefined,
+        consumableType: normalizedProductType === 2 ? values.consumableType : undefined,
+        benefitValue: normalizedProductType === 2 && normalizedConsumableType === 1
+          ? undefined
+          : normalizedBenefitValue,
         iconAttachmentId: normalizeOptionalAttachmentId(values.iconAttachmentId),
         coverAttachmentId: normalizeOptionalAttachmentId(values.coverAttachmentId),
-        expiresAt: values.expiresAt ? dayjs(values.expiresAt).format('YYYY-MM-DD HH:mm:ss') : undefined,
+        stock: normalizedStockType === 1 ? values.stock : 0,
+        durationDays: normalizedDurationType === 1 ? values.durationDays : undefined,
+        expiresAt: normalizedDurationType === 2 && values.expiresAt
+          ? dayjs(values.expiresAt).format('YYYY-MM-DD HH:mm:ss')
+          : undefined,
       };
 
       if (product) {
@@ -257,6 +516,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
         message.success('创建成功');
       }
 
+      setIsDirty(false);
       onSuccess();
       onClose();
     } catch (error) {
@@ -275,11 +535,13 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
     <Modal
       title={product ? '编辑商品' : '新建商品'}
       isOpen={visible}
-      onClose={onClose}
+      onClose={handleRequestClose}
       size="large"
+      closeOnOverlayClick={false}
+      closeOnEscape={false}
       footer={
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-          <Button onClick={onClose}>取消</Button>
+          <Button onClick={handleRequestClose}>取消</Button>
           <Button variant="primary" onClick={handleSubmit} disabled={loading || iconUploading || coverUploading}>
             {loading || iconUploading || coverUploading ? '保存中...' : '保存'}
           </Button>
@@ -290,6 +552,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
         form={form}
         layout="vertical"
         autoComplete="off"
+        onValuesChange={() => setIsDirty(true)}
       >
         <Form.Item
           label="商品名称"
@@ -315,14 +578,22 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
           name="categoryId"
           rules={[{ required: true, message: '请选择商品分类' }]}
         >
-          <Select placeholder="请选择商品分类">
-            {categories.map((cat) => (
+          <Select
+            placeholder={isCategoryLocked ? '分类将按当前商品类型自动匹配' : '请选择商品分类'}
+            disabled={isCategoryLocked}
+          >
+            {categoryOptions.map((cat) => (
               <Select.Option key={cat.voId} value={cat.voId}>
                 {cat.voName}
               </Select.Option>
             ))}
           </Select>
         </Form.Item>
+        {recommendedCategoryName && (
+          <div style={{ marginTop: -12, marginBottom: 16, color: 'var(--theme-text-placeholder)', fontSize: 12 }}>
+            当前商品会归入「{recommendedCategoryName}」分类，保存时将自动保持一致。
+          </div>
+        )}
 
         <Form.Item
           label="商品类型"
@@ -382,14 +653,20 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
           </>
         )}
 
-        {(productType === 1 || productType === 2) && (
+        {benefitValueFieldMeta && (
           <Form.Item
-            label="权益/消耗品值"
+            label={benefitValueFieldMeta.label}
             name="benefitValue"
-            tooltip="例如：徽章资源标识、经验卡数值等"
+            tooltip={benefitValueFieldMeta.tooltip}
+            rules={benefitValueRules}
           >
-            <Input placeholder="请输入权益/消耗品值" />
+            <Input placeholder={benefitValueFieldMeta.placeholder} />
           </Form.Item>
+        )}
+        {benefitValueFieldMeta?.help && (
+          <div style={{ marginTop: -12, marginBottom: 16, color: 'var(--theme-text-placeholder)', fontSize: 12 }}>
+            {benefitValueFieldMeta.help}
+          </div>
         )}
 
         <Form.Item
@@ -444,6 +721,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
                 disabled={!iconAttachmentId || iconUploading || loading}
                 onClick={() => {
                   form.setFieldValue('iconAttachmentId', undefined);
+                  setIsDirty(true);
                   setIconPreviewUrl(undefined);
                 }}
               >
@@ -511,6 +789,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
                 disabled={!coverAttachmentId || coverUploading || loading}
                 onClick={() => {
                   form.setFieldValue('coverAttachmentId', undefined);
+                  setIsDirty(true);
                   setCoverPreviewUrl(undefined);
                 }}
               >

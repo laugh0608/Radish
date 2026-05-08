@@ -84,6 +84,11 @@ export interface Product {
   voCreateTime?: string;
 }
 
+export interface ProductBuyCheckResult {
+  canBuy: boolean;
+  reason: string;
+}
+
 /**
  * 订单列表项 Vo
  */

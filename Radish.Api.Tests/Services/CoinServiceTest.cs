@@ -215,6 +215,116 @@ public class CoinServiceTest
         Assert.Contains(expectedErrorMessage, exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Theory]
+    [InlineData(0, "扣除金额必须大于 0")]
+    [InlineData(-100, "扣除金额必须大于 0")]
+    public async Task ConsumeCoinAsync_ShouldThrowArgumentException_WhenAmountInvalid(
+        long amount,
+        string expectedErrorMessage)
+    {
+        const long userId = 123456;
+        var service = CreateCoinService();
+
+        var exception = await Assert.ThrowsAsync<ArgumentException>(
+            async () => await service.ConsumeCoinAsync(userId, amount, "Order", 7001, "购买商品")
+        );
+
+        Assert.Contains(expectedErrorMessage, exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task ConsumeCoinAsync_ShouldCreateConsumeTransactionAndDeductBalance()
+    {
+        const long userId = 123456;
+        const long amount = 300;
+        const long businessId = 7001;
+        const long initialBalance = 1000;
+        const long initialSpent = 200;
+
+        var userBalance = new UserBalance
+        {
+            UserId = userId,
+            Balance = initialBalance,
+            TotalSpent = initialSpent,
+            Version = 2,
+            TenantId = 0
+        };
+
+        CoinTransaction? createdTransaction = null;
+        BalanceChangeLog? createdBalanceChangeLog = null;
+
+        _userBalanceRepositoryMock
+            .Setup(r => r.QueryFirstAsync(It.IsAny<Expression<Func<UserBalance, bool>>>() ))
+            .ReturnsAsync((Expression<Func<UserBalance, bool>> expression) =>
+            {
+                var predicate = expression.Compile();
+                return predicate(userBalance) ? userBalance : null;
+            });
+
+        _coinTransactionRepositoryMock
+            .Setup(r => r.AddAsync(It.IsAny<CoinTransaction>()))
+            .Callback<CoinTransaction>(transaction => createdTransaction = transaction)
+            .ReturnsAsync((CoinTransaction transaction) => transaction.Id);
+
+        _userBalanceRepositoryMock
+            .Setup(r => r.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<UserBalance, UserBalance>>>(),
+                It.IsAny<Expression<Func<UserBalance, bool>>>()))
+            .ReturnsAsync((
+                Expression<Func<UserBalance, UserBalance>> updateExpression,
+                Expression<Func<UserBalance, bool>> whereExpression) =>
+            {
+                var predicate = whereExpression.Compile();
+                if (!predicate(userBalance))
+                {
+                    return 0;
+                }
+
+                var patch = updateExpression.Compile()(userBalance);
+                userBalance.Balance = patch.Balance;
+                userBalance.TotalSpent = patch.TotalSpent;
+                userBalance.Version = patch.Version;
+                userBalance.ModifyTime = patch.ModifyTime;
+                userBalance.ModifyBy = patch.ModifyBy;
+                userBalance.ModifyId = patch.ModifyId;
+                return 1;
+            });
+
+        _balanceChangeLogRepositoryMock
+            .Setup(r => r.AddAsync(It.IsAny<BalanceChangeLog>()))
+            .Callback<BalanceChangeLog>(log => createdBalanceChangeLog = log)
+            .ReturnsAsync(9001);
+
+        _coinTransactionRepositoryMock
+            .Setup(r => r.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<CoinTransaction, CoinTransaction>>>(),
+                It.IsAny<Expression<Func<CoinTransaction, bool>>>()))
+            .ReturnsAsync(1);
+
+        var service = CreateCoinService();
+
+        var result = await service.ConsumeCoinAsync(userId, amount, "Order", businessId, "购买商品：测试");
+
+        Assert.NotNull(createdTransaction);
+        Assert.Equal(createdTransaction!.Id, result.transactionId);
+        Assert.Equal(createdTransaction.TransactionNo, result.transactionNo);
+        Assert.Equal(userId, createdTransaction.FromUserId);
+        Assert.Null(createdTransaction.ToUserId);
+        Assert.Equal(amount, createdTransaction.Amount);
+        Assert.Equal("CONSUME", createdTransaction.TransactionType);
+        Assert.Equal("Order", createdTransaction.BusinessType);
+        Assert.Equal(businessId, createdTransaction.BusinessId);
+
+        Assert.Equal(initialBalance - amount, userBalance.Balance);
+        Assert.Equal(initialSpent + amount, userBalance.TotalSpent);
+
+        Assert.NotNull(createdBalanceChangeLog);
+        Assert.Equal(-amount, createdBalanceChangeLog!.ChangeAmount);
+        Assert.Equal(initialBalance, createdBalanceChangeLog.BalanceBefore);
+        Assert.Equal(initialBalance - amount, createdBalanceChangeLog.BalanceAfter);
+        Assert.Equal("CONSUME", createdBalanceChangeLog.ChangeType);
+    }
+
     #endregion
 
     #region 管理员调账测试

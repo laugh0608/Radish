@@ -132,15 +132,14 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             // 7. 扣除萝卜币
             try
             {
-                var transactionNo = await _coinService.GrantCoinAsync(
+                var (transactionId, _) = await _coinService.ConsumeCoinAsync(
                     userId,
-                    -totalPrice, // 负数表示扣除
-                    "CONSUME",
+                    totalPrice,
                     "Order",
                     orderId,
                     $"购买商品：{product.Name}");
 
-                order.CoinTransactionId = long.TryParse(transactionNo.Replace("TXN_", ""), out var txnId) ? txnId : null;
+                order.CoinTransactionId = transactionId;
                 order.Status = OrderStatus.Paid;
                 order.PaidTime = DateTime.Now;
             }

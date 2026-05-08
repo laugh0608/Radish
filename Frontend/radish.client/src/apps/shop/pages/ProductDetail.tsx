@@ -1,4 +1,4 @@
-import type { Product } from '@/types/shop';
+import type { Product, ProductBuyCheckResult } from '@/types/shop';
 import { useTranslation } from 'react-i18next';
 import { getProductTypeDisplay, StockType } from '@/api/shop';
 import type { LongId } from '@/api/user';
@@ -9,7 +9,7 @@ interface ProductDetailProps {
   productId: LongId;
   product: Product | null;
   loading: boolean;
-  canBuy: { canBuy: boolean; reason: string } | null;
+  canBuy: ProductBuyCheckResult | null;
   checkingCanBuy: boolean;
   isAuthenticated: boolean;
   onBack: () => void;

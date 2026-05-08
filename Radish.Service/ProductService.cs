@@ -239,6 +239,16 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                 return (false, $"{ShopProductAvailabilityPolicy.GetUnavailableProductDisplayName(product.BenefitType, product.ConsumableType)}暂未开放，当前不可购买");
             }
 
+            var productConfigurationError = GetInvalidProductConfigurationMessage(
+                product.ProductType,
+                product.ConsumableType,
+                product.BenefitValue);
+            if (productConfigurationError != null)
+            {
+                Log.Warning("商品 {ProductId} 配置不完整，拒绝购买：{Reason}", productId, productConfigurationError);
+                return (false, "商品配置不完整，请联系管理员");
+            }
+
             // 检查库存
             if (product.StockType == StockType.Limited && product.Stock < quantity)
             {
@@ -402,6 +412,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
         try
         {
             EnsureSupportedOnSaleProduct(dto.ProductType, dto.BenefitType, dto.ConsumableType, dto.IsOnSale);
+            EnsureValidProductConfiguration(dto.ProductType, dto.ConsumableType, dto.BenefitValue);
 
             var tenantId = NormalizeTenantId(App.CurrentUser.TenantId);
             var product = Mapper.Map<Product>(dto);
@@ -434,6 +445,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
         try
         {
             EnsureSupportedOnSaleProduct(dto.ProductType, dto.BenefitType, dto.ConsumableType, dto.IsOnSale);
+            EnsureValidProductConfiguration(dto.ProductType, dto.ConsumableType, dto.BenefitValue);
 
             var product = await _productRepository.QueryFirstAsync(p => p.Id == dto.Id);
             if (product == null)
@@ -474,6 +486,8 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                 throw new InvalidOperationException($"{ShopProductAvailabilityPolicy.GetUnavailableProductDisplayName(product.BenefitType, product.ConsumableType)}暂未开放，不能上架销售");
             }
 
+            EnsureValidProductConfiguration(product.ProductType, product.ConsumableType, product.BenefitValue);
+
             var affected = await _productRepository.UpdateColumnsAsync(
                 p => new Product
                 {
@@ -509,6 +523,45 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
         }
 
         throw new InvalidOperationException($"{ShopProductAvailabilityPolicy.GetUnavailableProductDisplayName(benefitType, consumableType)}暂未开放，不能上架销售");
+    }
+
+    private static void EnsureValidProductConfiguration(
+        ProductType productType,
+        ConsumableType? consumableType,
+        string? benefitValue)
+    {
+        var errorMessage = GetInvalidProductConfigurationMessage(productType, consumableType, benefitValue);
+        if (errorMessage == null)
+        {
+            return;
+        }
+
+        throw new InvalidOperationException(errorMessage);
+    }
+
+    private static string? GetInvalidProductConfigurationMessage(
+        ProductType productType,
+        ConsumableType? consumableType,
+        string? benefitValue)
+    {
+        if (productType != ProductType.Consumable)
+        {
+            return null;
+        }
+
+        return consumableType switch
+        {
+            ConsumableType.ExpCard when !IsPositiveIntegerConfigValue(benefitValue) => "经验卡必须配置正整数经验值",
+            ConsumableType.CoinCard when !IsPositiveIntegerConfigValue(benefitValue) => "萝卜币红包必须配置正整数胡萝卜数量",
+            _ => null
+        };
+    }
+
+    private static bool IsPositiveIntegerConfigValue(string? benefitValue)
+    {
+        return !string.IsNullOrWhiteSpace(benefitValue)
+            && int.TryParse(benefitValue.Trim(), out var parsedValue)
+            && parsedValue > 0;
     }
 
     /// <summary>下架商品</summary>

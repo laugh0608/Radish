@@ -6,6 +6,7 @@ import type {
   ProductCategory,
   ProductListItem,
   Product,
+  ProductBuyCheckResult,
   OrderListItem,
   Order,
   UserBenefit,
@@ -31,7 +32,7 @@ export interface ShopDataState {
   totalPages: number;
 
   // 购买相关
-  canBuyProduct: { canBuy: boolean; reason: string } | null;
+  canBuyProduct: ProductBuyCheckResult | null;
   checkingCanBuy: boolean;
 
   // 订单数据

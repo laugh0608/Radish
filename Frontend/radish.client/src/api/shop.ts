@@ -10,6 +10,7 @@ import type {
   ProductCategory,
   ProductListItem,
   Product,
+  ProductBuyCheckResult,
   OrderListItem,
   Order,
   UserBenefit,
@@ -33,6 +34,7 @@ export type {
   ProductCategory,
   ProductListItem,
   Product,
+  ProductBuyCheckResult,
   OrderListItem,
   Order,
   UserBenefit,
@@ -80,6 +82,13 @@ export const StockType = {
 } as const;
 
 export type StockTypeValue = typeof StockType[keyof typeof StockType];
+
+interface RawProductBuyCheckResult {
+  voCanBuy?: boolean;
+  voReason?: string | null;
+  canBuy?: boolean;
+  reason?: string | null;
+}
 
 // ==================== API 方法 ====================
 
@@ -142,12 +151,28 @@ export async function getProduct(productId: LongId, t: TFunction): Promise<Parse
 /**
  * 检查是否可以购买商品
  */
-export async function checkCanBuy(productId: LongId, quantity: number = 1, t: TFunction) {
+export async function checkCanBuy(
+  productId: LongId,
+  quantity: number = 1,
+  t: TFunction
+): Promise<ParsedApiResponse<ProductBuyCheckResult>> {
   void t;
-  return await apiGet<{ canBuy: boolean; reason: string }>(
+  const response = await apiGet<RawProductBuyCheckResult>(
     `/api/v1/Shop/CheckCanBuy/${encodeURIComponent(String(productId))}?quantity=${quantity}`,
     { withAuth: true }
   );
+
+  if (!response.ok || !response.data) {
+    return response as ParsedApiResponse<ProductBuyCheckResult>;
+  }
+
+  return {
+    ...response,
+    data: {
+      canBuy: response.data.canBuy ?? response.data.voCanBuy ?? false,
+      reason: response.data.reason ?? response.data.voReason ?? '',
+    }
+  };
 }
 
 /**
