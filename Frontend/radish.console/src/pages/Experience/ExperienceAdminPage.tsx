@@ -45,10 +45,15 @@ function normalizePositiveLongIdInput(value: string): string | undefined {
   return /^[1-9]\d*$/.test(trimmed) ? trimmed : undefined;
 }
 
+function isFormValidationError(error: unknown): error is { errorFields: unknown[] } {
+  return typeof error === 'object' && error !== null && 'errorFields' in error;
+}
+
 export const ExperienceAdminPage = () => {
   useDocumentTitle('经验等级');
 
   const [queryUserId, setQueryUserId] = useState('');
+  const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
   const [experience, setExperience] = useState<UserExperienceVo | null>(null);
   const [levels, setLevels] = useState<LevelConfigVo[]>([]);
   const [loadingExperience, setLoadingExperience] = useState(false);
@@ -81,6 +86,17 @@ export const ExperienceAdminPage = () => {
     void loadLevels();
   }, []);
 
+  const clearLoadedExperience = (userId: string) => {
+    setLoadedUserId(null);
+    setExperience(null);
+    form.setFieldValue('userId', userId);
+    freezeForm.setFieldsValue({
+      userId,
+      reason: '',
+      frozenUntil: undefined,
+    });
+  };
+
   const loadExperience = async (
     userIdOverride?: string,
     options?: { showInvalidMessage?: boolean }
@@ -94,9 +110,11 @@ export const ExperienceAdminPage = () => {
     }
 
     try {
-      setLoadingExperience(true);
-      const result = await getUserExperience(userId);
       setQueryUserId(String(userId));
+      setLoadingExperience(true);
+      clearLoadedExperience(userId);
+      const result = await getUserExperience(userId);
+      setLoadedUserId(String(userId));
       setExperience(result);
       form.setFieldValue('userId', userId);
       freezeForm.setFieldsValue({
@@ -106,7 +124,7 @@ export const ExperienceAdminPage = () => {
       });
     } catch (error) {
       log.error('ExperienceAdminPage', '加载用户经验失败:', error);
-      message.error('加载用户经验失败');
+      message.error(error instanceof Error ? error.message : '加载用户经验失败');
     } finally {
       setLoadingExperience(false);
     }
@@ -132,8 +150,12 @@ export const ExperienceAdminPage = () => {
       await loadExperience(normalizedUserId, { showInvalidMessage: false });
       form.setFieldsValue({ deltaExp: 0, reason: '' });
     } catch (error) {
+      if (isFormValidationError(error)) {
+        return;
+      }
+
       log.error('ExperienceAdminPage', '调整经验失败:', error);
-      message.error('调整经验失败');
+      message.error(error instanceof Error ? error.message : '调整经验失败');
     } finally {
       setSubmitting(false);
     }
@@ -158,8 +180,12 @@ export const ExperienceAdminPage = () => {
       message.success('经验已冻结');
       await loadExperience(normalizedUserId, { showInvalidMessage: false });
     } catch (error) {
+      if (isFormValidationError(error)) {
+        return;
+      }
+
       log.error('ExperienceAdminPage', '冻结经验失败:', error);
-      message.error('冻结经验失败');
+      message.error(error instanceof Error ? error.message : '冻结经验失败');
     } finally {
       setFreezing(false);
     }
@@ -185,8 +211,12 @@ export const ExperienceAdminPage = () => {
         frozenUntil: undefined,
       });
     } catch (error) {
+      if (isFormValidationError(error)) {
+        return;
+      }
+
       log.error('ExperienceAdminPage', '解冻经验失败:', error);
-      message.error('解冻经验失败');
+      message.error(error instanceof Error ? error.message : '解冻经验失败');
     } finally {
       setUnfreezing(false);
     }
@@ -273,6 +303,9 @@ export const ExperienceAdminPage = () => {
               placeholder="用户 ID"
               value={queryUserId}
               onChange={(event) => setQueryUserId(event.target.value)}
+              onPressEnter={() => {
+                void loadExperience(undefined, { showInvalidMessage: true });
+              }}
               style={{ width: 220 }}
             />
             <Button variant="primary" onClick={() => {
@@ -284,6 +317,11 @@ export const ExperienceAdminPage = () => {
         </div>
 
         <div className="admin-feature-metrics" style={{ marginTop: 20 }}>
+          <div style={{ marginBottom: 12, color: '#8c8c8c' }}>
+            {loadedUserId && experience
+              ? `当前展示：${experience.voUserName || '未命名用户'}（ID: ${loadedUserId}）`
+              : '当前未加载用户经验数据'}
+          </div>
           <div className="admin-feature-metric">
             <span>当前等级</span>
             <strong>{experience ? `${experience.voCurrentLevelName} (L${experience.voCurrentLevel})` : '--'}</strong>
