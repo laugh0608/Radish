@@ -112,3 +112,58 @@
 - 当前已把外围暴露面大幅收口，但登录态 / 当前用户 ID 仍保留旧 `number` 口径，后续若继续推进 `ID Phase A`，应优先治理共享 `UserInfo / userStore` 与其直接消费者。
 - Console 构建的 chunk size warning 仍属既有问题，和本轮 ID 收口无直接关系，后续单独排序处理。
 - `PublicId Rollout`、数据库主键迁移与 Snowflake 退出策略继续保留在后置池，不应借当前 Phase A 护栏批次被提前拉成主线。
+
+## 2026-05-08
+
+### 主线判断
+
+- 当日主线继续保持“产品功能补全与多端任务重排”，执行面集中在 `P2-C4 商城权益效果收口`。
+- 本轮优先把用户能买到但不能完整消费 / 回补 / 治理的商城断点收成统一口径，覆盖商品种子、存量上架态、公开购买判定、订单取消回补与实际扣款链路。
+- 收口后暴露出的下一层真实缺口，已收束为“购买后资产闭环”：背包展示契约、支付密码校验与通知中心稳定性。
+
+### 已完成提交
+
+- `117cbc13 docs(db): 收口数据库结构变更协作口径`
+  - 明确结构变更、`DbMigrate apply/init/seed` 与协作边界，减少本地库状态与代码口径漂移。
+- `3d55bdc4 feat(frontend): 收口资产与商城治理工作流`
+  - 补强资产治理与商城工作流的前端入口与批次承接。
+- `91558b86 fix(console): 提升经验治理页状态可信度`
+  - 修正 Console 经验治理页面的状态判断和展示可信度。
+- `d0a42c0a fix(shop): 收口未开放道具与改名卡使用链路`
+  - 封禁未开放道具的公开购买 / 使用入口，并补齐改名卡闭环。
+- `a11876ba fix(shop): 收口经验卡链路与抽奖券入口`
+  - 补齐经验卡数量闭环，收回抽奖券入口。
+- `ad411831 fix(shop): 收口未开放权益商品展示与激活入口`
+  - 收回未真实消费的权益商品展示、购买、激活与上架入口。
+- `ff09d4a1 fix(shop): 对齐权益商品种子与上架治理口径`
+  - 对齐默认商品种子、存量上架态与 Console 管理口径。
+- `73cec1e4 fix(shop): 补齐订单库存快照与取消回补口径`
+  - 为订单补 `StockType` 快照，并统一取消订单的库存回补链路。
+- `71ee3ae1 fix(dbmigrate): 自动补齐商城订单快照列`
+  - 让 `DbMigrate` 自动发现缺失列，避免 `ShopOrder.StockType` 这类新增快照字段漏补。
+- `205b1140 fix(shop): 收口商品配置与商城购买链路`
+  - 自动约束商品分类与消耗品 / 权益类型匹配，阻止商品弹窗遮罩误关。
+  - 修复前台购买判定字段解析、拦截坏商品配置，并补独立的商城消费扣款链路与正确的订单交易关联。
+
+### 验证记录
+
+- `npm run type-check --workspace=radish.console`
+  - 通过。
+- `npm run type-check --workspace=radish.client`
+  - 通过。
+- `dotnet build D:\Code\Radish\Radish.Api.Tests\Radish.Api.Tests.csproj -v minimal`
+  - 通过。
+- `Radish.Api.Tests.exe -noLogo -reporter quiet -class "Radish.Api.Tests.Services.CoinServiceTest" -class "Radish.Api.Tests.Services.OrderServiceTest" -class "Radish.Api.Tests.Services.ProductServiceTest"`
+  - 通过。
+
+### 文档与对齐结论
+
+- 当日提交已同时影响商城商品配置、库存 / 订单快照、`DbMigrate`、自定义购买判定与消费扣款链路，需要同步规划与开发日志，而不应只保留代码提交。
+- 本次回顾后已补齐 `current.md`、`phase-two-product-completion.md` 与 `2026-05` 开发日志入口，明确 `P2-C4` 当前已收口范围和“明天第一事项”。
+- 当前没有新的架构分层、端侧路线或视觉设计变更，因此不额外改动路线图总览、壳层策略或设计规范文档口径。
+
+### 剩余风险与下一顺位
+
+- 用户实测已确认下一层缺口在购买后闭环：背包 `UserInventoryVo` 契约与前端渲染未对齐，导致商品名称 / 数量 / 图标与 React `key` 同时失真。
+- 商城购买当前仍未接支付密码，前后端 `CreateOrderDto` / 购买弹窗 / 订单服务都缺少密码参数与校验，不宜让“资产消费”继续以无密码口径上线。
+- 通知中心 `NotificationApp` 当前在 Store 与本地 state 之间存在循环同步风险，点击购买成功通知会触发 `Maximum update depth exceeded` 并白屏；这应作为明天的第一事项与商城购买后闭环一起收掉。
