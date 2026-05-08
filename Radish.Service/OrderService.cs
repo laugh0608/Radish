@@ -164,7 +164,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             long? userBenefitId = null;
             try
             {
-                userBenefitId = await _userBenefitService.GrantBenefitAsync(userId, product, orderId);
+                userBenefitId = await _userBenefitService.GrantBenefitAsync(userId, product, orderId, dto.Quantity);
                 order.UserBenefitId = userBenefitId;
                 order.Status = OrderStatus.Completed;
                 order.CompletedTime = DateTime.Now;
@@ -500,7 +500,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             }
 
             // 重新发放权益
-            var userBenefitId = await _userBenefitService.GrantBenefitAsync(order.UserId, product, orderId);
+            var userBenefitId = await _userBenefitService.GrantBenefitAsync(order.UserId, product, orderId, order.Quantity);
 
             order.UserBenefitId = userBenefitId;
             order.Status = OrderStatus.Completed;

@@ -43,8 +43,9 @@ public interface IUserBenefitService : IBaseService<UserBenefit, UserBenefitVo>
     /// <param name="userId">用户 ID</param>
     /// <param name="product">商品信息</param>
     /// <param name="orderId">订单 ID</param>
+    /// <param name="quantity">购买数量</param>
     /// <returns>用户权益 ID</returns>
-    Task<long> GrantBenefitAsync(long userId, Product product, long orderId);
+    Task<long> GrantBenefitAsync(long userId, Product product, long orderId, int quantity = 1);
 
     /// <summary>系统赠送权益</summary>
     /// <param name="userId">用户 ID</param>

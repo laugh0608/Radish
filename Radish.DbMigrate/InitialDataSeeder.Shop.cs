@@ -454,6 +454,23 @@ internal static partial class InitialDataSeeder
                 IsEnabled = true,
                 CreateTime = DateTime.Now,
                 CreateBy = "System"
+            },
+            new Product
+            {
+                Id = 100062,
+                Name = "经验卡（100点）",
+                Description = "使用后立即获得 100 点经验值",
+                CategoryId = "effect",
+                ProductType = ProductType.Consumable,
+                ConsumableType = ConsumableType.ExpCard,
+                BenefitValue = "100",
+                Price = 50,
+                StockType = StockType.Unlimited,
+                SortOrder = 11,
+                IsOnSale = true,
+                IsEnabled = true,
+                CreateTime = DateTime.Now,
+                CreateBy = "System"
             }
         };
 

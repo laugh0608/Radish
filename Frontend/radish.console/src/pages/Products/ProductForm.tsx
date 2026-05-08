@@ -301,11 +301,11 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
                 <Select.Option value={4}>经验卡</Select.Option>
                 <Select.Option value={5}>萝卜币红包</Select.Option>
                 <Select.Option value={6} disabled>双倍经验卡（暂未开放）</Select.Option>
-                <Select.Option value={7}>抽奖券</Select.Option>
+                <Select.Option value={99} disabled>抽奖券（暂未开放）</Select.Option>
               </Select>
             </Form.Item>
             <div style={{ marginTop: -12, marginBottom: 16, color: 'var(--theme-text-placeholder)', fontSize: 12 }}>
-              帖子置顶卡、帖子高亮卡、双倍经验卡当前未开放，不能上架销售。
+              帖子置顶卡、帖子高亮卡、双倍经验卡、抽奖券当前未开放，不能上架销售。
             </div>
           </>
         )}

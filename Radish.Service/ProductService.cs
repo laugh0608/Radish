@@ -26,7 +26,8 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
         !(p.ProductType == ProductType.Consumable && (
             p.ConsumableType == ConsumableType.PostPinCard ||
             p.ConsumableType == ConsumableType.PostHighlightCard ||
-            p.ConsumableType == ConsumableType.DoubleExpCard));
+            p.ConsumableType == ConsumableType.DoubleExpCard ||
+            p.ConsumableType == ConsumableType.LotteryTicket));
     private static readonly Expression<Func<Product, bool>> PublicVisibleProductExpression = p =>
         p.IsEnabled &&
         p.IsOnSale &&
@@ -34,7 +35,8 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
         !(p.ProductType == ProductType.Consumable && (
             p.ConsumableType == ConsumableType.PostPinCard ||
             p.ConsumableType == ConsumableType.PostHighlightCard ||
-            p.ConsumableType == ConsumableType.DoubleExpCard));
+            p.ConsumableType == ConsumableType.DoubleExpCard ||
+            p.ConsumableType == ConsumableType.LotteryTicket));
 #pragma warning restore CS0618
 
     /// <summary>乐观锁冲突重试次数</summary>
@@ -194,6 +196,11 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     {
         try
         {
+            if (quantity < 1)
+            {
+                return (false, "购买数量必须大于 0");
+            }
+
             var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
 
             if (product == null)
@@ -474,7 +481,8 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     {
         return consumableType is ConsumableType.PostPinCard
             or ConsumableType.PostHighlightCard
-            or ConsumableType.DoubleExpCard;
+            or ConsumableType.DoubleExpCard
+            or ConsumableType.LotteryTicket;
     }
 
     private static string GetConsumableTypeDisplayName(ConsumableType? consumableType)
@@ -484,6 +492,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             ConsumableType.PostPinCard => "帖子置顶卡",
             ConsumableType.PostHighlightCard => "帖子高亮卡",
             ConsumableType.DoubleExpCard => "双倍经验卡",
+            ConsumableType.LotteryTicket => "抽奖券",
             _ => "该消耗品"
         };
     }

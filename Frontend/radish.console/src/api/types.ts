@@ -59,7 +59,7 @@ export enum ConsumableType {
   ExpCard = 4,           // 经验卡
   CoinCard = 5,          // 萝卜币红包
   DoubleExpCard = 6,     // 双倍经验卡
-  LotteryTicket = 7      // 抽奖券
+  LotteryTicket = 99     // 抽奖券
 }
 
 /**

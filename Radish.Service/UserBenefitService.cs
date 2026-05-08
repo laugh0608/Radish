@@ -129,10 +129,15 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
     #region 权益发放
 
     /// <summary>发放权益</summary>
-    public async Task<long> GrantBenefitAsync(long userId, Product product, long orderId)
+    public async Task<long> GrantBenefitAsync(long userId, Product product, long orderId, int quantity = 1)
     {
         try
         {
+            if (quantity < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(quantity), "发放数量必须大于 0");
+            }
+
             Log.Information("开始发放权益：用户={UserId}, 商品={ProductId}, 订单={OrderId}",
                 userId, product.Id, orderId);
 
@@ -145,7 +150,7 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
             else if (product.ProductType == ProductType.Consumable && product.ConsumableType.HasValue)
             {
                 // 发放消耗品到背包
-                return await GrantConsumableItemAsync(userId, product, orderId);
+                return await GrantConsumableItemAsync(userId, product, orderId, quantity);
             }
             else
             {
@@ -200,7 +205,7 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
     }
 
     /// <summary>发放消耗品到背包</summary>
-    private async Task<long> GrantConsumableItemAsync(long userId, Product product, long orderId)
+    private async Task<long> GrantConsumableItemAsync(long userId, Product product, long orderId, int quantity)
     {
         // 检查背包中是否已有相同类型的道具
         var existingItem = await _userInventoryRepository.QueryFirstAsync(
@@ -212,7 +217,7 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
         if (existingItem != null)
         {
             // 增加数量
-            existingItem.Quantity += 1;
+            existingItem.Quantity += quantity;
             existingItem.ItemName = product.Name;
             existingItem.ItemIconAttachmentId = product.IconAttachmentId;
             existingItem.SourceProductId = product.Id;
@@ -234,7 +239,7 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
                 ItemValue = product.BenefitValue,
                 ItemName = product.Name,
                 ItemIconAttachmentId = product.IconAttachmentId,
-                Quantity = 1,
+                Quantity = quantity,
                 SourceProductId = product.Id,
                 CreateTime = DateTime.Now,
                 CreateBy = "System",

@@ -59,6 +59,7 @@ const normalizeConsumableType = (type?: string | null): string => {
     case '6':
       return 'DoubleExpCard';
     case '7':
+    case '99':
       return 'LotteryTicket';
     default:
       return String(type ?? '');
@@ -72,7 +73,8 @@ const isUnavailableConsumableItem = (item?: UserInventoryItem | null): boolean =
   const normalizedType = normalizeConsumableType(item?.voConsumableType);
   return normalizedType === 'PostPinCard'
     || normalizedType === 'PostHighlightCard'
-    || normalizedType === 'DoubleExpCard';
+    || normalizedType === 'DoubleExpCard'
+    || normalizedType === 'LotteryTicket';
 };
 
 export const Inventory = ({
