@@ -290,6 +290,7 @@ export const ShopApp = () => {
             onActivateBenefit={actionsState.handleActivateBenefit}
             onDeactivateBenefit={actionsState.handleDeactivateBenefit}
             onUseItem={actionsState.handleUseItem}
+            onUseRenameCard={actionsState.handleUseRenameCard}
             onBack={navigate.back}
           />
         );

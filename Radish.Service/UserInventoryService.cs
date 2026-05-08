@@ -103,6 +103,7 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
     #region 道具使用
 
     /// <summary>使用道具</summary>
+#pragma warning disable CS0618
     public async Task<UseItemResultDto> UseItemAsync(long userId, UseItemDto dto)
     {
         try
@@ -118,6 +119,11 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
             if (item.Quantity < dto.Quantity)
             {
                 return new UseItemResultDto { Success = false, ErrorMessage = "道具数量不足" };
+            }
+
+            if (IsUnavailableConsumableType(item.ConsumableType))
+            {
+                return CreateUnavailableConsumableResult(item.ConsumableType);
             }
 
             // 根据道具类型调用不同的使用方法
@@ -146,6 +152,7 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
             return new UseItemResultDto { Success = false, ErrorMessage = "使用道具失败" };
         }
     }
+#pragma warning restore CS0618
 
     /// <summary>使用改名卡</summary>
     public async Task<UseItemResultDto> UseRenameCardAsync(long userId, long inventoryId, string newNickname)
@@ -314,147 +321,24 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
     }
 
     /// <summary>使用双倍经验卡</summary>
-    public async Task<UseItemResultDto> UseDoubleExpCardAsync(long userId, long inventoryId)
+#pragma warning disable CS0618
+    public Task<UseItemResultDto> UseDoubleExpCardAsync(long userId, long inventoryId)
     {
-        try
-        {
-            var item = await _inventoryRepository.QueryFirstAsync(
-                i => i.Id == inventoryId && i.UserId == userId && i.ConsumableType == ConsumableType.DoubleExpCard);
-
-            if (item == null)
-            {
-                return new UseItemResultDto { Success = false, ErrorMessage = "双倍经验卡不存在" };
-            }
-
-            if (item.Quantity < 1)
-            {
-                return new UseItemResultDto { Success = false, ErrorMessage = "双倍经验卡数量不足" };
-            }
-
-            // 解析持续时间（小时）
-            if (!int.TryParse(item.ItemValue, out var durationHours) || durationHours <= 0)
-            {
-                durationHours = 24; // 默认 24 小时
-            }
-
-            // TODO: 实现双倍经验效果
-            // 这里需要在用户表或专门的 buff 表中记录双倍经验状态
-            // 暂时只记录日志
-
-            // 扣减道具
-            await DeductItemAsync(userId, inventoryId, 1);
-
-            Log.Information("用户 {UserId} 使用双倍经验卡，持续 {DurationHours} 小时", userId, durationHours);
-
-            return new UseItemResultDto
-            {
-                Success = true,
-                RemainingQuantity = item.Quantity - 1,
-                EffectDescription = $"双倍经验效果已激活，持续 {durationHours} 小时"
-            };
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "使用双倍经验卡失败：用户={UserId}", userId);
-            return new UseItemResultDto { Success = false, ErrorMessage = "使用双倍经验卡失败" };
-        }
+        return Task.FromResult(CreateUnavailableConsumableResult(ConsumableType.DoubleExpCard));
     }
 
     /// <summary>使用帖子置顶卡</summary>
-    public async Task<UseItemResultDto> UsePostPinCardAsync(long userId, long inventoryId, long postId)
+    public Task<UseItemResultDto> UsePostPinCardAsync(long userId, long inventoryId, long postId)
     {
-        try
-        {
-            var item = await _inventoryRepository.QueryFirstAsync(
-                i => i.Id == inventoryId && i.UserId == userId && i.ConsumableType == ConsumableType.PostPinCard);
-
-            if (item == null)
-            {
-                return new UseItemResultDto { Success = false, ErrorMessage = "置顶卡不存在" };
-            }
-
-            if (item.Quantity < 1)
-            {
-                return new UseItemResultDto { Success = false, ErrorMessage = "置顶卡数量不足" };
-            }
-
-            // 解析持续时间（小时）
-            if (!int.TryParse(item.ItemValue, out var durationHours) || durationHours <= 0)
-            {
-                durationHours = 24; // 默认 24 小时
-            }
-
-            // TODO: 实现帖子置顶效果
-            // 这里需要调用论坛服务来置顶帖子
-            // 暂时只记录日志
-
-            // 扣减道具
-            await DeductItemAsync(userId, inventoryId, 1);
-
-            Log.Information("用户 {UserId} 使用置顶卡，帖子 {PostId} 置顶 {DurationHours} 小时",
-                userId, postId, durationHours);
-
-            return new UseItemResultDto
-            {
-                Success = true,
-                RemainingQuantity = item.Quantity - 1,
-                EffectDescription = $"帖子已置顶，持续 {durationHours} 小时"
-            };
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "使用置顶卡失败：用户={UserId}, 帖子={PostId}", userId, postId);
-            return new UseItemResultDto { Success = false, ErrorMessage = "使用置顶卡失败" };
-        }
+        return Task.FromResult(CreateUnavailableConsumableResult(ConsumableType.PostPinCard));
     }
 
     /// <summary>使用帖子高亮卡</summary>
-    public async Task<UseItemResultDto> UsePostHighlightCardAsync(long userId, long inventoryId, long postId)
+    public Task<UseItemResultDto> UsePostHighlightCardAsync(long userId, long inventoryId, long postId)
     {
-        try
-        {
-            var item = await _inventoryRepository.QueryFirstAsync(
-                i => i.Id == inventoryId && i.UserId == userId && i.ConsumableType == ConsumableType.PostHighlightCard);
-
-            if (item == null)
-            {
-                return new UseItemResultDto { Success = false, ErrorMessage = "高亮卡不存在" };
-            }
-
-            if (item.Quantity < 1)
-            {
-                return new UseItemResultDto { Success = false, ErrorMessage = "高亮卡数量不足" };
-            }
-
-            // 解析持续时间（小时）
-            if (!int.TryParse(item.ItemValue, out var durationHours) || durationHours <= 0)
-            {
-                durationHours = 24; // 默认 24 小时
-            }
-
-            // TODO: 实现帖子高亮效果
-            // 这里需要调用论坛服务来高亮帖子
-            // 暂时只记录日志
-
-            // 扣减道具
-            await DeductItemAsync(userId, inventoryId, 1);
-
-            Log.Information("用户 {UserId} 使用高亮卡，帖子 {PostId} 高亮 {DurationHours} 小时",
-                userId, postId, durationHours);
-
-            return new UseItemResultDto
-            {
-                Success = true,
-                RemainingQuantity = item.Quantity - 1,
-                EffectDescription = $"帖子已高亮，持续 {durationHours} 小时"
-            };
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "使用高亮卡失败：用户={UserId}, 帖子={PostId}", userId, postId);
-            return new UseItemResultDto { Success = false, ErrorMessage = "使用高亮卡失败" };
-        }
+        return Task.FromResult(CreateUnavailableConsumableResult(ConsumableType.PostHighlightCard));
     }
+#pragma warning restore CS0618
 
     #endregion
 
@@ -564,6 +448,32 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
             item.ItemIcon = ResolveAttachmentUrl(item.ItemIconAttachmentId);
         }
     }
+
+#pragma warning disable CS0618
+    private static bool IsUnavailableConsumableType(ConsumableType consumableType)
+    {
+        return consumableType is ConsumableType.PostPinCard
+            or ConsumableType.PostHighlightCard
+            or ConsumableType.DoubleExpCard;
+    }
+
+    private static UseItemResultDto CreateUnavailableConsumableResult(ConsumableType consumableType)
+    {
+        var displayName = consumableType switch
+        {
+            ConsumableType.PostPinCard => "帖子置顶卡",
+            ConsumableType.PostHighlightCard => "帖子高亮卡",
+            ConsumableType.DoubleExpCard => "双倍经验卡",
+            _ => "该道具"
+        };
+
+        return new UseItemResultDto
+        {
+            Success = false,
+            ErrorMessage = $"{displayName}暂未开放，当前不可使用"
+        };
+    }
+#pragma warning restore CS0618
 
     private string? ResolveAttachmentUrl(long? attachmentId)
     {

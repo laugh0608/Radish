@@ -458,8 +458,15 @@ public class ShopController : ControllerBase
         var userId = GetCurrentUserId();
         var userName = GetCurrentUserName();
 
-        var productId = await _productService.CreateProductAsync(dto, userId, userName);
-        return MessageModel<long>.Success("创建成功", productId);
+        try
+        {
+            var productId = await _productService.CreateProductAsync(dto, userId, userName);
+            return MessageModel<long>.Success("创建成功", productId);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return MessageModel<long>.Message(false, ex.Message, default);
+        }
     }
 
     /// <summary>
@@ -473,8 +480,15 @@ public class ShopController : ControllerBase
         var userId = GetCurrentUserId();
         var userName = GetCurrentUserName();
 
-        var result = await _productService.UpdateProductAsync(dto, userId, userName);
-        return MessageModel<bool>.Success("更新成功", result);
+        try
+        {
+            var result = await _productService.UpdateProductAsync(dto, userId, userName);
+            return MessageModel<bool>.Success("更新成功", result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return MessageModel<bool>.Message(false, ex.Message, false);
+        }
     }
 
     /// <summary>
@@ -485,8 +499,15 @@ public class ShopController : ControllerBase
     [RequireConsolePermission(ConsolePermissions.ProductsToggleSale)]
     public async Task<MessageModel<bool>> PutOnSale(long productId)
     {
-        var result = await _productService.PutOnSaleAsync(productId);
-        return MessageModel<bool>.Success("上架成功", result);
+        try
+        {
+            var result = await _productService.PutOnSaleAsync(productId);
+            return MessageModel<bool>.Success("上架成功", result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return MessageModel<bool>.Message(false, ex.Message, false);
+        }
     }
 
     /// <summary>

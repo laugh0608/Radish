@@ -382,6 +382,40 @@
   color: var(--theme-text-secondary);
 }
 
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.formField label {
+  font-size: 14px;
+  color: var(--theme-text-secondary);
+}
+
+.textInput {
+  width: 100%;
+  border: 1px solid var(--theme-border-strong);
+  border-radius: 10px;
+  background: var(--theme-bg-surface);
+  color: var(--theme-text-primary);
+  padding: 12px 14px;
+  font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.textInput:focus {
+  outline: none;
+  border-color: var(--theme-brand-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-brand-primary) 18%, transparent);
+}
+
+.fieldHint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--theme-text-placeholder);
+}
+
 .quantitySelector {
   display: flex;
   align-items: center;
@@ -471,6 +505,13 @@
 .confirmButton:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.confirmButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 @media (max-width: 768px) {

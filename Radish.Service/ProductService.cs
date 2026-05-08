@@ -21,6 +21,21 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     private readonly IBaseRepository<ProductCategory> _categoryRepository;
     private readonly IBaseRepository<Order> _orderRepository;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
+#pragma warning disable CS0618
+    private static readonly Expression<Func<Product, bool>> SupportedPublicProductExpression = p =>
+        !(p.ProductType == ProductType.Consumable && (
+            p.ConsumableType == ConsumableType.PostPinCard ||
+            p.ConsumableType == ConsumableType.PostHighlightCard ||
+            p.ConsumableType == ConsumableType.DoubleExpCard));
+    private static readonly Expression<Func<Product, bool>> PublicVisibleProductExpression = p =>
+        p.IsEnabled &&
+        p.IsOnSale &&
+        !p.IsDeleted &&
+        !(p.ProductType == ProductType.Consumable && (
+            p.ConsumableType == ConsumableType.PostPinCard ||
+            p.ConsumableType == ConsumableType.PostHighlightCard ||
+            p.ConsumableType == ConsumableType.DoubleExpCard));
+#pragma warning restore CS0618
 
     /// <summary>乐观锁冲突重试次数</summary>
     private const int MaxRetryCount = 5;
@@ -56,7 +71,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             foreach (var category in categoryVos)
             {
                 category.VoProductCount = await _productRepository.QueryCountAsync(
-                    p => p.CategoryId == category.VoId && p.IsEnabled && p.IsOnSale && !p.IsDeleted);
+                    PublicVisibleProductExpression.And(p => p.CategoryId == category.VoId));
             }
 
             FillProductCategoryUrls(categoryVos);
@@ -79,7 +94,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
 
             var vo = Mapper.Map<ProductCategoryVo>(category);
             vo.VoProductCount = await _productRepository.QueryCountAsync(
-                p => p.CategoryId == categoryId && p.IsEnabled && p.IsOnSale && !p.IsDeleted);
+                PublicVisibleProductExpression.And(p => p.CategoryId == categoryId));
 
             FillProductCategoryUrl(vo);
             return vo;
@@ -106,7 +121,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
         try
         {
             // 构建查询条件
-            Expression<Func<Product, bool>> where = p => p.IsEnabled && p.IsOnSale && !p.IsDeleted;
+            Expression<Func<Product, bool>> where = PublicVisibleProductExpression;
 
             if (!string.IsNullOrWhiteSpace(categoryId))
             {
@@ -154,7 +169,8 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     {
         try
         {
-            var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && p.IsEnabled && !p.IsDeleted);
+            var product = await _productRepository.QueryFirstAsync(
+                SupportedPublicProductExpression.And(p => p.Id == productId && p.IsEnabled && !p.IsDeleted));
             if (product == null) return null;
 
             var vo = Mapper.Map<ProductVo>(product);
@@ -193,6 +209,11 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             if (!product.IsOnSale)
             {
                 return (false, "商品未上架");
+            }
+
+            if (IsUnsupportedConsumableType(product.ConsumableType))
+            {
+                return (false, $"{GetConsumableTypeDisplayName(product.ConsumableType)}暂未开放，当前不可购买");
             }
 
             // 检查库存
@@ -352,6 +373,8 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     {
         try
         {
+            EnsureSupportedOnSaleConsumable(dto.ProductType, dto.ConsumableType, dto.IsOnSale);
+
             var tenantId = NormalizeTenantId(App.CurrentUser.TenantId);
             var product = Mapper.Map<Product>(dto);
             product.TenantId = tenantId;
@@ -382,6 +405,8 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     {
         try
         {
+            EnsureSupportedOnSaleConsumable(dto.ProductType, dto.ConsumableType, dto.IsOnSale);
+
             var product = await _productRepository.QueryFirstAsync(p => p.Id == dto.Id);
             if (product == null)
             {
@@ -416,6 +441,11 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                 return false;
             }
 
+            if (IsUnsupportedConsumableType(product.ConsumableType))
+            {
+                throw new InvalidOperationException($"{GetConsumableTypeDisplayName(product.ConsumableType)}暂未开放，不能上架销售");
+            }
+
             var affected = await _productRepository.UpdateColumnsAsync(
                 p => new Product
                 {
@@ -438,6 +468,39 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             throw;
         }
     }
+
+#pragma warning disable CS0618
+    private static bool IsUnsupportedConsumableType(ConsumableType? consumableType)
+    {
+        return consumableType is ConsumableType.PostPinCard
+            or ConsumableType.PostHighlightCard
+            or ConsumableType.DoubleExpCard;
+    }
+
+    private static string GetConsumableTypeDisplayName(ConsumableType? consumableType)
+    {
+        return consumableType switch
+        {
+            ConsumableType.PostPinCard => "帖子置顶卡",
+            ConsumableType.PostHighlightCard => "帖子高亮卡",
+            ConsumableType.DoubleExpCard => "双倍经验卡",
+            _ => "该消耗品"
+        };
+    }
+
+    private static void EnsureSupportedOnSaleConsumable(
+        ProductType productType,
+        ConsumableType? consumableType,
+        bool isOnSale)
+    {
+        if (productType != ProductType.Consumable || !isOnSale || !IsUnsupportedConsumableType(consumableType))
+        {
+            return;
+        }
+
+        throw new InvalidOperationException($"{GetConsumableTypeDisplayName(consumableType)}暂未开放，不能上架销售");
+    }
+#pragma warning restore CS0618
 
     /// <summary>下架商品</summary>
     public async Task<bool> TakeOffSaleAsync(long productId)

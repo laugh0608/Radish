@@ -288,21 +288,26 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
         )}
 
         {productType === 2 && (
-          <Form.Item
-            label="消耗品类型"
-            name="consumableType"
-            rules={[{ required: true, message: '请选择消耗品类型' }]}
-          >
-            <Select placeholder="请选择消耗品类型">
-              <Select.Option value={1}>改名卡</Select.Option>
-              <Select.Option value={2}>置顶卡</Select.Option>
-              <Select.Option value={3}>高亮卡</Select.Option>
-              <Select.Option value={4}>经验卡</Select.Option>
-              <Select.Option value={5}>萝卜币红包</Select.Option>
-              <Select.Option value={6}>双倍经验卡</Select.Option>
-              <Select.Option value={7}>抽奖券</Select.Option>
-            </Select>
-          </Form.Item>
+          <>
+            <Form.Item
+              label="消耗品类型"
+              name="consumableType"
+              rules={[{ required: true, message: '请选择消耗品类型' }]}
+            >
+              <Select placeholder="请选择消耗品类型">
+                <Select.Option value={1}>改名卡</Select.Option>
+                <Select.Option value={2} disabled>置顶卡（暂未开放）</Select.Option>
+                <Select.Option value={3} disabled>高亮卡（暂未开放）</Select.Option>
+                <Select.Option value={4}>经验卡</Select.Option>
+                <Select.Option value={5}>萝卜币红包</Select.Option>
+                <Select.Option value={6} disabled>双倍经验卡（暂未开放）</Select.Option>
+                <Select.Option value={7}>抽奖券</Select.Option>
+              </Select>
+            </Form.Item>
+            <div style={{ marginTop: -12, marginBottom: 16, color: 'var(--theme-text-placeholder)', fontSize: 12 }}>
+              帖子置顶卡、帖子高亮卡、双倍经验卡当前未开放，不能上架销售。
+            </div>
+          </>
         )}
 
         {(productType === 1 || productType === 2) && (

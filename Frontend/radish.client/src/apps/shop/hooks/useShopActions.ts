@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { log } from '@/utils/logger';
+import { useUserStore } from '@/stores/userStore';
 import type { TFunction } from 'i18next';
 import type { LongId } from '@/api/user';
 import type { Product } from '@/types/shop';
@@ -185,12 +186,14 @@ export const useShopActions = (props: UseShopActionsProps) => {
 
         // 刷新背包数据
         await loadInventory();
+        return true;
       } else {
         throw new Error(result.data?.errorMessage || result.message || t('shop.error.useItemFailed'));
       }
     } catch (error) {
       log.error(t('shop.error.useItemFailed'), error);
       setError(error instanceof Error ? error.message : t('shop.error.useItemFailed'));
+      return false;
     }
   }, [t, loadInventory, setError]);
 
@@ -201,18 +204,31 @@ export const useShopActions = (props: UseShopActionsProps) => {
       if (result.ok && result.data?.success) {
         setError(null);
 
+        const currentUser = useUserStore.getState();
+        currentUser.setUser({
+          userId: currentUser.userId,
+          userName: newNickname.trim(),
+          tenantId: currentUser.tenantId,
+          roles: currentUser.roles,
+          permissions: currentUser.permissions,
+          avatarUrl: currentUser.avatarUrl,
+          avatarThumbnailUrl: currentUser.avatarThumbnailUrl
+        });
+
         if (result.data.effectDescription) {
           log.debug(t('shop.inventory.renameSuccess'), result.data.effectDescription);
         }
 
         // 刷新背包数据
         await loadInventory();
+        return true;
       } else {
         throw new Error(result.data?.errorMessage || result.message || t('shop.error.useRenameCardFailed'));
       }
     } catch (error) {
       log.error(t('shop.error.useRenameCardFailed'), error);
       setError(error instanceof Error ? error.message : t('shop.error.useRenameCardFailed'));
+      return false;
     }
   }, [t, loadInventory, setError]);
 
