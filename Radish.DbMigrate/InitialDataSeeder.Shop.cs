@@ -474,6 +474,8 @@ internal static partial class InitialDataSeeder
             }
         };
 
+        ApplySeedProductAvailabilityPolicy(products);
+
         foreach (var product in products)
         {
             var existingProduct = await db.Queryable<Product>().FirstAsync(p => p.Id == product.Id);
@@ -503,9 +505,47 @@ internal static partial class InitialDataSeeder
             }
             else
             {
+                await TakeSeededUnavailableProductOffSaleAsync(db, existingProduct, product);
                 Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={product.Id} 的商品，跳过。");
             }
         }
+    }
+
+    private static void ApplySeedProductAvailabilityPolicy(IEnumerable<Product> products)
+    {
+        foreach (var product in products)
+        {
+            if (!ShopProductAvailabilityPolicy.IsUnavailablePublicProduct(product.ProductType, product.BenefitType, product.ConsumableType))
+            {
+                continue;
+            }
+
+            product.IsOnSale = false;
+            product.OnSaleTime = null;
+        }
+    }
+
+    private static async Task TakeSeededUnavailableProductOffSaleAsync(ISqlSugarClient db, Product existingProduct, Product seedProduct)
+    {
+        if (!existingProduct.IsOnSale ||
+            !ShopProductAvailabilityPolicy.IsUnavailablePublicProduct(seedProduct.ProductType, seedProduct.BenefitType, seedProduct.ConsumableType))
+        {
+            return;
+        }
+
+        await db.Updateable<Product>()
+            .SetColumns(p => new Product
+            {
+                IsOnSale = false,
+                OffSaleTime = DateTime.Now,
+                ModifyBy = "System",
+                ModifyId = 0,
+                ModifyTime = DateTime.Now
+            })
+            .Where(p => p.Id == existingProduct.Id)
+            .ExecuteCommandAsync();
+
+        Console.WriteLine($"[Radish.DbMigrate] 已按当前可用性策略下架历史商品 Id={existingProduct.Id}, Name={existingProduct.Name}。");
     }
 
     /// <summary>补齐商城默认图片附件及商品/分类关联</summary>

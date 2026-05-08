@@ -34,6 +34,20 @@ interface ProductFormProps {
   onSuccess: () => void;
 }
 
+function isUnsupportedSaleSelection(productType?: unknown, benefitType?: unknown, consumableType?: unknown): boolean {
+  const normalizedProductType = Number(productType);
+
+  if (normalizedProductType === 1) {
+    return [1, 2, 3, 4, 5, 6, 7].includes(Number(benefitType));
+  }
+
+  if (normalizedProductType === 2) {
+    return [2, 3, 6, 99].includes(Number(consumableType));
+  }
+
+  return false;
+}
+
 export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFormProps) => {
   const [form] = Form.useForm<CreateProductDto | UpdateProductDto>();
   const [categories, setCategories] = useState<ProductCategory[]>([]);
@@ -47,8 +61,11 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
 
   // 监听商品类型变化
   const productType = Form.useWatch('productType', form);
+  const benefitType = Form.useWatch('benefitType', form);
+  const consumableType = Form.useWatch('consumableType', form);
   const stockType = Form.useWatch('stockType', form);
   const durationType = Form.useWatch('durationType', form);
+  const unsupportedSaleSelection = isUnsupportedSaleSelection(productType, benefitType, consumableType);
 
   const normalizeEnumNumber = (value: unknown, mapping: Record<string, number>): number | undefined => {
     const normalized = String(value ?? '').trim();
@@ -192,6 +209,16 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
       setCoverPreviewUrl(undefined);
     }
   }, [visible, product, form]);
+
+  useEffect(() => {
+    if (!visible || !unsupportedSaleSelection) {
+      return;
+    }
+
+    if (form.getFieldValue('isOnSale')) {
+      form.setFieldValue('isOnSale', false);
+    }
+  }, [form, unsupportedSaleSelection, visible]);
 
   const loadCategories = async () => {
     try {
@@ -605,8 +632,14 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
           name="isOnSale"
           valuePropName="checked"
         >
-          <Switch />
+          <Switch disabled={unsupportedSaleSelection} />
         </Form.Item>
+
+        {unsupportedSaleSelection && (
+          <div style={{ marginTop: -12, marginBottom: 16, color: 'var(--theme-text-placeholder)', fontSize: 12 }}>
+            当前商品类型未开放，保存时将保持下架状态。
+          </div>
+        )}
       </Form>
     </Modal>
   );

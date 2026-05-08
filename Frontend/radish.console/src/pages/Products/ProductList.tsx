@@ -125,6 +125,14 @@ function getUnsupportedSaleReason(product: Product): string | null {
   return null;
 }
 
+function getUnsupportedSaleStatusLabel(product: Product): string | null {
+  if (!getUnsupportedSaleReason(product)) {
+    return null;
+  }
+
+  return product.voIsOnSale ? '历史上架' : '未开放';
+}
+
 function getProductTypeDisplay(type: ProductType | string | number): string {
   switch (normalizeProductType(type)) {
     case 'Benefit':
@@ -377,16 +385,25 @@ export const ProductList = () => {
       title: '状态',
       key: 'status',
       width: 100,
-      render: (_: unknown, record: Product) => (
-        <Space direction="vertical" size="small">
-          <Tag color={record.voIsOnSale ? 'success' : 'default'}>
-            {record.voIsOnSale ? '已上架' : '已下架'}
-          </Tag>
-          <Tag color={record.voIsEnabled ? 'success' : 'error'}>
-            {record.voIsEnabled ? '启用' : '禁用'}
-          </Tag>
-        </Space>
-      ),
+      render: (_: unknown, record: Product) => {
+        const unsupportedStatusLabel = getUnsupportedSaleStatusLabel(record);
+
+        return (
+          <Space direction="vertical" size="small">
+            <Tag color={record.voIsOnSale ? 'success' : 'default'}>
+              {record.voIsOnSale ? '已上架' : '已下架'}
+            </Tag>
+            {unsupportedStatusLabel ? (
+              <Tag color={record.voIsOnSale ? 'warning' : 'processing'}>
+                {unsupportedStatusLabel}
+              </Tag>
+            ) : null}
+            <Tag color={record.voIsEnabled ? 'success' : 'error'}>
+              {record.voIsEnabled ? '启用' : '禁用'}
+            </Tag>
+          </Space>
+        );
+      },
     },
     {
       title: '操作',
@@ -394,7 +411,11 @@ export const ProductList = () => {
       width: 200,
       fixed: 'right',
       render: (_: unknown, record: Product) => {
-        const saleBlockReason = !record.voIsOnSale ? getUnsupportedSaleReason(record) : null;
+        const unsupportedSaleReason = getUnsupportedSaleReason(record);
+        const saleBlockReason = !record.voIsOnSale ? unsupportedSaleReason : null;
+        const toggleButtonTitle = record.voIsOnSale && unsupportedSaleReason
+          ? '当前商品属于未开放类型，建议先下架历史上架记录'
+          : saleBlockReason ?? undefined;
 
         return (
           <Space size="small">
@@ -417,7 +438,7 @@ export const ProductList = () => {
                 size="small"
                 onClick={() => handleToggleSale(record)}
                 disabled={!!saleBlockReason}
-                title={saleBlockReason ?? undefined}
+                title={toggleButtonTitle}
               >
                 {record.voIsOnSale ? '下架' : '上架'}
               </Button>
