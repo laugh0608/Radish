@@ -15,6 +15,8 @@ type SecurityTab = 'overview' | 'password' | 'log' | 'tips';
 export const SecuritySettings = () => {
   const [activeTab, setActiveTab] = useState<SecurityTab>('overview');
   const { status, loading, error, refetch } = useSecurityStatus();
+  const requiresPasscodeUpgrade = Boolean(status?.requiresPasscodeUpgrade);
+  const hasPaymentPasscode = Boolean(status?.hasPaymentPassword);
 
   const handleTabChange = (tab: SecurityTab) => {
     log.debug('SecuritySettings', `切换到标签页: ${tab}`);
@@ -64,12 +66,12 @@ export const SecuritySettings = () => {
         </div>
         <div className={styles.headerRight}>
           <div className={`${styles.securityLevel} ${
-            status?.isLocked ? styles.weak :
-            status?.hasPaymentPassword ? styles.secure : styles.moderate
+            status?.isLocked || requiresPasscodeUpgrade ? styles.weak :
+            hasPaymentPasscode ? styles.secure : styles.moderate
           }`}>
             <span className={styles.securityIcon}>🔒</span>
             <span className={styles.securityText}>
-              {status?.isLocked ? '较弱' : status?.hasPaymentPassword ? '安全' : '一般'}
+              {status?.isLocked ? '已锁定' : requiresPasscodeUpgrade ? '需重置' : hasPaymentPasscode ? '安全' : '一般'}
             </span>
           </div>
         </div>
@@ -90,10 +92,12 @@ export const SecuritySettings = () => {
             onClick={() => handleTabChange('password')}
           >
             <span className={styles.tabIcon}>🔑</span>
-            <span className={styles.tabText}>支付密码</span>
-            {!status?.hasPaymentPassword && (
+            <span className={styles.tabText}>支付口令</span>
+            {requiresPasscodeUpgrade ? (
+              <span className={styles.tabBadge}>重置</span>
+            ) : !hasPaymentPasscode ? (
               <span className={styles.tabBadge}>!</span>
-            )}
+            ) : null}
           </button>
           <button
             className={`${styles.tab} ${activeTab === 'log' ? styles.active : ''}`}
@@ -108,7 +112,7 @@ export const SecuritySettings = () => {
           >
             <span className={styles.tabIcon}>💡</span>
             <span className={styles.tabText}>安全建议</span>
-            {status && !status.hasPaymentPassword && (
+            {status && (requiresPasscodeUpgrade || !hasPaymentPasscode) && (
               <span className={styles.tabBadge}>1</span>
             )}
           </button>

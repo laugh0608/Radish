@@ -1,15 +1,22 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { PasscodeInput } from '@radish/ui';
 import type { Product } from '@/types/shop';
 import type { LongId } from '@/api/user';
 import { getProductTypeDisplay } from '@/api/shop';
 import { resolveMediaUrl } from '@/utils/media';
+import {
+  isPaymentPasscodeFormatValid,
+  isPaymentPasscodeValid,
+  isRepeatedDigitPaymentPasscode
+} from '@/utils/paymentPasscode';
 import styles from './PurchaseModal.module.css';
 
 interface PurchaseModalProps {
   isOpen: boolean;
   product: Product | null;
   loading: boolean;
+  passcodeUpgradePrompt?: string | null;
   onClose: () => void;
   onConfirm: (productId: LongId, quantity: number, paymentPassword: string) => void;
 }
@@ -18,6 +25,7 @@ export const PurchaseModal = ({
   isOpen,
   product,
   loading,
+  passcodeUpgradePrompt,
   onClose,
   onConfirm
 }: PurchaseModalProps) => {
@@ -50,6 +58,16 @@ export const PurchaseModal = ({
     const trimmedPassword = paymentPassword.trim();
     if (!trimmedPassword) {
       setPaymentPasswordError(t('shop.purchase.paymentPasswordRequired'));
+      return;
+    }
+
+    if (!isPaymentPasscodeFormatValid(trimmedPassword)) {
+      setPaymentPasswordError(t('shop.purchase.paymentPasswordInvalid'));
+      return;
+    }
+
+    if (isRepeatedDigitPaymentPasscode(trimmedPassword)) {
+      setPaymentPasswordError(t('shop.purchase.paymentPasswordRepeated'));
       return;
     }
 
@@ -161,29 +179,35 @@ export const PurchaseModal = ({
             <label className={styles.passwordLabel} htmlFor="shop-purchase-payment-password">
               {t('shop.purchase.paymentPassword')}
             </label>
-            <input
+            {passcodeUpgradePrompt && (
+              <div className={styles.passcodeUpgradeNotice}>
+                <div className={styles.passcodeUpgradeTitle}>
+                  {t('shop.purchase.paymentPasswordUpgradeTitle')}
+                </div>
+                <div className={styles.passcodeUpgradeText}>
+                  {passcodeUpgradePrompt}
+                  <br />
+                  {t('shop.purchase.paymentPasswordUpgradeAction')}
+                </div>
+              </div>
+            )}
+            <PasscodeInput
               id="shop-purchase-payment-password"
-              type="password"
-              className={`${styles.passwordInput} ${paymentPasswordError ? styles.passwordInputError : ''}`}
               value={paymentPassword}
-              onChange={(event) => {
-                setPaymentPassword(event.target.value);
+              onChange={(value) => {
+                setPaymentPassword(value);
                 if (paymentPasswordError) {
                   setPaymentPasswordError(null);
                 }
               }}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  handleConfirm();
-                }
-              }}
-              placeholder={t('shop.purchase.paymentPasswordPlaceholder')}
+              onEnterPress={handleConfirm}
               autoComplete="current-password"
+              error={paymentPasswordError ?? undefined}
+              helperText={t('shop.purchase.paymentPasswordHint')}
+              revealText={t('common.show')}
+              concealText={t('common.hide')}
+              disabled={loading}
             />
-            <p className={styles.passwordHint}>{t('shop.purchase.paymentPasswordHint')}</p>
-            {paymentPasswordError && (
-              <p className={styles.passwordError}>{paymentPasswordError}</p>
-            )}
           </div>
 
           {/* 购买须知 */}
@@ -209,7 +233,7 @@ export const PurchaseModal = ({
           <button
             className={styles.confirmButton}
             onClick={handleConfirm}
-            disabled={loading || !paymentPassword.trim()}
+            disabled={loading || !isPaymentPasscodeValid(paymentPassword) || Boolean(passcodeUpgradePrompt)}
           >
             {loading ? (
               <>
@@ -217,7 +241,9 @@ export const PurchaseModal = ({
                 {t('shop.purchase.processing')}
               </>
             ) : (
-              t('shop.purchase.confirmButton', { price: totalPrice.toLocaleString() })
+              passcodeUpgradePrompt
+                ? t('shop.purchase.paymentPasswordUpgradeButton')
+                : t('shop.purchase.confirmButton', { price: totalPrice.toLocaleString() })
             )}
           </button>
         </div>

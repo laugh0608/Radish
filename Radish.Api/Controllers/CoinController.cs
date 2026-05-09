@@ -10,6 +10,7 @@ using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Shared;
 using Radish.Shared.CustomEnum;
+using Radish.Shared.Security;
 
 namespace Radish.Api.Controllers;
 
@@ -308,7 +309,8 @@ public class CoinController : ControllerBase
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
+                MessageInfo = ex.Message,
+                ResponseData = BuildTransferFailureResult(ex.Message)
             };
         }
         catch (ArgumentException ex)
@@ -317,12 +319,27 @@ public class CoinController : ControllerBase
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
+                MessageInfo = ex.Message,
+                ResponseData = BuildTransferFailureResult(ex.Message)
             };
         }
     }
 
     #endregion
+
+    private static TransactionResultVo? BuildTransferFailureResult(string? message)
+    {
+        if (!string.Equals(message, PaymentPasscodeRules.UpgradeRequiredErrorMessage, StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        return new TransactionResultVo
+        {
+            VoErrorCode = PaymentPasscodeErrorCodes.UpgradeRequired,
+            VoRequiresPasscodeUpgrade = true
+        };
+    }
 
     #region 统计数据
 

@@ -1,4 +1,6 @@
 using Radish.Shared.CustomEnum;
+using Radish.Shared.Security;
+using System.ComponentModel.DataAnnotations;
 
 namespace Radish.Model.ViewModels;
 
@@ -149,7 +151,9 @@ public class CreateOrderDto
     /// <summary>购买数量</summary>
     public int Quantity { get; set; } = 1;
 
-    /// <summary>支付密码</summary>
+    /// <summary>支付口令</summary>
+    [Required(ErrorMessage = PaymentPasscodeRules.EmptyErrorMessage)]
+    [RegularExpression(PaymentPasscodeRules.NumericPattern, ErrorMessage = PaymentPasscodeRules.FormatErrorMessage)]
     public string PaymentPassword { get; set; } = string.Empty;
 
     /// <summary>用户备注</summary>
@@ -170,6 +174,12 @@ public class PurchaseResultDto
 
     /// <summary>错误信息</summary>
     public string? ErrorMessage { get; set; }
+
+    /// <summary>错误代码</summary>
+    public string? ErrorCode { get; set; }
+
+    /// <summary>是否需要升级支付口令</summary>
+    public bool RequiresPasscodeUpgrade { get; set; }
 
     /// <summary>用户权益 ID</summary>
     /// <remarks>购买成功后发放的权益 ID</remarks>

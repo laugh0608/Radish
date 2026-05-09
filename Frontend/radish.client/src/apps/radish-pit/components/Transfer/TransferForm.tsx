@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { log } from '@/utils/logger';
+import { PasscodeInput } from '@radish/ui';
+import { getPaymentPasscodeValidationMessage } from '@/utils/paymentPasscode';
 import { formatCoinAmount, validateTransferAmount, debounce } from '../../utils';
 import { searchUsersForMention, type UserMentionOption } from '@/api/user';
 import { useTranslation } from 'react-i18next';
@@ -127,11 +129,10 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
       }
     }
 
-    // 验证支付密码
-    if (!formData.paymentPassword?.trim()) {
-      newErrors.paymentPassword = '请输入支付密码';
-    } else if (formData.paymentPassword.length < 6) {
-      newErrors.paymentPassword = '支付密码长度不能少于6位';
+    // 验证支付口令
+    const paymentPasscodeError = getPaymentPasscodeValidationMessage(formData.paymentPassword ?? '');
+    if (paymentPasscodeError) {
+      newErrors.paymentPassword = paymentPasscodeError;
     }
 
     setErrors(newErrors);
@@ -319,22 +320,19 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
             </div>
           </div>
 
-          {/* 支付密码 */}
+          {/* 支付口令 */}
           <div className={styles.formGroup}>
             <label className={styles.label}>
-              支付密码 <span className={styles.required}>*</span>
+              支付口令 <span className={styles.required}>*</span>
             </label>
-            <input
-              type="password"
-              className={`${styles.input} ${errors.paymentPassword ? styles.error : ''}`}
-              placeholder="请输入支付密码"
+            <PasscodeInput
+              id="transfer-payment-passcode"
               value={formData.paymentPassword || ''}
-              onChange={(e) => handleInputChange('paymentPassword', e.target.value)}
-              maxLength={20}
+              onChange={(value) => handleInputChange('paymentPassword', value)}
+              error={errors.paymentPassword}
+              helperText="请输入 6 位数字支付口令以确认本次转移"
+              autoComplete="current-password"
             />
-            {errors.paymentPassword && (
-              <div className={styles.errorMessage}>{errors.paymentPassword}</div>
-            )}
           </div>
 
           {/* 提交按钮 */}

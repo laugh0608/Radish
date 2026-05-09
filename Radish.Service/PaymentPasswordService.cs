@@ -7,10 +7,10 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.Models;
 using Radish.Model.ViewModels;
+using Radish.Shared.Security;
 using SqlSugar;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace Radish.Service;
 
@@ -27,8 +27,6 @@ public class PaymentPasswordService : IPaymentPasswordService
     // 安全配置常量
     private const int MaxFailedAttempts = 5;
     private const int LockoutMinutes = 30;
-    private const int MinPasswordLength = 6;
-    private const int MaxPasswordLength = 20;
 
     public PaymentPasswordService(
         IPaymentPasswordRepository paymentPasswordRepository,
@@ -61,6 +59,8 @@ public class PaymentPasswordService : IPaymentPasswordService
                     VoUserId = userId,
                     VoHasPaymentPassword = false,
                     VoIsEnabled = false,
+                    VoIsLegacyPasscode = false,
+                    VoRequiresPasscodeUpgrade = false,
                     VoFailedAttempts = 0,
                     VoIsLocked = false,
                     VoStrengthLevel = 0,
@@ -83,7 +83,7 @@ public class PaymentPasswordService : IPaymentPasswordService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "获取用户支付密码状态失败，用户ID: {UserId}", userId);
+            _logger.LogError(ex, "获取用户支付口令状态失败，用户ID: {UserId}", userId);
             throw;
         }
     }
@@ -99,20 +99,18 @@ public class PaymentPasswordService : IPaymentPasswordService
         try
         {
             // 验证请求参数
-            if (string.IsNullOrWhiteSpace(request.NewPassword))
-                throw new ArgumentException("新密码不能为空");
+            EnsureNewPasscodeCanBeSaved(request.NewPassword, "新支付口令不能为空");
 
             if (request.NewPassword != request.ConfirmPassword)
-                throw new ArgumentException("两次输入的密码不一致");
-
-            if (!IsValidPassword(request.NewPassword))
-                throw new ArgumentException($"密码格式不正确，长度应为{MinPasswordLength}-{MaxPasswordLength}位");
+                throw new ArgumentException("两次输入的支付口令不一致");
 
             // 检查是否已设置支付密码
             var existingPassword = await _paymentPasswordRepository.GetByUserIdAsync(userId);
-            if (existingPassword != null && !string.IsNullOrEmpty(existingPassword.PasswordHash))
+            if (existingPassword != null
+                && !string.IsNullOrEmpty(existingPassword.PasswordHash)
+                && !HasLegacyPasscode(existingPassword))
             {
-                throw new InvalidOperationException("用户已设置支付密码，请使用修改密码功能");
+                throw new InvalidOperationException("用户已设置支付口令，请使用修改口令功能");
             }
 
             // 生成盐值和哈希
@@ -126,6 +124,7 @@ public class PaymentPasswordService : IPaymentPasswordService
                 existingPassword.PasswordHash = passwordHash;
                 existingPassword.Salt = salt;
                 existingPassword.StrengthLevel = strengthLevel;
+                existingPassword.PasscodeVersion = PaymentPasscodeRules.CurrentPasscodeVersion;
                 existingPassword.IsEnabled = true;
                 existingPassword.FailedAttempts = 0;
                 existingPassword.LockedUntil = null;
@@ -146,6 +145,7 @@ public class PaymentPasswordService : IPaymentPasswordService
                     PasswordHash = passwordHash,
                     Salt = salt,
                     StrengthLevel = strengthLevel,
+                    PasscodeVersion = PaymentPasscodeRules.CurrentPasscodeVersion,
                     IsEnabled = true,
                     FailedAttempts = 0,
                     CreateTime = DateTime.Now,
@@ -157,12 +157,12 @@ public class PaymentPasswordService : IPaymentPasswordService
                 await _paymentPasswordRepository.AddAsync(newPaymentPassword);
             }
 
-            _logger.LogInformation("用户设置支付密码成功，用户ID: {UserId}, 强度等级: {StrengthLevel}", userId, strengthLevel);
+            _logger.LogInformation("用户设置支付口令成功，用户ID: {UserId}, 强度等级: {StrengthLevel}", userId, strengthLevel);
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "设置支付密码失败，用户ID: {UserId}", userId);
+            _logger.LogError(ex, "设置支付口令失败，用户ID: {UserId}", userId);
             throw;
         }
     }
@@ -179,22 +179,23 @@ public class PaymentPasswordService : IPaymentPasswordService
         {
             // 验证请求参数
             if (string.IsNullOrWhiteSpace(request.CurrentPassword))
-                throw new ArgumentException("当前密码不能为空");
+                throw new ArgumentException("当前支付口令不能为空");
 
-            if (string.IsNullOrWhiteSpace(request.NewPassword))
-                throw new ArgumentException("新密码不能为空");
+            EnsureNewPasscodeCanBeSaved(request.NewPassword, "新支付口令不能为空");
 
             if (request.NewPassword != request.ConfirmPassword)
-                throw new ArgumentException("两次输入的新密码不一致");
-
-            if (!IsValidPassword(request.NewPassword))
-                throw new ArgumentException($"新密码格式不正确，长度应为{MinPasswordLength}-{MaxPasswordLength}位");
+                throw new ArgumentException("两次输入的新支付口令不一致");
 
             // 获取现有支付密码
             var paymentPassword = await _paymentPasswordRepository.GetByUserIdAsync(userId);
             if (paymentPassword == null || string.IsNullOrEmpty(paymentPassword.PasswordHash))
             {
-                throw new InvalidOperationException("用户未设置支付密码");
+                throw new InvalidOperationException("用户未设置支付口令");
+            }
+
+            if (HasLegacyPasscode(paymentPassword))
+            {
+                throw new InvalidOperationException(PaymentPasscodeRules.UpgradeRequiredErrorMessage);
             }
 
             // 验证当前密码
@@ -206,7 +207,7 @@ public class PaymentPasswordService : IPaymentPasswordService
 
             if (!verifyResult.IsSuccess)
             {
-                throw new UnauthorizedAccessException(verifyResult.ErrorMessage ?? "当前密码验证失败");
+                throw new UnauthorizedAccessException(verifyResult.ErrorMessage ?? "当前支付口令验证失败");
             }
 
             // 生成新的盐值和哈希
@@ -227,12 +228,12 @@ public class PaymentPasswordService : IPaymentPasswordService
 
             await _paymentPasswordRepository.UpdateAsync(paymentPassword);
 
-            _logger.LogInformation("用户修改支付密码成功，用户ID: {UserId}, 新强度等级: {StrengthLevel}", userId, strengthLevel);
+            _logger.LogInformation("用户修改支付口令成功，用户ID: {UserId}, 新强度等级: {StrengthLevel}", userId, strengthLevel);
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "修改支付密码失败，用户ID: {UserId}", userId);
+            _logger.LogError(ex, "修改支付口令失败，用户ID: {UserId}", userId);
             throw;
         }
     }
@@ -247,6 +248,16 @@ public class PaymentPasswordService : IPaymentPasswordService
     {
         try
         {
+            if (string.IsNullOrWhiteSpace(request.Password))
+            {
+                return new PaymentPasswordVerifyResult
+                {
+                    IsSuccess = false,
+                    ErrorMessage = PaymentPasscodeRules.EmptyErrorMessage,
+                    RemainingAttempts = MaxFailedAttempts
+                };
+            }
+
             var paymentPassword = await _paymentPasswordRepository.GetByUserIdAsync(userId);
 
             if (paymentPassword == null || string.IsNullOrEmpty(paymentPassword.PasswordHash))
@@ -254,9 +265,14 @@ public class PaymentPasswordService : IPaymentPasswordService
                 return new PaymentPasswordVerifyResult
                 {
                     IsSuccess = false,
-                    ErrorMessage = "用户未设置支付密码",
+                    ErrorMessage = "用户未设置支付口令",
                     RemainingAttempts = 0
                 };
+            }
+
+            if (HasLegacyPasscode(paymentPassword))
+            {
+                return CreateUpgradeRequiredResult();
             }
 
             // 检查是否被锁定
@@ -282,7 +298,7 @@ public class PaymentPasswordService : IPaymentPasswordService
                 await _paymentPasswordRepository.ResetFailedAttemptsAsync(userId);
                 await _paymentPasswordRepository.UpdateLastUsedTimeAsync(userId);
 
-                _logger.LogInformation("支付密码验证成功，用户ID: {UserId}, 业务类型: {BusinessType}",
+                _logger.LogInformation("支付口令验证成功，用户ID: {UserId}, 业务类型: {BusinessType}",
                     userId, request.BusinessType ?? "UNKNOWN");
 
                 return new PaymentPasswordVerifyResult
@@ -306,10 +322,10 @@ public class PaymentPasswordService : IPaymentPasswordService
 
                 var remainingAttempts = Math.Max(0, MaxFailedAttempts - newFailedAttempts);
                 var errorMessage = lockedUntil.HasValue
-                    ? $"密码错误次数过多，账户已被锁定{LockoutMinutes}分钟"
-                    : $"支付密码错误，还可尝试{remainingAttempts}次";
+                    ? $"支付口令错误次数过多，账户已被锁定{LockoutMinutes}分钟"
+                    : $"支付口令错误，还可尝试{remainingAttempts}次";
 
-                _logger.LogWarning("支付密码验证失败，用户ID: {UserId}, 失败次数: {FailedAttempts}, 业务类型: {BusinessType}",
+                _logger.LogWarning("支付口令验证失败，用户ID: {UserId}, 失败次数: {FailedAttempts}, 业务类型: {BusinessType}",
                     userId, newFailedAttempts, request.BusinessType ?? "UNKNOWN");
 
                 return new PaymentPasswordVerifyResult
@@ -324,7 +340,7 @@ public class PaymentPasswordService : IPaymentPasswordService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "验证支付密码失败，用户ID: {UserId}", userId);
+            _logger.LogError(ex, "验证支付口令失败，用户ID: {UserId}", userId);
             throw;
         }
     }
@@ -344,7 +360,7 @@ public class PaymentPasswordService : IPaymentPasswordService
             var paymentPassword = await _paymentPasswordRepository.GetByUserIdAsync(targetUserId);
             if (paymentPassword == null)
             {
-                throw new InvalidOperationException("目标用户未设置支付密码");
+                throw new InvalidOperationException("目标用户未设置支付口令");
             }
 
             // 重置密码（清空密码哈希，用户需要重新设置）
@@ -353,6 +369,7 @@ public class PaymentPasswordService : IPaymentPasswordService
             paymentPassword.FailedAttempts = 0;
             paymentPassword.LockedUntil = null;
             paymentPassword.StrengthLevel = 0;
+            paymentPassword.PasscodeVersion = null;
             paymentPassword.IsEnabled = false;
             paymentPassword.LastModifiedTime = DateTime.Now;
             paymentPassword.ModifyTime = DateTime.Now;
@@ -362,14 +379,14 @@ public class PaymentPasswordService : IPaymentPasswordService
 
             await _paymentPasswordRepository.UpdateAsync(paymentPassword);
 
-            _logger.LogWarning("管理员重置用户支付密码，管理员ID: {AdminUserId}, 目标用户ID: {TargetUserId}, 原因: {Reason}",
+            _logger.LogWarning("管理员重置用户支付口令，管理员ID: {AdminUserId}, 目标用户ID: {TargetUserId}, 原因: {Reason}",
                 adminUserId, targetUserId, request.Reason);
 
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "重置支付密码失败，管理员ID: {AdminUserId}, 目标用户ID: {TargetUserId}",
+            _logger.LogError(ex, "重置支付口令失败，管理员ID: {AdminUserId}, 目标用户ID: {TargetUserId}",
                 adminUserId, request.UserId);
             throw;
         }
@@ -390,7 +407,7 @@ public class PaymentPasswordService : IPaymentPasswordService
 
             if (result)
             {
-                _logger.LogWarning("管理员解锁用户支付密码，管理员ID: {AdminUserId}, 目标用户ID: {TargetUserId}, 原因: {Reason}",
+                _logger.LogWarning("管理员解锁用户支付口令，管理员ID: {AdminUserId}, 目标用户ID: {TargetUserId}, 原因: {Reason}",
                     adminUserId, targetUserId, reason);
             }
 
@@ -398,7 +415,7 @@ public class PaymentPasswordService : IPaymentPasswordService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "解锁支付密码失败，管理员ID: {AdminUserId}, 目标用户ID: {TargetUserId}",
+            _logger.LogError(ex, "解锁支付口令失败，管理员ID: {AdminUserId}, 目标用户ID: {TargetUserId}",
                 adminUserId, targetUserId);
             throw;
         }
@@ -426,7 +443,7 @@ public class PaymentPasswordService : IPaymentPasswordService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "获取支付密码统计信息失败");
+            _logger.LogError(ex, "获取支付口令统计信息失败");
             throw;
         }
     }
@@ -462,26 +479,7 @@ public class PaymentPasswordService : IPaymentPasswordService
     /// <returns>强度等级 (1-5)</returns>
     public int CheckPasswordStrength(string password)
     {
-        if (string.IsNullOrWhiteSpace(password))
-            return 0;
-
-        var score = 0;
-
-        // 长度检查
-        if (password.Length >= 8) score++;
-        if (password.Length >= 12) score++;
-
-        // 字符类型检查
-        if (Regex.IsMatch(password, @"[a-z]")) score++; // 小写字母
-        if (Regex.IsMatch(password, @"[A-Z]")) score++; // 大写字母
-        if (Regex.IsMatch(password, @"\d")) score++;    // 数字
-        if (Regex.IsMatch(password, @"[!@#$%^&*(),.?""':;|<>]")) score++; // 特殊字符
-
-        // 复杂度检查
-        if (password.Length >= 10 && Regex.IsMatch(password, @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])"))
-            score++;
-
-        return Math.Min(5, Math.Max(1, score));
+        return PaymentPasscodeRules.GetStrengthLevel(password);
     }
 
     /// <summary>
@@ -499,16 +497,23 @@ public class PaymentPasswordService : IPaymentPasswordService
 
             if (paymentPassword == null || string.IsNullOrEmpty(paymentPassword.PasswordHash))
             {
-                suggestions.Add("建议设置支付密码以保护账户安全");
-                suggestions.Add("支付密码应包含数字、字母和特殊字符");
-                suggestions.Add("密码长度建议8位以上");
+                suggestions.Add("建议设置支付口令以保护账户安全");
+                suggestions.Add("支付口令必须为 6 位数字，且不能为 6 个相同数字");
+                suggestions.Add("建议避免使用连续数字或过于简单的数字组合");
                 return suggestions;
             }
 
-            // 密码强度建议
+            if (HasLegacyPasscode(paymentPassword))
+            {
+                suggestions.Add(PaymentPasscodeRules.UpgradeRequiredSuggestion);
+                suggestions.Add("旧支付口令已不再支持商城购买和萝卜转移，请在安全设置中直接重置为新的6位数字支付口令");
+                return suggestions;
+            }
+
+            // 口令强度建议
             if (paymentPassword.StrengthLevel < 3)
             {
-                suggestions.Add("当前密码强度较低，建议使用更复杂的密码");
+                suggestions.Add("当前支付口令较弱，建议避开连续数字或过于集中的数字组合");
             }
 
             // 使用时间建议
@@ -517,21 +522,21 @@ public class PaymentPasswordService : IPaymentPasswordService
                 var daysSinceLastChange = (DateTime.Now - paymentPassword.LastModifiedTime.Value).Days;
                 if (daysSinceLastChange > 90)
                 {
-                    suggestions.Add("建议定期更换支付密码，上次修改已超过90天");
+                    suggestions.Add("建议定期更换支付口令，上次修改已超过90天");
                 }
             }
 
             // 失败次数建议
             if (paymentPassword.FailedAttempts > 0)
             {
-                suggestions.Add("检测到密码输入错误记录，请确保密码安全");
+                suggestions.Add("检测到口令输入错误记录，请确认是否存在异常操作");
             }
 
             // 通用安全建议
             if (suggestions.Count == 0)
             {
-                suggestions.Add("支付密码安全状态良好");
-                suggestions.Add("建议定期更换密码以保持安全");
+                suggestions.Add("支付口令安全状态良好");
+                suggestions.Add("建议定期更换口令以保持安全");
             }
         }
         catch (Exception ex)
@@ -580,24 +585,34 @@ public class PaymentPasswordService : IPaymentPasswordService
 
     #region 私有方法
 
-    /// <summary>
-    /// 验证密码格式
-    /// </summary>
-    /// <param name="password">密码</param>
-    /// <returns>是否有效</returns>
-    private static bool IsValidPassword(string password)
+    private static void EnsureNewPasscodeCanBeSaved(string? passcode, string emptyMessage)
     {
-        if (string.IsNullOrWhiteSpace(password))
-            return false;
+        if (string.IsNullOrWhiteSpace(passcode))
+            throw new ArgumentException(emptyMessage);
 
-        if (password.Length < MinPasswordLength || password.Length > MaxPasswordLength)
-            return false;
+        if (!PaymentPasscodeRules.IsFormatValid(passcode))
+            throw new ArgumentException(PaymentPasscodeRules.FormatErrorMessage);
 
-        // 至少包含数字
-        if (!Regex.IsMatch(password, @"\d"))
-            return false;
+        if (PaymentPasscodeRules.IsRepeatedDigits(passcode))
+            throw new ArgumentException(PaymentPasscodeRules.RepeatedDigitErrorMessage);
+    }
 
-        return true;
+    private static bool HasLegacyPasscode(UserPaymentPassword paymentPassword)
+    {
+        return !string.IsNullOrEmpty(paymentPassword.PasswordHash)
+               && PaymentPasscodeRules.RequiresUpgrade(paymentPassword.PasscodeVersion);
+    }
+
+    private static PaymentPasswordVerifyResult CreateUpgradeRequiredResult()
+    {
+        return new PaymentPasswordVerifyResult
+        {
+            IsSuccess = false,
+            ErrorCode = PaymentPasscodeErrorCodes.UpgradeRequired,
+            ErrorMessage = PaymentPasscodeRules.UpgradeRequiredErrorMessage,
+            RemainingAttempts = 0,
+            RequiresPasscodeUpgrade = true
+        };
     }
 
     /// <summary>
@@ -655,11 +670,11 @@ public class PaymentPasswordService : IPaymentPasswordService
         return level switch
         {
             0 => "未设置",
-            1 => "很弱",
-            2 => "弱",
-            3 => "中等",
-            4 => "强",
-            5 => "很强",
+            1 => "无效",
+            2 => "较弱",
+            3 => "一般",
+            4 => "稳妥",
+            5 => "较强",
             _ => "未知"
         };
     }
@@ -673,6 +688,9 @@ public class PaymentPasswordService : IPaymentPasswordService
     {
         if (string.IsNullOrEmpty(paymentPassword.PasswordHash))
             return "未设置";
+
+        if (HasLegacyPasscode(paymentPassword))
+            return PaymentPasscodeRules.UpgradeRequiredStatusText;
 
         if (paymentPassword.LockedUntil.HasValue && paymentPassword.LockedUntil.Value > DateTime.Now)
             return "已锁定";
@@ -727,15 +745,15 @@ public class PaymentPasswordService : IPaymentPasswordService
     private static string GetSecurityLogAction(string requestPath)
     {
         if (requestPath.Contains("VerifyPassword", StringComparison.OrdinalIgnoreCase))
-            return "支付密码验证";
+            return "支付口令验证";
         if (requestPath.Contains("ChangePassword", StringComparison.OrdinalIgnoreCase))
-            return "修改支付密码";
+            return "修改支付口令";
         if (requestPath.Contains("SetPassword", StringComparison.OrdinalIgnoreCase))
-            return "设置支付密码";
+            return "设置支付口令";
         if (requestPath.Contains("UnlockPassword", StringComparison.OrdinalIgnoreCase))
-            return "解锁支付密码";
+            return "解锁支付口令";
 
-        return "支付密码操作";
+        return "支付口令操作";
     }
 
     #endregion

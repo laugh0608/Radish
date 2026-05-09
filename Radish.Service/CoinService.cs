@@ -8,6 +8,7 @@ using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
+using Radish.Shared.Security;
 using Radish.Service.Base;
 using Serilog;
 using SqlSugar;
@@ -592,26 +593,29 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
                 throw new ArgumentException("转账金额必须大于0");
             }
 
-            if (string.IsNullOrWhiteSpace(paymentPassword))
+            var paymentPasscodeError = PaymentPasscodeRules.GetValidationMessage(paymentPassword);
+            if (!string.IsNullOrWhiteSpace(paymentPasscodeError))
             {
-                throw new ArgumentException("支付密码不能为空");
+                throw new ArgumentException(paymentPasscodeError);
             }
 
             Log.Information("用户转账：转出用户={FromUserId}, 转入用户={ToUserId}, 金额={Amount}",
                 fromUserId, toUserId, amount);
 
-            // 2. 验证支付密码
+            // 2. 验证支付口令
             var verifyRequest = new VerifyPaymentPasswordRequest
             {
-                Password = paymentPassword
+                Password = paymentPassword,
+                BusinessType = "CoinTransfer",
+                BusinessId = toUserId.ToString()
             };
             var verifyResult = await _paymentPasswordService.VerifyPaymentPasswordAsync(fromUserId, verifyRequest);
 
             if (!verifyResult.IsSuccess)
             {
-                Log.Warning("转账失败：支付密码验证失败，用户={FromUserId}, 原因={Reason}",
+                Log.Warning("转账失败：支付口令验证失败，用户={FromUserId}, 原因={Reason}",
                     fromUserId, verifyResult.ErrorMessage);
-                throw new InvalidOperationException(verifyResult.ErrorMessage ?? "支付密码验证失败");
+                throw new InvalidOperationException(verifyResult.ErrorMessage ?? "支付口令验证失败");
             }
 
             // 3. 使用乐观锁重试策略执行转账操作（最多重试 3 次，指数退避）

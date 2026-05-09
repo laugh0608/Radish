@@ -5,6 +5,9 @@ export type { ButtonProps } from './Button/Button';
 export { Input } from './Input/Input';
 export type { InputProps } from './Input/Input';
 
+export { PasscodeInput } from './PasscodeInput/PasscodeInput';
+export type { PasscodeInputProps } from './PasscodeInput/PasscodeInput';
+
 export { Select } from './Select/Select';
 export type { SelectProps, SelectOption } from './Select/Select';
 

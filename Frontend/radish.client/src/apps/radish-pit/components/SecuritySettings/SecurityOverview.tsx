@@ -40,19 +40,22 @@ export const SecurityOverview = ({ status, loading, error, onRefresh, onNavigate
     );
   }
 
+  const requiresPasscodeUpgrade = Boolean(status?.requiresPasscodeUpgrade);
+
   const getSecurityScore = (): number => {
     if (!status) return 0;
 
     let score = 0;
-    if (status.hasPaymentPassword) score += 40;
+    if (status.hasPaymentPassword && !status.requiresPasscodeUpgrade) score += 40;
     if (status.failedAttempts === 0) score += 20;
     if (!status.isLocked) score += 20;
-    if (status.lastPasswordChangeTime) score += 20;
+    if (status.lastPasswordChangeTime && !status.requiresPasscodeUpgrade) score += 20;
 
     return Math.min(100, score);
   };
 
   const getSecurityScoreColor = (score: number): string => {
+    if (requiresPasscodeUpgrade) return 'critical';
     if (score >= 80) return 'high';
     if (score >= 60) return 'medium';
     if (score >= 40) return 'low';
@@ -86,12 +89,14 @@ export const SecurityOverview = ({ status, loading, error, onRefresh, onNavigate
 
           <div className={styles.scoreDescription}>
             <div className={`${styles.scoreLevel} ${styles[scoreColor]}`}>
-              {securityScore >= 80 ? '安全' :
+              {requiresPasscodeUpgrade ? '需重置' :
+               securityScore >= 80 ? '安全' :
                securityScore >= 60 ? '良好' :
                securityScore >= 40 ? '一般' : '需要改进'}
             </div>
             <p className={styles.scoreText}>
-              {securityScore >= 80 ? '您的账户安全设置完善' :
+              {requiresPasscodeUpgrade ? '检测到您仍在使用已废弃的旧支付口令，请先重置为新的6位数字支付口令后再进行购买和转移。' :
+               securityScore >= 80 ? '您的账户安全设置完善' :
                securityScore >= 60 ? '您的账户安全设置良好，建议进一步完善' :
                securityScore >= 40 ? '您的账户安全设置一般，建议加强防护' :
                '您的账户安全设置需要改进，请尽快完善'}
@@ -102,27 +107,29 @@ export const SecurityOverview = ({ status, loading, error, onRefresh, onNavigate
 
       {/* 安全状态卡片 */}
       <div className={styles.securityCards}>
-        {/* 支付密码状态 */}
+        {/* 支付口令状态 */}
         <div className={`${styles.securityCard} ${
-          status?.hasPaymentPassword ? styles.secure : styles.warning
+          requiresPasscodeUpgrade ? styles.danger : status?.hasPaymentPassword ? styles.secure : styles.warning
         }`}>
           <div className={styles.cardIcon}>
-            {status?.hasPaymentPassword ? '🔑' : '⚠️'}
+            {requiresPasscodeUpgrade ? '♻️' : status?.hasPaymentPassword ? '🔑' : '⚠️'}
           </div>
           <div className={styles.cardContent}>
-            <div className={styles.cardTitle}>支付密码</div>
+            <div className={styles.cardTitle}>支付口令</div>
             <div className={styles.cardStatus}>
-              {status?.hasPaymentPassword ? '已设置' : '未设置'}
+              {requiresPasscodeUpgrade ? '旧口令已废弃' : status?.hasPaymentPassword ? '已设置' : '未设置'}
             </div>
             <div className={styles.cardDescription}>
-              {status?.hasPaymentPassword
-                ? '您已设置支付密码，转移操作更安全'
-                : '建议设置支付密码以保护您的萝卜'}
+              {requiresPasscodeUpgrade
+                ? '旧支付口令不再支持商城购买和萝卜转移，请尽快重置为新的6位数字支付口令'
+                : status?.hasPaymentPassword
+                ? '您已设置支付口令，转移和购买操作更安全'
+                : '建议设置支付口令以保护您的萝卜资产'}
             </div>
           </div>
           <div className={styles.cardAction}>
             <button className={styles.actionButton} onClick={() => onNavigate('password')}>
-              {status?.hasPaymentPassword ? '修改' : '设置'}
+              {requiresPasscodeUpgrade ? '立即重置' : status?.hasPaymentPassword ? '修改' : '设置'}
             </button>
           </div>
         </div>
@@ -162,14 +169,14 @@ export const SecurityOverview = ({ status, loading, error, onRefresh, onNavigate
             {(status?.failedAttempts || 0) > 0 ? '⚠️' : '✅'}
           </div>
           <div className={styles.cardContent}>
-            <div className={styles.cardTitle}>密码尝试</div>
+            <div className={styles.cardTitle}>口令尝试</div>
             <div className={styles.cardStatus}>
               {status?.failedAttempts || 0} 次失败
             </div>
             <div className={styles.cardDescription}>
               {(status?.failedAttempts || 0) > 0
-                ? `最近有${status?.failedAttempts}次密码输入错误`
-                : '最近没有密码输入错误记录'}
+                ? `最近有${status?.failedAttempts}次口令输入错误`
+                : '最近没有口令输入错误记录'}
             </div>
           </div>
         </div>
@@ -185,7 +192,7 @@ export const SecurityOverview = ({ status, loading, error, onRefresh, onNavigate
                 : '从未使用'}
             </div>
             <div className={styles.cardDescription}>
-              支付密码最后使用时间
+              支付口令最后使用时间
             </div>
           </div>
         </div>
@@ -198,7 +205,7 @@ export const SecurityOverview = ({ status, loading, error, onRefresh, onNavigate
           <button className={styles.quickActionButton} onClick={() => onNavigate('password')}>
             <span className={styles.actionIcon}>🔑</span>
             <span className={styles.actionText}>
-              {status?.hasPaymentPassword ? '修改支付密码' : '设置支付密码'}
+              {requiresPasscodeUpgrade ? '重置支付口令' : status?.hasPaymentPassword ? '修改支付口令' : '设置支付口令'}
             </span>
           </button>
           <button className={styles.quickActionButton} onClick={() => onNavigate('log')}>

@@ -11,6 +11,7 @@ using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Service.Base;
 using Radish.Shared.CustomEnum;
+using Radish.Shared.Security;
 using Serilog;
 using SqlSugar;
 
@@ -93,13 +94,14 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 };
             }
 
-            // 5. 验证支付密码
-            if (string.IsNullOrWhiteSpace(dto.PaymentPassword))
+            // 5. 验证支付口令
+            var paymentPasscodeError = PaymentPasscodeRules.GetValidationMessage(dto.PaymentPassword);
+            if (!string.IsNullOrWhiteSpace(paymentPasscodeError))
             {
                 return new PurchaseResultDto
                 {
                     Success = false,
-                    ErrorMessage = "支付密码不能为空"
+                    ErrorMessage = paymentPasscodeError
                 };
             }
 
@@ -112,12 +114,14 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
 
             if (!verifyResult.IsSuccess)
             {
-                Log.Warning("商城购买失败：支付密码验证失败，用户={UserId}, 商品={ProductId}, 原因={Reason}",
+                Log.Warning("商城购买失败：支付口令验证失败，用户={UserId}, 商品={ProductId}, 原因={Reason}",
                     userId, dto.ProductId, verifyResult.ErrorMessage);
                 return new PurchaseResultDto
                 {
                     Success = false,
-                    ErrorMessage = verifyResult.ErrorMessage ?? "支付密码验证失败"
+                    ErrorMessage = verifyResult.ErrorMessage ?? "支付口令验证失败",
+                    ErrorCode = verifyResult.ErrorCode,
+                    RequiresPasscodeUpgrade = verifyResult.RequiresPasscodeUpgrade
                 };
             }
 

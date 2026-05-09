@@ -190,6 +190,8 @@ export interface PurchaseResult {
   orderId?: LongId;
   orderNo?: string;
   errorMessage?: string;
+  errorCode?: string;
+  requiresPasscodeUpgrade?: boolean;
   userBenefitId?: LongId;
   deductedCoins?: number;
   remainingBalance?: number;

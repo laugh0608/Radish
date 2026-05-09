@@ -99,6 +99,7 @@ export const Transfer = ({ onNavigate }: TransferProps) => {
             result={transferResult!}
             displayMode={displayMode}
             onStartNew={handleStartNew}
+            onResetPasscode={() => onNavigate('security')}
             onViewHistory={() => onNavigate('history')}
           />
         );

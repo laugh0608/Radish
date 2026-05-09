@@ -5,6 +5,7 @@ import type { TFunction } from 'i18next';
 import type { LongId } from '@/api/user';
 import type { Product } from '@/types/shop';
 import * as shopApi from '@/api/shop';
+import { isPaymentPasscodeUpgradeRequiredError } from '@/utils/paymentPasscode';
 import type { ShopAppState } from '../ShopApp';
 
 interface UseShopActionsProps {
@@ -40,6 +41,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
   // 购买相关状态
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
+  const [purchasePasscodeUpgradePrompt, setPurchasePasscodeUpgradePrompt] = useState<string | null>(null);
 
   // 处理分页变化
   const handlePageChange = useCallback(async (page: number) => {
@@ -68,11 +70,13 @@ export const useShopActions = (props: UseShopActionsProps) => {
     // 检查是否可以购买
     await checkCanBuy(productId);
 
+    setPurchasePasscodeUpgradePrompt(null);
     setIsPurchaseModalOpen(true);
   }, [isAuthenticated, selectedProduct, loadProductDetail, checkCanBuy, setError]);
 
   // 关闭购买弹窗
   const handleClosePurchaseModal = useCallback(() => {
+    setPurchasePasscodeUpgradePrompt(null);
     setIsPurchaseModalOpen(false);
   }, []);
 
@@ -97,6 +101,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
 
       if (result.ok && result.data?.success) {
         setError(null);
+        setPurchasePasscodeUpgradePrompt(null);
         setIsPurchaseModalOpen(false);
 
         log.debug(
@@ -115,6 +120,18 @@ export const useShopActions = (props: UseShopActionsProps) => {
             : Promise.resolve()
         ]);
       } else {
+        const errorMessage = result.data?.errorMessage || result.message || t('shop.error.purchaseFailed');
+        const requiresPasscodeUpgrade = Boolean(result.data?.requiresPasscodeUpgrade) || isPaymentPasscodeUpgradeRequiredError({
+          code: result.data?.errorCode,
+          message: errorMessage
+        });
+
+        if (requiresPasscodeUpgrade) {
+          setError(null);
+          setPurchasePasscodeUpgradePrompt(errorMessage);
+          return;
+        }
+
         throw new Error(result.data?.errorMessage || result.message || t('shop.error.purchaseFailed'));
       }
     } catch (error) {
@@ -244,6 +261,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
     // 购买相关
     isPurchaseModalOpen,
     purchasing,
+    purchasePasscodeUpgradePrompt,
     handlePurchaseClick,
     handleClosePurchaseModal,
     handleConfirmPurchase,

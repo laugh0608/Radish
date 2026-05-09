@@ -14,6 +14,7 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Service;
+using Radish.Shared.Security;
 using SqlSugar;
 using Xunit;
 
@@ -356,6 +357,33 @@ public class CoinServiceTest
         Assert.Contains(expectedErrorMessage, exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public async Task TransferAsync_ShouldThrowUpgradePrompt_WhenPaymentPasscodeIsLegacy()
+    {
+        const long fromUserId = 123456;
+        const long toUserId = 654321;
+        const long amount = 100;
+
+        var paymentPasswordServiceMock = new Mock<IPaymentPasswordService>(MockBehavior.Strict);
+        paymentPasswordServiceMock
+            .Setup(service => service.VerifyPaymentPasswordAsync(fromUserId, It.IsAny<VerifyPaymentPasswordRequest>()))
+            .ReturnsAsync(new PaymentPasswordVerifyResult
+            {
+                IsSuccess = false,
+                ErrorCode = PaymentPasscodeErrorCodes.UpgradeRequired,
+                ErrorMessage = PaymentPasscodeRules.UpgradeRequiredErrorMessage,
+                RequiresPasscodeUpgrade = true
+            });
+
+        var service = CreateCoinService(paymentPasswordServiceMock.Object);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.TransferAsync(fromUserId, toUserId, amount, "274958", "测试转账"));
+
+        Assert.Equal(PaymentPasscodeRules.UpgradeRequiredErrorMessage, exception.Message);
+        paymentPasswordServiceMock.VerifyAll();
+    }
+
     #endregion
 
     #region 辅助方法
@@ -363,16 +391,14 @@ public class CoinServiceTest
     /// <summary>
     /// 创建 CoinService 实例（用于测试）
     /// </summary>
-    private CoinService CreateCoinService()
+    private CoinService CreateCoinService(IPaymentPasswordService? paymentPasswordService = null)
     {
-        var paymentPasswordServiceMock = new Mock<IPaymentPasswordService>();
-
         return new CoinService(
             _mapperMock.Object,
             _userBalanceRepositoryMock.Object,
             _coinTransactionRepositoryMock.Object,
             _balanceChangeLogRepositoryMock.Object,
-            paymentPasswordServiceMock.Object
+            paymentPasswordService ?? new Mock<IPaymentPasswordService>().Object
         );
     }
 

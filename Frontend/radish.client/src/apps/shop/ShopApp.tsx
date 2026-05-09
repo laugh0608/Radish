@@ -350,6 +350,7 @@ export const ShopApp = () => {
         isOpen={actionsState.isPurchaseModalOpen}
         product={dataState.selectedProduct}
         loading={actionsState.purchasing}
+        passcodeUpgradePrompt={actionsState.purchasePasscodeUpgradePrompt}
         onClose={actionsState.handleClosePurchaseModal}
         onConfirm={actionsState.handleConfirmPurchase}
       />

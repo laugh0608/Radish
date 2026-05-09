@@ -214,6 +214,8 @@ export interface TransferRequest {
  */
 export interface TransferResponse {
   transactionNo: string;
+  errorCode?: string;
+  requiresPasscodeUpgrade?: boolean;
 }
 
 /**
@@ -231,7 +233,10 @@ export async function transfer(request: TransferRequest, t?: TFunction): Promise
   );
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '转账失败');
+    const error = new Error(response.message || '转账失败') as Error & TransferResponse;
+    error.errorCode = response.data?.errorCode;
+    error.requiresPasscodeUpgrade = response.data?.requiresPasscodeUpgrade;
+    throw error;
   }
 
   return response.data;

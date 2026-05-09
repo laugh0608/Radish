@@ -253,6 +253,28 @@
   color: var(--theme-text-primary);
 }
 
+.passcodeUpgradeNotice {
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--theme-state-danger) 35%, var(--theme-border-soft));
+  background: color-mix(in srgb, var(--theme-state-warning) 10%, var(--theme-bg-surface));
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.passcodeUpgradeTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--theme-state-danger);
+}
+
+.passcodeUpgradeText {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--theme-text-secondary);
+}
+
 .passwordInput {
   width: 100%;
   border: 1px solid var(--theme-border-strong);

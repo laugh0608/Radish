@@ -11,6 +11,7 @@ using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Service;
 using Radish.Shared.CustomEnum;
+using Radish.Shared.Security;
 using Xunit;
 
 namespace Radish.Api.Tests.Services;
@@ -115,7 +116,7 @@ public class OrderServiceTest
         {
             ProductId = productId,
             Quantity = quantity,
-            PaymentPassword = "secure-password"
+            PaymentPassword = "274958"
         });
 
         Assert.True(result.Success, result.ErrorMessage);
@@ -136,7 +137,7 @@ public class OrderServiceTest
         paymentPasswordService.Verify(service => service.VerifyPaymentPasswordAsync(
             userId,
             It.Is<VerifyPaymentPasswordRequest>(request =>
-                request.Password == "secure-password"
+                request.Password == "274958"
                 && request.BusinessType == "ShopPurchase"
                 && request.BusinessId == productId.ToString())), Times.Once);
     }
@@ -237,7 +238,7 @@ public class OrderServiceTest
         {
             ProductId = productId,
             Quantity = 1,
-            PaymentPassword = "secure-password"
+            PaymentPassword = "246813"
         });
 
         Assert.False(result.Success);
@@ -305,7 +306,7 @@ public class OrderServiceTest
             .ReturnsAsync(new PaymentPasswordVerifyResult
             {
                 IsSuccess = false,
-                ErrorMessage = "支付密码错误，还可尝试4次"
+                ErrorMessage = "支付口令错误，还可尝试4次"
             });
 
         var service = new OrderService(
@@ -324,11 +325,11 @@ public class OrderServiceTest
         {
             ProductId = productId,
             Quantity = 1,
-            PaymentPassword = "wrong-password"
+            PaymentPassword = "123456"
         });
 
         Assert.False(result.Success);
-        Assert.Equal("支付密码错误，还可尝试4次", result.ErrorMessage);
+        Assert.Equal("支付口令错误，还可尝试4次", result.ErrorMessage);
         productService.Verify(service => service.DeductStockAsync(It.IsAny<long>(), It.IsAny<int>()), Times.Never);
         orderRepository.Verify(repository => repository.AddAsync(It.IsAny<Order>()), Times.Never);
         coinService.Verify(service => service.ConsumeCoinAsync(
@@ -337,6 +338,94 @@ public class OrderServiceTest
             It.IsAny<string?>(),
             It.IsAny<long?>(),
             It.IsAny<string?>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task PurchaseAsync_ShouldReturnUpgradePrompt_WhenPaymentPasscodeIsLegacy()
+    {
+        const long userId = 9527;
+        const long productId = 100302;
+
+        var product = new Product
+        {
+            Id = productId,
+            Name = "限量主题卡",
+            CategoryId = "effect",
+            ProductType = ProductType.Benefit,
+            BenefitType = BenefitType.Theme,
+            Price = 80,
+            StockType = StockType.Limited,
+            Stock = 3,
+            DurationType = DurationType.Permanent,
+            IsEnabled = true,
+            IsOnSale = true,
+            CreateTime = DateTime.Now,
+            CreateBy = "System"
+        };
+
+        var mapper = new Mock<IMapper>(MockBehavior.Loose);
+        var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Loose);
+        var productRepository = new Mock<IBaseRepository<Product>>(MockBehavior.Loose);
+        var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Loose);
+        var productService = new Mock<IProductService>(MockBehavior.Loose);
+        var userBenefitService = new Mock<IUserBenefitService>(MockBehavior.Loose);
+        var coinService = new Mock<ICoinService>(MockBehavior.Loose);
+        var paymentPasswordService = new Mock<IPaymentPasswordService>(MockBehavior.Loose);
+        var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Loose);
+
+        productService
+            .Setup(service => service.CheckCanBuyAsync(userId, productId, 1))
+            .ReturnsAsync((true, null as string));
+        productRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<Product, bool>>?>()))
+            .ReturnsAsync((Expression<Func<Product, bool>>? expression) =>
+            {
+                if (expression == null)
+                {
+                    return product;
+                }
+
+                var predicate = expression.Compile();
+                return predicate(product) ? product : null;
+            });
+        coinService
+            .Setup(service => service.GetBalanceAsync(userId))
+            .ReturnsAsync(new UserBalanceVo { VoUserId = userId, VoBalance = 1000 });
+        paymentPasswordService
+            .Setup(service => service.VerifyPaymentPasswordAsync(userId, It.IsAny<VerifyPaymentPasswordRequest>()))
+            .ReturnsAsync(new PaymentPasswordVerifyResult
+            {
+                IsSuccess = false,
+                ErrorCode = PaymentPasscodeErrorCodes.UpgradeRequired,
+                ErrorMessage = PaymentPasscodeRules.UpgradeRequiredErrorMessage,
+                RequiresPasscodeUpgrade = true
+            });
+
+        var service = new OrderService(
+            mapper.Object,
+            orderRepository.Object,
+            productRepository.Object,
+            userRepository.Object,
+            productService.Object,
+            userBenefitService.Object,
+            coinService.Object,
+            paymentPasswordService.Object,
+            attachmentUrlResolver.Object,
+            notificationService: null);
+
+        var result = await service.PurchaseAsync(userId, new CreateOrderDto
+        {
+            ProductId = productId,
+            Quantity = 1,
+            PaymentPassword = "274958"
+        });
+
+        Assert.False(result.Success);
+        Assert.True(result.RequiresPasscodeUpgrade);
+        Assert.Equal(PaymentPasscodeErrorCodes.UpgradeRequired, result.ErrorCode);
+        Assert.Equal(PaymentPasscodeRules.UpgradeRequiredErrorMessage, result.ErrorMessage);
+        productService.Verify(service => service.DeductStockAsync(It.IsAny<long>(), It.IsAny<int>()), Times.Never);
+        orderRepository.Verify(repository => repository.AddAsync(It.IsAny<Order>()), Times.Never);
     }
 
     [Fact]

@@ -8,13 +8,14 @@ interface TransferResultProps {
   result: TransferResultType;
   displayMode: 'carrot' | 'white';
   onStartNew: () => void;
+  onResetPasscode: () => void;
   onViewHistory: () => void;
 }
 
 /**
  * 转账结果组件
  */
-export const TransferResult = ({ result, onStartNew, onViewHistory }: TransferResultProps) => {
+export const TransferResult = ({ result, onStartNew, onResetPasscode, onViewHistory }: TransferResultProps) => {
   const handleCopyTransactionNo = async () => {
     if (!result.transactionNo) return;
 
@@ -104,8 +105,8 @@ export const TransferResult = ({ result, onStartNew, onViewHistory }: TransferRe
                 </div>
 
                 <div className={styles.errorMessage}>
-                  <h4>转移失败</h4>
-                  <p>很抱歉，您的转移操作未能完成</p>
+                  <h4>{result.requiresPasscodeUpgrade ? '请先重置支付口令' : '转移失败'}</h4>
+                  <p>{result.requiresPasscodeUpgrade ? '检测到您仍在使用已废弃的旧支付口令' : '很抱歉，您的转移操作未能完成'}</p>
                 </div>
 
                 <div className={styles.errorDetails}>
@@ -116,12 +117,22 @@ export const TransferResult = ({ result, onStartNew, onViewHistory }: TransferRe
                 </div>
 
                 <div className={styles.troubleshooting}>
-                  <h5>可能的解决方案：</h5>
+                  <h5>{result.requiresPasscodeUpgrade ? '下一步建议：' : '可能的解决方案：'}</h5>
                   <ul>
-                    <li>检查账户余额是否充足</li>
-                    <li>确认接收方用户信息正确</li>
-                    <li>验证支付密码是否正确</li>
-                    <li>稍后重试或联系客服</li>
+                    {result.requiresPasscodeUpgrade ? (
+                      <>
+                        <li>前往资产中心的安全设置，直接重置为新的 6 位数字支付口令</li>
+                        <li>重置完成后，再重新发起本次转移</li>
+                        <li>旧支付口令已经废弃，不能继续用于转移或商城购买</li>
+                      </>
+                    ) : (
+                      <>
+                        <li>检查账户余额是否充足</li>
+                        <li>确认接收方用户信息正确</li>
+                        <li>验证支付口令是否正确</li>
+                        <li>稍后重试或联系客服</li>
+                      </>
+                    )}
                   </ul>
                 </div>
               </div>
@@ -130,12 +141,21 @@ export const TransferResult = ({ result, onStartNew, onViewHistory }: TransferRe
 
           {/* 操作按钮 */}
           <div className={styles.actions}>
+            {result.requiresPasscodeUpgrade && (
+              <button
+                type="button"
+                className={styles.warningButton}
+                onClick={onResetPasscode}
+              >
+                前往安全设置
+              </button>
+            )}
             <button
               type="button"
               className={styles.primaryButton}
               onClick={onStartNew}
             >
-              {result.success ? '继续转移' : '重新转移'}
+              {result.success ? '继续转移' : result.requiresPasscodeUpgrade ? '返回转移页' : '重新转移'}
             </button>
 
             {result.success && (
