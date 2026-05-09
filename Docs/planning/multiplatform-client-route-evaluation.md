@@ -10,7 +10,7 @@
 > - [开发路线图](/development-plan)
 > - [Phase 2-3 Flutter 客户端 MVP](/planning/phase-two-flutter-client-mvp)
 > - [前端多壳层策略](/frontend/shell-strategy)
-> - [Flutter Android MVP RC 验收记录（2026-05-04）](/guide/flutter-android-mvp-rc-acceptance-record-2026-05-04)
+> - [Flutter Android MVP RC 验收记录（2026-05-04）](/records/flutter-android-mvp-rc-acceptance-record-2026-05-04)
 
 ## 1. 当前结论
 

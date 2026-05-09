@@ -7,7 +7,7 @@
 - **docs 搜索体验增强已完成收口**：搜索词提交会先做 trim 归一化，并同步输入框为实际搜索词；搜索、清除搜索与分页切换会回到结果顶部。
 - **搜索结果详情返回上下文已补齐**：从搜索结果滚动到较深位置打开内联详情后，返回会恢复原搜索结果附近的滚动上下文。
 - **Android Back 返回分流已修复**：真机复核发现的搜索结果进入详情后 Back 直接退到桌面问题已收口为 docs 内联详情优先消费根层返回。
-- **验证与留痕已完成**：本轮已通过 `flutter test test/docs_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter analyze` 与 `git diff --check`，并补 [Flutter Android MVP 第七批首个小闭环变更回归记录](/guide/flutter-android-mvp-regression-record-2026-05-01)。
+- **验证与留痕已完成**：本轮已通过 `flutter test test/docs_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter analyze` 与 `git diff --check`，并补 [Flutter Android MVP 第七批首个小闭环变更回归记录](/records/flutter-android-mvp-regression-record-2026-05-01)。
 
 ### Android MVP 内测 RC 前置整理
 
@@ -47,7 +47,7 @@
 - **详情错误态补齐目标与来源**：错误态现在会显示目标 `/forum/post/:postId`、来源与可选 `commentId`，并明确返回来源后重试口径。
 - **评论定位失败保持局部降级**：定位失败提示会带出目标评论 ID，但不拖垮帖子正文、轻回应和评论阅读。
 - **窄屏文本溢出同步收口**：forum detail 的公开地址 chip 与基础 meta 文本已改为受控宽度显示，长帖子 ID、长分类或长时间文本不再撑破布局。
-- **验证已完成**：本轮通过 `flutter test test/forum_detail_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter analyze` 与 `git diff --check`，并补 [Flutter Android MVP forum detail 来源上下文与错误态补强记录](/guide/flutter-android-mvp-forum-detail-readonly-context-record-2026-05-01)。
+- **验证已完成**：本轮通过 `flutter test test/forum_detail_page_test.dart`、`flutter test test/smoke_test.dart`、`flutter analyze` 与 `git diff --check`，并补 [Flutter Android MVP forum detail 来源上下文与错误态补强记录](/records/flutter-android-mvp-forum-detail-readonly-context-record-2026-05-01)。
 
 ### 当日收口判断
 
@@ -67,16 +67,16 @@
 
 ### Flutter 第十八至第二十批 profile 与验证清单收口
 
-- **刷新体验开发阶段清单已整理**：`Clients/radish.flutter/README.md` 与 [Flutter Android MVP 刷新体验开发阶段验证清单](/guide/flutter-android-mvp-refresh-experience-checklist-2026-05-02) 明确 `discover / forum / docs / profile` 四个主 tab 的刷新中旧内容保留、失败局部提示与成功清理旧提示检查口径。
+- **刷新体验开发阶段清单已整理**：`Clients/radish.flutter/README.md` 与 [Flutter Android MVP 刷新体验开发阶段验证清单](/records/flutter-android-mvp-refresh-experience-checklist-2026-05-02) 明确 `discover / forum / docs / profile` 四个主 tab 的刷新中旧内容保留、失败局部提示与成功清理旧提示检查口径。
 - **profile 空态人称已修正**：我的主页最近公开帖子 / 最近公开评论为空时改用第一人称空态，公开主页继续保留第三人称空态。
 - **profile 公开主页长文本窄屏显示已复核**：公开资料标题、用户名、用户 ID、最近文档 slug、最近阅读 `postId + commentId`、公开帖子标题 / 摘要 / 分类与公开评论快照均已补受控显示。
-- **命令级回归记录已补洞**：第十九批与第二十批已补 [profile 空态人称与文档口径复核记录](/guide/flutter-android-mvp-profile-empty-copy-record-2026-05-02) 和 [profile 公开主页长文本窄屏显示复核记录](/guide/flutter-android-mvp-profile-long-text-record-2026-05-02)，并补跑 `flutter test test/profile_page_test.dart test/smoke_test.dart`、`flutter analyze` 与 `git diff --check`，结果均通过。
+- **命令级回归记录已补洞**：第十九批与第二十批已补 [profile 空态人称与文档口径复核记录](/records/flutter-android-mvp-profile-empty-copy-record-2026-05-02) 和 [profile 公开主页长文本窄屏显示复核记录](/records/flutter-android-mvp-profile-long-text-record-2026-05-02)，并补跑 `flutter test test/profile_page_test.dart test/smoke_test.dart`、`flutter analyze` 与 `git diff --check`，结果均通过。
 
 ### Android MVP RC 前置材料整理
 
-- **正式域名临时 smoke 已记录**：使用 `https://radishx.com`（服务端版本 `v26.3.2-release`）在 Android Studio 虚拟机与 Android 真机验证帖子、文档和用户公开信息基础只读读取，未见异常；记录见 [Flutter Android MVP 正式域名临时 smoke 记录](/guide/flutter-android-mvp-radishx-smoke-record-2026-05-02)。
-- **RC 补验评估已完成**：[Flutter Android MVP RC 补验评估记录](/guide/flutter-android-mvp-rc-supplemental-assessment-2026-05-02) 已区分当前已具备能力、开发阶段可先补项，以及必须等 testing Gateway / release APK / 真机安装后补齐的 release 前验收。
-- **第八至第二十批验证索引已完成**：[Flutter Android MVP 第八至第二十批验证索引](/guide/flutter-android-mvp-validation-index-2026-05-02) 已按批次整理 Dart 定向测试、`smoke_test`、`flutter analyze`、Android JVM 单测、文档型验证与 release 前缺口。
+- **正式域名临时 smoke 已记录**：使用 `https://radishx.com`（服务端版本 `v26.3.2-release`）在 Android Studio 虚拟机与 Android 真机验证帖子、文档和用户公开信息基础只读读取，未见异常；记录见 [Flutter Android MVP 正式域名临时 smoke 记录](/records/flutter-android-mvp-radishx-smoke-record-2026-05-02)。
+- **RC 补验评估已完成**：[Flutter Android MVP RC 补验评估记录](/records/flutter-android-mvp-rc-supplemental-assessment-2026-05-02) 已区分当前已具备能力、开发阶段可先补项，以及必须等 testing Gateway / release APK / 真机安装后补齐的 release 前验收。
+- **第八至第二十批验证索引已完成**：[Flutter Android MVP 第八至第二十批验证索引](/records/flutter-android-mvp-validation-index-2026-05-02) 已按批次整理 Dart 定向测试、`smoke_test`、`flutter analyze`、Android JVM 单测、文档型验证与 release 前缺口。
 - **release 前置边界保持不变**：testing Gateway、release APK 构建、真机安装、登录 / 通知 / 写入链路和批次级外部分发回归仍留到正式 release 包发布前；系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理继续不纳入当前 RC 阻断项。
 
 ### 当日收口判断
@@ -92,7 +92,7 @@
 - **RC 验收口径已确认**：本轮接受 `https://radishx.com` 作为 Android MVP RC 验收 Gateway；前天人工验收使用的是同等参数 release APK。
 - **命令级验证已完成**：`flutter analyze`、`flutter test`、`flutter test test/smoke_test.dart`、Android Studio JBR 下的 `.\gradlew.bat :app:testDebugUnitTest`、`.\gradlew.bat :app:checkReleaseSigningConfig`、`flutter build apk --release --dart-define=RADISH_ENVIRONMENT=production --dart-define=RADISH_GATEWAY_BASE_URL=https://radishx.com` 与 `git diff --check` 均已通过。
 - **真机人工复核已确认**：小米 15S Pro / Android 16 / `test` 账号下，登录、退出、会话恢复、四个主 tab 真实读取、forum detail、docs 搜索 / 内链、profile 复访、轻回应发布与最小 forum notification 回流均未发现问题。
-- **Go 结论已落文档**：新增 [Flutter Android MVP RC 验收记录（2026-05-04）](/guide/flutter-android-mvp-rc-acceptance-record-2026-05-04)，本轮未发现 `P0 / P1` 阻断，`Phase 2-3 Android MVP` 可标记为“第一轮完成”。
+- **Go 结论已落文档**：新增 [Flutter Android MVP RC 验收记录（2026-05-04）](/records/flutter-android-mvp-rc-acceptance-record-2026-05-04)，本轮未发现 `P0 / P1` 阻断，`Phase 2-3 Android MVP` 可标记为“第一轮完成”。
 
 ### 多端客户端路线评估启动
 

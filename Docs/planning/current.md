@@ -29,7 +29,7 @@
 - [Phase 2-3 Flutter 客户端 MVP](/planning/phase-two-flutter-client-mvp)
 - [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation)
 - [前端多壳层策略](/frontend/shell-strategy)
-- [Flutter Android MVP RC 验收记录（2026-05-04）](/guide/flutter-android-mvp-rc-acceptance-record-2026-05-04)
+- [Flutter Android MVP RC 验收记录（2026-05-04）](/records/flutter-android-mvp-rc-acceptance-record-2026-05-04)
 - [验证基线说明](/guide/validation-baseline)
 
 ## 当前目标

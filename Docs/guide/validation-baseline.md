@@ -5,8 +5,8 @@
 > 关联维护入口：
 >
 > - [Repo Quality 故障分诊手册](/guide/repo-quality-troubleshooting)
-> - [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist)
-> - [`PR -> master` 最小执行清单](/guide/master-pr-minimal-checklist)
+> - [M14 宿主运行首轮执行清单](/records/m14-host-runtime-checklist)
+> - [`PR -> master` 最小执行清单](/records/master-pr-minimal-checklist)
 
 ## 当前目标
 
@@ -408,7 +408,7 @@ npm run validate:baseline:host
 
 补充说明：
 
-- 当前默认先从 [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist) 开始，按 `validate:baseline:host -> doctor/verify -> 健康检查/日志 -> 网关与部署链路` 的顺序排障
+- 当前默认先从 [M14 宿主运行首轮执行清单](/records/m14-host-runtime-checklist) 开始，按 `validate:baseline:host -> doctor/verify -> 健康检查/日志 -> 网关与部署链路` 的顺序排障
 - 当前主路径已经明确收束为：启动前先跑 `npm run validate:baseline:host`，宿主启动后再跑 `npm run check:host-runtime`
 - 不要跳过 `doctor` / `verify` 直接把问题归因到宿主代码或外层反代
 - 如果需要把启动前这轮验证直接回写到维护记录、回归记录或 PR，可执行：

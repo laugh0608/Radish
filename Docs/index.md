@@ -33,7 +33,7 @@ features:
 
 ## 快速入口
 
-- [快速开始](/guide/getting-started) - 本地环境、依赖与启动方式
+- [快速开始](/guide/getting-started) - 环境、初始化、验证与启动方式
 - [架构总览](/architecture/overview) - 系统拓扑、项目职责与关键约定
 - [开发规范](/architecture/specifications) - 分层约束、编码规范与协作规则
 - [前端设计](/frontend/design) - WebOS 架构与应用集成方式
@@ -53,7 +53,12 @@ features:
 
 ## 常用专题
 
+- [Guide 手册索引](/guide/)
 - [认证与权限](/guide/authentication)
+- [API 说明索引](/guide/api-index)
+- [数据库总览](/guide/database-overview)
+- [本地运行与排障手册](/guide/operations-runbook)
+- [记录与验收索引](/records/)
 - [Console 权限 / 菜单 / 按钮管理一期设计方案](/guide/console-authorization-phase1)
 - [配置管理](/guide/configuration)
 - [服务网关](/guide/gateway)

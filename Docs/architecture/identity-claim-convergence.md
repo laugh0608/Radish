@@ -7,7 +7,7 @@
 > - [身份语义收敛迁移计划](/guide/identity-claim-migration)
 > - [身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)
 > - [身份语义 Phase 4 最终启动评审](/guide/identity-claim-phase4-start-review)
-> - [身份语义 Phase 4 仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist)
+> - [身份语义 Phase 4 仓库外兼容边界确认清单](/records/identity-claim-external-compat-checklist)
 > - [开发框架说明](/architecture/framework)
 > - [开发规范](/architecture/specifications)
 
@@ -306,7 +306,7 @@ npm run validate:baseline:quick
 
 当前已完成并确认的事项：
 
-- [身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)、[最终启动评审](/guide/identity-claim-phase4-start-review) 与 [仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist) 当前都已完成；正式结论已更新为“仓库内输入已齐，且当前部署范围内的仓库外兼容边界已被事实关闭，因此允许启动 Phase 4”。
+- [身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)、[最终启动评审](/guide/identity-claim-phase4-start-review) 与 [仓库外兼容边界确认清单](/records/identity-claim-external-compat-checklist) 当前都已完成；正式结论已更新为“仓库内输入已齐，且当前部署范围内的仓库外兼容边界已被事实关闭，因此允许启动 Phase 4”。
 - 当前已按 [身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window) 完成首轮仓库内实施与官方顺序真实回归：Auth 历史双写输出已收缩，`userinfo` 已完成最小对齐，`radish-client / radish-console / Radish.Api.AuthFlow.http / radish-scalar` 当前均已完成端到端回归，结论已更新为“无需回滚，转入稳定维护”。
 - `npm run check:identity-claims` 当前已补到“运行时散点 Claim 解析 + Phase 4 协议输出回退风险”双重守卫，并已拆分为 `check:identity-runtime`、`check:identity-protocol-output` 与 `validate:identity` 作为更清晰的专题执行入口。
 - [身份语义防回归回归手册](/guide/identity-claim-regression-playbook) 当前已明确身份语义相关改动后的默认命令、专题回归顺序、记录模板与 CI 分层。

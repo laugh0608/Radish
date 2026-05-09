@@ -8,7 +8,7 @@
 > - [身份语义 Phase 4 协议消费者矩阵](/guide/identity-claim-protocol-consumers)
 > - [身份语义 Phase 4 历史 Claim 保留矩阵](/guide/identity-claim-retention-matrix)
 > - [身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window)
-> - [身份语义 Phase 4 仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist)
+> - [身份语义 Phase 4 仓库外兼容边界确认清单](/records/identity-claim-external-compat-checklist)
 > - [身份语义 Phase 4 仓库外兼容边界首轮执行记录（仓库资产侧）](/guide/identity-claim-external-compat-first-pass)
 > - [身份语义收敛迁移计划](/guide/identity-claim-migration)
 > - [当前进行中](/planning/current)
@@ -133,7 +133,7 @@
 
 当前产出：
 
-- 已新增 [身份语义 Phase 4 仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist)
+- 已新增 [身份语义 Phase 4 仓库外兼容边界确认清单](/records/identity-claim-external-compat-checklist)
 - 已新增 [身份语义 Phase 4 仓库外兼容边界首轮执行记录（仓库资产侧）](/guide/identity-claim-external-compat-first-pass)
 - 已补齐当前生产环境事实：`1Panel` 默认 HTTPS 反代、`v26.3.2-release`、默认客户端种子、无仓库外脚本
 

@@ -611,7 +611,7 @@ public CreateLotteryDto? Lottery { get; set; }
 
 ## 人工验收模板（样板）
 
-> 结构遵循：[人工验收模板](/guide/manual-acceptance-template)
+> 结构遵循：[人工验收模板](/records/manual-acceptance-template)
 
 ### 适用改动范围
 
@@ -666,7 +666,7 @@ public CreateLotteryDto? Lottery { get; set; }
 
 ### 回归结论记录（2026-03-16 样例）
 
-> 结构遵循：[回归结论记录模板](/guide/regression-result-template)
+> 结构遵循：[回归结论记录模板](/records/regression-result-template)
 
 - 记录日期：2026-03-16
 - 记录人：项目协作记录

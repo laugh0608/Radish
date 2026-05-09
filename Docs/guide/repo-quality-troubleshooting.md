@@ -215,8 +215,8 @@ npm run check:identity-impact
 - [validate-ci.mjs](/D:/Code/Radish/Scripts/validate-ci.mjs)
 - [validation-baseline.md](/D:/Code/Radish/Docs/guide/validation-baseline.md)
 - [identity-claim-regression-playbook.md](/D:/Code/Radish/Docs/guide/identity-claim-regression-playbook.md)
-- [change-regression-record-template.md](/D:/Code/Radish/Docs/guide/change-regression-record-template.md)
-- [regression-result-template.md](/D:/Code/Radish/Docs/guide/regression-result-template.md)
+- [change-regression-record-template.md](/D:/Code/Radish/Docs/records/change-regression-record-template.md)
+- [regression-result-template.md](/D:/Code/Radish/Docs/records/regression-result-template.md)
 - [PULL_REQUEST_TEMPLATE.md](/D:/Code/Radish/.github/PULL_REQUEST_TEMPLATE.md)
 
 最重要的原则只有一条：

@@ -5,10 +5,10 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 ## 入门与总览
 
 - [文档首页](./index.md)
+- [快速开始](./guide/getting-started.md)
 - [开发路线图总览](./development-plan.md)
 - [首版 dev 边界](./planning/dev-first-scope.md)
 - [首版 dev 功能矩阵状态表](./planning/dev-first-status-matrix.md)
-- [首版 dev 总回归与发布前检查单](./guide/dev-first-regression-checklist.md)
 - [当前进行中](./planning/current.md)
 - [Console 权限治理 V1](./guide/console-permission-governance.md)
 - [Console 权限覆盖矩阵](./guide/console-permission-coverage-matrix.md)
@@ -18,11 +18,16 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 
 ## 架构与规范
 
+- [Guide 手册索引](./guide/index.md)
+- [架构总览](./architecture/overview.md)
 - [开发规范](./architecture/specifications.md)
 - [架构设计](./architecture/framework.md)
+- [API 说明索引](./guide/api-index.md)
+- [数据库总览](./guide/database-overview.md)
 - [认证与权限](./guide/authentication.md)
 - [服务网关](./guide/gateway.md)
 - [部署指南](./deployment/guide.md)
+- [本地运行与排障手册](./guide/operations-runbook.md)
 
 ## 前端与交互
 
@@ -32,6 +37,13 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [文档系统方案](./guide/document-system.md)
 - [论坛投票 MVP 设计方案](./features/forum-poll-mvp.md)
 - [论坛问答 MVP 设计方案](./features/forum-qa-mvp.md)
+
+## 记录与验收
+
+- [记录与验收索引](./records/index.md)
+- [首版 dev 总回归与发布前检查单](./records/dev-first-regression-checklist.md)
+- [变更回归记录模板](./records/change-regression-record-template.md)
+- [人工验收模板](./records/manual-acceptance-template.md)
 
 ## 日志与回顾
 

@@ -1,5 +1,9 @@
 # Console 实施计划
 
+> 文档定位：本文属于阶段性实施路线页，用于保留当时的收口判断与待办边界，不作为当前默认说明书入口。
+>
+> 日常协作优先查看 [Guide 手册索引](/guide/) 与 [Console 系统说明](/guide/console-system)。
+
 > 本文档是 [Console 管理后台系统设计方案](/guide/console-system) 的第 5 章
 
 ## 5. 实施计划

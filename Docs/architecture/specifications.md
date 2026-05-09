@@ -28,14 +28,14 @@
 
 ## 前端 API 客户端规范
 
-### 统一使用 @radish/ui 提供的 API 客户端
+### 统一使用 @radish/http 提供的 API 客户端
 
-**禁止自定义 fetch/axios 封装**，所有 API 调用必须使用 `@radish/ui` 提供的统一客户端。
+**禁止自定义 fetch/axios 封装**，所有 HTTP API 调用必须使用 `@radish/http` 提供的统一客户端。`@radish/ui` 只负责 UI 组件、消息提示与部分前端展示工具，不再承载通用 HTTP 客户端职责。
 
 #### 基本使用
 
 ```typescript
-import { apiGet, apiPost, apiPut, apiDelete, configureApiClient } from '@radish/ui';
+import { apiGet, apiPost, apiPut, apiDelete, configureApiClient } from '@radish/http';
 
 // 1. 配置 API 客户端（在应用入口或 API 文件顶部）
 const defaultApiBase = 'https://localhost:5000';
@@ -72,7 +72,7 @@ export async function createProduct(data: CreateProductDto) {
 3. 其他方法仍使用统一客户端
 
 ```typescript
-import { getApiClientConfig } from '@radish/ui';
+import { getApiClientConfig } from '@radish/http';
 
 /**
  * 上传分片
