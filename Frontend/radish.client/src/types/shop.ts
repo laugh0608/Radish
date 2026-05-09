@@ -178,6 +178,7 @@ export interface UserInventoryItem {
 export interface CreateOrderRequest {
   productId: LongId;
   quantity?: number;
+  paymentPassword: string;
   userRemark?: string;
 }
 

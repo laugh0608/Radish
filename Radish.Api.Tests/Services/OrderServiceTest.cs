@@ -52,6 +52,7 @@ public class OrderServiceTest
         var productService = new Mock<IProductService>(MockBehavior.Loose);
         var userBenefitService = new Mock<IUserBenefitService>(MockBehavior.Loose);
         var coinService = new Mock<ICoinService>(MockBehavior.Loose);
+        var paymentPasswordService = new Mock<IPaymentPasswordService>(MockBehavior.Loose);
         var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Loose);
 
         productService
@@ -73,6 +74,9 @@ public class OrderServiceTest
             .SetupSequence(service => service.GetBalanceAsync(userId))
             .ReturnsAsync(new UserBalanceVo { VoUserId = userId, VoBalance = 1000 })
             .ReturnsAsync(new UserBalanceVo { VoUserId = userId, VoBalance = 850 });
+        paymentPasswordService
+            .Setup(service => service.VerifyPaymentPasswordAsync(userId, It.IsAny<VerifyPaymentPasswordRequest>()))
+            .ReturnsAsync(new PaymentPasswordVerifyResult { IsSuccess = true });
         orderRepository
             .Setup(repository => repository.AddAsync(It.IsAny<Order>()))
             .Callback<Order>(order => createdOrder = order)
@@ -103,13 +107,15 @@ public class OrderServiceTest
             productService.Object,
             userBenefitService.Object,
             coinService.Object,
+            paymentPasswordService.Object,
             attachmentUrlResolver.Object,
             notificationService: null);
 
         var result = await service.PurchaseAsync(userId, new CreateOrderDto
         {
             ProductId = productId,
-            Quantity = quantity
+            Quantity = quantity,
+            PaymentPassword = "secure-password"
         });
 
         Assert.True(result.Success, result.ErrorMessage);
@@ -127,6 +133,12 @@ public class OrderServiceTest
             It.Is<Product>(p => p.Id == productId && p.ConsumableType == ConsumableType.ExpCard),
             orderId,
             quantity), Times.Once);
+        paymentPasswordService.Verify(service => service.VerifyPaymentPasswordAsync(
+            userId,
+            It.Is<VerifyPaymentPasswordRequest>(request =>
+                request.Password == "secure-password"
+                && request.BusinessType == "ShopPurchase"
+                && request.BusinessId == productId.ToString())), Times.Once);
     }
 
     [Fact]
@@ -163,6 +175,7 @@ public class OrderServiceTest
         var productService = new Mock<IProductService>(MockBehavior.Loose);
         var userBenefitService = new Mock<IUserBenefitService>(MockBehavior.Loose);
         var coinService = new Mock<ICoinService>(MockBehavior.Loose);
+        var paymentPasswordService = new Mock<IPaymentPasswordService>(MockBehavior.Loose);
         var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Loose);
 
         productService
@@ -183,6 +196,9 @@ public class OrderServiceTest
         coinService
             .Setup(service => service.GetBalanceAsync(userId))
             .ReturnsAsync(new UserBalanceVo { VoUserId = userId, VoBalance = 1000 });
+        paymentPasswordService
+            .Setup(service => service.VerifyPaymentPasswordAsync(userId, It.IsAny<VerifyPaymentPasswordRequest>()))
+            .ReturnsAsync(new PaymentPasswordVerifyResult { IsSuccess = true });
         productService
             .Setup(service => service.DeductStockAsync(productId, 1))
             .ReturnsAsync(true);
@@ -213,13 +229,15 @@ public class OrderServiceTest
             productService.Object,
             userBenefitService.Object,
             coinService.Object,
+            paymentPasswordService.Object,
             attachmentUrlResolver.Object,
             notificationService: null);
 
         var result = await service.PurchaseAsync(userId, new CreateOrderDto
         {
             ProductId = productId,
-            Quantity = 1
+            Quantity = 1,
+            PaymentPassword = "secure-password"
         });
 
         Assert.False(result.Success);
@@ -229,6 +247,96 @@ public class OrderServiceTest
         Assert.Contains("余额不足", createdOrder.FailReason, StringComparison.Ordinal);
         productService.Verify(service => service.RestoreStockAsync(productId, 1, StockType.Limited), Times.Once);
         userBenefitService.Verify(service => service.GrantBenefitAsync(It.IsAny<long>(), It.IsAny<Product>(), It.IsAny<long>(), It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task PurchaseAsync_ShouldFailBeforeStockDeductionWhenPaymentPasswordInvalid()
+    {
+        const long userId = 9527;
+        const long productId = 100301;
+
+        var product = new Product
+        {
+            Id = productId,
+            Name = "限量主题卡",
+            CategoryId = "effect",
+            ProductType = ProductType.Benefit,
+            BenefitType = BenefitType.Theme,
+            Price = 80,
+            StockType = StockType.Limited,
+            Stock = 3,
+            DurationType = DurationType.Permanent,
+            IsEnabled = true,
+            IsOnSale = true,
+            CreateTime = DateTime.Now,
+            CreateBy = "System"
+        };
+
+        var mapper = new Mock<IMapper>(MockBehavior.Loose);
+        var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Loose);
+        var productRepository = new Mock<IBaseRepository<Product>>(MockBehavior.Loose);
+        var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Loose);
+        var productService = new Mock<IProductService>(MockBehavior.Loose);
+        var userBenefitService = new Mock<IUserBenefitService>(MockBehavior.Loose);
+        var coinService = new Mock<ICoinService>(MockBehavior.Loose);
+        var paymentPasswordService = new Mock<IPaymentPasswordService>(MockBehavior.Loose);
+        var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Loose);
+
+        productService
+            .Setup(service => service.CheckCanBuyAsync(userId, productId, 1))
+            .ReturnsAsync((true, null as string));
+        productRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<Product, bool>>?>()))
+            .ReturnsAsync((Expression<Func<Product, bool>>? expression) =>
+            {
+                if (expression == null)
+                {
+                    return product;
+                }
+
+                var predicate = expression.Compile();
+                return predicate(product) ? product : null;
+            });
+        coinService
+            .Setup(service => service.GetBalanceAsync(userId))
+            .ReturnsAsync(new UserBalanceVo { VoUserId = userId, VoBalance = 1000 });
+        paymentPasswordService
+            .Setup(service => service.VerifyPaymentPasswordAsync(userId, It.IsAny<VerifyPaymentPasswordRequest>()))
+            .ReturnsAsync(new PaymentPasswordVerifyResult
+            {
+                IsSuccess = false,
+                ErrorMessage = "支付密码错误，还可尝试4次"
+            });
+
+        var service = new OrderService(
+            mapper.Object,
+            orderRepository.Object,
+            productRepository.Object,
+            userRepository.Object,
+            productService.Object,
+            userBenefitService.Object,
+            coinService.Object,
+            paymentPasswordService.Object,
+            attachmentUrlResolver.Object,
+            notificationService: null);
+
+        var result = await service.PurchaseAsync(userId, new CreateOrderDto
+        {
+            ProductId = productId,
+            Quantity = 1,
+            PaymentPassword = "wrong-password"
+        });
+
+        Assert.False(result.Success);
+        Assert.Equal("支付密码错误，还可尝试4次", result.ErrorMessage);
+        productService.Verify(service => service.DeductStockAsync(It.IsAny<long>(), It.IsAny<int>()), Times.Never);
+        orderRepository.Verify(repository => repository.AddAsync(It.IsAny<Order>()), Times.Never);
+        coinService.Verify(service => service.ConsumeCoinAsync(
+            It.IsAny<long>(),
+            It.IsAny<long>(),
+            It.IsAny<string?>(),
+            It.IsAny<long?>(),
+            It.IsAny<string?>()), Times.Never);
     }
 
     [Fact]
@@ -259,6 +367,7 @@ public class OrderServiceTest
         var productService = new Mock<IProductService>(MockBehavior.Loose);
         var userBenefitService = new Mock<IUserBenefitService>(MockBehavior.Loose);
         var coinService = new Mock<ICoinService>(MockBehavior.Loose);
+        var paymentPasswordService = new Mock<IPaymentPasswordService>(MockBehavior.Loose);
         var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Loose);
 
         orderRepository
@@ -292,6 +401,7 @@ public class OrderServiceTest
             productService.Object,
             userBenefitService.Object,
             coinService.Object,
+            paymentPasswordService.Object,
             attachmentUrlResolver.Object,
             notificationService: null);
 
@@ -332,6 +442,7 @@ public class OrderServiceTest
         var productService = new Mock<IProductService>(MockBehavior.Loose);
         var userBenefitService = new Mock<IUserBenefitService>(MockBehavior.Loose);
         var coinService = new Mock<ICoinService>(MockBehavior.Loose);
+        var paymentPasswordService = new Mock<IPaymentPasswordService>(MockBehavior.Loose);
         var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Loose);
 
         orderRepository
@@ -361,6 +472,7 @@ public class OrderServiceTest
             productService.Object,
             userBenefitService.Object,
             coinService.Object,
+            paymentPasswordService.Object,
             attachmentUrlResolver.Object,
             notificationService: null);
 

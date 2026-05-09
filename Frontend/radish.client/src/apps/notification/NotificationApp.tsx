@@ -154,8 +154,28 @@ export const NotificationApp = () => {
     }
 
     const store = useNotificationStore.getState();
+    let hasUiChanges = false;
 
-    setNotifications((prev) => prev.map((item) => {
+    setNotifications((prev) => {
+      const next = prev.map((item) => {
+        const triggerIdKey = normalizePositiveLongIdKey(item.triggerId);
+        if (item.triggerAvatar || !triggerIdKey) {
+          return item;
+        }
+
+        const resolvedAvatar = avatarMap.get(triggerIdKey);
+        if (!resolvedAvatar) {
+          return item;
+        }
+
+        hasUiChanges = true;
+        return { ...item, triggerAvatar: resolvedAvatar };
+      });
+
+      return hasUiChanges ? next : prev;
+    });
+
+    const nextStoreItems = store.recentNotifications.map((item) => {
       const triggerIdKey = normalizePositiveLongIdKey(item.triggerId);
       if (item.triggerAvatar || !triggerIdKey) {
         return item;
@@ -163,27 +183,19 @@ export const NotificationApp = () => {
 
       const resolvedAvatar = avatarMap.get(triggerIdKey);
       return resolvedAvatar ? { ...item, triggerAvatar: resolvedAvatar } : item;
-    }));
+    });
 
-    store.setRecentNotifications(
-      store.recentNotifications.map((item) => {
-        const triggerIdKey = normalizePositiveLongIdKey(item.triggerId);
-        if (item.triggerAvatar || !triggerIdKey) {
-          return item;
-        }
-
-        const resolvedAvatar = avatarMap.get(triggerIdKey);
-        return resolvedAvatar ? { ...item, triggerAvatar: resolvedAvatar } : item;
-      })
-    );
+    if (nextStoreItems.some((item, index) => item !== store.recentNotifications[index])) {
+      store.setRecentNotifications(nextStoreItems);
+    }
   }, [normalizePositiveLongIdKey]);
 
   const backfillTriggerAvatars = useCallback(async (items: NotificationListItem[]) => {
     const missingTriggerIds = Array.from(new Set(
       items
+        .filter((item) => !item.triggerAvatar)
         .map((item) => normalizePositiveLongIdKey(item.triggerId))
         .filter((triggerId): triggerId is string => Boolean(triggerId))
-        .filter((triggerId, index, source) => source.indexOf(triggerId) === index)
     ));
 
     if (missingTriggerIds.length === 0) {

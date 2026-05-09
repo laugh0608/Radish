@@ -167,3 +167,34 @@
 - 用户实测已确认下一层缺口在购买后闭环：背包 `UserInventoryVo` 契约与前端渲染未对齐，导致商品名称 / 数量 / 图标与 React `key` 同时失真。
 - 商城购买当前仍未接支付密码，前后端 `CreateOrderDto` / 购买弹窗 / 订单服务都缺少密码参数与校验，不宜让“资产消费”继续以无密码口径上线。
 - 通知中心 `NotificationApp` 当前在 Store 与本地 state 之间存在循环同步风险，点击购买成功通知会触发 `Maximum update depth exceeded` 并白屏；这应作为明天的第一事项与商城购买后闭环一起收掉。
+
+## 2026-05-09
+
+### 主线判断
+
+- 当日主线按昨日已确认的“购买后资产闭环”继续执行，优先级保持在 `P2-C4 商城权益效果收口` 内，不转去做复访入口或端侧分发材料。
+- 本轮重点不是再补展示层兜底，而是把背包契约、资产消费安全口径和通知中心状态同步一次性收回到可维护实现。
+
+### 已完成提交
+
+- `worktree` 当前已完成商城购买后闭环首轮代码收口：
+  - 后端把 `UserInventoryVo` 改回统一 `Vo*` 契约，并同步修正背包图标 URL 填充，避免购买后名称 / 数量 / 图标与前端 `key` 失真。
+  - 商城购买链路已补支付密码输入与服务端校验：`CreateOrderDto` 新增 `PaymentPassword`，购买弹窗补真实输入，订单服务在扣库存和扣款前复用 `PaymentPasswordService` 做验证。
+  - 商城前端在购买成功后会立即刷新背包数据，并重新同步商品可购买状态，避免用户需要手动刷新才能看到资产变更。
+  - 通知中心已收口 Store 与本地 state 的无效重复同步，缺头像回填只在真实缺失时执行，避免点击购买成功通知后触发循环更新和白屏。
+  - `OrderServiceTest` 已补支付密码校验分支覆盖，新增“密码错误时不得扣库存 / 创建订单 / 扣款”的定向测试。
+
+### 验证记录
+
+- `dotnet test D:\Code\Radish\Radish.Api.Tests\Radish.Api.Tests.csproj -c Debug --filter FullyQualifiedName~OrderServiceTest`
+  - 通过，`5/5`。
+  - 运行中仍有既有 nullable / obsolete / XML 注释警告，但没有引入新的测试失败。
+- `npm run type-check --workspace=radish.client`
+  - 通过。
+- `npm run build --workspace=radish.client`
+  - 通过。
+
+### 剩余风险与下一顺位
+
+- 当前已收掉购买后资产闭环的第一批阻断点，但“通知点击后应该直达商城哪个上下文（首页 / 订单 / 订单详情）”仍可后续再单独评估，不必和本轮稳定性修复耦合。
+- 若继续沿 `P2-C4` 推进，下一步宜组织一轮人工验收，重点确认：购买成功后背包立即可见、支付密码错误 / 锁定提示符合预期、通知中心进入商城不再白屏。

@@ -149,6 +149,9 @@ public class CreateOrderDto
     /// <summary>购买数量</summary>
     public int Quantity { get; set; } = 1;
 
+    /// <summary>支付密码</summary>
+    public string PaymentPassword { get; set; } = string.Empty;
+
     /// <summary>用户备注</summary>
     public string? UserRemark { get; set; }
 }

@@ -77,6 +77,10 @@ interface NotificationStore {
   clearRecentNotifications: () => void;
 }
 
+function isSameNotificationList(a: NotificationItem[], b: NotificationItem[]): boolean {
+  return a.length === b.length && a.every((item, index) => item === b[index]);
+}
+
 export const useNotificationStore = create<NotificationStore>((set) => ({
   unreadCount: 0,
   connectionState: 'disconnected',
@@ -108,8 +112,14 @@ export const useNotificationStore = create<NotificationStore>((set) => ({
 
     // 仅维护最近通知列表，不用本地切片覆盖全局未读数。
     // 全局未读数由服务端事件/接口同步，避免列表页与 Dock 角标口径不一致。
-    set({
-      recentNotifications: trimmed
+    set((state) => {
+      if (isSameNotificationList(state.recentNotifications, trimmed)) {
+        return state;
+      }
+
+      return {
+        recentNotifications: trimmed
+      };
     });
   },
 

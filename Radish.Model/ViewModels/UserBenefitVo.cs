@@ -95,16 +95,16 @@ public class UserBenefitVo
 public class UserInventoryVo
 {
     /// <summary>背包项 ID</summary>
-    public long Id { get; set; }
+    public long VoId { get; set; }
 
     /// <summary>用户 ID</summary>
-    public long UserId { get; set; }
+    public long VoUserId { get; set; }
 
     /// <summary>消耗品类型</summary>
-    public ConsumableType ConsumableType { get; set; }
+    public ConsumableType VoConsumableType { get; set; }
 
     /// <summary>消耗品类型显示名称</summary>
-    public string ConsumableTypeDisplay => ConsumableType switch
+    public string VoConsumableTypeDisplay => VoConsumableType switch
     {
         ConsumableType.RenameCard => "改名卡",
         ConsumableType.PostPinCard => "置顶卡",
@@ -117,22 +117,22 @@ public class UserInventoryVo
     };
 
     /// <summary>道具值</summary>
-    public string? ItemValue { get; set; }
+    public string? VoItemValue { get; set; }
 
     /// <summary>道具名称</summary>
-    public string? ItemName { get; set; }
+    public string? VoItemName { get; set; }
 
     /// <summary>道具图标附件快照 Id</summary>
-    public long? ItemIconAttachmentId { get; set; }
+    public long? VoItemIconAttachmentId { get; set; }
 
     /// <summary>道具图标 URL</summary>
-    public string? ItemIcon { get; set; }
+    public string? VoItemIcon { get; set; }
 
     /// <summary>数量</summary>
-    public int Quantity { get; set; }
+    public int VoQuantity { get; set; }
 
     /// <summary>创建时间</summary>
-    public DateTime CreateTime { get; set; }
+    public DateTime VoCreateTime { get; set; }
 }
 
 /// <summary>使用道具 DTO</summary>

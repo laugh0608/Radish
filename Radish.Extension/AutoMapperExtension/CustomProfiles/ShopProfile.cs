@@ -123,7 +123,7 @@ public class ShopProfile : Profile
     {
         // UserInventory -> UserInventoryVo
         CreateMap<UserInventory, UserInventoryVo>()
-            .ForMember(dest => dest.ItemIcon, opt => opt.Ignore());
+            .ForMember(dest => dest.VoItemIcon, opt => opt.Ignore());
 
         // UserInventoryVo -> UserInventory
         CreateMap<UserInventoryVo, UserInventory>()

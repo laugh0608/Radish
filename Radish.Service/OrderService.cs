@@ -25,6 +25,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     private readonly IProductService _productService;
     private readonly IUserBenefitService _userBenefitService;
     private readonly ICoinService _coinService;
+    private readonly IPaymentPasswordService _paymentPasswordService;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
     private readonly INotificationService? _notificationService;
 
@@ -36,6 +37,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         IProductService productService,
         IUserBenefitService userBenefitService,
         ICoinService coinService,
+        IPaymentPasswordService paymentPasswordService,
         IAttachmentUrlResolver attachmentUrlResolver,
         INotificationService? notificationService = null)
         : base(mapper, orderRepository)
@@ -46,6 +48,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         _productService = productService;
         _userBenefitService = userBenefitService;
         _coinService = coinService;
+        _paymentPasswordService = paymentPasswordService;
         _attachmentUrlResolver = attachmentUrlResolver;
         _notificationService = notificationService;
     }
@@ -90,7 +93,35 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 };
             }
 
-            // 5. 扣减库存
+            // 5. 验证支付密码
+            if (string.IsNullOrWhiteSpace(dto.PaymentPassword))
+            {
+                return new PurchaseResultDto
+                {
+                    Success = false,
+                    ErrorMessage = "支付密码不能为空"
+                };
+            }
+
+            var verifyResult = await _paymentPasswordService.VerifyPaymentPasswordAsync(userId, new VerifyPaymentPasswordRequest
+            {
+                Password = dto.PaymentPassword,
+                BusinessType = "ShopPurchase",
+                BusinessId = dto.ProductId.ToString()
+            });
+
+            if (!verifyResult.IsSuccess)
+            {
+                Log.Warning("商城购买失败：支付密码验证失败，用户={UserId}, 商品={ProductId}, 原因={Reason}",
+                    userId, dto.ProductId, verifyResult.ErrorMessage);
+                return new PurchaseResultDto
+                {
+                    Success = false,
+                    ErrorMessage = verifyResult.ErrorMessage ?? "支付密码验证失败"
+                };
+            }
+
+            // 6. 扣减库存
             if (product.StockType == StockType.Limited)
             {
                 var stockDeducted = await _productService.DeductStockAsync(dto.ProductId, dto.Quantity);
@@ -100,7 +131,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 }
             }
 
-            // 6. 创建订单
+            // 7. 创建订单
             var order = new Order
             {
                 OrderNo = $"ORD_{SnowFlakeSingle.Instance.NextId()}",
@@ -129,7 +160,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             var orderId = await _orderRepository.AddAsync(order);
             order.Id = orderId;
 
-            // 7. 扣除萝卜币
+            // 8. 扣除萝卜币
             try
             {
                 var (transactionId, _) = await _coinService.ConsumeCoinAsync(
@@ -160,7 +191,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 return new PurchaseResultDto { Success = false, ErrorMessage = "扣除萝卜币失败" };
             }
 
-            // 8. 发放权益
+            // 9. 发放权益
             long? userBenefitId = null;
             try
             {
@@ -186,16 +217,16 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 order.FailReason = $"发放权益失败：{ex.Message}";
             }
 
-            // 9. 更新订单状态
+            // 10. 更新订单状态
             await _orderRepository.UpdateAsync(order);
 
-            // 10. 增加已售数量
+            // 11. 增加已售数量
             await _productService.IncreaseSoldCountAsync(dto.ProductId, dto.Quantity);
 
-            // 11. 获取最新余额
+            // 12. 获取最新余额
             var newBalance = await _coinService.GetBalanceAsync(userId);
 
-            // 12. 发送通知
+            // 13. 发送通知
             if (_notificationService != null && order.Status == OrderStatus.Completed)
             {
                 try

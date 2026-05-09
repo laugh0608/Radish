@@ -506,7 +506,7 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
     {
         foreach (var item in items)
         {
-            item.ItemIcon = ResolveAttachmentUrl(item.ItemIconAttachmentId);
+            item.VoItemIcon = ResolveAttachmentUrl(item.VoItemIconAttachmentId);
         }
     }
 

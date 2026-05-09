@@ -77,7 +77,11 @@ export const useShopActions = (props: UseShopActionsProps) => {
   }, []);
 
   // 确认购买
-  const handleConfirmPurchase = useCallback(async (productId: LongId, quantity: number = 1) => {
+  const handleConfirmPurchase = useCallback(async (
+    productId: LongId,
+    quantity: number = 1,
+    paymentPassword: string
+  ) => {
     if (!isAuthenticated) {
       setError(t('shop.loginRequired'));
       return;
@@ -87,7 +91,8 @@ export const useShopActions = (props: UseShopActionsProps) => {
     try {
       const result = await shopApi.purchaseProduct({
         productId,
-        quantity
+        quantity,
+        paymentPassword
       }, t);
 
       if (result.ok && result.data?.success) {
@@ -103,9 +108,12 @@ export const useShopActions = (props: UseShopActionsProps) => {
         );
 
         // 刷新相关数据
-        if (appState.currentView === 'product-detail') {
-          await checkCanBuy(productId);
-        }
+        await Promise.all([
+          loadInventory(),
+          appState.currentView === 'product-detail'
+            ? checkCanBuy(productId)
+            : Promise.resolve()
+        ]);
       } else {
         throw new Error(result.data?.errorMessage || result.message || t('shop.error.purchaseFailed'));
       }
@@ -115,7 +123,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
     } finally {
       setPurchasing(false);
     }
-  }, [isAuthenticated, t, appState.currentView, checkCanBuy, setError]);
+  }, [isAuthenticated, t, appState.currentView, checkCanBuy, loadInventory, setError]);
 
   // 取消订单
   const handleCancelOrder = useCallback(async (orderId: LongId, reason?: string) => {

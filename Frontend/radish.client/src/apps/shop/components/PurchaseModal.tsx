@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Product } from '@/types/shop';
 import type { LongId } from '@/api/user';
@@ -11,7 +11,7 @@ interface PurchaseModalProps {
   product: Product | null;
   loading: boolean;
   onClose: () => void;
-  onConfirm: (productId: LongId, quantity: number) => void;
+  onConfirm: (productId: LongId, quantity: number, paymentPassword: string) => void;
 }
 
 export const PurchaseModal = ({
@@ -23,6 +23,18 @@ export const PurchaseModal = ({
 }: PurchaseModalProps) => {
   const { t } = useTranslation();
   const [quantity, setQuantity] = useState(1);
+  const [paymentPassword, setPaymentPassword] = useState('');
+  const [paymentPasswordError, setPaymentPasswordError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    setQuantity(1);
+    setPaymentPassword('');
+    setPaymentPasswordError(null);
+  }, [isOpen, product?.voId]);
 
   if (!isOpen || !product) {
     return null;
@@ -35,7 +47,14 @@ export const PurchaseModal = ({
   };
 
   const handleConfirm = () => {
-    onConfirm(product.voId, quantity);
+    const trimmedPassword = paymentPassword.trim();
+    if (!trimmedPassword) {
+      setPaymentPasswordError(t('shop.purchase.paymentPasswordRequired'));
+      return;
+    }
+
+    setPaymentPasswordError(null);
+    onConfirm(product.voId, quantity, trimmedPassword);
   };
 
   const totalPrice = product.voPrice * quantity;
@@ -138,6 +157,35 @@ export const PurchaseModal = ({
             </div>
           </div>
 
+          <div className={styles.passwordSection}>
+            <label className={styles.passwordLabel} htmlFor="shop-purchase-payment-password">
+              {t('shop.purchase.paymentPassword')}
+            </label>
+            <input
+              id="shop-purchase-payment-password"
+              type="password"
+              className={`${styles.passwordInput} ${paymentPasswordError ? styles.passwordInputError : ''}`}
+              value={paymentPassword}
+              onChange={(event) => {
+                setPaymentPassword(event.target.value);
+                if (paymentPasswordError) {
+                  setPaymentPasswordError(null);
+                }
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  handleConfirm();
+                }
+              }}
+              placeholder={t('shop.purchase.paymentPasswordPlaceholder')}
+              autoComplete="current-password"
+            />
+            <p className={styles.passwordHint}>{t('shop.purchase.paymentPasswordHint')}</p>
+            {paymentPasswordError && (
+              <p className={styles.passwordError}>{paymentPasswordError}</p>
+            )}
+          </div>
+
           {/* 购买须知 */}
           <div className={styles.noticeSection}>
             <h4 className={styles.noticeTitle}>{t('shop.purchase.noticeTitle')}</h4>
@@ -161,7 +209,7 @@ export const PurchaseModal = ({
           <button
             className={styles.confirmButton}
             onClick={handleConfirm}
-            disabled={loading}
+            disabled={loading || !paymentPassword.trim()}
           >
             {loading ? (
               <>
