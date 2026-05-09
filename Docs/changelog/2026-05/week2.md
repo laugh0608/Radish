@@ -177,24 +177,43 @@
 
 ### 已完成提交
 
-- `worktree` 当前已完成商城购买后闭环首轮代码收口：
-  - 后端把 `UserInventoryVo` 改回统一 `Vo*` 契约，并同步修正背包图标 URL 填充，避免购买后名称 / 数量 / 图标与前端 `key` 失真。
-  - 商城购买链路已补支付密码输入与服务端校验：`CreateOrderDto` 新增 `PaymentPassword`，购买弹窗补真实输入，订单服务在扣库存和扣款前复用 `PaymentPasswordService` 做验证。
-  - 商城前端在购买成功后会立即刷新背包数据，并重新同步商品可购买状态，避免用户需要手动刷新才能看到资产变更。
-  - 通知中心已收口 Store 与本地 state 的无效重复同步，缺头像回填只在真实缺失时执行，避免点击购买成功通知后触发循环更新和白屏。
-  - `OrderServiceTest` 已补支付密码校验分支覆盖，新增“密码错误时不得扣库存 / 创建订单 / 扣款”的定向测试。
+- `b6486745 docs(guide): reorganize handbook and records structure`
+  - 调整 `Docs/guide` 与 `Docs/records` 的组织口径，减少入口混杂和历史资料堆叠。
+- `910a90ef fix(shop): 收口购买后资产闭环`
+  - 后端把背包返回契约收回统一 `Vo*` 命名，并同步修正背包图标 URL 填充，避免购买后名称 / 数量 / 图标与前端 `key` 失真。
+  - 商城购买链路补齐支付口令输入与服务端校验：`CreateOrderDto` 新增 `PaymentPassword`，订单服务在扣库存和扣款前复用 `PaymentPasswordService` 做验证。
+  - 商城前端在购买成功后会立即刷新背包数据，并重新同步商品可购买状态；通知中心也已收口循环同步和白屏问题。
+  - `OrderServiceTest` 已补支付口令校验分支覆盖，新增“密码错误时不得扣库存 / 创建订单 / 扣款”的定向测试。
+- `d93ea0ba fix(pit): 收口支付口令升级治理`
+  - 安全设置内容卡改为可纵向滚动，支付口令设置页在窗口高度不足时仍可完整滚到底部提交区域。
+  - 新增共享六码格输入组件，资产中心、转移表单和商城购买弹窗统一切到 6 位数字支付口令，禁止 6 个相同数字，并把顺子类组合降为弱口令显示。
+  - 后端新增共享 `PaymentPasscodeRules` / `PaymentPasscodeErrorCodes`，让 `PaymentPasswordService`、转移 DTO、商城购买 DTO 与购买 / 转移服务复用同一套格式、升级提示和错误口径。
+  - `UserPaymentPassword` 新增口令版本字段，旧记录按 legacy 状态识别；安全设置改为直接重置，商城购买与萝卜转移命中旧口令时会统一阻断并提示升级。
+  - 新增 `PaymentPasswordServiceTest`，并扩充 `CoinServiceTest`、`OrderServiceTest`，覆盖旧口令升级提示、合法六码口令落库和 legacy 口令阻断购买 / 转移。
 
 ### 验证记录
 
 - `dotnet test D:\Code\Radish\Radish.Api.Tests\Radish.Api.Tests.csproj -c Debug --filter FullyQualifiedName~OrderServiceTest`
   - 通过，`5/5`。
   - 运行中仍有既有 nullable / obsolete / XML 注释警告，但没有引入新的测试失败。
+- `npm run type-check --workspace=@radish/ui`
+  - 通过。
 - `npm run type-check --workspace=radish.client`
   - 通过。
 - `npm run build --workspace=radish.client`
   - 通过。
+- `dotnet test D:\Code\Radish\Radish.Api.Tests\Radish.Api.Tests.csproj -c Debug --filter "FullyQualifiedName~PaymentPasswordServiceTest|FullyQualifiedName~OrderServiceTest|FullyQualifiedName~CoinServiceTest"`
+  - 提权环境通过，`31/31`。
+  - 失败原因仅在沙盒无法读取用户级 `NuGet.Config`，提权后可正常还原与执行；不是本轮代码问题。
+
+### 文档与对齐结论
+
+- 今日代码提交已继续推进 `P2-C4`，因此同步更新了 [current.md](/planning/current) 与 [phase-two-product-completion.md](/planning/phase-two-product-completion)，把“购买后资产闭环已完成首轮、旧支付口令已废弃、下一步转为人工验收与转段判断”写回规划入口。
+- 今日开发日志已从临时 `worktree` 表述改回真实提交口径，避免后续回顾时无法对应到具体 commit。
+- 今日没有新的视觉设计规范、多端路线归属或壳层策略变化，因此不额外改动设计规范和路线总览文档。
 
 ### 剩余风险与下一顺位
 
-- 当前已收掉购买后资产闭环的第一批阻断点，但“通知点击后应该直达商城哪个上下文（首页 / 订单 / 订单详情）”仍可后续再单独评估，不必和本轮稳定性修复耦合。
-- 若继续沿 `P2-C4` 推进，下一步宜组织一轮人工验收，重点确认：购买成功后背包立即可见、支付密码错误 / 锁定提示符合预期、通知中心进入商城不再白屏。
+- 当前 `P2-C4` 已基本收口，但仍需要一轮人工 smoke，重点确认：新支付口令设置 / 重置、旧支付口令拦截、购买成功后背包立即可见、通知中心进入商城不再白屏。
+- 若人工验收稳定，下一顺位应切回后端 + Console 治理，优先处理安全 / 经验治理与商城管理前端缺口，而不是继续围绕复访入口或端侧分发材料做低收益工作。
+- “通知点击后应该直达商城哪个上下文（首页 / 订单 / 订单详情）”仍可后续单独评估，不必与本轮稳定性修复耦合。
