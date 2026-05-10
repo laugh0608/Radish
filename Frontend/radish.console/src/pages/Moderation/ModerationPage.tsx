@@ -69,12 +69,82 @@ function buildDesktopChatTargetUrl(channelId: number, messageId: number): string
   return url.toString();
 }
 
+function buildPublicForumTargetUrl(postId: number, commentId?: number | null): string {
+  const url = new URL(`/forum/post/${postId}`, getApiBaseUrl());
+  if (commentId && commentId > 0) {
+    url.searchParams.set('commentId', String(commentId));
+  }
+
+  return url.toString();
+}
+
 function canOpenChatTarget(targetType: string | null | undefined, channelId: number | null | undefined, messageId: number | null | undefined): boolean {
   return targetType === 'ChatMessage'
     && !!channelId
     && channelId > 0
     && !!messageId
     && messageId > 0;
+}
+
+interface ModerationTargetNavigationInput {
+  targetType: string | null | undefined;
+  targetContentId?: number | null;
+  targetPostId?: number | null;
+  targetCommentId?: number | null;
+  targetChannelId?: number | null;
+  targetMessageId?: number | null;
+}
+
+interface ModerationOpenTarget {
+  label: string;
+  url: string;
+}
+
+function resolveOpenTarget(input: ModerationTargetNavigationInput): ModerationOpenTarget | null {
+  const targetType = input.targetType ?? null;
+  if (canOpenChatTarget(targetType, input.targetChannelId, input.targetMessageId)) {
+    return {
+      label: '打开聊天定位',
+      url: buildDesktopChatTargetUrl(Number(input.targetChannelId), Number(input.targetMessageId)),
+    };
+  }
+
+  if (targetType === 'Post' && input.targetPostId && input.targetPostId > 0) {
+    return {
+      label: '打开帖子详情',
+      url: buildPublicForumTargetUrl(Number(input.targetPostId)),
+    };
+  }
+
+  if (targetType === 'Comment' && input.targetPostId && input.targetPostId > 0) {
+    const targetCommentId = input.targetCommentId ?? input.targetContentId;
+    return {
+      label: '打开评论定位',
+      url: buildPublicForumTargetUrl(Number(input.targetPostId), targetCommentId),
+    };
+  }
+
+  if (targetType === 'PostQuickReply' && input.targetPostId && input.targetPostId > 0) {
+    return {
+      label: '打开帖子回看',
+      url: buildPublicForumTargetUrl(Number(input.targetPostId)),
+    };
+  }
+
+  return null;
+}
+
+function resolveMissingTargetMessage(targetType: string | null | undefined): string {
+  switch (targetType) {
+    case 'ChatMessage':
+      return '当前举报项缺少聊天定位信息';
+    case 'Post':
+    case 'Comment':
+    case 'PostQuickReply':
+      return '当前举报项缺少论坛定位信息';
+    default:
+      return '当前举报项暂不支持直接回看';
+  }
 }
 
 export const ModerationPage = () => {
@@ -98,19 +168,14 @@ export const ModerationPage = () => {
 
   const canReview = usePermission(CONSOLE_PERMISSIONS.moderationReview);
 
-  const handleOpenChatTarget = (
-    targetType: string | null | undefined,
-    channelId: number | null | undefined,
-    messageId: number | null | undefined,
-  ) => {
-    if (!canOpenChatTarget(targetType, channelId, messageId)) {
-      message.error('当前举报项缺少聊天定位信息');
+  const handleOpenTarget = (input: ModerationTargetNavigationInput) => {
+    const target = resolveOpenTarget(input);
+    if (!target) {
+      message.error(resolveMissingTargetMessage(input.targetType));
       return;
     }
 
-    const safeChannelId = Number(channelId);
-    const safeMessageId = Number(messageId);
-    window.open(buildDesktopChatTargetUrl(safeChannelId, safeMessageId), '_blank', 'noopener');
+    window.open(target.url, '_blank', 'noopener');
   };
 
   const loadQueue = async (targetPageIndex = queuePageIndex, targetPageSize = queuePageSize) => {
@@ -215,6 +280,14 @@ export const ModerationPage = () => {
       render: (_, record) => (
         <div>
           <div>{record.voTargetType} #{record.voTargetContentId}</div>
+          {record.voTargetType === 'Comment' && record.voTargetPostId ? (
+            <div style={{ color: '#8c8c8c' }}>
+              帖子 #{record.voTargetPostId} · 评论 #{record.voTargetCommentId ?? record.voTargetContentId}
+            </div>
+          ) : null}
+          {record.voTargetType === 'PostQuickReply' && record.voTargetPostId ? (
+            <div style={{ color: '#8c8c8c' }}>所属帖子 #{record.voTargetPostId}</div>
+          ) : null}
           {record.voTargetType === 'ChatMessage' && record.voTargetChannelId ? (
             <div style={{ color: '#8c8c8c' }}>频道 #{record.voTargetChannelId} · 消息 #{record.voTargetMessageId ?? record.voTargetContentId}</div>
           ) : null}
@@ -260,16 +333,30 @@ export const ModerationPage = () => {
       key: 'actions',
       width: 260,
       render: (_, record) => {
-        const canOpenTarget = canOpenChatTarget(record.voTargetType, record.voTargetChannelId, record.voTargetMessageId);
+        const openTarget = resolveOpenTarget({
+          targetType: record.voTargetType,
+          targetContentId: record.voTargetContentId,
+          targetPostId: record.voTargetPostId,
+          targetCommentId: record.voTargetCommentId,
+          targetChannelId: record.voTargetChannelId,
+          targetMessageId: record.voTargetMessageId,
+        });
 
         return (
           <Space wrap>
-            {canOpenTarget ? (
+            {openTarget ? (
               <Button
                 size="small"
-                onClick={() => handleOpenChatTarget(record.voTargetType, record.voTargetChannelId, record.voTargetMessageId)}
+                onClick={() => handleOpenTarget({
+                  targetType: record.voTargetType,
+                  targetContentId: record.voTargetContentId,
+                  targetPostId: record.voTargetPostId,
+                  targetCommentId: record.voTargetCommentId,
+                  targetChannelId: record.voTargetChannelId,
+                  targetMessageId: record.voTargetMessageId,
+                })}
               >
-                打开聊天定位
+                {openTarget.label}
               </Button>
             ) : null}
             {record.voStatus === 'Pending' && canReview ? (
@@ -323,6 +410,14 @@ export const ModerationPage = () => {
             ) : (
               <div style={{ color: '#8c8c8c' }}>未保留目标快照</div>
             )}
+            {record.voSourceReportTargetType === 'Comment' && record.voSourceReportTargetPostId ? (
+              <div style={{ color: '#8c8c8c' }}>
+                帖子 #{record.voSourceReportTargetPostId} · 评论 #{record.voSourceReportTargetCommentId ?? record.voSourceReportTargetContentId ?? '-'}
+              </div>
+            ) : null}
+            {record.voSourceReportTargetType === 'PostQuickReply' && record.voSourceReportTargetPostId ? (
+              <div style={{ color: '#8c8c8c' }}>所属帖子 #{record.voSourceReportTargetPostId}</div>
+            ) : null}
             {record.voSourceReportTargetType === 'ChatMessage' && record.voSourceReportTargetChannelId ? (
               <div style={{ color: '#8c8c8c' }}>
                 频道 #{record.voSourceReportTargetChannelId} · 消息 #{record.voSourceReportTargetMessageId ?? record.voSourceReportTargetContentId ?? '-'}
@@ -353,26 +448,34 @@ export const ModerationPage = () => {
       title: '操作',
       key: 'actions',
       width: 180,
-      render: (_, record) => (
-        canOpenChatTarget(
-          record.voSourceReportTargetType,
-          record.voSourceReportTargetChannelId,
-          record.voSourceReportTargetMessageId,
-        ) ? (
+      render: (_, record) => {
+        const openTarget = resolveOpenTarget({
+          targetType: record.voSourceReportTargetType,
+          targetContentId: record.voSourceReportTargetContentId,
+          targetPostId: record.voSourceReportTargetPostId,
+          targetCommentId: record.voSourceReportTargetCommentId,
+          targetChannelId: record.voSourceReportTargetChannelId,
+          targetMessageId: record.voSourceReportTargetMessageId,
+        });
+
+        return openTarget ? (
           <Button
             size="small"
-            onClick={() => handleOpenChatTarget(
-              record.voSourceReportTargetType,
-              record.voSourceReportTargetChannelId,
-              record.voSourceReportTargetMessageId,
-            )}
+            onClick={() => handleOpenTarget({
+              targetType: record.voSourceReportTargetType,
+              targetContentId: record.voSourceReportTargetContentId,
+              targetPostId: record.voSourceReportTargetPostId,
+              targetCommentId: record.voSourceReportTargetCommentId,
+              targetChannelId: record.voSourceReportTargetChannelId,
+              targetMessageId: record.voSourceReportTargetMessageId,
+            })}
           >
-            打开聊天定位
+            {openTarget.label}
           </Button>
         ) : (
           <span style={{ color: '#8c8c8c' }}>-</span>
-        )
-      ),
+        );
+      },
     },
     {
       title: '开始时间',

@@ -67,6 +67,12 @@ public class ContentReportQueueItemVo
     /// <summary>举报目标内容 ID</summary>
     public long VoTargetContentId { get; set; }
 
+    /// <summary>论坛目标帖子 ID</summary>
+    public long? VoTargetPostId { get; set; }
+
+    /// <summary>论坛目标评论 ID</summary>
+    public long? VoTargetCommentId { get; set; }
+
     /// <summary>聊天室目标频道 ID</summary>
     public long? VoTargetChannelId { get; set; }
 
@@ -142,6 +148,12 @@ public class UserModerationActionVo
 
     /// <summary>来源举报目标内容 ID</summary>
     public long? VoSourceReportTargetContentId { get; set; }
+
+    /// <summary>来源举报论坛目标帖子 ID</summary>
+    public long? VoSourceReportTargetPostId { get; set; }
+
+    /// <summary>来源举报论坛目标评论 ID</summary>
+    public long? VoSourceReportTargetCommentId { get; set; }
 
     /// <summary>来源举报目标频道 ID</summary>
     public long? VoSourceReportTargetChannelId { get; set; }

@@ -705,8 +705,22 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
     {
         public string TargetTypeName { get; init; } = "Unknown";
         public long TargetContentId { get; init; }
+        public long? TargetPostId { get; init; }
+        public long? TargetCommentId { get; init; }
         public long? TargetChannelId { get; init; }
         public long? TargetMessageId { get; init; }
+    }
+
+    private sealed class ForumCommentNavigationRecord
+    {
+        public long CommentId { get; init; }
+        public long PostId { get; init; }
+    }
+
+    private sealed class ForumQuickReplyNavigationRecord
+    {
+        public long QuickReplyId { get; init; }
+        public long PostId { get; init; }
     }
 
     private async Task<List<ContentReportQueueItemVo>> BuildReportQueueItemsAsync(IReadOnlyCollection<ContentReport> reports)
@@ -753,15 +767,13 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
         return actions
             .Select(action =>
             {
-                ContentReport? sourceReport = null;
                 ReportTargetNavigationSnapshot? sourceNavigation = null;
                 if (action.SourceReportId.HasValue && sourceReportMap.TryGetValue(action.SourceReportId.Value, out var matchedReport))
                 {
-                    sourceReport = matchedReport;
                     sourceNavigation = navigationMap.GetValueOrDefault(matchedReport.Id);
                 }
 
-                return MapAction(action, sourceReport, sourceNavigation);
+                return MapAction(action, sourceNavigation);
             })
             .ToList();
     }
@@ -777,10 +789,18 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             report.ReportTargetType == (int)ContentReportTargetTypeEnum.ChatMessage
                 ? report.TargetContentId
                 : 0));
+        var commentPostMap = await BuildCommentPostMapAsync(reports.Select(report =>
+            report.ReportTargetType == (int)ContentReportTargetTypeEnum.Comment
+                ? report.TargetContentId
+                : 0));
+        var quickReplyPostMap = await BuildQuickReplyPostMapAsync(reports.Select(report =>
+            report.ReportTargetType == (int)ContentReportTargetTypeEnum.PostQuickReply
+                ? report.TargetContentId
+                : 0));
 
         return reports.ToDictionary(
             report => report.Id,
-            report => BuildReportTargetNavigationSnapshot(report, chatChannelMap));
+            report => BuildReportTargetNavigationSnapshot(report, chatChannelMap, commentPostMap, quickReplyPostMap));
     }
 
     private async Task<ReportTargetNavigationSnapshot> BuildReportNavigationSnapshotAsync(ContentReport report)
@@ -789,8 +809,16 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             report.ReportTargetType == (int)ContentReportTargetTypeEnum.ChatMessage
                 ? new[] { report.TargetContentId }
                 : Array.Empty<long>());
+        var commentPostMap = await BuildCommentPostMapAsync(
+            report.ReportTargetType == (int)ContentReportTargetTypeEnum.Comment
+                ? new[] { report.TargetContentId }
+                : Array.Empty<long>());
+        var quickReplyPostMap = await BuildQuickReplyPostMapAsync(
+            report.ReportTargetType == (int)ContentReportTargetTypeEnum.PostQuickReply
+                ? new[] { report.TargetContentId }
+                : Array.Empty<long>());
 
-        return BuildReportTargetNavigationSnapshot(report, chatChannelMap);
+        return BuildReportTargetNavigationSnapshot(report, chatChannelMap, commentPostMap, quickReplyPostMap);
     }
 
     private async Task<Dictionary<long, long?>> BuildChatChannelMapAsync(IEnumerable<long> messageIds)
@@ -809,16 +837,89 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             .ToDictionary(group => group.Key, group => (long?)group.First().ChannelId);
     }
 
+    private async Task<Dictionary<long, long?>> BuildCommentPostMapAsync(IEnumerable<long> commentIds)
+    {
+        var normalizedCommentIds = commentIds
+            .Where(id => id > 0)
+            .Distinct()
+            .ToList();
+        if (normalizedCommentIds.Count == 0)
+        {
+            return new Dictionary<long, long?>();
+        }
+
+        var items = await _commentRepository.QueryMuchAsync<Comment, Post, User, ForumCommentNavigationRecord>(
+            (comment, post, user) => new object[]
+            {
+                JoinType.Left, comment.PostId == post.Id,
+                JoinType.Left, comment.AuthorId == user.Id
+            },
+            (comment, _, _) => new ForumCommentNavigationRecord
+            {
+                CommentId = comment.Id,
+                PostId = comment.PostId
+            },
+            (comment, _, _) => normalizedCommentIds.Contains(comment.Id));
+
+        return items
+            .GroupBy(item => item.CommentId)
+            .ToDictionary(group => group.Key, group => (long?)group.First().PostId);
+    }
+
+    private async Task<Dictionary<long, long?>> BuildQuickReplyPostMapAsync(IEnumerable<long> quickReplyIds)
+    {
+        var normalizedQuickReplyIds = quickReplyIds
+            .Where(id => id > 0)
+            .Distinct()
+            .ToList();
+        if (normalizedQuickReplyIds.Count == 0)
+        {
+            return new Dictionary<long, long?>();
+        }
+
+        var items = await _postQuickReplyRepository.QueryMuchAsync<PostQuickReply, Post, User, ForumQuickReplyNavigationRecord>(
+            (reply, post, user) => new object[]
+            {
+                JoinType.Left, reply.PostId == post.Id,
+                JoinType.Left, reply.AuthorId == user.Id
+            },
+            (reply, _, _) => new ForumQuickReplyNavigationRecord
+            {
+                QuickReplyId = reply.Id,
+                PostId = reply.PostId
+            },
+            (reply, _, _) => normalizedQuickReplyIds.Contains(reply.Id));
+
+        return items
+            .GroupBy(item => item.QuickReplyId)
+            .ToDictionary(group => group.Key, group => (long?)group.First().PostId);
+    }
+
     private static ReportTargetNavigationSnapshot BuildReportTargetNavigationSnapshot(
         ContentReport report,
-        IReadOnlyDictionary<long, long?>? chatChannelMap = null)
+        IReadOnlyDictionary<long, long?>? chatChannelMap = null,
+        IReadOnlyDictionary<long, long?>? commentPostMap = null,
+        IReadOnlyDictionary<long, long?>? quickReplyPostMap = null)
     {
-        var isChatMessageTarget = report.ReportTargetType == (int)ContentReportTargetTypeEnum.ChatMessage;
+        var targetType = (ContentReportTargetTypeEnum)report.ReportTargetType;
+        var isChatMessageTarget = targetType == ContentReportTargetTypeEnum.ChatMessage;
+        var targetPostId = targetType switch
+        {
+            ContentReportTargetTypeEnum.Post => report.TargetContentId,
+            ContentReportTargetTypeEnum.Comment => commentPostMap?.GetValueOrDefault(report.TargetContentId),
+            ContentReportTargetTypeEnum.PostQuickReply => quickReplyPostMap?.GetValueOrDefault(report.TargetContentId),
+            _ => null
+        };
+        long? targetCommentId = targetType == ContentReportTargetTypeEnum.Comment
+            ? report.TargetContentId
+            : null;
 
         return new ReportTargetNavigationSnapshot
         {
             TargetTypeName = ToReportTargetTypeName(report.ReportTargetType),
             TargetContentId = report.TargetContentId,
+            TargetPostId = targetPostId,
+            TargetCommentId = targetCommentId,
             TargetChannelId = isChatMessageTarget ? chatChannelMap?.GetValueOrDefault(report.TargetContentId) : null,
             TargetMessageId = isChatMessageTarget ? report.TargetContentId : null
         };
@@ -833,6 +934,8 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             VoReportId = report.Id,
             VoTargetType = navigation.TargetTypeName,
             VoTargetContentId = navigation.TargetContentId,
+            VoTargetPostId = navigation.TargetPostId,
+            VoTargetCommentId = navigation.TargetCommentId,
             VoTargetChannelId = navigation.TargetChannelId,
             VoTargetMessageId = navigation.TargetMessageId,
             VoTargetUserId = report.TargetUserId,
@@ -854,7 +957,6 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
 
     private static UserModerationActionVo MapAction(
         UserModerationAction action,
-        ContentReport? sourceReport = null,
         ReportTargetNavigationSnapshot? sourceNavigation = null)
     {
         return new UserModerationActionVo
@@ -866,7 +968,9 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             VoReason = action.Reason,
             VoSourceReportId = action.SourceReportId,
             VoSourceReportTargetType = sourceNavigation?.TargetTypeName,
-            VoSourceReportTargetContentId = sourceReport != null ? sourceNavigation?.TargetContentId : null,
+            VoSourceReportTargetContentId = sourceNavigation?.TargetContentId,
+            VoSourceReportTargetPostId = sourceNavigation?.TargetPostId,
+            VoSourceReportTargetCommentId = sourceNavigation?.TargetCommentId,
             VoSourceReportTargetChannelId = sourceNavigation?.TargetChannelId,
             VoSourceReportTargetMessageId = sourceNavigation?.TargetMessageId,
             VoDurationHours = action.DurationHours,
