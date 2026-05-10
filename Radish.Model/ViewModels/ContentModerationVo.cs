@@ -79,6 +79,12 @@ public class ContentReportQueueItemVo
     /// <summary>聊天室目标消息 ID</summary>
     public long? VoTargetMessageId { get; set; }
 
+    /// <summary>目标导航状态（Ready/Fallback/Unavailable/Unsupported）</summary>
+    public string VoTargetNavigationStatus { get; set; } = "Unavailable";
+
+    /// <summary>目标导航状态说明</summary>
+    public string? VoTargetNavigationMessage { get; set; }
+
     /// <summary>被举报用户 ID</summary>
     public long VoTargetUserId { get; set; }
 
@@ -160,6 +166,12 @@ public class UserModerationActionVo
 
     /// <summary>来源举报目标消息 ID</summary>
     public long? VoSourceReportTargetMessageId { get; set; }
+
+    /// <summary>来源举报目标导航状态（Ready/Fallback/Unavailable/Unsupported）</summary>
+    public string VoSourceReportTargetNavigationStatus { get; set; } = "Unavailable";
+
+    /// <summary>来源举报目标导航状态说明</summary>
+    public string? VoSourceReportTargetNavigationMessage { get; set; }
 
     /// <summary>动作持续时长（小时）</summary>
     public int? VoDurationHours { get; set; }

@@ -15,6 +15,8 @@ export interface ContentReportQueueItemVo {
   voTargetCommentId?: number | null;
   voTargetChannelId?: number | null;
   voTargetMessageId?: number | null;
+  voTargetNavigationStatus: string;
+  voTargetNavigationMessage?: string | null;
   voTargetUserId: number;
   voTargetUserName?: string | null;
   voReporterUserId: number;
@@ -43,6 +45,8 @@ export interface UserModerationActionVo {
   voSourceReportTargetCommentId?: number | null;
   voSourceReportTargetChannelId?: number | null;
   voSourceReportTargetMessageId?: number | null;
+  voSourceReportTargetNavigationStatus: string;
+  voSourceReportTargetNavigationMessage?: string | null;
   voDurationHours?: number | null;
   voStartTime: string;
   voEndTime?: string | null;

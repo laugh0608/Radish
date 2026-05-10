@@ -78,6 +78,10 @@ function buildPublicForumTargetUrl(postId: number, commentId?: number | null): s
   return url.toString();
 }
 
+function buildPublicShopTargetUrl(productId: number): string {
+  return new URL(`/shop/product/${productId}`, getApiBaseUrl()).toString();
+}
+
 function canOpenChatTarget(targetType: string | null | undefined, channelId: number | null | undefined, messageId: number | null | undefined): boolean {
   return targetType === 'ChatMessage'
     && !!channelId
@@ -100,7 +104,76 @@ interface ModerationOpenTarget {
   url: string;
 }
 
-function resolveOpenTarget(input: ModerationTargetNavigationInput): ModerationOpenTarget | null {
+interface ModerationTargetNavigationStateInput extends ModerationTargetNavigationInput {
+  navigationStatus?: string | null;
+  navigationMessage?: string | null;
+}
+
+interface ModerationTargetDisplayInput extends ModerationTargetNavigationStateInput {
+  targetUserId?: number | null;
+  targetUserName?: string | null;
+  showTargetUser?: boolean;
+}
+
+function resolveNavigationStatusLabel(status: string | null | undefined): { color: string; label: string } {
+  switch (status) {
+    case 'Fallback':
+      return { color: 'warning', label: '已降级' };
+    case 'Unavailable':
+      return { color: 'default', label: '已失效' };
+    case 'Unsupported':
+      return { color: 'default', label: '暂不支持' };
+    default:
+      return { color: 'success', label: '可回看' };
+  }
+}
+
+function renderTargetNavigationState(status: string | null | undefined, messageText: string | null | undefined) {
+  if ((status === undefined || status === null || status === 'Ready') && !messageText) {
+    return null;
+  }
+
+  const statusMeta = resolveNavigationStatusLabel(status);
+
+  return (
+    <div style={{ marginTop: 4 }}>
+      <Tag color={statusMeta.color}>{statusMeta.label}</Tag>
+      {messageText ? <div style={{ color: '#8c8c8c' }}>{messageText}</div> : null}
+    </div>
+  );
+}
+
+function renderModerationTarget(input: ModerationTargetDisplayInput) {
+  return (
+    <div>
+      <div>{input.targetType} #{input.targetContentId ?? '-'}</div>
+      {input.targetType === 'Comment' && input.targetPostId ? (
+        <div style={{ color: '#8c8c8c' }}>
+          帖子 #{input.targetPostId} · 评论 #{input.targetCommentId ?? input.targetContentId}
+        </div>
+      ) : null}
+      {input.targetType === 'PostQuickReply' && input.targetPostId ? (
+        <div style={{ color: '#8c8c8c' }}>所属帖子 #{input.targetPostId}</div>
+      ) : null}
+      {input.targetType === 'ChatMessage' && input.targetChannelId ? (
+        <div style={{ color: '#8c8c8c' }}>
+          频道 #{input.targetChannelId} · 消息 #{input.targetMessageId ?? input.targetContentId}
+        </div>
+      ) : null}
+      {renderTargetNavigationState(input.navigationStatus, input.navigationMessage)}
+      {input.showTargetUser ? (
+        <div style={{ color: '#8c8c8c' }}>{input.targetUserName || `用户 ${input.targetUserId}`}</div>
+      ) : null}
+    </div>
+  );
+}
+
+function resolveOpenTarget(input: ModerationTargetNavigationStateInput): ModerationOpenTarget | null {
+  const navigationStatus = input.navigationStatus ?? 'Ready';
+  if (navigationStatus === 'Unavailable' || navigationStatus === 'Unsupported') {
+    return null;
+  }
+
   const targetType = input.targetType ?? null;
   if (canOpenChatTarget(targetType, input.targetChannelId, input.targetMessageId)) {
     return {
@@ -118,23 +191,35 @@ function resolveOpenTarget(input: ModerationTargetNavigationInput): ModerationOp
 
   if (targetType === 'Comment' && input.targetPostId && input.targetPostId > 0) {
     const targetCommentId = input.targetCommentId ?? input.targetContentId;
+    const isFallback = navigationStatus === 'Fallback';
     return {
-      label: '打开评论定位',
-      url: buildPublicForumTargetUrl(Number(input.targetPostId), targetCommentId),
+      label: isFallback ? '打开所属帖子' : '打开评论定位',
+      url: buildPublicForumTargetUrl(Number(input.targetPostId), isFallback ? undefined : targetCommentId),
     };
   }
 
   if (targetType === 'PostQuickReply' && input.targetPostId && input.targetPostId > 0) {
     return {
-      label: '打开帖子回看',
+      label: '打开所属帖子',
       url: buildPublicForumTargetUrl(Number(input.targetPostId)),
+    };
+  }
+
+  if (targetType === 'Product' && input.targetContentId && input.targetContentId > 0) {
+    return {
+      label: '打开商品详情',
+      url: buildPublicShopTargetUrl(Number(input.targetContentId)),
     };
   }
 
   return null;
 }
 
-function resolveMissingTargetMessage(targetType: string | null | undefined): string {
+function resolveMissingTargetMessage(targetType: string | null | undefined, navigationMessage?: string | null): string {
+  if (navigationMessage && navigationMessage.trim().length > 0) {
+    return navigationMessage;
+  }
+
   switch (targetType) {
     case 'ChatMessage':
       return '当前举报项缺少聊天定位信息';
@@ -142,6 +227,8 @@ function resolveMissingTargetMessage(targetType: string | null | undefined): str
     case 'Comment':
     case 'PostQuickReply':
       return '当前举报项缺少论坛定位信息';
+    case 'Product':
+      return '当前举报项缺少商品定位信息';
     default:
       return '当前举报项暂不支持直接回看';
   }
@@ -168,10 +255,10 @@ export const ModerationPage = () => {
 
   const canReview = usePermission(CONSOLE_PERMISSIONS.moderationReview);
 
-  const handleOpenTarget = (input: ModerationTargetNavigationInput) => {
+  const handleOpenTarget = (input: ModerationTargetNavigationStateInput) => {
     const target = resolveOpenTarget(input);
     if (!target) {
-      message.error(resolveMissingTargetMessage(input.targetType));
+      message.error(resolveMissingTargetMessage(input.targetType, input.navigationMessage));
       return;
     }
 
@@ -277,23 +364,19 @@ export const ModerationPage = () => {
       title: '目标',
       key: 'target',
       width: 220,
-      render: (_, record) => (
-        <div>
-          <div>{record.voTargetType} #{record.voTargetContentId}</div>
-          {record.voTargetType === 'Comment' && record.voTargetPostId ? (
-            <div style={{ color: '#8c8c8c' }}>
-              帖子 #{record.voTargetPostId} · 评论 #{record.voTargetCommentId ?? record.voTargetContentId}
-            </div>
-          ) : null}
-          {record.voTargetType === 'PostQuickReply' && record.voTargetPostId ? (
-            <div style={{ color: '#8c8c8c' }}>所属帖子 #{record.voTargetPostId}</div>
-          ) : null}
-          {record.voTargetType === 'ChatMessage' && record.voTargetChannelId ? (
-            <div style={{ color: '#8c8c8c' }}>频道 #{record.voTargetChannelId} · 消息 #{record.voTargetMessageId ?? record.voTargetContentId}</div>
-          ) : null}
-          <div style={{ color: '#8c8c8c' }}>{record.voTargetUserName || `用户 ${record.voTargetUserId}`}</div>
-        </div>
-      ),
+      render: (_, record) => renderModerationTarget({
+        targetType: record.voTargetType,
+        targetContentId: record.voTargetContentId,
+        targetPostId: record.voTargetPostId,
+        targetCommentId: record.voTargetCommentId,
+        targetChannelId: record.voTargetChannelId,
+        targetMessageId: record.voTargetMessageId,
+        navigationStatus: record.voTargetNavigationStatus,
+        navigationMessage: record.voTargetNavigationMessage,
+        targetUserId: record.voTargetUserId,
+        targetUserName: record.voTargetUserName,
+        showTargetUser: true,
+      }),
     },
     {
       title: '举报人',
@@ -340,6 +423,8 @@ export const ModerationPage = () => {
           targetCommentId: record.voTargetCommentId,
           targetChannelId: record.voTargetChannelId,
           targetMessageId: record.voTargetMessageId,
+          navigationStatus: record.voTargetNavigationStatus,
+          navigationMessage: record.voTargetNavigationMessage,
         });
 
         return (
@@ -354,10 +439,16 @@ export const ModerationPage = () => {
                   targetCommentId: record.voTargetCommentId,
                   targetChannelId: record.voTargetChannelId,
                   targetMessageId: record.voTargetMessageId,
+                  navigationStatus: record.voTargetNavigationStatus,
+                  navigationMessage: record.voTargetNavigationMessage,
                 })}
               >
                 {openTarget.label}
               </Button>
+            ) : record.voTargetNavigationStatus === 'Unavailable' || record.voTargetNavigationStatus === 'Unsupported' ? (
+              <span style={{ color: '#8c8c8c' }}>
+                {record.voTargetNavigationStatus === 'Unsupported' ? '暂不支持回看' : '目标已失效'}
+              </span>
             ) : null}
             {record.voStatus === 'Pending' && canReview ? (
               <Button size="small" variant="primary" onClick={() => openReviewModal(record)}>
@@ -401,29 +492,23 @@ export const ModerationPage = () => {
         }
 
         return (
-          <div>
-            <div>举报单 #{record.voSourceReportId}</div>
-            {record.voSourceReportTargetType ? (
-              <div style={{ color: '#8c8c8c' }}>
-                {record.voSourceReportTargetType} #{record.voSourceReportTargetContentId ?? '-'}
+          record.voSourceReportTargetType
+            ? (
+              <div>
+                <div>举报单 #{record.voSourceReportId}</div>
+                {renderModerationTarget({
+                  targetType: record.voSourceReportTargetType,
+                  targetContentId: record.voSourceReportTargetContentId ?? null,
+                  targetPostId: record.voSourceReportTargetPostId,
+                  targetCommentId: record.voSourceReportTargetCommentId,
+                  targetChannelId: record.voSourceReportTargetChannelId,
+                  targetMessageId: record.voSourceReportTargetMessageId,
+                  navigationStatus: record.voSourceReportTargetNavigationStatus,
+                  navigationMessage: record.voSourceReportTargetNavigationMessage,
+                })}
               </div>
-            ) : (
-              <div style={{ color: '#8c8c8c' }}>未保留目标快照</div>
-            )}
-            {record.voSourceReportTargetType === 'Comment' && record.voSourceReportTargetPostId ? (
-              <div style={{ color: '#8c8c8c' }}>
-                帖子 #{record.voSourceReportTargetPostId} · 评论 #{record.voSourceReportTargetCommentId ?? record.voSourceReportTargetContentId ?? '-'}
-              </div>
-            ) : null}
-            {record.voSourceReportTargetType === 'PostQuickReply' && record.voSourceReportTargetPostId ? (
-              <div style={{ color: '#8c8c8c' }}>所属帖子 #{record.voSourceReportTargetPostId}</div>
-            ) : null}
-            {record.voSourceReportTargetType === 'ChatMessage' && record.voSourceReportTargetChannelId ? (
-              <div style={{ color: '#8c8c8c' }}>
-                频道 #{record.voSourceReportTargetChannelId} · 消息 #{record.voSourceReportTargetMessageId ?? record.voSourceReportTargetContentId ?? '-'}
-              </div>
-            ) : null}
-          </div>
+            )
+            : <div style={{ color: '#8c8c8c' }}>未保留目标快照</div>
         );
       },
     },
@@ -456,6 +541,8 @@ export const ModerationPage = () => {
           targetCommentId: record.voSourceReportTargetCommentId,
           targetChannelId: record.voSourceReportTargetChannelId,
           targetMessageId: record.voSourceReportTargetMessageId,
+          navigationStatus: record.voSourceReportTargetNavigationStatus,
+          navigationMessage: record.voSourceReportTargetNavigationMessage,
         });
 
         return openTarget ? (
@@ -468,12 +555,20 @@ export const ModerationPage = () => {
               targetCommentId: record.voSourceReportTargetCommentId,
               targetChannelId: record.voSourceReportTargetChannelId,
               targetMessageId: record.voSourceReportTargetMessageId,
+              navigationStatus: record.voSourceReportTargetNavigationStatus,
+              navigationMessage: record.voSourceReportTargetNavigationMessage,
             })}
           >
             {openTarget.label}
           </Button>
         ) : (
-          <span style={{ color: '#8c8c8c' }}>-</span>
+          <span style={{ color: '#8c8c8c' }}>
+            {record.voSourceReportTargetNavigationStatus === 'Unsupported'
+              ? '暂不支持回看'
+              : record.voSourceReportTargetNavigationStatus === 'Unavailable'
+                ? '目标已失效'
+                : '-'}
+          </span>
         );
       },
     },

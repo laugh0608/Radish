@@ -701,6 +701,11 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
         };
     }
 
+    private const string TargetNavigationStatusReady = "Ready";
+    private const string TargetNavigationStatusFallback = "Fallback";
+    private const string TargetNavigationStatusUnavailable = "Unavailable";
+    private const string TargetNavigationStatusUnsupported = "Unsupported";
+
     private sealed class ReportTargetNavigationSnapshot
     {
         public string TargetTypeName { get; init; } = "Unknown";
@@ -709,18 +714,32 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
         public long? TargetCommentId { get; init; }
         public long? TargetChannelId { get; init; }
         public long? TargetMessageId { get; init; }
+        public string NavigationStatus { get; init; } = TargetNavigationStatusUnavailable;
+        public string? NavigationMessage { get; init; }
     }
 
     private sealed class ForumCommentNavigationRecord
     {
         public long CommentId { get; init; }
         public long PostId { get; init; }
+        public long RootCommentId { get; init; }
+        public bool IsCommentAvailable { get; init; }
+        public bool IsRootCommentAvailable { get; init; }
+        public bool IsPostAvailable { get; init; }
     }
 
     private sealed class ForumQuickReplyNavigationRecord
     {
         public long QuickReplyId { get; init; }
         public long PostId { get; init; }
+        public bool IsQuickReplyAvailable { get; init; }
+        public bool IsPostAvailable { get; init; }
+    }
+
+    private sealed class ForumRootCommentAvailabilityRecord
+    {
+        public long CommentId { get; init; }
+        public bool IsAvailable { get; init; }
     }
 
     private async Task<List<ContentReportQueueItemVo>> BuildReportQueueItemsAsync(IReadOnlyCollection<ContentReport> reports)
@@ -785,40 +804,68 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             return new Dictionary<long, ReportTargetNavigationSnapshot>();
         }
 
+        var postIdSet = await BuildAvailablePostIdSetAsync(reports.Select(report =>
+            report.ReportTargetType == (int)ContentReportTargetTypeEnum.Post
+                ? report.TargetContentId
+                : 0));
         var chatChannelMap = await BuildChatChannelMapAsync(reports.Select(report =>
             report.ReportTargetType == (int)ContentReportTargetTypeEnum.ChatMessage
                 ? report.TargetContentId
                 : 0));
-        var commentPostMap = await BuildCommentPostMapAsync(reports.Select(report =>
+        var commentNavigationMap = await BuildCommentNavigationMapAsync(reports.Select(report =>
             report.ReportTargetType == (int)ContentReportTargetTypeEnum.Comment
                 ? report.TargetContentId
                 : 0));
-        var quickReplyPostMap = await BuildQuickReplyPostMapAsync(reports.Select(report =>
+        var quickReplyNavigationMap = await BuildQuickReplyNavigationMapAsync(reports.Select(report =>
             report.ReportTargetType == (int)ContentReportTargetTypeEnum.PostQuickReply
+                ? report.TargetContentId
+                : 0));
+        var productMap = await BuildProductNavigationMapAsync(reports.Select(report =>
+            report.ReportTargetType == (int)ContentReportTargetTypeEnum.Product
                 ? report.TargetContentId
                 : 0));
 
         return reports.ToDictionary(
             report => report.Id,
-            report => BuildReportTargetNavigationSnapshot(report, chatChannelMap, commentPostMap, quickReplyPostMap));
+            report => BuildReportTargetNavigationSnapshot(
+                report,
+                postIdSet,
+                chatChannelMap,
+                commentNavigationMap,
+                quickReplyNavigationMap,
+                productMap));
     }
 
     private async Task<ReportTargetNavigationSnapshot> BuildReportNavigationSnapshotAsync(ContentReport report)
     {
+        var postIdSet = await BuildAvailablePostIdSetAsync(
+            report.ReportTargetType == (int)ContentReportTargetTypeEnum.Post
+                ? new[] { report.TargetContentId }
+                : Array.Empty<long>());
         var chatChannelMap = await BuildChatChannelMapAsync(
             report.ReportTargetType == (int)ContentReportTargetTypeEnum.ChatMessage
                 ? new[] { report.TargetContentId }
                 : Array.Empty<long>());
-        var commentPostMap = await BuildCommentPostMapAsync(
+        var commentNavigationMap = await BuildCommentNavigationMapAsync(
             report.ReportTargetType == (int)ContentReportTargetTypeEnum.Comment
                 ? new[] { report.TargetContentId }
                 : Array.Empty<long>());
-        var quickReplyPostMap = await BuildQuickReplyPostMapAsync(
+        var quickReplyNavigationMap = await BuildQuickReplyNavigationMapAsync(
             report.ReportTargetType == (int)ContentReportTargetTypeEnum.PostQuickReply
                 ? new[] { report.TargetContentId }
                 : Array.Empty<long>());
+        var productMap = await BuildProductNavigationMapAsync(
+            report.ReportTargetType == (int)ContentReportTargetTypeEnum.Product
+                ? new[] { report.TargetContentId }
+                : Array.Empty<long>());
 
-        return BuildReportTargetNavigationSnapshot(report, chatChannelMap, commentPostMap, quickReplyPostMap);
+        return BuildReportTargetNavigationSnapshot(
+            report,
+            postIdSet,
+            chatChannelMap,
+            commentNavigationMap,
+            quickReplyNavigationMap,
+            productMap);
     }
 
     private async Task<Dictionary<long, long?>> BuildChatChannelMapAsync(IEnumerable<long> messageIds)
@@ -837,7 +884,39 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             .ToDictionary(group => group.Key, group => (long?)group.First().ChannelId);
     }
 
-    private async Task<Dictionary<long, long?>> BuildCommentPostMapAsync(IEnumerable<long> commentIds)
+    private async Task<HashSet<long>> BuildAvailablePostIdSetAsync(IEnumerable<long> postIds)
+    {
+        var normalizedPostIds = postIds
+            .Where(id => id > 0)
+            .Distinct()
+            .ToList();
+        if (normalizedPostIds.Count == 0)
+        {
+            return new HashSet<long>();
+        }
+
+        return (await _postRepository.QueryByIdsAsync(normalizedPostIds))
+            .Select(post => post.Id)
+            .ToHashSet();
+    }
+
+    private async Task<Dictionary<long, Product>> BuildProductNavigationMapAsync(IEnumerable<long> productIds)
+    {
+        var normalizedProductIds = productIds
+            .Where(id => id > 0)
+            .Distinct()
+            .ToList();
+        if (normalizedProductIds.Count == 0)
+        {
+            return new Dictionary<long, Product>();
+        }
+
+        return (await _productRepository.QueryByIdsAsync(normalizedProductIds))
+            .GroupBy(product => product.Id)
+            .ToDictionary(group => group.Key, group => group.First());
+    }
+
+    private async Task<Dictionary<long, ForumCommentNavigationRecord>> BuildCommentNavigationMapAsync(IEnumerable<long> commentIds)
     {
         var normalizedCommentIds = commentIds
             .Where(id => id > 0)
@@ -845,7 +924,7 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             .ToList();
         if (normalizedCommentIds.Count == 0)
         {
-            return new Dictionary<long, long?>();
+            return new Dictionary<long, ForumCommentNavigationRecord>();
         }
 
         var items = await _commentRepository.QueryMuchAsync<Comment, Post, User, ForumCommentNavigationRecord>(
@@ -854,19 +933,69 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
                 JoinType.Left, comment.PostId == post.Id,
                 JoinType.Left, comment.AuthorId == user.Id
             },
-            (comment, _, _) => new ForumCommentNavigationRecord
+            (comment, post, _) => new ForumCommentNavigationRecord
             {
                 CommentId = comment.Id,
-                PostId = comment.PostId
+                PostId = comment.PostId,
+                RootCommentId = comment.ParentId == null ? comment.Id : comment.RootId ?? comment.ParentId ?? comment.Id,
+                IsCommentAvailable = !comment.IsDeleted && comment.IsEnabled,
+                IsPostAvailable = post.Id > 0 && !post.IsDeleted
             },
             (comment, _, _) => normalizedCommentIds.Contains(comment.Id));
 
+        var rootCommentAvailabilityMap = await BuildRootCommentAvailabilityMapAsync(items.Select(item => item.RootCommentId));
+
         return items
             .GroupBy(item => item.CommentId)
-            .ToDictionary(group => group.Key, group => (long?)group.First().PostId);
+            .ToDictionary(group => group.Key, group =>
+            {
+                var item = group.First();
+                var isRootCommentAvailable = item.RootCommentId == item.CommentId
+                    ? item.IsCommentAvailable
+                    : rootCommentAvailabilityMap.GetValueOrDefault(item.RootCommentId);
+
+                return new ForumCommentNavigationRecord
+                {
+                    CommentId = item.CommentId,
+                    PostId = item.PostId,
+                    RootCommentId = item.RootCommentId,
+                    IsCommentAvailable = item.IsCommentAvailable,
+                    IsRootCommentAvailable = isRootCommentAvailable,
+                    IsPostAvailable = item.IsPostAvailable
+                };
+            });
     }
 
-    private async Task<Dictionary<long, long?>> BuildQuickReplyPostMapAsync(IEnumerable<long> quickReplyIds)
+    private async Task<Dictionary<long, bool>> BuildRootCommentAvailabilityMapAsync(IEnumerable<long> rootCommentIds)
+    {
+        var normalizedRootCommentIds = rootCommentIds
+            .Where(id => id > 0)
+            .Distinct()
+            .ToList();
+        if (normalizedRootCommentIds.Count == 0)
+        {
+            return new Dictionary<long, bool>();
+        }
+
+        var rootItems = await _commentRepository.QueryMuchAsync<Comment, Post, User, ForumRootCommentAvailabilityRecord>(
+            (comment, post, user) => new object[]
+            {
+                JoinType.Left, comment.PostId == post.Id,
+                JoinType.Left, comment.AuthorId == user.Id
+            },
+            (comment, _, _) => new ForumRootCommentAvailabilityRecord
+            {
+                CommentId = comment.Id,
+                IsAvailable = !comment.IsDeleted && comment.IsEnabled
+            },
+            (comment, _, _) => normalizedRootCommentIds.Contains(comment.Id));
+
+        return rootItems
+            .GroupBy(item => item.CommentId)
+            .ToDictionary(group => group.Key, group => group.First().IsAvailable);
+    }
+
+    private async Task<Dictionary<long, ForumQuickReplyNavigationRecord>> BuildQuickReplyNavigationMapAsync(IEnumerable<long> quickReplyIds)
     {
         var normalizedQuickReplyIds = quickReplyIds
             .Where(id => id > 0)
@@ -874,7 +1003,7 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             .ToList();
         if (normalizedQuickReplyIds.Count == 0)
         {
-            return new Dictionary<long, long?>();
+            return new Dictionary<long, ForumQuickReplyNavigationRecord>();
         }
 
         var items = await _postQuickReplyRepository.QueryMuchAsync<PostQuickReply, Post, User, ForumQuickReplyNavigationRecord>(
@@ -883,45 +1012,188 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
                 JoinType.Left, reply.PostId == post.Id,
                 JoinType.Left, reply.AuthorId == user.Id
             },
-            (reply, _, _) => new ForumQuickReplyNavigationRecord
+            (reply, post, _) => new ForumQuickReplyNavigationRecord
             {
                 QuickReplyId = reply.Id,
-                PostId = reply.PostId
+                PostId = reply.PostId,
+                IsQuickReplyAvailable = !reply.IsDeleted,
+                IsPostAvailable = post.Id > 0 && !post.IsDeleted
             },
             (reply, _, _) => normalizedQuickReplyIds.Contains(reply.Id));
 
         return items
             .GroupBy(item => item.QuickReplyId)
-            .ToDictionary(group => group.Key, group => (long?)group.First().PostId);
+            .ToDictionary(group => group.Key, group => group.First());
     }
 
     private static ReportTargetNavigationSnapshot BuildReportTargetNavigationSnapshot(
         ContentReport report,
+        IReadOnlySet<long>? availablePostIds = null,
         IReadOnlyDictionary<long, long?>? chatChannelMap = null,
-        IReadOnlyDictionary<long, long?>? commentPostMap = null,
-        IReadOnlyDictionary<long, long?>? quickReplyPostMap = null)
+        IReadOnlyDictionary<long, ForumCommentNavigationRecord>? commentNavigationMap = null,
+        IReadOnlyDictionary<long, ForumQuickReplyNavigationRecord>? quickReplyNavigationMap = null,
+        IReadOnlyDictionary<long, Product>? productMap = null)
     {
         var targetType = (ContentReportTargetTypeEnum)report.ReportTargetType;
-        var isChatMessageTarget = targetType == ContentReportTargetTypeEnum.ChatMessage;
-        var targetPostId = targetType switch
+        var targetTypeName = ToReportTargetTypeName(report.ReportTargetType);
+
+        if (targetType == ContentReportTargetTypeEnum.Post)
         {
-            ContentReportTargetTypeEnum.Post => report.TargetContentId,
-            ContentReportTargetTypeEnum.Comment => commentPostMap?.GetValueOrDefault(report.TargetContentId),
-            ContentReportTargetTypeEnum.PostQuickReply => quickReplyPostMap?.GetValueOrDefault(report.TargetContentId),
-            _ => null
-        };
-        long? targetCommentId = targetType == ContentReportTargetTypeEnum.Comment
-            ? report.TargetContentId
-            : null;
+            var isPostAvailable = report.TargetContentId > 0 && (availablePostIds?.Contains(report.TargetContentId) ?? false);
+            return new ReportTargetNavigationSnapshot
+            {
+                TargetTypeName = targetTypeName,
+                TargetContentId = report.TargetContentId,
+                TargetPostId = report.TargetContentId > 0 ? report.TargetContentId : null,
+                NavigationStatus = isPostAvailable ? TargetNavigationStatusReady : TargetNavigationStatusUnavailable,
+                NavigationMessage = isPostAvailable ? null : "帖子已删除或不存在"
+            };
+        }
+
+        if (targetType == ContentReportTargetTypeEnum.Comment)
+        {
+            if (commentNavigationMap?.TryGetValue(report.TargetContentId, out var matchedCommentNavigation) != true || matchedCommentNavigation == null)
+            {
+                return new ReportTargetNavigationSnapshot
+                {
+                    TargetTypeName = targetTypeName,
+                    TargetContentId = report.TargetContentId,
+                    TargetCommentId = report.TargetContentId > 0 ? report.TargetContentId : null,
+                    NavigationStatus = TargetNavigationStatusUnavailable,
+                    NavigationMessage = "评论已删除或不存在"
+                };
+            }
+
+            var commentNavigation = matchedCommentNavigation;
+            var navigationStatus = commentNavigation.IsPostAvailable
+                ? commentNavigation.IsCommentAvailable && commentNavigation.IsRootCommentAvailable
+                    ? TargetNavigationStatusReady
+                    : TargetNavigationStatusFallback
+                : TargetNavigationStatusUnavailable;
+            var navigationMessage = navigationStatus switch
+            {
+                TargetNavigationStatusFallback => "评论已删除或无法定位，已降级为所属帖子回看",
+                TargetNavigationStatusUnavailable when !commentNavigation.IsPostAvailable => "所属帖子已删除或不存在",
+                TargetNavigationStatusUnavailable => "评论已删除或不存在",
+                _ => null
+            };
+
+            return new ReportTargetNavigationSnapshot
+            {
+                TargetTypeName = targetTypeName,
+                TargetContentId = report.TargetContentId,
+                TargetPostId = commentNavigation.PostId > 0 ? commentNavigation.PostId : null,
+                TargetCommentId = report.TargetContentId > 0 ? report.TargetContentId : null,
+                NavigationStatus = navigationStatus,
+                NavigationMessage = navigationMessage
+            };
+        }
+
+        if (targetType == ContentReportTargetTypeEnum.PostQuickReply)
+        {
+            if (quickReplyNavigationMap?.TryGetValue(report.TargetContentId, out var matchedQuickReplyNavigation) != true || matchedQuickReplyNavigation == null)
+            {
+                return new ReportTargetNavigationSnapshot
+                {
+                    TargetTypeName = targetTypeName,
+                    TargetContentId = report.TargetContentId,
+                    NavigationStatus = TargetNavigationStatusUnavailable,
+                    NavigationMessage = "轻回应已删除或不存在"
+                };
+            }
+
+            var quickReplyNavigation = matchedQuickReplyNavigation;
+            var navigationStatus = quickReplyNavigation.IsPostAvailable
+                ? quickReplyNavigation.IsQuickReplyAvailable
+                    ? TargetNavigationStatusReady
+                    : TargetNavigationStatusFallback
+                : TargetNavigationStatusUnavailable;
+            var navigationMessage = navigationStatus switch
+            {
+                TargetNavigationStatusFallback => "轻回应已删除，已降级为所属帖子回看",
+                TargetNavigationStatusUnavailable when !quickReplyNavigation.IsPostAvailable => "所属帖子已删除或不存在",
+                TargetNavigationStatusUnavailable => "轻回应已删除或不存在",
+                _ => null
+            };
+
+            return new ReportTargetNavigationSnapshot
+            {
+                TargetTypeName = targetTypeName,
+                TargetContentId = report.TargetContentId,
+                TargetPostId = quickReplyNavigation.PostId > 0 ? quickReplyNavigation.PostId : null,
+                NavigationStatus = navigationStatus,
+                NavigationMessage = navigationMessage
+            };
+        }
+
+        if (targetType == ContentReportTargetTypeEnum.Product)
+        {
+            if (productMap?.TryGetValue(report.TargetContentId, out var matchedProduct) != true || matchedProduct == null)
+            {
+                return new ReportTargetNavigationSnapshot
+                {
+                    TargetTypeName = targetTypeName,
+                    TargetContentId = report.TargetContentId,
+                    NavigationStatus = TargetNavigationStatusUnavailable,
+                    NavigationMessage = "商品已删除或不存在"
+                };
+            }
+
+            var product = matchedProduct;
+            if (!product.IsEnabled)
+            {
+                return new ReportTargetNavigationSnapshot
+                {
+                    TargetTypeName = targetTypeName,
+                    TargetContentId = report.TargetContentId,
+                    NavigationStatus = TargetNavigationStatusUnavailable,
+                    NavigationMessage = "商品已下线"
+                };
+            }
+
+            if (ShopProductAvailabilityPolicy.IsUnavailablePublicProduct(product.ProductType, product.BenefitType, product.ConsumableType))
+            {
+                return new ReportTargetNavigationSnapshot
+                {
+                    TargetTypeName = targetTypeName,
+                    TargetContentId = report.TargetContentId,
+                    NavigationStatus = TargetNavigationStatusUnavailable,
+                    NavigationMessage = $"{ShopProductAvailabilityPolicy.GetUnavailableProductDisplayName(product.BenefitType, product.ConsumableType)}暂不支持公开回看"
+                };
+            }
+
+            return new ReportTargetNavigationSnapshot
+            {
+                TargetTypeName = targetTypeName,
+                TargetContentId = report.TargetContentId,
+                NavigationStatus = TargetNavigationStatusReady
+            };
+        }
+
+        if (targetType == ContentReportTargetTypeEnum.ChatMessage)
+        {
+            var targetChannelId = chatChannelMap?.GetValueOrDefault(report.TargetContentId);
+            return new ReportTargetNavigationSnapshot
+            {
+                TargetTypeName = targetTypeName,
+                TargetContentId = report.TargetContentId,
+                TargetChannelId = targetChannelId,
+                TargetMessageId = report.TargetContentId > 0 ? report.TargetContentId : null,
+                NavigationStatus = targetChannelId.HasValue && targetChannelId.Value > 0
+                    ? TargetNavigationStatusReady
+                    : TargetNavigationStatusUnavailable,
+                NavigationMessage = targetChannelId.HasValue && targetChannelId.Value > 0
+                    ? null
+                    : "聊天消息定位已失效"
+            };
+        }
 
         return new ReportTargetNavigationSnapshot
         {
-            TargetTypeName = ToReportTargetTypeName(report.ReportTargetType),
+            TargetTypeName = targetTypeName,
             TargetContentId = report.TargetContentId,
-            TargetPostId = targetPostId,
-            TargetCommentId = targetCommentId,
-            TargetChannelId = isChatMessageTarget ? chatChannelMap?.GetValueOrDefault(report.TargetContentId) : null,
-            TargetMessageId = isChatMessageTarget ? report.TargetContentId : null
+            NavigationStatus = TargetNavigationStatusUnsupported,
+            NavigationMessage = "当前目标暂不支持直接回看"
         };
     }
 
@@ -938,6 +1210,8 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             VoTargetCommentId = navigation.TargetCommentId,
             VoTargetChannelId = navigation.TargetChannelId,
             VoTargetMessageId = navigation.TargetMessageId,
+            VoTargetNavigationStatus = navigation.NavigationStatus,
+            VoTargetNavigationMessage = navigation.NavigationMessage,
             VoTargetUserId = report.TargetUserId,
             VoTargetUserName = report.TargetUserName,
             VoReporterUserId = report.ReporterUserId,
@@ -973,6 +1247,8 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             VoSourceReportTargetCommentId = sourceNavigation?.TargetCommentId,
             VoSourceReportTargetChannelId = sourceNavigation?.TargetChannelId,
             VoSourceReportTargetMessageId = sourceNavigation?.TargetMessageId,
+            VoSourceReportTargetNavigationStatus = sourceNavigation?.NavigationStatus ?? TargetNavigationStatusUnavailable,
+            VoSourceReportTargetNavigationMessage = sourceNavigation?.NavigationMessage,
             VoDurationHours = action.DurationHours,
             VoStartTime = action.StartTime,
             VoEndTime = action.EndTime,
