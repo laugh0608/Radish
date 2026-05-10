@@ -59,13 +59,25 @@ export interface UserExpDailyStatsSummaryVo {
   voPeakDayExp: number;
   voPeakStatDate?: string | null;
   voZeroGainDays: number;
+  voReviewDays: number;
   voNotices: string[];
+}
+
+export interface UserExpDailyLimitSnapshotVo {
+  voDailyLimitEnabled: boolean;
+  voMaxDailyExp: number;
+  voMaxExpFromPost: number;
+  voMaxExpFromComment: number;
+  voMaxExpFromLike: number;
+  voMaxExpFromHighlight: number;
+  voMaxExpFromLogin: number;
 }
 
 export interface UserExpDailyStatsWindowVo {
   voWindowDays: number;
   voStats: UserExpDailyStatsVo[];
   voSummary?: UserExpDailyStatsSummaryVo | null;
+  voLimits?: UserExpDailyLimitSnapshotVo | null;
 }
 
 export interface AdminAdjustExperienceRequest {

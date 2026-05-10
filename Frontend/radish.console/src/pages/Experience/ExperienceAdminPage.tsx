@@ -17,6 +17,7 @@ import {
   adminUnfreezeExperience,
   getLevelConfigs,
   getUserDailyStats,
+  type UserExpDailyLimitSnapshotVo,
   getUserExperience,
   recalculateLevelConfigs,
   type LevelConfigVo,
@@ -62,6 +63,18 @@ function formatFullStatDate(value: string): string {
   return dayjs(value).format('YYYY-MM-DD');
 }
 
+function formatLimitValue(
+  value: number,
+  limit: number,
+  limits?: UserExpDailyLimitSnapshotVo | null
+): string {
+  if (!limits?.voDailyLimitEnabled || limit <= 0) {
+    return String(value);
+  }
+
+  return `${value}/${limit}`;
+}
+
 export const ExperienceAdminPage = () => {
   useDocumentTitle('经验等级');
 
@@ -86,6 +99,7 @@ export const ExperienceAdminPage = () => {
   const canRecalculate = usePermission(CONSOLE_PERMISSIONS.experienceRecalculate);
   const dailyStats = dailyStatsWindow?.voStats ?? [];
   const dailyStatsSummary = dailyStatsWindow?.voSummary ?? null;
+  const dailyLimits = dailyStatsWindow?.voLimits ?? null;
 
   const loadLevels = async () => {
     try {
@@ -338,6 +352,16 @@ export const ExperienceAdminPage = () => {
       dataIndex: 'voExpEarned',
       key: 'voExpEarned',
       width: 100,
+      render: (value: number) => (
+        <div>
+          <div>{value}</div>
+          {dailyLimits?.voDailyLimitEnabled && (
+            <div style={{ color: '#8c8c8c' }}>
+              上限 {formatLimitValue(value, dailyLimits.voMaxDailyExp, dailyLimits)}
+            </div>
+          )}
+        </div>
+      ),
     },
     {
       title: '来源拆分',
@@ -345,11 +369,11 @@ export const ExperienceAdminPage = () => {
       width: 360,
       render: (_, record) => (
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <span>发帖 {record.voExpFromPost}</span>
-          <span>评论 {record.voExpFromComment}</span>
-          <span>点赞 {record.voExpFromLike}</span>
-          <span>高亮 {record.voExpFromHighlight}</span>
-          <span>登录 {record.voExpFromLogin}</span>
+          <span>发帖 {formatLimitValue(record.voExpFromPost, dailyLimits?.voMaxExpFromPost ?? 0, dailyLimits)}</span>
+          <span>评论 {formatLimitValue(record.voExpFromComment, dailyLimits?.voMaxExpFromComment ?? 0, dailyLimits)}</span>
+          <span>点赞 {formatLimitValue(record.voExpFromLike, dailyLimits?.voMaxExpFromLike ?? 0, dailyLimits)}</span>
+          <span>高亮 {formatLimitValue(record.voExpFromHighlight, dailyLimits?.voMaxExpFromHighlight ?? 0, dailyLimits)}</span>
+          <span>登录 {formatLimitValue(record.voExpFromLogin, dailyLimits?.voMaxExpFromLogin ?? 0, dailyLimits)}</span>
         </div>
       ),
     },
@@ -508,7 +532,30 @@ export const ExperienceAdminPage = () => {
                 <span>零增长天数</span>
                 <strong>{dailyStatsSummary ? dailyStatsSummary.voZeroGainDays : '--'}</strong>
               </div>
+              <div className="admin-feature-metric">
+                <span>需复核天数</span>
+                <strong>{dailyStatsSummary ? dailyStatsSummary.voReviewDays : '--'}</strong>
+              </div>
             </div>
+
+            {dailyLimits && (
+              <div className="admin-feature-banner" style={{ marginTop: 16 }}>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <strong>当前经验阈值</strong>
+                  <Tag color={dailyLimits.voDailyLimitEnabled ? 'success' : 'default'}>
+                    {dailyLimits.voDailyLimitEnabled ? '每日上限启用中' : '每日上限已停用'}
+                  </Tag>
+                </div>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 12 }}>
+                  <span>总经验 {dailyLimits.voMaxDailyExp}</span>
+                  <span>发帖 {dailyLimits.voMaxExpFromPost}</span>
+                  <span>评论 {dailyLimits.voMaxExpFromComment}</span>
+                  <span>点赞 {dailyLimits.voMaxExpFromLike}</span>
+                  <span>高亮 {dailyLimits.voMaxExpFromHighlight}</span>
+                  <span>登录 {dailyLimits.voMaxExpFromLogin}</span>
+                </div>
+              </div>
+            )}
 
             {dailyStatsSummary && (
               <div className="admin-feature-banner" style={{ marginTop: 16 }}>

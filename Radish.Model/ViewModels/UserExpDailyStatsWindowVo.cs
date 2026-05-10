@@ -48,9 +48,55 @@ public class UserExpDailyStatsSummaryVo
     public int VoZeroGainDays { get; set; }
 
     /// <summary>
+    /// 需要人工复核的天数
+    /// </summary>
+    public int VoReviewDays { get; set; }
+
+    /// <summary>
     /// 管理侧观察提示
     /// </summary>
     public List<string> VoNotices { get; set; } = [];
+}
+
+/// <summary>
+/// 当前生效的每日经验上限快照
+/// </summary>
+public class UserExpDailyLimitSnapshotVo
+{
+    /// <summary>
+    /// 是否启用每日上限
+    /// </summary>
+    public bool VoDailyLimitEnabled { get; set; }
+
+    /// <summary>
+    /// 单日总经验上限
+    /// </summary>
+    public int VoMaxDailyExp { get; set; }
+
+    /// <summary>
+    /// 单日发帖经验上限
+    /// </summary>
+    public int VoMaxExpFromPost { get; set; }
+
+    /// <summary>
+    /// 单日评论经验上限
+    /// </summary>
+    public int VoMaxExpFromComment { get; set; }
+
+    /// <summary>
+    /// 单日点赞经验上限
+    /// </summary>
+    public int VoMaxExpFromLike { get; set; }
+
+    /// <summary>
+    /// 单日高亮经验上限
+    /// </summary>
+    public int VoMaxExpFromHighlight { get; set; }
+
+    /// <summary>
+    /// 单日登录经验上限
+    /// </summary>
+    public int VoMaxExpFromLogin { get; set; }
 }
 
 /// <summary>
@@ -72,4 +118,9 @@ public class UserExpDailyStatsWindowVo
     /// 窗口摘要
     /// </summary>
     public UserExpDailyStatsSummaryVo? VoSummary { get; set; }
+
+    /// <summary>
+    /// 当前生效的每日经验上限快照
+    /// </summary>
+    public UserExpDailyLimitSnapshotVo? VoLimits { get; set; }
 }

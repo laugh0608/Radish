@@ -478,6 +478,7 @@ namespace Radish.Service;
             var normalizedDays = days <= 0 ? 7 : Math.Min(days, 30);
             var endDate = DateTime.Today;
             var startDate = endDate.AddDays(-normalizedDays + 1);
+            var dailyLimits = GetDailyLimitOptions();
 
             var stats = await _dailyStatsRepository.QueryAsync(
                 s => s.UserId == userId && s.StatDate >= startDate && s.StatDate <= endDate
@@ -485,13 +486,14 @@ namespace Radish.Service;
 
             var sortedStats = stats.OrderByDescending(s => s.StatDate).ToList();
             var statVos = Mapper.Map<List<UserExpDailyStatsVo>>(sortedStats);
-            var normalizedStats = NormalizeDailyStatsWindow(userId, startDate, endDate, statVos);
+            var normalizedStats = NormalizeDailyStatsWindow(userId, startDate, endDate, statVos, dailyLimits);
 
             return new UserExpDailyStatsWindowVo
             {
                 VoWindowDays = normalizedDays,
                 VoStats = normalizedStats,
-                VoSummary = BuildDailyStatsSummary(normalizedStats)
+                VoSummary = BuildDailyStatsSummary(normalizedStats, dailyLimits),
+                VoLimits = BuildDailyLimitSnapshot(dailyLimits)
             };
         }
         catch (Exception ex)
@@ -527,7 +529,8 @@ namespace Radish.Service;
         long userId,
         DateTime startDate,
         DateTime endDate,
-        List<UserExpDailyStatsVo> stats)
+        List<UserExpDailyStatsVo> stats,
+        ExperienceDailyLimitSettings dailyLimits)
     {
         var statMap = stats
             .GroupBy(stat => stat.VoStatDate.Date)
@@ -545,7 +548,7 @@ namespace Radish.Service;
                 stat.VoStatDate = date;
             }
 
-            stat.VoObservations = BuildDailyStatObservations(stat);
+            stat.VoObservations = BuildDailyStatObservations(stat, dailyLimits);
             normalizedStats.Add(stat);
         }
 
@@ -573,26 +576,37 @@ namespace Radish.Service;
         };
     }
 
-    private static UserExpDailyStatsSummaryVo BuildDailyStatsSummary(List<UserExpDailyStatsVo> stats)
+    private static UserExpDailyStatsSummaryVo BuildDailyStatsSummary(
+        List<UserExpDailyStatsVo> stats,
+        ExperienceDailyLimitSettings dailyLimits)
     {
         if (stats.Count == 0)
         {
             return new UserExpDailyStatsSummaryVo
             {
+                VoReviewDays = 0,
                 VoNotices = ["当前窗口暂无经验统计数据。"]
             };
         }
 
         long totalExp = 0;
         var zeroGainDays = 0;
+        var reviewDays = 0;
         var likeHeavyDays = 0;
         var highlightHeavyDays = 0;
+        var cappedDailyLimitDays = 0;
+        var nearDailyLimitDays = 0;
+        var sourceLimitDays = 0;
         var peakDayExp = long.MinValue;
         DateTime? peakStatDate = null;
 
         foreach (var stat in stats)
         {
             totalExp += stat.VoExpEarned;
+            if (HasWarningObservation(stat))
+            {
+                reviewDays++;
+            }
 
             if (stat.VoExpEarned <= 0)
             {
@@ -609,6 +623,25 @@ namespace Radish.Service;
                 highlightHeavyDays++;
             }
 
+            if (HasObservation(stat, "触达总上限"))
+            {
+                cappedDailyLimitDays++;
+            }
+            else if (HasObservation(stat, "接近总上限"))
+            {
+                nearDailyLimitDays++;
+            }
+
+            if (
+                HasObservation(stat, "点赞触达上限")
+                || HasObservation(stat, "点赞接近上限")
+                || HasObservation(stat, "高亮触达上限")
+                || HasObservation(stat, "高亮接近上限")
+            )
+            {
+                sourceLimitDays++;
+            }
+
             if (stat.VoExpEarned > peakDayExp)
             {
                 peakDayExp = stat.VoExpEarned;
@@ -617,6 +650,27 @@ namespace Radish.Service;
         }
 
         var notices = new List<string>();
+        if (!dailyLimits.EnableDailyLimit)
+        {
+            notices.Add("当前未启用每日经验上限，观察结果仅基于经验来源结构。");
+        }
+        else
+        {
+            if (cappedDailyLimitDays > 0)
+            {
+                notices.Add($"最近 {stats.Count} 天中有 {cappedDailyLimitDays} 天触达当日总上限。");
+            }
+            else if (nearDailyLimitDays > 0)
+            {
+                notices.Add($"最近 {stats.Count} 天中有 {nearDailyLimitDays} 天接近当日总上限。");
+            }
+
+            if (sourceLimitDays > 0)
+            {
+                notices.Add($"其中 {sourceLimitDays} 天的点赞或高亮经验接近来源上限，建议结合行为计数复核。");
+            }
+        }
+
         if (zeroGainDays >= 3)
         {
             notices.Add($"最近 {stats.Count} 天中有 {zeroGainDays} 天没有经验增长。");
@@ -644,11 +698,14 @@ namespace Radish.Service;
             VoPeakDayExp = peakDayExp == long.MinValue ? 0 : peakDayExp,
             VoPeakStatDate = peakStatDate,
             VoZeroGainDays = zeroGainDays,
+            VoReviewDays = reviewDays,
             VoNotices = notices
         };
     }
 
-    private static List<UserExpDailyStatObservationVo> BuildDailyStatObservations(UserExpDailyStatsVo stat)
+    private static List<UserExpDailyStatObservationVo> BuildDailyStatObservations(
+        UserExpDailyStatsVo stat,
+        ExperienceDailyLimitSettings dailyLimits)
     {
         if (stat.VoExpEarned <= 0)
         {
@@ -667,6 +724,13 @@ namespace Radish.Service;
         if (dominantSource != null)
         {
             observations.Add(dominantSource);
+        }
+
+        if (dailyLimits.EnableDailyLimit)
+        {
+            AddLimitObservation(observations, stat.VoExpEarned, dailyLimits.MaxDailyExp, "总上限");
+            AddLimitObservation(observations, stat.VoExpFromLike, dailyLimits.MaxExpFromLike, "点赞");
+            AddLimitObservation(observations, stat.VoExpFromHighlight, dailyLimits.MaxExpFromHighlight, "高亮");
         }
 
         if (stat.VoExpEarned >= 20 && stat.VoExpFromLike / (double)stat.VoExpEarned >= 0.6d)
@@ -688,6 +752,63 @@ namespace Radish.Service;
         }
 
         return observations;
+    }
+
+    private static UserExpDailyLimitSnapshotVo BuildDailyLimitSnapshot(ExperienceDailyLimitSettings dailyLimits)
+    {
+        return new UserExpDailyLimitSnapshotVo
+        {
+            VoDailyLimitEnabled = dailyLimits.EnableDailyLimit,
+            VoMaxDailyExp = dailyLimits.MaxDailyExp,
+            VoMaxExpFromPost = dailyLimits.MaxExpFromPost,
+            VoMaxExpFromComment = dailyLimits.MaxExpFromComment,
+            VoMaxExpFromLike = dailyLimits.MaxExpFromLike,
+            VoMaxExpFromHighlight = dailyLimits.MaxExpFromHighlight,
+            VoMaxExpFromLogin = dailyLimits.MaxExpFromLogin
+        };
+    }
+
+    private static bool HasWarningObservation(UserExpDailyStatsVo stat)
+    {
+        return stat.VoObservations.Any(observation =>
+            string.Equals(observation.VoTone, "warning", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool HasObservation(UserExpDailyStatsVo stat, string label)
+    {
+        return stat.VoObservations.Any(observation =>
+            string.Equals(observation.VoLabel, label, StringComparison.Ordinal));
+    }
+
+    private static void AddLimitObservation(
+        ICollection<UserExpDailyStatObservationVo> observations,
+        long currentValue,
+        int limitValue,
+        string labelPrefix)
+    {
+        if (limitValue <= 0 || currentValue <= 0)
+        {
+            return;
+        }
+
+        if (currentValue >= limitValue)
+        {
+            observations.Add(new UserExpDailyStatObservationVo
+            {
+                VoLabel = labelPrefix == "总上限" ? "触达总上限" : $"{labelPrefix}触达上限",
+                VoTone = "warning"
+            });
+            return;
+        }
+
+        if (currentValue >= Math.Ceiling(limitValue * 0.8d))
+        {
+            observations.Add(new UserExpDailyStatObservationVo
+            {
+                VoLabel = labelPrefix == "总上限" ? "接近总上限" : $"{labelPrefix}接近上限",
+                VoTone = "warning"
+            });
+        }
     }
 
     private static UserExpDailyStatObservationVo? GetDominantSourceObservation(UserExpDailyStatsVo stat)
