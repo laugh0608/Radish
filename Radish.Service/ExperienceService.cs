@@ -1,6 +1,7 @@
 using AutoMapper;
 using Radish.Common;
 using Radish.Common.AttributeTool;
+using Radish.Common.CacheTool;
 using Radish.Common.Exceptions;
 using Radish.Infrastructure;
 using Radish.IRepository;
@@ -28,6 +29,9 @@ namespace Radish.Service;
     private readonly ICoinService _coinService;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
     private readonly INotificationService _notificationService;
+    private readonly ICaching _caching;
+
+    private const string LevelConfigsCacheKey = "experience:level-configs:enabled";
 
 	    /// <summary>乐观锁冲突重试次数</summary>
 	    private const int MaxRetryCount = 6;
@@ -48,7 +52,8 @@ namespace Radish.Service;
         IExperienceCalculator experienceCalculator,
         ICoinService coinService,
         IAttachmentUrlResolver attachmentUrlResolver,
-        INotificationService notificationService)
+        INotificationService notificationService,
+        ICaching caching)
         : base(mapper, userExpRepository)
     {
         _userExpRepository = userExpRepository;
@@ -60,6 +65,7 @@ namespace Radish.Service;
         _coinService = coinService;
         _attachmentUrlResolver = attachmentUrlResolver;
         _notificationService = notificationService;
+        _caching = caching;
     }
 
     #region 经验值查询
@@ -345,12 +351,8 @@ namespace Radish.Service;
     {
         try
         {
-            var levelConfigs = await _levelConfigRepository.QueryAsync(l => l.IsEnabled);
-
-            // 手动排序
-            var sortedConfigs = levelConfigs.OrderBy(l => l.Level).ToList();
-
-            var configVos = Mapper.Map<List<LevelConfigVo>>(sortedConfigs);
+            var levelConfigs = await GetLevelConfigsCacheAsync();
+            var configVos = Mapper.Map<List<LevelConfigVo>>(levelConfigs);
             FillLevelConfigUrls(configVos);
             return configVos;
         }
@@ -368,7 +370,7 @@ namespace Radish.Service;
     {
         try
         {
-            var levelConfig = await _levelConfigRepository.QueryFirstAsync(l => l.Level == level && l.IsEnabled);
+            var levelConfig = (await GetLevelConfigsCacheAsync()).FirstOrDefault(l => l.Level == level);
             if (levelConfig == null)
             {
                 return null;
@@ -496,10 +498,23 @@ namespace Radish.Service;
     /// <summary>
     /// 更新每日统计（内部方法，经验值发放时调用）
     /// </summary>
+    [UseTran(Propagation = Propagation.Required)]
     public async Task UpdateDailyStatsAsync(long userId, string expType, int amount, DateTime statDate)
     {
-        // TODO P1: 实现每日统计更新
-        await Task.CompletedTask;
+        if (userId <= 0)
+        {
+            Log.Warning("更新每日经验统计失败：userId 无效（{UserId}）", userId);
+            return;
+        }
+
+        if (amount <= 0)
+        {
+            Log.Warning("更新每日经验统计失败：amount 必须大于 0，userId={UserId}, amount={Amount}", userId, amount);
+            return;
+        }
+
+        var stats = await GetOrCreateDailyStatsAsync(userId, statDate);
+        await UpdateDailyStatsAsync(stats, amount, expType);
     }
 
     #endregion
@@ -779,6 +794,7 @@ namespace Radish.Service;
 
             // 3. 清除计算器缓存
             _experienceCalculator.ClearCache();
+            await InvalidateLevelConfigsCacheAsync();
 
             Log.Information("等级配置重新计算完成，共更新 {Count} 个等级", updatedConfigs.Count);
 
@@ -1172,9 +1188,57 @@ namespace Radish.Service;
     /// </summary>
     private async Task<List<LevelConfig>> GetLevelConfigsCacheAsync()
     {
-        // TODO P1: 添加缓存
-        var configs = await _levelConfigRepository.QueryAsync(l => l.IsEnabled);
-        return configs.OrderBy(l => l.Level).ToList();
+        if (IsExperienceCacheEnabled())
+        {
+            try
+            {
+                var cachedConfigs = await _caching.GetAsync<List<LevelConfig>>(LevelConfigsCacheKey);
+                if (cachedConfigs != null)
+                {
+                    return cachedConfigs.OrderBy(l => l.Level).ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "读取等级配置缓存失败，将回退到数据库查询");
+            }
+        }
+
+        var configs = (await _levelConfigRepository.QueryAsync(l => l.IsEnabled))
+            .OrderBy(l => l.Level)
+            .ToList();
+
+        if (IsExperienceCacheEnabled())
+        {
+            try
+            {
+                await _caching.SetAsync(LevelConfigsCacheKey, configs, GetLevelConfigCacheExpiration());
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "写入等级配置缓存失败");
+            }
+        }
+
+        return configs;
+    }
+
+    private async Task InvalidateLevelConfigsCacheAsync()
+    {
+        try
+        {
+            await _caching.RemoveAsync(LevelConfigsCacheKey);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "清除等级配置缓存失败");
+        }
+    }
+
+    private TimeSpan GetLevelConfigCacheExpiration()
+    {
+        var cacheMinutes = GetIntConfig("ExperienceCalculator:CacheExpirationMinutes", 60);
+        return TimeSpan.FromMinutes(cacheMinutes);
     }
 
     private async Task<UserExperience> NormalizeFreezeStateAsync(UserExperience userExp)
@@ -1412,19 +1476,17 @@ namespace Radish.Service;
     /// </summary>
     private bool CheckDailyLimit(UserExpDailyStats dailyStats, int amount, string expType)
     {
-        // TODO: 从配置读取每日上限（暂时硬编码）
-        const int MaxDailyExp = 500;
-        const int MaxExpFromPost = 100;
-        const int MaxExpFromComment = 100;
-        const int MaxExpFromLike = 50;
-        const int MaxExpFromHighlight = 200;
-        const int MaxExpFromLogin = 20;
+        var dailyLimits = GetDailyLimitOptions();
+        if (!dailyLimits.EnableDailyLimit)
+        {
+            return true;
+        }
 
         // 检查总经验值上限
-        if (dailyStats.ExpEarned + amount > MaxDailyExp)
+        if (dailyStats.ExpEarned + amount > dailyLimits.MaxDailyExp)
         {
             Log.Warning("用户每日总经验值已达上限：userId={UserId}, current={Current}, max={Max}",
-                dailyStats.UserId, dailyStats.ExpEarned, MaxDailyExp);
+                dailyStats.UserId, dailyStats.ExpEarned, dailyLimits.MaxDailyExp);
             return false;
         }
 
@@ -1433,56 +1495,95 @@ namespace Radish.Service;
         {
             case "POST_CREATE":
             case "FIRST_POST":
-                if (dailyStats.ExpFromPost + amount > MaxExpFromPost)
+                if (dailyStats.ExpFromPost + amount > dailyLimits.MaxExpFromPost)
                 {
                     Log.Warning("用户每日发帖经验值已达上限：userId={UserId}, current={Current}, max={Max}",
-                        dailyStats.UserId, dailyStats.ExpFromPost, MaxExpFromPost);
+                        dailyStats.UserId, dailyStats.ExpFromPost, dailyLimits.MaxExpFromPost);
                     return false;
                 }
                 break;
 
             case "COMMENT_CREATE":
             case "FIRST_COMMENT":
-                if (dailyStats.ExpFromComment + amount > MaxExpFromComment)
+                if (dailyStats.ExpFromComment + amount > dailyLimits.MaxExpFromComment)
                 {
                     Log.Warning("用户每日评论经验值已达上限：userId={UserId}, current={Current}, max={Max}",
-                        dailyStats.UserId, dailyStats.ExpFromComment, MaxExpFromComment);
+                        dailyStats.UserId, dailyStats.ExpFromComment, dailyLimits.MaxExpFromComment);
                     return false;
                 }
                 break;
 
+            case "POST_LIKED":
+            case "COMMENT_LIKED":
             case "RECEIVE_LIKE":
+            case "LIKE_OTHERS":
             case "GIVE_LIKE":
-                if (dailyStats.ExpFromLike + amount > MaxExpFromLike)
+                if (dailyStats.ExpFromLike + amount > dailyLimits.MaxExpFromLike)
                 {
                     Log.Warning("用户每日点赞经验值已达上限：userId={UserId}, current={Current}, max={Max}",
-                        dailyStats.UserId, dailyStats.ExpFromLike, MaxExpFromLike);
+                        dailyStats.UserId, dailyStats.ExpFromLike, dailyLimits.MaxExpFromLike);
                     return false;
                 }
                 break;
 
             case "GOD_COMMENT":
             case "SOFA_COMMENT":
-                if (dailyStats.ExpFromHighlight + amount > MaxExpFromHighlight)
+                if (dailyStats.ExpFromHighlight + amount > dailyLimits.MaxExpFromHighlight)
                 {
                     Log.Warning("用户每日神评/沙发经验值已达上限：userId={UserId}, current={Current}, max={Max}",
-                        dailyStats.UserId, dailyStats.ExpFromHighlight, MaxExpFromHighlight);
+                        dailyStats.UserId, dailyStats.ExpFromHighlight, dailyLimits.MaxExpFromHighlight);
                     return false;
                 }
                 break;
 
             case "DAILY_LOGIN":
+            case "WEEKLY_LOGIN":
             case "CONTINUOUS_LOGIN":
-                if (dailyStats.ExpFromLogin + amount > MaxExpFromLogin)
+                if (dailyStats.ExpFromLogin + amount > dailyLimits.MaxExpFromLogin)
                 {
                     Log.Warning("用户每日登录经验值已达上限：userId={UserId}, current={Current}, max={Max}",
-                        dailyStats.UserId, dailyStats.ExpFromLogin, MaxExpFromLogin);
+                        dailyStats.UserId, dailyStats.ExpFromLogin, dailyLimits.MaxExpFromLogin);
                     return false;
                 }
                 break;
         }
 
         return true;
+    }
+
+    private ExperienceDailyLimitSettings GetDailyLimitOptions()
+    {
+        return new ExperienceDailyLimitSettings
+        {
+            EnableDailyLimit = GetBoolConfig("ExperienceCalculator:DailyLimits:EnableDailyLimit", true),
+            MaxDailyExp = GetIntConfig("ExperienceCalculator:DailyLimits:MaxDailyExp", 500),
+            MaxExpFromPost = GetIntConfig("ExperienceCalculator:DailyLimits:MaxExpFromPost", 100),
+            MaxExpFromComment = GetIntConfig("ExperienceCalculator:DailyLimits:MaxExpFromComment", 100),
+            MaxExpFromLike = GetIntConfig("ExperienceCalculator:DailyLimits:MaxExpFromLike", 50),
+            MaxExpFromHighlight = GetIntConfig("ExperienceCalculator:DailyLimits:MaxExpFromHighlight", 200),
+            MaxExpFromLogin = GetIntConfig("ExperienceCalculator:DailyLimits:MaxExpFromLogin", 20)
+        };
+    }
+
+    private static bool IsExperienceCacheEnabled()
+    {
+        return GetBoolConfig("ExperienceCalculator:EnableCache", true);
+    }
+
+    private static int GetIntConfig(string path, int fallbackValue)
+    {
+        var rawValue = AppSettingsTool.GetValue(path);
+        return int.TryParse(rawValue, out var parsedValue) && parsedValue > 0
+            ? parsedValue
+            : fallbackValue;
+    }
+
+    private static bool GetBoolConfig(string path, bool fallbackValue)
+    {
+        var rawValue = AppSettingsTool.GetValue(path);
+        return bool.TryParse(rawValue, out var parsedValue)
+            ? parsedValue
+            : fallbackValue;
     }
 
     /// <summary>
@@ -1508,11 +1609,14 @@ namespace Radish.Service;
                 dailyStats.CommentCount++;
                 break;
 
+            case "POST_LIKED":
+            case "COMMENT_LIKED":
             case "RECEIVE_LIKE":
                 dailyStats.ExpFromLike += amount;
                 dailyStats.LikeReceivedCount++;
                 break;
 
+            case "LIKE_OTHERS":
             case "GIVE_LIKE":
                 dailyStats.ExpFromLike += amount;
                 dailyStats.LikeGivenCount++;
@@ -1524,6 +1628,7 @@ namespace Radish.Service;
                 break;
 
             case "DAILY_LOGIN":
+            case "WEEKLY_LOGIN":
             case "CONTINUOUS_LOGIN":
                 dailyStats.ExpFromLogin += amount;
                 break;
@@ -1531,6 +1636,23 @@ namespace Radish.Service;
 
         dailyStats.ModifyTime = DateTime.Now;
         await _dailyStatsRepository.UpdateAsync(dailyStats);
+    }
+
+    private sealed class ExperienceDailyLimitSettings
+    {
+        public bool EnableDailyLimit { get; init; }
+
+        public int MaxDailyExp { get; init; }
+
+        public int MaxExpFromPost { get; init; }
+
+        public int MaxExpFromComment { get; init; }
+
+        public int MaxExpFromLike { get; init; }
+
+        public int MaxExpFromHighlight { get; init; }
+
+        public int MaxExpFromLogin { get; init; }
     }
 
     #endregion
