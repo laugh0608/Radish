@@ -26,6 +26,7 @@ import {
   getOrderStatusColor,
   getProductTypeDisplay,
 } from '../../api/shopApi';
+import { useSearchParams } from 'react-router-dom';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
 import type { Order, OrderStatus } from '../../api/types';
@@ -33,13 +34,89 @@ import { OrderDetail } from './OrderDetail';
 import { log } from '../../utils/logger';
 import './OrderList.css';
 
+const DEFAULT_PAGE_INDEX = 1;
+const DEFAULT_PAGE_SIZE = 20;
+
+function parsePositiveIntQuery(value: string | null): number | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+function parseOrderStatusQuery(value: string | null): OrderStatus | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed >= 0 && parsed <= 5
+    ? parsed as OrderStatus
+    : undefined;
+}
+
+function parseBooleanQuery(value: string | null): boolean {
+  return value === '1' || value === 'true';
+}
+
+function buildOrderSearchParams(params: {
+  userId?: number;
+  status?: OrderStatus;
+  productId?: number;
+  orderNo?: string;
+  pageIndex?: number;
+  pageSize?: number;
+  openDetail?: boolean;
+}): URLSearchParams {
+  const searchParams = new URLSearchParams();
+  const normalizedOrderNo = params.orderNo?.trim() ?? '';
+
+  if (params.userId !== undefined) {
+    searchParams.set('userId', params.userId.toString());
+  }
+
+  if (params.status !== undefined) {
+    searchParams.set('status', params.status.toString());
+  }
+
+  if (params.productId !== undefined) {
+    searchParams.set('productId', params.productId.toString());
+  }
+
+  if (normalizedOrderNo) {
+    searchParams.set('orderNo', normalizedOrderNo);
+  }
+
+  if ((params.pageIndex ?? DEFAULT_PAGE_INDEX) !== DEFAULT_PAGE_INDEX) {
+    searchParams.set('pageIndex', String(params.pageIndex));
+  }
+
+  if ((params.pageSize ?? DEFAULT_PAGE_SIZE) !== DEFAULT_PAGE_SIZE) {
+    searchParams.set('pageSize', String(params.pageSize));
+  }
+
+  if (params.openDetail) {
+    searchParams.set('openDetail', '1');
+  }
+
+  return searchParams;
+}
+
 export const OrderList = () => {
   useDocumentTitle('订单管理');
+  const [urlSearchParams, setUrlSearchParams] = useSearchParams();
+  const queryUserId = parsePositiveIntQuery(urlSearchParams.get('userId'));
+  const queryStatus = parseOrderStatusQuery(urlSearchParams.get('status'));
+  const queryProductId = parsePositiveIntQuery(urlSearchParams.get('productId'));
+  const queryOrderNo = (urlSearchParams.get('orderNo') ?? '').trim();
+  const queryPageIndex = parsePositiveIntQuery(urlSearchParams.get('pageIndex')) ?? DEFAULT_PAGE_INDEX;
+  const queryPageSize = parsePositiveIntQuery(urlSearchParams.get('pageSize')) ?? DEFAULT_PAGE_SIZE;
+  const queryOpenDetail = parseBooleanQuery(urlSearchParams.get('openDetail'));
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
-  const [pageIndex, setPageIndex] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
   const canViewOrders = usePermission(CONSOLE_PERMISSIONS.ordersView);
   const canRetryOrder = usePermission(CONSOLE_PERMISSIONS.ordersRetry);
   const canRemarkOrder = usePermission(CONSOLE_PERMISSIONS.ordersRemark);
@@ -54,39 +131,59 @@ export const OrderList = () => {
   const [savingRemark, setSavingRemark] = useState(false);
 
   // 草稿筛选条件
-  const [draftUserId, setDraftUserId] = useState<number | undefined>();
-  const [draftStatus, setDraftStatus] = useState<OrderStatus | undefined>();
-  const [draftProductId, setDraftProductId] = useState<number | undefined>();
-  const [draftOrderNo, setDraftOrderNo] = useState('');
+  const [draftUserId, setDraftUserId] = useState<number | undefined>(queryUserId);
+  const [draftStatus, setDraftStatus] = useState<OrderStatus | undefined>(queryStatus);
+  const [draftProductId, setDraftProductId] = useState<number | undefined>(queryProductId);
+  const [draftOrderNo, setDraftOrderNo] = useState(queryOrderNo);
 
-  // 已应用筛选条件
-  const [searchParams, setSearchParams] = useState<{
+  const syncSearchParams = (params: {
     userId?: number;
     status?: OrderStatus;
     productId?: number;
-    orderNo: string;
-  }>({
-    userId: undefined,
-    status: undefined,
-    productId: undefined,
-    orderNo: '',
-  });
+    orderNo?: string;
+    pageIndex?: number;
+    pageSize?: number;
+    openDetail?: boolean;
+  }, replace: boolean = false) => {
+    setUrlSearchParams(buildOrderSearchParams(params), { replace });
+  };
+
+  useEffect(() => {
+    setDraftUserId(queryUserId);
+    setDraftStatus(queryStatus);
+    setDraftProductId(queryProductId);
+    setDraftOrderNo(queryOrderNo);
+  }, [queryUserId, queryStatus, queryProductId, queryOrderNo]);
 
   // 加载订单列表
   const loadOrders = async () => {
     try {
       setLoading(true);
       const response = await adminGetOrders({
-        userId: searchParams.userId,
-        status: searchParams.status,
-        productId: searchParams.productId,
-        orderNo: searchParams.orderNo || undefined,
-        pageIndex,
-        pageSize,
+        userId: queryUserId,
+        status: queryStatus,
+        productId: queryProductId,
+        orderNo: queryOrderNo || undefined,
+        pageIndex: queryPageIndex,
+        pageSize: queryPageSize,
       });
 
       setOrders(response.data);
       setTotal(response.dataCount);
+      setSelectedOrder((current) => current
+        ? response.data.find((item) => item.voId === current.voId) ?? current
+        : current);
+
+      if (queryOpenDetail) {
+        const targetOrder = queryOrderNo
+          ? response.data.find((item) => item.voOrderNo === queryOrderNo)
+          : response.data.length === 1 ? response.data[0] : undefined;
+
+        if (targetOrder) {
+          setSelectedOrder(targetOrder);
+          setDetailVisible(true);
+        }
+      }
     } catch (error) {
       log.error('OrderList', '加载订单列表失败:', error);
       message.error('加载订单列表失败');
@@ -102,31 +199,34 @@ export const OrderList = () => {
     }
 
     void loadOrders();
-  }, [pageIndex, pageSize, searchParams, canViewOrders]);
+  }, [
+    queryUserId,
+    queryStatus,
+    queryProductId,
+    queryOrderNo,
+    queryPageIndex,
+    queryPageSize,
+    queryOpenDetail,
+    canViewOrders
+  ]);
 
   // 搜索
   const handleSearch = () => {
-    setPageIndex(1);
-    setSearchParams({
+    syncSearchParams({
       userId: draftUserId,
       status: draftStatus,
       productId: draftProductId,
-      orderNo: draftOrderNo.trim(),
+      orderNo: draftOrderNo,
+      pageIndex: DEFAULT_PAGE_INDEX,
+      pageSize: queryPageSize,
     });
   };
 
   // 重置筛选
   const handleReset = () => {
-    setDraftUserId(undefined);
-    setDraftStatus(undefined);
-    setDraftProductId(undefined);
-    setDraftOrderNo('');
-    setPageIndex(1);
-    setSearchParams({
-      userId: undefined,
-      status: undefined,
-      productId: undefined,
-      orderNo: '',
+    syncSearchParams({
+      pageIndex: DEFAULT_PAGE_INDEX,
+      pageSize: queryPageSize,
     });
   };
 
@@ -140,6 +240,22 @@ export const OrderList = () => {
   const handleRetry = (order: Order) => {
     setRetryOrder(order);
     setConfirmVisible(true);
+  };
+
+  const handleCloseDetail = () => {
+    setDetailVisible(false);
+    setSelectedOrder(undefined);
+
+    if (queryOpenDetail) {
+      syncSearchParams({
+        userId: queryUserId,
+        status: queryStatus,
+        productId: queryProductId,
+        orderNo: queryOrderNo,
+        pageIndex: queryPageIndex,
+        pageSize: queryPageSize,
+      }, true);
+    }
   };
 
   // 确认重试
@@ -370,15 +486,21 @@ export const OrderList = () => {
         rowKey="voId"
         loading={loading}
         pagination={{
-          current: pageIndex,
-          pageSize: pageSize,
+          current: queryPageIndex,
+          pageSize: queryPageSize,
           total: total,
           showSizeChanger: true,
           showQuickJumper: true,
           showTotal: (total) => `共 ${total} 条`,
           onChange: (page, size) => {
-            setPageIndex(page);
-            setPageSize(size);
+            syncSearchParams({
+              userId: queryUserId,
+              status: queryStatus,
+              productId: queryProductId,
+              orderNo: queryOrderNo,
+              pageIndex: page,
+              pageSize: size,
+            });
           },
         }}
         scroll={{ x: 1400 }}
@@ -389,10 +511,7 @@ export const OrderList = () => {
         order={selectedOrder}
         canRemark={canRemarkOrder}
         savingRemark={savingRemark}
-        onClose={() => {
-          setDetailVisible(false);
-          setSelectedOrder(undefined);
-        }}
+        onClose={handleCloseDetail}
         onRetry={() => {
           if (selectedOrder) {
             handleRetry(selectedOrder);

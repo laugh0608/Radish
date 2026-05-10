@@ -38,10 +38,10 @@
 
 | 模块/页面 | 路由 | 路由访问权限 | 页面内操作权限 | 真实后端资源 | 种子状态 | 备注 |
 | --- | --- | --- | --- | --- | --- | --- |
-| Dashboard | `/` | `console.dashboard.view` | `console.orders.view`、`console.products.create`、`console.users.view`、`console.applications.view` | `Statistics/GetDashboardStats`、`Shop/AdminGetOrders` | ✅ | 最近订单按订单查看权限单独控制 |
+| Dashboard | `/` | `console.dashboard.view` | `console.orders.view`、`console.products.create`、`console.users.view`、`console.applications.view` | `Statistics/GetDashboardStats`、`Shop/AdminGetOrders` | ✅ | 最近订单按订单查看权限单独控制，并支持带 `orderNo` 深链进入订单治理面 |
 | Applications | `/applications` | `console.applications.view` | `console.applications.create/edit/delete/reset-secret` | `Client/GetClients`、`GetClient/.+`、`CreateClient`、`UpdateClient/.+`、`DeleteClient/.+`、`ResetClientSecret/.+` | ✅ | 列表与弹窗链路均已闭环 |
 | Products | `/products` | `console.products.view` | `console.products.create/edit/delete/toggle-sale` | `Shop/GetCategories`、`AdminGetProducts`、`CreateProduct`、`UpdateProduct`、`DeleteProduct/.+`、`PutOnSale/.+`、`TakeOffSale/.+` | ✅ | `AdminGetProduct` 当前页面未使用 |
-| Orders | `/orders` | `console.orders.view` | `console.orders.retry`、`console.orders.remark` | `Shop/AdminGetOrders`、`RetryGrantBenefit/.+`、`AdminRemarkOrder/.+` | ✅ | 详情当前复用列表数据，管理员备注通过列表快照更新 |
+| Orders | `/orders` | `console.orders.view` | `console.orders.retry`、`console.orders.remark` | `Shop/AdminGetOrders`、`RetryGrantBenefit/.+`、`AdminRemarkOrder/.+` | ✅ | 详情当前复用列表数据，管理员备注通过列表快照更新，并支持 `orderNo` 查询参数定位 / 展开目标订单 |
 | Users | `/users` | `console.users.view` | 无额外操作权限 | `User/GetUserList`、`GetUserById/\\d+` | ✅ | 未落地操作已收口，不再保留伪权限 |
 | User Detail | `/users/:userId` | `console.users.view` | 无额外操作权限 | 当前页面仍以 mock 为主，无新增真实资源依赖 | ✅ | 路由边界已稳定，后续若接真接口需重新补矩阵 |
 | Roles | `/roles` | `console.roles.view` | `console.roles.create/edit/toggle/delete` | `Role/GetRoleList`、`GetRoleById`、`CreateRole`、`UpdateRole`、`DeleteRole`、`ToggleRoleStatus` | ✅ | 首批闭环模块 |

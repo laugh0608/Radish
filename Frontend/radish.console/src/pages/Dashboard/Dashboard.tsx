@@ -88,6 +88,14 @@ export const Dashboard = () => {
     void loadRecentOrders();
   }, [canViewOrders]);
 
+  const handleOpenOrderDetail = (orderNo: string) => {
+    const searchParams = new URLSearchParams({
+      orderNo,
+      openDetail: '1',
+    });
+    navigate(`/orders?${searchParams.toString()}`);
+  };
+
   const orderColumns: TableColumnsType<Order> = [
     {
       title: '订单号',
@@ -133,7 +141,7 @@ export const Dashboard = () => {
           variant="ghost"
           size="small"
           icon={<EyeOutlined />}
-          onClick={() => navigate(`/orders?orderNo=${record.voOrderNo}`)}
+          onClick={() => handleOpenOrderDetail(record.voOrderNo)}
         >
           查看
         </Button>
