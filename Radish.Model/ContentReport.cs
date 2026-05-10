@@ -24,6 +24,22 @@ public class ContentReport : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
     [SugarColumn(IsNullable = false)]
     public long TargetContentId { get; set; }
 
+    /// <summary>举报目标快照所属帖子 ID</summary>
+    [SugarColumn(IsNullable = true)]
+    public long? TargetSnapshotPostId { get; set; }
+
+    /// <summary>举报目标快照所属频道 ID</summary>
+    [SugarColumn(IsNullable = true)]
+    public long? TargetSnapshotChannelId { get; set; }
+
+    /// <summary>举报目标快照标题</summary>
+    [SugarColumn(Length = 200, IsNullable = true)]
+    public string? TargetSnapshotTitle { get; set; }
+
+    /// <summary>举报目标快照摘要</summary>
+    [SugarColumn(Length = 200, IsNullable = true)]
+    public string? TargetSnapshotSummary { get; set; }
+
     /// <summary>被举报用户 ID</summary>
     [SugarColumn(IsNullable = false)]
     public long TargetUserId { get; set; }

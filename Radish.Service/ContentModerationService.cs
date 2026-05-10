@@ -65,13 +65,13 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
         }
 
         var targetType = ParseTargetType(dto.TargetType);
-        var (targetUserId, targetUserName) = await ResolveReportTargetAsync(targetType, dto.TargetContentId);
-        if (targetUserId < 0)
+        var targetSnapshot = await ResolveReportTargetSnapshotAsync(targetType, dto.TargetContentId);
+        if (targetSnapshot.TargetUserId < 0)
         {
             throw new InvalidOperationException("举报目标用户不存在");
         }
 
-        if (targetUserId > 0 && targetUserId == reporterUserId)
+        if (targetSnapshot.TargetUserId > 0 && targetSnapshot.TargetUserId == reporterUserId)
         {
             throw new ArgumentException("不能举报自己的内容");
         }
@@ -95,8 +95,12 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
         {
             ReportTargetType = (int)targetType,
             TargetContentId = dto.TargetContentId,
-            TargetUserId = targetUserId,
-            TargetUserName = targetUserName,
+            TargetSnapshotPostId = targetSnapshot.TargetPostId,
+            TargetSnapshotChannelId = targetSnapshot.TargetChannelId,
+            TargetSnapshotTitle = targetSnapshot.SnapshotTitle,
+            TargetSnapshotSummary = targetSnapshot.SnapshotSummary,
+            TargetUserId = targetSnapshot.TargetUserId,
+            TargetUserName = targetSnapshot.TargetUserName,
             ReporterUserId = reporterUserId,
             ReporterUserName = normalizedReporterName,
             ReasonType = normalizedReasonType,
@@ -532,22 +536,22 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
         await _moderationActionRepository.UpdateRangeAsync(activeActions);
     }
 
-    private async Task<(long targetUserId, string? targetUserName)> ResolveReportTargetAsync(
+    private async Task<ResolvedReportTargetSnapshot> ResolveReportTargetSnapshotAsync(
         ContentReportTargetTypeEnum targetType,
         long targetContentId)
     {
         return targetType switch
         {
-            ContentReportTargetTypeEnum.Post => await ResolvePostTargetAsync(targetContentId),
-            ContentReportTargetTypeEnum.Comment => await ResolveCommentTargetAsync(targetContentId),
-            ContentReportTargetTypeEnum.ChatMessage => await ResolveChatMessageTargetAsync(targetContentId),
-            ContentReportTargetTypeEnum.Product => await ResolveProductTargetAsync(targetContentId),
-            ContentReportTargetTypeEnum.PostQuickReply => await ResolvePostQuickReplyTargetAsync(targetContentId),
+            ContentReportTargetTypeEnum.Post => await ResolvePostTargetSnapshotAsync(targetContentId),
+            ContentReportTargetTypeEnum.Comment => await ResolveCommentTargetSnapshotAsync(targetContentId),
+            ContentReportTargetTypeEnum.ChatMessage => await ResolveChatMessageTargetSnapshotAsync(targetContentId),
+            ContentReportTargetTypeEnum.Product => await ResolveProductTargetSnapshotAsync(targetContentId),
+            ContentReportTargetTypeEnum.PostQuickReply => await ResolvePostQuickReplyTargetSnapshotAsync(targetContentId),
             _ => throw new ArgumentException("不支持的举报目标类型")
         };
     }
 
-    private async Task<(long targetUserId, string? targetUserName)> ResolvePostTargetAsync(long postId)
+    private async Task<ResolvedReportTargetSnapshot> ResolvePostTargetSnapshotAsync(long postId)
     {
         var post = await _postRepository.QueryFirstAsync(p => p.Id == postId && !p.IsDeleted);
         if (post == null)
@@ -555,10 +559,17 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             throw new InvalidOperationException("目标帖子不存在");
         }
 
-        return (post.AuthorId, post.AuthorName);
+        return new ResolvedReportTargetSnapshot
+        {
+            TargetUserId = post.AuthorId,
+            TargetUserName = post.AuthorName,
+            TargetPostId = post.Id,
+            SnapshotTitle = BuildTitleSnapshot(post.Title),
+            SnapshotSummary = BuildTextSnapshot(string.IsNullOrWhiteSpace(post.Summary) ? post.Content : post.Summary)
+        };
     }
 
-    private async Task<(long targetUserId, string? targetUserName)> ResolveCommentTargetAsync(long commentId)
+    private async Task<ResolvedReportTargetSnapshot> ResolveCommentTargetSnapshotAsync(long commentId)
     {
         var comment = await _commentRepository.QueryFirstAsync(c => c.Id == commentId && !c.IsDeleted);
         if (comment == null)
@@ -566,10 +577,19 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             throw new InvalidOperationException("目标评论不存在");
         }
 
-        return (comment.AuthorId, comment.AuthorName);
+        var postTitle = await ResolvePostTitleAsync(comment.PostId);
+
+        return new ResolvedReportTargetSnapshot
+        {
+            TargetUserId = comment.AuthorId,
+            TargetUserName = comment.AuthorName,
+            TargetPostId = comment.PostId > 0 ? comment.PostId : null,
+            SnapshotTitle = postTitle,
+            SnapshotSummary = BuildTextSnapshot(comment.Content)
+        };
     }
 
-    private async Task<(long targetUserId, string? targetUserName)> ResolveChatMessageTargetAsync(long messageId)
+    private async Task<ResolvedReportTargetSnapshot> ResolveChatMessageTargetSnapshotAsync(long messageId)
     {
         var message = await _channelMessageRepository.QueryFirstIncludingDeletedAsync(m => m.Id == messageId);
         if (message == null)
@@ -577,10 +597,16 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             throw new InvalidOperationException("目标聊天室消息不存在");
         }
 
-        return (message.UserId, message.UserName);
+        return new ResolvedReportTargetSnapshot
+        {
+            TargetUserId = message.UserId,
+            TargetUserName = message.UserName,
+            TargetChannelId = message.ChannelId > 0 ? message.ChannelId : null,
+            SnapshotSummary = message.IsDeleted ? "消息已撤回" : BuildMessageSnapshot(message)
+        };
     }
 
-    private async Task<(long targetUserId, string? targetUserName)> ResolveProductTargetAsync(long productId)
+    private async Task<ResolvedReportTargetSnapshot> ResolveProductTargetSnapshotAsync(long productId)
     {
         var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
         if (product == null)
@@ -588,11 +614,16 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             throw new InvalidOperationException("目标商品不存在");
         }
 
-        var targetUserId = product.CreateId < 0 ? -1 : product.CreateId;
-        return (targetUserId, product.CreateBy);
+        return new ResolvedReportTargetSnapshot
+        {
+            TargetUserId = product.CreateId < 0 ? -1 : product.CreateId,
+            TargetUserName = product.CreateBy,
+            SnapshotTitle = BuildTitleSnapshot(product.Name),
+            SnapshotSummary = BuildTextSnapshot(product.Description)
+        };
     }
 
-    private async Task<(long targetUserId, string? targetUserName)> ResolvePostQuickReplyTargetAsync(long quickReplyId)
+    private async Task<ResolvedReportTargetSnapshot> ResolvePostQuickReplyTargetSnapshotAsync(long quickReplyId)
     {
         var quickReply = await _postQuickReplyRepository.QueryFirstAsync(reply => reply.Id == quickReplyId && !reply.IsDeleted);
         if (quickReply == null)
@@ -600,7 +631,27 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             throw new InvalidOperationException("目标轻回应不存在");
         }
 
-        return (quickReply.AuthorId, quickReply.AuthorName);
+        var postTitle = await ResolvePostTitleAsync(quickReply.PostId);
+
+        return new ResolvedReportTargetSnapshot
+        {
+            TargetUserId = quickReply.AuthorId,
+            TargetUserName = quickReply.AuthorName,
+            TargetPostId = quickReply.PostId > 0 ? quickReply.PostId : null,
+            SnapshotTitle = postTitle,
+            SnapshotSummary = BuildTextSnapshot(quickReply.Content)
+        };
+    }
+
+    private async Task<string?> ResolvePostTitleAsync(long postId)
+    {
+        if (postId <= 0)
+        {
+            return null;
+        }
+
+        var post = await _postRepository.QueryFirstAsync(p => p.Id == postId && !p.IsDeleted);
+        return post == null ? null : BuildTitleSnapshot(post.Title);
     }
 
     private static ContentReportTargetTypeEnum ParseTargetType(string? targetType)
@@ -712,6 +763,16 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
     private const string TargetNavigationStatusFallback = "Fallback";
     private const string TargetNavigationStatusUnavailable = "Unavailable";
     private const string TargetNavigationStatusUnsupported = "Unsupported";
+
+    private sealed class ResolvedReportTargetSnapshot
+    {
+        public long TargetUserId { get; init; }
+        public string? TargetUserName { get; init; }
+        public long? TargetPostId { get; init; }
+        public long? TargetChannelId { get; init; }
+        public string? SnapshotTitle { get; init; }
+        public string? SnapshotSummary { get; init; }
+    }
 
     private sealed class ReportTargetNavigationSnapshot
     {
@@ -1119,6 +1180,49 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             .ToDictionary(group => group.Key, group => group.First());
     }
 
+    private static long? ResolveSnapshotPostId(ContentReport report, long? currentPostId = null)
+    {
+        if (currentPostId.HasValue && currentPostId.Value > 0)
+        {
+            return currentPostId.Value;
+        }
+
+        if (report.TargetSnapshotPostId.HasValue && report.TargetSnapshotPostId.Value > 0)
+        {
+            return report.TargetSnapshotPostId.Value;
+        }
+
+        return (ContentReportTargetTypeEnum)report.ReportTargetType == ContentReportTargetTypeEnum.Post && report.TargetContentId > 0
+            ? report.TargetContentId
+            : null;
+    }
+
+    private static long? ResolveSnapshotChannelId(ContentReport report, long? currentChannelId = null)
+    {
+        if (currentChannelId.HasValue && currentChannelId.Value > 0)
+        {
+            return currentChannelId.Value;
+        }
+
+        return report.TargetSnapshotChannelId.HasValue && report.TargetSnapshotChannelId.Value > 0
+            ? report.TargetSnapshotChannelId.Value
+            : null;
+    }
+
+    private static string? ResolveSnapshotTitle(ContentReport report, string? currentSnapshotTitle)
+    {
+        return !string.IsNullOrWhiteSpace(report.TargetSnapshotTitle)
+            ? report.TargetSnapshotTitle
+            : currentSnapshotTitle;
+    }
+
+    private static string? ResolveSnapshotSummary(ContentReport report, string? currentSnapshotSummary)
+    {
+        return !string.IsNullOrWhiteSpace(report.TargetSnapshotSummary)
+            ? report.TargetSnapshotSummary
+            : currentSnapshotSummary;
+    }
+
     private static ReportTargetNavigationSnapshot BuildReportTargetNavigationSnapshot(
         ContentReport report,
         IReadOnlyDictionary<long, ForumPostNavigationRecord>? postNavigationMap = null,
@@ -1138,29 +1242,35 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
                 postNavigationMap.TryGetValue(report.TargetContentId, out postNavigation);
             }
             var isPostAvailable = postNavigation?.IsPostAvailable == true;
+            var targetPostId = ResolveSnapshotPostId(report, postNavigation?.PostId);
             return new ReportTargetNavigationSnapshot
             {
                 TargetTypeName = targetTypeName,
                 TargetContentId = report.TargetContentId,
-                TargetPostId = report.TargetContentId > 0 ? report.TargetContentId : null,
+                TargetPostId = targetPostId,
                 NavigationStatus = isPostAvailable ? TargetNavigationStatusReady : TargetNavigationStatusUnavailable,
                 NavigationMessage = isPostAvailable ? null : "帖子已删除或不存在",
-                SnapshotTitle = postNavigation?.SnapshotTitle,
-                SnapshotSummary = postNavigation?.SnapshotSummary
+                SnapshotTitle = ResolveSnapshotTitle(report, postNavigation?.SnapshotTitle),
+                SnapshotSummary = ResolveSnapshotSummary(report, postNavigation?.SnapshotSummary)
             };
         }
 
         if (targetType == ContentReportTargetTypeEnum.Comment)
         {
+            var snapshotPostId = ResolveSnapshotPostId(report);
+
             if (commentNavigationMap?.TryGetValue(report.TargetContentId, out var matchedCommentNavigation) != true || matchedCommentNavigation == null)
             {
                 return new ReportTargetNavigationSnapshot
                 {
                     TargetTypeName = targetTypeName,
                     TargetContentId = report.TargetContentId,
+                    TargetPostId = snapshotPostId,
                     TargetCommentId = report.TargetContentId > 0 ? report.TargetContentId : null,
                     NavigationStatus = TargetNavigationStatusUnavailable,
-                    NavigationMessage = "评论已删除或不存在"
+                    NavigationMessage = "评论已删除或不存在",
+                    SnapshotTitle = ResolveSnapshotTitle(report, null),
+                    SnapshotSummary = ResolveSnapshotSummary(report, null)
                 };
             }
 
@@ -1182,25 +1292,30 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             {
                 TargetTypeName = targetTypeName,
                 TargetContentId = report.TargetContentId,
-                TargetPostId = commentNavigation.PostId > 0 ? commentNavigation.PostId : null,
+                TargetPostId = ResolveSnapshotPostId(report, commentNavigation.PostId),
                 TargetCommentId = report.TargetContentId > 0 ? report.TargetContentId : null,
                 NavigationStatus = navigationStatus,
                 NavigationMessage = navigationMessage,
-                SnapshotTitle = commentNavigation.SnapshotTitle,
-                SnapshotSummary = commentNavigation.SnapshotSummary
+                SnapshotTitle = ResolveSnapshotTitle(report, commentNavigation.SnapshotTitle),
+                SnapshotSummary = ResolveSnapshotSummary(report, commentNavigation.SnapshotSummary)
             };
         }
 
         if (targetType == ContentReportTargetTypeEnum.PostQuickReply)
         {
+            var snapshotPostId = ResolveSnapshotPostId(report);
+
             if (quickReplyNavigationMap?.TryGetValue(report.TargetContentId, out var matchedQuickReplyNavigation) != true || matchedQuickReplyNavigation == null)
             {
                 return new ReportTargetNavigationSnapshot
                 {
                     TargetTypeName = targetTypeName,
                     TargetContentId = report.TargetContentId,
+                    TargetPostId = snapshotPostId,
                     NavigationStatus = TargetNavigationStatusUnavailable,
-                    NavigationMessage = "轻回应已删除或不存在"
+                    NavigationMessage = "轻回应已删除或不存在",
+                    SnapshotTitle = ResolveSnapshotTitle(report, null),
+                    SnapshotSummary = ResolveSnapshotSummary(report, null)
                 };
             }
 
@@ -1222,11 +1337,11 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             {
                 TargetTypeName = targetTypeName,
                 TargetContentId = report.TargetContentId,
-                TargetPostId = quickReplyNavigation.PostId > 0 ? quickReplyNavigation.PostId : null,
+                TargetPostId = ResolveSnapshotPostId(report, quickReplyNavigation.PostId),
                 NavigationStatus = navigationStatus,
                 NavigationMessage = navigationMessage,
-                SnapshotTitle = quickReplyNavigation.SnapshotTitle,
-                SnapshotSummary = quickReplyNavigation.SnapshotSummary
+                SnapshotTitle = ResolveSnapshotTitle(report, quickReplyNavigation.SnapshotTitle),
+                SnapshotSummary = ResolveSnapshotSummary(report, quickReplyNavigation.SnapshotSummary)
             };
         }
 
@@ -1239,7 +1354,9 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
                     TargetTypeName = targetTypeName,
                     TargetContentId = report.TargetContentId,
                     NavigationStatus = TargetNavigationStatusUnavailable,
-                    NavigationMessage = "商品已删除或不存在"
+                    NavigationMessage = "商品已删除或不存在",
+                    SnapshotTitle = ResolveSnapshotTitle(report, null),
+                    SnapshotSummary = ResolveSnapshotSummary(report, null)
                 };
             }
 
@@ -1269,8 +1386,8 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
                 TargetContentId = report.TargetContentId,
                 NavigationStatus = navigationStatus,
                 NavigationMessage = navigationMessage,
-                SnapshotTitle = product.SnapshotTitle,
-                SnapshotSummary = product.SnapshotSummary
+                SnapshotTitle = ResolveSnapshotTitle(report, product.SnapshotTitle),
+                SnapshotSummary = ResolveSnapshotSummary(report, product.SnapshotSummary)
             };
         }
 
@@ -1281,20 +1398,20 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             {
                 chatMessageMap.TryGetValue(report.TargetContentId, out chatMessageNavigation);
             }
-            var targetChannelId = chatMessageNavigation?.ChannelId;
+            var targetChannelId = ResolveSnapshotChannelId(report, chatMessageNavigation?.ChannelId);
             return new ReportTargetNavigationSnapshot
             {
                 TargetTypeName = targetTypeName,
                 TargetContentId = report.TargetContentId,
                 TargetChannelId = targetChannelId,
                 TargetMessageId = report.TargetContentId > 0 ? report.TargetContentId : null,
-                NavigationStatus = targetChannelId.HasValue && targetChannelId.Value > 0
+                NavigationStatus = chatMessageNavigation?.ChannelId > 0
                     ? TargetNavigationStatusReady
                     : TargetNavigationStatusUnavailable,
-                NavigationMessage = targetChannelId.HasValue && targetChannelId.Value > 0
+                NavigationMessage = chatMessageNavigation?.ChannelId > 0
                     ? null
                     : "聊天消息定位已失效",
-                SnapshotSummary = chatMessageNavigation?.SnapshotSummary
+                SnapshotSummary = ResolveSnapshotSummary(report, chatMessageNavigation?.SnapshotSummary)
             };
         }
 
@@ -1303,7 +1420,9 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             TargetTypeName = targetTypeName,
             TargetContentId = report.TargetContentId,
             NavigationStatus = TargetNavigationStatusUnsupported,
-            NavigationMessage = "当前目标暂不支持直接回看"
+            NavigationMessage = "当前目标暂不支持直接回看",
+            SnapshotTitle = ResolveSnapshotTitle(report, null),
+            SnapshotSummary = ResolveSnapshotSummary(report, null)
         };
     }
 
@@ -1371,6 +1490,24 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             VoOperatorUserName = action.CreateBy,
             VoCreateTime = action.CreateTime
         };
+    }
+
+    private static string? BuildTitleSnapshot(string? title, int maxLength = 200)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return null;
+        }
+
+        var normalized = MultiWhitespacePattern.Replace(title, " ").Trim();
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return null;
+        }
+
+        return normalized.Length <= maxLength
+            ? normalized
+            : normalized[..maxLength];
     }
 
     private static string? BuildMessageSnapshot(ChannelMessage message)

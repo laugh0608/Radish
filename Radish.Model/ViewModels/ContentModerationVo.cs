@@ -12,6 +12,18 @@ public class ContentReportVo
     /// <summary>举报目标内容 ID</summary>
     public long VoTargetContentId { get; set; }
 
+    /// <summary>举报目标快照所属帖子 ID</summary>
+    public long? VoTargetSnapshotPostId { get; set; }
+
+    /// <summary>举报目标快照所属频道 ID</summary>
+    public long? VoTargetSnapshotChannelId { get; set; }
+
+    /// <summary>举报目标快照标题</summary>
+    public string? VoTargetSnapshotTitle { get; set; }
+
+    /// <summary>举报目标快照摘要</summary>
+    public string? VoTargetSnapshotSummary { get; set; }
+
     /// <summary>被举报用户 ID</summary>
     public long VoTargetUserId { get; set; }
 
