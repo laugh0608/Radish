@@ -67,6 +67,12 @@ public class ContentReportQueueItemVo
     /// <summary>举报目标内容 ID</summary>
     public long VoTargetContentId { get; set; }
 
+    /// <summary>聊天室目标频道 ID</summary>
+    public long? VoTargetChannelId { get; set; }
+
+    /// <summary>聊天室目标消息 ID</summary>
+    public long? VoTargetMessageId { get; set; }
+
     /// <summary>被举报用户 ID</summary>
     public long VoTargetUserId { get; set; }
 

@@ -1,4 +1,5 @@
 using AutoMapper;
+using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
@@ -17,7 +18,7 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
     private readonly IBaseRepository<UserModerationAction> _moderationActionRepository;
     private readonly IBaseRepository<Post> _postRepository;
     private readonly IBaseRepository<Comment> _commentRepository;
-    private readonly IBaseRepository<ChannelMessage> _channelMessageRepository;
+    private readonly IChannelMessageRepository _channelMessageRepository;
     private readonly IBaseRepository<Product> _productRepository;
     private readonly IBaseRepository<PostQuickReply> _postQuickReplyRepository;
     private readonly IBaseRepository<User> _userRepository;
@@ -28,7 +29,7 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
         IBaseRepository<UserModerationAction> moderationActionRepository,
         IBaseRepository<Post> postRepository,
         IBaseRepository<Comment> commentRepository,
-        IBaseRepository<ChannelMessage> channelMessageRepository,
+        IChannelMessageRepository channelMessageRepository,
         IBaseRepository<Product> productRepository,
         IBaseRepository<PostQuickReply> postQuickReplyRepository,
         IBaseRepository<User> userRepository)
@@ -120,7 +121,7 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
 
         return new VoPagedResult<ContentReportQueueItemVo>
         {
-            VoItems = reports.Select(MapReportQueueItem).ToList(),
+            VoItems = await BuildReportQueueItemsAsync(reports),
             VoTotal = totalCount,
             VoPageIndex = safePageIndex,
             VoPageSize = safePageSize
@@ -208,7 +209,7 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
                 tenantId > 0 ? tenantId : report.TenantId);
         }
 
-        return MapReportQueueItem(report);
+        return await BuildReportQueueItemAsync(report);
     }
 
     public async Task<UserModerationActionVo> ApplyUserActionAsync(
@@ -563,7 +564,7 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
 
     private async Task<(long targetUserId, string? targetUserName)> ResolveChatMessageTargetAsync(long messageId)
     {
-        var message = await _channelMessageRepository.QueryFirstAsync(m => m.Id == messageId && !m.IsDeleted);
+        var message = await _channelMessageRepository.QueryFirstIncludingDeletedAsync(m => m.Id == messageId);
         if (message == null)
         {
             throw new InvalidOperationException("目标聊天室消息不存在");
@@ -700,13 +701,53 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
         };
     }
 
-    private static ContentReportQueueItemVo MapReportQueueItem(ContentReport report)
+    private async Task<List<ContentReportQueueItemVo>> BuildReportQueueItemsAsync(IReadOnlyCollection<ContentReport> reports)
     {
+        if (reports.Count == 0)
+        {
+            return new List<ContentReportQueueItemVo>();
+        }
+
+        var chatMessageIds = reports
+            .Where(report => report.ReportTargetType == (int)ContentReportTargetTypeEnum.ChatMessage && report.TargetContentId > 0)
+            .Select(report => report.TargetContentId)
+            .Distinct()
+            .ToList();
+        var chatChannelMap = chatMessageIds.Count > 0
+            ? (await _channelMessageRepository.QueryByIdsIncludingDeletedAsync(chatMessageIds))
+                .GroupBy(message => message.Id)
+                .ToDictionary(group => group.Key, group => (long?)group.First().ChannelId)
+            : new Dictionary<long, long?>();
+
+        return reports
+            .Select(report => MapReportQueueItem(
+                report,
+                chatChannelMap.GetValueOrDefault(report.TargetContentId)))
+            .ToList();
+    }
+
+    private async Task<ContentReportQueueItemVo> BuildReportQueueItemAsync(ContentReport report)
+    {
+        if (report.ReportTargetType != (int)ContentReportTargetTypeEnum.ChatMessage || report.TargetContentId <= 0)
+        {
+            return MapReportQueueItem(report);
+        }
+
+        var message = await _channelMessageRepository.QueryFirstIncludingDeletedAsync(m => m.Id == report.TargetContentId);
+        return MapReportQueueItem(report, message?.ChannelId);
+    }
+
+    private static ContentReportQueueItemVo MapReportQueueItem(ContentReport report, long? targetChannelId = null)
+    {
+        var isChatMessageTarget = report.ReportTargetType == (int)ContentReportTargetTypeEnum.ChatMessage;
+
         return new ContentReportQueueItemVo
         {
             VoReportId = report.Id,
             VoTargetType = ToReportTargetTypeName(report.ReportTargetType),
             VoTargetContentId = report.TargetContentId,
+            VoTargetChannelId = isChatMessageTarget ? targetChannelId : null,
+            VoTargetMessageId = isChatMessageTarget ? report.TargetContentId : null,
             VoTargetUserId = report.TargetUserId,
             VoTargetUserName = report.TargetUserName,
             VoReporterUserId = report.ReporterUserId,

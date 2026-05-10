@@ -11,6 +11,8 @@ export interface ContentReportQueueItemVo {
   voReportId: number;
   voTargetType: string;
   voTargetContentId: number;
+  voTargetChannelId?: number | null;
+  voTargetMessageId?: number | null;
   voTargetUserId: number;
   voTargetUserName?: string | null;
   voReporterUserId: number;

@@ -14,6 +14,7 @@ import {
 } from '@radish/ui';
 import { ReloadOutlined } from '@radish/ui';
 import { getActionLogs, getReviewQueue, reviewReport, type ContentReportQueueItemVo, type UserModerationActionVo } from '@/api/moderationApi';
+import { getApiBaseUrl } from '@/config/env';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { usePermission } from '@/hooks/usePermission';
@@ -60,6 +61,14 @@ const renderActionType = (value: string) => {
   }
 };
 
+function buildDesktopChatTargetUrl(channelId: number, messageId: number): string {
+  const url = new URL('/desktop', getApiBaseUrl());
+  url.searchParams.set('app', 'chat');
+  url.searchParams.set('channelId', String(channelId));
+  url.searchParams.set('messageId', String(messageId));
+  return url.toString();
+}
+
 export const ModerationPage = () => {
   useDocumentTitle('内容治理');
 
@@ -80,6 +89,21 @@ export const ModerationPage = () => {
   const [submittingReview, setSubmittingReview] = useState(false);
 
   const canReview = usePermission(CONSOLE_PERMISSIONS.moderationReview);
+
+  const handleOpenChatTarget = (item: ContentReportQueueItemVo) => {
+    if (
+      item.voTargetType !== 'ChatMessage'
+      || !item.voTargetChannelId
+      || item.voTargetChannelId <= 0
+      || !item.voTargetMessageId
+      || item.voTargetMessageId <= 0
+    ) {
+      message.error('当前举报项缺少聊天定位信息');
+      return;
+    }
+
+    window.open(buildDesktopChatTargetUrl(item.voTargetChannelId, item.voTargetMessageId), '_blank', 'noopener');
+  };
 
   const loadQueue = async (targetPageIndex = queuePageIndex, targetPageSize = queuePageSize) => {
     try {
@@ -183,6 +207,9 @@ export const ModerationPage = () => {
       render: (_, record) => (
         <div>
           <div>{record.voTargetType} #{record.voTargetContentId}</div>
+          {record.voTargetType === 'ChatMessage' && record.voTargetChannelId ? (
+            <div style={{ color: '#8c8c8c' }}>频道 #{record.voTargetChannelId} · 消息 #{record.voTargetMessageId ?? record.voTargetContentId}</div>
+          ) : null}
           <div style={{ color: '#8c8c8c' }}>{record.voTargetUserName || `用户 ${record.voTargetUserId}`}</div>
         </div>
       ),
@@ -223,16 +250,31 @@ export const ModerationPage = () => {
     {
       title: '操作',
       key: 'actions',
-      width: 140,
-      render: (_, record) => (
-        record.voStatus === 'Pending' && canReview ? (
-          <Button size="small" variant="primary" onClick={() => openReviewModal(record)}>
-            审核
-          </Button>
-        ) : (
-          <span style={{ color: '#8c8c8c' }}>{record.voReviewedByName || '已处理'}</span>
-        )
-      ),
+      width: 260,
+      render: (_, record) => {
+        const canOpenChatTarget = record.voTargetType === 'ChatMessage'
+          && !!record.voTargetChannelId
+          && record.voTargetChannelId > 0
+          && !!record.voTargetMessageId
+          && record.voTargetMessageId > 0;
+
+        return (
+          <Space wrap>
+            {canOpenChatTarget ? (
+              <Button size="small" onClick={() => handleOpenChatTarget(record)}>
+                打开聊天定位
+              </Button>
+            ) : null}
+            {record.voStatus === 'Pending' && canReview ? (
+              <Button size="small" variant="primary" onClick={() => openReviewModal(record)}>
+                审核
+              </Button>
+            ) : (
+              <span style={{ color: '#8c8c8c' }}>{record.voReviewedByName || '已处理'}</span>
+            )}
+          </Space>
+        );
+      },
     },
   ];
 
