@@ -1,11 +1,3 @@
-import {
-  areEntityIdsEqual,
-  compareEntityIds,
-  isPersistedEntityId,
-  type ChannelMessageVo,
-  type EntityIdValue,
-} from '../types/chat.ts';
-
 export interface ChatNavigationTarget {
   channelId: string;
   messageId?: string;
@@ -21,8 +13,6 @@ export interface ChatAppParamTarget {
   channelId: string | number;
   messageId?: string | number;
 }
-
-export type ChatMessageNavigationAction = 'found' | 'load-more' | 'not-found';
 
 function normalizePositiveIntegerString(value: unknown): string | undefined {
   if (typeof value === 'number') {
@@ -108,21 +98,4 @@ export function parseChatNotificationNavigation(extData?: string | null): ChatNa
   } catch {
     return null;
   }
-}
-
-export function resolveChatMessageNavigationAction(
-  messages: ChannelMessageVo[],
-  targetMessageId: EntityIdValue,
-  hasMoreHistory: boolean
-): ChatMessageNavigationAction {
-  if (messages.some((message) => areEntityIdsEqual(message.voId, targetMessageId))) {
-    return 'found';
-  }
-
-  const oldestMessageId = messages[0]?.voId;
-  if (hasMoreHistory && isPersistedEntityId(oldestMessageId) && compareEntityIds(oldestMessageId, targetMessageId) > 0) {
-    return 'load-more';
-  }
-
-  return 'not-found';
 }

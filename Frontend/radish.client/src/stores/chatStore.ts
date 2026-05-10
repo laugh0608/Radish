@@ -32,6 +32,7 @@ interface ChatStore {
   setConnectionState: (state: ChatConnectionState) => void;
   setChannelMessages: (channelId: EntityIdValue, messages: ChannelMessageVo[]) => void;
   prependChannelMessages: (channelId: EntityIdValue, messages: ChannelMessageVo[]) => void;
+  appendChannelMessages: (channelId: EntityIdValue, messages: ChannelMessageVo[]) => void;
   addMessage: (message: ChannelMessageVo) => void;
   removeMessage: (channelId: EntityIdValue, messageId: EntityIdValue) => void;
   recallMessage: (channelId: EntityIdValue, messageId: EntityIdValue) => void;
@@ -182,6 +183,21 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   },
 
   prependChannelMessages: (channelId: EntityIdValue, messages: ChannelMessageVo[]) => {
+    const channelKey = getChannelKey(channelId);
+    if (!channelKey) {
+      return;
+    }
+
+    const current = get().messageMap[channelKey] || [];
+    set((state) => ({
+      messageMap: {
+        ...state.messageMap,
+        [channelKey]: mergeMessages(current, messages),
+      },
+    }));
+  },
+
+  appendChannelMessages: (channelId: EntityIdValue, messages: ChannelMessageVo[]) => {
     const channelKey = getChannelKey(channelId);
     if (!channelKey) {
       return;

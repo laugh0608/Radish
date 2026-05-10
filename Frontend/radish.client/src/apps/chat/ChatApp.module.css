@@ -206,6 +206,34 @@
   animation: messageTargetGlow 2.6s ease;
 }
 
+.loadNewerContainer {
+  display: flex;
+  justify-content: center;
+  padding: 4px 0 12px;
+}
+
+.loadNewerButton {
+  border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 36%, var(--theme-border-strong) 64%);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-brand-soft) 44%, var(--theme-bg-surface) 56%);
+  color: var(--theme-accent-earth);
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.loadNewerButton:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--theme-brand-soft) 62%, white 38%);
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 52%, var(--theme-border-strong) 48%);
+}
+
+.loadNewerButton:disabled {
+  cursor: wait;
+  color: var(--theme-text-muted);
+}
+
 .mine {
   justify-content: flex-end;
 }

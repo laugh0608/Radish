@@ -14,8 +14,17 @@ public interface IChatService : IBaseService<Channel, ChannelVo>
     /// <summary>获取频道详情（含当前用户未读状态）</summary>
     Task<ChannelVo?> GetChannelDetailAsync(long tenantId, long userId, long channelId);
 
-    /// <summary>获取频道历史消息</summary>
-    Task<List<ChannelMessageVo>> GetHistoryAsync(long tenantId, long userId, long channelId, long? beforeMessageId, int pageSize = 50);
+    /// <summary>获取频道历史消息（支持按锚点向前或向后分页）</summary>
+    Task<List<ChannelMessageVo>> GetHistoryAsync(long tenantId, long userId, long channelId, long? beforeMessageId, long? afterMessageId, int pageSize = 50);
+
+    /// <summary>获取目标消息附近的窗口消息</summary>
+    Task<ChannelMessageWindowVo?> GetMessageWindowAsync(
+        long tenantId,
+        long userId,
+        long channelId,
+        long messageId,
+        int beforeCount = 25,
+        int afterCount = 25);
 
     /// <summary>发送消息</summary>
     Task<ChannelMessageVo> SendMessageAsync(long tenantId, long userId, string userName, SendChannelMessageDto request);

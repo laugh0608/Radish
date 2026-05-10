@@ -39,7 +39,11 @@ public class ChannelMessageController : ControllerBase
     /// <summary>获取频道历史消息</summary>
     [HttpGet]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
-    public async Task<MessageModel> GetHistory([FromQuery] long channelId, [FromQuery] long? beforeMessageId, [FromQuery] int pageSize = 50)
+    public async Task<MessageModel> GetHistory(
+        [FromQuery] long channelId,
+        [FromQuery] long? beforeMessageId,
+        [FromQuery] long? afterMessageId,
+        [FromQuery] int pageSize = 50)
     {
         if (channelId <= 0)
         {
@@ -51,11 +55,22 @@ public class ChannelMessageController : ControllerBase
             };
         }
 
+        if (beforeMessageId.HasValue && afterMessageId.HasValue)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "beforeMessageId 和 afterMessageId 不能同时传入"
+            };
+        }
+
         var messages = await _chatService.GetHistoryAsync(
             Current.TenantId,
             Current.UserId,
             channelId,
             beforeMessageId,
+            afterMessageId,
             pageSize);
 
         return new MessageModel
@@ -64,6 +79,62 @@ public class ChannelMessageController : ControllerBase
             StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = "获取成功",
             ResponseData = messages
+        };
+    }
+
+    /// <summary>获取目标消息附近的窗口消息</summary>
+    [HttpGet]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    public async Task<MessageModel> GetMessageWindow(
+        [FromQuery] long channelId,
+        [FromQuery] long messageId,
+        [FromQuery] int beforeCount = 25,
+        [FromQuery] int afterCount = 25)
+    {
+        if (channelId <= 0)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "频道 Id 无效"
+            };
+        }
+
+        if (messageId <= 0)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "消息 Id 无效"
+            };
+        }
+
+        var window = await _chatService.GetMessageWindowAsync(
+            Current.TenantId,
+            Current.UserId,
+            channelId,
+            messageId,
+            beforeCount,
+            afterCount);
+
+        if (window == null)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "目标消息不存在或不属于当前频道"
+            };
+        }
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = window
         };
     }
 

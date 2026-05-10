@@ -83,6 +83,14 @@ export interface ChannelMessageVo {
   voLocalError?: string | null;
 }
 
+export interface ChannelMessageWindowVo {
+  voChannelId: EntityIdValue;
+  voAnchorMessageId: EntityIdValue;
+  voMessages: ChannelMessageVo[];
+  voHasMoreBefore: boolean;
+  voHasMoreAfter: boolean;
+}
+
 export interface ChannelVo {
   voId: EntityIdValue;
   voCategoryId?: EntityIdValue | null;
