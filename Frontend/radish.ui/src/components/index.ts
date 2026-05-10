@@ -79,7 +79,7 @@ export { toast, toastManager } from './Toast';
 export type { ToastProps } from './Toast';
 
 export { Notification } from './Notification/Notification';
-export type { NotificationProps, NotificationItemData } from './Notification/Notification';
+export type { NotificationProps, NotificationItemData, NotificationItemId } from './Notification/Notification';
 
 export { NotificationBadge } from './Notification/NotificationBadge';
 export type { NotificationBadgeProps } from './Notification/NotificationBadge';

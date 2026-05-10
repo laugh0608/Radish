@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import type { LongId } from '@/api/user';
+import { normalizePositiveLongIdKey } from '@/utils/longId';
 
 /** 通知类型 */
 export type NotificationType = 'system' | 'reply' | 'mention' | 'like' | 'follow' | 'lottery';
@@ -9,9 +11,9 @@ export type NotificationType = 'system' | 'reply' | 'mention' | 'like' | 'follow
  */
 export interface NotificationItem {
   /** 列表项唯一 ID（优先使用用户通知关系 ID） */
-  id: number;
+  id: LongId;
   /** 后端通知 ID（用于已读/删除等接口） */
-  notificationId?: number;
+  notificationId?: LongId;
   /** 通知类型 */
   type: NotificationType;
   /** 通知标题 */
@@ -23,11 +25,11 @@ export interface NotificationItem {
   /** 创建时间 */
   createdAt: string;
   /** 业务 ID */
-  businessId?: number | string | null;
+  businessId?: LongId | null;
   /** 业务类型 */
   businessType?: string | null;
   /** 触发者 ID */
-  triggerId?: number | string | null;
+  triggerId?: LongId | null;
   /** 触发者名称 */
   triggerName?: string | null;
   /** 触发者头像 */
@@ -65,10 +67,10 @@ interface NotificationStore {
   addNotification: (notification: NotificationItem) => void;
 
   /** 移除通知（按通知 ID） */
-  removeNotification: (notificationId: number) => void;
+  removeNotification: (notificationId: LongId) => void;
 
   /** 标记通知已读 */
-  markAsRead: (notificationIds: number[]) => void;
+  markAsRead: (notificationIds: LongId[]) => void;
 
   /** 标记全部已读 */
   markAllAsRead: () => void;
@@ -79,6 +81,20 @@ interface NotificationStore {
 
 function isSameNotificationList(a: NotificationItem[], b: NotificationItem[]): boolean {
   return a.length === b.length && a.every((item, index) => item === b[index]);
+}
+
+function getNotificationPrimaryKey(item: Pick<NotificationItem, 'id' | 'notificationId' | 'createdAt' | 'type'>): string {
+  return normalizePositiveLongIdKey(item.notificationId)
+    ?? normalizePositiveLongIdKey(item.id)
+    ?? `${String(item.notificationId ?? item.id)}|${item.createdAt}|${item.type}`;
+}
+
+function matchesNotificationId(
+  item: Pick<NotificationItem, 'id' | 'notificationId'>,
+  notificationIdKey: string
+): boolean {
+  return normalizePositiveLongIdKey(item.id) === notificationIdKey
+    || normalizePositiveLongIdKey(item.notificationId) === notificationIdKey;
 }
 
 export const useNotificationStore = create<NotificationStore>((set) => ({
@@ -100,11 +116,12 @@ export const useNotificationStore = create<NotificationStore>((set) => ({
 
   setRecentNotifications: (notifications: NotificationItem[]) => {
     const unique: NotificationItem[] = [];
-    const seen = new Set<number>();
+    const seen = new Set<string>();
 
     for (const item of notifications) {
-      if (seen.has(item.id)) continue;
-      seen.add(item.id);
+      const key = getNotificationPrimaryKey(item);
+      if (seen.has(key)) continue;
+      seen.add(key);
       unique.push(item);
     }
 
@@ -126,7 +143,10 @@ export const useNotificationStore = create<NotificationStore>((set) => ({
   addNotification: (notification: NotificationItem) => {
     set(state => ({
       recentNotifications: (() => {
-        const existingIndex = state.recentNotifications.findIndex(n => n.id === notification.id);
+        const notificationKey = getNotificationPrimaryKey(notification);
+        const existingIndex = state.recentNotifications.findIndex(
+          (item) => getNotificationPrimaryKey(item) === notificationKey
+        );
         if (existingIndex === -1) {
           return [notification, ...state.recentNotifications].slice(0, 20);
         }
@@ -138,34 +158,51 @@ export const useNotificationStore = create<NotificationStore>((set) => ({
     }));
   },
 
-  removeNotification: (notificationId: number) => {
+  removeNotification: (notificationId: LongId) => {
+    const notificationIdKey = normalizePositiveLongIdKey(notificationId);
+    if (!notificationIdKey) {
+      return;
+    }
+
     set(state => {
       const removedUnread = state.recentNotifications.filter(
-        n => (n.id === notificationId || n.notificationId === notificationId) && !n.isRead
+        (item) => matchesNotificationId(item, notificationIdKey) && !item.isRead
       ).length;
       return {
         recentNotifications: state.recentNotifications.filter(
-          n => n.id !== notificationId && n.notificationId !== notificationId
+          (item) => !matchesNotificationId(item, notificationIdKey)
         ),
         unreadCount: Math.max(0, state.unreadCount - removedUnread)
       };
     });
   },
 
-  markAsRead: (notificationIds: number[]) => {
-    const idSet = new Set(notificationIds);
+  markAsRead: (notificationIds: LongId[]) => {
+    const idSet = new Set(
+      notificationIds
+        .map((id) => normalizePositiveLongIdKey(id))
+        .filter((id): id is string => id !== null)
+    );
+
+    if (idSet.size === 0) {
+      return;
+    }
+
     set(state => {
+      const shouldMarkItem = (item: Pick<NotificationItem, 'id' | 'notificationId'>) => (
+        Array.from(idSet).some((id) => matchesNotificationId(item, id))
+      );
       const updated = state.recentNotifications.map(n =>
-        (idSet.has(n.id) || (n.notificationId !== undefined && idSet.has(n.notificationId)))
+        shouldMarkItem(n)
           ? { ...n, isRead: true }
           : n
       );
-      const markedCount = state.recentNotifications.filter(
-        n => (idSet.has(n.id) || (n.notificationId !== undefined && idSet.has(n.notificationId))) && !n.isRead
+      const markedUnreadCount = state.recentNotifications.filter(
+        (item) => !item.isRead && shouldMarkItem(item)
       ).length;
       return {
         recentNotifications: updated,
-        unreadCount: Math.max(0, state.unreadCount - markedCount)
+        unreadCount: Math.max(0, state.unreadCount - markedUnreadCount)
       };
     });
   },
