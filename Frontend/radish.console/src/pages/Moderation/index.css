@@ -1,3 +1,60 @@
 .moderation-inline-meta {
   color: #8c8c8c;
 }
+
+.moderation-target {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.moderation-target__identity {
+  color: #262626;
+  font-weight: 600;
+}
+
+.moderation-target__meta,
+.moderation-target__snapshot-summary,
+.moderation-target__state-message,
+.moderation-target__user,
+.moderation-target__empty {
+  color: #8c8c8c;
+  line-height: 1.5;
+}
+
+.moderation-target__section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.moderation-target__section-label {
+  color: #595959;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.moderation-target__snapshot-title {
+  color: #262626;
+}
+
+.moderation-target__state {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.moderation-review-preview {
+  margin-bottom: 16px;
+  border: 1px solid #f0f0f0;
+  border-radius: 10px;
+  background: #fafafa;
+  padding: 12px 14px;
+}
+
+.moderation-review-preview__label {
+  margin-bottom: 8px;
+  color: #595959;
+  font-size: 12px;
+  font-weight: 600;
+}

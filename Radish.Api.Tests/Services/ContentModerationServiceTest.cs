@@ -135,6 +135,7 @@ public class ContentModerationServiceTest
         reportItem.VoTargetType.ShouldBe("ChatMessage");
         reportItem.VoTargetChannelId.ShouldBe(88);
         reportItem.VoTargetMessageId.ShouldBe(90002);
+        reportItem.VoTargetSnapshotIsPersisted.ShouldBeFalse();
     }
 
     [Fact]
@@ -195,6 +196,7 @@ public class ContentModerationServiceTest
         var reportItem = result.VoItems[0];
         reportItem.VoTargetChannelId.ShouldBe(118);
         reportItem.VoTargetSnapshotSummary.ShouldBe("创建时聊天快照");
+        reportItem.VoTargetSnapshotIsPersisted.ShouldBeTrue();
     }
 
     [Fact]
@@ -346,6 +348,7 @@ public class ContentModerationServiceTest
         action.VoSourceReportTargetContentId.ShouldBe(90004);
         action.VoSourceReportTargetChannelId.ShouldBe(108);
         action.VoSourceReportTargetMessageId.ShouldBe(90004);
+        action.VoSourceReportTargetSnapshotIsPersisted.ShouldBeFalse();
     }
 
     private static ContentModerationService CreateService(

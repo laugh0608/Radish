@@ -103,6 +103,9 @@ public class ContentReportQueueItemVo
     /// <summary>目标快照摘要</summary>
     public string? VoTargetSnapshotSummary { get; set; }
 
+    /// <summary>目标快照是否来自创建时固化</summary>
+    public bool VoTargetSnapshotIsPersisted { get; set; }
+
     /// <summary>被举报用户 ID</summary>
     public long VoTargetUserId { get; set; }
 
@@ -196,6 +199,9 @@ public class UserModerationActionVo
 
     /// <summary>来源举报目标快照摘要</summary>
     public string? VoSourceReportTargetSnapshotSummary { get; set; }
+
+    /// <summary>来源举报目标快照是否来自创建时固化</summary>
+    public bool VoSourceReportTargetSnapshotIsPersisted { get; set; }
 
     /// <summary>动作持续时长（小时）</summary>
     public int? VoDurationHours { get; set; }

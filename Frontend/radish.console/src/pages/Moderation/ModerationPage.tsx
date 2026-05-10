@@ -112,6 +112,7 @@ interface ModerationTargetNavigationStateInput extends ModerationTargetNavigatio
 interface ModerationTargetDisplayInput extends ModerationTargetNavigationStateInput {
   snapshotTitle?: string | null;
   snapshotSummary?: string | null;
+  snapshotIsPersisted?: boolean;
   targetUserId?: number | null;
   targetUserName?: string | null;
   showTargetUser?: boolean;
@@ -131,48 +132,123 @@ function resolveNavigationStatusLabel(status: string | null | undefined): { colo
 }
 
 function renderTargetNavigationState(status: string | null | undefined, messageText: string | null | undefined) {
-  if ((status === undefined || status === null || status === 'Ready') && !messageText) {
-    return null;
-  }
-
   const statusMeta = resolveNavigationStatusLabel(status);
 
   return (
-    <div style={{ marginTop: 4 }}>
-      <Tag color={statusMeta.color}>{statusMeta.label}</Tag>
-      {messageText ? <div style={{ color: '#8c8c8c' }}>{messageText}</div> : null}
+    <div className="moderation-target__section">
+      <div className="moderation-target__section-label">当前状态</div>
+      <div className="moderation-target__state">
+        <Tag color={statusMeta.color}>{statusMeta.label}</Tag>
+        {messageText ? <div className="moderation-target__state-message">{messageText}</div> : null}
+      </div>
+    </div>
+  );
+}
+
+function renderSnapshotSection(input: ModerationTargetDisplayInput) {
+  const hasSnapshotTitle = !!input.snapshotTitle?.trim();
+  const hasSnapshotSummary = !!input.snapshotSummary?.trim();
+
+  if (!hasSnapshotTitle && !hasSnapshotSummary && !input.snapshotIsPersisted) {
+    return null;
+  }
+
+  return (
+    <div className="moderation-target__section">
+      <div className="moderation-target__section-label">
+        {input.snapshotIsPersisted ? '创建时快照' : '目标摘要（旧数据兼容）'}
+      </div>
+      {hasSnapshotTitle ? <div className="moderation-target__snapshot-title">{input.snapshotTitle}</div> : null}
+      {hasSnapshotSummary ? <div className="moderation-target__snapshot-summary">{input.snapshotSummary}</div> : null}
+      {!hasSnapshotTitle && !hasSnapshotSummary ? <div className="moderation-target__empty">未保留文本摘要</div> : null}
     </div>
   );
 }
 
 function renderModerationTarget(input: ModerationTargetDisplayInput) {
-  const hasSnapshotTitle = !!input.snapshotTitle?.trim();
-  const hasSnapshotSummary = !!input.snapshotSummary?.trim();
-
   return (
-    <div>
-      <div>{input.targetType} #{input.targetContentId ?? '-'}</div>
+    <div className="moderation-target">
+      <div className="moderation-target__identity">{input.targetType} #{input.targetContentId ?? '-'}</div>
       {input.targetType === 'Comment' && input.targetPostId ? (
-        <div style={{ color: '#8c8c8c' }}>
+        <div className="moderation-target__meta">
           帖子 #{input.targetPostId} · 评论 #{input.targetCommentId ?? input.targetContentId}
         </div>
       ) : null}
       {input.targetType === 'PostQuickReply' && input.targetPostId ? (
-        <div style={{ color: '#8c8c8c' }}>所属帖子 #{input.targetPostId}</div>
+        <div className="moderation-target__meta">所属帖子 #{input.targetPostId}</div>
       ) : null}
       {input.targetType === 'ChatMessage' && input.targetChannelId ? (
-        <div style={{ color: '#8c8c8c' }}>
+        <div className="moderation-target__meta">
           频道 #{input.targetChannelId} · 消息 #{input.targetMessageId ?? input.targetContentId}
         </div>
       ) : null}
-      {hasSnapshotTitle ? <div>{input.snapshotTitle}</div> : null}
-      {hasSnapshotSummary ? <div style={{ color: '#8c8c8c' }}>{input.snapshotSummary}</div> : null}
+      {renderSnapshotSection(input)}
       {renderTargetNavigationState(input.navigationStatus, input.navigationMessage)}
       {input.showTargetUser ? (
-        <div style={{ color: '#8c8c8c' }}>{input.targetUserName || `用户 ${input.targetUserId}`}</div>
+        <div className="moderation-target__user">{input.targetUserName || `用户 ${input.targetUserId}`}</div>
       ) : null}
     </div>
   );
+}
+
+function buildQueueTargetDisplayInput(record: ContentReportQueueItemVo): ModerationTargetDisplayInput {
+  return {
+    targetType: record.voTargetType,
+    targetContentId: record.voTargetContentId,
+    targetPostId: record.voTargetPostId,
+    targetCommentId: record.voTargetCommentId,
+    targetChannelId: record.voTargetChannelId,
+    targetMessageId: record.voTargetMessageId,
+    navigationStatus: record.voTargetNavigationStatus,
+    navigationMessage: record.voTargetNavigationMessage,
+    snapshotTitle: record.voTargetSnapshotTitle,
+    snapshotSummary: record.voTargetSnapshotSummary,
+    snapshotIsPersisted: record.voTargetSnapshotIsPersisted,
+    targetUserId: record.voTargetUserId,
+    targetUserName: record.voTargetUserName,
+  };
+}
+
+function buildQueueTargetNavigationInput(record: ContentReportQueueItemVo): ModerationTargetNavigationStateInput {
+  return {
+    targetType: record.voTargetType,
+    targetContentId: record.voTargetContentId,
+    targetPostId: record.voTargetPostId,
+    targetCommentId: record.voTargetCommentId,
+    targetChannelId: record.voTargetChannelId,
+    targetMessageId: record.voTargetMessageId,
+    navigationStatus: record.voTargetNavigationStatus,
+    navigationMessage: record.voTargetNavigationMessage,
+  };
+}
+
+function buildActionSourceTargetDisplayInput(record: UserModerationActionVo): ModerationTargetDisplayInput {
+  return {
+    targetType: record.voSourceReportTargetType,
+    targetContentId: record.voSourceReportTargetContentId ?? null,
+    targetPostId: record.voSourceReportTargetPostId,
+    targetCommentId: record.voSourceReportTargetCommentId,
+    targetChannelId: record.voSourceReportTargetChannelId,
+    targetMessageId: record.voSourceReportTargetMessageId,
+    navigationStatus: record.voSourceReportTargetNavigationStatus,
+    navigationMessage: record.voSourceReportTargetNavigationMessage,
+    snapshotTitle: record.voSourceReportTargetSnapshotTitle,
+    snapshotSummary: record.voSourceReportTargetSnapshotSummary,
+    snapshotIsPersisted: record.voSourceReportTargetSnapshotIsPersisted,
+  };
+}
+
+function buildActionSourceTargetNavigationInput(record: UserModerationActionVo): ModerationTargetNavigationStateInput {
+  return {
+    targetType: record.voSourceReportTargetType,
+    targetContentId: record.voSourceReportTargetContentId,
+    targetPostId: record.voSourceReportTargetPostId,
+    targetCommentId: record.voSourceReportTargetCommentId,
+    targetChannelId: record.voSourceReportTargetChannelId,
+    targetMessageId: record.voSourceReportTargetMessageId,
+    navigationStatus: record.voSourceReportTargetNavigationStatus,
+    navigationMessage: record.voSourceReportTargetNavigationMessage,
+  };
 }
 
 function resolveOpenTarget(input: ModerationTargetNavigationStateInput): ModerationOpenTarget | null {
@@ -370,20 +446,9 @@ export const ModerationPage = () => {
     {
       title: '目标',
       key: 'target',
-      width: 280,
+      width: 340,
       render: (_, record) => renderModerationTarget({
-        targetType: record.voTargetType,
-        targetContentId: record.voTargetContentId,
-        targetPostId: record.voTargetPostId,
-        targetCommentId: record.voTargetCommentId,
-        targetChannelId: record.voTargetChannelId,
-        targetMessageId: record.voTargetMessageId,
-        navigationStatus: record.voTargetNavigationStatus,
-        navigationMessage: record.voTargetNavigationMessage,
-        snapshotTitle: record.voTargetSnapshotTitle,
-        snapshotSummary: record.voTargetSnapshotSummary,
-        targetUserId: record.voTargetUserId,
-        targetUserName: record.voTargetUserName,
+        ...buildQueueTargetDisplayInput(record),
         showTargetUser: true,
       }),
     },
@@ -425,32 +490,14 @@ export const ModerationPage = () => {
       key: 'actions',
       width: 260,
       render: (_, record) => {
-        const openTarget = resolveOpenTarget({
-          targetType: record.voTargetType,
-          targetContentId: record.voTargetContentId,
-          targetPostId: record.voTargetPostId,
-          targetCommentId: record.voTargetCommentId,
-          targetChannelId: record.voTargetChannelId,
-          targetMessageId: record.voTargetMessageId,
-          navigationStatus: record.voTargetNavigationStatus,
-          navigationMessage: record.voTargetNavigationMessage,
-        });
+        const openTarget = resolveOpenTarget(buildQueueTargetNavigationInput(record));
 
         return (
           <Space wrap>
             {openTarget ? (
               <Button
                 size="small"
-                onClick={() => handleOpenTarget({
-                  targetType: record.voTargetType,
-                  targetContentId: record.voTargetContentId,
-                  targetPostId: record.voTargetPostId,
-                  targetCommentId: record.voTargetCommentId,
-                  targetChannelId: record.voTargetChannelId,
-                  targetMessageId: record.voTargetMessageId,
-                  navigationStatus: record.voTargetNavigationStatus,
-                  navigationMessage: record.voTargetNavigationMessage,
-                })}
+                onClick={() => handleOpenTarget(buildQueueTargetNavigationInput(record))}
               >
                 {openTarget.label}
               </Button>
@@ -494,7 +541,7 @@ export const ModerationPage = () => {
     {
       title: '来源举报',
       key: 'sourceReport',
-      width: 320,
+      width: 360,
       render: (_, record) => {
         if (!record.voSourceReportId) {
           return <span style={{ color: '#8c8c8c' }}>-</span>;
@@ -505,18 +552,7 @@ export const ModerationPage = () => {
             ? (
               <div>
                 <div>举报单 #{record.voSourceReportId}</div>
-                {renderModerationTarget({
-                  targetType: record.voSourceReportTargetType,
-                  targetContentId: record.voSourceReportTargetContentId ?? null,
-                  targetPostId: record.voSourceReportTargetPostId,
-                  targetCommentId: record.voSourceReportTargetCommentId,
-                  targetChannelId: record.voSourceReportTargetChannelId,
-                  targetMessageId: record.voSourceReportTargetMessageId,
-                  navigationStatus: record.voSourceReportTargetNavigationStatus,
-                  navigationMessage: record.voSourceReportTargetNavigationMessage,
-                  snapshotTitle: record.voSourceReportTargetSnapshotTitle,
-                  snapshotSummary: record.voSourceReportTargetSnapshotSummary,
-                })}
+                {renderModerationTarget(buildActionSourceTargetDisplayInput(record))}
               </div>
             )
             : <div style={{ color: '#8c8c8c' }}>未保留目标快照</div>
@@ -545,30 +581,12 @@ export const ModerationPage = () => {
       key: 'actions',
       width: 180,
       render: (_, record) => {
-        const openTarget = resolveOpenTarget({
-          targetType: record.voSourceReportTargetType,
-          targetContentId: record.voSourceReportTargetContentId,
-          targetPostId: record.voSourceReportTargetPostId,
-          targetCommentId: record.voSourceReportTargetCommentId,
-          targetChannelId: record.voSourceReportTargetChannelId,
-          targetMessageId: record.voSourceReportTargetMessageId,
-          navigationStatus: record.voSourceReportTargetNavigationStatus,
-          navigationMessage: record.voSourceReportTargetNavigationMessage,
-        });
+        const openTarget = resolveOpenTarget(buildActionSourceTargetNavigationInput(record));
 
         return openTarget ? (
           <Button
             size="small"
-            onClick={() => handleOpenTarget({
-              targetType: record.voSourceReportTargetType,
-              targetContentId: record.voSourceReportTargetContentId,
-              targetPostId: record.voSourceReportTargetPostId,
-              targetCommentId: record.voSourceReportTargetCommentId,
-              targetChannelId: record.voSourceReportTargetChannelId,
-              targetMessageId: record.voSourceReportTargetMessageId,
-              navigationStatus: record.voSourceReportTargetNavigationStatus,
-              navigationMessage: record.voSourceReportTargetNavigationMessage,
-            })}
+            onClick={() => handleOpenTarget(buildActionSourceTargetNavigationInput(record))}
           >
             {openTarget.label}
           </Button>
@@ -648,7 +666,7 @@ export const ModerationPage = () => {
               void loadQueue(page, size);
             },
           }}
-          scroll={{ x: 1380 }}
+          scroll={{ x: 1460 }}
         />
       </section>
 
@@ -690,7 +708,7 @@ export const ModerationPage = () => {
               void loadLogs(page, size);
             },
           }}
-          scroll={{ x: 1560 }}
+          scroll={{ x: 1640 }}
         />
       </section>
 
@@ -703,6 +721,16 @@ export const ModerationPage = () => {
         destroyOnHidden
       >
         <Form form={form} layout="vertical">
+          {reviewingItem ? (
+            <div className="moderation-review-preview">
+              <div className="moderation-review-preview__label">审核目标</div>
+              {renderModerationTarget({
+                ...buildQueueTargetDisplayInput(reviewingItem),
+                showTargetUser: true,
+              })}
+            </div>
+          ) : null}
+
           <Form.Item name="isApproved" label="审核结果" rules={[{ required: true, message: '请选择审核结果' }]}>
             <Select
               options={[

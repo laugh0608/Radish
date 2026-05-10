@@ -888,12 +888,14 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             .Select(action =>
             {
                 ReportTargetNavigationSnapshot? sourceNavigation = null;
+                var sourceSnapshotIsPersisted = false;
                 if (action.SourceReportId.HasValue && sourceReportMap.TryGetValue(action.SourceReportId.Value, out var matchedReport))
                 {
                     sourceNavigation = navigationMap.GetValueOrDefault(matchedReport.Id);
+                    sourceSnapshotIsPersisted = IsSnapshotPersisted(matchedReport);
                 }
 
-                return MapAction(action, sourceNavigation);
+                return MapAction(action, sourceNavigation, sourceSnapshotIsPersisted);
             })
             .ToList();
     }
@@ -1223,6 +1225,14 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             : currentSnapshotSummary;
     }
 
+    private static bool IsSnapshotPersisted(ContentReport report)
+    {
+        return report.TargetSnapshotPostId.HasValue
+            || report.TargetSnapshotChannelId.HasValue
+            || !string.IsNullOrWhiteSpace(report.TargetSnapshotTitle)
+            || !string.IsNullOrWhiteSpace(report.TargetSnapshotSummary);
+    }
+
     private static ReportTargetNavigationSnapshot BuildReportTargetNavigationSnapshot(
         ContentReport report,
         IReadOnlyDictionary<long, ForumPostNavigationRecord>? postNavigationMap = null,
@@ -1443,6 +1453,7 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             VoTargetNavigationMessage = navigation.NavigationMessage,
             VoTargetSnapshotTitle = navigation.SnapshotTitle,
             VoTargetSnapshotSummary = navigation.SnapshotSummary,
+            VoTargetSnapshotIsPersisted = IsSnapshotPersisted(report),
             VoTargetUserId = report.TargetUserId,
             VoTargetUserName = report.TargetUserName,
             VoReporterUserId = report.ReporterUserId,
@@ -1462,7 +1473,8 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
 
     private static UserModerationActionVo MapAction(
         UserModerationAction action,
-        ReportTargetNavigationSnapshot? sourceNavigation = null)
+        ReportTargetNavigationSnapshot? sourceNavigation = null,
+        bool sourceSnapshotIsPersisted = false)
     {
         return new UserModerationActionVo
         {
@@ -1482,6 +1494,7 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             VoSourceReportTargetNavigationMessage = sourceNavigation?.NavigationMessage,
             VoSourceReportTargetSnapshotTitle = sourceNavigation?.SnapshotTitle,
             VoSourceReportTargetSnapshotSummary = sourceNavigation?.SnapshotSummary,
+            VoSourceReportTargetSnapshotIsPersisted = sourceSnapshotIsPersisted,
             VoDurationHours = action.DurationHours,
             VoStartTime = action.StartTime,
             VoEndTime = action.EndTime,
