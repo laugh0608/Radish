@@ -154,7 +154,7 @@ export interface Order {
   voUserName: string;
   voProductId: number;
   voProductName: string;
-  voProductIcon: string;
+  voProductIcon?: string | null;
   voProductType: string;
   voProductTypeDisplay: string;
   voQuantity: number;
@@ -162,14 +162,16 @@ export interface Order {
   voTotalPrice: number;
   voStatus: string;
   voStatusDisplay: string;
-  voBenefitExpiresAt: string;
-  voDurationDisplay: string;
+  voBenefitExpiresAt?: string | null;
+  voDurationDisplay?: string | null;
   voCreateTime: string;
-  voPaidTime: string;
-  voCompletedTime: string;
-  voCancelledTime: string;
-  voCancelReason: string;
-  voFailReason: string;
+  voPaidTime?: string | null;
+  voCompletedTime?: string | null;
+  voCancelledTime?: string | null;
+  voCancelReason?: string | null;
+  voFailReason?: string | null;
+  voUserRemark?: string | null;
+  voAdminRemark?: string | null;
 }
 
 /**

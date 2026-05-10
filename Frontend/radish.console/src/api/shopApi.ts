@@ -335,6 +335,21 @@ export async function retryGrantBenefit(orderId: number): Promise<void> {
 }
 
 /**
+ * 管理员备注订单
+ */
+export async function adminRemarkOrder(orderId: number, remark: string): Promise<void> {
+  const response = await apiPost<null>(
+    `/api/v1/Shop/AdminRemarkOrder/${orderId}`,
+    { remark },
+    { withAuth: true }
+  );
+
+  if (!response.ok) {
+    throw new Error(response.message || '保存订单备注失败');
+  }
+}
+
+/**
  * 商品上架
  */
 export async function putOnSale(productId: number): Promise<void> {

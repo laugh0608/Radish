@@ -1,4 +1,5 @@
-import { Modal, Descriptions, Tag, Button, Space } from '@radish/ui';
+import { useEffect, useMemo, useState } from 'react';
+import { Modal, Descriptions, Tag, Button, Space, AntInput as Input } from '@radish/ui';
 import { SyncOutlined } from '@radish/ui';
 import {
   getOrderStatusColor,
@@ -10,12 +11,40 @@ interface OrderDetailProps {
   order?: Order;
   onClose: () => void;
   onRetry?: () => void;
+  canRemark?: boolean;
+  savingRemark?: boolean;
+  onSaveRemark?: (remark: string) => void;
 }
 
-export const OrderDetail = ({ visible, order, onClose, onRetry }: OrderDetailProps) => {
+export const OrderDetail = ({
+  visible,
+  order,
+  onClose,
+  onRetry,
+  canRemark = false,
+  savingRemark = false,
+  onSaveRemark,
+}: OrderDetailProps) => {
+  const [adminRemark, setAdminRemark] = useState('');
+
+  useEffect(() => {
+    if (!visible || !order) {
+      return;
+    }
+
+    setAdminRemark(order.voAdminRemark ?? '');
+  }, [order, visible]);
+
   if (!order) {
     return null;
   }
+
+  const normalizedSavedRemark = useMemo(() => (order.voAdminRemark ?? '').trim(), [order.voAdminRemark]);
+  const normalizedEditingRemark = adminRemark.trim();
+  const canSaveRemark = canRemark
+    && !!onSaveRemark
+    && normalizedEditingRemark !== normalizedSavedRemark
+    && !savingRemark;
 
   return (
     <Modal
@@ -29,6 +58,15 @@ export const OrderDetail = ({ visible, order, onClose, onRetry }: OrderDetailPro
             <Button variant="primary" onClick={onRetry}>
               <SyncOutlined />
               重试发放权益
+            </Button>
+          )}
+          {canRemark && onSaveRemark && (
+            <Button
+              variant="primary"
+              onClick={() => onSaveRemark(normalizedEditingRemark)}
+              disabled={!canSaveRemark}
+            >
+              {savingRemark ? '保存中...' : '保存备注'}
             </Button>
           )}
           <Button onClick={onClose}>关闭</Button>
@@ -76,6 +114,12 @@ export const OrderDetail = ({ visible, order, onClose, onRetry }: OrderDetailPro
         {order.voFailReason && (
           <Descriptions.Item label="失败原因" span={2}>
             <span style={{ color: '#ff4d4f' }}>{order.voFailReason}</span>
+          </Descriptions.Item>
+        )}
+
+        {order.voUserRemark && (
+          <Descriptions.Item label="用户备注" span={2}>
+            {order.voUserRemark}
           </Descriptions.Item>
         )}
 
@@ -127,6 +171,21 @@ export const OrderDetail = ({ visible, order, onClose, onRetry }: OrderDetailPro
           </Descriptions.Item>
         )}
       </Descriptions>
+
+      {canRemark ? (
+        <div style={{ marginTop: 16 }}>
+          <div style={{ marginBottom: 8, fontWeight: 600 }}>管理员备注</div>
+          <Input.TextArea
+            rows={4}
+            maxLength={500}
+            showCount
+            value={adminRemark}
+            onChange={(event) => setAdminRemark(event.target.value)}
+            placeholder="补充处理结论、追查线索或人工处置说明"
+            disabled={savingRemark}
+          />
+        </div>
+      ) : null}
     </Modal>
   );
 };

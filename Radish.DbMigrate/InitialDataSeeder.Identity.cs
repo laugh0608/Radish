@@ -496,6 +496,15 @@ internal static partial class InitialDataSeeder
             },
             new
             {
+                ApiModuleId = 50058L,
+                ApiModuleName = "Admin remark order",
+                LinkUrl = "/api/v1/Shop/AdminRemarkOrder/.+",
+                ControllerName = "Shop",
+                ActionName = "AdminRemarkOrder",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
                 ApiModuleId = 50060L,
                 ApiModuleName = "Get tag page",
                 LinkUrl = "/api/v1/Tag/GetPage",
@@ -834,6 +843,24 @@ internal static partial class InitialDataSeeder
                 LinkUrl = "/api/v1/Experience/RecalculateLevelConfigs",
                 ControllerName = "Experience",
                 ActionName = "RecalculateLevelConfigs",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50134L,
+                ApiModuleName = "Admin freeze experience",
+                LinkUrl = "/api/v1/Experience/AdminFreezeExperience",
+                ControllerName = "Experience",
+                ActionName = "AdminFreezeExperience",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50135L,
+                ApiModuleName = "Admin unfreeze experience",
+                LinkUrl = "/api/v1/Experience/AdminUnfreezeExperience",
+                ControllerName = "Experience",
+                ActionName = "AdminUnfreezeExperience",
                 Roles = new[] { 10000L, 10001L }
             }
         };

@@ -560,6 +560,31 @@ public class ShopController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// 管理员备注订单
+    /// </summary>
+    [HttpPost("{orderId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.OrdersRemark)]
+    public async Task<MessageModel<bool>> AdminRemarkOrder(long orderId, [FromBody] AdminRemarkOrderDto request)
+    {
+        try
+        {
+            var result = await _orderService.AdminRemarkOrderAsync(
+                orderId,
+                request.Remark ?? string.Empty,
+                GetCurrentUserId(),
+                GetCurrentUserName());
+            return result
+                ? MessageModel<bool>.Success("备注已保存", true)
+                : MessageModel<bool>.Message(false, "备注保存失败", false);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return MessageModel<bool>.Message(false, ex.Message, false);
+        }
+    }
+
     #endregion
 
     #region 私有方法

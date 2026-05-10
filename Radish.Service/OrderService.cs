@@ -503,20 +503,29 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     }
 
     /// <summary>管理员备注订单</summary>
-    public async Task<bool> AdminRemarkOrderAsync(long orderId, string remark)
+    public async Task<bool> AdminRemarkOrderAsync(long orderId, string remark, long operatorId, string operatorName)
     {
         try
         {
             var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && !o.IsDeleted);
             if (order == null)
             {
-                return false;
+                throw new InvalidOperationException("订单不存在");
             }
 
-            order.AdminRemark = remark;
+            order.AdminRemark = string.IsNullOrWhiteSpace(remark) ? null : remark.Trim();
             order.ModifyTime = DateTime.Now;
+            order.ModifyBy = string.IsNullOrWhiteSpace(operatorName) ? "Unknown" : operatorName.Trim();
+            order.ModifyId = operatorId;
 
-            return await _orderRepository.UpdateAsync(order);
+            var result = await _orderRepository.UpdateAsync(order);
+            if (result)
+            {
+                Log.Information("管理员 {OperatorName}({OperatorId}) 更新订单 {OrderId} 备注成功",
+                    order.ModifyBy, operatorId, orderId);
+            }
+
+            return result;
         }
         catch (Exception ex)
         {

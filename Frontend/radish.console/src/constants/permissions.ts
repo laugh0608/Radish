@@ -13,6 +13,7 @@ export const CONSOLE_PERMISSIONS = {
   productsToggleSale: 'console.products.toggle-sale',
   ordersView: 'console.orders.view',
   ordersRetry: 'console.orders.retry',
+  ordersRemark: 'console.orders.remark',
   usersView: 'console.users.view',
   rolesView: 'console.roles.view',
   rolesCreate: 'console.roles.create',

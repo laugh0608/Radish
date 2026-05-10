@@ -20,6 +20,7 @@ import {
 } from '@radish/ui';
 import {
   adminGetOrders,
+  adminRemarkOrder,
   retryGrantBenefit,
   getOrderStatusDisplay,
   getOrderStatusColor,
@@ -41,6 +42,7 @@ export const OrderList = () => {
   const [pageSize, setPageSize] = useState(20);
   const canViewOrders = usePermission(CONSOLE_PERMISSIONS.ordersView);
   const canRetryOrder = usePermission(CONSOLE_PERMISSIONS.ordersRetry);
+  const canRemarkOrder = usePermission(CONSOLE_PERMISSIONS.ordersRemark);
 
   // 详情弹窗状态
   const [detailVisible, setDetailVisible] = useState(false);
@@ -49,6 +51,7 @@ export const OrderList = () => {
   // 确认对话框状态
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [retryOrder, setRetryOrder] = useState<Order | undefined>();
+  const [savingRemark, setSavingRemark] = useState(false);
 
   // 草稿筛选条件
   const [draftUserId, setDraftUserId] = useState<number | undefined>();
@@ -153,6 +156,40 @@ export const OrderList = () => {
     } finally {
       setConfirmVisible(false);
       setRetryOrder(undefined);
+    }
+  };
+
+  const handleSaveRemark = async (remark: string) => {
+    if (!selectedOrder) {
+      return;
+    }
+
+    try {
+      setSavingRemark(true);
+      await adminRemarkOrder(selectedOrder.voId, remark);
+      const normalizedRemark = remark.trim();
+      const nextRemark = normalizedRemark || null;
+
+      setSelectedOrder((current) => current
+        ? {
+            ...current,
+            voAdminRemark: nextRemark,
+          }
+        : current);
+      setOrders((current) => current.map((item) => (
+        item.voId === selectedOrder.voId
+          ? {
+              ...item,
+              voAdminRemark: nextRemark,
+            }
+          : item
+      )));
+      message.success('订单备注已保存');
+    } catch (error) {
+      log.error('OrderList', '保存订单备注失败:', error);
+      message.error(error instanceof Error ? error.message : '保存订单备注失败');
+    } finally {
+      setSavingRemark(false);
     }
   };
 
@@ -350,6 +387,8 @@ export const OrderList = () => {
       <OrderDetail
         visible={detailVisible}
         order={selectedOrder}
+        canRemark={canRemarkOrder}
+        savingRemark={savingRemark}
         onClose={() => {
           setDetailVisible(false);
           setSelectedOrder(undefined);
@@ -359,6 +398,7 @@ export const OrderList = () => {
             handleRetry(selectedOrder);
           }
         }}
+        onSaveRemark={handleSaveRemark}
       />
 
       <ConfirmDialog

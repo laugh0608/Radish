@@ -97,6 +97,12 @@ public class OrderVo
 
     /// <summary>失败原因</summary>
     public string? VoFailReason { get; set; }
+
+    /// <summary>用户备注</summary>
+    public string? VoUserRemark { get; set; }
+
+    /// <summary>管理员备注</summary>
+    public string? VoAdminRemark { get; set; }
 }
 
 /// <summary>订单列表项视图模型</summary>

@@ -18,6 +18,7 @@ public static class ConsolePermissions
     public const string ProductsToggleSale = "console.products.toggle-sale";
     public const string OrdersView = "console.orders.view";
     public const string OrdersRetry = "console.orders.retry";
+    public const string OrdersRemark = "console.orders.remark";
     public const string UsersView = "console.users.view";
     public const string RolesView = "console.roles.view";
     public const string RolesCreate = "console.roles.create";
@@ -92,6 +93,7 @@ public static class ConsolePermissions
             ["/api/v1/Shop/TakeOffSale/.+"] = new[] { ProductsToggleSale },
             ["/api/v1/Shop/AdminGetOrders"] = new[] { OrdersView },
             ["/api/v1/Shop/RetryGrantBenefit/.+"] = new[] { OrdersRetry },
+            ["/api/v1/Shop/AdminRemarkOrder/.+"] = new[] { OrdersRemark },
             ["/api/v1/Tag/GetPage"] = new[] { TagsView },
             ["/api/v1/Tag/Create"] = new[] { TagsCreate },
             ["/api/v1/Tag/Update/.+"] = new[] { TagsEdit },
@@ -154,6 +156,7 @@ public static class ConsolePermissions
         ProductsToggleSale,
         OrdersView,
         OrdersRetry,
+        OrdersRemark,
         UsersView,
         RolesView,
         RolesCreate,

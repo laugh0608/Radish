@@ -119,11 +119,13 @@
 
 - 查看：`console.orders.view`
 - 重试发放：`console.orders.retry`
+- 备注订单：`console.orders.remark`
 
 ### 当前状态
 
 - ✅ 页面访问已接入
 - ✅ 重试按钮按权限控制
+- ✅ 管理员备注已接入独立权限，适用于失败 / 异常订单留痕
 - ⏸️ 更完整的订单处理后台不在本阶段展开
 
 ## 3.8 Tags

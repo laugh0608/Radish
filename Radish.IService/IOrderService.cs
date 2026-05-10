@@ -85,8 +85,10 @@ public interface IOrderService : IBaseService<Order, OrderVo>
     /// <summary>管理员备注订单</summary>
     /// <param name="orderId">订单 ID</param>
     /// <param name="remark">备注内容</param>
+    /// <param name="operatorId">操作员 ID</param>
+    /// <param name="operatorName">操作员名称</param>
     /// <returns>是否成功</returns>
-    Task<bool> AdminRemarkOrderAsync(long orderId, string remark);
+    Task<bool> AdminRemarkOrderAsync(long orderId, string remark, long operatorId, string operatorName);
 
     /// <summary>重新发放权益（发放失败时使用）</summary>
     /// <param name="orderId">订单 ID</param>
