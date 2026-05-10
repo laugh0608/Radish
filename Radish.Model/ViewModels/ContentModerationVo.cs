@@ -137,6 +137,18 @@ public class UserModerationActionVo
     /// <summary>关联举报单 ID</summary>
     public long? VoSourceReportId { get; set; }
 
+    /// <summary>来源举报目标类型</summary>
+    public string? VoSourceReportTargetType { get; set; }
+
+    /// <summary>来源举报目标内容 ID</summary>
+    public long? VoSourceReportTargetContentId { get; set; }
+
+    /// <summary>来源举报目标频道 ID</summary>
+    public long? VoSourceReportTargetChannelId { get; set; }
+
+    /// <summary>来源举报目标消息 ID</summary>
+    public long? VoSourceReportTargetMessageId { get; set; }
+
     /// <summary>动作持续时长（小时）</summary>
     public int? VoDurationHours { get; set; }
 

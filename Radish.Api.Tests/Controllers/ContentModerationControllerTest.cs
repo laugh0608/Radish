@@ -144,6 +144,42 @@ public class ContentModerationControllerTest
         Assert.True(payload.VoIsMuted);
     }
 
+    [Fact]
+    public async Task GetActionLogs_Should_Return_Paged_Result_With_Source_Report_Navigation()
+    {
+        var serviceMock = CreateServiceMock();
+        serviceMock
+            .Setup(s => s.GetActionLogsAsync(1, 20, null))
+            .ReturnsAsync(new VoPagedResult<UserModerationActionVo>
+            {
+                VoItems =
+                [
+                    new UserModerationActionVo
+                    {
+                        VoActionId = 81001,
+                        VoSourceReportId = 70003,
+                        VoSourceReportTargetType = "ChatMessage",
+                        VoSourceReportTargetContentId = 90004,
+                        VoSourceReportTargetChannelId = 108,
+                        VoSourceReportTargetMessageId = 90004
+                    }
+                ],
+                VoTotal = 1,
+                VoPageIndex = 1,
+                VoPageSize = 20
+            });
+
+        var controller = CreateController(serviceMock.Object);
+        var result = await controller.GetActionLogs();
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(200, result.StatusCode);
+        var payload = Assert.IsType<VoPagedResult<UserModerationActionVo>>(result.ResponseData);
+        Assert.Single(payload.VoItems);
+        Assert.Equal(108, payload.VoItems[0].VoSourceReportTargetChannelId);
+        Assert.Equal(90004, payload.VoItems[0].VoSourceReportTargetMessageId);
+    }
+
     private static ContentModerationController CreateController(IContentModerationService moderationService)
     {
         var currentUserAccessorMock = new Mock<ICurrentUserAccessor>();

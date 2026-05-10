@@ -106,17 +106,20 @@ public class ContentModerationServiceTest
             .Setup(repository => repository.UpdateAsync(It.IsAny<ContentReport>()))
             .ReturnsAsync(true);
         channelMessageRepository
-            .Setup(repository => repository.QueryFirstIncludingDeletedAsync(It.IsAny<Expression<Func<ChannelMessage, bool>>>()))
-            .ReturnsAsync(new ChannelMessage
+            .Setup(repository => repository.QueryByIdsIncludingDeletedAsync(It.Is<List<long>>(ids => ids.Count == 1 && ids[0] == 90003)))
+            .ReturnsAsync(new List<ChannelMessage>
             {
-                Id = 90003,
-                ChannelId = 99,
-                UserId = 10003,
-                UserName = "target",
-                Type = MessageType.Text,
-                Content = "hello",
-                IsDeleted = false,
-                CreateTime = new DateTime(2026, 5, 10, 11, 55, 0)
+                new()
+                {
+                    Id = 90003,
+                    ChannelId = 99,
+                    UserId = 10003,
+                    UserName = "target",
+                    Type = MessageType.Text,
+                    Content = "hello",
+                    IsDeleted = false,
+                    CreateTime = new DateTime(2026, 5, 10, 11, 55, 0)
+                }
             });
 
         var result = await service.ReviewReportAsync(
@@ -138,12 +141,99 @@ public class ContentModerationServiceTest
         result.VoStatus.ShouldBe("Rejected");
     }
 
+    [Fact]
+    public async Task GetActionLogsAsync_Should_Populate_Chat_Source_Report_Navigation_For_Action_Log()
+    {
+        var contentReportRepository = new Mock<IBaseRepository<ContentReport>>(MockBehavior.Strict);
+        var moderationActionRepository = new Mock<IBaseRepository<UserModerationAction>>(MockBehavior.Strict);
+        var channelMessageRepository = new Mock<IChannelMessageRepository>(MockBehavior.Strict);
+        var service = CreateService(
+            contentReportRepository: contentReportRepository,
+            moderationActionRepository: moderationActionRepository,
+            channelMessageRepository: channelMessageRepository);
+
+        moderationActionRepository
+            .Setup(repository => repository.QueryPageAsync(
+                It.IsAny<Expression<Func<UserModerationAction, bool>>?>(),
+                1,
+                20,
+                It.IsAny<Expression<Func<UserModerationAction, object>>?>(),
+                OrderByType.Desc))
+            .ReturnsAsync((
+                new List<UserModerationAction>
+                {
+                    new()
+                    {
+                        Id = 81001,
+                        TargetUserId = 10002,
+                        TargetUserName = "target",
+                        ActionType = (int)ModerationActionTypeEnum.Mute,
+                        Reason = "举报审核通过：Abuse",
+                        SourceReportId = 70003,
+                        DurationHours = 24,
+                        StartTime = new DateTime(2026, 5, 10, 12, 10, 0),
+                        EndTime = new DateTime(2026, 5, 11, 12, 10, 0),
+                        IsActive = true,
+                        CreateId = 20001,
+                        CreateBy = "reviewer",
+                        CreateTime = new DateTime(2026, 5, 10, 12, 10, 0)
+                    }
+                },
+                1));
+        contentReportRepository
+            .Setup(repository => repository.QueryByIdsAsync(It.Is<List<long>>(ids => ids.Count == 1 && ids[0] == 70003)))
+            .ReturnsAsync(new List<ContentReport>
+            {
+                new()
+                {
+                    Id = 70003,
+                    ReportTargetType = (int)ContentReportTargetTypeEnum.ChatMessage,
+                    TargetContentId = 90004,
+                    TargetUserId = 10002,
+                    TargetUserName = "target",
+                    ReporterUserId = 10001,
+                    ReporterUserName = "reporter",
+                    ReasonType = "Abuse",
+                    Status = (int)ContentReportStatusEnum.Approved,
+                    ReviewActionType = (int)ModerationActionTypeEnum.Mute,
+                    CreateTime = new DateTime(2026, 5, 10, 12, 0, 0)
+                }
+            });
+        channelMessageRepository
+            .Setup(repository => repository.QueryByIdsIncludingDeletedAsync(It.Is<List<long>>(ids => ids.Count == 1 && ids[0] == 90004)))
+            .ReturnsAsync(new List<ChannelMessage>
+            {
+                new()
+                {
+                    Id = 90004,
+                    ChannelId = 108,
+                    UserId = 10002,
+                    UserName = "target",
+                    Type = MessageType.Text,
+                    Content = "flagged",
+                    IsDeleted = true,
+                    CreateTime = new DateTime(2026, 5, 10, 11, 59, 0)
+                }
+            });
+
+        var result = await service.GetActionLogsAsync(1, 20);
+
+        result.VoItems.Count.ShouldBe(1);
+        var action = result.VoItems[0];
+        action.VoActionId.ShouldBe(81001);
+        action.VoSourceReportId.ShouldBe(70003);
+        action.VoSourceReportTargetType.ShouldBe("ChatMessage");
+        action.VoSourceReportTargetContentId.ShouldBe(90004);
+        action.VoSourceReportTargetChannelId.ShouldBe(108);
+        action.VoSourceReportTargetMessageId.ShouldBe(90004);
+    }
+
     private static ContentModerationService CreateService(
         Mock<IBaseRepository<ContentReport>>? contentReportRepository = null,
+        Mock<IBaseRepository<UserModerationAction>>? moderationActionRepository = null,
         Mock<IChannelMessageRepository>? channelMessageRepository = null)
     {
         var mapper = new Mock<IMapper>(MockBehavior.Strict);
-        var moderationActionRepository = new Mock<IBaseRepository<UserModerationAction>>(MockBehavior.Strict);
         var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
         var commentRepository = new Mock<IBaseRepository<Comment>>(MockBehavior.Strict);
         var productRepository = new Mock<IBaseRepository<Product>>(MockBehavior.Strict);
@@ -153,7 +243,7 @@ public class ContentModerationServiceTest
         return new ContentModerationService(
             mapper.Object,
             (contentReportRepository ?? new Mock<IBaseRepository<ContentReport>>(MockBehavior.Strict)).Object,
-            moderationActionRepository.Object,
+            (moderationActionRepository ?? new Mock<IBaseRepository<UserModerationAction>>(MockBehavior.Strict)).Object,
             postRepository.Object,
             commentRepository.Object,
             (channelMessageRepository ?? new Mock<IChannelMessageRepository>(MockBehavior.Strict)).Object,

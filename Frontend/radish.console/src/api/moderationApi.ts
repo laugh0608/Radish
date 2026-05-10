@@ -35,6 +35,10 @@ export interface UserModerationActionVo {
   voActionType: string;
   voReason: string;
   voSourceReportId?: number | null;
+  voSourceReportTargetType?: string | null;
+  voSourceReportTargetContentId?: number | null;
+  voSourceReportTargetChannelId?: number | null;
+  voSourceReportTargetMessageId?: number | null;
   voDurationHours?: number | null;
   voStartTime: string;
   voEndTime?: string | null;

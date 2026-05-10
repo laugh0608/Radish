@@ -403,7 +403,7 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
 
         return new VoPagedResult<UserModerationActionVo>
         {
-            VoItems = actions.Select(MapAction).ToList(),
+            VoItems = await BuildActionLogItemsAsync(actions),
             VoTotal = totalCount,
             VoPageIndex = safePageIndex,
             VoPageSize = safePageSize
@@ -701,6 +701,14 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
         };
     }
 
+    private sealed class ReportTargetNavigationSnapshot
+    {
+        public string TargetTypeName { get; init; } = "Unknown";
+        public long TargetContentId { get; init; }
+        public long? TargetChannelId { get; init; }
+        public long? TargetMessageId { get; init; }
+    }
+
     private async Task<List<ContentReportQueueItemVo>> BuildReportQueueItemsAsync(IReadOnlyCollection<ContentReport> reports)
     {
         if (reports.Count == 0)
@@ -708,46 +716,125 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             return new List<ContentReportQueueItemVo>();
         }
 
-        var chatMessageIds = reports
-            .Where(report => report.ReportTargetType == (int)ContentReportTargetTypeEnum.ChatMessage && report.TargetContentId > 0)
-            .Select(report => report.TargetContentId)
-            .Distinct()
-            .ToList();
-        var chatChannelMap = chatMessageIds.Count > 0
-            ? (await _channelMessageRepository.QueryByIdsIncludingDeletedAsync(chatMessageIds))
-                .GroupBy(message => message.Id)
-                .ToDictionary(group => group.Key, group => (long?)group.First().ChannelId)
-            : new Dictionary<long, long?>();
+        var navigationMap = await BuildReportNavigationMapAsync(reports);
 
         return reports
             .Select(report => MapReportQueueItem(
                 report,
-                chatChannelMap.GetValueOrDefault(report.TargetContentId)))
+                navigationMap.GetValueOrDefault(report.Id)))
             .ToList();
     }
 
     private async Task<ContentReportQueueItemVo> BuildReportQueueItemAsync(ContentReport report)
     {
-        if (report.ReportTargetType != (int)ContentReportTargetTypeEnum.ChatMessage || report.TargetContentId <= 0)
-        {
-            return MapReportQueueItem(report);
-        }
-
-        var message = await _channelMessageRepository.QueryFirstIncludingDeletedAsync(m => m.Id == report.TargetContentId);
-        return MapReportQueueItem(report, message?.ChannelId);
+        var navigation = await BuildReportNavigationSnapshotAsync(report);
+        return MapReportQueueItem(report, navigation);
     }
 
-    private static ContentReportQueueItemVo MapReportQueueItem(ContentReport report, long? targetChannelId = null)
+    private async Task<List<UserModerationActionVo>> BuildActionLogItemsAsync(IReadOnlyCollection<UserModerationAction> actions)
+    {
+        if (actions.Count == 0)
+        {
+            return new List<UserModerationActionVo>();
+        }
+
+        var sourceReportIds = actions
+            .Where(action => action.SourceReportId.HasValue && action.SourceReportId.Value > 0)
+            .Select(action => action.SourceReportId!.Value)
+            .Distinct()
+            .ToList();
+        var sourceReportMap = sourceReportIds.Count > 0
+            ? (await _contentReportRepository.QueryByIdsAsync(sourceReportIds))
+                .GroupBy(report => report.Id)
+                .ToDictionary(group => group.Key, group => group.First())
+            : new Dictionary<long, ContentReport>();
+        var navigationMap = await BuildReportNavigationMapAsync(sourceReportMap.Values.ToList());
+
+        return actions
+            .Select(action =>
+            {
+                ContentReport? sourceReport = null;
+                ReportTargetNavigationSnapshot? sourceNavigation = null;
+                if (action.SourceReportId.HasValue && sourceReportMap.TryGetValue(action.SourceReportId.Value, out var matchedReport))
+                {
+                    sourceReport = matchedReport;
+                    sourceNavigation = navigationMap.GetValueOrDefault(matchedReport.Id);
+                }
+
+                return MapAction(action, sourceReport, sourceNavigation);
+            })
+            .ToList();
+    }
+
+    private async Task<Dictionary<long, ReportTargetNavigationSnapshot>> BuildReportNavigationMapAsync(IReadOnlyCollection<ContentReport> reports)
+    {
+        if (reports.Count == 0)
+        {
+            return new Dictionary<long, ReportTargetNavigationSnapshot>();
+        }
+
+        var chatChannelMap = await BuildChatChannelMapAsync(reports.Select(report =>
+            report.ReportTargetType == (int)ContentReportTargetTypeEnum.ChatMessage
+                ? report.TargetContentId
+                : 0));
+
+        return reports.ToDictionary(
+            report => report.Id,
+            report => BuildReportTargetNavigationSnapshot(report, chatChannelMap));
+    }
+
+    private async Task<ReportTargetNavigationSnapshot> BuildReportNavigationSnapshotAsync(ContentReport report)
+    {
+        var chatChannelMap = await BuildChatChannelMapAsync(
+            report.ReportTargetType == (int)ContentReportTargetTypeEnum.ChatMessage
+                ? new[] { report.TargetContentId }
+                : Array.Empty<long>());
+
+        return BuildReportTargetNavigationSnapshot(report, chatChannelMap);
+    }
+
+    private async Task<Dictionary<long, long?>> BuildChatChannelMapAsync(IEnumerable<long> messageIds)
+    {
+        var normalizedMessageIds = messageIds
+            .Where(id => id > 0)
+            .Distinct()
+            .ToList();
+        if (normalizedMessageIds.Count == 0)
+        {
+            return new Dictionary<long, long?>();
+        }
+
+        return (await _channelMessageRepository.QueryByIdsIncludingDeletedAsync(normalizedMessageIds))
+            .GroupBy(message => message.Id)
+            .ToDictionary(group => group.Key, group => (long?)group.First().ChannelId);
+    }
+
+    private static ReportTargetNavigationSnapshot BuildReportTargetNavigationSnapshot(
+        ContentReport report,
+        IReadOnlyDictionary<long, long?>? chatChannelMap = null)
     {
         var isChatMessageTarget = report.ReportTargetType == (int)ContentReportTargetTypeEnum.ChatMessage;
+
+        return new ReportTargetNavigationSnapshot
+        {
+            TargetTypeName = ToReportTargetTypeName(report.ReportTargetType),
+            TargetContentId = report.TargetContentId,
+            TargetChannelId = isChatMessageTarget ? chatChannelMap?.GetValueOrDefault(report.TargetContentId) : null,
+            TargetMessageId = isChatMessageTarget ? report.TargetContentId : null
+        };
+    }
+
+    private static ContentReportQueueItemVo MapReportQueueItem(ContentReport report, ReportTargetNavigationSnapshot? navigation = null)
+    {
+        navigation ??= BuildReportTargetNavigationSnapshot(report);
 
         return new ContentReportQueueItemVo
         {
             VoReportId = report.Id,
-            VoTargetType = ToReportTargetTypeName(report.ReportTargetType),
-            VoTargetContentId = report.TargetContentId,
-            VoTargetChannelId = isChatMessageTarget ? targetChannelId : null,
-            VoTargetMessageId = isChatMessageTarget ? report.TargetContentId : null,
+            VoTargetType = navigation.TargetTypeName,
+            VoTargetContentId = navigation.TargetContentId,
+            VoTargetChannelId = navigation.TargetChannelId,
+            VoTargetMessageId = navigation.TargetMessageId,
             VoTargetUserId = report.TargetUserId,
             VoTargetUserName = report.TargetUserName,
             VoReporterUserId = report.ReporterUserId,
@@ -765,7 +852,10 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
         };
     }
 
-    private static UserModerationActionVo MapAction(UserModerationAction action)
+    private static UserModerationActionVo MapAction(
+        UserModerationAction action,
+        ContentReport? sourceReport = null,
+        ReportTargetNavigationSnapshot? sourceNavigation = null)
     {
         return new UserModerationActionVo
         {
@@ -775,6 +865,10 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             VoActionType = ToActionTypeName(action.ActionType),
             VoReason = action.Reason,
             VoSourceReportId = action.SourceReportId,
+            VoSourceReportTargetType = sourceNavigation?.TargetTypeName,
+            VoSourceReportTargetContentId = sourceReport != null ? sourceNavigation?.TargetContentId : null,
+            VoSourceReportTargetChannelId = sourceNavigation?.TargetChannelId,
+            VoSourceReportTargetMessageId = sourceNavigation?.TargetMessageId,
             VoDurationHours = action.DurationHours,
             VoStartTime = action.StartTime,
             VoEndTime = action.EndTime,

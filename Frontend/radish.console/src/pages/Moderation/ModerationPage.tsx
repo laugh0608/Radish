@@ -69,6 +69,14 @@ function buildDesktopChatTargetUrl(channelId: number, messageId: number): string
   return url.toString();
 }
 
+function canOpenChatTarget(targetType: string | null | undefined, channelId: number | null | undefined, messageId: number | null | undefined): boolean {
+  return targetType === 'ChatMessage'
+    && !!channelId
+    && channelId > 0
+    && !!messageId
+    && messageId > 0;
+}
+
 export const ModerationPage = () => {
   useDocumentTitle('内容治理');
 
@@ -90,19 +98,19 @@ export const ModerationPage = () => {
 
   const canReview = usePermission(CONSOLE_PERMISSIONS.moderationReview);
 
-  const handleOpenChatTarget = (item: ContentReportQueueItemVo) => {
-    if (
-      item.voTargetType !== 'ChatMessage'
-      || !item.voTargetChannelId
-      || item.voTargetChannelId <= 0
-      || !item.voTargetMessageId
-      || item.voTargetMessageId <= 0
-    ) {
+  const handleOpenChatTarget = (
+    targetType: string | null | undefined,
+    channelId: number | null | undefined,
+    messageId: number | null | undefined,
+  ) => {
+    if (!canOpenChatTarget(targetType, channelId, messageId)) {
       message.error('当前举报项缺少聊天定位信息');
       return;
     }
 
-    window.open(buildDesktopChatTargetUrl(item.voTargetChannelId, item.voTargetMessageId), '_blank', 'noopener');
+    const safeChannelId = Number(channelId);
+    const safeMessageId = Number(messageId);
+    window.open(buildDesktopChatTargetUrl(safeChannelId, safeMessageId), '_blank', 'noopener');
   };
 
   const loadQueue = async (targetPageIndex = queuePageIndex, targetPageSize = queuePageSize) => {
@@ -252,16 +260,15 @@ export const ModerationPage = () => {
       key: 'actions',
       width: 260,
       render: (_, record) => {
-        const canOpenChatTarget = record.voTargetType === 'ChatMessage'
-          && !!record.voTargetChannelId
-          && record.voTargetChannelId > 0
-          && !!record.voTargetMessageId
-          && record.voTargetMessageId > 0;
+        const canOpenTarget = canOpenChatTarget(record.voTargetType, record.voTargetChannelId, record.voTargetMessageId);
 
         return (
           <Space wrap>
-            {canOpenChatTarget ? (
-              <Button size="small" onClick={() => handleOpenChatTarget(record)}>
+            {canOpenTarget ? (
+              <Button
+                size="small"
+                onClick={() => handleOpenChatTarget(record.voTargetType, record.voTargetChannelId, record.voTargetMessageId)}
+              >
                 打开聊天定位
               </Button>
             ) : null}
@@ -298,6 +305,34 @@ export const ModerationPage = () => {
       render: (_, record) => renderActionType(record.voActionType),
     },
     {
+      title: '来源举报',
+      key: 'sourceReport',
+      width: 260,
+      render: (_, record) => {
+        if (!record.voSourceReportId) {
+          return <span style={{ color: '#8c8c8c' }}>-</span>;
+        }
+
+        return (
+          <div>
+            <div>举报单 #{record.voSourceReportId}</div>
+            {record.voSourceReportTargetType ? (
+              <div style={{ color: '#8c8c8c' }}>
+                {record.voSourceReportTargetType} #{record.voSourceReportTargetContentId ?? '-'}
+              </div>
+            ) : (
+              <div style={{ color: '#8c8c8c' }}>未保留目标快照</div>
+            )}
+            {record.voSourceReportTargetType === 'ChatMessage' && record.voSourceReportTargetChannelId ? (
+              <div style={{ color: '#8c8c8c' }}>
+                频道 #{record.voSourceReportTargetChannelId} · 消息 #{record.voSourceReportTargetMessageId ?? record.voSourceReportTargetContentId ?? '-'}
+              </div>
+            ) : null}
+          </div>
+        );
+      },
+    },
+    {
       title: '原因',
       dataIndex: 'voReason',
       key: 'voReason',
@@ -313,6 +348,31 @@ export const ModerationPage = () => {
       key: 'voIsActive',
       width: 100,
       render: (_, record) => <Tag color={record.voIsActive ? 'processing' : 'default'}>{record.voIsActive ? '生效中' : '已结束'}</Tag>,
+    },
+    {
+      title: '操作',
+      key: 'actions',
+      width: 180,
+      render: (_, record) => (
+        canOpenChatTarget(
+          record.voSourceReportTargetType,
+          record.voSourceReportTargetChannelId,
+          record.voSourceReportTargetMessageId,
+        ) ? (
+          <Button
+            size="small"
+            onClick={() => handleOpenChatTarget(
+              record.voSourceReportTargetType,
+              record.voSourceReportTargetChannelId,
+              record.voSourceReportTargetMessageId,
+            )}
+          >
+            打开聊天定位
+          </Button>
+        ) : (
+          <span style={{ color: '#8c8c8c' }}>-</span>
+        )
+      ),
     },
     {
       title: '开始时间',
@@ -421,7 +481,7 @@ export const ModerationPage = () => {
               void loadLogs(page, size);
             },
           }}
-          scroll={{ x: 1200 }}
+          scroll={{ x: 1460 }}
         />
       </section>
 
