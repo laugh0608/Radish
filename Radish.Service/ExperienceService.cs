@@ -471,22 +471,28 @@ namespace Radish.Service;
     /// <summary>
     /// 获取用户每日经验值统计
     /// </summary>
-    public async Task<List<UserExpDailyStatsVo>> GetDailyStatsAsync(long userId, int days = 7)
+    public async Task<UserExpDailyStatsWindowVo> GetDailyStatsAsync(long userId, int days = 7)
     {
         try
         {
-            if (days > 30) days = 30; // 最大 30 天
-
-            var startDate = DateTime.Today.AddDays(-days + 1);
+            var normalizedDays = days <= 0 ? 7 : Math.Min(days, 30);
+            var endDate = DateTime.Today;
+            var startDate = endDate.AddDays(-normalizedDays + 1);
 
             var stats = await _dailyStatsRepository.QueryAsync(
-                s => s.UserId == userId && s.StatDate >= startDate
+                s => s.UserId == userId && s.StatDate >= startDate && s.StatDate <= endDate
             );
 
-            // 手动排序
             var sortedStats = stats.OrderByDescending(s => s.StatDate).ToList();
+            var statVos = Mapper.Map<List<UserExpDailyStatsVo>>(sortedStats);
+            var normalizedStats = NormalizeDailyStatsWindow(userId, startDate, endDate, statVos);
 
-            return Mapper.Map<List<UserExpDailyStatsVo>>(sortedStats);
+            return new UserExpDailyStatsWindowVo
+            {
+                VoWindowDays = normalizedDays,
+                VoStats = normalizedStats,
+                VoSummary = BuildDailyStatsSummary(normalizedStats)
+            };
         }
         catch (Exception ex)
         {
@@ -515,6 +521,205 @@ namespace Radish.Service;
 
         var stats = await GetOrCreateDailyStatsAsync(userId, statDate);
         await UpdateDailyStatsAsync(stats, amount, expType);
+    }
+
+    private static List<UserExpDailyStatsVo> NormalizeDailyStatsWindow(
+        long userId,
+        DateTime startDate,
+        DateTime endDate,
+        List<UserExpDailyStatsVo> stats)
+    {
+        var statMap = stats
+            .GroupBy(stat => stat.VoStatDate.Date)
+            .ToDictionary(group => group.Key, group => group.First());
+
+        var normalizedStats = new List<UserExpDailyStatsVo>();
+        for (var date = endDate.Date; date >= startDate.Date; date = date.AddDays(-1))
+        {
+            if (!statMap.TryGetValue(date, out var stat))
+            {
+                stat = CreateEmptyDailyStatsVo(userId, date);
+            }
+            else
+            {
+                stat.VoStatDate = date;
+            }
+
+            stat.VoObservations = BuildDailyStatObservations(stat);
+            normalizedStats.Add(stat);
+        }
+
+        return normalizedStats;
+    }
+
+    private static UserExpDailyStatsVo CreateEmptyDailyStatsVo(long userId, DateTime statDate)
+    {
+        return new UserExpDailyStatsVo
+        {
+            VoId = 0,
+            VoUserId = userId,
+            VoStatDate = statDate.Date,
+            VoExpEarned = 0,
+            VoExpFromPost = 0,
+            VoExpFromComment = 0,
+            VoExpFromLike = 0,
+            VoExpFromHighlight = 0,
+            VoExpFromLogin = 0,
+            VoPostCount = 0,
+            VoCommentCount = 0,
+            VoLikeGivenCount = 0,
+            VoLikeReceivedCount = 0,
+            VoObservations = []
+        };
+    }
+
+    private static UserExpDailyStatsSummaryVo BuildDailyStatsSummary(List<UserExpDailyStatsVo> stats)
+    {
+        if (stats.Count == 0)
+        {
+            return new UserExpDailyStatsSummaryVo
+            {
+                VoNotices = ["当前窗口暂无经验统计数据。"]
+            };
+        }
+
+        long totalExp = 0;
+        var zeroGainDays = 0;
+        var likeHeavyDays = 0;
+        var highlightHeavyDays = 0;
+        var peakDayExp = long.MinValue;
+        DateTime? peakStatDate = null;
+
+        foreach (var stat in stats)
+        {
+            totalExp += stat.VoExpEarned;
+
+            if (stat.VoExpEarned <= 0)
+            {
+                zeroGainDays++;
+            }
+
+            if (stat.VoExpEarned >= 20 && stat.VoExpFromLike / (double)stat.VoExpEarned >= 0.6d)
+            {
+                likeHeavyDays++;
+            }
+
+            if (stat.VoExpEarned >= 30 && stat.VoExpFromHighlight / (double)stat.VoExpEarned >= 0.5d)
+            {
+                highlightHeavyDays++;
+            }
+
+            if (stat.VoExpEarned > peakDayExp)
+            {
+                peakDayExp = stat.VoExpEarned;
+                peakStatDate = stat.VoStatDate.Date;
+            }
+        }
+
+        var notices = new List<string>();
+        if (zeroGainDays >= 3)
+        {
+            notices.Add($"最近 {stats.Count} 天中有 {zeroGainDays} 天没有经验增长。");
+        }
+
+        if (likeHeavyDays > 0)
+        {
+            notices.Add($"其中 {likeHeavyDays} 天经验主要来自点赞，建议结合互动来源复核。");
+        }
+
+        if (highlightHeavyDays > 0)
+        {
+            notices.Add($"其中 {highlightHeavyDays} 天经验主要来自高亮评论，建议确认是否集中触发奖励。");
+        }
+
+        if (notices.Count == 0)
+        {
+            notices.Add("最近窗口内经验分布整体平稳，暂未看到明显需要人工复核的集中模式。");
+        }
+
+        return new UserExpDailyStatsSummaryVo
+        {
+            VoTotalExp = totalExp,
+            VoAverageExp = stats.Count == 0 ? 0 : totalExp / (double)stats.Count,
+            VoPeakDayExp = peakDayExp == long.MinValue ? 0 : peakDayExp,
+            VoPeakStatDate = peakStatDate,
+            VoZeroGainDays = zeroGainDays,
+            VoNotices = notices
+        };
+    }
+
+    private static List<UserExpDailyStatObservationVo> BuildDailyStatObservations(UserExpDailyStatsVo stat)
+    {
+        if (stat.VoExpEarned <= 0)
+        {
+            return
+            [
+                new UserExpDailyStatObservationVo
+                {
+                    VoLabel = "零增长",
+                    VoTone = "default"
+                }
+            ];
+        }
+
+        var observations = new List<UserExpDailyStatObservationVo>();
+        var dominantSource = GetDominantSourceObservation(stat);
+        if (dominantSource != null)
+        {
+            observations.Add(dominantSource);
+        }
+
+        if (stat.VoExpEarned >= 20 && stat.VoExpFromLike / (double)stat.VoExpEarned >= 0.6d)
+        {
+            observations.Add(new UserExpDailyStatObservationVo
+            {
+                VoLabel = "点赞占比偏高",
+                VoTone = "warning"
+            });
+        }
+
+        if (stat.VoExpEarned >= 30 && stat.VoExpFromHighlight / (double)stat.VoExpEarned >= 0.5d)
+        {
+            observations.Add(new UserExpDailyStatObservationVo
+            {
+                VoLabel = "高亮奖励集中",
+                VoTone = "warning"
+            });
+        }
+
+        return observations;
+    }
+
+    private static UserExpDailyStatObservationVo? GetDominantSourceObservation(UserExpDailyStatsVo stat)
+    {
+        var sourceObservations = new[]
+        {
+            new UserExpDailyStatObservationVo { VoLabel = "发帖驱动", VoTone = "success" },
+            new UserExpDailyStatObservationVo { VoLabel = "评论驱动", VoTone = "processing" },
+            new UserExpDailyStatObservationVo { VoLabel = "点赞驱动", VoTone = "warning" },
+            new UserExpDailyStatObservationVo { VoLabel = "高亮驱动", VoTone = "warning" },
+            new UserExpDailyStatObservationVo { VoLabel = "登录驱动", VoTone = "default" }
+        };
+
+        var sourceValues = new[]
+        {
+            stat.VoExpFromPost,
+            stat.VoExpFromComment,
+            stat.VoExpFromLike,
+            stat.VoExpFromHighlight,
+            stat.VoExpFromLogin
+        };
+
+        var dominantIndex = 0;
+        for (var i = 1; i < sourceValues.Length; i++)
+        {
+            if (sourceValues[i] > sourceValues[dominantIndex])
+            {
+                dominantIndex = i;
+            }
+        }
+
+        return sourceValues[dominantIndex] > 0 ? sourceObservations[dominantIndex] : null;
     }
 
     #endregion

@@ -113,33 +113,35 @@ export interface ProductCategory {
 export interface Product {
   voId: number;
   voName: string;
-  voDescription: string;
+  voDescription?: string | null;
   voIconAttachmentId?: string | null;
-  voIcon: string;
+  voIcon?: string | null;
   voCoverAttachmentId?: string | null;
-  voCoverImage: string;
+  voCoverImage?: string | null;
   voCategoryId: string;
-  voCategoryName: string;
+  voCategoryName?: string | null;
   voProductType: string;
-  voBenefitType?: string;
-  voConsumableType?: string;
+  voBenefitType?: string | null;
+  voConsumableType?: string | null;
+  voBenefitValue?: string | null;
   voPrice: number;
-  voOriginalPrice: number;
+  voOriginalPrice?: number | null;
   voHasDiscount: boolean;
-  voDiscountPercent: number;
+  voDiscountPercent?: number | null;
   voStockType: string;
   voStock: number;
   voSoldCount: number;
   voLimitPerUser: number;
   voDurationType: string;
-  voDurationDays: number;
-  voExpiresAt: string;
+  voDurationDays?: number | null;
+  voExpiresAt?: string | null;
   voDurationDisplay: string;
   voSortOrder: number;
   voIsOnSale: boolean;
   voIsEnabled: boolean;
   voCreateTime: string;
-  voUpdateTime: string;
+  voOnSaleTime?: string | null;
+  voOffSaleTime?: string | null;
 }
 
 /**

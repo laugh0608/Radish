@@ -506,7 +506,7 @@ export const ProductList = () => {
           >
             <Select.Option value={1}>权益</Select.Option>
             <Select.Option value={2}>消耗品</Select.Option>
-            <Select.Option value={3}>实物</Select.Option>
+            <Select.Option value={99}>实物</Select.Option>
           </Select>
 
           <Select

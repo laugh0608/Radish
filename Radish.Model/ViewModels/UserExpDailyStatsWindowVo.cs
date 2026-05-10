@@ -1,0 +1,75 @@
+namespace Radish.Model.ViewModels;
+
+/// <summary>
+/// 单日经验观察标签
+/// </summary>
+public class UserExpDailyStatObservationVo
+{
+    /// <summary>
+    /// 标签文案
+    /// </summary>
+    public string VoLabel { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 标签语义色
+    /// </summary>
+    /// <remarks>当前约定为 default / success / processing / warning</remarks>
+    public string VoTone { get; set; } = "default";
+}
+
+/// <summary>
+/// 经验统计窗口摘要
+/// </summary>
+public class UserExpDailyStatsSummaryVo
+{
+    /// <summary>
+    /// 窗口总经验
+    /// </summary>
+    public long VoTotalExp { get; set; }
+
+    /// <summary>
+    /// 日均经验
+    /// </summary>
+    public double VoAverageExp { get; set; }
+
+    /// <summary>
+    /// 峰值单日经验
+    /// </summary>
+    public long VoPeakDayExp { get; set; }
+
+    /// <summary>
+    /// 峰值对应日期
+    /// </summary>
+    public DateTime? VoPeakStatDate { get; set; }
+
+    /// <summary>
+    /// 零增长天数
+    /// </summary>
+    public int VoZeroGainDays { get; set; }
+
+    /// <summary>
+    /// 管理侧观察提示
+    /// </summary>
+    public List<string> VoNotices { get; set; } = [];
+}
+
+/// <summary>
+/// 经验统计窗口
+/// </summary>
+public class UserExpDailyStatsWindowVo
+{
+    /// <summary>
+    /// 查询窗口天数
+    /// </summary>
+    public int VoWindowDays { get; set; }
+
+    /// <summary>
+    /// 每日统计明细
+    /// </summary>
+    public List<UserExpDailyStatsVo> VoStats { get; set; } = [];
+
+    /// <summary>
+    /// 窗口摘要
+    /// </summary>
+    public UserExpDailyStatsSummaryVo? VoSummary { get; set; }
+}

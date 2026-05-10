@@ -73,4 +73,9 @@ public class UserExpDailyStatsVo
     /// </summary>
     /// <remarks>被他人点赞</remarks>
     public int VoLikeReceivedCount { get; set; }
+
+    /// <summary>
+    /// 当日经验观察标签
+    /// </summary>
+    public List<UserExpDailyStatObservationVo> VoObservations { get; set; } = [];
 }

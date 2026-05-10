@@ -45,6 +45,27 @@ export interface UserExpDailyStatsVo {
   voCommentCount: number;
   voLikeGivenCount: number;
   voLikeReceivedCount: number;
+  voObservations?: UserExpDailyStatObservationVo[] | null;
+}
+
+export interface UserExpDailyStatObservationVo {
+  voLabel: string;
+  voTone: 'success' | 'processing' | 'warning' | 'default';
+}
+
+export interface UserExpDailyStatsSummaryVo {
+  voTotalExp: number;
+  voAverageExp: number;
+  voPeakDayExp: number;
+  voPeakStatDate?: string | null;
+  voZeroGainDays: number;
+  voNotices: string[];
+}
+
+export interface UserExpDailyStatsWindowVo {
+  voWindowDays: number;
+  voStats: UserExpDailyStatsVo[];
+  voSummary?: UserExpDailyStatsSummaryVo | null;
 }
 
 export interface AdminAdjustExperienceRequest {
@@ -83,11 +104,11 @@ export async function getLevelConfigs(): Promise<LevelConfigVo[]> {
 export async function getUserDailyStats(
   userId: string | number,
   days: number = 7
-): Promise<UserExpDailyStatsVo[]> {
+): Promise<UserExpDailyStatsWindowVo> {
   const searchParams = new URLSearchParams({
     days: String(days),
   });
-  const response = await apiGet<UserExpDailyStatsVo[]>(
+  const response = await apiGet<UserExpDailyStatsWindowVo>(
     `/api/v1/Experience/GetUserDailyStats/${encodeURIComponent(String(userId))}?${searchParams.toString()}`,
     { withAuth: true }
   );

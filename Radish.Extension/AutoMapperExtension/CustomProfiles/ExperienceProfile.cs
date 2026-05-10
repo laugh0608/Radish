@@ -76,11 +76,13 @@ public class ExperienceProfile : Profile
     {
         // UserExpDailyStats -> UserExpDailyStatsVo
         RecognizeDestinationPrefixes("Vo");
-        CreateMap<UserExpDailyStats, UserExpDailyStatsVo>();
+        CreateMap<UserExpDailyStats, UserExpDailyStatsVo>()
+            .ForMember(dest => dest.VoObservations, opt => opt.Ignore());
 
         // UserExpDailyStatsVo -> UserExpDailyStats
         RecognizePrefixes("Vo");
-        CreateMap<UserExpDailyStatsVo, UserExpDailyStats>();
+        CreateMap<UserExpDailyStatsVo, UserExpDailyStats>()
+            .ForSourceMember(src => src.VoObservations, opt => opt.DoNotValidate());
     }
 
     /// <summary>

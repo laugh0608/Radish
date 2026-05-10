@@ -108,7 +108,7 @@ public interface IExperienceService : IBaseService<UserExperience, UserExperienc
     /// <param name="userId">用户 ID</param>
     /// <param name="days">查询最近N天（默认 7 天，最大 30 天）</param>
     /// <returns>每日统计列表</returns>
-    Task<List<UserExpDailyStatsVo>> GetDailyStatsAsync(long userId, int days = 7);
+    Task<UserExpDailyStatsWindowVo> GetDailyStatsAsync(long userId, int days = 7);
 
     /// <summary>
     /// 更新每日统计（内部方法，经验值发放时调用）

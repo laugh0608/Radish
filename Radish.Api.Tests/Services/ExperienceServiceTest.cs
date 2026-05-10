@@ -210,6 +210,75 @@ public class ExperienceServiceTest
             Times.Exactly(2));
     }
 
+    [Fact]
+    public async Task GetDailyStatsAsync_ShouldBackfillWindowAndBuildSummary()
+    {
+        const long userId = 20002;
+        var endDate = DateTime.Today;
+        var existingStats = new List<UserExpDailyStats>
+        {
+            new()
+            {
+                Id = 9101,
+                UserId = userId,
+                StatDate = endDate,
+                ExpEarned = 40,
+                ExpFromHighlight = 30,
+                ExpFromComment = 10,
+                CommentCount = 2
+            },
+            new()
+            {
+                Id = 9102,
+                UserId = userId,
+                StatDate = endDate.AddDays(-2),
+                ExpEarned = 25,
+                ExpFromLike = 20,
+                ExpFromComment = 5,
+                LikeReceivedCount = 10
+            }
+        };
+
+        var dailyStatsRepository = new Mock<IBaseRepository<UserExpDailyStats>>(MockBehavior.Strict);
+        dailyStatsRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<UserExpDailyStats, bool>>?>()))
+            .ReturnsAsync((Expression<Func<UserExpDailyStats, bool>>? expression) =>
+            {
+                var query = existingStats.AsEnumerable();
+                if (expression != null)
+                {
+                    query = query.Where(expression.Compile());
+                }
+
+                return query.ToList();
+            });
+
+        var service = CreateService(dailyStatsRepository: dailyStatsRepository);
+
+        var result = await service.GetDailyStatsAsync(userId, 3);
+
+        result.VoWindowDays.ShouldBe(3);
+        result.VoStats.Count.ShouldBe(3);
+        result.VoStats[0].VoStatDate.ShouldBe(endDate);
+        result.VoStats[0].VoObservations.Select(item => item.VoLabel).ShouldBe(["高亮驱动", "高亮奖励集中"]);
+        result.VoStats[1].VoStatDate.ShouldBe(endDate.AddDays(-1));
+        result.VoStats[1].VoExpEarned.ShouldBe(0);
+        result.VoStats[1].VoObservations.Select(item => item.VoLabel).ShouldBe(["零增长"]);
+        result.VoStats[2].VoStatDate.ShouldBe(endDate.AddDays(-2));
+        result.VoStats[2].VoObservations.Select(item => item.VoLabel).ShouldBe(["点赞驱动", "点赞占比偏高"]);
+
+        result.VoSummary.ShouldNotBeNull();
+        result.VoSummary.VoTotalExp.ShouldBe(65);
+        result.VoSummary.VoAverageExp.ShouldBe(65d / 3d);
+        result.VoSummary.VoPeakDayExp.ShouldBe(40);
+        result.VoSummary.VoPeakStatDate.ShouldBe(endDate);
+        result.VoSummary.VoZeroGainDays.ShouldBe(1);
+        result.VoSummary.VoNotices.ShouldBe([
+            "其中 1 天经验主要来自点赞，建议结合互动来源复核。",
+            "其中 1 天经验主要来自高亮评论，建议确认是否集中触发奖励。"
+        ]);
+    }
+
     private static ExperienceService CreateService(
         Mock<IBaseRepository<UserExperience>>? userExpRepository = null,
         Mock<IBaseRepository<ExpTransaction>>? expTransactionRepository = null,
@@ -249,6 +318,13 @@ public class ExperienceServiceTest
             {
                 var levelConfigs = (source as IEnumerable<LevelConfig>)?.ToList() ?? [];
                 return levelConfigs.Select(MapLevelConfig).ToList();
+            });
+        mapper
+            .Setup(service => service.Map<List<UserExpDailyStatsVo>>(It.IsAny<object>()))
+            .Returns((object source) =>
+            {
+                var dailyStats = (source as IEnumerable<UserExpDailyStats>)?.ToList() ?? [];
+                return dailyStats.Select(MapDailyStats).ToList();
             });
         mapper
             .Setup(service => service.Map<LevelConfigVo>(It.IsAny<object>()))
@@ -303,6 +379,27 @@ public class ExperienceServiceTest
             VoPrivileges = [],
             VoIsEnabled = source.IsEnabled,
             VoSortOrder = source.SortOrder
+        };
+    }
+
+    private static UserExpDailyStatsVo MapDailyStats(UserExpDailyStats source)
+    {
+        return new UserExpDailyStatsVo
+        {
+            VoId = source.Id,
+            VoUserId = source.UserId,
+            VoStatDate = source.StatDate,
+            VoExpEarned = source.ExpEarned,
+            VoExpFromPost = source.ExpFromPost,
+            VoExpFromComment = source.ExpFromComment,
+            VoExpFromLike = source.ExpFromLike,
+            VoExpFromHighlight = source.ExpFromHighlight,
+            VoExpFromLogin = source.ExpFromLogin,
+            VoPostCount = source.PostCount,
+            VoCommentCount = source.CommentCount,
+            VoLikeGivenCount = source.LikeGivenCount,
+            VoLikeReceivedCount = source.LikeReceivedCount,
+            VoObservations = []
         };
     }
 }

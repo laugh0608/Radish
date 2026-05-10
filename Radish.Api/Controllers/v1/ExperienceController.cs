@@ -90,16 +90,16 @@ public class ExperienceController : ControllerBase
     /// </summary>
     [HttpGet("{userId:long}")]
     [RequireConsolePermission(ConsolePermissions.ExperienceView)]
-    public async Task<MessageModel<List<UserExpDailyStatsVo>>> GetUserDailyStats(long userId, [FromQuery] int days = 7)
+    public async Task<MessageModel<UserExpDailyStatsWindowVo>> GetUserDailyStats(long userId, [FromQuery] int days = 7)
     {
         if (userId <= 0)
         {
-            return MessageModel<List<UserExpDailyStatsVo>>.Message(false, "用户ID无效", default!);
+            return MessageModel<UserExpDailyStatsWindowVo>.Message(false, "用户ID无效", default!);
         }
 
         var normalizedDays = days <= 0 ? 7 : Math.Min(days, 30);
         var result = await _experienceService.GetDailyStatsAsync(userId, normalizedDays);
-        return MessageModel<List<UserExpDailyStatsVo>>.Success("查询成功", result);
+        return MessageModel<UserExpDailyStatsWindowVo>.Success("查询成功", result);
     }
 
     #endregion
