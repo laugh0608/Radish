@@ -1226,6 +1226,7 @@ const resources = {
             'chat.loadingHistory': 'Loading message history...',
             'chat.loadHistoryFailed': 'Failed to load chat history',
             'chat.loadMoreHistoryFailed': 'Failed to load more history',
+            'chat.messageNavigationNotFound': 'The target message could not be located in this channel history',
             'chat.viewProfile': 'View {{name}} profile',
 
             'wiki.status.draft': 'Draft',
@@ -2687,6 +2688,7 @@ const resources = {
             'chat.loadingHistory': '正在加载历史消息...',
             'chat.loadHistoryFailed': '加载历史消息失败',
             'chat.loadMoreHistoryFailed': '加载更多历史消息失败',
+            'chat.messageNavigationNotFound': '未能在当前频道历史中定位到目标消息',
             'chat.viewProfile': '查看 {{name}} 的主页',
 
             'wiki.status.draft': '草稿',

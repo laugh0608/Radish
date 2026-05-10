@@ -18,7 +18,7 @@ import { chatHub } from '@/services/chatHub';
 import { useChatStore } from '@/stores/chatStore';
 import { useWindowStore } from '@/stores/windowStore';
 import { useUserStore } from '@/stores/userStore';
-import { parseChatWindowParams } from '@/utils/chatNavigation';
+import { parseChatWindowParams, resolveChatMessageNavigationAction } from '@/utils/chatNavigation';
 import { log } from '@/utils/logger';
 import { ContentReportModal } from '@/components/ContentReportModal';
 import i18n from '@/i18n';
@@ -33,6 +33,8 @@ import styles from './ChatApp.module.css';
 
 const PAGE_SIZE = 50;
 const MEMBER_REFRESH_INTERVAL_MS = 15_000;
+const MESSAGE_AUTO_SCROLL_LOCK_MS = 900;
+const MESSAGE_HIGHLIGHT_DURATION_MS = 2_600;
 const CHAT_DRAFT_STORAGE_KEY = 'radish.chat.drafts.v1';
 const MENTION_PATTERN = /@\[(?<name>[^\]]+)\]\((?<id>\d+)\)/g;
 
@@ -56,6 +58,12 @@ interface ChannelDraft {
 }
 
 type ChannelDraftMap = Record<string, ChannelDraft>;
+
+interface MessageNavigationTarget {
+  channelId: string;
+  messageId: string;
+  signature: string;
+}
 
 function toNumericId(value: EntityIdValue | null | undefined): number {
   if (typeof value === 'number') {
@@ -353,16 +361,22 @@ export const ChatApp = () => {
   const [onlineMembers, setOnlineMembers] = useState<ChannelMemberVo[]>([]);
   const [memberPanelCollapsed, setMemberPanelCollapsed] = useState(false);
   const [reportTarget, setReportTarget] = useState<{ targetType: ContentReportTargetType; targetId: number } | null>(null);
+  const [messageNavigationTarget, setMessageNavigationTarget] = useState<MessageNavigationTarget | null>(null);
+  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
 
   const messageScrollRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const messageElementMapRef = useRef(new Map<string, HTMLDivElement>());
   const previousConnectionStateRef = useRef(connectionState);
   const previousChannelIdRef = useRef<EntityIdValue | null>(null);
   const activeChannelIdRef = useRef<EntityIdValue | null>(null);
   const loadedDraftChannelRef = useRef<EntityIdValue | null>(null);
   const handledWindowNavigationRef = useRef<string | null>(null);
   const windowChannelIdRef = useRef<string | undefined>(windowParams.channelId);
+  const messageNavigationTargetRef = useRef<MessageNavigationTarget | null>(null);
+  const messageAutoScrollLockUntilRef = useRef(0);
+  const messageHighlightTimerRef = useRef<number | null>(null);
   const tempMessageIdRef = useRef(-1);
   const composerStateRef = useRef<{ messageInput: string; replyTarget: ChannelMessageVo | null; pendingImage: PendingImageDraft | null }>({
     messageInput: '',
@@ -420,6 +434,37 @@ export const ChatApp = () => {
     setMentionOptions([]);
     setMentionSelectedIndex(0);
     setMentionLoading(false);
+  }, []);
+
+  const clearMessageHighlight = useCallback(() => {
+    if (messageHighlightTimerRef.current !== null) {
+      window.clearTimeout(messageHighlightTimerRef.current);
+      messageHighlightTimerRef.current = null;
+    }
+
+    setHighlightedMessageId(null);
+  }, []);
+
+  const highlightMessage = useCallback((messageId: string) => {
+    clearMessageHighlight();
+    setHighlightedMessageId(messageId);
+    messageHighlightTimerRef.current = window.setTimeout(() => {
+      setHighlightedMessageId((current) => (current === messageId ? null : current));
+      messageHighlightTimerRef.current = null;
+    }, MESSAGE_HIGHLIGHT_DURATION_MS);
+  }, [clearMessageHighlight]);
+
+  const setMessageElementRef = useCallback((messageId: string, element: HTMLDivElement | null) => {
+    if (!messageId) {
+      return;
+    }
+
+    if (element) {
+      messageElementMapRef.current.set(messageId, element);
+      return;
+    }
+
+    messageElementMapRef.current.delete(messageId);
   }, []);
 
   const handleOpenUserProfile = useCallback((targetUserId: EntityIdValue, targetUserName?: string | null, avatarUrl?: string | null) => {
@@ -622,6 +667,9 @@ export const ChatApp = () => {
       return;
     }
 
+    const shouldPreserveMessageNavigation = !!messageNavigationTargetRef.current
+      && areEntityIdsEqual(messageNavigationTargetRef.current.channelId, channelId);
+
     setLoadingHistory(true);
 
     try {
@@ -632,12 +680,22 @@ export const ChatApp = () => {
         [channelKey]: history.length >= PAGE_SIZE,
       }));
 
-      requestAnimationFrame(() => {
-        scrollToBottom();
-      });
+      if (!shouldPreserveMessageNavigation) {
+        requestAnimationFrame(() => {
+          scrollToBottom();
+        });
+      }
 
       await chatHub.markChannelAsRead(channelId);
     } catch (error) {
+      if (shouldPreserveMessageNavigation) {
+        setMessageNavigationTarget((current) => (
+          current && areEntityIdsEqual(current.channelId, channelId)
+            ? null
+            : current
+        ));
+      }
+
       log.error('ChatApp', '加载历史消息失败:', error);
       toast.error(t('chat.loadHistoryFailed'));
     } finally {
@@ -666,7 +724,7 @@ export const ChatApp = () => {
   const loadMoreHistory = useCallback(async () => {
     const activeChannelKey = getEntityKey(activeChannelId);
     if (!activeChannelId || !activeChannelKey || loadingHistory || !hasMoreHistory[activeChannelKey]) {
-      return;
+      return 'skipped' as const;
     }
 
     const oldestMessage = activeMessages[0];
@@ -676,7 +734,7 @@ export const ChatApp = () => {
         ...prev,
         [activeChannelKey]: false,
       }));
-      return;
+      return 'exhausted' as const;
     }
 
     setLoadingHistory(true);
@@ -687,9 +745,11 @@ export const ChatApp = () => {
         ...prev,
         [activeChannelKey]: older.length >= PAGE_SIZE,
       }));
+      return older.length > 0 ? ('loaded' as const) : ('exhausted' as const);
     } catch (error) {
       log.error('ChatApp', '加载更多历史消息失败:', error);
       toast.error(t('chat.loadMoreHistoryFailed'));
+      return 'failed' as const;
     } finally {
       setLoadingHistory(false);
     }
@@ -1038,6 +1098,18 @@ export const ChatApp = () => {
   }, [messageInput, pendingImage, replyTarget]);
 
   useEffect(() => {
+    messageNavigationTargetRef.current = messageNavigationTarget;
+  }, [messageNavigationTarget]);
+
+  useEffect(() => (
+    () => {
+      if (messageHighlightTimerRef.current !== null) {
+        window.clearTimeout(messageHighlightTimerRef.current);
+      }
+    }
+  ), []);
+
+  useEffect(() => {
     activeChannelIdRef.current = activeChannelId;
   }, [activeChannelId]);
 
@@ -1050,11 +1122,17 @@ export const ChatApp = () => {
   }, [loadChannels]);
 
   useEffect(() => {
-    if (!windowParams.channelId || channels.length === 0) {
+    if (!windowParams.channelId) {
+      setMessageNavigationTarget(null);
+      return;
+    }
+
+    if (channels.length === 0) {
       return;
     }
 
     if (!channels.some((channel) => areEntityIdsEqual(channel.voId, windowParams.channelId))) {
+      setMessageNavigationTarget(null);
       return;
     }
 
@@ -1064,11 +1142,20 @@ export const ChatApp = () => {
     }
 
     handledWindowNavigationRef.current = navigationSignature;
+    clearMessageHighlight();
+
+    setMessageNavigationTarget(windowParams.messageId
+      ? {
+          channelId: windowParams.channelId,
+          messageId: windowParams.messageId,
+          signature: navigationSignature,
+        }
+      : null);
 
     if (!areEntityIdsEqual(activeChannelId, windowParams.channelId)) {
       setActiveChannel(windowParams.channelId);
     }
-  }, [activeChannelId, channels, setActiveChannel, windowParams.channelId, windowParams.messageId, windowParams.navigationKey]);
+  }, [activeChannelId, channels, clearMessageHighlight, setActiveChannel, windowParams.channelId, windowParams.messageId, windowParams.navigationKey]);
 
   useEffect(() => {
     void chatHub.start();
@@ -1095,6 +1182,7 @@ export const ChatApp = () => {
       setOnlineMembers([]);
       loadedDraftChannelRef.current = null;
       closeMentionDropdown();
+      clearMessageHighlight();
       return;
     }
 
@@ -1116,7 +1204,7 @@ export const ChatApp = () => {
       window.clearTimeout(initialMemberTimer);
       void chatHub.leaveChannel(activeChannelId);
     };
-  }, [activeChannelId, closeMentionDropdown, currentUserIdValue, loadInitialHistory, loadOnlineMembers]);
+  }, [activeChannelId, clearMessageHighlight, closeMentionDropdown, currentUserIdValue, loadInitialHistory, loadOnlineMembers]);
 
   useEffect(() => {
     if (!activeChannelId || !areEntityIdsEqual(loadedDraftChannelRef.current, activeChannelId)) {
@@ -1145,6 +1233,14 @@ export const ChatApp = () => {
       return;
     }
 
+    if (messageNavigationTarget && areEntityIdsEqual(messageNavigationTarget.channelId, activeChannelId)) {
+      return;
+    }
+
+    if (Date.now() < messageAutoScrollLockUntilRef.current) {
+      return;
+    }
+
     const scrollEl = messageScrollRef.current;
     if (!scrollEl) {
       return;
@@ -1156,7 +1252,81 @@ export const ChatApp = () => {
         scrollToBottom();
       });
     }
-  }, [activeChannelId, activeMessages, scrollToBottom]);
+  }, [activeChannelId, activeMessages, messageNavigationTarget, scrollToBottom]);
+
+  useEffect(() => {
+    if (!messageNavigationTarget || !activeChannelId || loadingHistory) {
+      return;
+    }
+
+    if (!areEntityIdsEqual(activeChannelId, messageNavigationTarget.channelId)) {
+      return;
+    }
+
+    const activeChannelKey = getEntityKey(activeChannelId);
+    if (!activeChannelKey) {
+      return;
+    }
+
+    const navigationAction = resolveChatMessageNavigationAction(
+      activeMessages,
+      messageNavigationTarget.messageId,
+      !!hasMoreHistory[activeChannelKey]
+    );
+
+    if (navigationAction === 'found') {
+      const targetMessageId = messageNavigationTarget.messageId;
+      messageAutoScrollLockUntilRef.current = Date.now() + MESSAGE_AUTO_SCROLL_LOCK_MS;
+      setMessageNavigationTarget((current) => (
+        current?.signature === messageNavigationTarget.signature
+          ? null
+          : current
+      ));
+
+      requestAnimationFrame(() => {
+        const targetElement = messageElementMapRef.current.get(targetMessageId);
+        if (targetElement) {
+          targetElement.scrollIntoView({
+            block: 'center',
+            behavior: 'smooth',
+          });
+        }
+
+        highlightMessage(targetMessageId);
+      });
+      return;
+    }
+
+    if (navigationAction === 'load-more') {
+      void (async () => {
+        const result = await loadMoreHistory();
+        if (result === 'failed') {
+          setMessageNavigationTarget((current) => (
+            current?.signature === messageNavigationTarget.signature
+              ? null
+              : current
+          ));
+        }
+      })();
+      return;
+    }
+
+    setMessageNavigationTarget((current) => (
+      current?.signature === messageNavigationTarget.signature
+        ? null
+        : current
+    ));
+    toast.error(t('chat.messageNavigationNotFound'));
+  }, [
+    activeChannelId,
+    activeMessages,
+    hasMoreHistory,
+    highlightMessage,
+    loadMoreHistory,
+    loadingHistory,
+    messageNavigationTarget,
+    t,
+  ]);
 
   useEffect(() => {
     if (!replyTarget) {
@@ -1298,6 +1468,7 @@ export const ChatApp = () => {
                 const messageIdKey = getEntityKey(message.voId);
                 const messageUserIdKey = getEntityKey(message.voUserId);
                 const canOpenMessageUserProfile = !!messageUserIdKey && messageUserIdKey !== '0' && !messageUserIdKey.startsWith('-');
+                const isHighlightedMessage = !!messageIdKey && messageIdKey === highlightedMessageId;
                 const isMine = !!messageUserIdKey && messageUserIdKey === currentUserIdKey;
                 const messageStatus = message.voLocalStatus ?? 'sent';
                 const isSendingMessage = messageStatus === 'sending';
@@ -1307,7 +1478,11 @@ export const ChatApp = () => {
                 const canReportMessage = !isMine && !message.voIsRecalled && messageStatus === 'sent' && isPersistedEntityId(message.voId);
 
                 return (
-                  <div key={messageIdKey || message.voClientRequestId || message.voCreateTime} className={`${styles.messageRow} ${isMine ? styles.mine : ''}`}>
+                  <div
+                    key={messageIdKey || message.voClientRequestId || message.voCreateTime}
+                    ref={messageIdKey ? (element) => setMessageElementRef(messageIdKey, element) : undefined}
+                    className={`${styles.messageRow} ${isMine ? styles.mine : ''} ${isHighlightedMessage ? styles.messageRowTargeted : ''}`.trim()}
+                  >
                     <div className={styles.messageMain}>
                       {renderAvatarButton(
                         message.voUserId,

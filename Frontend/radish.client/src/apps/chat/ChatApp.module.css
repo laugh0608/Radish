@@ -20,6 +20,8 @@
   --chat-danger: var(--theme-state-danger);
   --chat-danger-soft: color-mix(in srgb, var(--theme-state-danger) 14%, var(--theme-bg-surface) 86%);
   --chat-info-soft: color-mix(in srgb, var(--theme-accent-ink) 14%, var(--theme-bg-surface) 86%);
+  --chat-navigation-ring: color-mix(in srgb, var(--theme-brand-primary) 62%, var(--theme-accent-ink) 38%);
+  --chat-navigation-halo: color-mix(in srgb, var(--theme-brand-soft) 72%, transparent 28%);
   --chat-input-focus: color-mix(in srgb, var(--theme-brand-primary) 34%, var(--theme-accent-ink) 66%);
   --chat-shadow-soft: 0 10px 24px color-mix(in srgb, var(--theme-shadow-soft) 55%, transparent 45%);
   display: grid;
@@ -172,10 +174,36 @@
   text-align: center;
 }
 
+@keyframes messageTargetGlow {
+  0% {
+    outline-color: transparent;
+    box-shadow: 0 0 0 0 transparent;
+  }
+
+  16% {
+    outline-color: var(--chat-navigation-ring);
+    box-shadow: 0 0 0 8px var(--chat-navigation-halo);
+  }
+
+  100% {
+    outline-color: transparent;
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
 .messageRow {
   display: flex;
   justify-content: flex-start;
   margin-bottom: 16px;
+}
+
+.messageRowTargeted .bubble,
+.messageRowTargeted .quotedMessage,
+.messageRowTargeted .imageMessage,
+.messageRowTargeted .recalled {
+  outline: 2px solid transparent;
+  outline-offset: 3px;
+  animation: messageTargetGlow 2.6s ease;
 }
 
 .mine {
