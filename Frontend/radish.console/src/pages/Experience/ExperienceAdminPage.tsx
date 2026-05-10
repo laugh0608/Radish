@@ -16,9 +16,11 @@ import {
   adminFreezeExperience,
   adminUnfreezeExperience,
   getLevelConfigs,
+  getUserDailyStats,
   getUserExperience,
   recalculateLevelConfigs,
   type LevelConfigVo,
+  type UserExpDailyStatsVo,
   type UserExperienceVo,
 } from '@/api/experienceAdminApi';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
@@ -40,6 +42,24 @@ interface AdjustFormValues {
   reason?: string;
 }
 
+type StatsWindowDays = 7 | 30;
+
+type ObservationTone = 'success' | 'processing' | 'warning' | 'default';
+
+interface DailyStatObservation {
+  label: string;
+  color: ObservationTone;
+}
+
+interface DailyStatsSummary {
+  totalExp: number;
+  averageExp: number;
+  peakDayExp: number;
+  peakDayLabel: string;
+  zeroGainDays: number;
+  notices: string[];
+}
+
 function normalizePositiveLongIdInput(value: string): string | undefined {
   const trimmed = value.trim();
   return /^[1-9]\d*$/.test(trimmed) ? trimmed : undefined;
@@ -49,14 +69,110 @@ function isFormValidationError(error: unknown): error is { errorFields: unknown[
   return typeof error === 'object' && error !== null && 'errorFields' in error;
 }
 
+function formatStatDate(value: string): string {
+  return dayjs(value).format('MM-DD');
+}
+
+function formatFullStatDate(value: string): string {
+  return dayjs(value).format('YYYY-MM-DD');
+}
+
+function getDominantSource(stat: UserExpDailyStatsVo): DailyStatObservation | null {
+  const sources: Array<{ label: string; value: number; color: ObservationTone }> = [
+    { label: '发帖驱动', value: stat.voExpFromPost, color: 'success' },
+    { label: '评论驱动', value: stat.voExpFromComment, color: 'processing' },
+    { label: '点赞驱动', value: stat.voExpFromLike, color: 'warning' },
+    { label: '高亮驱动', value: stat.voExpFromHighlight, color: 'warning' },
+    { label: '登录驱动', value: stat.voExpFromLogin, color: 'default' },
+  ];
+
+  const dominant = sources.reduce((current, candidate) =>
+    candidate.value > current.value ? candidate : current
+  );
+
+  return dominant.value > 0
+    ? { label: dominant.label, color: dominant.color }
+    : null;
+}
+
+function getDailyStatObservations(stat: UserExpDailyStatsVo): DailyStatObservation[] {
+  if (stat.voExpEarned <= 0) {
+    return [{ label: '零增长', color: 'default' }];
+  }
+
+  const observations: DailyStatObservation[] = [];
+  const dominantSource = getDominantSource(stat);
+  if (dominantSource) {
+    observations.push(dominantSource);
+  }
+
+  if (stat.voExpEarned >= 20 && stat.voExpFromLike / stat.voExpEarned >= 0.6) {
+    observations.push({ label: '点赞占比偏高', color: 'warning' });
+  }
+
+  if (stat.voExpEarned >= 30 && stat.voExpFromHighlight / stat.voExpEarned >= 0.5) {
+    observations.push({ label: '高亮奖励集中', color: 'warning' });
+  }
+
+  return observations;
+}
+
+function buildDailyStatsSummary(stats: UserExpDailyStatsVo[]): DailyStatsSummary | null {
+  if (stats.length === 0) {
+    return null;
+  }
+
+  const totalExp = stats.reduce((sum, stat) => sum + stat.voExpEarned, 0);
+  const averageExp = totalExp / stats.length;
+  const zeroGainDays = stats.filter((stat) => stat.voExpEarned <= 0).length;
+  const peakDay = stats.reduce((current, candidate) =>
+    candidate.voExpEarned > current.voExpEarned ? candidate : current
+  );
+
+  const notices: string[] = [];
+  if (zeroGainDays >= 3) {
+    notices.push(`最近 ${stats.length} 天中有 ${zeroGainDays} 天没有经验增长。`);
+  }
+
+  const likeHeavyDays = stats.filter(
+    (stat) => stat.voExpEarned >= 20 && stat.voExpFromLike / stat.voExpEarned >= 0.6
+  ).length;
+  if (likeHeavyDays > 0) {
+    notices.push(`其中 ${likeHeavyDays} 天经验主要来自点赞，建议结合互动来源复核。`);
+  }
+
+  const highlightHeavyDays = stats.filter(
+    (stat) => stat.voExpEarned >= 30 && stat.voExpFromHighlight / stat.voExpEarned >= 0.5
+  ).length;
+  if (highlightHeavyDays > 0) {
+    notices.push(`其中 ${highlightHeavyDays} 天经验主要来自高亮评论，建议确认是否集中触发奖励。`);
+  }
+
+  if (notices.length === 0) {
+    notices.push('最近窗口内经验分布整体平稳，暂未看到明显需要人工复核的集中模式。');
+  }
+
+  return {
+    totalExp,
+    averageExp,
+    peakDayExp: peakDay.voExpEarned,
+    peakDayLabel: formatFullStatDate(peakDay.voStatDate),
+    zeroGainDays,
+    notices,
+  };
+}
+
 export const ExperienceAdminPage = () => {
   useDocumentTitle('经验等级');
 
   const [queryUserId, setQueryUserId] = useState('');
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
   const [experience, setExperience] = useState<UserExperienceVo | null>(null);
+  const [dailyStats, setDailyStats] = useState<UserExpDailyStatsVo[]>([]);
+  const [statsWindowDays, setStatsWindowDays] = useState<StatsWindowDays>(7);
   const [levels, setLevels] = useState<LevelConfigVo[]>([]);
   const [loadingExperience, setLoadingExperience] = useState(false);
+  const [loadingDailyStats, setLoadingDailyStats] = useState(false);
   const [loadingLevels, setLoadingLevels] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [freezing, setFreezing] = useState(false);
@@ -68,6 +184,7 @@ export const ExperienceAdminPage = () => {
   const canAdjust = usePermission(CONSOLE_PERMISSIONS.experienceAdjust);
   const canFreeze = usePermission(CONSOLE_PERMISSIONS.experienceFreeze);
   const canRecalculate = usePermission(CONSOLE_PERMISSIONS.experienceRecalculate);
+  const dailyStatsSummary = buildDailyStatsSummary(dailyStats);
 
   const loadLevels = async () => {
     try {
@@ -86,9 +203,39 @@ export const ExperienceAdminPage = () => {
     void loadLevels();
   }, []);
 
+  const loadDailyStats = async (userId: string, days: StatsWindowDays = statsWindowDays) => {
+    const normalizedUserId = normalizePositiveLongIdInput(userId);
+    if (!normalizedUserId) {
+      setDailyStats([]);
+      return;
+    }
+
+    try {
+      setLoadingDailyStats(true);
+      const result = await getUserDailyStats(normalizedUserId, days);
+      setDailyStats(result);
+    } catch (error) {
+      log.error('ExperienceAdminPage', '加载用户经验统计失败:', error);
+      message.error(error instanceof Error ? error.message : '加载用户经验统计失败');
+      setDailyStats([]);
+    } finally {
+      setLoadingDailyStats(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!loadedUserId) {
+      setDailyStats([]);
+      return;
+    }
+
+    void loadDailyStats(loadedUserId, statsWindowDays);
+  }, [loadedUserId, statsWindowDays]);
+
   const clearLoadedExperience = (userId: string) => {
     setLoadedUserId(null);
     setExperience(null);
+    setDailyStats([]);
     form.setFieldValue('userId', userId);
     freezeForm.setFieldsValue({
       userId,
@@ -273,6 +420,70 @@ export const ExperienceAdminPage = () => {
     },
   ];
 
+  const dailyStatsColumns: TableColumnsType<UserExpDailyStatsVo> = [
+    {
+      title: '日期',
+      key: 'date',
+      width: 120,
+      render: (_, record) => (
+        <div>
+          <div>{formatStatDate(record.voStatDate)}</div>
+          <div style={{ color: '#8c8c8c' }}>{dayjs(record.voStatDate).format('ddd')}</div>
+        </div>
+      ),
+    },
+    {
+      title: '总经验',
+      dataIndex: 'voExpEarned',
+      key: 'voExpEarned',
+      width: 100,
+    },
+    {
+      title: '来源拆分',
+      key: 'sources',
+      width: 360,
+      render: (_, record) => (
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <span>发帖 {record.voExpFromPost}</span>
+          <span>评论 {record.voExpFromComment}</span>
+          <span>点赞 {record.voExpFromLike}</span>
+          <span>高亮 {record.voExpFromHighlight}</span>
+          <span>登录 {record.voExpFromLogin}</span>
+        </div>
+      ),
+    },
+    {
+      title: '行为计数',
+      key: 'counts',
+      width: 320,
+      render: (_, record) => (
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <span>发帖 {record.voPostCount}</span>
+          <span>评论 {record.voCommentCount}</span>
+          <span>点赞 {record.voLikeGivenCount}</span>
+          <span>被赞 {record.voLikeReceivedCount}</span>
+        </div>
+      ),
+    },
+    {
+      title: '观察',
+      key: 'observations',
+      width: 260,
+      render: (_, record) => {
+        const observations = getDailyStatObservations(record);
+        return (
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {observations.map((observation) => (
+              <Tag key={observation.label} color={observation.color}>
+                {observation.label}
+              </Tag>
+            ))}
+          </div>
+        );
+      },
+    },
+  ];
+
   return (
     <div className="admin-feature-page">
       <section className="admin-feature-card">
@@ -344,6 +555,84 @@ export const ExperienceAdminPage = () => {
             <Tag color="warning">冻结中</Tag>
             <span>到期时间：{experience.voFrozenUntil || '永久冻结'}</span>
             <span>原因：{experience.voFrozenReason || '未填写'}</span>
+          </div>
+        )}
+      </section>
+
+      <section className="admin-feature-card">
+        <div className="admin-feature-header">
+          <div>
+            <h3>经验统计观察</h3>
+            <p className="admin-feature-subtle">查看最近 7 / 30 天经验来源与行为拆分，用于人工复核异常增长模式。</p>
+          </div>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <Button
+              variant={statsWindowDays === 7 ? 'primary' : 'secondary'}
+              disabled={!loadedUserId || loadingDailyStats}
+              onClick={() => setStatsWindowDays(7)}
+            >
+              最近 7 天
+            </Button>
+            <Button
+              variant={statsWindowDays === 30 ? 'primary' : 'secondary'}
+              disabled={!loadedUserId || loadingDailyStats}
+              onClick={() => setStatsWindowDays(30)}
+            >
+              最近 30 天
+            </Button>
+          </div>
+        </div>
+
+        {loadedUserId ? (
+          <>
+            <div className="admin-feature-metrics" style={{ marginTop: 20 }}>
+              <div className="admin-feature-metric">
+                <span>窗口总经验</span>
+                <strong>{dailyStatsSummary ? dailyStatsSummary.totalExp : '--'}</strong>
+              </div>
+              <div className="admin-feature-metric">
+                <span>日均经验</span>
+                <strong>{dailyStatsSummary ? dailyStatsSummary.averageExp.toFixed(1) : '--'}</strong>
+              </div>
+              <div className="admin-feature-metric">
+                <span>峰值单日</span>
+                <strong>{dailyStatsSummary ? dailyStatsSummary.peakDayExp : '--'}</strong>
+                <div style={{ marginTop: 6, color: '#8c8c8c' }}>
+                  {dailyStatsSummary ? dailyStatsSummary.peakDayLabel : '--'}
+                </div>
+              </div>
+              <div className="admin-feature-metric">
+                <span>零增长天数</span>
+                <strong>{dailyStatsSummary ? dailyStatsSummary.zeroGainDays : '--'}</strong>
+              </div>
+            </div>
+
+            {dailyStatsSummary && (
+              <div className="admin-feature-banner" style={{ marginTop: 16 }}>
+                {dailyStatsSummary.notices.map((notice) => (
+                  <div key={notice}>{notice}</div>
+                ))}
+              </div>
+            )}
+
+            <Table<UserExpDailyStatsVo>
+              rowKey={(record) => `${record.voUserId}-${record.voStatDate}`}
+              columns={dailyStatsColumns}
+              dataSource={dailyStats}
+              loading={loadingDailyStats}
+              pagination={false}
+              scroll={{ x: 1160 }}
+              style={{ marginTop: 20 }}
+              locale={{
+                emptyText: loadingDailyStats
+                  ? '统计加载中...'
+                  : `最近 ${statsWindowDays} 天暂无经验统计记录`,
+              }}
+            />
+          </>
+        ) : (
+          <div style={{ marginTop: 20, color: '#8c8c8c' }}>
+            请先查询用户经验，再查看最近 {statsWindowDays} 天的统计观察。
           </div>
         )}
       </section>

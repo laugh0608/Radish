@@ -85,6 +85,23 @@ public class ExperienceController : ControllerBase
         return MessageModel<UserExperienceVo>.Success("查询成功", result);
     }
 
+    /// <summary>
+    /// 管理端按用户查询每日经验统计
+    /// </summary>
+    [HttpGet("{userId:long}")]
+    [RequireConsolePermission(ConsolePermissions.ExperienceView)]
+    public async Task<MessageModel<List<UserExpDailyStatsVo>>> GetUserDailyStats(long userId, [FromQuery] int days = 7)
+    {
+        if (userId <= 0)
+        {
+            return MessageModel<List<UserExpDailyStatsVo>>.Message(false, "用户ID无效", default!);
+        }
+
+        var normalizedDays = days <= 0 ? 7 : Math.Min(days, 30);
+        var result = await _experienceService.GetDailyStatsAsync(userId, normalizedDays);
+        return MessageModel<List<UserExpDailyStatsVo>>.Success("查询成功", result);
+    }
+
     #endregion
 
     #region 等级配置

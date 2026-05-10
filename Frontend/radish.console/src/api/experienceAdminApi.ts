@@ -31,6 +31,22 @@ export interface LevelConfigVo {
   voSortOrder: number;
 }
 
+export interface UserExpDailyStatsVo {
+  voId: number | string;
+  voUserId: number | string;
+  voStatDate: string;
+  voExpEarned: number;
+  voExpFromPost: number;
+  voExpFromComment: number;
+  voExpFromLike: number;
+  voExpFromHighlight: number;
+  voExpFromLogin: number;
+  voPostCount: number;
+  voCommentCount: number;
+  voLikeGivenCount: number;
+  voLikeReceivedCount: number;
+}
+
 export interface AdminAdjustExperienceRequest {
   userId: string | number;
   deltaExp: number;
@@ -59,6 +75,24 @@ export async function getLevelConfigs(): Promise<LevelConfigVo[]> {
   const response = await apiGet<LevelConfigVo[]>('/api/v1/Experience/GetLevelConfigs', { withAuth: true });
   if (!response.ok || !response.data) {
     throw new Error(response.message || '获取等级配置失败');
+  }
+
+  return response.data;
+}
+
+export async function getUserDailyStats(
+  userId: string | number,
+  days: number = 7
+): Promise<UserExpDailyStatsVo[]> {
+  const searchParams = new URLSearchParams({
+    days: String(days),
+  });
+  const response = await apiGet<UserExpDailyStatsVo[]>(
+    `/api/v1/Experience/GetUserDailyStats/${encodeURIComponent(String(userId))}?${searchParams.toString()}`,
+    { withAuth: true }
+  );
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '获取用户经验统计失败');
   }
 
   return response.data;
