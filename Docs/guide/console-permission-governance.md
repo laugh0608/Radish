@@ -138,7 +138,9 @@ Route Meta / RouteGuard / usePermission
 - 审核队列
 - 审核联动禁言 / 封禁
 - 治理动作日志
-- `Post / Comment / ChatMessage / Product` 四类目标
+- `Post / Comment / PostQuickReply / ChatMessage / Product` 五类目标
+- 聊天消息定位、帖子评论 / 轻回应回看与失效降级
+- 举报创建时快照与当前可回看状态的并列展示
 
 当前暂不覆盖：
 
