@@ -1,4 +1,3 @@
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using AutoMapper;
 using Radish.IRepository.Base;
@@ -593,11 +592,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             TriggerAvatar = senderAvatarUrl,
             ReceiverUserIds = receiverUserIds,
             TenantId = tenantId,
-            ExtData = JsonSerializer.Serialize(new
-            {
-                channelId,
-                messageId
-            })
+            ExtData = NotificationNavigationHelper.BuildChatNavigationExtData(channelId, messageId)
         });
     }
 

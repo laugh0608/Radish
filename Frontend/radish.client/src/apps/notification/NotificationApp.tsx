@@ -13,6 +13,7 @@ import { useWindowStore } from '@/stores/windowStore';
 import { useUserStore } from '@/stores/userStore';
 import { tokenService } from '@/services/tokenService';
 import { toast } from '@radish/ui/toast';
+import { buildChatAppParams, parseChatNotificationNavigation } from '@/utils/chatNavigation';
 import { buildForumAppParams, parseForumNotificationNavigation } from '@/utils/forumNavigation';
 import { isSameLongId, normalizePositiveLongIdKey } from '@/utils/longId';
 import styles from './NotificationApp.module.css';
@@ -427,7 +428,13 @@ export const NotificationApp = () => {
     }
 
     const businessType = notification.businessType?.trim();
+    const chatNavigation = parseChatNotificationNavigation(notification.extData);
     const forumNavigation = parseForumNotificationNavigation(notification.extData);
+
+    if (chatNavigation) {
+      openOrReuseApp('chat', buildChatAppParams(chatNavigation));
+      return;
+    }
 
     if (forumNavigation) {
       openOrReuseApp('forum', buildForumAppParams(forumNavigation));

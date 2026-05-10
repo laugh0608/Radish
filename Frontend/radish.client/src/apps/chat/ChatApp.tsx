@@ -4,6 +4,7 @@ import { toast } from '@radish/ui/toast';
 import { buildAttachmentAssetUrl } from '@radish/ui';
 import { uploadImage } from '@/api/attachment';
 import type { ContentReportTargetType } from '@/api/contentModeration';
+import { useCurrentWindow } from '@/desktop/useCurrentWindow';
 import {
   getChannelHistory,
   getChannelList,
@@ -17,6 +18,7 @@ import { chatHub } from '@/services/chatHub';
 import { useChatStore } from '@/stores/chatStore';
 import { useWindowStore } from '@/stores/windowStore';
 import { useUserStore } from '@/stores/userStore';
+import { parseChatWindowParams } from '@/utils/chatNavigation';
 import { log } from '@/utils/logger';
 import { ContentReportModal } from '@/components/ContentReportModal';
 import i18n from '@/i18n';
@@ -313,6 +315,7 @@ function getReplyTargetMessageId(message: ChannelMessageVo | null | undefined): 
 export const ChatApp = () => {
   const { t } = useTranslation();
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
+  const currentWindow = useCurrentWindow();
   const { openApp } = useWindowStore();
   const {
     channels,
@@ -331,6 +334,7 @@ export const ChatApp = () => {
   const currentUserId = useUserStore((state) => state.userId);
   const currentUserName = useUserStore((state) => state.userName);
   const currentUserAvatarUrl = useUserStore((state) => state.avatarUrl);
+  const windowParams = useMemo(() => parseChatWindowParams(currentWindow?.appParams), [currentWindow?.appParams]);
 
   const [loadingChannels, setLoadingChannels] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -357,6 +361,8 @@ export const ChatApp = () => {
   const previousChannelIdRef = useRef<EntityIdValue | null>(null);
   const activeChannelIdRef = useRef<EntityIdValue | null>(null);
   const loadedDraftChannelRef = useRef<EntityIdValue | null>(null);
+  const handledWindowNavigationRef = useRef<string | null>(null);
+  const windowChannelIdRef = useRef<string | undefined>(windowParams.channelId);
   const tempMessageIdRef = useRef(-1);
   const composerStateRef = useRef<{ messageInput: string; replyTarget: ChannelMessageVo | null; pendingImage: PendingImageDraft | null }>({
     messageInput: '',
@@ -584,11 +590,23 @@ export const ChatApp = () => {
       const data = await getChannelList();
       setChannels(data);
 
-      if (data.length > 0) {
-        const firstId = normalizeEntityId(data[0].voId);
-        if (firstId) {
-          setActiveChannel(firstId);
-        }
+      if (data.length === 0) {
+        setActiveChannel(null);
+        return;
+      }
+
+      const targetWindowChannelId = windowChannelIdRef.current;
+      const currentActiveChannelId = activeChannelIdRef.current;
+      const nextActiveChannelId = (
+        targetWindowChannelId && data.some((channel) => areEntityIdsEqual(channel.voId, targetWindowChannelId))
+          ? targetWindowChannelId
+          : currentActiveChannelId && data.some((channel) => areEntityIdsEqual(channel.voId, currentActiveChannelId))
+            ? normalizeEntityId(currentActiveChannelId)
+            : normalizeEntityId(data[0].voId)
+      );
+
+      if (nextActiveChannelId) {
+        setActiveChannel(nextActiveChannelId);
       }
     } catch (error) {
       log.error('ChatApp', '加载频道列表失败:', error);
@@ -1024,8 +1042,33 @@ export const ChatApp = () => {
   }, [activeChannelId]);
 
   useEffect(() => {
+    windowChannelIdRef.current = windowParams.channelId;
+  }, [windowParams.channelId]);
+
+  useEffect(() => {
     void loadChannels();
   }, [loadChannels]);
+
+  useEffect(() => {
+    if (!windowParams.channelId || channels.length === 0) {
+      return;
+    }
+
+    if (!channels.some((channel) => areEntityIdsEqual(channel.voId, windowParams.channelId))) {
+      return;
+    }
+
+    const navigationSignature = `${windowParams.channelId}:${windowParams.messageId ?? 'none'}:${windowParams.navigationKey ?? 'initial'}`;
+    if (handledWindowNavigationRef.current === navigationSignature) {
+      return;
+    }
+
+    handledWindowNavigationRef.current = navigationSignature;
+
+    if (!areEntityIdsEqual(activeChannelId, windowParams.channelId)) {
+      setActiveChannel(windowParams.channelId);
+    }
+  }, [activeChannelId, channels, setActiveChannel, windowParams.channelId, windowParams.messageId, windowParams.navigationKey]);
 
   useEffect(() => {
     void chatHub.start();
