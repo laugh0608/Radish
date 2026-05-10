@@ -8,12 +8,19 @@ using Radish.Model.ViewModels;
 using Radish.Service.Base;
 using Radish.Shared.CustomEnum;
 using SqlSugar;
+using System.Text.RegularExpressions;
 
 namespace Radish.Service;
 
 /// <summary>内容治理服务实现</summary>
 public class ContentModerationService : BaseService<ContentReport, ContentReportVo>, IContentModerationService
 {
+    private static readonly Regex MarkdownImagePattern = new(@"!\[[^\]]*\]\(([^)]+)\)", RegexOptions.Compiled);
+    private static readonly Regex MarkdownLinkPattern = new(@"\[(?<name>[^\]]+)\]\(([^)\s]+)\)", RegexOptions.Compiled);
+    private static readonly Regex AttachmentUriPattern = new(@"attachment://\S+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex StickerUriPattern = new(@"sticker://\S+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex MultiWhitespacePattern = new(@"\s+", RegexOptions.Compiled);
+
     private readonly IBaseRepository<ContentReport> _contentReportRepository;
     private readonly IBaseRepository<UserModerationAction> _moderationActionRepository;
     private readonly IBaseRepository<Post> _postRepository;
@@ -716,6 +723,16 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
         public long? TargetMessageId { get; init; }
         public string NavigationStatus { get; init; } = TargetNavigationStatusUnavailable;
         public string? NavigationMessage { get; init; }
+        public string? SnapshotTitle { get; init; }
+        public string? SnapshotSummary { get; init; }
+    }
+
+    private sealed class ForumPostNavigationRecord
+    {
+        public long PostId { get; init; }
+        public bool IsPostAvailable { get; init; }
+        public string? SnapshotTitle { get; init; }
+        public string? SnapshotSummary { get; init; }
     }
 
     private sealed class ForumCommentNavigationRecord
@@ -726,6 +743,8 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
         public bool IsCommentAvailable { get; init; }
         public bool IsRootCommentAvailable { get; init; }
         public bool IsPostAvailable { get; init; }
+        public string? SnapshotTitle { get; init; }
+        public string? SnapshotSummary { get; init; }
     }
 
     private sealed class ForumQuickReplyNavigationRecord
@@ -734,6 +753,27 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
         public long PostId { get; init; }
         public bool IsQuickReplyAvailable { get; init; }
         public bool IsPostAvailable { get; init; }
+        public string? SnapshotTitle { get; init; }
+        public string? SnapshotSummary { get; init; }
+    }
+
+    private sealed class ChatMessageNavigationRecord
+    {
+        public long MessageId { get; init; }
+        public long ChannelId { get; init; }
+        public string? SnapshotSummary { get; init; }
+    }
+
+    private sealed class ProductNavigationRecord
+    {
+        public long ProductId { get; init; }
+        public bool IsEnabled { get; init; }
+        public bool IsDeleted { get; init; }
+        public ProductType ProductType { get; init; }
+        public BenefitType? BenefitType { get; init; }
+        public ConsumableType? ConsumableType { get; init; }
+        public string? SnapshotTitle { get; init; }
+        public string? SnapshotSummary { get; init; }
     }
 
     private sealed class ForumRootCommentAvailabilityRecord
@@ -804,11 +844,11 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             return new Dictionary<long, ReportTargetNavigationSnapshot>();
         }
 
-        var postIdSet = await BuildAvailablePostIdSetAsync(reports.Select(report =>
+        var postNavigationMap = await BuildPostNavigationMapAsync(reports.Select(report =>
             report.ReportTargetType == (int)ContentReportTargetTypeEnum.Post
                 ? report.TargetContentId
                 : 0));
-        var chatChannelMap = await BuildChatChannelMapAsync(reports.Select(report =>
+        var chatMessageMap = await BuildChatMessageNavigationMapAsync(reports.Select(report =>
             report.ReportTargetType == (int)ContentReportTargetTypeEnum.ChatMessage
                 ? report.TargetContentId
                 : 0));
@@ -829,8 +869,8 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             report => report.Id,
             report => BuildReportTargetNavigationSnapshot(
                 report,
-                postIdSet,
-                chatChannelMap,
+                postNavigationMap,
+                chatMessageMap,
                 commentNavigationMap,
                 quickReplyNavigationMap,
                 productMap));
@@ -838,11 +878,11 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
 
     private async Task<ReportTargetNavigationSnapshot> BuildReportNavigationSnapshotAsync(ContentReport report)
     {
-        var postIdSet = await BuildAvailablePostIdSetAsync(
+        var postNavigationMap = await BuildPostNavigationMapAsync(
             report.ReportTargetType == (int)ContentReportTargetTypeEnum.Post
                 ? new[] { report.TargetContentId }
                 : Array.Empty<long>());
-        var chatChannelMap = await BuildChatChannelMapAsync(
+        var chatMessageMap = await BuildChatMessageNavigationMapAsync(
             report.ReportTargetType == (int)ContentReportTargetTypeEnum.ChatMessage
                 ? new[] { report.TargetContentId }
                 : Array.Empty<long>());
@@ -861,30 +901,14 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
 
         return BuildReportTargetNavigationSnapshot(
             report,
-            postIdSet,
-            chatChannelMap,
+            postNavigationMap,
+            chatMessageMap,
             commentNavigationMap,
             quickReplyNavigationMap,
             productMap);
     }
 
-    private async Task<Dictionary<long, long?>> BuildChatChannelMapAsync(IEnumerable<long> messageIds)
-    {
-        var normalizedMessageIds = messageIds
-            .Where(id => id > 0)
-            .Distinct()
-            .ToList();
-        if (normalizedMessageIds.Count == 0)
-        {
-            return new Dictionary<long, long?>();
-        }
-
-        return (await _channelMessageRepository.QueryByIdsIncludingDeletedAsync(normalizedMessageIds))
-            .GroupBy(message => message.Id)
-            .ToDictionary(group => group.Key, group => (long?)group.First().ChannelId);
-    }
-
-    private async Task<HashSet<long>> BuildAvailablePostIdSetAsync(IEnumerable<long> postIds)
+    private async Task<Dictionary<long, ForumPostNavigationRecord>> BuildPostNavigationMapAsync(IEnumerable<long> postIds)
     {
         var normalizedPostIds = postIds
             .Where(id => id > 0)
@@ -892,15 +916,59 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             .ToList();
         if (normalizedPostIds.Count == 0)
         {
-            return new HashSet<long>();
+            return new Dictionary<long, ForumPostNavigationRecord>();
         }
 
-        return (await _postRepository.QueryByIdsAsync(normalizedPostIds))
-            .Select(post => post.Id)
-            .ToHashSet();
+        var items = await _postRepository.QueryMuchAsync<Post, User, User, ForumPostNavigationRecord>(
+            (post, primaryUser, secondaryUser) => new object[]
+            {
+                JoinType.Left, post.AuthorId == primaryUser.Id,
+                JoinType.Left, post.AuthorId == secondaryUser.Id
+            },
+            (post, _, _) => new ForumPostNavigationRecord
+            {
+                PostId = post.Id,
+                IsPostAvailable = !post.IsDeleted,
+                SnapshotTitle = string.IsNullOrWhiteSpace(post.Title) ? null : post.Title.Trim(),
+                SnapshotSummary = BuildTextSnapshot(string.IsNullOrWhiteSpace(post.Summary) ? post.Content : post.Summary)
+            },
+            (post, _, _) => normalizedPostIds.Contains(post.Id));
+
+        return items
+            .GroupBy(item => item.PostId)
+            .ToDictionary(group => group.Key, group => group.First());
     }
 
-    private async Task<Dictionary<long, Product>> BuildProductNavigationMapAsync(IEnumerable<long> productIds)
+    private async Task<Dictionary<long, ChatMessageNavigationRecord>> BuildChatMessageNavigationMapAsync(IEnumerable<long> messageIds)
+    {
+        var normalizedMessageIds = messageIds
+            .Where(id => id > 0)
+            .Distinct()
+            .ToList();
+        if (normalizedMessageIds.Count == 0)
+        {
+            return new Dictionary<long, ChatMessageNavigationRecord>();
+        }
+
+        return (await _channelMessageRepository.QueryByIdsIncludingDeletedAsync(normalizedMessageIds))
+            .GroupBy(message => message.Id)
+            .ToDictionary(
+                group => group.Key,
+                group =>
+                {
+                    var message = group.First();
+                    return new ChatMessageNavigationRecord
+                    {
+                        MessageId = message.Id,
+                        ChannelId = message.ChannelId,
+                        SnapshotSummary = message.IsDeleted
+                            ? "消息已撤回"
+                            : BuildMessageSnapshot(message)
+                    };
+                });
+    }
+
+    private async Task<Dictionary<long, ProductNavigationRecord>> BuildProductNavigationMapAsync(IEnumerable<long> productIds)
     {
         var normalizedProductIds = productIds
             .Where(id => id > 0)
@@ -908,11 +976,30 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             .ToList();
         if (normalizedProductIds.Count == 0)
         {
-            return new Dictionary<long, Product>();
+            return new Dictionary<long, ProductNavigationRecord>();
         }
 
-        return (await _productRepository.QueryByIdsAsync(normalizedProductIds))
-            .GroupBy(product => product.Id)
+        var items = await _productRepository.QueryMuchAsync<Product, ProductCategory, User, ProductNavigationRecord>(
+            (product, category, user) => new object[]
+            {
+                JoinType.Left, product.CategoryId == category.Id,
+                JoinType.Left, product.CreateId == user.Id
+            },
+            (product, _, _) => new ProductNavigationRecord
+            {
+                ProductId = product.Id,
+                IsEnabled = product.IsEnabled,
+                IsDeleted = product.IsDeleted,
+                ProductType = product.ProductType,
+                BenefitType = product.BenefitType,
+                ConsumableType = product.ConsumableType,
+                SnapshotTitle = string.IsNullOrWhiteSpace(product.Name) ? null : product.Name.Trim(),
+                SnapshotSummary = BuildTextSnapshot(product.Description)
+            },
+            (product, _, _) => normalizedProductIds.Contains(product.Id));
+
+        return items
+            .GroupBy(item => item.ProductId)
             .ToDictionary(group => group.Key, group => group.First());
     }
 
@@ -939,7 +1026,9 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
                 PostId = comment.PostId,
                 RootCommentId = comment.ParentId == null ? comment.Id : comment.RootId ?? comment.ParentId ?? comment.Id,
                 IsCommentAvailable = !comment.IsDeleted && comment.IsEnabled,
-                IsPostAvailable = post.Id > 0 && !post.IsDeleted
+                IsPostAvailable = post.Id > 0 && !post.IsDeleted,
+                SnapshotTitle = string.IsNullOrWhiteSpace(post.Title) ? null : post.Title.Trim(),
+                SnapshotSummary = BuildTextSnapshot(comment.Content)
             },
             (comment, _, _) => normalizedCommentIds.Contains(comment.Id));
 
@@ -961,7 +1050,9 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
                     RootCommentId = item.RootCommentId,
                     IsCommentAvailable = item.IsCommentAvailable,
                     IsRootCommentAvailable = isRootCommentAvailable,
-                    IsPostAvailable = item.IsPostAvailable
+                    IsPostAvailable = item.IsPostAvailable,
+                    SnapshotTitle = item.SnapshotTitle,
+                    SnapshotSummary = item.SnapshotSummary
                 };
             });
     }
@@ -1017,7 +1108,9 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
                 QuickReplyId = reply.Id,
                 PostId = reply.PostId,
                 IsQuickReplyAvailable = !reply.IsDeleted,
-                IsPostAvailable = post.Id > 0 && !post.IsDeleted
+                IsPostAvailable = post.Id > 0 && !post.IsDeleted,
+                SnapshotTitle = string.IsNullOrWhiteSpace(post.Title) ? null : post.Title.Trim(),
+                SnapshotSummary = BuildTextSnapshot(reply.Content)
             },
             (reply, _, _) => normalizedQuickReplyIds.Contains(reply.Id));
 
@@ -1028,25 +1121,32 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
 
     private static ReportTargetNavigationSnapshot BuildReportTargetNavigationSnapshot(
         ContentReport report,
-        IReadOnlySet<long>? availablePostIds = null,
-        IReadOnlyDictionary<long, long?>? chatChannelMap = null,
+        IReadOnlyDictionary<long, ForumPostNavigationRecord>? postNavigationMap = null,
+        IReadOnlyDictionary<long, ChatMessageNavigationRecord>? chatMessageMap = null,
         IReadOnlyDictionary<long, ForumCommentNavigationRecord>? commentNavigationMap = null,
         IReadOnlyDictionary<long, ForumQuickReplyNavigationRecord>? quickReplyNavigationMap = null,
-        IReadOnlyDictionary<long, Product>? productMap = null)
+        IReadOnlyDictionary<long, ProductNavigationRecord>? productMap = null)
     {
         var targetType = (ContentReportTargetTypeEnum)report.ReportTargetType;
         var targetTypeName = ToReportTargetTypeName(report.ReportTargetType);
 
         if (targetType == ContentReportTargetTypeEnum.Post)
         {
-            var isPostAvailable = report.TargetContentId > 0 && (availablePostIds?.Contains(report.TargetContentId) ?? false);
+            ForumPostNavigationRecord? postNavigation = null;
+            if (postNavigationMap != null)
+            {
+                postNavigationMap.TryGetValue(report.TargetContentId, out postNavigation);
+            }
+            var isPostAvailable = postNavigation?.IsPostAvailable == true;
             return new ReportTargetNavigationSnapshot
             {
                 TargetTypeName = targetTypeName,
                 TargetContentId = report.TargetContentId,
                 TargetPostId = report.TargetContentId > 0 ? report.TargetContentId : null,
                 NavigationStatus = isPostAvailable ? TargetNavigationStatusReady : TargetNavigationStatusUnavailable,
-                NavigationMessage = isPostAvailable ? null : "帖子已删除或不存在"
+                NavigationMessage = isPostAvailable ? null : "帖子已删除或不存在",
+                SnapshotTitle = postNavigation?.SnapshotTitle,
+                SnapshotSummary = postNavigation?.SnapshotSummary
             };
         }
 
@@ -1085,7 +1185,9 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
                 TargetPostId = commentNavigation.PostId > 0 ? commentNavigation.PostId : null,
                 TargetCommentId = report.TargetContentId > 0 ? report.TargetContentId : null,
                 NavigationStatus = navigationStatus,
-                NavigationMessage = navigationMessage
+                NavigationMessage = navigationMessage,
+                SnapshotTitle = commentNavigation.SnapshotTitle,
+                SnapshotSummary = commentNavigation.SnapshotSummary
             };
         }
 
@@ -1122,7 +1224,9 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
                 TargetContentId = report.TargetContentId,
                 TargetPostId = quickReplyNavigation.PostId > 0 ? quickReplyNavigation.PostId : null,
                 NavigationStatus = navigationStatus,
-                NavigationMessage = navigationMessage
+                NavigationMessage = navigationMessage,
+                SnapshotTitle = quickReplyNavigation.SnapshotTitle,
+                SnapshotSummary = quickReplyNavigation.SnapshotSummary
             };
         }
 
@@ -1140,39 +1244,44 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             }
 
             var product = matchedProduct;
-            if (!product.IsEnabled)
-            {
-                return new ReportTargetNavigationSnapshot
-                {
-                    TargetTypeName = targetTypeName,
-                    TargetContentId = report.TargetContentId,
-                    NavigationStatus = TargetNavigationStatusUnavailable,
-                    NavigationMessage = "商品已下线"
-                };
-            }
+            var navigationStatus = TargetNavigationStatusReady;
+            string? navigationMessage = null;
 
-            if (ShopProductAvailabilityPolicy.IsUnavailablePublicProduct(product.ProductType, product.BenefitType, product.ConsumableType))
+            if (product.IsDeleted)
             {
-                return new ReportTargetNavigationSnapshot
-                {
-                    TargetTypeName = targetTypeName,
-                    TargetContentId = report.TargetContentId,
-                    NavigationStatus = TargetNavigationStatusUnavailable,
-                    NavigationMessage = $"{ShopProductAvailabilityPolicy.GetUnavailableProductDisplayName(product.BenefitType, product.ConsumableType)}暂不支持公开回看"
-                };
+                navigationStatus = TargetNavigationStatusUnavailable;
+                navigationMessage = "商品已删除或不存在";
+            }
+            else if (!product.IsEnabled)
+            {
+                navigationStatus = TargetNavigationStatusUnavailable;
+                navigationMessage = "商品已下线";
+            }
+            else if (ShopProductAvailabilityPolicy.IsUnavailablePublicProduct(product.ProductType, product.BenefitType, product.ConsumableType))
+            {
+                navigationStatus = TargetNavigationStatusUnavailable;
+                navigationMessage = $"{ShopProductAvailabilityPolicy.GetUnavailableProductDisplayName(product.BenefitType, product.ConsumableType)}暂不支持公开回看";
             }
 
             return new ReportTargetNavigationSnapshot
             {
                 TargetTypeName = targetTypeName,
                 TargetContentId = report.TargetContentId,
-                NavigationStatus = TargetNavigationStatusReady
+                NavigationStatus = navigationStatus,
+                NavigationMessage = navigationMessage,
+                SnapshotTitle = product.SnapshotTitle,
+                SnapshotSummary = product.SnapshotSummary
             };
         }
 
         if (targetType == ContentReportTargetTypeEnum.ChatMessage)
         {
-            var targetChannelId = chatChannelMap?.GetValueOrDefault(report.TargetContentId);
+            ChatMessageNavigationRecord? chatMessageNavigation = null;
+            if (chatMessageMap != null)
+            {
+                chatMessageMap.TryGetValue(report.TargetContentId, out chatMessageNavigation);
+            }
+            var targetChannelId = chatMessageNavigation?.ChannelId;
             return new ReportTargetNavigationSnapshot
             {
                 TargetTypeName = targetTypeName,
@@ -1184,7 +1293,8 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
                     : TargetNavigationStatusUnavailable,
                 NavigationMessage = targetChannelId.HasValue && targetChannelId.Value > 0
                     ? null
-                    : "聊天消息定位已失效"
+                    : "聊天消息定位已失效",
+                SnapshotSummary = chatMessageNavigation?.SnapshotSummary
             };
         }
 
@@ -1212,6 +1322,8 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             VoTargetMessageId = navigation.TargetMessageId,
             VoTargetNavigationStatus = navigation.NavigationStatus,
             VoTargetNavigationMessage = navigation.NavigationMessage,
+            VoTargetSnapshotTitle = navigation.SnapshotTitle,
+            VoTargetSnapshotSummary = navigation.SnapshotSummary,
             VoTargetUserId = report.TargetUserId,
             VoTargetUserName = report.TargetUserName,
             VoReporterUserId = report.ReporterUserId,
@@ -1249,6 +1361,8 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             VoSourceReportTargetMessageId = sourceNavigation?.TargetMessageId,
             VoSourceReportTargetNavigationStatus = sourceNavigation?.NavigationStatus ?? TargetNavigationStatusUnavailable,
             VoSourceReportTargetNavigationMessage = sourceNavigation?.NavigationMessage,
+            VoSourceReportTargetSnapshotTitle = sourceNavigation?.SnapshotTitle,
+            VoSourceReportTargetSnapshotSummary = sourceNavigation?.SnapshotSummary,
             VoDurationHours = action.DurationHours,
             VoStartTime = action.StartTime,
             VoEndTime = action.EndTime,
@@ -1257,6 +1371,54 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             VoOperatorUserName = action.CreateBy,
             VoCreateTime = action.CreateTime
         };
+    }
+
+    private static string? BuildMessageSnapshot(ChannelMessage message)
+    {
+        return message.Type switch
+        {
+            MessageType.Text => BuildTextSnapshot(message.Content),
+            MessageType.Image => "图片消息",
+            MessageType.System => BuildTextSnapshot(message.Content) ?? "系统消息",
+            _ => BuildTextSnapshot(message.Content)
+        };
+    }
+
+    private static string? BuildTextSnapshot(string? content, int maxLength = 48)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return null;
+        }
+
+        var normalized = MarkdownImagePattern.Replace(content, match =>
+        {
+            var source = match.Groups.Count > 1 ? match.Groups[1].Value : string.Empty;
+            if (source.StartsWith("sticker://", StringComparison.OrdinalIgnoreCase))
+            {
+                return "[表情]";
+            }
+
+            return "[图片]";
+        });
+
+        normalized = MarkdownLinkPattern.Replace(normalized, match =>
+        {
+            var label = match.Groups["name"].Value.Trim();
+            return string.IsNullOrWhiteSpace(label) ? "[附件]" : label;
+        });
+        normalized = AttachmentUriPattern.Replace(normalized, "[附件]");
+        normalized = StickerUriPattern.Replace(normalized, "[表情]");
+        normalized = MultiWhitespacePattern.Replace(normalized, " ").Trim();
+
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return null;
+        }
+
+        return normalized.Length <= maxLength
+            ? normalized
+            : $"{normalized[..(maxLength - 3)]}...";
     }
 
     private static int NormalizePageIndex(int pageIndex)

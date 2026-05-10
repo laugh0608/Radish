@@ -85,6 +85,12 @@ public class ContentReportQueueItemVo
     /// <summary>目标导航状态说明</summary>
     public string? VoTargetNavigationMessage { get; set; }
 
+    /// <summary>目标快照标题</summary>
+    public string? VoTargetSnapshotTitle { get; set; }
+
+    /// <summary>目标快照摘要</summary>
+    public string? VoTargetSnapshotSummary { get; set; }
+
     /// <summary>被举报用户 ID</summary>
     public long VoTargetUserId { get; set; }
 
@@ -172,6 +178,12 @@ public class UserModerationActionVo
 
     /// <summary>来源举报目标导航状态说明</summary>
     public string? VoSourceReportTargetNavigationMessage { get; set; }
+
+    /// <summary>来源举报目标快照标题</summary>
+    public string? VoSourceReportTargetSnapshotTitle { get; set; }
+
+    /// <summary>来源举报目标快照摘要</summary>
+    public string? VoSourceReportTargetSnapshotSummary { get; set; }
 
     /// <summary>动作持续时长（小时）</summary>
     public int? VoDurationHours { get; set; }

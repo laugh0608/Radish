@@ -110,6 +110,8 @@ interface ModerationTargetNavigationStateInput extends ModerationTargetNavigatio
 }
 
 interface ModerationTargetDisplayInput extends ModerationTargetNavigationStateInput {
+  snapshotTitle?: string | null;
+  snapshotSummary?: string | null;
   targetUserId?: number | null;
   targetUserName?: string | null;
   showTargetUser?: boolean;
@@ -144,6 +146,9 @@ function renderTargetNavigationState(status: string | null | undefined, messageT
 }
 
 function renderModerationTarget(input: ModerationTargetDisplayInput) {
+  const hasSnapshotTitle = !!input.snapshotTitle?.trim();
+  const hasSnapshotSummary = !!input.snapshotSummary?.trim();
+
   return (
     <div>
       <div>{input.targetType} #{input.targetContentId ?? '-'}</div>
@@ -160,6 +165,8 @@ function renderModerationTarget(input: ModerationTargetDisplayInput) {
           频道 #{input.targetChannelId} · 消息 #{input.targetMessageId ?? input.targetContentId}
         </div>
       ) : null}
+      {hasSnapshotTitle ? <div>{input.snapshotTitle}</div> : null}
+      {hasSnapshotSummary ? <div style={{ color: '#8c8c8c' }}>{input.snapshotSummary}</div> : null}
       {renderTargetNavigationState(input.navigationStatus, input.navigationMessage)}
       {input.showTargetUser ? (
         <div style={{ color: '#8c8c8c' }}>{input.targetUserName || `用户 ${input.targetUserId}`}</div>
@@ -363,7 +370,7 @@ export const ModerationPage = () => {
     {
       title: '目标',
       key: 'target',
-      width: 220,
+      width: 280,
       render: (_, record) => renderModerationTarget({
         targetType: record.voTargetType,
         targetContentId: record.voTargetContentId,
@@ -373,6 +380,8 @@ export const ModerationPage = () => {
         targetMessageId: record.voTargetMessageId,
         navigationStatus: record.voTargetNavigationStatus,
         navigationMessage: record.voTargetNavigationMessage,
+        snapshotTitle: record.voTargetSnapshotTitle,
+        snapshotSummary: record.voTargetSnapshotSummary,
         targetUserId: record.voTargetUserId,
         targetUserName: record.voTargetUserName,
         showTargetUser: true,
@@ -485,7 +494,7 @@ export const ModerationPage = () => {
     {
       title: '来源举报',
       key: 'sourceReport',
-      width: 260,
+      width: 320,
       render: (_, record) => {
         if (!record.voSourceReportId) {
           return <span style={{ color: '#8c8c8c' }}>-</span>;
@@ -505,6 +514,8 @@ export const ModerationPage = () => {
                   targetMessageId: record.voSourceReportTargetMessageId,
                   navigationStatus: record.voSourceReportTargetNavigationStatus,
                   navigationMessage: record.voSourceReportTargetNavigationMessage,
+                  snapshotTitle: record.voSourceReportTargetSnapshotTitle,
+                  snapshotSummary: record.voSourceReportTargetSnapshotSummary,
                 })}
               </div>
             )
@@ -637,7 +648,7 @@ export const ModerationPage = () => {
               void loadQueue(page, size);
             },
           }}
-          scroll={{ x: 1280 }}
+          scroll={{ x: 1380 }}
         />
       </section>
 
@@ -679,7 +690,7 @@ export const ModerationPage = () => {
               void loadLogs(page, size);
             },
           }}
-          scroll={{ x: 1460 }}
+          scroll={{ x: 1560 }}
         />
       </section>
 
