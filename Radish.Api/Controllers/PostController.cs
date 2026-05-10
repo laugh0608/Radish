@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Api.Routing;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.IService.Base;
@@ -88,7 +89,7 @@ public class PostController : ControllerBase
                 Title = post.VoTitle,
                 Summary = post.VoSummary,
                 CoverAttachmentId = post.VoCoverAttachmentId,
-                RoutePath = $"/forum/post/{post.VoId}",
+                RoutePath = PublicRoutePathBuilder.BuildForumPostPath(post.VoId),
                 OperatorName = Current.UserName
             });
         }

@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Api.Routing;
 using Radish.Api.Filters;
 using Radish.Common.HttpContextTool;
 using Radish.Common.PermissionTool;
@@ -128,7 +129,7 @@ public class ShopController : ControllerBase
                 Title = result.VoName,
                 Summary = result.VoDescription,
                 CoverAttachmentId = result.VoCoverAttachmentId ?? result.VoIconAttachmentId,
-                RoutePath = $"/shop/product/{result.VoId}",
+                RoutePath = PublicRoutePathBuilder.BuildShopProductPath(result.VoId),
                 OperatorName = Current.UserName
             });
         }
