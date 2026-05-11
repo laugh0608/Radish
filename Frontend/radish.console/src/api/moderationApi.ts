@@ -69,6 +69,14 @@ export interface ReviewContentReportRequest {
   reviewRemark?: string;
 }
 
+export interface ApplyUserModerationActionRequest {
+  targetUserId: number;
+  actionType: number;
+  durationHours?: number | null;
+  reason?: string;
+  sourceReportId?: number | null;
+}
+
 export interface ContentModerationActionLogQuery {
   pageIndex?: number;
   pageSize?: number;
@@ -123,6 +131,15 @@ export async function reviewReport(request: ReviewContentReportRequest): Promise
   const response = await apiPost<ContentReportQueueItemVo>('/api/v1/ContentModeration/Review', request, { withAuth: true });
   if (!response.ok || !response.data) {
     throw new Error(response.message || '审核举报失败');
+  }
+
+  return response.data;
+}
+
+export async function applyUserModerationAction(request: ApplyUserModerationActionRequest): Promise<UserModerationActionVo> {
+  const response = await apiPost<UserModerationActionVo>('/api/v1/ContentModeration/ApplyUserAction', request, { withAuth: true });
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '执行治理动作失败');
   }
 
   return response.data;

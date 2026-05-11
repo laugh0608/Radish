@@ -162,6 +162,47 @@ public class ContentModerationControllerTest
     }
 
     [Fact]
+    public async Task ApplyUserAction_Should_Forward_Request_And_Return_Action_Result()
+    {
+        var serviceMock = CreateServiceMock();
+        serviceMock
+            .Setup(s => s.ApplyUserActionAsync(
+                It.Is<ApplyUserModerationActionDto>(dto =>
+                    dto.TargetUserId == 20002 &&
+                    dto.ActionType == 3 &&
+                    dto.DurationHours == null &&
+                    dto.SourceReportId == 70003 &&
+                    dto.Reason == "人工复核后解除禁言"),
+                10001,
+                "Tester",
+                0))
+            .ReturnsAsync(new UserModerationActionVo
+            {
+                VoActionId = 82011,
+                VoTargetUserId = 20002,
+                VoActionType = "Unmute",
+                VoSourceReportId = 70003,
+                VoIsActive = false
+            });
+
+        var controller = CreateController(serviceMock.Object);
+        var result = await controller.ApplyUserAction(new ApplyUserModerationActionDto
+        {
+            TargetUserId = 20002,
+            ActionType = 3,
+            SourceReportId = 70003,
+            Reason = "人工复核后解除禁言"
+        });
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(200, result.StatusCode);
+        var payload = Assert.IsType<UserModerationActionVo>(result.ResponseData);
+        Assert.Equal(82011, payload.VoActionId);
+        Assert.Equal("Unmute", payload.VoActionType);
+        Assert.False(payload.VoIsActive);
+    }
+
+    [Fact]
     public async Task GetActionLogs_Should_Return_Paged_Result_With_Source_Report_Navigation()
     {
         var serviceMock = CreateServiceMock();

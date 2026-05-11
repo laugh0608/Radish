@@ -14,6 +14,7 @@ import {
 } from '@radish/ui';
 import { ReloadOutlined } from '@radish/ui';
 import {
+  applyUserModerationAction,
   getActionLogs,
   getReviewQueue,
   reviewReport,
@@ -63,6 +64,22 @@ const ACTION_OPTIONS = [
   { label: '不处罚', value: 0 },
   { label: '禁言', value: 1 },
   { label: '封禁', value: 2 },
+];
+
+const MANUAL_ACTION_TYPE = {
+  mute: 1,
+  ban: 2,
+  unmute: 3,
+  unban: 4,
+} as const;
+
+type ManualActionTypeValue = typeof MANUAL_ACTION_TYPE[keyof typeof MANUAL_ACTION_TYPE];
+
+const MANUAL_ACTION_OPTIONS = [
+  { label: '禁言', value: MANUAL_ACTION_TYPE.mute },
+  { label: '封禁', value: MANUAL_ACTION_TYPE.ban },
+  { label: '解除禁言', value: MANUAL_ACTION_TYPE.unmute },
+  { label: '解除封禁', value: MANUAL_ACTION_TYPE.unban },
 ];
 
 const ACTION_LOG_ACTION_TYPE_OPTIONS = [
@@ -138,6 +155,36 @@ const renderActionType = (value: string) => {
   }
 };
 
+function getActionTypeText(value: string | null | undefined): string {
+  switch (value) {
+    case 'Mute':
+      return '禁言';
+    case 'Ban':
+      return '封禁';
+    case 'Unmute':
+      return '解除禁言';
+    case 'Unban':
+      return '解除封禁';
+    default:
+      return '治理动作';
+  }
+}
+
+function getManualActionTypeText(value: ManualActionTypeValue | null | undefined): string {
+  switch (value) {
+    case MANUAL_ACTION_TYPE.mute:
+      return '禁言';
+    case MANUAL_ACTION_TYPE.ban:
+      return '封禁';
+    case MANUAL_ACTION_TYPE.unmute:
+      return '解除禁言';
+    case MANUAL_ACTION_TYPE.unban:
+      return '解除封禁';
+    default:
+      return '治理动作';
+  }
+}
+
 function buildDesktopChatTargetUrl(channelId: number, messageId: number): string {
   const url = new URL('/desktop', getApiBaseUrl());
   url.searchParams.set('app', 'chat');
@@ -212,6 +259,15 @@ interface QueuePreset {
   reasonType?: string;
   navigationStatus?: string;
   keyword?: string;
+  hint: string;
+}
+
+interface ManualActionPreset {
+  targetUserId?: string;
+  sourceReportId?: string;
+  actionType?: ManualActionTypeValue;
+  durationHours?: number | null;
+  reason?: string;
   hint: string;
 }
 
@@ -348,6 +404,22 @@ function buildActionSourceTargetNavigationInput(record: UserModerationActionVo):
   };
 }
 
+function buildQueueManualActionReason(record: ContentReportQueueItemVo): string {
+  const reasonLabel = getReasonTypeLabel(record.voReasonType);
+  const reasonDetail = record.voReasonDetail?.trim();
+  return reasonDetail
+    ? `来源举报单 #${record.voReportId}：${reasonLabel}，${reasonDetail}`
+    : `来源举报单 #${record.voReportId}：${reasonLabel}`;
+}
+
+function buildActionLogManualActionReason(record: UserModerationActionVo, actionType?: ManualActionTypeValue): string {
+  if (actionType === MANUAL_ACTION_TYPE.unmute || actionType === MANUAL_ACTION_TYPE.unban) {
+    return `参考动作单 #${record.voActionId}，人工复核后${getManualActionTypeText(actionType)}`;
+  }
+
+  return `参考动作单 #${record.voActionId}，继续对用户 #${record.voTargetUserId} 执行人工治理`;
+}
+
 function resolveOpenTarget(input: ModerationTargetNavigationStateInput): ModerationOpenTarget | null {
   const navigationStatus = input.navigationStatus ?? 'Ready';
   if (navigationStatus === 'Unavailable' || navigationStatus === 'Unsupported') {
@@ -418,7 +490,9 @@ export const ModerationPage = () => {
   useDocumentTitle('内容治理');
 
   const [form] = Form.useForm();
+  const [manualActionForm] = Form.useForm();
   const queueSectionRef = useRef<HTMLElement | null>(null);
+  const manualActionSectionRef = useRef<HTMLElement | null>(null);
   const logSectionRef = useRef<HTMLElement | null>(null);
   const [loadingQueue, setLoadingQueue] = useState(false);
   const [loadingLogs, setLoadingLogs] = useState(false);
@@ -446,13 +520,19 @@ export const ModerationPage = () => {
   const [logKeywordInput, setLogKeywordInput] = useState('');
   const [logKeyword, setLogKeyword] = useState('');
   const [logContextHint, setLogContextHint] = useState<string | null>(null);
+  const [manualActionContextHint, setManualActionContextHint] = useState<string | null>(null);
   const [reviewingItem, setReviewingItem] = useState<ContentReportQueueItemVo | null>(null);
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [submittingManualAction, setSubmittingManualAction] = useState(false);
 
   const canReview = usePermission(CONSOLE_PERMISSIONS.moderationReview);
 
   const focusQueueSection = () => {
     queueSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const focusManualActionSection = () => {
+    manualActionSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const focusLogSection = () => {
@@ -686,6 +766,25 @@ export const ModerationPage = () => {
     });
   };
 
+  const applyManualActionPreset = (preset: ManualActionPreset) => {
+    const normalizedTargetUserId = preset.targetUserId ? (toPositiveLongString(preset.targetUserId) ?? '') : '';
+    const normalizedSourceReportId = preset.sourceReportId ? (toPositiveLongString(preset.sourceReportId) ?? '') : '';
+    manualActionForm.setFieldsValue({
+      targetUserId: normalizedTargetUserId,
+      sourceReportId: normalizedSourceReportId,
+      actionType: preset.actionType,
+      durationHours: preset.durationHours ?? undefined,
+      reason: preset.reason ?? '',
+    });
+    setManualActionContextHint(preset.hint);
+    focusManualActionSection();
+  };
+
+  const resetManualActionForm = () => {
+    manualActionForm.resetFields();
+    setManualActionContextHint(null);
+  };
+
   const openReviewModal = (item: ContentReportQueueItemVo) => {
     setReviewingItem(item);
     form.setFieldsValue({
@@ -728,10 +827,74 @@ export const ModerationPage = () => {
         await loadLogs();
       }
     } catch (error) {
+      if (error && typeof error === 'object' && 'errorFields' in error) {
+        return;
+      }
+
       log.error('ModerationPage', '提交审核失败:', error);
       message.error('提交审核失败');
     } finally {
       setSubmittingReview(false);
+    }
+  };
+
+  const handleSubmitManualAction = async () => {
+    try {
+      const values = await manualActionForm.validateFields();
+      const targetUserIdText = values.targetUserId?.trim() ?? '';
+      const sourceReportIdText = values.sourceReportId?.trim() ?? '';
+      const normalizedTargetUserId = toPositiveLongString(targetUserIdText);
+      const normalizedSourceReportId = sourceReportIdText.length > 0
+        ? toPositiveLongString(sourceReportIdText)
+        : undefined;
+
+      if (!normalizedTargetUserId) {
+        message.error('请输入有效的目标用户 ID');
+        return;
+      }
+
+      if (sourceReportIdText.length > 0 && !normalizedSourceReportId) {
+        message.error('请输入有效的关联举报单 ID');
+        return;
+      }
+
+      setSubmittingManualAction(true);
+      const result = await applyUserModerationAction({
+        targetUserId: Number(normalizedTargetUserId),
+        actionType: values.actionType,
+        durationHours: values.actionType === MANUAL_ACTION_TYPE.mute || values.actionType === MANUAL_ACTION_TYPE.ban
+          ? values.durationHours ?? null
+          : null,
+        reason: toOptionalString(values.reason),
+        sourceReportId: normalizedSourceReportId ? Number(normalizedSourceReportId) : null,
+      });
+
+      const actionText = getActionTypeText(result.voActionType);
+      message.success(`${actionText}已执行`);
+      manualActionForm.setFieldsValue({
+        targetUserId: normalizedTargetUserId,
+        sourceReportId: normalizedSourceReportId ?? '',
+        actionType: undefined,
+        durationHours: undefined,
+        reason: '',
+      });
+      setManualActionContextHint(`已执行${actionText}，目标用户与来源举报单已保留在表单中；下方日志已自动定位到动作单 #${result.voActionId}。`);
+      applyActionLogPreset({
+        targetUserId: String(result.voTargetUserId),
+        sourceReportId: result.voSourceReportId ? String(result.voSourceReportId) : undefined,
+        actionType: result.voActionType,
+        isActive: result.voIsActive ? 'active' : 'inactive',
+        hint: `已定位到刚执行的${actionText}动作单 #${result.voActionId}。`,
+      });
+    } catch (error) {
+      if (error && typeof error === 'object' && 'errorFields' in error) {
+        return;
+      }
+
+      log.error('ModerationPage', '执行手动治理动作失败:', error);
+      message.error('执行手动治理动作失败');
+    } finally {
+      setSubmittingManualAction(false);
     }
   };
 
@@ -787,7 +950,7 @@ export const ModerationPage = () => {
     {
       title: '操作',
       key: 'actions',
-      width: 360,
+      width: 460,
       render: (_, record) => {
         const openTarget = resolveOpenTarget(buildQueueTargetNavigationInput(record));
 
@@ -816,6 +979,29 @@ export const ModerationPage = () => {
                 }}
               >
                 查看目标动作
+              </Button>
+            ) : null}
+            {canReview && record.voTargetUserId > 0 ? (
+              <Button
+                size="small"
+                onClick={() => {
+                  applyManualActionPreset({
+                    targetUserId: String(record.voTargetUserId),
+                    sourceReportId: String(record.voReportId),
+                    actionType: record.voReviewActionType === 'Mute'
+                      ? MANUAL_ACTION_TYPE.mute
+                      : record.voReviewActionType === 'Ban'
+                        ? MANUAL_ACTION_TYPE.ban
+                        : undefined,
+                    durationHours: record.voReviewActionType === 'Mute' || record.voReviewActionType === 'Ban'
+                      ? record.voReviewDurationHours ?? undefined
+                      : undefined,
+                    reason: buildQueueManualActionReason(record),
+                    hint: `已带入举报单 #${record.voReportId} 与被举报用户 #${record.voTargetUserId}，可继续执行手动禁言 / 封禁或补录解除动作。`,
+                  });
+                }}
+              >
+                手动处置
               </Button>
             ) : null}
             {record.voReviewActionType !== 'None' ? (
@@ -905,7 +1091,7 @@ export const ModerationPage = () => {
     {
       title: '操作',
       key: 'actions',
-      width: 280,
+      width: 420,
       render: (_, record) => {
         const openTarget = resolveOpenTarget(buildActionSourceTargetNavigationInput(record));
 
@@ -940,6 +1126,41 @@ export const ModerationPage = () => {
                 查看原举报
               </Button>
             ) : null}
+            {canReview ? (
+              <Button
+                size="small"
+                onClick={() => {
+                  applyManualActionPreset({
+                    targetUserId: String(record.voTargetUserId),
+                    sourceReportId: record.voSourceReportId ? String(record.voSourceReportId) : undefined,
+                    reason: buildActionLogManualActionReason(record),
+                    hint: `已带入动作单 #${record.voActionId} 的目标用户${record.voSourceReportId ? ` 与来源举报单 #${record.voSourceReportId}` : ''}，可继续执行人工治理。`,
+                  });
+                }}
+              >
+                手动处置
+              </Button>
+            ) : null}
+            {canReview && record.voIsActive && (record.voActionType === 'Mute' || record.voActionType === 'Ban') ? (
+              <Button
+                size="small"
+                variant="primary"
+                onClick={() => {
+                  const actionType = record.voActionType === 'Mute'
+                    ? MANUAL_ACTION_TYPE.unmute
+                    : MANUAL_ACTION_TYPE.unban;
+                  applyManualActionPreset({
+                    targetUserId: String(record.voTargetUserId),
+                    sourceReportId: record.voSourceReportId ? String(record.voSourceReportId) : undefined,
+                    actionType,
+                    reason: buildActionLogManualActionReason(record, actionType),
+                    hint: `已根据动作单 #${record.voActionId} 带入${getManualActionTypeText(actionType)}建议，提交后会自动回跳到对应日志记录。`,
+                  });
+                }}
+              >
+                {record.voActionType === 'Mute' ? '解除禁言' : '解除封禁'}
+              </Button>
+            ) : null}
           </Space>
         );
       },
@@ -964,7 +1185,7 @@ export const ModerationPage = () => {
         <div className="admin-feature-header">
           <div>
             <h2>内容治理</h2>
-            <p className="admin-feature-subtle">举报队列、审核动作与治理日志统一在 Console 收口。</p>
+            <p className="admin-feature-subtle">举报队列、手动治理动作与治理日志统一在 Console 收口。</p>
           </div>
           <Button icon={<ReloadOutlined />} onClick={() => {
             void Promise.all([loadQueue(), loadLogs()]);
@@ -975,7 +1196,7 @@ export const ModerationPage = () => {
       </section>
 
       <div className="admin-feature-banner">
-        当前治理链路已统一接入帖子、评论、聊天室消息和商品举报，审核通过后可继续联动禁言或封禁动作。
+        当前治理链路已统一接入帖子、评论、聊天室消息和商品举报，审核通过后可联动禁言 / 封禁；历史动作也支持继续处置或直接解除。
       </div>
 
       <section className="admin-feature-card" ref={queueSectionRef}>
@@ -1071,15 +1292,127 @@ export const ModerationPage = () => {
               void loadQueue(page, size);
             },
           }}
-          scroll={{ x: 1460 }}
+          scroll={{ x: 1580 }}
         />
       </section>
+
+      {canReview ? (
+        <section className="admin-feature-card" ref={manualActionSectionRef}>
+          <div className="admin-feature-header">
+            <div>
+              <h3>手动治理动作</h3>
+              <p className="admin-feature-subtle">从举报队列或治理日志一键带入目标用户、来源举报单和解除建议，补齐人工禁言 / 封禁 / 解除动作闭环。</p>
+            </div>
+            <Space>
+              <Button onClick={resetManualActionForm}>
+                清空表单
+              </Button>
+              <Button variant="primary" disabled={submittingManualAction} onClick={() => {
+                void handleSubmitManualAction();
+              }}>
+                {submittingManualAction ? '执行中...' : '执行治理动作'}
+              </Button>
+            </Space>
+          </div>
+
+          {manualActionContextHint ? (
+            <div className="admin-feature-banner" style={{ marginTop: 16 }}>
+              {manualActionContextHint}
+            </div>
+          ) : null}
+
+          <Form form={manualActionForm} layout="vertical" className="moderation-manual-action-form">
+            <div className="moderation-manual-action-form__grid">
+              <Form.Item
+                name="targetUserId"
+                label="目标用户 ID"
+                rules={[
+                  { required: true, message: '请输入目标用户 ID' },
+                  {
+                    validator: (_, value) => {
+                      if (typeof value !== 'string' || value.trim().length === 0) {
+                        return Promise.resolve();
+                      }
+
+                      if (toPositiveLongString(value)) {
+                        return Promise.resolve();
+                      }
+
+                      return Promise.reject(new Error('请输入有效的目标用户 ID'));
+                    },
+                  },
+                ]}
+              >
+                <Input placeholder="输入目标用户 ID，或从上方队列 / 日志一键带入" />
+              </Form.Item>
+
+              <Form.Item
+                name="sourceReportId"
+                label="关联举报单 ID"
+                rules={[
+                  {
+                    validator: (_, value) => {
+                      if (value === undefined || value === null || String(value).trim().length === 0) {
+                        return Promise.resolve();
+                      }
+
+                      return toPositiveLongString(String(value))
+                        ? Promise.resolve()
+                        : Promise.reject(new Error('请输入有效的关联举报单 ID'));
+                    },
+                  },
+                ]}
+              >
+                <Input placeholder="可选，保留动作与举报单的关联" />
+              </Form.Item>
+            </div>
+
+            <div className="moderation-manual-action-form__grid">
+              <Form.Item name="actionType" label="治理动作" rules={[{ required: true, message: '请选择治理动作' }]}>
+                <Select options={MANUAL_ACTION_OPTIONS} placeholder="选择禁言、封禁或解除动作" />
+              </Form.Item>
+
+              <Form.Item
+                noStyle
+                shouldUpdate={(prev, next) => prev.actionType !== next.actionType}
+              >
+                {({ getFieldValue }) => {
+                  const currentActionType = getFieldValue('actionType') as ManualActionTypeValue | undefined;
+                  if (currentActionType !== MANUAL_ACTION_TYPE.mute && currentActionType !== MANUAL_ACTION_TYPE.ban) {
+                    return <div className="moderation-manual-action-form__field-placeholder" />;
+                  }
+
+                  return (
+                    <Form.Item
+                      name="durationHours"
+                      label={currentActionType === MANUAL_ACTION_TYPE.mute ? '持续时长（小时）' : '持续时长（小时，可留空表示永久封禁）'}
+                      rules={currentActionType === MANUAL_ACTION_TYPE.mute
+                        ? [{ required: true, message: '请输入禁言时长' }]
+                        : []}
+                    >
+                      <InputNumber min={1} max={720} style={{ width: '100%' }} placeholder={currentActionType === MANUAL_ACTION_TYPE.mute ? '例如 24' : '留空表示永久封禁'} />
+                    </Form.Item>
+                  );
+                }}
+              </Form.Item>
+            </div>
+
+            <Form.Item name="reason" label="动作原因">
+              <Input.TextArea rows={4} maxLength={500} showCount placeholder="补充人工治理依据；若从上方队列或日志带入，会自动预填推荐说明。" />
+            </Form.Item>
+
+            <div className="moderation-manual-action-form__footnote">
+              禁言必须填写时长，封禁可留空表示永久；解除禁言 / 解除封禁会记录新的治理动作单，并自动回跳到对应日志。
+            </div>
+          </Form>
+        </section>
+      ) : null}
 
       <section className="admin-feature-card" ref={logSectionRef}>
         <div className="admin-feature-header">
           <div>
             <h3>治理动作日志</h3>
-            <p className="admin-feature-subtle">回看审核联动后实际落下的禁言/封禁动作，并支持从举报队列或动作记录回跳到对应上下文。</p>
+            <p className="admin-feature-subtle">回看审核联动与手动执行后实际落下的治理动作，并支持从举报队列或动作记录回跳到对应上下文。</p>
           </div>
           <Space wrap>
             <Input
@@ -1165,7 +1498,7 @@ export const ModerationPage = () => {
               void loadLogs(page, size);
             },
           }}
-          scroll={{ x: 1640 }}
+          scroll={{ x: 1780 }}
         />
       </section>
 

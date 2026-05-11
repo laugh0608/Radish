@@ -114,6 +114,17 @@ Authorization: Bearer {{Access_Token}}
   "reason": "多次发布违规内容"
 }
 
+### 管理端：手动解除禁言
+POST {{Gateway_HostAddress}}/api/v1/ContentModeration/ApplyUserAction
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "targetUserId": {{TargetUserId}},
+  "actionType": 3,
+  "reason": "人工复核后解除禁言"
+}
+
 ### 管理端：获取治理动作记录
 GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetActionLogs?pageIndex=1&pageSize=10
 Accept: application/json

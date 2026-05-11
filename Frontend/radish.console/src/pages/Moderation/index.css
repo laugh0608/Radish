@@ -58,3 +58,22 @@
   font-size: 12px;
   font-weight: 600;
 }
+
+.moderation-manual-action-form {
+  margin-top: 16px;
+}
+
+.moderation-manual-action-form__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 0 16px;
+}
+
+.moderation-manual-action-form__field-placeholder {
+  min-height: 78px;
+}
+
+.moderation-manual-action-form__footnote {
+  color: #8c8c8c;
+  line-height: 1.6;
+}
