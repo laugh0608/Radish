@@ -139,28 +139,6 @@ export async function deleteProduct(productId: number): Promise<void> {
   }
 }
 
-/**
- * 上架商品
- */
-export async function putProductOnSale(productId: number): Promise<void> {
-  const response = await apiPost<null>(`/api/v1/Shop/PutOnSale/${productId}`, undefined, { withAuth: true });
-
-  if (!response.ok) {
-    throw new Error(response.message || '上架商品失败');
-  }
-}
-
-/**
- * 下架商品
- */
-export async function takeProductOffSale(productId: number): Promise<void> {
-  const response = await apiPost<null>(`/api/v1/Shop/TakeOffSale/${productId}`, undefined, { withAuth: true });
-
-  if (!response.ok) {
-    throw new Error(response.message || '下架商品失败');
-  }
-}
-
 // ==================== 订单管理 API ====================
 
 /**
@@ -168,10 +146,6 @@ export async function takeProductOffSale(productId: number): Promise<void> {
  */
 export async function adminGetOrders(params: {
   status?: OrderStatus;
-  productType?: ProductType;
-  keyword?: string;
-  startDate?: string;
-  endDate?: string;
   pageIndex?: number;
   pageSize?: number;
   userId?: string | number;
@@ -181,10 +155,6 @@ export async function adminGetOrders(params: {
   const searchParams = new URLSearchParams();
 
   if (params.status !== undefined) searchParams.append('status', params.status.toString());
-  if (params.productType !== undefined) searchParams.append('productType', params.productType.toString());
-  if (params.keyword) searchParams.append('keyword', params.keyword);
-  if (params.startDate) searchParams.append('startDate', params.startDate);
-  if (params.endDate) searchParams.append('endDate', params.endDate);
   if (params.userId) searchParams.append('userId', params.userId.toString());
   if (params.productId) searchParams.append('productId', params.productId.toString());
   if (params.orderNo) searchParams.append('orderNo', params.orderNo);
@@ -214,47 +184,6 @@ export async function adminGetOrder(orderId: number): Promise<Order> {
   }
 
   return response.data;
-}
-
-/**
- * 处理订单（发放权益）
- */
-export async function processOrder(orderId: number): Promise<void> {
-  const response = await apiPost<null>(`/api/v1/Shop/ProcessOrder/${orderId}`, undefined, { withAuth: true });
-
-  if (!response.ok) {
-    throw new Error(response.message || '处理订单失败');
-  }
-}
-
-/**
- * 取消订单
- */
-export async function cancelOrder(orderId: number, reason: string): Promise<void> {
-  const response = await apiPost<null>(
-    `/api/v1/Shop/CancelOrder/${orderId}`,
-    { reason },
-    { withAuth: true }
-  );
-
-  if (!response.ok) {
-    throw new Error(response.message || '取消订单失败');
-  }
-}
-
-/**
- * 退款订单
- */
-export async function refundOrder(orderId: number, reason: string): Promise<void> {
-  const response = await apiPost<null>(
-    `/api/v1/Shop/RefundOrder/${orderId}`,
-    { reason },
-    { withAuth: true }
-  );
-
-  if (!response.ok) {
-    throw new Error(response.message || '退款订单失败');
-  }
 }
 
 // ==================== 工具函数 ====================
@@ -353,9 +282,9 @@ export async function adminRemarkOrder(orderId: number, remark: string): Promise
  * 商品上架
  */
 export async function putOnSale(productId: number): Promise<void> {
-  const response = await apiPut<null>(
+  const response = await apiPost<null>(
     `/api/v1/Shop/PutOnSale/${productId}`,
-    {},
+    undefined,
     { withAuth: true }
   );
 
@@ -368,9 +297,9 @@ export async function putOnSale(productId: number): Promise<void> {
  * 商品下架
  */
 export async function takeOffSale(productId: number): Promise<void> {
-  const response = await apiPut<null>(
+  const response = await apiPost<null>(
     `/api/v1/Shop/TakeOffSale/${productId}`,
-    {},
+    undefined,
     { withAuth: true }
   );
 

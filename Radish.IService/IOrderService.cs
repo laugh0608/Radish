@@ -82,6 +82,11 @@ public interface IOrderService : IBaseService<Order, OrderVo>
         int pageIndex = 1,
         int pageSize = 20);
 
+    /// <summary>获取订单详情（管理后台）</summary>
+    /// <param name="orderId">订单 ID</param>
+    /// <returns>订单详情</returns>
+    Task<OrderVo?> GetOrderDetailForAdminAsync(long orderId);
+
     /// <summary>管理员备注订单</summary>
     /// <param name="orderId">订单 ID</param>
     /// <param name="remark">备注内容</param>

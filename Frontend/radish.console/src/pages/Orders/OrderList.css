@@ -21,3 +21,16 @@
   background: #fafafa;
   border-radius: 4px;
 }
+
+.order-detail-empty {
+  padding: 24px 0;
+  color: #666;
+}
+
+.order-detail-warning {
+  margin-top: 16px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #fff7e6;
+  color: #ad6800;
+}

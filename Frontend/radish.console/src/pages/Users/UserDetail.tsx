@@ -257,6 +257,16 @@ export const UserDetail = () => {
       width: 180,
       render: (time: string) => formatDisplayTime(time),
     },
+    {
+      title: '操作',
+      key: 'action',
+      width: 120,
+      render: (_: unknown, record: Order) => (
+        <Button onClick={() => navigate(`/orders?orderNo=${encodeURIComponent(record.voOrderNo)}&openDetail=1`)}>
+          治理详情
+        </Button>
+      ),
+    },
   ];
 
   if (!canViewUsers) {

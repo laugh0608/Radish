@@ -116,5 +116,17 @@ public interface IProductService : IBaseService<Product, ProductVo>
         int pageIndex = 1,
         int pageSize = 20);
 
+    /// <summary>获取商品详情（管理后台）</summary>
+    /// <param name="productId">商品 ID</param>
+    /// <returns>商品详情</returns>
+    Task<ProductVo?> GetProductDetailForAdminAsync(long productId);
+
+    /// <summary>删除商品（管理后台）</summary>
+    /// <param name="productId">商品 ID</param>
+    /// <param name="operatorId">操作员 ID</param>
+    /// <param name="operatorName">操作员名称</param>
+    /// <returns>是否成功</returns>
+    Task<bool> DeleteProductAsync(long productId, long operatorId, string operatorName);
+
     #endregion
 }

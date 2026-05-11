@@ -166,6 +166,125 @@ public class ProductServiceTest
         categoryRepository.Verify(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<ProductCategory, bool>>?>()), Times.Never);
     }
 
+    [Fact]
+    public async Task GetProductDetailForAdminAsync_ShouldReturnUnsupportedProductForAdmin()
+    {
+        var product = CreateLotteryTicketProduct();
+        product.IconAttachmentId = 9001;
+        product.CoverAttachmentId = 9002;
+        var category = new ProductCategory
+        {
+            Id = product.CategoryId,
+            Name = "效果道具",
+            IsEnabled = true,
+            CreateTime = DateTime.Now
+        };
+        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+        mapper
+            .Setup(m => m.Map<ProductVo>(It.IsAny<Product>()))
+            .Returns<Product>(source => new ProductVo
+            {
+                VoId = source.Id,
+                VoName = source.Name,
+                VoCategoryId = source.CategoryId,
+                VoIconAttachmentId = source.IconAttachmentId,
+                VoCoverAttachmentId = source.CoverAttachmentId,
+                VoProductType = source.ProductType,
+                VoConsumableType = source.ConsumableType,
+                VoPrice = source.Price,
+                VoStockType = source.StockType,
+                VoStock = source.Stock,
+                VoSoldCount = source.SoldCount,
+                VoLimitPerUser = source.LimitPerUser,
+                VoDurationType = source.DurationType,
+                VoDurationDays = source.DurationDays,
+                VoExpiresAt = source.ExpiresAt,
+                VoSortOrder = source.SortOrder,
+                VoIsOnSale = source.IsOnSale,
+                VoIsEnabled = source.IsEnabled,
+                VoCreateTime = source.CreateTime
+            });
+        var productRepository = CreateProductRepository(product);
+        var categoryRepository = new Mock<IBaseRepository<ProductCategory>>(MockBehavior.Strict);
+        categoryRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<ProductCategory, bool>>?>()))
+            .ReturnsAsync((Expression<Func<ProductCategory, bool>>? expression) =>
+            {
+                if (expression == null)
+                {
+                    return [category];
+                }
+
+                var predicate = expression.Compile();
+                return predicate(category) ? [category] : [];
+            });
+        var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Strict);
+        var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
+        attachmentUrlResolver
+            .Setup(resolver => resolver.ResolveAttachmentUrl(9001))
+            .Returns("https://cdn.example.com/product-icon.png");
+        attachmentUrlResolver
+            .Setup(resolver => resolver.ResolveAttachmentUrl(9002))
+            .Returns("https://cdn.example.com/product-cover.png");
+
+        var service = new ProductService(
+            mapper.Object,
+            productRepository.Object,
+            categoryRepository.Object,
+            orderRepository.Object,
+            attachmentUrlResolver.Object);
+
+        var result = await service.GetProductDetailForAdminAsync(product.Id);
+
+        Assert.NotNull(result);
+        Assert.Equal("效果道具", result!.VoCategoryName);
+        Assert.Equal("https://cdn.example.com/product-icon.png", result.VoIcon);
+        Assert.Equal("https://cdn.example.com/product-cover.png", result.VoCoverImage);
+    }
+
+    [Fact]
+    public async Task DeleteProductAsync_ShouldRejectWhenUnfinishedOrdersExist()
+    {
+        var product = CreateMisconfiguredCoinCardProduct();
+        product.Id = 100777;
+        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+        var productRepository = CreateProductRepository(product);
+        var categoryRepository = new Mock<IBaseRepository<ProductCategory>>(MockBehavior.Strict);
+        var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Strict);
+        orderRepository
+            .Setup(repository => repository.QueryCountAsync(It.IsAny<Expression<Func<Order, bool>>?>()))
+            .ReturnsAsync((Expression<Func<Order, bool>>? expression) =>
+            {
+                var pendingOrder = new Order
+                {
+                    ProductId = product.Id,
+                    Status = OrderStatus.Pending,
+                    IsDeleted = false
+                };
+
+                if (expression == null)
+                {
+                    return 1;
+                }
+
+                var predicate = expression.Compile();
+                return predicate(pendingOrder) ? 1 : 0;
+            });
+        var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
+
+        var service = new ProductService(
+            mapper.Object,
+            productRepository.Object,
+            categoryRepository.Object,
+            orderRepository.Object,
+            attachmentUrlResolver.Object);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.DeleteProductAsync(product.Id, 10001, "tester"));
+
+        Assert.Equal("存在未完成订单，不能删除商品", exception.Message);
+        productRepository.Verify(repository => repository.UpdateAsync(It.IsAny<Product>()), Times.Never);
+    }
+
     private static Product CreateLotteryTicketProduct()
     {
         return new Product

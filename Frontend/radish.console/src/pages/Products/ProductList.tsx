@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   TableSkeleton,
@@ -19,6 +20,7 @@ import {
   DeleteOutlined,
   SearchOutlined,
   ReloadOutlined,
+  EyeOutlined,
 } from '@radish/ui';
 import {
   adminGetProducts,
@@ -32,122 +34,49 @@ import { usePermission } from '@/hooks/usePermission';
 import type { Product, ProductCategory } from '../../api/types';
 import { ProductType } from '../../api/types';
 import { ProductForm } from './ProductForm';
+import { ProductDetail } from './ProductDetail';
+import {
+  getProductTypeDisplay,
+  getUnsupportedSaleReason,
+  getUnsupportedSaleStatusLabel,
+} from './productDisplay';
 import { getAvatarUrl } from '../../config/env';
 import { log } from '../../utils/logger';
 import './ProductList.css';
 
-// 本地工具函数
-function normalizeProductType(type?: string | number | null): string {
-  switch (String(type ?? '')) {
-    case '1':
-      return 'Benefit';
-    case '2':
-      return 'Consumable';
-    case '99':
-      return 'Physical';
-    default:
-      return String(type ?? '');
+function parsePositiveIntQuery(value: string | null): number | undefined {
+  if (!value) {
+    return undefined;
   }
+
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
 }
 
-function normalizeBenefitType(type?: string | number | null): string {
-  switch (String(type ?? '')) {
-    case '1':
-      return 'Badge';
-    case '2':
-      return 'AvatarFrame';
-    case '3':
-      return 'Title';
-    case '4':
-      return 'Theme';
-    case '5':
-      return 'Signature';
-    case '6':
-      return 'NameColor';
-    case '7':
-      return 'LikeEffect';
-    default:
-      return String(type ?? '');
-  }
+function parseBooleanQuery(value: string | null): boolean {
+  return value === '1' || value === 'true';
 }
 
-function normalizeConsumableType(type?: string | number | null): string {
-  switch (String(type ?? '')) {
-    case '1':
-      return 'RenameCard';
-    case '2':
-      return 'PostPinCard';
-    case '3':
-      return 'PostHighlightCard';
-    case '4':
-      return 'ExpCard';
-    case '5':
-      return 'CoinCard';
-    case '6':
-      return 'DoubleExpCard';
-    case '7':
-    case '99':
-      return 'LotteryTicket';
-    default:
-      return String(type ?? '');
-  }
-}
+function buildProductDetailSearchParams(productId?: number, openDetail?: boolean): URLSearchParams {
+  const searchParams = new URLSearchParams();
 
-function getUnsupportedSaleReason(product: Product): string | null {
-  const productType = normalizeProductType(product.voProductType);
-  if (productType === 'Benefit') {
-    const benefitType = normalizeBenefitType(product.voBenefitType);
-    if (
-      benefitType === 'Badge'
-      || benefitType === 'AvatarFrame'
-      || benefitType === 'Title'
-      || benefitType === 'Theme'
-      || benefitType === 'Signature'
-      || benefitType === 'NameColor'
-      || benefitType === 'LikeEffect'
-    ) {
-      return '当前权益效果未开放，不能上架销售';
-    }
+  if (productId !== undefined) {
+    searchParams.set('productId', productId.toString());
   }
 
-  if (productType === 'Consumable') {
-    const consumableType = normalizeConsumableType(product.voConsumableType);
-    if (
-      consumableType === 'PostPinCard'
-      || consumableType === 'PostHighlightCard'
-      || consumableType === 'DoubleExpCard'
-      || consumableType === 'LotteryTicket'
-    ) {
-      return '当前道具未开放，不能上架销售';
-    }
+  if (openDetail) {
+    searchParams.set('openDetail', '1');
   }
 
-  return null;
-}
-
-function getUnsupportedSaleStatusLabel(product: Product): string | null {
-  if (!getUnsupportedSaleReason(product)) {
-    return null;
-  }
-
-  return product.voIsOnSale ? '历史上架' : '未开放';
-}
-
-function getProductTypeDisplay(type: ProductType | string | number): string {
-  switch (normalizeProductType(type)) {
-    case 'Benefit':
-      return '权益';
-    case 'Consumable':
-      return '消耗品';
-    case 'Physical':
-      return '实物';
-    default:
-      return '未知';
-  }
+  return searchParams;
 }
 
 export const ProductList = () => {
   useDocumentTitle('商品管理');
+  const navigate = useNavigate();
+  const [urlSearchParams, setUrlSearchParams] = useSearchParams();
+  const queryProductId = parsePositiveIntQuery(urlSearchParams.get('productId'));
+  const queryOpenDetail = parseBooleanQuery(urlSearchParams.get('openDetail'));
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [loading, setLoading] = useState(false);
@@ -159,18 +88,21 @@ export const ProductList = () => {
   const canEditProduct = usePermission(CONSOLE_PERMISSIONS.productsEdit);
   const canDeleteProductPermission = usePermission(CONSOLE_PERMISSIONS.productsDelete);
   const canToggleProductSale = usePermission(CONSOLE_PERMISSIONS.productsToggleSale);
+  const canViewOrders = usePermission(CONSOLE_PERMISSIONS.ordersView);
 
-  // 表单状态
   const [formVisible, setFormVisible] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | undefined>();
 
-  // 草稿筛选条件
+  const [detailVisible, setDetailVisible] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState<number | undefined>();
+  const [selectedProductSnapshot, setSelectedProductSnapshot] = useState<Product | undefined>();
+  const [detailReloadToken, setDetailReloadToken] = useState(0);
+
   const [draftCategoryId, setDraftCategoryId] = useState<string | undefined>();
   const [draftProductType, setDraftProductType] = useState<ProductType | undefined>();
   const [draftIsOnSale, setDraftIsOnSale] = useState<boolean | undefined>();
   const [draftKeyword, setDraftKeyword] = useState('');
 
-  // 已应用筛选条件
   const [searchParams, setSearchParams] = useState<{
     categoryId?: string;
     productType?: ProductType;
@@ -183,7 +115,10 @@ export const ProductList = () => {
     keyword: '',
   });
 
-  // 加载商品列表
+  const syncDetailSearchParams = (productId?: number, openDetail?: boolean, replace: boolean = false) => {
+    setUrlSearchParams(buildProductDetailSearchParams(productId, openDetail), { replace });
+  };
+
   const loadProducts = async () => {
     try {
       setLoading(true);
@@ -198,6 +133,9 @@ export const ProductList = () => {
 
       setProducts(response.data);
       setTotal(response.dataCount);
+      setSelectedProductSnapshot((current) => current
+        ? response.data.find((item) => item.voId === current.voId) ?? current
+        : current);
     } catch (error) {
       log.error('ProductList', '加载商品列表失败:', error);
       message.error('加载商品列表失败');
@@ -206,7 +144,6 @@ export const ProductList = () => {
     }
   };
 
-  // 加载分类列表
   const loadCategories = async () => {
     try {
       const data = await getCategories();
@@ -216,7 +153,6 @@ export const ProductList = () => {
     }
   };
 
-  // 初始化
   useEffect(() => {
     if (!canViewProducts) {
       return;
@@ -225,7 +161,6 @@ export const ProductList = () => {
     void loadCategories();
   }, [canViewProducts]);
 
-  // 加载商品列表
   useEffect(() => {
     if (!canViewProducts) {
       return;
@@ -234,7 +169,16 @@ export const ProductList = () => {
     void loadProducts();
   }, [pageIndex, pageSize, searchParams, canViewProducts]);
 
-  // 搜索
+  useEffect(() => {
+    if (!queryOpenDetail || !queryProductId) {
+      return;
+    }
+
+    setSelectedProductId(queryProductId);
+    setSelectedProductSnapshot(products.find((item) => item.voId === queryProductId));
+    setDetailVisible(true);
+  }, [products, queryOpenDetail, queryProductId]);
+
   const handleSearch = () => {
     setPageIndex(1);
     setSearchParams({
@@ -245,7 +189,6 @@ export const ProductList = () => {
     });
   };
 
-  // 重置筛选
   const handleReset = () => {
     setDraftCategoryId(undefined);
     setDraftProductType(undefined);
@@ -260,7 +203,26 @@ export const ProductList = () => {
     });
   };
 
-  // 上架/下架
+  const handleOpenDetail = (productId: number, product?: Product, syncQuery: boolean = false) => {
+    setSelectedProductId(productId);
+    setSelectedProductSnapshot(product);
+    setDetailVisible(true);
+
+    if (syncQuery) {
+      syncDetailSearchParams(productId, true);
+    }
+  };
+
+  const handleCloseDetail = () => {
+    setDetailVisible(false);
+    setSelectedProductId(undefined);
+    setSelectedProductSnapshot(undefined);
+
+    if (queryOpenDetail || queryProductId) {
+      syncDetailSearchParams(undefined, false, true);
+    }
+  };
+
   const handleToggleSale = async (product: Product) => {
     try {
       if (product.voIsOnSale) {
@@ -270,14 +232,17 @@ export const ProductList = () => {
         await putOnSale(product.voId);
         message.success('上架成功');
       }
-      loadProducts();
+
+      await loadProducts();
+      if (selectedProductId === product.voId) {
+        setDetailReloadToken((current) => current + 1);
+      }
     } catch (error) {
       log.error('ProductList', '上架/下架失败:', error);
-      message.error('操作失败');
+      message.error(error instanceof Error ? error.message : '操作失败');
     }
   };
 
-  // 删除商品
   const handleDelete = (product: Product) => {
     (Modal as any).confirm({
       title: '确认删除',
@@ -286,16 +251,28 @@ export const ProductList = () => {
         try {
           await deleteProduct(product.voId);
           message.success('删除成功');
-          loadProducts();
+          await loadProducts();
+
+          if (selectedProductId === product.voId) {
+            handleCloseDetail();
+          }
         } catch (error) {
           log.error('ProductList', '删除商品失败:', error);
-          message.error('删除失败');
+          message.error(error instanceof Error ? error.message : '删除失败');
         }
       },
     });
   };
 
-  // 表格列定义
+  const handleViewOrders = (product: Product) => {
+    navigate(`/orders?productId=${product.voId}`);
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    setFormVisible(true);
+  };
+
   const columns: TableColumnsType<Product> = [
     {
       title: 'ID',
@@ -323,13 +300,15 @@ export const ProductList = () => {
       title: '商品名称',
       dataIndex: 'voName',
       key: 'voName',
-      width: 200,
-    },
-    {
-      title: '分类',
-      dataIndex: 'voCategoryName',
-      key: 'voCategoryName',
-      width: 100,
+      width: 220,
+      render: (name: string, record: Product) => (
+        <div>
+          <div>{name}</div>
+          <div style={{ fontSize: '12px', color: '#999' }}>
+            {record.voCategoryName || record.voCategoryId}
+          </div>
+        </div>
+      ),
     },
     {
       title: '类型',
@@ -350,11 +329,11 @@ export const ProductList = () => {
           <div style={{ fontWeight: 'bold', color: '#ff4d4f' }}>
             {price} 胡萝卜
           </div>
-          {record.voOriginalPrice && record.voOriginalPrice > price && (
+          {record.voOriginalPrice && record.voOriginalPrice > price ? (
             <div style={{ fontSize: '12px', color: '#999', textDecoration: 'line-through' }}>
               {record.voOriginalPrice} 胡萝卜
             </div>
-          )}
+          ) : null}
         </div>
       ),
     },
@@ -364,15 +343,9 @@ export const ProductList = () => {
       key: 'voStock',
       width: 100,
       render: (stock: number, record: Product) => (
-        <div>
-          {record.voStockType === 'Unlimited' ? (
-            <Tag color="green">无限</Tag>
-          ) : (
-            <span style={{ color: stock > 0 ? '#52c41a' : '#ff4d4f' }}>
-              {stock}
-            </span>
-          )}
-        </div>
+        record.voStockType === 'Unlimited'
+          ? <Tag color="green">无限</Tag>
+          : <span style={{ color: stock > 0 ? '#52c41a' : '#ff4d4f' }}>{stock}</span>
       ),
     },
     {
@@ -384,7 +357,7 @@ export const ProductList = () => {
     {
       title: '状态',
       key: 'status',
-      width: 100,
+      width: 120,
       render: (_: unknown, record: Product) => {
         const unsupportedStatusLabel = getUnsupportedSaleStatusLabel(record);
 
@@ -408,7 +381,7 @@ export const ProductList = () => {
     {
       title: '操作',
       key: 'action',
-      width: 200,
+      width: 320,
       fixed: 'right',
       render: (_: unknown, record: Product) => {
         const unsupportedSaleReason = getUnsupportedSaleReason(record);
@@ -418,16 +391,30 @@ export const ProductList = () => {
           : saleBlockReason ?? undefined;
 
         return (
-          <Space size="small">
+          <Space size="small" wrap>
+            <Button
+              variant="ghost"
+              size="small"
+              icon={<EyeOutlined />}
+              onClick={() => handleOpenDetail(record.voId, record, true)}
+            >
+              详情
+            </Button>
+            {canViewOrders ? (
+              <Button
+                variant="ghost"
+                size="small"
+                onClick={() => handleViewOrders(record)}
+              >
+                相关订单
+              </Button>
+            ) : null}
             {canEditProduct ? (
               <Button
                 variant="ghost"
                 size="small"
                 icon={<EditOutlined />}
-                onClick={() => {
-                  setEditingProduct(record);
-                  setFormVisible(true);
-                }}
+                onClick={() => handleEditProduct(record)}
               >
                 编辑
               </Button>
@@ -458,7 +445,7 @@ export const ProductList = () => {
       },
     },
   ];
-  // 如果正在加载且没有数据，显示骨架屏
+
   if (loading && products.length === 0) {
     return <TableSkeleton rows={10} columns={6} showFilters={true} showActions={true} />;
   }
@@ -550,13 +537,23 @@ export const ProductList = () => {
           total: total,
           showSizeChanger: true,
           showQuickJumper: true,
-          showTotal: (total) => `共 ${total} 条`,
+          showTotal: (itemTotal) => `共 ${itemTotal} 条`,
           onChange: (page, size) => {
             setPageIndex(page);
             setPageSize(size);
           },
         }}
-        scroll={{ x: 1400 }}
+        scroll={{ x: 1520 }}
+      />
+
+      <ProductDetail
+        visible={detailVisible}
+        productId={selectedProductId}
+        fallbackProduct={selectedProductSnapshot}
+        reloadToken={detailReloadToken}
+        onClose={handleCloseDetail}
+        onEdit={handleEditProduct}
+        onViewOrders={canViewOrders ? handleViewOrders : undefined}
       />
 
       <ProductForm
@@ -567,7 +564,10 @@ export const ProductList = () => {
           setEditingProduct(undefined);
         }}
         onSuccess={() => {
-          loadProducts();
+          void loadProducts();
+          if (editingProduct && editingProduct.voId === selectedProductId) {
+            setDetailReloadToken((current) => current + 1);
+          }
         }}
       />
     </div>

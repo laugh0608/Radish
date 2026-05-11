@@ -449,6 +449,23 @@ public class ShopController : ControllerBase
     }
 
     /// <summary>
+    /// 获取商品详情（管理后台）
+    /// </summary>
+    [HttpGet("{productId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.ProductsView)]
+    public async Task<MessageModel<ProductVo>> AdminGetProduct(long productId)
+    {
+        var result = await _productService.GetProductDetailForAdminAsync(productId);
+        if (result == null)
+        {
+            return MessageModel<ProductVo>.Message(false, "商品不存在", default!);
+        }
+
+        return MessageModel<ProductVo>.Success("查询成功", result);
+    }
+
+    /// <summary>
     /// 创建商品
     /// </summary>
     [HttpPost]
@@ -485,6 +502,28 @@ public class ShopController : ControllerBase
         {
             var result = await _productService.UpdateProductAsync(dto, userId, userName);
             return MessageModel<bool>.Success("更新成功", result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return MessageModel<bool>.Message(false, ex.Message, false);
+        }
+    }
+
+    /// <summary>
+    /// 删除商品
+    /// </summary>
+    [HttpDelete("{productId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.ProductsDelete)]
+    public async Task<MessageModel<bool>> DeleteProduct(long productId)
+    {
+        var userId = GetCurrentUserId();
+        var userName = GetCurrentUserName();
+
+        try
+        {
+            var result = await _productService.DeleteProductAsync(productId, userId, userName);
+            return MessageModel<bool>.Success("删除成功", result);
         }
         catch (InvalidOperationException ex)
         {
@@ -540,6 +579,23 @@ public class ShopController : ControllerBase
         var result = await _orderService.GetOrderListForAdminAsync(
             userId, status, productId, orderNo, pageIndex, pageSize);
         return MessageModel<PageModel<OrderVo>>.Success("查询成功", result);
+    }
+
+    /// <summary>
+    /// 获取订单详情（管理后台）
+    /// </summary>
+    [HttpGet("{orderId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.OrdersView)]
+    public async Task<MessageModel<OrderVo>> AdminGetOrder(long orderId)
+    {
+        var result = await _orderService.GetOrderDetailForAdminAsync(orderId);
+        if (result == null)
+        {
+            return MessageModel<OrderVo>.Message(false, "订单不存在", default!);
+        }
+
+        return MessageModel<OrderVo>.Success("查询成功", result);
     }
 
     /// <summary>

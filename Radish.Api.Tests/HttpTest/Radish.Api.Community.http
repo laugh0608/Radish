@@ -134,3 +134,21 @@ Authorization: Bearer {{Access_Token}}
 GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetActionLogs?pageIndex=1&pageSize=10&sourceReportId={{ReviewReportId}}&actionType=Mute&isActive=true&keyword=reviewer
 Accept: application/json
 Authorization: Bearer {{Access_Token}}
+
+@ShopAdminProductId = 1
+@ShopAdminOrderId = 1
+
+### 管理端：获取商品详情
+GET {{Gateway_HostAddress}}/api/v1/Shop/AdminGetProduct/{{ShopAdminProductId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 管理端：获取订单详情
+GET {{Gateway_HostAddress}}/api/v1/Shop/AdminGetOrder/{{ShopAdminOrderId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 管理端：删除商品
+DELETE {{Gateway_HostAddress}}/api/v1/Shop/DeleteProduct/{{ShopAdminProductId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}

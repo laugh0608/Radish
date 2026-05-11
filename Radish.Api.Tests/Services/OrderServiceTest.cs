@@ -570,4 +570,108 @@ public class OrderServiceTest
         Assert.True(result);
         productService.Verify(service => service.RestoreStockAsync(It.IsAny<long>(), It.IsAny<int>(), It.IsAny<StockType>()), Times.Never);
     }
+
+    [Fact]
+    public async Task GetOrderDetailForAdminAsync_ShouldFillUserNameAndProductIcon()
+    {
+        const long orderId = 7005;
+        const long userId = 9528;
+        const long attachmentId = 9001;
+
+        var order = new Order
+        {
+            Id = orderId,
+            OrderNo = "ORD_7005",
+            UserId = userId,
+            ProductId = 100501,
+            ProductName = "体验红包",
+            ProductIconAttachmentId = attachmentId,
+            ProductType = ProductType.Consumable,
+            Quantity = 1,
+            UnitPrice = 50,
+            TotalPrice = 50,
+            Status = OrderStatus.Completed,
+            CreateTime = DateTime.Now,
+            CreateBy = "User",
+            CreateId = userId
+        };
+        var user = new User
+        {
+            Id = userId,
+            UserName = "OrderAdmin"
+        };
+
+        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+        mapper
+            .Setup(m => m.Map<OrderVo>(It.IsAny<Order>()))
+            .Returns<Order>(source => new OrderVo
+            {
+                VoId = source.Id,
+                VoOrderNo = source.OrderNo,
+                VoUserId = source.UserId,
+                VoProductId = source.ProductId,
+                VoProductName = source.ProductName,
+                VoProductIconAttachmentId = source.ProductIconAttachmentId,
+                VoProductType = source.ProductType,
+                VoQuantity = source.Quantity,
+                VoUnitPrice = source.UnitPrice,
+                VoTotalPrice = source.TotalPrice,
+                VoStatus = source.Status,
+                VoCreateTime = source.CreateTime
+            });
+        var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Strict);
+        orderRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<Order, bool>>?>()))
+            .ReturnsAsync((Expression<Func<Order, bool>>? expression) =>
+            {
+                if (expression == null)
+                {
+                    return order;
+                }
+
+                var predicate = expression.Compile();
+                return predicate(order) ? order : null;
+            });
+        var productRepository = new Mock<IBaseRepository<Product>>(MockBehavior.Loose);
+        var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Strict);
+        userRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<User, bool>>?>()))
+            .ReturnsAsync((Expression<Func<User, bool>>? expression) =>
+            {
+                if (expression == null)
+                {
+                    return [user];
+                }
+
+                var predicate = expression.Compile();
+                return predicate(user) ? [user] : [];
+            });
+        var productService = new Mock<IProductService>(MockBehavior.Loose);
+        var userBenefitService = new Mock<IUserBenefitService>(MockBehavior.Loose);
+        var coinService = new Mock<ICoinService>(MockBehavior.Loose);
+        var paymentPasswordService = new Mock<IPaymentPasswordService>(MockBehavior.Loose);
+        var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
+        attachmentUrlResolver
+            .Setup(resolver => resolver.ResolveAttachmentUrl(attachmentId))
+            .Returns("https://cdn.example.com/order-icon.png");
+
+        var service = new OrderService(
+            mapper.Object,
+            orderRepository.Object,
+            productRepository.Object,
+            userRepository.Object,
+            productService.Object,
+            userBenefitService.Object,
+            coinService.Object,
+            paymentPasswordService.Object,
+            attachmentUrlResolver.Object,
+            notificationService: null);
+
+        var result = await service.GetOrderDetailForAdminAsync(orderId);
+
+        Assert.NotNull(result);
+        Assert.Equal("OrderAdmin", result!.VoUserName);
+        Assert.Equal("https://cdn.example.com/order-icon.png", result.VoProductIcon);
+        Assert.Equal(order.ProductName, result.VoProductName);
+    }
 }

@@ -1,6 +1,6 @@
 # Console 权限覆盖矩阵
 
-> 最后更新：2026-03-24
+> 最后更新：2026-05-11
 > 适用范围：`radish.console` 当前已接入权限治理的页面与其真实依赖的后端资源
 
 本文档用于把 Console 权限治理涉及的四层对象放到同一张表里：
@@ -40,8 +40,8 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | Dashboard | `/` | `console.dashboard.view` | `console.orders.view`、`console.products.create`、`console.users.view`、`console.applications.view` | `Statistics/GetDashboardStats`、`Shop/AdminGetOrders` | ✅ | 最近订单按订单查看权限单独控制，并支持带 `orderNo` 深链进入订单治理面 |
 | Applications | `/applications` | `console.applications.view` | `console.applications.create/edit/delete/reset-secret` | `Client/GetClients`、`GetClient/.+`、`CreateClient`、`UpdateClient/.+`、`DeleteClient/.+`、`ResetClientSecret/.+` | ✅ | 列表与弹窗链路均已闭环 |
-| Products | `/products` | `console.products.view` | `console.products.create/edit/delete/toggle-sale` | `Shop/GetCategories`、`AdminGetProducts`、`CreateProduct`、`UpdateProduct`、`DeleteProduct/.+`、`PutOnSale/.+`、`TakeOffSale/.+` | ✅ | `AdminGetProduct` 当前页面未使用 |
-| Orders | `/orders` | `console.orders.view` | `console.orders.retry`、`console.orders.remark` | `Shop/AdminGetOrders`、`RetryGrantBenefit/.+`、`AdminRemarkOrder/.+` | ✅ | 详情当前复用列表数据，管理员备注通过列表快照更新，并支持 `orderNo` 查询参数定位 / 展开目标订单 |
+| Products | `/products` | `console.products.view` | `console.products.create/edit/delete/toggle-sale` | `Shop/GetCategories`、`AdminGetProducts`、`AdminGetProduct/.+`、`CreateProduct`、`UpdateProduct`、`DeleteProduct/.+`、`PutOnSale/.+`、`TakeOffSale/.+` | ✅ | 已接商品详情弹窗、商品到订单回跳和订单回看入口 |
+| Orders | `/orders` | `console.orders.view` | `console.orders.retry`、`console.orders.remark` | `Shop/AdminGetOrders`、`AdminGetOrder/.+`、`RetryGrantBenefit/.+`、`AdminRemarkOrder/.+` | ✅ | 详情已改为独立真实接口加载，并支持订单到用户 / 商品治理回跳 |
 | Users | `/users` | `console.users.view` | 无额外操作权限 | `User/GetUserList`、`GetUserById/\\d+` | ✅ | 未落地操作已收口，不再保留伪权限 |
 | User Detail | `/users/:userId` | `console.users.view` | 无额外操作权限 | 当前页面仍以 mock 为主，无新增真实资源依赖 | ✅ | 路由边界已稳定，后续若接真接口需重新补矩阵 |
 | Roles | `/roles` | `console.roles.view` | `console.roles.create/edit/toggle/delete` | `Role/GetRoleList`、`GetRoleById`、`CreateRole`、`UpdateRole`、`DeleteRole`、`ToggleRoleStatus` | ✅ | 首批闭环模块 |
@@ -122,7 +122,6 @@
 
 ### 5.3 暂不视为缺口的项
 
-- `AdminGetProduct`、`AdminGetOrder`：当前页面未实际调用
 - `GetOrderTrend`、`GetProductSalesRanking`、`GetUserLevelDistribution`：当前页面未实际接入
 - `GetUserStats`：用户详情页仍以 mock/TODO 为主
 

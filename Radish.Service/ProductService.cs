@@ -639,20 +639,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                 orderByType: OrderByType.Desc);
 
             var productVos = Mapper.Map<List<ProductVo>>(products);
-
-            // 填充分类名称
-            var categoryIds = products.Select(p => p.CategoryId).Distinct().ToList();
-            var categories = await _categoryRepository.QueryAsync(c => categoryIds.Contains(c.Id));
-            var categoryDict = categories.ToDictionary(c => c.Id, c => c.Name);
-
-            foreach (var vo in productVos)
-            {
-                if (categoryDict.TryGetValue(vo.VoCategoryId, out var categoryName))
-                {
-                    vo.VoCategoryName = categoryName;
-                }
-            }
-
+            await FillProductCategoryNamesAsync(productVos);
             FillProductUrls(productVos);
 
             return new PageModel<ProductVo>
@@ -667,6 +654,74 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
         catch (Exception ex)
         {
             Log.Error(ex, "获取商品列表（管理后台）失败");
+            throw;
+        }
+    }
+
+    /// <summary>获取商品详情（管理后台）</summary>
+    public async Task<ProductVo?> GetProductDetailForAdminAsync(long productId)
+    {
+        try
+        {
+            var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
+            if (product == null)
+            {
+                return null;
+            }
+
+            var productVo = Mapper.Map<ProductVo>(product);
+            await FillProductCategoryNamesAsync([productVo]);
+            FillProductUrl(productVo);
+            return productVo;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "获取商品 {ProductId} 详情（管理后台）失败", productId);
+            throw;
+        }
+    }
+
+    /// <summary>删除商品（管理后台）</summary>
+    public async Task<bool> DeleteProductAsync(long productId, long operatorId, string operatorName)
+    {
+        try
+        {
+            var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
+            if (product == null)
+            {
+                throw new InvalidOperationException("商品不存在");
+            }
+
+            var unfinishedOrderCount = await _orderRepository.QueryCountAsync(
+                order => order.ProductId == productId
+                    && !order.IsDeleted
+                    && (order.Status == OrderStatus.Pending || order.Status == OrderStatus.Paid));
+            if (unfinishedOrderCount > 0)
+            {
+                throw new InvalidOperationException("存在未完成订单，不能删除商品");
+            }
+
+            product.IsDeleted = true;
+            product.IsOnSale = false;
+            product.OffSaleTime = DateTime.Now;
+            product.ModifyTime = DateTime.Now;
+            product.ModifyBy = string.IsNullOrWhiteSpace(operatorName) ? "Unknown" : operatorName.Trim();
+            product.ModifyId = operatorId;
+
+            var result = await _productRepository.UpdateAsync(product);
+            if (result)
+            {
+                Log.Information("商品 {ProductId} 删除成功，操作员={OperatorName}({OperatorId})",
+                    productId,
+                    product.ModifyBy,
+                    operatorId);
+            }
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "删除商品 {ProductId} 失败", productId);
             throw;
         }
     }
@@ -711,6 +766,35 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
         foreach (var category in categories)
         {
             FillProductCategoryUrl(category);
+        }
+    }
+
+    private async Task FillProductCategoryNamesAsync(IReadOnlyCollection<ProductVo> products)
+    {
+        if (products.Count == 0)
+        {
+            return;
+        }
+
+        var categoryIds = products
+            .Select(product => product.VoCategoryId)
+            .Where(categoryId => !string.IsNullOrWhiteSpace(categoryId))
+            .Distinct()
+            .ToList();
+        if (categoryIds.Count == 0)
+        {
+            return;
+        }
+
+        var categories = await _categoryRepository.QueryAsync(category => categoryIds.Contains(category.Id));
+        var categoryDict = categories.ToDictionary(category => category.Id, category => category.Name);
+
+        foreach (var product in products)
+        {
+            if (categoryDict.TryGetValue(product.VoCategoryId, out var categoryName))
+            {
+                product.VoCategoryName = categoryName;
+            }
         }
     }
 

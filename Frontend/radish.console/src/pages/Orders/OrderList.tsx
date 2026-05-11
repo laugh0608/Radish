@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   TableSkeleton,
@@ -22,11 +23,9 @@ import {
   adminGetOrders,
   adminRemarkOrder,
   retryGrantBenefit,
-  getOrderStatusDisplay,
   getOrderStatusColor,
   getProductTypeDisplay,
 } from '../../api/shopApi';
-import { useSearchParams } from 'react-router-dom';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
 import type { Order, OrderStatus } from '../../api/types';
@@ -106,6 +105,7 @@ function buildOrderSearchParams(params: {
 
 export const OrderList = () => {
   useDocumentTitle('订单管理');
+  const navigate = useNavigate();
   const [urlSearchParams, setUrlSearchParams] = useSearchParams();
   const queryUserId = parsePositiveIntQuery(urlSearchParams.get('userId'));
   const queryStatus = parseOrderStatusQuery(urlSearchParams.get('status'));
@@ -120,17 +120,18 @@ export const OrderList = () => {
   const canViewOrders = usePermission(CONSOLE_PERMISSIONS.ordersView);
   const canRetryOrder = usePermission(CONSOLE_PERMISSIONS.ordersRetry);
   const canRemarkOrder = usePermission(CONSOLE_PERMISSIONS.ordersRemark);
+  const canViewUsers = usePermission(CONSOLE_PERMISSIONS.usersView);
+  const canViewProducts = usePermission(CONSOLE_PERMISSIONS.productsView);
 
-  // 详情弹窗状态
   const [detailVisible, setDetailVisible] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<Order | undefined>();
+  const [selectedOrderId, setSelectedOrderId] = useState<number | undefined>();
+  const [selectedOrderPreview, setSelectedOrderPreview] = useState<Order | undefined>();
+  const [detailReloadToken, setDetailReloadToken] = useState(0);
 
-  // 确认对话框状态
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [retryOrder, setRetryOrder] = useState<Order | undefined>();
   const [savingRemark, setSavingRemark] = useState(false);
 
-  // 草稿筛选条件
   const [draftUserId, setDraftUserId] = useState<number | undefined>(queryUserId);
   const [draftStatus, setDraftStatus] = useState<OrderStatus | undefined>(queryStatus);
   const [draftProductId, setDraftProductId] = useState<number | undefined>(queryProductId);
@@ -155,7 +156,6 @@ export const OrderList = () => {
     setDraftOrderNo(queryOrderNo);
   }, [queryUserId, queryStatus, queryProductId, queryOrderNo]);
 
-  // 加载订单列表
   const loadOrders = async () => {
     try {
       setLoading(true);
@@ -170,7 +170,7 @@ export const OrderList = () => {
 
       setOrders(response.data);
       setTotal(response.dataCount);
-      setSelectedOrder((current) => current
+      setSelectedOrderPreview((current) => current
         ? response.data.find((item) => item.voId === current.voId) ?? current
         : current);
 
@@ -180,7 +180,8 @@ export const OrderList = () => {
           : response.data.length === 1 ? response.data[0] : undefined;
 
         if (targetOrder) {
-          setSelectedOrder(targetOrder);
+          setSelectedOrderId(targetOrder.voId);
+          setSelectedOrderPreview(targetOrder);
           setDetailVisible(true);
         }
       }
@@ -192,7 +193,6 @@ export const OrderList = () => {
     }
   };
 
-  // 初始化和筛选条件变化时加载
   useEffect(() => {
     if (!canViewOrders) {
       return;
@@ -207,10 +207,9 @@ export const OrderList = () => {
     queryPageIndex,
     queryPageSize,
     queryOpenDetail,
-    canViewOrders
+    canViewOrders,
   ]);
 
-  // 搜索
   const handleSearch = () => {
     syncSearchParams({
       userId: draftUserId,
@@ -222,7 +221,6 @@ export const OrderList = () => {
     });
   };
 
-  // 重置筛选
   const handleReset = () => {
     syncSearchParams({
       pageIndex: DEFAULT_PAGE_INDEX,
@@ -230,13 +228,20 @@ export const OrderList = () => {
     });
   };
 
-  // 查看详情
   const handleViewDetail = (order: Order) => {
-    setSelectedOrder(order);
+    setSelectedOrderId(order.voId);
+    setSelectedOrderPreview(order);
     setDetailVisible(true);
   };
 
-  // 重试失败订单
+  const handleViewUser = (order: Order) => {
+    navigate(`/users/${order.voUserId}`);
+  };
+
+  const handleViewProduct = (order: Order) => {
+    navigate(`/products?productId=${order.voProductId}&openDetail=1`);
+  };
+
   const handleRetry = (order: Order) => {
     setRetryOrder(order);
     setConfirmVisible(true);
@@ -244,7 +249,8 @@ export const OrderList = () => {
 
   const handleCloseDetail = () => {
     setDetailVisible(false);
-    setSelectedOrder(undefined);
+    setSelectedOrderId(undefined);
+    setSelectedOrderPreview(undefined);
 
     if (queryOpenDetail) {
       syncSearchParams({
@@ -258,17 +264,21 @@ export const OrderList = () => {
     }
   };
 
-  // 确认重试
   const handleConfirmRetry = async () => {
-    if (!retryOrder) return;
+    if (!retryOrder) {
+      return;
+    }
 
     try {
       await retryGrantBenefit(retryOrder.voId);
       message.success('重试成功');
-      loadOrders();
+      await loadOrders();
+      if (selectedOrderId === retryOrder.voId) {
+        setDetailReloadToken((current) => current + 1);
+      }
     } catch (error) {
       log.error('OrderList', '重试失败:', error);
-      message.error('重试失败');
+      message.error(error instanceof Error ? error.message : '重试失败');
     } finally {
       setConfirmVisible(false);
       setRetryOrder(undefined);
@@ -276,24 +286,24 @@ export const OrderList = () => {
   };
 
   const handleSaveRemark = async (remark: string) => {
-    if (!selectedOrder) {
+    if (!selectedOrderId) {
       return;
     }
 
     try {
       setSavingRemark(true);
-      await adminRemarkOrder(selectedOrder.voId, remark);
+      await adminRemarkOrder(selectedOrderId, remark);
       const normalizedRemark = remark.trim();
       const nextRemark = normalizedRemark || null;
 
-      setSelectedOrder((current) => current
+      setSelectedOrderPreview((current) => current
         ? {
             ...current,
             voAdminRemark: nextRemark,
           }
         : current);
       setOrders((current) => current.map((item) => (
-        item.voId === selectedOrder.voId
+        item.voId === selectedOrderId
           ? {
               ...item,
               voAdminRemark: nextRemark,
@@ -301,6 +311,7 @@ export const OrderList = () => {
           : item
       )));
       message.success('订单备注已保存');
+      setDetailReloadToken((current) => current + 1);
     } catch (error) {
       log.error('OrderList', '保存订单备注失败:', error);
       message.error(error instanceof Error ? error.message : '保存订单备注失败');
@@ -309,7 +320,6 @@ export const OrderList = () => {
     }
   };
 
-  // 表格列定义
   const columns: TableColumnsType<Order> = [
     {
       title: '订单号',
@@ -389,10 +399,28 @@ export const OrderList = () => {
     {
       title: '操作',
       key: 'action',
-      width: 150,
+      width: 280,
       fixed: 'right',
       render: (_: unknown, record: Order) => (
-        <Space size="small">
+        <Space size="small" wrap>
+          {canViewUsers ? (
+            <Button
+              variant="ghost"
+              size="small"
+              onClick={() => handleViewUser(record)}
+            >
+              查看用户
+            </Button>
+          ) : null}
+          {canViewProducts ? (
+            <Button
+              variant="ghost"
+              size="small"
+              onClick={() => handleViewProduct(record)}
+            >
+              查看商品
+            </Button>
+          ) : null}
           <Button
             variant="ghost"
             size="small"
@@ -401,7 +429,7 @@ export const OrderList = () => {
           >
             详情
           </Button>
-          {canRetryOrder && record.voStatus === 'Failed' && (
+          {canRetryOrder && record.voStatus === 'Failed' ? (
             <Button
               variant="ghost"
               size="small"
@@ -410,16 +438,16 @@ export const OrderList = () => {
             >
               重试
             </Button>
-          )}
+          ) : null}
         </Space>
       ),
     },
   ];
 
-  // 如果正在加载且没有数据，显示骨架屏
   if (loading && orders.length === 0) {
     return <TableSkeleton rows={10} columns={6} showFilters={true} showActions={true} />;
   }
+
   return (
     <div className="order-list-page">
       <div className="page-header">
@@ -491,7 +519,7 @@ export const OrderList = () => {
           total: total,
           showSizeChanger: true,
           showQuickJumper: true,
-          showTotal: (total) => `共 ${total} 条`,
+          showTotal: (itemTotal) => `共 ${itemTotal} 条`,
           onChange: (page, size) => {
             syncSearchParams({
               userId: queryUserId,
@@ -503,20 +531,24 @@ export const OrderList = () => {
             });
           },
         }}
-        scroll={{ x: 1400 }}
+        scroll={{ x: 1600 }}
       />
 
       <OrderDetail
         visible={detailVisible}
-        order={selectedOrder}
+        orderId={selectedOrderId}
+        fallbackOrder={selectedOrderPreview}
+        reloadToken={detailReloadToken}
         canRemark={canRemarkOrder}
         savingRemark={savingRemark}
         onClose={handleCloseDetail}
         onRetry={() => {
-          if (selectedOrder) {
-            handleRetry(selectedOrder);
+          if (selectedOrderPreview) {
+            handleRetry(selectedOrderPreview);
           }
         }}
+        onViewUser={canViewUsers ? handleViewUser : undefined}
+        onViewProduct={canViewProducts ? handleViewProduct : undefined}
         onSaveRemark={handleSaveRemark}
       />
 

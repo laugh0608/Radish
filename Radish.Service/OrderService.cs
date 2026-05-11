@@ -470,20 +470,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 orderByType: OrderByType.Desc);
 
             var orderVos = Mapper.Map<List<OrderVo>>(orders);
-
-            // 填充用户名
-            var userIds = orders.Select(o => o.UserId).Distinct().ToList();
-            var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id));
-            var userDict = users.ToDictionary(u => u.Id, u => u.UserName);
-
-            foreach (var vo in orderVos)
-            {
-                if (userDict.TryGetValue(vo.VoUserId, out var userName))
-                {
-                    vo.VoUserName = userName;
-                }
-            }
-
+            await FillOrderUsersAsync(orderVos);
             FillOrderUrls(orderVos);
 
             return new PageModel<OrderVo>
@@ -498,6 +485,29 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         catch (Exception ex)
         {
             Log.Error(ex, "获取订单列表（管理后台）失败");
+            throw;
+        }
+    }
+
+    /// <summary>获取订单详情（管理后台）</summary>
+    public async Task<OrderVo?> GetOrderDetailForAdminAsync(long orderId)
+    {
+        try
+        {
+            var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && !o.IsDeleted);
+            if (order == null)
+            {
+                return null;
+            }
+
+            var orderVo = Mapper.Map<OrderVo>(order);
+            await FillOrderUsersAsync([orderVo]);
+            FillOrderUrl(orderVo);
+            return orderVo;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "获取订单 {OrderId} 详情（管理后台）失败", orderId);
             throw;
         }
     }
@@ -647,6 +657,34 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         foreach (var order in orders)
         {
             FillOrderUrl(order);
+        }
+    }
+
+    private async Task FillOrderUsersAsync(IReadOnlyCollection<OrderVo> orders)
+    {
+        if (orders.Count == 0)
+        {
+            return;
+        }
+
+        var userIds = orders
+            .Select(order => order.VoUserId)
+            .Distinct()
+            .ToList();
+        if (userIds.Count == 0)
+        {
+            return;
+        }
+
+        var users = await _userRepository.QueryAsync(user => userIds.Contains(user.Id));
+        var userDict = users.ToDictionary(user => user.Id, user => user.UserName);
+
+        foreach (var order in orders)
+        {
+            if (userDict.TryGetValue(order.VoUserId, out var userName))
+            {
+                order.VoUserName = userName;
+            }
         }
     }
 
