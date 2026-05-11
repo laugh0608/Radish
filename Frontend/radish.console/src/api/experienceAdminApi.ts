@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from '@radish/http';
+import { apiGet, apiPost, type PagedResponse } from '@radish/http';
 
 export interface UserExperienceVo {
   voUserId: number | string;
@@ -80,6 +80,25 @@ export interface UserExpDailyStatsWindowVo {
   voLimits?: UserExpDailyLimitSnapshotVo | null;
 }
 
+export interface ExpTransactionVo {
+  voId: number | string;
+  voUserId: number | string;
+  voUserName?: string | null;
+  voOperatorId: number | string;
+  voOperatorName?: string | null;
+  voExpType: string;
+  voExpTypeDisplay: string;
+  voExpAmount: number;
+  voBusinessType?: string | null;
+  voBusinessId?: number | string | null;
+  voRemark?: string | null;
+  voExpBefore: number;
+  voExpAfter: number;
+  voLevelBefore: number;
+  voLevelAfter: number;
+  voCreateTime: string;
+}
+
 export interface AdminAdjustExperienceRequest {
   userId: string | number;
   deltaExp: number;
@@ -126,6 +145,32 @@ export async function getUserDailyStats(
   );
   if (!response.ok || !response.data) {
     throw new Error(response.message || '获取用户经验统计失败');
+  }
+
+  return response.data;
+}
+
+export async function getUserTransactions(params: {
+  userId: string | number;
+  pageIndex?: number;
+  pageSize?: number;
+  expType?: string;
+}): Promise<PagedResponse<ExpTransactionVo>> {
+  const searchParams = new URLSearchParams({
+    pageIndex: String(params.pageIndex ?? 1),
+    pageSize: String(params.pageSize ?? 20),
+  });
+
+  if (params.expType?.trim()) {
+    searchParams.set('expType', params.expType.trim());
+  }
+
+  const response = await apiGet<PagedResponse<ExpTransactionVo>>(
+    `/api/v1/Experience/GetUserTransactions/${encodeURIComponent(String(params.userId))}?${searchParams.toString()}`,
+    { withAuth: true }
+  );
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '获取用户经验流水失败');
   }
 
   return response.data;

@@ -42,6 +42,9 @@ namespace Radish.Service;
 	    /// <summary>重试最大延迟（毫秒），避免指数退避无限放大</summary>
 	    private const int MaxRetryDelayMs = 1000;
 
+    /// <summary>交易记录分页最大页大小</summary>
+    private const int MaxTransactionPageSize = 100;
+
     public ExperienceService(
         IMapper mapper,
         IBaseRepository<UserExperience> userExpRepository,
@@ -413,13 +416,17 @@ namespace Radish.Service;
     {
         try
         {
+            var safePageIndex = NormalizePositivePageIndex(pageIndex);
+            var safePageSize = NormalizeTransactionPageSize(pageSize);
+            var normalizedExpType = NormalizeOptionalFilter(expType);
+
             // 构建动态 Where 条件（使用 And 扩展方法组合多个条件）
             Expression<Func<ExpTransaction, bool>> whereExpression = t => t.UserId == userId;
 
             // 如果有 expType 筛选条件
-            if (!string.IsNullOrEmpty(expType))
+            if (normalizedExpType != null)
             {
-                whereExpression = whereExpression.And(t => t.ExpType == expType);
+                whereExpression = whereExpression.And(t => t.ExpType == normalizedExpType);
             }
 
             // 如果有开始日期筛选条件
@@ -437,21 +444,22 @@ namespace Radish.Service;
             // 使用 BaseRepository 的分页查询方法（数据库层面筛选、排序和分页）
             var (pagedData, totalCount) = await _expTransactionRepository.QueryPageAsync(
                 whereExpression: whereExpression,
-                pageIndex: pageIndex,
-                pageSize: pageSize,
+                pageIndex: safePageIndex,
+                pageSize: safePageSize,
                 orderByExpression: t => t.CreateTime,
                 orderByType: OrderByType.Desc
             );
 
             // 映射为 VO
             var transactions = Mapper.Map<List<ExpTransactionVo>>(pagedData);
+            await FillTransactionUserNamesAsync(pagedData, transactions);
 
-            var pageCount = (int)Math.Ceiling(totalCount / (double)pageSize);
+            var pageCount = (int)Math.Ceiling(totalCount / (double)safePageSize);
 
             return new PageModel<ExpTransactionVo>
             {
-                Page = pageIndex,
-                PageSize = pageSize,
+                Page = safePageIndex,
+                PageSize = safePageSize,
                 DataCount = totalCount,
                 PageCount = pageCount,
                 Data = transactions
@@ -1485,6 +1493,38 @@ namespace Radish.Service;
         return vo;
     }
 
+    private async Task FillTransactionUserNamesAsync(
+        IReadOnlyList<ExpTransaction> sourceTransactions,
+        IReadOnlyList<ExpTransactionVo> transactionVos)
+    {
+        if (sourceTransactions.Count == 0 || transactionVos.Count == 0)
+        {
+            return;
+        }
+
+        var userIds = sourceTransactions
+            .Select(transaction => transaction.UserId)
+            .Where(userId => userId > 0)
+            .Distinct()
+            .ToList();
+
+        if (userIds.Count == 0)
+        {
+            return;
+        }
+
+        var users = await _userRepository.QueryAsync(user => userIds.Contains(user.Id) && !user.IsDeleted);
+        var userNameMap = users.ToDictionary(user => user.Id, user => user.UserName);
+
+        for (var index = 0; index < sourceTransactions.Count && index < transactionVos.Count; index++)
+        {
+            if (userNameMap.TryGetValue(sourceTransactions[index].UserId, out var userName))
+            {
+                transactionVos[index].VoUserName = userName;
+            }
+        }
+    }
+
     private void FillLevelConfigUrls(List<LevelConfigVo> configs)
     {
         foreach (var config in configs)
@@ -1910,6 +1950,26 @@ namespace Radish.Service;
         return bool.TryParse(rawValue, out var parsedValue)
             ? parsedValue
             : fallbackValue;
+    }
+
+    private static int NormalizePositivePageIndex(int pageIndex)
+    {
+        return pageIndex > 0 ? pageIndex : 1;
+    }
+
+    private static int NormalizeTransactionPageSize(int pageSize)
+    {
+        if (pageSize <= 0)
+        {
+            return 20;
+        }
+
+        return Math.Min(pageSize, MaxTransactionPageSize);
+    }
+
+    private static string? NormalizeOptionalFilter(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
     /// <summary>

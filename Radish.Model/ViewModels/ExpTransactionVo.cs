@@ -22,6 +22,16 @@ public class ExpTransactionVo
     public string? VoUserName { get; set; }
 
     /// <summary>
+    /// 操作者 ID
+    /// </summary>
+    public long VoOperatorId { get; set; }
+
+    /// <summary>
+    /// 操作者名称
+    /// </summary>
+    public string? VoOperatorName { get; set; }
+
+    /// <summary>
     /// 经验值类型
     /// </summary>
     /// <remarks>

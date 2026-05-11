@@ -163,6 +163,26 @@ public class ExperienceController : ControllerBase
         return MessageModel<PageModel<ExpTransactionVo>>.Success("查询成功", result);
     }
 
+    /// <summary>
+    /// 管理端按用户查询经验值交易记录
+    /// </summary>
+    [HttpGet("{userId:long}")]
+    [RequireConsolePermission(ConsolePermissions.ExperienceView)]
+    public async Task<MessageModel<PageModel<ExpTransactionVo>>> GetUserTransactions(
+        long userId,
+        [FromQuery] int pageIndex = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? expType = null)
+    {
+        if (userId <= 0)
+        {
+            return MessageModel<PageModel<ExpTransactionVo>>.Message(false, "用户ID无效", default!);
+        }
+
+        var result = await _experienceService.GetTransactionsAsync(userId, pageIndex, pageSize, expType);
+        return MessageModel<PageModel<ExpTransactionVo>>.Success("查询成功", result);
+    }
+
     #endregion
 
     #region 排行榜

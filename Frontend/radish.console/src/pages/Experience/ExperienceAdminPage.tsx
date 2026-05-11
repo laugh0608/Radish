@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   AntInput as Input,
+  AntSelect as Select,
   Button,
   DatePicker,
   Form,
@@ -13,10 +14,12 @@ import {
 import { ReloadOutlined } from '@radish/ui';
 import {
   adminAdjustExperience,
+  type ExpTransactionVo,
   adminFreezeExperience,
   adminUnfreezeExperience,
   getLevelConfigs,
   getUserDailyStats,
+  getUserTransactions,
   type UserExpDailyLimitSnapshotVo,
   getUserExperience,
   recalculateLevelConfigs,
@@ -46,6 +49,17 @@ interface AdjustFormValues {
 
 type StatsWindowDays = 7 | 30;
 
+const EXPERIENCE_TRANSACTION_TYPE_OPTIONS = [
+  { label: '管理员调整', value: 'ADMIN_ADJUST' },
+  { label: '惩罚扣减', value: 'PENALTY' },
+  { label: '发布帖子', value: 'POST_CREATE' },
+  { label: '发布评论', value: 'COMMENT_CREATE' },
+  { label: '点赞互动', value: 'LIKE_OTHERS' },
+  { label: '被点赞', value: 'RECEIVE_LIKE' },
+  { label: '高亮奖励', value: 'GOD_COMMENT' },
+  { label: '登录奖励', value: 'DAILY_LOGIN' },
+];
+
 function normalizePositiveLongIdInput(value: string): string | undefined {
   const trimmed = value.trim();
   return /^[1-9]\d*$/.test(trimmed) ? trimmed : undefined;
@@ -61,6 +75,18 @@ function formatStatDate(value: string): string {
 
 function formatFullStatDate(value: string): string {
   return dayjs(value).format('YYYY-MM-DD');
+}
+
+function formatDisplayTime(value?: string | null): string {
+  if (!value) {
+    return '-';
+  }
+
+  return dayjs(value).isValid() ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : value;
+}
+
+function formatTransactionAmount(value: number): string {
+  return `${value >= 0 ? '+' : ''}${value}`;
 }
 
 function formatLimitValue(
@@ -84,9 +110,15 @@ export const ExperienceAdminPage = () => {
   const [dailyStatsWindow, setDailyStatsWindow] = useState<UserExpDailyStatsWindowVo | null>(null);
   const [statsWindowDays, setStatsWindowDays] = useState<StatsWindowDays>(7);
   const [levels, setLevels] = useState<LevelConfigVo[]>([]);
+  const [transactions, setTransactions] = useState<ExpTransactionVo[]>([]);
+  const [transactionTotal, setTransactionTotal] = useState(0);
+  const [transactionPageIndex, setTransactionPageIndex] = useState(1);
+  const [transactionPageSize, setTransactionPageSize] = useState(10);
+  const [transactionTypeFilter, setTransactionTypeFilter] = useState<string | undefined>();
   const [loadingExperience, setLoadingExperience] = useState(false);
   const [loadingDailyStats, setLoadingDailyStats] = useState(false);
   const [loadingLevels, setLoadingLevels] = useState(false);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [freezing, setFreezing] = useState(false);
   const [unfreezing, setUnfreezing] = useState(false);
@@ -147,10 +179,60 @@ export const ExperienceAdminPage = () => {
     void loadDailyStats(loadedUserId, statsWindowDays);
   }, [loadedUserId, statsWindowDays]);
 
+  const loadTransactions = async (
+    userId: string,
+    targetPageIndex = transactionPageIndex,
+    targetPageSize = transactionPageSize,
+    targetExpType = transactionTypeFilter
+  ) => {
+    const normalizedUserId = normalizePositiveLongIdInput(userId);
+    if (!normalizedUserId) {
+      setTransactions([]);
+      setTransactionTotal(0);
+      setTransactionPageIndex(1);
+      return;
+    }
+
+    try {
+      setLoadingTransactions(true);
+      const result = await getUserTransactions({
+        userId: normalizedUserId,
+        pageIndex: targetPageIndex,
+        pageSize: targetPageSize,
+        expType: targetExpType,
+      });
+      setTransactions(result.data);
+      setTransactionTotal(result.dataCount);
+      setTransactionPageIndex(result.page);
+      setTransactionPageSize(result.pageSize);
+    } catch (error) {
+      log.error('ExperienceAdminPage', '加载用户经验流水失败:', error);
+      message.error(error instanceof Error ? error.message : '加载用户经验流水失败');
+      setTransactions([]);
+      setTransactionTotal(0);
+    } finally {
+      setLoadingTransactions(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!loadedUserId) {
+      setTransactions([]);
+      setTransactionTotal(0);
+      setTransactionPageIndex(1);
+      return;
+    }
+
+    void loadTransactions(loadedUserId, 1, transactionPageSize, transactionTypeFilter);
+  }, [loadedUserId, transactionTypeFilter]);
+
   const clearLoadedExperience = (userId: string) => {
     setLoadedUserId(null);
     setExperience(null);
     setDailyStatsWindow(null);
+    setTransactions([]);
+    setTransactionTotal(0);
+    setTransactionPageIndex(1);
     form.setFieldValue('userId', userId);
     freezeForm.setFieldsValue({
       userId,
@@ -202,6 +284,7 @@ export const ExperienceAdminPage = () => {
       }
 
       setSubmitting(true);
+      setTransactionPageIndex(1);
       await adminAdjustExperience({
         userId: normalizedUserId,
         deltaExp: values.deltaExp,
@@ -233,6 +316,7 @@ export const ExperienceAdminPage = () => {
       }
 
       setFreezing(true);
+      setTransactionPageIndex(1);
       await adminFreezeExperience({
         userId: normalizedUserId,
         reason: values.reason.trim(),
@@ -263,6 +347,7 @@ export const ExperienceAdminPage = () => {
       }
 
       setUnfreezing(true);
+      setTransactionPageIndex(1);
       await adminUnfreezeExperience(normalizedUserId);
 
       message.success('经验已解冻');
@@ -406,6 +491,72 @@ export const ExperienceAdminPage = () => {
           </div>
         );
       },
+    },
+  ];
+
+  const transactionColumns: TableColumnsType<ExpTransactionVo> = [
+    {
+      title: '时间',
+      dataIndex: 'voCreateTime',
+      key: 'voCreateTime',
+      width: 180,
+      render: (value: string) => formatDisplayTime(value),
+    },
+    {
+      title: '类型',
+      key: 'type',
+      width: 140,
+      render: (_, record) => (
+        <div>
+          <div>{record.voExpTypeDisplay}</div>
+          <div style={{ color: '#8c8c8c' }}>{record.voExpType}</div>
+        </div>
+      ),
+    },
+    {
+      title: '变动量',
+      dataIndex: 'voExpAmount',
+      key: 'voExpAmount',
+      width: 110,
+      render: (value: number) => (
+        <span style={{ color: value >= 0 ? '#389e0d' : '#cf1322', fontWeight: 600 }}>
+          {formatTransactionAmount(value)}
+        </span>
+      ),
+    },
+    {
+      title: '经验变化',
+      key: 'expRange',
+      width: 180,
+      render: (_, record) => `${record.voExpBefore} -> ${record.voExpAfter}`,
+    },
+    {
+      title: '等级变化',
+      key: 'levelRange',
+      width: 170,
+      render: (_, record) => (
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <span>{`L${record.voLevelBefore} -> L${record.voLevelAfter}`}</span>
+          {record.voLevelAfter > record.voLevelBefore ? <Tag color="success">升级</Tag> : null}
+        </div>
+      ),
+    },
+    {
+      title: '操作者',
+      key: 'operator',
+      width: 180,
+      render: (_, record) => (
+        <div>
+          <div>{record.voOperatorName || 'System'}</div>
+          <div style={{ color: '#8c8c8c' }}>ID: {record.voOperatorId}</div>
+        </div>
+      ),
+    },
+    {
+      title: '备注',
+      dataIndex: 'voRemark',
+      key: 'voRemark',
+      render: (value?: string | null) => value || '-',
     },
   ];
 
@@ -583,6 +734,55 @@ export const ExperienceAdminPage = () => {
         ) : (
           <div style={{ marginTop: 20, color: '#8c8c8c' }}>
             请先查询用户经验，再查看最近 {statsWindowDays} 天的统计观察。
+          </div>
+        )}
+      </section>
+
+      <section className="admin-feature-card">
+        <div className="admin-feature-header">
+          <div>
+            <h3>经验流水</h3>
+            <p className="admin-feature-subtle">回看该用户最近的经验变动、管理员操作痕迹与升级轨迹。</p>
+          </div>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <Select
+              value={transactionTypeFilter}
+              style={{ width: 220 }}
+              options={EXPERIENCE_TRANSACTION_TYPE_OPTIONS}
+              allowClear
+              placeholder="筛选经验类型"
+              onChange={(value) => setTransactionTypeFilter(typeof value === 'string' && value.length > 0 ? value : undefined)}
+              disabled={!loadedUserId}
+            />
+          </div>
+        </div>
+
+        {loadedUserId ? (
+          <Table<ExpTransactionVo>
+            rowKey="voId"
+            columns={transactionColumns}
+            dataSource={transactions}
+            loading={loadingTransactions}
+            scroll={{ x: 1120 }}
+            style={{ marginTop: 20 }}
+            pagination={{
+              current: transactionPageIndex,
+              pageSize: transactionPageSize,
+              total: transactionTotal,
+              showSizeChanger: true,
+              showQuickJumper: true,
+              showTotal: (total) => `共 ${total} 条`,
+              onChange: (page, pageSize) => {
+                void loadTransactions(loadedUserId, page, pageSize, transactionTypeFilter);
+              },
+            }}
+            locale={{
+              emptyText: loadingTransactions ? '经验流水加载中...' : '该用户暂无经验流水记录',
+            }}
+          />
+        ) : (
+          <div style={{ marginTop: 20, color: '#8c8c8c' }}>
+            请先查询用户经验，再查看经验流水。
           </div>
         )}
       </section>

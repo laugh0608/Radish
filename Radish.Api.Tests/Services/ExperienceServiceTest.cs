@@ -17,6 +17,7 @@ using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Service;
 using Shouldly;
+using SqlSugar;
 using Xunit;
 
 namespace Radish.Api.Tests.Services;
@@ -279,6 +280,146 @@ public class ExperienceServiceTest
         ]);
     }
 
+    [Fact]
+    public async Task GetTransactionsAsync_Should_Map_UserName_And_Operator_Info()
+    {
+        const long userId = 31001;
+        var transactions = new List<ExpTransaction>
+        {
+            new()
+            {
+                Id = 70001,
+                UserId = userId,
+                ExpType = "ADMIN_ADJUST",
+                ExpAmount = 18,
+                Remark = "活动补偿",
+                ExpBefore = 120,
+                ExpAfter = 138,
+                LevelBefore = 2,
+                LevelAfter = 2,
+                CreateBy = "Auditor",
+                CreateId = 9001,
+                CreateTime = new DateTime(2026, 5, 11, 10, 30, 0)
+            }
+        };
+
+        var expTransactionRepository = new Mock<IBaseRepository<ExpTransaction>>(MockBehavior.Strict);
+        var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Strict);
+
+        expTransactionRepository
+            .Setup(repository => repository.QueryPageAsync(
+                It.IsAny<Expression<Func<ExpTransaction, bool>>>(),
+                1,
+                100,
+                It.IsAny<Expression<Func<ExpTransaction, object>>>(),
+                OrderByType.Desc))
+            .ReturnsAsync((transactions, 1));
+        userRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<User, bool>>?>()))
+            .ReturnsAsync(new List<User>
+            {
+                new()
+                {
+                    Id = userId,
+                    UserName = "tester-user",
+                    IsDeleted = false
+                }
+            });
+
+        var service = CreateService(
+            expTransactionRepository: expTransactionRepository,
+            userRepository: userRepository);
+
+        var result = await service.GetTransactionsAsync(userId, 0, 500, "  ADMIN_ADJUST  ");
+
+        result.Page.ShouldBe(1);
+        result.PageSize.ShouldBe(100);
+        result.DataCount.ShouldBe(1);
+        result.Data.Count.ShouldBe(1);
+        result.Data[0].VoUserName.ShouldBe("tester-user");
+        result.Data[0].VoOperatorName.ShouldBe("Auditor");
+        result.Data[0].VoOperatorId.ShouldBe(9001);
+        result.Data[0].VoExpTypeDisplay.ShouldBe("管理员调整");
+    }
+
+    [Fact]
+    public async Task AdminAdjustExperienceAsync_Should_Clamp_To_Zero_And_Record_Penalty_Transaction()
+    {
+        const long userId = 41001;
+        ExpTransaction? capturedTransaction = null;
+
+        var userExpRepository = new Mock<IBaseRepository<UserExperience>>(MockBehavior.Strict);
+        var expTransactionRepository = new Mock<IBaseRepository<ExpTransaction>>(MockBehavior.Strict);
+        var levelConfigRepository = new Mock<IBaseRepository<LevelConfig>>(MockBehavior.Strict);
+
+        userExpRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<UserExperience, bool>>?>()))
+            .ReturnsAsync(new UserExperience
+            {
+                Id = 8101,
+                UserId = userId,
+                CurrentLevel = 1,
+                CurrentExp = 20,
+                TotalExp = 80,
+                ExpFrozen = false,
+                Version = 3,
+                TenantId = 0,
+                IsDeleted = false
+            });
+        userExpRepository
+            .Setup(repository => repository.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<UserExperience, UserExperience>>>(),
+                It.IsAny<Expression<Func<UserExperience, bool>>>()))
+            .ReturnsAsync(1);
+        levelConfigRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<LevelConfig, bool>>?>()))
+            .ReturnsAsync(new List<LevelConfig>
+            {
+                new()
+                {
+                    Level = 0,
+                    LevelName = "凡人",
+                    ExpRequired = 50,
+                    ExpCumulative = 0,
+                    IsEnabled = true
+                },
+                new()
+                {
+                    Level = 1,
+                    LevelName = "练气",
+                    ExpRequired = 100,
+                    ExpCumulative = 50,
+                    IsEnabled = true
+                }
+            });
+        expTransactionRepository
+            .Setup(repository => repository.AddAsync(It.IsAny<ExpTransaction>()))
+            .Callback<ExpTransaction>(transaction => capturedTransaction = transaction)
+            .ReturnsAsync(90001);
+
+        var service = CreateService(
+            userExpRepository: userExpRepository,
+            expTransactionRepository: expTransactionRepository,
+            levelConfigRepository: levelConfigRepository,
+            configValues: new Dictionary<string, string?>
+            {
+                ["ExperienceCalculator:EnableCache"] = "false"
+            });
+
+        var success = await service.AdminAdjustExperienceAsync(userId, -120, "回收异常经验", 9001, "Auditor");
+
+        success.ShouldBeTrue();
+        capturedTransaction.ShouldNotBeNull();
+        capturedTransaction.ExpType.ShouldBe("PENALTY");
+        capturedTransaction.ExpAmount.ShouldBe(-80);
+        capturedTransaction.ExpBefore.ShouldBe(80);
+        capturedTransaction.ExpAfter.ShouldBe(0);
+        capturedTransaction.LevelBefore.ShouldBe(1);
+        capturedTransaction.LevelAfter.ShouldBe(0);
+        capturedTransaction.CreateBy.ShouldBe("Auditor");
+        capturedTransaction.CreateId.ShouldBe(9001);
+    }
+
     private static ExperienceService CreateService(
         Mock<IBaseRepository<UserExperience>>? userExpRepository = null,
         Mock<IBaseRepository<ExpTransaction>>? expTransactionRepository = null,
@@ -325,6 +466,13 @@ public class ExperienceServiceTest
             {
                 var dailyStats = (source as IEnumerable<UserExpDailyStats>)?.ToList() ?? [];
                 return dailyStats.Select(MapDailyStats).ToList();
+            });
+        mapper
+            .Setup(service => service.Map<List<ExpTransactionVo>>(It.IsAny<object>()))
+            .Returns((object source) =>
+            {
+                var transactions = (source as IEnumerable<ExpTransaction>)?.ToList() ?? [];
+                return transactions.Select(MapExpTransaction).ToList();
             });
         mapper
             .Setup(service => service.Map<LevelConfigVo>(It.IsAny<object>()))
@@ -400,6 +548,33 @@ public class ExperienceServiceTest
             VoLikeGivenCount = source.LikeGivenCount,
             VoLikeReceivedCount = source.LikeReceivedCount,
             VoObservations = []
+        };
+    }
+
+    private static ExpTransactionVo MapExpTransaction(ExpTransaction source)
+    {
+        return new ExpTransactionVo
+        {
+            VoId = source.Id,
+            VoUserId = source.UserId,
+            VoExpType = source.ExpType,
+            VoExpTypeDisplay = source.ExpType switch
+            {
+                "ADMIN_ADJUST" => "管理员调整",
+                "PENALTY" => "惩罚扣除",
+                _ => source.ExpType
+            },
+            VoExpAmount = source.ExpAmount,
+            VoBusinessType = source.BusinessType,
+            VoBusinessId = source.BusinessId,
+            VoRemark = source.Remark,
+            VoExpBefore = source.ExpBefore,
+            VoExpAfter = source.ExpAfter,
+            VoLevelBefore = source.LevelBefore,
+            VoLevelAfter = source.LevelAfter,
+            VoOperatorId = source.CreateId,
+            VoOperatorName = source.CreateBy,
+            VoCreateTime = source.CreateTime
         };
     }
 }
