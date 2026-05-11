@@ -18,8 +18,10 @@ import {
   adminFreezeExperience,
   adminUnfreezeExperience,
   getLevelConfigs,
+  type UserExpAnomalyRuleSummaryVo,
   getUserDailyStats,
   getUserTransactions,
+  type UserExpGovernanceRecommendationVo,
   type UserExpDailyLimitSnapshotVo,
   getUserExperience,
   recalculateLevelConfigs,
@@ -89,6 +91,45 @@ function formatTransactionAmount(value: number): string {
   return `${value >= 0 ? '+' : ''}${value}`;
 }
 
+function getRecommendationTagColor(level?: UserExpGovernanceRecommendationVo['voLevel']): 'success' | 'warning' | 'error' | 'default' {
+  switch (level) {
+    case 'freeze-suggest':
+      return 'error';
+    case 'review':
+      return 'warning';
+    case 'normal':
+      return 'success';
+    default:
+      return 'default';
+  }
+}
+
+function getRuleSeverityTagColor(severity?: UserExpAnomalyRuleSummaryVo['voSeverity']): 'success' | 'warning' | 'error' | 'default' {
+  switch (severity) {
+    case 'freeze-suggest':
+      return 'error';
+    case 'review':
+      return 'warning';
+    case 'observe':
+      return 'default';
+    default:
+      return 'default';
+  }
+}
+
+function getRuleSeverityLabel(severity?: UserExpAnomalyRuleSummaryVo['voSeverity']): string {
+  switch (severity) {
+    case 'freeze-suggest':
+      return '冻结建议';
+    case 'review':
+      return '人工复核';
+    case 'observe':
+      return '继续观察';
+    default:
+      return '继续观察';
+  }
+}
+
 function formatLimitValue(
   value: number,
   limit: number,
@@ -131,6 +172,8 @@ export const ExperienceAdminPage = () => {
   const canRecalculate = usePermission(CONSOLE_PERMISSIONS.experienceRecalculate);
   const dailyStats = dailyStatsWindow?.voStats ?? [];
   const dailyStatsSummary = dailyStatsWindow?.voSummary ?? null;
+  const anomalyRuleSummaries = dailyStatsWindow?.voRuleSummaries ?? [];
+  const governanceRecommendation = dailyStatsWindow?.voRecommendation ?? null;
   const dailyLimits = dailyStatsWindow?.voLimits ?? null;
 
   const loadLevels = async () => {
@@ -478,16 +521,33 @@ export const ExperienceAdminPage = () => {
     {
       title: '观察',
       key: 'observations',
-      width: 260,
+      width: 360,
       render: (_, record) => {
         const observations = record.voObservations ?? [];
+        const contextObservations = observations.filter((observation) => observation.voKind !== 'anomaly');
+        const anomalyObservations = observations.filter((observation) => observation.voKind === 'anomaly');
         return (
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {observations.map((observation) => (
-              <Tag key={observation.voLabel} color={observation.voTone}>
-                {observation.voLabel}
-              </Tag>
-            ))}
+          <div style={{ display: 'grid', gap: 10 }}>
+            <div>
+              <div style={{ color: '#8c8c8c', marginBottom: 6 }}>来源 / 状态</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {contextObservations.length > 0 ? contextObservations.map((observation) => (
+                  <Tag key={observation.voRuleCode} color={observation.voTone} title={observation.voDescription ?? undefined}>
+                    {observation.voLabel}
+                  </Tag>
+                )) : <span style={{ color: '#8c8c8c' }}>-</span>}
+              </div>
+            </div>
+            <div>
+              <div style={{ color: '#8c8c8c', marginBottom: 6 }}>异常判定</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {anomalyObservations.length > 0 ? anomalyObservations.map((observation) => (
+                  <Tag key={observation.voRuleCode} color={observation.voTone} title={observation.voDescription ?? undefined}>
+                    {observation.voLabel}
+                  </Tag>
+                )) : <span style={{ color: '#8c8c8c' }}>未命中</span>}
+              </div>
+            </div>
           </div>
         );
       },
@@ -639,7 +699,7 @@ export const ExperienceAdminPage = () => {
         <div className="admin-feature-header">
           <div>
             <h3>经验统计观察</h3>
-            <p className="admin-feature-subtle">查看最近 7 / 30 天经验来源与行为拆分，用于人工复核异常增长模式。</p>
+            <p className="admin-feature-subtle">查看最近 7 / 30 天经验来源与异常判定，仅服务人工复核和冻结建议，不自动处罚。</p>
           </div>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <Button
@@ -684,7 +744,7 @@ export const ExperienceAdminPage = () => {
                 <strong>{dailyStatsSummary ? dailyStatsSummary.voZeroGainDays : '--'}</strong>
               </div>
               <div className="admin-feature-metric">
-                <span>需复核天数</span>
+                <span>异常命中天数</span>
                 <strong>{dailyStatsSummary ? dailyStatsSummary.voReviewDays : '--'}</strong>
               </div>
             </div>
@@ -704,6 +764,60 @@ export const ExperienceAdminPage = () => {
                   <span>点赞 {dailyLimits.voMaxExpFromLike}</span>
                   <span>高亮 {dailyLimits.voMaxExpFromHighlight}</span>
                   <span>登录 {dailyLimits.voMaxExpFromLogin}</span>
+                </div>
+              </div>
+            )}
+
+            {governanceRecommendation && (
+              <div className="admin-feature-banner" style={{ marginTop: 16 }}>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <strong>当前治理建议</strong>
+                  <Tag color={getRecommendationTagColor(governanceRecommendation.voLevel)}>
+                    {governanceRecommendation.voTitle}
+                  </Tag>
+                </div>
+                <div style={{ marginTop: 12 }}>{governanceRecommendation.voReason}</div>
+                <div style={{ marginTop: 8, color: '#8c8c8c' }}>
+                  建议动作：{governanceRecommendation.voSuggestedAction}
+                </div>
+              </div>
+            )}
+
+            {anomalyRuleSummaries.length > 0 && (
+              <div style={{ marginTop: 16 }}>
+                <div style={{ marginBottom: 12, fontWeight: 600 }}>异常规则摘要</div>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                  gap: 12,
+                }}>
+                  {anomalyRuleSummaries.map((rule) => (
+                    <div
+                      key={rule.voRuleCode}
+                      style={{
+                        border: '1px solid rgba(5, 5, 5, 0.08)',
+                        borderRadius: 12,
+                        padding: 16,
+                        background: '#fff',
+                      }}
+                    >
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                        <strong>{rule.voRuleLabel}</strong>
+                        <Tag color={getRuleSeverityTagColor(rule.voSeverity)}>
+                          {getRuleSeverityLabel(rule.voSeverity)}
+                        </Tag>
+                      </div>
+                      <div style={{ marginTop: 10, color: '#595959' }}>{rule.voThresholdDescription}</div>
+                      <div style={{ marginTop: 10, display: 'grid', gap: 6 }}>
+                        <span>窗口命中：{rule.voHitDays} 天</span>
+                        <span>最强信号：{rule.voStrongestSignal}</span>
+                        <span>最近命中：{rule.voLatestHitDate ? formatFullStatDate(rule.voLatestHitDate) : '-'}</span>
+                      </div>
+                      <div style={{ marginTop: 10, color: '#8c8c8c' }}>
+                        建议动作：{rule.voSuggestedAction}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

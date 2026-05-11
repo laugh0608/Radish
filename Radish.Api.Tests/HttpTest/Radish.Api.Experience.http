@@ -104,6 +104,10 @@ Authorization: Bearer {{token}}
 GET {{baseUrl}}/api/v1/Experience/GetTransactions?pageIndex=1&pageSize=50
 Authorization: Bearer {{token}}
 
+### 4.3 管理端查看用户最近 7 天经验统计与治理建议
+GET {{baseUrl}}/api/v1/Experience/GetUserDailyStats/1?days=7
+Authorization: Bearer {{token}}
+
 ### ===== 5. 完整测试流程 =====
 
 ### 5.1 第一步：查看初始经验值

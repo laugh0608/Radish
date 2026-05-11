@@ -15,6 +15,22 @@ public class UserExpDailyStatObservationVo
     /// </summary>
     /// <remarks>当前约定为 default / success / processing / warning</remarks>
     public string VoTone { get; set; } = "default";
+
+    /// <summary>
+    /// 标签分类
+    /// </summary>
+    /// <remarks>当前约定为 context / anomaly</remarks>
+    public string VoKind { get; set; } = "context";
+
+    /// <summary>
+    /// 规则编码
+    /// </summary>
+    public string VoRuleCode { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 判定说明
+    /// </summary>
+    public string? VoDescription { get; set; }
 }
 
 /// <summary>
@@ -48,7 +64,7 @@ public class UserExpDailyStatsSummaryVo
     public int VoZeroGainDays { get; set; }
 
     /// <summary>
-    /// 需要人工复核的天数
+    /// 命中异常规则的天数
     /// </summary>
     public int VoReviewDays { get; set; }
 
@@ -56,6 +72,80 @@ public class UserExpDailyStatsSummaryVo
     /// 管理侧观察提示
     /// </summary>
     public List<string> VoNotices { get; set; } = [];
+}
+
+/// <summary>
+/// 异常规则摘要
+/// </summary>
+public class UserExpAnomalyRuleSummaryVo
+{
+    /// <summary>
+    /// 规则编码
+    /// </summary>
+    public string VoRuleCode { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 规则名称
+    /// </summary>
+    public string VoRuleLabel { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 阈值说明
+    /// </summary>
+    public string VoThresholdDescription { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 窗口命中天数
+    /// </summary>
+    public int VoHitDays { get; set; }
+
+    /// <summary>
+    /// 最近一次命中日期
+    /// </summary>
+    public DateTime? VoLatestHitDate { get; set; }
+
+    /// <summary>
+    /// 当前最强信号
+    /// </summary>
+    public string VoStrongestSignal { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 建议级别
+    /// </summary>
+    /// <remarks>当前约定为 observe / review / freeze-suggest</remarks>
+    public string VoSeverity { get; set; } = "observe";
+
+    /// <summary>
+    /// 建议动作
+    /// </summary>
+    public string VoSuggestedAction { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// 经验治理建议
+/// </summary>
+public class UserExpGovernanceRecommendationVo
+{
+    /// <summary>
+    /// 建议级别
+    /// </summary>
+    /// <remarks>当前约定为 normal / review / freeze-suggest</remarks>
+    public string VoLevel { get; set; } = "normal";
+
+    /// <summary>
+    /// 建议标题
+    /// </summary>
+    public string VoTitle { get; set; } = "正常观察";
+
+    /// <summary>
+    /// 结论原因
+    /// </summary>
+    public string VoReason { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 建议动作
+    /// </summary>
+    public string VoSuggestedAction { get; set; } = string.Empty;
 }
 
 /// <summary>
@@ -118,6 +208,16 @@ public class UserExpDailyStatsWindowVo
     /// 窗口摘要
     /// </summary>
     public UserExpDailyStatsSummaryVo? VoSummary { get; set; }
+
+    /// <summary>
+    /// 异常规则摘要
+    /// </summary>
+    public List<UserExpAnomalyRuleSummaryVo> VoRuleSummaries { get; set; } = [];
+
+    /// <summary>
+    /// 当前窗口治理建议
+    /// </summary>
+    public UserExpGovernanceRecommendationVo? VoRecommendation { get; set; }
 
     /// <summary>
     /// 当前生效的每日经验上限快照

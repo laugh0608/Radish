@@ -27,6 +27,14 @@
 
 ### 3.2.1 每日上限控制
 
+**当前配置快照**:
+- 总经验：`500 / 天`
+- 发帖经验：`100 / 天`
+- 评论经验：`100 / 天`
+- 点赞经验：`50 / 天`
+- 高亮经验：`200 / 天`
+- 登录经验：`20 / 天`
+
 **实现方式**:
 ```
 缓存 Key: exp:daily:{userId}:{action_type}:{date}
@@ -37,17 +45,17 @@ TTL: 次日凌晨
 **示例**:
 ```csharp
 // 检查每日上限
-var todayExpKey = $"exp:daily:{userId}:post_like:{DateTime.Today:yyyyMMdd}";
+var todayExpKey = $"exp:daily:{userId}:receive_like:{DateTime.Today:yyyyMMdd}";
 var todayExp = await _cache.GetAsync<int>(todayExpKey);
 
-if (todayExp >= 100) // 被点赞每日上限 100
+if (todayExp >= 50) // 点赞经验每日上限 50
 {
     return; // 不再奖励
 }
 
 // 增加经验值并更新缓存
-await GrantExperienceAsync(userId, 5, "被点赞");
-await _cache.IncrementAsync(todayExpKey, 5, TimeSpan.FromHours(24));
+await GrantExperienceAsync(userId, 2, "RECEIVE_LIKE");
+await _cache.IncrementAsync(todayExpKey, 2, TimeSpan.FromHours(24));
 ```
 
 ### 3.2.2 去重规则
@@ -65,15 +73,26 @@ UNIQUE INDEX idx_dedup (user_id, exp_type, business_type, business_id, created_d
 
 ### 3.2.3 异常检测
 
-**检测规则**:
-- 短时间内大量发帖(1 小时内超过 20 篇)
-- 短时间内大量点赞(1 分钟内超过 50 次)
-- 互刷行为检测(两个账号频繁互相点赞/评论)
+当前阶段只做 **最小可解释异常观察**，先服务 Console 人工复核和冻结建议，不做自动处罚，也不扩成大而全风控平台。
 
-**处理策略**:
-- 第一次:警告并冻结经验值获取 24 小时
-- 第二次:冻结经验值获取 7 天
-- 第三次:永久禁止经验值获取,等级降至 Lv.0
+**当前异常规则**:
+- **点赞占比偏高**：单日总经验 `>= 20`，且点赞经验占比 `>= 60%`
+- **高亮奖励集中**：单日总经验 `>= 30`，且高亮经验占比 `>= 50%`
+- **总经验接近/触达上限**：单日总经验达到当前总上限的 `80% / 100%`
+- **点赞经验接近/触达上限**：单日点赞经验达到当前点赞上限的 `80% / 100%`
+- **高亮经验接近/触达上限**：单日高亮经验达到当前高亮上限的 `80% / 100%`
+
+**当前处理口径**:
+- **正常观察**：没有命中异常规则，或只出现零星单次命中
+- **建议人工复核**：满足以下任一条件
+  - 任一上限规则出现“触达上限”
+  - 同一规则在 `7 天窗口 >= 2 天`，或在 `30 天窗口 >= 4 天` 重复命中
+  - 同一自然日同时命中 `2` 条及以上异常规则
+- **可考虑临时冻结**：在 `7 天窗口 >= 2 天`，或 `30 天窗口 >= 4 天`，重复出现“来源集中 + 对应来源触达上限”或“来源集中 + 触达总上限”组合
+
+**执行边界**:
+- 冻结仍由管理员结合经验流水、互动来源和目标内容手动执行
+- 当前观察结果用于解释与建议，不直接自动处罚
 
 ## 3.3 初始经验值
 

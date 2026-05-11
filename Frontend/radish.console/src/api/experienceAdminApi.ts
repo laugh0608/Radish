@@ -51,6 +51,9 @@ export interface UserExpDailyStatsVo {
 export interface UserExpDailyStatObservationVo {
   voLabel: string;
   voTone: 'success' | 'processing' | 'warning' | 'default';
+  voKind: 'context' | 'anomaly';
+  voRuleCode: string;
+  voDescription?: string | null;
 }
 
 export interface UserExpDailyStatsSummaryVo {
@@ -61,6 +64,24 @@ export interface UserExpDailyStatsSummaryVo {
   voZeroGainDays: number;
   voReviewDays: number;
   voNotices: string[];
+}
+
+export interface UserExpAnomalyRuleSummaryVo {
+  voRuleCode: string;
+  voRuleLabel: string;
+  voThresholdDescription: string;
+  voHitDays: number;
+  voLatestHitDate?: string | null;
+  voStrongestSignal: string;
+  voSeverity: 'observe' | 'review' | 'freeze-suggest';
+  voSuggestedAction: string;
+}
+
+export interface UserExpGovernanceRecommendationVo {
+  voLevel: 'normal' | 'review' | 'freeze-suggest';
+  voTitle: string;
+  voReason: string;
+  voSuggestedAction: string;
 }
 
 export interface UserExpDailyLimitSnapshotVo {
@@ -77,6 +98,8 @@ export interface UserExpDailyStatsWindowVo {
   voWindowDays: number;
   voStats: UserExpDailyStatsVo[];
   voSummary?: UserExpDailyStatsSummaryVo | null;
+  voRuleSummaries?: UserExpAnomalyRuleSummaryVo[] | null;
+  voRecommendation?: UserExpGovernanceRecommendationVo | null;
   voLimits?: UserExpDailyLimitSnapshotVo | null;
 }
 

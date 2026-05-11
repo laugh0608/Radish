@@ -61,6 +61,33 @@ public class ExperienceControllerTest
         Assert.Equal("用户ID无效", result.MessageInfo);
     }
 
+    [Fact]
+    public async Task GetUserDailyStats_Should_Return_Governance_Recommendation()
+    {
+        var serviceMock = CreateServiceMock();
+        serviceMock
+            .Setup(service => service.GetDailyStatsAsync(9527, 7))
+            .ReturnsAsync(new UserExpDailyStatsWindowVo
+            {
+                VoWindowDays = 7,
+                VoRecommendation = new UserExpGovernanceRecommendationVo
+                {
+                    VoLevel = "review",
+                    VoTitle = "建议人工复核",
+                    VoReason = "规则重复命中",
+                    VoSuggestedAction = "先复核后决定是否冻结。"
+                }
+            });
+
+        var controller = CreateController(serviceMock.Object);
+        var result = await controller.GetUserDailyStats(9527, 7);
+
+        Assert.True(result.IsSuccess);
+        var payload = Assert.IsType<UserExpDailyStatsWindowVo>(result.ResponseData);
+        Assert.Equal("review", payload.VoRecommendation?.VoLevel);
+        Assert.Equal("建议人工复核", payload.VoRecommendation?.VoTitle);
+    }
+
     private static ExperienceController CreateController(IExperienceService experienceService)
     {
         var currentUserAccessorMock = new Mock<ICurrentUserAccessor>();

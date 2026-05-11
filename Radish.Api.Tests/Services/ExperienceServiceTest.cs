@@ -274,10 +274,172 @@ public class ExperienceServiceTest
         result.VoSummary.VoPeakDayExp.ShouldBe(40);
         result.VoSummary.VoPeakStatDate.ShouldBe(endDate);
         result.VoSummary.VoZeroGainDays.ShouldBe(1);
+        result.VoSummary.VoReviewDays.ShouldBe(2);
         result.VoSummary.VoNotices.ShouldBe([
             "其中 1 天经验主要来自点赞，建议结合互动来源复核。",
             "其中 1 天经验主要来自高亮评论，建议确认是否集中触发奖励。"
         ]);
+        result.VoRuleSummaries.Select(item => item.VoRuleLabel).ShouldBe(["高亮奖励集中", "点赞占比偏高"]);
+        result.VoRecommendation.ShouldNotBeNull();
+        result.VoRecommendation.VoLevel.ShouldBe("normal");
+        result.VoRecommendation.VoTitle.ShouldBe("正常观察");
+    }
+
+    [Fact]
+    public async Task GetDailyStatsAsync_ShouldTreatDominantSourceAsContextNotAnomaly()
+    {
+        const long userId = 20003;
+        var endDate = DateTime.Today;
+        var existingStats = new List<UserExpDailyStats>
+        {
+            new()
+            {
+                Id = 9201,
+                UserId = userId,
+                StatDate = endDate,
+                ExpEarned = 10,
+                ExpFromLike = 10,
+                LikeReceivedCount = 5
+            }
+        };
+
+        var dailyStatsRepository = new Mock<IBaseRepository<UserExpDailyStats>>(MockBehavior.Strict);
+        dailyStatsRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<UserExpDailyStats, bool>>?>()))
+            .ReturnsAsync((Expression<Func<UserExpDailyStats, bool>>? expression) =>
+            {
+                var query = existingStats.AsEnumerable();
+                if (expression != null)
+                {
+                    query = query.Where(expression.Compile());
+                }
+
+                return query.ToList();
+            });
+
+        var service = CreateService(dailyStatsRepository: dailyStatsRepository);
+
+        var result = await service.GetDailyStatsAsync(userId, 1);
+
+        result.VoStats.Count.ShouldBe(1);
+        result.VoStats[0].VoObservations.Select(item => item.VoLabel).ShouldBe(["点赞驱动"]);
+        result.VoStats[0].VoObservations[0].VoKind.ShouldBe("context");
+        result.VoSummary.ShouldNotBeNull();
+        result.VoSummary.VoReviewDays.ShouldBe(0);
+        result.VoRuleSummaries.ShouldBeEmpty();
+        result.VoRecommendation.ShouldNotBeNull();
+        result.VoRecommendation.VoLevel.ShouldBe("normal");
+        result.VoRecommendation.VoReason.ShouldContain("未命中异常规则");
+    }
+
+    [Fact]
+    public async Task GetDailyStatsAsync_ShouldRecommendManualReviewForRepeatedRule()
+    {
+        const long userId = 20004;
+        var endDate = DateTime.Today;
+        var existingStats = new List<UserExpDailyStats>
+        {
+            new()
+            {
+                Id = 9301,
+                UserId = userId,
+                StatDate = endDate,
+                ExpEarned = 30,
+                ExpFromLike = 24,
+                ExpFromComment = 6,
+                LikeReceivedCount = 12
+            },
+            new()
+            {
+                Id = 9302,
+                UserId = userId,
+                StatDate = endDate.AddDays(-1),
+                ExpEarned = 25,
+                ExpFromLike = 20,
+                ExpFromComment = 5,
+                LikeReceivedCount = 10
+            }
+        };
+
+        var dailyStatsRepository = new Mock<IBaseRepository<UserExpDailyStats>>(MockBehavior.Strict);
+        dailyStatsRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<UserExpDailyStats, bool>>?>()))
+            .ReturnsAsync((Expression<Func<UserExpDailyStats, bool>>? expression) =>
+            {
+                var query = existingStats.AsEnumerable();
+                if (expression != null)
+                {
+                    query = query.Where(expression.Compile());
+                }
+
+                return query.ToList();
+            });
+
+        var service = CreateService(dailyStatsRepository: dailyStatsRepository);
+
+        var result = await service.GetDailyStatsAsync(userId, 7);
+
+        result.VoRuleSummaries.ShouldContain(item =>
+            item.VoRuleCode == "LIKE_SHARE_HEAVY"
+            && item.VoHitDays == 2
+            && item.VoSeverity == "review");
+        result.VoRecommendation.ShouldNotBeNull();
+        result.VoRecommendation.VoLevel.ShouldBe("review");
+        result.VoRecommendation.VoReason.ShouldContain("重复命中");
+    }
+
+    [Fact]
+    public async Task GetDailyStatsAsync_ShouldSuggestFreezeForRepeatedLimitHitAndSourceConcentration()
+    {
+        const long userId = 20005;
+        var endDate = DateTime.Today;
+        var existingStats = new List<UserExpDailyStats>
+        {
+            new()
+            {
+                Id = 9401,
+                UserId = userId,
+                StatDate = endDate,
+                ExpEarned = 50,
+                ExpFromLike = 50,
+                LikeReceivedCount = 25
+            },
+            new()
+            {
+                Id = 9402,
+                UserId = userId,
+                StatDate = endDate.AddDays(-2),
+                ExpEarned = 50,
+                ExpFromLike = 50,
+                LikeReceivedCount = 25
+            }
+        };
+
+        var dailyStatsRepository = new Mock<IBaseRepository<UserExpDailyStats>>(MockBehavior.Strict);
+        dailyStatsRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<UserExpDailyStats, bool>>?>()))
+            .ReturnsAsync((Expression<Func<UserExpDailyStats, bool>>? expression) =>
+            {
+                var query = existingStats.AsEnumerable();
+                if (expression != null)
+                {
+                    query = query.Where(expression.Compile());
+                }
+
+                return query.ToList();
+            });
+
+        var service = CreateService(dailyStatsRepository: dailyStatsRepository);
+
+        var result = await service.GetDailyStatsAsync(userId, 7);
+
+        result.VoRuleSummaries.ShouldContain(item =>
+            item.VoRuleCode == "LIKE_LIMIT_PRESSURE"
+            && item.VoHitDays == 2
+            && item.VoStrongestSignal == "触达上限");
+        result.VoRecommendation.ShouldNotBeNull();
+        result.VoRecommendation.VoLevel.ShouldBe("freeze-suggest");
+        result.VoRecommendation.VoReason.ShouldContain("冻结建议阈值");
     }
 
     [Fact]
