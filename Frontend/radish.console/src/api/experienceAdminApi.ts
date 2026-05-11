@@ -178,6 +178,8 @@ export async function getUserTransactions(params: {
   pageIndex?: number;
   pageSize?: number;
   expType?: string;
+  startDate?: string;
+  endDate?: string;
 }): Promise<PagedResponse<ExpTransactionVo>> {
   const searchParams = new URLSearchParams({
     pageIndex: String(params.pageIndex ?? 1),
@@ -186,6 +188,14 @@ export async function getUserTransactions(params: {
 
   if (params.expType?.trim()) {
     searchParams.set('expType', params.expType.trim());
+  }
+
+  if (params.startDate?.trim()) {
+    searchParams.set('startDate', params.startDate.trim());
+  }
+
+  if (params.endDate?.trim()) {
+    searchParams.set('endDate', params.endDate.trim());
   }
 
   const response = await apiGet<PagedResponse<ExpTransactionVo>>(

@@ -145,13 +145,17 @@ public class ExperienceController : ControllerBase
     /// </summary>
     /// <param name="pageIndex">页码（从 1 开始）</param>
     /// <param name="pageSize">每页数量</param>
-    /// <param name="expType">经验值类型（可选）</param>
+    /// <param name="expType">经验值类型（可选，支持逗号分隔多个类型）</param>
+    /// <param name="startDate">开始时间（可选）</param>
+    /// <param name="endDate">结束时间（可选）</param>
     /// <returns>分页的交易记录</returns>
     [HttpGet]
     public async Task<MessageModel<PageModel<ExpTransactionVo>>> GetTransactions(
         [FromQuery] int pageIndex = 1,
         [FromQuery] int pageSize = 20,
-        [FromQuery] string? expType = null)
+        [FromQuery] string? expType = null,
+        [FromQuery] DateTime? startDate = null,
+        [FromQuery] DateTime? endDate = null)
     {
         var userId = GetCurrentUserId();
         if (userId <= 0)
@@ -159,7 +163,7 @@ public class ExperienceController : ControllerBase
             return MessageModel<PageModel<ExpTransactionVo>>.Message(false, "未登录", default!);
         }
 
-        var result = await _experienceService.GetTransactionsAsync(userId, pageIndex, pageSize, expType);
+        var result = await _experienceService.GetTransactionsAsync(userId, pageIndex, pageSize, expType, startDate, endDate);
         return MessageModel<PageModel<ExpTransactionVo>>.Success("查询成功", result);
     }
 
@@ -172,14 +176,16 @@ public class ExperienceController : ControllerBase
         long userId,
         [FromQuery] int pageIndex = 1,
         [FromQuery] int pageSize = 20,
-        [FromQuery] string? expType = null)
+        [FromQuery] string? expType = null,
+        [FromQuery] DateTime? startDate = null,
+        [FromQuery] DateTime? endDate = null)
     {
         if (userId <= 0)
         {
             return MessageModel<PageModel<ExpTransactionVo>>.Message(false, "用户ID无效", default!);
         }
 
-        var result = await _experienceService.GetTransactionsAsync(userId, pageIndex, pageSize, expType);
+        var result = await _experienceService.GetTransactionsAsync(userId, pageIndex, pageSize, expType, startDate, endDate);
         return MessageModel<PageModel<ExpTransactionVo>>.Success("查询成功", result);
     }
 

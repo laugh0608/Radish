@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   AntInput as Input,
   AntSelect as Select,
@@ -51,7 +51,26 @@ interface AdjustFormValues {
 
 type StatsWindowDays = 7 | 30;
 
+const LIKE_TRANSACTION_FILTER = 'RECEIVE_LIKE,GIVE_LIKE';
+const HIGHLIGHT_TRANSACTION_FILTER = 'GOD_COMMENT,SOFA_COMMENT';
+
+const LIKE_RELATED_OBSERVATION_RULE_CODES = new Set([
+  'LIKE_LIMIT_PRESSURE',
+  'LIKE_LIMIT_NEAR',
+  'LIKE_LIMIT_HIT',
+  'LIKE_SHARE_HEAVY',
+]);
+
+const HIGHLIGHT_RELATED_OBSERVATION_RULE_CODES = new Set([
+  'HIGHLIGHT_LIMIT_PRESSURE',
+  'HIGHLIGHT_LIMIT_NEAR',
+  'HIGHLIGHT_LIMIT_HIT',
+  'HIGHLIGHT_REWARD_CLUSTERED',
+]);
+
 const EXPERIENCE_TRANSACTION_TYPE_OPTIONS = [
+  { label: '点赞相关', value: LIKE_TRANSACTION_FILTER },
+  { label: '高亮相关', value: HIGHLIGHT_TRANSACTION_FILTER },
   { label: '管理员调整', value: 'ADMIN_ADJUST' },
   { label: '惩罚扣减', value: 'PENALTY' },
   { label: '发布帖子', value: 'POST_CREATE' },
@@ -130,6 +149,21 @@ function getRuleSeverityLabel(severity?: UserExpAnomalyRuleSummaryVo['voSeverity
   }
 }
 
+function getTransactionExpTypePresetForRuleCodes(ruleCodes: string[]): string | undefined {
+  const hasLikeRule = ruleCodes.some((ruleCode) => LIKE_RELATED_OBSERVATION_RULE_CODES.has(ruleCode));
+  const hasHighlightRule = ruleCodes.some((ruleCode) => HIGHLIGHT_RELATED_OBSERVATION_RULE_CODES.has(ruleCode));
+
+  if (hasLikeRule && !hasHighlightRule) {
+    return LIKE_TRANSACTION_FILTER;
+  }
+
+  if (!hasLikeRule && hasHighlightRule) {
+    return HIGHLIGHT_TRANSACTION_FILTER;
+  }
+
+  return undefined;
+}
+
 function formatLimitValue(
   value: number,
   limit: number,
@@ -156,6 +190,9 @@ export const ExperienceAdminPage = () => {
   const [transactionPageIndex, setTransactionPageIndex] = useState(1);
   const [transactionPageSize, setTransactionPageSize] = useState(10);
   const [transactionTypeFilter, setTransactionTypeFilter] = useState<string | undefined>();
+  const [transactionStartDate, setTransactionStartDate] = useState<Dayjs | null>(null);
+  const [transactionEndDate, setTransactionEndDate] = useState<Dayjs | null>(null);
+  const [transactionReviewHint, setTransactionReviewHint] = useState<string | null>(null);
   const [loadingExperience, setLoadingExperience] = useState(false);
   const [loadingDailyStats, setLoadingDailyStats] = useState(false);
   const [loadingLevels, setLoadingLevels] = useState(false);
@@ -166,6 +203,8 @@ export const ExperienceAdminPage = () => {
   const [recalculating, setRecalculating] = useState(false);
   const [form] = Form.useForm<AdjustFormValues>();
   const [freezeForm] = Form.useForm<FreezeFormValues>();
+  const transactionSectionRef = useRef<HTMLElement | null>(null);
+  const freezeSectionRef = useRef<HTMLElement | null>(null);
 
   const canAdjust = usePermission(CONSOLE_PERMISSIONS.experienceAdjust);
   const canFreeze = usePermission(CONSOLE_PERMISSIONS.experienceFreeze);
@@ -226,7 +265,9 @@ export const ExperienceAdminPage = () => {
     userId: string,
     targetPageIndex = transactionPageIndex,
     targetPageSize = transactionPageSize,
-    targetExpType = transactionTypeFilter
+    targetExpType = transactionTypeFilter,
+    targetStartDate = transactionStartDate,
+    targetEndDate = transactionEndDate
   ) => {
     const normalizedUserId = normalizePositiveLongIdInput(userId);
     if (!normalizedUserId) {
@@ -243,6 +284,8 @@ export const ExperienceAdminPage = () => {
         pageIndex: targetPageIndex,
         pageSize: targetPageSize,
         expType: targetExpType,
+        startDate: targetStartDate ? targetStartDate.startOf('day').format('YYYY-MM-DD HH:mm:ss') : undefined,
+        endDate: targetEndDate ? targetEndDate.endOf('day').format('YYYY-MM-DD HH:mm:ss') : undefined,
       });
       setTransactions(result.data);
       setTransactionTotal(result.dataCount);
@@ -266,8 +309,8 @@ export const ExperienceAdminPage = () => {
       return;
     }
 
-    void loadTransactions(loadedUserId, 1, transactionPageSize, transactionTypeFilter);
-  }, [loadedUserId, transactionTypeFilter]);
+    void loadTransactions(loadedUserId, 1, transactionPageSize, transactionTypeFilter, transactionStartDate, transactionEndDate);
+  }, [loadedUserId, transactionTypeFilter, transactionStartDate, transactionEndDate]);
 
   const clearLoadedExperience = (userId: string) => {
     setLoadedUserId(null);
@@ -276,6 +319,10 @@ export const ExperienceAdminPage = () => {
     setTransactions([]);
     setTransactionTotal(0);
     setTransactionPageIndex(1);
+    setTransactionTypeFilter(undefined);
+    setTransactionStartDate(null);
+    setTransactionEndDate(null);
+    setTransactionReviewHint(null);
     form.setFieldValue('userId', userId);
     freezeForm.setFieldsValue({
       userId,
@@ -315,6 +362,77 @@ export const ExperienceAdminPage = () => {
     } finally {
       setLoadingExperience(false);
     }
+  };
+
+  const focusTransactionSection = () => {
+    transactionSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const focusFreezeSection = () => {
+    freezeSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const applyTransactionReviewPreset = (options: {
+    expType?: string;
+    date?: Dayjs | null;
+    hint: string;
+  }) => {
+    setTransactionPageIndex(1);
+    setTransactionTypeFilter(options.expType);
+    setTransactionStartDate(options.date ?? null);
+    setTransactionEndDate(options.date ?? null);
+    setTransactionReviewHint(options.hint);
+    focusTransactionSection();
+  };
+
+  const prefillFreezeReason = (reason: string) => {
+    if (!loadedUserId) {
+      return;
+    }
+
+    freezeForm.setFieldsValue({
+      userId: loadedUserId,
+      reason,
+    });
+    focusFreezeSection();
+    message.success('已带入冻结原因');
+  };
+
+  const handleRuleReview = (rule: UserExpAnomalyRuleSummaryVo) => {
+    applyTransactionReviewPreset({
+      expType: getTransactionExpTypePresetForRuleCodes([rule.voRuleCode]),
+      date: rule.voLatestHitDate ? dayjs(rule.voLatestHitDate) : null,
+      hint: rule.voLatestHitDate
+        ? `已按规则「${rule.voRuleLabel}」定位到 ${formatFullStatDate(rule.voLatestHitDate)} 的经验流水。`
+        : `已按规则「${rule.voRuleLabel}」定位相关经验流水。`,
+    });
+  };
+
+  const handleRuleFreezeReason = (rule: UserExpAnomalyRuleSummaryVo) => {
+    const latestHitDate = rule.voLatestHitDate ? formatFullStatDate(rule.voLatestHitDate) : '最近命中日';
+    prefillFreezeReason(
+      `经验异常待复核：最近 ${statsWindowDays} 天规则「${rule.voRuleLabel}」命中 ${rule.voHitDays} 天，最近命中 ${latestHitDate}，最强信号为${rule.voStrongestSignal}。`
+    );
+  };
+
+  const handleDayReview = (record: UserExpDailyStatsVo) => {
+    const anomalyRuleCodes = (record.voObservations ?? [])
+      .filter((observation) => observation.voKind === 'anomaly')
+      .map((observation) => observation.voRuleCode);
+    applyTransactionReviewPreset({
+      expType: getTransactionExpTypePresetForRuleCodes(anomalyRuleCodes),
+      date: dayjs(record.voStatDate),
+      hint: `已定位到 ${formatFullStatDate(record.voStatDate)} 的经验流水，优先复核该日异常记录。`,
+    });
+  };
+
+  const handleDayFreezeReason = (record: UserExpDailyStatsVo) => {
+    const anomalyLabels = (record.voObservations ?? [])
+      .filter((observation) => observation.voKind === 'anomaly')
+      .map((observation) => observation.voLabel);
+    prefillFreezeReason(
+      `经验异常待复核：${formatFullStatDate(record.voStatDate)} 命中 ${anomalyLabels.join('、')}，请结合经验流水、互动来源和目标内容人工复核。`
+    );
   };
 
   const handleAdjust = async () => {
@@ -552,6 +670,32 @@ export const ExperienceAdminPage = () => {
         );
       },
     },
+    {
+      title: '复核动作',
+      key: 'reviewActions',
+      width: 220,
+      render: (_, record) => {
+        const hasAnomaly = (record.voObservations ?? []).some((observation) => observation.voKind === 'anomaly');
+        if (!hasAnomaly) {
+          return <span style={{ color: '#8c8c8c' }}>-</span>;
+        }
+
+        return (
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Button onClick={() => handleDayReview(record)}>
+              查看流水
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={!canFreeze}
+              onClick={() => handleDayFreezeReason(record)}
+            >
+              带入冻结原因
+            </Button>
+          </div>
+        );
+      },
+    },
   ];
 
   const transactionColumns: TableColumnsType<ExpTransactionVo> = [
@@ -780,6 +924,17 @@ export const ExperienceAdminPage = () => {
                 <div style={{ marginTop: 8, color: '#8c8c8c' }}>
                   建议动作：{governanceRecommendation.voSuggestedAction}
                 </div>
+                {governanceRecommendation.voLevel !== 'normal' && (
+                  <div style={{ marginTop: 12 }}>
+                    <Button
+                      variant="secondary"
+                      disabled={!canFreeze}
+                      onClick={() => prefillFreezeReason(`经验异常待复核：${governanceRecommendation.voReason}`)}
+                    >
+                      带入冻结原因
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -816,6 +971,18 @@ export const ExperienceAdminPage = () => {
                       <div style={{ marginTop: 10, color: '#8c8c8c' }}>
                         建议动作：{rule.voSuggestedAction}
                       </div>
+                      <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        <Button onClick={() => handleRuleReview(rule)}>
+                          查看流水
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          disabled={!canFreeze}
+                          onClick={() => handleRuleFreezeReason(rule)}
+                        >
+                          带入冻结原因
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -836,7 +1003,7 @@ export const ExperienceAdminPage = () => {
               dataSource={dailyStats}
               loading={loadingDailyStats}
               pagination={false}
-              scroll={{ x: 1160 }}
+              scroll={{ x: 1380 }}
               style={{ marginTop: 20 }}
               locale={{
                 emptyText: loadingDailyStats
@@ -852,11 +1019,11 @@ export const ExperienceAdminPage = () => {
         )}
       </section>
 
-      <section className="admin-feature-card">
+      <section className="admin-feature-card" ref={transactionSectionRef}>
         <div className="admin-feature-header">
           <div>
             <h3>经验流水</h3>
-            <p className="admin-feature-subtle">回看该用户最近的经验变动、管理员操作痕迹与升级轨迹。</p>
+            <p className="admin-feature-subtle">回看该用户最近的经验变动、管理员操作痕迹与升级轨迹，并支持按异常日期 / 类型快速复核。</p>
           </div>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <Select
@@ -865,35 +1032,79 @@ export const ExperienceAdminPage = () => {
               options={EXPERIENCE_TRANSACTION_TYPE_OPTIONS}
               allowClear
               placeholder="筛选经验类型"
-              onChange={(value) => setTransactionTypeFilter(typeof value === 'string' && value.length > 0 ? value : undefined)}
+              onChange={(value) => {
+                setTransactionReviewHint(null);
+                setTransactionTypeFilter(typeof value === 'string' && value.length > 0 ? value : undefined);
+              }}
               disabled={!loadedUserId}
             />
+            <DatePicker
+              value={transactionStartDate}
+              allowClear
+              placeholder="开始日期"
+              style={{ width: 160 }}
+              disabled={!loadedUserId}
+              onChange={(value) => {
+                setTransactionReviewHint(null);
+                setTransactionStartDate(value);
+              }}
+            />
+            <DatePicker
+              value={transactionEndDate}
+              allowClear
+              placeholder="结束日期"
+              style={{ width: 160 }}
+              disabled={!loadedUserId}
+              onChange={(value) => {
+                setTransactionReviewHint(null);
+                setTransactionEndDate(value);
+              }}
+            />
+            <Button
+              disabled={!loadedUserId}
+              onClick={() => {
+                setTransactionPageIndex(1);
+                setTransactionTypeFilter(undefined);
+                setTransactionStartDate(null);
+                setTransactionEndDate(null);
+                setTransactionReviewHint(null);
+              }}
+            >
+              清空筛选
+            </Button>
           </div>
         </div>
 
         {loadedUserId ? (
-          <Table<ExpTransactionVo>
-            rowKey="voId"
-            columns={transactionColumns}
-            dataSource={transactions}
-            loading={loadingTransactions}
-            scroll={{ x: 1120 }}
-            style={{ marginTop: 20 }}
-            pagination={{
-              current: transactionPageIndex,
-              pageSize: transactionPageSize,
-              total: transactionTotal,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              showTotal: (total) => `共 ${total} 条`,
-              onChange: (page, pageSize) => {
-                void loadTransactions(loadedUserId, page, pageSize, transactionTypeFilter);
-              },
-            }}
-            locale={{
-              emptyText: loadingTransactions ? '经验流水加载中...' : '该用户暂无经验流水记录',
-            }}
-          />
+          <>
+            {transactionReviewHint && (
+              <div className="admin-feature-banner" style={{ marginTop: 16 }}>
+                {transactionReviewHint}
+              </div>
+            )}
+            <Table<ExpTransactionVo>
+              rowKey="voId"
+              columns={transactionColumns}
+              dataSource={transactions}
+              loading={loadingTransactions}
+              scroll={{ x: 1120 }}
+              style={{ marginTop: 20 }}
+              pagination={{
+                current: transactionPageIndex,
+                pageSize: transactionPageSize,
+                total: transactionTotal,
+                showSizeChanger: true,
+                showQuickJumper: true,
+                showTotal: (total) => `共 ${total} 条`,
+                onChange: (page, pageSize) => {
+                  void loadTransactions(loadedUserId, page, pageSize, transactionTypeFilter, transactionStartDate, transactionEndDate);
+                },
+              }}
+              locale={{
+                emptyText: loadingTransactions ? '经验流水加载中...' : '该用户暂无经验流水记录',
+              }}
+            />
+          </>
         ) : (
           <div style={{ marginTop: 20, color: '#8c8c8c' }}>
             请先查询用户经验，再查看经验流水。
@@ -943,7 +1154,7 @@ export const ExperienceAdminPage = () => {
         </Form>
       </section>
 
-      <section className="admin-feature-card">
+      <section className="admin-feature-card" ref={freezeSectionRef}>
         <div className="admin-feature-header">
           <div>
             <h3>冻结 / 解冻经验</h3>

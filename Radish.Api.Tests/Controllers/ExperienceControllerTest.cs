@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Moq;
@@ -86,6 +87,37 @@ public class ExperienceControllerTest
         var payload = Assert.IsType<UserExpDailyStatsWindowVo>(result.ResponseData);
         Assert.Equal("review", payload.VoRecommendation?.VoLevel);
         Assert.Equal("建议人工复核", payload.VoRecommendation?.VoTitle);
+    }
+
+    [Fact]
+    public async Task GetUserTransactions_Should_Forward_Date_Range_Filter()
+    {
+        var startDate = new DateTime(2026, 5, 1, 0, 0, 0);
+        var endDate = new DateTime(2026, 5, 1, 23, 59, 59);
+
+        var serviceMock = CreateServiceMock();
+        serviceMock
+            .Setup(service => service.GetTransactionsAsync(
+                9527,
+                1,
+                20,
+                "RECEIVE_LIKE,GIVE_LIKE",
+                startDate,
+                endDate))
+            .ReturnsAsync(new PageModel<ExpTransactionVo>
+            {
+                Page = 1,
+                PageSize = 20,
+                DataCount = 0,
+                PageCount = 0,
+                Data = []
+            });
+
+        var controller = CreateController(serviceMock.Object);
+        var result = await controller.GetUserTransactions(9527, 1, 20, "RECEIVE_LIKE,GIVE_LIKE", startDate, endDate);
+
+        Assert.True(result.IsSuccess);
+        _ = Assert.IsType<PageModel<ExpTransactionVo>>(result.ResponseData);
     }
 
     private static ExperienceController CreateController(IExperienceService experienceService)

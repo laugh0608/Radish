@@ -86,7 +86,7 @@ public interface IExperienceService : IBaseService<UserExperience, UserExperienc
     /// <param name="userId">用户 ID</param>
     /// <param name="pageIndex">页码（从 1 开始）</param>
     /// <param name="pageSize">每页数量</param>
-    /// <param name="expType">经验值类型（可选，用于筛选）</param>
+    /// <param name="expType">经验值类型（可选，用于筛选；支持逗号分隔多个类型）</param>
     /// <param name="startDate">开始日期（可选）</param>
     /// <param name="endDate">结束日期（可选）</param>
     /// <returns>分页的交易记录</returns>

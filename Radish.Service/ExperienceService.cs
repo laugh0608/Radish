@@ -449,15 +449,15 @@ namespace Radish.Service;
         {
             var safePageIndex = NormalizePositivePageIndex(pageIndex);
             var safePageSize = NormalizeTransactionPageSize(pageSize);
-            var normalizedExpType = NormalizeOptionalFilter(expType);
+            var normalizedExpTypes = NormalizeOptionalFilterValues(expType);
 
             // 构建动态 Where 条件（使用 And 扩展方法组合多个条件）
             Expression<Func<ExpTransaction, bool>> whereExpression = t => t.UserId == userId;
 
             // 如果有 expType 筛选条件
-            if (normalizedExpType != null)
+            if (normalizedExpTypes.Count > 0)
             {
-                whereExpression = whereExpression.And(t => t.ExpType == normalizedExpType);
+                whereExpression = whereExpression.And(t => normalizedExpTypes.Contains(t.ExpType));
             }
 
             // 如果有开始日期筛选条件
@@ -2306,9 +2306,18 @@ namespace Radish.Service;
         return Math.Min(pageSize, MaxTransactionPageSize);
     }
 
-    private static string? NormalizeOptionalFilter(string? value)
+    private static List<string> NormalizeOptionalFilterValues(string? value)
     {
-        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return [];
+        }
+
+        return value
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(item => !string.IsNullOrWhiteSpace(item))
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
     }
 
     /// <summary>

@@ -505,6 +505,113 @@ public class ExperienceServiceTest
     }
 
     [Fact]
+    public async Task GetTransactionsAsync_Should_Filter_By_Multiple_ExpTypes_And_DateRange()
+    {
+        const long userId = 31002;
+        var startDate = new DateTime(2026, 5, 10, 0, 0, 0);
+        var endDate = new DateTime(2026, 5, 10, 23, 59, 59);
+        var transactions = new List<ExpTransaction>
+        {
+            new()
+            {
+                Id = 80001,
+                UserId = userId,
+                ExpType = "RECEIVE_LIKE",
+                ExpAmount = 2,
+                ExpBefore = 100,
+                ExpAfter = 102,
+                LevelBefore = 2,
+                LevelAfter = 2,
+                CreateBy = "System",
+                CreateId = 0,
+                CreateTime = new DateTime(2026, 5, 10, 9, 0, 0)
+            },
+            new()
+            {
+                Id = 80002,
+                UserId = userId,
+                ExpType = "GIVE_LIKE",
+                ExpAmount = 1,
+                ExpBefore = 102,
+                ExpAfter = 103,
+                LevelBefore = 2,
+                LevelAfter = 2,
+                CreateBy = "System",
+                CreateId = 0,
+                CreateTime = new DateTime(2026, 5, 10, 10, 0, 0)
+            },
+            new()
+            {
+                Id = 80003,
+                UserId = userId,
+                ExpType = "POST_CREATE",
+                ExpAmount = 20,
+                ExpBefore = 103,
+                ExpAfter = 123,
+                LevelBefore = 2,
+                LevelAfter = 2,
+                CreateBy = "System",
+                CreateId = 0,
+                CreateTime = new DateTime(2026, 5, 10, 11, 0, 0)
+            },
+            new()
+            {
+                Id = 80004,
+                UserId = userId,
+                ExpType = "RECEIVE_LIKE",
+                ExpAmount = 2,
+                ExpBefore = 90,
+                ExpAfter = 92,
+                LevelBefore = 1,
+                LevelAfter = 1,
+                CreateBy = "System",
+                CreateId = 0,
+                CreateTime = new DateTime(2026, 5, 11, 9, 0, 0)
+            }
+        };
+
+        var expTransactionRepository = new Mock<IBaseRepository<ExpTransaction>>(MockBehavior.Strict);
+        var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Strict);
+
+        expTransactionRepository
+            .Setup(repository => repository.QueryPageAsync(
+                It.IsAny<Expression<Func<ExpTransaction, bool>>>(),
+                1,
+                20,
+                It.IsAny<Expression<Func<ExpTransaction, object>>>(),
+                OrderByType.Desc))
+            .ReturnsAsync((Expression<Func<ExpTransaction, bool>> expression, int pageIndex, int pageSize, Expression<Func<ExpTransaction, object>> orderByExpression, OrderByType orderByType) =>
+            {
+                var filtered = transactions
+                    .Where(expression.Compile())
+                    .OrderByDescending(item => item.CreateTime)
+                    .ToList();
+                return (filtered, filtered.Count);
+            });
+        userRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<User, bool>>?>()))
+            .ReturnsAsync(new List<User>
+            {
+                new()
+                {
+                    Id = userId,
+                    UserName = "filter-user",
+                    IsDeleted = false
+                }
+            });
+
+        var service = CreateService(
+            expTransactionRepository: expTransactionRepository,
+            userRepository: userRepository);
+
+        var result = await service.GetTransactionsAsync(userId, 1, 20, " RECEIVE_LIKE , GIVE_LIKE ", startDate, endDate);
+
+        result.DataCount.ShouldBe(2);
+        result.Data.Select(item => item.VoExpType).ShouldBe(["GIVE_LIKE", "RECEIVE_LIKE"]);
+        result.Data.All(item => item.VoUserName == "filter-user").ShouldBeTrue();
+    }
+
+    [Fact]
     public async Task AdminAdjustExperienceAsync_Should_Clamp_To_Zero_And_Record_Penalty_Transaction()
     {
         const long userId = 41001;

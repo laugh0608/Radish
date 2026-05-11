@@ -108,6 +108,14 @@ Authorization: Bearer {{token}}
 GET {{baseUrl}}/api/v1/Experience/GetUserDailyStats/1?days=7
 Authorization: Bearer {{token}}
 
+### 4.4 管理端按经验类型 + 日期范围回看用户经验流水（点赞相关）
+GET {{baseUrl}}/api/v1/Experience/GetUserTransactions/1?pageIndex=1&pageSize=20&expType=RECEIVE_LIKE,GIVE_LIKE&startDate=2026-05-10%2000:00:00&endDate=2026-05-10%2023:59:59
+Authorization: Bearer {{token}}
+
+### 4.5 管理端按经验类型 + 日期范围回看用户经验流水（高亮相关）
+GET {{baseUrl}}/api/v1/Experience/GetUserTransactions/1?pageIndex=1&pageSize=20&expType=GOD_COMMENT,SOFA_COMMENT&startDate=2026-05-10%2000:00:00&endDate=2026-05-10%2023:59:59
+Authorization: Bearer {{token}}
+
 ### ===== 5. 完整测试流程 =====
 
 ### 5.1 第一步：查看初始经验值
