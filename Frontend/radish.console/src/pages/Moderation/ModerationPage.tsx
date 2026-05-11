@@ -29,11 +29,65 @@ const REVIEW_STATUS_OPTIONS = [
   { label: '已驳回', value: 2 },
 ];
 
+const TARGET_TYPE_OPTIONS = [
+  { label: '帖子', value: 'Post' },
+  { label: '评论', value: 'Comment' },
+  { label: '轻回应', value: 'PostQuickReply' },
+  { label: '聊天消息', value: 'ChatMessage' },
+  { label: '商品', value: 'Product' },
+];
+
+const REASON_TYPE_OPTIONS = [
+  { label: '垃圾内容', value: 'Spam' },
+  { label: '辱骂骚扰', value: 'Abuse' },
+  { label: '色情低俗', value: 'Pornography' },
+  { label: '违法违规', value: 'Illegal' },
+  { label: '欺诈误导', value: 'Fraud' },
+  { label: '其他', value: 'Other' },
+];
+
+const TARGET_NAVIGATION_STATUS_OPTIONS = [
+  { label: '可回看', value: 'Ready' },
+  { label: '已降级', value: 'Fallback' },
+  { label: '已失效', value: 'Unavailable' },
+  { label: '暂不支持', value: 'Unsupported' },
+];
+
 const ACTION_OPTIONS = [
   { label: '不处罚', value: 0 },
   { label: '禁言', value: 1 },
   { label: '封禁', value: 2 },
 ];
+
+const TARGET_TYPE_LABEL_MAP: Record<string, string> = {
+  Post: '帖子',
+  Comment: '评论',
+  PostQuickReply: '轻回应',
+  ChatMessage: '聊天消息',
+  Product: '商品',
+  Unknown: '未知目标',
+};
+
+const REASON_TYPE_LABEL_MAP: Record<string, string> = {
+  Spam: '垃圾内容',
+  Abuse: '辱骂骚扰',
+  Pornography: '色情低俗',
+  Illegal: '违法违规',
+  Fraud: '欺诈误导',
+  Other: '其他',
+};
+
+function getTargetTypeLabel(value: string | null | undefined): string {
+  return value ? (TARGET_TYPE_LABEL_MAP[value] ?? value) : '未知目标';
+}
+
+function getReasonTypeLabel(value: string | null | undefined): string {
+  return value ? (REASON_TYPE_LABEL_MAP[value] ?? value) : '未分类';
+}
+
+function toOptionalString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
+}
 
 const renderReportStatus = (value: string) => {
   switch (value) {
@@ -168,7 +222,7 @@ function renderSnapshotSection(input: ModerationTargetDisplayInput) {
 function renderModerationTarget(input: ModerationTargetDisplayInput) {
   return (
     <div className="moderation-target">
-      <div className="moderation-target__identity">{input.targetType} #{input.targetContentId ?? '-'}</div>
+      <div className="moderation-target__identity">{getTargetTypeLabel(input.targetType)} #{input.targetContentId ?? '-'}</div>
       {input.targetType === 'Comment' && input.targetPostId ? (
         <div className="moderation-target__meta">
           帖子 #{input.targetPostId} · 评论 #{input.targetCommentId ?? input.targetContentId}
@@ -328,6 +382,11 @@ export const ModerationPage = () => {
   const [queuePageIndex, setQueuePageIndex] = useState(1);
   const [queuePageSize, setQueuePageSize] = useState(20);
   const [statusFilter, setStatusFilter] = useState(-1);
+  const [queueTargetTypeFilter, setQueueTargetTypeFilter] = useState<string | undefined>();
+  const [queueReasonTypeFilter, setQueueReasonTypeFilter] = useState<string | undefined>();
+  const [queueNavigationStatusFilter, setQueueNavigationStatusFilter] = useState<string | undefined>();
+  const [queueKeywordInput, setQueueKeywordInput] = useState('');
+  const [queueKeyword, setQueueKeyword] = useState('');
   const [logItems, setLogItems] = useState<UserModerationActionVo[]>([]);
   const [logTotal, setLogTotal] = useState(0);
   const [logPageIndex, setLogPageIndex] = useState(1);
@@ -351,11 +410,27 @@ export const ModerationPage = () => {
   const loadQueue = async (targetPageIndex = queuePageIndex, targetPageSize = queuePageSize) => {
     try {
       setLoadingQueue(true);
-      const page = await getReviewQueue({
+      let page = await getReviewQueue({
         status: statusFilter,
+        targetType: queueTargetTypeFilter,
+        reasonType: queueReasonTypeFilter,
+        navigationStatus: queueNavigationStatusFilter,
+        keyword: queueKeyword,
         pageIndex: targetPageIndex,
         pageSize: targetPageSize,
       });
+
+      if (page.voItems.length === 0 && page.voTotal > 0 && targetPageIndex > 1) {
+        page = await getReviewQueue({
+          status: statusFilter,
+          targetType: queueTargetTypeFilter,
+          reasonType: queueReasonTypeFilter,
+          navigationStatus: queueNavigationStatusFilter,
+          keyword: queueKeyword,
+          pageIndex: targetPageIndex - 1,
+          pageSize: targetPageSize,
+        });
+      }
 
       setQueueItems(page.voItems);
       setQueueTotal(page.voTotal);
@@ -393,11 +468,42 @@ export const ModerationPage = () => {
 
   useEffect(() => {
     void loadQueue(1, queuePageSize);
-  }, [statusFilter, queuePageSize]);
+  }, [statusFilter, queueTargetTypeFilter, queueReasonTypeFilter, queueNavigationStatusFilter, queueKeyword, queuePageSize]);
 
   useEffect(() => {
     void loadLogs(1, logPageSize);
   }, [logPageSize]);
+
+  const applyQueueKeywordSearch = () => {
+    const nextKeyword = queueKeywordInput.trim();
+    if (nextKeyword === queueKeyword) {
+      void loadQueue(1, queuePageSize);
+      return;
+    }
+
+    setQueueKeyword(nextKeyword);
+  };
+
+  const resetQueueFilters = () => {
+    const shouldReloadImmediately =
+      statusFilter === -1 &&
+      !queueTargetTypeFilter &&
+      !queueReasonTypeFilter &&
+      !queueNavigationStatusFilter &&
+      queueKeyword.length === 0 &&
+      queueKeywordInput.length === 0;
+
+    setStatusFilter(-1);
+    setQueueTargetTypeFilter(undefined);
+    setQueueReasonTypeFilter(undefined);
+    setQueueNavigationStatusFilter(undefined);
+    setQueueKeywordInput('');
+    setQueueKeyword('');
+
+    if (shouldReloadImmediately) {
+      void loadQueue(1, queuePageSize);
+    }
+  };
 
   const openReviewModal = (item: ContentReportQueueItemVo) => {
     setReviewingItem(item);
@@ -463,7 +569,7 @@ export const ModerationPage = () => {
       key: 'reason',
       render: (_, record) => (
         <div>
-          <div>{record.voReasonType}</div>
+          <div>{getReasonTypeLabel(record.voReasonType)}</div>
           {record.voReasonDetail ? <div style={{ color: '#8c8c8c' }}>{record.voReasonDetail}</div> : null}
         </div>
       ),
@@ -639,7 +745,7 @@ export const ModerationPage = () => {
         <div className="admin-feature-header">
           <div>
             <h3>举报审核队列</h3>
-            <p className="admin-feature-subtle">按状态查看举报单，并在审核时直接联动治理动作。</p>
+            <p className="admin-feature-subtle">按状态、目标类型、举报原因、回看状态和关键词筛选举报单，并在审核时直接联动治理动作。</p>
           </div>
           <Space wrap>
             <Select
@@ -648,6 +754,47 @@ export const ModerationPage = () => {
               options={REVIEW_STATUS_OPTIONS}
               onChange={(value) => setStatusFilter(value)}
             />
+            <Select
+              value={queueTargetTypeFilter}
+              style={{ width: 160 }}
+              options={TARGET_TYPE_OPTIONS}
+              allowClear
+              placeholder="目标类型"
+              onChange={(value) => setQueueTargetTypeFilter(toOptionalString(value))}
+            />
+            <Select
+              value={queueReasonTypeFilter}
+              style={{ width: 160 }}
+              options={REASON_TYPE_OPTIONS}
+              allowClear
+              placeholder="举报原因"
+              onChange={(value) => setQueueReasonTypeFilter(toOptionalString(value))}
+            />
+            <Select
+              value={queueNavigationStatusFilter}
+              style={{ width: 160 }}
+              options={TARGET_NAVIGATION_STATUS_OPTIONS}
+              allowClear
+              placeholder="回看状态"
+              onChange={(value) => setQueueNavigationStatusFilter(toOptionalString(value))}
+            />
+            <Input
+              allowClear
+              placeholder="搜索举报单 / 目标 / 快照 / 用户 / 原因补充"
+              value={queueKeywordInput}
+              onChange={(event) => setQueueKeywordInput(event.target.value)}
+              onPressEnter={applyQueueKeywordSearch}
+              style={{ width: 320 }}
+            />
+            <Button
+              variant="primary"
+              onClick={applyQueueKeywordSearch}
+            >
+              查询
+            </Button>
+            <Button onClick={resetQueueFilters}>
+              重置
+            </Button>
           </Space>
         </div>
 

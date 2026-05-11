@@ -128,7 +128,11 @@ public class ContentModerationServiceTest
                 }
             });
 
-        var result = await service.GetReportQueueAsync(null, 1, 20);
+        var result = await service.GetReportQueueAsync(new ContentReportQueueQueryDto
+        {
+            PageIndex = 1,
+            PageSize = 20
+        });
 
         result.VoItems.Count.ShouldBe(1);
         var reportItem = result.VoItems[0];
@@ -190,7 +194,11 @@ public class ContentModerationServiceTest
                 }
             });
 
-        var result = await service.GetReportQueueAsync(null, 1, 20);
+        var result = await service.GetReportQueueAsync(new ContentReportQueueQueryDto
+        {
+            PageIndex = 1,
+            PageSize = 20
+        });
 
         result.VoItems.Count.ShouldBe(1);
         var reportItem = result.VoItems[0];
@@ -351,18 +359,92 @@ public class ContentModerationServiceTest
         action.VoSourceReportTargetSnapshotIsPersisted.ShouldBeFalse();
     }
 
+    [Fact]
+    public async Task GetReportQueueAsync_Should_Filter_By_NavigationStatus_After_Building_Target_State()
+    {
+        var contentReportRepository = new Mock<IBaseRepository<ContentReport>>(MockBehavior.Strict);
+        var channelMessageRepository = new Mock<IChannelMessageRepository>(MockBehavior.Strict);
+        var service = CreateService(contentReportRepository: contentReportRepository, channelMessageRepository: channelMessageRepository);
+
+        contentReportRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<ContentReport, bool>>?>()))
+            .ReturnsAsync(new List<ContentReport>
+            {
+                new()
+                {
+                    Id = 72001,
+                    ReportTargetType = (int)ContentReportTargetTypeEnum.ChatMessage,
+                    TargetContentId = 91001,
+                    TargetUserId = 10011,
+                    TargetUserName = "ready-target",
+                    ReporterUserId = 10001,
+                    ReporterUserName = "reporter",
+                    ReasonType = "Spam",
+                    Status = (int)ContentReportStatusEnum.Pending,
+                    ReviewActionType = (int)ModerationActionTypeEnum.None,
+                    CreateTime = new DateTime(2026, 5, 11, 8, 0, 0)
+                },
+                new()
+                {
+                    Id = 72002,
+                    ReportTargetType = (int)ContentReportTargetTypeEnum.ChatMessage,
+                    TargetContentId = 91002,
+                    TargetUserId = 10012,
+                    TargetUserName = "missing-target",
+                    ReporterUserId = 10001,
+                    ReporterUserName = "reporter",
+                    ReasonType = "Spam",
+                    Status = (int)ContentReportStatusEnum.Pending,
+                    ReviewActionType = (int)ModerationActionTypeEnum.None,
+                    CreateTime = new DateTime(2026, 5, 11, 9, 0, 0)
+                }
+            });
+        channelMessageRepository
+            .Setup(repository => repository.QueryByIdsIncludingDeletedAsync(It.Is<List<long>>(ids =>
+                ids.Count == 2 &&
+                ids.Contains(91001) &&
+                ids.Contains(91002))))
+            .ReturnsAsync(new List<ChannelMessage>
+            {
+                new()
+                {
+                    Id = 91001,
+                    ChannelId = 208,
+                    UserId = 10011,
+                    UserName = "ready-target",
+                    Type = MessageType.Text,
+                    Content = "仍可定位",
+                    IsDeleted = false,
+                    CreateTime = new DateTime(2026, 5, 11, 7, 59, 0)
+                }
+            });
+
+        var result = await service.GetReportQueueAsync(new ContentReportQueueQueryDto
+        {
+            NavigationStatus = "Unavailable",
+            PageIndex = 1,
+            PageSize = 20
+        });
+
+        result.VoTotal.ShouldBe(1);
+        result.VoItems.Count.ShouldBe(1);
+        result.VoItems[0].VoReportId.ShouldBe(72002);
+        result.VoItems[0].VoTargetNavigationStatus.ShouldBe("Unavailable");
+    }
+
     private static ContentModerationService CreateService(
         Mock<IBaseRepository<ContentReport>>? contentReportRepository = null,
         Mock<IBaseRepository<UserModerationAction>>? moderationActionRepository = null,
         Mock<IBaseRepository<Post>>? postRepository = null,
         Mock<IBaseRepository<Comment>>? commentRepository = null,
-        Mock<IChannelMessageRepository>? channelMessageRepository = null)
+        Mock<IChannelMessageRepository>? channelMessageRepository = null,
+        Mock<IBaseRepository<PostQuickReply>>? postQuickReplyRepository = null)
     {
         var mapper = new Mock<IMapper>(MockBehavior.Strict);
         var basePostRepository = postRepository ?? new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
         var baseCommentRepository = commentRepository ?? new Mock<IBaseRepository<Comment>>(MockBehavior.Strict);
         var productRepository = new Mock<IBaseRepository<Product>>(MockBehavior.Strict);
-        var postQuickReplyRepository = new Mock<IBaseRepository<PostQuickReply>>(MockBehavior.Strict);
+        var basePostQuickReplyRepository = postQuickReplyRepository ?? new Mock<IBaseRepository<PostQuickReply>>(MockBehavior.Strict);
         var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Strict);
 
         return new ContentModerationService(
@@ -373,7 +455,7 @@ public class ContentModerationServiceTest
             baseCommentRepository.Object,
             (channelMessageRepository ?? new Mock<IChannelMessageRepository>(MockBehavior.Strict)).Object,
             productRepository.Object,
-            postQuickReplyRepository.Object,
+            basePostQuickReplyRepository.Object,
             userRepository.Object);
     }
 }

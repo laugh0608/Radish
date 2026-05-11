@@ -7,6 +7,7 @@ using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
+using Radish.Shared.CustomEnum;
 using Xunit;
 
 namespace Radish.Api.Tests.Controllers;
@@ -66,7 +67,14 @@ public class ContentModerationControllerTest
     {
         var serviceMock = CreateServiceMock();
         serviceMock
-            .Setup(s => s.GetReportQueueAsync(0, 1, 20))
+            .Setup(s => s.GetReportQueueAsync(It.Is<ContentReportQueueQueryDto>(query =>
+                query.Status == (int)ContentReportStatusEnum.Pending &&
+                query.TargetType == "Comment" &&
+                query.ReasonType == "Spam" &&
+                query.NavigationStatus == "Fallback" &&
+                query.Keyword == "9527" &&
+                query.PageIndex == 1 &&
+                query.PageSize == 20)))
             .ReturnsAsync(new VoPagedResult<ContentReportQueueItemVo>
             {
                 VoItems =
@@ -85,7 +93,16 @@ public class ContentModerationControllerTest
             });
 
         var controller = CreateController(serviceMock.Object);
-        var result = await controller.GetReviewQueue();
+        var result = await controller.GetReviewQueue(new ContentReportQueueQueryDto
+        {
+            Status = (int)ContentReportStatusEnum.Pending,
+            TargetType = "Comment",
+            ReasonType = "Spam",
+            NavigationStatus = "Fallback",
+            Keyword = "9527",
+            PageIndex = 1,
+            PageSize = 20
+        });
 
         Assert.True(result.IsSuccess);
         Assert.Equal(200, result.StatusCode);

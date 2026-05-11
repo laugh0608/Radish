@@ -71,13 +71,31 @@ export interface ReviewContentReportRequest {
 
 export async function getReviewQueue(params: {
   status?: number;
+  targetType?: string;
+  reasonType?: string;
+  navigationStatus?: string;
+  keyword?: string;
   pageIndex?: number;
   pageSize?: number;
 }): Promise<VoPagedResult<ContentReportQueueItemVo>> {
   const searchParams = new URLSearchParams();
-  searchParams.set('status', String(params.status ?? 0));
   searchParams.set('pageIndex', String(params.pageIndex ?? 1));
   searchParams.set('pageSize', String(params.pageSize ?? 20));
+  if (params.status !== undefined && params.status >= 0) {
+    searchParams.set('status', String(params.status));
+  }
+  if (params.targetType?.trim()) {
+    searchParams.set('targetType', params.targetType.trim());
+  }
+  if (params.reasonType?.trim()) {
+    searchParams.set('reasonType', params.reasonType.trim());
+  }
+  if (params.navigationStatus?.trim()) {
+    searchParams.set('navigationStatus', params.navigationStatus.trim());
+  }
+  if (params.keyword?.trim()) {
+    searchParams.set('keyword', params.keyword.trim());
+  }
 
   const response = await apiGet<VoPagedResult<ContentReportQueueItemVo>>(
     `/api/v1/ContentModeration/GetReviewQueue?${searchParams.toString()}`,

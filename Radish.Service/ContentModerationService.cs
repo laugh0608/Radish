@@ -8,6 +8,7 @@ using Radish.Model.ViewModels;
 using Radish.Service.Base;
 using Radish.Shared.CustomEnum;
 using SqlSugar;
+using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 
 namespace Radish.Service;
@@ -116,24 +117,72 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
         return reportId;
     }
 
-    public async Task<VoPagedResult<ContentReportQueueItemVo>> GetReportQueueAsync(int? status, int pageIndex, int pageSize)
+    public async Task<VoPagedResult<ContentReportQueueItemVo>> GetReportQueueAsync(ContentReportQueueQueryDto query)
     {
-        var safePageIndex = NormalizePageIndex(pageIndex);
-        var safePageSize = NormalizePageSize(pageSize);
-        var hasStatusFilter = status.HasValue && status.Value >= 0;
-        var statusValue = status ?? (int)ContentReportStatusEnum.Pending;
+        ArgumentNullException.ThrowIfNull(query);
 
-        var (reports, totalCount) = await _contentReportRepository.QueryPageAsync(
-            r => !r.IsDeleted && (!hasStatusFilter || r.Status == statusValue),
-            safePageIndex,
-            safePageSize,
-            r => r.CreateTime,
-            OrderByType.Desc);
+        var safePageIndex = NormalizePageIndex(query.PageIndex);
+        var safePageSize = NormalizePageSize(query.PageSize);
+        var normalizedStatus = NormalizeQueueStatusFilter(query.Status);
+        var normalizedTargetType = NormalizeQueueTargetTypeFilter(query.TargetType);
+        var normalizedReasonType = NormalizeOptionalFilter(query.ReasonType);
+        var normalizedNavigationStatus = NormalizeQueueNavigationStatusFilter(query.NavigationStatus);
+        var normalizedKeyword = NormalizeQueueKeyword(query.Keyword);
+        var hasKeyword = !string.IsNullOrWhiteSpace(normalizedKeyword);
+        var hasKeywordLongId = long.TryParse(normalizedKeyword, out var keywordLongId) && keywordLongId > 0;
+
+        Expression<Func<ContentReport, bool>> whereExpression = report =>
+            !report.IsDeleted &&
+            (!normalizedStatus.HasValue || report.Status == normalizedStatus.Value) &&
+            (!normalizedTargetType.HasValue || report.ReportTargetType == normalizedTargetType.Value) &&
+            (normalizedReasonType == null || report.ReasonType == normalizedReasonType) &&
+            (!hasKeyword ||
+             (hasKeywordLongId &&
+              (report.Id == keywordLongId ||
+               report.TargetContentId == keywordLongId ||
+               report.TargetUserId == keywordLongId ||
+               report.ReporterUserId == keywordLongId)) ||
+             (report.TargetSnapshotTitle != null && report.TargetSnapshotTitle.Contains(normalizedKeyword!)) ||
+             (report.TargetSnapshotSummary != null && report.TargetSnapshotSummary.Contains(normalizedKeyword!)) ||
+             (report.TargetUserName != null && report.TargetUserName.Contains(normalizedKeyword!)) ||
+             report.ReporterUserName.Contains(normalizedKeyword!) ||
+             report.ReasonType.Contains(normalizedKeyword!) ||
+             (report.ReasonDetail != null && report.ReasonDetail.Contains(normalizedKeyword!)));
+
+        if (normalizedNavigationStatus == null)
+        {
+            var (reports, totalCount) = await _contentReportRepository.QueryPageAsync(
+                whereExpression,
+                safePageIndex,
+                safePageSize,
+                r => r.CreateTime,
+                OrderByType.Desc);
+
+            return new VoPagedResult<ContentReportQueueItemVo>
+            {
+                VoItems = await BuildReportQueueItemsAsync(reports),
+                VoTotal = totalCount,
+                VoPageIndex = safePageIndex,
+                VoPageSize = safePageSize
+            };
+        }
+
+        var reportsForNavigationFiltering = await _contentReportRepository.QueryAsync(whereExpression);
+        var orderedReports = reportsForNavigationFiltering
+            .OrderByDescending(report => report.CreateTime)
+            .ThenByDescending(report => report.Id)
+            .ToList();
+        var filteredItems = (await BuildReportQueueItemsAsync(orderedReports))
+            .Where(item => item.VoTargetNavigationStatus == normalizedNavigationStatus)
+            .ToList();
 
         return new VoPagedResult<ContentReportQueueItemVo>
         {
-            VoItems = await BuildReportQueueItemsAsync(reports),
-            VoTotal = totalCount,
+            VoItems = filteredItems
+                .Skip((safePageIndex - 1) * safePageSize)
+                .Take(safePageSize)
+                .ToList(),
+            VoTotal = filteredItems.Count,
             VoPageIndex = safePageIndex,
             VoPageSize = safePageSize
         };
@@ -670,6 +719,59 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             "postquickreply" => ContentReportTargetTypeEnum.PostQuickReply,
             _ => throw new ArgumentException("举报目标类型仅支持 Post、Comment、ChatMessage、Product 或 PostQuickReply")
         };
+    }
+
+    private static int? NormalizeQueueStatusFilter(int? status)
+    {
+        if (!status.HasValue || status.Value < 0)
+        {
+            return null;
+        }
+
+        return status.Value switch
+        {
+            (int)ContentReportStatusEnum.Pending => (int)ContentReportStatusEnum.Pending,
+            (int)ContentReportStatusEnum.Approved => (int)ContentReportStatusEnum.Approved,
+            (int)ContentReportStatusEnum.Rejected => (int)ContentReportStatusEnum.Rejected,
+            _ => throw new ArgumentException("审核状态仅支持 Pending、Approved 或 Rejected")
+        };
+    }
+
+    private static int? NormalizeQueueTargetTypeFilter(string? targetType)
+    {
+        var normalizedTargetType = NormalizeOptionalFilter(targetType);
+        return normalizedTargetType == null ? null : (int)ParseTargetType(normalizedTargetType);
+    }
+
+    private static string? NormalizeQueueNavigationStatusFilter(string? navigationStatus)
+    {
+        var normalizedNavigationStatus = NormalizeOptionalFilter(navigationStatus);
+        if (normalizedNavigationStatus == null)
+        {
+            return null;
+        }
+
+        return normalizedNavigationStatus.Trim().ToLowerInvariant() switch
+        {
+            "ready" => TargetNavigationStatusReady,
+            "fallback" => TargetNavigationStatusFallback,
+            "unavailable" => TargetNavigationStatusUnavailable,
+            "unsupported" => TargetNavigationStatusUnsupported,
+            _ => throw new ArgumentException("目标回看状态仅支持 Ready、Fallback、Unavailable 或 Unsupported")
+        };
+    }
+
+    private static string? NormalizeQueueKeyword(string? keyword)
+    {
+        var normalizedKeyword = NormalizeOptionalFilter(keyword);
+        return string.IsNullOrWhiteSpace(normalizedKeyword)
+            ? null
+            : MultiWhitespacePattern.Replace(normalizedKeyword, " ").Trim();
+    }
+
+    private static string? NormalizeOptionalFilter(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
     private static ModerationActionTypeEnum ParseReviewActionType(int actionType)

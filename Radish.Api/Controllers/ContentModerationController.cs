@@ -109,17 +109,24 @@ public class ContentModerationController : ControllerBase
     [HttpGet]
     [RequireConsolePermission(ConsolePermissions.ModerationView)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
-    public async Task<MessageModel> GetReviewQueue(int? status = 0, int pageIndex = 1, int pageSize = 20)
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    public async Task<MessageModel> GetReviewQueue([FromQuery] ContentReportQueueQueryDto? query = null)
     {
-        var normalizedStatus = status.HasValue && status.Value < 0 ? null : status;
-        var result = await _contentModerationService.GetReportQueueAsync(normalizedStatus, pageIndex, pageSize);
-        return new MessageModel
+        try
         {
-            IsSuccess = true,
-            StatusCode = (int)HttpStatusCodeEnum.Success,
-            MessageInfo = "获取成功",
-            ResponseData = result
-        };
+            var result = await _contentModerationService.GetReportQueueAsync(query ?? new ContentReportQueueQueryDto());
+            return new MessageModel
+            {
+                IsSuccess = true,
+                StatusCode = (int)HttpStatusCodeEnum.Success,
+                MessageInfo = "获取成功",
+                ResponseData = result
+            };
+        }
+        catch (ArgumentException ex)
+        {
+            return BuildError(HttpStatusCodeEnum.BadRequest, ex.Message);
+        }
     }
 
     /// <summary>审核举报（管理端）</summary>
