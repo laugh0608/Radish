@@ -2,7 +2,7 @@
 
 > 状态：Android MVP 第一轮已完成，转入产品化与后续平台评估
 >
-> 最后更新：2026-05-04（Asia/Shanghai）
+> 最后更新：2026-05-11（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -157,6 +157,14 @@ Flutter 客户端第一批固定遵循以下约束：
 3. 下一步先评估 Android 内测产品化深化、分发反馈闭环，或按 [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation) 进入 Tauri + WebOS 桌面安装包第二轮评估
 4. 若后续暴露 `P0 / P1` 阻断，则只做定点修复，不回头扩完整通知中心、系统推送、发帖、完整评论提交、点赞、投票、编辑治理或 Flutter 专属 BFF
 5. Windows / macOS / Linux 不再作为 Flutter 默认扩平台方向；若进入桌面安装包，应优先走 Tauri + WebOS，并单独定义批次，不与 Android MVP 第一轮完成结论混在同一批
+
+若 `Phase 2-3` 后续重新进入连续执行批次，且出现“同类展示组件持续在多个页面重复维护”或“除主应用外出现第二个明确 Flutter 消费方”这两类信号之一，则可把 **Flutter UI 组件库治理** 纳入候选，但当前不提升为默认下一事项：
+
+1. 包落点建议固定为 `Clients/radish.flutter/packages/radish_ui`
+2. 第一批只纳入 Theme / design tokens、Section Card、Notice、Chip、Empty State、内容 Preview Tile 与只读 Markdown 视图这类稳定展示组件
+3. 第一批不纳入 repository、controller、forum / docs / profile 专属 handoff、页面状态模型或任何业务 API 契约，避免把业务层误抽成“伪共享层”
+4. 抽离顺序应优先从 `shared/widgets` 与跨 `discover / docs / forum / profile / shell` 的重复展示片段收口，再评估是否继续扩展到更完整的表单或交互组件
+5. 若未满足以上触发条件，Flutter 后续仍优先补高价值移动已登录链路和真实阻断问题，不单独为“先有一个组件库”启动批次
 
 本轮明确不纳入 RC 阻断的范围：
 
