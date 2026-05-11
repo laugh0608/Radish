@@ -14,8 +14,10 @@ using Radish.Common;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
+using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Service;
+using Radish.Shared.CustomEnum;
 using Shouldly;
 using SqlSugar;
 using Xunit;
@@ -612,6 +614,211 @@ public class ExperienceServiceTest
     }
 
     [Fact]
+    public async Task RecordGovernanceReviewAsync_Should_Persist_Review_Action_With_Evidence_Snapshot()
+    {
+        const long userId = 51001;
+        UserExperienceGovernanceAction? capturedAction = null;
+
+        var userExpRepository = new Mock<IBaseRepository<UserExperience>>(MockBehavior.Strict);
+        var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Strict);
+        var governanceActionRepository = new Mock<IBaseRepository<UserExperienceGovernanceAction>>(MockBehavior.Strict);
+
+        userExpRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<UserExperience, bool>>?>()))
+            .ReturnsAsync(new UserExperience
+            {
+                Id = 91001,
+                UserId = userId,
+                TenantId = 22,
+                IsDeleted = false
+            });
+        userRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<User, bool>>?>()))
+            .ReturnsAsync(new User
+            {
+                Id = userId,
+                UserName = "review-user",
+                TenantId = 22,
+                IsDeleted = false
+            });
+        governanceActionRepository
+            .Setup(repository => repository.AddAsync(It.IsAny<UserExperienceGovernanceAction>()))
+            .Callback<UserExperienceGovernanceAction>(action => capturedAction = action)
+            .ReturnsAsync(92001);
+
+        var service = CreateService(
+            userExpRepository: userExpRepository,
+            userRepository: userRepository,
+            governanceActionRepository: governanceActionRepository);
+
+        var success = await service.RecordGovernanceReviewAsync(
+            new AdminRecordExperienceGovernanceReviewDto
+            {
+                UserId = userId,
+                ReviewResult = "Observe",
+                Remark = "已回看对应日期经验流水与目标内容，暂未发现直接异常。",
+                WindowDays = 7,
+                StatDate = new DateTime(2026, 5, 10, 18, 30, 0),
+                RuleCodes = ["LIKE_SHARE_HEAVY"],
+                RuleLabels = ["点赞占比偏高"],
+                RecommendationLevel = "review",
+                RecommendationReason = "最近 7 天同一规则重复命中"
+            },
+            9001,
+            "Auditor");
+
+        success.ShouldBeTrue();
+        capturedAction.ShouldNotBeNull();
+        capturedAction.TargetUserId.ShouldBe(userId);
+        capturedAction.TargetUserName.ShouldBe("review-user");
+        capturedAction.TenantId.ShouldBe(22);
+        capturedAction.ActionType.ShouldBe((int)ExperienceGovernanceActionTypeEnum.Review);
+        capturedAction.ReviewResult.ShouldBe((int)ExperienceGovernanceReviewResultEnum.Observe);
+        capturedAction.Remark.ShouldBe("已回看对应日期经验流水与目标内容，暂未发现直接异常。");
+        capturedAction.WindowDays.ShouldBe(7);
+        capturedAction.StatDate.ShouldBe(new DateTime(2026, 5, 10));
+        var serializedRuleCodes = capturedAction.RuleCodes;
+        serializedRuleCodes.ShouldNotBeNull();
+        serializedRuleCodes!.ShouldContain("LIKE_SHARE_HEAVY");
+        var serializedRuleLabels = capturedAction.RuleLabels;
+        serializedRuleLabels.ShouldNotBeNull();
+        serializedRuleLabels!.ShouldContain("点赞占比偏高");
+        capturedAction.RecommendationLevel.ShouldBe("review");
+        capturedAction.RecommendationReason.ShouldBe("最近 7 天同一规则重复命中");
+        capturedAction.CreateBy.ShouldBe("Auditor");
+        capturedAction.CreateId.ShouldBe(9001);
+    }
+
+    [Fact]
+    public async Task FreezeExperienceAsync_Should_Record_Governance_Action()
+    {
+        const long userId = 51002;
+        var frozenUntil = new DateTime(2026, 5, 20, 12, 0, 0);
+        UserExperienceGovernanceAction? capturedAction = null;
+
+        var userExpRepository = new Mock<IBaseRepository<UserExperience>>(MockBehavior.Strict);
+        var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Strict);
+        var governanceActionRepository = new Mock<IBaseRepository<UserExperienceGovernanceAction>>(MockBehavior.Strict);
+
+        userExpRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<UserExperience, bool>>?>()))
+            .ReturnsAsync(new UserExperience
+            {
+                Id = 91002,
+                UserId = userId,
+                TenantId = 33,
+                Version = 4,
+                IsDeleted = false
+            });
+        userExpRepository
+            .Setup(repository => repository.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<UserExperience, UserExperience>>>(),
+                It.IsAny<Expression<Func<UserExperience, bool>>>()))
+            .ReturnsAsync(1);
+        userRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<User, bool>>?>()))
+            .ReturnsAsync(new User
+            {
+                Id = userId,
+                UserName = "freeze-user",
+                TenantId = 33,
+                IsDeleted = false
+            });
+        governanceActionRepository
+            .Setup(repository => repository.AddAsync(It.IsAny<UserExperienceGovernanceAction>()))
+            .Callback<UserExperienceGovernanceAction>(action => capturedAction = action)
+            .ReturnsAsync(92002);
+
+        var service = CreateService(
+            userExpRepository: userExpRepository,
+            userRepository: userRepository,
+            governanceActionRepository: governanceActionRepository);
+
+        var success = await service.FreezeExperienceAsync(userId, frozenUntil, "经验异常待复核", 9001, "Auditor");
+
+        success.ShouldBeTrue();
+        capturedAction.ShouldNotBeNull();
+        capturedAction.TargetUserId.ShouldBe(userId);
+        capturedAction.TargetUserName.ShouldBe("freeze-user");
+        capturedAction.TenantId.ShouldBe(33);
+        capturedAction.ActionType.ShouldBe((int)ExperienceGovernanceActionTypeEnum.Freeze);
+        capturedAction.ReviewResult.ShouldBeNull();
+        capturedAction.Remark.ShouldBe("经验异常待复核");
+        capturedAction.FrozenUntil.ShouldBe(frozenUntil);
+        capturedAction.CreateBy.ShouldBe("Auditor");
+        capturedAction.CreateId.ShouldBe(9001);
+    }
+
+    [Fact]
+    public async Task GetGovernanceActionsAsync_Should_Map_Items_In_Descending_Order()
+    {
+        const long userId = 51003;
+        var actions = new List<UserExperienceGovernanceAction>
+        {
+            new()
+            {
+                Id = 93001,
+                TargetUserId = userId,
+                TargetUserName = "review-user",
+                ActionType = (int)ExperienceGovernanceActionTypeEnum.Review,
+                ReviewResult = (int)ExperienceGovernanceReviewResultEnum.Observe,
+                Remark = "已人工复核，继续观察。",
+                WindowDays = 7,
+                StatDate = new DateTime(2026, 5, 10),
+                RuleCodes = "[\"LIKE_SHARE_HEAVY\"]",
+                RuleLabels = "[\"点赞占比偏高\"]",
+                RecommendationLevel = "review",
+                RecommendationReason = "最近 7 天重复命中",
+                CreateTime = new DateTime(2026, 5, 11, 10, 0, 0),
+                CreateBy = "Auditor",
+                CreateId = 9001
+            },
+            new()
+            {
+                Id = 93002,
+                TargetUserId = userId,
+                TargetUserName = "review-user",
+                ActionType = (int)ExperienceGovernanceActionTypeEnum.Freeze,
+                Remark = "经验异常待复核",
+                FrozenUntil = new DateTime(2026, 5, 20, 12, 0, 0),
+                CreateTime = new DateTime(2026, 5, 10, 9, 0, 0),
+                CreateBy = "Auditor",
+                CreateId = 9001
+            }
+        };
+
+        var governanceActionRepository = new Mock<IBaseRepository<UserExperienceGovernanceAction>>(MockBehavior.Strict);
+        governanceActionRepository
+            .Setup(repository => repository.QueryPageAsync(
+                It.IsAny<Expression<Func<UserExperienceGovernanceAction, bool>>>(),
+                1,
+                20,
+                It.IsAny<Expression<Func<UserExperienceGovernanceAction, object>>>(),
+                OrderByType.Desc))
+            .ReturnsAsync((actions, actions.Count));
+
+        var service = CreateService(governanceActionRepository: governanceActionRepository);
+
+        var result = await service.GetGovernanceActionsAsync(userId, 20);
+
+        result.Count.ShouldBe(2);
+        result[0].VoActionId.ShouldBe(93001);
+        result[0].VoActionType.ShouldBe("Review");
+        result[0].VoActionTypeDisplay.ShouldBe("人工复核");
+        result[0].VoReviewResult.ShouldBe("Observe");
+        result[0].VoReviewResultDisplay.ShouldBe("已复核，继续观察");
+        result[0].VoRuleCodes.ShouldBe(["LIKE_SHARE_HEAVY"]);
+        result[0].VoRuleLabels.ShouldBe(["点赞占比偏高"]);
+        var evidenceSummary = result[0].VoEvidenceSummary;
+        evidenceSummary.ShouldNotBeNull();
+        evidenceSummary!.ShouldContain("窗口 7 天");
+        evidenceSummary.ShouldContain("规则 点赞占比偏高");
+        result[1].VoActionId.ShouldBe(93002);
+        result[1].VoActionType.ShouldBe("Freeze");
+        result[1].VoFrozenUntil.ShouldBe(new DateTime(2026, 5, 20, 12, 0, 0));
+    }
+
+    [Fact]
     public async Task AdminAdjustExperienceAsync_Should_Clamp_To_Zero_And_Record_Penalty_Transaction()
     {
         const long userId = 41001;
@@ -695,6 +902,7 @@ public class ExperienceServiceTest
         Mock<IBaseRepository<LevelConfig>>? levelConfigRepository = null,
         Mock<IBaseRepository<UserExpDailyStats>>? dailyStatsRepository = null,
         Mock<IBaseRepository<User>>? userRepository = null,
+        Mock<IBaseRepository<UserExperienceGovernanceAction>>? governanceActionRepository = null,
         Mock<IExperienceCalculator>? experienceCalculator = null,
         Mock<ICoinService>? coinService = null,
         Mock<IAttachmentUrlResolver>? attachmentUrlResolver = null,
@@ -712,6 +920,7 @@ public class ExperienceServiceTest
             (levelConfigRepository ?? new Mock<IBaseRepository<LevelConfig>>(MockBehavior.Loose)).Object,
             (dailyStatsRepository ?? new Mock<IBaseRepository<UserExpDailyStats>>(MockBehavior.Loose)).Object,
             (userRepository ?? new Mock<IBaseRepository<User>>(MockBehavior.Loose)).Object,
+            (governanceActionRepository ?? new Mock<IBaseRepository<UserExperienceGovernanceAction>>(MockBehavior.Loose)).Object,
             (experienceCalculator ?? new Mock<IExperienceCalculator>(MockBehavior.Loose)).Object,
             (coinService ?? new Mock<ICoinService>(MockBehavior.Loose)).Object,
             (attachmentUrlResolver ?? new Mock<IAttachmentUrlResolver>(MockBehavior.Loose)).Object,

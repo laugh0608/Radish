@@ -84,6 +84,29 @@ export interface UserExpGovernanceRecommendationVo {
   voSuggestedAction: string;
 }
 
+export interface UserExperienceGovernanceActionVo {
+  voActionId: number | string;
+  voTargetUserId: number | string;
+  voTargetUserName?: string | null;
+  voActionType: 'Review' | 'Freeze' | 'Unfreeze' | 'Unknown' | string;
+  voActionTypeDisplay: string;
+  voReviewResult?: 'NoIssue' | 'Observe' | 'FreezeSuggest' | null;
+  voReviewResultDisplay?: string | null;
+  voRemark: string;
+  voEvidenceSummary?: string | null;
+  voWindowDays?: number | null;
+  voStatDate?: string | null;
+  voRuleCodes: string[];
+  voRuleLabels: string[];
+  voRecommendationLevel?: 'normal' | 'review' | 'freeze-suggest' | null;
+  voRecommendationTitle?: string | null;
+  voRecommendationReason?: string | null;
+  voFrozenUntil?: string | null;
+  voOperatorId: number | string;
+  voOperatorName?: string | null;
+  voCreateTime: string;
+}
+
 export interface UserExpDailyLimitSnapshotVo {
   voDailyLimitEnabled: boolean;
   voMaxDailyExp: number;
@@ -134,6 +157,18 @@ export interface AdminFreezeExperienceRequest {
   frozenUntil?: string;
 }
 
+export interface AdminRecordExperienceGovernanceReviewRequest {
+  userId: string | number;
+  reviewResult: 'NoIssue' | 'Observe' | 'FreezeSuggest';
+  remark: string;
+  windowDays?: number;
+  statDate?: string;
+  ruleCodes?: string[];
+  ruleLabels?: string[];
+  recommendationLevel?: 'normal' | 'review' | 'freeze-suggest';
+  recommendationReason?: string;
+}
+
 export async function getUserExperience(userId: string | number): Promise<UserExperienceVo> {
   const response = await apiGet<UserExperienceVo>(
     `/api/v1/Experience/GetUserExperience/${encodeURIComponent(String(userId))}`,
@@ -168,6 +203,24 @@ export async function getUserDailyStats(
   );
   if (!response.ok || !response.data) {
     throw new Error(response.message || '获取用户经验统计失败');
+  }
+
+  return response.data;
+}
+
+export async function getUserGovernanceActions(
+  userId: string | number,
+  take: number = 20
+): Promise<UserExperienceGovernanceActionVo[]> {
+  const searchParams = new URLSearchParams({
+    take: String(take),
+  });
+  const response = await apiGet<UserExperienceGovernanceActionVo[]>(
+    `/api/v1/Experience/GetUserGovernanceActions/${encodeURIComponent(String(userId))}?${searchParams.toString()}`,
+    { withAuth: true }
+  );
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '获取经验治理留痕失败');
   }
 
   return response.data;
@@ -231,6 +284,15 @@ export async function adminUnfreezeExperience(userId: string | number): Promise<
   );
   if (!response.ok) {
     throw new Error(response.message || '解冻经验失败');
+  }
+}
+
+export async function adminRecordGovernanceReview(
+  request: AdminRecordExperienceGovernanceReviewRequest
+): Promise<void> {
+  const response = await apiPost('/api/v1/Experience/AdminRecordGovernanceReview', request, { withAuth: true });
+  if (!response.ok) {
+    throw new Error(response.message || '记录复核结论失败');
   }
 }
 

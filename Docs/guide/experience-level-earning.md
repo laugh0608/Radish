@@ -93,6 +93,7 @@ UNIQUE INDEX idx_dedup (user_id, exp_type, business_type, business_id, created_d
 **执行边界**:
 - 冻结仍由管理员结合经验流水、互动来源和目标内容手动执行
 - 当前观察结果用于解释与建议，不直接自动处罚
+- 人工复核结论，以及后续冻结 / 解冻动作，都会写入经验治理留痕，便于后续回看
 
 ## 3.3 初始经验值
 

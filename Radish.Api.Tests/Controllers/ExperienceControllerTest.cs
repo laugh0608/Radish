@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Moq;
@@ -6,6 +7,7 @@ using Radish.Api.Controllers.v1;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
+using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Xunit;
 
@@ -118,6 +120,72 @@ public class ExperienceControllerTest
 
         Assert.True(result.IsSuccess);
         _ = Assert.IsType<PageModel<ExpTransactionVo>>(result.ResponseData);
+    }
+
+    [Fact]
+    public async Task GetUserGovernanceActions_Should_Return_Action_Logs()
+    {
+        var serviceMock = CreateServiceMock();
+        serviceMock
+            .Setup(service => service.GetGovernanceActionsAsync(9527, 20))
+            .ReturnsAsync([
+                new UserExperienceGovernanceActionVo
+                {
+                    VoActionId = 70021,
+                    VoTargetUserId = 9527,
+                    VoActionType = "Review",
+                    VoActionTypeDisplay = "人工复核",
+                    VoReviewResult = "Observe",
+                    VoReviewResultDisplay = "已复核，继续观察",
+                    VoRemark = "已回看经验流水，继续观察。"
+                }
+            ]);
+
+        var controller = CreateController(serviceMock.Object);
+        var result = await controller.GetUserGovernanceActions(9527, 20);
+
+        Assert.True(result.IsSuccess);
+        var payload = Assert.IsType<List<UserExperienceGovernanceActionVo>>(result.ResponseData);
+        Assert.Single(payload);
+        Assert.Equal("人工复核", payload[0].VoActionTypeDisplay);
+    }
+
+    [Fact]
+    public async Task AdminRecordGovernanceReview_Should_Forward_Request()
+    {
+        var request = new AdminRecordExperienceGovernanceReviewDto
+        {
+            UserId = 9527,
+            ReviewResult = "Observe",
+            Remark = "已结合经验流水人工复核，继续观察。",
+            WindowDays = 7,
+            StatDate = new DateTime(2026, 5, 10),
+            RuleCodes = ["LIKE_SHARE_HEAVY"],
+            RuleLabels = ["点赞占比偏高"],
+            RecommendationLevel = "review",
+            RecommendationReason = "最近 7 天重复命中"
+        };
+
+        var serviceMock = CreateServiceMock();
+        serviceMock
+            .Setup(service => service.RecordGovernanceReviewAsync(
+                It.Is<AdminRecordExperienceGovernanceReviewDto>(dto =>
+                    dto.UserId == 9527
+                    && dto.ReviewResult == "Observe"
+                    && dto.WindowDays == 7),
+                10001,
+                "Tester"))
+            .ReturnsAsync(true);
+
+        var controller = CreateController(serviceMock.Object);
+        var result = await controller.AdminRecordGovernanceReview(request);
+
+        Assert.True(result.IsSuccess);
+        Assert.True(Assert.IsType<bool>(result.ResponseData));
+        serviceMock.Verify(service => service.RecordGovernanceReviewAsync(
+            It.IsAny<AdminRecordExperienceGovernanceReviewDto>(),
+            10001,
+            "Tester"), Times.Once);
     }
 
     private static ExperienceController CreateController(IExperienceService experienceService)

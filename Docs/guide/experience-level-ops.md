@@ -177,6 +177,7 @@ public async Task<bool> CheckLevelPrivilegeAsync(long userId, string privilege)
 3. 异常观察与留痕
    - 点赞占比偏高、高亮奖励集中、接近/触达上限等最小可解释规则命中记录
    - 人工复核结论与冻结/解冻操作留痕
+   - 冻结建议只作为人工决策辅助，最终处置仍由管理员结合经验流水与目标内容手动确认
 
 ### 10.3 日志记录
 

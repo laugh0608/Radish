@@ -116,6 +116,27 @@ Authorization: Bearer {{token}}
 GET {{baseUrl}}/api/v1/Experience/GetUserTransactions/1?pageIndex=1&pageSize=20&expType=GOD_COMMENT,SOFA_COMMENT&startDate=2026-05-10%2000:00:00&endDate=2026-05-10%2023:59:59
 Authorization: Bearer {{token}}
 
+### 4.6 管理端查看用户最近治理留痕
+GET {{baseUrl}}/api/v1/Experience/GetUserGovernanceActions/1?take=20
+Authorization: Bearer {{token}}
+
+### 4.7 管理端记录人工复核结论
+POST {{baseUrl}}/api/v1/Experience/AdminRecordGovernanceReview
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "reviewResult": "Observe",
+  "remark": "已回看经验流水、互动来源和目标内容，暂未发现直接异常，继续观察。",
+  "windowDays": 7,
+  "statDate": "2026-05-10 00:00:00",
+  "ruleCodes": ["LIKE_SHARE_HEAVY"],
+  "ruleLabels": ["点赞占比偏高"],
+  "recommendationLevel": "review",
+  "recommendationReason": "最近 7 天同一规则重复命中"
+}
+
 ### ===== 5. 完整测试流程 =====
 
 ### 5.1 第一步：查看初始经验值

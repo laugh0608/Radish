@@ -1,5 +1,6 @@
 using Radish.IService.Base;
 using Radish.Model;
+using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 
 namespace Radish.IService;
@@ -111,6 +112,14 @@ public interface IExperienceService : IBaseService<UserExperience, UserExperienc
     Task<UserExpDailyStatsWindowVo> GetDailyStatsAsync(long userId, int days = 7);
 
     /// <summary>
+    /// 获取用户最近的经验治理留痕
+    /// </summary>
+    /// <param name="userId">用户 ID</param>
+    /// <param name="take">返回数量（默认 20，最大 50）</param>
+    /// <returns>治理动作记录列表</returns>
+    Task<List<UserExperienceGovernanceActionVo>> GetGovernanceActionsAsync(long userId, int take = 20);
+
+    /// <summary>
     /// 更新每日统计（内部方法，经验值发放时调用）
     /// </summary>
     /// <param name="userId">用户 ID</param>
@@ -177,6 +186,18 @@ public interface IExperienceService : IBaseService<UserExperience, UserExperienc
     /// <param name="userId">用户 ID</param>
     /// <returns>是否成功</returns>
     Task<bool> UnfreezeExperienceAsync(long userId, long operatorId, string operatorName);
+
+    /// <summary>
+    /// 记录人工复核结论
+    /// </summary>
+    /// <param name="request">复核记录请求</param>
+    /// <param name="operatorId">操作员 ID</param>
+    /// <param name="operatorName">操作员名称</param>
+    /// <returns>是否成功</returns>
+    Task<bool> RecordGovernanceReviewAsync(
+        AdminRecordExperienceGovernanceReviewDto request,
+        long operatorId,
+        string operatorName);
 
     /// <summary>
     /// 管理员重新计算并更新所有等级配置（根据当前配置文件）

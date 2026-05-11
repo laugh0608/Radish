@@ -14,6 +14,9 @@ using System.Linq.Expressions;
 using Radish.IRepository.Base;
 using Radish.Model.DtoModels;
 using Radish.Service.Base;
+using Radish.Shared.CustomEnum;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 
 namespace Radish.Service;
 
@@ -25,6 +28,7 @@ namespace Radish.Service;
     private readonly IBaseRepository<LevelConfig> _levelConfigRepository;
     private readonly IBaseRepository<UserExpDailyStats> _dailyStatsRepository;
     private readonly IBaseRepository<User> _userRepository;
+    private readonly IBaseRepository<UserExperienceGovernanceAction> _governanceActionRepository;
     private readonly IExperienceCalculator _experienceCalculator;
     private readonly ICoinService _coinService;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
@@ -44,6 +48,8 @@ namespace Radish.Service;
 
     /// <summary>交易记录分页最大页大小</summary>
     private const int MaxTransactionPageSize = 100;
+    private const int DefaultGovernanceActionTake = 20;
+    private const int MaxGovernanceActionTake = 50;
 
     private const string ObservationKindContext = "context";
     private const string ObservationKindAnomaly = "anomaly";
@@ -75,6 +81,10 @@ namespace Radish.Service;
     private const double LikeShareHeavyRatioThreshold = 0.6d;
     private const int HighlightClusterMinExp = 30;
     private const double HighlightClusterRatioThreshold = 0.5d;
+    private static readonly JsonSerializerOptions GovernanceSnapshotJsonOptions = new()
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    };
 
     public ExperienceService(
         IMapper mapper,
@@ -83,6 +93,7 @@ namespace Radish.Service;
         IBaseRepository<LevelConfig> levelConfigRepository,
         IBaseRepository<UserExpDailyStats> dailyStatsRepository,
         IBaseRepository<User> userRepository,
+        IBaseRepository<UserExperienceGovernanceAction> governanceActionRepository,
         IExperienceCalculator experienceCalculator,
         ICoinService coinService,
         IAttachmentUrlResolver attachmentUrlResolver,
@@ -95,6 +106,7 @@ namespace Radish.Service;
         _levelConfigRepository = levelConfigRepository;
         _dailyStatsRepository = dailyStatsRepository;
         _userRepository = userRepository;
+        _governanceActionRepository = governanceActionRepository;
         _experienceCalculator = experienceCalculator;
         _coinService = coinService;
         _attachmentUrlResolver = attachmentUrlResolver;
@@ -566,6 +578,30 @@ namespace Radish.Service;
 
         var stats = await GetOrCreateDailyStatsAsync(userId, statDate);
         await UpdateDailyStatsAsync(stats, amount, expType);
+    }
+
+    /// <summary>
+    /// 获取用户最近的经验治理留痕
+    /// </summary>
+    public async Task<List<UserExperienceGovernanceActionVo>> GetGovernanceActionsAsync(long userId, int take = 20)
+    {
+        try
+        {
+            var safeTake = NormalizeGovernanceActionTake(take);
+            var (actions, _) = await _governanceActionRepository.QueryPageAsync(
+                action => action.TargetUserId == userId && !action.IsDeleted,
+                1,
+                safeTake,
+                action => action.CreateTime,
+                OrderByType.Desc);
+
+            return actions.Select(MapGovernanceAction).ToList();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "获取用户 {UserId} 经验治理留痕失败", userId);
+            throw;
+        }
     }
 
     private static List<UserExpDailyStatsVo> NormalizeDailyStatsWindow(
@@ -1424,6 +1460,68 @@ namespace Radish.Service;
     }
 
     /// <summary>
+    /// 记录人工复核结论
+    /// </summary>
+    public async Task<bool> RecordGovernanceReviewAsync(
+        AdminRecordExperienceGovernanceReviewDto request,
+        long operatorId,
+        string operatorName)
+    {
+        if (request.UserId <= 0)
+        {
+            Log.Warning("记录经验治理复核结论失败：userId 无效（{UserId}）", request.UserId);
+            return false;
+        }
+
+        var reviewResult = ParseGovernanceReviewResult(request.ReviewResult);
+        if (reviewResult == ExperienceGovernanceReviewResultEnum.Unknown)
+        {
+            Log.Warning("记录经验治理复核结论失败：reviewResult 无效（{ReviewResult}），userId={UserId}", request.ReviewResult, request.UserId);
+            return false;
+        }
+
+        var normalizedRemark = NormalizeRequiredSnapshotText(request.Remark, "经验治理人工复核");
+        if (string.IsNullOrWhiteSpace(normalizedRemark))
+        {
+            Log.Warning("记录经验治理复核结论失败：remark 为空，userId={UserId}", request.UserId);
+            return false;
+        }
+
+        try
+        {
+            var targetInfo = await ResolveGovernanceTargetAsync(request.UserId);
+            await AddGovernanceActionAsync(
+                targetUserId: request.UserId,
+                targetUserName: targetInfo.UserName,
+                tenantId: targetInfo.TenantId,
+                actionType: ExperienceGovernanceActionTypeEnum.Review,
+                remark: normalizedRemark,
+                operatorId: operatorId,
+                operatorName: operatorName,
+                reviewResult: reviewResult,
+                windowDays: NormalizeGovernanceWindowDays(request.WindowDays),
+                statDate: request.StatDate?.Date,
+                ruleCodes: request.RuleCodes,
+                ruleLabels: request.RuleLabels,
+                recommendationLevel: NormalizeRecommendationLevel(request.RecommendationLevel),
+                recommendationReason: NormalizeOptionalSnapshotText(request.RecommendationReason));
+
+            Log.Information(
+                "管理员 {OperatorName}({OperatorId}) 记录用户 {UserId} 经验治理复核结论成功，reviewResult={ReviewResult}",
+                operatorName,
+                operatorId,
+                request.UserId,
+                request.ReviewResult);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "记录用户 {UserId} 经验治理复核结论失败", request.UserId);
+            return false;
+        }
+    }
+
+    /// <summary>
     /// 管理员重新计算并更新所有等级配置（根据当前配置文件）
     /// </summary>
     public async Task<List<LevelConfigVo>> RecalculateLevelConfigsAsync(long operatorId, string operatorName)
@@ -1723,6 +1821,17 @@ namespace Radish.Service;
             throw new ConcurrencyException("乐观锁冲突：经验冻结状态已被其他操作修改");
         }
 
+        var targetInfo = await ResolveGovernanceTargetAsync(userId, userExp.TenantId);
+        await AddGovernanceActionAsync(
+            targetUserId: userId,
+            targetUserName: targetInfo.UserName,
+            tenantId: targetInfo.TenantId,
+            actionType: ExperienceGovernanceActionTypeEnum.Freeze,
+            remark: NormalizeRequiredSnapshotText(reason, "管理员冻结经验"),
+            operatorId: operatorId,
+            operatorName: operatorName,
+            frozenUntil: frozenUntil);
+
         Log.Information("用户 {UserId} 经验已冻结，frozenUntil={FrozenUntil}, reason={Reason}", userId, frozenUntil, reason);
         return true;
     }
@@ -1747,6 +1856,7 @@ namespace Radish.Service;
             return true;
         }
 
+        var unfreezeRemark = BuildUnfreezeGovernanceRemark(userExp.FrozenReason);
         var now = DateTime.Now;
         var updatedRows = await _userExpRepository.UpdateColumnsAsync(
             e => new UserExperience
@@ -1766,6 +1876,16 @@ namespace Radish.Service;
         {
             throw new ConcurrencyException("乐观锁冲突：经验解冻状态已被其他操作修改");
         }
+
+        var targetInfo = await ResolveGovernanceTargetAsync(userId, userExp.TenantId);
+        await AddGovernanceActionAsync(
+            targetUserId: userId,
+            targetUserName: targetInfo.UserName,
+            tenantId: targetInfo.TenantId,
+            actionType: ExperienceGovernanceActionTypeEnum.Unfreeze,
+            remark: unfreezeRemark,
+            operatorId: operatorId,
+            operatorName: operatorName);
 
         Log.Information("用户 {UserId} 经验已解冻", userId);
         return true;
@@ -2320,6 +2440,297 @@ namespace Radish.Service;
             .ToList();
     }
 
+    private static int NormalizeGovernanceActionTake(int take)
+    {
+        if (take <= 0)
+        {
+            return DefaultGovernanceActionTake;
+        }
+
+        return Math.Min(take, MaxGovernanceActionTake);
+    }
+
+    private static int? NormalizeGovernanceWindowDays(int? windowDays)
+    {
+        if (!windowDays.HasValue || windowDays.Value <= 0)
+        {
+            return null;
+        }
+
+        return Math.Min(windowDays.Value, 30);
+    }
+
+    private static string NormalizeRequiredSnapshotText(string? value, string fallbackValue, int maxLength = 500)
+    {
+        var normalizedValue = NormalizeOptionalSnapshotText(value, maxLength);
+        return string.IsNullOrWhiteSpace(normalizedValue)
+            ? fallbackValue
+            : normalizedValue;
+    }
+
+    private static string? NormalizeOptionalSnapshotText(string? value, int maxLength = 500)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var trimmed = value.Trim();
+        return trimmed.Length <= maxLength ? trimmed : trimmed[..maxLength];
+    }
+
+    private static string? NormalizeRecommendationLevel(string? value)
+    {
+        return value?.Trim() switch
+        {
+            "normal" => "normal",
+            "review" => "review",
+            "freeze-suggest" => "freeze-suggest",
+            _ => null
+        };
+    }
+
+    private static string? SerializeSnapshotItems(IEnumerable<string>? values)
+    {
+        if (values == null)
+        {
+            return null;
+        }
+
+        var normalizedItems = values
+            .Where(item => !string.IsNullOrWhiteSpace(item))
+            .Select(item => item.Trim())
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+
+        return normalizedItems.Count == 0 ? null : JsonSerializer.Serialize(normalizedItems, GovernanceSnapshotJsonOptions);
+    }
+
+    private static List<string> DeserializeSnapshotItems(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return [];
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<List<string>>(value)
+                ?.Where(item => !string.IsNullOrWhiteSpace(item))
+                .Select(item => item.Trim())
+                .Distinct(StringComparer.Ordinal)
+                .ToList()
+                ?? [];
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    private static ExperienceGovernanceReviewResultEnum ParseGovernanceReviewResult(string? value)
+    {
+        return value?.Trim() switch
+        {
+            "NoIssue" => ExperienceGovernanceReviewResultEnum.NoIssue,
+            "Observe" => ExperienceGovernanceReviewResultEnum.Observe,
+            "FreezeSuggest" => ExperienceGovernanceReviewResultEnum.FreezeSuggest,
+            _ => ExperienceGovernanceReviewResultEnum.Unknown
+        };
+    }
+
+    private static string GetGovernanceActionTypeCode(int actionType)
+    {
+        return (ExperienceGovernanceActionTypeEnum)actionType switch
+        {
+            ExperienceGovernanceActionTypeEnum.Review => "Review",
+            ExperienceGovernanceActionTypeEnum.Freeze => "Freeze",
+            ExperienceGovernanceActionTypeEnum.Unfreeze => "Unfreeze",
+            _ => "Unknown"
+        };
+    }
+
+    private static string GetGovernanceActionTypeDisplay(int actionType)
+    {
+        return (ExperienceGovernanceActionTypeEnum)actionType switch
+        {
+            ExperienceGovernanceActionTypeEnum.Review => "人工复核",
+            ExperienceGovernanceActionTypeEnum.Freeze => "冻结经验",
+            ExperienceGovernanceActionTypeEnum.Unfreeze => "解除冻结",
+            _ => "未知动作"
+        };
+    }
+
+    private static string? GetGovernanceReviewResultCode(int? reviewResult)
+    {
+        return reviewResult switch
+        {
+            (int)ExperienceGovernanceReviewResultEnum.NoIssue => "NoIssue",
+            (int)ExperienceGovernanceReviewResultEnum.Observe => "Observe",
+            (int)ExperienceGovernanceReviewResultEnum.FreezeSuggest => "FreezeSuggest",
+            _ => null
+        };
+    }
+
+    private static string? GetGovernanceReviewResultDisplay(int? reviewResult)
+    {
+        return reviewResult switch
+        {
+            (int)ExperienceGovernanceReviewResultEnum.NoIssue => "已复核，未见异常",
+            (int)ExperienceGovernanceReviewResultEnum.Observe => "已复核，继续观察",
+            (int)ExperienceGovernanceReviewResultEnum.FreezeSuggest => "已复核，可考虑冻结",
+            _ => null
+        };
+    }
+
+    private static string? GetGovernanceRecommendationTitle(string? recommendationLevel)
+    {
+        return recommendationLevel switch
+        {
+            "normal" => "正常观察",
+            "review" => "建议人工复核",
+            "freeze-suggest" => "可考虑临时冻结",
+            _ => null
+        };
+    }
+
+    private static string? BuildGovernanceEvidenceSummary(
+        UserExperienceGovernanceAction action,
+        IReadOnlyCollection<string> ruleLabels)
+    {
+        var segments = new List<string>();
+        if (action.WindowDays.HasValue)
+        {
+            segments.Add($"窗口 {action.WindowDays.Value} 天");
+        }
+
+        if (action.StatDate.HasValue)
+        {
+            segments.Add($"命中日期 {action.StatDate.Value:yyyy-MM-dd}");
+        }
+
+        if (ruleLabels.Count > 0)
+        {
+            segments.Add($"规则 {string.Join("、", ruleLabels)}");
+        }
+
+        var recommendationTitle = GetGovernanceRecommendationTitle(action.RecommendationLevel);
+        if (!string.IsNullOrWhiteSpace(recommendationTitle))
+        {
+            segments.Add($"建议 {recommendationTitle}");
+        }
+
+        return segments.Count == 0 ? null : string.Join("；", segments);
+    }
+
+    private static string BuildUnfreezeGovernanceRemark(string? frozenReason)
+    {
+        var normalizedReason = NormalizeOptionalSnapshotText(frozenReason);
+        return string.IsNullOrWhiteSpace(normalizedReason)
+            ? "管理员解除经验冻结"
+            : NormalizeRequiredSnapshotText($"管理员解除经验冻结；原冻结原因：{normalizedReason}", "管理员解除经验冻结");
+    }
+
+    private UserExperienceGovernanceActionVo MapGovernanceAction(UserExperienceGovernanceAction action)
+    {
+        var ruleCodes = DeserializeSnapshotItems(action.RuleCodes);
+        var ruleLabels = DeserializeSnapshotItems(action.RuleLabels);
+
+        return new UserExperienceGovernanceActionVo
+        {
+            VoActionId = action.Id,
+            VoTargetUserId = action.TargetUserId,
+            VoTargetUserName = action.TargetUserName,
+            VoActionType = GetGovernanceActionTypeCode(action.ActionType),
+            VoActionTypeDisplay = GetGovernanceActionTypeDisplay(action.ActionType),
+            VoReviewResult = GetGovernanceReviewResultCode(action.ReviewResult),
+            VoReviewResultDisplay = GetGovernanceReviewResultDisplay(action.ReviewResult),
+            VoRemark = action.Remark,
+            VoEvidenceSummary = BuildGovernanceEvidenceSummary(action, ruleLabels),
+            VoWindowDays = action.WindowDays,
+            VoStatDate = action.StatDate,
+            VoRuleCodes = ruleCodes,
+            VoRuleLabels = ruleLabels,
+            VoRecommendationLevel = action.RecommendationLevel,
+            VoRecommendationTitle = GetGovernanceRecommendationTitle(action.RecommendationLevel),
+            VoRecommendationReason = action.RecommendationReason,
+            VoFrozenUntil = action.FrozenUntil,
+            VoOperatorId = action.CreateId,
+            VoOperatorName = action.CreateBy,
+            VoCreateTime = action.CreateTime
+        };
+    }
+
+    private async Task<ExperienceGovernanceTargetSnapshot> ResolveGovernanceTargetAsync(
+        long userId,
+        long fallbackTenantId = 0,
+        string? fallbackUserName = null)
+    {
+        var targetUser = await _userRepository.QueryFirstAsync(user => user.Id == userId);
+        var tenantId = fallbackTenantId > 0 ? fallbackTenantId : 0;
+        if (tenantId <= 0)
+        {
+            var userExp = await _userExpRepository.QueryFirstAsync(exp => exp.UserId == userId && !exp.IsDeleted);
+            tenantId = userExp?.TenantId ?? 0;
+        }
+
+        if (tenantId <= 0)
+        {
+            tenantId = targetUser?.TenantId ?? 0;
+        }
+
+        var userName = !string.IsNullOrWhiteSpace(targetUser?.UserName)
+            ? targetUser!.UserName!.Trim()
+            : !string.IsNullOrWhiteSpace(fallbackUserName)
+                ? fallbackUserName.Trim()
+                : $"User-{userId}";
+
+        return new ExperienceGovernanceTargetSnapshot(tenantId, userName);
+    }
+
+    private async Task AddGovernanceActionAsync(
+        long targetUserId,
+        string targetUserName,
+        long tenantId,
+        ExperienceGovernanceActionTypeEnum actionType,
+        string remark,
+        long operatorId,
+        string operatorName,
+        ExperienceGovernanceReviewResultEnum? reviewResult = null,
+        int? windowDays = null,
+        DateTime? statDate = null,
+        IEnumerable<string>? ruleCodes = null,
+        IEnumerable<string>? ruleLabels = null,
+        string? recommendationLevel = null,
+        string? recommendationReason = null,
+        DateTime? frozenUntil = null)
+    {
+        var now = DateTime.Now;
+        var action = new UserExperienceGovernanceAction
+        {
+            TargetUserId = targetUserId,
+            TargetUserName = NormalizeOptionalSnapshotText(targetUserName, 100) ?? $"User-{targetUserId}",
+            TenantId = tenantId > 0 ? tenantId : 0,
+            ActionType = (int)actionType,
+            ReviewResult = reviewResult.HasValue && reviewResult.Value != ExperienceGovernanceReviewResultEnum.Unknown
+                ? (int)reviewResult.Value
+                : null,
+            Remark = NormalizeRequiredSnapshotText(remark, "经验治理动作"),
+            WindowDays = NormalizeGovernanceWindowDays(windowDays),
+            StatDate = statDate?.Date,
+            RuleCodes = SerializeSnapshotItems(ruleCodes),
+            RuleLabels = SerializeSnapshotItems(ruleLabels),
+            RecommendationLevel = NormalizeRecommendationLevel(recommendationLevel),
+            RecommendationReason = NormalizeOptionalSnapshotText(recommendationReason),
+            FrozenUntil = frozenUntil,
+            CreateTime = now,
+            CreateBy = operatorName,
+            CreateId = operatorId
+        };
+
+        await _governanceActionRepository.AddAsync(action);
+    }
+
     /// <summary>
     /// 更新每日统计
     /// </summary>
@@ -2389,6 +2800,7 @@ namespace Radish.Service;
         public int MaxExpFromLogin { get; init; }
     }
 
+    private sealed record ExperienceGovernanceTargetSnapshot(long TenantId, string UserName);
     private sealed record AnomalyObservationHit(DateTime StatDate, UserExpDailyStatObservationVo Observation);
 
     #endregion

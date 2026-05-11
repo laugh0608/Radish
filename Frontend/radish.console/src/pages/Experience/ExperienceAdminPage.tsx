@@ -14,15 +14,18 @@ import {
 import { ReloadOutlined } from '@radish/ui';
 import {
   adminAdjustExperience,
+  adminRecordGovernanceReview,
   type ExpTransactionVo,
   adminFreezeExperience,
   adminUnfreezeExperience,
   getLevelConfigs,
   type UserExpAnomalyRuleSummaryVo,
   getUserDailyStats,
+  getUserGovernanceActions,
   getUserTransactions,
   type UserExpGovernanceRecommendationVo,
   type UserExpDailyLimitSnapshotVo,
+  type UserExperienceGovernanceActionVo,
   getUserExperience,
   recalculateLevelConfigs,
   type LevelConfigVo,
@@ -49,7 +52,23 @@ interface AdjustFormValues {
   reason?: string;
 }
 
+type GovernanceReviewResult = 'NoIssue' | 'Observe' | 'FreezeSuggest';
 type StatsWindowDays = 7 | 30;
+
+interface GovernanceReviewFormValues {
+  reviewResult: GovernanceReviewResult;
+  remark: string;
+}
+
+interface GovernanceReviewDraftContext {
+  windowDays?: number;
+  statDate?: string | null;
+  ruleCodes: string[];
+  ruleLabels: string[];
+  recommendationLevel?: UserExpGovernanceRecommendationVo['voLevel'];
+  recommendationReason?: string | null;
+  hint: string;
+}
 
 const LIKE_TRANSACTION_FILTER = 'RECEIVE_LIKE,GIVE_LIKE';
 const HIGHLIGHT_TRANSACTION_FILTER = 'GOD_COMMENT,SOFA_COMMENT';
@@ -149,6 +168,52 @@ function getRuleSeverityLabel(severity?: UserExpAnomalyRuleSummaryVo['voSeverity
   }
 }
 
+function getGovernanceReviewResultTagColor(result?: UserExperienceGovernanceActionVo['voReviewResult']): 'success' | 'warning' | 'error' | 'default' {
+  switch (result) {
+    case 'NoIssue':
+      return 'success';
+    case 'FreezeSuggest':
+      return 'error';
+    case 'Observe':
+      return 'warning';
+    default:
+      return 'default';
+  }
+}
+
+function getGovernanceActionTagColor(actionType?: UserExperienceGovernanceActionVo['voActionType']): 'success' | 'warning' | 'error' | 'processing' | 'default' {
+  switch (actionType) {
+    case 'Review':
+      return 'processing';
+    case 'Freeze':
+      return 'error';
+    case 'Unfreeze':
+      return 'success';
+    default:
+      return 'default';
+  }
+}
+
+function getGovernanceReviewResultForRecommendationLevel(
+  level?: UserExpGovernanceRecommendationVo['voLevel']
+): GovernanceReviewResult {
+  switch (level) {
+    case 'freeze-suggest':
+      return 'FreezeSuggest';
+    case 'normal':
+      return 'NoIssue';
+    case 'review':
+    default:
+      return 'Observe';
+  }
+}
+
+function getGovernanceReviewResultForRuleSeverity(
+  severity?: UserExpAnomalyRuleSummaryVo['voSeverity']
+): GovernanceReviewResult {
+  return severity === 'freeze-suggest' ? 'FreezeSuggest' : 'Observe';
+}
+
 function getTransactionExpTypePresetForRuleCodes(ruleCodes: string[]): string | undefined {
   const hasLikeRule = ruleCodes.some((ruleCode) => LIKE_RELATED_OBSERVATION_RULE_CODES.has(ruleCode));
   const hasHighlightRule = ruleCodes.some((ruleCode) => HIGHLIGHT_RELATED_OBSERVATION_RULE_CODES.has(ruleCode));
@@ -186,6 +251,7 @@ export const ExperienceAdminPage = () => {
   const [statsWindowDays, setStatsWindowDays] = useState<StatsWindowDays>(7);
   const [levels, setLevels] = useState<LevelConfigVo[]>([]);
   const [transactions, setTransactions] = useState<ExpTransactionVo[]>([]);
+  const [governanceActions, setGovernanceActions] = useState<UserExperienceGovernanceActionVo[]>([]);
   const [transactionTotal, setTransactionTotal] = useState(0);
   const [transactionPageIndex, setTransactionPageIndex] = useState(1);
   const [transactionPageSize, setTransactionPageSize] = useState(10);
@@ -193,17 +259,22 @@ export const ExperienceAdminPage = () => {
   const [transactionStartDate, setTransactionStartDate] = useState<Dayjs | null>(null);
   const [transactionEndDate, setTransactionEndDate] = useState<Dayjs | null>(null);
   const [transactionReviewHint, setTransactionReviewHint] = useState<string | null>(null);
+  const [reviewContextDraft, setReviewContextDraft] = useState<GovernanceReviewDraftContext | null>(null);
   const [loadingExperience, setLoadingExperience] = useState(false);
   const [loadingDailyStats, setLoadingDailyStats] = useState(false);
   const [loadingLevels, setLoadingLevels] = useState(false);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
+  const [loadingGovernanceActions, setLoadingGovernanceActions] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [freezing, setFreezing] = useState(false);
   const [unfreezing, setUnfreezing] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
   const [recalculating, setRecalculating] = useState(false);
   const [form] = Form.useForm<AdjustFormValues>();
   const [freezeForm] = Form.useForm<FreezeFormValues>();
+  const [reviewForm] = Form.useForm<GovernanceReviewFormValues>();
   const transactionSectionRef = useRef<HTMLElement | null>(null);
+  const reviewSectionRef = useRef<HTMLElement | null>(null);
   const freezeSectionRef = useRef<HTMLElement | null>(null);
 
   const canAdjust = usePermission(CONSOLE_PERMISSIONS.experienceAdjust);
@@ -260,6 +331,35 @@ export const ExperienceAdminPage = () => {
 
     void loadDailyStats(loadedUserId, statsWindowDays);
   }, [loadedUserId, statsWindowDays]);
+
+  const loadGovernanceActions = async (userId: string, take: number = 20) => {
+    const normalizedUserId = normalizePositiveLongIdInput(userId);
+    if (!normalizedUserId) {
+      setGovernanceActions([]);
+      return;
+    }
+
+    try {
+      setLoadingGovernanceActions(true);
+      const result = await getUserGovernanceActions(normalizedUserId, take);
+      setGovernanceActions(result);
+    } catch (error) {
+      log.error('ExperienceAdminPage', '加载经验治理留痕失败:', error);
+      message.error(error instanceof Error ? error.message : '加载经验治理留痕失败');
+      setGovernanceActions([]);
+    } finally {
+      setLoadingGovernanceActions(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!loadedUserId) {
+      setGovernanceActions([]);
+      return;
+    }
+
+    void loadGovernanceActions(loadedUserId);
+  }, [loadedUserId]);
 
   const loadTransactions = async (
     userId: string,
@@ -323,6 +423,9 @@ export const ExperienceAdminPage = () => {
     setTransactionStartDate(null);
     setTransactionEndDate(null);
     setTransactionReviewHint(null);
+    setGovernanceActions([]);
+    setReviewContextDraft(null);
+    reviewForm.resetFields();
     form.setFieldValue('userId', userId);
     freezeForm.setFieldsValue({
       userId,
@@ -356,6 +459,7 @@ export const ExperienceAdminPage = () => {
         reason: result.voFrozenReason || '',
         frozenUntil: result.voFrozenUntil ? dayjs(result.voFrozenUntil) : undefined,
       });
+      reviewForm.resetFields();
     } catch (error) {
       log.error('ExperienceAdminPage', '加载用户经验失败:', error);
       message.error(error instanceof Error ? error.message : '加载用户经验失败');
@@ -366,6 +470,10 @@ export const ExperienceAdminPage = () => {
 
   const focusTransactionSection = () => {
     transactionSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const focusReviewSection = () => {
+    reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const focusFreezeSection = () => {
@@ -383,6 +491,20 @@ export const ExperienceAdminPage = () => {
     setTransactionEndDate(options.date ?? null);
     setTransactionReviewHint(options.hint);
     focusTransactionSection();
+  };
+
+  const applyGovernanceReviewDraft = (options: {
+    reviewResult: GovernanceReviewResult;
+    remark: string;
+    context: GovernanceReviewDraftContext;
+  }) => {
+    reviewForm.setFieldsValue({
+      reviewResult: options.reviewResult,
+      remark: options.remark,
+    });
+    setReviewContextDraft(options.context);
+    focusReviewSection();
+    message.success('已带入复核结论草稿');
   };
 
   const prefillFreezeReason = (reason: string) => {
@@ -415,6 +537,42 @@ export const ExperienceAdminPage = () => {
     );
   };
 
+  const handleRecommendationGovernanceReview = (recommendation: UserExpGovernanceRecommendationVo) => {
+    applyGovernanceReviewDraft({
+      reviewResult: getGovernanceReviewResultForRecommendationLevel(recommendation.voLevel),
+      remark: `经验治理复核：最近 ${statsWindowDays} 天系统建议「${recommendation.voTitle}」，已结合经验流水与相关来源人工复核。`,
+      context: {
+        windowDays: statsWindowDays,
+        ruleCodes: [],
+        ruleLabels: [],
+        recommendationLevel: recommendation.voLevel,
+        recommendationReason: recommendation.voReason,
+        hint: `已带入当前治理建议「${recommendation.voTitle}」作为复核上下文。`,
+      },
+    });
+  };
+
+  const handleRuleGovernanceReview = (rule: UserExpAnomalyRuleSummaryVo) => {
+    const latestHitDate = rule.voLatestHitDate ? formatFullStatDate(rule.voLatestHitDate) : null;
+    applyGovernanceReviewDraft({
+      reviewResult: getGovernanceReviewResultForRuleSeverity(rule.voSeverity),
+      remark: latestHitDate
+        ? `经验治理复核：最近 ${statsWindowDays} 天规则「${rule.voRuleLabel}」命中 ${rule.voHitDays} 天，最近命中 ${latestHitDate}。`
+        : `经验治理复核：最近 ${statsWindowDays} 天规则「${rule.voRuleLabel}」命中 ${rule.voHitDays} 天。`,
+      context: {
+        windowDays: statsWindowDays,
+        statDate: rule.voLatestHitDate,
+        ruleCodes: [rule.voRuleCode],
+        ruleLabels: [rule.voRuleLabel],
+        recommendationLevel: governanceRecommendation?.voLevel,
+        recommendationReason: rule.voSuggestedAction,
+        hint: latestHitDate
+          ? `已带入规则「${rule.voRuleLabel}」和最近命中日 ${latestHitDate} 的复核上下文。`
+          : `已带入规则「${rule.voRuleLabel}」的复核上下文。`,
+      },
+    });
+  };
+
   const handleDayReview = (record: UserExpDailyStatsVo) => {
     const anomalyRuleCodes = (record.voObservations ?? [])
       .filter((observation) => observation.voKind === 'anomaly')
@@ -433,6 +591,69 @@ export const ExperienceAdminPage = () => {
     prefillFreezeReason(
       `经验异常待复核：${formatFullStatDate(record.voStatDate)} 命中 ${anomalyLabels.join('、')}，请结合经验流水、互动来源和目标内容人工复核。`
     );
+  };
+
+  const handleDayGovernanceReview = (record: UserExpDailyStatsVo) => {
+    const anomalyObservations = (record.voObservations ?? [])
+      .filter((observation) => observation.voKind === 'anomaly');
+    applyGovernanceReviewDraft({
+      reviewResult: anomalyObservations.length >= 2 ? 'FreezeSuggest' : 'Observe',
+      remark: `经验治理复核：${formatFullStatDate(record.voStatDate)} 命中 ${anomalyObservations.map((observation) => observation.voLabel).join('、')}，已结合经验流水与相关来源人工复核。`,
+      context: {
+        windowDays: statsWindowDays,
+        statDate: record.voStatDate,
+        ruleCodes: anomalyObservations.map((observation) => observation.voRuleCode),
+        ruleLabels: anomalyObservations.map((observation) => observation.voLabel),
+        recommendationLevel: governanceRecommendation?.voLevel,
+        recommendationReason: governanceRecommendation?.voReason,
+        hint: `已带入 ${formatFullStatDate(record.voStatDate)} 的异常命中记录作为复核上下文。`,
+      },
+    });
+  };
+
+  const handleRecordGovernanceReview = async () => {
+    if (!loadedUserId) {
+      message.error('请先查询用户经验');
+      return;
+    }
+
+    try {
+      const values = await reviewForm.validateFields();
+      const normalizedUserId = normalizePositiveLongIdInput(loadedUserId);
+      if (!normalizedUserId) {
+        message.error('请输入有效的用户 ID');
+        return;
+      }
+
+      setReviewing(true);
+      await adminRecordGovernanceReview({
+        userId: normalizedUserId,
+        reviewResult: values.reviewResult,
+        remark: values.remark.trim(),
+        windowDays: reviewContextDraft?.windowDays,
+        statDate: reviewContextDraft?.statDate
+          ? dayjs(reviewContextDraft.statDate).startOf('day').format('YYYY-MM-DD HH:mm:ss')
+          : undefined,
+        ruleCodes: reviewContextDraft?.ruleCodes,
+        ruleLabels: reviewContextDraft?.ruleLabels,
+        recommendationLevel: reviewContextDraft?.recommendationLevel,
+        recommendationReason: reviewContextDraft?.recommendationReason ?? undefined,
+      });
+
+      message.success('复核结论已记录');
+      await loadGovernanceActions(normalizedUserId);
+      reviewForm.resetFields();
+      setReviewContextDraft(null);
+    } catch (error) {
+      if (isFormValidationError(error)) {
+        return;
+      }
+
+      log.error('ExperienceAdminPage', '记录经验治理复核结论失败:', error);
+      message.error(error instanceof Error ? error.message : '记录复核结论失败');
+    } finally {
+      setReviewing(false);
+    }
   };
 
   const handleAdjust = async () => {
@@ -486,6 +707,7 @@ export const ExperienceAdminPage = () => {
 
       message.success('经验已冻结');
       await loadExperience(normalizedUserId, { showInvalidMessage: false });
+      await loadGovernanceActions(normalizedUserId);
     } catch (error) {
       if (isFormValidationError(error)) {
         return;
@@ -513,6 +735,7 @@ export const ExperienceAdminPage = () => {
 
       message.success('经验已解冻');
       await loadExperience(normalizedUserId, { showInvalidMessage: false });
+      await loadGovernanceActions(normalizedUserId);
       freezeForm.setFieldsValue({
         userId: normalizedUserId,
         reason: '',
@@ -673,7 +896,7 @@ export const ExperienceAdminPage = () => {
     {
       title: '复核动作',
       key: 'reviewActions',
-      width: 220,
+      width: 320,
       render: (_, record) => {
         const hasAnomaly = (record.voObservations ?? []).some((observation) => observation.voKind === 'anomaly');
         if (!hasAnomaly) {
@@ -684,6 +907,13 @@ export const ExperienceAdminPage = () => {
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <Button onClick={() => handleDayReview(record)}>
               查看流水
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={!canFreeze}
+              onClick={() => handleDayGovernanceReview(record)}
+            >
+              带入复核结论
             </Button>
             <Button
               variant="secondary"
@@ -761,6 +991,75 @@ export const ExperienceAdminPage = () => {
       dataIndex: 'voRemark',
       key: 'voRemark',
       render: (value?: string | null) => value || '-',
+    },
+  ];
+
+  const governanceActionColumns: TableColumnsType<UserExperienceGovernanceActionVo> = [
+    {
+      title: '动作',
+      key: 'actionType',
+      width: 200,
+      render: (_, record) => (
+        <div style={{ display: 'grid', gap: 6 }}>
+          <div>
+            <Tag color={getGovernanceActionTagColor(record.voActionType)}>
+              {record.voActionTypeDisplay}
+            </Tag>
+          </div>
+          {record.voActionType === 'Freeze' && (
+            <span style={{ color: '#8c8c8c' }}>
+              到期：{record.voFrozenUntil ? formatDisplayTime(record.voFrozenUntil) : '永久冻结'}
+            </span>
+          )}
+        </div>
+      ),
+    },
+    {
+      title: '复核结论',
+      key: 'reviewResult',
+      width: 180,
+      render: (_, record) => record.voReviewResultDisplay ? (
+        <Tag color={getGovernanceReviewResultTagColor(record.voReviewResult)}>
+          {record.voReviewResultDisplay}
+        </Tag>
+      ) : <span style={{ color: '#8c8c8c' }}>-</span>,
+    },
+    {
+      title: '证据快照',
+      key: 'evidence',
+      width: 360,
+      render: (_, record) => (
+        <div style={{ display: 'grid', gap: 6 }}>
+          <span>{record.voEvidenceSummary || '-'}</span>
+          {record.voRecommendationReason && (
+            <span style={{ color: '#8c8c8c' }}>
+              建议原因：{record.voRecommendationReason}
+            </span>
+          )}
+        </div>
+      ),
+    },
+    {
+      title: '备注',
+      dataIndex: 'voRemark',
+      key: 'voRemark',
+      width: 320,
+      render: (value: string) => (
+        <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+          {value}
+        </div>
+      ),
+    },
+    {
+      title: '操作人 / 时间',
+      key: 'operator',
+      width: 220,
+      render: (_, record) => (
+        <div style={{ display: 'grid', gap: 6 }}>
+          <span>{record.voOperatorName || 'System'}（ID: {record.voOperatorId}）</span>
+          <span style={{ color: '#8c8c8c' }}>{formatDisplayTime(record.voCreateTime)}</span>
+        </div>
+      ),
     },
   ];
 
@@ -924,8 +1223,15 @@ export const ExperienceAdminPage = () => {
                 <div style={{ marginTop: 8, color: '#8c8c8c' }}>
                   建议动作：{governanceRecommendation.voSuggestedAction}
                 </div>
-                {governanceRecommendation.voLevel !== 'normal' && (
-                  <div style={{ marginTop: 12 }}>
+                <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <Button
+                    variant="secondary"
+                    disabled={!canFreeze}
+                    onClick={() => handleRecommendationGovernanceReview(governanceRecommendation)}
+                  >
+                    带入复核结论
+                  </Button>
+                  {governanceRecommendation.voLevel !== 'normal' && (
                     <Button
                       variant="secondary"
                       disabled={!canFreeze}
@@ -933,8 +1239,8 @@ export const ExperienceAdminPage = () => {
                     >
                       带入冻结原因
                     </Button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             )}
 
@@ -978,6 +1284,13 @@ export const ExperienceAdminPage = () => {
                         <Button
                           variant="secondary"
                           disabled={!canFreeze}
+                          onClick={() => handleRuleGovernanceReview(rule)}
+                        >
+                          带入复核结论
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          disabled={!canFreeze}
                           onClick={() => handleRuleFreezeReason(rule)}
                         >
                           带入冻结原因
@@ -1003,7 +1316,7 @@ export const ExperienceAdminPage = () => {
               dataSource={dailyStats}
               loading={loadingDailyStats}
               pagination={false}
-              scroll={{ x: 1380 }}
+              scroll={{ x: 1520 }}
               style={{ marginTop: 20 }}
               locale={{
                 emptyText: loadingDailyStats
@@ -1108,6 +1421,110 @@ export const ExperienceAdminPage = () => {
         ) : (
           <div style={{ marginTop: 20, color: '#8c8c8c' }}>
             请先查询用户经验，再查看经验流水。
+          </div>
+        )}
+      </section>
+
+      <section className="admin-feature-card" ref={reviewSectionRef}>
+        <div className="admin-feature-header">
+          <div>
+            <h3>复核结论与留痕</h3>
+            <p className="admin-feature-subtle">记录人工复核结论；冻结 / 解冻动作会自动写入治理留痕，便于后续回看。</p>
+          </div>
+        </div>
+
+        {loadedUserId ? (
+          <>
+            <div style={{ marginTop: 16, color: '#8c8c8c' }}>
+              当前目标：{experience?.voUserName || '未命名用户'}（ID: {loadedUserId}）
+            </div>
+
+            <div className="admin-feature-banner" style={{ marginTop: 16 }}>
+              {reviewContextDraft ? (
+                <>
+                  <div>{reviewContextDraft.hint}</div>
+                  {reviewContextDraft.recommendationReason && (
+                    <div style={{ marginTop: 8, color: '#8c8c8c' }}>
+                      建议原因快照：{reviewContextDraft.recommendationReason}
+                    </div>
+                  )}
+                </>
+              ) : '可从上方治理建议、规则摘要或每日异常一键带入复核草稿，也可直接手动填写结论。'}
+            </div>
+
+            <Form form={reviewForm} layout="vertical" className="admin-feature-form" style={{ marginTop: 20 }}>
+              <Form.Item
+                name="reviewResult"
+                label="复核结论"
+                rules={[{ required: true, message: '请选择复核结论' }]}
+              >
+                <Select
+                  placeholder="选择复核结论"
+                  options={[
+                    { label: '已复核，未见异常', value: 'NoIssue' },
+                    { label: '已复核，继续观察', value: 'Observe' },
+                    { label: '已复核，可考虑冻结', value: 'FreezeSuggest' },
+                  ]}
+                  disabled={!canFreeze || reviewing}
+                />
+              </Form.Item>
+
+              <Form.Item
+                name="remark"
+                label="复核备注"
+                rules={[
+                  { required: true, message: '请输入复核备注' },
+                  { max: 500, message: '复核备注不能超过500个字符' },
+                ]}
+              >
+                <Input.TextArea
+                  rows={4}
+                  maxLength={500}
+                  showCount
+                  placeholder="例如：已回看对应日期经验流水与目标内容，暂未发现异常；继续观察。"
+                  disabled={!canFreeze || reviewing}
+                />
+              </Form.Item>
+
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                <Button
+                  variant="primary"
+                  disabled={!canFreeze || reviewing}
+                  onClick={() => {
+                    void handleRecordGovernanceReview();
+                  }}
+                >
+                  {reviewing ? '记录中...' : '记录复核结论'}
+                </Button>
+                <Button
+                  disabled={reviewing}
+                  onClick={() => {
+                    reviewForm.resetFields();
+                    setReviewContextDraft(null);
+                  }}
+                >
+                  清空复核草稿
+                </Button>
+              </div>
+            </Form>
+
+            <div style={{ marginTop: 24, fontWeight: 600 }}>最近治理留痕</div>
+            <Table<UserExperienceGovernanceActionVo>
+              rowKey="voActionId"
+              columns={governanceActionColumns}
+              dataSource={governanceActions}
+              loading={loadingGovernanceActions}
+              pagination={false}
+              scroll={{ x: 1280 }}
+              style={{ marginTop: 16 }}
+              locale={{
+                emptyText: loadingGovernanceActions ? '治理留痕加载中...' : '该用户暂无治理留痕',
+              }}
+            />
+          </>
+        ) : (
+          <div style={{ marginTop: 20, color: '#8c8c8c' }}>
+            请先查询用户经验，再记录复核结论或查看治理留痕。
           </div>
         )}
       </section>

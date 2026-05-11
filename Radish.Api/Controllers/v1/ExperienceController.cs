@@ -102,6 +102,24 @@ public class ExperienceController : ControllerBase
         return MessageModel<UserExpDailyStatsWindowVo>.Success("查询成功", result);
     }
 
+    /// <summary>
+    /// 管理端按用户查询经验治理留痕
+    /// </summary>
+    [HttpGet("{userId:long}")]
+    [RequireConsolePermission(ConsolePermissions.ExperienceView)]
+    public async Task<MessageModel<List<UserExperienceGovernanceActionVo>>> GetUserGovernanceActions(
+        long userId,
+        [FromQuery] int take = 20)
+    {
+        if (userId <= 0)
+        {
+            return MessageModel<List<UserExperienceGovernanceActionVo>>.Message(false, "用户ID无效", default!);
+        }
+
+        var result = await _experienceService.GetGovernanceActionsAsync(userId, take);
+        return MessageModel<List<UserExperienceGovernanceActionVo>>.Success("查询成功", result);
+    }
+
     #endregion
 
     #region 等级配置
@@ -311,6 +329,29 @@ public class ExperienceController : ControllerBase
         return result
             ? MessageModel<bool>.Success("解冻成功", true)
             : MessageModel<bool>.Message(false, "解冻失败", false);
+    }
+
+    /// <summary>
+    /// 管理员记录经验治理人工复核结论
+    /// </summary>
+    [HttpPost]
+    [RequireConsolePermission(ConsolePermissions.ExperienceFreeze)]
+    public async Task<MessageModel<bool>> AdminRecordGovernanceReview([FromBody] AdminRecordExperienceGovernanceReviewDto request)
+    {
+        var operatorId = GetCurrentUserId();
+        if (operatorId <= 0)
+        {
+            return MessageModel<bool>.Message(false, "未登录", false);
+        }
+
+        var result = await _experienceService.RecordGovernanceReviewAsync(
+            request,
+            operatorId,
+            GetCurrentOperatorName());
+
+        return result
+            ? MessageModel<bool>.Success("复核结论记录成功", true)
+            : MessageModel<bool>.Message(false, "复核结论记录失败", false);
     }
 
     /// <summary>
