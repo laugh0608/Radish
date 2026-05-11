@@ -118,3 +118,8 @@ Authorization: Bearer {{Access_Token}}
 GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetActionLogs?pageIndex=1&pageSize=10
 Accept: application/json
 Authorization: Bearer {{Access_Token}}
+
+### 管理端：按举报单 / 动作类型 / 生效状态筛选治理动作记录
+GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetActionLogs?pageIndex=1&pageSize=10&sourceReportId={{ReviewReportId}}&actionType=Mute&isActive=true&keyword=reviewer
+Accept: application/json
+Authorization: Bearer {{Access_Token}}

@@ -166,7 +166,14 @@ public class ContentModerationControllerTest
     {
         var serviceMock = CreateServiceMock();
         serviceMock
-            .Setup(s => s.GetActionLogsAsync(1, 20, null))
+            .Setup(s => s.GetActionLogsAsync(It.Is<ContentModerationActionLogQueryDto>(query =>
+                query.PageIndex == 1 &&
+                query.PageSize == 20 &&
+                query.TargetUserId == null &&
+                query.SourceReportId == 70003 &&
+                query.ActionType == "Mute" &&
+                query.IsActive == true &&
+                query.Keyword == "reviewer")))
             .ReturnsAsync(new VoPagedResult<UserModerationActionVo>
             {
                 VoItems =
@@ -187,7 +194,15 @@ public class ContentModerationControllerTest
             });
 
         var controller = CreateController(serviceMock.Object);
-        var result = await controller.GetActionLogs();
+        var result = await controller.GetActionLogs(new ContentModerationActionLogQueryDto
+        {
+            PageIndex = 1,
+            PageSize = 20,
+            SourceReportId = 70003,
+            ActionType = "Mute",
+            IsActive = true,
+            Keyword = "reviewer"
+        });
 
         Assert.True(result.IsSuccess);
         Assert.Equal(200, result.StatusCode);

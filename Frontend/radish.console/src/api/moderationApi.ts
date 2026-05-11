@@ -69,6 +69,16 @@ export interface ReviewContentReportRequest {
   reviewRemark?: string;
 }
 
+export interface ContentModerationActionLogQuery {
+  pageIndex?: number;
+  pageSize?: number;
+  targetUserId?: number;
+  sourceReportId?: number;
+  actionType?: string;
+  isActive?: boolean;
+  keyword?: string;
+}
+
 export async function getReviewQueue(params: {
   status?: number;
   targetType?: string;
@@ -118,16 +128,24 @@ export async function reviewReport(request: ReviewContentReportRequest): Promise
   return response.data;
 }
 
-export async function getActionLogs(params: {
-  pageIndex?: number;
-  pageSize?: number;
-  targetUserId?: number;
-}): Promise<VoPagedResult<UserModerationActionVo>> {
+export async function getActionLogs(params: ContentModerationActionLogQuery): Promise<VoPagedResult<UserModerationActionVo>> {
   const searchParams = new URLSearchParams();
   searchParams.set('pageIndex', String(params.pageIndex ?? 1));
   searchParams.set('pageSize', String(params.pageSize ?? 20));
   if (params.targetUserId) {
     searchParams.set('targetUserId', String(params.targetUserId));
+  }
+  if (params.sourceReportId) {
+    searchParams.set('sourceReportId', String(params.sourceReportId));
+  }
+  if (params.actionType?.trim()) {
+    searchParams.set('actionType', params.actionType.trim());
+  }
+  if (params.isActive !== undefined) {
+    searchParams.set('isActive', String(params.isActive));
+  }
+  if (params.keyword?.trim()) {
+    searchParams.set('keyword', params.keyword.trim());
   }
 
   const response = await apiGet<VoPagedResult<UserModerationActionVo>>(

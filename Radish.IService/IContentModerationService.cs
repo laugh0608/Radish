@@ -35,5 +35,5 @@ public interface IContentModerationService : IBaseService<ContentReport, Content
     Task<ContentModerationPermissionVo> GetPublishPermissionAsync(long userId);
 
     /// <summary>分页获取治理动作记录</summary>
-    Task<VoPagedResult<UserModerationActionVo>> GetActionLogsAsync(int pageIndex, int pageSize, long? targetUserId = null);
+    Task<VoPagedResult<UserModerationActionVo>> GetActionLogsAsync(ContentModerationActionLogQueryDto query);
 }

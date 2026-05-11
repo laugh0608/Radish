@@ -447,15 +447,37 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
         };
     }
 
-    public async Task<VoPagedResult<UserModerationActionVo>> GetActionLogsAsync(int pageIndex, int pageSize, long? targetUserId = null)
+    public async Task<VoPagedResult<UserModerationActionVo>> GetActionLogsAsync(ContentModerationActionLogQueryDto query)
     {
-        var safePageIndex = NormalizePageIndex(pageIndex);
-        var safePageSize = NormalizePageSize(pageSize);
-        var hasTargetUserFilter = targetUserId.HasValue && targetUserId.Value > 0;
-        var targetUserValue = targetUserId ?? 0;
+        ArgumentNullException.ThrowIfNull(query);
+
+        var safePageIndex = NormalizePageIndex(query.PageIndex);
+        var safePageSize = NormalizePageSize(query.PageSize);
+        var normalizedTargetUserId = query.TargetUserId.HasValue && query.TargetUserId.Value > 0
+            ? query.TargetUserId.Value
+            : (long?)null;
+        var normalizedSourceReportId = query.SourceReportId.HasValue && query.SourceReportId.Value > 0
+            ? query.SourceReportId.Value
+            : (long?)null;
+        var normalizedActionType = NormalizeActionLogActionTypeFilter(query.ActionType);
+        var normalizedKeyword = NormalizeActionLogKeyword(query.Keyword);
+        var hasKeyword = !string.IsNullOrWhiteSpace(normalizedKeyword);
+        var hasKeywordLongId = long.TryParse(normalizedKeyword, out var keywordLongId) && keywordLongId > 0;
 
         var (actions, totalCount) = await _moderationActionRepository.QueryPageAsync(
-            a => !a.IsDeleted && (!hasTargetUserFilter || a.TargetUserId == targetUserValue),
+            a => !a.IsDeleted
+                 && (!normalizedTargetUserId.HasValue || a.TargetUserId == normalizedTargetUserId.Value)
+                 && (!normalizedSourceReportId.HasValue || (a.SourceReportId.HasValue && a.SourceReportId.Value == normalizedSourceReportId.Value))
+                 && (!normalizedActionType.HasValue || a.ActionType == normalizedActionType.Value)
+                 && (!query.IsActive.HasValue || a.IsActive == query.IsActive.Value)
+                 && (!hasKeyword
+                     || (hasKeywordLongId
+                         && (a.Id == keywordLongId
+                             || a.TargetUserId == keywordLongId
+                             || (a.SourceReportId.HasValue && a.SourceReportId.Value == keywordLongId)))
+                     || (a.TargetUserName != null && a.TargetUserName.Contains(normalizedKeyword!))
+                     || a.Reason.Contains(normalizedKeyword!)
+                     || a.CreateBy.Contains(normalizedKeyword!)),
             safePageIndex,
             safePageSize,
             a => a.CreateTime,
@@ -769,9 +791,32 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
             : MultiWhitespacePattern.Replace(normalizedKeyword, " ").Trim();
     }
 
+    private static string? NormalizeActionLogKeyword(string? keyword)
+    {
+        return NormalizeQueueKeyword(keyword);
+    }
+
     private static string? NormalizeOptionalFilter(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private static int? NormalizeActionLogActionTypeFilter(string? actionType)
+    {
+        var normalizedActionType = NormalizeOptionalFilter(actionType);
+        if (normalizedActionType == null)
+        {
+            return null;
+        }
+
+        return normalizedActionType.Trim().ToLowerInvariant() switch
+        {
+            "mute" => (int)ModerationActionTypeEnum.Mute,
+            "ban" => (int)ModerationActionTypeEnum.Ban,
+            "unmute" => (int)ModerationActionTypeEnum.Unmute,
+            "unban" => (int)ModerationActionTypeEnum.Unban,
+            _ => throw new ArgumentException("治理动作类型仅支持 Mute、Ban、Unmute 或 Unban")
+        };
     }
 
     private static ModerationActionTypeEnum ParseReviewActionType(int actionType)

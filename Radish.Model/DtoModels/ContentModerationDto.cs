@@ -76,6 +76,35 @@ public class ContentReportQueueQueryDto
     public int PageSize { get; set; } = 20;
 }
 
+/// <summary>治理动作日志查询请求</summary>
+public class ContentModerationActionLogQueryDto
+{
+    /// <summary>目标用户 ID</summary>
+    [Range(1, long.MaxValue, ErrorMessage = "targetUserId 必须大于0")]
+    public long? TargetUserId { get; set; }
+
+    /// <summary>关联举报单 ID</summary>
+    [Range(1, long.MaxValue, ErrorMessage = "sourceReportId 必须大于0")]
+    public long? SourceReportId { get; set; }
+
+    /// <summary>治理动作类型（Mute/Ban/Unmute/Unban）</summary>
+    [StringLength(20, ErrorMessage = "actionType 长度不能超过20个字符")]
+    public string? ActionType { get; set; }
+
+    /// <summary>是否仅查看生效中的动作</summary>
+    public bool? IsActive { get; set; }
+
+    /// <summary>关键词检索</summary>
+    [StringLength(100, ErrorMessage = "keyword 长度不能超过100个字符")]
+    public string? Keyword { get; set; }
+
+    /// <summary>页码（从 1 开始）</summary>
+    public int PageIndex { get; set; } = 1;
+
+    /// <summary>每页大小</summary>
+    public int PageSize { get; set; } = 20;
+}
+
 /// <summary>手动执行治理动作请求</summary>
 public class ApplyUserModerationActionDto
 {

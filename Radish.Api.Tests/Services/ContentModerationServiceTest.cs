@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -346,7 +347,11 @@ public class ContentModerationServiceTest
                 }
             });
 
-        var result = await service.GetActionLogsAsync(1, 20);
+        var result = await service.GetActionLogsAsync(new ContentModerationActionLogQueryDto
+        {
+            PageIndex = 1,
+            PageSize = 20
+        });
 
         result.VoItems.Count.ShouldBe(1);
         var action = result.VoItems[0];
@@ -430,6 +435,144 @@ public class ContentModerationServiceTest
         result.VoItems.Count.ShouldBe(1);
         result.VoItems[0].VoReportId.ShouldBe(72002);
         result.VoItems[0].VoTargetNavigationStatus.ShouldBe("Unavailable");
+    }
+
+    [Fact]
+    public async Task GetActionLogsAsync_Should_Filter_By_SourceReport_ActionType_IsActive_And_Keyword()
+    {
+        var contentReportRepository = new Mock<IBaseRepository<ContentReport>>(MockBehavior.Strict);
+        var moderationActionRepository = new Mock<IBaseRepository<UserModerationAction>>(MockBehavior.Strict);
+        var channelMessageRepository = new Mock<IChannelMessageRepository>(MockBehavior.Strict);
+        var service = CreateService(
+            contentReportRepository: contentReportRepository,
+            moderationActionRepository: moderationActionRepository,
+            channelMessageRepository: channelMessageRepository);
+
+        var actions = new List<UserModerationAction>
+        {
+            new()
+            {
+                Id = 82001,
+                TargetUserId = 10021,
+                TargetUserName = "alpha-user",
+                ActionType = (int)ModerationActionTypeEnum.Mute,
+                Reason = "举报审核通过：Abuse",
+                SourceReportId = 73001,
+                DurationHours = 24,
+                StartTime = new DateTime(2026, 5, 11, 10, 0, 0),
+                EndTime = new DateTime(2026, 5, 12, 10, 0, 0),
+                IsActive = true,
+                CreateId = 20001,
+                CreateBy = "reviewer-alpha",
+                CreateTime = new DateTime(2026, 5, 11, 10, 0, 0)
+            },
+            new()
+            {
+                Id = 82002,
+                TargetUserId = 10022,
+                TargetUserName = "beta-user",
+                ActionType = (int)ModerationActionTypeEnum.Ban,
+                Reason = "举报审核通过：Spam",
+                SourceReportId = 73002,
+                DurationHours = null,
+                StartTime = new DateTime(2026, 5, 11, 9, 0, 0),
+                EndTime = null,
+                IsActive = true,
+                CreateId = 20002,
+                CreateBy = "reviewer-beta",
+                CreateTime = new DateTime(2026, 5, 11, 9, 0, 0)
+            },
+            new()
+            {
+                Id = 82003,
+                TargetUserId = 10021,
+                TargetUserName = "alpha-user",
+                ActionType = (int)ModerationActionTypeEnum.Unmute,
+                Reason = "管理员解除禁言",
+                SourceReportId = 73001,
+                DurationHours = null,
+                StartTime = new DateTime(2026, 5, 11, 11, 0, 0),
+                EndTime = new DateTime(2026, 5, 11, 11, 0, 0),
+                IsActive = false,
+                CreateId = 20003,
+                CreateBy = "reviewer-gamma",
+                CreateTime = new DateTime(2026, 5, 11, 11, 0, 0)
+            }
+        };
+
+        moderationActionRepository
+            .Setup(repository => repository.QueryPageAsync(
+                It.IsAny<Expression<Func<UserModerationAction, bool>>?>(),
+                1,
+                20,
+                It.IsAny<Expression<Func<UserModerationAction, object>>?>(),
+                OrderByType.Desc))
+            .ReturnsAsync((Expression<Func<UserModerationAction, bool>>? expression, int pageIndex, int pageSize, Expression<Func<UserModerationAction, object>>? orderByExpression, OrderByType orderByType) =>
+            {
+                var predicate = expression?.Compile() ?? (_ => true);
+                var filtered = actions
+                    .AsEnumerable()
+                    .Where(predicate)
+                    .OrderByDescending(item => item.CreateTime)
+                    .ToList();
+                return (filtered, filtered.Count);
+            });
+        contentReportRepository
+            .Setup(repository => repository.QueryByIdsAsync(It.Is<List<long>>(ids => ids.Count == 1 && ids[0] == 73001)))
+            .ReturnsAsync(new List<ContentReport>
+            {
+                new()
+                {
+                    Id = 73001,
+                    ReportTargetType = (int)ContentReportTargetTypeEnum.ChatMessage,
+                    TargetContentId = 93001,
+                    TargetSnapshotChannelId = 208,
+                    TargetSnapshotSummary = "来源举报聊天快照",
+                    TargetUserId = 10021,
+                    TargetUserName = "alpha-user",
+                    ReporterUserId = 10001,
+                    ReporterUserName = "reporter",
+                    ReasonType = "Abuse",
+                    Status = (int)ContentReportStatusEnum.Approved,
+                    ReviewActionType = (int)ModerationActionTypeEnum.Mute,
+                    CreateTime = new DateTime(2026, 5, 11, 8, 0, 0)
+                }
+            });
+        channelMessageRepository
+            .Setup(repository => repository.QueryByIdsIncludingDeletedAsync(It.Is<List<long>>(ids => ids.Count == 1 && ids[0] == 93001)))
+            .ReturnsAsync(new List<ChannelMessage>
+            {
+                new()
+                {
+                    Id = 93001,
+                    ChannelId = 208,
+                    UserId = 10021,
+                    UserName = "alpha-user",
+                    Type = MessageType.Text,
+                    Content = "当前聊天内容",
+                    IsDeleted = false,
+                    CreateTime = new DateTime(2026, 5, 11, 7, 59, 0)
+                }
+            });
+
+        var result = await service.GetActionLogsAsync(new ContentModerationActionLogQueryDto
+        {
+            PageIndex = 1,
+            PageSize = 20,
+            TargetUserId = 10021,
+            SourceReportId = 73001,
+            ActionType = "Mute",
+            IsActive = true,
+            Keyword = "alpha"
+        });
+
+        result.VoTotal.ShouldBe(1);
+        result.VoItems.Count.ShouldBe(1);
+        result.VoItems[0].VoActionId.ShouldBe(82001);
+        result.VoItems[0].VoActionType.ShouldBe("Mute");
+        result.VoItems[0].VoTargetUserId.ShouldBe(10021);
+        result.VoItems[0].VoSourceReportId.ShouldBe(73001);
+        result.VoItems[0].VoIsActive.ShouldBeTrue();
     }
 
     private static ContentModerationService CreateService(

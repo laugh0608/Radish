@@ -211,16 +211,24 @@ public class ContentModerationController : ControllerBase
     [HttpGet]
     [RequireConsolePermission(ConsolePermissions.ModerationView)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
-    public async Task<MessageModel> GetActionLogs(int pageIndex = 1, int pageSize = 20, long? targetUserId = null)
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    public async Task<MessageModel> GetActionLogs([FromQuery] ContentModerationActionLogQueryDto? query = null)
     {
-        var result = await _contentModerationService.GetActionLogsAsync(pageIndex, pageSize, targetUserId);
-        return new MessageModel
+        try
         {
-            IsSuccess = true,
-            StatusCode = (int)HttpStatusCodeEnum.Success,
-            MessageInfo = "获取成功",
-            ResponseData = result
-        };
+            var result = await _contentModerationService.GetActionLogsAsync(query ?? new ContentModerationActionLogQueryDto());
+            return new MessageModel
+            {
+                IsSuccess = true,
+                StatusCode = (int)HttpStatusCodeEnum.Success,
+                MessageInfo = "获取成功",
+                ResponseData = result
+            };
+        }
+        catch (ArgumentException ex)
+        {
+            return BuildError(HttpStatusCodeEnum.BadRequest, ex.Message);
+        }
     }
 
     private static MessageModel BuildError(HttpStatusCodeEnum statusCode, string message)

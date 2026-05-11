@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   AntInput as Input,
   AntModal as Modal,
@@ -13,7 +13,13 @@ import {
   type TableColumnsType,
 } from '@radish/ui';
 import { ReloadOutlined } from '@radish/ui';
-import { getActionLogs, getReviewQueue, reviewReport, type ContentReportQueueItemVo, type UserModerationActionVo } from '@/api/moderationApi';
+import {
+  getActionLogs,
+  getReviewQueue,
+  reviewReport,
+  type ContentReportQueueItemVo,
+  type UserModerationActionVo,
+} from '@/api/moderationApi';
 import { getApiBaseUrl } from '@/config/env';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
@@ -59,6 +65,18 @@ const ACTION_OPTIONS = [
   { label: '封禁', value: 2 },
 ];
 
+const ACTION_LOG_ACTION_TYPE_OPTIONS = [
+  { label: '禁言', value: 'Mute' },
+  { label: '封禁', value: 'Ban' },
+  { label: '解除禁言', value: 'Unmute' },
+  { label: '解除封禁', value: 'Unban' },
+];
+
+const ACTION_LOG_STATUS_OPTIONS = [
+  { label: '生效中', value: 'active' },
+  { label: '已结束', value: 'inactive' },
+];
+
 const TARGET_TYPE_LABEL_MAP: Record<string, string> = {
   Post: '帖子',
   Comment: '评论',
@@ -87,6 +105,11 @@ function getReasonTypeLabel(value: string | null | undefined): string {
 
 function toOptionalString(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
+}
+
+function toPositiveLongString(value: string): string | undefined {
+  const trimmed = value.trim();
+  return /^[1-9]\d*$/.test(trimmed) ? trimmed : undefined;
 }
 
 const renderReportStatus = (value: string) => {
@@ -170,6 +193,26 @@ interface ModerationTargetDisplayInput extends ModerationTargetNavigationStateIn
   targetUserId?: number | null;
   targetUserName?: string | null;
   showTargetUser?: boolean;
+}
+
+type ActionLogActiveFilter = 'active' | 'inactive';
+
+interface ActionLogPreset {
+  targetUserId?: string;
+  sourceReportId?: string;
+  actionType?: string;
+  isActive?: ActionLogActiveFilter;
+  keyword?: string;
+  hint: string;
+}
+
+interface QueuePreset {
+  status?: number;
+  targetType?: string;
+  reasonType?: string;
+  navigationStatus?: string;
+  keyword?: string;
+  hint: string;
 }
 
 function resolveNavigationStatusLabel(status: string | null | undefined): { color: string; label: string } {
@@ -375,6 +418,8 @@ export const ModerationPage = () => {
   useDocumentTitle('内容治理');
 
   const [form] = Form.useForm();
+  const queueSectionRef = useRef<HTMLElement | null>(null);
+  const logSectionRef = useRef<HTMLElement | null>(null);
   const [loadingQueue, setLoadingQueue] = useState(false);
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [queueItems, setQueueItems] = useState<ContentReportQueueItemVo[]>([]);
@@ -387,15 +432,32 @@ export const ModerationPage = () => {
   const [queueNavigationStatusFilter, setQueueNavigationStatusFilter] = useState<string | undefined>();
   const [queueKeywordInput, setQueueKeywordInput] = useState('');
   const [queueKeyword, setQueueKeyword] = useState('');
+  const [queueContextHint, setQueueContextHint] = useState<string | null>(null);
   const [logItems, setLogItems] = useState<UserModerationActionVo[]>([]);
   const [logTotal, setLogTotal] = useState(0);
   const [logPageIndex, setLogPageIndex] = useState(1);
   const [logPageSize, setLogPageSize] = useState(10);
+  const [logTargetUserIdInput, setLogTargetUserIdInput] = useState('');
   const [logTargetUserId, setLogTargetUserId] = useState('');
+  const [logSourceReportIdInput, setLogSourceReportIdInput] = useState('');
+  const [logSourceReportId, setLogSourceReportId] = useState('');
+  const [logActionTypeFilter, setLogActionTypeFilter] = useState<string | undefined>();
+  const [logIsActiveFilter, setLogIsActiveFilter] = useState<ActionLogActiveFilter | undefined>();
+  const [logKeywordInput, setLogKeywordInput] = useState('');
+  const [logKeyword, setLogKeyword] = useState('');
+  const [logContextHint, setLogContextHint] = useState<string | null>(null);
   const [reviewingItem, setReviewingItem] = useState<ContentReportQueueItemVo | null>(null);
   const [submittingReview, setSubmittingReview] = useState(false);
 
   const canReview = usePermission(CONSOLE_PERMISSIONS.moderationReview);
+
+  const focusQueueSection = () => {
+    queueSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const focusLogSection = () => {
+    logSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   const handleOpenTarget = (input: ModerationTargetNavigationStateInput) => {
     const target = resolveOpenTarget(input);
@@ -404,29 +466,44 @@ export const ModerationPage = () => {
       return;
     }
 
-    window.open(target.url, '_blank', 'noopener');
-  };
+      window.open(target.url, '_blank', 'noopener');
+    };
 
-  const loadQueue = async (targetPageIndex = queuePageIndex, targetPageSize = queuePageSize) => {
+  const loadQueue = async (
+    targetPageIndex = queuePageIndex,
+    targetPageSize = queuePageSize,
+    overrides?: {
+      status?: number;
+      targetType?: string;
+      reasonType?: string;
+      navigationStatus?: string;
+      keyword?: string;
+    }
+  ) => {
     try {
       setLoadingQueue(true);
+      const nextStatusFilter = overrides?.status ?? statusFilter;
+      const nextTargetTypeFilter = overrides?.targetType ?? queueTargetTypeFilter;
+      const nextReasonTypeFilter = overrides?.reasonType ?? queueReasonTypeFilter;
+      const nextNavigationStatusFilter = overrides?.navigationStatus ?? queueNavigationStatusFilter;
+      const nextKeyword = overrides?.keyword ?? queueKeyword;
       let page = await getReviewQueue({
-        status: statusFilter,
-        targetType: queueTargetTypeFilter,
-        reasonType: queueReasonTypeFilter,
-        navigationStatus: queueNavigationStatusFilter,
-        keyword: queueKeyword,
+        status: nextStatusFilter,
+        targetType: nextTargetTypeFilter,
+        reasonType: nextReasonTypeFilter,
+        navigationStatus: nextNavigationStatusFilter,
+        keyword: nextKeyword,
         pageIndex: targetPageIndex,
         pageSize: targetPageSize,
       });
 
       if (page.voItems.length === 0 && page.voTotal > 0 && targetPageIndex > 1) {
         page = await getReviewQueue({
-          status: statusFilter,
-          targetType: queueTargetTypeFilter,
-          reasonType: queueReasonTypeFilter,
-          navigationStatus: queueNavigationStatusFilter,
-          keyword: queueKeyword,
+          status: nextStatusFilter,
+          targetType: nextTargetTypeFilter,
+          reasonType: nextReasonTypeFilter,
+          navigationStatus: nextNavigationStatusFilter,
+          keyword: nextKeyword,
           pageIndex: targetPageIndex - 1,
           pageSize: targetPageSize,
         });
@@ -444,14 +521,34 @@ export const ModerationPage = () => {
     }
   };
 
-  const loadLogs = async (targetPageIndex = logPageIndex, targetPageSize = logPageSize) => {
+  const loadLogs = async (
+    targetPageIndex = logPageIndex,
+    targetPageSize = logPageSize,
+    overrides?: Partial<{
+      targetUserId: string;
+      sourceReportId: string;
+      actionType: string;
+      isActive: ActionLogActiveFilter;
+      keyword: string;
+    }>
+  ) => {
     try {
       setLoadingLogs(true);
-      const targetUserId = Number(logTargetUserId);
+      const targetUserIdText = overrides?.targetUserId ?? logTargetUserId;
+      const sourceReportIdText = overrides?.sourceReportId ?? logSourceReportId;
+      const targetUserId = Number(toPositiveLongString(targetUserIdText ?? '') ?? 0);
+      const sourceReportId = Number(toPositiveLongString(sourceReportIdText ?? '') ?? 0);
+      const actionType = overrides?.actionType ?? logActionTypeFilter;
+      const isActiveFilter = overrides?.isActive ?? logIsActiveFilter;
+      const keyword = overrides?.keyword ?? logKeyword;
       const page = await getActionLogs({
         pageIndex: targetPageIndex,
         pageSize: targetPageSize,
         targetUserId: Number.isFinite(targetUserId) && targetUserId > 0 ? targetUserId : undefined,
+        sourceReportId: Number.isFinite(sourceReportId) && sourceReportId > 0 ? sourceReportId : undefined,
+        actionType: actionType || undefined,
+        isActive: isActiveFilter === 'active' ? true : isActiveFilter === 'inactive' ? false : undefined,
+        keyword: keyword || undefined,
       });
 
       setLogItems(page.voItems);
@@ -472,10 +569,11 @@ export const ModerationPage = () => {
 
   useEffect(() => {
     void loadLogs(1, logPageSize);
-  }, [logPageSize]);
+  }, []);
 
   const applyQueueKeywordSearch = () => {
     const nextKeyword = queueKeywordInput.trim();
+    setQueueContextHint(null);
     if (nextKeyword === queueKeyword) {
       void loadQueue(1, queuePageSize);
       return;
@@ -485,6 +583,7 @@ export const ModerationPage = () => {
   };
 
   const resetQueueFilters = () => {
+    setQueueContextHint(null);
     const shouldReloadImmediately =
       statusFilter === -1 &&
       !queueTargetTypeFilter &&
@@ -505,6 +604,88 @@ export const ModerationPage = () => {
     }
   };
 
+  const applyQueuePreset = (preset: QueuePreset) => {
+    setStatusFilter(preset.status ?? -1);
+    setQueueTargetTypeFilter(preset.targetType);
+    setQueueReasonTypeFilter(preset.reasonType);
+    setQueueNavigationStatusFilter(preset.navigationStatus);
+    setQueueKeywordInput(preset.keyword ?? '');
+    setQueueKeyword(preset.keyword ?? '');
+    setQueueContextHint(preset.hint);
+    focusQueueSection();
+  };
+
+  const applyLogFilters = () => {
+    const nextTargetUserId = logTargetUserIdInput.trim();
+    const nextSourceReportId = logSourceReportIdInput.trim();
+    const normalizedTargetUserId = nextTargetUserId.length > 0 ? toPositiveLongString(nextTargetUserId) : '';
+    const normalizedSourceReportId = nextSourceReportId.length > 0 ? toPositiveLongString(nextSourceReportId) : '';
+    if (nextTargetUserId.length > 0 && !normalizedTargetUserId) {
+      message.error('请输入有效的目标用户 ID');
+      return;
+    }
+
+    if (nextSourceReportId.length > 0 && !normalizedSourceReportId) {
+      message.error('请输入有效的关联举报单 ID');
+      return;
+    }
+
+    const nextKeyword = logKeywordInput.trim();
+    setLogTargetUserId(normalizedTargetUserId || '');
+    setLogSourceReportId(normalizedSourceReportId || '');
+    setLogKeyword(nextKeyword);
+    setLogContextHint(null);
+    void loadLogs(1, logPageSize, {
+      targetUserId: normalizedTargetUserId || '',
+      sourceReportId: normalizedSourceReportId || '',
+      actionType: logActionTypeFilter,
+      isActive: logIsActiveFilter,
+      keyword: nextKeyword,
+    });
+  };
+
+  const resetLogFilters = () => {
+    setLogTargetUserIdInput('');
+    setLogTargetUserId('');
+    setLogSourceReportIdInput('');
+    setLogSourceReportId('');
+    setLogActionTypeFilter(undefined);
+    setLogIsActiveFilter(undefined);
+    setLogKeywordInput('');
+    setLogKeyword('');
+    setLogContextHint(null);
+    void loadLogs(1, logPageSize, {
+      targetUserId: '',
+      sourceReportId: '',
+      actionType: undefined,
+      isActive: undefined,
+      keyword: '',
+    });
+  };
+
+  const applyActionLogPreset = (preset: ActionLogPreset) => {
+    const normalizedTargetUserId = preset.targetUserId ? (toPositiveLongString(preset.targetUserId) ?? '') : '';
+    const normalizedSourceReportId = preset.sourceReportId ? (toPositiveLongString(preset.sourceReportId) ?? '') : '';
+    const nextKeyword = preset.keyword?.trim() ?? '';
+    setLogTargetUserIdInput(normalizedTargetUserId);
+    setLogTargetUserId(normalizedTargetUserId);
+    setLogSourceReportIdInput(normalizedSourceReportId);
+    setLogSourceReportId(normalizedSourceReportId);
+    setLogActionTypeFilter(preset.actionType);
+    setLogIsActiveFilter(preset.isActive);
+    setLogKeywordInput(nextKeyword);
+    setLogKeyword(nextKeyword);
+    setLogContextHint(preset.hint);
+    focusLogSection();
+    void loadLogs(1, logPageSize, {
+      targetUserId: normalizedTargetUserId,
+      sourceReportId: normalizedSourceReportId,
+      actionType: preset.actionType,
+      isActive: preset.isActive,
+      keyword: nextKeyword,
+    });
+  };
+
   const openReviewModal = (item: ContentReportQueueItemVo) => {
     setReviewingItem(item);
     form.setFieldsValue({
@@ -521,10 +702,11 @@ export const ModerationPage = () => {
     }
 
     try {
+      const reviewedItem = reviewingItem;
       const values = await form.validateFields();
       setSubmittingReview(true);
       await reviewReport({
-        reportId: reviewingItem.voReportId,
+        reportId: reviewedItem.voReportId,
         isApproved: values.isApproved,
         actionType: values.actionType,
         durationHours: values.actionType === 0 ? null : values.durationHours,
@@ -533,7 +715,18 @@ export const ModerationPage = () => {
 
       message.success('审核完成');
       setReviewingItem(null);
-      await Promise.all([loadQueue(), loadLogs()]);
+      await loadQueue();
+      if (values.isApproved && values.actionType > 0) {
+        applyActionLogPreset({
+          targetUserId: reviewedItem.voTargetUserId > 0 ? String(reviewedItem.voTargetUserId) : undefined,
+          sourceReportId: String(reviewedItem.voReportId),
+          actionType: values.actionType === 1 ? 'Mute' : values.actionType === 2 ? 'Ban' : undefined,
+          isActive: 'active',
+          hint: `已带入举报单 #${reviewedItem.voReportId} 关联的治理动作日志，便于继续核对实际处罚是否已落下。`,
+        });
+      } else {
+        await loadLogs();
+      }
     } catch (error) {
       log.error('ModerationPage', '提交审核失败:', error);
       message.error('提交审核失败');
@@ -594,7 +787,7 @@ export const ModerationPage = () => {
     {
       title: '操作',
       key: 'actions',
-      width: 260,
+      width: 360,
       render: (_, record) => {
         const openTarget = resolveOpenTarget(buildQueueTargetNavigationInput(record));
 
@@ -604,13 +797,40 @@ export const ModerationPage = () => {
               <Button
                 size="small"
                 onClick={() => handleOpenTarget(buildQueueTargetNavigationInput(record))}
+                >
+                  {openTarget.label}
+                </Button>
+              ) : record.voTargetNavigationStatus === 'Unavailable' || record.voTargetNavigationStatus === 'Unsupported' ? (
+                <span style={{ color: '#8c8c8c' }}>
+                  {record.voTargetNavigationStatus === 'Unsupported' ? '暂不支持回看' : '目标已失效'}
+                </span>
+              ) : null}
+            {record.voTargetUserId > 0 ? (
+              <Button
+                size="small"
+                onClick={() => {
+                  applyActionLogPreset({
+                    targetUserId: String(record.voTargetUserId),
+                    hint: `已带入被举报用户 #${record.voTargetUserId} 的治理动作日志，便于核对该用户历史处罚记录。`,
+                  });
+                }}
               >
-                {openTarget.label}
+                查看目标动作
               </Button>
-            ) : record.voTargetNavigationStatus === 'Unavailable' || record.voTargetNavigationStatus === 'Unsupported' ? (
-              <span style={{ color: '#8c8c8c' }}>
-                {record.voTargetNavigationStatus === 'Unsupported' ? '暂不支持回看' : '目标已失效'}
-              </span>
+            ) : null}
+            {record.voReviewActionType !== 'None' ? (
+              <Button
+                size="small"
+                onClick={() => {
+                  applyActionLogPreset({
+                    targetUserId: record.voTargetUserId > 0 ? String(record.voTargetUserId) : undefined,
+                    sourceReportId: String(record.voReportId),
+                    hint: `已带入举报单 #${record.voReportId} 关联的治理动作日志。`,
+                  });
+                }}
+              >
+                查看关联动作
+              </Button>
             ) : null}
             {record.voStatus === 'Pending' && canReview ? (
               <Button size="small" variant="primary" onClick={() => openReviewModal(record)}>
@@ -685,25 +905,42 @@ export const ModerationPage = () => {
     {
       title: '操作',
       key: 'actions',
-      width: 180,
+      width: 280,
       render: (_, record) => {
         const openTarget = resolveOpenTarget(buildActionSourceTargetNavigationInput(record));
 
-        return openTarget ? (
-          <Button
-            size="small"
-            onClick={() => handleOpenTarget(buildActionSourceTargetNavigationInput(record))}
-          >
-            {openTarget.label}
-          </Button>
-        ) : (
-          <span style={{ color: '#8c8c8c' }}>
-            {record.voSourceReportTargetNavigationStatus === 'Unsupported'
-              ? '暂不支持回看'
-              : record.voSourceReportTargetNavigationStatus === 'Unavailable'
-                ? '目标已失效'
-                : '-'}
-          </span>
+        return (
+          <Space wrap>
+            {openTarget ? (
+              <Button
+                size="small"
+                onClick={() => handleOpenTarget(buildActionSourceTargetNavigationInput(record))}
+              >
+                {openTarget.label}
+              </Button>
+            ) : (
+              <span style={{ color: '#8c8c8c' }}>
+                {record.voSourceReportTargetNavigationStatus === 'Unsupported'
+                  ? '暂不支持回看'
+                  : record.voSourceReportTargetNavigationStatus === 'Unavailable'
+                    ? '目标已失效'
+                    : '-'}
+              </span>
+            )}
+            {record.voSourceReportId ? (
+              <Button
+                size="small"
+                onClick={() => {
+                  applyQueuePreset({
+                    keyword: String(record.voSourceReportId),
+                    hint: `已带入来源举报单 #${record.voSourceReportId}，便于回看原始审核记录与目标快照。`,
+                  });
+                }}
+              >
+                查看原举报
+              </Button>
+            ) : null}
+          </Space>
         );
       },
     },
@@ -741,7 +978,7 @@ export const ModerationPage = () => {
         当前治理链路已统一接入帖子、评论、聊天室消息和商品举报，审核通过后可继续联动禁言或封禁动作。
       </div>
 
-      <section className="admin-feature-card">
+      <section className="admin-feature-card" ref={queueSectionRef}>
         <div className="admin-feature-header">
           <div>
             <h3>举报审核队列</h3>
@@ -752,7 +989,10 @@ export const ModerationPage = () => {
               value={statusFilter}
               style={{ width: 160 }}
               options={REVIEW_STATUS_OPTIONS}
-              onChange={(value) => setStatusFilter(value)}
+              onChange={(value) => {
+                setQueueContextHint(null);
+                setStatusFilter(value);
+              }}
             />
             <Select
               value={queueTargetTypeFilter}
@@ -760,7 +1000,10 @@ export const ModerationPage = () => {
               options={TARGET_TYPE_OPTIONS}
               allowClear
               placeholder="目标类型"
-              onChange={(value) => setQueueTargetTypeFilter(toOptionalString(value))}
+              onChange={(value) => {
+                setQueueContextHint(null);
+                setQueueTargetTypeFilter(toOptionalString(value));
+              }}
             />
             <Select
               value={queueReasonTypeFilter}
@@ -768,7 +1011,10 @@ export const ModerationPage = () => {
               options={REASON_TYPE_OPTIONS}
               allowClear
               placeholder="举报原因"
-              onChange={(value) => setQueueReasonTypeFilter(toOptionalString(value))}
+              onChange={(value) => {
+                setQueueContextHint(null);
+                setQueueReasonTypeFilter(toOptionalString(value));
+              }}
             />
             <Select
               value={queueNavigationStatusFilter}
@@ -776,13 +1022,19 @@ export const ModerationPage = () => {
               options={TARGET_NAVIGATION_STATUS_OPTIONS}
               allowClear
               placeholder="回看状态"
-              onChange={(value) => setQueueNavigationStatusFilter(toOptionalString(value))}
+              onChange={(value) => {
+                setQueueContextHint(null);
+                setQueueNavigationStatusFilter(toOptionalString(value));
+              }}
             />
             <Input
               allowClear
               placeholder="搜索举报单 / 目标 / 快照 / 用户 / 原因补充"
               value={queueKeywordInput}
-              onChange={(event) => setQueueKeywordInput(event.target.value)}
+              onChange={(event) => {
+                setQueueContextHint(null);
+                setQueueKeywordInput(event.target.value);
+              }}
               onPressEnter={applyQueueKeywordSearch}
               style={{ width: 320 }}
             />
@@ -797,6 +1049,12 @@ export const ModerationPage = () => {
             </Button>
           </Space>
         </div>
+
+        {queueContextHint ? (
+          <div className="admin-feature-banner" style={{ marginTop: 16 }}>
+            {queueContextHint}
+          </div>
+        ) : null}
 
         <Table<ContentReportQueueItemVo>
           rowKey="voReportId"
@@ -817,29 +1075,81 @@ export const ModerationPage = () => {
         />
       </section>
 
-      <section className="admin-feature-card">
+      <section className="admin-feature-card" ref={logSectionRef}>
         <div className="admin-feature-header">
           <div>
             <h3>治理动作日志</h3>
-            <p className="admin-feature-subtle">回看审核联动后实际落下的禁言/封禁动作。</p>
+            <p className="admin-feature-subtle">回看审核联动后实际落下的禁言/封禁动作，并支持从举报队列或动作记录回跳到对应上下文。</p>
           </div>
           <Space wrap>
             <Input
               placeholder="按目标用户 ID 过滤"
-              value={logTargetUserId}
-              onChange={(event) => setLogTargetUserId(event.target.value)}
+              value={logTargetUserIdInput}
+              onChange={(event) => {
+                setLogContextHint(null);
+                setLogTargetUserIdInput(event.target.value);
+              }}
               style={{ width: 200 }}
+            />
+            <Input
+              placeholder="关联举报单 ID"
+              value={logSourceReportIdInput}
+              onChange={(event) => {
+                setLogContextHint(null);
+                setLogSourceReportIdInput(event.target.value);
+              }}
+              style={{ width: 200 }}
+            />
+            <Select
+              value={logActionTypeFilter}
+              style={{ width: 160 }}
+              options={ACTION_LOG_ACTION_TYPE_OPTIONS}
+              allowClear
+              placeholder="治理动作"
+              onChange={(value) => {
+                setLogContextHint(null);
+                setLogActionTypeFilter(toOptionalString(value));
+              }}
+            />
+            <Select
+              value={logIsActiveFilter}
+              style={{ width: 160 }}
+              options={ACTION_LOG_STATUS_OPTIONS}
+              allowClear
+              placeholder="动作状态"
+              onChange={(value) => {
+                setLogContextHint(null);
+                setLogIsActiveFilter((value === 'active' || value === 'inactive') ? value : undefined);
+              }}
+            />
+            <Input
+              allowClear
+              placeholder="搜索动作单 / 目标用户 / 原因 / 操作者"
+              value={logKeywordInput}
+              onChange={(event) => {
+                setLogContextHint(null);
+                setLogKeywordInput(event.target.value);
+              }}
+              onPressEnter={applyLogFilters}
+              style={{ width: 280 }}
             />
             <Button
               variant="primary"
-              onClick={() => {
-                void loadLogs(1, logPageSize);
-              }}
+              onClick={applyLogFilters}
             >
               查询
             </Button>
+            <Button onClick={resetLogFilters}>
+              重置
+            </Button>
           </Space>
         </div>
+
+        {logContextHint ? (
+          <div className="admin-feature-banner" style={{ marginTop: 16 }}>
+            {logContextHint}
+          </div>
+        ) : null}
 
         <Table<UserModerationActionVo>
           rowKey="voActionId"
