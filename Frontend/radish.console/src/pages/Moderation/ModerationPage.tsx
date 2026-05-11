@@ -271,6 +271,20 @@ interface ManualActionPreset {
   hint: string;
 }
 
+interface ManualActiveModerationStatus {
+  actionId: number;
+  actionType: 'Mute' | 'Ban';
+  reason: string;
+  sourceReportId?: number | null;
+  endTime?: string | null;
+}
+
+interface ManualModerationStatusSnapshot {
+  targetUserId: string;
+  muteAction: ManualActiveModerationStatus | null;
+  banAction: ManualActiveModerationStatus | null;
+}
+
 function resolveNavigationStatusLabel(status: string | null | undefined): { color: string; label: string } {
   switch (status) {
     case 'Fallback':
@@ -420,6 +434,38 @@ function buildActionLogManualActionReason(record: UserModerationActionVo, action
   return `参考动作单 #${record.voActionId}，继续对用户 #${record.voTargetUserId} 执行人工治理`;
 }
 
+function pickLatestActiveModerationAction(
+  actions: UserModerationActionVo[],
+  actionType: 'Mute' | 'Ban'
+): ManualActiveModerationStatus | null {
+  const matchedAction = actions
+    .filter(action => action.voIsActive && action.voActionType === actionType)
+    .sort((left, right) => new Date(right.voStartTime).getTime() - new Date(left.voStartTime).getTime())[0];
+
+  if (!matchedAction) {
+    return null;
+  }
+
+  return {
+    actionId: matchedAction.voActionId,
+    actionType,
+    reason: matchedAction.voReason,
+    sourceReportId: matchedAction.voSourceReportId,
+    endTime: matchedAction.voEndTime,
+  };
+}
+
+function buildManualModerationStatusSnapshot(
+  targetUserId: string,
+  actions: UserModerationActionVo[]
+): ManualModerationStatusSnapshot {
+  return {
+    targetUserId,
+    muteAction: pickLatestActiveModerationAction(actions, 'Mute'),
+    banAction: pickLatestActiveModerationAction(actions, 'Ban'),
+  };
+}
+
 function resolveOpenTarget(input: ModerationTargetNavigationStateInput): ModerationOpenTarget | null {
   const navigationStatus = input.navigationStatus ?? 'Ready';
   if (navigationStatus === 'Unavailable' || navigationStatus === 'Unsupported') {
@@ -494,6 +540,7 @@ export const ModerationPage = () => {
   const queueSectionRef = useRef<HTMLElement | null>(null);
   const manualActionSectionRef = useRef<HTMLElement | null>(null);
   const logSectionRef = useRef<HTMLElement | null>(null);
+  const manualStatusRequestIdRef = useRef(0);
   const [loadingQueue, setLoadingQueue] = useState(false);
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [queueItems, setQueueItems] = useState<ContentReportQueueItemVo[]>([]);
@@ -521,6 +568,9 @@ export const ModerationPage = () => {
   const [logKeyword, setLogKeyword] = useState('');
   const [logContextHint, setLogContextHint] = useState<string | null>(null);
   const [manualActionContextHint, setManualActionContextHint] = useState<string | null>(null);
+  const [manualStatusLoading, setManualStatusLoading] = useState(false);
+  const [manualStatusError, setManualStatusError] = useState<string | null>(null);
+  const [manualStatusSnapshot, setManualStatusSnapshot] = useState<ManualModerationStatusSnapshot | null>(null);
   const [reviewingItem, setReviewingItem] = useState<ContentReportQueueItemVo | null>(null);
   const [submittingReview, setSubmittingReview] = useState(false);
   const [submittingManualAction, setSubmittingManualAction] = useState(false);
@@ -766,6 +816,51 @@ export const ModerationPage = () => {
     });
   };
 
+  const loadManualActionStatus = async (targetUserIdText?: string) => {
+    const normalizedTargetUserId = toPositiveLongString(targetUserIdText?.trim() ?? '');
+    if (!normalizedTargetUserId) {
+      manualStatusRequestIdRef.current += 1;
+      setManualStatusLoading(false);
+      setManualStatusSnapshot(null);
+      setManualStatusError(null);
+      return;
+    }
+
+    const requestId = ++manualStatusRequestIdRef.current;
+    try {
+      setManualStatusLoading(true);
+      setManualStatusError(null);
+      const page = await getActionLogs({
+        pageIndex: 1,
+        pageSize: 20,
+        targetUserId: Number(normalizedTargetUserId),
+        isActive: true,
+      });
+      if (requestId !== manualStatusRequestIdRef.current) {
+        return;
+      }
+
+      setManualStatusSnapshot(buildManualModerationStatusSnapshot(normalizedTargetUserId, page.voItems));
+    } catch (error) {
+      log.error('ModerationPage', '加载手动治理当前状态失败:', error);
+      if (requestId !== manualStatusRequestIdRef.current) {
+        return;
+      }
+
+      setManualStatusSnapshot(null);
+      setManualStatusError('加载当前治理状态失败');
+    } finally {
+      if (requestId === manualStatusRequestIdRef.current) {
+        setManualStatusLoading(false);
+      }
+    }
+  };
+
+  const refreshManualActionStatus = () => {
+    const targetUserIdValue = manualActionForm.getFieldValue('targetUserId');
+    void loadManualActionStatus(typeof targetUserIdValue === 'string' ? targetUserIdValue : String(targetUserIdValue ?? ''));
+  };
+
   const applyManualActionPreset = (preset: ManualActionPreset) => {
     const normalizedTargetUserId = preset.targetUserId ? (toPositiveLongString(preset.targetUserId) ?? '') : '';
     const normalizedSourceReportId = preset.sourceReportId ? (toPositiveLongString(preset.sourceReportId) ?? '') : '';
@@ -778,11 +873,16 @@ export const ModerationPage = () => {
     });
     setManualActionContextHint(preset.hint);
     focusManualActionSection();
+    void loadManualActionStatus(normalizedTargetUserId);
   };
 
   const resetManualActionForm = () => {
     manualActionForm.resetFields();
     setManualActionContextHint(null);
+    manualStatusRequestIdRef.current += 1;
+    setManualStatusLoading(false);
+    setManualStatusSnapshot(null);
+    setManualStatusError(null);
   };
 
   const openReviewModal = (item: ContentReportQueueItemVo) => {
@@ -879,6 +979,7 @@ export const ModerationPage = () => {
         reason: '',
       });
       setManualActionContextHint(`已执行${actionText}，目标用户与来源举报单已保留在表单中；下方日志已自动定位到动作单 #${result.voActionId}。`);
+      void loadManualActionStatus(normalizedTargetUserId);
       applyActionLogPreset({
         targetUserId: String(result.voTargetUserId),
         sourceReportId: result.voSourceReportId ? String(result.voSourceReportId) : undefined,
@@ -896,6 +997,69 @@ export const ModerationPage = () => {
     } finally {
       setSubmittingManualAction(false);
     }
+  };
+
+  const renderManualStatusCard = (
+    title: string,
+    action: ManualActiveModerationStatus | null,
+    cancelActionType: ManualActionTypeValue
+  ) => {
+    if (!action) {
+      return (
+        <div className="moderation-manual-status-card">
+          <div className="moderation-manual-status-card__title">{title}</div>
+          <Tag>当前未生效</Tag>
+          <div className="moderation-manual-status-card__empty">没有生效中的{title}动作。</div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="moderation-manual-status-card">
+        <div className="moderation-manual-status-card__head">
+          <div className="moderation-manual-status-card__title">{title}</div>
+          <Tag color="processing">生效中</Tag>
+        </div>
+        <div className="moderation-manual-status-card__meta">动作单 #{action.actionId}</div>
+        <div className="moderation-manual-status-card__meta">
+          截止时间：{action.endTime || '永久'}
+        </div>
+        {action.sourceReportId ? (
+          <div className="moderation-manual-status-card__meta">来源举报单：#{action.sourceReportId}</div>
+        ) : null}
+        <div className="moderation-manual-status-card__reason">{action.reason}</div>
+        <Space wrap>
+          <Button
+            size="small"
+            onClick={() => {
+              applyActionLogPreset({
+                targetUserId: manualStatusSnapshot?.targetUserId,
+                actionType: action.actionType,
+                isActive: 'active',
+                hint: `已带入用户 #${manualStatusSnapshot?.targetUserId} 当前生效中的${title}动作日志。`,
+              });
+            }}
+          >
+            查看当前动作
+          </Button>
+          <Button
+            size="small"
+            variant="primary"
+            onClick={() => {
+              applyManualActionPreset({
+                targetUserId: manualStatusSnapshot?.targetUserId,
+                sourceReportId: action.sourceReportId ? String(action.sourceReportId) : undefined,
+                actionType: cancelActionType,
+                reason: `参考动作单 #${action.actionId}，人工复核后${getManualActionTypeText(cancelActionType)}`,
+                hint: `已根据当前生效中的${title}动作单 #${action.actionId} 预填${getManualActionTypeText(cancelActionType)}表单。`,
+              });
+            }}
+          >
+            {getManualActionTypeText(cancelActionType)}
+          </Button>
+        </Space>
+      </div>
+    );
   };
 
   const queueColumns: TableColumnsType<ContentReportQueueItemVo> = [
@@ -1321,6 +1485,30 @@ export const ModerationPage = () => {
             </div>
           ) : null}
 
+          <div className="moderation-manual-status">
+            <div className="moderation-manual-status__header">
+              <div>
+                <div className="moderation-manual-status__title">当前生效状态</div>
+                <div className="moderation-manual-status__subtitle">输入或带入目标用户 ID 后，可直接查看该用户当前是否仍处于禁言或封禁中。</div>
+              </div>
+              <Button size="small" onClick={refreshManualActionStatus}>
+                刷新状态
+              </Button>
+            </div>
+
+            {!manualStatusSnapshot && !manualStatusLoading && !manualStatusError ? (
+              <div className="moderation-manual-status__empty">先输入目标用户 ID，或从上方举报队列 / 动作日志一键带入。</div>
+            ) : null}
+            {manualStatusLoading ? <div className="moderation-manual-status__empty">正在加载当前治理状态...</div> : null}
+            {manualStatusError ? <div className="moderation-manual-status__error">{manualStatusError}</div> : null}
+            {manualStatusSnapshot ? (
+              <div className="moderation-manual-status__grid">
+                {renderManualStatusCard('禁言', manualStatusSnapshot.muteAction, MANUAL_ACTION_TYPE.unmute)}
+                {renderManualStatusCard('封禁', manualStatusSnapshot.banAction, MANUAL_ACTION_TYPE.unban)}
+              </div>
+            ) : null}
+          </div>
+
           <Form form={manualActionForm} layout="vertical" className="moderation-manual-action-form">
             <div className="moderation-manual-action-form__grid">
               <Form.Item
@@ -1343,7 +1531,18 @@ export const ModerationPage = () => {
                   },
                 ]}
               >
-                <Input placeholder="输入目标用户 ID，或从上方队列 / 日志一键带入" />
+                <Input
+                  placeholder="输入目标用户 ID，或从上方队列 / 日志一键带入"
+                  onChange={() => {
+                    setManualActionContextHint(null);
+                    manualStatusRequestIdRef.current += 1;
+                    setManualStatusLoading(false);
+                    setManualStatusSnapshot(null);
+                    setManualStatusError(null);
+                  }}
+                  onBlur={refreshManualActionStatus}
+                  onPressEnter={refreshManualActionStatus}
+                />
               </Form.Item>
 
               <Form.Item

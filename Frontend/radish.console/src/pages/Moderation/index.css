@@ -59,6 +59,80 @@
   font-weight: 600;
 }
 
+.moderation-manual-status {
+  margin-top: 16px;
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  background: #fafafa;
+  padding: 14px 16px;
+}
+
+.moderation-manual-status__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.moderation-manual-status__title {
+  color: #262626;
+  font-weight: 600;
+}
+
+.moderation-manual-status__subtitle,
+.moderation-manual-status__empty,
+.moderation-manual-status__error,
+.moderation-manual-status-card__meta,
+.moderation-manual-status-card__reason {
+  color: #8c8c8c;
+  line-height: 1.6;
+}
+
+.moderation-manual-status__empty,
+.moderation-manual-status__error {
+  margin-top: 12px;
+}
+
+.moderation-manual-status__error {
+  color: #cf1322;
+}
+
+.moderation-manual-status__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.moderation-manual-status-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 168px;
+  border: 1px solid #f0f0f0;
+  border-radius: 10px;
+  background: #fff;
+  padding: 14px;
+}
+
+.moderation-manual-status-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.moderation-manual-status-card__title {
+  color: #262626;
+  font-weight: 600;
+}
+
+.moderation-manual-status-card__empty {
+  color: #8c8c8c;
+  line-height: 1.6;
+  flex: 1;
+}
+
 .moderation-manual-action-form {
   margin-top: 16px;
 }
