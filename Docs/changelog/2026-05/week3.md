@@ -1,0 +1,64 @@
+# 2026 年 5 月第 3 周开发日志
+
+> 范围：2026-05-11 至 2026-05-17（Asia/Shanghai）
+>
+> 本周继续沿“产品功能补全与多端任务重排”推进，执行面集中在后端 + Console 治理，优先收口经验治理、内容治理审核效率与商城管理前端缺口。
+
+## 2026-05-11
+
+### 主线判断
+
+- 当日执行重点继续落在后端 + Console 治理，不再新增大范围产品线，而是把已进入当前主线的经验治理、内容治理和商城管理缺口补成可用工作流。
+- `P2-C3` 经验 / 等级治理保持“最小可解释规则 + 人工复核”边界；内容治理继续聚焦人工审核与手动处置；商城治理则优先服务资产 / 订单人工追查。
+- 当前这条治理线完成后，下一步不宜继续扩新规则或新平台，而应先做商城管理人工验收，并按结果整理剩余尾项。
+
+### 已完成提交
+
+- `e01901b6 fix(client): resolve desktop external app urls`
+  - 修复桌面外部应用 URL 处理中的既有问题，避免继续干扰桌面工作台稳定性。
+- `3eb1788e feat(console): improve moderation queue filtering`
+  - 提前补了一轮内容治理审核队列筛选能力。
+- `2e618ef2 docs(planning): record flutter ui library trigger`
+  - 记录 Flutter UI 组件库触发点，保持规划口径连续。
+- `494e36e8 feat(console): add experience transaction review`
+  - 为经验治理补齐经验流水回看入口。
+- `11600f92 feat(console): 收口经验异常规则治理`
+  - 统一经验治理页的异常观察口径与管理端展示。
+- `a2f624f6 feat(experience): 串起异常复核闭环`
+  - 把异常规则摘要、异常日期与经验流水筛选联动起来，支持一键带入复核。
+- `a8d99259 feat(experience): 沉淀治理复核留痕`
+  - 补齐人工复核记录接口、冻结 / 解冻自动留痕，以及治理快照回看。
+- `7cac6909 feat(moderation): 收口审核台效率`
+  - 打通举报队列、治理日志、来源举报和目标动作的查询闭环。
+- `ae631cb9 feat(moderation): 接入手动治理处置入口`
+  - 审核台接入手动禁言 / 封禁 / 解封 / 解除禁言，并和治理日志联动。
+- `6841d29a feat(moderation): 前置展示当前治理状态`
+  - 在手动治理区直接展示目标用户当前生效中的禁言 / 封禁状态。
+- `9edf138b feat(shop): 收口商城后台订单商品治理`
+  - 补齐管理端订单详情、商品详情、商品删除拦截，以及订单 / 商品 / 用户三向治理回跳。
+  - 收口 `shopApi` 契约漂移，并补商品 / 订单相关测试与 HTTP 示例。
+
+### 验证记录
+
+- `npm run build --workspace=radish.console`
+  - 通过。
+  - 当日经验治理、内容治理和商城治理批次均已在该构建入口下确认无新增前端失败。
+- `dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --filter Experience`
+  - 先后通过 `13/13`、`15/15`、`20/20`，覆盖经验异常规则、复核联动与治理留痕批次。
+- `dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --filter ContentModeration`
+  - 先后通过 `13/13`、`14/14`，覆盖审核效率、手动处置与当前治理状态批次。
+- `dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --filter "FullyQualifiedName~ShopControllerTest|FullyQualifiedName~OrderServiceTest|FullyQualifiedName~ProductServiceTest"`
+  - 提权环境通过，`18/18`。
+  - 首次在沙盒中失败原因仅为无法读取用户级 `NuGet.Config`，不是本轮代码问题。
+
+### 文档与对齐结论
+
+- 今日提交横跨经验治理、内容治理和商城管理前端缺口，不能只保留代码提交；本次回顾后已同步更新 [current.md](/planning/current)、[development-plan.md](/development-plan)、[phase-two-product-completion.md](/planning/phase-two-product-completion)、[Console 系统设计方案](/guide/console-system) 与 [商城系统设计方案](/guide/shop-system)。
+- 月度开发日志入口已新增本周条目，并把“明日第一事项”从已完成的内容治理审核效率，切换为商城管理人工验收收口。
+- 今日没有新的多端路线、壳层归属或视觉规范变化，因此不额外改动多壳层策略与视觉设计规范文档。
+
+### 剩余风险与下一顺位
+
+- 经验治理和内容治理已完成首轮收口，但应继续保持人工复核和手动处置边界，不扩自动处罚或大而全治理平台。
+- 商城管理前端缺口已基本补齐，但仍需要一轮手工验收，重点确认商品上下架、删除拦截、订单详情 / 备注和三向回跳在真实 Console 账号下的可用性。
+- 若人工验收稳定，后端 + Console 治理的下一顺位应转向剩余历史构建 warning 与少量安全治理尾项，而不是继续在已收口模块上做低收益微调。
