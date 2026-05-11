@@ -2,6 +2,7 @@ import { lazy, Suspense, type ComponentType } from 'react';
 import i18n from '@/i18n';
 import type { AppDefinition } from './types';
 import { getVisibleAppsForUser } from './appAccess';
+import { resolveConsoleExternalUrl, resolveScalarExternalUrl } from './externalAppUrl';
 
 const createCachedLoader = <TModule,>(loader: () => Promise<TModule>) => {
   let cachedPromise: Promise<TModule> | null = null;
@@ -86,14 +87,6 @@ const wikiAppLoader = createCachedLoader(() =>
 const WikiApp = createLazyWindowApp(wikiAppLoader);
 
 /**
- * 判断是否通过 Gateway 访问（5000端口）
- */
-const isAccessingViaGateway = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  return window.location.port === '5000';
-};
-
-/**
  * 应用注册表
  *
  * Radish WebOS 支持三种应用集成方式:
@@ -160,7 +153,7 @@ export const appRegistry: AppDefinition[] = [
     descriptionKey: 'desktop.apps.console.description',
     component: () => null,
     type: 'external',
-    externalUrl: isAccessingViaGateway() ? '/console/' : 'http://localhost:3100',
+    externalUrl: resolveConsoleExternalUrl(),
     category: 'system',
   },
   {
@@ -172,7 +165,7 @@ export const appRegistry: AppDefinition[] = [
     descriptionKey: 'desktop.apps.scalar.description',
     component: () => null,
     type: 'external',
-    externalUrl: isAccessingViaGateway() ? '/scalar?auto=1' : 'http://localhost:5100/scalar?auto=1',
+    externalUrl: resolveScalarExternalUrl(),
     category: 'system',
   },
   {
