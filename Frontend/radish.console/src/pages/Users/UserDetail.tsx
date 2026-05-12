@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   Button,
@@ -39,6 +39,8 @@ interface UserDetailData {
 export const UserDetail = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnTo = searchParams.get('returnTo');
   useDocumentTitle('用户详情');
   const canViewUsers = usePermission(CONSOLE_PERMISSIONS.usersView);
   const canViewCoins = usePermission(CONSOLE_PERMISSIONS.coinsView);
@@ -81,6 +83,15 @@ export const UserDetail = () => {
     }
 
     return transaction.voAmount;
+  };
+
+  const handleBack = () => {
+    if (returnTo?.startsWith('/')) {
+      navigate(returnTo);
+      return;
+    }
+
+    navigate('/users');
   };
 
   // 加载用户详情
@@ -280,10 +291,7 @@ export const UserDetail = () => {
   return (
     <div className="user-detail-page">
       <div className="user-detail-header">
-        <Button
-          icon={<LeftOutlined />}
-          onClick={() => navigate('/users')}
-        >
+        <Button icon={<LeftOutlined />} onClick={handleBack}>
           返回
         </Button>
         <h2>用户详情</h2>

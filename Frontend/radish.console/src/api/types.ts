@@ -111,7 +111,7 @@ export interface ProductCategory {
  * 商品 Vo（直接使用后端字段名）
  */
 export interface Product {
-  voId: number;
+  voId: string | number;
   voName: string;
   voDescription?: string | null;
   voIconAttachmentId?: string | null;
@@ -148,11 +148,11 @@ export interface Product {
  * 订单 Vo（直接使用后端字段名）
  */
 export interface Order {
-  voId: number;
+  voId: string | number;
   voOrderNo: string;
-  voUserId: number;
+  voUserId: string | number;
   voUserName: string;
-  voProductId: number;
+  voProductId: string | number;
   voProductName: string;
   voProductIcon?: string | null;
   voProductType: string;
@@ -203,5 +203,5 @@ export interface CreateProductDto {
  * 更新商品 DTO
  */
 export interface UpdateProductDto extends CreateProductDto {
-  id: number;
+  id: string | number;
 }

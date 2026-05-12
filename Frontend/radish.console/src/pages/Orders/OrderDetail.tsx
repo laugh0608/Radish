@@ -6,7 +6,7 @@ import type { Order } from '../../api/types';
 
 interface OrderDetailProps {
   visible: boolean;
-  orderId?: number;
+  orderId?: string | number;
   fallbackOrder?: Order;
   reloadToken?: number;
   onClose: () => void;

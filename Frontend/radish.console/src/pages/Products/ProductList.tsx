@@ -11,7 +11,7 @@ import {
   Tag,
   Image,
   message,
-  Modal,
+  ConfirmDialog,
   type TableColumnsType,
 } from '@radish/ui';
 import {
@@ -44,28 +44,36 @@ import { getAvatarUrl } from '../../config/env';
 import { log } from '../../utils/logger';
 import './ProductList.css';
 
-function parsePositiveIntQuery(value: string | null): number | undefined {
+function parseLongIdQuery(value: string | null): string | undefined {
   if (!value) {
     return undefined;
   }
 
-  const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+  const trimmed = value.trim();
+  return /^\d+$/u.test(trimmed) ? trimmed : undefined;
 }
 
 function parseBooleanQuery(value: string | null): boolean {
   return value === '1' || value === 'true';
 }
 
-function buildProductDetailSearchParams(productId?: number, openDetail?: boolean): URLSearchParams {
+function buildProductDetailSearchParams(params: {
+  productId?: string | number;
+  openDetail?: boolean;
+  returnTo?: string | null;
+}): URLSearchParams {
   const searchParams = new URLSearchParams();
 
-  if (productId !== undefined) {
-    searchParams.set('productId', productId.toString());
+  if (params.productId !== undefined) {
+    searchParams.set('productId', String(params.productId));
   }
 
-  if (openDetail) {
+  if (params.openDetail) {
     searchParams.set('openDetail', '1');
+  }
+
+  if (params.returnTo) {
+    searchParams.set('returnTo', params.returnTo);
   }
 
   return searchParams;
@@ -75,8 +83,9 @@ export const ProductList = () => {
   useDocumentTitle('商品管理');
   const navigate = useNavigate();
   const [urlSearchParams, setUrlSearchParams] = useSearchParams();
-  const queryProductId = parsePositiveIntQuery(urlSearchParams.get('productId'));
+  const queryProductId = parseLongIdQuery(urlSearchParams.get('productId'));
   const queryOpenDetail = parseBooleanQuery(urlSearchParams.get('openDetail'));
+  const queryReturnTo = urlSearchParams.get('returnTo');
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [loading, setLoading] = useState(false);
@@ -94,9 +103,11 @@ export const ProductList = () => {
   const [editingProduct, setEditingProduct] = useState<Product | undefined>();
 
   const [detailVisible, setDetailVisible] = useState(false);
-  const [selectedProductId, setSelectedProductId] = useState<number | undefined>();
+  const [selectedProductId, setSelectedProductId] = useState<string | number | undefined>();
   const [selectedProductSnapshot, setSelectedProductSnapshot] = useState<Product | undefined>();
   const [detailReloadToken, setDetailReloadToken] = useState(0);
+  const [deletingProduct, setDeletingProduct] = useState<Product | undefined>();
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
 
   const [draftCategoryId, setDraftCategoryId] = useState<string | undefined>();
   const [draftProductType, setDraftProductType] = useState<ProductType | undefined>();
@@ -115,8 +126,13 @@ export const ProductList = () => {
     keyword: '',
   });
 
-  const syncDetailSearchParams = (productId?: number, openDetail?: boolean, replace: boolean = false) => {
-    setUrlSearchParams(buildProductDetailSearchParams(productId, openDetail), { replace });
+  const syncDetailSearchParams = (
+    productId?: string | number,
+    openDetail?: boolean,
+    replace: boolean = false,
+    returnTo?: string | null,
+  ) => {
+    setUrlSearchParams(buildProductDetailSearchParams({ productId, openDetail, returnTo }), { replace });
   };
 
   const loadProducts = async () => {
@@ -134,7 +150,7 @@ export const ProductList = () => {
       setProducts(response.data);
       setTotal(response.dataCount);
       setSelectedProductSnapshot((current) => current
-        ? response.data.find((item) => item.voId === current.voId) ?? current
+        ? response.data.find((item) => String(item.voId) === String(current.voId)) ?? current
         : current);
     } catch (error) {
       log.error('ProductList', '加载商品列表失败:', error);
@@ -175,7 +191,7 @@ export const ProductList = () => {
     }
 
     setSelectedProductId(queryProductId);
-    setSelectedProductSnapshot(products.find((item) => item.voId === queryProductId));
+    setSelectedProductSnapshot(products.find((item) => String(item.voId) === queryProductId));
     setDetailVisible(true);
   }, [products, queryOpenDetail, queryProductId]);
 
@@ -203,13 +219,13 @@ export const ProductList = () => {
     });
   };
 
-  const handleOpenDetail = (productId: number, product?: Product, syncQuery: boolean = false) => {
+  const handleOpenDetail = (productId: string | number, product?: Product, syncQuery: boolean = false) => {
     setSelectedProductId(productId);
     setSelectedProductSnapshot(product);
     setDetailVisible(true);
 
     if (syncQuery) {
-      syncDetailSearchParams(productId, true);
+      syncDetailSearchParams(productId, true, false, queryReturnTo);
     }
   };
 
@@ -218,7 +234,7 @@ export const ProductList = () => {
     setSelectedProductId(undefined);
     setSelectedProductSnapshot(undefined);
 
-    if (queryOpenDetail || queryProductId) {
+    if (queryOpenDetail || queryProductId || queryReturnTo) {
       syncDetailSearchParams(undefined, false, true);
     }
   };
@@ -234,7 +250,7 @@ export const ProductList = () => {
       }
 
       await loadProducts();
-      if (selectedProductId === product.voId) {
+      if (String(selectedProductId) === String(product.voId)) {
         setDetailReloadToken((current) => current + 1);
       }
     } catch (error) {
@@ -244,28 +260,40 @@ export const ProductList = () => {
   };
 
   const handleDelete = (product: Product) => {
-    (Modal as any).confirm({
-      title: '确认删除',
-      content: `确定要删除商品"${product.voName}"吗？`,
-      onOk: async () => {
-        try {
-          await deleteProduct(product.voId);
-          message.success('删除成功');
-          await loadProducts();
+    setDeletingProduct(product);
+    setDeleteConfirmVisible(true);
+  };
 
-          if (selectedProductId === product.voId) {
-            handleCloseDetail();
-          }
-        } catch (error) {
-          log.error('ProductList', '删除商品失败:', error);
-          message.error(error instanceof Error ? error.message : '删除失败');
-        }
-      },
-    });
+  const handleConfirmDelete = async () => {
+    if (!deletingProduct) {
+      return;
+    }
+
+    try {
+      await deleteProduct(deletingProduct.voId);
+      message.success('删除成功');
+      await loadProducts();
+
+      if (String(selectedProductId) === String(deletingProduct.voId)) {
+        handleCloseDetail();
+      }
+    } catch (error) {
+      log.error('ProductList', '删除商品失败:', error);
+      message.error(error instanceof Error ? error.message : '删除失败');
+    } finally {
+      setDeleteConfirmVisible(false);
+      setDeletingProduct(undefined);
+    }
   };
 
   const handleViewOrders = (product: Product) => {
-    navigate(`/orders?productId=${product.voId}`);
+    navigate(`/orders?productId=${encodeURIComponent(String(product.voId))}`);
+  };
+
+  const handleReturnToSource = () => {
+    if (queryReturnTo?.startsWith('/')) {
+      navigate(queryReturnTo);
+    }
   };
 
   const handleEditProduct = (product: Product) => {
@@ -554,6 +582,7 @@ export const ProductList = () => {
         onClose={handleCloseDetail}
         onEdit={handleEditProduct}
         onViewOrders={canViewOrders ? handleViewOrders : undefined}
+        onReturnToSource={queryReturnTo ? handleReturnToSource : undefined}
       />
 
       <ProductForm
@@ -565,9 +594,20 @@ export const ProductList = () => {
         }}
         onSuccess={() => {
           void loadProducts();
-          if (editingProduct && editingProduct.voId === selectedProductId) {
+          if (editingProduct && String(editingProduct.voId) === String(selectedProductId)) {
             setDetailReloadToken((current) => current + 1);
           }
+        }}
+      />
+
+      <ConfirmDialog
+        isOpen={deleteConfirmVisible}
+        title="确认删除"
+        message={`确定要删除商品"${deletingProduct?.voName ?? ''}"吗？若商品已有订单或业务关联，系统会拦截删除。`}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => {
+          setDeleteConfirmVisible(false);
+          setDeletingProduct(undefined);
         }}
       />
     </div>

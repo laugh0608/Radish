@@ -14,12 +14,13 @@ import {
 
 interface ProductDetailProps {
   visible: boolean;
-  productId?: number;
+  productId?: string | number;
   fallbackProduct?: Product;
   reloadToken?: number;
   onClose: () => void;
   onEdit?: (product: Product) => void;
   onViewOrders?: (product: Product) => void;
+  onReturnToSource?: () => void;
 }
 
 function formatDateTime(value?: string | null): string {
@@ -43,6 +44,7 @@ export const ProductDetail = ({
   onClose,
   onEdit,
   onViewOrders,
+  onReturnToSource,
 }: ProductDetailProps) => {
   const [product, setProduct] = useState<Product | undefined>(fallbackProduct);
   const [loading, setLoading] = useState(false);
@@ -118,6 +120,11 @@ export const ProductDetail = ({
       size="large"
       footer={
         <Space>
+          {currentProduct && onReturnToSource ? (
+            <Button onClick={onReturnToSource}>
+              返回订单
+            </Button>
+          ) : null}
           {currentProduct && onViewOrders ? (
             <Button onClick={() => onViewOrders(currentProduct)}>
               查看相关订单

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   TableSkeleton,
@@ -45,6 +45,15 @@ function parsePositiveIntQuery(value: string | null): number | undefined {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
 }
 
+function parseLongIdQuery(value: string | null): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  return /^\d+$/u.test(trimmed) ? trimmed : undefined;
+}
+
 function parseOrderStatusQuery(value: string | null): OrderStatus | undefined {
   if (!value) {
     return undefined;
@@ -61,9 +70,9 @@ function parseBooleanQuery(value: string | null): boolean {
 }
 
 function buildOrderSearchParams(params: {
-  userId?: number;
+  userId?: string;
   status?: OrderStatus;
-  productId?: number;
+  productId?: string;
   orderNo?: string;
   pageIndex?: number;
   pageSize?: number;
@@ -106,10 +115,11 @@ function buildOrderSearchParams(params: {
 export const OrderList = () => {
   useDocumentTitle('订单管理');
   const navigate = useNavigate();
+  const location = useLocation();
   const [urlSearchParams, setUrlSearchParams] = useSearchParams();
-  const queryUserId = parsePositiveIntQuery(urlSearchParams.get('userId'));
+  const queryUserId = parseLongIdQuery(urlSearchParams.get('userId'));
   const queryStatus = parseOrderStatusQuery(urlSearchParams.get('status'));
-  const queryProductId = parsePositiveIntQuery(urlSearchParams.get('productId'));
+  const queryProductId = parseLongIdQuery(urlSearchParams.get('productId'));
   const queryOrderNo = (urlSearchParams.get('orderNo') ?? '').trim();
   const queryPageIndex = parsePositiveIntQuery(urlSearchParams.get('pageIndex')) ?? DEFAULT_PAGE_INDEX;
   const queryPageSize = parsePositiveIntQuery(urlSearchParams.get('pageSize')) ?? DEFAULT_PAGE_SIZE;
@@ -124,7 +134,7 @@ export const OrderList = () => {
   const canViewProducts = usePermission(CONSOLE_PERMISSIONS.productsView);
 
   const [detailVisible, setDetailVisible] = useState(false);
-  const [selectedOrderId, setSelectedOrderId] = useState<number | undefined>();
+  const [selectedOrderId, setSelectedOrderId] = useState<string | number | undefined>();
   const [selectedOrderPreview, setSelectedOrderPreview] = useState<Order | undefined>();
   const [detailReloadToken, setDetailReloadToken] = useState(0);
 
@@ -132,15 +142,15 @@ export const OrderList = () => {
   const [retryOrder, setRetryOrder] = useState<Order | undefined>();
   const [savingRemark, setSavingRemark] = useState(false);
 
-  const [draftUserId, setDraftUserId] = useState<number | undefined>(queryUserId);
+  const [draftUserId, setDraftUserId] = useState<string | undefined>(queryUserId);
   const [draftStatus, setDraftStatus] = useState<OrderStatus | undefined>(queryStatus);
-  const [draftProductId, setDraftProductId] = useState<number | undefined>(queryProductId);
+  const [draftProductId, setDraftProductId] = useState<string | undefined>(queryProductId);
   const [draftOrderNo, setDraftOrderNo] = useState(queryOrderNo);
 
   const syncSearchParams = (params: {
-    userId?: number;
+    userId?: string;
     status?: OrderStatus;
-    productId?: number;
+    productId?: string;
     orderNo?: string;
     pageIndex?: number;
     pageSize?: number;
@@ -171,7 +181,7 @@ export const OrderList = () => {
       setOrders(response.data);
       setTotal(response.dataCount);
       setSelectedOrderPreview((current) => current
-        ? response.data.find((item) => item.voId === current.voId) ?? current
+        ? response.data.find((item) => String(item.voId) === String(current.voId)) ?? current
         : current);
 
       if (queryOpenDetail) {
@@ -235,11 +245,15 @@ export const OrderList = () => {
   };
 
   const handleViewUser = (order: Order) => {
-    navigate(`/users/${order.voUserId}`);
+    const returnTo = `${location.pathname}${location.search}`;
+    navigate(`/users/${encodeURIComponent(String(order.voUserId))}?returnTo=${encodeURIComponent(returnTo)}`);
   };
 
   const handleViewProduct = (order: Order) => {
-    navigate(`/products?productId=${order.voProductId}&openDetail=1`);
+    const returnTo = `${location.pathname}${location.search}`;
+    navigate(
+      `/products?productId=${encodeURIComponent(String(order.voProductId))}&openDetail=1&returnTo=${encodeURIComponent(returnTo)}`,
+    );
   };
 
   const handleRetry = (order: Order) => {
@@ -273,7 +287,7 @@ export const OrderList = () => {
       await retryGrantBenefit(retryOrder.voId);
       message.success('重试成功');
       await loadOrders();
-      if (selectedOrderId === retryOrder.voId) {
+      if (String(selectedOrderId) === String(retryOrder.voId)) {
         setDetailReloadToken((current) => current + 1);
       }
     } catch (error) {
@@ -303,7 +317,7 @@ export const OrderList = () => {
           }
         : current);
       setOrders((current) => current.map((item) => (
-        item.voId === selectedOrderId
+        String(item.voId) === String(selectedOrderId)
           ? {
               ...item,
               voAdminRemark: nextRemark,
@@ -461,7 +475,7 @@ export const OrderList = () => {
             style={{ width: 120 }}
             type="number"
             value={draftUserId}
-            onChange={(e) => setDraftUserId(e.target.value ? Number(e.target.value) : undefined)}
+            onChange={(e) => setDraftUserId(e.target.value ? e.target.value.trim() : undefined)}
             onPressEnter={handleSearch}
           />
 
@@ -485,7 +499,7 @@ export const OrderList = () => {
             style={{ width: 120 }}
             type="number"
             value={draftProductId}
-            onChange={(e) => setDraftProductId(e.target.value ? Number(e.target.value) : undefined)}
+            onChange={(e) => setDraftProductId(e.target.value ? e.target.value.trim() : undefined)}
             onPressEnter={handleSearch}
           />
 
