@@ -13,6 +13,7 @@ namespace Radish.Common.CacheTool;
 
 public class Caching : ICaching
 {
+    private static readonly TimeSpan DefaultCacheExpiration = TimeSpan.FromHours(6);
     private readonly IDistributedCache _cache;
 
     public Caching(IDistributedCache cache)
@@ -23,6 +24,18 @@ public class Caching : ICaching
     private byte[] GetBytes<T>(T source)
     {
         return Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(source));
+    }
+
+    private static DistributedCacheEntryOptions CreateExpiringOptions(TimeSpan? expire = null)
+    {
+        var normalizedExpire = expire.HasValue && expire.Value > TimeSpan.Zero
+            ? expire.Value
+            : DefaultCacheExpiration;
+
+        return new DistributedCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = normalizedExpire
+        };
     }
 
     private static List<string> DeserializeCacheKeys(string? value)
@@ -235,10 +248,7 @@ public class Caching : ICaching
 
     public void Set<T>(string cacheKey, T value, TimeSpan? expire = null)
     {
-        _cache.Set(cacheKey, GetBytes(value),
-            expire == null
-                ? new DistributedCacheEntryOptions() { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(6) }
-                : new DistributedCacheEntryOptions() { AbsoluteExpirationRelativeToNow = expire });
+        _cache.Set(cacheKey, GetBytes(value), CreateExpiringOptions(expire));
 
         AddCacheKey(cacheKey);
     }
@@ -252,7 +262,7 @@ public class Caching : ICaching
     public async Task SetAsync<T>(string cacheKey, T value)
     {
         await _cache.SetAsync(cacheKey, Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(value)),
-            new DistributedCacheEntryOptions() { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(6) });
+            CreateExpiringOptions());
 
         await AddCacheKeyAsync(cacheKey);
     }
@@ -267,7 +277,7 @@ public class Caching : ICaching
     public async Task SetAsync<T>(string cacheKey, T value, TimeSpan expire)
     {
         await _cache.SetAsync(cacheKey, Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(value)),
-            new DistributedCacheEntryOptions() { AbsoluteExpirationRelativeToNow = expire });
+            CreateExpiringOptions(expire));
 
         await AddCacheKeyAsync(cacheKey);
     }
@@ -286,12 +296,7 @@ public class Caching : ICaching
 
     public void SetString(string cacheKey, string value, TimeSpan? expire = null)
     {
-        if (expire == null)
-            _cache.SetString(cacheKey, value,
-                new DistributedCacheEntryOptions() { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(6) });
-        else
-            _cache.SetString(cacheKey, value,
-                new DistributedCacheEntryOptions() { AbsoluteExpirationRelativeToNow = expire });
+        _cache.SetString(cacheKey, value, CreateExpiringOptions(expire));
 
         AddCacheKey(cacheKey);
     }
@@ -305,7 +310,7 @@ public class Caching : ICaching
     public async Task SetStringAsync(string cacheKey, string value)
     {
         await _cache.SetStringAsync(cacheKey, value,
-            new DistributedCacheEntryOptions() { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(6) });
+            CreateExpiringOptions());
 
         await AddCacheKeyAsync(cacheKey);
     }
@@ -320,7 +325,7 @@ public class Caching : ICaching
     public async Task SetStringAsync(string cacheKey, string value, TimeSpan expire)
     {
         await _cache.SetStringAsync(cacheKey, value,
-            new DistributedCacheEntryOptions() { AbsoluteExpirationRelativeToNow = expire });
+            CreateExpiringOptions(expire));
 
         await AddCacheKeyAsync(cacheKey);
     }

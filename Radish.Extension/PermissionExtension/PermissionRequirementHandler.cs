@@ -1,10 +1,10 @@
-using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Radish.Common;
 using Radish.Common.HttpContextTool;
+using Radish.Common.PermissionTool;
 using Radish.IService;
 
 namespace Radish.Extension.PermissionExtension;
@@ -102,10 +102,7 @@ public class PermissionRequirementHandler : AuthorizationHandler<PermissionRequi
                                     continue;
                                 }
 
-                                if (Regex.IsMatch(
-                                        questUrl,
-                                        $"^{permissionUrl}$",
-                                        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+                                if (PermissionUrlMatcher.IsMatch(questUrl, permissionUrl))
                                 {
                                     isMatchRole = true;
                                     break;

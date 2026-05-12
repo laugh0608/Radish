@@ -11,6 +11,7 @@ namespace Radish.Extension.ExperienceExtension;
 /// </summary>
 public class ExperienceCalculator : IExperienceCalculator
 {
+    private const int DefaultCacheExpirationMinutes = 60;
     private readonly ExperienceCalculatorOptions _options;
     private readonly IDistributedCache? _cache;
     private readonly string _cacheKey = "ExperienceCalculator:AllLevels";
@@ -117,11 +118,11 @@ public class ExperienceCalculator : IExperienceCalculator
             {
                 var cacheOptions = new DistributedCacheEntryOptions
                 {
-                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(_options.CacheExpirationMinutes)
+                    AbsoluteExpirationRelativeToNow = GetCacheExpiration()
                 };
                 var serialized = JsonSerializer.Serialize(result);
                 _cache.SetString(_cacheKey, serialized, cacheOptions);
-                Log.Information("经验值配置已缓存，过期时间 {Minutes} 分钟", _options.CacheExpirationMinutes);
+                Log.Information("经验值配置已缓存，过期时间 {Minutes} 分钟", GetCacheExpirationMinutes());
             }
             catch (Exception ex)
             {
@@ -229,5 +230,17 @@ public class ExperienceCalculator : IExperienceCalculator
                 Log.Warning(ex, "清除经验值配置缓存失败");
             }
         }
+    }
+
+    private TimeSpan GetCacheExpiration()
+    {
+        return TimeSpan.FromMinutes(GetCacheExpirationMinutes());
+    }
+
+    private int GetCacheExpirationMinutes()
+    {
+        return _options.CacheExpirationMinutes > 0
+            ? _options.CacheExpirationMinutes
+            : DefaultCacheExpirationMinutes;
     }
 }

@@ -89,6 +89,11 @@
   - 创建令牌时统一校验附件 ID、有效期、访问次数和授权用户 ID，避免无效附件、负数访问次数、超长有效期或无效授权用户进入持久化。
   - `CreateFileAccessTokenDto` 补齐 `AuthorizedIp`，避免调用方传入 IP 限制但服务端未落库导致限制失效。
   - 补充 `FileAccessTokenServiceTest` 覆盖合法创建、非法请求拒绝、无效授权 IP 拒绝、空 token 不查询、有效 token 访问计数更新，以及不存在 token 异常不泄露原始 token。
+- 安全治理尾项第二批处理权限匹配、Console 授权一致性与缓存默认值边界：
+  - 新增 `PermissionUrlMatcher`，统一权限 URL 正则整段匹配、根路径要求、无效正则吞吐和匹配超时边界，避免 `PermissionRequirementHandler` 直接执行不受控正则。
+  - `ConsolePermissions.GetPermissionsByApiUrl` 支持映射表正则兜底匹配，并补齐 `ConsoleAuthorization`、商城管理商品详情、经验每日统计和经验交易记录等 Console 接口映射。
+  - 新增授权边界测试，确认所有声明 `RequireConsolePermission` 的 Action 均有认证入口且不允许匿名访问。
+  - `Caching` 与 `ExperienceCalculator` 对 `0` / 负数缓存过期配置回落到默认 TTL，避免异常配置导致缓存写入失败。
 
 ### 验证记录
 
@@ -105,6 +110,12 @@
   - 完整重建已达成 `0` warning / `0` error。
 - `dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj -v minimal`
   - 提权环境通过，安全治理尾项后为 `359/359`。
+- `dotnet test Radish.Api.Tests -v minimal`
+  - 提权环境通过，权限匹配、Console 授权一致性与缓存默认值边界治理后为 `373/373`。
+- `dotnet build Radish.slnx -c Debug -v minimal`
+  - 提权环境通过，完整解决方案 Debug 构建保持 `0` warning / `0` error。
+- `dotnet build Radish.slnx -c Debug -t:Rebuild -v minimal`
+  - 提权环境通过，完整重建保持 `0` warning / `0` error。
 - `npm run check:repo-hygiene:changed`
   - 通过，未发现文本卫生问题。
 
