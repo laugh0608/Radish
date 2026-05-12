@@ -82,6 +82,23 @@
   border-color: #0b8a61;
 }
 
+.displayModeButton:disabled,
+.exportButton:disabled,
+.refreshButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.exportNotice {
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #cfd9ea;
+  border-radius: 0.55rem;
+  background: #f5f9ff;
+  color: #30425d;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
 /* 筛选器区域 */
 .filtersSection {
   background: white;

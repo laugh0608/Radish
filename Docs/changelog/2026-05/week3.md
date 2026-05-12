@@ -99,6 +99,14 @@
   - `ConsoleResourceApiSeed` 同步补齐对应资源关联，避免代码层权限映射存在但授权 UI 预览和资源授权派生缺数据。
   - `check-console-permissions` 扩展为同时校验 `ApiModule.LinkUrl` 与 `ConsoleResourceApiSeed`，覆盖后端映射、接口资源种子和 Console 资源关联三层一致性。
 
+### WebOS / PC 工作台真实功能缺口
+
+- 萝卜坑交易记录导出从占位提示改为真实 CSV 下载：
+  - 导出时复用当前类型 / 状态筛选条件拉取全部分页交易记录。
+  - 前端补齐日期范围与关键字的导出过滤，避免导出结果绕过用户已填写的筛选条件。
+  - CSV 包含交易流水号、创建时间、类型、状态、金额、手续费、发起方、接收方、业务信息与备注，并使用 UTF-8 BOM 兼容常见表格工具。
+  - 导出过程中禁用按钮并在页面内展示成功 / 空结果 / 失败提示，不再弹出“开发中”占位。
+
 ### 验证记录
 
 - `npm run build --workspace=radish.console`
@@ -126,7 +134,13 @@
   - 通过，后端资源映射 `85` 条 URL、`ApiModule` 种子 `86` 条、`ConsoleResourceApiSeed` `85` 条完成基础对齐。
 - `npm run check:repo-hygiene:changed`
   - 通过，未发现文本卫生问题。
+- `npm run build --workspace=radish.client`
+  - 通过。
+  - 本轮萝卜坑交易导出改动可编译；构建仍提示既有 `app-shop` chunk 超过 `500 kB`，与本次交易导出改动无直接关系，后续可作为单独前端打包治理项处理。
+- `dotnet build Radish.slnx -c Debug -t:Rebuild -v minimal`
+  - 提权环境通过。
+  - 完整重建继续保持 `0` warning / `0` error。
 
 ### 下一顺位
 
-- 安全治理尾项继续按小批次推进，优先看权限匹配、公开 / Console 接口授权一致性，以及缓存默认值边界是否还存在可测试的风险点。
+- WebOS / PC 工作台继续按“用户能点到但不能真正完成”的功能缺口推进，优先从萝卜坑、商城与个人中心的已暴露入口中挑选可小批次闭环的事项。
