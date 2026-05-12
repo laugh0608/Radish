@@ -83,6 +83,7 @@
   - `Radish.Repository` 事务 / 多租户基础仓储 warning 已清理，`ISqlSugarClient` 类型不符合事务要求时改为明确失败，分库 `TenantAttribute.configId` 缺失时给出显式异常。
   - `Radish.Common` 和 `Radish.Model` 的历史 nullable warning 已按既有语义收口，保留缓存未命中返回默认值、启动期服务后置注入、无数据响应可为空和历史背包道具展示兼容。
   - `AttachmentService` 去重发现物理文件缺失时改为软删除旧附件记录，避免维护任务继续引入物理删除口径。
+- `Radish.Gateway` 已将配置源注册从 `ConfigureAppConfiguration` 等价迁移到 `WebApplicationBuilder.Configuration`，保持共享配置、宿主配置、本地覆盖和环境变量的加载顺序不变，清除最后一条 `ASP0013` analyzer warning。
 
 ### 验证记录
 
@@ -96,11 +97,12 @@
   - 提权环境通过，`3/3`。
 - `dotnet build Radish.slnx -c Debug -t:Rebuild -v minimal`
   - 提权环境通过。
-  - 完整重建当前仅剩 `Radish.Gateway/Program.cs` 的 `ASP0013`，需在确认配置加载顺序等价后迁移到 `WebApplicationBuilder.Configuration`。
+  - 完整重建已达成 `0` warning / `0` error。
 - `dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj -v minimal`
   - 提权环境通过，`348/348`。
+- `npm run check:repo-hygiene:changed`
+  - 通过，未发现文本卫生问题。
 
 ### 下一顺位
 
-- Gateway `ASP0013` 涉及配置加载迁移，下一轮应先做等价性评估，再决定是否改写到 `WebApplicationBuilder.Configuration`。
 - 安全治理尾项继续按小批次推进，优先看权限 / 文件访问 / 缓存默认值等边界是否还存在可测试的风险点。

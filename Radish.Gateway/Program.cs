@@ -65,17 +65,14 @@ static void RemoveHttpSysDelegationRegistrations(IServiceCollection services)
 }
 
 // ===== 配置管理 =====
-builder.Host.ConfigureAppConfiguration((hostingContext, config) =>
-{
-    hostingContext.Configuration.ConfigureApplication();
-    var basePath = AppContext.BaseDirectory;
-    var sharedConfigPath = ResolveSharedConfigPath(basePath, hostingContext.HostingEnvironment.ContentRootPath);
-    config.Sources.Clear();
-    config.AddJsonFile(sharedConfigPath, optional: true, reloadOnChange: false);
-    config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
-    config.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false);
-    config.AddEnvironmentVariables();
-});
+var basePath = AppContext.BaseDirectory;
+var sharedConfigPath = ResolveSharedConfigPath(basePath, builder.Environment.ContentRootPath);
+builder.Configuration.Sources.Clear();
+builder.Configuration.AddJsonFile(sharedConfigPath, optional: true, reloadOnChange: false);
+builder.Configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false);
+builder.Configuration.AddEnvironmentVariables();
+builder.Configuration.ConfigureApplication();
 
 // 绑定 InternalApp 扩展中的环境变量
 builder.ConfigureApplication();

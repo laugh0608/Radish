@@ -22,7 +22,7 @@
   - `P2-C3 经验 / 等级治理` 已完成用户概览、冻结 / 解冻、每日统计观察、经验流水回看、最小可解释异常规则、人工复核联动与治理留痕首轮收口
   - Console 内容治理已完成聊天消息定位、帖子评论 / 轻回应回看、失效降级、目标快照、审核效率、手动处置与当前治理状态前置，转入稳定维护
   - 商城管理人工验收已于 `2026-05-12` 收口：商品相关订单、详情长 ID、删除确认、订单跳用户 / 商品返回链路和后端商品删除保护均已确认稳定
-  - Console 历史 chunk size warning 已完成首轮治理，后端已收口 Extension / Repository / Service / Infrastructure / Common / Model / 测试项目的低风险历史 warning；完整重建仅剩 Gateway 配置加载 `ASP0013` 待等价迁移评估
+  - Console 历史 chunk size warning 已完成首轮治理，后端已收口 Extension / Repository / Service / Infrastructure / Common / Model / 测试项目和 Gateway 配置加载的历史 warning；完整重建已达成 `0` warning / `0` error
 
 ## 当前执行入口
 
@@ -55,14 +55,14 @@
 ## 下一顺位
 
 - WebOS / PC 工作台继续推进时，优先补齐用户能点到但不能真正完成的功能，避免继续围绕已落地复访入口做低收益微调
-- 后端 + Console 治理优先处理 Gateway 配置加载 analyzer warning 的等价迁移评估与少量安全治理尾项
+- 后端 + Console 治理优先处理少量安全治理尾项
 - Flutter 深化若进入执行，优先补高价值移动已登录链路，不默认转向分发产品化材料或低增益微体验
 - Tauri 桌面安装包正式签名、自动更新、生产 Auth、SmartScreen、托盘 / 菜单与公开分发方式，仅在真实对外分发前重新评估
 - 公开内容壳层只做必要稳定维护和问题修复，不继续新增公开入口或细节增强
 
 ## 明日第一事项
 
-- `Gateway 配置加载 analyzer warning 与安全治理尾项`：先评估 `Radish.Gateway` 从 `ConfigureAppConfiguration` 迁移到 `WebApplicationBuilder.Configuration` 的配置加载顺序等价性，再推进权限 / 文件访问等安全边界的小批次治理
+- `安全治理尾项`：优先推进权限 / 文件访问 / 缓存默认值等安全边界的小批次治理，并保持完整重建 `0 warning` 基线
 
 ## 并行维护项
 
