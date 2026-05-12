@@ -62,3 +62,35 @@
 - 经验治理和内容治理已完成首轮收口，但应继续保持人工复核和手动处置边界，不扩自动处罚或大而全治理平台。
 - 商城管理前端缺口已基本补齐，但仍需要一轮手工验收，重点确认商品上下架、删除拦截、订单详情 / 备注和三向回跳在真实 Console 账号下的可用性。
 - 若人工验收稳定，后端 + Console 治理的下一顺位应转向剩余历史构建 warning 与少量安全治理尾项，而不是继续在已收口模块上做低收益微调。
+
+## 2026-05-12
+
+### 商城管理人工验收收口
+
+- 新增 [商城管理人工验收记录（2026-05-12）](/records/shop-console-management-acceptance-record-2026-05-12)，确认商品相关订单、详情长 ID、删除确认、订单跳用户 / 商品返回链路已修复。
+- 后端商品删除保护已纳入验收结论：已有任意订单记录的商品不允许删除，避免破坏历史订单追溯。
+
+### 历史构建 warning 与安全治理尾项
+
+- `radish.console` 已从单入口静态页面导入改为路由级懒加载，并按 `React / Router / Ant Design / @radish/ui / @radish/http` 等边界拆分产物，Console 构建不再输出 chunk size warning。
+- 后端同步清理一批低风险 warning：
+  - `Radish.Gateway` 使用 .NET 10 推荐的 `KnownIPNetworks` 替代过时 `KnownNetworks`。
+  - `PermissionRequirementHandler` 过滤空权限 URL / 角色，并使用大小写不敏感的整段正则匹配，减少无效权限数据靠异常吞掉的安全边界噪音。
+  - `AttachmentController` 补齐 `GetMyAttachments` XML 参数注释。
+  - `ConsoleAuthorizationController` 未找到角色时不再显式写入泛型 `default` 响应体。
+
+### 验证记录
+
+- `npm run build --workspace=radish.console`
+  - 通过。
+  - 构建产物最大 chunk 为 `vendor-antd-_util`，约 `397.53 kB`，未再触发 `500 kB` chunk size warning。
+- `dotnet build Radish.slnx -c Debug -v minimal`
+  - 提权环境通过。
+  - 本次增量构建当前可见 warning 剩余 `24` 条，集中在 `Radish.Extension` 的 AOP、Redis、SqlSugar nullable 存量；Gateway `ASPDEPR005`、权限处理器本轮触达 warning、Attachment XML 注释 warning 与 Console 授权 `default` warning 已消失。
+- `dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --filter AttachmentControllerTest -v minimal`
+  - 提权环境通过，`3/3`。
+
+### 下一顺位
+
+- 继续按低风险批次处理 `Radish.Extension` AOP / Redis / SqlSugar nullable warning。
+- Gateway `ASP0013` 涉及配置加载迁移，下一轮应先做等价性评估，再决定是否改写到 `WebApplicationBuilder.Configuration`。

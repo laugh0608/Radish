@@ -36,12 +36,16 @@ public class PermissionRequirementHandler : AuthorizationHandler<PermissionRequi
         {
             var data = await _userService.RoleModuleMaps();
             List<PermissionItem> list = (from item in data
+                let url = item.ApiModule?.LinkUrl
+                let roleName = item.Role?.RoleName
                 where item.IsDeleted == false
+                      && !string.IsNullOrWhiteSpace(url)
+                      && !string.IsNullOrWhiteSpace(roleName)
                 orderby item.Id
                 select new PermissionItem
                 {
-                    Url = item.ApiModule?.LinkUrl,
-                    Role = item.Role?.RoleName.ObjToString(),
+                    Url = url,
+                    Role = roleName.ObjToString(),
                 }).ToList();
 
             requirement.PermissionItems = list;
@@ -72,7 +76,10 @@ public class PermissionRequirementHandler : AuthorizationHandler<PermissionRequi
                 // result?.Principal 不为空即登录成功
                 if (result?.Principal != null || isTestCurrent)
                 {
-                    if (!isTestCurrent) httpContext.User = result.Principal;
+                    if (!isTestCurrent && result?.Principal is { } principal)
+                    {
+                        httpContext.User = principal;
+                    }
 
                     var currentUser = httpContext.RequestServices.GetRequiredService<ICurrentUserAccessor>().Current;
                     var currentUserRoles = currentUser.Roles;
@@ -89,7 +96,16 @@ public class PermissionRequirementHandler : AuthorizationHandler<PermissionRequi
                             {
                                 // 需要注意的是，数据库中的 URL 需要加上根符号，比如 /api/test。而 api/test 这里是不通过的
                                 // 忽略 URL 的大小写，如果有路径参数，数据库中的 URL 要做特殊处理，例如 /api/User/GetUserById/\d+
-                                if (Regex.Match(questUrl, item.Url?.ObjToString().ToLower())?.Value == questUrl)
+                                var permissionUrl = item.Url.ObjToString();
+                                if (string.IsNullOrWhiteSpace(permissionUrl))
+                                {
+                                    continue;
+                                }
+
+                                if (Regex.IsMatch(
+                                        questUrl,
+                                        $"^{permissionUrl}$",
+                                        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
                                 {
                                     isMatchRole = true;
                                     break;

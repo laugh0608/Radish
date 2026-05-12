@@ -1,31 +1,34 @@
-import type { ReactNode } from 'react';
+import { lazy, Suspense, type ReactNode } from 'react';
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import { AdminLayout } from '../components/AdminLayout';
 import { RouteGuard } from '../components/PermissionGuard';
-import { Dashboard } from '../pages/Dashboard';
-import { Applications } from '../pages/Applications';
-import { ProductList } from '../pages/Products';
-import { OrderList } from '../pages/Orders';
-import { UserList } from '../pages/Users';
-import { UserDetail } from '../pages/Users/UserDetail';
-import { RoleList, RolePermissionPage } from '../pages/Roles';
-import { CategoryList } from '../pages/Categories';
-import { TagList } from '../pages/Tags';
-import { StickerGroupList, StickerList } from '../pages/Stickers';
-import { ModerationPage } from '../pages/Moderation';
-import { CoinAdminPage } from '../pages/Coins';
-import { ExperienceAdminPage } from '../pages/Experience';
-import { SystemConfigList } from '../pages/SystemConfig';
-import { UserProfile } from '../pages/UserProfile';
-import { Settings } from '../pages/Settings';
-import { Login } from '../pages/Login';
-import { OidcCallback } from '../pages/OidcCallback';
-import { ThemeTest } from '../pages/ThemeTest';
-import { NotFound } from '../components/NotFound';
 import { getApiBaseUrl } from '../config/env';
 import { tokenService } from '../services/tokenService';
 import { canEnterConsole, consoleRouteMetaMap } from './routeMeta';
 import { useUser } from '../contexts/UserContext';
+
+const Applications = lazy(() => import('../pages/Applications').then(module => ({ default: module.Applications })));
+const CategoryList = lazy(() => import('../pages/Categories').then(module => ({ default: module.CategoryList })));
+const CoinAdminPage = lazy(() => import('../pages/Coins').then(module => ({ default: module.CoinAdminPage })));
+const Dashboard = lazy(() => import('../pages/Dashboard').then(module => ({ default: module.Dashboard })));
+const ExperienceAdminPage = lazy(() => import('../pages/Experience').then(module => ({ default: module.ExperienceAdminPage })));
+const Login = lazy(() => import('../pages/Login').then(module => ({ default: module.Login })));
+const ModerationPage = lazy(() => import('../pages/Moderation').then(module => ({ default: module.ModerationPage })));
+const NotFound = lazy(() => import('../components/NotFound').then(module => ({ default: module.NotFound })));
+const OidcCallback = lazy(() => import('../pages/OidcCallback').then(module => ({ default: module.OidcCallback })));
+const OrderList = lazy(() => import('../pages/Orders').then(module => ({ default: module.OrderList })));
+const ProductList = lazy(() => import('../pages/Products').then(module => ({ default: module.ProductList })));
+const RoleList = lazy(() => import('../pages/Roles').then(module => ({ default: module.RoleList })));
+const RolePermissionPage = lazy(() => import('../pages/Roles').then(module => ({ default: module.RolePermissionPage })));
+const Settings = lazy(() => import('../pages/Settings').then(module => ({ default: module.Settings })));
+const StickerGroupList = lazy(() => import('../pages/Stickers').then(module => ({ default: module.StickerGroupList })));
+const StickerList = lazy(() => import('../pages/Stickers').then(module => ({ default: module.StickerList })));
+const SystemConfigList = lazy(() => import('../pages/SystemConfig').then(module => ({ default: module.SystemConfigList })));
+const TagList = lazy(() => import('../pages/Tags').then(module => ({ default: module.TagList })));
+const ThemeTest = lazy(() => import('../pages/ThemeTest').then(module => ({ default: module.ThemeTest })));
+const UserDetail = lazy(() => import('../pages/Users/UserDetail').then(module => ({ default: module.UserDetail })));
+const UserList = lazy(() => import('../pages/Users').then(module => ({ default: module.UserList })));
+const UserProfile = lazy(() => import('../pages/UserProfile').then(module => ({ default: module.UserProfile })));
 
 function AuthenticatedLayout() {
   const token = tokenService.getAccessToken();
@@ -66,6 +69,10 @@ function AuthenticatedLayout() {
   );
 }
 
+function RouteLoading() {
+  return <div style={{ padding: '24px' }}>正在加载页面...</div>;
+}
+
 function HangfirePage() {
   return (
     <div
@@ -92,20 +99,24 @@ function HangfirePage() {
   );
 }
 
+function withSuspense(element: ReactNode) {
+  return <Suspense fallback={<RouteLoading />}>{element}</Suspense>;
+}
+
 function withRouteGuard(routeKey: string, element: ReactNode) {
   const route = consoleRouteMetaMap[routeKey];
-  return <RouteGuard route={route}>{element}</RouteGuard>;
+  return <RouteGuard route={route}>{withSuspense(element)}</RouteGuard>;
 }
 
 export const router = createBrowserRouter(
   [
     {
       path: '/login',
-      element: <Login />,
+      element: withSuspense(<Login />),
     },
     {
       path: '/callback',
-      element: <OidcCallback />,
+      element: withSuspense(<OidcCallback />),
     },
     {
       path: '/',
@@ -195,7 +206,7 @@ export const router = createBrowserRouter(
     },
     {
       path: '*',
-      element: <NotFound />,
+      element: withSuspense(<NotFound />),
     },
   ],
   {

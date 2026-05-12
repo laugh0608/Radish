@@ -71,6 +71,7 @@
 
 - [flutter-android-rc-distribution](/records/flutter-android-rc-distribution)
 - [tauri-webos-desktop-distribution-evaluation-2026-05-05](/records/tauri-webos-desktop-distribution-evaluation-2026-05-05)
+- [shop-console-management-acceptance-record-2026-05-12](/records/shop-console-management-acceptance-record-2026-05-12)
 - [comment-tree-compat-retirement-checklist](/records/comment-tree-compat-retirement-checklist)
 - [react-capacitor-tauri-spike-record-2026-05-04](/records/react-capacitor-tauri-spike-record-2026-05-04)
 

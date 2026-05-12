@@ -62,8 +62,7 @@ public class ConsoleAuthorizationController : ControllerBase
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.NotFound,
-                MessageInfo = "角色不存在",
-                ResponseData = default
+                MessageInfo = "角色不存在"
             };
         }
 
