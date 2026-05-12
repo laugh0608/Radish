@@ -84,6 +84,11 @@
   - `Radish.Common` 和 `Radish.Model` 的历史 nullable warning 已按既有语义收口，保留缓存未命中返回默认值、启动期服务后置注入、无数据响应可为空和历史背包道具展示兼容。
   - `AttachmentService` 去重发现物理文件缺失时改为软删除旧附件记录，避免维护任务继续引入物理删除口径。
 - `Radish.Gateway` 已将配置源注册从 `ConfigureAppConfiguration` 等价迁移到 `WebApplicationBuilder.Configuration`，保持共享配置、宿主配置、本地覆盖和环境变量的加载顺序不变，清除最后一条 `ASP0013` analyzer warning。
+- 安全治理尾项首批处理文件访问令牌：
+  - `FileAccessTokenService` 不再在日志和“不存在”异常中输出完整 token，改为日志脱敏摘要。
+  - 创建令牌时统一校验附件 ID、有效期、访问次数和授权用户 ID，避免无效附件、负数访问次数、超长有效期或无效授权用户进入持久化。
+  - `CreateFileAccessTokenDto` 补齐 `AuthorizedIp`，避免调用方传入 IP 限制但服务端未落库导致限制失效。
+  - 补充 `FileAccessTokenServiceTest` 覆盖合法创建、非法请求拒绝、无效授权 IP 拒绝、空 token 不查询、有效 token 访问计数更新，以及不存在 token 异常不泄露原始 token。
 
 ### 验证记录
 
@@ -99,10 +104,10 @@
   - 提权环境通过。
   - 完整重建已达成 `0` warning / `0` error。
 - `dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj -v minimal`
-  - 提权环境通过，`348/348`。
+  - 提权环境通过，安全治理尾项后为 `359/359`。
 - `npm run check:repo-hygiene:changed`
   - 通过，未发现文本卫生问题。
 
 ### 下一顺位
 
-- 安全治理尾项继续按小批次推进，优先看权限 / 文件访问 / 缓存默认值等边界是否还存在可测试的风险点。
+- 安全治理尾项继续按小批次推进，优先看权限匹配、公开 / Console 接口授权一致性，以及缓存默认值边界是否还存在可测试的风险点。

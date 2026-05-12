@@ -72,6 +72,11 @@ public class CreateFileAccessTokenDto
     public long? AuthorizedUserId { get; set; }
 
     /// <summary>
+    /// 授权 IP 地址（可选，为空表示不限 IP）
+    /// </summary>
+    public string? AuthorizedIp { get; set; }
+
+    /// <summary>
     /// 最大访问次数（0表示无限制，默认1次）
     /// </summary>
     public int MaxAccessCount { get; set; } = 1;
