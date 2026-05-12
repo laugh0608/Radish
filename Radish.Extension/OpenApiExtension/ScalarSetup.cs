@@ -60,27 +60,28 @@ public static class ScalarSetup
                     }
 
                     // 清空默认服务器列表，添加自定义服务器
-                    document.Servers.Clear();
-                    document.Servers.Add(new()
+                    var servers = document.Servers ??= [];
+                    servers.Clear();
+                    servers.Add(new()
                     {
                         Url = "https://localhost:5000",
                         Description = "本地开发环境 (Gateway HTTPS)"
                     });
-                    document.Servers.Add(new()
+                    servers.Add(new()
                     {
                         Url = "http://localhost:5001",
                         Description = "本地开发环境 (Gateway HTTP)"
                     });
-                    document.Servers.Add(new()
+                    servers.Add(new()
                     {
                         Url = "http://localhost:5100",
                         Description = "本地开发环境 (API 直连)"
                     });
 
                     // 添加 OAuth2 Security Scheme（用于 Scalar OIDC 登录）
-                    document.Components ??= new OpenApiComponents();
-                    document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
-                    document.Components.SecuritySchemes["oauth2"] = new OpenApiSecurityScheme
+                    var components = document.Components ??= new OpenApiComponents();
+                    components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+                    components.SecuritySchemes["oauth2"] = new OpenApiSecurityScheme
                     {
                         Type = SecuritySchemeType.OAuth2,
                         Description = "通过 OIDC 认证服务器获取 Access Token",

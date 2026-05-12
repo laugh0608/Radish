@@ -28,7 +28,8 @@ public class UnitOfWorkManage : IUnitOfWorkManage
     public SqlSugarScope GetDbClient()
     {
         // 必须要 as，后边会用到切换数据库操作
-        return _sqlSugarClient as SqlSugarScope;
+        return _sqlSugarClient as SqlSugarScope
+            ?? throw new InvalidOperationException("当前 ISqlSugarClient 不是 SqlSugarScope，无法执行多租户/事务操作。");
     }
 
 
@@ -89,7 +90,7 @@ public class UnitOfWorkManage : IUnitOfWorkManage
     {
         lock (this)
         {
-            string result = "";
+            string? result = null;
             while (!TranStack.IsEmpty && !TranStack.TryPeek(out result))
             {
                 Thread.Sleep(1);
@@ -137,7 +138,7 @@ public class UnitOfWorkManage : IUnitOfWorkManage
     {
         lock (this)
         {
-            string result = "";
+            string? result = null;
             while (!TranStack.IsEmpty && !TranStack.TryPeek(out result))
             {
                 Thread.Sleep(1);

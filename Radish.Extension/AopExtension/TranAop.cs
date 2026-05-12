@@ -121,7 +121,7 @@ public class TranAop : IInterceptor
     /// <summary>获取变量的默认值</summary>
     /// <param name="type"></param>
     /// <returns></returns>
-    public object GetDefaultValue(Type type)
+    public object? GetDefaultValue(Type type)
     {
         return type.IsValueType ? Activator.CreateInstance(type) : null;
     }
@@ -144,7 +144,7 @@ public class TranAop : IInterceptor
 
     private async Task TestActionAsync(IInvocation invocation)
     {
-        await Task.Run(null);
+        await Task.CompletedTask;
     }
 
     internal async Task InterceptAsync(Task task, MethodInfo method)

@@ -71,7 +71,7 @@ public class ServiceAop : IInterceptor
     }
 
     private async Task SuccessAction(IInvocation invocation, AopLogInfoTool apiLogAopInfo, DateTime startTime,
-        object o = null)
+        object? o = null)
     {
         DateTime endTime = DateTime.Now;
         string responseTime = (endTime - startTime).Milliseconds.ToString();
@@ -83,7 +83,7 @@ public class ServiceAop : IInterceptor
         // await Task.Run(() => { Console.WriteLine("执行成功-->" + JsonConvert.SerializeObject(apiLogAopInfo)); });
     }
 
-    private void LogEx(Exception ex, AopLogInfoTool dataIntercept)
+    private void LogEx(Exception? ex, AopLogInfoTool dataIntercept)
     {
         if (ex != null)
         {
@@ -168,9 +168,9 @@ public class ServiceAop : IInterceptor
 internal static class InternalAsyncHelper
 {
     public static async Task AwaitTaskWithPostActionAndFinally(Task actualReturnValue, Func<Task> postAction,
-        Action<Exception> finalAction)
+        Action<Exception?> finalAction)
     {
-        Exception exception = null;
+        Exception? exception = null;
 
         try
         {
@@ -188,10 +188,10 @@ internal static class InternalAsyncHelper
     }
 
     public static async Task<T> AwaitTaskWithPostActionAndFinallyAndGetResult<T>(Task<T> actualReturnValue,
-        Func<object, Task> postAction,
-        Action<Exception> finalAction)
+        Func<object?, Task> postAction,
+        Action<Exception?> finalAction)
     {
-        Exception exception = null;
+        Exception? exception = null;
         try
         {
             var result = await actualReturnValue;
@@ -211,11 +211,15 @@ internal static class InternalAsyncHelper
 
     public static object CallAwaitTaskWithPostActionAndFinallyAndGetResult(Type taskReturnType,
         object actualReturnValue,
-        Func<object, Task> action, Action<Exception> finalAction)
+        Func<object?, Task> action, Action<Exception?> finalAction)
     {
-        return typeof(InternalAsyncHelper)
+        var helperMethod = typeof(InternalAsyncHelper)
             .GetMethod("AwaitTaskWithPostActionAndFinallyAndGetResult", BindingFlags.Public | BindingFlags.Static)
+            ?? throw new InvalidOperationException("未找到 AwaitTaskWithPostActionAndFinallyAndGetResult 方法");
+
+        return helperMethod
             .MakeGenericMethod(taskReturnType)
-            .Invoke(null, new object[] { actualReturnValue, action, finalAction });
+            .Invoke(null, [actualReturnValue, action, finalAction])
+            ?? throw new InvalidOperationException("异步 AOP 包装返回值为空");
     }
 }

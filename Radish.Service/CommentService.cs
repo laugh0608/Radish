@@ -728,7 +728,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             .GroupBy(attachment => attachment.BusinessId!.Value)
             .ToDictionary(
                 group => group.Key,
-                group => _attachmentUrlResolver.ResolveAttachmentUrl(group.First().Id));
+                group => (string?)_attachmentUrlResolver.ResolveAttachmentUrl(group.First().Id));
 
         ApplyAuthorAvatarUrls(comments, avatarMap);
     }

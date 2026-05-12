@@ -25,14 +25,19 @@ public class Caching : ICaching
         return Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(source));
     }
 
+    private static List<string> DeserializeCacheKeys(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? new List<string>()
+            : JsonConvert.DeserializeObject<List<string>>(value) ?? new List<string>();
+    }
+
     public IDistributedCache Cache => _cache;
 
     public void AddCacheKey(string cacheKey)
     {
         var res = _cache.GetString(CacheConst.KeyAll);
-        var allkeys = string.IsNullOrWhiteSpace(res)
-            ? new List<string>()
-            : JsonConvert.DeserializeObject<List<string>>(res);
+        var allkeys = DeserializeCacheKeys(res);
         if (!allkeys.Any(m => m == cacheKey))
         {
             allkeys.Add(cacheKey);
@@ -48,9 +53,7 @@ public class Caching : ICaching
     public async Task AddCacheKeyAsync(string cacheKey)
     {
         var res = await _cache.GetStringAsync(CacheConst.KeyAll);
-        var allkeys = string.IsNullOrWhiteSpace(res)
-            ? new List<string>()
-            : JsonConvert.DeserializeObject<List<string>>(res);
+        var allkeys = DeserializeCacheKeys(res);
         if (!allkeys.Any(m => m == cacheKey))
         {
             allkeys.Add(cacheKey);
@@ -92,9 +95,7 @@ public class Caching : ICaching
     public void DelCacheKey(string cacheKey)
     {
         var res = _cache.GetString(CacheConst.KeyAll);
-        var allkeys = string.IsNullOrWhiteSpace(res)
-            ? new List<string>()
-            : JsonConvert.DeserializeObject<List<string>>(res);
+        var allkeys = DeserializeCacheKeys(res);
         if (allkeys.Any(m => m == cacheKey))
         {
             allkeys.Remove(cacheKey);
@@ -110,9 +111,7 @@ public class Caching : ICaching
     public async Task DelCacheKeyAsync(string cacheKey)
     {
         var res = await _cache.GetStringAsync(CacheConst.KeyAll);
-        var allkeys = string.IsNullOrWhiteSpace(res)
-            ? new List<string>()
-            : JsonConvert.DeserializeObject<List<string>>(res);
+        var allkeys = DeserializeCacheKeys(res);
         if (allkeys.Any(m => m == cacheKey))
         {
             allkeys.Remove(cacheKey);
@@ -140,7 +139,7 @@ public class Caching : ICaching
     public List<string> GetAllCacheKeys()
     {
         var res = _cache.GetString(CacheConst.KeyAll);
-        return string.IsNullOrWhiteSpace(res) ? null : JsonConvert.DeserializeObject<List<string>>(res);
+        return DeserializeCacheKeys(res);
     }
 
     /// <summary>
@@ -150,13 +149,13 @@ public class Caching : ICaching
     public async Task<List<string>> GetAllCacheKeysAsync()
     {
         var res = await _cache.GetStringAsync(CacheConst.KeyAll);
-        return string.IsNullOrWhiteSpace(res) ? null : JsonConvert.DeserializeObject<List<string>>(res);
+        return DeserializeCacheKeys(res);
     }
 
     public T Get<T>(string cacheKey)
     {
         var res = _cache.Get(cacheKey);
-        return res == null ? default : JsonConvert.DeserializeObject<T>(Encoding.UTF8.GetString(res));
+        return res == null ? default! : JsonConvert.DeserializeObject<T>(Encoding.UTF8.GetString(res))!;
     }
 
     /// <summary>
@@ -168,24 +167,24 @@ public class Caching : ICaching
     public async Task<T> GetAsync<T>(string cacheKey)
     {
         var res = await _cache.GetAsync(cacheKey);
-        return res == null ? default : JsonConvert.DeserializeObject<T>(Encoding.UTF8.GetString(res));
+        return res == null ? default! : JsonConvert.DeserializeObject<T>(Encoding.UTF8.GetString(res))!;
     }
 
     public object Get(Type type, string cacheKey)
     {
         var res = _cache.Get(cacheKey);
-        return res == null ? default : JsonConvert.DeserializeObject(Encoding.UTF8.GetString(res), type);
+        return res == null ? default! : JsonConvert.DeserializeObject(Encoding.UTF8.GetString(res), type)!;
     }
 
     public async Task<object> GetAsync(Type type, string cacheKey)
     {
         var res = await _cache.GetAsync(cacheKey);
-        return res == null ? default : JsonConvert.DeserializeObject(Encoding.UTF8.GetString(res), type);
+        return res == null ? default! : JsonConvert.DeserializeObject(Encoding.UTF8.GetString(res), type)!;
     }
 
     public string GetString(string cacheKey)
     {
-        return _cache.GetString(cacheKey);
+        return _cache.GetString(cacheKey)!;
     }
 
     /// <summary>
@@ -195,7 +194,7 @@ public class Caching : ICaching
     /// <returns></returns>
     public async Task<string> GetStringAsync(string cacheKey)
     {
-        return await _cache.GetStringAsync(cacheKey);
+        return (await _cache.GetStringAsync(cacheKey))!;
     }
 
     public void Remove(string key)

@@ -37,7 +37,7 @@ public class App
     public static readonly IEnumerable<Type> EffectiveTypes;
 
     /// <summary>优先使用 App.GetService() 手动获取服务</summary>
-    public static IServiceProvider RootServices => IsRun || IsBuild ? InternalApp.RootServices : null;
+    public static IServiceProvider RootServices => IsRun || IsBuild ? InternalApp.RootServices : null!;
 
     /// <summary>获取Web主机环境，如，是否是开发环境，生产环境等</summary>
     public static IWebHostEnvironment WebHostEnvironment => InternalApp.WebHostEnvironment;
@@ -51,13 +51,13 @@ public class App
     /// <summary>
     /// 获取请求上下文
     /// </summary>
-    public static HttpContext HttpContext => RootServices?.GetService<IHttpContextAccessor>()?.HttpContext;
-    
+    public static HttpContext HttpContext => RootServices?.GetService<IHttpContextAccessor>()?.HttpContext!;
+
     public static CurrentUserContext CurrentUser => GetService<ICurrentUserAccessor>(mustBuild: false)?.Current ?? CurrentUserContext.Anonymous;
 
     [Obsolete("禁止新增使用，请优先改用 App.CurrentUser / ICurrentUserAccessor")]
     public static IHttpContextUser HttpContextUser => GetService<IHttpContextUser>(mustBuild: false);
-    
+
     #region Service
 
     /// <summary>解析服务提供器</summary>
@@ -93,7 +93,7 @@ public class App
                 throw new ApplicationException("当前不可用，必须要等到 WebApplication Build后");
             }
 
-            return default;
+            return default!;
         }
 
         ServiceProvider serviceProvider = InternalApp.InternalServices.BuildServiceProvider();
@@ -101,7 +101,7 @@ public class App
     }
 
     public static TService GetService<TService>(bool mustBuild = true) where TService : class =>
-        App.GetService(typeof(TService), null, mustBuild) as TService;
+        App.GetService(typeof(TService), null!, mustBuild) as TService ?? null!;
 
     /// <summary>获取请求生存周期的服务</summary>
     /// <typeparam name="TService"></typeparam>
@@ -110,15 +110,15 @@ public class App
     /// <returns></returns>
     public static TService GetService<TService>(IServiceProvider serviceProvider, bool mustBuild = true)
         where TService : class => (serviceProvider ?? App.GetServiceProvider(typeof(TService), mustBuild, false))
-        ?.GetService<TService>();
+        ?.GetService<TService>() ?? null!;
 
     /// <summary>获取请求生存周期的服务</summary>
     /// <param name="type"></param>
     /// <param name="serviceProvider"></param>
     /// <param name="mustBuild"></param>
     /// <returns></returns>
-    public static object GetService(Type type, IServiceProvider serviceProvider = null, bool mustBuild = true) =>
-        (serviceProvider ?? App.GetServiceProvider(type, mustBuild, false))?.GetService(type);
+    public static object GetService(Type type, IServiceProvider serviceProvider = null!, bool mustBuild = true) =>
+        (serviceProvider ?? App.GetServiceProvider(type, mustBuild, false))?.GetService(type) ?? null!;
 
     #endregion
 
@@ -132,7 +132,7 @@ public class App
     {
         TOptions instance = App.Configuration
             .GetSection(ConfigurableOptions.GetConfigurationPath(typeof(TOptions)))
-            .Get<TOptions>();
+            .Get<TOptions>()!;
         return instance;
     }
 
@@ -140,37 +140,37 @@ public class App
     /// <typeparam name="TOptions">强类型选项类</typeparam>
     /// <param name="serviceProvider"></param>
     /// <returns>TOptions</returns>
-    public static TOptions GetOptions<TOptions>(IServiceProvider serviceProvider = null) where TOptions : class, new()
+    public static TOptions GetOptions<TOptions>(IServiceProvider serviceProvider = null!) where TOptions : class, new()
     {
         IOptions<TOptions> service = App.GetService<IOptions<TOptions>>(serviceProvider ?? App.RootServices, false);
-        return service?.Value;
+        return service?.Value ?? null!;
     }
 
     /// <summary>获取选项</summary>
     /// <typeparam name="TOptions">强类型选项类</typeparam>
     /// <param name="serviceProvider"></param>
     /// <returns>TOptions</returns>
-    public static TOptions GetOptionsMonitor<TOptions>(IServiceProvider serviceProvider = null)
+    public static TOptions GetOptionsMonitor<TOptions>(IServiceProvider serviceProvider = null!)
         where TOptions : class, new()
     {
         IOptionsMonitor<TOptions> service =
             App.GetService<IOptionsMonitor<TOptions>>(serviceProvider ?? App.RootServices, false);
-        return service?.CurrentValue;
+        return service?.CurrentValue ?? null!;
     }
 
     /// <summary>获取选项</summary>
     /// <typeparam name="TOptions">强类型选项类</typeparam>
     /// <param name="serviceProvider"></param>
     /// <returns>TOptions</returns>
-    public static TOptions GetOptionsSnapshot<TOptions>(IServiceProvider serviceProvider = null)
+    public static TOptions GetOptionsSnapshot<TOptions>(IServiceProvider serviceProvider = null!)
         where TOptions : class, new()
     {
         IOptionsSnapshot<TOptions> service = App.GetService<IOptionsSnapshot<TOptions>>(serviceProvider, false);
-        return service?.Value;
+        return service?.Value ?? null!;
     }
 
     #endregion
-    
+
     /// <summary>加载程序集中的所有类型</summary>
     /// <param name="ass"></param>
     /// <returns></returns>

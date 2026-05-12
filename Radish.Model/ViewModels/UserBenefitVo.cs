@@ -104,6 +104,7 @@ public class UserInventoryVo
     public ConsumableType VoConsumableType { get; set; }
 
     /// <summary>消耗品类型显示名称</summary>
+#pragma warning disable CS0618 // 保留历史背包记录展示，不重新启用已废弃道具。
     public string VoConsumableTypeDisplay => VoConsumableType switch
     {
         ConsumableType.RenameCard => "改名卡",
@@ -115,6 +116,7 @@ public class UserInventoryVo
         ConsumableType.LotteryTicket => "抽奖券",
         _ => "未知"
     };
+#pragma warning restore CS0618
 
     /// <summary>道具值</summary>
     public string? VoItemValue { get; set; }

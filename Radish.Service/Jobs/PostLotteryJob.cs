@@ -40,7 +40,7 @@ public class PostLotteryJob
                        lottery.DrawTime <= now,
             1,
             safeBatchSize,
-            lottery => lottery.DrawTime,
+            lottery => lottery.DrawTime ?? DateTime.MaxValue,
             OrderByType.Asc);
 
         var duePostIds = dueLotteries

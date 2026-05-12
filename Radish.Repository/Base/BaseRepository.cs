@@ -41,8 +41,11 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             var tenantAttr = typeof(TEntity).GetCustomAttribute<TenantAttribute>();
             if (tenantAttr != null)
             {
+                var configId = tenantAttr.configId?.ToString()
+                    ?? throw new InvalidOperationException($"实体 {typeof(TEntity).Name} 的 TenantAttribute 缺少 configId。");
+
                 // 统一处理 configId 小写
-                db = _dbScopeBase.GetConnectionScope(tenantAttr.configId.ToString().ToLower());
+                db = _dbScopeBase.GetConnectionScope(configId.ToLowerInvariant());
                 return db;
             }
 

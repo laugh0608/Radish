@@ -78,6 +78,11 @@
   - `PermissionRequirementHandler` 过滤空权限 URL / 角色，并使用大小写不敏感的整段正则匹配，减少无效权限数据靠异常吞掉的安全边界噪音。
   - `AttachmentController` 补齐 `GetMyAttachments` XML 参数注释。
   - `ConsoleAuthorizationController` 未找到角色时不再显式写入泛型 `default` 响应体。
+- 继续清理后端历史构建 warning：
+  - `Radish.Extension` AOP / Redis / SqlSugar / Scalar 的 nullable warning 已清理，补齐 Redis 缓存未命中、Scalar 文档组件和 SqlSugar 操作名解析的空值边界。
+  - `Radish.Repository` 事务 / 多租户基础仓储 warning 已清理，`ISqlSugarClient` 类型不符合事务要求时改为明确失败，分库 `TenantAttribute.configId` 缺失时给出显式异常。
+  - `Radish.Common` 和 `Radish.Model` 的历史 nullable warning 已按既有语义收口，保留缓存未命中返回默认值、启动期服务后置注入、无数据响应可为空和历史背包道具展示兼容。
+  - `AttachmentService` 去重发现物理文件缺失时改为软删除旧附件记录，避免维护任务继续引入物理删除口径。
 
 ### 验证记录
 
@@ -89,8 +94,13 @@
   - 本次增量构建当前可见 warning 剩余 `24` 条，集中在 `Radish.Extension` 的 AOP、Redis、SqlSugar nullable 存量；Gateway `ASPDEPR005`、权限处理器本轮触达 warning、Attachment XML 注释 warning 与 Console 授权 `default` warning 已消失。
 - `dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --filter AttachmentControllerTest -v minimal`
   - 提权环境通过，`3/3`。
+- `dotnet build Radish.slnx -c Debug -t:Rebuild -v minimal`
+  - 提权环境通过。
+  - 完整重建当前仅剩 `Radish.Gateway/Program.cs` 的 `ASP0013`，需在确认配置加载顺序等价后迁移到 `WebApplicationBuilder.Configuration`。
+- `dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj -v minimal`
+  - 提权环境通过，`348/348`。
 
 ### 下一顺位
 
-- 继续按低风险批次处理 `Radish.Extension` AOP / Redis / SqlSugar nullable warning。
 - Gateway `ASP0013` 涉及配置加载迁移，下一轮应先做等价性评估，再决定是否改写到 `WebApplicationBuilder.Configuration`。
+- 安全治理尾项继续按小批次推进，优先看权限 / 文件访问 / 缓存默认值等边界是否还存在可测试的风险点。
