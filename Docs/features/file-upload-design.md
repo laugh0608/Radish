@@ -1,6 +1,6 @@
 # 文件上传与附件管理（Radish.Api）
 
-> **最后更新**：2026-03-29
+> **最后更新**：2026-05-12
 
 本文档描述当前附件系统的真实实现口径，重点覆盖“附件如何落库、如何在正文中引用、如何在运行时解析 URL，以及更换域名时哪些数据不需要再人工修补”。
 
@@ -127,6 +127,12 @@
   - `application/json`
   - body：`CreateFileAccessTokenDto`
   - 返回：令牌信息与 `accessUrl`
+  - 创建参数边界：
+    - `AttachmentId` 必须大于 `0`，且调用者必须拥有该附件
+    - `ValidHours` 必须在 `1-168` 小时之间
+    - `MaxAccessCount` 必须大于等于 `0`，`0` 表示不限制次数
+    - `AuthorizedUserId` 如传入，必须大于 `0`
+    - `AuthorizedIp` 如传入，必须是合法 IPv4 / IPv6 地址，服务端会规范化后落库
 
 - `GET /api/v1/Attachment/DownloadByToken?token=...`
   - `AllowAnonymous`
@@ -137,6 +143,12 @@
   - body：JSON 字符串（示例：`"{token}"`）
 
 - `GET /api/v1/Attachment/GetAttachmentTokens?attachmentId=...`
+
+安全约束：
+
+- 访问令牌属于敏感凭据，日志和“不存在”类异常不得输出完整 token，只允许输出脱敏摘要。
+- 空 token 不应继续查询数据库；不存在、撤销、过期、次数耗尽、用户不匹配与 IP 不匹配都应安全失败。
+- `AuthorizedIp` 是令牌自身的访问限制，不是附件业务真值；为空表示不限 IP。
 
 > `accessUrl` 会基于当前请求的 `scheme + host` 生成，因此在切换域名后，历史分发出去的访问链接如果写死旧域名，应重新生成或让调用方基于新公开入口重建链接；这不影响数据库中的附件真值。
 

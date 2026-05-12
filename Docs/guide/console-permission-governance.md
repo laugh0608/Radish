@@ -48,6 +48,16 @@ Route Meta / RouteGuard / usePermission
 - `DbMigrate` 负责种子化 `ApiModule` 与默认角色授权，保证非默认角色也可通过数据库授权获得能力
 - `HangfireAuthorizationFilter` 等特殊入口负责消费权限快照，而不是硬编码角色放行
 
+### 2.2.1 URL 匹配边界
+
+后端资源 URL 匹配统一通过 `PermissionUrlMatcher` 执行，当前规则如下：
+
+- 权限资源 URL 必须能匹配完整 API 路径，不允许只命中路径片段就放行。
+- 待匹配路径必须具备根路径语义，不能用空字符串或无效路径绕过授权判断。
+- `ConsolePermissions` 中确需表达参数路由时使用受控正则，例如 `AdminGetOrder/.+`。
+- 无效正则、正则匹配超时或异常匹配都按安全失败处理，不允许靠异常吞掉后继续放行。
+- 新增 Console 专属接口时，应同步补 `ConsolePermissions`、`ApiModule.LinkUrl`、`ConsoleResourceApiSeed`，并运行 `npm run check:console-permissions`。
+
 ### 2.3 `console.access` 当前语义
 
 `console.access` 当前不再等同于“只要拥有就能看见 Console”。实际规则如下：
