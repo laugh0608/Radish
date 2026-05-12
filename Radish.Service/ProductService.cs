@@ -692,13 +692,13 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                 throw new InvalidOperationException("商品不存在");
             }
 
-            var unfinishedOrderCount = await _orderRepository.QueryCountAsync(
+            var relatedOrderCount = await _orderRepository.QueryCountAsync(
                 order => order.ProductId == productId
                     && !order.IsDeleted
-                    && (order.Status == OrderStatus.Pending || order.Status == OrderStatus.Paid));
-            if (unfinishedOrderCount > 0)
+                    && order.TenantId == product.TenantId);
+            if (relatedOrderCount > 0)
             {
-                throw new InvalidOperationException("存在未完成订单，不能删除商品");
+                throw new InvalidOperationException("商品已有订单记录，不能删除；请下架商品以保留历史订单快照");
             }
 
             product.IsDeleted = true;

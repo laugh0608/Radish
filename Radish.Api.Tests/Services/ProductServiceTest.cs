@@ -243,7 +243,7 @@ public class ProductServiceTest
     }
 
     [Fact]
-    public async Task DeleteProductAsync_ShouldRejectWhenUnfinishedOrdersExist()
+    public async Task DeleteProductAsync_ShouldRejectWhenRelatedOrdersExist()
     {
         var product = CreateMisconfiguredCoinCardProduct();
         product.Id = 100777;
@@ -255,10 +255,11 @@ public class ProductServiceTest
             .Setup(repository => repository.QueryCountAsync(It.IsAny<Expression<Func<Order, bool>>?>()))
             .ReturnsAsync((Expression<Func<Order, bool>>? expression) =>
             {
-                var pendingOrder = new Order
+                var completedOrder = new Order
                 {
                     ProductId = product.Id,
-                    Status = OrderStatus.Pending,
+                    Status = OrderStatus.Completed,
+                    TenantId = product.TenantId,
                     IsDeleted = false
                 };
 
@@ -268,7 +269,7 @@ public class ProductServiceTest
                 }
 
                 var predicate = expression.Compile();
-                return predicate(pendingOrder) ? 1 : 0;
+                return predicate(completedOrder) ? 1 : 0;
             });
         var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
 
@@ -281,7 +282,7 @@ public class ProductServiceTest
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.DeleteProductAsync(product.Id, 10001, "tester"));
 
-        Assert.Equal("存在未完成订单，不能删除商品", exception.Message);
+        Assert.Equal("商品已有订单记录，不能删除；请下架商品以保留历史订单快照", exception.Message);
         productRepository.Verify(repository => repository.UpdateAsync(It.IsAny<Product>()), Times.Never);
     }
 
