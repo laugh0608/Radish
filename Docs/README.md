@@ -28,6 +28,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [服务网关](./guide/gateway.md)
 - [部署指南](./deployment/guide.md)
 - [本地运行与排障手册](./guide/operations-runbook.md)
+- [文档篇幅治理](./guide/document-governance.md)
 
 ## 前端与交互
 
@@ -58,4 +59,6 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - 在线文档由用户或管理员在应用内新建，内容存储在数据库
 - 规划类文档已拆分为“总览 / 当前 / Backlog / 已完成摘要”，避免单页持续膨胀
 - `Docs/index.md`、`Docs/README.md`、`Docs/development-plan.md`、`Docs/planning/current.md` 等关键入口必须尽可能简约，只描述最近阶段、当前进度、执行入口和必要约束
+- 文档篇幅按类型治理：入口 / 索引建议不超过 `300` 行、硬上限 `500` 行；架构 / 规范 / 设计建议不超过 `600` 行、硬上限 `900` 行；专题深度文档建议不超过 `800` 行、硬上限 `1200` 行
+- `Docs/changelog/`、`Docs/records/` 和归档资料可放宽篇幅限制，但必须按日期、阶段或批次拆分并提供索引；超过 `1200` 行时应优先拆分或归档
 - 历史批次、命令级验证流水、实现细节和长背景应写入 `Docs/changelog/`、`Docs/planning/archive.md` 或对应专题文档，避免 AI / Agent 在新会话中读取无关背景浪费上下文

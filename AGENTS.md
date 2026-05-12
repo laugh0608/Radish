@@ -369,6 +369,13 @@ feat(ui): 优化桌面主题与组件展示
 ## 文档与更新要求
 
 - `Docs/` 为唯一真相源
+- 文档应按读者目标和阅读预算拆分，不应让单文件长期承载入口、规范、历史、验证流水和实现细节等多种职责。
+- 入口类文档建议不超过 `300` 行，硬上限 `500` 行；包括 `Docs/index.md`、`Docs/README.md`、`Docs/development-plan.md`、`Docs/planning/current.md` 以及各目录索引。
+- 架构、规范、设计类文档建议不超过 `600` 行，硬上限 `900` 行。
+- 专题深度文档建议不超过 `800` 行，硬上限 `1200` 行。
+- `Docs/changelog/`、`Docs/records/` 和归档资料可放宽篇幅限制，但必须按日期、阶段或批次拆分，并提供索引入口；超过 `1200` 行时应优先拆分或归档。
+- 超过软上限时，应优先拆出历史记录、验证流水、实现细节或专题说明；超过硬上限时，除日志、记录和归档类文档外，不应继续追加内容，应先拆分或归档。
+- 长文档顶部应提供简短摘要和必要目录，避免新会话为定位当前结论读取整篇历史。
 - 重要目录包括：
   - `Docs/architecture/specifications.md`
   - `Docs/architecture/framework.md`
@@ -377,6 +384,7 @@ feat(ui): 优化桌面主题与组件展示
   - `Docs/frontend/visual-color-reference.md`
   - `Docs/guide/`
   - `Docs/guide/validation-baseline.md`
+  - `Docs/guide/document-governance.md`
   - `Docs/development-plan.md`
   - `Docs/planning/current.md`
   - `Docs/changelog/`

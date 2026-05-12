@@ -58,6 +58,7 @@ features:
 - [API 说明索引](/guide/api-index)
 - [数据库总览](/guide/database-overview)
 - [本地运行与排障手册](/guide/operations-runbook)
+- [文档篇幅治理](/guide/document-governance)
 - [记录与验收索引](/records/)
 - [Console 权限 / 菜单 / 按钮管理一期设计方案](/guide/console-authorization-phase1)
 - [配置管理](/guide/configuration)
@@ -85,5 +86,5 @@ features:
 :::
 
 ::: warning 入口文档约束
-关键入口文档只保留最近阶段、当前进度、执行入口和必要约束。历史批次、命令级验证流水、实现细节和长背景应放到日志、归档或专题文档，避免新会话读取过多无关上下文。
+关键入口文档只保留最近阶段、当前进度、执行入口和必要约束，建议不超过 300 行，硬上限 500 行。架构 / 规范 / 设计类文档建议不超过 600 行，硬上限 900 行；专题深度文档建议不超过 800 行，硬上限 1200 行。历史批次、命令级验证流水、实现细节和长背景应放到日志、记录、归档或专题文档，避免新会话读取过多无关上下文。
 :::
