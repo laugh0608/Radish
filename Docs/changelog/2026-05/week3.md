@@ -94,6 +94,10 @@
   - `ConsolePermissions.GetPermissionsByApiUrl` 支持映射表正则兜底匹配，并补齐 `ConsoleAuthorization`、商城管理商品详情、经验每日统计和经验交易记录等 Console 接口映射。
   - 新增授权边界测试，确认所有声明 `RequireConsolePermission` 的 Action 均有认证入口且不允许匿名访问。
   - `Caching` 与 `ExperienceCalculator` 对 `0` / 负数缓存过期配置回落到默认 TTL，避免异常配置导致缓存写入失败。
+- Console 权限种子一致性继续收口：
+  - `DbMigrate` 补齐 `ConsoleAuthorization`、商城商品 / 订单详情、经验每日统计、经验流水、治理留痕与复核记录等 `ApiModule` 种子。
+  - `ConsoleResourceApiSeed` 同步补齐对应资源关联，避免代码层权限映射存在但授权 UI 预览和资源授权派生缺数据。
+  - `check-console-permissions` 扩展为同时校验 `ApiModule.LinkUrl` 与 `ConsoleResourceApiSeed`，覆盖后端映射、接口资源种子和 Console 资源关联三层一致性。
 
 ### 验证记录
 
@@ -112,10 +116,14 @@
   - 提权环境通过，安全治理尾项后为 `359/359`。
 - `dotnet test Radish.Api.Tests -v minimal`
   - 提权环境通过，权限匹配、Console 授权一致性与缓存默认值边界治理后为 `373/373`。
+- `dotnet test Radish.Api.Tests -v minimal`
+  - 提权环境通过，Console 权限种子一致性补齐后为 `374/374`。
 - `dotnet build Radish.slnx -c Debug -v minimal`
   - 提权环境通过，完整解决方案 Debug 构建保持 `0` warning / `0` error。
 - `dotnet build Radish.slnx -c Debug -t:Rebuild -v minimal`
   - 提权环境通过，完整重建保持 `0` warning / `0` error。
+- `npm run check:console-permissions`
+  - 通过，后端资源映射 `85` 条 URL、`ApiModule` 种子 `86` 条、`ConsoleResourceApiSeed` `85` 条完成基础对齐。
 - `npm run check:repo-hygiene:changed`
   - 通过，未发现文本卫生问题。
 

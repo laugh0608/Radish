@@ -96,6 +96,7 @@ public static class ConsolePermissions
             ["/api/v1/Shop/PutOnSale/.+"] = new[] { ProductsToggleSale },
             ["/api/v1/Shop/TakeOffSale/.+"] = new[] { ProductsToggleSale },
             ["/api/v1/Shop/AdminGetOrders"] = new[] { OrdersView },
+            ["/api/v1/Shop/AdminGetOrder/.+"] = new[] { OrdersView },
             ["/api/v1/Shop/RetryGrantBenefit/.+"] = new[] { OrdersRetry },
             ["/api/v1/Shop/AdminRemarkOrder/.+"] = new[] { OrdersRemark },
             ["/api/v1/Tag/GetPage"] = new[] { TagsView },

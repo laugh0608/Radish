@@ -44,6 +44,7 @@ public class AuthorizationBoundaryTests
     [InlineData("/api/v1/ConsoleAuthorization/GetResourceTree", ConsolePermissions.RolesView)]
     [InlineData("/api/v1/ConsoleAuthorization/SaveRoleAuthorization", ConsolePermissions.RolesEdit)]
     [InlineData("/api/v1/Shop/AdminGetProduct/10001", ConsolePermissions.ProductsView)]
+    [InlineData("/api/v1/Shop/AdminGetOrder/10001", ConsolePermissions.OrdersView)]
     [InlineData("/api/v1/Experience/GetUserDailyStats/10001", ConsolePermissions.ExperienceView)]
     [InlineData("/api/v1/Experience/GetUserTransactions/10001", ConsolePermissions.ExperienceView)]
     public void ConsolePermissions_ShouldResolveConsoleApiMappings(string apiUrl, string expectedPermission)

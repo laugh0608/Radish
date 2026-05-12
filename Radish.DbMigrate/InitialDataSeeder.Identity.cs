@@ -244,6 +244,42 @@ internal static partial class InitialDataSeeder
             },
             new
             {
+                ApiModuleId = 50016L,
+                ApiModuleName = "Get console resource tree",
+                LinkUrl = "/api/v1/ConsoleAuthorization/GetResourceTree",
+                ControllerName = "ConsoleAuthorization",
+                ActionName = "GetResourceTree",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50017L,
+                ApiModuleName = "Get role console authorization",
+                LinkUrl = "/api/v1/ConsoleAuthorization/GetRoleAuthorization",
+                ControllerName = "ConsoleAuthorization",
+                ActionName = "GetRoleAuthorization",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50018L,
+                ApiModuleName = "Get role permission preview",
+                LinkUrl = "/api/v1/ConsoleAuthorization/GetRolePermissionPreview",
+                ControllerName = "ConsoleAuthorization",
+                ActionName = "GetRolePermissionPreview",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50019L,
+                ApiModuleName = "Save role console authorization",
+                LinkUrl = "/api/v1/ConsoleAuthorization/SaveRoleAuthorization",
+                ControllerName = "ConsoleAuthorization",
+                ActionName = "SaveRoleAuthorization",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
                 ApiModuleId = 50020L,
                 ApiModuleName = "Get user list",
                 LinkUrl = "/api/v1/User/GetUserList",
@@ -433,6 +469,15 @@ internal static partial class InitialDataSeeder
             },
             new
             {
+                ApiModuleId = 500501L,
+                ApiModuleName = "Admin get product detail",
+                LinkUrl = "/api/v1/Shop/AdminGetProduct/\\d+",
+                ControllerName = "Shop",
+                ActionName = "AdminGetProduct",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
                 ApiModuleId = 50051L,
                 ApiModuleName = "Create product",
                 LinkUrl = "/api/v1/Shop/CreateProduct",
@@ -483,6 +528,15 @@ internal static partial class InitialDataSeeder
                 LinkUrl = "/api/v1/Shop/AdminGetOrders",
                 ControllerName = "Shop",
                 ActionName = "AdminGetOrders",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 500561L,
+                ApiModuleName = "Admin get order detail",
+                LinkUrl = "/api/v1/Shop/AdminGetOrder/.+",
+                ControllerName = "Shop",
+                ActionName = "AdminGetOrder",
                 Roles = new[] { 10000L, 10001L }
             },
             new
@@ -861,6 +915,42 @@ internal static partial class InitialDataSeeder
                 LinkUrl = "/api/v1/Experience/AdminUnfreezeExperience",
                 ControllerName = "Experience",
                 ActionName = "AdminUnfreezeExperience",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50136L,
+                ApiModuleName = "Get user experience daily stats",
+                LinkUrl = "/api/v1/Experience/GetUserDailyStats/.+",
+                ControllerName = "Experience",
+                ActionName = "GetUserDailyStats",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50137L,
+                ApiModuleName = "Get user experience governance actions",
+                LinkUrl = "/api/v1/Experience/GetUserGovernanceActions/.+",
+                ControllerName = "Experience",
+                ActionName = "GetUserGovernanceActions",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50138L,
+                ApiModuleName = "Get user experience transactions",
+                LinkUrl = "/api/v1/Experience/GetUserTransactions/.+",
+                ControllerName = "Experience",
+                ActionName = "GetUserTransactions",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50139L,
+                ApiModuleName = "Record experience governance review",
+                LinkUrl = "/api/v1/Experience/AdminRecordGovernanceReview",
+                ControllerName = "Experience",
+                ActionName = "AdminRecordGovernanceReview",
                 Roles = new[] { 10000L, 10001L }
             }
         };

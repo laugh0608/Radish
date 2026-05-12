@@ -1,6 +1,6 @@
 # Console 权限覆盖矩阵
 
-> 最后更新：2026-05-11
+> 最后更新：2026-05-12
 > 适用范围：`radish.console` 当前已接入权限治理的页面与其真实依赖的后端资源
 
 本文档用于把 Console 权限治理涉及的四层对象放到同一张表里：
@@ -51,7 +51,7 @@
 | Stickers Items | `/stickers/:groupId/items` | `console.stickers.view` | `console.stickers.create/edit/delete/sort/batch-upload` | `Sticker/GetGroupStickers/.+`、`AddSticker`、`UpdateSticker/.+`、`DeleteSticker/.+`、`BatchAddStickers`、`BatchUpdateSort`、`CheckStickerCode`、`NormalizeCode` | ✅ | 上传文件仍走共享接口，但已按 `businessType` 对 Sticker 链路收口，见第 4 节 |
 | Moderation | `/moderation` | `console.moderation.view` | `console.moderation.review` | `ContentModeration/GetReviewQueue`、`Review`、`ApplyUserAction`、`GetActionLogs` | ✅ | 当前已纳管 `Post / Comment / PostQuickReply / ChatMessage / Product` 举报审核链路，并支持创建时快照、当前状态、回看与失效降级并列展示 |
 | Coins | `/coins` | `console.coins.view` | `console.coins.adjust` | `Coin/GetBalanceByUserId`、`AdminAdjustBalance` | ✅ | 仅管理端查询指定用户余额与调账能力 |
-| Experience | `/experience` | `console.experience.view` | `console.experience.adjust/freeze/recalculate` | `Experience/GetUserExperience/.+`、`GetUserDailyStats/.+`、`GetLevelConfigs`、`AdminAdjustExperience`、`AdminFreezeExperience`、`AdminUnfreezeExperience`、`RecalculateLevelConfigs` | ✅ | `GetLevelConfigs` 为公开接口；`GetUserDailyStats` 返回最近窗口统计、观察标签与当前生效阈值快照，供 Console 做经验治理判断 |
+| Experience | `/experience` | `console.experience.view` | `console.experience.adjust/freeze/recalculate` | `Experience/GetUserExperience/.+`、`GetUserDailyStats/.+`、`GetUserTransactions/.+`、`GetUserGovernanceActions/.+`、`GetLevelConfigs`、`AdminAdjustExperience`、`AdminFreezeExperience`、`AdminUnfreezeExperience`、`AdminRecordGovernanceReview`、`RecalculateLevelConfigs` | ✅ | `GetLevelConfigs` 为公开接口；每日统计、经验流水与治理留痕共同支撑 Console 经验治理回看与人工复核 |
 | SystemConfig | `/system-config` | `console.system-config.view` | `console.system-config.create/edit/delete` | `SystemConfig/GetSystemConfigs`、`GetConfigCategories`、`GetConfigById`、`CreateConfig`、`UpdateConfig`、`DeleteConfig` | ✅ | 编辑详情链路已覆盖 |
 | Hangfire | `/hangfire` | `console.hangfire.view` | 无 | `/hangfire(/.*)?` | ✅ | 特殊入口，走 `HangfireAuthorizationFilter` |
 
@@ -108,6 +108,7 @@
 - 入口守卫中的 `hasPermission(user, CONSOLE_PERMISSIONS.xxx)`
 - `ConsolePermissions.ApiPermissionMappings`
 - `InitialDataSeeder.Identity.cs` 中的 `ApiModule.LinkUrl`
+- `InitialDataSeeder.ConsoleAuthorization.cs` 中的 `ConsoleResourceApiSeed`
 
 说明：
 
