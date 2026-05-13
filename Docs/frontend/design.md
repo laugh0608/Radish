@@ -1132,49 +1132,59 @@ Client  Console   Shop    Document
 - 业务特定组件各自维护
 - 通过 npm workspaces 实现热更新
 
-### 10.5 WebOS 与 SEO 适配规划
+### 10.5 公开内容 SEO 与分享基线
 
-> 仅 WebOS（radish.client）需要对搜索引擎友好，用于公开帖子列表/详情；其他前端项目（radish.console 等）默认不做 SEO 要求。此处只记录前端视角的规划，真正启用时需要与部署文档的 Docker 方案配合。
+> 仅 `radish.client` 的公开内容壳层需要对搜索引擎和外链分享友好；`radish.console`、登录后 WebOS 工作台和治理类页面默认不做 SEO 要求。
 
-#### 10.5.1 URL 与路由规划
+#### 10.5.1 当前公开 URL 范围
 
-- 公开内容（需 SEO）：
-  - 帖子列表：`/forum`、`/forum/category/{id}`、`/forum/tag/{tagSlug}`、`/forum/question`、`/forum/poll`、`/forum/lottery`
-  - 帖子详情：`/forum/post/{id}` 或 `/forum/post/{id}-{slug}`
+- 公开内容壳层当前覆盖：
+  - `/discover`
+  - `/forum`、`/forum/search`、`/forum/category/:categoryId`、`/forum/tag/:tagSlug`、`/forum/question`、`/forum/poll`、`/forum/lottery`
+  - `/forum/post/:postId`
+  - `/docs`、`/docs/search`、`/docs/:slug`
+  - `/u/:userId`
+  - `/leaderboard`
+  - `/shop`、`/shop/products`、`/shop/product/:productId`
+- 登录后功能不进入公开 SEO 范围，例如发帖、编辑、订单、背包、设置、Console 与治理后台。
+- 桌面工作台入口继续由 `/desktop` 承载；公开 URL 命中时优先渲染公开内容壳层，而不是完整 WebOS 桌面 Shell。
 
-> 论坛分类与标签能力边界、实现现状与后续计划请参考：
-> [论坛帖子分类与标签（专题）](/features/forum-category-tag)
-- 登录后功能（不要求 SEO）：
-  - 发帖/编辑：`/forum/create`、`/forum/edit/{id}`
-  - 用户中心：`/me`、`/settings` 等
-- 桌面 Shell 与应用路由关系：
-  - 桌面仍然挂在 `/` 路径；
-- 对于搜索引擎访问 `/forum`、`/forum/tag/*`、`/forum/question`、`/forum/poll`、`/forum/lottery`、`/forum/search`、`/forum/post/*`、`/docs`、`/docs/*` 等路径时，可以直接渲染公开内容壳层而不是完整桌面壳，以减少噪音并提升首屏内容密度。
+#### 10.5.2 当前 head 契约
 
-#### 10.5.2 SSR/SSG 与 hydrate 策略（前端视角）
+`Frontend/radish.client/src/public/publicHead.ts` 是公开壳层的统一 head helper。公开页面进入、路由切换和详情数据加载后，应通过该 helper 统一维护：
 
-- WebOS 论坛相关路由建议支持：
-  - 服务端渲染（SSR）：
-    - 在服务器端拉取帖子数据，返回完整 HTML（标题、正文摘要、首屏列表等）；
-    - 浏览器加载 JS 后再对页面进行 hydrate，继续以 SPA 方式运行。
-  - 或静态站点生成（SSG）：
-    - 对热门帖子、专题页预生成静态 HTML；
-    - 通过前端路由和 API 实现增量内容加载。
-- 具体实现可以基于：
-  - Vite SSR
-  - Next.js / Remix
-  - Astro 等支持 React 的 SSG/SSR 框架
-- 文档层面只要求：
-  - `/forum`、`/forum/post/*` 等路由在**服务端就具备完整 HTML 内容**，而不是只有空 `div#root`。
+- `document.title`
+- `meta[name="description"]`
+- `link[rel="canonical"]`
+- `meta[property="og:title"]`
+- `meta[property="og:description"]`
+- `meta[property="og:url"]`
+- 可选 `meta[property="og:image"]`
 
-#### 10.5.3 SEO 元信息与结构化数据
+`Frontend/radish.client/index.html` 只提供 SPA 首包的中文语言、站点默认 title、description 与 Open Graph 基线；页面级标题、摘要、canonical 和分享 URL 由运行时 head helper 根据公开路由补齐。
 
-- 每个可索引页面需要具备：
-  - `<title>`：`{帖子标题} - Radish`；
-  - `<meta name="description" content="{摘要或首段内容}">`；
-  - `<link rel="canonical" href="https://radish.com/forum/post/{id}">`；
-  - 根据需要配置 `og:title` / `og:description` / `og:image` 等社交分享 meta。
-- 可选：为帖子详情页输出 JSON-LD 结构化数据：
+#### 10.5.3 canonical 与分享入口
+
+- canonical URL 当前统一以 `https://radishx.com` 作为公开域名 seed。
+- `buildPublicCanonicalUrl()` 只接受规范化后的公开路径，不把登录后工作台路径写入 canonical。
+- forum detail、shop detail 和 docs detail 都应复制 canonical 公共链接，而不是复制当前浏览器里可能带有临时状态、来源参数或工作台上下文的 URL。
+- forum detail 当前仍使用 long 版 `/forum/post/:postId` 作为兼容 canonical；`P3-2` 之后若 `PostVo.VoPublicId` 可用，应逐步切到 `/forum/post/:postPublicId`，并继续兼容旧 long 链接。
+
+#### 10.5.4 robots 与 sitemap seed
+
+- `Frontend/radish.client/public/robots.txt` 当前作为静态抓取入口约束，允许公开内容壳层，禁止 Console、认证回调、桌面工作台和登录后治理类路径。
+- `Frontend/radish.client/public/sitemap.xml` 当前是静态 seed，只包含公开入口和公开列表页，不包含动态详情页。
+- 动态详情 sitemap、按热度 / 时间生成详情 URL、结构化数据和详情首包 HTML 可见性仍是后续专题，不并入当前 SPA 运行时 head 基线。
+
+#### 10.5.5 SSR / SSG 后置边界
+
+当前已落地的是“静态可见 + SPA 运行时一致”的公开内容基线，不要求立即改成 SSR / SSG。SSR / SSG、JSON-LD 和详情首包完整 HTML 属于后续增长专题，需要与后端查询、缓存、部署和爬虫策略一起评估。
+
+若后续进入 SSR / SSG 专题，可选方向包括 Vite SSR、Next.js、Remix 或 Astro；但在正式立项前，前端不得假定存在 `start:ssr` 脚本或 Node SSR 服务。
+
+#### 10.5.6 结构化数据后置示例
+
+后续若为帖子详情页输出 JSON-LD，可参考：
 
 ```html
 <script type="application/ld+json">
@@ -1190,20 +1200,6 @@ Client  Console   Shop    Document
 }
 </script>
 ```
-
-- 上述 meta 与 JSON-LD 可以在 SSR 阶段注入，也可以通过前端渲染时在 `<head>` 中动态更新（优先推荐 SSR 注入）。
-
-#### 10.5.4 sitemap 与 robots 规范
-
-- 建议由后端或独立任务生成 sitemap：
-  - 包含主要列表页：`/forum`、`/forum/category/*`、`/forum/tag/*`；
-  - 包含一部分帖子详情页：可以按时间/热门程度取 Top N，避免 sitemap 过大；
-  - 将 sitemap 暴露为：`/sitemap.xml` 或 `/sitemap-forum.xml`。
-- `robots.txt` 规划：
-  - 允许搜索引擎抓取论坛公开路径：`/forum`、`/forum/post/*` 等；
-  - 显式禁止与登录、设置相关的路径：`/me`、`/settings`、`/admin/*` 等。
-
-> 具体 sitemap 和 robots 的生成/托管位置建议在后端与部署文档中补充，这里只约束前端 URL 与可索引页面的范围。
 
 ## 11. 迭代与交付（导航）
 

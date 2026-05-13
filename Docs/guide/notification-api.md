@@ -2,7 +2,7 @@
 
 > **文档版本**：v1.0
 > **创建日期**：2026-01-06
-> **最后更新**：2026-01-06
+> **最后更新**：2026-05-13
 > **关联文档**：[通知系统总体规划](/guide/notification-realtime)
 
 本文档定义通知系统的 HTTP API 契约和 SignalR 事件协议。
@@ -48,6 +48,13 @@
 | 404 | 资源不存在 |
 | 429 | 请求频率过高 |
 | 500 | 服务器内部错误 |
+
+### 1.5 外部对象 ID 契约
+
+- API 响应中的 `long / long?` 标识字段在前端消费时一律按字符串处理，避免 JavaScript `Number` 精度丢失。
+- `extData` 是服务端手动拼接的 JSON 字符串，不会自动套用全局 `long -> string` converter；写入 `postId`、`commentId`、`channelId`、`messageId` 等导航对象 ID 时必须显式写成字符串。
+- forum 通知导航当前以 `postId / commentId` 字符串兼容既有链路；`P3-2` 之后若帖子 `PublicId` 可用，`extData` 可新增 `postPublicId`，但必须继续保留 `postId` 作为旧客户端和旧通知兼容字段。
+- 前端打开通知时优先消费更稳定的公开标识；缺失时再回退旧 `postId / commentId` 字符串。
 
 ---
 
@@ -126,14 +133,14 @@ Authorization: Bearer {token}
     "pageCount": 8,
     "data": [
       {
-        "id": 123456789,
+        "id": "123456789",
         "type": "CommentReplied",
         "priority": 2,
         "title": "张三 回复了您的评论",
         "content": "张三 说：很有道理，学到了！",
         "businessType": "Comment",
-        "businessId": 987654321,
-        "triggerId": 111222333,
+        "businessId": "987654321",
+        "triggerId": "111222333",
         "triggerName": "张三",
         "triggerAvatar": "/_assets/attachments/70001",
         "isRead": false,
@@ -142,14 +149,14 @@ Authorization: Bearer {token}
         "createdAt": "2026-01-06T10:30:00+08:00"
       },
       {
-        "id": 123456788,
+        "id": "123456788",
         "type": "PostLiked",
         "priority": 1,
         "title": "李四 点赞了您的帖子",
         "content": "您的帖子《如何学习 React》收到了一个赞",
         "businessType": "Post",
-        "businessId": 555666777,
-        "triggerId": 444555666,
+        "businessId": "555666777",
+        "triggerId": "444555666",
         "triggerName": "李四",
         "triggerAvatar": "/_assets/attachments/70002",
         "isRead": true,
@@ -204,21 +211,22 @@ Authorization: Bearer {token}
   "statusCode": 200,
   "messageInfo": "获取成功",
   "responseData": {
-    "id": 123456789,
+    "id": "123456789",
     "type": "CommentReplied",
     "priority": 2,
     "title": "张三 回复了您的评论",
     "content": "张三 说：很有道理，学到了！",
     "businessType": "Comment",
-    "businessId": 987654321,
-    "triggerId": 111222333,
+    "businessId": "987654321",
+    "triggerId": "111222333",
     "triggerName": "张三",
     "triggerAvatar": "/_assets/attachments/70001",
     "isRead": false,
     "readAt": null,
     "link": "/forum/post/555666777#comment-987654321",
     "extData": {
-      "postId": 555666777,
+      "postId": "555666777",
+      "commentId": "987654321",
       "postTitle": "如何学习 React",
       "commentContent": "很有道理，学到了！"
     },
@@ -256,7 +264,7 @@ Content-Type: application/json
 
 ```json
 {
-  "notificationIds": [123456789, 123456788, 123456787]
+  "notificationIds": ["123456789", "123456788", "123456787"]
 }
 ```
 
@@ -345,7 +353,7 @@ Content-Type: application/json
 
 ```json
 {
-  "notificationIds": [123456789, 123456788]
+  "notificationIds": ["123456789", "123456788"]
 }
 ```
 
@@ -538,14 +546,14 @@ interface UnreadCountChangedPayload {
 
 ```typescript
 interface NotificationReceivedPayload {
-  id: number;
+  id: string;
   type: string;
   priority: number;
   title: string;
   content: string;
   businessType: string | null;
-  businessId: number | null;
-  triggerId: number | null;
+  businessId: string | null;
+  triggerId: string | null;
   triggerName: string | null;
   triggerAvatar: string | null;
   link: string | null;
@@ -557,14 +565,14 @@ interface NotificationReceivedPayload {
 
 ```json
 {
-  "id": 123456789,
+  "id": "123456789",
   "type": "CommentReplied",
   "priority": 2,
   "title": "张三 回复了您的评论",
   "content": "张三 说：很有道理，学到了！",
   "businessType": "Comment",
-  "businessId": 987654321,
-  "triggerId": 111222333,
+  "businessId": "987654321",
+  "triggerId": "111222333",
   "triggerName": "张三",
   "triggerAvatar": "/_assets/attachments/70001",
   "link": "/forum/post/555666777#comment-987654321",
@@ -584,7 +592,7 @@ interface NotificationReceivedPayload {
 
 ```typescript
 interface NotificationReadPayload {
-  notificationIds: number[];
+  notificationIds: string[];
 }
 ```
 
@@ -592,7 +600,7 @@ interface NotificationReadPayload {
 
 ```json
 {
-  "notificationIds": [123456789, 123456788]
+  "notificationIds": ["123456789", "123456788"]
 }
 ```
 
@@ -987,14 +995,14 @@ export enum NotificationPriority {
 
 /** 通知 ViewModel */
 export interface NotificationVo {
-  id: number;
+  id: string;
   type: NotificationType;
   priority: NotificationPriority;
   title: string;
   content: string;
   businessType: string | null;
-  businessId: number | null;
-  triggerId: number | null;
+  businessId: string | null;
+  triggerId: string | null;
   triggerName: string | null;
   triggerAvatar: string | null;
   isRead: boolean;
@@ -1052,14 +1060,14 @@ export interface UnreadCountChangedPayload {
 
 /** NotificationReceived 事件 */
 export interface NotificationReceivedPayload {
-  id: number;
+  id: string;
   type: NotificationType;
   priority: NotificationPriority;
   title: string;
   content: string;
   businessType: string | null;
-  businessId: number | null;
-  triggerId: number | null;
+  businessId: string | null;
+  triggerId: string | null;
   triggerName: string | null;
   triggerAvatar: string | null;
   link: string | null;
@@ -1068,7 +1076,7 @@ export interface NotificationReceivedPayload {
 
 /** NotificationRead 事件 */
 export interface NotificationReadPayload {
-  notificationIds: number[];
+  notificationIds: string[];
 }
 
 /** AllNotificationsRead 事件 */
@@ -1104,7 +1112,7 @@ Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
-  "notificationIds": [123456789, 123456788]
+  "notificationIds": ["123456789", "123456788"]
 }
 
 ### 标记全部已读
@@ -1117,7 +1125,7 @@ Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
-  "notificationIds": [123456789]
+  "notificationIds": ["123456789"]
 }
 
 ### 获取通知设置

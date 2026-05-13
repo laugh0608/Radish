@@ -813,10 +813,10 @@ COPY --from=build /app/gateway /app/gateway
 # 运行时不在镜像中写死 ENTRYPOINT，由 docker-compose 的 command 决定具体运行哪一个服务
 ```
 
-### 前端镜像设计示例（Dockerfile.frontend 草案，兼顾 WebOS SEO）
+### 前端镜像设计示例（Dockerfile.frontend 草案，兼顾公开内容 SEO）
 
-> 同样仅作为设计示例，说明如何用单一前端镜像承载三个前端项目。
-> 其中 `radish.client` 未来会承载 WebOS（帖子列表/详情等公开页面），需要对搜索引擎友好，建议采用 SSR/SSG + hydrate 的方式，而不是纯 SPA。出于简化，本节只记录“镜像运行形态”的规划，不约束具体框架实现（可以是 Vite SSR、Next.js、Astro 等）。
+> 同样仅作为设计示例，说明如何用单一前端镜像承载前端项目。
+> 当前 `radish.client` 已先采用 SPA 静态产物 + 运行时 head helper 的 SEO 基线：`index.html` 提供站点默认 meta，`publicHead` 在公开路由运行时维护 title、description、Open Graph 与 canonical，`public/robots.txt` 和 `public/sitemap.xml` 作为静态抓取 seed。SSR / SSG 不属于当前部署前置条件，后续若正式立项再补专门服务入口。
 
 ```dockerfile
 FROM node:20 AS base
@@ -834,26 +834,19 @@ COPY radish.client radish.client
 COPY radish.console radish.console
 
 # 统一构建所有前端项目
-# - radish.client: 未来可以是 SSR/SSG 构建（生成 server bundle + HTML 模板）
+# - radish.client: 当前构建为静态 SPA 产物，包含 robots.txt / sitemap.xml seed
 # - radish.console: 通常构建为静态站点
 RUN cd Frontend/radish.client && npm run build
 RUN cd Frontend/radish.console && npm run build
 
-# 运行时使用 Node 作为前端服务容器入口
-# - WebOS (radish.client) 通过 Node 服务进行 SSR/SSG 渲染，返回带完整 HTML 的帖子列表/详情页
-# - console 可按需独立托管；固定文档无需单独静态站点
-FROM node:20 AS final
-WORKDIR /app
-
-COPY --from=base /app .
-
-# 约定：
-# - `radish.client` 提供一个 SSR 入口（例如 scripts 中的 "start:ssr"），监听 3000 端口；
-# - 具体的 SSR 实现细节由前端工程内部决定，Docker 只关心如何启动该服务。
-CMD ["npm", "run", "start:ssr", "--prefix", "radish.client"]
+# 运行时可使用 Nginx / Caddy / 静态文件服务承载 dist
+# - 未匹配的公开 SPA 路由仍回退 index.html
+# - robots.txt / sitemap.xml 需要直接作为静态文件返回
+FROM nginx:alpine AS final
+COPY --from=base /app/Frontend/radish.client/dist /usr/share/nginx/html
 ```
 
-> 注意：上面的 `start:ssr` 仅为占位命令，用于表达“这个容器将以一个 Node Web 服务的形式运行 WebOS SSR”，真正实现时需要在 `Frontend/radish.client/package.json` 中定义对应脚本。
+> 注意：上面的 Dockerfile 仍是部署设计示例，真实仓库镜像入口以当前 `Frontend/Dockerfile` 和 Compose 配置为准。若后续切到 SSR / SSG，需要重新定义前端运行时、缓存策略和健康检查，而不是沿用当前静态文件服务假设。
 
 ### 两镜像多容器的 Compose 结构示例（草案）
 

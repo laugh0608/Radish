@@ -2,7 +2,7 @@
 
 > **文档版本**：v1.2
 > **创建日期**：2026-01-06
-> **最后更新**：2026-01-10
+> **最后更新**：2026-05-13
 > **关联文档**：[通知系统总体规划](/guide/notification-realtime)
 
 本文档包含通知系统的详细实现方案，包括数据模型、服务层设计、缓存策略、异步化方案等核心技术细节。
@@ -86,12 +86,14 @@ public class Notification : RootEntityTKey<long>, ITenantEntity
     public string? TriggerAvatar { get; set; }
 
     /// <summary>
-    /// 扩展数据（JSON 格式）
+    /// 扩展数据（JSON 格式）。内部手动序列化时，导航对象 ID 必须显式写成字符串。
     /// </summary>
     [SugarColumn(ColumnDescription = "扩展数据", ColumnDataType = "text", IsNullable = true)]
     public string? ExtData { get; set; }
 }
 ```
+
+> 实现约束：`ExtData` 是业务代码自行拼接 / 序列化的 JSON 字符串，不会自动经过 API 层全局 `long -> string` 转换器。forum / chat 导航载荷中的 `postId`、`commentId`、`channelId`、`messageId` 等字段必须在写入前转成字符串；未来新增 `postPublicId` 时也应与旧 `postId` 并行写入，避免旧通知和旧客户端失效。
 
 ### 1.2 UserNotification（用户通知关系表）
 
