@@ -7,6 +7,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [文档首页](./index.md)
 - [快速开始](./guide/getting-started.md)
 - [开发路线图总览](./development-plan.md)
+- [第三开发阶段：真实使用增长与长期契约治理](./planning/phase-three-real-usage-contract-governance.md)
 - [首版 dev 边界](./planning/dev-first-scope.md)
 - [首版 dev 功能矩阵状态表](./planning/dev-first-status-matrix.md)
 - [当前进行中](./planning/current.md)

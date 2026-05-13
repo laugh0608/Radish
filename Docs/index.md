@@ -37,12 +37,13 @@ features:
 - [架构总览](/architecture/overview) - 系统拓扑、项目职责与关键约定
 - [开发规范](/architecture/specifications) - 分层约束、编码规范与协作规则
 - [前端设计](/frontend/design) - WebOS 架构与应用集成方式
-- [前端多壳层策略](/frontend/shell-strategy) - 第二阶段前端演进方向
+- [前端多壳层策略](/frontend/shell-strategy) - 多端壳层职责分工
 
 ## 当前协作
 
-- [开发路线图总览](/development-plan) - 第二开发阶段的主线、下一顺位与维护线
-- [第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform) - 当前阶段总目标、拆分与优先级
+- [开发路线图总览](/development-plan) - 当前主线、下一顺位与维护线
+- [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance) - 当前 `P3-0` 定义与工程整备入口
+- [第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform) - 已归档阶段总目标、拆分与优先级
 - [前端多壳层策略](/frontend/shell-strategy) - 公开内容、桌面工作台与 Flutter 客户端的职责分工
 - [当前进行中](/planning/current) - 现在真正要做的正式主线
 - [未来规划](/planning/backlog) - 当前明确后置的事项

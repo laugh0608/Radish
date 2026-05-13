@@ -198,6 +198,13 @@
 - 第二阶段归档判断结论为 Go，已写入 [已完成摘要](/planning/archive)。
 - 当前主线切到下一阶段主任务选择；第三开发阶段仍需单独形成目标、边界和入口文档口径后再启动。
 
+### `P3-0` 第三阶段定义与工程整备启动
+
+- 新增 [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)，将第三阶段主题暂定为“真实使用增长与长期契约治理”。
+- 当前不直接铺第三阶段大功能，先启动 `P3-0` 定义与工程整备窗口，范围包括公开内容壳层、WebOS 工作台、Flutter、Console / 后端治理、外部 ID 契约和代码热区审计。
+- 第一批候选顺序暂定为公开内容增长基础、`PublicId` 最小试点方案、代码热区拆分与用户留存轻闭环。
+- [当前进行中](/planning/current)、[开发路线图](/development-plan) 与 [Backlog](/planning/backlog) 已同步到 `P3-0` 口径，避免后续继续把第二阶段低收益尾项作为默认主线。
+
 ### 验证记录
 
 - `flutter test test/smoke_test.dart`
