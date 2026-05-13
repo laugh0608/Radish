@@ -193,6 +193,11 @@
 - [第二阶段收口评审](/planning/phase-two-closure-review) 已补充归档 Go / No-Go 条件、归档候选成果和回拉边界。
 - 当前不直接写入 [已完成摘要](/planning/archive)，等归档判断 Go 后再把第二开发阶段作为已完成里程碑归档。
 
+### 第二阶段归档 Go
+
+- 第二阶段归档判断结论为 Go，已写入 [已完成摘要](/planning/archive)。
+- 当前主线切到下一阶段主任务选择；第三开发阶段仍需单独形成目标、边界和入口文档口径后再启动。
+
 ### 验证记录
 
 - `flutter test test/smoke_test.dart`
