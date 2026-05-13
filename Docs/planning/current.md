@@ -7,8 +7,8 @@
 ## 当前状态
 
 - **阶段**：`第二开发阶段：社区深化与多端化`
-- **当前主线**：`第二阶段收口评审与下一主任务选择`
-- **复核日期**：`2026-05-12`
+- **当前主线**：`P2-C5-A Flutter 移动端高价值已登录链路首批评估`
+- **复核日期**：`2026-05-13`
 - **最近结论**：
   - `v26.3.2-release` 已于 `2026-04-06` 完成首版真实发布，第一开发阶段结束
   - `Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口，转入稳定维护
@@ -18,17 +18,19 @@
   - WebOS 桌面工作台已回到产品功能开发推进，并落地首批“继续使用”复访入口、桌面应用恢复入口与萝卜坑工作流补全
   - Console 治理已完成用户详情、个人资料 / 设置真实化与仪表盘真实统计首轮补洞
   - `ID Phase A` 已进入当前主线治理面：先冻结外部 `long` 暴露扩散，按 `LongId` / 字符串安全收口窗口参数、通知跳转、公开路由与 `Profile / Shop / Wiki / Forum` 首批边界；数据库主键迁移与全量 `PublicId` 切换继续后置
-  - 当前主线已从“多端路线收口后的产品功能开发推进”进入“第二阶段收口评审与下一主任务选择”，不再无限继续扫零碎尾项
+  - 当前主线已从“多端路线收口后的产品功能开发推进”和“第二阶段收口评审”切到 `P2-C5-A`，不再无限继续扫零碎尾项
   - `P2-C3 经验 / 等级治理` 已完成用户概览、冻结 / 解冻、每日统计观察、经验流水回看、最小可解释异常规则、人工复核联动与治理留痕首轮收口
   - Console 内容治理已完成聊天消息定位、帖子评论 / 轻回应回看、失效降级、目标快照、审核效率、手动处置与当前治理状态前置，转入稳定维护
   - 商城管理人工验收已于 `2026-05-12` 收口：商品相关订单、详情长 ID、删除确认、订单跳用户 / 商品返回链路和后端商品删除保护均已确认稳定
   - Console 历史 chunk size warning 已完成首轮治理，后端已收口 Extension / Repository / Service / Infrastructure / Common / Model / 测试项目和 Gateway 配置加载的历史 warning；完整重建已达成 `0` warning / `0` error
   - 安全治理尾项已完成当前小批次收口：文件访问令牌、权限匹配、公开 / Console 授权一致性、缓存默认值和 Console 权限种子一致性均已补测试与验证，完整重建保持 `0` warning / `0` error
+  - `2026-05-13` 已完成 [第二阶段收口评审](/planning/phase-two-closure-review) 窄范围筛查，未发现新的必须立即闭环 `P0/P1` 阻断项；当前主线切到 `P2-C5-A Flutter 移动端高价值已登录链路首批评估`
 
 ## 当前执行入口
 
 - [开发路线图总览](/development-plan)
 - [第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform)
+- [第二阶段收口评审](/planning/phase-two-closure-review)
 - [第二阶段产品功能补全规划](/planning/phase-two-product-completion)
 - [Phase 2-3 Flutter 客户端 MVP](/planning/phase-two-flutter-client-mvp)
 - [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation)
@@ -38,14 +40,14 @@
 
 ## 当前目标
 
-1. **第二阶段收口评审**
-   - 盘点 WebOS / PC 工作台、后端 + Console、Flutter、公开 Web 与 Tauri 的阶段结果
-   - 只允许再挑 `1-2` 个会阻断资产、安全、登录、购买、转账或主路径的 `P0/P1` 缺口闭环
-   - `app-shop` chunk warning 等工程提示只作为专项治理项，不作为新主线
-2. **下一主任务选择**
-   - 候选优先级：Flutter 移动端高价值已登录链路 > WebOS 工作台成片工作流补强 > 公开内容壳层真实问题修复
-   - 后端 + Console 治理转入稳定维护，除新暴露的安全 / 授权一致性问题外，不再主动扩治理面
-   - 暂不直接进入第三开发阶段，先完成第二阶段收口判断和文档归档
+1. **`P2-C5-A Flutter 移动端高价值已登录链路首批评估`**
+   - 先读 Flutter notifications / forum / profile / shell 现状
+   - 起步范围限定为最小通知入口、forum detail 回流和个人复访轻操作
+   - 不复刻 WebOS 工作台，不拉入完整通知中心、发帖、完整评论提交、点赞、投票、编辑治理、聊天或完整商城工作台
+2. **第二阶段收口护栏**
+   - WebOS / PC 工作台、后端 + Console、公开 Web 与 Tauri 转入稳定维护
+   - 若新发现会阻断资产、安全、登录、购买、转账或主路径的 `P0/P1` 缺口，最多挑 `1-2` 个小闭环
+   - 暂不直接进入第三开发阶段，先完成 `P2-C5-A` 后再判断阶段归档
 3. **多端方向保持收束**
    - Web 浏览器：公开内容壳层
    - Android / iOS：Flutter 移动原生安装包路线
@@ -53,16 +55,16 @@
 
 ## 下一顺位
 
-- 先做第二阶段收口评审：明确已完成、转维护、后置和仍需 `P0/P1` 闭环的事项
+- 先做 `P2-C5-A`：明确 Flutter 移动端已登录链路的最小通知入口、详情回流和个人复访轻操作边界
 - WebOS / PC 工作台只继续处理成片工作流中的阻断级缺口，不再无限扫零碎按钮或提示
 - 后端 + Console 治理转入稳定维护，后续只处理新暴露的安全 / 授权一致性问题
 - Flutter 若接棒为下一主任务，优先补高价值移动已登录链路，不默认转向分发产品化材料或低增益微体验
 - Tauri 桌面安装包正式签名、自动更新、生产 Auth、SmartScreen、托盘 / 菜单与公开分发方式，仅在真实对外分发前重新评估
 - 公开内容壳层只做必要稳定维护和问题修复，不继续新增公开入口或细节增强
 
-## 明日第一事项
+## 下一事项
 
-- `第二阶段收口评审`：形成阶段收口清单，列明已完成 / 转维护 / 后置 / 仍需闭环的 `P0/P1` 项；若发现 WebOS 工作台阻断级缺口，最多挑 `1-2` 个小闭环，否则准备切到 Flutter 移动端高价值已登录链路
+- `P2-C5-A Flutter 移动端高价值已登录链路首批评估`：先读 Flutter notifications / forum / profile / shell 现状，形成最小实施范围；若新发现 WebOS 工作台阻断级缺口，最多挑 `1-2` 个小闭环
 
 ## 并行维护项
 
@@ -96,5 +98,6 @@
 - 若移动 Web、Flutter 移动端或 Tauri + WebOS 桌面端成为正式主线，必须同步：
   - [开发路线图](/development-plan)
   - [第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform)
+  - [第二阶段收口评审](/planning/phase-two-closure-review)
   - [当前进行中](/planning/current)
   - [前端多壳层策略](/frontend/shell-strategy)
