@@ -1395,6 +1395,8 @@ void main() {
       200,
       scrollable: scrollable,
     );
+    expect(find.text('原帖回流'), findsWidgets);
+
     await tester.tap(find.text('回到原帖'));
     await tester.pump();
     await tester.pumpAndSettle();

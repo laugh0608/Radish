@@ -1157,8 +1157,10 @@ class _MyQuickRepliesCard extends StatelessWidget {
           title: quickReply.postTitle,
           subtitle:
               quickReply.content.isEmpty ? '这条轻回应暂无内容。' : quickReply.content,
-          meta: '轻回应 ${quickReply.id}',
+          meta: '帖子 ${quickReply.postId} · 轻回应 ${quickReply.id}',
           chips: [
+            '轻回应回看',
+            '原帖回流',
             _formatDate(quickReply.createTime),
           ],
           actionLabel: onOpenForumDetailTarget == null ? null : '回到原帖',

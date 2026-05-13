@@ -1202,6 +1202,8 @@ void main() {
     expect(find.text('我的轻回应'), findsOneWidget);
     expect(find.text('这个原生回看入口不错'), findsOneWidget);
     expect(find.text('Native profile follow-up'), findsWidgets);
+    expect(find.text('帖子 post-1 · 轻回应 quick-1'), findsOneWidget);
+    expect(find.text('原帖回流'), findsOneWidget);
 
     await tester.tap(find.text('回到原帖'));
     await tester.pumpAndSettle();

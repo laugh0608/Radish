@@ -177,9 +177,16 @@
 - 增加“刷新通知”轻入口，允许用户手动重新读取最新 forum 通知目标。
 - 保持当前边界：不做完整通知中心、不接系统通知栏、不扩发帖、完整评论提交、点赞、投票、编辑治理、聊天或完整商城工作台。
 
+### Flutter 个人复访轻操作补强
+
+- `ProfilePage` 的“我的轻回应”回流条目补齐目标上下文，展示帖子 ID、轻回应 ID、“轻回应回看”和“原帖回流”标签。
+- 保持复访边界：不新增完整浏览历史、收藏、关注、通知中心或资料编辑能力，只让已存在的回流入口更容易判断目标。
+
 ### 验证记录
 
 - `flutter test test/smoke_test.dart`
   - 提权环境通过，`37/37`。
+- `flutter test test/profile_page_test.dart`
+  - 提权环境通过，`29/29`。
 - `flutter test test/notification_repository_test.dart`
   - 提权环境通过，`3/3`。
