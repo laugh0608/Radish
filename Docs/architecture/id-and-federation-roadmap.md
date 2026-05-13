@@ -2,7 +2,7 @@
 
 > 状态：已确认方向，暂不进入当前主线
 >
-> 最后更新：2026-05-07（Asia/Shanghai）
+> 最后更新：2026-05-13（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -233,6 +233,7 @@ Radish 未来联邦的最小公共节点定义为：
 - 对 `User / Post / Comment / Attachment / Channel / Notification / WikiDocument` 等核心聚合增加 `PublicId`
 - 外部 API、前端路由、分享链接、实时消息契约逐步切向 `PublicId`
 - 仓储与联表暂时仍可基于 `InternalId`
+- `P3-2` 最小试点先从 `Post` 开始：`PostVo` 并行暴露 `VoPublicId / VoId`，forum 公开路由、分享 canonical、通知 `extData` 和窗口参数优先支持 `postPublicId`，同时保留旧 `postId` 兼容；`User / Product / WikiDocument / Comment` 暂不扩面
 
 ### Phase C：联邦前置准备
 

@@ -226,6 +226,28 @@
 - docs detail 既有复制链接入口保持不变，公开详情分享基线首批收口。
 - 下一主线切到 `P3-2 PublicId 最小试点方案`；完整动态 sitemap、详情结构化数据和 SSR / SSG 后置专题评估。
 
+### `P3-2-A` 外部 ID 契约审计
+
+- 已审计公开路由、通知 `extData`、窗口参数、分享链接、API 返回和浏览历史中的外部对象 ID 暴露面。
+- 最小试点对象收敛为 `Post`：forum 帖子同时覆盖公开传播、SEO / canonical、分享、通知回流、窗口参数和浏览历史，且现有前端基本按字符串处理 `postId / commentId`，兼容风险可控。
+- 首批不扩到 `User / Product / WikiDocument / Comment`：`User` 涉及身份与隐私，`Product` 涉及交易与订单，`WikiDocument` 已有 slug，`Comment` 暂作为帖子详情定位参数保留。
+- 兼容策略已写入 [第三开发阶段专题](/planning/phase-three-real-usage-contract-governance) 与 [标识体系与社区联邦长期路线](/architecture/id-and-federation-roadmap)：`PostVo` 并行暴露 `VoPublicId / VoId`，forum 公开路由、canonical、通知 `extData` 和窗口参数优先支持 `postPublicId`，同时保留旧 `postId / VoId / TargetId`。
+- 回滚边界已明确：不删除数据库列和值，旧 long 路由和通知字段继续可用；试点稳定前不做数据库主键迁移、全量 DTO 替换或 ActivityPub / WebFinger 实现。
+
+### 当日提交回顾与文档同步
+
+- 今日提交链从第二阶段收口评审、Flutter 通知 / 个人复访补强、第二阶段归档，推进到第三阶段定义、公开内容 SEO 分享基线和 `P3-2-A` 外部 ID 契约审计。
+- 当日已回顾提交：`57884db1` 第二阶段评审与 Flutter 主线、`b55af16e` 论坛通知轻入口、`b232f404` 个人复访轻回应上下文、`1ac77d2e / 6d1da6e2` 第二阶段归档判断、`a7989a0a` 第二阶段归档、`1bab61af / 9dbed957` 第三阶段入口口径、`bab4de4b` 公开内容 SEO 与分享基线。
+- 已复核并同步规划入口：[当前进行中](/planning/current)、[开发路线图](/development-plan)、[Backlog](/planning/backlog) 和 [第三开发阶段专题](/planning/phase-three-real-usage-contract-governance) 均已指向 `P3-2 PublicId 最小试点方案`。
+- 已复核并同步设计 / 说明入口：[标识体系与社区联邦长期路线](/architecture/id-and-federation-roadmap) 已补充 `Post` 最小试点口径；`Docs/index.md` 与 `Docs/README.md` 已保持第三阶段入口可达。
+- 今日代码类提交 `bab4de4b` 已包含 `P3-1` 对应文档、测试和日志同步；本次收工只补 `P3-2-A` 审计结论、明日事项与阶段状态，不新增代码实现。
+
+### 明日事项
+
+- `2026-05-14` 第一事项：按 `Post` 最小试点方案做实现前差异评估，列出 `Post.PublicId` 列 / 唯一索引、创建生成、详情双读、`PostVo.VoPublicId`、forum canonical、通知 `extData` 和窗口参数双字段解析的最小改动清单。
+- 若评估后进入实现，先补定向测试，再做最小代码批次；保持 long 旧链路全兼容。
+- 明日仍不做数据库主键迁移、全量外部契约切换、`User / Product / WikiDocument / Comment` 扩面、动态 sitemap、SSR / SSG 或 ActivityPub / WebFinger。
+
 ### 验证记录
 
 - `flutter test test/smoke_test.dart`
@@ -242,3 +264,7 @@
   - 通过；保留既有 `app-shop` chunk size warning。
 - `npm run check:repo-hygiene:changed`
   - 通过。
+- `npm run check:repo-hygiene:changed`
+  - `P3-2-A` 文档同步后通过。
+- `git diff --check`
+  - `P3-2-A` 文档同步后通过。

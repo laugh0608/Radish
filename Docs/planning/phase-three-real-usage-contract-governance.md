@@ -1,10 +1,10 @@
 # 第三开发阶段：真实使用增长与长期契约治理
 
-> 状态：`P3-0 第三阶段定义与工程整备` 已启动
+> 状态：`P3-2 PublicId 最小试点方案` 进行中
 >
 > 启动日期：2026-05-13（Asia/Shanghai）
 >
-> 本页承载第三开发阶段的目标定义、边界、首批任务候选和 `P3-0` 审计口径。快速入口仍以 [当前进行中](/planning/current) 为准；第二阶段事实以 [第二阶段收口评审](/planning/phase-two-closure-review) 与 [已完成摘要](/planning/archive) 为准。
+> 本页承载第三开发阶段的目标定义、边界、首批任务候选、`P3-0` 审计口径和 `P3-1 / P3-2` 首批结论。快速入口仍以 [当前进行中](/planning/current) 为准；第二阶段事实以 [第二阶段收口评审](/planning/phase-two-closure-review) 与 [已完成摘要](/planning/archive) 为准。
 
 ## 阶段判断
 
@@ -18,7 +18,13 @@
 
 因此第三阶段主题暂定为：**真实使用增长与长期契约治理**。
 
-## 当前先做 `P3-0`
+## 当前推进状态
+
+`P3-0` 已完成第三阶段定义、公开内容增长基础审计和第一批任务排序；`P3-1` 已完成公开内容 SEO 与分享基线。当前主线为 `P3-2 PublicId 最小试点方案`，已完成 `P3-2-A` 外部 ID 契约审计，首批试点对象收敛为 `Post`。
+
+下一步若进入实现，必须仍以兼容试点为边界：只补 `Post.PublicId` 并行契约、forum 公开 canonical、通知 `extData` 与窗口参数双字段解析；不做数据库主键迁移、全量 DTO 替换或 `User / Product / WikiDocument / Comment` 扩面。
+
+## `P3-0` 定义与工程整备
 
 `P3-0` 是第三阶段定义与工程整备窗口，不直接铺大功能。建议周期控制在 `2-4` 个工作日。
 
@@ -178,6 +184,73 @@
 
 - 动态 sitemap、详情页结构化数据、SSR / SSG 与详情首包 HTML 可见性进入后续专题，不并入 `P3-1` 首批。
 - profile 分享入口暂不补；公开个人页仍以来源返回和公开阅读为主。
+
+## `P3-2-A` 外部 ID 契约审计与最小试点方案
+
+审计日期：2026-05-13。
+
+### 暴露面审计
+
+| 暴露面 | 当前事实 | 试点判断 |
+| --- | --- | --- |
+| 公开路由 | forum 使用 `/forum/post/:postId`，shop 使用 `/shop/product/:productId`，profile 使用 `/u/:userId`；docs 已使用 `slug` 作为公开详情主路由 | forum post 是公开传播、通知回流和浏览历史的交汇点，最适合作为第一试点 |
+| 通知 `extData` | forum / chat 导航 `extData` 已显式把 ID 写成字符串；通知主体仍返回 `businessId / triggerId` 等 `long` 语义字段 | 试点只新增 forum post 的 `postPublicId`，继续保留 `postId / businessId` 兼容 |
+| 窗口参数 | forum / chat `appParams` 已按字符串安全解析；profile / shop 仍以目标 ID 打开 | 首批只扩展 forum 窗口参数，不牵动 profile / shop |
+| 分享链接 | forum detail 和 shop detail 复制 canonical 链接；forum 当前仍复制 long 版帖子路径 | 试点可让 forum 详情在拿到 `VoPublicId` 后输出 PublicId canonical，long 路径继续可读 |
+| API 返回 | `PostVo / ProductVo / UserPublicProfileVo / WikiDocumentVo / UserBrowseHistoryVo / NotificationVo` 仍暴露内部 `long` 或 `LongId`；docs 同时有 `slug` | 首批只为 `PostVo` 增加 `VoPublicId`，不删除 `VoId` |
+| 浏览历史 / 回跳 | `UserBrowseHistory.RoutePath` 已记录公开路径，`TargetId` 仍是内部 ID；Post / Product / Wiki 分别由后端构建 routePath | Post 试点后只调整 Post routePath 为 PublicId canonical，`TargetId` 继续保留内部关联 |
+
+### 最小试点对象
+
+首批只选 `Post`。
+
+原因：
+
+- 公开传播价值最高：`/forum/post/:postId` 是当前公开分享、SEO、通知回流和个人公开页回跳共同依赖的核心内容对象。
+- 兼容面可控：现有前端已经把 `postId / commentId` 当字符串处理，后端也已对 `long` JSON 输出做字符串化，试点可在不改主键的前提下平滑并行。
+- 风险低于 `User / Product`：`User` 牵涉身份、关注、头像、权限和隐私；`Product` 牵涉交易、订单、背包和 Console 管理，不适合作为第一批外部契约试验场。
+- `WikiDocument` 已有 `slug` 公开路由，当前收益低于 forum post；可在后续把 `PublicId` 作为内部稳定补充，而不是 P3-2 首批主对象。
+
+`Comment` 不作为独立试点对象。首批仅把 `commentId` 作为帖子详情定位参数保留，继续接受 long 字符串；等 `Post` 试点稳定后，再评估 `Comment / Reaction / Notification` 是否进入第二批。
+
+### 兼容策略
+
+- 数据库不改主键，只在 `Post` 增加可空 `PublicId` 字符串列和唯一索引；历史数据可后置批量补齐或按读取 / 分享生成前的维护任务补齐。
+- `PublicId` 形态遵循长期路线：`pst_` 前缀 + 固定长度 UUIDv7 编码体；生成时机优先在创建帖子时完成。
+- `PostVo` 新增 `VoPublicId`，`VoId` 保留；列表、详情、个人公开页、浏览历史和通知仍可使用 `VoId` 兼容旧客户端。
+- 公开路由接受双格式：`/forum/post/{postKey}` 中 `{postKey}` 可为旧 long 字符串或 `pst_` PublicId；服务端查询优先按 PublicId 解析，失败再按 long 兼容。
+- canonical 输出逐步切换：当详情 API 返回 `VoPublicId` 时，公开 forum 详情复制链接和运行时 canonical 使用 `/forum/post/{VoPublicId}`；旧 long 链接继续 301/前端 replace 或直接兼容读取。
+- 通知 `extData` 新增 `postPublicId`，继续保留 `postId`；前端打开 forum 时优先使用 `postPublicId`，缺失时回退 `postId`。
+- 窗口参数新增 `postPublicId`，继续保留 `postId`；桌面 forum 窗口和公开 forum 路由解析都保持字符串安全，不引入 `Number(...)`。
+- 浏览历史的 `RoutePath` 在 Post 试点后写入 PublicId canonical；`TargetId` 保持内部 ID，用于当前用户私有历史去重与内部关联。
+
+### 验证入口
+
+实施批次建议验证：
+
+```bash
+dotnet test Radish.Api.Tests
+npm run type-check --workspace=radish.client
+npm run test --workspace=radish.client
+npm run build --workspace=radish.client
+npm run check:repo-hygiene:changed
+```
+
+定向用例至少覆盖：
+
+- 后端 `Post` 创建时生成 `PublicId`，唯一且格式固定。
+- `GetById` 或新增兼容查询入口能同时读取 long 与 `pst_`。
+- `PostVo` 同时返回 `VoId / VoPublicId`，旧字段不缺失。
+- forum 公开路由能解析 long 与 `pst_`，并在详情加载后产出 PublicId canonical。
+- 通知 `extData` 同时存在 `postPublicId / postId` 时优先走 `postPublicId`；仅有旧 `postId` 时仍可回流。
+- 浏览历史 Post `RoutePath` 写入 PublicId canonical 后仍能从“继续使用”打开桌面 forum。
+
+### 回滚边界
+
+- 回滚不删除数据库列和历史值；只停止新写 `PublicId` canonical，并让前端分享、通知和窗口参数继续使用旧 `postId`。
+- 因旧 long 路由、`postId` 通知字段、`VoId` 和 `TargetId` 全部保留，前端可单独回退，不需要数据回滚。
+- 若 `PublicId` 生成或唯一索引出现异常，发布 / 编辑主路径应优先失败并暴露错误，不允许静默生成空值后把公开链接切到不可解析状态。
+- 试点稳定前，不扩展到 `User / Product / WikiDocument / Comment`，也不启动全量 DTO 字段替换、数据库主键迁移或 ActivityPub / WebFinger 实现。
 
 ## 首批候选任务
 
