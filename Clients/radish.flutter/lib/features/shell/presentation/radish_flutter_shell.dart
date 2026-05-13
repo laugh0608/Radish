@@ -68,6 +68,9 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
   List<DocsDetailHandoffTarget> _recentDocumentTargets =
       const <DocsDetailHandoffTarget>[];
   ForumDetailHandoffTarget? _latestForumNotificationTarget;
+  _ForumNotificationLookupState _forumNotificationLookupState =
+      _ForumNotificationLookupState.idle;
+  int _forumNotificationLookupRequestId = 0;
   ShellPostLoginTarget? _pendingPostLoginTarget;
   VoidCallback? _docsInlineDetailBackHandler;
   int? _tabReturnIndex;
@@ -300,6 +303,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     if (_wasAuthenticated && !isAuthenticated) {
       setState(() {
         _latestForumNotificationTarget = null;
+        _forumNotificationLookupState = _ForumNotificationLookupState.idle;
       });
     }
     _wasAuthenticated = isAuthenticated;
@@ -449,35 +453,46 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
   }
 
   Future<void> _loadLatestForumNotificationTarget() async {
+    final requestId = ++_forumNotificationLookupRequestId;
     final accessToken =
         widget.sessionController.state.session?.accessToken.trim();
     if (accessToken == null || accessToken.isEmpty) {
       if (mounted) {
         setState(() {
           _latestForumNotificationTarget = null;
+          _forumNotificationLookupState = _ForumNotificationLookupState.idle;
         });
       }
       return;
     }
 
+    setState(() {
+      _forumNotificationLookupState = _ForumNotificationLookupState.loading;
+    });
+
     try {
       final target = await widget.notificationRepository.getLatestForumTarget(
         accessToken: accessToken,
       );
-      if (!mounted) {
+      if (!mounted || requestId != _forumNotificationLookupRequestId) {
         return;
       }
 
+      final normalizedTarget = _normalizeForumHandoffTarget(target);
       setState(() {
-        _latestForumNotificationTarget = _normalizeForumHandoffTarget(target);
+        _latestForumNotificationTarget = normalizedTarget;
+        _forumNotificationLookupState = normalizedTarget == null
+            ? _ForumNotificationLookupState.empty
+            : _ForumNotificationLookupState.available;
       });
     } catch (_) {
-      if (!mounted) {
+      if (!mounted || requestId != _forumNotificationLookupRequestId) {
         return;
       }
 
       setState(() {
         _latestForumNotificationTarget = null;
+        _forumNotificationLookupState = _ForumNotificationLookupState.error;
       });
     }
   }
@@ -893,12 +908,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
                 label: '继续阅读文档',
                 onTap: _resumeRecentDocumentTarget,
               ),
-            if (_latestForumNotificationTarget != null)
-              _ShellStatusChip(
-                icon: Icons.notifications_outlined,
-                label: '查看论坛通知',
-                onTap: _openLatestForumNotification,
-              ),
+            ..._buildForumNotificationChips(sessionState),
             _ShellStatusChip(
               label: widget.environment.name.toUpperCase(),
             ),
@@ -1002,6 +1012,79 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
 
     return null;
   }
+
+  List<Widget> _buildForumNotificationChips(SessionState sessionState) {
+    if (!sessionState.isAuthenticated) {
+      return const <Widget>[];
+    }
+
+    final chips = <Widget>[];
+    switch (_forumNotificationLookupState) {
+      case _ForumNotificationLookupState.idle:
+        chips.add(
+          _ShellStatusChip(
+            icon: Icons.notifications_outlined,
+            label: '检查论坛通知',
+            onTap: _loadLatestForumNotificationTarget,
+          ),
+        );
+        break;
+      case _ForumNotificationLookupState.loading:
+        chips.add(
+          const _ShellStatusChip(
+            icon: Icons.hourglass_top_outlined,
+            label: '正在检查论坛通知',
+          ),
+        );
+        break;
+      case _ForumNotificationLookupState.available:
+        chips.add(
+          _ShellStatusChip(
+            icon: Icons.notifications_outlined,
+            label: '查看论坛通知',
+            onTap: _openLatestForumNotification,
+          ),
+        );
+        break;
+      case _ForumNotificationLookupState.empty:
+        chips.add(
+          const _ShellStatusChip(
+            icon: Icons.notifications_none_outlined,
+            label: '暂无论坛通知',
+          ),
+        );
+        break;
+      case _ForumNotificationLookupState.error:
+        chips.add(
+          const _ShellStatusChip(
+            icon: Icons.error_outline,
+            label: '通知刷新失败',
+          ),
+        );
+        break;
+    }
+
+    if (_forumNotificationLookupState !=
+        _ForumNotificationLookupState.loading) {
+      chips.add(
+        _ShellStatusChip(
+          icon: Icons.refresh,
+          label: '刷新通知',
+          onTap: _loadLatestForumNotificationTarget,
+        ),
+      );
+    }
+
+    return chips;
+  }
+}
+
+enum _ForumNotificationLookupState {
+  idle,
+  loading,
+  available,
+  empty,
+  error,
 }
 
 String? _normalizeUserId(String? userId) {

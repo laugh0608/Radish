@@ -1803,6 +1803,81 @@ void main() {
     expect(find.text('Big id root comment'), findsOneWidget);
   });
 
+  testWidgets('forum notification chip explains failure empty and refresh',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final notificationRepository = _MutableForumNotificationRepository()
+      ..error = StateError('notification service unavailable');
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: 'user-42',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: 'user-42',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _SeededBigIdForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+        notificationRepository: notificationRepository,
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('通知刷新失败'), findsOneWidget);
+    expect(find.text('刷新通知'), findsOneWidget);
+    expect(notificationRepository.callCount, 1);
+
+    notificationRepository.error = null;
+    await tester.tap(find.text('刷新通知'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('暂无论坛通知'), findsOneWidget);
+    expect(find.text('刷新通知'), findsOneWidget);
+    expect(notificationRepository.callCount, 2);
+
+    notificationRepository.target = const ForumDetailHandoffTarget(
+      postId: '2042219067430928384',
+      source: ForumDetailHandoffSource.notification,
+      initialTitle: '帖子被评论',
+      commentId: 'comment-big-1',
+    );
+    await tester.tap(find.text('刷新通知'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('查看论坛通知'), findsOneWidget);
+    expect(notificationRepository.callCount, 3);
+
+    await tester.tap(find.text('查看论坛通知'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('帖子详情'), findsWidgets);
+    expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
+    expect(find.text('通知回流'), findsWidgets);
+  });
+
   testWidgets('recent browse handoff resumes forum detail from shell chip',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
@@ -2674,6 +2749,26 @@ class _FakeForumNotificationRepository implements NotificationRepository {
       initialTitle: '帖子被评论',
       commentId: 'comment-big-1',
     );
+  }
+}
+
+class _MutableForumNotificationRepository implements NotificationRepository {
+  ForumDetailHandoffTarget? target;
+  Object? error;
+  int callCount = 0;
+
+  @override
+  Future<ForumDetailHandoffTarget?> getLatestForumTarget({
+    required String accessToken,
+    int pageSize = 20,
+  }) async {
+    callCount += 1;
+    final error = this.error;
+    if (error != null) {
+      throw error;
+    }
+
+    return target;
   }
 }
 
