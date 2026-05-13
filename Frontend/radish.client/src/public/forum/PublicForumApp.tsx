@@ -23,6 +23,7 @@ import type { LongId } from '@/api/user';
 import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { log } from '@/utils/logger';
 import { createForumCommentHighlightMap, getForumCommentHighlight } from '@/utils/forumCommentHighlights';
+import { copyToClipboard } from '@/utils/clipboard';
 import { Icon } from '@radish/ui/icon';
 import { PostCard } from '@/apps/forum/components/PostCard';
 import { PostDetail as ForumPostDetail } from '@/apps/forum/components/PostDetail';
@@ -43,7 +44,8 @@ import {
   getPublicDetailBackLabelKey,
   type PublicDetailBackMode,
 } from '../publicRouteNavigation';
-import { createDefaultSearchRoute } from '../forumRouteState';
+import { buildPublicForumPath, createDefaultSearchRoute } from '../forumRouteState';
+import { buildPublicCanonicalUrl } from '../publicHead';
 import {
   resolvePublicForumCategoryLoadState,
   resolvePublicForumDetailLoadState,
@@ -2540,6 +2542,8 @@ const PublicForumDetail = ({
   const [commentNavigationNotice, setCommentNavigationNotice] = useState<string | null>(null);
   const [highlightedCommentId, setHighlightedCommentId] = useState<LongId | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+  const [shareBusy, setShareBusy] = useState(false);
+  const [shareState, setShareState] = useState<'idle' | 'success' | 'error'>('idle');
   const requestIdRef = useRef(0);
   const commentAnchorMapRef = useRef(new Map<string, HTMLDivElement>());
   const handledCommentNavigationRef = useRef<string | null>(null);
@@ -2726,6 +2730,36 @@ const PublicForumDetail = ({
 
     document.title = `${post.voTitle} · ${t('desktop.apps.forum.name')}`;
   }, [post?.voTitle, t]);
+
+  useEffect(() => {
+    if (shareState === 'idle') {
+      return;
+    }
+
+    const timerId = window.setTimeout(() => {
+      setShareState('idle');
+    }, 2200);
+
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [shareState]);
+
+  const handleShare = async () => {
+    setShareBusy(true);
+
+    try {
+      const sharePath = buildPublicForumPath(commentId
+        ? { kind: 'detail', postId, commentId }
+        : { kind: 'detail', postId });
+      await copyToClipboard(buildPublicCanonicalUrl(sharePath));
+      setShareState('success');
+    } catch {
+      setShareState('error');
+    } finally {
+      setShareBusy(false);
+    }
+  };
 
   const navigateToComment = useCallback(async (
     targetCommentId: LongId,
@@ -2937,10 +2971,21 @@ const PublicForumDetail = ({
   return (
     <section className={`${styles.sectionCard} ${styles.detailSectionCard}`}>
       <div className={styles.detailTopbar}>
-        <button type="button" className={styles.backButton} onClick={onBack}>
-          <Icon icon="mdi:arrow-left" size={18} />
-          <span>{backLabel}</span>
-        </button>
+        <div className={styles.detailTopbarActions}>
+          <button type="button" className={styles.backButton} onClick={onBack}>
+            <Icon icon="mdi:arrow-left" size={18} />
+            <span>{backLabel}</span>
+          </button>
+          <button type="button" className={styles.secondaryButton} onClick={() => void handleShare()} disabled={shareBusy}>
+            <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={18} />
+            <span>{shareBusy ? t('forum.public.shareSubmitting') : t('forum.public.shareAction')}</span>
+          </button>
+        </div>
+        {shareState !== 'idle' && (
+          <p className={styles.shareFeedback} data-state={shareState}>
+            {shareState === 'success' ? t('forum.public.shareSuccess') : t('forum.public.shareFailed')}
+          </p>
+        )}
       </div>
 
       <div className={styles.detailStack}>

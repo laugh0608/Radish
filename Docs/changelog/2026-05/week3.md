@@ -205,6 +205,27 @@
 - 第一批候选顺序暂定为公开内容增长基础、`PublicId` 最小试点方案、代码热区拆分与用户留存轻闭环。
 - [当前进行中](/planning/current)、[开发路线图](/development-plan) 与 [Backlog](/planning/backlog) 已同步到 `P3-0` 口径，避免后续继续把第二阶段低收益尾项作为默认主线。
 
+### `P3-0-A` 公开内容增长基础审计
+
+- 已审计公开壳层 SEO / 分享 / canonical / robots / sitemap 现状：当前公开页面有运行时 `document.title` 和路由归一化，但缺统一 `head` 契约、`meta description`、Open Graph、`link[rel="canonical"]`、`robots.txt` 与 sitemap seed。
+- docs 公开详情已有复制 canonical 链接能力；forum / shop / profile / discover 暂未形成统一分享入口。
+- Gateway catch-all 当前会把未匹配路径转到 frontend，生产前端静态服务可直接服务 dist 内静态文件；第一批可先由前端承载静态 robots 与 sitemap seed，动态详情 sitemap 后置单独评估。
+- `P3-1` 第一批建议收口为“公开内容 SEO 与分享基线”：先做统一 head helper、公开页面运行时 head、静态 robots、静态 sitemap seed、forum detail / shop detail 复制 canonical 链接，不直接启动 SSR / SSG 或动态 sitemap。
+
+### `P3-1-A` 公开 head 与抓取入口基线
+
+- 新增 `publicHead` 工具，统一公开路由的 `document.title`、`meta description`、Open Graph、`link[rel="canonical"]` 与 canonical URL 构造。
+- `PublicEntry` 已接入运行时 head 基线，覆盖 discover、forum、docs、profile、leaderboard、shop。
+- `index.html` 已切到中文语言与 Radish 默认 meta / Open Graph 基线；新增前端静态 `robots.txt` 与 `sitemap.xml`，以 `https://radishx.com` 作为当前公开域名 seed。
+- 新增 `publicHead` 与静态 SEO 文件测试，并纳入 `radish.client` 现有 `node --test` 入口。
+
+### `P3-1-B` 公开详情分享入口
+
+- forum detail 已新增复制 canonical 链接按钮，支持复制中、成功、失败反馈。
+- shop detail 已新增复制 canonical 链接按钮，支持复制中、成功、失败反馈。
+- docs detail 既有复制链接入口保持不变，公开详情分享基线首批收口。
+- 下一主线切到 `P3-2 PublicId 最小试点方案`；完整动态 sitemap、详情结构化数据和 SSR / SSG 后置专题评估。
+
 ### 验证记录
 
 - `flutter test test/smoke_test.dart`
@@ -213,3 +234,11 @@
   - 提权环境通过，`29/29`。
 - `flutter test test/notification_repository_test.dart`
   - 提权环境通过，`3/3`。
+- `npm run type-check --workspace=radish.client`
+  - 通过。
+- `npm run test --workspace=radish.client`
+  - 通过，`126/126`。
+- `npm run build --workspace=radish.client`
+  - 通过；保留既有 `app-shop` chunk size warning。
+- `npm run check:repo-hygiene:changed`
+  - 通过。

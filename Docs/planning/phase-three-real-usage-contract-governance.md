@@ -65,6 +65,120 @@
 
 初始判断：`P3-0` 的第一批开工不应从新增业务页开始，而应先把 `P3-1 / P3-2 / P3-3` 的范围、验收和风险写成可执行小批次。
 
+## `P3-0-A` 公开内容增长基础审计
+
+审计日期：2026-05-13。
+
+### 现状
+
+| 范围 | 当前事实 | 判断 |
+| --- | --- | --- |
+| HTML 基线 | `Frontend/radish.client/index.html` 仅有固定 `<title>radish.client</title>`、viewport 和 runtime config 脚本 | 搜索引擎和社交爬虫首包只能看到通用 SPA 壳 |
+| 运行时标题 | discover、forum、docs、profile、leaderboard、shop 均有 `document.title` 更新 | 对浏览器标签页有效，但不等同于服务端可见 SEO |
+| meta / Open Graph | 未发现统一 `meta description`、`og:title`、`og:description`、`og:image`、`twitter:*` 管理 | 分享卡片和搜索摘要缺统一契约 |
+| canonical | 公开路由已有 `buildPublic*Path` 与 `replaceState` 归一化；docs detail、forum tag、shop products/detail 等局部有 canonical route 收口 | URL 归一化已具备基础，但缺 `<link rel="canonical">` 输出 |
+| 分享入口 | docs 公开详情已有复制 canonical 公共链接；forum / profile / shop / discover 暂未形成统一分享动作 | 分享能力不一致，无法支撑公开内容增长第一批 |
+| 来源返回 | `PublicEntry` 已记录 discover / docs / forum / profile / shop 的来源返回动作 | 公开壳层回流基础可复用，不需要重做路由系统 |
+| sitemap / robots | `Frontend/radish.client/public` 未提供 `robots.txt` / `sitemap.xml`；Gateway 未定义专门路由；生产前端静态服务会对未知路径回退 `index.html` | 当前没有搜索引擎抓取入口约束 |
+| 承载位置 | Gateway catch-all 会把未匹配路径转到 frontend；Frontend 生产静态服务可直接服务 dist 内静态文件 | 静态 `robots.txt` / sitemap seed 可先放前端，动态 sitemap 需要后续单独设计 |
+
+### 关键结论
+
+- `P3-1` 不应第一步改 SSR / SSG。当前风险更基础：没有统一 `head` 契约、没有 `robots.txt`、没有 sitemap seed、分享入口不一致。
+- 第一批应先做“静态可见 + SPA 运行时一致”的增长基础：静态 `index.html` 品牌基线、统一 head helper、静态 robots、sitemap seed 和公开详情分享入口。
+- 动态 sitemap、SSR / SSG、JSON-LD 和内容详情首包 HTML 属于第二批或专题评估；它们需要后端查询、缓存、部署和爬虫策略一起定，不应在 `P3-1` 第一批直接铺开。
+- 公开内容增长基础应保持只读边界，不把购买、发帖、评论提交、个人治理、订单或背包动作带进公开壳层。
+
+### `P3-1` 第一批建议
+
+建议把 `P3-1` 第一批命名为：**公开内容 SEO 与分享基线**。
+
+建议范围：
+
+1. 建立 `publicHead` 前端小工具，统一写入：
+   - `document.title`
+   - `meta[name="description"]`
+   - `link[rel="canonical"]`
+   - `meta[property="og:title"]`
+   - `meta[property="og:description"]`
+   - `meta[property="og:url"]`
+   - 可选 `og:image`，无业务图时使用站点默认图
+2. 为公开壳层首批页面接入运行时 head：
+   - `/discover`
+   - `/forum` 与 forum 列表类路由
+   - `/forum/post/:postId`
+   - `/docs`、`/docs/search`、`/docs/:slug`
+   - `/u/:id`
+   - `/shop`、`/shop/products`、`/shop/product/:productId`
+3. 在前端静态产物中加入第一版 `robots.txt`：
+   - 允许公开内容壳层。
+   - 禁止 `/console/`、OIDC 回调、登录后工作台治理类路径。
+   - 指向当前公开域名下的 sitemap。
+4. 加入第一版静态 sitemap seed：
+   - 至少包含 `/discover`、`/forum`、`/docs`、`/docs/search`、`/leaderboard`、`/shop`、`/shop/products`。
+   - 详情页动态 sitemap 先不做，后续由 API / 构建任务或独立生成器承接。
+5. 统一公开详情分享入口策略：
+   - docs 已有复制链接，优先抽出可复用的复制链接反馈。
+   - forum detail 与 shop detail 首批补复制 canonical 链接。
+   - profile 是否开放分享入口在第一批内只做判断，不强制补。
+
+完成条件：
+
+- `npm run type-check --workspace=radish.client` 通过。
+- `npm run build --workspace=radish.client` 通过。
+- 新增或更新 `node --test` 覆盖 head helper、canonical URL 构造和 robots / sitemap 静态产物关键内容。
+- 人工检查至少覆盖 `/discover`、`/forum/post/:postId`、`/docs/:slug`、`/shop/product/:productId` 的 title、description、canonical 与复制链接。
+
+明确不做：
+
+- 不做 SSR / SSG 架构迁移。
+- 不做动态详情 sitemap。
+- 不做 JSON-LD。
+- 不把公开壳层扩成发帖、购买、订单、背包或治理工作台。
+
+### `P3-1-A` 公开 head 与抓取入口基线
+
+完成日期：2026-05-13。
+
+已完成：
+
+- 新增 `Frontend/radish.client/src/public/publicHead.ts`，统一公开路由的 `document.title`、`meta description`、Open Graph、`link[rel="canonical"]` 与 canonical URL 构造。
+- `PublicEntry` 已按公开路由接入 `publicHead`，覆盖 discover、forum、docs、profile、leaderboard、shop。
+- `Frontend/radish.client/index.html` 已改为中文语言基线和 Radish 默认 meta / Open Graph 基线。
+- 新增 `Frontend/radish.client/public/robots.txt` 与 `Frontend/radish.client/public/sitemap.xml`，先以 `https://radishx.com` 作为当前公开域名 seed。
+- 新增 `publicHead` 与静态 SEO 文件测试，纳入 `radish.client` 现有 `node --test` 入口。
+
+验证：
+
+- `npm run type-check --workspace=radish.client` 通过。
+- `npm run test --workspace=radish.client` 通过，`126/126`。
+- `npm run build --workspace=radish.client` 通过，仍有既有 `app-shop` chunk size warning。
+- `npm run check:repo-hygiene:changed` 通过。
+- `git diff --check` 通过。
+
+### `P3-1-B` 公开详情分享入口
+
+完成日期：2026-05-13。
+
+已完成：
+
+- forum detail 已新增复制 canonical 链接按钮，支持 busy / success / error 反馈。
+- shop detail 已新增复制 canonical 链接按钮，支持 busy / success / error 反馈。
+- docs detail 既有复制链接能力保持不变，三类公开详情的分享入口口径已经对齐。
+- 中英文 i18n 已补齐 forum / shop 公开分享文案。
+
+验证：
+
+- `npm run type-check --workspace=radish.client` 通过。
+- `npm run test --workspace=radish.client` 通过，`126/126`。
+- `npm run build --workspace=radish.client` 通过，仍有既有 `app-shop` chunk size warning。
+- `npm run check:repo-hygiene:changed` 通过。
+
+后置评估：
+
+- 动态 sitemap、详情页结构化数据、SSR / SSG 与详情首包 HTML 可见性进入后续专题，不并入 `P3-1` 首批。
+- profile 分享入口暂不补；公开个人页仍以来源返回和公开阅读为主。
+
 ## 首批候选任务
 
 ### `P3-1` 公开内容增长基础

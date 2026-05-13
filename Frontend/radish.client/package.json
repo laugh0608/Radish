@@ -12,7 +12,7 @@
     "cap:open:android": "cap open android",
     "cap:sync": "cap sync android",
     "cap:sync:android:local": "cap sync android && node ./scripts/write-capacitor-local-runtime-config.mjs",
-    "test": "node --test --test-isolation=none ./tests/wikiApp.helpers.test.ts ./tests/appAccess.test.ts ./tests/authSession.test.ts ./tests/tokenClaims.test.ts ./tests/windowGeometry.test.ts ./tests/forumNavigation.test.ts ./tests/chatNavigation.test.ts ./tests/workspaceNavigation.test.ts ./tests/desktopRecentApps.test.ts ./tests/desktopExternalUrl.test.ts ./tests/discoverRouteState.test.ts ./tests/publicRouteNavigation.test.ts ./tests/publicRouteState.test.ts ./tests/publicRouteSync.test.ts ./tests/tauriBridge.test.ts",
+    "test": "node --test --test-isolation=none ./tests/wikiApp.helpers.test.ts ./tests/appAccess.test.ts ./tests/authSession.test.ts ./tests/tokenClaims.test.ts ./tests/windowGeometry.test.ts ./tests/forumNavigation.test.ts ./tests/chatNavigation.test.ts ./tests/workspaceNavigation.test.ts ./tests/desktopRecentApps.test.ts ./tests/desktopExternalUrl.test.ts ./tests/discoverRouteState.test.ts ./tests/publicRouteNavigation.test.ts ./tests/publicRouteState.test.ts ./tests/publicRouteSync.test.ts ./tests/publicHead.test.ts ./tests/publicSeoStatic.test.ts ./tests/tauriBridge.test.ts",
     "type-check": "tsc --noEmit",
     "lint": "eslint .",
     "preview": "vite preview"

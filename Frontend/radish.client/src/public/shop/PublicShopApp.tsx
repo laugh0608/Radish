@@ -12,6 +12,7 @@ import {
 } from '@/api/shop';
 import type { Product, ProductCategory, ProductListItem } from '@/types/shop';
 import { resolveMediaUrl } from '@/utils/media';
+import { copyToClipboard } from '@/utils/clipboard';
 import type { PublicShopProductsRoute, PublicShopRoute } from '../shopRouteState';
 import {
   buildPublicShopPath,
@@ -22,6 +23,7 @@ import {
   getPublicDetailBackLabelKey,
   type PublicDetailBackMode,
 } from '../publicRouteNavigation';
+import { buildPublicCanonicalUrl } from '../publicHead';
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { usePublicReplaceRouteSync } from '../usePublicReplaceRouteSync';
@@ -175,6 +177,8 @@ export const PublicShopApp = ({
   const [totalPages, setTotalPages] = useState(1);
   const [reloadToken, setReloadToken] = useState(0);
   const [categoriesResolved, setCategoriesResolved] = useState(false);
+  const [shareBusy, setShareBusy] = useState(false);
+  const [shareState, setShareState] = useState<'idle' | 'success' | 'error'>('idle');
 
   const pageTitle = route.kind === 'detail'
     ? t('shop.public.detailTitle')
@@ -264,6 +268,20 @@ export const PublicShopApp = ({
   useEffect(() => {
     document.title = `${pageTitle} · ${t('desktop.apps.shop.name')}`;
   }, [pageTitle, t]);
+
+  useEffect(() => {
+    if (shareState === 'idle') {
+      return;
+    }
+
+    const timerId = window.setTimeout(() => {
+      setShareState('idle');
+    }, 2200);
+
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [shareState]);
 
   useEffect(() => {
     const requestId = ++categoryRequestIdRef.current;
@@ -471,6 +489,20 @@ export const PublicShopApp = ({
     onNavigate(fallbackProductsRoute);
   };
 
+  const handleShareProduct = async (productId: string) => {
+    setShareBusy(true);
+
+    try {
+      const sharePath = buildPublicShopPath({ kind: 'detail', productId });
+      await copyToClipboard(buildPublicCanonicalUrl(sharePath));
+      setShareState('success');
+    } catch {
+      setShareState('error');
+    } finally {
+      setShareBusy(false);
+    }
+  };
+
   const detailBackLabelKey = getPublicDetailBackLabelKey(detailBackAction?.mode);
   const detailBackLabel = detailBackLabelKey ? t(detailBackLabelKey) : t('shop.public.backToProducts');
   const detailBackHint = detailBackAction?.mode === 'discover'
@@ -599,6 +631,10 @@ export const PublicShopApp = ({
   };
 
   const renderDetail = () => {
+    if (route.kind !== 'detail') {
+      return null;
+    }
+
     if (productLoading) {
       return (
         <PublicStatusCard
@@ -655,12 +691,28 @@ export const PublicShopApp = ({
     return (
       <article className={styles.detailCard}>
         <div className={styles.detailTopbar}>
-          <button type="button" className={styles.secondaryButton} onClick={handleBackFromDetail}>
-            <Icon icon="mdi:arrow-left" size={18} />
-            <span>{detailBackLabel}</span>
-          </button>
+          <div className={styles.detailTopbarActions}>
+            <button type="button" className={styles.secondaryButton} onClick={handleBackFromDetail}>
+              <Icon icon="mdi:arrow-left" size={18} />
+              <span>{detailBackLabel}</span>
+            </button>
+            <button
+              type="button"
+              className={styles.secondaryButton}
+              onClick={() => void handleShareProduct(route.productId)}
+              disabled={shareBusy}
+            >
+              <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={18} />
+              <span>{shareBusy ? t('shop.public.shareSubmitting') : t('shop.public.shareAction')}</span>
+            </button>
+          </div>
           <span className={styles.readOnlyBadge}>{t('shop.public.readOnlyBadge')}</span>
         </div>
+        {shareState !== 'idle' && (
+          <p className={styles.shareFeedback} data-state={shareState}>
+            {shareState === 'success' ? t('shop.public.shareSuccess') : t('shop.public.shareFailed')}
+          </p>
+        )}
         <p className={styles.detailBackHint}>{detailBackHint}</p>
 
         <div className={styles.detailHero}>

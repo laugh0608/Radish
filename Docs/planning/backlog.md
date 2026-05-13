@@ -10,7 +10,7 @@
 ## 当前后置原则
 
 - backlog 中的事项，默认都不是“现在就该做”
-- 当前正式主线已经切换为 `P3-0 第三阶段定义与工程整备`
+- 当前正式主线已经切换为 `P3-2 PublicId 最小试点方案`
 - 若某项要从 backlog 回拉为主线，必须先更新 `planning/current.md` 与阶段路线图
 - backlog 只保留后置项，不再承担阶段定义职责
 
@@ -23,10 +23,10 @@
 - 经验 / 等级治理中的管理员调整、冻结 / 解冻、每日统计、缓存和配置化上限
 - 商城权益效果中的双倍经验、帖子置顶、帖子高亮等可购买权益效果复核
 
-以下事项已回拉到 [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance) 的 `P3-0` 定义与审计窗口，只先做范围、排序和验证口径判断：
+以下事项已回拉到 [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)：
 
-- 公开内容增长基础：`SEO / 分享卡片 / sitemap / canonical / robots / 外链打开策略`
-- `PublicId` 最小试点方案：只选择少数核心对象评估，不做全量迁移
+- 公开内容增长基础：`P3-1` 首批已完成 `SEO / canonical / robots / sitemap seed / 详情复制链接` 基线；动态 sitemap、结构化数据和 SSR / SSG 后置专题评估
+- `PublicId` 最小试点方案：当前主线，只选择少数核心对象评估，不做全量迁移
 - 代码热区拆分候选：超大公开页面、超大 Service、Flutter 大页面
 - 用户留存轻闭环：通知、复访、轻互动与公开分享的回流链路
 
@@ -48,7 +48,7 @@
 ### 标识体系与社区联邦预研
 
 - `ID Architecture`：为核心聚合引入 `InternalId / PublicId / FederationId` 分层，冻结新接口继续暴露 `long` 主键的扩散
-- `PublicId Rollout`：优先为 `User / Post / Comment / Attachment / Channel / Notification / WikiDocument` 设计并落地 `PublicId`；`P3-0` 只回拉最小试点方案，全量 rollout 仍后置
+- `PublicId Rollout`：优先为 `User / Post / Comment / Attachment / Channel / Notification / WikiDocument` 设计并落地 `PublicId`；当前只回拉最小试点方案，全量 rollout 仍后置
 - `Snowflake Exit Strategy`：待外部契约完成 `PublicId` 化后，再评估内部 Snowflake 主键向数据库 `sequence / identity` 的迁移窗口
 - `Federation Readiness`：为未来联邦预留本地对象 / 远端对象、canonical URI、收发队列、签名与重试边界
 - `ActivityPub / WebFinger`：作为未来公开社区联邦首选方向预研，不纳入第二阶段前半程主线
