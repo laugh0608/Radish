@@ -65,7 +65,7 @@
 
 ## 下一事项
 
-- `第二阶段归档判断`：按 [第二阶段收口评审](/planning/phase-two-closure-review) 整理阶段归档口径；若新发现 WebOS 工作台或 Flutter 主路径阻断级缺口，最多挑 `1-2` 个小闭环
+- `第二阶段归档判断`：按 [第二阶段收口评审](/planning/phase-two-closure-review) 的 Go / No-Go 条件判断是否可写入 [已完成摘要](/planning/archive)；若新发现 WebOS 工作台或 Flutter 主路径阻断级缺口，最多挑 `1-2` 个小闭环
 
 ## 并行维护项
 
