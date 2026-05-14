@@ -242,6 +242,13 @@
 - 评论定位、轻回应墙和详情加载在通过 PublicId 打开帖子后，会回到真实 `VoId` 调用内部评论 / 轻回应接口，避免把 PublicId 误传给内部 long 接口。
 - 首批仍不扩到 `User / Product / WikiDocument / Comment`，不启动历史数据批量补齐、数据库主键迁移或完整 `PublicId` 全量迁移。
 
+### `P3-3-A` `PublicForumApp` 首批低风险拆分
+
+- 已抽出 `publicForumUtils.ts`，承载公开论坛 route key、分页、阅读 guide、PublicId route identifier、评论树 children merge 等纯 helper。
+- 已抽出 `PublicStatusCard.tsx`，收口公开论坛多处加载 / 空态 / 错误状态展示。
+- 已抽出 `PublicForumTypeFeed.tsx`，独立承载问答 / 投票 / 抽奖类型流页面。
+- `PublicForumApp.tsx` 从约 `2911` 行降到约 `2289` 行；本批暂不移动 `PublicForumDetail`，避免扩大刚落地的 PublicId 评论定位风险。
+
 ### 当日提交回顾与文档同步
 
 - 今日提交链从第二阶段收口评审、Flutter 通知 / 个人复访补强、第二阶段归档，推进到第三阶段定义、公开内容 SEO 分享基线和 `P3-2-A` 外部 ID 契约审计。
@@ -252,7 +259,7 @@
 
 ### 明日事项
 
-- 下一事项建议进入 `P3-3` 前置差异评估，优先从 `PublicForumApp.tsx` 拆分候选入手，先确认不改变业务行为的拆分边界和定向验证入口。
+- 下一事项建议继续 `P3-3-A` 小步拆分，优先评估 `PublicForumSearch` 或 `PublicForumTag`，暂不移动 `PublicForumDetail`。
 - 若继续围绕 `P3-2`，只做定向回归、真实使用兼容观察或历史 `Post.PublicId` 补齐策略评估。
 - 仍不做数据库主键迁移、全量外部契约切换、`User / Product / WikiDocument / Comment` 扩面、动态 sitemap、SSR / SSG 或 ActivityPub / WebFinger。
 
@@ -286,3 +293,11 @@
   - `P3-2-B` 首批实现和文档同步后通过，保留既有 `Docs/frontend/design.md` 与 `Docs/guide/notification-api.md` 篇幅提醒。
 - `git diff --check`
   - `P3-2-B` 首批实现和文档同步后通过。
+- `npm run type-check --workspace=radish.client`
+  - `P3-3-A` 首批拆分后通过。
+- `npm run test --workspace=radish.client -- --test-name-pattern="Forum|forum|Public|public|workspace"`
+  - `P3-3-A` 首批拆分后通过，`134/134`。
+- `npm run check:repo-hygiene:changed`
+  - `P3-3-A` 首批拆分后通过。
+- `git diff --check`
+  - `P3-3-A` 首批拆分后通过。

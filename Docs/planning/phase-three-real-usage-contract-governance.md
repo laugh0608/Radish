@@ -1,6 +1,6 @@
 # 第三开发阶段：真实使用增长与长期契约治理
 
-> 状态：`P3-2 PublicId 最小试点方案` 首批实现完成，下一顺位建议进入 `P3-3`
+> 状态：`P3-3 代码热区拆分与维护成本治理` 进行中
 >
 > 启动日期：2026-05-13（Asia/Shanghai）
 >
@@ -20,9 +20,9 @@
 
 ## 当前推进状态
 
-`P3-0` 已完成第三阶段定义、公开内容增长基础审计和第一批任务排序；`P3-1` 已完成公开内容 SEO 与分享基线。`P3-2` 已完成 `P3-2-A` 外部 ID 契约审计和 `P3-2-B` `Post.PublicId` 首批实现，试点对象保持收敛为 `Post`。
+`P3-0` 已完成第三阶段定义、公开内容增长基础审计和第一批任务排序；`P3-1` 已完成公开内容 SEO 与分享基线。`P3-2` 已完成 `P3-2-A` 外部 ID 契约审计和 `P3-2-B` `Post.PublicId` 首批实现，试点对象保持收敛为 `Post`。当前主线已进入 `P3-3`。
 
-后续若继续围绕 `P3-2`，只处理定向回归、历史数据 `PublicId` 补齐策略或真实使用暴露的兼容问题；仍不做数据库主键迁移、全量 DTO 替换或 `User / Product / WikiDocument / Comment` 扩面。下一顺位建议进入 `P3-3` 代码热区拆分与维护成本治理。
+`P3-3-A` 首批从 `PublicForumApp.tsx` 开始，只做不改变业务行为的结构拆分；后续若继续围绕 `P3-2`，只处理定向回归、历史数据 `PublicId` 补齐策略或真实使用暴露的兼容问题。
 
 ## `P3-0` 定义与工程整备
 
@@ -277,6 +277,29 @@ npm run check:repo-hygiene:changed
 - 不回填历史 `Post.PublicId`；如需批量补齐，应单独做数据维护方案。
 - 不扩到 `User / Product / WikiDocument / Comment`。
 - 不启动完整 `PublicId` 全量迁移、数据库主键迁移或 ActivityPub / WebFinger 实现。
+
+## `P3-3-A` `PublicForumApp` 首批低风险拆分
+
+启动日期：2026-05-14。
+
+已完成：
+
+- 抽出 `publicForumUtils.ts`，承载公开论坛 route key、分页、阅读 guide、PublicId route identifier、评论树 children merge 等纯 helper。
+- 抽出 `PublicStatusCard.tsx`，收口公开论坛多处加载 / 空态 / 错误状态展示。
+- 抽出 `PublicForumTypeFeed.tsx`，独立承载问答 / 投票 / 抽奖类型流页面。
+- `PublicForumApp.tsx` 从约 `2911` 行降到约 `2289` 行，暂不移动 `PublicForumDetail`，避免在 PublicId 评论定位刚落地后扩大风险。
+
+验证：
+
+- `npm run type-check --workspace=radish.client` 通过。
+- `npm run test --workspace=radish.client -- --test-name-pattern="Forum|forum|Public|public|workspace"` 通过。
+- `npm run check:repo-hygiene:changed` 通过。
+- `git diff --check` 通过。
+
+下一步：
+
+- 继续评估 `PublicForumSearch` 或 `PublicForumTag` 的拆分边界。
+- `PublicForumDetail` 保持在后续单独批次处理。
 
 ## 首批候选任务
 
