@@ -249,6 +249,36 @@
 - 已抽出 `PublicForumTypeFeed.tsx`，独立承载问答 / 投票 / 抽奖类型流页面。
 - `PublicForumApp.tsx` 从约 `2911` 行降到约 `2289` 行；本批暂不移动 `PublicForumDetail`，避免扩大刚落地的 PublicId 评论定位风险。
 
+### `P3-3-A` 公开论坛搜索 / 标签页拆分
+
+- 继续小步拆分 `PublicForumApp.tsx`：抽出 `PublicForumSearch.tsx`，独立承载公开搜索页的关键词、排序、时间范围、分页、滚动恢复、神评预览和只读状态展示。
+- 抽出 `PublicForumTag.tsx`，独立承载标签详情读取、标签 canonical route 同步、标签帖子列表、分页、神评预览和标签 metadata 展示。
+- `PublicForumApp.tsx` 从首批拆分后的约 `2289` 行继续降到约 `1393` 行；当前仍保留 `PublicForumList` 和 `PublicForumDetail` 在主文件内。
+- 本批边界保持不变：不移动 `PublicForumDetail`，不改公开论坛路由、数据请求、PublicId / long 双读兼容、搜索参数同步或标签 canonical 行为。
+- 已完成提交：
+  - `6e338389` `refactor(client): 拆分公开论坛搜索页`
+  - `5997cb75` `refactor(client): 拆分公开论坛标签页`
+
+### `P3-3-A` 搜索 / 标签拆分验证
+
+- `npm run type-check --workspace=radish.client`
+  - 搜索页拆分后通过。
+  - 标签页拆分后通过。
+- `node --test --test-isolation=none ./tests/forumNavigation.test.ts ./tests/workspaceNavigation.test.ts ./tests/publicRouteNavigation.test.ts ./tests/publicRouteState.test.ts ./tests/publicRouteSync.test.ts ./tests/publicHead.test.ts ./tests/publicSeoStatic.test.ts`
+  - 搜索页拆分后通过，`73/73`。
+  - 标签页拆分后通过，`73/73`。
+- `npm run check:repo-hygiene:changed`
+  - 搜索页拆分后通过。
+  - 标签页拆分后通过。
+- `node Scripts/check-repo-hygiene.mjs --stdin-z`
+  - 已显式检查新增组件与 `PublicForumApp.tsx`，搜索页 / 标签页两批均通过。
+- `git --no-pager diff --check`
+  - 搜索页 / 标签页两批均通过。
+- `git --no-pager diff --check -- Frontend/radish.client/src/public/forum/PublicForumApp.tsx Frontend/radish.client/src/public/forum/PublicForumSearch.tsx`
+  - 通过。
+- `git --no-pager diff --check -- Frontend/radish.client/src/public/forum/PublicForumApp.tsx Frontend/radish.client/src/public/forum/PublicForumTag.tsx`
+  - 通过。
+
 ### 当日提交回顾与文档同步
 
 - 今日提交链从第二阶段收口评审、Flutter 通知 / 个人复访补强、第二阶段归档，推进到第三阶段定义、公开内容 SEO 分享基线和 `P3-2-A` 外部 ID 契约审计。
