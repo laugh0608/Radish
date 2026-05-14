@@ -145,7 +145,7 @@ export interface ForumDataActions {
   loadHotTags: () => Promise<void>;
   loadPosts: () => Promise<void>;
   loadTrendingContent: () => Promise<void>;
-  loadPostDetail: (postId: LongId, answerSortOverride?: QuestionAnswerSort) => Promise<void>;
+  loadPostDetail: (postId: LongId, answerSortOverride?: QuestionAnswerSort) => Promise<PostDetail | null>;
   loadComments: (postId: LongId, pageCount?: number) => Promise<void>;
   loadQuickReplies: (postId: LongId) => Promise<void>;
   loadMoreComments: (postId: LongId) => Promise<void>;
@@ -411,12 +411,13 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   };
 
   // 加载帖子详情
-  const loadPostDetail = async (postId: LongId, answerSortOverride?: QuestionAnswerSort) => {
+  const loadPostDetail = async (postId: LongId, answerSortOverride?: QuestionAnswerSort): Promise<PostDetail | null> => {
     setLoadingPostDetail(true);
     setError(null);
     try {
       const data = await getPostById(postId, t, answerSortOverride ?? questionAnswerSort);
       setSelectedPost(data);
+      return data;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
@@ -426,6 +427,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
       setQuickReplyTotal(0);
       setCommentTotal(0);
       setLoadedCommentPages(0);
+      return null;
     } finally {
       setLoadingPostDetail(false);
     }

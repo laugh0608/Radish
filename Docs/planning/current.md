@@ -8,7 +8,7 @@
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
 - **当前主线**：`P3-2 PublicId 最小试点方案`
-- **复核日期**：`2026-05-13`
+- **复核日期**：`2026-05-14`
 - **最近结论**：
   - `v26.3.2-release` 已于 `2026-04-06` 完成首版真实发布，第一开发阶段结束
   - `Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口，转入稳定维护
@@ -32,6 +32,7 @@
   - `P3-1-A` 已完成公开 head 契约、运行时 canonical、`robots.txt` 与 sitemap seed 首批落地
   - `P3-1-B` 已完成 forum detail / shop detail 复制 canonical 链接入口，公开详情分享基线首批收口
   - `P3-2-A` 已完成外部 ID 契约审计，最小试点对象收敛为 `Post`；首批只做 `Post.PublicId` 并行契约，不牵动数据库主键、`User / Product / WikiDocument / Comment` 或全量 API 切换
+  - `P3-2-B` 已完成 `Post.PublicId` 首批实现：新帖生成 `pst_` + UUIDv7 编码体，详情接口支持 long / PublicId 双读，`PostVo.VoPublicId`、forum canonical / 分享、通知 `extData`、浏览历史 routePath 与 WebOS forum 窗口参数均已保留旧 `postId` 并并行支持 `postPublicId`
 
 ## 当前执行入口
 
@@ -50,7 +51,7 @@
 
 1. **`P3-2` `PublicId` 最小试点方案**
    - 首批试点对象为 `Post`，只做 `PublicId` 与既有 `VoId / postId` 并行兼容
-   - 下一步若进入实现，优先补 `Post.PublicId` 生成、查询兼容、forum 公开 canonical、通知 `extData` 与窗口参数双字段解析
+   - 首批实现已完成，后续只处理回归、数据补齐策略或真实使用中暴露的兼容问题
    - 不启动数据库主键迁移、全量外部契约切换、`User / Product / WikiDocument / Comment` 扩面或 ActivityPub / WebFinger 实现
 2. **第二阶段收口护栏**
    - WebOS / PC 工作台、后端 + Console、公开 Web 与 Tauri 转入稳定维护
@@ -63,8 +64,8 @@
 
 ## 下一顺位
 
-- 当前优先完成 `P3-2`：`PublicId` 最小试点方案
-- 后续候选顺序为代码热区拆分、用户留存轻闭环
+- `P3-2` 首批实现已完成，下一顺位建议进入 `P3-3` 代码热区拆分与维护成本治理
+- 后续候选顺序为用户留存轻闭环、公开内容增长后续专题
 - WebOS / PC 工作台只继续处理成片工作流中的阻断级缺口，不再无限扫零碎按钮或提示
 - 后端 + Console 治理转入稳定维护，后续只处理新暴露的安全 / 授权一致性问题
 - Flutter 移动端高价值已登录链路首批已完成，后续不默认转向分发产品化材料或低增益微体验
@@ -73,9 +74,8 @@
 
 ## 明日事项
 
-- `2026-05-14` 第一事项：按 `Post` 最小试点方案做实现前差异评估，优先确认 `Post.PublicId` 列 / 唯一索引、创建生成、详情双读、`PostVo.VoPublicId`、forum canonical、通知 `extData` 和窗口参数双字段解析的最小改动清单
-- 若进入实现，必须保持 long 旧链路全兼容，先补后端双读 / DTO、前端 forum 路由 / 分享 / 通知回流的定向测试
-- 明日仍不做数据库主键迁移、全量外部契约切换、`User / Product / WikiDocument / Comment` 扩面或 ActivityPub / WebFinger 实现
+- 下一事项：进入 `P3-3` 前先做代码热区差异评估，优先从 `PublicForumApp.tsx` 拆分候选入手，确认能在不改变业务行为的前提下降低维护成本
+- 若继续推进 `P3-2`，只做定向回归或历史数据 `PublicId` 补齐策略评估，不扩到 `User / Product / WikiDocument / Comment`
 
 ## 并行维护项
 

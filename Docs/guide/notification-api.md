@@ -53,7 +53,7 @@
 
 - API 响应中的 `long / long?` 标识字段在前端消费时一律按字符串处理，避免 JavaScript `Number` 精度丢失。
 - `extData` 是服务端手动拼接的 JSON 字符串，不会自动套用全局 `long -> string` converter；写入 `postId`、`commentId`、`channelId`、`messageId` 等导航对象 ID 时必须显式写成字符串。
-- forum 通知导航当前以 `postId / commentId` 字符串兼容既有链路；`P3-2` 之后若帖子 `PublicId` 可用，`extData` 可新增 `postPublicId`，但必须继续保留 `postId` 作为旧客户端和旧通知兼容字段。
+- forum 通知导航以 `postPublicId / postId / commentId` 并行兼容：`postPublicId` 可用时优先写入并优先消费，`postId / commentId` 继续显式写成字符串，作为旧客户端和旧通知兼容字段。
 - 前端打开通知时优先消费更稳定的公开标识；缺失时再回退旧 `postId / commentId` 字符串。
 
 ---

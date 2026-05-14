@@ -240,6 +240,7 @@ export interface AcceptAnswerRequest {
  */
 export interface PostItem {
   voId: LongId;
+  voPublicId?: string | null;
   voTitle: string;
   voSlug?: string;
   voSummary?: string | null;
@@ -278,6 +279,7 @@ export interface PostItem {
  */
 export interface PostDetail {
   voId: LongId;
+  voPublicId?: string | null;
   voTitle: string;
   voSlug?: string;
   voSummary?: string | null;

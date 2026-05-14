@@ -38,6 +38,27 @@ test('buildPublicRouteHead 应为论坛帖子详情生成 article head', () => {
   });
 });
 
+test('buildPublicRouteHead 应优先使用论坛帖子 PublicId 生成 canonical path', () => {
+  const route: PublicRouteDescriptor = {
+    app: 'forum',
+    route: {
+      kind: 'detail',
+      postId: '2042219067430928384',
+      postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+      commentId: '8',
+    },
+  };
+
+  const head = buildPublicRouteHead(route);
+
+  assert.deepEqual<PublicHeadDescriptor>(head, {
+    title: '帖子 pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f - Radish 论坛',
+    description: '阅读 Radish 公开论坛帖子 pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f，查看讨论内容与社区互动。',
+    canonicalPath: '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?commentId=8',
+    type: 'article',
+  });
+});
+
 test('buildPublicRouteHead 应为 docs 详情生成去重前的路由 canonical path', () => {
   const route: PublicRouteDescriptor = {
     app: 'docs',

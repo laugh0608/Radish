@@ -97,6 +97,7 @@ public class PostRepository : BaseRepository<Post>, IPostRepository
             {
                 Id = post.Id,
                 Title = post.Title,
+                PublicId = post.PublicId,
                 Slug = post.Slug,
                 Summary = post.Summary,
                 ContentType = post.ContentType,

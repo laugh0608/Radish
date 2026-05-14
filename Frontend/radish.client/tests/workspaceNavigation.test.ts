@@ -24,6 +24,23 @@ test('resolveBrowseHistoryWorkspaceTarget 应优先解析 forum routePath 并保
   });
 });
 
+test('resolveBrowseHistoryWorkspaceTarget 应优先解析 forum PublicId routePath', () => {
+  const target = resolveBrowseHistoryWorkspaceTarget({
+    voRoutePath: '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?commentId=2042219067430928385',
+    voTargetType: 'Post',
+    voTargetId: '1',
+    voTargetSlug: null,
+  });
+
+  assert.deepEqual(target, {
+    appId: 'forum',
+    appParams: {
+      postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+      commentId: '2042219067430928385',
+    },
+  });
+});
+
 test('resolveBrowseHistoryWorkspaceTarget 应把 wiki 旧路由解析为文档 slug', () => {
   const target = resolveBrowseHistoryWorkspaceTarget({
     voRoutePath: '/wiki/doc/getting-started',

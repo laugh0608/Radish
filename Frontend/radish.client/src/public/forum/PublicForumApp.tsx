@@ -91,6 +91,10 @@ function isSameLongId(left: LongId | null | undefined, right: LongId | null | un
   return String(left) === String(right);
 }
 
+function getForumPostRouteIdentifier(post: Pick<PostItem, 'voId' | 'voPublicId'> | Pick<PostDetail, 'voId' | 'voPublicId'>): string {
+  return post.voPublicId?.trim() || String(post.voId);
+}
+
 interface PublicGuideDefinition {
   titleKey: string;
   descriptionKey: string;
@@ -1088,7 +1092,7 @@ const PublicForumList = ({
                 key={post.voId}
                 post={post}
                 displayTimeZone={displayTimeZone}
-                onClick={() => onOpenPost(String(post.voId))}
+                onClick={() => onOpenPost(getForumPostRouteIdentifier(post))}
                 variant="publicCompact"
                 onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
                 onTagClick={(_, tagSlug) => onOpenTag?.(tagSlug)}
@@ -1547,7 +1551,7 @@ const PublicForumTag = ({
                 key={post.voId}
                 post={post}
                 displayTimeZone={displayTimeZone}
-                onClick={() => onOpenPost(String(post.voId))}
+                onClick={() => onOpenPost(getForumPostRouteIdentifier(post))}
                 variant="publicCompact"
                 onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
                 onTagClick={(_, tagSlug) => onOpenTag?.(tagSlug)}
@@ -1944,7 +1948,7 @@ const PublicForumTypeFeed = ({
                 key={post.voId}
                 post={post}
                 displayTimeZone={displayTimeZone}
-                onClick={() => onOpenPost(String(post.voId))}
+                onClick={() => onOpenPost(getForumPostRouteIdentifier(post))}
                 variant="publicCompact"
                 onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
                 onTagClick={(_, tagSlug) => onOpenTag?.(tagSlug)}
@@ -2446,7 +2450,7 @@ const PublicForumSearch = ({
                 key={post.voId}
                 post={post}
                 displayTimeZone={displayTimeZone}
-                onClick={() => onOpenPost(String(post.voId))}
+                onClick={() => onOpenPost(getForumPostRouteIdentifier(post))}
                 variant="publicCompact"
                 onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
                 onTagClick={(_, tagSlug) => onOpenTag?.(tagSlug)}
@@ -2565,6 +2569,7 @@ const PublicForumDetail = ({
       setCommentNavigationTarget(null);
       setCommentNavigationNotice(null);
       setHighlightedCommentId(null);
+      let resolvedPostId: LongId = postId;
 
       try {
         const postDetail = await getPostById(postId, t);
@@ -2572,6 +2577,7 @@ const PublicForumDetail = ({
           return;
         }
 
+        resolvedPostId = postDetail.voId;
         setPost(postDetail);
       } catch (err) {
         if (requestId !== requestIdRef.current) {
@@ -2598,7 +2604,7 @@ const PublicForumDetail = ({
         if (commentId) {
           try {
             navigation = await getCommentNavigation(
-              postId,
+              resolvedPostId,
               commentId,
               commentPageSize,
               COMMENT_NAVIGATION_CHILD_PAGE_SIZE,
@@ -2615,8 +2621,8 @@ const PublicForumDetail = ({
         }
 
         const [rootCommentsResult, replyWallResult] = await Promise.allSettled([
-          getRootCommentsPage(postId, navigation?.voRootPageIndex ?? 1, commentPageSize, commentSortBy || 'default', t),
-          getPostQuickReplyWall(postId, t)
+          getRootCommentsPage(resolvedPostId, navigation?.voRootPageIndex ?? 1, commentPageSize, commentSortBy || 'default', t),
+          getPostQuickReplyWall(resolvedPostId, t)
         ]);
 
         if (requestId !== requestIdRef.current) {
@@ -2678,7 +2684,7 @@ const PublicForumDetail = ({
             expandedRootCommentId: navigation.voIsRootComment
               ? undefined
               : navigation.voParentCommentId ?? navigation.voRootCommentId,
-            navigationKey: `${postId}:${commentId ?? navigation.voCommentId}:${commentSortBy ?? 'default'}:${reloadToken}`
+            navigationKey: `${resolvedPostId}:${commentId ?? navigation.voCommentId}:${commentSortBy ?? 'default'}:${reloadToken}`
           } : null);
         } else {
           setComments([]);
@@ -2749,9 +2755,10 @@ const PublicForumDetail = ({
     setShareBusy(true);
 
     try {
+      const sharePostId = post ? getForumPostRouteIdentifier(post) : postId;
       const sharePath = buildPublicForumPath(commentId
-        ? { kind: 'detail', postId, commentId }
-        : { kind: 'detail', postId });
+        ? { kind: 'detail', postId: sharePostId, commentId }
+        : { kind: 'detail', postId: sharePostId });
       await copyToClipboard(buildPublicCanonicalUrl(sharePath));
       setShareState('success');
     } catch {
@@ -2766,11 +2773,12 @@ const PublicForumDetail = ({
     navigationKey: string
   ) => {
     try {
+      const resolvedPostId = post?.voId ?? postId;
       setCommentPagingError(null);
       setCommentNavigationNotice(null);
 
       const navigation = await getCommentNavigation(
-        postId,
+        resolvedPostId,
         targetCommentId,
         commentPageSize,
         COMMENT_NAVIGATION_CHILD_PAGE_SIZE,
@@ -2784,7 +2792,7 @@ const PublicForumDetail = ({
         || !comments.some((item) => isSameLongId(item.voId, navigation.voRootCommentId))
       ) {
         const rootComments = await getRootCommentsPage(
-          postId,
+          resolvedPostId,
           navigation.voRootPageIndex,
           commentPageSize,
           commentSortBy || 'default',
@@ -2835,7 +2843,7 @@ const PublicForumDetail = ({
     } catch {
       setCommentNavigationNotice(t('forum.commentNavigation.notice'));
     }
-  }, [commentPageSize, commentSortBy, comments, loadedCommentPages, postId, t]);
+  }, [commentPageSize, commentSortBy, comments, loadedCommentPages, post?.voId, postId, t]);
 
   const registerCommentAnchor = (targetCommentId: LongId, element: HTMLDivElement | null) => {
     const targetCommentIdKey = String(targetCommentId);
@@ -2906,7 +2914,7 @@ const PublicForumDetail = ({
     setCommentPagingError(null);
     try {
       const nextPage = loadedCommentPages + 1;
-      const pageData = await getRootCommentsPage(postId, nextPage, commentPageSize, commentSortBy || 'default', t);
+      const pageData = await getRootCommentsPage(post?.voId ?? postId, nextPage, commentPageSize, commentSortBy || 'default', t);
       const nextItems = pageData.voItems ?? [];
 
       setComments((current) => {

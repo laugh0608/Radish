@@ -35,6 +35,7 @@ export interface PublicForumSearchRoute {
 export interface PublicForumDetailRoute {
   kind: 'detail';
   postId: string;
+  postPublicId?: string;
   commentId?: string;
 }
 
@@ -105,6 +106,15 @@ function normalizePositiveIntegerString(value: string | undefined): string | und
   }
 
   return normalized;
+}
+
+function normalizePostPublicId(value: string | undefined): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  return /^pst_[a-f0-9]{32}$/.test(normalized) ? normalized : undefined;
 }
 
 function normalizeSortBy(value: string | null): PublicListSort {
@@ -222,14 +232,19 @@ export function parsePublicForumRoute(pathname: string, search: string): PublicF
     };
   }
 
-  const matched = pathname.match(/^\/forum\/post\/(\d+)\/?$/);
-  const postId = normalizePositiveIntegerString(matched?.[1]);
-  if (postId) {
+  const matched = pathname.match(/^\/forum\/post\/([^/?#]+)\/?$/);
+  const rawPostIdentifier = matched?.[1] ? decodeURIComponent(matched[1]) : undefined;
+  const postId = normalizePositiveIntegerString(rawPostIdentifier);
+  const postPublicId = normalizePostPublicId(rawPostIdentifier);
+  if (postId || postPublicId) {
     const params = new URLSearchParams(search);
     const commentId = normalizePositiveIntegerString(params.get('commentId') ?? undefined);
-    return commentId
-      ? { kind: 'detail', postId, commentId }
-      : { kind: 'detail', postId };
+    return {
+      kind: 'detail',
+      postId: postId ?? postPublicId!,
+      ...(postPublicId ? { postPublicId } : {}),
+      ...(commentId ? { commentId } : {})
+    };
   }
 
   return parseListRoute(search);
@@ -243,7 +258,8 @@ export function buildPublicForumPath(route: PublicForumRoute): string {
     }
 
     const queryString = search.toString();
-    const basePath = `/forum/post/${route.postId}`;
+    const postIdentifier = route.postPublicId || route.postId;
+    const basePath = `/forum/post/${encodeURIComponent(postIdentifier)}`;
     return queryString ? `${basePath}?${queryString}` : basePath;
   }
 

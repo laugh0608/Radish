@@ -330,7 +330,7 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
                 TriggerName = quickReply.AuthorName,
                 TriggerAvatar = triggerAvatar,
                 ReceiverUserIds = new List<long> { post.AuthorId },
-                ExtData = NotificationNavigationHelper.BuildForumNavigationExtData(post.Id),
+                ExtData = NotificationNavigationHelper.BuildForumNavigationExtData(post.Id, postPublicId: post.PublicId),
                 TenantId = quickReply.TenantId
             });
         }

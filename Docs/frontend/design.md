@@ -1168,7 +1168,7 @@ Client  Console   Shop    Document
 - canonical URL 当前统一以 `https://radishx.com` 作为公开域名 seed。
 - `buildPublicCanonicalUrl()` 只接受规范化后的公开路径，不把登录后工作台路径写入 canonical。
 - forum detail、shop detail 和 docs detail 都应复制 canonical 公共链接，而不是复制当前浏览器里可能带有临时状态、来源参数或工作台上下文的 URL。
-- forum detail 当前仍使用 long 版 `/forum/post/:postId` 作为兼容 canonical；`P3-2` 之后若 `PostVo.VoPublicId` 可用，应逐步切到 `/forum/post/:postPublicId`，并继续兼容旧 long 链接。
+- forum detail 在 `PostVo.VoPublicId` 可用时使用 `/forum/post/:postPublicId` 作为 canonical 和复制链接；旧 long 版 `/forum/post/:postId` 继续兼容读取。
 
 #### 10.5.4 robots 与 sitemap seed
 

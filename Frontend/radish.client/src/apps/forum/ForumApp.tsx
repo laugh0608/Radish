@@ -120,6 +120,7 @@ export const ForumApp = () => {
   const [followStatus, setFollowStatus] = useState<UserFollowStatus | null>(null);
   const [followLoading, setFollowLoading] = useState(false);
   const windowParams = parseForumWindowParams(currentWindow?.appParams);
+  const windowPostIdentifier = windowParams.postPublicId ?? windowParams.postId;
   const handledWindowRouteRef = useRef<string | null>(null);
   const canTogglePostTop = roles.some((role) => {
     const normalized = role.trim().toLowerCase();
@@ -333,13 +334,13 @@ export const ForumApp = () => {
   }, [dataState.selectedPost?.voId, navigateToComment, t]);
 
   useEffect(() => {
-    if (!windowParams.postId) {
+    if (!windowPostIdentifier) {
       setCommentNavigationTarget(null);
       setCommentNavigationNotice(null);
       return;
     }
 
-    const routeSignature = `${windowParams.postId}:${windowParams.commentId ?? 'none'}:${windowParams.navigationKey ?? 'initial'}`;
+    const routeSignature = `${windowPostIdentifier}:${windowParams.commentId ?? 'none'}:${windowParams.navigationKey ?? 'initial'}`;
     if (handledWindowRouteRef.current === routeSignature) {
       return;
     }
@@ -349,7 +350,7 @@ export const ForumApp = () => {
     let cancelled = false;
 
     const openPostFromWindow = async () => {
-      if (!windowParams.postId) {
+      if (!windowPostIdentifier) {
         return;
       }
 
@@ -359,7 +360,7 @@ export const ForumApp = () => {
       setCommentNavigationTarget(null);
       setCommentNavigationNotice(null);
 
-      await actionsState.handleSelectPost(windowParams.postId);
+      const post = await actionsState.handleSelectPost(windowPostIdentifier);
       if (cancelled || !windowParams.commentId) {
         return;
       }
@@ -369,7 +370,7 @@ export const ForumApp = () => {
           return;
         }
 
-        await navigateToComment(windowParams.postId, windowParams.commentId, routeSignature);
+        await navigateToComment(post?.voId ?? windowPostIdentifier, windowParams.commentId, routeSignature);
       } catch {
         if (cancelled) {
           return;
@@ -393,7 +394,7 @@ export const ForumApp = () => {
     dataState.setError,
     windowParams.commentId,
     windowParams.navigationKey,
-    windowParams.postId,
+    windowPostIdentifier,
     dataState.setSelectedCategoryId,
     dataState.setSelectedTagName,
     t,

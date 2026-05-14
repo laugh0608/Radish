@@ -78,9 +78,10 @@ function buildDiscoverHead(route: PublicRouteDescriptor & { app: 'discover' }): 
 function buildForumHead(route: PublicRouteDescriptor & { app: 'forum' }): PublicHeadDescriptor {
   const canonicalPath = buildPublicForumPath(route.route);
   if (route.route.kind === 'detail') {
+    const postLabel = route.route.postPublicId ?? route.route.postId;
     return {
-      title: `帖子 ${route.route.postId} - Radish 论坛`,
-      description: `阅读 Radish 公开论坛帖子 ${route.route.postId}，查看讨论内容与社区互动。`,
+      title: `帖子 ${postLabel} - Radish 论坛`,
+      description: `阅读 Radish 公开论坛帖子 ${postLabel}，查看讨论内容与社区互动。`,
       canonicalPath,
       type: 'article',
     };

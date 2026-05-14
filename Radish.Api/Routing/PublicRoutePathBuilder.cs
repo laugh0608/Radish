@@ -7,6 +7,14 @@ internal static class PublicRoutePathBuilder
         return $"/forum/post/{postId}";
     }
 
+    public static string BuildForumPostPath(string? postPublicId, long fallbackPostId)
+    {
+        var normalizedPublicId = postPublicId?.Trim();
+        return !string.IsNullOrWhiteSpace(normalizedPublicId)
+            ? $"/forum/post/{Uri.EscapeDataString(normalizedPublicId)}"
+            : BuildForumPostPath(fallbackPostId);
+    }
+
     public static string BuildShopProductPath(long productId)
     {
         return $"/shop/product/{productId}";

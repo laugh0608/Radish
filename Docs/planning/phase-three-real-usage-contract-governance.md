@@ -1,6 +1,6 @@
 # 第三开发阶段：真实使用增长与长期契约治理
 
-> 状态：`P3-2 PublicId 最小试点方案` 进行中
+> 状态：`P3-2 PublicId 最小试点方案` 首批实现完成，下一顺位建议进入 `P3-3`
 >
 > 启动日期：2026-05-13（Asia/Shanghai）
 >
@@ -20,9 +20,9 @@
 
 ## 当前推进状态
 
-`P3-0` 已完成第三阶段定义、公开内容增长基础审计和第一批任务排序；`P3-1` 已完成公开内容 SEO 与分享基线。当前主线为 `P3-2 PublicId 最小试点方案`，已完成 `P3-2-A` 外部 ID 契约审计，首批试点对象收敛为 `Post`。
+`P3-0` 已完成第三阶段定义、公开内容增长基础审计和第一批任务排序；`P3-1` 已完成公开内容 SEO 与分享基线。`P3-2` 已完成 `P3-2-A` 外部 ID 契约审计和 `P3-2-B` `Post.PublicId` 首批实现，试点对象保持收敛为 `Post`。
 
-下一步若进入实现，必须仍以兼容试点为边界：只补 `Post.PublicId` 并行契约、forum 公开 canonical、通知 `extData` 与窗口参数双字段解析；不做数据库主键迁移、全量 DTO 替换或 `User / Product / WikiDocument / Comment` 扩面。
+后续若继续围绕 `P3-2`，只处理定向回归、历史数据 `PublicId` 补齐策略或真实使用暴露的兼容问题；仍不做数据库主键迁移、全量 DTO 替换或 `User / Product / WikiDocument / Comment` 扩面。下一顺位建议进入 `P3-3` 代码热区拆分与维护成本治理。
 
 ## `P3-0` 定义与工程整备
 
@@ -159,7 +159,7 @@
 - `npm run type-check --workspace=radish.client` 通过。
 - `npm run test --workspace=radish.client` 通过，`126/126`。
 - `npm run build --workspace=radish.client` 通过，仍有既有 `app-shop` chunk size warning。
-- `npm run check:repo-hygiene:changed` 通过。
+- `npm run check:repo-hygiene:changed` 通过，保留既有 `Docs/frontend/design.md` 与 `Docs/guide/notification-api.md` 篇幅提醒。
 - `git diff --check` 通过。
 
 ### `P3-1-B` 公开详情分享入口
@@ -251,6 +251,32 @@ npm run check:repo-hygiene:changed
 - 因旧 long 路由、`postId` 通知字段、`VoId` 和 `TargetId` 全部保留，前端可单独回退，不需要数据回滚。
 - 若 `PublicId` 生成或唯一索引出现异常，发布 / 编辑主路径应优先失败并暴露错误，不允许静默生成空值后把公开链接切到不可解析状态。
 - 试点稳定前，不扩展到 `User / Product / WikiDocument / Comment`，也不启动全量 DTO 字段替换、数据库主键迁移或 ActivityPub / WebFinger 实现。
+
+## `P3-2-B` `Post.PublicId` 首批实现
+
+完成日期：2026-05-14。
+
+已完成：
+
+- `Post` 增加可空唯一 `PublicId`，新发帖生成 `pst_` + UUIDv7 编码体；历史空值继续通过旧 long 链路兼容。
+- `PostVo` 并行暴露 `VoPublicId / VoId`，列表与详情旧字段保持不变。
+- `PostController.GetById` 支持 long 与 PublicId 双读，浏览次数和浏览历史仍以内部 `VoId` 作为关联键。
+- forum 公开详情、复制 canonical 链接、运行时 head、浏览历史 routePath、通知 `extData` 和 WebOS forum 窗口参数均支持 `postPublicId`，并保留旧 `postId` 回退。
+- 评论定位、轻回应墙和详情加载在拿到 PublicId 打开的帖子后，会回到真实 `VoId` 调用内部评论 / 轻回应接口。
+
+验证：
+
+- `npm run type-check --workspace=radish.client` 通过。
+- `npm run test --workspace=radish.client -- --test-name-pattern="Forum|forum|Public|public|workspace"` 通过。
+- `dotnet test Radish.Api.Tests --filter "PostControllerTest"` 通过。
+- `npm run check:repo-hygiene:changed` 通过。
+- `git diff --check` 通过。
+
+后置边界：
+
+- 不回填历史 `Post.PublicId`；如需批量补齐，应单独做数据维护方案。
+- 不扩到 `User / Product / WikiDocument / Comment`。
+- 不启动完整 `PublicId` 全量迁移、数据库主键迁移或 ActivityPub / WebFinger 实现。
 
 ## 首批候选任务
 

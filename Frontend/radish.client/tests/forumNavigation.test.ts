@@ -56,6 +56,15 @@ test('parseForumRoutePath 应兼容编码后的 forum routePath', () => {
   });
 });
 
+test('parseForumRoutePath 应解析帖子 PublicId 路由', () => {
+  const navigation = parseForumRoutePath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?commentId=2042219067430928385');
+
+  assert.deepEqual(navigation, {
+    postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+    commentId: '2042219067430928385',
+  });
+});
+
 test('parseForumNotificationNavigation 应拒绝已丢精度的 number 型外部 ID', () => {
   const navigation = parseForumNotificationNavigation(JSON.stringify({
     app: 'forum',
@@ -74,6 +83,19 @@ test('parseForumNotificationNavigation 应接受字符串化的 forum extData', 
 
   assert.deepEqual(navigation, {
     postId: '2042219067430928384',
+    commentId: '2042219067430928385',
+  });
+});
+
+test('parseForumNotificationNavigation 应接受 PublicId forum extData', () => {
+  const navigation = parseForumNotificationNavigation(JSON.stringify({
+    app: 'forum',
+    postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+    commentId: '2042219067430928385',
+  }));
+
+  assert.deepEqual(navigation, {
+    postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
     commentId: '2042219067430928385',
   });
 });
@@ -127,6 +149,20 @@ test('parseForumWindowParams 应保留窗口参数中的大整数 ID 字符串',
   });
 });
 
+test('parseForumWindowParams 应保留窗口参数中的帖子 PublicId', () => {
+  const params = parseForumWindowParams({
+    postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+    commentId: '2042219067430928385',
+    __navigationKey: 'notification:1',
+  });
+
+  assert.deepEqual(params, {
+    postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+    commentId: '2042219067430928385',
+    navigationKey: 'notification:1',
+  });
+});
+
 test('buildForumAppParams 应把合法 ID 统一序列化为字符串参数', () => {
   const params = buildForumAppParams({
     postId: 123,
@@ -149,12 +185,35 @@ test('buildForumAppParams 应保留浏览回跳里的大整数字符串 ID', () 
   });
 });
 
+test('buildForumAppParams 应保留帖子 PublicId 参数', () => {
+  const params = buildForumAppParams({
+    postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+    commentId: '2042219067430928385',
+  });
+
+  assert.deepEqual(params, {
+    postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+    commentId: '2042219067430928385',
+  });
+});
+
 test('parsePublicForumRoute 应保留公开阅读直链的大整数字符串 ID', () => {
   const route = parsePublicForumRoute('/forum/post/2042219067430928384', '');
 
   assert.deepEqual(route, {
     kind: 'detail',
     postId: '2042219067430928384',
+  });
+});
+
+test('parsePublicForumRoute 应解析公开阅读直链里的帖子 PublicId', () => {
+  const route = parsePublicForumRoute('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f', '?commentId=2042219067430928385');
+
+  assert.deepEqual(route, {
+    kind: 'detail',
+    postId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+    postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+    commentId: '2042219067430928385',
   });
 });
 
@@ -185,6 +244,17 @@ test('buildPublicForumPath 应为公开评论定位回写 commentId 参数', () 
   });
 
   assert.equal(path, '/forum/post/2042219067430928384?commentId=2042219067430928385');
+});
+
+test('buildPublicForumPath 应优先使用帖子 PublicId 回写公开阅读直链', () => {
+  const path = buildPublicForumPath({
+    kind: 'detail',
+    postId: '2042219067430928384',
+    postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+    commentId: '2042219067430928385',
+  });
+
+  assert.equal(path, '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?commentId=2042219067430928385');
 });
 
 test('createForumCommentHighlightMap 应保留大整数字符串帖子键', () => {

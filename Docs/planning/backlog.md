@@ -10,7 +10,7 @@
 ## 当前后置原则
 
 - backlog 中的事项，默认都不是“现在就该做”
-- 当前正式主线已经切换为 `P3-2 PublicId 最小试点方案`
+- `P3-2 PublicId` 最小试点首批已完成，下一正式主线以 [当前进行中](/planning/current) 为准
 - 若某项要从 backlog 回拉为主线，必须先更新 `planning/current.md` 与阶段路线图
 - backlog 只保留后置项，不再承担阶段定义职责
 
@@ -26,7 +26,7 @@
 以下事项已回拉到 [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)：
 
 - 公开内容增长基础：`P3-1` 首批已完成 `SEO / canonical / robots / sitemap seed / 详情复制链接` 基线；动态 sitemap、结构化数据和 SSR / SSG 后置专题评估
-- `PublicId` 最小试点方案：当前主线，只选择少数核心对象评估，不做全量迁移
+- `PublicId` 最小试点方案：`Post` 首批已完成，不做全量迁移；历史补齐或扩面仍需单独评估
 - 代码热区拆分候选：超大公开页面、超大 Service、Flutter 大页面
 - 用户留存轻闭环：通知、复访、轻互动与公开分享的回流链路
 

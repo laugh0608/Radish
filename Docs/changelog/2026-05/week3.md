@@ -234,6 +234,14 @@
 - 兼容策略已写入 [第三开发阶段专题](/planning/phase-three-real-usage-contract-governance) 与 [标识体系与社区联邦长期路线](/architecture/id-and-federation-roadmap)：`PostVo` 并行暴露 `VoPublicId / VoId`，forum 公开路由、canonical、通知 `extData` 和窗口参数优先支持 `postPublicId`，同时保留旧 `postId / VoId / TargetId`。
 - 回滚边界已明确：不删除数据库列和值，旧 long 路由和通知字段继续可用；试点稳定前不做数据库主键迁移、全量 DTO 替换或 ActivityPub / WebFinger 实现。
 
+### `P3-2-B` `Post.PublicId` 首批实现
+
+- `Post` 已增加可空唯一 `PublicId`，新发帖生成 `pst_` + UUIDv7 编码体；历史空值继续通过旧 long 链路兼容。
+- `PostVo` 并行暴露 `VoPublicId / VoId`，`PostController.GetById` 支持 long 与 PublicId 双读，浏览次数和浏览历史仍以内部 `VoId` 作为关联键。
+- forum 公开详情、复制 canonical 链接、运行时 head、浏览历史 routePath、通知 `extData` 和 WebOS forum 窗口参数均支持 `postPublicId`，并保留旧 `postId` 回退。
+- 评论定位、轻回应墙和详情加载在通过 PublicId 打开帖子后，会回到真实 `VoId` 调用内部评论 / 轻回应接口，避免把 PublicId 误传给内部 long 接口。
+- 首批仍不扩到 `User / Product / WikiDocument / Comment`，不启动历史数据批量补齐、数据库主键迁移或完整 `PublicId` 全量迁移。
+
 ### 当日提交回顾与文档同步
 
 - 今日提交链从第二阶段收口评审、Flutter 通知 / 个人复访补强、第二阶段归档，推进到第三阶段定义、公开内容 SEO 分享基线和 `P3-2-A` 外部 ID 契约审计。
@@ -244,9 +252,9 @@
 
 ### 明日事项
 
-- `2026-05-14` 第一事项：按 `Post` 最小试点方案做实现前差异评估，列出 `Post.PublicId` 列 / 唯一索引、创建生成、详情双读、`PostVo.VoPublicId`、forum canonical、通知 `extData` 和窗口参数双字段解析的最小改动清单。
-- 若评估后进入实现，先补定向测试，再做最小代码批次；保持 long 旧链路全兼容。
-- 明日仍不做数据库主键迁移、全量外部契约切换、`User / Product / WikiDocument / Comment` 扩面、动态 sitemap、SSR / SSG 或 ActivityPub / WebFinger。
+- 下一事项建议进入 `P3-3` 前置差异评估，优先从 `PublicForumApp.tsx` 拆分候选入手，先确认不改变业务行为的拆分边界和定向验证入口。
+- 若继续围绕 `P3-2`，只做定向回归、真实使用兼容观察或历史 `Post.PublicId` 补齐策略评估。
+- 仍不做数据库主键迁移、全量外部契约切换、`User / Product / WikiDocument / Comment` 扩面、动态 sitemap、SSR / SSG 或 ActivityPub / WebFinger。
 
 ### 验证记录
 
@@ -268,3 +276,13 @@
   - `P3-2-A` 文档同步后通过。
 - `git diff --check`
   - `P3-2-A` 文档同步后通过。
+- `npm run type-check --workspace=radish.client`
+  - `P3-2-B` 首批实现后通过。
+- `npm run test --workspace=radish.client -- --test-name-pattern="Forum|forum|Public|public|workspace"`
+  - `P3-2-B` 首批实现后通过，`134/134`。
+- `dotnet test Radish.Api.Tests --filter "PostControllerTest"`
+  - 提权环境通过，`16/16`。
+- `npm run check:repo-hygiene:changed`
+  - `P3-2-B` 首批实现和文档同步后通过，保留既有 `Docs/frontend/design.md` 与 `Docs/guide/notification-api.md` 篇幅提醒。
+- `git diff --check`
+  - `P3-2-B` 首批实现和文档同步后通过。

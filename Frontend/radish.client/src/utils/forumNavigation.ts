@@ -1,16 +1,19 @@
 export interface ForumNavigationTarget {
-  postId: string;
+  postId?: string;
+  postPublicId?: string;
   commentId?: string;
 }
 
 export interface ForumWindowParams {
   postId?: string;
+  postPublicId?: string;
   commentId?: string;
   navigationKey?: string;
 }
 
 export interface ForumAppParamTarget {
-  postId: string | number;
+  postId?: string | number;
+  postPublicId?: string | number;
   commentId?: string | number;
 }
 
@@ -59,16 +62,32 @@ function normalizePositiveIntegerString(value: unknown): string | undefined {
   return normalized || undefined;
 }
 
+function normalizePostPublicId(value: unknown): string | undefined {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  return /^pst_[a-f0-9]{32}$/.test(normalized) ? normalized : undefined;
+}
+
+function hasPostNavigationTarget(target: ForumNavigationTarget): boolean {
+  return Boolean(target.postPublicId || target.postId);
+}
+
 export function buildForumAppParams(target: ForumAppParamTarget): Record<string, unknown> {
   const postId = normalizePositiveIntegerString(target.postId);
-  if (!postId) {
+  const postPublicId = normalizePostPublicId(target.postPublicId);
+  if (!postId && !postPublicId) {
     return {};
   }
 
   const commentId = normalizePositiveIntegerString(target.commentId);
-  return commentId
-    ? { postId, commentId }
-    : { postId };
+  return {
+    ...(postId ? { postId } : {}),
+    ...(postPublicId ? { postPublicId } : {}),
+    ...(commentId ? { commentId } : {})
+  };
 }
 
 function parseForumRouteCandidate(routePath: string): ForumNavigationTarget | null {
@@ -78,15 +97,19 @@ function parseForumRouteCandidate(routePath: string): ForumNavigationTarget | nu
     return null;
   }
 
-  const postId = normalizePositiveIntegerString(pathname.split('/').pop());
-  if (!postId) {
+  const rawPostIdentifier = pathname.split('/').pop();
+  const postId = normalizePositiveIntegerString(rawPostIdentifier);
+  const postPublicId = normalizePostPublicId(rawPostIdentifier);
+  if (!postId && !postPublicId) {
     return null;
   }
 
   const commentId = normalizePositiveIntegerString(new URLSearchParams(queryString).get('commentId'));
-  return commentId
-    ? { postId, commentId }
-    : { postId };
+  return {
+    ...(postId ? { postId } : {}),
+    ...(postPublicId ? { postPublicId } : {}),
+    ...(commentId ? { commentId } : {})
+  };
 }
 
 export function parseForumWindowParams(appParams?: Record<string, unknown> | null): ForumWindowParams {
@@ -95,7 +118,8 @@ export function parseForumWindowParams(appParams?: Record<string, unknown> | nul
   }
 
   const postId = normalizePositiveIntegerString(appParams.postId);
-  if (!postId) {
+  const postPublicId = normalizePostPublicId(appParams.postPublicId);
+  if (!postId && !postPublicId) {
     return {};
   }
 
@@ -104,9 +128,10 @@ export function parseForumWindowParams(appParams?: Record<string, unknown> | nul
   const navigationKey = rawNavigationKey == null ? undefined : String(rawNavigationKey);
 
   return {
-    postId,
-    commentId,
-    navigationKey
+    ...(postId ? { postId } : {}),
+    ...(postPublicId ? { postPublicId } : {}),
+    ...(commentId ? { commentId } : {}),
+    ...(navigationKey ? { navigationKey } : {})
   };
 }
 
@@ -147,14 +172,18 @@ export function parseForumNotificationNavigation(extData?: string | null): Forum
     }
 
     const postId = normalizePositiveIntegerString(parsed.postId);
-    if (!postId) {
+    const postPublicId = normalizePostPublicId(parsed.postPublicId);
+    if (!postId && !postPublicId) {
       return null;
     }
 
     const commentId = normalizePositiveIntegerString(parsed.commentId);
-    return commentId
-      ? { postId, commentId }
-      : { postId };
+    const navigation = {
+      ...(postId ? { postId } : {}),
+      ...(postPublicId ? { postPublicId } : {}),
+      ...(commentId ? { commentId } : {})
+    };
+    return hasPostNavigationTarget(navigation) ? navigation : null;
   } catch {
     return null;
   }

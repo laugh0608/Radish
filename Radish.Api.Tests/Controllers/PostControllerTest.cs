@@ -201,6 +201,48 @@ public class PostControllerTest
     }
 
     [Fact]
+    public async Task GetById_Should_Query_By_PublicId_When_Id_Is_Not_Numeric()
+    {
+        var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
+        var moderationServiceMock = new Mock<IContentModerationService>(MockBehavior.Strict);
+        var attachmentServiceMock = new Mock<IBaseService<Attachment, AttachmentVo>>(MockBehavior.Strict);
+        var commentServiceMock = new Mock<IBaseService<Comment, CommentVo>>(MockBehavior.Strict);
+
+        postServiceMock
+            .Setup(service => service.GetPostDetailByPublicIdAsync("pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f", 10001, "default"))
+            .ReturnsAsync(new PostVo
+            {
+                VoId = 9530,
+                VoPublicId = "pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f",
+                VoTitle = "PublicId 详情帖"
+            });
+        postServiceMock
+            .Setup(service => service.IncrementViewCountAsync(9530))
+            .Returns(Task.CompletedTask);
+        commentServiceMock
+            .Setup(service => service.QueryAsync(It.IsAny<Expression<Func<Comment, bool>>>()))
+            .ReturnsAsync(new List<CommentVo>());
+
+        var controller = CreateController(
+            postServiceMock.Object,
+            moderationServiceMock.Object,
+            attachmentServiceMock.Object,
+            commentServiceMock.Object);
+
+        var result = await controller.GetById("pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f");
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(200, result.StatusCode);
+
+        var post = Assert.IsType<PostVo>(result.ResponseData);
+        Assert.Equal(9530, post.VoId);
+        Assert.Equal("pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f", post.VoPublicId);
+        postServiceMock.Verify(service => service.GetPostDetailByPublicIdAsync("pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f", 10001, "default"), Times.Once);
+        postServiceMock.Verify(service => service.GetPostDetailAsync(It.IsAny<long>(), It.IsAny<long?>(), It.IsAny<string>()), Times.Never);
+        postServiceMock.Verify(service => service.IncrementViewCountAsync(9530), Times.Once);
+    }
+
+    [Fact]
     public async Task GetList_Should_Pass_TagSlug_To_ForumQuery()
     {
         var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);

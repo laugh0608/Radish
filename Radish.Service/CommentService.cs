@@ -240,7 +240,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                                 TriggerName = comment.AuthorName,
                                 TriggerAvatar = null,
                                 ReceiverUserIds = new List<long> { post.VoAuthorId },
-                                ExtData = NotificationNavigationHelper.BuildForumNavigationExtData(comment.PostId, commentId)
+                                ExtData = NotificationNavigationHelper.BuildForumNavigationExtData(comment.PostId, commentId, post.VoPublicId)
                             });
                             Log.Information("帖子评论通知发送成功：PostId={PostId}, CommentId={CommentId}, 接收者={ReceiverId}",
                                 comment.PostId, commentId, post.VoAuthorId);

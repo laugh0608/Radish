@@ -104,6 +104,23 @@ public partial class PostService
     }
 
     /// <summary>
+    /// 按公开访问标识获取帖子详情（包含分类名称和标签）
+    /// </summary>
+    public async Task<PostVo?> GetPostDetailByPublicIdAsync(string publicId, long? viewerUserId = null, string answerSort = "default")
+    {
+        var normalizedPublicId = publicId?.Trim();
+        if (string.IsNullOrWhiteSpace(normalizedPublicId))
+        {
+            return null;
+        }
+
+        var post = await _postRepository.QueryFirstAsync(item => item.PublicId == normalizedPublicId && !item.IsDeleted);
+        return post == null
+            ? null
+            : await GetPostDetailAsync(post.Id, viewerUserId, answerSort);
+    }
+
+    /// <summary>
     /// 分页获取问答帖子列表
     /// </summary>
     public async Task<(List<PostVo> data, int totalCount)> GetQuestionPostPageAsync(

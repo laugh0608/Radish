@@ -16,6 +16,11 @@ public class PostVo
     public string VoTitle { get; set; } = string.Empty;
 
     /// <summary>
+    /// 公开访问标识
+    /// </summary>
+    public string? VoPublicId { get; set; }
+
+    /// <summary>
     /// URL 友好的标识符
     /// </summary>
     public string VoSlug { get; set; } = string.Empty;
