@@ -279,6 +279,29 @@
 - `git --no-pager diff --check -- Frontend/radish.client/src/public/forum/PublicForumApp.tsx Frontend/radish.client/src/public/forum/PublicForumTag.tsx`
   - 通过。
 
+### `P3-3-A` 公开论坛列表页拆分
+
+- 继续抽出 `PublicForumList.tsx`，独立承载公开论坛默认列表页的分类读取、分类详情读取、分类切换、列表加载、分页、滚动恢复、神评预览、阅读 guide 和只读状态展示。
+- `PublicForumApp.tsx` 从约 `1393` 行继续降到约 `862` 行；当前主文件只保留公开论坛外层路由容器与 `PublicForumDetail`。
+- 本批仍不移动 `PublicForumDetail`，避免把评论定位、轻回应墙、分享 canonical、PublicId / long 双读和详情加载状态混入同一批结构拆分。
+- 已完成提交：
+  - `1ae57c8b` `refactor(client): 拆分公开论坛列表页`
+
+### `P3-3-A` 列表页拆分验证
+
+- `npm run type-check --workspace=radish.client`
+  - 列表页拆分后通过。
+- `node --test --test-isolation=none ./tests/forumNavigation.test.ts ./tests/workspaceNavigation.test.ts ./tests/publicRouteNavigation.test.ts ./tests/publicRouteState.test.ts ./tests/publicRouteSync.test.ts ./tests/publicHead.test.ts ./tests/publicSeoStatic.test.ts`
+  - 列表页拆分后通过，`73/73`。
+- `npm run check:repo-hygiene:changed`
+  - 列表页拆分后通过。
+- `node Scripts/check-repo-hygiene.mjs --stdin-z`
+  - 已显式检查新增 `PublicForumList.tsx` 与 `PublicForumApp.tsx`，通过。
+- `git --no-pager diff --check`
+  - 列表页拆分后通过。
+- `git --no-pager diff --check -- Frontend/radish.client/src/public/forum/PublicForumApp.tsx Frontend/radish.client/src/public/forum/PublicForumList.tsx`
+  - 通过。
+
 ### 当日提交回顾与文档同步
 
 - 今日提交链从第二阶段收口评审、Flutter 通知 / 个人复访补强、第二阶段归档，推进到第三阶段定义、公开内容 SEO 分享基线和 `P3-2-A` 外部 ID 契约审计。
@@ -289,7 +312,8 @@
 
 ### 明日事项
 
-- 下一事项建议继续 `P3-3-A` 小步拆分，优先评估 `PublicForumSearch` 或 `PublicForumTag`，暂不移动 `PublicForumDetail`。
+- 下一事项建议先收口 `P3-3-A` 本轮公开论坛结构拆分：`PublicForumApp.tsx` 已拆出 helper、状态卡、类型流、搜索页、标签页与列表页，暂不移动 `PublicForumDetail`。
+- 若继续推进 `P3-3`，应另开小批次单独评估详情页拆分边界，不把评论定位、轻回应墙、PublicId / long 双读和分享 canonical 混入已完成的列表类拆分批次。
 - 若继续围绕 `P3-2`，只做定向回归、真实使用兼容观察或历史 `Post.PublicId` 补齐策略评估。
 - 仍不做数据库主键迁移、全量外部契约切换、`User / Product / WikiDocument / Comment` 扩面、动态 sitemap、SSR / SSG 或 ActivityPub / WebFinger。
 

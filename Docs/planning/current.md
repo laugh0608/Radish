@@ -33,7 +33,7 @@
   - `P3-1-B` 已完成 forum detail / shop detail 复制 canonical 链接入口，公开详情分享基线首批收口
   - `P3-2-A` 已完成外部 ID 契约审计，最小试点对象收敛为 `Post`；首批只做 `Post.PublicId` 并行契约，不牵动数据库主键、`User / Product / WikiDocument / Comment` 或全量 API 切换
   - `P3-2-B` 已完成 `Post.PublicId` 首批实现：新帖生成 `pst_` + UUIDv7 编码体，详情接口支持 long / PublicId 双读，`PostVo.VoPublicId`、forum canonical / 分享、通知 `extData`、浏览历史 routePath 与 WebOS forum 窗口参数均已保留旧 `postId` 并并行支持 `postPublicId`
-  - `P3-3-A` 已启动 `PublicForumApp.tsx` 首批低风险拆分：公共 helper、`PublicStatusCard` 和 `PublicForumTypeFeed` 已抽出，主文件从约 `2911` 行降到约 `2289` 行，未改变业务行为
+  - `P3-3-A` 已完成 `PublicForumApp.tsx` 列表类页面首批低风险拆分：公共 helper、`PublicStatusCard`、`PublicForumTypeFeed`、`PublicForumSearch`、`PublicForumTag` 和 `PublicForumList` 已抽出，主文件从约 `2911` 行降到约 `862` 行，未改变业务行为；`PublicForumDetail` 继续保留在主文件内
 
 ## 当前执行入口
 
@@ -52,8 +52,8 @@
 
 1. **`P3-3` 代码热区拆分与维护成本治理**
    - 当前优先治理 `PublicForumApp.tsx`，只做不改变业务行为的结构拆分
-   - 首批已抽出公共 helper、状态卡和问答 / 投票 / 抽奖类型流组件
-   - 下一步继续评估 `PublicForumSearch` 或 `PublicForumTag` 的拆分边界，避免一次性移动详情页复杂状态
+   - 已抽出公共 helper、状态卡、问答 / 投票 / 抽奖类型流、搜索页、标签页和默认列表页组件
+   - 本轮先收口列表类页面拆分；若继续拆 `PublicForumDetail`，需另开小批次单独评估评论定位、轻回应墙、PublicId / long 双读和分享 canonical 边界
 2. **第二阶段收口护栏**
    - WebOS / PC 工作台、后端 + Console、公开 Web 与 Tauri 转入稳定维护
    - 若新发现会阻断资产、安全、登录、购买、转账或主路径的 `P0/P1` 缺口，最多挑 `1-2` 个小闭环
@@ -65,7 +65,7 @@
 
 ## 下一顺位
 
-- 当前优先完成 `P3-3-A`：继续围绕 `PublicForumApp.tsx` 做小步拆分与定向验证
+- 当前优先完成 `P3-3-A` 收口：记录本轮 `PublicForumApp.tsx` 列表类页面拆分和定向验证；后续再单独评估详情页是否值得拆
 - 后续候选顺序为用户留存轻闭环、公开内容增长后续专题
 - WebOS / PC 工作台只继续处理成片工作流中的阻断级缺口，不再无限扫零碎按钮或提示
 - 后端 + Console 治理转入稳定维护，后续只处理新暴露的安全 / 授权一致性问题
@@ -75,7 +75,7 @@
 
 ## 明日事项
 
-- 下一事项：继续 `P3-3-A` 小步拆分，优先评估 `PublicForumSearch` 或 `PublicForumTag`，暂不移动 `PublicForumDetail`
+- 下一事项：收口 `P3-3-A` 本轮公开论坛结构拆分；暂不移动 `PublicForumDetail`，后续如继续拆详情页需单独评估
 - 若继续推进 `P3-2`，只做定向回归或历史数据 `PublicId` 补齐策略评估，不扩到 `User / Product / WikiDocument / Comment`
 
 ## 并行维护项
