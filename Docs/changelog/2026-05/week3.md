@@ -302,18 +302,41 @@
 - `git --no-pager diff --check -- Frontend/radish.client/src/public/forum/PublicForumApp.tsx Frontend/radish.client/src/public/forum/PublicForumList.tsx`
   - 通过。
 
+### `P3-3-B` 公开论坛详情页拆分
+
+- 已批准并完成 `PublicForumDetail.tsx` 独立组件拆分，原样承载公开帖子详情加载、PublicId / long 双读后的真实 `VoId` 回落、评论定位、子评论补载、轻回应墙、复制 canonical 链接、滚动高亮和只读状态渲染。
+- `PublicForumApp.tsx` 从约 `862` 行降到约 `208` 行，当前只保留公开论坛外层路由容器、滚动恢复、返回入口和子组件接入。
+- 本批不拆详情页内部 hooks，不改接口、不改评论定位、不改 PublicId 兼容、不改分享 canonical，不改 UI 和文案。
+- 已完成提交：
+  - `5f704b59` `refactor(client): 拆分公开论坛详情页`
+
+### `P3-3-B` 详情页拆分验证
+
+- `npm run type-check --workspace=radish.client`
+  - 详情页拆分后通过。
+- `node --test --test-isolation=none ./tests/forumNavigation.test.ts ./tests/workspaceNavigation.test.ts ./tests/publicRouteNavigation.test.ts ./tests/publicRouteState.test.ts ./tests/publicRouteSync.test.ts ./tests/publicHead.test.ts ./tests/publicSeoStatic.test.ts`
+  - 详情页拆分后通过，`73/73`。
+- `npm run check:repo-hygiene:changed`
+  - 详情页拆分后通过。
+- `node Scripts/check-repo-hygiene.mjs --stdin-z`
+  - 已显式检查新增 `PublicForumDetail.tsx` 与 `PublicForumApp.tsx`，通过。
+- `git --no-pager diff --check`
+  - 详情页拆分后通过。
+- `git --no-pager diff --check -- Frontend/radish.client/src/public/forum/PublicForumApp.tsx Frontend/radish.client/src/public/forum/PublicForumDetail.tsx`
+  - 通过。
+
 ### 当日提交回顾与文档同步
 
-- 今日提交链从第二阶段收口评审、Flutter 通知 / 个人复访补强、第二阶段归档，推进到第三阶段定义、公开内容 SEO 分享基线和 `P3-2-A` 外部 ID 契约审计。
-- 当日已回顾提交：`57884db1` 第二阶段评审与 Flutter 主线、`b55af16e` 论坛通知轻入口、`b232f404` 个人复访轻回应上下文、`1ac77d2e / 6d1da6e2` 第二阶段归档判断、`a7989a0a` 第二阶段归档、`1bab61af / 9dbed957` 第三阶段入口口径、`bab4de4b` 公开内容 SEO 与分享基线。
-- 已复核并同步规划入口：[当前进行中](/planning/current)、[开发路线图](/development-plan)、[Backlog](/planning/backlog) 和 [第三开发阶段专题](/planning/phase-three-real-usage-contract-governance) 均已指向 `P3-2 PublicId 最小试点方案`。
-- 已复核并同步设计 / 说明入口：[标识体系与社区联邦长期路线](/architecture/id-and-federation-roadmap) 已补充 `Post` 最小试点口径；`Docs/index.md` 与 `Docs/README.md` 已保持第三阶段入口可达。
-- 今日代码类提交 `bab4de4b` 已包含 `P3-1` 对应文档、测试和日志同步；本次收工只补 `P3-2-A` 审计结论、明日事项与阶段状态，不新增代码实现。
+- 今日提交链从 `P3-2-B` `Post.PublicId` 首批实现推进到 `P3-3` 公开论坛热区拆分收口。
+- 当日已回顾提交：`7b7d95be` `Post.PublicId` 首批试点、`a6877316` 公共 helper / 状态卡 / 类型流拆分、`6e338389` 搜索页拆分、`5997cb75` 标签页拆分、`1ae57c8b` 列表页拆分、`5f704b59` 详情页拆分，以及 `f6ab4922 / fd5eb979` 两次文档同步。
+- 已复核并同步规划入口：[当前进行中](/planning/current)、[开发路线图](/development-plan) 和 [第三开发阶段专题](/planning/phase-three-real-usage-contract-governance) 均已指向 `P3-3` 公开论坛首轮结构拆分收口。
+- 已复核设计 / 说明入口：[前端设计](/frontend/design) 与 [验证基线说明](/guide/validation-baseline) 的公开 forum 只读边界、PublicId / long 兼容、公开路由和 canonical 口径仍适用；本批为结构拆分，不需要改动这些行为说明。
+- 本次收工文档只同步 `P3-3` 当前状态、今日提交回顾和明日事项，不新增产品行为或验证基线。
 
 ### 明日事项
 
-- 下一事项建议先收口 `P3-3-A` 本轮公开论坛结构拆分：`PublicForumApp.tsx` 已拆出 helper、状态卡、类型流、搜索页、标签页与列表页，暂不移动 `PublicForumDetail`。
-- 若继续推进 `P3-3`，应另开小批次单独评估详情页拆分边界，不把评论定位、轻回应墙、PublicId / long 双读和分享 canonical 混入已完成的列表类拆分批次。
+- 下一事项建议先做 `P3-3` 收工复核与下一主线选择：公开论坛 `PublicForumApp.tsx` 首轮热区拆分已完成，后续不继续无边界深拆详情页内部结构。
+- 下一主线候选优先在用户留存轻闭环与公开内容增长后续专题之间选择。
 - 若继续围绕 `P3-2`，只做定向回归、真实使用兼容观察或历史 `Post.PublicId` 补齐策略评估。
 - 仍不做数据库主键迁移、全量外部契约切换、`User / Product / WikiDocument / Comment` 扩面、动态 sitemap、SSR / SSG 或 ActivityPub / WebFinger。
 

@@ -33,7 +33,7 @@
   - `P3-1-B` 已完成 forum detail / shop detail 复制 canonical 链接入口，公开详情分享基线首批收口
   - `P3-2-A` 已完成外部 ID 契约审计，最小试点对象收敛为 `Post`；首批只做 `Post.PublicId` 并行契约，不牵动数据库主键、`User / Product / WikiDocument / Comment` 或全量 API 切换
   - `P3-2-B` 已完成 `Post.PublicId` 首批实现：新帖生成 `pst_` + UUIDv7 编码体，详情接口支持 long / PublicId 双读，`PostVo.VoPublicId`、forum canonical / 分享、通知 `extData`、浏览历史 routePath 与 WebOS forum 窗口参数均已保留旧 `postId` 并并行支持 `postPublicId`
-  - `P3-3-A` 已完成 `PublicForumApp.tsx` 列表类页面首批低风险拆分：公共 helper、`PublicStatusCard`、`PublicForumTypeFeed`、`PublicForumSearch`、`PublicForumTag` 和 `PublicForumList` 已抽出，主文件从约 `2911` 行降到约 `862` 行，未改变业务行为；`PublicForumDetail` 继续保留在主文件内
+  - `P3-3-A / P3-3-B` 已完成 `PublicForumApp.tsx` 公开论坛热区低风险拆分：公共 helper、`PublicStatusCard`、`PublicForumTypeFeed`、`PublicForumSearch`、`PublicForumTag`、`PublicForumList` 和 `PublicForumDetail` 已抽出，主文件从约 `2911` 行降到约 `208` 行，未改变业务行为
 
 ## 当前执行入口
 
@@ -51,9 +51,9 @@
 ## 当前目标
 
 1. **`P3-3` 代码热区拆分与维护成本治理**
-   - 当前优先治理 `PublicForumApp.tsx`，只做不改变业务行为的结构拆分
-   - 已抽出公共 helper、状态卡、问答 / 投票 / 抽奖类型流、搜索页、标签页和默认列表页组件
-   - 本轮先收口列表类页面拆分；若继续拆 `PublicForumDetail`，需另开小批次单独评估评论定位、轻回应墙、PublicId / long 双读和分享 canonical 边界
+   - `PublicForumApp.tsx` 公开论坛热区首轮结构拆分已完成，当前只保留外层路由容器和子组件接入
+   - 本轮拆分未改变公开论坛路由、只读边界、PublicId / long 双读、评论定位或分享 canonical 行为
+   - 下一步先做收工复核与下一主线选择，不继续在同一批次里深拆 `PublicForumDetail` 内部 hook / 子结构
 2. **第二阶段收口护栏**
    - WebOS / PC 工作台、后端 + Console、公开 Web 与 Tauri 转入稳定维护
    - 若新发现会阻断资产、安全、登录、购买、转账或主路径的 `P0/P1` 缺口，最多挑 `1-2` 个小闭环
@@ -65,7 +65,7 @@
 
 ## 下一顺位
 
-- 当前优先完成 `P3-3-A` 收口：记录本轮 `PublicForumApp.tsx` 列表类页面拆分和定向验证；后续再单独评估详情页是否值得拆
+- 当前优先完成 `P3-3` 收口：记录 `PublicForumApp.tsx` 公开论坛热区拆分和定向验证，并选择下一主线
 - 后续候选顺序为用户留存轻闭环、公开内容增长后续专题
 - WebOS / PC 工作台只继续处理成片工作流中的阻断级缺口，不再无限扫零碎按钮或提示
 - 后端 + Console 治理转入稳定维护，后续只处理新暴露的安全 / 授权一致性问题
@@ -75,7 +75,7 @@
 
 ## 明日事项
 
-- 下一事项：收口 `P3-3-A` 本轮公开论坛结构拆分；暂不移动 `PublicForumDetail`，后续如继续拆详情页需单独评估
+- 下一事项：做 `P3-3` 收工复核与下一主线选择；候选优先在用户留存轻闭环与公开内容增长后续专题之间二选一，不继续无边界深拆 `PublicForumDetail` 内部结构
 - 若继续推进 `P3-2`，只做定向回归或历史数据 `PublicId` 补齐策略评估，不扩到 `User / Product / WikiDocument / Comment`
 
 ## 并行维护项

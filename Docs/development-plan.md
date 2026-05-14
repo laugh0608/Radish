@@ -21,7 +21,7 @@
   - `2026-05-13` 已启动 `P3-0 第三阶段定义与工程整备`，第三阶段主题暂定为“真实使用增长与长期契约治理”，并完成 `P3-0-A` 公开内容增长基础审计
   - `P3-1` 第一批已完成：公开 head / canonical / robots / sitemap seed 基线，以及 forum detail / shop detail 复制 canonical 链接入口均已落地
   - `P3-2 PublicId 最小试点方案` 已完成首批 `Post.PublicId` 实现：新帖生成 `pst_` + UUIDv7 编码体，forum 公开 canonical、分享、通知 `extData`、浏览历史 routePath 与窗口参数已并行支持 `postPublicId`，不启动全量迁移
-  - `P3-3-A` 已启动 `PublicForumApp.tsx` 首批低风险拆分，先抽公共 helper、状态卡和问答 / 投票 / 抽奖类型流组件
+  - `P3-3` 已完成 `PublicForumApp.tsx` 公开论坛热区首轮低风险拆分：helper、状态卡、类型流、搜索页、标签页、列表页与详情页均已抽出，主文件降到约 `208` 行
 
 ## 当前主线入口
 
@@ -36,7 +36,7 @@
 
 ## 当前开发精力
 
-- `30%`：`P3-3` 代码热区拆分，优先治理 `PublicForumApp.tsx`，再评估超大 Service 与 Flutter 大页面
+- `30%`：`P3-3` 代码热区拆分收口与下一热区选择，`PublicForumApp.tsx` 首轮治理已完成，后续再评估超大 Service 与 Flutter 大页面
 - `25%`：`P3-2` `Post.PublicId` 首批实现后的定向回归、兼容观察与历史数据补齐策略评估
 - `20%`：公开内容增长基础后续评估，聚焦动态 sitemap、详情结构化数据与 SSR / SSG 是否值得进入下一批
 - `10%`：用户留存轻闭环候选评估，聚焦通知、复访、轻互动与公开分享回流
@@ -58,7 +58,7 @@
 
 ## 下一顺位
 
-- `P3-3`：继续 `PublicForumApp.tsx` 小步拆分，下一步评估 `PublicForumSearch` 或 `PublicForumTag`，暂不移动详情页复杂状态
+- `P3-3`：先收口 `PublicForumApp.tsx` 首轮拆分与验证记录，不继续无边界深拆详情页内部结构；下一主线在用户留存轻闭环与公开内容增长后续专题之间择一
 - `P3-2` 后续只做兼容观察、定向回归或历史 `Post.PublicId` 补齐策略评估，不扩成全量迁移
 - 后续候选顺序：用户留存轻闭环、公开内容增长后续专题
 - Flutter 移动端：`P2-C5-A` 首批已完成，不默认追加低收益体验批次
