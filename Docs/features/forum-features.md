@@ -4,7 +4,7 @@
 >
 > **版本**: v26.5.0
 >
-> **最后更新**: 2026.05.13
+> **最后更新**: 2026.05.14
 
 ---
 
@@ -16,6 +16,9 @@ Radish 论坛应用是一个基于 WebOS 架构的现代化社区讨论平台，
 
 > 分类与标签能力已拆分为专题文档，避免本页重复维护：
 > [论坛帖子分类与标签（专题）](./forum-category-tag.md)
+>
+> 公开 forum 壳层与组件结构已拆分为专题文档：
+> [公开 forum 应用结构（专题）](./forum-public-app.md)
 >
 > 编辑历史能力已拆分为专题文档：
 > [论坛编辑历史（专题）](./forum-edit-history.md)
@@ -114,7 +117,9 @@ Frontend/radish.client/src/apps/forum/
 Frontend/radish.client/src/public/
 ├── PublicEntry.tsx              # 公开内容壳层总入口
 └── forum/
-    ├── PublicForumApp.tsx       # forum 公开移动列表 / 搜索 / 详情应用
+    ├── PublicForumApp.tsx       # 公开 forum 应用容器
+    ├── PublicForum*.tsx         # 列表 / 搜索 / 标签 / 类型流 / 详情页拆分组件
+    ├── publicForum*.ts          # URL、统计、展示与视图状态辅助逻辑
     └── PublicForumApp.module.css
 ```
 
