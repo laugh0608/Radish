@@ -11,6 +11,7 @@ interface PostInfoCardProps {
 
 export const PostInfoCard = ({ post, displayTimeZone, onAuthorClick }: PostInfoCardProps) => {
   const hasAuthorId = String(post.voAuthorId) !== '0';
+  const authorName = post.voAuthorName?.trim() || '未知用户';
 
   return (
     <div className={styles.card}>
@@ -31,12 +32,12 @@ export const PostInfoCard = ({ post, displayTimeZone, onAuthorClick }: PostInfoC
               type="button"
               className={`${styles.value} ${styles.authorButton}`}
               onClick={() => onAuthorClick?.(post.voAuthorId, post.voAuthorName)}
-              title={`查看 ${post.voAuthorName || `用户 ${post.voAuthorId}`} 的主页`}
+              title={`查看 ${authorName} 的主页`}
             >
-              {post.voAuthorName || '匿名'}
+              {authorName}
             </button>
           ) : (
-            <span className={styles.value}>{post.voAuthorName || '匿名'}</span>
+            <span className={styles.value}>{authorName}</span>
           )}
         </div>
 

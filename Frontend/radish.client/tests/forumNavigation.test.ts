@@ -90,7 +90,37 @@ test('parseForumNotificationNavigation 应接受字符串化的 forum extData', 
 test('parseForumNotificationNavigation 应接受 PublicId forum extData', () => {
   const navigation = parseForumNotificationNavigation(JSON.stringify({
     app: 'forum',
+    postId: '2042219067430928384',
     postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+    commentId: '2042219067430928385',
+  }));
+
+  assert.deepEqual(navigation, {
+    postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+    commentId: '2042219067430928385',
+  });
+});
+
+test('parseForumNotificationNavigation 应优先使用 payload PublicId 而不是旧 routePath long id', () => {
+  const navigation = parseForumNotificationNavigation(JSON.stringify({
+    app: 'forum',
+    postId: '2042219067430928384',
+    postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+    routePath: '/forum/post/2042219067430928384?commentId=2042219067430928385',
+    commentId: '2042219067430928385',
+  }));
+
+  assert.deepEqual(navigation, {
+    postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+    commentId: '2042219067430928385',
+  });
+});
+
+test('parseForumNotificationNavigation 应在 payload 缺少 PublicId 时优先使用 routePath PublicId', () => {
+  const navigation = parseForumNotificationNavigation(JSON.stringify({
+    app: 'forum',
+    postId: '2042219067430928384',
+    routePath: '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?commentId=2042219067430928385',
     commentId: '2042219067430928385',
   }));
 

@@ -98,48 +98,52 @@ export const TrendingSidebar = ({
           <p className={styles.emptyText}>暂无热门帖子</p>
         ) : (
           <ul className={styles.list}>
-            {hotPosts.slice(0, 6).map((post, index) => (
-              <li
-                key={post.voId}
-                className={styles.hotPostItem}
-                onClick={() => onPostClick(post.voId)}
-              >
-                <div className={styles.hotPostRank}>
-                  <span className={index < 3 ? styles.topRank : styles.normalRank}>
-                    {index + 1}
-                  </span>
-                </div>
-                <div className={styles.hotPostContent}>
-                  <h4 className={styles.hotPostTitle}>{post.voTitle}</h4>
-                  <div className={styles.hotPostMeta}>
-                    <button
-                      type="button"
-                      className={styles.authorButton}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onAuthorClick?.(post.voAuthorId, post.voAuthorName, post.voAuthorAvatarUrl);
-                      }}
-                      title={`查看 ${post.voAuthorName?.trim() || `用户 ${post.voAuthorId}`} 的主页`}
-                    >
-                      {post.voAuthorName?.trim() || `用户 ${post.voAuthorId}`}
-                    </button>
-                    <span className={styles.hotPostLikes}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                      </svg>
-                      {post.voLikeCount}
-                    </span>
-                    <span className={styles.hotPostViews}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" strokeWidth="2"/>
-                        <circle cx="12" cy="12" r="3" strokeWidth="2"/>
-                      </svg>
-                      {post.voViewCount}
+            {hotPosts.slice(0, 6).map((post, index) => {
+              const authorName = post.voAuthorName?.trim() || '未知用户';
+
+              return (
+                <li
+                  key={post.voId}
+                  className={styles.hotPostItem}
+                  onClick={() => onPostClick(post.voId)}
+                >
+                  <div className={styles.hotPostRank}>
+                    <span className={index < 3 ? styles.topRank : styles.normalRank}>
+                      {index + 1}
                     </span>
                   </div>
-                </div>
-              </li>
-            ))}
+                  <div className={styles.hotPostContent}>
+                    <h4 className={styles.hotPostTitle}>{post.voTitle}</h4>
+                    <div className={styles.hotPostMeta}>
+                      <button
+                        type="button"
+                        className={styles.authorButton}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onAuthorClick?.(post.voAuthorId, post.voAuthorName, post.voAuthorAvatarUrl);
+                        }}
+                        title={`查看 ${authorName} 的主页`}
+                      >
+                        {authorName}
+                      </button>
+                      <span className={styles.hotPostLikes}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                        </svg>
+                        {post.voLikeCount}
+                      </span>
+                      <span className={styles.hotPostViews}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" strokeWidth="2"/>
+                          <circle cx="12" cy="12" r="3" strokeWidth="2"/>
+                        </svg>
+                        {post.voViewCount}
+                      </span>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>

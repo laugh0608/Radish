@@ -75,6 +75,22 @@ function hasPostNavigationTarget(target: ForumNavigationTarget): boolean {
   return Boolean(target.postPublicId || target.postId);
 }
 
+function buildForumNavigationTarget(target: {
+  postId?: unknown;
+  postPublicId?: unknown;
+  commentId?: unknown;
+}): ForumNavigationTarget {
+  const postPublicId = normalizePostPublicId(target.postPublicId);
+  const postId = postPublicId ? undefined : normalizePositiveIntegerString(target.postId);
+  const commentId = normalizePositiveIntegerString(target.commentId);
+
+  return {
+    ...(postPublicId ? { postPublicId } : {}),
+    ...(postId ? { postId } : {}),
+    ...(commentId ? { commentId } : {})
+  };
+}
+
 export function buildForumAppParams(target: ForumAppParamTarget): Record<string, unknown> {
   const postId = normalizePositiveIntegerString(target.postId);
   const postPublicId = normalizePostPublicId(target.postPublicId);
@@ -160,30 +176,21 @@ export function parseForumNotificationNavigation(extData?: string | null): Forum
       parsed.relatedUrl,
     ].find((value): value is string => typeof value === 'string' && value.trim().length > 0);
 
-    if (routeLikeValue) {
-      const routeNavigationFromPayload = parseForumRoutePath(routeLikeValue);
-      if (routeNavigationFromPayload) {
-        return routeNavigationFromPayload;
+    if (parsed.app === 'forum') {
+      const navigation = buildForumNavigationTarget(parsed);
+      if (navigation.postPublicId) {
+        return navigation;
       }
+
+      const routeNavigation = routeLikeValue ? parseForumRoutePath(routeLikeValue) : null;
+      if (routeNavigation?.postPublicId) {
+        return routeNavigation;
+      }
+
+      return hasPostNavigationTarget(navigation) ? navigation : routeNavigation;
     }
 
-    if (parsed.app !== 'forum') {
-      return null;
-    }
-
-    const postId = normalizePositiveIntegerString(parsed.postId);
-    const postPublicId = normalizePostPublicId(parsed.postPublicId);
-    if (!postId && !postPublicId) {
-      return null;
-    }
-
-    const commentId = normalizePositiveIntegerString(parsed.commentId);
-    const navigation = {
-      ...(postId ? { postId } : {}),
-      ...(postPublicId ? { postPublicId } : {}),
-      ...(commentId ? { commentId } : {})
-    };
-    return hasPostNavigationTarget(navigation) ? navigation : null;
+    return routeLikeValue ? parseForumRoutePath(routeLikeValue) : null;
   } catch {
     return null;
   }
