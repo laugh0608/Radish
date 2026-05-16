@@ -565,14 +565,14 @@ class _ForumPostCard extends StatelessWidget {
                 children: [
                   _ForumMetaAction(
                     icon: Icons.person_outline,
-                    text: post.authorName ?? '用户 ${post.authorId}',
+                    text: _formatForumAuthorName(post.authorName),
                     onTap: onOpenProfileUser == null
                         ? null
                         : () => onOpenProfileUser!(post.authorId),
                   ),
                   _ForumMetaText(
                     icon: Icons.folder_outlined,
-                    text: post.categoryName ?? '分类 ${post.categoryId}',
+                    text: _formatForumCategoryName(post.categoryName),
                   ),
                   _ForumMetaText(
                     icon: Icons.schedule_outlined,
@@ -662,6 +662,16 @@ class _ForumMetaText extends StatelessWidget {
       ],
     );
   }
+}
+
+String _formatForumAuthorName(String? value) {
+  final normalized = value?.trim();
+  return normalized == null || normalized.isEmpty ? '未知用户' : normalized;
+}
+
+String _formatForumCategoryName(String? value) {
+  final normalized = value?.trim();
+  return normalized == null || normalized.isEmpty ? '未分类' : normalized;
 }
 
 class _ForumMetaAction extends StatelessWidget {

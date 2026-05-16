@@ -478,6 +478,41 @@ void main() {
     expect(openedUserId, 'user-1');
   });
 
+  testWidgets('hides fallback author and category ids in detail metadata',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    String? openedUserId;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: _MissingMetadataForumRepository(),
+          postId: '2042219067430928384',
+          onOpenProfileUser: (userId) {
+            openedUserId = userId;
+          },
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('未知用户'), findsOneWidget);
+    expect(find.text('未分类'), findsOneWidget);
+    expect(find.text('用户 2042219067430928399'), findsNothing);
+    expect(find.text('分类 2042219067430928400'), findsNothing);
+
+    await tester.tap(find.text('未知用户'));
+    await tester.pumpAndSettle();
+
+    expect(openedUserId, '2042219067430928399');
+  });
+
   testWidgets('navigates directly to target child comment by commentId',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 900);
@@ -794,6 +829,24 @@ class _PublicIdForumRepository extends _PagedForumRepository {
   }) {
     lastQuickReplyPostId = postId;
     return super.getQuickReplyWall(postId: postId, take: take);
+  }
+}
+
+class _MissingMetadataForumRepository extends _PagedForumRepository {
+  @override
+  Future<ForumPostDetail> getPostDetail({
+    required String postId,
+  }) async {
+    return ForumPostDetail(
+      id: postId,
+      title: '缺省元数据帖子',
+      content: '正文',
+      contentType: 'Markdown',
+      categoryId: '2042219067430928400',
+      authorId: '2042219067430928399',
+      commentCount: 0,
+      createTime: '2026-04-20T08:00:00Z',
+    );
   }
 }
 

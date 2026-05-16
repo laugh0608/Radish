@@ -799,14 +799,14 @@ class _ForumDetailContent extends StatelessWidget {
               children: [
                 _ForumMetaText(
                   icon: Icons.person_outline,
-                  text: detail.authorName ?? '用户 ${detail.authorId}',
+                  text: _formatForumAuthorName(detail.authorName),
                   onTap: onOpenProfileUser == null
                       ? null
                       : () => onOpenProfileUser!(detail.authorId),
                 ),
                 _ForumMetaText(
                   icon: Icons.folder_outlined,
-                  text: detail.categoryName ?? '分类 ${detail.categoryId}',
+                  text: _formatForumCategoryName(detail.categoryName),
                 ),
                 _ForumMetaText(
                   icon: Icons.schedule_outlined,
@@ -2031,6 +2031,16 @@ class _ForumBoundedInlineText extends StatelessWidget {
 
 double _forumInlineMaxWidth(BuildContext context) {
   return (MediaQuery.sizeOf(context).width - 80).clamp(160.0, 420.0);
+}
+
+String _formatForumAuthorName(String? value) {
+  final normalized = value?.trim();
+  return normalized == null || normalized.isEmpty ? '未知用户' : normalized;
+}
+
+String _formatForumCategoryName(String? value) {
+  final normalized = value?.trim();
+  return normalized == null || normalized.isEmpty ? '未分类' : normalized;
 }
 
 String _formatDetailTime(String? value) {
