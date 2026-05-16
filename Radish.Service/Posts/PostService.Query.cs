@@ -54,6 +54,8 @@ public partial class PostService
             return null;
         }
 
+        await EnsurePostPublicIdBackfilledAsync(post);
+
         var postVo = Mapper.Map<PostVo>(post);
 
         if (post.CategoryId > 0)
@@ -101,6 +103,34 @@ public partial class PostService
         FillPostQuestionSummary(postVo, postVo.VoQuestion);
 
         return postVo;
+    }
+
+    private async Task EnsurePostPublicIdBackfilledAsync(Post post)
+    {
+        if (!string.IsNullOrWhiteSpace(post.PublicId))
+        {
+            post.PublicId = post.PublicId.Trim();
+            return;
+        }
+
+        var publicId = EnsurePostPublicId(post.PublicId);
+        var affectedRows = await _postRepository.UpdateColumnsAsync(
+            item => new Post { PublicId = publicId },
+            item => item.Id == post.Id &&
+                    !item.IsDeleted &&
+                    (item.PublicId == null || item.PublicId == string.Empty));
+
+        if (affectedRows > 0)
+        {
+            post.PublicId = publicId;
+            return;
+        }
+
+        var refreshedPost = await _postRepository.QueryByIdAsync(post.Id);
+        if (!string.IsNullOrWhiteSpace(refreshedPost?.PublicId))
+        {
+            post.PublicId = refreshedPost.PublicId.Trim();
+        }
     }
 
     /// <summary>
