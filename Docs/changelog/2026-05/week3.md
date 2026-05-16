@@ -400,6 +400,12 @@
 - 第二候选为“我的轻回应”回流并行携带 `VoPostPublicId`：WebOS 和 Flutter 当前都能回原帖，但 `UserPostQuickReplyVo` 只暴露 `VoPostId`，若要切到 PublicId 需要后端 ViewModel/API 契约扩展，建议单独批准后实施。
 - 本轮只做审计和文档记录，不直接改运行时代码。
 
+### `P3-4-A1` Flutter 通知 PublicId 回流
+
+- Flutter forum notification 回流已优先使用 `extData.postPublicId`，缺失时继续回退旧 `postId`。
+- 评论定位参数 `commentId` 保持不变，旧 forum 通知 payload 和非 forum 通知跳过逻辑保持兼容。
+- `notification_repository_test.dart` 已补 `postPublicId + postId` 并存、仅 `postPublicId`、旧 `postId`、非 forum 通知跳过和畸形 payload 忽略场景。
+
 ### 文档同步
 
 - [当前进行中](/planning/current) 已切到 `P3-4 用户留存轻闭环`。
@@ -416,3 +422,5 @@
   - 通过；当前没有需要检查的变更文件。
 - `git diff --check`
   - 通过。
+- `flutter test test/notification_repository_test.dart`
+  - 提权环境通过，`5/5`。

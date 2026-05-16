@@ -354,6 +354,24 @@ npm run check:repo-hygiene:changed
   - 若要让轻回应复访也逐步切到 PublicId，需要为 `UserPostQuickReplyVo` 增加 `VoPostPublicId` 并在 WebOS / Flutter 回流入口优先使用该字段。
   - 该项涉及后端 ViewModel/API 契约扩展，建议在 Flutter 通知小闭环完成后单独批准实施。
 
+### `P3-4-A1` Flutter forum notification PublicId 回流
+
+完成日期：2026-05-16。
+
+已完成：
+
+- Flutter `ForumNotificationPayload.forumTarget` 解析 forum 通知 `extData` 时，已优先使用 `postPublicId` 作为详情回流目标。
+- 旧通知 payload 仍保留兼容：`postPublicId` 缺失时继续回退 `postId`，`commentId` 继续用于评论上下文定位。
+- 新增单测覆盖 `postPublicId + postId` 并存、仅 `postPublicId`、旧 `postId`、非 forum 通知跳过和畸形 payload 忽略。
+
+验证：
+
+- `flutter test test/notification_repository_test.dart` 提权环境通过，`5/5`。
+
+后置：
+
+- “我的轻回应”回流并行 `VoPostPublicId` 仍后置；该项涉及后端 ViewModel/API 契约扩展，需单独批准。
+
 ## 首批候选任务
 
 ### `P3-1` 公开内容增长基础

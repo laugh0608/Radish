@@ -35,6 +35,7 @@
   - `P3-2-B` 已完成 `Post.PublicId` 首批实现：新帖生成 `pst_` + UUIDv7 编码体，详情接口支持 long / PublicId 双读，`PostVo.VoPublicId`、forum canonical / 分享、通知 `extData`、浏览历史 routePath 与 WebOS forum 窗口参数均已保留旧 `postId` 并并行支持 `postPublicId`
   - `P3-3-A / P3-3-B` 已完成 `PublicForumApp.tsx` 公开论坛热区低风险拆分：公共 helper、`PublicStatusCard`、`PublicForumTypeFeed`、`PublicForumSearch`、`PublicForumTag`、`PublicForumList` 和 `PublicForumDetail` 已抽出，主文件从约 `2911` 行降到约 `208` 行，未改变业务行为
   - `2026-05-16` 已完成 `P3-3` 收工复核：`radish.client` 类型检查、公开 forum / public route / public head 定向测试、changed-only 文本卫生与 `git diff --check` 均通过；下一主线选择为 `P3-4 用户留存轻闭环`
+  - `P3-4-A1` 已完成 Flutter forum notification PublicId 回流：移动端通知解析优先使用 `extData.postPublicId`，缺失时回退旧 `postId`，定向测试通过
 
 ## 当前执行入口
 
@@ -77,7 +78,7 @@
 
 ## 明日事项
 
-- 下一事项：优先做 `P3-4-A` 首个小闭环，建议从 Flutter forum notification 回流优先使用 `postPublicId` 开始；“我的轻回应”并行 `VoPostPublicId` 因涉及 API 契约扩展，单独批准后再做
+- 下一事项：评估是否推进“我的轻回应”回流并行 `VoPostPublicId`；该项涉及后端 ViewModel/API 契约扩展，实施前需单独确认范围
 - 若继续推进 `P3-2`，只做定向回归或历史数据 `PublicId` 补齐策略评估，不扩到 `User / Product / WikiDocument / Comment`
 
 ## 并行维护项

@@ -29,6 +29,50 @@ void main() {
     expect(target.source, ForumDetailHandoffSource.notification);
   });
 
+  test('prefers forum notification public id when present', () {
+    final page = ForumNotificationPage.fromJson({
+      'data': [
+        {
+          'voNotification': {
+            'voTitle': '帖子收到轻回应',
+            'voExtData':
+                '{"app":"forum","postId":"2042219067430928384","postPublicId":"pst_01HZEXAMPLEPUBLICID","commentId":"2042219067430928999"}',
+          },
+        },
+      ],
+    });
+
+    final target = page.latestForumTarget;
+
+    expect(target, isNotNull);
+    expect(target!.postId, 'pst_01HZEXAMPLEPUBLICID');
+    expect(target.commentId, '2042219067430928999');
+    expect(target.initialTitle, '帖子收到轻回应');
+    expect(target.source, ForumDetailHandoffSource.notification);
+  });
+
+  test('accepts public-id-only forum notification payloads', () {
+    final page = ForumNotificationPage.fromJson({
+      'data': [
+        {
+          'voNotification': {
+            'voTitle': '公开帖子回流',
+            'voExtData': {
+              'app': 'forum',
+              'postPublicId': 'pst_01HZONLYPUBLICID',
+            },
+          },
+        },
+      ],
+    });
+
+    final target = page.latestForumTarget;
+
+    expect(target, isNotNull);
+    expect(target!.postId, 'pst_01HZONLYPUBLICID');
+    expect(target.commentId, isNull);
+  });
+
   test('skips non-forum notifications before selecting target', () {
     final page = ForumNotificationPage.fromJson({
       'data': [
