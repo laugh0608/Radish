@@ -117,4 +117,54 @@ public class UserBrowseHistoryServiceTest
         repository.Verify(repo => repo.AddAsync(It.IsAny<UserBrowseHistory>()), Times.Never);
         repository.Verify(repo => repo.UpdateAsync(It.IsAny<UserBrowseHistory>()), Times.Once);
     }
+
+    [Fact]
+    public async Task RecordAsync_Should_UpdateExistingPostHistory_ToPublicIdRoutePath()
+    {
+        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+        var repository = new Mock<IBaseRepository<UserBrowseHistory>>(MockBehavior.Strict);
+        var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
+
+        var existing = new UserBrowseHistory
+        {
+            Id = 2,
+            UserId = 1001,
+            TargetType = "Post",
+            TargetId = 2042219067430928384,
+            Title = "旧帖子标题",
+            RoutePath = "/forum/post/2042219067430928384",
+            ViewCount = 1,
+            LastViewTime = DateTime.UtcNow.AddDays(-1)
+        };
+
+        repository
+            .Setup(repo => repo.QueryFirstAsync(It.IsAny<Expression<Func<UserBrowseHistory, bool>>?>()))
+            .ReturnsAsync(existing);
+        repository
+            .Setup(repo => repo.UpdateAsync(It.Is<UserBrowseHistory>(history =>
+                history.Id == 2 &&
+                history.TargetType == "Post" &&
+                history.TargetId == 2042219067430928384 &&
+                history.RoutePath == "/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f" &&
+                history.ViewCount == 2 &&
+                history.ModifyBy == "Tester" &&
+                history.ModifyId == 1001)))
+            .ReturnsAsync(true);
+
+        var service = new UserBrowseHistoryService(mapper.Object, repository.Object, attachmentUrlResolver.Object);
+
+        await service.RecordAsync(new RecordBrowseHistoryDto
+        {
+            UserId = 1001,
+            TenantId = 9,
+            TargetType = "Post",
+            TargetId = 2042219067430928384,
+            Title = "PublicId 路由帖子",
+            RoutePath = "/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f",
+            OperatorName = "Tester"
+        });
+
+        repository.Verify(repo => repo.AddAsync(It.IsAny<UserBrowseHistory>()), Times.Never);
+        repository.Verify(repo => repo.UpdateAsync(It.IsAny<UserBrowseHistory>()), Times.Once);
+    }
 }

@@ -37,6 +37,7 @@
   - `2026-05-16` 已完成 `P3-3` 收工复核：`radish.client` 类型检查、公开 forum / public route / public head 定向测试、changed-only 文本卫生与 `git diff --check` 均通过；下一主线选择为 `P3-4 用户留存轻闭环`
   - `P3-4-A1` 已完成 Flutter forum notification PublicId 回流：移动端通知解析优先使用 `extData.postPublicId`，缺失时回退旧 `postId`，定向测试通过
   - `P3-4-A2` 已完成“我的轻回应”PublicId 回流：后端并行暴露 `VoPostPublicId`，WebOS 与 Flutter 回流优先使用 PublicId 并保留旧 `VoPostId` 回退
+  - `P3-4-A3` 已完成最近阅读 / 浏览历史历史数据补齐策略评估：旧 long `RoutePath` 仍可回流，新访问会自然刷新为 PublicId canonical，当前不做一次性历史数据批量补齐
 
 ## 当前执行入口
 
@@ -68,7 +69,7 @@
 
 ## 下一顺位
 
-- 当前优先推进 `P3-4-A` 用户留存轻闭环审计：先盘点通知、最近阅读、我的轻回应、公开分享和 Flutter 复访入口的真实回流断点
+- `P3-4-A` 首批 forum 回流小闭环已覆盖通知、我的轻回应和最近阅读 / 浏览历史补齐策略；下一步优先观察真实使用，不继续扩全量 `PublicId`
 - `P3-3` 只保留后续观察，不继续无边界深拆 `PublicForumDetail` 内部结构
 - 公开内容增长后续专题后置到 `P3-4` 首批留存链路跑通后，再评估动态 sitemap、结构化数据或 SSR / SSG 是否值得进入下一批
 - WebOS / PC 工作台只继续处理成片工作流中的阻断级缺口，不再无限扫零碎按钮或提示
@@ -79,7 +80,7 @@
 
 ## 明日事项
 
-- 下一事项：`P3-4-A` 首批 forum 回流小闭环先收口；后续不扩全量 `PublicId`，只观察真实使用，或单独评估最近阅读 / 浏览历史历史数据补齐策略
+- 下一事项：`P3-4-A` 首批 forum 回流小闭环进入观察；若继续推进，先从真实使用中暴露的公开分享 / 复访断点里选 `1` 个小闭环
 - 若继续推进 `P3-2`，只做定向回归或历史数据 `PublicId` 补齐策略评估，不扩到 `User / Product / WikiDocument / Comment`
 
 ## 并行维护项

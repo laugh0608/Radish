@@ -413,6 +413,12 @@
 - Flutter Profile “我的轻回应”回流已优先使用 `voPostPublicId`，旧 payload 继续使用 `voPostId`。
 - 本批不扩全量 `PublicId`，也不处理历史数据批量补齐；后续只观察真实使用或单独评估最近阅读 / 浏览历史补齐策略。
 
+### `P3-4-A3` 最近阅读 / 浏览历史补齐策略评估
+
+- 已完成最近阅读 / 浏览历史历史数据补齐策略评估：新 Post 浏览历史会写入 PublicId canonical route，旧 long `RoutePath` 仍由 WebOS `workspaceNavigation` 兼容打开。
+- 已补后端测试确认 `PostController.GetById` 记录浏览历史时优先写入 `/forum/post/{VoPublicId}`，并确认 `UserBrowseHistoryService.RecordAsync` 可在用户再次访问同一 Post 时把旧 long route 自然刷新为 PublicId route。
+- 策略结论为当前不做一次性历史数据批量补齐、不新增维护任务、不扩浏览历史 API 契约；若后续真实使用发现旧数据影响回流，再单独评估只针对 Post 浏览历史的维护脚本。
+
 ### 文档同步
 
 - [当前进行中](/planning/current) 已切到 `P3-4 用户留存轻闭环`。
@@ -439,3 +445,11 @@
   - 通过。
 - `node --test --test-isolation=none ./tests/workspaceNavigation.test.ts ./tests/forumNavigation.test.ts`
   - 通过，`36/36`。
+- `dotnet test Radish.Api.Tests --filter "PostControllerTest|UserBrowseHistoryServiceTest" -v minimal`
+  - 首次沙盒内因无法读取用户 NuGet.Config 失败；提权环境通过，`20/20`。
+- `npm run type-check --workspace=radish.client`
+  - 通过。
+- `npm run test --workspace=radish.client -- --test-name-pattern="Forum|forum|Public|public|workspace|notification|browse"`
+  - 通过，`135/135`。
+- `flutter test test/notification_repository_test.dart test/profile_page_test.dart`
+  - 首次沙盒启动失败；提权环境通过，`34/34`。

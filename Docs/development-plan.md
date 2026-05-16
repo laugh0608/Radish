@@ -22,7 +22,7 @@
   - `P3-1` 第一批已完成：公开 head / canonical / robots / sitemap seed 基线，以及 forum detail / shop detail 复制 canonical 链接入口均已落地
   - `P3-2 PublicId 最小试点方案` 已完成首批 `Post.PublicId` 实现：新帖生成 `pst_` + UUIDv7 编码体，forum 公开 canonical、分享、通知 `extData`、浏览历史 routePath 与窗口参数已并行支持 `postPublicId`，不启动全量迁移
   - `P3-3` 已完成 `PublicForumApp.tsx` 公开论坛热区首轮低风险拆分和收工复核：helper、状态卡、类型流、搜索页、标签页、列表页与详情页均已抽出，主文件降到约 `208` 行，定向验证通过
-  - `P3-4` 首批 forum 回流小闭环已完成通知与我的轻回应两条路径：Flutter forum notification 优先使用 `postPublicId`，WebOS / Flutter “我的轻回应”回流并行使用 `VoPostPublicId`
+  - `P3-4` 首批 forum 回流小闭环已完成通知、我的轻回应和最近阅读 / 浏览历史补齐策略评估：Flutter forum notification 优先使用 `postPublicId`，WebOS / Flutter “我的轻回应”回流并行使用 `VoPostPublicId`，旧浏览历史不做一次性批量补齐
 
 ## 当前主线入口
 
@@ -59,7 +59,7 @@
 
 ## 下一顺位
 
-- `P3-4`：首批 forum 回流小闭环先收口，后续不扩全量 `PublicId`；若继续推进，只单独评估最近阅读 / 浏览历史历史数据补齐策略
+- `P3-4`：首批 forum 回流小闭环进入观察，后续不扩全量 `PublicId`；若继续推进，只从真实使用暴露的公开分享 / 复访断点中选择小闭环
 - `P3-3`：首轮拆分与验证记录已收口，不继续无边界深拆详情页内部结构
 - `P3-2` 后续只做兼容观察、定向回归或历史 `Post.PublicId` 补齐策略评估，不扩成全量迁移
 - 公开内容增长后续专题后置到 `P3-4` 首批留存链路跑通后再评估

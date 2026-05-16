@@ -243,6 +243,53 @@ public class PostControllerTest
     }
 
     [Fact]
+    public async Task GetById_Should_Record_BrowseHistory_With_PublicId_RoutePath_When_Post_Has_PublicId()
+    {
+        var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
+        var moderationServiceMock = new Mock<IContentModerationService>(MockBehavior.Strict);
+        var attachmentServiceMock = new Mock<IBaseService<Attachment, AttachmentVo>>(MockBehavior.Strict);
+        var commentServiceMock = new Mock<IBaseService<Comment, CommentVo>>(MockBehavior.Strict);
+        var browseHistoryServiceMock = new Mock<IUserBrowseHistoryService>(MockBehavior.Strict);
+
+        postServiceMock
+            .Setup(service => service.GetPostDetailAsync(9531, 10001, "default"))
+            .ReturnsAsync(new PostVo
+            {
+                VoId = 9531,
+                VoPublicId = "pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f",
+                VoTitle = "PublicId 浏览记录帖",
+                VoSummary = "浏览历史应写入公开标识路由",
+                VoCoverAttachmentId = 2048
+            });
+        postServiceMock
+            .Setup(service => service.IncrementViewCountAsync(9531))
+            .Returns(Task.CompletedTask);
+        browseHistoryServiceMock
+            .Setup(service => service.RecordAsync(It.Is<RecordBrowseHistoryDto>(request =>
+                request.UserId == 10001 &&
+                request.TargetType == "Post" &&
+                request.TargetId == 9531 &&
+                request.Title == "PublicId 浏览记录帖" &&
+                request.RoutePath == "/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f")))
+            .Returns(Task.CompletedTask);
+        commentServiceMock
+            .Setup(service => service.QueryAsync(It.IsAny<Expression<Func<Comment, bool>>>()))
+            .ReturnsAsync(new List<CommentVo>());
+
+        var controller = CreateController(
+            postServiceMock.Object,
+            moderationServiceMock.Object,
+            attachmentServiceMock.Object,
+            commentServiceMock.Object,
+            browseHistoryService: browseHistoryServiceMock.Object);
+
+        var result = await controller.GetById(9531);
+
+        Assert.True(result.IsSuccess);
+        browseHistoryServiceMock.Verify(service => service.RecordAsync(It.IsAny<RecordBrowseHistoryDto>()), Times.Once);
+    }
+
+    [Fact]
     public async Task GetList_Should_Pass_TagSlug_To_ForumQuery()
     {
         var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
@@ -955,7 +1002,8 @@ public class PostControllerTest
         IContentModerationService moderationService,
         IBaseService<Attachment, AttachmentVo> attachmentService,
         IBaseService<Comment, CommentVo> commentService,
-        CurrentUser? currentUser = null)
+        CurrentUser? currentUser = null,
+        IUserBrowseHistoryService? browseHistoryService = null)
     {
         Mock.Get(postService)
             .Setup(service => service.FillPostAvatarAndInteractorsAsync(It.IsAny<List<PostVo>>()))
@@ -981,7 +1029,7 @@ public class PostControllerTest
             moderationService,
             attachmentServiceAdapter,
             commentService,
-            browseHistoryServiceMock.Object,
+            browseHistoryService ?? browseHistoryServiceMock.Object,
             currentUserAccessorMock.Object);
     }
 }

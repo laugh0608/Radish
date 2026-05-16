@@ -394,6 +394,30 @@ npm run check:repo-hygiene:changed
 
 - `P3-4-A` 首批 forum 回流已覆盖通知和我的轻回应两条高价值路径；下一步不继续扩全量 `PublicId`，优先观察真实使用，或再评估最近阅读 / 浏览历史中的历史数据补齐策略。
 
+### `P3-4-A3` 最近阅读 / 浏览历史历史数据补齐策略评估
+
+完成日期：2026-05-16。
+
+审计结论：
+
+- 后端 `PostController.GetById` 已在记录 Post 浏览历史时使用 `PublicRoutePathBuilder.BuildForumPostPath(post.VoPublicId, post.VoId)`，新访问会写入 `/forum/post/{VoPublicId}`，缺失 `PublicId` 时才回退旧 long 路由。
+- `UserBrowseHistoryService.RecordAsync` 以 `UserId + TargetType + TargetId` 命中已有记录；用户再次打开同一帖子时，会用新的 PublicId canonical `RoutePath` 更新旧 long 记录，并递增浏览次数。
+- WebOS 个人页浏览历史和桌面“继续使用”统一走 `resolveBrowseHistoryWorkspaceTarget`；该入口已同时支持 long route、PublicId route，以及无 `routePath` 时按 `TargetType + TargetId` 回退打开 forum。
+- Flutter 近期 forum 复访仍以 `ForumDetailHandoffTarget.postId` 承载目标字符串；通知和我的轻回应已可把 `postPublicId` 作为该目标传入，旧 long 目标继续兼容。
+
+策略：
+
+- 当前不做一次性历史数据批量补齐，也不新增维护任务或扩展浏览历史 API 契约。
+- 历史 long `RoutePath` 不阻断回流：前端可直接解析并打开，后续用户再次访问同一 Post 时会自然刷新为 PublicId route。
+- 若真实使用中发现大量旧历史影响分享 / SEO / 跨端回流，再单独评估只针对 Post 浏览历史的维护脚本；不扩到 `User / Product / WikiDocument / Comment` 或全量 `PublicId` 迁移。
+
+验证：
+
+- `dotnet test Radish.Api.Tests --filter "PostControllerTest|UserBrowseHistoryServiceTest" -v minimal` 提权环境通过，`20/20`。
+- `npm run type-check --workspace=radish.client` 通过。
+- `npm run test --workspace=radish.client -- --test-name-pattern="Forum|forum|Public|public|workspace|notification|browse"` 通过，`135/135`。
+- `flutter test test/notification_repository_test.dart test/profile_page_test.dart` 提权环境通过，`34/34`。
+
 ## 首批候选任务
 
 ### `P3-1` 公开内容增长基础
