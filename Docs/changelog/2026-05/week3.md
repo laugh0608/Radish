@@ -419,11 +419,40 @@
 - 已补后端测试确认 `PostController.GetById` 记录浏览历史时优先写入 `/forum/post/{VoPublicId}`，并确认 `UserBrowseHistoryService.RecordAsync` 可在用户再次访问同一 Post 时把旧 long route 自然刷新为 PublicId route。
 - 策略结论为当前不做一次性历史数据批量补齐、不新增维护任务、不扩浏览历史 API 契约；若后续真实使用发现旧数据影响回流，再单独评估只针对 Post 浏览历史的维护脚本。
 
+### `P3-4-B` 至 `P3-4-F` forum 留存回流主动验收
+
+- 已按“开发期主动批量验收 + 成组修复”节奏完成 forum 回流矩阵复核，不再等待开发者逐个手动复测。
+- 覆盖公开分享、通知、最近阅读、我的轻回应、公开个人页最近公开帖子 / 评论、forum 详情作者 / 评论作者到公开个人页再返回详情的双向复访。
+- WebOS 与 Flutter 均保持帖子 PublicId 优先；long id 仅作为旧数据 fallback，评论回流只附带必要 `commentId`。
+- 后端为公开评论和我的轻回应补齐 `VoPostPublicId`，WebOS / Flutter 回流优先使用 PublicId；Flutter forum detail 会先解析真实详情，再用真实 `VoId` 调评论、轻回应和评论定位接口。
+- WebOS 通知解析在 payload 同时存在 `postPublicId` 与旧 long `routePath` 时优先使用 PublicId；payload 缺少 PublicId 但 routePath 已是 PublicId 时也优先使用 routePath PublicId。
+- WebOS / Flutter forum 普通可见文案不再把帖子 long id、评论 id、作者 id 或分类 id 当 fallback 外露；内部点击、旧 routePath 和旧通知 payload 兼容保留。
+
+### `P3-4-G` docs 留存回流可见性复核
+
+- Flutter docs handoff 详情已隐藏 long numeric slug 的普通可见上下文，保留旧 slug / documentId fallback 打开能力。
+- WebOS 最近阅读已隐藏 `/wiki/doc/{long}` 与 `/docs/{long}` 旧文档路径可见文本，仍可通过 `documentId` fallback 打开文档。
+- 当前不启动 `WikiDocument.PublicId`、历史文档路由批量补齐或数据库迁移。
+
+### `P3-4-H` shop 留存回流可见性复核
+
+- WebOS 最近阅读已隐藏 `/shop/product/{long}` 商品旧路径可见文本，仍可通过 `productId` fallback 打开商品详情。
+- 公开 shop 商品详情 head 不再把 `productId` 写入 title / description，canonical path 保持 `/shop/product/{productId}`，公开路由兼容不变。
+- 当前不启动 `Product.PublicId` 或全量外部标识改造。
+
+### 当日提交回顾与文档同步
+
+- 今日提交链从 `P3-3` 收工复核切入 `P3-4`，并完成 forum / docs / shop 留存回流主动验收第一轮。
+- 已回顾提交：`86350f24`、`06a093e9`、`8b74474a`、`e3ef6df5`、`94f2fe05`、`731de8ea`、`3aab4f85`、`14f42898`、`c508db06`、`c7134249`、`bd7ce3b0`、`dbe29220`、`ed56c4bb`、`cbf0b2b4`、`537bb9ca`。
+- 规划入口需同步：`P3-4` 下一步从继续拆新链路调整为阶段性收尾判断，公开内容增长后续专题作为下一主线候选。
+- 设计 / 说明入口复核结论：`Docs/frontend/design.md` 的公开壳层只读边界、`Docs/guide/validation-baseline.md` 的验证入口和 `P3-2` 最小试点不扩全量 PublicId 的口径仍适用，本轮不需要改动。
+
 ### 文档同步
 
 - [当前进行中](/planning/current) 已切到 `P3-4 用户留存轻闭环`。
 - [第三开发阶段专题](/planning/phase-three-real-usage-contract-governance) 已补 `P3-3` 收工复核、`P3-4-A` 审计口径和初步审计结论。
 - [开发路线图](/development-plan) 已同步当前主线、开发精力和下一顺位。
+- `2026-05-16` 收工前已再次同步 [当前进行中](/planning/current)、[开发路线图](/development-plan)、[第三开发阶段专题](/planning/phase-three-real-usage-contract-governance) 和本周开发日志，明日事项切到 `P3-4` 阶段性收尾判断。
 
 ### 验证记录
 
@@ -453,3 +482,21 @@
   - 通过，`135/135`。
 - `flutter test test/notification_repository_test.dart test/profile_page_test.dart`
   - 首次沙盒启动失败；提权环境通过，`34/34`。
+- `flutter test test/profile_page_test.dart test/forum_detail_page_test.dart`
+  - `P3-4-D / E` 提权环境通过，覆盖公开个人页 forum 回流、forum detail 作者 / 评论作者回流和可见文案收口。
+- `flutter test test/forum_follow_up_store_test.dart test/notification_repository_test.dart test/profile_page_test.dart test/forum_detail_page_test.dart`
+  - `P3-4-F` 提权环境通过，`49/49`。
+- `flutter test test/docs_page_test.dart test/profile_page_test.dart`
+  - `P3-4-G` 提权环境通过，`44/44`。
+- `node --test --test-isolation=none ./tests/forumNavigation.test.ts ./tests/workspaceNavigation.test.ts ./tests/publicProfileNavigation.test.ts ./tests/publicRouteNavigation.test.ts ./tests/publicRouteState.test.ts ./tests/publicHead.test.ts`
+  - `P3-4-F` WebOS / 公开路由矩阵通过，`79/79`。
+- `node --test --test-isolation=none ./tests/workspaceNavigation.test.ts ./tests/publicRouteState.test.ts ./tests/publicRouteNavigation.test.ts ./tests/publicHead.test.ts ./tests/wikiApp.helpers.test.ts`
+  - `P3-4-G` WebOS docs / workspace / public route 矩阵通过，`59/59`。
+- `node --test --test-isolation=none ./tests/workspaceNavigation.test.ts ./tests/publicRouteState.test.ts ./tests/publicRouteNavigation.test.ts ./tests/publicHead.test.ts`
+  - `P3-4-H` shop / workspace / public head 矩阵通过，`47/47`。
+- `npm run type-check --workspace=radish.client`
+  - `P3-4-D` 至 `P3-4-H` 各批均通过。
+- `npm run check:repo-hygiene:changed`
+  - `P3-4-D` 至 `P3-4-H` 各批均通过。
+- `git diff --check`
+  - `P3-4-D` 至 `P3-4-H` 各批均通过。

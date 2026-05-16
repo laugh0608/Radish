@@ -22,7 +22,7 @@
 
 `P3-0` 已完成第三阶段定义、公开内容增长基础审计和第一批任务排序；`P3-1` 已完成公开内容 SEO 与分享基线。`P3-2` 已完成 `P3-2-A` 外部 ID 契约审计和 `P3-2-B` `Post.PublicId` 首批实现，试点对象保持收敛为 `Post`。`P3-3` 已完成 `PublicForumApp.tsx` 公开论坛热区首轮拆分和收工复核。
 
-当前主线切到 `P3-4 用户留存轻闭环`。首批先审计通知、最近阅读、我的轻回应、公开分享与 Flutter 复访入口的真实回流断点，只选择 `1-2` 个可验证小闭环；公开内容增长后续专题、历史 `Post.PublicId` 补齐策略和 `P3-3` 深层拆分均后置到真实需要出现时再评估。
+当前主线为 `P3-4 用户留存轻闭环`。`2026-05-16` 已完成 forum / docs / shop 留存回流矩阵第一轮主动验收：forum 公开分享、通知、最近阅读、我的轻回应、公开个人页双向复访已保持 PublicId 优先；docs / shop 旧 long 路径只保留回流 fallback，不在最近阅读或公开 head 普通文案外露。下一步先做阶段性收尾判断，再决定是否切入公开内容增长后续专题。
 
 ## `P3-0` 定义与工程整备
 
@@ -445,6 +445,53 @@ npm run check:repo-hygiene:changed
 - 产品正式上线进入稳定运营前，`P3-4` 默认由 AI 主动按链路矩阵复核、成组修复、补充定向测试，并一次性交付结论。
 - 产品正式上线并进入稳定运营后，再切换为更小心谨慎的小步修复、风险隔离和发布留痕策略。
 - 下一批建议命名为 `P3-4-B 留存回流主动验收批次`，范围仍限定在公开分享、通知、最近阅读、我的轻回应到 WebOS / Flutter 详情的一致性，不扩完整 `PublicId` 迁移。
+
+### `P3-4-B` 至 `P3-4-F` forum 留存回流主动验收
+
+完成日期：2026-05-16。
+
+已完成：
+
+- 公开分享、通知、最近阅读、我的轻回应、公开个人页最近公开帖子 / 评论到 WebOS 或 Flutter forum 详情的回流链路已成组复核。
+- Flutter forum detail 会先解析真实帖子详情，再用真实 `VoId` 访问评论、轻回应和评论定位接口；PublicId 只作为外部入口标识，内部 long 接口不误传 PublicId。
+- WebOS 与 Flutter 公开个人页最近公开帖子 / 评论回流优先使用帖子 PublicId，评论只附带必要 `commentId` 定位参数。
+- forum 详情作者 / 评论作者到公开个人页、再从公开个人页回 forum 详情的来源返回和 PublicId 路由状态已补测试。
+- WebOS 通知解析在 payload 同时存在 `postPublicId` 与旧 long `routePath` 时优先使用 PublicId；payload 缺少 PublicId 但 routePath 已是 PublicId 时也优先使用 routePath PublicId。
+- WebOS / Flutter forum 普通可见文案不再用帖子 long id、评论 id、作者 id 或分类 id 作为 fallback；内部点击和旧数据回流能力保留。
+- Flutter 最近阅读 / 最近个人页复访存储已补测试，确认重复 PublicId handoff 去重、来源归一为 `browseHistory`，最近个人页 userId 做 trim / 空值清理。
+
+结论：
+
+- forum 留存回流第一轮矩阵已覆盖，不需要继续拆新 forum 批次。
+- 后续只处理真实使用中暴露的新公开分享 / 复访断点，不借此扩 `User / Product / WikiDocument / Comment` 全量 PublicId 迁移。
+
+### `P3-4-G` docs 留存回流可见性复核
+
+完成日期：2026-05-16。
+
+已完成：
+
+- Flutter docs handoff 详情已隐藏 long numeric slug 的普通可见上下文，保留 slug / documentId fallback 打开能力。
+- WebOS 最近阅读已隐藏 `/wiki/doc/{long}` 与 `/docs/{long}` 旧文档路径可见文本，仍可通过 `documentId` fallback 打开文档。
+- docs 公开路由、workspace navigation、public head 与 Flutter docs/profile 定向测试已覆盖。
+
+结论：
+
+- docs 当前以 slug 为公开详情主路由，不启动 `WikiDocument.PublicId` 或数据库迁移。
+
+### `P3-4-H` shop 留存回流可见性复核
+
+完成日期：2026-05-16。
+
+已完成：
+
+- WebOS 最近阅读已隐藏 `/shop/product/{long}` 商品旧路径可见文本，仍可通过 `productId` fallback 打开商品详情。
+- 公开 shop 商品详情 head 不再把 `productId` 写入 title / description，canonical path 保持 `/shop/product/{productId}`，公开路由兼容不变。
+- shop workspace navigation、public route、public head 与来源返回测试已覆盖。
+
+结论：
+
+- shop 当前仍以 long `productId` 作为兼容路由；本轮只冻结普通文案外露，不启动 `Product.PublicId` 或全量外部标识改造。
 
 ## 首批候选任务
 
