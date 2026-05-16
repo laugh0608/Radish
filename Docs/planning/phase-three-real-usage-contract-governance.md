@@ -372,6 +372,28 @@ npm run check:repo-hygiene:changed
 
 - “我的轻回应”回流并行 `VoPostPublicId` 仍后置；该项涉及后端 ViewModel/API 契约扩展，需单独批准。
 
+### `P3-4-A2` 我的轻回应 PublicId 回流
+
+完成日期：2026-05-16。
+
+已完成：
+
+- `UserPostQuickReplyVo` 新增 `VoPostPublicId`，并保留旧 `VoPostId`。
+- `PostQuickReplyService.GetMinePageAsync` 查询“我的轻回应”时并行填充帖子 `PublicId`，历史未补齐 `PublicId` 的帖子继续返回空值并走旧 `VoPostId`。
+- WebOS “继续使用”和个人页“我的轻回应”回流均优先携带 `postPublicId`，缺失时回退 `postId`。
+- Flutter Profile “我的轻回应”回流优先使用 `voPostPublicId`，旧 payload 继续使用 `voPostId`。
+
+验证：
+
+- `dotnet test Radish.Api.Tests --filter "PostQuickReplyServiceTest" -v minimal` 提权环境通过，`3/3`。
+- `flutter test test/profile_page_test.dart` 提权环境通过，`29/29`。
+- `npm run type-check --workspace=radish.client` 通过。
+- `node --test --test-isolation=none ./tests/workspaceNavigation.test.ts ./tests/forumNavigation.test.ts` 通过，`36/36`。
+
+后置：
+
+- `P3-4-A` 首批 forum 回流已覆盖通知和我的轻回应两条高价值路径；下一步不继续扩全量 `PublicId`，优先观察真实使用，或再评估最近阅读 / 浏览历史中的历史数据补齐策略。
+
 ## 首批候选任务
 
 ### `P3-1` 公开内容增长基础

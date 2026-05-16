@@ -113,24 +113,34 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
             .Distinct()
             .ToList();
 
-        var postTitleMap = postIds.Count == 0
-            ? new Dictionary<long, string>()
+        var postMap = postIds.Count == 0
+            ? new Dictionary<long, Post>()
             : (await _postRepository.QueryAsync(post => postIds.Contains(post.Id)))
                 .GroupBy(post => post.Id)
-                .ToDictionary(group => group.Key, group => group.First().Title?.Trim() ?? string.Empty);
+                .ToDictionary(group => group.Key, group => group.First());
 
-        var result = items.Select(item => new UserPostQuickReplyVo
+        var result = items.Select(item =>
         {
-            VoId = item.Id,
-            VoPostId = item.PostId,
-            VoPostTitle = postTitleMap.TryGetValue(item.PostId, out var title) && !string.IsNullOrWhiteSpace(title)
-                ? title
-                : $"帖子 {item.PostId}",
-            VoContent = item.Content,
-            VoCreateTime = item.CreateTime
+            postMap.TryGetValue(item.PostId, out var post);
+            return new UserPostQuickReplyVo
+            {
+                VoId = item.Id,
+                VoPostId = item.PostId,
+                VoPostPublicId = NormalizePostPublicId(post?.PublicId),
+                VoPostTitle = !string.IsNullOrWhiteSpace(post?.Title)
+                    ? post.Title.Trim()
+                    : $"帖子 {item.PostId}",
+                VoContent = item.Content,
+                VoCreateTime = item.CreateTime
+            };
         }).ToList();
 
         return (result, total);
+    }
+
+    private static string? NormalizePostPublicId(string? publicId)
+    {
+        return string.IsNullOrWhiteSpace(publicId) ? null : publicId.Trim();
     }
 
     [UseTran]

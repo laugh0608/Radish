@@ -204,6 +204,7 @@ class UserQuickReplySummary {
     required this.postTitle,
     required this.content,
     required this.createTime,
+    this.postPublicId,
   });
 
   factory UserQuickReplySummary.fromJson(Object? json) {
@@ -212,6 +213,7 @@ class UserQuickReplySummary {
     return UserQuickReplySummary(
       id: _readRequiredId(map, 'voId'),
       postId: _readRequiredId(map, 'voPostId'),
+      postPublicId: _readString(map['voPostPublicId']),
       postTitle: _readString(map['voPostTitle']) ?? '未命名帖子',
       content: _readString(map['voContent']) ?? '',
       createTime: _readString(map['voCreateTime']) ?? '',
@@ -220,9 +222,12 @@ class UserQuickReplySummary {
 
   final String id;
   final String postId;
+  final String? postPublicId;
   final String postTitle;
   final String content;
   final String createTime;
+
+  String get routePostId => postPublicId ?? postId;
 }
 
 class UserQuickReplyPage {

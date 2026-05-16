@@ -1168,7 +1168,7 @@ class _MyQuickRepliesCard extends StatelessWidget {
               ? null
               : () => onOpenForumDetailTarget!(
                     ForumDetailHandoffTarget(
-                      postId: quickReply.postId,
+                      postId: quickReply.routePostId,
                       source: ForumDetailHandoffSource.myQuickReply,
                       initialTitle: quickReply.postTitle,
                     ),

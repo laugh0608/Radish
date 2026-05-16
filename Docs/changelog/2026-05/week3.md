@@ -406,6 +406,13 @@
 - 评论定位参数 `commentId` 保持不变，旧 forum 通知 payload 和非 forum 通知跳过逻辑保持兼容。
 - `notification_repository_test.dart` 已补 `postPublicId + postId` 并存、仅 `postPublicId`、旧 `postId`、非 forum 通知跳过和畸形 payload 忽略场景。
 
+### `P3-4-A2` 我的轻回应 PublicId 回流
+
+- 后端 `UserPostQuickReplyVo` 已并行暴露 `VoPostPublicId / VoPostId`，`PostQuickReplyService.GetMinePageAsync` 会在“我的轻回应”列表中填充帖子 PublicId。
+- WebOS “继续使用”和个人页“我的轻回应”回流已优先携带 `postPublicId`，缺失时回退旧 `postId`。
+- Flutter Profile “我的轻回应”回流已优先使用 `voPostPublicId`，旧 payload 继续使用 `voPostId`。
+- 本批不扩全量 `PublicId`，也不处理历史数据批量补齐；后续只观察真实使用或单独评估最近阅读 / 浏览历史补齐策略。
+
 ### 文档同步
 
 - [当前进行中](/planning/current) 已切到 `P3-4 用户留存轻闭环`。
@@ -424,3 +431,11 @@
   - 通过。
 - `flutter test test/notification_repository_test.dart`
   - 提权环境通过，`5/5`。
+- `dotnet test Radish.Api.Tests --filter "PostQuickReplyServiceTest" -v minimal`
+  - 提权环境通过，`3/3`。
+- `flutter test test/profile_page_test.dart`
+  - 提权环境通过，`29/29`。
+- `npm run type-check --workspace=radish.client`
+  - 通过。
+- `node --test --test-isolation=none ./tests/workspaceNavigation.test.ts ./tests/forumNavigation.test.ts`
+  - 通过，`36/36`。

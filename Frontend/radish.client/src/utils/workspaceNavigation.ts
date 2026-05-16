@@ -124,9 +124,12 @@ export function resolveBrowseHistoryWorkspaceTarget(
   return null;
 }
 
-export function resolveForumPostWorkspaceTarget(postId: LongId): WorkspaceNavigationTarget | null {
-  const forumParams = buildForumAppParams({ postId });
-  if (!('postId' in forumParams)) {
+export function resolveForumPostWorkspaceTarget(
+  postId: LongId,
+  postPublicId?: string | null
+): WorkspaceNavigationTarget | null {
+  const forumParams = buildForumAppParams({ postId, postPublicId: postPublicId ?? undefined });
+  if (!('postId' in forumParams) && !('postPublicId' in forumParams)) {
     return null;
   }
 

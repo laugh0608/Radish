@@ -1209,7 +1209,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(openedTargets, hasLength(1));
-    expect(openedTargets.single.postId, 'post-1');
+    expect(openedTargets.single.postId, 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f');
     expect(openedTargets.single.initialTitle, 'Native profile follow-up');
     expect(openedTargets.single.source, ForumDetailHandoffSource.myQuickReply);
   });
@@ -1669,6 +1669,7 @@ class _SuccessProfileRepository implements ProfileRepository {
         UserQuickReplySummary(
           id: 'quick-1',
           postId: 'post-1',
+          postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
           postTitle: 'Native profile follow-up',
           content: '这个原生回看入口不错',
           createTime: '2026-04-20T09:10:00Z',

@@ -288,9 +288,9 @@ export const ProfileApp = () => {
     };
   }, [apiBaseUrl, isOwnProfile, loggedIn, viewingUserId, viewingUserIdKey]);
 
-  const handlePostClick = (postId: LongId) => {
-    openApp('forum', buildForumAppParams({ postId }));
-    log.debug('ProfileApp', `打开帖子: ${postId}`);
+  const handlePostClick = (postId: LongId, postPublicId?: string | null) => {
+    openApp('forum', buildForumAppParams({ postId, postPublicId: postPublicId ?? undefined }));
+    log.debug('ProfileApp', `打开帖子: ${postPublicId || postId}`);
   };
 
   const handleCommentClick = (postId: LongId, commentId: LongId) => {

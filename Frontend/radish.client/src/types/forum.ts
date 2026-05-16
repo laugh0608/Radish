@@ -389,6 +389,7 @@ export interface PostQuickReplyWall {
 export interface UserPostQuickReply {
   voId: LongId;
   voPostId: LongId;
+  voPostPublicId?: string | null;
   voPostTitle: string;
   voContent: string;
   voCreateTime: string;

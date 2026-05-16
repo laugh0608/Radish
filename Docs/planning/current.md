@@ -36,6 +36,7 @@
   - `P3-3-A / P3-3-B` 已完成 `PublicForumApp.tsx` 公开论坛热区低风险拆分：公共 helper、`PublicStatusCard`、`PublicForumTypeFeed`、`PublicForumSearch`、`PublicForumTag`、`PublicForumList` 和 `PublicForumDetail` 已抽出，主文件从约 `2911` 行降到约 `208` 行，未改变业务行为
   - `2026-05-16` 已完成 `P3-3` 收工复核：`radish.client` 类型检查、公开 forum / public route / public head 定向测试、changed-only 文本卫生与 `git diff --check` 均通过；下一主线选择为 `P3-4 用户留存轻闭环`
   - `P3-4-A1` 已完成 Flutter forum notification PublicId 回流：移动端通知解析优先使用 `extData.postPublicId`，缺失时回退旧 `postId`，定向测试通过
+  - `P3-4-A2` 已完成“我的轻回应”PublicId 回流：后端并行暴露 `VoPostPublicId`，WebOS 与 Flutter 回流优先使用 PublicId 并保留旧 `VoPostId` 回退
 
 ## 当前执行入口
 
@@ -78,7 +79,7 @@
 
 ## 明日事项
 
-- 下一事项：评估是否推进“我的轻回应”回流并行 `VoPostPublicId`；该项涉及后端 ViewModel/API 契约扩展，实施前需单独确认范围
+- 下一事项：`P3-4-A` 首批 forum 回流小闭环先收口；后续不扩全量 `PublicId`，只观察真实使用，或单独评估最近阅读 / 浏览历史历史数据补齐策略
 - 若继续推进 `P3-2`，只做定向回归或历史数据 `PublicId` 补齐策略评估，不扩到 `User / Product / WikiDocument / Comment`
 
 ## 并行维护项

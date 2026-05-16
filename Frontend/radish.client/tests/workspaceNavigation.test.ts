@@ -100,6 +100,21 @@ test('resolveForumPostWorkspaceTarget 应生成 forum 窗口参数', () => {
   });
 });
 
+test('resolveForumPostWorkspaceTarget 应优先携带帖子 PublicId', () => {
+  const target = resolveForumPostWorkspaceTarget(
+    '2042219067430928384',
+    'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f'
+  );
+
+  assert.deepEqual(target, {
+    appId: 'forum',
+    appParams: {
+      postId: '2042219067430928384',
+      postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+    },
+  });
+});
+
 test('openWorkspaceNavigationTarget 应在目标存在时打开应用', () => {
   const calls: Array<{ appId: WorkspaceNavigationAppId; appParams?: Record<string, unknown> }> = [];
 
