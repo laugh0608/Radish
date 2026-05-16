@@ -378,3 +378,41 @@
   - `P3-3-A` 首批拆分后通过。
 - `git diff --check`
   - `P3-3-A` 首批拆分后通过。
+
+## 2026-05-16
+
+### `P3-3` 收工复核
+
+- 已按昨日事项完成 `PublicForumApp.tsx` 公开论坛热区首轮拆分后的收工复核。
+- 本次复核确认 `P3-3` 只作为首轮热区治理收口，不继续无边界深拆 `PublicForumDetail` 内部 hook / 子结构。
+- 定向验证覆盖公开论坛路由、PublicId / long 双读路径、评论定位相关导航、公开 route state / sync、public head 与静态 SEO 产物测试。
+
+### 下一主线选择
+
+- 下一主线选择为 `P3-4 用户留存轻闭环`。
+- 选择理由：`P3-1` 已完成公开 SEO / 分享基线，`P3-2` 已完成 `Post.PublicId` 首批试点，`P3-3` 已降低公开论坛热区维护风险；当前更应验证公开分享、通知、最近阅读、我的轻回应和 Flutter 复访能否形成真实回流。
+- 首批不直接铺功能，先启动 `P3-4-A` 审计：从通知、最近阅读、我的轻回应、公开分享与 Flutter 复访入口中选择 `1-2` 个最高收益小闭环。
+- 公开内容增长后续专题暂后置；动态 sitemap、详情结构化数据、SSR / SSG 仍需单独评估，不并入 `P3-4-A`。
+
+### `P3-4-A` 初步审计
+
+- 首批最高收益小闭环建议先选 Flutter forum notification 回流优先使用 `postPublicId`：服务端 forum 通知 `extData` 已并行写入 `postId / postPublicId / commentId`，WebOS 通知中心也已走统一 forum navigation；Flutter `notification_repository.dart` 当前仍只读 `postId`。
+- 第二候选为“我的轻回应”回流并行携带 `VoPostPublicId`：WebOS 和 Flutter 当前都能回原帖，但 `UserPostQuickReplyVo` 只暴露 `VoPostId`，若要切到 PublicId 需要后端 ViewModel/API 契约扩展，建议单独批准后实施。
+- 本轮只做审计和文档记录，不直接改运行时代码。
+
+### 文档同步
+
+- [当前进行中](/planning/current) 已切到 `P3-4 用户留存轻闭环`。
+- [第三开发阶段专题](/planning/phase-three-real-usage-contract-governance) 已补 `P3-3` 收工复核、`P3-4-A` 审计口径和初步审计结论。
+- [开发路线图](/development-plan) 已同步当前主线、开发精力和下一顺位。
+
+### 验证记录
+
+- `npm run type-check --workspace=radish.client`
+  - 通过。
+- `node --test --test-isolation=none ./tests/forumNavigation.test.ts ./tests/workspaceNavigation.test.ts ./tests/publicRouteNavigation.test.ts ./tests/publicRouteState.test.ts ./tests/publicRouteSync.test.ts ./tests/publicHead.test.ts ./tests/publicSeoStatic.test.ts`
+  - 通过，`73/73`。
+- `npm run check:repo-hygiene:changed`
+  - 通过；当前没有需要检查的变更文件。
+- `git diff --check`
+  - 通过。

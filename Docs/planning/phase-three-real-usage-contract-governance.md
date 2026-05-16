@@ -1,6 +1,6 @@
 # 第三开发阶段：真实使用增长与长期契约治理
 
-> 状态：`P3-3 代码热区拆分与维护成本治理` 进行中
+> 状态：`P3-4 用户留存轻闭环` 进行中
 >
 > 启动日期：2026-05-13（Asia/Shanghai）
 >
@@ -20,9 +20,9 @@
 
 ## 当前推进状态
 
-`P3-0` 已完成第三阶段定义、公开内容增长基础审计和第一批任务排序；`P3-1` 已完成公开内容 SEO 与分享基线。`P3-2` 已完成 `P3-2-A` 外部 ID 契约审计和 `P3-2-B` `Post.PublicId` 首批实现，试点对象保持收敛为 `Post`。`P3-3` 已完成 `PublicForumApp.tsx` 公开论坛热区首轮拆分。
+`P3-0` 已完成第三阶段定义、公开内容增长基础审计和第一批任务排序；`P3-1` 已完成公开内容 SEO 与分享基线。`P3-2` 已完成 `P3-2-A` 外部 ID 契约审计和 `P3-2-B` `Post.PublicId` 首批实现，试点对象保持收敛为 `Post`。`P3-3` 已完成 `PublicForumApp.tsx` 公开论坛热区首轮拆分和收工复核。
 
-后续若继续围绕 `P3-2`，只处理定向回归、历史数据 `PublicId` 补齐策略或真实使用暴露的兼容问题。下一主线候选优先在用户留存轻闭环与公开内容增长后续专题之间选择。
+当前主线切到 `P3-4 用户留存轻闭环`。首批先审计通知、最近阅读、我的轻回应、公开分享与 Flutter 复访入口的真实回流断点，只选择 `1-2` 个可验证小闭环；公开内容增长后续专题、历史 `Post.PublicId` 补齐策略和 `P3-3` 深层拆分均后置到真实需要出现时再评估。
 
 ## `P3-0` 定义与工程整备
 
@@ -303,7 +303,56 @@ npm run check:repo-hygiene:changed
 
 - 本轮 `PublicForumApp.tsx` 首批治理先收口。
 - 不继续无边界深拆 `PublicForumDetail` 内部 hook / 子结构；如未来暴露真实维护痛点，再单独评估。
-- 下一主线候选优先在用户留存轻闭环与公开内容增长后续专题之间选择。
+- `2026-05-16` 收工复核已通过：`npm run type-check --workspace=radish.client`、公开 forum / public route / public head 定向 `node --test`、`npm run check:repo-hygiene:changed` 与 `git diff --check` 均通过。
+- 下一主线选择为 `P3-4 用户留存轻闭环`，公开内容增长后续专题后置。
+
+## `P3-4-A` 用户留存轻闭环审计
+
+启动日期：2026-05-16。
+
+### 目标
+
+- 从已有通知、最近阅读、我的轻回应、公开分享和 Flutter 复访入口中找出真实回流断点。
+- 只选 `1-2` 个首批小闭环，让用户能从“看到内容 / 收到提醒 / 回看记录”稳定回到上下文。
+- 保持桌面工作台、公开内容壳层和 Flutter 移动端的边界一致，不把任一端扩成完整运营平台。
+
+### 审计范围
+
+| 范围 | 审计重点 | 首批判断 |
+| --- | --- | --- |
+| 公开分享 | forum / docs / shop 复制 canonical 后，未登录和已登录用户是否都能进入正确公开壳层 | 只处理回流断点，不追加分享统计或海报 |
+| 通知回流 | forum 相关通知是否优先带 `postPublicId`，点击后能回到帖子和评论上下文 | 不做完整移动通知中心或系统推送 |
+| 最近阅读 | WebOS “继续使用”与浏览历史 routePath 是否稳定打开 forum / docs / shop 上下文 | 不扩完整收藏、关注或阅读管理 |
+| 我的轻回应 | Flutter 与桌面个人复访入口是否能看懂目标并回到原帖 | 不开放完整评论提交、点赞或投票 |
+| 多端一致性 | 桌面工作台和 Flutter 对复访入口的展示和回流边界是否一致 | 不把 WebOS 移植成移动版 |
+
+### 首批完成条件
+
+- 形成 `P3-4-A` 审计结论，明确首批要做的 `1-2` 个小闭环和不做项。
+- 若涉及代码改动，按影响面至少执行：
+  - `npm run type-check --workspace=radish.client`
+  - `npm run test --workspace=radish.client -- --test-name-pattern="Forum|forum|Public|public|workspace|notification|browse"`
+  - Flutter 相关改动追加对应 `flutter test test/<topic>_test.dart`
+  - `npm run check:repo-hygiene:changed`
+
+### 明确不做
+
+- 不做完整运营平台、完整通知中心移动版、系统通知栏推送或通知设置。
+- 不做完整评论提交、点赞、投票、编辑治理、聊天移动版或商城工作台移动化。
+- 不继续无边界扫按钮、提示、空态和视觉微调。
+- 不借留存主题扩大 `PublicId` 全量迁移或动态 sitemap / SSR / SSG 专题。
+
+### `2026-05-16` 初步审计结论
+
+- 首批最高收益小闭环建议先选 **Flutter forum notification 回流优先使用 `postPublicId`**：
+  - 服务端 `NotificationNavigationHelper.BuildForumNavigationExtData` 已在 forum 通知 `extData` 中并行写入 `postId / postPublicId / commentId`。
+  - WebOS 通知中心已经通过 `parseForumNotificationNavigation` 优先解析 forum navigation，并由 `buildForumAppParams` 打开 forum 窗口。
+  - Flutter `Clients/radish.flutter/lib/features/notifications/data/notification_repository.dart` 当前只读取 `extData.postId`，未优先使用 `postPublicId`；这会让移动通知回流继续依赖旧 long 路由，和 `P3-2` forum canonical / PublicId 方向不完全一致。
+  - 建议实现时只改 Flutter 通知解析和对应测试：`postPublicId` 存在时作为 `ForumDetailHandoffTarget.postId`，缺失时继续回退旧 `postId`，不改服务端接口。
+- 第二候选为 **我的轻回应回流并行携带 `VoPostPublicId`**：
+  - WebOS `DesktopResumePanel` 和 Flutter Profile 的“我的轻回应”当前都能回到原帖，但数据契约 `UserPostQuickReplyVo` 只暴露 `VoPostId`。
+  - 若要让轻回应复访也逐步切到 PublicId，需要为 `UserPostQuickReplyVo` 增加 `VoPostPublicId` 并在 WebOS / Flutter 回流入口优先使用该字段。
+  - 该项涉及后端 ViewModel/API 契约扩展，建议在 Flutter 通知小闭环完成后单独批准实施。
 
 ## 首批候选任务
 
