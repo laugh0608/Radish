@@ -83,6 +83,8 @@ test('buildPublicRouteHead 应覆盖商城商品和用户公开页类型', () =>
   });
 
   assert.equal(shopHead.type, 'product');
+  assert.equal(shopHead.title, '商城商品 - Radish 商城');
+  assert.equal(shopHead.description.includes('2042219067430928384'), false);
   assert.equal(shopHead.canonicalPath, '/shop/product/2042219067430928384');
   assert.equal(profileHead.type, 'profile');
   assert.equal(profileHead.canonicalPath, '/u/7?tab=comments&page=2');

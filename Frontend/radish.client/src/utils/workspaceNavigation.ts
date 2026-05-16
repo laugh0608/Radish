@@ -137,6 +137,10 @@ export function resolveBrowseHistoryDisplayRouteText(
     return fallback;
   }
 
+  if (/^\/shop\/product\/\d+(?:[?#].*)?$/i.test(routePath)) {
+    return fallback;
+  }
+
   if (/^\/(?:wiki\/doc|docs)\/\d+(?:[?#].*)?$/i.test(routePath)) {
     return fallback;
   }

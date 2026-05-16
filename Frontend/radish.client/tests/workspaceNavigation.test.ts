@@ -109,6 +109,19 @@ test('resolveBrowseHistoryDisplayRouteText 应隐藏 forum 和 docs long id fall
   assert.equal(
     resolveBrowseHistoryDisplayRouteText(
       {
+        voRoutePath: '/shop/product/2042219067430928384',
+        voTargetType: 'Product',
+        voTargetId: '2042219067430928384',
+        voTargetSlug: null,
+      },
+      fallback
+    ),
+    fallback
+  );
+
+  assert.equal(
+    resolveBrowseHistoryDisplayRouteText(
+      {
         voRoutePath: '/wiki/doc/2042219067430928384',
         voTargetType: 'Wiki',
         voTargetId: '2042219067430928384',

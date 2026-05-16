@@ -192,8 +192,8 @@ function buildShopHead(route: PublicRouteDescriptor & { app: 'shop' }): PublicHe
   const canonicalPath = buildPublicShopPath(route.route);
   if (route.route.kind === 'detail') {
     return {
-      title: `商品 ${route.route.productId} - Radish 商城`,
-      description: `查看 Radish 商城公开商品 ${route.route.productId} 的详情与兑换信息。`,
+      title: `商城商品 - Radish 商城`,
+      description: '查看 Radish 商城公开商品详情与兑换信息。',
       canonicalPath,
       type: 'product',
     };
