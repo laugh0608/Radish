@@ -137,7 +137,7 @@ export function resolveBrowseHistoryDisplayRouteText(
     return fallback;
   }
 
-  if (/^\/wiki\/doc\/\d+(?:[?#].*)?$/i.test(routePath)) {
+  if (/^\/(?:wiki\/doc|docs)\/\d+(?:[?#].*)?$/i.test(routePath)) {
     return fallback;
   }
 
