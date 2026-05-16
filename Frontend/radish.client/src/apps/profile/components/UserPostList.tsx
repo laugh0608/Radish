@@ -8,6 +8,7 @@ import styles from './UserPostList.module.css';
 
 interface Post {
   voId: LongId;
+  voPublicId?: string | null;
   voTitle: string;
   voContent: string;
   voViewCount: number;
@@ -20,7 +21,7 @@ interface UserPostListProps {
   userId: LongId;
   apiBaseUrl: string;
   displayTimeZone: string;
-  onPostClick?: (postId: LongId) => void;
+  onPostClick?: (postId: LongId, postPublicId?: string | null) => void;
 }
 
 export const UserPostList = ({ userId, apiBaseUrl, displayTimeZone, onPostClick }: UserPostListProps) => {
@@ -68,7 +69,7 @@ export const UserPostList = ({ userId, apiBaseUrl, displayTimeZone, onPostClick 
           <div
             key={post.voId}
             className={styles.postItem}
-            onClick={() => onPostClick?.(post.voId)}
+            onClick={() => onPostClick?.(post.voId, post.voPublicId)}
             style={{ cursor: onPostClick ? 'pointer' : 'default' }}
           >
             <h3 className={styles.title}>{post.voTitle}</h3>

@@ -101,6 +101,7 @@ void main() {
     );
     expect(find.text('最近公开评论'), findsOneWidget);
     expect(find.text('回复 @radish'), findsOneWidget);
+    expect(find.text('评论 comment-1'), findsNothing);
   });
 
   testWidgets('keeps long profile text constrained on narrow screens', (
@@ -600,7 +601,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(openedTargets, hasLength(1));
-    expect(openedTargets.first.postId, 'post-1');
+    expect(
+      openedTargets.first.postId,
+      'pst_018f6b6f7c7d70008f8f8f8f8f8f801',
+    );
     expect(
       openedTargets.first.source,
       ForumDetailHandoffSource.publicProfilePost,
@@ -615,7 +619,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(openedTargets, hasLength(2));
-    expect(openedTargets.last.postId, 'post-1');
+    expect(
+      openedTargets.last.postId,
+      'pst_018f6b6f7c7d70008f8f8f8f8f8f801',
+    );
     expect(openedTargets.last.commentId, 'comment-1');
     expect(
       openedTargets.last.source,
@@ -1001,7 +1008,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(openedTargets, hasLength(1));
-    expect(openedTargets.single.postId, 'post-page-4');
+    expect(openedTargets.single.postId, 'pst_018f6b6f7c7d70008f8f8f8f8f8f804');
     expect(openedTargets.single.initialTitle, '第四篇公开帖子');
     expect(
       openedTargets.single.source,
@@ -1106,7 +1113,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(openedTargets, hasLength(1));
-    expect(openedTargets.single.postId, 'post-4');
+    expect(openedTargets.single.postId, 'pst_018f6b6f7c7d70008f8f8f8f8f8f814');
     expect(openedTargets.single.commentId, 'comment-page-4');
     expect(
       openedTargets.single.source,
@@ -1620,6 +1627,7 @@ class _SuccessProfileRepository implements ProfileRepository {
       posts: [
         PublicProfilePostSummary(
           id: 'post-1',
+          publicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f801',
           title: 'Native profile follow-up',
           summary: 'Expand the public profile beyond a single info card.',
           content: 'Expand the public profile beyond a single info card.',
@@ -1648,6 +1656,7 @@ class _SuccessProfileRepository implements ProfileRepository {
         PublicProfileCommentSummary(
           id: 'comment-1',
           postId: 'post-1',
+          postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f801',
           content: 'Recent public comments should stay readable in the shell.',
           likeCount: 5,
           createTime: '2026-04-20T09:00:00Z',
@@ -1979,6 +1988,7 @@ class _PagedPostProfileRepository extends _SuccessProfileRepository {
       posts: [
         PublicProfilePostSummary(
           id: 'post-page-4',
+          publicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f804',
           title: '第四篇公开帖子',
           summary: '第四篇公开帖子摘要',
           content: '第四篇公开帖子正文',
@@ -2065,6 +2075,7 @@ class _PagedCommentProfileRepository extends _SuccessProfileRepository {
         PublicProfileCommentSummary(
           id: 'comment-page-4',
           postId: 'post-4',
+          postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f814',
           content: '第四条公开评论上下文',
           likeCount: 4,
           createTime: '2026-04-20T09:06:00Z',

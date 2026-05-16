@@ -72,6 +72,7 @@ export interface PublicUserStats {
 
 export interface PublicUserPost {
   voId: LongId;
+  voPublicId?: string | null;
   voTitle: string;
   voSummary?: string | null;
   voContent: string;
@@ -85,6 +86,7 @@ export interface PublicUserPost {
 export interface PublicUserComment {
   voId: LongId;
   voPostId: LongId;
+  voPostPublicId?: string | null;
   voContent: string;
   voLikeCount: number;
   voCreateTime: string;

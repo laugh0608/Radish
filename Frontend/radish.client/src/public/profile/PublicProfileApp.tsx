@@ -21,6 +21,10 @@ import {
   type PublicDetailBackMode,
 } from '../publicRouteNavigation';
 import { PublicShellHeader } from '../components/PublicShellHeader';
+import {
+  resolvePublicProfileCommentForumTarget,
+  resolvePublicProfilePostForumTarget,
+} from './publicProfileNavigation';
 import styles from './PublicProfileApp.module.css';
 
 interface PublicProfileAppProps {
@@ -573,10 +577,13 @@ export const PublicProfileApp = ({
                 ) : (
                   <div className={styles.list}>
                     {posts.map((post) => (
-                    <article
-                      key={String(post.voId)}
-                      className={styles.contentItem}
-                      onClick={() => onNavigateToForumPost(String(post.voId))}
+                      <article
+                        key={String(post.voId)}
+                        className={styles.contentItem}
+                        onClick={() => {
+                          const target = resolvePublicProfilePostForumTarget(post);
+                          onNavigateToForumPost(target.postId);
+                        }}
                       >
                         <div className={styles.itemTopRow}>
                           <span className={styles.itemType}>{t('profile.tab.userPosts')}</span>
@@ -607,7 +614,10 @@ export const PublicProfileApp = ({
                     <article
                       key={String(comment.voId)}
                       className={styles.contentItem}
-                      onClick={() => onNavigateToForumPost(String(comment.voPostId), String(comment.voId))}
+                      onClick={() => {
+                        const target = resolvePublicProfileCommentForumTarget(comment);
+                        onNavigateToForumPost(target.postId, target.commentId);
+                      }}
                     >
                       <div className={styles.itemTopRow}>
                         <span className={styles.itemType}>{t('profile.tab.userComments')}</span>
@@ -629,7 +639,8 @@ export const PublicProfileApp = ({
                           className={styles.inlineLinkButton}
                           onClick={(event) => {
                             event.stopPropagation();
-                            onNavigateToForumPost(String(comment.voPostId), String(comment.voId));
+                            const target = resolvePublicProfileCommentForumTarget(comment);
+                            onNavigateToForumPost(target.postId, target.commentId);
                           }}
                         >
                           {t('profile.public.openPost')}

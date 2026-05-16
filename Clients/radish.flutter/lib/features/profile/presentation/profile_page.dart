@@ -1061,7 +1061,7 @@ class _RecentPostsCard extends StatelessWidget {
               ? null
               : () => onOpenForumDetailTarget!(
                     ForumDetailHandoffTarget(
-                      postId: post.id,
+                      postId: post.routePostId,
                       source: ForumDetailHandoffSource.publicProfilePost,
                       initialTitle: post.title,
                     ),
@@ -1300,7 +1300,7 @@ class _RecentCommentsCard extends StatelessWidget {
         (comment) => _ContentPreviewTile(
           title: comment.replyToUserName == null ||
                   comment.replyToUserName!.isEmpty
-              ? '评论 ${comment.id}'
+              ? '公开评论'
               : '回复 @${comment.replyToUserName}',
           subtitle: comment.content,
           meta: '${comment.likeCount} 个赞',
@@ -1315,7 +1315,7 @@ class _RecentCommentsCard extends StatelessWidget {
               ? null
               : () => onOpenForumDetailTarget!(
                     ForumDetailHandoffTarget(
-                      postId: comment.postId,
+                      postId: comment.routePostId,
                       source: ForumDetailHandoffSource.publicProfileComment,
                       commentId: comment.id,
                     ),

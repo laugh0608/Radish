@@ -10,6 +10,7 @@ interface Comment {
   voId: LongId;
   voContent: string;
   voPostId: LongId;
+  voPostPublicId?: string | null;
   voLikeCount: number;
   voCreateTime: string;
 }
@@ -18,7 +19,7 @@ interface UserCommentListProps {
   userId: LongId;
   apiBaseUrl: string;
   displayTimeZone: string;
-  onCommentClick?: (postId: LongId, commentId: LongId) => void;
+  onCommentClick?: (postId: LongId, commentId: LongId, postPublicId?: string | null) => void;
 }
 
 export const UserCommentList = ({ userId, apiBaseUrl, displayTimeZone, onCommentClick }: UserCommentListProps) => {
@@ -66,7 +67,7 @@ export const UserCommentList = ({ userId, apiBaseUrl, displayTimeZone, onComment
           <div
             key={comment.voId}
             className={styles.commentItem}
-            onClick={() => onCommentClick?.(comment.voPostId, comment.voId)}
+            onClick={() => onCommentClick?.(comment.voPostId, comment.voId, comment.voPostPublicId)}
             style={{ cursor: onCommentClick ? 'pointer' : 'default' }}
           >
             <p className={styles.content}>{comment.voContent}</p>

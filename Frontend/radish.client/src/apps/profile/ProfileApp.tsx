@@ -293,9 +293,17 @@ export const ProfileApp = () => {
     log.debug('ProfileApp', `打开帖子: ${postPublicId || postId}`);
   };
 
-  const handleCommentClick = (postId: LongId, commentId: LongId) => {
-    openApp('forum', buildForumAppParams({ postId, commentId }));
-    log.debug('ProfileApp', `打开帖子 ${postId} 的评论 ${commentId}`);
+  const handleCommentClick = (
+    postId: LongId,
+    commentId: LongId,
+    postPublicId?: string | null,
+  ) => {
+    openApp('forum', buildForumAppParams({
+      postId,
+      postPublicId: postPublicId ?? undefined,
+      commentId,
+    }));
+    log.debug('ProfileApp', `打开帖子 ${postPublicId || postId} 的评论 ${commentId}`);
   };
 
   const handleBrowseHistoryClick = (item: UserBrowseHistoryItem) => {
