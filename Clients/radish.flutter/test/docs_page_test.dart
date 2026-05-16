@@ -417,6 +417,36 @@ void main() {
     expect(find.text('Radish Flutter docs scope'), findsOneWidget);
   });
 
+  testWidgets('handoff detail hides long numeric slug from visible context', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DocsPage(
+          environment: const AppEnvironment.development(),
+          repository: _SuccessDocsRepository(),
+          handoffTarget: const DocsDetailHandoffTarget(
+            slug: '2042219067430928384',
+            source: DocsDetailHandoffSource.profileRecentDocument,
+            initialTitle: '历史文档入口',
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('打开来源：我的最近文档'), findsOneWidget);
+    expect(find.text('正在阅读文档详情'), findsOneWidget);
+    expect(find.text('公开地址待生成'), findsWidgets);
+    expect(find.text('/docs/2042219067430928384'), findsNothing);
+  });
+
   testWidgets('opens linked docs from handoff detail route', (tester) async {
     tester.view.physicalSize = const Size(1200, 2400);
     tester.view.devicePixelRatio = 1.0;

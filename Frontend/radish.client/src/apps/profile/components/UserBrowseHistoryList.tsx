@@ -5,6 +5,7 @@ import { getApiBaseUrl } from '@/config/env';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { log } from '@/utils/logger';
 import { getMyBrowseHistory, type UserBrowseHistoryItem } from '@/api/user';
+import { resolveBrowseHistoryDisplayRouteText } from '@/utils/workspaceNavigation';
 import styles from './UserBrowseHistoryList.module.css';
 
 interface UserBrowseHistoryListProps {
@@ -41,19 +42,6 @@ const getTypeIcon = (targetType: string): string => {
     default:
       return 'mdi:history';
   }
-};
-
-const getDisplayRouteText = (item: UserBrowseHistoryItem, fallback: string): string => {
-  const routePath = item.voRoutePath?.trim();
-  if (!routePath) {
-    return fallback;
-  }
-
-  if (/^\/forum\/post\/\d+(?:[?#].*)?$/i.test(routePath)) {
-    return fallback;
-  }
-
-  return routePath;
 };
 
 export const UserBrowseHistoryList = ({
@@ -132,7 +120,9 @@ export const UserBrowseHistoryList = ({
 
                 <div className={styles.footer}>
                   <span className={styles.metaItem}>{t('profile.browse.viewCount', { count: item.voViewCount })}</span>
-                  <span className={styles.routeText}>{getDisplayRouteText(item, t('profile.browse.internalRoute'))}</span>
+                  <span className={styles.routeText}>
+                    {resolveBrowseHistoryDisplayRouteText(item, t('profile.browse.internalRoute'))}
+                  </span>
                 </div>
               </div>
             </article>

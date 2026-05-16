@@ -124,6 +124,26 @@ export function resolveBrowseHistoryWorkspaceTarget(
   return null;
 }
 
+export function resolveBrowseHistoryDisplayRouteText(
+  item: BrowseHistoryNavigationInput,
+  fallback: string
+): string {
+  const routePath = item.voRoutePath?.trim();
+  if (!routePath) {
+    return fallback;
+  }
+
+  if (/^\/forum\/post\/\d+(?:[?#].*)?$/i.test(routePath)) {
+    return fallback;
+  }
+
+  if (/^\/wiki\/doc\/\d+(?:[?#].*)?$/i.test(routePath)) {
+    return fallback;
+  }
+
+  return routePath;
+}
+
 export function resolveForumPostWorkspaceTarget(
   postId: LongId,
   postPublicId?: string | null

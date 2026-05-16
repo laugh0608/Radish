@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   openWorkspaceNavigationTarget,
+  resolveBrowseHistoryDisplayRouteText,
   resolveBrowseHistoryWorkspaceTarget,
   resolveForumPostWorkspaceTarget,
   type WorkspaceNavigationAppId,
@@ -71,6 +72,65 @@ test('resolveBrowseHistoryWorkspaceTarget 应兼容公开 docs 路由', () => {
       slug: 'install-guide',
     },
   });
+});
+
+test('resolveBrowseHistoryWorkspaceTarget 应兼容 wiki long id fallback', () => {
+  const target = resolveBrowseHistoryWorkspaceTarget({
+    voRoutePath: '/wiki/doc/2042219067430928384',
+    voTargetType: 'Wiki',
+    voTargetId: '2042219067430928384',
+    voTargetSlug: null,
+  });
+
+  assert.deepEqual(target, {
+    appId: 'document',
+    appParams: {
+      documentId: '2042219067430928384',
+    },
+  });
+});
+
+test('resolveBrowseHistoryDisplayRouteText 应隐藏 forum 和 docs long id fallback', () => {
+  const fallback = '站内路径';
+
+  assert.equal(
+    resolveBrowseHistoryDisplayRouteText(
+      {
+        voRoutePath: '/forum/post/2042219067430928384?commentId=2042219067430928385',
+        voTargetType: 'Post',
+        voTargetId: '2042219067430928384',
+        voTargetSlug: null,
+      },
+      fallback
+    ),
+    fallback
+  );
+
+  assert.equal(
+    resolveBrowseHistoryDisplayRouteText(
+      {
+        voRoutePath: '/wiki/doc/2042219067430928384',
+        voTargetType: 'Wiki',
+        voTargetId: '2042219067430928384',
+        voTargetSlug: null,
+      },
+      fallback
+    ),
+    fallback
+  );
+
+  assert.equal(
+    resolveBrowseHistoryDisplayRouteText(
+      {
+        voRoutePath: '/docs/install-guide',
+        voTargetType: 'Wiki',
+        voTargetId: '2042219067430928384',
+        voTargetSlug: 'install-guide',
+      },
+      fallback
+    ),
+    '/docs/install-guide'
+  );
 });
 
 test('resolveBrowseHistoryWorkspaceTarget 应在无 routePath 时回落到 target 类型', () => {
