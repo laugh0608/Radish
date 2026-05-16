@@ -39,7 +39,8 @@ void main() {
     expect(find.text('评论'), findsOneWidget);
     expect(find.text('只读上下文'), findsOneWidget);
     expect(find.text('应用内打开'), findsWidgets);
-    expect(find.text('/forum/post/post-42'), findsWidgets);
+    expect(find.text('公开地址待生成'), findsWidgets);
+    expect(find.text('/forum/post/post-42'), findsNothing);
     expect(
       find.text('仅阅读与最小轻回应，不提供评论提交、点赞、投票或编辑入口'),
       findsOneWidget,
@@ -100,7 +101,8 @@ void main() {
 
     expect(find.text('只读上下文'), findsOneWidget);
     expect(find.text('通知回流'), findsWidgets);
-    expect(find.text('/forum/post/2042219067430928384'), findsWidgets);
+    expect(find.text('公开地址待生成'), findsWidgets);
+    expect(find.text('/forum/post/2042219067430928384'), findsNothing);
     expect(find.text('reply-2'), findsOneWidget);
   });
 
@@ -111,11 +113,13 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
+    final repository = _PublicIdForumRepository();
+
     await tester.pumpWidget(
       MaterialApp(
         home: ForumDetailPage(
           environment: const AppEnvironment.development(),
-          repository: _PublicIdForumRepository(),
+          repository: repository,
           postId: '2042219761177198592',
           handoffSource: ForumDetailHandoffSource.discover,
           initialTitle: '测试问答帖子',
@@ -127,6 +131,8 @@ void main() {
 
     expect(find.text('/forum/post/pst_01HZPUBLICROUTEID'), findsWidgets);
     expect(find.text('/forum/post/2042219761177198592'), findsNothing);
+    expect(repository.lastRootCommentsPostId, '2042219761177198592');
+    expect(repository.lastQuickReplyPostId, '2042219761177198592');
 
     await tester.tap(find.text('刷新详情'));
     await tester.pump();
@@ -161,10 +167,10 @@ void main() {
     expect(find.text('暂时无法加载帖子详情'), findsOneWidget);
     expect(find.text('详情服务暂时不可用'), findsOneWidget);
     expect(find.text('我的最近阅读'), findsWidgets);
-    expect(find.text('/forum/post/post-error-42'), findsOneWidget);
+    expect(find.text('/forum/post/post-error-42'), findsNothing);
     expect(find.text('comment-error-1'), findsOneWidget);
     expect(
-      find.textContaining('目标评论：comment-error-1'),
+      find.textContaining('目标帖子：详情入口已保留。目标评论：comment-error-1'),
       findsOneWidget,
     );
     expect(find.text('重试'), findsOneWidget);
@@ -740,12 +746,15 @@ class _PagedForumRepository extends _BaseForumRepository {
 }
 
 class _PublicIdForumRepository extends _PagedForumRepository {
+  String? lastRootCommentsPostId;
+  String? lastQuickReplyPostId;
+
   @override
   Future<ForumPostDetail> getPostDetail({
     required String postId,
   }) async {
-    return ForumPostDetail(
-      id: postId,
+    return const ForumPostDetail(
+      id: '2042219761177198592',
       publicId: 'pst_01HZPUBLICROUTEID',
       title: '测试问答帖子',
       summary: '测试测试',
@@ -760,6 +769,31 @@ class _PublicIdForumRepository extends _PagedForumRepository {
       commentCount: 3,
       createTime: '2026-04-09T12:35:00Z',
     );
+  }
+
+  @override
+  Future<ForumCommentPage> getRootCommentsPage({
+    required String postId,
+    required int pageIndex,
+    required int pageSize,
+    String sortBy = 'default',
+  }) {
+    lastRootCommentsPostId = postId;
+    return super.getRootCommentsPage(
+      postId: postId,
+      pageIndex: pageIndex,
+      pageSize: pageSize,
+      sortBy: sortBy,
+    );
+  }
+
+  @override
+  Future<ForumQuickReplyWall> getQuickReplyWall({
+    required String postId,
+    int take = 30,
+  }) {
+    lastQuickReplyPostId = postId;
+    return super.getQuickReplyWall(postId: postId, take: take);
   }
 }
 

@@ -61,6 +61,8 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
   bool _isNavigatingToComment = false;
   bool _wasAuthenticated = false;
   bool _requestedSignInFromDetail = false;
+  String? _resolvedPostIdForDependentFeeds;
+  String? _startedCommentNavigationSignature;
   static const int _maxPendingNavigationScrollAttempts = 12;
 
   @override
@@ -76,17 +78,12 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
       repository: widget.repository,
     );
     _controller.openPost(widget.postId);
-    _commentController.openPost(widget.postId);
-    _quickReplyController.openPost(widget.postId);
     _targetCommentId = widget.commentId?.trim().isEmpty == true
         ? null
         : widget.commentId?.trim();
     widget.sessionController?.addListener(_handleSessionStateChanged);
     _wasAuthenticated =
         widget.sessionController?.state.isAuthenticated ?? false;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _startCommentNavigationIfNeeded();
-    });
   }
 
   @override
@@ -107,8 +104,8 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
         repository: widget.repository,
       );
       _controller.openPost(widget.postId);
-      _commentController.openPost(widget.postId);
-      _quickReplyController.openPost(widget.postId);
+      _resolvedPostIdForDependentFeeds = null;
+      _startedCommentNavigationSignature = null;
       return;
     }
 
@@ -121,8 +118,8 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
 
     if (oldWidget.postId != widget.postId) {
       _controller.openPost(widget.postId);
-      _commentController.openPost(widget.postId);
-      _quickReplyController.openPost(widget.postId);
+      _resolvedPostIdForDependentFeeds = null;
+      _startedCommentNavigationSignature = null;
     }
 
     final nextCommentId = widget.commentId?.trim();
@@ -135,9 +132,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
       _navigationNotice = null;
       _pendingNavigationSignature = null;
       _pendingNavigationScrollAttempts = 0;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _startCommentNavigationIfNeeded();
-      });
+      _startedCommentNavigationSignature = null;
     }
   }
 
@@ -180,6 +175,10 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
         );
 
         if (state.isReady) {
+          final resolvedPostId = detail?.id.trim() ?? '';
+          if (resolvedPostId.isNotEmpty) {
+            _openDependentFeedsForResolvedPost(resolvedPostId);
+          }
           _schedulePendingCommentScroll();
         }
 
@@ -209,7 +208,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                     '打开来源：${widget.handoffSource.label}',
                     '支持帖子正文、轻回应发布、根评论、子评论分页和原生返回',
                     '当前不支持评论提交、点赞、投票或编辑',
-                    detail == null ? '正在准备帖子详情' : '正在阅读帖子 ${detail.id}',
+                    detail == null ? '正在准备帖子详情' : '正在阅读帖子详情',
                     commentState.isIdle
                         ? '评论暂未加载'
                         : commentState.isLoading
@@ -329,6 +328,24 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
     await onRequestSignIn(target);
   }
 
+  void _openDependentFeedsForResolvedPost(String postId) {
+    if (_resolvedPostIdForDependentFeeds == postId) {
+      _startCommentNavigationIfNeeded(postId);
+      return;
+    }
+
+    _resolvedPostIdForDependentFeeds = postId;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _resolvedPostIdForDependentFeeds != postId) {
+        return;
+      }
+
+      _commentController.openPost(postId);
+      _quickReplyController.openPost(postId);
+      _startCommentNavigationIfNeeded(postId);
+    });
+  }
+
   void _registerCommentKey(String commentId, GlobalKey key) {
     _commentKeys[commentId] = key;
     if (commentId == _targetCommentId && _pendingNavigationSignature != null) {
@@ -336,7 +353,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
     }
   }
 
-  Future<void> _startCommentNavigationIfNeeded() async {
+  Future<void> _startCommentNavigationIfNeeded(String resolvedPostId) async {
     final commentId = _targetCommentId;
     if (!mounted ||
         commentId == null ||
@@ -345,11 +362,17 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
       return;
     }
 
-    final postId = widget.postId.trim();
+    final postId = resolvedPostId.trim();
     if (postId.isEmpty) {
       return;
     }
 
+    final navigationRequestSignature = '$postId:$commentId';
+    if (_startedCommentNavigationSignature == navigationRequestSignature) {
+      return;
+    }
+
+    _startedCommentNavigationSignature = navigationRequestSignature;
     _isNavigatingToComment = true;
     try {
       final navigation = await widget.repository.getCommentNavigation(
@@ -535,9 +558,7 @@ class _ForumDetailErrorState extends StatelessWidget {
             _ForumContextLine(
               icon: Icons.link_outlined,
               label: '目标',
-              value: normalizedPostId.isEmpty
-                  ? '帖子地址不可用'
-                  : '/forum/post/$normalizedPostId',
+              value: normalizedPostId.isEmpty ? '帖子地址不可用' : '帖子详情',
             ),
             if (normalizedCommentId != null &&
                 normalizedCommentId.isNotEmpty) ...[
@@ -709,6 +730,7 @@ class _ForumDetailContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final publicPath = _buildForumPostPublicPath(detail);
 
     return Card(
       child: Padding(
@@ -730,7 +752,7 @@ class _ForumDetailContent extends StatelessWidget {
                 ),
                 Chip(
                   label: _ForumBoundedInlineText(
-                    _buildForumPostPublicPath(detail),
+                    publicPath.isEmpty ? '公开地址待生成' : publicPath,
                   ),
                   visualDensity: VisualDensity.compact,
                 ),
@@ -919,7 +941,7 @@ class _ForumDetailContextPanel extends StatelessWidget {
             _ForumContextLine(
               icon: Icons.link_outlined,
               label: '地址',
-              value: publicPath.isEmpty ? '帖子地址不可用' : '公开地址：$publicPath',
+              value: publicPath.isEmpty ? '公开地址待生成' : '公开地址：$publicPath',
             ),
             if (normalizedCommentId != null &&
                 normalizedCommentId.isNotEmpty) ...[
@@ -2031,8 +2053,8 @@ String _formatDetailTime(String? value) {
 }
 
 String _buildForumPostPublicPath(ForumPostDetail detail) {
-  final routeId = detail.publicRouteId;
-  return routeId.isEmpty ? '' : '/forum/post/$routeId';
+  final publicId = detail.publicId?.trim();
+  return publicId == null || publicId.isEmpty ? '' : '/forum/post/$publicId';
 }
 
 String _formatForumDetailErrorHint({
@@ -2043,7 +2065,7 @@ String _formatForumDetailErrorHint({
     return '可以返回来源后重试，或稍后再次打开帖子详情。';
   }
 
-  final base = '目标地址：/forum/post/$postId。';
+  const base = '目标帖子：详情入口已保留。';
   if (commentId == null || commentId.isEmpty) {
     return '$base可以返回来源后重试，或稍后再次打开帖子详情。';
   }

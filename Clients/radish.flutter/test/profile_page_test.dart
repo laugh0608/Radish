@@ -747,7 +747,8 @@ void main() {
     );
     expect(find.text('Second forum read'), findsOneWidget);
     expect(find.text('First comment read'), findsOneWidget);
-    expect(find.text('帖子 post-1 · 评论 comment-1'), findsOneWidget);
+    expect(find.text('继续回到上次打开的评论上下文。'), findsOneWidget);
+    expect(find.text('帖子 post-1 · 评论 comment-1'), findsNothing);
 
     await tester.tap(find.widgetWithText(FilledButton, '继续阅读帖子').last);
     await tester.pumpAndSettle();
