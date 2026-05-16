@@ -312,8 +312,9 @@ npm run check:repo-hygiene:changed
 
 ### 目标
 
-- 从已有通知、最近阅读、我的轻回应、公开分享和 Flutter 复访入口中找出真实回流断点。
-- 只选 `1-2` 个首批小闭环，让用户能从“看到内容 / 收到提醒 / 回看记录”稳定回到上下文。
+- 从已有通知、最近阅读、我的轻回应、公开分享和 Flutter 复访入口中主动验收真实回流断点。
+- 产品正式上线进入稳定运营前，默认采用“主动批量验收 + 成组修复 + 一次性交付结论”，不把每个小修复都交给开发者手动复测后再继续推进。
+- 首批围绕同一高价值链路选择一组成片问题，让用户能从“看到内容 / 收到提醒 / 回看记录”稳定回到上下文。
 - 保持桌面工作台、公开内容壳层和 Flutter 移动端的边界一致，不把任一端扩成完整运营平台。
 
 ### 审计范围
@@ -328,7 +329,7 @@ npm run check:repo-hygiene:changed
 
 ### 首批完成条件
 
-- 形成 `P3-4-A` 审计结论，明确首批要做的 `1-2` 个小闭环和不做项。
+- 形成 `P3-4-A` 审计结论，明确首批要做的成组回流闭环和不做项。
 - 若涉及代码改动，按影响面至少执行：
   - `npm run type-check --workspace=radish.client`
   - `npm run test --workspace=radish.client -- --test-name-pattern="Forum|forum|Public|public|workspace|notification|browse"`
@@ -392,7 +393,7 @@ npm run check:repo-hygiene:changed
 
 后置：
 
-- `P3-4-A` 首批 forum 回流已覆盖通知和我的轻回应两条高价值路径；下一步不继续扩全量 `PublicId`，优先观察真实使用，或再评估最近阅读 / 浏览历史中的历史数据补齐策略。
+- `P3-4-A` 首批 forum 回流已覆盖通知和我的轻回应两条高价值路径；下一步不继续扩全量 `PublicId`，优先做主动链路验收，或再评估最近阅读 / 浏览历史中的历史数据补齐策略。
 
 ### `P3-4-A3` 最近阅读 / 浏览历史历史数据补齐策略评估
 
@@ -409,7 +410,7 @@ npm run check:repo-hygiene:changed
 
 - 当前不做一次性历史数据批量补齐，也不新增维护任务或扩展浏览历史 API 契约。
 - 历史 long `RoutePath` 不阻断回流：前端可直接解析并打开，后续用户再次访问同一 Post 时会自然刷新为 PublicId route。
-- 若真实使用中发现大量旧历史影响分享 / SEO / 跨端回流，再单独评估只针对 Post 浏览历史的维护脚本；不扩到 `User / Product / WikiDocument / Comment` 或全量 `PublicId` 迁移。
+- 开发期先由主动验收矩阵发现是否存在成片旧历史影响；若后续真实使用仍暴露大量旧历史影响分享 / SEO / 跨端回流，再单独评估只针对 Post 浏览历史的维护脚本；不扩到 `User / Product / WikiDocument / Comment` 或全量 `PublicId` 迁移。
 
 验证：
 
@@ -417,6 +418,33 @@ npm run check:repo-hygiene:changed
 - `npm run type-check --workspace=radish.client` 通过。
 - `npm run test --workspace=radish.client -- --test-name-pattern="Forum|forum|Public|public|workspace|notification|browse"` 通过，`135/135`。
 - `flutter test test/notification_repository_test.dart test/profile_page_test.dart` 提权环境通过，`34/34`。
+
+### `P3-4-A4` forum 回流窄范围真实链路复核
+
+完成日期：2026-05-16。
+
+已完成：
+
+- 复核公开分享、通知、最近阅读、我的轻回应回到 WebOS / Flutter forum 详情的一致性。
+- 后端评论回复、评论点赞通知补齐 `postPublicId`，仍保留旧 `postId` fallback。
+- Flutter Profile 最近阅读和我的轻回应卡片不再在可见文案中展示帖子 long id 或轻回应 id，回流目标仍保持 `postPublicId ?? postId`。
+- 补充 Flutter 个人页断言，确认旧 long id 文案不再出现。
+
+验证：
+
+- `flutter test test/profile_page_test.dart --plain-name "renders my quick replies and opens their forum handoff"` 通过。
+- `flutter test test/profile_page_test.dart --plain-name "keeps long profile text constrained on narrow screens"` 通过。
+- `flutter test test/notification_repository_test.dart` 通过。
+- `dotnet test Radish.Api.Tests --filter "FullyQualifiedName~Comment"` 通过。
+- `dotnet test Radish.Api.Tests --filter "FullyQualifiedName~PostControllerTest|FullyQualifiedName~UserBrowseHistoryServiceTest|FullyQualifiedName~PostQuickReplyServiceTest"` 通过。
+- `git diff --check` 通过。
+
+节奏调整：
+
+- `P3-4-A` 的“观察”不再理解为等待开发者逐个手动复测和反馈。
+- 产品正式上线进入稳定运营前，`P3-4` 默认由 AI 主动按链路矩阵复核、成组修复、补充定向测试，并一次性交付结论。
+- 产品正式上线并进入稳定运营后，再切换为更小心谨慎的小步修复、风险隔离和发布留痕策略。
+- 下一批建议命名为 `P3-4-B 留存回流主动验收批次`，范围仍限定在公开分享、通知、最近阅读、我的轻回应到 WebOS / Flutter 详情的一致性，不扩完整 `PublicId` 迁移。
 
 ## 首批候选任务
 
