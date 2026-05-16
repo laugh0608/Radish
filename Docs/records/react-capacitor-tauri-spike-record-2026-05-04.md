@@ -53,12 +53,12 @@ Capacitor 终止后，本轮转向桌面壳评估，重点验证：
 
 ## 当前实现
 
-- 依赖：`@capacitor/core`、`@capacitor/android`、`@capacitor/cli`
-- 配置：`Frontend/radish.client/capacitor.config.ts`
+- 依赖：`@capacitor/core`、`@capacitor/android`、`@capacitor/cli`（已于 2026-05-16 从当前代码中清理）
+- 配置：`Frontend/radish.client/capacitor.config.ts`（已于 2026-05-16 删除）
 - `webDir`：`dist`
 - `appId`：`com.radish.client.spike`
 - `appName`：`Radish React Spike`
-- 原生壳启动路径：Capacitor 原生环境下，若当前路径为 `/`，前端入口会将路径收口到 `/docs`
+- 原生壳启动路径：Capacitor 原生环境下，若当前路径为 `/`，前端入口曾将路径收口到 `/docs`
 - 登录 / OIDC 回调相关原生桥、deep link manifest、前端登录条与 Auth HTTP cookie 临时配置均未保留，避免影响既有 Web / Auth / Gateway 调试口径
 
 ### Tauri 桌面壳
@@ -71,7 +71,7 @@ Capacitor 终止后，本轮转向桌面壳评估，重点验证：
 - 插件：`tauri-plugin-deep-link`、`tauri-plugin-single-instance`、`tauri-plugin-opener`
 - deep link scheme：`radish`
 - 前端桥接：`Frontend/radish.client/src/platform/tauriBridge.ts`
-- Tauri 环境下根路径 `/` 当前收口到 `/desktop`，进入 WebOS 桌面工作台；Capacitor Android 技术参考入口仍收口到 `/docs`
+- Tauri 环境下根路径 `/` 当前收口到 `/desktop`，进入 WebOS 桌面工作台；Capacitor Android 技术参考入口曾收口到 `/docs`，相关工程代码已于 2026-05-16 清理
 - Tauri 环境下登录使用系统浏览器打开 `/connect/authorize`，`redirect_uri` 优先切换为 `http://127.0.0.1:48801/oidc/callback`
 - Tauri 环境下登出使用系统浏览器打开 `/connect/endsession`，`post_logout_redirect_uri` 优先切换为 `http://127.0.0.1:48801/oidc/logout-complete`
 - Rust 壳层会在登录 / 登出发起前启动一次性 loopback listener，收到浏览器回跳后通过 `radish-oidc-loopback` 事件透传给前端，并转换为既有浏览器回调路径：`http://127.0.0.1:48801/oidc/callback?...` -> `/oidc/callback?...`
@@ -85,8 +85,8 @@ Capacitor 终止后，本轮转向桌面壳评估，重点验证：
 npm run type-check --workspace=radish.client
 npm run build --workspace=radish.client
 npm run test --workspace=radish.client
-npm run cap:add:android --workspace=radish.client
-npm run cap:sync --workspace=radish.client
+npm run cap:add:android --workspace=radish.client # 历史命令，当前脚本已清理
+npm run cap:sync --workspace=radish.client # 历史命令，当前脚本已清理
 
 $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 $env:ANDROID_HOME='D:\MyKits\android'
@@ -107,7 +107,8 @@ cargo build --release
 - `.\gradlew.bat assembleDebug`：通过，临时使用 `D:\MyKits\android` 作为 `ANDROID_HOME` / `ANDROID_SDK_ROOT`
 - Debug APK 产物：`Frontend/radish.client/android/app/build/outputs/apk/debug/app-debug.apk`
 - Android Studio Pixel 9 Pro API 35 模拟器人工复核：通过，`/docs` 可通过本机 Gateway 正常加载公开文档内容
-- 2026-05-04 补充：登录 / OIDC 回调评估在本机调试复杂度确认后终止，未进入人工登录验收；相关临时代码与配置已回滚，最终保留范围仍是 Capacitor Android `/docs` 本机 Gateway 调试链路
+- 2026-05-04 补充：登录 / OIDC 回调评估在本机调试复杂度确认后终止，未进入人工登录验收；相关临时代码与配置已回滚，当时最终保留范围是 Capacitor Android `/docs` 本机 Gateway 调试链路
+- 2026-05-16 补充：Capacitor Android 已确认不再作为当前代码技术参考保留，`Frontend/radish.client/android`、`capacitor.config.ts`、`cap:*` scripts、`write-capacitor-local-runtime-config.mjs` 与 Capacitor npm 依赖已清理；本记录仅保留历史 spike 事实。
 - `npm run type-check --workspace=radish.client`：Tauri 桥接后通过
 - `npm run test --workspace=radish.client`：Tauri 桥接后通过，96 个测试通过，新增 `tauriBridge` deep link 与 loopback 转换测试
 - `npm run build --workspace=radish.client`：Tauri 桥接后通过；第一次沙盒内执行因 Windows `spawn EPERM` 失败，提权后通过
@@ -125,21 +126,21 @@ cargo build --release
 
 Android Studio / 模拟器调试本机 Gateway 时，`adb reverse` 只会影响设备侧访问对应端口的 `localhost` 请求。若 Capacitor assets 中仍写入 `https://radishx.com` 或 `.env.production` 的占位域名，则端口反向代理不会生效。
 
-本轮新增 `cap:sync:android:local`，用于在 `cap sync android` 后覆盖 Android assets 内的 `runtime-config.js`，让 debug 包通过 HTTP 访问本机 Gateway，避开 Android WebView 对 ASP.NET Core 本机开发证书的信任问题：
+本轮当时新增过 `cap:sync:android:local`，用于在 `cap sync android` 后覆盖 Android assets 内的 `runtime-config.js`，让 debug 包通过 HTTP 访问本机 Gateway，避开 Android WebView 对 ASP.NET Core 本机开发证书的信任问题；该脚本已于 2026-05-16 随 Capacitor Android 代码清理删除：
 
 ```powershell
 cd D:\Code\Radish
 
 npm run build --workspace=radish.client
 adb reverse tcp:5001 tcp:5001
-npm run cap:sync:android:local --workspace=radish.client
+npm run cap:sync:android:local --workspace=radish.client # 历史命令，当前脚本已清理
 ```
 
 默认本机 Gateway 地址为 `http://localhost:5001`。如需临时改用其他地址，可设置：
 
 ```powershell
 $env:CAPACITOR_LOCAL_GATEWAY_URL='http://localhost:5001'
-npm run cap:sync:android:local --workspace=radish.client
+npm run cap:sync:android:local --workspace=radish.client # 历史命令，当前脚本已清理
 ```
 
 Gateway 开发配置已在 `appsettings.Development.json` 中关闭 HTTPS 重定向，使 `http://localhost:5001` 不再自动跳到 `https://localhost:5000`。若 Gateway 已经启动，需要重启 Gateway 才会读取该配置。Auth cookie 与 antiforgery 安全策略保持原有口径，不为 Capacitor 登录 spike 额外放宽。

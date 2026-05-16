@@ -104,6 +104,38 @@ void main() {
     expect(find.text('reply-2'), findsOneWidget);
   });
 
+  testWidgets('refresh keeps public id as displayed public route',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: _PublicIdForumRepository(),
+          postId: '2042219761177198592',
+          handoffSource: ForumDetailHandoffSource.discover,
+          initialTitle: '测试问答帖子',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('/forum/post/pst_01HZPUBLICROUTEID'), findsWidgets);
+    expect(find.text('/forum/post/2042219761177198592'), findsNothing);
+
+    await tester.tap(find.text('刷新详情'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('/forum/post/pst_01HZPUBLICROUTEID'), findsWidgets);
+    expect(find.text('/forum/post/2042219761177198592'), findsNothing);
+  });
+
   testWidgets('detail error keeps target source and retry context',
       (tester) async {
     tester.view.physicalSize = const Size(390, 900);
@@ -703,6 +735,30 @@ class _PagedForumRepository extends _BaseForumRepository {
           createTime: '2026-04-20T08:07:00Z',
         ),
       ],
+    );
+  }
+}
+
+class _PublicIdForumRepository extends _PagedForumRepository {
+  @override
+  Future<ForumPostDetail> getPostDetail({
+    required String postId,
+  }) async {
+    return ForumPostDetail(
+      id: postId,
+      publicId: 'pst_01HZPUBLICROUTEID',
+      title: '测试问答帖子',
+      summary: '测试测试',
+      content: '# 测试问答帖子\n\n测试测试',
+      contentType: 'markdown',
+      categoryId: 'category-1',
+      categoryName: '生活随笔',
+      authorId: 'user-9',
+      authorName: 'test',
+      isQuestion: true,
+      isSolved: true,
+      commentCount: 3,
+      createTime: '2026-04-09T12:35:00Z',
     );
   }
 }

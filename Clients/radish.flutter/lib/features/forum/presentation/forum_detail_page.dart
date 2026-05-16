@@ -729,7 +729,9 @@ class _ForumDetailContent extends StatelessWidget {
                   visualDensity: VisualDensity.compact,
                 ),
                 Chip(
-                  label: _ForumBoundedInlineText('/forum/post/${detail.id}'),
+                  label: _ForumBoundedInlineText(
+                    _buildForumPostPublicPath(detail),
+                  ),
                   visualDensity: VisualDensity.compact,
                 ),
                 if (detail.contentType != null &&
@@ -888,6 +890,7 @@ class _ForumDetailContextPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final normalizedCommentId = targetCommentId?.trim();
+    final publicPath = _buildForumPostPublicPath(detail);
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -916,9 +919,7 @@ class _ForumDetailContextPanel extends StatelessWidget {
             _ForumContextLine(
               icon: Icons.link_outlined,
               label: '地址',
-              value: detail.id.isEmpty
-                  ? '帖子地址不可用'
-                  : '公开地址：/forum/post/${detail.id}',
+              value: publicPath.isEmpty ? '帖子地址不可用' : '公开地址：$publicPath',
             ),
             if (normalizedCommentId != null &&
                 normalizedCommentId.isNotEmpty) ...[
@@ -2027,6 +2028,11 @@ String _formatDetailTime(String? value) {
   final hour = local.hour.toString().padLeft(2, '0');
   final minute = local.minute.toString().padLeft(2, '0');
   return '$year-$month-$day $hour:$minute';
+}
+
+String _buildForumPostPublicPath(ForumPostDetail detail) {
+  final routeId = detail.publicRouteId;
+  return routeId.isEmpty ? '' : '/forum/post/$routeId';
 }
 
 String _formatForumDetailErrorHint({
