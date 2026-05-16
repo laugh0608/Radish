@@ -169,12 +169,13 @@ void main() {
     expect(find.text('/docs/$_longDocsSlug'), findsOneWidget);
 
     await tester.scrollUntilVisible(
-      find.text('帖子 $_longPostId · 评论 $_longCommentId'),
+      find.text(_longRecentBrowseTitle),
       200,
       scrollable: scrollable,
     );
     expect(tester.takeException(), isNull);
-    expect(find.text('帖子 $_longPostId · 评论 $_longCommentId'), findsOneWidget);
+    expect(find.text('评论上下文'), findsWidgets);
+    expect(find.text('帖子 $_longPostId · 评论 $_longCommentId'), findsNothing);
 
     await tester.scrollUntilVisible(
       find.text(_longPostTitle),
@@ -1202,7 +1203,8 @@ void main() {
     expect(find.text('我的轻回应'), findsOneWidget);
     expect(find.text('这个原生回看入口不错'), findsOneWidget);
     expect(find.text('Native profile follow-up'), findsWidgets);
-    expect(find.text('帖子 post-1 · 轻回应 quick-1'), findsOneWidget);
+    expect(find.text('轻回应回看'), findsWidgets);
+    expect(find.text('帖子 post-1 · 轻回应 quick-1'), findsNothing);
     expect(find.text('原帖回流'), findsOneWidget);
 
     await tester.tap(find.text('回到原帖'));
