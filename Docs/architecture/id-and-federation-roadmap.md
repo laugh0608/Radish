@@ -234,6 +234,7 @@ Radish 未来联邦的最小公共节点定义为：
 - 外部 API、前端路由、分享链接、实时消息契约逐步切向 `PublicId`
 - 仓储与联表暂时仍可基于 `InternalId`
 - `P3-2` 最小试点已先从 `Post` 落地：新帖生成 `pst_` + UUIDv7 编码体，`PostVo` 并行暴露 `VoPublicId / VoId`，forum 公开路由、分享 canonical、通知 `extData`、浏览历史 routePath 和窗口参数优先支持 `postPublicId`，同时保留旧 `postId` 兼容；`User / Product / WikiDocument / Comment` 暂不扩面
+- `P3-4` 留存回流验收已把“公开分享 / 通知 / 最近阅读 / 我的轻回应回到 WebOS 或 Flutter forum 详情”的当前契约收口为：`postPublicId` 优先，旧 long `postId` 只作为字符串 fallback，且普通用户可见文案不再展示长帖子 ID、评论 ID 或旧 long 路径。Flutter forum detail 进入真实详情后，应使用服务端返回的内部 `VoId` 调评论、轻回应和定位接口，不把 `PublicId` 误传给内部接口。docs / shop 仍不纳入本轮全量 `PublicId` 迁移，旧 long 路由只保留打开兼容，页面标题、描述和最近浏览展示不得把 long ID 当作可读内容。
 
 ### Phase C：联邦前置准备
 
@@ -251,5 +252,5 @@ Radish 未来联邦的最小公共节点定义为：
 - 当前主线仍以 [当前进行中](/planning/current) 与 [第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform) 为准。
 - 本页确立的是长期方向，不构成“当前立刻开工”的指令。
 - 但在当前主线范围内，凡是新增或补洞公开 forum 阅读入口、通知跳转、个人回看回跳或其他外部导航参数时，都必须优先满足“外部 ID 不再按前端 `number` 使用”的前置治理要求。
-- 当前已确认的直接相关入口包括：公开 `/forum/post/:postId` 直链、论坛通知 `extData` 跳转、个人主页浏览记录 `routePath / targetId` 回跳，以及桌面 forum 窗口 `appParams` / 深链解析。
+- 当前已确认的直接相关入口包括：公开 `/forum/post/:postId` 直链、论坛通知 `extData` 跳转、个人主页浏览记录 `routePath / targetId` 回跳、我的轻回应回看，以及桌面 / Flutter forum 窗口参数和深链解析；这些入口必须按 `postPublicId -> 旧 postId 字符串 fallback` 的顺序消费。
 - 后续若正式启动 `PublicId` 改造或联邦预研，必须先更新路线图、当前进行中与对应专题设计文档。

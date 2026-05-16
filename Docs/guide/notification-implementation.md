@@ -93,7 +93,7 @@ public class Notification : RootEntityTKey<long>, ITenantEntity
 }
 ```
 
-> 实现约束：`ExtData` 是业务代码自行拼接 / 序列化的 JSON 字符串，不会自动经过 API 层全局 `long -> string` 转换器。forum / chat 导航载荷中的 `postId`、`commentId`、`channelId`、`messageId` 等字段必须在写入前转成字符串；未来新增 `postPublicId` 时也应与旧 `postId` 并行写入，避免旧通知和旧客户端失效。
+> 实现约束：`ExtData` 是业务代码自行拼接 / 序列化的 JSON 字符串，不会自动经过 API 层全局 `long -> string` 转换器。forum / chat 导航载荷中的 `postId`、`commentId`、`channelId`、`messageId` 等字段必须在写入前转成字符串；forum 通知当前应在可取得时并行写入 `postPublicId`，客户端消费顺序为 `postPublicId` 优先、旧 `postId` 字符串 fallback，避免旧通知和旧客户端失效。
 
 ### 1.2 UserNotification（用户通知关系表）
 
