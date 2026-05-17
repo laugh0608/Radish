@@ -500,3 +500,35 @@
   - `P3-4-D` 至 `P3-4-H` 各批均通过。
 - `git diff --check`
   - `P3-4-D` 至 `P3-4-H` 各批均通过。
+
+## 2026-05-17
+
+### `P3-4-I` 公开 head 标识可见性补洞
+
+- 按 `P3-4` 收尾节奏继续做主动复核，而不是只写阶段判断。
+- 发现公开 head 仍存在一组同类可见性缺口：forum 详情 / 分类、docs 数字兼容路径和公开个人页初始 head 会把路由标识写进 title / description。
+- 已将这些初始 head 收口为通用公开阅读文案；canonical path 和旧路径打开兼容保持不变。
+- 本轮不启动 `User / Product / WikiDocument / Comment` 外部标识改造，不扩全量 `PublicId` 或数据库主键迁移。
+
+### `P3-4` 首轮收尾判断
+
+- forum / docs / shop 留存回流矩阵首轮已完成主动验收、成组补洞和定向验证。
+- 当前未发现新的 `P0/P1` 阻断项，`P3-4` 首轮可以收尾。
+- 下一步进入公开内容增长后续专题评估，优先比较动态 sitemap、结构化数据和详情首包可见性的收益 / 成本 / 部署风险；未评估前不直接启动 SSR / SSG。
+
+### 验证记录
+
+- `npm run type-check --workspace=radish.client`
+  - 通过。
+- `node --test --test-isolation=none ./tests/publicHead.test.ts ./tests/forumNavigation.test.ts ./tests/workspaceNavigation.test.ts ./tests/publicRouteNavigation.test.ts ./tests/publicRouteState.test.ts ./tests/publicProfileNavigation.test.ts`
+  - 通过，`80/80`。
+- `npm run test --workspace=radish.client -- --test-name-pattern="Forum|forum|Public|public|workspace|notification|browse"`
+  - 通过，`142/142`。
+- `flutter test test/notification_repository_test.dart test/profile_page_test.dart test/docs_page_test.dart`
+  - 首次沙盒启动失败；提权环境通过，`49/49`。
+- `dotnet test Radish.Api.Tests --filter "FullyQualifiedName~PostControllerTest|FullyQualifiedName~UserBrowseHistoryServiceTest|FullyQualifiedName~PostQuickReplyServiceTest|FullyQualifiedName~Comment" -v minimal`
+  - 首次沙盒内因无法读取用户 NuGet.Config 失败；提权环境通过，`34/34`。
+- `npm run check:repo-hygiene:changed`
+  - 通过。
+- `git diff --check`
+  - 通过。

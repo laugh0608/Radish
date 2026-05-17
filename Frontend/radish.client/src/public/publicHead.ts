@@ -62,6 +62,10 @@ function normalizeDescription(description: string): string {
   return normalized || publicDefaultDescription;
 }
 
+function isNumericRouteIdentifier(value: string | undefined): boolean {
+  return Boolean(value && /^\d+$/.test(value));
+}
+
 export function buildPublicCanonicalUrl(canonicalPath: string, origin?: string): string {
   const baseOrigin = normalizeOrigin(origin);
   return new URL(stripHash(canonicalPath), baseOrigin).toString();
@@ -78,10 +82,9 @@ function buildDiscoverHead(route: PublicRouteDescriptor & { app: 'discover' }): 
 function buildForumHead(route: PublicRouteDescriptor & { app: 'forum' }): PublicHeadDescriptor {
   const canonicalPath = buildPublicForumPath(route.route);
   if (route.route.kind === 'detail') {
-    const postLabel = route.route.postPublicId ?? route.route.postId;
     return {
-      title: `帖子 ${postLabel} - Radish 论坛`,
-      description: `阅读 Radish 公开论坛帖子 ${postLabel}，查看讨论内容与社区互动。`,
+      title: `论坛帖子 - Radish 论坛`,
+      description: '阅读 Radish 公开论坛帖子，查看讨论内容与社区互动。',
       canonicalPath,
       type: 'article',
     };
@@ -130,7 +133,7 @@ function buildForumHead(route: PublicRouteDescriptor & { app: 'forum' }): Public
 
   if (route.route.kind === 'list') {
     return {
-      title: route.route.categoryId ? `论坛分类 ${route.route.categoryId} - ${publicSiteName}` : `论坛 - ${publicSiteName}`,
+      title: route.route.categoryId ? `论坛分类 - ${publicSiteName}` : `论坛 - ${publicSiteName}`,
       description: '浏览 Radish 论坛的公开帖子、问答、投票、抽奖与社区讨论。',
       canonicalPath,
     };
@@ -146,6 +149,15 @@ function buildForumHead(route: PublicRouteDescriptor & { app: 'forum' }): Public
 function buildDocsHead(route: PublicRouteDescriptor & { app: 'docs' }): PublicHeadDescriptor {
   const canonicalPath = buildPublicDocsPath(route.route);
   if (route.route.kind === 'detail') {
+    if (isNumericRouteIdentifier(route.route.slug)) {
+      return {
+        title: `文档详情 - Radish 文档`,
+        description: '阅读 Radish 公开文档，了解项目能力、使用方式与协作信息。',
+        canonicalPath,
+        type: 'article',
+      };
+    }
+
     return {
       title: `${route.route.slug} - Radish 文档`,
       description: `阅读 Radish 公开文档 ${route.route.slug}，了解项目能力、使用方式与协作信息。`,
@@ -172,8 +184,8 @@ function buildDocsHead(route: PublicRouteDescriptor & { app: 'docs' }): PublicHe
 
 function buildProfileHead(route: PublicRouteDescriptor & { app: 'profile' }): PublicHeadDescriptor {
   return {
-    title: `用户 ${route.route.userId} 的公开主页 - ${publicSiteName}`,
-    description: `查看 Radish 用户 ${route.route.userId} 的公开主页、帖子与评论记录。`,
+    title: `用户公开主页 - ${publicSiteName}`,
+    description: '查看 Radish 用户的公开主页、帖子与评论记录。',
     canonicalPath: buildPublicProfilePath(route.route),
     type: 'profile',
   };

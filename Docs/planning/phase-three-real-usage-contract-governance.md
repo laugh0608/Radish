@@ -1,6 +1,6 @@
 # 第三开发阶段：真实使用增长与长期契约治理
 
-> 状态：`P3-4 用户留存轻闭环` 进行中
+> 状态：`P3-4 用户留存轻闭环` 首轮已完成，下一主线评估中
 >
 > 启动日期：2026-05-13（Asia/Shanghai）
 >
@@ -22,7 +22,7 @@
 
 `P3-0` 已完成第三阶段定义、公开内容增长基础审计和第一批任务排序；`P3-1` 已完成公开内容 SEO 与分享基线。`P3-2` 已完成 `P3-2-A` 外部 ID 契约审计和 `P3-2-B` `Post.PublicId` 首批实现，试点对象保持收敛为 `Post`。`P3-3` 已完成 `PublicForumApp.tsx` 公开论坛热区首轮拆分和收工复核。
 
-当前主线为 `P3-4 用户留存轻闭环`。`2026-05-16` 已完成 forum / docs / shop 留存回流矩阵第一轮主动验收：forum 公开分享、通知、最近阅读、我的轻回应、公开个人页双向复访已保持 PublicId 优先；docs / shop 旧 long 路径只保留回流 fallback，不在最近阅读或公开 head 普通文案外露。下一步先做阶段性收尾判断，再决定是否切入公开内容增长后续专题。
+当前主线为 `P3-4 用户留存轻闭环` 首轮收尾。`2026-05-16` 已完成 forum / docs / shop 留存回流矩阵第一轮主动验收：forum 公开分享、通知、最近阅读、我的轻回应、公开个人页双向复访已保持 PublicId 优先；docs / shop 旧 long 路径只保留回流 fallback，不在最近阅读或公开 head 普通文案外露。`2026-05-17` 主动收尾复核补齐公开 head 标识可见性缺口后，首轮结论为可收尾；下一步评估是否切入公开内容增长后续专题。
 
 ## `P3-0` 定义与工程整备
 
@@ -492,6 +492,33 @@ npm run check:repo-hygiene:changed
 结论：
 
 - shop 当前仍以 long `productId` 作为兼容路由；本轮只冻结普通文案外露，不启动 `Product.PublicId` 或全量外部标识改造。
+
+### `P3-4-I` 公开 head 标识可见性补洞与首轮收尾判断
+
+完成日期：2026-05-17。
+
+已完成：
+
+- 主动收尾复核发现 `publicHead` 初始 head 仍会把 forum 旧 long 路由、forum 分类 ID、docs 数字兼容路径和公开个人页 `userId` 写入 title / description。
+- 已将这些初始 head 文案收口为通用公开阅读文案，避免普通用户在浏览器标题、meta description 或分享预览兜底中看到长数字标识。
+- canonical path 继续保留原始公开路径，旧 long 路由、数字 docs 兼容路径和 `/u/:id` 仍可打开；本轮不启动 `User / Product / WikiDocument / Comment` 外部标识改造。
+- 详情数据加载后的业务标题仍由页面自身接管，例如 forum detail 使用真实帖子标题、docs detail 使用真实文档标题、profile 使用公开资料展示名。
+
+验证：
+
+- `npm run type-check --workspace=radish.client` 通过。
+- `node --test --test-isolation=none ./tests/publicHead.test.ts ./tests/forumNavigation.test.ts ./tests/workspaceNavigation.test.ts ./tests/publicRouteNavigation.test.ts ./tests/publicRouteState.test.ts ./tests/publicProfileNavigation.test.ts` 通过，`80/80`。
+- `npm run test --workspace=radish.client -- --test-name-pattern="Forum|forum|Public|public|workspace|notification|browse"` 通过，`142/142`。
+- `flutter test test/notification_repository_test.dart test/profile_page_test.dart test/docs_page_test.dart` 提权环境通过，`49/49`。
+- `dotnet test Radish.Api.Tests --filter "FullyQualifiedName~PostControllerTest|FullyQualifiedName~UserBrowseHistoryServiceTest|FullyQualifiedName~PostQuickReplyServiceTest|FullyQualifiedName~Comment" -v minimal` 提权环境通过，`34/34`。
+- `npm run check:repo-hygiene:changed` 通过。
+- `git diff --check` 通过。
+
+收尾判断：
+
+- `P3-4` 首轮 forum / docs / shop 留存回流矩阵已完成主动验收和补洞，当前未发现新的 `P0/P1` 阻断项。
+- 首轮可以收尾；后续只处理真实使用中新暴露的回流断点，不继续扩全量 `PublicId`、数据库主键迁移或低收益微体验。
+- 下一步进入公开内容增长后续专题评估，优先判断动态 sitemap、结构化数据或详情首包可见性是否值得作为下一批主线；未评估前不直接启动 SSR / SSG。
 
 ## 首批候选任务
 
