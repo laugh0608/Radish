@@ -504,9 +504,10 @@ eventBus.on('new-message', ({ count }) => {
 当前公开内容基线：
 
 - 公开路由输出运行时 head 与 canonical
-- forum / shop 详情提供 canonical 复制入口
-- `robots.txt` 与 `sitemap.xml` 先保留 seed 级入口
-- 动态 sitemap、结构化数据、SSR / SSG 后置到真实增长需要出现后再评估
+- forum / docs / shop 详情提供 canonical 复制入口
+- forum / docs / shop 详情和公开个人页输出运行时 JSON-LD
+- API + Gateway 已承载动态 sitemap index 与 `static / forum / docs / shop` 分片
+- Gateway 已对 forum / docs / shop 公开详情做首包 head snapshot 注入；正文 HTML、完整 SSR / SSG 和预渲染继续后置
 
 完整 URL 范围、head 契约和后置边界见 [公开内容 SEO 与分享基线](/frontend/public-seo-sharing)。
 
