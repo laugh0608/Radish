@@ -516,6 +516,13 @@
 - 当前未发现新的 `P0/P1` 阻断项，`P3-4` 首轮可以收尾。
 - 下一步进入公开内容增长后续专题评估，优先比较动态 sitemap、结构化数据和详情首包可见性的收益 / 成本 / 部署风险；未评估前不直接启动 SSR / SSG。
 
+### `P3-5-A` 公开内容增长后续专题评估
+
+- 已复核当前公开增长实现：`sitemap.xml` 仍是前端静态 seed，`publicHead` 只负责运行时 title / description / canonical / Open Graph，当前没有 JSON-LD，也没有详情首包 HTML 输出。
+- 动态 sitemap 具备长期收益，但需要先确认 API + Gateway 路由或构建生成器方案，明确公开域名、分页上限、缓存、更新时间和异常降级后再实施。
+- 详情首包可见性收益最高，但真正解决需要 SSR / SSG / prerender 或 Gateway HTML rewrite；该方向继续后置为单独方案评审，不直接改当前 Vite SPA 构建形态。
+- 下一批建议先做 `P3-5-B 运行时结构化数据基线`：限定在 forum detail、docs detail、shop detail 和公开个人页注入 / 清理 JSON-LD，复用已加载详情数据并补定向测试。
+
 ### 验证记录
 
 - `npm run type-check --workspace=radish.client`
@@ -532,3 +539,7 @@
   - 通过。
 - `git diff --check`
   - 通过。
+- `npm run check:repo-hygiene:changed`
+  - `P3-5-A` 文档同步后通过。
+- `git diff --check`
+  - `P3-5-A` 文档同步后通过。

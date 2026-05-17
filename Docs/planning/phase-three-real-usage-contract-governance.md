@@ -1,6 +1,6 @@
 # 第三开发阶段：真实使用增长与长期契约治理
 
-> 状态：`P3-4 用户留存轻闭环` 首轮已完成，下一主线评估中
+> 状态：`P3-5 公开内容增长后续专题` 评估已完成，下一批建议先做运行时结构化数据基线
 >
 > 启动日期：2026-05-13（Asia/Shanghai）
 >
@@ -20,9 +20,9 @@
 
 ## 当前推进状态
 
-`P3-0` 已完成第三阶段定义、公开内容增长基础审计和第一批任务排序；`P3-1` 已完成公开内容 SEO 与分享基线。`P3-2` 已完成 `P3-2-A` 外部 ID 契约审计和 `P3-2-B` `Post.PublicId` 首批实现，试点对象保持收敛为 `Post`。`P3-3` 已完成 `PublicForumApp.tsx` 公开论坛热区首轮拆分和收工复核。
+`P3-0` 已完成第三阶段定义、公开内容增长基础审计和第一批任务排序；`P3-1` 已完成公开内容 SEO 与分享基线。`P3-2` 已完成 `P3-2-A` 外部 ID 契约审计和 `P3-2-B` `Post.PublicId` 首批实现，试点对象保持收敛为 `Post`。`P3-3` 已完成 `PublicForumApp.tsx` 公开论坛热区首轮拆分和收工复核。`P3-4` 已完成 forum / docs / shop 留存回流矩阵首轮主动验收和补洞。
 
-当前主线为 `P3-4 用户留存轻闭环` 首轮收尾。`2026-05-16` 已完成 forum / docs / shop 留存回流矩阵第一轮主动验收：forum 公开分享、通知、最近阅读、我的轻回应、公开个人页双向复访已保持 PublicId 优先；docs / shop 旧 long 路径只保留回流 fallback，不在最近阅读或公开 head 普通文案外露。`2026-05-17` 主动收尾复核补齐公开 head 标识可见性缺口后，首轮结论为可收尾；下一步评估是否切入公开内容增长后续专题。
+当前主线切到 `P3-5 公开内容增长后续专题`。`2026-05-17` 已完成 `P3-5-A` 评估：动态 sitemap、结构化数据和详情首包可见性都具备增长价值，但风险层级不同；下一批建议先做前端运行时 JSON-LD 基线，再单独评估动态 sitemap 的 Gateway / API 路由方案，详情首包 HTML 可见性继续后置为 SSR / SSG / 预渲染专题。
 
 ## `P3-0` 定义与工程整备
 
@@ -519,6 +519,45 @@ npm run check:repo-hygiene:changed
 - `P3-4` 首轮 forum / docs / shop 留存回流矩阵已完成主动验收和补洞，当前未发现新的 `P0/P1` 阻断项。
 - 首轮可以收尾；后续只处理真实使用中新暴露的回流断点，不继续扩全量 `PublicId`、数据库主键迁移或低收益微体验。
 - 下一步进入公开内容增长后续专题评估，优先判断动态 sitemap、结构化数据或详情首包可见性是否值得作为下一批主线；未评估前不直接启动 SSR / SSG。
+
+## `P3-5-A` 公开内容增长后续专题评估
+
+完成日期：2026-05-17。
+
+### 审计结论
+
+| 方向 | 当前事实 | 收益判断 | 风险判断 |
+| --- | --- | --- | --- |
+| 动态 sitemap | 当前 `Frontend/radish.client/public/sitemap.xml` 只包含公开入口 seed；Gateway catch-all 默认转到 frontend，未给 `/sitemap.xml` 单独接 API / 生成器 | 可补 forum / docs / shop 详情抓取入口，长期收益明确 | 需要决定由 API + Gateway 路由、构建生成器或独立任务承载；涉及部署与缓存，不应直接改 |
+| 结构化数据 | 当前只有运行时 `publicHead` 写 title / description / canonical / Open Graph；未发现 `application/ld+json` 或 `schema.org` 输出 | 可先为 forum detail、docs detail、shop detail 和公开个人页补 `BlogPosting / Article / Product / ProfilePage` 等基线 | 前端运行时 JSON-LD 不能解决无 JS 首包问题，但改动边界清晰、验证成本低 |
+| 详情首包可见性 | `index.html` 仍是通用 SPA shell，详情标题、摘要和正文都依赖前端运行时加载 | 对搜索和社交爬虫收益最高 | 真正解决需要 SSR / SSG / prerender 或 Gateway HTML rewrite，牵涉构建、缓存、鉴权边界和部署策略 |
+
+### 排序结论
+
+下一批建议先做 `P3-5-B 运行时结构化数据基线`：
+
+- 只在 `radish.client` 公开详情页注入和清理 JSON-LD，不改变 API、Gateway、部署和公开路由。
+- 数据来源优先复用详情页已经加载到的业务数据，不新增额外详情请求。
+- 覆盖 forum detail、docs detail、shop detail 和公开个人页；列表页和搜索页暂不补结构化数据。
+- 为 JSON-LD helper、去重 / 清理行为和关键字段增加 `node --test` 覆盖。
+- 明确该批次只增强可执行 JS 的 crawler / 分享工具可读性，不宣称解决首包 HTML 可见性。
+
+`P3-5-C 动态 sitemap` 需要单独方案批准后再实施：
+
+- 优先比较 `API 生成 XML + Gateway /sitemap.xml 路由` 与 `构建期静态生成` 两条路线。
+- 需明确公开域名、分页上限、更新时间来源、缓存 TTL、详情 canonical 格式和异常降级。
+- 在方案批准前，不直接把数据库查询、API 调用或部署脚本塞进前端构建。
+
+`P3-5-D 详情首包可见性` 继续后置：
+
+- 只有当公开内容增长数据、爬虫抓取反馈或分享预览质量证明收益足够时，才进入 SSR / SSG / prerender / Gateway HTML rewrite 方案评审。
+- 未评审前不改 Vite 构建形态、不引入完整 SSR 运行时、不把 Gateway 变成临时 HTML 拼接层。
+
+### 完成条件
+
+- `P3-5-A` 只产出评估结论和下一批排序，不改运行时代码。
+- 规划入口同步到 `P3-5` 口径。
+- 文档卫生与 diff 检查通过。
 
 ## 首批候选任务
 
