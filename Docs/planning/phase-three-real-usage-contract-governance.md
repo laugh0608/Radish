@@ -1,6 +1,6 @@
 # 第三开发阶段：真实使用增长与长期契约治理
 
-> 状态：`P3-5-B 运行时结构化数据基线` 已完成，下一步进入动态 sitemap 方案评审
+> 状态：`P3-5-C 动态 sitemap` API + Gateway 首批实现已完成
 >
 > 启动日期：2026-05-13（Asia/Shanghai）
 >
@@ -22,7 +22,7 @@
 
 `P3-0` 已完成第三阶段定义、公开内容增长基础审计和第一批任务排序；`P3-1` 已完成公开内容 SEO 与分享基线。`P3-2` 已完成 `P3-2-A` 外部 ID 契约审计和 `P3-2-B` `Post.PublicId` 首批实现，试点对象保持收敛为 `Post`。`P3-3` 已完成 `PublicForumApp.tsx` 公开论坛热区首轮拆分和收工复核。`P3-4` 已完成 forum / docs / shop 留存回流矩阵首轮主动验收和补洞。
 
-当前主线为 `P3-5 公开内容增长后续专题`。`2026-05-17` 已完成 `P3-5-A` 评估和 `P3-5-B` 运行时结构化数据基线：公开 forum detail、docs detail、shop detail 和公开个人页已在前端运行时注入 JSON-LD，并在路由切换 / 组件卸载时清理。下一步进入动态 sitemap 的 Gateway / API 路由或构建生成器方案评审；详情首包 HTML 可见性继续后置为 SSR / SSG / 预渲染专题。
+当前主线为 `P3-5 公开内容增长后续专题`。`2026-05-17` 已完成 `P3-5-A` 评估、`P3-5-B` 运行时结构化数据基线和 `P3-5-C` 动态 sitemap 首批实现。公开 forum detail、docs detail、shop detail 和公开个人页已在前端运行时注入 JSON-LD，并在路由切换 / 组件卸载时清理。动态 sitemap 已采用 API + Gateway 路由，构建期静态生成器仅保留为离线 / 夜间导出备选；详情首包 HTML 可见性继续后置为 SSR / SSG / 预渲染专题。
 
 ## `P3-0` 定义与工程整备
 
@@ -582,6 +582,108 @@ npm run check:repo-hygiene:changed
 - 本批只增强可执行 JS 的 crawler / 分享工具可读性，不解决无 JS 首包 HTML 可见性。
 - 动态 sitemap 仍需单独确认 API + Gateway 路由或构建生成器方案。
 - SSR / SSG / prerender / Gateway HTML rewrite 继续后置，不因本批完成而直接启动。
+
+## `P3-5-C` 动态 sitemap 方案评审与首批实现
+
+评审完成日期：2026-05-17。
+
+首批实现完成日期：2026-05-17。
+
+### 现状判断
+
+- 当前 `Frontend/radish.client/public/sitemap.xml` 是静态 seed，只覆盖 `/discover`、forum / docs / shop 公开入口和少量列表页。
+- Gateway 当前通过 YARP 将 `/api/{**catch-all}`、`/uploads/{**catch-all}`、`/_assets/attachments/{**catch-all}` 等路由转到 API，并用最低优先级 `/{**catch-all}` 转前端；动态 sitemap 若对外暴露为顶层 `/sitemap.xml`，必须在 Gateway 中显式声明高于前端 catch-all 的路由。
+- forum 已具备 `Post.PublicId` canonical，docs 已以 `slug` 作为公开详情主路由，shop 仍以 `productId` 作为兼容公开详情路由。三类详情都能由后端根据公开状态筛出可索引 URL。
+
+### 路线评估
+
+| 路线 | 做法 | 优点 | 风险 | 结论 |
+| --- | --- | --- | --- | --- |
+| API + Gateway 路由 | API 提供 sitemap index 和分片 XML；Gateway 把顶层 `/sitemap.xml`、`/sitemaps/*.xml` 或等价固定路径代理到 API | 与运行时数据同步；能复用后端状态过滤、PublicId / slug canonical 和缓存；发布后内容变化不依赖重新构建前端 | 需要新增 API 只读查询、缓存和 Gateway 路由优先级；API 异常会影响动态 sitemap | 推荐作为首批实施路线 |
+| 构建期静态生成器 | 前端构建或独立构建任务调用 API / 数据库，写入 `public/sitemap.xml` 或 dist 静态文件 | 运行时最稳，前端静态服务即可返回 XML，不增加请求时数据库压力 | 构建依赖生产数据、凭据和网络；内容发布后容易过期；会把 API / DB 依赖塞进前端构建或 CI，部署耦合较重 | 不作为首批实施路线，仅保留为后续离线 / 夜间导出备选 |
+
+### 推荐方案
+
+首批采用 **API 生成 XML + Gateway 顶层路由**：
+
+- API 侧新增只读 sitemap 能力，输出 `application/xml; charset=utf-8`，不走登录态、不暴露内部管理字段。
+- Gateway 侧新增高优先级 sitemap 路由，避免 `/sitemap.xml` 被前端 catch-all 或旧静态文件覆盖；`robots.txt` 继续指向公开域名下 `/sitemap.xml`。
+- 输出形态采用 sitemap index + 分片文件，哪怕首批数据量不大也先固定契约，避免以后超过单文件上限时再改入口。
+
+### sitemap 范围
+
+首批范围限定为公开、可直达、可稳定 canonical 的 URL：
+
+- 静态 seed：继续包含 `/discover`、`/forum`、`/forum/question`、`/forum/poll`、`/forum/lottery`、`/docs`、`/docs/search`、`/leaderboard`、`/shop`、`/shop/products`。
+- forum detail：只包含 `IsPublished && !IsDeleted` 的帖子；URL 优先 `/forum/post/{VoPublicId}`，历史缺失 `PublicId` 时才回退 `/forum/post/{VoId}`。
+- docs detail：只包含 `Status = Published`、`Visibility = Public`、`!IsDeleted` 且 `Slug` 非空的文档；URL 使用 `/docs/{VoSlug}`。
+- shop detail：只包含公开商品列表中可见的商品，至少满足 `IsOnSale && IsEnabled && !IsDeleted`；URL 使用 `/shop/product/{VoId}`。
+
+首批不纳入：
+
+- `/u/:id` 公开个人页。当前仍依赖内部 long 用户 ID，且用户隐私 / 展示意愿边界未单独评审。
+- 搜索结果页组合、标签组合分页、评论锚点、订单 / 背包 / Console / Auth / API 文档 / Scalar / Hangfire 等登录态或治理路径。
+- 未发布、草稿、私有、认证可见、软删除、禁用、下架或审核不可见内容。
+
+### 缓存 TTL 与分页上限
+
+- API 内存缓存或 Redis 缓存 TTL 建议首批为 `30` 分钟；Redis 开启时用 Redis，关闭时用内存缓存，跟随现有 `AddCacheSetup()` 策略。
+- 可对 sitemap index 和各分片分别缓存；缓存 key 应包含公开域名、分片类型、页码和每页数量。
+- 单分片 URL 上限按搜索引擎标准保守控制在 `45,000` 条以内，低于 `50,000` 硬上限；首批默认每个内容类型每页 `5,000` 条，避免一次 XML 过大。
+- 首批总分页上限建议每个内容类型最多 `20` 个分片，即单类型最多约 `100,000` 条 URL；超过上限只输出前 `20` 个分片并记录告警，不在用户请求中无限扫库。
+- 查询顺序按更新时间倒序；同一时间戳下按内部 ID 倒序稳定排序，避免分页游标抖动。
+
+### 更新时间字段
+
+- forum detail 的 `lastmod` 使用 `VoModifyTime ?? VoPublishTime ?? VoCreateTime`。
+- docs detail 的 `lastmod` 使用 `VoModifyTime ?? VoPublishedAt ?? VoCreateTime`。
+- shop detail 的 `lastmod` 使用商品 `ModifyTime ?? OnSaleTime ?? CreateTime`；若当前 `ProductVo` 不暴露 `VoModifyTime / VoOnSaleTime`，实施时应在 sitemap 专用查询模型中读取实体字段，不为了 sitemap 扩普通前端 Vo。
+- 静态 seed 的 `lastmod` 可使用 sitemap 生成时间或固定部署时间；首批建议使用生成时间，配合 `30` 分钟缓存 TTL。
+- 所有输出统一为 UTC / ISO 8601 日期时间，避免服务器本地时区差异影响 XML。
+
+### 异常回退
+
+- API 生成失败时，首选返回最近一次成功缓存的 XML，并记录错误日志；缓存存在但过期也可短期兜底返回。
+- 没有成功缓存时，`/sitemap.xml` 返回静态 seed sitemap，保证爬虫入口不断；分片请求无缓存时返回空 `urlset` 或 `503` 需在实施前二选一，首批建议返回空 `urlset` 并记录告警，避免爬虫把根入口判为不可用。
+- 单一内容类型查询失败时，不影响其它分片；对应分片使用最近成功缓存或空 `urlset`。
+- XML 生成必须做 URL 转义、非法字符清洗和长度保护；异常数据只跳过单条 URL 并记录聚合告警，不让整份 sitemap 失败。
+
+### 部署风险与护栏
+
+- Gateway 路由优先级是主要风险：新增 `/sitemap.xml` 与分片路径必须高于前端 `/{**catch-all}`，并避免被前端静态 `sitemap.xml` 旧文件抢占。实施时要明确生产环境到底由 Gateway 代理前端还是直接由静态服务托管前端。
+- 公开域名来源必须统一使用生产 `RADISH_PUBLIC_URL` / `GatewayService:PublicUrl` 派生，不允许在动态 XML 中硬编码 `localhost` 或测试域名。
+- API sitemap 查询要走专用只读模型或仓储方法，不能在 Service 层直接 `_repository.Db.Queryable`；需要优先复用 / 扩展 repository 通用查询能力。
+- 不把 sitemap 生成挂进 `npm run build --workspace=radish.client`，避免本地构建、CI 和部署因生产数据或网络凭据失败。
+- 首批需要补后端单测覆盖公开过滤、PublicId / slug / product 路径、lastmod 选择、分页上限和异常回退；Gateway 配置需补最小路由验证或文档化人工验证点。
+
+### 后续实施完成条件
+
+- `/sitemap.xml` 返回 sitemap index 或 seed fallback，并能列出 forum / docs / shop 分片。
+- `robots.txt` 指向的 sitemap 与生产 Gateway 实际返回一致。
+- forum / docs / shop 分片只包含公开可索引内容，URL 与运行时 canonical 口径一致。
+- API 缓存、分页上限、lastmod、异常回退和日志路径有测试或明确验证记录。
+- `dotnet test Radish.Api.Tests`、`dotnet build Radish.slnx -c Debug` 和必要的文档 / 配置卫生检查通过。
+
+### 首批实现记录
+
+已完成：
+
+- 新增 `IPublicSitemapService / PublicSitemapService`，由 API 侧生成 sitemap index 与 `static / forum / docs / shop` 分片 XML。
+- 新增公开 `PublicSitemapController`，以顶层 `/sitemap.xml` 和 `/sitemaps/{fileName}` 输出 `application/xml; charset=utf-8`，不纳入 API 文档。
+- Gateway 新增 `/sitemap.xml` 与 `/sitemaps/{**catch-all}` 高优先级路由，避免被前端 catch-all 覆盖。
+- sitemap 范围按评审收敛：静态 seed、已发布且启用的 forum post、公开已发布 docs、公开可见 shop 商品；不纳入公开个人页、搜索组合页、评论锚点、Console / Auth / API 文档等路径。
+- 缓存 TTL 固定为 `30` 分钟；单分片 `5,000` 条，单类型最多 `20` 个分片；缓存 key 包含公开域名、类型和页码。
+- `lastmod` 按 forum `ModifyTime ?? PublishTime ?? CreateTime`、docs `ModifyTime ?? PublishedAt ?? CreateTime`、shop `ModifyTime ?? OnSaleTime ?? CreateTime` 输出 UTC ISO 8601。
+- 生成失败时优先返回进程内最近成功 XML；无成功结果时 index 回退静态分片入口，内容分片返回空 `urlset` 并记录日志。
+
+验证：
+
+- `dotnet test Radish.Api.Tests --filter "PublicSitemapServiceTest" -v minimal` 通过，`4/4`。
+
+后置：
+
+- 仍需在真实部署环境确认 `GatewayService:PublicUrl` / `RADISH_PUBLIC_URL` 输出生产域名，并人工访问 `/sitemap.xml`、`/sitemaps/static.xml`、`/sitemaps/forum-1.xml`。
+- 若后续内容规模接近单类型 `100,000` 条 URL，需要单独评估 cursor 分片、夜间导出或搜索引擎索引拆分策略。
 
 ## 首批候选任务
 

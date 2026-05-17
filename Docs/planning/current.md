@@ -7,7 +7,7 @@
 ## 当前状态
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
-- **当前主线**：`P3-5 公开内容增长后续专题`，运行时结构化数据基线已完成
+- **当前主线**：`P3-5 公开内容增长后续专题`，动态 sitemap 首批实现已完成
 - **复核日期**：`2026-05-17`
 - **最近结论**：
   - `v26.3.2-release` 已于 `2026-04-06` 完成首版真实发布，第一开发阶段结束
@@ -45,6 +45,7 @@
   - `P3-4` 首轮收尾判断为可收尾：forum / docs / shop 留存回流矩阵当前未发现新的 `P0/P1` 阻断项，下一步进入公开内容增长后续专题评估
   - `P3-5-A` 已完成公开内容增长后续专题评估：下一批建议先做运行时结构化数据基线；动态 sitemap 需先单独确认 API / Gateway 或生成器方案；详情首包 HTML 可见性继续后置为 SSR / SSG / 预渲染专题
   - `P3-5-B` 已完成运行时结构化数据基线：forum detail / docs detail / shop detail / 公开个人页已按已加载详情数据注入 JSON-LD，并在路由切换或卸载时清理旧结构化数据
+  - `P3-5-C` 已完成动态 sitemap 首批实现：API 输出 sitemap index / static / forum / docs / shop 分片 XML，Gateway 顶层 `/sitemap.xml` 与 `/sitemaps/{**catch-all}` 高优先级转发到 API；缓存 TTL、分页上限、lastmod 和异常回退已按评审方案落地
 
 ## 当前执行入口
 
@@ -62,8 +63,8 @@
 ## 当前目标
 
 1. **`P3-5` 公开内容增长后续专题**
-   - `P3-5-A / P3-5-B` 已完成动态 sitemap、结构化数据和详情首包可见性评估，以及公开详情运行时 JSON-LD 基线
-   - 下一批优先进入动态 sitemap 方案评审，先比较 API + Gateway 路由与构建生成器路线
+   - `P3-5-A / P3-5-B / P3-5-C` 已完成动态 sitemap、结构化数据和详情首包可见性评估、公开详情运行时 JSON-LD 基线，以及动态 sitemap API + Gateway 首批实现
+   - 动态 sitemap 首批不把生产 API / 数据库依赖塞进前端构建；构建期静态生成器仍仅作为离线 / 夜间导出备选
    - 详情首包 HTML 可见性继续作为单独方案评审项，不在未评估部署风险前直接启动
 2. **第二阶段收口护栏**
    - WebOS / PC 工作台、后端 + Console、公开 Web 与 Tauri 转入稳定维护
@@ -76,7 +77,7 @@
 
 ## 下一顺位
 
-- `P3-5-C` 动态 sitemap 方案评审可作为下一批候选，先明确 API + Gateway 路由或构建生成器边界、缓存 TTL、分页上限和异常降级
+- `P3-5-C` 动态 sitemap 首批已完成；下一步如继续公开内容增长，应转入 `P3-5-D` 详情首包 HTML 可见性方案评审，不直接启动 SSR / SSG、预渲染或 Gateway HTML rewrite
 - `P3-4` forum / docs / shop 留存回流矩阵首轮已完成阶段性收尾判断，后续只处理真实使用中新暴露的回流断点
 - `P3-3` 只保留后续观察，不继续无边界深拆 `PublicForumDetail` 内部结构
 - 详情首包 HTML 可见性继续后置，不直接启动 SSR / SSG、预渲染或 Gateway HTML rewrite
@@ -88,9 +89,9 @@
 
 ## 下一事项
 
-- 下一事项：若继续推进公开内容增长，优先启动 `P3-5-C 动态 sitemap 方案评审`；先做方案和边界确认，不直接改 Gateway / API / 构建脚本
+- 下一事项：若继续推进公开内容增长，可启动 `P3-5-D` 详情首包 HTML 可见性方案评审；先评估 SSR / SSG、预渲染与 Gateway HTML rewrite 的部署风险和收益
 - 若继续推进留存链路，只从真实使用中暴露的新断点选择小闭环，不再默认扩全量 `PublicId`、数据库主键迁移或 `User / Product / WikiDocument / Comment` 外部标识改造
-- 动态 sitemap 和详情首包 HTML 可见性继续后置为单独方案评审；未批准前不直接启动 SSR / SSG、预渲染或 Gateway HTML rewrite
+- 详情首包 HTML 可见性继续后置为单独方案评审；未批准前不直接启动 SSR / SSG、预渲染或 Gateway HTML rewrite
 
 ## 并行维护项
 
