@@ -26,7 +26,7 @@ import {
   TrophyOutlined,
   WalletOutlined,
 } from '@radish/ui';
-import { ROUTES } from '../../router';
+import { ROUTES } from '../../router/routes';
 import { getAuthServerBaseUrl, getPostLogoutRedirectUri, getAvatarUrl } from '@/config/env';
 import { tokenService } from '../../services/tokenService';
 import { AppBreadcrumb } from '../Breadcrumb';

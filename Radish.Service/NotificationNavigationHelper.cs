@@ -4,17 +4,39 @@ namespace Radish.Service;
 
 internal static class NotificationNavigationHelper
 {
-    public static string BuildForumNavigationExtData(long postId, long? commentId = null)
+    public static string BuildChatNavigationExtData(long channelId, long messageId)
+    {
+        if (channelId <= 0)
+        {
+            throw new ArgumentException("频道ID必须大于0", nameof(channelId));
+        }
+
+        if (messageId <= 0)
+        {
+            throw new ArgumentException("消息ID必须大于0", nameof(messageId));
+        }
+
+        return JsonSerializer.Serialize(new
+        {
+            app = "chat",
+            channelId = channelId.ToString(),
+            messageId = messageId.ToString()
+        });
+    }
+
+    public static string BuildForumNavigationExtData(long postId, long? commentId = null, string? postPublicId = null)
     {
         if (postId <= 0)
         {
             throw new ArgumentException("帖子ID必须大于0", nameof(postId));
         }
 
+        var normalizedPostPublicId = postPublicId?.Trim();
         return JsonSerializer.Serialize(new
         {
             app = "forum",
             postId = postId.ToString(),
+            postPublicId = string.IsNullOrWhiteSpace(normalizedPostPublicId) ? null : normalizedPostPublicId,
             commentId = commentId > 0 ? commentId.Value.ToString() : null
         });
     }
@@ -23,7 +45,8 @@ internal static class NotificationNavigationHelper
         long postId,
         long lotteryId,
         string prizeName,
-        int winnerCount)
+        int winnerCount,
+        string? postPublicId = null)
     {
         if (postId <= 0)
         {
@@ -35,10 +58,12 @@ internal static class NotificationNavigationHelper
             throw new ArgumentException("抽奖ID必须大于0", nameof(lotteryId));
         }
 
+        var normalizedPostPublicId = postPublicId?.Trim();
         return JsonSerializer.Serialize(new
         {
             app = "forum",
             postId = postId.ToString(),
+            postPublicId = string.IsNullOrWhiteSpace(normalizedPostPublicId) ? null : normalizedPostPublicId,
             lotteryId = lotteryId.ToString(),
             prizeName,
             winnerCount

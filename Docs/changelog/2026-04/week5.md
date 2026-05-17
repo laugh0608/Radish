@@ -95,7 +95,7 @@
 
 - **Android MVP 当前已具备内部 / 小范围 RC 候选链路**：登录、退出、会话恢复、四个主 tab 真实读取、forum feed / detail / 评论阅读、轻回应最小闭环、最小 forum notification 回流、profile / docs / discover 复访与返回上下文均已纳入已验证面。
 - **RC 外部分发阻塞条件已重新归类**：真实签名材料、测试 Gateway、外部分发对象与批次级回归留痕才是当前外部分发前置；缺少这些条件不应被误判为 Flutter 业务功能阻塞。
-- **清单已同步收口**：[Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution) 当前补齐 Android MVP 收口状态、非阻断项、外部分发阻塞条件与建议执行顺序；系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票和编辑治理继续不纳入 RC 前置范围。
+- **清单已同步收口**：[Flutter Android RC 分发前置清单](/records/flutter-android-rc-distribution) 当前补齐 Android MVP 收口状态、非阻断项、外部分发阻塞条件与建议执行顺序；系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票和编辑治理继续不纳入 RC 前置范围。
 
 ### Flutter 第五批 profile 最近阅读轻量多条列表
 

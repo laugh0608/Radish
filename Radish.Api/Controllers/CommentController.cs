@@ -25,15 +25,18 @@ namespace Radish.Api.Controllers;
 public class CommentController : ControllerBase
 {
     private readonly ICommentService _commentService;
+    private readonly IPostService _postService;
     private readonly IContentModerationService _contentModerationService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
 
     public CommentController(
         ICommentService commentService,
+        IPostService postService,
         IContentModerationService contentModerationService,
         ICurrentUserAccessor currentUserAccessor)
     {
         _commentService = commentService;
+        _postService = postService;
         _contentModerationService = contentModerationService;
         _currentUserAccessor = currentUserAccessor;
     }
@@ -300,6 +303,7 @@ public class CommentController : ControllerBase
             pageSize,
             c => c.CreateTime,
             SqlSugar.OrderByType.Desc);
+        await FillCommentPostPublicIdsAsync(data);
 
         // 构建分页模型
         var pageModel = new PageModel<CommentVo>
@@ -318,6 +322,39 @@ public class CommentController : ControllerBase
             MessageInfo = "获取成功",
             ResponseData = pageModel
         };
+    }
+
+    private async Task FillCommentPostPublicIdsAsync(List<CommentVo> comments)
+    {
+        var postIds = comments
+            .Select(comment => comment.VoPostId)
+            .Where(postId => postId > 0)
+            .Distinct()
+            .ToList();
+
+        if (postIds.Count == 0)
+        {
+            return;
+        }
+
+        var posts = await _postService.QueryAsync(post =>
+            postIds.Contains(post.Id) &&
+            post.IsPublished &&
+            !post.IsDeleted);
+        var publicIdMap = posts
+            .Where(post => !string.IsNullOrWhiteSpace(post.VoPublicId))
+            .GroupBy(post => post.VoId)
+            .ToDictionary(
+                group => group.Key,
+                group => group.First().VoPublicId);
+
+        foreach (var comment in comments)
+        {
+            if (publicIdMap.TryGetValue(comment.VoPostId, out var postPublicId))
+            {
+                comment.VoPostPublicId = postPublicId;
+            }
+        }
     }
 
     /// <summary>

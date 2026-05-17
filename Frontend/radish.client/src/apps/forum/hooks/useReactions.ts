@@ -5,6 +5,7 @@ import {
   toggleReaction,
   type ReactionSummaryVo,
 } from '@/api/forum';
+import type { LongId } from '@/api/user';
 
 interface ReactionTogglePayload {
   emojiType: 'unicode' | 'sticker';
@@ -22,8 +23,10 @@ interface UseReactionsOptions {
 const normalizeItems = (items: ReactionSummaryVo[]): ReactionSummaryVo[] =>
   (items || []).filter((item) => item.voCount > 0);
 
-const splitBatches = (ids: number[], batchSize: number): number[][] => {
-  const batches: number[][] = [];
+const toLongIdKey = (value: LongId): string => String(value);
+
+const splitBatches = (ids: LongId[], batchSize: number): LongId[][] => {
+  const batches: LongId[][] = [];
   for (let index = 0; index < ids.length; index += batchSize) {
     batches.push(ids.slice(index, index + batchSize));
   }
@@ -78,7 +81,7 @@ const applyOptimisticToggle = (
 export const useReactions = (options: UseReactionsOptions = {}) => {
   const { onError } = options;
   const [postItems, setPostItems] = useState<ReactionSummaryVo[]>([]);
-  const [commentItemsMap, setCommentItemsMap] = useState<Record<number, ReactionSummaryVo[]>>({});
+  const [commentItemsMap, setCommentItemsMap] = useState<Record<string, ReactionSummaryVo[]>>({});
   const [loadingPost, setLoadingPost] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
   const [pendingTargets, setPendingTargets] = useState<Record<string, boolean>>({});
@@ -92,7 +95,7 @@ export const useReactions = (options: UseReactionsOptions = {}) => {
   );
 
   const loadPostReactions = useCallback(
-    async (postId: number) => {
+    async (postId: LongId) => {
       if (!postId) {
         setPostItems([]);
         return;
@@ -113,8 +116,14 @@ export const useReactions = (options: UseReactionsOptions = {}) => {
   );
 
   const loadCommentReactions = useCallback(
-    async (commentIds: number[], options?: LoadCommentOptions) => {
-      const uniqueIds = Array.from(new Set((commentIds || []).filter((id) => id > 0)));
+    async (commentIds: LongId[], options?: LoadCommentOptions) => {
+      const uniqueIds = Array.from(
+        new Map(
+          (commentIds || [])
+            .filter((id): id is LongId => id != null && String(id).trim() !== '' && String(id) !== '0')
+            .map((id) => [toLongIdKey(id), id])
+        ).values()
+      );
       if (uniqueIds.length === 0) {
         if (options?.replace) {
           setCommentItemsMap({});
@@ -142,9 +151,9 @@ export const useReactions = (options: UseReactionsOptions = {}) => {
         }
 
         setCommentItemsMap((prev) => {
-          const next: Record<number, ReactionSummaryVo[]> = options?.replace ? {} : { ...prev };
+          const next: Record<string, ReactionSummaryVo[]> = options?.replace ? {} : { ...prev };
           for (const commentId of uniqueIds) {
-            next[commentId] = normalizeItems(mergedSummaryMap[String(commentId)] || []);
+            next[toLongIdKey(commentId)] = normalizeItems(mergedSummaryMap[toLongIdKey(commentId)] || []);
           }
           return next;
         });
@@ -158,8 +167,9 @@ export const useReactions = (options: UseReactionsOptions = {}) => {
   );
 
   const togglePostReaction = useCallback(
-    async (postId: number, payload: ReactionTogglePayload) => {
-      const pendingKey = `Post:${postId}`;
+    async (postId: LongId, payload: ReactionTogglePayload) => {
+      const postIdKey = toLongIdKey(postId);
+      const pendingKey = `Post:${postIdKey}`;
       if (pendingTargets[pendingKey]) {
         return;
       }
@@ -193,17 +203,18 @@ export const useReactions = (options: UseReactionsOptions = {}) => {
   );
 
   const toggleCommentReaction = useCallback(
-    async (commentId: number, payload: ReactionTogglePayload) => {
-      const pendingKey = `Comment:${commentId}`;
+    async (commentId: LongId, payload: ReactionTogglePayload) => {
+      const commentIdKey = toLongIdKey(commentId);
+      const pendingKey = `Comment:${commentIdKey}`;
       if (pendingTargets[pendingKey]) {
         return;
       }
 
-      const snapshot = commentItemsMap[commentId] || [];
+      const snapshot = commentItemsMap[commentIdKey] || [];
       setPendingTargets((prev) => ({ ...prev, [pendingKey]: true }));
       setCommentItemsMap((prev) => ({
         ...prev,
-        [commentId]: applyOptimisticToggle(prev[commentId] || [], payload),
+        [commentIdKey]: applyOptimisticToggle(prev[commentIdKey] || [], payload),
       }));
 
       try {
@@ -216,12 +227,12 @@ export const useReactions = (options: UseReactionsOptions = {}) => {
 
         setCommentItemsMap((prev) => ({
           ...prev,
-          [commentId]: normalizeItems(summary),
+          [commentIdKey]: normalizeItems(summary),
         }));
       } catch (error) {
         setCommentItemsMap((prev) => ({
           ...prev,
-          [commentId]: snapshot,
+          [commentIdKey]: snapshot,
         }));
         reportError(error, '评论回应失败');
         throw error;
@@ -237,8 +248,8 @@ export const useReactions = (options: UseReactionsOptions = {}) => {
   );
 
   const isPending = useCallback(
-    (targetType: 'Post' | 'Comment', targetId: number): boolean => {
-      return Boolean(pendingTargets[`${targetType}:${targetId}`]);
+    (targetType: 'Post' | 'Comment', targetId: LongId): boolean => {
+      return Boolean(pendingTargets[`${targetType}:${toLongIdKey(targetId)}`]);
     },
     [pendingTargets]
   );

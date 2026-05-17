@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Radish.Shared.Security;
 
 namespace Radish.Model.DtoModels;
 
@@ -53,9 +54,9 @@ public class TransferDto
     public string? Remark { get; set; }
 
     /// <summary>
-    /// 支付密码
+    /// 支付口令
     /// </summary>
-    [Required(ErrorMessage = "支付密码不能为空")]
-    [StringLength(100, ErrorMessage = "支付密码格式错误")]
+    [Required(ErrorMessage = PaymentPasscodeRules.EmptyErrorMessage)]
+    [RegularExpression(PaymentPasscodeRules.NumericPattern, ErrorMessage = PaymentPasscodeRules.FormatErrorMessage)]
     public string PaymentPassword { get; set; } = string.Empty;
 }

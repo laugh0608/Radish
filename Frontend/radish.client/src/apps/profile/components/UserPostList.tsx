@@ -3,10 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { Icon } from '@radish/ui/icon';
+import type { LongId } from '@/api/user';
 import styles from './UserPostList.module.css';
 
 interface Post {
-  voId: number;
+  voId: LongId;
+  voPublicId?: string | null;
   voTitle: string;
   voContent: string;
   voViewCount: number;
@@ -16,10 +18,10 @@ interface Post {
 }
 
 interface UserPostListProps {
-  userId: number;
+  userId: LongId;
   apiBaseUrl: string;
   displayTimeZone: string;
-  onPostClick?: (postId: number) => void;
+  onPostClick?: (postId: LongId, postPublicId?: string | null) => void;
 }
 
 export const UserPostList = ({ userId, apiBaseUrl, displayTimeZone, onPostClick }: UserPostListProps) => {
@@ -38,7 +40,7 @@ export const UserPostList = ({ userId, apiBaseUrl, displayTimeZone, onPostClick 
     setLoading(true);
     try {
       const response = await fetch(
-        `${apiBaseUrl}/api/v1/Post/GetUserPosts?userId=${userId}&pageIndex=${page}&pageSize=10`
+        `${apiBaseUrl}/api/v1/Post/GetUserPosts?userId=${encodeURIComponent(String(userId))}&pageIndex=${page}&pageSize=10`
       );
       const json = await response.json();
       if (json.isSuccess && json.responseData) {
@@ -67,7 +69,7 @@ export const UserPostList = ({ userId, apiBaseUrl, displayTimeZone, onPostClick 
           <div
             key={post.voId}
             className={styles.postItem}
-            onClick={() => onPostClick?.(post.voId)}
+            onClick={() => onPostClick?.(post.voId, post.voPublicId)}
             style={{ cursor: onPostClick ? 'pointer' : 'default' }}
           >
             <h3 className={styles.title}>{post.voTitle}</h3>

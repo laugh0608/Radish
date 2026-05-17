@@ -86,22 +86,24 @@ public static class SqlSugarSetup
             {
                 BaseDbConfig.AllConfigs.ForEach(config =>
                 {
-                    var dbProvider = db.GetConnectionScope((string)config.ConfigId);
+                    var configId = config.ConfigId?.ToString()
+                        ?? throw new InvalidOperationException("数据库连接配置缺少 ConfigId");
+                    var dbProvider = db.GetConnectionScope(configId);
 
                     // 只对非 Log 库配置实体数据权限（多租户）
-                    if (!SqlSugarConst.LogConfigId.ToLower().Equals(config.ConfigId.ToString().ToLower()))
+                    if (!SqlSugarConst.LogConfigId.Equals(configId, StringComparison.OrdinalIgnoreCase))
                     {
                         RepositorySetting.SetTenantEntityFilter(dbProvider);
                     }
 
                     // 打印 SQL 语句
                     // 注意：Log 库会被 Serilog 数据库 Sink 写入；如果对 Log 库也启用 SQL AOP，会出现“写日志 -> 触发 SQL AOP -> 再写日志”的递归，导致日志疯狂刷新
-                    if (!SqlSugarConst.LogConfigId.ToLower().Equals(config.ConfigId.ToString().ToLower()))
+                    if (!SqlSugarConst.LogConfigId.Equals(configId, StringComparison.OrdinalIgnoreCase))
                     {
                         dbProvider.Aop.OnLogExecuting = (s, parameters) =>
                         {
                             SqlSugarAop.OnLogExecuting(dbProvider, ResolveSqlAopUser(), ExtractTableName(s),
-                                Enum.GetName(typeof(SugarActionType), dbProvider.SugarActionType), s, parameters,
+                                ResolveOperateName(dbProvider), s, parameters,
                                 config);
                         };
 

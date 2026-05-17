@@ -58,3 +58,230 @@
 - 构建输出仍有历史 nullable、obsolete、XML 注释和 ASP.NET analyzer 警告，后续宜按模块继续治理，避免用全局抑制掩盖真实问题。
 - P2-C1 与 P2-C2 已完成首轮；下一顺位建议从 P2-C3 经验 / 等级治理、P2-C4 商城权益效果收口、P2-C5 移动端高价值已登录链路中选择。
 - Tauri 正式签名、自动更新、生产 Auth、SmartScreen、托盘 / 菜单和公开分发方式继续后置到真实对外分发前评估。
+
+## 2026-05-07
+
+### 主线判断
+
+- 当日主线仍是“产品功能补全与多端任务重排”，但执行面新增一条横向治理线：`ID Phase A`。
+- 本轮 `ID Phase A` 明确不做数据库主键迁移，也不做全量 `PublicId` 切换；先收口外部仍保留 `LongId` 的边界，避免继续在壳层、导航层、DTO、路由参数和回跳参数里提前 `Number(...)`。
+- 经验 / 等级治理继续与 Console 治理并行推进，优先补管理员可真实操作的冻结、查询和护栏能力。
+
+### 已完成提交
+
+- `8c104ea7 chore(repo): 收口协作入口与仓库治理`
+  - 对齐仓库协作入口与治理规则，减少入口文件口径漂移。
+- `44766a5e chore(config): 收口 appsettings 配置约束`
+  - 明确配置文件来源与允许提交的变体范围。
+- `8f9642bc fix(repo): 修复 PR 质量门禁失败`
+  - 修补仓库质量门禁与提交流水中的既有失败点。
+- `73974c7e feat(experience): add admin freeze controls and id guardrails`
+  - 补齐经验治理中的管理员冻结 / 解冻入口与 ID 护栏。
+- `6be84434 fix(console): harden user api response parsing`
+  - 加强 Console 用户接口响应解析，降低异常数据形态导致的前端误判。
+- `882553f0 refactor(client): preserve string-safe window ids`
+  - 先把桌面窗口 ID 与相关运行参数从 number 假设中剥离，避免大整数在壳层丢精度。
+- `30f11283 refactor(id): keep external ids string-safe at app boundaries`
+  - 收口通知 `extData`、公开 DTO / 路由参数 / 回跳参数，以及 `Profile / Shop / Wiki` 等应用边界的外部 ID。
+- `2bd67411 refactor(forum): keep forum ids string-safe across client views`
+  - 继续把 `Forum / Public Forum` 的 DTO、回调、评论锚点、Reaction 与公开阅读链路切到 `LongId` / 字符串安全口径。
+
+### 验证记录
+
+- `dotnet build D:\Code\Radish\Radish.Api\Radish.Api.csproj -c Debug -v minimal`
+  - 通过。
+  - 该结果承接当日批次中的后端 / Console 治理提交，没有发现本轮新增编译错误。
+- `npx tsc -b`
+  - `Frontend/radish.console` 通过。
+  - `Frontend/radish.client` 通过。
+- `npm run build --workspace=radish.client`
+  - 在提权环境通过。
+  - 说明沙盒中的 `vite [plugin externalize-deps] spawn EPERM` 仍属环境限制，不是本轮代码问题。
+- `npm run build --workspace=radish.console`
+  - 在提权环境通过。
+  - 仍保留既有 chunk size warning，但不是新增失败。
+
+### 文档与对齐结论
+
+- 当日提交已触达仓库治理、配置约束、经验治理与 `ID Phase A`，需要同步设计 / 规划 / 日志文档，而不应只留代码提交。
+- 规划入口已补一条当前关键事实：`ID Phase A` 当前只做外部 `LongId` / 字符串安全收口，不启动数据库主键迁移或全量 `PublicId` 切换。
+- 长期 ID 设计文档已补当前执行策略，明确通知 `extData`、window `appParams` / deep link、公开 DTO / 路由参数 / 回跳参数，以及 `Profile / Shop / Wiki / Forum / Public Forum` 与 Console 用户 ID 入口属于当前首批治理面。
+
+### 剩余风险与下一顺位
+
+- 当前已把外围暴露面大幅收口，但登录态 / 当前用户 ID 仍保留旧 `number` 口径，后续若继续推进 `ID Phase A`，应优先治理共享 `UserInfo / userStore` 与其直接消费者。
+- Console 构建的 chunk size warning 仍属既有问题，和本轮 ID 收口无直接关系，后续单独排序处理。
+- `PublicId Rollout`、数据库主键迁移与 Snowflake 退出策略继续保留在后置池，不应借当前 Phase A 护栏批次被提前拉成主线。
+
+## 2026-05-08
+
+### 主线判断
+
+- 当日主线继续保持“产品功能补全与多端任务重排”，执行面集中在 `P2-C4 商城权益效果收口`。
+- 本轮优先把用户能买到但不能完整消费 / 回补 / 治理的商城断点收成统一口径，覆盖商品种子、存量上架态、公开购买判定、订单取消回补与实际扣款链路。
+- 收口后暴露出的下一层真实缺口，已收束为“购买后资产闭环”：背包展示契约、支付密码校验与通知中心稳定性。
+
+### 已完成提交
+
+- `117cbc13 docs(db): 收口数据库结构变更协作口径`
+  - 明确结构变更、`DbMigrate apply/init/seed` 与协作边界，减少本地库状态与代码口径漂移。
+- `3d55bdc4 feat(frontend): 收口资产与商城治理工作流`
+  - 补强资产治理与商城工作流的前端入口与批次承接。
+- `91558b86 fix(console): 提升经验治理页状态可信度`
+  - 修正 Console 经验治理页面的状态判断和展示可信度。
+- `d0a42c0a fix(shop): 收口未开放道具与改名卡使用链路`
+  - 封禁未开放道具的公开购买 / 使用入口，并补齐改名卡闭环。
+- `a11876ba fix(shop): 收口经验卡链路与抽奖券入口`
+  - 补齐经验卡数量闭环，收回抽奖券入口。
+- `ad411831 fix(shop): 收口未开放权益商品展示与激活入口`
+  - 收回未真实消费的权益商品展示、购买、激活与上架入口。
+- `ff09d4a1 fix(shop): 对齐权益商品种子与上架治理口径`
+  - 对齐默认商品种子、存量上架态与 Console 管理口径。
+- `73cec1e4 fix(shop): 补齐订单库存快照与取消回补口径`
+  - 为订单补 `StockType` 快照，并统一取消订单的库存回补链路。
+- `71ee3ae1 fix(dbmigrate): 自动补齐商城订单快照列`
+  - 让 `DbMigrate` 自动发现缺失列，避免 `ShopOrder.StockType` 这类新增快照字段漏补。
+- `205b1140 fix(shop): 收口商品配置与商城购买链路`
+  - 自动约束商品分类与消耗品 / 权益类型匹配，阻止商品弹窗遮罩误关。
+  - 修复前台购买判定字段解析、拦截坏商品配置，并补独立的商城消费扣款链路与正确的订单交易关联。
+
+### 验证记录
+
+- `npm run type-check --workspace=radish.console`
+  - 通过。
+- `npm run type-check --workspace=radish.client`
+  - 通过。
+- `dotnet build D:\Code\Radish\Radish.Api.Tests\Radish.Api.Tests.csproj -v minimal`
+  - 通过。
+- `Radish.Api.Tests.exe -noLogo -reporter quiet -class "Radish.Api.Tests.Services.CoinServiceTest" -class "Radish.Api.Tests.Services.OrderServiceTest" -class "Radish.Api.Tests.Services.ProductServiceTest"`
+  - 通过。
+
+### 文档与对齐结论
+
+- 当日提交已同时影响商城商品配置、库存 / 订单快照、`DbMigrate`、自定义购买判定与消费扣款链路，需要同步规划与开发日志，而不应只保留代码提交。
+- 本次回顾后已补齐 `current.md`、`phase-two-product-completion.md` 与 `2026-05` 开发日志入口，明确 `P2-C4` 当前已收口范围和“明天第一事项”。
+- 当前没有新的架构分层、端侧路线或视觉设计变更，因此不额外改动路线图总览、壳层策略或设计规范文档口径。
+
+### 剩余风险与下一顺位
+
+- 用户实测已确认下一层缺口在购买后闭环：背包 `UserInventoryVo` 契约与前端渲染未对齐，导致商品名称 / 数量 / 图标与 React `key` 同时失真。
+- 商城购买当前仍未接支付密码，前后端 `CreateOrderDto` / 购买弹窗 / 订单服务都缺少密码参数与校验，不宜让“资产消费”继续以无密码口径上线。
+- 通知中心 `NotificationApp` 当前在 Store 与本地 state 之间存在循环同步风险，点击购买成功通知会触发 `Maximum update depth exceeded` 并白屏；这应作为明天的第一事项与商城购买后闭环一起收掉。
+
+## 2026-05-09
+
+### 主线判断
+
+- 当日主线按昨日已确认的“购买后资产闭环”继续执行，优先级保持在 `P2-C4 商城权益效果收口` 内，不转去做复访入口或端侧分发材料。
+- 本轮重点不是再补展示层兜底，而是把背包契约、资产消费安全口径和通知中心状态同步一次性收回到可维护实现。
+
+### 已完成提交
+
+- `b6486745 docs(guide): reorganize handbook and records structure`
+  - 调整 `Docs/guide` 与 `Docs/records` 的组织口径，减少入口混杂和历史资料堆叠。
+- `910a90ef fix(shop): 收口购买后资产闭环`
+  - 后端把背包返回契约收回统一 `Vo*` 命名，并同步修正背包图标 URL 填充，避免购买后名称 / 数量 / 图标与前端 `key` 失真。
+  - 商城购买链路补齐支付口令输入与服务端校验：`CreateOrderDto` 新增 `PaymentPassword`，订单服务在扣库存和扣款前复用 `PaymentPasswordService` 做验证。
+  - 商城前端在购买成功后会立即刷新背包数据，并重新同步商品可购买状态；通知中心也已收口循环同步和白屏问题。
+  - `OrderServiceTest` 已补支付口令校验分支覆盖，新增“密码错误时不得扣库存 / 创建订单 / 扣款”的定向测试。
+- `d93ea0ba fix(pit): 收口支付口令升级治理`
+  - 安全设置内容卡改为可纵向滚动，支付口令设置页在窗口高度不足时仍可完整滚到底部提交区域。
+  - 新增共享六码格输入组件，资产中心、转移表单和商城购买弹窗统一切到 6 位数字支付口令，禁止 6 个相同数字，并把顺子类组合降为弱口令显示。
+  - 后端新增共享 `PaymentPasscodeRules` / `PaymentPasscodeErrorCodes`，让 `PaymentPasswordService`、转移 DTO、商城购买 DTO 与购买 / 转移服务复用同一套格式、升级提示和错误口径。
+  - `UserPaymentPassword` 新增口令版本字段，旧记录按 legacy 状态识别；安全设置改为直接重置，商城购买与萝卜转移命中旧口令时会统一阻断并提示升级。
+  - 新增 `PaymentPasswordServiceTest`，并扩充 `CoinServiceTest`、`OrderServiceTest`，覆盖旧口令升级提示、合法六码口令落库和 legacy 口令阻断购买 / 转移。
+
+### 验证记录
+
+- `dotnet test D:\Code\Radish\Radish.Api.Tests\Radish.Api.Tests.csproj -c Debug --filter FullyQualifiedName~OrderServiceTest`
+  - 通过，`5/5`。
+  - 运行中仍有既有 nullable / obsolete / XML 注释警告，但没有引入新的测试失败。
+- `npm run type-check --workspace=@radish/ui`
+  - 通过。
+- `npm run type-check --workspace=radish.client`
+  - 通过。
+- `npm run build --workspace=radish.client`
+  - 通过。
+- `dotnet test D:\Code\Radish\Radish.Api.Tests\Radish.Api.Tests.csproj -c Debug --filter "FullyQualifiedName~PaymentPasswordServiceTest|FullyQualifiedName~OrderServiceTest|FullyQualifiedName~CoinServiceTest"`
+  - 提权环境通过，`31/31`。
+  - 失败原因仅在沙盒无法读取用户级 `NuGet.Config`，提权后可正常还原与执行；不是本轮代码问题。
+
+### 文档与对齐结论
+
+- 今日代码提交已继续推进 `P2-C4`，因此同步更新了 [current.md](/planning/current) 与 [phase-two-product-completion.md](/planning/phase-two-product-completion)，把“购买后资产闭环已完成首轮、旧支付口令已废弃、下一步转为人工验收与转段判断”写回规划入口。
+- 今日开发日志已从临时 `worktree` 表述改回真实提交口径，避免后续回顾时无法对应到具体 commit。
+- 今日没有新的视觉设计规范、多端路线归属或壳层策略变化，因此不额外改动设计规范和路线总览文档。
+
+### 剩余风险与下一顺位
+
+- 当前 `P2-C4` 已基本收口，但仍需要一轮人工 smoke，重点确认：新支付口令设置 / 重置、旧支付口令拦截、购买成功后背包立即可见、通知中心进入商城不再白屏。
+- 若人工验收稳定，下一顺位应切回后端 + Console 治理，优先处理安全 / 经验治理与商城管理前端缺口，而不是继续围绕复访入口或端侧分发材料做低收益工作。
+- “通知点击后应该直达商城哪个上下文（首页 / 订单 / 订单详情）”仍可后续单独评估，不必与本轮稳定性修复耦合。
+
+## 2026-05-10
+
+### 主线判断
+
+- 当日执行重心已从 `P2-C4` 人工验收准备转回后端 + Console 治理，优先补齐真实审核场景里“能看见举报，但不能稳定回看、不能可信复核历史目标”的断点。
+- 本轮不再把内容治理停留在“有举报单列表”，而是继续把目标定位、失效降级、历史快照和审核台展示收成统一口径。
+- `ID Phase A`、经验治理与订单治理在白天继续推进，但晚间主线已进一步收束为“内容治理闭环”。
+
+### 已完成提交
+
+- `4dba26fd feat(experience): 收口每日统计与等级缓存治理`
+  - 为经验治理补齐每日统计与等级缓存治理口径。
+- `a7265277 feat(console): 补经验统计治理面`
+  - Console 新增经验统计治理入口与观察面。
+- `86e1ac00 feat(experience): 统一管理端经验观察口径`
+  - 统一经验治理页面依赖的后端观察口径。
+- `e5516d1b feat(console): 补订单备注治理入口`
+  - 补齐 Console 订单备注治理入口。
+- `a70b40c3 fix(console): 收口订单治理深链入口`
+  - 修正订单治理的深链进入与定位行为。
+- `9a39fd4b feat(experience): 补经验治理阈值观察面`
+  - 增加经验阈值观察信息，便于治理判断。
+- `0e393ecc fix(client): 收口通知链 long id 参数`
+  - 继续收紧外部 long id 暴露面。
+- `99f24012 refactor(api): 统一公开浏览回跳路径生成`
+  - 把公开阅读回跳路径生成统一回收。
+- `f6b1ca4d fix(notification): 收口聊天室提及深链跳转`
+  - 修复通知到聊天室消息的深链续接。
+- `06644fde feat(chat): 支持消息级深链定位`
+  - 聊天链路支持消息级定位参数。
+- `6bbc5b18 feat(chat): 收口消息窗口定位链路`
+  - 桌面聊天窗口进一步收口消息定位行为。
+- `5aaa9d3f feat(moderation): 打通聊天消息审核回跳定位`
+  - Console 审核台可以直接回到对应聊天消息。
+- `f88e3b4e feat(moderation): 补齐治理动作日志内容回跳`
+  - 治理动作日志补齐来源举报目标回看入口。
+- `d6cd0995 feat(moderation): 补齐帖子评论举报回看入口`
+  - 帖子评论举报支持真实回看，不再停留在占位目标信息。
+- `2f346d73 feat(moderation): 补齐治理目标失效降级展示`
+  - 目标已删除、已失效或只能降级回看时，审核台会给出明确状态和降级说明。
+- `c0af2a06 feat(moderation): 展示治理目标摘要快照`
+  - 审核队列和治理动作日志补齐目标标题 / 摘要展示。
+- `2f1ad866 feat(moderation): 固化举报目标快照`
+  - 在举报创建时持久化目标标题、摘要与必要导航锚点，避免目标被编辑、删除或下线后历史记录漂移。
+- `2f9c1b4c feat(console): 拆分举报快照与当前状态展示`
+  - Console 审核台把“创建时快照”和“当前可回看状态”拆开显示，并在审核弹窗补充目标预览。
+
+### 验证记录
+
+- `dotnet test Radish.Api.Tests --filter "FullyQualifiedName~ContentModeration"`
+  - 提权环境通过，`11/11`。
+  - 首次在沙盒内失败原因仅为无法读取用户级 `NuGet.Config`；提权后可正常还原与执行，不是本轮代码问题。
+- `npm run build --workspace=radish.console`
+  - 通过。
+  - 仍保留既有 chunk size warning，但没有新增构建失败。
+
+### 文档与对齐结论
+
+- 今日提交横跨经验治理、订单治理、`ID Phase A` 和内容治理闭环，不能只留代码历史；本次回顾后已同步更新 [current.md](/planning/current)、[Console 系统设计方案](/guide/console-system)、[Console 权限治理 V1](/guide/console-permission-governance) 与 [Console 权限覆盖矩阵](/guide/console-permission-coverage-matrix)。
+- Console 相关文档已从“`Post / Comment / ChatMessage / Product` 四类举报目标”修正为当前真实实现的 `Post / Comment / PostQuickReply / ChatMessage / Product` 五类目标，并补记审核台已支持回看、失效降级和快照 / 当前态并列展示。
+- 本轮没有新的多端路线、壳层归属或视觉规范变更，因此不额外改动路线图总览、壳层策略和视觉设计规范文档。
+
+### 剩余风险与下一顺位
+
+- 内容治理链路当前已具备可信回看和历史快照，但审核台仍缺少更高效的筛选与检索能力；真实审核时，目标类型、原因类型、仅失效 / 已降级项仍需要人工逐页翻找。
+- 明日第一事项建议切到“内容治理审核台效率收口”，优先补 `目标类型 / 原因类型 / 仅失效或已降级项` 筛选与状态联动，让已补齐的快照和回看能力真正转化为审核效率。
+- 经验治理剩余警告、商城管理前端缺口和历史构建 warning 继续保留在后续治理池，但不应抢在当前审核台效率批次之前。

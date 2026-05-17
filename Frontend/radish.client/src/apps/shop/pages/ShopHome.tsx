@@ -1,6 +1,7 @@
 import type { SyntheticEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ProductCategory, ProductListItem } from '@/types/shop';
+import type { LongId } from '@/api/user';
 import { resolveMediaUrl } from '@/utils/media';
 import styles from './ShopHome.module.css';
 
@@ -9,7 +10,7 @@ interface ShopHomeProps {
   featuredProducts: ProductListItem[];
   loading: boolean;
   onCategoryClick: (categoryId: string) => void;
-  onProductClick: (productId: number) => void;
+  onProductClick: (productId: LongId) => void;
   onViewAllProducts: () => void;
 }
 
@@ -22,6 +23,7 @@ export const ShopHome = ({
   onViewAllProducts
 }: ShopHomeProps) => {
   const { t } = useTranslation();
+  const visibleCategories = categories.filter((category) => (category.voProductCount ?? 0) > 0);
 
   const handleCategoryImageError = (event: SyntheticEvent<HTMLImageElement>) => {
     event.currentTarget.style.display = 'none';
@@ -58,7 +60,7 @@ export const ShopHome = ({
         </div>
 
         <div className={styles.categoriesGrid}>
-          {categories.map((category) => {
+          {visibleCategories.map((category) => {
             const categoryIconUrl = resolveMediaUrl(category.voIcon);
 
             return (

@@ -10,7 +10,7 @@
 > - [开发路线图](/development-plan)
 > - [Phase 2-3 Flutter 客户端 MVP](/planning/phase-two-flutter-client-mvp)
 > - [前端多壳层策略](/frontend/shell-strategy)
-> - [Flutter Android MVP RC 验收记录（2026-05-04）](/guide/flutter-android-mvp-rc-acceptance-record-2026-05-04)
+> - [Flutter Android MVP RC 验收记录（2026-05-04）](/records/flutter-android-mvp-rc-acceptance-record-2026-05-04)
 
 ## 1. 当前结论
 
@@ -124,7 +124,7 @@ React spike 完成后已产出：
 
 当前实际状态已落在“三端分工”方案：公开 Web、Flutter 移动端、Tauri + WebOS 桌面端各自承担不同产品形态。
 
-截至 2026-05-04，Capacitor Android 的阶段性结论是：公开只读页面复用成立，但一进入登录态、OIDC 回调、本机 Gateway/Auth 调试和 Android WebView 证书 / 端口代理，复杂度明显高于预期，不符合 Radish 当前“低成本 React 复用”的路线目标。Capacitor 因此不进入移动端产品化主线。
+截至 2026-05-04，Capacitor Android 的阶段性结论是：公开只读页面复用成立，但一进入登录态、OIDC 回调、本机 Gateway/Auth 调试和 Android WebView 证书 / 端口代理，复杂度明显高于预期，不符合 Radish 当前“低成本 React 复用”的路线目标。Capacitor 因此不进入移动端产品化主线；截至 2026-05-16，`Frontend/radish.client/android`、`capacitor.config.ts`、`cap:*` scripts 与 Capacitor 依赖已从当前代码中清理，历史结论保留在 spike 记录中。
 
 截至 2026-05-05，Tauri 桌面壳首轮命令级 spike、第二轮人工验收与 Windows NSIS installer 首轮验证已成立：`Clients/radish-tauri` 可复用既有 React 构建产物，`npm run type-check --workspace=radish.client`、`npm run test --workspace=radish.client`、`npm run build --workspace=radish.client`、`cargo build`、`cargo build --release` 与 `cargo tauri build` 均已通过；Windows release exe 与 NSIS installer 可生成。Tauri 默认入口已从 `/docs` 切到 `/desktop`，桌面登录 / 登出优先改为系统浏览器 + `127.0.0.1:48801` loopback 回跳以复用浏览器登录态并避免依赖 Windows 注册表；GUI 启动、WebOS 桌面布局、窗口生命周期观察、真实登录 / 登出回跳、installer 安装、启动、普通用户卸载与同身份覆盖安装测试后暂未发现问题；release 启动伴随命令行窗口的问题已通过 `windows_subsystem = "windows"` 修复；当前本机普通用户安装未出现“未知发布者 / SmartScreen”提示，公开分发后仍需按下载来源、签名、信誉与系统策略复核。管理员安装后用普通权限卸载可能残留安装文件，当前归类为权限上下文不一致风险。当前已进入 `Radish` / `com.radish.desktop` 正式桌面包候选身份补验，并已生成 `Radish_0.1.0_x64-setup.exe`；生产候选构建默认指向 `https://radishx.com`，同时新增 `build:tauri-local` 本地 Auth 验收构建模式指向 `https://localhost:5000`，用于生产 Auth 客户端注册暂未更新时继续验证 loopback 登录；但暂不直接切为公开发布产品线，仍需补候选身份人工安装 / 卸载、代码签名、自动更新、deep link 协议注册清理和分发链路验证。
 

@@ -947,9 +947,7 @@ class _RecentBrowseListCard extends StatelessWidget {
               subtitle: target.normalizedCommentId == null
                   ? '继续阅读上次打开的论坛帖子。'
                   : '继续回到上次打开的评论上下文。',
-              meta: target.normalizedCommentId == null
-                  ? '帖子 ${target.normalizedPostId}'
-                  : '帖子 ${target.normalizedPostId} · 评论 ${target.normalizedCommentId}',
+              meta: target.normalizedCommentId == null ? '论坛帖子' : '评论上下文',
               chips: [
                 target.normalizedCommentId == null ? '帖子上下文' : '评论上下文',
                 target.source.label,
@@ -1063,7 +1061,7 @@ class _RecentPostsCard extends StatelessWidget {
               ? null
               : () => onOpenForumDetailTarget!(
                     ForumDetailHandoffTarget(
-                      postId: post.id,
+                      postId: post.routePostId,
                       source: ForumDetailHandoffSource.publicProfilePost,
                       initialTitle: post.title,
                     ),
@@ -1157,8 +1155,10 @@ class _MyQuickRepliesCard extends StatelessWidget {
           title: quickReply.postTitle,
           subtitle:
               quickReply.content.isEmpty ? '这条轻回应暂无内容。' : quickReply.content,
-          meta: '轻回应 ${quickReply.id}',
+          meta: '轻回应回看',
           chips: [
+            '轻回应回看',
+            '原帖回流',
             _formatDate(quickReply.createTime),
           ],
           actionLabel: onOpenForumDetailTarget == null ? null : '回到原帖',
@@ -1166,7 +1166,7 @@ class _MyQuickRepliesCard extends StatelessWidget {
               ? null
               : () => onOpenForumDetailTarget!(
                     ForumDetailHandoffTarget(
-                      postId: quickReply.postId,
+                      postId: quickReply.routePostId,
                       source: ForumDetailHandoffSource.myQuickReply,
                       initialTitle: quickReply.postTitle,
                     ),
@@ -1300,7 +1300,7 @@ class _RecentCommentsCard extends StatelessWidget {
         (comment) => _ContentPreviewTile(
           title: comment.replyToUserName == null ||
                   comment.replyToUserName!.isEmpty
-              ? '评论 ${comment.id}'
+              ? '公开评论'
               : '回复 @${comment.replyToUserName}',
           subtitle: comment.content,
           meta: '${comment.likeCount} 个赞',
@@ -1315,7 +1315,7 @@ class _RecentCommentsCard extends StatelessWidget {
               ? null
               : () => onOpenForumDetailTarget!(
                     ForumDetailHandoffTarget(
-                      postId: comment.postId,
+                      postId: comment.routePostId,
                       source: ForumDetailHandoffSource.publicProfileComment,
                       commentId: comment.id,
                     ),

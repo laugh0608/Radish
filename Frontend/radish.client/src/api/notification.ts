@@ -5,6 +5,7 @@
 
 import { apiGet, apiPost, apiPut, configureApiClient, type PagedResponse } from '@radish/http';
 import { getApiBaseUrl } from '@/config/env';
+import type { LongId } from '@/api/user';
 
 // 配置 API 客户端
 configureApiClient({
@@ -14,17 +15,18 @@ configureApiClient({
 /**
  * 通知详情 Vo（嵌套在 UserNotificationVo 中）
  */
-export type NotificationBusinessId = number | string;
+export type NotificationBusinessId = LongId;
+export type NotificationReferenceId = LongId;
 
 export interface NotificationVo {
-  voId: number;
+  voId: LongId;
   voType: string;
   voPriority: number;
   voTitle: string;
   voContent: string;
   voBusinessType: string | null;
   voBusinessId: NotificationBusinessId | null;
-  voTriggerId: number | null;
+  voTriggerId: NotificationReferenceId | null;
   voTriggerName: string | null;
   voTriggerAvatar: string | null;
   voExtData: string | null;
@@ -35,9 +37,9 @@ export interface NotificationVo {
  * 用户通知 Vo（后端实际返回的结构）
  */
 export interface UserNotificationVo {
-  voId: number;
-  voUserId: number;
-  voNotificationId: number;
+  voId: LongId;
+  voUserId: LongId;
+  voNotificationId: LongId;
   voIsRead: boolean;
   voReadAt: string | null;
   voDeliveryStatus: string;
@@ -51,14 +53,14 @@ export interface UserNotificationVo {
  * @deprecated 使用 UserNotificationVo 代替
  */
 export interface Notification {
-  voId: number;
-  voUserId: number;
+  voId: LongId;
+  voUserId: LongId;
   voTitle: string;
   voContent: string;
   voType: string;
   voTypeDisplay: string;
   voIsRead: boolean;
-  voRelatedId: number;
+  voRelatedId: LongId;
   voRelatedType: string;
   voRelatedUrl: string;
   voIcon: string;
@@ -115,7 +117,7 @@ export const notificationApi = {
   /**
    * 标记通知为已读
    */
-  async markAsRead(notificationId: number): Promise<boolean> {
+  async markAsRead(notificationId: LongId): Promise<boolean> {
     const response = await apiPut<void>('/api/v1/Notification/MarkAsRead', {
       notificationIds: [notificationId]
     }, {
@@ -150,10 +152,14 @@ export const notificationApi = {
   /**
    * 删除通知
    */
-  async deleteNotification(notificationId: number): Promise<boolean> {
-    const response = await apiPost<void>(`/api/v1/Notification/Delete/${notificationId}`, undefined, {
-      withAuth: true,
-    });
+  async deleteNotification(notificationId: LongId): Promise<boolean> {
+    const response = await apiPost<void>(
+      `/api/v1/Notification/Delete/${encodeURIComponent(String(notificationId))}`,
+      undefined,
+      {
+        withAuth: true,
+      }
+    );
 
     return response.ok;
   },

@@ -1,7 +1,7 @@
 # Console 权限治理 V1
 
-> 最后更新：2026-03-24
-> 状态：进行中（持续补边界，进入回归阶段）
+> 最后更新：2026-05-12
+> 状态：V1 已完成当前收口，进入稳定维护
 
 本文档用于统一 Console 权限治理的设计口径、当前完成范围、剩余清单与退出条件。
 
@@ -47,6 +47,16 @@ Route Meta / RouteGuard / usePermission
 - `UserService` 负责把角色资源映射为 `VoPermissions`
 - `DbMigrate` 负责种子化 `ApiModule` 与默认角色授权，保证非默认角色也可通过数据库授权获得能力
 - `HangfireAuthorizationFilter` 等特殊入口负责消费权限快照，而不是硬编码角色放行
+
+### 2.2.1 URL 匹配边界
+
+后端资源 URL 匹配统一通过 `PermissionUrlMatcher` 执行，当前规则如下：
+
+- 权限资源 URL 必须能匹配完整 API 路径，不允许只命中路径片段就放行。
+- 待匹配路径必须具备根路径语义，不能用空字符串或无效路径绕过授权判断。
+- `ConsolePermissions` 中确需表达参数路由时使用受控正则，例如 `AdminGetOrder/.+`。
+- 无效正则、正则匹配超时或异常匹配都按安全失败处理，不允许靠异常吞掉后继续放行。
+- 新增 Console 专属接口时，应同步补 `ConsolePermissions`、`ApiModule.LinkUrl`、`ConsoleResourceApiSeed`，并运行 `npm run check:console-permissions`。
 
 ### 2.3 `console.access` 当前语义
 
@@ -104,6 +114,7 @@ Route Meta / RouteGuard / usePermission
 9. `Products / Stickers` 辅助接口资源种子补齐
 10. `Categories / Moderation / Coins / Experience` 首版资源映射与种子补齐
 11. `console.access` 从“单独放行”收口为“入口标记 + 真实页面权限联动”
+12. `ConsoleAuthorization`、商城商品 / 订单详情、经验每日统计、经验流水、治理留痕与复核记录等资源映射、`ApiModule` 种子和 `ConsoleResourceApiSeed` 已完成当前一致性补齐
 
 ## 4. 当前明确边界
 
@@ -138,7 +149,9 @@ Route Meta / RouteGuard / usePermission
 - 审核队列
 - 审核联动禁言 / 封禁
 - 治理动作日志
-- `Post / Comment / ChatMessage / Product` 四类目标
+- `Post / Comment / PostQuickReply / ChatMessage / Product` 五类目标
+- 聊天消息定位、帖子评论 / 轻回应回看与失效降级
+- 举报创建时快照与当前可回看状态的并列展示
 
 当前暂不覆盖：
 
@@ -196,6 +209,7 @@ Route Meta / RouteGuard / usePermission
 - [x] `Products / Stickers` 真实在用辅助接口资源补齐
 - [x] `Users` 伪能力入口与无效权限常量清理
 - [x] `console.access` 入口权限与真实页面权限联动收口
+- [x] Console 权限映射、`ApiModule` 种子与 `ConsoleResourceApiSeed` 当前一致性补齐
 
 ### 6.2 进行中
 
@@ -203,6 +217,7 @@ Route Meta / RouteGuard / usePermission
 - [x] 文档、规划、README 口径统一
 - [x] 形成权限覆盖矩阵（路由 / 前端常量 / 后端映射 / `DbMigrate`）
 - [x] 轻量扫描脚本：`npm run check:console-permissions`
+- [x] 扫描脚本已扩展校验 `ApiModule.LinkUrl` 与 `ConsoleResourceApiSeed`
 
 ### 6.3 本阶段不做
 

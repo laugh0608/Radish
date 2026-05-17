@@ -8,12 +8,13 @@ import styles from './RecentTransfers.module.css';
 
 interface RecentTransfersProps {
   displayMode: 'carrot' | 'white';
+  onViewAll: () => void;
 }
 
 /**
  * 最近转账记录组件
  */
-export const RecentTransfers = ({ displayMode }: RecentTransfersProps) => {
+export const RecentTransfers = ({ displayMode, onViewAll }: RecentTransfersProps) => {
   const { userId } = useUserStore();
   const currentUserId = String(userId);
   const [transfers, setTransfers] = useState<CoinTransaction[]>([]);
@@ -118,8 +119,8 @@ export const RecentTransfers = ({ displayMode }: RecentTransfersProps) => {
         </h4>
         {transfers.length > 0 && (
           <button className={styles.viewAllButton} onClick={() => {
-            // TODO: 跳转到交易记录页面并筛选转账记录
-            log.debug('RecentTransfers', '查看全部转账记录');
+            log.debug('RecentTransfers', '打开交易记录页');
+            onViewAll();
           }}>
             查看全部
           </button>

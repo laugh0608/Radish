@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { log } from '@/utils/logger';
 import type { TFunction } from 'i18next';
+import type { LongId } from '@/api/user';
 import type {
   ProductCategory,
   ProductListItem,
   Product,
+  ProductBuyCheckResult,
   OrderListItem,
   Order,
   UserBenefit,
@@ -30,7 +32,7 @@ export interface ShopDataState {
   totalPages: number;
 
   // 购买相关
-  canBuyProduct: { canBuy: boolean; reason: string } | null;
+  canBuyProduct: ProductBuyCheckResult | null;
   checkingCanBuy: boolean;
 
   // 订单数据
@@ -156,7 +158,7 @@ export const useShopData = (t: TFunction) => {
   }, [t, setError]);
 
   // 加载商品详情
-  const loadProductDetail = useCallback(async (productId: number) => {
+  const loadProductDetail = useCallback(async (productId: LongId) => {
     setState(prev => ({ ...prev, loadingProductDetail: true, selectedProduct: null }));
     try {
       const result = await shopApi.getProduct(productId, t);
@@ -177,7 +179,7 @@ export const useShopData = (t: TFunction) => {
   }, [t, setError]);
 
   // 检查是否可以购买
-  const checkCanBuy = useCallback(async (productId: number, quantity: number = 1) => {
+  const checkCanBuy = useCallback(async (productId: LongId, quantity: number = 1) => {
     setState(prev => ({ ...prev, checkingCanBuy: true }));
     try {
       const result = await shopApi.checkCanBuy(productId, quantity, t);
@@ -225,7 +227,7 @@ export const useShopData = (t: TFunction) => {
   }, [t, setError]);
 
   // 加载订单详情
-  const loadOrderDetail = useCallback(async (orderId: number) => {
+  const loadOrderDetail = useCallback(async (orderId: LongId) => {
     setState(prev => ({ ...prev, loadingOrderDetail: true, selectedOrder: null }));
     try {
       const result = await shopApi.getOrder(orderId, t);

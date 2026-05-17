@@ -3,15 +3,16 @@ import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import { resolveMediaUrl } from '@/utils/media';
 import type { Order } from '@/types/shop';
+import type { LongId } from '@/api/user';
 import { getOrderStatusColor, OrderStatus } from '@/api/shop';
 import styles from './OrderDetail.module.css';
 
 interface OrderDetailProps {
-  orderId: number;
+  orderId: LongId;
   order: Order | null;
   loading: boolean;
   onBack: () => void;
-  onCancelOrder: (orderId: number, reason?: string) => void;
+  onCancelOrder: (orderId: LongId, reason?: string) => void;
 }
 
 export const OrderDetail = ({

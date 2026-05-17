@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.Extensions.Logging;
@@ -14,6 +15,7 @@ using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Service;
 using Shouldly;
+using SqlSugar;
 using Xunit;
 
 namespace Radish.Api.Tests.Services;
@@ -204,6 +206,72 @@ public class PostQuickReplyServiceTest
         notificationService.Verify(
             service => service.CreateNotificationAsync(It.IsAny<CreateNotificationDto>()),
             Times.Never);
+    }
+
+    [Fact(DisplayName = "我的轻回应列表应并行返回帖子 PublicId")]
+    public async Task GetMinePageAsync_ShouldReturnPostPublicId_WhenPostHasPublicId()
+    {
+        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+        var quickReplyRepository = new Mock<IBaseRepository<PostQuickReply>>(MockBehavior.Strict);
+        var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
+        var caching = new Mock<ICaching>(MockBehavior.Strict);
+        var notificationService = new Mock<INotificationService>(MockBehavior.Strict);
+        var logger = new Mock<ILogger<PostQuickReplyService>>();
+
+        quickReplyRepository
+            .Setup(repository => repository.QueryPageAsync(
+                It.IsAny<Expression<Func<PostQuickReply, bool>>?>(),
+                1,
+                10,
+                It.IsAny<Expression<Func<PostQuickReply, object>>?>(),
+                OrderByType.Desc,
+                It.IsAny<Expression<Func<PostQuickReply, object>>?>(),
+                OrderByType.Desc))
+            .ReturnsAsync((
+                new List<PostQuickReply>
+                {
+                    new()
+                    {
+                        Id = 5003,
+                        PostId = 1003,
+                        AuthorId = 3001,
+                        Content = "回看这条",
+                        CreateTime = new DateTime(2026, 5, 16, 8, 0, 0, DateTimeKind.Utc)
+                    }
+                },
+                1));
+
+        postRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<Post, bool>>?>()))
+            .ReturnsAsync(new List<Post>
+            {
+                new(new PostInitializationOptions("PublicId 帖子", "正文"))
+                {
+                    Id = 1003,
+                    PublicId = "pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f"
+                }
+            });
+
+        var service = CreateService(
+            mapper,
+            quickReplyRepository,
+            postRepository,
+            caching,
+            notificationService,
+            logger);
+
+        var (items, total) = await service.GetMinePageAsync(3001, 1, 10);
+
+        total.ShouldBe(1);
+        items.Count.ShouldBe(1);
+        items[0].VoId.ShouldBe(5003);
+        items[0].VoPostId.ShouldBe(1003);
+        items[0].VoPostPublicId.ShouldBe("pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f");
+        items[0].VoPostTitle.ShouldBe("PublicId 帖子");
+        items[0].VoContent.ShouldBe("回看这条");
+
+        quickReplyRepository.VerifyAll();
+        postRepository.VerifyAll();
     }
 
     private static PostQuickReplyService CreateService(

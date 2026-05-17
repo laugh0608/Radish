@@ -25,7 +25,19 @@ public class ChannelMessageControllerTest
         var serviceMock = CreateChatServiceMock();
         var controller = CreateController(serviceMock.Object);
 
-        var result = await controller.GetHistory(0, null);
+        var result = await controller.GetHistory(0, null, null);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(400, result.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetHistory_Should_Return_BadRequest_When_Before_And_After_Are_Both_Provided()
+    {
+        var serviceMock = CreateChatServiceMock();
+        var controller = CreateController(serviceMock.Object);
+
+        var result = await controller.GetHistory(1, 10, 20, 50);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(400, result.StatusCode);
@@ -36,7 +48,7 @@ public class ChannelMessageControllerTest
     {
         var serviceMock = CreateChatServiceMock();
         serviceMock
-            .Setup(s => s.GetHistoryAsync(0, 10001, 1, null, 50))
+            .Setup(s => s.GetHistoryAsync(0, 10001, 1, null, null, 50))
             .ReturnsAsync(new List<ChannelMessageVo>
             {
                 new()
@@ -51,13 +63,61 @@ public class ChannelMessageControllerTest
             });
 
         var controller = CreateController(serviceMock.Object);
-        var result = await controller.GetHistory(1, null, 50);
+        var result = await controller.GetHistory(1, null, null, 50);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(200, result.StatusCode);
         var payload = Assert.IsType<List<ChannelMessageVo>>(result.ResponseData);
         Assert.Single(payload);
         Assert.Equal(90001, payload[0].VoId);
+    }
+
+    [Fact]
+    public async Task GetMessageWindow_Should_Return_BadRequest_When_MessageId_Invalid()
+    {
+        var serviceMock = CreateChatServiceMock();
+        var controller = CreateController(serviceMock.Object);
+
+        var result = await controller.GetMessageWindow(1, 0);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(400, result.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetMessageWindow_Should_Return_Window_When_Request_Valid()
+    {
+        var serviceMock = CreateChatServiceMock();
+        serviceMock
+            .Setup(s => s.GetMessageWindowAsync(0, 10001, 1, 90001, 25, 25))
+            .ReturnsAsync(new ChannelMessageWindowVo
+            {
+                VoChannelId = 1,
+                VoAnchorMessageId = 90001,
+                VoHasMoreBefore = true,
+                VoHasMoreAfter = false,
+                VoMessages =
+                {
+                    new ChannelMessageVo
+                    {
+                        VoId = 90001,
+                        VoChannelId = 1,
+                        VoUserId = 10001,
+                        VoUserName = "Tester",
+                        VoContent = "hello",
+                        VoIsRecalled = false
+                    }
+                }
+            });
+
+        var controller = CreateController(serviceMock.Object);
+        var result = await controller.GetMessageWindow(1, 90001, 25, 25);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(200, result.StatusCode);
+        var payload = Assert.IsType<ChannelMessageWindowVo>(result.ResponseData);
+        Assert.Equal(90001, payload.VoAnchorMessageId);
+        Assert.Single(payload.VoMessages);
     }
 
     private static ChannelMessageController CreateController(IChatService chatService)

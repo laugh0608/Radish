@@ -59,6 +59,34 @@ function toNumber(value: unknown): number {
   return 0;
 }
 
+function toStringValue(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
+function toOptionalString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+
+function toNullableString(value: unknown): string | null {
+  return typeof value === 'string' ? value : null;
+}
+
+function toBoolean(value: unknown): boolean {
+  return typeof value === 'boolean' ? value : false;
+}
+
+function toAttachmentId(value: unknown): number | string | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  return null;
+}
+
 function toRoles(value: unknown): string[] | undefined {
   if (!Array.isArray(value)) {
     return undefined;
@@ -89,31 +117,41 @@ function isApiRecord(value: unknown): value is ApiRecord {
   return !!value && typeof value === 'object' && !Array.isArray(value);
 }
 
+function toParsedResponse<T>(response: ParsedApiResponse<unknown>, data?: T): ParsedApiResponse<T> {
+  return {
+    ok: response.ok,
+    data,
+    message: response.message,
+    code: response.code,
+    statusCode: response.statusCode,
+  };
+}
+
 function mapMyProfile(raw: ApiRecord): MyProfileInfo {
   return {
     voUserId: toNumber(raw.voUserId ?? raw.VoUserId),
-    voUserName: raw.voUserName ?? raw.VoUserName ?? '',
-    voUserEmail: raw.voUserEmail ?? raw.VoUserEmail ?? '',
-    voRealName: raw.voRealName ?? raw.VoRealName ?? '',
+    voUserName: toStringValue(raw.voUserName ?? raw.VoUserName),
+    voUserEmail: toStringValue(raw.voUserEmail ?? raw.VoUserEmail),
+    voRealName: toStringValue(raw.voRealName ?? raw.VoRealName),
     voSex: toNumber(raw.voSex ?? raw.VoSex),
     voAge: toNumber(raw.voAge ?? raw.VoAge),
-    voBirth: raw.voBirth ?? raw.VoBirth ?? null,
-    voAddress: raw.voAddress ?? raw.VoAddress ?? '',
-    voCreateTime: raw.voCreateTime ?? raw.VoCreateTime ?? '',
-    voAvatarAttachmentId: raw.voAvatarAttachmentId ?? raw.VoAvatarAttachmentId,
-    voAvatarUrl: raw.voAvatarUrl ?? raw.VoAvatarUrl,
-    voAvatarThumbnailUrl: raw.voAvatarThumbnailUrl ?? raw.VoAvatarThumbnailUrl,
+    voBirth: toNullableString(raw.voBirth ?? raw.VoBirth),
+    voAddress: toStringValue(raw.voAddress ?? raw.VoAddress),
+    voCreateTime: toStringValue(raw.voCreateTime ?? raw.VoCreateTime),
+    voAvatarAttachmentId: toAttachmentId(raw.voAvatarAttachmentId ?? raw.VoAvatarAttachmentId),
+    voAvatarUrl: toNullableString(raw.voAvatarUrl ?? raw.VoAvatarUrl),
+    voAvatarThumbnailUrl: toNullableString(raw.voAvatarThumbnailUrl ?? raw.VoAvatarThumbnailUrl),
   };
 }
 
 function mapTimePreference(raw: ApiRecord): UserTimePreferenceVo {
   return {
     voUserId: toNumber(raw.voUserId ?? raw.VoUserId),
-    voTimeZoneId: raw.voTimeZoneId ?? raw.VoTimeZoneId ?? '',
-    voIsCustomized: raw.voIsCustomized ?? raw.VoIsCustomized ?? false,
-    voSystemDefaultTimeZoneId: raw.voSystemDefaultTimeZoneId ?? raw.VoSystemDefaultTimeZoneId ?? 'Asia/Shanghai',
-    voDisplayFormat: raw.voDisplayFormat ?? raw.VoDisplayFormat ?? 'yyyy-MM-dd HH:mm:ss',
-    voModifyTime: raw.voModifyTime ?? raw.VoModifyTime ?? null,
+    voTimeZoneId: toStringValue(raw.voTimeZoneId ?? raw.VoTimeZoneId),
+    voIsCustomized: toBoolean(raw.voIsCustomized ?? raw.VoIsCustomized),
+    voSystemDefaultTimeZoneId: toStringValue(raw.voSystemDefaultTimeZoneId ?? raw.VoSystemDefaultTimeZoneId, 'Asia/Shanghai'),
+    voDisplayFormat: toStringValue(raw.voDisplayFormat ?? raw.VoDisplayFormat, 'yyyy-MM-dd HH:mm:ss'),
+    voModifyTime: toNullableString(raw.voModifyTime ?? raw.VoModifyTime),
   };
 }
 
@@ -147,21 +185,18 @@ export const userApi = {
       );
       const mappedData: UserInfo = {
         voUserId: toNumber(backendData.voUserId ?? backendData.VoUserId),
-        voUserName: backendData.voUserName || backendData.VoUserName || '',
+        voUserName: toStringValue(backendData.voUserName ?? backendData.VoUserName),
         voTenantId: toNumber(backendData.voTenantId ?? backendData.VoTenantId),
-        voAvatarUrl: backendData.voAvatarUrl || backendData.VoAvatarUrl,
-        voAvatarThumbnailUrl: backendData.voAvatarThumbnailUrl || backendData.VoAvatarThumbnailUrl,
+        voAvatarUrl: toOptionalString(backendData.voAvatarUrl ?? backendData.VoAvatarUrl),
+        voAvatarThumbnailUrl: toOptionalString(backendData.voAvatarThumbnailUrl ?? backendData.VoAvatarThumbnailUrl),
         roles: resolvedRoles,
         permissions: resolvedPermissions,
       };
 
-      return {
-        ...response,
-        data: mappedData
-      };
+      return toParsedResponse(response, mappedData);
     }
 
-    return response as ParsedApiResponse<UserInfo>;
+    return toParsedResponse(response);
   },
 
   /**
@@ -171,13 +206,10 @@ export const userApi = {
     const response = await apiGet<ApiRecord>('/api/v1/User/GetMyProfile', { withAuth: true });
 
     if (response.ok && isApiRecord(response.data)) {
-      return {
-        ...response,
-        data: mapMyProfile(response.data),
-      };
+      return toParsedResponse(response, mapMyProfile(response.data));
     }
 
-    return response as ParsedApiResponse<MyProfileInfo>;
+    return toParsedResponse(response);
   },
 
   /**
@@ -194,13 +226,10 @@ export const userApi = {
     const response = await apiGet<ApiRecord>('/api/v1/User/GetMyTimePreference', { withAuth: true });
 
     if (response.ok && isApiRecord(response.data)) {
-      return {
-        ...response,
-        data: mapTimePreference(response.data),
-      };
+      return toParsedResponse(response, mapTimePreference(response.data));
     }
 
-    return response as ParsedApiResponse<UserTimePreferenceVo>;
+    return toParsedResponse(response);
   },
 
   /**
@@ -214,13 +243,10 @@ export const userApi = {
     );
 
     if (response.ok && isApiRecord(response.data)) {
-      return {
-        ...response,
-        data: mapTimePreference(response.data),
-      };
+      return toParsedResponse(response, mapTimePreference(response.data));
     }
 
-    return response as ParsedApiResponse<UserTimePreferenceVo>;
+    return toParsedResponse(response);
   },
 
   /**

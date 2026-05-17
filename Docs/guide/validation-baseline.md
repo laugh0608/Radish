@@ -5,8 +5,8 @@
 > 关联维护入口：
 >
 > - [Repo Quality 故障分诊手册](/guide/repo-quality-troubleshooting)
-> - [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist)
-> - [`PR -> master` 最小执行清单](/guide/master-pr-minimal-checklist)
+> - [M14 宿主运行首轮执行清单](/records/m14-host-runtime-checklist)
+> - [`PR -> master` 最小执行清单](/records/master-pr-minimal-checklist)
 
 ## 当前目标
 
@@ -171,10 +171,12 @@ npm run validate:ci
 
 当前批次与 forum 主线直接相关的人工确认面：
 
-- 公开阅读：`/forum/post/:postId` 直链在移动公开壳层下打开时，帖子 ID 保持原始字符串
-- 通知跳转：通知中心点击 forum 相关通知时，优先走字符串化 `extData`，不因大整数 ID 被前端当作 `number` 拒绝
-- 浏览回跳：个人主页浏览记录命中 forum 帖子时，`routePath / targetId` 回跳不再经过 `Number(...)` 降精度
-- 深链 / 窗口参数：`openOrReuseApp('forum', appParams)` 与 forum 窗口首屏解析对 `postId / commentId` 继续保持字符串口径
+- 公开阅读：`/forum/post/:postId` 直链在移动公开壳层下打开时，帖子 ID 保持原始字符串；该参数可为 `Post.PublicId` 或旧 long 字符串，新增分享 / 回流入口默认优先生成 `PublicId` 路径
+- 通知跳转：通知中心点击 forum 相关通知时，优先消费字符串化 `extData.postPublicId`，缺失时再回退旧 `postId` 字符串；不因大整数 ID 被前端当作 `number` 拒绝
+- 浏览回跳：个人主页浏览记录、桌面最近浏览和 Flutter 最近阅读命中 forum 帖子时，`routePath / targetId` 回跳不再经过 `Number(...)` 降精度，且优先使用 `postPublicId` 回到详情
+- 我的轻回应回看：WebOS 与 Flutter 从“我的轻回应”回到帖子详情时，优先使用 `VoPostPublicId`，旧 `VoPostId` 只作为字符串 fallback；详情加载成功后再使用真实内部 `VoId` 访问评论、轻回应和定位接口
+- 深链 / 窗口参数：`openOrReuseApp('forum', appParams)` 与 forum 窗口首屏解析对 `postPublicId / postId / commentId` 继续保持字符串口径，先用 `postPublicId` 或旧 `postId` 确定帖子，再用 `commentId` 做评论定位
+- 可见文案：公开分享、通知、最近阅读、我的轻回应、个人公开页回跳和 forum 详情普通文案不应展示长帖子 ID、评论 ID、作者 ID 或分类 ID；旧 long 只承担兼容打开或内部定位
 - 列表补查：公开列表、桌面列表与搜索结果若批量补查 forum 神评预览，返回对象的 `postId` 键不得再经 `Number(...)` 转回前端映射，否则大整数帖子会出现“帖子可读但神评摘要丢失”的隐性回归
 - 通知附加对象：forum 相关通知若在 `extData` 里附带额外业务对象 ID（如 `lotteryId`），这些字段也必须由服务端显式序列化为字符串，不能只保证主 `postId` 正确而让附加 ID 继续落成 JSON number
 
@@ -203,6 +205,7 @@ npm run validate:ci
 - 详情直链：`/shop/product/:productId` 直链在公开壳层下打开时，会直接进入只读商品详情，而不是要求先登录或回落桌面窗口
 - 来源返回：从 `/discover` 或 `/shop/products` 进入 `/shop/product/:productId` 后，详情页返回动作会优先回到原公开来源，而不是一律退回默认商品列表
 - 外部 ID：公开商品详情路由与前端读取链路不会把外部 `productId` 强制扩大成前端 `number`，刷新和回跳时保持原始字符串口径
+- 可见文案：公开商品详情 head title / description、最近浏览卡片和回流提示不应直接回显旧 long `productId`；`/shop/product/:productId` 仍作为当前兼容 canonical 与打开路径保留
 - 只读边界：公开商品详情当前不会误触购买确认、订单、背包、权益使用、举报或其他“我的”能力；如需继续操作，会明确导向桌面工作台
 
 当前批次与公开社区分发页首批直接相关的人工确认面：
@@ -258,6 +261,7 @@ npm run validate:ci
 - 目录回跳：从 `/docs` 进入 `/docs/:slug` 后，返回时会回到原目录浏览态，并保持目录滚动位置，而不是回退成桌面窗口或异常丢失浏览态
 - 来源返回：从 `/discover` 进入 `/docs/:slug` 后，详情页返回动作会优先回到 `/discover`，而不是退回 docs 默认目录
 - canonical 与兼容路径：旧 `__documents__` 链接、非 canonical slug 与保留字冲突路径会继续落在公开 docs 壳层；普通文档会收口到 canonical 公共路径，不会误落到错误路由
+- 可见文案：旧 `/wiki/doc/{id}` / `/docs/{id}` long 兼容路径只用于打开能力，公开 docs 详情、Flutter 文档上下文和桌面最近浏览不应把 long 数字路径当作可读标题或说明展示
 - 只读边界：公开 docs 首批当前只承载目录浏览、正文阅读、文档内链跳转与最小分享能力，不开放编辑、发布、回收站、版本历史或其他桌面治理动作
 
 当前批次与 docs 公开搜索首批直接相关的人工确认面：
@@ -408,7 +412,7 @@ npm run validate:baseline:host
 
 补充说明：
 
-- 当前默认先从 [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist) 开始，按 `validate:baseline:host -> doctor/verify -> 健康检查/日志 -> 网关与部署链路` 的顺序排障
+- 当前默认先从 [M14 宿主运行首轮执行清单](/records/m14-host-runtime-checklist) 开始，按 `validate:baseline:host -> doctor/verify -> 健康检查/日志 -> 网关与部署链路` 的顺序排障
 - 当前主路径已经明确收束为：启动前先跑 `npm run validate:baseline:host`，宿主启动后再跑 `npm run check:host-runtime`
 - 不要跳过 `doctor` / `verify` 直接把问题归因到宿主代码或外层反代
 - 如果需要把启动前这轮验证直接回写到维护记录、回归记录或 PR，可执行：

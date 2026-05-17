@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { LongId } from '@/api/user';
 import type { ProductCategory, ProductListItem } from '@/types/shop';
 import { getProductTypeDisplay } from '@/api/shop';
 import { resolveMediaUrl } from '@/utils/media';
@@ -14,7 +15,7 @@ interface ProductListProps {
   searchKeyword?: string;
   loading: boolean;
   onCategoryChange: (categoryId?: string) => void;
-  onProductClick: (productId: number) => void;
+  onProductClick: (productId: LongId) => void;
   onSearchChange: (keyword: string) => void;
   onPageChange: (page: number) => void;
   onBack: () => void;
@@ -36,6 +37,9 @@ export const ProductList = ({
 }: ProductListProps) => {
   const { t } = useTranslation();
   const [searchInput, setSearchInput] = useState(searchKeyword || '');
+  const visibleCategories = categories.filter((category) => (category.voProductCount ?? 0) > 0);
+  const hasSelectedVisibleCategory = !!selectedCategoryId
+    && visibleCategories.some((category) => String(category.voId) === selectedCategoryId);
 
   useEffect(() => {
     setSearchInput(searchKeyword || '');
@@ -61,8 +65,8 @@ export const ProductList = ({
   // 获取当前分类名称
   const getCurrentCategoryName = () => {
     if (!selectedCategoryId) return t('shop.allProducts');
-    const category = categories.find(c => String(c.voId) === selectedCategoryId);
-    return category?.voName || t('shop.unknownCategory');
+    const category = visibleCategories.find(c => String(c.voId) === selectedCategoryId);
+    return category?.voName || t('shop.allProducts');
   };
 
   return (
@@ -98,12 +102,12 @@ export const ProductList = ({
 
         <div className={styles.categoryTabs}>
           <button
-            className={`${styles.categoryTab} ${!selectedCategoryId ? styles.active : ''}`}
+            className={`${styles.categoryTab} ${!hasSelectedVisibleCategory ? styles.active : ''}`}
             onClick={() => onCategoryChange(undefined)}
           >
             {t('shop.filter.all')}
           </button>
-          {categories.map((category) => (
+          {visibleCategories.map((category) => (
             <button
               key={category.voId}
               className={`${styles.categoryTab} ${selectedCategoryId === String(category.voId) ? styles.active : ''}`}

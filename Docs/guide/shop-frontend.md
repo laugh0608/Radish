@@ -25,6 +25,8 @@ export const ShopApp: AppConfig = {
 
 ### 7.1.2 路由结构
 
+WebOS 工作台内的商城窗口继续使用应用内路由承载购买、订单与背包；公开内容壳层另行提供只读商城入口，用于匿名浏览、搜索索引和外链分享。
+
 ```
 /shop
 ├── /                          # 商城首页
@@ -36,6 +38,16 @@ export const ShopApp: AppConfig = {
     ├── /benefits              # 权益列表
     └── /consumables           # 消耗品列表
 ```
+
+公开内容壳层当前补充以下直达路由：
+
+```text
+/shop                          # 公开商城首页
+/shop/products                 # 公开商品列表
+/shop/product/:productId       # 公开商品详情
+```
+
+公开商品详情页当前提供复制 canonical 公共链接入口，复制 `https://radishx.com/shop/product/:productId` 这类规范 URL；公开详情不展示订单、背包和购买动作。
 
 **实现方式**：
 ```typescript

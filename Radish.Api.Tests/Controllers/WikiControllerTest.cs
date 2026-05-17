@@ -189,6 +189,7 @@ public class WikiControllerTest
 
         Assert.True(result.IsSuccess);
         Assert.Equal(200, result.StatusCode);
+        Assert.NotNull(result.ResponseData);
         Assert.Single(result.ResponseData);
         Assert.Equal(3, result.ResponseData[0].VoVersion);
     }

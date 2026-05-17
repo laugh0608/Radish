@@ -5,13 +5,16 @@ export interface NotificationTextOverrides {
   delete?: string;
 }
 
+export type NotificationItemId = number | string;
+type NotificationReferenceId = NotificationItemId;
+
 /**
  * 通知项数据（纯 UI 接口，不依赖后端命名约定）
  * 业务层负责将后端 VO 转换为此接口
  */
 export interface NotificationItemData {
   /** 通知 ID */
-  id: number;
+  id: NotificationItemId;
   /** 通知类型 */
   type: string;
   /** 通知标题 */
@@ -23,9 +26,9 @@ export interface NotificationItemData {
   /** 业务类型 */
   businessType?: string | null;
   /** 业务 ID */
-  businessId?: number | string | null;
+  businessId?: NotificationReferenceId | null;
   /** 触发者 ID */
-  triggerId?: number | null;
+  triggerId?: NotificationReferenceId | null;
   /** 触发者名称 */
   triggerName?: string | null;
   /** 触发者头像 */
@@ -44,9 +47,9 @@ export interface NotificationProps {
   /** 点击通知回调 */
   onClick?: (notification: NotificationItemData) => void;
   /** 标记已读回调 */
-  onMarkAsRead?: (id: number) => void;
+  onMarkAsRead?: (id: NotificationItemId) => void;
   /** 删除回调 */
-  onDelete?: (id: number) => void;
+  onDelete?: (id: NotificationItemId) => void;
   /** 是否显示操作按钮 */
   showActions?: boolean;
   /** 操作文案 */

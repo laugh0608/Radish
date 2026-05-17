@@ -66,6 +66,21 @@ public class UserPaymentPasswordVo
     public string VoStrengthLevelDisplay { get; set; } = string.Empty;
 
     /// <summary>
+    /// 支付口令版本
+    /// </summary>
+    public int? VoPasscodeVersion { get; set; }
+
+    /// <summary>
+    /// 是否为旧支付口令
+    /// </summary>
+    public bool VoIsLegacyPasscode { get; set; }
+
+    /// <summary>
+    /// 是否需要升级支付口令
+    /// </summary>
+    public bool VoRequiresPasscodeUpgrade { get; set; }
+
+    /// <summary>
     /// 是否启用
     /// </summary>
     public bool VoIsEnabled { get; set; }
@@ -170,6 +185,11 @@ public class PaymentPasswordVerifyResult
     public string? ErrorMessage { get; set; }
 
     /// <summary>
+    /// 错误代码
+    /// </summary>
+    public string? ErrorCode { get; set; }
+
+    /// <summary>
     /// 剩余尝试次数
     /// </summary>
     public int RemainingAttempts { get; set; }
@@ -183,6 +203,11 @@ public class PaymentPasswordVerifyResult
     /// 锁定剩余时间（分钟）
     /// </summary>
     public int LockedRemainingMinutes { get; set; }
+
+    /// <summary>
+    /// 是否需要升级支付口令
+    /// </summary>
+    public bool RequiresPasscodeUpgrade { get; set; }
 }
 
 /// <summary>

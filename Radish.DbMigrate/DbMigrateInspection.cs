@@ -15,13 +15,6 @@ internal static class DbMigrateInspection
         public bool IsReadyForSeed => !DatabaseFileMissing && MissingTables.Count == 0 && MissingColumns.Count == 0;
     }
 
-    private static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> RequiredColumnsByTable =
-        new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["WikiDocument"] = ["Visibility", "AllowedRoles", "AllowedPermissions"],
-            ["Comment"] = ["ReplyToCommentId", "ReplyToCommentSnapshot"]
-        };
-
     public static SeedInspectionResult InspectSeedReadiness(IServiceProvider services, string? mainDbConnId)
     {
         var db = services.GetRequiredService<ISqlSugarClient>();
@@ -45,12 +38,20 @@ internal static class DbMigrateInspection
             }
         }
 
-        var requiredTables = DbMigrateEntityRegistry.GetTableNamesForConfig(mainDbConnId);
+        var entityInfos = DbMigrateEntityRegistry.GetEntityTypesForConfig(mainDbConnId)
+            .Select(probeDb.EntityMaintenance.GetEntityInfo)
+            .ToList();
+
+        var requiredTables = entityInfos
+            .Select(entityInfo => entityInfo.DbTableName)
+            .Where(tableName => !string.IsNullOrWhiteSpace(tableName))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
         var missingTables = requiredTables
             .Where(tableName => !probeDb.DbMaintenance.IsAnyTable(tableName, false))
             .ToList();
 
-        var missingColumns = InspectMissingColumns(probeDb, missingTables);
+        var missingColumns = InspectMissingColumns(probeDb, entityInfos, missingTables);
         return new SeedInspectionResult(missingTables, missingColumns, false, null);
     }
 
@@ -67,25 +68,42 @@ internal static class DbMigrateInspection
             : connectionString;
     }
 
-    private static IReadOnlyList<string> InspectMissingColumns(ISqlSugarClient db, IReadOnlyCollection<string> missingTables)
+    private static IReadOnlyList<string> InspectMissingColumns(
+        ISqlSugarClient db,
+        IReadOnlyCollection<EntityInfo> entityInfos,
+        IReadOnlyCollection<string> missingTables)
     {
-        if (missingTables.Count == 0 && RequiredColumnsByTable.Count == 0)
+        if (entityInfos.Count == 0)
         {
             return Array.Empty<string>();
         }
 
         var missingTableSet = missingTables.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var existingColumnsByTable = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
         var missingColumns = new List<string>();
 
-        foreach (var (tableName, requiredColumns) in RequiredColumnsByTable)
+        foreach (var entityInfo in entityInfos)
         {
-            if (missingTableSet.Contains(tableName) || !db.DbMaintenance.IsAnyTable(tableName, false))
+            var tableName = entityInfo.DbTableName;
+            if (string.IsNullOrWhiteSpace(tableName) ||
+                missingTableSet.Contains(tableName) ||
+                !db.DbMaintenance.IsAnyTable(tableName, false))
             {
                 continue;
             }
 
-            var existingColumns = GetSqliteTableColumns(db, tableName);
-            foreach (var columnName in requiredColumns)
+            if (!existingColumnsByTable.TryGetValue(tableName, out var existingColumns))
+            {
+                existingColumns = GetTableColumns(db, tableName);
+                existingColumnsByTable[tableName] = existingColumns;
+            }
+
+            var expectedColumns = entityInfo.Columns
+                .Where(column => !column.IsIgnore && !string.IsNullOrWhiteSpace(column.DbColumnName))
+                .Select(column => column.DbColumnName)
+                .Distinct(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var columnName in expectedColumns)
             {
                 if (!existingColumns.Contains(columnName))
                 {
@@ -94,28 +112,17 @@ internal static class DbMigrateInspection
             }
         }
 
-        return missingColumns;
+        return missingColumns
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
-    private static HashSet<string> GetSqliteTableColumns(ISqlSugarClient db, string tableName)
+    private static HashSet<string> GetTableColumns(ISqlSugarClient db, string tableName)
     {
-        var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var schemaTable = db.Ado.GetDataTable($"PRAGMA table_info({QuoteIdentifier(tableName)})");
-
-        foreach (System.Data.DataRow row in schemaTable.Rows)
-        {
-            var columnName = row["name"]?.ToString();
-            if (!string.IsNullOrWhiteSpace(columnName))
-            {
-                result.Add(columnName);
-            }
-        }
-
-        return result;
-    }
-
-    private static string QuoteIdentifier(string identifier)
-    {
-        return $"\"{identifier.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
+        return db.DbMaintenance
+            .GetColumnInfosByTableName(tableName, false)
+            .Select(column => column.DbColumnName)
+            .Where(columnName => !string.IsNullOrWhiteSpace(columnName))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
     }
 }

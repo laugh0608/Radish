@@ -156,7 +156,7 @@ class _DocsPageState extends State<DocsPage> {
                   if (isDetailMode)
                     detailState.detail == null
                         ? '正在准备文档详情'
-                        : '正在阅读 /docs/${detailState.detail!.slug}',
+                        : _formatDocsReadingStatus(detailState.detail!.slug),
                 ],
               ),
               const SizedBox(height: 16),
@@ -773,8 +773,8 @@ class _DocsDetailRoutePageState extends State<_DocsDetailRoutePage> {
                   '当前环境：${widget.environment.name}',
                   '打开来源：${widget.target.source.label}',
                   state.detail == null
-                      ? '正在准备 /docs/${widget.target.normalizedSlug}'
-                      : '正在阅读 /docs/${state.detail!.slug}',
+                      ? _formatDocsPreparingStatus(widget.target.normalizedSlug)
+                      : _formatDocsReadingStatus(state.detail!.slug),
                   '当前不支持编辑、发布、回收站或版本治理',
                 ],
               ),
@@ -872,7 +872,9 @@ class _DocsDocumentCard extends StatelessWidget {
                   ),
                   if (document.slug.isNotEmpty)
                     Chip(
-                      label: _DocsBoundedInlineText('/docs/${document.slug}'),
+                      label: _DocsBoundedInlineText(
+                        _formatDocsPublicPath(document.slug) ?? '公开地址待生成',
+                      ),
                       visualDensity: VisualDensity.compact,
                     ),
                 ],
@@ -896,9 +898,7 @@ class _DocsDocumentCard extends StatelessWidget {
                 children: [
                   _DocsMetaText(
                     icon: Icons.link_outlined,
-                    text: document.slug.isEmpty
-                        ? '文档地址不可用'
-                        : '/docs/${document.slug}',
+                    text: _formatDocsPublicPath(document.slug) ?? '公开地址待生成',
                   ),
                   _DocsMetaText(
                     icon: Icons.schedule_outlined,
@@ -955,7 +955,9 @@ class _DocsDetailContent extends StatelessWidget {
                   visualDensity: VisualDensity.compact,
                 ),
                 Chip(
-                  label: _DocsBoundedInlineText('/docs/${detail.slug}'),
+                  label: _DocsBoundedInlineText(
+                    _formatDocsPublicPath(detail.slug) ?? '公开地址待生成',
+                  ),
                   visualDensity: VisualDensity.compact,
                 ),
                 if (detail.sourceType != null && detail.sourceType!.isNotEmpty)
@@ -1064,7 +1066,7 @@ class _DocsDetailContextPanel extends StatelessWidget {
             _DocsContextLine(
               icon: Icons.link_outlined,
               label: '地址',
-              value: detail.slug.isEmpty ? '文档地址不可用' : '/docs/${detail.slug}',
+              value: _formatDocsPublicPath(detail.slug) ?? '公开地址待生成',
             ),
             const SizedBox(height: 8),
             const _DocsContextLine(
@@ -1244,5 +1246,33 @@ String? _formatDetailErrorHint(String? slug) {
     return '可以返回来源后重试，或稍后再次打开文档详情。';
   }
 
-  return '目标地址：/docs/$normalizedSlug。可以返回来源后重试，或稍后再次打开文档详情。';
+  final publicPath = _formatDocsPublicPath(normalizedSlug);
+  if (publicPath == null) {
+    return '目标文档：详情入口已保留。可以返回来源后重试，或稍后再次打开文档详情。';
+  }
+
+  return '目标地址：$publicPath。可以返回来源后重试，或稍后再次打开文档详情。';
+}
+
+String _formatDocsPreparingStatus(String? slug) {
+  final publicPath = _formatDocsPublicPath(slug);
+  return publicPath == null ? '正在准备文档详情' : '正在准备 $publicPath';
+}
+
+String _formatDocsReadingStatus(String? slug) {
+  final publicPath = _formatDocsPublicPath(slug);
+  return publicPath == null ? '正在阅读文档详情' : '正在阅读 $publicPath';
+}
+
+String? _formatDocsPublicPath(String? slug) {
+  final normalizedSlug = slug?.trim();
+  if (normalizedSlug == null || normalizedSlug.isEmpty) {
+    return null;
+  }
+
+  if (RegExp(r'^\d{16,}$').hasMatch(normalizedSlug)) {
+    return null;
+  }
+
+  return '/docs/$normalizedSlug';
 }

@@ -70,6 +70,7 @@ class PublicProfilePostSummary {
     required this.createTime,
     this.summary,
     this.categoryName,
+    this.publicId,
   });
 
   factory PublicProfilePostSummary.fromJson(Object? json) {
@@ -77,6 +78,7 @@ class PublicProfilePostSummary {
 
     return PublicProfilePostSummary(
       id: _readRequiredId(map, 'voId'),
+      publicId: _readString(map['voPublicId']),
       title: _readString(map['voTitle']) ?? '未命名帖子',
       summary: _readString(map['voSummary']),
       content: _readString(map['voContent']) ?? '',
@@ -89,6 +91,7 @@ class PublicProfilePostSummary {
   }
 
   final String id;
+  final String? publicId;
   final String title;
   final String? summary;
   final String content;
@@ -97,6 +100,8 @@ class PublicProfilePostSummary {
   final int likeCount;
   final int commentCount;
   final String createTime;
+
+  String get routePostId => publicId ?? id;
 }
 
 class PublicProfileCommentSummary {
@@ -106,6 +111,7 @@ class PublicProfileCommentSummary {
     required this.content,
     required this.likeCount,
     required this.createTime,
+    this.postPublicId,
     this.replyToUserName,
     this.replyToCommentSnapshot,
   });
@@ -116,6 +122,7 @@ class PublicProfileCommentSummary {
     return PublicProfileCommentSummary(
       id: _readRequiredId(map, 'voId'),
       postId: _readRequiredId(map, 'voPostId'),
+      postPublicId: _readString(map['voPostPublicId']),
       content: _readString(map['voContent']) ?? '',
       likeCount: _readInt(map['voLikeCount']) ?? 0,
       createTime: _readString(map['voCreateTime']) ?? '',
@@ -126,11 +133,14 @@ class PublicProfileCommentSummary {
 
   final String id;
   final String postId;
+  final String? postPublicId;
   final String content;
   final int likeCount;
   final String createTime;
   final String? replyToUserName;
   final String? replyToCommentSnapshot;
+
+  String get routePostId => postPublicId ?? postId;
 }
 
 class PublicProfilePostPage {
@@ -204,6 +214,7 @@ class UserQuickReplySummary {
     required this.postTitle,
     required this.content,
     required this.createTime,
+    this.postPublicId,
   });
 
   factory UserQuickReplySummary.fromJson(Object? json) {
@@ -212,6 +223,7 @@ class UserQuickReplySummary {
     return UserQuickReplySummary(
       id: _readRequiredId(map, 'voId'),
       postId: _readRequiredId(map, 'voPostId'),
+      postPublicId: _readString(map['voPostPublicId']),
       postTitle: _readString(map['voPostTitle']) ?? '未命名帖子',
       content: _readString(map['voContent']) ?? '',
       createTime: _readString(map['voCreateTime']) ?? '',
@@ -220,9 +232,12 @@ class UserQuickReplySummary {
 
   final String id;
   final String postId;
+  final String? postPublicId;
   final String postTitle;
   final String content;
   final String createTime;
+
+  String get routePostId => postPublicId ?? postId;
 }
 
 class UserQuickReplyPage {

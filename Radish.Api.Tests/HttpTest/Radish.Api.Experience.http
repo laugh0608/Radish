@@ -66,11 +66,31 @@ Content-Type: application/json
 GET {{baseUrl}}/api/v1/Experience/GetMyExperience
 Authorization: Bearer {{token}}
 
-### 3.3 查看萝卜币余额（验证升级奖励）
+### 3.3 冻结用户经验值（临时冻结）
+POST {{baseUrl}}/api/v1/Experience/AdminFreezeExperience
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "frozenUntil": "2026-05-08 12:00:00",
+  "reason": "测试临时冻结"
+}
+
+### 3.4 解冻用户经验值
+POST {{baseUrl}}/api/v1/Experience/AdminUnfreezeExperience
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userId": 1
+}
+
+### 3.5 查看萝卜币余额（验证升级奖励）
 GET {{baseUrl}}/api/v1/Coin/GetMyBalance
 Authorization: Bearer {{token}}
 
-### 3.4 查看通知（验证升级通知）
+### 3.6 查看通知（验证升级通知）
 GET {{baseUrl}}/api/v1/Notification/GetMyNotifications?pageIndex=1&pageSize=10
 Authorization: Bearer {{token}}
 
@@ -83,6 +103,39 @@ Authorization: Bearer {{token}}
 ### 4.2 查看所有类型的经验值交易记录
 GET {{baseUrl}}/api/v1/Experience/GetTransactions?pageIndex=1&pageSize=50
 Authorization: Bearer {{token}}
+
+### 4.3 管理端查看用户最近 7 天经验统计与治理建议
+GET {{baseUrl}}/api/v1/Experience/GetUserDailyStats/1?days=7
+Authorization: Bearer {{token}}
+
+### 4.4 管理端按经验类型 + 日期范围回看用户经验流水（点赞相关）
+GET {{baseUrl}}/api/v1/Experience/GetUserTransactions/1?pageIndex=1&pageSize=20&expType=RECEIVE_LIKE,GIVE_LIKE&startDate=2026-05-10%2000:00:00&endDate=2026-05-10%2023:59:59
+Authorization: Bearer {{token}}
+
+### 4.5 管理端按经验类型 + 日期范围回看用户经验流水（高亮相关）
+GET {{baseUrl}}/api/v1/Experience/GetUserTransactions/1?pageIndex=1&pageSize=20&expType=GOD_COMMENT,SOFA_COMMENT&startDate=2026-05-10%2000:00:00&endDate=2026-05-10%2023:59:59
+Authorization: Bearer {{token}}
+
+### 4.6 管理端查看用户最近治理留痕
+GET {{baseUrl}}/api/v1/Experience/GetUserGovernanceActions/1?take=20
+Authorization: Bearer {{token}}
+
+### 4.7 管理端记录人工复核结论
+POST {{baseUrl}}/api/v1/Experience/AdminRecordGovernanceReview
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "reviewResult": "Observe",
+  "remark": "已回看经验流水、互动来源和目标内容，暂未发现直接异常，继续观察。",
+  "windowDays": 7,
+  "statDate": "2026-05-10 00:00:00",
+  "ruleCodes": ["LIKE_SHARE_HEAVY"],
+  "ruleLabels": ["点赞占比偏高"],
+  "recommendationLevel": "review",
+  "recommendationReason": "最近 7 天同一规则重复命中"
+}
 
 ### ===== 5. 完整测试流程 =====
 

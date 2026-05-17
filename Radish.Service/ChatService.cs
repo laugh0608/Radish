@@ -1,5 +1,5 @@
-using System.Text.Json;
 using System.Text.RegularExpressions;
+using Radish.IRepository;
 using AutoMapper;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -16,7 +16,7 @@ namespace Radish.Service;
 public class ChatService : BaseService<Channel, ChannelVo>, IChatService
 {
     private readonly IBaseRepository<Channel> _channelRepository;
-    private readonly IBaseRepository<ChannelMessage> _messageRepository;
+    private readonly IChannelMessageRepository _messageRepository;
     private readonly IBaseRepository<ChannelMember> _memberRepository;
     private readonly IBaseRepository<Attachment> _attachmentRepository;
     private readonly IBaseRepository<User> _userRepository;
@@ -27,7 +27,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
     public ChatService(
         IMapper mapper,
         IBaseRepository<Channel> baseRepository,
-        IBaseRepository<ChannelMessage> messageRepository,
+        IChannelMessageRepository messageRepository,
         IBaseRepository<ChannelMember> memberRepository,
         IBaseRepository<Attachment> attachmentRepository,
         IBaseRepository<User> userRepository,
@@ -98,56 +98,108 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         return channelVo;
     }
 
-    public async Task<List<ChannelMessageVo>> GetHistoryAsync(long tenantId, long userId, long channelId, long? beforeMessageId, int pageSize = 50)
+    public async Task<List<ChannelMessageVo>> GetHistoryAsync(
+        long tenantId,
+        long userId,
+        long channelId,
+        long? beforeMessageId,
+        long? afterMessageId,
+        int pageSize = 50)
     {
         _ = tenantId;
+        _ = userId;
 
         if (channelId <= 0)
         {
             return new List<ChannelMessageVo>();
         }
 
-        var channel = await _channelRepository.QueryFirstAsync(c => c.Id == channelId && c.IsEnabled && !c.IsDeleted);
+        if (beforeMessageId.HasValue && beforeMessageId.Value > 0 && afterMessageId.HasValue && afterMessageId.Value > 0)
+        {
+            return new List<ChannelMessageVo>();
+        }
+
+        var channel = await GetEnabledChannelAsync(channelId);
         if (channel == null)
         {
             return new List<ChannelMessageVo>();
         }
 
         var safePageSize = Math.Clamp(pageSize, 1, 50);
-        var whereExpression = beforeMessageId.HasValue && beforeMessageId.Value > 0
-            ? (System.Linq.Expressions.Expression<Func<ChannelMessage, bool>>)(m => m.ChannelId == channelId && m.Id < beforeMessageId.Value)
-            : m => m.ChannelId == channelId;
+        var messages = afterMessageId.HasValue && afterMessageId.Value > 0
+            ? await QueryChannelMessagesAsync(
+                m => m.ChannelId == channelId && m.Id > afterMessageId.Value,
+                safePageSize,
+                OrderByType.Asc)
+            : await QueryChannelMessagesAsync(
+                beforeMessageId.HasValue && beforeMessageId.Value > 0
+                    ? (System.Linq.Expressions.Expression<Func<ChannelMessage, bool>>)(m => m.ChannelId == channelId && m.Id < beforeMessageId.Value)
+                    : m => m.ChannelId == channelId,
+                safePageSize,
+                OrderByType.Desc);
 
-        var (messages, _) = await _messageRepository.QueryPageAsync(
-            whereExpression,
-            1,
-            safePageSize,
-            m => m.Id,
-            OrderByType.Desc);
+        return await MapChannelMessagesAsync(messages);
+    }
 
-        if (messages.Count == 0)
+    public async Task<ChannelMessageWindowVo?> GetMessageWindowAsync(
+        long tenantId,
+        long userId,
+        long channelId,
+        long messageId,
+        int beforeCount = 25,
+        int afterCount = 25)
+    {
+        _ = tenantId;
+        _ = userId;
+
+        if (channelId <= 0 || messageId <= 0)
         {
-            return new List<ChannelMessageVo>();
+            return null;
         }
 
-        messages = messages
-            .OrderBy(m => m.Id)
-            .ToList();
+        var channel = await GetEnabledChannelAsync(channelId);
+        if (channel == null)
+        {
+            return null;
+        }
 
-        var replyIds = messages
-            .Where(m => m.ReplyToId.HasValue)
-            .Select(m => m.ReplyToId!.Value)
-            .Distinct()
-            .ToList();
-        var replyMap = replyIds.Count > 0
-            ? (await _messageRepository.QueryByIdsAsync(replyIds)).ToDictionary(m => m.Id, m => m)
-            : new Dictionary<long, ChannelMessage>();
-        var avatarMap = await GetUserAvatarAttachmentMapAsync(messages.Select(m => m.UserId)
-            .Concat(replyMap.Values.Select(m => m.UserId)));
+        var anchorMessage = await _messageRepository.QueryFirstIncludingDeletedAsync(m => m.ChannelId == channelId && m.Id == messageId);
+        if (anchorMessage == null)
+        {
+            return null;
+        }
 
-        return messages
-            .Select(message => MapMessageVo(message, replyMap, avatarMap))
-            .ToList();
+        var safeBeforeCount = Math.Clamp(beforeCount, 0, 50);
+        var safeAfterCount = Math.Clamp(afterCount, 0, 50);
+        var olderMessages = safeBeforeCount > 0
+            ? await QueryChannelMessagesAsync(
+                m => m.ChannelId == channelId && m.Id < messageId,
+                safeBeforeCount,
+                OrderByType.Desc)
+            : new List<ChannelMessage>();
+        var newerMessages = safeAfterCount > 0
+            ? await QueryChannelMessagesAsync(
+                m => m.ChannelId == channelId && m.Id > messageId,
+                safeAfterCount,
+                OrderByType.Asc)
+            : new List<ChannelMessage>();
+
+        var combinedMessages = new List<ChannelMessage>(olderMessages.Count + 1 + newerMessages.Count);
+        combinedMessages.AddRange(olderMessages);
+        combinedMessages.Add(anchorMessage);
+        combinedMessages.AddRange(newerMessages);
+
+        var oldestLoadedMessageId = olderMessages.Count > 0 ? olderMessages[0].Id : anchorMessage.Id;
+        var newestLoadedMessageId = newerMessages.Count > 0 ? newerMessages[^1].Id : anchorMessage.Id;
+
+        return new ChannelMessageWindowVo
+        {
+            VoChannelId = channelId,
+            VoAnchorMessageId = anchorMessage.Id,
+            VoMessages = await MapChannelMessagesAsync(combinedMessages),
+            VoHasMoreBefore = await _messageRepository.QueryExistsIncludingDeletedAsync(m => m.ChannelId == channelId && m.Id < oldestLoadedMessageId),
+            VoHasMoreAfter = await _messageRepository.QueryExistsIncludingDeletedAsync(m => m.ChannelId == channelId && m.Id > newestLoadedMessageId)
+        };
     }
 
     public async Task<ChannelMessageVo> SendMessageAsync(long tenantId, long userId, string userName, SendChannelMessageDto request)
@@ -264,6 +316,69 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         }
     }
 
+    private async Task<Channel?> GetEnabledChannelAsync(long channelId)
+    {
+        if (channelId <= 0)
+        {
+            return null;
+        }
+
+        return await _channelRepository.QueryFirstAsync(c => c.Id == channelId && c.IsEnabled && !c.IsDeleted);
+    }
+
+    private async Task<List<ChannelMessage>> QueryChannelMessagesAsync(
+        System.Linq.Expressions.Expression<Func<ChannelMessage, bool>> whereExpression,
+        int pageSize,
+        OrderByType orderByType)
+    {
+        if (pageSize <= 0)
+        {
+            return new List<ChannelMessage>();
+        }
+
+        var (messages, _) = await _messageRepository.QueryPageIncludingDeletedAsync(
+            whereExpression,
+            1,
+            pageSize,
+            m => m.Id,
+            orderByType);
+
+        if (messages.Count == 0)
+        {
+            return new List<ChannelMessage>();
+        }
+
+        return messages
+            .OrderBy(m => m.Id)
+            .ToList();
+    }
+
+    private async Task<List<ChannelMessageVo>> MapChannelMessagesAsync(IReadOnlyCollection<ChannelMessage> messages)
+    {
+        if (messages.Count == 0)
+        {
+            return new List<ChannelMessageVo>();
+        }
+
+        var orderedMessages = messages
+            .OrderBy(m => m.Id)
+            .ToList();
+        var replyIds = orderedMessages
+            .Where(m => m.ReplyToId.HasValue)
+            .Select(m => m.ReplyToId!.Value)
+            .Distinct()
+            .ToList();
+        var replyMap = replyIds.Count > 0
+            ? (await _messageRepository.QueryByIdsIncludingDeletedAsync(replyIds)).ToDictionary(m => m.Id, m => m)
+            : new Dictionary<long, ChannelMessage>();
+        var avatarMap = await GetUserAvatarAttachmentMapAsync(orderedMessages.Select(m => m.UserId)
+            .Concat(replyMap.Values.Select(m => m.UserId)));
+
+        return orderedMessages
+            .Select(message => MapMessageVo(message, replyMap, avatarMap))
+            .ToList();
+    }
+
     public async Task<long?> RecallMessageAsync(long tenantId, long userId, string userName, long messageId, bool canRecallOthers)
     {
         _ = tenantId;
@@ -273,7 +388,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             return null;
         }
 
-        var message = await _messageRepository.QueryFirstAsync(m => m.Id == messageId);
+        var message = await _messageRepository.QueryFirstIncludingDeletedAsync(m => m.Id == messageId);
         if (message == null)
         {
             return null;
@@ -593,11 +708,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             TriggerAvatar = senderAvatarUrl,
             ReceiverUserIds = receiverUserIds,
             TenantId = tenantId,
-            ExtData = JsonSerializer.Serialize(new
-            {
-                channelId,
-                messageId
-            })
+            ExtData = NotificationNavigationHelper.BuildChatNavigationExtData(channelId, messageId)
         });
     }
 

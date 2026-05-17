@@ -27,6 +27,9 @@ export interface PaymentPasswordStatus {
   voLastModifiedTimeDisplay: string;
   voStrengthLevel: number;
   voStrengthLevelDisplay: string;
+  voPasscodeVersion?: number;
+  voIsLegacyPasscode: boolean;
+  voRequiresPasscodeUpgrade: boolean;
   voIsEnabled: boolean;
   voHasPaymentPassword: boolean;
   voSecurityStatus: string;
@@ -74,9 +77,11 @@ export interface VerifyPaymentPasswordRequest {
 export interface PaymentPasswordVerifyResult {
   isSuccess: boolean;
   errorMessage: string;
+  errorCode?: string;
   remainingAttempts?: number;
   isLocked?: boolean;
   lockedRemainingMinutes?: number;
+  requiresPasscodeUpgrade?: boolean;
 }
 
 /**
@@ -105,7 +110,7 @@ export async function getPaymentPasswordStatus(t?: TFunction) {
   );
 
   if (!response.ok) {
-    throw new Error(response.message || '获取支付密码状态失败');
+    throw new Error(response.message || '获取支付口令状态失败');
   }
 
   return response.data;
@@ -126,7 +131,7 @@ export async function setPaymentPassword(request: SetPaymentPasswordRequest, t?:
   );
 
   if (!response.ok) {
-    throw new Error(response.message || '设置支付密码失败');
+    throw new Error(response.message || '设置支付口令失败');
   }
 
   return response.data ?? false;
@@ -147,7 +152,7 @@ export async function changePaymentPassword(request: ChangePaymentPasswordReques
   );
 
   if (!response.ok) {
-    throw new Error(response.message || '修改支付密码失败');
+    throw new Error(response.message || '修改支付口令失败');
   }
 
   return response.data ?? false;
@@ -168,7 +173,7 @@ export async function verifyPaymentPassword(request: VerifyPaymentPasswordReques
   );
 
   if (!response.ok) {
-    throw new Error(response.message || '验证支付密码失败');
+    throw new Error(response.message || '验证支付口令失败');
   }
 
   return response.data;

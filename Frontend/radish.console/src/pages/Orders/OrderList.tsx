@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   TableSkeleton,
@@ -20,8 +21,8 @@ import {
 } from '@radish/ui';
 import {
   adminGetOrders,
+  adminRemarkOrder,
   retryGrantBenefit,
-  getOrderStatusDisplay,
   getOrderStatusColor,
   getProductTypeDisplay,
 } from '../../api/shopApi';
@@ -32,45 +33,168 @@ import { OrderDetail } from './OrderDetail';
 import { log } from '../../utils/logger';
 import './OrderList.css';
 
+const DEFAULT_PAGE_INDEX = 1;
+const DEFAULT_PAGE_SIZE = 20;
+
+function parsePositiveIntQuery(value: string | null): number | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+function parseLongIdQuery(value: string | null): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  return /^\d+$/u.test(trimmed) ? trimmed : undefined;
+}
+
+function parseOrderStatusQuery(value: string | null): OrderStatus | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed >= 0 && parsed <= 5
+    ? parsed as OrderStatus
+    : undefined;
+}
+
+function parseBooleanQuery(value: string | null): boolean {
+  return value === '1' || value === 'true';
+}
+
+function buildOrderSearchParams(params: {
+  userId?: string;
+  status?: OrderStatus;
+  productId?: string;
+  orderNo?: string;
+  pageIndex?: number;
+  pageSize?: number;
+  openDetail?: boolean;
+}): URLSearchParams {
+  const searchParams = new URLSearchParams();
+  const normalizedOrderNo = params.orderNo?.trim() ?? '';
+
+  if (params.userId !== undefined) {
+    searchParams.set('userId', params.userId.toString());
+  }
+
+  if (params.status !== undefined) {
+    searchParams.set('status', params.status.toString());
+  }
+
+  if (params.productId !== undefined) {
+    searchParams.set('productId', params.productId.toString());
+  }
+
+  if (normalizedOrderNo) {
+    searchParams.set('orderNo', normalizedOrderNo);
+  }
+
+  if ((params.pageIndex ?? DEFAULT_PAGE_INDEX) !== DEFAULT_PAGE_INDEX) {
+    searchParams.set('pageIndex', String(params.pageIndex));
+  }
+
+  if ((params.pageSize ?? DEFAULT_PAGE_SIZE) !== DEFAULT_PAGE_SIZE) {
+    searchParams.set('pageSize', String(params.pageSize));
+  }
+
+  if (params.openDetail) {
+    searchParams.set('openDetail', '1');
+  }
+
+  return searchParams;
+}
+
 export const OrderList = () => {
   useDocumentTitle('订单管理');
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [urlSearchParams, setUrlSearchParams] = useSearchParams();
+  const queryUserId = parseLongIdQuery(urlSearchParams.get('userId'));
+  const queryStatus = parseOrderStatusQuery(urlSearchParams.get('status'));
+  const queryProductId = parseLongIdQuery(urlSearchParams.get('productId'));
+  const queryOrderNo = (urlSearchParams.get('orderNo') ?? '').trim();
+  const queryPageIndex = parsePositiveIntQuery(urlSearchParams.get('pageIndex')) ?? DEFAULT_PAGE_INDEX;
+  const queryPageSize = parsePositiveIntQuery(urlSearchParams.get('pageSize')) ?? DEFAULT_PAGE_SIZE;
+  const queryOpenDetail = parseBooleanQuery(urlSearchParams.get('openDetail'));
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
-  const [pageIndex, setPageIndex] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
   const canViewOrders = usePermission(CONSOLE_PERMISSIONS.ordersView);
   const canRetryOrder = usePermission(CONSOLE_PERMISSIONS.ordersRetry);
+  const canRemarkOrder = usePermission(CONSOLE_PERMISSIONS.ordersRemark);
+  const canViewUsers = usePermission(CONSOLE_PERMISSIONS.usersView);
+  const canViewProducts = usePermission(CONSOLE_PERMISSIONS.productsView);
 
-  // 详情弹窗状态
   const [detailVisible, setDetailVisible] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<Order | undefined>();
+  const [selectedOrderId, setSelectedOrderId] = useState<string | number | undefined>();
+  const [selectedOrderPreview, setSelectedOrderPreview] = useState<Order | undefined>();
+  const [detailReloadToken, setDetailReloadToken] = useState(0);
 
-  // 确认对话框状态
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [retryOrder, setRetryOrder] = useState<Order | undefined>();
+  const [savingRemark, setSavingRemark] = useState(false);
 
-  // 筛选条件
-  const [userId, setUserId] = useState<number | undefined>();
-  const [status, setStatus] = useState<OrderStatus | undefined>();
-  const [productId, setProductId] = useState<number | undefined>();
-  const [orderNo, setOrderNo] = useState<string>('');
+  const [draftUserId, setDraftUserId] = useState<string | undefined>(queryUserId);
+  const [draftStatus, setDraftStatus] = useState<OrderStatus | undefined>(queryStatus);
+  const [draftProductId, setDraftProductId] = useState<string | undefined>(queryProductId);
+  const [draftOrderNo, setDraftOrderNo] = useState(queryOrderNo);
 
-  // 加载订单列表
+  const syncSearchParams = (params: {
+    userId?: string;
+    status?: OrderStatus;
+    productId?: string;
+    orderNo?: string;
+    pageIndex?: number;
+    pageSize?: number;
+    openDetail?: boolean;
+  }, replace: boolean = false) => {
+    setUrlSearchParams(buildOrderSearchParams(params), { replace });
+  };
+
+  useEffect(() => {
+    setDraftUserId(queryUserId);
+    setDraftStatus(queryStatus);
+    setDraftProductId(queryProductId);
+    setDraftOrderNo(queryOrderNo);
+  }, [queryUserId, queryStatus, queryProductId, queryOrderNo]);
+
   const loadOrders = async () => {
     try {
       setLoading(true);
       const response = await adminGetOrders({
-        userId,
-        status,
-        productId,
-        orderNo: orderNo || undefined,
-        pageIndex,
-        pageSize,
+        userId: queryUserId,
+        status: queryStatus,
+        productId: queryProductId,
+        orderNo: queryOrderNo || undefined,
+        pageIndex: queryPageIndex,
+        pageSize: queryPageSize,
       });
 
       setOrders(response.data);
       setTotal(response.dataCount);
+      setSelectedOrderPreview((current) => current
+        ? response.data.find((item) => String(item.voId) === String(current.voId)) ?? current
+        : current);
+
+      if (queryOpenDetail) {
+        const targetOrder = queryOrderNo
+          ? response.data.find((item) => item.voOrderNo === queryOrderNo)
+          : response.data.length === 1 ? response.data[0] : undefined;
+
+        if (targetOrder) {
+          setSelectedOrderId(targetOrder.voId);
+          setSelectedOrderPreview(targetOrder);
+          setDetailVisible(true);
+        }
+      }
     } catch (error) {
       log.error('OrderList', '加载订单列表失败:', error);
       message.error('加载订单列表失败');
@@ -79,60 +203,137 @@ export const OrderList = () => {
     }
   };
 
-  // 初始化和筛选条件变化时加载
   useEffect(() => {
     if (!canViewOrders) {
       return;
     }
 
     void loadOrders();
-  }, [pageIndex, pageSize, userId, status, productId, canViewOrders]);
+  }, [
+    queryUserId,
+    queryStatus,
+    queryProductId,
+    queryOrderNo,
+    queryPageIndex,
+    queryPageSize,
+    queryOpenDetail,
+    canViewOrders,
+  ]);
 
-  // 搜索
   const handleSearch = () => {
-    setPageIndex(1);
-    loadOrders();
+    syncSearchParams({
+      userId: draftUserId,
+      status: draftStatus,
+      productId: draftProductId,
+      orderNo: draftOrderNo,
+      pageIndex: DEFAULT_PAGE_INDEX,
+      pageSize: queryPageSize,
+    });
   };
 
-  // 重置筛选
   const handleReset = () => {
-    setUserId(undefined);
-    setStatus(undefined);
-    setProductId(undefined);
-    setOrderNo('');
-    setPageIndex(1);
+    syncSearchParams({
+      pageIndex: DEFAULT_PAGE_INDEX,
+      pageSize: queryPageSize,
+    });
   };
 
-  // 查看详情
   const handleViewDetail = (order: Order) => {
-    setSelectedOrder(order);
+    setSelectedOrderId(order.voId);
+    setSelectedOrderPreview(order);
     setDetailVisible(true);
   };
 
-  // 重试失败订单
+  const handleViewUser = (order: Order) => {
+    const returnTo = `${location.pathname}${location.search}`;
+    navigate(`/users/${encodeURIComponent(String(order.voUserId))}?returnTo=${encodeURIComponent(returnTo)}`);
+  };
+
+  const handleViewProduct = (order: Order) => {
+    const returnTo = `${location.pathname}${location.search}`;
+    navigate(
+      `/products?productId=${encodeURIComponent(String(order.voProductId))}&openDetail=1&returnTo=${encodeURIComponent(returnTo)}`,
+    );
+  };
+
   const handleRetry = (order: Order) => {
     setRetryOrder(order);
     setConfirmVisible(true);
   };
 
-  // 确认重试
+  const handleCloseDetail = () => {
+    setDetailVisible(false);
+    setSelectedOrderId(undefined);
+    setSelectedOrderPreview(undefined);
+
+    if (queryOpenDetail) {
+      syncSearchParams({
+        userId: queryUserId,
+        status: queryStatus,
+        productId: queryProductId,
+        orderNo: queryOrderNo,
+        pageIndex: queryPageIndex,
+        pageSize: queryPageSize,
+      }, true);
+    }
+  };
+
   const handleConfirmRetry = async () => {
-    if (!retryOrder) return;
+    if (!retryOrder) {
+      return;
+    }
 
     try {
       await retryGrantBenefit(retryOrder.voId);
       message.success('重试成功');
-      loadOrders();
+      await loadOrders();
+      if (String(selectedOrderId) === String(retryOrder.voId)) {
+        setDetailReloadToken((current) => current + 1);
+      }
     } catch (error) {
       log.error('OrderList', '重试失败:', error);
-      message.error('重试失败');
+      message.error(error instanceof Error ? error.message : '重试失败');
     } finally {
       setConfirmVisible(false);
       setRetryOrder(undefined);
     }
   };
 
-  // 表格列定义
+  const handleSaveRemark = async (remark: string) => {
+    if (!selectedOrderId) {
+      return;
+    }
+
+    try {
+      setSavingRemark(true);
+      await adminRemarkOrder(selectedOrderId, remark);
+      const normalizedRemark = remark.trim();
+      const nextRemark = normalizedRemark || null;
+
+      setSelectedOrderPreview((current) => current
+        ? {
+            ...current,
+            voAdminRemark: nextRemark,
+          }
+        : current);
+      setOrders((current) => current.map((item) => (
+        String(item.voId) === String(selectedOrderId)
+          ? {
+              ...item,
+              voAdminRemark: nextRemark,
+            }
+          : item
+      )));
+      message.success('订单备注已保存');
+      setDetailReloadToken((current) => current + 1);
+    } catch (error) {
+      log.error('OrderList', '保存订单备注失败:', error);
+      message.error(error instanceof Error ? error.message : '保存订单备注失败');
+    } finally {
+      setSavingRemark(false);
+    }
+  };
+
   const columns: TableColumnsType<Order> = [
     {
       title: '订单号',
@@ -212,10 +413,28 @@ export const OrderList = () => {
     {
       title: '操作',
       key: 'action',
-      width: 150,
+      width: 280,
       fixed: 'right',
       render: (_: unknown, record: Order) => (
-        <Space size="small">
+        <Space size="small" wrap>
+          {canViewUsers ? (
+            <Button
+              variant="ghost"
+              size="small"
+              onClick={() => handleViewUser(record)}
+            >
+              查看用户
+            </Button>
+          ) : null}
+          {canViewProducts ? (
+            <Button
+              variant="ghost"
+              size="small"
+              onClick={() => handleViewProduct(record)}
+            >
+              查看商品
+            </Button>
+          ) : null}
           <Button
             variant="ghost"
             size="small"
@@ -224,7 +443,7 @@ export const OrderList = () => {
           >
             详情
           </Button>
-          {canRetryOrder && record.voStatus === 'Failed' && (
+          {canRetryOrder && record.voStatus === 'Failed' ? (
             <Button
               variant="ghost"
               size="small"
@@ -233,16 +452,16 @@ export const OrderList = () => {
             >
               重试
             </Button>
-          )}
+          ) : null}
         </Space>
       ),
     },
   ];
 
-  // 如果正在加载且没有数据，显示骨架屏
   if (loading && orders.length === 0) {
     return <TableSkeleton rows={10} columns={6} showFilters={true} showActions={true} />;
   }
+
   return (
     <div className="order-list-page">
       <div className="page-header">
@@ -255,16 +474,17 @@ export const OrderList = () => {
             placeholder="用户 ID"
             style={{ width: 120 }}
             type="number"
-            value={userId}
-            onChange={(e) => setUserId(e.target.value ? Number(e.target.value) : undefined)}
+            value={draftUserId}
+            onChange={(e) => setDraftUserId(e.target.value ? e.target.value.trim() : undefined)}
+            onPressEnter={handleSearch}
           />
 
           <Select
             placeholder="订单状态"
             style={{ width: 120 }}
             allowClear
-            value={status}
-            onChange={setStatus}
+            value={draftStatus}
+            onChange={setDraftStatus}
           >
             <Select.Option value={0}>待支付</Select.Option>
             <Select.Option value={1}>已支付</Select.Option>
@@ -278,15 +498,16 @@ export const OrderList = () => {
             placeholder="商品 ID"
             style={{ width: 120 }}
             type="number"
-            value={productId}
-            onChange={(e) => setProductId(e.target.value ? Number(e.target.value) : undefined)}
+            value={draftProductId}
+            onChange={(e) => setDraftProductId(e.target.value ? e.target.value.trim() : undefined)}
+            onPressEnter={handleSearch}
           />
 
           <Input
             placeholder="订单号"
             style={{ width: 200 }}
-            value={orderNo}
-            onChange={(e) => setOrderNo(e.target.value)}
+            value={draftOrderNo}
+            onChange={(e) => setDraftOrderNo(e.target.value)}
             onPressEnter={handleSearch}
             suffix={<SearchOutlined />}
           />
@@ -307,32 +528,42 @@ export const OrderList = () => {
         rowKey="voId"
         loading={loading}
         pagination={{
-          current: pageIndex,
-          pageSize: pageSize,
+          current: queryPageIndex,
+          pageSize: queryPageSize,
           total: total,
           showSizeChanger: true,
           showQuickJumper: true,
-          showTotal: (total) => `共 ${total} 条`,
+          showTotal: (itemTotal) => `共 ${itemTotal} 条`,
           onChange: (page, size) => {
-            setPageIndex(page);
-            setPageSize(size);
+            syncSearchParams({
+              userId: queryUserId,
+              status: queryStatus,
+              productId: queryProductId,
+              orderNo: queryOrderNo,
+              pageIndex: page,
+              pageSize: size,
+            });
           },
         }}
-        scroll={{ x: 1400 }}
+        scroll={{ x: 1600 }}
       />
 
       <OrderDetail
         visible={detailVisible}
-        order={selectedOrder}
-        onClose={() => {
-          setDetailVisible(false);
-          setSelectedOrder(undefined);
-        }}
+        orderId={selectedOrderId}
+        fallbackOrder={selectedOrderPreview}
+        reloadToken={detailReloadToken}
+        canRemark={canRemarkOrder}
+        savingRemark={savingRemark}
+        onClose={handleCloseDetail}
         onRetry={() => {
-          if (selectedOrder) {
-            handleRetry(selectedOrder);
+          if (selectedOrderPreview) {
+            handleRetry(selectedOrderPreview);
           }
         }}
+        onViewUser={canViewUsers ? handleViewUser : undefined}
+        onViewProduct={canViewProducts ? handleViewProduct : undefined}
+        onSaveRemark={handleSaveRemark}
       />
 
       <ConfirmDialog

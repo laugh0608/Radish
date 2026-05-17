@@ -12,7 +12,7 @@ public interface IRedisBasketRepository
     /// </summary>
     /// <param name="key"></param>
     /// <returns></returns>
-    Task<string> GetValue(string key);
+    Task<string?> GetValue(string key);
 
     /// <summary>
     /// 获取值，并序列化
@@ -20,7 +20,7 @@ public interface IRedisBasketRepository
     /// <param name="key"></param>
     /// <typeparam name="TEntity"></typeparam>
     /// <returns></returns>
-    Task<TEntity> Get<TEntity>(string key);
+    Task<TEntity?> Get<TEntity>(string key);
 
     /// <summary>
     /// 保存
@@ -55,10 +55,10 @@ public interface IRedisBasketRepository
     Task<long> ListLeftPushAsync(string redisKey, string redisValue, int db = -1);
     Task<long> ListRightPushAsync(string redisKey, string redisValue, int db = -1);
     Task<long> ListRightPushAsync(string redisKey, IEnumerable<string> redisValue, int db = -1);
-    Task<T> ListLeftPopAsync<T>(string redisKey, int db = -1) where T : class;
-    Task<T> ListRightPopAsync<T>(string redisKey, int db = -1) where T : class;
-    Task<string> ListLeftPopAsync(string redisKey, int db = -1);
-    Task<string> ListRightPopAsync(string redisKey, int db = -1);
+    Task<T?> ListLeftPopAsync<T>(string redisKey, int db = -1) where T : class;
+    Task<T?> ListRightPopAsync<T>(string redisKey, int db = -1) where T : class;
+    Task<string?> ListLeftPopAsync(string redisKey, int db = -1);
+    Task<string?> ListRightPopAsync(string redisKey, int db = -1);
     Task<long> ListLengthAsync(string redisKey, int db = -1);
     Task<IEnumerable<string>> ListRangeAsync(string redisKey, int db = -1);
     Task<IEnumerable<string>> ListRangeAsync(string redisKey, int start, int stop, int db = -1);

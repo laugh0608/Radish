@@ -157,8 +157,8 @@ npm run validate:identity
 
 若需要沉淀更完整记录，优先复用：
 
-- [回归结论记录模板](/guide/regression-result-template)
-- [变更回归记录模板](/guide/change-regression-record-template)
+- [回归结论记录模板](/records/regression-result-template)
+- [变更回归记录模板](/records/change-regression-record-template)
 
 补充约定：
 

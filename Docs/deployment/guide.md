@@ -6,9 +6,9 @@
 当前若要按仓库现实执行发版、部署、发布后最小复核与回滚，请优先参考：
 
 - [M15 最小交付与部署基线](/guide/m15-delivery-baseline)
-- [M15 发布记录（v26.3.2-release，2026-04-06）](/guide/m15-release-record-2026-04-06)
+- [M15 发布记录（v26.3.2-release，2026-04-06）](/records/m15-release-record-2026-04-06)
 - [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)
-- [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist)
+- [M14 宿主运行首轮执行清单](/records/m14-host-runtime-checklist)
 
 其中本页继续保留环境口径、Compose 细节与部署注意事项；最小发布顺序、最小复核顺序与最小回滚基线统一收口到 `M15` 单一入口。
 
@@ -128,7 +128,7 @@
 
 当前真实样例见：
 
-- [M15 发布记录（v26.3.2-release，2026-04-06）](/guide/m15-release-record-2026-04-06)
+- [M15 发布记录（v26.3.2-release，2026-04-06）](/records/m15-release-record-2026-04-06)
 
 ### 现阶段说明
 
@@ -426,6 +426,8 @@ docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deplo
 ## 数据库初始化与迁移（Radish.DbMigrate）
 
 > 适用于：新环境第一次部署数据库，或在已有数据库上按版本执行结构迁移。
+>
+> 当前 `Radish.DbMigrate` 管辖范围内的数据库结构真相源是 `SqlSugar Code First + Radish.DbMigrate + 版本化差异 SQL`；完整协作边界见 [数据库结构变更协作口径](/guide/database-schema-change-governance)。
 
 ### 快速开始：一键初始化（推荐）
 
@@ -623,7 +625,7 @@ HTTP (5000/5100) → ASP.NET Core 应用
 - 当前 `master` 最小门禁已收敛为 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Identity Guard` 四项
 - `npm run validate:baseline` 已通过
 - 如本轮触达宿主 / 配置 / `DbMigrate` / 部署链，`npm run validate:baseline:host` 已通过
-  - 当前它也是 `M14` 的默认宿主验证入口，失败时优先回到 [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist) 按顺序分诊
+  - 当前它也是 `M14` 的默认宿主验证入口，失败时优先回到 [M14 宿主运行首轮执行清单](/records/m14-host-runtime-checklist) 按顺序分诊
 - 当前没有阻塞主线的已知 `P0 / P1` 问题
 - 已具备真实外部 HTTPS 域名，可为 `Deploy/.env.prod` 提供真实 `RADISH_PUBLIC_URL`
 - 已具备可挂载到 Auth 容器的正式证书，或至少已具备可持久化写入的正式证书目录 / 卷
@@ -672,7 +674,7 @@ HTTP (5000/5100) → ASP.NET Core 应用
      - `/` 可打开 WebOS
      - `/console/` 可打开 Console
      - Auth / Gateway / Api 容器日志中没有证书加载失败、Issuer 不匹配或重定向异常
-   - 若这里失败，不要直接扩大排查范围，优先回到 [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist) 确认是 `doctor/verify`、宿主日志还是网关 / 反代链路的问题
+   - 若这里失败，不要直接扩大排查范围，优先回到 [M14 宿主运行首轮执行清单](/records/m14-host-runtime-checklist) 确认是 `doctor/verify`、宿主日志还是网关 / 反代链路的问题
 
 5. **做真实外部域名链路验证**
    - 使用与 `RADISH_PUBLIC_URL` 完全一致的域名访问，不要混用 `localhost`
@@ -690,7 +692,7 @@ HTTP (5000/5100) → ASP.NET Core 应用
 
 上线前交付复核不再建议临时手写字段，统一复用：
 
-- [M14 部署后最小复核记录模板](/guide/m14-deployment-review-record-template)
+- [M14 部署后最小复核记录模板](/records/m14-deployment-review-record-template)
 
 最少应明确记录：
 
@@ -705,7 +707,7 @@ HTTP (5000/5100) → ASP.NET Core 应用
 - 当前阶段若尚不具备真实 `RADISH_PUBLIC_URL`、Auth 证书或 Docker 镜像推送 / 部署条件，可先暂缓本清单；这表示“当前不阻塞”，不表示“真实外部联调已完成”
 - 截至 `2026-04-06`，仓库已进入 `M15` 第一批；发布、部署、发布后最小复核与回滚的默认顺序统一以 [M15 最小交付与部署基线](/guide/m15-delivery-baseline) 为准
 - 若后续只是常规功能迭代，仍优先使用 `validate:baseline` 与 `master` PR 质量门禁，不需要每次都执行本清单
-- 若本轮问题已经落到宿主运行、自检或最小排障层，统一按 [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist) 的顺序处理，不要把部署问题与代码回归问题混在一起排
+- 若本轮问题已经落到宿主运行、自检或最小排障层，统一按 [M14 宿主运行首轮执行清单](/records/m14-host-runtime-checklist) 的顺序处理，不要把部署问题与代码回归问题混在一起排
 - 若未来把 `Auth` 扩为多实例部署，OIDC 证书必须来自共享挂载目录、共享卷或外部密钥服务，不能让每个实例各自自动生成一套
 
 ## 文档系统部署
@@ -811,10 +813,10 @@ COPY --from=build /app/gateway /app/gateway
 # 运行时不在镜像中写死 ENTRYPOINT，由 docker-compose 的 command 决定具体运行哪一个服务
 ```
 
-### 前端镜像设计示例（Dockerfile.frontend 草案，兼顾 WebOS SEO）
+### 前端镜像设计示例（Dockerfile.frontend 草案，兼顾公开内容 SEO）
 
-> 同样仅作为设计示例，说明如何用单一前端镜像承载三个前端项目。
-> 其中 `radish.client` 未来会承载 WebOS（帖子列表/详情等公开页面），需要对搜索引擎友好，建议采用 SSR/SSG + hydrate 的方式，而不是纯 SPA。出于简化，本节只记录“镜像运行形态”的规划，不约束具体框架实现（可以是 Vite SSR、Next.js、Astro 等）。
+> 同样仅作为设计示例，说明如何用单一前端镜像承载前端项目。
+> 当前 `radish.client` 已先采用 SPA 静态产物 + 运行时 head helper 的 SEO 基线：`index.html` 提供站点默认 meta，`publicHead` 在公开路由运行时维护 title、description、Open Graph 与 canonical，`public/robots.txt` 和 `public/sitemap.xml` 作为静态抓取 seed。SSR / SSG 不属于当前部署前置条件，后续若正式立项再补专门服务入口。
 
 ```dockerfile
 FROM node:20 AS base
@@ -832,26 +834,19 @@ COPY radish.client radish.client
 COPY radish.console radish.console
 
 # 统一构建所有前端项目
-# - radish.client: 未来可以是 SSR/SSG 构建（生成 server bundle + HTML 模板）
+# - radish.client: 当前构建为静态 SPA 产物，包含 robots.txt / sitemap.xml seed
 # - radish.console: 通常构建为静态站点
 RUN cd Frontend/radish.client && npm run build
 RUN cd Frontend/radish.console && npm run build
 
-# 运行时使用 Node 作为前端服务容器入口
-# - WebOS (radish.client) 通过 Node 服务进行 SSR/SSG 渲染，返回带完整 HTML 的帖子列表/详情页
-# - console 可按需独立托管；固定文档无需单独静态站点
-FROM node:20 AS final
-WORKDIR /app
-
-COPY --from=base /app .
-
-# 约定：
-# - `radish.client` 提供一个 SSR 入口（例如 scripts 中的 "start:ssr"），监听 3000 端口；
-# - 具体的 SSR 实现细节由前端工程内部决定，Docker 只关心如何启动该服务。
-CMD ["npm", "run", "start:ssr", "--prefix", "radish.client"]
+# 运行时可使用 Nginx / Caddy / 静态文件服务承载 dist
+# - 未匹配的公开 SPA 路由仍回退 index.html
+# - robots.txt / sitemap.xml 需要直接作为静态文件返回
+FROM nginx:alpine AS final
+COPY --from=base /app/Frontend/radish.client/dist /usr/share/nginx/html
 ```
 
-> 注意：上面的 `start:ssr` 仅为占位命令，用于表达“这个容器将以一个 Node Web 服务的形式运行 WebOS SSR”，真正实现时需要在 `Frontend/radish.client/package.json` 中定义对应脚本。
+> 注意：上面的 Dockerfile 仍是部署设计示例，真实仓库镜像入口以当前 `Frontend/Dockerfile` 和 Compose 配置为准。若后续切到 SSR / SSG，需要重新定义前端运行时、缓存策略和健康检查，而不是沿用当前静态文件服务假设。
 
 ### 两镜像多容器的 Compose 结构示例（草案）
 

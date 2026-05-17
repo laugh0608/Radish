@@ -12,6 +12,7 @@ import {
 } from '@/api/shop';
 import type { Product, ProductCategory, ProductListItem } from '@/types/shop';
 import { resolveMediaUrl } from '@/utils/media';
+import { copyToClipboard } from '@/utils/clipboard';
 import type { PublicShopProductsRoute, PublicShopRoute } from '../shopRouteState';
 import {
   buildPublicShopPath,
@@ -22,6 +23,12 @@ import {
   getPublicDetailBackLabelKey,
   type PublicDetailBackMode,
 } from '../publicRouteNavigation';
+import { buildPublicCanonicalUrl } from '../publicHead';
+import {
+  applyPublicStructuredData,
+  buildShopProductStructuredData,
+  removePublicStructuredData,
+} from '../publicStructuredData';
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { usePublicReplaceRouteSync } from '../usePublicReplaceRouteSync';
@@ -175,6 +182,8 @@ export const PublicShopApp = ({
   const [totalPages, setTotalPages] = useState(1);
   const [reloadToken, setReloadToken] = useState(0);
   const [categoriesResolved, setCategoriesResolved] = useState(false);
+  const [shareBusy, setShareBusy] = useState(false);
+  const [shareState, setShareState] = useState<'idle' | 'success' | 'error'>('idle');
 
   const pageTitle = route.kind === 'detail'
     ? t('shop.public.detailTitle')
@@ -218,6 +227,10 @@ export const PublicShopApp = ({
   }, [categoriesError, featuredError, route.kind, t]);
 
   const productsRouteState = route.kind === 'products' ? route : null;
+  const visibleCategories = useMemo(
+    () => categories.filter((category) => (category.voProductCount ?? 0) > 0),
+    [categories]
+  );
 
   const validatedCategoryId = useMemo(() => {
     if (!productsRouteState?.categoryId) {
@@ -228,10 +241,10 @@ export const PublicShopApp = ({
       return productsRouteState.categoryId;
     }
 
-    return categories.some((category) => String(category.voId) === productsRouteState.categoryId)
+    return visibleCategories.some((category) => String(category.voId) === productsRouteState.categoryId)
       ? productsRouteState.categoryId
       : undefined;
-  }, [categories, categoriesError, categoriesLoading, categoriesResolved, productsRouteState]);
+  }, [categoriesError, categoriesLoading, categoriesResolved, productsRouteState, visibleCategories]);
 
   const canonicalProductsRoute = useMemo<PublicShopProductsRoute>(() => {
     if (!productsRouteState) {
@@ -260,6 +273,35 @@ export const PublicShopApp = ({
   useEffect(() => {
     document.title = `${pageTitle} · ${t('desktop.apps.shop.name')}`;
   }, [pageTitle, t]);
+
+  useEffect(() => {
+    if (route.kind !== 'detail' || !selectedProduct) {
+      removePublicStructuredData();
+      return;
+    }
+
+    applyPublicStructuredData(buildShopProductStructuredData({
+      product: selectedProduct,
+      imageUrl: resolveMediaUrl(selectedProduct.voCoverImage || selectedProduct.voIcon),
+      canonicalPath: buildPublicShopPath({ kind: 'detail', productId: String(selectedProduct.voId) }),
+    }));
+
+    return removePublicStructuredData;
+  }, [route.kind, selectedProduct]);
+
+  useEffect(() => {
+    if (shareState === 'idle') {
+      return;
+    }
+
+    const timerId = window.setTimeout(() => {
+      setShareState('idle');
+    }, 2200);
+
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [shareState]);
 
   useEffect(() => {
     const requestId = ++categoryRequestIdRef.current;
@@ -467,6 +509,20 @@ export const PublicShopApp = ({
     onNavigate(fallbackProductsRoute);
   };
 
+  const handleShareProduct = async (productId: string) => {
+    setShareBusy(true);
+
+    try {
+      const sharePath = buildPublicShopPath({ kind: 'detail', productId });
+      await copyToClipboard(buildPublicCanonicalUrl(sharePath));
+      setShareState('success');
+    } catch {
+      setShareState('error');
+    } finally {
+      setShareBusy(false);
+    }
+  };
+
   const detailBackLabelKey = getPublicDetailBackLabelKey(detailBackAction?.mode);
   const detailBackLabel = detailBackLabelKey ? t(detailBackLabelKey) : t('shop.public.backToProducts');
   const detailBackHint = detailBackAction?.mode === 'discover'
@@ -556,9 +612,9 @@ export const PublicShopApp = ({
         )}
 
         <ProductList
-          categories={categories}
+          categories={visibleCategories}
           products={products}
-          selectedCategoryId={route.categoryId}
+          selectedCategoryId={validatedCategoryId}
           currentPage={currentPage}
           totalPages={totalPages}
           searchKeyword={route.keyword}
@@ -575,7 +631,7 @@ export const PublicShopApp = ({
           onSearchChange={(keyword) => {
             onNavigate({
               kind: 'products',
-              categoryId: route.categoryId,
+              categoryId: validatedCategoryId,
               keyword: keyword || undefined,
               page: 1
             });
@@ -583,7 +639,7 @@ export const PublicShopApp = ({
           onPageChange={(page) => {
             onNavigate({
               kind: 'products',
-              categoryId: route.categoryId,
+              categoryId: validatedCategoryId,
               keyword: route.keyword,
               page
             });
@@ -595,6 +651,10 @@ export const PublicShopApp = ({
   };
 
   const renderDetail = () => {
+    if (route.kind !== 'detail') {
+      return null;
+    }
+
     if (productLoading) {
       return (
         <PublicStatusCard
@@ -651,12 +711,28 @@ export const PublicShopApp = ({
     return (
       <article className={styles.detailCard}>
         <div className={styles.detailTopbar}>
-          <button type="button" className={styles.secondaryButton} onClick={handleBackFromDetail}>
-            <Icon icon="mdi:arrow-left" size={18} />
-            <span>{detailBackLabel}</span>
-          </button>
+          <div className={styles.detailTopbarActions}>
+            <button type="button" className={styles.secondaryButton} onClick={handleBackFromDetail}>
+              <Icon icon="mdi:arrow-left" size={18} />
+              <span>{detailBackLabel}</span>
+            </button>
+            <button
+              type="button"
+              className={styles.secondaryButton}
+              onClick={() => void handleShareProduct(route.productId)}
+              disabled={shareBusy}
+            >
+              <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={18} />
+              <span>{shareBusy ? t('shop.public.shareSubmitting') : t('shop.public.shareAction')}</span>
+            </button>
+          </div>
           <span className={styles.readOnlyBadge}>{t('shop.public.readOnlyBadge')}</span>
         </div>
+        {shareState !== 'idle' && (
+          <p className={styles.shareFeedback} data-state={shareState}>
+            {shareState === 'success' ? t('shop.public.shareSuccess') : t('shop.public.shareFailed')}
+          </p>
+        )}
         <p className={styles.detailBackHint}>{detailBackHint}</p>
 
         <div className={styles.detailHero}>

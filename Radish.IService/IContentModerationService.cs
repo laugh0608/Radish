@@ -12,7 +12,7 @@ public interface IContentModerationService : IBaseService<ContentReport, Content
     Task<long> SubmitReportAsync(SubmitContentReportDto dto, long reporterUserId, string reporterUserName, long tenantId);
 
     /// <summary>分页获取审核队列</summary>
-    Task<VoPagedResult<ContentReportQueueItemVo>> GetReportQueueAsync(int? status, int pageIndex, int pageSize);
+    Task<VoPagedResult<ContentReportQueueItemVo>> GetReportQueueAsync(ContentReportQueueQueryDto query);
 
     /// <summary>审核举报单</summary>
     Task<ContentReportQueueItemVo> ReviewReportAsync(
@@ -35,5 +35,5 @@ public interface IContentModerationService : IBaseService<ContentReport, Content
     Task<ContentModerationPermissionVo> GetPublishPermissionAsync(long userId);
 
     /// <summary>分页获取治理动作记录</summary>
-    Task<VoPagedResult<UserModerationActionVo>> GetActionLogsAsync(int pageIndex, int pageSize, long? targetUserId = null);
+    Task<VoPagedResult<UserModerationActionVo>> GetActionLogsAsync(ContentModerationActionLogQueryDto query);
 }

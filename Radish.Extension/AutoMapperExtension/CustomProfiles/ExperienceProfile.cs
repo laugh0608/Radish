@@ -22,7 +22,7 @@ public class ExperienceProfile : Profile
         // UserExperience -> UserExperienceVo (使用前缀识别 + 手动配置特殊字段)
         RecognizeDestinationPrefixes("Vo");
         CreateMap<UserExperience, UserExperienceVo>()
-            .ForMember(dest => dest.VoUserId, opt => opt.MapFrom(src => src.Id)) // Id 就是 UserId
+            .ForMember(dest => dest.VoUserId, opt => opt.MapFrom(src => src.UserId))
             .ForMember(dest => dest.VoUserName, opt => opt.Ignore()) // 需要在 Service 层单独设置
             .ForMember(dest => dest.VoAvatarUrl, opt => opt.Ignore()) // 需要在 Service 层单独设置
             .ForMember(dest => dest.VoCurrentLevelName, opt => opt.Ignore()) // 需要在 Service 层根据 LevelConfig 设置
@@ -38,7 +38,8 @@ public class ExperienceProfile : Profile
         // UserExperienceVo -> UserExperience (使用前缀识别 + 手动配置特殊字段)
         RecognizePrefixes("Vo");
         CreateMap<UserExperienceVo, UserExperience>()
-            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.VoUserId));
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.VoUserId));
     }
 
     /// <summary>配置经验值交易记录映射</summary>
@@ -48,6 +49,8 @@ public class ExperienceProfile : Profile
         RecognizeDestinationPrefixes("Vo");
         CreateMap<ExpTransaction, ExpTransactionVo>()
             .ForMember(dest => dest.VoExpTypeDisplay, opt => opt.MapFrom(src => GetExpTypeName(src.ExpType)))
+            .ForMember(dest => dest.VoOperatorId, opt => opt.MapFrom(src => src.CreateId))
+            .ForMember(dest => dest.VoOperatorName, opt => opt.MapFrom(src => src.CreateBy))
             .ForMember(dest => dest.VoUserName, opt => opt.Ignore()); // 需要在 Service 层单独设置
 
         // ExpTransactionVo -> ExpTransaction
@@ -76,11 +79,13 @@ public class ExperienceProfile : Profile
     {
         // UserExpDailyStats -> UserExpDailyStatsVo
         RecognizeDestinationPrefixes("Vo");
-        CreateMap<UserExpDailyStats, UserExpDailyStatsVo>();
+        CreateMap<UserExpDailyStats, UserExpDailyStatsVo>()
+            .ForMember(dest => dest.VoObservations, opt => opt.Ignore());
 
         // UserExpDailyStatsVo -> UserExpDailyStats
         RecognizePrefixes("Vo");
-        CreateMap<UserExpDailyStatsVo, UserExpDailyStats>();
+        CreateMap<UserExpDailyStatsVo, UserExpDailyStats>()
+            .ForSourceMember(src => src.VoObservations, opt => opt.DoNotValidate());
     }
 
     /// <summary>

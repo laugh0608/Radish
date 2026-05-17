@@ -43,9 +43,10 @@ public class RedisBasketRepository : IRedisBasketRepository
         return await _database.KeyExistsAsync(key);
     }
 
-    public async Task<string> GetValue(string key)
+    public async Task<string?> GetValue(string key)
     {
-        return await _database.StringGetAsync(key);
+        var value = await _database.StringGetAsync(key);
+        return value.HasValue ? value.ToString() : null;
     }
 
     public async Task Remove(string key)
@@ -70,13 +71,14 @@ public class RedisBasketRepository : IRedisBasketRepository
         }
     }
 
-    public async Task<TEntity> Get<TEntity>(string key)
+    public async Task<TEntity?> Get<TEntity>(string key)
     {
         var value = await _database.StringGetAsync(key);
         if (value.HasValue)
         {
             //需要用的反序列化，将Redis存储的Byte[]，进行反序列化
-            return SerializeHelper.Deserialize<TEntity>(value);
+            var payload = (byte[]?)value;
+            return payload == null ? default : SerializeHelper.Deserialize<TEntity>(payload);
         }
         else
         {
@@ -145,9 +147,10 @@ public class RedisBasketRepository : IRedisBasketRepository
     /// <param name="redisKey"></param>
     /// <param name="db"></param>
     /// <returns></returns>
-    public async Task<T> ListLeftPopAsync<T>(string redisKey, int db = -1) where T : class
+    public async Task<T?> ListLeftPopAsync<T>(string redisKey, int db = -1) where T : class
     {
-        return JsonConvert.DeserializeObject<T>(await _database.ListLeftPopAsync(redisKey));
+        var value = await _database.ListLeftPopAsync(redisKey);
+        return value.HasValue ? JsonConvert.DeserializeObject<T>(value.ToString()) : null;
     }
 
     /// <summary>
@@ -157,31 +160,34 @@ public class RedisBasketRepository : IRedisBasketRepository
     /// <param name="redisKey"></param>
     /// <param name="db"></param>
     /// <returns></returns>
-    public async Task<T> ListRightPopAsync<T>(string redisKey, int db = -1) where T : class
+    public async Task<T?> ListRightPopAsync<T>(string redisKey, int db = -1) where T : class
     {
-        return JsonConvert.DeserializeObject<T>(await _database.ListRightPopAsync(redisKey));
+        var value = await _database.ListRightPopAsync(redisKey);
+        return value.HasValue ? JsonConvert.DeserializeObject<T>(value.ToString()) : null;
     }
 
     /// <summary>
-    /// 移除并返回存储在该键列表的第一个元素   
+    /// 移除并返回存储在该键列表的第一个元素
     /// </summary>
     /// <param name="redisKey"></param>
     /// <param name="db"></param>
     /// <returns></returns>
-    public async Task<string> ListLeftPopAsync(string redisKey, int db = -1)
+    public async Task<string?> ListLeftPopAsync(string redisKey, int db = -1)
     {
-        return await _database.ListLeftPopAsync(redisKey);
+        var value = await _database.ListLeftPopAsync(redisKey);
+        return value.HasValue ? value.ToString() : null;
     }
 
     /// <summary>
-    /// 移除并返回存储在该键列表的最后一个元素   
+    /// 移除并返回存储在该键列表的最后一个元素
     /// </summary>
     /// <param name="redisKey"></param>
     /// <param name="db"></param>
     /// <returns></returns>
-    public async Task<string> ListRightPopAsync(string redisKey, int db = -1)
+    public async Task<string?> ListRightPopAsync(string redisKey, int db = -1)
     {
-        return await _database.ListRightPopAsync(redisKey);
+        var value = await _database.ListRightPopAsync(redisKey);
+        return value.HasValue ? value.ToString() : null;
     }
 
     /// <summary>

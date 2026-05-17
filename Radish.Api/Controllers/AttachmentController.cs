@@ -458,6 +458,8 @@ public class AttachmentController : ControllerBase
     /// </summary>
     /// <param name="pageIndex">页码（从 1 开始）</param>
     /// <param name="pageSize">每页数量（默认 20）</param>
+    /// <param name="businessType">业务类型筛选</param>
+    /// <param name="keyword">原始文件名关键字</param>
     /// <returns>分页附件列表</returns>
     [HttpGet]
     [Authorize]

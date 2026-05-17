@@ -4,6 +4,34 @@ import { defineConfig, type PluginOption, type ViteDevServer } from 'vite';
 import plugin from '@vitejs/plugin-react';
 import { env } from 'process';
 
+const inPackage = (id: string, packageName: string): boolean => {
+    const normalized = id.replace(/\\/g, '/');
+    const pnpmName = packageName.replace('/', '+');
+
+    return (
+        normalized.includes(`/node_modules/${packageName}/`) ||
+        normalized.includes(`/node_modules/.pnpm/${pnpmName}@`) ||
+        normalized.includes(`/node_modules/.pnpm/${pnpmName}%40`)
+    );
+};
+
+const getAntdComponentChunk = (id: string): string | undefined => {
+    const normalized = id.replace(/\\/g, '/');
+    const marker = '/node_modules/antd/es/';
+    const markerIndex = normalized.indexOf(marker);
+
+    if (markerIndex < 0) {
+        return undefined;
+    }
+
+    const segment = normalized.slice(markerIndex + marker.length).split('/')[0];
+    if (!segment || segment === 'index.js') {
+        return 'vendor-antd-core';
+    }
+
+    return `vendor-antd-${segment.replace(/[^a-zA-Z0-9_-]/g, '-')}`;
+};
+
 const healthCheckPlugin = (): PluginOption => ({
     name: 'radish-console-health-check',
     configureServer(server: ViteDevServer) {
@@ -83,5 +111,45 @@ export default defineConfig({
         // 配置 history API fallback，确保所有路由都返回 index.html
         // 这对于 SPA 路由至关重要
         middlewareMode: false
+    },
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks(id) {
+                    const normalized = id.replace(/\\/g, '/');
+
+                    if (normalized.includes('/Frontend/radish.ui/') || inPackage(id, '@radish/ui')) return 'vendor-radish-ui';
+                    if (normalized.includes('/Frontend/radish.http/') || inPackage(id, '@radish/http')) return 'vendor-radish-http';
+
+                    if (inPackage(id, 'react') || inPackage(id, 'react-dom') || inPackage(id, 'scheduler')) {
+                        return 'vendor-react';
+                    }
+
+                    if (inPackage(id, 'react-router-dom') || inPackage(id, 'react-router')) return 'vendor-router';
+                    if (inPackage(id, 'dayjs')) return 'vendor-date';
+
+                    const antdComponentChunk = getAntdComponentChunk(id);
+                    if (antdComponentChunk) return antdComponentChunk;
+
+                    if (inPackage(id, '@ant-design/icons')) return 'vendor-antd-icons';
+                    if (inPackage(id, '@ant-design/cssinjs')) return 'vendor-antd-core';
+                    if (inPackage(id, '@rc-component/portal')) return 'vendor-rc-portal';
+
+                    if (normalized.includes('/node_modules/@rc-component/')) {
+                        const rcComponent = normalized.split('/node_modules/@rc-component/')[1]?.split('/')[0];
+                        return rcComponent ? `vendor-rc-${rcComponent}` : 'vendor-rc-component';
+                    }
+
+                    if (normalized.includes('/node_modules/rc-')) {
+                        const rcPackage = normalized.split('/node_modules/')[1]?.split('/')[0];
+                        return rcPackage ? `vendor-${rcPackage}` : 'vendor-rc';
+                    }
+
+                    if (normalized.includes('/node_modules/')) return 'vendor-misc';
+
+                    return undefined;
+                },
+            },
+        },
     }
 });

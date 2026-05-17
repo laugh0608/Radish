@@ -38,7 +38,7 @@ public class SqlSugarCache : ICacheService
 
     public V Get<V>(string key)
     {
-        return Caching != null ? Caching.Get<V>(key) : default;
+        return Caching != null ? Caching.Get<V>(key) : default!;
     }
 
     public IEnumerable<string> GetAllKey<V>()

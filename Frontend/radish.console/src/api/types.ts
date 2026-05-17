@@ -59,7 +59,7 @@ export enum ConsumableType {
   ExpCard = 4,           // 经验卡
   CoinCard = 5,          // 萝卜币红包
   DoubleExpCard = 6,     // 双倍经验卡
-  LotteryTicket = 7      // 抽奖券
+  LotteryTicket = 99     // 抽奖券
 }
 
 /**
@@ -111,48 +111,50 @@ export interface ProductCategory {
  * 商品 Vo（直接使用后端字段名）
  */
 export interface Product {
-  voId: number;
+  voId: string | number;
   voName: string;
-  voDescription: string;
+  voDescription?: string | null;
   voIconAttachmentId?: string | null;
-  voIcon: string;
+  voIcon?: string | null;
   voCoverAttachmentId?: string | null;
-  voCoverImage: string;
+  voCoverImage?: string | null;
   voCategoryId: string;
-  voCategoryName: string;
+  voCategoryName?: string | null;
   voProductType: string;
-  voBenefitType?: string;
-  voConsumableType?: string;
+  voBenefitType?: string | null;
+  voConsumableType?: string | null;
+  voBenefitValue?: string | null;
   voPrice: number;
-  voOriginalPrice: number;
+  voOriginalPrice?: number | null;
   voHasDiscount: boolean;
-  voDiscountPercent: number;
+  voDiscountPercent?: number | null;
   voStockType: string;
   voStock: number;
   voSoldCount: number;
   voLimitPerUser: number;
   voDurationType: string;
-  voDurationDays: number;
-  voExpiresAt: string;
+  voDurationDays?: number | null;
+  voExpiresAt?: string | null;
   voDurationDisplay: string;
   voSortOrder: number;
   voIsOnSale: boolean;
   voIsEnabled: boolean;
   voCreateTime: string;
-  voUpdateTime: string;
+  voOnSaleTime?: string | null;
+  voOffSaleTime?: string | null;
 }
 
 /**
  * 订单 Vo（直接使用后端字段名）
  */
 export interface Order {
-  voId: number;
+  voId: string | number;
   voOrderNo: string;
-  voUserId: number;
+  voUserId: string | number;
   voUserName: string;
-  voProductId: number;
+  voProductId: string | number;
   voProductName: string;
-  voProductIcon: string;
+  voProductIcon?: string | null;
   voProductType: string;
   voProductTypeDisplay: string;
   voQuantity: number;
@@ -160,14 +162,16 @@ export interface Order {
   voTotalPrice: number;
   voStatus: string;
   voStatusDisplay: string;
-  voBenefitExpiresAt: string;
-  voDurationDisplay: string;
+  voBenefitExpiresAt?: string | null;
+  voDurationDisplay?: string | null;
   voCreateTime: string;
-  voPaidTime: string;
-  voCompletedTime: string;
-  voCancelledTime: string;
-  voCancelReason: string;
-  voFailReason: string;
+  voPaidTime?: string | null;
+  voCompletedTime?: string | null;
+  voCancelledTime?: string | null;
+  voCancelReason?: string | null;
+  voFailReason?: string | null;
+  voUserRemark?: string | null;
+  voAdminRemark?: string | null;
 }
 
 /**
@@ -199,5 +203,5 @@ export interface CreateProductDto {
  * 更新商品 DTO
  */
 export interface UpdateProductDto extends CreateProductDto {
-  id: number;
+  id: string | number;
 }

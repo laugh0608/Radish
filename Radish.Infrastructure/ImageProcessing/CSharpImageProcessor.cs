@@ -342,11 +342,9 @@ public class CSharpImageProcessor : IImageProcessor
         // 按优先级尝试加载字体
         foreach (var fontName in preferredFonts)
         {
-            var family = SystemFonts.Families.FirstOrDefault(f =>
-                string.Equals(f.Name, fontName, StringComparison.OrdinalIgnoreCase) ||
-                f.Name.Contains(fontName, StringComparison.OrdinalIgnoreCase));
-
-            if (family != null)
+            foreach (var family in SystemFonts.Families.Where(f =>
+                         string.Equals(f.Name, fontName, StringComparison.OrdinalIgnoreCase) ||
+                         f.Name.Contains(fontName, StringComparison.OrdinalIgnoreCase)))
             {
                 try
                 {

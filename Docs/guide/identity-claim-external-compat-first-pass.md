@@ -1,13 +1,13 @@
 # 身份语义 Phase 4 仓库外兼容边界首轮执行记录（仓库资产侧）
 
-> 本文不是新的 checklist，而是对 [身份语义 Phase 4 仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist) 的第一轮实际执行记录。
+> 本文不是新的 checklist，而是对 [身份语义 Phase 4 仓库外兼容边界确认清单](/records/identity-claim-external-compat-checklist) 的第一轮实际执行记录。
 >
 > 当前记录范围刻意收敛为：**仓库内可直接核实的交付资产与官方协议入口**。它的目标不是替代测试 / 生产环境盘点，而是先把“仓库里已经能证明什么、还不能证明什么”写成事实，避免下一步继续停留在抽象表述。
 >
 > 关联文档：
 >
 > - [身份语义 Phase 4 最终启动评审](/guide/identity-claim-phase4-start-review)
-> - [身份语义 Phase 4 仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist)
+> - [身份语义 Phase 4 仓库外兼容边界确认清单](/records/identity-claim-external-compat-checklist)
 > - [身份语义 Phase 4 协议消费者矩阵](/guide/identity-claim-protocol-consumers)
 > - [鉴权与授权指南](/guide/authentication)
 > - [部署与容器指南](/deployment/guide)

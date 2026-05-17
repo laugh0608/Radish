@@ -6,11 +6,11 @@
 >
 > - [M15 最小交付与部署基线](/guide/m15-delivery-baseline)
 > - [验证基线说明](/guide/validation-baseline)
-> - [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist)
-> - [M14 部署后最小复核记录模板](/guide/m14-deployment-review-record-template)
-> - [M15 发布记录模板](/guide/m15-release-record-template)
-> - [变更回归记录模板](/guide/change-regression-record-template)
-> - [回归结论记录模板](/guide/regression-result-template)
+> - [M14 宿主运行首轮执行清单](/records/m14-host-runtime-checklist)
+> - [M14 部署后最小复核记录模板](/records/m14-deployment-review-record-template)
+> - [M15 发布记录模板](/records/m15-release-record-template)
+> - [变更回归记录模板](/records/change-regression-record-template)
+> - [回归结论记录模板](/records/regression-result-template)
 
 ## 一句话目标
 

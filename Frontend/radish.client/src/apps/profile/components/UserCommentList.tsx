@@ -3,21 +3,23 @@ import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { Icon } from '@radish/ui/icon';
+import type { LongId } from '@/api/user';
 import styles from './UserCommentList.module.css';
 
 interface Comment {
-  voId: number;
+  voId: LongId;
   voContent: string;
-  voPostId: number;
+  voPostId: LongId;
+  voPostPublicId?: string | null;
   voLikeCount: number;
   voCreateTime: string;
 }
 
 interface UserCommentListProps {
-  userId: number;
+  userId: LongId;
   apiBaseUrl: string;
   displayTimeZone: string;
-  onCommentClick?: (postId: number, commentId: number) => void;
+  onCommentClick?: (postId: LongId, commentId: LongId, postPublicId?: string | null) => void;
 }
 
 export const UserCommentList = ({ userId, apiBaseUrl, displayTimeZone, onCommentClick }: UserCommentListProps) => {
@@ -36,7 +38,7 @@ export const UserCommentList = ({ userId, apiBaseUrl, displayTimeZone, onComment
     setLoading(true);
     try {
       const response = await fetch(
-        `${apiBaseUrl}/api/v1/Comment/GetUserComments?userId=${userId}&pageIndex=${page}&pageSize=10`
+        `${apiBaseUrl}/api/v1/Comment/GetUserComments?userId=${encodeURIComponent(String(userId))}&pageIndex=${page}&pageSize=10`
       );
       const json = await response.json();
       if (json.isSuccess && json.responseData) {
@@ -65,7 +67,7 @@ export const UserCommentList = ({ userId, apiBaseUrl, displayTimeZone, onComment
           <div
             key={comment.voId}
             className={styles.commentItem}
-            onClick={() => onCommentClick?.(comment.voPostId, comment.voId)}
+            onClick={() => onCommentClick?.(comment.voPostId, comment.voId, comment.voPostPublicId)}
             style={{ cursor: onCommentClick ? 'pointer' : 'default' }}
           >
             <p className={styles.content}>{comment.voContent}</p>

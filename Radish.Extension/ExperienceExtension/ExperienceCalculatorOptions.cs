@@ -108,13 +108,59 @@ public class ExperienceCalculatorOptions : IConfigurableOptions
     public int MaxLevel { get; set; } = 10;
 
     /// <summary>
+    /// 每日经验治理配置
+    /// </summary>
+    public ExperienceDailyLimitOptions DailyLimits { get; set; } = new();
+
+    /// <summary>
     /// 是否启用缓存
     /// </summary>
-    /// <remarks>计算结果是否缓存，建议开启以提升性能</remarks>
+    /// <remarks>经验值相关配置结果是否缓存，建议开启以提升性能</remarks>
     public bool EnableCache { get; set; } = true;
 
     /// <summary>
     /// 缓存过期时间（分钟）
     /// </summary>
     public int CacheExpirationMinutes { get; set; } = 60;
+}
+
+/// <summary>
+/// 每日经验限制配置
+/// </summary>
+public class ExperienceDailyLimitOptions
+{
+    /// <summary>
+    /// 是否启用每日经验上限
+    /// </summary>
+    public bool EnableDailyLimit { get; set; } = true;
+
+    /// <summary>
+    /// 每日总经验值上限
+    /// </summary>
+    public int MaxDailyExp { get; set; } = 500;
+
+    /// <summary>
+    /// 每日发帖经验值上限
+    /// </summary>
+    public int MaxExpFromPost { get; set; } = 100;
+
+    /// <summary>
+    /// 每日评论经验值上限
+    /// </summary>
+    public int MaxExpFromComment { get; set; } = 100;
+
+    /// <summary>
+    /// 每日点赞经验值上限
+    /// </summary>
+    public int MaxExpFromLike { get; set; } = 50;
+
+    /// <summary>
+    /// 每日高亮评论经验值上限
+    /// </summary>
+    public int MaxExpFromHighlight { get; set; } = 200;
+
+    /// <summary>
+    /// 每日登录经验值上限
+    /// </summary>
+    public int MaxExpFromLogin { get; set; } = 20;
 }

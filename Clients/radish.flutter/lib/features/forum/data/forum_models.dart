@@ -169,6 +169,7 @@ class ForumPostDetail {
     this.lotteryIsDrawn = false,
     this.createTime,
     this.updateTime,
+    this.publicId,
   });
 
   factory ForumPostDetail.fromJson(Object? json) {
@@ -178,6 +179,7 @@ class ForumPostDetail {
 
     return ForumPostDetail(
       id: _readRequiredId(map, 'voId'),
+      publicId: _readString(map['voPublicId']),
       title: _readString(map['voTitle']) ?? '未命名帖子',
       summary: _readString(map['voSummary']),
       content: _readString(map['voContent']) ?? '',
@@ -205,6 +207,7 @@ class ForumPostDetail {
   }
 
   final String id;
+  final String? publicId;
   final String title;
   final String? summary;
   final String content;
@@ -228,6 +231,15 @@ class ForumPostDetail {
   final bool lotteryIsDrawn;
   final String? createTime;
   final String? updateTime;
+
+  String get publicRouteId {
+    final normalizedPublicId = publicId?.trim();
+    if (normalizedPublicId != null && normalizedPublicId.isNotEmpty) {
+      return normalizedPublicId;
+    }
+
+    return id.trim();
+  }
 
   List<String> get badges {
     return _buildForumBadges(

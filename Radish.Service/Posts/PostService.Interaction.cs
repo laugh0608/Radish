@@ -299,7 +299,7 @@ public partial class PostService
                                     TriggerName = null,
                                     TriggerAvatar = null,
                                     ReceiverUserIds = new List<long> { post.AuthorId },
-                                    ExtData = NotificationNavigationHelper.BuildForumNavigationExtData(postId)
+                                    ExtData = NotificationNavigationHelper.BuildForumNavigationExtData(postId, postPublicId: post.PublicId)
                                 });
 
                                 await _dedupService.RecordDedupKeyAsync(

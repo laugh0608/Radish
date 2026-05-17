@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { RouterProvider } from 'react-router-dom';
 import { UserProvider } from './contexts/UserContext';
 import { LoadingProvider } from './contexts/LoadingContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -8,7 +7,7 @@ import { setupApiInterceptors } from './services/apiInterceptor';
 import { tokenService } from './services/tokenService';
 import { env } from './config/env';
 import { log } from './utils/logger';
-import { router } from './router';
+import { ConsoleRouterProvider } from './router';
 import './App.css';
 
 setupApiInterceptors();
@@ -37,7 +36,7 @@ function App() {
     <ErrorBoundary>
       <LoadingProvider>
         <UserProvider>
-          <RouterProvider router={router} />
+          <ConsoleRouterProvider />
           <GlobalLoading />
         </UserProvider>
       </LoadingProvider>

@@ -1,5 +1,9 @@
 # 经验值与等级系统：实施计划与待确认问题
 
+> 文档定位：本文属于阶段性路线文档，保留当时的实施拆分与待确认问题，不作为当前默认说明书入口。
+>
+> 日常协作优先查看 [Guide 手册索引](/guide/) 与 [experience-level-system](/guide/experience-level-system)。
+
 > 入口页：[经验值与等级系统设计方案](/guide/experience-level-system)
 
 ## 12. 实施计划
@@ -30,7 +34,7 @@
 
 3. **Service 层** ✅
    - [x] 创建 `IExperienceService` 接口
-   - [x] 实现 `ExperienceService`(发放、��级、统计)
+- [x] 实现 `ExperienceService`（发放、升级、统计）
    - [x] 实现乐观锁重试机制 (6次重试，指数退避)
    - [x] 实现等级计算逻辑 (二分查找式算法)
    - [x] 实现每日上限检查

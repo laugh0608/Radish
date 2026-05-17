@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /discover
+Allow: /forum
+Allow: /forum/
+Allow: /docs
+Allow: /docs/
+Allow: /u/
+Allow: /leaderboard
+Allow: /shop
+Allow: /shop/
+Disallow: /console/
+Disallow: /oidc/
+Disallow: /Account/
+Disallow: /connect/
+Disallow: /api/
+Disallow: /scalar/
+Sitemap: https://radishx.com/sitemap.xml

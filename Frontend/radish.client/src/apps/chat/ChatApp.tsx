@@ -4,9 +4,11 @@ import { toast } from '@radish/ui/toast';
 import { buildAttachmentAssetUrl } from '@radish/ui';
 import { uploadImage } from '@/api/attachment';
 import type { ContentReportTargetType } from '@/api/contentModeration';
+import { useCurrentWindow } from '@/desktop/useCurrentWindow';
 import {
   getChannelHistory,
   getChannelList,
+  getChannelMessageWindow,
   getChannelOnlineMembers,
   recallChannelMessage,
   sendChannelMessage,
@@ -17,6 +19,7 @@ import { chatHub } from '@/services/chatHub';
 import { useChatStore } from '@/stores/chatStore';
 import { useWindowStore } from '@/stores/windowStore';
 import { useUserStore } from '@/stores/userStore';
+import { parseChatWindowParams } from '@/utils/chatNavigation';
 import { log } from '@/utils/logger';
 import { ContentReportModal } from '@/components/ContentReportModal';
 import i18n from '@/i18n';
@@ -31,6 +34,7 @@ import styles from './ChatApp.module.css';
 
 const PAGE_SIZE = 50;
 const MEMBER_REFRESH_INTERVAL_MS = 15_000;
+const MESSAGE_HIGHLIGHT_DURATION_MS = 2_600;
 const CHAT_DRAFT_STORAGE_KEY = 'radish.chat.drafts.v1';
 const MENTION_PATTERN = /@\[(?<name>[^\]]+)\]\((?<id>\d+)\)/g;
 
@@ -54,6 +58,18 @@ interface ChannelDraft {
 }
 
 type ChannelDraftMap = Record<string, ChannelDraft>;
+
+interface MessageNavigationTarget {
+  channelId: string;
+  messageId: string;
+  signature: string;
+}
+
+interface MessageFocusTarget {
+  channelId: string;
+  messageId: string;
+  signature: string;
+}
 
 function toNumericId(value: EntityIdValue | null | undefined): number {
   if (typeof value === 'number') {
@@ -313,6 +329,7 @@ function getReplyTargetMessageId(message: ChannelMessageVo | null | undefined): 
 export const ChatApp = () => {
   const { t } = useTranslation();
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
+  const currentWindow = useCurrentWindow();
   const { openApp } = useWindowStore();
   const {
     channels,
@@ -324,6 +341,7 @@ export const ChatApp = () => {
     setActiveChannel,
     setChannelMessages,
     prependChannelMessages,
+    appendChannelMessages,
     addMessage,
     removeMessage,
     recallMessage,
@@ -331,6 +349,7 @@ export const ChatApp = () => {
   const currentUserId = useUserStore((state) => state.userId);
   const currentUserName = useUserStore((state) => state.userName);
   const currentUserAvatarUrl = useUserStore((state) => state.avatarUrl);
+  const windowParams = useMemo(() => parseChatWindowParams(currentWindow?.appParams), [currentWindow?.appParams]);
 
   const [loadingChannels, setLoadingChannels] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -340,7 +359,8 @@ export const ChatApp = () => {
   const [messageInput, setMessageInput] = useState('');
   const [replyTarget, setReplyTarget] = useState<ChannelMessageVo | null>(null);
   const [pendingImage, setPendingImage] = useState<PendingImageDraft | null>(null);
-  const [hasMoreHistory, setHasMoreHistory] = useState<Record<string, boolean>>({});
+  const [hasMoreOlderHistory, setHasMoreOlderHistory] = useState<Record<string, boolean>>({});
+  const [hasMoreNewerHistory, setHasMoreNewerHistory] = useState<Record<string, boolean>>({});
   const [typingAt, setTypingAt] = useState(0);
   const [mentionContext, setMentionContext] = useState<MentionContext | null>(null);
   const [mentionOptions, setMentionOptions] = useState<UserMentionOption[]>([]);
@@ -349,14 +369,23 @@ export const ChatApp = () => {
   const [onlineMembers, setOnlineMembers] = useState<ChannelMemberVo[]>([]);
   const [memberPanelCollapsed, setMemberPanelCollapsed] = useState(false);
   const [reportTarget, setReportTarget] = useState<{ targetType: ContentReportTargetType; targetId: number } | null>(null);
+  const [messageNavigationTarget, setMessageNavigationTarget] = useState<MessageNavigationTarget | null>(null);
+  const [messageFocusTarget, setMessageFocusTarget] = useState<MessageFocusTarget | null>(null);
+  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
 
   const messageScrollRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const messageElementMapRef = useRef(new Map<string, HTMLDivElement>());
   const previousConnectionStateRef = useRef(connectionState);
   const previousChannelIdRef = useRef<EntityIdValue | null>(null);
   const activeChannelIdRef = useRef<EntityIdValue | null>(null);
   const loadedDraftChannelRef = useRef<EntityIdValue | null>(null);
+  const handledWindowNavigationRef = useRef<string | null>(null);
+  const handledMessageWindowLoadRef = useRef<string | null>(null);
+  const windowChannelIdRef = useRef<string | undefined>(windowParams.channelId);
+  const messageNavigationTargetRef = useRef<MessageNavigationTarget | null>(null);
+  const messageHighlightTimerRef = useRef<number | null>(null);
   const tempMessageIdRef = useRef(-1);
   const composerStateRef = useRef<{ messageInput: string; replyTarget: ChannelMessageVo | null; pendingImage: PendingImageDraft | null }>({
     messageInput: '',
@@ -387,6 +416,7 @@ export const ChatApp = () => {
 
     return messageMap[getEntityKey(activeChannelId)] || [];
   }, [activeChannelId, messageMap]);
+  const activeChannelKey = useMemo(() => getEntityKey(activeChannelId), [activeChannelId]);
 
   const typingUsers = useMemo(() => {
     if (!activeChannelId) {
@@ -414,6 +444,57 @@ export const ChatApp = () => {
     setMentionOptions([]);
     setMentionSelectedIndex(0);
     setMentionLoading(false);
+  }, []);
+
+  const clearMessageHighlight = useCallback(() => {
+    if (messageHighlightTimerRef.current !== null) {
+      window.clearTimeout(messageHighlightTimerRef.current);
+      messageHighlightTimerRef.current = null;
+    }
+
+    setHighlightedMessageId(null);
+  }, []);
+
+  const highlightMessage = useCallback((messageId: string) => {
+    clearMessageHighlight();
+    setHighlightedMessageId(messageId);
+    messageHighlightTimerRef.current = window.setTimeout(() => {
+      setHighlightedMessageId((current) => (current === messageId ? null : current));
+      messageHighlightTimerRef.current = null;
+    }, MESSAGE_HIGHLIGHT_DURATION_MS);
+  }, [clearMessageHighlight]);
+
+  const setMessageElementRef = useCallback((messageId: string, element: HTMLDivElement | null) => {
+    if (!messageId) {
+      return;
+    }
+
+    if (element) {
+      messageElementMapRef.current.set(messageId, element);
+      return;
+    }
+
+    messageElementMapRef.current.delete(messageId);
+  }, []);
+
+  const updateHistoryAvailability = useCallback((
+    channelId: EntityIdValue,
+    hasMoreBefore: boolean,
+    hasMoreAfter: boolean
+  ) => {
+    const channelKey = getEntityKey(channelId);
+    if (!channelKey) {
+      return;
+    }
+
+    setHasMoreOlderHistory((prev) => ({
+      ...prev,
+      [channelKey]: hasMoreBefore,
+    }));
+    setHasMoreNewerHistory((prev) => ({
+      ...prev,
+      [channelKey]: hasMoreAfter,
+    }));
   }, []);
 
   const handleOpenUserProfile = useCallback((targetUserId: EntityIdValue, targetUserName?: string | null, avatarUrl?: string | null) => {
@@ -584,11 +665,23 @@ export const ChatApp = () => {
       const data = await getChannelList();
       setChannels(data);
 
-      if (data.length > 0) {
-        const firstId = normalizeEntityId(data[0].voId);
-        if (firstId) {
-          setActiveChannel(firstId);
-        }
+      if (data.length === 0) {
+        setActiveChannel(null);
+        return;
+      }
+
+      const targetWindowChannelId = windowChannelIdRef.current;
+      const currentActiveChannelId = activeChannelIdRef.current;
+      const nextActiveChannelId = (
+        targetWindowChannelId && data.some((channel) => areEntityIdsEqual(channel.voId, targetWindowChannelId))
+          ? targetWindowChannelId
+          : currentActiveChannelId && data.some((channel) => areEntityIdsEqual(channel.voId, currentActiveChannelId))
+            ? normalizeEntityId(currentActiveChannelId)
+            : normalizeEntityId(data[0].voId)
+      );
+
+      if (nextActiveChannelId) {
+        setActiveChannel(nextActiveChannelId);
       }
     } catch (error) {
       log.error('ChatApp', '加载频道列表失败:', error);
@@ -607,12 +700,9 @@ export const ChatApp = () => {
     setLoadingHistory(true);
 
     try {
-      const history = await getChannelHistory(channelId, undefined, PAGE_SIZE);
+      const history = await getChannelHistory(channelId, { pageSize: PAGE_SIZE });
       setChannelMessages(channelId, history);
-      setHasMoreHistory((prev) => ({
-        ...prev,
-        [channelKey]: history.length >= PAGE_SIZE,
-      }));
+      updateHistoryAvailability(channelId, history.length >= PAGE_SIZE, false);
 
       requestAnimationFrame(() => {
         scrollToBottom();
@@ -625,7 +715,50 @@ export const ChatApp = () => {
     } finally {
       setLoadingHistory(false);
     }
-  }, [scrollToBottom, setChannelMessages, t]);
+  }, [scrollToBottom, setChannelMessages, t, updateHistoryAvailability]);
+
+  const loadMessageWindow = useCallback(async (target: MessageNavigationTarget) => {
+    const channelId = target.channelId;
+    if (!channelId) {
+      return;
+    }
+
+    let shouldFallbackToLatest = false;
+    setLoadingHistory(true);
+
+    try {
+      const windowData = await getChannelMessageWindow(channelId, target.messageId);
+      setChannelMessages(channelId, windowData.voMessages);
+      updateHistoryAvailability(channelId, windowData.voHasMoreBefore, windowData.voHasMoreAfter);
+      setMessageFocusTarget({
+        channelId,
+        messageId: getEntityKey(windowData.voAnchorMessageId),
+        signature: target.signature,
+      });
+      if (messageNavigationTargetRef.current?.signature === target.signature) {
+        messageNavigationTargetRef.current = null;
+      }
+      setMessageNavigationTarget((current) => (current?.signature === target.signature ? null : current));
+
+      if (!windowData.voHasMoreAfter) {
+        await chatHub.markChannelAsRead(channelId);
+      }
+    } catch (error) {
+      shouldFallbackToLatest = true;
+      if (messageNavigationTargetRef.current?.signature === target.signature) {
+        messageNavigationTargetRef.current = null;
+      }
+      setMessageNavigationTarget((current) => (current?.signature === target.signature ? null : current));
+      log.error('ChatApp', '加载目标消息窗口失败:', error);
+      toast.error(error instanceof Error ? error.message : t('chat.messageNavigationNotFound'));
+    } finally {
+      setLoadingHistory(false);
+    }
+
+    if (shouldFallbackToLatest) {
+      await loadInitialHistory(channelId);
+    }
+  }, [loadInitialHistory, setChannelMessages, t, updateHistoryAvailability]);
 
   const loadOnlineMembers = useCallback(async (channelId: EntityIdValue) => {
     if (!isPersistedEntityId(channelId)) {
@@ -645,37 +778,98 @@ export const ChatApp = () => {
     }
   }, []);
 
-  const loadMoreHistory = useCallback(async () => {
-    const activeChannelKey = getEntityKey(activeChannelId);
-    if (!activeChannelId || !activeChannelKey || loadingHistory || !hasMoreHistory[activeChannelKey]) {
-      return;
+  const loadOlderHistory = useCallback(async () => {
+    if (!activeChannelId || !activeChannelKey || loadingHistory || !hasMoreOlderHistory[activeChannelKey]) {
+      return 'skipped' as const;
     }
 
     const oldestMessage = activeMessages[0];
     const beforeMessageId = oldestMessage?.voId;
     if (!isPersistedEntityId(beforeMessageId)) {
-      setHasMoreHistory((prev) => ({
+      setHasMoreOlderHistory((prev) => ({
         ...prev,
         [activeChannelKey]: false,
       }));
-      return;
+      return 'exhausted' as const;
     }
 
     setLoadingHistory(true);
     try {
-      const older = await getChannelHistory(activeChannelId, beforeMessageId, PAGE_SIZE);
+      const older = await getChannelHistory(activeChannelId, {
+        beforeMessageId,
+        pageSize: PAGE_SIZE,
+      });
       prependChannelMessages(activeChannelId, older);
-      setHasMoreHistory((prev) => ({
+      setHasMoreOlderHistory((prev) => ({
         ...prev,
         [activeChannelKey]: older.length >= PAGE_SIZE,
       }));
+      return older.length > 0 ? ('loaded' as const) : ('exhausted' as const);
     } catch (error) {
       log.error('ChatApp', '加载更多历史消息失败:', error);
       toast.error(t('chat.loadMoreHistoryFailed'));
+      return 'failed' as const;
     } finally {
       setLoadingHistory(false);
     }
-  }, [activeChannelId, activeMessages, hasMoreHistory, loadingHistory, prependChannelMessages, t]);
+  }, [activeChannelId, activeChannelKey, activeMessages, hasMoreOlderHistory, loadingHistory, prependChannelMessages, t]);
+
+  const loadNewerHistory = useCallback(async (options?: { scrollToBottomWhenDone?: boolean }) => {
+    if (!activeChannelId || !activeChannelKey || loadingHistory || !hasMoreNewerHistory[activeChannelKey]) {
+      return 'skipped' as const;
+    }
+
+    const newestMessage = activeMessages[activeMessages.length - 1];
+    const afterMessageId = newestMessage?.voId;
+    if (!isPersistedEntityId(afterMessageId)) {
+      setHasMoreNewerHistory((prev) => ({
+        ...prev,
+        [activeChannelKey]: false,
+      }));
+      return 'exhausted' as const;
+    }
+
+    setLoadingHistory(true);
+    try {
+      const newer = await getChannelHistory(activeChannelId, {
+        afterMessageId,
+        pageSize: PAGE_SIZE,
+      });
+      appendChannelMessages(activeChannelId, newer);
+      const hasMoreAfter = newer.length >= PAGE_SIZE;
+      setHasMoreNewerHistory((prev) => ({
+        ...prev,
+        [activeChannelKey]: hasMoreAfter,
+      }));
+
+      if (options?.scrollToBottomWhenDone !== false) {
+        requestAnimationFrame(() => {
+          scrollToBottom();
+        });
+      }
+
+      if (!hasMoreAfter) {
+        await chatHub.markChannelAsRead(activeChannelId);
+      }
+
+      return newer.length > 0 ? ('loaded' as const) : ('exhausted' as const);
+    } catch (error) {
+      log.error('ChatApp', '加载较新消息失败:', error);
+      toast.error(t('chat.loadNewerHistoryFailed'));
+      return 'failed' as const;
+    } finally {
+      setLoadingHistory(false);
+    }
+  }, [
+    activeChannelId,
+    activeChannelKey,
+    activeMessages,
+    appendChannelMessages,
+    hasMoreNewerHistory,
+    loadingHistory,
+    scrollToBottom,
+    t,
+  ]);
 
   const handleOpenReport = useCallback((targetType: ContentReportTargetType, targetId: number) => {
     if (currentUserIdValue <= 0) {
@@ -997,19 +1191,19 @@ export const ChatApp = () => {
 
   const handleScroll = useCallback(async () => {
     const scrollEl = messageScrollRef.current;
-    if (!scrollEl || !activeChannelId) {
+    if (!scrollEl || !activeChannelId || !activeChannelKey) {
       return;
     }
 
     if (scrollEl.scrollTop <= 24 && !loadingHistory) {
-      await loadMoreHistory();
+      await loadOlderHistory();
     }
 
     const distanceToBottom = scrollEl.scrollHeight - (scrollEl.scrollTop + scrollEl.clientHeight);
-    if (distanceToBottom <= 24) {
+    if (distanceToBottom <= 24 && !hasMoreNewerHistory[activeChannelKey]) {
       await chatHub.markChannelAsRead(activeChannelId);
     }
-  }, [activeChannelId, loadMoreHistory, loadingHistory]);
+  }, [activeChannelId, activeChannelKey, hasMoreNewerHistory, loadOlderHistory, loadingHistory]);
 
   useEffect(() => {
     composerStateRef.current = {
@@ -1020,12 +1214,71 @@ export const ChatApp = () => {
   }, [messageInput, pendingImage, replyTarget]);
 
   useEffect(() => {
+    messageNavigationTargetRef.current = messageNavigationTarget;
+  }, [messageNavigationTarget]);
+
+  useEffect(() => (
+    () => {
+      if (messageHighlightTimerRef.current !== null) {
+        window.clearTimeout(messageHighlightTimerRef.current);
+      }
+    }
+  ), []);
+
+  useEffect(() => {
     activeChannelIdRef.current = activeChannelId;
   }, [activeChannelId]);
 
   useEffect(() => {
+    windowChannelIdRef.current = windowParams.channelId;
+  }, [windowParams.channelId]);
+
+  useEffect(() => {
     void loadChannels();
   }, [loadChannels]);
+
+  useEffect(() => {
+    if (!windowParams.channelId) {
+      messageNavigationTargetRef.current = null;
+      setMessageNavigationTarget(null);
+      setMessageFocusTarget(null);
+      return;
+    }
+
+    if (channels.length === 0) {
+      return;
+    }
+
+    if (!channels.some((channel) => areEntityIdsEqual(channel.voId, windowParams.channelId))) {
+      messageNavigationTargetRef.current = null;
+      setMessageNavigationTarget(null);
+      setMessageFocusTarget(null);
+      return;
+    }
+
+    const navigationSignature = `${windowParams.channelId}:${windowParams.messageId ?? 'none'}:${windowParams.navigationKey ?? 'initial'}`;
+    if (handledWindowNavigationRef.current === navigationSignature) {
+      return;
+    }
+
+    handledWindowNavigationRef.current = navigationSignature;
+    clearMessageHighlight();
+    setMessageFocusTarget(null);
+
+    const nextNavigationTarget = windowParams.messageId
+      ? {
+          channelId: windowParams.channelId,
+          messageId: windowParams.messageId,
+          signature: navigationSignature,
+        }
+      : null;
+    messageNavigationTargetRef.current = nextNavigationTarget;
+    setMessageNavigationTarget(nextNavigationTarget);
+
+    if (!areEntityIdsEqual(activeChannelId, windowParams.channelId)) {
+      setActiveChannel(windowParams.channelId);
+    }
+  }, [activeChannelId, channels, clearMessageHighlight, setActiveChannel, windowParams.channelId, windowParams.messageId, windowParams.navigationKey]);
 
   useEffect(() => {
     void chatHub.start();
@@ -1051,7 +1304,9 @@ export const ChatApp = () => {
       setPendingImage(null);
       setOnlineMembers([]);
       loadedDraftChannelRef.current = null;
+      setMessageFocusTarget(null);
       closeMentionDropdown();
+      clearMessageHighlight();
       return;
     }
 
@@ -1063,7 +1318,13 @@ export const ChatApp = () => {
     loadedDraftChannelRef.current = activeChannelId;
 
     void chatHub.joinChannel(activeChannelId);
-    void loadInitialHistory(activeChannelId);
+    const pendingNavigationTarget = messageNavigationTargetRef.current;
+    if (pendingNavigationTarget && areEntityIdsEqual(pendingNavigationTarget.channelId, activeChannelId)) {
+      handledMessageWindowLoadRef.current = pendingNavigationTarget.signature;
+      void loadMessageWindow(pendingNavigationTarget);
+    } else {
+      void loadInitialHistory(activeChannelId);
+    }
 
     const initialMemberTimer = window.setTimeout(() => {
       void loadOnlineMembers(activeChannelId);
@@ -1073,7 +1334,7 @@ export const ChatApp = () => {
       window.clearTimeout(initialMemberTimer);
       void chatHub.leaveChannel(activeChannelId);
     };
-  }, [activeChannelId, closeMentionDropdown, currentUserIdValue, loadInitialHistory, loadOnlineMembers]);
+  }, [activeChannelId, clearMessageHighlight, closeMentionDropdown, currentUserIdValue, loadInitialHistory, loadMessageWindow, loadOnlineMembers]);
 
   useEffect(() => {
     if (!activeChannelId || !areEntityIdsEqual(loadedDraftChannelRef.current, activeChannelId)) {
@@ -1102,6 +1363,17 @@ export const ChatApp = () => {
       return;
     }
 
+    if (messageNavigationTarget && areEntityIdsEqual(messageNavigationTarget.channelId, activeChannelId)) {
+      return;
+    }
+    if (messageFocusTarget && areEntityIdsEqual(messageFocusTarget.channelId, activeChannelId)) {
+      return;
+    }
+
+    if (activeChannelKey && hasMoreNewerHistory[activeChannelKey]) {
+      return;
+    }
+
     const scrollEl = messageScrollRef.current;
     if (!scrollEl) {
       return;
@@ -1113,7 +1385,48 @@ export const ChatApp = () => {
         scrollToBottom();
       });
     }
-  }, [activeChannelId, activeMessages, scrollToBottom]);
+  }, [activeChannelId, activeChannelKey, activeMessages, hasMoreNewerHistory, messageFocusTarget, messageNavigationTarget, scrollToBottom]);
+
+  useEffect(() => {
+    if (!messageNavigationTarget || !activeChannelId || loadingHistory) {
+      return;
+    }
+
+    if (!areEntityIdsEqual(activeChannelId, messageNavigationTarget.channelId)) {
+      return;
+    }
+
+    if (handledMessageWindowLoadRef.current === messageNavigationTarget.signature) {
+      return;
+    }
+
+    handledMessageWindowLoadRef.current = messageNavigationTarget.signature;
+    void loadMessageWindow(messageNavigationTarget);
+  }, [activeChannelId, loadMessageWindow, loadingHistory, messageNavigationTarget]);
+
+  useEffect(() => {
+    if (!messageFocusTarget || !activeChannelId) {
+      return;
+    }
+
+    if (!areEntityIdsEqual(activeChannelId, messageFocusTarget.channelId)) {
+      return;
+    }
+
+    const targetElement = messageElementMapRef.current.get(messageFocusTarget.messageId);
+    if (!targetElement) {
+      return;
+    }
+
+    setMessageFocusTarget((current) => (current?.signature === messageFocusTarget.signature ? null : current));
+    requestAnimationFrame(() => {
+      targetElement.scrollIntoView({
+        block: 'center',
+        behavior: 'smooth',
+      });
+      highlightMessage(messageFocusTarget.messageId);
+    });
+  }, [activeChannelId, activeMessages, highlightMessage, messageFocusTarget]);
 
   useEffect(() => {
     if (!replyTarget) {
@@ -1136,12 +1449,19 @@ export const ChatApp = () => {
     const previousConnectionState = previousConnectionStateRef.current;
     if (activeChannelId && previousConnectionState === 'reconnecting' && connectionState === 'connected') {
       setChannelMessages(activeChannelId, []);
-      void loadInitialHistory(activeChannelId);
+      updateHistoryAvailability(activeChannelId, false, false);
+      const pendingNavigationTarget = messageNavigationTargetRef.current;
+      if (pendingNavigationTarget && areEntityIdsEqual(pendingNavigationTarget.channelId, activeChannelId)) {
+        handledMessageWindowLoadRef.current = pendingNavigationTarget.signature;
+        void loadMessageWindow(pendingNavigationTarget);
+      } else {
+        void loadInitialHistory(activeChannelId);
+      }
       void loadOnlineMembers(activeChannelId);
     }
 
     previousConnectionStateRef.current = connectionState;
-  }, [activeChannelId, connectionState, loadInitialHistory, loadOnlineMembers, setChannelMessages]);
+  }, [activeChannelId, connectionState, loadInitialHistory, loadMessageWindow, loadOnlineMembers, setChannelMessages, updateHistoryAvailability]);
 
   useEffect(() => {
     if (!mentionContext || !mentionContext.keyword.trim()) {
@@ -1255,6 +1575,7 @@ export const ChatApp = () => {
                 const messageIdKey = getEntityKey(message.voId);
                 const messageUserIdKey = getEntityKey(message.voUserId);
                 const canOpenMessageUserProfile = !!messageUserIdKey && messageUserIdKey !== '0' && !messageUserIdKey.startsWith('-');
+                const isHighlightedMessage = !!messageIdKey && messageIdKey === highlightedMessageId;
                 const isMine = !!messageUserIdKey && messageUserIdKey === currentUserIdKey;
                 const messageStatus = message.voLocalStatus ?? 'sent';
                 const isSendingMessage = messageStatus === 'sending';
@@ -1264,7 +1585,11 @@ export const ChatApp = () => {
                 const canReportMessage = !isMine && !message.voIsRecalled && messageStatus === 'sent' && isPersistedEntityId(message.voId);
 
                 return (
-                  <div key={messageIdKey || message.voClientRequestId || message.voCreateTime} className={`${styles.messageRow} ${isMine ? styles.mine : ''}`}>
+                  <div
+                    key={messageIdKey || message.voClientRequestId || message.voCreateTime}
+                    ref={messageIdKey ? (element) => setMessageElementRef(messageIdKey, element) : undefined}
+                    className={`${styles.messageRow} ${isMine ? styles.mine : ''} ${isHighlightedMessage ? styles.messageRowTargeted : ''}`.trim()}
+                  >
                     <div className={styles.messageMain}>
                       {renderAvatarButton(
                         message.voUserId,
@@ -1370,6 +1695,20 @@ export const ChatApp = () => {
                   </div>
                 );
               })
+            )}
+            {activeChannelId !== null && activeChannelKey && hasMoreNewerHistory[activeChannelKey] && (
+              <div className={styles.loadNewerContainer}>
+                <button
+                  type="button"
+                  className={styles.loadNewerButton}
+                  onClick={() => {
+                    void loadNewerHistory({ scrollToBottomWhenDone: true });
+                  }}
+                  disabled={loadingHistory}
+                >
+                  {loadingHistory ? t('chat.loadingNewerHistory') : t('chat.loadNewerHistory')}
+                </button>
+              </div>
             )}
             </div>
 

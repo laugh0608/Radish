@@ -1,8 +1,8 @@
 # Phase 2-3 Flutter 客户端 MVP
 
-> 状态：Android MVP 第一轮已完成，转入产品化与后续平台评估
+> 状态：Android MVP 第一轮已完成，第二阶段已归档，转入稳定维护
 >
-> 最后更新：2026-05-04（Asia/Shanghai）
+> 最后更新：2026-05-13（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -115,11 +115,14 @@ Flutter 客户端第一批固定遵循以下约束：
 - Android MVP 本地 release APK 发布候选当前已完成首轮收口：Android 包身份为 `com.radish.client`，应用显示名为 `Radish`，release signing 读取逻辑与密钥忽略边界已落地，release 包已补齐 `INTERNET` 权限并完成真机安装联调
 - 当前 release APK 真机复核已确认登录、基础读取与样式显示正常；本轮自动化验证覆盖 `flutter analyze`、`flutter test`、Android Studio JBR 下的 `.\gradlew.bat :app:testDebugUnitTest` 与 `flutter build apk --release`
 - Flutter 环境切换能力当前已完成首轮收口：客户端启动配置会读取 `RADISH_ENVIRONMENT` 与 `RADISH_GATEWAY_BASE_URL` 这组 `--dart-define` 构建参数，并继续保持 API / Auth / Gateway 同源；本机 Android + `localhost` Gateway 会保留本地开发证书放行边界，测试 / 正式 Gateway 默认不放宽证书校验
-- Android RC 签名配置诊断与分发前置清单当前已完成首轮收口：Gradle 当前提供 `:app:checkReleaseSigningConfig` 检查正式签名材料，`key.properties` 不存在时本地 release 构建仍回落 debug signing；若 `key.properties` 存在但缺字段、仍是示例值或找不到 keystore，会快速失败并提示修正；清单见 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution)
+- Android RC 签名配置诊断与分发前置清单当前已完成首轮收口：Gradle 当前提供 `:app:checkReleaseSigningConfig` 检查正式签名材料，`key.properties` 不存在时本地 release 构建仍回落 debug signing；若 `key.properties` 存在但缺字段、仍是示例值或找不到 keystore，会快速失败并提示修正；清单见 [Flutter Android RC 分发前置清单](/records/flutter-android-rc-distribution)
 - Flutter 第三批中文文案基线当前已完成：主 tab、壳层登录态、登录提示、forum / docs / profile / discover 首批真实页面的标题、摘要、空态与错误态已统一到中文主文案；当前不引入完整 i18n 框架
 - Flutter 第三批个人复访入口当前已产品化：`profile` 承载最近 forum 阅读与公开主页复访入口，继续复用既有 `ForumDetailHandoffTarget` 与 follow-up 状态，不把开发态来源说明当作正式用户文案
 - Flutter forum detail 当前已接入轻回应墙最小读写闭环：详情页按“正文 -> 轻回应 -> 评论区”展示，匿名可读取最近轻回应，已登录可发布一句轻回应，并复用详情页原地登录续接；删除、举报、完整评论提交、点赞、投票、编辑治理与完整通知中心继续不纳入本批
 - Flutter 第三批 Android 真机复核当前已通过：中文文案、个人复访入口与轻回应发布在真实 Gateway 下确认正常；复核中发现的同一帖子详情返回列表后无法再次打开的问题已完成 handoff 消费状态修复与定向测试覆盖
+- `P2-C5-A` Flutter 移动端高价值已登录链路首批补强已完成：壳层论坛通知入口改为可解释状态，已登录后可检查最新 forum 通知目标；无目标时显示“暂无论坛通知”，读取失败时显示“通知刷新失败”，有目标时继续打开原生 forum detail / 评论上下文
+- Flutter 壳层当前新增“刷新通知”轻入口，允许用户手动重新读取最新 forum 通知目标；该入口仍只服务最小 forum 回流，不等同于完整通知中心、系统通知栏推送或通知管理
+- Flutter `profile` 的“我的轻回应”回看条目已补目标上下文：展示帖子 ID、轻回应 ID、“轻回应回看”和“原帖回流”标签，帮助用户判断回流对象；该区块仍不开放删除、举报、编辑或完整浏览历史中心
 
 ## 7. 第二批范围（已收口）
 
@@ -152,11 +155,19 @@ Flutter 客户端第一批固定遵循以下约束：
 
 截至 `2026-05-04`，第四批及后续小闭环已完成阶段性收口，Android MVP RC 验收已给出 Go 结论，当前优先顺序调整为：
 
-1. `Phase 2-3 Android MVP` 当前可标记为“第一轮完成”，RC Go 记录见 [Flutter Android MVP RC 验收记录（2026-05-04）](/guide/flutter-android-mvp-rc-acceptance-record-2026-05-04)
+1. `Phase 2-3 Android MVP` 当前可标记为“第一轮完成”，RC Go 记录见 [Flutter Android MVP RC 验收记录（2026-05-04）](/records/flutter-android-mvp-rc-acceptance-record-2026-05-04)
 2. 冻结新的低增益体验微调，不再默认继续追加第 `24` 批及以后 Flutter 小闭环
 3. 下一步先评估 Android 内测产品化深化、分发反馈闭环，或按 [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation) 进入 Tauri + WebOS 桌面安装包第二轮评估
 4. 若后续暴露 `P0 / P1` 阻断，则只做定点修复，不回头扩完整通知中心、系统推送、发帖、完整评论提交、点赞、投票、编辑治理或 Flutter 专属 BFF
 5. Windows / macOS / Linux 不再作为 Flutter 默认扩平台方向；若进入桌面安装包，应优先走 Tauri + WebOS，并单独定义批次，不与 Android MVP 第一轮完成结论混在同一批
+
+若 `Phase 2-3` 后续重新进入连续执行批次，且出现“同类展示组件持续在多个页面重复维护”或“除主应用外出现第二个明确 Flutter 消费方”这两类信号之一，则可把 **Flutter UI 组件库治理** 纳入候选，但当前不提升为默认下一事项：
+
+1. 包落点建议固定为 `Clients/radish.flutter/packages/radish_ui`
+2. 第一批只纳入 Theme / design tokens、Section Card、Notice、Chip、Empty State、内容 Preview Tile 与只读 Markdown 视图这类稳定展示组件
+3. 第一批不纳入 repository、controller、forum / docs / profile 专属 handoff、页面状态模型或任何业务 API 契约，避免把业务层误抽成“伪共享层”
+4. 抽离顺序应优先从 `shared/widgets` 与跨 `discover / docs / forum / profile / shell` 的重复展示片段收口，再评估是否继续扩展到更完整的表单或交互组件
+5. 若未满足以上触发条件，Flutter 后续仍优先补高价值移动已登录链路和真实阻断问题，不单独为“先有一个组件库”启动批次
 
 本轮明确不纳入 RC 阻断的范围：
 
@@ -248,7 +259,7 @@ Flutter 客户端第一批固定遵循以下约束：
 
 1. Android MVP 当前已具备内部 / 小范围 RC 候选链路：登录、退出、会话恢复、四个主 tab 真实读取、forum feed / detail / 评论阅读、轻回应最小闭环、最小 forum notification 回流、profile / docs / discover 复访与返回上下文均已纳入已验证面
 2. 外部分发在正式 release 包发布前仍依赖 testing Gateway、外部分发对象、真机验收与批次级回归留痕；这些前置条件在个人开发阶段暂缓，不应被误判为业务功能阻塞
-3. RC 前置判断已收口到 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution)，后续准备分发时按该清单执行，不在分发前置批次临时扩系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理
+3. RC 前置判断已收口到 [Flutter Android RC 分发前置清单](/records/flutter-android-rc-distribution)，后续准备分发时按该清单执行，不在分发前置批次临时扩系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理
 4. Android MVP 收口复核与 RC 前置清单整理作为维护项已完成，不再作为第五批功能候选；第五批若启动，应另选一个窄范围产品小闭环
 
 截至 `2026-04-30` 的第五批首个落地事实：
@@ -282,7 +293,7 @@ Flutter 客户端第一批固定遵循以下约束：
 1. 第七批首个小闭环收口后，当前下一步优先转向 Android MVP 内测分发前置整理，不启动第八批功能扩张
 2. Android MVP 内部 / 小范围 RC 候选链路继续成立：登录、退出、会话恢复、四个主 tab 真实读取、forum feed / detail / 评论阅读、轻回应最小闭环、最小 forum notification 回流、profile / docs / discover 复访与返回上下文均已纳入已有验证面
 3. 真实签名材料已由用户本机补齐并通过 `:app:checkReleaseSigningConfig`；testing Gateway、测试账号 / 测试数据、分发对象、反馈回收方式与真机安装复核在个人开发阶段暂缓，正式 release 包发布前再补，这些前置缺失不构成当前业务功能阻塞
-4. 本轮已补 [Flutter Android MVP 内测分发前置整理记录（2026-05-01）](/guide/flutter-android-internal-rc-prep-record-2026-05-01)，并同步 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution) 中的内测 RC 前置判断
+4. 本轮已补 [Flutter Android MVP 内测分发前置整理记录（2026-05-01）](/records/flutter-android-internal-rc-prep-record-2026-05-01)，并同步 [Flutter Android RC 分发前置清单](/records/flutter-android-rc-distribution) 中的内测 RC 前置判断
 5. 个人开发阶段暂缓 testing Gateway release APK 构建、真机验收与批次级外部分发回归留痕；上述动作统一留到正式 release 包发布前再按 RC 清单补齐，不回头扩系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票或编辑治理
 6. 暂缓真机 APK 安装与外部分发验收，不代表暂停开发中的模拟器功能测试；后续 Flutter MVP 功能推进仍可按需使用 Android Studio 模拟器 / AVD 验证页面、导航、登录回跳与 Gateway 接线，模拟器验证不替代正式 release 包发布前的真机安装验收
 
@@ -372,7 +383,7 @@ Flutter 客户端第一批固定遵循以下约束：
 截至 `2026-05-02` 的第十八批首个落地事实：
 
 1. Flutter 刷新体验收口复核 / 模拟器验证清单整理已完成文档收口：`Clients/radish.flutter/README.md` 已补充 `discover / forum / docs / profile` 四个主 tab 的开发阶段刷新体验检查项
-2. 新增 [Flutter Android MVP 刷新体验开发阶段验证清单（2026-05-02）](/guide/flutter-android-mvp-refresh-experience-checklist-2026-05-02)，明确刷新中旧内容保留、刷新失败局部提示、刷新成功清理旧提示的模拟器检查顺序
+2. 新增 [Flutter Android MVP 刷新体验开发阶段验证清单（2026-05-02）](/records/flutter-android-mvp-refresh-experience-checklist-2026-05-02)，明确刷新中旧内容保留、刷新失败局部提示、刷新成功清理旧提示的模拟器检查顺序
 3. 本轮不新增 Dart 业务代码，不改变现有 API、状态模型或刷新语义；第十五至第十七批已有自动化验证继续作为代码层保障
 4. 本轮仍不执行 testing Gateway release APK 构建、真机 APK 安装或外部分发验收；开发阶段模拟器验证与正式 release 前真机验收继续分开记录、分开判断
 
@@ -392,21 +403,21 @@ Flutter 客户端第一批固定遵循以下约束：
 
 截至 `2026-05-02` 的第二十一批文档收口事实：
 
-1. Android MVP RC 补验评估已完成文档口径收口：第二十批后新增 [Flutter Android MVP RC 补验评估记录（2026-05-02）](/guide/flutter-android-mvp-rc-supplemental-assessment-2026-05-02)，明确已具备、开发阶段可先补与必须等 release 前真实环境补齐的事项
+1. Android MVP RC 补验评估已完成文档口径收口：第二十批后新增 [Flutter Android MVP RC 补验评估记录（2026-05-02）](/records/flutter-android-mvp-rc-supplemental-assessment-2026-05-02)，明确已具备、开发阶段可先补与必须等 release 前真实环境补齐的事项
 2. `https://radishx.com` 正式域名临时 smoke 结论已纳入 RC 评估：该域名服务端版本为 `v26.3.2-release`，Android Studio 虚拟机与 Android 真机均已确认帖子、文档和用户公开信息基础只读读取未见异常
 3. 本轮继续保持个人开发阶段口径：testing Gateway、release APK 构建、真机安装、登录 / 通知 / 写入链路与批次级外部分发回归仍留到正式 release 包发布前补齐
 4. 本轮不新增 Flutter / Android 业务代码，不改变 API、状态模型、签名配置或 Gateway 切换逻辑；系统通知栏推送、完整通知中心、发帖、完整评论提交、点赞、投票、编辑治理继续不纳入当前 RC 前置阻断
 
 截至 `2026-05-02` 的第二十二批文档收口事实：
 
-1. 第八至第二十批验证索引已完成文档口径收口：新增 [Flutter Android MVP 第八至第二十批验证索引（2026-05-02）](/guide/flutter-android-mvp-validation-index-2026-05-02)，按批次整理 Dart 定向测试、`smoke_test`、`flutter analyze`、Android JVM 单测、文档型验证与 release 前缺口
+1. 第八至第二十批验证索引已完成文档口径收口：新增 [Flutter Android MVP 第八至第二十批验证索引（2026-05-02）](/records/flutter-android-mvp-validation-index-2026-05-02)，按批次整理 Dart 定向测试、`smoke_test`、`flutter analyze`、Android JVM 单测、文档型验证与 release 前缺口
 2. 当前索引明确第八至第十七批已有命令级开发阶段验证记录，第十八批为文档型刷新体验清单收口，第十九批与第二十批仍建议在 release 前补命令级批次记录
 3. 本轮不新增 Flutter / Android 业务代码，不重新执行测试，不替代 testing Gateway、release APK 构建、真机安装或外部分发回归
-4. 后续若准备 release / RC 外部分发，应优先按该索引和 [Flutter Android RC 分发前置清单](/guide/flutter-android-rc-distribution) 补齐批次级回归留痕
+4. 后续若准备 release / RC 外部分发，应优先按该索引和 [Flutter Android RC 分发前置清单](/records/flutter-android-rc-distribution) 补齐批次级回归留痕
 
 截至 `2026-05-02` 的第二十三批文档收口事实：
 
-1. 第十九批与第二十批命令级回归记录补洞已完成：新增 [profile 空态人称与文档口径复核记录（2026-05-02）](/guide/flutter-android-mvp-profile-empty-copy-record-2026-05-02) 与 [profile 公开主页长文本窄屏显示复核记录（2026-05-02）](/guide/flutter-android-mvp-profile-long-text-record-2026-05-02)
+1. 第十九批与第二十批命令级回归记录补洞已完成：新增 [profile 空态人称与文档口径复核记录（2026-05-02）](/records/flutter-android-mvp-profile-empty-copy-record-2026-05-02) 与 [profile 公开主页长文本窄屏显示复核记录（2026-05-02）](/records/flutter-android-mvp-profile-long-text-record-2026-05-02)
 2. 本轮补跑 `flutter test test/profile_page_test.dart test/smoke_test.dart`、`flutter analyze` 与 `git diff --check`，均已通过；Flutter 命令因当前 Windows 沙盒边界使用提权环境执行
 3. 本轮只补回归记录与索引引用，不新增 Flutter / Android 业务代码，不改变 API、状态模型、签名配置或 Gateway 切换逻辑
 4. testing Gateway、release APK 构建、真机安装、登录 / 通知 / 写入链路与批次级外部分发回归仍留到正式 release 包发布前补齐

@@ -15,12 +15,21 @@ import { followUser, getFollowStatus, unfollowUser, type UserFollowStatus } from
 import { useUserStore } from '@/stores/userStore';
 import { DEFAULT_TIME_ZONE, formatDateTimeByTimeZone, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
-import type { PublicProfileRoute, PublicProfileTab } from '../profileRouteState';
+import { buildPublicProfilePath, type PublicProfileRoute, type PublicProfileTab } from '../profileRouteState';
 import {
   getPublicDetailBackLabelKey,
   type PublicDetailBackMode,
 } from '../publicRouteNavigation';
+import {
+  applyPublicStructuredData,
+  buildProfilePageStructuredData,
+  removePublicStructuredData,
+} from '../publicStructuredData';
 import { PublicShellHeader } from '../components/PublicShellHeader';
+import {
+  resolvePublicProfileCommentForumTarget,
+  resolvePublicProfilePostForumTarget,
+} from './publicProfileNavigation';
 import styles from './PublicProfileApp.module.css';
 
 interface PublicProfileAppProps {
@@ -323,6 +332,27 @@ export const PublicProfileApp = ({
     [profile?.voAvatarThumbnailUrl, profile?.voAvatarUrl]
   );
 
+  useEffect(() => {
+    if (!profile) {
+      removePublicStructuredData();
+      return;
+    }
+
+    applyPublicStructuredData(buildProfilePageStructuredData({
+      profile,
+      stats,
+      imageUrl: avatarUrl,
+      canonicalPath: buildPublicProfilePath({
+        kind: 'detail',
+        userId: String(profile.voUserId),
+        tab: route.tab,
+        page: route.page,
+      }),
+    }));
+
+    return removePublicStructuredData;
+  }, [avatarUrl, profile, route.page, route.tab, stats]);
+
   const displayName = profile?.voDisplayName?.trim() || null;
   const userName = profile?.voUserName?.trim() || t('common.userFallback', { id: route.userId });
   const canToggleFollow = isLoggedIn && !isOwnProfile && !!profile;
@@ -573,10 +603,13 @@ export const PublicProfileApp = ({
                 ) : (
                   <div className={styles.list}>
                     {posts.map((post) => (
-                    <article
-                      key={String(post.voId)}
-                      className={styles.contentItem}
-                      onClick={() => onNavigateToForumPost(String(post.voId))}
+                      <article
+                        key={String(post.voId)}
+                        className={styles.contentItem}
+                        onClick={() => {
+                          const target = resolvePublicProfilePostForumTarget(post);
+                          onNavigateToForumPost(target.postId);
+                        }}
                       >
                         <div className={styles.itemTopRow}>
                           <span className={styles.itemType}>{t('profile.tab.userPosts')}</span>
@@ -607,7 +640,10 @@ export const PublicProfileApp = ({
                     <article
                       key={String(comment.voId)}
                       className={styles.contentItem}
-                      onClick={() => onNavigateToForumPost(String(comment.voPostId), String(comment.voId))}
+                      onClick={() => {
+                        const target = resolvePublicProfileCommentForumTarget(comment);
+                        onNavigateToForumPost(target.postId, target.commentId);
+                      }}
                     >
                       <div className={styles.itemTopRow}>
                         <span className={styles.itemType}>{t('profile.tab.userComments')}</span>
@@ -629,7 +665,8 @@ export const PublicProfileApp = ({
                           className={styles.inlineLinkButton}
                           onClick={(event) => {
                             event.stopPropagation();
-                            onNavigateToForumPost(String(comment.voPostId), String(comment.voId));
+                            const target = resolvePublicProfileCommentForumTarget(comment);
+                            onNavigateToForumPost(target.postId, target.commentId);
                           }}
                         >
                           {t('profile.public.openPost')}

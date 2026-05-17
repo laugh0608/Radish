@@ -15,6 +15,7 @@
 # 测试变量（请按实际数据替换）
 @ChannelId = 1
 @BeforeMessageId = 0
+@AfterMessageId = 0
 @MessageId = 1
 @ImageAttachmentId = 0
 
@@ -51,7 +52,17 @@ GET {{Gateway_HostAddress}}/api/v1/ChannelMessage/GetHistory?channelId={{Channel
 Authorization: Bearer {{Access_Token}}
 Accept: application/json
 
-### 6. 发送文本消息
+### 6. 获取历史消息（向下分页）
+GET {{Gateway_HostAddress}}/api/v1/ChannelMessage/GetHistory?channelId={{ChannelId}}&afterMessageId={{AfterMessageId}}&pageSize=20
+Authorization: Bearer {{Access_Token}}
+Accept: application/json
+
+### 7. 获取目标消息窗口（用于消息级定位）
+GET {{Gateway_HostAddress}}/api/v1/ChannelMessage/GetMessageWindow?channelId={{ChannelId}}&messageId={{MessageId}}&beforeCount=25&afterCount=25
+Authorization: Bearer {{Access_Token}}
+Accept: application/json
+
+### 8. 发送文本消息
 POST {{Gateway_HostAddress}}/api/v1/ChannelMessage/Send
 Authorization: Bearer {{Access_Token}}
 Content-Type: application/json
@@ -62,7 +73,7 @@ Content-Type: application/json
   "content": "hello from http test"
 }
 
-### 7. 发送图片消息（可选）
+### 9. 发送图片消息（可选）
 POST {{Gateway_HostAddress}}/api/v1/ChannelMessage/Send
 Authorization: Bearer {{Access_Token}}
 Content-Type: application/json
@@ -76,7 +87,7 @@ Content-Type: application/json
   "imageThumbnailUrl": "https://example.com/chat/image-thumb.png"
 }
 
-### 8. 撤回消息
+### 10. 撤回消息
 DELETE {{Gateway_HostAddress}}/api/v1/ChannelMessage/Recall/{{MessageId}}
 Authorization: Bearer {{Access_Token}}
 Accept: application/json

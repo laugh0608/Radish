@@ -110,6 +110,49 @@ const suspiciousMojibakePatterns = [
   /ð[\u0080-\u00ff]/u
 ];
 
+const documentationLengthPolicies = [
+  {
+    type: '入口 / 索引',
+    softLimit: 300,
+    hardLimit: 500,
+    match: (filePath) => {
+      const baseName = path.basename(filePath);
+      return (
+        filePath === 'Docs/index.md' ||
+        filePath === 'Docs/README.md' ||
+        filePath === 'Docs/development-plan.md' ||
+        filePath === 'Docs/planning/current.md' ||
+        baseName === 'index.md'
+      );
+    }
+  },
+  {
+    type: '日志 / 记录 / 归档',
+    softLimit: 1200,
+    hardLimit: null,
+    match: (filePath) =>
+      filePath.startsWith('Docs/changelog/') ||
+      filePath.startsWith('Docs/records/') ||
+      filePath === 'Docs/planning/archive.md'
+  },
+  {
+    type: '架构 / 规范 / 设计',
+    softLimit: 600,
+    hardLimit: 900,
+    match: (filePath) =>
+      filePath.startsWith('Docs/architecture/') ||
+      filePath.startsWith('Docs/frontend/') ||
+      filePath.startsWith('Docs/guide/') ||
+      filePath.startsWith('Docs/deployment/')
+  },
+  {
+    type: '专题深度',
+    softLimit: 800,
+    hardLimit: 1200,
+    match: (filePath) => filePath.startsWith('Docs/features/') || filePath.startsWith('Docs/planning/')
+  }
+];
+
 function getCandidateFiles() {
   const fileArgs = process.argv.slice(2).filter((arg) => !arg.startsWith('--'));
 
@@ -194,6 +237,61 @@ function isDocumentationFile(filePath) {
   const ext = path.extname(filePath).toLowerCase();
 
   return normalizedPath.startsWith('Docs/') || documentationExtensions.has(ext);
+}
+
+function getDocumentationLengthPolicy(filePath) {
+  const normalizedPath = filePath.replace(/\\/g, '/');
+
+  if (!normalizedPath.startsWith('Docs/') || path.extname(normalizedPath).toLowerCase() !== '.md') {
+    return null;
+  }
+
+  return documentationLengthPolicies.find((policy) => policy.match(normalizedPath)) ?? {
+    type: '专题深度',
+    softLimit: 800,
+    hardLimit: 1200,
+  };
+}
+
+function countLines(text) {
+  if (text.length === 0) {
+    return 0;
+  }
+
+  const normalizedText = text.replace(/\r\n/gu, '\n').replace(/\r/gu, '\n');
+  const trailingNewlineOffset = normalizedText.endsWith('\n') ? 1 : 0;
+
+  return normalizedText.split('\n').length - trailingNewlineOffset;
+}
+
+function getDocumentationLengthWarning(filePath) {
+  const policy = getDocumentationLengthPolicy(filePath);
+
+  if (!policy) {
+    return null;
+  }
+
+  const absolutePath = path.join(repoRoot, filePath);
+  let content = '';
+
+  try {
+    content = decoder.decode(readFileSync(absolutePath));
+  } catch {
+    return null;
+  }
+
+  const lineCount = countLines(content);
+
+  if (lineCount <= policy.softLimit) {
+    return null;
+  }
+
+  const limitMessage =
+    policy.hardLimit !== null && lineCount > policy.hardLimit
+      ? `超过硬上限 ${policy.hardLimit} 行`
+      : `超过建议上限 ${policy.softLimit} 行`;
+
+  return `${policy.type}文档当前 ${lineCount} 行，${limitMessage}；应优先拆分历史、验证流水、实现细节或专题内容。`;
 }
 
 function hasSuspiciousMojibake(text) {
@@ -285,15 +383,29 @@ function main() {
   }
 
   const failures = [];
+  const warnings = [];
 
   for (const file of files) {
     const issues = validateFile(file);
     if (issues.length > 0) {
       failures.push({ file, issues });
     }
+
+    const lengthWarning = getDocumentationLengthWarning(file);
+    if (lengthWarning) {
+      warnings.push({ file, warning: lengthWarning });
+    }
   }
 
   if (failures.length === 0) {
+    if (warnings.length > 0) {
+      console.log(`[repo-hygiene] 发现 ${warnings.length} 个文档篇幅提醒：`);
+      for (const warning of warnings) {
+        console.log(`- ${warning.file}`);
+        console.log(`  - ${warning.warning}`);
+      }
+    }
+
     console.log(`[repo-hygiene] 已检查 ${files.length} 个文件，未发现文本卫生问题。`);
     return;
   }
@@ -303,6 +415,14 @@ function main() {
     console.error(`- ${failure.file}`);
     for (const issue of failure.issues) {
       console.error(`  - ${issue}`);
+    }
+  }
+
+  if (warnings.length > 0) {
+    console.log(`[repo-hygiene] 另有 ${warnings.length} 个文档篇幅提醒：`);
+    for (const warning of warnings) {
+      console.log(`- ${warning.file}`);
+      console.log(`  - ${warning.warning}`);
     }
   }
 

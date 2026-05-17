@@ -28,11 +28,14 @@ export interface TransferResult {
   success: boolean;
   transactionNo?: string;
   message: string;
+  requiresPasscodeUpgrade?: boolean;
 }
 
 // 安全设置状态
 export interface SecurityStatus {
   hasPaymentPassword: boolean;
+  isLegacyPasscode?: boolean;
+  requiresPasscodeUpgrade?: boolean;
   lastPasswordChangeTime?: string;
   lastPasswordChangeTimeDisplay?: string;
   lastPasswordUsedTime?: string;

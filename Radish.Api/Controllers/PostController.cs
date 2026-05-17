@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Api.Routing;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.IService.Base;
@@ -51,20 +52,19 @@ public class PostController : ControllerBase
     /// <summary>
     /// 根据 ID 获取帖子详情
     /// </summary>
-    /// <param name="id">帖子 ID</param>
+    /// <param name="id">帖子 ID 或公开访问标识</param>
     /// <param name="answerSort">问答回答排序：default（默认）/ latest（最新回答）</param>
     /// <returns>帖子详情（包含分类名称和标签）</returns>
-    [HttpGet("{id:long}")]
+    [HttpGet("{id}")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
-    public async Task<MessageModel> GetById(long id, string answerSort = "default")
+    public async Task<MessageModel> GetById(string id, string answerSort = "default")
     {
-        // 增加浏览次数
-        await _postService.IncrementViewCountAsync(id);
-
         var viewerUserId = Current.UserId > 0 ? (long?)Current.UserId : null;
-        var post = await _postService.GetPostDetailAsync(id, viewerUserId, answerSort);
+        var post = TryParsePostId(id, out var numericPostId)
+            ? await _postService.GetPostDetailAsync(numericPostId, viewerUserId, answerSort)
+            : await _postService.GetPostDetailByPublicIdAsync(id, viewerUserId, answerSort);
         if (post == null)
         {
             return new MessageModel
@@ -74,6 +74,9 @@ public class PostController : ControllerBase
                 MessageInfo = "帖子不存在"
             };
         }
+
+        // 增加浏览次数
+        await _postService.IncrementViewCountAsync(post.VoId);
 
         await _postService.FillPostAvatarAndInteractorsAsync(new List<PostVo> { post });
 
@@ -88,7 +91,7 @@ public class PostController : ControllerBase
                 Title = post.VoTitle,
                 Summary = post.VoSummary,
                 CoverAttachmentId = post.VoCoverAttachmentId,
-                RoutePath = $"/forum/post/{post.VoId}",
+                RoutePath = PublicRoutePathBuilder.BuildForumPostPath(post.VoPublicId, post.VoId),
                 OperatorName = Current.UserName
             });
         }
@@ -100,6 +103,21 @@ public class PostController : ControllerBase
             MessageInfo = "获取成功",
             ResponseData = post
         };
+    }
+
+    [NonAction]
+    public Task<MessageModel> GetById(long id, string answerSort = "default")
+    {
+        return GetById(id.ToString(), answerSort);
+    }
+
+    private static bool TryParsePostId(string? rawId, out long postId)
+    {
+        postId = 0;
+        var normalized = rawId?.Trim();
+        return !string.IsNullOrWhiteSpace(normalized)
+               && long.TryParse(normalized, out postId)
+               && postId > 0;
     }
 
     /// <summary>

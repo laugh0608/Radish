@@ -173,7 +173,8 @@ public class PostLotteryService : IPostLotteryService
                 post.Id,
                 lottery.Id,
                 normalizedPrizeName,
-                actualWinnerCount)
+                actualWinnerCount,
+                post.PublicId)
         });
     }
 

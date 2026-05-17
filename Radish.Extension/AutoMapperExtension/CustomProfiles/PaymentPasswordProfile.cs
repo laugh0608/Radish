@@ -1,6 +1,7 @@
 using AutoMapper;
 using Radish.Model.Models;
 using Radish.Model.ViewModels;
+using Radish.Shared.Security;
 
 namespace Radish.Extension.AutoMapperExtension.CustomProfiles;
 
@@ -24,6 +25,10 @@ public class PaymentPasswordProfile : Profile
                     : 0))
             .ForMember(dest => dest.VoHasPaymentPassword, opt => opt.MapFrom(src =>
                 !string.IsNullOrEmpty(src.PasswordHash)))
+            .ForMember(dest => dest.VoIsLegacyPasscode, opt => opt.MapFrom(src =>
+                !string.IsNullOrEmpty(src.PasswordHash) && PaymentPasscodeRules.RequiresUpgrade(src.PasscodeVersion)))
+            .ForMember(dest => dest.VoRequiresPasscodeUpgrade, opt => opt.MapFrom(src =>
+                !string.IsNullOrEmpty(src.PasswordHash) && PaymentPasscodeRules.RequiresUpgrade(src.PasscodeVersion)))
             .ForMember(dest => dest.VoLastUsedTimeDisplay, opt => opt.Ignore())
             .ForMember(dest => dest.VoLastModifiedTimeDisplay, opt => opt.Ignore())
             .ForMember(dest => dest.VoStrengthLevelDisplay, opt => opt.Ignore())

@@ -5,10 +5,11 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 ## 入门与总览
 
 - [文档首页](./index.md)
+- [快速开始](./guide/getting-started.md)
 - [开发路线图总览](./development-plan.md)
+- [第三开发阶段：真实使用增长与长期契约治理](./planning/phase-three-real-usage-contract-governance.md)
 - [首版 dev 边界](./planning/dev-first-scope.md)
 - [首版 dev 功能矩阵状态表](./planning/dev-first-status-matrix.md)
-- [首版 dev 总回归与发布前检查单](./guide/dev-first-regression-checklist.md)
 - [当前进行中](./planning/current.md)
 - [Console 权限治理 V1](./guide/console-permission-governance.md)
 - [Console 权限覆盖矩阵](./guide/console-permission-coverage-matrix.md)
@@ -18,11 +19,17 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 
 ## 架构与规范
 
+- [Guide 手册索引](./guide/index.md)
+- [架构总览](./architecture/overview.md)
 - [开发规范](./architecture/specifications.md)
 - [架构设计](./architecture/framework.md)
+- [API 说明索引](./guide/api-index.md)
+- [数据库总览](./guide/database-overview.md)
 - [认证与权限](./guide/authentication.md)
 - [服务网关](./guide/gateway.md)
 - [部署指南](./deployment/guide.md)
+- [本地运行与排障手册](./guide/operations-runbook.md)
+- [文档篇幅治理](./guide/document-governance.md)
 
 ## 前端与交互
 
@@ -32,6 +39,13 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [文档系统方案](./guide/document-system.md)
 - [论坛投票 MVP 设计方案](./features/forum-poll-mvp.md)
 - [论坛问答 MVP 设计方案](./features/forum-qa-mvp.md)
+
+## 记录与验收
+
+- [记录与验收索引](./records/index.md)
+- [首版 dev 总回归与发布前检查单](./records/dev-first-regression-checklist.md)
+- [变更回归记录模板](./records/change-regression-record-template.md)
+- [人工验收模板](./records/manual-acceptance-template.md)
 
 ## 日志与回顾
 
@@ -46,4 +60,6 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - 在线文档由用户或管理员在应用内新建，内容存储在数据库
 - 规划类文档已拆分为“总览 / 当前 / Backlog / 已完成摘要”，避免单页持续膨胀
 - `Docs/index.md`、`Docs/README.md`、`Docs/development-plan.md`、`Docs/planning/current.md` 等关键入口必须尽可能简约，只描述最近阶段、当前进度、执行入口和必要约束
+- 文档篇幅按类型治理：入口 / 索引建议不超过 `300` 行、硬上限 `500` 行；架构 / 规范 / 设计建议不超过 `600` 行、硬上限 `900` 行；专题深度文档建议不超过 `800` 行、硬上限 `1200` 行
+- `Docs/changelog/`、`Docs/records/` 和归档资料可放宽篇幅限制，但必须按日期、阶段或批次拆分并提供索引；超过 `1200` 行时应优先拆分或归档
 - 历史批次、命令级验证流水、实现细节和长背景应写入 `Docs/changelog/`、`Docs/planning/archive.md` 或对应专题文档，避免 AI / Agent 在新会话中读取无关背景浪费上下文

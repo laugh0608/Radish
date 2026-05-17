@@ -1,4 +1,4 @@
-﻿using Radish.Shared.CustomEnum;
+using Radish.Shared.CustomEnum;
 
 namespace Radish.Model;
 
@@ -66,7 +66,7 @@ public class MessageModel<T>
     /// 响应数据
     /// </summary>
     /// <value>实际的业务数据，类型由泛型参数 T 决定</value>
-    public T ResponseData { get; set; } = default;
+    public T? ResponseData { get; set; } = default;
 
     /// <summary>
     /// 业务错误码
@@ -183,7 +183,7 @@ public class MessageModel<T>
     /// <param name="msg">消息内容</param>
     /// <param name="responseData">响应数据</param>
     /// <returns>自定义的响应对象</returns>
-    public static MessageModel<T> Message(bool isSuccess, string msg, T responseData)
+    public static MessageModel<T> Message(bool isSuccess, string msg, T? responseData)
     {
         return Message(isSuccess, msg, responseData, null, null);
     }
@@ -197,7 +197,7 @@ public class MessageModel<T>
     /// <param name="code">业务错误码</param>
     /// <param name="messageKey">多语言消息 key</param>
     /// <returns>自定义的响应对象</returns>
-    public static MessageModel<T> Message(bool isSuccess, string msg, T responseData, string? code, string? messageKey)
+    public static MessageModel<T> Message(bool isSuccess, string msg, T? responseData, string? code, string? messageKey)
     {
         return new MessageModel<T>
         {

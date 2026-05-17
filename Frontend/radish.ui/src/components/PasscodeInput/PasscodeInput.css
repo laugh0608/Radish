@@ -1,0 +1,126 @@
+.radish-passcode-input {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.radish-passcode-input__controls {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+}
+
+.radish-passcode-input__digits {
+  display: grid;
+  grid-template-columns: repeat(var(--radish-passcode-length, 6), minmax(0, 1fr));
+  gap: 10px;
+  flex: 1;
+}
+
+.radish-passcode-input__digit {
+  width: 100%;
+  min-width: 0;
+  min-height: 52px;
+  border: 1px solid var(--theme-border-soft, rgba(84, 108, 122, 0.16));
+  border-radius: var(--theme-radius-control, 12px);
+  background: color-mix(in srgb, var(--theme-bg-surface, #fbfcfc) 94%, white 6%);
+  color: var(--theme-text-primary, #23313b);
+  text-align: center;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+  outline: none;
+  transition:
+    border-color var(--theme-transition-standard, 220ms ease),
+    box-shadow var(--theme-transition-standard, 220ms ease),
+    transform var(--theme-transition-standard, 220ms ease);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 72%, transparent 28%),
+    0 8px 24px color-mix(in srgb, var(--theme-brand-soft, rgba(88, 119, 134, 0.12)) 28%, transparent 72%);
+}
+
+.radish-passcode-input__digit:hover:not(:disabled) {
+  border-color: var(--theme-border-strong, rgba(84, 108, 122, 0.28));
+  transform: translateY(-1px);
+}
+
+.radish-passcode-input__digit:focus {
+  border-color: color-mix(in srgb, var(--theme-brand-primary, #587786) 62%, white 38%);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--theme-brand-soft, rgba(88, 119, 134, 0.14)) 88%, transparent 12%);
+}
+
+.radish-passcode-input__digit:disabled {
+  background-color: color-mix(in srgb, var(--theme-bg-muted, #e1e7e8) 78%, white 22%);
+  cursor: not-allowed;
+  opacity: 0.65;
+  box-shadow: none;
+}
+
+.radish-passcode-input--error .radish-passcode-input__digit {
+  border-color: var(--theme-state-danger, #bb5b54);
+}
+
+.radish-passcode-input--error .radish-passcode-input__digit:focus {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--theme-state-danger, #bb5b54) 18%, transparent 82%);
+}
+
+.radish-passcode-input__toggle {
+  flex-shrink: 0;
+  min-height: 52px;
+  padding: 0 16px;
+  border: 1px solid var(--theme-border-soft, rgba(84, 108, 122, 0.16));
+  border-radius: var(--theme-radius-control, 12px);
+  background: color-mix(in srgb, var(--theme-bg-surface, #fbfcfc) 92%, white 8%);
+  color: var(--theme-text-secondary, #5d6b75);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color var(--theme-transition-standard, 220ms ease),
+    color var(--theme-transition-standard, 220ms ease),
+    background var(--theme-transition-standard, 220ms ease);
+}
+
+.radish-passcode-input__toggle:hover:not(:disabled) {
+  border-color: var(--theme-brand-primary, #587786);
+  color: var(--theme-brand-primary, #587786);
+}
+
+.radish-passcode-input__toggle:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.radish-passcode-input__error {
+  font-size: 12px;
+  color: var(--theme-state-danger, #bb5b54);
+}
+
+.radish-passcode-input__helper {
+  font-size: 12px;
+  color: var(--theme-text-secondary, #5d6b75);
+  line-height: 1.6;
+}
+
+@media (max-width: 640px) {
+  .radish-passcode-input__controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .radish-passcode-input__digits {
+    gap: 8px;
+  }
+
+  .radish-passcode-input__digit {
+    min-height: 48px;
+    font-size: 21px;
+  }
+
+  .radish-passcode-input__toggle {
+    min-height: 44px;
+    width: 100%;
+  }
+}

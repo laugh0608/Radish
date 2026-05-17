@@ -5,7 +5,7 @@ import { TransferForm } from './TransferForm';
 import { TransferConfirm } from './TransferConfirm';
 import { TransferResult } from './TransferResult';
 import { RecentTransfers } from './RecentTransfers';
-import type { TransferFormData, TransferResult as TransferResultType } from '../../types';
+import type { TabType, TransferFormData, TransferResult as TransferResultType } from '../../types';
 import styles from './Transfer.module.css';
 
 type TransferStep = 'form' | 'confirm' | 'result';
@@ -13,7 +13,11 @@ type TransferStep = 'form' | 'confirm' | 'result';
 /**
  * 转账功能组件
  */
-export const Transfer = () => {
+interface TransferProps {
+  onNavigate: (tab: TabType) => void;
+}
+
+export const Transfer = ({ onNavigate }: TransferProps) => {
   const [currentStep, setCurrentStep] = useState<TransferStep>('form');
   const [transferData, setTransferData] = useState<TransferFormData | null>(null);
   const [transferResult, setTransferResult] = useState<TransferResultType | null>(null);
@@ -95,6 +99,8 @@ export const Transfer = () => {
             result={transferResult!}
             displayMode={displayMode}
             onStartNew={handleStartNew}
+            onResetPasscode={() => onNavigate('security')}
+            onViewHistory={() => onNavigate('history')}
           />
         );
       default:
@@ -155,7 +161,7 @@ export const Transfer = () => {
         {/* 最近转账记录 */}
         {currentStep === 'form' && (
           <div className={styles.sideContent}>
-            <RecentTransfers displayMode={displayMode} />
+            <RecentTransfers displayMode={displayMode} onViewAll={() => onNavigate('history')} />
           </div>
         )}
       </div>

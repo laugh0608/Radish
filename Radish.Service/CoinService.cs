@@ -8,6 +8,7 @@ using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
+using Radish.Shared.Security;
 using Radish.Service.Base;
 using Serilog;
 using SqlSugar;
@@ -211,6 +212,43 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
     }
 
     /// <summary>
+    /// 扣除萝卜币（商城消费等）
+    /// </summary>
+    public async Task<(long transactionId, string transactionNo)> ConsumeCoinAsync(
+        long userId,
+        long amount,
+        string? businessType = null,
+        long? businessId = null,
+        string? remark = null)
+    {
+        try
+        {
+            if (amount <= 0)
+            {
+                throw new ArgumentException("扣除金额必须大于 0", nameof(amount));
+            }
+
+            Log.Information("开始扣除萝卜币：用户={UserId}, 金额={Amount}, 业务={BusinessType}, 业务ID={BusinessId}",
+                userId, amount, businessType, businessId);
+
+            var result = await ExecuteWithRetryAsync(async () =>
+                await ConsumeCoinInternalAsync(userId, amount, businessType, businessId, remark)
+            );
+
+            Log.Information("萝卜币扣除成功：用户={UserId}, 金额={Amount}, 交易ID={TransactionId}, 流水号={TransactionNo}",
+                userId, amount, result.transactionId, result.transactionNo);
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "扣除萝卜币失败：用户={UserId}, 金额={Amount}, 业务={BusinessType}, 业务ID={BusinessId}",
+                userId, amount, businessType, businessId);
+            throw;
+        }
+    }
+
+    /// <summary>
     /// 发放萝卜币的内部实现（包含事务和乐观锁）
     /// </summary>
     [UseTran(Propagation = Propagation.Required)]
@@ -303,6 +341,100 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         );
 
         return transactionNo;
+    }
+
+    /// <summary>
+    /// 扣除萝卜币的内部实现（包含事务和乐观锁）
+    /// </summary>
+    [UseTran(Propagation = Propagation.Required)]
+    private async Task<(long transactionId, string transactionNo)> ConsumeCoinInternalAsync(
+        long userId,
+        long amount,
+        string? businessType,
+        long? businessId,
+        string? remark)
+    {
+        var userBalance = await _userBalanceRepository.QueryFirstAsync(b => b.UserId == userId && !b.IsDeleted);
+        if (userBalance == null)
+        {
+            userBalance = await InitializeUserBalanceAsync(userId);
+        }
+
+        if (userBalance.Balance < amount)
+        {
+            throw new InvalidOperationException($"余额不足：当前余额={userBalance.Balance}, 扣除金额={amount}");
+        }
+
+        var transactionNo = $"TXN_{SnowFlakeSingle.Instance.NextId()}";
+        var transaction = new CoinTransaction
+        {
+            Id = SnowFlakeSingle.Instance.NextId(),
+            TransactionNo = transactionNo,
+            FromUserId = userId,
+            ToUserId = null,
+            Amount = amount,
+            Fee = 0,
+            TransactionType = "CONSUME",
+            Status = "PENDING",
+            BusinessType = businessType,
+            BusinessId = businessId,
+            Remark = remark,
+            TenantId = userBalance.TenantId,
+            CreateTime = DateTime.Now,
+            CreateBy = $"User_{userId}",
+            CreateId = userId
+        };
+
+        await _coinTransactionRepository.AddAsync(transaction);
+
+        var balanceBefore = userBalance.Balance;
+        var updatedRows = await _userBalanceRepository.UpdateColumnsAsync(
+            u => new UserBalance
+            {
+                Balance = u.Balance - amount,
+                TotalSpent = u.TotalSpent + amount,
+                Version = u.Version + 1,
+                ModifyTime = DateTime.Now,
+                ModifyBy = $"User_{userId}",
+                ModifyId = userId
+            },
+            u => u.UserId == userId && u.Version == userBalance.Version
+        );
+
+        if (updatedRows == 0)
+        {
+            throw new ConcurrencyException("乐观锁冲突：余额已被其他操作修改");
+        }
+
+        var balanceChangeLog = new BalanceChangeLog
+        {
+            Id = SnowFlakeSingle.Instance.NextId(),
+            UserId = userId,
+            TransactionId = transaction.Id,
+            ChangeAmount = -amount,
+            BalanceBefore = balanceBefore,
+            BalanceAfter = balanceBefore - amount,
+            ChangeType = "CONSUME",
+            TenantId = userBalance.TenantId,
+            CreateTime = DateTime.Now,
+            CreateBy = $"User_{userId}",
+            CreateId = userId
+        };
+
+        await _balanceChangeLogRepository.AddAsync(balanceChangeLog);
+
+        await _coinTransactionRepository.UpdateColumnsAsync(
+            t => new CoinTransaction
+            {
+                Status = "SUCCESS",
+                ModifyTime = DateTime.Now,
+                ModifyBy = $"User_{userId}",
+                ModifyId = userId
+            },
+            t => t.Id == transaction.Id
+        );
+
+        return (transaction.Id, transactionNo);
     }
 
     /// <summary>
@@ -461,26 +593,29 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
                 throw new ArgumentException("转账金额必须大于0");
             }
 
-            if (string.IsNullOrWhiteSpace(paymentPassword))
+            var paymentPasscodeError = PaymentPasscodeRules.GetValidationMessage(paymentPassword);
+            if (!string.IsNullOrWhiteSpace(paymentPasscodeError))
             {
-                throw new ArgumentException("支付密码不能为空");
+                throw new ArgumentException(paymentPasscodeError);
             }
 
             Log.Information("用户转账：转出用户={FromUserId}, 转入用户={ToUserId}, 金额={Amount}",
                 fromUserId, toUserId, amount);
 
-            // 2. 验证支付密码
+            // 2. 验证支付口令
             var verifyRequest = new VerifyPaymentPasswordRequest
             {
-                Password = paymentPassword
+                Password = paymentPassword,
+                BusinessType = "CoinTransfer",
+                BusinessId = toUserId.ToString()
             };
             var verifyResult = await _paymentPasswordService.VerifyPaymentPasswordAsync(fromUserId, verifyRequest);
 
             if (!verifyResult.IsSuccess)
             {
-                Log.Warning("转账失败：支付密码验证失败，用户={FromUserId}, 原因={Reason}",
+                Log.Warning("转账失败：支付口令验证失败，用户={FromUserId}, 原因={Reason}",
                     fromUserId, verifyResult.ErrorMessage);
-                throw new InvalidOperationException(verifyResult.ErrorMessage ?? "支付密码验证失败");
+                throw new InvalidOperationException(verifyResult.ErrorMessage ?? "支付口令验证失败");
             }
 
             // 3. 使用乐观锁重试策略执行转账操作（最多重试 3 次，指数退避）

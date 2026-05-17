@@ -139,13 +139,15 @@ class ForumNotificationPayload {
     }
 
     final app = _readString(ext['app']);
+    final postPublicId = _readString(ext['postPublicId']);
     final postId = _readString(ext['postId']);
-    if (app != 'forum' || postId == null || postId.isEmpty) {
+    final routePostId = postPublicId ?? postId;
+    if (app != 'forum' || routePostId == null || routePostId.isEmpty) {
       return null;
     }
 
     return ForumDetailHandoffTarget(
-      postId: postId,
+      postId: routePostId,
       source: ForumDetailHandoffSource.notification,
       initialTitle: title,
       commentId: _readString(ext['commentId']),

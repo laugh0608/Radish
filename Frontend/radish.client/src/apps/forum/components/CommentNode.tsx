@@ -4,6 +4,7 @@ import { log } from '@/utils/logger';
 import { buildAttachmentAssetUrl, parseAttachmentMarkdownUrl, resolveConfiguredMediaUrl } from '@radish/ui';
 import type { MarkdownStickerMap } from '@radish/ui/markdown-renderer';
 import type { CommentNode as CommentNodeType, CommentReplyTarget, ReactionSummaryVo } from '@/api/forum';
+import type { LongId } from '@/api/user';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
 import { Icon } from '@radish/ui/icon';
@@ -17,28 +18,28 @@ interface CommentNodeProps {
   node: CommentNodeType;
   level: number;
   displayTimeZone: string;
-  currentUserId?: number;
-  highlightedCommentId?: number | null;
-  expandedRootCommentId?: number;
+  currentUserId?: LongId;
+  highlightedCommentId?: LongId | null;
+  expandedRootCommentId?: LongId;
   pageSize?: number; // 每次加载子评论数量
   isGodComment?: boolean; // 是否是神评
-  onDelete?: (commentId: number) => void;
-  onEdit?: (commentId: number, newContent: string) => Promise<void>;
-  onViewHistory?: (commentId: number) => void;
-  onLike?: (commentId: number) => Promise<{ isLiked: boolean; likeCount: number }>;
+  onDelete?: (commentId: LongId) => void;
+  onEdit?: (commentId: LongId, newContent: string) => Promise<void>;
+  onViewHistory?: (commentId: LongId) => void;
+  onLike?: (commentId: LongId) => Promise<{ isLiked: boolean; likeCount: number }>;
   onReply?: (target: CommentReplyTarget) => void;
-  onLoadMoreChildren?: (parentId: number, pageIndex: number, pageSize: number) => Promise<CommentNodeType[]>;
+  onLoadMoreChildren?: (parentId: LongId, pageIndex: number, pageSize: number) => Promise<CommentNodeType[]>;
   stickerMap?: MarkdownStickerMap;
-  reactionMap?: Record<number, ReactionSummaryVo[]>;
+  reactionMap?: Record<string, ReactionSummaryVo[]>;
   isAuthenticated?: boolean;
   stickerGroups?: StickerPickerGroup[];
-  onToggleReaction?: (commentId: number, payload: ReactionTogglePayload) => Promise<void>;
-  isReactionPending?: (commentId: number) => boolean;
+  onToggleReaction?: (commentId: LongId, payload: ReactionTogglePayload) => Promise<void>;
+  isReactionPending?: (commentId: LongId) => boolean;
   onRequireReactionLogin?: () => void;
-  onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
-  onReport?: (commentId: number) => void;
-  registerCommentAnchor?: (commentId: number, element: HTMLDivElement | null) => void;
-  onNavigateToComment?: (commentId: number) => void | Promise<void>;
+  onAuthorClick?: (userId: LongId, userName?: string | null, avatarUrl?: string | null) => void;
+  onReport?: (commentId: LongId) => void;
+  registerCommentAnchor?: (commentId: LongId, element: HTMLDivElement | null) => void;
+  onNavigateToComment?: (commentId: LongId) => void | Promise<void>;
 }
 
 /**
@@ -71,6 +72,14 @@ const normalizeStickerCode = (value: string): string => value.trim().toLowerCase
 
 const normalizeStickerKey = (groupCode: string, stickerCode: string): string =>
   `${normalizeStickerCode(groupCode)}/${normalizeStickerCode(stickerCode)}`;
+
+const isSameLongId = (left: LongId | null | undefined, right: LongId | null | undefined): boolean => {
+  if (left == null || right == null) {
+    return false;
+  }
+
+  return String(left) === String(right);
+};
 
 const isSafeStickerUrl = (value?: string | null): value is string => {
   if (typeof value !== 'string') {
@@ -262,7 +271,7 @@ export const CommentNode = ({
 }: CommentNodeProps) => {
   const { t } = useTranslation();
   // 判断是否是作者本人
-  const isAuthor = currentUserId > 0 && String(node.voAuthorId) === String(currentUserId);
+  const isAuthor = !isSameLongId(currentUserId, 0) && isSameLongId(node.voAuthorId, currentUserId);
 
   // 编辑权限交给后端最终判定（时间窗口/次数限制由服务端配置控制）
   const canEdit = isAuthor;
@@ -325,7 +334,7 @@ export const CommentNode = ({
   const totalChildren = node.voChildrenTotal ?? node.voChildren?.length ?? 0;
   const loadedCount = loadedChildren.length;
   const hasMore = loadedCount < totalChildren;
-  const reactionItems = reactionMap[node.voId] || [];
+  const reactionItems = reactionMap[String(node.voId)] || [];
   const reactionLoading = isReactionPending ? isReactionPending(node.voId) : false;
 
   // 监听 node.voChildren 变化,重新初始化子评论列表
@@ -341,7 +350,7 @@ export const CommentNode = ({
   }, [node.voChildren, node.voChildrenTotal, node.voId]);
 
   useEffect(() => {
-    if (level !== 0 || expandedRootCommentId !== node.voId) {
+    if (level !== 0 || !isSameLongId(expandedRootCommentId, node.voId)) {
       return;
     }
 
@@ -478,7 +487,9 @@ export const CommentNode = ({
         }
 
         const existingIds = new Set(prev.map(child => child.voId));
-        const appended = normalized.filter(child => !existingIds.has(child.voId));
+        const appended = normalized.filter(child =>
+          !Array.from(existingIds).some(existingId => isSameLongId(existingId, child.voId))
+        );
         return [...prev, ...appended];
       });
       setCurrentPage(nextPage);
@@ -534,7 +545,7 @@ export const CommentNode = ({
 
     if (childSortBy === null && topSofaComment) {
       // 展开且未手动排序：当前点赞数最高的沙发置顶 + 其他按时间升序
-      const others = loadedChildren.filter(c => c.voId !== topSofaComment.voId);
+      const others = loadedChildren.filter(c => !isSameLongId(c.voId, topSofaComment.voId));
       return [topSofaComment, ...others];
     }
 
@@ -545,7 +556,7 @@ export const CommentNode = ({
   return (
     <div
       ref={(element) => registerCommentAnchor?.(node.voId, element)}
-      className={`${styles.container} ${highlightedCommentId === node.voId ? styles.containerHighlighted : ''}`}
+      className={`${styles.container} ${isSameLongId(highlightedCommentId, node.voId) ? styles.containerHighlighted : ''}`}
       style={{ marginLeft: level * 16 }}
     >
       <div className={styles.header}>
@@ -671,7 +682,7 @@ export const CommentNode = ({
               type="button"
               className={styles.replyQuoteButton}
               onClick={() => {
-                if (replyToCommentId > 0) {
+                if (replyToCommentId != null) {
                   void onNavigateToComment?.(replyToCommentId);
                 }
               }}

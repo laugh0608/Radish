@@ -1,8 +1,8 @@
 # 论坛轻回应墙 Phase 1 设计
 
-> 状态：Flutter Android 最小闭环已接入，待真机复核
+> 状态：Web / Console 治理闭环已补齐，Flutter Android 仍维持最小读写闭环
 >
-> 最后更新：2026-04-27（Asia/Shanghai）
+> 最后更新：2026-05-10（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -30,7 +30,7 @@
 
 ## 2. 当前代码事实
 
-截至 `2026-04-27`，论坛轻回应墙的基础链路已经落地，仓库中的实际结构如下：
+截至 `2026-05-10`，论坛轻回应墙的基础链路已经落地，仓库中的实际结构如下：
 
 - 帖子轻回应后端独立链路已存在：
   - `Radish.Model/PostQuickReply.cs`
@@ -43,7 +43,11 @@
 - 轻回应治理与配置已接入：
   - `Radish.Api/appsettings.json` 中的 `ForumQuickReply`
   - `Radish.Service/ContentModerationService.cs`
+  - `Radish.Model/ViewModels/ContentModerationVo.cs`
   - `Frontend/radish.client/src/components/ContentReportModal.tsx`
+  - `Frontend/radish.console/src/api/moderationApi.ts`
+  - `Frontend/radish.console/src/pages/Moderation/ModerationPage.tsx`
+  - `Frontend/radish.console/src/pages/Moderation/index.css`
 - 前端帖子详情页已接入轻回应墙：
   - `Frontend/radish.client/src/apps/forum/views/PostDetailContentView.tsx`
   - `Frontend/radish.client/src/apps/forum/components/PostQuickReplyWall.tsx`
@@ -97,17 +101,18 @@
 
 ### 2.2 当前阶段判断
 
-截至 `2026-04-27`，轻回应墙 `Phase 1` 的当前判断为：
+截至 `2026-05-10`，轻回应墙 `Phase 1` 的当前判断为：
 
 - “独立建模 / 独立接口 / 独立治理边界 / 三段式插入位”已经成立；
 - 当前不再讨论“是否继续复用 Comment / Reaction 临时拼装”；
-- 当前主线重心已从“基础实现”转向“联调收口 + 最小回流链路补齐”；
-- 其中最值得优先补齐的回流项，是“个人内容回看 -> 跳回帖子详情”的最小闭环；通知跳转继续保留为同批次预留项。
-- 当前“我的轻回应”回看入口已作为最小回流链路落地到个人主页，通知跳转继续保留为同批次预留项。
+- 当前 Web 主线重心已从“基础实现”转向“治理闭环收口 + 审核效率优化”；
+- 当前“我的轻回应”回看入口已作为最小回流链路落地到个人主页，通知跳转也已完成最小闭环，不再属于预留项；回看入口与通知回流均优先使用 `postPublicId` 打开 forum detail，旧 `postId` 只作为字符串 fallback。
 - 论坛现有帖子 / 评论类通知当前已完成统一导航载荷收口，可稳定跳回帖子详情。
 - 论坛评论精确定位最小闭环已落地：带 `commentId` 打开 forum 时，帖子详情页在评论加载完成后可自动滚动到目标评论，并给出一次性高亮提示；若目标评论不在当前首屏评论数据中，会按最小所需页数补齐根评论 / 子评论数据。
 - 轻回应专属通知最小闭环已落地：他人在你的帖子下发布轻回应时，当前会给帖子作者发送一条最小论坛通知，并支持从通知中心跳回帖子详情。
-- Flutter Android 当前已完成客户端最小闭环：详情页按“正文 -> 轻回应 -> 评论区”展示，匿名可读取最近轻回应，已登录可发布一句轻回应，并复用详情页原地登录续接；删除、举报、我的轻回应列表、完整评论提交、点赞、投票与编辑治理不进入当前 Flutter 批次。
+- `radish.console` 的 `Moderation` 审核台当前已支持轻回应真实回看，可从审核队列或治理动作日志回跳到对应帖子详情。
+- 轻回应举报的目标摘要当前会在创建举报时固化；审核台并列展示“创建时快照”和“当前状态”，目标后续被删除、编辑或下线时仍保留历史证据并给出失效降级态。
+- Flutter Android 当前已完成客户端最小闭环：详情页按“正文 -> 轻回应 -> 评论区”展示，匿名可读取最近轻回应，已登录可发布一句轻回应，并复用详情页原地登录续接；通知、个人公开页和我的轻回应回流优先携带 `postPublicId`，进入详情后再使用真实 `VoId` 调轻回应与评论相关内部接口；删除、举报、我的轻回应列表、完整评论提交、点赞、投票与编辑治理不进入当前 Flutter 批次。
 
 ## 3. 目标
 
@@ -368,11 +373,13 @@ PostQuickReply
 - 删除使用软删除
 - 普通读取链路不返回已删除项
 
-## 10.5 举报与最小审核预留
+## 10.5 举报与审核闭环
 
 - 轻回应首版就支持举报
-- 首版不单独做新审核台 UI
-- 服务端保留 `Status` 字段，为后续“隐藏但不删”预留空间
+- 审核继续复用 `radish.console` 的统一 `Moderation` 页面，不单独拆轻回应治理台
+- 审核队列与治理动作日志支持从轻回应记录直接回跳到对应帖子详情
+- 若轻回应已删除、目标帖子不可读或目标已下线，审核台继续保留创建时快照，并把当前状态展示为失效降级
+- 服务端继续保留 `Status` 字段，为后续“隐藏但不删”与自动治理策略预留空间
 
 ## 11. 前端实现建议
 
@@ -429,6 +436,9 @@ PostQuickReply
 - `Frontend/radish.client/src/i18n.ts`
 - `Frontend/radish.client/src/apps/forum/components/PostQuickReplyWall.tsx`
 - `Frontend/radish.client/src/apps/forum/components/PostQuickReplyWall.module.css`
+- `Frontend/radish.console/src/api/moderationApi.ts`
+- `Frontend/radish.console/src/pages/Moderation/ModerationPage.tsx`
+- `Frontend/radish.console/src/pages/Moderation/index.css`
 
 后端已落地：
 
@@ -443,25 +453,25 @@ PostQuickReply
 - `Radish.Service/ContentModerationService.cs`
 - `Radish.Api/Controllers/ContentModerationController.cs`
 - `Radish.Model/DtoModels/ContentModerationDto.cs`
+- `Radish.Model/ViewModels/ContentModerationVo.cs`
 - `Radish.Shared/CustomEnum/ContentModerationEnums.cs`
 
 ### 13.2 当前后续范围
 
 当前批次的后续重点不再是继续证明“轻回应墙能否独立成立”，而是：
 
-1. 联调收口：
-   - 空态、加载态、报错态、登录引导、删除与举报链路是否一致
-   - 少量内容静态铺排、超宽轨道才漂移的视觉表现是否稳定
-   - 移动端降级形态是否自然，不把桌面交互硬搬到小屏
-   - Flutter Android 当前先验证最近轻回应读取、已登录发布与匿名登录引导，不扩删除 / 举报入口
-2. 最小回流链路：
+1. 审核效率优化：
+   - 审核台筛选增强
+   - 失效 / 降级项的快速聚焦
+   - 批量治理与操作效率优化
+2. 现有回流链路维持稳定：
    - “个人内容回看 -> 跳回帖子详情”已完成
    - 评论精确定位已完成最小闭环
-   - 轻回应专属通知已完成“通知中心 -> 跳回帖子详情”的最小闭环，不继续扩张成完整通知体系改造
-   - Flutter Android 端复用 profile 复访、browse history 与 detail 原地登录续接，不新建独立通知中心
-3. 验收与留痕：
-   - 把当前已落地的基础链路从“实现完成”推进到“主线可验收”
-   - Flutter Android 第三批先完成自动化验证，真机联调顺延到下一工作日
+   - 轻回应专属通知已完成“通知中心 -> 跳回帖子详情”的最小闭环
+   - 审核队列 / 治理日志 -> 轻回应真实回看已完成，不再回退为只读摘要
+3. 多端节奏控制：
+   - Flutter Android 继续维持最小读写闭环，不同步扩删除 / 举报 / 审核台能力
+   - Web / Console 侧以当前已落地治理闭环作为主线验收口径
 
 ## 14. 最小验证方案
 
@@ -497,7 +507,7 @@ Flutter Android 客户端最小验证建议：
 
 ## 15. 当前决定
 
-截至 `2026-04-27`，论坛轻回应墙 Phase 1 的正式口径固定为：
+截至 `2026-05-10`，论坛轻回应墙 Phase 1 的正式口径固定为：
 
 - 独立数据模型
 - 独立接口
@@ -505,7 +515,8 @@ Flutter Android 客户端最小验证建议：
 - 放在帖子正文之后、评论区之前
 - 支持纯文本和默认 Unicode emoji
 - 不支持贴纸、表情包、附件、Markdown、`@提及`
-- 基础链路已落地，当前执行重点转向联调收口与最小回流链路补齐
+- 基础链路已落地，当前执行重点转向治理闭环稳定化与审核效率优化
+- 轻回应已纳入统一治理台，支持真实回看、失效降级以及“创建时快照 / 当前状态”并列展示
 - Flutter Android 先承载最小读写闭环，不把 Web / 桌面端完整治理能力一次性搬入原生客户端
 
 后续若要支持贴纸型轻回应，应进入后续阶段单独评估，不并入当前 Phase 1。

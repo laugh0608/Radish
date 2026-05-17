@@ -7,6 +7,7 @@ import {
   parseApiResponse,
   type ApiResponse,
 } from '@radish/http';
+import type { LongId } from '@/api/user';
 import { getApiBaseUrl } from '@/config/env';
 import { buildWikiListUrl } from '../wikiApp.helpers';
 import type {
@@ -43,56 +44,59 @@ export async function getWikiList(query: WikiListQuery = {}): Promise<WikiPageMo
   return await ensureOk(apiGet<WikiPageModel<WikiDocumentVo>>(buildWikiListUrl(query), { withAuth: true }), '加载文档列表失败');
 }
 
-export async function getWikiDocumentById(id: number, includeDeleted: boolean = false): Promise<WikiDocumentDetailVo> {
+export async function getWikiDocumentById(id: LongId, includeDeleted: boolean = false): Promise<WikiDocumentDetailVo> {
   const suffix = includeDeleted ? '?includeDeleted=true' : '';
-  return await ensureOk(apiGet<WikiDocumentDetailVo>(`/api/v1/Wiki/GetById/${id}${suffix}`, { withAuth: true }), '加载文档详情失败');
+  return await ensureOk(
+    apiGet<WikiDocumentDetailVo>(`/api/v1/Wiki/GetById/${encodeURIComponent(String(id))}${suffix}`, { withAuth: true }),
+    '加载文档详情失败'
+  );
 }
 
 export async function getWikiDocumentBySlug(slug: string): Promise<WikiDocumentDetailVo> {
   return await ensureOk(apiGet<WikiDocumentDetailVo>(`/api/v1/Wiki/GetBySlug/${encodeURIComponent(slug)}`, { withAuth: true }), '加载文档详情失败');
 }
 
-export async function createWikiDocument(request: CreateWikiDocumentRequest): Promise<number> {
-  return await ensureOk(apiPost<number>('/api/v1/Wiki/Create', request, { withAuth: true }), '创建文档失败');
+export async function createWikiDocument(request: CreateWikiDocumentRequest): Promise<LongId> {
+  return await ensureOk(apiPost<LongId>('/api/v1/Wiki/Create', request, { withAuth: true }), '创建文档失败');
 }
 
-export async function updateWikiDocument(id: number, request: UpdateWikiDocumentRequest): Promise<boolean> {
-  return await ensureOk(apiPut<boolean>(`/api/v1/Wiki/Update/${id}`, request, { withAuth: true }), '更新文档失败');
+export async function updateWikiDocument(id: LongId, request: UpdateWikiDocumentRequest): Promise<boolean> {
+  return await ensureOk(apiPut<boolean>(`/api/v1/Wiki/Update/${encodeURIComponent(String(id))}`, request, { withAuth: true }), '更新文档失败');
 }
 
-export async function deleteWikiDocument(id: number): Promise<boolean> {
-  return await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Delete/${id}`, undefined, { withAuth: true }), '删除文档失败');
+export async function deleteWikiDocument(id: LongId): Promise<boolean> {
+  return await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Delete/${encodeURIComponent(String(id))}`, undefined, { withAuth: true }), '删除文档失败');
 }
 
-export async function restoreWikiDocument(id: number): Promise<boolean> {
-  return await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Restore/${id}`, undefined, { withAuth: true }), '恢复文档失败');
+export async function restoreWikiDocument(id: LongId): Promise<boolean> {
+  return await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Restore/${encodeURIComponent(String(id))}`, undefined, { withAuth: true }), '恢复文档失败');
 }
 
-export async function publishWikiDocument(id: number): Promise<boolean> {
-  return await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Publish/${id}`, undefined, { withAuth: true }), '发布文档失败');
+export async function publishWikiDocument(id: LongId): Promise<boolean> {
+  return await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Publish/${encodeURIComponent(String(id))}`, undefined, { withAuth: true }), '发布文档失败');
 }
 
-export async function unpublishWikiDocument(id: number): Promise<boolean> {
-  return await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Unpublish/${id}`, undefined, { withAuth: true }), '撤下文档失败');
+export async function unpublishWikiDocument(id: LongId): Promise<boolean> {
+  return await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Unpublish/${encodeURIComponent(String(id))}`, undefined, { withAuth: true }), '撤下文档失败');
 }
 
-export async function archiveWikiDocument(id: number): Promise<boolean> {
-  return await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Archive/${id}`, undefined, { withAuth: true }), '归档文档失败');
+export async function archiveWikiDocument(id: LongId): Promise<boolean> {
+  return await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Archive/${encodeURIComponent(String(id))}`, undefined, { withAuth: true }), '归档文档失败');
 }
 
-export async function getWikiRevisionList(id: number): Promise<WikiDocumentRevisionItemVo[]> {
-  return await ensureOk(apiGet<WikiDocumentRevisionItemVo[]>(`/api/v1/Wiki/GetRevisionList/${id}`, { withAuth: true }), '加载版本历史失败');
+export async function getWikiRevisionList(id: LongId): Promise<WikiDocumentRevisionItemVo[]> {
+  return await ensureOk(apiGet<WikiDocumentRevisionItemVo[]>(`/api/v1/Wiki/GetRevisionList/${encodeURIComponent(String(id))}`, { withAuth: true }), '加载版本历史失败');
 }
 
-export async function getWikiRevisionDetail(revisionId: number): Promise<WikiDocumentRevisionDetailVo> {
-  return await ensureOk(apiGet<WikiDocumentRevisionDetailVo>(`/api/v1/Wiki/GetRevisionDetail/${revisionId}`, { withAuth: true }), '加载版本详情失败');
+export async function getWikiRevisionDetail(revisionId: LongId): Promise<WikiDocumentRevisionDetailVo> {
+  return await ensureOk(apiGet<WikiDocumentRevisionDetailVo>(`/api/v1/Wiki/GetRevisionDetail/${encodeURIComponent(String(revisionId))}`, { withAuth: true }), '加载版本详情失败');
 }
 
-export async function rollbackWikiRevision(revisionId: number): Promise<boolean> {
-  return await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Rollback/${revisionId}`, undefined, { withAuth: true }), '回滚版本失败');
+export async function rollbackWikiRevision(revisionId: LongId): Promise<boolean> {
+  return await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Rollback/${encodeURIComponent(String(revisionId))}`, undefined, { withAuth: true }), '回滚版本失败');
 }
 
-export async function importWikiMarkdown(request: ImportWikiMarkdownRequest): Promise<number> {
+export async function importWikiMarkdown(request: ImportWikiMarkdownRequest): Promise<LongId> {
   const formData = new FormData();
   formData.append('file', request.file);
 
@@ -104,7 +108,7 @@ export async function importWikiMarkdown(request: ImportWikiMarkdownRequest): Pr
     formData.append('summary', request.summary.trim());
   }
 
-  if (typeof request.parentId === 'number') {
+  if (request.parentId != null) {
     formData.append('parentId', String(request.parentId));
   }
 
@@ -117,8 +121,8 @@ export async function importWikiMarkdown(request: ImportWikiMarkdownRequest): Pr
     body: formData,
   });
 
-  const json = await response.json() as ApiResponse<number>;
-  const parsed = parseApiResponse<number>(json);
+  const json = await response.json() as ApiResponse<LongId>;
+  const parsed = parseApiResponse<LongId>(json);
 
   if (!parsed.ok || parsed.data === undefined) {
     throw new Error(parsed.message || '导入 Markdown 失败');
@@ -145,8 +149,8 @@ function getFileNameFromDisposition(contentDisposition: string | null, fallbackF
   return fallbackFileName;
 }
 
-export async function downloadWikiMarkdown(id: number): Promise<{ blob: Blob; fileName: string }> {
-  const response = await apiFetch(`/api/v1/Wiki/ExportMarkdown/${id}`, {
+export async function downloadWikiMarkdown(id: LongId): Promise<{ blob: Blob; fileName: string }> {
+  const response = await apiFetch(`/api/v1/Wiki/ExportMarkdown/${encodeURIComponent(String(id))}`, {
     method: 'GET',
     withAuth: true,
     headers: {

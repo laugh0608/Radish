@@ -1,5 +1,9 @@
 # 16. 实施落地待完善事项（2025-12-30 评审）：后端与接口
 
+> 文档定位：本文属于实现评审记录，保留当时后端落地阶段的待完善判断，不作为当前默认说明书入口。
+>
+> 日常协作优先查看 [Guide 手册索引](/guide/) 与 [radish-coin-system](/guide/radish-coin-system)。
+
 > 入口页：[萝卜币系统设计方案](/guide/radish-coin-system)
 
 ## 16.1 与现有论坛功能的集成细节
@@ -381,4 +385,3 @@
            TimeZone = TimeZoneInfo.Local
        });
    ```
-

@@ -8,6 +8,7 @@ import { useUserStore } from '@/stores/userStore';
 import { coinApi } from '@/api/coin';
 import { paymentPasswordApi } from '@/api/paymentPassword';
 import { getApiBaseUrl } from '@/config/env';
+import { isPaymentPasscodeUpgradeRequiredError } from '@/utils/paymentPasscode';
 import type {
   AccountStats,
   TransferFormData,
@@ -143,10 +144,15 @@ export const useTransfer = () => {
       const errorMessage = err instanceof Error ? err.message : '转移失败';
       setError(errorMessage);
       log.error('转账失败:', err);
+      const requiresPasscodeUpgrade = isPaymentPasscodeUpgradeRequiredError({
+        code: err && typeof err === 'object' && 'errorCode' in err ? String(err.errorCode ?? '') : undefined,
+        message: errorMessage
+      });
 
       return {
         success: false,
-        message: errorMessage
+        message: errorMessage,
+        requiresPasscodeUpgrade
       };
     } finally {
       setLoading(false);
@@ -186,6 +192,8 @@ export const useSecurityStatus = () => {
       if (passwordStatus) {
         setStatus({
           hasPaymentPassword: passwordStatus.voHasPaymentPassword,
+          isLegacyPasscode: passwordStatus.voIsLegacyPasscode,
+          requiresPasscodeUpgrade: passwordStatus.voRequiresPasscodeUpgrade,
           lastPasswordChangeTime: passwordStatus.voLastModifiedTime,
           lastPasswordChangeTimeDisplay: passwordStatus.voLastModifiedTimeDisplay,
           lastPasswordUsedTime: passwordStatus.voLastUsedTime,
@@ -203,6 +211,8 @@ export const useSecurityStatus = () => {
         // 未设置支付密码
         setStatus({
           hasPaymentPassword: false,
+          isLegacyPasscode: false,
+          requiresPasscodeUpgrade: false,
           failedAttempts: 0,
           isLocked: false
         });
@@ -321,7 +331,7 @@ export const useNotifications = () => {
           id: '3',
           type: 'security',
           title: '安全提醒',
-          content: '建议您设置支付密码以保护账户安全',
+          content: '建议您设置支付口令以保护账户安全',
           isRead: true,
           createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
         }

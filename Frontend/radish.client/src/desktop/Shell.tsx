@@ -9,8 +9,10 @@ import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { useChatStore } from '@/stores/chatStore';
+import { useWindowStore } from '@/stores/windowStore';
 import { tokenService } from '@/services/tokenService';
 import { bootstrapAuth } from '@/services/authBootstrap';
+import { parseDesktopExternalEntry, stripDesktopExternalEntrySearch } from '@/utils/desktopEntryNavigation';
 import { prefetchAppComponent } from './AppRegistry';
 import { Desktop } from './Desktop';
 import { Dock } from './Dock';
@@ -35,6 +37,15 @@ export const Shell = () => {
   const currentUser = useUserStore(state => state.userId);
   const clearUser = useUserStore(state => state.clearUser);
   const resetChatStore = useChatStore(state => state.reset);
+  const openOrReuseApp = useWindowStore(state => state.openOrReuseApp);
+  const handledDesktopEntrySignatureRef = useRef<string | null>(null);
+  const desktopExternalEntry = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    return parseDesktopExternalEntry(window.location.pathname, window.location.search);
+  }, []);
 
   // 监听认证状态变化，同步清除用户信息和通知
   useEffect(() => {
@@ -76,6 +87,23 @@ export const Shell = () => {
     const timer = window.setTimeout(preloadApps, 600);
     return () => window.clearTimeout(timer);
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !isAuthenticated || !desktopExternalEntry) {
+      return;
+    }
+
+    if (handledDesktopEntrySignatureRef.current === desktopExternalEntry.signature) {
+      return;
+    }
+
+    handledDesktopEntrySignatureRef.current = desktopExternalEntry.signature;
+    openOrReuseApp(desktopExternalEntry.appId, desktopExternalEntry.appParams);
+
+    const nextUrl = new URL(window.location.href);
+    nextUrl.search = stripDesktopExternalEntrySearch(nextUrl.search);
+    window.history.replaceState({}, '', `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
+  }, [desktopExternalEntry, isAuthenticated, openOrReuseApp]);
 
   // 根据认证状态控制 SignalR 连接
   useEffect(() => {

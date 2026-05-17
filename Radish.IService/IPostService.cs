@@ -18,6 +18,15 @@ public interface IPostService : IBaseService<Post, PostVo>
     Task<PostVo?> GetPostDetailAsync(long postId, long? viewerUserId = null, string answerSort = "default");
 
     /// <summary>
+    /// 按公开访问标识获取帖子详情（包含分类名称和标签）
+    /// </summary>
+    /// <param name="publicId">公开访问标识</param>
+    /// <param name="viewerUserId">查看者用户 Id（可空，用于补充用户态信息）</param>
+    /// <param name="answerSort">问答回答排序：default / latest</param>
+    /// <returns>帖子详情</returns>
+    Task<PostVo?> GetPostDetailByPublicIdAsync(string publicId, long? viewerUserId = null, string answerSort = "default");
+
+    /// <summary>
     /// 分页获取普通论坛帖子列表
     /// </summary>
     /// <param name="categoryId">分类 ID（可空）</param>

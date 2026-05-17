@@ -1,5 +1,6 @@
 import { useMemo, useRef } from 'react';
 import type { PostItem, CommentHighlight } from '@/api/forum';
+import type { LongId } from '@/api/user';
 import { getForumCommentHighlight } from '@/utils/forumCommentHighlights';
 import { PostCard } from '../components/PostCard';
 import styles from './ForumSearchView.module.css';
@@ -32,8 +33,8 @@ interface ForumSearchViewProps {
   onCustomEndDateChange: (value: string) => void;
   onApplyCustomRange: () => void;
   onPageChange: (page: number) => void;
-  onPostClick: (postId: number) => void;
-  onAuthorClick: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
+  onPostClick: (postId: LongId) => void;
+  onAuthorClick: (userId: LongId, userName?: string | null, avatarUrl?: string | null) => void;
 }
 
 export const ForumSearchView = ({

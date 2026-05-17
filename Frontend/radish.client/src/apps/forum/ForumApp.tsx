@@ -23,6 +23,7 @@ import {
   unfollowUser,
   type UserFollowStatus
 } from '@/api/userFollow';
+import type { LongId } from '@/api/user';
 import { getMyTimePreference, getTimeSettings } from '@/api/time';
 import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId, resolveTimeZoneId } from '@/utils/dateTime';
 import { parseForumWindowParams } from '@/utils/forumNavigation';
@@ -55,19 +56,27 @@ const SEARCH_PAGE_SIZE = 20;
 const COMMENT_NAVIGATION_CHILD_PAGE_SIZE = 5;
 
 interface ForumCommentNavigationTarget {
-  commentId: number;
-  expandedRootCommentId?: number;
+  commentId: LongId;
+  expandedRootCommentId?: LongId;
   navigationKey: string;
+}
+
+function isSameLongId(left: LongId | null | undefined, right: LongId | null | undefined): boolean {
+  if (left == null || right == null) {
+    return false;
+  }
+
+  return String(left) === String(right);
 }
 
 function mergeCommentChildren(
   comments: CommentNode[],
-  parentCommentId: number,
+  parentCommentId: LongId,
   children: CommentNode[],
   totalChildren: number
 ): CommentNode[] {
   return comments.map((comment) => {
-    if (comment.voId !== parentCommentId) {
+    if (!isSameLongId(comment.voId, parentCommentId)) {
       return comment;
     }
 
@@ -104,13 +113,14 @@ export const ForumApp = () => {
   const [searchPosts, setSearchPosts] = useState<PostItem[]>([]);
   const [searchPostGodComments, setSearchPostGodComments] = useState<Map<string, CommentHighlight>>(new Map());
   const [loadingSearchPosts, setLoadingSearchPosts] = useState(false);
-  const [reportTarget, setReportTarget] = useState<{ targetType: ContentReportTargetType; targetId: number } | null>(null);
+  const [reportTarget, setReportTarget] = useState<{ targetType: ContentReportTargetType; targetId: LongId } | null>(null);
   const [commentNavigationTarget, setCommentNavigationTarget] = useState<ForumCommentNavigationTarget | null>(null);
   const [commentNavigationNotice, setCommentNavigationNotice] = useState<string | null>(null);
   const searchRequestIdRef = useRef(0);
   const [followStatus, setFollowStatus] = useState<UserFollowStatus | null>(null);
   const [followLoading, setFollowLoading] = useState(false);
   const windowParams = parseForumWindowParams(currentWindow?.appParams);
+  const windowPostIdentifier = windowParams.postPublicId ?? windowParams.postId;
   const handledWindowRouteRef = useRef<string | null>(null);
   const canTogglePostTop = roles.some((role) => {
     const normalized = role.trim().toLowerCase();
@@ -292,11 +302,11 @@ export const ForumApp = () => {
       }
 
       const deduplicatedChildren = aggregatedChildren.filter((child, index, source) =>
-        source.findIndex((item) => item.voId === child.voId) === index
+        source.findIndex((item) => isSameLongId(item.voId, child.voId)) === index
       );
 
       dataState.setComments((prev) =>
-        mergeCommentChildren(prev, navigation.voParentCommentId as number, deduplicatedChildren, totalChildren)
+        mergeCommentChildren(prev, navigation.voParentCommentId ?? navigation.voRootCommentId, deduplicatedChildren, totalChildren)
       );
     }
 
@@ -310,9 +320,9 @@ export const ForumApp = () => {
     setCommentNavigationNotice(null);
   }, [dataState.commentPageSize, dataState.loadComments, dataState.setComments, t]);
 
-  const handleNavigateToComment = useCallback(async (commentId: number) => {
+  const handleNavigateToComment = useCallback(async (commentId: LongId) => {
     const postId = dataState.selectedPost?.voId;
-    if (!postId || commentId <= 0) {
+    if (!postId || !commentId) {
       return;
     }
 
@@ -324,13 +334,13 @@ export const ForumApp = () => {
   }, [dataState.selectedPost?.voId, navigateToComment, t]);
 
   useEffect(() => {
-    if (!windowParams.postId) {
+    if (!windowPostIdentifier) {
       setCommentNavigationTarget(null);
       setCommentNavigationNotice(null);
       return;
     }
 
-    const routeSignature = `${windowParams.postId}:${windowParams.commentId ?? 'none'}:${windowParams.navigationKey ?? 'initial'}`;
+    const routeSignature = `${windowPostIdentifier}:${windowParams.commentId ?? 'none'}:${windowParams.navigationKey ?? 'initial'}`;
     if (handledWindowRouteRef.current === routeSignature) {
       return;
     }
@@ -340,7 +350,7 @@ export const ForumApp = () => {
     let cancelled = false;
 
     const openPostFromWindow = async () => {
-      if (!windowParams.postId) {
+      if (!windowPostIdentifier) {
         return;
       }
 
@@ -350,7 +360,7 @@ export const ForumApp = () => {
       setCommentNavigationTarget(null);
       setCommentNavigationNotice(null);
 
-      await actionsState.handleSelectPost(windowParams.postId);
+      const post = await actionsState.handleSelectPost(windowPostIdentifier);
       if (cancelled || !windowParams.commentId) {
         return;
       }
@@ -360,7 +370,7 @@ export const ForumApp = () => {
           return;
         }
 
-        await navigateToComment(windowParams.postId, windowParams.commentId, routeSignature);
+        await navigateToComment(post?.voId ?? windowPostIdentifier, windowParams.commentId, routeSignature);
       } catch {
         if (cancelled) {
           return;
@@ -384,7 +394,7 @@ export const ForumApp = () => {
     dataState.setError,
     windowParams.commentId,
     windowParams.navigationKey,
-    windowParams.postId,
+    windowPostIdentifier,
     dataState.setSelectedCategoryId,
     dataState.setSelectedTagName,
     t,
@@ -514,7 +524,7 @@ export const ForumApp = () => {
     dataState.setError
   ]);
 
-  const handleToggleFollow = async (targetUserId: number, isFollowing: boolean) => {
+  const handleToggleFollow = async (targetUserId: LongId, isFollowing: boolean) => {
     if (!loggedIn) {
       dataState.setError(t('forum.loginRequiredToFollow'));
       return;
@@ -535,7 +545,7 @@ export const ForumApp = () => {
     }
   };
 
-  const handleOpenUserProfile = (targetUserId: number, targetUserName?: string | null, avatarUrl?: string | null) => {
+  const handleOpenUserProfile = (targetUserId: LongId, targetUserName?: string | null, avatarUrl?: string | null) => {
     if (!targetUserId) {
       return;
     }
@@ -552,13 +562,13 @@ export const ForumApp = () => {
     });
   };
 
-  const handleOpenReport = (targetType: ContentReportTargetType, targetId: number) => {
+  const handleOpenReport = (targetType: ContentReportTargetType, targetId: LongId) => {
     if (!loggedIn) {
       dataState.setError(t('report.loginRequired'));
       return;
     }
 
-    if (targetId <= 0) {
+    if (!targetId) {
       return;
     }
 
@@ -675,7 +685,7 @@ export const ForumApp = () => {
                 loadingQuickReplies={dataState.loadingQuickReplies}
                 loadingMoreComments={dataState.loadingMoreComments}
                 displayTimeZone={displayTimeZone}
-                isLiked={actionsState.likedPosts.has(dataState.selectedPost.voId)}
+                isLiked={actionsState.likedPosts.has(String(dataState.selectedPost.voId))}
                 isAuthenticated={loggedIn}
                 showFloatingTools={showDetailFloatingTools}
                 currentUserId={userId ?? 0}

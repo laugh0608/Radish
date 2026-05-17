@@ -181,6 +181,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                     }
                 }
 
+                var postDetail = await _postService.GetPostDetailAsync(comment.PostId);
+
                 // 4.4 评论被回复奖励（如果是回复评论）
                 if (replyTargetComment != null)
                 {
@@ -208,7 +210,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                                 TriggerName = comment.AuthorName,
                                 TriggerAvatar = null, // 头像字段可以后续从用户表查询
                                 ReceiverUserIds = new List<long> { replyTargetComment.AuthorId },
-                                ExtData = NotificationNavigationHelper.BuildForumNavigationExtData(comment.PostId, commentId)
+                                ExtData = NotificationNavigationHelper.BuildForumNavigationExtData(comment.PostId, commentId, postDetail?.VoPublicId)
                             });
                             Log.Information("评论回复通知发送成功：CommentId={CommentId}, ReplyTargetCommentId={ReplyTargetCommentId}, 接收者={ReceiverId}",
                                 commentId, replyTargetComment.Id, replyTargetComment.AuthorId);
@@ -225,8 +227,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                 {
                     try
                     {
-                        var post = await _postService.GetPostDetailAsync(comment.PostId);
-                        if (post != null && post.VoAuthorId != comment.AuthorId)
+                        if (postDetail != null && postDetail.VoAuthorId != comment.AuthorId)
                         {
                             await _notificationService.CreateNotificationAsync(new CreateNotificationDto
                             {
@@ -239,11 +240,11 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                                 TriggerId = comment.AuthorId,
                                 TriggerName = comment.AuthorName,
                                 TriggerAvatar = null,
-                                ReceiverUserIds = new List<long> { post.VoAuthorId },
-                                ExtData = NotificationNavigationHelper.BuildForumNavigationExtData(comment.PostId, commentId)
+                                ReceiverUserIds = new List<long> { postDetail.VoAuthorId },
+                                ExtData = NotificationNavigationHelper.BuildForumNavigationExtData(comment.PostId, commentId, postDetail.VoPublicId)
                             });
                             Log.Information("帖子评论通知发送成功：PostId={PostId}, CommentId={CommentId}, 接收者={ReceiverId}",
-                                comment.PostId, commentId, post.VoAuthorId);
+                                comment.PostId, commentId, postDetail.VoAuthorId);
                         }
                     }
                     catch (Exception notifyEx)
@@ -541,6 +542,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                         {
                             try
                             {
+                                var postDetail = await _postService.GetPostDetailAsync(comment.PostId);
                                 await _notificationService.CreateNotificationAsync(new CreateNotificationDto
                                 {
                                     Type = NotificationType.CommentLiked,
@@ -553,7 +555,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                                     TriggerName = null, // TODO: 从用户上下文获取用户名
                                     TriggerAvatar = null, // TODO: 从用户表查询头像
                                     ReceiverUserIds = new List<long> { comment.AuthorId },
-                                    ExtData = NotificationNavigationHelper.BuildForumNavigationExtData(comment.PostId, commentId)
+                                    ExtData = NotificationNavigationHelper.BuildForumNavigationExtData(comment.PostId, commentId, postDetail?.VoPublicId)
                                 });
 
                                 // 记录去重键（5分钟内不重复通知）
@@ -728,7 +730,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             .GroupBy(attachment => attachment.BusinessId!.Value)
             .ToDictionary(
                 group => group.Key,
-                group => _attachmentUrlResolver.ResolveAttachmentUrl(group.First().Id));
+                group => (string?)_attachmentUrlResolver.ResolveAttachmentUrl(group.First().Id));
 
         ApplyAuthorAvatarUrls(comments, avatarMap);
     }

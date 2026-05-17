@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Json;
 
 namespace Radish.Common;
@@ -7,8 +7,8 @@ namespace Radish.Common;
 public class AppSettingsTool
 {
     // 需要引用 Microsoft.Extensions.Configuration.Binder 和 Microsoft.Extensions.Configuration.Json 包
-    public static IConfiguration Configuration { get; set; }
-    
+    public static IConfiguration Configuration { get; set; } = null!;
+
     // static string ContentPath { get; set; }
 
     public AppSettingsTool(IConfiguration configuration)
@@ -41,7 +41,7 @@ public class AppSettingsTool
         {
             if (sections.Any())
             {
-                return Configuration[string.Join(":", sections)];
+                return Configuration[string.Join(":", sections)] ?? string.Empty;
             }
         }
         catch (Exception)
@@ -72,7 +72,7 @@ public class AppSettingsTool
     {
         try
         {
-            return Configuration[sectionsPath];
+            return Configuration[sectionsPath] ?? string.Empty;
         }
         catch (Exception)
         {

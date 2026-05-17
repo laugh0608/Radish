@@ -7,6 +7,7 @@ namespace Radish.Service;
 public partial class PostService
 {
     private static readonly TimeSpan MinLotteryLeadTime = TimeSpan.FromHours(1);
+    private const string PostPublicIdPrefix = "pst_";
 
     /// <summary>
     /// 发布帖子
@@ -28,6 +29,7 @@ public partial class PostService
 
         var normalizedTagNames = NormalizeTagNamesOrThrow(tagNames, nameof(tagNames), "发布帖子时至少需要一个标签");
         var operatorName = string.IsNullOrWhiteSpace(post.AuthorName) ? "System" : post.AuthorName;
+        post.PublicId = EnsurePostPublicId(post.PublicId);
 
         if (poll != null)
         {
@@ -355,6 +357,22 @@ public partial class PostService
         }
 
         return normalizedTagNames;
+    }
+
+    private static string EnsurePostPublicId(string? currentPublicId)
+    {
+        var normalizedCurrent = currentPublicId?.Trim();
+        if (!string.IsNullOrWhiteSpace(normalizedCurrent))
+        {
+            return normalizedCurrent;
+        }
+
+        return GeneratePostPublicId();
+    }
+
+    private static string GeneratePostPublicId()
+    {
+        return $"{PostPublicIdPrefix}{Guid.CreateVersion7():N}";
     }
 
     private async Task<Tag> ResolveTagByNameAsync(string tagName, bool allowCreateTag)

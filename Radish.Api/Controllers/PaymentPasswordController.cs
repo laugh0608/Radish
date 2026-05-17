@@ -4,6 +4,7 @@ using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
+using Radish.Shared.Security;
 
 namespace Radish.Api.Controllers;
 
@@ -46,7 +47,7 @@ public class PaymentPasswordController : ControllerBase
     public async Task<MessageModel<bool>> SetPassword([FromBody] SetPaymentPasswordRequest request)
     {
         var result = await _paymentPasswordService.SetPaymentPasswordAsync(_currentUserAccessor.Current.UserId, request);
-        return MessageModel<bool>.Success(result ? "支付密码设置成功" : "支付密码设置失败", result);
+        return MessageModel<bool>.Success(result ? "支付口令设置成功" : "支付口令设置失败", result);
     }
 
     /// <summary>
@@ -58,7 +59,7 @@ public class PaymentPasswordController : ControllerBase
     public async Task<MessageModel<bool>> ChangePassword([FromBody] ChangePaymentPasswordRequest request)
     {
         var result = await _paymentPasswordService.ChangePaymentPasswordAsync(_currentUserAccessor.Current.UserId, request);
-        return MessageModel<bool>.Success(result ? "支付密码修改成功" : "支付密码修改失败", result);
+        return MessageModel<bool>.Success(result ? "支付口令修改成功" : "支付口令修改失败", result);
     }
 
     /// <summary>
@@ -70,7 +71,9 @@ public class PaymentPasswordController : ControllerBase
     public async Task<MessageModel<PaymentPasswordVerifyResult>> VerifyPassword([FromBody] VerifyPaymentPasswordRequest request)
     {
         var result = await _paymentPasswordService.VerifyPaymentPasswordAsync(_currentUserAccessor.Current.UserId, request);
-        return MessageModel<PaymentPasswordVerifyResult>.Success(result.IsSuccess ? "密码验证成功" : result.ErrorMessage, result);
+        return MessageModel<PaymentPasswordVerifyResult>.Success(
+            result.IsSuccess ? "支付口令验证成功" : result.ErrorMessage ?? "支付口令验证失败",
+            result);
     }
 
     /// <summary>
@@ -84,12 +87,12 @@ public class PaymentPasswordController : ControllerBase
         var strength = _paymentPasswordService.CheckPasswordStrength(password);
         var strengthDisplay = strength switch
         {
-            0 => "无效",
-            1 => "很弱",
-            2 => "弱",
-            3 => "中等",
-            4 => "强",
-            5 => "很强",
+            0 => "未完成",
+            1 => "无效",
+            2 => "较弱",
+            3 => "一般",
+            4 => "稳妥",
+            5 => "较强",
             _ => "未知"
         };
 
@@ -97,7 +100,7 @@ public class PaymentPasswordController : ControllerBase
         {
             VoLevel = strength,
             VoDisplay = strengthDisplay,
-            VoIsValid = strength > 0
+            VoIsValid = PaymentPasscodeRules.IsAccepted(password)
         });
     }
 
@@ -142,7 +145,7 @@ public class PaymentPasswordController : ControllerBase
     public async Task<MessageModel<bool>> AdminResetPassword([FromBody] ResetPaymentPasswordRequest request)
     {
         var result = await _paymentPasswordService.ResetPaymentPasswordAsync(_currentUserAccessor.Current.UserId, request);
-        return MessageModel<bool>.Success(result ? "重置支付密码成功" : "重置支付密码失败", result);
+        return MessageModel<bool>.Success(result ? "重置支付口令成功" : "重置支付口令失败", result);
     }
 
     /// <summary>
@@ -156,7 +159,7 @@ public class PaymentPasswordController : ControllerBase
     public async Task<MessageModel<bool>> AdminUnlockPassword([FromQuery] long userId, [FromBody] string reason)
     {
         var result = await _paymentPasswordService.UnlockPaymentPasswordAsync(_currentUserAccessor.Current.UserId, userId, reason);
-        return MessageModel<bool>.Success(result ? "解锁支付密码成功" : "解锁支付密码失败", result);
+        return MessageModel<bool>.Success(result ? "解锁支付口令成功" : "解锁支付口令失败", result);
     }
 
     /// <summary>

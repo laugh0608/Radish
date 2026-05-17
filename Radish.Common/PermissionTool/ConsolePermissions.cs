@@ -1,5 +1,4 @@
 using Radish.Common.HttpContextTool;
-
 namespace Radish.Common.PermissionTool;
 
 public static class ConsolePermissions
@@ -18,6 +17,7 @@ public static class ConsolePermissions
     public const string ProductsToggleSale = "console.products.toggle-sale";
     public const string OrdersView = "console.orders.view";
     public const string OrdersRetry = "console.orders.retry";
+    public const string OrdersRemark = "console.orders.remark";
     public const string UsersView = "console.users.view";
     public const string RolesView = "console.roles.view";
     public const string RolesCreate = "console.roles.create";
@@ -51,6 +51,7 @@ public static class ConsolePermissions
     public const string CoinsAdjust = "console.coins.adjust";
     public const string ExperienceView = "console.experience.view";
     public const string ExperienceAdjust = "console.experience.adjust";
+    public const string ExperienceFreeze = "console.experience.freeze";
     public const string ExperienceRecalculate = "console.experience.recalculate";
     public const string SystemConfigView = "console.system-config.view";
     public const string SystemConfigCreate = "console.system-config.create";
@@ -67,6 +68,10 @@ public static class ConsolePermissions
             ["/api/v1/Role/UpdateRole"] = new[] { RolesEdit },
             ["/api/v1/Role/DeleteRole"] = new[] { RolesDelete },
             ["/api/v1/Role/ToggleRoleStatus"] = new[] { RolesToggle },
+            ["/api/v1/ConsoleAuthorization/GetResourceTree"] = new[] { RolesView, RolesEdit },
+            ["/api/v1/ConsoleAuthorization/GetRoleAuthorization"] = new[] { RolesView, RolesEdit },
+            ["/api/v1/ConsoleAuthorization/GetRolePermissionPreview"] = new[] { RolesView, RolesEdit },
+            ["/api/v1/ConsoleAuthorization/SaveRoleAuthorization"] = new[] { RolesEdit },
             ["/api/v1/Category/GetPage"] = new[] { CategoriesView },
             ["/api/v1/Category/Create"] = new[] { CategoriesCreate },
             ["/api/v1/Category/Update/.+"] = new[] { CategoriesEdit },
@@ -84,13 +89,16 @@ public static class ConsolePermissions
             ["/api/v1/Client/ResetClientSecret/.+"] = new[] { ApplicationsResetSecret },
             ["/api/v1/Shop/GetCategories"] = new[] { ProductsView },
             ["/api/v1/Shop/AdminGetProducts"] = new[] { ProductsView },
+            ["/api/v1/Shop/AdminGetProduct/\\d+"] = new[] { ProductsView },
             ["/api/v1/Shop/CreateProduct"] = new[] { ProductsCreate },
             ["/api/v1/Shop/UpdateProduct"] = new[] { ProductsEdit },
             ["/api/v1/Shop/DeleteProduct/.+"] = new[] { ProductsDelete },
             ["/api/v1/Shop/PutOnSale/.+"] = new[] { ProductsToggleSale },
             ["/api/v1/Shop/TakeOffSale/.+"] = new[] { ProductsToggleSale },
             ["/api/v1/Shop/AdminGetOrders"] = new[] { OrdersView },
+            ["/api/v1/Shop/AdminGetOrder/.+"] = new[] { OrdersView },
             ["/api/v1/Shop/RetryGrantBenefit/.+"] = new[] { OrdersRetry },
+            ["/api/v1/Shop/AdminRemarkOrder/.+"] = new[] { OrdersRemark },
             ["/api/v1/Tag/GetPage"] = new[] { TagsView },
             ["/api/v1/Tag/Create"] = new[] { TagsCreate },
             ["/api/v1/Tag/Update/.+"] = new[] { TagsEdit },
@@ -119,8 +127,14 @@ public static class ConsolePermissions
             ["/api/v1/Coin/AdminGetTransactions"] = new[] { CoinsView },
             ["/api/v1/Coin/AdminAdjustBalance"] = new[] { CoinsAdjust },
             ["/api/v1/Experience/GetUserExperience/.+"] = new[] { ExperienceView },
+            ["/api/v1/Experience/GetUserDailyStats/.+"] = new[] { ExperienceView },
             ["/api/v1/Experience/GetLevelConfigs"] = new[] { ExperienceView },
+            ["/api/v1/Experience/GetUserGovernanceActions/.+"] = new[] { ExperienceView },
+            ["/api/v1/Experience/GetUserTransactions/.+"] = new[] { ExperienceView },
             ["/api/v1/Experience/AdminAdjustExperience"] = new[] { ExperienceAdjust },
+            ["/api/v1/Experience/AdminFreezeExperience"] = new[] { ExperienceFreeze },
+            ["/api/v1/Experience/AdminUnfreezeExperience"] = new[] { ExperienceFreeze },
+            ["/api/v1/Experience/AdminRecordGovernanceReview"] = new[] { ExperienceFreeze },
             ["/api/v1/Experience/RecalculateLevelConfigs"] = new[] { ExperienceRecalculate },
             ["/api/v1/SystemConfig/GetSystemConfigs"] = new[] { SystemConfigView },
             ["/api/v1/SystemConfig/GetConfigCategories"] = new[] { SystemConfigView },
@@ -151,6 +165,7 @@ public static class ConsolePermissions
         ProductsToggleSale,
         OrdersView,
         OrdersRetry,
+        OrdersRemark,
         UsersView,
         RolesView,
         RolesCreate,
@@ -184,6 +199,7 @@ public static class ConsolePermissions
         CoinsAdjust,
         ExperienceView,
         ExperienceAdjust,
+        ExperienceFreeze,
         ExperienceRecalculate,
         SystemConfigView,
         SystemConfigCreate,
@@ -215,9 +231,17 @@ public static class ConsolePermissions
             return Array.Empty<string>();
         }
 
-        return ApiPermissionMappings.TryGetValue(apiUrl.Trim(), out var permissions)
-            ? permissions
-            : Array.Empty<string>();
+        var normalizedApiUrl = apiUrl.Trim();
+        if (ApiPermissionMappings.TryGetValue(normalizedApiUrl, out var permissions))
+        {
+            return permissions;
+        }
+
+        return ApiPermissionMappings
+            .Where(mapping => PermissionUrlMatcher.IsMatch(normalizedApiUrl, mapping.Key))
+            .SelectMany(mapping => mapping.Value)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
     }
 
     public static bool IsConsoleOperationalPermission(string? permissionKey)

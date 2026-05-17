@@ -24,6 +24,11 @@ import {
   getPublicDetailBackLabelKey,
   type PublicDetailBackMode,
 } from '../publicRouteNavigation';
+import {
+  applyPublicStructuredData,
+  buildDocsArticleStructuredData,
+  removePublicStructuredData,
+} from '../publicStructuredData';
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { getPublicWikiDocumentBySlug, getPublicWikiList, getPublicWikiTree } from './publicDocsApi';
@@ -88,7 +93,7 @@ interface PublicDocsAppProps {
 }
 
 interface PublicDocsTreeRow {
-  id: number;
+  id: number | string;
   slug: string;
   title: string;
   depth: number;
@@ -1091,6 +1096,24 @@ const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigat
 
     globalThis.document.title = `${documentDetail.voTitle} · ${t('desktop.apps.document.name')}`;
   }, [documentDetail?.voTitle, t]);
+
+  useEffect(() => {
+    if (!documentDetail) {
+      removePublicStructuredData();
+      return;
+    }
+
+    applyPublicStructuredData(buildDocsArticleStructuredData({
+      document: documentDetail,
+      canonicalPath: buildPublicDocsPath({
+        kind: 'detail',
+        slug: documentDetail.voSlug,
+        anchor: route.anchor,
+      }),
+    }));
+
+    return removePublicStructuredData;
+  }, [documentDetail, route.anchor]);
 
   useEffect(() => {
     if (!documentDetail?.voSlug) {

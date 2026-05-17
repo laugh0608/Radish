@@ -9,19 +9,19 @@ namespace Radish.Common.CoreTool;
 /// <summary>内部只用于初始化使用</summary>
 public static class InternalApp
 {
-    internal static IServiceCollection InternalServices;
+    internal static IServiceCollection InternalServices = null!;
 
     /// <summary>根服务</summary>
-    internal static IServiceProvider RootServices;
+    internal static IServiceProvider RootServices = null!;
 
     /// <summary>获取 Web 主机环境</summary>
-    internal static IWebHostEnvironment WebHostEnvironment;
+    internal static IWebHostEnvironment WebHostEnvironment = null!;
 
     /// <summary>获取泛型主机环境</summary>
-    internal static IHostEnvironment HostEnvironment;
+    internal static IHostEnvironment HostEnvironment = null!;
 
     /// <summary>配置对象</summary>
-    internal static IConfiguration Configuration;
+    internal static IConfiguration Configuration = null!;
 
     public static void ConfigureApplication(this WebApplicationBuilder wab)
     {

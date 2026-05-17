@@ -27,10 +27,10 @@ public class SerializeHelper
     {
         if (value == null)
         {
-            return default;
+            return default!;
         }
 
         var jsonString = Encoding.UTF8.GetString(value);
-        return JsonConvert.DeserializeObject<TEntity>(jsonString);
+        return JsonConvert.DeserializeObject<TEntity>(jsonString)!;
     }
 }

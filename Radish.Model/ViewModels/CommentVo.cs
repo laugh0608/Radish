@@ -21,6 +21,11 @@ public class CommentVo
     public long VoPostId { get; set; }
 
     /// <summary>
+    /// 所属帖子公开访问标识
+    /// </summary>
+    public string? VoPostPublicId { get; set; }
+
+    /// <summary>
     /// 父评论 Id
     /// </summary>
     public long? VoParentId { get; set; }

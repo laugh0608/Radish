@@ -7,6 +7,7 @@ using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
+using Radish.Shared.CustomEnum;
 using Xunit;
 
 namespace Radish.Api.Tests.Controllers;
@@ -66,7 +67,14 @@ public class ContentModerationControllerTest
     {
         var serviceMock = CreateServiceMock();
         serviceMock
-            .Setup(s => s.GetReportQueueAsync(0, 1, 20))
+            .Setup(s => s.GetReportQueueAsync(It.Is<ContentReportQueueQueryDto>(query =>
+                query.Status == (int)ContentReportStatusEnum.Pending &&
+                query.TargetType == "Comment" &&
+                query.ReasonType == "Spam" &&
+                query.NavigationStatus == "Fallback" &&
+                query.Keyword == "9527" &&
+                query.PageIndex == 1 &&
+                query.PageSize == 20)))
             .ReturnsAsync(new VoPagedResult<ContentReportQueueItemVo>
             {
                 VoItems =
@@ -85,7 +93,16 @@ public class ContentModerationControllerTest
             });
 
         var controller = CreateController(serviceMock.Object);
-        var result = await controller.GetReviewQueue();
+        var result = await controller.GetReviewQueue(new ContentReportQueueQueryDto
+        {
+            Status = (int)ContentReportStatusEnum.Pending,
+            TargetType = "Comment",
+            ReasonType = "Spam",
+            NavigationStatus = "Fallback",
+            Keyword = "9527",
+            PageIndex = 1,
+            PageSize = 20
+        });
 
         Assert.True(result.IsSuccess);
         Assert.Equal(200, result.StatusCode);
@@ -142,6 +159,98 @@ public class ContentModerationControllerTest
         var payload = Assert.IsType<ContentModerationPermissionVo>(result.ResponseData);
         Assert.False(payload.VoCanPublish);
         Assert.True(payload.VoIsMuted);
+    }
+
+    [Fact]
+    public async Task ApplyUserAction_Should_Forward_Request_And_Return_Action_Result()
+    {
+        var serviceMock = CreateServiceMock();
+        serviceMock
+            .Setup(s => s.ApplyUserActionAsync(
+                It.Is<ApplyUserModerationActionDto>(dto =>
+                    dto.TargetUserId == 20002 &&
+                    dto.ActionType == 3 &&
+                    dto.DurationHours == null &&
+                    dto.SourceReportId == 70003 &&
+                    dto.Reason == "人工复核后解除禁言"),
+                10001,
+                "Tester",
+                0))
+            .ReturnsAsync(new UserModerationActionVo
+            {
+                VoActionId = 82011,
+                VoTargetUserId = 20002,
+                VoActionType = "Unmute",
+                VoSourceReportId = 70003,
+                VoIsActive = false
+            });
+
+        var controller = CreateController(serviceMock.Object);
+        var result = await controller.ApplyUserAction(new ApplyUserModerationActionDto
+        {
+            TargetUserId = 20002,
+            ActionType = 3,
+            SourceReportId = 70003,
+            Reason = "人工复核后解除禁言"
+        });
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(200, result.StatusCode);
+        var payload = Assert.IsType<UserModerationActionVo>(result.ResponseData);
+        Assert.Equal(82011, payload.VoActionId);
+        Assert.Equal("Unmute", payload.VoActionType);
+        Assert.False(payload.VoIsActive);
+    }
+
+    [Fact]
+    public async Task GetActionLogs_Should_Return_Paged_Result_With_Source_Report_Navigation()
+    {
+        var serviceMock = CreateServiceMock();
+        serviceMock
+            .Setup(s => s.GetActionLogsAsync(It.Is<ContentModerationActionLogQueryDto>(query =>
+                query.PageIndex == 1 &&
+                query.PageSize == 20 &&
+                query.TargetUserId == null &&
+                query.SourceReportId == 70003 &&
+                query.ActionType == "Mute" &&
+                query.IsActive == true &&
+                query.Keyword == "reviewer")))
+            .ReturnsAsync(new VoPagedResult<UserModerationActionVo>
+            {
+                VoItems =
+                [
+                    new UserModerationActionVo
+                    {
+                        VoActionId = 81001,
+                        VoSourceReportId = 70003,
+                        VoSourceReportTargetType = "ChatMessage",
+                        VoSourceReportTargetContentId = 90004,
+                        VoSourceReportTargetChannelId = 108,
+                        VoSourceReportTargetMessageId = 90004
+                    }
+                ],
+                VoTotal = 1,
+                VoPageIndex = 1,
+                VoPageSize = 20
+            });
+
+        var controller = CreateController(serviceMock.Object);
+        var result = await controller.GetActionLogs(new ContentModerationActionLogQueryDto
+        {
+            PageIndex = 1,
+            PageSize = 20,
+            SourceReportId = 70003,
+            ActionType = "Mute",
+            IsActive = true,
+            Keyword = "reviewer"
+        });
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(200, result.StatusCode);
+        var payload = Assert.IsType<VoPagedResult<UserModerationActionVo>>(result.ResponseData);
+        Assert.Single(payload.VoItems);
+        Assert.Equal(108, payload.VoItems[0].VoSourceReportTargetChannelId);
+        Assert.Equal(90004, payload.VoItems[0].VoSourceReportTargetMessageId);
     }
 
     private static ContentModerationController CreateController(IContentModerationService moderationService)

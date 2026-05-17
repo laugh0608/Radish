@@ -6,14 +6,16 @@ import { log } from '@/utils/logger';
 import { NotificationList } from '@radish/ui/notification-list';
 import type { NotificationItemData } from '@radish/ui/notification';
 import { notificationApi, type UserNotificationVo } from '@/api/notification';
-import { getPublicProfile } from '@/api/user';
+import { getPublicProfile, type LongId } from '@/api/user';
 import { getApiBaseUrl } from '@/config/env';
 import { useNotificationStore, type NotificationItem } from '@/stores/notificationStore';
 import { useWindowStore } from '@/stores/windowStore';
 import { useUserStore } from '@/stores/userStore';
 import { tokenService } from '@/services/tokenService';
 import { toast } from '@radish/ui/toast';
+import { buildChatAppParams, parseChatNotificationNavigation } from '@/utils/chatNavigation';
 import { buildForumAppParams, parseForumNotificationNavigation } from '@/utils/forumNavigation';
+import { isSameLongId, normalizePositiveLongIdKey } from '@/utils/longId';
 import styles from './NotificationApp.module.css';
 
 /**
@@ -29,10 +31,10 @@ export const NotificationApp = () => {
   const currentUserId = useUserStore((state) => state.userId);
   const { unreadCount, recentNotifications } = useNotificationStore();
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
-  const triggerAvatarCacheRef = useRef(new Map<number, string | null>());
+  const triggerAvatarCacheRef = useRef(new Map<string, string | null>());
 
   interface NotificationListItem extends NotificationItemData {
-    notificationId?: number;
+    notificationId?: LongId;
   }
 
   const resolveNotificationAvatar = useCallback((avatarUrl?: string | null) => {
@@ -59,6 +61,11 @@ export const NotificationApp = () => {
   const [hasMore, setHasMore] = useState(true);
   const [activeFilter, setActiveFilter] = useState<'all' | 'unread' | 'mention' | 'comment' | 'like'>('all');
   const pageSize = 20;
+  const getNotificationKey = useCallback((item: Pick<NotificationListItem, 'id' | 'notificationId'>) => (
+    normalizePositiveLongIdKey(item.notificationId)
+    ?? normalizePositiveLongIdKey(item.id)
+    ?? String(item.notificationId ?? item.id)
+  ), []);
   const notificationListLabels = useMemo(() => ({
     loading: t('notification.shared.loading'),
     loadingMore: t('notification.shared.loadingMore'),
@@ -135,39 +142,54 @@ export const NotificationApp = () => {
     }));
   };
 
-  const patchNotificationsWithResolvedAvatars = useCallback((avatarMap: Map<number, string | null>) => {
+  const patchNotificationsWithResolvedAvatars = useCallback((avatarMap: Map<string, string | null>) => {
     if (avatarMap.size === 0) {
       return;
     }
 
     const store = useNotificationStore.getState();
+    let hasUiChanges = false;
 
-    setNotifications((prev) => prev.map((item) => {
-      if (item.triggerAvatar || !item.triggerId) {
-        return item;
-      }
-
-      const resolvedAvatar = avatarMap.get(item.triggerId);
-      return resolvedAvatar ? { ...item, triggerAvatar: resolvedAvatar } : item;
-    }));
-
-    store.setRecentNotifications(
-      store.recentNotifications.map((item) => {
-        if (item.triggerAvatar || !item.triggerId) {
+    setNotifications((prev) => {
+      const next = prev.map((item) => {
+        const triggerIdKey = normalizePositiveLongIdKey(item.triggerId);
+        if (item.triggerAvatar || !triggerIdKey) {
           return item;
         }
 
-        const resolvedAvatar = avatarMap.get(item.triggerId);
-        return resolvedAvatar ? { ...item, triggerAvatar: resolvedAvatar } : item;
-      })
-    );
+        const resolvedAvatar = avatarMap.get(triggerIdKey);
+        if (!resolvedAvatar) {
+          return item;
+        }
+
+        hasUiChanges = true;
+        return { ...item, triggerAvatar: resolvedAvatar };
+      });
+
+      return hasUiChanges ? next : prev;
+    });
+
+    const nextStoreItems = store.recentNotifications.map((item) => {
+      const triggerIdKey = normalizePositiveLongIdKey(item.triggerId);
+      if (item.triggerAvatar || !triggerIdKey) {
+        return item;
+      }
+
+      const resolvedAvatar = avatarMap.get(triggerIdKey);
+      return resolvedAvatar ? { ...item, triggerAvatar: resolvedAvatar } : item;
+    });
+
+    if (nextStoreItems.some((item, index) => item !== store.recentNotifications[index])) {
+      store.setRecentNotifications(nextStoreItems);
+    }
   }, []);
 
   const backfillTriggerAvatars = useCallback(async (items: NotificationListItem[]) => {
     const missingTriggerIds = Array.from(new Set(
       items
-        .filter((item) => !item.triggerAvatar && (item.triggerId ?? 0) > 0)
-        .map((item) => item.triggerId as number)
+        .filter((item) => !item.triggerAvatar)
+        .map((item) => normalizePositiveLongIdKey(item.triggerId))
+        .filter((triggerId): triggerId is string => Boolean(triggerId))
     ));
 
     if (missingTriggerIds.length === 0) {
@@ -193,7 +215,7 @@ export const NotificationApp = () => {
       }
     }
 
-    const resolvedAvatarMap = new Map<number, string | null>();
+    const resolvedAvatarMap = new Map<string, string | null>();
     for (const triggerId of missingTriggerIds) {
       resolvedAvatarMap.set(triggerId, triggerAvatarCacheRef.current.get(triggerId) ?? null);
     }
@@ -206,35 +228,38 @@ export const NotificationApp = () => {
     incoming: NotificationListItem[]
   ) => {
     if (incoming.length === 0) return base;
-    const getMergeKey = (item: NotificationListItem) =>
-      `${item.notificationId ?? item.id}|${item.createdAt}|${item.type}`;
     const baseMap = new Map<string, NotificationListItem>();
     for (const item of base) {
-      baseMap.set(getMergeKey(item), item);
+      baseMap.set(getNotificationKey(item), item);
     }
     const result: NotificationListItem[] = [];
     const seen = new Set<string>();
     for (const item of incoming) {
-      const mergeKey = getMergeKey(item);
+      const mergeKey = getNotificationKey(item);
       const existing = baseMap.get(mergeKey);
       result.push(existing ? { ...existing, ...item } : item);
       seen.add(mergeKey);
     }
     for (const item of base) {
-      if (!seen.has(getMergeKey(item))) {
+      if (!seen.has(getNotificationKey(item))) {
         result.push(item);
       }
     }
     return result;
   };
 
-  const resolveBackendNotificationId = useCallback((uiId: number): number => {
-    const current = notifications.find(item => item.id === uiId);
+  const resolveBackendNotificationId = useCallback((uiId: LongId): LongId | null => {
+    const uiIdKey = normalizePositiveLongIdKey(uiId);
+    if (!uiIdKey) {
+      return null;
+    }
+
+    const current = notifications.find((item) => normalizePositiveLongIdKey(item.id) === uiIdKey);
     if (current?.notificationId !== undefined) {
       return current.notificationId;
     }
 
-    const fromStore = recentNotifications.find(item => item.id === uiId);
+    const fromStore = recentNotifications.find((item) => normalizePositiveLongIdKey(item.id) === uiIdKey);
     if (fromStore?.notificationId !== undefined) {
       return fromStore.notificationId;
     }
@@ -298,7 +323,7 @@ export const NotificationApp = () => {
     };
 
     void loadNotifications();
-  }, [t]);
+  }, [backfillTriggerAvatars, syncUnreadCountFromServer, t]);
 
   const handleLoadMore = useCallback(async () => {
     if (loadingMore || loading || !hasMore) return;
@@ -313,15 +338,16 @@ export const NotificationApp = () => {
         const nextItems = result.data.map(mapApiNotificationToUi);
         void backfillTriggerAvatars(nextItems);
         setNotifications(prev => {
-          const indexMap = new Map<number, number>();
+          const indexMap = new Map<string, number>();
           const merged = prev.slice();
-          merged.forEach((item, idx) => indexMap.set(item.id, idx));
+          merged.forEach((item, idx) => indexMap.set(getNotificationKey(item), idx));
           for (const item of nextItems) {
-            const existingIndex = indexMap.get(item.id);
+            const itemKey = getNotificationKey(item);
+            const existingIndex = indexMap.get(itemKey);
             if (existingIndex !== undefined) {
               merged[existingIndex] = { ...merged[existingIndex], ...item };
             } else {
-              indexMap.set(item.id, merged.length);
+              indexMap.set(itemKey, merged.length);
               merged.push(item);
             }
           }
@@ -338,7 +364,7 @@ export const NotificationApp = () => {
     } finally {
       setLoadingMore(false);
     }
-  }, [hasMore, loading, loadingMore, pageIndex, pageSize, t]);
+  }, [backfillTriggerAvatars, getNotificationKey, hasMore, loading, loadingMore, pageIndex, pageSize, t]);
 
   const filteredNotifications = useMemo(() => {
     switch (activeFilter) {
@@ -357,20 +383,28 @@ export const NotificationApp = () => {
 
   // 标记已读
   const handleMarkAsRead = useCallback(async (
-    id: number,
+    id: LongId,
     options?: { silent?: boolean }
   ) => {
     try {
       const backendNotificationId = resolveBackendNotificationId(id);
+      if (!backendNotificationId) {
+        throw new Error(`无法解析通知 ID，UiId: ${String(id)}`);
+      }
+      const targetIdKey = normalizePositiveLongIdKey(id);
 
       const success = await notificationApi.markAsRead(backendNotificationId);
       if (!success) {
-        throw new Error(`标记通知已读失败，NotificationId: ${backendNotificationId}`);
+        throw new Error(`标记通知已读失败，NotificationId: ${String(backendNotificationId)}`);
       }
 
       const store = useNotificationStore.getState();
       store.markAsRead([backendNotificationId]);
-      setNotifications(prev => prev.map(n => (n.id === id ? { ...n, isRead: true } : n)));
+      setNotifications(prev => prev.map((item) => (
+        targetIdKey !== null && normalizePositiveLongIdKey(item.id) === targetIdKey
+          ? { ...item, isRead: true }
+          : item
+      )));
       await syncUnreadCountFromServer();
 
       if (!options?.silent) {
@@ -394,7 +428,13 @@ export const NotificationApp = () => {
     }
 
     const businessType = notification.businessType?.trim();
+    const chatNavigation = parseChatNotificationNavigation(notification.extData);
     const forumNavigation = parseForumNotificationNavigation(notification.extData);
+
+    if (chatNavigation) {
+      openOrReuseApp('chat', buildChatAppParams(chatNavigation));
+      return;
+    }
 
     if (forumNavigation) {
       openOrReuseApp('forum', buildForumAppParams(forumNavigation));
@@ -415,15 +455,14 @@ export const NotificationApp = () => {
     }
 
     if (businessType === 'User' || notification.type === 'follow') {
-      const targetUserId = notification.type === 'follow'
-        ? (notification.triggerId ?? notification.businessId ?? 0)
-        : (notification.businessId ?? notification.triggerId ?? 0);
-      const hasTargetUserId = typeof targetUserId === 'string'
-        ? targetUserId.trim().length > 0
-        : targetUserId > 0;
+      const targetUserId = normalizePositiveLongIdKey(
+        notification.type === 'follow'
+          ? (notification.triggerId ?? notification.businessId)
+          : (notification.businessId ?? notification.triggerId)
+      );
 
-      if (hasTargetUserId) {
-        if (String(targetUserId) === String(currentUserId ?? 0)) {
+      if (targetUserId) {
+        if (isSameLongId(targetUserId, currentUserId)) {
           openApp('profile');
         } else {
           openApp('profile', {
@@ -470,15 +509,24 @@ export const NotificationApp = () => {
   }, [syncUnreadCountFromServer, t]);
 
   // 删除通知
-  const handleDelete = useCallback(async (id: number) => {
+  const handleDelete = useCallback(async (id: LongId) => {
     try {
       const backendNotificationId = resolveBackendNotificationId(id);
+      if (!backendNotificationId) {
+        throw new Error(`无法解析通知 ID，UiId: ${String(id)}`);
+      }
+      const backendNotificationIdKey = normalizePositiveLongIdKey(backendNotificationId);
+      if (!backendNotificationIdKey) {
+        throw new Error(`通知 ID 非法，NotificationId: ${String(backendNotificationId)}`);
+      }
       await notificationApi.deleteNotification(backendNotificationId);
 
       // 更新 Store：从列表中移除该通知（兼容 id/notificationId）
       const store = useNotificationStore.getState();
       store.removeNotification(backendNotificationId);
-      setNotifications(prev => prev.filter(n => (n.notificationId ?? n.id) !== backendNotificationId));
+      setNotifications((prev) => prev.filter((item) => (
+        normalizePositiveLongIdKey(item.notificationId ?? item.id) !== backendNotificationIdKey
+      )));
       await syncUnreadCountFromServer();
 
       toast.success(t('notification.deleteSuccess'));

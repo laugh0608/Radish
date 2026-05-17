@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   TableSkeleton,
@@ -10,7 +11,7 @@ import {
   Tag,
   Image,
   message,
-  Modal,
+  ConfirmDialog,
   type TableColumnsType,
 } from '@radish/ui';
 import {
@@ -19,6 +20,7 @@ import {
   DeleteOutlined,
   SearchOutlined,
   ReloadOutlined,
+  EyeOutlined,
 } from '@radish/ui';
 import {
   adminGetProducts,
@@ -32,26 +34,58 @@ import { usePermission } from '@/hooks/usePermission';
 import type { Product, ProductCategory } from '../../api/types';
 import { ProductType } from '../../api/types';
 import { ProductForm } from './ProductForm';
+import { ProductDetail } from './ProductDetail';
+import {
+  getProductTypeDisplay,
+  getUnsupportedSaleReason,
+  getUnsupportedSaleStatusLabel,
+} from './productDisplay';
 import { getAvatarUrl } from '../../config/env';
 import { log } from '../../utils/logger';
 import './ProductList.css';
 
-// 本地工具函数
-function getProductTypeDisplay(type: ProductType): string {
-  switch (type) {
-    case ProductType.Benefit:
-      return '权益';
-    case ProductType.Consumable:
-      return '消耗品';
-    case ProductType.Physical:
-      return '实物';
-    default:
-      return '未知';
+function parseLongIdQuery(value: string | null): string | undefined {
+  if (!value) {
+    return undefined;
   }
+
+  const trimmed = value.trim();
+  return /^\d+$/u.test(trimmed) ? trimmed : undefined;
+}
+
+function parseBooleanQuery(value: string | null): boolean {
+  return value === '1' || value === 'true';
+}
+
+function buildProductDetailSearchParams(params: {
+  productId?: string | number;
+  openDetail?: boolean;
+  returnTo?: string | null;
+}): URLSearchParams {
+  const searchParams = new URLSearchParams();
+
+  if (params.productId !== undefined) {
+    searchParams.set('productId', String(params.productId));
+  }
+
+  if (params.openDetail) {
+    searchParams.set('openDetail', '1');
+  }
+
+  if (params.returnTo) {
+    searchParams.set('returnTo', params.returnTo);
+  }
+
+  return searchParams;
 }
 
 export const ProductList = () => {
   useDocumentTitle('商品管理');
+  const navigate = useNavigate();
+  const [urlSearchParams, setUrlSearchParams] = useSearchParams();
+  const queryProductId = parseLongIdQuery(urlSearchParams.get('productId'));
+  const queryOpenDetail = parseBooleanQuery(urlSearchParams.get('openDetail'));
+  const queryReturnTo = urlSearchParams.get('returnTo');
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [loading, setLoading] = useState(false);
@@ -63,32 +97,61 @@ export const ProductList = () => {
   const canEditProduct = usePermission(CONSOLE_PERMISSIONS.productsEdit);
   const canDeleteProductPermission = usePermission(CONSOLE_PERMISSIONS.productsDelete);
   const canToggleProductSale = usePermission(CONSOLE_PERMISSIONS.productsToggleSale);
+  const canViewOrders = usePermission(CONSOLE_PERMISSIONS.ordersView);
 
-  // 表单状态
   const [formVisible, setFormVisible] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | undefined>();
 
-  // 筛选条件
-  const [categoryId, setCategoryId] = useState<string | undefined>();
-  const [productType, setProductType] = useState<ProductType | undefined>();
-  const [isOnSale, setIsOnSale] = useState<boolean | undefined>();
-  const [keyword, setKeyword] = useState<string>('');
+  const [detailVisible, setDetailVisible] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState<string | number | undefined>();
+  const [selectedProductSnapshot, setSelectedProductSnapshot] = useState<Product | undefined>();
+  const [detailReloadToken, setDetailReloadToken] = useState(0);
+  const [deletingProduct, setDeletingProduct] = useState<Product | undefined>();
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
 
-  // 加载商品列表
+  const [draftCategoryId, setDraftCategoryId] = useState<string | undefined>();
+  const [draftProductType, setDraftProductType] = useState<ProductType | undefined>();
+  const [draftIsOnSale, setDraftIsOnSale] = useState<boolean | undefined>();
+  const [draftKeyword, setDraftKeyword] = useState('');
+
+  const [searchParams, setSearchParams] = useState<{
+    categoryId?: string;
+    productType?: ProductType;
+    isOnSale?: boolean;
+    keyword: string;
+  }>({
+    categoryId: undefined,
+    productType: undefined,
+    isOnSale: undefined,
+    keyword: '',
+  });
+
+  const syncDetailSearchParams = (
+    productId?: string | number,
+    openDetail?: boolean,
+    replace: boolean = false,
+    returnTo?: string | null,
+  ) => {
+    setUrlSearchParams(buildProductDetailSearchParams({ productId, openDetail, returnTo }), { replace });
+  };
+
   const loadProducts = async () => {
     try {
       setLoading(true);
       const response = await adminGetProducts({
-        categoryId,
-        productType,
-        isOnSale,
-        keyword: keyword || undefined,
+        categoryId: searchParams.categoryId,
+        productType: searchParams.productType,
+        isOnSale: searchParams.isOnSale,
+        keyword: searchParams.keyword || undefined,
         pageIndex,
         pageSize,
       });
 
       setProducts(response.data);
       setTotal(response.dataCount);
+      setSelectedProductSnapshot((current) => current
+        ? response.data.find((item) => String(item.voId) === String(current.voId)) ?? current
+        : current);
     } catch (error) {
       log.error('ProductList', '加载商品列表失败:', error);
       message.error('加载商品列表失败');
@@ -97,7 +160,6 @@ export const ProductList = () => {
     }
   };
 
-  // 加载分类列表
   const loadCategories = async () => {
     try {
       const data = await getCategories();
@@ -107,7 +169,6 @@ export const ProductList = () => {
     }
   };
 
-  // 初始化
   useEffect(() => {
     if (!canViewProducts) {
       return;
@@ -116,31 +177,68 @@ export const ProductList = () => {
     void loadCategories();
   }, [canViewProducts]);
 
-  // 加载商品列表
   useEffect(() => {
     if (!canViewProducts) {
       return;
     }
 
     void loadProducts();
-  }, [pageIndex, pageSize, categoryId, productType, isOnSale, canViewProducts]);
+  }, [pageIndex, pageSize, searchParams, canViewProducts]);
 
-  // 搜索
+  useEffect(() => {
+    if (!queryOpenDetail || !queryProductId) {
+      return;
+    }
+
+    setSelectedProductId(queryProductId);
+    setSelectedProductSnapshot(products.find((item) => String(item.voId) === queryProductId));
+    setDetailVisible(true);
+  }, [products, queryOpenDetail, queryProductId]);
+
   const handleSearch = () => {
     setPageIndex(1);
-    loadProducts();
+    setSearchParams({
+      categoryId: draftCategoryId,
+      productType: draftProductType,
+      isOnSale: draftIsOnSale,
+      keyword: draftKeyword.trim(),
+    });
   };
 
-  // 重置筛选
   const handleReset = () => {
-    setCategoryId(undefined);
-    setProductType(undefined);
-    setIsOnSale(undefined);
-    setKeyword('');
+    setDraftCategoryId(undefined);
+    setDraftProductType(undefined);
+    setDraftIsOnSale(undefined);
+    setDraftKeyword('');
     setPageIndex(1);
+    setSearchParams({
+      categoryId: undefined,
+      productType: undefined,
+      isOnSale: undefined,
+      keyword: '',
+    });
   };
 
-  // 上架/下架
+  const handleOpenDetail = (productId: string | number, product?: Product, syncQuery: boolean = false) => {
+    setSelectedProductId(productId);
+    setSelectedProductSnapshot(product);
+    setDetailVisible(true);
+
+    if (syncQuery) {
+      syncDetailSearchParams(productId, true, false, queryReturnTo);
+    }
+  };
+
+  const handleCloseDetail = () => {
+    setDetailVisible(false);
+    setSelectedProductId(undefined);
+    setSelectedProductSnapshot(undefined);
+
+    if (queryOpenDetail || queryProductId || queryReturnTo) {
+      syncDetailSearchParams(undefined, false, true);
+    }
+  };
+
   const handleToggleSale = async (product: Product) => {
     try {
       if (product.voIsOnSale) {
@@ -150,32 +248,59 @@ export const ProductList = () => {
         await putOnSale(product.voId);
         message.success('上架成功');
       }
-      loadProducts();
+
+      await loadProducts();
+      if (String(selectedProductId) === String(product.voId)) {
+        setDetailReloadToken((current) => current + 1);
+      }
     } catch (error) {
       log.error('ProductList', '上架/下架失败:', error);
-      message.error('操作失败');
+      message.error(error instanceof Error ? error.message : '操作失败');
     }
   };
 
-  // 删除商品
   const handleDelete = (product: Product) => {
-    (Modal as any).confirm({
-      title: '确认删除',
-      content: `确定要删除商品"${product.voName}"吗？`,
-      onOk: async () => {
-        try {
-          await deleteProduct(product.voId);
-          message.success('删除成功');
-          loadProducts();
-        } catch (error) {
-          log.error('ProductList', '删除商品失败:', error);
-          message.error('删除失败');
-        }
-      },
-    });
+    setDeletingProduct(product);
+    setDeleteConfirmVisible(true);
   };
 
-  // 表格列定义
+  const handleConfirmDelete = async () => {
+    if (!deletingProduct) {
+      return;
+    }
+
+    try {
+      await deleteProduct(deletingProduct.voId);
+      message.success('删除成功');
+      await loadProducts();
+
+      if (String(selectedProductId) === String(deletingProduct.voId)) {
+        handleCloseDetail();
+      }
+    } catch (error) {
+      log.error('ProductList', '删除商品失败:', error);
+      message.error(error instanceof Error ? error.message : '删除失败');
+    } finally {
+      setDeleteConfirmVisible(false);
+      setDeletingProduct(undefined);
+    }
+  };
+
+  const handleViewOrders = (product: Product) => {
+    navigate(`/orders?productId=${encodeURIComponent(String(product.voId))}`);
+  };
+
+  const handleReturnToSource = () => {
+    if (queryReturnTo?.startsWith('/')) {
+      navigate(queryReturnTo);
+    }
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    setFormVisible(true);
+  };
+
   const columns: TableColumnsType<Product> = [
     {
       title: 'ID',
@@ -203,13 +328,15 @@ export const ProductList = () => {
       title: '商品名称',
       dataIndex: 'voName',
       key: 'voName',
-      width: 200,
-    },
-    {
-      title: '分类',
-      dataIndex: 'voCategoryName',
-      key: 'voCategoryName',
-      width: 100,
+      width: 220,
+      render: (name: string, record: Product) => (
+        <div>
+          <div>{name}</div>
+          <div style={{ fontSize: '12px', color: '#999' }}>
+            {record.voCategoryName || record.voCategoryId}
+          </div>
+        </div>
+      ),
     },
     {
       title: '类型',
@@ -230,11 +357,11 @@ export const ProductList = () => {
           <div style={{ fontWeight: 'bold', color: '#ff4d4f' }}>
             {price} 胡萝卜
           </div>
-          {record.voOriginalPrice && record.voOriginalPrice > price && (
+          {record.voOriginalPrice && record.voOriginalPrice > price ? (
             <div style={{ fontSize: '12px', color: '#999', textDecoration: 'line-through' }}>
               {record.voOriginalPrice} 胡萝卜
             </div>
-          )}
+          ) : null}
         </div>
       ),
     },
@@ -244,15 +371,9 @@ export const ProductList = () => {
       key: 'voStock',
       width: 100,
       render: (stock: number, record: Product) => (
-        <div>
-          {record.voStockType === 'Unlimited' ? (
-            <Tag color="green">无限</Tag>
-          ) : (
-            <span style={{ color: stock > 0 ? '#52c41a' : '#ff4d4f' }}>
-              {stock}
-            </span>
-          )}
-        </div>
+        record.voStockType === 'Unlimited'
+          ? <Tag color="green">无限</Tag>
+          : <span style={{ color: stock > 0 ? '#52c41a' : '#ff4d4f' }}>{stock}</span>
       ),
     },
     {
@@ -264,62 +385,95 @@ export const ProductList = () => {
     {
       title: '状态',
       key: 'status',
-      width: 100,
-      render: (_: unknown, record: Product) => (
-        <Space direction="vertical" size="small">
-          <Tag color={record.voIsOnSale ? 'success' : 'default'}>
-            {record.voIsOnSale ? '已上架' : '已下架'}
-          </Tag>
-          <Tag color={record.voIsEnabled ? 'success' : 'error'}>
-            {record.voIsEnabled ? '启用' : '禁用'}
-          </Tag>
-        </Space>
-      ),
+      width: 120,
+      render: (_: unknown, record: Product) => {
+        const unsupportedStatusLabel = getUnsupportedSaleStatusLabel(record);
+
+        return (
+          <Space direction="vertical" size="small">
+            <Tag color={record.voIsOnSale ? 'success' : 'default'}>
+              {record.voIsOnSale ? '已上架' : '已下架'}
+            </Tag>
+            {unsupportedStatusLabel ? (
+              <Tag color={record.voIsOnSale ? 'warning' : 'processing'}>
+                {unsupportedStatusLabel}
+              </Tag>
+            ) : null}
+            <Tag color={record.voIsEnabled ? 'success' : 'error'}>
+              {record.voIsEnabled ? '启用' : '禁用'}
+            </Tag>
+          </Space>
+        );
+      },
     },
     {
       title: '操作',
       key: 'action',
-      width: 200,
+      width: 320,
       fixed: 'right',
-      render: (_: unknown, record: Product) => (
-        <Space size="small">
-          {canEditProduct ? (
+      render: (_: unknown, record: Product) => {
+        const unsupportedSaleReason = getUnsupportedSaleReason(record);
+        const saleBlockReason = !record.voIsOnSale ? unsupportedSaleReason : null;
+        const toggleButtonTitle = record.voIsOnSale && unsupportedSaleReason
+          ? '当前商品属于未开放类型，建议先下架历史上架记录'
+          : saleBlockReason ?? undefined;
+
+        return (
+          <Space size="small" wrap>
             <Button
               variant="ghost"
               size="small"
-              icon={<EditOutlined />}
-              onClick={() => {
-                setEditingProduct(record);
-                setFormVisible(true);
-              }}
+              icon={<EyeOutlined />}
+              onClick={() => handleOpenDetail(record.voId, record, true)}
             >
-              编辑
+              详情
             </Button>
-          ) : null}
-          {canToggleProductSale ? (
-            <Button
-              variant="ghost"
-              size="small"
-              onClick={() => handleToggleSale(record)}
-            >
-              {record.voIsOnSale ? '下架' : '上架'}
-            </Button>
-          ) : null}
-          {canDeleteProductPermission ? (
-            <Button
-              variant="danger"
-              size="small"
-              icon={<DeleteOutlined />}
-              onClick={() => handleDelete(record)}
-            >
-              删除
-            </Button>
-          ) : null}
-        </Space>
-      ),
+            {canViewOrders ? (
+              <Button
+                variant="ghost"
+                size="small"
+                onClick={() => handleViewOrders(record)}
+              >
+                相关订单
+              </Button>
+            ) : null}
+            {canEditProduct ? (
+              <Button
+                variant="ghost"
+                size="small"
+                icon={<EditOutlined />}
+                onClick={() => handleEditProduct(record)}
+              >
+                编辑
+              </Button>
+            ) : null}
+            {canToggleProductSale ? (
+              <Button
+                variant="ghost"
+                size="small"
+                onClick={() => handleToggleSale(record)}
+                disabled={!!saleBlockReason}
+                title={toggleButtonTitle}
+              >
+                {record.voIsOnSale ? '下架' : '上架'}
+              </Button>
+            ) : null}
+            {canDeleteProductPermission ? (
+              <Button
+                variant="danger"
+                size="small"
+                icon={<DeleteOutlined />}
+                onClick={() => handleDelete(record)}
+              >
+                删除
+              </Button>
+            ) : null}
+          </Space>
+        );
+      },
     },
   ];
-  // 如果正在加载且没有数据，显示骨架屏
+
   if (loading && products.length === 0) {
     return <TableSkeleton rows={10} columns={6} showFilters={true} showActions={true} />;
   }
@@ -348,8 +502,8 @@ export const ProductList = () => {
             placeholder="选择分类"
             style={{ width: 150 }}
             allowClear
-            value={categoryId}
-            onChange={setCategoryId}
+            value={draftCategoryId}
+            onChange={setDraftCategoryId}
           >
             {categories.map((cat) => (
               <Select.Option key={cat.voId} value={cat.voId}>
@@ -362,20 +516,20 @@ export const ProductList = () => {
             placeholder="商品类型"
             style={{ width: 120 }}
             allowClear
-            value={productType}
-            onChange={setProductType}
+            value={draftProductType}
+            onChange={setDraftProductType}
           >
             <Select.Option value={1}>权益</Select.Option>
             <Select.Option value={2}>消耗品</Select.Option>
-            <Select.Option value={3}>实物</Select.Option>
+            <Select.Option value={99}>实物</Select.Option>
           </Select>
 
           <Select
             placeholder="上架状态"
             style={{ width: 120 }}
             allowClear
-            value={isOnSale}
-            onChange={setIsOnSale}
+            value={draftIsOnSale}
+            onChange={setDraftIsOnSale}
           >
             <Select.Option value={true}>已上架</Select.Option>
             <Select.Option value={false}>已下架</Select.Option>
@@ -384,8 +538,8 @@ export const ProductList = () => {
           <Input
             placeholder="搜索商品名称"
             style={{ width: 200 }}
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
+            value={draftKeyword}
+            onChange={(e) => setDraftKeyword(e.target.value)}
             onPressEnter={handleSearch}
             suffix={<SearchOutlined />}
           />
@@ -411,13 +565,24 @@ export const ProductList = () => {
           total: total,
           showSizeChanger: true,
           showQuickJumper: true,
-          showTotal: (total) => `共 ${total} 条`,
+          showTotal: (itemTotal) => `共 ${itemTotal} 条`,
           onChange: (page, size) => {
             setPageIndex(page);
             setPageSize(size);
           },
         }}
-        scroll={{ x: 1400 }}
+        scroll={{ x: 1520 }}
+      />
+
+      <ProductDetail
+        visible={detailVisible}
+        productId={selectedProductId}
+        fallbackProduct={selectedProductSnapshot}
+        reloadToken={detailReloadToken}
+        onClose={handleCloseDetail}
+        onEdit={handleEditProduct}
+        onViewOrders={canViewOrders ? handleViewOrders : undefined}
+        onReturnToSource={queryReturnTo ? handleReturnToSource : undefined}
       />
 
       <ProductForm
@@ -428,7 +593,21 @@ export const ProductList = () => {
           setEditingProduct(undefined);
         }}
         onSuccess={() => {
-          loadProducts();
+          void loadProducts();
+          if (editingProduct && String(editingProduct.voId) === String(selectedProductId)) {
+            setDetailReloadToken((current) => current + 1);
+          }
+        }}
+      />
+
+      <ConfirmDialog
+        isOpen={deleteConfirmVisible}
+        title="确认删除"
+        message={`确定要删除商品"${deletingProduct?.voName ?? ''}"吗？若商品已有订单或业务关联，系统会拦截删除。`}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => {
+          setDeleteConfirmVisible(false);
+          setDeletingProduct(undefined);
         }}
       />
     </div>

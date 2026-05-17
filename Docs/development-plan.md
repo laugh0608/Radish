@@ -6,8 +6,8 @@
 
 ## 当前状态
 
-- **当前里程碑**：`第二开发阶段：社区深化与多端化`
-- **当前主线**：`多端路线收口后的产品功能开发推进`
+- **当前里程碑**：`第三开发阶段：真实使用增长与长期契约治理`
+- **当前主线**：`P3-5 公开内容增长后续专题`
 - **最近结论**：
   - `2026-04-06` 完成首版真实发布 `v26.3.2-release`，第一开发阶段结束
   - `Phase 2-2 移动 Web 形态` 已完成公开内容壳层首批收口，转入稳定维护
@@ -16,12 +16,22 @@
   - Tauri + WebOS 桌面安装包个人开发阶段验证通过
   - WebOS 桌面工作台已回到产品功能开发推进，并落地首批“继续使用”复访入口、桌面应用恢复入口与萝卜坑工作流补全
   - Console 治理已完成用户详情、个人资料 / 设置真实化与仪表盘真实统计首轮补洞
-  - 当前主线进一步收束为“产品功能补全与多端任务重排”，后续优先经验 / 等级治理、商城权益效果与移动端高价值已登录链路
+  - `ID Phase A` 已进入前期治理面：先冻结外部 `long` 扩散，按 `LongId` / 字符串安全收口窗口参数、通知跳转、公开路由与 `Profile / Shop / Wiki / Forum` 边界，不启动数据库主键迁移或全量 `PublicId` 切换
+  - `2026-05-13` 第二阶段收口评审窄范围筛查未发现新的必须立即闭环 `P0/P1` 阻断项，`P2-C5-A` 已完成 Flutter 通知回流与个人复访轻操作首批补强，第二阶段归档判断 Go
+  - `2026-05-13` 已启动 `P3-0 第三阶段定义与工程整备`，第三阶段主题暂定为“真实使用增长与长期契约治理”，并完成 `P3-0-A` 公开内容增长基础审计
+  - `P3-1` 第一批已完成：公开 head / canonical / robots / sitemap seed 基线，以及 forum detail / shop detail 复制 canonical 链接入口均已落地
+  - `P3-2 PublicId 最小试点方案` 已完成首批 `Post.PublicId` 实现：新帖生成 `pst_` + UUIDv7 编码体，forum 公开 canonical、分享、通知 `extData`、浏览历史 routePath 与窗口参数已并行支持 `postPublicId`，不启动全量迁移
+  - `P3-3` 已完成 `PublicForumApp.tsx` 公开论坛热区首轮低风险拆分和收工复核：helper、状态卡、类型流、搜索页、标签页、列表页与详情页均已抽出，主文件降到约 `208` 行，定向验证通过
+  - `P3-4` forum / docs / shop 留存回流矩阵已完成一轮主动验收：forum 公开分享、通知、最近阅读、我的轻回应、公开个人页双向复访已保持 PublicId 优先；docs / shop 旧 long 路径只保留回流 fallback，不在最近阅读或公开 head 普通文案外露
+  - `P3-5-A` 已完成公开内容增长后续专题评估：下一批建议先做运行时结构化数据基线；动态 sitemap 与详情首包 HTML 可见性继续单独方案评审
+  - `P3-5-B` 已完成运行时结构化数据基线：forum / docs / shop / 公开个人页详情在前端运行时输出 JSON-LD，旧结构化数据会在路由切换或卸载时清理
 
 ## 当前主线入口
 
 - [当前进行中](/planning/current)
+- [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
 - [第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform)
+- [第二阶段收口评审](/planning/phase-two-closure-review)
 - [第二阶段产品功能补全规划](/planning/phase-two-product-completion)
 - [前端多壳层策略](/frontend/shell-strategy)
 - [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation)
@@ -29,11 +39,11 @@
 
 ## 当前开发精力
 
-- `45%`：WebOS / PC 工作台产品功能补全，优先萝卜坑、个人中心、通知、商城、论坛工作台交互与跨应用回流
-- `25%`：后端 + Console 治理，补后台管理、统计、权限、安全、经验治理、商城管理与运维可见性缺口
-- `15%`：Flutter 移动端高价值已登录链路，不复刻 WebOS，不默认转向分发产品化材料
-- `10%`：公开内容壳层稳定维护，处理真实阅读、分享、响应式和来源返回问题
-- `5%`：Tauri + WebOS 桌面安装包维护观察；正式分发事项只在真实对外分发前重新评估
+- `35%`：`P3-5` 公开内容增长后续专题，优先准备动态 sitemap 方案评审
+- `20%`：结构化数据基线后的公开详情观察，只处理真实暴露的 JSON-LD 字段错误或残留问题
+- `20%`：`P3-2 / P3-4` PublicId 与留存回流兼容观察；只处理真实暴露的回流断点，不扩全量迁移
+- `10%`：`P3-3` 代码热区治理后续观察，暂不继续深拆 `PublicForumDetail` 内部结构
+- `15%`：第二阶段收口护栏，只回拉新发现的 `P0/P1` 阻断项
 
 ## 已确认的多端方向
 
@@ -51,15 +61,22 @@
 
 ## 下一顺位
 
-- WebOS / PC 工作台：优先补用户能点到但不能真正完成的产品功能，已落地的复访和萝卜坑批次转入维护观察
-- 后端 + Console 治理：优先处理安全 / 经验治理、商城管理前端缺口和剩余历史构建警告
-- Flutter 移动端：优先高价值移动已登录链路，不默认追加低增益体验批次
+- `P3-5`：公开内容增长后续专题已完成首轮评估和运行时 JSON-LD 结构化数据基线；下一步优先做动态 sitemap 方案评审
+- `P3-4`：forum / docs / shop 留存回流矩阵已完成一轮主动验收和收尾判断，后续只从真实使用暴露的公开分享 / 复访断点中选择小闭环
+- `P3-3`：首轮拆分与验证记录已收口，不继续无边界深拆详情页内部结构
+- `P3-2` 后续只做兼容观察、定向回归或历史 `Post.PublicId` 补齐策略评估，不扩成全量迁移
+- 动态 sitemap 和详情首包 HTML 可见性需单独方案评审，不在未确认部署风险前直接启动 SSR / SSG 或 Gateway HTML rewrite
+- Flutter 移动端：`P2-C5-A` 首批已完成，不默认追加低收益体验批次
+- WebOS / PC 工作台：只处理用户主路径中的阻断级缺口，萝卜坑交易导出已补齐，后续不再无限扫零碎入口
+- 后端 + Console 治理：经验治理、内容治理、商城管理验收、安全治理尾项和 Console 权限种子一致性转入稳定维护，只处理新暴露的安全 / 授权一致性问题
+- Flutter 移动端：聚焦高价值移动已登录链路，不默认追加低增益体验批次
 - 公开内容壳层：只做稳定维护和真实问题修复，不继续扩公开入口细节
 - Tauri 桌面安装包：签名、自动更新、生产 Auth、SmartScreen、托盘 / 菜单和公开分发方式后置到真实对外分发前
 
-## 长期方向（暂不进入当前主线）
+## 长期方向与当前衔接
 
 - 标识体系升级：`InternalId / PublicId / FederationId` 分层，`PublicId` 长期优先 `UUIDv7`
+- `P3-0` 只允许形成 `PublicId` 最小试点方案，不启动数据库主键迁移或全量外部契约切换
 - 社区联邦化：公开社区对象优先按 `ActivityPub + WebFinger` 方向预留
 - 租户语义调整：长期产品语义转向 `instance / node / space / group / category`
 - 详细方案见：[标识体系与社区联邦长期路线](/architecture/id-and-federation-roadmap)
@@ -73,6 +90,8 @@
 
 ## 明确后置
 
+- 第三开发阶段大功能开发：`P3-2 PublicId` 最小试点已完成首批 `Post` 实现，后续仍不得直接启动全量迁移
+- 完整 `PublicId` 全量迁移、数据库主键迁移与 ActivityPub / WebFinger 实现
 - `Gateway & BFF` 深化
 - `Console-ext Phase 2+`
 - 开放平台第三方接入 / SDK
@@ -85,4 +104,4 @@
 
 - `Docs/index.md`、`Docs/README.md`、`Docs/development-plan.md`、`Docs/planning/current.md` 等关键入口只描述最近阶段和进度，不承载长背景
 - 功能批次、验证命令、人工验收记录和历史事实默认写入 `Docs/changelog/`、`Docs/planning/archive.md` 或对应专题文档
-- 判断阶段定义时，以本页、[当前进行中](/planning/current)、[第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform)、[前端多壳层策略](/frontend/shell-strategy) 与 [已完成摘要](/planning/archive) 为准
+- 判断阶段定义时，以本页、[当前进行中](/planning/current)、[第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)、[前端多壳层策略](/frontend/shell-strategy) 与 [已完成摘要](/planning/archive) 为准

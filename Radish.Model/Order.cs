@@ -31,6 +31,7 @@ public class Order : RootEntityTKey<long>, IHasUserId, ITenantEntity
         UserId = 0;
         ProductId = 0;
         ProductName = string.Empty;
+        StockType = StockType.Unlimited;
         Quantity = 1;
         UnitPrice = 0;
         TotalPrice = 0;
@@ -64,6 +65,10 @@ public class Order : RootEntityTKey<long>, IHasUserId, ITenantEntity
     /// <remarks>下单时的商品名称，防止商品修改后订单信息不一致</remarks>
     [SugarColumn(Length = 200, IsNullable = false, ColumnDescription = "商品名称")]
     public string ProductName { get; set; } = string.Empty;
+
+    /// <summary>库存类型（快照）</summary>
+    [SugarColumn(IsNullable = false, ColumnDescription = "库存类型")]
+    public StockType StockType { get; set; } = StockType.Unlimited;
 
     /// <summary>商品图标附件快照 Id</summary>
     [SugarColumn(IsNullable = true, ColumnDescription = "商品图标附件ID")]

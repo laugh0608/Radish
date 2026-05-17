@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { log } from '@/utils/logger';
 import type { Dispatch, SetStateAction } from 'react';
 import type { TFunction } from 'i18next';
+import type { LongId } from '@/api/user';
 import {
   getTopCategories,
   getHotTags,
@@ -61,6 +62,14 @@ function sortRootComments(
 
     return leftTime - rightTime;
   });
+}
+
+function isSameLongId(left: LongId | null | undefined, right: LongId | null | undefined): boolean {
+  if (left == null || right == null) {
+    return false;
+  }
+
+  return String(left) === String(right);
 }
 
 export interface ForumDataState {
@@ -136,10 +145,10 @@ export interface ForumDataActions {
   loadHotTags: () => Promise<void>;
   loadPosts: () => Promise<void>;
   loadTrendingContent: () => Promise<void>;
-  loadPostDetail: (postId: string | number, answerSortOverride?: QuestionAnswerSort) => Promise<void>;
-  loadComments: (postId: string | number, pageCount?: number) => Promise<void>;
-  loadQuickReplies: (postId: string | number) => Promise<void>;
-  loadMoreComments: (postId: string | number) => Promise<void>;
+  loadPostDetail: (postId: LongId, answerSortOverride?: QuestionAnswerSort) => Promise<PostDetail | null>;
+  loadComments: (postId: LongId, pageCount?: number) => Promise<void>;
+  loadQuickReplies: (postId: LongId) => Promise<void>;
+  loadMoreComments: (postId: LongId) => Promise<void>;
   resetCommentSort: () => void;
 }
 
@@ -193,7 +202,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
 
   // 错误状态
   const [error, setError] = useState<string | null>(null);
-  const inFlightGodCommentsRef = useRef<Set<number>>(new Set());
+  const inFlightGodCommentsRef = useRef<Set<string>>(new Set());
   const inFlightPostListRef = useRef<Set<string>>(new Set());
   const trendingLoadedRef = useRef(false);
 
@@ -318,8 +327,8 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
       const hotPostIds = hotPostsModel.data
         .slice(0, 5)
         .map(post => post.voId)
-        .filter(postId => !inFlightGodCommentsRef.current.has(postId));
-      hotPostIds.forEach(postId => inFlightGodCommentsRef.current.add(postId));
+        .filter(postId => !inFlightGodCommentsRef.current.has(String(postId)));
+      hotPostIds.forEach(postId => inFlightGodCommentsRef.current.add(String(postId)));
       try {
         const batchResult = await getCurrentGodCommentsBatch(hotPostIds, t);
         for (const postId of hotPostIds) {
@@ -346,7 +355,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
       } catch (err) {
         log.warn('加载热门神评失败:', err);
       } finally {
-        hotPostIds.forEach(postId => inFlightGodCommentsRef.current.delete(postId));
+        hotPostIds.forEach(postId => inFlightGodCommentsRef.current.delete(String(postId)));
       }
       allGodComments.sort((a, b) => (b.voLikeCount || 0) - (a.voLikeCount || 0));
       setTrendingGodComments(allGodComments.slice(0, 10));
@@ -373,7 +382,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   const loadGodCommentsForPosts = async (postList: PostItem[]) => {
     const godCommentsMap = new Map(postGodComments);
     const missingPostIds = postList
-      .filter(post => !godCommentsMap.has(String(post.voId)) && !inFlightGodCommentsRef.current.has(post.voId))
+      .filter(post => !godCommentsMap.has(String(post.voId)) && !inFlightGodCommentsRef.current.has(String(post.voId)))
       .map(post => post.voId);
 
     if (missingPostIds.length === 0) {
@@ -381,7 +390,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     }
 
     try {
-      missingPostIds.forEach(postId => inFlightGodCommentsRef.current.add(postId));
+      missingPostIds.forEach(postId => inFlightGodCommentsRef.current.add(String(postId)));
       const batchResult = await getCurrentGodCommentsBatch(missingPostIds, t);
       for (const [postId, highlight] of createForumCommentHighlightMap(batchResult)) {
         godCommentsMap.set(postId, highlight);
@@ -389,7 +398,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     } catch (err) {
       log.warn('加载帖子神评预览失败:', err);
     } finally {
-      missingPostIds.forEach(postId => inFlightGodCommentsRef.current.delete(postId));
+      missingPostIds.forEach(postId => inFlightGodCommentsRef.current.delete(String(postId)));
     }
 
     setPostGodComments(prev => {
@@ -402,12 +411,13 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   };
 
   // 加载帖子详情
-  const loadPostDetail = async (postId: string | number, answerSortOverride?: QuestionAnswerSort) => {
+  const loadPostDetail = async (postId: LongId, answerSortOverride?: QuestionAnswerSort): Promise<PostDetail | null> => {
     setLoadingPostDetail(true);
     setError(null);
     try {
       const data = await getPostById(postId, t, answerSortOverride ?? questionAnswerSort);
       setSelectedPost(data);
+      return data;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
@@ -417,13 +427,14 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
       setQuickReplyTotal(0);
       setCommentTotal(0);
       setLoadedCommentPages(0);
+      return null;
     } finally {
       setLoadingPostDetail(false);
     }
   };
 
   // 加载评论列表
-  const loadComments = async (postId: string | number, pageCount = 1) => {
+  const loadComments = async (postId: LongId, pageCount = 1) => {
     setLoadingComments(true);
     setError(null);
     try {
@@ -443,7 +454,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
       }
 
       const deduplicatedComments = aggregatedComments.filter((comment, index, source) =>
-        source.findIndex(item => item.voId === comment.voId) === index
+        source.findIndex(item => isSameLongId(item.voId, comment.voId)) === index
       );
 
       setComments(sortRootComments(deduplicatedComments, sortParam));
@@ -461,7 +472,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   };
 
   // 加载轻回应墙
-  const loadQuickReplies = async (postId: string | number) => {
+  const loadQuickReplies = async (postId: LongId) => {
     setLoadingQuickReplies(true);
     setError(null);
     try {
@@ -478,7 +489,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     }
   };
 
-  const loadMoreComments = async (postId: string | number) => {
+  const loadMoreComments = async (postId: LongId) => {
     if (loadingComments || loadingMoreComments) {
       return;
     }
@@ -496,8 +507,10 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
       const nextItems = pageData.voItems ?? [];
 
       setComments(prev => {
-        const existingIds = new Set(prev.map(item => item.voId));
-        const appendedItems = nextItems.filter(item => !existingIds.has(item.voId));
+        const existingIds = prev.map(item => item.voId);
+        const appendedItems = nextItems.filter(item =>
+          !existingIds.some(existingId => isSameLongId(existingId, item.voId))
+        );
         return sortRootComments([...prev, ...appendedItems], sortParam);
       });
       setCommentTotal(prev => pageData.voTotal ?? prev);

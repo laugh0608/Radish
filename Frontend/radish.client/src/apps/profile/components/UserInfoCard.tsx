@@ -12,6 +12,7 @@ import { Select } from '@radish/ui/select';
 import { useUserStore } from '@/stores/userStore';
 import { tokenService } from '@/services/tokenService';
 import { buildTimeZoneOptions, formatDateTimeByTimeZone, resolveTimeZoneId } from '@/utils/dateTime';
+import type { LongId } from '@/api/user';
 import { reuseInFlightRequest } from '../requestDedup';
 import styles from './UserInfoCard.module.css';
 
@@ -41,7 +42,7 @@ interface UserInfoCardProps {
 }
 
 interface ProfileInfo {
-  voUserId: number;
+  voUserId: LongId;
   voUserName: string;
   voUserEmail: string;
   voRealName: string;
@@ -56,7 +57,7 @@ interface ProfileInfo {
 }
 
 interface CoinBalanceInfo {
-  voUserId: number | string;
+  voUserId: LongId;
   voBalance: number | string;
   voBalanceDisplay: string;
   voFrozenBalance: number | string;
@@ -106,13 +107,13 @@ interface OwnProfileBundle {
   coinBalance: CoinBalanceInfo | null;
 }
 
-function buildOwnProfileRequestKey(apiBaseUrl: string, userId: number): string {
+function buildOwnProfileRequestKey(apiBaseUrl: string, userId: LongId): string {
   return `own-profile|${apiBaseUrl}|${userId}`;
 }
 
 async function fetchOwnProfileBundle(
   apiBaseUrl: string,
-  userId: number,
+  userId: LongId,
   reuseInFlight: boolean
 ): Promise<OwnProfileBundle> {
   const loadBundle = async () => {
@@ -222,7 +223,7 @@ export const UserInfoCard = ({
 
         // 更新全局 userStore，使 Dock 栏能实时刷新头像
         setUser({
-          userId: currentProfile.voUserId,
+          userId,
           userName: currentProfile.voUserName,
           tenantId: tenantId,
           roles: roles || ['User'],

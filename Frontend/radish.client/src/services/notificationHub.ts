@@ -1,6 +1,7 @@
 import * as signalR from '@microsoft/signalr';
 import { createElement } from 'react';
 import { toast } from '@radish/ui/toast';
+import type { LongId } from '@/api/user';
 import { useNotificationStore, type NotificationItem } from '@/stores/notificationStore';
 import { useAuthStore } from '@/stores/authStore';
 import { tokenService } from './tokenService';
@@ -255,7 +256,7 @@ class NotificationHubService {
       showNotificationToast(notification);
     });
 
-    this.connection.on('NotificationRead', (data: { notificationIds: number[] }) => {
+    this.connection.on('NotificationRead', (data: { notificationIds: LongId[] }) => {
       log.debug('[NotificationHub] 通知已读（其他端）:', data.notificationIds);
       useNotificationStore.getState().markAsRead(data.notificationIds);
     });
@@ -267,7 +268,7 @@ class NotificationHubService {
   }
 
   /** 客户端调用：标记通知已读 */
-  async markAsRead(notificationId: number): Promise<void> {
+  async markAsRead(notificationId: LongId): Promise<void> {
     if (this.connection?.state !== signalR.HubConnectionState.Connected) {
       log.warn('[NotificationHub] 未连接，无法标记已读');
       return;
@@ -307,7 +308,7 @@ export function useNotificationHub() {
   return {
     start: () => notificationHub.start(),
     stop: () => notificationHub.stop(),
-    markAsRead: (id: number) => notificationHub.markAsRead(id),
+    markAsRead: (id: LongId) => notificationHub.markAsRead(id),
     markAllAsRead: () => notificationHub.markAllAsRead()
   };
 }

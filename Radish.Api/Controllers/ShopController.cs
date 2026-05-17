@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Api.Routing;
 using Radish.Api.Filters;
 using Radish.Common.HttpContextTool;
 using Radish.Common.PermissionTool;
@@ -128,7 +129,7 @@ public class ShopController : ControllerBase
                 Title = result.VoName,
                 Summary = result.VoDescription,
                 CoverAttachmentId = result.VoCoverAttachmentId ?? result.VoIconAttachmentId,
-                RoutePath = $"/shop/product/{result.VoId}",
+                RoutePath = PublicRoutePathBuilder.BuildShopProductPath(result.VoId),
                 OperatorName = Current.UserName
             });
         }
@@ -448,6 +449,23 @@ public class ShopController : ControllerBase
     }
 
     /// <summary>
+    /// 获取商品详情（管理后台）
+    /// </summary>
+    [HttpGet("{productId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.ProductsView)]
+    public async Task<MessageModel<ProductVo>> AdminGetProduct(long productId)
+    {
+        var result = await _productService.GetProductDetailForAdminAsync(productId);
+        if (result == null)
+        {
+            return MessageModel<ProductVo>.Message(false, "商品不存在", default!);
+        }
+
+        return MessageModel<ProductVo>.Success("查询成功", result);
+    }
+
+    /// <summary>
     /// 创建商品
     /// </summary>
     [HttpPost]
@@ -458,8 +476,15 @@ public class ShopController : ControllerBase
         var userId = GetCurrentUserId();
         var userName = GetCurrentUserName();
 
-        var productId = await _productService.CreateProductAsync(dto, userId, userName);
-        return MessageModel<long>.Success("创建成功", productId);
+        try
+        {
+            var productId = await _productService.CreateProductAsync(dto, userId, userName);
+            return MessageModel<long>.Success("创建成功", productId);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return MessageModel<long>.Message(false, ex.Message, default);
+        }
     }
 
     /// <summary>
@@ -473,8 +498,37 @@ public class ShopController : ControllerBase
         var userId = GetCurrentUserId();
         var userName = GetCurrentUserName();
 
-        var result = await _productService.UpdateProductAsync(dto, userId, userName);
-        return MessageModel<bool>.Success("更新成功", result);
+        try
+        {
+            var result = await _productService.UpdateProductAsync(dto, userId, userName);
+            return MessageModel<bool>.Success("更新成功", result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return MessageModel<bool>.Message(false, ex.Message, false);
+        }
+    }
+
+    /// <summary>
+    /// 删除商品
+    /// </summary>
+    [HttpDelete("{productId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.ProductsDelete)]
+    public async Task<MessageModel<bool>> DeleteProduct(long productId)
+    {
+        var userId = GetCurrentUserId();
+        var userName = GetCurrentUserName();
+
+        try
+        {
+            var result = await _productService.DeleteProductAsync(productId, userId, userName);
+            return MessageModel<bool>.Success("删除成功", result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return MessageModel<bool>.Message(false, ex.Message, false);
+        }
     }
 
     /// <summary>
@@ -485,8 +539,15 @@ public class ShopController : ControllerBase
     [RequireConsolePermission(ConsolePermissions.ProductsToggleSale)]
     public async Task<MessageModel<bool>> PutOnSale(long productId)
     {
-        var result = await _productService.PutOnSaleAsync(productId);
-        return MessageModel<bool>.Success("上架成功", result);
+        try
+        {
+            var result = await _productService.PutOnSaleAsync(productId);
+            return MessageModel<bool>.Success("上架成功", result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return MessageModel<bool>.Message(false, ex.Message, false);
+        }
     }
 
     /// <summary>
@@ -521,6 +582,23 @@ public class ShopController : ControllerBase
     }
 
     /// <summary>
+    /// 获取订单详情（管理后台）
+    /// </summary>
+    [HttpGet("{orderId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.OrdersView)]
+    public async Task<MessageModel<OrderVo>> AdminGetOrder(long orderId)
+    {
+        var result = await _orderService.GetOrderDetailForAdminAsync(orderId);
+        if (result == null)
+        {
+            return MessageModel<OrderVo>.Message(false, "订单不存在", default!);
+        }
+
+        return MessageModel<OrderVo>.Success("查询成功", result);
+    }
+
+    /// <summary>
     /// 重新发放权益
     /// </summary>
     [HttpPost("{orderId:long}")]
@@ -532,6 +610,31 @@ public class ShopController : ControllerBase
         {
             var result = await _orderService.RetryGrantBenefitAsync(orderId);
             return MessageModel<bool>.Success("重新发放成功", result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return MessageModel<bool>.Message(false, ex.Message, false);
+        }
+    }
+
+    /// <summary>
+    /// 管理员备注订单
+    /// </summary>
+    [HttpPost("{orderId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.OrdersRemark)]
+    public async Task<MessageModel<bool>> AdminRemarkOrder(long orderId, [FromBody] AdminRemarkOrderDto request)
+    {
+        try
+        {
+            var result = await _orderService.AdminRemarkOrderAsync(
+                orderId,
+                request.Remark ?? string.Empty,
+                GetCurrentUserId(),
+                GetCurrentUserName());
+            return result
+                ? MessageModel<bool>.Success("备注已保存", true)
+                : MessageModel<bool>.Message(false, "备注保存失败", false);
         }
         catch (InvalidOperationException ex)
         {

@@ -1,5 +1,10 @@
 import { useRef, type UIEvent } from 'react';
-import { Notification, type NotificationItemData, type NotificationTextOverrides } from './Notification';
+import {
+  Notification,
+  type NotificationItemData,
+  type NotificationItemId,
+  type NotificationTextOverrides
+} from './Notification';
 import styles from './NotificationList.module.css';
 
 export interface NotificationListTextOverrides extends NotificationTextOverrides {
@@ -27,9 +32,9 @@ export interface NotificationListProps {
   /** 点击通知回调 */
   onNotificationClick?: (notification: NotificationItemData) => void;
   /** 标记已读回调 */
-  onMarkAsRead?: (id: number) => void;
+  onMarkAsRead?: (id: NotificationItemId) => void;
   /** 删除通知回调 */
-  onDelete?: (id: number) => void;
+  onDelete?: (id: NotificationItemId) => void;
   /** 文案覆盖 */
   labels?: NotificationListTextOverrides;
   /** 相对时间格式化 */

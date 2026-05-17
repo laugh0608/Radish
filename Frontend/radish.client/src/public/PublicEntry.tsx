@@ -71,6 +71,7 @@ import {
   type PublicDetailBackMode,
   type PublicRouteDescriptor,
 } from './publicRouteNavigation';
+import { applyPublicHead, buildPublicRouteHead } from './publicHead';
 export type {
   PublicListSort,
 } from './forumRouteState';
@@ -190,6 +191,10 @@ export const PublicEntry = () => {
     }
 
     window.history.replaceState({}, '', canonicalPath);
+  }, [route]);
+
+  useEffect(() => {
+    applyPublicHead(buildPublicRouteHead(route));
   }, [route]);
 
   useEffect(() => {

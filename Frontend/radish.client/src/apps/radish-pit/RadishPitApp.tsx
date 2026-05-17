@@ -49,7 +49,7 @@ export const RadishPitApp = () => {
       case 'overview':
         return <AccountOverview onNavigate={handleTabChange} />;
       case 'transfer':
-        return <Transfer />;
+        return <Transfer onNavigate={handleTabChange} />;
       case 'history':
         return <TransactionHistory />;
       case 'security':

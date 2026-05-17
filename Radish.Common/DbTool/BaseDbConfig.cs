@@ -11,8 +11,8 @@ public class BaseDbConfig
     /// <summary>有效的库连接(排除 Log 库)</summary>
     public static List<ConnectionConfig> ValidConfig = new();
 
-    public static ConnectionConfig MainConfig;
-    public static ConnectionConfig LogConfig; // Log 日志库
+    public static ConnectionConfig MainConfig = null!;
+    public static ConnectionConfig LogConfig = null!; // Log 日志库
 
     public static bool IsMulti => ValidConfig.Count > 1;
 
@@ -154,17 +154,17 @@ public class MutiDbOperate
     public bool Enabled { get; set; }
 
     /// <summary>连接 Id</summary>
-    public string ConnId { get; set; }
+    public string ConnId { get; set; } = string.Empty;
 
     /// <summary>从库执行级别，越大越先执行</summary>
     public int HitRate { get; set; }
 
     /// <summary>连接字符串</summary>
-    public string ConnectionString { get; set; }
+    public string ConnectionString { get; set; } = string.Empty;
 
     /// <summary>数据库类型</summary>
     public DataBaseType DbType { get; set; }
 
     /// <summary>从库</summary>
-    public List<MutiDbOperate> Slaves { get; set; }
+    public List<MutiDbOperate> Slaves { get; set; } = [];
 }

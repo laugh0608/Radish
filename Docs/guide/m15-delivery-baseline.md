@@ -5,11 +5,11 @@
 > 关联入口：
 >
 > - [部署与容器指南](/deployment/guide)
-> - [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist)
+> - [M14 宿主运行首轮执行清单](/records/m14-host-runtime-checklist)
 > - [验证基线说明](/guide/validation-baseline)
-> - [M15 测试环境最小回滚演练记录（2026-04-06）](/guide/m15-test-rollback-rehearsal-2026-04-06)
-> - [M15 生产环境最小回滚预案（2026-04-06）](/guide/m15-prod-rollback-playbook-2026-04-06)
-> - [M15 发布记录（v26.3.2-release，2026-04-06）](/guide/m15-release-record-2026-04-06)
+> - [M15 测试环境最小回滚演练记录（2026-04-06）](/records/m15-test-rollback-rehearsal-2026-04-06)
+> - [M15 生产环境最小回滚预案（2026-04-06）](/records/m15-prod-rollback-playbook-2026-04-06)
+> - [M15 发布记录（v26.3.2-release，2026-04-06）](/records/m15-release-record-2026-04-06)
 
 ## 目标
 

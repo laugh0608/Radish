@@ -86,7 +86,7 @@ public class HttpContextUser : IHttpContextUser
         var headers = _accessor.HttpContext.Request.Headers;
         foreach (var header in headers)
         {
-            claims.Add(new Claim(header.Key, header.Value));
+            claims.Add(new Claim(header.Key, header.Value.ToString()));
         }
 
         return claims;

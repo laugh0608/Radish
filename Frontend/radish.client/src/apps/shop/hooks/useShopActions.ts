@@ -1,8 +1,11 @@
 import { useState, useCallback } from 'react';
 import { log } from '@/utils/logger';
+import { useUserStore } from '@/stores/userStore';
 import type { TFunction } from 'i18next';
+import type { LongId } from '@/api/user';
 import type { Product } from '@/types/shop';
 import * as shopApi from '@/api/shop';
+import { isPaymentPasscodeUpgradeRequiredError } from '@/utils/paymentPasscode';
 import type { ShopAppState } from '../ShopApp';
 
 interface UseShopActionsProps {
@@ -11,10 +14,10 @@ interface UseShopActionsProps {
   appState: ShopAppState;
   setError: (error: string | null) => void;
   loadProducts: (categoryId?: string, productType?: shopApi.ProductTypeValue, keyword?: string, pageIndex?: number, pageSize?: number) => Promise<void>;
-  loadProductDetail: (productId: number) => Promise<void>;
-  checkCanBuy: (productId: number, quantity?: number) => Promise<void>;
+  loadProductDetail: (productId: LongId) => Promise<void>;
+  checkCanBuy: (productId: LongId, quantity?: number) => Promise<void>;
   loadOrders: (status?: shopApi.OrderStatusValue, pageIndex?: number, pageSize?: number) => Promise<void>;
-  loadOrderDetail: (orderId: number) => Promise<void>;
+  loadOrderDetail: (orderId: LongId) => Promise<void>;
   loadInventory: () => Promise<void>;
   searchProducts: (keyword: string) => Promise<void>;
   selectedProduct: Product | null;
@@ -38,6 +41,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
   // 购买相关状态
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
+  const [purchasePasscodeUpgradePrompt, setPurchasePasscodeUpgradePrompt] = useState<string | null>(null);
 
   // 处理分页变化
   const handlePageChange = useCallback(async (page: number) => {
@@ -52,30 +56,36 @@ export const useShopActions = (props: UseShopActionsProps) => {
   }, [appState, loadProducts, loadOrders]);
 
   // 处理购买点击
-  const handlePurchaseClick = useCallback(async (productId: number) => {
+  const handlePurchaseClick = useCallback(async (productId: LongId) => {
     if (!isAuthenticated) {
       setError(t('shop.loginRequired'));
       return;
     }
 
     // 加载商品详情（如果还没有）
-    if (!selectedProduct || selectedProduct.voId !== productId) {
+    if (!selectedProduct || String(selectedProduct.voId) !== String(productId)) {
       await loadProductDetail(productId);
     }
 
     // 检查是否可以购买
     await checkCanBuy(productId);
 
+    setPurchasePasscodeUpgradePrompt(null);
     setIsPurchaseModalOpen(true);
   }, [isAuthenticated, selectedProduct, loadProductDetail, checkCanBuy, setError]);
 
   // 关闭购买弹窗
   const handleClosePurchaseModal = useCallback(() => {
+    setPurchasePasscodeUpgradePrompt(null);
     setIsPurchaseModalOpen(false);
   }, []);
 
   // 确认购买
-  const handleConfirmPurchase = useCallback(async (productId: number, quantity: number = 1) => {
+  const handleConfirmPurchase = useCallback(async (
+    productId: LongId,
+    quantity: number = 1,
+    paymentPassword: string
+  ) => {
     if (!isAuthenticated) {
       setError(t('shop.loginRequired'));
       return;
@@ -85,11 +95,13 @@ export const useShopActions = (props: UseShopActionsProps) => {
     try {
       const result = await shopApi.purchaseProduct({
         productId,
-        quantity
+        quantity,
+        paymentPassword
       }, t);
 
       if (result.ok && result.data?.success) {
         setError(null);
+        setPurchasePasscodeUpgradePrompt(null);
         setIsPurchaseModalOpen(false);
 
         log.debug(
@@ -101,10 +113,25 @@ export const useShopActions = (props: UseShopActionsProps) => {
         );
 
         // 刷新相关数据
-        if (appState.currentView === 'product-detail') {
-          await checkCanBuy(productId);
-        }
+        await Promise.all([
+          loadInventory(),
+          appState.currentView === 'product-detail'
+            ? checkCanBuy(productId)
+            : Promise.resolve()
+        ]);
       } else {
+        const errorMessage = result.data?.errorMessage || result.message || t('shop.error.purchaseFailed');
+        const requiresPasscodeUpgrade = Boolean(result.data?.requiresPasscodeUpgrade) || isPaymentPasscodeUpgradeRequiredError({
+          code: result.data?.errorCode,
+          message: errorMessage
+        });
+
+        if (requiresPasscodeUpgrade) {
+          setError(null);
+          setPurchasePasscodeUpgradePrompt(errorMessage);
+          return;
+        }
+
         throw new Error(result.data?.errorMessage || result.message || t('shop.error.purchaseFailed'));
       }
     } catch (error) {
@@ -113,10 +140,10 @@ export const useShopActions = (props: UseShopActionsProps) => {
     } finally {
       setPurchasing(false);
     }
-  }, [isAuthenticated, t, appState.currentView, checkCanBuy, setError]);
+  }, [isAuthenticated, t, appState.currentView, checkCanBuy, loadInventory, setError]);
 
   // 取消订单
-  const handleCancelOrder = useCallback(async (orderId: number, reason?: string) => {
+  const handleCancelOrder = useCallback(async (orderId: LongId, reason?: string) => {
     try {
       const result = await shopApi.cancelOrder(orderId, t, reason);
       if (result.ok) {
@@ -133,7 +160,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
   }, [t, loadOrderDetail, setError]);
 
   // 激活权益
-  const handleActivateBenefit = useCallback(async (benefitId: number) => {
+  const handleActivateBenefit = useCallback(async (benefitId: LongId) => {
     try {
       const result = await shopApi.activateBenefit(benefitId, t);
       if (result.ok) {
@@ -150,7 +177,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
   }, [t, loadInventory, setError]);
 
   // 取消激活权益
-  const handleDeactivateBenefit = useCallback(async (benefitId: number) => {
+  const handleDeactivateBenefit = useCallback(async (benefitId: LongId) => {
     try {
       const result = await shopApi.deactivateBenefit(benefitId, t);
       if (result.ok) {
@@ -167,7 +194,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
   }, [t, loadInventory, setError]);
 
   // 使用道具
-  const handleUseItem = useCallback(async (inventoryId: number, quantity: number = 1, targetId?: number) => {
+  const handleUseItem = useCallback(async (inventoryId: LongId, quantity: number = 1, targetId?: LongId) => {
     try {
       const result = await shopApi.useItem({
         inventoryId,
@@ -184,21 +211,34 @@ export const useShopActions = (props: UseShopActionsProps) => {
 
         // 刷新背包数据
         await loadInventory();
+        return true;
       } else {
         throw new Error(result.data?.errorMessage || result.message || t('shop.error.useItemFailed'));
       }
     } catch (error) {
       log.error(t('shop.error.useItemFailed'), error);
       setError(error instanceof Error ? error.message : t('shop.error.useItemFailed'));
+      return false;
     }
   }, [t, loadInventory, setError]);
 
   // 使用改名卡
-  const handleUseRenameCard = useCallback(async (inventoryId: number, newNickname: string) => {
+  const handleUseRenameCard = useCallback(async (inventoryId: LongId, newNickname: string) => {
     try {
       const result = await shopApi.useRenameCard(inventoryId, newNickname, t);
       if (result.ok && result.data?.success) {
         setError(null);
+
+        const currentUser = useUserStore.getState();
+        currentUser.setUser({
+          userId: currentUser.userId,
+          userName: newNickname.trim(),
+          tenantId: currentUser.tenantId,
+          roles: currentUser.roles,
+          permissions: currentUser.permissions,
+          avatarUrl: currentUser.avatarUrl,
+          avatarThumbnailUrl: currentUser.avatarThumbnailUrl
+        });
 
         if (result.data.effectDescription) {
           log.debug(t('shop.inventory.renameSuccess'), result.data.effectDescription);
@@ -206,12 +246,14 @@ export const useShopActions = (props: UseShopActionsProps) => {
 
         // 刷新背包数据
         await loadInventory();
+        return true;
       } else {
         throw new Error(result.data?.errorMessage || result.message || t('shop.error.useRenameCardFailed'));
       }
     } catch (error) {
       log.error(t('shop.error.useRenameCardFailed'), error);
       setError(error instanceof Error ? error.message : t('shop.error.useRenameCardFailed'));
+      return false;
     }
   }, [t, loadInventory, setError]);
 
@@ -219,6 +261,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
     // 购买相关
     isPurchaseModalOpen,
     purchasing,
+    purchasePasscodeUpgradePrompt,
     handlePurchaseClick,
     handleClosePurchaseModal,
     handleConfirmPurchase,

@@ -2,8 +2,11 @@ import type { SecurityStatus } from '../../types';
 import styles from './SecurityTips.module.css';
 import { log } from '@/utils/logger';
 
+type SecurityActionTab = 'overview' | 'password' | 'log';
+
 interface SecurityTipsProps {
   status: SecurityStatus | null;
+  onNavigate: (tab: SecurityActionTab) => void;
 }
 
 interface SecurityTip {
@@ -19,7 +22,12 @@ interface SecurityTip {
 /**
  * 安全建议组件
  */
-export const SecurityTips = ({ status }: SecurityTipsProps) => {
+export const SecurityTips = ({ status, onNavigate }: SecurityTipsProps) => {
+  const navigateTo = (tab: SecurityActionTab, source: string) => {
+    log.debug('SecurityTips', `从 ${source} 跳转到 ${tab}`);
+    onNavigate(tab);
+  };
+
   const generateTips = (): SecurityTip[] => {
     const tips: SecurityTip[] = [];
 
@@ -28,14 +36,23 @@ export const SecurityTips = ({ status }: SecurityTipsProps) => {
       tips.push({
         id: 'set-password',
         icon: '🔑',
-        title: '设置支付密码',
-        description: '设置支付密码可以保护您的萝卜转移操作，防止未经授权的转移。',
+        title: '设置支付口令',
+        description: '设置 6 位数字支付口令，可以保护您的萝卜转移和购买操作，防止未经授权的消费。',
         priority: 'high',
         actionText: '立即设置',
-        onAction: () => {
-          // TODO: 跳转到支付密码设置
-          log.debug('SecurityTips', '跳转到支付密码设置');
-        }
+        onAction: () => navigateTo('password', 'tip:set-password')
+      });
+    }
+
+    if (status?.requiresPasscodeUpgrade) {
+      tips.push({
+        id: 'upgrade-legacy-passcode',
+        icon: '♻️',
+        title: '重置旧支付口令',
+        description: '检测到您的账户仍在使用旧支付口令，旧规则已废弃，商城购买和萝卜转移都会被阻止，请立即重置为新的 6 位数字支付口令。',
+        priority: 'high',
+        actionText: '立即重置',
+        onAction: () => navigateTo('password', 'tip:upgrade-legacy-passcode')
       });
     }
 
@@ -43,8 +60,8 @@ export const SecurityTips = ({ status }: SecurityTipsProps) => {
       tips.push({
         id: 'failed-attempts',
         icon: '⚠️',
-        title: '密码输入错误',
-        description: `检测到${status.failedAttempts}次密码输入错误，请确保您的密码安全，如有异常请及时修改密码。`,
+        title: '口令输入错误',
+        description: `检测到${status.failedAttempts}次口令输入错误，请确认是否为本人操作，如有异常请及时修改支付口令。`,
         priority: 'high'
       });
     }
@@ -64,29 +81,29 @@ export const SecurityTips = ({ status }: SecurityTipsProps) => {
       {
         id: 'strong-password',
         icon: '💪',
-        title: '使用强密码',
-        description: '使用包含大小写字母、数字和特殊字符的复杂密码，长度至少8位，提高账户安全性。',
+        title: '设置稳妥口令',
+        description: '支付口令固定为 6 位数字，避免使用连续数字或重复数字，提升资产操作安全性。',
         priority: 'medium'
       },
       {
         id: 'regular-change',
         icon: '🔄',
-        title: '定期更换密码',
-        description: '建议每3-6个月更换一次支付密码，避免长期使用同一密码带来的安全风险。',
+        title: '定期更换口令',
+        description: '建议每3-6个月更换一次支付口令，避免长期使用同一口令带来的安全风险。',
         priority: 'medium'
       },
       {
         id: 'secure-environment',
         icon: '🏠',
         title: '安全环境操作',
-        description: '在安全的网络环境下进行萝卜操作，避免在公共WiFi或不信任的设备上输入密码。',
+        description: '在安全的网络环境下进行萝卜操作，避免在公共 WiFi 或不信任设备上输入支付口令。',
         priority: 'medium'
       },
       {
         id: 'phishing-awareness',
         icon: '🎣',
         title: '防范钓鱼攻击',
-        description: '注意识别钓鱼网站和诈骗信息，官方不会通过邮件或短信要求您提供密码信息。',
+        description: '注意识别钓鱼网站和诈骗信息，官方不会通过邮件或短信要求您提供支付口令。',
         priority: 'medium'
       },
       {
@@ -177,8 +194,8 @@ export const SecurityTips = ({ status }: SecurityTipsProps) => {
             <div className={styles.knowledgeCard}>
               <div className={styles.knowledgeCardIcon}>🔐</div>
               <div className={styles.knowledgeCardContent}>
-                <h5>密码安全</h5>
-                <p>使用复杂密码，避免使用生日、姓名等容易猜测的信息作为密码。</p>
+                <h5>口令安全</h5>
+                <p>支付口令只用于资金类操作，避免使用连续数字、重复数字等容易猜测的组合。</p>
               </div>
             </div>
             <div className={styles.knowledgeCard}>
@@ -204,13 +221,21 @@ export const SecurityTips = ({ status }: SecurityTipsProps) => {
             <div className={styles.supportIcon}>🆘</div>
             <div className={styles.supportContent}>
               <h4>需要帮助？</h4>
-              <p>如果您遇到安全问题或需要技术支持，请及时联系我们的客服团队。</p>
+              <p>您可以先通过支付口令设置和安全日志自查常见安全问题；如仍发现异常，再联系支持处理。</p>
               <div className={styles.supportActions}>
-                <button className={styles.supportButton}>
-                  联系客服
+                <button
+                  type="button"
+                  className={styles.supportButton}
+                  onClick={() => navigateTo('password', 'support:password')}
+                >
+                  {status?.hasPaymentPassword ? '修改支付口令' : '设置支付口令'}
                 </button>
-                <button className={styles.supportButton}>
-                  查看帮助文档
+                <button
+                  type="button"
+                  className={styles.supportButton}
+                  onClick={() => navigateTo('log', 'support:log')}
+                >
+                  查看安全日志
                 </button>
               </div>
             </div>

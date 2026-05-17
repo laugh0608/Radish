@@ -10,6 +10,7 @@ namespace Radish.Model;
 /// <remarks>支持多租户，主键为 Id，类型为 long</remarks>
 [SugarIndex("idx_post_forum_list", nameof(TenantId), OrderByType.Asc, nameof(IsDeleted), OrderByType.Asc, nameof(IsPublished), OrderByType.Asc, nameof(IsTop), OrderByType.Desc, nameof(CreateTime), OrderByType.Desc)]
 [SugarIndex("idx_post_forum_category_list", nameof(TenantId), OrderByType.Asc, nameof(CategoryId), OrderByType.Asc, nameof(IsDeleted), OrderByType.Asc, nameof(IsPublished), OrderByType.Asc, nameof(CreateTime), OrderByType.Desc)]
+[SugarIndex("idx_post_public_id", nameof(PublicId), OrderByType.Asc, IsUnique = true)]
 public class Post : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
 {
     /// <summary>初始化默认帖子实例</summary>
@@ -45,6 +46,7 @@ public class Post : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
     private void InitializeDefaults()
     {
         Title = string.Empty;
+        PublicId = null;
         Slug = string.Empty;
         Summary = string.Empty;
         Content = string.Empty;
@@ -79,6 +81,11 @@ public class Post : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
     {
         Title = NormalizeRequired(options.Title, nameof(options.Title));
         Content = NormalizeRequired(options.Content, nameof(options.Content));
+
+        if (!string.IsNullOrWhiteSpace(options.PublicId))
+        {
+            PublicId = options.PublicId.Trim();
+        }
 
         if (!string.IsNullOrWhiteSpace(options.Slug))
         {
@@ -215,6 +222,11 @@ public class Post : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
     /// <remarks>不可为空，最大 200 字符</remarks>
     [SugarColumn(Length = 200, IsNullable = false)]
     public string Title { get; set; } = string.Empty;
+
+    /// <summary>公开访问标识</summary>
+    /// <remarks>可空，首批用于公开路由与分享链接，不替代数据库主键</remarks>
+    [SugarColumn(Length = 40, IsNullable = true)]
+    public string? PublicId { get; set; }
 
     /// <summary>URL 友好的标识符</summary>
     /// <remarks>不可为空，最大 200 字符，唯一索引</remarks>
@@ -412,6 +424,9 @@ public sealed class PostInitializationOptions
 
     /// <summary>帖子内容</summary>
     public string Content { get; }
+
+    /// <summary>公开访问标识</summary>
+    public string? PublicId { get; set; }
 
     /// <summary>URL 友好标识符</summary>
     public string? Slug { get; set; }

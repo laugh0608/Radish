@@ -2,10 +2,19 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { MarkdownStickerMap } from '@radish/ui/markdown-renderer';
 import type { CommentNode as CommentNodeType, CommentReplyTarget, ReactionSummaryVo } from '@/api/forum';
+import type { LongId } from '@/api/user';
 import type { ReactionTogglePayload } from '@radish/ui/reaction-bar';
 import type { StickerPickerGroup } from '@radish/ui/sticker-picker';
 import { CommentNode } from './CommentNode';
 import styles from './CommentTree.module.css';
+
+const isSameLongId = (left: LongId | null | undefined, right: LongId | null | undefined): boolean => {
+  if (left == null || right == null) {
+    return false;
+  }
+
+  return String(left) === String(right);
+};
 
 interface CommentTreeProps {
   comments: CommentNodeType[];
@@ -14,33 +23,33 @@ interface CommentTreeProps {
   hasPost?: boolean;
   showTitle?: boolean;
   displayTimeZone: string;
-  currentUserId?: number;
-  highlightedCommentId?: number | null;
-  expandedRootCommentId?: number;
+  currentUserId?: LongId;
+  highlightedCommentId?: LongId | null;
+  expandedRootCommentId?: LongId;
   pageSize?: number;
   rootCommentTotal?: number;
   loadedRootCommentCount?: number;
   rootCommentPageSize?: number;
   sortBy?: 'newest' | 'hottest' | null; // null表示默认排序
-  onDeleteComment?: (commentId: number) => void;
-  onEditComment?: (commentId: number, newContent: string) => Promise<void>;
-  onViewCommentHistory?: (commentId: number) => void;
-  onLikeComment?: (commentId: number) => Promise<{ isLiked: boolean; likeCount: number }>;
+  onDeleteComment?: (commentId: LongId) => void;
+  onEditComment?: (commentId: LongId, newContent: string) => Promise<void>;
+  onViewCommentHistory?: (commentId: LongId) => void;
+  onLikeComment?: (commentId: LongId) => Promise<{ isLiked: boolean; likeCount: number }>;
   onReplyComment?: (target: CommentReplyTarget) => void;
-  onLoadMoreChildren?: (parentId: number, pageIndex: number, pageSize: number) => Promise<CommentNodeType[]>;
+  onLoadMoreChildren?: (parentId: LongId, pageIndex: number, pageSize: number) => Promise<CommentNodeType[]>;
   onLoadMoreRootComments?: () => Promise<void>;
   onSortChange?: (sortBy: 'newest' | 'hottest') => void;
   stickerMap?: MarkdownStickerMap;
-  reactionMap?: Record<number, ReactionSummaryVo[]>;
+  reactionMap?: Record<string, ReactionSummaryVo[]>;
   isAuthenticated?: boolean;
   stickerGroups?: StickerPickerGroup[];
-  onToggleReaction?: (commentId: number, payload: ReactionTogglePayload) => Promise<void>;
-  isReactionPending?: (commentId: number) => boolean;
+  onToggleReaction?: (commentId: LongId, payload: ReactionTogglePayload) => Promise<void>;
+  isReactionPending?: (commentId: LongId) => boolean;
   onRequireReactionLogin?: () => void;
-  onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
-  onReportComment?: (commentId: number) => void;
-  registerCommentAnchor?: (commentId: number, element: HTMLDivElement | null) => void;
-  onNavigateToComment?: (commentId: number) => Promise<void> | void;
+  onAuthorClick?: (userId: LongId, userName?: string | null, avatarUrl?: string | null) => void;
+  onReportComment?: (commentId: LongId) => void;
+  registerCommentAnchor?: (commentId: LongId, element: HTMLDivElement | null) => void;
+  onNavigateToComment?: (commentId: LongId) => Promise<void> | void;
 }
 
 export const CommentTree = ({
@@ -103,7 +112,7 @@ export const CommentTree = ({
 
     if (sortBy === null && topGodComment) {
       // 默认排序：当前点赞数最高的神评置顶 + 其他按时间升序
-      const others = comments.filter(c => c.voId !== topGodComment.voId);
+      const others = comments.filter(c => !isSameLongId(c.voId, topGodComment.voId));
       return [topGodComment, ...others];
     }
 

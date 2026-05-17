@@ -33,16 +33,17 @@ features:
 
 ## 快速入口
 
-- [快速开始](/guide/getting-started) - 本地环境、依赖与启动方式
+- [快速开始](/guide/getting-started) - 环境、初始化、验证与启动方式
 - [架构总览](/architecture/overview) - 系统拓扑、项目职责与关键约定
 - [开发规范](/architecture/specifications) - 分层约束、编码规范与协作规则
 - [前端设计](/frontend/design) - WebOS 架构与应用集成方式
-- [前端多壳层策略](/frontend/shell-strategy) - 第二阶段前端演进方向
+- [前端多壳层策略](/frontend/shell-strategy) - 多端壳层职责分工
 
 ## 当前协作
 
-- [开发路线图总览](/development-plan) - 第二开发阶段的主线、下一顺位与维护线
-- [第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform) - 当前阶段总目标、拆分与优先级
+- [开发路线图总览](/development-plan) - 当前主线、下一顺位与维护线
+- [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance) - `P3-2 PublicId` 首批实现与下一顺位入口
+- [第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform) - 已归档阶段总目标、拆分与优先级
 - [前端多壳层策略](/frontend/shell-strategy) - 公开内容、桌面工作台与 Flutter 客户端的职责分工
 - [当前进行中](/planning/current) - 现在真正要做的正式主线
 - [未来规划](/planning/backlog) - 当前明确后置的事项
@@ -53,7 +54,13 @@ features:
 
 ## 常用专题
 
+- [Guide 手册索引](/guide/)
 - [认证与权限](/guide/authentication)
+- [API 说明索引](/guide/api-index)
+- [数据库总览](/guide/database-overview)
+- [本地运行与排障手册](/guide/operations-runbook)
+- [文档篇幅治理](/guide/document-governance)
+- [记录与验收索引](/records/)
 - [Console 权限 / 菜单 / 按钮管理一期设计方案](/guide/console-authorization-phase1)
 - [配置管理](/guide/configuration)
 - [服务网关](/guide/gateway)
@@ -80,5 +87,5 @@ features:
 :::
 
 ::: warning 入口文档约束
-关键入口文档只保留最近阶段、当前进度、执行入口和必要约束。历史批次、命令级验证流水、实现细节和长背景应放到日志、归档或专题文档，避免新会话读取过多无关上下文。
+关键入口文档只保留最近阶段、当前进度、执行入口和必要约束，建议不超过 300 行，硬上限 500 行。架构 / 规范 / 设计类文档建议不超过 600 行，硬上限 900 行；专题深度文档建议不超过 800 行，硬上限 1200 行。历史批次、命令级验证流水、实现细节和长背景应放到日志、记录、归档或专题文档，避免新会话读取过多无关上下文。
 :::

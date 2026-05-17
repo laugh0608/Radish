@@ -115,9 +115,9 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                         }
                         else
                         {
-                            // 物理文件不存在，删除旧记录并继续上传
-                            Log.Warning("文件记录存在但物理文件缺失，删除旧记录：{AttachmentId}, {FileHash}", existingAttachment.Id, fileHash);
-                            await _attachmentRepository.DeleteByIdAsync(existingAttachment.Id);
+                            // 物理文件不存在，软删除旧记录并继续上传
+                            Log.Warning("文件记录存在但物理文件缺失，软删除旧记录：{AttachmentId}, {FileHash}", existingAttachment.Id, fileHash);
+                            await _attachmentRepository.SoftDeleteByIdAsync(existingAttachment.Id, "System");
                         }
                     }
                 }

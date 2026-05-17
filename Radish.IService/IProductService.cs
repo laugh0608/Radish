@@ -62,8 +62,9 @@ public interface IProductService : IBaseService<Product, ProductVo>
     /// <summary>恢复库存</summary>
     /// <param name="productId">商品 ID</param>
     /// <param name="quantity">恢复数量</param>
+    /// <param name="stockType">下单时的库存类型快照</param>
     /// <returns>是否成功</returns>
-    Task<bool> RestoreStockAsync(long productId, int quantity);
+    Task<bool> RestoreStockAsync(long productId, int quantity, StockType stockType);
 
     /// <summary>增加已售数量</summary>
     /// <param name="productId">商品 ID</param>
@@ -114,6 +115,18 @@ public interface IProductService : IBaseService<Product, ProductVo>
         string? keyword = null,
         int pageIndex = 1,
         int pageSize = 20);
+
+    /// <summary>获取商品详情（管理后台）</summary>
+    /// <param name="productId">商品 ID</param>
+    /// <returns>商品详情</returns>
+    Task<ProductVo?> GetProductDetailForAdminAsync(long productId);
+
+    /// <summary>删除商品（管理后台）</summary>
+    /// <param name="productId">商品 ID</param>
+    /// <param name="operatorId">操作员 ID</param>
+    /// <param name="operatorName">操作员名称</param>
+    /// <returns>是否成功</returns>
+    Task<bool> DeleteProductAsync(long productId, long operatorId, string operatorName);
 
     #endregion
 }

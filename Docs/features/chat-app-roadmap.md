@@ -45,7 +45,7 @@
 
 ## P1 最小人工验收模板（样板）
 
-> 结构遵循：[人工验收模板](/guide/manual-acceptance-template)
+> 结构遵循：[人工验收模板](/records/manual-acceptance-template)
 
 ### 适用改动范围
 

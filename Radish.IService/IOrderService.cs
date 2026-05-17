@@ -23,6 +23,12 @@ public interface IOrderService : IBaseService<Order, OrderVo>
     /// <returns>是否成功</returns>
     Task<bool> CancelOrderAsync(long userId, long orderId, string? reason = null);
 
+    /// <summary>系统取消订单</summary>
+    /// <param name="orderId">订单 ID</param>
+    /// <param name="reason">取消原因</param>
+    /// <returns>是否成功</returns>
+    Task<bool> CancelOrderBySystemAsync(long orderId, string reason);
+
     #endregion
 
     #region 订单查询
@@ -76,11 +82,18 @@ public interface IOrderService : IBaseService<Order, OrderVo>
         int pageIndex = 1,
         int pageSize = 20);
 
+    /// <summary>获取订单详情（管理后台）</summary>
+    /// <param name="orderId">订单 ID</param>
+    /// <returns>订单详情</returns>
+    Task<OrderVo?> GetOrderDetailForAdminAsync(long orderId);
+
     /// <summary>管理员备注订单</summary>
     /// <param name="orderId">订单 ID</param>
     /// <param name="remark">备注内容</param>
+    /// <param name="operatorId">操作员 ID</param>
+    /// <param name="operatorName">操作员名称</param>
     /// <returns>是否成功</returns>
-    Task<bool> AdminRemarkOrderAsync(long orderId, string remark);
+    Task<bool> AdminRemarkOrderAsync(long orderId, string remark, long operatorId, string operatorName);
 
     /// <summary>重新发放权益（发放失败时使用）</summary>
     /// <param name="orderId">订单 ID</param>

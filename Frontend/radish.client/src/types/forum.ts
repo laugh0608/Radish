@@ -1,3 +1,5 @@
+import type { LongId } from '@/api/user';
+
 /**
  * 论坛相关的 TypeScript 类型定义
  * 直接使用后端 Vo 字段名，不进行映射
@@ -74,7 +76,7 @@ export interface Tag {
  * 帖子列表项 Vo
  */
 export interface PostInteractor {
-  voUserId: number;
+  voUserId: LongId;
   voUserName: string;
   voAvatarUrl?: string | null;
 }
@@ -94,8 +96,8 @@ export interface PostPollOption {
  * 帖子投票 Vo
  */
 export interface PostPoll {
-  voPollId: number;
-  voPostId: number;
+  voPollId: LongId;
+  voPostId: LongId;
   voQuestion: string;
   voEndTime?: string | null;
   voIsClosed: boolean;
@@ -109,11 +111,11 @@ export interface PostPoll {
  * 抽奖中奖人 Vo
  */
 export interface PostLotteryWinner {
-  voId: number;
-  voLotteryId: number;
-  voUserId: number;
+  voId: LongId;
+  voLotteryId: LongId;
+  voUserId: LongId;
   voUserName: string;
-  voCommentId?: number | null;
+  voCommentId?: LongId | null;
   voCommentContentSnapshot?: string | null;
   voDrawnAt: string;
 }
@@ -122,8 +124,8 @@ export interface PostLotteryWinner {
  * 帖子抽奖 Vo
  */
 export interface PostLottery {
-  voLotteryId: number;
-  voPostId: number;
+  voLotteryId: LongId;
+  voPostId: LongId;
   voPrizeName: string;
   voPrizeDescription?: string | null;
   voDrawTime?: string | null;
@@ -138,7 +140,7 @@ export interface PostLottery {
  * 抽奖结果 Vo
  */
 export interface LotteryResult {
-  voPostId: number;
+  voPostId: LongId;
   voLottery?: PostLottery | null;
 }
 
@@ -146,7 +148,7 @@ export interface LotteryResult {
  * 投票结果 Vo
  */
 export interface PollVoteResult {
-  voPostId: number;
+  voPostId: LongId;
   voPoll?: PostPoll | null;
 }
 
@@ -154,9 +156,9 @@ export interface PollVoteResult {
  * 问答回答 Vo
  */
 export interface PostAnswer {
-  voAnswerId: number;
-  voPostId: number;
-  voAuthorId: number;
+  voAnswerId: LongId;
+  voPostId: LongId;
+  voAuthorId: LongId;
   voAuthorName: string;
   voAuthorAvatarUrl?: string | null;
   voContent: string;
@@ -168,9 +170,9 @@ export interface PostAnswer {
  * 帖子问答详情 Vo
  */
 export interface PostQuestion {
-  voPostId: number;
+  voPostId: LongId;
   voIsSolved: boolean;
-  voAcceptedAnswerId?: number | null;
+  voAcceptedAnswerId?: LongId | null;
   voAnswerCount: number;
   voAnswers: PostAnswer[];
 }
@@ -206,7 +208,7 @@ export interface CreatePollOptionRequest {
  * 提交投票请求
  */
 export interface VotePollRequest {
-  postId: number;
+  postId: LongId;
   optionId: number;
 }
 
@@ -214,14 +216,14 @@ export interface VotePollRequest {
  * 结束投票请求
  */
 export interface ClosePollRequest {
-  postId: number;
+  postId: LongId;
 }
 
 /**
  * 提交回答请求
  */
 export interface CreateAnswerRequest {
-  postId: number;
+  postId: LongId;
   content: string;
 }
 
@@ -229,15 +231,16 @@ export interface CreateAnswerRequest {
  * 采纳回答请求
  */
 export interface AcceptAnswerRequest {
-  postId: number;
-  answerId: number;
+  postId: LongId;
+  answerId: LongId;
 }
 
 /**
  * 帖子列表项 Vo
  */
 export interface PostItem {
-  voId: number;
+  voId: LongId;
+  voPublicId?: string | null;
   voTitle: string;
   voSlug?: string;
   voSummary?: string | null;
@@ -245,11 +248,11 @@ export interface PostItem {
   voTagSlugs?: string[];
   voCategoryId: number;
   voCategoryName?: string | null;
-  voAuthorId: number;
+  voAuthorId: LongId;
   voAuthorName?: string | null;
   voAuthorAvatarUrl?: string | null;
   voLatestInteractors?: PostInteractor[];
-  voGodCommentId?: number | null;
+  voGodCommentId?: LongId | null;
   voGodCommentAuthorName?: string | null;
   voGodCommentContentSnapshot?: string | null;
   voViewCount?: number;
@@ -275,7 +278,8 @@ export interface PostItem {
  * 帖子详情 Vo
  */
 export interface PostDetail {
-  voId: number;
+  voId: LongId;
+  voPublicId?: string | null;
   voTitle: string;
   voSlug?: string;
   voSummary?: string | null;
@@ -284,13 +288,13 @@ export interface PostDetail {
   voCoverImage?: string | null;
   voCategoryId: number;
   voCategoryName?: string | null;
-  voAuthorId: number;
+  voAuthorId: LongId;
   voAuthorName?: string | null;
   voAuthorAvatarUrl?: string | null;
   voTags?: string;
   voTagNames?: string[];
   voTagSlugs?: string[];
-  voGodCommentId?: number | null;
+  voGodCommentId?: LongId | null;
   voGodCommentAuthorName?: string | null;
   voGodCommentContentSnapshot?: string | null;
   voViewCount?: number;
@@ -319,17 +323,17 @@ export interface PostDetail {
  * 评论节点 Vo（树形结构）
  */
 export interface CommentNode {
-  voId: number;
-  voPostId: number;
+  voId: LongId;
+  voPostId: LongId;
   voContent: string;
-  voAuthorId: number;
+  voAuthorId: LongId;
   voAuthorName: string;
   voAuthorAvatarUrl?: string | null;
-  voParentId?: number | null;
-  voRootId?: number | null;
-  voReplyToCommentId?: number | null;
+  voParentId?: LongId | null;
+  voRootId?: LongId | null;
+  voReplyToCommentId?: LongId | null;
   voReplyToCommentSnapshot?: string | null;
-  voReplyToUserId?: number | null;
+  voReplyToUserId?: LongId | null;
   voReplyToUserName?: string | null;
   voLevel?: number;
   voLikeCount?: number;
@@ -351,8 +355,8 @@ export interface CommentNode {
  * 但仍保留实际点击的回复目标，用于“回复 @某人”的展示。
  */
 export interface CommentReplyTarget {
-  parentCommentId: number;
-  targetCommentId: number;
+  parentCommentId: LongId;
+  targetCommentId: LongId;
   authorName: string;
   contentSnapshot?: string | null;
 }
@@ -361,9 +365,9 @@ export interface CommentReplyTarget {
  * 帖子轻回应 Vo
  */
 export interface PostQuickReply {
-  voId: number;
-  voPostId: number;
-  voAuthorId: number;
+  voId: LongId;
+  voPostId: LongId;
+  voAuthorId: LongId;
   voAuthorName: string;
   voAuthorAvatarUrl?: string | null;
   voContent: string;
@@ -383,8 +387,9 @@ export interface PostQuickReplyWall {
  * 个人主页轻回应列表项
  */
 export interface UserPostQuickReply {
-  voId: number;
-  voPostId: number;
+  voId: LongId;
+  voPostId: LongId;
+  voPostPublicId?: string | null;
   voPostTitle: string;
   voContent: string;
   voCreateTime: string;
@@ -394,14 +399,14 @@ export interface UserPostQuickReply {
  * 帖子编辑历史
  */
 export interface PostEditHistory {
-  voId: number;
-  voPostId: number;
+  voId: LongId;
+  voPostId: LongId;
   voEditSequence: number;
   voOldTitle: string;
   voNewTitle: string;
   voOldContent: string;
   voNewContent: string;
-  voEditorId: number;
+  voEditorId: LongId;
   voEditorName: string;
   voEditedAt: string;
   voCreateTime: string;
@@ -411,13 +416,13 @@ export interface PostEditHistory {
  * 评论编辑历史
  */
 export interface CommentEditHistory {
-  voId: number;
-  voCommentId: number;
-  voPostId: number;
+  voId: LongId;
+  voCommentId: LongId;
+  voPostId: LongId;
   voEditSequence: number;
   voOldContent: string;
   voNewContent: string;
-  voEditorId: number;
+  voEditorId: LongId;
   voEditorName: string;
   voEditedAt: string;
   voCreateTime: string;
@@ -437,16 +442,16 @@ export interface VoPagedResult<T> {
  * 神评/沙发高亮记录 Vo
  */
 export interface CommentHighlight {
-  voId: number;
-  voPostId: number;
-  voCommentId: number;
-  voParentCommentId: number | null;
+  voId: LongId;
+  voPostId: LongId;
+  voCommentId: LongId;
+  voParentCommentId: LongId | null;
   voHighlightType: number;
   voStatDate: string;
   voLikeCount: number;
   voRank: number;
   voContentSnapshot: string | null;
-  voAuthorId: number;
+  voAuthorId: LongId;
   voAuthorName: string;
   voIsCurrent: boolean;
   voCreateTime: string;
@@ -456,10 +461,10 @@ export interface CommentHighlight {
  * 评论精确定位结果
  */
 export interface CommentNavigationLocation {
-  voCommentId: number;
-  voPostId: number;
-  voRootCommentId: number;
-  voParentCommentId?: number | null;
+  voCommentId: LongId;
+  voPostId: LongId;
+  voRootCommentId: LongId;
+  voParentCommentId?: LongId | null;
   voIsRootComment: boolean;
   voRootPageIndex: number;
   voChildPageIndex?: number | null;
@@ -490,7 +495,7 @@ export interface ReactionSummaryVo {
  */
 export interface ToggleReactionRequest {
   targetType: 'Post' | 'Comment' | 'ChatMessage';
-  targetId: number;
+  targetId: LongId;
   emojiType: 'unicode' | 'sticker';
   emojiValue: string;
 }
@@ -500,7 +505,7 @@ export interface ToggleReactionRequest {
  */
 export interface BatchGetReactionSummaryRequest {
   targetType: 'Post' | 'Comment' | 'ChatMessage';
-  targetIds: number[];
+  targetIds: LongId[];
 }
 
 /**
@@ -529,7 +534,7 @@ export interface PublishPostRequest {
  * 编辑帖子请求
  */
 export interface UpdatePostRequest {
-  postId: number;
+  postId: LongId;
   title: string;
   content: string;
   categoryId?: number;
@@ -540,7 +545,7 @@ export interface UpdatePostRequest {
  * 设置帖子置顶状态请求
  */
 export interface SetPostTopRequest {
-  postId: number;
+  postId: LongId;
   isTop: boolean;
 }
 
@@ -548,12 +553,12 @@ export interface SetPostTopRequest {
  * 创建评论请求
  */
 export interface CreateCommentRequest {
-  postId: number;
+  postId: LongId;
   content: string;
-  parentId?: number | null;
-  replyToCommentId?: number | null;
+  parentId?: LongId | null;
+  replyToCommentId?: LongId | null;
   replyToCommentSnapshot?: string | null;
-  replyToUserId?: number | null;
+  replyToUserId?: LongId | null;
   replyToUserName?: string | null;
 }
 
@@ -561,6 +566,6 @@ export interface CreateCommentRequest {
  * 创建轻回应请求
  */
 export interface CreatePostQuickReplyRequest {
-  postId: number;
+  postId: LongId;
   content: string;
 }

@@ -6,7 +6,7 @@
 >
 > 关于 **Phase 4 最终是否正式启动** 的当前结论，见：[身份语义 Phase 4 最终启动评审](/guide/identity-claim-phase4-start-review)
 >
-> 关于 **仓库外兼容边界还差哪些事实**，见：[身份语义 Phase 4 仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist)
+> 关于 **仓库外兼容边界还差哪些事实**，见：[身份语义 Phase 4 仓库外兼容边界确认清单](/records/identity-claim-external-compat-checklist)
 >
 > 关于 **哪些 Claim 继续保留输出、哪些只保留兼容输入** 的具体判断，见：[身份语义 Phase 4 历史 Claim 保留矩阵](/guide/identity-claim-retention-matrix)
 >
@@ -317,6 +317,6 @@
 
 1. `M13` 当前已形成 `npm run check:identity-claims`、`check:identity-runtime`、`check:identity-protocol-output` 与 `validate:identity` 的专题入口组合，并已通过 [身份语义防回归回归手册](/guide/identity-claim-regression-playbook) 明确“改了身份语义后默认必须跑什么”；后续再视项目阶段决定是否继续扩张到更重的流水线或宿主专题。
 2. 当前优先维持 [身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window) 的既定边界，不在同一窗口提前删除输入兼容；若后续回归再暴露阻塞，再按回滚窗口处理。
-3. 若后续新增新的部署环境、第三方客户端或自定义反代规则，再回到 [身份语义 Phase 4 仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist) 追加事实。
+3. 若后续新增新的部署环境、第三方客户端或自定义反代规则，再回到 [身份语义 Phase 4 仓库外兼容边界确认清单](/records/identity-claim-external-compat-checklist) 追加事实。
 4. 在确认首轮输出收缩稳定后，再评估移除 `IHttpContextUser` 兼容层。
 5. 清理遗留注释、示例与文档中的旧 JWT/Claim 口径，避免回归。

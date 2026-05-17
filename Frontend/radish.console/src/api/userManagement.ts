@@ -8,19 +8,56 @@ function isApiRecord(value: unknown): value is ApiRecord {
   return !!value && typeof value === 'object' && !Array.isArray(value);
 }
 
+function toNumber(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return 0;
+}
+
+function toStringValue(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
+function toOptionalString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+
+function toBoolean(value: unknown): boolean {
+  return typeof value === 'boolean' ? value : false;
+}
+
+function toParsedResponse<T>(response: ParsedApiResponse<unknown>, data?: T): ParsedApiResponse<T> {
+  return {
+    ok: response.ok,
+    data,
+    message: response.message,
+    code: response.code,
+    statusCode: response.statusCode,
+  };
+}
+
 function mapUserListItem(raw: ApiRecord): UserListItem {
   return {
-    uuid: raw.uuid ?? raw.Uuid ?? 0,
-    voLoginName: raw.voLoginName ?? raw.VoLoginName ?? '',
-    voUserName: raw.voUserName ?? raw.VoUserName ?? '',
-    voUserEmail: raw.voUserEmail ?? raw.VoUserEmail ?? '',
-    voAvatarUrl: raw.voAvatarUrl ?? raw.VoAvatarUrl,
-    voAvatarThumbnailUrl: raw.voAvatarThumbnailUrl ?? raw.VoAvatarThumbnailUrl,
-    voIsEnable: raw.voIsEnable ?? raw.VoIsEnable ?? false,
-    voCreateTime: raw.voCreateTime ?? raw.VoCreateTime ?? '',
-    voUpdateTime: raw.voUpdateTime ?? raw.VoUpdateTime,
-    voIsDeleted: raw.voIsDeleted ?? raw.VoIsDeleted ?? false,
-    voTenantId: raw.voTenantId ?? raw.VoTenantId ?? 0,
+    uuid: toNumber(raw.uuid ?? raw.Uuid),
+    voLoginName: toStringValue(raw.voLoginName ?? raw.VoLoginName),
+    voUserName: toStringValue(raw.voUserName ?? raw.VoUserName),
+    voUserEmail: toStringValue(raw.voUserEmail ?? raw.VoUserEmail),
+    voAvatarUrl: toOptionalString(raw.voAvatarUrl ?? raw.VoAvatarUrl),
+    voAvatarThumbnailUrl: toOptionalString(raw.voAvatarThumbnailUrl ?? raw.VoAvatarThumbnailUrl),
+    voIsEnable: toBoolean(raw.voIsEnable ?? raw.VoIsEnable),
+    voCreateTime: toStringValue(raw.voCreateTime ?? raw.VoCreateTime),
+    voUpdateTime: toOptionalString(raw.voUpdateTime ?? raw.VoUpdateTime),
+    voIsDeleted: toBoolean(raw.voIsDeleted ?? raw.VoIsDeleted),
+    voTenantId: toNumber(raw.voTenantId ?? raw.VoTenantId),
   };
 }
 
@@ -106,18 +143,15 @@ export const userManagementApi = {
 
       const mappedData: UserListResponse = {
         items: rawItems.map((item) => mapUserListItem(isApiRecord(item) ? item : {})),
-        total: backendData.voTotal || backendData.VoTotal || 0,
-        pageIndex: backendData.voPageIndex || backendData.VoPageIndex || 1,
-        pageSize: backendData.voPageSize || backendData.VoPageSize || 20,
+        total: toNumber(backendData.voTotal ?? backendData.VoTotal),
+        pageIndex: toNumber(backendData.voPageIndex ?? backendData.VoPageIndex) || 1,
+        pageSize: toNumber(backendData.voPageSize ?? backendData.VoPageSize) || 20,
       };
 
-      return {
-        ...response,
-        data: mappedData
-      };
+      return toParsedResponse(response, mappedData);
     }
 
-    return response as ParsedApiResponse<UserListResponse>;
+    return toParsedResponse(response);
   },
 
   /**
@@ -131,16 +165,13 @@ export const userManagementApi = {
     if (response.ok && response.data) {
       const rawUser = Array.isArray(response.data) ? response.data[0] : response.data;
       if (!isApiRecord(rawUser)) {
-        return response as ParsedApiResponse<UserListItem>;
+        return toParsedResponse(response);
       }
 
-      return {
-        ...response,
-        data: mapUserListItem(rawUser),
-      };
+      return toParsedResponse(response, mapUserListItem(rawUser));
     }
 
-    return response as ParsedApiResponse<UserListItem>;
+    return toParsedResponse(response);
   },
 
   /**

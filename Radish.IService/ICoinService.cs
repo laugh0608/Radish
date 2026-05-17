@@ -46,6 +46,22 @@ public interface ICoinService : IBaseService<UserBalance, UserBalanceVo>
         string? remark = null);
 
     /// <summary>
+    /// 扣除萝卜币（商城消费等）
+    /// </summary>
+    /// <param name="userId">消费用户 ID</param>
+    /// <param name="amount">扣除金额（胡萝卜）</param>
+    /// <param name="businessType">业务类型（可选）</param>
+    /// <param name="businessId">业务 ID（可选）</param>
+    /// <param name="remark">备注（可选）</param>
+    /// <returns>交易 ID 与流水号</returns>
+    Task<(long transactionId, string transactionNo)> ConsumeCoinAsync(
+        long userId,
+        long amount,
+        string? businessType = null,
+        long? businessId = null,
+        string? remark = null);
+
+    /// <summary>
     /// 批量发放萝卜币
     /// </summary>
     /// <param name="grantInfos">发放信息列表</param>

@@ -67,6 +67,12 @@ public class UserPaymentPassword : RootEntityTKey<long>, IDeleteFilter, ITenantE
     public int StrengthLevel { get; set; } = 1;
 
     /// <summary>
+    /// 支付口令规则版本
+    /// </summary>
+    [SugarColumn(ColumnDescription = "支付口令规则版本", IsNullable = true)]
+    public int? PasscodeVersion { get; set; }
+
+    /// <summary>
     /// 是否启用
     /// </summary>
     [SugarColumn(ColumnDescription = "是否启用", IsNullable = false)]

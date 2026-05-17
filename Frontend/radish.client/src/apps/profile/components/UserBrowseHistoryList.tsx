@@ -5,6 +5,7 @@ import { getApiBaseUrl } from '@/config/env';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { log } from '@/utils/logger';
 import { getMyBrowseHistory, type UserBrowseHistoryItem } from '@/api/user';
+import { resolveBrowseHistoryDisplayRouteText } from '@/utils/workspaceNavigation';
 import styles from './UserBrowseHistoryList.module.css';
 
 interface UserBrowseHistoryListProps {
@@ -119,7 +120,9 @@ export const UserBrowseHistoryList = ({
 
                 <div className={styles.footer}>
                   <span className={styles.metaItem}>{t('profile.browse.viewCount', { count: item.voViewCount })}</span>
-                  <span className={styles.routeText}>{item.voRoutePath || t('profile.browse.internalRoute')}</span>
+                  <span className={styles.routeText}>
+                    {resolveBrowseHistoryDisplayRouteText(item, t('profile.browse.internalRoute'))}
+                  </span>
                 </div>
               </div>
             </article>

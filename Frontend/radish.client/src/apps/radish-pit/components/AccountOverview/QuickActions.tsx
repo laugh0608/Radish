@@ -40,7 +40,7 @@ export const QuickActions = ({ onNavigate }: QuickActionsProps) => {
       id: 'security',
       icon: '🔒',
       title: '安全设置',
-      description: '设置支付密码和安全选项',
+      description: '设置支付口令和安全选项',
       color: 'orange'
     },
     {

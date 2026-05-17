@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { LongId } from '@/api/user';
 import type { UserBenefit, UserInventoryItem } from '@/types/shop';
 import { resolveMediaUrl } from '@/utils/media';
 import styles from './Inventory.module.css';
@@ -8,13 +9,35 @@ interface InventoryProps {
   benefits: UserBenefit[];
   inventory: UserInventoryItem[];
   loading: boolean;
-  onActivateBenefit: (benefitId: number) => void;
-  onDeactivateBenefit: (benefitId: number) => void;
-  onUseItem: (inventoryId: number, quantity?: number, targetId?: number) => void;
+  onActivateBenefit: (benefitId: LongId) => void;
+  onDeactivateBenefit: (benefitId: LongId) => void;
+  onUseItem: (inventoryId: LongId, quantity?: number, targetId?: LongId) => Promise<boolean>;
+  onUseRenameCard: (inventoryId: LongId, newNickname: string) => Promise<boolean>;
   onBack: () => void;
 }
 
 type TabType = 'benefits' | 'consumables';
+
+const normalizeBenefitType = (type?: string | null): string => {
+  switch (String(type ?? '')) {
+    case '1':
+      return 'Badge';
+    case '2':
+      return 'AvatarFrame';
+    case '3':
+      return 'Title';
+    case '4':
+      return 'Theme';
+    case '5':
+      return 'Signature';
+    case '6':
+      return 'NameColor';
+    case '7':
+      return 'LikeEffect';
+    default:
+      return String(type ?? '');
+  }
+};
 
 const getBenefitTypeIcon = (type: string): string => {
   const icons: Record<string, string> = {
@@ -26,7 +49,7 @@ const getBenefitTypeIcon = (type: string): string => {
     'NameColor': '🌈',
     'LikeEffect': '❤️'
   };
-  return icons[type] || '🎁';
+  return icons[normalizeBenefitType(type)] || '🎁';
 };
 
 const getConsumableTypeIcon = (type: string): string => {
@@ -39,7 +62,51 @@ const getConsumableTypeIcon = (type: string): string => {
     'DoubleExpCard': '🚀',
     'LotteryTicket': '🎫'
   };
-  return icons[type] || '📦';
+  return icons[normalizeConsumableType(type)] || '📦';
+};
+
+const normalizeConsumableType = (type?: string | null): string => {
+  switch (String(type ?? '')) {
+    case '1':
+      return 'RenameCard';
+    case '2':
+      return 'PostPinCard';
+    case '3':
+      return 'PostHighlightCard';
+    case '4':
+      return 'ExpCard';
+    case '5':
+      return 'CoinCard';
+    case '6':
+      return 'DoubleExpCard';
+    case '7':
+    case '99':
+      return 'LotteryTicket';
+    default:
+      return String(type ?? '');
+  }
+};
+
+const isRenameCardItem = (item?: UserInventoryItem | null): boolean =>
+  normalizeConsumableType(item?.voConsumableType) === 'RenameCard';
+
+const isUnavailableBenefitItem = (benefit?: UserBenefit | null): boolean => {
+  const normalizedType = normalizeBenefitType(benefit?.voBenefitType);
+  return normalizedType === 'Badge'
+    || normalizedType === 'AvatarFrame'
+    || normalizedType === 'Title'
+    || normalizedType === 'Theme'
+    || normalizedType === 'Signature'
+    || normalizedType === 'NameColor'
+    || normalizedType === 'LikeEffect';
+};
+
+const isUnavailableConsumableItem = (item?: UserInventoryItem | null): boolean => {
+  const normalizedType = normalizeConsumableType(item?.voConsumableType);
+  return normalizedType === 'PostPinCard'
+    || normalizedType === 'PostHighlightCard'
+    || normalizedType === 'DoubleExpCard'
+    || normalizedType === 'LotteryTicket';
 };
 
 export const Inventory = ({
@@ -49,6 +116,7 @@ export const Inventory = ({
   onActivateBenefit,
   onDeactivateBenefit,
   onUseItem,
+  onUseRenameCard,
   onBack
 }: InventoryProps) => {
   const { t } = useTranslation();
@@ -56,6 +124,7 @@ export const Inventory = ({
   const [selectedItem, setSelectedItem] = useState<UserInventoryItem | null>(null);
   const [useQuantity, setUseQuantity] = useState(1);
   const [showUseModal, setShowUseModal] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
   const selectedItemIconUrl = resolveMediaUrl(selectedItem?.voItemIcon);
 
   const formatTime = (timeStr?: string | null) => {
@@ -72,21 +141,33 @@ export const Inventory = ({
   const handleUseItemClick = (item: UserInventoryItem) => {
     setSelectedItem(item);
     setUseQuantity(1);
+    setRenameValue('');
     setShowUseModal(true);
   };
 
-  const handleConfirmUse = () => {
-    if (selectedItem) {
-      onUseItem(selectedItem.voId, useQuantity);
-      setShowUseModal(false);
-      setSelectedItem(null);
+  const handleConfirmUse = async () => {
+    if (!selectedItem) {
+      return;
     }
+
+    const success = isRenameCardItem(selectedItem)
+      ? await onUseRenameCard(selectedItem.voId, renameValue.trim())
+      : await onUseItem(selectedItem.voId, useQuantity);
+
+    if (!success) {
+      return;
+    }
+
+    setShowUseModal(false);
+    setSelectedItem(null);
+    setRenameValue('');
   };
 
   const handleCloseModal = () => {
     setShowUseModal(false);
     setSelectedItem(null);
     setUseQuantity(1);
+    setRenameValue('');
   };
 
   if (loading) {
@@ -182,6 +263,13 @@ export const Inventory = ({
                           >
                             {t('shop.inventory.deactivate')}
                           </button>
+                        ) : isUnavailableBenefitItem(benefit) ? (
+                          <button
+                            className={styles.activateButton}
+                            disabled
+                          >
+                            {t('shop.inventory.unavailable')}
+                          </button>
                         ) : (
                           <button
                             className={styles.activateButton}
@@ -231,9 +319,11 @@ export const Inventory = ({
                       <button
                         className={styles.useButton}
                         onClick={() => handleUseItemClick(item)}
-                        disabled={item.voQuantity <= 0}
+                        disabled={item.voQuantity <= 0 || isUnavailableConsumableItem(item)}
                       >
-                        {t('shop.inventory.use')}
+                        {isUnavailableConsumableItem(item)
+                          ? t('shop.inventory.unavailable')
+                          : t('shop.inventory.use')}
                       </button>
                     </div>
                   </div>
@@ -248,7 +338,7 @@ export const Inventory = ({
         <div className={styles.modalOverlay} onClick={handleCloseModal}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h3>{t('shop.inventory.useTitle')}</h3>
+              <h3>{t(isRenameCardItem(selectedItem) ? 'shop.inventory.renameTitle' : 'shop.inventory.useTitle')}</h3>
               <button className={styles.modalClose} onClick={handleCloseModal}>
                 ✕
               </button>
@@ -271,30 +361,54 @@ export const Inventory = ({
                   </div>
                 </div>
               </div>
-              <div className={styles.quantitySelector}>
-                <label>{t('shop.inventory.useQuantity')}</label>
-                <div className={styles.quantityControls}>
-                  <button
-                    onClick={() => setUseQuantity(Math.max(1, useQuantity - 1))}
-                    disabled={useQuantity <= 1}
-                  >
-                    -
-                  </button>
-                  <span>{useQuantity}</span>
-                  <button
-                    onClick={() => setUseQuantity(Math.min(selectedItem.voQuantity, useQuantity + 1))}
-                    disabled={useQuantity >= selectedItem.voQuantity}
-                  >
-                    +
-                  </button>
+              {isRenameCardItem(selectedItem) ? (
+                <div className={styles.formField}>
+                  <label htmlFor="shop-rename-input">{t('shop.inventory.renameInputLabel')}</label>
+                  <input
+                    id="shop-rename-input"
+                    className={styles.textInput}
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && renameValue.trim()) {
+                        void handleConfirmUse();
+                      }
+                    }}
+                    placeholder={t('shop.inventory.renamePlaceholder')}
+                    autoFocus
+                  />
+                  <p className={styles.fieldHint}>{t('shop.inventory.renameHint')}</p>
                 </div>
-              </div>
+              ) : (
+                <div className={styles.quantitySelector}>
+                  <label>{t('shop.inventory.useQuantity')}</label>
+                  <div className={styles.quantityControls}>
+                    <button
+                      onClick={() => setUseQuantity(Math.max(1, useQuantity - 1))}
+                      disabled={useQuantity <= 1}
+                    >
+                      -
+                    </button>
+                    <span>{useQuantity}</span>
+                    <button
+                      onClick={() => setUseQuantity(Math.min(selectedItem.voQuantity, useQuantity + 1))}
+                      disabled={useQuantity >= selectedItem.voQuantity}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
             <div className={styles.modalFooter}>
               <button className={styles.cancelButton} onClick={handleCloseModal}>
                 {t('common.cancel')}
               </button>
-              <button className={styles.confirmButton} onClick={handleConfirmUse}>
+              <button
+                className={styles.confirmButton}
+                onClick={() => { void handleConfirmUse(); }}
+                disabled={isRenameCardItem(selectedItem) && !renameValue.trim()}
+              >
                 {t('shop.inventory.confirmUse')}
               </button>
             </div>

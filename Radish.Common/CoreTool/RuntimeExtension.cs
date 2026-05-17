@@ -39,7 +39,8 @@ public static class RuntimeExtension
 
     public static Assembly GetAssembly(string assemblyName)
     {
-        return GetAllAssemblies().FirstOrDefault(assembly => assembly.FullName.Contains(assemblyName));
+        return GetAllAssemblies().FirstOrDefault(assembly => assembly.FullName?.Contains(assemblyName) == true)
+            ?? throw new InvalidOperationException($"未找到程序集：{assemblyName}");
     }
 
     public static IList<Type> GetAllTypes()
@@ -82,6 +83,6 @@ public static class RuntimeExtension
             }
 
             return false;
-        });
+        }) ?? throw new InvalidOperationException($"未找到 {baseInterfaceType.Name} 的实现类型：{typeName}");
     }
 }

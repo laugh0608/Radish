@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Api.Routing;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
@@ -99,7 +100,7 @@ public class WikiController : ControllerBase
                 TargetSlug = result.VoSlug,
                 Title = result.VoTitle,
                 Summary = result.VoSummary,
-                RoutePath = $"/wiki/doc/{result.VoId}",
+                RoutePath = PublicRoutePathBuilder.BuildDocsPath(result.VoSlug, result.VoId),
                 OperatorName = Current.UserName
             });
         }
@@ -133,7 +134,7 @@ public class WikiController : ControllerBase
                 TargetSlug = result.VoSlug,
                 Title = result.VoTitle,
                 Summary = result.VoSummary,
-                RoutePath = $"/wiki/doc/{result.VoSlug}",
+                RoutePath = PublicRoutePathBuilder.BuildDocsPath(result.VoSlug, result.VoId),
                 OperatorName = Current.UserName
             });
         }

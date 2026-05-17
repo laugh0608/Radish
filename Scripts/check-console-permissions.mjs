@@ -11,6 +11,7 @@ const routeMetaPath = join(repoRoot, 'Frontend/radish.console/src/router/routeMe
 const consoleSourceRoot = join(repoRoot, 'Frontend/radish.console/src');
 const backendPermissionsPath = join(repoRoot, 'Radish.Common/PermissionTool/ConsolePermissions.cs');
 const identitySeederPath = join(repoRoot, 'Radish.DbMigrate/InitialDataSeeder.Identity.cs');
+const consoleAuthorizationSeederPath = join(repoRoot, 'Radish.DbMigrate/InitialDataSeeder.ConsoleAuthorization.cs');
 const entryOnlyPermissions = new Set(['console.access']);
 
 function readText(filePath) {
@@ -147,6 +148,10 @@ function parseSeedUrls(fileContent) {
   return unique([...fileContent.matchAll(/LinkUrl\s*=\s*"([^"]+)"/g)].map((match) => match[1]));
 }
 
+function parseConsoleResourceApiSeedUrls(fileContent) {
+  return unique([...fileContent.matchAll(/new\(\s*\d+,\s*"([^"]+)"\s*,\s*"(?:View|Action)"\s*\)/g)].map((match) => match[1]));
+}
+
 function parsePermissionReferences(filePaths, frontendPermissions) {
   const references = [];
   const patterns = [
@@ -199,6 +204,7 @@ try {
   const permissionReferences = parsePermissionReferences(sourceFiles, frontendPermissions);
   const mappings = parseApiPermissionMappings(readText(backendPermissionsPath), backendPermissions);
   const seedUrls = parseSeedUrls(readText(identitySeederPath));
+  const consoleResourceApiSeedUrls = parseConsoleResourceApiSeedUrls(readText(consoleAuthorizationSeederPath));
 
   const frontendPermissionValues = unique([...frontendPermissions.values()]);
   const backendPermissionValues = unique([...backendPermissions.values()]);
@@ -217,6 +223,7 @@ try {
   const frontendOnlyPermissions = sortStrings(difference(frontendPermissionValues, backendPermissionValues));
   const backendOnlyPermissions = sortStrings(difference(backendPermissionValues, frontendPermissionValues));
   const missingSeedUrls = sortStrings(difference(mappingUrls, seedUrls));
+  const missingConsoleResourceApiSeedUrls = sortStrings(difference(mappingUrls, consoleResourceApiSeedUrls));
   const referencedButNotMappedPermissions = sortStrings(
     difference(
       referencedPermissionValues.filter((permission) => !entryOnlyPermissions.has(permission)),
@@ -270,6 +277,10 @@ try {
     errors.push(`后端资源映射缺少 DbMigrate 种子 LinkUrl：${missingSeedUrls.join('、')}`);
   }
 
+  if (missingConsoleResourceApiSeedUrls.length > 0) {
+    errors.push(`后端资源映射缺少 ConsoleResourceApiSeed 关联：${missingConsoleResourceApiSeedUrls.join('、')}`);
+  }
+
   if (unusedFrontendPermissions.length > 0) {
     warnings.push(`前端权限常量当前未被 routeMeta、usePermission 或 hasPermission 入口守卫引用：${unusedFrontendPermissions.join('、')}`);
   }
@@ -283,6 +294,7 @@ try {
   );
   console.log(`- 后端资源映射：${mappingUrls.length} 条 URL，${mappingPermissionValues.length} 项权限值`);
   console.log(`- DbMigrate 种子 LinkUrl：${seedUrls.length} 条`);
+  console.log(`- ConsoleResourceApiSeed：${consoleResourceApiSeedUrls.length} 条`);
   console.log(`- 入口权限豁免：${entryOnlyPermissions.size} 项`);
 
   printSection('authOnly 路由', sortStrings(authOnlyPaths));

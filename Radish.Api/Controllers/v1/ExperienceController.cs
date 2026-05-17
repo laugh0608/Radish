@@ -85,6 +85,41 @@ public class ExperienceController : ControllerBase
         return MessageModel<UserExperienceVo>.Success("查询成功", result);
     }
 
+    /// <summary>
+    /// 管理端按用户查询每日经验统计
+    /// </summary>
+    [HttpGet("{userId:long}")]
+    [RequireConsolePermission(ConsolePermissions.ExperienceView)]
+    public async Task<MessageModel<UserExpDailyStatsWindowVo>> GetUserDailyStats(long userId, [FromQuery] int days = 7)
+    {
+        if (userId <= 0)
+        {
+            return MessageModel<UserExpDailyStatsWindowVo>.Message(false, "用户ID无效", default!);
+        }
+
+        var normalizedDays = days <= 0 ? 7 : Math.Min(days, 30);
+        var result = await _experienceService.GetDailyStatsAsync(userId, normalizedDays);
+        return MessageModel<UserExpDailyStatsWindowVo>.Success("查询成功", result);
+    }
+
+    /// <summary>
+    /// 管理端按用户查询经验治理留痕
+    /// </summary>
+    [HttpGet("{userId:long}")]
+    [RequireConsolePermission(ConsolePermissions.ExperienceView)]
+    public async Task<MessageModel<List<UserExperienceGovernanceActionVo>>> GetUserGovernanceActions(
+        long userId,
+        [FromQuery] int take = 20)
+    {
+        if (userId <= 0)
+        {
+            return MessageModel<List<UserExperienceGovernanceActionVo>>.Message(false, "用户ID无效", default!);
+        }
+
+        var result = await _experienceService.GetGovernanceActionsAsync(userId, take);
+        return MessageModel<List<UserExperienceGovernanceActionVo>>.Success("查询成功", result);
+    }
+
     #endregion
 
     #region 等级配置
@@ -128,13 +163,17 @@ public class ExperienceController : ControllerBase
     /// </summary>
     /// <param name="pageIndex">页码（从 1 开始）</param>
     /// <param name="pageSize">每页数量</param>
-    /// <param name="expType">经验值类型（可选）</param>
+    /// <param name="expType">经验值类型（可选，支持逗号分隔多个类型）</param>
+    /// <param name="startDate">开始时间（可选）</param>
+    /// <param name="endDate">结束时间（可选）</param>
     /// <returns>分页的交易记录</returns>
     [HttpGet]
     public async Task<MessageModel<PageModel<ExpTransactionVo>>> GetTransactions(
         [FromQuery] int pageIndex = 1,
         [FromQuery] int pageSize = 20,
-        [FromQuery] string? expType = null)
+        [FromQuery] string? expType = null,
+        [FromQuery] DateTime? startDate = null,
+        [FromQuery] DateTime? endDate = null)
     {
         var userId = GetCurrentUserId();
         if (userId <= 0)
@@ -142,7 +181,29 @@ public class ExperienceController : ControllerBase
             return MessageModel<PageModel<ExpTransactionVo>>.Message(false, "未登录", default!);
         }
 
-        var result = await _experienceService.GetTransactionsAsync(userId, pageIndex, pageSize, expType);
+        var result = await _experienceService.GetTransactionsAsync(userId, pageIndex, pageSize, expType, startDate, endDate);
+        return MessageModel<PageModel<ExpTransactionVo>>.Success("查询成功", result);
+    }
+
+    /// <summary>
+    /// 管理端按用户查询经验值交易记录
+    /// </summary>
+    [HttpGet("{userId:long}")]
+    [RequireConsolePermission(ConsolePermissions.ExperienceView)]
+    public async Task<MessageModel<PageModel<ExpTransactionVo>>> GetUserTransactions(
+        long userId,
+        [FromQuery] int pageIndex = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? expType = null,
+        [FromQuery] DateTime? startDate = null,
+        [FromQuery] DateTime? endDate = null)
+    {
+        if (userId <= 0)
+        {
+            return MessageModel<PageModel<ExpTransactionVo>>.Message(false, "用户ID无效", default!);
+        }
+
+        var result = await _experienceService.GetTransactionsAsync(userId, pageIndex, pageSize, expType, startDate, endDate);
         return MessageModel<PageModel<ExpTransactionVo>>.Success("查询成功", result);
     }
 
@@ -213,6 +274,84 @@ public class ExperienceController : ControllerBase
         return result
             ? MessageModel<bool>.Success("调整成功", true)
             : MessageModel<bool>.Message(false, "调整失败", false);
+    }
+
+    /// <summary>
+    /// 管理员冻结用户经验值
+    /// </summary>
+    /// <param name="request">冻结请求</param>
+    /// <returns>是否成功</returns>
+    [HttpPost]
+    [RequireConsolePermission(ConsolePermissions.ExperienceFreeze)]
+    public async Task<MessageModel<bool>> AdminFreezeExperience([FromBody] AdminFreezeExperienceDto request)
+    {
+        var operatorId = GetCurrentUserId();
+        if (operatorId <= 0)
+        {
+            return MessageModel<bool>.Message(false, "未登录", false);
+        }
+
+        if (request.FrozenUntil.HasValue && request.FrozenUntil.Value <= DateTime.Now)
+        {
+            return MessageModel<bool>.Message(false, "冻结到期时间必须晚于当前时间", false);
+        }
+
+        var result = await _experienceService.FreezeExperienceAsync(
+            request.UserId,
+            request.FrozenUntil,
+            request.Reason.Trim(),
+            operatorId,
+            GetCurrentOperatorName());
+        return result
+            ? MessageModel<bool>.Success("冻结成功", true)
+            : MessageModel<bool>.Message(false, "冻结失败", false);
+    }
+
+    /// <summary>
+    /// 管理员解冻用户经验值
+    /// </summary>
+    /// <param name="request">解冻请求</param>
+    /// <returns>是否成功</returns>
+    [HttpPost]
+    [RequireConsolePermission(ConsolePermissions.ExperienceFreeze)]
+    public async Task<MessageModel<bool>> AdminUnfreezeExperience([FromBody] AdminUnfreezeExperienceDto request)
+    {
+        var operatorId = GetCurrentUserId();
+        if (operatorId <= 0)
+        {
+            return MessageModel<bool>.Message(false, "未登录", false);
+        }
+
+        var result = await _experienceService.UnfreezeExperienceAsync(
+            request.UserId,
+            operatorId,
+            GetCurrentOperatorName());
+        return result
+            ? MessageModel<bool>.Success("解冻成功", true)
+            : MessageModel<bool>.Message(false, "解冻失败", false);
+    }
+
+    /// <summary>
+    /// 管理员记录经验治理人工复核结论
+    /// </summary>
+    [HttpPost]
+    [RequireConsolePermission(ConsolePermissions.ExperienceFreeze)]
+    public async Task<MessageModel<bool>> AdminRecordGovernanceReview([FromBody] AdminRecordExperienceGovernanceReviewDto request)
+    {
+        var operatorId = GetCurrentUserId();
+        if (operatorId <= 0)
+        {
+            return MessageModel<bool>.Message(false, "未登录", false);
+        }
+
+        var result = await _experienceService.RecordGovernanceReviewAsync(
+            request,
+            operatorId,
+            GetCurrentOperatorName());
+
+        return result
+            ? MessageModel<bool>.Success("复核结论记录成功", true)
+            : MessageModel<bool>.Message(false, "复核结论记录失败", false);
     }
 
     /// <summary>

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   openWorkspaceNavigationTarget,
+  resolveBrowseHistoryDisplayRouteText,
   resolveBrowseHistoryWorkspaceTarget,
   resolveForumPostWorkspaceTarget,
   type WorkspaceNavigationAppId,
@@ -19,6 +20,23 @@ test('resolveBrowseHistoryWorkspaceTarget 应优先解析 forum routePath 并保
     appId: 'forum',
     appParams: {
       postId: '2042219067430928384',
+      commentId: '2042219067430928385',
+    },
+  });
+});
+
+test('resolveBrowseHistoryWorkspaceTarget 应优先解析 forum PublicId routePath', () => {
+  const target = resolveBrowseHistoryWorkspaceTarget({
+    voRoutePath: '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?commentId=2042219067430928385',
+    voTargetType: 'Post',
+    voTargetId: '1',
+    voTargetSlug: null,
+  });
+
+  assert.deepEqual(target, {
+    appId: 'forum',
+    appParams: {
+      postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
       commentId: '2042219067430928385',
     },
   });
@@ -56,6 +74,91 @@ test('resolveBrowseHistoryWorkspaceTarget 应兼容公开 docs 路由', () => {
   });
 });
 
+test('resolveBrowseHistoryWorkspaceTarget 应兼容 wiki long id fallback', () => {
+  const target = resolveBrowseHistoryWorkspaceTarget({
+    voRoutePath: '/wiki/doc/2042219067430928384',
+    voTargetType: 'Wiki',
+    voTargetId: '2042219067430928384',
+    voTargetSlug: null,
+  });
+
+  assert.deepEqual(target, {
+    appId: 'document',
+    appParams: {
+      documentId: '2042219067430928384',
+    },
+  });
+});
+
+test('resolveBrowseHistoryDisplayRouteText 应隐藏 forum 和 docs long id fallback', () => {
+  const fallback = '站内路径';
+
+  assert.equal(
+    resolveBrowseHistoryDisplayRouteText(
+      {
+        voRoutePath: '/forum/post/2042219067430928384?commentId=2042219067430928385',
+        voTargetType: 'Post',
+        voTargetId: '2042219067430928384',
+        voTargetSlug: null,
+      },
+      fallback
+    ),
+    fallback
+  );
+
+  assert.equal(
+    resolveBrowseHistoryDisplayRouteText(
+      {
+        voRoutePath: '/shop/product/2042219067430928384',
+        voTargetType: 'Product',
+        voTargetId: '2042219067430928384',
+        voTargetSlug: null,
+      },
+      fallback
+    ),
+    fallback
+  );
+
+  assert.equal(
+    resolveBrowseHistoryDisplayRouteText(
+      {
+        voRoutePath: '/wiki/doc/2042219067430928384',
+        voTargetType: 'Wiki',
+        voTargetId: '2042219067430928384',
+        voTargetSlug: null,
+      },
+      fallback
+    ),
+    fallback
+  );
+
+  assert.equal(
+    resolveBrowseHistoryDisplayRouteText(
+      {
+        voRoutePath: '/docs/2042219067430928384#overview',
+        voTargetType: 'Wiki',
+        voTargetId: '2042219067430928384',
+        voTargetSlug: null,
+      },
+      fallback
+    ),
+    fallback
+  );
+
+  assert.equal(
+    resolveBrowseHistoryDisplayRouteText(
+      {
+        voRoutePath: '/docs/install-guide',
+        voTargetType: 'Wiki',
+        voTargetId: '2042219067430928384',
+        voTargetSlug: 'install-guide',
+      },
+      fallback
+    ),
+    '/docs/install-guide'
+  );
+});
+
 test('resolveBrowseHistoryWorkspaceTarget 应在无 routePath 时回落到 target 类型', () => {
   const target = resolveBrowseHistoryWorkspaceTarget({
     voRoutePath: null,
@@ -79,6 +182,21 @@ test('resolveForumPostWorkspaceTarget 应生成 forum 窗口参数', () => {
     appId: 'forum',
     appParams: {
       postId: '2042219067430928384',
+    },
+  });
+});
+
+test('resolveForumPostWorkspaceTarget 应优先携带帖子 PublicId', () => {
+  const target = resolveForumPostWorkspaceTarget(
+    '2042219067430928384',
+    'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f'
+  );
+
+  assert.deepEqual(target, {
+    appId: 'forum',
+    appParams: {
+      postId: '2042219067430928384',
+      postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
     },
   });
 });

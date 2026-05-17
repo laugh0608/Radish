@@ -7,6 +7,8 @@ public class UserPostQuickReplyVo
 
     public long VoPostId { get; set; }
 
+    public string? VoPostPublicId { get; set; }
+
     public string VoPostTitle { get; set; } = string.Empty;
 
     public string VoContent { get; set; } = string.Empty;

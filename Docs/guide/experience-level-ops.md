@@ -171,11 +171,13 @@ public async Task<bool> CheckLevelPrivilegeAsync(long userId, string privilege)
    - 经验值来源占比
 2. 用户经验值管理
    - 查询用户经验值详情
+   - 最近 `7 / 30` 天异常规则摘要、治理建议与冻结建议
    - 手动调整经验值
    - 冻结/解冻用户经验值
-3. 异常检测日志
-   - 作弊行为检测记录
-   - 异常经验值发放记录
+3. 异常观察与留痕
+   - 点赞占比偏高、高亮奖励集中、接近/触达上限等最小可解释规则命中记录
+   - 人工复核结论与冻结/解冻操作留痕
+   - 冻结建议只作为人工决策辅助，最终处置仍由管理员结合经验流水与目标内容手动确认
 
 ### 10.3 日志记录
 
@@ -183,14 +185,14 @@ public async Task<bool> CheckLevelPrivilegeAsync(long userId, string privilege)
 - 经验值发放成功/失败
 - 用户升级
 - 每日上限触发
-- 作弊检测触发
+- 异常规则命中（仅观察，不自动处罚）
 - 经验值冻结/解冻
 
 **日志级别**:
 - 正常发放:Debug
 - 升级:Information
 - 每日上限触发:Information
-- 作弊检测:Warning
+- 异常规则命中:Warning
 - 冻结操作:Warning
 
 ---

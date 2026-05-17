@@ -5,6 +5,9 @@ export type { ButtonProps } from './Button/Button';
 export { Input } from './Input/Input';
 export type { InputProps } from './Input/Input';
 
+export { PasscodeInput } from './PasscodeInput/PasscodeInput';
+export type { PasscodeInputProps } from './PasscodeInput/PasscodeInput';
+
 export { Select } from './Select/Select';
 export type { SelectProps, SelectOption } from './Select/Select';
 
@@ -76,7 +79,7 @@ export { toast, toastManager } from './Toast';
 export type { ToastProps } from './Toast';
 
 export { Notification } from './Notification/Notification';
-export type { NotificationProps, NotificationItemData } from './Notification/Notification';
+export type { NotificationProps, NotificationItemData, NotificationItemId } from './Notification/Notification';
 
 export { NotificationBadge } from './Notification/NotificationBadge';
 export type { NotificationBadgeProps } from './Notification/NotificationBadge';

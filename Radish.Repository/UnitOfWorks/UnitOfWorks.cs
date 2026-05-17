@@ -5,10 +5,10 @@ namespace Radish.Repository.UnitOfWorks;
 
 public class UnitOfWorks : IDisposable
 {
-    public ILogger Logger { get; set; }
-    public ISqlSugarClient Db { get; internal set; }
+    public ILogger Logger { get; set; } = null!;
+    public ISqlSugarClient Db { get; internal set; } = null!;
 
-    public ITenant Tenant { get; internal set; }
+    public ITenant Tenant { get; internal set; } = null!;
 
     public bool IsTran { get; internal set; }
 

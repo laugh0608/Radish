@@ -28,14 +28,14 @@
 
 ## 前端 API 客户端规范
 
-### 统一使用 @radish/ui 提供的 API 客户端
+### 统一使用 @radish/http 提供的 API 客户端
 
-**禁止自定义 fetch/axios 封装**，所有 API 调用必须使用 `@radish/ui` 提供的统一客户端。
+**禁止自定义 fetch/axios 封装**，所有 HTTP API 调用必须使用 `@radish/http` 提供的统一客户端。`@radish/ui` 只负责 UI 组件、消息提示与部分前端展示工具，不再承载通用 HTTP 客户端职责。
 
 #### 基本使用
 
 ```typescript
-import { apiGet, apiPost, apiPut, apiDelete, configureApiClient } from '@radish/ui';
+import { apiGet, apiPost, apiPut, apiDelete, configureApiClient } from '@radish/http';
 
 // 1. 配置 API 客户端（在应用入口或 API 文件顶部）
 const defaultApiBase = 'https://localhost:5000';
@@ -72,7 +72,7 @@ export async function createProduct(data: CreateProductDto) {
 3. 其他方法仍使用统一客户端
 
 ```typescript
-import { getApiClientConfig } from '@radish/ui';
+import { getApiClientConfig } from '@radish/http';
 
 /**
  * 上传分片
@@ -174,6 +174,8 @@ export async function uploadChunk(
 - 提取自定义 Hooks（前端）或抽离 Service/Utility（后端/前端）
 - 分离业务逻辑与展示逻辑，按功能拆分目录
 - 对于必须保留同一服务类型的大型后端实现，可使用“**目录 + partial class**”按职责拆分，例如 `Radish.Service/Posts/PostService*.cs`；禁止继续把实现堆回单个超大文件
+
+**文档篇幅治理**：固定文档按读者目标、阅读预算和文档类型控制篇幅。入口 / 索引建议不超过 `300` 行，硬上限 `500` 行；架构 / 规范 / 设计建议不超过 `600` 行，硬上限 `900` 行；专题深度文档建议不超过 `800` 行，硬上限 `1200` 行。详细规则见 [文档篇幅治理](../guide/document-governance.md)。
 
 ## 项目版本号规范
 
@@ -485,6 +487,8 @@ git push origin v26.1.1.3003
 ## 新增实体与字段的标准流程
 
 > 目标：保证“以实体为真源（Code First）”，在不直接手改数据库的前提下，让开发环境与生产环境的表结构、安全地跟随代码演进。
+>
+> 本流程仅针对 `Radish.DbMigrate` 管辖的业务库。其正式路径是 `SqlSugar Code First + Radish.DbMigrate + 版本化差异 SQL`，不使用 EF Core `Migrations/*.cs` / `ModelSnapshot.cs` 历史链；完整协作口径见 [数据库结构变更协作口径](/guide/database-schema-change-governance)。
 
 1. **设计与建模**
    - 在 `Radish.Model` 中定义/修改实体类型（继承 `RootEntityTKey<TKey>`），补充字段、注释与 `[SugarColumn]` 等特性。
@@ -510,7 +514,7 @@ git push origin v26.1.1.3003
      - 动作说明：
        - `doctor` 只读检查当前配置、连接定义与 Seed 前置状态；
        - 根据当前配置创建数据库（如不存在）。
-       - 扫描 `Radish.Model` 中标记了 `[SugarTable]` 的实体类型，执行 `CodeFirst.InitTables`：
+       - 扫描当前连接对应的实体类型并执行 `CodeFirst.InitTables`：
          - 新表会被创建；
          - 新增字段会自动补列；
          - 不会主动删除旧字段。
@@ -533,7 +537,7 @@ git push origin v26.1.1.3003
    - 若新增字段需要默认业务数据（例如为所有历史用户回填某个状态），建议：
      - 在迁移 SQL 中加入安全的 `UPDATE` 语句，或
      - 在 `Radish.DbMigrate` 中实现 `seed` 子命令，集中处理默认管理员、角色、租户、基础参数等数据初始化。
-   - 推荐执行顺序：先运行 `doctor` 做只读检查，再执行 `seed`；若 `doctor` 报告结构缺失，可先执行 `init`。
+   - 推荐执行顺序：先运行 `doctor` 做只读检查，再执行 `seed`；若 `doctor` 报告结构缺失，可先执行 `init`。`verify` 当前同样属于 `Radish.DbMigrate` 的只读检查，不承担 EF migration 历史链校验职责。
    - 数据初始化脚本同样应纳入版本管理，并在上线流程中显式执行。
 
 ---

@@ -247,6 +247,12 @@ level > Threshold2: BaseExp × (level+1)^Exponent3
 }
 ```
 
+缓存配置说明：
+
+- `EnableCache = true` 时，`ExperienceCalculator` 会缓存等级配置和计算结果。
+- `CacheExpirationMinutes` 必须按正数配置；若配置为 `0` 或负数，运行时会回落到默认缓存时长，而不是把异常配置直接传给缓存层。
+- 如果需要临时禁用经验计算缓存，应设置 `EnableCache = false`，不要通过非正数过期时间表达。
+
 ### 2.3.3 推荐配置方案
 
 **1. 新社区快速成长模式**（推荐用于早期运营）

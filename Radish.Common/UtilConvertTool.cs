@@ -6,11 +6,11 @@ namespace Radish.Common;
 public static class UtilConvertTool
 {
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <param name="thisValue"></param>
     /// <returns></returns>
-    public static int ObjToInt(this object thisValue)
+    public static int ObjToInt(this object? thisValue)
     {
         int reval = 0;
         if (thisValue == null) return 0;
@@ -23,12 +23,12 @@ public static class UtilConvertTool
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <param name="thisValue"></param>
     /// <param name="errorValue"></param>
     /// <returns></returns>
-    public static int ObjToInt(this object thisValue, int errorValue)
+    public static int ObjToInt(this object? thisValue, int errorValue)
     {
         int reval = 0;
         if (thisValue != null && thisValue != DBNull.Value && int.TryParse(thisValue.ToString(), out reval))
@@ -39,7 +39,7 @@ public static class UtilConvertTool
         return errorValue;
     }
 
-    public static long ObjToLong(this object thisValue)
+    public static long ObjToLong(this object? thisValue)
     {
         long reval = 0;
         if (thisValue == null) return 0;
@@ -52,11 +52,11 @@ public static class UtilConvertTool
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <param name="thisValue"></param>
     /// <returns></returns>
-    public static double ObjToMoney(this object thisValue)
+    public static double ObjToMoney(this object? thisValue)
     {
         double reval = 0;
         if (thisValue != null && thisValue != DBNull.Value && double.TryParse(thisValue.ToString(), out reval))
@@ -68,12 +68,12 @@ public static class UtilConvertTool
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <param name="thisValue"></param>
     /// <param name="errorValue"></param>
     /// <returns></returns>
-    public static double ObjToMoney(this object thisValue, double errorValue)
+    public static double ObjToMoney(this object? thisValue, double errorValue)
     {
         double reval = 0;
         if (thisValue != null && thisValue != DBNull.Value && double.TryParse(thisValue.ToString(), out reval))
@@ -85,48 +85,48 @@ public static class UtilConvertTool
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <param name="thisValue"></param>
     /// <returns></returns>
-    public static string ObjToString(this object thisValue)
+    public static string ObjToString(this object? thisValue)
     {
-        if (thisValue != null) return thisValue.ToString().Trim();
+        if (thisValue != null) return thisValue.ToString()?.Trim() ?? string.Empty;
         return "";
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <param name="thisValue"></param>
     /// <returns></returns>
-    public static bool IsNotEmptyOrNull(this object thisValue)
+    public static bool IsNotEmptyOrNull(this object? thisValue)
     {
         return thisValue.ObjToString() != "" && thisValue.ObjToString() != "undefined" &&
                thisValue.ObjToString() != "null";
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <param name="thisValue"></param>
     /// <param name="errorValue"></param>
     /// <returns></returns>
-    public static string ObjToString(this object thisValue, string errorValue)
+    public static string ObjToString(this object? thisValue, string errorValue)
     {
-        if (thisValue != null) return thisValue.ToString().Trim();
+        if (thisValue != null) return thisValue.ToString()?.Trim() ?? errorValue;
         return errorValue;
     }
 
-    public static bool IsNullOrEmpty(this object thisValue) => thisValue == null || thisValue == DBNull.Value ||
+    public static bool IsNullOrEmpty(this object? thisValue) => thisValue == null || thisValue == DBNull.Value ||
                                                                string.IsNullOrWhiteSpace(thisValue.ToString());
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <param name="thisValue"></param>
     /// <returns></returns>
-    public static decimal ObjToDecimal(this object thisValue)
+    public static decimal ObjToDecimal(this object? thisValue)
     {
         decimal reval = 0;
         if (thisValue != null && thisValue != DBNull.Value && decimal.TryParse(thisValue.ToString(), out reval))
@@ -138,12 +138,12 @@ public static class UtilConvertTool
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <param name="thisValue"></param>
     /// <param name="errorValue"></param>
     /// <returns></returns>
-    public static decimal ObjToDecimal(this object thisValue, decimal errorValue)
+    public static decimal ObjToDecimal(this object? thisValue, decimal errorValue)
     {
         decimal reval = 0;
         if (thisValue != null && thisValue != DBNull.Value && decimal.TryParse(thisValue.ToString(), out reval))
@@ -155,11 +155,11 @@ public static class UtilConvertTool
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <param name="thisValue"></param>
     /// <returns></returns>
-    public static DateTime ObjToDate(this object thisValue)
+    public static DateTime ObjToDate(this object? thisValue)
     {
         DateTime reval = DateTime.MinValue;
         if (thisValue != null && thisValue != DBNull.Value && DateTime.TryParse(thisValue.ToString(), out reval))
@@ -181,12 +181,12 @@ public static class UtilConvertTool
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <param name="thisValue"></param>
     /// <param name="errorValue"></param>
     /// <returns></returns>
-    public static DateTime ObjToDate(this object thisValue, DateTime errorValue)
+    public static DateTime ObjToDate(this object? thisValue, DateTime errorValue)
     {
         DateTime reval = DateTime.MinValue;
         if (thisValue != null && thisValue != DBNull.Value && DateTime.TryParse(thisValue.ToString(), out reval))
@@ -198,11 +198,11 @@ public static class UtilConvertTool
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <param name="thisValue"></param>
     /// <returns></returns>
-    public static bool ObjToBool(this object thisValue)
+    public static bool ObjToBool(this object? thisValue)
     {
         bool reval = false;
         if (thisValue != null && thisValue != DBNull.Value && bool.TryParse(thisValue.ToString(), out reval))
@@ -225,41 +225,42 @@ public static class UtilConvertTool
         return Convert.ToInt64(ts.TotalSeconds).ToString();
     }
 
-    public static object ChangeType(this object value, Type type)
+    public static object ChangeType(this object? value, Type type)
     {
-        if (value == null && type.IsGenericType) return Activator.CreateInstance(type);
-        if (value == null) return null;
+        if (value == null && type.IsGenericType) return Activator.CreateInstance(type)!;
+        if (value == null) return null!;
         if (type == value.GetType()) return value;
         if (type.IsEnum)
         {
-            if (value is string)
-                return Enum.Parse(type, value as string);
-            else
-                return Enum.ToObject(type, value);
+            if (value is string stringValue)
+                return Enum.Parse(type, stringValue);
+
+            return Enum.ToObject(type, value);
         }
 
         if (!type.IsInterface && type.IsGenericType)
         {
             Type innerType = type.GetGenericArguments()[0];
             object innerValue = value.ChangeType(innerType);
-            return Activator.CreateInstance(type, new object[] { innerValue });
+            return Activator.CreateInstance(type, new object[] { innerValue })!;
         }
 
-        if (value is string && type == typeof(Guid)) return new Guid(value as string);
-        if (value is string && type == typeof(Version)) return new Version(value as string);
+        if (value is string guidValue && type == typeof(Guid)) return new Guid(guidValue);
+        if (value is string versionValue && type == typeof(Version)) return new Version(versionValue);
         if (!(value is IConvertible)) return value;
         return Convert.ChangeType(value, type);
     }
 
-    public static object ChangeTypeList(this object value, Type type)
+    public static object ChangeTypeList(this object? value, Type type)
     {
-        if (value == null) return default;
+        if (value == null) return default!;
 
         var gt = typeof(List<>).MakeGenericType(type);
-        dynamic lis = Activator.CreateInstance(gt);
+        dynamic lis = Activator.CreateInstance(gt)!;
 
-        var addMethod = gt.GetMethod("Add");
-        string values = value.ToString();
+        var addMethod = gt.GetMethod("Add")
+            ?? throw new InvalidOperationException($"类型 {gt.Name} 未找到 Add 方法。");
+        string values = value.ToString() ?? string.Empty;
         if (values != null && values.StartsWith("(") && values.EndsWith(")"))
         {
             string[] splits;

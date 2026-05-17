@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import type { PostItem } from '@/api/forum';
+import type { LongId } from '@/api/user';
 import styles from './PostList.module.css';
 
 interface PostListProps {
   posts: PostItem[];
-  selectedPostId: number | null;
-  onSelectPost: (postId: number) => void;
+  selectedPostId: LongId | null;
+  onSelectPost: (postId: LongId) => void;
   loading?: boolean;
   currentPage: number;
   totalPages: number;
@@ -29,6 +30,9 @@ export const PostList = ({
   searchKeyword,
   onSearchChange
 }: PostListProps) => {
+  const isSameLongId = (left: LongId | null, right: LongId): boolean =>
+    left != null && String(left) === String(right);
+
   // 本地搜索输入状态（用于即时显示用户输入）
   const [localSearch, setLocalSearch] = useState(searchKeyword);
 
@@ -144,7 +148,7 @@ export const PostList = ({
               type="button"
               onClick={() => onSelectPost(post.voId)}
               className={`${styles.postButton} ${
-                selectedPostId === post.voId ? styles.active : ''
+                isSameLongId(selectedPostId, post.voId) ? styles.active : ''
               }`}
             >
               <div className={styles.postTitle}>{post.voTitle}</div>

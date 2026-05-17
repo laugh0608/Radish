@@ -150,6 +150,7 @@ PostgreSQL / SQLite
 - `Radish.Extension`
   - 横切关注：验证、缓存策略、OpenAPI 自定义、JWT 扩展、全局过滤器；按照职责拆分 `AutofacExtension/*`, `AutoMapperExtension/*`, `RedisExtension/*` 等子目录。
   - `RedisExtension.CacheSetup` 提供统一入口 `AddCacheSetup()`，根据 `Redis.Enable` 自动在 Redis（StackExchange.Redis）与内存缓存间切换，并在启用 Redis 时预先创建 `IConnectionMultiplexer`；当前约定 `Redis.Enable/ConnectionString` 放在 `appsettings.Shared.json`，`Redis.InstanceName` 保留在各宿主配置中做命名空间隔离。
+  - `ICaching` 的过期时间参数中，`0` 或负数会回落到组件默认 TTL，避免异常配置导致缓存写入失败；确需不缓存时，应在调用侧显式跳过写入。
   - `SqlSugarExtension.SqlSugarSetup` 负责注入 `ISqlSugarClient` 单例：内部读取 `Radish.Common.DbTool.BaseDbConfig` 生成的连接集合（含 `MainDb`、`Log` 以及所有从库），并在缺失日志库配置时直接抛出异常，确保多库配置在启动阶段即被验证。
 - `Radish.Shared`
   - 常量、错误码、事件名、Options 绑定类型，以及跨模块共享的业务枚举（集中位于 `Radish.Shared.CustomEnum` 命名空间，例如 `UserStatusCodeEnum`、`UserSexEnum`、`DepartmentStatusCodeEnum`、`AuthorityScopeKindEnum`、`HttpStatusCodeEnum` 等）。
@@ -209,10 +210,12 @@ graph LR
 - `SqlSugarExtension.SqlSugarSetup` 会为日志库之外的所有连接注册到 `BaseDbConfig.ValidConfig`，并将 `SqlSugarConst.Log` 标记的配置注入日志上下文；SqlSugar 内部缓存通过 `SqlSugarCache` 委托给现有 `ICaching`，AOP 事件统一写入 Serilog，便于分析 SQL。
 - 公共实体基类统一继承 `Radish.Model.Root.RootEntityTKey<TKey>`，并在派生类中补充审计字段（`CreatedAt/By`, `UpdatedAt/By`, `IsDeleted`, `ConcurrencyStamp` 等），保证主键类型可控且能被 SqlSugar 的 Attribute 正确识别。
 - 软删除通过 SQLSugar Filter 全局开启；必要时在仓储层提供 `IncludeDeleted` 选项。
+- `Radish.Auth` 的 OpenIddict 独立库继续由 `AuthOpenIddictDbContext` 按 EF Core 管理；以下迁移策略仅针对 `Radish.DbMigrate` 管辖的业务库。
+- 数据库结构变更的完整协作边界见：[数据库结构变更协作口径](/guide/database-schema-change-governance)。
 - 迁移策略：
-  - 开发：`db.DbMaintenance.CreateDatabase()` + `InitTables()`。
-  - 生产：通过 `Radish.Repository.Migrations` 导出 SQL 或在部署阶段运行迁移命令。
-- 数据初始化：`SeedRunner` 负责创建默认分类、管理员、积分规则。
+  - 开发：通过 `Radish.DbMigrate` 执行 `doctor / init / apply`，在开发库内走 `CreateDatabase()` + `InitTables()` 自动建表 / 补列。
+  - 测试 / 生产：先以 `DbMigrate init` 同步基线库，再生成并审核版本化差异 SQL（建议 `Deploy/sql/*.sql`），上线前显式执行。
+- 数据初始化：`Radish.DbMigrate/InitialDataSeeder.cs` 负责创建默认分类、管理员、积分规则及其他基础种子数据。
 - PostgreSQL 特性利用：JSONB 列（存储自定义配置）、`tsvector` 搜索、行级锁（积分/库存扣减）。
 
 ## 前端架构与规范

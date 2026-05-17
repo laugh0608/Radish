@@ -1,14 +1,18 @@
 import type { PostDetail } from '@/api/forum';
+import type { LongId } from '@/api/user';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import styles from './PostInfoCard.module.css';
 
 interface PostInfoCardProps {
   post: PostDetail;
   displayTimeZone: string;
-  onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
+  onAuthorClick?: (userId: LongId, userName?: string | null, avatarUrl?: string | null) => void;
 }
 
 export const PostInfoCard = ({ post, displayTimeZone, onAuthorClick }: PostInfoCardProps) => {
+  const hasAuthorId = String(post.voAuthorId) !== '0';
+  const authorName = post.voAuthorName?.trim() || '未知用户';
+
   return (
     <div className={styles.card}>
       <h3 className={styles.title}>帖子信息</h3>
@@ -23,17 +27,17 @@ export const PostInfoCard = ({ post, displayTimeZone, onAuthorClick }: PostInfoC
             </svg>
             发布者
           </span>
-          {post.voAuthorId > 0 ? (
+          {hasAuthorId ? (
             <button
               type="button"
               className={`${styles.value} ${styles.authorButton}`}
               onClick={() => onAuthorClick?.(post.voAuthorId, post.voAuthorName)}
-              title={`查看 ${post.voAuthorName || `用户 ${post.voAuthorId}`} 的主页`}
+              title={`查看 ${authorName} 的主页`}
             >
-              {post.voAuthorName || '匿名'}
+              {authorName}
             </button>
           ) : (
-            <span className={styles.value}>{post.voAuthorName || '匿名'}</span>
+            <span className={styles.value}>{authorName}</span>
           )}
         </div>
 

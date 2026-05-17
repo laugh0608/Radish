@@ -24,13 +24,15 @@ public static class CacheSetup
                 return ConnectionMultiplexer.Connect(configuration);
             });
             services.AddSingleton<ConnectionMultiplexer>(p =>
-                p.GetService<IConnectionMultiplexer>() as ConnectionMultiplexer);
+                p.GetRequiredService<IConnectionMultiplexer>() as ConnectionMultiplexer
+                ?? throw new InvalidOperationException("Redis 连接注册类型不是 ConnectionMultiplexer"));
 
             //使用 Redis 缓存
             services.AddStackExchangeRedisCache(options =>
             {
                 options.ConnectionMultiplexerFactory =
-                    () => Task.FromResult(App.GetService<IConnectionMultiplexer>(false));
+                    () => Task.FromResult(App.GetService<IConnectionMultiplexer>(false)
+                                          ?? throw new InvalidOperationException("Redis 连接未完成注册"));
                 if (!string.IsNullOrEmpty(cacheOptions.InstanceName)) options.InstanceName = cacheOptions.InstanceName;
             });
 

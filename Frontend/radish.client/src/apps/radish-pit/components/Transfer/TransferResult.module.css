@@ -407,7 +407,8 @@
 }
 
 .primaryButton,
-.secondaryButton {
+.secondaryButton,
+.warningButton {
   flex: 1;
   padding: 0.875rem 1.5rem;
   border-radius: 0.5rem;
@@ -439,6 +440,18 @@
   background: #f9fafb;
   border-color: #9ca3af;
   color: #374151;
+}
+
+.warningButton {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: white;
+  border: none;
+}
+
+.warningButton:hover {
+  background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.28);
 }
 
 /* 响应式设计 */

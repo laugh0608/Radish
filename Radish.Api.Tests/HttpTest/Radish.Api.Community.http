@@ -114,7 +114,41 @@ Authorization: Bearer {{Access_Token}}
   "reason": "多次发布违规内容"
 }
 
+### 管理端：手动解除禁言
+POST {{Gateway_HostAddress}}/api/v1/ContentModeration/ApplyUserAction
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "targetUserId": {{TargetUserId}},
+  "actionType": 3,
+  "reason": "人工复核后解除禁言"
+}
+
 ### 管理端：获取治理动作记录
 GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetActionLogs?pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 管理端：按举报单 / 动作类型 / 生效状态筛选治理动作记录
+GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetActionLogs?pageIndex=1&pageSize=10&sourceReportId={{ReviewReportId}}&actionType=Mute&isActive=true&keyword=reviewer
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+@ShopAdminProductId = 1
+@ShopAdminOrderId = 1
+
+### 管理端：获取商品详情
+GET {{Gateway_HostAddress}}/api/v1/Shop/AdminGetProduct/{{ShopAdminProductId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 管理端：获取订单详情
+GET {{Gateway_HostAddress}}/api/v1/Shop/AdminGetOrder/{{ShopAdminOrderId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 管理端：删除商品
+DELETE {{Gateway_HostAddress}}/api/v1/Shop/DeleteProduct/{{ShopAdminProductId}}
 Accept: application/json
 Authorization: Bearer {{Access_Token}}

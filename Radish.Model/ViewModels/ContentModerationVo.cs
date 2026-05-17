@@ -12,6 +12,18 @@ public class ContentReportVo
     /// <summary>举报目标内容 ID</summary>
     public long VoTargetContentId { get; set; }
 
+    /// <summary>举报目标快照所属帖子 ID</summary>
+    public long? VoTargetSnapshotPostId { get; set; }
+
+    /// <summary>举报目标快照所属频道 ID</summary>
+    public long? VoTargetSnapshotChannelId { get; set; }
+
+    /// <summary>举报目标快照标题</summary>
+    public string? VoTargetSnapshotTitle { get; set; }
+
+    /// <summary>举报目标快照摘要</summary>
+    public string? VoTargetSnapshotSummary { get; set; }
+
     /// <summary>被举报用户 ID</summary>
     public long VoTargetUserId { get; set; }
 
@@ -66,6 +78,33 @@ public class ContentReportQueueItemVo
 
     /// <summary>举报目标内容 ID</summary>
     public long VoTargetContentId { get; set; }
+
+    /// <summary>论坛目标帖子 ID</summary>
+    public long? VoTargetPostId { get; set; }
+
+    /// <summary>论坛目标评论 ID</summary>
+    public long? VoTargetCommentId { get; set; }
+
+    /// <summary>聊天室目标频道 ID</summary>
+    public long? VoTargetChannelId { get; set; }
+
+    /// <summary>聊天室目标消息 ID</summary>
+    public long? VoTargetMessageId { get; set; }
+
+    /// <summary>目标导航状态（Ready/Fallback/Unavailable/Unsupported）</summary>
+    public string VoTargetNavigationStatus { get; set; } = "Unavailable";
+
+    /// <summary>目标导航状态说明</summary>
+    public string? VoTargetNavigationMessage { get; set; }
+
+    /// <summary>目标快照标题</summary>
+    public string? VoTargetSnapshotTitle { get; set; }
+
+    /// <summary>目标快照摘要</summary>
+    public string? VoTargetSnapshotSummary { get; set; }
+
+    /// <summary>目标快照是否来自创建时固化</summary>
+    public bool VoTargetSnapshotIsPersisted { get; set; }
 
     /// <summary>被举报用户 ID</summary>
     public long VoTargetUserId { get; set; }
@@ -130,6 +169,39 @@ public class UserModerationActionVo
 
     /// <summary>关联举报单 ID</summary>
     public long? VoSourceReportId { get; set; }
+
+    /// <summary>来源举报目标类型</summary>
+    public string? VoSourceReportTargetType { get; set; }
+
+    /// <summary>来源举报目标内容 ID</summary>
+    public long? VoSourceReportTargetContentId { get; set; }
+
+    /// <summary>来源举报论坛目标帖子 ID</summary>
+    public long? VoSourceReportTargetPostId { get; set; }
+
+    /// <summary>来源举报论坛目标评论 ID</summary>
+    public long? VoSourceReportTargetCommentId { get; set; }
+
+    /// <summary>来源举报目标频道 ID</summary>
+    public long? VoSourceReportTargetChannelId { get; set; }
+
+    /// <summary>来源举报目标消息 ID</summary>
+    public long? VoSourceReportTargetMessageId { get; set; }
+
+    /// <summary>来源举报目标导航状态（Ready/Fallback/Unavailable/Unsupported）</summary>
+    public string VoSourceReportTargetNavigationStatus { get; set; } = "Unavailable";
+
+    /// <summary>来源举报目标导航状态说明</summary>
+    public string? VoSourceReportTargetNavigationMessage { get; set; }
+
+    /// <summary>来源举报目标快照标题</summary>
+    public string? VoSourceReportTargetSnapshotTitle { get; set; }
+
+    /// <summary>来源举报目标快照摘要</summary>
+    public string? VoSourceReportTargetSnapshotSummary { get; set; }
+
+    /// <summary>来源举报目标快照是否来自创建时固化</summary>
+    public bool VoSourceReportTargetSnapshotIsPersisted { get; set; }
 
     /// <summary>动作持续时长（小时）</summary>
     public int? VoDurationHours { get; set; }

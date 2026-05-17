@@ -90,7 +90,7 @@ const buildQuickReplyResumeItem = (item: UserPostQuickReply, meta: string): Resu
   title: item.voPostTitle?.trim() || meta,
   description: item.voContent?.trim() || meta,
   meta,
-  target: resolveForumPostWorkspaceTarget(item.voPostId),
+  target: resolveForumPostWorkspaceTarget(item.voPostId, item.voPostPublicId),
 });
 
 export const DesktopResumePanel = () => {

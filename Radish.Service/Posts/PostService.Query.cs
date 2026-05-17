@@ -54,6 +54,8 @@ public partial class PostService
             return null;
         }
 
+        await EnsurePostPublicIdBackfilledAsync(post);
+
         var postVo = Mapper.Map<PostVo>(post);
 
         if (post.CategoryId > 0)
@@ -101,6 +103,51 @@ public partial class PostService
         FillPostQuestionSummary(postVo, postVo.VoQuestion);
 
         return postVo;
+    }
+
+    private async Task EnsurePostPublicIdBackfilledAsync(Post post)
+    {
+        if (!string.IsNullOrWhiteSpace(post.PublicId))
+        {
+            post.PublicId = post.PublicId.Trim();
+            return;
+        }
+
+        var publicId = EnsurePostPublicId(post.PublicId);
+        var affectedRows = await _postRepository.UpdateColumnsAsync(
+            item => new Post { PublicId = publicId },
+            item => item.Id == post.Id &&
+                    !item.IsDeleted &&
+                    (item.PublicId == null || item.PublicId == string.Empty));
+
+        if (affectedRows > 0)
+        {
+            post.PublicId = publicId;
+            return;
+        }
+
+        var refreshedPost = await _postRepository.QueryByIdAsync(post.Id);
+        if (!string.IsNullOrWhiteSpace(refreshedPost?.PublicId))
+        {
+            post.PublicId = refreshedPost.PublicId.Trim();
+        }
+    }
+
+    /// <summary>
+    /// 按公开访问标识获取帖子详情（包含分类名称和标签）
+    /// </summary>
+    public async Task<PostVo?> GetPostDetailByPublicIdAsync(string publicId, long? viewerUserId = null, string answerSort = "default")
+    {
+        var normalizedPublicId = publicId?.Trim();
+        if (string.IsNullOrWhiteSpace(normalizedPublicId))
+        {
+            return null;
+        }
+
+        var post = await _postRepository.QueryFirstAsync(item => item.PublicId == normalizedPublicId && !item.IsDeleted);
+        return post == null
+            ? null
+            : await GetPostDetailAsync(post.Id, viewerUserId, answerSort);
     }
 
     /// <summary>

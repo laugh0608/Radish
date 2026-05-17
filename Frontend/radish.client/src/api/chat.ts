@@ -3,6 +3,7 @@ import { getApiBaseUrl } from '@/config/env';
 import type {
   ChannelMemberVo,
   ChannelMessageVo,
+  ChannelMessageWindowVo,
   ChannelVo,
   EntityIdValue,
   SendChannelMessageRequest,
@@ -14,6 +15,12 @@ configureApiClient({
 });
 
 const CHAT_READ_TIMEOUT_MS = 30_000;
+
+export interface ChannelHistoryQuery {
+  beforeMessageId?: EntityIdValue;
+  afterMessageId?: EntityIdValue;
+  pageSize?: number;
+}
 
 export async function getChannelList(): Promise<ChannelVo[]> {
   const response = await apiGet<ChannelVo[]>('/api/v1/Channel/GetList', {
@@ -30,20 +37,27 @@ export async function getChannelList(): Promise<ChannelVo[]> {
 
 export async function getChannelHistory(
   channelId: EntityIdValue,
-  beforeMessageId?: EntityIdValue,
-  pageSize: number = 50
+  query: ChannelHistoryQuery = {}
 ): Promise<ChannelMessageVo[]> {
   const normalizedChannelId = normalizeEntityId(channelId);
   if (!normalizedChannelId) {
     throw new Error('频道 Id 无效');
   }
 
+  const normalizedBeforeMessageId = normalizeEntityId(query.beforeMessageId);
+  const normalizedAfterMessageId = normalizeEntityId(query.afterMessageId);
+  if (normalizedBeforeMessageId && normalizedAfterMessageId) {
+    throw new Error('beforeMessageId 和 afterMessageId 不能同时传入');
+  }
+
   const params = new URLSearchParams();
   params.set('channelId', normalizedChannelId);
-  params.set('pageSize', String(pageSize));
-  const normalizedBeforeMessageId = normalizeEntityId(beforeMessageId);
+  params.set('pageSize', String(query.pageSize ?? 50));
   if (normalizedBeforeMessageId && normalizedBeforeMessageId !== '0' && !normalizedBeforeMessageId.startsWith('-')) {
     params.set('beforeMessageId', normalizedBeforeMessageId);
+  }
+  if (normalizedAfterMessageId && normalizedAfterMessageId !== '0' && !normalizedAfterMessageId.startsWith('-')) {
+    params.set('afterMessageId', normalizedAfterMessageId);
   }
 
   const response = await apiGet<ChannelMessageVo[]>(`/api/v1/ChannelMessage/GetHistory?${params.toString()}`, {
@@ -53,6 +67,40 @@ export async function getChannelHistory(
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '加载历史消息失败');
+  }
+
+  return response.data;
+}
+
+export async function getChannelMessageWindow(
+  channelId: EntityIdValue,
+  messageId: EntityIdValue,
+  beforeCount: number = 25,
+  afterCount: number = 25
+): Promise<ChannelMessageWindowVo> {
+  const normalizedChannelId = normalizeEntityId(channelId);
+  if (!normalizedChannelId) {
+    throw new Error('频道 Id 无效');
+  }
+
+  const normalizedMessageId = normalizeEntityId(messageId);
+  if (!normalizedMessageId || normalizedMessageId === '0' || normalizedMessageId.startsWith('-')) {
+    throw new Error('消息 Id 无效');
+  }
+
+  const params = new URLSearchParams();
+  params.set('channelId', normalizedChannelId);
+  params.set('messageId', normalizedMessageId);
+  params.set('beforeCount', String(beforeCount));
+  params.set('afterCount', String(afterCount));
+
+  const response = await apiGet<ChannelMessageWindowVo>(`/api/v1/ChannelMessage/GetMessageWindow?${params.toString()}`, {
+    withAuth: true,
+    timeout: CHAT_READ_TIMEOUT_MS,
+  });
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '加载目标消息窗口失败');
   }
 
   return response.data;

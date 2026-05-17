@@ -1,10 +1,12 @@
+import type { LongId } from '@/api/user';
+
 export interface WikiDocumentVo {
-  voId: number;
+  voId: LongId;
   voTitle: string;
   voSlug: string;
   voSummary?: string | null;
-  voCoverAttachmentId?: number | null;
-  voParentId?: number | null;
+  voCoverAttachmentId?: LongId | null;
+  voParentId?: LongId | null;
   voSort: number;
   voStatus: number;
   voVisibility: number;
@@ -26,8 +28,8 @@ export interface WikiDocumentDetailVo extends WikiDocumentVo {
 }
 
 export interface WikiDocumentRevisionItemVo {
-  voId: number;
-  voDocumentId: number;
+  voId: LongId;
+  voDocumentId: LongId;
   voVersion: number;
   voTitle: string;
   voChangeSummary?: string | null;
@@ -39,14 +41,14 @@ export interface WikiDocumentRevisionItemVo {
 
 export interface WikiDocumentRevisionDetailVo extends WikiDocumentRevisionItemVo {
   voMarkdownContent: string;
-  voCreateId: number;
+  voCreateId: LongId;
 }
 
 export interface WikiDocumentTreeNodeVo {
-  voId: number;
+  voId: LongId;
   voTitle: string;
   voSlug: string;
-  voParentId?: number | null;
+  voParentId?: LongId | null;
   voSort: number;
   voStatus: number;
   voVisibility: number;
@@ -66,7 +68,7 @@ export interface WikiListQuery {
   pageSize?: number;
   keyword?: string;
   status?: number;
-  parentId?: number;
+  parentId?: LongId;
   includeDeleted?: boolean;
   deletedOnly?: boolean;
 }
@@ -76,9 +78,9 @@ export interface CreateWikiDocumentRequest {
   slug?: string;
   summary?: string;
   markdownContent: string;
-  parentId?: number | null;
+  parentId?: LongId | null;
   sort?: number;
-  coverAttachmentId?: number | null;
+  coverAttachmentId?: LongId | null;
   visibility?: number;
   allowedRoles?: string[];
   allowedPermissions?: string[];
@@ -92,7 +94,7 @@ export interface ImportWikiMarkdownRequest {
   file: File;
   slug?: string;
   summary?: string;
-  parentId?: number | null;
+  parentId?: LongId | null;
   sort?: number;
   publishAfterImport?: boolean;
   visibility?: number;

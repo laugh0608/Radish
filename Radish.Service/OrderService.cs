@@ -11,6 +11,7 @@ using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Service.Base;
 using Radish.Shared.CustomEnum;
+using Radish.Shared.Security;
 using Serilog;
 using SqlSugar;
 
@@ -25,6 +26,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     private readonly IProductService _productService;
     private readonly IUserBenefitService _userBenefitService;
     private readonly ICoinService _coinService;
+    private readonly IPaymentPasswordService _paymentPasswordService;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
     private readonly INotificationService? _notificationService;
 
@@ -36,6 +38,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         IProductService productService,
         IUserBenefitService userBenefitService,
         ICoinService coinService,
+        IPaymentPasswordService paymentPasswordService,
         IAttachmentUrlResolver attachmentUrlResolver,
         INotificationService? notificationService = null)
         : base(mapper, orderRepository)
@@ -46,6 +49,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         _productService = productService;
         _userBenefitService = userBenefitService;
         _coinService = coinService;
+        _paymentPasswordService = paymentPasswordService;
         _attachmentUrlResolver = attachmentUrlResolver;
         _notificationService = notificationService;
     }
@@ -90,7 +94,38 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 };
             }
 
-            // 5. 扣减库存
+            // 5. 验证支付口令
+            var paymentPasscodeError = PaymentPasscodeRules.GetValidationMessage(dto.PaymentPassword);
+            if (!string.IsNullOrWhiteSpace(paymentPasscodeError))
+            {
+                return new PurchaseResultDto
+                {
+                    Success = false,
+                    ErrorMessage = paymentPasscodeError
+                };
+            }
+
+            var verifyResult = await _paymentPasswordService.VerifyPaymentPasswordAsync(userId, new VerifyPaymentPasswordRequest
+            {
+                Password = dto.PaymentPassword,
+                BusinessType = "ShopPurchase",
+                BusinessId = dto.ProductId.ToString()
+            });
+
+            if (!verifyResult.IsSuccess)
+            {
+                Log.Warning("商城购买失败：支付口令验证失败，用户={UserId}, 商品={ProductId}, 原因={Reason}",
+                    userId, dto.ProductId, verifyResult.ErrorMessage);
+                return new PurchaseResultDto
+                {
+                    Success = false,
+                    ErrorMessage = verifyResult.ErrorMessage ?? "支付口令验证失败",
+                    ErrorCode = verifyResult.ErrorCode,
+                    RequiresPasscodeUpgrade = verifyResult.RequiresPasscodeUpgrade
+                };
+            }
+
+            // 6. 扣减库存
             if (product.StockType == StockType.Limited)
             {
                 var stockDeducted = await _productService.DeductStockAsync(dto.ProductId, dto.Quantity);
@@ -100,13 +135,14 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 }
             }
 
-            // 6. 创建订单
+            // 7. 创建订单
             var order = new Order
             {
                 OrderNo = $"ORD_{SnowFlakeSingle.Instance.NextId()}",
                 UserId = userId,
                 ProductId = product.Id,
                 ProductName = product.Name,
+                StockType = product.StockType,
                 ProductIconAttachmentId = product.IconAttachmentId,
                 ProductType = product.ProductType,
                 BenefitType = product.BenefitType,
@@ -128,18 +164,17 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             var orderId = await _orderRepository.AddAsync(order);
             order.Id = orderId;
 
-            // 7. 扣除萝卜币
+            // 8. 扣除萝卜币
             try
             {
-                var transactionNo = await _coinService.GrantCoinAsync(
+                var (transactionId, _) = await _coinService.ConsumeCoinAsync(
                     userId,
-                    -totalPrice, // 负数表示扣除
-                    "CONSUME",
+                    totalPrice,
                     "Order",
                     orderId,
                     $"购买商品：{product.Name}");
 
-                order.CoinTransactionId = long.TryParse(transactionNo.Replace("TXN_", ""), out var txnId) ? txnId : null;
+                order.CoinTransactionId = transactionId;
                 order.Status = OrderStatus.Paid;
                 order.PaidTime = DateTime.Now;
             }
@@ -150,7 +185,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 // 恢复库存
                 if (product.StockType == StockType.Limited)
                 {
-                    await _productService.RestoreStockAsync(dto.ProductId, dto.Quantity);
+                    await _productService.RestoreStockAsync(dto.ProductId, dto.Quantity, product.StockType);
                 }
 
                 order.Status = OrderStatus.Failed;
@@ -160,11 +195,11 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 return new PurchaseResultDto { Success = false, ErrorMessage = "扣除萝卜币失败" };
             }
 
-            // 8. 发放权益
+            // 9. 发放权益
             long? userBenefitId = null;
             try
             {
-                userBenefitId = await _userBenefitService.GrantBenefitAsync(userId, product, orderId);
+                userBenefitId = await _userBenefitService.GrantBenefitAsync(userId, product, orderId, dto.Quantity);
                 order.UserBenefitId = userBenefitId;
                 order.Status = OrderStatus.Completed;
                 order.CompletedTime = DateTime.Now;
@@ -186,16 +221,16 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 order.FailReason = $"发放权益失败：{ex.Message}";
             }
 
-            // 9. 更新订单状态
+            // 10. 更新订单状态
             await _orderRepository.UpdateAsync(order);
 
-            // 10. 增加已售数量
+            // 11. 增加已售数量
             await _productService.IncreaseSoldCountAsync(dto.ProductId, dto.Quantity);
 
-            // 11. 获取最新余额
+            // 12. 获取最新余额
             var newBalance = await _coinService.GetBalanceAsync(userId);
 
-            // 12. 发送通知
+            // 13. 发送通知
             if (_notificationService != null && order.Status == OrderStatus.Completed)
             {
                 try
@@ -238,6 +273,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     }
 
     /// <summary>取消订单</summary>
+    [UseTran]
     public async Task<bool> CancelOrderAsync(long userId, long orderId, string? reason = null)
     {
         try
@@ -248,28 +284,40 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 throw new InvalidOperationException("订单不存在");
             }
 
-            if (order.Status != OrderStatus.Pending)
-            {
-                throw new InvalidOperationException("只能取消待支付的订单");
-            }
-
-            order.Status = OrderStatus.Cancelled;
-            order.CancelledTime = DateTime.Now;
-            order.CancelReason = reason ?? "用户取消";
-            order.ModifyTime = DateTime.Now;
-
-            var result = await _orderRepository.UpdateAsync(order);
-
-            if (result)
-            {
-                Log.Information("订单 {OrderId} 已取消", orderId);
-            }
-
-            return result;
+            return await CancelPendingOrderAsync(
+                order,
+                string.IsNullOrWhiteSpace(reason) ? "用户取消" : reason.Trim(),
+                "User",
+                userId);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "取消订单 {OrderId} 失败", orderId);
+            throw;
+        }
+    }
+
+    /// <summary>系统取消订单</summary>
+    [UseTran]
+    public async Task<bool> CancelOrderBySystemAsync(long orderId, string reason)
+    {
+        try
+        {
+            var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && !o.IsDeleted);
+            if (order == null)
+            {
+                throw new InvalidOperationException("订单不存在");
+            }
+
+            return await CancelPendingOrderAsync(
+                order,
+                string.IsNullOrWhiteSpace(reason) ? "系统取消" : reason.Trim(),
+                "System",
+                0);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "系统取消订单 {OrderId} 失败", orderId);
             throw;
         }
     }
@@ -422,20 +470,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 orderByType: OrderByType.Desc);
 
             var orderVos = Mapper.Map<List<OrderVo>>(orders);
-
-            // 填充用户名
-            var userIds = orders.Select(o => o.UserId).Distinct().ToList();
-            var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id));
-            var userDict = users.ToDictionary(u => u.Id, u => u.UserName);
-
-            foreach (var vo in orderVos)
-            {
-                if (userDict.TryGetValue(vo.VoUserId, out var userName))
-                {
-                    vo.VoUserName = userName;
-                }
-            }
-
+            await FillOrderUsersAsync(orderVos);
             FillOrderUrls(orderVos);
 
             return new PageModel<OrderVo>
@@ -454,21 +489,53 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         }
     }
 
-    /// <summary>管理员备注订单</summary>
-    public async Task<bool> AdminRemarkOrderAsync(long orderId, string remark)
+    /// <summary>获取订单详情（管理后台）</summary>
+    public async Task<OrderVo?> GetOrderDetailForAdminAsync(long orderId)
     {
         try
         {
             var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && !o.IsDeleted);
             if (order == null)
             {
-                return false;
+                return null;
             }
 
-            order.AdminRemark = remark;
-            order.ModifyTime = DateTime.Now;
+            var orderVo = Mapper.Map<OrderVo>(order);
+            await FillOrderUsersAsync([orderVo]);
+            FillOrderUrl(orderVo);
+            return orderVo;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "获取订单 {OrderId} 详情（管理后台）失败", orderId);
+            throw;
+        }
+    }
 
-            return await _orderRepository.UpdateAsync(order);
+    /// <summary>管理员备注订单</summary>
+    public async Task<bool> AdminRemarkOrderAsync(long orderId, string remark, long operatorId, string operatorName)
+    {
+        try
+        {
+            var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && !o.IsDeleted);
+            if (order == null)
+            {
+                throw new InvalidOperationException("订单不存在");
+            }
+
+            order.AdminRemark = string.IsNullOrWhiteSpace(remark) ? null : remark.Trim();
+            order.ModifyTime = DateTime.Now;
+            order.ModifyBy = string.IsNullOrWhiteSpace(operatorName) ? "Unknown" : operatorName.Trim();
+            order.ModifyId = operatorId;
+
+            var result = await _orderRepository.UpdateAsync(order);
+            if (result)
+            {
+                Log.Information("管理员 {OperatorName}({OperatorId}) 更新订单 {OrderId} 备注成功",
+                    order.ModifyBy, operatorId, orderId);
+            }
+
+            return result;
         }
         catch (Exception ex)
         {
@@ -500,7 +567,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             }
 
             // 重新发放权益
-            var userBenefitId = await _userBenefitService.GrantBenefitAsync(order.UserId, product, orderId);
+            var userBenefitId = await _userBenefitService.GrantBenefitAsync(order.UserId, product, orderId, order.Quantity);
 
             order.UserBenefitId = userBenefitId;
             order.Status = OrderStatus.Completed;
@@ -541,11 +608,83 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         return tenantId > 0 ? tenantId : 0;
     }
 
+    private async Task<bool> CancelPendingOrderAsync(Order order, string cancelReason, string operatorName, long operatorId)
+    {
+        if (order.Status != OrderStatus.Pending)
+        {
+            throw new InvalidOperationException("只能取消待支付的订单");
+        }
+
+        var cancelledTime = DateTime.Now;
+        var affected = await _orderRepository.UpdateColumnsAsync(
+            o => new Order
+            {
+                Status = OrderStatus.Cancelled,
+                CancelledTime = cancelledTime,
+                CancelReason = cancelReason,
+                ModifyTime = cancelledTime,
+                ModifyBy = operatorName,
+                ModifyId = operatorId
+            },
+            o => o.Id == order.Id && o.UserId == order.UserId && o.Status == OrderStatus.Pending && !o.IsDeleted);
+
+        if (affected <= 0)
+        {
+            throw new InvalidOperationException("订单状态已变更，请刷新后重试");
+        }
+
+        if (order.StockType == StockType.Limited)
+        {
+            var stockRestored = await _productService.RestoreStockAsync(order.ProductId, order.Quantity, order.StockType);
+            if (!stockRestored)
+            {
+                throw new InvalidOperationException("取消订单失败，库存回补未完成");
+            }
+        }
+
+        Log.Information(
+            "订单 {OrderId} 已取消，用户={UserId}，数量={Quantity}，原因={Reason}",
+            order.Id,
+            order.UserId,
+            order.Quantity,
+            cancelReason);
+
+        return true;
+    }
+
     private void FillOrderUrls(List<OrderVo> orders)
     {
         foreach (var order in orders)
         {
             FillOrderUrl(order);
+        }
+    }
+
+    private async Task FillOrderUsersAsync(IReadOnlyCollection<OrderVo> orders)
+    {
+        if (orders.Count == 0)
+        {
+            return;
+        }
+
+        var userIds = orders
+            .Select(order => order.VoUserId)
+            .Distinct()
+            .ToList();
+        if (userIds.Count == 0)
+        {
+            return;
+        }
+
+        var users = await _userRepository.QueryAsync(user => userIds.Contains(user.Id));
+        var userDict = users.ToDictionary(user => user.Id, user => user.UserName);
+
+        foreach (var order in orders)
+        {
+            if (userDict.TryGetValue(order.VoUserId, out var userName))
+            {
+                order.VoUserName = userName;
+            }
         }
     }
 

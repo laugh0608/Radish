@@ -21,6 +21,39 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     private readonly IBaseRepository<ProductCategory> _categoryRepository;
     private readonly IBaseRepository<Order> _orderRepository;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
+#pragma warning disable CS0618
+    private static readonly Expression<Func<Product, bool>> SupportedPublicProductExpression = p =>
+        !(p.ProductType == ProductType.Benefit && (
+            p.BenefitType == BenefitType.Badge ||
+            p.BenefitType == BenefitType.AvatarFrame ||
+            p.BenefitType == BenefitType.Title ||
+            p.BenefitType == BenefitType.Theme ||
+            p.BenefitType == BenefitType.Signature ||
+            p.BenefitType == BenefitType.NameColor ||
+            p.BenefitType == BenefitType.LikeEffect)) &&
+        !(p.ProductType == ProductType.Consumable && (
+            p.ConsumableType == ConsumableType.PostPinCard ||
+            p.ConsumableType == ConsumableType.PostHighlightCard ||
+            p.ConsumableType == ConsumableType.DoubleExpCard ||
+            p.ConsumableType == ConsumableType.LotteryTicket));
+    private static readonly Expression<Func<Product, bool>> PublicVisibleProductExpression = p =>
+        p.IsEnabled &&
+        p.IsOnSale &&
+        !p.IsDeleted &&
+        !(p.ProductType == ProductType.Benefit && (
+            p.BenefitType == BenefitType.Badge ||
+            p.BenefitType == BenefitType.AvatarFrame ||
+            p.BenefitType == BenefitType.Title ||
+            p.BenefitType == BenefitType.Theme ||
+            p.BenefitType == BenefitType.Signature ||
+            p.BenefitType == BenefitType.NameColor ||
+            p.BenefitType == BenefitType.LikeEffect)) &&
+        !(p.ProductType == ProductType.Consumable && (
+            p.ConsumableType == ConsumableType.PostPinCard ||
+            p.ConsumableType == ConsumableType.PostHighlightCard ||
+            p.ConsumableType == ConsumableType.DoubleExpCard ||
+            p.ConsumableType == ConsumableType.LotteryTicket));
+#pragma warning restore CS0618
 
     /// <summary>乐观锁冲突重试次数</summary>
     private const int MaxRetryCount = 5;
@@ -56,7 +89,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             foreach (var category in categoryVos)
             {
                 category.VoProductCount = await _productRepository.QueryCountAsync(
-                    p => p.CategoryId == category.VoId && p.IsEnabled && p.IsOnSale && !p.IsDeleted);
+                    PublicVisibleProductExpression.And(p => p.CategoryId == category.VoId));
             }
 
             FillProductCategoryUrls(categoryVos);
@@ -79,7 +112,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
 
             var vo = Mapper.Map<ProductCategoryVo>(category);
             vo.VoProductCount = await _productRepository.QueryCountAsync(
-                p => p.CategoryId == categoryId && p.IsEnabled && p.IsOnSale && !p.IsDeleted);
+                PublicVisibleProductExpression.And(p => p.CategoryId == categoryId));
 
             FillProductCategoryUrl(vo);
             return vo;
@@ -106,7 +139,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
         try
         {
             // 构建查询条件
-            Expression<Func<Product, bool>> where = p => p.IsEnabled && p.IsOnSale && !p.IsDeleted;
+            Expression<Func<Product, bool>> where = PublicVisibleProductExpression;
 
             if (!string.IsNullOrWhiteSpace(categoryId))
             {
@@ -154,7 +187,8 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     {
         try
         {
-            var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && p.IsEnabled && !p.IsDeleted);
+            var product = await _productRepository.QueryFirstAsync(
+                SupportedPublicProductExpression.And(p => p.Id == productId && p.IsEnabled && !p.IsDeleted));
             if (product == null) return null;
 
             var vo = Mapper.Map<ProductVo>(product);
@@ -178,6 +212,11 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     {
         try
         {
+            if (quantity < 1)
+            {
+                return (false, "购买数量必须大于 0");
+            }
+
             var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
 
             if (product == null)
@@ -193,6 +232,21 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             if (!product.IsOnSale)
             {
                 return (false, "商品未上架");
+            }
+
+            if (ShopProductAvailabilityPolicy.IsUnavailablePublicProduct(product.ProductType, product.BenefitType, product.ConsumableType))
+            {
+                return (false, $"{ShopProductAvailabilityPolicy.GetUnavailableProductDisplayName(product.BenefitType, product.ConsumableType)}暂未开放，当前不可购买");
+            }
+
+            var productConfigurationError = GetInvalidProductConfigurationMessage(
+                product.ProductType,
+                product.ConsumableType,
+                product.BenefitValue);
+            if (productConfigurationError != null)
+            {
+                Log.Warning("商品 {ProductId} 配置不完整，拒绝购买：{Reason}", productId, productConfigurationError);
+                return (false, "商品配置不完整，请联系管理员");
             }
 
             // 检查库存
@@ -288,14 +342,19 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     }
 
     /// <summary>恢复库存</summary>
-    public async Task<bool> RestoreStockAsync(long productId, int quantity)
+    public async Task<bool> RestoreStockAsync(long productId, int quantity, StockType stockType)
     {
         try
         {
-            var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
-            if (product == null || product.StockType == StockType.Unlimited)
+            if (stockType == StockType.Unlimited)
             {
                 return true;
+            }
+
+            var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
+            if (product == null)
+            {
+                return false;
             }
 
             var affected = await _productRepository.UpdateColumnsAsync(
@@ -352,6 +411,9 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     {
         try
         {
+            EnsureSupportedOnSaleProduct(dto.ProductType, dto.BenefitType, dto.ConsumableType, dto.IsOnSale);
+            EnsureValidProductConfiguration(dto.ProductType, dto.ConsumableType, dto.BenefitValue);
+
             var tenantId = NormalizeTenantId(App.CurrentUser.TenantId);
             var product = Mapper.Map<Product>(dto);
             product.TenantId = tenantId;
@@ -382,6 +444,9 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     {
         try
         {
+            EnsureSupportedOnSaleProduct(dto.ProductType, dto.BenefitType, dto.ConsumableType, dto.IsOnSale);
+            EnsureValidProductConfiguration(dto.ProductType, dto.ConsumableType, dto.BenefitValue);
+
             var product = await _productRepository.QueryFirstAsync(p => p.Id == dto.Id);
             if (product == null)
             {
@@ -416,6 +481,13 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                 return false;
             }
 
+            if (ShopProductAvailabilityPolicy.IsUnavailablePublicProduct(product.ProductType, product.BenefitType, product.ConsumableType))
+            {
+                throw new InvalidOperationException($"{ShopProductAvailabilityPolicy.GetUnavailableProductDisplayName(product.BenefitType, product.ConsumableType)}暂未开放，不能上架销售");
+            }
+
+            EnsureValidProductConfiguration(product.ProductType, product.ConsumableType, product.BenefitValue);
+
             var affected = await _productRepository.UpdateColumnsAsync(
                 p => new Product
                 {
@@ -437,6 +509,59 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             Log.Error(ex, "上架商品 {ProductId} 失败", productId);
             throw;
         }
+    }
+
+    private static void EnsureSupportedOnSaleProduct(
+        ProductType productType,
+        BenefitType? benefitType,
+        ConsumableType? consumableType,
+        bool isOnSale)
+    {
+        if (!isOnSale || !ShopProductAvailabilityPolicy.IsUnavailablePublicProduct(productType, benefitType, consumableType))
+        {
+            return;
+        }
+
+        throw new InvalidOperationException($"{ShopProductAvailabilityPolicy.GetUnavailableProductDisplayName(benefitType, consumableType)}暂未开放，不能上架销售");
+    }
+
+    private static void EnsureValidProductConfiguration(
+        ProductType productType,
+        ConsumableType? consumableType,
+        string? benefitValue)
+    {
+        var errorMessage = GetInvalidProductConfigurationMessage(productType, consumableType, benefitValue);
+        if (errorMessage == null)
+        {
+            return;
+        }
+
+        throw new InvalidOperationException(errorMessage);
+    }
+
+    private static string? GetInvalidProductConfigurationMessage(
+        ProductType productType,
+        ConsumableType? consumableType,
+        string? benefitValue)
+    {
+        if (productType != ProductType.Consumable)
+        {
+            return null;
+        }
+
+        return consumableType switch
+        {
+            ConsumableType.ExpCard when !IsPositiveIntegerConfigValue(benefitValue) => "经验卡必须配置正整数经验值",
+            ConsumableType.CoinCard when !IsPositiveIntegerConfigValue(benefitValue) => "萝卜币红包必须配置正整数胡萝卜数量",
+            _ => null
+        };
+    }
+
+    private static bool IsPositiveIntegerConfigValue(string? benefitValue)
+    {
+        return !string.IsNullOrWhiteSpace(benefitValue)
+            && int.TryParse(benefitValue.Trim(), out var parsedValue)
+            && parsedValue > 0;
     }
 
     /// <summary>下架商品</summary>
@@ -514,20 +639,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                 orderByType: OrderByType.Desc);
 
             var productVos = Mapper.Map<List<ProductVo>>(products);
-
-            // 填充分类名称
-            var categoryIds = products.Select(p => p.CategoryId).Distinct().ToList();
-            var categories = await _categoryRepository.QueryAsync(c => categoryIds.Contains(c.Id));
-            var categoryDict = categories.ToDictionary(c => c.Id, c => c.Name);
-
-            foreach (var vo in productVos)
-            {
-                if (categoryDict.TryGetValue(vo.VoCategoryId, out var categoryName))
-                {
-                    vo.VoCategoryName = categoryName;
-                }
-            }
-
+            await FillProductCategoryNamesAsync(productVos);
             FillProductUrls(productVos);
 
             return new PageModel<ProductVo>
@@ -542,6 +654,74 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
         catch (Exception ex)
         {
             Log.Error(ex, "获取商品列表（管理后台）失败");
+            throw;
+        }
+    }
+
+    /// <summary>获取商品详情（管理后台）</summary>
+    public async Task<ProductVo?> GetProductDetailForAdminAsync(long productId)
+    {
+        try
+        {
+            var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
+            if (product == null)
+            {
+                return null;
+            }
+
+            var productVo = Mapper.Map<ProductVo>(product);
+            await FillProductCategoryNamesAsync([productVo]);
+            FillProductUrl(productVo);
+            return productVo;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "获取商品 {ProductId} 详情（管理后台）失败", productId);
+            throw;
+        }
+    }
+
+    /// <summary>删除商品（管理后台）</summary>
+    public async Task<bool> DeleteProductAsync(long productId, long operatorId, string operatorName)
+    {
+        try
+        {
+            var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
+            if (product == null)
+            {
+                throw new InvalidOperationException("商品不存在");
+            }
+
+            var relatedOrderCount = await _orderRepository.QueryCountAsync(
+                order => order.ProductId == productId
+                    && !order.IsDeleted
+                    && order.TenantId == product.TenantId);
+            if (relatedOrderCount > 0)
+            {
+                throw new InvalidOperationException("商品已有订单记录，不能删除；请下架商品以保留历史订单快照");
+            }
+
+            product.IsDeleted = true;
+            product.IsOnSale = false;
+            product.OffSaleTime = DateTime.Now;
+            product.ModifyTime = DateTime.Now;
+            product.ModifyBy = string.IsNullOrWhiteSpace(operatorName) ? "Unknown" : operatorName.Trim();
+            product.ModifyId = operatorId;
+
+            var result = await _productRepository.UpdateAsync(product);
+            if (result)
+            {
+                Log.Information("商品 {ProductId} 删除成功，操作员={OperatorName}({OperatorId})",
+                    productId,
+                    product.ModifyBy,
+                    operatorId);
+            }
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "删除商品 {ProductId} 失败", productId);
             throw;
         }
     }
@@ -586,6 +766,35 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
         foreach (var category in categories)
         {
             FillProductCategoryUrl(category);
+        }
+    }
+
+    private async Task FillProductCategoryNamesAsync(IReadOnlyCollection<ProductVo> products)
+    {
+        if (products.Count == 0)
+        {
+            return;
+        }
+
+        var categoryIds = products
+            .Select(product => product.VoCategoryId)
+            .Where(categoryId => !string.IsNullOrWhiteSpace(categoryId))
+            .Distinct()
+            .ToList();
+        if (categoryIds.Count == 0)
+        {
+            return;
+        }
+
+        var categories = await _categoryRepository.QueryAsync(category => categoryIds.Contains(category.Id));
+        var categoryDict = categories.ToDictionary(category => category.Id, category => category.Name);
+
+        foreach (var product in products)
+        {
+            if (categoryDict.TryGetValue(product.VoCategoryId, out var categoryName))
+            {
+                product.VoCategoryName = categoryName;
+            }
         }
     }
 

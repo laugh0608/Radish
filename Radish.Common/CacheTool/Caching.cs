@@ -13,6 +13,7 @@ namespace Radish.Common.CacheTool;
 
 public class Caching : ICaching
 {
+    private static readonly TimeSpan DefaultCacheExpiration = TimeSpan.FromHours(6);
     private readonly IDistributedCache _cache;
 
     public Caching(IDistributedCache cache)
@@ -25,14 +26,31 @@ public class Caching : ICaching
         return Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(source));
     }
 
+    private static DistributedCacheEntryOptions CreateExpiringOptions(TimeSpan? expire = null)
+    {
+        var normalizedExpire = expire.HasValue && expire.Value > TimeSpan.Zero
+            ? expire.Value
+            : DefaultCacheExpiration;
+
+        return new DistributedCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = normalizedExpire
+        };
+    }
+
+    private static List<string> DeserializeCacheKeys(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? new List<string>()
+            : JsonConvert.DeserializeObject<List<string>>(value) ?? new List<string>();
+    }
+
     public IDistributedCache Cache => _cache;
 
     public void AddCacheKey(string cacheKey)
     {
         var res = _cache.GetString(CacheConst.KeyAll);
-        var allkeys = string.IsNullOrWhiteSpace(res)
-            ? new List<string>()
-            : JsonConvert.DeserializeObject<List<string>>(res);
+        var allkeys = DeserializeCacheKeys(res);
         if (!allkeys.Any(m => m == cacheKey))
         {
             allkeys.Add(cacheKey);
@@ -48,9 +66,7 @@ public class Caching : ICaching
     public async Task AddCacheKeyAsync(string cacheKey)
     {
         var res = await _cache.GetStringAsync(CacheConst.KeyAll);
-        var allkeys = string.IsNullOrWhiteSpace(res)
-            ? new List<string>()
-            : JsonConvert.DeserializeObject<List<string>>(res);
+        var allkeys = DeserializeCacheKeys(res);
         if (!allkeys.Any(m => m == cacheKey))
         {
             allkeys.Add(cacheKey);
@@ -92,9 +108,7 @@ public class Caching : ICaching
     public void DelCacheKey(string cacheKey)
     {
         var res = _cache.GetString(CacheConst.KeyAll);
-        var allkeys = string.IsNullOrWhiteSpace(res)
-            ? new List<string>()
-            : JsonConvert.DeserializeObject<List<string>>(res);
+        var allkeys = DeserializeCacheKeys(res);
         if (allkeys.Any(m => m == cacheKey))
         {
             allkeys.Remove(cacheKey);
@@ -110,9 +124,7 @@ public class Caching : ICaching
     public async Task DelCacheKeyAsync(string cacheKey)
     {
         var res = await _cache.GetStringAsync(CacheConst.KeyAll);
-        var allkeys = string.IsNullOrWhiteSpace(res)
-            ? new List<string>()
-            : JsonConvert.DeserializeObject<List<string>>(res);
+        var allkeys = DeserializeCacheKeys(res);
         if (allkeys.Any(m => m == cacheKey))
         {
             allkeys.Remove(cacheKey);
@@ -140,7 +152,7 @@ public class Caching : ICaching
     public List<string> GetAllCacheKeys()
     {
         var res = _cache.GetString(CacheConst.KeyAll);
-        return string.IsNullOrWhiteSpace(res) ? null : JsonConvert.DeserializeObject<List<string>>(res);
+        return DeserializeCacheKeys(res);
     }
 
     /// <summary>
@@ -150,13 +162,13 @@ public class Caching : ICaching
     public async Task<List<string>> GetAllCacheKeysAsync()
     {
         var res = await _cache.GetStringAsync(CacheConst.KeyAll);
-        return string.IsNullOrWhiteSpace(res) ? null : JsonConvert.DeserializeObject<List<string>>(res);
+        return DeserializeCacheKeys(res);
     }
 
     public T Get<T>(string cacheKey)
     {
         var res = _cache.Get(cacheKey);
-        return res == null ? default : JsonConvert.DeserializeObject<T>(Encoding.UTF8.GetString(res));
+        return res == null ? default! : JsonConvert.DeserializeObject<T>(Encoding.UTF8.GetString(res))!;
     }
 
     /// <summary>
@@ -168,24 +180,24 @@ public class Caching : ICaching
     public async Task<T> GetAsync<T>(string cacheKey)
     {
         var res = await _cache.GetAsync(cacheKey);
-        return res == null ? default : JsonConvert.DeserializeObject<T>(Encoding.UTF8.GetString(res));
+        return res == null ? default! : JsonConvert.DeserializeObject<T>(Encoding.UTF8.GetString(res))!;
     }
 
     public object Get(Type type, string cacheKey)
     {
         var res = _cache.Get(cacheKey);
-        return res == null ? default : JsonConvert.DeserializeObject(Encoding.UTF8.GetString(res), type);
+        return res == null ? default! : JsonConvert.DeserializeObject(Encoding.UTF8.GetString(res), type)!;
     }
 
     public async Task<object> GetAsync(Type type, string cacheKey)
     {
         var res = await _cache.GetAsync(cacheKey);
-        return res == null ? default : JsonConvert.DeserializeObject(Encoding.UTF8.GetString(res), type);
+        return res == null ? default! : JsonConvert.DeserializeObject(Encoding.UTF8.GetString(res), type)!;
     }
 
     public string GetString(string cacheKey)
     {
-        return _cache.GetString(cacheKey);
+        return _cache.GetString(cacheKey)!;
     }
 
     /// <summary>
@@ -195,7 +207,7 @@ public class Caching : ICaching
     /// <returns></returns>
     public async Task<string> GetStringAsync(string cacheKey)
     {
-        return await _cache.GetStringAsync(cacheKey);
+        return (await _cache.GetStringAsync(cacheKey))!;
     }
 
     public void Remove(string key)
@@ -236,10 +248,7 @@ public class Caching : ICaching
 
     public void Set<T>(string cacheKey, T value, TimeSpan? expire = null)
     {
-        _cache.Set(cacheKey, GetBytes(value),
-            expire == null
-                ? new DistributedCacheEntryOptions() { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(6) }
-                : new DistributedCacheEntryOptions() { AbsoluteExpirationRelativeToNow = expire });
+        _cache.Set(cacheKey, GetBytes(value), CreateExpiringOptions(expire));
 
         AddCacheKey(cacheKey);
     }
@@ -253,7 +262,7 @@ public class Caching : ICaching
     public async Task SetAsync<T>(string cacheKey, T value)
     {
         await _cache.SetAsync(cacheKey, Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(value)),
-            new DistributedCacheEntryOptions() { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(6) });
+            CreateExpiringOptions());
 
         await AddCacheKeyAsync(cacheKey);
     }
@@ -268,7 +277,7 @@ public class Caching : ICaching
     public async Task SetAsync<T>(string cacheKey, T value, TimeSpan expire)
     {
         await _cache.SetAsync(cacheKey, Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(value)),
-            new DistributedCacheEntryOptions() { AbsoluteExpirationRelativeToNow = expire });
+            CreateExpiringOptions(expire));
 
         await AddCacheKeyAsync(cacheKey);
     }
@@ -287,12 +296,7 @@ public class Caching : ICaching
 
     public void SetString(string cacheKey, string value, TimeSpan? expire = null)
     {
-        if (expire == null)
-            _cache.SetString(cacheKey, value,
-                new DistributedCacheEntryOptions() { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(6) });
-        else
-            _cache.SetString(cacheKey, value,
-                new DistributedCacheEntryOptions() { AbsoluteExpirationRelativeToNow = expire });
+        _cache.SetString(cacheKey, value, CreateExpiringOptions(expire));
 
         AddCacheKey(cacheKey);
     }
@@ -306,7 +310,7 @@ public class Caching : ICaching
     public async Task SetStringAsync(string cacheKey, string value)
     {
         await _cache.SetStringAsync(cacheKey, value,
-            new DistributedCacheEntryOptions() { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(6) });
+            CreateExpiringOptions());
 
         await AddCacheKeyAsync(cacheKey);
     }
@@ -321,7 +325,7 @@ public class Caching : ICaching
     public async Task SetStringAsync(string cacheKey, string value, TimeSpan expire)
     {
         await _cache.SetStringAsync(cacheKey, value,
-            new DistributedCacheEntryOptions() { AbsoluteExpirationRelativeToNow = expire });
+            CreateExpiringOptions(expire));
 
         await AddCacheKeyAsync(cacheKey);
     }

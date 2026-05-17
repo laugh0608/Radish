@@ -1,12 +1,13 @@
+import type { LongId } from '@/api/user';
 import type { WikiDocumentTreeNodeVo, WikiListQuery } from './types/wiki';
 
 export type ParentOption = {
-  id: number;
+  id: LongId;
   label: string;
 };
 
 export type WikiTreeRow = {
-  id: number;
+  id: LongId;
   title: string;
   status: number;
   depth: number;
@@ -15,7 +16,7 @@ export type WikiTreeRow = {
 
 export const SORT_PRESET_VALUES = ['0', '10', '20', '30', '40', '50', '100'];
 
-export function flattenTree(nodes: WikiDocumentTreeNodeVo[]): number[] {
+export function flattenTree(nodes: WikiDocumentTreeNodeVo[]): LongId[] {
   return nodes.flatMap((node) => [node.voId, ...flattenTree(node.voChildren || [])]);
 }
 
@@ -46,12 +47,13 @@ export function flattenTreeOptions(nodes: WikiDocumentTreeNodeVo[], depth: numbe
   ]);
 }
 
-export function collectDescendantIds(nodes: WikiDocumentTreeNodeVo[], targetId: number): Set<number> {
-  const result = new Set<number>();
+export function collectDescendantIds(nodes: WikiDocumentTreeNodeVo[], targetId: LongId): Set<LongId> {
+  const result = new Set<LongId>();
+  const targetIdKey = String(targetId);
 
   const visit = (currentNodes: WikiDocumentTreeNodeVo[], collecting: boolean) => {
     currentNodes.forEach((node) => {
-      const shouldCollect = collecting || node.voId === targetId;
+      const shouldCollect = collecting || String(node.voId) === targetIdKey;
       if (collecting) {
         result.add(node.voId);
       }
@@ -66,11 +68,15 @@ export function collectDescendantIds(nodes: WikiDocumentTreeNodeVo[], targetId: 
 
 export function getSuggestedSortValue(
   nodes: WikiDocumentTreeNodeVo[],
-  parentId?: number | null,
-  currentDocumentId?: number
+  parentId?: LongId | null,
+  currentDocumentId?: LongId
 ): number {
+  const parentIdKey = parentId == null ? '' : String(parentId);
+  const currentDocumentIdKey = currentDocumentId == null ? '' : String(currentDocumentId);
   const siblingNodes = flattenNodes(nodes).filter(
-    (node) => (node.voParentId ?? null) === (parentId ?? null) && node.voId !== currentDocumentId
+    (node) =>
+      String(node.voParentId ?? '') === parentIdKey
+      && String(node.voId) !== currentDocumentIdKey
   );
 
   if (siblingNodes.length === 0) {
@@ -99,7 +105,7 @@ export function buildWikiListUrl(query: WikiListQuery = {}): string {
     params.set('status', String(query.status));
   }
 
-  if (typeof query.parentId === 'number') {
+  if (query.parentId != null) {
     params.set('parentId', String(query.parentId));
   }
 
