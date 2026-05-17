@@ -35,7 +35,10 @@ public sealed class PublicHeadSnapshotClient
         var requestUrl = CombineUrl(apiBaseUrl, apiPath);
         try
         {
-            using var response = await _httpClient.GetAsync(requestUrl, cancellationToken);
+            using var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+            ApplyPublicForwardedHeaders(request);
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
             if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
                 return null;
@@ -99,5 +102,23 @@ public sealed class PublicHeadSnapshotClient
     private static string CombineUrl(string baseUrl, string path)
     {
         return $"{baseUrl.Trim().TrimEnd('/')}{(path.StartsWith('/') ? path : $"/{path}")}";
+    }
+
+    private void ApplyPublicForwardedHeaders(HttpRequestMessage request)
+    {
+        var publicBaseUrl = _configuration["GatewayService:PublicUrl"];
+        if (string.IsNullOrWhiteSpace(publicBaseUrl))
+        {
+            publicBaseUrl = _configuration["RADISH_PUBLIC_URL"];
+        }
+
+        if (string.IsNullOrWhiteSpace(publicBaseUrl) ||
+            !Uri.TryCreate(publicBaseUrl.Trim(), UriKind.Absolute, out var publicUri))
+        {
+            return;
+        }
+
+        request.Headers.TryAddWithoutValidation("X-Forwarded-Proto", publicUri.Scheme);
+        request.Headers.TryAddWithoutValidation("X-Forwarded-Host", publicUri.IsDefaultPort ? publicUri.Host : publicUri.Authority);
     }
 }
