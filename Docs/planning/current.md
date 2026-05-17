@@ -7,7 +7,7 @@
 ## 当前状态
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
-- **当前主线**：`P3-5 公开内容增长后续专题`，详情首包 HTML 可见性方案评审已完成
+- **当前主线**：`P3-5 公开内容增长后续专题`，公开详情 HTML head 快照注入首批实现已完成
 - **复核日期**：`2026-05-17`
 - **最近结论**：
   - `v26.3.2-release` 已于 `2026-04-06` 完成首版真实发布，第一开发阶段结束
@@ -47,6 +47,7 @@
   - `P3-5-B` 已完成运行时结构化数据基线：forum detail / docs detail / shop detail / 公开个人页已按已加载详情数据注入 JSON-LD，并在路由切换或卸载时清理旧结构化数据
   - `P3-5-C` 已完成动态 sitemap 首批实现：API 输出 sitemap index / static / forum / docs / shop 分片 XML，Gateway 顶层 `/sitemap.xml` 与 `/sitemaps/{**catch-all}` 高优先级转发到 API；缓存 TTL、分页上限、lastmod 和异常回退已按评审方案落地
   - `P3-5-D` 已完成详情首包 HTML 可见性方案评审：完整 SSR / 构建期 SSG 暂不作为首批路线；若后续确需解决无 JS 首包，优先评估 API 公开详情快照 + Gateway 缓存化 head 注入的窄方案
+  - `P3-5-D1` 已完成公开详情 HTML head 快照注入首批实现：API 提供 forum / docs / shop 公开详情 head snapshot，Gateway 对三类详情页注入 title / description / canonical / Open Graph / JSON-LD；任一环节失败回落原 SPA 代理链路，不渲染正文、不启动完整 SSR / SSG
 
 ## 当前执行入口
 
@@ -64,9 +65,9 @@
 ## 当前目标
 
 1. **`P3-5` 公开内容增长后续专题**
-   - `P3-5-A / P3-5-B / P3-5-C / P3-5-D` 已完成动态 sitemap、结构化数据和详情首包可见性评估、公开详情运行时 JSON-LD 基线、动态 sitemap API + Gateway 首批实现，以及详情首包 HTML 可见性路线评审
+   - `P3-5-A / P3-5-B / P3-5-C / P3-5-D / P3-5-D1` 已完成动态 sitemap、结构化数据和详情首包可见性评估、公开详情运行时 JSON-LD 基线、动态 sitemap API + Gateway 首批实现、详情首包 HTML 可见性路线评审，以及公开详情 HTML head 快照注入首批实现
    - 动态 sitemap 首批不把生产 API / 数据库依赖塞进前端构建；构建期静态生成器仍仅作为离线 / 夜间导出备选
-   - 详情首包 HTML 可见性不直接启动完整 SSR / SSG；后续若实施，需先批准窄范围 head 注入方案并补缓存、回退和人工验收口径
+   - 详情首包 HTML 可见性不直接启动完整 SSR / SSG；首批只做 forum / docs / shop 详情的 head 注入，不生成正文 HTML
 2. **第二阶段收口护栏**
    - WebOS / PC 工作台、后端 + Console、公开 Web 与 Tauri 转入稳定维护
    - 若新发现会阻断资产、安全、登录、购买、转账或主路径的 `P0/P1` 缺口，最多挑 `1-2` 个小闭环
@@ -78,7 +79,7 @@
 
 ## 下一顺位
 
-- `P3-5-D` 详情首包 HTML 可见性方案评审已完成；下一步如继续公开内容增长，应先确认是否进入窄范围 head 注入实施，不直接启动完整 SSR / SSG
+- `P3-5-D1` 公开详情 HTML head 快照注入已完成；下一步优先做部署前人工验收清单与公开抓取 smoke 口径，不直接扩大到完整 SSR / SSG 或正文预渲染
 - `P3-4` forum / docs / shop 留存回流矩阵首轮已完成阶段性收尾判断，后续只处理真实使用中新暴露的回流断点
 - `P3-3` 只保留后续观察，不继续无边界深拆 `PublicForumDetail` 内部结构
 - 详情首包 HTML 可见性继续后置，不直接启动 SSR / SSG、预渲染或 Gateway HTML rewrite
@@ -90,9 +91,9 @@
 
 ## 下一事项
 
-- 下一事项：若继续推进公开内容增长，可在批准后启动 `P3-5-D1` 公开详情 HTML head 快照注入首批实现；范围只覆盖 forum / docs / shop 详情，不改完整 SSR / SSG
+- 下一事项：继续推进公开内容增长时，建议启动 `P3-5-D2` 部署前 head 注入人工验收与抓取 smoke 清单，重点确认生产 `GatewayService:PublicUrl / FrontendService:BaseUrl / DownstreamServices:ApiService:BaseUrl`、三类公开详情 HTML head、动态 sitemap 与 robots 入口一致
 - 若继续推进留存链路，只从真实使用中暴露的新断点选择小闭环，不再默认扩全量 `PublicId`、数据库主键迁移或 `User / Product / WikiDocument / Comment` 外部标识改造
-- 详情首包 HTML 可见性继续后置为单独方案评审；未批准前不直接启动 SSR / SSG、预渲染或 Gateway HTML rewrite
+- 详情首包 HTML 可见性继续保持窄实现；未重新评估前不直接启动 SSR / SSG、正文预渲染或更广泛 Gateway HTML rewrite
 
 ## 并行维护项
 

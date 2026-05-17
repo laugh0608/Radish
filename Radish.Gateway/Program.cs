@@ -6,6 +6,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Radish.Common;
 using Radish.Common.CoreTool;
 using Radish.Common.HealthTool;
+using Radish.Gateway.PublicHead;
 using Radish.Gateway.HealthChecks;
 using Radish.Extension.Log;
 using Serilog;
@@ -115,6 +116,11 @@ builder.Services.AddGatewayHostHealthChecks(builder.Configuration, healthCheckTa
 
 // ===== AppSettings 工具初始化 =====
 builder.Services.AddSingleton(new AppSettingsTool(builder.Configuration));
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient<PublicHeadSnapshotClient>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(3);
+});
 
 // ===== Serilog 日志配置 =====
 builder.Host.AddSerilogSetup();
@@ -160,6 +166,8 @@ app.UseStaticFiles();
 app.UseWebSockets();
 
 app.UseCors("GatewayCorsPolicy");
+
+app.UsePublicHeadSnapshotHtml();
 
 app.UseRouting();
 

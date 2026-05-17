@@ -1,6 +1,6 @@
 # 第三开发阶段：真实使用增长与长期契约治理
 
-> 状态：`P3-5-D 详情首包 HTML 可见性方案评审` 已完成
+> 状态：`P3-5-D1 公开详情 HTML head 快照注入` 已完成
 >
 > 启动日期：2026-05-13（Asia/Shanghai）
 >
@@ -22,7 +22,7 @@
 
 `P3-0` 已完成第三阶段定义、公开内容增长基础审计和第一批任务排序；`P3-1` 已完成公开内容 SEO 与分享基线。`P3-2` 已完成 `P3-2-A` 外部 ID 契约审计和 `P3-2-B` `Post.PublicId` 首批实现，试点对象保持收敛为 `Post`。`P3-3` 已完成 `PublicForumApp.tsx` 公开论坛热区首轮拆分和收工复核。`P3-4` 已完成 forum / docs / shop 留存回流矩阵首轮主动验收和补洞。
 
-当前主线为 `P3-5 公开内容增长后续专题`。`2026-05-17` 已完成 `P3-5-A` 评估、`P3-5-B` 运行时结构化数据基线、`P3-5-C` 动态 sitemap 首批实现和 `P3-5-D` 详情首包 HTML 可见性方案评审。公开 forum detail、docs detail、shop detail 和公开个人页已在前端运行时注入 JSON-LD，并在路由切换 / 组件卸载时清理。动态 sitemap 已采用 API + Gateway 路由，构建期静态生成器仅保留为离线 / 夜间导出备选；详情首包 HTML 可见性后续若实施，优先走窄范围 head 快照注入，不直接启动完整 SSR / SSG。
+当前主线为 `P3-5 公开内容增长后续专题`。`2026-05-17` 已完成 `P3-5-A` 评估、`P3-5-B` 运行时结构化数据基线、`P3-5-C` 动态 sitemap 首批实现、`P3-5-D` 详情首包 HTML 可见性方案评审和 `P3-5-D1` 公开详情 HTML head 快照注入首批实现。公开 forum detail、docs detail、shop detail 和公开个人页已在前端运行时注入 JSON-LD，并在路由切换 / 组件卸载时清理。动态 sitemap 已采用 API + Gateway 路由，构建期静态生成器仅保留为离线 / 夜间导出备选；详情首包 HTML 可见性首批只覆盖 forum / docs / shop 详情 head 注入，不启动完整 SSR / SSG 或正文预渲染。
 
 ## `P3-0` 定义与工程整备
 
@@ -692,7 +692,35 @@ npm run check:repo-hygiene:changed
 - 当前 `radish.client` 仍是纯 Vite SPA，Gateway 没有 SSR / HTML 渲染流水线；无 JS 爬虫 / 分享工具只能看到通用 shell。
 - 完整 SSR 和构建期 SSG / 预渲染均不作为首批路线，避免引入 Node SSR 宿主、生产数据构建依赖和大范围 hydrate / 路由重构。
 - 若继续实施，优先做 `P3-5-D1 公开详情 HTML head 快照注入`：API 提供公开详情 head snapshot，Gateway 只对 forum / docs / shop 公开详情做缓存化 head 注入，不渲染正文。
-- 该批次涉及 API + Gateway 运行时行为，实施前仍需单独批准。
+- 该批次涉及 API + Gateway 运行时行为，已在用户批准后进入首批实现。
+
+## `P3-5-D1` 公开详情 HTML head 快照注入
+
+完成日期：2026-05-17。
+
+### 实现范围
+
+- API 新增 `IPublicHeadSnapshotService / PublicHeadSnapshotService` 与 `PublicHeadSnapshotController`，通过内部公开只读接口输出 forum post、docs detail、shop product 三类详情的 head snapshot。
+- Gateway 新增 `PublicHeadSnapshotMiddleware`，仅拦截 `GET / HEAD` 且接受 HTML 的 `/forum/post/{postKey}`、`/docs/{slug}`、`/shop/product/{productId}`，从 API 获取 snapshot，再基于 `FrontendService:BaseUrl` 的前端入口 HTML 注入 head。
+- 注入内容限定为 `<title>`、`meta description`、canonical、Open Graph、Twitter card 和 `application/ld+json`；不渲染正文 HTML，不改 React hydrate，不改前端构建脚本。
+- 公开过滤与 sitemap 口径保持一致：forum 只暴露 `IsPublished && IsEnabled && !IsDeleted`，docs 只暴露公开已发布且未删除文档，shop 只暴露已启用、已上架、未删除且公开列表可见的商品。
+
+### 缓存与更新时间
+
+- API snapshot 缓存 TTL 为 `20` 分钟，缓存 key 包含内容类型、内容 key 和公开域名；Redis 开启时跟随现有缓存配置，关闭时使用内存缓存。
+- Gateway 注入后 HTML 缓存 TTL 为 `10` 分钟；前端入口 HTML 缓存 TTL 为 `5` 分钟。
+- snapshot 输出 `VoPublishedAt / VoModifiedAt`，JSON-LD 使用 forum `ModifyTime ?? PublishTime ?? CreateTime`、docs `ModifyTime ?? PublishedAt ?? CreateTime`、shop `ModifyTime ?? OnSaleTime ?? CreateTime`。
+
+### 异常回退与部署风险
+
+- API 找不到公开内容时返回 `404`，Gateway 不注入，继续走原 YARP / SPA 链路。
+- API snapshot、前端入口 HTML 获取、HTML 注入任一环节异常时，Gateway 记录 warning 并回落到原代理链路，避免 SEO head 注入影响页面可用性。
+- 部署时必须确认 `GatewayService:PublicUrl` 或 `RADISH_PUBLIC_URL` 为生产公开域名，`DownstreamServices:ApiService:BaseUrl` 与 `FrontendService:BaseUrl` 对 Gateway 可达。
+- 生产人工验收需直接查看三类详情的初始 HTML，确认 head 中 canonical / Open Graph / JSON-LD 与运行时 canonical、动态 sitemap URL 一致。
+
+### 验证
+
+- `dotnet test Radish.Api.Tests` 通过，`390/390`。
 
 ## 首批候选任务
 
