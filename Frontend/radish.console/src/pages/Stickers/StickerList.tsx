@@ -27,7 +27,7 @@ import {
 } from '@/api/stickerApi';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
-import { ROUTES } from '@/router';
+import { ROUTES } from '@/router/routes';
 import { getAvatarUrl } from '@/config/env';
 import { log } from '@/utils/logger';
 import { StickerForm } from './StickerForm';

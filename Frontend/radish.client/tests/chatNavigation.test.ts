@@ -7,10 +7,13 @@ import {
 } from '../src/utils/chatNavigation.ts';
 
 test('parseChatNotificationNavigation 应拒绝已丢精度的 number 型频道 ID', () => {
+  const unsafeChannelId = Number('2042219067430928384');
+  const unsafeMessageId = Number('2042219067430928385');
+
   const navigation = parseChatNotificationNavigation(JSON.stringify({
     app: 'chat',
-    channelId: 2042219067430928384,
-    messageId: 2042219067430928385,
+    channelId: unsafeChannelId,
+    messageId: unsafeMessageId,
   }));
 
   assert.equal(navigation, null);

@@ -48,7 +48,7 @@ function stripMarkdown(value: string | null | undefined): string | undefined {
       .replace(/`([^`]+)`/g, '$1')
       .replace(/!\[[^\]]*]\([^)]*\)/g, ' ')
       .replace(/\[([^\]]+)]\([^)]*\)/g, '$1')
-      .replace(/[#>*_~\-]+/g, ' ')
+      .replace(/[#>*_~-]+/g, ' ')
   );
   return normalized;
 }

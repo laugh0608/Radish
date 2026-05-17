@@ -4,8 +4,6 @@ import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId } from '@/utils/dateTime';
 import type {
   PublicForumBrowseRoute,
   PublicForumRoute,
-  PublicForumTypeRoute,
-  PublicForumRouteSort,
 } from '../forumRouteState';
 import {
   getPublicDetailBackLabelKey,

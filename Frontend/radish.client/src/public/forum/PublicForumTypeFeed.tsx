@@ -7,7 +7,6 @@ import {
   type CommentHighlight,
   type PostItem,
 } from '@/api/forum';
-import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { log } from '@/utils/logger';
 import { createForumCommentHighlightMap, getForumCommentHighlight } from '@/utils/forumCommentHighlights';
 import { Icon } from '@radish/ui/icon';

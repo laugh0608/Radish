@@ -26,7 +26,7 @@ import type {
 import { uploadAttachmentImage } from '../../api/attachmentApi';
 import { getAvatarUrl } from '../../config/env';
 import { log } from '../../utils/logger';
-import dayjs from 'dayjs';
+import dayjs, { type Dayjs } from 'dayjs';
 
 interface ProductFormProps {
   visible: boolean;
@@ -34,6 +34,11 @@ interface ProductFormProps {
   onClose: () => void;
   onSuccess: () => void;
 }
+
+type ProductFormValues = Omit<CreateProductDto, 'expiresAt'> & {
+  id?: string | number;
+  expiresAt?: Dayjs;
+};
 
 function isUnsupportedSaleSelection(productType?: unknown, benefitType?: unknown, consumableType?: unknown): boolean {
   const normalizedProductType = Number(productType);
@@ -115,7 +120,7 @@ function resolveRecommendedCategoryId(productType?: unknown, benefitType?: unkno
   return undefined;
 }
 
-function getAllowedCategoryIds(productType?: unknown, benefitType?: unknown, consumableType?: unknown): string[] | undefined {
+function getAllowedCategoryIds(productType?: unknown, benefitType?: unknown): string[] | undefined {
   const normalizedProductType = Number(productType);
 
   if (normalizedProductType === 1) {
@@ -188,7 +193,7 @@ function normalizeBenefitValue(value: unknown): string | undefined {
 }
 
 export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFormProps) => {
-  const [form] = Form.useForm<CreateProductDto | UpdateProductDto>();
+  const [form] = Form.useForm<ProductFormValues>();
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [loading, setLoading] = useState(false);
   const [iconUploading, setIconUploading] = useState(false);
@@ -208,7 +213,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
   const durationType = Form.useWatch('durationType', form);
   const unsupportedSaleSelection = isUnsupportedSaleSelection(productType, benefitType, consumableType);
   const recommendedCategoryId = resolveRecommendedCategoryId(productType, benefitType, consumableType);
-  const allowedCategoryIds = getAllowedCategoryIds(productType, benefitType, consumableType);
+  const allowedCategoryIds = getAllowedCategoryIds(productType, benefitType);
   const filteredCategories = allowedCategoryIds
     ? categories.filter((cat) => allowedCategoryIds.includes(cat.voId))
     : categories;
@@ -382,7 +387,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
         sortOrder: product.voSortOrder,
         isOnSale: product.voIsOnSale,
         expiresAt: product.voExpiresAt ? dayjs(product.voExpiresAt) : undefined,
-      } as any);
+      });
       setIconPreviewUrl(getAvatarUrl(product.voIcon));
       setCoverPreviewUrl(getAvatarUrl(product.voCoverImage));
       setIsDirty(false);
@@ -397,7 +402,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
         limitPerUser: 0,
         sortOrder: 0,
         isOnSale: false,
-      } as any);
+      });
       setIconPreviewUrl(undefined);
       setCoverPreviewUrl(undefined);
       setIsDirty(false);
