@@ -1,6 +1,6 @@
 # 第三开发阶段：真实使用增长与长期契约治理
 
-> 状态：`P3-5-D1 公开详情 HTML head 快照注入` 已完成
+> 状态：`P3-5-D2 公开详情 head 注入部署前 smoke 入口` 已完成
 >
 > 启动日期：2026-05-13（Asia/Shanghai）
 >
@@ -22,7 +22,7 @@
 
 `P3-0` 已完成第三阶段定义、公开内容增长基础审计和第一批任务排序；`P3-1` 已完成公开内容 SEO 与分享基线。`P3-2` 已完成 `P3-2-A` 外部 ID 契约审计和 `P3-2-B` `Post.PublicId` 首批实现，试点对象保持收敛为 `Post`。`P3-3` 已完成 `PublicForumApp.tsx` 公开论坛热区首轮拆分和收工复核。`P3-4` 已完成 forum / docs / shop 留存回流矩阵首轮主动验收和补洞。
 
-当前主线为 `P3-5 公开内容增长后续专题`。`2026-05-17` 已完成 `P3-5-A` 评估、`P3-5-B` 运行时结构化数据基线、`P3-5-C` 动态 sitemap 首批实现、`P3-5-D` 详情首包 HTML 可见性方案评审和 `P3-5-D1` 公开详情 HTML head 快照注入首批实现。公开 forum detail、docs detail、shop detail 和公开个人页已在前端运行时注入 JSON-LD，并在路由切换 / 组件卸载时清理。动态 sitemap 已采用 API + Gateway 路由，构建期静态生成器仅保留为离线 / 夜间导出备选；详情首包 HTML 可见性首批只覆盖 forum / docs / shop 详情 head 注入，不启动完整 SSR / SSG 或正文预渲染。
+当前主线为 `P3-5 公开内容增长后续专题`。`2026-05-17` 已完成 `P3-5-A` 评估、`P3-5-B` 运行时结构化数据基线、`P3-5-C` 动态 sitemap 首批实现、`P3-5-D` 详情首包 HTML 可见性方案评审、`P3-5-D1` 公开详情 HTML head 快照注入首批实现和 `P3-5-D2` 部署前 smoke 入口。公开 forum detail、docs detail、shop detail 和公开个人页已在前端运行时注入 JSON-LD，并在路由切换 / 组件卸载时清理。动态 sitemap 已采用 API + Gateway 路由，构建期静态生成器仅保留为离线 / 夜间导出备选；详情首包 HTML 可见性首批只覆盖 forum / docs / shop 详情 head 注入，不启动完整 SSR / SSG 或正文预渲染。
 
 ## `P3-0` 定义与工程整备
 
@@ -721,6 +721,18 @@ npm run check:repo-hygiene:changed
 ### 验证
 
 - `dotnet test Radish.Api.Tests` 通过，`390/390`。
+
+## `P3-5-D2` 公开详情 head 注入部署前 smoke 入口
+
+完成日期：2026-05-17。详见 [公开详情 Head Smoke 验收](/guide/public-head-smoke)。
+
+- 新增 `Scripts/check-public-head-smoke.mjs` 与 `npm run check:public-head-smoke`，部署后可用 Gateway base URL 与真实 forum / docs / shop 公开详情路径做首包 HTML head smoke。
+- smoke 默认检查 `/robots.txt`、`/sitemap.xml` 和传入详情路径，防止被 SPA shell 覆盖，并断言详情 head 中存在非通用 title、description、canonical、Open Graph、Twitter card 与 `radish-public-jsonld`。
+- 本批不启动服务、不抓生产数据、不扩大 Gateway 注入范围；真实环境需要由发布 / 部署人员传入当前公开详情样本路径。
+
+验证：
+
+- `npm run check:public-head-smoke -- --self-test` 通过。
 
 ## 首批候选任务
 

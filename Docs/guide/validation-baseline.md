@@ -28,6 +28,7 @@ npm run collect:changed:staged
 npm run collect:tracked
 npm run collect:m14-host-record
 npm run collect:change-regression-record
+npm run check:public-head-smoke
 npm run check:identity-impact
 npm run check:identity-impact:staged
 npm run validate:baseline
@@ -78,6 +79,11 @@ npm run validate:ci
   - `baseline / host / M14` 报告需显式通过参数传入，避免误吃到历史残留的 `.tmp` 文件
   - 默认输出 `.tmp/change-regression-record.md`
   - 会同时复用当前 changed files 判定身份语义影响面，把命中原因与失败归类一并写进记录
+- `check:public-head-smoke`
+  - 运行公开详情 HTML head 首包 smoke 检查
+  - 默认同时检查 `/robots.txt` 与 `/sitemap.xml` 是否没有被 SPA shell 覆盖
+  - 需要传入部署后的 Gateway base URL 和至少一条公开详情路径，建议同时覆盖 forum / docs / shop
+  - 详细用法见 [公开详情 Head Smoke 验收](/guide/public-head-smoke)
 - `check:identity-impact`
   - 只判定“当前变更是否命中身份语义影响面”
   - 默认同时输出命中文件与命中原因类别，便于直接回写 PR / 维护记录
@@ -479,6 +485,7 @@ npm run check:host-runtime -- --details --report-file .tmp/host-runtime-report.m
 
 - `Radish.Api.Tests/HttpTest/*.http`
 - 各专题文档中的最小人工验收顺序
+- `npm run check:public-head-smoke`：部署后公开详情 head 注入、robots 与动态 sitemap smoke
 - 需要先启动本地服务的联调链路
 
 专题选择建议见：[专题回归索引](/guide/regression-index)
