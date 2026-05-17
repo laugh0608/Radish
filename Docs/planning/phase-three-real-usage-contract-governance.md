@@ -1,6 +1,6 @@
 # 第三开发阶段：真实使用增长与长期契约治理
 
-> 状态：`P3-5 公开内容增长后续专题` 评估已完成，下一批建议先做运行时结构化数据基线
+> 状态：`P3-5-B 运行时结构化数据基线` 已完成，下一步进入动态 sitemap 方案评审
 >
 > 启动日期：2026-05-13（Asia/Shanghai）
 >
@@ -22,7 +22,7 @@
 
 `P3-0` 已完成第三阶段定义、公开内容增长基础审计和第一批任务排序；`P3-1` 已完成公开内容 SEO 与分享基线。`P3-2` 已完成 `P3-2-A` 外部 ID 契约审计和 `P3-2-B` `Post.PublicId` 首批实现，试点对象保持收敛为 `Post`。`P3-3` 已完成 `PublicForumApp.tsx` 公开论坛热区首轮拆分和收工复核。`P3-4` 已完成 forum / docs / shop 留存回流矩阵首轮主动验收和补洞。
 
-当前主线切到 `P3-5 公开内容增长后续专题`。`2026-05-17` 已完成 `P3-5-A` 评估：动态 sitemap、结构化数据和详情首包可见性都具备增长价值，但风险层级不同；下一批建议先做前端运行时 JSON-LD 基线，再单独评估动态 sitemap 的 Gateway / API 路由方案，详情首包 HTML 可见性继续后置为 SSR / SSG / 预渲染专题。
+当前主线为 `P3-5 公开内容增长后续专题`。`2026-05-17` 已完成 `P3-5-A` 评估和 `P3-5-B` 运行时结构化数据基线：公开 forum detail、docs detail、shop detail 和公开个人页已在前端运行时注入 JSON-LD，并在路由切换 / 组件卸载时清理。下一步进入动态 sitemap 的 Gateway / API 路由或构建生成器方案评审；详情首包 HTML 可见性继续后置为 SSR / SSG / 预渲染专题。
 
 ## `P3-0` 定义与工程整备
 
@@ -558,6 +558,30 @@ npm run check:repo-hygiene:changed
 - `P3-5-A` 只产出评估结论和下一批排序，不改运行时代码。
 - 规划入口同步到 `P3-5` 口径。
 - 文档卫生与 diff 检查通过。
+
+## `P3-5-B` 运行时结构化数据基线
+
+完成日期：2026-05-17。
+
+已完成：
+
+- 新增 `publicStructuredData` helper，统一构建、注入、复用和清理 `<script type="application/ld+json">`。
+- forum detail 在帖子详情加载成功后输出 `BlogPosting`，复用 PublicId canonical、帖子标题、摘要 / 正文、作者、发布时间、封面、标签和互动计数。
+- docs detail 在文档详情加载成功后输出 `Article`，复用文档 slug canonical、标题、摘要 / markdown 正文、发布时间和更新时间。
+- shop detail 在商品详情加载成功后输出 `Product`，复用商品 canonical、名称、描述、图片、分类和 Radish 组织信息；不把积分价格伪装成法币 offer。
+- 公开个人页在资料加载成功后输出 `ProfilePage` / `Person`，使用展示名 / 用户名和头像，不把长数字用户 ID 当作可见名称。
+- 路由切换、详情数据缺失或组件卸载时会清理旧 JSON-LD，避免从一个公开详情跳到另一个页面后残留错误结构化数据。
+
+验证：
+
+- `npm run type-check --workspace=radish.client` 通过。
+- `node --test --test-isolation=none ./tests/publicStructuredData.test.ts ./tests/publicHead.test.ts` 通过，`12/12`。
+
+后置：
+
+- 本批只增强可执行 JS 的 crawler / 分享工具可读性，不解决无 JS 首包 HTML 可见性。
+- 动态 sitemap 仍需单独确认 API + Gateway 路由或构建生成器方案。
+- SSR / SSG / prerender / Gateway HTML rewrite 继续后置，不因本批完成而直接启动。
 
 ## 首批候选任务
 

@@ -24,6 +24,11 @@ import {
   type PublicDetailBackMode,
 } from '../publicRouteNavigation';
 import { buildPublicCanonicalUrl } from '../publicHead';
+import {
+  applyPublicStructuredData,
+  buildShopProductStructuredData,
+  removePublicStructuredData,
+} from '../publicStructuredData';
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { usePublicReplaceRouteSync } from '../usePublicReplaceRouteSync';
@@ -268,6 +273,21 @@ export const PublicShopApp = ({
   useEffect(() => {
     document.title = `${pageTitle} · ${t('desktop.apps.shop.name')}`;
   }, [pageTitle, t]);
+
+  useEffect(() => {
+    if (route.kind !== 'detail' || !selectedProduct) {
+      removePublicStructuredData();
+      return;
+    }
+
+    applyPublicStructuredData(buildShopProductStructuredData({
+      product: selectedProduct,
+      imageUrl: resolveMediaUrl(selectedProduct.voCoverImage || selectedProduct.voIcon),
+      canonicalPath: buildPublicShopPath({ kind: 'detail', productId: String(selectedProduct.voId) }),
+    }));
+
+    return removePublicStructuredData;
+  }, [route.kind, selectedProduct]);
 
   useEffect(() => {
     if (shareState === 'idle') {

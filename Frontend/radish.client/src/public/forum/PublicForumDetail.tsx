@@ -14,11 +14,17 @@ import {
 import type { LongId } from '@/api/user';
 import { copyToClipboard } from '@/utils/clipboard';
 import { log } from '@/utils/logger';
+import { resolveMediaUrl } from '@/utils/media';
 import { CommentTree } from '@/apps/forum/components/CommentTree';
 import { PostDetail as ForumPostDetail } from '@/apps/forum/components/PostDetail';
 import { PostQuickReplyWall } from '@/apps/forum/components/PostQuickReplyWall';
 import { buildPublicForumPath } from '../forumRouteState';
 import { buildPublicCanonicalUrl } from '../publicHead';
+import {
+  applyPublicStructuredData,
+  buildForumPostStructuredData,
+  removePublicStructuredData,
+} from '../publicStructuredData';
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import {
   resolvePublicForumDetailLoadState,
@@ -278,6 +284,29 @@ export const PublicForumDetail = ({
 
     document.title = `${post.voTitle} · ${t('desktop.apps.forum.name')}`;
   }, [post?.voTitle, t]);
+
+  useEffect(() => {
+    if (!post) {
+      removePublicStructuredData();
+      return;
+    }
+
+    const structuredPost = {
+      ...post,
+      voCoverImage: resolveMediaUrl(post.voCoverImage),
+    };
+    const routePostId = getForumPostRouteIdentifier(post);
+    const canonicalPath = buildPublicForumPath(commentId
+      ? { kind: 'detail', postId: routePostId, commentId }
+      : { kind: 'detail', postId: routePostId });
+
+    applyPublicStructuredData(buildForumPostStructuredData({
+      post: structuredPost,
+      canonicalPath,
+    }));
+
+    return removePublicStructuredData;
+  }, [commentId, post]);
 
   useEffect(() => {
     if (shareState === 'idle') {

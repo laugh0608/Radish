@@ -15,11 +15,16 @@ import { followUser, getFollowStatus, unfollowUser, type UserFollowStatus } from
 import { useUserStore } from '@/stores/userStore';
 import { DEFAULT_TIME_ZONE, formatDateTimeByTimeZone, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
-import type { PublicProfileRoute, PublicProfileTab } from '../profileRouteState';
+import { buildPublicProfilePath, type PublicProfileRoute, type PublicProfileTab } from '../profileRouteState';
 import {
   getPublicDetailBackLabelKey,
   type PublicDetailBackMode,
 } from '../publicRouteNavigation';
+import {
+  applyPublicStructuredData,
+  buildProfilePageStructuredData,
+  removePublicStructuredData,
+} from '../publicStructuredData';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import {
   resolvePublicProfileCommentForumTarget,
@@ -326,6 +331,27 @@ export const PublicProfileApp = ({
     () => resolveMediaUrl(profile?.voAvatarThumbnailUrl || profile?.voAvatarUrl),
     [profile?.voAvatarThumbnailUrl, profile?.voAvatarUrl]
   );
+
+  useEffect(() => {
+    if (!profile) {
+      removePublicStructuredData();
+      return;
+    }
+
+    applyPublicStructuredData(buildProfilePageStructuredData({
+      profile,
+      stats,
+      imageUrl: avatarUrl,
+      canonicalPath: buildPublicProfilePath({
+        kind: 'detail',
+        userId: String(profile.voUserId),
+        tab: route.tab,
+        page: route.page,
+      }),
+    }));
+
+    return removePublicStructuredData;
+  }, [avatarUrl, profile, route.page, route.tab, stats]);
 
   const displayName = profile?.voDisplayName?.trim() || null;
   const userName = profile?.voUserName?.trim() || t('common.userFallback', { id: route.userId });

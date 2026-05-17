@@ -523,6 +523,14 @@
 - 详情首包可见性收益最高，但真正解决需要 SSR / SSG / prerender 或 Gateway HTML rewrite；该方向继续后置为单独方案评审，不直接改当前 Vite SPA 构建形态。
 - 下一批建议先做 `P3-5-B 运行时结构化数据基线`：限定在 forum detail、docs detail、shop detail 和公开个人页注入 / 清理 JSON-LD，复用已加载详情数据并补定向测试。
 
+### `P3-5-B` 运行时结构化数据基线
+
+- 新增 `publicStructuredData` helper，统一构建、注入、复用和清理 `<script type="application/ld+json">`。
+- forum detail、docs detail、shop detail 和公开个人页已分别输出 `BlogPosting`、`Article`、`Product`、`ProfilePage / Person` JSON-LD。
+- 结构化数据复用页面已加载详情数据，不新增接口请求；商品不把积分价格伪装成法币 offer，公开个人页不把长数字用户 ID 当作可见名称。
+- 路由切换、详情数据缺失或组件卸载时会清理旧 JSON-LD，避免公开详情之间残留错误结构化数据。
+- 下一步进入动态 sitemap 方案评审，继续后置 SSR / SSG / prerender / Gateway HTML rewrite。
+
 ### 验证记录
 
 - `npm run type-check --workspace=radish.client`
@@ -543,3 +551,11 @@
   - `P3-5-A` 文档同步后通过。
 - `git diff --check`
   - `P3-5-A` 文档同步后通过。
+- `npm run type-check --workspace=radish.client`
+  - `P3-5-B` 运行时结构化数据基线通过。
+- `node --test --test-isolation=none ./tests/publicStructuredData.test.ts ./tests/publicHead.test.ts`
+  - `P3-5-B` 运行时结构化数据和公开 head 定向测试通过，`12/12`。
+- `npm run test --workspace=radish.client`
+  - `P3-5-B` 并入默认前端测试入口后通过，`147/147`。
+- `npm run build --workspace=radish.client`
+  - `P3-5-B` 运行时结构化数据基线通过；仍保留既有 `app-shop` chunk size warning。
