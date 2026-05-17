@@ -1,6 +1,6 @@
 # 第三开发阶段：真实使用增长与长期契约治理
 
-> 状态：`P3-5-D2 公开详情 head 注入部署前 smoke 入口` 已完成
+> 状态：`P3-5` 公开内容增长后续专题已阶段收尾，当前进入 `P3-6 真实使用运营观察与反馈分流`
 >
 > 启动日期：2026-05-13（Asia/Shanghai）
 >
@@ -22,7 +22,9 @@
 
 `P3-0` 已完成第三阶段定义、公开内容增长基础审计和第一批任务排序；`P3-1` 已完成公开内容 SEO 与分享基线。`P3-2` 已完成 `P3-2-A` 外部 ID 契约审计和 `P3-2-B` `Post.PublicId` 首批实现，试点对象保持收敛为 `Post`。`P3-3` 已完成 `PublicForumApp.tsx` 公开论坛热区首轮拆分和收工复核。`P3-4` 已完成 forum / docs / shop 留存回流矩阵首轮主动验收和补洞。
 
-当前主线为 `P3-5 公开内容增长后续专题`。`2026-05-17` 已完成 `P3-5-A` 评估、`P3-5-B` 运行时结构化数据基线、`P3-5-C` 动态 sitemap 首批实现、`P3-5-D` 详情首包 HTML 可见性方案评审、`P3-5-D1` 公开详情 HTML head 快照注入首批实现和 `P3-5-D2` 部署前 smoke 入口。公开 forum detail、docs detail、shop detail 和公开个人页已在前端运行时注入 JSON-LD，并在路由切换 / 组件卸载时清理。动态 sitemap 已采用 API + Gateway 路由，构建期静态生成器仅保留为离线 / 夜间导出备选；详情首包 HTML 可见性首批只覆盖 forum / docs / shop 详情 head 注入，不启动完整 SSR / SSG 或正文预渲染。
+`P3-5 公开内容增长后续专题` 已于 `2026-05-17` 阶段收尾：`P3-5-A` 评估、`P3-5-B` 运行时结构化数据基线、`P3-5-C` 动态 sitemap 首批实现、`P3-5-D` 详情首包 HTML 可见性方案评审、`P3-5-D1` 公开详情 HTML head 快照注入首批实现和 `P3-5-D2` 部署前 smoke 入口均已完成。最新公开 head smoke 已通过 robots、sitemap、forum / docs / shop 三类详情。动态 sitemap 已采用 API + Gateway 路由，构建期静态生成器仅保留为离线 / 夜间导出备选；详情首包 HTML 可见性首批只覆盖 forum / docs / shop 详情 head 注入，不启动完整 SSR / SSG 或正文预渲染。
+
+当前主线切到 `P3-6 真实使用运营观察与反馈分流`：只从真实部署、真实内容、爬虫抓取、分享预览、用户回流和运行日志中挑选高信号问题；公开内容增长能力转入部署 / 运营维护线。
 
 ## `P3-0` 定义与工程整备
 
@@ -734,106 +736,53 @@ npm run check:repo-hygiene:changed
 
 - `npm run check:public-head-smoke -- --self-test` 通过。
 
-## 首批候选任务
+## `P3-5` 收尾判断与维护线
 
-### `P3-1` 公开内容增长基础
+收尾日期：2026-05-17。
 
-目标：让公开内容从“可直达阅读”推进到“可传播、可索引、可回流”。
+`P3-5` 可以阶段收尾。
 
-候选范围：
+依据：
 
-- sitemap / robots / canonical 口径与生成位置确认。
-- forum / docs / profile / shop 的基础 `title / description / og:*` 输出策略。
-- 分享卡片与公开链接复制口径复核。
-- 公开内容壳层来源返回与外链打开策略复核。
+- 公开详情增长链路已覆盖运行时 JSON-LD、动态 sitemap、详情首包 head snapshot 注入和部署后 smoke 入口。
+- 最新 smoke 已通过 robots、sitemap、forum / docs / shop 三类详情，说明 Gateway 顶层抓取入口和三类公开详情首包 head 当前可被部署验证覆盖。
+- 首批方案已明确不渲染正文 HTML、不改变 React hydrate、不引入完整 SSR / SSG，也不把生产数据依赖塞入前端构建；当前继续扩大工程路线的收益不足以覆盖复杂度。
 
-边界：
+转入维护的部署 / 运营项：生产公开域名配置、API / Frontend 可达性、public head smoke、sitemap 分片、head snapshot / sitemap 缓存日志、分享预览、搜索抓取反馈，以及内容规模接近单类型 `100,000` 条 URL 时的分片策略复评。
 
-- 不把公开壳层扩成工作台。
-- 不开放发帖、完整评论提交、购买、订单、背包或治理动作。
-- SSR / SSG 只先做方案判断，不默认立刻改构建架构。
+不继续扩大的范围：正文 HTML 预渲染、完整 SSR / SSG、构建期生产数据抓取、公开个人页纳入动态 sitemap、全量 `PublicId` 迁移，以及把公开壳层扩成发帖、评论提交、购买、背包、订单或治理工作台。
 
-### `P3-2` `PublicId` 最小试点方案
+## `P3-6` 真实使用运营观察与反馈分流
 
-目标：把长期 `InternalId / PublicId / FederationId` 方向从文档原则推进到可执行试点。
+启动日期：2026-05-17。
 
-候选范围：
+- 把 `P3-1` 至 `P3-5` 已落地的公开内容增长、PublicId 试点、留存回流和 head / sitemap 能力放到真实部署与真实使用反馈中观察。
+- 从真实内容、真实访问、爬虫抓取、分享预览、用户回流、运行日志和部署 smoke 中筛出高信号问题。
+- 将问题分流为小闭环修复、部署 / 运维配置、后续专题评审或暂不处理，避免第三阶段继续被低收益尾项拖住。
 
-- 选择 `Post / User / WikiDocument` 中 `1-2` 个核心对象作为试点候选。
-- 定义 `PublicId` 格式、生成时机、唯一索引、DTO 暴露和兼容查询口径。
-- 明确 `LongId` 字符串安全过渡期与 `PublicId` 并行期边界。
+首批观察入口：
+- 公开增长：robots、动态 sitemap、forum / docs / shop 详情首包 head、运行时 JSON-LD、分享预览和搜索抓取反馈。
+- 回流留存：公开分享、通知、最近阅读、我的轻回应、公开个人页到 WebOS / Flutter 的真实回流断点。
+- 长期契约：PublicId 优先链路、旧 long fallback、普通用户可见文案中的内部 ID 外露。
+- 部署运行：Gateway route 优先级、API / Frontend base URL、head snapshot 缓存、sitemap 缓存和异常回退日志。
 
-边界：
+分流规则：
+- `P0/P1`：阻断公开访问、登录回流、分享入口、核心 head / sitemap、资产安全、购买 / 订单 / 转账或权限授权的缺口，进入当前批次小闭环。
+- `P2`：影响增长质量但不阻断主路径的问题，成组排入下一小批次。
+- 低收益微体验、一次性历史数据补齐、全量外部标识迁移、分发材料和平台化工程，除非有真实证据支撑，否则继续后置。
 
-- 不迁移数据库主键。
-- 不一次性修改所有 API / 前端路由。
-- 不启动 ActivityPub / WebFinger 实现。
+### `P3-6-A` 公开增长 Gateway origin 观察
 
-### `P3-3` 代码热区拆分与维护成本治理
+启动日期：2026-05-17。
 
-目标：降低继续扩功能时的变更风险。
+- 本地 Gateway smoke 已通过 robots、sitemap、forum / docs / shop 三类详情。
+- 观察中发现 sitemap index 和分片 `<loc>` 一度输出 API 内部 origin `http://localhost:5100`，而详情 head canonical 已正确输出 Gateway origin。
+- 已将 `PublicSitemapController` 的公开 base URL 解析与 head snapshot 口径对齐：配置缺失时优先读取安全的 `X-Forwarded-Proto / X-Forwarded-Host`，再回落 `Request.Scheme / Request.Host`。
+- 定向验证已覆盖 `PublicSitemapControllerTest` 和 `PublicSitemapServiceTest`；本地复测确认 `/sitemap.xml` 的 `<loc>` 已回到 `https://localhost:5000/sitemaps/...`。
 
-首批候选热区：
+明日继续观察：
+- 在真实部署或当前本地 Gateway 上复跑 public head smoke。
+- 额外抽查 `/sitemap.xml` 与 `static / forum / docs / shop` 分片 `<loc>` 是否全部使用公开 Gateway origin。
+- 观察 head snapshot、sitemap 缓存与异常回退日志；没有新 `P0/P1` 时只记录结论，不开新功能。
 
-- `Frontend/radish.client/src/public/forum/PublicForumApp.tsx`
-- `Frontend/radish.client/src/i18n.ts`
-- `Radish.Service/ExperienceService.cs`
-- `Radish.Service/ContentModerationService.cs`
-- `Clients/radish.flutter/lib/features/forum/presentation/forum_detail_page.dart`
-- `Clients/radish.flutter/lib/features/profile/presentation/profile_page.dart`
-
-边界：
-
-- 只做能降低真实复杂度的拆分，不做空壳抽象。
-- 每次拆分必须有对应定向验证。
-- 不在拆分批次里顺手改业务行为，除非是拆分暴露出的明确 bug。
-
-### `P3-4` 用户留存轻闭环
-
-目标：把已有通知、复访、轻互动和公开分享串成自然回流路径。
-
-候选范围：
-
-- 公开内容分享后进入正确壳层。
-- 已登录用户从通知 / 最近阅读 / 我的轻回应回到上下文。
-- 桌面工作台与 Flutter 移动端对“继续使用”的边界保持一致。
-
-边界：
-
-- 不做完整运营平台。
-- 不做完整通知中心移动版。
-- 不扩完整评论提交、点赞、投票、编辑治理或聊天移动版。
-
-## 首批排序建议
-
-`P3-0` 完成后，默认优先级建议为：
-
-1. `P3-1` 公开内容增长基础。
-2. `P3-2` `PublicId` 最小试点方案。
-3. `P3-3` 代码热区拆分与维护成本治理。
-4. `P3-4` 用户留存轻闭环。
-
-如果 `P3-0` 审计发现资产、安全、登录、购买、转账、权限授权或主路径中断的 `P0/P1`，最多先回拉 `1-2` 个小闭环，再继续上述排序。
-
-## `P3-0` 完成条件
-
-- 当前阶段文档入口已经从“下一阶段主任务选择”切到 `P3-0`。
-- 第三阶段目标、非目标、首批候选和排序依据已经写清楚。
-- 主路径与代码热区审计形成简短结论。
-- 第一批正式开工任务具备明确范围、完成条件和验证入口。
-- 第二阶段维护边界仍然成立，没有被低收益尾项重新拉回。
-
-## 验证口径
-
-`P3-0` 以文档和审计为主，默认只需要：
-
-```bash
-npm run check:repo-hygiene:changed
-```
-
-若审计过程中改动代码，再按改动范围追加：
-
-- 前端公开壳层：`npm run type-check --workspace=radish.client`
-- Console：`npm run build --workspace=radish.console`
-- 后端契约：`dotnet test Radish.Api.Tests`
-- Flutter：对应 `flutter test test/<topic>_test.dart` 与 `flutter analyze`
+截至 `2026-05-17`，`P3-1` 至 `P3-5` 均已完成阶段性收口。当前不再按历史候选清单惯性扩张，后续以 `P3-6` 的真实使用运营观察与反馈分流为准。

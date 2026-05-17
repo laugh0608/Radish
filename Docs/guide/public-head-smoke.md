@@ -47,5 +47,12 @@ npm run check:public-head-smoke -- --self-test
 
 - 直接查看三类详情的页面源代码，确认 head 内容已经在首包 HTML 中，不依赖浏览器执行 JS 后才出现。
 - 确认 canonical 与页面运行时复制链接、动态 sitemap 中的 URL 口径一致。
+- 确认 `/sitemap.xml` 与各分片中的 `<loc>` 使用公开 Gateway origin，而不是 API 内部地址；本地示例期望为 `https://localhost:5000/sitemaps/...`，不应出现 `http://localhost:5100/...`。
 - 确认未公开内容返回原 SPA 链路或 404 业务状态，不输出草稿、未发布文档、未上架商品的详情 head。
 - 确认 `robots.txt` 指向的 sitemap URL 与生产 Gateway 实际返回一致。
+
+本地可用以下命令抽查 sitemap index 的 `<loc>`：
+
+```powershell
+node -e "const https=require('https');const agent=new https.Agent({rejectUnauthorized:false});https.get('https://localhost:5000/sitemap.xml',{agent},res=>{let b='';res.on('data',c=>b+=c);res.on('end',()=>console.log([...b.matchAll(/<loc>(.*?)<\/loc>/g)].map(m=>m[1]).join('\n')));}).on('error',e=>{console.error(e);process.exit(1);});"
+```

@@ -7,7 +7,7 @@
 ## 当前状态
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
-- **当前主线**：`P3-5 公开内容增长后续专题`，公开详情 head 注入部署前 smoke 入口已补齐
+- **当前主线**：`P3-6 真实使用运营观察与反馈分流`，`P3-5` 公开内容增长后续专题已阶段收尾
 - **复核日期**：`2026-05-17`
 - **最近结论**：
   - `v26.3.2-release` 已于 `2026-04-06` 完成首版真实发布，第一开发阶段结束
@@ -18,7 +18,7 @@
   - WebOS 桌面工作台已回到产品功能开发推进，并落地首批“继续使用”复访入口、桌面应用恢复入口与萝卜坑工作流补全
   - Console 治理已完成用户详情、个人资料 / 设置真实化与仪表盘真实统计首轮补洞
   - `ID Phase A` 已进入前期治理面：先冻结外部 `long` 暴露扩散，按 `LongId` / 字符串安全收口窗口参数、通知跳转、公开路由与 `Profile / Shop / Wiki / Forum` 首批边界；数据库主键迁移与全量 `PublicId` 切换继续后置
-  - 主线演进已从“多端路线收口后的产品功能开发推进”“第二阶段收口评审”、`P2-C5-A` Flutter 首批补强、下一阶段主任务选择、`P3-0 / P3-1 / P3-2 / P3-3 / P3-4`，切到 `P3-5`
+  - 主线演进已从“多端路线收口后的产品功能开发推进”“第二阶段收口评审”、`P2-C5-A` Flutter 首批补强、下一阶段主任务选择、`P3-0 / P3-1 / P3-2 / P3-3 / P3-4 / P3-5`，切到 `P3-6`
   - `P2-C3 经验 / 等级治理` 已完成用户概览、冻结 / 解冻、每日统计观察、经验流水回看、最小可解释异常规则、人工复核联动与治理留痕首轮收口
   - Console 内容治理已完成聊天消息定位、帖子评论 / 轻回应回看、失效降级、目标快照、审核效率、手动处置与当前治理状态前置，转入稳定维护
   - 商城管理人工验收已于 `2026-05-12` 收口：商品相关订单、详情长 ID、删除确认、订单跳用户 / 商品返回链路和后端商品删除保护均已确认稳定
@@ -49,6 +49,7 @@
   - `P3-5-D` 已完成详情首包 HTML 可见性方案评审：完整 SSR / 构建期 SSG 暂不作为首批路线；若后续确需解决无 JS 首包，优先评估 API 公开详情快照 + Gateway 缓存化 head 注入的窄方案
   - `P3-5-D1` 已完成公开详情 HTML head 快照注入首批实现：API 提供 forum / docs / shop 公开详情 head snapshot，Gateway 对三类详情页注入 title / description / canonical / Open Graph / JSON-LD；任一环节失败回落原 SPA 代理链路，不渲染正文、不启动完整 SSR / SSG
   - `P3-5-D2` 已补齐部署前 smoke 入口：新增 `npm run check:public-head-smoke` 与 [公开详情 Head Smoke 验收](/guide/public-head-smoke)，用于部署后检查 robots、动态 sitemap 和三类公开详情首包 head
+  - `P3-5` 收尾判断为可收尾：最新公开 head smoke 已通过 robots、sitemap、forum / docs / shop 三类详情；剩余公开增长事项转入部署与运营维护线，不继续扩大到完整 SSR / SSG 或正文预渲染
 
 ## 当前执行入口
 
@@ -65,10 +66,10 @@
 
 ## 当前目标
 
-1. **`P3-5` 公开内容增长后续专题**
-   - `P3-5-A / P3-5-B / P3-5-C / P3-5-D / P3-5-D1 / P3-5-D2` 已完成动态 sitemap、结构化数据和详情首包可见性评估、公开详情运行时 JSON-LD 基线、动态 sitemap API + Gateway 首批实现、详情首包 HTML 可见性路线评审、公开详情 HTML head 快照注入首批实现，以及部署前 smoke 入口
-   - 动态 sitemap 首批不把生产 API / 数据库依赖塞进前端构建；构建期静态生成器仍仅作为离线 / 夜间导出备选
-   - 详情首包 HTML 可见性不直接启动完整 SSR / SSG；首批只做 forum / docs / shop 详情的 head 注入，不生成正文 HTML
+1. **`P3-6` 真实使用运营观察与反馈分流**
+   - 目标是把 `P3-1` 至 `P3-5` 已落地的公开内容增长、PublicId 试点、留存回流和 head / sitemap 能力放到真实使用反馈中观察
+   - 只处理真实部署、真实内容、爬虫抓取、分享预览、用户回流或日志中暴露的高信号问题
+   - 不把 `P3-6` 扩成新的大功能池；未出现明确证据前，不启动完整 SSR / SSG、正文预渲染、全量 `PublicId` 迁移或运营平台
 2. **第二阶段收口护栏**
    - WebOS / PC 工作台、后端 + Console、公开 Web 与 Tauri 转入稳定维护
    - 若新发现会阻断资产、安全、登录、购买、转账或主路径的 `P0/P1` 缺口，最多挑 `1-2` 个小闭环
@@ -80,7 +81,8 @@
 
 ## 下一顺位
 
-- `P3-5-D2` 部署前 smoke 入口已完成；下一步公开内容增长应转向部署环境实测或阶段收尾判断，不直接扩大到完整 SSR / SSG 或正文预渲染
+- `P3-6` 优先观察真实部署后的公开 head smoke、动态 sitemap、head snapshot 缓存、公开域名配置、分享预览和搜索抓取反馈
+- `P3-5` 已阶段收尾，后续只维护 forum / docs / shop 三类详情首包 head 注入、动态 sitemap 和运行时 JSON-LD；不继续扩大到完整 SSR / SSG 或正文预渲染
 - `P3-4` forum / docs / shop 留存回流矩阵首轮已完成阶段性收尾判断，后续只处理真实使用中新暴露的回流断点
 - `P3-3` 只保留后续观察，不继续无边界深拆 `PublicForumDetail` 内部结构
 - 详情首包 HTML 可见性继续后置，不直接启动 SSR / SSG、预渲染或 Gateway HTML rewrite
@@ -92,12 +94,14 @@
 
 ## 下一事项
 
-- 下一事项：继续推进公开内容增长时，建议在真实部署环境执行 `npm run check:public-head-smoke -- --base-url <public-gateway-url> --path <forum-detail> --path <docs-detail> --path <shop-detail>`，并据结果决定 `P3-5` 是否阶段收尾
+- 明天事项：继续做 `P3-6-A` 真实部署 / 本地 Gateway 公开增长观察，不开新功能；复跑 `npm run check:public-head-smoke -- --base-url <public-gateway-url> --path <forum-detail> --path <docs-detail> --path <shop-detail>`，并额外确认 `/sitemap.xml` 与 sitemap 分片 `<loc>` 均使用公开 Gateway origin
+- 同步观察 head snapshot 日志、sitemap 缓存 / 回退日志、分享预览和搜索抓取反馈；若没有新的 `P0/P1`，只形成观察结论，不扩大 SSR / SSG 或正文预渲染
 - 若继续推进留存链路，只从真实使用中暴露的新断点选择小闭环，不再默认扩全量 `PublicId`、数据库主键迁移或 `User / Product / WikiDocument / Comment` 外部标识改造
 - 详情首包 HTML 可见性继续保持窄实现；未重新评估前不直接启动 SSR / SSG、正文预渲染或更广泛 Gateway HTML rewrite
 
 ## 并行维护项
 
+- 公开 head smoke、动态 sitemap、head snapshot 缓存与 `GatewayService:PublicUrl` / `RADISH_PUBLIC_URL` 生产域名配置
 - `M14` 宿主运行与最小可观测性基线
 - `M15` 最小交付与部署基线
 - `validate:baseline / validate:baseline:host / validate:ci / Identity Guard`
