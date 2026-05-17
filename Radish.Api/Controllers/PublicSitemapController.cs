@@ -69,6 +69,22 @@ public class PublicSitemapController : ControllerBase
             return configuredUrl.Trim().TrimEnd('/');
         }
 
+        var forwardedProto = Request.Headers["X-Forwarded-Proto"].FirstOrDefault();
+        var forwardedHost = Request.Headers["X-Forwarded-Host"].FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(forwardedProto) &&
+            !string.IsNullOrWhiteSpace(forwardedHost) &&
+            IsSafeForwardedHost(forwardedHost))
+        {
+            return $"{forwardedProto.Trim()}://{forwardedHost.Trim()}".TrimEnd('/');
+        }
+
         return $"{Request.Scheme}://{Request.Host}".TrimEnd('/');
+    }
+
+    private static bool IsSafeForwardedHost(string forwardedHost)
+    {
+        return !forwardedHost.Contains('/', StringComparison.Ordinal) &&
+            !forwardedHost.Contains('\\', StringComparison.Ordinal) &&
+            !forwardedHost.Contains(' ', StringComparison.Ordinal);
     }
 }
