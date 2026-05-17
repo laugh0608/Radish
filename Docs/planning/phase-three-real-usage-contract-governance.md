@@ -1,6 +1,6 @@
 # 第三开发阶段：真实使用增长与长期契约治理
 
-> 状态：`P3-5-C 动态 sitemap` API + Gateway 首批实现已完成
+> 状态：`P3-5-D 详情首包 HTML 可见性方案评审` 已完成
 >
 > 启动日期：2026-05-13（Asia/Shanghai）
 >
@@ -22,7 +22,7 @@
 
 `P3-0` 已完成第三阶段定义、公开内容增长基础审计和第一批任务排序；`P3-1` 已完成公开内容 SEO 与分享基线。`P3-2` 已完成 `P3-2-A` 外部 ID 契约审计和 `P3-2-B` `Post.PublicId` 首批实现，试点对象保持收敛为 `Post`。`P3-3` 已完成 `PublicForumApp.tsx` 公开论坛热区首轮拆分和收工复核。`P3-4` 已完成 forum / docs / shop 留存回流矩阵首轮主动验收和补洞。
 
-当前主线为 `P3-5 公开内容增长后续专题`。`2026-05-17` 已完成 `P3-5-A` 评估、`P3-5-B` 运行时结构化数据基线和 `P3-5-C` 动态 sitemap 首批实现。公开 forum detail、docs detail、shop detail 和公开个人页已在前端运行时注入 JSON-LD，并在路由切换 / 组件卸载时清理。动态 sitemap 已采用 API + Gateway 路由，构建期静态生成器仅保留为离线 / 夜间导出备选；详情首包 HTML 可见性继续后置为 SSR / SSG / 预渲染专题。
+当前主线为 `P3-5 公开内容增长后续专题`。`2026-05-17` 已完成 `P3-5-A` 评估、`P3-5-B` 运行时结构化数据基线、`P3-5-C` 动态 sitemap 首批实现和 `P3-5-D` 详情首包 HTML 可见性方案评审。公开 forum detail、docs detail、shop detail 和公开个人页已在前端运行时注入 JSON-LD，并在路由切换 / 组件卸载时清理。动态 sitemap 已采用 API + Gateway 路由，构建期静态生成器仅保留为离线 / 夜间导出备选；详情首包 HTML 可见性后续若实施，优先走窄范围 head 快照注入，不直接启动完整 SSR / SSG。
 
 ## `P3-0` 定义与工程整备
 
@@ -684,6 +684,15 @@ npm run check:repo-hygiene:changed
 
 - 仍需在真实部署环境确认 `GatewayService:PublicUrl` / `RADISH_PUBLIC_URL` 输出生产域名，并人工访问 `/sitemap.xml`、`/sitemaps/static.xml`、`/sitemaps/forum-1.xml`。
 - 若后续内容规模接近单类型 `100,000` 条 URL，需要单独评估 cursor 分片、夜间导出或搜索引擎索引拆分策略。
+
+## `P3-5-D` 详情首包 HTML 可见性方案评审
+
+完成日期：2026-05-17。详见 [P3-5-D 详情首包 HTML 可见性方案评审](/planning/p3-5-d-html-first-paint-visibility)。
+
+- 当前 `radish.client` 仍是纯 Vite SPA，Gateway 没有 SSR / HTML 渲染流水线；无 JS 爬虫 / 分享工具只能看到通用 shell。
+- 完整 SSR 和构建期 SSG / 预渲染均不作为首批路线，避免引入 Node SSR 宿主、生产数据构建依赖和大范围 hydrate / 路由重构。
+- 若继续实施，优先做 `P3-5-D1 公开详情 HTML head 快照注入`：API 提供公开详情 head snapshot，Gateway 只对 forum / docs / shop 公开详情做缓存化 head 注入，不渲染正文。
+- 该批次涉及 API + Gateway 运行时行为，实施前仍需单独批准。
 
 ## 首批候选任务
 
