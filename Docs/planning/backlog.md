@@ -60,6 +60,7 @@
 ### `Console-ext Phase 2+`
 
 - 更完整权限中心、审计与共享接口治理
+- Console 前端后续治理应优先复用 `@radish/ui` 的组件、交互反馈与主题 token，逐步收敛历史页面的自定义样式和重复组件，保持 Console 与 Radish 其他前端入口的视觉一致性
 - 不在第二阶段前半程启动
 
 ### `Gateway & BFF` 深化

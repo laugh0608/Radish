@@ -8,7 +8,7 @@
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
 - **当前主线**：`P3-6 真实使用运营观察与反馈分流`，`P3-5` 公开内容增长后续专题已阶段收尾
-- **复核日期**：`2026-05-17`
+- **复核日期**：`2026-05-18`
 - **最近结论**：
   - `v26.3.2-release` 已于 `2026-04-06` 完成首版真实发布，第一开发阶段结束
   - `Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口，转入稳定维护
@@ -50,6 +50,9 @@
   - `P3-5-D1` 已完成公开详情 HTML head 快照注入首批实现：API 提供 forum / docs / shop 公开详情 head snapshot，Gateway 对三类详情页注入 title / description / canonical / Open Graph / JSON-LD；任一环节失败回落原 SPA 代理链路，不渲染正文、不启动完整 SSR / SSG
   - `P3-5-D2` 已补齐部署前 smoke 入口：新增 `npm run check:public-head-smoke` 与 [公开详情 Head Smoke 验收](/guide/public-head-smoke)，用于部署后检查 robots、动态 sitemap 和三类公开详情首包 head
   - `P3-5` 收尾判断为可收尾：最新公开 head smoke 已通过 robots、sitemap、forum / docs / shop 三类详情；剩余公开增长事项转入部署与运营维护线，不继续扩大到完整 SSR / SSG 或正文预渲染
+  - `P3-6-A` 本地 Gateway 公开增长观察已完成首轮收口：公开 head smoke 已覆盖 robots、sitemap index、`static / forum / docs / shop` 分片和三类详情首包 head；sitemap 分片 `<loc>` origin 检查已纳入脚本自动验证
+  - 观察中暴露的本地 SQLite + Hangfire 并发读异常已在仓储 SQLite fallback 读路径串行化处理，重启后 `shop-cancel-timeout-orders` 初步观察未再出现 reader closed 异常
+  - 下一小批次转向 `P3-6-B` smoke 失败诊断增强，目标是提高部署后定位 Gateway / API / Frontend 配置问题的效率，不启动运营平台或完整可观测性平台
 
 ## 当前执行入口
 
@@ -81,7 +84,7 @@
 
 ## 下一顺位
 
-- `P3-6` 优先观察真实部署后的公开 head smoke、动态 sitemap、head snapshot 缓存、公开域名配置、分享预览和搜索抓取反馈
+- `P3-6` 优先观察真实部署后的公开 head smoke、动态 sitemap、head snapshot 缓存、公开域名配置、分享预览和搜索抓取反馈；下一小批次先做 smoke 失败诊断增强
 - `P3-5` 已阶段收尾，后续只维护 forum / docs / shop 三类详情首包 head 注入、动态 sitemap 和运行时 JSON-LD；不继续扩大到完整 SSR / SSG 或正文预渲染
 - `P3-4` forum / docs / shop 留存回流矩阵首轮已完成阶段性收尾判断，后续只处理真实使用中新暴露的回流断点
 - `P3-3` 只保留后续观察，不继续无边界深拆 `PublicForumDetail` 内部结构
@@ -94,8 +97,8 @@
 
 ## 下一事项
 
-- 明天事项：继续做 `P3-6-A` 真实部署 / 本地 Gateway 公开增长观察，不开新功能；复跑 `npm run check:public-head-smoke -- --base-url <public-gateway-url> --path <forum-detail> --path <docs-detail> --path <shop-detail>`，并额外确认 `/sitemap.xml` 与 sitemap 分片 `<loc>` 均使用公开 Gateway origin
-- 同步观察 head snapshot 日志、sitemap 缓存 / 回退日志、分享预览和搜索抓取反馈；若没有新的 `P0/P1`，只形成观察结论，不扩大 SSR / SSG 或正文预渲染
+- 下一事项：进入 `P3-6-B` 公开增长 smoke 失败诊断增强；失败时应输出状态码、content-type、响应片段、是否疑似 SPA shell、失败阶段和请求 URL，帮助部署后区分 Gateway 路由、API 只读接口、Frontend shell 或域名配置问题
+- 继续同步观察 head snapshot 日志、sitemap 缓存 / 回退日志、分享预览和搜索抓取反馈；若没有新的 `P0/P1`，只形成观察结论，不扩大 SSR / SSG 或正文预渲染
 - 若继续推进留存链路，只从真实使用中暴露的新断点选择小闭环，不再默认扩全量 `PublicId`、数据库主键迁移或 `User / Product / WikiDocument / Comment` 外部标识改造
 - 详情首包 HTML 可见性继续保持窄实现；未重新评估前不直接启动 SSR / SSG、正文预渲染或更广泛 Gateway HTML rewrite
 
@@ -106,6 +109,7 @@
 - `M15` 最小交付与部署基线
 - `validate:baseline / validate:baseline:host / validate:ci / Identity Guard`
 - 桌面壳层、窗口几何记忆、主题切换、聊天室 `P1`、通知中心、商城等既有能力稳定维护
+- Console 后续扩展进入规划时，优先复用 `@radish/ui` 组件、交互反馈和主题 token，避免后台视觉与 Radish 其他前端入口继续分叉
 
 ## 当前不做
 

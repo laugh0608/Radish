@@ -780,9 +780,19 @@ npm run check:repo-hygiene:changed
 - 已将 `PublicSitemapController` 的公开 base URL 解析与 head snapshot 口径对齐：配置缺失时优先读取安全的 `X-Forwarded-Proto / X-Forwarded-Host`，再回落 `Request.Scheme / Request.Host`。
 - 定向验证已覆盖 `PublicSitemapControllerTest` 和 `PublicSitemapServiceTest`；本地复测确认 `/sitemap.xml` 的 `<loc>` 已回到 `https://localhost:5000/sitemaps/...`。
 
-明日继续观察：
-- 在真实部署或当前本地 Gateway 上复跑 public head smoke。
-- 额外抽查 `/sitemap.xml` 与 `static / forum / docs / shop` 分片 `<loc>` 是否全部使用公开 Gateway origin。
-- 观察 head snapshot、sitemap 缓存与异常回退日志；没有新 `P0/P1` 时只记录结论，不开新功能。
+`2026-05-18` 观察结论：
 
-截至 `2026-05-17`，`P3-1` 至 `P3-5` 均已完成阶段性收口。当前不再按历史候选清单惯性扩张，后续以 `P3-6` 的真实使用运营观察与反馈分流为准。
+- 当前本地 Gateway 上已复跑 public head smoke，robots、sitemap index、`static / forum / docs / shop` 分片和 forum / docs / shop 三类详情首包 head 均通过。
+- sitemap 分片 `<loc>` origin 检查已纳入 `Scripts/check-public-head-smoke.mjs`，不再依赖人工临时脚本抽查。
+- 观察中暴露的本地 SQLite + Hangfire 并发读异常已在仓储 SQLite fallback 读路径串行化处理，重启后 `shop-cancel-timeout-orders` 初步观察未再出现 reader closed 异常。
+- 未发现新的公开访问、head / sitemap、分享或回流 `P0/P1` 阻断项；`P3-6-A` 可阶段收口。
+
+### `P3-6-B` 公开增长 smoke 失败诊断增强
+
+启动口径：`2026-05-18`。
+
+目标是在脚本层把 public head smoke 从“只给出 PASS / FAIL”增强为可定位的部署诊断入口：失败时输出请求 URL、状态码、content-type、响应 body 前段、是否疑似 SPA shell、失败阶段和关键断言，帮助区分 Gateway 路由、API 只读接口、Frontend shell、公开域名配置或 TLS / 网络问题。
+
+完成条件是 robots、sitemap index、sitemap shard 和详情 head 任一失败时能输出足够定位的信息；`--self-test` 覆盖核心解析逻辑；本地 Gateway 使用真实 forum / docs / shop 详情路径复跑通过。本批不启动运营平台、完整可观测性平台、完整 Playwright / E2E 或 SSR / SSG。
+
+截至 `2026-05-18`，`P3-1` 至 `P3-5` 均已完成阶段性收口，`P3-6-A` 已完成本地公开增长观察首轮收口。当前不再按历史候选清单惯性扩张，后续以 `P3-6` 的真实使用运营观察与反馈分流为准。
