@@ -30,6 +30,18 @@ npm run check:public-head-smoke -- --base-url https://localhost:5000 --path /for
 npm run check:public-head-smoke -- --base-url https://gateway.internal --path /forum/post/pst_xxx --allow-external-canonical
 ```
 
+如 sitemap `<loc>` 指向的公开域名和检查用 base URL 不一致，追加：
+
+```bash
+npm run check:public-head-smoke -- --base-url https://gateway.internal --path /forum/post/pst_xxx --allow-external-sitemap-loc
+```
+
+如只想检查 sitemap index 本身，不递归请求分片，追加：
+
+```bash
+npm run check:public-head-smoke -- --base-url https://radishx.com --path /forum/post/pst_xxx --skip-sitemap-shards
+```
+
 脚本会检查：
 
 - `/robots.txt` 包含 `Sitemap:`，且未被 SPA shell 覆盖。
