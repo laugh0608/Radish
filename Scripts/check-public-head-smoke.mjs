@@ -56,7 +56,9 @@ function printUsage() {
   console.log('  --timeout-ms <number>         单个请求超时时间，默认 5000');
   console.log('  --skip-robots                 不检查 /robots.txt');
   console.log('  --skip-sitemap                不检查 /sitemap.xml');
+  console.log('  --skip-sitemap-shards         不检查 sitemap index 中的分片');
   console.log('  --allow-external-canonical    允许 canonical origin 不等于 --base-url origin');
+  console.log('  --allow-external-sitemap-loc  允许 sitemap <loc> origin 不等于 --base-url origin');
   console.log('  --strict-tls                  严格校验 HTTPS 证书，默认对 localhost/127.0.0.1 放宽');
   console.log('  --self-test                   运行脚本内置离线自检，不发起网络请求');
 }
@@ -316,6 +318,49 @@ function assertSitemapXml(xml) {
   return failures;
 }
 
+function isSitemapIndex(xml) {
+  return /<(?:\w+:)?sitemapindex\b/i.test(xml);
+}
+
+function decodeXmlText(value) {
+  return value
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .trim();
+}
+
+function extractXmlLocs(xml) {
+  return [...xml.matchAll(/<(?:\w+:)?loc\b[^>]*>([\s\S]*?)<\/(?:\w+:)?loc>/gi)]
+    .map((match) => decodeXmlText(match[1] ?? ''))
+    .filter(Boolean);
+}
+
+function assertSitemapLocs(xml, label, options) {
+  const failures = [];
+  const locs = extractXmlLocs(xml);
+
+  if (locs.length === 0) {
+    failures.push(`${label} 未包含 <loc>。`);
+    return failures;
+  }
+
+  for (const loc of locs) {
+    try {
+      const locUrl = new URL(loc);
+      if (!options.allowExternalSitemapLoc && locUrl.origin !== options.baseOrigin) {
+        failures.push(`${label} <loc> origin 与 base-url 不一致：${locUrl.origin} != ${options.baseOrigin}`);
+      }
+    } catch {
+      failures.push(`${label} <loc> 不是合法绝对 URL：${loc}`);
+    }
+  }
+
+  return failures;
+}
+
 function assertRobotsTxt(text) {
   const failures = [];
   if (!/^\s*Sitemap:\s*\S+/im.test(text)) {
@@ -342,6 +387,64 @@ async function checkTextEndpoint(label, url, accept, timeoutMs, strictTls, asser
   return assertBody(result.body);
 }
 
+async function checkSitemapEndpoint(label, url, timeoutMs, strictTls, options) {
+  const result = await fetchText(url, 'application/xml,text/xml,*/*', timeoutMs, strictTls);
+  if (!result.ok) {
+    return {
+      body: '',
+      failures: [`${label} 请求失败：${result.error?.message ?? 'unknown error'}`],
+    };
+  }
+
+  if (!isSuccessStatus(result.statusCode)) {
+    return {
+      body: result.body,
+      failures: [`${label} 返回非 2xx：${result.statusCode}`],
+    };
+  }
+
+  return {
+    body: result.body,
+    failures: [
+      ...assertSitemapXml(result.body),
+      ...assertSitemapLocs(result.body, label, options),
+    ],
+  };
+}
+
+async function checkSitemapShards(indexXml, timeoutMs, strictTls, options) {
+  if (!isSitemapIndex(indexXml)) {
+    return [];
+  }
+
+  const failures = [];
+  const shardUrls = extractXmlLocs(indexXml);
+  for (const shardUrl of shardUrls) {
+    let parsedShardUrl;
+    try {
+      parsedShardUrl = new URL(shardUrl);
+    } catch {
+      continue;
+    }
+
+    if (!options.allowExternalSitemapLoc && parsedShardUrl.origin !== options.baseOrigin) {
+      continue;
+    }
+
+    const shardResult = await checkSitemapEndpoint(
+      `sitemap shard ${parsedShardUrl.pathname}`,
+      parsedShardUrl,
+      timeoutMs,
+      strictTls,
+      options
+    );
+    printCheckResult(`sitemap shard ${parsedShardUrl.pathname}`, parsedShardUrl, shardResult.failures);
+    failures.push(...shardResult.failures);
+  }
+
+  return failures;
+}
+
 async function runSmoke() {
   const baseUrl = normalizeBaseUrl(getArgValue('--base-url', process.env.RADISH_PUBLIC_HEAD_BASE_URL));
   const envPaths = (process.env.RADISH_PUBLIC_HEAD_PATHS ?? '')
@@ -359,6 +462,7 @@ async function runSmoke() {
   const timeoutMs = parseTimeoutMs();
   const strictTls = hasFlag('--strict-tls');
   const allowExternalCanonical = hasFlag('--allow-external-canonical');
+  const allowExternalSitemapLoc = hasFlag('--allow-external-sitemap-loc');
   const baseOrigin = new URL(baseUrl).origin;
   const allFailures = [];
 
@@ -373,9 +477,20 @@ async function runSmoke() {
 
   if (!hasFlag('--skip-sitemap')) {
     const sitemapUrl = buildUrl(baseUrl, '/sitemap.xml');
-    const failures = await checkTextEndpoint('sitemap.xml', sitemapUrl, 'application/xml,text/xml,*/*', timeoutMs, strictTls, assertSitemapXml);
-    printCheckResult('sitemap.xml', sitemapUrl, failures);
-    allFailures.push(...failures);
+    const sitemapResult = await checkSitemapEndpoint('sitemap.xml', sitemapUrl, timeoutMs, strictTls, {
+      allowExternalSitemapLoc,
+      baseOrigin,
+    });
+    printCheckResult('sitemap.xml', sitemapUrl, sitemapResult.failures);
+    allFailures.push(...sitemapResult.failures);
+
+    if (!hasFlag('--skip-sitemap-shards')) {
+      const shardFailures = await checkSitemapShards(sitemapResult.body, timeoutMs, strictTls, {
+        allowExternalSitemapLoc,
+        baseOrigin,
+      });
+      allFailures.push(...shardFailures);
+    }
   }
 
   for (const path of paths) {
@@ -406,7 +521,7 @@ async function runSmoke() {
   }
 
   console.log('');
-  console.log(`[public-head-smoke] 通过：${paths.length} 个公开详情路径，robots/sitemap 检查按参数执行。`);
+  console.log(`[public-head-smoke] 通过：${paths.length} 个公开详情路径，robots/sitemap/sitemap shards 检查按参数执行。`);
 }
 
 function printCheckResult(label, url, failures) {
@@ -441,10 +556,21 @@ function runSelfTest() {
     allowExternalCanonical: false,
     baseOrigin: 'https://example.test',
   });
+  const sitemapFailures = [
+    ...assertSitemapXml(`<?xml version="1.0" encoding="utf-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><sitemap><loc>https://example.test/sitemaps/static.xml</loc></sitemap></sitemapindex>`),
+    ...assertSitemapLocs(
+      `<?xml version="1.0" encoding="utf-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://example.test/forum/post/pst_alpha</loc></url></urlset>`,
+      'self-test sitemap',
+      {
+        allowExternalSitemapLoc: false,
+        baseOrigin: 'https://example.test',
+      }
+    ),
+  ];
 
-  if (failures.length > 0) {
+  if (failures.length > 0 || sitemapFailures.length > 0) {
     console.error('[public-head-smoke] self-test 失败：');
-    for (const failure of failures) {
+    for (const failure of [...failures, ...sitemapFailures]) {
       console.error(`- ${failure}`);
     }
     process.exitCode = 1;
