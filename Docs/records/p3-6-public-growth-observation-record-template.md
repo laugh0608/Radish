@@ -1,16 +1,22 @@
-# P3-6 公开增长真实部署观察记录模板
+# P3-6 公开增长部署观察记录模板
 
-> 用途：记录真实部署或生产公开域名下的公开增长观察事实，并分流为修复、配置、后续专题或暂不处理。
+> 用途：记录 local / testing / release 前生产公开域名下的公开增长观察事实，并分流为修复、配置、后续专题或暂不处理。
 >
 > 复制本模板时建议命名为 `p3-6-public-growth-observation-record-YYYY-MM-DD.md`。
 
 ## 基本信息
 
 - 日期：YYYY-MM-DD（Asia/Shanghai）
-- 环境：local / testing / production
+- 环境：local / testing / production-release-prep
 - 公开域名：
 - 服务版本 / commit：
 - 记录人：
+
+当前口径：
+
+- 日常推进优先使用 testing URL 做低成本部署观察。
+- 生产域名验证是 release 前置项，不作为日常继续开发的阻塞项。
+- 没有真实失败证据前，不因 production URL 暂缺而启动 SSR / SSG、完整 E2E、运营平台或全量 `PublicId` 迁移。
 
 ## 观察范围
 
@@ -20,8 +26,8 @@
 | 动态 sitemap | `/sitemap.xml`、`/sitemaps/*.xml` | 未执行 / 通过 / 失败 | 重点看 `<loc>` origin、分片可达性和 XML 类型 |
 | head snapshot | forum / docs / shop 公开详情首包 HTML | 未执行 / 通过 / 失败 | 重点看 title、description、canonical、OG、Twitter、JSON-LD |
 | 公开域名配置 | `GatewayService:PublicUrl` / `RADISH_PUBLIC_URL` | 未执行 / 通过 / 失败 | 重点看 canonical 与 sitemap origin 是否一致 |
-| 分享预览 | 真实分享工具 / 平台预览 | 未执行 / 通过 / 失败 | 记录平台、URL 和异常截图或描述 |
-| 搜索抓取反馈 | Search Console / 爬虫日志 / 访问日志 | 未执行 / 通过 / 失败 | 记录抓取状态、错误类型和样本 URL |
+| 分享预览 | testing 可用分享工具 / release 前真实平台预览 | 未执行 / 通过 / 失败 | 记录平台、URL 和异常截图或描述 |
+| 搜索抓取反馈 | release 前 Search Console / 爬虫日志 / 访问日志 | 未执行 / 通过 / 失败 | 日常 testing 可先记为未执行，release 前补生产样本 |
 
 ## 命令与结果
 
@@ -55,3 +61,4 @@ npm run check:public-head-smoke -- --base-url <url> --path /forum/post/<postKey>
   - 不启动 SSR / SSG 或正文预渲染。
   - 不启动完整 E2E 或运营平台。
   - 不启动全量 `PublicId` 迁移。
+  - 不把生产域名部署作为日常开发阻塞项；生产域名 smoke 放到 release 前执行。

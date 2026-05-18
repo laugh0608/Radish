@@ -70,6 +70,7 @@
 ## 七、专题清单与一次性观察
 
 - [p3-6-public-growth-observation-record-template](/records/p3-6-public-growth-observation-record-template)
+- [p3-6-public-growth-observation-record-2026-05-18](/records/p3-6-public-growth-observation-record-2026-05-18)
 - [flutter-android-rc-distribution](/records/flutter-android-rc-distribution)
 - [tauri-webos-desktop-distribution-evaluation-2026-05-05](/records/tauri-webos-desktop-distribution-evaluation-2026-05-05)
 - [shop-console-management-acceptance-record-2026-05-12](/records/shop-console-management-acceptance-record-2026-05-12)

@@ -717,7 +717,7 @@ npm run check:repo-hygiene:changed
 
 - API 找不到公开内容时返回 `404`，Gateway 不注入，继续走原 YARP / SPA 链路。
 - API snapshot、前端入口 HTML 获取、HTML 注入任一环节异常时，Gateway 记录 warning 并回落到原代理链路，避免 SEO head 注入影响页面可用性。
-- 部署时必须确认 `GatewayService:PublicUrl` 或 `RADISH_PUBLIC_URL` 为生产公开域名，`DownstreamServices:ApiService:BaseUrl` 与 `FrontendService:BaseUrl` 对 Gateway 可达。
+- release / 生产部署时必须确认 `GatewayService:PublicUrl` 或 `RADISH_PUBLIC_URL` 为生产公开域名，`DownstreamServices:ApiService:BaseUrl` 与 `FrontendService:BaseUrl` 对 Gateway 可达；日常推进可先用 testing URL 验证同一链路。
 - 生产人工验收需直接查看三类详情的初始 HTML，确认 head 中 canonical / Open Graph / JSON-LD 与运行时 canonical、动态 sitemap URL 一致。
 
 ### 验证
@@ -748,7 +748,7 @@ npm run check:repo-hygiene:changed
 - 最新 smoke 已通过 robots、sitemap、forum / docs / shop 三类详情，说明 Gateway 顶层抓取入口和三类公开详情首包 head 当前可被部署验证覆盖。
 - 首批方案已明确不渲染正文 HTML、不改变 React hydrate、不引入完整 SSR / SSG，也不把生产数据依赖塞入前端构建；当前继续扩大工程路线的收益不足以覆盖复杂度。
 
-转入维护的部署 / 运营项：生产公开域名配置、API / Frontend 可达性、public head smoke、sitemap 分片、head snapshot / sitemap 缓存日志、分享预览、搜索抓取反馈，以及内容规模接近单类型 `100,000` 条 URL 时的分片策略复评。
+转入维护的部署 / 运营项：testing / release 公开域名配置、API / Frontend 可达性、public head smoke、sitemap 分片、head snapshot / sitemap 缓存日志、分享预览、搜索抓取反馈，以及内容规模接近单类型 `100,000` 条 URL 时的分片策略复评。
 
 不继续扩大的范围：正文 HTML 预渲染、完整 SSR / SSG、构建期生产数据抓取、公开个人页纳入动态 sitemap、全量 `PublicId` 迁移，以及把公开壳层扩成发帖、评论提交、购买、背包、订单或治理工作台。
 
@@ -804,16 +804,19 @@ npm run check:repo-hygiene:changed
 
 截至 `2026-05-18`，`P3-1` 至 `P3-5` 均已完成阶段性收口，`P3-6-A` 已完成本地公开增长观察首轮收口。当前不再按历史候选清单惯性扩张，后续以 `P3-6` 的真实使用运营观察与反馈分流为准。
 
-### `P3-6-C` 真实部署观察与分流记录
+### `P3-6-C` testing 优先公开增长观察与分流记录
 
 启动口径：`2026-05-18`。
 
-目标是把 `P3-6-A / P3-6-B` 已验证的公开增长检查能力用于真实部署观察：记录公开 head smoke、动态 sitemap、head snapshot 缓存、公开域名配置、分享预览和搜索抓取反馈中的事实，并按 `P0/P1/P2/暂不处理` 分流。
+目标是把 `P3-6-A / P3-6-B` 已验证的公开增长检查能力用于低成本部署观察：当前优先使用 testing URL 记录公开 head smoke、动态 sitemap、head snapshot 缓存、公开域名配置、分享预览和搜索抓取反馈中的事实，并按 `P0/P1/P2/暂不处理` 分流。
 
-本批只做观察记录入口和事实分级，不新增运营平台、完整可观测性平台、完整 E2E、SSR / SSG、正文预渲染或全量 `PublicId` 迁移。
+本批只做观察记录入口和事实分级，不新增运营平台、完整可观测性平台、完整 E2E、SSR / SSG、正文预渲染或全量 `PublicId` 迁移。生产域名验证调整为 release 前置项：准备公开发布前再绑定生产域名、配置 `RADISH_PUBLIC_URL` / `GatewayService:PublicUrl`、复跑 public head smoke，并抽查真实分享预览与搜索抓取入口。
 
 执行入口：
 
-- [P3-6 公开增长真实部署观察记录模板](/records/p3-6-public-growth-observation-record-template)
+- [P3-6 公开增长部署观察记录模板](/records/p3-6-public-growth-observation-record-template)
+- [P3-6 公开增长部署观察记录（2026-05-18）](/records/p3-6-public-growth-observation-record-2026-05-18)
 
-建议每次真实部署或生产公开域名 smoke 后复制该模板生成日期记录。若未发现 `P0/P1`，记录观察结论即可；若发现阻断公开访问、核心 head / sitemap、分享入口或回流的高信号问题，再单独切出小闭环修复。
+建议每次 testing 环境更新或 release 前生产公开域名 smoke 后复制该模板生成日期记录。若未发现 `P0/P1`，记录观察结论即可；若发现阻断公开访问、核心 head / sitemap、分享入口或回流的高信号问题，再单独切出小闭环修复。
+
+`2026-05-18` 首份本地观察记录结论：本地 Gateway public head smoke 覆盖 robots、sitemap index、`static / forum / docs / shop` 分片和 forum / docs / shop 三类详情并通过；生产分享预览和搜索抓取反馈作为 release 前置项，不阻塞当前继续推进，不切出修复小闭环。
