@@ -21,6 +21,8 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
 {
     private readonly SqlSugarScope _dbScopeBase;
     private static readonly ConcurrentDictionary<Type, List<PropertyInfo>> DateTimePropertyCache = new();
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> SqliteSyncReadLocks =
+        new(StringComparer.OrdinalIgnoreCase);
     private static readonly bool IsTenantScopedEntity = typeof(ITenantEntity).IsAssignableFrom(typeof(TEntity));
 
     /// <summary>供 BaseRepository 及子类使用的 ISqlSugarClient 数据库实例</summary>
@@ -143,9 +145,31 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         }
     }
 
-    private bool UseSqliteSyncReadFallback()
+    private bool TryGetSqliteSyncReadLockKey(out string lockKey)
     {
-        return DbClientBase.CurrentConnectionConfig?.DbType == DbType.Sqlite;
+        var config = DbClientBase.CurrentConnectionConfig;
+        if (config?.DbType != DbType.Sqlite)
+        {
+            lockKey = string.Empty;
+            return false;
+        }
+
+        lockKey = $"{config.ConfigId}:{config.ConnectionString}";
+        return true;
+    }
+
+    private static async Task<TResult> ExecuteSqliteSyncReadAsync<TResult>(string lockKey, Func<TResult> readAction)
+    {
+        var readLock = SqliteSyncReadLocks.GetOrAdd(lockKey, _ => new SemaphoreSlim(1, 1));
+        await readLock.WaitAsync();
+        try
+        {
+            return readAction();
+        }
+        finally
+        {
+            readLock.Release();
+        }
     }
 
     private ISugarQueryable<TEntity> CreateTenantQueryable(bool includeDeleted = false)
@@ -730,9 +754,9 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             query = query.Where(whereExpression);
         }
 
-        if (UseSqliteSyncReadFallback())
+        if (TryGetSqliteSyncReadLockKey(out var sqliteReadLockKey))
         {
-            return query.ToList();
+            return await ExecuteSqliteSyncReadAsync(sqliteReadLockKey, query.ToList);
         }
 
         return await query.ToListAsync();
@@ -783,11 +807,14 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
                 : query.OrderByDescending(orderByExpression);
         }
 
-        if (UseSqliteSyncReadFallback())
+        if (TryGetSqliteSyncReadLockKey(out var sqliteReadLockKey))
         {
-            var syncTotalCount = 0;
-            var syncData = query.ToPageList(pageIndex, pageSize, ref syncTotalCount);
-            return (syncData, syncTotalCount);
+            return await ExecuteSqliteSyncReadAsync(sqliteReadLockKey, () =>
+            {
+                var syncTotalCount = 0;
+                var syncData = query.ToPageList(pageIndex, pageSize, ref syncTotalCount);
+                return (syncData, syncTotalCount);
+            });
         }
 
         var data = await query.ToPageListAsync(pageIndex, pageSize, totalCount);
@@ -826,11 +853,14 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             query = query.OrderBy(thenByExpression, thenByType);
         }
 
-        if (UseSqliteSyncReadFallback())
+        if (TryGetSqliteSyncReadLockKey(out var sqliteReadLockKey))
         {
-            var syncTotalCount = 0;
-            var syncData = query.ToPageList(pageIndex, pageSize, ref syncTotalCount);
-            return (syncData, syncTotalCount);
+            return await ExecuteSqliteSyncReadAsync(sqliteReadLockKey, () =>
+            {
+                var syncTotalCount = 0;
+                var syncData = query.ToPageList(pageIndex, pageSize, ref syncTotalCount);
+                return (syncData, syncTotalCount);
+            });
         }
 
         var data = await query.ToPageListAsync(pageIndex, pageSize, totalCount);
@@ -849,9 +879,9 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             query = query.Where(whereExpression);
         }
 
-        if (UseSqliteSyncReadFallback())
+        if (TryGetSqliteSyncReadLockKey(out var sqliteReadLockKey))
         {
-            return query.Count();
+            return await ExecuteSqliteSyncReadAsync(sqliteReadLockKey, query.Count);
         }
 
         return await query.CountAsync();
@@ -863,9 +893,9 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     public async Task<bool> QueryExistsAsync(Expression<Func<TEntity, bool>> whereExpression)
     {
         var query = CreateTenantQueryable();
-        if (UseSqliteSyncReadFallback())
+        if (TryGetSqliteSyncReadLockKey(out var sqliteReadLockKey))
         {
-            return query.Any(whereExpression);
+            return await ExecuteSqliteSyncReadAsync(sqliteReadLockKey, () => query.Any(whereExpression));
         }
 
         return await query.AnyAsync(whereExpression);
