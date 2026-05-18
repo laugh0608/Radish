@@ -53,6 +53,7 @@
   - `P3-6-A` 本地 Gateway 公开增长观察已完成首轮收口：公开 head smoke 已覆盖 robots、sitemap index、`static / forum / docs / shop` 分片和三类详情首包 head；sitemap 分片 `<loc>` origin 检查已纳入脚本自动验证
   - `P3-6-B` 公开增长 smoke 失败诊断增强已完成：失败时会输出请求 URL、状态码、content-type、body 前段、疑似 SPA shell 判断、失败阶段和关键断言；self-test 与本地 Gateway smoke 均已通过
   - `P3-6-C` 已补首份本地公开增长观察记录：本地 Gateway smoke 覆盖 robots、sitemap index、`static / forum / docs / shop` 分片和三类详情并通过；当前改为 testing URL 优先观察，生产域名作为 release 前置项，不阻塞继续开发
+  - WebOS / PC 工作台成片工作流阻断级缺口筛查已完成：应用注册、窗口复用、继续使用、通知回流、forum / docs / shop 主路径未发现新的 `P0/P1`
   - 观察中暴露的本地 SQLite + Hangfire 并发读异常已在仓储 SQLite fallback 读路径串行化处理，重启后 `shop-cancel-timeout-orders` 初步观察未再出现 reader closed 异常
   - 下一步继续按 `P3-6` 真实使用观察口径分流高信号问题；未出现新的 `P0/P1` 前，不启动运营平台、完整可观测性平台、完整 E2E 或 SSR / SSG
 
@@ -91,7 +92,7 @@
 - `P3-4` forum / docs / shop 留存回流矩阵首轮已完成阶段性收尾判断，后续只处理真实使用中新暴露的回流断点
 - `P3-3` 只保留后续观察，不继续无边界深拆 `PublicForumDetail` 内部结构
 - 详情首包 HTML 可见性继续后置，不直接启动 SSR / SSG、预渲染或 Gateway HTML rewrite
-- WebOS / PC 工作台只继续处理成片工作流中的阻断级缺口，不再无限扫零碎按钮或提示
+- WebOS / PC 工作台成片工作流阻断级筛查当前未发现新的 `P0/P1`，后续只处理真实使用中新暴露的打开失败、通知回流、窗口参数、购买 / 订单 / 背包或权限边界断点
 - 后端 + Console 治理转入稳定维护，后续只处理新暴露的安全 / 授权一致性问题
 - Flutter 移动端高价值已登录链路首批已完成，后续不默认转向分发产品化材料或低增益微体验
 - Tauri 桌面安装包正式签名、自动更新、生产 Auth、SmartScreen、托盘 / 菜单与公开分发方式，仅在真实对外分发前重新评估
