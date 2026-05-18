@@ -15,3 +15,4 @@
 - 已将 Console 后续 UI 一致性治理写入未来规划：后续回拉 Console 扩展时优先复用 `@radish/ui` 组件、交互反馈与主题 token，避免后台视觉继续分叉。
 - Console 后续 UI 一致性评估已补记录：当前后台已部分复用 `@radish/ui`，但页面壳、局部 CSS、直接 `antd` 引入和硬编码色值仍需在后续新增 / 改动页面时小范围收敛；当前不启动整站视觉重构。
 - Console 用户列表一处疑似乱码错误提示已恢复为“获取用户列表失败”，并通过 `radish.console` 类型检查与 changed-only 文本卫生检查。
+- 收工前已补 [2026-05-18 收工回顾与明日事项](/records/daily-handoff-2026-05-18)：今日提交已复核到公开 head smoke 手册、`P3-6` 规划、阶段专题、记录索引和开发日志；明日优先补 testing URL 公开增长观察，若 testing URL 暂不可用则只做 Console token bridge 小方案评审。

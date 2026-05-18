@@ -101,7 +101,8 @@
 
 ## 下一事项
 
-- 下一事项：继续按 [P3-6 公开增长部署观察记录模板](/records/p3-6-public-growth-observation-record-template) 记录 testing URL 的公开 head smoke 与配置事实；生产公开域名、真实分享预览和搜索抓取反馈作为 release 前置项处理
+- 明日事项（2026-05-19）：优先按 [P3-6 公开增长部署观察记录模板](/records/p3-6-public-growth-observation-record-template) 补 testing URL 的公开 head smoke 与配置事实；生产公开域名、真实分享预览和搜索抓取反馈作为 release 前置项处理
+- 如果 testing URL 暂时不可用，不把生产域名部署当作阻断；可改做 Console token bridge 小方案评审，只判断 `AdminLayout.css` 与 `adminFeature.css` 是否适合先引入 Console 局部 CSS 变量，不直接启动整站视觉重构
 - 若没有新的 `P0/P1`，只形成观察结论，不扩大 SSR / SSG、正文预渲染、完整 E2E 或运营平台
 - 若继续推进留存链路，只从真实使用中暴露的新断点选择小闭环，不再默认扩全量 `PublicId`、数据库主键迁移或 `User / Product / WikiDocument / Comment` 外部标识改造
 - 详情首包 HTML 可见性继续保持窄实现；未重新评估前不直接启动 SSR / SSG、正文预渲染或更广泛 Gateway HTML rewrite
