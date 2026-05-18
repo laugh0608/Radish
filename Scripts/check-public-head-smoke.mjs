@@ -6,6 +6,7 @@ const rawArgs = process.argv.slice(2);
 const args = new Set(rawArgs);
 const defaultTimeoutMs = 5000;
 const maxBodyBytes = 2 * 1024 * 1024;
+const diagnosticBodyPreviewChars = 700;
 
 function hasFlag(flagName) {
   return args.has(flagName);
@@ -145,6 +146,90 @@ function fetchText(url, accept, timeoutMs, strictTls) {
 
 function isSuccessStatus(statusCode) {
   return statusCode >= 200 && statusCode < 300;
+}
+
+function getHeaderValue(headers, headerName) {
+  const value = headers[headerName.toLowerCase()];
+  if (Array.isArray(value)) {
+    return value.join(', ');
+  }
+
+  return value ?? '';
+}
+
+function createBodyPreview(body) {
+  if (!body) {
+    return '(empty)';
+  }
+
+  return body
+    .slice(0, diagnosticBodyPreviewChars)
+    .replace(/\r/g, '\\r')
+    .replace(/\n/g, '\\n');
+}
+
+function isSuspectedSpaShell(body) {
+  if (!/<!doctype html|<html\b/i.test(body)) {
+    return false;
+  }
+
+  const head = extractHead(body);
+  const title = extractTitle(head).toLowerCase();
+  const hasRoot = /<div\s+id=["']root["']/i.test(body);
+  const hasPublicHeadMarker = /radish-public-jsonld|property=["']og:title["']|name=["']twitter:card["']/i.test(head);
+  const hasGenericTitle = title === 'radish' || title === 'radish.client';
+
+  return hasRoot && (hasGenericTitle || !hasPublicHeadMarker);
+}
+
+function createFailureDiagnostic(label, url, stage, result, assertions) {
+  return {
+    label,
+    url: url.toString(),
+    stage,
+    statusCode: result?.statusCode ?? 0,
+    contentType: result ? getHeaderValue(result.headers, 'content-type') : '',
+    bodyPreview: createBodyPreview(result?.body ?? ''),
+    suspectedSpaShell: isSuspectedSpaShell(result?.body ?? ''),
+    assertions,
+  };
+}
+
+function formatRequestError(error) {
+  if (!error) {
+    return 'unknown error';
+  }
+
+  const messages = [];
+  if (error.message) {
+    messages.push(error.message);
+  }
+
+  if (error.code) {
+    messages.push(`code=${error.code}`);
+  }
+
+  if (error.name && error.name !== 'Error') {
+    messages.push(`name=${error.name}`);
+  }
+
+  if (Array.isArray(error.errors)) {
+    for (const innerError of error.errors) {
+      const innerMessage = [
+        innerError.message,
+        innerError.code ? `code=${innerError.code}` : '',
+      ].filter(Boolean).join(' ');
+      if (innerMessage) {
+        messages.push(innerMessage);
+      }
+    }
+  }
+
+  if (error.cause?.message) {
+    messages.push(`cause=${error.cause.message}`);
+  }
+
+  return [...new Set(messages)].join('; ') || String(error);
 }
 
 function extractHead(html) {
@@ -374,41 +459,74 @@ function assertRobotsTxt(text) {
   return failures;
 }
 
-async function checkTextEndpoint(label, url, accept, timeoutMs, strictTls, assertBody) {
+async function checkTextEndpoint(label, url, accept, timeoutMs, strictTls, assertionStage, assertBody) {
   const result = await fetchText(url, accept, timeoutMs, strictTls);
   if (!result.ok) {
-    return [`${label} 请求失败：${result.error?.message ?? 'unknown error'}`];
+    const failures = [`${label} 请求失败：${formatRequestError(result.error)}`];
+    return {
+      body: '',
+      failures,
+      diagnostic: createFailureDiagnostic(label, url, 'request', result, failures),
+    };
   }
 
   if (!isSuccessStatus(result.statusCode)) {
-    return [`${label} 返回非 2xx：${result.statusCode}`];
+    const failures = [`${label} 返回非 2xx：${result.statusCode}`];
+    return {
+      body: result.body,
+      failures,
+      diagnostic: createFailureDiagnostic(label, url, 'status', result, failures),
+    };
   }
 
-  return assertBody(result.body);
+  const failures = assertBody(result.body);
+  return {
+    body: result.body,
+    failures,
+    diagnostic: failures.length > 0
+      ? createFailureDiagnostic(label, url, assertionStage, result, failures)
+      : null,
+  };
 }
 
 async function checkSitemapEndpoint(label, url, timeoutMs, strictTls, options) {
   const result = await fetchText(url, 'application/xml,text/xml,*/*', timeoutMs, strictTls);
   if (!result.ok) {
+    const failures = [`${label} 请求失败：${formatRequestError(result.error)}`];
     return {
       body: '',
-      failures: [`${label} 请求失败：${result.error?.message ?? 'unknown error'}`],
+      failures,
+      diagnostic: createFailureDiagnostic(label, url, 'request', result, failures),
     };
   }
 
   if (!isSuccessStatus(result.statusCode)) {
+    const failures = [`${label} 返回非 2xx：${result.statusCode}`];
     return {
       body: result.body,
-      failures: [`${label} 返回非 2xx：${result.statusCode}`],
+      failures,
+      diagnostic: createFailureDiagnostic(label, url, 'status', result, failures),
     };
+  }
+
+  const xmlFailures = assertSitemapXml(result.body);
+  const locFailures = assertSitemapLocs(result.body, label, options);
+  const failures = [...xmlFailures, ...locFailures];
+  const stages = [];
+  if (xmlFailures.length > 0) {
+    stages.push('sitemap xml assertion');
+  }
+
+  if (locFailures.length > 0) {
+    stages.push('sitemap loc assertion');
   }
 
   return {
     body: result.body,
-    failures: [
-      ...assertSitemapXml(result.body),
-      ...assertSitemapLocs(result.body, label, options),
-    ],
+    failures,
+    diagnostic: failures.length > 0
+      ? createFailureDiagnostic(label, url, stages.join(', '), result, failures)
+      : null,
   };
 }
 
@@ -438,7 +556,7 @@ async function checkSitemapShards(indexXml, timeoutMs, strictTls, options) {
       strictTls,
       options
     );
-    printCheckResult(`sitemap shard ${parsedShardUrl.pathname}`, parsedShardUrl, shardResult.failures);
+    printCheckResult(`sitemap shard ${parsedShardUrl.pathname}`, parsedShardUrl, shardResult);
     failures.push(...shardResult.failures);
   }
 
@@ -470,9 +588,9 @@ async function runSmoke() {
 
   if (!hasFlag('--skip-robots')) {
     const robotsUrl = buildUrl(baseUrl, '/robots.txt');
-    const failures = await checkTextEndpoint('robots.txt', robotsUrl, 'text/plain,*/*', timeoutMs, strictTls, assertRobotsTxt);
-    printCheckResult('robots.txt', robotsUrl, failures);
-    allFailures.push(...failures);
+    const result = await checkTextEndpoint('robots.txt', robotsUrl, 'text/plain,*/*', timeoutMs, strictTls, 'robots assertion', assertRobotsTxt);
+    printCheckResult('robots.txt', robotsUrl, result);
+    allFailures.push(...result.failures);
   }
 
   if (!hasFlag('--skip-sitemap')) {
@@ -481,7 +599,7 @@ async function runSmoke() {
       allowExternalSitemapLoc,
       baseOrigin,
     });
-    printCheckResult('sitemap.xml', sitemapUrl, sitemapResult.failures);
+    printCheckResult('sitemap.xml', sitemapUrl, sitemapResult);
     allFailures.push(...sitemapResult.failures);
 
     if (!hasFlag('--skip-sitemap-shards')) {
@@ -495,19 +613,20 @@ async function runSmoke() {
 
   for (const path of paths) {
     const pageUrl = buildUrl(baseUrl, path);
-    const failures = await checkTextEndpoint(
+    const result = await checkTextEndpoint(
       path,
       pageUrl,
       'text/html,application/xhtml+xml,*/*',
       timeoutMs,
       strictTls,
+      'public head assertion',
       (html) => assertPublicHead(html, pageUrl, {
         allowExternalCanonical,
         baseOrigin,
       })
     );
-    printCheckResult(path, pageUrl, failures);
-    allFailures.push(...failures.map((failure) => `${path}: ${failure}`));
+    printCheckResult(path, pageUrl, result);
+    allFailures.push(...result.failures.map((failure) => `${path}: ${failure}`));
   }
 
   if (allFailures.length > 0) {
@@ -524,13 +643,37 @@ async function runSmoke() {
   console.log(`[public-head-smoke] 通过：${paths.length} 个公开详情路径，robots/sitemap/sitemap shards 检查按参数执行。`);
 }
 
-function printCheckResult(label, url, failures) {
-  if (failures.length === 0) {
+function printCheckResult(label, url, result) {
+  if (result.failures.length === 0) {
     console.log(`[public-head-smoke] PASS ${label} -> ${url}`);
     return;
   }
 
   console.log(`[public-head-smoke] FAIL ${label} -> ${url}`);
+  printFailureDiagnostic(result.diagnostic);
+}
+
+function printFailureDiagnostic(diagnostic) {
+  if (!diagnostic) {
+    return;
+  }
+
+  console.log(`  request-url: ${diagnostic.url}`);
+  console.log(`  stage: ${diagnostic.stage}`);
+  console.log(`  status-code: ${diagnostic.statusCode || '(none)'}`);
+  console.log(`  content-type: ${diagnostic.contentType || '(none)'}`);
+  console.log(`  suspected-spa-shell: ${diagnostic.suspectedSpaShell ? 'yes' : 'no'}`);
+  console.log(`  body-preview: ${diagnostic.bodyPreview}`);
+  console.log('  assertions:');
+  for (const assertion of diagnostic.assertions) {
+    console.log(`    - ${assertion}`);
+  }
+}
+
+function pushSelfTestFailure(condition, failures, message) {
+  if (!condition) {
+    failures.push(message);
+  }
 }
 
 function runSelfTest() {
@@ -567,10 +710,40 @@ function runSelfTest() {
       }
     ),
   ];
+  const shellFixture = `<!doctype html>
+<html>
+  <head>
+    <title>radish.client</title>
+  </head>
+  <body><div id="root"></div><script type="module" src="/assets/index.js"></script></body>
+</html>`;
+  const diagnosticAssertions = assertRobotsTxt(shellFixture);
+  const diagnostic = createFailureDiagnostic(
+    'self-test robots shell',
+    new URL('https://example.test/robots.txt'),
+    'robots assertion',
+    {
+      ok: true,
+      statusCode: 200,
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+      },
+      body: shellFixture,
+    },
+    diagnosticAssertions
+  );
+  const diagnosticFailures = [];
+  pushSelfTestFailure(diagnostic.url === 'https://example.test/robots.txt', diagnosticFailures, '诊断信息缺少请求 URL。');
+  pushSelfTestFailure(diagnostic.stage === 'robots assertion', diagnosticFailures, '诊断信息缺少失败阶段。');
+  pushSelfTestFailure(diagnostic.statusCode === 200, diagnosticFailures, '诊断信息缺少状态码。');
+  pushSelfTestFailure(diagnostic.contentType === 'text/html; charset=utf-8', diagnosticFailures, '诊断信息缺少 content-type。');
+  pushSelfTestFailure(diagnostic.bodyPreview.includes('<!doctype html>'), diagnosticFailures, '诊断信息缺少响应 body 前段。');
+  pushSelfTestFailure(diagnostic.suspectedSpaShell, diagnosticFailures, '诊断信息未识别疑似 SPA shell。');
+  pushSelfTestFailure(diagnostic.assertions.length === diagnosticAssertions.length, diagnosticFailures, '诊断信息缺少关键断言。');
 
-  if (failures.length > 0 || sitemapFailures.length > 0) {
+  if (failures.length > 0 || sitemapFailures.length > 0 || diagnosticFailures.length > 0) {
     console.error('[public-head-smoke] self-test 失败：');
-    for (const failure of [...failures, ...sitemapFailures]) {
+    for (const failure of [...failures, ...sitemapFailures, ...diagnosticFailures]) {
       console.error(`- ${failure}`);
     }
     process.exitCode = 1;

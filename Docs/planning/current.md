@@ -51,8 +51,9 @@
   - `P3-5-D2` 已补齐部署前 smoke 入口：新增 `npm run check:public-head-smoke` 与 [公开详情 Head Smoke 验收](/guide/public-head-smoke)，用于部署后检查 robots、动态 sitemap 和三类公开详情首包 head
   - `P3-5` 收尾判断为可收尾：最新公开 head smoke 已通过 robots、sitemap、forum / docs / shop 三类详情；剩余公开增长事项转入部署与运营维护线，不继续扩大到完整 SSR / SSG 或正文预渲染
   - `P3-6-A` 本地 Gateway 公开增长观察已完成首轮收口：公开 head smoke 已覆盖 robots、sitemap index、`static / forum / docs / shop` 分片和三类详情首包 head；sitemap 分片 `<loc>` origin 检查已纳入脚本自动验证
+  - `P3-6-B` 公开增长 smoke 失败诊断增强已完成：失败时会输出请求 URL、状态码、content-type、body 前段、疑似 SPA shell 判断、失败阶段和关键断言；self-test 与本地 Gateway smoke 均已通过
   - 观察中暴露的本地 SQLite + Hangfire 并发读异常已在仓储 SQLite fallback 读路径串行化处理，重启后 `shop-cancel-timeout-orders` 初步观察未再出现 reader closed 异常
-  - 下一小批次转向 `P3-6-B` smoke 失败诊断增强，目标是提高部署后定位 Gateway / API / Frontend 配置问题的效率，不启动运营平台或完整可观测性平台
+  - 下一步继续按 `P3-6` 真实使用观察口径分流高信号问题；未出现新的 `P0/P1` 前，不启动运营平台、完整可观测性平台、完整 E2E 或 SSR / SSG
 
 ## 当前执行入口
 
@@ -84,7 +85,7 @@
 
 ## 下一顺位
 
-- `P3-6` 优先观察真实部署后的公开 head smoke、动态 sitemap、head snapshot 缓存、公开域名配置、分享预览和搜索抓取反馈；下一小批次先做 smoke 失败诊断增强
+- `P3-6-C` 优先做真实部署观察与分流记录：复核公开 head smoke、动态 sitemap、head snapshot 缓存、公开域名配置、分享预览和搜索抓取反馈，只记录事实、分级和后续动作，不扩成新平台
 - `P3-5` 已阶段收尾，后续只维护 forum / docs / shop 三类详情首包 head 注入、动态 sitemap 和运行时 JSON-LD；不继续扩大到完整 SSR / SSG 或正文预渲染
 - `P3-4` forum / docs / shop 留存回流矩阵首轮已完成阶段性收尾判断，后续只处理真实使用中新暴露的回流断点
 - `P3-3` 只保留后续观察，不继续无边界深拆 `PublicForumDetail` 内部结构
@@ -97,8 +98,8 @@
 
 ## 下一事项
 
-- 下一事项：进入 `P3-6-B` 公开增长 smoke 失败诊断增强；失败时应输出状态码、content-type、响应片段、是否疑似 SPA shell、失败阶段和请求 URL，帮助部署后区分 Gateway 路由、API 只读接口、Frontend shell 或域名配置问题
-- 继续同步观察 head snapshot 日志、sitemap 缓存 / 回退日志、分享预览和搜索抓取反馈；若没有新的 `P0/P1`，只形成观察结论，不扩大 SSR / SSG 或正文预渲染
+- 下一事项：补齐 `P3-6-C` 真实部署观察与分流记录入口，后续按公开 head smoke、动态 sitemap、head snapshot 缓存日志、分享预览和搜索抓取反馈填写事实与分级结论
+- 若没有新的 `P0/P1`，只形成观察结论，不扩大 SSR / SSG、正文预渲染、完整 E2E 或运营平台
 - 若继续推进留存链路，只从真实使用中暴露的新断点选择小闭环，不再默认扩全量 `PublicId`、数据库主键迁移或 `User / Product / WikiDocument / Comment` 外部标识改造
 - 详情首包 HTML 可见性继续保持窄实现；未重新评估前不直接启动 SSR / SSG、正文预渲染或更广泛 Gateway HTML rewrite
 

@@ -795,4 +795,25 @@ npm run check:repo-hygiene:changed
 
 完成条件是 robots、sitemap index、sitemap shard 和详情 head 任一失败时能输出足够定位的信息；`--self-test` 覆盖核心解析逻辑；本地 Gateway 使用真实 forum / docs / shop 详情路径复跑通过。本批不启动运营平台、完整可观测性平台、完整 Playwright / E2E 或 SSR / SSG。
 
+完成日期：`2026-05-18`。
+
+- `Scripts/check-public-head-smoke.mjs` 已统一 robots、sitemap index、sitemap shard 和详情 head 的失败诊断输出。
+- 失败诊断覆盖请求 URL、失败阶段、状态码、content-type、响应 body 前段、疑似 SPA shell 判断和关键断言；请求失败还会输出 `ECONNREFUSED` / `AggregateError` 等底层错误细节。
+- `Docs/guide/public-head-smoke.md` 已补充失败输出字段和常见分诊方向。
+- 验证已通过 `npm run check:public-head-smoke -- --self-test` 与本地 Gateway public head smoke，覆盖 robots、sitemap index、`static / forum / docs / shop` 分片和 forum / docs / shop 三类详情。
+
 截至 `2026-05-18`，`P3-1` 至 `P3-5` 均已完成阶段性收口，`P3-6-A` 已完成本地公开增长观察首轮收口。当前不再按历史候选清单惯性扩张，后续以 `P3-6` 的真实使用运营观察与反馈分流为准。
+
+### `P3-6-C` 真实部署观察与分流记录
+
+启动口径：`2026-05-18`。
+
+目标是把 `P3-6-A / P3-6-B` 已验证的公开增长检查能力用于真实部署观察：记录公开 head smoke、动态 sitemap、head snapshot 缓存、公开域名配置、分享预览和搜索抓取反馈中的事实，并按 `P0/P1/P2/暂不处理` 分流。
+
+本批只做观察记录入口和事实分级，不新增运营平台、完整可观测性平台、完整 E2E、SSR / SSG、正文预渲染或全量 `PublicId` 迁移。
+
+执行入口：
+
+- [P3-6 公开增长真实部署观察记录模板](/records/p3-6-public-growth-observation-record-template)
+
+建议每次真实部署或生产公开域名 smoke 后复制该模板生成日期记录。若未发现 `P0/P1`，记录观察结论即可；若发现阻断公开访问、核心 head / sitemap、分享入口或回流的高信号问题，再单独切出小闭环修复。
