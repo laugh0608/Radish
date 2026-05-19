@@ -62,7 +62,7 @@ services:
       retries: 10
 
   dbmigrate:
-    image: "${RADISH_IMAGE_REGISTRY:-ghcr.io/laugh0608}/radish-dbmigrate:${RADISH_IMAGE_TAG:?RADISH_IMAGE_TAG is required}"
+    image: "${RADISH_IMAGE_REGISTRY:-ghcr.io/laugh0608}/radish-dbmigrate:${RADISH_IMAGE_TAG:-${RADISH_IMAGE_TRACK:-test}-latest}"
     environment:
       <<: [*radish-postgres-databases, *radish-redis]
       DOTNET_ENVIRONMENT: Production
@@ -77,14 +77,14 @@ services:
         condition: service_healthy
 
   frontend:
-    image: "${RADISH_IMAGE_REGISTRY:-ghcr.io/laugh0608}/radish-frontend:${RADISH_IMAGE_TAG:?RADISH_IMAGE_TAG is required}"
+    image: "${RADISH_IMAGE_REGISTRY:-ghcr.io/laugh0608}/radish-frontend:${RADISH_IMAGE_TAG:-${RADISH_IMAGE_TRACK:-test}-latest}"
     environment:
       RADISH_PUBLIC_URL: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
     expose:
       - "80"
 
   api:
-    image: "${RADISH_IMAGE_REGISTRY:-ghcr.io/laugh0608}/radish-api:${RADISH_IMAGE_TAG:?RADISH_IMAGE_TAG is required}"
+    image: "${RADISH_IMAGE_REGISTRY:-ghcr.io/laugh0608}/radish-api:${RADISH_IMAGE_TAG:-${RADISH_IMAGE_TRACK:-test}-latest}"
     environment:
       <<: [*radish-postgres-databases, *radish-redis]
       ASPNETCORE_ENVIRONMENT: Production
@@ -112,7 +112,7 @@ services:
       - "5100"
 
   auth:
-    image: "${RADISH_IMAGE_REGISTRY:-ghcr.io/laugh0608}/radish-auth:${RADISH_IMAGE_TAG:?RADISH_IMAGE_TAG is required}"
+    image: "${RADISH_IMAGE_REGISTRY:-ghcr.io/laugh0608}/radish-auth:${RADISH_IMAGE_TAG:-${RADISH_IMAGE_TRACK:-test}-latest}"
     environment:
       <<: [*radish-postgres-databases, *radish-redis]
       ASPNETCORE_ENVIRONMENT: Production
@@ -146,7 +146,7 @@ services:
       - "5200"
 
   gateway:
-    image: "${RADISH_IMAGE_REGISTRY:-ghcr.io/laugh0608}/radish-gateway:${RADISH_IMAGE_TAG:?RADISH_IMAGE_TAG is required}"
+    image: "${RADISH_IMAGE_REGISTRY:-ghcr.io/laugh0608}/radish-gateway:${RADISH_IMAGE_TAG:-${RADISH_IMAGE_TRACK:-test}-latest}"
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:5000

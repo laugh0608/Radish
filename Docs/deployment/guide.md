@@ -119,11 +119,11 @@
    ```
 
 7. 等待 `Docker Images` 工作流完成本次镜像产出；若当前标签为 `v*-release`，`GHCR` 会同步产出：
-   - `ghcr.io/<owner>/radish-dbmigrate:<tag>` / `latest`
-   - `ghcr.io/<owner>/radish-api:<tag>` / `latest`
-   - `ghcr.io/<owner>/radish-auth:<tag>` / `latest`
-   - `ghcr.io/<owner>/radish-gateway:<tag>` / `latest`
-   - `ghcr.io/<owner>/radish-frontend:<tag>` / `latest`
+   - `ghcr.io/<owner>/radish-dbmigrate:<tag>` / `release-latest` / `latest`
+   - `ghcr.io/<owner>/radish-api:<tag>` / `release-latest` / `latest`
+   - `ghcr.io/<owner>/radish-auth:<tag>` / `release-latest` / `latest`
+   - `ghcr.io/<owner>/radish-gateway:<tag>` / `release-latest` / `latest`
+   - `ghcr.io/<owner>/radish-frontend:<tag>` / `release-latest` / `latest`
 
 8. 补一份仓库内发布记录；如需 GitHub Release，可同步复用同一套说明、已知风险与回滚信息
 
@@ -176,7 +176,7 @@
 - `Repo Quality`：仅在 `pull_request -> master / dev` 与 `workflow_dispatch` 触发，不再因普通 `dev` push 消耗资源
 - `push -> v*-dev`：构建五个镜像入口，并把 `radish-dbmigrate`、`radish-api`、`radish-auth`、`radish-gateway`、`radish-frontend` 以 `<tag>` + `dev-latest` 推送到 `GHCR`
 - `push -> v*-test`：构建五个镜像入口，并把 `radish-dbmigrate`、`radish-api`、`radish-auth`、`radish-gateway`、`radish-frontend` 以 `<tag>` + `test-latest` 推送到 `GHCR`
-- `push -> v*-release`：构建五个镜像入口，并把 `radish-dbmigrate`、`radish-api`、`radish-auth`、`radish-gateway`、`radish-frontend` 以 `<tag>` + `latest` 推送到 `GHCR`
+- `push -> v*-release`：构建五个镜像入口，并把 `radish-dbmigrate`、`radish-api`、`radish-auth`、`radish-gateway`、`radish-frontend` 以 `<tag>` + `release-latest` + `latest` 推送到 `GHCR`
 - `workflow_dispatch`：可手动补跑；仅当当前 ref 为 `v*-dev`、`v*-test` 或 `v*-release` tag，且显式启用 `push_backend`、`push_frontend` 对应开关时，才会推送对应镜像
 
 当前镜像命名约定如下：
@@ -193,9 +193,9 @@
 
 - `v*-dev`：`<tag>`、`dev-latest`
 - `v*-test`：`<tag>`、`test-latest`
-- `v*-release`：`<tag>`、`latest`
+- `v*-release`：`<tag>`、`release-latest`、`latest`
 
-其中 `dev-latest`、`test-latest`、`latest` 都只是对应轨道的浮动别名；测试与生产部署都建议固定使用明确的版本 tag，而不是依赖漂移别名。
+其中 `dev-latest`、`test-latest`、`release-latest`、`latest` 都只是对应轨道的浮动别名；需要完全可复现的部署时，建议用固定版本 tag 覆盖浮动别名。
 
 当前 `frontend` 已接入统一 GHCR 推送规则；之所以可以直接纳入，是因为：
 
@@ -289,7 +289,8 @@ docker compose -f Deploy/docker-compose.local.yaml up -d
 
 先在服务器上拉取仓库，再进入 `Deploy/` 目录，复制 `.env.example` 为 `.env`，并至少替换以下真实值：
 
-- `RADISH_IMAGE_TAG`：测试部署固定到明确 `v*-test` tag，生产部署固定到明确 `v*-release` tag
+- `RADISH_IMAGE_TRACK`：测试部署使用 `test`，生产部署使用 `release`；默认会分别拉取 `test-latest` 或 `release-latest`
+- `RADISH_IMAGE_TAG`：默认注释；只有需要固定到明确 `v*-test` 或 `v*-release` tag 时再启用
 - `RADISH_PUBLIC_URL`
 - `RADISH_POSTGRES_PASSWORD`
 - `RADISH_REDIS_PASSWORD`
@@ -318,7 +319,7 @@ docker compose up -d
 - `Seed__DeveloperDefaultsEnabled=false`，`dbmigrate apply` 不会创建默认 `admin` 账号、默认密码或 `system / test` 开发账号
 - 首次打开 `RADISH_PUBLIC_URL` 根入口时，`radish.client` 会检测是否尚无 `System / Admin` 管理员；若没有管理员，会进入首个管理员初始化页，要求部署人员设置账号和强密码
 - 首个管理员初始化只能在“尚无管理员”状态下使用；初始化完成后该入口会关闭，后续按正常 OIDC 登录和管理流程进入系统
-- `RADISH_IMAGE_REGISTRY / RADISH_IMAGE_TAG` 共同决定五个 `GHCR` 镜像地址，测试与生产主要通过 `RADISH_IMAGE_TAG` 区分代码版本
+- `RADISH_IMAGE_REGISTRY / RADISH_IMAGE_TRACK / RADISH_IMAGE_TAG` 共同决定五个 `GHCR` 镜像地址；未设置 `RADISH_IMAGE_TAG` 时按 `RADISH_IMAGE_TRACK` 使用浮动别名，设置后优先使用固定版本 tag
 - `GatewayService__PublicUrl`、前端运行时公开地址回退值，以及 Auth 的 `Issuer / CORS` 都通过 `RADISH_PUBLIC_URL` 对齐真实外部域名
 - `Api / Auth / Gateway` 三个宿主的部署态 CORS 允许来源都会优先从 `RADISH_PUBLIC_URL` 推导，启动日志应保持一致
 - `Auth` 中官方 OIDC 客户端（`radish-client / radish-console / radish-scalar`）的 Gateway 回调地址也会跟随 `OpenIddict__Server__Issuer` 对齐，因此 `RADISH_PUBLIC_URL` 必须与真实外部 HTTPS 域名保持一致
@@ -530,7 +531,7 @@ HTTP (5000/5100) → ASP.NET Core 应用
 #### 当前仓库交付文件
 
 - `Deploy/nginx.prod.conf`：当前仓库随代码交付的生产反向代理样例，默认采用“宿主机 Nginx 终止 HTTPS，再回源 `127.0.0.1:5000`”的口径。
-- `Deploy/.env.example`：当前部署态组合的最小变量样例，至少覆盖 `RADISH_IMAGE_TAG`、`RADISH_PUBLIC_URL`、PostgreSQL / Redis 密码，以及 Auth 证书密码。
+- `Deploy/.env.example`：当前部署态组合的最小变量样例，至少覆盖 `RADISH_IMAGE_TRACK`、`RADISH_PUBLIC_URL`、PostgreSQL / Redis 密码，以及 Auth 证书密码；如需固定版本再启用 `RADISH_IMAGE_TAG`。
 - `Radish.Gateway/Program.cs`：当前已经显式启用 `X-Forwarded-For / X-Forwarded-Proto / X-Forwarded-Host` 识别，能够正确处理反代后的 Scheme、Host 与重定向。
 
 #### Nginx 落地步骤
@@ -600,7 +601,7 @@ HTTP (5000/5100) → ASP.NET Core 应用
 ### 建议执行顺序
 
 1. **先确认生产变量与证书路径**
-   - `RADISH_IMAGE_TAG`
+   - `RADISH_IMAGE_TRACK` 或固定版本 `RADISH_IMAGE_TAG`
    - `Deploy/.env` 中的 `RADISH_PUBLIC_URL` 必须与真实外部 HTTPS 域名完全一致
    - `RADISH_POSTGRES_USER / RADISH_POSTGRES_PASSWORD / RADISH_REDIS_PASSWORD`
    - `RADISH_AUTH_SIGNING_CERT_PASSWORD / RADISH_AUTH_ENCRYPTION_CERT_PASSWORD` 应分别用 `openssl rand -hex 32` 生成，并在 `RADISH_AUTH_CERTS_PATH` 目录生命周期内保持不变
