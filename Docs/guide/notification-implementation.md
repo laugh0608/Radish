@@ -2,12 +2,12 @@
 
 > **文档版本**：v1.2
 > **创建日期**：2026-01-06
-> **最后更新**：2026-05-13
+> **最后更新**：2026-05-19
 > **关联文档**：[通知系统总体规划](/guide/notification-realtime)
 
 本文档包含通知系统的详细实现方案，包括数据模型、服务层设计、缓存策略、异步化方案等核心技术细节。
 
-**实施状态**：M7 P1 阶段已完成（2026-01-10）。
+**实施状态**：M7 P1 阶段已完成（2026-01-10）。截至 2026-05-19，`NotificationCacheService` 与 `NotificationDedupService` 已落地为统一缓存层实现；Redis 原子计数、缓存一致性巡检和 SignalR Redis Backplane 仍属于后续增强。
 
 ## 1. 数据模型设计
 
@@ -607,7 +607,9 @@ public class NotificationTemplateService : INotificationTemplateService
 
 ## 4. 未读数缓存策略
 
-### 4.1 缓存服务接口
+当前实现以 `ICaching` 为统一入口：部署态 `Redis.Enable=true` 时使用 Redis，本地默认使用内存缓存。未读数缓存键为 `notification:unread_count:{userId}`，TTL 为 `30` 分钟；增量和减量更新当前是普通读-改-写缓存操作，`UserNotification` 关系表仍是未读状态真值来源。Redis `INCRBY / DECRBY` 原子计数和缓存一致性校验任务保留为后续治理项。
+
+### 4.1 当前缓存服务接口
 
 ```csharp
 namespace Radish.IService;
@@ -622,7 +624,7 @@ public interface INotificationCacheService
     /// <summary>
     /// 增加用户未读数
     /// </summary>
-    Task<long> IncrementUnreadCountAsync(long userId, int delta = 1);
+    Task<long> IncrementUnreadCountAsync(long userId);
 
     /// <summary>
     /// 减少用户未读数
@@ -637,21 +639,20 @@ public interface INotificationCacheService
     /// <summary>
     /// 删除用户未读数缓存
     /// </summary>
-    Task RemoveUnreadCountAsync(long userId);
+    Task ClearUnreadCountAsync(long userId);
 
     /// <summary>
-    /// 检查通知去重
+    /// 刷新用户未读数缓存
     /// </summary>
-    Task<bool> CheckDedupAsync(string type, long businessId, long triggerId);
-
-    /// <summary>
-    /// 设置通知去重标记
-    /// </summary>
-    Task SetDedupAsync(string type, long businessId, long triggerId, TimeSpan ttl);
+    Task<long> RefreshUnreadCountAsync(long userId);
 }
 ```
 
-### 4.2 缓存服务实现
+通知去重已经拆到 `NotificationDedupService`，缓存键格式为 `notification:dedup:{userId}:{notificationType}:{businessId}`，默认去重窗口为 `300` 秒。
+
+### 4.2 早期 Redis 原子计数设计示例（后续增强）
+
+下面代码块保留为后续 Redis 原子计数方案参考，不代表当前仓库代码。当前代码实现位于 `Radish.Service/NotificationCacheService.cs` 与 `Radish.Service/NotificationDedupService.cs`。
 
 ```csharp
 using Radish.Common.Cache;
@@ -704,7 +705,7 @@ public class NotificationCacheService : INotificationCacheService
 
         try
         {
-            // Redis INCRBY 原子操作
+            // 后续增强可改为 Redis INCRBY 原子操作
             var newCount = await _cache.IncrementAsync(key, delta);
 
             // 设置/刷新过期时间
@@ -725,7 +726,7 @@ public class NotificationCacheService : INotificationCacheService
 
         try
         {
-            // Redis DECRBY 原子操作
+            // 后续增强可改为 Redis DECRBY 原子操作
             var newCount = await _cache.IncrementAsync(key, -delta);
 
             // 确保不会为负数
@@ -761,7 +762,7 @@ public class NotificationCacheService : INotificationCacheService
         }
     }
 
-    public async Task RemoveUnreadCountAsync(long userId)
+    public async Task ClearUnreadCountAsync(long userId)
     {
         var key = $"{UnreadCountKeyPrefix}{userId}";
 
@@ -775,7 +776,7 @@ public class NotificationCacheService : INotificationCacheService
         }
     }
 
-    public async Task<bool> CheckDedupAsync(string type, long businessId, long triggerId)
+    public async Task<bool> ShouldDedupAsync(string type, long businessId, long triggerId)
     {
         var key = $"{DedupKeyPrefix}{type}:{businessId}:{triggerId}";
 
@@ -790,7 +791,7 @@ public class NotificationCacheService : INotificationCacheService
         }
     }
 
-    public async Task SetDedupAsync(string type, long businessId, long triggerId, TimeSpan ttl)
+    public async Task RecordDedupKeyAsync(string type, long businessId, long triggerId, TimeSpan ttl)
     {
         var key = $"{DedupKeyPrefix}{type}:{businessId}:{triggerId}";
 
@@ -1216,14 +1217,14 @@ namespace Radish.Service;
 
 public class NotificationDedupService : INotificationDedupService
 {
-    private readonly INotificationCacheService _cacheService;
+    private readonly ICaching _caching;
     private readonly NotificationDedupOptions _options;
 
     public NotificationDedupService(
-        INotificationCacheService cacheService,
+        ICaching caching,
         IOptions<NotificationDedupOptions> options)
     {
-        _cacheService = cacheService;
+        _caching = caching;
         _options = options.Value;
     }
 
@@ -1243,7 +1244,8 @@ public class NotificationDedupService : INotificationDedupService
         }
 
         // 2. 检查缓存去重
-        var isDuplicate = await _cacheService.CheckDedupAsync(type, businessId, triggerId);
+        var dedupKey = BuildDedupKey(receiverId, type, businessId);
+        var isDuplicate = await _caching.ExistsAsync(dedupKey);
         if (isDuplicate)
         {
             return false;
@@ -1255,10 +1257,15 @@ public class NotificationDedupService : INotificationDedupService
     /// <summary>
     /// 标记通知已发送（设置去重缓存）
     /// </summary>
-    public async Task MarkAsSentAsync(string type, long businessId, long triggerId)
+    public async Task MarkAsSentAsync(string type, long businessId, long receiverId)
     {
         var ttl = GetDedupTTL(type);
-        await _cacheService.SetDedupAsync(type, businessId, triggerId, ttl);
+        await _caching.SetStringAsync(BuildDedupKey(receiverId, type, businessId), "1", ttl);
+    }
+
+    private static string BuildDedupKey(long userId, string type, long businessId)
+    {
+        return $"notification:dedup:{userId}:{type}:{businessId}";
     }
 
     private TimeSpan GetDedupTTL(string type)
@@ -1770,15 +1777,16 @@ DataBases/
 
 ### 12.2 待实施功能
 
-**P2 阶段（计划中）**：
-- ⏳ NotificationCacheService（未读数缓存管理）
-- ⏳ 集成通知到点赞功能（PostService、CommentService）
-- ⏳ 前端 NotificationCenter 组件
-- ⏳ 前端 NotificationList 页面
+**P2 阶段（已完成首批，后续增强待规划）**：
+- ✅ NotificationCacheService（统一缓存层未读数缓存管理）
+- ✅ NotificationDedupService（通知去重）
+- ✅ 集成通知到点赞功能（PostService、CommentService）
+- ✅ 前端 NotificationCenter 组件
+- ✅ 前端 NotificationList 页面
+- ⏳ Redis 原子未读计数与缓存一致性巡检
 
 **P3 阶段（计划中）**：
 - ⏳ NotificationTemplateService（通知模板）
-- ⏳ NotificationDedupService（通知去重）
 - ⏳ 推送失败重试机制
 - ⏳ 未读数一致性检查任务
 
@@ -1791,15 +1799,15 @@ DataBases/
 ### 12.3 下一步行动
 
 **明日优先级**：
-1. 实现 NotificationCacheService（Redis 缓存未读数）
-2. 集成通知到点赞功能（PostLiked、CommentLiked）
-3. 前端 NotificationCenter 组件（顶栏通知铃铛）
+1. 视多实例和高并发情况评估 Redis 原子未读计数。
+2. 评估缓存一致性巡检任务是否需要回拉。
+3. 评估多实例 SignalR Redis Backplane。
 
 ---
 
 **文档版本**：v1.1
-**最后更新**：2026-01-09
-**状态**：P1 阶段已完成，P2 阶段进行中
+**最后更新**：2026-05-19
+**状态**：P1 / P2 首批已完成，Redis 原子计数与一致性巡检后置
 **关联文档**：
 - [通知系统总体规划](/guide/notification-realtime)
 - [通知系统 API 文档](/guide/notification-api)
