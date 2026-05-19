@@ -27,4 +27,7 @@ interface Window {
       ) => Promise<() => void>;
     };
   };
+  Capacitor?: {
+    isNativePlatform?: () => boolean;
+  };
 }

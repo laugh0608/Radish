@@ -1,6 +1,5 @@
 import { StrictMode, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Capacitor } from '@capacitor/core';
 import { configureApiClient } from '@radish/http';
 import { tokenService } from '@/services/tokenService';
 import { getApiBaseUrl } from '@/config/env';
@@ -25,6 +24,10 @@ const PublicEntry = lazy(() => import('./public/PublicEntry.tsx').then((module) 
 
 const isBrowser = typeof window !== 'undefined';
 
+function isCapacitorNativePlatform(): boolean {
+  return window.Capacitor?.isNativePlatform?.() === true;
+}
+
 function handleTauriDeepLink(url: string): void {
   if (!isBrowser) {
     return;
@@ -48,7 +51,7 @@ if (isBrowser && isTauriRuntime() && window.location.pathname === '/') {
   window.history.replaceState({}, '', TAURI_DESKTOP_ENTRY_PATH);
 }
 
-if (isBrowser && Capacitor.isNativePlatform() && window.location.pathname === '/') {
+if (isBrowser && isCapacitorNativePlatform() && window.location.pathname === '/') {
   window.history.replaceState({}, '', '/docs');
 }
 
