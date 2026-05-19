@@ -1,0 +1,107 @@
+.page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 32px 16px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-bg-surface) 88%, white), transparent 60%),
+    var(--theme-shell-background);
+  color: var(--theme-text-primary);
+}
+
+.panel {
+  width: min(560px, 100%);
+  padding: 32px;
+  border: 1px solid color-mix(in srgb, var(--theme-accent-earth) 30%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white);
+  box-shadow: 0 18px 45px rgba(26, 36, 42, 0.16);
+}
+
+.kicker {
+  margin: 0 0 8px;
+  color: var(--theme-text-muted);
+  font-size: 14px;
+}
+
+.panel h1 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.25;
+}
+
+.description {
+  margin: 14px 0 0;
+  color: var(--theme-text-secondary);
+  line-height: 1.7;
+}
+
+.form {
+  display: grid;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--theme-text-secondary);
+}
+
+.field input {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 80%, #999);
+  border-radius: 6px;
+  background: var(--theme-bg-surface);
+  color: var(--theme-text-primary);
+  font: inherit;
+}
+
+.field input:focus {
+  outline: 2px solid color-mix(in srgb, var(--theme-brand-primary) 28%, transparent);
+  border-color: var(--theme-brand-primary);
+}
+
+.passwordRule {
+  margin: 0;
+  color: var(--theme-text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.error {
+  margin: 0;
+  color: #b42318;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.primaryButton {
+  min-height: 42px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--theme-brand-primary);
+  color: var(--theme-bg-surface);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+@media (max-width: 640px) {
+  .panel {
+    padding: 24px;
+  }
+
+  .panel h1 {
+    font-size: 24px;
+  }
+}

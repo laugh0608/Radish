@@ -19,7 +19,7 @@ import './i18n';
 import 'highlight.js/styles/github-dark.css';
 
 const App = lazy(() => import('./App.tsx'));
-const Shell = lazy(() => import('./desktop/Shell.tsx').then((module) => ({ default: module.Shell })));
+const RootEntry = lazy(() => import('./desktop/RootEntry.tsx').then((module) => ({ default: module.RootEntry })));
 const PublicEntry = lazy(() => import('./public/PublicEntry.tsx').then((module) => ({ default: module.PublicEntry })));
 
 const isBrowser = typeof window !== 'undefined';
@@ -74,7 +74,7 @@ const isPublicContentRoute = isBrowser && (
 const params = new URLSearchParams(window.location.search);
 const isDemo = params.has('demo');
 
-const Page = isOidcCallback || isDemo ? App : isPublicContentRoute ? PublicEntry : Shell;
+const Page = isOidcCallback || isDemo ? App : isPublicContentRoute ? PublicEntry : RootEntry;
 
 initializeTheme();
 void applySiteBranding(getApiBaseUrl());

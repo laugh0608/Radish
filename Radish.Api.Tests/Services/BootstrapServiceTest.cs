@@ -1,0 +1,76 @@
+using System.Threading.Tasks;
+using Moq;
+using Radish.Common.HelpTool;
+using Radish.IRepository;
+using Radish.Model.DtoModels;
+using Radish.Service;
+using Xunit;
+
+namespace Radish.Api.Tests.Services;
+
+public class BootstrapServiceTest
+{
+    [Fact]
+    public async Task GetStatusAsync_ShouldRequireInitialization_WhenNoAdministratorExists()
+    {
+        var repository = new Mock<IBootstrapRepository>(MockBehavior.Strict);
+        repository
+            .Setup(r => r.AdministratorExistsAsync())
+            .ReturnsAsync(false);
+
+        var service = new BootstrapService(repository.Object);
+
+        var status = await service.GetStatusAsync();
+
+        Assert.True(status.VoRequiresAdminInitialization);
+        Assert.False(status.VoAdministratorExists);
+    }
+
+    [Fact]
+    public async Task CreateFirstAdministratorAsync_ShouldRejectWeakDefaultPassword()
+    {
+        var repository = new Mock<IBootstrapRepository>(MockBehavior.Strict);
+        var service = new BootstrapService(repository.Object);
+
+        var result = await service.CreateFirstAdministratorAsync(new BootstrapCreateAdminDto
+        {
+            LoginName = "admin",
+            Password = "admin123456",
+            ConfirmPassword = "admin123456"
+        });
+
+        Assert.Equal(BootstrapAdminCreationStatus.InvalidInput, result.Status);
+        repository.Verify(
+            r => r.TryCreateFirstAdministratorAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string?>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateFirstAdministratorAsync_ShouldPassPasswordHashToRepository()
+    {
+        string? capturedHash = null;
+        var repository = new Mock<IBootstrapRepository>(MockBehavior.Strict);
+        repository
+            .Setup(r => r.TryCreateFirstAdministratorAsync("owner", It.IsAny<string>(), "owner@radish.test"))
+            .Callback<string, string, string?>((_, passwordHash, _) => capturedHash = passwordHash)
+            .ReturnsAsync(BootstrapAdminCreationResult.Created(9001, "owner"));
+
+        var service = new BootstrapService(repository.Object);
+
+        var result = await service.CreateFirstAdministratorAsync(new BootstrapCreateAdminDto
+        {
+            LoginName = " owner ",
+            Email = " owner@radish.test ",
+            Password = "Strong!Pass123",
+            ConfirmPassword = "Strong!Pass123"
+        });
+
+        Assert.Equal(BootstrapAdminCreationStatus.Created, result.Status);
+        Assert.NotNull(capturedHash);
+        Assert.NotEqual("Strong!Pass123", capturedHash);
+        Assert.True(PasswordHasher.VerifyPassword("Strong!Pass123", capturedHash!));
+    }
+}

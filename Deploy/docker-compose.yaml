@@ -66,6 +66,7 @@ services:
     environment:
       <<: [*radish-postgres-databases, *radish-redis]
       DOTNET_ENVIRONMENT: Production
+      Seed__DeveloperDefaultsEnabled: "${RADISH_SEED_DEVELOPER_DEFAULTS_ENABLED:-false}"
     volumes:
       - ../DataBases:/app/DataBases
       - ../Logs:/app/Logs
@@ -89,6 +90,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:5100
       RADISH_PUBLIC_URL: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
+      Seed__DeveloperDefaultsEnabled: "${RADISH_SEED_DEVELOPER_DEFAULTS_ENABLED:-false}"
       OpenIddict__Database__DbType: "4"
       OpenIddict__Database__ConnectionString: "Host=postgres;Port=5432;Database=${RADISH_POSTGRES_OPENIDDICT_DB:-radish_openiddict};Username=${RADISH_POSTGRES_USER:?RADISH_POSTGRES_USER is required};Password=${RADISH_POSTGRES_PASSWORD:?RADISH_POSTGRES_PASSWORD is required}"
       Hangfire__DbType: "4"
@@ -116,6 +118,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:5200
       RADISH_PUBLIC_URL: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
+      Seed__DeveloperDefaultsEnabled: "${RADISH_SEED_DEVELOPER_DEFAULTS_ENABLED:-false}"
       OpenIddict__Database__DbType: "4"
       OpenIddict__Database__ConnectionString: "Host=postgres;Port=5432;Database=${RADISH_POSTGRES_OPENIDDICT_DB:-radish_openiddict};Username=${RADISH_POSTGRES_USER:?RADISH_POSTGRES_USER is required};Password=${RADISH_POSTGRES_PASSWORD:?RADISH_POSTGRES_PASSWORD is required}"
       OpenIddict__Server__Issuer: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"

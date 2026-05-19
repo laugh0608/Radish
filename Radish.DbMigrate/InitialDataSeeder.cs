@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Radish.Common;
 using Radish.Model;
 using SqlSugar;
 
@@ -66,17 +67,21 @@ internal static partial class InitialDataSeeder
         return Task.CompletedTask;
     }
 
+    private static bool IsDeveloperDefaultsEnabled()
+    {
+        var configured = AppSettingsTool.RadishApp("Seed", "DeveloperDefaultsEnabled");
+        return bool.TryParse(configured, out var enabled) && enabled;
+    }
+
     public static async Task SeedAsync(ISqlSugarClient db, IServiceProvider services)
     {
         var completedSteps = new List<string>();
-        var seedSteps = new (string Name, Func<Task> Action)[]
+        var developerDefaultsEnabled = IsDeveloperDefaultsEnabled();
+        var seedSteps = new List<(string Name, Func<Task> Action)>
         {
             ("角色", () => SeedRolesAsync(db)),
             ("租户", () => SeedTenantsAsync(db)),
             ("部门", () => SeedDepartmentsAsync(db)),
-            ("用户", () => SeedUsersAsync(db)),
-            ("用户时区偏好", () => SeedUserTimePreferencesAsync(db)),
-            ("用户角色", () => SeedUserRolesAsync(db)),
             ("角色 API 权限", () => SeedPermissionsAsync(db)),
             ("Console 授权资源", () => SeedConsoleAuthorizationAsync(db)),
             ("论坛分类", () => SeedForumCategoriesAsync(db)),
@@ -90,6 +95,20 @@ internal static partial class InitialDataSeeder
             ("商城默认图片", () => SeedShopDefaultImagesAsync(db)),
             ("表情包默认数据", SeedStickerDefaultsAsync)
         };
+
+        if (developerDefaultsEnabled)
+        {
+            seedSteps.InsertRange(3,
+            [
+                ("开发默认用户", () => SeedUsersAsync(db)),
+                ("开发默认用户时区偏好", () => SeedUserTimePreferencesAsync(db)),
+                ("开发默认用户角色", () => SeedUserRolesAsync(db))
+            ]);
+        }
+        else
+        {
+            Console.WriteLine("[Radish.DbMigrate] Seed:DeveloperDefaultsEnabled=false，跳过 system/admin/test 开发默认账号、默认密码、默认头像和用户角色绑定。");
+        }
 
         foreach (var step in seedSteps)
         {

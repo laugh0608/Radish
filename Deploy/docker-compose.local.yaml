@@ -8,6 +8,7 @@ services:
         BUILD_CONFIGURATION: Release
     environment:
       DOTNET_ENVIRONMENT: Production
+      Seed__DeveloperDefaultsEnabled: "true"
     volumes:
       - ../DataBases:/app/DataBases
       - ../Logs:/app/Logs
@@ -33,6 +34,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:5100
       RADISH_PUBLIC_URL: https://localhost:5000
+      Seed__DeveloperDefaultsEnabled: "true"
       OpenIddict__Encryption__SigningCertificatePath: /app/certs/dev-auth-cert.pfx
       OpenIddict__Encryption__SigningCertificatePassword: RadishDevCert123!
     volumes:
@@ -56,6 +58,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:5200
       RADISH_PUBLIC_URL: https://localhost:5000
+      Seed__DeveloperDefaultsEnabled: "true"
       OpenIddict__Server__Issuer: https://localhost:5000
       OpenIddict__Server__AllowInsecureHttp: "true"
       OpenIddict__Encryption__SigningCertificatePath: /app/certs/dev-auth-cert.pfx

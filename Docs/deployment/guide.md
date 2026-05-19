@@ -277,6 +277,7 @@ docker compose -f Deploy/docker-compose.local.yaml up -d
 本地容器验证口径如下：
 
 - `dbmigrate`：先执行一次 `apply`，自动补齐共享业务库表结构与基础数据
+- `Seed__DeveloperDefaultsEnabled=true`：允许创建 `system / admin / test` 开发演示账号、默认密码、默认头像与用户角色绑定，仅用于本地容器验证
 - `gateway`：对外监听 `https://localhost:5000`
 - `api`：容器内监听 `5100`
 - `auth`：容器内监听 `5200`
@@ -292,6 +293,7 @@ docker compose -f Deploy/docker-compose.local.yaml up -d
 - `RADISH_PUBLIC_URL`
 - `RADISH_POSTGRES_PASSWORD`
 - `RADISH_REDIS_PASSWORD`
+- `RADISH_SEED_DEVELOPER_DEFAULTS_ENABLED`：测试 / 生产保持默认 `false`，不要开启开发默认账号种子
 - `RADISH_AUTH_SIGNING_CERT_PASSWORD`：建议部署前用 `openssl rand -hex 32` 生成
 - `RADISH_AUTH_ENCRYPTION_CERT_PASSWORD`：建议部署前另行用 `openssl rand -hex 32` 生成
 
@@ -309,6 +311,9 @@ docker compose up -d
 部署态默认约定如下：
 
 - `postgres / redis` 会先完成健康检查，随后 `dbmigrate` 执行一次 `apply`，自动初始化 / 补齐共享业务库表结构与基础数据
+- `Seed__DeveloperDefaultsEnabled=false`，`dbmigrate apply` 不会创建默认 `admin` 账号、默认密码或 `system / test` 开发账号
+- 首次打开 `RADISH_PUBLIC_URL` 根入口时，`radish.client` 会检测是否尚无 `System / Admin` 管理员；若没有管理员，会进入首个管理员初始化页，要求部署人员设置账号和强密码
+- 首个管理员初始化只能在“尚无管理员”状态下使用；初始化完成后该入口会关闭，后续按正常 OIDC 登录和管理流程进入系统
 - `RADISH_IMAGE_REGISTRY / RADISH_IMAGE_TAG` 共同决定五个 `GHCR` 镜像地址，测试与生产主要通过 `RADISH_IMAGE_TAG` 区分代码版本
 - `GatewayService__PublicUrl`、前端运行时公开地址回退值，以及 Auth 的 `Issuer / CORS` 都通过 `RADISH_PUBLIC_URL` 对齐真实外部域名
 - `Api / Auth / Gateway` 三个宿主的部署态 CORS 允许来源都会优先从 `RADISH_PUBLIC_URL` 推导，启动日志应保持一致
