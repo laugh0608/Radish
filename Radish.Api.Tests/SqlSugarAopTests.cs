@@ -82,6 +82,46 @@ public class SqlSugarAopTests
         shouldLog.ShouldBeFalse();
     }
 
+    [Fact(DisplayName = "PostgreSQL 参数中的本地时间应规范化为 UTC")]
+    public void NormalizeDateTimeParametersForPostgreSql_ShouldConvertLocalDateTimeToUtc()
+    {
+        var localTime = new DateTime(2026, 5, 19, 15, 0, 0, DateTimeKind.Local);
+        var parameters = new[]
+        {
+            new SugarParameter("@CreateTime", localTime)
+        };
+        var config = new ConnectionConfig { DbType = SqlSugar.DbType.PostgreSQL };
+
+        InvokePrivateVoid(
+            "NormalizeDateTimeParametersForPostgreSql",
+            new object[] { config, parameters });
+
+        parameters[0].Value.ShouldBeOfType<DateTime>();
+        var normalized = (DateTime)parameters[0].Value;
+        normalized.Kind.ShouldBe(DateTimeKind.Utc);
+        normalized.ShouldBe(localTime.ToUniversalTime());
+    }
+
+    [Fact(DisplayName = "PostgreSQL 参数中的未指定时间应按 UTC 语义标记")]
+    public void NormalizeDateTimeParametersForPostgreSql_ShouldMarkUnspecifiedDateTimeAsUtc()
+    {
+        var unspecifiedTime = new DateTime(2026, 5, 19, 15, 0, 0, DateTimeKind.Unspecified);
+        var parameters = new[]
+        {
+            new SugarParameter("@CreateTime", unspecifiedTime)
+        };
+        var config = new ConnectionConfig { DbType = SqlSugar.DbType.PostgreSQL };
+
+        InvokePrivateVoid(
+            "NormalizeDateTimeParametersForPostgreSql",
+            new object[] { config, parameters });
+
+        parameters[0].Value.ShouldBeOfType<DateTime>();
+        var normalized = (DateTime)parameters[0].Value;
+        normalized.Kind.ShouldBe(DateTimeKind.Utc);
+        normalized.ShouldBe(DateTime.SpecifyKind(unspecifiedTime, DateTimeKind.Utc));
+    }
+
     [Theory(DisplayName = "ExtractTableName 应支持 INSERT/UPDATE/DELETE/SELECT 并归一化表名")]
     [InlineData("INSERT INTO `WikiDocument` (`Id`) VALUES (@Id)", "WikiDocument")]
     [InlineData("UPDATE `WikiDocument` SET `Title`=@Title WHERE `Id`=@Id", "WikiDocument")]
@@ -148,5 +188,13 @@ public class SqlSugarAopTests
         var result = method.Invoke(null, args);
         result.ShouldBeOfType<T>();
         return (T)result;
+    }
+
+    private static void InvokePrivateVoid(string methodName, params object[] args)
+    {
+        var method = typeof(SqlSugarAop).GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Static);
+        method.ShouldNotBeNull();
+
+        method.Invoke(null, args);
     }
 }

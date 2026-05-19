@@ -66,7 +66,8 @@ public class BootstrapRepository : IBootstrapRepository
             }).ExecuteCommandAsync();
 
             var adminRoleId = await EnsureAdminRoleAsync(db);
-            var userId = await db.Insertable(new User(new UserInitializationOptions(loginName, passwordHash)
+            var initializedAt = DateTime.UtcNow;
+            var administrator = new User(new UserInitializationOptions(loginName, passwordHash)
             {
                 UserName = loginName,
                 UserEmail = email,
@@ -78,7 +79,15 @@ public class BootstrapRepository : IBootstrapRepository
                 IsDeleted = false,
                 StatusCode = (int)UserStatusCodeEnum.Normal,
                 Remark = "First administrator initialized by bootstrap"
-            })).ExecuteReturnSnowflakeIdAsync();
+            })
+            {
+                CreateTime = initializedAt,
+                UpdateTime = initializedAt,
+                CriticalModifyTime = initializedAt,
+                LastErrorTime = initializedAt
+            };
+
+            var userId = await db.Insertable(administrator).ExecuteReturnSnowflakeIdAsync();
 
             await db.Insertable(new UserRole
             {
