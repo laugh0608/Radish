@@ -287,12 +287,13 @@ docker compose -f Deploy/docker-compose.local.yaml up -d
 
 ### 测试 / 生产部署
 
-先进入 `Deploy/` 目录，复制 `.env.example` 为 `.env`，并至少替换以下真实值：
+先在服务器上拉取仓库，再进入 `Deploy/` 目录，复制 `.env.example` 为 `.env`，并至少替换以下真实值：
 
 - `RADISH_IMAGE_TAG`：测试部署固定到明确 `v*-test` tag，生产部署固定到明确 `v*-release` tag
 - `RADISH_PUBLIC_URL`
 - `RADISH_POSTGRES_PASSWORD`
 - `RADISH_REDIS_PASSWORD`
+- `RADISH_POSTGRES_DATA_PATH / RADISH_REDIS_DATA_PATH / RADISH_AUTH_CERTS_PATH`：默认分别为 `../DeployData/Postgres`、`../DeployData/Redis`、`../DeployData/AuthCerts`
 - `RADISH_SEED_DEVELOPER_DEFAULTS_ENABLED`：测试 / 生产保持默认 `false`，不要开启开发默认账号种子
 - `RADISH_AUTH_SIGNING_CERT_PASSWORD`：建议部署前用 `openssl rand -hex 32` 生成
 - `RADISH_AUTH_ENCRYPTION_CERT_PASSWORD`：建议部署前另行用 `openssl rand -hex 32` 生成
@@ -300,7 +301,10 @@ docker compose -f Deploy/docker-compose.local.yaml up -d
 `RADISH_POSTGRES_MAIN_DB / RADISH_POSTGRES_LOG_DB / RADISH_POSTGRES_MESSAGE_DB / RADISH_POSTGRES_CHAT_DB / RADISH_POSTGRES_OPENIDDICT_DB / RADISH_POSTGRES_HANGFIRE_DB` 可按需改名；不改时会使用 `.env.example` 中的默认库名。
 
 ```bash
-cd Deploy
+git clone https://github.com/laugh0608/Radish.git
+cd Radish/Deploy
+mkdir -p ../DeployData/Postgres ../DeployData/Redis ../DeployData/AuthCerts
+mkdir -p ../DataBases ../Logs
 cp .env.example .env
 # 编辑 .env 后执行：
 docker compose config
@@ -321,10 +325,12 @@ docker compose up -d
 - 部署态不要直接用 `http://localhost:5000` 做登录验证；若访问协议、域名或端口与 `RADISH_PUBLIC_URL` 不一致，OpenIddict 会因 `redirect_uri` 不匹配而拒绝请求
 - `Gateway` 容器内部监听 `http://+:5000`
 - `GatewayRuntime__EnableHttpsRedirection=false`
-- `Databases` 中的 `Main / Log / Message / Chat`、`OpenIddict:Database` 与 `Hangfire` 都会通过环境变量覆盖为 PostgreSQL 连接；`Deploy/postgres-init/create-radish-databases.sh` 会在首次初始化 PostgreSQL 卷时补齐 `Log / Message / Chat / OpenIddict / Hangfire` 等非主库数据库
+- `Databases` 中的 `Main / Log / Message / Chat`、`OpenIddict:Database` 与 `Hangfire` 都会通过环境变量覆盖为 PostgreSQL 连接；`Deploy/postgres-init/create-radish-databases.sh` 会在首次初始化 PostgreSQL 数据目录时补齐 `Log / Message / Chat / OpenIddict / Hangfire` 等非主库数据库
 - `Redis__Enable=true`，缓存层默认走 Redis，不再回落到内存缓存
 - `AuthUi__ShowTestAccountHint=false`，登录页默认不再暴露测试账号提示
-- `Auth` 会把 OIDC signing / encryption 证书写入 `radish-auth-certs` 命名卷，`Api` 只读复用同一份 signing 证书做本地 JWT 验签
+- `PostgreSQL / Redis / Auth 证书` 默认持久化到宿主机 `../DeployData/Postgres`、`../DeployData/Redis`、`../DeployData/AuthCerts`，不再使用 Docker 命名卷；`../DataBases` 仍只作为 Radish 应用运行数据目录挂载到 `/app/DataBases`
+- 首次部署前建议手动创建 `../DeployData/*`、`../DataBases` 与 `../Logs`；Docker 也可能自动创建 bind mount 目录，但测试 / 生产环境不要依赖该行为。若容器启动时报权限错误，再按容器日志调整对应目录 owner / 权限
+- `Auth` 会把 OIDC signing / encryption 证书写入 `RADISH_AUTH_CERTS_PATH`，`Api` 只读复用同一份 signing 证书做本地 JWT 验签
 - 若 `RADISH_AUTH_CERT_AUTO_GENERATE=true` 且目标证书文件不存在，`Auth` 会在首次启动时自动生成 OIDC 证书；默认有效期为 `RADISH_AUTH_CERT_VALID_DAYS=7300` 天，后续启动直接复用同一组证书
 - TLS 由外部 Nginx / Traefik / Caddy 终止，再转发到容器内 HTTP 端口；仓库已提供可直接落地的 `Deploy/nginx.prod.conf`
 - 不要再额外覆盖 `Cors__AllowedOrigins__0` 之类的单索引数组项；部署态统一以 `RADISH_PUBLIC_URL` 为准，避免旧 `localhost` 端口残留
@@ -552,7 +558,7 @@ HTTP (5000/5100) → ASP.NET Core 应用
 
 1. **准备新证书**：参考《[鉴权与授权指南](/guide/authentication)》的“证书生成示例”生成新 `.pfx`（签名/加密可拆分）。
 2. **上传/挂载**：将新证书放到宿主机（如 `/etc/radish/certs/auth-signing-2025Q1.pfx`），并映射到容器的 `/app/certs`。
-3. **更新部署变量**：修改 `Deploy/.env` 中的 `RADISH_AUTH_SIGNING_CERT_PASSWORD / RADISH_AUTH_ENCRYPTION_CERT_PASSWORD`；如需替换已有证书文件，应先在 `radish-auth-certs` 命名卷内完成证书轮换。
+3. **更新部署变量**：修改 `Deploy/.env` 中的 `RADISH_AUTH_SIGNING_CERT_PASSWORD / RADISH_AUTH_ENCRYPTION_CERT_PASSWORD`；如需替换已有证书文件，应先在 `RADISH_AUTH_CERTS_PATH` 指向的宿主目录内完成证书轮换。
    ```bash
    cd Deploy
    docker compose up -d auth
@@ -588,7 +594,7 @@ HTTP (5000/5100) → ASP.NET Core 应用
   - 当前它也是 `M14` 的默认宿主验证入口，失败时优先回到 [M14 宿主运行首轮执行清单](/records/m14-host-runtime-checklist) 按顺序分诊
 - 当前没有阻塞主线的已知 `P0 / P1` 问题
 - 已具备真实外部 HTTPS 域名，可为 `Deploy/.env` 提供真实 `RADISH_PUBLIC_URL`
-- 已具备可持久化 Auth OIDC 证书的 Docker 命名卷；首次部署可由容器自动生成，后续必须复用同一组证书
+- 已具备可持久化 Auth OIDC 证书的宿主目录；首次部署可由容器自动生成，后续必须复用同一组证书
 - 已具备 Docker 镜像可构建、可推送、可拉取、可部署的最小条件
 
 ### 建议执行顺序
@@ -597,8 +603,8 @@ HTTP (5000/5100) → ASP.NET Core 应用
    - `RADISH_IMAGE_TAG`
    - `Deploy/.env` 中的 `RADISH_PUBLIC_URL` 必须与真实外部 HTTPS 域名完全一致
    - `RADISH_POSTGRES_USER / RADISH_POSTGRES_PASSWORD / RADISH_REDIS_PASSWORD`
-   - `RADISH_AUTH_SIGNING_CERT_PASSWORD / RADISH_AUTH_ENCRYPTION_CERT_PASSWORD` 应分别用 `openssl rand -hex 32` 生成，并在 `radish-auth-certs` 命名卷生命周期内保持不变
-   - 确认 `radish-auth-certs` 命名卷会被保留和备份
+   - `RADISH_AUTH_SIGNING_CERT_PASSWORD / RADISH_AUTH_ENCRYPTION_CERT_PASSWORD` 应分别用 `openssl rand -hex 32` 生成，并在 `RADISH_AUTH_CERTS_PATH` 目录生命周期内保持不变
+   - 确认 `RADISH_POSTGRES_DATA_PATH / RADISH_REDIS_DATA_PATH / RADISH_AUTH_CERTS_PATH` 指向的宿主目录会被保留和备份
 
 2. **先做静态展开，不直接启动**
    - 从仓库根目录进入 `Deploy/` 后执行：

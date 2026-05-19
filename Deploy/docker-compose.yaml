@@ -39,7 +39,7 @@ services:
       RADISH_POSTGRES_OPENIDDICT_DB: "${RADISH_POSTGRES_OPENIDDICT_DB:-radish_openiddict}"
       RADISH_POSTGRES_HANGFIRE_DB: "${RADISH_POSTGRES_HANGFIRE_DB:-radish_hangfire}"
     volumes:
-      - radish-postgres-data:/var/lib/postgresql/data
+      - ${RADISH_POSTGRES_DATA_PATH:-../DeployData/Postgres}:/var/lib/postgresql/data
       - ./postgres-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
@@ -54,7 +54,7 @@ services:
     environment:
       REDIS_PASSWORD: "${RADISH_REDIS_PASSWORD:?RADISH_REDIS_PASSWORD is required}"
     volumes:
-      - radish-redis-data:/data
+      - ${RADISH_REDIS_DATA_PATH:-../DeployData/Redis}:/data
     healthcheck:
       test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep PONG"]
       interval: 10s
@@ -100,7 +100,7 @@ services:
     volumes:
       - ../DataBases:/app/DataBases
       - ../Logs:/app/Logs
-      - radish-auth-certs:/app/certs:ro
+      - ${RADISH_AUTH_CERTS_PATH:-../DeployData/AuthCerts}:/app/certs:ro
     depends_on:
       dbmigrate:
         condition: service_completed_successfully
@@ -134,7 +134,7 @@ services:
     volumes:
       - ../DataBases:/app/DataBases
       - ../Logs:/app/Logs
-      - radish-auth-certs:/app/certs
+      - ${RADISH_AUTH_CERTS_PATH:-../DeployData/AuthCerts}:/app/certs
     depends_on:
       dbmigrate:
         condition: service_completed_successfully
@@ -166,8 +166,3 @@ services:
       - auth
     ports:
       - "${RADISH_GATEWAY_HTTP_PORT:-5000}:5000"
-
-volumes:
-  radish-postgres-data:
-  radish-redis-data:
-  radish-auth-certs:
