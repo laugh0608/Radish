@@ -43,7 +43,7 @@
 
 本轮已检查的对象包括：
 
-- `Deploy/docker-compose.yml`、`Deploy/docker-compose.local.yml`、`Deploy/docker-compose.test.yml`、`Deploy/docker-compose.prod.yml`
+- `Deploy/docker-compose.yaml`、`Deploy/docker-compose.yml`、`Deploy/docker-compose.local.yml`
 - `Deploy/nginx.prod.conf`
 - `Docs/deployment/guide.md`
 - `Radish.Auth/OpenIddict/OpenIddictSeedHostedService.cs`
@@ -79,13 +79,13 @@
 
 ### 3.2 仓库交付的 Compose / 部署变量口径
 
-结论：**当前仓库内的部署编排口径主要依赖 `RADISH_PUBLIC_URL`、OIDC 证书路径、镜像地址与启动顺序，未发现把旧 Claim 字段写进部署变量或 Compose 规则。**
+结论：**当前仓库内的部署编排口径主要依赖 `RADISH_PUBLIC_URL`、OIDC 证书密码、镜像 tag 与启动顺序，未发现把旧 Claim 字段写进部署变量或 Compose 规则。**
 
 依据：
 
-- `Deploy/docker-compose.test.yml` 与 `Deploy/docker-compose.prod.yml` 当前重点关注：
+- `Deploy/docker-compose.yaml` 当前重点关注：
   - `OpenIddict__Server__Issuer`
-  - OIDC signing / encryption 证书路径与密码
+  - OIDC signing / encryption 证书密码与持久化命名卷
   - `dbmigrate -> api/auth -> gateway` 启动顺序
 - 本轮未发现 Compose 层直接解析 Token 或按旧 Claim 字段做环境判断。
 - `Docs/deployment/guide.md` 中的部署前后复核动作，也集中在 `RADISH_PUBLIC_URL`、回调地址、证书、健康检查与日志入口。

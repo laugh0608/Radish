@@ -1,0 +1,162 @@
+x-radish-postgres-databases: &radish-postgres-databases
+  MainDb: Main
+  Databases__0__ConnId: Main
+  Databases__0__DbType: "4"
+  Databases__0__Enabled: "true"
+  Databases__0__HitRate: "50"
+  Databases__0__ConnectionString: "Host=postgres;Port=5432;Database=${RADISH_POSTGRES_MAIN_DB:-radish};Username=${RADISH_POSTGRES_USER:?RADISH_POSTGRES_USER is required};Password=${RADISH_POSTGRES_PASSWORD:?RADISH_POSTGRES_PASSWORD is required}"
+  Databases__1__ConnId: Log
+  Databases__1__DbType: "4"
+  Databases__1__Enabled: "true"
+  Databases__1__HitRate: "50"
+  Databases__1__ConnectionString: "Host=postgres;Port=5432;Database=${RADISH_POSTGRES_LOG_DB:-radish_log};Username=${RADISH_POSTGRES_USER:?RADISH_POSTGRES_USER is required};Password=${RADISH_POSTGRES_PASSWORD:?RADISH_POSTGRES_PASSWORD is required}"
+  Databases__2__ConnId: Message
+  Databases__2__DbType: "4"
+  Databases__2__Enabled: "true"
+  Databases__2__HitRate: "50"
+  Databases__2__ConnectionString: "Host=postgres;Port=5432;Database=${RADISH_POSTGRES_MESSAGE_DB:-radish_message};Username=${RADISH_POSTGRES_USER:?RADISH_POSTGRES_USER is required};Password=${RADISH_POSTGRES_PASSWORD:?RADISH_POSTGRES_PASSWORD is required}"
+  Databases__3__ConnId: Chat
+  Databases__3__DbType: "4"
+  Databases__3__Enabled: "true"
+  Databases__3__HitRate: "50"
+  Databases__3__ConnectionString: "Host=postgres;Port=5432;Database=${RADISH_POSTGRES_CHAT_DB:-radish_chat};Username=${RADISH_POSTGRES_USER:?RADISH_POSTGRES_USER is required};Password=${RADISH_POSTGRES_PASSWORD:?RADISH_POSTGRES_PASSWORD is required}"
+
+x-radish-redis: &radish-redis
+  Redis__Enable: "true"
+  Redis__ConnectionString: "redis:6379,password=${RADISH_REDIS_PASSWORD:?RADISH_REDIS_PASSWORD is required},abortConnect=false"
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: "${RADISH_POSTGRES_MAIN_DB:-radish}"
+      POSTGRES_USER: "${RADISH_POSTGRES_USER:?RADISH_POSTGRES_USER is required}"
+      POSTGRES_PASSWORD: "${RADISH_POSTGRES_PASSWORD:?RADISH_POSTGRES_PASSWORD is required}"
+      RADISH_POSTGRES_LOG_DB: "${RADISH_POSTGRES_LOG_DB:-radish_log}"
+      RADISH_POSTGRES_MESSAGE_DB: "${RADISH_POSTGRES_MESSAGE_DB:-radish_message}"
+      RADISH_POSTGRES_CHAT_DB: "${RADISH_POSTGRES_CHAT_DB:-radish_chat}"
+    volumes:
+      - radish-postgres-data:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${RADISH_REDIS_PASSWORD:?RADISH_REDIS_PASSWORD is required}"]
+    environment:
+      REDIS_PASSWORD: "${RADISH_REDIS_PASSWORD:?RADISH_REDIS_PASSWORD is required}"
+    volumes:
+      - radish-redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  dbmigrate:
+    image: "${RADISH_IMAGE_REGISTRY:-ghcr.io/laugh0608}/radish-dbmigrate:${RADISH_IMAGE_TAG:?RADISH_IMAGE_TAG is required}"
+    environment:
+      <<: [*radish-postgres-databases, *radish-redis]
+      DOTNET_ENVIRONMENT: Production
+    volumes:
+      - ../DataBases:/app/DataBases
+      - ../Logs:/app/Logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    image: "${RADISH_IMAGE_REGISTRY:-ghcr.io/laugh0608}/radish-frontend:${RADISH_IMAGE_TAG:?RADISH_IMAGE_TAG is required}"
+    environment:
+      RADISH_PUBLIC_URL: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
+    expose:
+      - "80"
+
+  api:
+    image: "${RADISH_IMAGE_REGISTRY:-ghcr.io/laugh0608}/radish-api:${RADISH_IMAGE_TAG:?RADISH_IMAGE_TAG is required}"
+    environment:
+      <<: [*radish-postgres-databases, *radish-redis]
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:5100
+      RADISH_PUBLIC_URL: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
+      OpenIddict__Encryption__SigningCertificatePath: /app/certs/auth-signing.pfx
+      OpenIddict__Encryption__SigningCertificatePassword: "${RADISH_AUTH_SIGNING_CERT_PASSWORD:?RADISH_AUTH_SIGNING_CERT_PASSWORD is required}"
+    volumes:
+      - ../DataBases:/app/DataBases
+      - ../Logs:/app/Logs
+      - radish-auth-certs:/app/certs:ro
+    depends_on:
+      dbmigrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    expose:
+      - "5100"
+
+  auth:
+    image: "${RADISH_IMAGE_REGISTRY:-ghcr.io/laugh0608}/radish-auth:${RADISH_IMAGE_TAG:?RADISH_IMAGE_TAG is required}"
+    environment:
+      <<: [*radish-postgres-databases, *radish-redis]
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:5200
+      RADISH_PUBLIC_URL: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
+      OpenIddict__Server__Issuer: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
+      OpenIddict__Server__AllowInsecureHttp: "false"
+      OpenIddict__Encryption__UseDevelopmentKeys: "false"
+      OpenIddict__Encryption__SigningCertificatePath: /app/certs/auth-signing.pfx
+      OpenIddict__Encryption__SigningCertificatePassword: "${RADISH_AUTH_SIGNING_CERT_PASSWORD:?RADISH_AUTH_SIGNING_CERT_PASSWORD is required}"
+      OpenIddict__Encryption__EncryptionCertificatePath: /app/certs/auth-encryption.pfx
+      OpenIddict__Encryption__EncryptionCertificatePassword: "${RADISH_AUTH_ENCRYPTION_CERT_PASSWORD:?RADISH_AUTH_ENCRYPTION_CERT_PASSWORD is required}"
+      RADISH_AUTH_CERT_AUTO_GENERATE: "${RADISH_AUTH_CERT_AUTO_GENERATE:-true}"
+      RADISH_AUTH_CERT_VALID_DAYS: "${RADISH_AUTH_CERT_VALID_DAYS:-7300}"
+      AuthUi__ShowTestAccountHint: "false"
+    volumes:
+      - ../DataBases:/app/DataBases
+      - ../Logs:/app/Logs
+      - radish-auth-certs:/app/certs
+    depends_on:
+      dbmigrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    expose:
+      - "5200"
+
+  gateway:
+    image: "${RADISH_IMAGE_REGISTRY:-ghcr.io/laugh0608}/radish-gateway:${RADISH_IMAGE_TAG:?RADISH_IMAGE_TAG is required}"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:5000
+      RADISH_PUBLIC_URL: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
+      GatewayRuntime__EnableHttpsRedirection: "false"
+      GatewayService__PublicUrl: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
+      FrontendService__BaseUrl: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
+      DownstreamServices__ApiService__BaseUrl: http://api:5100
+      DownstreamServices__AuthService__BaseUrl: http://auth:5200
+      ReverseProxy__Clusters__apiCluster__Destinations__api__Address: http://api:5100
+      ReverseProxy__Clusters__authCluster__Destinations__auth__Address: http://auth:5200
+      ReverseProxy__Clusters__frontendCluster__Destinations__frontend__Address: http://frontend
+      ReverseProxy__Clusters__consoleCluster__Destinations__console__Address: http://frontend
+    depends_on:
+      - frontend
+      - api
+      - auth
+    ports:
+      - "${RADISH_GATEWAY_HTTP_PORT:-5000}:5000"
+
+volumes:
+  radish-postgres-data:
+  radish-redis-data:
+  radish-auth-certs:

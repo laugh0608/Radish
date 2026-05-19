@@ -1,7 +1,7 @@
 # 部署与容器指南
 
 ## 目标
-本指南面向需要在本地或服务器上快速部署 Radish 的维护者，说明如何使用 `Radish.Api/Dockerfile`、`Radish.Auth/Dockerfile`、`Radish.Gateway/Dockerfile` 与 `Frontend/Dockerfile` 构建首版最小镜像链，并通过 `Deploy/docker-compose.yml` 及其环境覆盖文件组织 `gateway / api / auth / frontend` 四个容器。当前部署口径已经收束为“开发环境直接 IDE / 宿主机运行，测试与生产环境统一拉取预构建镜像部署”；其中测试环境采用“Gateway 容器内 HTTPS”，生产环境采用“外部反代 HTTPS、容器内 HTTP”。
+本指南面向需要在本地或服务器上快速部署 Radish 的维护者，说明如何使用 `Radish.Api/Dockerfile`、`Radish.Auth/Dockerfile`、`Radish.Gateway/Dockerfile` 与 `Frontend/Dockerfile` 构建首版最小镜像链，并通过 `Deploy/docker-compose.yml` 及其环境覆盖文件组织 `gateway / api / auth / frontend` 四个容器。当前部署口径已经收束为“开发环境直接 IDE / 宿主机运行，本地容器验证保留容器内 HTTPS，测试与生产环境统一采用外部反代 HTTPS、容器内 HTTP，并默认启用 PostgreSQL / Redis”。
 
 当前若要按仓库现实执行发版、部署、发布后最小复核与回滚，请优先参考：
 
@@ -27,14 +27,15 @@
 - **测试部署**
   - 面向企业内部环境或外部客户试用
   - 直接拉取 `GHCR` 中已构建好的镜像，不在部署机现场构建
-  - `Gateway` 容器直接对外提供 `HTTPS`
-  - `Gateway` TLS 证书与 `Auth` OIDC 签名 / 加密证书均可在首次启动时自动生成并持久化
-  - 默认通过 `https://IP:port` 或测试域名访问；若使用自签名证书，浏览器出现证书告警属于预期行为
+  - 与生产部署保持同构：外部 `Nginx / Traefik / Caddy` 终止 TLS，容器内部 `Gateway / Api / Auth` 只提供 `HTTP`
+  - 默认启用 PostgreSQL / Redis，测试与生产的主要差异应收敛为镜像 tag、域名、证书路径、密钥和数据
+  - `Auth` OIDC 签名 / 加密证书可在首次启动时自动生成并持久化；后续必须复用同一组证书
 - **生产部署**
   - 面向正式外部客户
   - 直接拉取 `GHCR` 中已构建好的发布镜像，不在部署机现场构建
   - 外部 `Nginx / Traefik / Caddy` 终止 TLS 并提供 `HTTPS`
   - 容器内部 `Gateway / Api / Auth` 只提供 `HTTP`
+  - 默认启用 PostgreSQL / Redis
   - `Auth` OIDC 证书可在首次启动时自动生成并写入挂载目录；后续必须复用同一组证书
 
 ## 更换域名时的处理边界
@@ -141,7 +142,7 @@
 - 若 `GHCR` 包为私有，还需要准备 `docker login ghcr.io` 所需凭据。
 - .NET SDK 10.0.0+，用于调试或本地 `dotnet publish`。
 - Node.js 24+：可选，用于宿主机本地构建前端；`Frontend/Dockerfile` 当前直接基于 Node 24 多阶段镜像完成构建与运行时封装。
-- PostgreSQL / Redis：当前最小 Compose **不是必需项**。默认链路直接复用仓库共享配置中的 SQLite + 内存缓存，以便先完成首版镜像构建与交付验证；生产环境再按需覆盖。
+- PostgreSQL / Redis：测试与生产 Compose 默认会启动 PostgreSQL 16 与 Redis 7，并通过环境变量覆盖 `Databases` 与 `Redis` 共享配置；本地容器验证仍可继续使用 SQLite + 内存缓存。
 - **Auth 证书**：准备好 OIDC 签名/加密证书（`.pfx` 文件），或至少预留一个可持久化写入的挂载目录供容器在首次启动时自动生成证书；默认的 `Certs/dev-auth-cert.pfx` 仅用于本地联调，生产必须替换。
 
 ## 当前仓库资产
@@ -155,14 +156,12 @@
   - `Frontend/Dockerfile`
   - `Frontend/scripts/serve-static.mjs`
 - 最小编排：
+  - `Deploy/docker-compose.yaml`
   - `Deploy/docker-compose.yml`
   - `Deploy/docker-compose.local.yml`
-  - `Deploy/docker-compose.test.yml`
-  - `Deploy/docker-compose.prod.yml`
 - 生产交付样例：
-  - `Deploy/.env.test.example`
+  - `Deploy/.env.example`
   - `Deploy/nginx.prod.conf`
-  - `Deploy/.env.prod.example`
 - CI / 镜像工作流：
   - `.github/workflows/repo-quality.yml`
   - `.github/workflows/docker-images.yml`
@@ -203,7 +202,7 @@
 
 - `Frontend/scripts/serve-static.mjs` 已支持按请求返回 `/runtime-config.js` 运行时配置脚本
 - `radish.client` 与 `radish.console` 当前都会优先读取运行时注入的公开地址与功能开关，再回退到构建期 `VITE_*`
-- `Deploy/docker-compose.local.yml / docker-compose.test.yml / docker-compose.prod.yml` 也已为 `frontend` 容器补齐运行时环境变量入口
+- `Deploy/docker-compose.local.yml` 与部署态 `Deploy/docker-compose.yaml` 也已为 `frontend` 容器补齐运行时环境变量入口
 
 因此当前 `frontend` 已具备“同一个镜像按运行时环境复用”的能力；当前工作流已补齐统一推送规则，且 `frontend` GHCR 首次真实产物已可通过 `docker pull` 获取，当前剩余重点转为上线前外部交付复核。
 
@@ -250,23 +249,20 @@ docker build \
 
 - 静态服务会在请求 `/runtime-config.js` 时动态返回运行时配置
 - 运行时默认优先读取 `RADISH_PUBLIC_URL`
-- 如需细分，也可通过 `VITE_API_BASE_URL`、`VITE_AUTH_BASE_URL`、`VITE_SIGNALR_HUB_URL`、`VITE_AUTH_SERVER_URL` 单独覆盖
+- 部署态默认只注入 `RADISH_PUBLIC_URL`，前端运行时配置统一回退到同一个 Gateway 公开入口
 
 > 说明：当前 `frontend` 镜像已纳入统一 GHCR 推送链路，并且已经完全切到运行时配置注入；同时 `Frontend/Dockerfile` 已收口为轻量多阶段运行时镜像，本地构建验证体积约 `300MB`，继续沿用“预构建镜像 + 部署时注入公开地址”时不再需要额外改 Dockerfile。
 
 ## 运行容器
-当前最小链默认以 `Gateway` 作为唯一对外入口。Compose 现在拆为“基础文件 + 环境覆盖文件”两层：
+当前最小链默认以 `Gateway` 作为唯一对外入口。Compose 现在收束为两类：
 
-- `Deploy/docker-compose.yml`：共享基础编排，只保留所有环境都一致的服务结构、镜像引用、`dbmigrate -> api/auth -> gateway` 启动顺序与下游地址
-- `Deploy/docker-compose.local.yml`：本地容器验证覆盖，补充本地 `build` 入口，并让 `Gateway` 在容器内监听 HTTPS
-- `Deploy/docker-compose.test.yml`：测试部署覆盖，默认让 `Gateway` 在容器内监听 HTTPS，并自动生成 / 复用测试 TLS 证书与 Auth OIDC 证书
-- `Deploy/docker-compose.prod.yml`：生产反代覆盖，默认让 `Gateway` 在容器内监听 HTTP，并关闭 `UseHttpsRedirection()`
+- `Deploy/docker-compose.yaml`：测试 / 生产共用的部署态编排，直接拉取远程镜像，默认启用 PostgreSQL / Redis，`Gateway` 容器内监听 HTTP，外部反代终止 HTTPS。
+- `Deploy/docker-compose.yml + Deploy/docker-compose.local.yml`：本地容器验证组合，保留本地 `build` 入口，默认使用 SQLite + 内存缓存，并让 `Gateway` 在容器内监听 HTTPS。
 
-开发运行不走 Compose；Compose 只建议按以下三种组合使用：
+开发运行不走 Compose；Compose 只建议按以下两种组合使用：
 
-- `base + local`：`Deploy/docker-compose.yml + Deploy/docker-compose.local.yml`，适用于本地容器构建验证、镜像入口验证、浏览器直连 Gateway 的场景
-- `base + test`：`Deploy/docker-compose.yml + Deploy/docker-compose.test.yml`，适用于内部测试部署、客户试用与“容器内直接 HTTPS”场景
-- `base + prod`：`Deploy/docker-compose.yml + Deploy/docker-compose.prod.yml`，适用于服务器部署、外层 Nginx 终止 HTTPS、Gateway 容器内仅监听 HTTP 的场景
+- 本地容器验证：`Deploy/docker-compose.yml + Deploy/docker-compose.local.yml`
+- 测试 / 生产部署：`Deploy/docker-compose.yaml + Deploy/.env`
 
 ### 开发运行：IDE / 宿主机直跑
 
@@ -289,76 +285,38 @@ docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.local.yml u
 
 本地容器验证时，`Gateway` 镜像会内置 `Certs/dev-gateway-cert.pfx` 作为开发证书，使 `https://localhost:5000` 可以直接完成 TLS 握手；若浏览器提示证书不受信任，请先在宿主机信任该开发证书。
 
-### `base + test`：测试部署 / 客户试用
+### 测试 / 生产部署
 
-先复制 `Deploy/.env.test.example` 为 `Deploy/.env.test`。当前样例默认使用明确版本占位 `ghcr.io/laugh0608/...:v26.3.2-test`；如果只是想故意跟随测试轨道的最新镜像，可手动改回 `test-latest`。并替换至少以下真实值：
+先复制 `Deploy/.env.example` 为 `Deploy/.env`，并至少替换以下真实值：
 
-- `RADISH_FRONTEND_IMAGE`
-- `RADISH_DBMIGRATE_IMAGE`
-- `RADISH_API_IMAGE`
-- `RADISH_AUTH_IMAGE`
-- `RADISH_GATEWAY_IMAGE`
+- `RADISH_IMAGE_TAG`：测试部署固定到明确 `v*-test` tag，生产部署固定到明确 `v*-release` tag
 - `RADISH_PUBLIC_URL`
-- `RADISH_GATEWAY_HTTPS_PORT`
-- `RADISH_GATEWAY_CERT_PASSWORD`
-- `RADISH_AUTH_SIGNING_CERT_PASSWORD`
-- `RADISH_AUTH_ENCRYPTION_CERT_PASSWORD`
+- `RADISH_POSTGRES_PASSWORD`
+- `RADISH_REDIS_PASSWORD`
+- `RADISH_AUTH_SIGNING_CERT_PASSWORD`：建议部署前用 `openssl rand -hex 32` 生成
+- `RADISH_AUTH_ENCRYPTION_CERT_PASSWORD`：建议部署前另行用 `openssl rand -hex 32` 生成
 
 ```bash
-docker compose --env-file Deploy/.env.test -f Deploy/docker-compose.yml -f Deploy/docker-compose.test.yml config
-docker compose --env-file Deploy/.env.test -f Deploy/docker-compose.yml -f Deploy/docker-compose.test.yml pull
-docker compose --env-file Deploy/.env.test -f Deploy/docker-compose.yml -f Deploy/docker-compose.test.yml up -d
+docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml config
+docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml pull
+docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml up -d
 ```
 
-测试覆盖默认约定如下：
+部署态默认约定如下：
 
-- `dbmigrate` 会在 `api / auth / gateway` 启动前先执行一次 `apply`，自动初始化 / 补齐共享业务库表结构与基础数据；重复执行保持幂等
-- `Gateway` 容器内部监听 `https://+:5000`
-- `RADISH_PUBLIC_URL` 需要直接写成测试入口，例如 `https://10.10.10.20:5000`
-- `Api / Auth / Gateway` 三个宿主都会优先基于 `RADISH_PUBLIC_URL` 自动收口到同一个 CORS 允许来源
-- `Gateway` TLS 证书会在首次启动时按 `RADISH_PUBLIC_URL` 的 host 自动生成，并持久化到测试证书卷
-- `Auth` 的 OIDC signing / encryption 证书会在首次启动时自动生成，并持久化到测试证书卷
-- `AuthUi__ShowTestAccountHint=true`，登录页会保留测试账号提示，便于测试部署与客户试用时快速联调
-- `Api` 会把同一份 Auth signing 证书以只读方式挂载到容器内，并直接做本地 JWT 验签，不依赖再通过 `127.0.0.1` 或外部域名回拉 OIDC metadata / JWKS
-- 证书只会在“目标文件缺失”时生成；若证书已存在，则直接复用，不会因为重启漂移
-- 若使用 `https://IP:port` + 自签名证书，浏览器出现证书告警属于预期行为，不代表 Gateway / OIDC 链路异常
-
-### `base + prod`：生产 / 外部反向代理
-
-先复制 `Deploy/.env.prod.example` 为 `Deploy/.env.prod`。当前样例默认使用明确版本占位 `ghcr.io/laugh0608/...:v26.3.2-release`；生产部署如无特殊原因，不建议改回 `latest`。并替换至少以下真实值：
-
-- `RADISH_FRONTEND_IMAGE`
-- `RADISH_DBMIGRATE_IMAGE`
-- `RADISH_API_IMAGE`
-- `RADISH_AUTH_IMAGE`
-- `RADISH_GATEWAY_IMAGE`
-- `RADISH_PUBLIC_URL`
-- `RADISH_AUTH_CERTS_DIR`
-- `RADISH_AUTH_SIGNING_CERT_PATH`
-- `RADISH_AUTH_SIGNING_CERT_PASSWORD`
-- `RADISH_AUTH_ENCRYPTION_CERT_PATH`
-- `RADISH_AUTH_ENCRYPTION_CERT_PASSWORD`
-
-```bash
-docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml config
-docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml pull
-docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml up -d
-```
-
-生产覆盖默认约定如下：
-
-- `dbmigrate` 会在 `api / auth / gateway` 启动前先执行一次 `apply`，自动初始化 / 补齐共享业务库表结构与基础数据；若使用 SQLite，宿主机挂载目录中会生成或复用 `Radish.db` 等数据库文件
-- `RADISH_*_IMAGE` 应指向 `GHCR` 中已经构建完成的发布镜像，生产建议固定到明确版本 tag，而不是 `latest`
+- `postgres / redis` 会先完成健康检查，随后 `dbmigrate` 执行一次 `apply`，自动初始化 / 补齐共享业务库表结构与基础数据
+- `RADISH_IMAGE_REGISTRY / RADISH_IMAGE_TAG` 共同决定五个 `GHCR` 镜像地址，测试与生产主要通过 `RADISH_IMAGE_TAG` 区分代码版本
 - `GatewayService__PublicUrl`、前端运行时公开地址回退值，以及 Auth 的 `Issuer / CORS` 都通过 `RADISH_PUBLIC_URL` 对齐真实外部域名
 - `Api / Auth / Gateway` 三个宿主的部署态 CORS 允许来源都会优先从 `RADISH_PUBLIC_URL` 推导，启动日志应保持一致
 - `Auth` 中官方 OIDC 客户端（`radish-client / radish-console / radish-scalar`）的 Gateway 回调地址也会跟随 `OpenIddict__Server__Issuer` 对齐，因此 `RADISH_PUBLIC_URL` 必须与真实外部 HTTPS 域名保持一致
-- `prod` 口径下不要直接用 `http://localhost:5000` 做登录验证；若访问协议、域名或端口与 `RADISH_PUBLIC_URL` 不一致，OpenIddict 会因 `redirect_uri` 不匹配而拒绝请求
+- 部署态不要直接用 `http://localhost:5000` 做登录验证；若访问协议、域名或端口与 `RADISH_PUBLIC_URL` 不一致，OpenIddict 会因 `redirect_uri` 不匹配而拒绝请求
 - `Gateway` 容器内部监听 `http://+:5000`
 - `GatewayRuntime__EnableHttpsRedirection=false`
-- `AuthUi__ShowTestAccountHint=false`，正式登录页默认不再暴露测试账号提示
-- `Auth` 通过 `RADISH_AUTH_CERTS_DIR` 把宿主机证书目录挂载到容器 `/app/certs`，并通过 `RADISH_AUTH_*` 变量覆盖生产证书路径与密码
-- `Api` 会从同一个挂载目录只读复用 Auth signing 证书，并直接做本地 JWT 验签，避免再依赖外部反代域名或容器内 loopback 去获取 OIDC 元数据
-- 若 `RADISH_AUTH_CERT_AUTO_GENERATE=true` 且目标证书文件不存在，`Auth` 会在首次启动时自动生成 OIDC 证书并写入挂载目录；后续启动直接复用同一组证书
+- `Databases` 中的 `Main / Log / Message / Chat` 会通过环境变量覆盖为 PostgreSQL 连接；`Deploy/postgres-init/create-radish-databases.sh` 会在首次初始化 PostgreSQL 卷时补齐非主库数据库
+- `Redis__Enable=true`，缓存层默认走 Redis，不再回落到内存缓存
+- `AuthUi__ShowTestAccountHint=false`，登录页默认不再暴露测试账号提示
+- `Auth` 会把 OIDC signing / encryption 证书写入 `radish-auth-certs` 命名卷，`Api` 只读复用同一份 signing 证书做本地 JWT 验签
+- 若 `RADISH_AUTH_CERT_AUTO_GENERATE=true` 且目标证书文件不存在，`Auth` 会在首次启动时自动生成 OIDC 证书；默认有效期为 `RADISH_AUTH_CERT_VALID_DAYS=7300` 天，后续启动直接复用同一组证书
 - TLS 由外部 Nginx / Traefik / Caddy 终止，再转发到容器内 HTTP 端口；仓库已提供可直接落地的 `Deploy/nginx.prod.conf`
 - 不要再额外覆盖 `Cors__AllowedOrigins__0` 之类的单索引数组项；部署态统一以 `RADISH_PUBLIC_URL` 为准，避免旧 `localhost` 端口残留
 
@@ -367,8 +325,8 @@ docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deplo
 当前仓库默认不提供自动回滚脚本；测试与生产环境都统一按 [M15 最小交付与部署基线](/guide/m15-delivery-baseline) 执行最小回滚：
 
 1. 找到上一版已知可用的 `v*-test` 或 `v*-release` tag
-2. 把 `Deploy/.env.test` 或 `Deploy/.env.prod` 中的 `RADISH_*_IMAGE` 改回该 tag
-3. 重新执行对应环境的 `pull + up -d`
+2. 把 `Deploy/.env` 中的 `RADISH_IMAGE_TAG` 改回该 tag
+3. 重新执行 `pull + up -d`
 4. 按 `M14` 顺序复跑 `check:host-runtime`、维护记录汇总与部署后最小复核
 
 **文件上传目录挂载（生产环境建议）**：
@@ -388,7 +346,7 @@ docker run -d --name radish-api \
   ghcr.io/laugh0608/radish-api:latest
 ```
 
-将实际数据库凭据、安全密钥与证书路径等以环境变量或挂载文件方式注入。上面的镜像地址仅用于对齐当前 `.env.prod.example` 默认值；正式发布仍建议固定到明确的 `v*-release` tag。日志可通过 `docker logs -f <container>` 追踪；若需热重载，请继续使用宿主机 `dotnet watch` / `npm run dev`。
+将实际数据库凭据、安全密钥与公开入口等以环境变量方式注入。上面的镜像地址仅用于说明当前 GHCR 命名；正式发布仍建议通过 `RADISH_IMAGE_TAG` 固定到明确的 `v*-release` tag。日志可通过 `docker logs -f <container>` 追踪；若需热重载，请继续使用宿主机 `dotnet watch` / `npm run dev`。
 
 ## Docker Compose 示例
 仓库根目录已提供真实可用的基础编排与环境覆盖文件，推荐按环境组合使用：
@@ -398,30 +356,24 @@ docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.local.yml c
 docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.local.yml build
 docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.local.yml up -d
 
-docker compose --env-file Deploy/.env.test -f Deploy/docker-compose.yml -f Deploy/docker-compose.test.yml config
-docker compose --env-file Deploy/.env.test -f Deploy/docker-compose.yml -f Deploy/docker-compose.test.yml pull
-docker compose --env-file Deploy/.env.test -f Deploy/docker-compose.yml -f Deploy/docker-compose.test.yml up -d
-
-docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml config
-docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml pull
-docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml up -d
+docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml config
+docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml pull
+docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml up -d
 ```
 
 当前 Compose 口径如下：
 
-- 默认使用仓库共享配置中的 SQLite 与内存缓存，不强依赖 PostgreSQL / Redis。
-- 当前三套容器编排都会先执行 `dbmigrate apply`，再启动 `api / auth / gateway`，避免首次部署时因为共享业务库缺表而直接在登录链路报错；首次远程镜像 + 空库部署的真实 Smoke 待下一次规范 tag 补齐。
-- `DataBases/` 与 `Logs/` 会挂载到宿主机，便于保留 SQLite、上传文件与运行日志。
+- 本地容器验证默认使用仓库共享配置中的 SQLite 与内存缓存；测试与生产默认启用 PostgreSQL / Redis。
+- 本地容器验证和部署态编排都会先执行 `dbmigrate apply`，再启动 `api / auth / gateway`，避免首次部署时因为共享业务库缺表而直接在登录链路报错；部署态会先等待 `postgres / redis` 健康检查通过。
+- `DataBases/` 与 `Logs/` 会挂载到宿主机，便于保留本地 SQLite、上传文件与运行日志。
 - `Frontend` 运行的是预构建镜像；该镜像在 `CI` 中统一构建，并同时托管 `radish.client` 与 `radish.console`。
 - `Gateway` 会通过环境变量把 `/` 与 `/console/` 反代到前端容器，并把 `/api`、`/connect`、`/Account` 等路径转发给对应后端服务。
 - `GatewayRuntime__EnableHttpsRedirection` 当前已作为运行时开关显式暴露，可与 `ASPNETCORE_URLS` 一起切换容器内部的 HTTP / HTTPS 监听模式。
 - 开发运行默认使用 IDE / 宿主机直跑，不走 Compose。
 - 本地容器验证默认保持项目既有口径：`Gateway` 作为唯一对外 HTTPS 入口，访问地址为 `https://localhost:5000`。
-- 测试部署默认保持“Gateway 容器内 HTTPS + 自动生成测试 TLS 证书 + 自动生成 Auth OIDC 证书”的单机交付口径。
+- 测试部署与生产部署默认保持同构：外层 HTTPS、内层 HTTP、PostgreSQL、Redis、持久化 Auth OIDC 证书。
 - 测试部署与生产部署默认直接拉取 `GHCR` 预构建镜像，不在部署机执行 `build`。
-- 生产覆盖默认收口为“外层 HTTPS、内层 HTTP”，避免与外部反向代理重复做 TLS 终止。
-
-如果后续需要切换到 PostgreSQL / Redis，只需在 Compose 中继续补相应服务，并通过环境变量覆盖共享配置。
+- 当前 PostgreSQL 覆盖的是 SqlSugar 管辖的 `Main / Log / Message / Chat` 连接；`OpenIddict` EF Core 存储与 `Hangfire` 仍沿用现有 SQLite provider，若要完全去 SQLite，需要单独迁移 provider 与依赖。
 
 ## 数据库初始化与迁移（Radish.DbMigrate）
 
@@ -562,7 +514,7 @@ HTTP (5000/5100) → ASP.NET Core 应用
 #### 当前仓库交付文件
 
 - `Deploy/nginx.prod.conf`：当前仓库随代码交付的生产反向代理样例，默认采用“宿主机 Nginx 终止 HTTPS，再回源 `127.0.0.1:5000`”的口径。
-- `Deploy/.env.prod.example`：当前 `base + prod` 组合的最小变量样例，至少覆盖 `RADISH_PUBLIC_URL`、Auth 证书挂载目录，以及签名 / 加密证书路径与密码。
+- `Deploy/.env.example`：当前部署态组合的最小变量样例，至少覆盖 `RADISH_IMAGE_TAG`、`RADISH_PUBLIC_URL`、PostgreSQL / Redis 密码，以及 Auth 证书密码。
 - `Radish.Gateway/Program.cs`：当前已经显式启用 `X-Forwarded-For / X-Forwarded-Proto / X-Forwarded-Host` 识别，能够正确处理反代后的 Scheme、Host 与重定向。
 
 #### Nginx 落地步骤
@@ -580,8 +532,8 @@ HTTP (5000/5100) → ASP.NET Core 应用
 
 ### 注意事项
 
-- **`base + local`**：`Deploy/docker-compose.yml + Deploy/docker-compose.local.yml` 当前直接让 Gateway 在容器内终止 TLS，并只对宿主机暴露 `https://localhost:5000`
-- **`base + prod`**：`Deploy/docker-compose.yml + Deploy/docker-compose.prod.yml` 当前默认要求通过 `--env-file Deploy/.env.prod` 注入真实域名与 Auth 证书变量，再由外层 Nginx 终止 HTTPS
+- **本地容器验证**：`Deploy/docker-compose.yml + Deploy/docker-compose.local.yml` 当前直接让 Gateway 在容器内终止 TLS，并只对宿主机暴露 `https://localhost:5000`
+- **测试 / 生产部署**：`Deploy/docker-compose.yaml` 当前默认要求通过 `--env-file Deploy/.env` 注入真实域名、镜像 tag 与密钥，再由外层 Nginx 终止 HTTPS
 - **生产环境**：Gateway / Api / Auth 当前仍默认走 HTTP 容器内通信，TLS 只在反向代理层终止
 - **内网可信场景**：反代到 HTTP 端口是安全的
 - **零信任架构**：如需端到端加密，可配置反代到 HTTPS，但需要额外证书管理
@@ -590,16 +542,15 @@ HTTP (5000/5100) → ASP.NET Core 应用
 
 1. **准备新证书**：参考《[鉴权与授权指南](/guide/authentication)》的“证书生成示例”生成新 `.pfx`（签名/加密可拆分）。
 2. **上传/挂载**：将新证书放到宿主机（如 `/etc/radish/certs/auth-signing-2025Q1.pfx`），并映射到容器的 `/app/certs`。
-3. **更新部署变量**：修改 `Deploy/.env.prod` 中的 `RADISH_AUTH_SIGNING_CERT_PATH / RADISH_AUTH_SIGNING_CERT_PASSWORD / RADISH_AUTH_ENCRYPTION_CERT_PATH / RADISH_AUTH_ENCRYPTION_CERT_PASSWORD`；若证书目录也变化，同时更新 `RADISH_AUTH_CERTS_DIR`。
+3. **更新部署变量**：修改 `Deploy/.env` 中的 `RADISH_AUTH_SIGNING_CERT_PASSWORD / RADISH_AUTH_ENCRYPTION_CERT_PASSWORD`；如需替换已有证书文件，应先在 `radish-auth-certs` 命名卷内完成证书轮换。
    ```bash
-   docker compose --env-file Deploy/.env.prod \
-     -f Deploy/docker-compose.yml \
-     -f Deploy/docker-compose.prod.yml \
+   docker compose --env-file Deploy/.env \
+     -f Deploy/docker-compose.yaml \
      up -d auth
    ```
    Kubernetes 集群可在 Helm values 中覆盖对应 `env`，并执行 `helm upgrade`。
 4. **分批重启**：
-   - Compose：`docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml up -d auth`
+   - Compose：`docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml up -d auth`
    - Kubernetes：`kubectl rollout restart deploy/radish-auth`
 5. **验证**：
    ```bash
@@ -627,32 +578,26 @@ HTTP (5000/5100) → ASP.NET Core 应用
 - 如本轮触达宿主 / 配置 / `DbMigrate` / 部署链，`npm run validate:baseline:host` 已通过
   - 当前它也是 `M14` 的默认宿主验证入口，失败时优先回到 [M14 宿主运行首轮执行清单](/records/m14-host-runtime-checklist) 按顺序分诊
 - 当前没有阻塞主线的已知 `P0 / P1` 问题
-- 已具备真实外部 HTTPS 域名，可为 `Deploy/.env.prod` 提供真实 `RADISH_PUBLIC_URL`
-- 已具备可挂载到 Auth 容器的正式证书，或至少已具备可持久化写入的正式证书目录 / 卷
+- 已具备真实外部 HTTPS 域名，可为 `Deploy/.env` 提供真实 `RADISH_PUBLIC_URL`
+- 已具备可持久化 Auth OIDC 证书的 Docker 命名卷；首次部署可由容器自动生成，后续必须复用同一组证书
 - 已具备 Docker 镜像可构建、可推送、可拉取、可部署的最小条件
 
 ### 建议执行顺序
 
 1. **先确认生产变量与证书路径**
-   - `RADISH_FRONTEND_IMAGE`
-   - `RADISH_API_IMAGE`
-   - `RADISH_AUTH_IMAGE`
-   - `RADISH_GATEWAY_IMAGE`
-   - `Deploy/.env.prod` 中的 `RADISH_PUBLIC_URL` 必须与真实外部 HTTPS 域名完全一致
-   - `RADISH_AUTH_CERTS_DIR`
-   - `RADISH_AUTH_SIGNING_CERT_PATH`
-   - `RADISH_AUTH_SIGNING_CERT_PASSWORD`
-   - `RADISH_AUTH_ENCRYPTION_CERT_PATH`
-   - `RADISH_AUTH_ENCRYPTION_CERT_PASSWORD`
-   - 确认证书文件在宿主机真实存在，且容器内挂载后路径与变量值一致
+   - `RADISH_IMAGE_TAG`
+   - `Deploy/.env` 中的 `RADISH_PUBLIC_URL` 必须与真实外部 HTTPS 域名完全一致
+   - `RADISH_POSTGRES_USER / RADISH_POSTGRES_PASSWORD / RADISH_REDIS_PASSWORD`
+   - `RADISH_AUTH_SIGNING_CERT_PASSWORD / RADISH_AUTH_ENCRYPTION_CERT_PASSWORD` 应分别用 `openssl rand -hex 32` 生成，并在 `radish-auth-certs` 命名卷生命周期内保持不变
+   - 确认 `radish-auth-certs` 命名卷会被保留和备份
 
 2. **先做静态展开，不直接启动**
    - 在仓库根目录执行：
      ```bash
-     docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml config
+     docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml config
      ```
    - 确认 `gateway / api / auth / frontend` 四个服务都已展开
-   - 确认 `RADISH_PUBLIC_URL`、证书挂载目录、`GatewayRuntime__EnableHttpsRedirection=false` 等关键变量都已落到最终配置
+   - 确认 `RADISH_PUBLIC_URL`、镜像 tag、`GatewayRuntime__EnableHttpsRedirection=false` 等关键变量都已落到最终配置
 
 3. **再校验外层反代**
    - Nginx / Traefik / Caddy 的公开域名需与 `RADISH_PUBLIC_URL` 保持一致
@@ -663,11 +608,11 @@ HTTP (5000/5100) → ASP.NET Core 应用
      - `X-Forwarded-Host`
    - 若使用 Nginx，可基于 `Deploy/nginx.prod.conf` 修改 `server_name` 与证书路径后再上线
 
-4. **启动 `base + prod` 组合并做最小运行态检查**
+4. **启动部署态组合并做最小运行态检查**
    - 推荐命令：
      ```bash
-     docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml pull
-     docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml up -d
+     docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml pull
+     docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml up -d
      ```
    - 启动后至少确认：
      - `/health` 可访问
@@ -696,7 +641,7 @@ HTTP (5000/5100) → ASP.NET Core 应用
 
 最少应明确记录：
 
-- `base + prod` 组合、外部域名、镜像版本与证书来源
+- 部署态组合、外部域名、镜像版本与证书来源
 - `validate:baseline:host`、`check:host-runtime` 与 `collect:m14-host-record` 的执行结果
 - `RADISH_PUBLIC_URL`、Issuer、反代头、`/health`、`/`、`/console/`、`/scalar`
 - `radish-client / radish-console / radish-scalar` 登录、回调、登出，以及 `userinfo` / 受保护接口结论

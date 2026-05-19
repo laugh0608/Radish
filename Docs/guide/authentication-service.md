@@ -523,14 +523,16 @@ export const App: React.FC = () => {
 VITE_AUTH_BASE_URL=https://localhost:5000
 VITE_API_BASE_URL=https://localhost:5000
 
-# Deploy/.env.test
-RADISH_PUBLIC_URL=https://10.10.10.20:5000
+# Deploy/.env for test
+RADISH_PUBLIC_URL=https://test.radish.example.com
+RADISH_IMAGE_TAG=v26.3.2-test
 # 可选：若不填，frontend 容器会回退到 RADISH_PUBLIC_URL
-# VITE_AUTH_BASE_URL=https://10.10.10.20:5000
-# VITE_API_BASE_URL=https://10.10.10.20:5000
+# VITE_AUTH_BASE_URL=https://test.radish.example.com
+# VITE_API_BASE_URL=https://test.radish.example.com
 
-# Deploy/.env.prod
+# Deploy/.env for release
 RADISH_PUBLIC_URL=https://radish.example.com
+RADISH_IMAGE_TAG=v26.3.2-release
 # 可选：若不填，frontend 容器会回退到 RADISH_PUBLIC_URL
 # VITE_AUTH_BASE_URL=https://radish.example.com
 # VITE_API_BASE_URL=https://radish.example.com

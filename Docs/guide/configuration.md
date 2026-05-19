@@ -261,13 +261,13 @@ touch Radish.Api/appsettings.Local.json
 
 **Radish.Gateway（默认配置 + 环境变量）**
 
-Gateway 通常直接使用 `appsettings.json`；若本机需要临时覆盖，也应使用未提交的 `appsettings.Local.json`。测试部署与生产部署优先通过 `Deploy/.env.test`、`Deploy/.env.prod` 及对应的 Compose 覆盖文件注入环境变量：
+Gateway 通常直接使用 `appsettings.json`；若本机需要临时覆盖，也应使用未提交的 `appsettings.Local.json`。测试部署与生产部署优先通过 `Deploy/.env` 与 `Deploy/docker-compose.yaml` 注入环境变量：
 
 ```bash
 # Docker Compose 示例
 services:
   radish-gateway:
-    image: ${RADISH_GATEWAY_IMAGE}
+    image: ${RADISH_IMAGE_REGISTRY}/radish-gateway:${RADISH_IMAGE_TAG}
     environment:
       - RADISH_PUBLIC_URL=https://your-domain.com
       - GatewayService__PublicUrl=https://your-domain.com
@@ -276,7 +276,7 @@ services:
       - FrontendService__BaseUrl=https://your-domain.com
 ```
 
-其中 `RADISH_GATEWAY_IMAGE` 应由 `Deploy/.env.test` 或 `Deploy/.env.prod` 提供，指向 `GHCR` 中已构建好的镜像；测试 / 生产部署不再建议在部署机本地构建镜像。
+其中 `RADISH_IMAGE_REGISTRY / RADISH_IMAGE_TAG` 应由 `Deploy/.env` 提供，指向 `GHCR` 中已构建好的镜像；测试 / 生产部署不再建议在部署机本地构建镜像。
 
 部署态下，`Api / Auth / Gateway` 三个宿主都会优先根据 `RADISH_PUBLIC_URL` 推导统一的 CORS 允许来源；只有未提供该变量时，才回退到各自 `appsettings.json` 中的开发默认值。
 
@@ -286,7 +286,7 @@ services:
 - 测试部署与生产部署下，`Radish.Api` 需要额外读取与 `Radish.Auth` 共享的 signing 证书路径和密码：
   - `OpenIddict__Encryption__SigningCertificatePath`
   - `OpenIddict__Encryption__SigningCertificatePassword`
-- `Radish.Auth` 登录页中的测试账号提示由 `AuthUi__ShowTestAccountHint` 控制；测试部署建议为 `true`，生产部署建议为 `false`
+- `Radish.Auth` 登录页中的测试账号提示由 `AuthUi__ShowTestAccountHint` 控制；部署态默认保持 `false`
 - 该证书应与 `Auth` 使用的 signing `.pfx` 保持同源，并以只读方式挂载给 `Api`，用于本地 JWT 验签。
 
 详细配置说明请参考 `Radish.Gateway/README.md`
@@ -656,7 +656,7 @@ Gateway 门户页面需要配置服务的公开访问地址，用于页面展示
 
 #### 生产环境配置
 
-Gateway 在生产部署中推荐直接使用 `Deploy/.env.prod.example` 与 `Deploy/docker-compose.prod.yml`，而不是额外维护单独的 Gateway 生产示例 JSON。典型变量如下：
+Gateway 在测试 / 生产部署中推荐直接使用 `Deploy/.env.example` 与 `Deploy/docker-compose.yaml`，而不是额外维护单独的 Gateway 生产示例 JSON。典型变量如下：
 
 ```bash
 RADISH_PUBLIC_URL=https://radish.com
@@ -672,7 +672,7 @@ GatewayRuntime__EnableHttpsRedirection=false
 - 公开地址（`GatewayService__PublicUrl` / `RADISH_PUBLIC_URL`）使用真实外部域名
 - 不要再通过 `Cors__AllowedOrigins__0` 之类的单索引环境变量去覆盖部署态 CORS；.NET 会按索引合并数组，容易把旧的 `localhost` 端口残留进最终白名单
 - 外部 `Nginx` 反向代理会将公网 HTTPS 请求转发到容器内 HTTP 端口
-- 如果是测试部署，则改用 `Deploy/.env.test.example` 与 `Deploy/docker-compose.test.yml`，此时 Gateway 容器内直接提供 HTTPS
+- 测试与生产使用同一套部署态 Compose，差异主要是 `RADISH_IMAGE_TAG` 与 `RADISH_PUBLIC_URL`
 - 详细的反向代理配置请参考 [部署指南](/deployment/guide)
 
 ## 配置示例
@@ -918,7 +918,7 @@ services:
       - Redis__Enable=true
       - Redis__ConnectionString=${REDIS_URL}
     env_file:
-      - Deploy/.env.prod  # 部署态敏感数据从 env-file 加载（不提交到 Git）
+      - Deploy/.env  # 部署态敏感数据从 env-file 加载（不提交到 Git）
 ```
 
 ### Q4: 团队成员如何快速配置？
