@@ -97,6 +97,7 @@
 - 第三开发阶段大功能开发：`P3-2 PublicId` 最小试点已完成首批 `Post` 实现，后续仍不得直接启动全量迁移
 - 完整 `PublicId` 全量迁移、数据库主键迁移与 ActivityPub / WebFinger 实现
 - `Gateway & BFF` 深化
+- Redis 与缓存治理专题：多实例 SignalR Backplane、聊天室在线状态、通知未读原子计数、上传限流、商城 / 萝卜币幂等与并发保护、排行榜 / 热点读模型缓存，详见 [Redis 与缓存治理专题](/planning/redis-cache-governance)
 - `Console-ext Phase 2+`
 - Console 复用 `@radish/ui` 的组件与视觉 token，保持后台与 Radish 前端入口的 UI 一致性
 - 开放平台第三方接入 / SDK

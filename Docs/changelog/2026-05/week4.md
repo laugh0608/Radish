@@ -16,3 +16,14 @@
 - Console 后续 UI 一致性评估已补记录：当前后台已部分复用 `@radish/ui`，但页面壳、局部 CSS、直接 `antd` 引入和硬编码色值仍需在后续新增 / 改动页面时小范围收敛；当前不启动整站视觉重构。
 - Console 用户列表一处疑似乱码错误提示已恢复为“获取用户列表失败”，并通过 `radish.console` 类型检查与 changed-only 文本卫生检查。
 - 收工前已补 [2026-05-18 收工回顾与明日事项](/records/daily-handoff-2026-05-18)：今日提交已复核到公开 head smoke 手册、`P3-6` 规划、阶段专题、记录索引和开发日志；明日优先补 testing URL 公开增长观察，若 testing URL 暂不可用则只做 Console token bridge 小方案评审。
+
+## 2026-05-19
+
+- 部署态 Compose 与镜像轨道继续收敛：测试 / 生产默认使用统一 `Deploy/docker-compose.yaml`、`RADISH_IMAGE_TRACK` 与 `test-latest` / `release-latest` 浮动别名，固定 tag 仅用于可复现部署。
+- PostgreSQL / Redis / Auth 证书持久化默认改为宿主目录，部署说明已强调测试 / 生产环境应提前创建并维护 `DeployData/Postgres`、`DeployData/Redis` 与 `DeployData/AuthCerts`。
+- 测试 / 生产首次部署安全口径已收口：`Seed:DeveloperDefaultsEnabled=false` 时不创建开发管理员账号，首次访问根入口由部署人员创建首个管理员。
+- 修复首次管理员初始化在 PostgreSQL 旧库上的 `SystemBootstrapState.CompletedUserId / CompletedTime` 非空约束问题，并补 `DbMigrate` 旧库约束修复。
+- 修复 PostgreSQL 写入 `timestamp with time zone` 时拒绝 `DateTimeKind.Local` 的问题：SqlSugar AOP 参数层统一把 `DateTime` / `DateTimeOffset` 规范化为 UTC。
+- 复核 Redis 当前能力：业务实际主要通过 `ICaching` / `IDistributedCache` 走 Redis 或内存缓存，Redis 已在部署态生效，但尚未系统性承担原子计数、在线状态、Backplane 或分布式锁。
+- 新增 [Redis 与缓存治理专题](/planning/redis-cache-governance)，将通知未读原子计数、上传限流、聊天室在线状态、SignalR Backplane、商城 / 萝卜币幂等与并发保护、排行榜 / 热点读模型缓存纳入后置规划。
+- 收工前已补 [2026-05-19 收工回顾与明日事项](/records/daily-handoff-2026-05-19)：今日提交已复核到部署指南、架构框架、开发路线图、backlog、Redis 专题和开发日志；配置指南当前已超篇幅硬上限，本次不继续追加。

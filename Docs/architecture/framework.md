@@ -151,6 +151,7 @@ PostgreSQL / SQLite
   - 横切关注：验证、缓存策略、OpenAPI 自定义、JWT 扩展、全局过滤器；按照职责拆分 `AutofacExtension/*`, `AutoMapperExtension/*`, `RedisExtension/*` 等子目录。
   - `RedisExtension.CacheSetup` 提供统一入口 `AddCacheSetup()`，根据 `Redis.Enable` 自动在 Redis（StackExchange.Redis）与内存缓存间切换，并在启用 Redis 时预先创建 `IConnectionMultiplexer`；当前约定 `Redis.Enable/ConnectionString` 放在 `appsettings.Shared.json`，`Redis.InstanceName` 保留在各宿主配置中做命名空间隔离。
   - `ICaching` 的过期时间参数中，`0` 或负数会回落到组件默认 TTL，避免异常配置导致缓存写入失败；确需不缓存时，应在调用侧显式跳过写入。
+  - Redis 目前只作为统一缓存后端与少量 Redis List / Queue 能力预留；多实例 SignalR Backplane、聊天室在线状态、通知未读原子计数、上传限流、商城 / 萝卜币幂等和排行榜等 Redis 专项增强已后置到 [Redis 与缓存治理专题](/planning/redis-cache-governance)，不作为普通业务开发的默认前置条件。
   - `SqlSugarExtension.SqlSugarSetup` 负责注入 `ISqlSugarClient` 单例：内部读取 `Radish.Common.DbTool.BaseDbConfig` 生成的连接集合（含 `MainDb`、`Log` 以及所有从库），并在缺失日志库配置时直接抛出异常，确保多库配置在启动阶段即被验证。
 - `Radish.Shared`
   - 常量、错误码、事件名、Options 绑定类型，以及跨模块共享的业务枚举（集中位于 `Radish.Shared.CustomEnum` 命名空间，例如 `UserStatusCodeEnum`、`UserSexEnum`、`DepartmentStatusCodeEnum`、`AuthorityScopeKindEnum`、`HttpStatusCodeEnum` 等）。
@@ -208,6 +209,7 @@ graph LR
 
 - SQLSugar 统一由 `SqlSugarScope` 单例提供，`Radish.Common.DbTool.BaseDbConfig.MutiConnectionString` 负责解析配置中的 `MainDb` 与 `Databases` 列表并生成所有连接配置。当前约定这两项放在 `appsettings.Shared.json` 统一维护，宿主按需在本地文件/环境变量覆盖。默认示例包含 `Main`（业务库）与 `Log`（共享日志库）两个 SQLite 文件，可扩展到 PostgreSQL/MySQL 等；若缺少 `Log` 库会在启动阶段直接抛出异常。当前数据库日志设计不是按宿主分库，而是共享 `ConnId=Log` 并按日志类型 / 日期分表。
 - `SqlSugarExtension.SqlSugarSetup` 会为日志库之外的所有连接注册到 `BaseDbConfig.ValidConfig`，并将 `SqlSugarConst.Log` 标记的配置注入日志上下文；SqlSugar 内部缓存通过 `SqlSugarCache` 委托给现有 `ICaching`，AOP 事件统一写入 Serilog，便于分析 SQL。
+- PostgreSQL `timestamp with time zone` 写入前，SqlSugar AOP 会规范化 `DateTime` / `DateTimeOffset` 参数：`Local` 转 UTC，`Unspecified` 按 UTC 解释，数组和可枚举时间参数也按同一规则处理。业务展示仍按用户偏好时区 / 浏览器时区 / 系统默认时区回退，数据库侧保持 UTC 真值。
 - 公共实体基类统一继承 `Radish.Model.Root.RootEntityTKey<TKey>`，并在派生类中补充审计字段（`CreatedAt/By`, `UpdatedAt/By`, `IsDeleted`, `ConcurrencyStamp` 等），保证主键类型可控且能被 SqlSugar 的 Attribute 正确识别。
 - 软删除通过 SQLSugar Filter 全局开启；必要时在仓储层提供 `IncludeDeleted` 选项。
 - `Radish.Auth` 的 OpenIddict 独立库继续由 `AuthOpenIddictDbContext` 按 EF Core 管理；以下迁移策略仅针对 `Radish.DbMigrate` 管辖的业务库。
