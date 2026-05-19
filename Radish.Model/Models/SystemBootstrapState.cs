@@ -12,6 +12,7 @@ public sealed class SystemBootstrapState : RootEntityTKey<long>
 
     public bool IsCompleted { get; set; }
 
+    [SugarColumn(IsNullable = true)]
     public long? CompletedUserId { get; set; }
 
     [SugarColumn(Length = 200, IsNullable = true)]
@@ -19,5 +20,6 @@ public sealed class SystemBootstrapState : RootEntityTKey<long>
 
     public DateTime CreateTime { get; set; } = DateTime.UtcNow;
 
+    [SugarColumn(IsNullable = true)]
     public DateTime? CompletedTime { get; set; }
 }

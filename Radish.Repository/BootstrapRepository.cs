@@ -60,6 +60,8 @@ public class BootstrapRepository : IBootstrapRepository
                 Id = SystemBootstrapState.FirstAdminBootstrapId,
                 BootstrapKey = "FirstAdministrator",
                 IsCompleted = false,
+                CompletedUserId = 0,
+                CompletedTime = DateTime.UtcNow,
                 CreateTime = DateTime.UtcNow
             }).ExecuteCommandAsync();
 
