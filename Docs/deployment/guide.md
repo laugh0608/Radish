@@ -1,7 +1,7 @@
 # 部署与容器指南
 
 ## 目标
-本指南面向需要在本地或服务器上快速部署 Radish 的维护者，说明如何使用 `Radish.Api/Dockerfile`、`Radish.Auth/Dockerfile`、`Radish.Gateway/Dockerfile` 与 `Frontend/Dockerfile` 构建首版最小镜像链，并通过 `Deploy/docker-compose.yml` 及其环境覆盖文件组织 `gateway / api / auth / frontend` 四个容器。当前部署口径已经收束为“开发环境直接 IDE / 宿主机运行，本地容器验证保留容器内 HTTPS，测试与生产环境统一采用外部反代 HTTPS、容器内 HTTP，并默认启用 PostgreSQL / Redis”。
+本指南面向需要在本地或服务器上快速部署 Radish 的维护者，说明如何使用 `Radish.Api/Dockerfile`、`Radish.Auth/Dockerfile`、`Radish.Gateway/Dockerfile` 与 `Frontend/Dockerfile` 构建首版最小镜像链，并通过 `Deploy/docker-compose.local.yaml` 或 `Deploy/docker-compose.yaml` 组织 `gateway / api / auth / frontend` 四个容器。当前部署口径已经收束为“开发环境直接 IDE / 宿主机运行，本地容器验证保留容器内 HTTPS，测试与生产环境统一采用外部反代 HTTPS、容器内 HTTP，并默认启用 PostgreSQL / Redis”。
 
 当前若要按仓库现实执行发版、部署、发布后最小复核与回滚，请优先参考：
 
@@ -22,7 +22,7 @@
   - 目标是调试效率，不要求与线上部署形态完全一致
 - **本地容器验证**
   - 仅用于可选的本地容器构建与启动验证
-  - 使用 `Deploy/docker-compose.yml + Deploy/docker-compose.local.yml`
+  - 使用 `Deploy/docker-compose.local.yaml`
   - 允许在本机执行 `build`，但不作为日常开发启动方式
 - **测试部署**
   - 面向企业内部环境或外部客户试用
@@ -157,8 +157,7 @@
   - `Frontend/scripts/serve-static.mjs`
 - 最小编排：
   - `Deploy/docker-compose.yaml`
-  - `Deploy/docker-compose.yml`
-  - `Deploy/docker-compose.local.yml`
+  - `Deploy/docker-compose.local.yaml`
 - 生产交付样例：
   - `Deploy/.env.example`
   - `Deploy/nginx.prod.conf`
@@ -202,7 +201,7 @@
 
 - `Frontend/scripts/serve-static.mjs` 已支持按请求返回 `/runtime-config.js` 运行时配置脚本
 - `radish.client` 与 `radish.console` 当前都会优先读取运行时注入的公开地址与功能开关，再回退到构建期 `VITE_*`
-- `Deploy/docker-compose.local.yml` 与部署态 `Deploy/docker-compose.yaml` 也已为 `frontend` 容器补齐运行时环境变量入口
+- `Deploy/docker-compose.local.yaml` 与部署态 `Deploy/docker-compose.yaml` 也已为 `frontend` 容器补齐运行时环境变量入口
 
 因此当前 `frontend` 已具备“同一个镜像按运行时环境复用”的能力；当前工作流已补齐统一推送规则，且 `frontend` GHCR 首次真实产物已可通过 `docker pull` 获取，当前剩余重点转为上线前外部交付复核。
 
@@ -257,22 +256,22 @@ docker build \
 当前最小链默认以 `Gateway` 作为唯一对外入口。Compose 现在收束为两类：
 
 - `Deploy/docker-compose.yaml`：测试 / 生产共用的部署态编排，直接拉取远程镜像，默认启用 PostgreSQL / Redis，`Gateway` 容器内监听 HTTP，外部反代终止 HTTPS。
-- `Deploy/docker-compose.yml + Deploy/docker-compose.local.yml`：本地容器验证组合，保留本地 `build` 入口，默认使用 SQLite + 内存缓存，并让 `Gateway` 在容器内监听 HTTPS。
+- `Deploy/docker-compose.local.yaml`：本地容器验证编排，保留本地 `build` 入口，默认使用 SQLite + 内存缓存，并让 `Gateway` 在容器内监听 HTTPS。
 
 开发运行不走 Compose；Compose 只建议按以下两种组合使用：
 
-- 本地容器验证：`Deploy/docker-compose.yml + Deploy/docker-compose.local.yml`
-- 测试 / 生产部署：`Deploy/docker-compose.yaml + Deploy/.env`
+- 本地容器验证：`Deploy/docker-compose.local.yaml`
+- 测试 / 生产部署：进入 `Deploy/` 目录后使用默认 `docker-compose.yaml + .env`
 
 ### 开发运行：IDE / 宿主机直跑
 
 日常开发默认直接使用 IDE、`dotnet run`、`npm run dev` 与启动脚本，不使用 Compose。
 
-### `base + local`：本地容器验证
+### 本地容器验证
 
 ```bash
-docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.local.yml build
-docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.local.yml up -d
+docker compose -f Deploy/docker-compose.local.yaml build
+docker compose -f Deploy/docker-compose.local.yaml up -d
 ```
 
 本地容器验证口径如下：
@@ -287,7 +286,7 @@ docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.local.yml u
 
 ### 测试 / 生产部署
 
-先复制 `Deploy/.env.example` 为 `Deploy/.env`，并至少替换以下真实值：
+先进入 `Deploy/` 目录，复制 `.env.example` 为 `.env`，并至少替换以下真实值：
 
 - `RADISH_IMAGE_TAG`：测试部署固定到明确 `v*-test` tag，生产部署固定到明确 `v*-release` tag
 - `RADISH_PUBLIC_URL`
@@ -296,10 +295,15 @@ docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.local.yml u
 - `RADISH_AUTH_SIGNING_CERT_PASSWORD`：建议部署前用 `openssl rand -hex 32` 生成
 - `RADISH_AUTH_ENCRYPTION_CERT_PASSWORD`：建议部署前另行用 `openssl rand -hex 32` 生成
 
+`RADISH_POSTGRES_MAIN_DB / RADISH_POSTGRES_LOG_DB / RADISH_POSTGRES_MESSAGE_DB / RADISH_POSTGRES_CHAT_DB / RADISH_POSTGRES_OPENIDDICT_DB / RADISH_POSTGRES_HANGFIRE_DB` 可按需改名；不改时会使用 `.env.example` 中的默认库名。
+
 ```bash
-docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml config
-docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml pull
-docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml up -d
+cd Deploy
+cp .env.example .env
+# 编辑 .env 后执行：
+docker compose config
+docker compose pull
+docker compose up -d
 ```
 
 部署态默认约定如下：
@@ -312,7 +316,7 @@ docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml up -d
 - 部署态不要直接用 `http://localhost:5000` 做登录验证；若访问协议、域名或端口与 `RADISH_PUBLIC_URL` 不一致，OpenIddict 会因 `redirect_uri` 不匹配而拒绝请求
 - `Gateway` 容器内部监听 `http://+:5000`
 - `GatewayRuntime__EnableHttpsRedirection=false`
-- `Databases` 中的 `Main / Log / Message / Chat` 会通过环境变量覆盖为 PostgreSQL 连接；`Deploy/postgres-init/create-radish-databases.sh` 会在首次初始化 PostgreSQL 卷时补齐非主库数据库
+- `Databases` 中的 `Main / Log / Message / Chat`、`OpenIddict:Database` 与 `Hangfire` 都会通过环境变量覆盖为 PostgreSQL 连接；`Deploy/postgres-init/create-radish-databases.sh` 会在首次初始化 PostgreSQL 卷时补齐 `Log / Message / Chat / OpenIddict / Hangfire` 等非主库数据库
 - `Redis__Enable=true`，缓存层默认走 Redis，不再回落到内存缓存
 - `AuthUi__ShowTestAccountHint=false`，登录页默认不再暴露测试账号提示
 - `Auth` 会把 OIDC signing / encryption 证书写入 `radish-auth-certs` 命名卷，`Api` 只读复用同一份 signing 证书做本地 JWT 验签
@@ -352,13 +356,14 @@ docker run -d --name radish-api \
 仓库根目录已提供真实可用的基础编排与环境覆盖文件，推荐按环境组合使用：
 
 ```bash
-docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.local.yml config
-docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.local.yml build
-docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.local.yml up -d
+docker compose -f Deploy/docker-compose.local.yaml config
+docker compose -f Deploy/docker-compose.local.yaml build
+docker compose -f Deploy/docker-compose.local.yaml up -d
 
-docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml config
-docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml pull
-docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml up -d
+cd Deploy
+docker compose config
+docker compose pull
+docker compose up -d
 ```
 
 当前 Compose 口径如下：
@@ -373,7 +378,7 @@ docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml up -d
 - 本地容器验证默认保持项目既有口径：`Gateway` 作为唯一对外 HTTPS 入口，访问地址为 `https://localhost:5000`。
 - 测试部署与生产部署默认保持同构：外层 HTTPS、内层 HTTP、PostgreSQL、Redis、持久化 Auth OIDC 证书。
 - 测试部署与生产部署默认直接拉取 `GHCR` 预构建镜像，不在部署机执行 `build`。
-- 当前 PostgreSQL 覆盖的是 SqlSugar 管辖的 `Main / Log / Message / Chat` 连接；`OpenIddict` EF Core 存储与 `Hangfire` 仍沿用现有 SQLite provider，若要完全去 SQLite，需要单独迁移 provider 与依赖。
+- 部署态 PostgreSQL 覆盖范围包含 SqlSugar 管辖的 `Main / Log / Message / Chat`、OpenIddict EF Core 存储与 Hangfire 存储；本地容器验证继续默认使用 SQLite provider。
 
 ## 数据库初始化与迁移（Radish.DbMigrate）
 
@@ -532,8 +537,8 @@ HTTP (5000/5100) → ASP.NET Core 应用
 
 ### 注意事项
 
-- **本地容器验证**：`Deploy/docker-compose.yml + Deploy/docker-compose.local.yml` 当前直接让 Gateway 在容器内终止 TLS，并只对宿主机暴露 `https://localhost:5000`
-- **测试 / 生产部署**：`Deploy/docker-compose.yaml` 当前默认要求通过 `--env-file Deploy/.env` 注入真实域名、镜像 tag 与密钥，再由外层 Nginx 终止 HTTPS
+- **本地容器验证**：`Deploy/docker-compose.local.yaml` 当前直接让 Gateway 在容器内终止 TLS，并只对宿主机暴露 `https://localhost:5000`
+- **测试 / 生产部署**：进入 `Deploy/` 目录后，`docker compose` 会自动读取 `docker-compose.yaml` 与 `.env`，由 `.env` 注入真实域名、镜像 tag 与密钥，再由外层 Nginx 终止 HTTPS
 - **生产环境**：Gateway / Api / Auth 当前仍默认走 HTTP 容器内通信，TLS 只在反向代理层终止
 - **内网可信场景**：反代到 HTTP 端口是安全的
 - **零信任架构**：如需端到端加密，可配置反代到 HTTPS，但需要额外证书管理
@@ -544,13 +549,12 @@ HTTP (5000/5100) → ASP.NET Core 应用
 2. **上传/挂载**：将新证书放到宿主机（如 `/etc/radish/certs/auth-signing-2025Q1.pfx`），并映射到容器的 `/app/certs`。
 3. **更新部署变量**：修改 `Deploy/.env` 中的 `RADISH_AUTH_SIGNING_CERT_PASSWORD / RADISH_AUTH_ENCRYPTION_CERT_PASSWORD`；如需替换已有证书文件，应先在 `radish-auth-certs` 命名卷内完成证书轮换。
    ```bash
-   docker compose --env-file Deploy/.env \
-     -f Deploy/docker-compose.yaml \
-     up -d auth
+   cd Deploy
+   docker compose up -d auth
    ```
    Kubernetes 集群可在 Helm values 中覆盖对应 `env`，并执行 `helm upgrade`。
 4. **分批重启**：
-   - Compose：`docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml up -d auth`
+   - Compose：进入 `Deploy/` 后执行 `docker compose up -d auth`
    - Kubernetes：`kubectl rollout restart deploy/radish-auth`
 5. **验证**：
    ```bash
@@ -592,9 +596,10 @@ HTTP (5000/5100) → ASP.NET Core 应用
    - 确认 `radish-auth-certs` 命名卷会被保留和备份
 
 2. **先做静态展开，不直接启动**
-   - 在仓库根目录执行：
+   - 从仓库根目录进入 `Deploy/` 后执行：
      ```bash
-     docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml config
+     cd Deploy
+     docker compose config
      ```
    - 确认 `gateway / api / auth / frontend` 四个服务都已展开
    - 确认 `RADISH_PUBLIC_URL`、镜像 tag、`GatewayRuntime__EnableHttpsRedirection=false` 等关键变量都已落到最终配置
@@ -611,8 +616,9 @@ HTTP (5000/5100) → ASP.NET Core 应用
 4. **启动部署态组合并做最小运行态检查**
    - 推荐命令：
      ```bash
-     docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml pull
-     docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml up -d
+     cd Deploy
+     docker compose pull
+     docker compose up -d
      ```
    - 启动后至少确认：
      - `/health` 可访问
@@ -797,7 +803,7 @@ COPY --from=base /app/Frontend/radish.client/dist /usr/share/nginx/html
 
 > 本小节给出一个基于 `radish-backend` 与 `radish-frontend` 的 Compose 结构示例，并结合 4–8GB 内存的目标机器给出初始内存限制配置。数值仅供参考，实际部署应结合 `docker stats` 和监控数据调整。
 
-推荐在仓库根目录使用 `docker-compose.yml` 统一编排（路径可根据团队习惯调整）：
+推荐在仓库根目录使用 `docker-compose.yaml` 统一编排（路径可根据团队习惯调整）：
 
 ```yaml
 version: "3.9"
@@ -917,7 +923,7 @@ volumes:
   - 前端推荐继续使用 `npm run dev --prefix Frontend/radish.client` 等命令运行 Vite 开发服务；
   - Docker 相关内容当前已不再只是草案，而是首版 `dev` 的最小构建 / 交付验证资产；但运行态联调与日常开发默认仍以宿主机方式为主。
 - **在真正落地容器部署前，建议遵循以下步骤**：
-  1. 与运维/基础设施同学确认最终的目录结构与文件命名（例如是否采用 `Dockerfile.backend`、`Dockerfile.frontend` 与仓库根目录 `docker-compose.yml`）；
+  1. 与运维/基础设施同学确认最终的目录结构与文件命名（例如是否采用 `Dockerfile.backend`、`Dockerfile.frontend` 与仓库根目录 `docker-compose.yaml`）；
   2. 根据实际数据库/Redis/域名/TLS 方案，补全 Compose 中的环境变量与端口映射；
   3. 在测试环境中逐步启用各服务容器，并使用 `docker stats`/监控系统验证内存与 CPU 占用情况；
   4. 确认没有影响现有非容器化部署流程后，再考虑将该方案纳入正式的部署流水线。

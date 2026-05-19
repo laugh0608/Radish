@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Radish.Common;
 using Radish.Common.CoreTool;
+using Radish.Common.DbTool;
 using Radish.Common.HealthTool;
 using Radish.Auth.OpenIddict;
 using Radish.Auth.HealthChecks;
@@ -219,27 +220,22 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 
 // OpenIddict 所用 EF Core DbContext（仅承载 OpenIddict 实体）
-var openIddictConnectionString = builder.Configuration.GetConnectionString("OpenIddict");
-
-// 如果未配置连接字符串，使用解决方案根目录下的 DataBases 文件夹（与 API 项目共享）
-if (string.IsNullOrEmpty(openIddictConnectionString))
-{
-    // 查找解决方案根目录（包含 Radish.slnx 的目录）
-    var currentDir = new DirectoryInfo(AppContext.BaseDirectory);
-    while (currentDir != null && !File.Exists(Path.Combine(currentDir.FullName, "Radish.slnx")))
-    {
-        currentDir = currentDir.Parent;
-    }
-    var solutionRoot = currentDir?.FullName ?? AppContext.BaseDirectory;
-    var dbDirectory = Path.Combine(solutionRoot, "DataBases");
-    Directory.CreateDirectory(dbDirectory); // 确保目录存在
-    var dbPath = Path.Combine(dbDirectory, "Radish.OpenIddict.db");
-    openIddictConnectionString = $"Data Source={dbPath}";
-}
+var openIddictDatabase = RuntimeDatabaseConfigResolver.Resolve(
+    builder.Configuration,
+    "OpenIddict:Database",
+    builder.Configuration.GetConnectionString("OpenIddict"),
+    "Radish.OpenIddict.db");
 
 builder.Services.AddDbContext<AuthOpenIddictDbContext>(options =>
 {
-    options.UseSqlite(openIddictConnectionString);
+    if (openIddictDatabase.DbType == DataBaseType.PostgreSql)
+    {
+        options.UseNpgsql(openIddictDatabase.ConnectionString);
+    }
+    else
+    {
+        options.UseSqlite(openIddictDatabase.ConnectionString);
+    }
 });
 
 var openIddictCertificateSection = builder.Configuration.GetSection("OpenIddict:Encryption");

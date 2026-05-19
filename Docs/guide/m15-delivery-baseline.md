@@ -44,28 +44,30 @@ npm run validate:baseline:quick
 
 ### 测试部署
 
-1. 复制 `Deploy/.env.example` 为 `Deploy/.env`
+1. 进入 `Deploy/` 目录，复制 `.env.example` 为 `.env`
 2. 将 `RADISH_IMAGE_TAG` 固定到明确的 `v*-test` tag，并设置测试域名 `RADISH_PUBLIC_URL`
 3. 执行：
 
 ```bash
-docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml config
-docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml pull
-docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml up -d
+cd Deploy
+docker compose config
+docker compose pull
+docker compose up -d
 ```
 
 4. 按 `M14` 顺序做最小复核
 
 ### 生产部署
 
-1. 复制 `Deploy/.env.example` 为 `Deploy/.env`
+1. 进入 `Deploy/` 目录，复制 `.env.example` 为 `.env`
 2. 将 `RADISH_IMAGE_TAG` 固定到明确的 `v*-release` tag，并设置生产域名 `RADISH_PUBLIC_URL`
 3. 执行：
 
 ```bash
-docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml config
-docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml pull
-docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml up -d
+cd Deploy
+docker compose config
+docker compose pull
+docker compose up -d
 ```
 
 4. 按 `M14` 顺序做最小复核

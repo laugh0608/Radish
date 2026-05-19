@@ -43,7 +43,7 @@
 
 本轮已检查的对象包括：
 
-- `Deploy/docker-compose.yaml`、`Deploy/docker-compose.yml`、`Deploy/docker-compose.local.yml`
+- `Deploy/docker-compose.yaml`、`Deploy/docker-compose.local.yaml`
 - `Deploy/nginx.prod.conf`
 - `Docs/deployment/guide.md`
 - `Radish.Auth/OpenIddict/OpenIddictSeedHostedService.cs`

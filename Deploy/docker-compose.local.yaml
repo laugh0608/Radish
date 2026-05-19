@@ -1,0 +1,106 @@
+services:
+  dbmigrate:
+    image: ${RADISH_DBMIGRATE_IMAGE:-radish/dbmigrate:local}
+    build:
+      context: ..
+      dockerfile: Radish.DbMigrate/Dockerfile
+      args:
+        BUILD_CONFIGURATION: Release
+    environment:
+      DOTNET_ENVIRONMENT: Production
+    volumes:
+      - ../DataBases:/app/DataBases
+      - ../Logs:/app/Logs
+
+  frontend:
+    image: ${RADISH_FRONTEND_IMAGE:-radish/frontend:local}
+    build:
+      context: ..
+      dockerfile: Frontend/Dockerfile
+    environment:
+      RADISH_PUBLIC_URL: https://localhost:5000
+    expose:
+      - "80"
+
+  api:
+    image: ${RADISH_API_IMAGE:-radish/api:local}
+    build:
+      context: ..
+      dockerfile: Radish.Api/Dockerfile
+      args:
+        BUILD_CONFIGURATION: Release
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:5100
+      RADISH_PUBLIC_URL: https://localhost:5000
+      OpenIddict__Encryption__SigningCertificatePath: /app/certs/dev-auth-cert.pfx
+      OpenIddict__Encryption__SigningCertificatePassword: RadishDevCert123!
+    volumes:
+      - ../DataBases:/app/DataBases
+      - ../Logs:/app/Logs
+      - ../Certs:/app/certs:ro
+    depends_on:
+      dbmigrate:
+        condition: service_completed_successfully
+    expose:
+      - "5100"
+
+  auth:
+    image: ${RADISH_AUTH_IMAGE:-radish/auth:local}
+    build:
+      context: ..
+      dockerfile: Radish.Auth/Dockerfile
+      args:
+        BUILD_CONFIGURATION: Release
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:5200
+      RADISH_PUBLIC_URL: https://localhost:5000
+      OpenIddict__Server__Issuer: https://localhost:5000
+      OpenIddict__Server__AllowInsecureHttp: "true"
+      OpenIddict__Encryption__SigningCertificatePath: /app/certs/dev-auth-cert.pfx
+      OpenIddict__Encryption__SigningCertificatePassword: RadishDevCert123!
+      OpenIddict__Encryption__EncryptionCertificatePath: /app/certs/dev-auth-cert.pfx
+      OpenIddict__Encryption__EncryptionCertificatePassword: RadishDevCert123!
+    volumes:
+      - ../DataBases:/app/DataBases
+      - ../Logs:/app/Logs
+      - ../Certs:/app/certs:ro
+    depends_on:
+      dbmigrate:
+        condition: service_completed_successfully
+    expose:
+      - "5200"
+
+  gateway:
+    image: ${RADISH_GATEWAY_IMAGE:-radish/gateway:local}
+    build:
+      context: ..
+      dockerfile: Radish.Gateway/Dockerfile
+      args:
+        BUILD_CONFIGURATION: Release
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: https://+:5000
+      RADISH_PUBLIC_URL: https://localhost:5000
+      Kestrel__Certificates__Default__Path: /app/certs/dev-gateway-cert.pfx
+      Kestrel__Certificates__Default__Password: RadishDevCert123!
+      GatewayRuntime__EnableHttpsRedirection: "true"
+      GatewayService__PublicUrl: https://localhost:5000
+      FrontendService__BaseUrl: https://localhost:5000
+      DownstreamServices__ApiService__BaseUrl: http://api:5100
+      DownstreamServices__AuthService__BaseUrl: http://auth:5200
+      ReverseProxy__Clusters__apiCluster__Destinations__api__Address: http://api:5100
+      ReverseProxy__Clusters__authCluster__Destinations__auth__Address: http://auth:5200
+      ReverseProxy__Clusters__frontendCluster__Destinations__frontend__Address: http://frontend
+      ReverseProxy__Clusters__consoleCluster__Destinations__console__Address: http://frontend
+    volumes:
+      - ../Certs:/app/certs:ro
+    depends_on:
+      - frontend
+      - api
+      - auth
+    expose:
+      - "5000"
+    ports:
+      - "5000:5000"

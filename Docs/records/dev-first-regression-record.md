@@ -183,7 +183,7 @@
 ### 执行摘要
 
 - 推送 `v26.3.1-test` 后，`Docker Images` workflow 已成功产出 `radish-api / radish-auth / radish-gateway / radish-frontend` 四个测试轨道镜像。
-- 测试环境已基于 `Deploy/docker-compose.yml + Deploy/docker-compose.test.yml` 从 `GHCR` 拉取远程镜像，并完成 `base + test` 启动。
+- 测试环境已基于 `Deploy/docker-compose.yaml` 从 `GHCR` 拉取远程镜像，并完成部署态启动。
 - 用户已完成一轮真实测试部署 Smoke：登录、回调、权限与核心页面当前均已通过。
 
 ### 当前结论

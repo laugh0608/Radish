@@ -20,3 +20,5 @@ SQL
 create_database "${RADISH_POSTGRES_LOG_DB:-radish_log}"
 create_database "${RADISH_POSTGRES_MESSAGE_DB:-radish_message}"
 create_database "${RADISH_POSTGRES_CHAT_DB:-radish_chat}"
+create_database "${RADISH_POSTGRES_OPENIDDICT_DB:-radish_openiddict}"
+create_database "${RADISH_POSTGRES_HANGFIRE_DB:-radish_hangfire}"

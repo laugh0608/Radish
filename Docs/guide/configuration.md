@@ -261,7 +261,7 @@ touch Radish.Api/appsettings.Local.json
 
 **Radish.Gateway（默认配置 + 环境变量）**
 
-Gateway 通常直接使用 `appsettings.json`；若本机需要临时覆盖，也应使用未提交的 `appsettings.Local.json`。测试部署与生产部署优先通过 `Deploy/.env` 与 `Deploy/docker-compose.yaml` 注入环境变量：
+Gateway 通常直接使用 `appsettings.json`；若本机需要临时覆盖，也应使用未提交的 `appsettings.Local.json`。测试部署与生产部署优先进入 `Deploy/` 目录，通过 `.env` 与默认 `docker-compose.yaml` 注入环境变量：
 
 ```bash
 # Docker Compose 示例
@@ -324,8 +324,11 @@ services:
 - **Radish.Api** 和 **Radish.Auth** 项目使用**相同的业务数据库**（`Radish.db` 和 `Radish.Log.db`）
 - 这两个数据库存储用户、角色、权限、租户等业务数据，需要被两个项目共同访问
 - **OpenIddict 使用独立的数据库**（`Radish.OpenIddict.db`），由 EF Core 管理，存储 OIDC 认证相关数据（客户端、授权码、令牌等）
+- **Hangfire 使用独立的任务存储**（默认 `Radish.Hangfire.db`），由 `Radish.Api` 管理
 - **所有数据库文件统一存放在解决方案根目录的 `DataBases/` 文件夹**
-- `MainDb` 与 `Databases` 默认配置位于根目录 `appsettings.Shared.json`
+- `MainDb`、`Databases` 与 `OpenIddict:Database` 默认配置位于根目录 `appsettings.Shared.json`
+
+`Databases`、`OpenIddict:Database` 与 `Hangfire` 都支持按配置切换 `DbType`：本地默认 `2=SQLite`，部署态通过环境变量覆盖为 `4=PostgreSQL`。OpenIddict 的配置由 `Radish.Api` 与 `Radish.Auth` 共享；Hangfire 配置只由 `Radish.Api` 使用。
 
 ### 2.1 文件存储配置（FileStorage）
 
@@ -404,6 +407,7 @@ Hangfire 用于执行后台定时任务（如文件清理），配置位于 `Han
 ```json
 {
   "Hangfire": {
+    "DbType": 2,
     "ConnectionString": "Data Source=DataBases/Radish.Hangfire.db",
     "Dashboard": {
       "Enable": true,
@@ -437,10 +441,34 @@ Hangfire 用于执行后台定时任务（如文件清理），配置位于 `Han
 ```
 
 **说明**：
+- `DbType`：任务存储 provider，`2=SQLite`，`4=PostgreSQL`
+- `ConnectionString`：SQLite 时可填写数据库文件名或 `Data Source=...`；PostgreSQL 时填写标准 Npgsql 连接串
 - `Dashboard.RoutePrefix`：Dashboard 访问路径
 - `FileCleanup.*.Schedule`：Cron 表达式
 - `FileCleanup.*.Retention*`：保留周期（天/小时）
 - 详细说明见：`/guide/hangfire-scheduled-jobs`
+
+### 2.3 OpenIddict 存储配置
+
+OpenIddict 使用 EF Core 存储，`Radish.Auth` 负责 OIDC Server 与种子数据，`Radish.Api` 复用同一数据库做客户端管理 API。
+
+```json
+{
+  "OpenIddict": {
+    "Database": {
+      "DbType": 2,
+      "ConnectionString": "Radish.OpenIddict.db"
+    }
+  }
+}
+```
+
+**说明**：
+- `DbType`：OpenIddict EF Core provider，`2=SQLite`，`4=PostgreSQL`
+- `ConnectionString`：SQLite 时默认解析到解决方案根目录 `DataBases/`；PostgreSQL 时填写独立的 OpenIddict 数据库连接串
+- 旧的 `ConnectionStrings:OpenIddict` 仍作为兼容入口；新配置应优先使用 `OpenIddict:Database:*`
+
+### 2.4 数据库 provider 示例
 
 #### SQLite（默认，适合本地开发）
 
@@ -656,7 +684,7 @@ Gateway 门户页面需要配置服务的公开访问地址，用于页面展示
 
 #### 生产环境配置
 
-Gateway 在测试 / 生产部署中推荐直接使用 `Deploy/.env.example` 与 `Deploy/docker-compose.yaml`，而不是额外维护单独的 Gateway 生产示例 JSON。典型变量如下：
+Gateway 在测试 / 生产部署中推荐复制 `Deploy/.env.example` 为 `Deploy/.env`，并在 `Deploy/` 目录直接执行 `docker compose`，而不是额外维护单独的 Gateway 生产示例 JSON。典型变量如下：
 
 ```bash
 RADISH_PUBLIC_URL=https://radish.com
@@ -730,6 +758,10 @@ environment:
   - Snowflake__WorkId=2
   - Databases__0__ConnectionString=Host=postgres-prod;Port=5432;Database=radish;Username=radish_user;Password=${DB_PASSWORD}
   - Databases__1__ConnectionString=Host=postgres-prod;Port=5432;Database=radish_log;Username=radish_user;Password=${DB_PASSWORD}
+  - OpenIddict__Database__DbType=4
+  - OpenIddict__Database__ConnectionString=Host=postgres-prod;Port=5432;Database=radish_openiddict;Username=radish_user;Password=${DB_PASSWORD}
+  - Hangfire__DbType=4
+  - Hangfire__ConnectionString=Host=postgres-prod;Port=5432;Database=radish_hangfire;Username=radish_user;Password=${DB_PASSWORD}
   - Redis__Enable=true
   - Redis__ConnectionString=redis-prod:6379,password=${REDIS_PASSWORD},ssl=true
   - AutoMapper__LicenseKey=${AUTOMAPPER_LICENSE}
@@ -918,7 +950,7 @@ services:
       - Redis__Enable=true
       - Redis__ConnectionString=${REDIS_URL}
     env_file:
-      - Deploy/.env  # 部署态敏感数据从 env-file 加载（不提交到 Git）
+      - Deploy/.env  # 部署态敏感数据由 Compose 自动加载（不提交到 Git）
 ```
 
 ### Q4: 团队成员如何快速配置？

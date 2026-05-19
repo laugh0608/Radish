@@ -661,16 +661,17 @@ curl https://localhost:5000/healthz | jq
 只有在本地容器验证或手动验证镜像入口时，才需要显式构建本地镜像，例如：
 
 ```bash
-docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.local.yml build gateway
+docker compose -f Deploy/docker-compose.local.yaml build gateway
 ```
 
 测试部署与生产部署默认应直接拉取 `GHCR` 中已构建好的镜像，不再推荐在部署机单独 `docker build` 或 `docker run` Gateway 容器，而是直接使用仓库现成编排：
 
 ```bash
 # 测试 / 生产部署
-docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml config
-docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml pull
-docker compose --env-file Deploy/.env -f Deploy/docker-compose.yaml up -d
+cd Deploy
+docker compose config
+docker compose pull
+docker compose up -d
 ```
 
 这样可以保证：
