@@ -1,6 +1,6 @@
 # 第三开发阶段：真实使用增长与长期契约治理
 
-> 状态：`P3-5` 公开内容增长后续专题已阶段收尾，当前进入 `P3-6 真实使用运营观察与反馈分流`
+> 状态：`P3-6` 真实使用运营观察与反馈分流已阶段收口，当前转入真实使用维护观察
 >
 > 启动日期：2026-05-13（Asia/Shanghai）
 >
@@ -24,7 +24,7 @@
 
 `P3-5 公开内容增长后续专题` 已于 `2026-05-17` 阶段收尾：`P3-5-A` 评估、`P3-5-B` 运行时结构化数据基线、`P3-5-C` 动态 sitemap 首批实现、`P3-5-D` 详情首包 HTML 可见性方案评审、`P3-5-D1` 公开详情 HTML head 快照注入首批实现和 `P3-5-D2` 部署前 smoke 入口均已完成。最新公开 head smoke 已通过 robots、sitemap、forum / docs / shop 三类详情。动态 sitemap 已采用 API + Gateway 路由，构建期静态生成器仅保留为离线 / 夜间导出备选；详情首包 HTML 可见性首批只覆盖 forum / docs / shop 详情 head 注入，不启动完整 SSR / SSG 或正文预渲染。
 
-当前主线切到 `P3-6 真实使用运营观察与反馈分流`：只从真实部署、真实内容、爬虫抓取、分享预览、用户回流和运行日志中挑选高信号问题；公开内容增长能力转入部署 / 运营维护线。
+当前 `P3-6 真实使用运营观察与反馈分流` 已阶段收口：本地 Gateway 与生产公开域名 `https://radishx.com` 均已通过 public head smoke；后续只从真实部署、真实内容、爬虫抓取、分享预览、用户回流和运行日志中挑选高信号问题，公开内容增长能力转入部署 / 运营维护线。
 
 ## `P3-0` 定义与工程整备
 
@@ -684,7 +684,7 @@ npm run check:repo-hygiene:changed
 
 后置：
 
-- 仍需在真实部署环境确认 `GatewayService:PublicUrl` / `RADISH_PUBLIC_URL` 输出生产域名，并人工访问 `/sitemap.xml`、`/sitemaps/static.xml`、`/sitemaps/forum-1.xml`。
+- `2026-05-20` 已在生产公开域名 `https://radishx.com` 复跑 public head smoke，确认 sitemap index、`static / forum / docs / shop` 分片和三类详情首包 head 可达；后续 release 前仍按同一入口复核。
 - 若后续内容规模接近单类型 `100,000` 条 URL，需要单独评估 cursor 分片、夜间导出或搜索引擎索引拆分策略。
 
 ## `P3-5-D` 详情首包 HTML 可见性方案评审
@@ -717,8 +717,8 @@ npm run check:repo-hygiene:changed
 
 - API 找不到公开内容时返回 `404`，Gateway 不注入，继续走原 YARP / SPA 链路。
 - API snapshot、前端入口 HTML 获取、HTML 注入任一环节异常时，Gateway 记录 warning 并回落到原代理链路，避免 SEO head 注入影响页面可用性。
-- release / 生产部署时必须确认 `GatewayService:PublicUrl` 或 `RADISH_PUBLIC_URL` 为生产公开域名，`DownstreamServices:ApiService:BaseUrl` 与 `FrontendService:BaseUrl` 对 Gateway 可达；日常推进可先用 testing URL 验证同一链路。
-- 生产人工验收需直接查看三类详情的初始 HTML，确认 head 中 canonical / Open Graph / JSON-LD 与运行时 canonical、动态 sitemap URL 一致。
+- release / 生产部署时必须确认 `GatewayService:PublicUrl` 或 `RADISH_PUBLIC_URL` 为生产公开域名，`DownstreamServices:ApiService:BaseUrl` 与 `FrontendService:BaseUrl` 对 Gateway 可达；`2026-05-20` 的 `https://radishx.com` smoke 已确认当前生产链路成立。
+- 后续生产人工验收需直接查看三类详情的初始 HTML，确认 head 中 canonical / Open Graph / JSON-LD 与运行时 canonical、动态 sitemap URL 一致。
 
 ### 验证
 
@@ -804,19 +804,38 @@ npm run check:repo-hygiene:changed
 
 截至 `2026-05-18`，`P3-1` 至 `P3-5` 均已完成阶段性收口，`P3-6-A` 已完成本地公开增长观察首轮收口。当前不再按历史候选清单惯性扩张，后续以 `P3-6` 的真实使用运营观察与反馈分流为准。
 
-### `P3-6-C` testing 优先公开增长观察与分流记录
+### `P3-6-C` 公开增长观察与分流记录
 
 启动口径：`2026-05-18`。
 
-目标是把 `P3-6-A / P3-6-B` 已验证的公开增长检查能力用于低成本部署观察：当前优先使用 testing URL 记录公开 head smoke、动态 sitemap、head snapshot 缓存、公开域名配置、分享预览和搜索抓取反馈中的事实，并按 `P0/P1/P2/暂不处理` 分流。
+目标是把 `P3-6-A / P3-6-B` 已验证的公开增长检查能力用于部署观察：记录公开 head smoke、动态 sitemap、head snapshot 缓存、公开域名配置、分享预览和搜索抓取反馈中的事实，并按 `P0/P1/P2/暂不处理` 分流。
 
-本批只做观察记录入口和事实分级，不新增运营平台、完整可观测性平台、完整 E2E、SSR / SSG、正文预渲染或全量 `PublicId` 迁移。生产域名验证调整为 release 前置项：准备公开发布前再绑定生产域名、配置 `RADISH_PUBLIC_URL` / `GatewayService:PublicUrl`、复跑 public head smoke，并抽查真实分享预览与搜索抓取入口。
+本批只做观察记录入口和事实分级，不新增运营平台、完整可观测性平台、完整 E2E、SSR / SSG、正文预渲染或全量 `PublicId` 迁移。生产域名 `https://radishx.com` 已在 `2026-05-20` 使用同一 public head smoke 入口复跑通过；真实平台分享预览、搜索抓取反馈和运行日志样本继续作为运营维护观察项。
 
 执行入口：
 
 - [P3-6 公开增长部署观察记录模板](/records/p3-6-public-growth-observation-record-template)
 - [P3-6 公开增长部署观察记录（2026-05-18）](/records/p3-6-public-growth-observation-record-2026-05-18)
+- [P3-6 公开增长部署观察记录（2026-05-20）](/records/p3-6-public-growth-observation-record-2026-05-20)
 
-建议每次 testing 环境更新或 release 前生产公开域名 smoke 后复制该模板生成日期记录。若未发现 `P0/P1`，记录观察结论即可；若发现阻断公开访问、核心 head / sitemap、分享入口或回流的高信号问题，再单独切出小闭环修复。
+建议后续每次 testing / production 环境更新、release 前复核或真实平台反馈出现新样本时复制该模板生成日期记录。若未发现 `P0/P1`，记录观察结论即可；若发现阻断公开访问、核心 head / sitemap、分享入口或回流的高信号问题，再单独切出小闭环修复。
 
 `2026-05-18` 首份本地观察记录结论：本地 Gateway public head smoke 覆盖 robots、sitemap index、`static / forum / docs / shop` 分片和 forum / docs / shop 三类详情并通过；生产分享预览和搜索抓取反馈作为 release 前置项，不阻塞当前继续推进，不切出修复小闭环。
+
+`2026-05-20` 生产公开域名观察记录结论：`https://radishx.com` public head smoke 覆盖 robots、sitemap index、`static / forum / docs / shop` 分片和 forum / docs / shop 三类详情并通过；本轮未发现新的公开访问、head / sitemap、分享入口或回流 `P0/P1`，不切修复小闭环。
+
+### `P3-6` 阶段收口结论
+
+收口日期：`2026-05-20`。
+
+`P3-6` 可以阶段收口。
+
+依据：
+
+- 本地 Gateway 与生产公开域名 `https://radishx.com` 均已完成 public head smoke，覆盖 robots、sitemap index、`static / forum / docs / shop` 分片和 forum / docs / shop 三类详情首包 head。
+- public head smoke 失败诊断已能输出请求 URL、状态码、content-type、body 前段、疑似 SPA shell、失败阶段和关键断言，可支撑后续部署排障。
+- 本轮未发现新的公开访问、核心 head / sitemap、分享入口或回流 `P0/P1` 阻断项。
+
+转入维护的运营观察项：真实平台分享预览、Search Console / 爬虫日志、生产访问日志、用户回流断点、内容规模接近单类型 `100,000` 条 URL 时的 sitemap 分片策略复评。
+
+不继续扩大的范围：运营平台、完整可观测性平台、完整 Playwright / E2E、完整 SSR / SSG、正文预渲染、全量 `PublicId` 迁移，以及无真实证据支撑的低收益公开体验微调。

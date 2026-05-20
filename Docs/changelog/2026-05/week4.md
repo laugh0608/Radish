@@ -27,3 +27,10 @@
 - 复核 Redis 当前能力：业务实际主要通过 `ICaching` / `IDistributedCache` 走 Redis 或内存缓存，Redis 已在部署态生效，但尚未系统性承担原子计数、在线状态、Backplane 或分布式锁。
 - 新增 [Redis 与缓存治理专题](/planning/redis-cache-governance)，将通知未读原子计数、上传限流、聊天室在线状态、SignalR Backplane、商城 / 萝卜币幂等与并发保护、排行榜 / 热点读模型缓存纳入后置规划。
 - 收工前已补 [2026-05-19 收工回顾与明日事项](/records/daily-handoff-2026-05-19)：今日提交已复核到部署指南、架构框架、开发路线图、backlog、Redis 专题和开发日志；配置指南当前已超篇幅硬上限，本次不继续追加。
+
+## 2026-05-20
+
+- `P3-6-C` 生产公开增长观察已补齐：`https://radishx.com` public head smoke 覆盖 robots、sitemap index、`static / forum / docs / shop` 分片和 forum / docs / shop 三类详情首包 head 并通过。
+- 新增 [P3-6 公开增长部署观察记录（2026-05-20）](/records/p3-6-public-growth-observation-record-2026-05-20)，并挂入 [记录与验收索引](/records/)。
+- `P3-6` 阶段收口结论已同步到 [当前进行中](/planning/current)、[开发路线图](/development-plan) 与 [第三开发阶段专题](/planning/phase-three-real-usage-contract-governance)：本轮未发现新的公开访问、head / sitemap、分享入口或回流 `P0/P1`，不切修复小闭环。
+- 真实平台分享预览、Search Console / 爬虫日志、生产访问日志和用户回流断点转入运营维护观察；未出现真实证据前，不启动运营平台、完整可观测性平台、完整 E2E、SSR / SSG、正文预渲染或全量 `PublicId` 迁移。
