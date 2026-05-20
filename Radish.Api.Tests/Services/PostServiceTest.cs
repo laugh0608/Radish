@@ -21,6 +21,60 @@ namespace Radish.Api.Tests.Services;
 public class PostServiceTest
 {
     [Fact]
+    public async Task FillPostAvatarAndInteractorsAsync_Should_Fill_AuthorAvatar()
+    {
+        var attachmentService = new Mock<IAttachmentService>(MockBehavior.Strict);
+        attachmentService
+            .Setup(service => service.GetLatestAvatarAssetMapAsync(It.Is<IReadOnlyCollection<long>>(userIds =>
+                userIds.Contains(2001))))
+            .ReturnsAsync(new Dictionary<long, AttachmentAssetDto>
+            {
+                [2001] = new()
+                {
+                    AttachmentId = 3001,
+                    Url = "/_assets/attachments/3001",
+                    ThumbnailUrl = "/_assets/attachments/3001/thumbnail"
+                }
+            });
+
+        var service = new PostService(
+            Mock.Of<IMapper>(),
+            Mock.Of<IBaseRepository<Post>>(),
+            Mock.Of<IBaseRepository<UserPostLike>>(),
+            Mock.Of<IBaseRepository<PostTag>>(),
+            Mock.Of<IBaseRepository<Category>>(),
+            Mock.Of<IBaseRepository<Tag>>(),
+            Mock.Of<IBaseRepository<PostPoll>>(),
+            Mock.Of<IBaseRepository<PostPollOption>>(),
+            Mock.Of<IBaseRepository<PostPollVote>>(),
+            Mock.Of<IBaseRepository<PostQuestion>>(),
+            Mock.Of<IBaseRepository<PostAnswer>>(),
+            Mock.Of<ITagService>(),
+            Mock.Of<ICoinRewardService>(),
+            Mock.Of<INotificationService>(),
+            Mock.Of<INotificationDedupService>(),
+            Mock.Of<IExperienceService>(),
+            Mock.Of<IBaseRepository<PostEditHistory>>(),
+            attachmentService.Object,
+            Options.Create(new ForumEditHistoryOptions()));
+
+        var posts = new List<PostVo>
+        {
+            new()
+            {
+                VoId = 1001,
+                VoAuthorId = 2001,
+                VoAuthorName = "luobo"
+            }
+        };
+
+        await service.FillPostAvatarAndInteractorsAsync(posts);
+
+        Assert.Equal("/_assets/attachments/3001", posts[0].VoAuthorAvatarUrl);
+        attachmentService.VerifyAll();
+    }
+
+    [Fact]
     public async Task FillPostListMetadataAsync_Should_BatchFill_Category_Tags_And_Poll_Summary()
     {
         var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
@@ -124,6 +178,7 @@ public class PostServiceTest
             dedupService.Object,
             experienceService.Object,
             postEditHistoryRepository.Object,
+            Mock.Of<IAttachmentService>(),
             Options.Create(new ForumEditHistoryOptions()));
 
         var posts = new List<PostVo>
@@ -266,6 +321,7 @@ public class PostServiceTest
             dedupService.Object,
             experienceService.Object,
             postEditHistoryRepository.Object,
+            Mock.Of<IAttachmentService>(),
             Options.Create(new ForumEditHistoryOptions()));
 
         var result = await service.GetPostDetailAsync(1004, viewerUserId: null);
@@ -368,6 +424,7 @@ public class PostServiceTest
             dedupService.Object,
             experienceService.Object,
             postEditHistoryRepository.Object,
+            Mock.Of<IAttachmentService>(),
             Options.Create(new ForumEditHistoryOptions()));
 
         var result = await service.GetPostDetailAsync(1006, viewerUserId: null);
@@ -530,6 +587,7 @@ public class PostServiceTest
             dedupService.Object,
             experienceService.Object,
             postEditHistoryRepository.Object,
+            Mock.Of<IAttachmentService>(),
             Options.Create(new ForumEditHistoryOptions()));
 
         var result = await service.GetPostDetailAsync(1005, viewerUserId: null);
@@ -591,6 +649,7 @@ public class PostServiceTest
             dedupService.Object,
             experienceService.Object,
             postEditHistoryRepository.Object,
+            Mock.Of<IAttachmentService>(),
             Options.Create(new ForumEditHistoryOptions()));
 
         var (data, totalCount) = await service.GetPollPostPageAsync(sortBy: "newest");
@@ -732,6 +791,7 @@ public class PostServiceTest
             dedupService.Object,
             experienceService.Object,
             postEditHistoryRepository.Object,
+            Mock.Of<IAttachmentService>(),
             Options.Create(new ForumEditHistoryOptions()));
 
         var (closedPosts, closedTotalCount) = await service.GetPollPostPageAsync(sortBy: "newest", isClosed: true);
@@ -876,6 +936,7 @@ public class PostServiceTest
             dedupService.Object,
             experienceService.Object,
             postEditHistoryRepository.Object,
+            Mock.Of<IAttachmentService>(),
             Options.Create(new ForumEditHistoryOptions()));
 
         var (data, totalCount) = await service.GetPollPostPageAsync(sortBy: "votes");
@@ -1033,6 +1094,7 @@ public class PostServiceTest
             dedupService.Object,
             experienceService.Object,
             postEditHistoryRepository.Object,
+            Mock.Of<IAttachmentService>(),
             Options.Create(new ForumEditHistoryOptions()));
 
         var (data, totalCount) = await service.GetPollPostPageAsync(sortBy: "deadline");
@@ -1169,6 +1231,7 @@ public class PostServiceTest
             dedupService.Object,
             experienceService.Object,
             postEditHistoryRepository.Object,
+            Mock.Of<IAttachmentService>(),
             Options.Create(new ForumEditHistoryOptions()));
 
         var result = await service.AddAnswerAsync(1006, "  先检查数据库连接。  ", 2001, "Alice", 9);
@@ -1308,6 +1371,7 @@ public class PostServiceTest
             dedupService.Object,
             experienceService.Object,
             postEditHistoryRepository.Object,
+            Mock.Of<IAttachmentService>(),
             Options.Create(new ForumEditHistoryOptions()));
 
         var result = await service.AcceptAnswerAsync(1007, 4004, 9527, "Owner");
@@ -1390,6 +1454,7 @@ public class PostServiceTest
             dedupService.Object,
             experienceService.Object,
             postEditHistoryRepository.Object,
+            Mock.Of<IAttachmentService>(),
             Options.Create(new ForumEditHistoryOptions()));
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
@@ -1530,6 +1595,7 @@ public class PostServiceTest
             dedupService.Object,
             experienceService.Object,
             postEditHistoryRepository.Object,
+            Mock.Of<IAttachmentService>(),
             Options.Create(new ForumEditHistoryOptions
             {
                 Enable = true,
@@ -1643,6 +1709,7 @@ public class PostServiceTest
             dedupService.Object,
             experienceService.Object,
             postEditHistoryRepository.Object,
+            Mock.Of<IAttachmentService>(),
             Options.Create(new ForumEditHistoryOptions()));
 
         var (result, total) = await service.GetPostEditHistoryPageAsync(2001, 0, 200);
@@ -1788,6 +1855,7 @@ public class PostServiceTest
             dedupService.Object,
             experienceService.Object,
             postEditHistoryRepository.Object,
+            Mock.Of<IAttachmentService>(),
             Options.Create(new ForumEditHistoryOptions()));
 
         var post = new Post(new PostInitializationOptions("投票帖", "今天吃什么")
@@ -1926,6 +1994,7 @@ public class PostServiceTest
             dedupService.Object,
             experienceService.Object,
             postEditHistoryRepository.Object,
+            Mock.Of<IAttachmentService>(),
             Options.Create(new ForumEditHistoryOptions()));
 
         var post = new Post(new PostInitializationOptions("短时投票帖", "三分钟后截止")
@@ -2058,6 +2127,7 @@ public class PostServiceTest
             dedupService.Object,
             experienceService.Object,
             postEditHistoryRepository.Object,
+            Mock.Of<IAttachmentService>(),
             Options.Create(new ForumEditHistoryOptions()));
 
         var post = new Post(new PostInitializationOptions("问答帖", "这个问题怎么解？")
@@ -2186,6 +2256,7 @@ public class PostServiceTest
             dedupService.Object,
             experienceService.Object,
             postEditHistoryRepository.Object,
+            Mock.Of<IAttachmentService>(),
             Options.Create(new ForumEditHistoryOptions()),
             postLotteryRepository: postLotteryRepository.Object);
 
@@ -2238,6 +2309,7 @@ public class PostServiceTest
             new Mock<INotificationDedupService>(MockBehavior.Strict).Object,
             new Mock<IExperienceService>(MockBehavior.Strict).Object,
             new Mock<IBaseRepository<PostEditHistory>>(MockBehavior.Strict).Object,
+            Mock.Of<IAttachmentService>(),
             Options.Create(new ForumEditHistoryOptions()),
             postLotteryRepository: new Mock<IBaseRepository<PostLottery>>(MockBehavior.Strict).Object);
 
@@ -2287,6 +2359,7 @@ public class PostServiceTest
             new Mock<INotificationDedupService>(MockBehavior.Strict).Object,
             new Mock<IExperienceService>(MockBehavior.Strict).Object,
             new Mock<IBaseRepository<PostEditHistory>>(MockBehavior.Strict).Object,
+            Mock.Of<IAttachmentService>(),
             Options.Create(new ForumEditHistoryOptions()));
 
         var post = new Post(new PostInitializationOptions("冲突功能帖", "正文"))

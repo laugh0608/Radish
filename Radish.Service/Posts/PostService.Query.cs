@@ -569,7 +569,7 @@ public partial class PostService
             .ToList();
 
         Dictionary<long, string> avatarUrlMap = new();
-        if (_attachmentService != null && userIds.Count > 0)
+        if (userIds.Count > 0)
         {
             avatarUrlMap = (await _attachmentService.GetLatestAvatarAssetMapAsync(userIds))
                 .Where(entry => !string.IsNullOrWhiteSpace(entry.Value.Url))

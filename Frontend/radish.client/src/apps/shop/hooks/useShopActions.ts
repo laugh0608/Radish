@@ -233,6 +233,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
         currentUser.setUser({
           userId: currentUser.userId,
           userName: newNickname.trim(),
+          nickname: newNickname.trim(),
           tenantId: currentUser.tenantId,
           roles: currentUser.roles,
           permissions: currentUser.permissions,
