@@ -137,22 +137,6 @@ export const ShopApp = () => {
     selectedProduct
   } = dataState;
 
-  // 事件处理
-  const actionsState = useShopActions({
-    t,
-    isAuthenticated: loggedIn,
-    appState,
-    setError,
-    loadProducts,
-    loadProductDetail,
-    checkCanBuy,
-    loadOrders,
-    loadOrderDetail,
-    loadInventory,
-    searchProducts,
-    selectedProduct
-  });
-
   // 导航方法
   const navigate = {
     toHome: () => setAppState({ currentView: 'home' }),
@@ -183,6 +167,23 @@ export const ShopApp = () => {
       }
     }
   };
+
+  // 事件处理
+  const actionsState = useShopActions({
+    t,
+    isAuthenticated: loggedIn,
+    appState,
+    setError,
+    loadProducts,
+    loadProductDetail,
+    checkCanBuy,
+    loadOrders,
+    loadOrderDetail,
+    loadInventory,
+    searchProducts,
+    selectedProduct,
+    onPurchaseComplete: (orderId) => navigate.toOrderDetail(orderId)
+  });
 
   const handleOpenProductReport = (productId: LongId) => {
     if (!loggedIn) {
