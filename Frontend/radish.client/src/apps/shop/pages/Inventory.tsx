@@ -13,6 +13,8 @@ interface InventoryProps {
   onDeactivateBenefit: (benefitId: LongId) => void;
   onUseItem: (inventoryId: LongId, quantity?: number, targetId?: LongId) => Promise<boolean>;
   onUseRenameCard: (inventoryId: LongId, newNickname: string) => Promise<boolean>;
+  onSourceOrderClick: (orderId: LongId) => void;
+  onSourceProductClick: (productId: LongId) => void;
   onBack: () => void;
 }
 
@@ -109,6 +111,17 @@ const isUnavailableConsumableItem = (item?: UserInventoryItem | null): boolean =
     || normalizedType === 'LotteryTicket';
 };
 
+const isPositiveLongId = (value?: LongId | null): value is LongId => {
+  if (typeof value === 'number') {
+    return Number.isSafeInteger(value) && value > 0;
+  }
+
+  return typeof value === 'string' && /^[1-9]\d*$/.test(value.trim());
+};
+
+const isPurchaseSource = (benefit: UserBenefit): boolean =>
+  benefit.voSourceType?.trim().toLowerCase() === 'purchase';
+
 export const Inventory = ({
   benefits,
   inventory,
@@ -117,6 +130,8 @@ export const Inventory = ({
   onDeactivateBenefit,
   onUseItem,
   onUseRenameCard,
+  onSourceOrderClick,
+  onSourceProductClick,
   onBack
 }: InventoryProps) => {
   const { t } = useTranslation();
@@ -217,6 +232,12 @@ export const Inventory = ({
             ) : (
               benefits.map((benefit) => {
                 const benefitIconUrl = resolveMediaUrl(benefit.voBenefitIcon);
+                const sourceOrderId = isPurchaseSource(benefit) && isPositiveLongId(benefit.voSourceOrderId)
+                  ? benefit.voSourceOrderId
+                  : undefined;
+                const sourceProductId = isPurchaseSource(benefit) && isPositiveLongId(benefit.voSourceProductId)
+                  ? benefit.voSourceProductId
+                  : undefined;
 
                 return (
                   <div
@@ -251,6 +272,28 @@ export const Inventory = ({
                       {benefit.voExpiresAt && !benefit.voIsExpired && (
                         <div className={styles.benefitExpiry}>
                           {t('shop.inventory.expireAt', { value: formatTime(benefit.voExpiresAt) })}
+                        </div>
+                      )}
+                      {(sourceOrderId || sourceProductId) && (
+                        <div className={styles.benefitSourceActions}>
+                          {sourceOrderId && (
+                            <button
+                              type="button"
+                              className={styles.sourceButton}
+                              onClick={() => onSourceOrderClick(sourceOrderId)}
+                            >
+                              {t('shop.inventory.viewSourceOrder')}
+                            </button>
+                          )}
+                          {sourceProductId && (
+                            <button
+                              type="button"
+                              className={styles.sourceButton}
+                              onClick={() => onSourceProductClick(sourceProductId)}
+                            >
+                              {t('shop.inventory.viewSourceProduct')}
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>

@@ -224,6 +224,29 @@
   color: var(--theme-state-warning);
 }
 
+.benefitSourceActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.sourceButton {
+  border: 1px solid var(--theme-border-strong);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--theme-brand-primary) 8%, var(--theme-bg-surface));
+  color: var(--theme-brand-primary);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 5px 10px;
+  transition: all 0.2s;
+}
+
+.sourceButton:hover {
+  border-color: var(--theme-brand-primary);
+  background: color-mix(in srgb, var(--theme-brand-primary) 14%, var(--theme-bg-surface));
+}
+
 .consumableQuantity {
   font-size: 14px;
   color: var(--theme-text-secondary);
@@ -529,6 +552,10 @@
   .benefitMeta {
     flex-direction: column;
     gap: 4px;
+  }
+
+  .benefitSourceActions {
+    justify-content: center;
   }
 
   .tabs {

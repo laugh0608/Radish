@@ -39,6 +39,12 @@ public class UserBenefitVo
     /// <summary>权益图标 URL</summary>
     public string? VoBenefitIcon { get; set; }
 
+    /// <summary>来源订单 ID</summary>
+    public long? VoSourceOrderId { get; set; }
+
+    /// <summary>来源商品 ID</summary>
+    public long? VoSourceProductId { get; set; }
+
     /// <summary>来源类型</summary>
     public string VoSourceType { get; set; } = string.Empty;
 

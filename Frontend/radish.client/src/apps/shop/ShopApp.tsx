@@ -328,6 +328,8 @@ export const ShopApp = () => {
             onDeactivateBenefit={actionsState.handleDeactivateBenefit}
             onUseItem={actionsState.handleUseItem}
             onUseRenameCard={actionsState.handleUseRenameCard}
+            onSourceOrderClick={navigate.toOrderDetail}
+            onSourceProductClick={navigate.toProductDetail}
             onBack={navigate.back}
           />
         );

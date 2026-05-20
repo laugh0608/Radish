@@ -102,6 +102,8 @@ public class ShopProfile : Profile
     {
         // UserBenefit -> UserBenefitVo
         CreateMap<UserBenefit, UserBenefitVo>()
+            .ForMember(dest => dest.VoSourceOrderId, opt => opt.MapFrom(src => src.SourceOrderId))
+            .ForMember(dest => dest.VoSourceProductId, opt => opt.MapFrom(src => src.SourceProductId))
             .ForMember(dest => dest.VoBenefitIcon, opt => opt.Ignore());
 
         // UserBenefitVo -> UserBenefit
