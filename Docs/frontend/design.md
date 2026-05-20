@@ -364,9 +364,10 @@ export const tokens = {
 - `radish.client` 主题状态由根级主题能力驱动
 - 新增 UI 改造优先复用语义 token，不继续扩硬编码颜色
 - 高频桌面壳层、商城、论坛、聊天、通知、个人中心和文档应用已完成首轮主题 / i18n 接入
+- Console 后续新增或明显改动页面优先使用 `--console-*` 局部变量承接 `@radish/ui` / `--theme-*` token，不启动后台整站视觉重构
 - 后续只在真实联调中处理残余边角，不在设计入口继续追加流水
 
-主题与 i18n 落地细节见 [前端主题与 i18n 落地记录](/frontend/theme-i18n-implementation)、[视觉主题规范](/frontend/visual-theme-spec) 与 [视觉色彩参考](/frontend/visual-color-reference)。
+主题与 i18n 落地细节见 [前端主题与 i18n 落地记录](/frontend/theme-i18n-implementation)、[视觉主题规范](/frontend/visual-theme-spec)、[视觉色彩参考](/frontend/visual-color-reference) 与 [Console 样式与 Token 使用说明](/frontend/console-style-guide)。
 
 ### 8.2 基础组件
 

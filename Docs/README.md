@@ -34,6 +34,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 ## 前端与交互
 
 - [前端设计](./frontend/design.md)
+- [Console 样式与 Token 使用说明](./frontend/console-style-guide.md)
 - [视觉主题规范](./frontend/visual-theme-spec.md)
 - [视觉颜色参考](./frontend/visual-color-reference.md)
 - [文档系统方案](./guide/document-system.md)
