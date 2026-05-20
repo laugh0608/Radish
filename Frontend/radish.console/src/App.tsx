@@ -8,7 +8,6 @@ import { tokenService } from './services/tokenService';
 import { env } from './config/env';
 import { log } from './utils/logger';
 import { ConsoleRouterProvider } from './router';
-import './App.css';
 
 setupApiInterceptors();
 
