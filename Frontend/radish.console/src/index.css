@@ -1,5 +1,38 @@
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --console-font-sans: var(
+    --theme-font-sans,
+    system-ui,
+    Avenir,
+    Helvetica,
+    Arial,
+    sans-serif
+  );
+  --console-bg-app: var(--theme-bg-app, #f5f5f5);
+  --console-bg-surface: var(--theme-bg-surface, #ffffff);
+  --console-bg-muted: var(--theme-bg-muted, #fafafa);
+  --console-text-primary: var(--theme-text-primary, #262626);
+  --console-text-secondary: var(--theme-text-secondary, #8c8c8c);
+  --console-text-on-dark: #ffffff;
+  --console-border-subtle: var(--theme-border-soft, #f0f0f0);
+  --console-brand-primary: var(--theme-brand-primary, #ff6b35);
+  --console-info: var(--theme-state-info, #1890ff);
+  --console-warning-text: var(--theme-accent-earth, #8c6d1f);
+  --console-warning-border: color-mix(
+    in srgb,
+    var(--theme-state-warning, #faad14) 45%,
+    #ffffff 55%
+  );
+  --console-warning-bg: color-mix(
+    in srgb,
+    var(--theme-state-warning, #faad14) 10%,
+    #ffffff 90%
+  );
+  --console-shadow-soft: var(--theme-shadow-soft, 0 1px 4px rgba(0, 0, 0, 0.08));
+  --console-shadow-card: var(--theme-shadow-soft, 0 8px 24px rgba(15, 23, 42, 0.04));
+  --console-radius-panel: 12px;
+  --console-radius-control: 8px;
+
+  font-family: var(--console-font-sans);
   line-height: 1.5;
   font-weight: 400;
 
