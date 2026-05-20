@@ -74,6 +74,7 @@
 - [p3-6-public-growth-observation-record-2026-05-18](/records/p3-6-public-growth-observation-record-2026-05-18)
 - [webos-workspace-p0-p1-screening-record-2026-05-18](/records/webos-workspace-p0-p1-screening-record-2026-05-18)
 - [console-ui-consistency-evaluation-2026-05-18](/records/console-ui-consistency-evaluation-2026-05-18)
+- [daily-handoff-2026-05-20](/records/daily-handoff-2026-05-20)
 - [daily-handoff-2026-05-19](/records/daily-handoff-2026-05-19)
 - [daily-handoff-2026-05-18](/records/daily-handoff-2026-05-18)
 - [flutter-android-rc-distribution](/records/flutter-android-rc-distribution)

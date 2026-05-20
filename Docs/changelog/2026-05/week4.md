@@ -34,3 +34,6 @@
 - 新增 [P3-6 公开增长部署观察记录（2026-05-20）](/records/p3-6-public-growth-observation-record-2026-05-20)，并挂入 [记录与验收索引](/records/)。
 - `P3-6` 阶段收口结论已同步到 [当前进行中](/planning/current)、[开发路线图](/development-plan) 与 [第三开发阶段专题](/planning/phase-three-real-usage-contract-governance)：本轮未发现新的公开访问、head / sitemap、分享入口或回流 `P0/P1`，不切修复小闭环。
 - 真实平台分享预览、Search Console / 爬虫日志、生产访问日志和用户回流断点转入运营维护观察；未出现真实证据前，不启动运营平台、完整可观测性平台、完整 E2E、SSR / SSG、正文预渲染或全量 `PublicId` 迁移。
+- Console token bridge 小范围落地：`radish.console` 入口样式、`AdminLayout.css` 与 `adminFeature.css` 已接入局部 `--console-*` token 口径，并删除旧 Vite 模板入口样式污染；当前不启动后台整站视觉重构。
+- `P3-7-A` WebOS / PC 工作台复访链路首批小闭环已完成：订单通知携带合法业务 ID 时进入商城订单详情，订单详情可回到商品详情，购买成功后进入订单详情，背包权益可基于 `VoSourceOrderId / VoSourceProductId` 回到来源订单 / 商品。
+- 今日同步 [当前进行中](/planning/current) 与 [2026-05-20 收工回顾与明日事项](/records/daily-handoff-2026-05-20)；[商城前端设计说明](/guide/shop-frontend) 当前已超文档篇幅硬上限，后续若要迁入复访链路说明需先拆分该说明书；明日优先做商城复访链路收尾复核，不扩大到运营平台、完整 E2E、SSR / SSG 或全量 `PublicId`。
