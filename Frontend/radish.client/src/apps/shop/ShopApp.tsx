@@ -38,12 +38,15 @@ function normalizePositiveLongId(value: unknown): LongId | undefined {
   return /^[1-9]\d*$/.test(trimmed) ? trimmed : undefined;
 }
 
-function parseShopWindowParams(appParams?: Record<string, unknown> | null): { productId?: LongId } {
+function parseShopWindowParams(appParams?: Record<string, unknown> | null): { productId?: LongId; orderId?: LongId } {
   if (!appParams) {
     return {};
   }
 
-  return { productId: normalizePositiveLongId(appParams.productId) };
+  return {
+    productId: normalizePositiveLongId(appParams.productId),
+    orderId: normalizePositiveLongId(appParams.orderId)
+  };
 }
 
 export const ShopApp = () => {
@@ -52,30 +55,41 @@ export const ShopApp = () => {
   const currentWindow = useCurrentWindow();
   const loggedIn = isAuthenticated();
   const [reportProductId, setReportProductId] = useState<LongId | null>(null);
-  const initialWindowProductId = useMemo(
-    () => parseShopWindowParams(currentWindow?.appParams).productId,
+  const windowParams = useMemo(
+    () => parseShopWindowParams(currentWindow?.appParams),
     [currentWindow?.appParams]
   );
 
   // 应用状态
-  const [appState, setAppState] = useState<ShopAppState>(() => initialWindowProductId
-    ? {
+  const [appState, setAppState] = useState<ShopAppState>(() => {
+    if (windowParams.productId) {
+      return {
         currentView: 'product-detail',
-        selectedProductId: initialWindowProductId
-      }
-    : {
-        currentView: 'home'
-      });
+        selectedProductId: windowParams.productId
+      };
+    }
+
+    if (windowParams.orderId) {
+      return {
+        currentView: 'order-detail',
+        selectedOrderId: windowParams.orderId
+      };
+    }
+
+    return {
+      currentView: 'home'
+    };
+  });
 
   useEffect(() => {
-    if (!initialWindowProductId) {
+    if (!windowParams.productId) {
       return;
     }
 
     setAppState((current) => {
       if (
         current.currentView === 'product-detail'
-        && String(current.selectedProductId) === String(initialWindowProductId)
+        && String(current.selectedProductId) === String(windowParams.productId)
       ) {
         return current;
       }
@@ -83,10 +97,31 @@ export const ShopApp = () => {
       return {
         ...current,
         currentView: 'product-detail',
-        selectedProductId: initialWindowProductId
+        selectedProductId: windowParams.productId
       };
     });
-  }, [initialWindowProductId]);
+  }, [windowParams.productId]);
+
+  useEffect(() => {
+    if (!windowParams.orderId) {
+      return;
+    }
+
+    setAppState((current) => {
+      if (
+        current.currentView === 'order-detail'
+        && String(current.selectedOrderId) === String(windowParams.orderId)
+      ) {
+        return current;
+      }
+
+      return {
+        ...current,
+        currentView: 'order-detail',
+        selectedOrderId: windowParams.orderId
+      };
+    });
+  }, [windowParams.orderId]);
 
   // 数据管理
   const dataState = useShopData(t);

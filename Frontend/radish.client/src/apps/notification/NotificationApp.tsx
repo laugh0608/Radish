@@ -476,7 +476,12 @@ export const NotificationApp = () => {
     }
 
     if (businessType === 'Order') {
-      openApp('shop');
+      const targetOrderId = normalizePositiveLongIdKey(notification.businessId);
+      if (targetOrderId) {
+        openOrReuseApp('shop', { orderId: targetOrderId });
+      } else {
+        openApp('shop');
+      }
       return;
     }
 
