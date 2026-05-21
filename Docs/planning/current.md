@@ -7,135 +7,65 @@
 ## 当前状态
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
-- **当前主线**：`P3-7 WebOS / PC 工作台真实使用小闭环`
+- **当前主线**：`P3-8 单人开发期多端功能补全与 UI 设计治理`
 - **复核日期**：`2026-05-21`
 - **最近结论**：
-  - `v26.3.2-release` 已于 `2026-04-06` 完成首版真实发布，第一开发阶段结束
-  - `Phase 2-2 移动 Web 形态` 已完成 forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口，转入稳定维护
-  - `Phase 2-3 Android MVP` 已完成第一轮 RC 验收并给出 Go 结论
-  - Capacitor Android 因登录 / OIDC 与本机调试复杂度终止，不进入移动端产品化主线
-  - Tauri 桌面安装包个人开发阶段验证通过，定位为 `Tauri 壳 + WebOS 桌面工作台`
-  - WebOS 桌面工作台已回到产品功能开发推进，并落地首批“继续使用”复访入口、桌面应用恢复入口与萝卜坑工作流补全
-  - Console 治理已完成用户详情、个人资料 / 设置真实化与仪表盘真实统计首轮补洞
-  - `ID Phase A` 已进入前期治理面：先冻结外部 `long` 暴露扩散，按 `LongId` / 字符串安全收口窗口参数、通知跳转、公开路由与 `Profile / Shop / Wiki / Forum` 首批边界；数据库主键迁移与全量 `PublicId` 切换继续后置
-  - 主线演进已从“多端路线收口后的产品功能开发推进”“第二阶段收口评审”、`P2-C5-A` Flutter 首批补强、下一阶段主任务选择、`P3-0 / P3-1 / P3-2 / P3-3 / P3-4 / P3-5`，切到 `P3-6`
-  - `P2-C3 经验 / 等级治理` 已完成用户概览、冻结 / 解冻、每日统计观察、经验流水回看、最小可解释异常规则、人工复核联动与治理留痕首轮收口
-  - Console 内容治理已完成聊天消息定位、帖子评论 / 轻回应回看、失效降级、目标快照、审核效率、手动处置与当前治理状态前置，转入稳定维护
-  - 商城管理人工验收已于 `2026-05-12` 收口：商品相关订单、详情长 ID、删除确认、订单跳用户 / 商品返回链路和后端商品删除保护均已确认稳定
-  - Console 历史 chunk size warning 已完成首轮治理，后端已收口 Extension / Repository / Service / Infrastructure / Common / Model / 测试项目和 Gateway 配置加载的历史 warning；完整重建已达成 `0` warning / `0` error
-  - 安全治理尾项已完成当前小批次收口：文件访问令牌、权限匹配、公开 / Console 授权一致性、缓存默认值和 Console 权限种子一致性均已补测试与验证，完整重建保持 `0` warning / `0` error
-  - `2026-05-13` 已完成 [第二阶段收口评审](/planning/phase-two-closure-review) 窄范围筛查，未发现新的必须立即闭环 `P0/P1` 阻断项
-  - `P2-C5-A Flutter 移动端高价值已登录链路首批评估` 已完成论坛通知轻入口、forum detail 回流和个人复访轻操作补强；第二阶段归档判断随后给出 Go 结论
-  - 第二阶段归档判断结论为 Go，已写入 [已完成摘要](/planning/archive)
-  - `2026-05-13` 已批准启动 `P3-0 第三阶段定义与工程整备`，第三阶段主题暂定为“真实使用增长与长期契约治理”
-  - `P3-0-A` 公开内容增长基础审计已完成，第一批正式开工任务收口为 `P3-1 公开内容 SEO 与分享基线`
-  - `P3-1-A` 已完成公开 head 契约、运行时 canonical、`robots.txt` 与 sitemap seed 首批落地
-  - `P3-1-B` 已完成 forum detail / shop detail 复制 canonical 链接入口，公开详情分享基线首批收口
-  - `P3-2-A` 已完成外部 ID 契约审计，最小试点对象收敛为 `Post`；首批只做 `Post.PublicId` 并行契约，不牵动数据库主键、`User / Product / WikiDocument / Comment` 或全量 API 切换
-  - `P3-2-B` 已完成 `Post.PublicId` 首批实现：新帖生成 `pst_` + UUIDv7 编码体，详情接口支持 long / PublicId 双读，`PostVo.VoPublicId`、forum canonical / 分享、通知 `extData`、浏览历史 routePath 与 WebOS forum 窗口参数均已保留旧 `postId` 并并行支持 `postPublicId`
-  - `P3-3-A / P3-3-B` 已完成 `PublicForumApp.tsx` 公开论坛热区低风险拆分：公共 helper、`PublicStatusCard`、`PublicForumTypeFeed`、`PublicForumSearch`、`PublicForumTag`、`PublicForumList` 和 `PublicForumDetail` 已抽出，主文件从约 `2911` 行降到约 `208` 行，未改变业务行为
-  - `2026-05-16` 已完成 `P3-3` 收工复核：`radish.client` 类型检查、公开 forum / public route / public head 定向测试、changed-only 文本卫生与 `git diff --check` 均通过；下一主线选择为 `P3-4 用户留存轻闭环`
-  - `P3-4-A1` 已完成 Flutter forum notification PublicId 回流：移动端通知解析优先使用 `extData.postPublicId`，缺失时回退旧 `postId`，定向测试通过
-  - `P3-4-A2` 已完成“我的轻回应”PublicId 回流：后端并行暴露 `VoPostPublicId`，WebOS 与 Flutter 回流优先使用 PublicId 并保留旧 `VoPostId` 回退
-  - `P3-4-A3` 已完成最近阅读 / 浏览历史历史数据补齐策略评估：旧 long `RoutePath` 仍可回流，新访问会自然刷新为 PublicId canonical，当前不做一次性历史数据批量补齐
-  - `P3-4-A4` 已完成 forum 回流窄范围真实链路复核：公开分享、通知、最近阅读、我的轻回应回到 WebOS / Flutter 详情时继续保持 PublicId 优先、long id fallback，Flutter 个人页可见文案不再外露 long id
-  - `2026-05-16` 已调整第三阶段开发节奏：产品正式上线进入稳定运营前，默认由 AI 主动做批量链路验收、成组修复和一次性交付结论；正式稳定运营后再切回小步谨慎修复
-  - `2026-05-16` 已完成 `P3-4-B` 至 `P3-4-H` 主动验收批次：forum 公开分享 / 通知 / 最近阅读 / 我的轻回应 / 公开个人页双向复访在 WebOS 与 Flutter 中保持 PublicId 优先、long id 仅 fallback 且不在普通用户可见文案外露；docs 与 shop 最近阅读 / 公开 head 的 long id 可见性也已收口
-  - `2026-05-17` 已完成 `P3-4-I` 公开 head 标识可见性补洞：forum 详情 / 分类、docs 数字兼容路径和公开个人页初始 head 不再把长数字标识写入 title / description，canonical 与旧路径打开兼容保留
-  - `P3-4` 首轮收尾判断为可收尾：forum / docs / shop 留存回流矩阵当前未发现新的 `P0/P1` 阻断项，下一步进入公开内容增长后续专题评估
-  - `P3-5-A` 已完成公开内容增长后续专题评估：下一批建议先做运行时结构化数据基线；动态 sitemap 需先单独确认 API / Gateway 或生成器方案；详情首包 HTML 可见性继续后置为 SSR / SSG / 预渲染专题
-  - `P3-5-B` 已完成运行时结构化数据基线：forum detail / docs detail / shop detail / 公开个人页已按已加载详情数据注入 JSON-LD，并在路由切换或卸载时清理旧结构化数据
-  - `P3-5-C` 已完成动态 sitemap 首批实现：API 输出 sitemap index / static / forum / docs / shop 分片 XML，Gateway 顶层 `/sitemap.xml` 与 `/sitemaps/{**catch-all}` 高优先级转发到 API；缓存 TTL、分页上限、lastmod 和异常回退已按评审方案落地
-  - `P3-5-D` 已完成详情首包 HTML 可见性方案评审：完整 SSR / 构建期 SSG 暂不作为首批路线；若后续确需解决无 JS 首包，优先评估 API 公开详情快照 + Gateway 缓存化 head 注入的窄方案
-  - `P3-5-D1` 已完成公开详情 HTML head 快照注入首批实现：API 提供 forum / docs / shop 公开详情 head snapshot，Gateway 对三类详情页注入 title / description / canonical / Open Graph / JSON-LD；任一环节失败回落原 SPA 代理链路，不渲染正文、不启动完整 SSR / SSG
-  - `P3-5-D2` 已补齐部署前 smoke 入口：新增 `npm run check:public-head-smoke` 与 [公开详情 Head Smoke 验收](/guide/public-head-smoke)，用于部署后检查 robots、动态 sitemap 和三类公开详情首包 head
-  - `P3-5` 收尾判断为可收尾：最新公开 head smoke 已通过 robots、sitemap、forum / docs / shop 三类详情；剩余公开增长事项转入部署与运营维护线，不继续扩大到完整 SSR / SSG 或正文预渲染
-  - `P3-6-A` 本地 Gateway 公开增长观察已完成首轮收口：公开 head smoke 已覆盖 robots、sitemap index、`static / forum / docs / shop` 分片和三类详情首包 head；sitemap 分片 `<loc>` origin 检查已纳入脚本自动验证
-  - `P3-6-B` 公开增长 smoke 失败诊断增强已完成：失败时会输出请求 URL、状态码、content-type、body 前段、疑似 SPA shell 判断、失败阶段和关键断言；self-test 与本地 Gateway smoke 均已通过
-  - `P3-6-C` 已完成公开增长观察记录收口：本地 Gateway 与生产公开域名 `https://radishx.com` 均已通过 public head smoke，覆盖 robots、sitemap index、`static / forum / docs / shop` 分片和 forum / docs / shop 三类详情首包 head
-  - WebOS / PC 工作台成片工作流阻断级缺口筛查已完成：应用注册、窗口复用、继续使用、通知回流、forum / docs / shop 主路径未发现新的 `P0/P1`
-  - 观察中暴露的本地 SQLite + Hangfire 并发读异常已在仓储 SQLite fallback 读路径串行化处理，重启后 `shop-cancel-timeout-orders` 初步观察未再出现 reader closed 异常
-  - Console 后续 UI 一致性评估已完成：现有后台已部分复用 `@radish/ui`，但页面壳、局部 CSS、直接 `antd` 引入和硬编码色值仍需在后续新增 / 改动页面时小范围收敛；当前不启动整站视觉重构
-  - `P3-6` 本轮未发现新的公开访问、head / sitemap、分享入口或回流 `P0/P1`，不切修复小闭环；真实平台分享预览、搜索抓取反馈和运行日志样本转入运营维护观察
-  - `P3-7-A` 已启动 WebOS / PC 工作台复访与继续使用链路复核；首个高信号小闭环收口为订单通知回流：订单类通知携带合法业务 ID 时复用 / 打开商城订单详情，缺失合法 ID 时仍回落商城入口；同批次补齐订单详情回商品详情入口、购买成功后去订单详情，以及权益来源订单 / 商品回流，减少商城购买 / 通知 / 订单 / 背包复访的上下文断点
-  - `P3-7-A` 商城背包消耗品来源入口已完成最小契约：`UserInventoryVo` 只暴露 `VoSourceProductId` 作为相关商品回流，不新增订单来源，不改变同类消耗品聚合模型，避免把最近关联商品误写成完整订单溯源
-  - `P3-7-A` 首轮收尾复核结论为可收尾并转观察：购买、订单通知、订单详情、背包权益与背包消耗品相关商品回流已形成小闭环；本地前端 / API 可达，消耗品相关商品数据与公开商品详情读取已确认
-  - `P3-7-B` WebOS / PC 工作台高信号候选筛查已完成：桌面启动续接、最近应用、通知分流、forum / chat / workspace 窗口参数和窗口几何记忆的定向测试通过，本地 `/desktop` 与 API health 可达，未发现新的 `P0/P1` 或需要立即拉起的小闭环
+  - `P3-1` 至 `P3-5` 已完成公开内容增长、PublicId 试点、留存回流、动态 sitemap 与详情 head snapshot 首批闭环
+  - `P3-6` 公开增长部署观察已收口，本地 Gateway 与生产公开域名 `https://radishx.com` 的 public head smoke 均通过，转入维护线
+  - `P3-7-A / P3-7-B` 已完成 WebOS / PC 工作台复访小闭环和高信号候选筛查，当前未发现新的 `P0/P1`
+  - 项目仍处于单人开发期和功能建设期，没有稳定用户反馈和专职测试，不能把“等待真实使用观察”作为默认主线
+  - 公开页面、移动端视图公开页、Flutter 移动客户端、WebOS / PC / Tauri 客户端、Console 等仍有大量功能未适配或未开发完，应恢复为后续重点
+  - client、console、公开页和各客户端 UI 缺少统一设计与系统化优化，需要单独设立 UI 设计治理阶段，优先使用 Pencil 设计稿驱动开发
 
 ## 当前执行入口
 
 - [开发路线图总览](/development-plan)
+- [P3-8 多端功能补全与 UI 设计治理](/planning/p3-8-multiplatform-feature-ui-governance)
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
-- [第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform)
-- [第二阶段收口评审](/planning/phase-two-closure-review)
 - [第二阶段产品功能补全规划](/planning/phase-two-product-completion)
-- [Phase 2-3 Flutter 客户端 MVP](/planning/phase-two-flutter-client-mvp)
-- [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation)
 - [前端多壳层策略](/frontend/shell-strategy)
-- [Flutter Android MVP RC 验收记录（2026-05-04）](/records/flutter-android-mvp-rc-acceptance-record-2026-05-04)
+- [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation)
 - [验证基线说明](/guide/validation-baseline)
 
 ## 当前目标
 
-1. **`P3-6` 阶段收口后的真实使用维护观察**
-   - 目标是把 `P3-1` 至 `P3-5` 已落地的公开内容增长、PublicId 试点、留存回流和 head / sitemap 能力放到真实使用反馈中观察
-   - 本阶段本地与生产公开 head smoke 已完成，后续只处理真实部署、真实内容、爬虫抓取、分享预览、用户回流或日志中暴露的高信号问题
-   - 不把维护观察扩成新的大功能池；未出现明确证据前，不启动完整 SSR / SSG、正文预渲染、全量 `PublicId` 迁移或运营平台
-2. **第二阶段收口护栏**
-   - WebOS / PC 工作台、后端 + Console、公开 Web 与 Tauri 转入稳定维护
-   - 若新发现会阻断资产、安全、登录、购买、转账或主路径的 `P0/P1` 缺口，最多挑 `1-2` 个小闭环
-   - 若 `P3-0` 审计发现阻断项，最多挑 `1-2` 个小闭环回拉
-3. **多端方向保持收束**
-   - Web 浏览器：公开内容壳层
-   - Android / iOS：Flutter 移动原生安装包路线
-   - Windows / macOS / Linux：`Tauri 壳 + WebOS 桌面工作台`
+1. **多端功能补全与适配**
+   - 系统盘点公开页面、移动端 Web 公开视图、Flutter 移动客户端、WebOS / PC / Tauri 客户端与 Console 的未适配、未完成和断点能力
+   - 以真实用户主路径、跨端回流、内容浏览、登录态能力、客户端壳层体验和治理后台效率为排序依据
+   - 不把缺少用户反馈当作停止开发理由；正式稳定运营前继续由 AI 主动批量验收、成组修复和一次性交付结论
+2. **UI 设计治理专题**
+   - 对 client、console、公开页和各客户端 UI 建立统一设计口径，减少历史页面风格分叉、硬编码颜色、重复局部样式和交互不一致
+   - 原则上先用 Pencil 绘制设计稿，再按设计稿开发；设计源文件进入项目并与实现同步维护
+   - 端点与 `.pen` 文件拆分先在 `P3-8-A` 审计中决定，候选包括公开页、移动端 Web 公开视图、WebOS、Flutter、Tauri / PC 桌面壳、Console
+3. **维护观察降级为并行线**
+   - `P3-6 / P3-7` 暴露的新问题仍可回拉小闭环，但不再占用主线
+   - 维护线只处理公开访问、head / sitemap、分享预览、运行日志、购买 / 订单 / 背包、权限授权等高信号问题
 
 ## 下一顺位
 
-- `P3-6` 已阶段收口：本地 Gateway 与生产公开域名 `https://radishx.com` 的公开增长观察记录均已完成；后续只在真实平台分享预览、搜索抓取反馈、运行日志或用户回流暴露高信号问题时回拉小闭环
-- `P3-5` 已阶段收尾，后续只维护 forum / docs / shop 三类详情首包 head 注入、动态 sitemap 和运行时 JSON-LD；不继续扩大到完整 SSR / SSG 或正文预渲染
-- `P3-4` forum / docs / shop 留存回流矩阵首轮已完成阶段性收尾判断，后续只处理真实使用中新暴露的回流断点
-- `P3-3` 只保留后续观察，不继续无边界深拆 `PublicForumDetail` 内部结构
-- 详情首包 HTML 可见性继续后置，不直接启动 SSR / SSG、预渲染或 Gateway HTML rewrite
-- WebOS / PC 工作台成片工作流阻断级筛查当前未发现新的 `P0/P1`，后续只处理真实使用中新暴露的打开失败、通知回流、窗口参数、购买 / 订单 / 背包或权限边界断点
-- 后端 + Console 治理转入稳定维护，后续只处理新暴露的安全 / 授权一致性问题
-- Flutter 移动端高价值已登录链路首批已完成，后续不默认转向分发产品化材料或低增益微体验
-- Tauri 桌面安装包正式签名、自动更新、生产 Auth、SmartScreen、托盘 / 菜单与公开分发方式，仅在真实对外分发前重新评估
-- 公开内容壳层只做必要稳定维护和问题修复，不继续新增公开入口或细节增强
-
-## 下一事项
-
-- 当前事项：`P3-7-A / P3-7-B` 均已完成首轮收尾并转观察；后续只处理真实使用、运行日志、发布前回归中新暴露的高信号断点
-- 若回拉 Console token bridge，只做新增 / 改动页面的小范围 token 收敛评审，不直接启动整站视觉重构
-- 若没有新的 `P0/P1`，只形成观察结论，不扩大 SSR / SSG、正文预渲染、完整 E2E 或运营平台
-- 若继续推进留存链路，只从真实使用中暴露的新断点选择小闭环，不再默认扩全量 `PublicId`、数据库主键迁移或 `User / Product / WikiDocument / Comment` 外部标识改造
-- 详情首包 HTML 可见性继续保持窄实现；未重新评估前不直接启动 SSR / SSG、正文预渲染或更广泛 Gateway HTML rewrite
-- 若回拉 Console 扩展，先按 [Console UI 一致性评估记录](/records/console-ui-consistency-evaluation-2026-05-18) 做新增 / 改动页面的小范围收敛，不启动后台整站视觉重构
+- `P3-8-A 多端功能缺口与 UI 设计入口审计`
+  - 产出多端功能缺口矩阵，覆盖公开内容、移动 Web、Flutter、WebOS / PC / Tauri、Console
+  - 产出 UI 端点分组与 `.pen` 文件命名 / 存放建议，明确哪些设计稿先画、哪些页面先按设计稿改造
+  - 选出首批 `1-2` 个开发批次，边界必须能在一天级别内验证和提交
+- `P3-8-B` 之后再进入首批设计稿或首批功能补全实现，不提前一锅端重构所有端
 
 ## 并行维护项
 
 - 公开 head smoke、动态 sitemap、head snapshot 缓存与 `GatewayService:PublicUrl` / `RADISH_PUBLIC_URL` 生产域名配置维护
-- `M14` 宿主运行与最小可观测性基线
-- `M15` 最小交付与部署基线
+- `M14` 宿主运行与最小可观测性基线、`M15` 最小交付与部署基线
 - `validate:baseline / validate:baseline:host / validate:ci / Identity Guard`
-- 桌面壳层、窗口几何记忆、主题切换、聊天室 `P1`、通知中心、商城等既有能力稳定维护
-- Console 后续扩展进入规划时，优先复用 `@radish/ui` 组件、交互反馈和主题 token，避免后台视觉与 Radish 其他前端入口继续分叉
+- 桌面壳层、窗口几何记忆、主题切换、聊天室、通知中心、商城等既有能力稳定维护
+- Console 新增或改动页面继续优先复用 `@radish/ui` 组件、交互反馈和主题 token
 
 ## 当前不做
 
-- 继续沿 `Phase 2-1` 扩张论坛回跳、轻回应或通知尾项
-- 绕过 `P3-2` 最小试点方案去铺完整 `PublicId` 全量迁移
-- 把正式稳定运营前的开发节奏降级为“每修一点等待开发者手动复测一次”
-- 继续无边界扫低收益按钮、提示、样式或非阻断 warning
-- 继续围绕 WebOS 复访入口做低收益微调
-- 在产品功能缺口未重新排序前优先推进 Android / Tauri 分发产品化材料
-- 未经重新评估继续追加低增益 Flutter 微体验批次
-- 未经单独评估启动 Flutter iOS 产品化工程
-- 把 Windows / macOS / Linux 作为 Flutter 默认扩平台方向
-- 继续扩大 Capacitor Android 登录态或移动端产品化能力
+- 把维护观察继续当作唯一主线
+- 等真实用户反馈出现后才继续开发未完成功能
+- 未经审计直接启动整站 UI 重构或多端同时重写
+- 直接拍死所有 `.pen` 文件拆分；端点粒度需在 `P3-8-A` 结合实际页面和客户端边界决定
+- 绕过 Pencil / 设计稿直接大面积改 UI
 - 把 Tauri 当作原生 UI 重写路线
 - “移动版 WebOS”
-- 完整 `PWA / 离线能力 / 推送闭环`
 - 完整 `PublicId` 全量迁移或数据库主键迁移
 - 完整 Playwright / E2E 平台
 - 完整可观测性平台或大而全运维平台
@@ -145,10 +75,4 @@
 - 本页必须保持简短，面向新会话快速读取
 - 没有主线切换、优先级变化或新的关键事实，不改本页
 - 功能开发细节、命令级验证记录、批次流水和历史背景不写入本页
-- 需要记录历史时，写入 [开发日志](/changelog/)、[已完成摘要](/planning/archive) 或对应专题文档
-- 若移动 Web、Flutter 移动端或 Tauri + WebOS 桌面端成为正式主线，必须同步：
-  - [开发路线图](/development-plan)
-  - [第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform)
-  - [第二阶段收口评审](/planning/phase-two-closure-review)
-  - [当前进行中](/planning/current)
-  - [前端多壳层策略](/frontend/shell-strategy)
+- P3-8 细节统一写入 [P3-8 多端功能补全与 UI 设计治理](/planning/p3-8-multiplatform-feature-ui-governance)
