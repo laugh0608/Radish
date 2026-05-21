@@ -44,3 +44,4 @@
 - 本次只把 `UserInventory.SourceProductId` 作为相关商品定位，不新增 `SourceOrderId`，不改变同类消耗品按类型和值聚合的库存模型，避免把最近关联商品误写成完整订单溯源。
 - 验证已覆盖 `radish.client` 类型检查、`ShopProfileTest` 后端映射定向测试与 `git diff --check`。
 - `P3-7-A` 首轮收尾复核结论为可收尾并转观察：本地 `/desktop` 与 API health 可达，商品列表 / 商品详情接口可读，本地有效消耗品库存已带相关商品 ID；未发现新的购买、订单、背包或通知回流高信号断点。
+- `P3-7-B` WebOS / PC 工作台高信号候选筛查已完成：桌面启动续接、最近应用、通知分流、forum / chat / workspace 窗口参数和窗口几何记忆定向测试 `67/67` 通过；本地 `/desktop` 与 API health 可达，未发现新的 `P0/P1` 或需要立即拉起的小闭环。
