@@ -37,3 +37,9 @@
 - Console token bridge 小范围落地：`radish.console` 入口样式、`AdminLayout.css` 与 `adminFeature.css` 已接入局部 `--console-*` token 口径，并删除旧 Vite 模板入口样式污染；当前不启动后台整站视觉重构。
 - `P3-7-A` WebOS / PC 工作台复访链路首批小闭环已完成：订单通知携带合法业务 ID 时进入商城订单详情，订单详情可回到商品详情，购买成功后进入订单详情，背包权益可基于 `VoSourceOrderId / VoSourceProductId` 回到来源订单 / 商品。
 - 今日同步 [当前进行中](/planning/current) 与 [2026-05-20 收工回顾与明日事项](/records/daily-handoff-2026-05-20)；[商城前端设计说明](/guide/shop-frontend) 当前已超文档篇幅硬上限，后续若要迁入复访链路说明需先拆分该说明书；明日优先做商城复访链路收尾复核，不扩大到运营平台、完整 E2E、SSR / SSG 或全量 `PublicId`。
+
+## 2026-05-21
+
+- `P3-7-A` 商城背包消耗品来源入口已完成最小契约：`UserInventoryVo` 暴露 `VoSourceProductId`，`radish.client` 背包消耗品卡显示“相关商品”回流入口。
+- 本次只把 `UserInventory.SourceProductId` 作为相关商品定位，不新增 `SourceOrderId`，不改变同类消耗品按类型和值聚合的库存模型，避免把最近关联商品误写成完整订单溯源。
+- 验证已覆盖 `radish.client` 类型检查、`ShopProfileTest` 后端映射定向测试与 `git diff --check`。

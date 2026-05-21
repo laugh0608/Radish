@@ -170,6 +170,7 @@ export interface UserInventoryItem {
   voItemName?: string | null;
   voItemIcon?: string | null;
   voQuantity: number;
+  voSourceProductId?: LongId | null;
   voCreateTime?: string;
 }
 

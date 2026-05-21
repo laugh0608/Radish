@@ -125,6 +125,7 @@ public class ShopProfile : Profile
     {
         // UserInventory -> UserInventoryVo
         CreateMap<UserInventory, UserInventoryVo>()
+            .ForMember(dest => dest.VoSourceProductId, opt => opt.MapFrom(src => src.SourceProductId))
             .ForMember(dest => dest.VoItemIcon, opt => opt.Ignore());
 
         // UserInventoryVo -> UserInventory

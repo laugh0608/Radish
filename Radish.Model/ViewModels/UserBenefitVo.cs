@@ -139,6 +139,12 @@ public class UserInventoryVo
     /// <summary>数量</summary>
     public int VoQuantity { get; set; }
 
+    /// <summary>相关商品 ID</summary>
+    /// <remarks>
+    /// 背包消耗品可能按类型和值聚合数量，本字段只表示当前可回跳的相关商品，不表示完整订单来源。
+    /// </remarks>
+    public long? VoSourceProductId { get; set; }
+
     /// <summary>创建时间</summary>
     public DateTime VoCreateTime { get; set; }
 }

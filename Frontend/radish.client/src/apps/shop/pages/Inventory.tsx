@@ -339,6 +339,9 @@ export const Inventory = ({
             ) : (
               inventory.map((item) => {
                 const itemIconUrl = resolveMediaUrl(item.voItemIcon);
+                const sourceProductId = isPositiveLongId(item.voSourceProductId)
+                  ? item.voSourceProductId
+                  : undefined;
 
                 return (
                   <div key={item.voId} className={styles.consumableCard}>
@@ -357,6 +360,17 @@ export const Inventory = ({
                       <div className={styles.consumableQuantity}>
                         {t('shop.inventory.quantity')}<span className={styles.quantity}>{item.voQuantity}</span>
                       </div>
+                      {sourceProductId && (
+                        <div className={styles.benefitSourceActions}>
+                          <button
+                            type="button"
+                            className={styles.sourceButton}
+                            onClick={() => onSourceProductClick(sourceProductId)}
+                          >
+                            {t('shop.inventory.viewRelatedProduct')}
+                          </button>
+                        </div>
+                      )}
                     </div>
                     <div className={styles.consumableActions}>
                       <button
