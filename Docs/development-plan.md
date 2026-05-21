@@ -7,38 +7,38 @@
 ## 当前状态
 
 - **当前里程碑**：`第三开发阶段：真实使用增长与长期契约治理`
-- **当前主线**：`P3-8 单人开发期多端功能补全与 UI 设计治理`
+- **当前主线**：`P3-7-C 近期开发任务重评估与下一批任务选择`
 - **最近结论**：
   - `2026-04-06` 完成首版真实发布 `v26.3.2-release`，第一开发阶段结束
   - 第二开发阶段已完成公开内容壳层、Flutter Android MVP、Tauri + WebOS 桌面壳、多端路线分工和产品治理收口
   - `P3-1` 至 `P3-5` 已完成公开内容 SEO / 分享、`Post.PublicId` 试点、留存回流、动态 sitemap、详情 head snapshot 与部署 smoke 入口
   - `P3-6` 公开增长部署观察已完成本地 Gateway 与生产域名 `https://radishx.com` smoke 收口，转入维护线
   - `P3-7-A / P3-7-B` 已完成 WebOS / PC 工作台复访小闭环和高信号候选筛查，当前未发现新的 `P0/P1`
-  - 重新评估后确认：项目仍处于单人开发期，公开页面、移动端视图公开页、移动端客户端、PC 端客户端与 Console 仍有大量功能未适配或未开发完，后续重点应切回主动功能补全与 UI 设计治理
+  - 重新评估后确认：原 `P3-7` 收尾口径没有给出最近阶段的明确开发入口，当前应先做近期任务重评估，而不是直接切入后续重点专题
 
 ## 当前主线入口
 
 - [当前进行中](/planning/current)
-- [P3-8 多端功能补全与 UI 设计治理](/planning/p3-8-multiplatform-feature-ui-governance)
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
 - [第二阶段产品功能补全规划](/planning/phase-two-product-completion)
 - [前端多壳层策略](/frontend/shell-strategy)
 - [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation)
+- [P3-8 多端功能补全与 UI 设计治理](/planning/p3-8-multiplatform-feature-ui-governance)
 - [验证基线说明](/guide/validation-baseline)
 
 ## 当前开发精力
 
-- `35%`：多端功能补全与适配，优先盘点并推进公开页、移动 Web、Flutter、WebOS / PC / Tauri、Console 的未完成主路径
-- `30%`：UI 设计治理，使用 Pencil 设计稿先行，逐步统一 client、console、公开页和各客户端 UI
-- `15%`：WebOS / PC 工作台真实使用补强，继续处理购买、订单、背包、通知、窗口参数和复访链路中的高价值断点
+- `40%`：`P3-7-C` 近期开发任务重评估，从原规划、backlog、未完成功能和当前主路径中选出下一批 `1-2` 个可开发任务
+- `25%`：WebOS / PC 工作台与既有产品主路径补强，继续处理购买、订单、背包、通知、窗口参数和复访链路中的高价值断点
+- `15%`：公开内容与移动回流维护，只处理公开访问、head / sitemap、分享、回流和运行日志暴露的高信号问题
 - `10%`：Console 与共享 UI 收敛，新增或改动页面优先复用 `@radish/ui`、主题 token 和统一交互反馈
-- `10%`：维护观察与发布前回归，只处理公开访问、head / sitemap、运行日志、权限授权、资产安全等高信号问题
+- `10%`：后续重点预留，包括多端功能补全和 UI 设计治理的专题准备，不直接抢占当前最近任务
 
 ## 已确认的多端方向
 
 1. **Web 浏览器**
    - 使用公开内容壳层，覆盖 PC 浏览器与移动浏览器
-   - 后续重点不只是 SEO 维护，还包括公开页功能完整度、移动端视图适配、分享 / 回流和轻互动体验
+   - 公开页功能完整度、移动端视图适配、分享 / 回流和轻互动体验是后续重点
 2. **Android / iOS**
    - 使用 Flutter 移动原生安装包路线
    - Android MVP 已完成第一轮；iOS 后续单独评估
@@ -53,11 +53,13 @@
 
 ## 下一顺位
 
-- `P3-8-A 多端功能缺口与 UI 设计入口审计`
-  - 输出功能缺口矩阵：公开页、移动 Web 公开视图、Flutter、WebOS / PC / Tauri、Console
-  - 输出 UI 端点分组：确认哪些页面或客户端需要独立 `.pen` 设计稿，候选包括公开页、移动端 Web 公开视图、WebOS、Flutter、Tauri / PC 桌面壳、Console
-  - 输出首批开发批次：只选择 `1-2` 个一天级可验证任务，不一次性重构所有端
-- `P3-8-B` 根据审计结果进入首批设计稿或首批功能补全实现
+- `P3-7-C 近期开发任务重评估与下一批任务选择`
+  - 输出近期任务候选矩阵，覆盖原规划、backlog、未完成功能和近期主路径
+  - 明确今天或下一批应开发的 `1-2` 个任务，不把“继续观察”作为默认结论
+  - 每个任务必须写清目标、边界、不做范围、验证方式和预计提交粒度
+- `P3-8 多端功能补全与 UI 设计治理`
+  - 作为后续重点方向保留，不直接替代当前最近阶段
+  - 后续再决定多端功能缺口矩阵、UI 端点分组和 `.pen` 设计稿拆分
 - `P3-6 / P3-7` 继续作为维护线，只在真实问题或发布前回归暴露高信号断点时回拉小闭环
 
 ## 长期方向与当前衔接
@@ -78,6 +80,7 @@
 
 ## 明确后置
 
+- 直接把 P3-8 作为当前主线；它是后续重点方向，需要在近期任务重评估后再决定启动时机
 - 完整 `PublicId` 全量迁移、数据库主键迁移与 ActivityPub / WebFinger 实现
 - `Gateway & BFF` 深化
 - Redis 与缓存治理专题：多实例 SignalR Backplane、聊天室在线状态、通知未读原子计数、上传限流、商城 / 萝卜币幂等与并发保护、排行榜 / 热点读模型缓存，详见 [Redis 与缓存治理专题](/planning/redis-cache-governance)
@@ -92,4 +95,4 @@
 
 - `Docs/index.md`、`Docs/README.md`、`Docs/development-plan.md`、`Docs/planning/current.md` 等关键入口只描述最近阶段和进度，不承载长背景
 - 功能批次、验证命令、人工验收记录和历史事实默认写入 `Docs/changelog/`、`Docs/planning/archive.md` 或对应专题文档
-- 判断阶段定义时，以本页、[当前进行中](/planning/current)、[P3-8 多端功能补全与 UI 设计治理](/planning/p3-8-multiplatform-feature-ui-governance)、[第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance) 与 [已完成摘要](/planning/archive) 为准
+- 判断阶段定义时，以本页、[当前进行中](/planning/current)、[第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)、[P3-8 多端功能补全与 UI 设计治理](/planning/p3-8-multiplatform-feature-ui-governance) 与 [已完成摘要](/planning/archive) 为准
