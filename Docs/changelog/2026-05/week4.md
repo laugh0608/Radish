@@ -45,3 +45,10 @@
 - 验证已覆盖 `radish.client` 类型检查、`ShopProfileTest` 后端映射定向测试与 `git diff --check`。
 - `P3-7-A` 首轮收尾复核结论为可收尾并转观察：本地 `/desktop` 与 API health 可达，商品列表 / 商品详情接口可读，本地有效消耗品库存已带相关商品 ID；未发现新的购买、订单、背包或通知回流高信号断点。
 - `P3-7-B` WebOS / PC 工作台高信号候选筛查已完成：桌面启动续接、最近应用、通知分流、forum / chat / workspace 窗口参数和窗口几何记忆定向测试 `67/67` 通过；本地 `/desktop` 与 API health 可达，未发现新的 `P0/P1` 或需要立即拉起的小闭环。
+
+## 2026-05-22
+
+- `P3-7-C` 已完成近期开发任务重评估：不把维护观察当作无事可做，也不直接切入后续 `P3-8` 多端功能补全与 UI / Pencil 设计治理；下一批一天级任务选择 `WikiApp -> ChatApp` 工作台热区治理。
+- `P3-7-C1 WikiApp 文档工作台首批热区拆分` 已完成：新增 `WikiSidebar` 承接目录树、搜索结果、筛选和阅读态侧栏；`wikiApp.helpers.ts` 承接编辑草稿、窗口参数解析、树展开、请求构造和时间格式化等纯逻辑。
+- `WikiApp.tsx` 从约 `1759` 行降至 `1419` 行，回到项目单文件硬上限以内；本批不改 API、公开 docs 路由、视觉设计或文档业务能力。
+- 验证已覆盖 `npm run type-check --workspace=radish.client`、`node --test --test-isolation=none ./Frontend/radish.client/tests/wikiApp.helpers.test.ts ./Frontend/radish.client/tests/workspaceNavigation.test.ts`、`npm run build --workspace=radish.client`、`npm run check:repo-hygiene:changed` 与 `git diff --check`；构建仍保留既有 `app-shop` chunk size warning。

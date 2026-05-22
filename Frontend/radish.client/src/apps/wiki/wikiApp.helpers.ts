@@ -1,5 +1,14 @@
 import type { LongId } from '@/api/user';
-import type { WikiDocumentTreeNodeVo, WikiListQuery } from './types/wiki';
+import type { TFunction } from 'i18next';
+import type {
+  CreateWikiDocumentRequest,
+  UpdateWikiDocumentRequest,
+  WikiDocumentRevisionItemVo,
+  WikiDocumentTreeNodeVo,
+  WikiDocumentVo,
+  WikiListQuery,
+} from './types/wiki';
+import { WikiDocumentVisibility } from './types/wiki.ts';
 
 export type ParentOption = {
   id: LongId;
@@ -14,7 +23,35 @@ export type WikiTreeRow = {
   childCount: number;
 };
 
+export type EditorDraft = {
+  title: string;
+  slug: string;
+  summary: string;
+  markdownContent: string;
+  parentId: string;
+  sort: string;
+  coverAttachmentId: string;
+  changeSummary: string;
+  visibility: string;
+  allowedRoles: string;
+  allowedPermissions: string;
+};
+
 export const SORT_PRESET_VALUES = ['0', '10', '20', '30', '40', '50', '100'];
+
+export const EMPTY_DRAFT: EditorDraft = {
+  title: '',
+  slug: '',
+  summary: '',
+  markdownContent: '',
+  parentId: '',
+  sort: '0',
+  coverAttachmentId: '',
+  changeSummary: '',
+  visibility: String(WikiDocumentVisibility.Authenticated),
+  allowedRoles: '',
+  allowedPermissions: '',
+};
 
 export function flattenTree(nodes: WikiDocumentTreeNodeVo[]): LongId[] {
   return nodes.flatMap((node) => [node.voId, ...flattenTree(node.voChildren || [])]);
@@ -66,6 +103,32 @@ export function collectDescendantIds(nodes: WikiDocumentTreeNodeVo[], targetId: 
   return result;
 }
 
+export function collectExpandableNodeIds(nodes: WikiDocumentTreeNodeVo[]): LongId[] {
+  return nodes.flatMap((node) => {
+    const children = node.voChildren || [];
+    return children.length > 0
+      ? [node.voId, ...collectExpandableNodeIds(children)]
+      : collectExpandableNodeIds(children);
+  });
+}
+
+export function findAncestorIds(nodes: WikiDocumentTreeNodeVo[], targetId: LongId, trail: LongId[] = []): LongId[] {
+  const targetIdKey = String(targetId);
+  for (const node of nodes) {
+    if (String(node.voId) === targetIdKey) {
+      return trail;
+    }
+
+    const nextTrail = [...trail, node.voId];
+    const result = findAncestorIds(node.voChildren || [], targetId, nextTrail);
+    if (result.length > 0) {
+      return result;
+    }
+  }
+
+  return [];
+}
+
 export function getSuggestedSortValue(
   nodes: WikiDocumentTreeNodeVo[],
   parentId?: LongId | null,
@@ -89,6 +152,117 @@ export function getSuggestedSortValue(
   }
 
   return (Math.floor(maxSort / 10) + 1) * 10;
+}
+
+export function formatWikiTime(value: string | null | undefined, language?: string): string {
+  if (!value) {
+    return '--';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString(resolveDateLocale(language), {
+    hour12: false,
+  });
+}
+
+export function pickInitialDocumentId(tree: WikiDocumentTreeNodeVo[], list: WikiDocumentVo[]): LongId | null {
+  if (list.length > 0) {
+    return list[0].voId;
+  }
+
+  if (tree.length > 0) {
+    return tree[0].voId;
+  }
+
+  return null;
+}
+
+export function normalizeOptionalString(value: string): string | undefined {
+  const trimmed = value.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+export function normalizeOptionalNumber(value: string): number | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+export function normalizeOptionalLongId(value: string): LongId | undefined {
+  const trimmed = value.trim();
+  return /^[1-9]\d*$/.test(trimmed) ? trimmed : undefined;
+}
+
+export function normalizePositiveLongId(value: unknown): LongId | undefined {
+  if (typeof value === 'number') {
+    return Number.isSafeInteger(value) && value > 0 ? value : undefined;
+  }
+
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const trimmed = String(value).trim();
+  return /^[1-9]\d*$/.test(trimmed) ? trimmed : undefined;
+}
+
+export function normalizeAccessList(value: string): string[] {
+  return value
+    .split(/[\n,，]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+export function parseWikiWindowParams(appParams?: Record<string, unknown> | null): { documentId?: LongId; slug?: string } {
+  if (!appParams) {
+    return {};
+  }
+
+  const documentId = normalizePositiveLongId(appParams.documentId);
+  const slug = typeof appParams.slug === 'string' ? appParams.slug.trim() : '';
+
+  return {
+    documentId,
+    slug: slug || undefined,
+  };
+}
+
+export function buildCreateRequest(draft: EditorDraft): CreateWikiDocumentRequest {
+  return {
+    title: draft.title.trim(),
+    slug: normalizeOptionalString(draft.slug),
+    summary: normalizeOptionalString(draft.summary),
+    markdownContent: draft.markdownContent,
+    parentId: normalizeOptionalLongId(draft.parentId),
+    sort: normalizeOptionalNumber(draft.sort) ?? 0,
+    coverAttachmentId: normalizeOptionalLongId(draft.coverAttachmentId),
+    visibility: normalizeOptionalNumber(draft.visibility) ?? WikiDocumentVisibility.Authenticated,
+    allowedRoles: normalizeAccessList(draft.allowedRoles),
+    allowedPermissions: normalizeAccessList(draft.allowedPermissions),
+  };
+}
+
+export function buildUpdateRequest(draft: EditorDraft): UpdateWikiDocumentRequest {
+  return {
+    ...buildCreateRequest(draft),
+    changeSummary: normalizeOptionalString(draft.changeSummary),
+  };
+}
+
+export function describeRevisionSummary(t: TFunction, revision: WikiDocumentRevisionItemVo): string {
+  if (revision.voChangeSummary?.trim()) {
+    return revision.voChangeSummary;
+  }
+
+  return revision.voIsCurrent ? t('wiki.revision.currentSnapshot') : t('wiki.revision.noChangeSummary');
 }
 
 export function buildWikiListUrl(query: WikiListQuery = {}): string {
@@ -122,4 +296,8 @@ export function buildWikiListUrl(query: WikiListQuery = {}): string {
 
 function flattenNodes(nodes: WikiDocumentTreeNodeVo[]): WikiDocumentTreeNodeVo[] {
   return nodes.flatMap((node) => [node, ...flattenNodes(node.voChildren || [])]);
+}
+
+function resolveDateLocale(language?: string): string {
+  return language?.toLowerCase().startsWith('zh') ? 'zh-CN' : 'en-US';
 }

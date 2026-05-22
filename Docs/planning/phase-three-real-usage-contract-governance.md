@@ -779,3 +779,15 @@ npm run check:repo-hygiene:changed
 收口结论：`P3-6` 可以阶段收口。本轮未发现新的公开访问、核心 head / sitemap、分享入口或回流 `P0/P1` 阻断项。真实平台分享预览、Search Console / 爬虫日志、生产访问日志、用户回流断点、内容规模接近单类型 `100,000` 条 URL 时的 sitemap 分片策略复评转入维护线。
 
 不继续扩大的范围：运营平台、完整可观测性平台、完整 Playwright / E2E、完整 SSR / SSG、正文预渲染、全量 `PublicId` 迁移，以及无真实证据支撑的低收益公开体验微调。
+
+## `P3-7-C` 近期开发任务重评估与首批实现
+
+完成日期：`2026-05-22`。
+
+重评估结论：`P3-6 / P3-7-A / P3-7-B` 降为维护线；`P3-8` 多端功能补全与 UI / Pencil 设计治理继续后置；当前最近开发入口回到第三阶段已点名的工作台代码热区治理，优先处理 `WikiApp.tsx` 与 `ChatApp.tsx`。
+
+`P3-7-C1 WikiApp 文档工作台首批热区拆分` 已完成：新增 `WikiSidebar` 承接目录树、搜索结果、筛选、新建、导入与阅读态侧栏渲染；编辑草稿、窗口参数解析、树展开、初始文档选择、请求构造和时间格式化等纯逻辑迁入 `wikiApp.helpers.ts`；`WikiApp.tsx` 从约 `1759` 行降至 `1419` 行，回到项目单文件硬上限以内。本批不改 API、公开 docs 路由、视觉设计或文档业务能力。
+
+验证：`npm run type-check --workspace=radish.client`、`node --test --test-isolation=none ./Frontend/radish.client/tests/wikiApp.helpers.test.ts ./Frontend/radish.client/tests/workspaceNavigation.test.ts`（`27/27`）、`npm run build --workspace=radish.client`、`npm run check:repo-hygiene:changed` 与 `git diff --check` 通过；构建保留既有 `app-shop` chunk size warning。
+
+下一顺位：`P3-7-C2 ChatApp 聊天工作台首批热区拆分`。首批只做行为等价拆分，不启动私聊、消息搜索、Reaction、置顶、阅读回执或权限细化等 backlog 功能。
