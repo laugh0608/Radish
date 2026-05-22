@@ -13,11 +13,13 @@
 | `UserBenefit` | 自动生效或持续生效的权益记录，例如会员、徽章、头像框等 | `SourceOrderId`、`SourceProductId` |
 | `UserInventory` | 可持有 / 可使用的消耗品背包记录，例如改名卡、经验卡等 | `SourceProductId` |
 | `UserBenefitVo` | 前端“我的背包”权益卡片使用的展示契约 | `VoSourceOrderId`、`VoSourceProductId` |
-| `UserInventoryVo` | 前端“我的背包”消耗品卡片使用的展示契约 | 不承载统一订单来源 |
+| `UserInventoryVo` | 前端“我的背包”消耗品卡片使用的展示契约 | `VoSourceProductId`，不承载统一订单来源 |
 
-WebOS 商城当前只在权益卡片上展示购买来源回访。当 `UserBenefitVo.VoSourceOrderId` 或 `UserBenefitVo.VoSourceProductId` 有效时，前端分别展示“查看订单”和“查看商品”动作，并打开商城订单详情 / 商品详情。
+WebOS 商城当前在权益卡片上展示购买来源回访。当 `UserBenefitVo.VoSourceOrderId` 或 `UserBenefitVo.VoSourceProductId` 有效时，前端分别展示“查看订单”和“查看商品”动作，并打开商城订单详情 / 商品详情。
 
-不要把 `UserBenefitVo` 的来源字段误迁移为 `UserInventory` 的统一订单来源契约；消耗品来源治理应单独评估是否需要订单级追溯。
+消耗品卡片只展示商品维度的相关回访。当 `UserInventoryVo.VoSourceProductId` 有效时，前端展示“相关商品”动作并打开商城商品详情；它不表示消耗品具备订单级来源追溯。
+
+不要把 `UserBenefitVo` 的订单来源字段误迁移为 `UserInventory` 的统一订单来源契约；消耗品订单级追溯应单独评估契约与前端展示。
 
 ### 5.1.2 背包物品模型补充
 
@@ -142,6 +144,7 @@ public class InventoryService : IInventoryService
 
 - 同类型、同参数且仍有效的消耗品可以堆叠数量。
 - 新消耗品记录持有名称、图标附件快照、效果参数、数量、使用期限和商品来源。
+- 前端可通过 `UserInventoryVo.VoSourceProductId` 展示“相关商品”回访入口。
 - 当前 `UserInventory` 不承载统一订单来源；如果后续需要消耗品订单级追溯，应单独扩展契约与前端展示。
 
 ---
