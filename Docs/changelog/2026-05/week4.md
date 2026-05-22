@@ -52,3 +52,6 @@
 - `P3-7-C1 WikiApp 文档工作台首批热区拆分` 已完成：新增 `WikiSidebar` 承接目录树、搜索结果、筛选和阅读态侧栏；`wikiApp.helpers.ts` 承接编辑草稿、窗口参数解析、树展开、请求构造和时间格式化等纯逻辑。
 - `WikiApp.tsx` 从约 `1759` 行降至 `1419` 行，回到项目单文件硬上限以内；本批不改 API、公开 docs 路由、视觉设计或文档业务能力。
 - 验证已覆盖 `npm run type-check --workspace=radish.client`、`node --test --test-isolation=none ./Frontend/radish.client/tests/wikiApp.helpers.test.ts ./Frontend/radish.client/tests/workspaceNavigation.test.ts`、`npm run build --workspace=radish.client`、`npm run check:repo-hygiene:changed` 与 `git diff --check`；构建仍保留既有 `app-shop` chunk size warning。
+- `P3-7-C2 ChatApp 聊天工作台首批热区拆分` 已完成：消息列表、频道侧栏、成员面板、输入区状态和纯 helper 已从 `ChatApp.tsx` 抽出，主文件从约 `2004` 行降至 `1489` 行。
+- 本批保持行为等价，不启动私聊、消息搜索、Reaction、置顶、阅读回执或权限细化等 Chat P2 backlog 功能；下一顺位转向 `P3-7-C3` 后端 Service 热区评估与首批治理候选。
+- 验证已覆盖 `npm run type-check --workspace=radish.client`、`node --test --test-isolation=none ./Frontend/radish.client/tests/chatApp.helpers.test.ts ./Frontend/radish.client/tests/chatNavigation.test.ts ./Frontend/radish.client/tests/desktopRecentApps.test.ts ./Frontend/radish.client/tests/windowGeometry.test.ts`（`24/24`）、`npm run build --workspace=radish.client`、`npm run check:repo-hygiene:changed` 与 `git diff --check`；构建仍保留既有 `app-shop` chunk size warning。
