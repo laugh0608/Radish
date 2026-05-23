@@ -1,6 +1,6 @@
 # 第三开发阶段：真实使用增长与长期契约治理
 
-> 状态：`P3-7-C` 近期开发任务重评估与下一批任务选择；`P3-6` 转入维护线
+> 状态：`P3-8-A` 多端功能缺口与 UI 设计入口审计；`P3-6 / P3-7` 转入维护线
 >
 > 启动日期：2026-05-13（Asia/Shanghai）
 >
@@ -26,7 +26,9 @@
 
 `P3-6 真实使用运营观察与反馈分流` 已阶段收口：本地 Gateway 与生产公开域名 `https://radishx.com` 均已通过 public head smoke；后续只从真实部署、真实内容、爬虫抓取、分享预览、用户回流和运行日志中挑选高信号问题，公开内容增长能力转入部署 / 运营维护线。
 
-`P3-7-A / P3-7-B` 已完成 WebOS / PC 工作台复访小闭环和高信号候选筛查，当前未发现新的 `P0/P1`。重新评估后确认，项目仍处于单人开发期和功能建设期，不能把“等待真实使用观察”作为默认主线；但多端功能补全与 UI 设计治理属于后续重点方向，不应直接替代当前最近阶段。因此当前主线调整为 `P3-7-C 近期开发任务重评估与下一批任务选择`：先从原规划、backlog、未完成功能和近期主路径中选出下一批 `1-2` 个一天级可验证开发任务。
+`P3-7-A / P3-7-B` 已完成 WebOS / PC 工作台复访小闭环和高信号候选筛查，当前未发现新的 `P0/P1`。`P3-7-C` 已完成近期开发任务重评估与首批热区治理：`WikiApp`、`ChatApp`、`ContentModerationService` 与 `ExperienceService` 均已完成首批行为等价拆分。继续硬拆 `ExperienceService` 经验发放主流程的收益下降、风险上升，因此 `P3-7-C3` 作为当前主线阶段收口。
+
+当前主线切换为 `P3-8-A 多端功能缺口与 UI 设计入口审计`。本批放宽“P3-8 只能后置”的约束，但不直接大面积实现；首批先建立多端功能缺口矩阵、UI 端点分组、`.pen` 设计稿治理建议，并选出 `1-2` 个一天级可验证开发任务。
 
 ## `P3-0` 定义与工程整备
 
@@ -784,10 +786,14 @@ npm run check:repo-hygiene:changed
 
 完成日期：`2026-05-22`。
 
-重评估结论：`P3-6 / P3-7-A / P3-7-B` 降为维护线；`P3-8` 多端功能补全与 UI / Pencil 设计治理继续后置；当前最近开发入口回到第三阶段已点名的工作台代码热区治理，优先处理 `WikiApp.tsx` 与 `ChatApp.tsx`。
+当时重评估结论：`P3-6 / P3-7-A / P3-7-B` 降为维护线；`P3-8` 多端功能补全与 UI / Pencil 设计治理先作为后续重点保留；最近开发入口回到第三阶段已点名的工作台代码热区治理，优先处理 `WikiApp.tsx` 与 `ChatApp.tsx`。
 
 `P3-7-C1 WikiApp` 与 `P3-7-C2 ChatApp` 工作台首批热区拆分已完成。Wiki 侧新增 `WikiSidebar` 与 `wikiApp.helpers.ts`，`WikiApp.tsx` 从约 `1759` 行降至 `1419` 行；Chat 侧新增消息列表、频道侧栏、成员面板、输入区状态组件和 `chatApp.helpers.ts`，`ChatApp.tsx` 从约 `2004` 行降至 `1489` 行。本批均不改 API、路由、视觉设计或新增 P2 backlog 功能。
 
 验证：Wiki / Chat 定向 node tests、`npm run type-check --workspace=radish.client`、`npm run build --workspace=radish.client`、`npm run check:repo-hygiene:changed` 与 `git diff --check` 通过；构建保留既有 `app-shop` chunk size warning。
 
-下一顺位：`P3-7-C3 后端 Service 热区评估与首批治理候选`，优先复核 `ExperienceService.cs`、`ContentModerationService.cs` 等第三阶段已点名热区，只选择一天级、行为等价、可验证的拆分候选。
+`P3-7-C3` 后端 Service 热区治理完成于 `2026-05-23`：`ContentModerationService.cs` 已降至 `806` 行；`ExperienceService.cs` 已完成每日统计、经验治理观察规则、治理动作留痕、等级配置 / 缓存、交易记录、冻结状态、排行榜与管理员调整逻辑拆分，主文件从 `2807` 行降至 `888` 行。
+
+验证：`dotnet test Radish.Api.Tests --filter ExperienceServiceTest` 与 `dotnet build Radish.slnx -c Debug` 通过。
+
+下一顺位：`P3-8-A 多端功能缺口与 UI 设计入口审计`。`P3-7-C3` 剩余经验发放主流程不在本批硬拆，后续如需治理应单独评审事务、重试、升级奖励和冻结语义风险。
