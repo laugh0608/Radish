@@ -62,7 +62,7 @@
 - `P3-7-C3` 后端 Service 首批热区治理已完成：选定 `ContentModerationService` 作为一天级、行为等价拆分候选，拆出举报目标快照解析与举报队列导航装配到 `ContentModerationService.Navigation.cs`。
 - `ContentModerationService.cs` 从 `1735` 行降至 `806` 行；本批不改 API 契约、权限语义、数据库结构、审核规则或举报 / 治理运行时行为。
 - 验证已覆盖 `dotnet test Radish.Api.Tests --filter ContentModerationServiceTest`（`7/7`）、`dotnet build Radish.slnx -c Debug` 与 `git diff --check`；沙盒内因无法读取用户级 `NuGet.Config` 失败后，已按验证用途提权重跑通过。
-- `ExperienceService` 后端热区第二批拆分已完成：每日统计窗口、异常观察规则、治理建议和最近治理留痕查询迁移到 `ExperienceService.DailyStats.cs`，主文件从 `2807` 行降至 `2097` 行。
-- 第二批仍保持行为等价，不改经验发放、冻结、等级计算、API 契约、数据库结构或经验治理规则阈值。
+- `ExperienceService` 后端热区后续拆分已完成：每日统计窗口、异常观察规则、治理建议和最近治理留痕查询迁移到 `ExperienceService.DailyStats.cs`，治理动作留痕辅助逻辑迁移到 `ExperienceService.GovernanceActions.cs`，主文件从 `2807` 行降至 `1807` 行。
+- 本批仍保持行为等价，不改经验发放、冻结、等级计算、API 契约、数据库结构或经验治理规则阈值。
 - 验证已覆盖 `dotnet test Radish.Api.Tests --filter ExperienceServiceTest`（`13/13`）、`dotnet build Radish.slnx -c Debug` 与 `git diff --check`。
-- 下一步继续复核 `ExperienceService.cs` 剩余治理动作映射、缓存与等级配置辅助逻辑是否存在一天级、安全可验证的行为等价拆分点；不直接切入 `P3-8`。
+- 下一步继续复核 `ExperienceService.cs` 剩余缓存、等级配置与发放辅助逻辑是否存在一天级、安全可验证的行为等价拆分点；不直接切入 `P3-8`。
