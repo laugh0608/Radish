@@ -588,109 +588,117 @@ export const ExperienceAdminPage = () => {
         }}
       />
 
-      <ExperienceUserQuerySummary
-        queryUserId={queryUserId}
-        loadedUserId={loadedUserId}
-        experience={experience}
-        loadingExperience={loadingExperience}
-        onQueryUserIdChange={setQueryUserId}
-        onQuery={() => {
-          void loadExperience(undefined, { showInvalidMessage: true });
-        }}
-      />
+      <div className="governance-workbench">
+        <div className="governance-workbench__queue">
+          <ExperienceUserQuerySummary
+            queryUserId={queryUserId}
+            loadedUserId={loadedUserId}
+            experience={experience}
+            loadingExperience={loadingExperience}
+            onQueryUserIdChange={setQueryUserId}
+            onQuery={() => {
+              void loadExperience(undefined, { showInvalidMessage: true });
+            }}
+          />
 
-      <ExperienceObservationSummary
-        loadedUserId={loadedUserId}
-        statsWindowDays={statsWindowDays}
-        loadingDailyStats={loadingDailyStats}
-        canFreeze={canFreeze}
-        dailyStats={dailyStats}
-        dailyStatsSummary={dailyStatsSummary}
-        anomalyRuleSummaries={anomalyRuleSummaries}
-        governanceRecommendation={governanceRecommendation}
-        dailyLimits={dailyLimits}
-        onStatsWindowDaysChange={setStatsWindowDays}
-        onRecommendationGovernanceReview={handleRecommendationGovernanceReview}
-        onRecommendationFreezeReason={prefillFreezeReason}
-        onRuleReview={handleRuleReview}
-        onRuleGovernanceReview={handleRuleGovernanceReview}
-        onRuleFreezeReason={handleRuleFreezeReason}
-        onDayReview={handleDayReview}
-        onDayGovernanceReview={handleDayGovernanceReview}
-        onDayFreezeReason={handleDayFreezeReason}
-      />
+          <ExperienceObservationSummary
+            loadedUserId={loadedUserId}
+            statsWindowDays={statsWindowDays}
+            loadingDailyStats={loadingDailyStats}
+            canFreeze={canFreeze}
+            dailyStats={dailyStats}
+            dailyStatsSummary={dailyStatsSummary}
+            anomalyRuleSummaries={anomalyRuleSummaries}
+            governanceRecommendation={governanceRecommendation}
+            dailyLimits={dailyLimits}
+            onStatsWindowDaysChange={setStatsWindowDays}
+            onRecommendationGovernanceReview={handleRecommendationGovernanceReview}
+            onRecommendationFreezeReason={prefillFreezeReason}
+            onRuleReview={handleRuleReview}
+            onRuleGovernanceReview={handleRuleGovernanceReview}
+            onRuleFreezeReason={handleRuleFreezeReason}
+            onDayReview={handleDayReview}
+            onDayGovernanceReview={handleDayGovernanceReview}
+            onDayFreezeReason={handleDayFreezeReason}
+          />
+        </div>
 
-      <ExperienceTransactionSection
-        transactionSectionRef={transactionSectionRef}
-        loadedUserId={loadedUserId}
-        transactions={transactions}
-        loadingTransactions={loadingTransactions}
-        transactionTotal={transactionTotal}
-        transactionPageIndex={transactionPageIndex}
-        transactionPageSize={transactionPageSize}
-        transactionTypeFilter={transactionTypeFilter}
-        transactionStartDate={transactionStartDate}
-        transactionEndDate={transactionEndDate}
-        transactionReviewHint={transactionReviewHint}
-        onTransactionTypeFilterChange={(value) => {
-          setTransactionReviewHint(null);
-          setTransactionTypeFilter(value);
-        }}
-        onTransactionStartDateChange={(value) => {
-          setTransactionReviewHint(null);
-          setTransactionStartDate(value);
-        }}
-        onTransactionEndDateChange={(value) => {
-          setTransactionReviewHint(null);
-          setTransactionEndDate(value);
-        }}
-        onClearTransactionFilters={() => {
-          setTransactionPageIndex(1);
-          setTransactionTypeFilter(undefined);
-          setTransactionStartDate(null);
-          setTransactionEndDate(null);
-          setTransactionReviewHint(null);
-        }}
-        onPageChange={(page, pageSize) => {
-          if (!loadedUserId) {
-            return;
-          }
+        <div className="governance-workbench__detail">
+          <ExperienceTransactionSection
+            transactionSectionRef={transactionSectionRef}
+            loadedUserId={loadedUserId}
+            transactions={transactions}
+            loadingTransactions={loadingTransactions}
+            transactionTotal={transactionTotal}
+            transactionPageIndex={transactionPageIndex}
+            transactionPageSize={transactionPageSize}
+            transactionTypeFilter={transactionTypeFilter}
+            transactionStartDate={transactionStartDate}
+            transactionEndDate={transactionEndDate}
+            transactionReviewHint={transactionReviewHint}
+            onTransactionTypeFilterChange={(value) => {
+              setTransactionReviewHint(null);
+              setTransactionTypeFilter(value);
+            }}
+            onTransactionStartDateChange={(value) => {
+              setTransactionReviewHint(null);
+              setTransactionStartDate(value);
+            }}
+            onTransactionEndDateChange={(value) => {
+              setTransactionReviewHint(null);
+              setTransactionEndDate(value);
+            }}
+            onClearTransactionFilters={() => {
+              setTransactionPageIndex(1);
+              setTransactionTypeFilter(undefined);
+              setTransactionStartDate(null);
+              setTransactionEndDate(null);
+              setTransactionReviewHint(null);
+            }}
+            onPageChange={(page, pageSize) => {
+              if (!loadedUserId) {
+                return;
+              }
 
-          void loadTransactions(loadedUserId, page, pageSize, transactionTypeFilter, transactionStartDate, transactionEndDate);
-        }}
-      />
+              void loadTransactions(loadedUserId, page, pageSize, transactionTypeFilter, transactionStartDate, transactionEndDate);
+            }}
+          />
 
-      <ExperienceGovernanceReviewSection
-        reviewSectionRef={reviewSectionRef}
-        loadedUserId={loadedUserId}
-        experience={experience}
-        reviewForm={reviewForm}
-        reviewContextDraft={reviewContextDraft}
-        canFreeze={canFreeze}
-        reviewing={reviewing}
-        governanceActions={governanceActions}
-        loadingGovernanceActions={loadingGovernanceActions}
-        onRecordGovernanceReview={handleRecordGovernanceReview}
-        onClearReviewDraft={() => {
-          reviewForm.resetFields();
-          setReviewContextDraft(null);
-        }}
-      />
+          <ExperienceGovernanceReviewSection
+            reviewSectionRef={reviewSectionRef}
+            loadedUserId={loadedUserId}
+            experience={experience}
+            reviewForm={reviewForm}
+            reviewContextDraft={reviewContextDraft}
+            canFreeze={canFreeze}
+            reviewing={reviewing}
+            governanceActions={governanceActions}
+            loadingGovernanceActions={loadingGovernanceActions}
+            onRecordGovernanceReview={handleRecordGovernanceReview}
+            onClearReviewDraft={() => {
+              reviewForm.resetFields();
+              setReviewContextDraft(null);
+            }}
+          />
+        </div>
 
-      <ExperienceGovernanceActionForms
-        adjustForm={form}
-        freezeForm={freezeForm}
-        freezeSectionRef={freezeSectionRef}
-        experience={experience}
-        canAdjust={canAdjust}
-        canFreeze={canFreeze}
-        submitting={submitting}
-        freezing={freezing}
-        unfreezing={unfreezing}
-        onAdjust={handleAdjust}
-        onFreeze={handleFreeze}
-        onUnfreeze={handleUnfreeze}
-      />
+        <div className="governance-workbench__actions">
+          <ExperienceGovernanceActionForms
+            adjustForm={form}
+            freezeForm={freezeForm}
+            freezeSectionRef={freezeSectionRef}
+            experience={experience}
+            canAdjust={canAdjust}
+            canFreeze={canFreeze}
+            submitting={submitting}
+            freezing={freezing}
+            unfreezing={unfreezing}
+            onAdjust={handleAdjust}
+            onFreeze={handleFreeze}
+            onUnfreeze={handleUnfreeze}
+          />
+        </div>
+      </div>
 
       <ExperienceLevelConfigSection
         levels={levels}

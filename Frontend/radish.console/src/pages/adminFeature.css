@@ -84,6 +84,9 @@
 .governance-workbench__queue,
 .governance-workbench__detail,
 .governance-workbench__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
   min-width: 0;
 }
 
