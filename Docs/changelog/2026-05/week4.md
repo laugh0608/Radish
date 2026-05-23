@@ -56,3 +56,10 @@
 - 本批保持行为等价，不启动私聊、消息搜索、Reaction、置顶、阅读回执或权限细化等 Chat P2 backlog 功能；下一顺位转向 `P3-7-C3` 后端 Service 热区评估与首批治理候选。
 - 验证已覆盖 `npm run type-check --workspace=radish.client`、`node --test --test-isolation=none ./Frontend/radish.client/tests/chatApp.helpers.test.ts ./Frontend/radish.client/tests/chatNavigation.test.ts ./Frontend/radish.client/tests/desktopRecentApps.test.ts ./Frontend/radish.client/tests/windowGeometry.test.ts`（`24/24`）、`npm run build --workspace=radish.client`、`npm run check:repo-hygiene:changed` 与 `git diff --check`；构建仍保留既有 `app-shop` chunk size warning。
 - 收工前已补 [2026-05-22 收工回顾与明日事项](/records/daily-handoff-2026-05-22)，并补正 [2026-05-21 收工回顾与明日事项](/records/daily-handoff-2026-05-21) 的提交级回顾；明日优先做 `P3-7-C3` 后端 Service 热区评估，不切入 `P3-8`。
+
+## 2026-05-23
+
+- `P3-7-C3` 后端 Service 首批热区治理已完成：选定 `ContentModerationService` 作为一天级、行为等价拆分候选，拆出举报目标快照解析与举报队列导航装配到 `ContentModerationService.Navigation.cs`。
+- `ContentModerationService.cs` 从 `1735` 行降至 `806` 行；本批不改 API 契约、权限语义、数据库结构、审核规则或举报 / 治理运行时行为。
+- 验证已覆盖 `dotnet test Radish.Api.Tests --filter ContentModerationServiceTest`（`7/7`）、`dotnet build Radish.slnx -c Debug` 与 `git diff --check`；沙盒内因无法读取用户级 `NuGet.Config` 失败后，已按验证用途提权重跑通过。
+- 下一步继续复核 `ExperienceService.cs` 的治理规则、快照映射与纯 helper 是否存在一天级、安全可验证的行为等价拆分点；不直接切入 `P3-8`。

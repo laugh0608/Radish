@@ -16,6 +16,7 @@
   - `P3-7-A / P3-7-B` 已完成 WebOS / PC 工作台复访小闭环和高信号候选筛查，当前未发现新的 `P0/P1`
   - 重新评估后确认：原 `P3-7` 收尾口径没有给出最近阶段的明确开发入口，当前应先做近期任务重评估，而不是直接切入后续重点专题
   - `P3-7-C` 已完成近期任务重评估，首批一天级任务按 `WikiApp -> ChatApp` 热区治理推进；`P3-7-C1` WikiApp 与 `P3-7-C2` ChatApp 首批拆分已完成
+  - `P3-7-C3` 已完成 `ContentModerationService` 后端热区首批行为等价拆分，下一步继续评估 `ExperienceService` 是否存在一天级、安全可验证的拆分点
 
 ## 当前主线入口
 
@@ -29,7 +30,7 @@
 
 ## 当前开发精力
 
-- `40%`：`P3-7-C3` 后端 Service 热区评估与首批治理候选，继续治理第三阶段点名的代码热区
+- `40%`：`P3-7-C3` 后端 Service 热区评估与首批治理候选，继续复核 `ExperienceService` 等第三阶段点名代码热区
 - `25%`：WebOS / PC 工作台与既有产品主路径补强，继续处理购买、订单、背包、通知、窗口参数和复访链路中的高价值断点
 - `15%`：公开内容与移动回流维护，只处理公开访问、head / sitemap、分享、回流和运行日志暴露的高信号问题
 - `10%`：Console 与共享 UI 收敛，新增或改动页面优先复用 `@radish/ui`、主题 token 和统一交互反馈
@@ -55,7 +56,7 @@
 ## 下一顺位
 
 - `P3-7-C3 后端 Service 热区评估与首批治理候选`
-  - 优先复核 `ExperienceService.cs`、`ContentModerationService.cs` 等第三阶段已点名热区
+  - `ContentModerationService.cs` 首批行为等价拆分已完成，下一步优先复核 `ExperienceService.cs`
   - 首批仍以行为等价拆分和测试补强为主，不改 API 契约、权限语义、数据库结构或业务规则
   - 验证覆盖对应后端定向测试与 `dotnet build Radish.slnx -c Debug`
 - `P3-8 多端功能补全与 UI 设计治理`
