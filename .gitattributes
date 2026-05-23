@@ -25,6 +25,7 @@
 *.ico   binary
 *.svg   text
 *.pdf   binary
+*.pen   binary
 *.zip   binary
 *.7z    binary
 *.gz    binary

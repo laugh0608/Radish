@@ -23,6 +23,7 @@
   - 当前约束放宽为：`P3-8-A` 可从后续重点切为当前主线，但首批只做多端功能缺口与 UI 设计入口审计，不直接大面积实现
   - `P3-8-A` 首批审计矩阵已落到专题文档，下一步优先推进 `Flutter 公开榜单只读入口` 或 `Console 治理工作台设计端点`
   - `P3-8-B1` 已完成 Flutter 公开经验榜只读入口：新增原生榜单 tab、发现页跳转、公开经验榜 API 仓储、加载 / 空态 / 错误 / 刷新状态，并补齐 Flutter 单测与壳层 smoke
+  - `P3-8-B2` 已开始 Console 治理工作台设计端点：首批先落内容治理与经验治理的信息架构、布局建议、`.pen` 源文件落点和后续实现拆分，不直接重写 Console 大页
   - 项目仍处于单人开发期和功能建设期，没有稳定用户反馈和专职测试，不能把“等待真实使用观察”作为默认主线
 
 ## 当前执行入口
@@ -33,14 +34,15 @@
 - [前端多壳层策略](/frontend/shell-strategy)
 - [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation)
 - [P3-8 多端功能补全与 UI 设计治理](/planning/p3-8-multiplatform-feature-ui-governance)
+- [Console 治理工作台设计端点](/frontend/console-governance-workbench-design)
 - [验证基线说明](/guide/validation-baseline)
 
 ## 当前目标
 
-1. **进入 P3-8-B2 Console 治理工作台设计端点**
-   - 以内容治理和经验治理工作台为首批 Console 设计端点
-   - 先明确信息架构、筛选区、队列表格、详情 / 动作区和日志回看区，不直接重写整套 Console
-   - 需要页面级 UI 方案时优先通过 Pencil 设计源文件推进
+1. **收口 P3-8-B2 Console 治理工作台设计端点**
+   - 已建立内容治理和经验治理工作台的端点说明、页面结构和实现拆分建议
+   - 后续实际视觉源文件目标为 `Docs/frontend/design-sources/console-governance-workbench.pen`
+   - 下一批可进入 `P3-8-C1 Console 治理工作台结构基座`，优先从 `ModerationPage` 做行为等价布局承载
 2. **维护观察降级为并行线**
    - `P3-6 / P3-7` 暴露的新问题仍可回拉小闭环，但不再占用主线
    - 维护线只处理公开访问、head / sitemap、分享预览、运行日志、购买 / 订单 / 背包、权限授权等高信号问题
@@ -51,10 +53,10 @@
 
 ## 下一顺位
 
-- `P3-8-B2 Console 治理工作台设计端点`
-  - 首批覆盖内容治理与经验治理两类后台工作台
-  - 先做设计端点与页面结构治理，再选择一个页面进入一天级实现
-  - 继续遵守：不直接启动整站 UI 重构或多端同时重写
+- `P3-8-C1 Console 治理工作台结构基座`
+  - 优先从 `ModerationPage` 进入实现，保持 API、权限、表单字段、表格列和治理动作行为等价
+  - 只调整队列、目标详情、动作 / 留痕的布局承载，新增样式优先使用 `--console-*` token
+  - 暂不改 `ExperienceAdminPage` 经验规则、冻结语义、等级配置或经验发放主流程
 - `P3-7-C3` 进入维护 / 后续评审池
   - `ExperienceService` 剩余经验发放主流程如需继续拆分，应单独评估事务、重试、升级奖励和冻结语义风险
   - 不把继续拆热区作为当前主线的默认下一步

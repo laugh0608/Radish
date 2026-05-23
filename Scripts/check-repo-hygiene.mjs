@@ -21,6 +21,7 @@ const binaryExtensions = new Set([
   '.jpeg',
   '.jpg',
   '.pdb',
+  '.pen',
   '.pdf',
   '.pfx',
   '.png',
