@@ -16,6 +16,7 @@ class DiscoverPage extends StatefulWidget {
     required this.repository,
     this.onOpenForum,
     this.onOpenDocs,
+    this.onOpenLeaderboard,
     this.onOpenDocument,
     this.onOpenForumDetailTarget,
     this.onOpenProfileUser,
@@ -27,6 +28,7 @@ class DiscoverPage extends StatefulWidget {
   final DiscoverRepository repository;
   final VoidCallback? onOpenForum;
   final VoidCallback? onOpenDocs;
+  final VoidCallback? onOpenLeaderboard;
   final ValueChanged<DocsDocumentSummary>? onOpenDocument;
   final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
   final ValueChanged<String>? onOpenProfileUser;
@@ -148,6 +150,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                 snapshot: snapshot,
                 onOpenForum: widget.onOpenForum,
                 onOpenDocs: widget.onOpenDocs,
+                onOpenLeaderboard: widget.onOpenLeaderboard,
                 onOpenDocument: widget.onOpenDocument,
                 onOpenForumDetailTarget: widget.onOpenForumDetailTarget,
               ),
@@ -411,6 +414,7 @@ class _DiscoverContent extends StatelessWidget {
     required this.snapshot,
     required this.onOpenForum,
     required this.onOpenDocs,
+    required this.onOpenLeaderboard,
     required this.onOpenDocument,
     required this.onOpenForumDetailTarget,
   });
@@ -418,6 +422,7 @@ class _DiscoverContent extends StatelessWidget {
   final DiscoverSnapshot snapshot;
   final VoidCallback? onOpenForum;
   final VoidCallback? onOpenDocs;
+  final VoidCallback? onOpenLeaderboard;
   final ValueChanged<DocsDocumentSummary>? onOpenDocument;
   final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
 
@@ -458,7 +463,9 @@ class _DiscoverContent extends StatelessWidget {
         const SizedBox(height: 16),
         _ShopSection(products: snapshot.products),
         const SizedBox(height: 16),
-        const _DiscoverBoundarySection(),
+        _DiscoverBoundarySection(
+          onOpenLeaderboard: onOpenLeaderboard,
+        ),
       ],
     );
   }
@@ -666,21 +673,29 @@ class _ShopSection extends StatelessWidget {
 }
 
 class _DiscoverBoundarySection extends StatelessWidget {
-  const _DiscoverBoundarySection();
+  const _DiscoverBoundarySection({
+    required this.onOpenLeaderboard,
+  });
+
+  final VoidCallback? onOpenLeaderboard;
 
   @override
   Widget build(BuildContext context) {
-    return const _DiscoverSectionCard(
+    return _DiscoverSectionCard(
       title: '只读边界',
-      description: '当前发现页聚焦公开阅读和入口跳转，榜单详情、购买流程和工作台操作暂不进入原生 MVP。',
+      description: '当前发现页聚焦公开阅读和入口跳转，经验榜只读首屏已进入原生入口，购买流程和工作台操作暂不进入原生 MVP。',
       emptyText: '',
+      actionLabel: onOpenLeaderboard == null ? null : '打开榜单',
+      onAction: onOpenLeaderboard,
       children: [
         _SummaryTile(
           icon: Icons.emoji_events_outlined,
-          title: '榜单和更深商城流程',
-          subtitle: '排名阅读、公开比较、购买确认、订单和账号专属操作会在后续批次再评估。',
-          meta: '后续批次推进',
-          chips: ['只读发现', '不含工作台操作'],
+          title: '经验榜只读入口',
+          subtitle: '可查看公开经验榜首屏；我的排名、商品榜、购买确认、订单和账号专属操作仍留在后续批次评估。',
+          meta: '公开只读',
+          chips: const ['榜单首屏', '不含工作台操作'],
+          actionLabel: onOpenLeaderboard == null ? null : '打开榜单',
+          onAction: onOpenLeaderboard,
         ),
       ],
     );

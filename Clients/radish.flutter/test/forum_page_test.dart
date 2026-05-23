@@ -347,6 +347,7 @@ class _SuccessForumRepository implements ForumRepository {
   }) async {
     return ForumPostDetail(
       id: postId,
+      publicId: postId,
       title: 'How to wire Radish Flutter forum reading',
       summary:
           'Use the public read-only feed contract first, then expand into detail.',
