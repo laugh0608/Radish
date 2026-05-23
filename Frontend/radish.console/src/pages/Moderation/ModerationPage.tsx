@@ -8,9 +8,7 @@ import {
   InputNumber,
   Space,
   Table,
-  Tag,
   message,
-  type TableColumnsType,
 } from '@radish/ui';
 import { ReloadOutlined } from '@radish/ui';
 import {
@@ -29,26 +27,15 @@ import {
   ACTION_LOG_ACTION_TYPE_OPTIONS,
   ACTION_LOG_STATUS_OPTIONS,
   ACTION_OPTIONS,
-  MANUAL_ACTION_OPTIONS,
   MANUAL_ACTION_TYPE,
   REASON_TYPE_OPTIONS,
   REVIEW_STATUS_OPTIONS,
   TARGET_NAVIGATION_STATUS_OPTIONS,
   TARGET_TYPE_OPTIONS,
-  buildActionLogManualActionReason,
-  buildActionSourceTargetDisplayInput,
-  buildActionSourceTargetNavigationInput,
   buildManualModerationStatusSnapshot,
-  buildQueueManualActionReason,
   buildQueueTargetDisplayInput,
-  buildQueueTargetNavigationInput,
-  canOpenChatTarget,
   getActionTypeText,
-  getManualActionTypeText,
-  getReasonTypeLabel,
-  renderActionType,
   renderModerationTarget,
-  renderReportStatus,
   resolveMissingTargetMessage,
   resolveOpenTarget,
   toOptionalString,
@@ -56,12 +43,15 @@ import {
   type ActionLogActiveFilter,
   type ActionLogPreset,
   type ManualActionPreset,
-  type ManualActionTypeValue,
-  type ManualActiveModerationStatus,
   type ManualModerationStatusSnapshot,
   type ModerationTargetNavigationStateInput,
   type QueuePreset,
 } from './moderationPageHelpers';
+import {
+  createModerationLogColumns,
+  createModerationQueueColumns,
+} from './moderationPageColumns';
+import { ManualModerationActionSection } from './ManualModerationActionSection';
 import './index.css';
 import '../adminFeature.css';
 
@@ -418,6 +408,14 @@ export const ModerationPage = () => {
     setManualStatusError(null);
   };
 
+  const handleManualActionTargetUserInputChange = () => {
+    setManualActionContextHint(null);
+    manualStatusRequestIdRef.current += 1;
+    setManualStatusLoading(false);
+    setManualStatusSnapshot(null);
+    setManualStatusError(null);
+  };
+
   const openReviewModal = (item: ContentReportQueueItemVo) => {
     setReviewingItem(item);
     form.setFieldsValue({
@@ -532,349 +530,20 @@ export const ModerationPage = () => {
     }
   };
 
-  const renderManualStatusCard = (
-    title: string,
-    action: ManualActiveModerationStatus | null,
-    cancelActionType: ManualActionTypeValue
-  ) => {
-    if (!action) {
-      return (
-        <div className="moderation-manual-status-card">
-          <div className="moderation-manual-status-card__title">{title}</div>
-          <Tag>当前未生效</Tag>
-          <div className="moderation-manual-status-card__empty">没有生效中的{title}动作。</div>
-        </div>
-      );
-    }
+  const queueColumns = createModerationQueueColumns({
+    canReview,
+    onOpenTarget: handleOpenTarget,
+    onApplyActionLogPreset: applyActionLogPreset,
+    onApplyManualActionPreset: applyManualActionPreset,
+    onOpenReviewModal: openReviewModal,
+  });
 
-    return (
-      <div className="moderation-manual-status-card">
-        <div className="moderation-manual-status-card__head">
-          <div className="moderation-manual-status-card__title">{title}</div>
-          <Tag color="processing">生效中</Tag>
-        </div>
-        <div className="moderation-manual-status-card__meta">动作单 #{action.actionId}</div>
-        <div className="moderation-manual-status-card__meta">
-          截止时间：{action.endTime || '永久'}
-        </div>
-        {action.sourceReportId ? (
-          <div className="moderation-manual-status-card__meta">来源举报单：#{action.sourceReportId}</div>
-        ) : null}
-        <div className="moderation-manual-status-card__reason">{action.reason}</div>
-        <Space wrap>
-          <Button
-            size="small"
-            onClick={() => {
-              applyActionLogPreset({
-                targetUserId: manualStatusSnapshot?.targetUserId,
-                actionType: action.actionType,
-                isActive: 'active',
-                hint: `已带入用户 #${manualStatusSnapshot?.targetUserId} 当前生效中的${title}动作日志。`,
-              });
-            }}
-          >
-            查看当前动作
-          </Button>
-          <Button
-            size="small"
-            variant="primary"
-            onClick={() => {
-              applyManualActionPreset({
-                targetUserId: manualStatusSnapshot?.targetUserId,
-                sourceReportId: action.sourceReportId ? String(action.sourceReportId) : undefined,
-                actionType: cancelActionType,
-                reason: `参考动作单 #${action.actionId}，人工复核后${getManualActionTypeText(cancelActionType)}`,
-                hint: `已根据当前生效中的${title}动作单 #${action.actionId} 预填${getManualActionTypeText(cancelActionType)}表单。`,
-              });
-            }}
-          >
-            {getManualActionTypeText(cancelActionType)}
-          </Button>
-        </Space>
-      </div>
-    );
-  };
-
-  const queueColumns: TableColumnsType<ContentReportQueueItemVo> = [
-    {
-      title: '举报单',
-      key: 'report',
-      width: 110,
-      render: (_, record) => `#${record.voReportId}`,
-    },
-    {
-      title: '目标',
-      key: 'target',
-      width: 340,
-      render: (_, record) => renderModerationTarget({
-        ...buildQueueTargetDisplayInput(record),
-        showTargetUser: true,
-      }),
-    },
-    {
-      title: '举报人',
-      key: 'reporter',
-      width: 180,
-      render: (_, record) => `${record.voReporterUserName} (#${record.voReporterUserId})`,
-    },
-    {
-      title: '原因',
-      key: 'reason',
-      render: (_, record) => (
-        <div>
-          <div>{getReasonTypeLabel(record.voReasonType)}</div>
-          {record.voReasonDetail ? <div style={{ color: '#8c8c8c' }}>{record.voReasonDetail}</div> : null}
-        </div>
-      ),
-    },
-    {
-      title: '状态',
-      key: 'status',
-      width: 160,
-      render: (_, record) => (
-        <Space direction="vertical" size={4}>
-          {renderReportStatus(record.voStatus)}
-          {renderActionType(record.voReviewActionType)}
-        </Space>
-      ),
-    },
-    {
-      title: '提交时间',
-      dataIndex: 'voCreateTime',
-      key: 'voCreateTime',
-      width: 180,
-    },
-    {
-      title: '操作',
-      key: 'actions',
-      width: 460,
-      render: (_, record) => {
-        const openTarget = resolveOpenTarget(buildQueueTargetNavigationInput(record));
-
-        return (
-          <Space wrap>
-            {openTarget ? (
-              <Button
-                size="small"
-                onClick={() => handleOpenTarget(buildQueueTargetNavigationInput(record))}
-                >
-                  {openTarget.label}
-                </Button>
-              ) : record.voTargetNavigationStatus === 'Unavailable' || record.voTargetNavigationStatus === 'Unsupported' ? (
-                <span style={{ color: '#8c8c8c' }}>
-                  {record.voTargetNavigationStatus === 'Unsupported' ? '暂不支持回看' : '目标已失效'}
-                </span>
-              ) : null}
-            {record.voTargetUserId > 0 ? (
-              <Button
-                size="small"
-                onClick={() => {
-                  applyActionLogPreset({
-                    targetUserId: String(record.voTargetUserId),
-                    hint: `已带入被举报用户 #${record.voTargetUserId} 的治理动作日志，便于核对该用户历史处罚记录。`,
-                  });
-                }}
-              >
-                查看目标动作
-              </Button>
-            ) : null}
-            {canReview && record.voTargetUserId > 0 ? (
-              <Button
-                size="small"
-                onClick={() => {
-                  applyManualActionPreset({
-                    targetUserId: String(record.voTargetUserId),
-                    sourceReportId: String(record.voReportId),
-                    actionType: record.voReviewActionType === 'Mute'
-                      ? MANUAL_ACTION_TYPE.mute
-                      : record.voReviewActionType === 'Ban'
-                        ? MANUAL_ACTION_TYPE.ban
-                        : undefined,
-                    durationHours: record.voReviewActionType === 'Mute' || record.voReviewActionType === 'Ban'
-                      ? record.voReviewDurationHours ?? undefined
-                      : undefined,
-                    reason: buildQueueManualActionReason(record),
-                    hint: `已带入举报单 #${record.voReportId} 与被举报用户 #${record.voTargetUserId}，可继续执行手动禁言 / 封禁或补录解除动作。`,
-                  });
-                }}
-              >
-                手动处置
-              </Button>
-            ) : null}
-            {record.voReviewActionType !== 'None' ? (
-              <Button
-                size="small"
-                onClick={() => {
-                  applyActionLogPreset({
-                    targetUserId: record.voTargetUserId > 0 ? String(record.voTargetUserId) : undefined,
-                    sourceReportId: String(record.voReportId),
-                    hint: `已带入举报单 #${record.voReportId} 关联的治理动作日志。`,
-                  });
-                }}
-              >
-                查看关联动作
-              </Button>
-            ) : null}
-            {record.voStatus === 'Pending' && canReview ? (
-              <Button size="small" variant="primary" onClick={() => openReviewModal(record)}>
-                审核
-              </Button>
-            ) : (
-              <span style={{ color: '#8c8c8c' }}>{record.voReviewedByName || '已处理'}</span>
-            )}
-          </Space>
-        );
-      },
-    },
-  ];
-
-  const logColumns: TableColumnsType<UserModerationActionVo> = [
-    {
-      title: '动作单',
-      key: 'voActionId',
-      width: 110,
-      render: (_, record) => `#${record.voActionId}`,
-    },
-    {
-      title: '目标用户',
-      key: 'targetUser',
-      width: 180,
-      render: (_, record) => record.voTargetUserName || `用户 ${record.voTargetUserId}`,
-    },
-    {
-      title: '动作',
-      key: 'actionType',
-      width: 140,
-      render: (_, record) => renderActionType(record.voActionType),
-    },
-    {
-      title: '来源举报',
-      key: 'sourceReport',
-      width: 360,
-      render: (_, record) => {
-        if (!record.voSourceReportId) {
-          return <span style={{ color: '#8c8c8c' }}>-</span>;
-        }
-
-        return (
-          record.voSourceReportTargetType
-            ? (
-              <div>
-                <div>举报单 #{record.voSourceReportId}</div>
-                {renderModerationTarget(buildActionSourceTargetDisplayInput(record))}
-              </div>
-            )
-            : <div style={{ color: '#8c8c8c' }}>未保留目标快照</div>
-        );
-      },
-    },
-    {
-      title: '原因',
-      dataIndex: 'voReason',
-      key: 'voReason',
-    },
-    {
-      title: '操作者',
-      dataIndex: 'voOperatorUserName',
-      key: 'voOperatorUserName',
-      width: 140,
-    },
-    {
-      title: '状态',
-      key: 'voIsActive',
-      width: 100,
-      render: (_, record) => <Tag color={record.voIsActive ? 'processing' : 'default'}>{record.voIsActive ? '生效中' : '已结束'}</Tag>,
-    },
-    {
-      title: '操作',
-      key: 'actions',
-      width: 420,
-      render: (_, record) => {
-        const openTarget = resolveOpenTarget(buildActionSourceTargetNavigationInput(record));
-
-        return (
-          <Space wrap>
-            {openTarget ? (
-              <Button
-                size="small"
-                onClick={() => handleOpenTarget(buildActionSourceTargetNavigationInput(record))}
-              >
-                {openTarget.label}
-              </Button>
-            ) : (
-              <span style={{ color: '#8c8c8c' }}>
-                {record.voSourceReportTargetNavigationStatus === 'Unsupported'
-                  ? '暂不支持回看'
-                  : record.voSourceReportTargetNavigationStatus === 'Unavailable'
-                    ? '目标已失效'
-                    : '-'}
-              </span>
-            )}
-            {record.voSourceReportId ? (
-              <Button
-                size="small"
-                onClick={() => {
-                  applyQueuePreset({
-                    keyword: String(record.voSourceReportId),
-                    hint: `已带入来源举报单 #${record.voSourceReportId}，便于回看原始审核记录与目标快照。`,
-                  });
-                }}
-              >
-                查看原举报
-              </Button>
-            ) : null}
-            {canReview ? (
-              <Button
-                size="small"
-                onClick={() => {
-                  applyManualActionPreset({
-                    targetUserId: String(record.voTargetUserId),
-                    sourceReportId: record.voSourceReportId ? String(record.voSourceReportId) : undefined,
-                    reason: buildActionLogManualActionReason(record),
-                    hint: `已带入动作单 #${record.voActionId} 的目标用户${record.voSourceReportId ? ` 与来源举报单 #${record.voSourceReportId}` : ''}，可继续执行人工治理。`,
-                  });
-                }}
-              >
-                手动处置
-              </Button>
-            ) : null}
-            {canReview && record.voIsActive && (record.voActionType === 'Mute' || record.voActionType === 'Ban') ? (
-              <Button
-                size="small"
-                variant="primary"
-                onClick={() => {
-                  const actionType = record.voActionType === 'Mute'
-                    ? MANUAL_ACTION_TYPE.unmute
-                    : MANUAL_ACTION_TYPE.unban;
-                  applyManualActionPreset({
-                    targetUserId: String(record.voTargetUserId),
-                    sourceReportId: record.voSourceReportId ? String(record.voSourceReportId) : undefined,
-                    actionType,
-                    reason: buildActionLogManualActionReason(record, actionType),
-                    hint: `已根据动作单 #${record.voActionId} 带入${getManualActionTypeText(actionType)}建议，提交后会自动回跳到对应日志记录。`,
-                  });
-                }}
-              >
-                {record.voActionType === 'Mute' ? '解除禁言' : '解除封禁'}
-              </Button>
-            ) : null}
-          </Space>
-        );
-      },
-    },
-    {
-      title: '开始时间',
-      dataIndex: 'voStartTime',
-      key: 'voStartTime',
-      width: 180,
-    },
-    {
-      title: '结束时间',
-      key: 'voEndTime',
-      width: 180,
-      render: (_, record) => record.voEndTime || '-',
-    },
-  ];
+  const logColumns = createModerationLogColumns({
+    canReview,
+    onOpenTarget: handleOpenTarget,
+    onApplyQueuePreset: applyQueuePreset,
+    onApplyManualActionPreset: applyManualActionPreset,
+  });
 
   return (
     <div className="admin-feature-page">
@@ -994,150 +663,23 @@ export const ModerationPage = () => {
       </section>
 
       {canReview ? (
-        <section className="admin-feature-card" ref={manualActionSectionRef}>
-          <div className="admin-feature-header">
-            <div>
-              <h3>手动治理动作</h3>
-              <p className="admin-feature-subtle">从举报队列或治理日志一键带入目标用户、来源举报单和解除建议，补齐人工禁言 / 封禁 / 解除动作闭环。</p>
-            </div>
-            <Space>
-              <Button onClick={resetManualActionForm}>
-                清空表单
-              </Button>
-              <Button variant="primary" disabled={submittingManualAction} onClick={() => {
-                void handleSubmitManualAction();
-              }}>
-                {submittingManualAction ? '执行中...' : '执行治理动作'}
-              </Button>
-            </Space>
-          </div>
-
-          {manualActionContextHint ? (
-            <div className="admin-feature-banner" style={{ marginTop: 16 }}>
-              {manualActionContextHint}
-            </div>
-          ) : null}
-
-          <div className="moderation-manual-status">
-            <div className="moderation-manual-status__header">
-              <div>
-                <div className="moderation-manual-status__title">当前生效状态</div>
-                <div className="moderation-manual-status__subtitle">输入或带入目标用户 ID 后，可直接查看该用户当前是否仍处于禁言或封禁中。</div>
-              </div>
-              <Button size="small" onClick={refreshManualActionStatus}>
-                刷新状态
-              </Button>
-            </div>
-
-            {!manualStatusSnapshot && !manualStatusLoading && !manualStatusError ? (
-              <div className="moderation-manual-status__empty">先输入目标用户 ID，或从上方举报队列 / 动作日志一键带入。</div>
-            ) : null}
-            {manualStatusLoading ? <div className="moderation-manual-status__empty">正在加载当前治理状态...</div> : null}
-            {manualStatusError ? <div className="moderation-manual-status__error">{manualStatusError}</div> : null}
-            {manualStatusSnapshot ? (
-              <div className="moderation-manual-status__grid">
-                {renderManualStatusCard('禁言', manualStatusSnapshot.muteAction, MANUAL_ACTION_TYPE.unmute)}
-                {renderManualStatusCard('封禁', manualStatusSnapshot.banAction, MANUAL_ACTION_TYPE.unban)}
-              </div>
-            ) : null}
-          </div>
-
-          <Form form={manualActionForm} layout="vertical" className="moderation-manual-action-form">
-            <div className="moderation-manual-action-form__grid">
-              <Form.Item
-                name="targetUserId"
-                label="目标用户 ID"
-                rules={[
-                  { required: true, message: '请输入目标用户 ID' },
-                  {
-                    validator: (_, value) => {
-                      if (typeof value !== 'string' || value.trim().length === 0) {
-                        return Promise.resolve();
-                      }
-
-                      if (toPositiveLongString(value)) {
-                        return Promise.resolve();
-                      }
-
-                      return Promise.reject(new Error('请输入有效的目标用户 ID'));
-                    },
-                  },
-                ]}
-              >
-                <Input
-                  placeholder="输入目标用户 ID，或从上方队列 / 日志一键带入"
-                  onChange={() => {
-                    setManualActionContextHint(null);
-                    manualStatusRequestIdRef.current += 1;
-                    setManualStatusLoading(false);
-                    setManualStatusSnapshot(null);
-                    setManualStatusError(null);
-                  }}
-                  onBlur={refreshManualActionStatus}
-                  onPressEnter={refreshManualActionStatus}
-                />
-              </Form.Item>
-
-              <Form.Item
-                name="sourceReportId"
-                label="关联举报单 ID"
-                rules={[
-                  {
-                    validator: (_, value) => {
-                      if (value === undefined || value === null || String(value).trim().length === 0) {
-                        return Promise.resolve();
-                      }
-
-                      return toPositiveLongString(String(value))
-                        ? Promise.resolve()
-                        : Promise.reject(new Error('请输入有效的关联举报单 ID'));
-                    },
-                  },
-                ]}
-              >
-                <Input placeholder="可选，保留动作与举报单的关联" />
-              </Form.Item>
-            </div>
-
-            <div className="moderation-manual-action-form__grid">
-              <Form.Item name="actionType" label="治理动作" rules={[{ required: true, message: '请选择治理动作' }]}>
-                <Select options={MANUAL_ACTION_OPTIONS} placeholder="选择禁言、封禁或解除动作" />
-              </Form.Item>
-
-              <Form.Item
-                noStyle
-                shouldUpdate={(prev, next) => prev.actionType !== next.actionType}
-              >
-                {({ getFieldValue }) => {
-                  const currentActionType = getFieldValue('actionType') as ManualActionTypeValue | undefined;
-                  if (currentActionType !== MANUAL_ACTION_TYPE.mute && currentActionType !== MANUAL_ACTION_TYPE.ban) {
-                    return <div className="moderation-manual-action-form__field-placeholder" />;
-                  }
-
-                  return (
-                    <Form.Item
-                      name="durationHours"
-                      label={currentActionType === MANUAL_ACTION_TYPE.mute ? '持续时长（小时）' : '持续时长（小时，可留空表示永久封禁）'}
-                      rules={currentActionType === MANUAL_ACTION_TYPE.mute
-                        ? [{ required: true, message: '请输入禁言时长' }]
-                        : []}
-                    >
-                      <InputNumber min={1} max={720} style={{ width: '100%' }} placeholder={currentActionType === MANUAL_ACTION_TYPE.mute ? '例如 24' : '留空表示永久封禁'} />
-                    </Form.Item>
-                  );
-                }}
-              </Form.Item>
-            </div>
-
-            <Form.Item name="reason" label="动作原因">
-              <Input.TextArea rows={4} maxLength={500} showCount placeholder="补充人工治理依据；若从上方队列或日志带入，会自动预填推荐说明。" />
-            </Form.Item>
-
-            <div className="moderation-manual-action-form__footnote">
-              禁言必须填写时长，封禁可留空表示永久；解除禁言 / 解除封禁会记录新的治理动作单，并自动回跳到对应日志。
-            </div>
-          </Form>
-        </section>
+        <ManualModerationActionSection
+          sectionRef={manualActionSectionRef}
+          form={manualActionForm}
+          contextHint={manualActionContextHint}
+          submitting={submittingManualAction}
+          statusLoading={manualStatusLoading}
+          statusError={manualStatusError}
+          statusSnapshot={manualStatusSnapshot}
+          onResetForm={resetManualActionForm}
+          onSubmit={() => {
+            void handleSubmitManualAction();
+          }}
+          onRefreshStatus={refreshManualActionStatus}
+          onTargetUserInputChange={handleManualActionTargetUserInputChange}
+          onApplyActionLogPreset={applyActionLogPreset}
+          onApplyManualActionPreset={applyManualActionPreset}
+        />
       ) : null}
 
       <section className="admin-feature-card" ref={logSectionRef}>
