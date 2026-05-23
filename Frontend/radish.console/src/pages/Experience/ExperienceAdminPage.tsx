@@ -1,11 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  Button,
   Form,
-  Table,
   message,
 } from '@radish/ui';
-import { ReloadOutlined } from '@radish/ui';
 import {
   adminAdjustExperience,
   adminRecordGovernanceReview,
@@ -45,9 +42,10 @@ import {
   type GovernanceReviewResult,
   type StatsWindowDays,
 } from './experienceAdminHelpers';
-import { createLevelColumns } from './experienceAdminColumns';
+import { ExperienceAdminHeader } from './ExperienceAdminHeader';
 import { ExperienceGovernanceActionForms } from './ExperienceGovernanceActionForms';
 import { ExperienceGovernanceReviewSection } from './ExperienceGovernanceReviewSection';
+import { ExperienceLevelConfigSection } from './ExperienceLevelConfigSection';
 import { ExperienceObservationSummary } from './ExperienceObservationSummary';
 import { ExperienceTransactionSection } from './ExperienceTransactionSection';
 import { ExperienceUserQuerySummary } from './ExperienceUserQuerySummary';
@@ -579,26 +577,16 @@ export const ExperienceAdminPage = () => {
     }
   };
 
-  const levelColumns = createLevelColumns();
-
   return (
     <div className="admin-feature-page">
-      <section className="admin-feature-card">
-        <div className="admin-feature-header">
-          <div>
-            <h2>经验等级</h2>
-            <p className="admin-feature-subtle">支持按用户查看经验等级、调经验，并回看当前等级配置。</p>
-          </div>
-          <Button icon={<ReloadOutlined />} onClick={() => {
-            void Promise.all([
-              loadExperience(undefined, { showInvalidMessage: false }),
-              loadLevels(),
-            ]);
-          }}>
-            刷新
-          </Button>
-        </div>
-      </section>
+      <ExperienceAdminHeader
+        onRefresh={() => {
+          void Promise.all([
+            loadExperience(undefined, { showInvalidMessage: false }),
+            loadLevels(),
+          ]);
+        }}
+      />
 
       <ExperienceUserQuerySummary
         queryUserId={queryUserId}
@@ -704,28 +692,13 @@ export const ExperienceAdminPage = () => {
         onUnfreeze={handleUnfreeze}
       />
 
-      <section className="admin-feature-card">
-        <div className="admin-feature-header">
-          <div>
-            <h3>等级配置</h3>
-            <p className="admin-feature-subtle">查看当前等级曲线，必要时重新按后端配置重算。</p>
-          </div>
-          <Button variant="primary" disabled={!canRecalculate || recalculating} onClick={() => {
-            void handleRecalculate();
-          }}>
-            {recalculating ? '重算中...' : '重算等级配置'}
-          </Button>
-        </div>
-
-        <Table<LevelConfigVo>
-          rowKey="voLevel"
-          columns={levelColumns}
-          dataSource={levels}
-          loading={loadingLevels}
-          pagination={false}
-          scroll={{ x: 960 }}
-        />
-      </section>
+      <ExperienceLevelConfigSection
+        levels={levels}
+        loadingLevels={loadingLevels}
+        canRecalculate={canRecalculate}
+        recalculating={recalculating}
+        onRecalculate={handleRecalculate}
+      />
     </div>
   );
 };
