@@ -68,3 +68,5 @@
 - 下一步继续复核 `ExperienceService.cs` 剩余缓存、等级配置与发放辅助逻辑是否存在一天级、安全可验证的行为等价拆分点；不直接切入 `P3-8`。
 - `ExperienceService` 等级配置与缓存辅助逻辑已继续拆分到 `ExperienceService.LevelConfigs.cs`，覆盖等级配置查询、等级配置缓存读写、图标 / 徽章 URL 补全和纯等级计算；主文件进一步降至 `1652` 行。
 - 本次仍不改经验发放、冻结、等级计算语义、API 契约、数据库结构或缓存配置口径；验证已覆盖 `dotnet test Radish.Api.Tests --filter ExperienceServiceTest`（`13/13`）、`dotnet build Radish.slnx -c Debug` 与 `git diff --check`。
+- `ExperienceService` 交易记录辅助逻辑已拆分到 `ExperienceService.Transactions.cs`，覆盖交易分页筛选、经验类型过滤、日期过滤、分页归一化和交易用户名称补全；主文件进一步降至 `1514` 行。
+- 本次仍保持行为等价，不改交易查询 API、分页规则、筛选语义、AutoMapper 映射或经验发放 / 冻结链路；验证已覆盖 `dotnet test Radish.Api.Tests --filter ExperienceServiceTest`（`13/13`）、`dotnet build Radish.slnx -c Debug` 与 `git diff --check`。
