@@ -21,7 +21,6 @@ const binaryExtensions = new Set([
   '.jpeg',
   '.jpg',
   '.pdb',
-  '.pen',
   '.pdf',
   '.pfx',
   '.png',
@@ -102,6 +101,7 @@ const crlfExtensions = new Set([
 
 const markdownExtensions = new Set(['.md']);
 const documentationExtensions = new Set(['.cshtml', '.html', '.md', '.txt']);
+const pencilDesignSourceExtensions = new Set(['.pen']);
 const suspiciousMojibakePatterns = [
   /ï»¿/u,
   /锟斤拷/u,
@@ -363,11 +363,15 @@ function validateFile(filePath) {
     issues.push('应使用 CRLF 换行，但检测到 LF。');
   }
 
-  if (content.length > 0 && !content.endsWith('\n')) {
+  const ext = path.extname(filePath).toLowerCase();
+  if (
+    content.length > 0 &&
+    !content.endsWith('\n') &&
+    !pencilDesignSourceExtensions.has(ext)
+  ) {
     issues.push('文件末尾缺少换行。');
   }
 
-  const ext = path.extname(filePath).toLowerCase();
   if (!markdownExtensions.has(ext) && hasTrailingWhitespace(content)) {
     issues.push('存在行尾空格或制表符。');
   }
