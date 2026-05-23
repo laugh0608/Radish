@@ -565,216 +565,224 @@ export const ModerationPage = () => {
         当前治理链路已统一接入帖子、评论、聊天室消息和商品举报，审核通过后可联动禁言 / 封禁；历史动作也支持继续处置或直接解除。
       </div>
 
-      <section className="admin-feature-card" ref={queueSectionRef}>
-        <div className="admin-feature-header">
-          <div>
-            <h3>举报审核队列</h3>
-            <p className="admin-feature-subtle">按状态、目标类型、举报原因、回看状态和关键词筛选举报单，并在审核时直接联动治理动作。</p>
-          </div>
-          <Space wrap>
-            <Select
-              value={statusFilter}
-              style={{ width: 160 }}
-              options={REVIEW_STATUS_OPTIONS}
-              onChange={(value) => {
-                setQueueContextHint(null);
-                setStatusFilter(value);
+      <div className={canReview ? 'governance-workbench' : 'governance-workbench governance-workbench--without-actions'}>
+        <div className="governance-workbench__queue">
+          <section className="admin-feature-card" ref={queueSectionRef}>
+            <div className="admin-feature-header">
+              <div>
+                <h3>举报审核队列</h3>
+                <p className="admin-feature-subtle">按状态、目标类型、举报原因、回看状态和关键词筛选举报单，并在审核时直接联动治理动作。</p>
+              </div>
+              <Space wrap>
+                <Select
+                  value={statusFilter}
+                  style={{ width: 160 }}
+                  options={REVIEW_STATUS_OPTIONS}
+                  onChange={(value) => {
+                    setQueueContextHint(null);
+                    setStatusFilter(value);
+                  }}
+                />
+                <Select
+                  value={queueTargetTypeFilter}
+                  style={{ width: 160 }}
+                  options={TARGET_TYPE_OPTIONS}
+                  allowClear
+                  placeholder="目标类型"
+                  onChange={(value) => {
+                    setQueueContextHint(null);
+                    setQueueTargetTypeFilter(toOptionalString(value));
+                  }}
+                />
+                <Select
+                  value={queueReasonTypeFilter}
+                  style={{ width: 160 }}
+                  options={REASON_TYPE_OPTIONS}
+                  allowClear
+                  placeholder="举报原因"
+                  onChange={(value) => {
+                    setQueueContextHint(null);
+                    setQueueReasonTypeFilter(toOptionalString(value));
+                  }}
+                />
+                <Select
+                  value={queueNavigationStatusFilter}
+                  style={{ width: 160 }}
+                  options={TARGET_NAVIGATION_STATUS_OPTIONS}
+                  allowClear
+                  placeholder="回看状态"
+                  onChange={(value) => {
+                    setQueueContextHint(null);
+                    setQueueNavigationStatusFilter(toOptionalString(value));
+                  }}
+                />
+                <Input
+                  allowClear
+                  placeholder="搜索举报单 / 目标 / 快照 / 用户 / 原因补充"
+                  value={queueKeywordInput}
+                  onChange={(event) => {
+                    setQueueContextHint(null);
+                    setQueueKeywordInput(event.target.value);
+                  }}
+                  onPressEnter={applyQueueKeywordSearch}
+                  style={{ width: 320 }}
+                />
+                <Button
+                  variant="primary"
+                  onClick={applyQueueKeywordSearch}
+                >
+                  查询
+                </Button>
+                <Button onClick={resetQueueFilters}>
+                  重置
+                </Button>
+              </Space>
+            </div>
+
+            {queueContextHint ? (
+              <div className="admin-feature-banner" style={{ marginTop: 16 }}>
+                {queueContextHint}
+              </div>
+            ) : null}
+
+            <Table<ContentReportQueueItemVo>
+              rowKey="voReportId"
+              columns={queueColumns}
+              dataSource={queueItems}
+              loading={loadingQueue}
+              pagination={{
+                current: queuePageIndex,
+                pageSize: queuePageSize,
+                total: queueTotal,
+                showSizeChanger: true,
+                showQuickJumper: true,
+                onChange: (page, size) => {
+                  void loadQueue(page, size);
+                },
               }}
+              scroll={{ x: 1580 }}
             />
-            <Select
-              value={queueTargetTypeFilter}
-              style={{ width: 160 }}
-              options={TARGET_TYPE_OPTIONS}
-              allowClear
-              placeholder="目标类型"
-              onChange={(value) => {
-                setQueueContextHint(null);
-                setQueueTargetTypeFilter(toOptionalString(value));
-              }}
-            />
-            <Select
-              value={queueReasonTypeFilter}
-              style={{ width: 160 }}
-              options={REASON_TYPE_OPTIONS}
-              allowClear
-              placeholder="举报原因"
-              onChange={(value) => {
-                setQueueContextHint(null);
-                setQueueReasonTypeFilter(toOptionalString(value));
-              }}
-            />
-            <Select
-              value={queueNavigationStatusFilter}
-              style={{ width: 160 }}
-              options={TARGET_NAVIGATION_STATUS_OPTIONS}
-              allowClear
-              placeholder="回看状态"
-              onChange={(value) => {
-                setQueueContextHint(null);
-                setQueueNavigationStatusFilter(toOptionalString(value));
-              }}
-            />
-            <Input
-              allowClear
-              placeholder="搜索举报单 / 目标 / 快照 / 用户 / 原因补充"
-              value={queueKeywordInput}
-              onChange={(event) => {
-                setQueueContextHint(null);
-                setQueueKeywordInput(event.target.value);
-              }}
-              onPressEnter={applyQueueKeywordSearch}
-              style={{ width: 320 }}
-            />
-            <Button
-              variant="primary"
-              onClick={applyQueueKeywordSearch}
-            >
-              查询
-            </Button>
-            <Button onClick={resetQueueFilters}>
-              重置
-            </Button>
-          </Space>
+          </section>
         </div>
 
-        {queueContextHint ? (
-          <div className="admin-feature-banner" style={{ marginTop: 16 }}>
-            {queueContextHint}
+        {canReview ? (
+          <div className="governance-workbench__actions">
+            <ManualModerationActionSection
+              sectionRef={manualActionSectionRef}
+              form={manualActionForm}
+              contextHint={manualActionContextHint}
+              submitting={submittingManualAction}
+              statusLoading={manualStatusLoading}
+              statusError={manualStatusError}
+              statusSnapshot={manualStatusSnapshot}
+              onResetForm={resetManualActionForm}
+              onSubmit={() => {
+                void handleSubmitManualAction();
+              }}
+              onRefreshStatus={refreshManualActionStatus}
+              onTargetUserInputChange={handleManualActionTargetUserInputChange}
+              onApplyActionLogPreset={applyActionLogPreset}
+              onApplyManualActionPreset={applyManualActionPreset}
+            />
           </div>
         ) : null}
 
-        <Table<ContentReportQueueItemVo>
-          rowKey="voReportId"
-          columns={queueColumns}
-          dataSource={queueItems}
-          loading={loadingQueue}
-          pagination={{
-            current: queuePageIndex,
-            pageSize: queuePageSize,
-            total: queueTotal,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            onChange: (page, size) => {
-              void loadQueue(page, size);
-            },
-          }}
-          scroll={{ x: 1580 }}
-        />
-      </section>
+        <div className="governance-workbench__detail">
+          <section className="admin-feature-card" ref={logSectionRef}>
+            <div className="admin-feature-header">
+              <div>
+                <h3>治理动作日志</h3>
+                <p className="admin-feature-subtle">回看审核联动与手动执行后实际落下的治理动作，并支持从举报队列或动作记录回跳到对应上下文。</p>
+              </div>
+              <Space wrap>
+                <Input
+                  placeholder="按目标用户 ID 过滤"
+                  value={logTargetUserIdInput}
+                  onChange={(event) => {
+                    setLogContextHint(null);
+                    setLogTargetUserIdInput(event.target.value);
+                  }}
+                  style={{ width: 200 }}
+                />
+                <Input
+                  placeholder="关联举报单 ID"
+                  value={logSourceReportIdInput}
+                  onChange={(event) => {
+                    setLogContextHint(null);
+                    setLogSourceReportIdInput(event.target.value);
+                  }}
+                  style={{ width: 200 }}
+                />
+                <Select
+                  value={logActionTypeFilter}
+                  style={{ width: 160 }}
+                  options={ACTION_LOG_ACTION_TYPE_OPTIONS}
+                  allowClear
+                  placeholder="治理动作"
+                  onChange={(value) => {
+                    setLogContextHint(null);
+                    setLogActionTypeFilter(toOptionalString(value));
+                  }}
+                />
+                <Select
+                  value={logIsActiveFilter}
+                  style={{ width: 160 }}
+                  options={ACTION_LOG_STATUS_OPTIONS}
+                  allowClear
+                  placeholder="动作状态"
+                  onChange={(value) => {
+                    setLogContextHint(null);
+                    setLogIsActiveFilter((value === 'active' || value === 'inactive') ? value : undefined);
+                  }}
+                />
+                <Input
+                  allowClear
+                  placeholder="搜索动作单 / 目标用户 / 原因 / 操作者"
+                  value={logKeywordInput}
+                  onChange={(event) => {
+                    setLogContextHint(null);
+                    setLogKeywordInput(event.target.value);
+                  }}
+                  onPressEnter={applyLogFilters}
+                  style={{ width: 280 }}
+                />
+                <Button
+                  variant="primary"
+                  onClick={applyLogFilters}
+                >
+                  查询
+                </Button>
+                <Button onClick={resetLogFilters}>
+                  重置
+                </Button>
+              </Space>
+            </div>
 
-      {canReview ? (
-        <ManualModerationActionSection
-          sectionRef={manualActionSectionRef}
-          form={manualActionForm}
-          contextHint={manualActionContextHint}
-          submitting={submittingManualAction}
-          statusLoading={manualStatusLoading}
-          statusError={manualStatusError}
-          statusSnapshot={manualStatusSnapshot}
-          onResetForm={resetManualActionForm}
-          onSubmit={() => {
-            void handleSubmitManualAction();
-          }}
-          onRefreshStatus={refreshManualActionStatus}
-          onTargetUserInputChange={handleManualActionTargetUserInputChange}
-          onApplyActionLogPreset={applyActionLogPreset}
-          onApplyManualActionPreset={applyManualActionPreset}
-        />
-      ) : null}
+            {logContextHint ? (
+              <div className="admin-feature-banner" style={{ marginTop: 16 }}>
+                {logContextHint}
+              </div>
+            ) : null}
 
-      <section className="admin-feature-card" ref={logSectionRef}>
-        <div className="admin-feature-header">
-          <div>
-            <h3>治理动作日志</h3>
-            <p className="admin-feature-subtle">回看审核联动与手动执行后实际落下的治理动作，并支持从举报队列或动作记录回跳到对应上下文。</p>
-          </div>
-          <Space wrap>
-            <Input
-              placeholder="按目标用户 ID 过滤"
-              value={logTargetUserIdInput}
-              onChange={(event) => {
-                setLogContextHint(null);
-                setLogTargetUserIdInput(event.target.value);
+            <Table<UserModerationActionVo>
+              rowKey="voActionId"
+              columns={logColumns}
+              dataSource={logItems}
+              loading={loadingLogs}
+              pagination={{
+                current: logPageIndex,
+                pageSize: logPageSize,
+                total: logTotal,
+                showSizeChanger: true,
+                onChange: (page, size) => {
+                  void loadLogs(page, size);
+                },
               }}
-              style={{ width: 200 }}
+              scroll={{ x: 1780 }}
             />
-            <Input
-              placeholder="关联举报单 ID"
-              value={logSourceReportIdInput}
-              onChange={(event) => {
-                setLogContextHint(null);
-                setLogSourceReportIdInput(event.target.value);
-              }}
-              style={{ width: 200 }}
-            />
-            <Select
-              value={logActionTypeFilter}
-              style={{ width: 160 }}
-              options={ACTION_LOG_ACTION_TYPE_OPTIONS}
-              allowClear
-              placeholder="治理动作"
-              onChange={(value) => {
-                setLogContextHint(null);
-                setLogActionTypeFilter(toOptionalString(value));
-              }}
-            />
-            <Select
-              value={logIsActiveFilter}
-              style={{ width: 160 }}
-              options={ACTION_LOG_STATUS_OPTIONS}
-              allowClear
-              placeholder="动作状态"
-              onChange={(value) => {
-                setLogContextHint(null);
-                setLogIsActiveFilter((value === 'active' || value === 'inactive') ? value : undefined);
-              }}
-            />
-            <Input
-              allowClear
-              placeholder="搜索动作单 / 目标用户 / 原因 / 操作者"
-              value={logKeywordInput}
-              onChange={(event) => {
-                setLogContextHint(null);
-                setLogKeywordInput(event.target.value);
-              }}
-              onPressEnter={applyLogFilters}
-              style={{ width: 280 }}
-            />
-            <Button
-              variant="primary"
-              onClick={applyLogFilters}
-            >
-              查询
-            </Button>
-            <Button onClick={resetLogFilters}>
-              重置
-            </Button>
-          </Space>
+          </section>
         </div>
-
-        {logContextHint ? (
-          <div className="admin-feature-banner" style={{ marginTop: 16 }}>
-            {logContextHint}
-          </div>
-        ) : null}
-
-        <Table<UserModerationActionVo>
-          rowKey="voActionId"
-          columns={logColumns}
-          dataSource={logItems}
-          loading={loadingLogs}
-          pagination={{
-            current: logPageIndex,
-            pageSize: logPageSize,
-            total: logTotal,
-            showSizeChanger: true,
-            onChange: (page, size) => {
-              void loadLogs(page, size);
-            },
-          }}
-          scroll={{ x: 1780 }}
-        />
-      </section>
+      </div>
 
       <Modal
         title={reviewingItem ? `审核举报单 #${reviewingItem.voReportId}` : '审核举报单'}

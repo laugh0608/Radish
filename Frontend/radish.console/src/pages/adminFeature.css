@@ -76,6 +76,7 @@
 .governance-workbench {
   display: grid;
   gap: 20px;
+  grid-template-areas: "queue detail actions";
   grid-template-columns: minmax(360px, 520px) minmax(0, 1fr) minmax(300px, 360px);
   align-items: start;
 }
@@ -86,9 +87,36 @@
   min-width: 0;
 }
 
+.governance-workbench__queue {
+  grid-area: queue;
+}
+
+.governance-workbench__detail {
+  grid-area: detail;
+}
+
+.governance-workbench__actions {
+  grid-area: actions;
+}
+
+.governance-workbench--without-actions {
+  grid-template-areas: "queue detail";
+  grid-template-columns: minmax(360px, 520px) minmax(0, 1fr);
+}
+
 @media (max-width: 1200px) {
   .governance-workbench {
+    grid-template-areas:
+      "queue"
+      "detail"
+      "actions";
     grid-template-columns: 1fr;
+  }
+
+  .governance-workbench--without-actions {
+    grid-template-areas:
+      "queue"
+      "detail";
   }
 }
 
