@@ -7,7 +7,6 @@ import {
   Form,
   InputNumber,
   Table,
-  Tag,
   message,
 } from '@radish/ui';
 import { ReloadOutlined } from '@radish/ui';
@@ -39,12 +38,8 @@ import dayjs, { type Dayjs } from 'dayjs';
 import {
   EXPERIENCE_TRANSACTION_TYPE_OPTIONS,
   formatFullStatDate,
-  formatLimitValue,
   getGovernanceReviewResultForRecommendationLevel,
   getGovernanceReviewResultForRuleSeverity,
-  getRecommendationTagColor,
-  getRuleSeverityLabel,
-  getRuleSeverityTagColor,
   getTransactionExpTypePresetForRuleCodes,
   isFormValidationError,
   normalizePositiveLongIdInput,
@@ -56,11 +51,11 @@ import {
   type StatsWindowDays,
 } from './experienceAdminHelpers';
 import {
-  createDailyStatsColumns,
-  createGovernanceActionColumns,
   createLevelColumns,
   createTransactionColumns,
 } from './experienceAdminColumns';
+import { ExperienceGovernanceReviewSection } from './ExperienceGovernanceReviewSection';
+import { ExperienceObservationSummary } from './ExperienceObservationSummary';
 import { ExperienceUserQuerySummary } from './ExperienceUserQuerySummary';
 import '../adminFeature.css';
 
@@ -591,15 +586,7 @@ export const ExperienceAdminPage = () => {
   };
 
   const levelColumns = createLevelColumns();
-  const dailyStatsColumns = createDailyStatsColumns({
-    canFreeze,
-    dailyLimits,
-    onDayReview: handleDayReview,
-    onDayGovernanceReview: handleDayGovernanceReview,
-    onDayFreezeReason: handleDayFreezeReason,
-  });
   const transactionColumns = createTransactionColumns();
-  const governanceActionColumns = createGovernanceActionColumns();
 
   return (
     <div className="admin-feature-page">
@@ -631,199 +618,26 @@ export const ExperienceAdminPage = () => {
         }}
       />
 
-      <section className="admin-feature-card">
-        <div className="admin-feature-header">
-          <div>
-            <h3>经验统计观察</h3>
-            <p className="admin-feature-subtle">查看最近 7 / 30 天经验来源与异常判定，仅服务人工复核和冻结建议，不自动处罚。</p>
-          </div>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <Button
-              variant={statsWindowDays === 7 ? 'primary' : 'secondary'}
-              disabled={!loadedUserId || loadingDailyStats}
-              onClick={() => setStatsWindowDays(7)}
-            >
-              最近 7 天
-            </Button>
-            <Button
-              variant={statsWindowDays === 30 ? 'primary' : 'secondary'}
-              disabled={!loadedUserId || loadingDailyStats}
-              onClick={() => setStatsWindowDays(30)}
-            >
-              最近 30 天
-            </Button>
-          </div>
-        </div>
-
-        {loadedUserId ? (
-          <>
-            <div className="admin-feature-metrics" style={{ marginTop: 20 }}>
-              <div className="admin-feature-metric">
-                <span>窗口总经验</span>
-                <strong>{dailyStatsSummary ? dailyStatsSummary.voTotalExp : '--'}</strong>
-              </div>
-              <div className="admin-feature-metric">
-                <span>日均经验</span>
-                <strong>{dailyStatsSummary ? dailyStatsSummary.voAverageExp.toFixed(1) : '--'}</strong>
-              </div>
-              <div className="admin-feature-metric">
-                <span>峰值单日</span>
-                <strong>{dailyStatsSummary ? dailyStatsSummary.voPeakDayExp : '--'}</strong>
-                <div style={{ marginTop: 6, color: '#8c8c8c' }}>
-                  {dailyStatsSummary?.voPeakStatDate
-                    ? formatFullStatDate(dailyStatsSummary.voPeakStatDate)
-                    : '--'}
-                </div>
-              </div>
-              <div className="admin-feature-metric">
-                <span>零增长天数</span>
-                <strong>{dailyStatsSummary ? dailyStatsSummary.voZeroGainDays : '--'}</strong>
-              </div>
-              <div className="admin-feature-metric">
-                <span>异常命中天数</span>
-                <strong>{dailyStatsSummary ? dailyStatsSummary.voReviewDays : '--'}</strong>
-              </div>
-            </div>
-
-            {dailyLimits && (
-              <div className="admin-feature-banner" style={{ marginTop: 16 }}>
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                  <strong>当前经验阈值</strong>
-                  <Tag color={dailyLimits.voDailyLimitEnabled ? 'success' : 'default'}>
-                    {dailyLimits.voDailyLimitEnabled ? '每日上限启用中' : '每日上限已停用'}
-                  </Tag>
-                </div>
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 12 }}>
-                  <span>总经验 {dailyLimits.voMaxDailyExp}</span>
-                  <span>发帖 {dailyLimits.voMaxExpFromPost}</span>
-                  <span>评论 {dailyLimits.voMaxExpFromComment}</span>
-                  <span>点赞 {dailyLimits.voMaxExpFromLike}</span>
-                  <span>高亮 {dailyLimits.voMaxExpFromHighlight}</span>
-                  <span>登录 {dailyLimits.voMaxExpFromLogin}</span>
-                </div>
-              </div>
-            )}
-
-            {governanceRecommendation && (
-              <div className="admin-feature-banner" style={{ marginTop: 16 }}>
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                  <strong>当前治理建议</strong>
-                  <Tag color={getRecommendationTagColor(governanceRecommendation.voLevel)}>
-                    {governanceRecommendation.voTitle}
-                  </Tag>
-                </div>
-                <div style={{ marginTop: 12 }}>{governanceRecommendation.voReason}</div>
-                <div style={{ marginTop: 8, color: '#8c8c8c' }}>
-                  建议动作：{governanceRecommendation.voSuggestedAction}
-                </div>
-                <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <Button
-                    variant="secondary"
-                    disabled={!canFreeze}
-                    onClick={() => handleRecommendationGovernanceReview(governanceRecommendation)}
-                  >
-                    带入复核结论
-                  </Button>
-                  {governanceRecommendation.voLevel !== 'normal' && (
-                    <Button
-                      variant="secondary"
-                      disabled={!canFreeze}
-                      onClick={() => prefillFreezeReason(`经验异常待复核：${governanceRecommendation.voReason}`)}
-                    >
-                      带入冻结原因
-                    </Button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {anomalyRuleSummaries.length > 0 && (
-              <div style={{ marginTop: 16 }}>
-                <div style={{ marginBottom: 12, fontWeight: 600 }}>异常规则摘要</div>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                  gap: 12,
-                }}>
-                  {anomalyRuleSummaries.map((rule) => (
-                    <div
-                      key={rule.voRuleCode}
-                      style={{
-                        border: '1px solid rgba(5, 5, 5, 0.08)',
-                        borderRadius: 12,
-                        padding: 16,
-                        background: '#fff',
-                      }}
-                    >
-                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                        <strong>{rule.voRuleLabel}</strong>
-                        <Tag color={getRuleSeverityTagColor(rule.voSeverity)}>
-                          {getRuleSeverityLabel(rule.voSeverity)}
-                        </Tag>
-                      </div>
-                      <div style={{ marginTop: 10, color: '#595959' }}>{rule.voThresholdDescription}</div>
-                      <div style={{ marginTop: 10, display: 'grid', gap: 6 }}>
-                        <span>窗口命中：{rule.voHitDays} 天</span>
-                        <span>最强信号：{rule.voStrongestSignal}</span>
-                        <span>最近命中：{rule.voLatestHitDate ? formatFullStatDate(rule.voLatestHitDate) : '-'}</span>
-                      </div>
-                      <div style={{ marginTop: 10, color: '#8c8c8c' }}>
-                        建议动作：{rule.voSuggestedAction}
-                      </div>
-                      <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        <Button onClick={() => handleRuleReview(rule)}>
-                          查看流水
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          disabled={!canFreeze}
-                          onClick={() => handleRuleGovernanceReview(rule)}
-                        >
-                          带入复核结论
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          disabled={!canFreeze}
-                          onClick={() => handleRuleFreezeReason(rule)}
-                        >
-                          带入冻结原因
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {dailyStatsSummary && (
-              <div className="admin-feature-banner" style={{ marginTop: 16 }}>
-                {dailyStatsSummary.voNotices.map((notice) => (
-                  <div key={notice}>{notice}</div>
-                ))}
-              </div>
-            )}
-
-            <Table<UserExpDailyStatsVo>
-              rowKey={(record) => `${record.voUserId}-${record.voStatDate}`}
-              columns={dailyStatsColumns}
-              dataSource={dailyStats}
-              loading={loadingDailyStats}
-              pagination={false}
-              scroll={{ x: 1520 }}
-              style={{ marginTop: 20 }}
-              locale={{
-                emptyText: loadingDailyStats
-                  ? '统计加载中...'
-                  : `最近 ${statsWindowDays} 天暂无经验统计记录`,
-              }}
-            />
-          </>
-        ) : (
-          <div style={{ marginTop: 20, color: '#8c8c8c' }}>
-            请先查询用户经验，再查看最近 {statsWindowDays} 天的统计观察。
-          </div>
-        )}
-      </section>
+      <ExperienceObservationSummary
+        loadedUserId={loadedUserId}
+        statsWindowDays={statsWindowDays}
+        loadingDailyStats={loadingDailyStats}
+        canFreeze={canFreeze}
+        dailyStats={dailyStats}
+        dailyStatsSummary={dailyStatsSummary}
+        anomalyRuleSummaries={anomalyRuleSummaries}
+        governanceRecommendation={governanceRecommendation}
+        dailyLimits={dailyLimits}
+        onStatsWindowDaysChange={setStatsWindowDays}
+        onRecommendationGovernanceReview={handleRecommendationGovernanceReview}
+        onRecommendationFreezeReason={prefillFreezeReason}
+        onRuleReview={handleRuleReview}
+        onRuleGovernanceReview={handleRuleGovernanceReview}
+        onRuleFreezeReason={handleRuleFreezeReason}
+        onDayReview={handleDayReview}
+        onDayGovernanceReview={handleDayGovernanceReview}
+        onDayFreezeReason={handleDayFreezeReason}
+      />
 
       <section className="admin-feature-card" ref={transactionSectionRef}>
         <div className="admin-feature-header">
@@ -918,109 +732,22 @@ export const ExperienceAdminPage = () => {
         )}
       </section>
 
-      <section className="admin-feature-card" ref={reviewSectionRef}>
-        <div className="admin-feature-header">
-          <div>
-            <h3>复核结论与留痕</h3>
-            <p className="admin-feature-subtle">记录人工复核结论；冻结 / 解冻动作会自动写入治理留痕，便于后续回看。</p>
-          </div>
-        </div>
-
-        {loadedUserId ? (
-          <>
-            <div style={{ marginTop: 16, color: '#8c8c8c' }}>
-              当前目标：{experience?.voUserName || '未命名用户'}（ID: {loadedUserId}）
-            </div>
-
-            <div className="admin-feature-banner" style={{ marginTop: 16 }}>
-              {reviewContextDraft ? (
-                <>
-                  <div>{reviewContextDraft.hint}</div>
-                  {reviewContextDraft.recommendationReason && (
-                    <div style={{ marginTop: 8, color: '#8c8c8c' }}>
-                      建议原因快照：{reviewContextDraft.recommendationReason}
-                    </div>
-                  )}
-                </>
-              ) : '可从上方治理建议、规则摘要或每日异常一键带入复核草稿，也可直接手动填写结论。'}
-            </div>
-
-            <Form form={reviewForm} layout="vertical" className="admin-feature-form" style={{ marginTop: 20 }}>
-              <Form.Item
-                name="reviewResult"
-                label="复核结论"
-                rules={[{ required: true, message: '请选择复核结论' }]}
-              >
-                <Select
-                  placeholder="选择复核结论"
-                  options={[
-                    { label: '已复核，未见异常', value: 'NoIssue' },
-                    { label: '已复核，继续观察', value: 'Observe' },
-                    { label: '已复核，可考虑冻结', value: 'FreezeSuggest' },
-                  ]}
-                  disabled={!canFreeze || reviewing}
-                />
-              </Form.Item>
-
-              <Form.Item
-                name="remark"
-                label="复核备注"
-                rules={[
-                  { required: true, message: '请输入复核备注' },
-                  { max: 500, message: '复核备注不能超过500个字符' },
-                ]}
-              >
-                <Input.TextArea
-                  rows={4}
-                  maxLength={500}
-                  showCount
-                  placeholder="例如：已回看对应日期经验流水与目标内容，暂未发现异常；继续观察。"
-                  disabled={!canFreeze || reviewing}
-                />
-              </Form.Item>
-
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                <Button
-                  variant="primary"
-                  disabled={!canFreeze || reviewing}
-                  onClick={() => {
-                    void handleRecordGovernanceReview();
-                  }}
-                >
-                  {reviewing ? '记录中...' : '记录复核结论'}
-                </Button>
-                <Button
-                  disabled={reviewing}
-                  onClick={() => {
-                    reviewForm.resetFields();
-                    setReviewContextDraft(null);
-                  }}
-                >
-                  清空复核草稿
-                </Button>
-              </div>
-            </Form>
-
-            <div style={{ marginTop: 24, fontWeight: 600 }}>最近治理留痕</div>
-            <Table<UserExperienceGovernanceActionVo>
-              rowKey="voActionId"
-              columns={governanceActionColumns}
-              dataSource={governanceActions}
-              loading={loadingGovernanceActions}
-              pagination={false}
-              scroll={{ x: 1280 }}
-              style={{ marginTop: 16 }}
-              locale={{
-                emptyText: loadingGovernanceActions ? '治理留痕加载中...' : '该用户暂无治理留痕',
-              }}
-            />
-          </>
-        ) : (
-          <div style={{ marginTop: 20, color: '#8c8c8c' }}>
-            请先查询用户经验，再记录复核结论或查看治理留痕。
-          </div>
-        )}
-      </section>
+      <ExperienceGovernanceReviewSection
+        reviewSectionRef={reviewSectionRef}
+        loadedUserId={loadedUserId}
+        experience={experience}
+        reviewForm={reviewForm}
+        reviewContextDraft={reviewContextDraft}
+        canFreeze={canFreeze}
+        reviewing={reviewing}
+        governanceActions={governanceActions}
+        loadingGovernanceActions={loadingGovernanceActions}
+        onRecordGovernanceReview={handleRecordGovernanceReview}
+        onClearReviewDraft={() => {
+          reviewForm.resetFields();
+          setReviewContextDraft(null);
+        }}
+      />
 
       <section className="admin-feature-card">
         <div className="admin-feature-header">
