@@ -73,6 +73,25 @@
   gap: 16px;
 }
 
+.governance-workbench {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(360px, 520px) minmax(0, 1fr) minmax(300px, 360px);
+  align-items: start;
+}
+
+.governance-workbench__queue,
+.governance-workbench__detail,
+.governance-workbench__actions {
+  min-width: 0;
+}
+
+@media (max-width: 1200px) {
+  .governance-workbench {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 768px) {
   .admin-feature-page {
     padding: 16px;
