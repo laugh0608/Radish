@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   AntInput as Input,
-  AntSelect as Select,
   Button,
   DatePicker,
   Form,
@@ -36,7 +35,6 @@ import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
 import dayjs, { type Dayjs } from 'dayjs';
 import {
-  EXPERIENCE_TRANSACTION_TYPE_OPTIONS,
   formatFullStatDate,
   getGovernanceReviewResultForRecommendationLevel,
   getGovernanceReviewResultForRuleSeverity,
@@ -50,12 +48,10 @@ import {
   type GovernanceReviewResult,
   type StatsWindowDays,
 } from './experienceAdminHelpers';
-import {
-  createLevelColumns,
-  createTransactionColumns,
-} from './experienceAdminColumns';
+import { createLevelColumns } from './experienceAdminColumns';
 import { ExperienceGovernanceReviewSection } from './ExperienceGovernanceReviewSection';
 import { ExperienceObservationSummary } from './ExperienceObservationSummary';
+import { ExperienceTransactionSection } from './ExperienceTransactionSection';
 import { ExperienceUserQuerySummary } from './ExperienceUserQuerySummary';
 import '../adminFeature.css';
 
@@ -586,7 +582,6 @@ export const ExperienceAdminPage = () => {
   };
 
   const levelColumns = createLevelColumns();
-  const transactionColumns = createTransactionColumns();
 
   return (
     <div className="admin-feature-page">
@@ -639,98 +634,45 @@ export const ExperienceAdminPage = () => {
         onDayFreezeReason={handleDayFreezeReason}
       />
 
-      <section className="admin-feature-card" ref={transactionSectionRef}>
-        <div className="admin-feature-header">
-          <div>
-            <h3>经验流水</h3>
-            <p className="admin-feature-subtle">回看该用户最近的经验变动、管理员操作痕迹与升级轨迹，并支持按异常日期 / 类型快速复核。</p>
-          </div>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <Select
-              value={transactionTypeFilter}
-              style={{ width: 220 }}
-              options={EXPERIENCE_TRANSACTION_TYPE_OPTIONS}
-              allowClear
-              placeholder="筛选经验类型"
-              onChange={(value) => {
-                setTransactionReviewHint(null);
-                setTransactionTypeFilter(typeof value === 'string' && value.length > 0 ? value : undefined);
-              }}
-              disabled={!loadedUserId}
-            />
-            <DatePicker
-              value={transactionStartDate}
-              allowClear
-              placeholder="开始日期"
-              style={{ width: 160 }}
-              disabled={!loadedUserId}
-              onChange={(value) => {
-                setTransactionReviewHint(null);
-                setTransactionStartDate(value);
-              }}
-            />
-            <DatePicker
-              value={transactionEndDate}
-              allowClear
-              placeholder="结束日期"
-              style={{ width: 160 }}
-              disabled={!loadedUserId}
-              onChange={(value) => {
-                setTransactionReviewHint(null);
-                setTransactionEndDate(value);
-              }}
-            />
-            <Button
-              disabled={!loadedUserId}
-              onClick={() => {
-                setTransactionPageIndex(1);
-                setTransactionTypeFilter(undefined);
-                setTransactionStartDate(null);
-                setTransactionEndDate(null);
-                setTransactionReviewHint(null);
-              }}
-            >
-              清空筛选
-            </Button>
-          </div>
-        </div>
+      <ExperienceTransactionSection
+        transactionSectionRef={transactionSectionRef}
+        loadedUserId={loadedUserId}
+        transactions={transactions}
+        loadingTransactions={loadingTransactions}
+        transactionTotal={transactionTotal}
+        transactionPageIndex={transactionPageIndex}
+        transactionPageSize={transactionPageSize}
+        transactionTypeFilter={transactionTypeFilter}
+        transactionStartDate={transactionStartDate}
+        transactionEndDate={transactionEndDate}
+        transactionReviewHint={transactionReviewHint}
+        onTransactionTypeFilterChange={(value) => {
+          setTransactionReviewHint(null);
+          setTransactionTypeFilter(value);
+        }}
+        onTransactionStartDateChange={(value) => {
+          setTransactionReviewHint(null);
+          setTransactionStartDate(value);
+        }}
+        onTransactionEndDateChange={(value) => {
+          setTransactionReviewHint(null);
+          setTransactionEndDate(value);
+        }}
+        onClearTransactionFilters={() => {
+          setTransactionPageIndex(1);
+          setTransactionTypeFilter(undefined);
+          setTransactionStartDate(null);
+          setTransactionEndDate(null);
+          setTransactionReviewHint(null);
+        }}
+        onPageChange={(page, pageSize) => {
+          if (!loadedUserId) {
+            return;
+          }
 
-        {loadedUserId ? (
-          <>
-            {transactionReviewHint && (
-              <div className="admin-feature-banner" style={{ marginTop: 16 }}>
-                {transactionReviewHint}
-              </div>
-            )}
-            <Table<ExpTransactionVo>
-              rowKey="voId"
-              columns={transactionColumns}
-              dataSource={transactions}
-              loading={loadingTransactions}
-              scroll={{ x: 1120 }}
-              style={{ marginTop: 20 }}
-              pagination={{
-                current: transactionPageIndex,
-                pageSize: transactionPageSize,
-                total: transactionTotal,
-                showSizeChanger: true,
-                showQuickJumper: true,
-                showTotal: (total) => `共 ${total} 条`,
-                onChange: (page, pageSize) => {
-                  void loadTransactions(loadedUserId, page, pageSize, transactionTypeFilter, transactionStartDate, transactionEndDate);
-                },
-              }}
-              locale={{
-                emptyText: loadingTransactions ? '经验流水加载中...' : '该用户暂无经验流水记录',
-              }}
-            />
-          </>
-        ) : (
-          <div style={{ marginTop: 20, color: '#8c8c8c' }}>
-            请先查询用户经验，再查看经验流水。
-          </div>
-        )}
-      </section>
+          void loadTransactions(loadedUserId, page, pageSize, transactionTypeFilter, transactionStartDate, transactionEndDate);
+        }}
+      />
 
       <ExperienceGovernanceReviewSection
         reviewSectionRef={reviewSectionRef}
