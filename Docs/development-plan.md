@@ -16,7 +16,7 @@
   - `P3-7-A / P3-7-B` 已完成 WebOS / PC 工作台复访小闭环和高信号候选筛查，当前未发现新的 `P0/P1`
   - 重新评估后确认：原 `P3-7` 收尾口径没有给出最近阶段的明确开发入口，当前应先做近期任务重评估，而不是直接切入后续重点专题
   - `P3-7-C` 已完成近期任务重评估，首批一天级任务按 `WikiApp -> ChatApp` 热区治理推进；`P3-7-C1` WikiApp 与 `P3-7-C2` ChatApp 首批拆分已完成
-  - `P3-7-C3` 已完成 `ContentModerationService` 后端热区首批行为等价拆分；`ExperienceService` 每日统计、经验治理观察规则、治理动作留痕、等级配置缓存与交易记录辅助逻辑拆分也已完成
+  - `P3-7-C3` 已完成 `ContentModerationService` 后端热区首批行为等价拆分；`ExperienceService` 每日统计、经验治理观察规则、治理动作留痕、等级配置缓存、交易记录与冻结状态辅助逻辑拆分也已完成
 
 ## 当前主线入口
 
@@ -56,8 +56,8 @@
 ## 下一顺位
 
 - `P3-7-C3 后端 Service 热区评估与首批治理候选`
-  - `ContentModerationService.cs` 首批行为等价拆分已完成，`ExperienceService.cs` 每日统计 / 观察规则 / 治理动作留痕 / 等级配置缓存 / 交易记录辅助逻辑拆分已完成
-  - 下一步优先复核 `ExperienceService.cs` 剩余经验发放与冻结状态辅助逻辑
+  - `ContentModerationService.cs` 首批行为等价拆分已完成，`ExperienceService.cs` 每日统计 / 观察规则 / 治理动作留痕 / 等级配置缓存 / 交易记录 / 冻结状态辅助逻辑拆分已完成
+  - 下一步优先复核 `ExperienceService.cs` 剩余经验发放、管理员调整与排行榜辅助逻辑
   - 首批仍以行为等价拆分和测试补强为主，不改 API 契约、权限语义、数据库结构或业务规则
   - 验证覆盖对应后端定向测试与 `dotnet build Radish.slnx -c Debug`
 - `P3-8 多端功能补全与 UI 设计治理`

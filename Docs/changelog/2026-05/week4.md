@@ -70,3 +70,5 @@
 - 本次仍不改经验发放、冻结、等级计算语义、API 契约、数据库结构或缓存配置口径；验证已覆盖 `dotnet test Radish.Api.Tests --filter ExperienceServiceTest`（`13/13`）、`dotnet build Radish.slnx -c Debug` 与 `git diff --check`。
 - `ExperienceService` 交易记录辅助逻辑已拆分到 `ExperienceService.Transactions.cs`，覆盖交易分页筛选、经验类型过滤、日期过滤、分页归一化和交易用户名称补全；主文件进一步降至 `1514` 行。
 - 本次仍保持行为等价，不改交易查询 API、分页规则、筛选语义、AutoMapper 映射或经验发放 / 冻结链路；验证已覆盖 `dotnet test Radish.Api.Tests --filter ExperienceServiceTest`（`13/13`）、`dotnet build Radish.slnx -c Debug` 与 `git diff --check`。
+- `ExperienceService` 冻结状态辅助逻辑已拆分到 `ExperienceService.Freeze.cs`，覆盖冻结 / 解冻入口、事务内部方法、过期冻结自动释放和冻结状态判断；主文件进一步降至 `1305` 行。
+- 本次仍保持行为等价，不改冻结语义、治理留痕、乐观锁条件、经验发放或排行榜过滤逻辑；验证已覆盖 `dotnet test Radish.Api.Tests --filter ExperienceServiceTest`（`13/13`）、`dotnet build Radish.slnx -c Debug` 与 `git diff --check`。
