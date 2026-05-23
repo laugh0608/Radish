@@ -107,6 +107,27 @@
   grid-template-columns: minmax(360px, 520px) minmax(0, 1fr);
 }
 
+.governance-workbench--experience {
+  grid-template-areas:
+    "queue detail"
+    "actions actions";
+  grid-template-columns: minmax(360px, 0.9fr) minmax(520px, 1.1fr);
+}
+
+.governance-workbench--experience .governance-workbench__actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  align-items: start;
+}
+
+.experience-transaction-filters {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) repeat(2, minmax(140px, 160px)) minmax(96px, auto);
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+}
+
 @media (max-width: 1200px) {
   .governance-workbench {
     grid-template-areas:
@@ -120,6 +141,18 @@
     grid-template-areas:
       "queue"
       "detail";
+  }
+
+  .governance-workbench--experience {
+    grid-template-areas:
+      "queue"
+      "detail"
+      "actions";
+    grid-template-columns: 1fr;
+  }
+
+  .experience-transaction-filters {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   }
 }
 

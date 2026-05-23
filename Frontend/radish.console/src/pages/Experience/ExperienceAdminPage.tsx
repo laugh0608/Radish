@@ -588,7 +588,7 @@ export const ExperienceAdminPage = () => {
         }}
       />
 
-      <div className="governance-workbench">
+      <div className="governance-workbench governance-workbench--experience">
         <div className="governance-workbench__queue">
           <ExperienceUserQuerySummary
             queryUserId={queryUserId}

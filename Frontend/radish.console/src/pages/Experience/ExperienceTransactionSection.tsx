@@ -51,10 +51,10 @@ export const ExperienceTransactionSection = ({
           <h3>经验流水</h3>
           <p className="admin-feature-subtle">回看该用户最近的经验变动、管理员操作痕迹与升级轨迹，并支持按异常日期 / 类型快速复核。</p>
         </div>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        <div className="experience-transaction-filters">
           <Select
             value={transactionTypeFilter}
-            style={{ width: 220 }}
+            style={{ width: '100%' }}
             options={EXPERIENCE_TRANSACTION_TYPE_OPTIONS}
             allowClear
             placeholder="筛选经验类型"
@@ -67,7 +67,7 @@ export const ExperienceTransactionSection = ({
             value={transactionStartDate}
             allowClear
             placeholder="开始日期"
-            style={{ width: 160 }}
+            style={{ width: '100%' }}
             disabled={!loadedUserId}
             onChange={onTransactionStartDateChange}
           />
@@ -75,7 +75,7 @@ export const ExperienceTransactionSection = ({
             value={transactionEndDate}
             allowClear
             placeholder="结束日期"
-            style={{ width: 160 }}
+            style={{ width: '100%' }}
             disabled={!loadedUserId}
             onChange={onTransactionEndDateChange}
           />
