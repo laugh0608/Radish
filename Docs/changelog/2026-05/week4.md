@@ -66,3 +66,5 @@
 - 本批仍保持行为等价，不改经验发放、冻结、等级计算、API 契约、数据库结构或经验治理规则阈值。
 - 验证已覆盖 `dotnet test Radish.Api.Tests --filter ExperienceServiceTest`（`13/13`）、`dotnet build Radish.slnx -c Debug` 与 `git diff --check`。
 - 下一步继续复核 `ExperienceService.cs` 剩余缓存、等级配置与发放辅助逻辑是否存在一天级、安全可验证的行为等价拆分点；不直接切入 `P3-8`。
+- `ExperienceService` 等级配置与缓存辅助逻辑已继续拆分到 `ExperienceService.LevelConfigs.cs`，覆盖等级配置查询、等级配置缓存读写、图标 / 徽章 URL 补全和纯等级计算；主文件进一步降至 `1652` 行。
+- 本次仍不改经验发放、冻结、等级计算语义、API 契约、数据库结构或缓存配置口径；验证已覆盖 `dotnet test Radish.Api.Tests --filter ExperienceServiceTest`（`13/13`）、`dotnet build Radish.slnx -c Debug` 与 `git diff --check`。

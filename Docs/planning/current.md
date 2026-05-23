@@ -18,7 +18,7 @@
   - `P3-7-C1` 已完成 WikiApp 文档工作台首批热区拆分：侧边栏抽出为独立组件，纯 helper 迁出主文件，`WikiApp.tsx` 已降至硬上限以内
   - `P3-7-C2` 已完成 ChatApp 聊天工作台首批热区拆分：消息列表、频道侧栏、成员面板、输入区状态和纯 helper 已从主文件抽出，`ChatApp.tsx` 已降至硬上限以内
   - `P3-7-C3` 已完成后端 Service 首批候选治理：`ContentModerationService` 采用行为等价 partial 分文件拆出举报目标快照解析与队列导航装配，主文件从 `1735` 行降至 `806` 行
-  - `ExperienceService` 已完成每日统计、经验治理观察规则与治理动作留痕辅助逻辑拆分，`ExperienceService.cs` 从 `2807` 行降至 `1807` 行
+  - `ExperienceService` 已完成每日统计、经验治理观察规则、治理动作留痕辅助逻辑与等级配置 / 缓存辅助逻辑拆分，`ExperienceService.cs` 从 `2807` 行降至 `1652` 行
   - 项目仍处于单人开发期和功能建设期，没有稳定用户反馈和专职测试，不能把“等待真实使用观察”作为默认主线
 
 ## 当前执行入口
@@ -35,7 +35,7 @@
 
 1. **收口工作台代码热区首批治理**
    - `WikiApp -> ChatApp` 两个一天级前端热区任务已完成首批行为等价拆分
-   - 后端 Service 首批已完成 `ContentModerationService` 与 `ExperienceService` 每日统计 / 观察规则 / 治理动作留痕行为等价拆分，下一步继续复核 `ExperienceService.cs` 剩余热区是否存在安全拆分点
+   - 后端 Service 首批已完成 `ContentModerationService` 与 `ExperienceService` 每日统计 / 观察规则 / 治理动作留痕 / 等级配置缓存行为等价拆分，下一步继续复核 `ExperienceService.cs` 剩余热区是否存在安全拆分点
    - 不把“观察”作为无事可做的结论，也不直接把后续重点提前升级为当前主线
 2. **维护观察降级为并行线**
    - `P3-6 / P3-7` 暴露的新问题仍可回拉小闭环，但不再占用主线
@@ -48,8 +48,8 @@
 ## 下一顺位
 
 - `P3-7-C3 后端 Service 热区评估与首批治理候选`
-  - 已完成 `ContentModerationService.cs` 首批行为等价拆分，以及 `ExperienceService.cs` 每日统计 / 观察规则 / 治理动作留痕辅助逻辑拆分
-  - 下一步继续复核 `ExperienceService.cs` 剩余缓存、等级配置与发放辅助逻辑是否存在一天级、安全可验证的拆分候选
+  - 已完成 `ContentModerationService.cs` 首批行为等价拆分，以及 `ExperienceService.cs` 每日统计 / 观察规则 / 治理动作留痕 / 等级配置缓存辅助逻辑拆分
+  - 下一步继续复核 `ExperienceService.cs` 剩余经验发放、冻结状态与交易记录辅助逻辑是否存在一天级、安全可验证的拆分候选
   - 不改 API 契约、权限语义、数据库结构或业务规则；若评估发现需要运行时行为变更，应先单独评审
   - 验证优先覆盖对应后端定向测试与 `dotnet build Radish.slnx -c Debug`
 - `P3-8 多端功能补全与 UI 设计治理` 保留为后续重点方向，不作为当前最近任务的默认入口
