@@ -9,7 +9,6 @@ import {
   Table,
   Tag,
   message,
-  type TableColumnsType,
 } from '@radish/ui';
 import { ReloadOutlined } from '@radish/ui';
 import {
@@ -24,7 +23,6 @@ import {
   getUserGovernanceActions,
   getUserTransactions,
   type UserExpGovernanceRecommendationVo,
-  type UserExpDailyLimitSnapshotVo,
   type UserExperienceGovernanceActionVo,
   getUserExperience,
   recalculateLevelConfigs,
@@ -38,208 +36,32 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
 import dayjs, { type Dayjs } from 'dayjs';
+import {
+  EXPERIENCE_TRANSACTION_TYPE_OPTIONS,
+  formatFullStatDate,
+  formatLimitValue,
+  getGovernanceReviewResultForRecommendationLevel,
+  getGovernanceReviewResultForRuleSeverity,
+  getRecommendationTagColor,
+  getRuleSeverityLabel,
+  getRuleSeverityTagColor,
+  getTransactionExpTypePresetForRuleCodes,
+  isFormValidationError,
+  normalizePositiveLongIdInput,
+  type AdjustFormValues,
+  type FreezeFormValues,
+  type GovernanceReviewDraftContext,
+  type GovernanceReviewFormValues,
+  type GovernanceReviewResult,
+  type StatsWindowDays,
+} from './experienceAdminHelpers';
+import {
+  createDailyStatsColumns,
+  createGovernanceActionColumns,
+  createLevelColumns,
+  createTransactionColumns,
+} from './experienceAdminColumns';
 import '../adminFeature.css';
-
-interface FreezeFormValues {
-  userId: string;
-  reason: string;
-  frozenUntil?: Dayjs;
-}
-
-interface AdjustFormValues {
-  userId: string;
-  deltaExp: number;
-  reason?: string;
-}
-
-type GovernanceReviewResult = 'NoIssue' | 'Observe' | 'FreezeSuggest';
-type StatsWindowDays = 7 | 30;
-
-interface GovernanceReviewFormValues {
-  reviewResult: GovernanceReviewResult;
-  remark: string;
-}
-
-interface GovernanceReviewDraftContext {
-  windowDays?: number;
-  statDate?: string | null;
-  ruleCodes: string[];
-  ruleLabels: string[];
-  recommendationLevel?: UserExpGovernanceRecommendationVo['voLevel'];
-  recommendationReason?: string | null;
-  hint: string;
-}
-
-const LIKE_TRANSACTION_FILTER = 'RECEIVE_LIKE,GIVE_LIKE';
-const HIGHLIGHT_TRANSACTION_FILTER = 'GOD_COMMENT,SOFA_COMMENT';
-
-const LIKE_RELATED_OBSERVATION_RULE_CODES = new Set([
-  'LIKE_LIMIT_PRESSURE',
-  'LIKE_LIMIT_NEAR',
-  'LIKE_LIMIT_HIT',
-  'LIKE_SHARE_HEAVY',
-]);
-
-const HIGHLIGHT_RELATED_OBSERVATION_RULE_CODES = new Set([
-  'HIGHLIGHT_LIMIT_PRESSURE',
-  'HIGHLIGHT_LIMIT_NEAR',
-  'HIGHLIGHT_LIMIT_HIT',
-  'HIGHLIGHT_REWARD_CLUSTERED',
-]);
-
-const EXPERIENCE_TRANSACTION_TYPE_OPTIONS = [
-  { label: '点赞相关', value: LIKE_TRANSACTION_FILTER },
-  { label: '高亮相关', value: HIGHLIGHT_TRANSACTION_FILTER },
-  { label: '管理员调整', value: 'ADMIN_ADJUST' },
-  { label: '惩罚扣减', value: 'PENALTY' },
-  { label: '发布帖子', value: 'POST_CREATE' },
-  { label: '发布评论', value: 'COMMENT_CREATE' },
-  { label: '点赞互动', value: 'LIKE_OTHERS' },
-  { label: '被点赞', value: 'RECEIVE_LIKE' },
-  { label: '高亮奖励', value: 'GOD_COMMENT' },
-  { label: '登录奖励', value: 'DAILY_LOGIN' },
-];
-
-function normalizePositiveLongIdInput(value: string): string | undefined {
-  const trimmed = value.trim();
-  return /^[1-9]\d*$/.test(trimmed) ? trimmed : undefined;
-}
-
-function isFormValidationError(error: unknown): error is { errorFields: unknown[] } {
-  return typeof error === 'object' && error !== null && 'errorFields' in error;
-}
-
-function formatStatDate(value: string): string {
-  return dayjs(value).format('MM-DD');
-}
-
-function formatFullStatDate(value: string): string {
-  return dayjs(value).format('YYYY-MM-DD');
-}
-
-function formatDisplayTime(value?: string | null): string {
-  if (!value) {
-    return '-';
-  }
-
-  return dayjs(value).isValid() ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : value;
-}
-
-function formatTransactionAmount(value: number): string {
-  return `${value >= 0 ? '+' : ''}${value}`;
-}
-
-function getRecommendationTagColor(level?: UserExpGovernanceRecommendationVo['voLevel']): 'success' | 'warning' | 'error' | 'default' {
-  switch (level) {
-    case 'freeze-suggest':
-      return 'error';
-    case 'review':
-      return 'warning';
-    case 'normal':
-      return 'success';
-    default:
-      return 'default';
-  }
-}
-
-function getRuleSeverityTagColor(severity?: UserExpAnomalyRuleSummaryVo['voSeverity']): 'success' | 'warning' | 'error' | 'default' {
-  switch (severity) {
-    case 'freeze-suggest':
-      return 'error';
-    case 'review':
-      return 'warning';
-    case 'observe':
-      return 'default';
-    default:
-      return 'default';
-  }
-}
-
-function getRuleSeverityLabel(severity?: UserExpAnomalyRuleSummaryVo['voSeverity']): string {
-  switch (severity) {
-    case 'freeze-suggest':
-      return '冻结建议';
-    case 'review':
-      return '人工复核';
-    case 'observe':
-      return '继续观察';
-    default:
-      return '继续观察';
-  }
-}
-
-function getGovernanceReviewResultTagColor(result?: UserExperienceGovernanceActionVo['voReviewResult']): 'success' | 'warning' | 'error' | 'default' {
-  switch (result) {
-    case 'NoIssue':
-      return 'success';
-    case 'FreezeSuggest':
-      return 'error';
-    case 'Observe':
-      return 'warning';
-    default:
-      return 'default';
-  }
-}
-
-function getGovernanceActionTagColor(actionType?: UserExperienceGovernanceActionVo['voActionType']): 'success' | 'warning' | 'error' | 'processing' | 'default' {
-  switch (actionType) {
-    case 'Review':
-      return 'processing';
-    case 'Freeze':
-      return 'error';
-    case 'Unfreeze':
-      return 'success';
-    default:
-      return 'default';
-  }
-}
-
-function getGovernanceReviewResultForRecommendationLevel(
-  level?: UserExpGovernanceRecommendationVo['voLevel']
-): GovernanceReviewResult {
-  switch (level) {
-    case 'freeze-suggest':
-      return 'FreezeSuggest';
-    case 'normal':
-      return 'NoIssue';
-    case 'review':
-    default:
-      return 'Observe';
-  }
-}
-
-function getGovernanceReviewResultForRuleSeverity(
-  severity?: UserExpAnomalyRuleSummaryVo['voSeverity']
-): GovernanceReviewResult {
-  return severity === 'freeze-suggest' ? 'FreezeSuggest' : 'Observe';
-}
-
-function getTransactionExpTypePresetForRuleCodes(ruleCodes: string[]): string | undefined {
-  const hasLikeRule = ruleCodes.some((ruleCode) => LIKE_RELATED_OBSERVATION_RULE_CODES.has(ruleCode));
-  const hasHighlightRule = ruleCodes.some((ruleCode) => HIGHLIGHT_RELATED_OBSERVATION_RULE_CODES.has(ruleCode));
-
-  if (hasLikeRule && !hasHighlightRule) {
-    return LIKE_TRANSACTION_FILTER;
-  }
-
-  if (!hasLikeRule && hasHighlightRule) {
-    return HIGHLIGHT_TRANSACTION_FILTER;
-  }
-
-  return undefined;
-}
-
-function formatLimitValue(
-  value: number,
-  limit: number,
-  limits?: UserExpDailyLimitSnapshotVo | null
-): string {
-  if (!limits?.voDailyLimitEnabled || limit <= 0) {
-    return String(value);
-  }
-
-  return `${value}/${limit}`;
-}
 
 export const ExperienceAdminPage = () => {
   useDocumentTitle('经验等级');
@@ -767,301 +589,16 @@ export const ExperienceAdminPage = () => {
     }
   };
 
-  const levelColumns: TableColumnsType<LevelConfigVo> = [
-    {
-      title: '等级',
-      key: 'level',
-      width: 120,
-      render: (_, record) => (
-        <div>
-          <div>L{record.voLevel}</div>
-          <div style={{ color: '#8c8c8c' }}>{record.voLevelName}</div>
-        </div>
-      ),
-    },
-    {
-      title: '累计经验',
-      dataIndex: 'voExpCumulative',
-      key: 'voExpCumulative',
-      width: 140,
-    },
-    {
-      title: '升级所需',
-      dataIndex: 'voExpRequired',
-      key: 'voExpRequired',
-      width: 140,
-    },
-    {
-      title: '状态',
-      key: 'status',
-      width: 100,
-      render: (_, record) => <Tag color={record.voIsEnabled ? 'success' : 'default'}>{record.voIsEnabled ? '启用' : '禁用'}</Tag>,
-    },
-    {
-      title: '说明',
-      key: 'description',
-      render: (_, record) => record.voDescription || '-',
-    },
-  ];
-
-  const dailyStatsColumns: TableColumnsType<UserExpDailyStatsVo> = [
-    {
-      title: '日期',
-      key: 'date',
-      width: 120,
-      render: (_, record) => (
-        <div>
-          <div>{formatStatDate(record.voStatDate)}</div>
-          <div style={{ color: '#8c8c8c' }}>{dayjs(record.voStatDate).format('ddd')}</div>
-        </div>
-      ),
-    },
-    {
-      title: '总经验',
-      dataIndex: 'voExpEarned',
-      key: 'voExpEarned',
-      width: 100,
-      render: (value: number) => (
-        <div>
-          <div>{value}</div>
-          {dailyLimits?.voDailyLimitEnabled && (
-            <div style={{ color: '#8c8c8c' }}>
-              上限 {formatLimitValue(value, dailyLimits.voMaxDailyExp, dailyLimits)}
-            </div>
-          )}
-        </div>
-      ),
-    },
-    {
-      title: '来源拆分',
-      key: 'sources',
-      width: 360,
-      render: (_, record) => (
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <span>发帖 {formatLimitValue(record.voExpFromPost, dailyLimits?.voMaxExpFromPost ?? 0, dailyLimits)}</span>
-          <span>评论 {formatLimitValue(record.voExpFromComment, dailyLimits?.voMaxExpFromComment ?? 0, dailyLimits)}</span>
-          <span>点赞 {formatLimitValue(record.voExpFromLike, dailyLimits?.voMaxExpFromLike ?? 0, dailyLimits)}</span>
-          <span>高亮 {formatLimitValue(record.voExpFromHighlight, dailyLimits?.voMaxExpFromHighlight ?? 0, dailyLimits)}</span>
-          <span>登录 {formatLimitValue(record.voExpFromLogin, dailyLimits?.voMaxExpFromLogin ?? 0, dailyLimits)}</span>
-        </div>
-      ),
-    },
-    {
-      title: '行为计数',
-      key: 'counts',
-      width: 320,
-      render: (_, record) => (
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <span>发帖 {record.voPostCount}</span>
-          <span>评论 {record.voCommentCount}</span>
-          <span>点赞 {record.voLikeGivenCount}</span>
-          <span>被赞 {record.voLikeReceivedCount}</span>
-        </div>
-      ),
-    },
-    {
-      title: '观察',
-      key: 'observations',
-      width: 360,
-      render: (_, record) => {
-        const observations = record.voObservations ?? [];
-        const contextObservations = observations.filter((observation) => observation.voKind !== 'anomaly');
-        const anomalyObservations = observations.filter((observation) => observation.voKind === 'anomaly');
-        return (
-          <div style={{ display: 'grid', gap: 10 }}>
-            <div>
-              <div style={{ color: '#8c8c8c', marginBottom: 6 }}>来源 / 状态</div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {contextObservations.length > 0 ? contextObservations.map((observation) => (
-                  <Tag key={observation.voRuleCode} color={observation.voTone} title={observation.voDescription ?? undefined}>
-                    {observation.voLabel}
-                  </Tag>
-                )) : <span style={{ color: '#8c8c8c' }}>-</span>}
-              </div>
-            </div>
-            <div>
-              <div style={{ color: '#8c8c8c', marginBottom: 6 }}>异常判定</div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {anomalyObservations.length > 0 ? anomalyObservations.map((observation) => (
-                  <Tag key={observation.voRuleCode} color={observation.voTone} title={observation.voDescription ?? undefined}>
-                    {observation.voLabel}
-                  </Tag>
-                )) : <span style={{ color: '#8c8c8c' }}>未命中</span>}
-              </div>
-            </div>
-          </div>
-        );
-      },
-    },
-    {
-      title: '复核动作',
-      key: 'reviewActions',
-      width: 320,
-      render: (_, record) => {
-        const hasAnomaly = (record.voObservations ?? []).some((observation) => observation.voKind === 'anomaly');
-        if (!hasAnomaly) {
-          return <span style={{ color: '#8c8c8c' }}>-</span>;
-        }
-
-        return (
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <Button onClick={() => handleDayReview(record)}>
-              查看流水
-            </Button>
-            <Button
-              variant="secondary"
-              disabled={!canFreeze}
-              onClick={() => handleDayGovernanceReview(record)}
-            >
-              带入复核结论
-            </Button>
-            <Button
-              variant="secondary"
-              disabled={!canFreeze}
-              onClick={() => handleDayFreezeReason(record)}
-            >
-              带入冻结原因
-            </Button>
-          </div>
-        );
-      },
-    },
-  ];
-
-  const transactionColumns: TableColumnsType<ExpTransactionVo> = [
-    {
-      title: '时间',
-      dataIndex: 'voCreateTime',
-      key: 'voCreateTime',
-      width: 180,
-      render: (value: string) => formatDisplayTime(value),
-    },
-    {
-      title: '类型',
-      key: 'type',
-      width: 140,
-      render: (_, record) => (
-        <div>
-          <div>{record.voExpTypeDisplay}</div>
-          <div style={{ color: '#8c8c8c' }}>{record.voExpType}</div>
-        </div>
-      ),
-    },
-    {
-      title: '变动量',
-      dataIndex: 'voExpAmount',
-      key: 'voExpAmount',
-      width: 110,
-      render: (value: number) => (
-        <span style={{ color: value >= 0 ? '#389e0d' : '#cf1322', fontWeight: 600 }}>
-          {formatTransactionAmount(value)}
-        </span>
-      ),
-    },
-    {
-      title: '经验变化',
-      key: 'expRange',
-      width: 180,
-      render: (_, record) => `${record.voExpBefore} -> ${record.voExpAfter}`,
-    },
-    {
-      title: '等级变化',
-      key: 'levelRange',
-      width: 170,
-      render: (_, record) => (
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          <span>{`L${record.voLevelBefore} -> L${record.voLevelAfter}`}</span>
-          {record.voLevelAfter > record.voLevelBefore ? <Tag color="success">升级</Tag> : null}
-        </div>
-      ),
-    },
-    {
-      title: '操作者',
-      key: 'operator',
-      width: 180,
-      render: (_, record) => (
-        <div>
-          <div>{record.voOperatorName || 'System'}</div>
-          <div style={{ color: '#8c8c8c' }}>ID: {record.voOperatorId}</div>
-        </div>
-      ),
-    },
-    {
-      title: '备注',
-      dataIndex: 'voRemark',
-      key: 'voRemark',
-      render: (value?: string | null) => value || '-',
-    },
-  ];
-
-  const governanceActionColumns: TableColumnsType<UserExperienceGovernanceActionVo> = [
-    {
-      title: '动作',
-      key: 'actionType',
-      width: 200,
-      render: (_, record) => (
-        <div style={{ display: 'grid', gap: 6 }}>
-          <div>
-            <Tag color={getGovernanceActionTagColor(record.voActionType)}>
-              {record.voActionTypeDisplay}
-            </Tag>
-          </div>
-          {record.voActionType === 'Freeze' && (
-            <span style={{ color: '#8c8c8c' }}>
-              到期：{record.voFrozenUntil ? formatDisplayTime(record.voFrozenUntil) : '永久冻结'}
-            </span>
-          )}
-        </div>
-      ),
-    },
-    {
-      title: '复核结论',
-      key: 'reviewResult',
-      width: 180,
-      render: (_, record) => record.voReviewResultDisplay ? (
-        <Tag color={getGovernanceReviewResultTagColor(record.voReviewResult)}>
-          {record.voReviewResultDisplay}
-        </Tag>
-      ) : <span style={{ color: '#8c8c8c' }}>-</span>,
-    },
-    {
-      title: '证据快照',
-      key: 'evidence',
-      width: 360,
-      render: (_, record) => (
-        <div style={{ display: 'grid', gap: 6 }}>
-          <span>{record.voEvidenceSummary || '-'}</span>
-          {record.voRecommendationReason && (
-            <span style={{ color: '#8c8c8c' }}>
-              建议原因：{record.voRecommendationReason}
-            </span>
-          )}
-        </div>
-      ),
-    },
-    {
-      title: '备注',
-      dataIndex: 'voRemark',
-      key: 'voRemark',
-      width: 320,
-      render: (value: string) => (
-        <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-          {value}
-        </div>
-      ),
-    },
-    {
-      title: '操作人 / 时间',
-      key: 'operator',
-      width: 220,
-      render: (_, record) => (
-        <div style={{ display: 'grid', gap: 6 }}>
-          <span>{record.voOperatorName || 'System'}（ID: {record.voOperatorId}）</span>
-          <span style={{ color: '#8c8c8c' }}>{formatDisplayTime(record.voCreateTime)}</span>
-        </div>
-      ),
-    },
-  ];
+  const levelColumns = createLevelColumns();
+  const dailyStatsColumns = createDailyStatsColumns({
+    canFreeze,
+    dailyLimits,
+    onDayReview: handleDayReview,
+    onDayGovernanceReview: handleDayGovernanceReview,
+    onDayFreezeReason: handleDayFreezeReason,
+  });
+  const transactionColumns = createTransactionColumns();
+  const governanceActionColumns = createGovernanceActionColumns();
 
   return (
     <div className="admin-feature-page">
