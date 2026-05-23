@@ -9,6 +9,6 @@
 - 不使用普通文本工具打开或编辑 `.pen` 文件。
 - 设计源文件名应表达端点和职责。
 
-当前计划：
+当前源文件：
 
-- `console-governance-workbench.pen`：Console 内容治理与经验治理工作台设计端点。
+- `console-governance-workbench.pen`：Console 治理工作台与后台视觉基座设计端点，当前包含 `P01-P08` 编号画板，覆盖壳层基座、内容审核、经验台账、治理调度、表格 CRUD、设置策略和移动端治理流程参考。

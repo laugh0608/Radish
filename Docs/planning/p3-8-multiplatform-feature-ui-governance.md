@@ -1,6 +1,6 @@
 # P3-8 多端功能补全与 UI 设计治理
 
-> 状态：`P3-8-B2` Console 治理工作台设计端点已启动，下一顺位为 `P3-8-C1`
+> 状态：`P3-8-C1` Console 治理工作台结构基座已完成，下一顺位为 `P3-8-C2`
 >
 > 启动日期：2026-05-21（Asia/Shanghai）
 >
@@ -14,7 +14,7 @@
 
 同时，各个页面 UI、各客户端 UI、`radish.client` 和 `radish.console` 的页面风格仍有明显历史分叉：局部 CSS、硬编码颜色、组件复用不足、交互反馈不一致、端点视觉层级不统一。需要单独设立 UI 设计治理专题，先形成设计稿和设计源文件，再按设计稿推进实现。
 
-`P3-7-C` 已完成工作台与后端 Service 首批热区治理，继续硬拆低风险候选的收益下降。`P3-8-A` 已完成多端功能缺口与 UI 设计入口审计，首批实现任务 `P3-8-B1 Flutter 公开榜单只读入口` 已完成。当前已启动 `P3-8-B2 Console 治理工作台设计端点`，先做设计端点和页面结构治理，不直接大面积重写 Console。
+`P3-7-C` 已完成工作台与后端 Service 首批热区治理，继续硬拆低风险候选的收益下降。`P3-8-A` 已完成多端功能缺口与 UI 设计入口审计，首批实现任务 `P3-8-B1 Flutter 公开榜单只读入口` 已完成。`P3-8-B2` 已建立 Console 治理工作台设计端点，`P3-8-C1` 已完成内容治理与经验治理首批结构基座。后续继续按设计稿和页面类型推进，不直接大面积重写 Console。
 
 ## 阶段目标
 
@@ -67,13 +67,21 @@
   - 复用现有 `/api/v1/Leaderboard/GetLeaderboard` 公开经验榜接口。
   - 覆盖加载、空态、错误态、刷新态、当前用户标记和发现页跳转返回。
   - 未加入我的排名、商品榜、购买、订单、背包、登录增强或管理员调整。
+- `P3-8-B2 Console 治理工作台设计端点`
+  - 建立 `Docs/frontend/console-governance-workbench-design.md` 端点说明，明确内容治理、经验治理、工作台信息架构、实现拆分顺序和验证入口。
+  - 新增 `Docs/frontend/design-sources/console-governance-workbench.pen` 设计源文件入口，并约定 `.pen` 只能通过 Pencil 工具维护。
+  - 后续扩展为 `P01-P08` 编号画板，覆盖壳层基座、内容审核、经验台账、治理调度总览、表格 CRUD、设置策略和移动端治理视图。
+- `P3-8-C1 Console 治理工作台结构基座`
+  - `ModerationPage` 完成 helper、列定义、手动治理区拆分，并接入治理工作台布局承载。
+  - `ExperienceAdminPage` 完成 helper、列定义、用户查询摘要、观察摘要、复核区、经验流水区、治理动作表单、页面头部和等级配置拆分，并接入治理工作台布局承载。
+  - 页面拆分保持 API、权限、表单字段、表格列、经验规则、冻结 / 解冻语义和数据契约行为等价。
 
 下一顺位：
 
-- `P3-8-C1 Console 治理工作台结构基座`
-  - 设计依据见：[Console 治理工作台设计端点](/frontend/console-governance-workbench-design)。
-  - 优先从 `ModerationPage` 进入行为等价布局承载。
-  - 只调整队列、目标详情、动作 / 留痕的页面结构，不改 API、权限或治理动作语义。
+- `P3-8-C2 Console 设计稿到实现的对齐试点`
+  - 设计依据见：[Console 治理工作台设计端点](/frontend/console-governance-workbench-design) 与 [Console 样式与 Token 使用说明](/frontend/console-style-guide)。
+  - 先按 `P01-P08` 复核当前 Console 页面差距，优先沉淀壳层、按钮层级、表格密度、设置页和右侧摘要区的可复用样式。
+  - 选择一个低风险列表 / 设置 / 总览页面做试点，不一次性改完整个 Console，不把所有页面硬套成同一模板。
 
 ## UI 设计稿治理
 
@@ -158,6 +166,14 @@ flutter analyze
 `P3-8-B2` 文档 / 设计端点批次默认执行：
 
 ```bash
+npm run check:repo-hygiene:changed
+git diff --check
+```
+
+`P3-8-C1` 已执行：
+
+```bash
+npm run type-check --workspace=radish.console
 npm run check:repo-hygiene:changed
 git diff --check
 ```

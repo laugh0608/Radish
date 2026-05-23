@@ -1,10 +1,10 @@
 # Console 治理工作台设计端点
 
-> 状态：`P3-8-B2` 设计端点说明
+> 状态：`P3-8-C1` 结构基座已完成，下一步进入 `P3-8-C2` 设计实现对齐试点
 >
 > 日期：2026-05-23（Asia/Shanghai）
 >
-> 适用范围：`radish.console` 内容治理与经验治理工作台。当前先定义端点、信息架构和实现边界，不直接重写 Console 大页。
+> 适用范围：`radish.console` 内容治理、经验治理与后续 Console 页面视觉基座。当前已完成首批治理页面结构承载，后续按设计稿编号逐步对齐，不直接重写 Console 全站。
 
 ## 目标
 
@@ -26,8 +26,20 @@ Docs/frontend/design-sources/console-governance-workbench.pen
 规则：
 
 - `.pen` 文件必须通过 Pencil 工具创建和修改，不能用普通文本工具读写。
-- 当前仓库尚未存在可打开的 `.pen` 设计源文件；进入实际 Pencil 绘制时，应在上述路径创建项目内设计源。
 - Markdown 只承载可检索的设计约束、页面结构和实现拆分，不替代 `.pen` 视觉源文件。
+
+当前画板编号：
+
+| 编号 | 画板 | 用途 |
+| --- | --- | --- |
+| `P01` | `Console Shell Foundation - Layout System` | Console 侧栏、顶栏、页面密度和结构基座 |
+| `P02` | `Console Content Moderation - Review Desk` | 内容审核 / 证据复核工作台 |
+| `P03` | `Console Experience Governance - Ledger Desk` | 经验等级 / 台账治理工作台 |
+| `P04` | `Console Governance Overview - Dispatch Center` | 跨模块治理负载 / 调度总览页 |
+| `P05` | `Console Table CRUD - User Management` | 普通表格 CRUD 页面 |
+| `P06` | `Console Settings - Governance Policy` | 设置 / 权限 / 配置型页面 |
+| `P07` | `Mobile Content Moderation - Review Flow` | 移动端内容审核流程参考 |
+| `P08` | `Mobile Experience Governance - Ledger Flow` | 移动端经验治理流程参考 |
 
 ## 当前页面盘点
 
@@ -35,6 +47,12 @@ Docs/frontend/design-sources/console-governance-workbench.pen
 | --- | --- | ---: | --- | --- |
 | 内容治理 | `Frontend/radish.console/src/pages/Moderation/ModerationPage.tsx` | 约 `1760` 行 | 举报审核队列、手动治理动作、治理动作日志、审核弹窗 | 单页承载过多状态、表格动作区过宽、筛选 / 详情 / 动作缺少稳定工作台分区 |
 | 经验治理 | `Frontend/radish.console/src/pages/Experience/ExperienceAdminPage.tsx` | 约 `1650` 行 | 用户查询、经验概览、每日统计、异常摘要、流水、复核、调经验、冻结、等级配置 | 业务链路长、inline 样式多、治理观察和执行动作混排、配置类内容与人工复核混在同页 |
+
+`P3-8-C1` 已完成首批结构治理：
+
+- `ModerationPage.tsx` 已拆出 helper、列定义和手动治理动作区，主文件降至 `843` 行。
+- `ExperienceAdminPage.tsx` 已拆出 helper、列定义、用户查询摘要、观察摘要、复核区、流水区、治理动作表单、页头和等级配置，主文件降至 `712` 行。
+- 内容治理和经验治理已接入治理工作台布局承载，保持 API、权限、表单字段、数据契约和治理语义不变。
 
 已可复用基础：
 
@@ -125,20 +143,26 @@ Console 治理工作台按四段组织：
 
 ## 实现拆分顺序
 
-建议下一批实现 `P3-8-C1 Console 治理工作台结构基座`：
+`P3-8-C1 Console 治理工作台结构基座` 已完成：
 
-1. 在 Console 侧新增通用治理工作台布局组件或 CSS 结构：
+1. 在 Console 侧新增通用治理工作台布局 CSS 结构：
    - `governance-workbench`
    - `governance-workbench__queue`
    - `governance-workbench__detail`
    - `governance-workbench__actions`
-2. 先在 `ModerationPage` 做结构替换：
+2. 已在 `ModerationPage` 做结构替换：
    - 保留现有 API、权限、表单字段、表格列和动作逻辑。
    - 只调整队列、手动动作和日志的布局承载。
    - 移除当前页面可见的硬编码颜色和重复 inline 间距。
-3. 再评估 `ExperienceAdminPage`：
-   - 优先抽出用户查询 / 观察摘要 / 复核动作三个组件。
-   - 等级配置先不动或移到页面末尾的配置区。
+3. 已继续处理 `ExperienceAdminPage`：
+   - 用户查询 / 观察摘要 / 复核动作 / 流水 / 调整动作 / 等级配置已拆为局部组件。
+   - 等级配置仍保持原字段和 API，不纳入经验发放主流程治理。
+
+下一批建议 `P3-8-C2 Console 设计稿到实现的对齐试点`：
+
+1. 先复核 `P01 / P04 / P05 / P06` 与当前 Console 壳层、Dashboard、列表页和设置页的差距。
+2. 优先沉淀 `AdminLayout`、`adminFeature.css` 和 `--console-*` token 的可复用视觉基座。
+3. 选择一个低风险列表 / 设置 / 总览页面做试点，不一次性改完整个 Console，不把所有页面硬套成 `P02` 或 `P03` 的工作台结构。
 
 验证入口：
 

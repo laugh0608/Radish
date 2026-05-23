@@ -72,3 +72,10 @@
 - 本次仍保持行为等价，不改交易查询 API、分页规则、筛选语义、AutoMapper 映射或经验发放 / 冻结链路；验证已覆盖 `dotnet test Radish.Api.Tests --filter ExperienceServiceTest`（`13/13`）、`dotnet build Radish.slnx -c Debug` 与 `git diff --check`。
 - `ExperienceService` 冻结状态辅助逻辑已拆分到 `ExperienceService.Freeze.cs`，覆盖冻结 / 解冻入口、事务内部方法、过期冻结自动释放和冻结状态判断；主文件进一步降至 `1305` 行。
 - 本次仍保持行为等价，不改冻结语义、治理留痕、乐观锁条件、经验发放或排行榜过滤逻辑；验证已覆盖 `dotnet test Radish.Api.Tests --filter ExperienceServiceTest`（`13/13`）、`dotnet build Radish.slnx -c Debug` 与 `git diff --check`。
+- `ExperienceService` 排行榜与管理员调整辅助逻辑继续拆分，`P3-7-C3` 后端 Service 热区治理阶段收口；剩余经验发放主流程进入后续单独评审池，不作为默认继续硬拆目标。
+- `P3-8-A` 已切为当前 UI / 多端治理主线并完成首批审计，`P3-8-B1` Flutter 公开榜单只读入口已完成：新增 Flutter 原生榜单 tab、发现页跳转、公开榜单仓储、加载 / 空态 / 错误 / 刷新态与单测。
+- `P3-8-B2` Console 治理工作台设计端点已建立：新增端点说明、Pencil 设计源文件入口和 `.pen` 工具维护规则，明确内容治理、经验治理、工作台信息架构、实现边界和验证入口。
+- `P3-8-C1` Console 治理工作台结构基座已完成：内容治理页面拆出 helper、列定义与手动治理动作区；经验治理页面拆出 helper、列定义、用户查询摘要、观察摘要、复核区、流水区、治理动作表单、页头和等级配置。
+- Console 首批治理页面已接入工作台布局承载，保持 API、权限、表单字段、表格列、经验规则、冻结 / 解冻语义和数据契约行为等价；`ModerationPage.tsx` / `ExperienceAdminPage.tsx` 分别降至 `843` / `712` 行。
+- `Console Case Desk` 设计稿已扩展到 `P01-P08` 编号画板，覆盖壳层基座、内容审核、经验台账、治理调度总览、表格 CRUD、设置策略和两个移动端治理视图；`Console 样式与 Token 使用说明` 已同步低饱和暖灰 / 纸色背景、轻侧栏、按钮层级、页面类型和“不硬套模板”规则。
+- 今日收工前已补 [2026-05-23 收工回顾与明日事项](/records/daily-handoff-2026-05-23)：明日优先推进 `P3-8-C2 Console 设计稿到实现的对齐试点`，先复核 `P01-P08` 与当前 Console 页面差距，选择一个低风险页面试点，不做整站一次性换皮。
