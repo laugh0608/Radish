@@ -48,6 +48,7 @@
   - 哪些页面应归入同一个设计稿
   - 哪些已有视觉规范或共享组件可以复用
   - 哪些历史页面需要优先收敛
+  - 哪些页面可参考 [UI 设计灵感参考](/frontend/ui-design-inspiration) 中的布局、密度、设置页、仪表盘或社区列表模式
 - 设计源文件治理建议：
   - `.pen` 文件目录
   - 文件命名
@@ -60,6 +61,8 @@
 ## UI 设计稿治理
 
 Pencil 设计稿是 UI 专题的设计源文件。后续涉及页面级或客户端级 UI 优化时，原则上先更新对应 `.pen` 设计稿，再进入实现。
+
+启动 `P3-8-A` 的 UI 审计和 Pencil 设计稿拆分前，应先阅读 [UI 设计灵感参考](/frontend/ui-design-inspiration)，从 AFFINE、CodexApp、Cloudflare、GitHub、Discourse 与 1Panel 的截图中提炼布局、信息密度、控件气质和配色节奏，再结合 Radish 自身内容重新设计，不直接照搬外部产品。
 
 候选端点包括但不限于：
 

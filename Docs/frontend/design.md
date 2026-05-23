@@ -367,7 +367,7 @@ export const tokens = {
 - Console 后续新增或明显改动页面优先使用 `--console-*` 局部变量承接 `@radish/ui` / `--theme-*` token，不启动后台整站视觉重构
 - 后续只在真实联调中处理残余边角，不在设计入口继续追加流水
 
-主题与 i18n 落地细节见 [前端主题与 i18n 落地记录](/frontend/theme-i18n-implementation)、[视觉主题规范](/frontend/visual-theme-spec)、[视觉色彩参考](/frontend/visual-color-reference) 与 [Console 样式与 Token 使用说明](/frontend/console-style-guide)。
+主题与 i18n 落地细节见 [前端主题与 i18n 落地记录](/frontend/theme-i18n-implementation)、[视觉主题规范](/frontend/visual-theme-spec)、[视觉色彩参考](/frontend/visual-color-reference)、[UI 设计灵感参考](/frontend/ui-design-inspiration) 与 [Console 样式与 Token 使用说明](/frontend/console-style-guide)。
 
 ### 8.2 基础组件
 
@@ -534,6 +534,7 @@ eventBus.on('new-message', ({ count }) => {
 - 窗口拖拽：react-rnd
 - macOS Big Sur 设计规范
 - Windows 11 设计规范
+- [UI 设计灵感参考](/frontend/ui-design-inspiration)
 
 ---
 
