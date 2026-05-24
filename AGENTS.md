@@ -149,6 +149,13 @@ npm run dev --workspace=radish.console
 - 文档：固定项目文档统一收口到仓库 `Docs/`，由 WebOS“文档”应用承载，不再维护独立 Docs 站点
 - Scalar：Gateway `https://localhost:5000/scalar`，API 直连 `http://localhost:5100/scalar`
 
+### 本地复核入口
+
+- 浏览器复核、人工联调和集成链路默认优先访问 Gateway：`https://localhost:5000`
+- Console 管理后台默认通过 Gateway 访问：`https://localhost:5000/console/`
+- `http://localhost:3000` 与 `http://localhost:3100` 仅作为 Vite dev server 直连端口，用于 HMR、前端资源路径或局部 UI 调试
+- 如确需直连 Console dev server，路径必须带 `/console/` base，例如 `http://localhost:3100/console/`
+
 ## 配置与数据库
 
 ### 配置加载优先级

@@ -144,6 +144,19 @@ npm run validate:ci
 
 ## 分层使用建议
 
+### 本地页面复核入口
+
+浏览器复核、人工联调和集成链路默认优先访问 Gateway：
+
+```text
+https://localhost:5000
+https://localhost:5000/console/
+```
+
+`http://localhost:3000` 与 `http://localhost:3100` 只作为 Vite dev server 直连端口，用于 HMR、前端资源路径或局部 UI 调试。直连 Console dev server 时必须带 `/console/` base，例如 `http://localhost:3100/console/`。
+
+涉及用户真实路径、登录回跳、Console 管理后台、公开壳层、API 转发、静态资源路径或部署口径时，不要默认绕过 Gateway 直接访问前端 dev server。
+
 ### 0. 执行粒度约定
 
 当前仓库的验证与留痕，默认按“开发中 / 准备合并 / 发布部署”三种粒度区分，而不是把同一套重流程压到每一次本地提交：
