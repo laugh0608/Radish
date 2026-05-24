@@ -1,18 +1,30 @@
 .user-profile-page {
-  padding: 24px;
-  max-width: 800px;
-  margin: 0 auto;
+  min-width: 0;
 }
 
-.profile-card {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.profile-header {
+.profile-heading {
   display: flex;
-  align-items: flex-start;
-  gap: 24px;
-  margin-bottom: 24px;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.profile-heading h2 {
+  margin: 0;
+}
+
+.user-profile-layout {
+  grid-template-columns: minmax(180px, 240px) minmax(0, 1fr) minmax(260px, 320px);
+}
+
+.user-profile-empty {
+  display: flex;
+  min-height: 200px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
 }
 
 .avatar-section {
@@ -20,94 +32,33 @@
   flex-direction: column;
   align-items: center;
   gap: 12px;
+  margin-top: 16px;
 }
 
 .profile-avatar {
-  border: 3px solid #f0f0f0;
+  border: 3px solid var(--console-border-subtle);
 }
 
 .avatar-upload-btn {
   font-size: 12px;
 }
 
-.profile-info {
-  flex: 1;
-}
-
-.profile-info h3 {
-  margin: 0 0 8px 0;
-  font-size: 24px;
-  font-weight: 600;
-  color: #262626;
-}
-
-.profile-roles {
-  margin: 4px 0;
-  color: #1890ff;
-  font-weight: 500;
-}
-
-.profile-id {
-  margin: 4px 0;
-  color: #8c8c8c;
-  font-size: 14px;
-}
-
 .profile-actions {
   display: flex;
   align-items: flex-start;
-}
-
-.profile-stats {
-  background: #fafafa;
-  padding: 16px;
-  border-radius: 6px;
-  border: 1px solid #d9d9d9;
-}
-
-.stat-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-}
-
-.stat-item:not(:last-child) {
-  border-bottom: 1px solid #e8e8e8;
-}
-
-.stat-label {
-  font-weight: 500;
-  color: #595959;
-}
-
-.stat-value {
-  color: #262626;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 @media (max-width: 768px) {
-  .user-profile-page {
-    padding: 16px;
-  }
-
-  .profile-header {
+  .profile-heading {
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     text-align: center;
-  }
-
-  .profile-info {
-    width: 100%;
   }
 
   .profile-actions {
     width: 100%;
     justify-content: center;
-  }
-
-  .stat-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
   }
 }
