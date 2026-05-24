@@ -32,6 +32,7 @@ import { getAvatarUrl } from '@/config/env';
 import { ROUTES } from '@/router/routes';
 import { log } from '@/utils/logger';
 import { StickerGroupForm } from './StickerGroupForm';
+import '../adminFeature.css';
 import './StickerGroupList.css';
 
 const getGroupTypeText = (type: number) => (type === 2 ? '付费' : '官方');
@@ -85,6 +86,10 @@ export const StickerGroupList = () => {
       (item.voDescription || '').toLowerCase().includes(normalized)
     );
   }, [groups, keyword]);
+  const activeFilterCount = keyword.trim() ? 1 : 0;
+  const enabledGroups = groups.filter((group) => group.voIsEnabled).length;
+  const paidGroups = groups.filter((group) => group.voGroupType === 2).length;
+  const totalStickers = groups.reduce((sum, group) => sum + group.voStickerCount, 0);
 
   const openCreate = () => {
     setFormMode('create');
@@ -261,45 +266,112 @@ export const StickerGroupList = () => {
     },
   ];
   return (
-    <div className="sticker-group-list-page">
-      <div className="page-header">
-        <h2>表情包管理</h2>
-        <Space>
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={() => {
-              void loadGroups();
-            }}
-          >
-            刷新
-          </Button>
-          {canCreateSticker ? (
-            <Button variant="primary" icon={<PlusOutlined />} onClick={openCreate}>
-              新建分组
+    <div className="admin-feature-page sticker-group-list-page">
+      <section className="admin-feature-card">
+        <div className="admin-feature-header">
+          <div>
+            <h2>
+              <AppstoreOutlined /> 表情包管理
+            </h2>
+            <p className="admin-feature-subtle">维护表情包分组、启停状态和进入分组表情管理的操作入口。</p>
+          </div>
+          <div className="sticker-list-header-actions">
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={() => {
+                void loadGroups();
+              }}
+            >
+              刷新
             </Button>
-          ) : null}
-        </Space>
-      </div>
+            {canCreateSticker ? (
+              <Button variant="primary" icon={<PlusOutlined />} onClick={openCreate}>
+                新建分组
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      </section>
 
-      <div className="filter-bar">
-        <Input
-          allowClear
-          placeholder="搜索名称 / Code / 描述"
-          prefix={<SearchOutlined />}
-          style={{ width: 280 }}
-          value={keyword}
-          onChange={(event) => setKeyword(event.target.value)}
-        />
-      </div>
+      <section className="admin-feature-metrics" aria-label="表情包分组指标">
+        <div className="admin-feature-metric">
+          全部分组
+          <strong>{groups.length}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          当前结果
+          <strong>{filteredGroups.length}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          启用分组
+          <strong>{enabledGroups}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          表情总数
+          <strong>{totalStickers}</strong>
+        </div>
+      </section>
 
-      <Table<StickerGroupVo>
-        rowKey="voId"
-        loading={loading}
-        columns={columns}
-        dataSource={filteredGroups}
-        scroll={{ x: 1200 }}
-        pagination={false}
-      />
+      <div className="admin-table-layout">
+        <main className="admin-table-main">
+          <section className="admin-table-toolbar" aria-label="表情包分组筛选">
+            <div className="admin-table-toolbar__title">
+              <span>筛选分组</span>
+              <Tag>{activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}</Tag>
+            </div>
+            <div className="admin-table-toolbar__filters">
+              <Input
+                allowClear
+                className="sticker-list-filter-input"
+                placeholder="搜索名称 / Code / 描述"
+                prefix={<SearchOutlined />}
+                value={keyword}
+                onChange={(event) => setKeyword(event.target.value)}
+              />
+            </div>
+          </section>
+
+          <section className="admin-table-panel">
+            <Table<StickerGroupVo>
+              rowKey="voId"
+              loading={loading}
+              columns={columns}
+              dataSource={filteredGroups}
+              scroll={{ x: 1200 }}
+              pagination={false}
+            />
+          </section>
+        </main>
+
+        <aside className="admin-table-aside">
+          <h3>分组摘要</h3>
+          <p className="admin-feature-subtle">用于核对当前分组范围、类型分布和可执行动作。</p>
+          <div className="admin-table-summary">
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">查询范围</span>
+              <span className="admin-table-summary__value">
+                {activeFilterCount > 0 ? '名称 / Code / 描述筛选' : '全部表情包分组'}
+              </span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">付费分组</span>
+              <span className="admin-table-summary__value">{paidGroups}</span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">启停权限</span>
+              <span className="admin-table-summary__value">
+                {canToggleSticker ? '可启用 / 禁用' : '仅可查看启停状态'}
+              </span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">分组维护</span>
+              <span className="admin-table-summary__value">
+                {canEditSticker ? '可编辑分组并管理表情' : '仅可查看分组'}
+              </span>
+            </div>
+          </div>
+        </aside>
+      </div>
 
       <StickerGroupForm
         visible={formVisible}

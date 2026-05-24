@@ -18,6 +18,8 @@ import {
   DeleteOutlined,
   ReloadOutlined,
   SearchOutlined,
+  AppstoreOutlined,
+  LeftOutlined,
 } from '@radish/ui';
 import {
   batchUpdateStickerSort,
@@ -32,6 +34,8 @@ import { getAvatarUrl } from '@/config/env';
 import { log } from '@/utils/logger';
 import { StickerForm } from './StickerForm';
 import { StickerBatchUploadModal } from './StickerBatchUploadModal';
+import '../adminFeature.css';
+import './StickerList.css';
 
 const getPreviewUrl = (sticker: StickerVo) => getAvatarUrl(sticker.voThumbnailUrl || sticker.voImageUrl);
 
@@ -96,6 +100,11 @@ export const StickerList = () => {
       item.voCode.toLowerCase().includes(normalized)
     );
   }, [stickers, keyword]);
+  const activeFilterCount = keyword.trim() ? 1 : 0;
+  const enabledStickers = stickers.filter((sticker) => sticker.voIsEnabled).length;
+  const animatedStickers = stickers.filter((sticker) => sticker.voIsAnimated).length;
+  const inlineStickers = stickers.filter((sticker) => sticker.voAllowInline).length;
+  const sortDraftCount = Object.keys(sortDrafts).length;
 
   const handleDelete = async (id: string) => {
     try {
@@ -147,12 +156,8 @@ export const StickerList = () => {
       key: 'preview',
       width: 90,
       render: (_, record) => (
-        <div style={{ width: 40, height: 40, borderRadius: 6, overflow: 'hidden', border: '1px solid #f0f0f0' }}>
-          <img
-            src={getPreviewUrl(record)}
-            alt={record.voName}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
+        <div className="sticker-item-preview">
+          <img src={getPreviewUrl(record)} alt={record.voName} />
         </div>
       ),
     },
@@ -262,92 +267,168 @@ export const StickerList = () => {
 
   if (!isValidGroupId) {
     return (
-      <div>
-        <p>分组 ID 无效</p>
-        <Button
-          onClick={() => {
-            navigate(ROUTES.STICKERS);
-          }}
-        >
-          返回分组列表
-        </Button>
+      <div className="admin-feature-page sticker-item-list-page">
+        <section className="admin-feature-card">
+          <div className="admin-feature-header">
+            <div>
+              <h2>
+                <AppstoreOutlined /> 分组表情管理
+              </h2>
+              <p className="admin-feature-subtle">分组 ID 无效，无法加载表情列表。</p>
+            </div>
+            <Button
+              icon={<LeftOutlined />}
+              onClick={() => {
+                navigate(ROUTES.STICKERS);
+              }}
+            >
+              返回分组列表
+            </Button>
+          </div>
+        </section>
       </div>
     );
   }
   return (
-    <div>
-      <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <h2 style={{ margin: 0 }}>分组表情管理（GroupId: {normalizedGroupId}）</h2>
-        <Space>
-          <Button
-            onClick={() => {
-              navigate(ROUTES.STICKERS);
-            }}
-          >
-            返回分组列表
-          </Button>
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={() => {
-              void loadStickers();
-            }}
-          >
-            刷新
-          </Button>
-          {canSortSticker ? (
-            <Button
-              disabled={savingSort}
-              onClick={() => {
-                void handleSaveSort();
-              }}
-            >
-              保存排序
-            </Button>
-          ) : null}
-          {canCreateSticker ? (
-            <Button
-              variant="primary"
-              icon={<PlusOutlined />}
-              onClick={() => {
-                setFormMode('create');
-                setEditingSticker(undefined);
-                setFormVisible(true);
-              }}
-            >
-              新增表情
-            </Button>
-          ) : null}
-          {canBatchUploadSticker ? (
+    <div className="admin-feature-page sticker-item-list-page">
+      <section className="admin-feature-card">
+        <div className="admin-feature-header">
+          <div>
+            <h2>
+              <AppstoreOutlined /> 分组表情管理
+            </h2>
+            <p className="admin-feature-subtle">当前分组：{normalizedGroupId}。维护表情图片、编码、内嵌能力和排序权重。</p>
+          </div>
+          <div className="sticker-list-header-actions">
             <Button
               onClick={() => {
-                setBatchModalVisible(true);
+                navigate(ROUTES.STICKERS);
+              }}
+              icon={<LeftOutlined />}
+            >
+              返回分组列表
+            </Button>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={() => {
+                void loadStickers();
               }}
             >
-              批量上传
+              刷新
             </Button>
-          ) : null}
-        </Space>
-      </div>
+            {canCreateSticker ? (
+              <Button
+                variant="primary"
+                icon={<PlusOutlined />}
+                onClick={() => {
+                  setFormMode('create');
+                  setEditingSticker(undefined);
+                  setFormVisible(true);
+                }}
+              >
+                新增表情
+              </Button>
+            ) : null}
+            {canBatchUploadSticker ? (
+              <Button
+                onClick={() => {
+                  setBatchModalVisible(true);
+                }}
+              >
+                批量上传
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      </section>
 
-      <div style={{ marginBottom: 16 }}>
-        <Input
-          allowClear
-          placeholder="搜索名称 / Code"
-          prefix={<SearchOutlined />}
-          style={{ width: 280 }}
-          value={keyword}
-          onChange={(event) => setKeyword(event.target.value)}
-        />
-      </div>
+      <section className="admin-feature-metrics" aria-label="分组表情指标">
+        <div className="admin-feature-metric">
+          全部表情
+          <strong>{stickers.length}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          当前结果
+          <strong>{filteredStickers.length}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          启用表情
+          <strong>{enabledStickers}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          排序草稿
+          <strong>{sortDraftCount}</strong>
+        </div>
+      </section>
 
-      <Table<StickerVo>
-        rowKey="voId"
-        loading={loading}
-        columns={columns}
-        dataSource={filteredStickers}
-        scroll={{ x: 1200 }}
-        pagination={false}
-      />
+      <div className="admin-table-layout">
+        <main className="admin-table-main">
+          <section className="admin-table-toolbar" aria-label="分组表情筛选">
+            <div className="admin-table-toolbar__title">
+              <span>筛选表情</span>
+              <Tag>{activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}</Tag>
+            </div>
+            <div className="admin-table-toolbar__filters">
+              <Input
+                allowClear
+                className="sticker-list-filter-input"
+                placeholder="搜索名称 / Code"
+                prefix={<SearchOutlined />}
+                value={keyword}
+                onChange={(event) => setKeyword(event.target.value)}
+              />
+              {canSortSticker ? (
+                <Button
+                  disabled={savingSort}
+                  onClick={() => {
+                    void handleSaveSort();
+                  }}
+                >
+                  保存排序
+                </Button>
+              ) : null}
+            </div>
+          </section>
+
+          <section className="admin-table-panel">
+            <Table<StickerVo>
+              rowKey="voId"
+              loading={loading}
+              columns={columns}
+              dataSource={filteredStickers}
+              scroll={{ x: 1200 }}
+              pagination={false}
+            />
+          </section>
+        </main>
+
+        <aside className="admin-table-aside">
+          <h3>表情摘要</h3>
+          <p className="admin-feature-subtle">用于核对当前分组筛选、排序草稿和表情类型分布。</p>
+          <div className="admin-table-summary">
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">分组 ID</span>
+              <span className="admin-table-summary__value">{normalizedGroupId}</span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">查询范围</span>
+              <span className="admin-table-summary__value">
+                {activeFilterCount > 0 ? '名称 / Code 筛选' : '全部分组表情'}
+              </span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">GIF / 内嵌</span>
+              <span className="admin-table-summary__value">{animatedStickers} / {inlineStickers}</span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">排序权限</span>
+              <span className="admin-table-summary__value">
+                {canSortSticker ? '可调整排序' : '仅可查看排序'}
+              </span>
+            </div>
+          </div>
+        </aside>
+      </div>
 
       <StickerForm
         visible={formVisible}
