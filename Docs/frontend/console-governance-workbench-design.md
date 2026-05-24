@@ -1,8 +1,8 @@
 # Console 治理工作台设计端点
 
-> 状态：`P3-8-C1` 结构基座已完成，下一步进入 `P3-8-C2` 设计实现对齐试点
+> 状态：`P3-8-C2` 设计实现对齐试点已覆盖首批高频历史页面，下一步进入阶段复盘与剩余页面筛查
 >
-> 日期：2026-05-23（Asia/Shanghai）
+> 日期：2026-05-24（Asia/Shanghai）
 >
 > 适用范围：`radish.console` 内容治理、经验治理与后续 Console 页面视觉基座。当前已完成首批治理页面结构承载，后续按设计稿编号逐步对齐，不直接重写 Console 全站。
 
@@ -59,6 +59,14 @@ Docs/frontend/design-sources/console-governance-workbench.pen
 - `@radish/ui` 已提供 `Button`、`Table`、`Form`、`Tag`、`Modal`、`DatePicker` 等基础控件。
 - `adminFeature.css` 已提供功能页容器、卡片、标题区、提示条、指标卡、表单栅格。
 - `Docs/frontend/console-style-guide.md` 已定义 Console 局部 token 和样式分层。
+
+`P3-8-C2` 已完成首批设计实现对齐：
+
+- `P01` 壳层基座已落到 `AdminLayout`、`Breadcrumb`、`index.css` 与 `adminFeature.css` 的局部 token 和结构收敛。
+- `P04` 调度总览已落到 `Dashboard`。
+- `P05` 表格 CRUD 已落到 `UserList / TagList / CategoryList / SystemConfigList / RoleList / Applications / StickerGroupList / StickerList / ProductList / OrderList`。
+- `P06` 设置 / 配置型页面已落到 `Settings / UserProfile`，并扩展到 `CoinAdminPage` 工具型、`RolePermissionPage` 权限配置型和 `UserDetail` 详情型页面试点。
+- 上述迁移均保持 API、权限、表单字段、数据契约和业务语义不变，不把所有页面硬套为同一布局。
 
 ## 工作台信息架构
 
@@ -158,11 +166,17 @@ Console 治理工作台按四段组织：
    - 用户查询 / 观察摘要 / 复核动作 / 流水 / 调整动作 / 等级配置已拆为局部组件。
    - 等级配置仍保持原字段和 API，不纳入经验发放主流程治理。
 
-下一批建议 `P3-8-C2 Console 设计稿到实现的对齐试点`：
+`P3-8-C2 Console 设计稿到实现的对齐试点` 已完成首批高频页面覆盖：
 
 1. 先复核 `P01 / P04 / P05 / P06` 与当前 Console 壳层、Dashboard、列表页和设置页的差距。
 2. 优先沉淀 `AdminLayout`、`adminFeature.css` 和 `--console-*` token 的可复用视觉基座。
 3. 选择一个低风险列表 / 设置 / 总览页面做试点，不一次性改完整个 Console，不把所有页面硬套成 `P02` 或 `P03` 的工作台结构。
+
+下一批建议：
+
+1. 复核 Console 路由表和历史页面 CSS，确认剩余页面是否仍存在未对齐的高频入口。
+2. 回看 `P02 / P03` 内容治理与经验治理页面在实际使用中的首屏密度、右侧动作区和留痕摘要是否需要细节修正。
+3. 继续保持小步迁移：一次只处理一个页面或一个已迁移页面的明确一致性问题。
 
 验证入口：
 

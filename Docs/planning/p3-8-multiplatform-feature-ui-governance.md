@@ -1,6 +1,6 @@
 # P3-8 多端功能补全与 UI 设计治理
 
-> 状态：`P3-8-C1` Console 治理工作台结构基座已完成，下一顺位为 `P3-8-C2`
+> 状态：`P3-8-C2` Console 设计稿到实现的页面类型试点已覆盖首批高频历史页面，下一顺位为阶段复盘与剩余页面筛查
 >
 > 启动日期：2026-05-21（Asia/Shanghai）
 >
@@ -14,7 +14,7 @@
 
 同时，各个页面 UI、各客户端 UI、`radish.client` 和 `radish.console` 的页面风格仍有明显历史分叉：局部 CSS、硬编码颜色、组件复用不足、交互反馈不一致、端点视觉层级不统一。需要单独设立 UI 设计治理专题，先形成设计稿和设计源文件，再按设计稿推进实现。
 
-`P3-7-C` 已完成工作台与后端 Service 首批热区治理，继续硬拆低风险候选的收益下降。`P3-8-A` 已完成多端功能缺口与 UI 设计入口审计，首批实现任务 `P3-8-B1 Flutter 公开榜单只读入口` 已完成。`P3-8-B2` 已建立 Console 治理工作台设计端点，`P3-8-C1` 已完成内容治理与经验治理首批结构基座。后续继续按设计稿和页面类型推进，不直接大面积重写 Console。
+`P3-7-C` 已完成工作台与后端 Service 首批热区治理，继续硬拆低风险候选的收益下降。`P3-8-A` 已完成多端功能缺口与 UI 设计入口审计，首批实现任务 `P3-8-B1 Flutter 公开榜单只读入口` 已完成。`P3-8-B2` 已建立 Console 治理工作台设计端点，`P3-8-C1` 已完成内容治理与经验治理首批结构基座，`P3-8-C2` 已把 `P01 / P04 / P05 / P06` 页面类型试点落到首批高频历史页面。后续继续按设计稿和页面类型推进，不直接大面积重写 Console。
 
 ## 阶段目标
 
@@ -93,12 +93,19 @@
   - `SystemConfigList` 已迁入配置指标、筛选工具条、品牌图标配置面板、表格主体和右侧摘要栏，保留配置 CRUD、站点图标上传 / 恢复默认、分类筛选和关键词筛选行为。
   - 后续列表迁移第四个落点选择 `RoleList` 角色管理页，继续复用 `P05` 表格型布局基座。
   - `RoleList` 已迁入角色指标、列表状态工具条、表格主体和右侧权限摘要栏，保留角色 CRUD、启停、权限配置跳转和分页行为。
+  - 后续列表迁移继续覆盖 `Applications / StickerGroupList / StickerList`，复用 `P05` 表格型布局基座，保留客户端 CRUD、密钥重置、表情包启停、表情排序与批量上传行为。
+  - 商城管理迁移继续覆盖 `ProductList / OrderList`，复用 `P05` 表格型布局基座，保留商品 CRUD、上下架、关联订单跳转、订单详情、失败重试和管理员备注行为。
+  - 工具型页面试点选择 `CoinAdminPage`，迁入余额指标、查询工具条、调账主区和右侧摘要栏，保留用户余额查询、管理员调账、权限判断和表单字段行为。
+  - 权限配置型页面试点选择 `RolePermissionPage`，迁入页面标题卡、授权指标、角色信息卡、资源树主区和权限预览区，保留资源树勾选、父级继承、接口预览、并发保存参数和权限判断行为。
+  - 详情型页面试点选择 `UserDetail`，迁入标题卡、用户指标、基本信息、最近胡萝卜流水 / 订单记录和右侧摘要栏，保留用户详情、资产、经验、订单查询与订单治理详情跳转行为。
+  - 个人资料设置型页面试点选择 `UserProfile`，复用 `P06` 设置型布局基座，保留头像上传、个人资料保存、表单校验和 `UserContext` 刷新行为。
 
 下一顺位：
 
-- 继续 `P3-8-C2` 后续页面类型试点
+- `P3-8-C2` 阶段复盘与剩余页面筛查
   - 设计依据见：[Console 治理工作台设计端点](/frontend/console-governance-workbench-design) 与 [Console 样式与 Token 使用说明](/frontend/console-style-guide)。
-  - 优先继续复核 `Applications / Stickers` 等历史列表页是否可按 `P05` 小步迁移，或回看 `P02 / P03` 治理工作台实际使用后的布局细节。
+  - 优先复核 Console 路由表、历史页面 CSS 与 `P01-P08` 设计稿覆盖关系，确认剩余页面是否仍适合小步迁移。
+  - 可回看 `P02 / P03` 治理工作台实际使用后的布局细节，或选择一个低风险剩余页面补齐设计实现一致性。
   - 不一次性改完整个 Console，不把所有页面硬套成同一模板。
 
 ## UI 设计稿治理
@@ -250,6 +257,15 @@ git diff --check
 ```bash
 npm run type-check --workspace=radish.console
 npm run build --workspace=radish.console
+git diff --check
+```
+
+`P3-8-C2` 后续页面类型试点已按批次执行：
+
+```bash
+npm run type-check --workspace=radish.console
+npm run build --workspace=radish.console
+npm run check:repo-hygiene:changed
 git diff --check
 ```
 

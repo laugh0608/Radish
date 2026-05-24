@@ -71,6 +71,7 @@
 - `P3-8-C2 Console 设计稿到实现的对齐试点`
   - 设置型页面试点已落到 `Settings`，表格 CRUD 试点已落到 `UserList / TagList / CategoryList / SystemConfigList / RoleList / Applications / Stickers / Products / Orders`，调度总览试点已落到 `Dashboard`
   - 工具型页面试点已落到 `CoinAdminPage`，权限配置型页面试点已落到 `RolePermissionPage`，详情型页面试点已落到 `UserDetail`，个人资料设置型页面试点已落到 `UserProfile`；后续可回看 `P02 / P03` 治理工作台实际使用后的布局细节，或继续按页面风险评估剩余历史页面是否需要小步迁移
+  - 明日优先做 `P3-8-C2` 阶段复盘和剩余页面筛查：先复核 Console 路由表、历史页面 CSS 与 `P01-P08` 设计稿覆盖关系，再选择一个低风险剩余页面或回补一个已迁移页面的细节一致性问题
   - 保持 API、权限、表单字段、数据契约和治理动作语义不变；不做整站一次性换皮
 - `P3-7-C3` 进入维护 / 后续评审池
   - `ExperienceService` 剩余经验发放主流程如需继续拆分，应单独评估事务、重试、升级奖励和冻结语义风险

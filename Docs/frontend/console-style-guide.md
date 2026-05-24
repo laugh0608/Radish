@@ -1,7 +1,7 @@
 # Console 样式与 Token 使用说明
 
 > 入口页：[前端设计文档](/frontend/design)  
-> 最后更新：2026-05-23
+> 最后更新：2026-05-24
 
 本文说明 `radish.console` 后续新增或改动页面时的局部样式口径。Console 后续视觉方向以 `Docs/frontend/design-sources/console-governance-workbench.pen` 中的 `Case Desk` 系列画板为当前设计基准。
 
@@ -35,6 +35,15 @@
 - `Console Governance Overview - Dispatch Center`：跨模块治理负载 / 调度总览页。
 - `Console Table CRUD - User Management`：普通表格 CRUD 页面。
 - `Console Settings - Governance Policy`：设置 / 权限 / 配置型页面。
+
+已完成的首批实现落点：
+
+- 壳层与通用基座：`AdminLayout`、`Breadcrumb`、`index.css`、`adminFeature.css`。
+- 调度总览：`Dashboard`。
+- 表格 CRUD：`UserList`、`TagList`、`CategoryList`、`SystemConfigList`、`RoleList`、`Applications`、`StickerGroupList`、`StickerList`、`ProductList`、`OrderList`。
+- 设置 / 详情 / 配置扩展：`Settings`、`UserProfile`、`UserDetail`、`RolePermissionPage`、`CoinAdminPage`。
+
+这些页面按页面类型复用视觉语言，但保留原 API、权限、表单字段、数据契约和业务语义。
 
 ## 3. 页面类型
 

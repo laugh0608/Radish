@@ -79,3 +79,13 @@
 - Console 首批治理页面已接入工作台布局承载，保持 API、权限、表单字段、表格列、经验规则、冻结 / 解冻语义和数据契约行为等价；`ModerationPage.tsx` / `ExperienceAdminPage.tsx` 分别降至 `843` / `712` 行。
 - `Console Case Desk` 设计稿已扩展到 `P01-P08` 编号画板，覆盖壳层基座、内容审核、经验台账、治理调度总览、表格 CRUD、设置策略和两个移动端治理视图；`Console 样式与 Token 使用说明` 已同步低饱和暖灰 / 纸色背景、轻侧栏、按钮层级、页面类型和“不硬套模板”规则。
 - 今日收工前已补 [2026-05-23 收工回顾与明日事项](/records/daily-handoff-2026-05-23)：明日优先推进 `P3-8-C2 Console 设计稿到实现的对齐试点`，先复核 `P01-P08` 与当前 Console 页面差距，选择一个低风险页面试点，不做整站一次性换皮。
+
+## 2026-05-24
+
+- PR 前端 lint 失败已修复：补正 Chat、Notification、Shop、Moderation 相关 TypeScript / lint 问题，作为继续推进 Console 设计实现对齐前的仓库卫生收口。
+- 本地页面复核入口口径已同步到 `AGENTS.md`、`CLAUDE.md` 和验证基线：浏览器复核优先走 Gateway，Console 默认访问 `https://localhost:5000/console/`，直连 Vite 时使用 `http://localhost:3100/console/`。
+- `P3-8-C2` 已从 `Settings` 启动设置型页面试点，随后完成 `UserList` 表格 CRUD 试点、`Dashboard` 调度总览试点，并沉淀 `AdminLayout`、`Breadcrumb`、`index.css` 与 `adminFeature.css` 的 Console token 和布局基座。
+- 表格 CRUD 历史页面已按 `P05` 小步迁移：`TagList`、`CategoryList`、`SystemConfigList`、`RoleList`、`Applications`、`StickerGroupList`、`StickerList`、`ProductList` 与 `OrderList` 已迁入指标、筛选 / 工具条、表格主体和右侧摘要栏。
+- 非典型列表 / 设置页面已完成首批页面类型试点：`CoinAdminPage` 迁入工具型布局，`RolePermissionPage` 迁入权限配置型布局，`UserDetail` 迁入详情型布局，`UserProfile` 迁入个人资料设置型布局。
+- 全日 Console 迁移保持 API、权限、表单字段、数据契约、订单治理、商品上下架、表情上传 / 排序、角色授权、胡萝卜调账、用户详情查询和个人资料保存语义不变；未做 Console 整站一次性换皮。
+- 今日收工前已补 [2026-05-24 收工回顾与明日事项](/records/daily-handoff-2026-05-24)：明日优先做 `P3-8-C2` 阶段复盘与剩余页面筛查，先确认 Console 路由表、历史页面 CSS 和 `P01-P08` 设计稿覆盖关系，再决定是否继续小步迁移或回补已迁移页面细节。
