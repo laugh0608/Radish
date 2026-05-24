@@ -75,13 +75,17 @@
   - `ModerationPage` 完成 helper、列定义、手动治理区拆分，并接入治理工作台布局承载。
   - `ExperienceAdminPage` 完成 helper、列定义、用户查询摘要、观察摘要、复核区、经验流水区、治理动作表单、页面头部和等级配置拆分，并接入治理工作台布局承载。
   - 页面拆分保持 API、权限、表单字段、表格列、经验规则、冻结 / 解冻语义和数据契约行为等价。
+- `P3-8-C2 Console 设计稿到实现的对齐试点`
+  - 首个试点选择低风险 `Settings` 设置页，对齐 `P06` 设置 / 权限 / 配置型页面方向。
+  - `Settings` 已迁入分组导航、居中设置列和右侧影响范围摘要，保留个人时区偏好、重置默认和密码修改行为。
+  - `adminFeature.css` 新增 `admin-settings-*` 与 `admin-setting-section` 可复用布局类，供后续设置 / 策略类页面继续复用。
 
 下一顺位：
 
-- `P3-8-C2 Console 设计稿到实现的对齐试点`
+- 继续 `P3-8-C2` 后续页面类型试点
   - 设计依据见：[Console 治理工作台设计端点](/frontend/console-governance-workbench-design) 与 [Console 样式与 Token 使用说明](/frontend/console-style-guide)。
-  - 先按 `P01-P08` 复核当前 Console 页面差距，优先沉淀壳层、按钮层级、表格密度、设置页和右侧摘要区的可复用样式。
-  - 选择一个低风险列表 / 设置 / 总览页面做试点，不一次性改完整个 Console，不把所有页面硬套成同一模板。
+  - 优先复核 `P05` 表格 CRUD 或 `P04` 调度总览页，验证列表密度、摘要侧栏、按钮层级和总览指标能否复用。
+  - 不一次性改完整个 Console，不把所有页面硬套成同一模板。
 
 ## UI 设计稿治理
 
@@ -174,6 +178,15 @@ git diff --check
 
 ```bash
 npm run type-check --workspace=radish.console
+npm run check:repo-hygiene:changed
+git diff --check
+```
+
+`P3-8-C2` 设置页试点已执行：
+
+```bash
+npm run type-check --workspace=radish.console
+npm run build --workspace=radish.console
 npm run check:repo-hygiene:changed
 git diff --check
 ```

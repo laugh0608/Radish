@@ -26,6 +26,7 @@
   - `P3-8-B2` 已完成 Console 治理工作台设计端点：`Docs/frontend/console-governance-workbench-design.md` 已定义信息架构、实现边界、验证入口和 `.pen` 源文件落点
   - `P3-8-C1` 已完成 Console 治理工作台结构基座首批实现：`ModerationPage` 与 `ExperienceAdminPage` 已完成 helper、列定义、局部组件拆分和行为等价布局承载，主文件分别降至 `843` / `712` 行
   - Console 设计稿已扩展为 `P01-P08` 编号页面，覆盖壳层基座、内容审核、经验台账、治理调度总览、表格 CRUD、设置策略与两个移动端治理视图；`Console 样式与 Token 使用说明` 已同步 Case Desk 风格、页面类型和“不硬套模板”规则
+  - `P3-8-C2` 已完成 Console 设置型页面首个实现试点：`Settings` 按 `P06` 方向迁入分组导航、居中配置列和右侧影响范围摘要，并在 `adminFeature.css` 沉淀可复用设置型布局类
   - 项目仍处于单人开发期和功能建设期，没有稳定用户反馈和专职测试，不能把“等待真实使用观察”作为默认主线
 
 ## 当前执行入口
@@ -56,8 +57,7 @@
 ## 下一顺位
 
 - `P3-8-C2 Console 设计稿到实现的对齐试点`
-  - 明日优先读取 `Docs/frontend/console-style-guide.md`、`Docs/frontend/console-governance-workbench-design.md` 与设计稿编号口径
-  - 先复核现有 Console 页面与 `P01-P08` 的差距，选一个低风险列表 / 设置 / 总览页面试点
+  - 设置型页面试点已落到 `Settings`；后续优先继续复核 `P05` 表格 CRUD 或 `P04` 总览页，验证列表密度、摘要侧栏和按钮层级能否复用
   - 保持 API、权限、表单字段、数据契约和治理动作语义不变；不做整站一次性换皮
 - `P3-7-C3` 进入维护 / 后续评审池
   - `ExperienceService` 剩余经验发放主流程如需继续拆分，应单独评估事务、重试、升级奖励和冻结语义风险

@@ -73,6 +73,116 @@
   gap: 16px;
 }
 
+.admin-settings-layout {
+  display: grid;
+  grid-template-columns: minmax(160px, 220px) minmax(0, 1fr) minmax(260px, 320px);
+  gap: 20px;
+  align-items: start;
+}
+
+.admin-settings-nav,
+.admin-settings-aside {
+  position: sticky;
+  top: 24px;
+}
+
+.admin-settings-nav,
+.admin-settings-main,
+.admin-settings-aside,
+.admin-setting-section {
+  min-width: 0;
+}
+
+.admin-settings-nav,
+.admin-settings-aside,
+.admin-setting-section {
+  padding: 20px;
+  background: var(--console-bg-surface);
+  border: 1px solid var(--console-border-subtle);
+  border-radius: var(--console-radius-panel);
+  box-shadow: var(--console-shadow-card);
+}
+
+.admin-settings-nav h3,
+.admin-settings-aside h3,
+.admin-setting-section h3 {
+  margin: 0;
+  color: var(--console-text-primary);
+  font-size: 16px;
+}
+
+.admin-settings-nav p,
+.admin-settings-aside p,
+.admin-setting-section p {
+  margin: 6px 0 0;
+}
+
+.admin-settings-nav__list,
+.admin-settings-aside__list {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.admin-settings-nav__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  color: var(--console-text-primary);
+  text-decoration: none;
+  border: 1px solid transparent;
+  border-radius: var(--console-radius-control);
+  background: var(--console-bg-muted);
+}
+
+.admin-settings-nav__item:hover {
+  color: var(--console-text-primary);
+  border-color: var(--console-border-subtle);
+  background: var(--console-bg-surface);
+}
+
+.admin-settings-main {
+  display: grid;
+  gap: 20px;
+}
+
+.admin-setting-section__title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.admin-setting-section__title-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-settings-aside__item {
+  display: grid;
+  gap: 4px;
+  padding: 12px 0;
+  border-top: 1px solid var(--console-border-subtle);
+}
+
+.admin-settings-aside__item:first-child {
+  border-top: 0;
+}
+
+.admin-settings-aside__label {
+  color: var(--console-text-secondary);
+  font-size: 12px;
+}
+
+.admin-settings-aside__value {
+  color: var(--console-text-primary);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
 .governance-workbench {
   display: grid;
   gap: 20px;
@@ -149,6 +259,15 @@
       "detail"
       "actions";
     grid-template-columns: 1fr;
+  }
+
+  .admin-settings-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-settings-nav,
+  .admin-settings-aside {
+    position: static;
   }
 
   .experience-transaction-filters {
