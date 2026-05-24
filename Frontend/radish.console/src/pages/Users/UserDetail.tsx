@@ -8,7 +8,7 @@ import {
   message,
   type TableColumnsType,
 } from '@radish/ui';
-import { Card, Descriptions, Empty, Statistic, Tabs } from 'antd';
+import { Descriptions, Empty, Tabs } from 'antd';
 import {
   UserOutlined,
   TrophyOutlined,
@@ -24,6 +24,7 @@ import { getUserExperience, type UserExperienceVo } from '@/api/experienceAdminA
 import { adminGetOrders, getOrderStatusColor, getOrderStatusDisplay } from '@/api/shopApi';
 import type { Order } from '@/api/types';
 import type { UserListItem } from '@/types/user';
+import '../adminFeature.css';
 import './UserDetail.css';
 
 interface UserDetailData {
@@ -84,6 +85,12 @@ export const UserDetail = () => {
 
     return transaction.voAmount;
   };
+
+  const getSignedAmountClassName = (amount: number) => (
+    amount >= 0
+      ? 'user-detail-signed-amount user-detail-signed-amount--positive'
+      : 'user-detail-signed-amount user-detail-signed-amount--negative'
+  );
 
   const handleBack = () => {
     if (returnTo?.startsWith('/')) {
@@ -203,7 +210,7 @@ export const UserDetail = () => {
         const signedAmount = getSignedCoinAmount(record);
 
         return (
-          <span style={{ color: signedAmount >= 0 ? '#52c41a' : '#ff4d4f', fontWeight: 'bold' }}>
+          <span className={getSignedAmountClassName(signedAmount)}>
             {signedAmount >= 0 ? '+' : ''}{signedAmount}
           </span>
         );
@@ -281,118 +288,179 @@ export const UserDetail = () => {
   ];
 
   if (!canViewUsers) {
-    return <div style={{ padding: '24px' }}>没有查看用户详情的权限</div>;
+    return (
+      <div className="admin-feature-page user-detail-page">
+        <section className="admin-feature-card">
+          <div className="admin-feature-header">
+            <div>
+              <h2>
+                <UserOutlined /> 用户详情
+              </h2>
+              <p className="admin-feature-subtle">没有查看用户详情的权限。</p>
+            </div>
+            <Button icon={<LeftOutlined />} onClick={handleBack}>
+              返回
+            </Button>
+          </div>
+        </section>
+      </div>
+    );
   }
 
   if (loading || !user) {
-    return <div style={{ padding: '24px' }}>加载中...</div>;
+    return (
+      <div className="admin-feature-page user-detail-page">
+        <section className="admin-feature-card">
+          <div className="admin-feature-header">
+            <div>
+              <h2>
+                <UserOutlined /> 用户详情
+              </h2>
+              <p className="admin-feature-subtle">加载用户档案、资产和最近行为记录。</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
   }
 
   return (
-    <div className="user-detail-page">
-      <div className="user-detail-header">
-        <Button icon={<LeftOutlined />} onClick={handleBack}>
-          返回
-        </Button>
-        <h2>用户详情</h2>
+    <div className="admin-feature-page user-detail-page">
+      <section className="admin-feature-card">
+        <div className="admin-feature-header">
+          <div className="user-detail-heading">
+            <Button icon={<LeftOutlined />} onClick={handleBack}>
+              返回
+            </Button>
+            <div>
+              <h2>
+                <UserOutlined /> 用户详情
+              </h2>
+              <p className="admin-feature-subtle">聚合用户基础资料、经验、胡萝卜余额和最近订单。</p>
+            </div>
+          </div>
+          <Tag color={user.isEnabled ? 'success' : 'error'}>
+            {user.isEnabled ? '启用' : '禁用'}
+          </Tag>
+        </div>
+      </section>
+
+      <section className="admin-feature-metrics" aria-label="用户详情指标">
+        <div className="admin-feature-metric">
+          <span><TrophyOutlined /> 等级</span>
+          <strong>{experience ? `${experience.voCurrentLevel} ${experience.voCurrentLevelName}` : '--'}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          <span><UserOutlined /> 当前经验</span>
+          <strong>{experience ? `${experience.voCurrentExp} / ${experience.voExpToNextLevel}` : '--'}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          <span><TrophyOutlined /> 总经验</span>
+          <strong>{experience?.voTotalExp ?? '--'}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          <span><WalletOutlined /> 胡萝卜余额</span>
+          <strong>{balance?.voBalance ?? '--'}</strong>
+        </div>
+      </section>
+
+      <div className="admin-table-layout">
+        <main className="admin-table-main">
+          <section className="admin-table-panel">
+            <div className="user-detail-section-title">
+              <div>
+                <h3>基本信息</h3>
+                <p className="admin-feature-subtle">用户账号基础档案和最近登录时间。</p>
+              </div>
+            </div>
+            <Descriptions column={2}>
+              <Descriptions.Item label="用户名">{user.userName}</Descriptions.Item>
+              <Descriptions.Item label="登录名">{user.loginName}</Descriptions.Item>
+              <Descriptions.Item label="邮箱">{user.email}</Descriptions.Item>
+              <Descriptions.Item label="用户 ID">{user.uuid}</Descriptions.Item>
+              <Descriptions.Item label="状态">
+                <Tag color={user.isEnabled ? 'success' : 'error'}>
+                  {user.isEnabled ? '启用' : '禁用'}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="注册时间">{formatDisplayTime(user.createTime)}</Descriptions.Item>
+              <Descriptions.Item label="最后登录">{formatDisplayTime(user.lastLoginTime)}</Descriptions.Item>
+            </Descriptions>
+          </section>
+
+          <section className="admin-table-panel">
+            <div className="user-detail-section-title">
+              <div>
+                <h3>最近记录</h3>
+                <p className="admin-feature-subtle">展示最近 10 条胡萝卜流水和购买记录。</p>
+              </div>
+            </div>
+            <Tabs
+              items={[
+                {
+                  key: 'coins',
+                  label: '萝卜币流水',
+                  children: (
+                    canViewCoins ? (
+                      <Table
+                        columns={coinColumns}
+                        dataSource={coinTransactions}
+                        rowKey="voId"
+                        loading={coinLoading}
+                        pagination={{ pageSize: 10 }}
+                        scroll={{ x: 760 }}
+                      />
+                    ) : (
+                      <Empty description="没有查看萝卜币流水的权限" />
+                    )
+                  ),
+                },
+                {
+                  key: 'orders',
+                  label: '购买记录',
+                  children: (
+                    canViewOrders ? (
+                      <Table
+                        columns={orderColumns}
+                        dataSource={orders}
+                        rowKey="voId"
+                        loading={orderLoading}
+                        pagination={{ pageSize: 10 }}
+                        scroll={{ x: 900 }}
+                      />
+                    ) : (
+                      <Empty description="没有查看购买记录的权限" />
+                    )
+                  ),
+                },
+              ]}
+            />
+          </section>
+        </main>
+
+        <aside className="admin-table-aside">
+          <h3>用户摘要</h3>
+          <p className="admin-feature-subtle">用于核对当前用户跨模块数据可见性和返回来源。</p>
+          <div className="admin-table-summary">
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">用户 ID</span>
+              <span className="admin-table-summary__value">{user.uuid}</span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">资产权限</span>
+              <span className="admin-table-summary__value">{canViewCoins ? '可查看胡萝卜资产' : '无资产查看权限'}</span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">经验权限</span>
+              <span className="admin-table-summary__value">{canViewExperience ? '可查看经验数据' : '无经验查看权限'}</span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">订单权限</span>
+              <span className="admin-table-summary__value">{canViewOrders ? '可查看购买记录' : '无订单查看权限'}</span>
+            </div>
+          </div>
+        </aside>
       </div>
-
-      {/* 用户基本信息 */}
-      <Card title="基本信息" style={{ marginBottom: '16px' }}>
-        <Descriptions column={2}>
-          <Descriptions.Item label="用户名">{user.userName}</Descriptions.Item>
-          <Descriptions.Item label="登录名">{user.loginName}</Descriptions.Item>
-          <Descriptions.Item label="邮箱">{user.email}</Descriptions.Item>
-          <Descriptions.Item label="用户 ID">{user.uuid}</Descriptions.Item>
-          <Descriptions.Item label="状态">
-            <Tag color={user.isEnabled ? 'success' : 'error'}>
-              {user.isEnabled ? '启用' : '禁用'}
-            </Tag>
-          </Descriptions.Item>
-          <Descriptions.Item label="注册时间">{user.createTime}</Descriptions.Item>
-          <Descriptions.Item label="最后登录">{user.lastLoginTime || '-'}</Descriptions.Item>
-        </Descriptions>
-      </Card>
-
-      {/* 统计数据 */}
-      <div className="user-stats">
-        <Card>
-          <Statistic
-            title="等级"
-            value={experience?.voCurrentLevel ?? '-'}
-            suffix={experience?.voCurrentLevelName ?? ''}
-            prefix={<TrophyOutlined />}
-            styles={{ content: { color: '#722ed1' } }}
-          />
-        </Card>
-        <Card>
-          <Statistic
-            title="当前经验"
-            value={experience?.voCurrentExp ?? '-'}
-            suffix={experience ? `/ ${experience.voExpToNextLevel}` : ''}
-            prefix={<UserOutlined />}
-            styles={{ content: { color: '#1890ff' } }}
-          />
-        </Card>
-        <Card>
-          <Statistic
-            title="总经验"
-            value={experience?.voTotalExp ?? '-'}
-            prefix={<TrophyOutlined />}
-            styles={{ content: { color: '#52c41a' } }}
-          />
-        </Card>
-        <Card>
-          <Statistic
-            title="萝卜币余额"
-            value={balance?.voBalance ?? '-'}
-            prefix={<WalletOutlined />}
-            styles={{ content: { color: '#faad14' } }}
-          />
-        </Card>
-      </div>
-
-      {/* 详细信息标签页 */}
-      <Card style={{ marginTop: '16px' }}>
-        <Tabs
-          items={[
-            {
-              key: 'coins',
-              label: '萝卜币流水',
-              children: (
-                canViewCoins ? (
-                  <Table
-                    columns={coinColumns}
-                    dataSource={coinTransactions}
-                    rowKey="voId"
-                    loading={coinLoading}
-                    pagination={{ pageSize: 10 }}
-                  />
-                ) : (
-                  <Empty description="没有查看萝卜币流水的权限" />
-                )
-              ),
-            },
-            {
-              key: 'orders',
-              label: '购买记录',
-              children: (
-                canViewOrders ? (
-                  <Table
-                    columns={orderColumns}
-                    dataSource={orders}
-                    rowKey="voId"
-                    loading={orderLoading}
-                    pagination={{ pageSize: 10 }}
-                  />
-                ) : (
-                  <Empty description="没有查看购买记录的权限" />
-                )
-              ),
-            },
-          ]}
-        />
-      </Card>
     </div>
   );
 };

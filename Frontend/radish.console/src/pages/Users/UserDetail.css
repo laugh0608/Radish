@@ -1,31 +1,39 @@
 .user-detail-page {
-  padding: 24px;
+  min-width: 0;
 }
 
-.user-detail-header {
+.user-detail-heading,
+.user-detail-section-title {
   display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 24px;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-.user-detail-header h2 {
+.user-detail-heading h2,
+.user-detail-section-title h3 {
   margin: 0;
-  font-size: 24px;
-  font-weight: 600;
 }
 
-.user-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 16px;
+.user-detail-section-title {
+  justify-content: space-between;
+  margin-bottom: 20px;
 }
 
-.user-stats .ant-card {
-  text-align: center;
+.user-detail-signed-amount {
+  font-weight: 700;
 }
 
-.user-stats .ant-statistic {
-  padding: 16px 0;
+.user-detail-signed-amount--positive {
+  color: var(--console-success-text);
+}
+
+.user-detail-signed-amount--negative {
+  color: var(--console-danger-text);
+}
+
+@media (max-width: 768px) {
+  .user-detail-page .admin-feature-header {
+    align-items: flex-start;
+  }
 }
