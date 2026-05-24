@@ -1,34 +1,27 @@
 .dashboard-page {
-  padding: 24px;
+  min-width: 0;
 }
 
-.dashboard-stats {
+.dashboard-metric {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: 6px;
 }
 
-.dashboard-stats .ant-card {
-  text-align: center;
+.dashboard-metric__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--console-text-secondary);
+  font-size: 13px;
+  font-weight: 650;
 }
 
-.dashboard-stats .ant-statistic {
-  padding: 16px 0;
+.dashboard-metric__title .anticon {
+  color: var(--console-brand-primary);
 }
 
-.dashboard-stats .ant-statistic-title {
-  font-size: 14px;
-  color: rgba(0, 0, 0, 0.65);
-  margin-bottom: 8px;
-}
-
-.dashboard-stats .ant-statistic-content {
-  font-size: 24px;
-  font-weight: 600;
-}
-
-.dashboard-stats .anticon {
-  font-size: 20px;
-  margin-right: 8px;
+@media (max-width: 768px) {
+  .dashboard-page .admin-feature-header {
+    align-items: flex-start;
+  }
 }
