@@ -1,50 +1,27 @@
 .tag-list-page {
-  padding: 24px;
+  min-width: 0;
 }
 
-.page-header {
+.tag-list-header-actions {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
-.page-header h2 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: #262626;
+.tag-list-filter-input {
+  width: 240px;
 }
 
-.filter-bar {
-  margin-bottom: 16px;
-  padding: 16px;
-  background: #fafafa;
-  border-radius: 6px;
-  border: 1px solid #d9d9d9;
+.tag-list-filter-select {
+  width: 140px;
+}
+
+.tag-list-filter-select--deleted {
+  width: 160px;
 }
 
 @media (max-width: 768px) {
-  .tag-list-page {
-    padding: 16px;
-  }
-
-  .page-header {
-    flex-direction: column;
+  .tag-list-page .admin-feature-header {
     align-items: flex-start;
-    gap: 16px;
-  }
-
-  .filter-bar .ant-space {
-    width: 100%;
-  }
-
-  .filter-bar .ant-space-item {
-    width: 100%;
-  }
-
-  .filter-bar .ant-select,
-  .filter-bar .ant-input {
-    width: 100% !important;
   }
 }

@@ -85,12 +85,14 @@
   - 第三个试点选择 `Dashboard` 仪表盘，对齐 `P04` 治理 / 运营调度总览页方向。
   - `Dashboard` 已迁入总览指标、快捷操作、最近订单和右侧调度入口，保留统计数据、最近订单加载、权限判断和跳转行为。
   - `adminFeature.css` 新增 `admin-overview-*` 与 `admin-dispatch-*` 可复用布局类，供后续总览 / 调度类页面继续复用。
+  - 后续列表迁移首个落点选择 `TagList` 标签管理页，继续复用 `P05` 表格型布局基座。
+  - `TagList` 已迁入顶部指标、筛选工具条、表格主体和右侧摘要栏，保留标签 CRUD、启停、恢复、排序、软删除显示和分页行为。
 
 下一顺位：
 
 - 继续 `P3-8-C2` 后续页面类型试点
   - 设计依据见：[Console 治理工作台设计端点](/frontend/console-governance-workbench-design) 与 [Console 样式与 Token 使用说明](/frontend/console-style-guide)。
-  - 优先复核同类历史列表页是否可按 `P05` 小步迁移，或回看 `P02 / P03` 治理工作台实际使用后的布局细节。
+  - 优先继续复核 `CategoryList` 等同类历史列表页是否可按 `P05` 小步迁移，或回看 `P02 / P03` 治理工作台实际使用后的布局细节。
   - 不一次性改完整个 Console，不把所有页面硬套成同一模板。
 
 ## UI 设计稿治理
@@ -206,6 +208,14 @@ git diff --check
 ```
 
 `P3-8-C2` 调度总览页试点已执行：
+
+```bash
+npm run type-check --workspace=radish.console
+npm run build --workspace=radish.console
+git diff --check
+```
+
+`P3-8-C2` 标签列表迁移已执行：
 
 ```bash
 npm run type-check --workspace=radish.console
