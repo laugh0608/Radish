@@ -50,6 +50,29 @@ Frontend/radish.console/src/
 2. **无访问权限时停止请求**
    - 避免仅由路由层兜底，但页面 effect 仍先发请求
 
+#### 4.1.5 页面结构与样式分层
+
+Console 当前页面结构按“页面类型”选择布局基座，而不是所有页面共用同一个模板：
+
+| 页面类型 | 推荐结构 | 当前典型页面 |
+| --- | --- | --- |
+| 调度总览 | 顶部指标 + 快捷操作 + 最近事项 + 右侧调度入口 | `Dashboard` |
+| 表格 CRUD | 指标条 + 筛选 / 工具条 + 表格 + 右侧摘要栏 | `UserList`、`TagList`、`CategoryList`、`RoleList`、`Applications`、`Stickers`、`Products`、`Orders` |
+| 设置 / 配置 | 分组导航 + 设置列 + 影响范围摘要 | `Settings`、`UserProfile` |
+| 权限配置 | 页面标题 + 授权指标 + 主配置树 + 权限预览 | `RolePermissionPage` |
+| 详情页 | 标题卡 + 指标 + 详情分区 + 右侧摘要 | `UserDetail` |
+| 工具型页面 | 查询工具条 + 主操作区 + 右侧说明 / 摘要 | `CoinAdminPage` |
+| 治理工作台 | 队列 / 证据详情 / 动作留痕 | `ModerationPage`、`ExperienceAdminPage` |
+
+样式分层遵循：
+
+- `index.css`：Console 根级 `--console-*` token、全局 box model 和基础背景。
+- `AdminLayout.css`：后台壳层、侧栏、顶栏、内容区和响应式承载。
+- `adminFeature.css`：功能页通用结构，例如页面容器、卡片、标题区、指标、工具条、设置布局、详情布局和摘要栏。
+- 页面 CSS：仅放该页面不可复用的业务布局或特殊状态。
+
+新增或明显改动页面时，应先判断页面类型，再复用 `AdminLayout`、`Breadcrumb`、`adminFeature.css` 与 `--console-*` token；只有业务信息结构确实不同，才在页面 CSS 中补局部样式。页面结构调整不得改变 API、权限、表单字段、数据契约或业务语义。
+
 ### 4.2 API 客户端与特殊上传场景
 
 #### 4.2.1 统一 API 客户端
@@ -121,3 +144,4 @@ CurrentUserVo.VoPermissions
 
 - [Console 权限治理 V1](/guide/console-permission-governance)
 - [Console 核心概念](/guide/console-core-concepts)
+- [Console 样式与 Token 使用说明](/frontend/console-style-guide)

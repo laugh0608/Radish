@@ -45,6 +45,21 @@
 
 这些页面按页面类型复用视觉语言，但保留原 API、权限、表单字段、数据契约和业务语义。
 
+## 2.1 页面类型实现口径
+
+进入 Console 页面开发时，先按页面职责选择结构：
+
+| 页面职责 | 首选结构 | 主要复用 |
+|----------|----------|----------|
+| 高频对象管理 | 指标条、工具条、表格、右侧摘要 | `admin-feature-metrics`、`admin-feature-toolbar`、`admin-feature-main` |
+| 设置 / 个人资料 / 策略 | 左侧分组导航、中间设置列、右侧影响范围 | `admin-settings-layout`、`admin-setting-section`、`admin-settings-aside` |
+| 调度总览 | 总览指标、快捷操作、最近事项、右侧入口 | `admin-overview-*`、`admin-dispatch-*` |
+| 详情页 | 标题卡、指标、详情分区、右侧摘要 | `admin-detail-*` |
+| 工具型页面 | 查询工具条、主操作区、说明摘要 | `admin-tool-*` 或页面局部类 |
+| 治理工作台 | 队列、证据详情、动作留痕 | `governance-workbench-*` |
+
+选择页面类型后，页面 CSS 只补不可复用的业务状态和局部排版。不要把表格 CRUD 页改成治理工作台，也不要把详情页拆成一组互相嵌套的卡片。
+
 ## 3. 页面类型
 
 不同 Console 页面应复用同一视觉语言，但信息结构按页面类型区分：
