@@ -24,6 +24,7 @@ import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
 import { RoleForm } from './RoleForm';
 import { log } from '@/utils/logger';
+import '../adminFeature.css';
 import './RoleList.css';
 
 export const RoleList = () => {
@@ -39,6 +40,8 @@ export const RoleList = () => {
   const canEditRole = usePermission(CONSOLE_PERMISSIONS.rolesEdit);
   const canToggleRole = usePermission(CONSOLE_PERMISSIONS.rolesToggle);
   const canDeleteRole = usePermission(CONSOLE_PERMISSIONS.rolesDelete);
+  const enabledRoles = roles.filter((role) => role.voIsEnabled).length;
+  const customScopeRoles = roles.filter((role) => role.voAuthorityScope === 1).length;
 
   // 加载角色列表
   const loadRoles = async () => {
@@ -234,40 +237,109 @@ export const RoleList = () => {
     },
   ];
   return (
-    <div className="role-list-page">
-      <div className="page-header">
-        <h2>角色管理</h2>
-        <Space>
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={loadRoles}
-          >
-            刷新
-          </Button>
-          {canCreateRole ? (
+    <div className="admin-feature-page role-list-page">
+      <section className="admin-feature-card">
+        <div className="admin-feature-header">
+          <div>
+            <h2>
+              <SafetyOutlined /> 角色管理
+            </h2>
+            <p className="admin-feature-subtle">维护后台角色、权限范围和权限配置入口。</p>
+          </div>
+          <div className="role-list-header-actions">
             <Button
-              variant="primary"
-              icon={<PlusOutlined />}
-              onClick={handleCreate}
+              icon={<ReloadOutlined />}
+              onClick={loadRoles}
             >
-              新增角色
+              刷新
             </Button>
-          ) : null}
-        </Space>
-      </div>
+            {canCreateRole ? (
+              <Button
+                variant="primary"
+                icon={<PlusOutlined />}
+                onClick={handleCreate}
+              >
+                新增角色
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      </section>
 
-      <Table
-        columns={columns}
-        dataSource={roles}
-        rowKey="voId"
-        loading={loading}
-        pagination={{
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total) => `共 ${total} 条`,
-        }}
-        scroll={{ x: 1200 }}
-      />
+      <section className="admin-feature-metrics" aria-label="角色列表指标">
+        <div className="admin-feature-metric">
+          全部角色
+          <strong>{roles.length}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          启用角色
+          <strong>{enabledRoles}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          禁用角色
+          <strong>{roles.length - enabledRoles}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          自定义权限
+          <strong>{customScopeRoles}</strong>
+        </div>
+      </section>
+
+      <div className="admin-table-layout">
+        <main className="admin-table-main">
+          <section className="admin-table-toolbar" aria-label="角色列表状态">
+            <div className="admin-table-toolbar__title">
+              <span>角色列表</span>
+              <Tag>{loading ? '加载中' : '全部角色'}</Tag>
+            </div>
+            <p className="admin-feature-subtle">角色权限配置会跳转到独立权限页，当前列表仅承载角色基础信息和启停状态。</p>
+          </section>
+
+          <section className="admin-table-panel">
+            <Table
+              columns={columns}
+              dataSource={roles}
+              rowKey="voId"
+              loading={loading}
+              pagination={{
+                showSizeChanger: true,
+                showQuickJumper: true,
+                showTotal: (total) => `共 ${total} 条`,
+              }}
+              scroll={{ x: 1200 }}
+            />
+          </section>
+        </main>
+
+        <aside className="admin-table-aside">
+          <h3>权限摘要</h3>
+          <p className="admin-feature-subtle">用于核对当前角色范围和可执行权限动作。</p>
+          <div className="admin-table-summary">
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">角色范围</span>
+              <span className="admin-table-summary__value">全部角色</span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">权限配置</span>
+              <span className="admin-table-summary__value">
+                {canEditRole ? '可进入权限配置' : '无权限配置权限'}
+              </span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">启停权限</span>
+              <span className="admin-table-summary__value">
+                {canToggleRole ? '可启用 / 禁用' : '仅可查看启停状态'}
+              </span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">删除权限</span>
+              <span className="admin-table-summary__value">
+                {canDeleteRole ? '可删除角色' : '不可删除角色'}
+              </span>
+            </div>
+          </div>
+        </aside>
+      </div>
 
       <RoleForm
         visible={formVisible}
