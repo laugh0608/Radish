@@ -89,12 +89,14 @@
   - `TagList` 已迁入顶部指标、筛选工具条、表格主体和右侧摘要栏，保留标签 CRUD、启停、恢复、排序、软删除显示和分页行为。
   - 后续列表迁移第二个落点选择 `CategoryList` 分类管理页，继续复用 `P05` 表格型布局基座。
   - `CategoryList` 已迁入顶部指标、筛选工具条、表格主体和右侧摘要栏，保留分类 CRUD、启停、恢复、排序、层级显示、软删除显示和分页行为。
+  - 后续列表迁移第三个落点选择 `SystemConfigList` 系统配置页，继续复用 `P05` 表格型布局基座。
+  - `SystemConfigList` 已迁入配置指标、筛选工具条、品牌图标配置面板、表格主体和右侧摘要栏，保留配置 CRUD、站点图标上传 / 恢复默认、分类筛选和关键词筛选行为。
 
 下一顺位：
 
 - 继续 `P3-8-C2` 后续页面类型试点
   - 设计依据见：[Console 治理工作台设计端点](/frontend/console-governance-workbench-design) 与 [Console 样式与 Token 使用说明](/frontend/console-style-guide)。
-  - 优先继续复核 `SystemConfigList` 等同类历史列表页是否可按 `P05` 小步迁移，或回看 `P02 / P03` 治理工作台实际使用后的布局细节。
+  - 优先继续复核 `RoleList` 等权限 / 配置型列表页是否可按 `P05` 小步迁移，或回看 `P02 / P03` 治理工作台实际使用后的布局细节。
   - 不一次性改完整个 Console，不把所有页面硬套成同一模板。
 
 ## UI 设计稿治理
@@ -226,6 +228,14 @@ git diff --check
 ```
 
 `P3-8-C2` 分类列表迁移已执行：
+
+```bash
+npm run type-check --workspace=radish.console
+npm run build --workspace=radish.console
+git diff --check
+```
+
+`P3-8-C2` 系统配置列表迁移已执行：
 
 ```bash
 npm run type-check --workspace=radish.console
