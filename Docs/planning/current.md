@@ -34,6 +34,7 @@
   - `P3-8-C2` 已继续完成 `SystemConfigList` 小步迁移：复用 `P05` 表格型布局基座，迁入配置指标、筛选工具条、品牌图标配置面板、表格主体和右侧摘要栏，保留配置 CRUD、站点图标上传 / 恢复默认和筛选行为
   - `P3-8-C2` 已继续完成 `RoleList` 小步迁移：复用 `P05` 表格型布局基座，迁入角色指标、列表状态工具条、表格主体和右侧权限摘要栏，保留角色 CRUD、启停、权限配置跳转和分页行为
   - `P3-8-C2` 已继续完成 `Applications / StickerGroupList / StickerList` 小步迁移：复用 `P05` 表格型布局基座，迁入应用 / 表情包 / 分组表情指标、列表工具条、表格主体和右侧摘要栏，保留客户端 CRUD、密钥重置、表情包启停、表情排序与批量上传行为
+  - `P3-8-C2` 已继续完成 `ProductList / OrderList` 小步迁移：复用 `P05` 表格型布局基座，迁入商城商品 / 订单指标、筛选工具条、表格主体和右侧摘要栏，保留商品 CRUD、上下架、关联订单跳转、订单详情、失败重试和管理员备注行为
   - 项目仍处于单人开发期和功能建设期，没有稳定用户反馈和专职测试，不能把“等待真实使用观察”作为默认主线
 
 ## 当前执行入口
@@ -64,7 +65,7 @@
 ## 下一顺位
 
 - `P3-8-C2 Console 设计稿到实现的对齐试点`
-  - 设置型页面试点已落到 `Settings`，表格 CRUD 试点已落到 `UserList / TagList / CategoryList / SystemConfigList / RoleList / Applications / Stickers`，调度总览试点已落到 `Dashboard`
+  - 设置型页面试点已落到 `Settings`，表格 CRUD 试点已落到 `UserList / TagList / CategoryList / SystemConfigList / RoleList / Applications / Stickers / Products / Orders`，调度总览试点已落到 `Dashboard`
   - 后续可回看 `P02 / P03` 治理工作台实际使用后的布局细节，或继续按页面风险评估剩余历史列表页是否需要小步迁移
   - 保持 API、权限、表单字段、数据契约和治理动作语义不变；不做整站一次性换皮
 - `P3-7-C3` 进入维护 / 后续评审池

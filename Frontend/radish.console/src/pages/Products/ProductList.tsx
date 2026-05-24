@@ -21,6 +21,7 @@ import {
   SearchOutlined,
   ReloadOutlined,
   EyeOutlined,
+  ShoppingOutlined,
 } from '@radish/ui';
 import {
   adminGetProducts,
@@ -42,6 +43,7 @@ import {
 } from './productDisplay';
 import { getAvatarUrl } from '../../config/env';
 import { log } from '../../utils/logger';
+import '../adminFeature.css';
 import './ProductList.css';
 
 function parseLongIdQuery(value: string | null): string | undefined {
@@ -125,6 +127,15 @@ export const ProductList = () => {
     isOnSale: undefined,
     keyword: '',
   });
+  const activeFilterCount = [
+    searchParams.categoryId,
+    searchParams.productType !== undefined ? 'productType' : undefined,
+    searchParams.isOnSale !== undefined ? 'saleStatus' : undefined,
+    searchParams.keyword.trim() ? 'keyword' : undefined,
+  ].filter(Boolean).length;
+  const currentCategoryName = categories.find((item) => String(item.voId) === String(searchParams.categoryId))?.voName;
+  const onSaleProducts = products.filter((product) => product.voIsOnSale).length;
+  const enabledProducts = products.filter((product) => product.voIsEnabled).length;
 
   const syncDetailSearchParams = (
     productId?: string | number,
@@ -319,7 +330,7 @@ export const ProductList = () => {
           alt={record.voName}
           width={60}
           height={60}
-          style={{ objectFit: 'cover', borderRadius: '4px' }}
+          className="product-list-image"
           fallback="/placeholder.png"
         />
       ),
@@ -330,9 +341,9 @@ export const ProductList = () => {
       key: 'voName',
       width: 220,
       render: (name: string, record: Product) => (
-        <div>
-          <div>{name}</div>
-          <div style={{ fontSize: '12px', color: '#999' }}>
+        <div className="product-list-name">
+          <div className="product-list-name__title">{name}</div>
+          <div className="product-list-name__meta">
             {record.voCategoryName || record.voCategoryId}
           </div>
         </div>
@@ -353,12 +364,12 @@ export const ProductList = () => {
       key: 'voPrice',
       width: 120,
       render: (price: number, record: Product) => (
-        <div>
-          <div style={{ fontWeight: 'bold', color: '#ff4d4f' }}>
+        <div className="product-list-price">
+          <div className="product-list-price__current">
             {price} 胡萝卜
           </div>
           {record.voOriginalPrice && record.voOriginalPrice > price ? (
-            <div style={{ fontSize: '12px', color: '#999', textDecoration: 'line-through' }}>
+            <div className="product-list-price__original">
               {record.voOriginalPrice} 胡萝卜
             </div>
           ) : null}
@@ -373,7 +384,7 @@ export const ProductList = () => {
       render: (stock: number, record: Product) => (
         record.voStockType === 'Unlimited'
           ? <Tag color="green">无限</Tag>
-          : <span style={{ color: stock > 0 ? '#52c41a' : '#ff4d4f' }}>{stock}</span>
+          : <span className={stock > 0 ? 'product-list-stock product-list-stock--available' : 'product-list-stock product-list-stock--empty'}>{stock}</span>
       ),
     },
     {
@@ -479,100 +490,165 @@ export const ProductList = () => {
   }
 
   return (
-    <div className="product-list-page">
-      <div className="page-header">
-        <h2>商品管理</h2>
-        {canCreateProduct ? (
-          <Button
-            variant="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              setEditingProduct(undefined);
-              setFormVisible(true);
-            }}
-          >
-            新建商品
-          </Button>
-        ) : null}
+    <div className="admin-feature-page product-list-page">
+      <section className="admin-feature-card">
+        <div className="admin-feature-header">
+          <div>
+            <h2>
+              <ShoppingOutlined /> 商品管理
+            </h2>
+            <p className="admin-feature-subtle">维护商城商品、上架状态、库存与关联订单入口。</p>
+          </div>
+          <div className="product-list-header-actions">
+            {canCreateProduct ? (
+              <Button
+                variant="primary"
+                icon={<PlusOutlined />}
+                onClick={() => {
+                  setEditingProduct(undefined);
+                  setFormVisible(true);
+                }}
+              >
+                新建商品
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      </section>
+
+      <section className="admin-feature-metrics" aria-label="商品列表指标">
+        <div className="admin-feature-metric">
+          当前结果
+          <strong>{total}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          本页商品
+          <strong>{products.length}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          本页上架
+          <strong>{onSaleProducts}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          本页启用
+          <strong>{enabledProducts}</strong>
+        </div>
+      </section>
+
+      <div className="admin-table-layout">
+        <main className="admin-table-main">
+          <section className="admin-table-toolbar" aria-label="商品筛选">
+            <div className="admin-table-toolbar__title">
+              <span>筛选商品</span>
+              <Tag>{activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}</Tag>
+            </div>
+            <div className="admin-table-toolbar__filters">
+              <Select
+                className="product-list-filter-select"
+                placeholder="选择分类"
+                allowClear
+                value={draftCategoryId}
+                onChange={setDraftCategoryId}
+              >
+                {categories.map((cat) => (
+                  <Select.Option key={cat.voId} value={cat.voId}>
+                    {cat.voName}
+                  </Select.Option>
+                ))}
+              </Select>
+
+              <Select
+                className="product-list-filter-select product-list-filter-select--type"
+                placeholder="商品类型"
+                allowClear
+                value={draftProductType}
+                onChange={setDraftProductType}
+              >
+                <Select.Option value={1}>权益</Select.Option>
+                <Select.Option value={2}>消耗品</Select.Option>
+                <Select.Option value={99}>实物</Select.Option>
+              </Select>
+
+              <Select
+                className="product-list-filter-select product-list-filter-select--sale"
+                placeholder="上架状态"
+                allowClear
+                value={draftIsOnSale}
+                onChange={setDraftIsOnSale}
+              >
+                <Select.Option value={true}>已上架</Select.Option>
+                <Select.Option value={false}>已下架</Select.Option>
+              </Select>
+
+              <Input
+                className="product-list-filter-input"
+                placeholder="搜索商品名称"
+                value={draftKeyword}
+                onChange={(e) => setDraftKeyword(e.target.value)}
+                onPressEnter={handleSearch}
+                suffix={<SearchOutlined />}
+              />
+
+              <Button variant="primary" icon={<SearchOutlined />} onClick={handleSearch}>
+                搜索
+              </Button>
+
+              <Button icon={<ReloadOutlined />} onClick={handleReset}>
+                重置
+              </Button>
+            </div>
+          </section>
+
+          <section className="admin-table-panel">
+            <Table
+              columns={columns}
+              dataSource={products}
+              rowKey="voId"
+              loading={loading}
+              pagination={{
+                current: pageIndex,
+                pageSize: pageSize,
+                total: total,
+                showSizeChanger: true,
+                showQuickJumper: true,
+                showTotal: (itemTotal) => `共 ${itemTotal} 条`,
+                onChange: (page, size) => {
+                  setPageIndex(page);
+                  setPageSize(size);
+                },
+              }}
+              scroll={{ x: 1520 }}
+            />
+          </section>
+        </main>
+
+        <aside className="admin-table-aside">
+          <h3>商品摘要</h3>
+          <p className="admin-feature-subtle">用于核对当前筛选范围、分页规模和商品治理动作。</p>
+          <div className="admin-table-summary">
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">查询范围</span>
+              <span className="admin-table-summary__value">
+                {activeFilterCount > 0 ? `${activeFilterCount} 个筛选条件` : '全部商品'}
+              </span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">分类范围</span>
+              <span className="admin-table-summary__value">{currentCategoryName || '全部分类'}</span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">分页规模</span>
+              <span className="admin-table-summary__value">{pageSize} 条 / 页</span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">上架权限</span>
+              <span className="admin-table-summary__value">
+                {canToggleProductSale ? '可上架 / 下架' : '仅可查看上架状态'}
+              </span>
+            </div>
+          </div>
+        </aside>
       </div>
-
-      <div className="filter-bar">
-        <Space wrap>
-          <Select
-            placeholder="选择分类"
-            style={{ width: 150 }}
-            allowClear
-            value={draftCategoryId}
-            onChange={setDraftCategoryId}
-          >
-            {categories.map((cat) => (
-              <Select.Option key={cat.voId} value={cat.voId}>
-                {cat.voName}
-              </Select.Option>
-            ))}
-          </Select>
-
-          <Select
-            placeholder="商品类型"
-            style={{ width: 120 }}
-            allowClear
-            value={draftProductType}
-            onChange={setDraftProductType}
-          >
-            <Select.Option value={1}>权益</Select.Option>
-            <Select.Option value={2}>消耗品</Select.Option>
-            <Select.Option value={99}>实物</Select.Option>
-          </Select>
-
-          <Select
-            placeholder="上架状态"
-            style={{ width: 120 }}
-            allowClear
-            value={draftIsOnSale}
-            onChange={setDraftIsOnSale}
-          >
-            <Select.Option value={true}>已上架</Select.Option>
-            <Select.Option value={false}>已下架</Select.Option>
-          </Select>
-
-          <Input
-            placeholder="搜索商品名称"
-            style={{ width: 200 }}
-            value={draftKeyword}
-            onChange={(e) => setDraftKeyword(e.target.value)}
-            onPressEnter={handleSearch}
-            suffix={<SearchOutlined />}
-          />
-
-          <Button variant="primary" icon={<SearchOutlined />} onClick={handleSearch}>
-            搜索
-          </Button>
-
-          <Button icon={<ReloadOutlined />} onClick={handleReset}>
-            重置
-          </Button>
-        </Space>
-      </div>
-
-      <Table
-        columns={columns}
-        dataSource={products}
-        rowKey="voId"
-        loading={loading}
-        pagination={{
-          current: pageIndex,
-          pageSize: pageSize,
-          total: total,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (itemTotal) => `共 ${itemTotal} 条`,
-          onChange: (page, size) => {
-            setPageIndex(page);
-            setPageSize(size);
-          },
-        }}
-        scroll={{ x: 1520 }}
-      />
 
       <ProductDetail
         visible={detailVisible}
