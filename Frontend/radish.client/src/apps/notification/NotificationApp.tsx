@@ -84,7 +84,7 @@ export const NotificationApp = () => {
     });
   }, [i18n.language]);
 
-  const mapApiNotificationToStore = (n: UserNotificationVo): NotificationItem => {
+  const mapApiNotificationToStore = useCallback((n: UserNotificationVo): NotificationItem => {
     const notification = n.voNotification;
     return {
       id: n.voId,
@@ -101,9 +101,9 @@ export const NotificationApp = () => {
       triggerAvatar: resolveNotificationAvatar(notification?.voTriggerAvatar),
       extData: notification?.voExtData
     };
-  };
+  }, [resolveNotificationAvatar]);
 
-  const mapApiNotificationToUi = (n: UserNotificationVo): NotificationListItem => {
+  const mapApiNotificationToUi = useCallback((n: UserNotificationVo): NotificationListItem => {
     const notification = n.voNotification;
     return {
       id: n.voId,
@@ -121,9 +121,9 @@ export const NotificationApp = () => {
       isRead: n.voIsRead,
       createdAt: n.voCreateTime
     };
-  };
+  }, [resolveNotificationAvatar]);
 
-  const mapStoreToUi = (items: NotificationItem[]): NotificationListItem[] => {
+  const mapStoreToUi = useCallback((items: NotificationItem[]): NotificationListItem[] => {
     return items.map((n) => ({
       id: n.id,
       notificationId: n.notificationId ?? n.id,
@@ -140,7 +140,7 @@ export const NotificationApp = () => {
       isRead: n.isRead,
       createdAt: n.createdAt
     }));
-  };
+  }, [resolveNotificationAvatar]);
 
   const patchNotificationsWithResolvedAvatars = useCallback((avatarMap: Map<string, string | null>) => {
     if (avatarMap.size === 0) {
@@ -223,7 +223,7 @@ export const NotificationApp = () => {
     patchNotificationsWithResolvedAvatars(resolvedAvatarMap);
   }, [patchNotificationsWithResolvedAvatars, resolveNotificationAvatar]);
 
-  const mergeNotifications = (
+  const mergeNotifications = useCallback((
     base: NotificationListItem[],
     incoming: NotificationListItem[]
   ) => {
@@ -246,7 +246,7 @@ export const NotificationApp = () => {
       }
     }
     return result;
-  };
+  }, [getNotificationKey]);
 
   const resolveBackendNotificationId = useCallback((uiId: LongId): LongId | null => {
     const uiIdKey = normalizePositiveLongIdKey(uiId);
@@ -281,7 +281,7 @@ export const NotificationApp = () => {
     const converted = mapStoreToUi(recentNotifications);
     setNotifications(prev => mergeNotifications(prev, converted));
     void backfillTriggerAvatars(converted);
-  }, [backfillTriggerAvatars, recentNotifications]);
+  }, [backfillTriggerAvatars, mapStoreToUi, mergeNotifications, recentNotifications]);
 
   // 初始加载通知列表
   useEffect(() => {
@@ -323,7 +323,7 @@ export const NotificationApp = () => {
     };
 
     void loadNotifications();
-  }, [backfillTriggerAvatars, syncUnreadCountFromServer, t]);
+  }, [backfillTriggerAvatars, mapApiNotificationToStore, mapApiNotificationToUi, syncUnreadCountFromServer, t]);
 
   const handleLoadMore = useCallback(async () => {
     if (loadingMore || loading || !hasMore) return;
@@ -364,7 +364,7 @@ export const NotificationApp = () => {
     } finally {
       setLoadingMore(false);
     }
-  }, [backfillTriggerAvatars, getNotificationKey, hasMore, loading, loadingMore, pageIndex, pageSize, t]);
+  }, [backfillTriggerAvatars, getNotificationKey, hasMore, loading, loadingMore, mapApiNotificationToUi, pageIndex, pageSize, t]);
 
   const filteredNotifications = useMemo(() => {
     switch (activeFilter) {

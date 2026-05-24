@@ -18,15 +18,17 @@ import {
   buildQueueTargetNavigationInput,
   getManualActionTypeText,
   getReasonTypeLabel,
-  renderActionType,
-  renderModerationTarget,
-  renderReportStatus,
   resolveOpenTarget,
   type ActionLogPreset,
   type ManualActionPreset,
   type ModerationTargetNavigationStateInput,
   type QueuePreset,
 } from './moderationPageHelpers';
+import {
+  ActionTypeTag,
+  ModerationTargetDisplay,
+  ReportStatusTag,
+} from './moderationPageRenderers';
 
 interface ModerationQueueColumnActions {
   canReview: boolean;
@@ -59,10 +61,14 @@ export function createModerationQueueColumns(
       title: '目标',
       key: 'target',
       width: 340,
-      render: (_, record) => renderModerationTarget({
-        ...buildQueueTargetDisplayInput(record),
-        showTargetUser: true,
-      }),
+      render: (_, record) => (
+        <ModerationTargetDisplay
+          input={{
+            ...buildQueueTargetDisplayInput(record),
+            showTargetUser: true,
+          }}
+        />
+      ),
     },
     {
       title: '举报人',
@@ -86,8 +92,8 @@ export function createModerationQueueColumns(
       width: 160,
       render: (_, record) => (
         <Space direction="vertical" size={4}>
-          {renderReportStatus(record.voStatus)}
-          {renderActionType(record.voReviewActionType)}
+          <ReportStatusTag value={record.voStatus} />
+          <ActionTypeTag value={record.voReviewActionType} />
         </Space>
       ),
     },
@@ -203,7 +209,7 @@ export function createModerationLogColumns(
       title: '动作',
       key: 'actionType',
       width: 140,
-      render: (_, record) => renderActionType(record.voActionType),
+      render: (_, record) => <ActionTypeTag value={record.voActionType} />,
     },
     {
       title: '来源举报',
@@ -219,7 +225,7 @@ export function createModerationLogColumns(
             ? (
               <div>
                 <div>举报单 #{record.voSourceReportId}</div>
-                {renderModerationTarget(buildActionSourceTargetDisplayInput(record))}
+                <ModerationTargetDisplay input={buildActionSourceTargetDisplayInput(record)} />
               </div>
             )
             : <div style={mutedTextStyle}>未保留目标快照</div>

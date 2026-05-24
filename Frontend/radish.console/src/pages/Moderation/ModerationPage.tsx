@@ -35,7 +35,6 @@ import {
   buildManualModerationStatusSnapshot,
   buildQueueTargetDisplayInput,
   getActionTypeText,
-  renderModerationTarget,
   resolveMissingTargetMessage,
   resolveOpenTarget,
   toOptionalString,
@@ -47,6 +46,7 @@ import {
   type ModerationTargetNavigationStateInput,
   type QueuePreset,
 } from './moderationPageHelpers';
+import { ModerationTargetDisplay } from './moderationPageRenderers';
 import {
   createModerationLogColumns,
   createModerationQueueColumns,
@@ -796,10 +796,12 @@ export const ModerationPage = () => {
           {reviewingItem ? (
             <div className="moderation-review-preview">
               <div className="moderation-review-preview__label">审核目标</div>
-              {renderModerationTarget({
-                ...buildQueueTargetDisplayInput(reviewingItem),
-                showTargetUser: true,
-              })}
+              <ModerationTargetDisplay
+                input={{
+                  ...buildQueueTargetDisplayInput(reviewingItem),
+                  showTargetUser: true,
+                }}
+              />
             </div>
           ) : null}
 

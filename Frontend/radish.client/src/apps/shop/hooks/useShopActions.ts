@@ -74,7 +74,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
 
     setPurchasePasscodeUpgradePrompt(null);
     setIsPurchaseModalOpen(true);
-  }, [isAuthenticated, selectedProduct, loadProductDetail, checkCanBuy, setError]);
+  }, [checkCanBuy, isAuthenticated, loadProductDetail, selectedProduct, setError, t]);
 
   // 关闭购买弹窗
   const handleClosePurchaseModal = useCallback(() => {

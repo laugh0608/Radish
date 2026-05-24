@@ -38,7 +38,6 @@ import {
   getEntityKey,
   getErrorMessage,
   getFallbackUserName,
-  getMessagePreviewText,
   getReplyTargetMessageId,
   loadChannelDraft,
   MENTION_PATTERN,
@@ -711,7 +710,7 @@ export const ChatApp = () => {
       });
       toast.error(errorMessage);
     }
-  }, [addMessage, scrollToBottom]);
+  }, [addMessage, scrollToBottom, t]);
 
   const handleSendMessage = useCallback(() => {
     if (!activeChannelId || uploadingImage) {
