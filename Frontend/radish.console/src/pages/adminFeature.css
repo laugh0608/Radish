@@ -1,5 +1,5 @@
 .admin-feature-page {
-  padding: 24px;
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -71,6 +71,93 @@
 .admin-feature-form {
   display: grid;
   gap: 16px;
+}
+
+.admin-table-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+  gap: 20px;
+  align-items: start;
+}
+
+.admin-table-main,
+.admin-table-aside,
+.admin-table-panel {
+  min-width: 0;
+}
+
+.admin-table-main {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-table-aside {
+  position: sticky;
+  top: 24px;
+  display: grid;
+  gap: 16px;
+}
+
+.admin-table-panel,
+.admin-table-toolbar,
+.admin-table-aside {
+  padding: 20px;
+  background: var(--console-bg-surface);
+  border: 1px solid var(--console-border-subtle);
+  border-radius: var(--console-radius-panel);
+  box-shadow: var(--console-shadow-card);
+}
+
+.admin-table-toolbar {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-table-toolbar__title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--console-text-primary);
+  font-weight: 600;
+}
+
+.admin-table-toolbar__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.admin-table-toolbar__filters .ant-input,
+.admin-table-toolbar__filters .ant-select {
+  min-width: 160px;
+}
+
+.admin-table-summary {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-table-summary__item {
+  display: grid;
+  gap: 4px;
+  padding: 12px 0;
+  border-top: 1px solid var(--console-border-subtle);
+}
+
+.admin-table-summary__item:first-child {
+  border-top: 0;
+}
+
+.admin-table-summary__label {
+  color: var(--console-text-secondary);
+  font-size: 12px;
+}
+
+.admin-table-summary__value {
+  color: var(--console-text-primary);
+  font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .admin-settings-layout {
@@ -265,8 +352,13 @@
     grid-template-columns: 1fr;
   }
 
+  .admin-table-layout {
+    grid-template-columns: 1fr;
+  }
+
   .admin-settings-nav,
-  .admin-settings-aside {
+  .admin-settings-aside,
+  .admin-table-aside {
     position: static;
   }
 
@@ -277,6 +369,11 @@
 
 @media (max-width: 768px) {
   .admin-feature-page {
-    padding: 16px;
+    padding: 0;
+  }
+
+  .admin-table-toolbar__filters .ant-input,
+  .admin-table-toolbar__filters .ant-select {
+    width: 100% !important;
   }
 }

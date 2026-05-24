@@ -79,12 +79,15 @@
   - 首个试点选择低风险 `Settings` 设置页，对齐 `P06` 设置 / 权限 / 配置型页面方向。
   - `Settings` 已迁入分组导航、居中设置列和右侧影响范围摘要，保留个人时区偏好、重置默认和密码修改行为。
   - `adminFeature.css` 新增 `admin-settings-*` 与 `admin-setting-section` 可复用布局类，供后续设置 / 策略类页面继续复用。
+  - 第二个试点选择 `UserList` 用户管理页，对齐 `P05` 普通表格 CRUD 页面方向。
+  - `UserList` 已迁入顶部指标、筛选工具条、表格主体和右侧摘要栏，保留用户查询、分页、状态 / 角色筛选和详情跳转行为。
+  - `AdminLayout`、`Breadcrumb`、`index.css` 与 `adminFeature.css` 已继续沉淀 Case Desk 壳层、表格型布局和 `--console-*` token 基座。
 
 下一顺位：
 
 - 继续 `P3-8-C2` 后续页面类型试点
   - 设计依据见：[Console 治理工作台设计端点](/frontend/console-governance-workbench-design) 与 [Console 样式与 Token 使用说明](/frontend/console-style-guide)。
-  - 优先复核 `P05` 表格 CRUD 或 `P04` 调度总览页，验证列表密度、摘要侧栏、按钮层级和总览指标能否复用。
+  - 优先复核 `P04` 调度总览页，验证总览指标、摘要侧栏、按钮层级和调度入口能否复用。
   - 不一次性改完整个 Console，不把所有页面硬套成同一模板。
 
 ## UI 设计稿治理
@@ -188,6 +191,14 @@ git diff --check
 npm run type-check --workspace=radish.console
 npm run build --workspace=radish.console
 npm run check:repo-hygiene:changed
+git diff --check
+```
+
+`P3-8-C2` 表格 CRUD 试点已执行：
+
+```bash
+npm run type-check --workspace=radish.console
+npm run build --workspace=radish.console
 git diff --check
 ```
 

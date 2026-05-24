@@ -142,13 +142,21 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         trigger={null}
         collapsible
         collapsed={collapsed}
+        width={268}
+        collapsedWidth={88}
         className="admin-sider"
       >
         <div className="admin-logo">
-          {collapsed ? 'R' : 'Radish Console'}
+          <span className="admin-logo-mark">R</span>
+          {!collapsed ? (
+            <span className="admin-logo-copy">
+              <span className="admin-logo-title">Radish Console</span>
+              <span className="admin-logo-subtitle">Case Desk</span>
+            </span>
+          ) : null}
         </div>
         <Menu
-          theme="dark"
+          theme="light"
           mode="inline"
           selectedKeys={[getActiveMenuKey(location.pathname)]}
           items={menuItems}
@@ -174,7 +182,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             <SearchOutlined
               className="admin-search-icon"
               onClick={() => setSearchVisible(true)}
-              style={{ fontSize: '18px', cursor: 'pointer', marginRight: '24px' }}
             />
             <Dropdown
               menu={{

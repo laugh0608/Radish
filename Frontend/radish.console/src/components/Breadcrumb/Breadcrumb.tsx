@@ -32,7 +32,7 @@ export function AppBreadcrumb() {
     const items: BreadcrumbProps['items'] = [
       {
         title: (
-          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <Link to="/" className="admin-breadcrumb-home">
             <HomeOutlined />
             <span>首页</span>
           </Link>
@@ -72,7 +72,7 @@ export function AppBreadcrumb() {
   }
 
   return (
-    <div style={{ marginBottom: '16px' }}>
+    <div className="admin-breadcrumb">
       <Breadcrumb items={breadcrumbItems} />
     </div>
   );
