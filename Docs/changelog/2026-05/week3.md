@@ -531,6 +531,35 @@
 - 路由切换、详情数据缺失或组件卸载时会清理旧 JSON-LD，避免公开详情之间残留错误结构化数据。
 - 下一步进入动态 sitemap 方案评审，继续后置 SSR / SSG / prerender / Gateway HTML rewrite。
 
+### `P3-5-C` 至 `P3-5-D2` 公开增长后续专题收口
+
+- 动态 sitemap 已采用 API + Gateway 路由：API 输出 sitemap index 与 `static / forum / docs / shop` 分片，Gateway 顶层 `/sitemap.xml` 与 `/sitemaps/{**catch-all}` 高优先级转发到 API。
+- 详情首包可见性已完成方案评审：完整 SSR / 构建期 SSG 暂不作为首批路线，首批只做 forum / docs / shop 详情 head snapshot 注入，不渲染正文 HTML。
+- API 已提供 forum / docs / shop 公开详情 head snapshot，Gateway 注入 title、description、canonical、Open Graph、Twitter card 与 JSON-LD；任一环节失败回落原 SPA 代理链路。
+- 已补 `npm run check:public-head-smoke` 部署前 smoke 入口，覆盖 robots、sitemap 和三类公开详情首包 head。
+
+### `P3-6-A` 真实使用观察与 sitemap origin 修复
+
+- `P3-5` 收尾判断为可收尾，当前主线切到 `P3-6 真实使用运营观察与反馈分流`。
+- 本地 Gateway smoke 已通过 robots、sitemap、forum / docs / shop 三类详情。
+- 继续抽查 sitemap index 与分片时发现 `<loc>` 输出 API 内部 origin `http://localhost:5100`，而详情 head canonical 已正确输出 Gateway origin。
+- 已修复 `PublicSitemapController`：配置缺失时优先使用安全的 `X-Forwarded-Proto / X-Forwarded-Host`，与 head snapshot 公开 base URL 口径对齐。
+- 本地复测确认 `/sitemap.xml` 的 `<loc>` 已输出 `https://localhost:5000/sitemaps/...`。
+
+### 当日提交回顾与文档同步
+
+- 今日提交链覆盖 `P3-4-I` 公开 head 标识可见性补洞、`P3-5-A` 公开内容增长后续专题评估、`P3-5-B` 运行时结构化数据、`P3-5-C` 动态 sitemap、`P3-5-D` 首包可见性评审、`P3-5-D1` head snapshot 注入、`P3-5-D2` smoke 入口，以及 sitemap public origin 修复。
+- 已回顾提交：`180efb8e`、`3f27fa07`、`838e852a`、`9f8bc735`、`6ca0e603`、`65136f41`、`29c38424`、`f6d1fb42`、`59c19424`、`f80c9bae`。
+- 规划入口已同步到 `P3-6`：当前进行中和第三阶段专题均明确 `P3-5` 阶段收尾，后续只从真实部署、真实使用、爬虫抓取、分享预览和运行日志中分流高信号问题。
+- 说明入口已同步 [公开详情 Head Smoke 验收](/guide/public-head-smoke)，补充 sitemap `<loc>` public origin 人工抽查，避免 smoke 只验证 XML 可达但漏掉内部 origin 外露。
+- 今日没有新增视觉、组件体系、多壳层策略、API 客户端使用方式或长期 ID 总路线变化；相关设计 / 说明书口径仍沿用既有文档，不额外扩写。
+
+### 明日事项
+
+- 继续 `P3-6-A` 真实部署 / 本地 Gateway 公开增长观察：复跑 public head smoke，并额外抽查 `/sitemap.xml` 与 `static / forum / docs / shop` 分片 `<loc>` 是否全部使用公开 Gateway origin。
+- 观察 head snapshot、sitemap 缓存与异常回退日志，抽查分享预览和搜索抓取反馈。
+- 若没有新的 `P0/P1`，只形成观察结论，不开新功能；仍不启动完整 SSR / SSG、正文预渲染、全量 `PublicId` 迁移或运营平台。
+
 ### 验证记录
 
 - `npm run type-check --workspace=radish.client`
@@ -559,3 +588,11 @@
   - `P3-5-B` 并入默认前端测试入口后通过，`147/147`。
 - `npm run build --workspace=radish.client`
   - `P3-5-B` 运行时结构化数据基线通过；仍保留既有 `app-shop` chunk size warning。
+- `dotnet test Radish.Api.Tests --filter "FullyQualifiedName~PublicSitemapControllerTest" -v minimal`
+  - 提权环境通过，`1/1`。
+- `dotnet test Radish.Api.Tests --filter "FullyQualifiedName~PublicSitemap" -v minimal`
+  - 提权环境通过，`5/5`。
+- `npm run check:public-head-smoke -- --base-url https://localhost:5000 --path /forum/post/pst_019e304093b374a8a20c9461f31a2302 --path /docs/guide --path /shop/product/100061`
+  - 通过，robots、sitemap、forum / docs / shop 三类详情均通过。
+- sitemap `<loc>` public origin 抽查
+  - 本地 Gateway 返回 `https://localhost:5000/sitemaps/static.xml`、`forum-1.xml`、`docs-1.xml`、`shop-1.xml`。

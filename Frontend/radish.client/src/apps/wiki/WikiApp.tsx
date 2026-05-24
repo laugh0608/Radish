@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type MouseEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type MouseEvent } from 'react';
 import { ConfirmDialog } from '@radish/ui/confirm-dialog';
 import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { toast } from '@radish/ui/toast';
@@ -37,8 +37,6 @@ import {
   updateWikiDocument,
 } from './api/wiki';
 import type {
-  CreateWikiDocumentRequest,
-  UpdateWikiDocumentRequest,
   WikiDocumentDetailVo,
   WikiDocumentRevisionDetailVo,
   WikiDocumentRevisionItemVo,
@@ -47,46 +45,29 @@ import type {
 } from './types/wiki';
 import { WikiDocumentStatus, WikiDocumentVisibility } from './types/wiki';
 import {
+  buildCreateRequest,
+  buildUpdateRequest,
   collectDescendantIds,
+  collectExpandableNodeIds,
+  describeRevisionSummary,
+  EMPTY_DRAFT,
+  findAncestorIds,
   flattenTree,
   flattenTreeOptions,
+  formatWikiTime,
   getSuggestedSortValue,
+  normalizeAccessList,
+  normalizeOptionalNumber,
+  normalizeOptionalLongId,
+  pickInitialDocumentId,
+  parseWikiWindowParams,
   SORT_PRESET_VALUES,
+  type EditorDraft,
 } from './wikiApp.helpers';
+import { WikiSidebar, type DeletionFilter, type SidebarView } from './WikiSidebar';
 import styles from './WikiApp.module.css';
 
 type EditorMode = 'create' | 'edit';
-type DeletionFilter = 'active' | 'deleted';
-type SidebarView = 'tree' | 'results';
-type SidebarRenderMode = 'default' | 'overlay';
-
-type EditorDraft = {
-  title: string;
-  slug: string;
-  summary: string;
-  markdownContent: string;
-  parentId: string;
-  sort: string;
-  coverAttachmentId: string;
-  changeSummary: string;
-  visibility: string;
-  allowedRoles: string;
-  allowedPermissions: string;
-};
-
-const EMPTY_DRAFT: EditorDraft = {
-  title: '',
-  slug: '',
-  summary: '',
-  markdownContent: '',
-  parentId: '',
-  sort: '0',
-  coverAttachmentId: '',
-  changeSummary: '',
-  visibility: String(WikiDocumentVisibility.Authenticated),
-  allowedRoles: '',
-  allowedPermissions: '',
-};
 
 function toStatusText(t: TFunction, status: number): string {
   switch (status) {
@@ -136,147 +117,6 @@ function toSourceText(t: TFunction, sourceType?: string | null): string {
     default:
       return sourceType?.trim() || t('wiki.source.unknown');
   }
-}
-
-function resolveDateLocale(language?: string): string {
-  return language?.toLowerCase().startsWith('zh') ? 'zh-CN' : 'en-US';
-}
-
-function formatTime(value: string | null | undefined, language?: string): string {
-  if (!value) {
-    return '--';
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return date.toLocaleString(resolveDateLocale(language), {
-    hour12: false,
-  });
-}
-
-function pickInitialDocumentId(tree: WikiDocumentTreeNodeVo[], list: WikiDocumentVo[]): LongId | null {
-  if (list.length > 0) {
-    return list[0].voId;
-  }
-
-  if (tree.length > 0) {
-    return tree[0].voId;
-  }
-
-  return null;
-}
-
-function normalizeOptionalString(value: string): string | undefined {
-  const trimmed = value.trim();
-  return trimmed ? trimmed : undefined;
-}
-
-function normalizeOptionalNumber(value: string): number | undefined {
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return undefined;
-  }
-
-  const parsed = Number(trimmed);
-  return Number.isFinite(parsed) ? parsed : undefined;
-}
-
-function normalizeOptionalLongId(value: string): LongId | undefined {
-  const trimmed = value.trim();
-  return /^[1-9]\d*$/.test(trimmed) ? trimmed : undefined;
-}
-
-function normalizePositiveLongId(value: unknown): LongId | undefined {
-  if (typeof value === 'number') {
-    return Number.isSafeInteger(value) && value > 0 ? value : undefined;
-  }
-
-  if (typeof value !== 'string') {
-    return undefined;
-  }
-
-  const trimmed = value.trim();
-  return /^[1-9]\d*$/.test(trimmed) ? trimmed : undefined;
-}
-
-function normalizeAccessList(value: string): string[] {
-  return value
-    .split(/[\n,，]/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function parseWikiWindowParams(appParams?: Record<string, unknown> | null): { documentId?: LongId; slug?: string } {
-  if (!appParams) {
-    return {};
-  }
-
-  const documentId = normalizePositiveLongId(appParams.documentId);
-  const slug = typeof appParams.slug === 'string' ? appParams.slug.trim() : '';
-
-  return {
-    documentId,
-    slug: slug || undefined,
-  };
-}
-
-function buildCreateRequest(draft: EditorDraft): CreateWikiDocumentRequest {
-  return {
-    title: draft.title.trim(),
-    slug: normalizeOptionalString(draft.slug),
-    summary: normalizeOptionalString(draft.summary),
-    markdownContent: draft.markdownContent,
-    parentId: normalizeOptionalLongId(draft.parentId),
-    sort: normalizeOptionalNumber(draft.sort) ?? 0,
-    coverAttachmentId: normalizeOptionalLongId(draft.coverAttachmentId),
-    visibility: normalizeOptionalNumber(draft.visibility) ?? WikiDocumentVisibility.Authenticated,
-    allowedRoles: normalizeAccessList(draft.allowedRoles),
-    allowedPermissions: normalizeAccessList(draft.allowedPermissions),
-  };
-}
-
-function buildUpdateRequest(draft: EditorDraft): UpdateWikiDocumentRequest {
-  return {
-    ...buildCreateRequest(draft),
-    changeSummary: normalizeOptionalString(draft.changeSummary),
-  };
-}
-
-function describeRevisionSummary(t: TFunction, revision: WikiDocumentRevisionItemVo): string {
-  if (revision.voChangeSummary?.trim()) {
-    return revision.voChangeSummary;
-  }
-
-  return revision.voIsCurrent ? t('wiki.revision.currentSnapshot') : t('wiki.revision.noChangeSummary');
-}
-
-function collectExpandableNodeIds(nodes: WikiDocumentTreeNodeVo[]): LongId[] {
-  return nodes.flatMap((node) => {
-    const children = node.voChildren || [];
-    return children.length > 0
-      ? [node.voId, ...collectExpandableNodeIds(children)]
-      : collectExpandableNodeIds(children);
-  });
-}
-
-function findAncestorIds(nodes: WikiDocumentTreeNodeVo[], targetId: LongId, trail: LongId[] = []): LongId[] {
-  const targetIdKey = String(targetId);
-  for (const node of nodes) {
-    if (String(node.voId) === targetIdKey) {
-      return trail;
-    }
-
-    const nextTrail = [...trail, node.voId];
-    const result = findAncestorIds(node.voChildren || [], targetId, nextTrail);
-    if (result.length > 0) {
-      return result;
-    }
-  }
-
-  return [];
 }
 
 export const WikiApp = () => {
@@ -1047,7 +887,7 @@ export const WikiApp = () => {
   const selectedStatusText = selectedDocument ? toStatusText(t, selectedDocument.voStatus) : t('wiki.status.unselected');
   const selectedStatusClass = selectedDocument ? toStatusClassName(selectedDocument.voStatus) : styles.statusDraft;
 
-  const toggleTreeNode = (nodeId: LongId) => {
+  const handleToggleTreeNode = useCallback((nodeId: LongId) => {
     setExpandedNodeIds((current) => {
       const next = new Set(current);
       const nodeIdKey = String(nodeId);
@@ -1059,271 +899,56 @@ export const WikiApp = () => {
 
       return next;
     });
-  };
+  }, []);
 
-  const renderTreeNodes = (nodes: WikiDocumentTreeNodeVo[], depth: number = 0): ReactNode => {
-    return nodes.map((node) => {
-      const children = node.voChildren || [];
-      const isExpandable = children.length > 0;
-      const isExpanded = expandedNodeIds.has(String(node.voId));
-
-      return (
-        <div key={node.voId} className={styles.treeNodeGroup}>
-          <div
-            className={styles.treeNodeRow}
-            style={{
-              marginLeft: `${depth * 18}px`,
-              width: `calc(100% - ${depth * 18}px)`,
-            }}
-          >
-            {isExpandable ? (
-              <button
-                type="button"
-                className={styles.treeToggleButton}
-                onClick={() => toggleTreeNode(node.voId)}
-                aria-label={isExpanded
-                  ? t('wiki.tree.collapseNode', { title: node.voTitle })
-                  : t('wiki.tree.expandNode', { title: node.voTitle })}
-                aria-expanded={isExpanded}
-              >
-                <span className={`${styles.treeToggleIcon} ${isExpanded ? styles.treeToggleIconExpanded : ''}`}>▶</span>
-              </button>
-            ) : (
-              <span className={styles.treeToggleSpacer} aria-hidden="true" />
-            )}
-
-            <button
-              type="button"
-              className={`${styles.treeNode} ${String(selectedDocumentId) === String(node.voId) ? styles.treeNodeActive : ''}`}
-              onClick={() => {
-                handleSelectDocument(node.voId);
-                if (isExpandable) {
-                  setExpandedNodeIds((current) => new Set(current).add(String(node.voId)));
-                }
-              }}
-            >
-              <span className={styles.treeNodeDepth} />
-              <span className={styles.treeNodeTitle}>{node.voTitle}</span>
-              {isExpandable ? <span className={styles.treeNodeMeta}>{children.length}</span> : null}
-              <span className={`${styles.statusChip} ${toStatusClassName(node.voStatus)}`}>{toStatusText(t, node.voStatus)}</span>
-            </button>
-          </div>
-
-          {isExpandable && isExpanded ? renderTreeNodes(children, depth + 1) : null}
-        </div>
-      );
-    });
-  };
-
-  const renderSidebarPanel = (view: SidebarView, compact: boolean = false) => (
-    <section className={`${styles.sidebarPanel} ${compact ? styles.sidebarPanelCompact : ''}`}>
-      <div className={styles.sectionHeader}>
-        <h3 className={styles.sectionTitle}>
-          {view === 'tree'
-            ? t('wiki.sidebar.tab.tree')
-            : showingDeleted
-              ? t('wiki.sidebar.tab.deletedResults')
-              : t('wiki.sidebar.tab.results')}
-        </h3>
-        <span className={styles.sectionCount}>{view === 'tree' ? totalTreeDocuments : totalResultsCount}</span>
-      </div>
-      <div className={styles.sectionHint}>
-        {view === 'results'
-          ? totalResultsCount > currentListCount
-            ? t('wiki.sidebar.sectionHint.pageStats', { current: currentListCount, total: totalResultsCount })
-            : hasActiveFilters
-              ? t('wiki.sidebar.sectionHint.filtered', { total: totalResultsCount })
-              : t('wiki.sidebar.sectionHint.list', { total: totalResultsCount })
-          : t('wiki.sidebar.sectionHint.tree')}
-      </div>
-
-      {view === 'tree' ? (
-        <div className={styles.treeScroll}>
-          {loadingTree ? (
-            <div className={styles.loadingText}>{t('wiki.loading.tree')}</div>
-          ) : tree.length > 0 ? (
-            renderTreeNodes(tree)
-          ) : (
-            <div className={styles.mutedText}>{loggedIn ? t('wiki.empty.tree') : t('wiki.empty.publicTree')}</div>
-          )}
-        </div>
-      ) : (
-        <div className={styles.listScroll}>
-          {loadingList ? (
-            <div className={styles.loadingText}>{t('wiki.loading.list')}</div>
-          ) : documents.length > 0 ? (
-            documents.map((document) => (
-              <button
-                key={document.voId}
-                type="button"
-                className={`${styles.listItem} ${String(selectedDocumentId) === String(document.voId) ? styles.listItemActive : ''}`}
-                onClick={() => handleSelectDocument(document.voId)}
-              >
-                <div className={styles.listItemHeader}>
-                  <span className={styles.listItemTitle}>{document.voTitle}</span>
-                  <span className={`${styles.statusChip} ${document.voIsDeleted ? styles.statusDeleted : toStatusClassName(document.voStatus)}`}>
-                    {document.voIsDeleted ? t('wiki.status.deleted') : toStatusText(t, document.voStatus)}
-                  </span>
-                </div>
-                {document.voSummary ? (
-                  <div className={styles.listItemSummary}>{document.voSummary}</div>
-                ) : null}
-                <div className={styles.listItemMeta}>
-                  {document.voSlug} · v{document.voVersion} · {toVisibilityText(t, document.voVisibility)}
-                </div>
-              </button>
-            ))
-          ) : (
-            <div className={styles.mutedText}>
-              {showingDeleted
-                ? t('wiki.empty.deletedResults')
-                : loggedIn
-                  ? t('wiki.empty.results')
-                  : t('wiki.empty.publicResults')}
-            </div>
-          )}
-        </div>
-      )}
-    </section>
-  );
-
-  const renderSidebar = (renderMode: SidebarRenderMode = 'default') => {
-    const isOverlayMode = renderMode === 'overlay';
-
-    return (
-      <>
-        <div className={`${styles.sidebarHeader} ${isOverlayMode ? styles.sidebarHeaderOverlay : ''}`}>
-          {!isOverlayMode ? (
-            <div className={styles.sidebarTitleRow}>
-              <div>
-                <h2 className={styles.sidebarTitle}>{t('wiki.sidebar.title')}</h2>
-                <p className={styles.sidebarHint}>{t('wiki.sidebar.hint')}</p>
-              </div>
-            </div>
-          ) : null}
-
-          <div className={`${styles.sidebarUtilityRow} ${isOverlayMode ? styles.sidebarUtilityRowOverlay : ''}`}>
-            <div className={styles.sidebarStatsRow}>
-              <span className={styles.sidebarStatBadge}>
-                <span className={styles.sidebarStatLabel}>{t('wiki.sidebar.stats.directory')}</span>
-                <strong className={styles.sidebarStatValue}>{totalTreeDocuments}</strong>
-              </span>
-              <span className={styles.sidebarStatBadge}>
-                <span className={styles.sidebarStatLabel}>
-                  {showingDeleted ? t('wiki.sidebar.stats.recycleBinTotal') : t('wiki.sidebar.stats.resultsTotal')}
-                </span>
-                <strong className={styles.sidebarStatValue}>{totalResultsText}</strong>
-              </span>
-            </div>
-
-            <div className={styles.toolbarRow}>
-              <button
-                type="button"
-                className={styles.secondaryButton}
-                onClick={() => void refreshCollections(true)}
-                disabled={loadingTree || loadingList}
-              >
-                {t('wiki.actions.refresh')}
-              </button>
-              {isAdmin ? (
-                <>
-                  <button type="button" className={styles.primaryButton} onClick={openCreateEditor}>
-                    {t('wiki.actions.create')}
-                  </button>
-                  <button type="button" className={styles.ghostButton} onClick={triggerImport} disabled={submitting}>
-                    {t('wiki.actions.import')}
-                  </button>
-                </>
-              ) : null}
-            </div>
-          </div>
-
-          <div className={styles.sidebarFilters}>
-            <div className={styles.searchRow}>
-              <input
-                className={styles.searchInput}
-                value={keyword}
-                placeholder={t('wiki.sidebar.searchPlaceholder')}
-                onChange={(event) => setKeyword(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    void handleSearch();
-                  }
-                }}
-              />
-              <button type="button" className={styles.primaryButton} onClick={() => void handleSearch()}>
-                {t('wiki.actions.search')}
-              </button>
-            </div>
-
-            {isAdmin ? (
-              <div className={styles.statusStack}>
-                <div className={styles.statusRow}>
-                  <select
-                    className={styles.select}
-                    value={statusFilter}
-                    onChange={(event) => setStatusFilter(event.target.value)}
-                  >
-                    <option value="">{t('wiki.filter.allStatuses')}</option>
-                    <option value={String(WikiDocumentStatus.Draft)}>{t('wiki.status.draft')}</option>
-                    <option value={String(WikiDocumentStatus.Published)}>{t('wiki.status.published')}</option>
-                    <option value={String(WikiDocumentStatus.Archived)}>{t('wiki.status.archived')}</option>
-                  </select>
-                </div>
-                <div className={styles.statusRow}>
-                  <select
-                    className={styles.select}
-                    value={deletionFilter}
-                    onChange={(event) => setDeletionFilter(event.target.value as DeletionFilter)}
-                  >
-                    <option value="active">{t('wiki.filter.activeOnly')}</option>
-                    <option value="deleted">{t('wiki.filter.deletedOnly')}</option>
-                  </select>
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </div>
-
-        <div className={`${styles.sidebarBody} ${isOverlayMode ? styles.sidebarBodyOverlay : ''}`}>
-          {isOverlayMode ? (
-            <div className={styles.sidebarSplit}>
-              {renderSidebarPanel('tree', true)}
-              {renderSidebarPanel('results', true)}
-            </div>
-          ) : (
-            <>
-              <div className={styles.sidebarTabs}>
-                <button
-                  type="button"
-                  className={sidebarView === 'tree' ? styles.sidebarTabActive : styles.sidebarTab}
-                  onClick={() => setSidebarView('tree')}
-                >
-                  {t('wiki.sidebar.tab.tree')}
-                </button>
-                <button
-                  type="button"
-                  className={sidebarView === 'results' ? styles.sidebarTabActive : styles.sidebarTab}
-                  onClick={() => setSidebarView('results')}
-                >
-                  {showingDeleted ? t('wiki.sidebar.tab.deletedResults') : t('wiki.sidebar.tab.results')}
-                </button>
-              </div>
-
-              {renderSidebarPanel(sidebarView)}
-            </>
-          )}
-        </div>
-      </>
-    );
-  };
+  const handleExpandTreeNode = useCallback((nodeId: LongId) => {
+    setExpandedNodeIds((current) => new Set(current).add(String(nodeId)));
+  }, []);
 
   return (
     <div
       ref={containerRef}
       className={`${styles.container} ${isCompactLayout ? styles.containerCompact : ''} ${shouldUseSidebarOverlay ? styles.containerReading : ''}`}
     >
-      {!shouldUseSidebarOverlay ? <aside className={styles.sidebar}>{renderSidebar()}</aside> : null}
+      {!shouldUseSidebarOverlay ? (
+        <aside className={styles.sidebar}>
+          <WikiSidebar
+            tree={tree}
+            documents={documents}
+            selectedDocumentId={selectedDocumentId}
+            expandedNodeIds={expandedNodeIds}
+            sidebarView={sidebarView}
+            keyword={keyword}
+            statusFilter={statusFilter}
+            deletionFilter={deletionFilter}
+            loadingTree={loadingTree}
+            loadingList={loadingList}
+            loggedIn={loggedIn}
+            isAdmin={isAdmin}
+            submitting={submitting}
+            showingDeleted={showingDeleted}
+            totalTreeDocuments={totalTreeDocuments}
+            totalResultsCount={totalResultsCount}
+            currentListCount={currentListCount}
+            totalResultsText={totalResultsText}
+            hasActiveFilters={hasActiveFilters}
+            getStatusText={(status) => toStatusText(t, status)}
+            getStatusClassName={toStatusClassName}
+            getVisibilityText={(visibility) => toVisibilityText(t, visibility)}
+            onToggleTreeNode={handleToggleTreeNode}
+            onExpandTreeNode={handleExpandTreeNode}
+            onSelectDocument={handleSelectDocument}
+            onSidebarViewChange={setSidebarView}
+            onKeywordChange={setKeyword}
+            onStatusFilterChange={setStatusFilter}
+            onDeletionFilterChange={setDeletionFilter}
+            onSearch={handleSearch}
+            onRefresh={() => refreshCollections(true)}
+            onCreate={openCreateEditor}
+            onImport={triggerImport}
+          />
+        </aside>
+      ) : null}
 
       <main className={`${styles.main} ${shouldUseSidebarOverlay ? styles.mainReading : ''}`}>
         <div className={styles.contentHeader}>
@@ -1556,18 +1181,18 @@ export const WikiApp = () => {
                   {selectedDocument.voSourcePath ? (
                     <span className={styles.metaChip}>{t('wiki.meta.sourcePath', { value: selectedDocument.voSourcePath })}</span>
                   ) : null}
-                  <span className={styles.metaChip}>{t('wiki.meta.created', { value: formatTime(selectedDocument.voCreateTime, i18n.resolvedLanguage) })}</span>
-                  <span className={styles.metaChip}>{t('wiki.meta.updated', { value: formatTime(selectedDocument.voModifyTime, i18n.resolvedLanguage) })}</span>
+                  <span className={styles.metaChip}>{t('wiki.meta.created', { value: formatWikiTime(selectedDocument.voCreateTime, i18n.resolvedLanguage) })}</span>
+                  <span className={styles.metaChip}>{t('wiki.meta.updated', { value: formatWikiTime(selectedDocument.voModifyTime, i18n.resolvedLanguage) })}</span>
                   {selectedDocument.voIsDeleted ? (
                     <span className={styles.metaChip}>
                       {t('wiki.meta.deleted', {
-                        time: formatTime(selectedDocument.voDeletedAt, i18n.resolvedLanguage),
+                        time: formatWikiTime(selectedDocument.voDeletedAt, i18n.resolvedLanguage),
                         user: selectedDocument.voDeletedBy || t('common.unknownUser'),
                       })}
                     </span>
                   ) : null}
                   {selectedDocument.voPublishedAt ? (
-                    <span className={styles.metaChip}>{t('wiki.meta.published', { value: formatTime(selectedDocument.voPublishedAt, i18n.resolvedLanguage) })}</span>
+                    <span className={styles.metaChip}>{t('wiki.meta.published', { value: formatWikiTime(selectedDocument.voPublishedAt, i18n.resolvedLanguage) })}</span>
                   ) : null}
                 </div>
 
@@ -1636,7 +1261,42 @@ export const WikiApp = () => {
           bodyClassName={styles.sidebarSheetBody}
         >
           <div className={styles.sidebarSheet}>
-            {renderSidebar('overlay')}
+            <WikiSidebar
+              renderMode="overlay"
+              tree={tree}
+              documents={documents}
+              selectedDocumentId={selectedDocumentId}
+              expandedNodeIds={expandedNodeIds}
+              sidebarView={sidebarView}
+              keyword={keyword}
+              statusFilter={statusFilter}
+              deletionFilter={deletionFilter}
+              loadingTree={loadingTree}
+              loadingList={loadingList}
+              loggedIn={loggedIn}
+              isAdmin={isAdmin}
+              submitting={submitting}
+              showingDeleted={showingDeleted}
+              totalTreeDocuments={totalTreeDocuments}
+              totalResultsCount={totalResultsCount}
+              currentListCount={currentListCount}
+              totalResultsText={totalResultsText}
+              hasActiveFilters={hasActiveFilters}
+              getStatusText={(status) => toStatusText(t, status)}
+              getStatusClassName={toStatusClassName}
+              getVisibilityText={(visibility) => toVisibilityText(t, visibility)}
+              onToggleTreeNode={handleToggleTreeNode}
+              onExpandTreeNode={handleExpandTreeNode}
+              onSelectDocument={handleSelectDocument}
+              onSidebarViewChange={setSidebarView}
+              onKeywordChange={setKeyword}
+              onStatusFilterChange={setStatusFilter}
+              onDeletionFilterChange={setDeletionFilter}
+              onSearch={handleSearch}
+              onRefresh={() => refreshCollections(true)}
+              onCreate={openCreateEditor}
+              onImport={triggerImport}
+            />
           </div>
         </BottomSheet>
       ) : null}
@@ -1683,7 +1343,7 @@ export const WikiApp = () => {
                     <div className={styles.revisionMeta}>{revision.voTitle}</div>
                     <div className={styles.revisionMeta}>
                       {t('wiki.history.revisionMeta', {
-                        time: formatTime(revision.voCreateTime, i18n.resolvedLanguage),
+                        time: formatWikiTime(revision.voCreateTime, i18n.resolvedLanguage),
                         author: revision.voCreateBy,
                       })}
                     </div>
@@ -1716,7 +1376,7 @@ export const WikiApp = () => {
                   </div>
 
                   <div className={styles.revisionMetaBar}>
-                    <span className={styles.metaChip}>{t('wiki.meta.created', { value: formatTime(selectedRevision.voCreateTime, i18n.resolvedLanguage) })}</span>
+                    <span className={styles.metaChip}>{t('wiki.meta.created', { value: formatWikiTime(selectedRevision.voCreateTime, i18n.resolvedLanguage) })}</span>
                     <span className={styles.metaChip}>{t('wiki.meta.author', { value: selectedRevision.voCreateBy })}</span>
                     <span className={styles.metaChip}>{t('wiki.meta.description', { value: selectedRevision.voChangeSummary || t('wiki.revision.noChangeSummary') })}</span>
                   </div>

@@ -306,6 +306,9 @@ DataBases/**
 !DataBases/Uploads/DefaultIco/.gitkeep
 !DataBases/Uploads/DefaultIco/*
 
+# Deployment runtime data
+DeployData/**
+
 # Environment files
 .env
 .env.local

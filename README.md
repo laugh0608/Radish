@@ -8,14 +8,15 @@ Radish 是一个自研分层架构的现代化内容社区：后端基于 ASP.NE
 
 ## 当前状态
 
-- **当前阶段**：`第二开发阶段：社区深化与多端化`
-- **当前主线**：`多端路线收口后的产品功能开发推进`
-- **复核日期**：`2026-05-06`
+- **当前阶段**：`第三开发阶段：真实使用增长与长期契约治理`
+- **当前主线**：`P3-6 真实使用运营观察与反馈分流`
+- **复核日期**：`2026-05-19`
 - **当前结论**：
   - `Phase 2-2 移动 Web 形态` 已完成公开内容壳层首批收口，转入稳定维护
   - `Phase 2-3 Android MVP` 已完成第一轮 RC 验收并给出 Go 结论
   - Tauri 桌面安装包个人开发阶段验证通过，当前定位为 `Tauri 壳 + WebOS 桌面工作台`
-  - WebOS / PC 工作台、后端与 Console 治理已回到真实产品功能补全主线
+  - `P3-1` 至 `P3-5` 已完成公开内容 SEO / 分享基线、PublicId 最小试点、公开热区拆分、留存回流和动态 sitemap / head snapshot 首批收口
+  - WebOS / PC 工作台、后端与 Console 治理转入稳定维护，只处理真实使用中新暴露的高信号问题
   - 当前规划、优先级与范围以 `Docs/planning/current.md` 为准
 - **当前验证基线**：
   - 快速基线：`npm run validate:baseline:quick`
@@ -29,7 +30,7 @@ Radish 是一个自研分层架构的现代化内容社区：后端基于 ASP.NE
 - **数据库**：PostgreSQL 16（本地开发可用 SQLite）
 - **前端**：React 19、Vite (Rolldown)、TypeScript
 - **测试**：xUnit + Shouldly（后端）、`node --test` + TypeScript 类型检查 + `HttpTest`（前端 / 联调资产）
-- **容器化**：已提供 `Radish.DbMigrate / Radish.Api / Radish.Auth / Radish.Gateway / Frontend` 五个 Dockerfile，以及 `Deploy/docker-compose.local.yml / Deploy/docker-compose.test.yml / Deploy/docker-compose.prod.yml` 三套容器编排口径
+- **容器化**：已提供 `Radish.DbMigrate / Radish.Api / Radish.Auth / Radish.Gateway / Frontend` 五个 Dockerfile，以及本地容器验证 `Deploy/docker-compose.local.yaml` 与部署态 `Deploy/docker-compose.yaml`
 
 ## 快速开始
 
@@ -163,7 +164,7 @@ Radish/
 ### 核心文档
 - 📘 [**开发规范**](Docs/architecture/specifications.md) - 目录职责、分层依赖、代码约定
 - 📗 [**架构设计**](Docs/architecture/framework.md) - 技术选型、分层架构、数据持久化
-- 📙 [**开发路线图**](Docs/development-plan.md) - 第二开发阶段主线、下一顺位与维护线
+- 📙 [**开发路线图**](Docs/development-plan.md) - 当前阶段主线、下一顺位与维护线
 - 📒 [**第二开发阶段路线图**](Docs/planning/phase-two-community-multiplatform.md) - 社区深化与多端化拆分
 - 📗 [**前端多壳层策略**](Docs/frontend/shell-strategy.md) - 公开内容、桌面工作台与 Flutter 客户端分工
 - 📓 [**当前进行中**](Docs/planning/current.md) - 当前正式主线与并行维护项
@@ -176,7 +177,7 @@ Radish/
 - 🎨 [**前端设计**](Docs/frontend/design.md) - WebOS 桌面范式与应用集成方式
 - 🚪 [**Gateway 服务网关**](Docs/guide/gateway.md) - 统一服务入口与路由转发
 - 🚀 [**部署指南**](Docs/deployment/guide.md) - 容器化、CI/CD、生产部署
-- 当前部署口径：开发运行使用 IDE / `dotnet run` / `npm run dev`；本地容器验证使用 `Deploy/docker-compose.local.yml`；测试与生产分别使用 `Deploy/docker-compose.test.yml` / `Deploy/docker-compose.prod.yml` 并拉取远程镜像；所有容器编排都会先执行 `dbmigrate apply` 初始化共享业务库
+- 当前部署口径：开发运行使用 IDE / `dotnet run` / `npm run dev`；本地容器验证使用 `Deploy/docker-compose.local.yaml`；测试与生产共用 `Deploy/docker-compose.yaml`，默认通过 `RADISH_IMAGE_TRACK=test/release` 拉取 `test-latest` / `release-latest`，需要可复现部署时再启用固定 `RADISH_IMAGE_TAG`；所有容器编排都会先执行 `dbmigrate apply` 初始化共享业务库
 - 🧩 [**文件上传设计**](Docs/features/file-upload-design.md) - 文件上传与图片处理方案
 - 🦀 [**Rust 扩展**](Docs/guide/rust-extensions.md) - radish-lib 使用指南
 

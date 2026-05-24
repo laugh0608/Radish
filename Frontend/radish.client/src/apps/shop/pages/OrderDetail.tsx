@@ -12,6 +12,7 @@ interface OrderDetailProps {
   order: Order | null;
   loading: boolean;
   onBack: () => void;
+  onProductClick: (productId: LongId) => void;
   onCancelOrder: (orderId: LongId, reason?: string) => void;
 }
 
@@ -19,6 +20,7 @@ export const OrderDetail = ({
   order,
   loading,
   onBack,
+  onProductClick,
   onCancelOrder
 }: OrderDetailProps) => {
   const { t } = useTranslation();
@@ -115,7 +117,16 @@ export const OrderDetail = ({
 
         {/* 商品信息 */}
         <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>{t('shop.orderDetail.productInfo')}</h2>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>{t('shop.orderDetail.productInfo')}</h2>
+            <button
+              type="button"
+              className={styles.productActionButton}
+              onClick={() => onProductClick(order.voProductId)}
+            >
+              {t('shop.orderDetail.viewProduct')}
+            </button>
+          </div>
           <div className={styles.productInfo}>
             <div className={styles.productImage}>
               {productIconUrl ? (

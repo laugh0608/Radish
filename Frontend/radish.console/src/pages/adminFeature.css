@@ -7,10 +7,10 @@
 
 .admin-feature-card {
   padding: 20px;
-  background: #fff;
-  border: 1px solid #f0f0f0;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  background: var(--console-bg-surface);
+  border: 1px solid var(--console-border-subtle);
+  border-radius: var(--console-radius-panel);
+  box-shadow: var(--console-shadow-card);
 }
 
 .admin-feature-header {
@@ -28,16 +28,16 @@
 
 .admin-feature-subtle {
   margin: 6px 0 0;
-  color: #8c8c8c;
+  color: var(--console-text-secondary);
   font-size: 13px;
 }
 
 .admin-feature-banner {
   padding: 14px 16px;
   border-radius: 10px;
-  border: 1px solid #ffe58f;
-  background: #fffbe6;
-  color: #8c6d1f;
+  border: 1px solid var(--console-warning-border);
+  background: var(--console-warning-bg);
+  color: var(--console-warning-text);
   font-size: 13px;
   line-height: 1.6;
 }
@@ -57,20 +57,103 @@
 .admin-feature-metric {
   padding: 16px;
   border-radius: 10px;
-  background: #fafafa;
-  border: 1px solid #f0f0f0;
+  background: var(--console-bg-muted);
+  border: 1px solid var(--console-border-subtle);
 }
 
 .admin-feature-metric strong {
   display: block;
   margin-top: 6px;
   font-size: 24px;
-  color: #262626;
+  color: var(--console-text-primary);
 }
 
 .admin-feature-form {
   display: grid;
   gap: 16px;
+}
+
+.governance-workbench {
+  display: grid;
+  gap: 20px;
+  grid-template-areas: "queue detail actions";
+  grid-template-columns: minmax(360px, 520px) minmax(0, 1fr) minmax(300px, 360px);
+  align-items: start;
+}
+
+.governance-workbench__queue,
+.governance-workbench__detail,
+.governance-workbench__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.governance-workbench__queue {
+  grid-area: queue;
+}
+
+.governance-workbench__detail {
+  grid-area: detail;
+}
+
+.governance-workbench__actions {
+  grid-area: actions;
+}
+
+.governance-workbench--without-actions {
+  grid-template-areas: "queue detail";
+  grid-template-columns: minmax(360px, 520px) minmax(0, 1fr);
+}
+
+.governance-workbench--experience {
+  grid-template-areas:
+    "queue detail"
+    "actions actions";
+  grid-template-columns: minmax(360px, 0.9fr) minmax(520px, 1.1fr);
+}
+
+.governance-workbench--experience .governance-workbench__actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  align-items: start;
+}
+
+.experience-transaction-filters {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) repeat(2, minmax(140px, 160px)) minmax(96px, auto);
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+}
+
+@media (max-width: 1200px) {
+  .governance-workbench {
+    grid-template-areas:
+      "queue"
+      "detail"
+      "actions";
+    grid-template-columns: 1fr;
+  }
+
+  .governance-workbench--without-actions {
+    grid-template-areas:
+      "queue"
+      "detail";
+  }
+
+  .governance-workbench--experience {
+    grid-template-areas:
+      "queue"
+      "detail"
+      "actions";
+    grid-template-columns: 1fr;
+  }
+
+  .experience-transaction-filters {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
 }
 
 @media (max-width: 768px) {

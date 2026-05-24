@@ -11,6 +11,8 @@ import { AUTH_TOKEN_EXPIRED_EVENT } from './authSession';
 export interface CurrentUser {
   voUserId: number;
   voUserName: string;
+  voLoginName?: string;
+  voNickname?: string;
   voTenantId: number;
   voAvatarUrl?: string;
   voAvatarThumbnailUrl?: string;
@@ -162,9 +164,15 @@ function resolveUserRoles(user: CurrentUser, token?: string | null): string[] {
 
 function setUserFromCurrentUser(user: CurrentUser, token?: string | null) {
   const { setUser } = useUserStore.getState();
+  const loginName = user.voLoginName?.trim() || user.voUserName;
+  const nickname = user.voNickname?.trim()
+    || (user.voUserName.trim() && user.voUserName.trim() !== loginName ? user.voUserName : undefined);
+
   setUser({
     userId: typeof user.voUserId === 'string' ? parseInt(user.voUserId, 10) : user.voUserId,
     userName: user.voUserName,
+    loginName,
+    nickname,
     tenantId: typeof user.voTenantId === 'string' ? parseInt(user.voTenantId, 10) : user.voTenantId,
     roles: resolveUserRoles(user, token),
     permissions: [
@@ -187,6 +195,8 @@ function buildCurrentUserFromStore(): CurrentUser | null {
   return {
     voUserId: userStore.userId,
     voUserName: userStore.userName,
+    voLoginName: userStore.loginName,
+    voNickname: userStore.nickname,
     voTenantId: userStore.tenantId,
     voAvatarUrl: userStore.avatarUrl,
     voAvatarThumbnailUrl: userStore.avatarThumbnailUrl,
@@ -209,6 +219,8 @@ function buildCurrentUserFromToken(token?: string | null): CurrentUser | null {
   return {
     voUserId: identity.userId,
     voUserName: identity.userName,
+    voLoginName: sameUser ? currentStoreUser.loginName || identity.userName : identity.userName,
+    voNickname: sameUser ? currentStoreUser.nickname : undefined,
     voTenantId: identity.tenantId,
     voAvatarUrl: sameUser ? currentStoreUser.avatarUrl : undefined,
     voAvatarThumbnailUrl: sameUser ? currentStoreUser.avatarThumbnailUrl : undefined,

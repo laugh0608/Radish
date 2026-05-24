@@ -33,7 +33,7 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
     private readonly IBaseRepository<CommentHighlight>? _commentHighlightRepository;
     private readonly ICommentRepository? _commentCustomRepository;
     private readonly ITagService _tagService;
-    private readonly IAttachmentService? _attachmentService;
+    private readonly IAttachmentService _attachmentService;
     private readonly ICoinRewardService _coinRewardService;
     private readonly INotificationService _notificationService;
     private readonly INotificationDedupService _dedupService;
@@ -60,8 +60,8 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
         INotificationDedupService dedupService,
         IExperienceService experienceService,
         IBaseRepository<PostEditHistory> postEditHistoryRepository,
+        IAttachmentService attachmentService,
         IOptions<ForumEditHistoryOptions> editHistoryOptions,
-        IAttachmentService? attachmentService = null,
         IPostRepository? postCustomRepository = null,
         ICommentRepository? commentCustomRepository = null,
         IBaseRepository<Attachment>? attachmentRepository = null,

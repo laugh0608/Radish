@@ -64,7 +64,7 @@ export const UserList = () => {
         setUsers(response.data.items);
         setTotal(response.data.total);
       } else {
-        message.error(response.message || '获取���户列表失败');
+        message.error(response.message || '获取用户列表失败');
       }
     } catch (error) {
       log.error('UserList', '加载用户列表失败', error);

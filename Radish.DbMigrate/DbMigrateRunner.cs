@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Radish.Common;
 using Radish.Common.DbTool;
 using Radish.Model;
+using Radish.Model.Models;
 using SqlSugar;
 
 namespace Radish.DbMigrate;
@@ -134,8 +135,111 @@ internal static class DbMigrateRunner
         var normalizedMainDbConnId = (string.IsNullOrWhiteSpace(mainDbConnId) ? "Main" : mainDbConnId)
             .ToLowerInvariant();
         var mainDb = dbScope.GetConnectionScope(normalizedMainDbConnId);
+        EnsureBootstrapStateSchema(mainDb);
         EnsureUserLoginIndex(mainDb);
         EnsureForumIndexes(mainDb);
+    }
+
+    private static void EnsureBootstrapStateSchema(ISqlSugarClient db)
+    {
+        if (db.CurrentConnectionConfig.DbType != SqlSugar.DbType.PostgreSQL)
+        {
+            return;
+        }
+
+        var entityInfo = db.EntityMaintenance.GetEntityInfo<SystemBootstrapState>();
+        var tableName = ResolveExistingTableName(db, entityInfo.DbTableName);
+        if (string.IsNullOrWhiteSpace(tableName))
+        {
+            return;
+        }
+
+        DropNotNullIfNeeded(
+            db,
+            tableName,
+            GetColumnName(entityInfo, nameof(SystemBootstrapState.CompletedUserId)));
+        DropNotNullIfNeeded(
+            db,
+            tableName,
+            GetColumnName(entityInfo, nameof(SystemBootstrapState.CompletedTime)));
+    }
+
+    private static void DropNotNullIfNeeded(ISqlSugarClient db, string tableName, string? expectedColumnName)
+    {
+        var columnName = ResolveExistingColumnName(db, tableName, expectedColumnName);
+        if (string.IsNullOrWhiteSpace(columnName) || !IsPostgreSqlColumnNotNull(db, tableName, columnName))
+        {
+            return;
+        }
+
+        db.Ado.ExecuteCommand($"""
+            ALTER TABLE {QuoteIdentifier(tableName)}
+            ALTER COLUMN {QuoteIdentifier(columnName)} DROP NOT NULL
+            """);
+        Console.WriteLine($"[Radish.DbMigrate] 已修复 SystemBootstrapState.{expectedColumnName} 可空约束。");
+    }
+
+    private static bool IsPostgreSqlColumnNotNull(ISqlSugarClient db, string tableName, string columnName)
+    {
+        var isNullable = db.Ado.GetString("""
+            SELECT is_nullable
+            FROM information_schema.columns
+            WHERE table_schema = current_schema()
+              AND lower(table_name) = lower(@tableName)
+              AND lower(column_name) = lower(@columnName)
+            LIMIT 1
+            """,
+            new SugarParameter("@tableName", tableName),
+            new SugarParameter("@columnName", columnName));
+
+        return string.Equals(isNullable, "NO", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string? GetColumnName(EntityInfo entityInfo, string propertyName)
+    {
+        return entityInfo.Columns
+            .FirstOrDefault(column => string.Equals(column.PropertyName, propertyName, StringComparison.Ordinal))
+            ?.DbColumnName;
+    }
+
+    private static string? ResolveExistingTableName(ISqlSugarClient db, string? expectedTableName)
+    {
+        if (string.IsNullOrWhiteSpace(expectedTableName))
+        {
+            return null;
+        }
+
+        return db.Ado.GetString("""
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema = current_schema()
+              AND lower(table_name) = lower(@tableName)
+            LIMIT 1
+            """, new SugarParameter("@tableName", expectedTableName));
+    }
+
+    private static string? ResolveExistingColumnName(ISqlSugarClient db, string tableName, string? expectedColumnName)
+    {
+        if (string.IsNullOrWhiteSpace(expectedColumnName))
+        {
+            return null;
+        }
+
+        return db.Ado.GetString("""
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = current_schema()
+              AND lower(table_name) = lower(@tableName)
+              AND lower(column_name) = lower(@columnName)
+            LIMIT 1
+            """,
+            new SugarParameter("@tableName", tableName),
+            new SugarParameter("@columnName", expectedColumnName));
+    }
+
+    private static string QuoteIdentifier(string identifier)
+    {
+        return $"\"{identifier.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
     }
 
     private static void EnsureUserLoginIndex(ISqlSugarClient db)

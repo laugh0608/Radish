@@ -56,9 +56,11 @@ git push origin v26.3.2-r1-test
 将 `Deploy/.env.test` 中的 `RADISH_*_IMAGE` 统一切到 `v26.3.2-r1-test`，然后执行：
 
 ```bash
-docker compose --env-file Deploy/.env.test -f Deploy/docker-compose.yml -f Deploy/docker-compose.test.yml config
-docker compose --env-file Deploy/.env.test -f Deploy/docker-compose.yml -f Deploy/docker-compose.test.yml pull
-docker compose --env-file Deploy/.env.test -f Deploy/docker-compose.yml -f Deploy/docker-compose.test.yml up -d
+cd Deploy
+docker compose config
+docker compose pull
+docker compose up -d
+cd ..
 npm run check:host-runtime -- --report-file .tmp/host-runtime-report.md
 npm run collect:m14-host-record
 ```
@@ -68,8 +70,10 @@ npm run collect:m14-host-record
 将 `Deploy/.env.test` 中的 `RADISH_*_IMAGE` 统一改回 `v26.3.2-test`，然后执行：
 
 ```bash
-docker compose --env-file Deploy/.env.test -f Deploy/docker-compose.yml -f Deploy/docker-compose.test.yml pull
-docker compose --env-file Deploy/.env.test -f Deploy/docker-compose.yml -f Deploy/docker-compose.test.yml up -d
+cd Deploy
+docker compose pull
+docker compose up -d
+cd ..
 npm run check:host-runtime -- --report-file .tmp/host-runtime-report.md
 npm run collect:m14-host-record
 ```

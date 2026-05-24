@@ -552,24 +552,25 @@ internal static partial class InitialDataSeeder
     {
         var orderEntity = db.EntityMaintenance.GetEntityInfo<Order>();
         var productEntity = db.EntityMaintenance.GetEntityInfo<Product>();
-        var orderTable = orderEntity.DbTableName;
-        var productTable = productEntity.DbTableName;
+        var orderTable = ResolveExistingTableName(db, orderEntity.DbTableName);
+        var productTable = ResolveExistingTableName(db, productEntity.DbTableName);
 
-        if (!db.DbMaintenance.IsAnyTable(orderTable, false) || !db.DbMaintenance.IsAnyTable(productTable, false))
+        if (string.IsNullOrWhiteSpace(orderTable) || string.IsNullOrWhiteSpace(productTable))
         {
+            Console.WriteLine("[Radish.DbMigrate] 商城订单或商品表尚不存在，跳过历史订单快照回填。");
             return;
         }
 
-        var orderStockTypeColumn = GetColumnName(orderEntity, nameof(Order.StockType));
-        if (string.IsNullOrWhiteSpace(orderStockTypeColumn) || !db.DbMaintenance.IsAnyColumn(orderTable, orderStockTypeColumn, false))
+        var orderStockTypeColumn = ResolveExistingColumnName(db, orderTable, GetColumnName(orderEntity, nameof(Order.StockType)));
+        if (string.IsNullOrWhiteSpace(orderStockTypeColumn))
         {
             Console.WriteLine("[Radish.DbMigrate] ShopOrder.StockType 列尚不存在，跳过历史订单快照回填。");
             return;
         }
 
-        var orderProductIdColumn = GetColumnName(orderEntity, nameof(Order.ProductId));
-        var productIdColumn = GetColumnName(productEntity, nameof(Product.Id));
-        var productStockTypeColumn = GetColumnName(productEntity, nameof(Product.StockType));
+        var orderProductIdColumn = ResolveExistingColumnName(db, orderTable, GetColumnName(orderEntity, nameof(Order.ProductId)));
+        var productIdColumn = ResolveExistingColumnName(db, productTable, GetColumnName(productEntity, nameof(Product.Id)));
+        var productStockTypeColumn = ResolveExistingColumnName(db, productTable, GetColumnName(productEntity, nameof(Product.StockType)));
 
         if (string.IsNullOrWhiteSpace(orderProductIdColumn) ||
             string.IsNullOrWhiteSpace(productIdColumn) ||
@@ -626,6 +627,55 @@ internal static partial class InitialDataSeeder
         return entityInfo.Columns
             .FirstOrDefault(column => string.Equals(column.PropertyName, propertyName, StringComparison.Ordinal))
             ?.DbColumnName;
+    }
+
+    private static string? ResolveExistingTableName(ISqlSugarClient db, string? expectedTableName)
+    {
+        if (string.IsNullOrWhiteSpace(expectedTableName))
+        {
+            return null;
+        }
+
+        if (db.CurrentConnectionConfig.DbType == SqlSugar.DbType.PostgreSQL)
+        {
+            return db.Ado.GetString("""
+                SELECT table_name
+                FROM information_schema.tables
+                WHERE table_schema = current_schema()
+                  AND lower(table_name) = lower(@tableName)
+                LIMIT 1
+                """, new SugarParameter("@tableName", expectedTableName));
+        }
+
+        return db.DbMaintenance.IsAnyTable(expectedTableName, false)
+            ? expectedTableName
+            : null;
+    }
+
+    private static string? ResolveExistingColumnName(ISqlSugarClient db, string tableName, string? expectedColumnName)
+    {
+        if (string.IsNullOrWhiteSpace(expectedColumnName))
+        {
+            return null;
+        }
+
+        if (db.CurrentConnectionConfig.DbType == SqlSugar.DbType.PostgreSQL)
+        {
+            return db.Ado.GetString("""
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = current_schema()
+                  AND lower(table_name) = lower(@tableName)
+                  AND lower(column_name) = lower(@columnName)
+                LIMIT 1
+                """,
+                new SugarParameter("@tableName", tableName),
+                new SugarParameter("@columnName", expectedColumnName));
+        }
+
+        return db.DbMaintenance.IsAnyColumn(tableName, expectedColumnName, false)
+            ? expectedColumnName
+            : null;
     }
 
     /// <summary>补齐商城默认图片附件及商品/分类关联</summary>

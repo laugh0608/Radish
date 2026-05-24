@@ -693,7 +693,7 @@ public class ExperienceServiceTest
     public async Task FreezeExperienceAsync_Should_Record_Governance_Action()
     {
         const long userId = 51002;
-        var frozenUntil = new DateTime(2026, 5, 20, 12, 0, 0);
+        var frozenUntil = DateTime.Now.AddDays(7);
         UserExperienceGovernanceAction? capturedAction = null;
 
         var userExpRepository = new Mock<IBaseRepository<UserExperience>>(MockBehavior.Strict);

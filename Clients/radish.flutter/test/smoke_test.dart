@@ -350,6 +350,56 @@ void main() {
     expect(find.text('Native discover'), findsOneWidget);
   });
 
+  testWidgets(
+      'discover leaderboard shortcut returns to discover on Android back',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final lifecycleGateway = _RecordingAppLifecycleGateway();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _SeededDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _FakeForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+        appLifecycleGateway: lifecycleGateway,
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('打开榜单').first,
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.tap(find.text('打开榜单').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('榜单类型：经验榜'), findsOneWidget);
+    expect(find.text('当前暂无可展示的经验榜排名。'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(lifecycleGateway.moveTaskToBackCallCount, 0);
+    expect(find.text('继续阅读'), findsOneWidget);
+    expect(find.text('Native discover'), findsOneWidget);
+  });
+
   testWidgets('recent public profile target survives shell rebuild',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
@@ -2231,6 +2281,7 @@ class _FakeForumRepository implements ForumRepository {
   }) async {
     return ForumPostDetail(
       id: postId,
+      publicId: postId,
       title: 'Post $postId',
       summary: 'Summary for $postId',
       content: '# Post $postId\n\nBody content',
@@ -2351,6 +2402,7 @@ class _SeededForumRepository implements ForumRepository {
   }) async {
     return ForumPostDetail(
       id: postId,
+      publicId: postId,
       title: '论坛详情回流',
       summary: 'Tap through to the public native detail page.',
       content:
@@ -2559,6 +2611,7 @@ class _SeededBigIdForumRepository implements ForumRepository {
   }) async {
     return ForumPostDetail(
       id: postId,
+      publicId: postId,
       title: 'Native discover wiring plan',
       summary: 'Connect real summaries without expanding into details.',
       content: '# Big id detail\n\nPreserve string ids through native handoff.',

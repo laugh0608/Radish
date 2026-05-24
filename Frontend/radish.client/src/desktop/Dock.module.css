@@ -127,10 +127,14 @@
   line-height: 1.2;
 }
 
-.userId {
+.userNickname {
   font-size: 11px;
   color: var(--theme-text-muted);
   line-height: 1.2;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .divider {
@@ -510,7 +514,6 @@
     opacity: 0.6;
   }
 }
-
 
 
 

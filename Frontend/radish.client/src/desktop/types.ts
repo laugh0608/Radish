@@ -75,6 +75,10 @@ export interface UserInfo {
   userId: number;
   /** 用户名 */
   userName: string;
+  /** 登录名 */
+  loginName?: string;
+  /** 昵称 */
+  nickname?: string;
   /** 租户 ID */
   tenantId: number;
   /** 用户角色 */

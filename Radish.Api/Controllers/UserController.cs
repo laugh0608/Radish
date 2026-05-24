@@ -260,6 +260,9 @@ public class UserController : ControllerBase
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(role => role, StringComparer.OrdinalIgnoreCase)
             .ToList();
+        var user = await _userService.QueryFirstAsync(u => u.Id == userId && !u.IsDeleted);
+        var loginName = string.IsNullOrWhiteSpace(user?.VoLoginName) ? userName : user.VoLoginName;
+        var nickname = string.IsNullOrWhiteSpace(user?.VoUserName) ? userName : user.VoUserName;
 
         Log.Information(
             "[GetUserByHttpContext] 开始处理当前用户信息，用户: {UserId}, 角色数: {RoleCount}",
@@ -311,6 +314,8 @@ public class UserController : ControllerBase
         {
             VoUserId = userId,
             VoUserName = userName,
+            VoLoginName = loginName,
+            VoNickname = nickname,
             VoTenantId = tenantId,
             VoAvatarUrl = avatar?.Url,
             VoAvatarThumbnailUrl = avatar?.ThumbnailUrl,

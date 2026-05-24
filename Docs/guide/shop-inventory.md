@@ -4,185 +4,30 @@
 
 ## 5.1 权益数据模型
 
-### 5.1.1 用户权益/背包实体（UserInventory）
+### 5.1.1 当前实现口径（UserBenefit / UserInventory）
+
+当前商城权益与背包已经拆成两个运行时概念：
+
+| 模型 | 职责 | 来源字段口径 |
+|------|------|--------------|
+| `UserBenefit` | 自动生效或持续生效的权益记录，例如会员、徽章、头像框等 | `SourceOrderId`、`SourceProductId` |
+| `UserInventory` | 可持有 / 可使用的消耗品背包记录，例如改名卡、经验卡等 | `SourceProductId` |
+| `UserBenefitVo` | 前端“我的背包”权益卡片使用的展示契约 | `VoSourceOrderId`、`VoSourceProductId` |
+| `UserInventoryVo` | 前端“我的背包”消耗品卡片使用的展示契约 | `VoSourceProductId`，不承载统一订单来源 |
+
+WebOS 商城当前在权益卡片上展示购买来源回访。当 `UserBenefitVo.VoSourceOrderId` 或 `UserBenefitVo.VoSourceProductId` 有效时，前端分别展示“查看订单”和“查看商品”动作，并打开商城订单详情 / 商品详情。
+
+消耗品卡片只展示商品维度的相关回访。当 `UserInventoryVo.VoSourceProductId` 有效时，前端展示“相关商品”动作并打开商城商品详情；它不表示消耗品具备订单级来源追溯。
+
+不要把 `UserBenefitVo` 的订单来源字段误迁移为 `UserInventory` 的统一订单来源契约；消耗品订单级追溯应单独评估契约与前端展示。
+
+### 5.1.2 背包物品模型补充
 
 > **2026-03 对齐说明**：背包道具图标同样已经收口为“附件快照 Id + 运行时 URL 派生”。实体层以 `ItemIconAttachmentId` 为真值，列表 / 详情展示时再解析 `ItemIcon`。
 
-```csharp
-/// <summary>
-/// 用户权益/背包实体
-/// </summary>
-[SugarTable("ShopUserInventory")]
-public class UserInventory : RootEntityTKey<long>, ITenantEntity
-{
-    #region 基础信息
+`UserInventory` 当前用于消耗品持有、数量、状态、使用目标、使用备注、有效期和商品来源记录。它不再作为权益与消耗品的统一大模型说明；权益来源、有效期和装备态以 `UserBenefit` / `UserBenefitVo` 为准。
 
-    /// <summary>
-    /// 用户 ID
-    /// </summary>
-    public long UserId { get; set; }
-
-    /// <summary>
-    /// 物品类型（权益/消耗品）
-    /// </summary>
-    public InventoryItemType ItemType { get; set; }
-
-    /// <summary>
-    /// 权益类型（ItemType = Benefit 时有效）
-    /// </summary>
-    public BenefitType? BenefitType { get; set; }
-
-    /// <summary>
-    /// 消耗品类型（ItemType = Consumable 时有效）
-    /// </summary>
-    public ConsumableType? ConsumableType { get; set; }
-
-    #endregion
-
-    #region 物品信息
-
-    /// <summary>
-    /// 物品名称
-    /// </summary>
-    [SugarColumn(Length = 100)]
-    public string ItemName { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 物品图标附件快照 Id
-    /// </summary>
-    [SugarColumn(IsNullable = true)]
-    public long? ItemIconAttachmentId { get; set; }
-
-    /// <summary>
-    /// 物品描述
-    /// </summary>
-    [SugarColumn(Length = 500, IsNullable = true)]
-    public string? ItemDescription { get; set; }
-
-    /// <summary>
-    /// 效果参数（JSON 格式）
-    /// </summary>
-    [SugarColumn(ColumnDataType = "text", IsNullable = true)]
-    public string? EffectParams { get; set; }
-
-    #endregion
-
-    #region 数量与状态
-
-    /// <summary>
-    /// 数量（消耗品可堆叠）
-    /// </summary>
-    public int Quantity { get; set; } = 1;
-
-    /// <summary>
-    /// 物品状态
-    /// </summary>
-    public InventoryStatus Status { get; set; }
-
-    /// <summary>
-    /// 是否已装备/激活（徽章、头像框等）
-    /// </summary>
-    public bool IsEquipped { get; set; }
-
-    #endregion
-
-    #region 有效期
-
-    /// <summary>
-    /// 有效期类型
-    /// </summary>
-    public DurationType DurationType { get; set; }
-
-    /// <summary>
-    /// 生效时间
-    /// </summary>
-    public DateTime? EffectiveTime { get; set; }
-
-    /// <summary>
-    /// 到期时间
-    /// </summary>
-    public DateTime? ExpiresAt { get; set; }
-
-    /// <summary>
-    /// 使用期限（消耗品需在此时间前使用）
-    /// </summary>
-    public DateTime? UseDeadline { get; set; }
-
-    #endregion
-
-    #region 来源信息
-
-    /// <summary>
-    /// 来源类型
-    /// </summary>
-    public InventorySourceType SourceType { get; set; }
-
-    /// <summary>
-    /// 来源订单 ID
-    /// </summary>
-    public long? SourceOrderId { get; set; }
-
-    /// <summary>
-    /// 来源商品 ID
-    /// </summary>
-    public long? SourceProductId { get; set; }
-
-    /// <summary>
-    /// 来源描述
-    /// </summary>
-    [SugarColumn(Length = 200, IsNullable = true)]
-    public string? SourceDescription { get; set; }
-
-    #endregion
-
-    #region 使用记录
-
-    /// <summary>
-    /// 使用时间（消耗品）
-    /// </summary>
-    public DateTime? UsedTime { get; set; }
-
-    /// <summary>
-    /// 使用目标（如帖子 ID）
-    /// </summary>
-    [SugarColumn(Length = 100, IsNullable = true)]
-    public string? UsedTarget { get; set; }
-
-    /// <summary>
-    /// 使用备注
-    /// </summary>
-    [SugarColumn(Length = 200, IsNullable = true)]
-    public string? UsedRemark { get; set; }
-
-    #endregion
-
-    #region 审计字段
-
-    /// <summary>
-    /// 租户 ID
-    /// </summary>
-    public long TenantId { get; set; }
-
-    /// <summary>
-    /// 创建时间
-    /// </summary>
-    public DateTime CreateTime { get; set; }
-
-    /// <summary>
-    /// 更新时间
-    /// </summary>
-    public DateTime? UpdateTime { get; set; }
-
-    /// <summary>
-    /// 是否删除
-    /// </summary>
-    public bool IsDeleted { get; set; }
-
-    #endregion
-}
-```
-
-### 5.1.2 相关枚举
+### 5.1.3 相关枚举
 
 ```csharp
 /// <summary>
@@ -285,171 +130,22 @@ public class InventoryService : IInventoryService
 
 ### 5.2.2 发放权益类商品
 
-```csharp
-/// <summary>
-/// 发放权益类商品
-/// </summary>
-private async Task<long> GrantBenefitAsync(Order order)
-{
-    if (!order.BenefitType.HasValue)
-        throw new BusinessException("权益类型不能为空");
+权益类商品由 `UserBenefitService.GrantBenefitAsync` 发放：
 
-    var benefitType = order.BenefitType.Value;
-
-    // 计算有效期
-    DateTime? effectiveTime = DateTime.Now;
-    DateTime? expiresAt = null;
-
-    if (order.DurationType == DurationType.Days && order.DurationDays.HasValue)
-    {
-        // 检查是否有同类型的有效权益，叠加时长
-        var existingBenefit = await _inventoryRepository.QueryFirstAsync(
-            i => i.UserId == order.UserId &&
-                 i.ItemType == InventoryItemType.Benefit &&
-                 i.BenefitType == benefitType &&
-                 i.Status == InventoryStatus.Active &&
-                 (i.ExpiresAt == null || i.ExpiresAt > DateTime.Now)
-        );
-
-        if (existingBenefit != null && existingBenefit.ExpiresAt.HasValue)
-        {
-            // 叠加时长：从当前到期时间开始计算
-            effectiveTime = existingBenefit.EffectiveTime;
-            expiresAt = existingBenefit.ExpiresAt.Value.AddDays(order.DurationDays.Value * order.Quantity);
-
-            // 更新现有记录
-            existingBenefit.ExpiresAt = expiresAt;
-            existingBenefit.UpdateTime = DateTime.Now;
-            await _inventoryRepository.UpdateAsync(existingBenefit);
-
-            // 更新订单的权益时间
-            order.BenefitStartTime = effectiveTime;
-            order.BenefitEndTime = expiresAt;
-
-            Log.Information("用户 {UserId} 权益 {BenefitType} 时长叠加，新到期时间：{ExpiresAt}",
-                order.UserId, benefitType, expiresAt);
-
-            return existingBenefit.Id;
-        }
-        else
-        {
-            // 新权益
-            expiresAt = DateTime.Now.AddDays(order.DurationDays.Value * order.Quantity);
-        }
-    }
-    else if (order.DurationType == DurationType.FixedDate)
-    {
-        // 固定到期时间（从商品配置获取）
-        var product = await _productRepository.QueryFirstAsync(p => p.Id == order.ProductId);
-        expiresAt = product?.ExpiresAt;
-    }
-    // DurationType.Permanent 则 expiresAt 为 null（永久）
-
-    // 创建新的权益记录
-    var inventory = new UserInventory
-    {
-        Id = SnowFlakeSingle.Instance.NextId(),
-        UserId = order.UserId,
-        ItemType = InventoryItemType.Benefit,
-        BenefitType = benefitType,
-        ItemName = order.ProductName,
-        ItemIconAttachmentId = order.ProductIconAttachmentId,
-        EffectParams = order.EffectParams,
-        Quantity = 1,
-        Status = InventoryStatus.Active,
-        DurationType = order.DurationType,
-        EffectiveTime = effectiveTime,
-        ExpiresAt = expiresAt,
-        SourceType = InventorySourceType.Purchase,
-        SourceOrderId = order.Id,
-        SourceProductId = order.ProductId,
-        CreateTime = DateTime.Now
-    };
-
-    await _inventoryRepository.AddAsync(inventory);
-
-    // 更新订单的权益时间
-    order.BenefitStartTime = effectiveTime;
-    order.BenefitEndTime = expiresAt;
-
-    Log.Information("用户 {UserId} 获得权益 {BenefitType}，到期时间：{ExpiresAt}",
-        order.UserId, benefitType, expiresAt?.ToString("yyyy-MM-dd HH:mm") ?? "永久");
-
-    return inventory.Id;
-}
-```
+- 先校验商品权益类型、有效期和数量配置。
+- 同类有效权益按当前规则叠加或刷新有效期。
+- 新权益写入 `UserBenefit`，并记录 `SourceOrderId`、`SourceProductId` 与商品图标附件快照。
+- 订单记录保存发放后的 `UserBenefitId`，供订单详情与治理链路追溯。
+- 前端通过 `UserBenefitVo.VoSourceOrderId` / `VoSourceProductId` 展示来源回访入口。
 
 ### 5.2.3 发放消耗品商品
 
-```csharp
-/// <summary>
-/// 发放消耗品商品
-/// </summary>
-private async Task<long> GrantConsumableAsync(Order order)
-{
-    if (!order.ConsumableType.HasValue)
-        throw new BusinessException("消耗品类型不能为空");
+消耗品仍写入 `UserInventory`：
 
-    var consumableType = order.ConsumableType.Value;
-
-    // 计算使用期限
-    DateTime? useDeadline = null;
-    if (order.DurationType == DurationType.Days && order.DurationDays.HasValue)
-    {
-        useDeadline = DateTime.Now.AddDays(order.DurationDays.Value);
-    }
-
-    // 检查是否有同类型的消耗品可以堆叠
-    var existingItem = await _inventoryRepository.QueryFirstAsync(
-        i => i.UserId == order.UserId &&
-             i.ItemType == InventoryItemType.Consumable &&
-             i.ConsumableType == consumableType &&
-             i.Status == InventoryStatus.Active &&
-             i.EffectParams == order.EffectParams && // 参数相同才能堆叠
-             (i.UseDeadline == null || i.UseDeadline > DateTime.Now)
-    );
-
-    if (existingItem != null)
-    {
-        // 堆叠数量
-        existingItem.Quantity += order.Quantity;
-        existingItem.UpdateTime = DateTime.Now;
-        await _inventoryRepository.UpdateAsync(existingItem);
-
-        Log.Information("用户 {UserId} 消耗品 {ConsumableType} 堆叠，当前数量：{Quantity}",
-            order.UserId, consumableType, existingItem.Quantity);
-
-        return existingItem.Id;
-    }
-
-    // 创建新的消耗品记录
-    var inventory = new UserInventory
-    {
-        Id = SnowFlakeSingle.Instance.NextId(),
-        UserId = order.UserId,
-        ItemType = InventoryItemType.Consumable,
-        ConsumableType = consumableType,
-        ItemName = order.ProductName,
-        ItemIconAttachmentId = order.ProductIconAttachmentId,
-        EffectParams = order.EffectParams,
-        Quantity = order.Quantity,
-        Status = InventoryStatus.Active,
-        DurationType = order.DurationType,
-        UseDeadline = useDeadline,
-        SourceType = InventorySourceType.Purchase,
-        SourceOrderId = order.Id,
-        SourceProductId = order.ProductId,
-        CreateTime = DateTime.Now
-    };
-
-    await _inventoryRepository.AddAsync(inventory);
-
-    Log.Information("用户 {UserId} 获得消耗品 {ConsumableType} x{Quantity}",
-        order.UserId, consumableType, order.Quantity);
-
-    return inventory.Id;
-}
-```
+- 同类型、同参数且仍有效的消耗品可以堆叠数量。
+- 新消耗品记录持有名称、图标附件快照、效果参数、数量、使用期限和商品来源。
+- 前端可通过 `UserInventoryVo.VoSourceProductId` 展示“相关商品”回访入口。
+- 当前 `UserInventory` 不承载统一订单来源；如果后续需要消耗品订单级追溯，应单独扩展契约与前端展示。
 
 ---
 

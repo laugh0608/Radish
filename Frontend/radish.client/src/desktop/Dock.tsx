@@ -31,7 +31,7 @@ export const Dock = () => {
   const { t } = useTranslation();
   const { openWindows, openApp, restoreWindow } = useWindowStore();
   const authAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const { userName, userId, avatarUrl, avatarThumbnailUrl, clearUser } = useUserStore();
+  const { userName, userId, loginName, nickname, avatarUrl, avatarThumbnailUrl, clearUser } = useUserStore();
   const { unreadCount: storeUnreadCount, connectionState } = useNotificationStore();
   const { currentTheme, cycleTheme } = useTheme();
   const [time, setTime] = useState(new Date());
@@ -84,6 +84,8 @@ export const Dock = () => {
   const avatarImageSrc = avatarLoadError ? undefined : avatarSrc;
   const avatarSeed = userName?.trim() || 'User';
   const avatarFallbackText = buildAvatarText(avatarSeed);
+  const displayUserName = loginName?.trim() || userName?.trim() || '';
+  const displayNickname = nickname?.trim() || userName?.trim() || '';
   const avatarContainerStyle = {
     cursor: loggedIn ? 'pointer' : 'default',
     ...(loggedIn && !avatarImageSrc ? buildAvatarStyle(avatarSeed) : {})
@@ -268,8 +270,8 @@ export const Dock = () => {
                   style={{ cursor: 'pointer' }}
                   title={t('dock.openProfile')}
                 >
-                  <div className={styles.userName}>{userName}</div>
-                  <div className={styles.userId}>ID: {userId}</div>
+                  <div className={styles.userName}>{displayUserName}</div>
+                  <div className={styles.userNickname}>昵称：{displayNickname}</div>
                 </div>
               )}
             </div>

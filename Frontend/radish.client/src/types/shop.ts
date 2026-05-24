@@ -145,7 +145,8 @@ export interface UserBenefit {
   voBenefitValue?: string | null;
   voBenefitName?: string | null;
   voBenefitIcon?: string | null;
-  voSourceId: LongId;
+  voSourceOrderId?: LongId | null;
+  voSourceProductId?: LongId | null;
   voSourceType: string;
   voSourceTypeDisplay?: string;
   voDurationType: string;
@@ -169,6 +170,7 @@ export interface UserInventoryItem {
   voItemName?: string | null;
   voItemIcon?: string | null;
   voQuantity: number;
+  voSourceProductId?: LongId | null;
   voCreateTime?: string;
 }
 

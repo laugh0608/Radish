@@ -1,11 +1,40 @@
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --console-font-sans: var(
+    --theme-font-sans,
+    system-ui,
+    Avenir,
+    Helvetica,
+    Arial,
+    sans-serif
+  );
+  --console-bg-app: var(--theme-bg-app, #f5f5f5);
+  --console-bg-surface: var(--theme-bg-surface, #ffffff);
+  --console-bg-muted: var(--theme-bg-muted, #fafafa);
+  --console-text-primary: var(--theme-text-primary, #262626);
+  --console-text-secondary: var(--theme-text-secondary, #8c8c8c);
+  --console-text-on-dark: #ffffff;
+  --console-border-subtle: var(--theme-border-soft, #f0f0f0);
+  --console-brand-primary: var(--theme-brand-primary, #ff6b35);
+  --console-info: var(--theme-state-info, #1890ff);
+  --console-warning-text: var(--theme-accent-earth, #8c6d1f);
+  --console-warning-border: color-mix(
+    in srgb,
+    var(--theme-state-warning, #faad14) 45%,
+    #ffffff 55%
+  );
+  --console-warning-bg: color-mix(
+    in srgb,
+    var(--theme-state-warning, #faad14) 10%,
+    #ffffff 90%
+  );
+  --console-shadow-soft: var(--theme-shadow-soft, 0 1px 4px rgba(0, 0, 0, 0.08));
+  --console-shadow-card: var(--theme-shadow-soft, 0 8px 24px rgba(15, 23, 42, 0.04));
+  --console-radius-panel: 12px;
+  --console-radius-control: 8px;
+
+  font-family: var(--console-font-sans);
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -13,54 +42,20 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  color: var(--console-text-primary);
+  background: var(--console-bg-app);
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+#root {
+  min-height: 100vh;
 }

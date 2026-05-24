@@ -78,14 +78,16 @@
 3. 先执行静态展开确认：
 
 ```bash
-docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml config
+cd Deploy
+docker compose config
 ```
 
 4. 再执行：
 
 ```bash
-docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml pull
-docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml up -d
+cd Deploy
+docker compose pull
+docker compose up -d
 ```
 
 5. 立即按 `M14` 顺序补最小复核与记录

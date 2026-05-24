@@ -59,7 +59,7 @@ Radish.Gateway (http://gateway:5000，容器内仅提供 HTTP)
 | 场景 | Gateway 公开入口 | Gateway 监听 | 说明 |
 |------|------------------|--------------|------|
 | **开发运行** | `https://localhost:5000` | `https://localhost:5000`，可选 `http://localhost:5001` 重定向 | IDE / `dotnet run` 默认口径 |
-| **测试部署** | `https://IP:port` 或测试域名 | `https://+:5000` | Gateway 容器首次启动可自动生成并复用测试 TLS 证书 |
+| **测试部署** | 测试域名的 HTTPS 入口 | `http://+:5000` | 与生产同构，TLS 由外部 `Nginx / Traefik / Caddy` 终止 |
 | **生产部署** | `https://radish.example.com` | `http://+:5000` | TLS 由外部 `Nginx / Traefik / Caddy` 终止，Gateway 容器内仅 HTTP |
 
 补充约束：
@@ -274,15 +274,14 @@ Gateway 当前已经收束为开发、测试、生产三种明确形态：
 
 #### 测试部署
 
-- 使用 `Deploy/docker-compose.yml + Deploy/docker-compose.test.yml`。
-- 入口通常写成 `https://IP:port` 或测试域名，对应变量见 `Deploy/.env.test.example`。
-- Gateway 容器内部直接监听 `https://+:5000`。
-- 若 `RADISH_GATEWAY_CERT_AUTO_GENERATE=true` 且目标 `.pfx` 不存在，容器启动前会自动生成并复用测试 TLS 证书。
-- 该证书通常为自签名证书，浏览器出现证书告警属于预期行为。
+- 使用 `Deploy/docker-compose.yaml`。
+- 入口通常写成测试域名的 HTTPS 地址，对应变量见 `Deploy/.env.example`。
+- Gateway 容器内部仅监听 `http://+:5000`，并通过 `GatewayRuntime__EnableHttpsRedirection=false` 避免在反代链路里错误重定向。
+- 外部 `Nginx / Traefik / Caddy` 提供测试域名的 HTTPS 入口；测试部署不再由 Gateway 容器直接终止 TLS。
 
 #### 生产部署
 
-- 使用 `Deploy/docker-compose.yml + Deploy/docker-compose.prod.yml`。
+- 使用 `Deploy/docker-compose.yaml`。
 - 外部 `Nginx / Traefik / Caddy` 提供真实域名的 HTTPS 入口。
 - Gateway 容器内部仅监听 `http://+:5000`，并通过 `GatewayRuntime__EnableHttpsRedirection=false` 避免在反代链路里错误重定向。
 - `RADISH_PUBLIC_URL` 必须与真实外部访问域名完全一致，否则 OIDC 回调、CORS 与门户跳转都会漂移。
@@ -293,9 +292,7 @@ Gateway 当前已经收束为开发、测试、生产三种明确形态：
 |------|----------|----------|------|
 | `RADISH_PUBLIC_URL` | 必填 | 必填 | 系统公开入口，Gateway / Frontend / OIDC 统一围绕它对齐 |
 | `GatewayService__PublicUrl` | 由 Compose 从 `RADISH_PUBLIC_URL` 注入 | 由 Compose 从 `RADISH_PUBLIC_URL` 注入 | Gateway 门户显示与公开入口基准 |
-| `GatewayRuntime__EnableHttpsRedirection` | `true` | `false` | 测试部署由 Gateway 直接提供 HTTPS；生产部署由外部反代终止 TLS |
-| `Kestrel__Certificates__Default__Path` / `Password` | 需要 | 不需要 | 仅测试部署下 Gateway 容器内 HTTPS 使用 |
-| `RADISH_GATEWAY_CERT_AUTO_GENERATE` | 可选，默认 `true` | 不使用 | 控制测试证书首次自动生成 |
+| `GatewayRuntime__EnableHttpsRedirection` | `false` | `false` | 测试与生产都由外部反代终止 TLS，Gateway 容器内只监听 HTTP |
 | `DownstreamServices__*` / `ReverseProxy__Clusters__*` | 按需覆盖 | 按需覆盖 | 内部服务地址变更时再覆盖，默认 Compose 已给出最小值 |
 
 如果你要看完整部署组合、证书持久化策略与 Nginx 示例，直接参考 [部署与容器指南](/deployment/guide)；如果你要看 Auth OIDC 证书策略，参考 [认证与授权指南](/guide/authentication)。
@@ -655,42 +652,26 @@ curl https://localhost:5000/healthz | jq
 
 ### Docker 与 Compose
 
-当前仓库的 Gateway 镜像入口已经与测试/生产部署策略绑定：
+当前仓库的 Gateway 镜像入口已经与本地容器验证、测试和生产部署策略绑定：
 
 - `Radish.Gateway/Dockerfile` 会在运行时镜像中安装 `openssl`
 - 镜像会复制 `Scripts/docker/gateway-entrypoint.sh`
-- 最终入口不是直接 `dotnet Radish.Gateway.dll`，而是先执行入口脚本，再按环境决定是否生成 / 复用测试 TLS 证书
+- 最终入口不是直接 `dotnet Radish.Gateway.dll`，而是先执行入口脚本；本地容器验证可继续生成 / 复用开发 TLS 证书，测试与生产默认走容器内 HTTP
 
 只有在本地容器验证或手动验证镜像入口时，才需要显式构建本地镜像，例如：
 
 ```bash
-docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.local.yml build gateway
+docker compose -f Deploy/docker-compose.local.yaml build gateway
 ```
 
 测试部署与生产部署默认应直接拉取 `GHCR` 中已构建好的镜像，不再推荐在部署机单独 `docker build` 或 `docker run` Gateway 容器，而是直接使用仓库现成编排：
 
 ```bash
-# 测试部署
-docker compose --env-file Deploy/.env.test \
-  -f Deploy/docker-compose.yml \
-  -f Deploy/docker-compose.test.yml config
-docker compose --env-file Deploy/.env.test \
-  -f Deploy/docker-compose.yml \
-  -f Deploy/docker-compose.test.yml pull
-docker compose --env-file Deploy/.env.test \
-  -f Deploy/docker-compose.yml \
-  -f Deploy/docker-compose.test.yml up -d
-
-# 生产部署
-docker compose --env-file Deploy/.env.prod \
-  -f Deploy/docker-compose.yml \
-  -f Deploy/docker-compose.prod.yml config
-docker compose --env-file Deploy/.env.prod \
-  -f Deploy/docker-compose.yml \
-  -f Deploy/docker-compose.prod.yml pull
-docker compose --env-file Deploy/.env.prod \
-  -f Deploy/docker-compose.yml \
-  -f Deploy/docker-compose.prod.yml up -d
+# 测试 / 生产部署
+cd Deploy
+docker compose config
+docker compose pull
+docker compose up -d
 ```
 
 这样可以保证：

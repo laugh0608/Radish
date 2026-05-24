@@ -250,3 +250,4 @@ export const useWindowStore = create<WindowStore>((set) => ({
 - 窗口持久化键默认按 `appId` 生成；若窗口携带业务定位参数，则按 `appId + 稳定业务参数` 生成独立记忆位。
 - `__navigationKey` 等纯导航刷新参数不会参与持久化键计算，避免通知跳转或内容刷新污染同类窗口布局。
 - 历史位置在当前分辨率下越界时，会先做边界压缩后再恢复，确保窗口始终落在可见区域内。
+- WebOS 未来可以用 `/desktop#...`、query 或本地存储增强窗口恢复、前进后退和应用内定位，但这些状态只表达工作台上下文；公开内容的分享、canonical、sitemap 和 Gateway head snapshot 仍以 `/forum/post/:id`、`/docs/:slug`、`/shop/product/:id` 等真实路径为准。

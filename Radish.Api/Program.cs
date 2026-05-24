@@ -14,6 +14,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Radish.Common;
 using Radish.Common.CoreTool;
+using Radish.Common.DbTool;
 using Radish.Common.HttpContextTool;
 using Radish.Common.OptionTool;
 using Radish.Common.HealthTool;
@@ -44,6 +45,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Options;
 using Hangfire;
+using Hangfire.PostgreSql;
 using Hangfire.Storage.SQLite;
 using System.Security.Cryptography.X509Certificates;
 using Radish.Common.DocumentTool;
@@ -309,24 +311,21 @@ builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.AddScoped(typeof(IBaseService<,>), typeof(BaseService<,>));
 
 // 注册 OpenIddict DbContext（用于客户端管理 API，与 Auth 项目共享数据库）
-var openIddictConnectionString = builder.Configuration.GetConnectionString("OpenIddict");
-if (string.IsNullOrEmpty(openIddictConnectionString))
-{
-    // 查找解决方案根目录（包含 Radish.slnx 的目录）
-    var currentDir = new DirectoryInfo(AppContext.BaseDirectory);
-    while (currentDir != null && !File.Exists(Path.Combine(currentDir.FullName, "Radish.slnx")))
-    {
-        currentDir = currentDir.Parent;
-    }
-    var solutionRoot = currentDir?.FullName ?? AppContext.BaseDirectory;
-    var dbDirectory = Path.Combine(solutionRoot, "DataBases");
-    Directory.CreateDirectory(dbDirectory);
-    var dbPath = Path.Combine(dbDirectory, "Radish.OpenIddict.db");
-    openIddictConnectionString = $"Data Source={dbPath}";
-}
+var openIddictDatabase = RuntimeDatabaseConfigResolver.Resolve(
+    builder.Configuration,
+    "OpenIddict:Database",
+    builder.Configuration.GetConnectionString("OpenIddict"),
+    "Radish.OpenIddict.db");
 builder.Services.AddDbContext<Radish.Auth.OpenIddict.AuthOpenIddictDbContext>(options =>
 {
-    options.UseSqlite(openIddictConnectionString);
+    if (openIddictDatabase.DbType == DataBaseType.PostgreSql)
+    {
+        options.UseNpgsql(openIddictDatabase.ConnectionString);
+    }
+    else
+    {
+        options.UseSqlite(openIddictDatabase.ConnectionString);
+    }
 });
 
 // 注册 OpenIddict Core（仅用于客户端管理，不启用 Server）
@@ -476,34 +475,27 @@ builder.Services.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>();
 builder.Services.AddScoped<IHttpContextUser, HttpContextUser>();
 
 // 注册 Hangfire 服务
-var hangfireConnectionString = builder.Configuration["Hangfire:ConnectionString"] ?? "Data Source=DataBases/Radish.Hangfire.db";
-// 提取数据库文件路径（Hangfire.Storage.SQLite 需要文件路径,不是连接字符串）
-var hangfireDbPath = hangfireConnectionString.Replace("Data Source=", "").Trim();
-
-// 如果是相对路径,转换为绝对路径
-if (!Path.IsPathRooted(hangfireDbPath))
-{
-    // 查找解决方案根目录
-    var currentDir = new DirectoryInfo(AppContext.BaseDirectory);
-    while (currentDir != null && !File.Exists(Path.Combine(currentDir.FullName, "Radish.slnx")))
-    {
-        currentDir = currentDir.Parent;
-    }
-    var solutionRoot = currentDir?.FullName ?? AppContext.BaseDirectory;
-    hangfireDbPath = Path.Combine(solutionRoot, hangfireDbPath);
-}
-
-// 确保数据库目录存在
-var hangfireDbDirectory = Path.GetDirectoryName(hangfireDbPath);
-if (!string.IsNullOrEmpty(hangfireDbDirectory) && !Directory.Exists(hangfireDbDirectory))
-{
-    Directory.CreateDirectory(hangfireDbDirectory);
-}
+var hangfireDatabase = RuntimeDatabaseConfigResolver.Resolve(
+    builder.Configuration,
+    "Hangfire",
+    null,
+    "Radish.Hangfire.db");
 
 builder.Services.AddHangfire(config =>
 {
-    // Hangfire.Storage.SQLite 使用文件路径,不是连接字符串
-    config.UseSQLiteStorage(hangfireDbPath);
+    if (hangfireDatabase.DbType == DataBaseType.PostgreSql)
+    {
+        config.UsePostgreSqlStorage(options =>
+            options.UseNpgsqlConnection(hangfireDatabase.ConnectionString));
+    }
+    else
+    {
+        var hangfireDbPath = RuntimeDatabaseConfigResolver.ResolveSqliteFilePath(
+            hangfireDatabase.ConnectionString,
+            "Radish.Hangfire.db");
+        config.UseSQLiteStorage(hangfireDbPath);
+    }
+
     config.SetDataCompatibilityLevel(CompatibilityLevel.Version_180);
     config.UseSimpleAssemblyNameTypeSerializer();
     config.UseRecommendedSerializerSettings();

@@ -261,13 +261,13 @@ touch Radish.Api/appsettings.Local.json
 
 **Radish.Gateway（默认配置 + 环境变量）**
 
-Gateway 通常直接使用 `appsettings.json`；若本机需要临时覆盖，也应使用未提交的 `appsettings.Local.json`。测试部署与生产部署优先通过 `Deploy/.env.test`、`Deploy/.env.prod` 及对应的 Compose 覆盖文件注入环境变量：
+Gateway 通常直接使用 `appsettings.json`；若本机需要临时覆盖，也应使用未提交的 `appsettings.Local.json`。测试部署与生产部署优先进入 `Deploy/` 目录，通过 `.env` 与默认 `docker-compose.yaml` 注入环境变量：
 
 ```bash
 # Docker Compose 示例
 services:
   radish-gateway:
-    image: ${RADISH_GATEWAY_IMAGE}
+    image: ${RADISH_IMAGE_REGISTRY}/radish-gateway:${RADISH_IMAGE_TAG:-${RADISH_IMAGE_TRACK:-test}-latest}
     environment:
       - RADISH_PUBLIC_URL=https://your-domain.com
       - GatewayService__PublicUrl=https://your-domain.com
@@ -276,7 +276,7 @@ services:
       - FrontendService__BaseUrl=https://your-domain.com
 ```
 
-其中 `RADISH_GATEWAY_IMAGE` 应由 `Deploy/.env.test` 或 `Deploy/.env.prod` 提供，指向 `GHCR` 中已构建好的镜像；测试 / 生产部署不再建议在部署机本地构建镜像。
+其中 `RADISH_IMAGE_REGISTRY / RADISH_IMAGE_TRACK` 应由 `Deploy/.env` 提供，默认按 `test-latest` / `release-latest` 拉取 `GHCR` 中已构建好的镜像；需要完全可复现部署时再启用固定 `RADISH_IMAGE_TAG`。测试 / 生产部署不再建议在部署机本地构建镜像。
 
 部署态下，`Api / Auth / Gateway` 三个宿主都会优先根据 `RADISH_PUBLIC_URL` 推导统一的 CORS 允许来源；只有未提供该变量时，才回退到各自 `appsettings.json` 中的开发默认值。
 
@@ -286,7 +286,8 @@ services:
 - 测试部署与生产部署下，`Radish.Api` 需要额外读取与 `Radish.Auth` 共享的 signing 证书路径和密码：
   - `OpenIddict__Encryption__SigningCertificatePath`
   - `OpenIddict__Encryption__SigningCertificatePassword`
-- `Radish.Auth` 登录页中的测试账号提示由 `AuthUi__ShowTestAccountHint` 控制；测试部署建议为 `true`，生产部署建议为 `false`
+- `Radish.Auth` 登录页中的测试账号提示由 `AuthUi__ShowTestAccountHint` 控制；部署态默认保持 `false`
+- `Seed:DeveloperDefaultsEnabled` 控制 `DbMigrate` 是否创建 `system / admin / test` 开发账号和默认密码；测试 / 生产部署默认保持 `false`，本地容器验证通过 `Deploy/docker-compose.local.yaml` 显式开启
 - 该证书应与 `Auth` 使用的 signing `.pfx` 保持同源，并以只读方式挂载给 `Api`，用于本地 JWT 验签。
 
 详细配置说明请参考 `Radish.Gateway/README.md`
@@ -324,8 +325,11 @@ services:
 - **Radish.Api** 和 **Radish.Auth** 项目使用**相同的业务数据库**（`Radish.db` 和 `Radish.Log.db`）
 - 这两个数据库存储用户、角色、权限、租户等业务数据，需要被两个项目共同访问
 - **OpenIddict 使用独立的数据库**（`Radish.OpenIddict.db`），由 EF Core 管理，存储 OIDC 认证相关数据（客户端、授权码、令牌等）
+- **Hangfire 使用独立的任务存储**（默认 `Radish.Hangfire.db`），由 `Radish.Api` 管理
 - **所有数据库文件统一存放在解决方案根目录的 `DataBases/` 文件夹**
-- `MainDb` 与 `Databases` 默认配置位于根目录 `appsettings.Shared.json`
+- `MainDb`、`Databases` 与 `OpenIddict:Database` 默认配置位于根目录 `appsettings.Shared.json`
+
+`Databases`、`OpenIddict:Database` 与 `Hangfire` 都支持按配置切换 `DbType`：本地默认 `2=SQLite`，部署态通过环境变量覆盖为 `4=PostgreSQL`。OpenIddict 的配置由 `Radish.Api` 与 `Radish.Auth` 共享；Hangfire 配置只由 `Radish.Api` 使用。
 
 ### 2.1 文件存储配置（FileStorage）
 
@@ -404,6 +408,7 @@ Hangfire 用于执行后台定时任务（如文件清理），配置位于 `Han
 ```json
 {
   "Hangfire": {
+    "DbType": 2,
     "ConnectionString": "Data Source=DataBases/Radish.Hangfire.db",
     "Dashboard": {
       "Enable": true,
@@ -437,10 +442,34 @@ Hangfire 用于执行后台定时任务（如文件清理），配置位于 `Han
 ```
 
 **说明**：
+- `DbType`：任务存储 provider，`2=SQLite`，`4=PostgreSQL`
+- `ConnectionString`：SQLite 时可填写数据库文件名或 `Data Source=...`；PostgreSQL 时填写标准 Npgsql 连接串
 - `Dashboard.RoutePrefix`：Dashboard 访问路径
 - `FileCleanup.*.Schedule`：Cron 表达式
 - `FileCleanup.*.Retention*`：保留周期（天/小时）
 - 详细说明见：`/guide/hangfire-scheduled-jobs`
+
+### 2.3 OpenIddict 存储配置
+
+OpenIddict 使用 EF Core 存储，`Radish.Auth` 负责 OIDC Server 与种子数据，`Radish.Api` 复用同一数据库做客户端管理 API。
+
+```json
+{
+  "OpenIddict": {
+    "Database": {
+      "DbType": 2,
+      "ConnectionString": "Radish.OpenIddict.db"
+    }
+  }
+}
+```
+
+**说明**：
+- `DbType`：OpenIddict EF Core provider，`2=SQLite`，`4=PostgreSQL`
+- `ConnectionString`：SQLite 时默认解析到解决方案根目录 `DataBases/`；PostgreSQL 时填写独立的 OpenIddict 数据库连接串
+- 旧的 `ConnectionStrings:OpenIddict` 仍作为兼容入口；新配置应优先使用 `OpenIddict:Database:*`
+
+### 2.4 数据库 provider 示例
 
 #### SQLite（默认，适合本地开发）
 
@@ -583,8 +612,29 @@ Hangfire 用于执行后台定时任务（如文件清理），配置位于 `Han
 - `POST /api/v1/User/UpdateMyTimePreference`：登录用户更新个人时区偏好（支持 IANA/Windows 时区 ID，后端会做规范化）。
 
 实现约束：
-- 数据库存储统一使用 UTC（Repository 层会规范化 `DateTime` 落库值）。
+- 数据库存储统一使用 UTC；PostgreSQL 写入前会通过 SqlSugar AOP 参数层规范化 `DateTime` / `DateTimeOffset`，避免 `timestamp with time zone` 拒绝本地时间参数。
 - 前端按“用户偏好时区 > 浏览器时区 > 系统默认时区”回退策略进行展示。
+
+### 3.2 Seed 与首次管理员初始化
+
+`Seed:DeveloperDefaultsEnabled` 是部署安全相关开关：
+
+```json
+{
+  "Seed": {
+    "DeveloperDefaultsEnabled": false
+  }
+}
+```
+
+规则：
+
+- 默认值为 `false`，此时 `Radish.DbMigrate apply / seed` 只创建角色、权限、Console 授权、论坛 / 商城 / 等级等系统基础数据，不创建 `system / admin / test` 开发账号、默认密码、默认头像或用户角色绑定。
+- 测试 / 生产部署使用 `Deploy/docker-compose.yaml`，`.env.example` 中 `RADISH_SEED_DEVELOPER_DEFAULTS_ENABLED=false`，应保持安全默认值。
+- 本地容器验证使用 `Deploy/docker-compose.local.yaml`，显式设置 `Seed__DeveloperDefaultsEnabled=true`，保留开发演示账号的开箱体验。
+- OpenIddict 官方客户端种子不受该开关影响；`radish-client / radish-console / radish-scalar` 与 `radish-api scope` 仍由 `Radish.Auth` 启动时维护，并跟随 `RADISH_PUBLIC_URL` / Issuer 更新回调地址。
+
+新测试 / 生产环境首次部署后，访问 `RADISH_PUBLIC_URL` 根入口；当系统检测到还没有 `System / Admin` 管理员时，前端会进入首个管理员初始化页。初始化页要求部署人员输入账号和强密码，后端会做服务端校验和并发保护。已有管理员后，初始化接口不可再创建账号。
 
 ### 4. AutoMapper 许可证
 
@@ -656,10 +706,11 @@ Gateway 门户页面需要配置服务的公开访问地址，用于页面展示
 
 #### 生产环境配置
 
-Gateway 在生产部署中推荐直接使用 `Deploy/.env.prod.example` 与 `Deploy/docker-compose.prod.yml`，而不是额外维护单独的 Gateway 生产示例 JSON。典型变量如下：
+Gateway 在测试 / 生产部署中推荐复制 `Deploy/.env.example` 为 `Deploy/.env`，并在 `Deploy/` 目录直接执行 `docker compose`，而不是额外维护单独的 Gateway 生产示例 JSON。典型变量如下：
 
 ```bash
 RADISH_PUBLIC_URL=https://radish.com
+RADISH_SEED_DEVELOPER_DEFAULTS_ENABLED=false
 GatewayService__PublicUrl=https://radish.com
 FrontendService__BaseUrl=https://radish.com
 DownstreamServices__ApiService__BaseUrl=http://api:5100
@@ -672,7 +723,7 @@ GatewayRuntime__EnableHttpsRedirection=false
 - 公开地址（`GatewayService__PublicUrl` / `RADISH_PUBLIC_URL`）使用真实外部域名
 - 不要再通过 `Cors__AllowedOrigins__0` 之类的单索引环境变量去覆盖部署态 CORS；.NET 会按索引合并数组，容易把旧的 `localhost` 端口残留进最终白名单
 - 外部 `Nginx` 反向代理会将公网 HTTPS 请求转发到容器内 HTTP 端口
-- 如果是测试部署，则改用 `Deploy/.env.test.example` 与 `Deploy/docker-compose.test.yml`，此时 Gateway 容器内直接提供 HTTPS
+- 测试与生产使用同一套部署态 Compose，差异主要是 `RADISH_IMAGE_TRACK` / 可选固定 `RADISH_IMAGE_TAG` 与 `RADISH_PUBLIC_URL`
 - 详细的反向代理配置请参考 [部署指南](/deployment/guide)
 
 ## 配置示例
@@ -730,6 +781,10 @@ environment:
   - Snowflake__WorkId=2
   - Databases__0__ConnectionString=Host=postgres-prod;Port=5432;Database=radish;Username=radish_user;Password=${DB_PASSWORD}
   - Databases__1__ConnectionString=Host=postgres-prod;Port=5432;Database=radish_log;Username=radish_user;Password=${DB_PASSWORD}
+  - OpenIddict__Database__DbType=4
+  - OpenIddict__Database__ConnectionString=Host=postgres-prod;Port=5432;Database=radish_openiddict;Username=radish_user;Password=${DB_PASSWORD}
+  - Hangfire__DbType=4
+  - Hangfire__ConnectionString=Host=postgres-prod;Port=5432;Database=radish_hangfire;Username=radish_user;Password=${DB_PASSWORD}
   - Redis__Enable=true
   - Redis__ConnectionString=redis-prod:6379,password=${REDIS_PASSWORD},ssl=true
   - AutoMapper__LicenseKey=${AUTOMAPPER_LICENSE}
@@ -918,7 +973,7 @@ services:
       - Redis__Enable=true
       - Redis__ConnectionString=${REDIS_URL}
     env_file:
-      - Deploy/.env.prod  # 部署态敏感数据从 env-file 加载（不提交到 Git）
+      - Deploy/.env  # 部署态敏感数据由 Compose 自动加载（不提交到 Git）
 ```
 
 ### Q4: 团队成员如何快速配置？

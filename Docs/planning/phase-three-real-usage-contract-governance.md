@@ -1,10 +1,10 @@
 # 第三开发阶段：真实使用增长与长期契约治理
 
-> 状态：`P3-5-B 运行时结构化数据基线` 已完成，下一步进入动态 sitemap 方案评审
+> 状态：`P3-8-A` 多端功能缺口与 UI 设计入口审计；`P3-6 / P3-7` 转入维护线
 >
 > 启动日期：2026-05-13（Asia/Shanghai）
 >
-> 本页承载第三开发阶段的目标定义、边界、首批任务候选、`P3-0` 审计口径和 `P3-1 / P3-2` 首批结论。快速入口仍以 [当前进行中](/planning/current) 为准；第二阶段事实以 [第二阶段收口评审](/planning/phase-two-closure-review) 与 [已完成摘要](/planning/archive) 为准。
+> 本页承载第三开发阶段的目标定义、边界和阶段记录。后续多端功能与 UI 设计治理方向见 [P3-8 多端功能补全与 UI 设计治理](/planning/p3-8-multiplatform-feature-ui-governance)。快速入口仍以 [当前进行中](/planning/current) 为准；第二阶段事实以 [第二阶段收口评审](/planning/phase-two-closure-review) 与 [已完成摘要](/planning/archive) 为准。
 
 ## 阶段判断
 
@@ -22,7 +22,13 @@
 
 `P3-0` 已完成第三阶段定义、公开内容增长基础审计和第一批任务排序；`P3-1` 已完成公开内容 SEO 与分享基线。`P3-2` 已完成 `P3-2-A` 外部 ID 契约审计和 `P3-2-B` `Post.PublicId` 首批实现，试点对象保持收敛为 `Post`。`P3-3` 已完成 `PublicForumApp.tsx` 公开论坛热区首轮拆分和收工复核。`P3-4` 已完成 forum / docs / shop 留存回流矩阵首轮主动验收和补洞。
 
-当前主线为 `P3-5 公开内容增长后续专题`。`2026-05-17` 已完成 `P3-5-A` 评估和 `P3-5-B` 运行时结构化数据基线：公开 forum detail、docs detail、shop detail 和公开个人页已在前端运行时注入 JSON-LD，并在路由切换 / 组件卸载时清理。下一步进入动态 sitemap 的 Gateway / API 路由或构建生成器方案评审；详情首包 HTML 可见性继续后置为 SSR / SSG / 预渲染专题。
+`P3-5 公开内容增长后续专题` 已于 `2026-05-17` 阶段收尾：`P3-5-A` 评估、`P3-5-B` 运行时结构化数据基线、`P3-5-C` 动态 sitemap 首批实现、`P3-5-D` 详情首包 HTML 可见性方案评审、`P3-5-D1` 公开详情 HTML head 快照注入首批实现和 `P3-5-D2` 部署前 smoke 入口均已完成。最新公开 head smoke 已通过 robots、sitemap、forum / docs / shop 三类详情。动态 sitemap 已采用 API + Gateway 路由，构建期静态生成器仅保留为离线 / 夜间导出备选；详情首包 HTML 可见性首批只覆盖 forum / docs / shop 详情 head 注入，不启动完整 SSR / SSG 或正文预渲染。
+
+`P3-6 真实使用运营观察与反馈分流` 已阶段收口：本地 Gateway 与生产公开域名 `https://radishx.com` 均已通过 public head smoke；后续只从真实部署、真实内容、爬虫抓取、分享预览、用户回流和运行日志中挑选高信号问题，公开内容增长能力转入部署 / 运营维护线。
+
+`P3-7-A / P3-7-B` 已完成 WebOS / PC 工作台复访小闭环和高信号候选筛查，当前未发现新的 `P0/P1`。`P3-7-C` 已完成近期开发任务重评估与首批热区治理：`WikiApp`、`ChatApp`、`ContentModerationService` 与 `ExperienceService` 均已完成首批行为等价拆分。继续硬拆 `ExperienceService` 经验发放主流程的收益下降、风险上升，因此 `P3-7-C3` 作为当前主线阶段收口。
+
+当前主线切换为 `P3-8-A 多端功能缺口与 UI 设计入口审计`。本批放宽“P3-8 只能后置”的约束，但不直接大面积实现；首批先建立多端功能缺口矩阵、UI 端点分组、`.pen` 设计稿治理建议，并选出 `1-2` 个一天级可验证开发任务。
 
 ## `P3-0` 定义与工程整备
 
@@ -583,106 +589,211 @@ npm run check:repo-hygiene:changed
 - 动态 sitemap 仍需单独确认 API + Gateway 路由或构建生成器方案。
 - SSR / SSG / prerender / Gateway HTML rewrite 继续后置，不因本批完成而直接启动。
 
-## 首批候选任务
+## `P3-5-C` 动态 sitemap 方案评审与首批实现
 
-### `P3-1` 公开内容增长基础
+评审完成日期：2026-05-17。
 
-目标：让公开内容从“可直达阅读”推进到“可传播、可索引、可回流”。
+首批实现完成日期：2026-05-17。
 
-候选范围：
+### 现状判断
 
-- sitemap / robots / canonical 口径与生成位置确认。
-- forum / docs / profile / shop 的基础 `title / description / og:*` 输出策略。
-- 分享卡片与公开链接复制口径复核。
-- 公开内容壳层来源返回与外链打开策略复核。
+- 当前 `Frontend/radish.client/public/sitemap.xml` 是静态 seed，只覆盖 `/discover`、forum / docs / shop 公开入口和少量列表页。
+- Gateway 当前通过 YARP 将 `/api/{**catch-all}`、`/uploads/{**catch-all}`、`/_assets/attachments/{**catch-all}` 等路由转到 API，并用最低优先级 `/{**catch-all}` 转前端；动态 sitemap 若对外暴露为顶层 `/sitemap.xml`，必须在 Gateway 中显式声明高于前端 catch-all 的路由。
+- forum 已具备 `Post.PublicId` canonical，docs 已以 `slug` 作为公开详情主路由，shop 仍以 `productId` 作为兼容公开详情路由。三类详情都能由后端根据公开状态筛出可索引 URL。
 
-边界：
+### 路线评估
 
-- 不把公开壳层扩成工作台。
-- 不开放发帖、完整评论提交、购买、订单、背包或治理动作。
-- SSR / SSG 只先做方案判断，不默认立刻改构建架构。
+| 路线 | 做法 | 优点 | 风险 | 结论 |
+| --- | --- | --- | --- | --- |
+| API + Gateway 路由 | API 提供 sitemap index 和分片 XML；Gateway 把顶层 `/sitemap.xml`、`/sitemaps/*.xml` 或等价固定路径代理到 API | 与运行时数据同步；能复用后端状态过滤、PublicId / slug canonical 和缓存；发布后内容变化不依赖重新构建前端 | 需要新增 API 只读查询、缓存和 Gateway 路由优先级；API 异常会影响动态 sitemap | 推荐作为首批实施路线 |
+| 构建期静态生成器 | 前端构建或独立构建任务调用 API / 数据库，写入 `public/sitemap.xml` 或 dist 静态文件 | 运行时最稳，前端静态服务即可返回 XML，不增加请求时数据库压力 | 构建依赖生产数据、凭据和网络；内容发布后容易过期；会把 API / DB 依赖塞进前端构建或 CI，部署耦合较重 | 不作为首批实施路线，仅保留为后续离线 / 夜间导出备选 |
 
-### `P3-2` `PublicId` 最小试点方案
+### 推荐方案
 
-目标：把长期 `InternalId / PublicId / FederationId` 方向从文档原则推进到可执行试点。
+首批采用 **API 生成 XML + Gateway 顶层路由**：
 
-候选范围：
+- API 侧新增只读 sitemap 能力，输出 `application/xml; charset=utf-8`，不走登录态、不暴露内部管理字段。
+- Gateway 侧新增高优先级 sitemap 路由，避免 `/sitemap.xml` 被前端 catch-all 或旧静态文件覆盖；`robots.txt` 继续指向公开域名下 `/sitemap.xml`。
+- 输出形态采用 sitemap index + 分片文件，哪怕首批数据量不大也先固定契约，避免以后超过单文件上限时再改入口。
 
-- 选择 `Post / User / WikiDocument` 中 `1-2` 个核心对象作为试点候选。
-- 定义 `PublicId` 格式、生成时机、唯一索引、DTO 暴露和兼容查询口径。
-- 明确 `LongId` 字符串安全过渡期与 `PublicId` 并行期边界。
+### sitemap 范围
 
-边界：
+首批范围限定为公开、可直达、可稳定 canonical 的 URL：
 
-- 不迁移数据库主键。
-- 不一次性修改所有 API / 前端路由。
-- 不启动 ActivityPub / WebFinger 实现。
+- 静态 seed：继续包含 `/discover`、`/forum`、`/forum/question`、`/forum/poll`、`/forum/lottery`、`/docs`、`/docs/search`、`/leaderboard`、`/shop`、`/shop/products`。
+- forum detail：只包含 `IsPublished && !IsDeleted` 的帖子；URL 优先 `/forum/post/{VoPublicId}`，历史缺失 `PublicId` 时才回退 `/forum/post/{VoId}`。
+- docs detail：只包含 `Status = Published`、`Visibility = Public`、`!IsDeleted` 且 `Slug` 非空的文档；URL 使用 `/docs/{VoSlug}`。
+- shop detail：只包含公开商品列表中可见的商品，至少满足 `IsOnSale && IsEnabled && !IsDeleted`；URL 使用 `/shop/product/{VoId}`。
 
-### `P3-3` 代码热区拆分与维护成本治理
+首批不纳入：
 
-目标：降低继续扩功能时的变更风险。
+- `/u/:id` 公开个人页。当前仍依赖内部 long 用户 ID，且用户隐私 / 展示意愿边界未单独评审。
+- 搜索结果页组合、标签组合分页、评论锚点、订单 / 背包 / Console / Auth / API 文档 / Scalar / Hangfire 等登录态或治理路径。
+- 未发布、草稿、私有、认证可见、软删除、禁用、下架或审核不可见内容。
 
-首批候选热区：
+### 缓存 TTL 与分页上限
 
-- `Frontend/radish.client/src/public/forum/PublicForumApp.tsx`
-- `Frontend/radish.client/src/i18n.ts`
-- `Radish.Service/ExperienceService.cs`
-- `Radish.Service/ContentModerationService.cs`
-- `Clients/radish.flutter/lib/features/forum/presentation/forum_detail_page.dart`
-- `Clients/radish.flutter/lib/features/profile/presentation/profile_page.dart`
+- API 内存缓存或 Redis 缓存 TTL 建议首批为 `30` 分钟；Redis 开启时用 Redis，关闭时用内存缓存，跟随现有 `AddCacheSetup()` 策略。
+- 可对 sitemap index 和各分片分别缓存；缓存 key 应包含公开域名、分片类型、页码和每页数量。
+- 单分片 URL 上限按搜索引擎标准保守控制在 `45,000` 条以内，低于 `50,000` 硬上限；首批默认每个内容类型每页 `5,000` 条，避免一次 XML 过大。
+- 首批总分页上限建议每个内容类型最多 `20` 个分片，即单类型最多约 `100,000` 条 URL；超过上限只输出前 `20` 个分片并记录告警，不在用户请求中无限扫库。
+- 查询顺序按更新时间倒序；同一时间戳下按内部 ID 倒序稳定排序，避免分页游标抖动。
 
-边界：
+### 更新时间字段
 
-- 只做能降低真实复杂度的拆分，不做空壳抽象。
-- 每次拆分必须有对应定向验证。
-- 不在拆分批次里顺手改业务行为，除非是拆分暴露出的明确 bug。
+- forum detail 的 `lastmod` 使用 `VoModifyTime ?? VoPublishTime ?? VoCreateTime`。
+- docs detail 的 `lastmod` 使用 `VoModifyTime ?? VoPublishedAt ?? VoCreateTime`。
+- shop detail 的 `lastmod` 使用商品 `ModifyTime ?? OnSaleTime ?? CreateTime`；若当前 `ProductVo` 不暴露 `VoModifyTime / VoOnSaleTime`，实施时应在 sitemap 专用查询模型中读取实体字段，不为了 sitemap 扩普通前端 Vo。
+- 静态 seed 的 `lastmod` 可使用 sitemap 生成时间或固定部署时间；首批建议使用生成时间，配合 `30` 分钟缓存 TTL。
+- 所有输出统一为 UTC / ISO 8601 日期时间，避免服务器本地时区差异影响 XML。
 
-### `P3-4` 用户留存轻闭环
+### 异常回退
 
-目标：把已有通知、复访、轻互动和公开分享串成自然回流路径。
+- API 生成失败时，首选返回最近一次成功缓存的 XML，并记录错误日志；缓存存在但过期也可短期兜底返回。
+- 没有成功缓存时，`/sitemap.xml` 返回静态 seed sitemap，保证爬虫入口不断；分片请求无缓存时返回空 `urlset` 或 `503` 需在实施前二选一，首批建议返回空 `urlset` 并记录告警，避免爬虫把根入口判为不可用。
+- 单一内容类型查询失败时，不影响其它分片；对应分片使用最近成功缓存或空 `urlset`。
+- XML 生成必须做 URL 转义、非法字符清洗和长度保护；异常数据只跳过单条 URL 并记录聚合告警，不让整份 sitemap 失败。
 
-候选范围：
+### 部署风险与护栏
 
-- 公开内容分享后进入正确壳层。
-- 已登录用户从通知 / 最近阅读 / 我的轻回应回到上下文。
-- 桌面工作台与 Flutter 移动端对“继续使用”的边界保持一致。
+- Gateway 路由优先级是主要风险：新增 `/sitemap.xml` 与分片路径必须高于前端 `/{**catch-all}`，并避免被前端静态 `sitemap.xml` 旧文件抢占。实施时要明确生产环境到底由 Gateway 代理前端还是直接由静态服务托管前端。
+- 公开域名来源必须统一使用生产 `RADISH_PUBLIC_URL` / `GatewayService:PublicUrl` 派生，不允许在动态 XML 中硬编码 `localhost` 或测试域名。
+- API sitemap 查询要走专用只读模型或仓储方法，不能在 Service 层直接 `_repository.Db.Queryable`；需要优先复用 / 扩展 repository 通用查询能力。
+- 不把 sitemap 生成挂进 `npm run build --workspace=radish.client`，避免本地构建、CI 和部署因生产数据或网络凭据失败。
+- 首批需要补后端单测覆盖公开过滤、PublicId / slug / product 路径、lastmod 选择、分页上限和异常回退；Gateway 配置需补最小路由验证或文档化人工验证点。
 
-边界：
+### 后续实施完成条件
 
-- 不做完整运营平台。
-- 不做完整通知中心移动版。
-- 不扩完整评论提交、点赞、投票、编辑治理或聊天移动版。
+- `/sitemap.xml` 返回 sitemap index 或 seed fallback，并能列出 forum / docs / shop 分片。
+- `robots.txt` 指向的 sitemap 与生产 Gateway 实际返回一致。
+- forum / docs / shop 分片只包含公开可索引内容，URL 与运行时 canonical 口径一致。
+- API 缓存、分页上限、lastmod、异常回退和日志路径有测试或明确验证记录。
+- `dotnet test Radish.Api.Tests`、`dotnet build Radish.slnx -c Debug` 和必要的文档 / 配置卫生检查通过。
 
-## 首批排序建议
+### 首批实现记录
 
-`P3-0` 完成后，默认优先级建议为：
+已完成：
 
-1. `P3-1` 公开内容增长基础。
-2. `P3-2` `PublicId` 最小试点方案。
-3. `P3-3` 代码热区拆分与维护成本治理。
-4. `P3-4` 用户留存轻闭环。
+- 新增 `IPublicSitemapService / PublicSitemapService`，由 API 侧生成 sitemap index 与 `static / forum / docs / shop` 分片 XML。
+- 新增公开 `PublicSitemapController`，以顶层 `/sitemap.xml` 和 `/sitemaps/{fileName}` 输出 `application/xml; charset=utf-8`，不纳入 API 文档。
+- Gateway 新增 `/sitemap.xml` 与 `/sitemaps/{**catch-all}` 高优先级路由，避免被前端 catch-all 覆盖。
+- sitemap 范围按评审收敛：静态 seed、已发布且启用的 forum post、公开已发布 docs、公开可见 shop 商品；不纳入公开个人页、搜索组合页、评论锚点、Console / Auth / API 文档等路径。
+- 缓存 TTL 固定为 `30` 分钟；单分片 `5,000` 条，单类型最多 `20` 个分片；缓存 key 包含公开域名、类型和页码。
+- `lastmod` 按 forum `ModifyTime ?? PublishTime ?? CreateTime`、docs `ModifyTime ?? PublishedAt ?? CreateTime`、shop `ModifyTime ?? OnSaleTime ?? CreateTime` 输出 UTC ISO 8601。
+- 生成失败时优先返回进程内最近成功 XML；无成功结果时 index 回退静态分片入口，内容分片返回空 `urlset` 并记录日志。
 
-如果 `P3-0` 审计发现资产、安全、登录、购买、转账、权限授权或主路径中断的 `P0/P1`，最多先回拉 `1-2` 个小闭环，再继续上述排序。
+验证：
 
-## `P3-0` 完成条件
+- `dotnet test Radish.Api.Tests --filter "PublicSitemapServiceTest" -v minimal` 通过，`4/4`。
 
-- 当前阶段文档入口已经从“下一阶段主任务选择”切到 `P3-0`。
-- 第三阶段目标、非目标、首批候选和排序依据已经写清楚。
-- 主路径与代码热区审计形成简短结论。
-- 第一批正式开工任务具备明确范围、完成条件和验证入口。
-- 第二阶段维护边界仍然成立，没有被低收益尾项重新拉回。
+后置：
 
-## 验证口径
+- `2026-05-20` 已在生产公开域名 `https://radishx.com` 复跑 public head smoke，确认 sitemap index、`static / forum / docs / shop` 分片和三类详情首包 head 可达；后续 release 前仍按同一入口复核。
+- 若后续内容规模接近单类型 `100,000` 条 URL，需要单独评估 cursor 分片、夜间导出或搜索引擎索引拆分策略。
 
-`P3-0` 以文档和审计为主，默认只需要：
+## `P3-5-D` 详情首包 HTML 可见性方案评审
 
-```bash
-npm run check:repo-hygiene:changed
-```
+完成日期：2026-05-17。详见 [P3-5-D 详情首包 HTML 可见性方案评审](/planning/p3-5-d-html-first-paint-visibility)。
 
-若审计过程中改动代码，再按改动范围追加：
+- 当前 `radish.client` 仍是纯 Vite SPA，Gateway 没有 SSR / HTML 渲染流水线；无 JS 爬虫 / 分享工具只能看到通用 shell。
+- 完整 SSR 和构建期 SSG / 预渲染均不作为首批路线，避免引入 Node SSR 宿主、生产数据构建依赖和大范围 hydrate / 路由重构。
+- 若继续实施，优先做 `P3-5-D1 公开详情 HTML head 快照注入`：API 提供公开详情 head snapshot，Gateway 只对 forum / docs / shop 公开详情做缓存化 head 注入，不渲染正文。
+- 该批次涉及 API + Gateway 运行时行为，已在用户批准后进入首批实现。
 
-- 前端公开壳层：`npm run type-check --workspace=radish.client`
-- Console：`npm run build --workspace=radish.console`
-- 后端契约：`dotnet test Radish.Api.Tests`
-- Flutter：对应 `flutter test test/<topic>_test.dart` 与 `flutter analyze`
+## `P3-5-D1` 公开详情 HTML head 快照注入
+
+完成日期：2026-05-17。
+
+### 实现范围
+
+- API 新增 `IPublicHeadSnapshotService / PublicHeadSnapshotService` 与 `PublicHeadSnapshotController`，通过内部公开只读接口输出 forum post、docs detail、shop product 三类详情的 head snapshot。
+- Gateway 新增 `PublicHeadSnapshotMiddleware`，仅拦截 `GET / HEAD` 且接受 HTML 的 `/forum/post/{postKey}`、`/docs/{slug}`、`/shop/product/{productId}`，从 API 获取 snapshot，再基于 `FrontendService:BaseUrl` 的前端入口 HTML 注入 head。
+- 注入内容限定为 `<title>`、`meta description`、canonical、Open Graph、Twitter card 和 `application/ld+json`；不渲染正文 HTML，不改 React hydrate，不改前端构建脚本。
+- 公开过滤与 sitemap 口径保持一致：forum 只暴露 `IsPublished && IsEnabled && !IsDeleted`，docs 只暴露公开已发布且未删除文档，shop 只暴露已启用、已上架、未删除且公开列表可见的商品。
+
+### 缓存与更新时间
+
+- API snapshot 缓存 TTL 为 `20` 分钟，缓存 key 包含内容类型、内容 key 和公开域名；Redis 开启时跟随现有缓存配置，关闭时使用内存缓存。
+- Gateway 注入后 HTML 缓存 TTL 为 `10` 分钟；前端入口 HTML 缓存 TTL 为 `5` 分钟。
+- snapshot 输出 `VoPublishedAt / VoModifiedAt`，JSON-LD 使用 forum `ModifyTime ?? PublishTime ?? CreateTime`、docs `ModifyTime ?? PublishedAt ?? CreateTime`、shop `ModifyTime ?? OnSaleTime ?? CreateTime`。
+
+### 异常回退与部署风险
+
+- API 找不到公开内容时返回 `404`，Gateway 不注入，继续走原 YARP / SPA 链路。
+- API snapshot、前端入口 HTML 获取、HTML 注入任一环节异常时，Gateway 记录 warning 并回落到原代理链路，避免 SEO head 注入影响页面可用性。
+- release / 生产部署时必须确认 `GatewayService:PublicUrl` 或 `RADISH_PUBLIC_URL` 为生产公开域名，`DownstreamServices:ApiService:BaseUrl` 与 `FrontendService:BaseUrl` 对 Gateway 可达；`2026-05-20` 的 `https://radishx.com` smoke 已确认当前生产链路成立。
+- 后续生产人工验收需直接查看三类详情的初始 HTML，确认 head 中 canonical / Open Graph / JSON-LD 与运行时 canonical、动态 sitemap URL 一致。
+
+### 验证
+
+- `dotnet test Radish.Api.Tests` 通过，`390/390`。
+
+## `P3-5-D2` 公开详情 head 注入部署前 smoke 入口
+
+完成日期：2026-05-17。详见 [公开详情 Head Smoke 验收](/guide/public-head-smoke)。
+
+- 新增 `Scripts/check-public-head-smoke.mjs` 与 `npm run check:public-head-smoke`，部署后可用 Gateway base URL 与真实 forum / docs / shop 公开详情路径做首包 HTML head smoke。
+- smoke 默认检查 `/robots.txt`、`/sitemap.xml` 和传入详情路径，防止被 SPA shell 覆盖，并断言详情 head 中存在非通用 title、description、canonical、Open Graph、Twitter card 与 `radish-public-jsonld`。
+- 本批不启动服务、不抓生产数据、不扩大 Gateway 注入范围；真实环境需要由发布 / 部署人员传入当前公开详情样本路径。
+
+验证：
+
+- `npm run check:public-head-smoke -- --self-test` 通过。
+
+## `P3-5` 收尾判断与维护线
+
+收尾日期：2026-05-17。
+
+`P3-5` 可以阶段收尾。
+
+依据：
+
+- 公开详情增长链路已覆盖运行时 JSON-LD、动态 sitemap、详情首包 head snapshot 注入和部署后 smoke 入口。
+- 最新 smoke 已通过 robots、sitemap、forum / docs / shop 三类详情，说明 Gateway 顶层抓取入口和三类公开详情首包 head 当前可被部署验证覆盖。
+- 首批方案已明确不渲染正文 HTML、不改变 React hydrate、不引入完整 SSR / SSG，也不把生产数据依赖塞入前端构建；当前继续扩大工程路线的收益不足以覆盖复杂度。
+
+转入维护的部署 / 运营项：testing / release 公开域名配置、API / Frontend 可达性、public head smoke、sitemap 分片、head snapshot / sitemap 缓存日志、分享预览、搜索抓取反馈，以及内容规模接近单类型 `100,000` 条 URL 时的分片策略复评。
+
+不继续扩大的范围：正文 HTML 预渲染、完整 SSR / SSG、构建期生产数据抓取、公开个人页纳入动态 sitemap、全量 `PublicId` 迁移，以及把公开壳层扩成发帖、评论提交、购买、背包、订单或治理工作台。
+
+## `P3-6` 真实使用运营观察与反馈分流
+
+启动日期：2026-05-17。
+
+目标是把 `P3-1` 至 `P3-5` 已落地的公开内容增长、PublicId 试点、留存回流和 head / sitemap 能力放到真实部署与真实使用反馈中观察，并按 `P0/P1/P2/暂不处理` 分流。
+
+首批观察入口包括 robots、动态 sitemap、forum / docs / shop 详情首包 head、运行时 JSON-LD、分享预览、搜索抓取反馈、公开回流断点、PublicId 优先链路、Gateway route 优先级、API / Frontend base URL、head snapshot 缓存和 sitemap 缓存。
+
+完成摘要：
+
+- `P3-6-A` 已完成公开增长 Gateway origin 观察：sitemap `<loc>` origin 已与 head snapshot 口径对齐，分片 origin 检查纳入 `Scripts/check-public-head-smoke.mjs`。
+- `P3-6-B` 已完成 public head smoke 失败诊断增强：失败时输出请求 URL、状态码、content-type、body 前段、疑似 SPA shell、失败阶段和关键断言。
+- `P3-6-C` 已完成公开增长部署观察记录：本地 Gateway 与生产公开域名 `https://radishx.com` 均已通过 public head smoke，覆盖 robots、sitemap index、`static / forum / docs / shop` 分片和 forum / docs / shop 三类详情。
+
+记录入口：
+
+- [P3-6 公开增长部署观察记录模板](/records/p3-6-public-growth-observation-record-template)
+- [P3-6 公开增长部署观察记录（2026-05-18）](/records/p3-6-public-growth-observation-record-2026-05-18)
+- [P3-6 公开增长部署观察记录（2026-05-20）](/records/p3-6-public-growth-observation-record-2026-05-20)
+
+阶段收口日期：`2026-05-20`。
+
+收口结论：`P3-6` 可以阶段收口。本轮未发现新的公开访问、核心 head / sitemap、分享入口或回流 `P0/P1` 阻断项。真实平台分享预览、Search Console / 爬虫日志、生产访问日志、用户回流断点、内容规模接近单类型 `100,000` 条 URL 时的 sitemap 分片策略复评转入维护线。
+
+不继续扩大的范围：运营平台、完整可观测性平台、完整 Playwright / E2E、完整 SSR / SSG、正文预渲染、全量 `PublicId` 迁移，以及无真实证据支撑的低收益公开体验微调。
+
+## `P3-7-C` 近期开发任务重评估与首批实现
+
+完成日期：`2026-05-22`。
+
+当时重评估结论：`P3-6 / P3-7-A / P3-7-B` 降为维护线；`P3-8` 多端功能补全与 UI / Pencil 设计治理先作为后续重点保留；最近开发入口回到第三阶段已点名的工作台代码热区治理，优先处理 `WikiApp.tsx` 与 `ChatApp.tsx`。
+
+`P3-7-C1 WikiApp` 与 `P3-7-C2 ChatApp` 工作台首批热区拆分已完成。Wiki 侧新增 `WikiSidebar` 与 `wikiApp.helpers.ts`，`WikiApp.tsx` 从约 `1759` 行降至 `1419` 行；Chat 侧新增消息列表、频道侧栏、成员面板、输入区状态组件和 `chatApp.helpers.ts`，`ChatApp.tsx` 从约 `2004` 行降至 `1489` 行。本批均不改 API、路由、视觉设计或新增 P2 backlog 功能。
+
+验证：Wiki / Chat 定向 node tests、`npm run type-check --workspace=radish.client`、`npm run build --workspace=radish.client`、`npm run check:repo-hygiene:changed` 与 `git diff --check` 通过；构建保留既有 `app-shop` chunk size warning。
+
+`P3-7-C3` 后端 Service 热区治理完成于 `2026-05-23`：`ContentModerationService.cs` 已降至 `806` 行；`ExperienceService.cs` 已完成每日统计、经验治理观察规则、治理动作留痕、等级配置 / 缓存、交易记录、冻结状态、排行榜与管理员调整逻辑拆分，主文件从 `2807` 行降至 `888` 行。
+
+验证：`dotnet test Radish.Api.Tests --filter ExperienceServiceTest` 与 `dotnet build Radish.slnx -c Debug` 通过。
+
+下一顺位：`P3-8-A 多端功能缺口与 UI 设计入口审计`。`P3-7-C3` 剩余经验发放主流程不在本批硬拆，后续如需治理应单独评审事务、重试、升级奖励和冻结语义风险。

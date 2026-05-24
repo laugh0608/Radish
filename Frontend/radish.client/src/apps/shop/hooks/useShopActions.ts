@@ -21,6 +21,7 @@ interface UseShopActionsProps {
   loadInventory: () => Promise<void>;
   searchProducts: (keyword: string) => Promise<void>;
   selectedProduct: Product | null;
+  onPurchaseComplete?: (orderId: LongId) => void;
 }
 
 export const useShopActions = (props: UseShopActionsProps) => {
@@ -35,7 +36,8 @@ export const useShopActions = (props: UseShopActionsProps) => {
     loadOrders,
     loadOrderDetail,
     loadInventory,
-    selectedProduct
+    selectedProduct,
+    onPurchaseComplete
   } = props;
 
   // 购买相关状态
@@ -72,7 +74,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
 
     setPurchasePasscodeUpgradePrompt(null);
     setIsPurchaseModalOpen(true);
-  }, [isAuthenticated, selectedProduct, loadProductDetail, checkCanBuy, setError]);
+  }, [checkCanBuy, isAuthenticated, loadProductDetail, selectedProduct, setError, t]);
 
   // 关闭购买弹窗
   const handleClosePurchaseModal = useCallback(() => {
@@ -119,6 +121,10 @@ export const useShopActions = (props: UseShopActionsProps) => {
             ? checkCanBuy(productId)
             : Promise.resolve()
         ]);
+
+        if (result.data.orderId) {
+          onPurchaseComplete?.(result.data.orderId);
+        }
       } else {
         const errorMessage = result.data?.errorMessage || result.message || t('shop.error.purchaseFailed');
         const requiresPasscodeUpgrade = Boolean(result.data?.requiresPasscodeUpgrade) || isPaymentPasscodeUpgradeRequiredError({
@@ -140,7 +146,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
     } finally {
       setPurchasing(false);
     }
-  }, [isAuthenticated, t, appState.currentView, checkCanBuy, loadInventory, setError]);
+  }, [isAuthenticated, t, appState.currentView, checkCanBuy, loadInventory, onPurchaseComplete, setError]);
 
   // 取消订单
   const handleCancelOrder = useCallback(async (orderId: LongId, reason?: string) => {
@@ -233,6 +239,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
         currentUser.setUser({
           userId: currentUser.userId,
           userName: newNickname.trim(),
+          nickname: newNickname.trim(),
           tenantId: currentUser.tenantId,
           roles: currentUser.roles,
           permissions: currentUser.permissions,

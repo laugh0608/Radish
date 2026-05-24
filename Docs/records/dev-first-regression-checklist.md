@@ -102,12 +102,12 @@
 - `Deploy/`
 - `Radish.Api / Auth / Gateway / Frontend` Dockerfile
 - 证书、`RADISH_PUBLIC_URL`、`OpenIddict__Server__Issuer`
-- `docker-compose.local.yml / docker-compose.test.yml / docker-compose.prod.yml`
+- `docker-compose.local.yaml / docker-compose.yaml`
 
 建议检查：
 
 - `docker compose ... config` 是否仍可展开
-- `base + local` 是否仍可完成最小运行态验证
+- `Deploy/docker-compose.local.yaml` 是否仍可完成最小运行态验证
 - 若改到生产口径，是否仍满足公开域名、证书和回调地址一致性
 
 参考文档： [部署指南](/deployment/guide)

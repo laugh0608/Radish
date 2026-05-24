@@ -29,7 +29,6 @@ internal static class DbMigrateBootstrap
         builder.Configuration.Sources.Clear();
         builder.Configuration.AddJsonFile(Path.Combine(solutionRoot, "appsettings.Shared.json"), optional: true, reloadOnChange: false);
         builder.Configuration.AddJsonFile(Path.Combine(projectRoot, "appsettings.json"), optional: true, reloadOnChange: false);
-        builder.Configuration.AddJsonFile(Path.Combine(projectRoot, $"appsettings.{builder.Environment.EnvironmentName}.json"), optional: true, reloadOnChange: false);
         builder.Configuration.AddJsonFile(Path.Combine(projectRoot, "appsettings.Local.json"), optional: true, reloadOnChange: false);
         builder.Configuration.AddJsonFile(Path.Combine(solutionRoot, "appsettings.Local.json"), optional: true, reloadOnChange: false);
         builder.Configuration.AddEnvironmentVariables();

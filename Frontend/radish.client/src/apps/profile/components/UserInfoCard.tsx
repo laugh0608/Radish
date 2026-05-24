@@ -225,6 +225,7 @@ export const UserInfoCard = ({
         setUser({
           userId,
           userName: currentProfile.voUserName,
+          nickname: currentProfile.voUserName,
           tenantId: tenantId,
           roles: roles || ['User'],
           permissions: permissions || [],

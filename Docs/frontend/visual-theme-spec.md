@@ -11,6 +11,7 @@
 > 关联文档：
 >
 > - [视觉颜色参考](/frontend/visual-color-reference)
+> - [UI 设计灵感参考](/frontend/ui-design-inspiration)
 > - [前端设计](/frontend/design)
 > - [首版 dev 边界](/planning/dev-first-scope)
 >
@@ -375,6 +376,12 @@ Frontend/radish.client/src/stores/
 - 不抢内容
 - 有边饰感，不有贴花感
 - 有东方气质，但保持现代界面的简洁与秩序
+
+### 11.4 现代产品 UI 参考
+
+[UI 设计灵感参考](/frontend/ui-design-inspiration) 收录 AFFINE、CodexApp、Cloudflare、GitHub、Discourse 与 1Panel 的界面截图，并将其提炼为布局、信息密度、设置页、管理后台、社区列表和色彩节奏参考。
+
+这些素材只用于学习现代产品的信息组织与视觉克制方法，不改变 Radish 的淡雅新中式主题方向；后续页面级或客户端级 UI 优化仍应先通过 Pencil 产出 Radish 自己的 `.pen` 设计稿，再进入实现。
 
 ## 12. 维护规则
 

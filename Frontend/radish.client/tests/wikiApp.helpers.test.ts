@@ -1,11 +1,17 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  buildCreateRequest,
   buildWikiListUrl,
+  collectExpandableNodeIds,
   collectDescendantIds,
+  EMPTY_DRAFT,
+  findAncestorIds,
   flattenTreeRows,
   flattenTreeOptions,
   getSuggestedSortValue,
+  parseWikiWindowParams,
+  pickInitialDocumentId,
 } from '../src/apps/wiki/wikiApp.helpers.ts';
 import {
   buildPublicDocsPath,
@@ -13,7 +19,7 @@ import {
   resolvePublicDocsRouteFromHref,
   rewritePublicDocsHref,
 } from '../src/public/docsRouteState.ts';
-import type { WikiDocumentTreeNodeVo } from '../src/apps/wiki/types/wiki.ts';
+import type { WikiDocumentTreeNodeVo, WikiDocumentVo } from '../src/apps/wiki/types/wiki.ts';
 
 const mockTree: WikiDocumentTreeNodeVo[] = [
   {
@@ -96,6 +102,12 @@ test('collectDescendantIds 应返回目标节点全部子孙节点', () => {
   assert.equal(descendants.has(1), false);
 });
 
+test('collectExpandableNodeIds 与 findAncestorIds 应保持树展开关系', () => {
+  assert.deepEqual(collectExpandableNodeIds(mockTree), [1, 3]);
+  assert.deepEqual(findAncestorIds(mockTree, 4), [1, 3]);
+  assert.deepEqual(findAncestorIds(mockTree, 999), []);
+});
+
 test('getSuggestedSortValue 应按同级最大排序位推导建议值', () => {
   assert.equal(getSuggestedSortValue(mockTree, 1), 30);
   assert.equal(getSuggestedSortValue(mockTree, 3), 10);
@@ -118,6 +130,69 @@ test('buildWikiListUrl 应按回收站筛选拼接参数', () => {
     url,
     '/api/v1/Wiki/GetList?pageIndex=1&pageSize=100&keyword=guide&status=1&includeDeleted=true&deletedOnly=true'
   );
+});
+
+test('parseWikiWindowParams 应只接受合法文档 ID 或 slug', () => {
+  assert.deepEqual(parseWikiWindowParams({ documentId: '2042219067430928384', slug: '  getting-started  ' }), {
+    documentId: '2042219067430928384',
+    slug: 'getting-started',
+  });
+  assert.deepEqual(parseWikiWindowParams({ documentId: '0', slug: '   ' }), {
+    documentId: undefined,
+    slug: undefined,
+  });
+  assert.deepEqual(parseWikiWindowParams(null), {});
+});
+
+test('buildCreateRequest 应规范化编辑草稿', () => {
+  const request = buildCreateRequest({
+    ...EMPTY_DRAFT,
+    title: '  新文档  ',
+    slug: '  docs-guide  ',
+    summary: '  摘要  ',
+    markdownContent: '# 内容',
+    parentId: '2042219067430928384',
+    sort: '20',
+    coverAttachmentId: '0',
+    visibility: '3',
+    allowedRoles: 'admin, editor\noperator，auditor',
+    allowedPermissions: 'wiki.manage',
+  });
+
+  assert.deepEqual(request, {
+    title: '新文档',
+    slug: 'docs-guide',
+    summary: '摘要',
+    markdownContent: '# 内容',
+    parentId: '2042219067430928384',
+    sort: 20,
+    coverAttachmentId: undefined,
+    visibility: 3,
+    allowedRoles: ['admin', 'editor', 'operator', 'auditor'],
+    allowedPermissions: ['wiki.manage'],
+  });
+});
+
+test('pickInitialDocumentId 应优先选择列表首项再回退目录根节点', () => {
+  const listDocument: WikiDocumentVo = {
+    voId: 9,
+    voTitle: '搜索结果',
+    voSlug: 'search-result',
+    voParentId: null,
+    voSort: 0,
+    voStatus: 1,
+    voVisibility: 1,
+    voAllowedRoles: [],
+    voAllowedPermissions: [],
+    voSourceType: 'manual',
+    voVersion: 1,
+    voIsDeleted: false,
+    voCreateTime: '',
+  };
+
+  assert.equal(pickInitialDocumentId(mockTree, [listDocument]), 9);
+  assert.equal(pickInitialDocumentId(mockTree, []), 1);
+  assert.equal(pickInitialDocumentId([], []), null);
 });
 
 test('parsePublicDocsRoute 应按 slug 解析公开文档详情路由并保留 hash anchor', () => {

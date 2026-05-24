@@ -57,9 +57,17 @@
 
 ## 平台与治理后置项
 
+### Redis 与缓存治理专题
+
+- 后置专题入口：[Redis 与缓存治理专题](/planning/redis-cache-governance)
+- 当前结论：Redis 已作为部署态默认缓存后端生效，但业务仍应优先依赖 `ICaching` / `IDistributedCache`，不直接散落 Redis 专用调用
+- 后续只在多实例、SignalR 跨实例推送、聊天室在线状态、通知未读数原子化、上传限流、商城 / 萝卜币幂等与并发保护、排行榜或热点读模型出现明确需求时回拉
+- 不把 `P3-6` 扩成 Redis 平台化专项；每次回拉都必须对应真实问题或明确业务批次
+
 ### `Console-ext Phase 2+`
 
 - 更完整权限中心、审计与共享接口治理
+- Console 前端后续治理应优先复用 `@radish/ui` 的组件、交互反馈与主题 token，逐步收敛历史页面的自定义样式和重复组件，保持 Console 与 Radish 其他前端入口的视觉一致性
 - 不在第二阶段前半程启动
 
 ### `Gateway & BFF` 深化

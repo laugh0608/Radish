@@ -1,6 +1,5 @@
 import { StrictMode, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Capacitor } from '@capacitor/core';
 import { configureApiClient } from '@radish/http';
 import { tokenService } from '@/services/tokenService';
 import { getApiBaseUrl } from '@/config/env';
@@ -20,10 +19,14 @@ import './i18n';
 import 'highlight.js/styles/github-dark.css';
 
 const App = lazy(() => import('./App.tsx'));
-const Shell = lazy(() => import('./desktop/Shell.tsx').then((module) => ({ default: module.Shell })));
+const RootEntry = lazy(() => import('./desktop/RootEntry.tsx').then((module) => ({ default: module.RootEntry })));
 const PublicEntry = lazy(() => import('./public/PublicEntry.tsx').then((module) => ({ default: module.PublicEntry })));
 
 const isBrowser = typeof window !== 'undefined';
+
+function isCapacitorNativePlatform(): boolean {
+  return window.Capacitor?.isNativePlatform?.() === true;
+}
 
 function handleTauriDeepLink(url: string): void {
   if (!isBrowser) {
@@ -48,7 +51,7 @@ if (isBrowser && isTauriRuntime() && window.location.pathname === '/') {
   window.history.replaceState({}, '', TAURI_DESKTOP_ENTRY_PATH);
 }
 
-if (isBrowser && Capacitor.isNativePlatform() && window.location.pathname === '/') {
+if (isBrowser && isCapacitorNativePlatform() && window.location.pathname === '/') {
   window.history.replaceState({}, '', '/docs');
 }
 
@@ -71,7 +74,7 @@ const isPublicContentRoute = isBrowser && (
 const params = new URLSearchParams(window.location.search);
 const isDemo = params.has('demo');
 
-const Page = isOidcCallback || isDemo ? App : isPublicContentRoute ? PublicEntry : Shell;
+const Page = isOidcCallback || isDemo ? App : isPublicContentRoute ? PublicEntry : RootEntry;
 
 initializeTheme();
 void applySiteBranding(getApiBaseUrl());

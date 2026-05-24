@@ -17,7 +17,7 @@
 
 ## 当前已确认事实
 
-- `base + test` 与 `base + prod` 已完成真实部署复核
+- 测试 / 生产部署态已收束为共用 `Deploy/docker-compose.yaml`，默认通过 `RADISH_IMAGE_TRACK=test/release` 拉取 `test-latest` / `release-latest`；需要完全可复现部署或回滚时，再启用固定 `RADISH_IMAGE_TAG`
 - `M14` 的启动前、启动后与部署后最小复核已完成首轮真实闭环
 - 测试环境已完成首轮真实最小回滚演练：`v26.3.2-r1-test -> v26.3.2-test`
 - 生产环境当前已形成最小回滚预案，但尚未做真实回滚演练
@@ -37,35 +37,37 @@ npm run validate:baseline:quick
 5. 合并到 `master`
 6. 创建规范 tag
 7. 等待 `Docker Images` 工作流产出对应镜像
-8. 在部署环境把镜像 tag 固定到本次发布版本
+8. 在部署环境确认 `RADISH_IMAGE_TRACK` 或固定 `RADISH_IMAGE_TAG` 指向本次发布镜像
 9. 补一份发布记录
 
 ## 最小部署顺序
 
 ### 测试部署
 
-1. 复制 `Deploy/.env.test.example` 为 `Deploy/.env.test`
-2. 将 `RADISH_*_IMAGE` 固定到明确的 `v*-test` tag
+1. 进入 `Deploy/` 目录，复制 `.env.example` 为 `.env`
+2. 设置 `RADISH_IMAGE_TRACK=test` 与测试域名 `RADISH_PUBLIC_URL`；如需完全可复现部署，再把 `RADISH_IMAGE_TAG` 固定到明确的 `v*-test` tag
 3. 执行：
 
 ```bash
-docker compose --env-file Deploy/.env.test -f Deploy/docker-compose.yml -f Deploy/docker-compose.test.yml config
-docker compose --env-file Deploy/.env.test -f Deploy/docker-compose.yml -f Deploy/docker-compose.test.yml pull
-docker compose --env-file Deploy/.env.test -f Deploy/docker-compose.yml -f Deploy/docker-compose.test.yml up -d
+cd Deploy
+docker compose config
+docker compose pull
+docker compose up -d
 ```
 
 4. 按 `M14` 顺序做最小复核
 
 ### 生产部署
 
-1. 复制 `Deploy/.env.prod.example` 为 `Deploy/.env.prod`
-2. 将 `RADISH_*_IMAGE` 固定到明确的 `v*-release` tag
+1. 进入 `Deploy/` 目录，复制 `.env.example` 为 `.env`
+2. 设置 `RADISH_IMAGE_TRACK=release` 与生产域名 `RADISH_PUBLIC_URL`；如需完全可复现部署，再把 `RADISH_IMAGE_TAG` 固定到明确的 `v*-release` tag
 3. 执行：
 
 ```bash
-docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml config
-docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml pull
-docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml up -d
+cd Deploy
+docker compose config
+docker compose pull
+docker compose up -d
 ```
 
 4. 按 `M14` 顺序做最小复核
@@ -107,7 +109,7 @@ npm run collect:m14-host-record
 当前最小可行回滚不是自动切换整套环境，而是：
 
 1. 找到上一版已知可用 tag
-2. 将 `Deploy/.env.test` 或 `Deploy/.env.prod` 中的 `RADISH_*_IMAGE` 改回该 tag
+2. 将 `Deploy/.env` 中的 `RADISH_IMAGE_TAG` 改回该 tag
 3. 重新拉取并更新容器
 4. 重新执行最小复核
 

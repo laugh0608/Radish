@@ -71,8 +71,11 @@
 - Shop：
   - [shop-system](/guide/shop-system)
   - [shop-core-concepts](/guide/shop-core-concepts)
+  - [shop-order](/guide/shop-order)
+  - [shop-inventory](/guide/shop-inventory)
   - [shop-backend](/guide/shop-backend)
   - [shop-frontend](/guide/shop-frontend)
+  - [shop-workspace-revisit](/guide/shop-workspace-revisit)
 - Radish Coin：
   - [radish-coin-system](/guide/radish-coin-system)
   - [radish-coin-core-concepts](/guide/radish-coin-core-concepts)

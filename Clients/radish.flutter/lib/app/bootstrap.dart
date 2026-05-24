@@ -17,6 +17,7 @@ import '../features/docs/data/docs_follow_up_store.dart';
 import '../features/docs/data/docs_repository.dart';
 import '../features/forum/data/forum_follow_up_store.dart';
 import '../features/forum/data/forum_repository.dart';
+import '../features/leaderboard/data/leaderboard_repository.dart';
 import '../features/notifications/data/notification_repository.dart';
 import '../features/profile/data/profile_repository.dart';
 import 'app.dart';
@@ -72,6 +73,10 @@ class RadishBootstrap {
       apiClient: apiClient,
       endpoints: apiEndpoints,
     );
+    final leaderboardRepository = HttpLeaderboardRepository(
+      apiClient: apiClient,
+      endpoints: apiEndpoints,
+    );
     final notificationRepository = HttpNotificationRepository(
       apiClient: apiClient,
       endpoints: apiEndpoints,
@@ -86,6 +91,7 @@ class RadishBootstrap {
         docsRepository: docsRepository,
         forumRepository: forumRepository,
         profileRepository: profileRepository,
+        leaderboardRepository: leaderboardRepository,
         followUpStore: followUpStore,
         docsFollowUpStore: docsFollowUpStore,
         notificationRepository: notificationRepository,

@@ -341,6 +341,7 @@ void main() {
     final scrollable = find.byType(Scrollable);
     var forumOpened = false;
     var docsOpened = false;
+    var leaderboardOpened = false;
     DocsDocumentSummary? openedDocument;
     ForumDetailHandoffTarget? openedForumTarget;
     String? openedProfileUserId;
@@ -356,6 +357,9 @@ void main() {
           },
           onOpenDocs: () {
             docsOpened = true;
+          },
+          onOpenLeaderboard: () {
+            leaderboardOpened = true;
           },
           onOpenDocument: (document) {
             openedDocument = document;
@@ -402,9 +406,16 @@ void main() {
       scrollable: scrollable,
     );
     await tester.tap(find.text('打开文档'));
+    await tester.scrollUntilVisible(
+      find.text('打开榜单').first,
+      200,
+      scrollable: scrollable,
+    );
+    await tester.tap(find.text('打开榜单').first);
 
     expect(forumOpened, isTrue);
     expect(docsOpened, isTrue);
+    expect(leaderboardOpened, isTrue);
     expect(openedDocument?.slug, 'flutter-mvp-overview');
     expect(openedForumTarget?.postId, '2042219067430928384');
     expect(openedForumTarget?.initialTitle, 'Native discover wiring plan');

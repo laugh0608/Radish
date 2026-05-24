@@ -139,8 +139,9 @@ jobs:
                 "${image}:test-latest"
               ;;
             release)
-              printf -v tags '%s\n%s' \
+              printf -v tags '%s\n%s\n%s' \
                 "${image}:${REF_NAME}" \
+                "${image}:release-latest" \
                 "${image}:latest"
               ;;
             *)
@@ -212,8 +213,9 @@ jobs:
                 "${image}:test-latest"
               ;;
             release)
-              printf -v tags '%s\n%s' \
+              printf -v tags '%s\n%s\n%s' \
                 "${image}:${REF_NAME}" \
+                "${image}:release-latest" \
                 "${image}:latest"
               ;;
             *)

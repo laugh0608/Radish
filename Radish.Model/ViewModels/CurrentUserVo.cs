@@ -16,6 +16,16 @@ public class CurrentUserVo
     public string VoUserName { get; set; } = string.Empty;
 
     /// <summary>
+    /// 登录名
+    /// </summary>
+    public string VoLoginName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 昵称
+    /// </summary>
+    public string VoNickname { get; set; } = string.Empty;
+
+    /// <summary>
     /// 租户ID
     /// </summary>
     public long VoTenantId { get; set; }

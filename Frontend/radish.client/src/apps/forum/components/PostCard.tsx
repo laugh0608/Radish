@@ -3,6 +3,7 @@ import type { LongId } from '@/api/user';
 import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
+import { resolveMediaUrl } from '@/utils/media';
 import styles from './PostCard.module.css';
 
 interface PostCardProps {
@@ -132,7 +133,7 @@ export const PostCard = ({
     className: string,
     title?: string
   ) => {
-    const normalizedUrl = avatarUrl?.trim();
+    const normalizedUrl = resolveMediaUrl(avatarUrl);
     return (
       <span
         className={className}
