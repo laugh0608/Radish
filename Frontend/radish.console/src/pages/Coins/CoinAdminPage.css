@@ -1,0 +1,36 @@
+.coin-admin-page {
+  min-width: 0;
+}
+
+.coin-admin-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.coin-admin-query-input {
+  width: 220px;
+}
+
+.coin-admin-section-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.coin-admin-section-title h3 {
+  margin: 0;
+}
+
+.coin-admin-full-width {
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .coin-admin-page .admin-feature-header,
+  .coin-admin-section-title {
+    align-items: flex-start;
+  }
+}
