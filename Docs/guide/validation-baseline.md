@@ -576,20 +576,13 @@ Android MVP 本地 release APK 发布候选当前已完成首轮收口。涉及 
 - 真实 `android/key.properties`、`.jks` 与 `.keystore` 不进入版本库
 - 真机通过 `adb reverse tcp:5000 tcp:5000` 访问本机 Gateway 时，登录、基础读取与关键样式显示正常
 
-## Tauri + WebOS 桌面壳验证分层
+## PC/Tauri 后置增强壳验证分层
 
-Tauri 桌面壳当前是 Windows / macOS / Linux 桌面安装包路线的候选下一阶段，默认 UI 入口为 `/desktop`，承载 WebOS 桌面工作台；`/docs` 只作为公开内容壳层和早期 spike 样例，不作为桌面安装包正式默认体验。
+PC/Tauri 当前后置到纯 Web 与 Flutter 主线之后，不再默认绑定 WebOS。历史 Tauri + WebOS 桌面壳验证已经成立，但只作为验证资产保留；后续若重启 PC 客户端，应以 Tauri 增强纯 Web 体验重新定义默认入口、验收范围和分发材料。`/desktop` 仅作为 WebOS 保留入口，`/docs` 只作为公开内容壳层和早期 spike 样例。
 
-涉及 `Clients/radish-tauri`、Tauri 配置、`Frontend/radish.client/src/platform/tauriBridge.ts`、桌面 OIDC 回跳、deep link、WebOS 默认入口或 Tauri 构建链路时，开发阶段至少确认：
+涉及 `Clients/radish-tauri`、Tauri 配置、`Frontend/radish.client/src/platform/tauriBridge.ts`、桌面 OIDC 回跳、deep link、Tauri 构建链路、WebOS `/desktop` 保留入口或历史 Tauri + WebOS 验证路径时，开发阶段至少确认 `npm run type-check --workspace=radish.client`、`npm run test --workspace=radish.client`、`npm run build --workspace=radish.client` 与 `cargo build`；涉及 release exe 时补 `cargo build --release`，涉及 installer bundle 时补 `cargo tauri build`。
 
-- `npm run type-check --workspace=radish.client`
-- `npm run test --workspace=radish.client`
-- `npm run build --workspace=radish.client`
-- 在 `Clients/radish-tauri` 下执行 `cargo build`
-- 涉及 release exe 时补 `cargo build --release`
-- 涉及 installer bundle 时补 `cargo tauri build`
-
-当前已通过 GUI 启动、WebOS 桌面布局、窗口生命周期观察、系统浏览器登录 / 登出 `127.0.0.1:48801` loopback 回跳、Windows NSIS installer 构建、本机安装、启动、普通用户卸载与同身份覆盖安装人工验收；release 启动伴随命令行窗口的问题已通过 `windows_subsystem = "windows"` 修复。当前本机普通用户安装未出现“未知发布者 / SmartScreen”提示；公开分发后仍需结合下载来源、签名、信誉与系统策略重新复核。管理员权限安装后用普通权限卸载可能残留安装文件，当前归类为安装 / 卸载权限上下文不一致风险，不作为 Tauri / NSIS 配置缺陷处理。`Clients/radish-tauri` 当前已进入正式桌面包候选身份补验，`productName` / 窗口标题为 `Radish`，`identifier` 为 `com.radish.desktop`；该身份切换只用于验证安装目录、卸载项、同身份覆盖安装和 `radish://` 协议注册清理，不等同于公开发布版。正式候选包生产构建默认基址当前为 `https://radishx.com`，另有 `npm run build:tauri-local --workspace=radish.client` 本地 Auth 验收构建模式指向 `https://localhost:5000`，用于生产 Auth 客户端注册暂未更新时继续验证安装包 loopback 登录。Tauri loopback 登录在浏览器关闭后会复用等待中的同路径 listener 以支持再次点击登录。代码签名、自动更新、托盘、菜单、SmartScreen 公开来源复核和正式分发体积仍需后续单独补验。
+历史 Tauri + WebOS 验证已通过 GUI 启动、WebOS 桌面布局、窗口生命周期观察、系统浏览器登录 / 登出 `127.0.0.1:48801` loopback 回跳、Windows NSIS installer 构建、本机安装、启动、普通用户卸载与同身份覆盖安装人工验收；release 启动伴随命令行窗口的问题已通过 `windows_subsystem = "windows"` 修复。当前本机普通用户安装未出现“未知发布者 / SmartScreen”提示；公开分发后仍需结合下载来源、签名、信誉与系统策略重新复核。管理员权限安装后用普通权限卸载可能残留安装文件，当前归类为安装 / 卸载权限上下文不一致风险，不作为 Tauri / NSIS 配置缺陷处理。`Clients/radish-tauri` 曾进入正式桌面包候选身份补验，`productName` / 窗口标题为 `Radish`，`identifier` 为 `com.radish.desktop`；该身份切换只用于验证安装目录、卸载项、同身份覆盖安装和 `radish://` 协议注册清理，不等同于公开发布版。正式候选包生产构建默认基址为 `https://radishx.com`，另有 `npm run build:tauri-local --workspace=radish.client` 本地 Auth 验收构建模式指向 `https://localhost:5000`，用于生产 Auth 客户端注册暂未更新时继续验证安装包 loopback 登录。Tauri loopback 登录在浏览器关闭后会复用等待中的同路径 listener 以支持再次点击登录。代码签名、自动更新、托盘、菜单、SmartScreen 公开来源复核和正式分发体积仍需在 PC/Tauri 重新进入主线时按纯 Web 增强壳口径重新补验。
 
 ## 受限环境说明
 

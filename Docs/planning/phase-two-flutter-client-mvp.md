@@ -2,7 +2,7 @@
 
 > 状态：Android MVP 第一轮已完成，第二阶段已归档，转入稳定维护
 >
-> 最后更新：2026-05-13（Asia/Shanghai）
+> 最后更新：2026-05-25（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -11,6 +11,8 @@
 > - [第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform)
 > - [前端多壳层策略](/frontend/shell-strategy)
 > - [前端设计文档](/frontend/design)
+
+> 说明：本页保留 Flutter Android MVP 第一轮完成前后的历史批次口径。`2026-05-25` 后，多端主线已收敛为纯 Web + Flutter；PC/Tauri 后置且不再绑定 WebOS。当前路线以 [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation) 和 [当前进行中](/planning/current) 为准。
 
 ## 1. 目标
 
@@ -76,7 +78,7 @@ Flutter 客户端第一批固定遵循以下约束：
 1. 优先复用现有 API、认证契约与公开内容路由语义
 2. 不复刻 WebOS 窗口交互，不把桌面工作台直接搬进原生端
 3. 主题语义复用 Radish 品牌口径，但不强求与 Web 结构完全同形
-4. Android 跑通后，iOS 作为移动端单独评估；Windows / macOS / Linux 桌面安装包优先走 Tauri + WebOS 路线
+4. Android 跑通后，iOS 作为移动端单独评估；Windows / macOS / Linux 不作为 Flutter 默认扩平台目标，PC/Tauri 后续如重启应增强纯 Web，不再绑定 WebOS
 
 ## 6. 本批交付物
 
@@ -157,9 +159,9 @@ Flutter 客户端第一批固定遵循以下约束：
 
 1. `Phase 2-3 Android MVP` 当前可标记为“第一轮完成”，RC Go 记录见 [Flutter Android MVP RC 验收记录（2026-05-04）](/records/flutter-android-mvp-rc-acceptance-record-2026-05-04)
 2. 冻结新的低增益体验微调，不再默认继续追加第 `24` 批及以后 Flutter 小闭环
-3. 下一步先评估 Android 内测产品化深化、分发反馈闭环，或按 [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation) 进入 Tauri + WebOS 桌面安装包第二轮评估
+3. 下一步先评估 Android 内测产品化深化、分发反馈闭环，或按 [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation) 评估纯 Web / Flutter 下一批主路径缺口
 4. 若后续暴露 `P0 / P1` 阻断，则只做定点修复，不回头扩完整通知中心、系统推送、发帖、完整评论提交、点赞、投票、编辑治理或 Flutter 专属 BFF
-5. Windows / macOS / Linux 不再作为 Flutter 默认扩平台方向；若进入桌面安装包，应优先走 Tauri + WebOS，并单独定义批次，不与 Android MVP 第一轮完成结论混在同一批
+5. Windows / macOS / Linux 不再作为 Flutter 默认扩平台方向；PC/Tauri 后置到纯 Web 与 Flutter 主线之后，若重启应承载纯 Web 增强体验，并单独定义批次，不与 Android MVP 第一轮完成结论混在同一批
 
 若 `Phase 2-3` 后续重新进入连续执行批次，且出现“同类展示组件持续在多个页面重复维护”或“除主应用外出现第二个明确 Flutter 消费方”这两类信号之一，则可把 **Flutter UI 组件库治理** 纳入候选，但当前不提升为默认下一事项：
 
@@ -175,7 +177,7 @@ Flutter 客户端第一批固定遵循以下约束：
 - 发帖、完整评论提交、点赞、投票与编辑治理
 - 聊天、完整商城工作台、创作器
 - 完整浏览历史中心、删除 / 清空与跨端同步治理
-- iOS 移动端单独评估、Tauri + WebOS 桌面安装包评估与 Flutter 专属 BFF
+- iOS 移动端单独评估、PC/Tauri 纯 Web 增强壳评估与 Flutter 专属 BFF
 
 截至 `2026-04-28` 的第四批建议：
 
