@@ -38,8 +38,9 @@
 .summaryHeader {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 0.75rem;
+  flex-wrap: wrap;
   margin-bottom: 0.65rem;
 }
 
@@ -299,6 +300,29 @@
 
 .secondaryButton {
   cursor: pointer;
+}
+
+.shareButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 38px;
+}
+
+.shareFeedback {
+  margin: -0.2rem 0 0.8rem;
+  color: var(--theme-text-secondary);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.shareFeedback[data-state='success'] {
+  color: color-mix(in srgb, var(--theme-accent-jade) 78%, var(--theme-text-primary) 22%);
+}
+
+.shareFeedback[data-state='error'] {
+  color: var(--theme-danger, #b42318);
 }
 
 .primaryButton:disabled,

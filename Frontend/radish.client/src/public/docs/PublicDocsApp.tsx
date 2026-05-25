@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent, type RefObject } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MarkdownRenderer } from '@radish/ui/markdown-renderer';
 import { Icon } from '@radish/ui/icon';
 import { DEFAULT_TIME_ZONE, formatDateTimeByTimeZone, getBrowserTimeZoneId } from '@/utils/dateTime';
-import { copyToClipboard } from '@/utils/clipboard';
 import type {
   WikiDocumentDetailVo,
   WikiDocumentTreeNodeVo,
@@ -31,6 +30,7 @@ import {
 } from '../publicStructuredData';
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import { PublicShellHeader } from '../components/PublicShellHeader';
+import { usePublicShareLink } from '../hooks/usePublicShareLink';
 import { getPublicWikiDocumentBySlug, getPublicWikiList, getPublicWikiTree } from './publicDocsApi';
 import styles from './PublicDocsApp.module.css';
 
@@ -1055,8 +1055,6 @@ const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigat
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
-  const [shareState, setShareState] = useState<'idle' | 'success' | 'error'>('idle');
-  const [shareBusy, setShareBusy] = useState(false);
   const articleBodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -1192,38 +1190,17 @@ const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigat
         ? 'error'
           : 'loading';
 
-  useEffect(() => {
-    if (shareState === 'idle') {
-      return;
-    }
-
-    const timerId = window.setTimeout(() => {
-      setShareState('idle');
-    }, 2200);
-
-    return () => {
-      window.clearTimeout(timerId);
+  const buildDocsShareUrl = useCallback(() => {
+    const shareRoute: PublicDocsRoute = {
+      kind: 'detail',
+      slug: documentDetail?.voSlug || route.slug,
+      anchor: route.anchor
     };
-  }, [shareState]);
-
-  const handleShare = async () => {
-    setShareBusy(true);
-
-    try {
-      const shareRoute: PublicDocsRoute = {
-        kind: 'detail',
-        slug: documentDetail?.voSlug || route.slug,
-        anchor: route.anchor
-      };
-      const shareUrl = new URL(buildPublicDocsPath(shareRoute), getCurrentOrigin()).toString();
-      await copyToClipboard(shareUrl);
-      setShareState('success');
-    } catch {
-      setShareState('error');
-    } finally {
-      setShareBusy(false);
-    }
-  };
+    return new URL(buildPublicDocsPath(shareRoute), getCurrentOrigin()).toString();
+  }, [documentDetail?.voSlug, route.anchor, route.slug]);
+  const { copyShareLink, shareBusy, shareState } = usePublicShareLink({
+    buildShareUrl: buildDocsShareUrl,
+  });
 
   return (
     <section className={styles.sectionCard}>
@@ -1233,7 +1210,7 @@ const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigat
             <Icon icon="mdi:arrow-left" size={18} />
             <span>{backLabel}</span>
           </button>
-          <button type="button" className={styles.secondaryButton} onClick={() => void handleShare()} disabled={shareBusy}>
+          <button type="button" className={styles.secondaryButton} onClick={() => void copyShareLink()} disabled={shareBusy}>
             <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={18} />
             <span>{shareBusy ? t('wiki.public.shareSubmitting') : t('wiki.public.shareAction')}</span>
           </button>

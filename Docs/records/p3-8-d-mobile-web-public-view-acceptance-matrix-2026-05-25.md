@@ -16,7 +16,7 @@
 
 1. 先按本矩阵补齐 `430 x 932` 或 Gateway 入口复核。
 2. 根路径 `/` 已切向 `/discover` 公开分发页，继续复核切换后是否还有其他依赖 `/` 的公开页内部入口。
-3. 再进入纯 Web 登录后轻量链路或 Flutter 下一批高价值功能评估。
+3. 公开个人页 `/u/:id` 的显式分享入口已作为第二个纯 Web 小闭环补齐；后续再进入移动阅读、来源返回、购买 / 订单 / 背包、纯 Web 登录后轻量链路或 Flutter 下一批高价值功能评估。
 
 ## 验收维度
 
@@ -37,7 +37,7 @@
 | `/discover` | [discover-public-acceptance](/records/discover-public-acceptance) | `PublicDiscoverApp.tsx`、`discoverRouteState.ts` | 分发页已覆盖 forum / docs / leaderboard / shop 摘要、区块预览和公开页直达；代码中有区块记忆与来源回流设计 | 首屏摘要卡信息密度、摘要卡主区域和“直接进入公开页”按钮是否容易混淆、从专题页回到上次区块是否成立 | 中 |
 | `/forum` | [forum-public-mobile-acceptance](/records/forum-public-mobile-acceptance) | `PublicForumApp.tsx`、`PublicForumList.tsx`、`PublicForumDetail.tsx`、`forumRouteState.ts` | 公开 forum 已覆盖列表、分类、标签、类型、搜索、详情和来源返回；详情页分享已存在 | 长标题 / 多标签帖子、类型页横向筛选、详情返回 `/discover` / `/u/:id` / 列表上下文、评论阅读区窄屏节奏 | 中 |
 | `/docs` | [docs-public-acceptance](/records/docs-public-acceptance) | `PublicDocsApp.tsx`、`docsRouteState.ts`、`publicDocsApi.ts` | 公开 docs 已覆盖目录、搜索、详情、旧 `__documents__` 兼容和 canonical 复制 | 搜索结果回跳、正文长链接 / 长 slug、正文内链和锚点、从 `/discover` 返回来源 | 中 |
-| `/u/:id` | [profile-public-acceptance](/records/profile-public-acceptance) | `PublicProfileApp.tsx`、`profileRouteState.ts` | 公开个人页已覆盖资料、帖子 / 评论页签、榜单 / forum 来源返回；当前没有显式分享入口 | 头像 / 昵称 / 长 ID、页签分页 URL、榜单进入后返回、本人 / 他人登录态识别；评估是否需要补个人页分享入口 | 中 |
+| `/u/:id` | [profile-public-acceptance](/records/profile-public-acceptance) | `PublicProfileApp.tsx`、`profileRouteState.ts` | 公开个人页已覆盖资料、帖子 / 评论页签、榜单 / forum 来源返回；显式复制链接入口已补齐 | 头像 / 昵称 / 长 ID、页签分页 URL、榜单进入后返回、本人 / 他人登录态识别；复核分享按钮和反馈不造成窄屏挤压 | 中 |
 | `/leaderboard` | [leaderboard-public-acceptance](/records/leaderboard-public-acceptance) | `PublicLeaderboardApp.tsx`、`leaderboardRouteState.ts` | 公开榜单已覆盖类型切换、分页、用户榜单到公开个人页；商品榜单保持只读不进购买链路 | 榜单行在 `390px` 下是否拥挤、分页是否可点、用户榜单到 `/u/:id` 返回是否保留来源 | 中 |
 | `/shop` | [shop-public-acceptance](/records/shop-public-acceptance) | `PublicShopApp.tsx`、`shopRouteState.ts` | 公开商城已覆盖首页、商品列表、商品详情、详情分享和来源返回；只读边界明确 | 商品图片、价格 / 库存 / 时效文本、列表筛选分页 URL、详情从 `/discover` 或列表返回、工作台入口语义 | 中 |
 
@@ -46,7 +46,7 @@
 | 发现 | 影响 | 建议 |
 | --- | --- | --- |
 | `PublicShellHeader` 的工作台入口曾是 `<a href="/">WebOS</a>` | 根路径 `/` 切到纯 Web 后，公开页顶部入口会回到当前纯 Web 页面而不是 `/desktop`，且 `WebOS` 文案不符合新路线 | 已在后续小闭环中改为 `/desktop`，默认文案改为“工作台”，图标态补充 `aria-label` / `title` |
-| `/u/:id` 没有显式分享入口 | 公开个人页是增长入口之一，但当前只依赖浏览器地址栏可复制；是否需要显式分享未重新评估 | 人工实测后若个人页承担跨端回流，列入 P2 小修；不要抢在工作台入口修正前 |
+| `/u/:id` 曾没有显式分享入口 | 公开个人页是增长入口之一，只依赖浏览器地址栏复制会弱化跨端回流 | 已补显式复制链接按钮；同时复用公开详情页分享 hook，并修正底层剪贴板同步 fallback |
 | `/leaderboard` 和 `/discover` 没有显式分享动作 | 列表 / 分发页天然可直达，但分享入口标准弱于详情页 | 暂不作为首批修复；仅在实测确认分享是高频入口时回拉 |
 | 公开页多处文案仍使用“桌面工作台 / WebOS”作为边界说明 | 新路线后这些文案仍可表达“重功能在工作台”，但需要避免暗示 WebOS 是主线 | 跟随 `/desktop` 入口修正一起抽查，必要时小范围改为“工作台保留入口” |
 | 根路径 `/` 实测时仍落到 `RootEntry`，Tauri 环境才替换到 `/desktop` | 与新规划不冲突，因为代码切换被拆成后续批次；但矩阵需要提前识别依赖 `/` 的入口 | 已在后续小闭环中将普通浏览器 `/` 切向 `/discover`，Tauri 当前仍保留 `/desktop` |
@@ -77,6 +77,17 @@
   - `https://localhost:5000/` 已进入 `/discover` 公开分发页
   - `https://localhost:5000/desktop` 仍进入 WebOS 工作台保留入口
   - 后续入口治理已移除 `http://localhost:3000/?demo` 早期登录 / 通知测试页；`/?demo` 不再绕过纯 Web 默认入口
+
+补充公开个人页分享复核：
+
+- 验收日期：2026-05-25
+- 环境：`radish.client` Vite 直连 `http://localhost:3000`
+- 样本：从 `/leaderboard` 进入 `/u/20001`
+- 结果：
+  - 个人公开页显示“复制链接”按钮，复制 canonical 链接为 `https://radishx.com/u/20001`
+  - 页面级 `documentElement.scrollWidth` 与 `body.scrollWidth` 均等于当前视口宽度，未出现页面级横向溢出
+  - 公开个人页、论坛帖子、公开文档和商品详情分享状态已收敛到统一 hook
+  - 底层剪贴板工具已调整为先同步 textarea 复制，再回退 `navigator.clipboard`，避免嵌入浏览器或权限受限上下文误报失败
 
 ## 后续实测前置
 

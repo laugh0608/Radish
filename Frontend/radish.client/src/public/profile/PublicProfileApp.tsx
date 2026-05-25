@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import {
@@ -25,7 +25,9 @@ import {
   buildProfilePageStructuredData,
   removePublicStructuredData,
 } from '../publicStructuredData';
+import { buildPublicCanonicalUrl } from '../publicHead';
 import { PublicShellHeader } from '../components/PublicShellHeader';
+import { usePublicShareLink } from '../hooks/usePublicShareLink';
 import {
   resolvePublicProfileCommentForumTarget,
   resolvePublicProfilePostForumTarget,
@@ -359,6 +361,18 @@ export const PublicProfileApp = ({
   const backLabelKey = getPublicDetailBackLabelKey(backAction?.mode);
   const backLabel = backLabelKey ? t(backLabelKey) : t('profile.public.backToForum');
   const handleBack = backAction?.onBack ?? onNavigateToForumList;
+  const buildProfileShareUrl = useCallback(() => {
+    const profileUserId = String(profile?.voUserId ?? route.userId);
+    return buildPublicCanonicalUrl(buildPublicProfilePath({
+      kind: 'detail',
+      userId: profileUserId,
+      tab: route.tab,
+      page: route.page,
+    }));
+  }, [profile?.voUserId, route.page, route.tab, route.userId]);
+  const { copyShareLink, shareBusy, shareState } = usePublicShareLink({
+    buildShareUrl: buildProfileShareUrl,
+  });
 
   const handleToggleFollow = async () => {
     if (!canToggleFollow || togglingFollow) {
@@ -430,7 +444,16 @@ export const PublicProfileApp = ({
             <section className={styles.summaryCard}>
               <div className={styles.summaryHeader}>
                 <span className={styles.readOnlyBadge}>{t('profile.public.readOnlyBadge')}</span>
+                <button type="button" className={`${styles.secondaryButton} ${styles.shareButton}`} onClick={() => void copyShareLink()} disabled={shareBusy}>
+                  <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={16} />
+                  <span>{shareBusy ? t('profile.public.shareSubmitting') : t('profile.public.shareAction')}</span>
+                </button>
               </div>
+              {shareState !== 'idle' && (
+                <p className={styles.shareFeedback} data-state={shareState}>
+                  {shareState === 'success' ? t('profile.public.shareSuccess') : t('profile.public.shareFailed')}
+                </p>
+              )}
               <button type="button" className={styles.summaryBackLink} onClick={handleBack}>
                 <Icon icon="mdi:arrow-left" size={16} />
                 <span>{backLabel}</span>
