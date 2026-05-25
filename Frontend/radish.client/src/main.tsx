@@ -23,6 +23,8 @@ const RootEntry = lazy(() => import('./desktop/RootEntry.tsx').then((module) => 
 const PublicEntry = lazy(() => import('./public/PublicEntry.tsx').then((module) => ({ default: module.PublicEntry })));
 
 const isBrowser = typeof window !== 'undefined';
+const BROWSER_PUBLIC_ENTRY_PATH = '/discover';
+const CAPACITOR_PUBLIC_ENTRY_PATH = '/docs';
 
 function isCapacitorNativePlatform(): boolean {
   return window.Capacitor?.isNativePlatform?.() === true;
@@ -47,12 +49,17 @@ if (isBrowser) {
   });
 }
 
-if (isBrowser && isTauriRuntime() && window.location.pathname === '/') {
-  window.history.replaceState({}, '', TAURI_DESKTOP_ENTRY_PATH);
-}
+const params = isBrowser ? new URLSearchParams(window.location.search) : new URLSearchParams();
+const isDemo = params.has('demo');
 
-if (isBrowser && isCapacitorNativePlatform() && window.location.pathname === '/') {
-  window.history.replaceState({}, '', '/docs');
+if (isBrowser && window.location.pathname === '/' && !isDemo) {
+  if (isTauriRuntime()) {
+    window.history.replaceState({}, '', TAURI_DESKTOP_ENTRY_PATH);
+  } else if (isCapacitorNativePlatform()) {
+    window.history.replaceState({}, '', CAPACITOR_PUBLIC_ENTRY_PATH);
+  } else {
+    window.history.replaceState({}, '', BROWSER_PUBLIC_ENTRY_PATH);
+  }
 }
 
 const isOidcCallback = isBrowser && window.location.pathname === '/oidc/callback';
@@ -70,9 +77,6 @@ const isPublicContentRoute = isBrowser && (
   || window.location.pathname === '/__documents__'
   || window.location.pathname.startsWith('/__documents__/')
 );
-
-const params = new URLSearchParams(window.location.search);
-const isDemo = params.has('demo');
 
 const Page = isOidcCallback || isDemo ? App : isPublicContentRoute ? PublicEntry : RootEntry;
 
