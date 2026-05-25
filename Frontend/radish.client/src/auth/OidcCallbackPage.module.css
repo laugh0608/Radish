@@ -1,0 +1,42 @@
+.page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--theme-brand-soft) 48%, transparent) 0%, transparent 34%),
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-app) 94%, white 6%) 0%, var(--theme-bg-app) 100%);
+  color: var(--theme-text-primary);
+}
+
+.card {
+  width: min(480px, 100%);
+  display: grid;
+  gap: 14px;
+  padding: 28px;
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 84%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  box-shadow: var(--theme-shadow-soft);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--theme-font-serif);
+  font-size: 24px;
+  line-height: 1.25;
+}
+
+.message,
+.error {
+  margin: 0;
+  line-height: 1.7;
+}
+
+.message {
+  color: var(--theme-text-secondary);
+}
+
+.error {
+  color: var(--theme-danger);
+}

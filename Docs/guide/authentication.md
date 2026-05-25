@@ -389,11 +389,14 @@ builder.Services.AddAuthorizationBuilder()
 
 ## 6. 前端集成
 
-> 当前仓库中，为了先打通端到端调试链路，在 `Frontend/radish.client/src/App.tsx` 中实现了一套极简 OIDC 流程：
+> 当前 `radish.client` 已移除早期 `?demo` 认证测试页，普通浏览器根路径 `/` 进入 `/discover` 纯 Web 公开分发页，WebOS 仅保留 `/desktop` 入口。
+>
+> Web 侧 OIDC 回调由 `Frontend/radish.client/src/auth/OidcCallbackPage.tsx` 独立承载：
+>
 > - 前端统一通过 Gateway 访问：`https://localhost:5000`；
-> - 首页 `App` 组件提供“通过 OIDC 登录 / 退出登录”按钮，登录重定向到 `${apiBaseUrl}/connect/authorize`，回调地址为 `${window.location.origin}/oidc/callback`；
+> - 登录入口由正式 UI 触发 `redirectToLogin()`，回调地址为 `${window.location.origin}/oidc/callback`；
 > - 回调页 `/oidc/callback` 调用 `${apiBaseUrl}/connect/token` 换取 Token，并将 `access_token/refresh_token` 持久化到浏览器；
-> - 首页挂载时调用 `${apiBaseUrl}/api/v1/User/GetUserByHttpContext` 获取当前用户 `userId/userName/tenantId`，用以验证 Auth ↔ Api ↔ Db 的数据映射。
+> - 回调成功后会预热当前用户资料，再回到根路径，由入口分流进入 `/discover` 或 Tauri `/desktop`。
 >
 > 这套实现仍是 Web 侧当前阶段的轻量口径；与此同时，`Clients/radish.flutter` 当前已落地 Android 起步的原生浏览器登录 / 登出与 `radish://oidc/callback` 回调闭环。
 > 后续若 Web 侧继续深化，仍计划按本节 6.1–6.3 所述方式，引入 `oidc-client-ts` 或 `react-oidc-context` 等专用库接管 Token 生命周期与自动续期。

@@ -9,25 +9,8 @@ import { welcomeZh } from './locales/welcome.zh';
 const resources = {
     en: {
         translation: {
-            'app.title': 'Radish Auth Test',
-            'app.description': 'Inspect OIDC login status and current user information from Radish services.',
-
-            'auth.sectionTitle': 'Authentication',
             'auth.login': 'Login via OIDC',
-            'auth.relogin': 'Re-login via OIDC',
             'auth.logout': 'Logout',
-            'auth.currentUser': 'Current user: {{userName}} (Id: {{userId}}, Tenant: {{tenantId}})',
-            'auth.notLoggedIn': 'Not logged in',
-            'auth.userInfoLoadFailedPrefix': 'Failed to load user info: ',
-
-            'weather.loading': 'Loading weather data from Radish.Api...',
-            'weather.date': 'Date',
-            'weather.tempC': 'Temp. (C)',
-            'weather.tempF': 'Temp. (F)',
-            'weather.summary': 'Summary',
-
-            'info.weather.load_success': 'Weather forecast loaded successfully.',
-            'error.weather.load_failed': 'Failed to load weather data.',
 
             'oidc.title': 'OIDC Login Callback',
             'oidc.completingLogin': 'Completing login...',
@@ -1486,25 +1469,8 @@ const resources = {
     },
     zh: {
         translation: {
-            'app.title': 'Radish 认证测试',
-            'app.description': '用于查看 OIDC 登录状态和当前用户信息，验证认证链路是否正常。',
-
-            'auth.sectionTitle': '认证',
             'auth.login': '通过 OIDC 登录',
-            'auth.relogin': '重新通过 OIDC 登录',
             'auth.logout': '退出登录',
-            'auth.currentUser': '当前用户：{{userName}}（Id: {{userId}}, Tenant: {{tenantId}}）',
-            'auth.notLoggedIn': '当前未登录',
-            'auth.userInfoLoadFailedPrefix': '用户信息加载失败：',
-
-            'weather.loading': '正在从 Radish.Api 加载天气数据...',
-            'weather.date': '日期',
-            'weather.tempC': '温度 (℃)',
-            'weather.tempF': '温度 (℉)',
-            'weather.summary': '摘要',
-
-            'info.weather.load_success': '获取天气预报成功。',
-            'error.weather.load_failed': '天气数据加载失败。',
 
             'oidc.title': 'OIDC 登录回调',
             'oidc.completingLogin': '正在完成登录...',

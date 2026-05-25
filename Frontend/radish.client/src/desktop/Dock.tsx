@@ -187,7 +187,7 @@ export const Dock = () => {
       setTime(new Date());
     }, 1000);
 
-    // 注意：用户信息由 App.tsx 统一管理，此处不再重复获取
+    // 注意：用户信息由 Shell.tsx 统一管理，此处不再重复获取
     // 注意：WebSocket 连接由 Shell.tsx 统一管理，此处不再启动
 
     if (typeof window !== 'undefined' && loggedIn) {

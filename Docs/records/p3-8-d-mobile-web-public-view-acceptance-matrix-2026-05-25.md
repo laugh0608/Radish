@@ -76,7 +76,7 @@
 - 结果：
   - `https://localhost:5000/` 已进入 `/discover` 公开分发页
   - `https://localhost:5000/desktop` 仍进入 WebOS 工作台保留入口
-  - `http://localhost:3000/?demo` 仍保留在早期登录 / 通知测试页，没有被根路径切换覆盖
+  - 后续入口治理已移除 `http://localhost:3000/?demo` 早期登录 / 通知测试页；`/?demo` 不再绕过纯 Web 默认入口
 
 ## 后续实测前置
 

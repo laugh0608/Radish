@@ -9,22 +9,23 @@ import { initializeTheme } from '@/theme/theme';
 import {
   initializeTauriBridge,
   isTauriRuntime,
-  TAURI_DESKTOP_ENTRY_PATH,
   rewriteDesktopOidcReturnToBrowserPath,
 } from '@/platform/tauriBridge';
-import { isPublicDiscoverPathname } from './public/discoverRouteState';
+import {
+  OIDC_CALLBACK_PATH,
+  isPublicContentPathname,
+  resolveInitialEntryPath,
+} from '@/bootstrap/entryRoute';
 import './theme/theme-tokens.css';
 import './index.css';
 import './i18n';
 import 'highlight.js/styles/github-dark.css';
 
-const App = lazy(() => import('./App.tsx'));
+const OidcCallbackPage = lazy(() => import('./auth/OidcCallbackPage.tsx').then((module) => ({ default: module.OidcCallbackPage })));
 const RootEntry = lazy(() => import('./desktop/RootEntry.tsx').then((module) => ({ default: module.RootEntry })));
 const PublicEntry = lazy(() => import('./public/PublicEntry.tsx').then((module) => ({ default: module.PublicEntry })));
 
 const isBrowser = typeof window !== 'undefined';
-const BROWSER_PUBLIC_ENTRY_PATH = '/discover';
-const CAPACITOR_PUBLIC_ENTRY_PATH = '/docs';
 
 function isCapacitorNativePlatform(): boolean {
   return window.Capacitor?.isNativePlatform?.() === true;
@@ -49,36 +50,22 @@ if (isBrowser) {
   });
 }
 
-const params = isBrowser ? new URLSearchParams(window.location.search) : new URLSearchParams();
-const isDemo = params.has('demo');
+const initialEntryPath = isBrowser
+  ? resolveInitialEntryPath({
+      pathname: window.location.pathname,
+      isTauriRuntime: isTauriRuntime(),
+      isCapacitorNativePlatform: isCapacitorNativePlatform(),
+    })
+  : null;
 
-if (isBrowser && window.location.pathname === '/' && !isDemo) {
-  if (isTauriRuntime()) {
-    window.history.replaceState({}, '', TAURI_DESKTOP_ENTRY_PATH);
-  } else if (isCapacitorNativePlatform()) {
-    window.history.replaceState({}, '', CAPACITOR_PUBLIC_ENTRY_PATH);
-  } else {
-    window.history.replaceState({}, '', BROWSER_PUBLIC_ENTRY_PATH);
-  }
+if (initialEntryPath) {
+  window.history.replaceState({}, '', initialEntryPath);
 }
 
-const isOidcCallback = isBrowser && window.location.pathname === '/oidc/callback';
-const isPublicContentRoute = isBrowser && (
-  isPublicDiscoverPathname(window.location.pathname)
-  || window.location.pathname === '/forum'
-  || window.location.pathname.startsWith('/forum/')
-  || window.location.pathname === '/shop'
-  || window.location.pathname.startsWith('/shop/')
-  || window.location.pathname === '/leaderboard'
-  || window.location.pathname.startsWith('/leaderboard/')
-  || window.location.pathname === '/docs'
-  || window.location.pathname.startsWith('/docs/')
-  || /^\/u\/[1-9]\d*\/?$/.test(window.location.pathname)
-  || window.location.pathname === '/__documents__'
-  || window.location.pathname.startsWith('/__documents__/')
-);
+const isOidcCallback = isBrowser && window.location.pathname === OIDC_CALLBACK_PATH;
+const isPublicContentRoute = isBrowser && isPublicContentPathname(window.location.pathname);
 
-const Page = isOidcCallback || isDemo ? App : isPublicContentRoute ? PublicEntry : RootEntry;
+const Page = isOidcCallback ? OidcCallbackPage : isPublicContentRoute ? PublicEntry : RootEntry;
 
 initializeTheme();
 void applySiteBranding(getApiBaseUrl());

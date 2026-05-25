@@ -77,7 +77,7 @@ Radish 的前端主线收敛为 **纯 Web + Flutter**。
 ## 路由与迁移策略
 
 - 当前保持增量迁移，不立即删除 WebOS 路由结构
-- 普通浏览器根路径 `/` 已切向纯 Web 公开分发页 `/discover`；Tauri 当前仍保留 `/desktop`，`?demo` 与 `/oidc/callback` 继续保留既有逻辑
+- 普通浏览器根路径 `/` 已切向纯 Web 公开分发页 `/discover`；Tauri 当前仍保留 `/desktop`；历史 `?demo` 认证测试页已移除，`/oidc/callback` 保留为独立正式回调入口
 - 公开内容直达路由已经覆盖 `/discover`、`/forum`、`/forum/post/:id`、`/docs`、`/docs/:slug`、`/u/:id`、`/leaderboard`、`/shop` 等首批路径
 - 公开内容主路由坚持使用服务端可见的真实路径，不采用 `/shell#page` 或 `/desktop#...` 这类 hash shell 作为公开资源地址
 - `/desktop` 仅作为 WebOS 保留入口
