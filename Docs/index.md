@@ -1,11 +1,11 @@
 ---
 layout: home
 title: Radish 文档
-titleTemplate: 现代社区与 WebOS 平台
+titleTemplate: 现代社区与多端平台
 hero:
   name: Radish
-  text: 现代社区平台与 WebOS 文档
-  tagline: 基于 .NET 10 + SQLSugar + PostgreSQL + React 19 的社区与桌面化体验
+  text: 现代社区平台与多端文档
+  tagline: 基于 .NET 10 + SQLSugar + PostgreSQL + React 19 的纯 Web、Flutter 与工作台体验
   actions:
     - theme: brand
       text: 开发快速上手
@@ -24,8 +24,8 @@ features:
     title: 清晰的分层架构
     details: Common / Shared / Model / Repository / Service / Api 分层明确，便于协作与维护。
   - icon: 🖥️
-    title: WebOS 桌面体验
-    details: Desktop Shell、Dock、窗口系统统一承载论坛、商城、后台等应用。
+    title: 纯 Web 与工作台入口
+    details: 普通浏览器默认进入纯 Web 公开入口，/desktop 保留 WebOS 工作台能力。
   - icon: 🗂️
     title: 低噪音入口
     details: 首页只保留高频入口；详细目录、规划和日志拆分到独立页面，减少查找与上下文噪音。
@@ -36,7 +36,7 @@ features:
 - [快速开始](/guide/getting-started) - 环境、初始化、验证与启动方式
 - [架构总览](/architecture/overview) - 系统拓扑、项目职责与关键约定
 - [开发规范](/architecture/specifications) - 分层约束、编码规范与协作规则
-- [前端设计](/frontend/design) - WebOS 架构与应用集成方式
+- [前端设计](/frontend/design) - 纯 Web、Flutter、WebOS 保留入口与应用集成方式
 - [前端多壳层策略](/frontend/shell-strategy) - 多端壳层职责分工
 
 ## 当前协作

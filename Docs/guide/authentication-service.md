@@ -416,93 +416,28 @@ window.addEventListener('storage', (event) => {
 
 ### 回调路由
 
-```typescript
-// src/routes/OidcCallback.tsx
-import { useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { getAuthBaseUrl } from '@/config/env';
-import { tokenService } from '@/services/tokenService';
+Web 侧 OIDC 回调由 `Frontend/radish.client/src/auth/OidcCallbackPage.tsx` 独立承载，不再依赖早期 `App.tsx` 或 `?demo` 页面。
 
-export const OidcCallback: React.FC = () => {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
+当前实现要点：
 
-  useEffect(() => {
-    const code = searchParams.get('code');
-    const error = searchParams.get('error');
+- 回调地址固定为 `${window.location.origin}/oidc/callback`
+- 回调页调用 `@radish/http` 的 `redeemOidcAuthorizationCode()` 完成授权码换 Token
+- Token 写入统一的 `tokenService`
+- 写入 Token 后调用 `hydrateAuthUser()` 预热当前用户资料
+- 成功后执行 `window.location.replace('/')` 回到根入口
+- 普通浏览器根入口 `/` 会进入 `/discover` 纯 Web 公开分发页；Tauri 当前仍保留进入 `/desktop`
 
-    if (error) {
-      console.error('OIDC 认证失败:', error);
-      navigate('/');
-      return;
-    }
-
-    if (code) {
-      // 交换 code 获取 token
-      exchangeCodeForToken(code);
-    }
-  }, [searchParams, navigate]);
-
-  const exchangeCodeForToken = async (code: string) => {
-    try {
-      const authServerBaseUrl = getAuthBaseUrl();
-
-      const response = await fetch(`${authServerBaseUrl}/connect/token`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          grant_type: 'authorization_code',
-          code: code,
-          redirect_uri: `${window.location.origin}/oidc/callback`,
-          client_id: 'radish-client',
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.access_token) {
-        // 存储 Token
-        tokenService.setTokenInfoFromJwt(data.access_token, data.refresh_token);
-
-        // 当前真实实现会先预热当前用户资料，再跳回桌面壳层
-        navigate('/');
-      }
-    } catch (error) {
-      console.error('Token 交换失败:', error);
-      navigate('/');
-    }
-  };
-
-  return <div>正在登录...</div>;
-};
-```
+回调页只负责协议闭环和用户资料预热，不承载登录测试 UI、天气示例或其他 demo 行为。
 
 ### 当前实现补充
 
-- OIDC 回调完成并写入 token 后，`radish.client` 当前会先执行一次当前用户资料预热，再返回桌面壳层，优先同步头像、昵称、等级经验等高频信息。
+- OIDC 回调完成并写入 token 后，`radish.client` 当前会先执行一次当前用户资料预热，再返回根入口；普通浏览器进入 `/discover`，Tauri 当前进入 `/desktop`，以优先同步头像、昵称、等级经验等高频信息。
 - 这一步的目标不是扩大缓存生命周期，而是缩短“刚登录成功但桌面头像 / 等级信息还要再等几秒”的体感空窗。
 - `cached_user_info` 仍只允许作为与当前 `access token` 身份强绑定的一次性引导缓存；资料预热完成后应继续按既有规则消费并清理，不能回退为跨账号、跨租户的长期缓存。
 
-### 路由配置
+### 入口分流
 
-```typescript
-// src/App.tsx
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { OidcCallback } from './routes/OidcCallback';
-
-export const App: React.FC = () => {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/oidc/callback" element={<OidcCallback />} />
-        {/* 其他路由 */}
-      </Routes>
-    </BrowserRouter>
-  );
-};
-```
+`Frontend/radish.client/src/main.tsx` 会先识别 `/oidc/callback` 并加载独立回调页；其他公开内容路径进入 `PublicEntry`；`/desktop` 和工作台路径进入 `RootEntry`。历史 `/?demo` 不再有特殊分流。
 
 ## 环境配置
 

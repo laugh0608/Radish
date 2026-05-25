@@ -57,8 +57,8 @@
 | Web Host | ASP.NET Core WebApplication | Program.cs 中最小宿主，按需要拆 Controller/Minimal API |
 | ORM | [SQLSugar](https://github.com/donet5/SqlSugar) | Code First + Migration，仓储层集中管理上下文，支持读写分离配置 |
 | 数据库 | PostgreSQL 16 | 默认端口 5432，连接通过 `ConnectionStrings__Default` 注入 |
-| 前端 | React 19 + Vite + TypeScript | radish.client (WebOS)、radish.console (管理控制台)、radish.ui (@radish/ui 组件库)；使用 npm workspaces；当前以 Zustand 与共享 API 客户端为主要前端基线 |
-| 前端构建 | Vite Rolldown，ESLint 9，TypeScript | 各项目独立构建：radish.client、radish.console；固定文档统一存放于 `Docs/`，由 API 启动时同步到 WebOS 文档应用 |
+| 前端 | React 19 + Vite + TypeScript | radish.client（纯 Web 默认入口 + `/desktop` WebOS 保留入口）、radish.console（管理控制台）、radish.ui（@radish/ui 组件库）；使用 npm workspaces；当前以 Zustand 与共享 API 客户端为主要前端基线 |
+| 前端构建 | Vite Rolldown，ESLint 9，TypeScript | 各项目独立构建：radish.client、radish.console；固定文档统一存放于 `Docs/`，由 API 启动时同步为内置文档，WebOS `/desktop` 文档应用可继续展示 |
 | 测试 | xUnit 3 + Shouldly + Moq，辅以 `HttpTest` | `Radish.Api.Tests` 目录承载后端测试与专题 `.http` 资产；前端当前仅有最小 `node --test` 与 `type-check` 基线 |
 | 日志 / 配置 | Serilog + `Microsoft.Extensions.Configuration` | 支持 JSON + 环境变量 + 用户密钥；生产日志输出到 Console + Seq/Elastic 预留 |
 | 容器 | `Radish.DbMigrate / Radish.Api / Radish.Auth / Radish.Gateway / Frontend` Dockerfile 已落地 | 仓库已提供五个镜像入口、`Deploy/docker-compose*.yml` 最小编排与 `Docker Images` workflow；当前 `radish-dbmigrate / radish-api / radish-auth / radish-gateway / radish-frontend` 已统一纳入 `GHCR` 推送口径，并已通过 `v26.3.2-test / v26.3.2-release` 完成真实 `docker pull`、`DbMigrate` 初始化与测试 / 正式部署验收；`Frontend/Dockerfile` 也已收口为轻量 Node 多阶段镜像，本地验证体积约 `300MB`，当前容器链路转入发布后回归维护 |
@@ -78,15 +78,16 @@
 ```
 浏览器访问 Gateway (https://localhost:5000)
         │
-        ├─→ /         (radish.client - WebOS 桌面与文档应用)
+        ├─→ /         (radish.client - 纯 Web 默认入口，当前进入 /discover)
+        ├─→ /desktop  (radish.client - WebOS 保留入口)
         ├─→ /console  (radish.console - 管理控制台)
         ├─→ /api      (Radish.Api - REST API)
         └─→ /scalar   (API 文档)
 
-radish.client (WebOS)           radish.console (独立 SPA)
+radish.client (纯 Web + /desktop)  radish.console (独立 SPA)
         │                              │
-        ├─ 内置应用 (window)            ├─ OIDC 认证
-        ├─ 文档/论坛/设置               ├─ 独立路由
+        ├─ 公开内容壳层                 ├─ OIDC 认证
+        ├─ WebOS 保留入口 (/desktop)     ├─ 独立路由
         └─ 外部应用 (external)          └─ 管理功能
               │
               └─ Console (新标签页打开)

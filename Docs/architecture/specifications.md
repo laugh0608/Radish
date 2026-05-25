@@ -316,7 +316,7 @@ git push origin v26.1.1.3003
 
 - docs/：项目文档，实际文件夹，映射解决方案中的 docs 目录，包含开发规范、设计文档等
 - others/：其他资源文件，虚拟文件夹，只是解决方案中的文件夹，其中所有文件均为项目根目录下的，包括 Dockerfile、GitHub 配置、start.ps1 脚本 等
-- radish.client：主要 - 前端 React 应用代码（WebOS 桌面环境），TypeScript 编写；采用混合架构支持三种应用集成方式：内置应用(type: 'window')、嵌入应用(type: 'iframe')、外部应用(type: 'external')。详见 [前端设计](/frontend/design)
+- radish.client：主要 - 前端 React 应用代码，TypeScript 编写；普通浏览器根路径承载纯 Web 默认入口，`/desktop` 保留 WebOS 桌面环境；历史桌面环境采用混合架构支持三种应用集成方式：内置应用(type: 'window')、嵌入应用(type: 'iframe')、外部应用(type: 'external')。详见 [前端设计](/frontend/design)
 - radish.console：主要 - 管理控制台前端应用，独立的 SPA；通过 OIDC 认证，有独立的路由系统；不嵌入 radish.client，在新标签页独立运行
 - radish.ui：主要 - UI 组件库，通过 npm workspaces 供 radish.client 和 radish.console 共享基础组件、Hooks 和工具函数
 - Radish.Gateway：主要 - 服务门户与网关项目，ASP.NET Core 编写；已实现统一服务入口、YARP 路由转发、健康检查聚合等核心功能。详细说明见 [Gateway 服务网关](/guide/gateway)。
@@ -1153,7 +1153,7 @@ public class UserBalance : RootEntityTKey<long>, IDeleteFilter
   - `MessageKey`：与 `.resx` 和前端 i18n 映射的 key，沿用 `error.*` / `info.*` 命名规范（如 `error.auth.invalid_credentials`）。
   - `MessageInfo`：按当前文化翻译后的完整提示句子，由后端本地化组件生成，作为前端兜底展示内容。
 - 前端发起 HTTP 请求时必须携带 `Accept-Language` 头：
-  - 统一通过封装的 `apiFetch()` / `requestJson<T>()` 等 helper 写入 `Accept-Language: i18n.language || 'zh'`，避免在页面中分散设置（当前示例实现见 `Frontend/radish.client/src/App.tsx`）。
+  - 统一通过 `@radish/http`、业务 API helper 或 `requestJson<T>()` 等封装写入 `Accept-Language: i18n.language || 'zh'`，避免在页面中分散设置。
   - 前端解析响应时优先使用 `messageKey` 做 i18n 映射，仅在 key 缺失或解析失败时回退到 `MessageInfo`。
 - 所有新接口、新页面默认遵循上述统一模式：Controller 返回 `MessageModel<T>`，通过 `IStringLocalizer<Errors>` 提供多语言文案，前端使用 `requestJson<T>` + `parseApiResponse` 完成解析与提示。
 
@@ -1161,7 +1161,7 @@ public class UserBalance : RootEntityTKey<long>, IDeleteFilter
 
 > 详细的交互、设计 Token、跨端策略以 [前端设计](/frontend/design) 为准，此处保留关键守则，便于与后端规范并列查看。
 
-- radish.client 以桌面模式为核心交互范式，首页加载后呈现类似 macOS 的桌面界面。
+- radish.client 当前以纯 Web 作为普通浏览器默认入口；WebOS 桌面模式保留在 `/desktop`，只维护既有工作台能力和迁移过渡。
 - 顶部为状态栏，需显示当前登录用户名、IP 地址以及预留系统状态信息区域。
 - 底部为 Dock 栏，用于承载核心功能快捷入口；点击或双击图标都应维持桌面操作逻辑和动效。
 - 左侧屏幕区域展示社区功能图标，用户双击后需弹出大弹窗（模态窗口）显示对应功能内容。

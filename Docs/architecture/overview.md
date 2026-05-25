@@ -1,6 +1,6 @@
 # 架构总览
 
-> 本文提供 Radish 的“架构一页纸”视角：项目组成、运行拓扑、分层边界与关键约定。更细的实现细节见 [开发框架说明](/architecture/framework)，前端交互与 WebOS 范式见 [前端设计](/frontend/design)，里程碑与当前进度见 [开发路线图](/development-plan)。
+> 本文提供 Radish 的“架构一页纸”视角：项目组成、运行拓扑、分层边界与关键约定。更细的实现细节见 [开发框架说明](/architecture/framework)，前端纯 Web / Flutter / WebOS 保留入口分工见 [前端设计](/frontend/design)，里程碑与当前进度见 [开发路线图](/development-plan)。
 
 ## 1. 文档导航（先看什么）
 
@@ -9,7 +9,7 @@
 - **想看更细的后端/网关实现要点**：[开发框架说明](/architecture/framework)
 - **想看长期 ID 体系与社区联邦方向**：[标识体系与社区联邦长期路线](/architecture/id-and-federation-roadmap)
 - **想看当前迭代计划与进度**：[开发路线图](/development-plan) / [开发日志](/changelog/)
-- **想理解桌面化前端（WebOS）**：[前端设计](/frontend/design)
+- **想理解前端入口分工（纯 Web / Flutter / WebOS 保留入口）**：[前端设计](/frontend/design)
 - **想理解统一入口与路由转发**：[Gateway 服务网关](/guide/gateway)
 
 ## 2. 系统拓扑（运行视图）
@@ -17,7 +17,8 @@
 ```text
 浏览器访问 Gateway (https://localhost:5000)
         │
-        ├─ /            → radish.client   (WebOS 桌面与文档应用)
+        ├─ /            → radish.client   (纯 Web 默认入口，当前进入 /discover)
+        ├─ /desktop     → radish.client   (WebOS 保留入口)
         ├─ /console     → radish.console  (管理控制台)
         ├─ /api         → Radish.Api      (REST API)
         ├─ /connect/*   → Radish.Auth     (OIDC 端点)
@@ -31,10 +32,10 @@
 - `Radish.Api`：业务 API 宿主（Controller/DI/认证授权/全局异常/Scalar/HealthChecks）
 - `Radish.Auth`：OIDC 认证中心（授权码流程、Token/Session、客户端配置）
 - `Radish.Gateway`：统一入口与反向代理（门户页、路由转发、健康检查聚合等）
-- `radish.client`：普通用户前台（WebOS 桌面 + 内置应用）
+- `radish.client`：普通用户前台（纯 Web 公开 / 轻登录入口 + `/desktop` WebOS 保留入口）
 - `radish.console`：管理员控制台（独立 SPA，权限更高，建议独立部署/入口）
 - `radish.ui`：共享 UI 组件库（client/console 复用）
-- `Docs/`：固定项目文档目录（唯一真相源，由 API 启动时同步到 WebOS 文档应用）
+- `Docs/`：固定项目文档目录（唯一真相源，由 API 启动时同步为内置文档；WebOS `/desktop` 文档应用可继续展示）
 
 ## 4. 后端分层（代码组织视角）
 

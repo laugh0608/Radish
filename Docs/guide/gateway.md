@@ -493,7 +493,8 @@ dotnet watch --project Radish.Gateway/Radish.Gateway.csproj
 | 服务 | 地址 | 说明 |
 |------|------|------|
 | **Gateway 门户** | https://localhost:5000/ | 服务门户首页 |
-| **前端应用** | https://localhost:5000/ | WebOS 桌面（通过 Gateway） |
+| **前端应用** | https://localhost:5000/ | 纯 Web 默认入口（当前进入 `/discover`） |
+| **WebOS 保留入口** | https://localhost:5000/desktop | 工作台保留入口（通过 Gateway） |
 | **API 接口** | https://localhost:5000/api/... | 业务 API（通过 Gateway） |
 | **Scalar 文档** | https://localhost:5000/scalar | API 文档（通过 Gateway） |
 | **Hangfire 面板** | https://localhost:5000/hangfire | 定时任务面板（通过 Gateway） |
