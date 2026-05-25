@@ -18,7 +18,7 @@ export const PublicShellHeader = ({
   onBrandClick,
   onNavigateToDiscover,
   discoverLabel = '发现',
-  desktopLabel = 'WebOS'
+  desktopLabel = '工作台'
 }: PublicShellHeaderProps) => {
   return (
     <header className={styles.hero}>
@@ -37,7 +37,7 @@ export const PublicShellHeader = ({
               <span>{discoverLabel}</span>
             </button>
           ) : null}
-          <a className={styles.desktopLink} href="/">
+          <a className={styles.desktopLink} href="/desktop" aria-label={desktopLabel} title={desktopLabel}>
             <Icon icon="mdi:view-dashboard-outline" size={18} />
             <span>{desktopLabel}</span>
           </a>
