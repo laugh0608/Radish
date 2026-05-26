@@ -124,6 +124,15 @@ function buildProductsRouteKey(route: PublicShopProductsRoute): string {
   return buildPublicShopPath(route);
 }
 
+function buildDesktopProductEntryUrl(productId: string): string {
+  const query = new URLSearchParams({
+    app: 'shop',
+    productId
+  });
+
+  return `/desktop?${query.toString()}`;
+}
+
 const publicBrowseGuideItems: readonly PublicGuideItemDefinition[] = [
   {
     labelKey: 'shop.public.guideBrowseLabel',
@@ -770,7 +779,7 @@ export const PublicShopApp = ({
             <div className={styles.readOnlyPanel}>
               <h2 className={styles.readOnlyTitle}>{t('shop.public.purchaseTitle')}</h2>
               <p className={styles.readOnlyDescription}>{t('shop.public.purchaseDescription')}</p>
-              <a className={styles.primaryLink} href="/desktop">
+              <a className={styles.primaryLink} href={buildDesktopProductEntryUrl(String(selectedProduct.voId))}>
                 <Icon icon="mdi:view-dashboard-outline" size={18} />
                 <span>{t('shop.public.openDesktop')}</span>
               </a>

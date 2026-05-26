@@ -89,7 +89,11 @@ export const Shell = () => {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !isAuthenticated || !desktopExternalEntry) {
+    if (typeof window === 'undefined' || !desktopExternalEntry) {
+      return;
+    }
+
+    if (desktopExternalEntry.requiresAuthenticatedSession && !isAuthenticated) {
       return;
     }
 

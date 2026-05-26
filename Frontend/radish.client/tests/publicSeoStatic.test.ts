@@ -32,6 +32,7 @@ test('sitemap.xml 应提供第一批公开入口 seed', () => {
 test('公开商城详情购买回流入口应指向保留工作台路径', () => {
   const source = readFileSync(resolve(clientRoot, 'src/public/shop/PublicShopApp.tsx'), 'utf8');
 
-  assert.match(source, /className=\{styles\.primaryLink\} href="\/desktop"/);
+  assert.match(source, /href=\{buildDesktopProductEntryUrl\(String\(selectedProduct\.voId\)\)\}/);
+  assert.match(source, /return `\/desktop\?\$\{query\.toString\(\)\}`;/);
   assert.doesNotMatch(source, /className=\{styles\.primaryLink\} href="\/"/);
 });

@@ -14,6 +14,7 @@ test('parseDesktopExternalEntry 应解析 desktop 聊天消息深链参数', () 
       channelId: '2042219067430928384',
       messageId: '2042219067430928385',
     },
+    requiresAuthenticatedSession: true,
     signature: 'chat:2042219067430928384:2042219067430928385',
   });
 });
@@ -31,8 +32,31 @@ test('parseDesktopExternalEntry 应允许仅按频道打开聊天窗口', () => 
     appParams: {
       channelId: '123',
     },
+    requiresAuthenticatedSession: true,
     signature: 'chat:123:none',
   });
+});
+
+test('parseDesktopExternalEntry 应解析 desktop 商城商品深链参数', () => {
+  const target = parseDesktopExternalEntry(
+    '/desktop',
+    '?app=shop&productId=2042219067430928384',
+  );
+
+  assert.deepEqual(target, {
+    appId: 'shop',
+    appParams: {
+      productId: '2042219067430928384',
+    },
+    requiresAuthenticatedSession: false,
+    signature: 'shop:product:2042219067430928384',
+  });
+});
+
+test('parseDesktopExternalEntry 应拒绝非法商城商品参数', () => {
+  assert.equal(parseDesktopExternalEntry('/desktop', '?app=shop&productId=0'), null);
+  assert.equal(parseDesktopExternalEntry('/desktop', '?app=shop&productId=abc'), null);
+  assert.equal(parseDesktopExternalEntry('/desktop', '?app=shop'), null);
 });
 
 test('stripDesktopExternalEntrySearch 应仅移除已处理的 desktop 跳转参数', () => {
@@ -41,4 +65,8 @@ test('stripDesktopExternalEntrySearch 应仅移除已处理的 desktop 跳转参
     '?culture=zh',
   );
   assert.equal(stripDesktopExternalEntrySearch('?app=chat&channelId=123'), '');
+  assert.equal(
+    stripDesktopExternalEntrySearch('?app=shop&productId=2042219067430928384&culture=zh'),
+    '?culture=zh',
+  );
 });
