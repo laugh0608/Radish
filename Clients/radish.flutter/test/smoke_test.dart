@@ -20,6 +20,8 @@ import 'package:radish_flutter/features/docs/data/docs_repository.dart';
 import 'package:radish_flutter/features/forum/data/forum_follow_up_store.dart';
 import 'package:radish_flutter/features/forum/data/forum_models.dart';
 import 'package:radish_flutter/features/forum/data/forum_repository.dart';
+import 'package:radish_flutter/features/leaderboard/data/leaderboard_models.dart';
+import 'package:radish_flutter/features/leaderboard/data/leaderboard_repository.dart';
 import 'package:radish_flutter/features/notifications/data/notification_repository.dart';
 import 'package:radish_flutter/features/profile/data/profile_models.dart';
 import 'package:radish_flutter/features/profile/data/profile_repository.dart';
@@ -398,6 +400,55 @@ void main() {
     expect(lifecycleGateway.moveTaskToBackCallCount, 0);
     expect(find.text('继续阅读'), findsOneWidget);
     expect(find.text('Native discover'), findsOneWidget);
+  });
+
+  testWidgets('leaderboard user can open public profile and return to ranking',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final lifecycleGateway = _RecordingAppLifecycleGateway();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _SeededDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _FakeForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        leaderboardRepository: const _SeededLeaderboardRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+        appLifecycleGateway: lifecycleGateway,
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('榜单').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('luobo'), findsOneWidget);
+    await tester.tap(find.text('打开公开主页'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('公开主页'), findsOneWidget);
+    expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(lifecycleGateway.moveTaskToBackCallCount, 0);
+    expect(find.text('榜单类型：经验榜'), findsOneWidget);
+    expect(find.text('luobo'), findsOneWidget);
   });
 
   testWidgets('recent public profile target survives shell rebuild',
@@ -2786,6 +2837,34 @@ class _FakeProfileRepository implements ProfileRepository {
       pageSize: 3,
       total: 0,
       items: [],
+    );
+  }
+}
+
+class _SeededLeaderboardRepository implements LeaderboardRepository {
+  const _SeededLeaderboardRepository();
+
+  @override
+  Future<LeaderboardPageResult> getExperienceLeaderboard({
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const LeaderboardPageResult(
+      page: 1,
+      pageSize: 20,
+      dataCount: 1,
+      pageCount: 1,
+      items: [
+        LeaderboardItem(
+          rank: 1,
+          userId: 'user-9',
+          userName: 'luobo',
+          currentLevel: 8,
+          currentLevelName: '探索者',
+          primaryValue: '18888',
+          primaryLabel: '总经验值',
+        ),
+      ],
     );
   }
 }

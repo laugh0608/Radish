@@ -203,7 +203,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     await widget.appLifecycleGateway.moveTaskToBack();
   }
 
-  void _openProfileUser(String userId) {
+  void _openProfileUser(String userId, {int? returnIndex}) {
     final normalizedUserId = userId.trim();
     if (normalizedUserId.isEmpty) {
       return;
@@ -213,10 +213,16 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       _publicProfileUserId = normalizedUserId;
       _recentProfileUserId = normalizedUserId;
       _currentIndex = _profileTabIndex;
-      _tabReturnIndex = null;
+      _tabReturnIndex = returnIndex == null || returnIndex == _profileTabIndex
+          ? null
+          : returnIndex;
     });
 
     unawaited(widget.followUpStore.writeRecentProfileUserId(normalizedUserId));
+  }
+
+  void _openProfileUserFromLeaderboard(String userId) {
+    _openProfileUser(userId, returnIndex: _leaderboardTabIndex);
   }
 
   void _openRecentProfileUser() {
@@ -822,6 +828,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
           ),
           LeaderboardPage(
             repository: widget.leaderboardRepository,
+            onOpenProfileUser: _openProfileUserFromLeaderboard,
           ),
           ProfilePage(
             sessionController: widget.sessionController,

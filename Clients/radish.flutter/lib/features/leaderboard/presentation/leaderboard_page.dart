@@ -10,10 +10,12 @@ import '../data/leaderboard_repository.dart';
 class LeaderboardPage extends StatefulWidget {
   const LeaderboardPage({
     required this.repository,
+    this.onOpenProfileUser,
     super.key,
   });
 
   final LeaderboardRepository repository;
+  final ValueChanged<String>? onOpenProfileUser;
 
   @override
   State<LeaderboardPage> createState() => _LeaderboardPageState();
@@ -159,7 +161,10 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
             const _LeaderboardEmptyState()
           else
             for (final item in page.items) ...[
-              _LeaderboardItemCard(item: item),
+              _LeaderboardItemCard(
+                item: item,
+                onOpenProfileUser: widget.onOpenProfileUser,
+              ),
               if (item != page.items.last) const SizedBox(height: 12),
             ],
         ],
@@ -359,14 +364,18 @@ class _LeaderboardEmptyState extends StatelessWidget {
 class _LeaderboardItemCard extends StatelessWidget {
   const _LeaderboardItemCard({
     required this.item,
+    this.onOpenProfileUser,
   });
 
   final LeaderboardItem item;
+  final ValueChanged<String>? onOpenProfileUser;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final accentColor = _parseThemeColor(item.themeColor);
+    final userId = item.userId.trim();
+    final canOpenProfile = userId.isNotEmpty && onOpenProfileUser != null;
 
     return Card(
       child: Padding(
@@ -431,6 +440,14 @@ class _LeaderboardItemCard extends StatelessWidget {
                         ),
                     ],
                   ),
+                  if (canOpenProfile) ...[
+                    const SizedBox(height: 12),
+                    FilledButton.tonalIcon(
+                      onPressed: () => onOpenProfileUser!(userId),
+                      icon: const Icon(Icons.person_search_outlined),
+                      label: const Text('打开公开主页'),
+                    ),
+                  ],
                 ],
               ),
             ),
