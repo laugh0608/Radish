@@ -28,3 +28,10 @@ test('sitemap.xml 应提供第一批公开入口 seed', () => {
   assert.match(sitemap, /<loc>https:\/\/radishx\.com\/docs<\/loc>/);
   assert.match(sitemap, /<loc>https:\/\/radishx\.com\/shop\/products<\/loc>/);
 });
+
+test('公开商城详情购买回流入口应指向保留工作台路径', () => {
+  const source = readFileSync(resolve(clientRoot, 'src/public/shop/PublicShopApp.tsx'), 'utf8');
+
+  assert.match(source, /className=\{styles\.primaryLink\} href="\/desktop"/);
+  assert.doesNotMatch(source, /className=\{styles\.primaryLink\} href="\/"/);
+});

@@ -770,7 +770,7 @@ export const PublicShopApp = ({
             <div className={styles.readOnlyPanel}>
               <h2 className={styles.readOnlyTitle}>{t('shop.public.purchaseTitle')}</h2>
               <p className={styles.readOnlyDescription}>{t('shop.public.purchaseDescription')}</p>
-              <a className={styles.primaryLink} href="/">
+              <a className={styles.primaryLink} href="/desktop">
                 <Icon icon="mdi:view-dashboard-outline" size={18} />
                 <span>{t('shop.public.openDesktop')}</span>
               </a>
