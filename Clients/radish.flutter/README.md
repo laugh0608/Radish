@@ -10,7 +10,7 @@
 - `discover / forum / docs / profile` 四个高价值入口的首批真实只读页面
 - 最小登录、退出、会话恢复、Android 本地会话持久化与浏览器 OIDC 回调
 - forum feed、forum detail、评论分页、子评论分页、作者跳转与 detail 原地登录续接
-- forum detail 轻回应发布后局部体验：发布成功后即时前插到轻回应墙并给出局部成功反馈，发布失败只在轻回应区提示
+- forum detail 轻回应发布后局部体验：发布成功后即时前插到轻回应墙并给出局部成功反馈，发布失败只在轻回应区提示；从轻回应区发起登录后会回到当前轻回应区继续发布
 - discover 论坛精选直达：`discover` 中的论坛精选帖子可直接打开原生 forum detail，并按发现页来源返回
 - `profile` 我的轻回应回看：已登录态可在我的主页查看最近轻回应、继续加载更多，并回到对应 forum detail
 - `profile` 最近阅读轻量多条列表：已登录态可在我的主页继续打开最近多条 forum 阅读目标，并从详情返回 profile
@@ -198,6 +198,7 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 - 第三批中文文案、个人复访入口与轻回应发布已完成一轮 Android 真机复核，真实 Gateway 下确认正常
 - 本轮复核发现并修复同一帖子详情返回列表后无法再次打开的问题；当前已补 `forum_page_test.dart` 定向回归测试
 - 第六批“forum detail 轻回应发布后局部体验补强”已完成代码、自动化验证与 Android 真机复核：发布成功后不整页刷新，新轻回应即时前插并显示局部成功反馈；发布失败只在轻回应区提示
+- P3-8-D “forum detail 轻回应登录回流”已完成代码与自动化验证：匿名态从轻回应区发起登录后，会回到当前帖子轻回应区并提示可继续发布；本轮不扩展完整评论、发帖、点赞或投票能力
 - 第四批首个小闭环“我的轻回应回看”及分页复访已完成代码、自动化验证与 Android 真机复核，真实 Gateway 下确认正常
 - 第四批“最近阅读上下文”已接入我的 profile，并已完成代码、自动化验证与 Android 真机复核：第四批只承载最近一次 forum 阅读目标
 - 第五批首个小闭环“profile 最近阅读轻量多条列表”已完成代码、自动化验证与 Android 真机复核：我的 profile 当前可展示最近多条 forum 阅读上下文，Android 本地持久化兼容旧单条记录并按 `postId + commentId` 去重；本轮仍不扩展完整浏览历史中心、删除、清空、同步治理或 docs / forum 混合时间线

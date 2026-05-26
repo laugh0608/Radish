@@ -1217,6 +1217,80 @@ void main() {
     expect(find.text('登录并保留当前位置'), findsNothing);
   });
 
+  testWidgets('quick reply sign-in returns to composer in current detail',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+    final gateway = InMemoryNativeAuthGateway();
+    final authController = NativeAuthController(
+      environment: const AppEnvironment.development(),
+      sessionController: sessionController,
+      gateway: gateway,
+      exchangeService: _FakeAuthorizationCodeExchangeService(
+        nextSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: 'user-212',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: 'user-212',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: authController,
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _SeededBigIdForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.tap(find.text('论坛'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('查看详情'));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('登录后发布'),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    expect(find.text('登录后可以发布轻回应'), findsOneWidget);
+
+    gateway.setPendingCallback(
+      const NativeAuthCallbackPayload(
+        type: NativeAuthCallbackType.login,
+        code: 'quick-reply-login-code',
+      ),
+    );
+    await tester.tap(find.text('登录后发布'));
+    await tester.pumpAndSettle();
+    await authController.consumePendingCallback();
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
+    expect(find.text('已回到轻回应区，可以继续发布。'), findsOneWidget);
+    expect(find.text('发布轻回应'), findsOneWidget);
+    expect(find.text('登录后发布'), findsNothing);
+  });
+
   testWidgets('forum feed opens native public detail page', (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
     tester.view.devicePixelRatio = 1.0;

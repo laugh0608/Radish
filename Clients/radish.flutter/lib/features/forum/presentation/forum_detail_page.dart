@@ -50,6 +50,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
   late ForumCommentFeedController _commentController;
   late ForumQuickReplyController _quickReplyController;
   final ScrollController _scrollController = ScrollController();
+  final GlobalKey _quickReplySectionKey = GlobalKey();
   final Map<String, GlobalKey> _commentKeys = <String, GlobalKey>{};
   String? _targetCommentId;
   String? _expandedRootCommentId;
@@ -61,6 +62,8 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
   bool _isNavigatingToComment = false;
   bool _wasAuthenticated = false;
   bool _requestedSignInFromDetail = false;
+  bool _shouldReturnToQuickReplyAfterLogin = false;
+  String? _quickReplyLoginReturnNotice;
   String? _resolvedPostIdForDependentFeeds;
   String? _startedCommentNavigationSignature;
   static const int _maxPendingNavigationScrollAttempts = 12;
@@ -106,6 +109,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
       _controller.openPost(widget.postId);
       _resolvedPostIdForDependentFeeds = null;
       _startedCommentNavigationSignature = null;
+      _quickReplyLoginReturnNotice = null;
       return;
     }
 
@@ -120,6 +124,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
       _controller.openPost(widget.postId);
       _resolvedPostIdForDependentFeeds = null;
       _startedCommentNavigationSignature = null;
+      _quickReplyLoginReturnNotice = null;
     }
 
     final nextCommentId = widget.commentId?.trim();
@@ -270,15 +275,18 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                     accessToken: sessionState?.session?.accessToken,
                     authState: authState,
                     quickReplyState: quickReplyState,
+                    quickReplySectionKey: _quickReplySectionKey,
+                    quickReplyLoginReturnNotice: _quickReplyLoginReturnNotice,
                     onRetryQuickReplies: _quickReplyController.refresh,
-                    onSubmitQuickReply: (content) =>
-                        _quickReplyController.submit(
+                    onSubmitQuickReply: (content) => _submitQuickReply(
                       postId: detail.id,
                       content: content,
                       accessToken: sessionState?.session?.accessToken ?? '',
                     ),
                     onRequestSignIn: canRequestSignIn
-                        ? () => _requestSignIn(currentDetailTarget)
+                        ? () => _requestSignInForQuickReply(
+                              currentDetailTarget,
+                            )
                         : null,
                     commentState: commentState,
                     onRetryComments: _commentController.refresh,
@@ -302,6 +310,8 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
         widget.sessionController?.state.isAuthenticated ?? false;
     if (!_wasAuthenticated && isAuthenticated && _requestedSignInFromDetail) {
       _requestedSignInFromDetail = false;
+      final shouldReturnToQuickReply = _shouldReturnToQuickReplyAfterLogin;
+      _shouldReturnToQuickReplyAfterLogin = false;
       final onConsume = widget.onConsumeActiveDetailLoginTarget;
       if (onConsume != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -312,9 +322,46 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
           onConsume();
         });
       }
+      if (shouldReturnToQuickReply) {
+        setState(() {
+          _quickReplyLoginReturnNotice = '已回到轻回应区，可以继续发布。';
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _scrollToQuickReplySection();
+        });
+      }
     }
 
     _wasAuthenticated = isAuthenticated;
+  }
+
+  Future<void> _requestSignInForQuickReply(
+    ForumDetailHandoffTarget target,
+  ) async {
+    _shouldReturnToQuickReplyAfterLogin = true;
+    if (_quickReplyLoginReturnNotice != null) {
+      setState(() {
+        _quickReplyLoginReturnNotice = null;
+      });
+    }
+    await _requestSignIn(target);
+  }
+
+  Future<bool> _submitQuickReply({
+    required String postId,
+    required String content,
+    required String accessToken,
+  }) {
+    if (_quickReplyLoginReturnNotice != null) {
+      setState(() {
+        _quickReplyLoginReturnNotice = null;
+      });
+    }
+    return _quickReplyController.submit(
+      postId: postId,
+      content: content,
+      accessToken: accessToken,
+    );
   }
 
   Future<void> _requestSignIn(ForumDetailHandoffTarget target) async {
@@ -326,6 +373,20 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
 
     _requestedSignInFromDetail = true;
     await onRequestSignIn(target);
+  }
+
+  void _scrollToQuickReplySection() {
+    final context = _quickReplySectionKey.currentContext;
+    if (!mounted || context == null) {
+      return;
+    }
+
+    Scrollable.ensureVisible(
+      context,
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOutCubic,
+      alignment: 0.12,
+    );
   }
 
   void _openDependentFeedsForResolvedPost(String postId) {
@@ -695,6 +756,8 @@ class _ForumDetailContent extends StatelessWidget {
     required this.accessToken,
     required this.authState,
     required this.quickReplyState,
+    required this.quickReplySectionKey,
+    required this.quickReplyLoginReturnNotice,
     required this.onRetryQuickReplies,
     required this.onSubmitQuickReply,
     required this.onRequestSignIn,
@@ -715,6 +778,8 @@ class _ForumDetailContent extends StatelessWidget {
   final String? accessToken;
   final NativeAuthState? authState;
   final ForumQuickReplyState quickReplyState;
+  final GlobalKey quickReplySectionKey;
+  final String? quickReplyLoginReturnNotice;
   final VoidCallback onRetryQuickReplies;
   final Future<bool> Function(String content) onSubmitQuickReply;
   final VoidCallback? onRequestSignIn;
@@ -869,14 +934,18 @@ class _ForumDetailContent extends StatelessWidget {
               emptyText: '这篇帖子暂无公开正文。',
             ),
             const SizedBox(height: 24),
-            _ForumQuickReplySection(
-              state: quickReplyState,
-              isAuthenticated: isAuthenticated,
-              isAuthBusy: authState?.isBusy ?? false,
-              hasAccessToken: accessToken != null && accessToken!.isNotEmpty,
-              onRetry: onRetryQuickReplies,
-              onSubmit: onSubmitQuickReply,
-              onRequestSignIn: onRequestSignIn,
+            KeyedSubtree(
+              key: quickReplySectionKey,
+              child: _ForumQuickReplySection(
+                state: quickReplyState,
+                isAuthenticated: isAuthenticated,
+                isAuthBusy: authState?.isBusy ?? false,
+                hasAccessToken: accessToken != null && accessToken!.isNotEmpty,
+                loginReturnNotice: quickReplyLoginReturnNotice,
+                onRetry: onRetryQuickReplies,
+                onSubmit: onSubmitQuickReply,
+                onRequestSignIn: onRequestSignIn,
+              ),
             ),
             const SizedBox(height: 24),
             _ForumCommentSection(
@@ -971,6 +1040,7 @@ class _ForumQuickReplySection extends StatefulWidget {
     required this.isAuthenticated,
     required this.isAuthBusy,
     required this.hasAccessToken,
+    required this.loginReturnNotice,
     required this.onRetry,
     required this.onSubmit,
     required this.onRequestSignIn,
@@ -980,6 +1050,7 @@ class _ForumQuickReplySection extends StatefulWidget {
   final bool isAuthenticated;
   final bool isAuthBusy;
   final bool hasAccessToken;
+  final String? loginReturnNotice;
   final VoidCallback onRetry;
   final Future<bool> Function(String content) onSubmit;
   final VoidCallback? onRequestSignIn;
@@ -1083,6 +1154,14 @@ class _ForumQuickReplySectionState extends State<_ForumQuickReplySection> {
         if (state.submitSuccessMessage != null &&
             state.submitSuccessMessage!.isNotEmpty) ...[
           _ForumInlineSuccessCard(message: state.submitSuccessMessage!),
+          const SizedBox(height: 12),
+        ],
+        if (widget.loginReturnNotice != null &&
+            widget.loginReturnNotice!.isNotEmpty &&
+            !state.isSubmitting &&
+            (state.submitSuccessMessage == null ||
+                state.submitSuccessMessage!.isEmpty)) ...[
+          _ForumInlineSuccessCard(message: widget.loginReturnNotice!),
           const SizedBox(height: 12),
         ],
         if (widget.isAuthenticated && widget.hasAccessToken)
