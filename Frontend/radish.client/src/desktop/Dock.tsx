@@ -368,7 +368,7 @@ export const Dock = () => {
               <button
                 type="button"
                 className={`${styles.authButton} ${loggedIn ? styles.loggedIn : styles.loggedOut}`}
-                onClick={loggedIn ? handleLogoutClick : redirectToLogin}
+                onClick={loggedIn ? handleLogoutClick : () => redirectToLogin()}
                 title={loggedIn ? t('auth.logout') : t('auth.login')}
                 aria-label={loggedIn ? t('auth.logout') : t('auth.login')}
               >

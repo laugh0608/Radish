@@ -85,7 +85,7 @@ export const WelcomeApp = () => {
               <div className={styles.guestNotice}>
                 <span className={styles.guestBadge}>{t('welcome.hero.guestBadge')}</span>
                 <p className={styles.guestHint}>{t('welcome.hero.guestHint')}</p>
-                <button type="button" className={styles.heroActionButton} onClick={redirectToLogin}>
+                <button type="button" className={styles.heroActionButton} onClick={() => redirectToLogin()}>
                   {t('welcome.hero.loginAction')}
                 </button>
               </div>

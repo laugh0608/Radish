@@ -4,6 +4,7 @@ import { OidcCallbackError, redeemOidcAuthorizationCode } from '@radish/http';
 import i18n from '@/i18n';
 import { getApiBaseUrl, getAuthBaseUrl } from '@/config/env';
 import { hydrateAuthUser } from '@/services/authBootstrap';
+import { consumeAuthReturnPath } from '@/services/authReturnPath';
 import { tokenService } from '@/services/tokenService';
 import { getOidcRedirectUri } from '@/platform/tauriBridge';
 import styles from './OidcCallbackPage.module.css';
@@ -79,7 +80,7 @@ export function OidcCallbackPage() {
         }
 
         setMessage(t('oidc.loginSucceeded'));
-        window.location.replace('/');
+        window.location.replace(consumeAuthReturnPath());
       } catch (err) {
         if (cancelled) {
           return;

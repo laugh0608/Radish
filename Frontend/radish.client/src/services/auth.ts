@@ -13,17 +13,24 @@ import {
   prepareOidcRedirectUri,
   preparePostLogoutRedirectUri,
 } from '@/platform/tauriBridge';
+import { rememberAuthReturnPath } from './authReturnPath';
 import { log } from '@/utils/logger';
 
 const CLIENT_ID = 'radish-client';
 
+interface RedirectToLoginOptions {
+  returnPath?: string | null;
+}
+
 /**
  * 跳转到 OIDC 登录页面
  */
-export function redirectToLogin(): void {
+export function redirectToLogin(options: RedirectToLoginOptions = {}): void {
   if (typeof window === 'undefined') return;
 
   const startLogin = async () => {
+    rememberAuthReturnPath(options.returnPath);
+
     const redirectUri = isTauriRuntime() ? await prepareOidcRedirectUri() : getOidcRedirectUri();
     const authServerBaseUrl = getAuthBaseUrl();
 

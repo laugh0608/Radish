@@ -119,7 +119,7 @@ function FirstAdminBootstrapPage() {
           <p className={styles.kicker}>系统初始化</p>
           <h1>管理员已创建</h1>
           <p className={styles.description}>使用账号 {createdLoginName} 登录后即可进入工作台和管理入口。</p>
-          <button type="button" className={styles.primaryButton} onClick={redirectToLogin}>
+          <button type="button" className={styles.primaryButton} onClick={() => redirectToLogin()}>
             登录
           </button>
         </section>
