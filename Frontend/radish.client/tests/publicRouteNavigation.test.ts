@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  createPublicRouteSourceState,
   resolveDocsDetailBackMode,
   resolveForumDetailBackMode,
   resolveProfileBackMode,
@@ -212,6 +213,50 @@ test('resolveShopDetailBackMode 应对 discover 回 discover，对商城内部�
 
   assert.equal(resolveShopDetailBackMode(discoverSource), 'discover');
   assert.equal(resolveShopDetailBackMode(shopProductsSource), 'source');
+});
+
+test('createPublicRouteSourceState 应把详情来源写入可持久化状态并在回到浏览页时清理', () => {
+  const discoverRoute: PublicRouteDescriptor = {
+    app: 'discover',
+    route: { kind: 'home' }
+  };
+  const forumDetailRoute: PublicRouteDescriptor = {
+    app: 'forum',
+    route: { kind: 'detail', postId: '42' }
+  };
+  const forumListRoute: PublicRouteDescriptor = {
+    app: 'forum',
+    route: { kind: 'list', categoryId: null, sortBy: 'newest', page: 1 }
+  };
+
+  const detailState = createPublicRouteSourceState({}, discoverRoute, forumDetailRoute);
+  assert.deepEqual(detailState.forumDetailSourceRoute, discoverRoute);
+
+  const listState = createPublicRouteSourceState(detailState, forumDetailRoute, forumListRoute);
+  assert.equal(listState.forumDetailSourceRoute, null);
+});
+
+test('createPublicRouteSourceState 应保留同一详情内的既有来源状态', () => {
+  const discoverRoute: PublicRouteDescriptor = {
+    app: 'discover',
+    route: { kind: 'home' }
+  };
+  const forumDetailRoute: PublicRouteDescriptor = {
+    app: 'forum',
+    route: { kind: 'detail', postId: '42' }
+  };
+  const forumDetailCommentRoute: PublicRouteDescriptor = {
+    app: 'forum',
+    route: { kind: 'detail', postId: '42', commentId: '88' }
+  };
+
+  const nextState = createPublicRouteSourceState(
+    { forumDetailSourceRoute: discoverRoute },
+    forumDetailRoute,
+    forumDetailCommentRoute
+  );
+
+  assert.deepEqual(nextState.forumDetailSourceRoute, discoverRoute);
 });
 
 test('shouldCommitPublicRouteUpdate 对同 app 同路径的 replace 导航返回 false', () => {

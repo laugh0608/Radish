@@ -59,26 +59,48 @@ import type {
   PublicShopRoute,
 } from './shopRouteState';
 import {
+  createPublicRouteSourceState,
   resolveDocsDetailBackMode,
   resolveForumDetailBackMode,
   resolveProfileBackMode,
   resolveShopDetailBackMode,
   shouldCommitPublicRouteUpdate,
-  shouldCaptureDocsDetailSource,
-  shouldCaptureForumDetailSource,
-  shouldCaptureProfileDetailSource,
-  shouldCaptureShopDetailSource,
   type PublicDetailBackMode,
   type PublicRouteDescriptor,
+  type PublicRouteSourceState,
 } from './publicRouteNavigation';
 import { applyPublicHead, buildPublicRouteHead } from './publicHead';
 export type {
   PublicListSort,
 } from './forumRouteState';
 
+const PUBLIC_ROUTE_SOURCE_STATE_KEY = 'radishPublicRouteSource';
+
 interface PublicBackAction {
   mode: PublicDetailBackMode;
   onBack: () => void;
+}
+
+function readPublicRouteSourceState(): PublicRouteSourceState {
+  const historyState = window.history.state;
+  if (!historyState || typeof historyState !== 'object') {
+    return {};
+  }
+
+  const sourceState = (historyState as Record<string, unknown>)[PUBLIC_ROUTE_SOURCE_STATE_KEY];
+  return sourceState && typeof sourceState === 'object'
+    ? sourceState as PublicRouteSourceState
+    : {};
+}
+
+function buildPublicHistoryState(sourceState: PublicRouteSourceState): Record<string, unknown> {
+  const historyState = window.history.state;
+  const nextHistoryState = historyState && typeof historyState === 'object'
+    ? { ...(historyState as Record<string, unknown>) }
+    : {};
+
+  nextHistoryState[PUBLIC_ROUTE_SOURCE_STATE_KEY] = sourceState;
+  return nextHistoryState;
 }
 
 function parsePublicRoute(): PublicRouteDescriptor {
@@ -171,10 +193,7 @@ export const PublicEntry = () => {
     const parsedRoute = parsePublicShopRoute(window.location.pathname, window.location.search);
     return parsedRoute.kind === 'products' ? parsedRoute : createDefaultPublicShopProductsRoute();
   });
-  const [forumDetailSourceRoute, setForumDetailSourceRoute] = useState<PublicRouteDescriptor | null>(null);
-  const [docsDetailSourceRoute, setDocsDetailSourceRoute] = useState<PublicRouteDescriptor | null>(null);
-  const [profileSourceRoute, setProfileSourceRoute] = useState<PublicRouteDescriptor | null>(null);
-  const [shopDetailSourceRoute, setShopDetailSourceRoute] = useState<PublicRouteDescriptor | null>(null);
+  const [routeSourceState, setRouteSourceState] = useState<PublicRouteSourceState>(() => readPublicRouteSourceState());
 
   useEffect(() => {
     const cleanup = bootstrapAuth({ apiBaseUrl });
@@ -190,7 +209,7 @@ export const PublicEntry = () => {
       return;
     }
 
-    window.history.replaceState({}, '', canonicalPath);
+    window.history.replaceState(window.history.state, '', canonicalPath);
   }, [route]);
 
   useEffect(() => {
@@ -201,6 +220,7 @@ export const PublicEntry = () => {
     const handlePopState = () => {
       const nextRoute = parsePublicRoute();
       setRoute(nextRoute);
+      setRouteSourceState(readPublicRouteSourceState());
       if (nextRoute.app === 'discover') {
         setLastDiscoverRoute(nextRoute.route);
       }
@@ -230,23 +250,17 @@ export const PublicEntry = () => {
       return;
     }
 
-    if (shouldCaptureForumDetailSource(currentRoute, nextRoute)) {
-      setForumDetailSourceRoute(currentRoute);
-    }
-    if (shouldCaptureDocsDetailSource(currentRoute, nextRoute)) {
-      setDocsDetailSourceRoute(currentRoute);
-    }
-    if (shouldCaptureProfileDetailSource(currentRoute, nextRoute)) {
-      setProfileSourceRoute(currentRoute);
-    }
-    if (shouldCaptureShopDetailSource(currentRoute, nextRoute)) {
-      setShopDetailSourceRoute(currentRoute);
-    }
+    const nextRouteSourceState = createPublicRouteSourceState(
+      readPublicRouteSourceState(),
+      currentRoute,
+      nextRoute
+    );
+    const nextHistoryState = buildPublicHistoryState(nextRouteSourceState);
 
     if (options?.replace) {
-      window.history.replaceState({}, '', nextPath);
+      window.history.replaceState(nextHistoryState, '', nextPath);
     } else if (currentPath !== nextPath) {
-      window.history.pushState({}, '', nextPath);
+      window.history.pushState(nextHistoryState, '', nextPath);
     }
 
     if (nextRoute.app === 'discover') {
@@ -261,6 +275,7 @@ export const PublicEntry = () => {
     if (nextRoute.app === 'shop' && nextRoute.route.kind === 'products') {
       setLastShopProductsRoute(nextRoute.route);
     }
+    setRouteSourceState(nextRouteSourceState);
     setRoute(nextRoute);
   }, []);
 
@@ -326,52 +341,52 @@ export const PublicEntry = () => {
   }, [navigateToProfileRoute]);
 
   const forumDetailBackAction = useMemo<PublicBackAction | null>(() => {
-    const mode = resolveForumDetailBackMode(forumDetailSourceRoute);
-    if (!mode || !forumDetailSourceRoute) {
+    const mode = resolveForumDetailBackMode(routeSourceState.forumDetailSourceRoute ?? null);
+    if (!mode || !routeSourceState.forumDetailSourceRoute) {
       return null;
     }
 
     return {
       mode,
-      onBack: () => navigateToRoute(forumDetailSourceRoute)
+      onBack: () => navigateToRoute(routeSourceState.forumDetailSourceRoute!)
     };
-  }, [forumDetailSourceRoute, navigateToRoute]);
+  }, [navigateToRoute, routeSourceState.forumDetailSourceRoute]);
 
   const docsDetailBackAction = useMemo<PublicBackAction | null>(() => {
-    const mode = resolveDocsDetailBackMode(docsDetailSourceRoute);
-    if (!mode || !docsDetailSourceRoute) {
+    const mode = resolveDocsDetailBackMode(routeSourceState.docsDetailSourceRoute ?? null);
+    if (!mode || !routeSourceState.docsDetailSourceRoute) {
       return null;
     }
 
     return {
       mode,
-      onBack: () => navigateToRoute(docsDetailSourceRoute)
+      onBack: () => navigateToRoute(routeSourceState.docsDetailSourceRoute!)
     };
-  }, [docsDetailSourceRoute, navigateToRoute]);
+  }, [navigateToRoute, routeSourceState.docsDetailSourceRoute]);
 
   const profileBackAction = useMemo<PublicBackAction | null>(() => {
-    const mode = resolveProfileBackMode(profileSourceRoute);
-    if (!mode || !profileSourceRoute) {
+    const mode = resolveProfileBackMode(routeSourceState.profileSourceRoute ?? null);
+    if (!mode || !routeSourceState.profileSourceRoute) {
       return null;
     }
 
     return {
       mode,
-      onBack: () => navigateToRoute(profileSourceRoute)
+      onBack: () => navigateToRoute(routeSourceState.profileSourceRoute!)
     };
-  }, [navigateToRoute, profileSourceRoute]);
+  }, [navigateToRoute, routeSourceState.profileSourceRoute]);
 
   const shopDetailBackAction = useMemo<PublicBackAction | null>(() => {
-    const mode = resolveShopDetailBackMode(shopDetailSourceRoute);
-    if (!mode || !shopDetailSourceRoute) {
+    const mode = resolveShopDetailBackMode(routeSourceState.shopDetailSourceRoute ?? null);
+    if (!mode || !routeSourceState.shopDetailSourceRoute) {
       return null;
     }
 
     return {
       mode,
-      onBack: () => navigateToRoute(shopDetailSourceRoute)
+      onBack: () => navigateToRoute(routeSourceState.shopDetailSourceRoute!)
     };
-  }, [navigateToRoute, shopDetailSourceRoute]);
+  }, [navigateToRoute, routeSourceState.shopDetailSourceRoute]);
 
   return route.app === 'discover' ? (
     <PublicDiscoverApp

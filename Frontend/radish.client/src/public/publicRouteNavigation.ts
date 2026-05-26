@@ -23,6 +23,13 @@ export type PublicDetailBackMode =
   | 'shop'
   | 'shopProducts';
 
+export interface PublicRouteSourceState {
+  forumDetailSourceRoute?: PublicRouteDescriptor | null;
+  docsDetailSourceRoute?: PublicRouteDescriptor | null;
+  profileSourceRoute?: PublicRouteDescriptor | null;
+  shopDetailSourceRoute?: PublicRouteDescriptor | null;
+}
+
 function isForumBrowseDescriptor(
   route: PublicRouteDescriptor | null
 ): route is { app: 'forum'; route: PublicForumBrowseRoute } {
@@ -137,6 +144,38 @@ export function shouldCommitPublicRouteUpdate(
   }
 
   return currentRoute.app !== nextRoute.app;
+}
+
+export function createPublicRouteSourceState(
+  currentState: PublicRouteSourceState,
+  currentRoute: PublicRouteDescriptor,
+  nextRoute: PublicRouteDescriptor
+): PublicRouteSourceState {
+  const nextState: PublicRouteSourceState = { ...currentState };
+
+  if (shouldCaptureForumDetailSource(currentRoute, nextRoute)) {
+    nextState.forumDetailSourceRoute = currentRoute;
+  } else if (nextRoute.app === 'forum' && nextRoute.route.kind !== 'detail') {
+    nextState.forumDetailSourceRoute = null;
+  }
+
+  if (shouldCaptureDocsDetailSource(currentRoute, nextRoute)) {
+    nextState.docsDetailSourceRoute = currentRoute;
+  } else if (nextRoute.app === 'docs' && nextRoute.route.kind !== 'detail') {
+    nextState.docsDetailSourceRoute = null;
+  }
+
+  if (shouldCaptureProfileDetailSource(currentRoute, nextRoute)) {
+    nextState.profileSourceRoute = currentRoute;
+  }
+
+  if (shouldCaptureShopDetailSource(currentRoute, nextRoute)) {
+    nextState.shopDetailSourceRoute = currentRoute;
+  } else if (nextRoute.app === 'shop' && nextRoute.route.kind !== 'detail') {
+    nextState.shopDetailSourceRoute = null;
+  }
+
+  return nextState;
 }
 
 export function resolveForumDetailBackMode(sourceRoute: PublicRouteDescriptor | null): PublicDetailBackMode | null {

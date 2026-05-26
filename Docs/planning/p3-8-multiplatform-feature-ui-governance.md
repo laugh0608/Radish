@@ -114,6 +114,7 @@
 - 矩阵已补充 `390 x 844` Vite 直连实测，暂未发现新的 `P0/P1`；第一小闭环已完成：公开页顶部入口已从指向 `/` 的 `WebOS` 链接收敛为指向 `/desktop` 的工作台保留入口。
 - 根路径 `/` 默认入口切换已完成：普通浏览器访问 `/` 时进入 `/discover` 公开分发页，Vite 直连与 Gateway 入口均已复核；Tauri 当前仍保留 `/desktop`；历史 `?demo` 认证测试页已移除，`/oidc/callback` 保留为独立正式回调入口。
 - 第二个纯 Web 小闭环已完成：公开个人页 `/u/:id` 补显式复制链接入口，forum / docs / shop / profile 详情类公开分享状态收敛到统一 hook，底层 `copyToClipboard` 改为先尝试同步 textarea 复制、再回退 `navigator.clipboard`，覆盖嵌入浏览器 / 权限受限上下文。
+- 第三个纯 Web 小闭环已完成：公开 forum / docs / profile / shop 详情来源返回状态写入 `history.state`，浏览器历史恢复或刷新后仍能保留来源返回语义，不通过 URL 参数污染公开分享链接。
 - 后续继续只选择一个高价值小闭环继续实现，候选方向为移动阅读、来源返回、购买 / 订单 / 背包、纯 Web 登录后轻量链路补强或 Flutter 下一批功能。
 - WebOS 只保留 `/desktop` 历史入口，不再作为新增功能候选；PC/Tauri 放到最后再评估，后续若重启也只增强纯 Web。
 - 不直接启动完整移动商城、完整通知中心、完整创作器、公开 Web 整体 UI 重构或多端同时重写。
@@ -314,6 +315,15 @@ npm run build --workspace=radish.client
 ```bash
 npm run type-check --workspace=radish.client
 npm run test --workspace=radish.client -- --test-name-pattern="copyToClipboard|publicRoute|entryRoute"
+```
+
+`P3-8-D` 公开详情来源返回持久化小闭环已执行：
+
+```bash
+npm run type-check --workspace=radish.client
+npm run test --workspace=radish.client -- --test-name-pattern=publicRouteNavigation
+npm run check:repo-hygiene:changed
+git diff --check
 ```
 
 ## 与维护线关系
