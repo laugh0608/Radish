@@ -20,7 +20,7 @@
 - docs 正文内链跳转：公开文档正文中的 `/docs/:slug` 与 Markdown 文档链接会继续打开原生 docs 详情
 - docs 关键词搜索复访：docs tab 可搜索公开文档，搜索结果继续复用原生列表、分页、刷新与详情打开路径
 - leaderboard 公开主页回流：经验榜用户可打开原生公开主页，并通过 Android 返回键回到榜单
-- 已登录态最小 forum notification 来源读取：原生壳层会读取当前用户最新可跳 forum 的通知，并复用 forum detail handoff 打开 `postId / commentId`
+- 已登录态最小 forum notification 来源读取：原生壳层会读取当前用户最新可跳 forum 的通知，复用 forum detail handoff 打开 `postId / commentId`，并在详情返回后回到打开通知前的 tab
 - 环境配置、认证存储与主题基线
 - 与现有 Web / API 契约一致的复用边界
 - Android 模拟器经 Gateway `https://localhost:5000` 的最小联调入口

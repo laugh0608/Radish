@@ -1895,6 +1895,9 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
+    await tester.tap(find.text('我的').last);
+    await tester.pumpAndSettle();
+    expect(find.text('已登录用户 user-42'), findsOneWidget);
     expect(find.text('查看论坛通知'), findsOneWidget);
 
     await tester.tap(find.text('查看论坛通知'));
@@ -1904,6 +1907,12 @@ void main() {
     expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
     expect(find.text('通知回流'), findsWidgets);
     expect(find.text('Big id root comment'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('已登录用户 user-42'), findsOneWidget);
+    expect(find.text('查看论坛通知'), findsOneWidget);
   });
 
   testWidgets('forum notification chip explains failure empty and refresh',

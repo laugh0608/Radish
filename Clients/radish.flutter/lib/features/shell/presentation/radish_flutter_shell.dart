@@ -748,6 +748,10 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       return true;
     }
 
+    if (target.source == ForumDetailHandoffSource.notification) {
+      return true;
+    }
+
     if (_currentIndex != _profileTabIndex) {
       return false;
     }
@@ -758,9 +762,10 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       case ForumDetailHandoffSource.myQuickReply:
       case ForumDetailHandoffSource.profileRecentBrowse:
         return true;
+      case ForumDetailHandoffSource.notification:
+        return true;
       case ForumDetailHandoffSource.shell:
       case ForumDetailHandoffSource.discover:
-      case ForumDetailHandoffSource.notification:
       case ForumDetailHandoffSource.browseHistory:
         return false;
     }
