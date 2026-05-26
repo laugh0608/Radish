@@ -75,6 +75,8 @@
 - [p3-7-webos-workspace-screening-record-2026-05-21](/records/p3-7-webos-workspace-screening-record-2026-05-21)
 - [webos-workspace-p0-p1-screening-record-2026-05-18](/records/webos-workspace-p0-p1-screening-record-2026-05-18)
 - [console-ui-consistency-evaluation-2026-05-18](/records/console-ui-consistency-evaluation-2026-05-18)
+- [daily-handoff-2026-05-26](/records/daily-handoff-2026-05-26)
+- [daily-handoff-2026-05-25](/records/daily-handoff-2026-05-25)
 - [daily-handoff-2026-05-24](/records/daily-handoff-2026-05-24)
 - [daily-handoff-2026-05-23](/records/daily-handoff-2026-05-23)
 - [daily-handoff-2026-05-22](/records/daily-handoff-2026-05-22)
