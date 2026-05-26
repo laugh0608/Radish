@@ -53,6 +53,7 @@
 - [通知系统 API 文档](/guide/notification-api)
 - [通知中心设计说明](/guide/notification-center)
 - [通知系统前端说明](/guide/notification-frontend)
+- [Flutter 移动端 handoff 与回流说明](/guide/flutter-mobile-handoff)
 - [通知系统实现说明](/guide/notification-implementation)
 - [通知系统实时推送方案](/guide/notification-realtime)
 - [Console 权限治理 V1](/guide/console-permission-governance)
@@ -76,6 +77,7 @@
   - [shop-inventory](/guide/shop-inventory)
   - [shop-backend](/guide/shop-backend)
   - [shop-frontend](/guide/shop-frontend)
+  - [shop-web-return-paths](/guide/shop-web-return-paths)
   - [shop-workspace-revisit](/guide/shop-workspace-revisit)
 - Radish Coin：
   - [radish-coin-system](/guide/radish-coin-system)

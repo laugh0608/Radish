@@ -31,6 +31,8 @@
 > - 删除未读通知后，通知应用、Dock 角标与服务端未读数是否一致
 > - 多端同时在线时，`NotificationRead / AllNotificationsRead` 的同步是否稳定
 > - 非聊天类通知在缺少 `voTriggerAvatar` 时，前端头像兜底是否仍能稳定回填到列表项
+>
+> Flutter Android 的最小通知回流边界见 [Flutter 移动端 handoff 与回流说明](/guide/flutter-mobile-handoff)。
 
 ## 0. 当前最小人工验收顺序（首版 Smoke）
 

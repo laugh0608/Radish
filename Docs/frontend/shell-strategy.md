@@ -2,7 +2,7 @@
 
 > 状态：执行中
 >
-> 最后更新：2026-05-25（Asia/Shanghai）
+> 最后更新：2026-05-26（Asia/Shanghai）
 >
 > 本页只保留壳层分工、归属判断和当前边界。公开入口落地流水、RC 记录和批次细节不写入本页。
 
@@ -80,8 +80,15 @@ Radish 的前端主线收敛为 **纯 Web + Flutter**。
 - 普通浏览器根路径 `/` 已切向纯 Web 公开分发页 `/discover`；Tauri 当前仍保留 `/desktop`；历史 `?demo` 认证测试页已移除，`/oidc/callback` 保留为独立正式回调入口
 - 公开内容直达路由已经覆盖 `/discover`、`/forum`、`/forum/post/:id`、`/docs`、`/docs/:slug`、`/u/:id`、`/leaderboard`、`/shop` 等首批路径
 - 公开内容主路由坚持使用服务端可见的真实路径，不采用 `/shell#page` 或 `/desktop#...` 这类 hash shell 作为公开资源地址
-- `/desktop` 仅作为 WebOS 保留入口
+- 公开详情页的来源返回状态保存在 `history.state`，用于刷新或浏览器历史恢复后保留返回语义；该状态不进入 canonical、分享链接或 sitemap
+- `/desktop` 仅作为 WebOS 保留入口，但允许作为迁移期登录后工作台深链承接点
 - WebOS 可在 `/desktop` 内部使用 hash、query 或本地状态表达窗口恢复和局内导航，但这些状态不构成公开 URL 契约
+- 当前允许的 `/desktop` 外部承接参数包括：
+  - `?app=shop&productId=...`：打开商城商品详情，可从公开商品页或登录回流进入；商品详情本身可匿名读取，购买动作仍要求登录
+  - `?app=shop&orderId=...`：打开商城订单详情，要求已登录后消费
+  - `?app=shop&view=orders`：打开商城订单列表，要求已登录后消费
+  - `?app=shop&view=inventory`：打开商城背包，要求已登录后消费
+  - `?app=chat&channelId=...&messageId=...`：保留现有聊天深链，要求已登录后消费
 - 未来如重启 Tauri PC 客户端，默认入口应承载纯 Web，不再默认进入 `/desktop`
 
 ## 当前明确不做

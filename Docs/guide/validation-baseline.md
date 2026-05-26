@@ -224,9 +224,12 @@ https://localhost:5000/console/
 - 列表状态：`/shop/products` 的 `category / q / page` 会稳定回写到 URL，刷新后仍能恢复商品列表上下文
 - 详情直链：`/shop/product/:productId` 直链在公开壳层下打开时，会直接进入只读商品详情，而不是要求先登录或回落桌面窗口
 - 来源返回：从 `/discover` 或 `/shop/products` 进入 `/shop/product/:productId` 后，详情页返回动作会优先回到原公开来源，而不是一律退回默认商品列表
+- 来源返回持久化：公开详情来源返回状态保存在 `history.state`，刷新或浏览器历史恢复后仍应保留来源返回语义，但复制链接、canonical、Open Graph 和 sitemap 不应带入该状态
 - 外部 ID：公开商品详情路由与前端读取链路不会把外部 `productId` 强制扩大成前端 `number`，刷新和回跳时保持原始字符串口径
 - 可见文案：公开商品详情 head title / description、最近浏览卡片和回流提示不应直接回显旧 long `productId`；`/shop/product/:productId` 仍作为当前兼容 canonical 与打开路径保留
-- 只读边界：公开商品详情当前不会误触购买确认、订单、背包、权益使用、举报或其他“我的”能力；如需继续操作，会明确导向桌面工作台
+- 只读边界：公开商品详情当前不会误触购买确认、订单、背包、权益使用、举报或其他“我的”能力；如需继续操作，会明确导向 `/desktop?app=shop&productId=...` 工作台商品详情
+- 登录后购买回流：未登录用户从工作台商品详情点击“登录后继续购买”时，应保存 `/desktop?app=shop&productId=...` 一次性返回路径；OIDC 回调成功后恢复到原商品详情，随后购买按钮继续走登录态购买流程
+- 订单 / 背包深链：`/desktop?app=shop&orderId=...`、`/desktop?app=shop&view=orders`、`/desktop?app=shop&view=inventory` 要求登录后消费，匿名态不应误显空订单或空背包
 
 当前批次与公开社区分发页首批直接相关的人工确认面：
 
@@ -565,7 +568,9 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 
 Flutter Android MVP 当前人工验收优先覆盖已经具备真实入口、真实数据或可稳定手工触发的链路：登录、退出、会话恢复、`discover / forum / docs / profile` 真实只读读取、forum feed、forum detail、评论阅读、评论分页、detail 原地登录续接、docs 搜索 / 内链、profile 复访、轻回应发布，以及已登录壳层的最小 forum notification 回流。
 
-最小 forum notification 回流当前使用站内通知列表作为可测来源：用另一个账号在 Web / 桌面端评论或回复目标用户的帖子 / 评论，接收账号登录 Flutter 后点击 `Forum notification`，应能回到对应 forum detail，并在通知携带 `commentId` 时落到评论上下文。系统通知栏推送、完整通知中心、标记已读、删除通知和通知设置仍不属于当前 Android MVP 阻断项。具体 checklist 以 `Clients/radish.flutter/README.md` 为准。
+最小 forum notification 回流当前使用站内通知列表作为可测来源：用另一个账号在 Web / 桌面端评论或回复目标用户的帖子 / 评论，接收账号登录 Flutter 后点击 `Forum notification`，应能回到对应 forum detail，并在通知携带 `commentId` 时落到评论上下文；详情返回后应回到打开通知前所在 tab。系统通知栏推送、完整通知中心、标记已读、删除通知和通知设置仍不属于当前 Android MVP 阻断项。具体 checklist 以 `Clients/radish.flutter/README.md` 为准。
+
+Flutter forum detail 轻回应登录回流还需确认：匿名态滚动到轻回应区点击“登录后发布”，登录成功后回到当前帖子轻回应区并提示可继续发布；后续发布成功只刷新轻回应墙和局部成功提示，不刷新正文或评论阅读位置。
 
 Android MVP 本地 release APK 发布候选当前已完成首轮收口。涉及 Android 包身份、release signing、main manifest 权限、Gateway 基址或 RC 构建脚本时，除 Dart / Android 平台自动化外，还应确认：
 
