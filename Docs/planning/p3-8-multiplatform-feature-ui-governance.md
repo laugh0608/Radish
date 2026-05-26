@@ -117,6 +117,7 @@
 - 第三个纯 Web 小闭环已完成：公开 forum / docs / profile / shop 详情来源返回状态写入 `history.state`，浏览器历史恢复或刷新后仍能保留来源返回语义，不通过 URL 参数污染公开分享链接。
 - 公开商城购买回流小闭环已完成：公开商品详情只读购买提示的工作台入口从 `/` 修正到 `/desktop`，避免根路径切到 `/discover` 后购买、订单和背包回流被带回公开发现页。
 - 公开商城到工作台上下文桥接已完成：公开商品详情的工作台入口改为 `/desktop?app=shop&productId=...`，桌面壳层扩展 `shop` 商品深链解析并复用现有 `ShopApp` 的 `productId` 参数承接，进入工作台后可直接打开对应商品详情。
+- 工作台商城订单 / 背包入口承接已完成：桌面壳层扩展 `shop` 的 `orderId`、`view=orders` 与 `view=inventory` 深链解析，复用 `ShopApp` 既有订单详情并新增订单列表 / 背包初始视图参数；订单和背包入口保持登录后消费，避免未登录时误显空订单或空背包。
 - 后续继续只选择一个高价值小闭环继续实现，候选方向为移动阅读、来源返回、购买 / 订单 / 背包、纯 Web 登录后轻量链路补强或 Flutter 下一批功能。
 - WebOS 只保留 `/desktop` 历史入口，不再作为新增功能候选；PC/Tauri 放到最后再评估，后续若重启也只增强纯 Web。
 - 不直接启动完整移动商城、完整通知中心、完整创作器、公开 Web 整体 UI 重构或多端同时重写。
@@ -343,6 +344,13 @@ git diff --check
 npm run test --workspace=radish.client -- --test-name-pattern="desktop.*商城|公开商城详情购买回流入口|desktop 商城|stripDesktopExternalEntrySearch"
 npm run type-check --workspace=radish.client
 git diff --check
+```
+
+`P3-8-D` 工作台商城订单 / 背包入口承接小闭环已执行：
+
+```bash
+npm run test --workspace=radish.client -- --test-name-pattern=desktop
+npm run type-check --workspace=radish.client
 ```
 
 ## 与维护线关系

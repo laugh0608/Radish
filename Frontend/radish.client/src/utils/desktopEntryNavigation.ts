@@ -50,16 +50,36 @@ function parseChatDesktopEntry(query: URLSearchParams): DesktopExternalEntryTarg
 
 function parseShopDesktopEntry(query: URLSearchParams): DesktopExternalEntryTarget | null {
   const productId = normalizePositiveIntegerString(query.get('productId'));
-  if (!productId) {
-    return null;
+  if (productId) {
+    return {
+      appId: 'shop',
+      appParams: { productId },
+      requiresAuthenticatedSession: false,
+      signature: `shop:product:${productId}`,
+    };
   }
 
-  return {
-    appId: 'shop',
-    appParams: { productId },
-    requiresAuthenticatedSession: false,
-    signature: `shop:product:${productId}`,
-  };
+  const orderId = normalizePositiveIntegerString(query.get('orderId'));
+  if (orderId) {
+    return {
+      appId: 'shop',
+      appParams: { orderId },
+      requiresAuthenticatedSession: true,
+      signature: `shop:order:${orderId}`,
+    };
+  }
+
+  const view = query.get('view')?.trim().toLowerCase();
+  if (view === 'orders' || view === 'inventory') {
+    return {
+      appId: 'shop',
+      appParams: { initialView: view },
+      requiresAuthenticatedSession: true,
+      signature: `shop:${view}`,
+    };
+  }
+
+  return null;
 }
 
 export function parseDesktopExternalEntry(pathname: string, search: string): DesktopExternalEntryTarget | null {
@@ -86,6 +106,8 @@ export function stripDesktopExternalEntrySearch(search: string): string {
   query.delete('channelId');
   query.delete('messageId');
   query.delete('productId');
+  query.delete('orderId');
+  query.delete('view');
 
   const nextSearch = query.toString();
   return nextSearch ? `?${nextSearch}` : '';

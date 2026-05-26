@@ -38,14 +38,21 @@ function normalizePositiveLongId(value: unknown): LongId | undefined {
   return /^[1-9]\d*$/.test(trimmed) ? trimmed : undefined;
 }
 
-function parseShopWindowParams(appParams?: Record<string, unknown> | null): { productId?: LongId; orderId?: LongId } {
+function normalizeInitialShopView(value: unknown): Extract<ShopView, 'orders' | 'inventory'> | undefined {
+  return value === 'orders' || value === 'inventory' ? value : undefined;
+}
+
+function parseShopWindowParams(
+  appParams?: Record<string, unknown> | null
+): { productId?: LongId; orderId?: LongId; initialView?: Extract<ShopView, 'orders' | 'inventory'> } {
   if (!appParams) {
     return {};
   }
 
   return {
     productId: normalizePositiveLongId(appParams.productId),
-    orderId: normalizePositiveLongId(appParams.orderId)
+    orderId: normalizePositiveLongId(appParams.orderId),
+    initialView: normalizeInitialShopView(appParams.initialView)
   };
 }
 
@@ -73,6 +80,12 @@ export const ShopApp = () => {
       return {
         currentView: 'order-detail',
         selectedOrderId: windowParams.orderId
+      };
+    }
+
+    if (windowParams.initialView) {
+      return {
+        currentView: windowParams.initialView
       };
     }
 
@@ -122,6 +135,23 @@ export const ShopApp = () => {
       };
     });
   }, [windowParams.orderId]);
+
+  useEffect(() => {
+    const initialView = windowParams.initialView;
+    if (!initialView) {
+      return;
+    }
+
+    setAppState((current) => {
+      if (current.currentView === initialView) {
+        return current;
+      }
+
+      return {
+        currentView: initialView
+      };
+    });
+  }, [windowParams.initialView]);
 
   // 数据管理
   const dataState = useShopData(t);
