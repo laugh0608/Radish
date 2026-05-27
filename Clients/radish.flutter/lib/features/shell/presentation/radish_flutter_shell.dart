@@ -225,6 +225,10 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     _openProfileUser(userId, returnIndex: _leaderboardTabIndex);
   }
 
+  void _openProfileUserFromCurrentTab(String userId) {
+    _openProfileUser(userId, returnIndex: _currentIndex);
+  }
+
   void _openRecentProfileUser() {
     final normalizedUserId = _recentProfileUserId?.trim();
     if (normalizedUserId == null || normalizedUserId.isEmpty) {
@@ -255,7 +259,11 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     final recentTarget = _buildRecentBrowseTarget(normalizedTarget);
     final nextIndex = _shouldKeepCurrentTabForForumDetail(normalizedTarget)
         ? _currentIndex
-        : 1;
+        : _forumTabIndex;
+    final nextReturnIndex = _resolveForumDetailReturnIndex(
+      normalizedTarget,
+      nextIndex,
+    );
 
     setState(() {
       _forumHandoffTarget = normalizedTarget;
@@ -265,7 +273,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
         recentTarget,
       );
       _currentIndex = nextIndex;
-      _tabReturnIndex = null;
+      _tabReturnIndex = nextReturnIndex;
     });
 
     unawaited(widget.followUpStore.writeRecentBrowseHandoff(recentTarget));
@@ -771,6 +779,28 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     }
   }
 
+  int? _resolveForumDetailReturnIndex(
+    ForumDetailHandoffTarget target,
+    int nextIndex,
+  ) {
+    if (_currentIndex != _profileTabIndex || nextIndex != _profileTabIndex) {
+      return null;
+    }
+
+    switch (target.source) {
+      case ForumDetailHandoffSource.publicProfilePost:
+      case ForumDetailHandoffSource.publicProfileComment:
+      case ForumDetailHandoffSource.myQuickReply:
+      case ForumDetailHandoffSource.profileRecentBrowse:
+        return _tabReturnIndex;
+      case ForumDetailHandoffSource.shell:
+      case ForumDetailHandoffSource.discover:
+      case ForumDetailHandoffSource.notification:
+      case ForumDetailHandoffSource.browseHistory:
+        return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -808,14 +838,14 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
               ),
             ),
             onOpenForumDetailTarget: _openForumDetailTarget,
-            onOpenProfileUser: _openProfileUser,
+            onOpenProfileUser: _openProfileUserFromCurrentTab,
           ),
           ForumPage(
             environment: widget.environment,
             repository: widget.forumRepository,
             sessionController: widget.sessionController,
             authController: widget.authController,
-            onOpenProfileUser: _openProfileUser,
+            onOpenProfileUser: _openProfileUserFromCurrentTab,
             onOpenForumDetailTarget: _openForumDetailTarget,
             onRequestSignInForDetail: _startLoginForForumDetail,
             onConsumeActiveDetailLoginTarget:

@@ -185,6 +185,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     final scrollable = find.byType(Scrollable).last;
+    final lifecycleGateway = _RecordingAppLifecycleGateway();
     final sessionController = SessionController(
       sessionStore: InMemorySessionStore(),
       refreshService: _FakeSessionRefreshService.missing(),
@@ -200,6 +201,7 @@ void main() {
         forumRepository: _FakeForumRepository(),
         profileRepository: _FakeProfileRepository(),
         followUpStore: InMemoryForumFollowUpStore(),
+        appLifecycleGateway: lifecycleGateway,
       ),
     );
 
@@ -217,6 +219,13 @@ void main() {
     expect(find.text('我的'), findsWidgets);
     expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
     expect(find.text('用户 user-9'), findsWidgets);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(lifecycleGateway.moveTaskToBackCallCount, 0);
+    expect(find.text('继续阅读'), findsOneWidget);
+    expect(find.text('Native discover'), findsOneWidget);
   });
 
   testWidgets('discover forum card opens detail and returns to discover',
@@ -441,6 +450,74 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('公开主页'), findsOneWidget);
+    expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(lifecycleGateway.moveTaskToBackCallCount, 0);
+    expect(find.text('榜单类型：经验榜'), findsOneWidget);
+    expect(find.text('luobo'), findsOneWidget);
+  });
+
+  testWidgets(
+      'leaderboard profile detail pop preserves return to ranking on Android back',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final lifecycleGateway = _RecordingAppLifecycleGateway();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _SeededForumRepository(),
+        profileRepository: _SeededProfileRepository(),
+        leaderboardRepository: const _SeededLeaderboardRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+        appLifecycleGateway: lifecycleGateway,
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('榜单').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('打开公开主页'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
+
+    final scrollable = find.byType(Scrollable).last;
+    final openPostButton = find.widgetWithText(FilledButton, '打开帖子');
+    await tester.scrollUntilVisible(
+      openPostButton,
+      200,
+      scrollable: scrollable,
+    );
+    await tester.tap(openPostButton);
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('帖子详情'), findsWidgets);
+    expect(find.text('个人主页帖子'), findsWidgets);
+
+    Navigator.of(tester.element(find.text('帖子详情').first)).pop();
+    await tester.pumpAndSettle();
+
+    expect(find.text('最近公开帖子'), findsOneWidget);
     expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
 
     await tester.binding.handlePopRoute();
@@ -1337,6 +1414,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
+    final lifecycleGateway = _RecordingAppLifecycleGateway();
     final sessionController = SessionController(
       sessionStore: InMemorySessionStore(),
       refreshService: _FakeSessionRefreshService.missing(),
@@ -1352,6 +1430,7 @@ void main() {
         forumRepository: _SeededForumRepository(),
         profileRepository: _FakeProfileRepository(),
         followUpStore: InMemoryForumFollowUpStore(),
+        appLifecycleGateway: lifecycleGateway,
       ),
     );
 
@@ -1365,6 +1444,13 @@ void main() {
     expect(find.text('我的'), findsWidgets);
     expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
     expect(find.text('用户 user-9'), findsWidgets);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(lifecycleGateway.moveTaskToBackCallCount, 0);
+    expect(find.text('论坛详情回流'), findsOneWidget);
+    expect(find.text('浏览公开帖子，支持最新和热门排序。当前阶段仅提供只读阅读。'), findsOneWidget);
   });
 
   testWidgets('shell forum handoff opens native detail and targets comment',
