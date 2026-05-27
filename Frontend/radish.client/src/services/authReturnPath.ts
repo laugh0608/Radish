@@ -69,3 +69,26 @@ export function buildDesktopShopProductReturnPath(productId: string | number): s
 
   return `/desktop?${query.toString()}`;
 }
+
+export function buildDesktopShopOrderReturnPath(orderId: string | number): string | null {
+  const normalizedOrderId = String(orderId).trim();
+  if (!/^[1-9]\d*$/.test(normalizedOrderId)) {
+    return null;
+  }
+
+  const query = new URLSearchParams({
+    app: 'shop',
+    orderId: normalizedOrderId,
+  });
+
+  return `/desktop?${query.toString()}`;
+}
+
+export function buildDesktopShopPrivateViewReturnPath(view: 'orders' | 'inventory'): string {
+  const query = new URLSearchParams({
+    app: 'shop',
+    view,
+  });
+
+  return `/desktop?${query.toString()}`;
+}

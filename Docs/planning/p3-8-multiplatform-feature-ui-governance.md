@@ -119,13 +119,14 @@
 - 公开商城到工作台上下文桥接已完成：公开商品详情的工作台入口改为 `/desktop?app=shop&productId=...`，桌面壳层扩展 `shop` 商品深链解析并复用现有 `ShopApp` 的 `productId` 参数承接，进入工作台后可直接打开对应商品详情。
 - 工作台商城订单 / 背包入口承接已完成：桌面壳层扩展 `shop` 的 `orderId`、`view=orders` 与 `view=inventory` 深链解析，复用 `ShopApp` 既有订单详情并新增订单列表 / 背包初始视图参数；订单和背包入口保持登录后消费，避免未登录时误显空订单或空背包。
 - 纯 Web 登录后轻量链路闭环已完成：未登录用户从公开商品页进入工作台商品详情后，可通过“登录后继续购买”保存 `/desktop?app=shop&productId=...` 上下文；OIDC 回调成功后一次性恢复到该商品详情，再继续购买动作。
+- 公开商城私有回流批量验收已完成：匿名态打开 `/desktop?app=shop&orderId=...`、`/desktop?app=shop&view=orders` 或 `/desktop?app=shop&view=inventory` 会保存原深链并进入登录，登录成功后回到对应订单详情、订单列表或背包；`ShopApp` 私有视图也补明确登录门禁状态，避免把未登录状态误显示成空订单或空背包。
 - Flutter 榜单到公开主页小闭环已完成：经验榜条目新增“打开公开主页”，复用既有 `ProfilePage` 公开主页能力，并保留 Android Back 返回榜单的来源语义。
 - Flutter 通知回流小闭环已完成：最新论坛通知打开原生帖子详情时保留打开通知前的 tab，详情返回后回到原位置，不把用户强制留在 forum tab。
 - Flutter 轻回应登录回流小闭环已完成：从 forum detail 轻回应区发起登录后，成功回到当前详情的轻回应区并提示继续发布；本轮不扩展完整评论、发帖、点赞或投票能力。
 - 公开商品榜单到商品详情小闭环已完成：公开热门商品榜单条目可进入公开商品详情，并通过 `history.state` 来源状态返回榜单；榜单仍保持只读浏览边界，不直接打开购买、订单或背包流程。
 - Gateway 公开页资源 URL 收口小闭环已完成：当页面通过 `https://localhost:5000` 访问时，浏览器可见的本地 HTTP 媒体、favicon、头像和 Markdown 附件资源地址会归一到当前 Gateway origin；公网、CDN、非 localhost 地址不改写。
 - 移动 Web 公开阅读链路小闭环已完成：共享 `MarkdownRenderer` 补齐长链接、长 inline code、代码块、表格和图片的窄屏防溢出约束；公开 docs / forum 详情补齐标题、slug chip、评论摘要 chip、返回 / 分享按钮和评论内容的 390px 窄屏换行约束；公开分享链接统一走运行时公开域名配置，并保留 docs 详情文档锚点。
-- 后续继续只选择一个高价值小闭环继续实现，候选方向为移动阅读、来源返回、购买 / 订单 / 背包、纯 Web 登录后轻量链路补强或 Flutter 下一批功能。
+- 后续继续按验收矩阵做主动批量复核、成组修复和一次性交付结论；候选方向为移动阅读、来源返回、购买 / 订单 / 背包、纯 Web 登录后轻量链路补强或 Flutter 下一批功能。
 - WebOS 只保留 `/desktop` 历史入口，不再作为新增功能候选；PC/Tauri 放到最后再评估，后续若重启也只增强纯 Web。
 - 不直接启动完整移动商城、完整通知中心、完整创作器、公开 Web 整体 UI 重构或多端同时重写。
 
@@ -358,6 +359,18 @@ git diff --check
 ```bash
 npm run test --workspace=radish.client -- --test-name-pattern=desktop
 npm run type-check --workspace=radish.client
+```
+
+`P3-8-D` 公开商城私有回流批量验收已执行：
+
+```bash
+npm run type-check --workspace=radish.client
+npm run test --workspace=radish.client
+npm run validate:baseline:quick
+npm run lint:changed
+npm run check:repo-hygiene:changed
+npm run check:identity-impact
+npm run validate:identity
 ```
 
 `P3-8-D` 公开商品榜单到商品详情小闭环已执行：

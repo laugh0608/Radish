@@ -4,6 +4,11 @@ import { useUserStore } from '@/stores/userStore';
 import { useCurrentWindow } from '@/desktop/useCurrentWindow';
 import type { LongId } from '@/api/user';
 import { ContentReportModal } from '@/components/ContentReportModal';
+import { redirectToLogin } from '@/services/auth';
+import {
+  buildDesktopShopOrderReturnPath,
+  buildDesktopShopPrivateViewReturnPath,
+} from '@/services/authReturnPath';
 import { ShopHome } from './pages/ShopHome';
 import { ProductList } from './pages/ProductList';
 import { ProductDetail } from './pages/ProductDetail';
@@ -54,6 +59,10 @@ function parseShopWindowParams(
     orderId: normalizePositiveLongId(appParams.orderId),
     initialView: normalizeInitialShopView(appParams.initialView)
   };
+}
+
+function isAuthenticatedShopView(view: ShopView): boolean {
+  return view === 'orders' || view === 'order-detail' || view === 'inventory';
 }
 
 export const ShopApp = () => {
@@ -225,6 +234,23 @@ export const ShopApp = () => {
     setReportProductId(productId);
   };
 
+  const buildCurrentPrivateReturnPath = (): string => {
+    if (appState.currentView === 'order-detail' && appState.selectedOrderId) {
+      return buildDesktopShopOrderReturnPath(appState.selectedOrderId)
+        ?? buildDesktopShopPrivateViewReturnPath('orders');
+    }
+
+    if (appState.currentView === 'inventory') {
+      return buildDesktopShopPrivateViewReturnPath('inventory');
+    }
+
+    return buildDesktopShopPrivateViewReturnPath('orders');
+  };
+
+  const handleLoginForPrivateShopView = () => {
+    redirectToLogin({ returnPath: buildCurrentPrivateReturnPath() });
+  };
+
   // 监听视图变化，加载对应数据
   useEffect(() => {
     switch (appState.currentView) {
@@ -271,6 +297,24 @@ export const ShopApp = () => {
 
   // 渲染当前视图
   const renderCurrentView = () => {
+    if (!loggedIn && isAuthenticatedShopView(appState.currentView)) {
+      return (
+        <div className={styles.authRequired}>
+          <div className={styles.authRequiredIcon}>🔐</div>
+          <h2 className={styles.authRequiredTitle}>{t('shop.privateLogin.title')}</h2>
+          <p className={styles.authRequiredDescription}>{t('shop.privateLogin.description')}</p>
+          <div className={styles.authRequiredActions}>
+            <button className={styles.authPrimaryButton} onClick={handleLoginForPrivateShopView}>
+              {t('shop.privateLogin.action')}
+            </button>
+            <button className={styles.authSecondaryButton} onClick={navigate.toHome}>
+              {t('shop.privateLogin.backToShop')}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     switch (appState.currentView) {
       case 'home':
         return (

@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  buildDesktopShopOrderReturnPath,
+  buildDesktopShopPrivateViewReturnPath,
   buildDesktopShopProductReturnPath,
   consumeAuthReturnPath,
   normalizeAuthReturnPath,
@@ -69,4 +71,16 @@ test('buildDesktopShopProductReturnPath 应构造商品上下文恢复路径并�
   assert.equal(buildDesktopShopProductReturnPath(12), '/desktop?app=shop&productId=12');
   assert.equal(buildDesktopShopProductReturnPath(0), null);
   assert.equal(buildDesktopShopProductReturnPath('abc'), null);
+});
+
+test('商城订单和背包返回路径应保持字符串 ID 并收敛到 desktop 深链', () => {
+  assert.equal(
+    buildDesktopShopOrderReturnPath('2042219067430928385'),
+    '/desktop?app=shop&orderId=2042219067430928385',
+  );
+  assert.equal(buildDesktopShopOrderReturnPath(15), '/desktop?app=shop&orderId=15');
+  assert.equal(buildDesktopShopOrderReturnPath('0'), null);
+  assert.equal(buildDesktopShopOrderReturnPath('abc'), null);
+  assert.equal(buildDesktopShopPrivateViewReturnPath('orders'), '/desktop?app=shop&view=orders');
+  assert.equal(buildDesktopShopPrivateViewReturnPath('inventory'), '/desktop?app=shop&view=inventory');
 });
