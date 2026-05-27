@@ -81,6 +81,11 @@ interface PublicBackAction {
   onBack: () => void;
 }
 
+interface PublicNavigateOptions {
+  replace?: boolean;
+  preserveSourceState?: boolean;
+}
+
 function readPublicRouteSourceState(): PublicRouteSourceState {
   const historyState = window.history.state;
   if (!historyState || typeof historyState !== 'object') {
@@ -241,7 +246,7 @@ export const PublicEntry = () => {
     };
   }, []);
 
-  const navigateToRoute = useCallback((nextRoute: PublicRouteDescriptor, options?: { replace?: boolean }) => {
+  const navigateToRoute = useCallback((nextRoute: PublicRouteDescriptor, options?: PublicNavigateOptions) => {
     const currentRoute = parsePublicRoute();
     const nextPath = buildPublicPath(nextRoute);
     const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
@@ -253,7 +258,8 @@ export const PublicEntry = () => {
     const nextRouteSourceState = createPublicRouteSourceState(
       readPublicRouteSourceState(),
       currentRoute,
-      nextRoute
+      nextRoute,
+      { preserveExisting: options?.preserveSourceState }
     );
     const nextHistoryState = buildPublicHistoryState(nextRouteSourceState);
 
@@ -348,7 +354,7 @@ export const PublicEntry = () => {
 
     return {
       mode,
-      onBack: () => navigateToRoute(routeSourceState.forumDetailSourceRoute!)
+      onBack: () => navigateToRoute(routeSourceState.forumDetailSourceRoute!, { preserveSourceState: true })
     };
   }, [navigateToRoute, routeSourceState.forumDetailSourceRoute]);
 
@@ -360,7 +366,7 @@ export const PublicEntry = () => {
 
     return {
       mode,
-      onBack: () => navigateToRoute(routeSourceState.docsDetailSourceRoute!)
+      onBack: () => navigateToRoute(routeSourceState.docsDetailSourceRoute!, { preserveSourceState: true })
     };
   }, [navigateToRoute, routeSourceState.docsDetailSourceRoute]);
 
@@ -372,7 +378,7 @@ export const PublicEntry = () => {
 
     return {
       mode,
-      onBack: () => navigateToRoute(routeSourceState.profileSourceRoute!)
+      onBack: () => navigateToRoute(routeSourceState.profileSourceRoute!, { preserveSourceState: true })
     };
   }, [navigateToRoute, routeSourceState.profileSourceRoute]);
 
@@ -384,7 +390,7 @@ export const PublicEntry = () => {
 
     return {
       mode,
-      onBack: () => navigateToRoute(routeSourceState.shopDetailSourceRoute!)
+      onBack: () => navigateToRoute(routeSourceState.shopDetailSourceRoute!, { preserveSourceState: true })
     };
   }, [navigateToRoute, routeSourceState.shopDetailSourceRoute]);
 

@@ -274,6 +274,35 @@ test('createPublicRouteSourceState 应保留同一详情内的既有来源状态
   assert.deepEqual(nextState.forumDetailSourceRoute, discoverRoute);
 });
 
+test('createPublicRouteSourceState 在来源返回导航中应保留既有来源状态', () => {
+  const discoverRoute: PublicRouteDescriptor = {
+    app: 'discover',
+    route: { kind: 'home' }
+  };
+  const forumDetailRoute: PublicRouteDescriptor = {
+    app: 'forum',
+    route: { kind: 'detail', postId: '42' }
+  };
+  const profileRoute: PublicRouteDescriptor = {
+    app: 'profile',
+    route: { kind: 'detail', userId: '7', tab: 'posts', page: 1 }
+  };
+  const currentState = {
+    forumDetailSourceRoute: discoverRoute,
+    profileSourceRoute: forumDetailRoute
+  };
+
+  const preservedState = createPublicRouteSourceState(
+    currentState,
+    profileRoute,
+    forumDetailRoute,
+    { preserveExisting: true }
+  );
+
+  assert.deepEqual(preservedState.forumDetailSourceRoute, discoverRoute);
+  assert.deepEqual(preservedState.profileSourceRoute, forumDetailRoute);
+});
+
 test('shouldCommitPublicRouteUpdate 对同 app 同路径的 replace 导航返回 false', () => {
   const currentRoute: PublicRouteDescriptor = {
     app: 'forum',

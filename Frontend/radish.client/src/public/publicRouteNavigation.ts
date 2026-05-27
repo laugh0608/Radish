@@ -30,6 +30,10 @@ export interface PublicRouteSourceState {
   shopDetailSourceRoute?: PublicRouteDescriptor | null;
 }
 
+export interface PublicRouteSourceStateOptions {
+  preserveExisting?: boolean;
+}
+
 function isForumBrowseDescriptor(
   route: PublicRouteDescriptor | null
 ): route is { app: 'forum'; route: PublicForumBrowseRoute } {
@@ -149,9 +153,13 @@ export function shouldCommitPublicRouteUpdate(
 export function createPublicRouteSourceState(
   currentState: PublicRouteSourceState,
   currentRoute: PublicRouteDescriptor,
-  nextRoute: PublicRouteDescriptor
+  nextRoute: PublicRouteDescriptor,
+  options: PublicRouteSourceStateOptions = {}
 ): PublicRouteSourceState {
   const nextState: PublicRouteSourceState = { ...currentState };
+  if (options.preserveExisting) {
+    return nextState;
+  }
 
   if (shouldCaptureForumDetailSource(currentRoute, nextRoute)) {
     nextState.forumDetailSourceRoute = currentRoute;
