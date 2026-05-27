@@ -19,3 +19,14 @@
 - 规划入口、P3-8-D 专题和 Flutter README 已同步今日能力边界；本批没有新增后端 API、数据库结构、权限模型、视觉设计稿或共享 UI token，因此前端视觉规范、部署说明和 Pencil 设计源文件无需跟随更新。
 - 今日验证覆盖 `radish.client` 定向测试、类型检查、生产构建，Flutter 定向测试、`flutter analyze`、全量 `flutter test` 与 `git diff --check`；`radish.client` 构建仍保留既有 `app-shop` chunk size warning。
 - 收工前已补 [2026-05-26 收工回顾与明日事项](/records/daily-handoff-2026-05-26)：明日优先做今日链路的批量验收复核，再根据结果只选择一个纯 Web 或 Flutter 一天级小闭环。
+
+## 2026-05-27
+
+- `P3-8-D` 二轮复核继续补齐纯 Web 公开主路径：公开商品榜单进入商品详情并保留榜单来源返回、商城详情返回文案按商品列表 / 榜单来源精确展示、公开详情显式来源返回保留既有 `history.state` 来源链路，避免 `discover -> forum detail -> profile -> 返回 forum detail` 形成来源循环。
+- Gateway 公开页资源 URL 已收口：HTTPS Gateway 下本地 HTTP 媒体、favicon、头像和 Markdown 附件归一到当前 Gateway origin；移动 Web 公开阅读链路补齐 Markdown、docs 详情和 forum 详情窄屏防溢出；公开分享链接统一走运行时公开域名配置。
+- Flutter 公开个人页来源返回已补齐：发现、论坛作者和榜单进入原生公开主页后，Android Back 可回到原来源；公开主页继续打开帖子 / 评论详情并返回后，仍保留来源 tab。
+- 前端构建治理已处理历史 `app-shop` chunk warning：`ShopApp` 按页面和购买弹窗懒加载，商城手动 chunk 细分后 `app-shop` 已低于 500k 警告阈值；仓库不保留 npm update notifier 配置，npm 自身 update notice 仍按本机环境显示。
+- `/discover` 论坛卡片公开路径已统一为 PublicId 优先，与 forum 列表 / 搜索 / 标签页 URL 口径一致；P3-8-D 移动 Web 验收矩阵已补 2026-05-27 二轮静态复核记录。
+- 规划入口、P3-8-D 专题、Flutter README、前端构建拆包说明、记录索引与本周 / 本月开发日志已同步；今日没有新增后端 API、数据库结构、权限模型、视觉 token、Pencil 设计稿或部署配置，因此相关说明书无需跟随更新。
+- 今日验证覆盖 `radish.client` 公开路由、公开 head、商城来源返回、Gateway 资源 URL、商城登录回流等定向测试，`radish.client` / `@radish/ui` 类型检查，`radish.client` 生产构建，Flutter `smoke_test`、全量 `flutter test`、`flutter analyze`，`validate:baseline:quick`、changed / staged 文本卫生与 `git diff --check`。
+- 收工前已补 [2026-05-27 收工回顾与明日事项](/records/daily-handoff-2026-05-27)：明日优先转向 Flutter `公开个人页 -> 帖子 / 评论详情 -> Android Back 回到原 profile 来源` 主路径；若能力已完整，只补验收结论，不继续为了纯 Web 矩阵凑低收益小闭环。

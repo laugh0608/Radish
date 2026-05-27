@@ -32,6 +32,7 @@
 - 萝卜坑已完成页级拆分：`app-radish-pit` 约 `25.32 kB`，并拆出 `pit-transfer` / `pit-history` / `pit-security` / `pit-statistics` 独立 chunk。
 - Showcase 已从桶导入迁移到子路径导入，`app-showcase` 从约 `751.21 kB` 降至约 `410.06 kB`。
 - `forum-detail-view` 已从约 `349.00 kB` 拆分为：`forum-detail-view` 约 `5.49 kB`、`forum-detail-post` 约 `3.91 kB`、`forum-detail-comments` 约 `19.85 kB`。
+- 商城工作台已完成页级拆分：`ShopApp` 按首页、商品列表 / 详情、订单列表 / 详情、背包和购买弹窗懒加载，并通过 `shop-products`、`shop-orders`、`shop-inventory`、`shop-purchase` 等 chunk 分组承载，`app-shop` 已从超过 500k 的历史 warning 收敛到约 `27.39 kB`。
 - 当前已无超过 500k 的业务 chunk。
 
 ##
