@@ -133,6 +133,21 @@ test('shouldCaptureShopDetailSource 应在从 discover 或商城列表进入商�
   assert.equal(shouldCaptureShopDetailSource(productsRoute, detailRoute), true);
 });
 
+test('shouldCaptureShopDetailSource 应在从商品榜单进入商品详情时记录来源', () => {
+  const leaderboardRoute: PublicRouteDescriptor = {
+    app: 'leaderboard',
+    route: { kind: 'list', typeSlug: 'hot-product', page: 1 }
+  };
+  const detailRoute: PublicRouteDescriptor = {
+    app: 'shop',
+    route: { kind: 'detail', productId: '2042219067430928384' }
+  };
+
+  const nextState = createPublicRouteSourceState({}, leaderboardRoute, detailRoute);
+  assert.deepEqual(nextState.shopDetailSourceRoute, leaderboardRoute);
+  assert.equal(resolveShopDetailBackMode(nextState.shopDetailSourceRoute), 'source');
+});
+
 test('shouldCaptureShopDetailSource 不应在同一商品详情内重复覆盖来源', () => {
   const currentRoute: PublicRouteDescriptor = {
     app: 'shop',

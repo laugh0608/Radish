@@ -26,6 +26,7 @@ interface PublicLeaderboardAppProps {
   onNavigate: (route: PublicLeaderboardRoute, options?: { replace?: boolean }) => void;
   onNavigateToDiscover?: () => void;
   onNavigateToProfile?: (userId: string) => void;
+  onNavigateToShopProduct?: (productId: string) => void;
 }
 
 type PublicStatusTone = 'loading' | 'empty' | 'error';
@@ -257,6 +258,7 @@ export const PublicLeaderboardApp = ({
   onNavigate,
   onNavigateToDiscover,
   onNavigateToProfile,
+  onNavigateToShopProduct,
 }: PublicLeaderboardAppProps) => {
   const { t } = useTranslation();
   const pageRef = useRef<HTMLDivElement>(null);
@@ -456,6 +458,14 @@ export const PublicLeaderboardApp = ({
     }
 
     onNavigateToProfile?.(String(item.voUserId));
+  };
+
+  const handleOpenProductDetail = (item: UnifiedLeaderboardItemData) => {
+    if (!item.voProductId) {
+      return;
+    }
+
+    onNavigateToShopProduct?.(String(item.voProductId));
   };
 
   return (
@@ -684,10 +694,14 @@ export const PublicLeaderboardApp = ({
                   })()
                 ) : (() => {
                   const productIconUrl = resolveMediaUrl(item.voProductIcon);
+                  const canOpenProductDetail = !!item.voProductId && !!onNavigateToShopProduct;
                   return (
-                    <article
+                    <button
                       key={`${item.voLeaderboardType}-${String(item.voProductId)}-${item.voRank}`}
+                      type="button"
                       className={`${styles.listItem} ${styles.productListItem}`}
+                      onClick={() => handleOpenProductDetail(item)}
+                      disabled={!canOpenProductDetail}
                     >
                       <div className={styles.rankBadge} data-rank={item.voRank <= 3 ? item.voRank : undefined}>
                         {item.voRank <= 3 ? (
@@ -711,9 +725,9 @@ export const PublicLeaderboardApp = ({
                         <div className={styles.itemPrimary}>
                           <div className={styles.itemTitleRow}>
                             <span className={styles.itemTitle}>{item.voProductName || t('leaderboard.public.productFallback')}</span>
-                            <span className={styles.productReadonly}>{t('leaderboard.public.productReadOnly')}</span>
+                            <span className={styles.productReadonly}>{t('leaderboard.public.productDetailAction')}</span>
                           </div>
-                          <p className={styles.itemMeta}>{t('leaderboard.public.productReadOnly')}</p>
+                          <p className={styles.itemMeta}>{t('leaderboard.public.productDetailMeta')}</p>
                         </div>
                         <div className={styles.itemSideInfo}>
                           <span className={styles.sideInfoLabel}>{t('shop.meta.price')}</span>
@@ -728,7 +742,7 @@ export const PublicLeaderboardApp = ({
                         <span className={styles.metricValue}>{Number(item.voPrimaryValue || 0).toLocaleString()}</span>
                         <span className={styles.metricLabel}>{item.voPrimaryLabel || activeTypeConfig.voPrimaryLabel}</span>
                       </div>
-                    </article>
+                    </button>
                   );
                 })())}
               </div>

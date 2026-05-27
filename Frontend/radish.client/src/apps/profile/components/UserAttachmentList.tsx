@@ -7,6 +7,7 @@ import { copyToClipboard } from '@/utils/clipboard';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { deleteAttachment } from '@/api/attachment';
 import { tokenService } from '@/services/tokenService';
+import { resolveMediaUrl } from '@/utils/media';
 import { useTranslation } from 'react-i18next';
 import styles from './UserAttachmentList.module.css';
 
@@ -51,10 +52,7 @@ function isImageExtension(extension: string | undefined | null): boolean {
 }
 
 function resolveUrl(apiBaseUrl: string, url: string): string {
-  if (!url) return '';
-  if (/^https?:\/\//i.test(url)) return url;
-  if (url.startsWith('/')) return `${apiBaseUrl}${url}`;
-  return `${apiBaseUrl}/${url}`;
+  return resolveMediaUrl(url, apiBaseUrl) ?? '';
 }
 
 export const UserAttachmentList = ({ apiBaseUrl, displayTimeZone }: UserAttachmentListProps) => {

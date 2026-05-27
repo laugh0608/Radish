@@ -22,6 +22,7 @@ import {
   openWorkspaceNavigationTarget,
   resolveBrowseHistoryWorkspaceTarget,
 } from '@/utils/workspaceNavigation';
+import { resolveMediaUrl } from '@/utils/media';
 import { reuseInFlightRequest } from './requestDedup';
 import styles from './ProfileApp.module.css';
 
@@ -96,10 +97,7 @@ function parseProfileWindowParams(input: Record<string, unknown> | undefined): P
 }
 
 function resolveAvatarUrl(apiBaseUrl: string, url: string | null | undefined): string | null {
-  if (!url) return null;
-  if (/^https?:\/\//i.test(url)) return url;
-  if (url.startsWith('/')) return `${apiBaseUrl}${url}`;
-  return `${apiBaseUrl}/${url}`;
+  return resolveMediaUrl(url, apiBaseUrl);
 }
 
 function buildAvatarText(name: string): string {

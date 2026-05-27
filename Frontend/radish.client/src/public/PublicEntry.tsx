@@ -403,6 +403,7 @@ export const PublicEntry = () => {
       onNavigate={navigateToLeaderboardRoute}
       onNavigateToDiscover={navigateToDiscoverRoute}
       onNavigateToProfile={(userId) => navigateToProfileRoute({ kind: 'detail', userId, tab: 'posts', page: 1 })}
+      onNavigateToShopProduct={(productId) => navigateToShopRoute({ kind: 'detail', productId })}
     />
   ) : route.app === 'shop' ? (
     <PublicShopApp

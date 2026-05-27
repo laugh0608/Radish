@@ -15,6 +15,7 @@ import i18n from '@/i18n';
 import type { ApiResponse } from '@radish/http';
 import { getApiBaseUrl } from '@/config/env';
 import { tokenService } from '@/services/tokenService';
+import { resolveMediaUrl } from '@/utils/media';
 import styles from './Dock.module.css';
 
 /**
@@ -55,10 +56,7 @@ export const Dock = () => {
 
   // 解析头像 URL（处理相对路径）
   const resolveAvatarUrl = (url: string | undefined): string | undefined => {
-    if (!url) return undefined;
-    if (/^https?:\/\//i.test(url)) return url;
-    if (url.startsWith('/')) return `${apiBaseUrl}${url}`;
-    return `${apiBaseUrl}/${url}`;
+    return resolveMediaUrl(url, apiBaseUrl) ?? undefined;
   };
 
   const buildAvatarText = (name: string): string => {

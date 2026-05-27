@@ -3,6 +3,7 @@ import {
   isPersistedEntityId,
   normalizeEntityId,
 } from '../../types/chat.ts';
+import { normalizeBrowserVisibleUrl } from '../../utils/browserVisibleUrl.ts';
 
 export const CHAT_DRAFT_STORAGE_KEY = 'radish.chat.drafts.v1';
 export const MENTION_PATTERN = /@\[(?<name>[^\]]+)\]\((?<id>\d+)\)/g;
@@ -94,14 +95,14 @@ export function resolveMediaUrl(apiBaseUrl: string, url: string | null | undefin
   }
 
   if (/^https?:\/\//i.test(url)) {
-    return url;
+    return normalizeBrowserVisibleUrl(url);
   }
 
   if (url.startsWith('/')) {
-    return `${apiBaseUrl}${url}`;
+    return normalizeBrowserVisibleUrl(`${apiBaseUrl}${url}`);
   }
 
-  return `${apiBaseUrl}/${url}`;
+  return normalizeBrowserVisibleUrl(`${apiBaseUrl}/${url}`);
 }
 
 export function resolveAttachmentAssetUrl(

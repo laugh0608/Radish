@@ -6,6 +6,7 @@ import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { log } from '@/utils/logger';
 import { getMyBrowseHistory, type UserBrowseHistoryItem } from '@/api/user';
 import { resolveBrowseHistoryDisplayRouteText } from '@/utils/workspaceNavigation';
+import { resolveMediaUrl } from '@/utils/media';
 import styles from './UserBrowseHistoryList.module.css';
 
 interface UserBrowseHistoryListProps {
@@ -16,19 +17,7 @@ interface UserBrowseHistoryListProps {
 const apiBaseUrl = getApiBaseUrl();
 
 const buildCoverUrl = (coverImage?: string | null): string | null => {
-  if (!coverImage) {
-    return null;
-  }
-
-  if (/^https?:\/\//i.test(coverImage)) {
-    return coverImage;
-  }
-
-  if (coverImage.startsWith('/')) {
-    return `${apiBaseUrl}${coverImage}`;
-  }
-
-  return `${apiBaseUrl}/${coverImage}`;
+  return resolveMediaUrl(coverImage, apiBaseUrl);
 };
 
 const getTypeIcon = (targetType: string): string => {

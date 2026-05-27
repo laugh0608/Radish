@@ -1,3 +1,5 @@
+import { normalizeBrowserVisibleUrl } from '@/utils/browserVisibleUrl';
+
 const DEFAULT_FAVICON_PATH = '/uploads/DefaultIco/bailuobo.ico';
 const PUBLIC_SITE_SETTINGS_ENDPOINT = '/api/v1/SystemConfig/GetPublicSiteSettings';
 
@@ -17,12 +19,14 @@ function resolveAssetUrl(apiBaseUrl: string, rawUrl: string): string {
   }
 
   if (/^https?:\/\//i.test(normalizedUrl)) {
-    return normalizedUrl;
+    return normalizeBrowserVisibleUrl(normalizedUrl);
   }
 
-  return normalizedUrl.startsWith('/')
+  const resolvedUrl = normalizedUrl.startsWith('/')
     ? `${apiBaseUrl}${normalizedUrl}`
     : `${apiBaseUrl}/${normalizedUrl}`;
+
+  return normalizeBrowserVisibleUrl(resolvedUrl);
 }
 
 function upsertFaviconLink(rel: string, href: string) {

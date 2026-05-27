@@ -534,6 +534,8 @@
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 76%, transparent);
   background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
   cursor: pointer;
+  color: inherit;
+  font: inherit;
   text-align: left;
   transition: all var(--theme-transition-standard);
 }

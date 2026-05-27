@@ -12,6 +12,7 @@ import { Select } from '@radish/ui/select';
 import { useUserStore } from '@/stores/userStore';
 import { tokenService } from '@/services/tokenService';
 import { buildTimeZoneOptions, formatDateTimeByTimeZone, resolveTimeZoneId } from '@/utils/dateTime';
+import { resolveMediaUrl } from '@/utils/media';
 import type { LongId } from '@/api/user';
 import { reuseInFlightRequest } from '../requestDedup';
 import styles from './UserInfoCard.module.css';
@@ -76,10 +77,7 @@ function getAuthHeader(): string | null {
 }
 
 function resolveUrl(apiBaseUrl: string, url: string | null | undefined): string | null {
-  if (!url) return null;
-  if (/^https?:\/\//i.test(url)) return url;
-  if (url.startsWith('/')) return `${apiBaseUrl}${url}`;
-  return `${apiBaseUrl}/${url}`;
+  return resolveMediaUrl(url, apiBaseUrl);
 }
 
 function formatCoinAmount(
