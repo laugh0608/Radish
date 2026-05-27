@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { lazy, Suspense, useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUserStore } from '@/stores/userStore';
 import { useCurrentWindow } from '@/desktop/useCurrentWindow';
@@ -9,16 +9,17 @@ import {
   buildDesktopShopOrderReturnPath,
   buildDesktopShopPrivateViewReturnPath,
 } from '@/services/authReturnPath';
-import { ShopHome } from './pages/ShopHome';
-import { ProductList } from './pages/ProductList';
-import { ProductDetail } from './pages/ProductDetail';
-import { OrderList } from './pages/OrderList';
-import { OrderDetail } from './pages/OrderDetail';
-import { Inventory } from './pages/Inventory';
-import { PurchaseModal } from './components/PurchaseModal';
 import { useShopData } from './hooks/useShopData';
 import { useShopActions } from './hooks/useShopActions';
 import styles from './ShopApp.module.css';
+
+const ShopHome = lazy(() => import('./pages/ShopHome').then((module) => ({ default: module.ShopHome })));
+const ProductList = lazy(() => import('./pages/ProductList').then((module) => ({ default: module.ProductList })));
+const ProductDetail = lazy(() => import('./pages/ProductDetail').then((module) => ({ default: module.ProductDetail })));
+const OrderList = lazy(() => import('./pages/OrderList').then((module) => ({ default: module.OrderList })));
+const OrderDetail = lazy(() => import('./pages/OrderDetail').then((module) => ({ default: module.OrderDetail })));
+const Inventory = lazy(() => import('./pages/Inventory').then((module) => ({ default: module.Inventory })));
+const PurchaseModal = lazy(() => import('./components/PurchaseModal').then((module) => ({ default: module.PurchaseModal })));
 
 export type ShopView = 'home' | 'products' | 'product-detail' | 'orders' | 'order-detail' | 'inventory';
 
@@ -63,6 +64,14 @@ function parseShopWindowParams(
 
 function isAuthenticatedShopView(view: ShopView): boolean {
   return view === 'orders' || view === 'order-detail' || view === 'inventory';
+}
+
+function renderShopLoadingFallback() {
+  return (
+    <div className={styles.lazyLoading}>
+      <div className={styles.lazySpinner}></div>
+    </div>
+  );
 }
 
 export const ShopApp = () => {
@@ -455,18 +464,24 @@ export const ShopApp = () => {
 
       {/* 主要内容区域 */}
       <div className={styles.content}>
-        {renderCurrentView()}
+        <Suspense fallback={renderShopLoadingFallback()}>
+          {renderCurrentView()}
+        </Suspense>
       </div>
 
       {/* 购买确认弹窗 */}
-      <PurchaseModal
-        isOpen={actionsState.isPurchaseModalOpen}
-        product={dataState.selectedProduct}
-        loading={actionsState.purchasing}
-        passcodeUpgradePrompt={actionsState.purchasePasscodeUpgradePrompt}
-        onClose={actionsState.handleClosePurchaseModal}
-        onConfirm={actionsState.handleConfirmPurchase}
-      />
+      {actionsState.isPurchaseModalOpen && (
+        <Suspense fallback={null}>
+          <PurchaseModal
+            isOpen={actionsState.isPurchaseModalOpen}
+            product={dataState.selectedProduct}
+            loading={actionsState.purchasing}
+            passcodeUpgradePrompt={actionsState.purchasePasscodeUpgradePrompt}
+            onClose={actionsState.handleClosePurchaseModal}
+            onConfirm={actionsState.handleConfirmPurchase}
+          />
+        </Suspense>
+      )}
 
       {reportProductId !== null && (
         <ContentReportModal

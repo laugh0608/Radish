@@ -71,6 +71,22 @@
   box-sizing: border-box;
 }
 
+.lazyLoading {
+  display: flex;
+  min-height: 240px;
+  align-items: center;
+  justify-content: center;
+}
+
+.lazySpinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--theme-border-soft);
+  border-top-color: var(--theme-brand-primary);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
 .authRequired {
   display: flex;
   min-height: 360px;
@@ -172,6 +188,12 @@
   to {
     transform: translateX(0);
     opacity: 1;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 

@@ -148,6 +148,14 @@ export default defineConfig({
           if (normalized.includes('/src/apps/radish-pit/components/TransactionHistory/')) return 'pit-history';
           if (normalized.includes('/src/apps/radish-pit/components/Transfer/')) return 'pit-transfer';
 
+          if (normalized.includes('/src/apps/shop/components/PurchaseModal')) return 'shop-purchase';
+          if (normalized.includes('/src/apps/shop/pages/Inventory')) return 'shop-inventory';
+          if (normalized.includes('/src/apps/shop/pages/Order')) return 'shop-orders';
+          if (normalized.includes('/src/apps/shop/pages/Product')) return 'shop-products';
+          if (normalized.includes('/src/apps/shop/pages/ShopHome')) return 'shop-home';
+          if (normalized.includes('/src/apps/shop/hooks/')) return 'shop-data';
+          if (normalized.includes('/src/api/shop')) return 'shop-data';
+
           if (normalized.includes('/src/apps/profile/')) return 'app-profile';
           if (normalized.includes('/src/apps/radish-pit/')) return 'app-radish-pit';
           if (normalized.includes('/src/apps/shop/')) return 'app-shop';
