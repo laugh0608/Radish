@@ -72,7 +72,9 @@
 - 公开入口的图片展示当前继续沿附件运行时 URL 口径：商品、榜单与社区分发页若引用仍有效的业务附件，不应再因后台清理误删而退化成前端 404 坏图
 - `/discover` 首屏摘要卡当前优先表达“整卡预览本页区块 + 独立按钮直达公开页”的双层动作关系；forum / docs / leaderboard / shop 分区推荐项在窄屏下也要保持一致的信息密度与留白节奏
 - Flutter forum 当前的最小登录、回流与轻互动语义也已进一步明确：详情页允许匿名用户原地发起 OIDC 登录，并在浏览器回跳后继续保留当前 `postPublicId / postId / commentId` 上下文；已登录壳层可读取最新 forum 通知并回到帖子 / 评论上下文，通知、个人公开页、我的轻回应与最近浏览回流均优先消费 `postPublicId`，旧 `postId` 只保留为字符串 fallback；进入详情后再使用真实 `VoId` 执行评论、轻回应和定位类内部接口，不把公开标识误传给内部接口；轻回应发布成功只更新轻回应墙与局部反馈，不刷新正文或评论阅读位置；但评论提交、点赞、投票、编辑、完整通知中心与系统通知栏推送仍不在当前批次内
+- Flutter 公开主页当前会记录发现页、forum 作者入口和榜单来源；公开主页内继续打开帖子 / 评论详情后，Android Back 先回公开主页，再回原来源 tab，不把用户强制留在 profile tab
 - 公开详情页来源返回使用 `history.state` 保留来源语义，不污染公开 URL、canonical、分享链接或 sitemap；公开商品详情需要继续购买时，当前通过 `/desktop?app=shop&productId=...` 桥接到 WebOS 保留入口，未登录用户可保存该返回路径并在 OIDC 回调后恢复到原商品详情。订单详情、订单列表和背包入口分别通过 `/desktop?app=shop&orderId=...`、`/desktop?app=shop&view=orders`、`/desktop?app=shop&view=inventory` 承接，并要求登录后消费
+- HTTPS Gateway 下的公开页面会把本地 HTTP 媒体、favicon、头像和 Markdown 附件归一到当前 Gateway origin；公开分享链接通过运行时公开域名配置生成，docs 分享保留锚点，canonical / sitemap 不携带临时来源状态
 - 后续不立即删除现有 WebOS 路由，而是把 `/desktop` 作为保留入口，按价值把既有高价值能力逐步迁移到纯 Web 或 Flutter
 
 ## 2. 系统架构
