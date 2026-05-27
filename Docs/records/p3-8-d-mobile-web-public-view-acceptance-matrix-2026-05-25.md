@@ -51,6 +51,15 @@
 | 公开页多处文案仍使用“桌面工作台 / WebOS”作为边界说明 | 新路线后这些文案仍可表达“重功能在工作台”，但需要避免暗示 WebOS 是主线 | 跟随 `/desktop` 入口修正一起抽查，必要时小范围改为“工作台保留入口” |
 | 根路径 `/` 实测时仍落到 `RootEntry`，Tauri 环境才替换到 `/desktop` | 与新规划不冲突，因为代码切换被拆成后续批次；但矩阵需要提前识别依赖 `/` 的入口 | 已在后续小闭环中将普通浏览器 `/` 切向 `/discover`，Tauri 当前仍保留 `/desktop` |
 
+## 二轮静态复核（2026-05-27）
+
+- 范围：在不启动服务的前提下复核 `/discover`、公开详情来源状态、分享链接、公开商城到 `/desktop` 的上下文桥接和既有测试覆盖。
+- 运行态前提：本机 `localhost:3000` 与 `localhost:5000` 均未监听，本轮不做浏览器实测，不启动服务。
+- 发现：`/discover` 论坛卡片进入帖子详情时仍直接使用 `post.voId`，而 forum 列表、搜索、标签和个人公开页内容入口已优先使用 `Post.PublicId`。
+- 影响：发现页到帖子详情会继续生成 long id 公开路径，和当前公开 URL / canonical 优先使用 PublicId 的口径不一致。
+- 处理：已改为复用 `getForumPostRouteIdentifier(post)`，优先生成 PublicId 路径；无 PublicId 时才回退旧 long id 兼容路径。
+- 验证：已执行 `radish.client` 公开路由定向测试、类型检查、changed lint、client build、changed 文本卫生检查和 `git diff --check`。
+
 ## 开发服务器实测记录
 
 - 验收日期：2026-05-25

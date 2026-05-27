@@ -13,6 +13,7 @@ import { getProductTypeDisplay, getProducts, type ProductListItem } from '@/api/
 import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
 import { getPublicWikiList } from '../docs/publicDocsApi';
+import { getForumPostRouteIdentifier } from '../forum/publicForumUtils';
 import type { PublicDiscoverRoute } from '../discoverRouteState';
 import type { PublicDocsRoute } from '../docsRouteState';
 import { createDefaultPublicLeaderboardRoute, type PublicLeaderboardRoute } from '../leaderboardRouteState';
@@ -920,7 +921,7 @@ export const PublicDiscoverApp = ({
                       key={post.voId}
                       post={post}
                       displayTimeZone={displayTimeZone}
-                      onClick={() => runFromSection('forum', () => onNavigateToForum({ kind: 'detail', postId: String(post.voId) }))}
+                      onClick={() => runFromSection('forum', () => onNavigateToForum({ kind: 'detail', postId: getForumPostRouteIdentifier(post) }))}
                       variant="publicCompact"
                       onTagClick={(_, tagSlug) => runFromSection('forum', () => onNavigateToForum({ kind: 'tag', tagSlug, sortBy: 'newest', page: 1 }))}
                       onQuestionClick={() => runFromSection('forum', () => onNavigateToForum({ kind: 'question', sortBy: 'newest', page: 1 }))}
