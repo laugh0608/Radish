@@ -25,7 +25,7 @@ import {
   buildProfilePageStructuredData,
   removePublicStructuredData,
 } from '../publicStructuredData';
-import { buildPublicCanonicalUrl } from '../publicHead';
+import { buildPublicShareUrl } from '../publicHead';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { usePublicShareLink } from '../hooks/usePublicShareLink';
 import {
@@ -363,7 +363,7 @@ export const PublicProfileApp = ({
   const handleBack = backAction?.onBack ?? onNavigateToForumList;
   const buildProfileShareUrl = useCallback(() => {
     const profileUserId = String(profile?.voUserId ?? route.userId);
-    return buildPublicCanonicalUrl(buildPublicProfilePath({
+    return buildPublicShareUrl(buildPublicProfilePath({
       kind: 'detail',
       userId: profileUserId,
       tab: route.tab,

@@ -68,6 +68,7 @@ function getRuntimeConfig() {
   const publicUrl = readStringEnv('RADISH_PUBLIC_URL', 'https://localhost:5000');
 
   return {
+    publicUrl,
     apiBaseUrl: readStringEnv('VITE_API_BASE_URL', publicUrl),
     authBaseUrl: readStringEnv('VITE_AUTH_BASE_URL', publicUrl),
     signalrHubUrl: readStringEnv('VITE_SIGNALR_HUB_URL', publicUrl),

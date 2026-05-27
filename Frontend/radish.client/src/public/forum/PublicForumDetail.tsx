@@ -18,7 +18,7 @@ import { CommentTree } from '@/apps/forum/components/CommentTree';
 import { PostDetail as ForumPostDetail } from '@/apps/forum/components/PostDetail';
 import { PostQuickReplyWall } from '@/apps/forum/components/PostQuickReplyWall';
 import { buildPublicForumPath } from '../forumRouteState';
-import { buildPublicCanonicalUrl } from '../publicHead';
+import { buildPublicShareUrl } from '../publicHead';
 import {
   applyPublicStructuredData,
   buildForumPostStructuredData,
@@ -311,7 +311,7 @@ export const PublicForumDetail = ({
     const sharePath = buildPublicForumPath(commentId
       ? { kind: 'detail', postId: sharePostId, commentId }
       : { kind: 'detail', postId: sharePostId });
-    return buildPublicCanonicalUrl(sharePath);
+    return buildPublicShareUrl(sharePath);
   }, [commentId, post, postId]);
   const { copyShareLink, shareBusy, shareState } = usePublicShareLink({
     buildShareUrl: buildForumShareUrl,

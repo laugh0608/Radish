@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   buildPublicCanonicalUrl,
+  buildPublicShareUrl,
   buildPublicRouteHead,
   publicDefaultOrigin,
   type PublicHeadDescriptor,
@@ -19,6 +20,47 @@ test('buildPublicCanonicalUrl 应保留规范化查询参数', () => {
   assert.equal(
     buildPublicCanonicalUrl('/forum/search?q=radish&page=2', 'https://example.test/app'),
     'https://example.test/forum/search?q=radish&page=2'
+  );
+});
+
+test('buildPublicShareUrl 应使用运行时公开域名配置并保留锚点', () => {
+  const globalWithWindow = globalThis as typeof globalThis & { window?: Window };
+  const originalWindow = globalWithWindow.window;
+
+  Object.defineProperty(globalWithWindow, 'window', {
+    value: {
+      __RADISH_RUNTIME_CONFIG__: {
+        publicUrl: 'https://configured.example/base',
+      },
+    } as unknown as Window,
+    configurable: true,
+  });
+
+  try {
+    assert.equal(
+      buildPublicCanonicalUrl('/docs/Guide#intro'),
+      'https://configured.example/docs/Guide'
+    );
+    assert.equal(
+      buildPublicShareUrl('/docs/Guide#intro'),
+      'https://configured.example/docs/Guide#intro'
+    );
+  } finally {
+    if (originalWindow === undefined) {
+      delete globalWithWindow.window;
+    } else {
+      Object.defineProperty(globalWithWindow, 'window', {
+        value: originalWindow,
+        configurable: true,
+      });
+    }
+  }
+});
+
+test('buildPublicShareUrl 应允许显式来源覆盖运行时配置', () => {
+  assert.equal(
+    buildPublicShareUrl('/docs/Guide#intro', 'https://share.example/app'),
+    'https://share.example/docs/Guide#intro'
   );
 });
 

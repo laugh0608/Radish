@@ -28,6 +28,7 @@ import {
   buildDocsArticleStructuredData,
   removePublicStructuredData,
 } from '../publicStructuredData';
+import { buildPublicShareUrl } from '../publicHead';
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { usePublicShareLink } from '../hooks/usePublicShareLink';
@@ -1196,7 +1197,7 @@ const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigat
       slug: documentDetail?.voSlug || route.slug,
       anchor: route.anchor
     };
-    return new URL(buildPublicDocsPath(shareRoute), getCurrentOrigin()).toString();
+    return buildPublicShareUrl(buildPublicDocsPath(shareRoute));
   }, [documentDetail?.voSlug, route.anchor, route.slug]);
   const { copyShareLink, shareBusy, shareState } = usePublicShareLink({
     buildShareUrl: buildDocsShareUrl,

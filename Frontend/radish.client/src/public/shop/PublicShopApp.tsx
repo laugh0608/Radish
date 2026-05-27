@@ -22,7 +22,7 @@ import {
   getPublicDetailBackLabelKey,
   type PublicDetailBackMode,
 } from '../publicRouteNavigation';
-import { buildPublicCanonicalUrl } from '../publicHead';
+import { buildPublicShareUrl } from '../publicHead';
 import {
   applyPublicStructuredData,
   buildShopProductStructuredData,
@@ -298,7 +298,7 @@ export const PublicShopApp = ({
 
   const buildShopShareUrl = useCallback(() => {
     const productId = route.kind === 'detail' ? route.productId : String(selectedProduct?.voId ?? '');
-    return buildPublicCanonicalUrl(buildPublicShopPath({ kind: 'detail', productId }));
+    return buildPublicShareUrl(buildPublicShopPath({ kind: 'detail', productId }));
   }, [route, selectedProduct?.voId]);
   const { copyShareLink, shareBusy, shareState } = usePublicShareLink({
     buildShareUrl: buildShopShareUrl,

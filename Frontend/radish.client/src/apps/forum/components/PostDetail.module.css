@@ -21,6 +21,7 @@
   border-radius: 16px;
   padding: 16px;
   box-shadow: var(--theme-shadow-soft);
+  min-width: 0;
 }
 
 .postTitle {
@@ -31,6 +32,7 @@
   font-weight: 600;
   color: var(--theme-text-primary);
   text-align: left;
+  overflow-wrap: anywhere;
 }
 
 .statusRow {
@@ -95,7 +97,9 @@
 }
 
 .postMeta span {
+  min-width: 0;
   margin-right: 8px;
+  overflow-wrap: anywhere;
 }
 
 .authorLink {
@@ -140,6 +144,7 @@
   margin-bottom: 12px;
   font-size: 14px;
   text-align: left;
+  min-width: 0;
   --text-primary: var(--theme-text-primary);
   --heading-color: var(--theme-text-primary);
   --text-secondary: var(--theme-text-secondary);
@@ -166,10 +171,12 @@
   gap: 8px;
   padding-top: 12px;
   border-top: 1px solid var(--theme-border-soft);
+  min-width: 0;
 }
 
 .tag {
   display: inline-block;
+  max-width: 100%;
   padding: 4px 12px;
   border: none;
   background-color: var(--theme-brand-soft);
@@ -177,6 +184,7 @@
   border-radius: 12px;
   font-size: 12px;
   cursor: pointer;
+  overflow-wrap: anywhere;
 }
 
 .pollCard {
@@ -1190,5 +1198,15 @@
 
   .answerEditor {
     min-height: 200px;
+  }
+
+  .postContent {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .postTitle {
+    font-size: 21px;
+    line-height: 1.35;
   }
 }

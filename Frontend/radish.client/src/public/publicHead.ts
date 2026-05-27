@@ -40,9 +40,30 @@ function normalizeOrigin(origin: string | undefined): string {
   }
 }
 
+function readRuntimePublicOrigin(): string | undefined {
+  if (typeof window === 'undefined') {
+    return undefined;
+  }
+
+  return window.__RADISH_RUNTIME_CONFIG__?.publicUrl;
+}
+
+export function resolvePublicOrigin(origin?: string): string {
+  if (origin) {
+    return normalizeOrigin(origin);
+  }
+
+  return normalizeOrigin(readRuntimePublicOrigin() ?? publicDefaultOrigin);
+}
+
 function resolveRuntimeOrigin(origin?: string): string {
   if (origin) {
     return normalizeOrigin(origin);
+  }
+
+  const runtimePublicOrigin = readRuntimePublicOrigin();
+  if (runtimePublicOrigin) {
+    return normalizeOrigin(runtimePublicOrigin);
   }
 
   if (typeof window !== 'undefined' && window.location.origin) {
@@ -67,8 +88,12 @@ function isNumericRouteIdentifier(value: string | undefined): boolean {
 }
 
 export function buildPublicCanonicalUrl(canonicalPath: string, origin?: string): string {
-  const baseOrigin = normalizeOrigin(origin);
+  const baseOrigin = resolvePublicOrigin(origin);
   return new URL(stripHash(canonicalPath), baseOrigin).toString();
+}
+
+export function buildPublicShareUrl(publicPath: string, origin?: string): string {
+  return new URL(publicPath, resolvePublicOrigin(origin)).toString();
 }
 
 function buildDiscoverHead(route: PublicRouteDescriptor & { app: 'discover' }): PublicHeadDescriptor {

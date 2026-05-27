@@ -151,6 +151,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-width: 0;
 }
 
 .sectionActions {
@@ -173,6 +174,7 @@
   margin: 0;
   font-family: var(--theme-font-serif);
   line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 
 .pageTitle {
@@ -628,6 +630,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-width: 0;
 }
 
 .articleTitle {
@@ -641,6 +644,8 @@
 .metaChip {
   display: inline-flex;
   align-items: center;
+  max-width: 100%;
+  min-width: 0;
   min-height: 32px;
   padding: 6px 10px;
   border-radius: 999px;
@@ -649,10 +654,13 @@
   color: var(--theme-text-secondary);
   font-size: 12px;
   font-weight: 600;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .articleBody {
   padding: 8px 20px 28px;
+  min-width: 0;
 }
 
 .markdownContent {
@@ -768,6 +776,16 @@
 
   .detailTopbarActions {
     width: 100%;
+  }
+
+  .detailTopbarActions .secondaryButton {
+    flex: 1 1 148px;
+    min-width: 0;
+  }
+
+  .detailTopbarActions .secondaryButton span {
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 
   .panel,

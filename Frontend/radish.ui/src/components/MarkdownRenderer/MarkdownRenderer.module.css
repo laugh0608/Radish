@@ -8,7 +8,9 @@
   color: var(--text-primary, #1f2937);
   font-size: 15px;
   line-height: 1.72;
+  min-width: 0;
   word-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
 .markdownBody h1,
@@ -61,6 +63,8 @@
 .markdownBody a {
   color: var(--link-color, #2563eb);
   text-decoration: none;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .markdownBody a:hover {
@@ -111,12 +115,17 @@
   background-color: var(--inline-code-bg, #eff6ff);
   border-radius: 6px;
   font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .markdownBody .codeBlock {
+  box-sizing: border-box;
+  max-width: 100%;
   margin-bottom: 16px;
   padding: 14px 16px;
   overflow: auto;
+  overscroll-behavior-inline: contain;
   font-size: 85%;
   line-height: 1.55;
   color: var(--code-text, #1f2937);
@@ -198,7 +207,9 @@
 }
 
 .markdownBody .tableWrapper {
+  max-width: 100%;
   overflow-x: auto;
+  overscroll-behavior-inline: contain;
   margin-bottom: 16px;
 }
 
@@ -230,6 +241,7 @@
 
 .markdownBody img {
   max-width: 100%;
+  height: auto;
   box-sizing: content-box;
   background-color: transparent;
   border-radius: 8px;
@@ -274,4 +286,42 @@
 
 .markdownBody em {
   font-style: italic;
+}
+
+@media (max-width: 720px) {
+  .markdownBody {
+    font-size: 14px;
+    line-height: 1.78;
+  }
+
+  .markdownBody h1 {
+    font-size: 1.55em;
+  }
+
+  .markdownBody h2 {
+    font-size: 1.32em;
+  }
+
+  .markdownBody h3 {
+    font-size: 1.14em;
+  }
+
+  .markdownBody ul,
+  .markdownBody ol {
+    padding-left: 1.35em;
+  }
+
+  .markdownBody blockquote {
+    padding-right: 0.75em;
+    padding-left: 0.75em;
+  }
+
+  .markdownBody .codeBlock {
+    padding: 12px;
+    border-radius: 10px;
+  }
+
+  .markdownBody table {
+    min-width: max-content;
+  }
 }
