@@ -215,5 +215,5 @@ export function resolveShopDetailBackMode(sourceRoute: PublicRouteDescriptor | n
     return null;
   }
 
-  return sourceRoute.app === 'discover' ? 'discover' : 'source';
+  return resolveBackMode(sourceRoute);
 }

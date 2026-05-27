@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   createPublicRouteSourceState,
+  getPublicDetailBackLabelKey,
   resolveDocsDetailBackMode,
   resolveForumDetailBackMode,
   resolveProfileBackMode,
@@ -145,7 +146,7 @@ test('shouldCaptureShopDetailSource 应在从商品榜单进入商品详情时�
 
   const nextState = createPublicRouteSourceState({}, leaderboardRoute, detailRoute);
   assert.deepEqual(nextState.shopDetailSourceRoute, leaderboardRoute);
-  assert.equal(resolveShopDetailBackMode(nextState.shopDetailSourceRoute), 'source');
+  assert.equal(resolveShopDetailBackMode(nextState.shopDetailSourceRoute), 'leaderboard');
 });
 
 test('shouldCaptureShopDetailSource 不应在同一商品详情内重复覆盖来源', () => {
@@ -216,7 +217,7 @@ test('resolveProfileBackMode 应把 discover 与其他公开来源区分为不�
   assert.equal(resolveProfileBackMode(forumDetailSource), 'source');
 });
 
-test('resolveShopDetailBackMode 应对 discover 回 discover，对商城内部来源保留来源返回', () => {
+test('resolveShopDetailBackMode 应按商品详情来源返回精确文案模式', () => {
   const discoverSource: PublicRouteDescriptor = {
     app: 'discover',
     route: { kind: 'home' }
@@ -225,9 +226,22 @@ test('resolveShopDetailBackMode 应对 discover 回 discover，对商城内部�
     app: 'shop',
     route: { kind: 'products', categoryId: 'digital', keyword: 'vip', page: 2 }
   };
+  const leaderboardSource: PublicRouteDescriptor = {
+    app: 'leaderboard',
+    route: { kind: 'list', typeSlug: 'hot-product', page: 3 }
+  };
 
   assert.equal(resolveShopDetailBackMode(discoverSource), 'discover');
-  assert.equal(resolveShopDetailBackMode(shopProductsSource), 'source');
+  assert.equal(resolveShopDetailBackMode(shopProductsSource), 'shopProducts');
+  assert.equal(resolveShopDetailBackMode(leaderboardSource), 'leaderboard');
+  assert.equal(
+    getPublicDetailBackLabelKey(resolveShopDetailBackMode(shopProductsSource)),
+    'public.shell.backToShopProducts'
+  );
+  assert.equal(
+    getPublicDetailBackLabelKey(resolveShopDetailBackMode(leaderboardSource)),
+    'public.shell.backToLeaderboard'
+  );
 });
 
 test('createPublicRouteSourceState 应把详情来源写入可持久化状态并在回到浏览页时清理', () => {

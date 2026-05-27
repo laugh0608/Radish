@@ -125,6 +125,7 @@
 - Flutter 轻回应登录回流小闭环已完成：从 forum detail 轻回应区发起登录后，成功回到当前详情的轻回应区并提示继续发布；本轮不扩展完整评论、发帖、点赞或投票能力。
 - Flutter 公开个人页来源返回批量验收已完成：从发现页、论坛作者和榜单进入原生公开主页时记录来源 tab；公开主页继续打开帖子 / 评论详情并返回后，Android Back 仍回到原发现、论坛或榜单位置，不把用户直接送到后台。
 - 公开商品榜单到商品详情小闭环已完成：公开热门商品榜单条目可进入公开商品详情，并通过 `history.state` 来源状态返回榜单；榜单仍保持只读浏览边界，不直接打开购买、订单或背包流程。
+- 公开商城详情来源返回文案批量收口已完成：`/shop/products` 或商品榜进入 `/shop/product/:productId` 后，详情返回按钮按来源显示“返回商品列表 / 返回榜单”等精确文案，避免移动端只看到泛化的“返回上一入口”。
 - Gateway 公开页资源 URL 收口小闭环已完成：当页面通过 `https://localhost:5000` 访问时，浏览器可见的本地 HTTP 媒体、favicon、头像和 Markdown 附件资源地址会归一到当前 Gateway origin；公网、CDN、非 localhost 地址不改写。
 - 移动 Web 公开阅读链路小闭环已完成：共享 `MarkdownRenderer` 补齐长链接、长 inline code、代码块、表格和图片的窄屏防溢出约束；公开 docs / forum 详情补齐标题、slug chip、评论摘要 chip、返回 / 分享按钮和评论内容的 390px 窄屏换行约束；公开分享链接统一走运行时公开域名配置，并保留 docs 详情文档锚点。
 - 公开来源返回批量验收已完成：公开详情页的显式来源返回动作会保留既有 `history.state` 来源链路，避免 `discover -> forum detail -> profile -> 返回 forum detail` 后把 forum 详情来源改写成 profile 形成返回循环；从个人公开页内容卡片主动进入 forum 详情仍按普通导航记录 profile 来源。
