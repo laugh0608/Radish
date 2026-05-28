@@ -17,10 +17,11 @@
 - `profile` 最近公开帖子回看：公开主页与我的主页可继续加载更多公开帖子，并回到对应 forum detail
 - `profile` 最近公开评论回看：公开主页与我的主页可继续加载更多公开评论，并回到对应 forum detail / 评论上下文
 - docs 最近阅读与直达复访：`discover` 文档精选、docs 列表与我的 `profile` 最近文档可打开原生 docs 详情，并按来源返回
-- docs 正文内链跳转：公开文档正文中的 `/docs/:slug` 与 Markdown 文档链接会继续打开原生 docs 详情
+- docs 正文内链跳转：公开文档正文中的 `/docs/:slug`、完整公开 URL、`docs/:slug`、`./:slug` 与普通相对 slug 文档链接会继续打开原生 docs 详情；页内锚点、附件路径和非 docs 链接仍按文本展示
 - docs 关键词搜索复访：docs tab 可搜索公开文档，搜索结果继续复用原生列表、分页、刷新与详情打开路径
 - leaderboard 公开主页回流：经验榜用户可打开原生公开主页，并通过 Android 返回键回到榜单
 - shop 公开商品列表与只读详情：发现页可进入原生公开商城列表，列表项和商城精选商品可打开原生只读详情，并通过 Android 返回键回到原来源；购买、订单、背包和支付操作仍不进入 Flutter 本批
+- 原生公开详情链接复制：forum detail、docs detail 与 shop detail 展示完整公开链接并支持复制；复制口径为当前 Gateway Base URL 加 Web 公开路由，不接入系统分享 SDK
 - 公开主页来源返回：从发现、论坛作者和榜单进入原生公开主页后，Android Back 会回到原来源；公开主页继续打开帖子 / 评论详情并返回后，仍保留原 profile 来源 tab
 - 已登录态轻量 forum notification 来源读取：原生壳层会读取当前用户最近少量可跳 forum 的通知，列表项复用 forum detail handoff 打开 `postId / commentId`，并在详情返回后回到打开通知前的 tab
 - 环境配置、认证存储与主题基线
@@ -176,7 +177,7 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 5. 从 discover 点击“进入文档”，确认可切到文档列表；按 Android 返回键应先回到 discover，而不是退出到桌面
 6. 从 discover 的论坛精选帖子点击“打开帖子”，确认进入原生 forum detail，返回后仍回到 discover
 7. 进入 docs，确认关键词搜索、分页、刷新与清除搜索可用；已有文档列表刷新时应保留旧列表，刷新失败只显示“刷新文档失败”局部提示；从搜索结果打开文档详情后，返回仍保留搜索列表上下文
-8. 在 docs 详情正文中点击 `/docs/:slug` 或 Markdown 文档链接，确认会打开原生 docs 详情；从 docs 列表内联详情进入时应切换当前详情，从 discover / profile 来源详情进入时应 push 新详情并可逐层返回
+8. 在 docs 详情正文中点击 `/docs/:slug`、完整公开 URL、`docs/:slug`、`./:slug` 或普通相对 slug 文档链接，确认会打开原生 docs 详情；页内锚点、附件路径和非 docs 链接应保持文本展示；从 docs 列表内联详情进入时应切换当前详情，从 discover / profile 来源详情进入时应 push 新详情并可逐层返回
 9. 在根层按 Android 返回键回到桌面，再点桌面图标打开应用，确认应用恢复到 Flutter 页面而不是卡在原生启动页
 10. 进入 forum feed，确认 `latest / hottest`、分页加载、空态或错误态文案正常；已有帖子列表刷新时应保留旧列表，刷新失败只显示“刷新论坛失败”局部提示
 11. 从 forum feed 打开帖子详情，确认正文、作者、分类、时间与基础统计可读，原生返回正常
@@ -208,6 +209,8 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 - P3-8-D “Flutter 论坛详情评论发布与回复”已完成代码与自动化验证：已登录用户可在原生帖子详情发布根评论、回复根评论或子评论，提交后局部更新评论区，失败只在评论输入区提示；本轮不扩展发帖编辑器、点赞、投票、审核治理或富文本评论
 - P3-8-D “Flutter 论坛评论登录回流与来源回归”已完成代码与自动化验证：匿名态从评论区发起登录后会回到当前评论输入区；从公开主页评论上下文进入详情并回复后，Android Back 仍返回公开主页来源
 - P3-8-D “Flutter 公开商城列表只读入口”已完成代码与自动化验证：发现页可进入公开商城列表，列表项可打开只读商品详情并返回商城列表；本轮不扩展购买、订单、背包、支付口令或权益激活
+- P3-8-D “Flutter 原生公开详情分享入口”已完成代码与自动化验证：forum detail、docs detail 与 shop detail 支持完整公开链接展示和复制；本轮不扩展系统分享 SDK
+- P3-8-D “Flutter 原生公开文档阅读链路”已完成代码与自动化验证：只读 Markdown 阅读器可识别 Web 公开路由、完整公开 URL 与相对文档链接并打开原生 docs detail；非 docs 链接继续按文本展示
 - 第四批首个小闭环“我的轻回应回看”及分页复访已完成代码、自动化验证与 Android 真机复核，真实 Gateway 下确认正常
 - 第四批“最近阅读上下文”已接入我的 profile，并已完成代码、自动化验证与 Android 真机复核：第四批只承载最近一次 forum 阅读目标
 - 第五批首个小闭环“profile 最近阅读轻量多条列表”已完成代码、自动化验证与 Android 真机复核：我的 profile 当前可展示最近多条 forum 阅读上下文，Android 本地持久化兼容旧单条记录并按 `postId + commentId` 去重；本轮仍不扩展完整浏览历史中心、删除、清空、同步治理或 docs / forum 混合时间线

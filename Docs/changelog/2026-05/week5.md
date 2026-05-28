@@ -30,3 +30,12 @@
 - 规划入口、P3-8-D 专题、Flutter README、前端构建拆包说明、记录索引与本周 / 本月开发日志已同步；今日没有新增后端 API、数据库结构、权限模型、视觉 token、Pencil 设计稿或部署配置，因此相关说明书无需跟随更新。
 - 今日验证覆盖 `radish.client` 公开路由、公开 head、商城来源返回、Gateway 资源 URL、商城登录回流等定向测试，`radish.client` / `@radish/ui` 类型检查，`radish.client` 生产构建，Flutter `smoke_test`、全量 `flutter test`、`flutter analyze`，`validate:baseline:quick`、changed / staged 文本卫生与 `git diff --check`。
 - 收工前已补 [2026-05-27 收工回顾与明日事项](/records/daily-handoff-2026-05-27)：明日优先转向 Flutter `公开个人页 -> 帖子 / 评论详情 -> Android Back 回到原 profile 来源` 主路径；若能力已完整，只补验收结论，不继续为了纯 Web 矩阵凑低收益小闭环。
+
+## 2026-05-28
+
+- `P3-8-D` 继续沿纯 Web + Flutter 主线推进，先完成纯 Web / 工作台论坛登录回流、Dock 主动登录回流、公开商城工作台入口契约、公开商品榜单到详情、Gateway 公开资源 URL 和移动 Web 公开阅读链路二轮复核；移动 Web 公开视图矩阵阶段收口，后续不再逐页打磨 Web 公开页。
+- Flutter 侧连续补齐公开商品只读详情、轻量 forum 通知列表、公开商城列表、论坛详情评论发布 / 回复、评论区登录回流与来源回归；随后补齐 forum/docs/shop 原生公开详情完整公开链接展示与复制入口。
+- Flutter docs 阅读链路继续补强：只读 Markdown 阅读器可识别 `/docs/:slug`、完整公开 URL、`docs/:slug`、`./:slug` 与普通相对 slug 文档内链并打开原生 docs detail；页内锚点、附件路径和非 docs 链接继续按文本展示。
+- 今日文档同步覆盖 [当前进行中](/planning/current)、[开发路线图](/development-plan)、[P3-8 多端功能补全与 UI 设计治理](/planning/p3-8-multiplatform-feature-ui-governance)、[Flutter README](../../../Clients/radish.flutter/README.md)、本周 / 本月开发日志和每日交接记录；本轮没有新增后端 API、数据库结构、权限模型、视觉 token、Pencil 设计稿或部署配置，因此相关说明书无需跟随更新。
+- 今日验证覆盖 `radish.client` 定向测试、类型检查、构建和 changed 文本卫生；Flutter 全量 `flutter test`、`flutter analyze`、docs / forum / shop 定向测试；仓库级 `git diff --check` 与 `npm run check:repo-hygiene:changed`。
+- 收工前补 [2026-05-28 收工回顾与明日事项](/records/daily-handoff-2026-05-28)：明日优先推进 Flutter 原生公开主页链接复制 / 展示、长文本防溢出、来源返回和匿名 / 已登录边界复核。
