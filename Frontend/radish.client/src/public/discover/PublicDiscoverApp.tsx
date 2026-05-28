@@ -14,13 +14,15 @@ import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
 import { getPublicWikiList } from '../docs/publicDocsApi';
 import { getForumPostRouteIdentifier } from '../forum/publicForumUtils';
-import type { PublicDiscoverRoute } from '../discoverRouteState';
+import { buildPublicDiscoverPath, type PublicDiscoverRoute } from '../discoverRouteState';
 import type { PublicDocsRoute } from '../docsRouteState';
 import { createDefaultPublicLeaderboardRoute, type PublicLeaderboardRoute } from '../leaderboardRouteState';
 import type { PublicForumRoute } from '../forumRouteState';
 import type { PublicShopRoute } from '../shopRouteState';
 import { createDefaultPublicShopProductsRoute } from '../shopRouteState';
+import { buildPublicShareUrl } from '../publicHead';
 import { PublicShellHeader } from '../components/PublicShellHeader';
+import { usePublicShareLink } from '../hooks/usePublicShareLink';
 import styles from './PublicDiscoverApp.module.css';
 
 type DiscoverRouteKey = 'forum' | 'docs' | 'leaderboard' | 'shop';
@@ -417,6 +419,12 @@ export const PublicDiscoverApp = ({
   const [shopError, setShopError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const displayTimeZone = useMemo(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE), []);
+  const buildDiscoverShareUrl = useCallback(() => (
+    buildPublicShareUrl(buildPublicDiscoverPath(route))
+  ), [route]);
+  const { copyShareLink, shareBusy, shareState } = usePublicShareLink({
+    buildShareUrl: buildDiscoverShareUrl,
+  });
 
   useEffect(() => {
     document.title = `${t('discover.public.pageTitle')} · ${t('discover.public.shellLabel')}`;
@@ -745,7 +753,16 @@ export const PublicDiscoverApp = ({
               <Icon icon="mdi:store-search-outline" size={18} />
               <span>{t('discover.public.browseShop')}</span>
             </button>
+            <button type="button" className={styles.secondaryButton} onClick={() => void copyShareLink()} disabled={shareBusy}>
+              <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={18} />
+              <span>{shareBusy ? t('discover.public.shareSubmitting') : t('discover.public.shareAction')}</span>
+            </button>
           </div>
+          {shareState !== 'idle' && (
+            <p className={styles.shareFeedback} data-state={shareState}>
+              {shareState === 'success' ? t('discover.public.shareSuccess') : t('discover.public.shareFailed')}
+            </p>
+          )}
 
           <div className={styles.summaryGrid}>
             {summaryCards.map((item) => (

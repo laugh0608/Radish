@@ -17,6 +17,7 @@
   width: min(1040px, calc(100vw - 24px));
   margin: 0 auto;
   padding: 24px 0 40px;
+  min-width: 0;
 }
 
 .sectionCard {
@@ -25,6 +26,7 @@
   border-radius: 28px;
   box-shadow: var(--theme-shadow-soft);
   overflow: hidden;
+  min-width: 0;
 }
 
 .sectionHeader {
@@ -161,6 +163,7 @@
 
 .contentWrap {
   padding: 24px;
+  min-width: 0;
 }
 
 .guideSection {
@@ -253,6 +256,7 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+  min-width: 0;
 }
 
 .detailTopbar {
@@ -346,6 +350,7 @@
   flex-direction: column;
   gap: 18px;
   padding: 24px;
+  min-width: 0;
 }
 
 .detailTitleRow {
@@ -434,6 +439,7 @@
 
 .detailSection {
   padding: 22px;
+  min-width: 0;
 }
 
 .description {
@@ -456,6 +462,31 @@
 
 .noticeList {
   padding-left: 20px;
+}
+
+.pageTitle,
+.pageIntro,
+.inlineNoticeText,
+.statusTitle,
+.statusDescription,
+.detailBackHint,
+.detailTitle,
+.detailSummary,
+.readOnlyTitle,
+.readOnlyDescription,
+.metaChip,
+.metaLabel,
+.metaValue,
+.priceValue,
+.priceOriginal,
+.sectionTitle,
+.placeholderText,
+.description,
+.description p,
+.benefitBox,
+.noticeList,
+.shareFeedback {
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 900px) {

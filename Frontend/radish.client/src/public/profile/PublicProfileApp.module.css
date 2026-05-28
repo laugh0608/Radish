@@ -28,6 +28,7 @@
   border-radius: 1.75rem;
   background: color-mix(in srgb, var(--color-surface-raised, #fffaf2) 92%, white 8%);
   box-shadow: 0 20px 50px rgb(79 52 22 / 0.08);
+  min-width: 0;
 }
 
 .summaryCard,
@@ -82,6 +83,7 @@
   border-radius: 1.3rem;
   border: 1px solid color-mix(in srgb, var(--color-border-default, #d9ccb8) 74%, white 26%);
   background: linear-gradient(180deg, rgb(255 255 255 / 0.86), rgb(248 242 231 / 0.94));
+  min-width: 0;
 }
 
 .readingGuideSummaryHeading,
@@ -126,6 +128,7 @@
   padding: 0.85rem 0.9rem;
   border-radius: 1rem;
   background: color-mix(in srgb, var(--theme-bg-surface) 82%, white 18%);
+  min-width: 0;
 }
 
 .readingGuideFocusValue {
@@ -173,6 +176,7 @@
   grid-template-columns: auto 1fr;
   gap: 1rem;
   align-items: start;
+  min-width: 0;
 }
 
 .avatar {
@@ -198,6 +202,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
+  min-width: 0;
 }
 
 .identityText {
@@ -410,6 +415,7 @@
   background: linear-gradient(180deg, rgb(255 255 255 / 0.82), rgb(248 242 231 / 0.92));
   cursor: pointer;
   transition: transform 160ms ease, box-shadow 160ms ease;
+  min-width: 0;
 }
 
 .contentItem:hover {
@@ -488,11 +494,42 @@
 .statusBody {
   display: grid;
   gap: 0.45rem;
+  min-width: 0;
 }
 
 .statusDescription {
   color: var(--color-text-secondary, #766554);
   line-height: 1.65;
+}
+
+.summaryIntro,
+.readingGuideSummaryTitle,
+.readingGuideSummaryDescription,
+.readingGuideBoundaryTitle,
+.readingGuideBoundaryDescription,
+.readingGuideBoundaryItem,
+.readingGuideFocusValue,
+.summaryBackLink span,
+.userName,
+.displayName,
+.joinedAt,
+.viewHint,
+.followStats,
+.statLabel,
+.statValue,
+.sectionTitle,
+.itemType,
+.itemTime,
+.itemTitle,
+.itemExcerpt,
+.commentContent,
+.replyMeta,
+.itemMeta,
+.pageInfo,
+.statusTitle,
+.statusDescription,
+.shareFeedback {
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 780px) {

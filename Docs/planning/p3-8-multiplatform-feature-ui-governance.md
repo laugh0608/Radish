@@ -135,9 +135,10 @@
 - 移动 Web 公开阅读链路二轮复核已完成：公开 docs 详情页内 Markdown 相对文档链接和同页锚点统一解析到公开 docs 路由，避免阅读中触发整页跳转或丢失来源语义；docs / forum 阅读容器继续补齐嵌套 flex、卡片和 Markdown 内容的 `min-width: 0` / `max-width` 约束。
 - 公开来源返回批量验收已完成：公开详情页的显式来源返回动作会保留既有 `history.state` 来源链路，避免 `discover -> forum detail -> profile -> 返回 forum detail` 后把 forum 详情来源改写成 profile 形成返回循环；从个人公开页内容卡片主动进入 forum 详情仍按普通导航记录 profile 来源。
 - 移动 Web 公开分发页二轮复核已完成：`/discover` 论坛卡片进入公开帖子详情时改为优先使用 `Post.PublicId`，与 forum 列表 / 搜索 / 标签页的公开 URL 口径保持一致，避免发现页链路继续生成 long id 公开详情路径。
+- 移动 Web 公开视图矩阵阶段收口已完成：批量复核 `/discover / forum / docs / shop / leaderboard / u/:id` 的窄屏布局、来源返回、分享入口、公开只读边界、长文本防溢出和公开链接契约；`/discover` 与 `/leaderboard` 补显式分享入口，`/u/:id` 移除登录态关注 / 取关写操作，`/shop` 公开链路补齐商品长文本防溢出约束。本轮未发现新的 `P0/P1`，后续不再逐页小循环式打磨 Web 公开页。
 - 商城工作台构建 warning 已完成治理：`ShopApp` 改为按首页、商品、订单、背包与购买弹窗懒加载，`vite.config.ts` 同步细分商城手动 chunk，`app-shop` 已收敛到 500k 警告阈值以内；npm 自身 update notice 不进入仓库级配置治理。
 - 后续继续按验收矩阵做主动批量复核、成组修复和一次性交付结论；候选方向为移动阅读、来源返回、购买 / 订单 / 背包、纯 Web 登录后轻量链路补强或 Flutter 下一批功能。
-- 下一步不继续重复 Flutter 个人主页来源返回；优先回到 P3-8-D 矩阵筛选新的高信号缺口，重点仍是移动阅读、来源返回、购买 / 订单 / 背包和纯 Web 登录后轻量链路。
+- 下一步不继续重复 Flutter 个人主页来源返回，也不继续逐页打磨 Web 公开页；除非维护线暴露公开访问、分享预览、购买 / 订单 / 背包或权限授权阻断，否则转入 Flutter 下一批高价值功能评估。
 - WebOS 只保留 `/desktop` 历史入口，不再作为新增功能候选；PC/Tauri 放到最后再评估，后续若重启也只增强纯 Web。
 - 不直接启动完整移动商城、完整通知中心、完整创作器、公开 Web 整体 UI 重构或多端同时重写。
 
@@ -483,6 +484,13 @@ npm run build --workspace=radish.client
 npm run lint:changed
 npm run check:repo-hygiene:changed
 git diff --check
+```
+
+`P3-8-D` 移动 Web 公开视图矩阵阶段收口已执行：
+
+```bash
+npm run type-check --workspace=radish.client
+npm run test --workspace=radish.client -- --test-name-pattern="discoverRouteState|publicHead|publicSeoStatic|publicRouteNavigation|publicRouteState"
 ```
 
 ## 与维护线关系

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import {
@@ -10,6 +10,7 @@ import {
 import { useUserStore } from '@/stores/userStore';
 import {
   createDefaultPublicLeaderboardRoute,
+  buildPublicLeaderboardPath,
   getPublicLeaderboardRouteDefinitionBySlug,
   getPublicLeaderboardRouteDefinitionByType,
   publicLeaderboardTypeRouteDefinitions,
@@ -18,6 +19,8 @@ import {
 } from '../leaderboardRouteState';
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import { PublicShellHeader } from '../components/PublicShellHeader';
+import { buildPublicShareUrl } from '../publicHead';
+import { usePublicShareLink } from '../hooks/usePublicShareLink';
 import { resolveMediaUrl } from '@/utils/media';
 import styles from './PublicLeaderboardApp.module.css';
 
@@ -277,6 +280,12 @@ export const PublicLeaderboardApp = ({
   const [isCompactViewport, setIsCompactViewport] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth <= 720 : false
   );
+  const buildLeaderboardShareUrl = useCallback(() => (
+    buildPublicShareUrl(buildPublicLeaderboardPath(route))
+  ), [route]);
+  const { copyShareLink, shareBusy, shareState } = usePublicShareLink({
+    buildShareUrl: buildLeaderboardShareUrl,
+  });
 
   const fallbackTypes = useMemo(() => createFallbackLeaderboardTypes(t), [t]);
   const activeRouteDefinition = useMemo(
@@ -496,6 +505,15 @@ export const PublicLeaderboardApp = ({
                 <span className={styles.statChip}>{t('leaderboard.public.myRank', { rank: myRank })}</span>
               )}
               <span className={styles.statChip}>{activeTypeConfig.voPrimaryLabel}</span>
+              <button type="button" className={styles.shareButton} onClick={() => void copyShareLink()} disabled={shareBusy}>
+                <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={16} />
+                <span>{shareBusy ? t('leaderboard.public.shareSubmitting') : t('leaderboard.public.shareAction')}</span>
+              </button>
+              {shareState !== 'idle' && (
+                <span className={styles.shareFeedback} data-state={shareState}>
+                  {shareState === 'success' ? t('leaderboard.public.shareSuccess') : t('leaderboard.public.shareFailed')}
+                </span>
+              )}
             </div>
           </div>
 

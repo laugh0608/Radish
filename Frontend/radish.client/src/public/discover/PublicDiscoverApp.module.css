@@ -242,6 +242,33 @@
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
 }
 
+.secondaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
+}
+
+.shareFeedback {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  color: var(--theme-text-secondary);
+  font-size: 0.86rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.shareFeedback[data-state='success'] {
+  background: color-mix(in srgb, var(--theme-accent-jade) 10%, white 90%);
+  border: 1px solid color-mix(in srgb, var(--theme-accent-jade) 20%, transparent);
+  color: color-mix(in srgb, var(--theme-accent-jade) 74%, var(--theme-text-primary) 26%);
+}
+
+.shareFeedback[data-state='error'] {
+  background: color-mix(in srgb, var(--theme-state-danger) 8%, white 92%);
+  border: 1px solid color-mix(in srgb, var(--theme-state-danger) 18%, transparent);
+  color: var(--theme-state-danger);
+}
+
 .primaryButton:hover,
 .secondaryButton:hover,
 .sectionLink:hover,

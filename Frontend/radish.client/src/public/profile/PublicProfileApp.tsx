@@ -11,8 +11,6 @@ import {
   type PublicUserProfile,
   type PublicUserStats,
 } from '@/api/user';
-import { followUser, getFollowStatus, unfollowUser, type UserFollowStatus } from '@/api/userFollow';
-import { useUserStore } from '@/stores/userStore';
 import { DEFAULT_TIME_ZONE, formatDateTimeByTimeZone, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
 import { buildPublicProfilePath, type PublicProfileRoute, type PublicProfileTab } from '../profileRouteState';
@@ -179,16 +177,9 @@ export const PublicProfileApp = ({
   const profileRequestIdRef = useRef(0);
   const contentRequestIdRef = useRef(0);
   const displayTimeZone = useMemo(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE), []);
-  const { userId, isAuthenticated } = useUserStore();
-  const isLoggedIn = isAuthenticated();
-  const currentUserIdKey = String(userId || 0);
-  const isOwnProfile = currentUserIdKey !== '0' && currentUserIdKey === route.userId;
   const [profile, setProfile] = useState<PublicUserProfile | null>(null);
   const [stats, setStats] = useState<PublicUserStats | null>(null);
-  const [followStatus, setFollowStatus] = useState<UserFollowStatus | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
-  const [loadingFollowStatus, setLoadingFollowStatus] = useState(false);
-  const [togglingFollow, setTogglingFollow] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [posts, setPosts] = useState<PublicUserPost[]>([]);
   const [comments, setComments] = useState<PublicUserComment[]>([]);
@@ -208,15 +199,11 @@ export const PublicProfileApp = ({
     const loadProfile = async () => {
       setLoadingProfile(true);
       setProfileError(null);
-      setLoadingFollowStatus(isLoggedIn && !isOwnProfile);
 
       try {
-        const [profileResult, statsResult, followResult] = await Promise.all([
+        const [profileResult, statsResult] = await Promise.all([
           getPublicProfile(route.userId),
           getPublicUserStats(route.userId),
-          isLoggedIn && !isOwnProfile
-            ? getFollowStatus(route.userId).catch(() => null)
-            : Promise.resolve(null)
         ]);
 
         if (requestId !== profileRequestIdRef.current) {
@@ -225,7 +212,6 @@ export const PublicProfileApp = ({
 
         setProfile(profileResult);
         setStats(statsResult);
-        setFollowStatus(followResult);
       } catch (error) {
         if (requestId !== profileRequestIdRef.current) {
           return;
@@ -234,18 +220,16 @@ export const PublicProfileApp = ({
         const message = error instanceof Error ? error.message : String(error);
         setProfile(null);
         setStats(null);
-        setFollowStatus(null);
         setProfileError(message);
       } finally {
         if (requestId === profileRequestIdRef.current) {
           setLoadingProfile(false);
-          setLoadingFollowStatus(false);
         }
       }
     };
 
     void loadProfile();
-  }, [isLoggedIn, isOwnProfile, profileReloadToken, route.userId]);
+  }, [profileReloadToken, route.userId]);
 
   useEffect(() => {
     const requestId = ++contentRequestIdRef.current;
@@ -357,7 +341,6 @@ export const PublicProfileApp = ({
 
   const displayName = profile?.voDisplayName?.trim() || null;
   const userName = profile?.voUserName?.trim() || t('common.userFallback', { id: route.userId });
-  const canToggleFollow = isLoggedIn && !isOwnProfile && !!profile;
   const backLabelKey = getPublicDetailBackLabelKey(backAction?.mode);
   const backLabel = backLabelKey ? t(backLabelKey) : t('profile.public.backToForum');
   const handleBack = backAction?.onBack ?? onNavigateToForumList;
@@ -373,24 +356,6 @@ export const PublicProfileApp = ({
   const { copyShareLink, shareBusy, shareState } = usePublicShareLink({
     buildShareUrl: buildProfileShareUrl,
   });
-
-  const handleToggleFollow = async () => {
-    if (!canToggleFollow || togglingFollow) {
-      return;
-    }
-
-    setTogglingFollow(true);
-    try {
-      const nextStatus = followStatus?.voIsFollowing
-        ? await unfollowUser(route.userId)
-        : await followUser(route.userId);
-      setFollowStatus(nextStatus);
-    } catch {
-      setProfileReloadToken((current) => current + 1);
-    } finally {
-      setTogglingFollow(false);
-    }
-  };
 
   const handleTabChange = (tab: PublicProfileTab) => {
     if (tab === route.tab && route.page === 1) {
@@ -487,31 +452,6 @@ export const PublicProfileApp = ({
                     <p className={styles.viewHint}>{t('profile.publicViewHint')}</p>
                   </div>
 
-                  {canToggleFollow && (
-                    <div className={styles.followPanel}>
-                      {followStatus && (
-                        <span className={styles.followStats}>
-                          {t('forum.postDetail.followStats', {
-                            followers: followStatus.voFollowerCount,
-                            following: followStatus.voFollowingCount
-                          })}
-                        </span>
-                      )}
-                      <button
-                        type="button"
-                        className={`${styles.primaryButton} ${styles.followActionButton} ${followStatus?.voIsFollowing ? styles.followingButton : ''}`}
-                        onClick={() => void handleToggleFollow()}
-                        disabled={loadingFollowStatus || togglingFollow}
-                        title={followStatus?.voIsFollowing ? t('forum.postDetail.follow.unfollowTitle') : t('forum.postDetail.follow.followTitle')}
-                      >
-                        {loadingFollowStatus || togglingFollow
-                          ? t('forum.postDetail.follow.loading')
-                          : followStatus?.voIsFollowing
-                            ? t('forum.postDetail.follow.following')
-                            : t('forum.postDetail.follow.follow')}
-                      </button>
-                    </div>
-                  )}
                 </div>
               </div>
 

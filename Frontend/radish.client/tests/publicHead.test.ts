@@ -64,6 +64,20 @@ test('buildPublicShareUrl 应允许显式来源覆盖运行时配置', () => {
   );
 });
 
+test('buildPublicShareUrl 应保留公开榜单类型与分页分享路径', () => {
+  assert.equal(
+    buildPublicShareUrl('/leaderboard/post-count?page=3', 'https://share.example/app'),
+    'https://share.example/leaderboard/post-count?page=3'
+  );
+});
+
+test('buildPublicShareUrl 应保留公开分发页区块分享路径', () => {
+  assert.equal(
+    buildPublicShareUrl('/discover?section=shop', 'https://share.example/app'),
+    'https://share.example/discover?section=shop'
+  );
+});
+
 test('buildPublicRouteHead 应为论坛帖子详情生成 article head', () => {
   const route: PublicRouteDescriptor = {
     app: 'forum',

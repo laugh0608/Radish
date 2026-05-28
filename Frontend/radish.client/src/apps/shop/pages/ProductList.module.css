@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: column;
   min-height: 100%;
+  min-width: 0;
 }
 
 .header {
@@ -46,6 +47,7 @@
   font-size: 24px;
   line-height: 1.24;
   color: var(--theme-text-primary);
+  min-width: 0;
 }
 
 .filterBar {
@@ -58,6 +60,7 @@
   background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
   box-shadow: var(--theme-shadow-soft);
+  min-width: 0;
 }
 
 .searchBox {
@@ -136,7 +139,9 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  white-space: nowrap;
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
 }
 
 .categoryTab.active {
@@ -154,11 +159,13 @@
   color: var(--theme-brand-primary);
   font-size: 13px;
   font-weight: 700;
+  min-width: 0;
 }
 
 .content {
   flex: 1 1 auto;
   min-height: 0;
+  min-width: 0;
 }
 
 .loading {
@@ -200,6 +207,7 @@
   box-shadow: var(--theme-shadow-soft);
   cursor: pointer;
   transition: transform var(--theme-transition-standard), box-shadow var(--theme-transition-standard), border-color var(--theme-transition-standard);
+  min-width: 0;
 }
 
 .productCard:hover {
@@ -267,6 +275,7 @@
   flex-direction: column;
   gap: 10px;
   padding: 16px;
+  min-width: 0;
 }
 
 .productType,
@@ -322,6 +331,8 @@
   font-size: 12px;
   line-height: 1.6;
   color: var(--theme-text-secondary);
+  min-width: 0;
+  flex-wrap: wrap;
 }
 
 .soldCount {
@@ -402,6 +413,20 @@
   margin: 0 0 20px;
   font-size: 14px;
   line-height: 1.7;
+}
+
+.title,
+.categoryTab,
+.searchResult,
+.productType,
+.productName,
+.currentPrice,
+.originalPrice,
+.soldCount,
+.duration,
+.emptyState h3,
+.emptyState p {
+  overflow-wrap: anywhere;
 }
 
 .clearSearchButton {

@@ -126,6 +126,7 @@
   border-radius: 28px;
   box-shadow: var(--theme-shadow-soft);
   overflow: hidden;
+  min-width: 0;
 }
 
 .sectionHeader {
@@ -144,6 +145,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-width: 0;
 }
 
 .sectionTitleRow {
@@ -209,6 +211,8 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  justify-content: flex-end;
+  min-width: 0;
 }
 
 .statChip {
@@ -217,11 +221,51 @@
   color: var(--theme-text-secondary);
 }
 
+.shareButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 24%, transparent);
+  background: color-mix(in srgb, var(--theme-brand-soft) 58%, white 42%);
+  color: var(--theme-brand-primary);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.shareButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
+}
+
+.shareFeedback {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.shareFeedback[data-state='success'] {
+  color: color-mix(in srgb, var(--theme-accent-jade) 78%, var(--theme-text-primary) 22%);
+}
+
+.shareFeedback[data-state='error'] {
+  color: var(--theme-danger, #b42318);
+}
+
 .toolbar {
   padding: 18px 24px 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-width: 0;
 }
 
 .tabRail {
@@ -515,12 +559,14 @@
 
 .contentWrap {
   padding: 20px 24px 24px;
+  min-width: 0;
 }
 
 .list {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-width: 0;
 }
 
 .listItem {
@@ -538,6 +584,7 @@
   font: inherit;
   text-align: left;
   transition: all var(--theme-transition-standard);
+  min-width: 0;
 }
 
 .listItem:hover:not(:disabled) {
@@ -714,6 +761,31 @@
   font-size: 18px;
   font-weight: 700;
   line-height: 1.35;
+}
+
+.pageTitle,
+.pageIntro,
+.toolbarHint,
+.experienceGuideTitle,
+.experienceGuideIntro,
+.experienceGuideSummaryTitle,
+.experienceGuideSummaryDescription,
+.experienceGuideBoundaryTitle,
+.experienceGuideBoundaryDescription,
+.experienceGuideBoundaryItem,
+.experienceGuideFocusValue,
+.experienceGuideCardTitle,
+.experienceGuideCardDescription,
+.inlineNoticeText,
+.itemTitle,
+.itemMeta,
+.sideInfoValue,
+.metricValue,
+.metricLabel,
+.statusTitle,
+.statusDescription,
+.shareFeedback {
+  overflow-wrap: anywhere;
 }
 
 .currentUserBadge {
