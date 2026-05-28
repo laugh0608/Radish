@@ -386,6 +386,64 @@ void main() {
     expect(recordedTargets.last.source, DocsDetailHandoffSource.docsLink);
   });
 
+  testWidgets('opens relative and absolute docs links from inline detail', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final recordedTargets = <DocsDetailHandoffTarget>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DocsPage(
+          environment: const AppEnvironment.development(),
+          repository: _SuccessDocsRepository(),
+          handoffTarget: const DocsDetailHandoffTarget(
+            slug: 'flutter-docs-scope',
+            source: DocsDetailHandoffSource.discover,
+            initialTitle: 'Radish Flutter docs scope',
+          ),
+          onRecordDocumentTarget: recordedTargets.add,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    final relativeDocsAction = find.text('相对边界').last;
+    await tester.ensureVisible(relativeDocsAction);
+    await tester.tap(relativeDocsAction);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Public docs reading boundary detail'), findsOneWidget);
+    expect(recordedTargets.last.slug, 'public-docs-reading-boundary');
+    expect(recordedTargets.last.source, DocsDetailHandoffSource.docsLink);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    final dottedDocsAction = find.text('点路径边界').last;
+    await tester.ensureVisible(dottedDocsAction);
+    await tester.tap(dottedDocsAction);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Public docs reading boundary detail'), findsOneWidget);
+    expect(recordedTargets.last.slug, 'public-docs-reading-boundary');
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    final absoluteDocsAction = find.text('完整地址边界').last;
+    await tester.ensureVisible(absoluteDocsAction);
+    await tester.tap(absoluteDocsAction);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Public docs reading boundary detail'), findsOneWidget);
+    expect(recordedTargets.last.slug, 'public-docs-reading-boundary');
+  });
+
   testWidgets('opens handoff docs detail as route and records recent target', (
     tester,
   ) async {
@@ -621,7 +679,7 @@ class _SuccessDocsRepository implements DocsRepository {
       status: 1,
       modifyTime: '2026-04-20T08:00:00Z',
       markdownContent:
-          '# Overview\nRead docs in Flutter.\n\n- Keep it read-only\n- 继续阅读 [公开阅读边界](/docs/public-docs-reading-boundary)\n```txt\npublic detail\n/docs/not-a-link-in-code\n```',
+          '# Overview\nRead docs in Flutter.\n\n- Keep it read-only\n- 继续阅读 [公开阅读边界](/docs/public-docs-reading-boundary)\n- 相对阅读 [相对边界](public-docs-reading-boundary?from=native#comments)\n- 点路径阅读 [点路径边界](./public-docs-reading-boundary)\n- 完整地址阅读 [完整地址边界](https://localhost:5000/docs/public-docs-reading-boundary#read)\n- 页内锚点 [当前章节](#overview)\n- 附件路径 [附件](assets/public-docs-reading-boundary.pdf)\n```txt\npublic detail\n/docs/not-a-link-in-code\n```',
     );
   }
 }

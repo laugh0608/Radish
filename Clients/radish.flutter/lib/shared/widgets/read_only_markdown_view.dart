@@ -246,8 +246,9 @@ class _InlineSegment {
 
 final RegExp _markdownLinkPattern = RegExp(r'\[([^\]]+)\]\(([^)]+)\)');
 final RegExp _rawDocsPathPattern = RegExp(
-  r'(^|[\s(])(/docs/([A-Za-z0-9._~-]+)(?:[?#][^\s)]*)?)',
+  r'(^|[\s(])((?:https?://[^/\s)]+)?/docs/([A-Za-z0-9._~-]+)(?:[?#][^\s)]*)?)',
 );
+final RegExp _docsSlugPattern = RegExp(r'^[A-Za-z0-9][A-Za-z0-9._~-]*$');
 
 List<_InlineSegment> _parseDocsLinkSegments(String text) {
   final segments = <_InlineSegment>[];
@@ -345,12 +346,53 @@ String? _extractDocsSlug(String? value) {
     return null;
   }
 
-  final uri = Uri.tryParse(normalized);
-  final segments = uri?.pathSegments ?? const <String>[];
-  if (segments.length < 2 || segments.first != 'docs') {
+  if (normalized.startsWith('#')) {
     return null;
   }
 
-  final slug = segments[1].trim();
-  return slug.isEmpty ? null : Uri.decodeComponent(slug);
+  final uri = Uri.tryParse(normalized);
+  final pathSegments = uri?.pathSegments ?? const <String>[];
+  if (pathSegments.length >= 2 && pathSegments.first == 'docs') {
+    return _normalizeDocsSlug(pathSegments[1]);
+  }
+
+  if (uri == null || uri.hasScheme || normalized.startsWith('/')) {
+    return null;
+  }
+
+  final relativePath = uri.path.trim();
+  if (relativePath.isEmpty) {
+    return null;
+  }
+
+  final relativeSegments = relativePath
+      .split('/')
+      .where((segment) => segment.isNotEmpty && segment != '.')
+      .toList(growable: false);
+  while (relativeSegments.isNotEmpty && relativeSegments.first == '..') {
+    relativeSegments.removeAt(0);
+  }
+
+  if (relativeSegments.length == 2 && relativeSegments.first == 'docs') {
+    return _normalizeDocsSlug(relativeSegments[1]);
+  }
+
+  if (relativeSegments.length != 1) {
+    return null;
+  }
+
+  return _normalizeDocsSlug(relativeSegments.single);
+}
+
+String? _normalizeDocsSlug(String value) {
+  final decodedSlug = Uri.decodeComponent(value).trim();
+  if (decodedSlug.isEmpty || !_docsSlugPattern.hasMatch(decodedSlug)) {
+    return null;
+  }
+
+  if (RegExp(r'^\d{16,}$').hasMatch(decodedSlug)) {
+    return null;
+  }
+
+  return decodedSlug;
 }
