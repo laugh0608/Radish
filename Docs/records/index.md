@@ -73,6 +73,7 @@
 - [p3-6-public-growth-observation-record-2026-05-20](/records/p3-6-public-growth-observation-record-2026-05-20)
 - [p3-6-public-growth-observation-record-2026-05-18](/records/p3-6-public-growth-observation-record-2026-05-18)
 - [p3-7-webos-workspace-screening-record-2026-05-21](/records/p3-7-webos-workspace-screening-record-2026-05-21)
+- [p3-8-d-flutter-next-candidate-matrix-2026-05-28](/records/p3-8-d-flutter-next-candidate-matrix-2026-05-28)
 - [webos-workspace-p0-p1-screening-record-2026-05-18](/records/webos-workspace-p0-p1-screening-record-2026-05-18)
 - [console-ui-consistency-evaluation-2026-05-18](/records/console-ui-consistency-evaluation-2026-05-18)
 - [daily-handoff-2026-05-27](/records/daily-handoff-2026-05-27)
