@@ -132,6 +132,7 @@
 - 公开商城详情来源返回文案批量收口已完成：`/shop/products` 或商品榜进入 `/shop/product/:productId` 后，详情返回按钮按来源显示“返回商品列表 / 返回榜单”等精确文案，避免移动端只看到泛化的“返回上一入口”。
 - Gateway 公开页资源 URL 收口小闭环已完成：当页面通过 `https://localhost:5000` 访问时，浏览器可见的本地 HTTP 媒体、favicon、头像和 Markdown 附件资源地址会归一到当前 Gateway origin；公网、CDN、非 localhost 地址不改写。
 - 移动 Web 公开阅读链路小闭环已完成：共享 `MarkdownRenderer` 补齐长链接、长 inline code、代码块、表格和图片的窄屏防溢出约束；公开 docs / forum 详情补齐标题、slug chip、评论摘要 chip、返回 / 分享按钮和评论内容的 390px 窄屏换行约束；公开分享链接统一走运行时公开域名配置，并保留 docs 详情文档锚点。
+- 移动 Web 公开阅读链路二轮复核已完成：公开 docs 详情页内 Markdown 相对文档链接和同页锚点统一解析到公开 docs 路由，避免阅读中触发整页跳转或丢失来源语义；docs / forum 阅读容器继续补齐嵌套 flex、卡片和 Markdown 内容的 `min-width: 0` / `max-width` 约束。
 - 公开来源返回批量验收已完成：公开详情页的显式来源返回动作会保留既有 `history.state` 来源链路，避免 `discover -> forum detail -> profile -> 返回 forum detail` 后把 forum 详情来源改写成 profile 形成返回循环；从个人公开页内容卡片主动进入 forum 详情仍按普通导航记录 profile 来源。
 - 移动 Web 公开分发页二轮复核已完成：`/discover` 论坛卡片进入公开帖子详情时改为优先使用 `Post.PublicId`，与 forum 列表 / 搜索 / 标签页的公开 URL 口径保持一致，避免发现页链路继续生成 long id 公开详情路径。
 - 商城工作台构建 warning 已完成治理：`ShopApp` 改为按首页、商品、订单、背包与购买弹窗懒加载，`vite.config.ts` 同步细分商城手动 chunk，`app-shop` 已收敛到 500k 警告阈值以内；npm 自身 update notice 不进入仓库级配置治理。
@@ -411,6 +412,18 @@ npm run test --workspace=radish.client -- --test-name-pattern="publicRoute|publi
 npm run type-check --workspace=radish.client
 npm run type-check --workspace=@radish/ui
 npm run build --workspace=radish.client
+npm run check:repo-hygiene:changed
+git diff --check
+```
+
+`P3-8-D` 移动 Web 公开阅读链路二轮复核已执行：
+
+```bash
+npm run test --workspace=radish.client -- --test-name-pattern="publicRouteState|publicHead"
+npm run type-check --workspace=radish.client
+npm run type-check --workspace=@radish/ui
+npm run build --workspace=radish.client
+npm run lint:changed
 npm run check:repo-hygiene:changed
 git diff --check
 ```

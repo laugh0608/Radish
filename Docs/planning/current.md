@@ -60,6 +60,7 @@
   - `P3-8-D` 公开商品榜单到商品详情小闭环已推进：公开热门商品榜单条目可进入公开商品详情，并通过来源状态返回榜单，不直接打开订单或背包流程
   - `P3-8-D` Gateway 公开页资源 URL 收口已推进：HTTPS Gateway 下的本地 HTTP 媒体 / favicon / Markdown 附件资源地址会归一到当前 Gateway origin，减少 Schemeful Same-Site Cookie 告警
   - `P3-8-D` 移动 Web 公开阅读链路小闭环已推进：共享 Markdown、公开 docs 详情和公开 forum 详情补齐窄屏长链接、代码块、表格、图片、标题、slug 和返回 / 分享按钮的防横向溢出约束；公开分享链接统一走运行时公开域名配置并保留 docs 锚点
+  - `P3-8-D` 移动 Web 公开阅读链路二轮复核已推进：公开 docs Markdown 相对文档链接 / 同页锚点统一走公开壳层路由，阅读容器继续补齐嵌套 flex / 卡片场景的窄屏防撑开约束
   - `P3-8-D` 公开来源返回批量验收已推进：公开详情页的显式来源返回会保留既有 `history.state` 来源链路，避免 `discover -> forum detail -> profile -> 返回 forum detail` 后形成来源循环
   - `P3-8-D` 移动 Web 公开分发页二轮复核已推进：`/discover` 论坛卡片进入公开帖子详情时优先使用 `Post.PublicId`，与 forum 列表 / 搜索 / 标签页的公开 URL 口径保持一致
   - `radish.client` 商城工作台构建 chunk warning 已完成治理：`ShopApp` 页级懒加载和商城分包规则已把 `app-shop` 收敛到 500k 警告阈值以内；仓库不保留 npm update notifier 配置

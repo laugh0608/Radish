@@ -1057,6 +1057,11 @@ const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigat
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const articleBodyRef = useRef<HTMLDivElement>(null);
+  const currentDocsPath = buildPublicDocsPath({
+    kind: 'detail',
+    slug: documentDetail?.voSlug || route.slug,
+    anchor: route.anchor
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -1145,12 +1150,26 @@ const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigat
         return;
       }
 
-      const rewrittenHref = rewritePublicDocsHref(href, currentOrigin);
+      const rewrittenHref = rewritePublicDocsHref(href, currentOrigin, currentDocsPath);
       if (rewrittenHref) {
         anchor.setAttribute('href', rewrittenHref);
       }
     });
-  }, [documentDetail?.voId, documentDetail?.voMarkdownContent]);
+  }, [currentDocsPath, documentDetail?.voId, documentDetail?.voMarkdownContent]);
+
+  useEffect(() => {
+    if (!route.anchor || !documentDetail || typeof globalThis.document === 'undefined') {
+      return;
+    }
+
+    const anchorTarget = globalThis.document.getElementById(route.anchor)
+      ?? globalThis.document.getElementsByName(route.anchor)[0];
+    if (!anchorTarget || !articleBodyRef.current?.contains(anchorTarget)) {
+      return;
+    }
+
+    anchorTarget.scrollIntoView({ block: 'start' });
+  }, [documentDetail, route.anchor]);
 
   const handleMarkdownLinkClick = (event: MouseEvent<HTMLDivElement>) => {
     if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
@@ -1172,7 +1191,7 @@ const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigat
       return;
     }
 
-    const nextRoute = resolvePublicDocsRouteFromHref(href, getCurrentOrigin());
+    const nextRoute = resolvePublicDocsRouteFromHref(href, getCurrentOrigin(), currentDocsPath);
     if (!nextRoute) {
       return;
     }

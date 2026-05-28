@@ -70,6 +70,38 @@ test('resolvePublicDocsRouteFromHref 与 rewritePublicDocsHref 应把站内 docs
   assert.equal(rewritePublicDocsHref(href, 'https://radish.local'), '/docs/Guide#overview');
 });
 
+test('resolvePublicDocsRouteFromHref 应按当前文档路径解析 Markdown 相对链接与同页锚点', () => {
+  assert.deepEqual(
+    resolvePublicDocsRouteFromHref('Next-Guide#install', 'https://radish.local', '/docs/Getting-Started#overview'),
+    {
+      kind: 'detail',
+      slug: 'Next-Guide',
+      anchor: 'install',
+    }
+  );
+  assert.deepEqual(
+    resolvePublicDocsRouteFromHref('#faq', 'https://radish.local', '/docs/Getting-Started'),
+    {
+      kind: 'detail',
+      slug: 'Getting-Started',
+      anchor: 'faq',
+    }
+  );
+  assert.equal(
+    rewritePublicDocsHref('#faq', 'https://radish.local', '/docs/Getting-Started'),
+    '/docs/Getting-Started#faq'
+  );
+});
+
+test('parsePublicDocsRoute 应忽略非法编码的 slug 与锚点并回落到稳定路由', () => {
+  assert.deepEqual(parsePublicDocsRoute('/docs/%E0%A4%A', ''), { kind: 'list' });
+  assert.deepEqual(parsePublicDocsRoute('/docs/Guide', '#%E0%A4%A'), {
+    kind: 'detail',
+    slug: 'Guide',
+    anchor: undefined,
+  });
+});
+
 test('parsePublicProfileRoute 应保留公开个人页 tab 与分页状态', () => {
   const route = parsePublicProfileRoute('/u/2042219067430928384', '?tab=comments&page=4');
 

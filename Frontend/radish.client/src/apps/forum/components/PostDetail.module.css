@@ -1,5 +1,6 @@
 .container {
   margin-bottom: 20px;
+  min-width: 0;
 }
 
 .title {
@@ -145,6 +146,7 @@
   font-size: 14px;
   text-align: left;
   min-width: 0;
+  max-width: 100%;
   --text-primary: var(--theme-text-primary);
   --heading-color: var(--theme-text-primary);
   --text-secondary: var(--theme-text-secondary);
@@ -197,6 +199,7 @@
     color-mix(in srgb, var(--theme-bg-surface) 82%, white 18%) 0%,
     color-mix(in srgb, var(--theme-brand-soft) 28%, var(--theme-bg-surface) 72%) 100%
   );
+  min-width: 0;
 }
 
 .lotteryCard {
@@ -209,6 +212,7 @@
     color-mix(in srgb, var(--theme-bg-surface) 84%, white 16%) 0%,
     color-mix(in srgb, var(--theme-accent-earth) 12%, var(--theme-bg-surface) 88%) 100%
   );
+  min-width: 0;
 }
 
 .pollHeader {
@@ -222,6 +226,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .pollBadge {
@@ -239,6 +244,8 @@
   margin: 0;
   font-size: 16px;
   color: var(--theme-text-primary);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .lotteryHeader {
@@ -252,6 +259,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .lotteryBadge {
@@ -269,6 +277,8 @@
   margin: 0;
   font-size: 16px;
   color: var(--theme-text-primary);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .lotteryMeta {
@@ -607,6 +617,7 @@
     color-mix(in srgb, var(--theme-bg-surface) 84%, white 16%) 0%,
     color-mix(in srgb, var(--theme-accent-earth) 8%, var(--theme-bg-surface) 92%) 100%
   );
+  min-width: 0;
 }
 
 .questionHeader {
@@ -628,6 +639,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .questionSectionBadge {
@@ -645,6 +657,8 @@
   margin: 0;
   font-size: 16px;
   color: var(--theme-text-primary);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .questionMeta {
@@ -736,6 +750,7 @@
   border: 1px solid var(--theme-border-soft);
   border-radius: 12px;
   background: var(--theme-bg-surface);
+  min-width: 0;
 }
 
 .answerItemAccepted {
@@ -872,6 +887,8 @@
   color: var(--theme-text-primary);
   font-size: 14px;
   text-align: left;
+  min-width: 0;
+  max-width: 100%;
   --text-primary: var(--theme-text-primary);
   --heading-color: var(--theme-text-primary);
   --text-secondary: var(--theme-text-secondary);
