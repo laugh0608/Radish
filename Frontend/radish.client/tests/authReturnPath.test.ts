@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  buildCurrentDesktopReturnPath,
   buildDesktopForumPostReturnPath,
   buildDesktopForumReturnPath,
   buildDesktopShopOrderReturnPath,
@@ -64,6 +65,26 @@ test('rememberAuthReturnPath 应拒绝非法路径且不覆盖已有合法路径
   assert.equal(rememberAuthReturnPath('/desktop?app=shop&productId=2042219067430928384', storage), true);
   assert.equal(rememberAuthReturnPath('/shop/product/2042219067430928384', storage), false);
   assert.equal(consumeAuthReturnPath(storage), '/desktop?app=shop&productId=2042219067430928384');
+});
+
+test('buildCurrentDesktopReturnPath 只从当前 desktop 路径构造登录回流路径', () => {
+  assert.equal(
+    buildCurrentDesktopReturnPath({
+      pathname: '/desktop',
+      search: '?app=forum&postId=2042219067430928384',
+      hash: '#comments',
+    }),
+    '/desktop?app=forum&postId=2042219067430928384#comments',
+  );
+  assert.equal(
+    buildCurrentDesktopReturnPath({
+      pathname: '/desktop/',
+      search: '?app=shop&view=orders',
+    }),
+    '/desktop/?app=shop&view=orders',
+  );
+  assert.equal(buildCurrentDesktopReturnPath({ pathname: '/discover', search: '?from=desktop' }), null);
+  assert.equal(buildCurrentDesktopReturnPath(null), null);
 });
 
 test('buildDesktopShopProductReturnPath 应构造商品上下文恢复路径并拒绝非法商品 ID', () => {

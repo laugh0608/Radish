@@ -1,6 +1,12 @@
 const AUTH_RETURN_PATH_STORAGE_KEY = 'radish:auth:return-path';
 const AUTH_RETURN_PATH_BASE_URL = 'https://radish.local';
 
+interface AuthReturnLocation {
+  pathname: string;
+  search?: string;
+  hash?: string;
+}
+
 function getSessionStorage(): Storage | null {
   if (typeof window === 'undefined') {
     return null;
@@ -54,6 +60,16 @@ export function consumeAuthReturnPath(storage = getSessionStorage(), fallbackPat
   storage.removeItem(AUTH_RETURN_PATH_STORAGE_KEY);
 
   return normalizeAuthReturnPath(storedPath) ?? fallbackPath;
+}
+
+export function buildCurrentDesktopReturnPath(
+  location: AuthReturnLocation | null | undefined = typeof window === 'undefined' ? null : window.location,
+): string | null {
+  if (!location) {
+    return null;
+  }
+
+  return normalizeAuthReturnPath(`${location.pathname}${location.search ?? ''}${location.hash ?? ''}`);
 }
 
 export function buildDesktopShopProductReturnPath(productId: string | number): string | null {

@@ -126,6 +126,7 @@
 - Flutter 公开个人页来源返回批量验收已完成：从发现页、论坛作者和榜单进入原生公开主页时记录来源 tab；公开主页继续打开帖子 / 评论详情并返回后，Android Back 仍回到原发现、论坛或榜单位置，不把用户直接送到后台。
 - Flutter 公开个人页详情 Android Back 回归已补：新增 shell smoke 覆盖 `榜单 -> 公开主页 -> 帖子 / 评论详情 -> Android Back 回公开主页 -> Android Back 回榜单`，现有 shell 路由状态可直接承接，未改业务逻辑。
 - 纯 Web / 工作台论坛登录回流小闭环已完成：桌面入口新增 `forum` 深链解析，论坛发帖、评论和轻回应登录入口改为统一 `redirectToLogin({ returnPath })`；登录成功后回到论坛工作台或原帖子 / 评论上下文，不再因根路径 `/` 切向 `/discover` 而丢失 forum 场景。
+- Dock 主动登录回流小闭环已完成：工作台右侧登录按钮改为保存当前合法 `/desktop...` 路径；用户在 forum / shop 等保留入口主动登录后回到原工作台上下文，非 desktop 公开页仍不进入登录回流白名单。
 - 公开商品榜单到商品详情小闭环已完成：公开热门商品榜单条目可进入公开商品详情，并通过 `history.state` 来源状态返回榜单；榜单仍保持只读浏览边界，不直接打开购买、订单或背包流程。
 - 公开商城详情来源返回文案批量收口已完成：`/shop/products` 或商品榜进入 `/shop/product/:productId` 后，详情返回按钮按来源显示“返回商品列表 / 返回榜单”等精确文案，避免移动端只看到泛化的“返回上一入口”。
 - Gateway 公开页资源 URL 收口小闭环已完成：当页面通过 `https://localhost:5000` 访问时，浏览器可见的本地 HTTP 媒体、favicon、头像和 Markdown 附件资源地址会归一到当前 Gateway origin；公网、CDN、非 localhost 地址不改写。
@@ -439,6 +440,19 @@ git diff --check
 
 ```bash
 npm run test --workspace=radish.client -- --test-name-pattern="authReturnPath|desktopExternalEntry"
+npm run type-check --workspace=radish.client
+npm run build --workspace=radish.client
+npm run lint:changed
+npm run check:repo-hygiene:changed
+git diff --check
+```
+
+人工联调已通过：`https://localhost:5000/desktop?app=forum`、论坛发帖登录、帖子详情轻回应登录、评论登录和 forum 帖子 / 评论深链回流均未再落回 `/discover`。
+
+`P3-8-D` Dock 主动登录回流小闭环已执行：
+
+```bash
+npm run test --workspace=radish.client -- --test-name-pattern="authReturnPath"
 npm run type-check --workspace=radish.client
 npm run build --workspace=radish.client
 npm run lint:changed

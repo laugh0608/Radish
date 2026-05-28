@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { redirectToLogin, logout, hasAccessToken } from '@/services/auth';
+import { buildCurrentDesktopReturnPath } from '@/services/authReturnPath';
 import { hasAuthenticatedSession } from '@/services/authSession';
 import { getAppById, prefetchAppComponent } from './AppRegistry';
 import type { AppDefinition } from './types';
@@ -147,6 +148,9 @@ export const Dock = () => {
   const handleLogoutClick = () => {
     clearUser();
     logout();
+  };
+  const handleLoginClick = () => {
+    redirectToLogin({ returnPath: buildCurrentDesktopReturnPath() });
   };
   const notifyLoginRequired = () => {
     toast.info(t('dock.loginRequired'));
@@ -366,7 +370,7 @@ export const Dock = () => {
               <button
                 type="button"
                 className={`${styles.authButton} ${loggedIn ? styles.loggedIn : styles.loggedOut}`}
-                onClick={loggedIn ? handleLogoutClick : () => redirectToLogin()}
+                onClick={loggedIn ? handleLogoutClick : handleLoginClick}
                 title={loggedIn ? t('auth.logout') : t('auth.login')}
                 aria-label={loggedIn ? t('auth.logout') : t('auth.login')}
               >
