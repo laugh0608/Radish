@@ -51,6 +51,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
   late ForumQuickReplyController _quickReplyController;
   final ScrollController _scrollController = ScrollController();
   final GlobalKey _quickReplySectionKey = GlobalKey();
+  final GlobalKey _commentSectionKey = GlobalKey();
   final Map<String, GlobalKey> _commentKeys = <String, GlobalKey>{};
   String? _targetCommentId;
   String? _expandedRootCommentId;
@@ -282,6 +283,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                     authState: authState,
                     quickReplyState: quickReplyState,
                     quickReplySectionKey: _quickReplySectionKey,
+                    commentSectionKey: _commentSectionKey,
                     quickReplyLoginReturnNotice: _quickReplyLoginReturnNotice,
                     onRetryQuickReplies: _quickReplyController.refresh,
                     onSubmitQuickReply: (content) => _submitQuickReply(
@@ -358,6 +360,9 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
         _shouldReturnToCommentComposerAfterLogin = false;
         setState(() {
           _commentLoginReturnNotice = '已回到评论区，可以继续发布。';
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _scrollToCommentSection();
         });
       }
     }
@@ -536,6 +541,20 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
       duration: const Duration(milliseconds: 280),
       curve: Curves.easeOutCubic,
       alignment: 0.12,
+    );
+  }
+
+  void _scrollToCommentSection() {
+    final context = _commentSectionKey.currentContext;
+    if (!mounted || context == null) {
+      return;
+    }
+
+    Scrollable.ensureVisible(
+      context,
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOutCubic,
+      alignment: 0.08,
     );
   }
 
@@ -907,6 +926,7 @@ class _ForumDetailContent extends StatelessWidget {
     required this.authState,
     required this.quickReplyState,
     required this.quickReplySectionKey,
+    required this.commentSectionKey,
     required this.quickReplyLoginReturnNotice,
     required this.onRetryQuickReplies,
     required this.onSubmitQuickReply,
@@ -938,6 +958,7 @@ class _ForumDetailContent extends StatelessWidget {
   final NativeAuthState? authState;
   final ForumQuickReplyState quickReplyState;
   final GlobalKey quickReplySectionKey;
+  final GlobalKey commentSectionKey;
   final String? quickReplyLoginReturnNotice;
   final VoidCallback onRetryQuickReplies;
   final Future<bool> Function(String content) onSubmitQuickReply;
@@ -1116,28 +1137,31 @@ class _ForumDetailContent extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            _ForumCommentSection(
-              repository: repository,
-              state: commentState,
-              isAuthenticated: isAuthenticated,
-              isAuthBusy: authState?.isBusy ?? false,
-              hasAccessToken: accessToken != null && accessToken!.isNotEmpty,
-              replyTarget: commentReplyTarget,
-              isSubmittingComment: isSubmittingComment,
-              submitErrorMessage: commentSubmitErrorMessage,
-              submitSuccessMessage: commentSubmitSuccessMessage,
-              loginReturnNotice: commentLoginReturnNotice,
-              onRetry: onRetryComments,
-              onLoadMore: onLoadMoreComments,
-              onSubmitComment: onSubmitComment,
-              onRequestSignIn: onRequestSignInForComment,
-              onCancelReply: onCancelCommentReply,
-              targetCommentId: targetCommentId,
-              expandedRootCommentId: expandedRootCommentId,
-              expandedChildPageIndex: expandedChildPageIndex,
-              registerCommentKey: registerCommentKey,
-              onOpenProfileUser: onOpenProfileUser,
-              onReplyComment: onReplyComment,
+            KeyedSubtree(
+              key: commentSectionKey,
+              child: _ForumCommentSection(
+                repository: repository,
+                state: commentState,
+                isAuthenticated: isAuthenticated,
+                isAuthBusy: authState?.isBusy ?? false,
+                hasAccessToken: accessToken != null && accessToken!.isNotEmpty,
+                replyTarget: commentReplyTarget,
+                isSubmittingComment: isSubmittingComment,
+                submitErrorMessage: commentSubmitErrorMessage,
+                submitSuccessMessage: commentSubmitSuccessMessage,
+                loginReturnNotice: commentLoginReturnNotice,
+                onRetry: onRetryComments,
+                onLoadMore: onLoadMoreComments,
+                onSubmitComment: onSubmitComment,
+                onRequestSignIn: onRequestSignInForComment,
+                onCancelReply: onCancelCommentReply,
+                targetCommentId: targetCommentId,
+                expandedRootCommentId: expandedRootCommentId,
+                expandedChildPageIndex: expandedChildPageIndex,
+                registerCommentKey: registerCommentKey,
+                onOpenProfileUser: onOpenProfileUser,
+                onReplyComment: onReplyComment,
+              ),
             ),
           ],
         ),

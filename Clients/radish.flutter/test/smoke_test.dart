@@ -28,6 +28,12 @@ import 'package:radish_flutter/features/profile/data/profile_repository.dart';
 import 'package:radish_flutter/features/shop/data/shop_models.dart';
 import 'package:radish_flutter/features/shop/data/shop_repository.dart';
 
+Finder _forumCommentTextField({String hintText = '写下你的评论...'}) {
+  return find.byWidgetPredicate(
+    (widget) => widget is TextField && widget.decoration?.hintText == hintText,
+  );
+}
+
 void main() {
   testWidgets('restores into guest shell when no session exists',
       (tester) async {
@@ -1571,6 +1577,80 @@ void main() {
     expect(find.text('登录后发布'), findsNothing);
   });
 
+  testWidgets('comment sign-in returns to composer in current detail',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+    final gateway = InMemoryNativeAuthGateway();
+    final authController = NativeAuthController(
+      environment: const AppEnvironment.development(),
+      sessionController: sessionController,
+      gateway: gateway,
+      exchangeService: _FakeAuthorizationCodeExchangeService(
+        nextSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: 'user-213',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: 'user-213',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: authController,
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _SeededBigIdForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.tap(find.text('论坛'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('查看详情'));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('登录后评论'),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    expect(find.text('登录后可以发表评论'), findsOneWidget);
+
+    gateway.setPendingCallback(
+      const NativeAuthCallbackPayload(
+        type: NativeAuthCallbackType.login,
+        code: 'comment-login-code',
+      ),
+    );
+    await tester.tap(find.text('登录后评论'));
+    await tester.pumpAndSettle();
+    await authController.consumePendingCallback();
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
+    expect(find.text('已回到评论区，可以继续发布。'), findsOneWidget);
+    expect(find.text('发布评论'), findsOneWidget);
+    expect(find.text('登录后评论'), findsNothing);
+  });
+
   testWidgets('forum feed opens native public detail page', (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
     tester.view.devicePixelRatio = 1.0;
@@ -1751,6 +1831,84 @@ void main() {
     expect(find.text('/forum/post/post-42'), findsOneWidget);
     expect(find.text('个人主页评论'), findsWidgets);
     expect(find.text('First public child comment'), findsOneWidget);
+  });
+
+  testWidgets('profile comment reply returns to profile after detail pop',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: 'user-42',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: 'user-42',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _SeededForumRepository(),
+        profileRepository: _SeededProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.tap(find.text('我的'));
+    await tester.pumpAndSettle();
+
+    final profileScrollable = find.byType(Scrollable).last;
+    final openCommentButton = find.widgetWithText(FilledButton, '打开评论上下文');
+    await tester.scrollUntilVisible(
+      openCommentButton,
+      200,
+      scrollable: profileScrollable,
+    );
+    await tester.drag(profileScrollable, const Offset(0, -240));
+    await tester.pumpAndSettle();
+    await tester.tap(openCommentButton);
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('论坛详情回流'), findsWidgets);
+    expect(find.text('个人主页评论'), findsWidgets);
+    expect(find.text('First public child comment'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(TextButton, '回复').first);
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      _forumCommentTextField(hintText: '写下你的回复...'),
+      '从个人主页评论回复',
+    );
+    await tester.pump();
+    final replyButton = find.widgetWithText(FilledButton, '发布回复');
+    await tester.ensureVisible(replyButton);
+    await tester.tap(replyButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('回复已发布，已更新当前评论区。'), findsOneWidget);
+    expect(find.text('从个人主页评论回复'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('最近公开评论'), findsOneWidget);
+    expect(find.text('帖子详情'), findsNothing);
   });
 
   testWidgets('profile post handoff returns to profile after detail pop',
