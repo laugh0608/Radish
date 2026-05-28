@@ -12,6 +12,7 @@ import {
 } from '@/api/shop';
 import type { Product, ProductCategory, ProductListItem } from '@/types/shop';
 import { resolveMediaUrl } from '@/utils/media';
+import { buildDesktopShopProductReturnPath } from '@/services/authReturnPath';
 import type { PublicShopProductsRoute, PublicShopRoute } from '../shopRouteState';
 import {
   buildPublicShopPath,
@@ -122,15 +123,6 @@ function formatProductPrice(value: number): string {
 
 function buildProductsRouteKey(route: PublicShopProductsRoute): string {
   return buildPublicShopPath(route);
-}
-
-function buildDesktopProductEntryUrl(productId: string): string {
-  const query = new URLSearchParams({
-    app: 'shop',
-    productId
-  });
-
-  return `/desktop?${query.toString()}`;
 }
 
 const publicBrowseGuideItems: readonly PublicGuideItemDefinition[] = [
@@ -688,6 +680,7 @@ export const PublicShopApp = ({
 
     const coverImageUrl = resolveMediaUrl(selectedProduct.voCoverImage);
     const iconImageUrl = resolveMediaUrl(selectedProduct.voIcon);
+    const desktopProductEntryUrl = buildDesktopShopProductReturnPath(selectedProduct.voId);
     const stockText = selectedProduct.voStockType === StockType.Unlimited
       ? t('shop.stock.unlimited')
       : t('shop.productCount', { count: selectedProduct.voStock ?? 0 });
@@ -779,10 +772,12 @@ export const PublicShopApp = ({
             <div className={styles.readOnlyPanel}>
               <h2 className={styles.readOnlyTitle}>{t('shop.public.purchaseTitle')}</h2>
               <p className={styles.readOnlyDescription}>{t('shop.public.purchaseDescription')}</p>
-              <a className={styles.primaryLink} href={buildDesktopProductEntryUrl(String(selectedProduct.voId))}>
-                <Icon icon="mdi:view-dashboard-outline" size={18} />
-                <span>{t('shop.public.openDesktop')}</span>
-              </a>
+              {desktopProductEntryUrl && (
+                <a className={styles.primaryLink} href={desktopProductEntryUrl}>
+                  <Icon icon="mdi:view-dashboard-outline" size={18} />
+                  <span>{t('shop.public.openDesktop')}</span>
+                </a>
+              )}
             </div>
           </div>
         </div>

@@ -56,6 +56,7 @@
   - `P3-8-D` Flutter 公开个人页来源返回批量验收已推进：发现、论坛作者和榜单进入公开主页后，Android Back 可回到原来源；公开主页内容详情返回后仍保留来源 tab，并已补直接 Android Back 从帖子 / 评论详情退回公开主页再回榜单的 shell smoke
   - `P3-8-D` 纯 Web / 工作台论坛登录回流小闭环已推进：桌面入口支持 `forum` 深链，论坛发帖、评论和轻回应登录入口统一走 `redirectToLogin({ returnPath })`，登录后可回到论坛工作台或原帖子 / 评论上下文
   - `P3-8-D` Dock 主动登录回流小闭环已推进：工作台右侧登录按钮会保存当前合法 `/desktop...` 路径，避免用户在 forum / shop 等保留入口主动登录后落回 `/discover`
+  - `P3-8-D` 公开商城工作台入口契约已收口：公开商品详情复用统一 `buildDesktopShopProductReturnPath` 构造工作台入口，非法商品详情路径明确回落商城首页
   - `P3-8-D` 公开商品榜单到商品详情小闭环已推进：公开热门商品榜单条目可进入公开商品详情，并通过来源状态返回榜单，不直接打开订单或背包流程
   - `P3-8-D` Gateway 公开页资源 URL 收口已推进：HTTPS Gateway 下的本地 HTTP 媒体 / favicon / Markdown 附件资源地址会归一到当前 Gateway origin，减少 Schemeful Same-Site Cookie 告警
   - `P3-8-D` 移动 Web 公开阅读链路小闭环已推进：共享 Markdown、公开 docs 详情和公开 forum 详情补齐窄屏长链接、代码块、表格、图片、标题、slug 和返回 / 分享按钮的防横向溢出约束；公开分享链接统一走运行时公开域名配置并保留 docs 锚点

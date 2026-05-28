@@ -123,6 +123,11 @@ test('parsePublicShopRoute 应保留商品详情的大整数字符串 ID', () =>
   });
 });
 
+test('parsePublicShopRoute 应拒绝非法商品详情 ID 并回落到商城首页', () => {
+  assert.deepEqual(parsePublicShopRoute('/shop/product/0', ''), { kind: 'home' });
+  assert.deepEqual(parsePublicShopRoute('/shop/product/abc', ''), { kind: 'home' });
+});
+
 test('buildPublicShopPath 应回写公开商城列表和详情路径', () => {
   const productsPath = buildPublicShopPath({
     kind: 'products',
