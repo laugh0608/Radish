@@ -24,6 +24,7 @@ import '../../../features/forum/presentation/forum_page.dart';
 import '../../../features/profile/presentation/profile_page.dart';
 import '../../../features/shop/data/shop_repository.dart';
 import '../../../features/shop/presentation/shop_product_detail_page.dart';
+import '../../../features/shop/presentation/shop_product_list_page.dart';
 
 class RadishFlutterShell extends StatefulWidget {
   const RadishFlutterShell({
@@ -500,6 +501,17 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     );
   }
 
+  void _openShopFromDiscover() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => ShopProductListPage(
+          environment: widget.environment,
+          repository: widget.shopRepository,
+        ),
+      ),
+    );
+  }
+
   void _resumeRecentDocumentTarget() {
     final target = _recentDocumentTarget;
     if (target == null) {
@@ -896,6 +908,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
             ),
             onOpenForumDetailTarget: _openForumDetailTarget,
             onOpenShopProduct: _openShopProductFromDiscover,
+            onOpenShop: _openShopFromDiscover,
             onOpenProfileUser: _openProfileUserFromCurrentTab,
           ),
           ForumPage(

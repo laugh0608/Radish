@@ -464,6 +464,67 @@ void main() {
     expect(find.text('Profile Rename Card'), findsOneWidget);
   });
 
+  testWidgets('discover shop shortcut opens read-only product list and returns',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _SeededDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _FakeForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        shopRepository: const _SeededShopRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('查看全部商品'),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.tap(find.text('查看全部商品'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('公开商城'), findsWidgets);
+    expect(find.text('商品列表'), findsOneWidget);
+    expect(find.text('/shop/product/product-4001'), findsOneWidget);
+
+    await tester.tap(find.text('查看详情'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('商品详情'), findsWidgets);
+    expect(find.text('来源：公开商品列表'), findsOneWidget);
+    expect(find.text('返回商城'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('公开商城'), findsWidgets);
+    expect(find.text('商品列表'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('继续阅读'), findsOneWidget);
+    expect(find.text('商城精选'), findsOneWidget);
+  });
+
   testWidgets('leaderboard user can open public profile and return to ranking',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
@@ -2499,6 +2560,32 @@ class _SeededDiscoverRepository implements DiscoverRepository {
 
 class _SeededShopRepository implements ShopRepository {
   const _SeededShopRepository();
+
+  @override
+  Future<ShopProductPage> getProductPage({
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const ShopProductPage(
+      page: 1,
+      pageSize: 20,
+      dataCount: 1,
+      pageCount: 1,
+      products: [
+        ShopProductSummary(
+          id: 'product-4001',
+          name: 'Profile Rename Card',
+          productType: '消耗品',
+          price: 120,
+          originalPrice: 180,
+          hasDiscount: true,
+          soldCount: 3,
+          durationDisplay: '永久',
+          inStock: true,
+        ),
+      ],
+    );
+  }
 
   @override
   Future<ShopProductDetail> getProductDetail({

@@ -1,0 +1,144 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:radish_flutter/core/config/app_environment.dart';
+import 'package:radish_flutter/core/network/radish_api_client.dart';
+import 'package:radish_flutter/features/shop/data/shop_models.dart';
+import 'package:radish_flutter/features/shop/data/shop_repository.dart';
+import 'package:radish_flutter/features/shop/presentation/shop_product_list_page.dart';
+
+void main() {
+  testWidgets('renders public shop product list and opens detail',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ShopProductListPage(
+          environment: AppEnvironment.development(),
+          repository: _SeededShopRepository(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('公开商城'), findsWidgets);
+    expect(find.text('商品列表'), findsOneWidget);
+    expect(find.text('Profile Rename Card'), findsOneWidget);
+    expect(find.text('/shop/product/4001'), findsOneWidget);
+    expect(find.text('只读购买边界'), findsNothing);
+
+    await tester.tap(find.text('查看详情'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('商品详情'), findsWidgets);
+    expect(find.text('来源：公开商品列表'), findsOneWidget);
+    expect(find.text('返回商城'), findsOneWidget);
+    expect(find.text('只读购买边界'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('公开商城'), findsWidgets);
+    expect(find.text('商品列表'), findsOneWidget);
+  });
+
+  testWidgets('renders public shop list error state', (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ShopProductListPage(
+          environment: AppEnvironment.development(),
+          repository: _FailingShopRepository(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('暂时无法加载公开商品'), findsOneWidget);
+    expect(find.text('商品列表不可用'), findsOneWidget);
+    expect(find.text('重试'), findsOneWidget);
+  });
+}
+
+class _SeededShopRepository implements ShopRepository {
+  const _SeededShopRepository();
+
+  @override
+  Future<ShopProductPage> getProductPage({
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const ShopProductPage(
+      page: 1,
+      pageSize: 20,
+      dataCount: 1,
+      pageCount: 1,
+      products: [
+        ShopProductSummary(
+          id: '4001',
+          name: 'Profile Rename Card',
+          productType: '消耗品',
+          price: 120,
+          originalPrice: 180,
+          hasDiscount: true,
+          soldCount: 3,
+          durationDisplay: '永久',
+          inStock: true,
+        ),
+      ],
+    );
+  }
+
+  @override
+  Future<ShopProductDetail> getProductDetail({
+    required String productId,
+  }) async {
+    return const ShopProductDetail(
+      id: '4001',
+      name: 'Profile Rename Card',
+      description: 'Use this read-only detail to confirm the item scope.',
+      categoryName: 'Profile tools',
+      productType: '消耗品',
+      benefitValue: 'rename-card',
+      price: 120,
+      originalPrice: 180,
+      hasDiscount: true,
+      stockType: 'Unlimited',
+      stock: 0,
+      soldCount: 3,
+      limitPerUser: 1,
+      inStock: true,
+      durationDisplay: '永久',
+      isOnSale: true,
+      isEnabled: true,
+    );
+  }
+}
+
+class _FailingShopRepository implements ShopRepository {
+  const _FailingShopRepository();
+
+  @override
+  Future<ShopProductPage> getProductPage({
+    required int pageIndex,
+    required int pageSize,
+  }) {
+    throw const RadishApiClientException('商品列表不可用');
+  }
+
+  @override
+  Future<ShopProductDetail> getProductDetail({
+    required String productId,
+  }) {
+    throw const RadishApiClientException('商品不存在');
+  }
+}

@@ -342,6 +342,7 @@ void main() {
     var forumOpened = false;
     var docsOpened = false;
     var leaderboardOpened = false;
+    var shopOpened = false;
     DocsDocumentSummary? openedDocument;
     ForumDetailHandoffTarget? openedForumTarget;
     DiscoverProductSummary? openedProduct;
@@ -361,6 +362,9 @@ void main() {
           },
           onOpenLeaderboard: () {
             leaderboardOpened = true;
+          },
+          onOpenShop: () {
+            shopOpened = true;
           },
           onOpenDocument: (document) {
             openedDocument = document;
@@ -417,6 +421,12 @@ void main() {
     );
     await tester.tap(find.text('查看详情'));
     await tester.scrollUntilVisible(
+      find.text('查看全部商品'),
+      200,
+      scrollable: scrollable,
+    );
+    await tester.tap(find.text('查看全部商品'));
+    await tester.scrollUntilVisible(
       find.text('打开榜单').first,
       200,
       scrollable: scrollable,
@@ -426,6 +436,7 @@ void main() {
     expect(forumOpened, isTrue);
     expect(docsOpened, isTrue);
     expect(leaderboardOpened, isTrue);
+    expect(shopOpened, isTrue);
     expect(openedDocument?.slug, 'flutter-mvp-overview');
     expect(openedForumTarget?.postId, '2042219067430928384');
     expect(openedForumTarget?.initialTitle, 'Native discover wiring plan');

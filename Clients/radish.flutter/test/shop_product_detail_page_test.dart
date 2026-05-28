@@ -73,10 +73,52 @@ void main() {
     expect(product.productType, '消耗品');
     expect(product.durationDisplay, '永久');
   });
+
+  test('http shop repository uses public product list endpoint', () async {
+    final apiClient = _RecordingShopApiClient();
+    final repository = HttpShopRepository(
+      apiClient: apiClient,
+      endpoints: const RadishApiEndpoints(AppEnvironment.development()),
+    );
+
+    final page = await repository.getProductPage(pageIndex: 2, pageSize: 10);
+
+    expect(apiClient.lastUri?.path, '/api/v1/Shop/GetProducts');
+    expect(apiClient.lastUri?.queryParameters['pageIndex'], '2');
+    expect(apiClient.lastUri?.queryParameters['pageSize'], '10');
+    expect(page.products.single.id, '4001');
+    expect(page.products.single.productType, '消耗品');
+  });
 }
 
 class _SuccessShopRepository implements ShopRepository {
   const _SuccessShopRepository();
+
+  @override
+  Future<ShopProductPage> getProductPage({
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const ShopProductPage(
+      page: 1,
+      pageSize: 20,
+      dataCount: 1,
+      pageCount: 1,
+      products: [
+        ShopProductSummary(
+          id: '4001',
+          name: 'Profile Rename Card',
+          productType: '消耗品',
+          price: 120,
+          originalPrice: 180,
+          hasDiscount: true,
+          soldCount: 3,
+          durationDisplay: '永久',
+          inStock: true,
+        ),
+      ],
+    );
+  }
 
   @override
   Future<ShopProductDetail> getProductDetail({
@@ -108,6 +150,14 @@ class _FailingShopRepository implements ShopRepository {
   const _FailingShopRepository();
 
   @override
+  Future<ShopProductPage> getProductPage({
+    required int pageIndex,
+    required int pageSize,
+  }) {
+    throw const RadishApiClientException('商品列表不可用');
+  }
+
+  @override
   Future<ShopProductDetail> getProductDetail({
     required String productId,
   }) {
@@ -125,6 +175,28 @@ class _RecordingShopApiClient implements RadishApiClient {
     String? bearerToken,
   }) async {
     lastUri = uri;
+    if (uri.path == '/api/v1/Shop/GetProducts') {
+      return decode({
+        'page': 1,
+        'pageSize': 10,
+        'dataCount': 1,
+        'pageCount': 1,
+        'data': [
+          {
+            'voId': '4001',
+            'voName': 'Profile Rename Card',
+            'voProductType': 2,
+            'voPrice': 120,
+            'voOriginalPrice': 180,
+            'voHasDiscount': true,
+            'voSoldCount': 3,
+            'voDurationDisplay': '永久',
+            'voInStock': true,
+          },
+        ],
+      });
+    }
+
     return decode({
       'voId': '4001',
       'voName': 'Profile Rename Card',

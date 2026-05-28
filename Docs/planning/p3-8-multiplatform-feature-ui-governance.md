@@ -138,9 +138,10 @@
 - 移动 Web 公开视图矩阵阶段收口已完成：批量复核 `/discover / forum / docs / shop / leaderboard / u/:id` 的窄屏布局、来源返回、分享入口、公开只读边界、长文本防溢出和公开链接契约；`/discover` 与 `/leaderboard` 补显式分享入口，`/u/:id` 移除登录态关注 / 取关写操作，`/shop` 公开链路补齐商品长文本防溢出约束。本轮未发现新的 `P0/P1`，后续不再逐页小循环式打磨 Web 公开页。
 - Flutter 公开商品只读详情小闭环已完成：发现页商城精选商品可打开原生商品详情，详情页复用公开 `Shop/GetProduct` 契约展示名称、价格、库存、限购、有效期、描述、权益值和只读购买边界；Android Back 返回发现页。本轮不扩展完整移动商城、购买、订单、背包、支付口令或权益激活。
 - Flutter 轻量 forum 通知列表已完成：已登录壳层从 `/api/v1/Notification/GetNotificationList` 读取最近少量可跳 forum 通知，展示轻量列表并复用既有 forum detail handoff 打开帖子 / 评论，详情返回后回到打开前 tab；本轮不扩展完整通知中心、已读 / 删除、系统推送、完整移动商城或创作器。
+- Flutter 公开商城列表只读入口已完成：发现页新增进入公开商城列表入口，列表复用 `/api/v1/Shop/GetProducts`，商品项打开既有只读商品详情并可返回商城列表；本轮不扩展购买、订单、背包、支付口令或权益激活。
 - 商城工作台构建 warning 已完成治理：`ShopApp` 改为按首页、商品、订单、背包与购买弹窗懒加载，`vite.config.ts` 同步细分商城手动 chunk，`app-shop` 已收敛到 500k 警告阈值以内；npm 自身 update notice 不进入仓库级配置治理。
 - 后续继续按验收矩阵做主动批量复核、成组修复和一次性交付结论；候选方向为 Flutter 下一批真实移动主路径小闭环、纯 Web 登录后轻量链路补强，或维护线暴露的购买 / 订单 / 背包阻断。
-- 下一步不继续重复 Flutter 个人主页来源返回、轻量通知列表，也不继续逐页打磨 Web 公开页；除非维护线暴露公开访问、分享预览、购买 / 订单 / 背包或权限授权阻断，否则继续从 Flutter 真实移动缺口中筛选下一个一天级小闭环。
+- 下一步不继续重复 Flutter 个人主页来源返回、轻量通知列表、公开商城列表，也不继续逐页打磨 Web 公开页；除非维护线暴露公开访问、分享预览、购买 / 订单 / 背包或权限授权阻断，否则继续从 Flutter 真实移动缺口中筛选下一个一天级小闭环。
 - WebOS 只保留 `/desktop` 历史入口，不再作为新增功能候选；PC/Tauri 放到最后再评估，后续若重启也只增强纯 Web。
 - 不直接启动完整移动商城、完整通知中心、完整创作器、公开 Web 整体 UI 重构或多端同时重写。
 
@@ -504,6 +505,14 @@ flutter analyze
 ```
 
 `P3-8-D` Flutter 轻量 forum 通知列表小闭环已执行：
+
+```bash
+cd Clients/radish.flutter
+flutter test
+flutter analyze
+```
+
+`P3-8-D` Flutter 公开商城列表只读入口小闭环已执行：
 
 ```bash
 cd Clients/radish.flutter

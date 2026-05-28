@@ -1,3 +1,77 @@
+class ShopProductSummary {
+  const ShopProductSummary({
+    required this.id,
+    required this.name,
+    required this.productType,
+    required this.price,
+    this.originalPrice,
+    this.hasDiscount = false,
+    this.soldCount = 0,
+    this.durationDisplay,
+    this.inStock = true,
+  });
+
+  factory ShopProductSummary.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+
+    return ShopProductSummary(
+      id: _readRequiredId(map, 'voId'),
+      name: _readString(map['voName']) ?? '未命名商品',
+      productType: _readString(map['voProductTypeDisplay']) ??
+          _formatProductType(map['voProductType']),
+      price: _readInt(map['voPrice']) ?? 0,
+      originalPrice: _readInt(map['voOriginalPrice']),
+      hasDiscount: _readBool(map['voHasDiscount']),
+      soldCount: _readInt(map['voSoldCount']) ?? 0,
+      durationDisplay: _readString(map['voDurationDisplay']),
+      inStock: _readBool(map['voInStock'], defaultValue: true),
+    );
+  }
+
+  final String id;
+  final String name;
+  final String productType;
+  final int price;
+  final int? originalPrice;
+  final bool hasDiscount;
+  final int soldCount;
+  final String? durationDisplay;
+  final bool inStock;
+}
+
+class ShopProductPage {
+  const ShopProductPage({
+    required this.page,
+    required this.pageSize,
+    required this.dataCount,
+    required this.pageCount,
+    required this.products,
+  });
+
+  factory ShopProductPage.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+    final data = map['data'];
+
+    return ShopProductPage(
+      page: _readInt(map['page']) ?? _readInt(map['pageIndex']) ?? 1,
+      pageSize: _readInt(map['pageSize']) ?? 20,
+      dataCount: _readInt(map['dataCount']) ?? 0,
+      pageCount: _readInt(map['pageCount']) ?? 1,
+      products: data is List
+          ? data.map(ShopProductSummary.fromJson).toList()
+          : const <ShopProductSummary>[],
+    );
+  }
+
+  final int page;
+  final int pageSize;
+  final int dataCount;
+  final int pageCount;
+  final List<ShopProductSummary> products;
+
+  bool get hasMore => page < pageCount;
+}
+
 class ShopProductDetail {
   const ShopProductDetail({
     required this.id,

@@ -14,6 +14,8 @@ class ShopProductDetailPage extends StatefulWidget {
     required this.repository,
     required this.productId,
     this.initialTitle,
+    this.sourceLabel = '发现页商城精选',
+    this.returnLabel = '返回发现',
     super.key,
   });
 
@@ -21,6 +23,8 @@ class ShopProductDetailPage extends StatefulWidget {
   final ShopRepository repository;
   final String productId;
   final String? initialTitle;
+  final String sourceLabel;
+  final String returnLabel;
 
   @override
   State<ShopProductDetailPage> createState() => _ShopProductDetailPageState();
@@ -134,7 +138,7 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
             title: '当前能力',
             items: [
               '当前环境：${widget.environment.name}',
-              '来源：发现页商城精选',
+              '来源：${widget.sourceLabel}',
               product == null
                   ? '正在准备商品 ${widget.productId}'
                   : '正在查看商品 ${product.id}',
@@ -149,7 +153,7 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
               OutlinedButton.icon(
                 onPressed: () => Navigator.of(context).maybePop(),
                 icon: const Icon(Icons.arrow_back),
-                label: const Text('返回发现'),
+                label: Text(widget.returnLabel),
               ),
               FilledButton.tonalIcon(
                 onPressed: _isLoading || _isRefreshing ? null : _refresh,
