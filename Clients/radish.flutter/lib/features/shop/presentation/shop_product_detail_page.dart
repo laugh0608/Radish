@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../core/config/app_environment.dart';
 import '../../../core/network/radish_api_client.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
+import '../../../shared/widgets/public_link_copy_panel.dart';
 import '../data/shop_models.dart';
 import '../data/shop_repository.dart';
 
@@ -178,7 +179,10 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
               _ShopDetailRefreshIssueNotice(message: errorMessage),
               const SizedBox(height: 16),
             ],
-            _ShopProductDetailContent(product: product),
+            _ShopProductDetailContent(
+              environment: widget.environment,
+              product: product,
+            ),
           ],
         ],
       ),
@@ -333,15 +337,22 @@ class _ShopDetailRefreshIssueNotice extends StatelessWidget {
 
 class _ShopProductDetailContent extends StatelessWidget {
   const _ShopProductDetailContent({
+    required this.environment,
     required this.product,
   });
 
+  final AppEnvironment environment;
   final ShopProductDetail product;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final originalPrice = product.originalPrice;
+    final publicPath = _formatShopProductPublicPath(product.id);
+    final publicUrl = buildRadishPublicUrl(
+      environment: environment,
+      publicPath: publicPath,
+    );
 
     return Card(
       child: Padding(
@@ -358,7 +369,7 @@ class _ShopProductDetailContent extends StatelessWidget {
                   visualDensity: VisualDensity.compact,
                 ),
                 Chip(
-                  label: _ShopBoundedText('/shop/product/${product.id}'),
+                  label: _ShopBoundedText(publicPath ?? '公开地址待生成'),
                   visualDensity: VisualDensity.compact,
                 ),
                 if (product.categoryName != null)
@@ -389,6 +400,12 @@ class _ShopProductDetailContent extends StatelessWidget {
             ],
             const SizedBox(height: 16),
             _ShopReadOnlyPanel(product: product),
+            const SizedBox(height: 16),
+            PublicLinkCopyPanel(
+              title: '公开商品链接',
+              publicUrl: publicUrl,
+              description: '复制后可在浏览器打开公开商品详情；购买、订单和背包仍不在 Flutter 本批开放。',
+            ),
             const SizedBox(height: 20),
             Text(
               '商品信息',
@@ -606,4 +623,13 @@ String _formatLimit(int limitPerUser) {
 
 double _inlineWidth(BuildContext context) {
   return (MediaQuery.sizeOf(context).width - 80).clamp(150.0, 280.0);
+}
+
+String? _formatShopProductPublicPath(String productId) {
+  final normalizedProductId = productId.trim();
+  if (normalizedProductId.isEmpty) {
+    return null;
+  }
+
+  return '/shop/product/$normalizedProductId';
 }

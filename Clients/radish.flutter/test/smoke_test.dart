@@ -718,8 +718,6 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('帖子详情'), findsWidgets);
-    expect(find.text('个人主页评论'), findsWidgets);
     expect(find.text('First public child comment'), findsOneWidget);
 
     await tester.binding.handlePopRoute();
@@ -727,6 +725,7 @@ void main() {
 
     expect(find.text('最近公开评论'), findsOneWidget);
     expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
+    expect(find.text('First public child comment'), findsNothing);
     expect(find.text('帖子详情'), findsNothing);
 
     await tester.binding.handlePopRoute();

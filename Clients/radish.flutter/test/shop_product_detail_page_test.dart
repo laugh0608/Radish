@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:radish_flutter/core/config/app_environment.dart';
 import 'package:radish_flutter/core/network/radish_api_client.dart';
@@ -13,6 +14,8 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+    final clipboard = _ClipboardRecorder()..install();
+    addTearDown(clipboard.reset);
 
     await tester.pumpWidget(
       const MaterialApp(
@@ -30,10 +33,20 @@ void main() {
     expect(find.text('商品详情'), findsWidgets);
     expect(find.text('公开商品详情'), findsOneWidget);
     expect(find.text('/shop/product/4001'), findsOneWidget);
+    expect(
+      find.text('https://localhost:5000/shop/product/4001'),
+      findsOneWidget,
+    );
     expect(find.text('Profile Rename Card'), findsWidgets);
     expect(find.text('120 胡萝卜'), findsOneWidget);
     expect(find.text('只读购买边界'), findsOneWidget);
     expect(find.text('购买、订单、背包、支付口令和权益激活仍留在后续批次评估。'), findsOneWidget);
+
+    await tester.tap(find.text('复制公开链接'));
+    await tester.pump();
+
+    expect(clipboard.text, 'https://localhost:5000/shop/product/4001');
+    expect(find.text('公开链接已复制'), findsOneWidget);
   });
 
   testWidgets('renders shop detail error state', (tester) async {
@@ -226,5 +239,26 @@ class _RecordingShopApiClient implements RadishApiClient {
     String? bearerToken,
   }) {
     throw UnimplementedError();
+  }
+}
+
+class _ClipboardRecorder {
+  String? text;
+
+  void install() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.setData') {
+        final arguments = Map<Object?, Object?>.from(call.arguments as Map);
+        text = arguments['text'] as String?;
+      }
+
+      return null;
+    });
+  }
+
+  void reset() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, null);
   }
 }

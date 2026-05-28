@@ -5,6 +5,7 @@ import '../../../core/auth/session_controller.dart';
 import '../../../core/config/app_environment.dart';
 import '../../../core/network/radish_api_client.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
+import '../../../shared/widgets/public_link_copy_panel.dart';
 import '../../../shared/widgets/read_only_markdown_view.dart';
 import '../data/forum_models.dart';
 import '../data/forum_repository.dart';
@@ -275,6 +276,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                   ),
                 if (state.isReady && detail != null)
                   _ForumDetailContent(
+                    environment: widget.environment,
                     repository: widget.repository,
                     handoffSource: widget.handoffSource,
                     detail: detail,
@@ -918,6 +920,7 @@ class _ForumDetailAuthNotice extends StatelessWidget {
 
 class _ForumDetailContent extends StatelessWidget {
   const _ForumDetailContent({
+    required this.environment,
     required this.repository,
     required this.handoffSource,
     required this.detail,
@@ -950,6 +953,7 @@ class _ForumDetailContent extends StatelessWidget {
     required this.onReplyComment,
   });
 
+  final AppEnvironment environment;
   final ForumRepository repository;
   final ForumDetailHandoffSource handoffSource;
   final ForumPostDetail detail;
@@ -985,6 +989,10 @@ class _ForumDetailContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final publicPath = _buildForumPostPublicPath(detail);
+    final publicUrl = buildRadishPublicUrl(
+      environment: environment,
+      publicPath: publicPath,
+    );
 
     return Card(
       child: Padding(
@@ -1033,6 +1041,12 @@ class _ForumDetailContent extends StatelessWidget {
               detail: detail,
               source: handoffSource,
               targetCommentId: targetCommentId,
+            ),
+            const SizedBox(height: 16),
+            PublicLinkCopyPanel(
+              title: '公开帖子链接',
+              publicUrl: publicUrl,
+              description: '复制后可在浏览器打开公开帖子详情；评论定位仍保留在应用内上下文。',
             ),
             const SizedBox(height: 16),
             Text(

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:radish_flutter/core/config/app_environment.dart';
 import 'package:radish_flutter/core/network/radish_api_client.dart';
@@ -36,6 +37,8 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+    final clipboard = _ClipboardRecorder()..install();
+    addTearDown(clipboard.reset);
 
     final scrollable = find.byType(Scrollable).first;
 
@@ -63,6 +66,16 @@ void main() {
     expect(find.text('正文'), findsOneWidget);
     expect(find.text('Overview'), findsOneWidget);
     expect(find.text('Read docs in Flutter.'), findsOneWidget);
+    expect(
+      find.text('https://localhost:5000/docs/flutter-docs-scope'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('复制公开链接'));
+    await tester.pump();
+
+    expect(clipboard.text, 'https://localhost:5000/docs/flutter-docs-scope');
+    expect(find.text('公开链接已复制'), findsOneWidget);
 
     await tester.tap(find.text('返回文档列表'));
     await tester.pumpAndSettle();
@@ -848,5 +861,26 @@ class _ManySearchDocsRepository implements DocsRepository {
       status: 1,
       publishedAt: '2026-04-20T08:00:00Z',
     );
+  }
+}
+
+class _ClipboardRecorder {
+  String? text;
+
+  void install() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.setData') {
+        final arguments = Map<Object?, Object?>.from(call.arguments as Map);
+        text = arguments['text'] as String?;
+      }
+
+      return null;
+    });
+  }
+
+  void reset() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, null);
   }
 }

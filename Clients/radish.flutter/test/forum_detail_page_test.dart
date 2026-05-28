@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:radish_flutter/core/auth/session_controller.dart';
 import 'package:radish_flutter/core/auth/session_refresh_service.dart';
@@ -24,7 +25,7 @@ Finder _commentTextField({String hintText = '写下你的评论...'}) {
 void main() {
   testWidgets('renders public detail comments and loads more pages',
       (tester) async {
-    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.physicalSize = const Size(1200, 2600);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -61,6 +62,11 @@ void main() {
     expect(find.text('回复 @luobo'), findsOneWidget);
     expect(find.text('加载更多评论'), findsOneWidget);
 
+    await tester.scrollUntilVisible(
+      find.text('加载更多评论'),
+      100,
+      scrollable: scrollable,
+    );
     await tester.tap(find.text('加载更多评论'));
     await tester.pump();
     await tester.pumpAndSettle();
@@ -149,6 +155,48 @@ void main() {
 
     expect(find.text('/forum/post/pst_01HZPUBLICROUTEID'), findsWidgets);
     expect(find.text('/forum/post/2042219761177198592'), findsNothing);
+  });
+
+  testWidgets('copies public forum detail link from public id', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final clipboard = _ClipboardRecorder()..install();
+    addTearDown(clipboard.reset);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: _PublicIdForumRepository(),
+          postId: '2042219761177198592',
+          handoffSource: ForumDetailHandoffSource.discover,
+          initialTitle: '测试问答帖子',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('https://localhost:5000/forum/post/pst_01HZPUBLICROUTEID'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('复制公开链接'));
+    await tester.pump();
+
+    expect(
+      clipboard.text,
+      'https://localhost:5000/forum/post/pst_01HZPUBLICROUTEID',
+    );
+    expect(find.text('公开链接已复制'), findsOneWidget);
+    expect(find.text('已复制公开链接'), findsOneWidget);
+    expect(find.text('https://localhost:5000/forum/post/2042219761177198592'),
+        findsNothing);
   });
 
   testWidgets('detail error keeps target source and retry context',
@@ -1113,6 +1161,27 @@ class _CreateCommentRequest {
   final String? replyToCommentId;
   final String? replyToCommentSnapshot;
   final String? replyToUserName;
+}
+
+class _ClipboardRecorder {
+  String? text;
+
+  void install() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.setData') {
+        final arguments = Map<Object?, Object?>.from(call.arguments as Map);
+        text = arguments['text'] as String?;
+      }
+
+      return null;
+    });
+  }
+
+  void reset() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, null);
+  }
 }
 
 class _DetailFailingForumRepository extends _PagedForumRepository {
