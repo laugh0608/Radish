@@ -37,6 +37,46 @@ test('parseDesktopExternalEntry 应允许仅按频道打开聊天窗口', () => 
   });
 });
 
+test('parseDesktopExternalEntry 应解析 desktop 论坛入口和帖子深链参数', () => {
+  assert.deepEqual(parseDesktopExternalEntry('/desktop', '?app=forum'), {
+    appId: 'forum',
+    appParams: {},
+    requiresAuthenticatedSession: false,
+    signature: 'forum:home',
+  });
+
+  assert.deepEqual(
+    parseDesktopExternalEntry(
+      '/desktop',
+      '?app=forum&postPublicId=pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f&commentId=2042219067430928385',
+    ),
+    {
+      appId: 'forum',
+      appParams: {
+        postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+        commentId: '2042219067430928385',
+      },
+      requiresAuthenticatedSession: false,
+      signature: 'forum:pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f:2042219067430928385',
+    },
+  );
+
+  assert.deepEqual(parseDesktopExternalEntry('/desktop', '?app=forum&postId=2042219067430928384'), {
+    appId: 'forum',
+    appParams: {
+      postId: '2042219067430928384',
+    },
+    requiresAuthenticatedSession: false,
+    signature: 'forum:2042219067430928384:none',
+  });
+});
+
+test('parseDesktopExternalEntry 应拒绝非法论坛帖子深链参数', () => {
+  assert.equal(parseDesktopExternalEntry('/desktop', '?app=forum&postId=0'), null);
+  assert.equal(parseDesktopExternalEntry('/desktop', '?app=forum&postPublicId=post-42'), null);
+  assert.equal(parseDesktopExternalEntry('/desktop', '?app=forum&commentId=2042219067430928385'), null);
+});
+
 test('parseDesktopExternalEntry 应解析 desktop 商城商品深链参数', () => {
   const target = parseDesktopExternalEntry(
     '/desktop',
@@ -103,6 +143,10 @@ test('stripDesktopExternalEntrySearch 应仅移除已处理的 desktop 跳转参
     '?culture=zh',
   );
   assert.equal(stripDesktopExternalEntrySearch('?app=chat&channelId=123'), '');
+  assert.equal(
+    stripDesktopExternalEntrySearch('?app=forum&postId=2042219067430928384&commentId=2042219067430928385&culture=zh'),
+    '?culture=zh',
+  );
   assert.equal(
     stripDesktopExternalEntrySearch('?app=shop&productId=2042219067430928384&culture=zh'),
     '?culture=zh',

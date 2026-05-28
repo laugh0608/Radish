@@ -11,8 +11,9 @@ import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { ConfirmDialog } from '@radish/ui/confirm-dialog';
 import { toast } from '@radish/ui/toast';
-import { getOidcLoginUrl, type PostQuickReply } from '@/api/forum';
+import type { PostQuickReply } from '@/api/forum';
 import type { LongId } from '@/api/user';
+import { redirectToLogin } from '@/services/auth';
 import { resolveMediaUrl } from '@/utils/media';
 import styles from './PostQuickReplyWall.module.css';
 
@@ -26,6 +27,7 @@ interface PostQuickReplyWallProps {
   onCreate?: (content: string) => Promise<void>;
   onDelete?: (quickReplyId: LongId) => Promise<void>;
   onReport?: (quickReplyId: LongId) => void;
+  loginReturnPath?: string | null;
 }
 
 interface QuickReplyLaneLayout {
@@ -82,6 +84,7 @@ export const PostQuickReplyWall = ({
   onCreate,
   onDelete,
   onReport,
+  loginReturnPath,
 }: PostQuickReplyWallProps) => {
   const { t } = useTranslation();
   const isReadOnly = mode === 'readOnly';
@@ -221,10 +224,7 @@ export const PostQuickReplyWall = ({
   }, [measuredWidths, replies, wallWidth]);
 
   const handleLogin = () => {
-    const loginUrl = getOidcLoginUrl();
-    if (loginUrl) {
-      window.location.href = loginUrl;
-    }
+    redirectToLogin({ returnPath: loginReturnPath });
   };
 
   const handleSubmit = async () => {

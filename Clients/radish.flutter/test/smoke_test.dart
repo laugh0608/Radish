@@ -528,6 +528,95 @@ void main() {
     expect(find.text('luobo'), findsOneWidget);
   });
 
+  testWidgets(
+      'leaderboard profile post and comment details handle Android back to source',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final lifecycleGateway = _RecordingAppLifecycleGateway();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _SeededForumRepository(),
+        profileRepository: _SeededProfileRepository(),
+        leaderboardRepository: const _SeededLeaderboardRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+        appLifecycleGateway: lifecycleGateway,
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('榜单').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('打开公开主页'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
+
+    final profileScrollable = find.byType(Scrollable).last;
+    final openPostButton = find.widgetWithText(FilledButton, '打开帖子');
+    await tester.scrollUntilVisible(
+      openPostButton,
+      200,
+      scrollable: profileScrollable,
+    );
+    await tester.tap(openPostButton);
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('帖子详情'), findsWidgets);
+    expect(find.text('个人主页帖子'), findsWidgets);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('最近公开帖子'), findsOneWidget);
+    expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
+    expect(find.text('帖子详情'), findsNothing);
+
+    final openCommentButton = find.widgetWithText(FilledButton, '打开评论上下文');
+    await tester.scrollUntilVisible(
+      openCommentButton,
+      200,
+      scrollable: profileScrollable,
+    );
+    await tester.tap(openCommentButton);
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('帖子详情'), findsWidgets);
+    expect(find.text('个人主页评论'), findsWidgets);
+    expect(find.text('First public child comment'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('最近公开评论'), findsOneWidget);
+    expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
+    expect(find.text('帖子详情'), findsNothing);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(lifecycleGateway.moveTaskToBackCallCount, 0);
+    expect(find.text('榜单类型：经验榜'), findsOneWidget);
+    expect(find.text('luobo'), findsOneWidget);
+  });
+
   testWidgets('recent public profile target survives shell rebuild',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);

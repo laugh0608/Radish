@@ -92,3 +92,46 @@ export function buildDesktopShopPrivateViewReturnPath(view: 'orders' | 'inventor
 
   return `/desktop?${query.toString()}`;
 }
+
+export function buildDesktopForumReturnPath(): string {
+  const query = new URLSearchParams({
+    app: 'forum',
+  });
+
+  return `/desktop?${query.toString()}`;
+}
+
+export function buildDesktopForumPostReturnPath(target: {
+  postId?: string | number | null;
+  postPublicId?: string | null;
+  commentId?: string | number | null;
+}): string | null {
+  const normalizedPostPublicId = target.postPublicId?.trim().toLowerCase();
+  const normalizedPostId = target.postId == null ? '' : String(target.postId).trim();
+  const normalizedCommentId = target.commentId == null ? '' : String(target.commentId).trim();
+  const hasPostPublicId = normalizedPostPublicId != null
+    && /^pst_[a-f0-9]{32}$/.test(normalizedPostPublicId);
+  const hasPostId = /^[1-9]\d*$/.test(normalizedPostId);
+
+  if (!hasPostPublicId && !hasPostId) {
+    return null;
+  }
+
+  if (normalizedCommentId && !/^[1-9]\d*$/.test(normalizedCommentId)) {
+    return null;
+  }
+
+  const query = new URLSearchParams({
+    app: 'forum',
+  });
+  if (hasPostPublicId && normalizedPostPublicId) {
+    query.set('postPublicId', normalizedPostPublicId);
+  } else {
+    query.set('postId', normalizedPostId);
+  }
+  if (normalizedCommentId) {
+    query.set('commentId', normalizedCommentId);
+  }
+
+  return `/desktop?${query.toString()}`;
+}

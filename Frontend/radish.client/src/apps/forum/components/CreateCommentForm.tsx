@@ -5,8 +5,8 @@ import { Icon } from '@radish/ui/icon';
 import { buildAttachmentMarkdownUrl } from '@radish/ui';
 import { StickerPicker, type StickerPickerGroup, type StickerPickerSelection } from '@radish/ui/sticker-picker';
 import type { CommentReplyTarget } from '@/api/forum';
-import { getOidcLoginUrl } from '@/api/forum';
 import { searchUsersForMention } from '@/api/user';
+import { redirectToLogin } from '@/services/auth';
 import { UserMention, type UserMentionOption as UiUserMentionOption } from '@radish/ui/user-mention';
 import { MarkdownRenderer } from '@radish/ui/markdown-renderer';
 import { uploadImage, uploadDocument } from '@/api/attachment';
@@ -25,6 +25,7 @@ interface CreateCommentFormProps {
   title?: string;
   submitText?: string;
   placeholder?: string;
+  loginReturnPath?: string | null;
 }
 
 const MENTION_PANEL_WIDTH = 320;
@@ -126,6 +127,7 @@ export const CreateCommentForm = ({
   title,
   submitText,
   placeholder,
+  loginReturnPath,
 }: CreateCommentFormProps) => {
   const { t } = useTranslation();
   const [content, setContent] = useState('');
@@ -222,10 +224,7 @@ export const CreateCommentForm = ({
   };
 
   const handleLoginClick = () => {
-    const loginUrl = getOidcLoginUrl();
-    if (loginUrl) {
-      window.location.href = loginUrl;
-    }
+    redirectToLogin({ returnPath: loginReturnPath });
   };
 
   // 检测@符号并触发用户搜索

@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  buildDesktopForumPostReturnPath,
+  buildDesktopForumReturnPath,
   buildDesktopShopOrderReturnPath,
   buildDesktopShopPrivateViewReturnPath,
   buildDesktopShopProductReturnPath,
@@ -39,6 +41,7 @@ class MemoryStorage implements Storage {
 
 test('normalizeAuthReturnPath 只接受 desktop 相对路径', () => {
   assert.equal(normalizeAuthReturnPath('/desktop?app=shop&productId=2042219067430928384'), '/desktop?app=shop&productId=2042219067430928384');
+  assert.equal(normalizeAuthReturnPath('/desktop?app=forum&postId=2042219067430928384'), '/desktop?app=forum&postId=2042219067430928384');
   assert.equal(normalizeAuthReturnPath('/desktop/?app=shop&view=orders'), '/desktop/?app=shop&view=orders');
   assert.equal(normalizeAuthReturnPath('/discover'), null);
   assert.equal(normalizeAuthReturnPath('/oidc/callback'), null);
@@ -83,4 +86,28 @@ test('商城订单和背包返回路径应保持字符串 ID 并收敛到 deskto
   assert.equal(buildDesktopShopOrderReturnPath('abc'), null);
   assert.equal(buildDesktopShopPrivateViewReturnPath('orders'), '/desktop?app=shop&view=orders');
   assert.equal(buildDesktopShopPrivateViewReturnPath('inventory'), '/desktop?app=shop&view=inventory');
+});
+
+test('论坛返回路径应支持工作台首页、帖子和评论上下文', () => {
+  assert.equal(buildDesktopForumReturnPath(), '/desktop?app=forum');
+  assert.equal(
+    buildDesktopForumPostReturnPath({ postId: '2042219067430928384' }),
+    '/desktop?app=forum&postId=2042219067430928384',
+  );
+  assert.equal(
+    buildDesktopForumPostReturnPath({
+      postPublicId: 'PST_018F6B6F7C7D70008F8F8F8F8F8F8F8F',
+      commentId: '2042219067430928385',
+    }),
+    '/desktop?app=forum&postPublicId=pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f&commentId=2042219067430928385',
+  );
+  assert.equal(buildDesktopForumPostReturnPath({ postId: 0 }), null);
+  assert.equal(buildDesktopForumPostReturnPath({ postPublicId: 'post-42' }), null);
+  assert.equal(
+    buildDesktopForumPostReturnPath({
+      postId: '2042219067430928384',
+      commentId: 'comment-1',
+    }),
+    null,
+  );
 });

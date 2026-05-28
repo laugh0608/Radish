@@ -124,6 +124,8 @@
 - Flutter 通知回流小闭环已完成：最新论坛通知打开原生帖子详情时保留打开通知前的 tab，详情返回后回到原位置，不把用户强制留在 forum tab。
 - Flutter 轻回应登录回流小闭环已完成：从 forum detail 轻回应区发起登录后，成功回到当前详情的轻回应区并提示继续发布；本轮不扩展完整评论、发帖、点赞或投票能力。
 - Flutter 公开个人页来源返回批量验收已完成：从发现页、论坛作者和榜单进入原生公开主页时记录来源 tab；公开主页继续打开帖子 / 评论详情并返回后，Android Back 仍回到原发现、论坛或榜单位置，不把用户直接送到后台。
+- Flutter 公开个人页详情 Android Back 回归已补：新增 shell smoke 覆盖 `榜单 -> 公开主页 -> 帖子 / 评论详情 -> Android Back 回公开主页 -> Android Back 回榜单`，现有 shell 路由状态可直接承接，未改业务逻辑。
+- 纯 Web / 工作台论坛登录回流小闭环已完成：桌面入口新增 `forum` 深链解析，论坛发帖、评论和轻回应登录入口改为统一 `redirectToLogin({ returnPath })`；登录成功后回到论坛工作台或原帖子 / 评论上下文，不再因根路径 `/` 切向 `/discover` 而丢失 forum 场景。
 - 公开商品榜单到商品详情小闭环已完成：公开热门商品榜单条目可进入公开商品详情，并通过 `history.state` 来源状态返回榜单；榜单仍保持只读浏览边界，不直接打开购买、订单或背包流程。
 - 公开商城详情来源返回文案批量收口已完成：`/shop/products` 或商品榜进入 `/shop/product/:productId` 后，详情返回按钮按来源显示“返回商品列表 / 返回榜单”等精确文案，避免移动端只看到泛化的“返回上一入口”。
 - Gateway 公开页资源 URL 收口小闭环已完成：当页面通过 `https://localhost:5000` 访问时，浏览器可见的本地 HTTP 媒体、favicon、头像和 Markdown 附件资源地址会归一到当前 Gateway origin；公网、CDN、非 localhost 地址不改写。
@@ -132,7 +134,7 @@
 - 移动 Web 公开分发页二轮复核已完成：`/discover` 论坛卡片进入公开帖子详情时改为优先使用 `Post.PublicId`，与 forum 列表 / 搜索 / 标签页的公开 URL 口径保持一致，避免发现页链路继续生成 long id 公开详情路径。
 - 商城工作台构建 warning 已完成治理：`ShopApp` 改为按首页、商品、订单、背包与购买弹窗懒加载，`vite.config.ts` 同步细分商城手动 chunk，`app-shop` 已收敛到 500k 警告阈值以内；npm 自身 update notice 不进入仓库级配置治理。
 - 后续继续按验收矩阵做主动批量复核、成组修复和一次性交付结论；候选方向为移动阅读、来源返回、购买 / 订单 / 背包、纯 Web 登录后轻量链路补强或 Flutter 下一批功能。
-- 明日优先建议切到 Flutter 个人链路：复核并补强 `公开个人页 -> 帖子 / 评论详情 -> Android Back 回到原 profile 来源`，若已有能力完整则只补验收结论，不继续为了纯 Web 矩阵凑小闭环。
+- 下一步不继续重复 Flutter 个人主页来源返回；优先回到 P3-8-D 矩阵筛选新的高信号缺口，重点仍是移动阅读、来源返回、购买 / 订单 / 背包和纯 Web 登录后轻量链路。
 - WebOS 只保留 `/desktop` 历史入口，不再作为新增功能候选；PC/Tauri 放到最后再评估，后续若重启也只增强纯 Web。
 - 不直接启动完整移动商城、完整通知中心、完整创作器、公开 Web 整体 UI 重构或多端同时重写。
 
@@ -429,6 +431,17 @@ npm run test --workspace=radish.client -- --test-name-pattern="publicRouteNaviga
 npm run type-check --workspace=radish.client
 npm run lint:changed
 npm run build --workspace=radish.client
+npm run check:repo-hygiene:changed
+git diff --check
+```
+
+`P3-8-D` 纯 Web / 工作台论坛登录回流小闭环已执行：
+
+```bash
+npm run test --workspace=radish.client -- --test-name-pattern="authReturnPath|desktopExternalEntry"
+npm run type-check --workspace=radish.client
+npm run build --workspace=radish.client
+npm run lint:changed
 npm run check:repo-hygiene:changed
 git diff --check
 ```

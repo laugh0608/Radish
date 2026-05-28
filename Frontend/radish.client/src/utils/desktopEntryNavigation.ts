@@ -1,7 +1,8 @@
 import { buildChatAppParams } from './chatNavigation.ts';
+import { buildForumAppParams } from './forumNavigation.ts';
 
 export interface DesktopExternalEntryTarget {
-  appId: 'chat' | 'shop';
+  appId: 'chat' | 'forum' | 'shop';
   appParams: Record<string, unknown>;
   requiresAuthenticatedSession: boolean;
   signature: string;
@@ -45,6 +46,40 @@ function parseChatDesktopEntry(query: URLSearchParams): DesktopExternalEntryTarg
     appParams,
     requiresAuthenticatedSession: true,
     signature: `chat:${appParams.channelId}:${normalizedMessageId ?? 'none'}`,
+  };
+}
+
+function parseForumDesktopEntry(query: URLSearchParams): DesktopExternalEntryTarget | null {
+  const hasPostTarget = query.has('postId') || query.has('postPublicId') || query.has('commentId');
+  if (!hasPostTarget) {
+    return {
+      appId: 'forum',
+      appParams: {},
+      requiresAuthenticatedSession: false,
+      signature: 'forum:home',
+    };
+  }
+
+  const appParams = buildForumAppParams({
+    postId: query.get('postId') ?? undefined,
+    postPublicId: query.get('postPublicId') ?? undefined,
+    commentId: query.get('commentId') ?? undefined,
+  });
+  const postIdentifier = typeof appParams.postPublicId === 'string'
+    ? appParams.postPublicId
+    : typeof appParams.postId === 'string'
+      ? appParams.postId
+      : null;
+  if (!postIdentifier) {
+    return null;
+  }
+
+  const commentId = typeof appParams.commentId === 'string' ? appParams.commentId : undefined;
+  return {
+    appId: 'forum',
+    appParams,
+    requiresAuthenticatedSession: false,
+    signature: `forum:${postIdentifier}:${commentId ?? 'none'}`,
   };
 }
 
@@ -93,6 +128,10 @@ export function parseDesktopExternalEntry(pathname: string, search: string): Des
     return parseChatDesktopEntry(query);
   }
 
+  if (appId === 'forum') {
+    return parseForumDesktopEntry(query);
+  }
+
   if (appId === 'shop') {
     return parseShopDesktopEntry(query);
   }
@@ -105,6 +144,9 @@ export function stripDesktopExternalEntrySearch(search: string): string {
   query.delete('app');
   query.delete('channelId');
   query.delete('messageId');
+  query.delete('postId');
+  query.delete('postPublicId');
+  query.delete('commentId');
   query.delete('productId');
   query.delete('orderId');
   query.delete('view');
