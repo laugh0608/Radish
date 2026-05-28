@@ -49,7 +49,7 @@
 ### 1.4 当前边界
 
 - 当前代码事实仍然保留 `Desktop Shell + WindowManager`，但该能力后续仅作为 `/desktop` 历史入口维护和迁移来源
-- `Clients/radish.flutter` 当前已完成 Android MVP 第一轮 RC 验收并给出 Go 结论：壳层登录态分发、公开 forum / docs / discover / profile 读取、forum detail / comment 只读阅读、detail 原地登录续接、已登录态最小 forum notification 回流、profile 复访、docs 搜索 / 内链、轻回应即时前插与局部成功 / 失败反馈均已落地；当前仍明确保持窄范围阅读与轻互动边界，不扩完整通知中心、系统通知栏推送、发帖、完整评论提交、点赞、投票或桌面治理能力
+- `Clients/radish.flutter` 当前已完成 Android MVP 第一轮 RC 验收并给出 Go 结论：壳层登录态分发、公开 forum / docs / discover / profile 读取、forum detail 阅读与评论发布 / 回复、detail 原地登录续接、已登录态轻量 forum notification 列表回流、profile 复访、docs 搜索 / 内链、公开商城列表与只读商品详情、公开详情链接复制、轻回应即时前插与局部成功 / 失败反馈均已落地；当前仍明确保持移动主路径边界，不扩完整通知中心、系统通知栏推送、发帖编辑器、完整商城工作台、系统分享 SDK、点赞、投票或桌面治理能力
 - Android / iOS 移动安装包继续以 Flutter 为主线；Capacitor Android spike 已清理出当前代码，只保留历史记录作为公开只读 React 页面复用的技术参考，不进入登录态移动端产品化路线
 - Windows / macOS / Linux 桌面安装包曾完成 `Tauri 壳 + WebOS 桌面工作台` 个人开发阶段验证；路线复盘后，PC/Tauri 放到最后再评估，若重启应增强纯 Web 体验，不再默认绑定 WebOS。Tauri 不是移动端替代方案，也不是原生 UI 重写路线
 - WebOS 桌面工作台当前已补首批“继续使用”复访面板：桌面首页按最近应用、最近浏览、我的轻回应分组承接已登录用户的回到工作台场景；最近应用使用本地轻量记录，最近浏览与我的轻回应复用既有 API 与工作台打开能力；forum 回流统一优先使用 `postPublicId`，旧 `postId` 仅作为兼容 fallback，docs / shop 仍保留现有 slug 或 long 路由兼容但不把旧 long 路径作为用户可见文案；该面板不等于完整历史中心，不扩删除 / 清空、跨端同步或新的后端 API
@@ -71,8 +71,11 @@
 - 公开 docs 搜索当前也已开始补结构化只读导览：`/docs/search` 会强调“先看结果 / 继续进入 / 不在这里”，把关键词检索、结果回跳与桌面治理边界拆清楚
 - 公开入口的图片展示当前继续沿附件运行时 URL 口径：商品、榜单与社区分发页若引用仍有效的业务附件，不应再因后台清理误删而退化成前端 404 坏图
 - `/discover` 首屏摘要卡当前优先表达“整卡预览本页区块 + 独立按钮直达公开页”的双层动作关系；forum / docs / leaderboard / shop 分区推荐项在窄屏下也要保持一致的信息密度与留白节奏
-- Flutter forum 当前的最小登录、回流与轻互动语义也已进一步明确：详情页允许匿名用户原地发起 OIDC 登录，并在浏览器回跳后继续保留当前 `postPublicId / postId / commentId` 上下文；已登录壳层可读取最新 forum 通知并回到帖子 / 评论上下文，通知、个人公开页、我的轻回应与最近浏览回流均优先消费 `postPublicId`，旧 `postId` 只保留为字符串 fallback；进入详情后再使用真实 `VoId` 执行评论、轻回应和定位类内部接口，不把公开标识误传给内部接口；轻回应发布成功只更新轻回应墙与局部反馈，不刷新正文或评论阅读位置；但评论提交、点赞、投票、编辑、完整通知中心与系统通知栏推送仍不在当前批次内
+- Flutter forum 当前的登录、回流与轻互动语义也已进一步明确：详情页允许匿名用户从评论区或轻回应区原地发起 OIDC 登录，并在浏览器回跳后继续保留当前 `postPublicId / postId / commentId` 上下文；已登录壳层可读取最近少量 forum 通知并回到帖子 / 评论上下文，通知、个人公开页、我的轻回应与最近浏览回流均优先消费 `postPublicId`，旧 `postId` 只保留为字符串 fallback；进入详情后再使用真实 `VoId` 执行评论、轻回应和定位类内部接口，不把公开标识误传给内部接口；评论发布 / 回复成功只更新评论区，轻回应发布成功只更新轻回应墙与局部反馈，不刷新正文或来源 tab；但发帖编辑器、点赞、投票、编辑、完整通知中心与系统通知栏推送仍不在当前边界内
 - Flutter 公开主页当前会记录发现页、forum 作者入口和榜单来源；公开主页内继续打开帖子 / 评论详情后，Android Back 先回公开主页，再回原来源 tab，不把用户强制留在 profile tab
+- Flutter 原生 docs detail 当前复用 Web 公开 docs 路由口径：公开文档正文里的 `/docs/:slug`、完整公开 URL、`docs/:slug`、`./:slug` 与普通相对 slug 链接会继续打开原生 docs detail；页内锚点、附件路径和非 docs 链接不在 Flutter 内扩成外部跳转或附件治理
+- Flutter 原生 shop 当前只承接公开商城列表与只读商品详情，发现页来源回发现页、列表来源回商城列表；购买、订单、背包、支付口令和权益激活仍留在 Web / 工作台回流链路内
+- Flutter 原生 forum / docs / shop detail 的公开链接展示与复制使用当前 Gateway Base URL 加 Web 公开路由，不复制内部 handoff、`radish://` deep link、API 地址、来源 tab 或评论定位状态；当前只提供剪贴板复制，不接系统分享 SDK、海报生成或分享统计
 - 公开详情页来源返回使用 `history.state` 保留来源语义，不污染公开 URL、canonical、分享链接或 sitemap；公开商品详情需要继续购买时，当前通过 `/desktop?app=shop&productId=...` 桥接到 WebOS 保留入口，未登录用户可保存该返回路径并在 OIDC 回调后恢复到原商品详情。订单详情、订单列表和背包入口分别通过 `/desktop?app=shop&orderId=...`、`/desktop?app=shop&view=orders`、`/desktop?app=shop&view=inventory` 承接，并要求登录后消费
 - HTTPS Gateway 下的公开页面会把本地 HTTP 媒体、favicon、头像和 Markdown 附件归一到当前 Gateway origin；公开分享链接通过运行时公开域名配置生成，docs 分享保留锚点，canonical / sitemap 不携带临时来源状态
 - 后续不立即删除现有 WebOS 路由，而是把 `/desktop` 作为保留入口，按价值把既有高价值能力逐步迁移到纯 Web 或 Flutter

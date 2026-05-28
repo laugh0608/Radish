@@ -35,6 +35,18 @@
 - 聊天、完整通知中心、完整商城工作台、创作器
 - “移动版 WebOS”
 
+## 公开路由与链接口径
+
+Flutter 原生详情不定义 Flutter 专属公开 URL。forum detail、docs detail 与 shop detail 展示和复制的公开链接统一由当前 `RADISH_GATEWAY_BASE_URL` 加 Web 公开路由组成：
+
+- forum detail：仅当帖子返回 `Post.PublicId` 时生成 `/forum/post/:publicId` 公开复制链接；旧 `postId` 仍可作为打开兼容 fallback，但不作为分享地址展示
+- docs detail：使用 `/docs/:slug`；16 位以上纯数字旧 long slug 只承担兼容打开能力，不生成公开复制链接
+- shop detail：使用 `/shop/product/:productId`
+
+复制链接不携带来源 tab、目标评论、内部 handoff、`radish://` deep link 或 API 地址。当前只提供完整链接展示和剪贴板复制，不接系统分享 SDK、海报生成或分享统计。
+
+原生 docs 正文内链只承接公开文档阅读：`/docs/:slug`、完整公开 URL、`docs/:slug`、`./:slug` 与普通相对 slug 会继续打开原生 docs detail；页内锚点、附件路径和非 docs 链接按文本展示，不扩外部浏览器跳转或附件治理。
+
 ## 目录概览
 
 ```text
@@ -156,7 +168,7 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 
 ## Android 真机人工验证 checklist
 
-当前 Android MVP 人工验证只覆盖已经具备真实入口、真实数据或可稳定手工触发的链路。已登录态当前具备轻量 forum notification 来源列表，可用于验证通知来源回到 forum detail 与 `commentId` 定位；第三批新增的中文文案、个人复访入口与 forum 轻回应最小闭环也纳入下一轮真机复核。
+当前 Android MVP 人工验证只覆盖已经具备真实入口、真实数据或可稳定手工触发的链路。已登录态当前具备轻量 forum notification 来源列表，可用于验证通知来源回到 forum detail 与 `commentId` 定位；第三批新增的中文文案、个人复访入口与 forum 轻回应任务也纳入下一轮真机复核。
 
 第十五批至第十七批已完成 `discover / forum / docs / profile` 主 tab 的刷新体验一致性收口。开发阶段可优先使用 Android Studio 模拟器 / AVD 做功能验证；若需要验证刷新失败局部提示，可在已有内容成功加载后临时断开 Gateway 或网络再点击刷新。该验证只记录为开发阶段人工检查，不替代正式 release 包发布前的真机 APK 安装验收。
 

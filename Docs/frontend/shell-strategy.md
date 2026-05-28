@@ -2,7 +2,7 @@
 
 > 状态：执行中
 >
-> 最后更新：2026-05-27（Asia/Shanghai）
+> 最后更新：2026-05-28（Asia/Shanghai）
 >
 > 本页只保留壳层分工、归属判断和当前边界。公开入口落地流水、RC 记录和批次细节不写入本页。
 
@@ -35,7 +35,7 @@ Radish 的前端主线收敛为 **纯 Web + Flutter**。
    - 既有聊天、通知、个人中心、创作、继续使用等能力按价值逐步迁移到纯 Web 或 Flutter
 3. **移动原生客户端壳层**
    - Flutter Android MVP 已完成第一轮 RC 验收
-   - 当前已补齐榜单、通知、轻回应和公开主页来源返回等高价值移动回流链路
+   - 当前已补齐榜单、轻量 forum 通知列表、公开主页来源返回、forum 评论发布 / 回复、公开商城只读列表与详情、公开详情链接复制和 docs 原生阅读内链等高价值移动主路径
    - iOS 后续按移动端价值单独评估
    - 不把 Windows / macOS / Linux 作为 Flutter 默认扩平台目标
 4. **PC 增强壳层**
@@ -66,6 +66,16 @@ Radish 的前端主线收敛为 **纯 Web + Flutter**。
 
 上述能力不代表继续在 WebOS 扩展。它们只是现有保留项，后续若仍有长期价值，应优先迁移到纯 Web 或 Flutter。
 
+### 优先进入 Flutter 移动客户端
+
+- 移动原生导航、Android Back 来源返回、系统浏览器 OIDC 回跳和本地会话恢复
+- forum / docs / shop 等公开详情的原生阅读、公开链接展示与复制
+- forum detail 中适合移动原生上下文的评论发布 / 回复、轻回应发布和登录回流
+- 已登录态最近少量 forum 通知列表到帖子 / 评论上下文的回流
+- 发现页、榜单、公开主页、商城列表与详情之间的移动来源返回
+
+Flutter 承接的是移动安装包中的高价值主路径，不复刻 WebOS 工作台，也不在当前阶段扩完整通知中心、完整商城工作台、系统分享 SDK、发帖创作器或桌面治理能力。
+
 ### 按价值再判断是否双端承载
 
 - 商城购买与登录后链路
@@ -82,6 +92,7 @@ Radish 的前端主线收敛为 **纯 Web + Flutter**。
 - 公开内容直达路由已经覆盖 `/discover`、`/forum`、`/forum/post/:id`、`/docs`、`/docs/:slug`、`/u/:id`、`/leaderboard`、`/shop` 等首批路径
 - 公开内容主路由坚持使用服务端可见的真实路径，不采用 `/shell#page` 或 `/desktop#...` 这类 hash shell 作为公开资源地址
 - 公开详情页的来源返回状态保存在 `history.state`，用于刷新或浏览器历史恢复后保留返回语义；该状态不进入 canonical、分享链接或 sitemap
+- Flutter 原生详情复制公开链接时沿用同一组 Web 公开路由：forum 使用 `/forum/post/:publicId`，docs 使用 `/docs/:slug`，shop 使用 `/shop/product/:productId`；应用内来源、评论定位和 tab 状态不进入复制链接
 - `/desktop` 仅作为 WebOS 保留入口，但允许作为迁移期登录后工作台深链承接点
 - WebOS 可在 `/desktop` 内部使用 hash、query 或本地状态表达窗口恢复和局内导航，但这些状态不构成公开 URL 契约
 - 当前允许的 `/desktop` 外部承接参数包括：

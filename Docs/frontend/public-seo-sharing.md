@@ -44,6 +44,9 @@ forum / docs / shop 三类公开详情还会在 Gateway 层做首包 head snapsh
 - `buildPublicCanonicalUrl()` 会移除 hash anchor；`buildPublicShareUrl()` 保留公开路径中的 hash anchor，用于 docs 详情复制当前章节链接。
 - canonical、sitemap、分享链接和 Gateway 首包 head snapshot 都必须基于服务端可见的公开真实路径，不基于 `/shell#...`、`/desktop#...` 或其他仅客户端可见的 hash 状态。
 - forum detail、shop detail、docs detail 和公开个人页都应复制 canonical 公共链接，而不是复制当前浏览器里可能带有临时状态、来源参数或工作台上下文的 URL。
+- Flutter 原生 forum / docs / shop detail 的“公开链接”展示和复制也沿用同一口径：当前 Gateway Base URL 加 Web 公开路由，不复制 Flutter 内部 handoff、`radish://` deep link、API 地址、来源 tab 或评论定位状态。
+- Flutter forum detail 只有在 `PostVo.VoPublicId` 可用时生成 `/forum/post/:postPublicId` 复制链接；旧 long `postId` 仍可作为打开兼容 fallback，但不作为面向用户的分享地址。
+- Flutter docs detail 使用 `/docs/:slug` 复制链接，并继续避免把 16 位以上纯数字旧 long 路径当作公开可读 slug；shop detail 使用 `/shop/product/:productId`。
 - 公开详情来源返回当前使用 `history.state` 保存，不写入 URL query；刷新或浏览器历史恢复后可继续返回原公开来源，但复制链接、canonical、Open Graph 与 sitemap 都必须忽略该状态。
 - forum detail 在 `PostVo.VoPublicId` 可用时使用 `/forum/post/:postPublicId` 作为 canonical 和复制链接；旧 long 版 `/forum/post/:postId` 继续兼容读取。
 - 公开壳层内部生成 forum detail 链接时也应优先使用 `PostVo.VoPublicId`，包括 `/discover` 摘要卡、forum 列表 / 搜索 / 标签页和个人公开页内容入口；只有缺少 PublicId 时才回退旧 long 字符串。

@@ -38,6 +38,7 @@ features:
 - [开发规范](/architecture/specifications) - 分层约束、编码规范与协作规则
 - [前端设计](/frontend/design) - 纯 Web、Flutter、WebOS 保留入口与应用集成方式
 - [前端多壳层策略](/frontend/shell-strategy) - 多端壳层职责分工
+- [Flutter 移动端 handoff 与回流说明](/guide/flutter-mobile-handoff) - 移动原生来源返回、登录回流与公开链接口径
 
 ## 当前协作
 
@@ -68,6 +69,7 @@ features:
 - [视觉颜色参考](/frontend/visual-color-reference)
 - [国际化指南](/architecture/i18n)
 - [文档系统方案](/guide/document-system)
+- [公开内容 SEO 与分享基线](/frontend/public-seo-sharing)
 - [论坛投票 MVP 设计方案](/features/forum-poll-mvp)
 - [论坛问答 MVP 设计方案](/features/forum-qa-mvp)
 
