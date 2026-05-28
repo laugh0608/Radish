@@ -20,6 +20,7 @@ import '../features/forum/data/forum_repository.dart';
 import '../features/leaderboard/data/leaderboard_repository.dart';
 import '../features/notifications/data/notification_repository.dart';
 import '../features/profile/data/profile_repository.dart';
+import '../features/shop/data/shop_repository.dart';
 import 'app.dart';
 
 class RadishBootstrap {
@@ -81,6 +82,10 @@ class RadishBootstrap {
       apiClient: apiClient,
       endpoints: apiEndpoints,
     );
+    final shopRepository = HttpShopRepository(
+      apiClient: apiClient,
+      endpoints: apiEndpoints,
+    );
 
     runApp(
       RadishApp(
@@ -92,6 +97,7 @@ class RadishBootstrap {
         forumRepository: forumRepository,
         profileRepository: profileRepository,
         leaderboardRepository: leaderboardRepository,
+        shopRepository: shopRepository,
         followUpStore: followUpStore,
         docsFollowUpStore: docsFollowUpStore,
         notificationRepository: notificationRepository,

@@ -19,6 +19,7 @@ class DiscoverPage extends StatefulWidget {
     this.onOpenLeaderboard,
     this.onOpenDocument,
     this.onOpenForumDetailTarget,
+    this.onOpenShopProduct,
     this.onOpenProfileUser,
     super.key,
   });
@@ -31,6 +32,7 @@ class DiscoverPage extends StatefulWidget {
   final VoidCallback? onOpenLeaderboard;
   final ValueChanged<DocsDocumentSummary>? onOpenDocument;
   final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
+  final ValueChanged<DiscoverProductSummary>? onOpenShopProduct;
   final ValueChanged<String>? onOpenProfileUser;
 
   @override
@@ -153,6 +155,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
                 onOpenLeaderboard: widget.onOpenLeaderboard,
                 onOpenDocument: widget.onOpenDocument,
                 onOpenForumDetailTarget: widget.onOpenForumDetailTarget,
+                onOpenShopProduct: widget.onOpenShopProduct,
               ),
             ],
           ],
@@ -417,6 +420,7 @@ class _DiscoverContent extends StatelessWidget {
     required this.onOpenLeaderboard,
     required this.onOpenDocument,
     required this.onOpenForumDetailTarget,
+    required this.onOpenShopProduct,
   });
 
   final DiscoverSnapshot snapshot;
@@ -425,6 +429,7 @@ class _DiscoverContent extends StatelessWidget {
   final VoidCallback? onOpenLeaderboard;
   final ValueChanged<DocsDocumentSummary>? onOpenDocument;
   final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
+  final ValueChanged<DiscoverProductSummary>? onOpenShopProduct;
 
   @override
   Widget build(BuildContext context) {
@@ -461,7 +466,10 @@ class _DiscoverContent extends StatelessWidget {
           onOpenDocument: onOpenDocument,
         ),
         const SizedBox(height: 16),
-        _ShopSection(products: snapshot.products),
+        _ShopSection(
+          products: snapshot.products,
+          onOpenShopProduct: onOpenShopProduct,
+        ),
         const SizedBox(height: 16),
         _DiscoverBoundarySection(
           onOpenLeaderboard: onOpenLeaderboard,
@@ -643,9 +651,11 @@ class _DocsSection extends StatelessWidget {
 class _ShopSection extends StatelessWidget {
   const _ShopSection({
     required this.products,
+    required this.onOpenShopProduct,
   });
 
   final List<DiscoverProductSummary> products;
+  final ValueChanged<DiscoverProductSummary>? onOpenShopProduct;
 
   @override
   Widget build(BuildContext context) {
@@ -665,6 +675,10 @@ class _ShopSection extends StatelessWidget {
                 if (product.hasDiscount) '有折扣',
                 if (!product.inStock) '暂时缺货',
               ],
+              actionLabel: onOpenShopProduct == null ? null : '查看详情',
+              onAction: onOpenShopProduct == null
+                  ? null
+                  : () => onOpenShopProduct!(product),
             ),
           )
           .toList(),

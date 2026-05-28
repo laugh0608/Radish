@@ -7,6 +7,7 @@ import '../../../core/auth/native_auth_controller.dart';
 import '../../../core/config/app_environment.dart';
 import '../../../core/platform/app_lifecycle_gateway.dart';
 import '../../../features/discover/data/discover_repository.dart';
+import '../../../features/discover/data/discover_models.dart';
 import '../../../features/docs/data/docs_follow_up_store.dart';
 import '../../../features/docs/data/docs_models.dart';
 import '../../../features/docs/data/docs_repository.dart';
@@ -21,6 +22,8 @@ import '../../../features/discover/presentation/discover_page.dart';
 import '../../../features/docs/presentation/docs_page.dart';
 import '../../../features/forum/presentation/forum_page.dart';
 import '../../../features/profile/presentation/profile_page.dart';
+import '../../../features/shop/data/shop_repository.dart';
+import '../../../features/shop/presentation/shop_product_detail_page.dart';
 
 class RadishFlutterShell extends StatefulWidget {
   const RadishFlutterShell({
@@ -33,6 +36,7 @@ class RadishFlutterShell extends StatefulWidget {
     required this.profileRepository,
     required this.followUpStore,
     this.leaderboardRepository = const EmptyLeaderboardRepository(),
+    this.shopRepository = const EmptyShopRepository(),
     this.docsFollowUpStore = const EmptyDocsFollowUpStore(),
     this.notificationRepository = const EmptyNotificationRepository(),
     this.appLifecycleGateway = const EmptyAppLifecycleGateway(),
@@ -49,6 +53,7 @@ class RadishFlutterShell extends StatefulWidget {
   final ProfileRepository profileRepository;
   final ForumFollowUpStore followUpStore;
   final LeaderboardRepository leaderboardRepository;
+  final ShopRepository shopRepository;
   final DocsFollowUpStore docsFollowUpStore;
   final NotificationRepository notificationRepository;
   final AppLifecycleGateway appLifecycleGateway;
@@ -467,6 +472,24 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     _openForumDetailTarget(target);
   }
 
+  void _openShopProductFromDiscover(DiscoverProductSummary product) {
+    final productId = product.id.trim();
+    if (productId.isEmpty) {
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => ShopProductDetailPage(
+          environment: widget.environment,
+          repository: widget.shopRepository,
+          productId: productId,
+          initialTitle: product.name,
+        ),
+      ),
+    );
+  }
+
   void _resumeRecentDocumentTarget() {
     final target = _recentDocumentTarget;
     if (target == null) {
@@ -838,6 +861,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
               ),
             ),
             onOpenForumDetailTarget: _openForumDetailTarget,
+            onOpenShopProduct: _openShopProductFromDiscover,
             onOpenProfileUser: _openProfileUserFromCurrentTab,
           ),
           ForumPage(

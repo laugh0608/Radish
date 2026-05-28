@@ -25,6 +25,8 @@ import 'package:radish_flutter/features/leaderboard/data/leaderboard_repository.
 import 'package:radish_flutter/features/notifications/data/notification_repository.dart';
 import 'package:radish_flutter/features/profile/data/profile_models.dart';
 import 'package:radish_flutter/features/profile/data/profile_repository.dart';
+import 'package:radish_flutter/features/shop/data/shop_models.dart';
+import 'package:radish_flutter/features/shop/data/shop_repository.dart';
 
 void main() {
   testWidgets('restores into guest shell when no session exists',
@@ -409,6 +411,57 @@ void main() {
     expect(lifecycleGateway.moveTaskToBackCallCount, 0);
     expect(find.text('继续阅读'), findsOneWidget);
     expect(find.text('Native discover'), findsOneWidget);
+  });
+
+  testWidgets('discover shop product opens read-only detail and returns',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _SeededDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _FakeForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        shopRepository: const _SeededShopRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('查看详情'),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.tap(find.text('查看详情'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('商品详情'), findsWidgets);
+    expect(find.text('公开商品详情'), findsOneWidget);
+    expect(find.text('Profile Rename Card'), findsWidgets);
+    expect(find.text('只读购买边界'), findsOneWidget);
+    expect(find.text('/shop/product/product-4001'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('继续阅读'), findsOneWidget);
+    expect(find.text('商城精选'), findsOneWidget);
+    expect(find.text('Profile Rename Card'), findsOneWidget);
   });
 
   testWidgets('leaderboard user can open public profile and return to ranking',
@@ -2419,7 +2472,45 @@ class _SeededDiscoverRepository implements DiscoverRepository {
         ),
       ],
       documents: [],
-      products: [],
+      products: [
+        DiscoverProductSummary(
+          id: 'product-4001',
+          name: 'Profile Rename Card',
+          productType: 'Consumable',
+          price: 120,
+          soldCount: 3,
+          durationDisplay: '永久',
+        ),
+      ],
+    );
+  }
+}
+
+class _SeededShopRepository implements ShopRepository {
+  const _SeededShopRepository();
+
+  @override
+  Future<ShopProductDetail> getProductDetail({
+    required String productId,
+  }) async {
+    return const ShopProductDetail(
+      id: 'product-4001',
+      name: 'Profile Rename Card',
+      description: 'Use this read-only detail to confirm the item scope.',
+      categoryName: 'Profile tools',
+      productType: '消耗品',
+      benefitValue: 'rename-card',
+      price: 120,
+      originalPrice: 180,
+      hasDiscount: true,
+      stockType: 'Unlimited',
+      stock: 0,
+      soldCount: 3,
+      limitPerUser: 1,
+      inStock: true,
+      durationDisplay: '永久',
+      isOnSale: true,
+      isEnabled: true,
     );
   }
 }
