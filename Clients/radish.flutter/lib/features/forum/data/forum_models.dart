@@ -401,6 +401,57 @@ class ForumCommentSummary {
   final List<ForumCommentSummary> children;
   final int childrenTotal;
 
+  ForumCommentSummary copyWith({
+    String? id,
+    String? postId,
+    String? content,
+    String? authorId,
+    String? authorName,
+    String? parentId,
+    String? rootId,
+    String? replyToCommentId,
+    String? replyToCommentSnapshot,
+    String? replyToUserId,
+    String? replyToUserName,
+    int? level,
+    int? likeCount,
+    int? replyCount,
+    bool? isTop,
+    bool? isLiked,
+    bool? isGodComment,
+    bool? isSofa,
+    String? createTime,
+    String? updateTime,
+    List<ForumCommentSummary>? children,
+    int? childrenTotal,
+  }) {
+    return ForumCommentSummary(
+      id: id ?? this.id,
+      postId: postId ?? this.postId,
+      content: content ?? this.content,
+      authorId: authorId ?? this.authorId,
+      authorName: authorName ?? this.authorName,
+      parentId: parentId ?? this.parentId,
+      rootId: rootId ?? this.rootId,
+      replyToCommentId: replyToCommentId ?? this.replyToCommentId,
+      replyToCommentSnapshot:
+          replyToCommentSnapshot ?? this.replyToCommentSnapshot,
+      replyToUserId: replyToUserId ?? this.replyToUserId,
+      replyToUserName: replyToUserName ?? this.replyToUserName,
+      level: level ?? this.level,
+      likeCount: likeCount ?? this.likeCount,
+      replyCount: replyCount ?? this.replyCount,
+      isTop: isTop ?? this.isTop,
+      isLiked: isLiked ?? this.isLiked,
+      isGodComment: isGodComment ?? this.isGodComment,
+      isSofa: isSofa ?? this.isSofa,
+      createTime: createTime ?? this.createTime,
+      updateTime: updateTime ?? this.updateTime,
+      children: children ?? this.children,
+      childrenTotal: childrenTotal ?? this.childrenTotal,
+    );
+  }
+
   List<String> get badges {
     return [
       if (isTop) '置顶',

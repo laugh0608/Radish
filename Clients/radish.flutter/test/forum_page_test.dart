@@ -455,6 +455,19 @@ class _SuccessForumRepository implements ForumRepository {
       createTime: '2026-04-18T12:15:00Z',
     );
   }
+
+  @override
+  Future<String> createComment({
+    required String postId,
+    required String content,
+    required String accessToken,
+    String? parentId,
+    String? replyToCommentId,
+    String? replyToCommentSnapshot,
+    String? replyToUserName,
+  }) async {
+    return 'comment-created';
+  }
 }
 
 class _FailingForumRepository implements ForumRepository {
@@ -518,6 +531,19 @@ class _FailingForumRepository implements ForumRepository {
     required String accessToken,
   }) {
     throw const RadishApiClientException('轻回应发布服务暂时不可用');
+  }
+
+  @override
+  Future<String> createComment({
+    required String postId,
+    required String content,
+    required String accessToken,
+    String? parentId,
+    String? replyToCommentId,
+    String? replyToCommentSnapshot,
+    String? replyToUserName,
+  }) {
+    throw const RadishApiClientException('评论发布服务暂时不可用');
   }
 }
 

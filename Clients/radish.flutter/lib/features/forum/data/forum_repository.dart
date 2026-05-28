@@ -43,6 +43,16 @@ abstract class ForumRepository {
     required String content,
     required String accessToken,
   });
+
+  Future<String> createComment({
+    required String postId,
+    required String content,
+    required String accessToken,
+    String? parentId,
+    String? replyToCommentId,
+    String? replyToCommentSnapshot,
+    String? replyToUserName,
+  });
 }
 
 class HttpForumRepository implements ForumRepository {
@@ -206,4 +216,56 @@ class HttpForumRepository implements ForumRepository {
       decode: ForumQuickReplySummary.fromJson,
     );
   }
+
+  @override
+  Future<String> createComment({
+    required String postId,
+    required String content,
+    required String accessToken,
+    String? parentId,
+    String? replyToCommentId,
+    String? replyToCommentSnapshot,
+    String? replyToUserName,
+  }) {
+    final normalizedPostId = postId.trim();
+    final normalizedContent = content.trim();
+    final uri = endpoints.resolveApi('/api/v1/Comment/Create');
+
+    return apiClient.post(
+      uri: uri,
+      body: {
+        'postId': int.tryParse(normalizedPostId) ?? normalizedPostId,
+        'content': normalizedContent,
+        'parentId': _readNumericOrString(parentId),
+        'replyToCommentId': _readNumericOrString(replyToCommentId),
+        'replyToCommentSnapshot': _readNullableString(replyToCommentSnapshot),
+        'replyToUserName': _readNullableString(replyToUserName),
+      },
+      bearerToken: accessToken,
+      decode: _readCreatedCommentId,
+    );
+  }
+}
+
+Object? _readNumericOrString(String? value) {
+  final normalized = _readNullableString(value);
+  if (normalized == null) {
+    return null;
+  }
+
+  return int.tryParse(normalized) ?? normalized;
+}
+
+String? _readNullableString(String? value) {
+  final normalized = value?.trim();
+  return normalized == null || normalized.isEmpty ? null : normalized;
+}
+
+String _readCreatedCommentId(Object? json) {
+  final value = json?.toString().trim();
+  if (value == null || value.isEmpty) {
+    throw const FormatException('Missing created comment id.');
+  }
+
+  return value;
 }

@@ -1689,7 +1689,7 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('帖子详情'), findsWidgets);
+    expect(find.text('论坛详情回流'), findsWidgets);
     expect(find.text('/forum/post/post-42'), findsOneWidget);
     expect(find.text('First public child comment'), findsOneWidget);
   });
@@ -1747,7 +1747,7 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('帖子详情'), findsWidgets);
+    expect(find.text('论坛详情回流'), findsWidgets);
     expect(find.text('/forum/post/post-42'), findsOneWidget);
     expect(find.text('个人主页评论'), findsWidgets);
     expect(find.text('First public child comment'), findsOneWidget);
@@ -2865,6 +2865,19 @@ class _FakeForumRepository implements ForumRepository {
       createTime: '2026-04-20T08:13:00Z',
     );
   }
+
+  @override
+  Future<String> createComment({
+    required String postId,
+    required String content,
+    required String accessToken,
+    String? parentId,
+    String? replyToCommentId,
+    String? replyToCommentSnapshot,
+    String? replyToUserName,
+  }) async {
+    return 'comment-created';
+  }
 }
 
 class _SeededForumRepository implements ForumRepository {
@@ -3072,6 +3085,19 @@ class _SeededForumRepository implements ForumRepository {
       createTime: '2026-04-20T11:30:00Z',
     );
   }
+
+  @override
+  Future<String> createComment({
+    required String postId,
+    required String content,
+    required String accessToken,
+    String? parentId,
+    String? replyToCommentId,
+    String? replyToCommentSnapshot,
+    String? replyToUserName,
+  }) async {
+    return 'comment-created';
+  }
 }
 
 class _SeededBigIdForumRepository implements ForumRepository {
@@ -3214,6 +3240,19 @@ class _SeededBigIdForumRepository implements ForumRepository {
       content: content,
       createTime: '2026-04-18T12:20:00Z',
     );
+  }
+
+  @override
+  Future<String> createComment({
+    required String postId,
+    required String content,
+    required String accessToken,
+    String? parentId,
+    String? replyToCommentId,
+    String? replyToCommentSnapshot,
+    String? replyToUserName,
+  }) async {
+    return 'comment-created';
   }
 }
 
