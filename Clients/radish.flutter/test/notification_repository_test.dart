@@ -123,4 +123,47 @@ void main() {
 
     expect(page.latestForumTarget, isNull);
   });
+
+  test('returns recent forum notification targets in page order', () {
+    final page = ForumNotificationPage.fromJson({
+      'data': [
+        {
+          'voNotification': {
+            'voTitle': '系统通知',
+            'voExtData': '{"app":"system"}',
+          },
+        },
+        {
+          'voNotification': {
+            'voTitle': '第一条论坛通知',
+            'voExtData': {
+              'app': 'forum',
+              'postPublicId': 'pst_first',
+              'commentId': 'comment-1',
+            },
+          },
+        },
+        {
+          'voNotification': {
+            'voTitle': '第二条论坛通知',
+            'voExtData': {
+              'app': 'forum',
+              'postId': 'post-second',
+            },
+          },
+        },
+      ],
+    });
+
+    final targets = page.forumTargets;
+
+    expect(targets, hasLength(2));
+    expect(targets[0].postId, 'pst_first');
+    expect(targets[0].commentId, 'comment-1');
+    expect(targets[0].initialTitle, '第一条论坛通知');
+    expect(targets[1].postId, 'post-second');
+    expect(targets[1].commentId, isNull);
+    expect(page.latestForumTarget?.postId, targets.first.postId);
+    expect(page.latestForumTarget?.commentId, targets.first.commentId);
+  });
 }

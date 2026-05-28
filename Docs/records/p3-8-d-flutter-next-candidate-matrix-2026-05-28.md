@@ -1,6 +1,8 @@
 # P3-8-D Flutter 下一批主路径候选矩阵（2026-05-28）
 
 > 本记录用于衔接 `P3-8-D 多端主路径缺口补齐与验收矩阵`。本批只做候选评估与下一步排序，不直接修改 Flutter 运行时代码。
+>
+> 结果更新：推荐项 `Flutter 轻量 forum 通知列表` 已在同日进入实现并完成自动化验证。
 
 ## 评估依据
 
@@ -59,4 +61,3 @@ flutter analyze
 npm run check:repo-hygiene:changed
 git diff --check
 ```
-

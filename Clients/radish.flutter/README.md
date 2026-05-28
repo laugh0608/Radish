@@ -22,7 +22,7 @@
 - leaderboard 公开主页回流：经验榜用户可打开原生公开主页，并通过 Android 返回键回到榜单
 - shop 公开商品只读详情：发现页商城精选商品可打开原生只读详情，并通过 Android 返回键回到发现页；购买、订单、背包和支付操作仍不进入 Flutter 本批
 - 公开主页来源返回：从发现、论坛作者和榜单进入原生公开主页后，Android Back 会回到原来源；公开主页继续打开帖子 / 评论详情并返回后，仍保留原 profile 来源 tab
-- 已登录态最小 forum notification 来源读取：原生壳层会读取当前用户最新可跳 forum 的通知，复用 forum detail handoff 打开 `postId / commentId`，并在详情返回后回到打开通知前的 tab
+- 已登录态轻量 forum notification 来源读取：原生壳层会读取当前用户最近少量可跳 forum 的通知，列表项复用 forum detail handoff 打开 `postId / commentId`，并在详情返回后回到打开通知前的 tab
 - 环境配置、认证存储与主题基线
 - 与现有 Web / API 契约一致的复用边界
 - Android 模拟器经 Gateway `https://localhost:5000` 的最小联调入口
@@ -155,7 +155,7 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 
 ## Android 真机人工验证 checklist
 
-当前 Android MVP 人工验证只覆盖已经具备真实入口、真实数据或可稳定手工触发的链路。已登录态当前具备一个最小 forum notification 来源入口，可用于验证通知来源回到 forum detail 与 `commentId` 定位；第三批新增的中文文案、个人复访入口与 forum 轻回应最小闭环也纳入下一轮真机复核。
+当前 Android MVP 人工验证只覆盖已经具备真实入口、真实数据或可稳定手工触发的链路。已登录态当前具备轻量 forum notification 来源列表，可用于验证通知来源回到 forum detail 与 `commentId` 定位；第三批新增的中文文案、个人复访入口与 forum 轻回应最小闭环也纳入下一轮真机复核。
 
 第十五批至第十七批已完成 `discover / forum / docs / profile` 主 tab 的刷新体验一致性收口。开发阶段可优先使用 Android Studio 模拟器 / AVD 做功能验证；若需要验证刷新失败局部提示，可在已有内容成功加载后临时断开 Gateway 或网络再点击刷新。该验证只记录为开发阶段人工检查，不替代正式 release 包发布前的真机 APK 安装验收。
 
@@ -189,12 +189,12 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 18. 在 profile 中确认“最近公开评论”可继续加载更多；点击任意评论应回到对应帖子，并自动定位到目标根评论或子评论位置，而不是停在帖子顶部
 19. 在我的 profile 中确认“我的轻回应”只在已登录我的主页展示，公开主页不展示；若有多页轻回应，可继续加载更多；点击任意条目应回到对应帖子详情
 20. 已登录态执行退出，确认浏览器登出回调后回到匿名态，后续重新进入 profile 或 detail 登录入口仍可用
-21. 接收账号登录 Flutter 后，确认壳层出现 `Forum notification` 入口；点击后应打开对应帖子，并在通知包含 `commentId` 时落到目标评论上下文
+21. 接收账号登录 Flutter 后，确认壳层出现 forum notification 入口；点击后应展示最近可跳 forum 通知列表，选择任一通知可打开对应帖子，并在通知包含 `commentId` 时落到目标评论上下文
 22. 关闭并重启应用，确认会话恢复或匿名回落符合当前 token 状态，复访入口仍符合最近状态
 
 当前结果：
 
-- Android 真机已确认 `Forum notification` 回到 forum detail / 评论上下文逻辑正常
+- Android 真机已确认 forum notification 回到 forum detail / 评论上下文逻辑正常
 - Android release APK 已完成一轮真机安装与本机 Gateway 联调复核，登录、基础读取与样式显示均正常
 - Android release 包身份当前为 `com.radish.client` / `Radish`
 - 第三批中文文案、个人复访入口与轻回应发布已完成一轮 Android 真机复核，真实 Gateway 下确认正常
@@ -202,6 +202,7 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 - 第六批“forum detail 轻回应发布后局部体验补强”已完成代码、自动化验证与 Android 真机复核：发布成功后不整页刷新，新轻回应即时前插并显示局部成功反馈；发布失败只在轻回应区提示
 - P3-8-D “forum detail 轻回应登录回流”已完成代码与自动化验证：匿名态从轻回应区发起登录后，会回到当前帖子轻回应区并提示可继续发布；本轮不扩展完整评论、发帖、点赞或投票能力
 - P3-8-D “Flutter 公开商品只读详情”已完成代码与自动化验证：发现页商城精选商品可打开原生商品详情，详情只展示公开信息和只读购买边界，Android Back 返回发现页；本轮不扩展完整商城、购买、订单、背包、支付口令或权益激活
+- P3-8-D “Flutter 轻量 forum 通知列表”已完成代码与自动化验证：已登录壳层展示最近少量可跳 forum 通知，选择后打开对应帖子 / 评论并返回打开前 tab；本轮不扩展完整通知中心、已读 / 删除、系统推送、聊天通知或商城通知
 - 第四批首个小闭环“我的轻回应回看”及分页复访已完成代码、自动化验证与 Android 真机复核，真实 Gateway 下确认正常
 - 第四批“最近阅读上下文”已接入我的 profile，并已完成代码、自动化验证与 Android 真机复核：第四批只承载最近一次 forum 阅读目标
 - 第五批首个小闭环“profile 最近阅读轻量多条列表”已完成代码、自动化验证与 Android 真机复核：我的 profile 当前可展示最近多条 forum 阅读上下文，Android 本地持久化兼容旧单条记录并按 `postId + commentId` 去重；本轮仍不扩展完整浏览历史中心、删除、清空、同步治理或 docs / forum 混合时间线
@@ -212,7 +213,7 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 - 第七批首个小闭环“docs 搜索体验增强”已完成代码、自动化验证与 Android 真机复核：搜索词会 trim 归一化，搜索 / 清除 / 翻页会回到结果顶部，从搜索结果打开内联详情后返回会恢复搜索列表上下文；真机复核发现的 Android Back 退桌面问题已修复并补 `docs_page_test.dart` 与 `smoke_test.dart` 覆盖；批次记录见 [Flutter Android MVP 第七批首个小闭环变更回归记录](../../Docs/guide/flutter-android-mvp-regression-record-2026-05-01.md)
 - 第四批 discover 论坛精选直达已完成代码与定向测试补齐：发现页论坛精选帖子可直接打开原生 forum detail，并以 `discover` 来源返回发现页；discover 的“进入论坛 / 进入文档”快捷入口也已补齐 Android Back 返回 discover 的轻量来源上下文；仍不开放发帖、评论提交、点赞、投票或编辑治理
 - 第十五批至第十七批刷新体验一致性已完成代码与自动化验证：`discover / forum / docs / profile` 在已有内容刷新时保留上次可用内容，刷新失败只显示局部提示，刷新成功后清理旧提示；模拟器验证清单见 [Flutter Android MVP 刷新体验开发阶段验证清单](../../Docs/guide/flutter-android-mvp-refresh-experience-checklist-2026-05-02.md)
-- 该入口只验证站内最新 forum 通知读取，不代表完整通知中心或系统通知栏推送已纳入 Android MVP
+- 该入口只验证站内最近少量 forum 通知读取，不代表完整通知中心、已读 / 删除或系统通知栏推送已纳入 Android MVP
 
 暂不作为当前阻断项：
 

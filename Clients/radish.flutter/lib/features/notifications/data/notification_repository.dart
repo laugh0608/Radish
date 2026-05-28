@@ -5,10 +5,21 @@ import '../../../core/network/radish_api_endpoints.dart';
 import '../../forum/data/forum_models.dart';
 
 abstract class NotificationRepository {
-  Future<ForumDetailHandoffTarget?> getLatestForumTarget({
+  Future<List<ForumDetailHandoffTarget>> getForumTargets({
     required String accessToken,
     int pageSize = 20,
   });
+
+  Future<ForumDetailHandoffTarget?> getLatestForumTarget({
+    required String accessToken,
+    int pageSize = 20,
+  }) async {
+    final targets = await getForumTargets(
+      accessToken: accessToken,
+      pageSize: pageSize,
+    );
+    return targets.isEmpty ? null : targets.first;
+  }
 }
 
 class EmptyNotificationRepository implements NotificationRepository {
@@ -20,6 +31,14 @@ class EmptyNotificationRepository implements NotificationRepository {
     int pageSize = 20,
   }) async {
     return null;
+  }
+
+  @override
+  Future<List<ForumDetailHandoffTarget>> getForumTargets({
+    required String accessToken,
+    int pageSize = 20,
+  }) async {
+    return const <ForumDetailHandoffTarget>[];
   }
 }
 
@@ -37,9 +56,21 @@ class HttpNotificationRepository implements NotificationRepository {
     required String accessToken,
     int pageSize = 20,
   }) async {
+    final targets = await getForumTargets(
+      accessToken: accessToken,
+      pageSize: pageSize,
+    );
+    return targets.isEmpty ? null : targets.first;
+  }
+
+  @override
+  Future<List<ForumDetailHandoffTarget>> getForumTargets({
+    required String accessToken,
+    int pageSize = 20,
+  }) async {
     final normalizedAccessToken = accessToken.trim();
     if (normalizedAccessToken.isEmpty) {
-      return null;
+      return const <ForumDetailHandoffTarget>[];
     }
 
     final uri = endpoints.resolveApi(
@@ -56,7 +87,7 @@ class HttpNotificationRepository implements NotificationRepository {
       decode: ForumNotificationPage.fromJson,
     );
 
-    return page.latestForumTarget;
+    return page.forumTargets;
   }
 }
 
@@ -79,15 +110,21 @@ class ForumNotificationPage {
 
   final List<ForumNotificationItem> notifications;
 
-  ForumDetailHandoffTarget? get latestForumTarget {
+  List<ForumDetailHandoffTarget> get forumTargets {
+    final targets = <ForumDetailHandoffTarget>[];
     for (final notification in notifications) {
       final target = notification.forumTarget;
       if (target != null) {
-        return target;
+        targets.add(target);
       }
     }
 
-    return null;
+    return List<ForumDetailHandoffTarget>.unmodifiable(targets);
+  }
+
+  ForumDetailHandoffTarget? get latestForumTarget {
+    final targets = forumTargets;
+    return targets.isEmpty ? null : targets.first;
   }
 }
 
