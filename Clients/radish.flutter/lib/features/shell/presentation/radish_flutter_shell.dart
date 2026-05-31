@@ -27,6 +27,8 @@ import '../../../features/shop/presentation/shop_inventory_page.dart';
 import '../../../features/shop/presentation/shop_order_list_page.dart';
 import '../../../features/shop/presentation/shop_product_detail_page.dart';
 import '../../../features/shop/presentation/shop_product_list_page.dart';
+import '../../../features/wallet/data/wallet_repository.dart';
+import '../../../features/wallet/presentation/wallet_page.dart';
 
 class RadishFlutterShell extends StatefulWidget {
   const RadishFlutterShell({
@@ -40,6 +42,7 @@ class RadishFlutterShell extends StatefulWidget {
     required this.followUpStore,
     this.leaderboardRepository = const EmptyLeaderboardRepository(),
     this.shopRepository = const EmptyShopRepository(),
+    this.walletRepository = const EmptyWalletRepository(),
     this.docsFollowUpStore = const EmptyDocsFollowUpStore(),
     this.notificationRepository = const EmptyNotificationRepository(),
     this.appLifecycleGateway = const EmptyAppLifecycleGateway(),
@@ -57,6 +60,7 @@ class RadishFlutterShell extends StatefulWidget {
   final ForumFollowUpStore followUpStore;
   final LeaderboardRepository leaderboardRepository;
   final ShopRepository shopRepository;
+  final WalletRepository walletRepository;
   final DocsFollowUpStore docsFollowUpStore;
   final NotificationRepository notificationRepository;
   final AppLifecycleGateway appLifecycleGateway;
@@ -562,6 +566,29 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     );
   }
 
+  Future<void> _openWalletFromProfile() async {
+    final accessToken =
+        widget.sessionController.state.session?.accessToken.trim();
+    if (accessToken == null || accessToken.isEmpty) {
+      await _startLoginForProfile();
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => WalletPage(
+          environment: widget.environment,
+          repository: widget.walletRepository,
+          accessToken: accessToken,
+        ),
+      ),
+    );
+  }
+
   void _resumeRecentDocumentTarget() {
     final target = _recentDocumentTarget;
     if (target == null) {
@@ -980,6 +1007,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
             onOpenMyProfile: _openMyProfile,
             onOpenShopOrders: _openShopOrdersFromProfile,
             onOpenShopInventory: _openShopInventoryFromProfile,
+            onOpenWallet: _openWalletFromProfile,
             onRequestSignIn: _startLoginForProfile,
           ),
         ];

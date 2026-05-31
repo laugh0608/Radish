@@ -21,6 +21,7 @@ import '../features/leaderboard/data/leaderboard_repository.dart';
 import '../features/notifications/data/notification_repository.dart';
 import '../features/profile/data/profile_repository.dart';
 import '../features/shop/data/shop_repository.dart';
+import '../features/wallet/data/wallet_repository.dart';
 import 'app.dart';
 
 class RadishBootstrap {
@@ -86,6 +87,10 @@ class RadishBootstrap {
       apiClient: apiClient,
       endpoints: apiEndpoints,
     );
+    final walletRepository = HttpWalletRepository(
+      apiClient: apiClient,
+      endpoints: apiEndpoints,
+    );
 
     runApp(
       RadishApp(
@@ -98,6 +103,7 @@ class RadishBootstrap {
         profileRepository: profileRepository,
         leaderboardRepository: leaderboardRepository,
         shopRepository: shopRepository,
+        walletRepository: walletRepository,
         followUpStore: followUpStore,
         docsFollowUpStore: docsFollowUpStore,
         notificationRepository: notificationRepository,

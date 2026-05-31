@@ -29,6 +29,7 @@ class ProfilePage extends StatefulWidget {
     this.onOpenMyProfile,
     this.onOpenShopOrders,
     this.onOpenShopInventory,
+    this.onOpenWallet,
     this.onRequestSignIn,
     super.key,
   });
@@ -49,6 +50,7 @@ class ProfilePage extends StatefulWidget {
   final VoidCallback? onOpenMyProfile;
   final VoidCallback? onOpenShopOrders;
   final VoidCallback? onOpenShopInventory;
+  final VoidCallback? onOpenWallet;
   final Future<void> Function()? onRequestSignIn;
 
   @override
@@ -257,6 +259,12 @@ class _ProfilePageState extends State<ProfilePage> {
                     onPressed: widget.onOpenShopInventory,
                     icon: const Icon(Icons.inventory_2_outlined),
                     label: const Text('查看背包'),
+                  ),
+                if (isMyProfile && widget.onOpenWallet != null)
+                  FilledButton.tonalIcon(
+                    onPressed: widget.onOpenWallet,
+                    icon: const Icon(Icons.account_balance_wallet_outlined),
+                    label: const Text('查看胡萝卜资产'),
                   ),
                 if (hasTargetUser)
                   FilledButton.tonalIcon(

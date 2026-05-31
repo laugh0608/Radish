@@ -27,6 +27,8 @@ import 'package:radish_flutter/features/profile/data/profile_models.dart';
 import 'package:radish_flutter/features/profile/data/profile_repository.dart';
 import 'package:radish_flutter/features/shop/data/shop_models.dart';
 import 'package:radish_flutter/features/shop/data/shop_repository.dart';
+import 'package:radish_flutter/features/wallet/data/wallet_models.dart';
+import 'package:radish_flutter/features/wallet/data/wallet_repository.dart';
 
 Finder _forumCommentTextField({String hintText = '写下你的评论...'}) {
   return find.byWidgetPredicate(
@@ -185,7 +187,8 @@ void main() {
     expect(find.text('已登录用户 user-42'), findsOneWidget);
   });
 
-  testWidgets('authenticated profile opens read-only orders and inventory',
+  testWidgets(
+      'authenticated profile opens read-only orders inventory and wallet',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
     tester.view.devicePixelRatio = 1.0;
@@ -217,6 +220,7 @@ void main() {
         forumRepository: _FakeForumRepository(),
         profileRepository: _FakeProfileRepository(),
         shopRepository: const _SeededShopRepository(),
+        walletRepository: const _SeededWalletRepository(),
         followUpStore: InMemoryForumFollowUpStore(),
       ),
     );
@@ -227,6 +231,7 @@ void main() {
 
     expect(find.text('查看商城订单'), findsOneWidget);
     expect(find.text('查看背包'), findsOneWidget);
+    expect(find.text('查看胡萝卜资产'), findsOneWidget);
 
     await tester.tap(find.text('查看商城订单'));
     await tester.pumpAndSettle();
@@ -291,6 +296,21 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('查看背包'), findsOneWidget);
+
+    await tester.tap(find.text('查看胡萝卜资产'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('胡萝卜资产'), findsWidgets);
+    expect(find.text('已加载 2 / 2 条流水'), findsOneWidget);
+    expect(find.text('余额概览'), findsOneWidget);
+    expect(find.text('1200 胡萝卜'), findsOneWidget);
+    expect(find.text('系统赠送'), findsOneWidget);
+    expect(find.text('商城消费'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('查看胡萝卜资产'), findsOneWidget);
   });
 
   testWidgets('discover handoff opens guest profile target in shell',
@@ -2971,6 +2991,83 @@ class _SeededShopRepository implements ShopRepository {
         createTime: '2026-05-31T08:06:00Z',
       ),
     ];
+  }
+}
+
+class _SeededWalletRepository implements WalletRepository {
+  const _SeededWalletRepository();
+
+  @override
+  Future<CoinBalance> getBalance({
+    required String accessToken,
+  }) async {
+    return const CoinBalance(
+      userId: 'user-42',
+      balance: 1200,
+      balanceDisplay: '1.200',
+      frozenBalance: 100,
+      frozenBalanceDisplay: '0.100',
+      totalEarned: 1800,
+      totalSpent: 600,
+      totalTransferredIn: 0,
+      totalTransferredOut: 0,
+      createTime: '2026-05-30T08:00:00Z',
+      modifyTime: '2026-05-31T09:00:00Z',
+    );
+  }
+
+  @override
+  Future<CoinTransactionPage> getTransactions({
+    required String accessToken,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const CoinTransactionPage(
+      page: 1,
+      pageSize: 20,
+      dataCount: 2,
+      pageCount: 1,
+      transactions: [
+        CoinTransaction(
+          id: 'coin-1',
+          transactionNo: 'CT202605310001',
+          fromUserId: null,
+          fromUserName: null,
+          toUserId: 'user-42',
+          toUserName: 'user-42',
+          amount: 1800,
+          amountDisplay: '1.800',
+          fee: 0,
+          feeDisplay: '0.000',
+          transactionType: 'SYSTEM_GRANT',
+          transactionTypeDisplay: '系统赠送',
+          status: 'SUCCESS',
+          statusDisplay: '成功',
+          remark: '新账号奖励',
+          createTime: '2026-05-31T08:00:00Z',
+        ),
+        CoinTransaction(
+          id: 'coin-2',
+          transactionNo: 'CT202605310002',
+          fromUserId: 'user-42',
+          fromUserName: 'user-42',
+          toUserId: null,
+          toUserName: null,
+          amount: 600,
+          amountDisplay: '0.600',
+          fee: 0,
+          feeDisplay: '0.000',
+          transactionType: 'CONSUME',
+          transactionTypeDisplay: '商城消费',
+          status: 'SUCCESS',
+          statusDisplay: '成功',
+          businessType: 'Order',
+          businessId: '9001',
+          remark: '购买 Profile Rename Card',
+          createTime: '2026-05-31T08:30:00Z',
+        ),
+      ],
+    );
   }
 }
 

@@ -18,6 +18,7 @@ import '../features/notifications/data/notification_repository.dart';
 import '../features/profile/data/profile_repository.dart';
 import '../features/shell/presentation/radish_flutter_shell.dart';
 import '../features/shop/data/shop_repository.dart';
+import '../features/wallet/data/wallet_repository.dart';
 
 class RadishApp extends StatefulWidget {
   const RadishApp({
@@ -31,6 +32,7 @@ class RadishApp extends StatefulWidget {
     required this.followUpStore,
     this.leaderboardRepository = const EmptyLeaderboardRepository(),
     this.shopRepository = const EmptyShopRepository(),
+    this.walletRepository = const EmptyWalletRepository(),
     this.docsFollowUpStore = const EmptyDocsFollowUpStore(),
     this.notificationRepository = const EmptyNotificationRepository(),
     this.appLifecycleGateway = const EmptyAppLifecycleGateway(),
@@ -48,6 +50,7 @@ class RadishApp extends StatefulWidget {
   final ForumFollowUpStore followUpStore;
   final LeaderboardRepository leaderboardRepository;
   final ShopRepository shopRepository;
+  final WalletRepository walletRepository;
   final DocsFollowUpStore docsFollowUpStore;
   final NotificationRepository notificationRepository;
   final AppLifecycleGateway appLifecycleGateway;
@@ -96,6 +99,7 @@ class _RadishAppState extends State<RadishApp> {
                   profileRepository: widget.profileRepository,
                   leaderboardRepository: widget.leaderboardRepository,
                   shopRepository: widget.shopRepository,
+                  walletRepository: widget.walletRepository,
                   followUpStore: widget.followUpStore,
                   docsFollowUpStore: widget.docsFollowUpStore,
                   notificationRepository: widget.notificationRepository,
