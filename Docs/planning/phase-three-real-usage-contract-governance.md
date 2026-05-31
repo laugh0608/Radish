@@ -28,7 +28,7 @@
 
 `P3-7-A / P3-7-B` 已完成 WebOS / PC 工作台复访小闭环和高信号候选筛查，当前未发现新的 `P0/P1`。`P3-7-C` 已完成近期开发任务重评估与首批热区治理：`WikiApp`、`ChatApp`、`ContentModerationService` 与 `ExperienceService` 均已完成首批行为等价拆分。继续硬拆 `ExperienceService` 经验发放主流程的收益下降、风险上升，因此 `P3-7-C3` 作为当前主线阶段收口。
 
-`P3-8-A/B/C` 已完成审计、Flutter 榜单首批、Console 设计端点、治理工作台结构基座和高频页面类型试点；当前主线切换为 `P3-8-D 纯 Web + Flutter 主线缺口补齐与验收矩阵`，第一批先做移动 Web 公开视图验收矩阵，并以根路径 `/` 默认入口切换、纯 Web 主路径补强和 Flutter 下一批高价值功能作为后续候选。WebOS 只保留 `/desktop` 历史入口，不再作为新增功能承载方向；PC/Tauri 后置且不再绑定 WebOS。
+`P3-8-A/B/C` 已完成审计、Flutter 榜单首批、Console 设计端点、治理工作台结构基座和高频页面类型试点；`P3-8-D` 已完成移动 Web 公开视图矩阵阶段收口、根路径 `/` 默认入口切换、纯 Web 参与 / 购买回流补强，以及 Flutter 多条真实移动主路径补齐。当前阶段约束调整为：移动 Web 逐页打磨和 Console 剩余页面默认迁移不再占用主线，Flutter 不再把“只能只读”作为长期总门禁；后续允许成熟 API 支撑的单一用户动作进入受控写入评估。WebOS 只保留 `/desktop` 历史入口，不再作为新增功能承载方向；PC/Tauri 后置且不再绑定 WebOS。
 
 ## `P3-0` 定义与工程整备
 
