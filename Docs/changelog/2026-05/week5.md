@@ -39,3 +39,13 @@
 - 今日文档同步覆盖 [当前进行中](/planning/current)、[开发路线图](/development-plan)、[P3-8 多端功能补全与 UI 设计治理](/planning/p3-8-multiplatform-feature-ui-governance)、[Flutter README](../../../Clients/radish.flutter/README.md)、本周 / 本月开发日志和每日交接记录；本轮没有新增后端 API、数据库结构、权限模型、视觉 token、Pencil 设计稿或部署配置，因此相关说明书无需跟随更新。
 - 今日验证覆盖 `radish.client` 定向测试、类型检查、构建和 changed 文本卫生；Flutter 全量 `flutter test`、`flutter analyze`、docs / forum / shop 定向测试；仓库级 `git diff --check` 与 `npm run check:repo-hygiene:changed`。
 - 收工前补 [2026-05-28 收工回顾与明日事项](/records/daily-handoff-2026-05-28)：明日优先推进 Flutter 原生公开主页链接复制 / 展示、长文本防溢出、来源返回和匿名 / 已登录边界复核。
+
+## 2026-05-31
+
+- `P3-8-D` 继续沿纯 Web + Flutter 主线推进，纯 Web 已补 forum 公开详情到工作台参与回流和 shop 登录态购买意图回流；Flutter 侧完成公开主页链接 / 来源返回复核后，集中补齐登录态“我的”页私有只读入口。
+- Flutter 登录态商城链路已补齐订单列表、订单详情、背包和背包来源订单 / 商品回看；保持只读，不扩展购买、取消订单、支付口令、权益激活或道具使用。
+- Flutter 登录态通知从轻量 forum-only 列表升级为完整站内通知只读列表：标题、内容、类型、已读状态和时间可见，forum 通知可回到帖子 / 评论，系统等不可跳通知只读展示。
+- Flutter 登录态资产类入口已补齐胡萝卜资产和经验记录：复用现有 `Coin` 与 `Experience` 私有接口，展示余额 / 冻结余额 / 累计统计 / 最近流水，以及等级 / 经验进度 / 冻结状态 / 最近经验流水。
+- 今日文档同步覆盖 [当前进行中](/planning/current)、[开发路线图](/development-plan)、[P3-8 多端功能补全与 UI 设计治理](/planning/p3-8-multiplatform-feature-ui-governance)、[Flutter README](../../../Clients/radish.flutter/README.md)、本周 / 本月开发日志和每日交接记录；本轮没有新增后端 API、数据库结构、权限模型、视觉 token、Pencil 设计稿、部署配置或运行时环境变量。
+- 今日验证覆盖 Flutter 全量 `flutter test`、`flutter analyze`、仓库级 `git diff --check` 与 `npm run check:repo-hygiene:changed`。
+- 收工前补 [2026-05-31 收工回顾与明日事项](/records/daily-handoff-2026-05-31)：明日优先推进 Flutter 登录态“我的浏览记录 / 最近访问”只读入口，复用 `User/GetMyBrowseHistory`，不扩展清空 / 删除、推荐系统或 WebOS 新功能。
