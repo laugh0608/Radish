@@ -328,7 +328,7 @@ docker compose up -d
 - `GatewayRuntime__EnableHttpsRedirection=false`
 - `Databases` 中的 `Main / Log / Message / Chat`、`OpenIddict:Database` 与 `Hangfire` 都会通过环境变量覆盖为 PostgreSQL 连接；`Deploy/postgres-init/create-radish-databases.sh` 会在首次初始化 PostgreSQL 数据目录时补齐 `Log / Message / Chat / OpenIddict / Hangfire` 等非主库数据库
 - `Redis__Enable=true`，缓存层默认走 Redis，不再回落到内存缓存
-- `AuthUi__ShowTestAccountHint=false`，登录页默认不再暴露测试账号提示
+- 登录页不再暴露内置测试账号提示；测试 / 生产部署必须通过首个管理员初始化或已有真实账号登录
 - `PostgreSQL / Redis / Auth 证书` 默认持久化到宿主机 `../DeployData/Postgres`、`../DeployData/Redis`、`../DeployData/AuthCerts`，不再使用 Docker 命名卷；`../DataBases` 仍只作为 Radish 应用运行数据目录挂载到 `/app/DataBases`
 - 首次部署前建议手动创建 `../DeployData/*`、`../DataBases` 与 `../Logs`；Docker 也可能自动创建 bind mount 目录，但测试 / 生产环境不要依赖该行为。若容器启动时报权限错误，再按容器日志调整对应目录 owner / 权限
 - `Auth` 会把 OIDC signing / encryption 证书写入 `RADISH_AUTH_CERTS_PATH`，`Api` 只读复用同一份 signing 证书做本地 JWT 验签

@@ -16,10 +16,10 @@
     <value>Radish 统一登录</value>
   </data>
   <data name="auth.login.heading" xml:space="preserve">
-    <value>Radish.Auth 测试登录</value>
+    <value>Radish 统一登录</value>
   </data>
   <data name="auth.login.description" xml:space="preserve">
-    <value>使用内置测试账号登录，后续可替换为实际用户体系。</value>
+    <value>使用你的 Radish 账号登录并授权访问当前客户端。</value>
   </data>
   <data name="auth.login.client.title" xml:space="preserve">
     <value>正在登录的客户端</value>
@@ -41,15 +41,6 @@
   </data>
   <data name="auth.login.client.logoAlt" xml:space="preserve">
     <value>客户端图标</value>
-  </data>
-  <data name="auth.login.testAccount" xml:space="preserve">
-    <value>测试账号</value>
-  </data>
-  <data name="auth.login.testAccount.username" xml:space="preserve">
-    <value>用户名：</value>
-  </data>
-  <data name="auth.login.testAccount.password" xml:space="preserve">
-    <value>密码：</value>
   </data>
   <data name="auth.login.usernameLabel" xml:space="preserve">
     <value>用户名</value>

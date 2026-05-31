@@ -1,10 +1,8 @@
 @model Radish.Auth.ViewModels.Account.LoginViewModel
 @using System
 @using System.Globalization
-@using Microsoft.Extensions.Configuration
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<Radish.Auth.Resources.Errors> Localizer
-@inject IConfiguration Configuration
 
 @{
     ViewData["Title"] = Localizer["auth.login.title"];
@@ -15,9 +13,7 @@
     var developerLabel = isZh ? "开发者" : "Developer";
     var registerPrompt = isZh ? "没有账号？" : "Need an account?";
     var registerAction = isZh ? "立即注册" : "Create one";
-    var testAccountHint = isZh ? "可直接用于本地联调和授权链路验证。" : "Use this demo account for local sign-in and consent testing.";
     var loginSubmittingText = isZh ? "登录中..." : "Signing in...";
-    var showTestAccount = Configuration.GetValue<bool?>("AuthUi:ShowTestAccountHint") ?? true;
 }
 
 <!DOCTYPE html>
@@ -272,63 +268,6 @@
             border: 1px solid var(--error-border);
         }
 
-        .test-account {
-            margin-bottom: 14px;
-            padding: 14px;
-            border-radius: 16px;
-            background: linear-gradient(180deg, #fff9f4 0%, #fffdf9 100%);
-            border: 1px solid #eee4d8;
-        }
-
-        .test-account-head {
-            display: flex;
-            align-items: baseline;
-            justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 10px;
-        }
-
-        .test-account-head strong {
-            color: var(--ink-strong);
-            font-size: 0.94rem;
-        }
-
-        .test-account-head small {
-            color: #64748b;
-            font-size: 0.76rem;
-        }
-
-        .test-account-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 10px;
-        }
-
-        .test-account-item {
-            padding: 10px 12px;
-            border-radius: 12px;
-            background: rgba(255,255,255,0.88);
-            border: 1px solid #f1e7dd;
-        }
-
-        .test-account-item span {
-            display: block;
-            margin-bottom: 6px;
-            color: #64748b;
-            font-size: 0.78rem;
-        }
-
-        .test-account-item code {
-            display: inline-flex;
-            align-items: center;
-            padding: 4px 8px;
-            border-radius: 999px;
-            background: var(--paper-soft);
-            color: var(--accent-primary);
-            font-size: 0.84rem;
-            border: 1px solid #ecdcd3;
-        }
-
         form {
             display: grid;
             gap: 12px;
@@ -475,10 +414,6 @@
                 align-items: flex-start;
             }
 
-            .test-account-grid {
-                grid-template-columns: 1fr;
-            }
-
             .password-field {
                 grid-template-columns: 1fr;
             }
@@ -552,27 +487,6 @@
                 @if (!string.IsNullOrEmpty(Model.ErrorMessage))
                 {
                     <div class="notice error">@Model.ErrorMessage</div>
-                }
-
-                @if (showTestAccount)
-                {
-                    <div class="test-account">
-                        <div class="test-account-head">
-                            <strong>@Localizer["auth.login.testAccount"]</strong>
-                            <small>@testAccountHint</small>
-                        </div>
-
-                        <div class="test-account-grid">
-                            <div class="test-account-item">
-                                <span>@Localizer["auth.login.testAccount.username"]</span>
-                                <code>test</code>
-                            </div>
-                            <div class="test-account-item">
-                                <span>@Localizer["auth.login.testAccount.password"]</span>
-                                <code>test123456</code>
-                            </div>
-                        </div>
-                    </div>
                 }
 
                 <form id="loginForm" asp-controller="Account" asp-action="Login" method="post">

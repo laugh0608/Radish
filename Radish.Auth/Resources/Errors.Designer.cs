@@ -124,7 +124,7 @@ namespace Radish.Auth.Resources {
         }
         
         /// <summary>
-        ///   查找类似 使用内置测试账号登录，后续可替换为实际用户体系。 的本地化字符串。
+        ///   查找类似 使用你的 Radish 账号登录并授权访问当前客户端。 的本地化字符串。
         /// </summary>
         internal static string auth_login_description {
             get {
@@ -142,7 +142,7 @@ namespace Radish.Auth.Resources {
         }
         
         /// <summary>
-        ///   查找类似 Radish.Auth 测试登录 的本地化字符串。
+        ///   查找类似 Radish 统一登录 的本地化字符串。
         /// </summary>
         internal static string auth_login_heading {
             get {
@@ -174,33 +174,6 @@ namespace Radish.Auth.Resources {
         internal static string auth_login_success_message {
             get {
                 return ResourceManager.GetString("auth.login.success.message", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   查找类似 测试账号 的本地化字符串。
-        /// </summary>
-        internal static string auth_login_testAccount {
-            get {
-                return ResourceManager.GetString("auth.login.testAccount", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   查找类似 密码： 的本地化字符串。
-        /// </summary>
-        internal static string auth_login_testAccount_password {
-            get {
-                return ResourceManager.GetString("auth.login.testAccount.password", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   查找类似 用户名： 的本地化字符串。
-        /// </summary>
-        internal static string auth_login_testAccount_username {
-            get {
-                return ResourceManager.GetString("auth.login.testAccount.username", resourceCulture);
             }
         }
         
