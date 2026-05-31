@@ -260,7 +260,7 @@
 **测试步骤**:
 ```bash
 # 1. 启动后端服务
-pwsh ./start.ps1  # 选择 11 (Start ALL)
+pwsh ./start.ps1  # 选择 10 (Start ALL)
 
 # 2. 等待所有服务启动完成
 

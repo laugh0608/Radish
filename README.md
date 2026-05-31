@@ -96,8 +96,7 @@ npm run type-check --workspace=@radish/ui   # 类型检查
 npm run lint --workspace=@radish/ui         # 代码检查
 
 # Windows 用户注意：
-# 如果需要在子项目目录中直接运行 npm 命令，请先以管理员身份运行：
-# pwsh ./setup-workspace-links.ps1
+# 优先在仓库根目录通过 npm workspace 参数执行子项目命令，避免子目录依赖解析口径漂移。
 ```
 
 在当前仓库环境中，若本机 `dotnet` 受用户目录、NuGet 审计或并发还原影响，优先使用根目录脚本包装命令：

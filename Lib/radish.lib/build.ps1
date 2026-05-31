@@ -8,6 +8,7 @@ Write-Host "=========================================" -ForegroundColor Green
 
 # Get the script directory
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$RepoRoot = (Resolve-Path (Join-Path $ScriptDir "..\..")).Path
 Set-Location $ScriptDir
 
 # Check if Rust is installed
@@ -37,7 +38,7 @@ if ($LASTEXITCODE -eq 0) {
     $LibName = "radish_lib.dll"
 
     # Copy to Radish.Api output directory
-    $ApiOutputDir = ".\Radish.Api\bin\Debug\net10.0"
+    $ApiOutputDir = Join-Path $RepoRoot "Radish.Api\bin\Debug\net10.0"
 
     if (Test-Path $ApiOutputDir) {
         Write-Host "Copying $LibName to $ApiOutputDir..." -ForegroundColor Cyan
