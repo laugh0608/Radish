@@ -121,6 +121,7 @@ export function buildDesktopForumPostReturnPath(target: {
   postId?: string | number | null;
   postPublicId?: string | null;
   commentId?: string | number | null;
+  intent?: 'comment' | 'quickReply' | null;
 }): string | null {
   const normalizedPostPublicId = target.postPublicId?.trim().toLowerCase();
   const normalizedPostId = target.postId == null ? '' : String(target.postId).trim();
@@ -147,6 +148,9 @@ export function buildDesktopForumPostReturnPath(target: {
   }
   if (normalizedCommentId) {
     query.set('commentId', normalizedCommentId);
+  }
+  if (target.intent === 'comment' || target.intent === 'quickReply') {
+    query.set('intent', target.intent);
   }
 
   return `/desktop?${query.toString()}`;

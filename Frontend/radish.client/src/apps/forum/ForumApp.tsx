@@ -737,6 +737,8 @@ export const ForumApp = () => {
                 onReportQuickReply={(quickReplyId) => handleOpenReport('PostQuickReply', quickReplyId)}
                 onReportComment={(commentId) => handleOpenReport('Comment', commentId)}
                 onNavigateToComment={handleNavigateToComment}
+                workspaceIntent={windowParams.intent ?? null}
+                workspaceIntentKey={windowParams.intent ? `${windowPostIdentifier}:${windowParams.commentId ?? 'none'}:${windowParams.navigationKey ?? 'initial'}:${windowParams.intent}` : null}
               />
             </Suspense>
           ) : (

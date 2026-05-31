@@ -57,7 +57,7 @@ test('parseDesktopExternalEntry 应解析 desktop 论坛入口和帖子深链参
         commentId: '2042219067430928385',
       },
       requiresAuthenticatedSession: false,
-      signature: 'forum:pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f:2042219067430928385',
+      signature: 'forum:pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f:2042219067430928385:read',
     },
   );
 
@@ -67,8 +67,54 @@ test('parseDesktopExternalEntry 应解析 desktop 论坛入口和帖子深链参
       postId: '2042219067430928384',
     },
     requiresAuthenticatedSession: false,
-    signature: 'forum:2042219067430928384:none',
+    signature: 'forum:2042219067430928384:none:read',
   });
+});
+
+test('parseDesktopExternalEntry 应解析 desktop 论坛参与意图参数', () => {
+  assert.deepEqual(
+    parseDesktopExternalEntry(
+      '/desktop',
+      '?app=forum&postPublicId=pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f&intent=quickReply',
+    ),
+    {
+      appId: 'forum',
+      appParams: {
+        postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+        intent: 'quickReply',
+      },
+      requiresAuthenticatedSession: false,
+      signature: 'forum:pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f:none:quickReply',
+    },
+  );
+
+  assert.deepEqual(
+    parseDesktopExternalEntry(
+      '/desktop',
+      '?app=forum&postPublicId=pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f&commentId=2042219067430928385&intent=comment',
+    ),
+    {
+      appId: 'forum',
+      appParams: {
+        postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+        commentId: '2042219067430928385',
+        intent: 'comment',
+      },
+      requiresAuthenticatedSession: false,
+      signature: 'forum:pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f:2042219067430928385:comment',
+    },
+  );
+});
+
+test('parseDesktopExternalEntry 应拒绝非法论坛参与意图', () => {
+  assert.equal(parseDesktopExternalEntry('/desktop', '?app=forum&intent=comment'), null);
+  assert.equal(
+    parseDesktopExternalEntry(
+      '/desktop',
+      '?app=forum&postPublicId=pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f&intent=publish',
+    ),
+    null,
+  );
 });
 
 test('parseDesktopExternalEntry 应拒绝非法论坛帖子深链参数', () => {
@@ -144,7 +190,7 @@ test('stripDesktopExternalEntrySearch 应仅移除已处理的 desktop 跳转参
   );
   assert.equal(stripDesktopExternalEntrySearch('?app=chat&channelId=123'), '');
   assert.equal(
-    stripDesktopExternalEntrySearch('?app=forum&postId=2042219067430928384&commentId=2042219067430928385&culture=zh'),
+    stripDesktopExternalEntrySearch('?app=forum&postId=2042219067430928384&commentId=2042219067430928385&intent=comment&culture=zh'),
     '?culture=zh',
   );
   assert.equal(

@@ -52,6 +52,10 @@ function parseChatDesktopEntry(query: URLSearchParams): DesktopExternalEntryTarg
 function parseForumDesktopEntry(query: URLSearchParams): DesktopExternalEntryTarget | null {
   const hasPostTarget = query.has('postId') || query.has('postPublicId') || query.has('commentId');
   if (!hasPostTarget) {
+    if (query.has('intent')) {
+      return null;
+    }
+
     return {
       appId: 'forum',
       appParams: {},
@@ -64,7 +68,12 @@ function parseForumDesktopEntry(query: URLSearchParams): DesktopExternalEntryTar
     postId: query.get('postId') ?? undefined,
     postPublicId: query.get('postPublicId') ?? undefined,
     commentId: query.get('commentId') ?? undefined,
+    intent: query.get('intent') ?? undefined,
   });
+  if (query.has('intent') && typeof appParams.intent !== 'string') {
+    return null;
+  }
+
   const postIdentifier = typeof appParams.postPublicId === 'string'
     ? appParams.postPublicId
     : typeof appParams.postId === 'string'
@@ -75,11 +84,12 @@ function parseForumDesktopEntry(query: URLSearchParams): DesktopExternalEntryTar
   }
 
   const commentId = typeof appParams.commentId === 'string' ? appParams.commentId : undefined;
+  const intent = typeof appParams.intent === 'string' ? appParams.intent : undefined;
   return {
     appId: 'forum',
     appParams,
     requiresAuthenticatedSession: false,
-    signature: `forum:${postIdentifier}:${commentId ?? 'none'}`,
+    signature: `forum:${postIdentifier}:${commentId ?? 'none'}:${intent ?? 'read'}`,
   };
 }
 
@@ -147,6 +157,7 @@ export function stripDesktopExternalEntrySearch(search: string): string {
   query.delete('postId');
   query.delete('postPublicId');
   query.delete('commentId');
+  query.delete('intent');
   query.delete('productId');
   query.delete('orderId');
   query.delete('view');

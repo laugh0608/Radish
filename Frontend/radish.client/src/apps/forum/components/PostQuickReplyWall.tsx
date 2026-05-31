@@ -28,6 +28,7 @@ interface PostQuickReplyWallProps {
   onDelete?: (quickReplyId: LongId) => Promise<void>;
   onReport?: (quickReplyId: LongId) => void;
   loginReturnPath?: string | null;
+  autoFocusComposerKey?: string | null;
 }
 
 interface QuickReplyLaneLayout {
@@ -85,6 +86,7 @@ export const PostQuickReplyWall = ({
   onDelete,
   onReport,
   loginReturnPath,
+  autoFocusComposerKey = null,
 }: PostQuickReplyWallProps) => {
   const { t } = useTranslation();
   const isReadOnly = mode === 'readOnly';
@@ -95,6 +97,8 @@ export const PostQuickReplyWall = ({
   const [wallWidth, setWallWidth] = useState(0);
   const [measuredWidths, setMeasuredWidths] = useState<Record<string, number>>({});
   const wallRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const handledAutoFocusKeyRef = useRef<string | null>(null);
   const measureRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const normalizedContent = useMemo(
@@ -165,6 +169,20 @@ export const PostQuickReplyWall = ({
       return changed ? nextWidths : current;
     });
   }, [replies, wallWidth]);
+
+  useEffect(() => {
+    if (!autoFocusComposerKey || !isAuthenticated || isReadOnly) {
+      return;
+    }
+
+    if (handledAutoFocusKeyRef.current === autoFocusComposerKey) {
+      return;
+    }
+
+    handledAutoFocusKeyRef.current = autoFocusComposerKey;
+    textareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    textareaRef.current?.focus();
+  }, [autoFocusComposerKey, isAuthenticated, isReadOnly]);
 
   const laneLayouts = useMemo<QuickReplyLaneLayout[]>(() => {
     if (replies.length === 0) {
@@ -286,6 +304,7 @@ export const PostQuickReplyWall = ({
         <div className={styles.composer}>
           <div className={styles.composerShell}>
             <textarea
+              ref={textareaRef}
               className={styles.textarea}
               placeholder={isAuthenticated ? t('forum.quickReply.placeholder') : t('forum.quickReply.loginPrompt')}
               value={content}

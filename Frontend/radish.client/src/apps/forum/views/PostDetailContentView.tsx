@@ -9,6 +9,7 @@ import { FORUM_DETAIL_TOOL_EVENT, type ForumDetailToolAction } from '../constant
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
 import { useReactions } from '../hooks/useReactions';
 import { buildDesktopForumPostReturnPath } from '@/services/authReturnPath';
+import type { ForumWorkspaceIntent } from '@/utils/forumNavigation';
 import styles from './PostDetailContentView.module.css';
 
 const PostDetailComponent = lazy(() =>
@@ -92,6 +93,8 @@ interface PostDetailContentViewProps {
   onReportQuickReply: (quickReplyId: LongId) => void;
   onReportComment: (commentId: LongId) => void;
   onNavigateToComment: (commentId: LongId) => Promise<void> | void;
+  workspaceIntent?: ForumWorkspaceIntent | null;
+  workspaceIntentKey?: string | null;
 }
 
 const collectCommentIds = (nodes: CommentNode[]): LongId[] => {
@@ -169,6 +172,8 @@ export const PostDetailContentView = ({
   onReportQuickReply,
   onReportComment,
   onNavigateToComment,
+  workspaceIntent = null,
+  workspaceIntentKey = null,
 }: PostDetailContentViewProps) => {
   const { t } = useTranslation();
   const [isCommentSheetOpen, setIsCommentSheetOpen] = useState(false);
@@ -215,6 +220,14 @@ export const PostDetailContentView = ({
       setIsCommentSheetOpen(true);
     }
   }, [replyTo]);
+
+  useEffect(() => {
+    if (workspaceIntent !== 'comment' || !workspaceIntentKey || !isAuthenticated || !post?.voId) {
+      return;
+    }
+
+    setIsCommentSheetOpen(true);
+  }, [workspaceIntent, workspaceIntentKey, isAuthenticated, post?.voId]);
 
   useEffect(() => {
     const handleToolAction = (event: Event) => {
@@ -405,6 +418,7 @@ export const PostDetailContentView = ({
               onDelete={onDeleteQuickReply}
               onReport={onReportQuickReply}
               loginReturnPath={loginReturnPath}
+              autoFocusComposerKey={workspaceIntent === 'quickReply' ? workspaceIntentKey : null}
             />
           </Suspense>
 

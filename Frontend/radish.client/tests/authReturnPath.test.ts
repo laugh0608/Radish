@@ -119,8 +119,16 @@ test('论坛返回路径应支持工作台首页、帖子和评论上下文', ()
     buildDesktopForumPostReturnPath({
       postPublicId: 'PST_018F6B6F7C7D70008F8F8F8F8F8F8F8F',
       commentId: '2042219067430928385',
+      intent: 'comment',
     }),
-    '/desktop?app=forum&postPublicId=pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f&commentId=2042219067430928385',
+    '/desktop?app=forum&postPublicId=pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f&commentId=2042219067430928385&intent=comment',
+  );
+  assert.equal(
+    buildDesktopForumPostReturnPath({
+      postPublicId: 'PST_018F6B6F7C7D70008F8F8F8F8F8F8F8F',
+      intent: 'quickReply',
+    }),
+    '/desktop?app=forum&postPublicId=pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f&intent=quickReply',
   );
   assert.equal(buildDesktopForumPostReturnPath({ postId: 0 }), null);
   assert.equal(buildDesktopForumPostReturnPath({ postPublicId: 'post-42' }), null);

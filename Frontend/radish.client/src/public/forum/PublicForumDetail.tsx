@@ -12,6 +12,7 @@ import {
   type PostQuickReply,
 } from '@/api/forum';
 import type { LongId } from '@/api/user';
+import { buildDesktopForumPostReturnPath } from '@/services/authReturnPath';
 import { log } from '@/utils/logger';
 import { resolveMediaUrl } from '@/utils/media';
 import { CommentTree } from '@/apps/forum/components/CommentTree';
@@ -316,6 +317,20 @@ export const PublicForumDetail = ({
   const { copyShareLink, shareBusy, shareState } = usePublicShareLink({
     buildShareUrl: buildForumShareUrl,
   });
+  const desktopCommentEntryUrl = post
+    ? buildDesktopForumPostReturnPath({
+      postId: post.voId,
+      postPublicId: post.voPublicId,
+      intent: 'comment',
+    })
+    : null;
+  const desktopQuickReplyEntryUrl = post
+    ? buildDesktopForumPostReturnPath({
+      postId: post.voId,
+      postPublicId: post.voPublicId,
+      intent: 'quickReply',
+    })
+    : null;
 
   const navigateToComment = useCallback(async (
     targetCommentId: LongId,
@@ -599,6 +614,31 @@ export const PublicForumDetail = ({
               description={readingGuide.description}
               items={readingGuide.items}
             />
+
+            {(desktopCommentEntryUrl || desktopQuickReplyEntryUrl) && (
+              <section className={styles.workspaceActionPanel}>
+                <div className={styles.workspaceActionCopy}>
+                  <h2 className={styles.workspaceActionTitle}>{t('forum.public.workspaceActionTitle')}</h2>
+                  <p className={styles.workspaceActionDescription}>
+                    {t('forum.public.workspaceActionDescription')}
+                  </p>
+                </div>
+                <div className={styles.workspaceActionButtons}>
+                  {desktopQuickReplyEntryUrl && (
+                    <a className={styles.workspaceActionButton} href={desktopQuickReplyEntryUrl}>
+                      <Icon icon="mdi:message-flash-outline" size={18} />
+                      <span>{t('forum.public.workspaceQuickReplyAction')}</span>
+                    </a>
+                  )}
+                  {desktopCommentEntryUrl && (
+                    <a className={styles.workspaceActionButton} href={desktopCommentEntryUrl}>
+                      <Icon icon="mdi:comment-text-outline" size={18} />
+                      <span>{t('forum.public.workspaceCommentAction')}</span>
+                    </a>
+                  )}
+                </div>
+              </section>
+            )}
 
             <ForumPostDetail
               post={post}
