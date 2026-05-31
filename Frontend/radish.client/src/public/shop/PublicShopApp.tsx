@@ -680,7 +680,7 @@ export const PublicShopApp = ({
 
     const coverImageUrl = resolveMediaUrl(selectedProduct.voCoverImage);
     const iconImageUrl = resolveMediaUrl(selectedProduct.voIcon);
-    const desktopProductEntryUrl = buildDesktopShopProductReturnPath(selectedProduct.voId);
+    const desktopProductEntryUrl = buildDesktopShopProductReturnPath(selectedProduct.voId, { intent: 'purchase' });
     const stockText = selectedProduct.voStockType === StockType.Unlimited
       ? t('shop.stock.unlimited')
       : t('shop.productCount', { count: selectedProduct.voStock ?? 0 });

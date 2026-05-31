@@ -59,7 +59,7 @@ export const ProductDetail = ({
 
   const handlePurchase = () => {
     if (!isAuthenticated) {
-      const returnPath = buildDesktopShopProductReturnPath(product.voId);
+      const returnPath = buildDesktopShopProductReturnPath(product.voId, { intent: 'purchase' });
       redirectToLogin({ returnPath });
       return;
     }

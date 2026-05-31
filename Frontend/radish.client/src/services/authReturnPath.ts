@@ -72,7 +72,10 @@ export function buildCurrentDesktopReturnPath(
   return normalizeAuthReturnPath(`${location.pathname}${location.search ?? ''}${location.hash ?? ''}`);
 }
 
-export function buildDesktopShopProductReturnPath(productId: string | number): string | null {
+export function buildDesktopShopProductReturnPath(
+  productId: string | number,
+  options: { intent?: 'purchase' | null } = {},
+): string | null {
   const normalizedProductId = String(productId).trim();
   if (!/^[1-9]\d*$/.test(normalizedProductId)) {
     return null;
@@ -82,6 +85,9 @@ export function buildDesktopShopProductReturnPath(productId: string | number): s
     app: 'shop',
     productId: normalizedProductId,
   });
+  if (options.intent === 'purchase') {
+    query.set('intent', 'purchase');
+  }
 
   return `/desktop?${query.toString()}`;
 }

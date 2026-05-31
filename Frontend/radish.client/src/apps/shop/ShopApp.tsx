@@ -8,6 +8,7 @@ import { redirectToLogin } from '@/services/auth';
 import {
   buildDesktopShopOrderReturnPath,
   buildDesktopShopPrivateViewReturnPath,
+  buildDesktopShopProductReturnPath,
 } from '@/services/authReturnPath';
 import { useShopData } from './hooks/useShopData';
 import { useShopActions } from './hooks/useShopActions';
@@ -48,9 +49,18 @@ function normalizeInitialShopView(value: unknown): Extract<ShopView, 'orders' | 
   return value === 'orders' || value === 'inventory' ? value : undefined;
 }
 
+function normalizeShopIntent(value: unknown): 'purchase' | undefined {
+  return value === 'purchase' ? value : undefined;
+}
+
 function parseShopWindowParams(
   appParams?: Record<string, unknown> | null
-): { productId?: LongId; orderId?: LongId; initialView?: Extract<ShopView, 'orders' | 'inventory'> } {
+): {
+  productId?: LongId;
+  orderId?: LongId;
+  initialView?: Extract<ShopView, 'orders' | 'inventory'>;
+  intent?: 'purchase';
+} {
   if (!appParams) {
     return {};
   }
@@ -58,7 +68,8 @@ function parseShopWindowParams(
   return {
     productId: normalizePositiveLongId(appParams.productId),
     orderId: normalizePositiveLongId(appParams.orderId),
-    initialView: normalizeInitialShopView(appParams.initialView)
+    initialView: normalizeInitialShopView(appParams.initialView),
+    intent: normalizeShopIntent(appParams.intent)
   };
 }
 
@@ -80,6 +91,7 @@ export const ShopApp = () => {
   const currentWindow = useCurrentWindow();
   const loggedIn = isAuthenticated();
   const [reportProductId, setReportProductId] = useState<LongId | null>(null);
+  const [handledPurchaseIntentKey, setHandledPurchaseIntentKey] = useState<string | null>(null);
   const windowParams = useMemo(
     () => parseShopWindowParams(currentWindow?.appParams),
     [currentWindow?.appParams]
@@ -232,6 +244,7 @@ export const ShopApp = () => {
     selectedProduct,
     onPurchaseComplete: (orderId) => navigate.toOrderDetail(orderId)
   });
+  const { handlePurchaseClick } = actionsState;
 
   const handleOpenProductReport = (productId: LongId) => {
     if (!loggedIn) {
@@ -259,6 +272,49 @@ export const ShopApp = () => {
   const handleLoginForPrivateShopView = () => {
     redirectToLogin({ returnPath: buildCurrentPrivateReturnPath() });
   };
+
+  useEffect(() => {
+    if (windowParams.intent !== 'purchase' || !windowParams.productId) {
+      return;
+    }
+
+    const intentKey = `purchase:${windowParams.productId}`;
+    if (handledPurchaseIntentKey === intentKey) {
+      return;
+    }
+
+    if (!loggedIn) {
+      redirectToLogin({
+        returnPath: buildDesktopShopProductReturnPath(windowParams.productId, { intent: 'purchase' }),
+      });
+      setHandledPurchaseIntentKey(intentKey);
+      return;
+    }
+
+    if (
+      appState.currentView !== 'product-detail'
+      || String(appState.selectedProductId) !== String(windowParams.productId)
+      || !dataState.selectedProduct
+      || dataState.loadingProductDetail
+      || dataState.checkingCanBuy
+    ) {
+      return;
+    }
+
+    setHandledPurchaseIntentKey(intentKey);
+    void handlePurchaseClick(windowParams.productId);
+  }, [
+    appState.currentView,
+    appState.selectedProductId,
+    dataState.checkingCanBuy,
+    dataState.loadingProductDetail,
+    dataState.selectedProduct,
+    handlePurchaseClick,
+    handledPurchaseIntentKey,
+    loggedIn,
+    windowParams.intent,
+    windowParams.productId,
+  ]);
 
   // 监听视图变化，加载对应数据
   useEffect(() => {

@@ -92,6 +92,10 @@ test('buildDesktopShopProductReturnPath 应构造商品上下文恢复路径并�
     buildDesktopShopProductReturnPath('2042219067430928384'),
     '/desktop?app=shop&productId=2042219067430928384',
   );
+  assert.equal(
+    buildDesktopShopProductReturnPath('2042219067430928384', { intent: 'purchase' }),
+    '/desktop?app=shop&productId=2042219067430928384&intent=purchase',
+  );
   assert.equal(buildDesktopShopProductReturnPath(12), '/desktop?app=shop&productId=12');
   assert.equal(buildDesktopShopProductReturnPath(0), null);
   assert.equal(buildDesktopShopProductReturnPath('abc'), null);

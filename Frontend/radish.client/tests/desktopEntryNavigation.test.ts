@@ -135,8 +135,21 @@ test('parseDesktopExternalEntry 应解析 desktop 商城商品深链参数', () 
       productId: '2042219067430928384',
     },
     requiresAuthenticatedSession: false,
-    signature: 'shop:product:2042219067430928384',
+    signature: 'shop:product:2042219067430928384:read',
   });
+
+  assert.deepEqual(
+    parseDesktopExternalEntry('/desktop', '?app=shop&productId=2042219067430928384&intent=purchase'),
+    {
+      appId: 'shop',
+      appParams: {
+        productId: '2042219067430928384',
+        intent: 'purchase',
+      },
+      requiresAuthenticatedSession: false,
+      signature: 'shop:product:2042219067430928384:purchase',
+    },
+  );
 });
 
 test('parseDesktopExternalEntry 应解析 desktop 商城订单深链参数', () => {
@@ -178,6 +191,8 @@ test('parseDesktopExternalEntry 应解析 desktop 商城订单列表和背包入
 test('parseDesktopExternalEntry 应拒绝非法商城参数', () => {
   assert.equal(parseDesktopExternalEntry('/desktop', '?app=shop&productId=0'), null);
   assert.equal(parseDesktopExternalEntry('/desktop', '?app=shop&productId=abc'), null);
+  assert.equal(parseDesktopExternalEntry('/desktop', '?app=shop&productId=2042219067430928384&intent=orders'), null);
+  assert.equal(parseDesktopExternalEntry('/desktop', '?app=shop&intent=purchase'), null);
   assert.equal(parseDesktopExternalEntry('/desktop', '?app=shop&orderId=0'), null);
   assert.equal(parseDesktopExternalEntry('/desktop', '?app=shop&view=profile'), null);
   assert.equal(parseDesktopExternalEntry('/desktop', '?app=shop'), null);
@@ -194,7 +209,7 @@ test('stripDesktopExternalEntrySearch 应仅移除已处理的 desktop 跳转参
     '?culture=zh',
   );
   assert.equal(
-    stripDesktopExternalEntrySearch('?app=shop&productId=2042219067430928384&culture=zh'),
+    stripDesktopExternalEntrySearch('?app=shop&productId=2042219067430928384&intent=purchase&culture=zh'),
     '?culture=zh',
   );
   assert.equal(

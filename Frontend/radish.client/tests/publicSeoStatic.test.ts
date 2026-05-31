@@ -33,7 +33,7 @@ test('公开商城详情购买回流入口应指向保留工作台路径', () =>
   const source = readFileSync(resolve(clientRoot, 'src/public/shop/PublicShopApp.tsx'), 'utf8');
 
   assert.match(source, /import \{ buildDesktopShopProductReturnPath \} from '@\/services\/authReturnPath';/);
-  assert.match(source, /const desktopProductEntryUrl = buildDesktopShopProductReturnPath\(selectedProduct\.voId\);/);
+  assert.match(source, /const desktopProductEntryUrl = buildDesktopShopProductReturnPath\(selectedProduct\.voId, \{ intent: 'purchase' \}\);/);
   assert.match(source, /href=\{desktopProductEntryUrl\}/);
   assert.doesNotMatch(source, /function buildDesktopProductEntryUrl/);
   assert.doesNotMatch(source, /className=\{styles\.primaryLink\} href="\/"/);

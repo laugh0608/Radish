@@ -96,12 +96,26 @@ function parseForumDesktopEntry(query: URLSearchParams): DesktopExternalEntryTar
 function parseShopDesktopEntry(query: URLSearchParams): DesktopExternalEntryTarget | null {
   const productId = normalizePositiveIntegerString(query.get('productId'));
   if (productId) {
+    const intent = query.get('intent')?.trim();
+    if (query.has('intent') && intent !== 'purchase') {
+      return null;
+    }
+
+    const appParams = {
+      productId,
+      ...(intent === 'purchase' ? { intent } : {}),
+    };
+
     return {
       appId: 'shop',
-      appParams: { productId },
+      appParams,
       requiresAuthenticatedSession: false,
-      signature: `shop:product:${productId}`,
+      signature: `shop:product:${productId}:${intent === 'purchase' ? 'purchase' : 'read'}`,
     };
+  }
+
+  if (query.has('intent')) {
+    return null;
   }
 
   const orderId = normalizePositiveIntegerString(query.get('orderId'));
