@@ -185,6 +185,75 @@ void main() {
     expect(find.text('已登录用户 user-42'), findsOneWidget);
   });
 
+  testWidgets('authenticated profile opens read-only orders and inventory',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: 'user-42',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: 'user-42',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _FakeForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        shopRepository: const _SeededShopRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.tap(find.text('我的'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('查看商城订单'), findsOneWidget);
+    expect(find.text('查看背包'), findsOneWidget);
+
+    await tester.tap(find.text('查看商城订单'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('我的订单'), findsWidgets);
+    expect(find.textContaining('RO202605310001'), findsOneWidget);
+    expect(find.text('已加载 1 / 1 个订单'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('查看商城订单'), findsOneWidget);
+
+    await tester.tap(find.text('查看背包'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('我的背包'), findsWidgets);
+    expect(find.text('已加载 1 个权益、1 个道具'), findsOneWidget);
+    expect(find.text('早鸟徽章'), findsOneWidget);
+    expect(find.text('Profile Rename Card'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('查看背包'), findsOneWidget);
+  });
+
   testWidgets('discover handoff opens guest profile target in shell',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
@@ -2771,6 +2840,68 @@ class _SeededShopRepository implements ShopRepository {
       isOnSale: true,
       isEnabled: true,
     );
+  }
+
+  @override
+  Future<ShopOrderPage> getMyOrders({
+    required String accessToken,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const ShopOrderPage(
+      page: 1,
+      pageSize: 20,
+      dataCount: 1,
+      pageCount: 1,
+      orders: [
+        ShopOrderSummary(
+          id: 'order-1',
+          orderNo: 'RO202605310001',
+          productName: 'Profile Rename Card',
+          quantity: 1,
+          totalPrice: 120,
+          status: 'Completed',
+          statusDisplay: '已完成',
+          createTime: '2026-05-31T08:00:00Z',
+        ),
+      ],
+    );
+  }
+
+  @override
+  Future<List<ShopUserBenefit>> getMyBenefits({
+    required String accessToken,
+  }) async {
+    return const [
+      ShopUserBenefit(
+        id: 'benefit-1',
+        benefitType: 'Badge',
+        benefitTypeDisplay: '徽章',
+        benefitName: '早鸟徽章',
+        sourceType: 'Purchase',
+        durationDisplay: '永久',
+        isActive: true,
+        isExpired: false,
+        createTime: '2026-05-31T08:05:00Z',
+      ),
+    ];
+  }
+
+  @override
+  Future<List<ShopInventoryItem>> getMyInventory({
+    required String accessToken,
+  }) async {
+    return const [
+      ShopInventoryItem(
+        id: 'inventory-1',
+        consumableType: 'RenameCard',
+        consumableTypeDisplay: '改名卡',
+        itemName: 'Profile Rename Card',
+        itemValue: 'rename-card',
+        quantity: 1,
+        createTime: '2026-05-31T08:06:00Z',
+      ),
+    ];
   }
 }
 

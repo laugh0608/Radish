@@ -23,6 +23,8 @@ import '../../../features/docs/presentation/docs_page.dart';
 import '../../../features/forum/presentation/forum_page.dart';
 import '../../../features/profile/presentation/profile_page.dart';
 import '../../../features/shop/data/shop_repository.dart';
+import '../../../features/shop/presentation/shop_inventory_page.dart';
+import '../../../features/shop/presentation/shop_order_list_page.dart';
 import '../../../features/shop/presentation/shop_product_detail_page.dart';
 import '../../../features/shop/presentation/shop_product_list_page.dart';
 
@@ -512,6 +514,52 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     );
   }
 
+  Future<void> _openShopOrdersFromProfile() async {
+    final accessToken =
+        widget.sessionController.state.session?.accessToken.trim();
+    if (accessToken == null || accessToken.isEmpty) {
+      await _startLoginForProfile();
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => ShopOrderListPage(
+          environment: widget.environment,
+          repository: widget.shopRepository,
+          accessToken: accessToken,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openShopInventoryFromProfile() async {
+    final accessToken =
+        widget.sessionController.state.session?.accessToken.trim();
+    if (accessToken == null || accessToken.isEmpty) {
+      await _startLoginForProfile();
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => ShopInventoryPage(
+          environment: widget.environment,
+          repository: widget.shopRepository,
+          accessToken: accessToken,
+        ),
+      ),
+    );
+  }
+
   void _resumeRecentDocumentTarget() {
     final target = _recentDocumentTarget;
     if (target == null) {
@@ -951,6 +999,8 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
             onOpenDocsDetailTarget: _openDocsDetailTarget,
             onOpenRecentPublicProfile: _openRecentProfileUser,
             onOpenMyProfile: _openMyProfile,
+            onOpenShopOrders: _openShopOrdersFromProfile,
+            onOpenShopInventory: _openShopInventoryFromProfile,
             onRequestSignIn: _startLoginForProfile,
           ),
         ];

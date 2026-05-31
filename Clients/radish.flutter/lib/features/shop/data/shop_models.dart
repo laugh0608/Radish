@@ -137,6 +137,153 @@ class ShopProductDetail {
   final bool isEnabled;
 }
 
+class ShopOrderSummary {
+  const ShopOrderSummary({
+    required this.id,
+    required this.orderNo,
+    required this.productName,
+    required this.quantity,
+    required this.totalPrice,
+    required this.status,
+    this.statusDisplay,
+    this.createTime,
+  });
+
+  factory ShopOrderSummary.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+
+    return ShopOrderSummary(
+      id: _readRequiredId(map, 'voId'),
+      orderNo: _readString(map['voOrderNo']) ?? '未知订单',
+      productName: _readString(map['voProductName']) ?? '未命名商品',
+      quantity: _readInt(map['voQuantity']) ?? 0,
+      totalPrice: _readInt(map['voTotalPrice']) ?? 0,
+      status: _readString(map['voStatus']) ?? 'Unknown',
+      statusDisplay: _readString(map['voStatusDisplay']),
+      createTime: _readString(map['voCreateTime']),
+    );
+  }
+
+  final String id;
+  final String orderNo;
+  final String productName;
+  final int quantity;
+  final int totalPrice;
+  final String status;
+  final String? statusDisplay;
+  final String? createTime;
+}
+
+class ShopOrderPage {
+  const ShopOrderPage({
+    required this.page,
+    required this.pageSize,
+    required this.dataCount,
+    required this.pageCount,
+    required this.orders,
+  });
+
+  factory ShopOrderPage.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+    final data = map['data'];
+
+    return ShopOrderPage(
+      page: _readInt(map['page']) ?? _readInt(map['pageIndex']) ?? 1,
+      pageSize: _readInt(map['pageSize']) ?? 20,
+      dataCount: _readInt(map['dataCount']) ?? 0,
+      pageCount: _readInt(map['pageCount']) ?? 1,
+      orders: data is List
+          ? data.map(ShopOrderSummary.fromJson).toList()
+          : const <ShopOrderSummary>[],
+    );
+  }
+
+  final int page;
+  final int pageSize;
+  final int dataCount;
+  final int pageCount;
+  final List<ShopOrderSummary> orders;
+
+  bool get hasMore => page < pageCount;
+}
+
+class ShopUserBenefit {
+  const ShopUserBenefit({
+    required this.id,
+    required this.benefitType,
+    required this.sourceType,
+    required this.isActive,
+    required this.isExpired,
+    this.benefitTypeDisplay,
+    this.benefitName,
+    this.durationDisplay,
+    this.expiresAt,
+    this.createTime,
+  });
+
+  factory ShopUserBenefit.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+
+    return ShopUserBenefit(
+      id: _readRequiredId(map, 'voId'),
+      benefitType: _readString(map['voBenefitType']) ?? 'Unknown',
+      benefitTypeDisplay: _readString(map['voBenefitTypeDisplay']),
+      benefitName: _readString(map['voBenefitName']),
+      sourceType: _readString(map['voSourceType']) ?? 'Unknown',
+      durationDisplay: _readString(map['voDurationDisplay']),
+      expiresAt: _readString(map['voExpiresAt']),
+      isActive: _readBool(map['voIsActive']),
+      isExpired: _readBool(map['voIsExpired']),
+      createTime: _readString(map['voCreateTime']),
+    );
+  }
+
+  final String id;
+  final String benefitType;
+  final String? benefitTypeDisplay;
+  final String? benefitName;
+  final String sourceType;
+  final String? durationDisplay;
+  final String? expiresAt;
+  final bool isActive;
+  final bool isExpired;
+  final String? createTime;
+}
+
+class ShopInventoryItem {
+  const ShopInventoryItem({
+    required this.id,
+    required this.consumableType,
+    required this.quantity,
+    this.consumableTypeDisplay,
+    this.itemName,
+    this.itemValue,
+    this.createTime,
+  });
+
+  factory ShopInventoryItem.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+
+    return ShopInventoryItem(
+      id: _readRequiredId(map, 'voId'),
+      consumableType: _readString(map['voConsumableType']) ?? 'Unknown',
+      consumableTypeDisplay: _readString(map['voConsumableTypeDisplay']),
+      itemName: _readString(map['voItemName']),
+      itemValue: _readString(map['voItemValue']),
+      quantity: _readInt(map['voQuantity']) ?? 0,
+      createTime: _readString(map['voCreateTime']),
+    );
+  }
+
+  final String id;
+  final String consumableType;
+  final String? consumableTypeDisplay;
+  final String? itemName;
+  final String? itemValue;
+  final int quantity;
+  final String? createTime;
+}
+
 Map<String, Object?> _readJsonMap(Object? json) {
   if (json is Map) {
     return Map<String, Object?>.from(json.cast<Object?, Object?>());

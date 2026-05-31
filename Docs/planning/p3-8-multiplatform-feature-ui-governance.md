@@ -146,9 +146,10 @@
 - Flutter 原生公开主页链接 / 展示 / 来源返回复核已完成：`ProfilePage` 接入 `PublicLinkCopyPanel` 展示并复制 `/u/:userId` Web 公开链接，壳层传入当前 `AppEnvironment` 以统一 Gateway Base URL 口径；匿名公开主页、已登录公开主页、长文本约束、帖子 / 评论 handoff 和榜单来源返回继续由 profile 单测与 shell smoke 覆盖。本轮不扩展关注 / 取关、私信、完整系统分享 SDK 或 WebOS 复刻。
 - 纯 Web forum 公开详情到工作台参与回流已完成：公开帖子详情在只读阅读边界内新增“发送轻回应 / 参与讨论”工作台入口，`/desktop?app=forum&postPublicId=...&intent=quickReply|comment` 会打开同一帖子详情并聚焦对应操作区域；若需要登录，既有 OIDC returnPath 会保留该 desktop 深链。本轮不扩展公开页内写操作、点赞、投票、发帖编辑器或完整创作器。
 - 纯 Web shop 登录态购买意图回流已完成：公开商品详情和工作台商品详情的购买入口统一携带 `/desktop?app=shop&productId=...&intent=purchase`，匿名用户登录后回到同一商品并打开购买流程；订单 / 背包私有深链仍由 `/desktop` 门禁和 `ShopApp` 私有视图承接。本轮不扩展公开页内购买、支付口令、权益激活或完整移动商城。
+- Flutter 登录态商城订单 / 背包只读入口已完成：登录态“我的”页新增“查看商城订单”和“查看背包”入口，复用现有 `Shop/GetMyOrders`、`Shop/GetMyBenefits`、`Shop/GetMyInventory` 私有接口；订单页覆盖分页加载、刷新、加载更多、空态、错误态和返回“我的”，背包页覆盖权益 / 道具只读展示、加载、空态、错误态、刷新和返回“我的”。本轮不扩展购买、取消订单、支付口令、权益激活、道具使用、完整移动商城、完整通知中心或 WebOS 新功能。
 - 商城工作台构建 warning 已完成治理：`ShopApp` 改为按首页、商品、订单、背包与购买弹窗懒加载，`vite.config.ts` 同步细分商城手动 chunk，`app-shop` 已收敛到 500k 警告阈值以内；npm 自身 update notice 不进入仓库级配置治理。
 - 后续继续按验收矩阵做主动批量复核、成组修复和一次性交付结论；候选方向为 Flutter 下一批真实移动主路径任务、纯 Web 登录后轻量链路补强，或维护线暴露的购买 / 订单 / 背包阻断。
-- 下一步不继续重复 Flutter 个人主页来源返回、公开主页链接展示、轻量通知列表、公开商城列表、论坛详情评论发布 / 回复、评论登录回流、原生公开详情分享入口或公开文档阅读链路验收，也不继续逐页打磨 Web 公开页；纯 Web 已补 forum 参与和 shop 购买意图回流，后续优先回到 Flutter 真实移动主路径，或继续处理跨端回流中影响购买 / 订单 / 背包的高信号缺口。
+- 下一步不继续重复 Flutter 个人主页来源返回、公开主页链接展示、轻量通知列表、公开商城列表、论坛详情评论发布 / 回复、评论登录回流、原生公开详情分享入口、公开文档阅读链路或订单 / 背包只读入口验收，也不继续逐页打磨 Web 公开页；纯 Web 已补 forum 参与和 shop 购买意图回流，后续继续从 Flutter 真实移动主路径或跨端回流高信号缺口中选择。
 - WebOS 只保留 `/desktop` 历史入口，不再作为新增功能候选；PC/Tauri 放到最后再评估，后续若重启也只增强纯 Web。
 - 不直接启动完整移动商城、完整通知中心、完整创作器、公开 Web 整体 UI 重构或多端同时重写。
 
@@ -571,6 +572,14 @@ npm run build --workspace=radish.client
 npm run lint:changed
 npm run check:repo-hygiene:changed
 git diff --check
+```
+
+`P3-8-D` Flutter 登录态商城订单 / 背包只读入口已执行：
+
+```bash
+cd Clients/radish.flutter
+flutter test
+flutter analyze
 ```
 
 ## 与维护线关系

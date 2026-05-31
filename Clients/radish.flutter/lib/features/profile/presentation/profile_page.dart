@@ -27,6 +27,8 @@ class ProfilePage extends StatefulWidget {
     this.onOpenDocsDetailTarget,
     this.onOpenRecentPublicProfile,
     this.onOpenMyProfile,
+    this.onOpenShopOrders,
+    this.onOpenShopInventory,
     this.onRequestSignIn,
     super.key,
   });
@@ -45,6 +47,8 @@ class ProfilePage extends StatefulWidget {
   final ValueChanged<DocsDetailHandoffTarget>? onOpenDocsDetailTarget;
   final VoidCallback? onOpenRecentPublicProfile;
   final VoidCallback? onOpenMyProfile;
+  final VoidCallback? onOpenShopOrders;
+  final VoidCallback? onOpenShopInventory;
   final Future<void> Function()? onRequestSignIn;
 
   @override
@@ -241,6 +245,18 @@ class _ProfilePageState extends State<ProfilePage> {
                     onPressed: widget.onOpenRecentPublicProfile,
                     icon: const Icon(Icons.history_outlined),
                     label: const Text('继续看公开主页'),
+                  ),
+                if (isMyProfile && widget.onOpenShopOrders != null)
+                  FilledButton.tonalIcon(
+                    onPressed: widget.onOpenShopOrders,
+                    icon: const Icon(Icons.receipt_long_outlined),
+                    label: const Text('查看商城订单'),
+                  ),
+                if (isMyProfile && widget.onOpenShopInventory != null)
+                  FilledButton.tonalIcon(
+                    onPressed: widget.onOpenShopInventory,
+                    icon: const Icon(Icons.inventory_2_outlined),
+                    label: const Text('查看背包'),
                   ),
                 if (hasTargetUser)
                   FilledButton.tonalIcon(

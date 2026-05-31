@@ -157,6 +157,35 @@ class _SuccessShopRepository implements ShopRepository {
       isEnabled: true,
     );
   }
+
+  @override
+  Future<ShopOrderPage> getMyOrders({
+    required String accessToken,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const ShopOrderPage(
+      page: 1,
+      pageSize: 20,
+      dataCount: 0,
+      pageCount: 1,
+      orders: [],
+    );
+  }
+
+  @override
+  Future<List<ShopUserBenefit>> getMyBenefits({
+    required String accessToken,
+  }) async {
+    return const <ShopUserBenefit>[];
+  }
+
+  @override
+  Future<List<ShopInventoryItem>> getMyInventory({
+    required String accessToken,
+  }) async {
+    return const <ShopInventoryItem>[];
+  }
 }
 
 class _FailingShopRepository implements ShopRepository {
@@ -175,6 +204,29 @@ class _FailingShopRepository implements ShopRepository {
     required String productId,
   }) {
     throw const RadishApiClientException('商品不存在');
+  }
+
+  @override
+  Future<ShopOrderPage> getMyOrders({
+    required String accessToken,
+    required int pageIndex,
+    required int pageSize,
+  }) {
+    throw const RadishApiClientException('订单列表不可用');
+  }
+
+  @override
+  Future<List<ShopUserBenefit>> getMyBenefits({
+    required String accessToken,
+  }) {
+    throw const RadishApiClientException('权益列表不可用');
+  }
+
+  @override
+  Future<List<ShopInventoryItem>> getMyInventory({
+    required String accessToken,
+  }) {
+    throw const RadishApiClientException('背包列表不可用');
   }
 }
 

@@ -11,6 +11,20 @@ abstract class ShopRepository {
   Future<ShopProductDetail> getProductDetail({
     required String productId,
   });
+
+  Future<ShopOrderPage> getMyOrders({
+    required String accessToken,
+    required int pageIndex,
+    required int pageSize,
+  });
+
+  Future<List<ShopUserBenefit>> getMyBenefits({
+    required String accessToken,
+  });
+
+  Future<List<ShopInventoryItem>> getMyInventory({
+    required String accessToken,
+  });
 }
 
 class EmptyShopRepository implements ShopRepository {
@@ -29,6 +43,29 @@ class EmptyShopRepository implements ShopRepository {
     required String productId,
   }) {
     throw const RadishApiClientException('商城详情暂时不可用');
+  }
+
+  @override
+  Future<ShopOrderPage> getMyOrders({
+    required String accessToken,
+    required int pageIndex,
+    required int pageSize,
+  }) {
+    throw const RadishApiClientException('订单列表暂时不可用');
+  }
+
+  @override
+  Future<List<ShopUserBenefit>> getMyBenefits({
+    required String accessToken,
+  }) {
+    throw const RadishApiClientException('权益列表暂时不可用');
+  }
+
+  @override
+  Future<List<ShopInventoryItem>> getMyInventory({
+    required String accessToken,
+  }) {
+    throw const RadishApiClientException('背包列表暂时不可用');
   }
 }
 
@@ -73,4 +110,87 @@ class HttpShopRepository implements ShopRepository {
       decode: ShopProductDetail.fromJson,
     );
   }
+
+  @override
+  Future<ShopOrderPage> getMyOrders({
+    required String accessToken,
+    required int pageIndex,
+    required int pageSize,
+  }) {
+    final normalizedAccessToken = accessToken.trim();
+    if (normalizedAccessToken.isEmpty) {
+      throw const RadishApiClientException('请先登录后查看订单');
+    }
+
+    final uri = endpoints.resolveApi(
+      '/api/v1/Shop/GetMyOrders',
+      queryParameters: {
+        'pageIndex': pageIndex.clamp(1, 9999).toString(),
+        'pageSize': pageSize.clamp(1, 50).toString(),
+      },
+    );
+
+    return apiClient.get(
+      uri: uri,
+      bearerToken: normalizedAccessToken,
+      decode: ShopOrderPage.fromJson,
+    );
+  }
+
+  @override
+  Future<List<ShopUserBenefit>> getMyBenefits({
+    required String accessToken,
+  }) {
+    final normalizedAccessToken = accessToken.trim();
+    if (normalizedAccessToken.isEmpty) {
+      throw const RadishApiClientException('请先登录后查看背包');
+    }
+
+    final uri = endpoints.resolveApi(
+      '/api/v1/Shop/GetMyBenefits',
+      queryParameters: {
+        'includeExpired': 'false',
+      },
+    );
+
+    return apiClient.get(
+      uri: uri,
+      bearerToken: normalizedAccessToken,
+      decode: _decodeBenefits,
+    );
+  }
+
+  @override
+  Future<List<ShopInventoryItem>> getMyInventory({
+    required String accessToken,
+  }) {
+    final normalizedAccessToken = accessToken.trim();
+    if (normalizedAccessToken.isEmpty) {
+      throw const RadishApiClientException('请先登录后查看背包');
+    }
+
+    final uri = endpoints.resolveApi('/api/v1/Shop/GetMyInventory');
+
+    return apiClient.get(
+      uri: uri,
+      bearerToken: normalizedAccessToken,
+      decode: _decodeInventory,
+    );
+  }
+}
+
+List<ShopUserBenefit> _decodeBenefits(Object? json) {
+  if (json is! List) {
+    throw const FormatException('Expected a JSON array.');
+  }
+
+  return json.map(ShopUserBenefit.fromJson).toList();
+}
+
+List<ShopInventoryItem> _decodeInventory(Object? json) {
+  if (json is! List) {
+    throw const FormatException('Expected a JSON array.');
+  }
+
+  return json.map(ShopInventoryItem.fromJson).toList();
 }
