@@ -15,6 +15,7 @@ import '../core/platform/app_lifecycle_gateway.dart';
 import '../features/discover/data/discover_repository.dart';
 import '../features/docs/data/docs_follow_up_store.dart';
 import '../features/docs/data/docs_repository.dart';
+import '../features/experience/data/experience_repository.dart';
 import '../features/forum/data/forum_follow_up_store.dart';
 import '../features/forum/data/forum_repository.dart';
 import '../features/leaderboard/data/leaderboard_repository.dart';
@@ -91,6 +92,10 @@ class RadishBootstrap {
       apiClient: apiClient,
       endpoints: apiEndpoints,
     );
+    final experienceRepository = HttpExperienceRepository(
+      apiClient: apiClient,
+      endpoints: apiEndpoints,
+    );
 
     runApp(
       RadishApp(
@@ -104,6 +109,7 @@ class RadishBootstrap {
         leaderboardRepository: leaderboardRepository,
         shopRepository: shopRepository,
         walletRepository: walletRepository,
+        experienceRepository: experienceRepository,
         followUpStore: followUpStore,
         docsFollowUpStore: docsFollowUpStore,
         notificationRepository: notificationRepository,

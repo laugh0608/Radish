@@ -10,6 +10,7 @@ import '../core/theme/radish_theme.dart';
 import '../features/discover/data/discover_repository.dart';
 import '../features/docs/data/docs_follow_up_store.dart';
 import '../features/docs/data/docs_repository.dart';
+import '../features/experience/data/experience_repository.dart';
 import '../features/forum/data/forum_follow_up_store.dart';
 import '../features/forum/data/forum_models.dart';
 import '../features/forum/data/forum_repository.dart';
@@ -33,6 +34,7 @@ class RadishApp extends StatefulWidget {
     this.leaderboardRepository = const EmptyLeaderboardRepository(),
     this.shopRepository = const EmptyShopRepository(),
     this.walletRepository = const EmptyWalletRepository(),
+    this.experienceRepository = const EmptyExperienceRepository(),
     this.docsFollowUpStore = const EmptyDocsFollowUpStore(),
     this.notificationRepository = const EmptyNotificationRepository(),
     this.appLifecycleGateway = const EmptyAppLifecycleGateway(),
@@ -51,6 +53,7 @@ class RadishApp extends StatefulWidget {
   final LeaderboardRepository leaderboardRepository;
   final ShopRepository shopRepository;
   final WalletRepository walletRepository;
+  final ExperienceRepository experienceRepository;
   final DocsFollowUpStore docsFollowUpStore;
   final NotificationRepository notificationRepository;
   final AppLifecycleGateway appLifecycleGateway;
@@ -100,6 +103,7 @@ class _RadishAppState extends State<RadishApp> {
                   leaderboardRepository: widget.leaderboardRepository,
                   shopRepository: widget.shopRepository,
                   walletRepository: widget.walletRepository,
+                  experienceRepository: widget.experienceRepository,
                   followUpStore: widget.followUpStore,
                   docsFollowUpStore: widget.docsFollowUpStore,
                   notificationRepository: widget.notificationRepository,

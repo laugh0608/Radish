@@ -11,6 +11,8 @@ import '../../../features/discover/data/discover_models.dart';
 import '../../../features/docs/data/docs_follow_up_store.dart';
 import '../../../features/docs/data/docs_models.dart';
 import '../../../features/docs/data/docs_repository.dart';
+import '../../../features/experience/data/experience_repository.dart';
+import '../../../features/experience/presentation/experience_page.dart';
 import '../../../features/forum/data/forum_follow_up_store.dart';
 import '../../../features/forum/data/forum_models.dart';
 import '../../../features/forum/data/forum_repository.dart';
@@ -43,6 +45,7 @@ class RadishFlutterShell extends StatefulWidget {
     this.leaderboardRepository = const EmptyLeaderboardRepository(),
     this.shopRepository = const EmptyShopRepository(),
     this.walletRepository = const EmptyWalletRepository(),
+    this.experienceRepository = const EmptyExperienceRepository(),
     this.docsFollowUpStore = const EmptyDocsFollowUpStore(),
     this.notificationRepository = const EmptyNotificationRepository(),
     this.appLifecycleGateway = const EmptyAppLifecycleGateway(),
@@ -61,6 +64,7 @@ class RadishFlutterShell extends StatefulWidget {
   final LeaderboardRepository leaderboardRepository;
   final ShopRepository shopRepository;
   final WalletRepository walletRepository;
+  final ExperienceRepository experienceRepository;
   final DocsFollowUpStore docsFollowUpStore;
   final NotificationRepository notificationRepository;
   final AppLifecycleGateway appLifecycleGateway;
@@ -589,6 +593,29 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     );
   }
 
+  Future<void> _openExperienceFromProfile() async {
+    final accessToken =
+        widget.sessionController.state.session?.accessToken.trim();
+    if (accessToken == null || accessToken.isEmpty) {
+      await _startLoginForProfile();
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => ExperiencePage(
+          environment: widget.environment,
+          repository: widget.experienceRepository,
+          accessToken: accessToken,
+        ),
+      ),
+    );
+  }
+
   void _resumeRecentDocumentTarget() {
     final target = _recentDocumentTarget;
     if (target == null) {
@@ -1008,6 +1035,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
             onOpenShopOrders: _openShopOrdersFromProfile,
             onOpenShopInventory: _openShopInventoryFromProfile,
             onOpenWallet: _openWalletFromProfile,
+            onOpenExperience: _openExperienceFromProfile,
             onRequestSignIn: _startLoginForProfile,
           ),
         ];

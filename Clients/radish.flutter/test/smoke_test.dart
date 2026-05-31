@@ -17,6 +17,8 @@ import 'package:radish_flutter/features/discover/data/discover_repository.dart';
 import 'package:radish_flutter/features/docs/data/docs_follow_up_store.dart';
 import 'package:radish_flutter/features/docs/data/docs_models.dart';
 import 'package:radish_flutter/features/docs/data/docs_repository.dart';
+import 'package:radish_flutter/features/experience/data/experience_models.dart';
+import 'package:radish_flutter/features/experience/data/experience_repository.dart';
 import 'package:radish_flutter/features/forum/data/forum_follow_up_store.dart';
 import 'package:radish_flutter/features/forum/data/forum_models.dart';
 import 'package:radish_flutter/features/forum/data/forum_repository.dart';
@@ -187,8 +189,7 @@ void main() {
     expect(find.text('已登录用户 user-42'), findsOneWidget);
   });
 
-  testWidgets(
-      'authenticated profile opens read-only orders inventory and wallet',
+  testWidgets('authenticated profile opens read-only private account routes',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
     tester.view.devicePixelRatio = 1.0;
@@ -221,6 +222,7 @@ void main() {
         profileRepository: _FakeProfileRepository(),
         shopRepository: const _SeededShopRepository(),
         walletRepository: const _SeededWalletRepository(),
+        experienceRepository: const _SeededExperienceRepository(),
         followUpStore: InMemoryForumFollowUpStore(),
       ),
     );
@@ -232,6 +234,7 @@ void main() {
     expect(find.text('查看商城订单'), findsOneWidget);
     expect(find.text('查看背包'), findsOneWidget);
     expect(find.text('查看胡萝卜资产'), findsOneWidget);
+    expect(find.text('查看经验记录'), findsOneWidget);
 
     await tester.tap(find.text('查看商城订单'));
     await tester.pumpAndSettle();
@@ -311,6 +314,21 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('查看胡萝卜资产'), findsOneWidget);
+
+    await tester.tap(find.text('查看经验记录'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('经验记录'), findsWidgets);
+    expect(find.text('已加载 2 / 2 条经验流水'), findsOneWidget);
+    expect(find.text('等级概览'), findsOneWidget);
+    expect(find.text('Lv.3 练气'), findsOneWidget);
+    expect(find.text('发帖奖励'), findsOneWidget);
+    expect(find.text('评论奖励'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('查看经验记录'), findsOneWidget);
   });
 
   testWidgets('discover handoff opens guest profile target in shell',
@@ -3065,6 +3083,85 @@ class _SeededWalletRepository implements WalletRepository {
           businessId: '9001',
           remark: '购买 Profile Rename Card',
           createTime: '2026-05-31T08:30:00Z',
+        ),
+      ],
+    );
+  }
+}
+
+class _SeededExperienceRepository implements ExperienceRepository {
+  const _SeededExperienceRepository();
+
+  @override
+  Future<UserExperience> getMyExperience({
+    required String accessToken,
+  }) async {
+    return const UserExperience(
+      userId: 'user-42',
+      userName: 'user-42',
+      currentLevel: 3,
+      currentLevelName: '练气',
+      currentExp: 240,
+      totalExp: 1240,
+      expToNextLevel: 260,
+      nextLevel: 4,
+      nextLevelName: '筑基',
+      levelProgress: 0.48,
+      expFrozen: false,
+      levelUpAt: '2026-05-30T08:00:00Z',
+      rank: 12,
+    );
+  }
+
+  @override
+  Future<ExperienceTransactionPage> getTransactions({
+    required String accessToken,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const ExperienceTransactionPage(
+      page: 1,
+      pageSize: 20,
+      dataCount: 2,
+      pageCount: 1,
+      transactions: [
+        ExperienceTransaction(
+          id: 'exp-1',
+          userId: 'user-42',
+          userName: 'user-42',
+          operatorId: '0',
+          operatorName: 'system',
+          expType: 'POST_CREATE',
+          expTypeDisplay: '发帖奖励',
+          expAmount: 20,
+          businessType: 'Post',
+          businessId: 'post-1',
+          remark: '发布公开帖子',
+          expBefore: 1220,
+          expAfter: 1240,
+          levelBefore: 3,
+          levelAfter: 3,
+          isLevelUp: false,
+          createTime: '2026-05-31T08:00:00Z',
+        ),
+        ExperienceTransaction(
+          id: 'exp-2',
+          userId: 'user-42',
+          userName: 'user-42',
+          operatorId: '0',
+          operatorName: 'system',
+          expType: 'COMMENT_CREATE',
+          expTypeDisplay: '评论奖励',
+          expAmount: 10,
+          businessType: 'Comment',
+          businessId: 'comment-1',
+          remark: '发布公开评论',
+          expBefore: 1210,
+          expAfter: 1220,
+          levelBefore: 2,
+          levelAfter: 3,
+          isLevelUp: true,
+          createTime: '2026-05-31T07:30:00Z',
         ),
       ],
     );
