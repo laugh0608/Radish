@@ -940,6 +940,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
             sessionController: widget.sessionController,
             authController: widget.authController,
             repository: widget.profileRepository,
+            environment: widget.environment,
             publicUserId: _publicProfileUserId,
             recentPublicUserId: _recentProfileUserId,
             recentBrowseHandoffTarget: _recentBrowseHandoffTarget,

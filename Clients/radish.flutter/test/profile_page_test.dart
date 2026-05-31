@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:radish_flutter/core/auth/authorization_code_exchange_service.dart';
 import 'package:radish_flutter/core/auth/native_auth_controller.dart';
@@ -471,6 +472,55 @@ void main() {
       scrollable: scrollable,
     );
     expect(find.text('最近公开帖子'), findsOneWidget);
+  });
+
+  testWidgets('renders and copies public profile web link', (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final clipboard = _ClipboardRecorder()..install();
+    addTearDown(clipboard.reset);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          sessionController: sessionController,
+          authController: authController,
+          repository: _SuccessProfileRepository(),
+          environment: const AppEnvironment(
+            name: 'test',
+            apiBaseUrl: 'https://radish.example',
+            authBaseUrl: 'https://radish.example',
+            gatewayBaseUrl: 'https://radish.example',
+            oidcClientId: 'radish-client',
+            nativeOidcRedirectUri: 'radish://oidc/callback',
+            nativeOidcPostLogoutRedirectUri: 'radish://oidc/logout-complete',
+            oidcScopes: 'openid profile offline_access radish-api',
+          ),
+          publicUserId: 'guest-42',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('公开主页链接'), findsOneWidget);
+    expect(find.text('https://radish.example/u/guest-42'), findsOneWidget);
+
+    await tester.tap(find.text('复制公开链接'));
+    await tester.pumpAndSettle();
+
+    expect(clipboard.text, 'https://radish.example/u/guest-42');
+    expect(find.text('公开链接已复制'), findsOneWidget);
+    expect(find.text('已复制公开链接'), findsOneWidget);
   });
 
   testWidgets('renders recent public profile revisit action', (tester) async {
@@ -2191,6 +2241,27 @@ class _NoopSessionRefreshService extends SessionRefreshService {
   @override
   Future<AuthSession> refresh(AuthSession session) async {
     return session;
+  }
+}
+
+class _ClipboardRecorder {
+  String? text;
+
+  void install() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.setData') {
+        final arguments = Map<Object?, Object?>.from(call.arguments as Map);
+        text = arguments['text'] as String?;
+      }
+
+      return null;
+    });
+  }
+
+  void reset() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, null);
   }
 }
 

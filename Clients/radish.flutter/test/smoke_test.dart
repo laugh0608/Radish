@@ -627,6 +627,10 @@ void main() {
       200,
       scrollable: scrollable,
     );
+    await tester.ensureVisible(openPostButton);
+    await tester.pumpAndSettle();
+    await tester.drag(scrollable, const Offset(0, -240));
+    await tester.pumpAndSettle();
     await tester.tap(openPostButton);
     await tester.pump();
     await tester.pumpAndSettle();
@@ -1912,7 +1916,7 @@ void main() {
 
   testWidgets('profile post handoff returns to profile after detail pop',
       (tester) async {
-    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.physicalSize = const Size(1200, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);

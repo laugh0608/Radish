@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../../../core/auth/native_auth_controller.dart';
 import '../../../core/auth/session_controller.dart';
+import '../../../core/config/app_environment.dart';
 import '../../../features/docs/data/docs_models.dart';
 import '../../../features/forum/data/forum_models.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
+import '../../../shared/widgets/public_link_copy_panel.dart';
 import '../data/profile_models.dart';
 import '../data/profile_repository.dart';
 import 'profile_controller.dart';
@@ -14,6 +16,7 @@ class ProfilePage extends StatefulWidget {
     required this.sessionController,
     required this.authController,
     required this.repository,
+    this.environment,
     this.publicUserId,
     this.recentPublicUserId,
     this.recentBrowseHandoffTarget,
@@ -31,6 +34,7 @@ class ProfilePage extends StatefulWidget {
   final SessionController sessionController;
   final NativeAuthController authController;
   final ProfileRepository repository;
+  final AppEnvironment? environment;
   final String? publicUserId;
   final String? recentPublicUserId;
   final ForumDetailHandoffTarget? recentBrowseHandoffTarget;
@@ -279,6 +283,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     const SizedBox(height: 16),
                   ],
                   _PublicProfileContent(
+                    environment: widget.environment,
                     profile: profileState.profile!,
                     stats: profileState.stats,
                     isMyProfile: isMyProfile,
@@ -501,6 +506,7 @@ class _ProfileRefreshIssueNotice extends StatelessWidget {
 
 class _PublicProfileContent extends StatelessWidget {
   const _PublicProfileContent({
+    required this.environment,
     required this.profile,
     required this.stats,
     required this.isMyProfile,
@@ -530,6 +536,7 @@ class _PublicProfileContent extends StatelessWidget {
     required this.onOpenDocsDetailTarget,
   });
 
+  final AppEnvironment? environment;
   final PublicProfileSummary profile;
   final PublicProfileStats? stats;
   final bool isMyProfile;
@@ -567,6 +574,13 @@ class _PublicProfileContent extends StatelessWidget {
     return Column(
       children: [
         _PublicProfileHero(profile: profile),
+        if (environment != null) ...[
+          const SizedBox(height: 16),
+          _PublicProfileLinkCard(
+            environment: environment!,
+            userId: profile.userId,
+          ),
+        ],
         const SizedBox(height: 16),
         _ProfileStatsCard(stats: stats),
         const SizedBox(height: 16),
@@ -723,6 +737,30 @@ class _PublicProfileHero extends StatelessWidget {
     }
 
     return trimmed.characters.first.toUpperCase();
+  }
+}
+
+class _PublicProfileLinkCard extends StatelessWidget {
+  const _PublicProfileLinkCard({
+    required this.environment,
+    required this.userId,
+  });
+
+  final AppEnvironment environment;
+  final String userId;
+
+  @override
+  Widget build(BuildContext context) {
+    final publicPath = _formatPublicProfilePath(userId);
+
+    return PublicLinkCopyPanel(
+      title: '公开主页链接',
+      publicUrl: buildRadishPublicUrl(
+        environment: environment,
+        publicPath: publicPath,
+      ),
+      description: '复制这个链接后，可在 Web 公开页继续查看同一用户主页。',
+    );
   }
 }
 
@@ -1695,6 +1733,15 @@ class _ProfileMetaText extends StatelessWidget {
       ),
     );
   }
+}
+
+String? _formatPublicProfilePath(String userId) {
+  final normalizedUserId = userId.trim();
+  if (normalizedUserId.isEmpty) {
+    return null;
+  }
+
+  return '/u/$normalizedUserId';
 }
 
 String _formatDate(String value) {

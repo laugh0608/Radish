@@ -143,9 +143,10 @@
 - Flutter 公开商城列表只读入口已完成：发现页新增进入公开商城列表入口，列表复用 `/api/v1/Shop/GetProducts`，商品项打开既有只读商品详情并可返回商城列表；本轮不扩展购买、订单、背包、支付口令或权益激活。
 - Flutter 原生公开详情分享入口复核与补齐已完成：forum detail、docs detail 与 shop detail 均补齐完整公开链接展示和复制入口，复制口径统一为 `Gateway Base URL + Web 公开路由`；无有效 `Post.PublicId` 或公开 slug 时继续显示“公开链接尚未生成”并禁用复制，避免把内部长数字 ID 当作公开分享契约。本轮只使用系统剪贴板能力，不扩展系统分享 SDK、完整商城、完整通知中心、完整创作器或 WebOS 新功能。
 - Flutter 原生公开文档阅读链路补强已完成：只读 Markdown 阅读器可识别 `/docs/:slug`、完整公开 URL、`docs/:slug`、`./:slug` 与普通相对 slug 形式的文档内链，统一转换为应用内 docs detail 打开；纯页内锚点、附件路径和非 docs 链接继续按文本展示，避免引入外部浏览器、编辑器或创作能力。
+- Flutter 原生公开主页链接 / 展示 / 来源返回复核已完成：`ProfilePage` 接入 `PublicLinkCopyPanel` 展示并复制 `/u/:userId` Web 公开链接，壳层传入当前 `AppEnvironment` 以统一 Gateway Base URL 口径；匿名公开主页、已登录公开主页、长文本约束、帖子 / 评论 handoff 和榜单来源返回继续由 profile 单测与 shell smoke 覆盖。本轮不扩展关注 / 取关、私信、完整系统分享 SDK 或 WebOS 复刻。
 - 商城工作台构建 warning 已完成治理：`ShopApp` 改为按首页、商品、订单、背包与购买弹窗懒加载，`vite.config.ts` 同步细分商城手动 chunk，`app-shop` 已收敛到 500k 警告阈值以内；npm 自身 update notice 不进入仓库级配置治理。
 - 后续继续按验收矩阵做主动批量复核、成组修复和一次性交付结论；候选方向为 Flutter 下一批真实移动主路径任务、纯 Web 登录后轻量链路补强，或维护线暴露的购买 / 订单 / 背包阻断。
-- 下一步不继续重复 Flutter 个人主页来源返回、轻量通知列表、公开商城列表、论坛详情评论发布 / 回复、评论登录回流、原生公开详情分享入口或公开文档阅读链路验收，也不继续逐页打磨 Web 公开页；明日建议转向 Flutter 原生公开主页链接复制 / 展示、长文本防溢出、来源返回和匿名 / 已登录边界复核。
+- 下一步不继续重复 Flutter 个人主页来源返回、公开主页链接展示、轻量通知列表、公开商城列表、论坛详情评论发布 / 回复、评论登录回流、原生公开详情分享入口或公开文档阅读链路验收，也不继续逐页打磨 Web 公开页；后续优先回看纯 Web 登录后轻量链路或跨端回流缺口，若继续 Flutter 只选择真实移动主路径中一天级可验证任务。
 - WebOS 只保留 `/desktop` 历史入口，不再作为新增功能候选；PC/Tauri 放到最后再评估，后续若重启也只增强纯 Web。
 - 不直接启动完整移动商城、完整通知中心、完整创作器、公开 Web 整体 UI 重构或多端同时重写。
 
@@ -538,6 +539,14 @@ flutter analyze
 cd Clients/radish.flutter
 flutter test
 flutter analyze
+```
+
+`P3-8-D` Flutter 原生公开主页链接 / 展示 / 来源返回复核已执行：
+
+```bash
+cd Clients/radish.flutter
+flutter test test/profile_page_test.dart
+flutter test test/smoke_test.dart
 ```
 
 ## 与维护线关系
