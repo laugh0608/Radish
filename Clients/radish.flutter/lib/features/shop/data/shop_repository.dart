@@ -18,6 +18,11 @@ abstract class ShopRepository {
     required int pageSize,
   });
 
+  Future<ShopOrderDetail> getOrderDetail({
+    required String accessToken,
+    required String orderId,
+  });
+
   Future<List<ShopUserBenefit>> getMyBenefits({
     required String accessToken,
   });
@@ -52,6 +57,14 @@ class EmptyShopRepository implements ShopRepository {
     required int pageSize,
   }) {
     throw const RadishApiClientException('订单列表暂时不可用');
+  }
+
+  @override
+  Future<ShopOrderDetail> getOrderDetail({
+    required String accessToken,
+    required String orderId,
+  }) {
+    throw const RadishApiClientException('订单详情暂时不可用');
   }
 
   @override
@@ -134,6 +147,31 @@ class HttpShopRepository implements ShopRepository {
       uri: uri,
       bearerToken: normalizedAccessToken,
       decode: ShopOrderPage.fromJson,
+    );
+  }
+
+  @override
+  Future<ShopOrderDetail> getOrderDetail({
+    required String accessToken,
+    required String orderId,
+  }) {
+    final normalizedAccessToken = accessToken.trim();
+    final normalizedOrderId = orderId.trim();
+    if (normalizedAccessToken.isEmpty) {
+      throw const RadishApiClientException('请先登录后查看订单');
+    }
+    if (normalizedOrderId.isEmpty) {
+      throw const RadishApiClientException('订单详情入口缺少订单 ID');
+    }
+
+    final uri = endpoints.resolveApi(
+      '/api/v1/Shop/GetOrder/$normalizedOrderId',
+    );
+
+    return apiClient.get(
+      uri: uri,
+      bearerToken: normalizedAccessToken,
+      decode: ShopOrderDetail.fromJson,
     );
   }
 

@@ -207,6 +207,79 @@ class ShopOrderPage {
   bool get hasMore => page < pageCount;
 }
 
+class ShopOrderDetail {
+  const ShopOrderDetail({
+    required this.id,
+    required this.orderNo,
+    required this.productId,
+    required this.productName,
+    required this.productType,
+    required this.quantity,
+    required this.unitPrice,
+    required this.totalPrice,
+    required this.status,
+    required this.createTime,
+    this.productTypeDisplay,
+    this.statusDisplay,
+    this.durationDisplay,
+    this.benefitExpiresAt,
+    this.paidTime,
+    this.completedTime,
+    this.cancelledTime,
+    this.cancelReason,
+    this.failReason,
+    this.userRemark,
+  });
+
+  factory ShopOrderDetail.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+
+    return ShopOrderDetail(
+      id: _readRequiredId(map, 'voId'),
+      orderNo: _readString(map['voOrderNo']) ?? '未知订单',
+      productId: _readRequiredId(map, 'voProductId'),
+      productName: _readString(map['voProductName']) ?? '未命名商品',
+      productType: _readString(map['voProductType']) ?? 'Unknown',
+      productTypeDisplay: _readString(map['voProductTypeDisplay']),
+      quantity: _readInt(map['voQuantity']) ?? 0,
+      unitPrice: _readInt(map['voUnitPrice']) ?? 0,
+      totalPrice: _readInt(map['voTotalPrice']) ?? 0,
+      status: _readString(map['voStatus']) ?? 'Unknown',
+      statusDisplay: _readString(map['voStatusDisplay']),
+      durationDisplay: _readString(map['voDurationDisplay']),
+      benefitExpiresAt: _readString(map['voBenefitExpiresAt']),
+      createTime: _readString(map['voCreateTime']) ?? '未知',
+      paidTime: _readString(map['voPaidTime']),
+      completedTime: _readString(map['voCompletedTime']),
+      cancelledTime: _readString(map['voCancelledTime']),
+      cancelReason: _readString(map['voCancelReason']),
+      failReason: _readString(map['voFailReason']),
+      userRemark: _readString(map['voUserRemark']),
+    );
+  }
+
+  final String id;
+  final String orderNo;
+  final String productId;
+  final String productName;
+  final String productType;
+  final String? productTypeDisplay;
+  final int quantity;
+  final int unitPrice;
+  final int totalPrice;
+  final String status;
+  final String? statusDisplay;
+  final String? durationDisplay;
+  final String? benefitExpiresAt;
+  final String createTime;
+  final String? paidTime;
+  final String? completedTime;
+  final String? cancelledTime;
+  final String? cancelReason;
+  final String? failReason;
+  final String? userRemark;
+}
+
 class ShopUserBenefit {
   const ShopUserBenefit({
     required this.id,
@@ -216,6 +289,9 @@ class ShopUserBenefit {
     required this.isExpired,
     this.benefitTypeDisplay,
     this.benefitName,
+    this.sourceOrderId,
+    this.sourceProductId,
+    this.sourceTypeDisplay,
     this.durationDisplay,
     this.expiresAt,
     this.createTime,
@@ -230,6 +306,9 @@ class ShopUserBenefit {
       benefitTypeDisplay: _readString(map['voBenefitTypeDisplay']),
       benefitName: _readString(map['voBenefitName']),
       sourceType: _readString(map['voSourceType']) ?? 'Unknown',
+      sourceTypeDisplay: _readString(map['voSourceTypeDisplay']),
+      sourceOrderId: _readString(map['voSourceOrderId']),
+      sourceProductId: _readString(map['voSourceProductId']),
       durationDisplay: _readString(map['voDurationDisplay']),
       expiresAt: _readString(map['voExpiresAt']),
       isActive: _readBool(map['voIsActive']),
@@ -243,6 +322,9 @@ class ShopUserBenefit {
   final String? benefitTypeDisplay;
   final String? benefitName;
   final String sourceType;
+  final String? sourceTypeDisplay;
+  final String? sourceOrderId;
+  final String? sourceProductId;
   final String? durationDisplay;
   final String? expiresAt;
   final bool isActive;
@@ -258,6 +340,7 @@ class ShopInventoryItem {
     this.consumableTypeDisplay,
     this.itemName,
     this.itemValue,
+    this.sourceProductId,
     this.createTime,
   });
 
@@ -271,6 +354,7 @@ class ShopInventoryItem {
       itemName: _readString(map['voItemName']),
       itemValue: _readString(map['voItemValue']),
       quantity: _readInt(map['voQuantity']) ?? 0,
+      sourceProductId: _readString(map['voSourceProductId']),
       createTime: _readString(map['voCreateTime']),
     );
   }
@@ -281,6 +365,7 @@ class ShopInventoryItem {
   final String? itemName;
   final String? itemValue;
   final int quantity;
+  final String? sourceProductId;
   final String? createTime;
 }
 

@@ -139,6 +139,28 @@ class _SeededShopRepository implements ShopRepository {
   }
 
   @override
+  Future<ShopOrderDetail> getOrderDetail({
+    required String accessToken,
+    required String orderId,
+  }) async {
+    return const ShopOrderDetail(
+      id: '9001',
+      orderNo: 'RO202605310001',
+      productId: '4001',
+      productName: 'Profile Rename Card',
+      productType: 'Consumable',
+      productTypeDisplay: '消耗品',
+      quantity: 1,
+      unitPrice: 120,
+      totalPrice: 120,
+      status: 'Completed',
+      statusDisplay: '已完成',
+      createTime: '2026-05-31T08:00:00Z',
+      completedTime: '2026-05-31T08:01:00Z',
+    );
+  }
+
+  @override
   Future<List<ShopUserBenefit>> getMyBenefits({
     required String accessToken,
   }) async {
@@ -178,6 +200,14 @@ class _FailingShopRepository implements ShopRepository {
     required int pageSize,
   }) {
     throw const RadishApiClientException('订单列表不可用');
+  }
+
+  @override
+  Future<ShopOrderDetail> getOrderDetail({
+    required String accessToken,
+    required String orderId,
+  }) {
+    throw const RadishApiClientException('订单详情不可用');
   }
 
   @override

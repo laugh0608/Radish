@@ -234,6 +234,19 @@ void main() {
     expect(find.text('我的订单'), findsWidgets);
     expect(find.textContaining('RO202605310001'), findsOneWidget);
     expect(find.text('已加载 1 / 1 个订单'), findsOneWidget);
+    expect(find.text('查看订单详情'), findsOneWidget);
+
+    await tester.tap(find.text('查看订单详情'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('来源：订单列表'), findsOneWidget);
+    expect(find.text('完成支付'), findsOneWidget);
+    expect(find.text('订单完成'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('我的订单'), findsWidgets);
 
     await tester.pageBack();
     await tester.pumpAndSettle();
@@ -247,6 +260,32 @@ void main() {
     expect(find.text('已加载 1 个权益、1 个道具'), findsOneWidget);
     expect(find.text('早鸟徽章'), findsOneWidget);
     expect(find.text('Profile Rename Card'), findsOneWidget);
+    expect(find.text('查看来源订单'), findsOneWidget);
+    expect(find.text('查看来源商品'), findsWidgets);
+
+    await tester.tap(find.text('查看来源订单'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('来源：背包来源'), findsOneWidget);
+    expect(find.text('返回背包'), findsOneWidget);
+    expect(find.text('完成支付'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('我的背包'), findsWidgets);
+
+    await tester.tap(find.text('查看来源商品').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('商品详情'), findsWidgets);
+    expect(find.text('来源：背包来源'), findsOneWidget);
+    expect(find.text('返回背包'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('我的背包'), findsWidgets);
 
     await tester.pageBack();
     await tester.pumpAndSettle();
@@ -2855,7 +2894,7 @@ class _SeededShopRepository implements ShopRepository {
       pageCount: 1,
       orders: [
         ShopOrderSummary(
-          id: 'order-1',
+          id: '9001',
           orderNo: 'RO202605310001',
           productName: 'Profile Rename Card',
           quantity: 1,
@@ -2865,6 +2904,30 @@ class _SeededShopRepository implements ShopRepository {
           createTime: '2026-05-31T08:00:00Z',
         ),
       ],
+    );
+  }
+
+  @override
+  Future<ShopOrderDetail> getOrderDetail({
+    required String accessToken,
+    required String orderId,
+  }) async {
+    return const ShopOrderDetail(
+      id: '9001',
+      orderNo: 'RO202605310001',
+      productId: '4001',
+      productName: 'Profile Rename Card',
+      productType: 'Consumable',
+      productTypeDisplay: '消耗品',
+      quantity: 1,
+      unitPrice: 120,
+      totalPrice: 120,
+      status: 'Completed',
+      statusDisplay: '已完成',
+      durationDisplay: '永久',
+      createTime: '2026-05-31T08:00:00Z',
+      paidTime: '2026-05-31T08:00:30Z',
+      completedTime: '2026-05-31T08:01:00Z',
     );
   }
 
@@ -2879,6 +2942,9 @@ class _SeededShopRepository implements ShopRepository {
         benefitTypeDisplay: '徽章',
         benefitName: '早鸟徽章',
         sourceType: 'Purchase',
+        sourceTypeDisplay: '购买',
+        sourceOrderId: '9001',
+        sourceProductId: '4001',
         durationDisplay: '永久',
         isActive: true,
         isExpired: false,
@@ -2898,6 +2964,7 @@ class _SeededShopRepository implements ShopRepository {
         consumableTypeDisplay: '改名卡',
         itemName: 'Profile Rename Card',
         itemValue: 'rename-card',
+        sourceProductId: '4001',
         quantity: 1,
         createTime: '2026-05-31T08:06:00Z',
       ),

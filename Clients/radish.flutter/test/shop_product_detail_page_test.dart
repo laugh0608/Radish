@@ -102,6 +102,25 @@ void main() {
     expect(page.products.single.id, '4001');
     expect(page.products.single.productType, '消耗品');
   });
+
+  test('http shop repository uses private order detail endpoint', () async {
+    final apiClient = _RecordingShopApiClient();
+    final repository = HttpShopRepository(
+      apiClient: apiClient,
+      endpoints: const RadishApiEndpoints(AppEnvironment.development()),
+    );
+
+    final order = await repository.getOrderDetail(
+      accessToken: 'access-token',
+      orderId: '9001',
+    );
+
+    expect(apiClient.lastUri?.path, '/api/v1/Shop/GetOrder/9001');
+    expect(apiClient.lastBearerToken, 'access-token');
+    expect(order.id, '9001');
+    expect(order.orderNo, 'RO202605310001');
+    expect(order.productId, '4001');
+  });
 }
 
 class _SuccessShopRepository implements ShopRepository {
@@ -174,6 +193,28 @@ class _SuccessShopRepository implements ShopRepository {
   }
 
   @override
+  Future<ShopOrderDetail> getOrderDetail({
+    required String accessToken,
+    required String orderId,
+  }) async {
+    return const ShopOrderDetail(
+      id: '9001',
+      orderNo: 'RO202605310001',
+      productId: '4001',
+      productName: 'Profile Rename Card',
+      productType: 'Consumable',
+      productTypeDisplay: '消耗品',
+      quantity: 1,
+      unitPrice: 120,
+      totalPrice: 120,
+      status: 'Completed',
+      statusDisplay: '已完成',
+      createTime: '2026-05-31T08:00:00Z',
+      completedTime: '2026-05-31T08:01:00Z',
+    );
+  }
+
+  @override
   Future<List<ShopUserBenefit>> getMyBenefits({
     required String accessToken,
   }) async {
@@ -216,6 +257,14 @@ class _FailingShopRepository implements ShopRepository {
   }
 
   @override
+  Future<ShopOrderDetail> getOrderDetail({
+    required String accessToken,
+    required String orderId,
+  }) {
+    throw const RadishApiClientException('订单详情不可用');
+  }
+
+  @override
   Future<List<ShopUserBenefit>> getMyBenefits({
     required String accessToken,
   }) {
@@ -232,6 +281,7 @@ class _FailingShopRepository implements ShopRepository {
 
 class _RecordingShopApiClient implements RadishApiClient {
   Uri? lastUri;
+  String? lastBearerToken;
 
   @override
   Future<T> get<T>({
@@ -240,6 +290,7 @@ class _RecordingShopApiClient implements RadishApiClient {
     String? bearerToken,
   }) async {
     lastUri = uri;
+    lastBearerToken = bearerToken;
     if (uri.path == '/api/v1/Shop/GetProducts') {
       return decode({
         'page': 1,
@@ -259,6 +310,24 @@ class _RecordingShopApiClient implements RadishApiClient {
             'voInStock': true,
           },
         ],
+      });
+    }
+
+    if (uri.path == '/api/v1/Shop/GetOrder/9001') {
+      return decode({
+        'voId': '9001',
+        'voOrderNo': 'RO202605310001',
+        'voProductId': '4001',
+        'voProductName': 'Profile Rename Card',
+        'voProductType': 'Consumable',
+        'voProductTypeDisplay': '消耗品',
+        'voQuantity': 1,
+        'voUnitPrice': 120,
+        'voTotalPrice': 120,
+        'voStatus': 'Completed',
+        'voStatusDisplay': '已完成',
+        'voCreateTime': '2026-05-31T08:00:00Z',
+        'voCompletedTime': '2026-05-31T08:01:00Z',
       });
     }
 

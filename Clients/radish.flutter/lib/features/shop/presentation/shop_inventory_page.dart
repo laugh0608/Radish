@@ -7,6 +7,8 @@ import '../../../core/network/radish_api_client.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
 import '../data/shop_models.dart';
 import '../data/shop_repository.dart';
+import 'shop_order_detail_page.dart';
+import 'shop_product_detail_page.dart';
 
 class ShopInventoryPage extends StatefulWidget {
   const ShopInventoryPage({
@@ -102,6 +104,45 @@ class _ShopInventoryPageState extends State<ShopInventoryPage> {
     });
   }
 
+  void _openSourceOrder(String? orderId) {
+    final normalizedOrderId = _normalizePositiveId(orderId);
+    if (normalizedOrderId == null) {
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => ShopOrderDetailPage(
+          environment: widget.environment,
+          repository: widget.repository,
+          accessToken: widget.accessToken,
+          orderId: normalizedOrderId,
+          sourceLabel: '背包来源',
+          returnLabel: '返回背包',
+        ),
+      ),
+    );
+  }
+
+  void _openSourceProduct(String? productId) {
+    final normalizedProductId = _normalizePositiveId(productId);
+    if (normalizedProductId == null) {
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => ShopProductDetailPage(
+          environment: widget.environment,
+          repository: widget.repository,
+          productId: normalizedProductId,
+          sourceLabel: '背包来源',
+          returnLabel: '返回背包',
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final errorMessage = _errorMessage;
@@ -170,9 +211,16 @@ class _ShopInventoryPageState extends State<ShopInventoryPage> {
               _ShopInventoryRefreshIssueNotice(message: errorMessage),
               const SizedBox(height: 16),
             ],
-            _ShopBenefitSection(benefits: _benefits),
+            _ShopBenefitSection(
+              benefits: _benefits,
+              onOpenSourceOrder: _openSourceOrder,
+              onOpenSourceProduct: _openSourceProduct,
+            ),
             const SizedBox(height: 16),
-            _ShopInventoryItemSection(items: _items),
+            _ShopInventoryItemSection(
+              items: _items,
+              onOpenSourceProduct: _openSourceProduct,
+            ),
           ],
         ],
       ),
@@ -183,16 +231,29 @@ class _ShopInventoryPageState extends State<ShopInventoryPage> {
 class _ShopBenefitSection extends StatelessWidget {
   const _ShopBenefitSection({
     required this.benefits,
+    required this.onOpenSourceOrder,
+    required this.onOpenSourceProduct,
   });
 
   final List<ShopUserBenefit> benefits;
+  final ValueChanged<String?> onOpenSourceOrder;
+  final ValueChanged<String?> onOpenSourceProduct;
 
   @override
   Widget build(BuildContext context) {
     return _ShopInventorySection(
       title: '权益',
       emptyMessage: '当前没有可展示的权益。',
-      children: benefits.map(_ShopBenefitCard.new).toList(),
+      children: benefits
+          .map(
+            (benefit) => _ShopBenefitCard(
+              benefit: benefit,
+              onOpenSourceOrder: () => onOpenSourceOrder(benefit.sourceOrderId),
+              onOpenSourceProduct: () =>
+                  onOpenSourceProduct(benefit.sourceProductId),
+            ),
+          )
+          .toList(),
     );
   }
 }
@@ -200,16 +261,26 @@ class _ShopBenefitSection extends StatelessWidget {
 class _ShopInventoryItemSection extends StatelessWidget {
   const _ShopInventoryItemSection({
     required this.items,
+    required this.onOpenSourceProduct,
   });
 
   final List<ShopInventoryItem> items;
+  final ValueChanged<String?> onOpenSourceProduct;
 
   @override
   Widget build(BuildContext context) {
     return _ShopInventorySection(
       title: '道具',
       emptyMessage: '当前没有可展示的道具。',
-      children: items.map(_ShopInventoryItemCard.new).toList(),
+      children: items
+          .map(
+            (item) => _ShopInventoryItemCard(
+              item: item,
+              onOpenSourceProduct: () =>
+                  onOpenSourceProduct(item.sourceProductId),
+            ),
+          )
+          .toList(),
     );
   }
 }
@@ -252,9 +323,15 @@ class _ShopInventorySection extends StatelessWidget {
 }
 
 class _ShopBenefitCard extends StatelessWidget {
-  const _ShopBenefitCard(this.benefit);
+  const _ShopBenefitCard({
+    required this.benefit,
+    required this.onOpenSourceOrder,
+    required this.onOpenSourceProduct,
+  });
 
   final ShopUserBenefit benefit;
+  final VoidCallback onOpenSourceOrder;
+  final VoidCallback onOpenSourceProduct;
 
   @override
   Widget build(BuildContext context) {
@@ -266,6 +343,11 @@ class _ShopBenefitCard extends StatelessWidget {
         : benefit.isActive
             ? '已激活'
             : '未激活';
+    final sourceText = benefit.sourceTypeDisplay ?? benefit.sourceType;
+    final canOpenSourceOrder =
+        _normalizePositiveId(benefit.sourceOrderId) != null;
+    final canOpenSourceProduct =
+        _normalizePositiveId(benefit.sourceProductId) != null;
 
     return DecoratedBox(
       decoration: _itemDecoration(context),
@@ -280,7 +362,7 @@ class _ShopBenefitCard extends StatelessWidget {
               children: [
                 Chip(label: Text(status), visualDensity: VisualDensity.compact),
                 Chip(
-                  label: Text(benefit.sourceType),
+                  label: Text(sourceText),
                   visualDensity: VisualDensity.compact,
                 ),
               ],
@@ -295,6 +377,27 @@ class _ShopBenefitCard extends StatelessWidget {
               const SizedBox(height: 6),
               Text('到期时间：${benefit.expiresAt}'),
             ],
+            if (canOpenSourceOrder || canOpenSourceProduct) ...[
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  if (canOpenSourceOrder)
+                    FilledButton.tonalIcon(
+                      onPressed: onOpenSourceOrder,
+                      icon: const Icon(Icons.receipt_long_outlined),
+                      label: const Text('查看来源订单'),
+                    ),
+                  if (canOpenSourceProduct)
+                    OutlinedButton.icon(
+                      onPressed: onOpenSourceProduct,
+                      icon: const Icon(Icons.shopping_bag_outlined),
+                      label: const Text('查看来源商品'),
+                    ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
@@ -303,14 +406,20 @@ class _ShopBenefitCard extends StatelessWidget {
 }
 
 class _ShopInventoryItemCard extends StatelessWidget {
-  const _ShopInventoryItemCard(this.item);
+  const _ShopInventoryItemCard({
+    required this.item,
+    required this.onOpenSourceProduct,
+  });
 
   final ShopInventoryItem item;
+  final VoidCallback onOpenSourceProduct;
 
   @override
   Widget build(BuildContext context) {
     final title =
         item.itemName ?? item.consumableTypeDisplay ?? item.consumableType;
+    final canOpenSourceProduct =
+        _normalizePositiveId(item.sourceProductId) != null;
 
     return DecoratedBox(
       decoration: _itemDecoration(context),
@@ -335,11 +444,33 @@ class _ShopInventoryItemCard extends StatelessWidget {
               const SizedBox(height: 6),
               Text('获得时间：${item.createTime}'),
             ],
+            if (canOpenSourceProduct) ...[
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: onOpenSourceProduct,
+                icon: const Icon(Icons.shopping_bag_outlined),
+                label: const Text('查看来源商品'),
+              ),
+            ],
           ],
         ),
       ),
     );
   }
+}
+
+String? _normalizePositiveId(String? value) {
+  final normalizedValue = value?.trim();
+  if (normalizedValue == null || normalizedValue.isEmpty) {
+    return null;
+  }
+
+  final parsedValue = int.tryParse(normalizedValue);
+  if (parsedValue == null || parsedValue <= 0) {
+    return null;
+  }
+
+  return normalizedValue;
 }
 
 BoxDecoration _itemDecoration(BuildContext context) {

@@ -7,6 +7,7 @@ import '../../../core/network/radish_api_client.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
 import '../data/shop_models.dart';
 import '../data/shop_repository.dart';
+import 'shop_order_detail_page.dart';
 
 class ShopOrderListPage extends StatefulWidget {
   const ShopOrderListPage({
@@ -147,6 +148,25 @@ class _ShopOrderListPageState extends State<ShopOrderListPage> {
     });
   }
 
+  void _openOrder(ShopOrderSummary order) {
+    final orderId = order.id.trim();
+    if (orderId.isEmpty) {
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => ShopOrderDetailPage(
+          environment: widget.environment,
+          repository: widget.repository,
+          accessToken: widget.accessToken,
+          orderId: orderId,
+          initialTitle: order.productName,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final errorMessage = _errorMessage;
@@ -216,7 +236,12 @@ class _ShopOrderListPageState extends State<ShopOrderListPage> {
               _ShopPrivateRefreshIssueNotice(message: errorMessage),
               const SizedBox(height: 16),
             ],
-            ..._orders.map(_ShopOrderCard.new),
+            ..._orders.map(
+              (order) => _ShopOrderCard(
+                order: order,
+                onOpenOrder: () => _openOrder(order),
+              ),
+            ),
             const SizedBox(height: 16),
             if (_hasMore)
               FilledButton.tonalIcon(
@@ -247,9 +272,13 @@ enum _ShopOrderListLoadMode {
 }
 
 class _ShopOrderCard extends StatelessWidget {
-  const _ShopOrderCard(this.order);
+  const _ShopOrderCard({
+    required this.order,
+    required this.onOpenOrder,
+  });
 
   final ShopOrderSummary order;
+  final VoidCallback onOpenOrder;
 
   @override
   Widget build(BuildContext context) {
@@ -257,34 +286,47 @@ class _ShopOrderCard extends StatelessWidget {
     final statusText = order.statusDisplay ?? order.status;
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                Chip(
-                  label: Text(statusText),
-                  visualDensity: VisualDensity.compact,
-                ),
-                Chip(
-                  label: Text('订单 ${order.orderNo}'),
-                  visualDensity: VisualDensity.compact,
-                ),
+      child: InkWell(
+        onTap: onOpenOrder,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  Chip(
+                    label: Text(statusText),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  Chip(
+                    label: Text('订单 ${order.orderNo}'),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(order.productName, style: textTheme.titleMedium),
+              const SizedBox(height: 8),
+              Text('数量 ${order.quantity} · 合计 ${order.totalPrice} 胡萝卜'),
+              if (order.createTime != null) ...[
+                const SizedBox(height: 6),
+                Text('创建时间：${order.createTime}'),
               ],
-            ),
-            const SizedBox(height: 12),
-            Text(order.productName, style: textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Text('数量 ${order.quantity} · 合计 ${order.totalPrice} 胡萝卜'),
-            if (order.createTime != null) ...[
-              const SizedBox(height: 6),
-              Text('创建时间：${order.createTime}'),
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: FilledButton.tonalIcon(
+                  onPressed: onOpenOrder,
+                  icon: const Icon(Icons.receipt_long_outlined),
+                  label: const Text('查看订单详情'),
+                ),
+              ),
             ],
-          ],
+          ),
         ),
       ),
     );
