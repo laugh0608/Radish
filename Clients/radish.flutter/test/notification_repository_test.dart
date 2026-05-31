@@ -4,7 +4,7 @@ import 'package:radish_flutter/features/notifications/data/notification_reposito
 
 void main() {
   test('parses latest forum notification target with string ids', () {
-    final page = ForumNotificationPage.fromJson({
+    final page = NotificationPage.fromJson({
       'page': 1,
       'dataCount': 1,
       'pageCount': 1,
@@ -30,7 +30,7 @@ void main() {
   });
 
   test('prefers forum notification public id when present', () {
-    final page = ForumNotificationPage.fromJson({
+    final page = NotificationPage.fromJson({
       'data': [
         {
           'voNotification': {
@@ -52,7 +52,7 @@ void main() {
   });
 
   test('accepts public-id-only forum notification payloads', () {
-    final page = ForumNotificationPage.fromJson({
+    final page = NotificationPage.fromJson({
       'data': [
         {
           'voNotification': {
@@ -74,7 +74,7 @@ void main() {
   });
 
   test('skips non-forum notifications before selecting target', () {
-    final page = ForumNotificationPage.fromJson({
+    final page = NotificationPage.fromJson({
       'data': [
         {
           'voNotification': {
@@ -104,7 +104,7 @@ void main() {
   });
 
   test('ignores malformed forum notification payloads', () {
-    final page = ForumNotificationPage.fromJson({
+    final page = NotificationPage.fromJson({
       'data': [
         {
           'voNotification': {
@@ -125,7 +125,7 @@ void main() {
   });
 
   test('returns recent forum notification targets in page order', () {
-    final page = ForumNotificationPage.fromJson({
+    final page = NotificationPage.fromJson({
       'data': [
         {
           'voNotification': {
@@ -165,5 +165,60 @@ void main() {
     expect(targets[1].commentId, isNull);
     expect(page.latestForumTarget?.postId, targets.first.postId);
     expect(page.latestForumTarget?.commentId, targets.first.commentId);
+  });
+
+  test('parses readonly notification metadata alongside forum targets', () {
+    final page = NotificationPage.fromJson({
+      'page': 1,
+      'dataCount': 2,
+      'pageCount': 1,
+      'data': [
+        {
+          'voId': 1001,
+          'voNotificationId': 2001,
+          'voIsRead': false,
+          'voCreateTime': '2026-05-31T08:30:00',
+          'voNotification': {
+            'voType': 'System',
+            'voTitle': '系统维护',
+            'voContent': '今晚 23:00 进行维护。',
+            'voBusinessType': 'System',
+            'voCreateTime': '2026-05-31T08:00:00',
+            'voExtData': '{"app":"system"}',
+          },
+        },
+        {
+          'voId': 1002,
+          'voNotificationId': 2002,
+          'voIsRead': 'true',
+          'voNotification': {
+            'voType': 'CommentReplied',
+            'voTitle': '评论被回复',
+            'voContent': '有人回复了你的评论。',
+            'voBusinessType': 'Comment',
+            'voExtData': {
+              'app': 'forum',
+              'postPublicId': 'pst_reply',
+              'commentId': 'reply-1',
+            },
+          },
+        },
+      ],
+    });
+
+    expect(page.notifications, hasLength(2));
+    expect(page.notifications.first.id, '1001');
+    expect(page.notifications.first.notificationId, '2001');
+    expect(page.notifications.first.title, '系统维护');
+    expect(page.notifications.first.content, '今晚 23:00 进行维护。');
+    expect(page.notifications.first.typeLabel, '系统');
+    expect(page.notifications.first.isRead, isFalse);
+    expect(page.notifications.first.createdAt, '2026-05-31T08:30:00');
+    expect(page.notifications.first.forumTarget, isNull);
+
+    expect(page.notifications.last.typeLabel, '评论');
+    expect(page.notifications.last.isRead, isTrue);
+    expect(page.notifications.last.forumTarget?.postId, 'pst_reply');
+    expect(page.notifications.last.forumTarget?.commentId, 'reply-1');
   });
 }

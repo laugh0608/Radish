@@ -2530,11 +2530,13 @@ void main() {
     await tester.tap(find.text('我的').last);
     await tester.pumpAndSettle();
     expect(find.text('已登录用户 user-42'), findsOneWidget);
-    expect(find.text('论坛通知 2 条'), findsOneWidget);
+    expect(find.text('通知 3 条'), findsOneWidget);
 
-    await tester.tap(find.text('论坛通知 2 条'));
+    await tester.tap(find.text('通知 3 条'));
     await tester.pumpAndSettle();
 
+    expect(find.text('系统维护'), findsOneWidget);
+    expect(find.text('只读'), findsOneWidget);
     expect(find.text('帖子被评论'), findsOneWidget);
     expect(find.text('帖子收到轻回应'), findsOneWidget);
 
@@ -2550,7 +2552,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('已登录用户 user-42'), findsOneWidget);
-    expect(find.text('论坛通知 2 条'), findsOneWidget);
+    expect(find.text('通知 3 条'), findsOneWidget);
   });
 
   testWidgets('forum notification chip explains failure empty and refresh',
@@ -2603,7 +2605,7 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('暂无论坛通知'), findsOneWidget);
+    expect(find.text('暂无通知'), findsOneWidget);
     expect(find.text('刷新通知'), findsOneWidget);
     expect(notificationRepository.callCount, 2);
 
@@ -2617,10 +2619,10 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('论坛通知 1 条'), findsOneWidget);
+    expect(find.text('通知 1 条'), findsOneWidget);
     expect(notificationRepository.callCount, 3);
 
-    await tester.tap(find.text('论坛通知 1 条'));
+    await tester.tap(find.text('通知 1 条'));
     await tester.pumpAndSettle();
 
     expect(find.text('帖子被评论'), findsOneWidget);
@@ -3718,6 +3720,66 @@ class _FakeForumNotificationRepository implements NotificationRepository {
   const _FakeForumNotificationRepository();
 
   @override
+  Future<NotificationPage> getNotifications({
+    required String accessToken,
+    int pageSize = 20,
+  }) async {
+    return const NotificationPage(
+      notifications: [
+        NotificationListItem(
+          id: 'notification-system',
+          notificationId: 'system-1',
+          notification: NotificationPayload(
+            title: '系统维护',
+            content: '今晚 23:00 进行维护。',
+            type: 'System',
+            businessType: 'System',
+            createdAt: null,
+            extData: {'app': 'system'},
+          ),
+          isRead: false,
+          createdAt: '2026-05-31T08:30:00',
+        ),
+        NotificationListItem(
+          id: 'notification-forum-comment',
+          notificationId: 'forum-1',
+          notification: NotificationPayload(
+            title: '帖子被评论',
+            content: '有人评论了你的帖子。',
+            type: 'CommentReplied',
+            businessType: 'Comment',
+            createdAt: null,
+            extData: {
+              'app': 'forum',
+              'postId': '2042219067430928384',
+              'commentId': 'comment-big-1',
+            },
+          ),
+          isRead: false,
+          createdAt: '2026-05-31T08:31:00',
+        ),
+        NotificationListItem(
+          id: 'notification-forum-like',
+          notificationId: 'forum-2',
+          notification: NotificationPayload(
+            title: '帖子收到轻回应',
+            content: '你的帖子收到新的轻回应。',
+            type: 'PostLiked',
+            businessType: 'Post',
+            createdAt: null,
+            extData: {
+              'app': 'forum',
+              'postId': '2042219067430928384',
+            },
+          ),
+          isRead: true,
+          createdAt: '2026-05-31T08:32:00',
+        ),
+      ],
+    );
+  }
+
+  @override
   Future<ForumDetailHandoffTarget?> getLatestForumTarget({
     required String accessToken,
     int pageSize = 20,
@@ -3754,6 +3816,18 @@ class _MutableForumNotificationRepository implements NotificationRepository {
   ForumDetailHandoffTarget? target;
   Object? error;
   int callCount = 0;
+
+  @override
+  Future<NotificationPage> getNotifications({
+    required String accessToken,
+    int pageSize = 20,
+  }) async {
+    final targets = await getForumTargets(
+      accessToken: accessToken,
+      pageSize: pageSize,
+    );
+    return NotificationPage.fromForumTargets(targets);
+  }
 
   @override
   Future<ForumDetailHandoffTarget?> getLatestForumTarget({
