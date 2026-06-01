@@ -21,6 +21,11 @@ abstract class NotificationRepository {
     int pageSize = 20,
   });
 
+  Future<int> markAsRead({
+    required String accessToken,
+    required String notificationId,
+  });
+
   Future<ForumDetailHandoffTarget?> getLatestForumTarget({
     required String accessToken,
     int pageSize = 20,
@@ -58,6 +63,14 @@ class EmptyNotificationRepository implements NotificationRepository {
     int pageSize = 20,
   }) async {
     return const <ForumDetailHandoffTarget>[];
+  }
+
+  @override
+  Future<int> markAsRead({
+    required String accessToken,
+    required String notificationId,
+  }) {
+    throw const RadishApiClientException('通知已读状态暂时不可用');
   }
 }
 
@@ -118,6 +131,32 @@ class HttpNotificationRepository implements NotificationRepository {
     );
 
     return page.forumTargets;
+  }
+
+  @override
+  Future<int> markAsRead({
+    required String accessToken,
+    required String notificationId,
+  }) {
+    final normalizedAccessToken = accessToken.trim();
+    final normalizedNotificationId = notificationId.trim();
+    if (normalizedAccessToken.isEmpty) {
+      throw const RadishApiClientException('请先登录后再标记通知已读');
+    }
+    if (normalizedNotificationId.isEmpty) {
+      throw const RadishApiClientException('通知已读入口缺少通知 ID');
+    }
+
+    final uri = endpoints.resolveApi('/api/v1/Notification/MarkAsRead');
+
+    return apiClient.put(
+      uri: uri,
+      bearerToken: normalizedAccessToken,
+      body: {
+        'notificationIds': [normalizedNotificationId],
+      },
+      decode: _readAffectedRows,
+    );
   }
 }
 
@@ -220,6 +259,18 @@ class NotificationListItem {
   String get typeLabel => notification?.typeLabel ?? '站内通知';
 
   ForumDetailHandoffTarget? get forumTarget => notification?.forumTarget;
+
+  NotificationListItem copyWith({
+    bool? isRead,
+  }) {
+    return NotificationListItem(
+      id: id,
+      notificationId: notificationId,
+      notification: notification,
+      isRead: isRead ?? this.isRead,
+      createdAt: createdAt,
+    );
+  }
 }
 
 class ForumNotificationItem {
@@ -385,6 +436,18 @@ bool _readBool(Object? value) {
 
   final text = _readString(value)?.toLowerCase();
   return text == 'true' || text == '1';
+}
+
+int _readAffectedRows(Object? value) {
+  if (value is int) {
+    return value;
+  }
+
+  if (value is double) {
+    return value.round();
+  }
+
+  return int.tryParse(value?.toString() ?? '') ?? 0;
 }
 
 String _buildForumTargetContent(ForumDetailHandoffTarget target) {

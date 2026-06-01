@@ -2604,6 +2604,13 @@ void main() {
     expect(find.text('只读'), findsOneWidget);
     expect(find.text('帖子被评论'), findsOneWidget);
     expect(find.text('帖子收到轻回应'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, '标记已读'), findsNWidgets(2));
+
+    await tester.tap(find.widgetWithText(FilledButton, '标记已读').first);
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('系统 · 已读'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, '标记已读'), findsOneWidget);
 
     await tester.tap(find.text('帖子被评论'));
     await tester.pumpAndSettle();
@@ -4045,12 +4052,22 @@ class _FakeForumNotificationRepository implements NotificationRepository {
       ),
     ];
   }
+
+  @override
+  Future<int> markAsRead({
+    required String accessToken,
+    required String notificationId,
+  }) async {
+    return 1;
+  }
 }
 
 class _MutableForumNotificationRepository implements NotificationRepository {
   ForumDetailHandoffTarget? target;
   Object? error;
+  Object? markAsReadError;
   int callCount = 0;
+  final List<String> markedReadNotificationIds = <String>[];
 
   @override
   Future<NotificationPage> getNotifications({
@@ -4089,6 +4106,20 @@ class _MutableForumNotificationRepository implements NotificationRepository {
 
     final target = this.target;
     return target == null ? const <ForumDetailHandoffTarget>[] : [target];
+  }
+
+  @override
+  Future<int> markAsRead({
+    required String accessToken,
+    required String notificationId,
+  }) async {
+    final error = markAsReadError;
+    if (error != null) {
+      throw error;
+    }
+
+    markedReadNotificationIds.add(notificationId);
+    return 1;
   }
 }
 

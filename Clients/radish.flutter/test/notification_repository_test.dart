@@ -1,4 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:radish_flutter/core/config/app_environment.dart';
+import 'package:radish_flutter/core/network/radish_api_client.dart';
+import 'package:radish_flutter/core/network/radish_api_endpoints.dart';
 import 'package:radish_flutter/features/forum/data/forum_models.dart';
 import 'package:radish_flutter/features/notifications/data/notification_repository.dart';
 
@@ -221,4 +224,66 @@ void main() {
     expect(page.notifications.last.forumTarget?.postId, 'pst_reply');
     expect(page.notifications.last.forumTarget?.commentId, 'reply-1');
   });
+
+  test('marks a single notification as read with backend put contract',
+      () async {
+    final apiClient = _RecordingNotificationApiClient();
+    final repository = HttpNotificationRepository(
+      apiClient: apiClient,
+      endpoints: const RadishApiEndpoints(AppEnvironment.development()),
+    );
+
+    final affectedRows = await repository.markAsRead(
+      accessToken: 'access-token',
+      notificationId: '2001',
+    );
+
+    expect(affectedRows, 1);
+    expect(apiClient.lastMethod, 'PUT');
+    expect(apiClient.lastUri?.path, '/api/v1/Notification/MarkAsRead');
+    expect(apiClient.lastBearerToken, 'access-token');
+    expect(apiClient.lastBody, {
+      'notificationIds': ['2001'],
+    });
+  });
+}
+
+class _RecordingNotificationApiClient implements RadishApiClient {
+  String? lastMethod;
+  Uri? lastUri;
+  Object? lastBody;
+  String? lastBearerToken;
+
+  @override
+  Future<T> get<T>({
+    required Uri uri,
+    required JsonFactory<T> decode,
+    String? bearerToken,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<T> post<T>({
+    required Uri uri,
+    required Object? body,
+    required JsonFactory<T> decode,
+    String? bearerToken,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<T> put<T>({
+    required Uri uri,
+    required Object? body,
+    required JsonFactory<T> decode,
+    String? bearerToken,
+  }) async {
+    lastMethod = 'PUT';
+    lastUri = uri;
+    lastBody = body;
+    lastBearerToken = bearerToken;
+    return decode(1);
+  }
 }

@@ -740,4 +740,14 @@ class _SectionFailingApiClient implements RadishApiClient {
   }) {
     throw UnimplementedError();
   }
+
+  @override
+  Future<T> put<T>({
+    required Uri uri,
+    required Object? body,
+    required JsonFactory<T> decode,
+    String? bearerToken,
+  }) {
+    throw UnimplementedError();
+  }
 }

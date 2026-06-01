@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../core/auth/session_controller.dart';
 import '../../../core/auth/native_auth_controller.dart';
 import '../../../core/config/app_environment.dart';
+import '../../../core/network/radish_api_client.dart';
 import '../../../core/platform/app_lifecycle_gateway.dart';
 import '../../../features/discover/data/discover_repository.dart';
 import '../../../features/discover/data/discover_models.dart';
@@ -487,6 +488,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       showDragHandle: true,
       builder: (context) => _NotificationListSheet(
         notifications: notifications,
+        onMarkAsRead: _markNotificationAsRead,
       ),
     );
     if (!mounted || selectedTarget == null) {
@@ -494,6 +496,50 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     }
 
     _openForumDetailTarget(selectedTarget);
+  }
+
+  Future<String?> _markNotificationAsRead(
+    NotificationListItem notification,
+  ) async {
+    if (notification.isRead) {
+      return null;
+    }
+
+    final accessToken =
+        widget.sessionController.state.session?.accessToken.trim();
+    if (accessToken == null || accessToken.isEmpty) {
+      return '请先登录后再标记通知已读';
+    }
+
+    final notificationId = notification.notificationId?.trim();
+    if (notificationId == null || notificationId.isEmpty) {
+      return '当前通知缺少可标记的通知 ID';
+    }
+
+    try {
+      await widget.notificationRepository.markAsRead(
+        accessToken: accessToken,
+        notificationId: notificationId,
+      );
+      if (!mounted) {
+        return null;
+      }
+
+      setState(() {
+        _notificationItems = _notificationItems
+            .map(
+              (item) => item.notificationId == notificationId
+                  ? item.copyWith(isRead: true)
+                  : item,
+            )
+            .toList();
+      });
+      return null;
+    } on RadishApiClientException catch (error) {
+      return error.message;
+    } on FormatException catch (error) {
+      return '通知已读状态返回格式异常：${error.message}';
+    }
   }
 
   void _openShopProductFromDiscover(DiscoverProductSummary product) {
@@ -1343,12 +1389,74 @@ String? _normalizeUserId(String? userId) {
   return normalizedUserId;
 }
 
-class _NotificationListSheet extends StatelessWidget {
+class _NotificationListSheet extends StatefulWidget {
   const _NotificationListSheet({
     required this.notifications,
+    required this.onMarkAsRead,
   });
 
   final List<NotificationListItem> notifications;
+  final Future<String?> Function(NotificationListItem notification)
+      onMarkAsRead;
+
+  @override
+  State<_NotificationListSheet> createState() => _NotificationListSheetState();
+}
+
+class _NotificationListSheetState extends State<_NotificationListSheet> {
+  late List<NotificationListItem> _notifications;
+  final Set<String> _markingReadIds = <String>{};
+  String? _markReadIssueMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _notifications = widget.notifications;
+  }
+
+  @override
+  void didUpdateWidget(covariant _NotificationListSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.notifications != widget.notifications) {
+      _notifications = widget.notifications;
+    }
+  }
+
+  Future<void> _markAsRead(NotificationListItem notification) async {
+    final notificationId = notification.notificationId?.trim();
+    if (notificationId == null || notificationId.isEmpty) {
+      setState(() {
+        _markReadIssueMessage = '当前通知缺少可标记的通知 ID';
+      });
+      return;
+    }
+
+    setState(() {
+      _markReadIssueMessage = null;
+      _markingReadIds.add(notificationId);
+    });
+
+    final issueMessage = await widget.onMarkAsRead(notification);
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _markingReadIds.remove(notificationId);
+      if (issueMessage == null) {
+        _notifications = _notifications
+            .map(
+              (item) => item.notificationId == notificationId
+                  ? item.copyWith(isRead: true)
+                  : item,
+            )
+            .toList();
+      } else {
+        _markReadIssueMessage = issueMessage;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1372,46 +1480,147 @@ class _NotificationListSheet extends StatelessWidget {
                     color: colorScheme.onSurfaceVariant,
                   ),
             ),
+            if (_markReadIssueMessage != null) ...[
+              const SizedBox(height: 12),
+              _NotificationMarkReadIssueNotice(
+                message: _markReadIssueMessage!,
+              ),
+            ],
             const SizedBox(height: 12),
             Flexible(
               child: ListView.separated(
                 shrinkWrap: true,
-                itemCount: notifications.length,
+                itemCount: _notifications.length,
                 separatorBuilder: (context, index) => const Divider(height: 1),
                 itemBuilder: (context, index) {
-                  final notification = notifications[index];
+                  final notification = _notifications[index];
                   final target = notification.forumTarget;
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(
-                      target == null
-                          ? Icons.notifications_outlined
-                          : Icons.forum_outlined,
-                    ),
-                    title: Text(
-                      notification.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: _NotificationListItemSubtitle(
-                      notification: notification,
-                    ),
-                    trailing: target == null
-                        ? Text(
-                            '只读',
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelSmall
-                                ?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                          )
-                        : const Icon(Icons.chevron_right),
-                    onTap: target == null
+                  final notificationId = notification.notificationId?.trim();
+                  final isMarking = notificationId != null &&
+                      _markingReadIds.contains(notificationId);
+
+                  return _NotificationListTile(
+                    notification: notification,
+                    isMarkingRead: isMarking,
+                    onOpen: target == null
                         ? null
                         : () => Navigator.of(context).pop(target),
+                    onMarkAsRead: notification.isRead || notificationId == null
+                        ? null
+                        : () => _markAsRead(notification),
                   );
                 },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NotificationListTile extends StatelessWidget {
+  const _NotificationListTile({
+    required this.notification,
+    required this.isMarkingRead,
+    required this.onOpen,
+    required this.onMarkAsRead,
+  });
+
+  final NotificationListItem notification;
+  final bool isMarkingRead;
+  final VoidCallback? onOpen;
+  final VoidCallback? onMarkAsRead;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final target = notification.forumTarget;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(
+              target == null
+                  ? Icons.notifications_outlined
+                  : Icons.forum_outlined,
+            ),
+            title: Text(
+              notification.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            subtitle: _NotificationListItemSubtitle(
+              notification: notification,
+            ),
+            trailing: target == null
+                ? Text(
+                    notification.isRead ? '已读' : '只读',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                  )
+                : const Icon(Icons.chevron_right),
+            onTap: onOpen,
+          ),
+          if (onMarkAsRead != null) ...[
+            Padding(
+              padding: const EdgeInsets.only(left: 56, bottom: 4),
+              child: FilledButton.tonalIcon(
+                onPressed: isMarkingRead ? null : onMarkAsRead,
+                icon: isMarkingRead
+                    ? const SizedBox.square(
+                        dimension: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.done_all),
+                label: Text(isMarkingRead ? '正在标记' : '标记已读'),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _NotificationMarkReadIssueNotice extends StatelessWidget {
+  const _NotificationMarkReadIssueNotice({
+    required this.message,
+  });
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.error),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.error_outline,
+              color: colorScheme.onErrorContainer,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
