@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using Moq;
 using Radish.Common.HelpTool;
 using Radish.IRepository;
+using Radish.IService;
 using Radish.Model.DtoModels;
 using Radish.Service;
 using Xunit;
@@ -17,8 +18,9 @@ public class BootstrapServiceTest
         repository
             .Setup(r => r.AdministratorExistsAsync())
             .ReturnsAsync(false);
+        var coinService = new Mock<ICoinService>(MockBehavior.Strict);
 
-        var service = new BootstrapService(repository.Object);
+        var service = new BootstrapService(repository.Object, coinService.Object);
 
         var status = await service.GetStatusAsync();
 
@@ -30,7 +32,8 @@ public class BootstrapServiceTest
     public async Task CreateFirstAdministratorAsync_ShouldRejectWeakDefaultPassword()
     {
         var repository = new Mock<IBootstrapRepository>(MockBehavior.Strict);
-        var service = new BootstrapService(repository.Object);
+        var coinService = new Mock<ICoinService>(MockBehavior.Strict);
+        var service = new BootstrapService(repository.Object, coinService.Object);
 
         var result = await service.CreateFirstAdministratorAsync(new BootstrapCreateAdminDto
         {
@@ -53,12 +56,16 @@ public class BootstrapServiceTest
     {
         string? capturedHash = null;
         var repository = new Mock<IBootstrapRepository>(MockBehavior.Strict);
+        var coinService = new Mock<ICoinService>(MockBehavior.Strict);
         repository
             .Setup(r => r.TryCreateFirstAdministratorAsync("owner", It.IsAny<string>(), "owner@radish.test"))
             .Callback<string, string, string?>((_, passwordHash, _) => capturedHash = passwordHash)
             .ReturnsAsync(BootstrapAdminCreationResult.Created(9001, "owner"));
+        coinService
+            .Setup(service => service.GrantRegistrationRewardAsync(9001))
+            .ReturnsAsync("TXN_REGISTER_9001");
 
-        var service = new BootstrapService(repository.Object);
+        var service = new BootstrapService(repository.Object, coinService.Object);
 
         var result = await service.CreateFirstAdministratorAsync(new BootstrapCreateAdminDto
         {
@@ -72,5 +79,6 @@ public class BootstrapServiceTest
         Assert.NotNull(capturedHash);
         Assert.NotEqual("Strong!Pass123", capturedHash);
         Assert.True(PasswordHasher.VerifyPassword("Strong!Pass123", capturedHash!));
+        coinService.Verify(service => service.GrantRegistrationRewardAsync(9001), Times.Once);
     }
 }

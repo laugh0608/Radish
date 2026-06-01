@@ -12,14 +12,14 @@ import {
   type PostQuickReply,
 } from '@/api/forum';
 import type { LongId } from '@/api/user';
-import { copyToClipboard } from '@/utils/clipboard';
+import { buildDesktopForumPostReturnPath } from '@/services/authReturnPath';
 import { log } from '@/utils/logger';
 import { resolveMediaUrl } from '@/utils/media';
 import { CommentTree } from '@/apps/forum/components/CommentTree';
 import { PostDetail as ForumPostDetail } from '@/apps/forum/components/PostDetail';
 import { PostQuickReplyWall } from '@/apps/forum/components/PostQuickReplyWall';
 import { buildPublicForumPath } from '../forumRouteState';
-import { buildPublicCanonicalUrl } from '../publicHead';
+import { buildPublicShareUrl } from '../publicHead';
 import {
   applyPublicStructuredData,
   buildForumPostStructuredData,
@@ -30,6 +30,7 @@ import {
   resolvePublicForumDetailLoadState,
   resolvePublicForumReadSectionState,
 } from './publicForumViewState';
+import { usePublicShareLink } from '../hooks/usePublicShareLink';
 import { PublicStatusCard } from './PublicStatusCard';
 import {
   createForumReadingGuide,
@@ -94,8 +95,6 @@ export const PublicForumDetail = ({
   const [commentNavigationNotice, setCommentNavigationNotice] = useState<string | null>(null);
   const [highlightedCommentId, setHighlightedCommentId] = useState<LongId | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
-  const [shareBusy, setShareBusy] = useState(false);
-  const [shareState, setShareState] = useState<'idle' | 'success' | 'error'>('idle');
   const requestIdRef = useRef(0);
   const commentAnchorMapRef = useRef(new Map<string, HTMLDivElement>());
   const handledCommentNavigationRef = useRef<string | null>(null);
@@ -308,36 +307,30 @@ export const PublicForumDetail = ({
     return removePublicStructuredData;
   }, [commentId, post]);
 
-  useEffect(() => {
-    if (shareState === 'idle') {
-      return;
-    }
-
-    const timerId = window.setTimeout(() => {
-      setShareState('idle');
-    }, 2200);
-
-    return () => {
-      window.clearTimeout(timerId);
-    };
-  }, [shareState]);
-
-  const handleShare = async () => {
-    setShareBusy(true);
-
-    try {
-      const sharePostId = post ? getForumPostRouteIdentifier(post) : postId;
-      const sharePath = buildPublicForumPath(commentId
-        ? { kind: 'detail', postId: sharePostId, commentId }
-        : { kind: 'detail', postId: sharePostId });
-      await copyToClipboard(buildPublicCanonicalUrl(sharePath));
-      setShareState('success');
-    } catch {
-      setShareState('error');
-    } finally {
-      setShareBusy(false);
-    }
-  };
+  const buildForumShareUrl = useCallback(() => {
+    const sharePostId = post ? getForumPostRouteIdentifier(post) : postId;
+    const sharePath = buildPublicForumPath(commentId
+      ? { kind: 'detail', postId: sharePostId, commentId }
+      : { kind: 'detail', postId: sharePostId });
+    return buildPublicShareUrl(sharePath);
+  }, [commentId, post, postId]);
+  const { copyShareLink, shareBusy, shareState } = usePublicShareLink({
+    buildShareUrl: buildForumShareUrl,
+  });
+  const desktopCommentEntryUrl = post
+    ? buildDesktopForumPostReturnPath({
+      postId: post.voId,
+      postPublicId: post.voPublicId,
+      intent: 'comment',
+    })
+    : null;
+  const desktopQuickReplyEntryUrl = post
+    ? buildDesktopForumPostReturnPath({
+      postId: post.voId,
+      postPublicId: post.voPublicId,
+      intent: 'quickReply',
+    })
+    : null;
 
   const navigateToComment = useCallback(async (
     targetCommentId: LongId,
@@ -555,7 +548,7 @@ export const PublicForumDetail = ({
             <Icon icon="mdi:arrow-left" size={18} />
             <span>{backLabel}</span>
           </button>
-          <button type="button" className={styles.secondaryButton} onClick={() => void handleShare()} disabled={shareBusy}>
+          <button type="button" className={styles.secondaryButton} onClick={() => void copyShareLink()} disabled={shareBusy}>
             <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={18} />
             <span>{shareBusy ? t('forum.public.shareSubmitting') : t('forum.public.shareAction')}</span>
           </button>
@@ -621,6 +614,31 @@ export const PublicForumDetail = ({
               description={readingGuide.description}
               items={readingGuide.items}
             />
+
+            {(desktopCommentEntryUrl || desktopQuickReplyEntryUrl) && (
+              <section className={styles.workspaceActionPanel}>
+                <div className={styles.workspaceActionCopy}>
+                  <h2 className={styles.workspaceActionTitle}>{t('forum.public.workspaceActionTitle')}</h2>
+                  <p className={styles.workspaceActionDescription}>
+                    {t('forum.public.workspaceActionDescription')}
+                  </p>
+                </div>
+                <div className={styles.workspaceActionButtons}>
+                  {desktopQuickReplyEntryUrl && (
+                    <a className={styles.workspaceActionButton} href={desktopQuickReplyEntryUrl}>
+                      <Icon icon="mdi:message-flash-outline" size={18} />
+                      <span>{t('forum.public.workspaceQuickReplyAction')}</span>
+                    </a>
+                  )}
+                  {desktopCommentEntryUrl && (
+                    <a className={styles.workspaceActionButton} href={desktopCommentEntryUrl}>
+                      <Icon icon="mdi:comment-text-outline" size={18} />
+                      <span>{t('forum.public.workspaceCommentAction')}</span>
+                    </a>
+                  )}
+                </div>
+              </section>
+            )}
 
             <ForumPostDetail
               post={post}

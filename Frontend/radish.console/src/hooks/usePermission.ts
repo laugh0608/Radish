@@ -1,4 +1,4 @@
-import { useUser } from '../contexts/UserContext';
+import { useUser } from './useUser';
 import type { UserInfo } from '../types/user';
 
 export function hasPermission(user: UserInfo | null | undefined, permission?: string): boolean {

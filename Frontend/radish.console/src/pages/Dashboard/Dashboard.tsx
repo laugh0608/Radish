@@ -2,14 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
-  Space,
   Button,
   Table,
   Tag,
   message,
   type TableColumnsType,
 } from '@radish/ui';
-import { Card, Statistic } from 'antd';
 import {
   ShoppingOutlined,
   TeamOutlined,
@@ -17,6 +15,9 @@ import {
   FileTextOutlined,
   PlusOutlined,
   EyeOutlined,
+  SafetyOutlined,
+  TrophyOutlined,
+  WalletOutlined,
 } from '@radish/ui';
 import { adminGetOrders, getOrderStatusColor } from '@/api/shopApi';
 import { getDashboardStats, type DashboardStatsVo } from '@/api/statisticsApi';
@@ -24,6 +25,7 @@ import type { Order } from '@/api/types';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
+import '../adminFeature.css';
 import './Dashboard.css';
 
 export const Dashboard = () => {
@@ -34,6 +36,9 @@ export const Dashboard = () => {
   const canCreateProduct = usePermission(CONSOLE_PERMISSIONS.productsCreate);
   const canViewUsers = usePermission(CONSOLE_PERMISSIONS.usersView);
   const canViewApplications = usePermission(CONSOLE_PERMISSIONS.applicationsView);
+  const canViewModeration = usePermission(CONSOLE_PERMISSIONS.moderationView);
+  const canViewCoins = usePermission(CONSOLE_PERMISSIONS.coinsView);
+  const canViewExperience = usePermission(CONSOLE_PERMISSIONS.experienceView);
 
   const [stats, setStats] = useState<DashboardStatsVo>({
     voTotalUsers: 0,
@@ -150,121 +155,193 @@ export const Dashboard = () => {
   ];
 
   const hasQuickActions = canCreateProduct || canViewOrders || canViewUsers || canViewApplications;
+  const visibleQuickActionCount = [
+    canCreateProduct,
+    canViewOrders,
+    canViewUsers,
+    canViewApplications,
+    !canCreateProduct && canViewProducts,
+  ].filter(Boolean).length;
+  const dispatchItems = [
+    {
+      title: '内容治理',
+      description: '举报审核与手动治理动作',
+      enabled: canViewModeration,
+      path: '/moderation',
+      icon: <SafetyOutlined />,
+    },
+    {
+      title: '经验等级',
+      description: '经验台账、冻结与复核',
+      enabled: canViewExperience,
+      path: '/experience',
+      icon: <TrophyOutlined />,
+    },
+    {
+      title: '订单管理',
+      description: '最近订单与支付状态回看',
+      enabled: canViewOrders,
+      path: '/orders',
+      icon: <FileTextOutlined />,
+    },
+    {
+      title: '胡萝卜管理',
+      description: '余额台账与人工调整',
+      enabled: canViewCoins,
+      path: '/coins',
+      icon: <WalletOutlined />,
+    },
+  ];
+  const enabledDispatchCount = dispatchItems.filter((item) => item.enabled).length;
 
   return (
-    <div className="dashboard-page">
-      <h2 style={{ marginBottom: '24px' }}>仪表盘</h2>
+    <div className="admin-feature-page dashboard-page">
+      <section className="admin-feature-card">
+        <div className="admin-feature-header">
+          <div>
+            <h2>仪表盘</h2>
+            <p className="admin-feature-subtle">汇总 Console 当前可处理的运营入口、订单回看和治理调度状态。</p>
+          </div>
+          <Tag>{enabledDispatchCount > 0 ? `${enabledDispatchCount} 个调度入口` : '暂无调度权限'}</Tag>
+        </div>
+      </section>
 
-      <div className="dashboard-stats">
-        <Card loading={statsLoading}>
-          <Statistic
-            title="总用户数"
-            value={stats.voTotalUsers}
-            prefix={<TeamOutlined />}
-            styles={{ content: { color: '#3f8600' } }}
-          />
-        </Card>
-        <Card loading={statsLoading}>
-          <Statistic
-            title="总订单数"
-            value={stats.voTotalOrders}
-            prefix={<FileTextOutlined />}
-            styles={{ content: { color: '#1890ff' } }}
-          />
-        </Card>
-        <Card loading={statsLoading}>
-          <Statistic
-            title="商品数量"
-            value={stats.voTotalProducts}
-            prefix={<ShoppingOutlined />}
-            styles={{ content: { color: '#722ed1' } }}
-          />
-        </Card>
-        <Card loading={statsLoading}>
-          <Statistic
-            title="总收入"
-            value={stats.voTotalRevenue}
-            suffix="胡萝卜"
-            prefix={<AppstoreOutlined />}
-            styles={{ content: { color: '#cf1322' } }}
-          />
-        </Card>
+      <section className="admin-feature-metrics dashboard-metrics" aria-label="仪表盘指标">
+        <div className="admin-feature-metric dashboard-metric">
+          <span className="dashboard-metric__title">
+            <TeamOutlined /> 总用户数
+          </span>
+          <strong>{statsLoading ? '加载中' : stats.voTotalUsers}</strong>
+        </div>
+        <div className="admin-feature-metric dashboard-metric">
+          <span className="dashboard-metric__title">
+            <FileTextOutlined /> 总订单数
+          </span>
+          <strong>{statsLoading ? '加载中' : stats.voTotalOrders}</strong>
+        </div>
+        <div className="admin-feature-metric dashboard-metric">
+          <span className="dashboard-metric__title">
+            <ShoppingOutlined /> 商品数量
+          </span>
+          <strong>{statsLoading ? '加载中' : stats.voTotalProducts}</strong>
+        </div>
+        <div className="admin-feature-metric dashboard-metric">
+          <span className="dashboard-metric__title">
+            <AppstoreOutlined /> 总收入
+          </span>
+          <strong>{statsLoading ? '加载中' : `${stats.voTotalRevenue} 胡萝卜`}</strong>
+        </div>
+      </section>
+
+      <div className="admin-overview-layout">
+        <main className="admin-overview-main">
+          <section className="admin-overview-panel">
+            <div className="admin-overview-panel__title">
+              <div>
+                <h3>快速操作</h3>
+                <p className="admin-feature-subtle">按当前账号权限展示常用处理入口。</p>
+              </div>
+              <Tag>{visibleQuickActionCount > 0 ? `${visibleQuickActionCount} 项可用` : '无可用操作'}</Tag>
+            </div>
+            {hasQuickActions ? (
+              <div className="admin-overview-actions">
+                {canCreateProduct ? (
+                  <Button
+                    variant="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => navigate('/products')}
+                  >
+                    新建商品
+                  </Button>
+                ) : null}
+                {canViewOrders ? (
+                  <Button
+                    icon={<FileTextOutlined />}
+                    onClick={() => navigate('/orders')}
+                  >
+                    查看订单
+                  </Button>
+                ) : null}
+                {canViewUsers ? (
+                  <Button
+                    icon={<TeamOutlined />}
+                    onClick={() => navigate('/users')}
+                  >
+                    用户管理
+                  </Button>
+                ) : null}
+                {canViewApplications ? (
+                  <Button
+                    icon={<AppstoreOutlined />}
+                    onClick={() => navigate('/applications')}
+                  >
+                    应用管理
+                  </Button>
+                ) : null}
+                {!canCreateProduct && canViewProducts ? (
+                  <Button
+                    icon={<ShoppingOutlined />}
+                    onClick={() => navigate('/products')}
+                  >
+                    商品管理
+                  </Button>
+                ) : null}
+              </div>
+            ) : (
+              <p className="admin-feature-subtle">当前账号暂无可用快捷操作。</p>
+            )}
+          </section>
+
+          {canViewOrders ? (
+            <section className="admin-overview-panel">
+              <div className="admin-overview-panel__title">
+                <div>
+                  <h3>最近订单</h3>
+                  <p className="admin-feature-subtle">用于快速回看最近交易状态和用户反馈入口。</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="small"
+                  onClick={() => navigate('/orders')}
+                >
+                  查看全部
+                </Button>
+              </div>
+              <Table
+                columns={orderColumns}
+                dataSource={recentOrders}
+                rowKey="voId"
+                loading={loading}
+                pagination={false}
+                size="small"
+              />
+            </section>
+          ) : null}
+        </main>
+
+        <aside className="admin-overview-aside">
+          <h3>调度总览</h3>
+          <p className="admin-feature-subtle">按治理和运营链路聚合当前账号可进入的处理台。</p>
+          <div className="admin-dispatch-list">
+            {dispatchItems.map((item) => (
+              <button
+                key={item.path}
+                className="admin-dispatch-item"
+                type="button"
+                disabled={!item.enabled}
+                onClick={() => navigate(item.path)}
+              >
+                <span className="admin-dispatch-item__icon">{item.icon}</span>
+                <span className="admin-dispatch-item__content">
+                  <span className="admin-dispatch-item__title">{item.title}</span>
+                  <span className="admin-dispatch-item__description">{item.description}</span>
+                </span>
+                <Tag>{item.enabled ? '可进入' : '无权限'}</Tag>
+              </button>
+            ))}
+          </div>
+        </aside>
       </div>
-
-      <Card title="快速操作" style={{ marginTop: '24px' }}>
-        {hasQuickActions ? (
-          <Space wrap>
-            {canCreateProduct ? (
-              <Button
-                variant="primary"
-                icon={<PlusOutlined />}
-                onClick={() => navigate('/products')}
-              >
-                新建商品
-              </Button>
-            ) : null}
-            {canViewOrders ? (
-              <Button
-                icon={<FileTextOutlined />}
-                onClick={() => navigate('/orders')}
-              >
-                查看订单
-              </Button>
-            ) : null}
-            {canViewUsers ? (
-              <Button
-                icon={<TeamOutlined />}
-                onClick={() => navigate('/users')}
-              >
-                用户管理
-              </Button>
-            ) : null}
-            {canViewApplications ? (
-              <Button
-                icon={<AppstoreOutlined />}
-                onClick={() => navigate('/applications')}
-              >
-                应用管理
-              </Button>
-            ) : null}
-            {!canCreateProduct && canViewProducts ? (
-              <Button
-                icon={<ShoppingOutlined />}
-                onClick={() => navigate('/products')}
-              >
-                商品管理
-              </Button>
-            ) : null}
-          </Space>
-        ) : (
-          <div style={{ color: '#8c8c8c' }}>当前账号暂无可用快捷操作。</div>
-        )}
-      </Card>
-
-      {canViewOrders ? (
-        <Card
-          title="最近订单"
-          extra={
-            <Button
-              variant="ghost"
-              size="small"
-              onClick={() => navigate('/orders')}
-            >
-              查看全部
-            </Button>
-          }
-          style={{ marginTop: '24px' }}
-        >
-          <Table
-            columns={orderColumns}
-            dataSource={recentOrders}
-            rowKey="voId"
-            loading={loading}
-            pagination={false}
-            size="small"
-          />
-        </Card>
-      ) : null}
     </div>
   );
 };

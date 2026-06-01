@@ -17,8 +17,10 @@ class DiscoverPage extends StatefulWidget {
     this.onOpenForum,
     this.onOpenDocs,
     this.onOpenLeaderboard,
+    this.onOpenShop,
     this.onOpenDocument,
     this.onOpenForumDetailTarget,
+    this.onOpenShopProduct,
     this.onOpenProfileUser,
     super.key,
   });
@@ -29,8 +31,10 @@ class DiscoverPage extends StatefulWidget {
   final VoidCallback? onOpenForum;
   final VoidCallback? onOpenDocs;
   final VoidCallback? onOpenLeaderboard;
+  final VoidCallback? onOpenShop;
   final ValueChanged<DocsDocumentSummary>? onOpenDocument;
   final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
+  final ValueChanged<DiscoverProductSummary>? onOpenShopProduct;
   final ValueChanged<String>? onOpenProfileUser;
 
   @override
@@ -153,6 +157,8 @@ class _DiscoverPageState extends State<DiscoverPage> {
                 onOpenLeaderboard: widget.onOpenLeaderboard,
                 onOpenDocument: widget.onOpenDocument,
                 onOpenForumDetailTarget: widget.onOpenForumDetailTarget,
+                onOpenShopProduct: widget.onOpenShopProduct,
+                onOpenShop: widget.onOpenShop,
               ),
             ],
           ],
@@ -417,6 +423,8 @@ class _DiscoverContent extends StatelessWidget {
     required this.onOpenLeaderboard,
     required this.onOpenDocument,
     required this.onOpenForumDetailTarget,
+    required this.onOpenShopProduct,
+    required this.onOpenShop,
   });
 
   final DiscoverSnapshot snapshot;
@@ -425,6 +433,8 @@ class _DiscoverContent extends StatelessWidget {
   final VoidCallback? onOpenLeaderboard;
   final ValueChanged<DocsDocumentSummary>? onOpenDocument;
   final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
+  final ValueChanged<DiscoverProductSummary>? onOpenShopProduct;
+  final VoidCallback? onOpenShop;
 
   @override
   Widget build(BuildContext context) {
@@ -461,7 +471,11 @@ class _DiscoverContent extends StatelessWidget {
           onOpenDocument: onOpenDocument,
         ),
         const SizedBox(height: 16),
-        _ShopSection(products: snapshot.products),
+        _ShopSection(
+          products: snapshot.products,
+          onOpenShopProduct: onOpenShopProduct,
+          onOpenShop: onOpenShop,
+        ),
         const SizedBox(height: 16),
         _DiscoverBoundarySection(
           onOpenLeaderboard: onOpenLeaderboard,
@@ -643,9 +657,13 @@ class _DocsSection extends StatelessWidget {
 class _ShopSection extends StatelessWidget {
   const _ShopSection({
     required this.products,
+    required this.onOpenShopProduct,
+    required this.onOpenShop,
   });
 
   final List<DiscoverProductSummary> products;
+  final ValueChanged<DiscoverProductSummary>? onOpenShopProduct;
+  final VoidCallback? onOpenShop;
 
   @override
   Widget build(BuildContext context) {
@@ -653,6 +671,8 @@ class _ShopSection extends StatelessWidget {
       title: '商城精选',
       description: '这里只展示公开商品摘要，购买、订单和背包仍留在桌面工作台。',
       emptyText: '当前暂无可展示的公开商品。',
+      actionLabel: onOpenShop == null ? null : '查看全部商品',
+      onAction: onOpenShop,
       children: products
           .map(
             (product) => _SummaryTile(
@@ -665,6 +685,10 @@ class _ShopSection extends StatelessWidget {
                 if (product.hasDiscount) '有折扣',
                 if (!product.inStock) '暂时缺货',
               ],
+              actionLabel: onOpenShopProduct == null ? null : '查看详情',
+              onAction: onOpenShopProduct == null
+                  ? null
+                  : () => onOpenShopProduct!(product),
             ),
           )
           .toList(),

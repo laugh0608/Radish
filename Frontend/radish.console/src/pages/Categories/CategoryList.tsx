@@ -19,6 +19,7 @@ import {
   PlusOutlined,
   ReloadOutlined,
   SearchOutlined,
+  AppstoreOutlined,
 } from '@radish/ui';
 import {
   deleteCategory,
@@ -32,6 +33,7 @@ import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
 import { CategoryForm } from './CategoryForm';
+import '../adminFeature.css';
 import './CategoryList.css';
 
 const renderLevelText = (level: number) => {
@@ -56,6 +58,13 @@ export const CategoryList = () => {
   const [formVisible, setFormVisible] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [editingCategory, setEditingCategory] = useState<CategoryVo | undefined>(undefined);
+  const activeFilterCount = [
+    keyword.trim() ? 'keyword' : undefined,
+    isEnabled !== 'all' ? 'status' : undefined,
+    includeDeleted ? 'deleted' : undefined,
+  ].filter(Boolean).length;
+  const enabledCategories = categories.filter((category) => category.voIsEnabled && !category.voIsDeleted).length;
+  const rootCategories = categories.filter((category) => category.voLevel <= 0).length;
 
   const canViewCategories = usePermission(CONSOLE_PERMISSIONS.categoriesView);
   const canCreateCategory = usePermission(CONSOLE_PERMISSIONS.categoriesCreate);
@@ -307,75 +316,138 @@ export const CategoryList = () => {
   ];
 
   return (
-    <div className="category-list-page">
-      <div className="page-header">
-        <h2>分类管理</h2>
-        <Space>
-          <Button icon={<ReloadOutlined />} onClick={() => {
-            void loadCategories();
-          }}>
-            刷新
-          </Button>
-          {canCreateCategory ? (
-            <Button variant="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-              新增分类
+    <div className="admin-feature-page category-list-page">
+      <section className="admin-feature-card">
+        <div className="admin-feature-header">
+          <div>
+            <h2>
+              <AppstoreOutlined /> 分类管理
+            </h2>
+            <p className="admin-feature-subtle">维护社区内容分类、层级关系和排序权重。</p>
+          </div>
+          <div className="category-list-header-actions">
+            <Button icon={<ReloadOutlined />} onClick={() => {
+              void loadCategories();
+            }}>
+              刷新
             </Button>
-          ) : null}
-        </Space>
+            {canCreateCategory ? (
+              <Button variant="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+                新增分类
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      </section>
+
+      <section className="admin-feature-metrics" aria-label="分类列表指标">
+        <div className="admin-feature-metric">
+          当前结果
+          <strong>{total}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          本页分类
+          <strong>{categories.length}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          本页启用
+          <strong>{enabledCategories}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          顶级分类
+          <strong>{rootCategories}</strong>
+        </div>
+      </section>
+
+      <div className="admin-table-layout">
+        <main className="admin-table-main">
+          <section className="admin-table-toolbar" aria-label="分类筛选">
+            <div className="admin-table-toolbar__title">
+              <span>筛选分类</span>
+              <Tag>{activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}</Tag>
+            </div>
+            <div className="admin-table-toolbar__filters">
+              <Input
+                className="category-list-filter-input"
+                allowClear
+                placeholder="搜索分类名称/描述/Slug"
+                prefix={<SearchOutlined />}
+                value={keyword}
+                onChange={(event) => setKeyword(event.target.value)}
+              />
+
+              <Select
+                className="category-list-filter-select"
+                value={isEnabled}
+                onChange={(value) => setIsEnabled(value)}
+                options={[
+                  { label: '全部状态', value: 'all' },
+                  { label: '启用', value: 'enabled' },
+                  { label: '禁用', value: 'disabled' },
+                ]}
+              />
+
+              <Select
+                className="category-list-filter-select category-list-filter-select--deleted"
+                value={includeDeleted ? 'yes' : 'no'}
+                onChange={(value) => setIncludeDeleted(value === 'yes')}
+                options={[
+                  { label: '隐藏已删除', value: 'no' },
+                  { label: '显示已删除', value: 'yes' },
+                ]}
+              />
+            </div>
+          </section>
+
+          <section className="admin-table-panel">
+            <Table<CategoryVo>
+              rowKey="voId"
+              columns={columns}
+              dataSource={categories}
+              loading={loading}
+              pagination={{
+                current: pageIndex,
+                pageSize,
+                total,
+                showSizeChanger: true,
+                showQuickJumper: true,
+                showTotal: (count) => `共 ${count} 条`,
+                onChange: (current, size) => {
+                  void loadCategories(current, size);
+                },
+              }}
+              scroll={{ x: 1500 }}
+            />
+          </section>
+        </main>
+
+        <aside className="admin-table-aside">
+          <h3>列表摘要</h3>
+          <p className="admin-feature-subtle">用于核对当前分类范围、层级入口和排序权限。</p>
+          <div className="admin-table-summary">
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">查询范围</span>
+              <span className="admin-table-summary__value">
+                {activeFilterCount > 0 ? `${activeFilterCount} 个筛选条件` : '全部分类'}
+              </span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">软删除记录</span>
+              <span className="admin-table-summary__value">{includeDeleted ? '已显示' : '已隐藏'}</span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">分页规模</span>
+              <span className="admin-table-summary__value">{pageSize} 条 / 页</span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">排序权限</span>
+              <span className="admin-table-summary__value">
+                {canSortCategory ? '可调整排序' : '仅可查看排序'}
+              </span>
+            </div>
+          </div>
+        </aside>
       </div>
-
-      <div className="filter-bar">
-        <Space wrap>
-          <Input
-            allowClear
-            placeholder="搜索分类名称/描述/Slug"
-            prefix={<SearchOutlined />}
-            style={{ width: 260 }}
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-          />
-
-          <Select
-            value={isEnabled}
-            style={{ width: 140 }}
-            onChange={(value) => setIsEnabled(value)}
-            options={[
-              { label: '全部状态', value: 'all' },
-              { label: '启用', value: 'enabled' },
-              { label: '禁用', value: 'disabled' },
-            ]}
-          />
-
-          <Select
-            value={includeDeleted ? 'yes' : 'no'}
-            style={{ width: 160 }}
-            onChange={(value) => setIncludeDeleted(value === 'yes')}
-            options={[
-              { label: '隐藏已删除', value: 'no' },
-              { label: '显示已删除', value: 'yes' },
-            ]}
-          />
-        </Space>
-      </div>
-
-      <Table<CategoryVo>
-        rowKey="voId"
-        columns={columns}
-        dataSource={categories}
-        loading={loading}
-        pagination={{
-          current: pageIndex,
-          pageSize,
-          total,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (count) => `共 ${count} 条`,
-          onChange: (current, size) => {
-            void loadCategories(current, size);
-          },
-        }}
-        scroll={{ x: 1500 }}
-      />
 
       <CategoryForm
         visible={formVisible}

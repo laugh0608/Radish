@@ -4,10 +4,13 @@ export interface ForumNavigationTarget {
   commentId?: string;
 }
 
+export type ForumWorkspaceIntent = 'comment' | 'quickReply';
+
 export interface ForumWindowParams {
   postId?: string;
   postPublicId?: string;
   commentId?: string;
+  intent?: ForumWorkspaceIntent;
   navigationKey?: string;
 }
 
@@ -15,6 +18,7 @@ export interface ForumAppParamTarget {
   postId?: string | number;
   postPublicId?: string | number;
   commentId?: string | number;
+  intent?: string | null;
 }
 
 function decodeRouteCandidate(value: string): string {
@@ -71,6 +75,15 @@ function normalizePostPublicId(value: unknown): string | undefined {
   return /^pst_[a-f0-9]{32}$/.test(normalized) ? normalized : undefined;
 }
 
+function normalizeForumWorkspaceIntent(value: unknown): ForumWorkspaceIntent | undefined {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const normalized = value.trim();
+  return normalized === 'comment' || normalized === 'quickReply' ? normalized : undefined;
+}
+
 function hasPostNavigationTarget(target: ForumNavigationTarget): boolean {
   return Boolean(target.postPublicId || target.postId);
 }
@@ -99,10 +112,12 @@ export function buildForumAppParams(target: ForumAppParamTarget): Record<string,
   }
 
   const commentId = normalizePositiveIntegerString(target.commentId);
+  const intent = normalizeForumWorkspaceIntent(target.intent);
   return {
     ...(postId ? { postId } : {}),
     ...(postPublicId ? { postPublicId } : {}),
-    ...(commentId ? { commentId } : {})
+    ...(commentId ? { commentId } : {}),
+    ...(intent ? { intent } : {})
   };
 }
 
@@ -140,6 +155,7 @@ export function parseForumWindowParams(appParams?: Record<string, unknown> | nul
   }
 
   const commentId = normalizePositiveIntegerString(appParams.commentId);
+  const intent = normalizeForumWorkspaceIntent(appParams.intent);
   const rawNavigationKey = appParams.__navigationKey;
   const navigationKey = rawNavigationKey == null ? undefined : String(rawNavigationKey);
 
@@ -147,6 +163,7 @@ export function parseForumWindowParams(appParams?: Record<string, unknown> | nul
     ...(postId ? { postId } : {}),
     ...(postPublicId ? { postPublicId } : {}),
     ...(commentId ? { commentId } : {}),
+    ...(intent ? { intent } : {}),
     ...(navigationKey ? { navigationKey } : {})
   };
 }

@@ -31,6 +31,33 @@ void main() {
     expect(find.text('Lv.8 · 探索者'), findsOneWidget);
     expect(find.text('总经验值: 18888'), findsOneWidget);
     expect(find.text('当前账号'), findsOneWidget);
+    expect(find.text('打开公开主页'), findsNothing);
+  });
+
+  testWidgets(
+      'opens public profile from leaderboard entry when callback exists',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    String? openedUserId;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LeaderboardPage(
+          repository: const _SuccessLeaderboardRepository(),
+          onOpenProfileUser: (userId) {
+            openedUserId = userId;
+          },
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('打开公开主页'));
+
+    expect(openedUserId, '2042219067430928384');
   });
 
   testWidgets('renders leaderboard error state when repository fails', (
@@ -152,6 +179,16 @@ class _RecordingLeaderboardApiClient implements RadishApiClient {
 
   @override
   Future<T> post<T>({
+    required Uri uri,
+    required Object? body,
+    required JsonFactory<T> decode,
+    String? bearerToken,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<T> put<T>({
     required Uri uri,
     required Object? body,
     required JsonFactory<T> decode,

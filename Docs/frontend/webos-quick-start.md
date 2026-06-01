@@ -8,7 +8,7 @@
 npm run dev --workspace=radish.client
 ```
 
-默认入口：
+当前开发端口：
 
 ```text
 http://localhost:3000/
@@ -16,14 +16,17 @@ http://localhost:3000/
 
 如果你通过 Gateway 联调，则仍以 `https://localhost:5000/` 为统一外部入口。
 
+路线复盘后，根路径 `/` 与默认浏览器入口转向纯 Web。普通浏览器访问 `/` 已进入 `/discover` 公开分发页；WebOS 工作台只作为 `/desktop` 保留入口。
+
 ## 2. 当前定位
 
-`radish.client` 当前承担的是 **桌面工作台壳层**：
+`radish.client` 当前仍包含 **WebOS 桌面工作台实现**，但其产品定位已调整为 `/desktop` 保留入口：
 
 - 面向桌面端与高交互场景
-- 继续承载 Dock、窗口系统与桌面内应用打开体验
-- 与公开内容壳层、Flutter 客户端壳层分工协作
-- 在桌面安装包路线中继续作为 `Tauri + WebOS` 的前端主体
+- 继续维护 Dock、窗口系统与桌面内应用打开体验
+- 与纯 Web 壳层、Flutter 客户端壳层分工协作
+- 不再作为新增功能默认承载层
+- 不再作为 PC/Tauri 的默认 UI；未来 PC 客户端若重启，应以 Tauri 增强纯 Web 体验为主
 
 更完整的壳层分工见 [前端设计](/frontend/design) 与 [前端多壳层策略](/frontend/shell-strategy)。
 

@@ -28,3 +28,30 @@ test('sitemap.xml 应提供第一批公开入口 seed', () => {
   assert.match(sitemap, /<loc>https:\/\/radishx\.com\/docs<\/loc>/);
   assert.match(sitemap, /<loc>https:\/\/radishx\.com\/shop\/products<\/loc>/);
 });
+
+test('公开商城详情购买回流入口应指向保留工作台路径', () => {
+  const source = readFileSync(resolve(clientRoot, 'src/public/shop/PublicShopApp.tsx'), 'utf8');
+
+  assert.match(source, /import \{ buildDesktopShopProductReturnPath \} from '@\/services\/authReturnPath';/);
+  assert.match(source, /const desktopProductEntryUrl = buildDesktopShopProductReturnPath\(selectedProduct\.voId, \{ intent: 'purchase' \}\);/);
+  assert.match(source, /href=\{desktopProductEntryUrl\}/);
+  assert.doesNotMatch(source, /function buildDesktopProductEntryUrl/);
+  assert.doesNotMatch(source, /className=\{styles\.primaryLink\} href="\/"/);
+});
+
+test('公开个人页应保持只读边界，不直接暴露关注写操作', () => {
+  const source = readFileSync(resolve(clientRoot, 'src/public/profile/PublicProfileApp.tsx'), 'utf8');
+
+  assert.doesNotMatch(source, /from '@\/api\/userFollow'/);
+  assert.doesNotMatch(source, /followUser\(/);
+  assert.doesNotMatch(source, /unfollowUser\(/);
+  assert.doesNotMatch(source, /getFollowStatus\(/);
+});
+
+test('公开社区发现页应使用统一公开分享入口', () => {
+  const source = readFileSync(resolve(clientRoot, 'src/public/discover/PublicDiscoverApp.tsx'), 'utf8');
+
+  assert.match(source, /usePublicShareLink/);
+  assert.match(source, /buildPublicShareUrl\(buildPublicDiscoverPath\(route\)\)/);
+  assert.match(source, /discover\.public\.shareAction/);
+});

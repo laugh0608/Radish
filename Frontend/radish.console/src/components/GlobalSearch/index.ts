@@ -1,1 +1,2 @@
-export { GlobalSearch, useGlobalSearchHotkey } from './GlobalSearch';
+export { GlobalSearch } from './GlobalSearch';
+export { useGlobalSearchHotkey } from './useGlobalSearchHotkey';

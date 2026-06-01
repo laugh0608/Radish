@@ -311,7 +311,8 @@ public class PublicHeadSnapshotService : IPublicHeadSnapshotService
             return null;
         }
 
-        return Uri.TryCreate(imagePath, UriKind.Absolute, out _)
+        return Uri.TryCreate(imagePath, UriKind.Absolute, out var absoluteUri) &&
+               (absoluteUri.Scheme == Uri.UriSchemeHttp || absoluteUri.Scheme == Uri.UriSchemeHttps)
             ? imagePath
             : CombineUrl(publicBaseUrl, imagePath);
     }

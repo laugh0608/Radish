@@ -9,6 +9,7 @@ echo "========================================="
 
 # Get the script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$SCRIPT_DIR"
 
 # Check if Rust is installed
@@ -50,7 +51,7 @@ if [ $? -eq 0 ]; then
     fi
 
     # Copy to Radish.Api output directory
-    API_OUTPUT_DIR="./Radish.Api/bin/Debug/net10.0"
+    API_OUTPUT_DIR="$REPO_ROOT/Radish.Api/bin/Debug/net10.0"
 
     if [ -d "$API_OUTPUT_DIR" ]; then
         echo "Copying $LIB_NAME to $API_OUTPUT_DIR..."

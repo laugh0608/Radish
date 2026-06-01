@@ -19,6 +19,7 @@ import {
   DeleteOutlined,
   ReloadOutlined,
   SearchOutlined,
+  SettingOutlined,
 } from '@radish/ui';
 import {
   getSystemConfigs,
@@ -33,6 +34,7 @@ import { usePermission } from '@/hooks/usePermission';
 import { getAvatarUrl } from '@/config/env';
 import { SystemConfigForm } from './SystemConfigForm';
 import { log } from '@/utils/logger';
+import '../adminFeature.css';
 import './SystemConfigList.css';
 
 const SITE_FAVICON_KEY = 'Site.Branding.FaviconUrl';
@@ -57,6 +59,10 @@ export const SystemConfigList = () => {
   // 筛选条件
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searchKeyword, setSearchKeyword] = useState<string>('');
+  const activeFilterCount = [
+    selectedCategory ? 'category' : undefined,
+    searchKeyword.trim() ? 'keyword' : undefined,
+  ].filter(Boolean).length;
 
   // 加载配置列表
   const loadConfigs = async () => {
@@ -117,6 +123,7 @@ export const SystemConfigList = () => {
   const faviconConfig = configs.find((config) => config.voKey === SITE_FAVICON_KEY);
   const faviconPreviewUrl = getAvatarUrl(faviconConfig?.voValue || DEFAULT_SITE_FAVICON_PATH);
   const isUsingDefaultFavicon = !faviconConfig || faviconConfig.voValue === DEFAULT_SITE_FAVICON_PATH;
+  const enabledConfigs = filteredConfigs.filter((config) => config.voIsEnabled).length;
 
   const handleRestoreDefaultFavicon = async () => {
     if (!faviconConfig) {
@@ -280,7 +287,7 @@ export const SystemConfigList = () => {
       key: 'voKey',
       width: 200,
       render: (key: string) => (
-        <code style={{ fontSize: '12px', background: '#f5f5f5', padding: '2px 4px', borderRadius: '2px' }}>
+        <code className="system-config-key-code">
           {key}
         </code>
       ),
@@ -380,119 +387,183 @@ export const SystemConfigList = () => {
     },
   ];
   return (
-    <div className="system-config-list-page">
-      <div className="page-header">
-        <h2>系统配置</h2>
-        <Space>
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={loadConfigs}
-          >
-            刷新
-          </Button>
-          {canCreateSystemConfig ? (
-            <Button
-              variant="primary"
-              icon={<PlusOutlined />}
-              onClick={handleCreate}
-            >
-              新增配置
-            </Button>
-          ) : null}
-        </Space>
-      </div>
-
-      <div className="branding-card">
-        <div className="branding-card__main">
-          <div className="branding-card__preview">
-            {faviconPreviewUrl ? (
-              <img src={faviconPreviewUrl} alt="当前站点图标" className="branding-card__image" />
-            ) : (
-              <span className="branding-card__empty">暂无图标</span>
-            )}
+    <div className="admin-feature-page system-config-list-page">
+      <section className="admin-feature-card">
+        <div className="admin-feature-header">
+          <div>
+            <h2>
+              <SettingOutlined /> 系统配置
+            </h2>
+            <p className="admin-feature-subtle">维护站点基础配置、分类配置项和品牌图标入口。</p>
           </div>
-          <div className="branding-card__content">
-            <div className="branding-card__title-row">
-              <h3 className="branding-card__title">网站标签页图标</h3>
-              <Tag color={isUsingDefaultFavicon ? 'default' : 'processing'}>
-                {isUsingDefaultFavicon ? '默认种子' : '自定义图标'}
-              </Tag>
-            </div>
-            <p className="branding-card__description">
-              当前浏览器标签页左侧显示的站点图标。默认种子文件来自 `DataBases/Uploads/DefaultIco/bailuobo.ico`。
-            </p>
-            <code className="branding-card__value">{faviconConfig?.voValue || DEFAULT_SITE_FAVICON_PATH}</code>
+          <div className="system-config-header-actions">
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={loadConfigs}
+            >
+              刷新
+            </Button>
+            {canCreateSystemConfig ? (
+              <Button
+                variant="primary"
+                icon={<PlusOutlined />}
+                onClick={handleCreate}
+              >
+                新增配置
+              </Button>
+            ) : null}
           </div>
         </div>
-        <Space wrap>
-          <Upload
-            accept=".ico"
-            showUploadList={false}
-            customRequest={handleFaviconUpload}
-            disabled={!canEditSystemConfig || faviconUploading || faviconSaving}
-          >
-            <Button
-              variant="primary"
-              icon={<PlusOutlined />}
-              disabled={!canEditSystemConfig || faviconUploading || faviconSaving}
-            >
-              {faviconUploading ? '上传中...' : '上传 ICO'}
-            </Button>
-          </Upload>
-          <Button
-            onClick={() => {
-              void handleRestoreDefaultFavicon();
-            }}
-            disabled={!canEditSystemConfig || faviconUploading || faviconSaving || isUsingDefaultFavicon}
-          >
-            恢复默认
-          </Button>
-          <Button
-            onClick={() => {
-              void loadConfigs();
-            }}
-            disabled={faviconUploading || faviconSaving}
-          >
-            重新读取
-          </Button>
-        </Space>
-      </div>
+      </section>
 
-      {/* 筛选条件 */}
-      <div className="filter-bar">
-        <Space wrap>
-          <Select
-            placeholder="选择分类"
-            style={{ width: 150 }}
-            value={selectedCategory || undefined}
-            onChange={setSelectedCategory}
-            allowClear
-            options={categories.map(category => ({ label: category, value: category }))}
-          />
-          <Input
-            placeholder="搜索配置名称、键或描述"
-            style={{ width: 250 }}
-            value={searchKeyword}
-            onChange={(e) => setSearchKeyword(e.target.value)}
-            prefix={<SearchOutlined />}
-            allowClear
-          />
-          <Button onClick={handleResetFilter}>重置</Button>
-        </Space>
-      </div>
+      <section className="admin-feature-metrics" aria-label="系统配置指标">
+        <div className="admin-feature-metric">
+          全部配置
+          <strong>{configs.length}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          当前结果
+          <strong>{filteredConfigs.length}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          当前启用
+          <strong>{enabledConfigs}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          配置分类
+          <strong>{categories.length}</strong>
+        </div>
+      </section>
 
-      <Table
-        columns={columns}
-        dataSource={filteredConfigs}
-        rowKey="voId"
-        loading={loading}
-        pagination={{
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total) => `共 ${total} 条`,
-        }}
-        scroll={{ x: 1400 }}
-      />
+      <div className="admin-table-layout">
+        <main className="admin-table-main">
+          <section className="branding-card">
+            <div className="branding-card__main">
+              <div className="branding-card__preview">
+                {faviconPreviewUrl ? (
+                  <img src={faviconPreviewUrl} alt="当前站点图标" className="branding-card__image" />
+                ) : (
+                  <span className="branding-card__empty">暂无图标</span>
+                )}
+              </div>
+              <div className="branding-card__content">
+                <div className="branding-card__title-row">
+                  <h3 className="branding-card__title">网站标签页图标</h3>
+                  <Tag color={isUsingDefaultFavicon ? 'default' : 'processing'}>
+                    {isUsingDefaultFavicon ? '默认种子' : '自定义图标'}
+                  </Tag>
+                </div>
+                <p className="branding-card__description">
+                  当前浏览器标签页左侧显示的站点图标。默认种子文件来自 `DataBases/Uploads/DefaultIco/bailuobo.ico`。
+                </p>
+                <code className="branding-card__value">{faviconConfig?.voValue || DEFAULT_SITE_FAVICON_PATH}</code>
+              </div>
+            </div>
+            <div className="branding-card__actions">
+              <Upload
+                accept=".ico"
+                showUploadList={false}
+                customRequest={handleFaviconUpload}
+                disabled={!canEditSystemConfig || faviconUploading || faviconSaving}
+              >
+                <Button
+                  variant="primary"
+                  icon={<PlusOutlined />}
+                  disabled={!canEditSystemConfig || faviconUploading || faviconSaving}
+                >
+                  {faviconUploading ? '上传中...' : '上传 ICO'}
+                </Button>
+              </Upload>
+              <Button
+                onClick={() => {
+                  void handleRestoreDefaultFavicon();
+                }}
+                disabled={!canEditSystemConfig || faviconUploading || faviconSaving || isUsingDefaultFavicon}
+              >
+                恢复默认
+              </Button>
+              <Button
+                onClick={() => {
+                  void loadConfigs();
+                }}
+                disabled={faviconUploading || faviconSaving}
+              >
+                重新读取
+              </Button>
+            </div>
+          </section>
+
+          <section className="admin-table-toolbar" aria-label="系统配置筛选">
+            <div className="admin-table-toolbar__title">
+              <span>筛选配置</span>
+              <Tag>{activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}</Tag>
+            </div>
+            <div className="admin-table-toolbar__filters">
+              <Select
+                className="system-config-filter-select"
+                placeholder="选择分类"
+                value={selectedCategory || undefined}
+                onChange={setSelectedCategory}
+                allowClear
+                options={categories.map(category => ({ label: category, value: category }))}
+              />
+              <Input
+                className="system-config-filter-input"
+                placeholder="搜索配置名称、键或描述"
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                prefix={<SearchOutlined />}
+                allowClear
+              />
+              <Button onClick={handleResetFilter}>重置</Button>
+            </div>
+          </section>
+
+          <section className="admin-table-panel">
+            <Table
+              columns={columns}
+              dataSource={filteredConfigs}
+              rowKey="voId"
+              loading={loading}
+              pagination={{
+                showSizeChanger: true,
+                showQuickJumper: true,
+                showTotal: (total) => `共 ${total} 条`,
+              }}
+              scroll={{ x: 1400 }}
+            />
+          </section>
+        </main>
+
+        <aside className="admin-table-aside">
+          <h3>配置摘要</h3>
+          <p className="admin-feature-subtle">用于核对当前配置范围、品牌图标状态和编辑权限。</p>
+          <div className="admin-table-summary">
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">查询范围</span>
+              <span className="admin-table-summary__value">
+                {activeFilterCount > 0 ? `${activeFilterCount} 个筛选条件` : '全部配置'}
+              </span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">站点图标</span>
+              <span className="admin-table-summary__value">
+                {isUsingDefaultFavicon ? '默认种子' : '自定义图标'}
+              </span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">配置分类</span>
+              <span className="admin-table-summary__value">{categories.length} 类</span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">编辑权限</span>
+              <span className="admin-table-summary__value">
+                {canEditSystemConfig ? '可编辑配置' : '仅可查看配置'}
+              </span>
+            </div>
+          </div>
+        </aside>
+      </div>
 
       <SystemConfigForm
         visible={formVisible}

@@ -11,8 +11,9 @@ import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { ConfirmDialog } from '@radish/ui/confirm-dialog';
 import { toast } from '@radish/ui/toast';
-import { getOidcLoginUrl, type PostQuickReply } from '@/api/forum';
+import type { PostQuickReply } from '@/api/forum';
 import type { LongId } from '@/api/user';
+import { redirectToLogin } from '@/services/auth';
 import { resolveMediaUrl } from '@/utils/media';
 import styles from './PostQuickReplyWall.module.css';
 
@@ -26,6 +27,8 @@ interface PostQuickReplyWallProps {
   onCreate?: (content: string) => Promise<void>;
   onDelete?: (quickReplyId: LongId) => Promise<void>;
   onReport?: (quickReplyId: LongId) => void;
+  loginReturnPath?: string | null;
+  autoFocusComposerKey?: string | null;
 }
 
 interface QuickReplyLaneLayout {
@@ -82,6 +85,8 @@ export const PostQuickReplyWall = ({
   onCreate,
   onDelete,
   onReport,
+  loginReturnPath,
+  autoFocusComposerKey = null,
 }: PostQuickReplyWallProps) => {
   const { t } = useTranslation();
   const isReadOnly = mode === 'readOnly';
@@ -92,6 +97,8 @@ export const PostQuickReplyWall = ({
   const [wallWidth, setWallWidth] = useState(0);
   const [measuredWidths, setMeasuredWidths] = useState<Record<string, number>>({});
   const wallRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const handledAutoFocusKeyRef = useRef<string | null>(null);
   const measureRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const normalizedContent = useMemo(
@@ -163,6 +170,20 @@ export const PostQuickReplyWall = ({
     });
   }, [replies, wallWidth]);
 
+  useEffect(() => {
+    if (!autoFocusComposerKey || !isAuthenticated || isReadOnly) {
+      return;
+    }
+
+    if (handledAutoFocusKeyRef.current === autoFocusComposerKey) {
+      return;
+    }
+
+    handledAutoFocusKeyRef.current = autoFocusComposerKey;
+    textareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    textareaRef.current?.focus();
+  }, [autoFocusComposerKey, isAuthenticated, isReadOnly]);
+
   const laneLayouts = useMemo<QuickReplyLaneLayout[]>(() => {
     if (replies.length === 0) {
       return [];
@@ -221,10 +242,7 @@ export const PostQuickReplyWall = ({
   }, [measuredWidths, replies, wallWidth]);
 
   const handleLogin = () => {
-    const loginUrl = getOidcLoginUrl();
-    if (loginUrl) {
-      window.location.href = loginUrl;
-    }
+    redirectToLogin({ returnPath: loginReturnPath });
   };
 
   const handleSubmit = async () => {
@@ -286,6 +304,7 @@ export const PostQuickReplyWall = ({
         <div className={styles.composer}>
           <div className={styles.composerShell}>
             <textarea
+              ref={textareaRef}
               className={styles.textarea}
               placeholder={isAuthenticated ? t('forum.quickReply.placeholder') : t('forum.quickReply.loginPrompt')}
               value={content}

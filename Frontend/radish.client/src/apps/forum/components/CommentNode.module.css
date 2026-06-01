@@ -6,6 +6,7 @@
   border-left: 3px solid var(--theme-border-strong);
   border-radius: 14px;
   box-shadow: var(--theme-shadow-soft);
+  min-width: 0;
 }
 
 .containerHighlighted {
@@ -35,6 +36,7 @@
 .header {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   font-size: 12px;
   color: var(--theme-text-secondary);
@@ -168,17 +170,20 @@
   color: var(--theme-text-primary);
   font-size: 14px;
   text-align: left;
+  overflow-wrap: anywhere;
 }
 
 .contentWrapper {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
 }
 
 .replyMeta {
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 4px;
   font-size: 12px;
   color: var(--theme-text-secondary);
@@ -226,6 +231,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  max-width: 100%;
 }
 
 .imageButton {

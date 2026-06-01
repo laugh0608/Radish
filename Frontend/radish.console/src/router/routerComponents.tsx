@@ -3,7 +3,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { AdminLayout } from '../components/AdminLayout';
 import { RouteGuard } from '../components/PermissionGuard';
 import { getApiBaseUrl } from '../config/env';
-import { useUser } from '../contexts/UserContext';
+import { useUser } from '../hooks/useUser';
 import { tokenService } from '../services/tokenService';
 import { canEnterConsole, consoleRouteMetaMap } from './routeMeta';
 

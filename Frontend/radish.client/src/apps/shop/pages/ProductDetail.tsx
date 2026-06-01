@@ -2,6 +2,8 @@ import type { Product, ProductBuyCheckResult } from '@/types/shop';
 import { useTranslation } from 'react-i18next';
 import { getProductTypeDisplay, StockType } from '@/api/shop';
 import type { LongId } from '@/api/user';
+import { redirectToLogin } from '@/services/auth';
+import { buildDesktopShopProductReturnPath } from '@/services/authReturnPath';
 import { resolveMediaUrl } from '@/utils/media';
 import styles from './ProductDetail.module.css';
 
@@ -57,14 +59,15 @@ export const ProductDetail = ({
 
   const handlePurchase = () => {
     if (!isAuthenticated) {
-      alert(t('shop.loginRequired'));
+      const returnPath = buildDesktopShopProductReturnPath(product.voId, { intent: 'purchase' });
+      redirectToLogin({ returnPath });
       return;
     }
     onPurchase(product.voId);
   };
 
   const getPurchaseButtonText = () => {
-    if (!isAuthenticated) return t('shop.loginRequired');
+    if (!isAuthenticated) return t('shop.loginAndContinuePurchase');
     if (checkingCanBuy) return t('shop.checkingAvailability');
     if (!product.voInStock) return t('shop.outOfStock');
     if (!product.voIsOnSale) return t('shop.unavailable');
@@ -73,8 +76,7 @@ export const ProductDetail = ({
   };
 
   const isPurchaseDisabled = () => {
-    return !isAuthenticated ||
-           checkingCanBuy ||
+    return checkingCanBuy ||
            !product.voInStock ||
            !product.voIsOnSale ||
            (canBuy !== null && !canBuy.canBuy);
@@ -171,6 +173,11 @@ export const ProductDetail = ({
 
             {/* 购买按钮 */}
             <div className={styles.purchaseSection}>
+              {!isAuthenticated && (
+                <div className={styles.loginPrompt}>
+                  {t('shop.loginToContinuePurchase')}
+                </div>
+              )}
               <button
                 className={`${styles.purchaseButton} ${isPurchaseDisabled() ? styles.disabled : ''}`}
                 onClick={handlePurchase}

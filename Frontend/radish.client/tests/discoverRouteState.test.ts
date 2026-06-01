@@ -38,3 +38,7 @@ test('buildPublicDiscoverPath 应稳定回写公开社区分发页路径', () =>
 
   assert.equal(path, '/discover');
 });
+
+test('buildPublicDiscoverPath 应保留公开社区分发页区块状态', () => {
+  assert.equal(buildPublicDiscoverPath({ kind: 'home', section: 'shop' }), '/discover?section=shop');
+});

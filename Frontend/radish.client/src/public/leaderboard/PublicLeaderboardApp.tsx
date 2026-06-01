@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import {
@@ -10,6 +10,7 @@ import {
 import { useUserStore } from '@/stores/userStore';
 import {
   createDefaultPublicLeaderboardRoute,
+  buildPublicLeaderboardPath,
   getPublicLeaderboardRouteDefinitionBySlug,
   getPublicLeaderboardRouteDefinitionByType,
   publicLeaderboardTypeRouteDefinitions,
@@ -18,6 +19,8 @@ import {
 } from '../leaderboardRouteState';
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import { PublicShellHeader } from '../components/PublicShellHeader';
+import { buildPublicShareUrl } from '../publicHead';
+import { usePublicShareLink } from '../hooks/usePublicShareLink';
 import { resolveMediaUrl } from '@/utils/media';
 import styles from './PublicLeaderboardApp.module.css';
 
@@ -26,6 +29,7 @@ interface PublicLeaderboardAppProps {
   onNavigate: (route: PublicLeaderboardRoute, options?: { replace?: boolean }) => void;
   onNavigateToDiscover?: () => void;
   onNavigateToProfile?: (userId: string) => void;
+  onNavigateToShopProduct?: (productId: string) => void;
 }
 
 type PublicStatusTone = 'loading' | 'empty' | 'error';
@@ -257,6 +261,7 @@ export const PublicLeaderboardApp = ({
   onNavigate,
   onNavigateToDiscover,
   onNavigateToProfile,
+  onNavigateToShopProduct,
 }: PublicLeaderboardAppProps) => {
   const { t } = useTranslation();
   const pageRef = useRef<HTMLDivElement>(null);
@@ -275,6 +280,12 @@ export const PublicLeaderboardApp = ({
   const [isCompactViewport, setIsCompactViewport] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth <= 720 : false
   );
+  const buildLeaderboardShareUrl = useCallback(() => (
+    buildPublicShareUrl(buildPublicLeaderboardPath(route))
+  ), [route]);
+  const { copyShareLink, shareBusy, shareState } = usePublicShareLink({
+    buildShareUrl: buildLeaderboardShareUrl,
+  });
 
   const fallbackTypes = useMemo(() => createFallbackLeaderboardTypes(t), [t]);
   const activeRouteDefinition = useMemo(
@@ -458,6 +469,14 @@ export const PublicLeaderboardApp = ({
     onNavigateToProfile?.(String(item.voUserId));
   };
 
+  const handleOpenProductDetail = (item: UnifiedLeaderboardItemData) => {
+    if (!item.voProductId) {
+      return;
+    }
+
+    onNavigateToShopProduct?.(String(item.voProductId));
+  };
+
   return (
     <div className={styles.page} ref={pageRef}>
       <PublicShellHeader
@@ -486,6 +505,15 @@ export const PublicLeaderboardApp = ({
                 <span className={styles.statChip}>{t('leaderboard.public.myRank', { rank: myRank })}</span>
               )}
               <span className={styles.statChip}>{activeTypeConfig.voPrimaryLabel}</span>
+              <button type="button" className={styles.shareButton} onClick={() => void copyShareLink()} disabled={shareBusy}>
+                <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={16} />
+                <span>{shareBusy ? t('leaderboard.public.shareSubmitting') : t('leaderboard.public.shareAction')}</span>
+              </button>
+              {shareState !== 'idle' && (
+                <span className={styles.shareFeedback} data-state={shareState}>
+                  {shareState === 'success' ? t('leaderboard.public.shareSuccess') : t('leaderboard.public.shareFailed')}
+                </span>
+              )}
             </div>
           </div>
 
@@ -684,10 +712,14 @@ export const PublicLeaderboardApp = ({
                   })()
                 ) : (() => {
                   const productIconUrl = resolveMediaUrl(item.voProductIcon);
+                  const canOpenProductDetail = !!item.voProductId && !!onNavigateToShopProduct;
                   return (
-                    <article
+                    <button
                       key={`${item.voLeaderboardType}-${String(item.voProductId)}-${item.voRank}`}
+                      type="button"
                       className={`${styles.listItem} ${styles.productListItem}`}
+                      onClick={() => handleOpenProductDetail(item)}
+                      disabled={!canOpenProductDetail}
                     >
                       <div className={styles.rankBadge} data-rank={item.voRank <= 3 ? item.voRank : undefined}>
                         {item.voRank <= 3 ? (
@@ -711,9 +743,9 @@ export const PublicLeaderboardApp = ({
                         <div className={styles.itemPrimary}>
                           <div className={styles.itemTitleRow}>
                             <span className={styles.itemTitle}>{item.voProductName || t('leaderboard.public.productFallback')}</span>
-                            <span className={styles.productReadonly}>{t('leaderboard.public.productReadOnly')}</span>
+                            <span className={styles.productReadonly}>{t('leaderboard.public.productDetailAction')}</span>
                           </div>
-                          <p className={styles.itemMeta}>{t('leaderboard.public.productReadOnly')}</p>
+                          <p className={styles.itemMeta}>{t('leaderboard.public.productDetailMeta')}</p>
                         </div>
                         <div className={styles.itemSideInfo}>
                           <span className={styles.sideInfoLabel}>{t('shop.meta.price')}</span>
@@ -728,7 +760,7 @@ export const PublicLeaderboardApp = ({
                         <span className={styles.metricValue}>{Number(item.voPrimaryValue || 0).toLocaleString()}</span>
                         <span className={styles.metricLabel}>{item.voPrimaryLabel || activeTypeConfig.voPrimaryLabel}</span>
                       </div>
-                    </article>
+                    </button>
                   );
                 })())}
               </div>

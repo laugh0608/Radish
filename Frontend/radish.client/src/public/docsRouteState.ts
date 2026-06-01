@@ -31,12 +31,20 @@ export function createDefaultDocsSearchRoute(): PublicDocsSearchRoute {
   };
 }
 
+function safeDecodeURIComponent(value: string): string | undefined {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return undefined;
+  }
+}
+
 function normalizeSlug(value: string | undefined): string | undefined {
   if (!value) {
     return undefined;
   }
 
-  const normalized = decodeURIComponent(value).trim();
+  const normalized = safeDecodeURIComponent(value)?.trim();
   if (!normalized || normalized.includes('/')) {
     return undefined;
   }
@@ -49,7 +57,7 @@ function normalizeAnchor(value: string | undefined): string | undefined {
     return undefined;
   }
 
-  const normalized = decodeURIComponent(value.replace(/^#/, '')).trim();
+  const normalized = safeDecodeURIComponent(value.replace(/^#/, ''))?.trim();
   return normalized || undefined;
 }
 
@@ -141,7 +149,11 @@ export function parsePublicDocsRoute(pathname: string, searchOrHash = '', hash =
   return createDefaultDocsListRoute();
 }
 
-export function resolvePublicDocsRouteFromHref(href: string, currentOrigin: string): PublicDocsRoute | null {
+export function resolvePublicDocsRouteFromHref(
+  href: string,
+  currentOrigin: string,
+  currentPublicPath = '/'
+): PublicDocsRoute | null {
   const trimmedHref = href.trim();
   if (!trimmedHref) {
     return null;
@@ -149,7 +161,8 @@ export function resolvePublicDocsRouteFromHref(href: string, currentOrigin: stri
 
   try {
     const baseUrl = new URL(currentOrigin);
-    const resolvedUrl = new URL(trimmedHref, baseUrl);
+    const currentUrl = new URL(currentPublicPath, baseUrl);
+    const resolvedUrl = new URL(trimmedHref, currentUrl);
     if (resolvedUrl.origin !== baseUrl.origin) {
       return null;
     }
@@ -168,8 +181,12 @@ export function resolvePublicDocsRouteFromHref(href: string, currentOrigin: stri
   }
 }
 
-export function rewritePublicDocsHref(href: string, currentOrigin: string): string | null {
-  const route = resolvePublicDocsRouteFromHref(href, currentOrigin);
+export function rewritePublicDocsHref(
+  href: string,
+  currentOrigin: string,
+  currentPublicPath = '/'
+): string | null {
+  const route = resolvePublicDocsRouteFromHref(href, currentOrigin, currentPublicPath);
   if (!route) {
     return null;
   }

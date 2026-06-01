@@ -3,7 +3,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { log } from '@/utils/logger';
 import {
   Table,
-  AntButton,
+  Button,
   Space,
   Tag,
   Popconfirm,
@@ -18,11 +18,14 @@ import {
   DeleteOutlined,
   PlusOutlined,
   ReloadOutlined,
+  AppstoreOutlined,
+  KeyOutlined,
 } from '@radish/ui';
 import { clientApi } from '../../api/clients';
 import type { OidcClient, CreateClientRequest } from '../../types/oidc';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
+import '../adminFeature.css';
 import './Applications.css';
 
 export const Applications = () => {
@@ -38,6 +41,8 @@ export const Applications = () => {
   const canEditApplication = usePermission(CONSOLE_PERMISSIONS.applicationsEdit);
   const canDeleteApplication = usePermission(CONSOLE_PERMISSIONS.applicationsDelete);
   const canResetApplicationSecret = usePermission(CONSOLE_PERMISSIONS.applicationsResetSecret);
+  const enabledClients = clients.filter((client) => client.status !== 'Disabled').length;
+  const thirdPartyClients = clients.filter((client) => client.type === 'ThirdParty').length;
 
   useEffect(() => {
     if (!canViewApplications) {
@@ -110,7 +115,7 @@ export const Applications = () => {
           content: (
             <div>
               <p>新的客户端密钥（请妥善保存，仅显示一次）：</p>
-              <p style={{ fontFamily: 'monospace', background: '#f5f5f5', padding: '8px' }}>
+              <p className="applications-secret-box">
                 {result.data.clientSecret}
               </p>
             </div>
@@ -149,7 +154,7 @@ export const Applications = () => {
               <div>
                 <p>Client ID: {result.data.clientId}</p>
                 <p>Client Secret（请妥善保存，仅显示一次）：</p>
-                <p style={{ fontFamily: 'monospace', background: '#f5f5f5', padding: '8px' }}>
+                <p className="applications-secret-box">
                   {result.data.clientSecret}
                 </p>
               </div>
@@ -232,23 +237,24 @@ export const Applications = () => {
       render: (_, record) => (
         <Space size="small">
           {canEditApplication ? (
-            <AntButton
-              type="link"
+            <Button
+              variant="ghost"
               size="small"
               icon={<EditOutlined />}
               onClick={() => handleEdit(record)}
             >
               编辑
-            </AntButton>
+            </Button>
           ) : null}
           {canResetApplicationSecret ? (
-            <AntButton
-              type="link"
+            <Button
+              variant="ghost"
               size="small"
+              icon={<KeyOutlined />}
               onClick={() => void handleResetSecret(record.id)}
             >
               重置密钥
-            </AntButton>
+            </Button>
           ) : null}
           {canDeleteApplication ? (
             <Popconfirm
@@ -257,14 +263,13 @@ export const Applications = () => {
               okText="确定"
               cancelText="取消"
             >
-              <AntButton
-                type="link"
+              <Button
+                variant="danger"
                 size="small"
-                danger
                 icon={<DeleteOutlined />}
               >
                 删除
-              </AntButton>
+              </Button>
             </Popconfirm>
           ) : null}
         </Space>
@@ -272,32 +277,98 @@ export const Applications = () => {
     },
   ];
   return (
-    <div className="applications-page">
-      <div className="page-header">
-        <h2>应用管理</h2>
-        <Space>
-          <AntButton icon={<ReloadOutlined />} onClick={() => void loadClients()}>
-            刷新
-          </AntButton>
-          {canCreateApplication ? (
-            <AntButton type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-              新增应用
-            </AntButton>
-          ) : null}
-        </Space>
-      </div>
+    <div className="admin-feature-page applications-page">
+      <section className="admin-feature-card">
+        <div className="admin-feature-header">
+          <div>
+            <h2>
+              <AppstoreOutlined /> 应用管理
+            </h2>
+            <p className="admin-feature-subtle">维护 OIDC 客户端、回调地址和客户端密钥重置入口。</p>
+          </div>
+          <div className="applications-header-actions">
+            <Button icon={<ReloadOutlined />} onClick={() => void loadClients()}>
+              刷新
+            </Button>
+            {canCreateApplication ? (
+              <Button variant="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+                新增应用
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      </section>
 
-      <Table<OidcClient>
-        columns={columns}
-        dataSource={clients}
-        rowKey="id"
-        loading={loading}
-        pagination={{
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total) => `共 ${total} 条`,
-        }}
-      />
+      <section className="admin-feature-metrics" aria-label="应用列表指标">
+        <div className="admin-feature-metric">
+          已加载应用
+          <strong>{clients.length}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          启用应用
+          <strong>{enabledClients}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          第三方应用
+          <strong>{thirdPartyClients}</strong>
+        </div>
+      </section>
+
+      <div className="admin-table-layout">
+        <main className="admin-table-main">
+          <section className="admin-table-toolbar" aria-label="应用列表状态">
+            <div className="admin-table-toolbar__title">
+              <span>客户端列表</span>
+              <Tag>{loading ? '加载中' : '最近 100 条'}</Tag>
+            </div>
+            <p className="admin-feature-subtle">当前列表沿用既有客户端接口，创建和编辑表单字段保持不变。</p>
+          </section>
+
+          <section className="admin-table-panel">
+            <Table<OidcClient>
+              columns={columns}
+              dataSource={clients}
+              rowKey="id"
+              loading={loading}
+              scroll={{ x: 980 }}
+              pagination={{
+                showSizeChanger: true,
+                showQuickJumper: true,
+                showTotal: (total) => `共 ${total} 条`,
+              }}
+            />
+          </section>
+        </main>
+
+        <aside className="admin-table-aside">
+          <h3>应用摘要</h3>
+          <p className="admin-feature-subtle">用于核对客户端状态、类型和敏感操作权限。</p>
+          <div className="admin-table-summary">
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">查询范围</span>
+              <span className="admin-table-summary__value">客户端接口前 100 条</span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">创建权限</span>
+              <span className="admin-table-summary__value">
+                {canCreateApplication ? '可新增应用' : '不可新增应用'}
+              </span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">密钥操作</span>
+              <span className="admin-table-summary__value">
+                {canResetApplicationSecret ? '可重置客户端密钥' : '无密钥重置权限'}
+              </span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">删除权限</span>
+              <span className="admin-table-summary__value">
+                {canDeleteApplication ? '可删除应用' : '不可删除应用'}
+              </span>
+            </div>
+          </div>
+        </aside>
+      </div>
 
       <AntModal
         title={modalMode === 'create' ? '新增应用' : '编辑应用'}

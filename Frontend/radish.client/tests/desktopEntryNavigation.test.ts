@@ -14,6 +14,7 @@ test('parseDesktopExternalEntry 应解析 desktop 聊天消息深链参数', () 
       channelId: '2042219067430928384',
       messageId: '2042219067430928385',
     },
+    requiresAuthenticatedSession: true,
     signature: 'chat:2042219067430928384:2042219067430928385',
   });
 });
@@ -31,8 +32,170 @@ test('parseDesktopExternalEntry 应允许仅按频道打开聊天窗口', () => 
     appParams: {
       channelId: '123',
     },
+    requiresAuthenticatedSession: true,
     signature: 'chat:123:none',
   });
+});
+
+test('parseDesktopExternalEntry 应解析 desktop 论坛入口和帖子深链参数', () => {
+  assert.deepEqual(parseDesktopExternalEntry('/desktop', '?app=forum'), {
+    appId: 'forum',
+    appParams: {},
+    requiresAuthenticatedSession: false,
+    signature: 'forum:home',
+  });
+
+  assert.deepEqual(
+    parseDesktopExternalEntry(
+      '/desktop',
+      '?app=forum&postPublicId=pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f&commentId=2042219067430928385',
+    ),
+    {
+      appId: 'forum',
+      appParams: {
+        postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+        commentId: '2042219067430928385',
+      },
+      requiresAuthenticatedSession: false,
+      signature: 'forum:pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f:2042219067430928385:read',
+    },
+  );
+
+  assert.deepEqual(parseDesktopExternalEntry('/desktop', '?app=forum&postId=2042219067430928384'), {
+    appId: 'forum',
+    appParams: {
+      postId: '2042219067430928384',
+    },
+    requiresAuthenticatedSession: false,
+    signature: 'forum:2042219067430928384:none:read',
+  });
+});
+
+test('parseDesktopExternalEntry 应解析 desktop 论坛参与意图参数', () => {
+  assert.deepEqual(
+    parseDesktopExternalEntry(
+      '/desktop',
+      '?app=forum&postPublicId=pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f&intent=quickReply',
+    ),
+    {
+      appId: 'forum',
+      appParams: {
+        postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+        intent: 'quickReply',
+      },
+      requiresAuthenticatedSession: false,
+      signature: 'forum:pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f:none:quickReply',
+    },
+  );
+
+  assert.deepEqual(
+    parseDesktopExternalEntry(
+      '/desktop',
+      '?app=forum&postPublicId=pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f&commentId=2042219067430928385&intent=comment',
+    ),
+    {
+      appId: 'forum',
+      appParams: {
+        postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+        commentId: '2042219067430928385',
+        intent: 'comment',
+      },
+      requiresAuthenticatedSession: false,
+      signature: 'forum:pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f:2042219067430928385:comment',
+    },
+  );
+});
+
+test('parseDesktopExternalEntry 应拒绝非法论坛参与意图', () => {
+  assert.equal(parseDesktopExternalEntry('/desktop', '?app=forum&intent=comment'), null);
+  assert.equal(
+    parseDesktopExternalEntry(
+      '/desktop',
+      '?app=forum&postPublicId=pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f&intent=publish',
+    ),
+    null,
+  );
+});
+
+test('parseDesktopExternalEntry 应拒绝非法论坛帖子深链参数', () => {
+  assert.equal(parseDesktopExternalEntry('/desktop', '?app=forum&postId=0'), null);
+  assert.equal(parseDesktopExternalEntry('/desktop', '?app=forum&postPublicId=post-42'), null);
+  assert.equal(parseDesktopExternalEntry('/desktop', '?app=forum&commentId=2042219067430928385'), null);
+});
+
+test('parseDesktopExternalEntry 应解析 desktop 商城商品深链参数', () => {
+  const target = parseDesktopExternalEntry(
+    '/desktop',
+    '?app=shop&productId=2042219067430928384',
+  );
+
+  assert.deepEqual(target, {
+    appId: 'shop',
+    appParams: {
+      productId: '2042219067430928384',
+    },
+    requiresAuthenticatedSession: false,
+    signature: 'shop:product:2042219067430928384:read',
+  });
+
+  assert.deepEqual(
+    parseDesktopExternalEntry('/desktop', '?app=shop&productId=2042219067430928384&intent=purchase'),
+    {
+      appId: 'shop',
+      appParams: {
+        productId: '2042219067430928384',
+        intent: 'purchase',
+      },
+      requiresAuthenticatedSession: false,
+      signature: 'shop:product:2042219067430928384:purchase',
+    },
+  );
+});
+
+test('parseDesktopExternalEntry 应解析 desktop 商城订单深链参数', () => {
+  const target = parseDesktopExternalEntry(
+    '/desktop',
+    '?app=shop&orderId=2042219067430928384',
+  );
+
+  assert.deepEqual(target, {
+    appId: 'shop',
+    appParams: {
+      orderId: '2042219067430928384',
+    },
+    requiresAuthenticatedSession: true,
+    signature: 'shop:order:2042219067430928384',
+  });
+});
+
+test('parseDesktopExternalEntry 应解析 desktop 商城订单列表和背包入口', () => {
+  assert.deepEqual(parseDesktopExternalEntry('/desktop', '?app=shop&view=orders'), {
+    appId: 'shop',
+    appParams: {
+      initialView: 'orders',
+    },
+    requiresAuthenticatedSession: true,
+    signature: 'shop:orders',
+  });
+
+  assert.deepEqual(parseDesktopExternalEntry('/desktop', '?app=shop&view=inventory'), {
+    appId: 'shop',
+    appParams: {
+      initialView: 'inventory',
+    },
+    requiresAuthenticatedSession: true,
+    signature: 'shop:inventory',
+  });
+});
+
+test('parseDesktopExternalEntry 应拒绝非法商城参数', () => {
+  assert.equal(parseDesktopExternalEntry('/desktop', '?app=shop&productId=0'), null);
+  assert.equal(parseDesktopExternalEntry('/desktop', '?app=shop&productId=abc'), null);
+  assert.equal(parseDesktopExternalEntry('/desktop', '?app=shop&productId=2042219067430928384&intent=orders'), null);
+  assert.equal(parseDesktopExternalEntry('/desktop', '?app=shop&intent=purchase'), null);
+  assert.equal(parseDesktopExternalEntry('/desktop', '?app=shop&orderId=0'), null);
+  assert.equal(parseDesktopExternalEntry('/desktop', '?app=shop&view=profile'), null);
+  assert.equal(parseDesktopExternalEntry('/desktop', '?app=shop'), null);
 });
 
 test('stripDesktopExternalEntrySearch 应仅移除已处理的 desktop 跳转参数', () => {
@@ -41,4 +204,16 @@ test('stripDesktopExternalEntrySearch 应仅移除已处理的 desktop 跳转参
     '?culture=zh',
   );
   assert.equal(stripDesktopExternalEntrySearch('?app=chat&channelId=123'), '');
+  assert.equal(
+    stripDesktopExternalEntrySearch('?app=forum&postId=2042219067430928384&commentId=2042219067430928385&intent=comment&culture=zh'),
+    '?culture=zh',
+  );
+  assert.equal(
+    stripDesktopExternalEntrySearch('?app=shop&productId=2042219067430928384&intent=purchase&culture=zh'),
+    '?culture=zh',
+  );
+  assert.equal(
+    stripDesktopExternalEntrySearch('?app=shop&orderId=2042219067430928384&view=orders&culture=zh'),
+    '?culture=zh',
+  );
 });

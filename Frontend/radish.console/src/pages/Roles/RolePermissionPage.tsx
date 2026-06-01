@@ -4,7 +4,6 @@ import {
   Button,
   Checkbox,
   Descriptions,
-  Divider,
   Space,
   Tag,
   message,
@@ -23,6 +22,7 @@ import {
   type RoleAuthorizationSnapshotVo,
 } from '@/api/consoleAuthorization';
 import { log } from '@/utils/logger';
+import '../adminFeature.css';
 import './RolePermissionPage.css';
 
 interface ResourceIndexItem {
@@ -343,44 +343,65 @@ export const RolePermissionPage = () => {
   const visualStateCache = useMemo(() => new Map<number, NodeVisualState>(), [selectedResourceIds]);
 
   return (
-    <div className="role-permission-page">
-      <div className="role-permission-page__header">
-        <div className="role-permission-page__heading">
-          <Space>
+    <div className="admin-feature-page role-permission-page">
+      <section className="admin-feature-card">
+        <div className="admin-feature-header">
+          <div className="role-permission-page__heading">
             <Button icon={<LeftOutlined />} onClick={() => navigate('/roles')}>
               返回角色列表
             </Button>
             <div>
-              <h2>角色权限配置</h2>
-              <p>维护 Console 菜单、按钮与接口的第一阶段授权资源。</p>
+              <h2>
+                <SafetyOutlined /> 角色权限配置
+              </h2>
+              <p className="admin-feature-subtle">维护 Console 菜单、按钮与接口的第一阶段授权资源。</p>
             </div>
-          </Space>
+          </div>
+
+          <div className="role-permission-page__actions">
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={() => {
+                void loadAuthorization();
+              }}
+            >
+              刷新
+            </Button>
+            <Button
+              variant="primary"
+              icon={<SafetyOutlined />}
+              onClick={() => {
+                void handleSave();
+              }}
+              disabled={!canEditRole || !isDirty}
+            >
+              {saving ? '保存中...' : '保存权限'}
+            </Button>
+          </div>
         </div>
+      </section>
 
-        <Space>
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={() => {
-              void loadAuthorization();
-            }}
-          >
-            刷新
-          </Button>
-          <Button
-            variant="primary"
-            icon={<SafetyOutlined />}
-            onClick={() => {
-              void handleSave();
-            }}
-            disabled={!canEditRole || !isDirty}
-          >
-            {saving ? '保存中...' : '保存权限'}
-          </Button>
-        </Space>
-      </div>
+      <section className="admin-feature-metrics" aria-label="角色权限指标">
+        <div className="admin-feature-metric">
+          已选资源
+          <strong>{selectedResourceIds.length}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          权限键
+          <strong>{permissionKeys.length}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          接口映射
+          <strong>{livePreview.length}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          保存状态
+          <strong>{isDirty ? '待保存' : '已同步'}</strong>
+        </div>
+      </section>
 
-      <div className="role-permission-page__summary">
-        <div className="role-permission-card">
+      <section className="admin-feature-card">
+        <div className="role-permission-page__role-card">
           <Descriptions
             title="角色信息"
             column={2}
@@ -414,22 +435,7 @@ export const RolePermissionPage = () => {
             ]}
           />
         </div>
-
-        <div className="role-permission-card role-permission-card--metrics">
-          <div>
-            <span>已选资源</span>
-            <strong>{selectedResourceIds.length}</strong>
-          </div>
-          <div>
-            <span>权限键</span>
-            <strong>{permissionKeys.length}</strong>
-          </div>
-          <div>
-            <span>接口映射</span>
-            <strong>{livePreview.length}</strong>
-          </div>
-        </div>
-      </div>
+      </section>
 
       <div className="role-permission-page__content">
         <section className="role-permission-panel">
@@ -440,8 +446,6 @@ export const RolePermissionPage = () => {
             </div>
             {loading ? <Tag color="processing">加载中</Tag> : null}
           </div>
-
-          <Divider />
 
           <div className="role-permission-panel__body">
             {resourceTree.map((node) => (
@@ -465,8 +469,6 @@ export const RolePermissionPage = () => {
             </div>
             {isDirty ? <Tag color="warning">有未保存变更</Tag> : <Tag color="success">已同步</Tag>}
           </div>
-
-          <Divider />
 
           <div className="role-permission-preview">
             <div className="role-permission-preview__section">

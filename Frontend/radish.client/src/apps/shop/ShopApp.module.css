@@ -71,6 +71,102 @@
   box-sizing: border-box;
 }
 
+.lazyLoading {
+  display: flex;
+  min-height: 240px;
+  align-items: center;
+  justify-content: center;
+}
+
+.lazySpinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--theme-border-soft);
+  border-top-color: var(--theme-brand-primary);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+.authRequired {
+  display: flex;
+  min-height: 360px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px 24px;
+  text-align: center;
+  background: var(--theme-bg-surface);
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 8px;
+  box-shadow: var(--theme-shadow-soft);
+}
+
+.authRequiredIcon {
+  display: flex;
+  width: 56px;
+  height: 56px;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  background: var(--theme-brand-soft);
+  border-radius: 50%;
+}
+
+.authRequiredTitle {
+  margin: 8px 0 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--theme-text-primary);
+}
+
+.authRequiredDescription {
+  max-width: 520px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--theme-text-secondary);
+}
+
+.authRequiredActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.authPrimaryButton,
+.authSecondaryButton {
+  min-height: 38px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.authPrimaryButton {
+  color: var(--theme-text-inverse);
+  background: var(--theme-brand-primary);
+  border: 1px solid var(--theme-brand-primary);
+}
+
+.authPrimaryButton:hover {
+  background: color-mix(in srgb, var(--theme-brand-primary) 82%, black 18%);
+}
+
+.authSecondaryButton {
+  color: var(--theme-text-secondary);
+  background: transparent;
+  border: 1px solid var(--theme-border-soft);
+}
+
+.authSecondaryButton:hover {
+  color: var(--theme-brand-primary);
+  background: var(--theme-bg-muted);
+}
+
 .errorToast {
   position: fixed;
   top: 80px;
@@ -92,6 +188,12 @@
   to {
     transform: translateX(0);
     opacity: 1;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 

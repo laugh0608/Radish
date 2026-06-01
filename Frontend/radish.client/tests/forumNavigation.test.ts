@@ -183,12 +183,14 @@ test('parseForumWindowParams 应保留窗口参数中的帖子 PublicId', () => 
   const params = parseForumWindowParams({
     postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
     commentId: '2042219067430928385',
+    intent: 'comment',
     __navigationKey: 'notification:1',
   });
 
   assert.deepEqual(params, {
     postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
     commentId: '2042219067430928385',
+    intent: 'comment',
     navigationKey: 'notification:1',
   });
 });
@@ -219,12 +221,35 @@ test('buildForumAppParams 应保留帖子 PublicId 参数', () => {
   const params = buildForumAppParams({
     postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
     commentId: '2042219067430928385',
+    intent: 'quickReply',
   });
 
   assert.deepEqual(params, {
     postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
     commentId: '2042219067430928385',
+    intent: 'quickReply',
   });
+});
+
+test('论坛工作台参数应拒绝非法参与意图', () => {
+  assert.deepEqual(
+    buildForumAppParams({
+      postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+      intent: 'publish',
+    }),
+    {
+      postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+    },
+  );
+  assert.deepEqual(
+    parseForumWindowParams({
+      postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+      intent: 'publish',
+    }),
+    {
+      postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+    },
+  );
 });
 
 test('parsePublicForumRoute 应保留公开阅读直链的大整数字符串 ID', () => {

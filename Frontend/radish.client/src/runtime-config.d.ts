@@ -1,4 +1,5 @@
 interface RadishRuntimeConfig {
+  publicUrl?: string;
   apiBaseUrl?: string;
   authBaseUrl?: string;
   signalrHubUrl?: string;

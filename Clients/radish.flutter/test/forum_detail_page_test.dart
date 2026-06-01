@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:radish_flutter/core/auth/session_controller.dart';
 import 'package:radish_flutter/core/auth/session_refresh_service.dart';
@@ -9,10 +10,22 @@ import 'package:radish_flutter/features/forum/data/forum_models.dart';
 import 'package:radish_flutter/features/forum/data/forum_repository.dart';
 import 'package:radish_flutter/features/forum/presentation/forum_detail_page.dart';
 
+Finder _quickReplyTextField() {
+  return find.byWidgetPredicate(
+    (widget) => widget is TextField && widget.decoration?.labelText == '写一句轻回应',
+  );
+}
+
+Finder _commentTextField({String hintText = '写下你的评论...'}) {
+  return find.byWidgetPredicate(
+    (widget) => widget is TextField && widget.decoration?.hintText == hintText,
+  );
+}
+
 void main() {
   testWidgets('renders public detail comments and loads more pages',
       (tester) async {
-    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.physicalSize = const Size(1200, 2600);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -41,10 +54,7 @@ void main() {
     expect(find.text('应用内打开'), findsWidgets);
     expect(find.text('公开地址待生成'), findsWidgets);
     expect(find.text('/forum/post/post-42'), findsNothing);
-    expect(
-      find.text('仅阅读与最小轻回应，不提供评论提交、点赞、投票或编辑入口'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('支持评论发布与回复'), findsOneWidget);
     expect(find.text('共 2 条轻回应'), findsOneWidget);
     expect(find.text('radish：学到了'), findsOneWidget);
     expect(find.text('已加载 2 / 3 条根评论'), findsWidgets);
@@ -52,6 +62,11 @@ void main() {
     expect(find.text('回复 @luobo'), findsOneWidget);
     expect(find.text('加载更多评论'), findsOneWidget);
 
+    await tester.scrollUntilVisible(
+      find.text('加载更多评论'),
+      100,
+      scrollable: scrollable,
+    );
     await tester.tap(find.text('加载更多评论'));
     await tester.pump();
     await tester.pumpAndSettle();
@@ -140,6 +155,48 @@ void main() {
 
     expect(find.text('/forum/post/pst_01HZPUBLICROUTEID'), findsWidgets);
     expect(find.text('/forum/post/2042219761177198592'), findsNothing);
+  });
+
+  testWidgets('copies public forum detail link from public id', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final clipboard = _ClipboardRecorder()..install();
+    addTearDown(clipboard.reset);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: _PublicIdForumRepository(),
+          postId: '2042219761177198592',
+          handoffSource: ForumDetailHandoffSource.discover,
+          initialTitle: '测试问答帖子',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('https://localhost:5000/forum/post/pst_01HZPUBLICROUTEID'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('复制公开链接'));
+    await tester.pump();
+
+    expect(
+      clipboard.text,
+      'https://localhost:5000/forum/post/pst_01HZPUBLICROUTEID',
+    );
+    expect(find.text('公开链接已复制'), findsOneWidget);
+    expect(find.text('已复制公开链接'), findsOneWidget);
+    expect(find.text('https://localhost:5000/forum/post/2042219761177198592'),
+        findsNothing);
   });
 
   testWidgets('detail error keeps target source and retry context',
@@ -313,8 +370,10 @@ void main() {
       scrollable: scrollable,
     );
 
-    await tester.enterText(find.byType(TextField).last, '同感');
-    await tester.tap(find.text('发布轻回应'));
+    await tester.enterText(_quickReplyTextField(), '同感');
+    final quickReplyButton = find.widgetWithText(FilledButton, '发布轻回应');
+    await tester.ensureVisible(quickReplyButton);
+    await tester.tap(quickReplyButton);
     await tester.pumpAndSettle();
 
     expect(find.text('current：同感'), findsOneWidget);
@@ -371,8 +430,10 @@ void main() {
     expect(repository.detailRequests, 1);
     expect(repository.rootCommentRequests, 1);
 
-    await tester.enterText(find.byType(TextField).last, '我也来一句');
-    await tester.tap(find.text('发布轻回应'));
+    await tester.enterText(_quickReplyTextField(), '我也来一句');
+    final quickReplyButton = find.widgetWithText(FilledButton, '发布轻回应');
+    await tester.ensureVisible(quickReplyButton);
+    await tester.tap(quickReplyButton);
     await tester.pumpAndSettle();
 
     expect(find.text('current：我也来一句'), findsOneWidget);
@@ -425,8 +486,10 @@ void main() {
       scrollable: scrollable,
     );
 
-    await tester.enterText(find.byType(TextField).last, '发不出去的轻回应');
-    await tester.tap(find.text('发布轻回应'));
+    await tester.enterText(_quickReplyTextField(), '发不出去的轻回应');
+    final quickReplyButton = find.widgetWithText(FilledButton, '发布轻回应');
+    await tester.ensureVisible(quickReplyButton);
+    await tester.tap(quickReplyButton);
     await tester.pumpAndSettle();
 
     expect(find.text('轻回应发布失败'), findsOneWidget);
@@ -435,6 +498,139 @@ void main() {
     expect(find.text('论坛详情回流'), findsWidgets);
     expect(find.text('Root comment one'), findsOneWidget);
     expect(find.text('radish：学到了'), findsOneWidget);
+  });
+
+  testWidgets('submits root comment when session is authenticated',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repository = _RecordingCommentForumRepository();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: const SessionRefreshService(
+        environment: AppEnvironment.development(),
+      ),
+    );
+    await sessionController.setSession(
+      AuthSession(
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+        userId: 'user-current',
+        expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: repository,
+          postId: 'post-42',
+          initialTitle: '论坛详情回流',
+          sessionController: sessionController,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    final scrollable = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(
+      find.text('发布评论'),
+      200,
+      scrollable: scrollable,
+    );
+
+    await tester.enterText(_commentTextField(), '正式评论内容');
+    await tester.pump();
+    final commentButton = find.widgetWithText(FilledButton, '发布评论');
+    await tester.ensureVisible(commentButton);
+    await tester.tap(commentButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('正式评论内容'), findsOneWidget);
+    expect(find.text('评论已发布，已显示在评论区顶部。'), findsOneWidget);
+    expect(find.text('已加载 3 / 4 条根评论'), findsWidgets);
+    expect(repository.createCommentRequests, hasLength(1));
+    expect(repository.createCommentRequests.single.postId, 'post-42');
+    expect(repository.createCommentRequests.single.content, '正式评论内容');
+    expect(repository.createCommentRequests.single.accessToken, 'access-token');
+    expect(repository.createCommentRequests.single.parentId, isNull);
+    expect(repository.createCommentRequests.single.replyToCommentId, isNull);
+  });
+
+  testWidgets('submits reply with parent and target comment context',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repository = _RecordingCommentForumRepository();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: const SessionRefreshService(
+        environment: AppEnvironment.development(),
+      ),
+    );
+    await sessionController.setSession(
+      AuthSession(
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+        userId: 'user-current',
+        expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: repository,
+          postId: 'post-42',
+          initialTitle: '论坛详情回流',
+          sessionController: sessionController,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    final scrollable = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(
+      find.text('Root comment one'),
+      200,
+      scrollable: scrollable,
+    );
+
+    await tester.tap(find.widgetWithText(TextButton, '回复评论').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('回复 @radish'), findsOneWidget);
+    expect(find.text('Root comment one'), findsWidgets);
+
+    await tester.enterText(_commentTextField(hintText: '写下你的回复...'), '回复一条根评论');
+    await tester.pump();
+    final replyButton = find.widgetWithText(FilledButton, '发布回复');
+    await tester.ensureVisible(replyButton);
+    await tester.tap(replyButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('回复一条根评论'), findsOneWidget);
+    expect(find.text('回复已发布，已更新当前评论区。'), findsOneWidget);
+    expect(find.text('回复 3'), findsOneWidget);
+    expect(repository.createCommentRequests, hasLength(1));
+    expect(repository.createCommentRequests.single.postId, 'post-42');
+    expect(repository.createCommentRequests.single.content, '回复一条根评论');
+    expect(repository.createCommentRequests.single.parentId, 'comment-1');
+    expect(
+        repository.createCommentRequests.single.replyToCommentId, 'comment-1');
+    expect(repository.createCommentRequests.single.replyToUserName, 'radish');
+    expect(
+      repository.createCommentRequests.single.replyToCommentSnapshot,
+      'Root comment one',
+    );
   });
 
   testWidgets('opens profile handoff from detail author and comment author',
@@ -553,6 +749,16 @@ void main() {
 
 abstract class _BaseForumRepository implements ForumRepository {
   @override
+  Future<List<ForumCategorySummary>> getTopCategories() async {
+    return const [
+      ForumCategorySummary(
+        id: 'category-1',
+        name: 'General',
+      ),
+    ];
+  }
+
+  @override
   Future<ForumPostPage> getPostPage({
     required int pageIndex,
     required int pageSize,
@@ -661,6 +867,30 @@ abstract class _BaseForumRepository implements ForumRepository {
       content: content,
       createTime: '2026-04-20T08:13:00Z',
     );
+  }
+
+  @override
+  Future<String> createComment({
+    required String postId,
+    required String content,
+    required String accessToken,
+    String? parentId,
+    String? replyToCommentId,
+    String? replyToCommentSnapshot,
+    String? replyToUserName,
+  }) async {
+    return 'comment-created';
+  }
+
+  @override
+  Future<String> createPost({
+    required String title,
+    required String content,
+    required String categoryId,
+    required List<String> tagNames,
+    required String accessToken,
+  }) async {
+    return 'post-created';
   }
 }
 
@@ -902,6 +1132,76 @@ class _QuickReplySubmitFailingForumRepository extends _PagedForumRepository {
     required String accessToken,
   }) {
     throw const RadishApiClientException('轻回应服务暂时不可用');
+  }
+}
+
+class _RecordingCommentForumRepository extends _PagedForumRepository {
+  final List<_CreateCommentRequest> createCommentRequests =
+      <_CreateCommentRequest>[];
+
+  @override
+  Future<String> createComment({
+    required String postId,
+    required String content,
+    required String accessToken,
+    String? parentId,
+    String? replyToCommentId,
+    String? replyToCommentSnapshot,
+    String? replyToUserName,
+  }) async {
+    createCommentRequests.add(
+      _CreateCommentRequest(
+        postId: postId,
+        content: content,
+        accessToken: accessToken,
+        parentId: parentId,
+        replyToCommentId: replyToCommentId,
+        replyToCommentSnapshot: replyToCommentSnapshot,
+        replyToUserName: replyToUserName,
+      ),
+    );
+    return parentId == null ? 'comment-created-root' : 'comment-created-reply';
+  }
+}
+
+class _CreateCommentRequest {
+  const _CreateCommentRequest({
+    required this.postId,
+    required this.content,
+    required this.accessToken,
+    required this.parentId,
+    required this.replyToCommentId,
+    required this.replyToCommentSnapshot,
+    required this.replyToUserName,
+  });
+
+  final String postId;
+  final String content;
+  final String accessToken;
+  final String? parentId;
+  final String? replyToCommentId;
+  final String? replyToCommentSnapshot;
+  final String? replyToUserName;
+}
+
+class _ClipboardRecorder {
+  String? text;
+
+  void install() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.setData') {
+        final arguments = Map<Object?, Object?>.from(call.arguments as Map);
+        text = arguments['text'] as String?;
+      }
+
+      return null;
+    });
+  }
+
+  void reset() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, null);
   }
 }
 

@@ -6,8 +6,12 @@ import {
   AntSelect as Select,
   message,
   Space,
+  Form,
+  Divider,
+  AntModal as Modal,
+  AntButton as Button,
+  Tag,
 } from '@radish/ui';
-import { Card, Form, Divider, Modal, Button, Tag } from 'antd';
 import {
   SettingOutlined,
   LockOutlined,
@@ -16,6 +20,7 @@ import {
 import { SaveOutlined, BellOutlined } from '@ant-design/icons';
 import { userApi, type UserTimePreferenceVo } from '@/api/user';
 import { log } from '@/utils/logger';
+import '../adminFeature.css';
 import './Settings.css';
 
 interface SettingsData {
@@ -172,38 +177,67 @@ export const Settings = () => {
   };
 
   return (
-    <div className="settings-page">
-      <div className="settings-header">
-        <h2>
-          <SettingOutlined /> 设置
-        </h2>
-        <Space>
-          <Button onClick={handleReset} disabled={initializing || loading}>
-            重置默认
-          </Button>
-          <Button
-            type="primary"
-            icon={<SaveOutlined />}
-            loading={loading}
-            disabled={initializing}
-            onClick={handleSave}
-          >
-            保存设置
-          </Button>
-        </Space>
-      </div>
+    <div className="admin-feature-page settings-page">
+      <section className="admin-feature-card">
+        <div className="admin-feature-header">
+          <div>
+            <h2>
+              <SettingOutlined /> 设置
+            </h2>
+            <p className="admin-feature-subtle">管理个人偏好、安全凭证和后续通知策略入口。</p>
+          </div>
+          <Space>
+            <Button onClick={handleReset} disabled={initializing || loading}>
+              重置默认
+            </Button>
+            <Button
+              type="primary"
+              icon={<SaveOutlined />}
+              loading={loading}
+              disabled={initializing}
+              onClick={handleSave}
+            >
+              保存设置
+            </Button>
+          </Space>
+        </div>
+      </section>
 
-      <div className="settings-content">
+      <div className="admin-settings-layout">
+        <aside className="admin-settings-nav" aria-label="设置分组">
+          <h3>设置分组</h3>
+          <p className="admin-feature-subtle">按配置影响范围进入对应分组。</p>
+          <nav className="admin-settings-nav__list">
+            <a className="admin-settings-nav__item" href="#settings-notifications">
+              <BellOutlined /> 通知设置
+            </a>
+            <a className="admin-settings-nav__item" href="#settings-interface">
+              <EyeOutlined /> 界面设置
+            </a>
+            <a className="admin-settings-nav__item" href="#settings-security">
+              <LockOutlined /> 安全设置
+            </a>
+          </nav>
+        </aside>
+
         <Form
           form={form}
           layout="vertical"
           initialValues={settings}
+          className="admin-settings-main"
         >
-          <Card
-            title={<><BellOutlined /> 通知设置</>}
-            className="settings-card"
-            extra={<Tag>后置</Tag>}
-          >
+          <section id="settings-notifications" className="admin-setting-section">
+            <div className="admin-setting-section__title">
+              <div>
+                <div className="admin-setting-section__title-main">
+                  <BellOutlined />
+                  <h3>通知设置</h3>
+                </div>
+                <p className="admin-feature-subtle">通知策略当前作为后置能力展示，保存时不写入通知配置。</p>
+              </div>
+              <Tag>后置</Tag>
+            </div>
+
             <Form.Item name="emailNotifications" label="邮件通知" valuePropName="checked">
               <Switch checkedChildren="开启" unCheckedChildren="关闭" disabled />
             </Form.Item>
@@ -213,9 +247,19 @@ export const Settings = () => {
             <Form.Item name="systemNotifications" label="系统通知" valuePropName="checked">
               <Switch checkedChildren="开启" unCheckedChildren="关闭" disabled />
             </Form.Item>
-          </Card>
+          </section>
 
-          <Card title={<><EyeOutlined /> 界面设置</>} className="settings-card">
+          <section id="settings-interface" className="admin-setting-section">
+            <div className="admin-setting-section__title">
+              <div>
+                <div className="admin-setting-section__title-main">
+                  <EyeOutlined />
+                  <h3>界面设置</h3>
+                </div>
+                <p className="admin-feature-subtle">当前只开放时区偏好，其余界面选项保留为只读能力占位。</p>
+              </div>
+            </div>
+
             <Form.Item
               name="timeZoneId"
               label="时区"
@@ -248,9 +292,19 @@ export const Settings = () => {
                 options={[{ label: '20 条/页', value: 20 }]}
               />
             </Form.Item>
-          </Card>
+          </section>
 
-          <Card title={<><LockOutlined /> 安全设置</>} className="settings-card">
+          <section id="settings-security" className="admin-setting-section">
+            <div className="admin-setting-section__title">
+              <div>
+                <div className="admin-setting-section__title-main">
+                  <LockOutlined />
+                  <h3>安全设置</h3>
+                </div>
+                <p className="admin-feature-subtle">高风险账户动作集中在本分组，避免与偏好配置混排。</p>
+              </div>
+            </div>
+
             <Form.Item name="twoFactorAuth" label="双因素认证" valuePropName="checked">
               <Switch checkedChildren="开启" unCheckedChildren="关闭" disabled />
             </Form.Item>
@@ -265,7 +319,7 @@ export const Settings = () => {
 
             <div className="password-section">
               <h4>密码管理</h4>
-              <p>定期更换密码可以提高账户安全性</p>
+              <p>定期更换密码可以提高账户安全性。</p>
               <Button
                 icon={<LockOutlined />}
                 onClick={() => setPasswordModalVisible(true)}
@@ -273,8 +327,35 @@ export const Settings = () => {
                 修改密码
               </Button>
             </div>
-          </Card>
+          </section>
         </Form>
+
+        <aside className="admin-settings-aside">
+          <h3>当前影响范围</h3>
+          <p className="admin-feature-subtle">本页仅保存个人时区偏好和密码变更，不调整系统级治理策略。</p>
+          <div className="admin-settings-aside__list">
+            <div className="admin-settings-aside__item">
+              <span className="admin-settings-aside__label">当前时区</span>
+              <span className="admin-settings-aside__value">{settings.timeZoneId}</span>
+            </div>
+            <div className="admin-settings-aside__item">
+              <span className="admin-settings-aside__label">系统默认</span>
+              <span className="admin-settings-aside__value">
+                {timePreference?.voSystemDefaultTimeZoneId || DEFAULT_SETTINGS.timeZoneId}
+              </span>
+            </div>
+            <div className="admin-settings-aside__item">
+              <span className="admin-settings-aside__label">展示格式</span>
+              <span className="admin-settings-aside__value">
+                {timePreference?.voDisplayFormat || 'yyyy-MM-dd HH:mm:ss'}
+              </span>
+            </div>
+            <div className="admin-settings-aside__item">
+              <span className="admin-settings-aside__label">通知能力</span>
+              <span className="admin-settings-aside__value">后续接入</span>
+            </div>
+          </div>
+        </aside>
       </div>
 
       <Modal

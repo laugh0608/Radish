@@ -27,6 +27,18 @@ function toStringValue(value: unknown, fallback = ''): string {
   return typeof value === 'string' ? value : fallback;
 }
 
+function toIdString(value: unknown): string {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  return '';
+}
+
 function toOptionalString(value: unknown): string | undefined {
   return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
@@ -47,7 +59,7 @@ function toParsedResponse<T>(response: ParsedApiResponse<unknown>, data?: T): Pa
 
 function mapUserListItem(raw: ApiRecord): UserListItem {
   return {
-    uuid: toNumber(raw.uuid ?? raw.Uuid),
+    uuid: toIdString(raw.uuid ?? raw.Uuid),
     voLoginName: toStringValue(raw.voLoginName ?? raw.VoLoginName),
     voUserName: toStringValue(raw.voUserName ?? raw.VoUserName),
     voUserEmail: toStringValue(raw.voUserEmail ?? raw.VoUserEmail),

@@ -1,23 +1,26 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useUser } from '@/contexts/UserContext';
+import { useUser } from '@/hooks/useUser';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   AntInput as Input,
   Avatar,
   Space,
   message,
+  Tag,
 } from '@radish/ui';
-import { Card, Form, Divider, Upload, Button } from 'antd';
+import { Form, Upload, Button } from 'antd';
 import type { UploadProps } from 'antd';
 import {
   UserOutlined,
   EditOutlined,
+  SettingOutlined,
 } from '@radish/ui';
 import { SaveOutlined, CameraOutlined } from '@ant-design/icons';
 import { getApiBaseUrl, getAvatarUrl } from '@/config/env';
 import { log } from '@/utils/logger';
 import { userApi, type MyProfileInfo } from '@/api/user';
 import { tokenService } from '@/services/tokenService';
+import '../adminFeature.css';
 import './UserProfile.css';
 
 interface UserProfileData extends MyProfileInfo {
@@ -203,68 +206,72 @@ export const UserProfile = () => {
 
   if (userLoading) {
     return (
-      <div className="user-profile-page">
-        <Card title="个人信息" loading>
-          <div style={{ height: '200px' }} />
-        </Card>
+      <div className="admin-feature-page user-profile-page">
+        <section className="admin-feature-card">
+          <div className="admin-feature-header">
+            <div>
+              <h2>
+                <UserOutlined /> 个人信息
+              </h2>
+              <p className="admin-feature-subtle">正在加载当前登录用户资料。</p>
+            </div>
+            <Tag color="processing">加载中</Tag>
+          </div>
+        </section>
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="user-profile-page">
-        <Card title="个人信息">
-          <div style={{ textAlign: 'center', padding: '40px' }}>
+      <div className="admin-feature-page user-profile-page">
+        <section className="admin-feature-card">
+          <div className="user-profile-empty">
             <p>无法获取用户信息，请重新登录</p>
             <Button onClick={() => window.location.reload()}>
               刷新页面
             </Button>
           </div>
-        </Card>
+        </section>
       </div>
     );
   }
 
   if (!profileData) {
     return (
-      <div className="user-profile-page">
-        <Card title="个人信息" loading>
-          <div style={{ height: '200px' }} />
-        </Card>
+      <div className="admin-feature-page user-profile-page">
+        <section className="admin-feature-card">
+          <div className="admin-feature-header">
+            <div>
+              <h2>
+                <UserOutlined /> 个人信息
+              </h2>
+              <p className="admin-feature-subtle">正在加载个人资料表单。</p>
+            </div>
+            <Tag color="processing">加载中</Tag>
+          </div>
+        </section>
       </div>
     );
   }
 
   return (
-    <div className="user-profile-page">
-      <Card title="个人信息" className="profile-card">
-        <div className="profile-header">
-          <div className="avatar-section">
+    <div className="admin-feature-page user-profile-page">
+      <section className="admin-feature-card">
+        <div className="admin-feature-header">
+          <div className="profile-heading">
             <Avatar
-              size={80}
+              size={72}
               src={getAvatarUrl(profileData.voAvatarUrl)}
               icon={<UserOutlined />}
               className="profile-avatar"
             />
-            <Upload {...uploadProps} showUploadList={false}>
-              <Button
-                icon={<CameraOutlined />}
-                size="small"
-                className="avatar-upload-btn"
-              >
-                更换头像
-              </Button>
-            </Upload>
-          </div>
-          <div className="profile-info">
-            <h3>{profileData.voUserName}</h3>
-            <p className="profile-roles">
-              角色: {profileData.voRoles.join(', ')}
-            </p>
-            <p className="profile-id">
-              用户ID: {profileData.voUserId}
-            </p>
+            <div>
+              <h2>
+                <UserOutlined /> 个人信息
+              </h2>
+              <p className="admin-feature-subtle">维护当前登录账号的基础资料和头像。</p>
+            </div>
           </div>
           <div className="profile-actions">
             {!editing ? (
@@ -291,93 +298,150 @@ export const UserProfile = () => {
             )}
           </div>
         </div>
+      </section>
 
-        <Divider />
-
-        <Form
-          form={form}
-          layout="vertical"
-          disabled={!editing}
-        >
-          <Form.Item
-            name="voUserName"
-            label="用户名"
-            rules={[
-              { required: true, message: '请输入用户名' },
-              { min: 2, max: 50, message: '用户名长度为2-50个字符' },
-            ]}
-          >
-            <Input placeholder="请输入用户名" />
-          </Form.Item>
-
-          <Form.Item
-            name="voUserEmail"
-            label="邮箱"
-            rules={[
-              { required: true, message: '请输入邮箱' },
-              { type: 'email', message: '请输入有效的邮箱地址' },
-            ]}
-          >
-            <Input placeholder="请输入邮箱" />
-          </Form.Item>
-
-          <Form.Item
-            name="voRealName"
-            label="真实姓名"
-            rules={[{ max: 50, message: '真实姓名长度不能超过50个字符' }]}
-          >
-            <Input placeholder="请输入真实姓名" />
-          </Form.Item>
-
-          <Form.Item
-            name="voAge"
-            label="年龄"
-            rules={[
-              {
-                validator(_, value) {
-                  if (value === undefined || value === null || value === '') {
-                    return Promise.resolve();
-                  }
-
-                  const age = Number(value);
-                  if (Number.isInteger(age) && age >= 0) {
-                    return Promise.resolve();
-                  }
-
-                  return Promise.reject(new Error('年龄必须是非负整数'));
-                },
-              },
-            ]}
-          >
-            <Input placeholder="请输入年龄" />
-          </Form.Item>
-
-          <Form.Item
-            name="voAddress"
-            label="地址"
-            rules={[{ max: 2000, message: '地址长度不能超过2000个字符' }]}
-          >
-            <Input.TextArea rows={3} placeholder="请输入地址" />
-          </Form.Item>
-        </Form>
-
-        <Divider />
-
-        <div className="profile-stats">
-          <div className="stat-item">
-            <span className="stat-label">注册时间:</span>
-            <span className="stat-value">
-              {new Date(profileData.voCreateTime).toLocaleString('zh-CN')}
-            </span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-label">最后登录:</span>
-            <span className="stat-value">
-              暂无记录
-            </span>
-          </div>
+      <section className="admin-feature-metrics" aria-label="个人资料指标">
+        <div className="admin-feature-metric">
+          用户名
+          <strong>{profileData.voUserName || '--'}</strong>
         </div>
-      </Card>
+        <div className="admin-feature-metric">
+          角色数量
+          <strong>{profileData.voRoles.length}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          用户 ID
+          <strong>{profileData.voUserId}</strong>
+        </div>
+      </section>
+
+      <div className="admin-settings-layout user-profile-layout">
+        <aside className="admin-settings-nav">
+          <h3>资料摘要</h3>
+          <p className="admin-feature-subtle">当前登录账号的身份和头像状态。</p>
+          <div className="avatar-section">
+            <Avatar
+              size={80}
+              src={getAvatarUrl(profileData.voAvatarUrl)}
+              icon={<UserOutlined />}
+              className="profile-avatar"
+            />
+            <Upload {...uploadProps} showUploadList={false}>
+              <Button
+                icon={<CameraOutlined />}
+                size="small"
+                className="avatar-upload-btn"
+              >
+                更换头像
+              </Button>
+            </Upload>
+          </div>
+        </aside>
+
+        <main className="admin-settings-main">
+          <section className="admin-setting-section">
+            <div className="admin-setting-section__title">
+              <div className="admin-setting-section__title-main">
+                <SettingOutlined />
+                <h3>基础资料</h3>
+              </div>
+              <Tag>{editing ? '编辑中' : '只读'}</Tag>
+            </div>
+
+            <Form
+              form={form}
+              layout="vertical"
+              disabled={!editing}
+            >
+              <Form.Item
+                name="voUserName"
+                label="用户名"
+                rules={[
+                  { required: true, message: '请输入用户名' },
+                  { min: 2, max: 50, message: '用户名长度为2-50个字符' },
+                ]}
+              >
+                <Input placeholder="请输入用户名" />
+              </Form.Item>
+
+              <Form.Item
+                name="voUserEmail"
+                label="邮箱"
+                rules={[
+                  { required: true, message: '请输入邮箱' },
+                  { type: 'email', message: '请输入有效的邮箱地址' },
+                ]}
+              >
+                <Input placeholder="请输入邮箱" />
+              </Form.Item>
+
+              <Form.Item
+                name="voRealName"
+                label="真实姓名"
+                rules={[{ max: 50, message: '真实姓名长度不能超过50个字符' }]}
+              >
+                <Input placeholder="请输入真实姓名" />
+              </Form.Item>
+
+              <Form.Item
+                name="voAge"
+                label="年龄"
+                rules={[
+                  {
+                    validator(_, value) {
+                      if (value === undefined || value === null || value === '') {
+                        return Promise.resolve();
+                      }
+
+                      const age = Number(value);
+                      if (Number.isInteger(age) && age >= 0) {
+                        return Promise.resolve();
+                      }
+
+                      return Promise.reject(new Error('年龄必须是非负整数'));
+                    },
+                  },
+                ]}
+              >
+                <Input placeholder="请输入年龄" />
+              </Form.Item>
+
+              <Form.Item
+                name="voAddress"
+                label="地址"
+                rules={[{ max: 2000, message: '地址长度不能超过2000个字符' }]}
+              >
+                <Input.TextArea rows={3} placeholder="请输入地址" />
+              </Form.Item>
+            </Form>
+          </section>
+        </main>
+
+        <aside className="admin-settings-aside">
+          <h3>账号摘要</h3>
+          <p className="admin-feature-subtle">用于核对当前登录账号的角色和注册信息。</p>
+          <div className="admin-settings-aside__list">
+            <div className="admin-settings-aside__item">
+              <span className="admin-settings-aside__label">用户 ID</span>
+              <span className="admin-settings-aside__value">{profileData.voUserId}</span>
+            </div>
+            <div className="admin-settings-aside__item">
+              <span className="admin-settings-aside__label">角色</span>
+              <span className="admin-settings-aside__value">{profileData.voRoles.join(', ') || '无角色'}</span>
+            </div>
+            <div className="admin-settings-aside__item">
+              <span className="admin-settings-aside__label">注册时间</span>
+              <span className="admin-settings-aside__value">
+                {new Date(profileData.voCreateTime).toLocaleString('zh-CN')}
+              </span>
+            </div>
+            <div className="admin-settings-aside__item">
+              <span className="admin-settings-aside__label">最后登录</span>
+              <span className="admin-settings-aside__value">暂无记录</span>
+            </div>
+          </div>
+        </aside>
+      </div>
     </div>
   );
 };

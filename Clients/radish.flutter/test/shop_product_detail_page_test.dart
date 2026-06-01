@@ -1,0 +1,631 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:radish_flutter/core/auth/session_controller.dart';
+import 'package:radish_flutter/core/auth/session_refresh_service.dart';
+import 'package:radish_flutter/core/auth/session_store.dart';
+import 'package:radish_flutter/core/config/app_environment.dart';
+import 'package:radish_flutter/core/network/radish_api_client.dart';
+import 'package:radish_flutter/core/network/radish_api_endpoints.dart';
+import 'package:radish_flutter/features/shop/data/shop_models.dart';
+import 'package:radish_flutter/features/shop/data/shop_repository.dart';
+import 'package:radish_flutter/features/shop/presentation/shop_product_detail_page.dart';
+
+void main() {
+  testWidgets('renders public shop product detail with login purchase boundary',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final clipboard = _ClipboardRecorder()..install();
+    addTearDown(clipboard.reset);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ShopProductDetailPage(
+          environment: AppEnvironment.development(),
+          repository: _SuccessShopRepository(),
+          productId: '4001',
+          initialTitle: 'Profile Rename Card',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('商品详情'), findsWidgets);
+    expect(find.text('公开商品详情'), findsOneWidget);
+    expect(find.text('/shop/product/4001'), findsOneWidget);
+    expect(
+      find.text('https://localhost:5000/shop/product/4001'),
+      findsOneWidget,
+    );
+    expect(find.text('Profile Rename Card'), findsWidgets);
+    expect(find.text('120 胡萝卜'), findsOneWidget);
+    expect(find.text('单商品购买'), findsOneWidget);
+    expect(find.text('登录后购买'), findsOneWidget);
+    expect(
+      find.text('本批只支持当前商品直接购买 1 件；购物车、退款、权益使用和完整移动商城不在本次范围。'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('复制公开链接'));
+    await tester.pump();
+
+    expect(clipboard.text, 'https://localhost:5000/shop/product/4001');
+    expect(find.text('公开链接已复制'), findsOneWidget);
+  });
+
+  testWidgets('renders shop detail error state', (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ShopProductDetailPage(
+          environment: AppEnvironment.development(),
+          repository: _FailingShopRepository(),
+          productId: '4001',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('暂时无法加载商品详情'), findsOneWidget);
+    expect(find.text('商品不存在'), findsOneWidget);
+    expect(find.text('重试'), findsOneWidget);
+  });
+
+  testWidgets('authenticated user purchases product and opens order result',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ShopProductDetailPage(
+          environment: AppEnvironment.development(),
+          repository: _SuccessShopRepository(),
+          productId: '4001',
+          accessToken: 'access-token',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('当前可购买'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), '123456');
+    await tester.tap(find.text('确认购买 1 件'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('订单详情'), findsWidgets);
+    expect(find.text('订单 RO202605310001'), findsOneWidget);
+    expect(find.text('返回商品详情'), findsOneWidget);
+  });
+
+  testWidgets('login request returns to product purchase panel',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: const SessionRefreshService(
+        environment: AppEnvironment.development(),
+      ),
+    );
+    await sessionController.restore();
+    var loginRequested = false;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ShopProductDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: const _SuccessShopRepository(),
+          productId: '4001',
+          sessionController: sessionController,
+          onRequestSignIn: () async {
+            loginRequested = true;
+            await sessionController.setSession(
+              AuthSession(
+                accessToken: 'access-token',
+                refreshToken: 'refresh-token',
+                userId: 'user-42',
+                expiresAt: DateTime.now().toUtc().add(
+                      const Duration(hours: 1),
+                    ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('登录后购买'));
+    await tester.pumpAndSettle();
+
+    expect(loginRequested, isTrue);
+    expect(find.text('已回到商品详情，可以继续确认购买。'), findsOneWidget);
+    expect(find.text('当前可购买'), findsOneWidget);
+  });
+
+  testWidgets('purchase failure stays on detail with explicit error',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ShopProductDetailPage(
+          environment: AppEnvironment.development(),
+          repository: _PurchaseFailingShopRepository(),
+          productId: '4001',
+          accessToken: 'access-token',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '123456');
+    await tester.tap(find.text('确认购买 1 件'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('支付口令错误'), findsOneWidget);
+    expect(find.text('商品详情'), findsWidgets);
+  });
+
+  test('http shop repository uses public product detail endpoint', () async {
+    final apiClient = _RecordingShopApiClient();
+    final repository = HttpShopRepository(
+      apiClient: apiClient,
+      endpoints: const RadishApiEndpoints(AppEnvironment.development()),
+    );
+
+    final product = await repository.getProductDetail(productId: '4001');
+
+    expect(apiClient.lastUri?.path, '/api/v1/Shop/GetProduct/4001');
+    expect(product.id, '4001');
+    expect(product.productType, '消耗品');
+    expect(product.durationDisplay, '永久');
+  });
+
+  test('http shop repository uses public product list endpoint', () async {
+    final apiClient = _RecordingShopApiClient();
+    final repository = HttpShopRepository(
+      apiClient: apiClient,
+      endpoints: const RadishApiEndpoints(AppEnvironment.development()),
+    );
+
+    final page = await repository.getProductPage(pageIndex: 2, pageSize: 10);
+
+    expect(apiClient.lastUri?.path, '/api/v1/Shop/GetProducts');
+    expect(apiClient.lastUri?.queryParameters['pageIndex'], '2');
+    expect(apiClient.lastUri?.queryParameters['pageSize'], '10');
+    expect(page.products.single.id, '4001');
+    expect(page.products.single.productType, '消耗品');
+  });
+
+  test('http shop repository uses private order detail endpoint', () async {
+    final apiClient = _RecordingShopApiClient();
+    final repository = HttpShopRepository(
+      apiClient: apiClient,
+      endpoints: const RadishApiEndpoints(AppEnvironment.development()),
+    );
+
+    final order = await repository.getOrderDetail(
+      accessToken: 'access-token',
+      orderId: '9001',
+    );
+
+    expect(apiClient.lastUri?.path, '/api/v1/Shop/GetOrder/9001');
+    expect(apiClient.lastBearerToken, 'access-token');
+    expect(order.id, '9001');
+    expect(order.orderNo, 'RO202605310001');
+    expect(order.productId, '4001');
+  });
+
+  test('http shop repository uses private buy check endpoint', () async {
+    final apiClient = _RecordingShopApiClient();
+    final repository = HttpShopRepository(
+      apiClient: apiClient,
+      endpoints: const RadishApiEndpoints(AppEnvironment.development()),
+    );
+
+    final result = await repository.checkCanBuy(
+      accessToken: 'access-token',
+      productId: '4001',
+    );
+
+    expect(apiClient.lastUri?.path, '/api/v1/Shop/CheckCanBuy/4001');
+    expect(apiClient.lastUri?.queryParameters['quantity'], '1');
+    expect(apiClient.lastBearerToken, 'access-token');
+    expect(result.canBuy, isTrue);
+  });
+
+  test('http shop repository posts purchase body to private endpoint',
+      () async {
+    final apiClient = _RecordingShopApiClient();
+    final repository = HttpShopRepository(
+      apiClient: apiClient,
+      endpoints: const RadishApiEndpoints(AppEnvironment.development()),
+    );
+
+    final result = await repository.purchaseProduct(
+      accessToken: 'access-token',
+      productId: '4001',
+      paymentPassword: '123456',
+    );
+
+    expect(apiClient.lastUri?.path, '/api/v1/Shop/Purchase');
+    expect(apiClient.lastBearerToken, 'access-token');
+    expect(apiClient.lastBody, {
+      'productId': '4001',
+      'quantity': 1,
+      'paymentPassword': '123456',
+    });
+    expect(result.success, isTrue);
+    expect(result.orderId, '9001');
+  });
+}
+
+class _SuccessShopRepository implements ShopRepository {
+  const _SuccessShopRepository();
+
+  @override
+  Future<ShopProductPage> getProductPage({
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const ShopProductPage(
+      page: 1,
+      pageSize: 20,
+      dataCount: 1,
+      pageCount: 1,
+      products: [
+        ShopProductSummary(
+          id: '4001',
+          name: 'Profile Rename Card',
+          productType: '消耗品',
+          price: 120,
+          originalPrice: 180,
+          hasDiscount: true,
+          soldCount: 3,
+          durationDisplay: '永久',
+          inStock: true,
+        ),
+      ],
+    );
+  }
+
+  @override
+  Future<ShopProductDetail> getProductDetail({
+    required String productId,
+  }) async {
+    return const ShopProductDetail(
+      id: '4001',
+      name: 'Profile Rename Card',
+      description: 'Use this read-only detail to confirm the item scope.',
+      categoryName: 'Profile tools',
+      productType: '消耗品',
+      benefitValue: 'rename-card',
+      price: 120,
+      originalPrice: 180,
+      hasDiscount: true,
+      stockType: 'Unlimited',
+      stock: 0,
+      soldCount: 3,
+      limitPerUser: 1,
+      inStock: true,
+      durationDisplay: '永久',
+      isOnSale: true,
+      isEnabled: true,
+    );
+  }
+
+  @override
+  Future<ShopProductBuyCheckResult> checkCanBuy({
+    required String accessToken,
+    required String productId,
+    int quantity = 1,
+  }) async {
+    return const ShopProductBuyCheckResult(canBuy: true);
+  }
+
+  @override
+  Future<ShopPurchaseResult> purchaseProduct({
+    required String accessToken,
+    required String productId,
+    required String paymentPassword,
+    int quantity = 1,
+  }) async {
+    return const ShopPurchaseResult(
+      success: true,
+      orderId: '9001',
+      orderNo: 'RO202605310001',
+      deductedCoins: 120,
+      remainingBalance: 880,
+    );
+  }
+
+  @override
+  Future<ShopOrderPage> getMyOrders({
+    required String accessToken,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const ShopOrderPage(
+      page: 1,
+      pageSize: 20,
+      dataCount: 0,
+      pageCount: 1,
+      orders: [],
+    );
+  }
+
+  @override
+  Future<ShopOrderDetail> getOrderDetail({
+    required String accessToken,
+    required String orderId,
+  }) async {
+    return const ShopOrderDetail(
+      id: '9001',
+      orderNo: 'RO202605310001',
+      productId: '4001',
+      productName: 'Profile Rename Card',
+      productType: 'Consumable',
+      productTypeDisplay: '消耗品',
+      quantity: 1,
+      unitPrice: 120,
+      totalPrice: 120,
+      status: 'Completed',
+      statusDisplay: '已完成',
+      createTime: '2026-05-31T08:00:00Z',
+      completedTime: '2026-05-31T08:01:00Z',
+    );
+  }
+
+  @override
+  Future<List<ShopUserBenefit>> getMyBenefits({
+    required String accessToken,
+  }) async {
+    return const <ShopUserBenefit>[];
+  }
+
+  @override
+  Future<List<ShopInventoryItem>> getMyInventory({
+    required String accessToken,
+  }) async {
+    return const <ShopInventoryItem>[];
+  }
+}
+
+class _PurchaseFailingShopRepository extends _SuccessShopRepository {
+  const _PurchaseFailingShopRepository();
+
+  @override
+  Future<ShopPurchaseResult> purchaseProduct({
+    required String accessToken,
+    required String productId,
+    required String paymentPassword,
+    int quantity = 1,
+  }) async {
+    return const ShopPurchaseResult(
+      success: false,
+      errorMessage: '支付口令错误',
+    );
+  }
+}
+
+class _FailingShopRepository implements ShopRepository {
+  const _FailingShopRepository();
+
+  @override
+  Future<ShopProductPage> getProductPage({
+    required int pageIndex,
+    required int pageSize,
+  }) {
+    throw const RadishApiClientException('商品列表不可用');
+  }
+
+  @override
+  Future<ShopProductDetail> getProductDetail({
+    required String productId,
+  }) {
+    throw const RadishApiClientException('商品不存在');
+  }
+
+  @override
+  Future<ShopProductBuyCheckResult> checkCanBuy({
+    required String accessToken,
+    required String productId,
+    int quantity = 1,
+  }) {
+    throw const RadishApiClientException('购买检查不可用');
+  }
+
+  @override
+  Future<ShopPurchaseResult> purchaseProduct({
+    required String accessToken,
+    required String productId,
+    required String paymentPassword,
+    int quantity = 1,
+  }) {
+    throw const RadishApiClientException('购买不可用');
+  }
+
+  @override
+  Future<ShopOrderPage> getMyOrders({
+    required String accessToken,
+    required int pageIndex,
+    required int pageSize,
+  }) {
+    throw const RadishApiClientException('订单列表不可用');
+  }
+
+  @override
+  Future<ShopOrderDetail> getOrderDetail({
+    required String accessToken,
+    required String orderId,
+  }) {
+    throw const RadishApiClientException('订单详情不可用');
+  }
+
+  @override
+  Future<List<ShopUserBenefit>> getMyBenefits({
+    required String accessToken,
+  }) {
+    throw const RadishApiClientException('权益列表不可用');
+  }
+
+  @override
+  Future<List<ShopInventoryItem>> getMyInventory({
+    required String accessToken,
+  }) {
+    throw const RadishApiClientException('背包列表不可用');
+  }
+}
+
+class _RecordingShopApiClient implements RadishApiClient {
+  Uri? lastUri;
+  String? lastBearerToken;
+  Object? lastBody;
+
+  @override
+  Future<T> get<T>({
+    required Uri uri,
+    required JsonFactory<T> decode,
+    String? bearerToken,
+  }) async {
+    lastUri = uri;
+    lastBearerToken = bearerToken;
+    lastBody = null;
+    if (uri.path == '/api/v1/Shop/GetProducts') {
+      return decode({
+        'page': 1,
+        'pageSize': 10,
+        'dataCount': 1,
+        'pageCount': 1,
+        'data': [
+          {
+            'voId': '4001',
+            'voName': 'Profile Rename Card',
+            'voProductType': 2,
+            'voPrice': 120,
+            'voOriginalPrice': 180,
+            'voHasDiscount': true,
+            'voSoldCount': 3,
+            'voDurationDisplay': '永久',
+            'voInStock': true,
+          },
+        ],
+      });
+    }
+
+    if (uri.path == '/api/v1/Shop/GetOrder/9001') {
+      return decode({
+        'voId': '9001',
+        'voOrderNo': 'RO202605310001',
+        'voProductId': '4001',
+        'voProductName': 'Profile Rename Card',
+        'voProductType': 'Consumable',
+        'voProductTypeDisplay': '消耗品',
+        'voQuantity': 1,
+        'voUnitPrice': 120,
+        'voTotalPrice': 120,
+        'voStatus': 'Completed',
+        'voStatusDisplay': '已完成',
+        'voCreateTime': '2026-05-31T08:00:00Z',
+        'voCompletedTime': '2026-05-31T08:01:00Z',
+      });
+    }
+
+    if (uri.path == '/api/v1/Shop/CheckCanBuy/4001') {
+      return decode({
+        'voCanBuy': true,
+        'voReason': null,
+      });
+    }
+
+    return decode({
+      'voId': '4001',
+      'voName': 'Profile Rename Card',
+      'voDescription': 'Use this read-only detail.',
+      'voCategoryName': 'Profile tools',
+      'voProductType': 2,
+      'voBenefitValue': 'rename-card',
+      'voPrice': 120,
+      'voOriginalPrice': 180,
+      'voHasDiscount': true,
+      'voStockType': 0,
+      'voStock': 0,
+      'voSoldCount': 3,
+      'voLimitPerUser': 1,
+      'voInStock': true,
+      'voDurationDisplay': '永久',
+      'voIsOnSale': true,
+      'voIsEnabled': true,
+    });
+  }
+
+  @override
+  Future<T> post<T>({
+    required Uri uri,
+    required Object? body,
+    required JsonFactory<T> decode,
+    String? bearerToken,
+  }) async {
+    lastUri = uri;
+    lastBearerToken = bearerToken;
+    lastBody = body;
+    return decode({
+      'success': true,
+      'orderId': '9001',
+      'orderNo': 'RO202605310001',
+      'deductedCoins': 120,
+      'remainingBalance': 880,
+    });
+  }
+
+  @override
+  Future<T> put<T>({
+    required Uri uri,
+    required Object? body,
+    required JsonFactory<T> decode,
+    String? bearerToken,
+  }) {
+    throw UnimplementedError();
+  }
+}
+
+class _ClipboardRecorder {
+  String? text;
+
+  void install() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.setData') {
+        final arguments = Map<Object?, Object?>.from(call.arguments as Map);
+        text = arguments['text'] as String?;
+      }
+
+      return null;
+    });
+  }
+
+  void reset() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, null);
+  }
+}

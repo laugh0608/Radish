@@ -18,6 +18,7 @@ import {
   ReloadOutlined,
   SearchOutlined,
   SyncOutlined,
+  FileTextOutlined,
 } from '@radish/ui';
 import {
   adminGetOrders,
@@ -31,6 +32,7 @@ import { usePermission } from '@/hooks/usePermission';
 import type { Order, OrderStatus } from '../../api/types';
 import { OrderDetail } from './OrderDetail';
 import { log } from '../../utils/logger';
+import '../adminFeature.css';
 import './OrderList.css';
 
 const DEFAULT_PAGE_INDEX = 1;
@@ -146,6 +148,15 @@ export const OrderList = () => {
   const [draftStatus, setDraftStatus] = useState<OrderStatus | undefined>(queryStatus);
   const [draftProductId, setDraftProductId] = useState<string | undefined>(queryProductId);
   const [draftOrderNo, setDraftOrderNo] = useState(queryOrderNo);
+  const activeFilterCount = [
+    queryUserId,
+    queryStatus !== undefined ? 'status' : undefined,
+    queryProductId,
+    queryOrderNo,
+  ].filter(Boolean).length;
+  const failedOrders = orders.filter((order) => order.voStatus === 'Failed').length;
+  const completedOrders = orders.filter((order) => order.voStatus === 'Completed').length;
+  const pageTotalPrice = orders.reduce((sum, order) => sum + order.voTotalPrice, 0);
 
   const syncSearchParams = (params: {
     userId?: string;
@@ -347,9 +358,9 @@ export const OrderList = () => {
       key: 'user',
       width: 150,
       render: (_: unknown, record: Order) => (
-        <div>
-          <div>{record.voUserName || '未知'}</div>
-          <div style={{ fontSize: '12px', color: '#999' }}>ID: {record.voUserId}</div>
+        <div className="order-list-entity">
+          <div className="order-list-entity__title">{record.voUserName || '未知'}</div>
+          <div className="order-list-entity__meta">ID: {record.voUserId}</div>
         </div>
       ),
     },
@@ -358,9 +369,9 @@ export const OrderList = () => {
       key: 'product',
       width: 200,
       render: (_: unknown, record: Order) => (
-        <div>
-          <div>{record.voProductName}</div>
-          <div style={{ fontSize: '12px', color: '#999' }}>
+        <div className="order-list-entity">
+          <div className="order-list-entity__title">{record.voProductName}</div>
+          <div className="order-list-entity__meta">
             {getProductTypeDisplay(record.voProductType)} | ID: {record.voProductId}
           </div>
         </div>
@@ -379,7 +390,7 @@ export const OrderList = () => {
       key: 'voUnitPrice',
       width: 120,
       render: (price: number) => (
-        <span style={{ color: '#ff4d4f' }}>{price} 胡萝卜</span>
+        <span className="order-list-price">{price} 胡萝卜</span>
       ),
     },
     {
@@ -388,7 +399,7 @@ export const OrderList = () => {
       key: 'voTotalPrice',
       width: 120,
       render: (price: number) => (
-        <span style={{ fontWeight: 'bold', color: '#ff4d4f' }}>
+        <span className="order-list-price order-list-price--total">
           {price} 胡萝卜
         </span>
       ),
@@ -463,90 +474,154 @@ export const OrderList = () => {
   }
 
   return (
-    <div className="order-list-page">
-      <div className="page-header">
-        <h2>订单管理</h2>
+    <div className="admin-feature-page order-list-page">
+      <section className="admin-feature-card">
+        <div className="admin-feature-header">
+          <div>
+            <h2>
+              <FileTextOutlined /> 订单管理
+            </h2>
+            <p className="admin-feature-subtle">查看商城订单、定位用户与商品，并处理发放失败重试和管理员备注。</p>
+          </div>
+          <Tag>{canRemarkOrder ? '可备注' : '只读'}</Tag>
+        </div>
+      </section>
+
+      <section className="admin-feature-metrics" aria-label="订单列表指标">
+        <div className="admin-feature-metric">
+          当前结果
+          <strong>{total}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          本页订单
+          <strong>{orders.length}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          本页完成
+          <strong>{completedOrders}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          发放失败
+          <strong>{failedOrders}</strong>
+        </div>
+      </section>
+
+      <div className="admin-table-layout">
+        <main className="admin-table-main">
+          <section className="admin-table-toolbar" aria-label="订单筛选">
+            <div className="admin-table-toolbar__title">
+              <span>筛选订单</span>
+              <Tag>{activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}</Tag>
+            </div>
+            <div className="admin-table-toolbar__filters">
+              <Input
+                className="order-list-filter-input order-list-filter-input--id"
+                placeholder="用户 ID"
+                type="number"
+                value={draftUserId}
+                onChange={(e) => setDraftUserId(e.target.value ? e.target.value.trim() : undefined)}
+                onPressEnter={handleSearch}
+              />
+
+              <Select
+                className="order-list-filter-select"
+                placeholder="订单状态"
+                allowClear
+                value={draftStatus}
+                onChange={setDraftStatus}
+              >
+                <Select.Option value={0}>待支付</Select.Option>
+                <Select.Option value={1}>已支付</Select.Option>
+                <Select.Option value={2}>已完成</Select.Option>
+                <Select.Option value={3}>已取消</Select.Option>
+                <Select.Option value={4}>已退款</Select.Option>
+                <Select.Option value={5}>发放失败</Select.Option>
+              </Select>
+
+              <Input
+                className="order-list-filter-input order-list-filter-input--id"
+                placeholder="商品 ID"
+                type="number"
+                value={draftProductId}
+                onChange={(e) => setDraftProductId(e.target.value ? e.target.value.trim() : undefined)}
+                onPressEnter={handleSearch}
+              />
+
+              <Input
+                className="order-list-filter-input"
+                placeholder="订单号"
+                value={draftOrderNo}
+                onChange={(e) => setDraftOrderNo(e.target.value)}
+                onPressEnter={handleSearch}
+                suffix={<SearchOutlined />}
+              />
+
+              <Button variant="primary" icon={<SearchOutlined />} onClick={handleSearch}>
+                搜索
+              </Button>
+
+              <Button icon={<ReloadOutlined />} onClick={handleReset}>
+                重置
+              </Button>
+            </div>
+          </section>
+
+          <section className="admin-table-panel">
+            <Table
+              columns={columns}
+              dataSource={orders}
+              rowKey="voId"
+              loading={loading}
+              pagination={{
+                current: queryPageIndex,
+                pageSize: queryPageSize,
+                total: total,
+                showSizeChanger: true,
+                showQuickJumper: true,
+                showTotal: (itemTotal) => `共 ${itemTotal} 条`,
+                onChange: (page, size) => {
+                  syncSearchParams({
+                    userId: queryUserId,
+                    status: queryStatus,
+                    productId: queryProductId,
+                    orderNo: queryOrderNo,
+                    pageIndex: page,
+                    pageSize: size,
+                  });
+                },
+              }}
+              scroll={{ x: 1600 }}
+            />
+          </section>
+        </main>
+
+        <aside className="admin-table-aside">
+          <h3>订单摘要</h3>
+          <p className="admin-feature-subtle">用于核对当前 URL 查询条件、分页规模和失败订单处理入口。</p>
+          <div className="admin-table-summary">
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">查询范围</span>
+              <span className="admin-table-summary__value">
+                {activeFilterCount > 0 ? `${activeFilterCount} 个筛选条件` : '全部订单'}
+              </span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">分页规模</span>
+              <span className="admin-table-summary__value">{queryPageSize} 条 / 页</span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">本页成交额</span>
+              <span className="admin-table-summary__value">{pageTotalPrice} 胡萝卜</span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">失败重试</span>
+              <span className="admin-table-summary__value">
+                {canRetryOrder ? '可重试发放失败订单' : '无重试权限'}
+              </span>
+            </div>
+          </div>
+        </aside>
       </div>
-
-      <div className="filter-bar">
-        <Space wrap>
-          <Input
-            placeholder="用户 ID"
-            style={{ width: 120 }}
-            type="number"
-            value={draftUserId}
-            onChange={(e) => setDraftUserId(e.target.value ? e.target.value.trim() : undefined)}
-            onPressEnter={handleSearch}
-          />
-
-          <Select
-            placeholder="订单状态"
-            style={{ width: 120 }}
-            allowClear
-            value={draftStatus}
-            onChange={setDraftStatus}
-          >
-            <Select.Option value={0}>待支付</Select.Option>
-            <Select.Option value={1}>已支付</Select.Option>
-            <Select.Option value={2}>已完成</Select.Option>
-            <Select.Option value={3}>已取消</Select.Option>
-            <Select.Option value={4}>已退款</Select.Option>
-            <Select.Option value={5}>发放失败</Select.Option>
-          </Select>
-
-          <Input
-            placeholder="商品 ID"
-            style={{ width: 120 }}
-            type="number"
-            value={draftProductId}
-            onChange={(e) => setDraftProductId(e.target.value ? e.target.value.trim() : undefined)}
-            onPressEnter={handleSearch}
-          />
-
-          <Input
-            placeholder="订单号"
-            style={{ width: 200 }}
-            value={draftOrderNo}
-            onChange={(e) => setDraftOrderNo(e.target.value)}
-            onPressEnter={handleSearch}
-            suffix={<SearchOutlined />}
-          />
-
-          <Button variant="primary" icon={<SearchOutlined />} onClick={handleSearch}>
-            搜索
-          </Button>
-
-          <Button icon={<ReloadOutlined />} onClick={handleReset}>
-            重置
-          </Button>
-        </Space>
-      </div>
-
-      <Table
-        columns={columns}
-        dataSource={orders}
-        rowKey="voId"
-        loading={loading}
-        pagination={{
-          current: queryPageIndex,
-          pageSize: queryPageSize,
-          total: total,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (itemTotal) => `共 ${itemTotal} 条`,
-          onChange: (page, size) => {
-            syncSearchParams({
-              userId: queryUserId,
-              status: queryStatus,
-              productId: queryProductId,
-              orderNo: queryOrderNo,
-              pageIndex: page,
-              pageSize: size,
-            });
-          },
-        }}
-        scroll={{ x: 1600 }}
-      />
 
       <OrderDetail
         visible={detailVisible}

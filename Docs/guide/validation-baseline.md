@@ -144,6 +144,19 @@ npm run validate:ci
 
 ## 分层使用建议
 
+### 本地页面复核入口
+
+浏览器复核、人工联调和集成链路默认优先访问 Gateway：
+
+```text
+https://localhost:5000
+https://localhost:5000/console/
+```
+
+`http://localhost:3000` 与 `http://localhost:3100` 只作为 Vite dev server 直连端口，用于 HMR、前端资源路径或局部 UI 调试。直连 Console dev server 时必须带 `/console/` base，例如 `http://localhost:3100/console/`。
+
+涉及用户真实路径、登录回跳、Console 管理后台、公开壳层、API 转发、静态资源路径或部署口径时，不要默认绕过 Gateway 直接访问前端 dev server。
+
 ### 0. 执行粒度约定
 
 当前仓库的验证与留痕，默认按“开发中 / 准备合并 / 发布部署”三种粒度区分，而不是把同一套重流程压到每一次本地提交：
@@ -193,6 +206,7 @@ npm run validate:ci
 - forum 作者跳转：公开 forum 列表、帖子详情与评论作者入口跳到 `/u/:id` 时，不因大整数用户 ID 被前端当作 `number` 而打开失败
 - 公开个人页回跳：从公开个人页点击帖子 / 评论对应入口跳回 `/forum/post/:postId` 时，`postId` 继续保持字符串口径
 - 登录态识别：直接打开 `/u/:id` 时，公开壳层也会完成认证初始化；登录用户查看自己主页时，不会因为 `userStore` 未预热而误显示关注按钮
+- 公开个人页分享：`/u/:id` 顶部复制入口应复制公开 canonical 链接，不包含 `/desktop`、窗口参数或临时来源状态；嵌入浏览器 / 权限受限上下文应走同步 textarea fallback，避免误报复制失败
 
 当前批次与公开榜单首批直接相关的人工确认面：
 
@@ -210,9 +224,12 @@ npm run validate:ci
 - 列表状态：`/shop/products` 的 `category / q / page` 会稳定回写到 URL，刷新后仍能恢复商品列表上下文
 - 详情直链：`/shop/product/:productId` 直链在公开壳层下打开时，会直接进入只读商品详情，而不是要求先登录或回落桌面窗口
 - 来源返回：从 `/discover` 或 `/shop/products` 进入 `/shop/product/:productId` 后，详情页返回动作会优先回到原公开来源，而不是一律退回默认商品列表
+- 来源返回持久化：公开详情来源返回状态保存在 `history.state`，刷新或浏览器历史恢复后仍应保留来源返回语义，但复制链接、canonical、Open Graph 和 sitemap 不应带入该状态
 - 外部 ID：公开商品详情路由与前端读取链路不会把外部 `productId` 强制扩大成前端 `number`，刷新和回跳时保持原始字符串口径
 - 可见文案：公开商品详情 head title / description、最近浏览卡片和回流提示不应直接回显旧 long `productId`；`/shop/product/:productId` 仍作为当前兼容 canonical 与打开路径保留
-- 只读边界：公开商品详情当前不会误触购买确认、订单、背包、权益使用、举报或其他“我的”能力；如需继续操作，会明确导向桌面工作台
+- 只读边界：公开商品详情当前不会误触购买确认、订单、背包、权益使用、举报或其他“我的”能力；如需继续操作，会明确导向 `/desktop?app=shop&productId=...` 工作台商品详情
+- 登录后购买回流：未登录用户从工作台商品详情点击“登录后继续购买”时，应保存 `/desktop?app=shop&productId=...` 一次性返回路径；OIDC 回调成功后恢复到原商品详情，随后购买按钮继续走登录态购买流程
+- 订单 / 背包深链：`/desktop?app=shop&orderId=...`、`/desktop?app=shop&view=orders`、`/desktop?app=shop&view=inventory` 要求登录后消费，匿名态不应误显空订单或空背包
 
 当前批次与公开社区分发页首批直接相关的人工确认面：
 
@@ -547,11 +564,9 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 
 ## Flutter Android 人工验收分层
 
-截至 `2026-05-04`，Flutter Android MVP 第一轮 RC 已完成并给出 Go 结论。后续若改动 `Clients/radish.flutter` 下 Android 壳层、`discover / forum / docs / profile` 原生页面、handoff、Android Back、OIDC 回调、本地复访状态、签名配置或 release 构建脚本，仍应按本节补对应开发阶段或 release 前验证。
+截至 `2026-05-04`，Flutter Android MVP 第一轮 RC 已完成并给出 Go 结论。后续若改动 `Clients/radish.flutter` 下 Android 壳层、`discover / forum / docs / profile` 原生页面、handoff、Android Back、OIDC 回调、本地复访状态、签名配置或 release 构建脚本，仍应按本节补对应开发阶段或 release 前验证。当前人工验收优先覆盖已经具备真实入口、真实数据或可稳定手工触发的链路：登录、退出、会话恢复、`discover / forum / docs / profile` 真实读取、forum feed、forum detail、评论阅读、评论分页、评论发布 / 回复、纯文本发帖、detail 原地登录续接、docs 搜索 / 内链、公开商城列表与商品详情、登录态单商品购买、公开详情链接复制、profile 复访、最近访问、轻回应发布，以及已登录壳层的通知列表回流和单条已读。
 
-Flutter Android MVP 当前人工验收优先覆盖已经具备真实入口、真实数据或可稳定手工触发的链路：登录、退出、会话恢复、`discover / forum / docs / profile` 真实只读读取、forum feed、forum detail、评论阅读、评论分页、detail 原地登录续接、docs 搜索 / 内链、profile 复访、轻回应发布，以及已登录壳层的最小 forum notification 回流。
-
-最小 forum notification 回流当前使用站内通知列表作为可测来源：用另一个账号在 Web / 桌面端评论或回复目标用户的帖子 / 评论，接收账号登录 Flutter 后点击 `Forum notification`，应能回到对应 forum detail，并在通知携带 `commentId` 时落到评论上下文。系统通知栏推送、完整通知中心、标记已读、删除通知和通知设置仍不属于当前 Android MVP 阻断项。具体 checklist 以 `Clients/radish.flutter/README.md` 为准。
+通知回流当前使用站内通知列表作为可测来源：用另一个账号在 Web / 桌面端评论或回复目标用户的帖子 / 评论，接收账号登录 Flutter 后打开通知列表并选择通知，应能回到对应 forum detail，并在通知携带 `commentId` 时落到评论上下文；详情返回后应回到打开通知前所在 tab。单条未读通知可显式标记已读，成功后局部更新状态，失败时保留原状态并提示错误。系统通知栏推送、完整通知中心、批量已读、删除通知和通知设置仍不属于当前 Android MVP 阻断项。Forum detail 登录回流还需确认：匿名态从轻回应区或评论区登录后，应分别回到当前轻回应区或评论输入上下文；后续轻回应发布只刷新轻回应墙和局部成功提示，根评论发布或回复只局部更新评论区，不刷新正文、轻回应或来源 tab。具体 checklist 以 `Clients/radish.flutter/README.md` 为准。
 
 Android MVP 本地 release APK 发布候选当前已完成首轮收口。涉及 Android 包身份、release signing、main manifest 权限、Gateway 基址或 RC 构建脚本时，除 Dart / Android 平台自动化外，还应确认：
 
@@ -563,20 +578,13 @@ Android MVP 本地 release APK 发布候选当前已完成首轮收口。涉及 
 - 真实 `android/key.properties`、`.jks` 与 `.keystore` 不进入版本库
 - 真机通过 `adb reverse tcp:5000 tcp:5000` 访问本机 Gateway 时，登录、基础读取与关键样式显示正常
 
-## Tauri + WebOS 桌面壳验证分层
+## PC/Tauri 后置增强壳验证分层
 
-Tauri 桌面壳当前是 Windows / macOS / Linux 桌面安装包路线的候选下一阶段，默认 UI 入口为 `/desktop`，承载 WebOS 桌面工作台；`/docs` 只作为公开内容壳层和早期 spike 样例，不作为桌面安装包正式默认体验。
+PC/Tauri 当前后置到纯 Web 与 Flutter 主线之后，不再默认绑定 WebOS。历史 Tauri + WebOS 桌面壳验证已经成立，但只作为验证资产保留；后续若重启 PC 客户端，应以 Tauri 增强纯 Web 体验重新定义默认入口、验收范围和分发材料。`/desktop` 仅作为 WebOS 保留入口，`/docs` 只作为公开内容壳层和早期 spike 样例。
 
-涉及 `Clients/radish-tauri`、Tauri 配置、`Frontend/radish.client/src/platform/tauriBridge.ts`、桌面 OIDC 回跳、deep link、WebOS 默认入口或 Tauri 构建链路时，开发阶段至少确认：
+涉及 `Clients/radish-tauri`、Tauri 配置、`Frontend/radish.client/src/platform/tauriBridge.ts`、桌面 OIDC 回跳、deep link、Tauri 构建链路、WebOS `/desktop` 保留入口或历史 Tauri + WebOS 验证路径时，开发阶段至少确认 `npm run type-check --workspace=radish.client`、`npm run test --workspace=radish.client`、`npm run build --workspace=radish.client` 与 `cargo build`；涉及 release exe 时补 `cargo build --release`，涉及 installer bundle 时补 `cargo tauri build`。
 
-- `npm run type-check --workspace=radish.client`
-- `npm run test --workspace=radish.client`
-- `npm run build --workspace=radish.client`
-- 在 `Clients/radish-tauri` 下执行 `cargo build`
-- 涉及 release exe 时补 `cargo build --release`
-- 涉及 installer bundle 时补 `cargo tauri build`
-
-当前已通过 GUI 启动、WebOS 桌面布局、窗口生命周期观察、系统浏览器登录 / 登出 `127.0.0.1:48801` loopback 回跳、Windows NSIS installer 构建、本机安装、启动、普通用户卸载与同身份覆盖安装人工验收；release 启动伴随命令行窗口的问题已通过 `windows_subsystem = "windows"` 修复。当前本机普通用户安装未出现“未知发布者 / SmartScreen”提示；公开分发后仍需结合下载来源、签名、信誉与系统策略重新复核。管理员权限安装后用普通权限卸载可能残留安装文件，当前归类为安装 / 卸载权限上下文不一致风险，不作为 Tauri / NSIS 配置缺陷处理。`Clients/radish-tauri` 当前已进入正式桌面包候选身份补验，`productName` / 窗口标题为 `Radish`，`identifier` 为 `com.radish.desktop`；该身份切换只用于验证安装目录、卸载项、同身份覆盖安装和 `radish://` 协议注册清理，不等同于公开发布版。正式候选包生产构建默认基址当前为 `https://radishx.com`，另有 `npm run build:tauri-local --workspace=radish.client` 本地 Auth 验收构建模式指向 `https://localhost:5000`，用于生产 Auth 客户端注册暂未更新时继续验证安装包 loopback 登录。Tauri loopback 登录在浏览器关闭后会复用等待中的同路径 listener 以支持再次点击登录。代码签名、自动更新、托盘、菜单、SmartScreen 公开来源复核和正式分发体积仍需后续单独补验。
+历史 Tauri + WebOS 验证已通过 GUI 启动、WebOS 桌面布局、窗口生命周期观察、系统浏览器登录 / 登出 `127.0.0.1:48801` loopback 回跳、Windows NSIS installer 构建、本机安装、启动、普通用户卸载与同身份覆盖安装人工验收；release 启动伴随命令行窗口的问题已通过 `windows_subsystem = "windows"` 修复。当前本机普通用户安装未出现“未知发布者 / SmartScreen”提示；公开分发后仍需结合下载来源、签名、信誉与系统策略重新复核。管理员权限安装后用普通权限卸载可能残留安装文件，当前归类为安装 / 卸载权限上下文不一致风险，不作为 Tauri / NSIS 配置缺陷处理。`Clients/radish-tauri` 曾进入正式桌面包候选身份补验，`productName` / 窗口标题为 `Radish`，`identifier` 为 `com.radish.desktop`；该身份切换只用于验证安装目录、卸载项、同身份覆盖安装和 `radish://` 协议注册清理，不等同于公开发布版。正式候选包生产构建默认基址为 `https://radishx.com`，另有 `npm run build:tauri-local --workspace=radish.client` 本地 Auth 验收构建模式指向 `https://localhost:5000`，用于生产 Auth 客户端注册暂未更新时继续验证安装包 loopback 登录。Tauri loopback 登录在浏览器关闭后会复用等待中的同路径 listener 以支持再次点击登录。代码签名、自动更新、托盘、菜单、SmartScreen 公开来源复核和正式分发体积仍需在 PC/Tauri 重新进入主线时按纯 Web 增强壳口径重新补验。
 
 ## 受限环境说明
 

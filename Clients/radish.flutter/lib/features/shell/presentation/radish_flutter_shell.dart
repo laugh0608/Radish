@@ -5,11 +5,15 @@ import 'package:flutter/material.dart';
 import '../../../core/auth/session_controller.dart';
 import '../../../core/auth/native_auth_controller.dart';
 import '../../../core/config/app_environment.dart';
+import '../../../core/network/radish_api_client.dart';
 import '../../../core/platform/app_lifecycle_gateway.dart';
 import '../../../features/discover/data/discover_repository.dart';
+import '../../../features/discover/data/discover_models.dart';
 import '../../../features/docs/data/docs_follow_up_store.dart';
 import '../../../features/docs/data/docs_models.dart';
 import '../../../features/docs/data/docs_repository.dart';
+import '../../../features/experience/data/experience_repository.dart';
+import '../../../features/experience/presentation/experience_page.dart';
 import '../../../features/forum/data/forum_follow_up_store.dart';
 import '../../../features/forum/data/forum_models.dart';
 import '../../../features/forum/data/forum_repository.dart';
@@ -17,10 +21,18 @@ import '../../../features/leaderboard/data/leaderboard_repository.dart';
 import '../../../features/leaderboard/presentation/leaderboard_page.dart';
 import '../../../features/notifications/data/notification_repository.dart';
 import '../../../features/profile/data/profile_repository.dart';
+import '../../../features/profile/presentation/browse_history_page.dart';
 import '../../../features/discover/presentation/discover_page.dart';
 import '../../../features/docs/presentation/docs_page.dart';
 import '../../../features/forum/presentation/forum_page.dart';
 import '../../../features/profile/presentation/profile_page.dart';
+import '../../../features/shop/data/shop_repository.dart';
+import '../../../features/shop/presentation/shop_inventory_page.dart';
+import '../../../features/shop/presentation/shop_order_list_page.dart';
+import '../../../features/shop/presentation/shop_product_detail_page.dart';
+import '../../../features/shop/presentation/shop_product_list_page.dart';
+import '../../../features/wallet/data/wallet_repository.dart';
+import '../../../features/wallet/presentation/wallet_page.dart';
 
 class RadishFlutterShell extends StatefulWidget {
   const RadishFlutterShell({
@@ -33,6 +45,9 @@ class RadishFlutterShell extends StatefulWidget {
     required this.profileRepository,
     required this.followUpStore,
     this.leaderboardRepository = const EmptyLeaderboardRepository(),
+    this.shopRepository = const EmptyShopRepository(),
+    this.walletRepository = const EmptyWalletRepository(),
+    this.experienceRepository = const EmptyExperienceRepository(),
     this.docsFollowUpStore = const EmptyDocsFollowUpStore(),
     this.notificationRepository = const EmptyNotificationRepository(),
     this.appLifecycleGateway = const EmptyAppLifecycleGateway(),
@@ -49,6 +64,9 @@ class RadishFlutterShell extends StatefulWidget {
   final ProfileRepository profileRepository;
   final ForumFollowUpStore followUpStore;
   final LeaderboardRepository leaderboardRepository;
+  final ShopRepository shopRepository;
+  final WalletRepository walletRepository;
+  final ExperienceRepository experienceRepository;
   final DocsFollowUpStore docsFollowUpStore;
   final NotificationRepository notificationRepository;
   final AppLifecycleGateway appLifecycleGateway;
@@ -77,10 +95,11 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
   DocsDetailHandoffTarget? _recentDocumentTarget;
   List<DocsDetailHandoffTarget> _recentDocumentTargets =
       const <DocsDetailHandoffTarget>[];
-  ForumDetailHandoffTarget? _latestForumNotificationTarget;
-  _ForumNotificationLookupState _forumNotificationLookupState =
-      _ForumNotificationLookupState.idle;
-  int _forumNotificationLookupRequestId = 0;
+  List<NotificationListItem> _notificationItems =
+      const <NotificationListItem>[];
+  _NotificationLookupState _notificationLookupState =
+      _NotificationLookupState.idle;
+  int _notificationLookupRequestId = 0;
   ShellPostLoginTarget? _pendingPostLoginTarget;
   VoidCallback? _docsInlineDetailBackHandler;
   int? _tabReturnIndex;
@@ -104,7 +123,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     unawaited(_loadFollowUps());
     unawaited(_loadPendingPostLoginTarget());
     if (_wasAuthenticated) {
-      unawaited(_loadLatestForumNotificationTarget());
+      unawaited(_loadNotificationItems());
     }
   }
 
@@ -144,7 +163,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
 
     if (oldWidget.notificationRepository != widget.notificationRepository &&
         widget.sessionController.state.isAuthenticated) {
-      unawaited(_loadLatestForumNotificationTarget());
+      unawaited(_loadNotificationItems());
     }
   }
 
@@ -154,7 +173,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       unawaited(widget.authController.consumePendingCallback());
       unawaited(_loadPendingHandoff());
       if (widget.sessionController.state.isAuthenticated) {
-        unawaited(_loadLatestForumNotificationTarget());
+        unawaited(_loadNotificationItems());
       }
     }
   }
@@ -203,7 +222,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     await widget.appLifecycleGateway.moveTaskToBack();
   }
 
-  void _openProfileUser(String userId) {
+  void _openProfileUser(String userId, {int? returnIndex}) {
     final normalizedUserId = userId.trim();
     if (normalizedUserId.isEmpty) {
       return;
@@ -213,10 +232,20 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       _publicProfileUserId = normalizedUserId;
       _recentProfileUserId = normalizedUserId;
       _currentIndex = _profileTabIndex;
-      _tabReturnIndex = null;
+      _tabReturnIndex = returnIndex == null || returnIndex == _profileTabIndex
+          ? null
+          : returnIndex;
     });
 
     unawaited(widget.followUpStore.writeRecentProfileUserId(normalizedUserId));
+  }
+
+  void _openProfileUserFromLeaderboard(String userId) {
+    _openProfileUser(userId, returnIndex: _leaderboardTabIndex);
+  }
+
+  void _openProfileUserFromCurrentTab(String userId) {
+    _openProfileUser(userId, returnIndex: _currentIndex);
   }
 
   void _openRecentProfileUser() {
@@ -249,7 +278,11 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     final recentTarget = _buildRecentBrowseTarget(normalizedTarget);
     final nextIndex = _shouldKeepCurrentTabForForumDetail(normalizedTarget)
         ? _currentIndex
-        : 1;
+        : _forumTabIndex;
+    final nextReturnIndex = _resolveForumDetailReturnIndex(
+      normalizedTarget,
+      nextIndex,
+    );
 
     setState(() {
       _forumHandoffTarget = normalizedTarget;
@@ -259,7 +292,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
         recentTarget,
       );
       _currentIndex = nextIndex;
-      _tabReturnIndex = null;
+      _tabReturnIndex = nextReturnIndex;
     });
 
     unawaited(widget.followUpStore.writeRecentBrowseHandoff(recentTarget));
@@ -308,12 +341,12 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
         isAuthenticated &&
         (ModalRoute.of(context)?.isCurrent ?? true)) {
       unawaited(_consumePendingPostLoginTarget());
-      unawaited(_loadLatestForumNotificationTarget());
+      unawaited(_loadNotificationItems());
     }
     if (_wasAuthenticated && !isAuthenticated) {
       setState(() {
-        _latestForumNotificationTarget = null;
-        _forumNotificationLookupState = _ForumNotificationLookupState.idle;
+        _notificationItems = const <NotificationListItem>[];
+        _notificationLookupState = _NotificationLookupState.idle;
       });
     }
     _wasAuthenticated = isAuthenticated;
@@ -444,13 +477,226 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     _openForumDetailTarget(target);
   }
 
-  void _openLatestForumNotification() {
-    final target = _latestForumNotificationTarget;
-    if (target == null) {
+  Future<void> _openNotificationList() async {
+    final notifications = _notificationItems;
+    if (notifications.isEmpty) {
       return;
     }
 
-    _openForumDetailTarget(target);
+    final selectedTarget = await showModalBottomSheet<ForumDetailHandoffTarget>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => _NotificationListSheet(
+        notifications: notifications,
+        onMarkAsRead: _markNotificationAsRead,
+      ),
+    );
+    if (!mounted || selectedTarget == null) {
+      return;
+    }
+
+    _openForumDetailTarget(selectedTarget);
+  }
+
+  Future<String?> _markNotificationAsRead(
+    NotificationListItem notification,
+  ) async {
+    if (notification.isRead) {
+      return null;
+    }
+
+    final accessToken =
+        widget.sessionController.state.session?.accessToken.trim();
+    if (accessToken == null || accessToken.isEmpty) {
+      return '请先登录后再标记通知已读';
+    }
+
+    final notificationId = notification.notificationId?.trim();
+    if (notificationId == null || notificationId.isEmpty) {
+      return '当前通知缺少可标记的通知 ID';
+    }
+
+    try {
+      await widget.notificationRepository.markAsRead(
+        accessToken: accessToken,
+        notificationId: notificationId,
+      );
+      if (!mounted) {
+        return null;
+      }
+
+      setState(() {
+        _notificationItems = _notificationItems
+            .map(
+              (item) => item.notificationId == notificationId
+                  ? item.copyWith(isRead: true)
+                  : item,
+            )
+            .toList();
+      });
+      return null;
+    } on RadishApiClientException catch (error) {
+      return error.message;
+    } on FormatException catch (error) {
+      return '通知已读状态返回格式异常：${error.message}';
+    }
+  }
+
+  void _openShopProductFromDiscover(DiscoverProductSummary product) {
+    final productId = product.id.trim();
+    if (productId.isEmpty) {
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => ShopProductDetailPage(
+          environment: widget.environment,
+          repository: widget.shopRepository,
+          productId: productId,
+          initialTitle: product.name,
+          sessionController: widget.sessionController,
+          authController: widget.authController,
+          onRequestSignIn: () => _startLoginForTarget(
+            const ShellPostLoginTarget(tabIndex: _discoverTabIndex),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openShopFromDiscover() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => ShopProductListPage(
+          environment: widget.environment,
+          repository: widget.shopRepository,
+          sessionController: widget.sessionController,
+          authController: widget.authController,
+          onRequestSignIn: () => _startLoginForTarget(
+            const ShellPostLoginTarget(tabIndex: _discoverTabIndex),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openShopOrdersFromProfile() async {
+    final accessToken =
+        widget.sessionController.state.session?.accessToken.trim();
+    if (accessToken == null || accessToken.isEmpty) {
+      await _startLoginForProfile();
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => ShopOrderListPage(
+          environment: widget.environment,
+          repository: widget.shopRepository,
+          accessToken: accessToken,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openShopInventoryFromProfile() async {
+    final accessToken =
+        widget.sessionController.state.session?.accessToken.trim();
+    if (accessToken == null || accessToken.isEmpty) {
+      await _startLoginForProfile();
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => ShopInventoryPage(
+          environment: widget.environment,
+          repository: widget.shopRepository,
+          accessToken: accessToken,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openWalletFromProfile() async {
+    final accessToken =
+        widget.sessionController.state.session?.accessToken.trim();
+    if (accessToken == null || accessToken.isEmpty) {
+      await _startLoginForProfile();
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => WalletPage(
+          environment: widget.environment,
+          repository: widget.walletRepository,
+          accessToken: accessToken,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openExperienceFromProfile() async {
+    final accessToken =
+        widget.sessionController.state.session?.accessToken.trim();
+    if (accessToken == null || accessToken.isEmpty) {
+      await _startLoginForProfile();
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => ExperiencePage(
+          environment: widget.environment,
+          repository: widget.experienceRepository,
+          accessToken: accessToken,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openBrowseHistoryFromProfile() async {
+    final accessToken =
+        widget.sessionController.state.session?.accessToken.trim();
+    if (accessToken == null || accessToken.isEmpty) {
+      await _startLoginForProfile();
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => BrowseHistoryPage(
+          environment: widget.environment,
+          repository: widget.profileRepository,
+          shopRepository: widget.shopRepository,
+          accessToken: accessToken,
+          onOpenForumDetailTarget: _openForumDetailTarget,
+          onOpenDocsDetailTarget: _openDocsDetailTarget,
+        ),
+      ),
+    );
   }
 
   void _resumeRecentDocumentTarget() {
@@ -462,47 +708,48 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     _openDocsDetailTarget(target);
   }
 
-  Future<void> _loadLatestForumNotificationTarget() async {
-    final requestId = ++_forumNotificationLookupRequestId;
+  Future<void> _loadNotificationItems() async {
+    final requestId = ++_notificationLookupRequestId;
     final accessToken =
         widget.sessionController.state.session?.accessToken.trim();
     if (accessToken == null || accessToken.isEmpty) {
       if (mounted) {
         setState(() {
-          _latestForumNotificationTarget = null;
-          _forumNotificationLookupState = _ForumNotificationLookupState.idle;
+          _notificationItems = const <NotificationListItem>[];
+          _notificationLookupState = _NotificationLookupState.idle;
         });
       }
       return;
     }
 
     setState(() {
-      _forumNotificationLookupState = _ForumNotificationLookupState.loading;
+      _notificationLookupState = _NotificationLookupState.loading;
     });
 
     try {
-      final target = await widget.notificationRepository.getLatestForumTarget(
+      final page = await widget.notificationRepository.getNotifications(
         accessToken: accessToken,
+        pageSize: 20,
       );
-      if (!mounted || requestId != _forumNotificationLookupRequestId) {
+      if (!mounted || requestId != _notificationLookupRequestId) {
         return;
       }
 
-      final normalizedTarget = _normalizeForumHandoffTarget(target);
+      final notifications = page.notifications.take(20).toList();
       setState(() {
-        _latestForumNotificationTarget = normalizedTarget;
-        _forumNotificationLookupState = normalizedTarget == null
-            ? _ForumNotificationLookupState.empty
-            : _ForumNotificationLookupState.available;
+        _notificationItems = notifications;
+        _notificationLookupState = notifications.isEmpty
+            ? _NotificationLookupState.empty
+            : _NotificationLookupState.available;
       });
     } catch (_) {
-      if (!mounted || requestId != _forumNotificationLookupRequestId) {
+      if (!mounted || requestId != _notificationLookupRequestId) {
         return;
       }
 
       setState(() {
-        _latestForumNotificationTarget = null;
-        _forumNotificationLookupState = _ForumNotificationLookupState.error;
+        _notificationItems = const <NotificationListItem>[];
+        _notificationLookupState = _NotificationLookupState.error;
       });
     }
   }
@@ -742,6 +989,10 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       return true;
     }
 
+    if (target.source == ForumDetailHandoffSource.notification) {
+      return true;
+    }
+
     if (_currentIndex != _profileTabIndex) {
       return false;
     }
@@ -752,11 +1003,34 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       case ForumDetailHandoffSource.myQuickReply:
       case ForumDetailHandoffSource.profileRecentBrowse:
         return true;
+      case ForumDetailHandoffSource.notification:
+        return true;
+      case ForumDetailHandoffSource.shell:
+      case ForumDetailHandoffSource.discover:
+      case ForumDetailHandoffSource.browseHistory:
+        return false;
+    }
+  }
+
+  int? _resolveForumDetailReturnIndex(
+    ForumDetailHandoffTarget target,
+    int nextIndex,
+  ) {
+    if (_currentIndex != _profileTabIndex || nextIndex != _profileTabIndex) {
+      return null;
+    }
+
+    switch (target.source) {
+      case ForumDetailHandoffSource.publicProfilePost:
+      case ForumDetailHandoffSource.publicProfileComment:
+      case ForumDetailHandoffSource.myQuickReply:
+      case ForumDetailHandoffSource.profileRecentBrowse:
+        return _tabReturnIndex;
       case ForumDetailHandoffSource.shell:
       case ForumDetailHandoffSource.discover:
       case ForumDetailHandoffSource.notification:
       case ForumDetailHandoffSource.browseHistory:
-        return false;
+        return null;
     }
   }
 
@@ -797,15 +1071,20 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
               ),
             ),
             onOpenForumDetailTarget: _openForumDetailTarget,
-            onOpenProfileUser: _openProfileUser,
+            onOpenShopProduct: _openShopProductFromDiscover,
+            onOpenShop: _openShopFromDiscover,
+            onOpenProfileUser: _openProfileUserFromCurrentTab,
           ),
           ForumPage(
             environment: widget.environment,
             repository: widget.forumRepository,
             sessionController: widget.sessionController,
             authController: widget.authController,
-            onOpenProfileUser: _openProfileUser,
+            onOpenProfileUser: _openProfileUserFromCurrentTab,
             onOpenForumDetailTarget: _openForumDetailTarget,
+            onRequestSignInForForum: () => _startLoginForTarget(
+              const ShellPostLoginTarget(tabIndex: _forumTabIndex),
+            ),
             onRequestSignInForDetail: _startLoginForForumDetail,
             onConsumeActiveDetailLoginTarget:
                 _clearInPlaceForumDetailLoginTarget,
@@ -822,11 +1101,13 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
           ),
           LeaderboardPage(
             repository: widget.leaderboardRepository,
+            onOpenProfileUser: _openProfileUserFromLeaderboard,
           ),
           ProfilePage(
             sessionController: widget.sessionController,
             authController: widget.authController,
             repository: widget.profileRepository,
+            environment: widget.environment,
             publicUserId: _publicProfileUserId,
             recentPublicUserId: _recentProfileUserId,
             recentBrowseHandoffTarget: _recentBrowseHandoffTarget,
@@ -837,6 +1118,11 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
             onOpenDocsDetailTarget: _openDocsDetailTarget,
             onOpenRecentPublicProfile: _openRecentProfileUser,
             onOpenMyProfile: _openMyProfile,
+            onOpenShopOrders: _openShopOrdersFromProfile,
+            onOpenShopInventory: _openShopInventoryFromProfile,
+            onOpenWallet: _openWalletFromProfile,
+            onOpenExperience: _openExperienceFromProfile,
+            onOpenBrowseHistory: _openBrowseHistoryFromProfile,
             onRequestSignIn: _startLoginForProfile,
           ),
         ];
@@ -1040,42 +1326,42 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     }
 
     final chips = <Widget>[];
-    switch (_forumNotificationLookupState) {
-      case _ForumNotificationLookupState.idle:
+    switch (_notificationLookupState) {
+      case _NotificationLookupState.idle:
         chips.add(
           _ShellStatusChip(
             icon: Icons.notifications_outlined,
-            label: '检查论坛通知',
-            onTap: _loadLatestForumNotificationTarget,
+            label: '检查通知',
+            onTap: _loadNotificationItems,
           ),
         );
         break;
-      case _ForumNotificationLookupState.loading:
+      case _NotificationLookupState.loading:
         chips.add(
           const _ShellStatusChip(
             icon: Icons.hourglass_top_outlined,
-            label: '正在检查论坛通知',
+            label: '正在刷新通知',
           ),
         );
         break;
-      case _ForumNotificationLookupState.available:
+      case _NotificationLookupState.available:
         chips.add(
           _ShellStatusChip(
             icon: Icons.notifications_outlined,
-            label: '查看论坛通知',
-            onTap: _openLatestForumNotification,
+            label: '通知 ${_notificationItems.length} 条',
+            onTap: _openNotificationList,
           ),
         );
         break;
-      case _ForumNotificationLookupState.empty:
+      case _NotificationLookupState.empty:
         chips.add(
           const _ShellStatusChip(
             icon: Icons.notifications_none_outlined,
-            label: '暂无论坛通知',
+            label: '暂无通知',
           ),
         );
         break;
-      case _ForumNotificationLookupState.error:
+      case _NotificationLookupState.error:
         chips.add(
           const _ShellStatusChip(
             icon: Icons.error_outline,
@@ -1085,13 +1371,12 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
         break;
     }
 
-    if (_forumNotificationLookupState !=
-        _ForumNotificationLookupState.loading) {
+    if (_notificationLookupState != _NotificationLookupState.loading) {
       chips.add(
         _ShellStatusChip(
           icon: Icons.refresh,
           label: '刷新通知',
-          onTap: _loadLatestForumNotificationTarget,
+          onTap: _loadNotificationItems,
         ),
       );
     }
@@ -1100,7 +1385,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
   }
 }
 
-enum _ForumNotificationLookupState {
+enum _NotificationLookupState {
   idle,
   loading,
   available,
@@ -1115,6 +1400,308 @@ String? _normalizeUserId(String? userId) {
   }
 
   return normalizedUserId;
+}
+
+class _NotificationListSheet extends StatefulWidget {
+  const _NotificationListSheet({
+    required this.notifications,
+    required this.onMarkAsRead,
+  });
+
+  final List<NotificationListItem> notifications;
+  final Future<String?> Function(NotificationListItem notification)
+      onMarkAsRead;
+
+  @override
+  State<_NotificationListSheet> createState() => _NotificationListSheetState();
+}
+
+class _NotificationListSheetState extends State<_NotificationListSheet> {
+  late List<NotificationListItem> _notifications;
+  final Set<String> _markingReadIds = <String>{};
+  String? _markReadIssueMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _notifications = widget.notifications;
+  }
+
+  @override
+  void didUpdateWidget(covariant _NotificationListSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.notifications != widget.notifications) {
+      _notifications = widget.notifications;
+    }
+  }
+
+  Future<void> _markAsRead(NotificationListItem notification) async {
+    final notificationId = notification.notificationId?.trim();
+    if (notificationId == null || notificationId.isEmpty) {
+      setState(() {
+        _markReadIssueMessage = '当前通知缺少可标记的通知 ID';
+      });
+      return;
+    }
+
+    setState(() {
+      _markReadIssueMessage = null;
+      _markingReadIds.add(notificationId);
+    });
+
+    final issueMessage = await widget.onMarkAsRead(notification);
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _markingReadIds.remove(notificationId);
+      if (issueMessage == null) {
+        _notifications = _notifications
+            .map(
+              (item) => item.notificationId == notificationId
+                  ? item.copyWith(isRead: true)
+                  : item,
+            )
+            .toList();
+      } else {
+        _markReadIssueMessage = issueMessage;
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '通知',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '最近站内通知，论坛通知可回到帖子或评论。',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+            ),
+            if (_markReadIssueMessage != null) ...[
+              const SizedBox(height: 12),
+              _NotificationMarkReadIssueNotice(
+                message: _markReadIssueMessage!,
+              ),
+            ],
+            const SizedBox(height: 12),
+            Flexible(
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: _notifications.length,
+                separatorBuilder: (context, index) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final notification = _notifications[index];
+                  final target = notification.forumTarget;
+                  final notificationId = notification.notificationId?.trim();
+                  final isMarking = notificationId != null &&
+                      _markingReadIds.contains(notificationId);
+
+                  return _NotificationListTile(
+                    notification: notification,
+                    isMarkingRead: isMarking,
+                    onOpen: target == null
+                        ? null
+                        : () => Navigator.of(context).pop(target),
+                    onMarkAsRead: notification.isRead || notificationId == null
+                        ? null
+                        : () => _markAsRead(notification),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NotificationListTile extends StatelessWidget {
+  const _NotificationListTile({
+    required this.notification,
+    required this.isMarkingRead,
+    required this.onOpen,
+    required this.onMarkAsRead,
+  });
+
+  final NotificationListItem notification;
+  final bool isMarkingRead;
+  final VoidCallback? onOpen;
+  final VoidCallback? onMarkAsRead;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final target = notification.forumTarget;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(
+              target == null
+                  ? Icons.notifications_outlined
+                  : Icons.forum_outlined,
+            ),
+            title: Text(
+              notification.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            subtitle: _NotificationListItemSubtitle(
+              notification: notification,
+            ),
+            trailing: target == null
+                ? Text(
+                    notification.isRead ? '已读' : '只读',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                  )
+                : const Icon(Icons.chevron_right),
+            onTap: onOpen,
+          ),
+          if (onMarkAsRead != null) ...[
+            Padding(
+              padding: const EdgeInsets.only(left: 56, bottom: 4),
+              child: FilledButton.tonalIcon(
+                onPressed: isMarkingRead ? null : onMarkAsRead,
+                icon: isMarkingRead
+                    ? const SizedBox.square(
+                        dimension: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.done_all),
+                label: Text(isMarkingRead ? '正在标记' : '标记已读'),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _NotificationMarkReadIssueNotice extends StatelessWidget {
+  const _NotificationMarkReadIssueNotice({
+    required this.message,
+  });
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.error),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.error_outline,
+              color: colorScheme.onErrorContainer,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NotificationListItemSubtitle extends StatelessWidget {
+  const _NotificationListItemSubtitle({
+    required this.notification,
+  });
+
+  final NotificationListItem notification;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final metadata = _buildNotificationMetadata(notification);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (notification.content != null)
+          Text(
+            notification.content!,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        Text(
+          metadata,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+        ),
+      ],
+    );
+  }
+}
+
+String _buildNotificationMetadata(NotificationListItem notification) {
+  final parts = <String>[
+    notification.typeLabel,
+    notification.isRead ? '已读' : '未读',
+  ];
+  final createdAt =
+      notification.createdAt ?? notification.notification?.createdAt;
+  if (createdAt != null) {
+    parts.add(createdAt);
+  }
+
+  final target = notification.forumTarget;
+  if (target != null) {
+    parts.add(_buildForumNotificationTargetLabel(target));
+  }
+
+  return parts.join(' · ');
+}
+
+String _buildForumNotificationTargetLabel(ForumDetailHandoffTarget target) {
+  final commentId = target.normalizedCommentId;
+  if (commentId == null) {
+    return '/forum/post/${target.normalizedPostId}';
+  }
+
+  return '/forum/post/${target.normalizedPostId} · comment $commentId';
 }
 
 class _ShellStatusChip extends StatelessWidget {

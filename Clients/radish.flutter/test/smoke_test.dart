@@ -17,12 +17,26 @@ import 'package:radish_flutter/features/discover/data/discover_repository.dart';
 import 'package:radish_flutter/features/docs/data/docs_follow_up_store.dart';
 import 'package:radish_flutter/features/docs/data/docs_models.dart';
 import 'package:radish_flutter/features/docs/data/docs_repository.dart';
+import 'package:radish_flutter/features/experience/data/experience_models.dart';
+import 'package:radish_flutter/features/experience/data/experience_repository.dart';
 import 'package:radish_flutter/features/forum/data/forum_follow_up_store.dart';
 import 'package:radish_flutter/features/forum/data/forum_models.dart';
 import 'package:radish_flutter/features/forum/data/forum_repository.dart';
+import 'package:radish_flutter/features/leaderboard/data/leaderboard_models.dart';
+import 'package:radish_flutter/features/leaderboard/data/leaderboard_repository.dart';
 import 'package:radish_flutter/features/notifications/data/notification_repository.dart';
 import 'package:radish_flutter/features/profile/data/profile_models.dart';
 import 'package:radish_flutter/features/profile/data/profile_repository.dart';
+import 'package:radish_flutter/features/shop/data/shop_models.dart';
+import 'package:radish_flutter/features/shop/data/shop_repository.dart';
+import 'package:radish_flutter/features/wallet/data/wallet_models.dart';
+import 'package:radish_flutter/features/wallet/data/wallet_repository.dart';
+
+Finder _forumCommentTextField({String hintText = '写下你的评论...'}) {
+  return find.byWidgetPredicate(
+    (widget) => widget is TextField && widget.decoration?.hintText == hintText,
+  );
+}
 
 void main() {
   testWidgets('restores into guest shell when no session exists',
@@ -175,6 +189,175 @@ void main() {
     expect(find.text('已登录用户 user-42'), findsOneWidget);
   });
 
+  testWidgets('authenticated profile opens read-only private account routes',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: 'user-42',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: 'user-42',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _FakeForumRepository(),
+        profileRepository: _SeededProfileRepository(),
+        shopRepository: const _SeededShopRepository(),
+        walletRepository: const _SeededWalletRepository(),
+        experienceRepository: const _SeededExperienceRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.tap(find.text('我的'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('查看商城订单'), findsOneWidget);
+    expect(find.text('查看背包'), findsOneWidget);
+    expect(find.text('查看胡萝卜资产'), findsOneWidget);
+    expect(find.text('查看经验记录'), findsOneWidget);
+    expect(find.text('查看最近访问'), findsOneWidget);
+
+    await tester.tap(find.text('查看商城订单'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('我的订单'), findsWidgets);
+    expect(find.textContaining('RO202605310001'), findsOneWidget);
+    expect(find.text('已加载 1 / 1 个订单'), findsOneWidget);
+    expect(find.text('查看订单详情'), findsOneWidget);
+
+    await tester.tap(find.text('查看订单详情'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('来源：订单列表'), findsOneWidget);
+    expect(find.text('完成支付'), findsOneWidget);
+    expect(find.text('订单完成'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('我的订单'), findsWidgets);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('查看商城订单'), findsOneWidget);
+
+    await tester.tap(find.text('查看背包'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('我的背包'), findsWidgets);
+    expect(find.text('已加载 1 个权益、1 个道具'), findsOneWidget);
+    expect(find.text('早鸟徽章'), findsOneWidget);
+    expect(find.text('Profile Rename Card'), findsOneWidget);
+    expect(find.text('查看来源订单'), findsOneWidget);
+    expect(find.text('查看来源商品'), findsWidgets);
+
+    await tester.tap(find.text('查看来源订单'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('来源：背包来源'), findsOneWidget);
+    expect(find.text('返回背包'), findsOneWidget);
+    expect(find.text('完成支付'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('我的背包'), findsWidgets);
+
+    await tester.tap(find.text('查看来源商品').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('商品详情'), findsWidgets);
+    expect(find.text('来源：背包来源'), findsOneWidget);
+    expect(find.text('返回背包'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('我的背包'), findsWidgets);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('查看背包'), findsOneWidget);
+
+    await tester.tap(find.text('查看胡萝卜资产'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('胡萝卜资产'), findsWidgets);
+    expect(find.text('已加载 2 / 2 条流水'), findsOneWidget);
+    expect(find.text('余额概览'), findsOneWidget);
+    expect(find.text('1200 胡萝卜'), findsOneWidget);
+    expect(find.text('系统赠送'), findsOneWidget);
+    expect(find.text('商城消费'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('查看胡萝卜资产'), findsOneWidget);
+
+    await tester.tap(find.text('查看经验记录'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('经验记录'), findsWidgets);
+    expect(find.text('已加载 2 / 2 条经验流水'), findsOneWidget);
+    expect(find.text('等级概览'), findsOneWidget);
+    expect(find.text('Lv.3 练气'), findsOneWidget);
+    expect(find.text('发帖奖励'), findsOneWidget);
+    expect(find.text('评论奖励'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('查看经验记录'), findsOneWidget);
+
+    await tester.tap(find.text('查看最近访问'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('最近访问'), findsWidgets);
+    expect(find.text('已加载 3 / 3 条记录'), findsOneWidget);
+    expect(find.text('论坛详情回流'), findsOneWidget);
+    expect(find.text('Native docs'), findsOneWidget);
+    expect(find.text('Early Access Badge'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilledButton, '打开详情').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('商品详情'), findsWidgets);
+    expect(find.text('来源：浏览记录'), findsOneWidget);
+    expect(find.text('返回最近访问'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('最近访问'), findsWidgets);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('查看最近访问'), findsOneWidget);
+  });
+
   testWidgets('discover handoff opens guest profile target in shell',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
@@ -183,6 +366,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     final scrollable = find.byType(Scrollable).last;
+    final lifecycleGateway = _RecordingAppLifecycleGateway();
     final sessionController = SessionController(
       sessionStore: InMemorySessionStore(),
       refreshService: _FakeSessionRefreshService.missing(),
@@ -198,6 +382,7 @@ void main() {
         forumRepository: _FakeForumRepository(),
         profileRepository: _FakeProfileRepository(),
         followUpStore: InMemoryForumFollowUpStore(),
+        appLifecycleGateway: lifecycleGateway,
       ),
     );
 
@@ -215,6 +400,13 @@ void main() {
     expect(find.text('我的'), findsWidgets);
     expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
     expect(find.text('用户 user-9'), findsWidgets);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(lifecycleGateway.moveTaskToBackCallCount, 0);
+    expect(find.text('继续阅读'), findsOneWidget);
+    expect(find.text('Native discover'), findsOneWidget);
   });
 
   testWidgets('discover forum card opens detail and returns to discover',
@@ -398,6 +590,328 @@ void main() {
     expect(lifecycleGateway.moveTaskToBackCallCount, 0);
     expect(find.text('继续阅读'), findsOneWidget);
     expect(find.text('Native discover'), findsOneWidget);
+  });
+
+  testWidgets('discover shop product opens read-only detail and returns',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _SeededDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _FakeForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        shopRepository: const _SeededShopRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('查看详情'),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.tap(find.text('查看详情'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('商品详情'), findsWidgets);
+    expect(find.text('公开商品详情'), findsOneWidget);
+    expect(find.text('Profile Rename Card'), findsWidgets);
+    expect(find.text('单商品购买'), findsOneWidget);
+    expect(find.text('登录后购买'), findsOneWidget);
+    expect(find.text('/shop/product/product-4001'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('继续阅读'), findsOneWidget);
+    expect(find.text('商城精选'), findsOneWidget);
+    expect(find.text('Profile Rename Card'), findsOneWidget);
+  });
+
+  testWidgets('discover shop shortcut opens read-only product list and returns',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _SeededDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _FakeForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        shopRepository: const _SeededShopRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('查看全部商品'),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.tap(find.text('查看全部商品'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('公开商城'), findsWidgets);
+    expect(find.text('商品列表'), findsOneWidget);
+    expect(find.text('/shop/product/product-4001'), findsOneWidget);
+
+    await tester.tap(find.text('查看详情'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('商品详情'), findsWidgets);
+    expect(find.text('来源：公开商品列表'), findsOneWidget);
+    expect(find.text('返回商城'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('公开商城'), findsWidgets);
+    expect(find.text('商品列表'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('继续阅读'), findsOneWidget);
+    expect(find.text('商城精选'), findsOneWidget);
+  });
+
+  testWidgets('leaderboard user can open public profile and return to ranking',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final lifecycleGateway = _RecordingAppLifecycleGateway();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _SeededDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _FakeForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        leaderboardRepository: const _SeededLeaderboardRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+        appLifecycleGateway: lifecycleGateway,
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('榜单').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('luobo'), findsOneWidget);
+    await tester.tap(find.text('打开公开主页'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('公开主页'), findsOneWidget);
+    expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(lifecycleGateway.moveTaskToBackCallCount, 0);
+    expect(find.text('榜单类型：经验榜'), findsOneWidget);
+    expect(find.text('luobo'), findsOneWidget);
+  });
+
+  testWidgets(
+      'leaderboard profile detail pop preserves return to ranking on Android back',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final lifecycleGateway = _RecordingAppLifecycleGateway();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _SeededForumRepository(),
+        profileRepository: _SeededProfileRepository(),
+        leaderboardRepository: const _SeededLeaderboardRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+        appLifecycleGateway: lifecycleGateway,
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('榜单').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('打开公开主页'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
+
+    final scrollable = find.byType(Scrollable).last;
+    final openPostButton = find.widgetWithText(FilledButton, '打开帖子');
+    await tester.scrollUntilVisible(
+      openPostButton,
+      200,
+      scrollable: scrollable,
+    );
+    await tester.ensureVisible(openPostButton);
+    await tester.pumpAndSettle();
+    await tester.drag(scrollable, const Offset(0, -240));
+    await tester.pumpAndSettle();
+    await tester.tap(openPostButton);
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('帖子详情'), findsWidgets);
+    expect(find.text('个人主页帖子'), findsWidgets);
+
+    Navigator.of(tester.element(find.text('帖子详情').first)).pop();
+    await tester.pumpAndSettle();
+
+    expect(find.text('最近公开帖子'), findsOneWidget);
+    expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(lifecycleGateway.moveTaskToBackCallCount, 0);
+    expect(find.text('榜单类型：经验榜'), findsOneWidget);
+    expect(find.text('luobo'), findsOneWidget);
+  });
+
+  testWidgets(
+      'leaderboard profile post and comment details handle Android back to source',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final lifecycleGateway = _RecordingAppLifecycleGateway();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _SeededForumRepository(),
+        profileRepository: _SeededProfileRepository(),
+        leaderboardRepository: const _SeededLeaderboardRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+        appLifecycleGateway: lifecycleGateway,
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('榜单').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('打开公开主页'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
+
+    final profileScrollable = find.byType(Scrollable).last;
+    final openPostButton = find.widgetWithText(FilledButton, '打开帖子');
+    await tester.scrollUntilVisible(
+      openPostButton,
+      200,
+      scrollable: profileScrollable,
+    );
+    await tester.tap(openPostButton);
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('帖子详情'), findsWidgets);
+    expect(find.text('个人主页帖子'), findsWidgets);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('最近公开帖子'), findsOneWidget);
+    expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
+    expect(find.text('帖子详情'), findsNothing);
+
+    final openCommentButton = find.widgetWithText(FilledButton, '打开评论上下文');
+    await tester.scrollUntilVisible(
+      openCommentButton,
+      200,
+      scrollable: profileScrollable,
+    );
+    await tester.tap(openCommentButton);
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('First public child comment'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('最近公开评论'), findsOneWidget);
+    expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
+    expect(find.text('First public child comment'), findsNothing);
+    expect(find.text('帖子详情'), findsNothing);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(lifecycleGateway.moveTaskToBackCallCount, 0);
+    expect(find.text('榜单类型：经验榜'), findsOneWidget);
+    expect(find.text('luobo'), findsOneWidget);
   });
 
   testWidgets('recent public profile target survives shell rebuild',
@@ -1166,6 +1680,154 @@ void main() {
     expect(find.text('登录并保留当前位置'), findsNothing);
   });
 
+  testWidgets('quick reply sign-in returns to composer in current detail',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+    final gateway = InMemoryNativeAuthGateway();
+    final authController = NativeAuthController(
+      environment: const AppEnvironment.development(),
+      sessionController: sessionController,
+      gateway: gateway,
+      exchangeService: _FakeAuthorizationCodeExchangeService(
+        nextSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: 'user-212',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: 'user-212',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: authController,
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _SeededBigIdForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.tap(find.text('论坛'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('查看详情'));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('登录后发布'),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    expect(find.text('登录后可以发布轻回应'), findsOneWidget);
+
+    gateway.setPendingCallback(
+      const NativeAuthCallbackPayload(
+        type: NativeAuthCallbackType.login,
+        code: 'quick-reply-login-code',
+      ),
+    );
+    await tester.tap(find.text('登录后发布'));
+    await tester.pumpAndSettle();
+    await authController.consumePendingCallback();
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
+    expect(find.text('已回到轻回应区，可以继续发布。'), findsOneWidget);
+    expect(find.text('发布轻回应'), findsOneWidget);
+    expect(find.text('登录后发布'), findsNothing);
+  });
+
+  testWidgets('comment sign-in returns to composer in current detail',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+    final gateway = InMemoryNativeAuthGateway();
+    final authController = NativeAuthController(
+      environment: const AppEnvironment.development(),
+      sessionController: sessionController,
+      gateway: gateway,
+      exchangeService: _FakeAuthorizationCodeExchangeService(
+        nextSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: 'user-213',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: 'user-213',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: authController,
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _SeededBigIdForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.tap(find.text('论坛'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('查看详情'));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('登录后评论'),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    expect(find.text('登录后可以发表评论'), findsOneWidget);
+
+    gateway.setPendingCallback(
+      const NativeAuthCallbackPayload(
+        type: NativeAuthCallbackType.login,
+        code: 'comment-login-code',
+      ),
+    );
+    await tester.tap(find.text('登录后评论'));
+    await tester.pumpAndSettle();
+    await authController.consumePendingCallback();
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
+    expect(find.text('已回到评论区，可以继续发布。'), findsOneWidget);
+    expect(find.text('发布评论'), findsOneWidget);
+    expect(find.text('登录后评论'), findsNothing);
+  });
+
   testWidgets('forum feed opens native public detail page', (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
     tester.view.devicePixelRatio = 1.0;
@@ -1212,6 +1874,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
+    final lifecycleGateway = _RecordingAppLifecycleGateway();
     final sessionController = SessionController(
       sessionStore: InMemorySessionStore(),
       refreshService: _FakeSessionRefreshService.missing(),
@@ -1227,6 +1890,7 @@ void main() {
         forumRepository: _SeededForumRepository(),
         profileRepository: _FakeProfileRepository(),
         followUpStore: InMemoryForumFollowUpStore(),
+        appLifecycleGateway: lifecycleGateway,
       ),
     );
 
@@ -1240,6 +1904,13 @@ void main() {
     expect(find.text('我的'), findsWidgets);
     expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
     expect(find.text('用户 user-9'), findsWidgets);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(lifecycleGateway.moveTaskToBackCallCount, 0);
+    expect(find.text('论坛详情回流'), findsOneWidget);
+    expect(find.text('浏览公开帖子，支持最新和热门排序。当前阶段仅提供只读阅读。'), findsOneWidget);
   });
 
   testWidgets('shell forum handoff opens native detail and targets comment',
@@ -1275,7 +1946,7 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('帖子详情'), findsWidgets);
+    expect(find.text('论坛详情回流'), findsWidgets);
     expect(find.text('/forum/post/post-42'), findsOneWidget);
     expect(find.text('First public child comment'), findsOneWidget);
   });
@@ -1333,15 +2004,93 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('帖子详情'), findsWidgets);
+    expect(find.text('论坛详情回流'), findsWidgets);
     expect(find.text('/forum/post/post-42'), findsOneWidget);
     expect(find.text('个人主页评论'), findsWidgets);
     expect(find.text('First public child comment'), findsOneWidget);
   });
 
-  testWidgets('profile post handoff returns to profile after detail pop',
+  testWidgets('profile comment reply returns to profile after detail pop',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: 'user-42',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: 'user-42',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _SeededForumRepository(),
+        profileRepository: _SeededProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.tap(find.text('我的'));
+    await tester.pumpAndSettle();
+
+    final profileScrollable = find.byType(Scrollable).last;
+    final openCommentButton = find.widgetWithText(FilledButton, '打开评论上下文');
+    await tester.scrollUntilVisible(
+      openCommentButton,
+      200,
+      scrollable: profileScrollable,
+    );
+    await tester.drag(profileScrollable, const Offset(0, -240));
+    await tester.pumpAndSettle();
+    await tester.tap(openCommentButton);
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('论坛详情回流'), findsWidgets);
+    expect(find.text('个人主页评论'), findsWidgets);
+    expect(find.text('First public child comment'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(TextButton, '回复').first);
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      _forumCommentTextField(hintText: '写下你的回复...'),
+      '从个人主页评论回复',
+    );
+    await tester.pump();
+    final replyButton = find.widgetWithText(FilledButton, '发布回复');
+    await tester.ensureVisible(replyButton);
+    await tester.tap(replyButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('回复已发布，已更新当前评论区。'), findsOneWidget);
+    expect(find.text('从个人主页评论回复'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('最近公开评论'), findsOneWidget);
+    expect(find.text('帖子详情'), findsNothing);
+  });
+
+  testWidgets('profile post handoff returns to profile after detail pop',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -1805,7 +2554,7 @@ void main() {
     expect(find.text('通知回流'), findsWidgets);
   });
 
-  testWidgets('latest forum notification opens shared native detail',
+  testWidgets('recent forum notification list opens shared native detail',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
     tester.view.devicePixelRatio = 1.0;
@@ -1844,15 +2593,39 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('查看论坛通知'), findsOneWidget);
+    await tester.tap(find.text('我的').last);
+    await tester.pumpAndSettle();
+    expect(find.text('已登录用户 user-42'), findsOneWidget);
+    expect(find.text('通知 3 条'), findsOneWidget);
 
-    await tester.tap(find.text('查看论坛通知'));
+    await tester.tap(find.text('通知 3 条'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('系统维护'), findsOneWidget);
+    expect(find.text('只读'), findsOneWidget);
+    expect(find.text('帖子被评论'), findsOneWidget);
+    expect(find.text('帖子收到轻回应'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, '标记已读'), findsNWidgets(2));
+
+    await tester.tap(find.widgetWithText(FilledButton, '标记已读').first);
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('系统 · 已读'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, '标记已读'), findsOneWidget);
+
+    await tester.tap(find.text('帖子被评论'));
     await tester.pumpAndSettle();
 
     expect(find.text('帖子详情'), findsWidgets);
     expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
     expect(find.text('通知回流'), findsWidgets);
     expect(find.text('Big id root comment'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('已登录用户 user-42'), findsOneWidget);
+    expect(find.text('通知 3 条'), findsOneWidget);
   });
 
   testWidgets('forum notification chip explains failure empty and refresh',
@@ -1905,7 +2678,7 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('暂无论坛通知'), findsOneWidget);
+    expect(find.text('暂无通知'), findsOneWidget);
     expect(find.text('刷新通知'), findsOneWidget);
     expect(notificationRepository.callCount, 2);
 
@@ -1919,10 +2692,15 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('查看论坛通知'), findsOneWidget);
+    expect(find.text('通知 1 条'), findsOneWidget);
     expect(notificationRepository.callCount, 3);
 
-    await tester.tap(find.text('查看论坛通知'));
+    await tester.tap(find.text('通知 1 条'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('帖子被评论'), findsOneWidget);
+
+    await tester.tap(find.text('帖子被评论'));
     await tester.pumpAndSettle();
 
     expect(find.text('帖子详情'), findsWidgets);
@@ -2110,7 +2888,342 @@ class _SeededDiscoverRepository implements DiscoverRepository {
         ),
       ],
       documents: [],
-      products: [],
+      products: [
+        DiscoverProductSummary(
+          id: 'product-4001',
+          name: 'Profile Rename Card',
+          productType: 'Consumable',
+          price: 120,
+          soldCount: 3,
+          durationDisplay: '永久',
+        ),
+      ],
+    );
+  }
+}
+
+class _SeededShopRepository implements ShopRepository {
+  const _SeededShopRepository();
+
+  @override
+  Future<ShopProductPage> getProductPage({
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const ShopProductPage(
+      page: 1,
+      pageSize: 20,
+      dataCount: 1,
+      pageCount: 1,
+      products: [
+        ShopProductSummary(
+          id: 'product-4001',
+          name: 'Profile Rename Card',
+          productType: '消耗品',
+          price: 120,
+          originalPrice: 180,
+          hasDiscount: true,
+          soldCount: 3,
+          durationDisplay: '永久',
+          inStock: true,
+        ),
+      ],
+    );
+  }
+
+  @override
+  Future<ShopProductDetail> getProductDetail({
+    required String productId,
+  }) async {
+    return const ShopProductDetail(
+      id: 'product-4001',
+      name: 'Profile Rename Card',
+      description: 'Use this read-only detail to confirm the item scope.',
+      categoryName: 'Profile tools',
+      productType: '消耗品',
+      benefitValue: 'rename-card',
+      price: 120,
+      originalPrice: 180,
+      hasDiscount: true,
+      stockType: 'Unlimited',
+      stock: 0,
+      soldCount: 3,
+      limitPerUser: 1,
+      inStock: true,
+      durationDisplay: '永久',
+      isOnSale: true,
+      isEnabled: true,
+    );
+  }
+
+  @override
+  Future<ShopProductBuyCheckResult> checkCanBuy({
+    required String accessToken,
+    required String productId,
+    int quantity = 1,
+  }) async {
+    return const ShopProductBuyCheckResult(canBuy: true);
+  }
+
+  @override
+  Future<ShopPurchaseResult> purchaseProduct({
+    required String accessToken,
+    required String productId,
+    required String paymentPassword,
+    int quantity = 1,
+  }) async {
+    return const ShopPurchaseResult(
+      success: true,
+      orderId: '9001',
+      orderNo: 'RO202605310001',
+      deductedCoins: 120,
+      remainingBalance: 880,
+    );
+  }
+
+  @override
+  Future<ShopOrderPage> getMyOrders({
+    required String accessToken,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const ShopOrderPage(
+      page: 1,
+      pageSize: 20,
+      dataCount: 1,
+      pageCount: 1,
+      orders: [
+        ShopOrderSummary(
+          id: '9001',
+          orderNo: 'RO202605310001',
+          productName: 'Profile Rename Card',
+          quantity: 1,
+          totalPrice: 120,
+          status: 'Completed',
+          statusDisplay: '已完成',
+          createTime: '2026-05-31T08:00:00Z',
+        ),
+      ],
+    );
+  }
+
+  @override
+  Future<ShopOrderDetail> getOrderDetail({
+    required String accessToken,
+    required String orderId,
+  }) async {
+    return const ShopOrderDetail(
+      id: '9001',
+      orderNo: 'RO202605310001',
+      productId: '4001',
+      productName: 'Profile Rename Card',
+      productType: 'Consumable',
+      productTypeDisplay: '消耗品',
+      quantity: 1,
+      unitPrice: 120,
+      totalPrice: 120,
+      status: 'Completed',
+      statusDisplay: '已完成',
+      durationDisplay: '永久',
+      createTime: '2026-05-31T08:00:00Z',
+      paidTime: '2026-05-31T08:00:30Z',
+      completedTime: '2026-05-31T08:01:00Z',
+    );
+  }
+
+  @override
+  Future<List<ShopUserBenefit>> getMyBenefits({
+    required String accessToken,
+  }) async {
+    return const [
+      ShopUserBenefit(
+        id: 'benefit-1',
+        benefitType: 'Badge',
+        benefitTypeDisplay: '徽章',
+        benefitName: '早鸟徽章',
+        sourceType: 'Purchase',
+        sourceTypeDisplay: '购买',
+        sourceOrderId: '9001',
+        sourceProductId: '4001',
+        durationDisplay: '永久',
+        isActive: true,
+        isExpired: false,
+        createTime: '2026-05-31T08:05:00Z',
+      ),
+    ];
+  }
+
+  @override
+  Future<List<ShopInventoryItem>> getMyInventory({
+    required String accessToken,
+  }) async {
+    return const [
+      ShopInventoryItem(
+        id: 'inventory-1',
+        consumableType: 'RenameCard',
+        consumableTypeDisplay: '改名卡',
+        itemName: 'Profile Rename Card',
+        itemValue: 'rename-card',
+        sourceProductId: '4001',
+        quantity: 1,
+        createTime: '2026-05-31T08:06:00Z',
+      ),
+    ];
+  }
+}
+
+class _SeededWalletRepository implements WalletRepository {
+  const _SeededWalletRepository();
+
+  @override
+  Future<CoinBalance> getBalance({
+    required String accessToken,
+  }) async {
+    return const CoinBalance(
+      userId: 'user-42',
+      balance: 1200,
+      balanceDisplay: '1.200',
+      frozenBalance: 100,
+      frozenBalanceDisplay: '0.100',
+      totalEarned: 1800,
+      totalSpent: 600,
+      totalTransferredIn: 0,
+      totalTransferredOut: 0,
+      createTime: '2026-05-30T08:00:00Z',
+      modifyTime: '2026-05-31T09:00:00Z',
+    );
+  }
+
+  @override
+  Future<CoinTransactionPage> getTransactions({
+    required String accessToken,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const CoinTransactionPage(
+      page: 1,
+      pageSize: 20,
+      dataCount: 2,
+      pageCount: 1,
+      transactions: [
+        CoinTransaction(
+          id: 'coin-1',
+          transactionNo: 'CT202605310001',
+          fromUserId: null,
+          fromUserName: null,
+          toUserId: 'user-42',
+          toUserName: 'user-42',
+          amount: 1800,
+          amountDisplay: '1.800',
+          fee: 0,
+          feeDisplay: '0.000',
+          transactionType: 'SYSTEM_GRANT',
+          transactionTypeDisplay: '系统赠送',
+          status: 'SUCCESS',
+          statusDisplay: '成功',
+          remark: '新账号奖励',
+          createTime: '2026-05-31T08:00:00Z',
+        ),
+        CoinTransaction(
+          id: 'coin-2',
+          transactionNo: 'CT202605310002',
+          fromUserId: 'user-42',
+          fromUserName: 'user-42',
+          toUserId: null,
+          toUserName: null,
+          amount: 600,
+          amountDisplay: '0.600',
+          fee: 0,
+          feeDisplay: '0.000',
+          transactionType: 'CONSUME',
+          transactionTypeDisplay: '商城消费',
+          status: 'SUCCESS',
+          statusDisplay: '成功',
+          businessType: 'Order',
+          businessId: '9001',
+          remark: '购买 Profile Rename Card',
+          createTime: '2026-05-31T08:30:00Z',
+        ),
+      ],
+    );
+  }
+}
+
+class _SeededExperienceRepository implements ExperienceRepository {
+  const _SeededExperienceRepository();
+
+  @override
+  Future<UserExperience> getMyExperience({
+    required String accessToken,
+  }) async {
+    return const UserExperience(
+      userId: 'user-42',
+      userName: 'user-42',
+      currentLevel: 3,
+      currentLevelName: '练气',
+      currentExp: 240,
+      totalExp: 1240,
+      expToNextLevel: 260,
+      nextLevel: 4,
+      nextLevelName: '筑基',
+      levelProgress: 0.48,
+      expFrozen: false,
+      levelUpAt: '2026-05-30T08:00:00Z',
+      rank: 12,
+    );
+  }
+
+  @override
+  Future<ExperienceTransactionPage> getTransactions({
+    required String accessToken,
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const ExperienceTransactionPage(
+      page: 1,
+      pageSize: 20,
+      dataCount: 2,
+      pageCount: 1,
+      transactions: [
+        ExperienceTransaction(
+          id: 'exp-1',
+          userId: 'user-42',
+          userName: 'user-42',
+          operatorId: '0',
+          operatorName: 'system',
+          expType: 'POST_CREATE',
+          expTypeDisplay: '发帖奖励',
+          expAmount: 20,
+          businessType: 'Post',
+          businessId: 'post-1',
+          remark: '发布公开帖子',
+          expBefore: 1220,
+          expAfter: 1240,
+          levelBefore: 3,
+          levelAfter: 3,
+          isLevelUp: false,
+          createTime: '2026-05-31T08:00:00Z',
+        ),
+        ExperienceTransaction(
+          id: 'exp-2',
+          userId: 'user-42',
+          userName: 'user-42',
+          operatorId: '0',
+          operatorName: 'system',
+          expType: 'COMMENT_CREATE',
+          expTypeDisplay: '评论奖励',
+          expAmount: 10,
+          businessType: 'Comment',
+          businessId: 'comment-1',
+          remark: '发布公开评论',
+          expBefore: 1210,
+          expAfter: 1220,
+          levelBefore: 2,
+          levelAfter: 3,
+          isLevelUp: true,
+          createTime: '2026-05-31T07:30:00Z',
+        ),
+      ],
     );
   }
 }
@@ -2261,6 +3374,16 @@ class _LinkedDocsRepository extends _FakeDocsRepository {
 
 class _FakeForumRepository implements ForumRepository {
   @override
+  Future<List<ForumCategorySummary>> getTopCategories() async {
+    return const [
+      ForumCategorySummary(
+        id: 'category-1',
+        name: 'General',
+      ),
+    ];
+  }
+
+  @override
   Future<ForumPostPage> getPostPage({
     required int pageIndex,
     required int pageSize,
@@ -2367,9 +3490,43 @@ class _FakeForumRepository implements ForumRepository {
       createTime: '2026-04-20T08:13:00Z',
     );
   }
+
+  @override
+  Future<String> createComment({
+    required String postId,
+    required String content,
+    required String accessToken,
+    String? parentId,
+    String? replyToCommentId,
+    String? replyToCommentSnapshot,
+    String? replyToUserName,
+  }) async {
+    return 'comment-created';
+  }
+
+  @override
+  Future<String> createPost({
+    required String title,
+    required String content,
+    required String categoryId,
+    required List<String> tagNames,
+    required String accessToken,
+  }) async {
+    return 'post-created';
+  }
 }
 
 class _SeededForumRepository implements ForumRepository {
+  @override
+  Future<List<ForumCategorySummary>> getTopCategories() async {
+    return const [
+      ForumCategorySummary(
+        id: 'category-1',
+        name: 'General',
+      ),
+    ];
+  }
+
   @override
   Future<ForumPostPage> getPostPage({
     required int pageIndex,
@@ -2574,9 +3731,43 @@ class _SeededForumRepository implements ForumRepository {
       createTime: '2026-04-20T11:30:00Z',
     );
   }
+
+  @override
+  Future<String> createComment({
+    required String postId,
+    required String content,
+    required String accessToken,
+    String? parentId,
+    String? replyToCommentId,
+    String? replyToCommentSnapshot,
+    String? replyToUserName,
+  }) async {
+    return 'comment-created';
+  }
+
+  @override
+  Future<String> createPost({
+    required String title,
+    required String content,
+    required String categoryId,
+    required List<String> tagNames,
+    required String accessToken,
+  }) async {
+    return 'post-created';
+  }
 }
 
 class _SeededBigIdForumRepository implements ForumRepository {
+  @override
+  Future<List<ForumCategorySummary>> getTopCategories() async {
+    return const [
+      ForumCategorySummary(
+        id: '9',
+        name: 'Engineering',
+      ),
+    ];
+  }
+
   @override
   Future<ForumPostPage> getPostPage({
     required int pageIndex,
@@ -2717,6 +3908,30 @@ class _SeededBigIdForumRepository implements ForumRepository {
       createTime: '2026-04-18T12:20:00Z',
     );
   }
+
+  @override
+  Future<String> createComment({
+    required String postId,
+    required String content,
+    required String accessToken,
+    String? parentId,
+    String? replyToCommentId,
+    String? replyToCommentSnapshot,
+    String? replyToUserName,
+  }) async {
+    return 'comment-created';
+  }
+
+  @override
+  Future<String> createPost({
+    required String title,
+    required String content,
+    required String categoryId,
+    required List<String> tagNames,
+    required String accessToken,
+  }) async {
+    return '2042219067430928399';
+  }
 }
 
 class _FakeProfileRepository implements ProfileRepository {
@@ -2788,32 +4003,187 @@ class _FakeProfileRepository implements ProfileRepository {
       items: [],
     );
   }
+
+  @override
+  Future<UserBrowseHistoryPage> getMyBrowseHistory({
+    required int pageIndex,
+    required int pageSize,
+    required String accessToken,
+  }) async {
+    return const UserBrowseHistoryPage(
+      page: 1,
+      pageSize: 20,
+      total: 0,
+      items: [],
+    );
+  }
+}
+
+class _SeededLeaderboardRepository implements LeaderboardRepository {
+  const _SeededLeaderboardRepository();
+
+  @override
+  Future<LeaderboardPageResult> getExperienceLeaderboard({
+    required int pageIndex,
+    required int pageSize,
+  }) async {
+    return const LeaderboardPageResult(
+      page: 1,
+      pageSize: 20,
+      dataCount: 1,
+      pageCount: 1,
+      items: [
+        LeaderboardItem(
+          rank: 1,
+          userId: 'user-9',
+          userName: 'luobo',
+          currentLevel: 8,
+          currentLevelName: '探索者',
+          primaryValue: '18888',
+          primaryLabel: '总经验值',
+        ),
+      ],
+    );
+  }
 }
 
 class _FakeForumNotificationRepository implements NotificationRepository {
   const _FakeForumNotificationRepository();
 
   @override
+  Future<NotificationPage> getNotifications({
+    required String accessToken,
+    int pageSize = 20,
+  }) async {
+    return const NotificationPage(
+      notifications: [
+        NotificationListItem(
+          id: 'notification-system',
+          notificationId: 'system-1',
+          notification: NotificationPayload(
+            title: '系统维护',
+            content: '今晚 23:00 进行维护。',
+            type: 'System',
+            businessType: 'System',
+            createdAt: null,
+            extData: {'app': 'system'},
+          ),
+          isRead: false,
+          createdAt: '2026-05-31T08:30:00',
+        ),
+        NotificationListItem(
+          id: 'notification-forum-comment',
+          notificationId: 'forum-1',
+          notification: NotificationPayload(
+            title: '帖子被评论',
+            content: '有人评论了你的帖子。',
+            type: 'CommentReplied',
+            businessType: 'Comment',
+            createdAt: null,
+            extData: {
+              'app': 'forum',
+              'postId': '2042219067430928384',
+              'commentId': 'comment-big-1',
+            },
+          ),
+          isRead: false,
+          createdAt: '2026-05-31T08:31:00',
+        ),
+        NotificationListItem(
+          id: 'notification-forum-like',
+          notificationId: 'forum-2',
+          notification: NotificationPayload(
+            title: '帖子收到轻回应',
+            content: '你的帖子收到新的轻回应。',
+            type: 'PostLiked',
+            businessType: 'Post',
+            createdAt: null,
+            extData: {
+              'app': 'forum',
+              'postId': '2042219067430928384',
+            },
+          ),
+          isRead: true,
+          createdAt: '2026-05-31T08:32:00',
+        ),
+      ],
+    );
+  }
+
+  @override
   Future<ForumDetailHandoffTarget?> getLatestForumTarget({
     required String accessToken,
     int pageSize = 20,
   }) async {
-    return const ForumDetailHandoffTarget(
-      postId: '2042219067430928384',
-      source: ForumDetailHandoffSource.notification,
-      initialTitle: '帖子被评论',
-      commentId: 'comment-big-1',
+    final targets = await getForumTargets(
+      accessToken: accessToken,
+      pageSize: pageSize,
     );
+    return targets.first;
+  }
+
+  @override
+  Future<List<ForumDetailHandoffTarget>> getForumTargets({
+    required String accessToken,
+    int pageSize = 20,
+  }) async {
+    return const [
+      ForumDetailHandoffTarget(
+        postId: '2042219067430928384',
+        source: ForumDetailHandoffSource.notification,
+        initialTitle: '帖子被评论',
+        commentId: 'comment-big-1',
+      ),
+      ForumDetailHandoffTarget(
+        postId: '2042219067430928384',
+        source: ForumDetailHandoffSource.notification,
+        initialTitle: '帖子收到轻回应',
+      ),
+    ];
+  }
+
+  @override
+  Future<int> markAsRead({
+    required String accessToken,
+    required String notificationId,
+  }) async {
+    return 1;
   }
 }
 
 class _MutableForumNotificationRepository implements NotificationRepository {
   ForumDetailHandoffTarget? target;
   Object? error;
+  Object? markAsReadError;
   int callCount = 0;
+  final List<String> markedReadNotificationIds = <String>[];
+
+  @override
+  Future<NotificationPage> getNotifications({
+    required String accessToken,
+    int pageSize = 20,
+  }) async {
+    final targets = await getForumTargets(
+      accessToken: accessToken,
+      pageSize: pageSize,
+    );
+    return NotificationPage.fromForumTargets(targets);
+  }
 
   @override
   Future<ForumDetailHandoffTarget?> getLatestForumTarget({
+    required String accessToken,
+    int pageSize = 20,
+  }) async {
+    final targets = await getForumTargets(
+      accessToken: accessToken,
+      pageSize: pageSize,
+    );
+    return targets.isEmpty ? null : targets.first;
+  }
+
+  @override
+  Future<List<ForumDetailHandoffTarget>> getForumTargets({
     required String accessToken,
     int pageSize = 20,
   }) async {
@@ -2823,7 +4193,22 @@ class _MutableForumNotificationRepository implements NotificationRepository {
       throw error;
     }
 
-    return target;
+    final target = this.target;
+    return target == null ? const <ForumDetailHandoffTarget>[] : [target];
+  }
+
+  @override
+  Future<int> markAsRead({
+    required String accessToken,
+    required String notificationId,
+  }) async {
+    final error = markAsReadError;
+    if (error != null) {
+      throw error;
+    }
+
+    markedReadNotificationIds.add(notificationId);
+    return 1;
   }
 }
 
@@ -2931,6 +4316,52 @@ class _SeededProfileRepository implements ProfileRepository {
           postTitle: '论坛详情回流',
           content: '这个回流很好用',
           createTime: '2026-04-20T09:10:00Z',
+        ),
+      ],
+    );
+  }
+
+  @override
+  Future<UserBrowseHistoryPage> getMyBrowseHistory({
+    required int pageIndex,
+    required int pageSize,
+    required String accessToken,
+  }) async {
+    return const UserBrowseHistoryPage(
+      page: 1,
+      pageSize: 20,
+      total: 3,
+      items: [
+        UserBrowseHistoryItem(
+          id: 'history-post-42',
+          targetType: 'Post',
+          targetTypeDisplay: '帖子',
+          targetId: '42',
+          title: '论坛详情回流',
+          routePath: '/forum/post/post-42',
+          viewCount: 3,
+          lastViewTime: '2026-04-20T09:20:00Z',
+        ),
+        UserBrowseHistoryItem(
+          id: 'history-docs-42',
+          targetType: 'Wiki',
+          targetTypeDisplay: '文档',
+          targetId: '43',
+          targetSlug: 'native-docs',
+          title: 'Native docs',
+          routePath: '/docs/native-docs',
+          viewCount: 2,
+          lastViewTime: '2026-04-20T09:10:00Z',
+        ),
+        UserBrowseHistoryItem(
+          id: 'history-product-42',
+          targetType: 'Product',
+          targetTypeDisplay: '商品',
+          targetId: '1001',
+          title: 'Early Access Badge',
+          routePath: '/shop/products/1001',
+          viewCount: 1,
+          lastViewTime: '2026-04-20T09:00:00Z',
         ),
       ],
     );

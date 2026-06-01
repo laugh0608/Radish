@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { redirectToLogin, logout, hasAccessToken } from '@/services/auth';
+import { buildCurrentDesktopReturnPath } from '@/services/authReturnPath';
 import { hasAuthenticatedSession } from '@/services/authSession';
 import { getAppById, prefetchAppComponent } from './AppRegistry';
 import type { AppDefinition } from './types';
@@ -15,6 +16,7 @@ import i18n from '@/i18n';
 import type { ApiResponse } from '@radish/http';
 import { getApiBaseUrl } from '@/config/env';
 import { tokenService } from '@/services/tokenService';
+import { resolveMediaUrl } from '@/utils/media';
 import styles from './Dock.module.css';
 
 /**
@@ -55,10 +57,7 @@ export const Dock = () => {
 
   // 解析头像 URL（处理相对路径）
   const resolveAvatarUrl = (url: string | undefined): string | undefined => {
-    if (!url) return undefined;
-    if (/^https?:\/\//i.test(url)) return url;
-    if (url.startsWith('/')) return `${apiBaseUrl}${url}`;
-    return `${apiBaseUrl}/${url}`;
+    return resolveMediaUrl(url, apiBaseUrl) ?? undefined;
   };
 
   const buildAvatarText = (name: string): string => {
@@ -150,6 +149,9 @@ export const Dock = () => {
     clearUser();
     logout();
   };
+  const handleLoginClick = () => {
+    redirectToLogin({ returnPath: buildCurrentDesktopReturnPath() });
+  };
   const notifyLoginRequired = () => {
     toast.info(t('dock.loginRequired'));
   };
@@ -187,7 +189,7 @@ export const Dock = () => {
       setTime(new Date());
     }, 1000);
 
-    // 注意：用户信息由 App.tsx 统一管理，此处不再重复获取
+    // 注意：用户信息由 Shell.tsx 统一管理，此处不再重复获取
     // 注意：WebSocket 连接由 Shell.tsx 统一管理，此处不再启动
 
     if (typeof window !== 'undefined' && loggedIn) {
@@ -368,7 +370,7 @@ export const Dock = () => {
               <button
                 type="button"
                 className={`${styles.authButton} ${loggedIn ? styles.loggedIn : styles.loggedOut}`}
-                onClick={loggedIn ? handleLogoutClick : redirectToLogin}
+                onClick={loggedIn ? handleLogoutClick : handleLoginClick}
                 title={loggedIn ? t('auth.logout') : t('auth.login')}
                 aria-label={loggedIn ? t('auth.logout') : t('auth.login')}
               >

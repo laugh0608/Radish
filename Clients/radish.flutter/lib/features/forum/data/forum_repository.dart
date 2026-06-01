@@ -3,6 +3,8 @@ import '../../../core/network/radish_api_endpoints.dart';
 import 'forum_models.dart';
 
 abstract class ForumRepository {
+  Future<List<ForumCategorySummary>> getTopCategories();
+
   Future<ForumPostPage> getPostPage({
     required int pageIndex,
     required int pageSize,
@@ -43,6 +45,24 @@ abstract class ForumRepository {
     required String content,
     required String accessToken,
   });
+
+  Future<String> createComment({
+    required String postId,
+    required String content,
+    required String accessToken,
+    String? parentId,
+    String? replyToCommentId,
+    String? replyToCommentSnapshot,
+    String? replyToUserName,
+  });
+
+  Future<String> createPost({
+    required String title,
+    required String content,
+    required String categoryId,
+    required List<String> tagNames,
+    required String accessToken,
+  });
 }
 
 class HttpForumRepository implements ForumRepository {
@@ -53,6 +73,16 @@ class HttpForumRepository implements ForumRepository {
 
   final RadishApiClient apiClient;
   final RadishApiEndpoints endpoints;
+
+  @override
+  Future<List<ForumCategorySummary>> getTopCategories() {
+    final uri = endpoints.resolveApi('/api/v1/Category/GetTopCategories');
+
+    return apiClient.get(
+      uri: uri,
+      decode: _readForumCategories,
+    );
+  }
 
   @override
   Future<ForumPostPage> getPostPage({
@@ -206,4 +236,107 @@ class HttpForumRepository implements ForumRepository {
       decode: ForumQuickReplySummary.fromJson,
     );
   }
+
+  @override
+  Future<String> createComment({
+    required String postId,
+    required String content,
+    required String accessToken,
+    String? parentId,
+    String? replyToCommentId,
+    String? replyToCommentSnapshot,
+    String? replyToUserName,
+  }) {
+    final normalizedPostId = postId.trim();
+    final normalizedContent = content.trim();
+    final uri = endpoints.resolveApi('/api/v1/Comment/Create');
+
+    return apiClient.post(
+      uri: uri,
+      body: {
+        'postId': int.tryParse(normalizedPostId) ?? normalizedPostId,
+        'content': normalizedContent,
+        'parentId': _readNumericOrString(parentId),
+        'replyToCommentId': _readNumericOrString(replyToCommentId),
+        'replyToCommentSnapshot': _readNullableString(replyToCommentSnapshot),
+        'replyToUserName': _readNullableString(replyToUserName),
+      },
+      bearerToken: accessToken,
+      decode: _readCreatedCommentId,
+    );
+  }
+
+  @override
+  Future<String> createPost({
+    required String title,
+    required String content,
+    required String categoryId,
+    required List<String> tagNames,
+    required String accessToken,
+  }) {
+    final normalizedTitle = title.trim();
+    final normalizedContent = content.trim();
+    final normalizedCategoryId = categoryId.trim();
+    final normalizedTags = tagNames
+        .map((tag) => tag.trim())
+        .where((tag) => tag.isNotEmpty)
+        .toSet()
+        .toList();
+    final uri = endpoints.resolveApi('/api/v1/Post/Publish');
+
+    return apiClient.post(
+      uri: uri,
+      body: {
+        'title': normalizedTitle,
+        'content': normalizedContent,
+        'contentType': 'text',
+        'categoryId':
+            int.tryParse(normalizedCategoryId) ?? normalizedCategoryId,
+        'tagNames': normalizedTags,
+        'isQuestion': false,
+      },
+      bearerToken: accessToken,
+      decode: _readCreatedPostId,
+    );
+  }
+}
+
+List<ForumCategorySummary> _readForumCategories(Object? json) {
+  if (json is! List) {
+    return const <ForumCategorySummary>[];
+  }
+
+  return json.map(ForumCategorySummary.fromJson).toList();
+}
+
+Object? _readNumericOrString(String? value) {
+  final normalized = _readNullableString(value);
+  if (normalized == null) {
+    return null;
+  }
+
+  return int.tryParse(normalized) ?? normalized;
+}
+
+String? _readNullableString(String? value) {
+  final normalized = value?.trim();
+  return normalized == null || normalized.isEmpty ? null : normalized;
+}
+
+String _readCreatedCommentId(Object? json) {
+  final value = json?.toString().trim();
+  if (value == null || value.isEmpty) {
+    throw const FormatException('Missing created comment id.');
+  }
+
+  return value;
+}
+
+String _readCreatedPostId(Object? json) {
+  final value = json?.toString().trim();
+  if (value == null || value.isEmpty) {
+    throw const FormatException('Missing created post id.');
+  }
+
+  return value;
 }

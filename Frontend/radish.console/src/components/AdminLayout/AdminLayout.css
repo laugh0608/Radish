@@ -1,5 +1,6 @@
 .admin-layout {
   min-height: 100vh;
+  background: var(--console-bg-app);
 }
 
 .admin-sider {
@@ -10,42 +11,132 @@
   top: 0;
   bottom: 0;
   z-index: 10;
+  padding: 0 14px;
+  background: var(--console-bg-muted) !important;
+  border-right: 1px solid var(--console-border-subtle);
 }
 
 .admin-logo {
-  height: 64px;
+  height: 82px;
   display: flex;
   align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 0 8px;
+  color: var(--console-text-primary);
+  border-bottom: 1px solid var(--console-border-subtle);
+  white-space: nowrap;
+}
+
+.admin-sider.ant-layout-sider-collapsed .admin-logo {
   justify-content: center;
-  font-size: 18px;
-  font-weight: bold;
+  padding: 0 4px;
+}
+
+.admin-logo-mark {
+  display: inline-flex;
+  width: 38px;
+  height: 38px;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
   color: var(--console-text-on-dark);
-  background: rgba(255, 255, 255, 0.05);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--console-text-primary);
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 850;
+}
+
+.admin-logo-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.admin-logo-title {
+  color: var(--console-text-primary);
+  font-size: 18px;
+  font-weight: 850;
+  line-height: 1.2;
+}
+
+.admin-logo-subtitle {
+  color: var(--console-text-secondary);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.admin-sider .ant-menu {
+  margin-top: 20px;
+  background: transparent;
+  border-inline-end: 0 !important;
+}
+
+.admin-sider .ant-menu-item {
+  width: 240px;
+  height: 40px;
+  margin: 5px 0;
+  padding-inline: 14px !important;
+  color: var(--console-text-secondary);
+  border: 1px solid transparent;
+  border-radius: var(--console-radius-control);
+}
+
+.admin-sider .ant-menu-item .ant-menu-item-icon {
+  color: inherit;
+}
+
+.admin-sider .ant-menu-item:hover {
+  color: var(--console-text-primary);
+  background: var(--console-bg-surface);
+  border-color: var(--console-border-subtle);
+}
+
+.admin-sider .ant-menu-item-selected {
+  color: var(--console-text-primary);
+  background: var(--console-bg-surface) !important;
+  border-color: var(--console-border-muted);
+  box-shadow: var(--console-shadow-card);
+}
+
+.admin-sider .ant-menu-item-selected::after {
+  display: none;
+}
+
+.admin-sider.ant-layout-sider-collapsed .ant-menu-item {
+  width: 60px;
+  padding-inline: 0 !important;
 }
 
 /* 根据侧边栏展开/折叠状态调整右侧布局的左边距 */
 .admin-layout > .ant-layout {
-  margin-left: 200px;
+  margin-left: 268px;
   transition: margin-left 0.2s;
   display: flex;
   flex-direction: column;
   flex: 1;
-  width: calc(100% - 200px);
+  width: calc(100% - 268px);
+  background: var(--console-bg-app);
 }
 
 .admin-layout > .ant-layout.collapsed {
-  margin-left: 80px;
-  width: calc(100% - 80px);
+  margin-left: 88px;
+  width: calc(100% - 88px);
 }
 
 .admin-header {
-  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 9;
+  height: 74px;
+  padding: 0 30px;
   background: var(--console-bg-surface);
   display: flex;
   align-items: center;
   justify-content: space-between;
   box-shadow: var(--console-shadow-soft);
+  border-bottom: 1px solid var(--console-border-subtle);
 }
 
 .admin-header-left {
@@ -62,11 +153,27 @@
 .admin-trigger {
   font-size: 18px;
   cursor: pointer;
+  color: var(--console-text-secondary);
   transition: color 0.3s;
 }
 
 .admin-trigger:hover {
-  color: var(--console-info);
+  color: var(--console-text-primary);
+}
+
+.admin-search-icon {
+  margin-right: 8px;
+  padding: 8px;
+  color: var(--console-text-secondary);
+  font-size: 18px;
+  cursor: pointer;
+  border-radius: var(--console-radius-control);
+  transition: color 0.2s, background-color 0.2s;
+}
+
+.admin-search-icon:hover {
+  color: var(--console-text-primary);
+  background: var(--console-bg-muted);
 }
 
 .admin-user {
@@ -74,8 +181,9 @@
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 6px 10px;
+  color: var(--console-text-primary);
+  border-radius: var(--console-radius-control);
   transition: background-color 0.3s;
 }
 
@@ -88,11 +196,33 @@
 }
 
 .admin-content {
-  margin: 24px 16px;
-  padding: 24px;
-  background: var(--console-bg-surface);
+  margin: 0;
+  padding: 26px 30px 30px;
+  background: transparent;
   min-height: 280px;
-  border-radius: var(--console-radius-control);
   flex: 1;
   overflow: auto;
+}
+
+.admin-breadcrumb {
+  margin-bottom: 26px;
+  color: var(--console-text-secondary);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.admin-breadcrumb-home {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--console-text-secondary);
+}
+
+.admin-breadcrumb a {
+  color: var(--console-text-secondary);
+}
+
+.admin-breadcrumb .ant-breadcrumb-separator,
+.admin-breadcrumb .ant-breadcrumb-link {
+  color: var(--console-text-secondary);
 }

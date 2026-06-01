@@ -23,6 +23,45 @@ export interface ParsedAttachmentMarkdownUrl {
 const ATTACHMENT_PROTOCOL = 'attachment://';
 const RADISH_META_PREFIX = 'radish:';
 const URI_SCHEME_PATTERN = /^[a-z][a-z\d+.-]*:/i;
+const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+function getCurrentOrigin(): string | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  return window.location.origin;
+}
+
+function isLocalHostname(hostname: string): boolean {
+  return LOCAL_HOSTNAMES.has(hostname.toLowerCase());
+}
+
+function normalizeBrowserVisibleAssetUrl(rawUrl: string, currentOrigin: string | null = getCurrentOrigin()): string {
+  if (!rawUrl || !currentOrigin || !/^https?:\/\//i.test(rawUrl)) {
+    return rawUrl;
+  }
+
+  let targetUrl: URL;
+  let originUrl: URL;
+  try {
+    targetUrl = new URL(rawUrl);
+    originUrl = new URL(currentOrigin);
+  } catch {
+    return rawUrl;
+  }
+
+  if (
+    originUrl.protocol !== 'https:'
+    || targetUrl.protocol !== 'http:'
+    || !isLocalHostname(originUrl.hostname)
+    || !isLocalHostname(targetUrl.hostname)
+  ) {
+    return rawUrl;
+  }
+
+  return `${originUrl.origin}${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`;
+}
 
 export function resolveConfiguredMediaUrl(url: string): string {
   const normalizedUrl = url.trim();
@@ -31,9 +70,12 @@ export function resolveConfiguredMediaUrl(url: string): string {
     || normalizedUrl.startsWith('//')
     || normalizedUrl.startsWith('#')
     || normalizedUrl.startsWith('?')
-    || URI_SCHEME_PATTERN.test(normalizedUrl)
   ) {
     return normalizedUrl;
+  }
+
+  if (URI_SCHEME_PATTERN.test(normalizedUrl)) {
+    return normalizeBrowserVisibleAssetUrl(normalizedUrl);
   }
 
   const normalizedBaseUrl = (getApiClientConfig().baseUrl || '').trim().replace(/\/$/, '');
@@ -41,9 +83,11 @@ export function resolveConfiguredMediaUrl(url: string): string {
     return normalizedUrl;
   }
 
-  return normalizedUrl.startsWith('/')
+  const resolvedUrl = normalizedUrl.startsWith('/')
     ? `${normalizedBaseUrl}${normalizedUrl}`
     : `${normalizedBaseUrl}/${normalizedUrl}`;
+
+  return normalizeBrowserVisibleAssetUrl(resolvedUrl);
 }
 
 export function normalizeAttachmentId(value: string | number | null | undefined): string | null {

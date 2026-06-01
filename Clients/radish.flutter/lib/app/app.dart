@@ -10,6 +10,7 @@ import '../core/theme/radish_theme.dart';
 import '../features/discover/data/discover_repository.dart';
 import '../features/docs/data/docs_follow_up_store.dart';
 import '../features/docs/data/docs_repository.dart';
+import '../features/experience/data/experience_repository.dart';
 import '../features/forum/data/forum_follow_up_store.dart';
 import '../features/forum/data/forum_models.dart';
 import '../features/forum/data/forum_repository.dart';
@@ -17,6 +18,8 @@ import '../features/leaderboard/data/leaderboard_repository.dart';
 import '../features/notifications/data/notification_repository.dart';
 import '../features/profile/data/profile_repository.dart';
 import '../features/shell/presentation/radish_flutter_shell.dart';
+import '../features/shop/data/shop_repository.dart';
+import '../features/wallet/data/wallet_repository.dart';
 
 class RadishApp extends StatefulWidget {
   const RadishApp({
@@ -29,6 +32,9 @@ class RadishApp extends StatefulWidget {
     required this.profileRepository,
     required this.followUpStore,
     this.leaderboardRepository = const EmptyLeaderboardRepository(),
+    this.shopRepository = const EmptyShopRepository(),
+    this.walletRepository = const EmptyWalletRepository(),
+    this.experienceRepository = const EmptyExperienceRepository(),
     this.docsFollowUpStore = const EmptyDocsFollowUpStore(),
     this.notificationRepository = const EmptyNotificationRepository(),
     this.appLifecycleGateway = const EmptyAppLifecycleGateway(),
@@ -45,6 +51,9 @@ class RadishApp extends StatefulWidget {
   final ProfileRepository profileRepository;
   final ForumFollowUpStore followUpStore;
   final LeaderboardRepository leaderboardRepository;
+  final ShopRepository shopRepository;
+  final WalletRepository walletRepository;
+  final ExperienceRepository experienceRepository;
   final DocsFollowUpStore docsFollowUpStore;
   final NotificationRepository notificationRepository;
   final AppLifecycleGateway appLifecycleGateway;
@@ -92,6 +101,9 @@ class _RadishAppState extends State<RadishApp> {
                   forumRepository: widget.forumRepository,
                   profileRepository: widget.profileRepository,
                   leaderboardRepository: widget.leaderboardRepository,
+                  shopRepository: widget.shopRepository,
+                  walletRepository: widget.walletRepository,
+                  experienceRepository: widget.experienceRepository,
                   followUpStore: widget.followUpStore,
                   docsFollowUpStore: widget.docsFollowUpStore,
                   notificationRepository: widget.notificationRepository,

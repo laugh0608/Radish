@@ -46,6 +46,13 @@ public interface ICoinService : IBaseService<UserBalance, UserBalanceVo>
         string? remark = null);
 
     /// <summary>
+    /// 确保用户已获得注册默认奖励。
+    /// </summary>
+    /// <param name="userId">接收用户 ID</param>
+    /// <returns>交易流水号；如果已发放则返回既有流水号</returns>
+    Task<string> GrantRegistrationRewardAsync(long userId);
+
+    /// <summary>
     /// 扣除萝卜币（商城消费等）
     /// </summary>
     /// <param name="userId">消费用户 ID</param>

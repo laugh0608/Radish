@@ -8,8 +8,8 @@
 |------|---------|
 | 框架 | React 19 + TypeScript |
 | 构建 | Vite (Rolldown) |
-| 路由 | TanStack Router |
-| 状态管理 | Zustand (窗口/Dock) + TanStack Query (数据) |
+| 路由 | 轻量路径解析 + History API；公开内容壳层由 route state 辅助能力承接 |
+| 状态管理 | Zustand (窗口/Dock 与公开壳层局部状态) + TanStack Query (数据) |
 | UI 框架 | TailwindCSS + 自研组件 |
 | 窗口拖拽 | react-rnd |
 | 动效 | Framer Motion |
@@ -68,12 +68,14 @@ if (response.ok && response.data) {
 ```
 用户访问 → 检查 Token → 未登录 → redirectToLogin()
                 ↓
-            已登录 → 加载桌面 → 打开应用
+            已登录 → 保持当前入口（纯 Web 或 /desktop）
                 ↓
         API 请求自动添加 Token (withAuth: true)
                 ↓
         Token 过期 → 401 错误 → redirectToLogin()
 ```
+
+OIDC 回调页由 `Frontend/radish.client/src/auth/OidcCallbackPage.tsx` 承接，成功换取 Token 并恢复用户状态后回到根入口。普通浏览器根路径 `/` 当前进入 `/discover` 公开分发页；Tauri 或显式工作台场景才进入 `/desktop`。
 
 **使用示例**：
 

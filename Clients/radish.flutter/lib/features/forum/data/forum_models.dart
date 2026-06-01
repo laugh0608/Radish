@@ -57,6 +57,31 @@ extension ForumFeedSortApiValue on ForumFeedSort {
   }
 }
 
+class ForumCategorySummary {
+  const ForumCategorySummary({
+    required this.id,
+    required this.name,
+    this.slug,
+    this.description,
+  });
+
+  factory ForumCategorySummary.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+
+    return ForumCategorySummary(
+      id: _readRequiredId(map, 'voId'),
+      name: _readString(map['voName']) ?? '未命名分类',
+      slug: _readString(map['voSlug']),
+      description: _readString(map['voDescription']),
+    );
+  }
+
+  final String id;
+  final String name;
+  final String? slug;
+  final String? description;
+}
+
 class ForumPostSummary {
   const ForumPostSummary({
     required this.id,
@@ -400,6 +425,57 @@ class ForumCommentSummary {
   final String? updateTime;
   final List<ForumCommentSummary> children;
   final int childrenTotal;
+
+  ForumCommentSummary copyWith({
+    String? id,
+    String? postId,
+    String? content,
+    String? authorId,
+    String? authorName,
+    String? parentId,
+    String? rootId,
+    String? replyToCommentId,
+    String? replyToCommentSnapshot,
+    String? replyToUserId,
+    String? replyToUserName,
+    int? level,
+    int? likeCount,
+    int? replyCount,
+    bool? isTop,
+    bool? isLiked,
+    bool? isGodComment,
+    bool? isSofa,
+    String? createTime,
+    String? updateTime,
+    List<ForumCommentSummary>? children,
+    int? childrenTotal,
+  }) {
+    return ForumCommentSummary(
+      id: id ?? this.id,
+      postId: postId ?? this.postId,
+      content: content ?? this.content,
+      authorId: authorId ?? this.authorId,
+      authorName: authorName ?? this.authorName,
+      parentId: parentId ?? this.parentId,
+      rootId: rootId ?? this.rootId,
+      replyToCommentId: replyToCommentId ?? this.replyToCommentId,
+      replyToCommentSnapshot:
+          replyToCommentSnapshot ?? this.replyToCommentSnapshot,
+      replyToUserId: replyToUserId ?? this.replyToUserId,
+      replyToUserName: replyToUserName ?? this.replyToUserName,
+      level: level ?? this.level,
+      likeCount: likeCount ?? this.likeCount,
+      replyCount: replyCount ?? this.replyCount,
+      isTop: isTop ?? this.isTop,
+      isLiked: isLiked ?? this.isLiked,
+      isGodComment: isGodComment ?? this.isGodComment,
+      isSofa: isSofa ?? this.isSofa,
+      createTime: createTime ?? this.createTime,
+      updateTime: updateTime ?? this.updateTime,
+      children: children ?? this.children,
+      childrenTotal: childrenTotal ?? this.childrenTotal,
+    );
+  }
 
   List<String> get badges {
     return [

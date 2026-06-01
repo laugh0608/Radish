@@ -16,19 +16,10 @@
     <value>Radish Unified Login</value>
   </data>
   <data name="auth.login.heading" xml:space="preserve">
-    <value>Radish.Auth Test Login</value>
+    <value>Radish Unified Login</value>
   </data>
   <data name="auth.login.description" xml:space="preserve">
-    <value>Sign in with the built-in test account. You can replace it with a real user store later.</value>
-  </data>
-  <data name="auth.login.testAccount" xml:space="preserve">
-    <value>Test account</value>
-  </data>
-  <data name="auth.login.testAccount.username" xml:space="preserve">
-    <value>User:</value>
-  </data>
-  <data name="auth.login.testAccount.password" xml:space="preserve">
-    <value>Password:</value>
+    <value>Sign in with your Radish account and authorize access for the current client.</value>
   </data>
   <data name="auth.login.usernameLabel" xml:space="preserve">
     <value>Username</value>

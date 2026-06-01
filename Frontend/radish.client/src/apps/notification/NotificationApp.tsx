@@ -16,6 +16,7 @@ import { toast } from '@radish/ui/toast';
 import { buildChatAppParams, parseChatNotificationNavigation } from '@/utils/chatNavigation';
 import { buildForumAppParams, parseForumNotificationNavigation } from '@/utils/forumNavigation';
 import { isSameLongId, normalizePositiveLongIdKey } from '@/utils/longId';
+import { resolveMediaUrl } from '@/utils/media';
 import styles from './NotificationApp.module.css';
 
 /**
@@ -38,20 +39,7 @@ export const NotificationApp = () => {
   }
 
   const resolveNotificationAvatar = useCallback((avatarUrl?: string | null) => {
-    const normalized = avatarUrl?.trim();
-    if (!normalized) {
-      return null;
-    }
-
-    if (/^https?:\/\//i.test(normalized)) {
-      return normalized;
-    }
-
-    if (normalized.startsWith('/')) {
-      return `${apiBaseUrl}${normalized}`;
-    }
-
-    return `${apiBaseUrl}/${normalized}`;
+    return resolveMediaUrl(avatarUrl, apiBaseUrl);
   }, [apiBaseUrl]);
 
   const [notifications, setNotifications] = useState<NotificationListItem[]>([]);

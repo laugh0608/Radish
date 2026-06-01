@@ -12,13 +12,14 @@ import {
 import { log } from '@/utils/logger';
 import {
   getAllTags,
-  getOidcLoginUrl,
   type Category,
   type CreateLotteryRequest,
   type CreatePollRequest
 } from '@/api/forum';
 import { searchUsersForMention } from '@/api/user';
 import { uploadDocument, uploadImage } from '@/api/attachment';
+import { redirectToLogin } from '@/services/auth';
+import { buildDesktopForumReturnPath } from '@/services/authReturnPath';
 import { useUserStore } from '@/stores/userStore';
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
 import { RichTextMarkdownEditor } from './RichTextMarkdownEditor';
@@ -714,10 +715,7 @@ export const PublishPostModal = ({
   };
 
   const handleLoginClick = () => {
-    const loginUrl = getOidcLoginUrl();
-    if (loginUrl) {
-      window.location.href = loginUrl;
-    }
+    redirectToLogin({ returnPath: buildDesktopForumReturnPath() });
   };
 
   const handleImageUpload = async (file: File): Promise<MarkdownImageUploadResult> => {

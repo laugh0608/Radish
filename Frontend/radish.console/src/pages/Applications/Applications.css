@@ -1,16 +1,25 @@
 .applications-page {
-  width: 100%;
+  min-width: 0;
 }
 
-.page-header {
+.applications-header-actions {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
-.page-header h2 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
+.applications-secret-box {
+  padding: 8px;
+  color: var(--console-text-primary);
+  font-family: monospace;
+  overflow-wrap: anywhere;
+  background: var(--console-bg-muted);
+  border: 1px solid var(--console-border-subtle);
+  border-radius: var(--console-radius-control);
+}
+
+@media (max-width: 768px) {
+  .applications-page .admin-feature-header {
+    align-items: flex-start;
+  }
 }

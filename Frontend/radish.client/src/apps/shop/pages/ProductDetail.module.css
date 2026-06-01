@@ -237,6 +237,17 @@
   margin-top: auto;
 }
 
+.loginPrompt {
+  max-width: 420px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--theme-brand-primary) 8%, var(--theme-bg-surface));
+  border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 22%, transparent);
+  border-radius: 6px;
+  color: var(--theme-text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
 .purchaseButton {
   background: var(--theme-brand-primary);
   border: none;

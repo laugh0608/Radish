@@ -1,16 +1,9 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { log } from '@/utils/logger';
 import { userApi } from '../api/user';
 import { tokenService } from '../services/tokenService';
+import { UserContext } from './userContextCore';
 import type { UserInfo } from '../types/user';
-
-interface UserContextValue {
-  user: UserInfo | null;
-  loading: boolean;
-  refreshUser: () => Promise<void>;
-}
-
-const UserContext = createContext<UserContextValue | undefined>(undefined);
 
 export interface UserProviderProps {
   children: ReactNode;
@@ -46,7 +39,7 @@ export function UserProvider({ children }: UserProviderProps) {
       } else {
         if (tokenUserName) {
           setUser({
-            voUserId: 0,
+            voUserId: '',
             voUserName: tokenUserName,
             voTenantId: 0,
             roles: [],
@@ -60,7 +53,7 @@ export function UserProvider({ children }: UserProviderProps) {
       log.error('UserContext', 'Failed to fetch user info:', error);
       if (tokenUserName) {
         setUser({
-          voUserId: 0,
+          voUserId: '',
           voUserName: tokenUserName,
           voTenantId: 0,
           roles: [],
@@ -99,15 +92,4 @@ export function UserProvider({ children }: UserProviderProps) {
       {children}
     </UserContext.Provider>
   );
-}
-
-/**
- * 使用用户信息 Hook
- */
-export function useUser() {
-  const context = useContext(UserContext);
-  if (context === undefined) {
-    throw new Error('useUser must be used within a UserProvider');
-  }
-  return context;
 }

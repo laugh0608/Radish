@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/config/app_environment.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
+import '../../../shared/widgets/public_link_copy_panel.dart';
 import '../../../shared/widgets/read_only_markdown_view.dart';
 import '../data/docs_models.dart';
 import '../data/docs_repository.dart';
@@ -245,6 +246,7 @@ class _DocsPageState extends State<DocsPage> {
                   detailState.isReady &&
                   detailState.detail != null)
                 _DocsDetailContent(
+                  environment: widget.environment,
                   detail: detailState.detail!,
                   onOpenDocumentSlug: _openLinkedDocumentFromListDetail,
                 ),
@@ -809,6 +811,7 @@ class _DocsDetailRoutePageState extends State<_DocsDetailRoutePage> {
                 ),
               if (state.isReady && state.detail != null)
                 _DocsDetailContent(
+                  environment: widget.environment,
                   detail: state.detail!,
                   source: widget.target.source,
                   onOpenDocumentSlug: _openLinkedDocument,
@@ -927,11 +930,13 @@ class _DocsDocumentCard extends StatelessWidget {
 
 class _DocsDetailContent extends StatelessWidget {
   const _DocsDetailContent({
+    required this.environment,
     required this.detail,
     this.source,
     this.onOpenDocumentSlug,
   });
 
+  final AppEnvironment environment;
   final DocsDocumentDetail detail;
   final DocsDetailHandoffSource? source;
   final ValueChanged<String>? onOpenDocumentSlug;
@@ -939,6 +944,11 @@ class _DocsDetailContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final publicPath = _formatDocsPublicPath(detail.slug);
+    final publicUrl = buildRadishPublicUrl(
+      environment: environment,
+      publicPath: publicPath,
+    );
 
     return Card(
       child: Padding(
@@ -976,6 +986,12 @@ class _DocsDetailContent extends StatelessWidget {
             _DocsDetailContextPanel(
               detail: detail,
               source: source,
+            ),
+            const SizedBox(height: 16),
+            PublicLinkCopyPanel(
+              title: '公开文档链接',
+              publicUrl: publicUrl,
+              description: '复制后可在浏览器打开公开文档详情；文档内链继续留在应用内阅读。',
             ),
             const SizedBox(height: 16),
             Text(

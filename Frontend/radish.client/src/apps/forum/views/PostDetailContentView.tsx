@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { Icon } from '@radish/ui/icon';
@@ -8,6 +8,8 @@ import type { UserFollowStatus } from '@/api/userFollow';
 import { FORUM_DETAIL_TOOL_EVENT, type ForumDetailToolAction } from '../constants/detailTools';
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
 import { useReactions } from '../hooks/useReactions';
+import { buildDesktopForumPostReturnPath } from '@/services/authReturnPath';
+import type { ForumWorkspaceIntent } from '@/utils/forumNavigation';
 import styles from './PostDetailContentView.module.css';
 
 const PostDetailComponent = lazy(() =>
@@ -91,6 +93,8 @@ interface PostDetailContentViewProps {
   onReportQuickReply: (quickReplyId: LongId) => void;
   onReportComment: (commentId: LongId) => void;
   onNavigateToComment: (commentId: LongId) => Promise<void> | void;
+  workspaceIntent?: ForumWorkspaceIntent | null;
+  workspaceIntentKey?: string | null;
 }
 
 const collectCommentIds = (nodes: CommentNode[]): LongId[] => {
@@ -168,6 +172,8 @@ export const PostDetailContentView = ({
   onReportQuickReply,
   onReportComment,
   onNavigateToComment,
+  workspaceIntent = null,
+  workspaceIntentKey = null,
 }: PostDetailContentViewProps) => {
   const { t } = useTranslation();
   const [isCommentSheetOpen, setIsCommentSheetOpen] = useState(false);
@@ -179,6 +185,22 @@ export const PostDetailContentView = ({
   const commentAnchorMapRef = useRef(new Map<string, HTMLDivElement>());
   const { stickerGroups, stickerMap, handleStickerSelect } = useStickerCatalog();
   const reactionsState = useReactions({ onError: onReactionError });
+  const { loadPostReactions, loadCommentReactions } = reactionsState;
+  const loginReturnPath = useMemo(
+    () => buildDesktopForumPostReturnPath({
+      postId: post.voId,
+      postPublicId: post.voPublicId,
+    }),
+    [post.voId, post.voPublicId],
+  );
+  const commentLoginReturnPath = useMemo(
+    () => buildDesktopForumPostReturnPath({
+      postId: post.voId,
+      postPublicId: post.voPublicId,
+      commentId: replyTo?.targetCommentId,
+    }),
+    [post.voId, post.voPublicId, replyTo?.targetCommentId],
+  );
 
   const registerCommentAnchor = useCallback((commentId: LongId, element: HTMLDivElement | null) => {
     const commentIdKey = String(commentId);
@@ -198,6 +220,14 @@ export const PostDetailContentView = ({
       setIsCommentSheetOpen(true);
     }
   }, [replyTo]);
+
+  useEffect(() => {
+    if (workspaceIntent !== 'comment' || !workspaceIntentKey || !isAuthenticated || !post?.voId) {
+      return;
+    }
+
+    setIsCommentSheetOpen(true);
+  }, [workspaceIntent, workspaceIntentKey, isAuthenticated, post?.voId]);
 
   useEffect(() => {
     const handleToolAction = (event: Event) => {
@@ -226,13 +256,13 @@ export const PostDetailContentView = ({
       return;
     }
 
-    void reactionsState.loadPostReactions(post.voId);
-  }, [post?.voId]);
+    void loadPostReactions(post.voId);
+  }, [loadPostReactions, post?.voId]);
 
   useEffect(() => {
     const commentIds = collectCommentIds(comments);
-    void reactionsState.loadCommentReactions(commentIds, { replace: true });
-  }, [comments]);
+    void loadCommentReactions(commentIds, { replace: true });
+  }, [comments, loadCommentReactions]);
 
   useEffect(() => {
     return () => {
@@ -387,6 +417,8 @@ export const PostDetailContentView = ({
               onCreate={onCreateQuickReply}
               onDelete={onDeleteQuickReply}
               onReport={onReportQuickReply}
+              loginReturnPath={loginReturnPath}
+              autoFocusComposerKey={workspaceIntent === 'quickReply' ? workspaceIntentKey : null}
             />
           </Suspense>
 
@@ -478,6 +510,7 @@ export const PostDetailContentView = ({
                 title={t('forum.joinDiscussion')}
                 submitText={t('forum.submitDiscussion')}
                 placeholder={t('forum.discussionPlaceholder')}
+                loginReturnPath={commentLoginReturnPath}
                 stickerGroups={stickerGroups}
                 onStickerSelect={(selection) => {
                   void handleStickerSelect(selection);

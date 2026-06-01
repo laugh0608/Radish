@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/config/env';
+import { normalizeBrowserVisibleUrl } from './browserVisibleUrl';
 
 export function resolveMediaUrl(url: string | null | undefined, apiBaseUrl: string = getApiBaseUrl()): string | null {
   const normalizedUrl = url?.trim();
@@ -7,12 +8,12 @@ export function resolveMediaUrl(url: string | null | undefined, apiBaseUrl: stri
   }
 
   if (/^https?:\/\//i.test(normalizedUrl)) {
-    return normalizedUrl;
+    return normalizeBrowserVisibleUrl(normalizedUrl);
   }
 
   if (normalizedUrl.startsWith('/')) {
-    return `${apiBaseUrl}${normalizedUrl}`;
+    return normalizeBrowserVisibleUrl(`${apiBaseUrl}${normalizedUrl}`);
   }
 
-  return `${apiBaseUrl}/${normalizedUrl}`;
+  return normalizeBrowserVisibleUrl(`${apiBaseUrl}/${normalizedUrl}`);
 }

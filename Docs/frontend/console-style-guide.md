@@ -1,7 +1,7 @@
 # Console 样式与 Token 使用说明
 
 > 入口页：[前端设计文档](/frontend/design)  
-> 最后更新：2026-05-23
+> 最后更新：2026-05-24
 
 本文说明 `radish.console` 后续新增或改动页面时的局部样式口径。Console 后续视觉方向以 `Docs/frontend/design-sources/console-governance-workbench.pen` 中的 `Case Desk` 系列画板为当前设计基准。
 
@@ -35,6 +35,30 @@
 - `Console Governance Overview - Dispatch Center`：跨模块治理负载 / 调度总览页。
 - `Console Table CRUD - User Management`：普通表格 CRUD 页面。
 - `Console Settings - Governance Policy`：设置 / 权限 / 配置型页面。
+
+已完成的首批实现落点：
+
+- 壳层与通用基座：`AdminLayout`、`Breadcrumb`、`index.css`、`adminFeature.css`。
+- 调度总览：`Dashboard`。
+- 表格 CRUD：`UserList`、`TagList`、`CategoryList`、`SystemConfigList`、`RoleList`、`Applications`、`StickerGroupList`、`StickerList`、`ProductList`、`OrderList`。
+- 设置 / 详情 / 配置扩展：`Settings`、`UserProfile`、`UserDetail`、`RolePermissionPage`、`CoinAdminPage`。
+
+这些页面按页面类型复用视觉语言，但保留原 API、权限、表单字段、数据契约和业务语义。
+
+## 2.1 页面类型实现口径
+
+进入 Console 页面开发时，先按页面职责选择结构：
+
+| 页面职责 | 首选结构 | 主要复用 |
+|----------|----------|----------|
+| 高频对象管理 | 指标条、工具条、表格、右侧摘要 | `admin-feature-metrics`、`admin-feature-toolbar`、`admin-feature-main` |
+| 设置 / 个人资料 / 策略 | 左侧分组导航、中间设置列、右侧影响范围 | `admin-settings-layout`、`admin-setting-section`、`admin-settings-aside` |
+| 调度总览 | 总览指标、快捷操作、最近事项、右侧入口 | `admin-overview-*`、`admin-dispatch-*` |
+| 详情页 | 标题卡、指标、详情分区、右侧摘要 | `admin-detail-*` |
+| 工具型页面 | 查询工具条、主操作区、说明摘要 | `admin-tool-*` 或页面局部类 |
+| 治理工作台 | 队列、证据详情、动作留痕 | `governance-workbench-*` |
+
+选择页面类型后，页面 CSS 只补不可复用的业务状态和局部排版。不要把表格 CRUD 页改成治理工作台，也不要把详情页拆成一组互相嵌套的卡片。
 
 ## 3. 页面类型
 

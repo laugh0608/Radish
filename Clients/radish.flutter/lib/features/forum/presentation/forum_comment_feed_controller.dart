@@ -198,6 +198,63 @@ class ForumCommentFeedController extends ChangeNotifier {
     }
   }
 
+  void insertCreatedRootComment(ForumCommentSummary comment) {
+    final existingIds = _state.comments.map((item) => item.id).toSet();
+    if (existingIds.contains(comment.id)) {
+      return;
+    }
+
+    _state = _state.copyWith(
+      status: ForumCommentFeedStatus.ready,
+      postId: comment.postId,
+      comments: [comment, ..._state.comments],
+      totalCount: _state.totalCount + 1,
+      pageIndex: _state.pageIndex <= 0 ? 1 : _state.pageIndex,
+      pageCount: _state.pageCount <= 0 ? 1 : _state.pageCount,
+      clearError: true,
+      clearLoadMoreError: true,
+    );
+    notifyListeners();
+  }
+
+  void insertCreatedReply({
+    required String rootCommentId,
+    required ForumCommentSummary reply,
+  }) {
+    var inserted = false;
+    final nextComments = _state.comments.map((comment) {
+      if (comment.id != rootCommentId) {
+        return comment;
+      }
+
+      inserted = true;
+      final existingIds = comment.children.map((item) => item.id).toSet();
+      final nextChildren = existingIds.contains(reply.id)
+          ? comment.children
+          : [...comment.children, reply];
+
+      return comment.copyWith(
+        children: nextChildren,
+        childrenTotal:
+            comment.childrenTotal + (existingIds.contains(reply.id) ? 0 : 1),
+        replyCount:
+            comment.replyCount + (existingIds.contains(reply.id) ? 0 : 1),
+      );
+    }).toList(growable: false);
+
+    if (!inserted) {
+      return;
+    }
+
+    _state = _state.copyWith(
+      status: ForumCommentFeedStatus.ready,
+      comments: nextComments,
+      clearError: true,
+      clearLoadMoreError: true,
+    );
+    notifyListeners();
+  }
+
   Future<void> _loadInitial(String postId, {int pageIndex = 1}) async {
     final requestVersion = ++_requestVersion;
     _state = _state.copyWith(

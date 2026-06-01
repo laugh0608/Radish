@@ -328,7 +328,7 @@ docker compose up -d
 - `GatewayRuntime__EnableHttpsRedirection=false`
 - `Databases` 中的 `Main / Log / Message / Chat`、`OpenIddict:Database` 与 `Hangfire` 都会通过环境变量覆盖为 PostgreSQL 连接；`Deploy/postgres-init/create-radish-databases.sh` 会在首次初始化 PostgreSQL 数据目录时补齐 `Log / Message / Chat / OpenIddict / Hangfire` 等非主库数据库
 - `Redis__Enable=true`，缓存层默认走 Redis，不再回落到内存缓存
-- `AuthUi__ShowTestAccountHint=false`，登录页默认不再暴露测试账号提示
+- 登录页不再暴露内置测试账号提示；测试 / 生产部署必须通过首个管理员初始化或已有真实账号登录
 - `PostgreSQL / Redis / Auth 证书` 默认持久化到宿主机 `../DeployData/Postgres`、`../DeployData/Redis`、`../DeployData/AuthCerts`，不再使用 Docker 命名卷；`../DataBases` 仍只作为 Radish 应用运行数据目录挂载到 `/app/DataBases`
 - 首次部署前建议手动创建 `../DeployData/*`、`../DataBases` 与 `../Logs`；Docker 也可能自动创建 bind mount 目录，但测试 / 生产环境不要依赖该行为。若容器启动时报权限错误，再按容器日志调整对应目录 owner / 权限
 - `Auth` 会把 OIDC signing / encryption 证书写入 `RADISH_AUTH_CERTS_PATH`，`Api` 只读复用同一份 signing 证书做本地 JWT 验签
@@ -634,7 +634,8 @@ HTTP (5000/5100) → ASP.NET Core 应用
      ```
    - 启动后至少确认：
      - `/health` 可访问
-     - `/` 可打开 WebOS
+     - `/` 可进入纯 Web 默认入口（当前为 `/discover` 公开分发页）
+     - `/desktop` 可打开 WebOS 保留入口
      - `/console/` 可打开 Console
      - Auth / Gateway / Api 容器日志中没有证书加载失败、Issuer 不匹配或重定向异常
    - 若这里失败，不要直接扩大排查范围，优先回到 [M14 宿主运行首轮执行清单](/records/m14-host-runtime-checklist) 确认是 `doctor/verify`、宿主日志还是网关 / 反代链路的问题
@@ -661,7 +662,7 @@ HTTP (5000/5100) → ASP.NET Core 应用
 
 - 部署态组合、外部域名、镜像版本与证书来源
 - `validate:baseline:host`、`check:host-runtime` 与 `collect:m14-host-record` 的执行结果
-- `RADISH_PUBLIC_URL`、Issuer、反代头、`/health`、`/`、`/console/`、`/scalar`
+- `RADISH_PUBLIC_URL`、Issuer、反代头、`/health`、`/`、`/desktop`、`/console/`、`/scalar`
 - `radish-client / radish-console / radish-scalar` 登录、回调、登出，以及 `userinfo` / 受保护接口结论
 
 ### 当前说明
@@ -681,7 +682,7 @@ HTTP (5000/5100) → ASP.NET Core 应用
 
 1. 固定文档直接存放在 `Docs/` 目录，按 `architecture/`、`guide/`、`frontend/`、`features/`、`deployment/`、`changelog/` 等分类维护。
 2. API 启动时自动扫描 `Docs/**/*.md`，同步为只读固定文档，并重写站内链接与资源路径。
-3. WebOS 中统一使用“文档”应用展示固定文档与在线文档；在线文档继续存数据库。
+3. WebOS `/desktop` 保留入口中继续可通过“文档”应用展示固定文档与在线文档；在线文档继续存数据库。
 4. 通过 `Document.ShowBuiltInDocs` 控制是否展示固定文档，便于其他站点复用时关闭项目内置文档。
 
 补充约束：
@@ -704,7 +705,8 @@ HTTP (5000/5100) → ASP.NET Core 应用
 
 ### Gateway 常见入口（开发环境）
 
-- `/` → 前端 WebOS（radish.client）
+- `/` → 纯 Web 默认入口（radish.client，普通浏览器当前进入 `/discover`）
+- `/desktop` → WebOS 保留入口（radish.client）
 - `/api` → 后端 API（Radish.Api）
 - `/scalar` → Scalar API 文档 UI（转发到 Radish.Api 的 `/scalar`，`/api/docs` 为旧兼容路径）
 - `/console` → 控制台前端（radish.console）

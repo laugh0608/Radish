@@ -35,6 +35,7 @@ public class CoinServiceTest
 {
     private readonly Mock<IMapper> _mapperMock;
     private readonly Mock<IUserBalanceRepository> _userBalanceRepositoryMock;
+    private readonly Mock<IBaseRepository<User>> _userRepositoryMock;
     private readonly Mock<IBaseRepository<CoinTransaction>> _coinTransactionRepositoryMock;
     private readonly Mock<IBaseRepository<BalanceChangeLog>> _balanceChangeLogRepositoryMock;
 
@@ -42,8 +43,26 @@ public class CoinServiceTest
     {
         _mapperMock = new Mock<IMapper>();
         _userBalanceRepositoryMock = new Mock<IUserBalanceRepository>();
+        _userRepositoryMock = new Mock<IBaseRepository<User>>();
         _coinTransactionRepositoryMock = new Mock<IBaseRepository<CoinTransaction>>();
         _balanceChangeLogRepositoryMock = new Mock<IBaseRepository<BalanceChangeLog>>();
+
+        _userRepositoryMock
+            .Setup(r => r.QueryFirstAsync(It.IsAny<Expression<Func<User, bool>>>()))
+            .ReturnsAsync((Expression<Func<User, bool>> expression) =>
+            {
+                var predicate = expression.Compile();
+                var users = new[]
+                {
+                    new User { Id = 1, IsDeleted = false },
+                    new User { Id = 2, IsDeleted = false },
+                    new User { Id = 3, IsDeleted = false },
+                    new User { Id = 123456, IsDeleted = false },
+                    new User { Id = 654321, IsDeleted = false },
+                    new User { Id = 999999, IsDeleted = false }
+                };
+                return users.FirstOrDefault(predicate);
+            });
 
         _userBalanceRepositoryMock
             .Setup(r => r.QueryByUserIdIncludingDeletedAsync(It.IsAny<long>()))
@@ -149,6 +168,18 @@ public class CoinServiceTest
         _userBalanceRepositoryMock.Verify(r => r.AddAsync(It.IsAny<UserBalance>()), Times.Once);
     }
 
+    [Fact]
+    public async Task GetBalanceAsync_ShouldThrowInvalidOperationException_WhenUserMissing()
+    {
+        const long userId = 888888;
+        var service = CreateCoinService();
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetBalanceAsync(userId));
+
+        Assert.Contains("用户不存在或已删除", exception.Message, StringComparison.OrdinalIgnoreCase);
+        _userBalanceRepositoryMock.Verify(r => r.AddAsync(It.IsAny<UserBalance>()), Times.Never);
+    }
+
     /// <summary>
     /// 测试批量获取用户余额
     /// </summary>
@@ -214,6 +245,99 @@ public class CoinServiceTest
         );
 
         Assert.Contains(expectedErrorMessage, exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task GrantRegistrationRewardAsync_ShouldReturnExistingTransaction_WhenRewardAlreadyGranted()
+    {
+        const long userId = 123456;
+        var existingTransaction = new CoinTransaction
+        {
+            ToUserId = userId,
+            TransactionType = "SYSTEM_GRANT",
+            BusinessType = "UserRegistration",
+            BusinessId = userId,
+            Status = "SUCCESS",
+            TransactionNo = "TXN_EXISTING_REGISTER"
+        };
+
+        _coinTransactionRepositoryMock
+            .Setup(r => r.QueryFirstAsync(It.IsAny<Expression<Func<CoinTransaction, bool>>>()))
+            .ReturnsAsync(existingTransaction);
+
+        var service = CreateCoinService();
+
+        var transactionNo = await service.GrantRegistrationRewardAsync(userId);
+
+        Assert.Equal("TXN_EXISTING_REGISTER", transactionNo);
+        _coinTransactionRepositoryMock.Verify(r => r.AddAsync(It.IsAny<CoinTransaction>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GrantRegistrationRewardAsync_ShouldGrantDefaultCarrots_WhenRewardMissing()
+    {
+        const long userId = 123456;
+        var userBalance = new UserBalance
+        {
+            UserId = userId,
+            Balance = 0,
+            TotalEarned = 0,
+            Version = 0,
+            TenantId = 0
+        };
+        CoinTransaction? createdTransaction = null;
+
+        _coinTransactionRepositoryMock
+            .Setup(r => r.QueryFirstAsync(It.IsAny<Expression<Func<CoinTransaction, bool>>>()))
+            .ReturnsAsync((CoinTransaction?)null);
+        _userBalanceRepositoryMock
+            .Setup(r => r.QueryFirstAsync(It.IsAny<Expression<Func<UserBalance, bool>>>()))
+            .ReturnsAsync(userBalance);
+        _coinTransactionRepositoryMock
+            .Setup(r => r.AddAsync(It.IsAny<CoinTransaction>()))
+            .Callback<CoinTransaction>(transaction => createdTransaction = transaction)
+            .ReturnsAsync((CoinTransaction transaction) => transaction.Id);
+        _userBalanceRepositoryMock
+            .Setup(r => r.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<UserBalance, UserBalance>>>(),
+                It.IsAny<Expression<Func<UserBalance, bool>>>()))
+            .ReturnsAsync((
+                Expression<Func<UserBalance, UserBalance>> updateExpression,
+                Expression<Func<UserBalance, bool>> whereExpression) =>
+            {
+                if (!whereExpression.Compile()(userBalance))
+                {
+                    return 0;
+                }
+
+                var patch = updateExpression.Compile()(userBalance);
+                userBalance.Balance = patch.Balance;
+                userBalance.TotalEarned = patch.TotalEarned;
+                userBalance.Version = patch.Version;
+                return 1;
+            });
+        _balanceChangeLogRepositoryMock
+            .Setup(r => r.AddAsync(It.IsAny<BalanceChangeLog>()))
+            .ReturnsAsync(9001);
+        _coinTransactionRepositoryMock
+            .Setup(r => r.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<CoinTransaction, CoinTransaction>>>(),
+                It.IsAny<Expression<Func<CoinTransaction, bool>>>()))
+            .ReturnsAsync(1);
+
+        var service = CreateCoinService();
+
+        var transactionNo = await service.GrantRegistrationRewardAsync(userId);
+
+        Assert.NotNull(createdTransaction);
+        Assert.Equal(transactionNo, createdTransaction!.TransactionNo);
+        Assert.Equal(userId, createdTransaction.ToUserId);
+        Assert.Equal(50, createdTransaction.Amount);
+        Assert.Equal("SYSTEM_GRANT", createdTransaction.TransactionType);
+        Assert.Equal("UserRegistration", createdTransaction.BusinessType);
+        Assert.Equal(userId, createdTransaction.BusinessId);
+        Assert.Equal(50, userBalance.Balance);
+        Assert.Equal(50, userBalance.TotalEarned);
     }
 
     [Theory]
@@ -358,6 +482,21 @@ public class CoinServiceTest
     }
 
     [Fact]
+    public async Task AdminAdjustBalanceAsync_ShouldThrowInvalidOperationException_WhenUserMissing()
+    {
+        const long userId = 888888;
+        const long operatorId = 1;
+        const string operatorName = "admin";
+        var service = CreateCoinService();
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.AdminAdjustBalanceAsync(userId, 500, "测试调账", operatorId, operatorName));
+
+        Assert.Contains("用户不存在或已删除", exception.Message, StringComparison.OrdinalIgnoreCase);
+        _userBalanceRepositoryMock.Verify(r => r.AddAsync(It.IsAny<UserBalance>()), Times.Never);
+    }
+
+    [Fact]
     public async Task TransferAsync_ShouldThrowUpgradePrompt_WhenPaymentPasscodeIsLegacy()
     {
         const long fromUserId = 123456;
@@ -396,6 +535,7 @@ public class CoinServiceTest
         return new CoinService(
             _mapperMock.Object,
             _userBalanceRepositoryMock.Object,
+            _userRepositoryMock.Object,
             _coinTransactionRepositoryMock.Object,
             _balanceChangeLogRepositoryMock.Object,
             paymentPasswordService ?? new Mock<IPaymentPasswordService>().Object

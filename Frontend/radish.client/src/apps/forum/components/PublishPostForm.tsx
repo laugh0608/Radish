@@ -8,9 +8,10 @@ import {
   type MarkdownDocumentUploadResult,
   type MarkdownImageUploadResult,
 } from '@radish/ui';
-import { getOidcLoginUrl } from '@/api/forum';
 import { searchUsersForMention } from '@/api/user';
 import { uploadImage, uploadDocument } from '@/api/attachment';
+import { redirectToLogin } from '@/services/auth';
+import { buildDesktopForumReturnPath } from '@/services/authReturnPath';
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
 import styles from './PublishPostForm.module.css';
 
@@ -26,7 +27,6 @@ const IMAGE_SCALE_OPTIONS = [30, 50, 70, 75, 100] as const;
 
 export const PublishPostForm = ({
   isAuthenticated,
-  userName,
   onPublish,
   disabled = false
 }: PublishPostFormProps) => {
@@ -100,10 +100,7 @@ export const PublishPostForm = ({
   };
 
   const handleLoginClick = () => {
-    const loginUrl = getOidcLoginUrl();
-    if (loginUrl) {
-      window.location.href = loginUrl;
-    }
+    redirectToLogin({ returnPath: buildDesktopForumReturnPath() });
   };
 
   // 处理图片上传

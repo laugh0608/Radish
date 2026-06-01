@@ -62,7 +62,6 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     {
         try
         {
-            var tenantId = NormalizeTenantId(App.CurrentUser.TenantId);
             Log.Information("用户 {UserId} 开始购买商品 {ProductId}, 数量={Quantity}",
                 userId, dto.ProductId, dto.Quantity);
 
@@ -136,6 +135,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             }
 
             // 7. 创建订单
+            var tenantId = NormalizeTenantId(App.CurrentUser.TenantId);
             var order = new Order
             {
                 OrderNo = $"ORD_{SnowFlakeSingle.Instance.NextId()}",

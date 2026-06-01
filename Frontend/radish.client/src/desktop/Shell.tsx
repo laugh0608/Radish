@@ -11,6 +11,7 @@ import { useNotificationStore } from '@/stores/notificationStore';
 import { useChatStore } from '@/stores/chatStore';
 import { useWindowStore } from '@/stores/windowStore';
 import { tokenService } from '@/services/tokenService';
+import { redirectToLogin } from '@/services/auth';
 import { bootstrapAuth } from '@/services/authBootstrap';
 import { parseDesktopExternalEntry, stripDesktopExternalEntrySearch } from '@/utils/desktopEntryNavigation';
 import { prefetchAppComponent } from './AppRegistry';
@@ -39,6 +40,7 @@ export const Shell = () => {
   const resetChatStore = useChatStore(state => state.reset);
   const openOrReuseApp = useWindowStore(state => state.openOrReuseApp);
   const handledDesktopEntrySignatureRef = useRef<string | null>(null);
+  const loginRedirectEntrySignatureRef = useRef<string | null>(null);
   const desktopExternalEntry = useMemo(() => {
     if (typeof window === 'undefined') {
       return null;
@@ -89,7 +91,23 @@ export const Shell = () => {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !isAuthenticated || !desktopExternalEntry) {
+    if (typeof window === 'undefined' || !desktopExternalEntry) {
+      return;
+    }
+
+    if (desktopExternalEntry.requiresAuthenticatedSession && !isAuthenticated) {
+      if (tokenService.getAccessToken()) {
+        return;
+      }
+
+      if (loginRedirectEntrySignatureRef.current === desktopExternalEntry.signature) {
+        return;
+      }
+
+      loginRedirectEntrySignatureRef.current = desktopExternalEntry.signature;
+      redirectToLogin({
+        returnPath: `${window.location.pathname}${window.location.search}${window.location.hash}`,
+      });
       return;
     }
 

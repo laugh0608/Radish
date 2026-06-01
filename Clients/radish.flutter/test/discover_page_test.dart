@@ -342,8 +342,10 @@ void main() {
     var forumOpened = false;
     var docsOpened = false;
     var leaderboardOpened = false;
+    var shopOpened = false;
     DocsDocumentSummary? openedDocument;
     ForumDetailHandoffTarget? openedForumTarget;
+    DiscoverProductSummary? openedProduct;
     String? openedProfileUserId;
 
     await tester.pumpWidget(
@@ -361,11 +363,17 @@ void main() {
           onOpenLeaderboard: () {
             leaderboardOpened = true;
           },
+          onOpenShop: () {
+            shopOpened = true;
+          },
           onOpenDocument: (document) {
             openedDocument = document;
           },
           onOpenForumDetailTarget: (target) {
             openedForumTarget = target;
+          },
+          onOpenShopProduct: (product) {
+            openedProduct = product;
           },
           onOpenProfileUser: (userId) {
             openedProfileUserId = userId;
@@ -407,6 +415,18 @@ void main() {
     );
     await tester.tap(find.text('打开文档'));
     await tester.scrollUntilVisible(
+      find.text('查看详情'),
+      200,
+      scrollable: scrollable,
+    );
+    await tester.tap(find.text('查看详情'));
+    await tester.scrollUntilVisible(
+      find.text('查看全部商品'),
+      200,
+      scrollable: scrollable,
+    );
+    await tester.tap(find.text('查看全部商品'));
+    await tester.scrollUntilVisible(
       find.text('打开榜单').first,
       200,
       scrollable: scrollable,
@@ -416,10 +436,12 @@ void main() {
     expect(forumOpened, isTrue);
     expect(docsOpened, isTrue);
     expect(leaderboardOpened, isTrue);
+    expect(shopOpened, isTrue);
     expect(openedDocument?.slug, 'flutter-mvp-overview');
     expect(openedForumTarget?.postId, '2042219067430928384');
     expect(openedForumTarget?.initialTitle, 'Native discover wiring plan');
     expect(openedForumTarget?.source, ForumDetailHandoffSource.discover);
+    expect(openedProduct?.id, '4001');
     expect(openedProfileUserId, '1024');
   });
 }
@@ -711,6 +733,16 @@ class _SectionFailingApiClient implements RadishApiClient {
 
   @override
   Future<T> post<T>({
+    required Uri uri,
+    required Object? body,
+    required JsonFactory<T> decode,
+    String? bearerToken,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<T> put<T>({
     required Uri uri,
     required Object? body,
     required JsonFactory<T> decode,

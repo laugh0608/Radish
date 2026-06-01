@@ -84,19 +84,41 @@ public class CoinController : ControllerBase
     [HttpGet]
     [RequireConsolePermission(ConsolePermissions.CoinsView)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
     public async Task<MessageModel> GetBalanceByUserId(long userId)
     {
-        var balance = await _coinService.GetBalanceAsync(userId);
-
-        return new MessageModel
+        try
         {
-            IsSuccess = true,
-            StatusCode = (int)HttpStatusCodeEnum.Success,
-            MessageInfo = "获取余额成功",
-            ResponseData = balance
-        };
+            var balance = await _coinService.GetBalanceAsync(userId);
+
+            return new MessageModel
+            {
+                IsSuccess = true,
+                StatusCode = (int)HttpStatusCodeEnum.Success,
+                MessageInfo = "获取余额成功",
+                ResponseData = balance
+            };
+        }
+        catch (InvalidOperationException ex)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = ex.Message
+            };
+        }
+        catch (ArgumentException ex)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = ex.Message
+            };
+        }
     }
 
     #endregion

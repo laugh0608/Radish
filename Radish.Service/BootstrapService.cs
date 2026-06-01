@@ -10,10 +10,12 @@ namespace Radish.Service;
 public class BootstrapService : IBootstrapService
 {
     private readonly IBootstrapRepository _bootstrapRepository;
+    private readonly ICoinService _coinService;
 
-    public BootstrapService(IBootstrapRepository bootstrapRepository)
+    public BootstrapService(IBootstrapRepository bootstrapRepository, ICoinService coinService)
     {
         _bootstrapRepository = bootstrapRepository;
+        _coinService = coinService;
     }
 
     public async Task<BootstrapStatusVo> GetStatusAsync()
@@ -67,7 +69,13 @@ public class BootstrapService : IBootstrapService
         }
 
         var passwordHash = PasswordHasher.HashPassword(dto.Password);
-        return await _bootstrapRepository.TryCreateFirstAdministratorAsync(loginName, passwordHash, normalizedEmail);
+        var result = await _bootstrapRepository.TryCreateFirstAdministratorAsync(loginName, passwordHash, normalizedEmail);
+        if (result.Status == BootstrapAdminCreationStatus.Created)
+        {
+            await _coinService.GrantRegistrationRewardAsync(result.UserId);
+        }
+
+        return result;
     }
 
     private static bool IsValidLoginNameCharacter(char value)

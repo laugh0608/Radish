@@ -1,1 +1,2 @@
-export { AppBreadcrumb, useCustomBreadcrumb } from './Breadcrumb';
+export { AppBreadcrumb } from './Breadcrumb';
+export { useCustomBreadcrumb } from './useCustomBreadcrumb';

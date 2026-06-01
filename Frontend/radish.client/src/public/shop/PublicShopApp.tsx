@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { ShopHome } from '@/apps/shop/pages/ShopHome';
@@ -12,7 +12,7 @@ import {
 } from '@/api/shop';
 import type { Product, ProductCategory, ProductListItem } from '@/types/shop';
 import { resolveMediaUrl } from '@/utils/media';
-import { copyToClipboard } from '@/utils/clipboard';
+import { buildDesktopShopProductReturnPath } from '@/services/authReturnPath';
 import type { PublicShopProductsRoute, PublicShopRoute } from '../shopRouteState';
 import {
   buildPublicShopPath,
@@ -23,7 +23,7 @@ import {
   getPublicDetailBackLabelKey,
   type PublicDetailBackMode,
 } from '../publicRouteNavigation';
-import { buildPublicCanonicalUrl } from '../publicHead';
+import { buildPublicShareUrl } from '../publicHead';
 import {
   applyPublicStructuredData,
   buildShopProductStructuredData,
@@ -31,6 +31,7 @@ import {
 } from '../publicStructuredData';
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import { PublicShellHeader } from '../components/PublicShellHeader';
+import { usePublicShareLink } from '../hooks/usePublicShareLink';
 import { usePublicReplaceRouteSync } from '../usePublicReplaceRouteSync';
 import styles from './PublicShopApp.module.css';
 
@@ -182,8 +183,6 @@ export const PublicShopApp = ({
   const [totalPages, setTotalPages] = useState(1);
   const [reloadToken, setReloadToken] = useState(0);
   const [categoriesResolved, setCategoriesResolved] = useState(false);
-  const [shareBusy, setShareBusy] = useState(false);
-  const [shareState, setShareState] = useState<'idle' | 'success' | 'error'>('idle');
 
   const pageTitle = route.kind === 'detail'
     ? t('shop.public.detailTitle')
@@ -289,19 +288,13 @@ export const PublicShopApp = ({
     return removePublicStructuredData;
   }, [route.kind, selectedProduct]);
 
-  useEffect(() => {
-    if (shareState === 'idle') {
-      return;
-    }
-
-    const timerId = window.setTimeout(() => {
-      setShareState('idle');
-    }, 2200);
-
-    return () => {
-      window.clearTimeout(timerId);
-    };
-  }, [shareState]);
+  const buildShopShareUrl = useCallback(() => {
+    const productId = route.kind === 'detail' ? route.productId : String(selectedProduct?.voId ?? '');
+    return buildPublicShareUrl(buildPublicShopPath({ kind: 'detail', productId }));
+  }, [route, selectedProduct?.voId]);
+  const { copyShareLink, shareBusy, shareState } = usePublicShareLink({
+    buildShareUrl: buildShopShareUrl,
+  });
 
   useEffect(() => {
     const requestId = ++categoryRequestIdRef.current;
@@ -509,20 +502,6 @@ export const PublicShopApp = ({
     onNavigate(fallbackProductsRoute);
   };
 
-  const handleShareProduct = async (productId: string) => {
-    setShareBusy(true);
-
-    try {
-      const sharePath = buildPublicShopPath({ kind: 'detail', productId });
-      await copyToClipboard(buildPublicCanonicalUrl(sharePath));
-      setShareState('success');
-    } catch {
-      setShareState('error');
-    } finally {
-      setShareBusy(false);
-    }
-  };
-
   const detailBackLabelKey = getPublicDetailBackLabelKey(detailBackAction?.mode);
   const detailBackLabel = detailBackLabelKey ? t(detailBackLabelKey) : t('shop.public.backToProducts');
   const detailBackHint = detailBackAction?.mode === 'discover'
@@ -701,6 +680,7 @@ export const PublicShopApp = ({
 
     const coverImageUrl = resolveMediaUrl(selectedProduct.voCoverImage);
     const iconImageUrl = resolveMediaUrl(selectedProduct.voIcon);
+    const desktopProductEntryUrl = buildDesktopShopProductReturnPath(selectedProduct.voId, { intent: 'purchase' });
     const stockText = selectedProduct.voStockType === StockType.Unlimited
       ? t('shop.stock.unlimited')
       : t('shop.productCount', { count: selectedProduct.voStock ?? 0 });
@@ -719,7 +699,7 @@ export const PublicShopApp = ({
             <button
               type="button"
               className={styles.secondaryButton}
-              onClick={() => void handleShareProduct(route.productId)}
+              onClick={() => void copyShareLink()}
               disabled={shareBusy}
             >
               <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={18} />
@@ -792,10 +772,12 @@ export const PublicShopApp = ({
             <div className={styles.readOnlyPanel}>
               <h2 className={styles.readOnlyTitle}>{t('shop.public.purchaseTitle')}</h2>
               <p className={styles.readOnlyDescription}>{t('shop.public.purchaseDescription')}</p>
-              <a className={styles.primaryLink} href="/">
-                <Icon icon="mdi:view-dashboard-outline" size={18} />
-                <span>{t('shop.public.openDesktop')}</span>
-              </a>
+              {desktopProductEntryUrl && (
+                <a className={styles.primaryLink} href={desktopProductEntryUrl}>
+                  <Icon icon="mdi:view-dashboard-outline" size={18} />
+                  <span>{t('shop.public.openDesktop')}</span>
+                </a>
+              )}
             </div>
           </div>
         </div>

@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: column;
   gap: 28px;
+  min-width: 0;
 }
 
 .loading {
@@ -54,6 +55,7 @@
   position: relative;
   z-index: 1;
   max-width: 680px;
+  min-width: 0;
 }
 
 .bannerTitle {
@@ -126,6 +128,7 @@
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
   background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
   box-shadow: var(--theme-shadow-soft);
+  min-width: 0;
 }
 
 .categoryCard,
@@ -281,6 +284,7 @@
   flex-direction: column;
   gap: 10px;
   padding: 16px;
+  min-width: 0;
 }
 
 .productName {
@@ -317,6 +321,8 @@
   gap: 10px;
   font-size: 12px;
   line-height: 1.6;
+  min-width: 0;
+  flex-wrap: wrap;
 }
 
 .soldCount {
@@ -332,6 +338,24 @@
   background: color-mix(in srgb, var(--theme-bg-muted) 82%, var(--theme-bg-surface) 18%);
   color: var(--theme-brand-primary);
   font-weight: 700;
+  max-width: 100%;
+}
+
+.bannerTitle,
+.bannerSubtitle,
+.sectionTitle,
+.categoryName,
+.categoryDescription,
+.categoryCount,
+.productName,
+.currentPrice,
+.originalPrice,
+.soldCount,
+.duration,
+.guideCard h3,
+.guideCard p,
+.emptyState p {
+  overflow-wrap: anywhere;
 }
 
 .emptyState {

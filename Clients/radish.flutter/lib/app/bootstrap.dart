@@ -15,11 +15,14 @@ import '../core/platform/app_lifecycle_gateway.dart';
 import '../features/discover/data/discover_repository.dart';
 import '../features/docs/data/docs_follow_up_store.dart';
 import '../features/docs/data/docs_repository.dart';
+import '../features/experience/data/experience_repository.dart';
 import '../features/forum/data/forum_follow_up_store.dart';
 import '../features/forum/data/forum_repository.dart';
 import '../features/leaderboard/data/leaderboard_repository.dart';
 import '../features/notifications/data/notification_repository.dart';
 import '../features/profile/data/profile_repository.dart';
+import '../features/shop/data/shop_repository.dart';
+import '../features/wallet/data/wallet_repository.dart';
 import 'app.dart';
 
 class RadishBootstrap {
@@ -81,6 +84,18 @@ class RadishBootstrap {
       apiClient: apiClient,
       endpoints: apiEndpoints,
     );
+    final shopRepository = HttpShopRepository(
+      apiClient: apiClient,
+      endpoints: apiEndpoints,
+    );
+    final walletRepository = HttpWalletRepository(
+      apiClient: apiClient,
+      endpoints: apiEndpoints,
+    );
+    final experienceRepository = HttpExperienceRepository(
+      apiClient: apiClient,
+      endpoints: apiEndpoints,
+    );
 
     runApp(
       RadishApp(
@@ -92,6 +107,9 @@ class RadishBootstrap {
         forumRepository: forumRepository,
         profileRepository: profileRepository,
         leaderboardRepository: leaderboardRepository,
+        shopRepository: shopRepository,
+        walletRepository: walletRepository,
+        experienceRepository: experienceRepository,
         followUpStore: followUpStore,
         docsFollowUpStore: docsFollowUpStore,
         notificationRepository: notificationRepository,

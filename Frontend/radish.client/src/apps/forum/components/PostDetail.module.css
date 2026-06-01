@@ -1,5 +1,6 @@
 .container {
   margin-bottom: 20px;
+  min-width: 0;
 }
 
 .title {
@@ -21,6 +22,7 @@
   border-radius: 16px;
   padding: 16px;
   box-shadow: var(--theme-shadow-soft);
+  min-width: 0;
 }
 
 .postTitle {
@@ -31,6 +33,7 @@
   font-weight: 600;
   color: var(--theme-text-primary);
   text-align: left;
+  overflow-wrap: anywhere;
 }
 
 .statusRow {
@@ -95,7 +98,9 @@
 }
 
 .postMeta span {
+  min-width: 0;
   margin-right: 8px;
+  overflow-wrap: anywhere;
 }
 
 .authorLink {
@@ -140,6 +145,8 @@
   margin-bottom: 12px;
   font-size: 14px;
   text-align: left;
+  min-width: 0;
+  max-width: 100%;
   --text-primary: var(--theme-text-primary);
   --heading-color: var(--theme-text-primary);
   --text-secondary: var(--theme-text-secondary);
@@ -166,10 +173,12 @@
   gap: 8px;
   padding-top: 12px;
   border-top: 1px solid var(--theme-border-soft);
+  min-width: 0;
 }
 
 .tag {
   display: inline-block;
+  max-width: 100%;
   padding: 4px 12px;
   border: none;
   background-color: var(--theme-brand-soft);
@@ -177,6 +186,7 @@
   border-radius: 12px;
   font-size: 12px;
   cursor: pointer;
+  overflow-wrap: anywhere;
 }
 
 .pollCard {
@@ -189,6 +199,7 @@
     color-mix(in srgb, var(--theme-bg-surface) 82%, white 18%) 0%,
     color-mix(in srgb, var(--theme-brand-soft) 28%, var(--theme-bg-surface) 72%) 100%
   );
+  min-width: 0;
 }
 
 .lotteryCard {
@@ -201,6 +212,7 @@
     color-mix(in srgb, var(--theme-bg-surface) 84%, white 16%) 0%,
     color-mix(in srgb, var(--theme-accent-earth) 12%, var(--theme-bg-surface) 88%) 100%
   );
+  min-width: 0;
 }
 
 .pollHeader {
@@ -214,6 +226,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .pollBadge {
@@ -231,6 +244,8 @@
   margin: 0;
   font-size: 16px;
   color: var(--theme-text-primary);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .lotteryHeader {
@@ -244,6 +259,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .lotteryBadge {
@@ -261,6 +277,8 @@
   margin: 0;
   font-size: 16px;
   color: var(--theme-text-primary);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .lotteryMeta {
@@ -599,6 +617,7 @@
     color-mix(in srgb, var(--theme-bg-surface) 84%, white 16%) 0%,
     color-mix(in srgb, var(--theme-accent-earth) 8%, var(--theme-bg-surface) 92%) 100%
   );
+  min-width: 0;
 }
 
 .questionHeader {
@@ -620,6 +639,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .questionSectionBadge {
@@ -637,6 +657,8 @@
   margin: 0;
   font-size: 16px;
   color: var(--theme-text-primary);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .questionMeta {
@@ -728,6 +750,7 @@
   border: 1px solid var(--theme-border-soft);
   border-radius: 12px;
   background: var(--theme-bg-surface);
+  min-width: 0;
 }
 
 .answerItemAccepted {
@@ -864,6 +887,8 @@
   color: var(--theme-text-primary);
   font-size: 14px;
   text-align: left;
+  min-width: 0;
+  max-width: 100%;
   --text-primary: var(--theme-text-primary);
   --heading-color: var(--theme-text-primary);
   --text-secondary: var(--theme-text-secondary);
@@ -1190,5 +1215,15 @@
 
   .answerEditor {
     min-height: 200px;
+  }
+
+  .postContent {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .postTitle {
+    font-size: 21px;
+    line-height: 1.35;
   }
 }
