@@ -555,6 +555,11 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
           repository: widget.shopRepository,
           productId: productId,
           initialTitle: product.name,
+          sessionController: widget.sessionController,
+          authController: widget.authController,
+          onRequestSignIn: () => _startLoginForTarget(
+            const ShellPostLoginTarget(tabIndex: _discoverTabIndex),
+          ),
         ),
       ),
     );
@@ -566,6 +571,11 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
         builder: (context) => ShopProductListPage(
           environment: widget.environment,
           repository: widget.shopRepository,
+          sessionController: widget.sessionController,
+          authController: widget.authController,
+          onRequestSignIn: () => _startLoginForTarget(
+            const ShellPostLoginTarget(tabIndex: _discoverTabIndex),
+          ),
         ),
       ),
     );

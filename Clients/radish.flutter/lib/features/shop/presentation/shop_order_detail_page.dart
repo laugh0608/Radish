@@ -130,6 +130,7 @@ class _ShopOrderDetailPageState extends State<ShopOrderDetailPage> {
           initialTitle: order.productName,
           sourceLabel: '订单详情',
           returnLabel: '返回订单详情',
+          accessToken: widget.accessToken,
         ),
       ),
     );

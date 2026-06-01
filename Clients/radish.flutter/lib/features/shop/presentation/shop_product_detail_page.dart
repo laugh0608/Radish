@@ -2,12 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/auth/native_auth_controller.dart';
+import '../../../core/auth/session_controller.dart';
 import '../../../core/config/app_environment.dart';
 import '../../../core/network/radish_api_client.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
 import '../../../shared/widgets/public_link_copy_panel.dart';
 import '../data/shop_models.dart';
 import '../data/shop_repository.dart';
+import 'shop_order_detail_page.dart';
 
 class ShopProductDetailPage extends StatefulWidget {
   const ShopProductDetailPage({
@@ -17,6 +20,10 @@ class ShopProductDetailPage extends StatefulWidget {
     this.initialTitle,
     this.sourceLabel = '发现页商城精选',
     this.returnLabel = '返回发现',
+    this.accessToken,
+    this.sessionController,
+    this.authController,
+    this.onRequestSignIn,
     super.key,
   });
 
@@ -26,21 +33,38 @@ class ShopProductDetailPage extends StatefulWidget {
   final String? initialTitle;
   final String sourceLabel;
   final String returnLabel;
+  final String? accessToken;
+  final SessionController? sessionController;
+  final NativeAuthController? authController;
+  final Future<void> Function()? onRequestSignIn;
 
   @override
   State<ShopProductDetailPage> createState() => _ShopProductDetailPageState();
 }
 
 class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
+  final TextEditingController _paymentPasswordController =
+      TextEditingController();
   ShopProductDetail? _product;
+  ShopProductBuyCheckResult? _buyCheck;
   bool _isLoading = true;
   bool _isRefreshing = false;
+  bool _isCheckingCanBuy = false;
+  bool _isPurchasing = false;
+  bool _wasAuthenticated = false;
+  bool _requestedSignInFromPurchase = false;
   String? _errorMessage;
+  String? _purchaseNotice;
+  String? _purchaseErrorMessage;
   int _requestId = 0;
+  int _buyCheckRequestId = 0;
 
   @override
   void initState() {
     super.initState();
+    widget.sessionController?.addListener(_handleSessionStateChanged);
+    _wasAuthenticated =
+        widget.sessionController?.state.isAuthenticated ?? false;
     unawaited(_load(keepCurrentProduct: false));
   }
 
@@ -50,8 +74,25 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
 
     if (oldWidget.repository != widget.repository ||
         oldWidget.productId != widget.productId) {
+      _buyCheck = null;
+      _purchaseNotice = null;
+      _purchaseErrorMessage = null;
       unawaited(_load(keepCurrentProduct: false));
     }
+
+    if (oldWidget.sessionController != widget.sessionController) {
+      oldWidget.sessionController?.removeListener(_handleSessionStateChanged);
+      widget.sessionController?.addListener(_handleSessionStateChanged);
+      _wasAuthenticated =
+          widget.sessionController?.state.isAuthenticated ?? false;
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.sessionController?.removeListener(_handleSessionStateChanged);
+    _paymentPasswordController.dispose();
+    super.dispose();
   }
 
   Future<void> _refresh() {
@@ -92,6 +133,10 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
         _isRefreshing = false;
         _errorMessage = null;
       });
+
+      if (_currentAccessToken != null) {
+        unawaited(_checkCanBuy(product.id));
+      }
     } on RadishApiClientException catch (error) {
       _setFailure(requestId, error.message);
     } on FormatException catch (error) {
@@ -108,6 +153,229 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
       _isLoading = false;
       _isRefreshing = false;
       _errorMessage = message;
+    });
+  }
+
+  String? get _currentAccessToken {
+    final explicitToken = widget.accessToken?.trim();
+    if (explicitToken != null && explicitToken.isNotEmpty) {
+      return explicitToken;
+    }
+
+    final sessionToken =
+        widget.sessionController?.state.session?.accessToken.trim();
+    if (sessionToken != null && sessionToken.isNotEmpty) {
+      return sessionToken;
+    }
+
+    return null;
+  }
+
+  bool get _isAuthenticated => _currentAccessToken != null;
+
+  void _handleSessionStateChanged() {
+    final isAuthenticated =
+        widget.sessionController?.state.isAuthenticated ?? false;
+    if (!_wasAuthenticated && isAuthenticated && _requestedSignInFromPurchase) {
+      _requestedSignInFromPurchase = false;
+      setState(() {
+        _purchaseNotice = '已回到商品详情，可以继续确认购买。';
+        _purchaseErrorMessage = null;
+      });
+
+      final productId = _product?.id;
+      if (productId != null && productId.trim().isNotEmpty) {
+        unawaited(_checkCanBuy(productId));
+      }
+    }
+
+    _wasAuthenticated = isAuthenticated;
+  }
+
+  Future<void> _requestSignInForPurchase() async {
+    _requestedSignInFromPurchase = true;
+    setState(() {
+      _purchaseNotice = null;
+      _purchaseErrorMessage = null;
+    });
+
+    final onRequestSignIn = widget.onRequestSignIn;
+    if (onRequestSignIn != null) {
+      await onRequestSignIn();
+      return;
+    }
+
+    await widget.authController?.startLogin();
+  }
+
+  Future<ShopProductBuyCheckResult?> _checkCanBuy(String productId) async {
+    final accessToken = _currentAccessToken;
+    if (accessToken == null) {
+      setState(() {
+        _buyCheck = null;
+        _isCheckingCanBuy = false;
+      });
+      return null;
+    }
+
+    final requestId = ++_buyCheckRequestId;
+    setState(() {
+      _isCheckingCanBuy = true;
+      _purchaseErrorMessage = null;
+    });
+
+    try {
+      final result = await widget.repository.checkCanBuy(
+        accessToken: accessToken,
+        productId: productId,
+      );
+      if (!mounted || requestId != _buyCheckRequestId) {
+        return null;
+      }
+
+      setState(() {
+        _buyCheck = result;
+        _isCheckingCanBuy = false;
+      });
+      return result;
+    } on RadishApiClientException catch (error) {
+      _setBuyCheckFailure(requestId, error.message);
+    } on FormatException catch (error) {
+      _setBuyCheckFailure(requestId, '购买检查返回格式异常：${error.message}');
+    }
+
+    return null;
+  }
+
+  void _setBuyCheckFailure(int requestId, String message) {
+    if (!mounted || requestId != _buyCheckRequestId) {
+      return;
+    }
+
+    setState(() {
+      _buyCheck = null;
+      _isCheckingCanBuy = false;
+      _purchaseErrorMessage = message;
+    });
+  }
+
+  Future<void> _submitPurchase() async {
+    final product = _product;
+    if (product == null || _isPurchasing) {
+      return;
+    }
+
+    final accessToken = _currentAccessToken;
+    if (accessToken == null) {
+      await _requestSignInForPurchase();
+      return;
+    }
+
+    final paymentPassword = _paymentPasswordController.text.trim();
+    if (paymentPassword.isEmpty) {
+      setState(() {
+        _purchaseErrorMessage = '请输入支付口令。';
+        _purchaseNotice = null;
+      });
+      return;
+    }
+
+    if (!RegExp(r'^\d{6}$').hasMatch(paymentPassword)) {
+      setState(() {
+        _purchaseErrorMessage = '支付口令必须是 6 位数字。';
+        _purchaseNotice = null;
+      });
+      return;
+    }
+
+    var buyCheck = _buyCheck;
+    if (buyCheck == null || !buyCheck.canBuy) {
+      buyCheck = await _checkCanBuy(product.id);
+    }
+
+    if (!mounted || buyCheck == null) {
+      return;
+    }
+
+    if (!buyCheck.canBuy) {
+      setState(() {
+        _purchaseErrorMessage = buyCheck?.reason?.trim().isNotEmpty == true
+            ? buyCheck!.reason
+            : '当前商品暂不可购买。';
+        _purchaseNotice = null;
+      });
+      return;
+    }
+
+    setState(() {
+      _isPurchasing = true;
+      _purchaseNotice = null;
+      _purchaseErrorMessage = null;
+    });
+
+    try {
+      final result = await widget.repository.purchaseProduct(
+        accessToken: accessToken,
+        productId: product.id,
+        paymentPassword: paymentPassword,
+      );
+      if (!mounted) {
+        return;
+      }
+
+      if (!result.success) {
+        setState(() {
+          _isPurchasing = false;
+          _purchaseErrorMessage = result.errorMessage?.trim().isNotEmpty == true
+              ? result.errorMessage
+              : '购买失败，请稍后重试。';
+          _purchaseNotice = null;
+        });
+        return;
+      }
+
+      _paymentPasswordController.clear();
+      setState(() {
+        _isPurchasing = false;
+        _purchaseErrorMessage = null;
+        _purchaseNotice = _buildPurchaseSuccessNotice(result);
+      });
+
+      final orderId = result.orderId?.trim();
+      if (orderId != null && orderId.isNotEmpty) {
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (context) => ShopOrderDetailPage(
+              environment: widget.environment,
+              repository: widget.repository,
+              accessToken: accessToken,
+              orderId: orderId,
+              sourceLabel: '购买结果',
+              returnLabel: '返回商品详情',
+            ),
+          ),
+        );
+      }
+
+      if (mounted) {
+        unawaited(_checkCanBuy(product.id));
+      }
+    } on RadishApiClientException catch (error) {
+      _setPurchaseFailure(error.message);
+    } on FormatException catch (error) {
+      _setPurchaseFailure('购买返回格式异常：${error.message}');
+    }
+  }
+
+  void _setPurchaseFailure(String message) {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _isPurchasing = false;
+      _purchaseErrorMessage = message;
+      _purchaseNotice = null;
     });
   }
 
@@ -131,7 +399,7 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            '查看公开商品详情。当前只读，不开放购买、订单、背包或支付操作。',
+            '查看公开商品详情。登录后可从当前商品发起一次单商品购买，并返回明确订单结果。',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 20),
@@ -143,7 +411,8 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
               product == null
                   ? '正在准备商品 ${widget.productId}'
                   : '正在查看商品 ${product.id}',
-              '当前不支持购买、订单、背包、支付口令或权益激活',
+              _isAuthenticated ? '当前已具备购买会话' : '未登录时可先阅读详情，再登录后购买',
+              '本批只开放单商品购买，不扩展购物车、退款、权益使用或完整移动商城',
             ],
           ),
           const SizedBox(height: 16),
@@ -182,6 +451,17 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
             _ShopProductDetailContent(
               environment: widget.environment,
               product: product,
+              isAuthenticated: _isAuthenticated,
+              authState: widget.authController?.state,
+              buyCheck: _buyCheck,
+              isCheckingCanBuy: _isCheckingCanBuy,
+              isPurchasing: _isPurchasing,
+              paymentPasswordController: _paymentPasswordController,
+              purchaseNotice: _purchaseNotice,
+              purchaseErrorMessage: _purchaseErrorMessage,
+              onRequestSignIn: _requestSignInForPurchase,
+              onRefreshBuyCheck: () => _checkCanBuy(product.id),
+              onSubmitPurchase: _submitPurchase,
             ),
           ],
         ],
@@ -339,10 +619,32 @@ class _ShopProductDetailContent extends StatelessWidget {
   const _ShopProductDetailContent({
     required this.environment,
     required this.product,
+    required this.isAuthenticated,
+    required this.isCheckingCanBuy,
+    required this.isPurchasing,
+    required this.paymentPasswordController,
+    required this.onRequestSignIn,
+    required this.onRefreshBuyCheck,
+    required this.onSubmitPurchase,
+    this.authState,
+    this.buyCheck,
+    this.purchaseNotice,
+    this.purchaseErrorMessage,
   });
 
   final AppEnvironment environment;
   final ShopProductDetail product;
+  final bool isAuthenticated;
+  final NativeAuthState? authState;
+  final ShopProductBuyCheckResult? buyCheck;
+  final bool isCheckingCanBuy;
+  final bool isPurchasing;
+  final TextEditingController paymentPasswordController;
+  final String? purchaseNotice;
+  final String? purchaseErrorMessage;
+  final VoidCallback onRequestSignIn;
+  final VoidCallback onRefreshBuyCheck;
+  final VoidCallback onSubmitPurchase;
 
   @override
   Widget build(BuildContext context) {
@@ -399,12 +701,25 @@ class _ShopProductDetailContent extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 16),
-            _ShopReadOnlyPanel(product: product),
+            _ShopPurchasePanel(
+              product: product,
+              isAuthenticated: isAuthenticated,
+              authState: authState,
+              buyCheck: buyCheck,
+              isCheckingCanBuy: isCheckingCanBuy,
+              isPurchasing: isPurchasing,
+              paymentPasswordController: paymentPasswordController,
+              notice: purchaseNotice,
+              errorMessage: purchaseErrorMessage,
+              onRequestSignIn: onRequestSignIn,
+              onRefreshBuyCheck: onRefreshBuyCheck,
+              onSubmitPurchase: onSubmitPurchase,
+            ),
             const SizedBox(height: 16),
             PublicLinkCopyPanel(
               title: '公开商品链接',
               publicUrl: publicUrl,
-              description: '复制后可在浏览器打开公开商品详情；购买、订单和背包仍不在 Flutter 本批开放。',
+              description: '复制后可在浏览器打开公开商品详情；Flutter 本批只在登录态商品详情内开放单商品购买。',
             ),
             const SizedBox(height: 20),
             Text(
@@ -454,16 +769,40 @@ class _ShopProductDetailContent extends StatelessWidget {
   }
 }
 
-class _ShopReadOnlyPanel extends StatelessWidget {
-  const _ShopReadOnlyPanel({
+class _ShopPurchasePanel extends StatelessWidget {
+  const _ShopPurchasePanel({
     required this.product,
+    required this.isAuthenticated,
+    required this.isCheckingCanBuy,
+    required this.isPurchasing,
+    required this.paymentPasswordController,
+    required this.onRequestSignIn,
+    required this.onRefreshBuyCheck,
+    required this.onSubmitPurchase,
+    this.authState,
+    this.buyCheck,
+    this.notice,
+    this.errorMessage,
   });
 
   final ShopProductDetail product;
+  final bool isAuthenticated;
+  final NativeAuthState? authState;
+  final ShopProductBuyCheckResult? buyCheck;
+  final bool isCheckingCanBuy;
+  final bool isPurchasing;
+  final TextEditingController paymentPasswordController;
+  final String? notice;
+  final String? errorMessage;
+  final VoidCallback onRequestSignIn;
+  final VoidCallback onRefreshBuyCheck;
+  final VoidCallback onSubmitPurchase;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final blockedReason = buyCheck?.reason?.trim();
+    final isBlocked = buyCheck != null && !buyCheck!.canBuy;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -477,15 +816,99 @@ class _ShopReadOnlyPanel extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '只读购买边界',
+              '单商品购买',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             Text(
               _buildAvailabilityText(product),
             ),
-            const SizedBox(height: 8),
-            const Text('购买、订单、背包、支付口令和权益激活仍留在后续批次评估。'),
+            if (notice != null && notice!.trim().isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _ShopPurchaseStatusNotice(
+                message: notice!,
+                isError: false,
+              ),
+            ],
+            if (errorMessage != null && errorMessage!.trim().isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _ShopPurchaseStatusNotice(
+                message: errorMessage!,
+                isError: true,
+              ),
+            ],
+            const SizedBox(height: 12),
+            if (!isAuthenticated) ...[
+              Text(
+                authState?.isBusy == true
+                    ? '正在打开登录流程，完成后将回到当前商品详情。'
+                    : '登录后可从当前商品详情继续购买。',
+              ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: authState?.isBusy == true ? null : onRequestSignIn,
+                icon: const Icon(Icons.login),
+                label: Text(authState?.isBusy == true ? '正在登录' : '登录后购买'),
+              ),
+            ] else ...[
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Chip(
+                    label: Text(
+                      isCheckingCanBuy
+                          ? '正在检查购买资格'
+                          : buyCheck == null
+                              ? '购买资格待检查'
+                              : buyCheck!.canBuy
+                                  ? '当前可购买'
+                                  : blockedReason?.isNotEmpty == true
+                                      ? blockedReason!
+                                      : '当前不可购买',
+                    ),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  TextButton.icon(
+                    onPressed: isCheckingCanBuy || isPurchasing
+                        ? null
+                        : onRefreshBuyCheck,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('重新检查'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: paymentPasswordController,
+                enabled: !isPurchasing,
+                keyboardType: TextInputType.number,
+                obscureText: true,
+                maxLength: 6,
+                decoration: const InputDecoration(
+                  labelText: '支付口令',
+                  helperText: '请输入 6 位数字支付口令。',
+                  border: OutlineInputBorder(),
+                  counterText: '',
+                ),
+              ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: isPurchasing || isCheckingCanBuy || isBlocked
+                    ? null
+                    : onSubmitPurchase,
+                icon: isPurchasing
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.shopping_bag_outlined),
+                label: Text(isPurchasing ? '正在购买' : '确认购买 1 件'),
+              ),
+            ],
+            const SizedBox(height: 12),
+            const Text('本批只支持当前商品直接购买 1 件；购物车、退款、权益使用和完整移动商城不在本次范围。'),
           ],
         ),
       ),
@@ -570,10 +993,53 @@ class _ShopNoticeList extends StatelessWidget {
       children: [
         Text('购买须知'),
         SizedBox(height: 8),
-        Text('· 当前 Flutter 只展示公开商品详情。'),
-        Text('· 余额、订单和背包仍需在既有工作台链路处理。'),
+        Text('· 登录态可从当前商品详情直接购买 1 件。'),
+        Text('· 购买成功后优先进入订单详情确认结果。'),
         Text('· 权益和道具的实际发放以服务端订单结果为准。'),
       ],
+    );
+  }
+}
+
+class _ShopPurchaseStatusNotice extends StatelessWidget {
+  const _ShopPurchaseStatusNotice({
+    required this.message,
+    required this.isError,
+  });
+
+  final String message;
+  final bool isError;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: isError
+            ? colorScheme.errorContainer
+            : colorScheme.tertiaryContainer,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isError ? colorScheme.error : colorScheme.tertiary,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              isError ? Icons.error_outline : Icons.check_circle_outline,
+              color: isError
+                  ? colorScheme.onErrorContainer
+                  : colorScheme.onTertiaryContainer,
+            ),
+            const SizedBox(width: 10),
+            Expanded(child: Text(message)),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -602,10 +1068,25 @@ String _buildAvailabilityText(ShopProductDetail product) {
   }
 
   if (!product.inStock) {
-    return '当前商品暂时缺货，Flutter 不开放购买动作。';
+    return '当前商品暂时缺货，登录后也不能购买。';
   }
 
-  return '当前商品可公开查看，Flutter 本批不开放购买动作。';
+  return '当前商品可公开查看，登录后可直接购买 1 件。';
+}
+
+String _buildPurchaseSuccessNotice(ShopPurchaseResult result) {
+  final orderText = result.orderNo?.trim().isNotEmpty == true
+      ? '订单号 ${result.orderNo}'
+      : result.orderId?.trim().isNotEmpty == true
+          ? '订单 ${result.orderId}'
+          : '服务端未返回订单 ID';
+  final deducted = result.deductedCoins;
+  final remaining = result.remainingBalance;
+  if (deducted != null && remaining != null) {
+    return '购买成功，$orderText。已扣除 $deducted 胡萝卜，剩余 $remaining 胡萝卜。';
+  }
+
+  return '购买成功，$orderText。';
 }
 
 String _formatStock(ShopProductDetail product) {

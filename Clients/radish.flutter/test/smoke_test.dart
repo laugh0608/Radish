@@ -632,7 +632,8 @@ void main() {
     expect(find.text('商品详情'), findsWidgets);
     expect(find.text('公开商品详情'), findsOneWidget);
     expect(find.text('Profile Rename Card'), findsWidgets);
-    expect(find.text('只读购买边界'), findsOneWidget);
+    expect(find.text('单商品购买'), findsOneWidget);
+    expect(find.text('登录后购买'), findsOneWidget);
     expect(find.text('/shop/product/product-4001'), findsOneWidget);
 
     await tester.pageBack();
@@ -2952,6 +2953,31 @@ class _SeededShopRepository implements ShopRepository {
       durationDisplay: '永久',
       isOnSale: true,
       isEnabled: true,
+    );
+  }
+
+  @override
+  Future<ShopProductBuyCheckResult> checkCanBuy({
+    required String accessToken,
+    required String productId,
+    int quantity = 1,
+  }) async {
+    return const ShopProductBuyCheckResult(canBuy: true);
+  }
+
+  @override
+  Future<ShopPurchaseResult> purchaseProduct({
+    required String accessToken,
+    required String productId,
+    required String paymentPassword,
+    int quantity = 1,
+  }) async {
+    return const ShopPurchaseResult(
+      success: true,
+      orderId: '9001',
+      orderNo: 'RO202605310001',
+      deductedCoins: 120,
+      remainingBalance: 880,
     );
   }
 

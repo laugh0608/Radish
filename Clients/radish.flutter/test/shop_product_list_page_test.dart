@@ -37,7 +37,8 @@ void main() {
     expect(find.text('商品详情'), findsWidgets);
     expect(find.text('来源：公开商品列表'), findsOneWidget);
     expect(find.text('返回商城'), findsOneWidget);
-    expect(find.text('只读购买边界'), findsOneWidget);
+    expect(find.text('单商品购买'), findsOneWidget);
+    expect(find.text('登录后购买'), findsOneWidget);
 
     await tester.pageBack();
     await tester.pumpAndSettle();
@@ -124,6 +125,29 @@ class _SeededShopRepository implements ShopRepository {
   }
 
   @override
+  Future<ShopProductBuyCheckResult> checkCanBuy({
+    required String accessToken,
+    required String productId,
+    int quantity = 1,
+  }) async {
+    return const ShopProductBuyCheckResult(canBuy: true);
+  }
+
+  @override
+  Future<ShopPurchaseResult> purchaseProduct({
+    required String accessToken,
+    required String productId,
+    required String paymentPassword,
+    int quantity = 1,
+  }) async {
+    return const ShopPurchaseResult(
+      success: true,
+      orderId: '9001',
+      orderNo: 'RO202605310001',
+    );
+  }
+
+  @override
   Future<ShopOrderPage> getMyOrders({
     required String accessToken,
     required int pageIndex,
@@ -191,6 +215,25 @@ class _FailingShopRepository implements ShopRepository {
     required String productId,
   }) {
     throw const RadishApiClientException('商品不存在');
+  }
+
+  @override
+  Future<ShopProductBuyCheckResult> checkCanBuy({
+    required String accessToken,
+    required String productId,
+    int quantity = 1,
+  }) {
+    throw const RadishApiClientException('购买检查不可用');
+  }
+
+  @override
+  Future<ShopPurchaseResult> purchaseProduct({
+    required String accessToken,
+    required String productId,
+    required String paymentPassword,
+    int quantity = 1,
+  }) {
+    throw const RadishApiClientException('购买不可用');
   }
 
   @override

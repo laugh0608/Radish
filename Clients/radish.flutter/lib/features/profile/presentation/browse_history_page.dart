@@ -188,6 +188,7 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage> {
               initialTitle: item.title,
               sourceLabel: '浏览记录',
               returnLabel: '返回最近访问',
+              accessToken: widget.accessToken,
             ),
           ),
         );

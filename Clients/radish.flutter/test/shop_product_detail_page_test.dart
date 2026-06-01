@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:radish_flutter/core/auth/session_controller.dart';
+import 'package:radish_flutter/core/auth/session_refresh_service.dart';
+import 'package:radish_flutter/core/auth/session_store.dart';
 import 'package:radish_flutter/core/config/app_environment.dart';
 import 'package:radish_flutter/core/network/radish_api_client.dart';
 import 'package:radish_flutter/core/network/radish_api_endpoints.dart';
@@ -9,7 +12,8 @@ import 'package:radish_flutter/features/shop/data/shop_repository.dart';
 import 'package:radish_flutter/features/shop/presentation/shop_product_detail_page.dart';
 
 void main() {
-  testWidgets('renders read-only public shop product detail', (tester) async {
+  testWidgets('renders public shop product detail with login purchase boundary',
+      (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -39,8 +43,12 @@ void main() {
     );
     expect(find.text('Profile Rename Card'), findsWidgets);
     expect(find.text('120 胡萝卜'), findsOneWidget);
-    expect(find.text('只读购买边界'), findsOneWidget);
-    expect(find.text('购买、订单、背包、支付口令和权益激活仍留在后续批次评估。'), findsOneWidget);
+    expect(find.text('单商品购买'), findsOneWidget);
+    expect(find.text('登录后购买'), findsOneWidget);
+    expect(
+      find.text('本批只支持当前商品直接购买 1 件；购物车、退款、权益使用和完整移动商城不在本次范围。'),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text('复制公开链接'));
     await tester.pump();
@@ -70,6 +78,112 @@ void main() {
     expect(find.text('暂时无法加载商品详情'), findsOneWidget);
     expect(find.text('商品不存在'), findsOneWidget);
     expect(find.text('重试'), findsOneWidget);
+  });
+
+  testWidgets('authenticated user purchases product and opens order result',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ShopProductDetailPage(
+          environment: AppEnvironment.development(),
+          repository: _SuccessShopRepository(),
+          productId: '4001',
+          accessToken: 'access-token',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('当前可购买'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), '123456');
+    await tester.tap(find.text('确认购买 1 件'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('订单详情'), findsWidgets);
+    expect(find.text('订单 RO202605310001'), findsOneWidget);
+    expect(find.text('返回商品详情'), findsOneWidget);
+  });
+
+  testWidgets('login request returns to product purchase panel',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: const SessionRefreshService(
+        environment: AppEnvironment.development(),
+      ),
+    );
+    await sessionController.restore();
+    var loginRequested = false;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ShopProductDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: const _SuccessShopRepository(),
+          productId: '4001',
+          sessionController: sessionController,
+          onRequestSignIn: () async {
+            loginRequested = true;
+            await sessionController.setSession(
+              AuthSession(
+                accessToken: 'access-token',
+                refreshToken: 'refresh-token',
+                userId: 'user-42',
+                expiresAt: DateTime.now().toUtc().add(
+                      const Duration(hours: 1),
+                    ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('登录后购买'));
+    await tester.pumpAndSettle();
+
+    expect(loginRequested, isTrue);
+    expect(find.text('已回到商品详情，可以继续确认购买。'), findsOneWidget);
+    expect(find.text('当前可购买'), findsOneWidget);
+  });
+
+  testWidgets('purchase failure stays on detail with explicit error',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ShopProductDetailPage(
+          environment: AppEnvironment.development(),
+          repository: _PurchaseFailingShopRepository(),
+          productId: '4001',
+          accessToken: 'access-token',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '123456');
+    await tester.tap(find.text('确认购买 1 件'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('支付口令错误'), findsOneWidget);
+    expect(find.text('商品详情'), findsWidgets);
   });
 
   test('http shop repository uses public product detail endpoint', () async {
@@ -120,6 +234,49 @@ void main() {
     expect(order.id, '9001');
     expect(order.orderNo, 'RO202605310001');
     expect(order.productId, '4001');
+  });
+
+  test('http shop repository uses private buy check endpoint', () async {
+    final apiClient = _RecordingShopApiClient();
+    final repository = HttpShopRepository(
+      apiClient: apiClient,
+      endpoints: const RadishApiEndpoints(AppEnvironment.development()),
+    );
+
+    final result = await repository.checkCanBuy(
+      accessToken: 'access-token',
+      productId: '4001',
+    );
+
+    expect(apiClient.lastUri?.path, '/api/v1/Shop/CheckCanBuy/4001');
+    expect(apiClient.lastUri?.queryParameters['quantity'], '1');
+    expect(apiClient.lastBearerToken, 'access-token');
+    expect(result.canBuy, isTrue);
+  });
+
+  test('http shop repository posts purchase body to private endpoint',
+      () async {
+    final apiClient = _RecordingShopApiClient();
+    final repository = HttpShopRepository(
+      apiClient: apiClient,
+      endpoints: const RadishApiEndpoints(AppEnvironment.development()),
+    );
+
+    final result = await repository.purchaseProduct(
+      accessToken: 'access-token',
+      productId: '4001',
+      paymentPassword: '123456',
+    );
+
+    expect(apiClient.lastUri?.path, '/api/v1/Shop/Purchase');
+    expect(apiClient.lastBearerToken, 'access-token');
+    expect(apiClient.lastBody, {
+      'productId': '4001',
+      'quantity': 1,
+      'paymentPassword': '123456',
+    });
+    expect(result.success, isTrue);
+    expect(result.orderId, '9001');
   });
 }
 
@@ -178,6 +335,31 @@ class _SuccessShopRepository implements ShopRepository {
   }
 
   @override
+  Future<ShopProductBuyCheckResult> checkCanBuy({
+    required String accessToken,
+    required String productId,
+    int quantity = 1,
+  }) async {
+    return const ShopProductBuyCheckResult(canBuy: true);
+  }
+
+  @override
+  Future<ShopPurchaseResult> purchaseProduct({
+    required String accessToken,
+    required String productId,
+    required String paymentPassword,
+    int quantity = 1,
+  }) async {
+    return const ShopPurchaseResult(
+      success: true,
+      orderId: '9001',
+      orderNo: 'RO202605310001',
+      deductedCoins: 120,
+      remainingBalance: 880,
+    );
+  }
+
+  @override
   Future<ShopOrderPage> getMyOrders({
     required String accessToken,
     required int pageIndex,
@@ -229,6 +411,23 @@ class _SuccessShopRepository implements ShopRepository {
   }
 }
 
+class _PurchaseFailingShopRepository extends _SuccessShopRepository {
+  const _PurchaseFailingShopRepository();
+
+  @override
+  Future<ShopPurchaseResult> purchaseProduct({
+    required String accessToken,
+    required String productId,
+    required String paymentPassword,
+    int quantity = 1,
+  }) async {
+    return const ShopPurchaseResult(
+      success: false,
+      errorMessage: '支付口令错误',
+    );
+  }
+}
+
 class _FailingShopRepository implements ShopRepository {
   const _FailingShopRepository();
 
@@ -245,6 +444,25 @@ class _FailingShopRepository implements ShopRepository {
     required String productId,
   }) {
     throw const RadishApiClientException('商品不存在');
+  }
+
+  @override
+  Future<ShopProductBuyCheckResult> checkCanBuy({
+    required String accessToken,
+    required String productId,
+    int quantity = 1,
+  }) {
+    throw const RadishApiClientException('购买检查不可用');
+  }
+
+  @override
+  Future<ShopPurchaseResult> purchaseProduct({
+    required String accessToken,
+    required String productId,
+    required String paymentPassword,
+    int quantity = 1,
+  }) {
+    throw const RadishApiClientException('购买不可用');
   }
 
   @override
@@ -282,6 +500,7 @@ class _FailingShopRepository implements ShopRepository {
 class _RecordingShopApiClient implements RadishApiClient {
   Uri? lastUri;
   String? lastBearerToken;
+  Object? lastBody;
 
   @override
   Future<T> get<T>({
@@ -291,6 +510,7 @@ class _RecordingShopApiClient implements RadishApiClient {
   }) async {
     lastUri = uri;
     lastBearerToken = bearerToken;
+    lastBody = null;
     if (uri.path == '/api/v1/Shop/GetProducts') {
       return decode({
         'page': 1,
@@ -331,6 +551,13 @@ class _RecordingShopApiClient implements RadishApiClient {
       });
     }
 
+    if (uri.path == '/api/v1/Shop/CheckCanBuy/4001') {
+      return decode({
+        'voCanBuy': true,
+        'voReason': null,
+      });
+    }
+
     return decode({
       'voId': '4001',
       'voName': 'Profile Rename Card',
@@ -358,8 +585,17 @@ class _RecordingShopApiClient implements RadishApiClient {
     required Object? body,
     required JsonFactory<T> decode,
     String? bearerToken,
-  }) {
-    throw UnimplementedError();
+  }) async {
+    lastUri = uri;
+    lastBearerToken = bearerToken;
+    lastBody = body;
+    return decode({
+      'success': true,
+      'orderId': '9001',
+      'orderNo': 'RO202605310001',
+      'deductedCoins': 120,
+      'remainingBalance': 880,
+    });
   }
 
   @override

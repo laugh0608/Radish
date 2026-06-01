@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/auth/native_auth_controller.dart';
+import '../../../core/auth/session_controller.dart';
 import '../../../core/config/app_environment.dart';
 import '../../../core/network/radish_api_client.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
@@ -13,11 +15,19 @@ class ShopProductListPage extends StatefulWidget {
   const ShopProductListPage({
     required this.environment,
     required this.repository,
+    this.accessToken,
+    this.sessionController,
+    this.authController,
+    this.onRequestSignIn,
     super.key,
   });
 
   final AppEnvironment environment;
   final ShopRepository repository;
+  final String? accessToken;
+  final SessionController? sessionController;
+  final NativeAuthController? authController;
+  final Future<void> Function()? onRequestSignIn;
 
   @override
   State<ShopProductListPage> createState() => _ShopProductListPageState();
@@ -157,6 +167,10 @@ class _ShopProductListPageState extends State<ShopProductListPage> {
           initialTitle: product.name,
           sourceLabel: '公开商品列表',
           returnLabel: '返回商城',
+          accessToken: widget.accessToken,
+          sessionController: widget.sessionController,
+          authController: widget.authController,
+          onRequestSignIn: widget.onRequestSignIn,
         ),
       ),
     );

@@ -12,6 +12,19 @@ abstract class ShopRepository {
     required String productId,
   });
 
+  Future<ShopProductBuyCheckResult> checkCanBuy({
+    required String accessToken,
+    required String productId,
+    int quantity = 1,
+  });
+
+  Future<ShopPurchaseResult> purchaseProduct({
+    required String accessToken,
+    required String productId,
+    required String paymentPassword,
+    int quantity = 1,
+  });
+
   Future<ShopOrderPage> getMyOrders({
     required String accessToken,
     required int pageIndex,
@@ -48,6 +61,25 @@ class EmptyShopRepository implements ShopRepository {
     required String productId,
   }) {
     throw const RadishApiClientException('商城详情暂时不可用');
+  }
+
+  @override
+  Future<ShopProductBuyCheckResult> checkCanBuy({
+    required String accessToken,
+    required String productId,
+    int quantity = 1,
+  }) {
+    throw const RadishApiClientException('购买检查暂时不可用');
+  }
+
+  @override
+  Future<ShopPurchaseResult> purchaseProduct({
+    required String accessToken,
+    required String productId,
+    required String paymentPassword,
+    int quantity = 1,
+  }) {
+    throw const RadishApiClientException('购买暂时不可用');
   }
 
   @override
@@ -121,6 +153,69 @@ class HttpShopRepository implements ShopRepository {
     return apiClient.get(
       uri: uri,
       decode: ShopProductDetail.fromJson,
+    );
+  }
+
+  @override
+  Future<ShopProductBuyCheckResult> checkCanBuy({
+    required String accessToken,
+    required String productId,
+    int quantity = 1,
+  }) {
+    final normalizedAccessToken = accessToken.trim();
+    final normalizedProductId = productId.trim();
+    if (normalizedAccessToken.isEmpty) {
+      throw const RadishApiClientException('请先登录后购买商品');
+    }
+    if (normalizedProductId.isEmpty) {
+      throw const RadishApiClientException('购买入口缺少商品 ID');
+    }
+
+    final uri = endpoints.resolveApi(
+      '/api/v1/Shop/CheckCanBuy/$normalizedProductId',
+      queryParameters: {
+        'quantity': quantity.clamp(1, 99).toString(),
+      },
+    );
+
+    return apiClient.get(
+      uri: uri,
+      bearerToken: normalizedAccessToken,
+      decode: ShopProductBuyCheckResult.fromJson,
+    );
+  }
+
+  @override
+  Future<ShopPurchaseResult> purchaseProduct({
+    required String accessToken,
+    required String productId,
+    required String paymentPassword,
+    int quantity = 1,
+  }) {
+    final normalizedAccessToken = accessToken.trim();
+    final normalizedProductId = productId.trim();
+    final normalizedPaymentPassword = paymentPassword.trim();
+    if (normalizedAccessToken.isEmpty) {
+      throw const RadishApiClientException('请先登录后购买商品');
+    }
+    if (normalizedProductId.isEmpty) {
+      throw const RadishApiClientException('购买入口缺少商品 ID');
+    }
+    if (normalizedPaymentPassword.isEmpty) {
+      throw const RadishApiClientException('请输入支付口令');
+    }
+
+    final uri = endpoints.resolveApi('/api/v1/Shop/Purchase');
+
+    return apiClient.post(
+      uri: uri,
+      bearerToken: normalizedAccessToken,
+      body: {
+        'productId': normalizedProductId,
+        'quantity': quantity.clamp(1, 99),
+        'paymentPassword': normalizedPaymentPassword,
+      },
+      decode: ShopPurchaseResult.fromJson,
     );
   }
 

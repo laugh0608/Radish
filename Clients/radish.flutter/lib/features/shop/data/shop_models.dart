@@ -137,6 +137,67 @@ class ShopProductDetail {
   final bool isEnabled;
 }
 
+class ShopProductBuyCheckResult {
+  const ShopProductBuyCheckResult({
+    required this.canBuy,
+    this.reason,
+  });
+
+  factory ShopProductBuyCheckResult.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+
+    return ShopProductBuyCheckResult(
+      canBuy: _readBool(
+        map['voCanBuy'] ?? map['canBuy'],
+      ),
+      reason: _readString(map['voReason'] ?? map['reason']),
+    );
+  }
+
+  final bool canBuy;
+  final String? reason;
+}
+
+class ShopPurchaseResult {
+  const ShopPurchaseResult({
+    required this.success,
+    this.orderId,
+    this.orderNo,
+    this.errorMessage,
+    this.errorCode,
+    this.requiresPasscodeUpgrade = false,
+    this.userBenefitId,
+    this.deductedCoins,
+    this.remainingBalance,
+  });
+
+  factory ShopPurchaseResult.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+
+    return ShopPurchaseResult(
+      success: _readBool(map['success']),
+      orderId: _readString(map['orderId']),
+      orderNo: _readString(map['orderNo']),
+      errorMessage: _readString(map['errorMessage']),
+      errorCode: _readString(map['errorCode']),
+      requiresPasscodeUpgrade: _readBool(map['requiresPasscodeUpgrade']),
+      userBenefitId: _readString(map['userBenefitId']),
+      deductedCoins: _readInt(map['deductedCoins']),
+      remainingBalance: _readInt(map['remainingBalance']),
+    );
+  }
+
+  final bool success;
+  final String? orderId;
+  final String? orderNo;
+  final String? errorMessage;
+  final String? errorCode;
+  final bool requiresPasscodeUpgrade;
+  final String? userBenefitId;
+  final int? deductedCoins;
+  final int? remainingBalance;
+}
+
 class ShopOrderSummary {
   const ShopOrderSummary({
     required this.id,

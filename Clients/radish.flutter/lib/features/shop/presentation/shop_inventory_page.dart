@@ -138,6 +138,7 @@ class _ShopInventoryPageState extends State<ShopInventoryPage> {
           productId: normalizedProductId,
           sourceLabel: '背包来源',
           returnLabel: '返回背包',
+          accessToken: widget.accessToken,
         ),
       ),
     );
