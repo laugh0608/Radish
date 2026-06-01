@@ -74,6 +74,14 @@
 - 缩略图统一走 `/_assets/attachments/{id}/thumbnail`
 - 正文中的资源引用协议统一为 `attachment://{id}`
 
+### 外部 ID 字符串安全
+
+- 服务端内部仍可使用 Snowflake `long` 主键。
+- API 响应、通知 `extData`、公开路由、深链参数、Console 查询参数和 Flutter handoff 中的外部对象 ID，前端都应按字符串消费。
+- JavaScript / TypeScript 侧禁止把用户 ID、帖子 ID、评论 ID、订单 ID、商品 ID、通知 ID 等外部 long 标识提前转成 `number`。
+- Dart / Flutter 侧也应优先把外部对象 ID 建模为 `String`，只有分页、数量、金额、排序权重和枚举状态等真实数值进入 `int`。
+- 需要正式切换 `PublicId` 的对象按 [ID 与联邦路线图](/architecture/id-and-federation-roadmap) 推进；当前要求先保证仍暴露的 LongId 字符串安全。
+
 ## 3. 当前模块索引
 
 下面的分组优先按“手工回归入口”组织，而不是按 Controller 逐个展开。
@@ -110,6 +118,12 @@
 
 - `Radish.Api.User.Profile.http`
 
+对应范围：
+
+- 当前用户资料
+- 公开资料
+- 我的浏览历史 / 最近访问
+
 ### 附件与上传
 
 - `Radish.Api.Attachment.Upload.http`
@@ -123,6 +137,17 @@
 - `Radish.Api.RateLimit.Core.http`
 - `Radish.Api.RateLimit.Policy.http`
 - `Radish.Api.RateLimit.Edge.http`
+
+### 商城与交易
+
+商城购买 / 订单 / 背包接口以 Scalar / OpenAPI 与商城说明文档为准。当前重点接口包括：
+
+- `Shop/CheckCanBuy/{productId}`
+- `Shop/Purchase`
+- `Shop/GetMyOrders`
+- `Shop/GetOrder/{orderId}`
+- `Shop/GetMyBenefits`
+- `Shop/GetMyInventory`
 
 ### 其他专题
 

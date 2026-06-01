@@ -11,74 +11,37 @@
 
 #### 3.1.1 用户注册奖励集成指南
 
-**集成位置**：在用户注册流程中（`Radish.Auth/AccountController.Register` 或 `Radish.Api/UserController.Register`）
+当前统一入口为 `ICoinService.GrantRegistrationRewardAsync(long userId)`，不要在注册、登录补偿或管理员初始化流程里手写 `GrantCoinAsync` 参数。
 
-**实现步骤**：
+当前契约：
 
-1. **注入 ICoinService**：
-   ```csharp
-   private readonly ICoinService _coinService;
+- 奖励金额固定为 `50 胡萝卜`。
+- 交易类型固定为 `SYSTEM_GRANT`。
+- 业务类型固定为 `UserRegistration`。
+- `businessId` 使用真实 `userId`。
+- 备注固定为 `新用户注册奖励`。
+- 方法内部先校验用户存在，再按 `ToUserId + TransactionType + BusinessType + BusinessId + SUCCESS` 做幂等判断。
+- 已发放过时返回既有流水号，不重复增加余额。
 
-   public AccountController(ICoinService coinService, ...)
-   {
-       _coinService = coinService;
-   }
-   ```
+集成位置：
 
-2. **在注册成功后发放奖励**：
-   ```csharp
-   [HttpPost]
-   [AllowAnonymous]
-   public async Task<IActionResult> Register([FromBody] RegisterRequest request)
-   {
-       // 1. 创建用户
-       var userId = await _userService.AddAsync(newUser);
+- 普通注册：用户创建成功后调用。
+- 首个管理员初始化：管理员账号创建成功后调用。
+- 登录补偿：老数据用户登录成功时调用，用于补齐历史缺失的注册奖励。
 
-       // 2. 发放注册奖励（50 胡萝卜）
-       try
-       {
-           await _coinService.GrantCoinAsync(
-               userId: userId,
-               amount: 50,
-               transactionType: "SYSTEM_GRANT",
-               businessType: "UserRegistration",
-               businessId: userId,
-               remark: "新用户注册奖励"
-           );
+示例：
 
-           Log.Information("用户 {UserId} 注册成功，已发放 50 胡萝卜奖励", userId);
-       }
-       catch (Exception ex)
-       {
-           // 注册奖励发放失败不应影响注册流程
-           Log.Error(ex, "用户 {UserId} 注册奖励发放失败", userId);
-       }
+```csharp
+var userId = await _userService.AddAsync(newUser);
+var transactionNo = await _coinService.GrantRegistrationRewardAsync(userId);
+Log.Information("用户 {UserId} 注册奖励发放成功，流水号: {TransactionNo}", userId, transactionNo);
+```
 
-       return Success("注册成功！已赠送 50 胡萝卜");
-   }
-   ```
+错误处理策略：
 
-3. **错误处理策略**：
-   - **推荐**：注册奖励发放失败 **不应影响** 用户注册流程
-   - **原因**：用户注册是核心功能，币奖励是附加功能
-   - **处理**：记录日志，后续可通过对账任务或管理员手动补发
-
-4. **幂等性保证**：
-   ```csharp
-   // 在发放奖励前检查是否已发放过（可选）
-   var existingGrant = await _coinService.GetTransactionsAsync(
-       userId: userId,
-       pageIndex: 1,
-       pageSize: 1,
-       transactionType: "SYSTEM_GRANT"
-   );
-
-   if (existingGrant.Data.Any(t => t.BusinessType == "UserRegistration"))
-   {
-       Log.Warning("用户 {UserId} 已领取过注册奖励，跳过发放", userId);
-       return; // 跳过发放
-   }
-   ```
+- 注册和首个管理员初始化不应“悄悄吞掉”奖励发放失败，否则会形成用户已创建但默认胡萝卜缺失的脏状态。
+- 登录补偿可以依赖幂等判断安全重试，避免重复发放。
+- 如果需要人工调账，Console 调账前必须校验目标是真实用户，不能为不存在的 UserId 创建余额记录。
 
 ### 3.2 互动奖励
 

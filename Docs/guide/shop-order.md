@@ -205,6 +205,35 @@ public class Order : RootEntityTKey<long>, ITenantEntity
 
 ## 4.2 订单创建流程
 
+### 4.2.0 当前接口契约
+
+当前用户侧购买仍采用“一步购买”模型：检查购买资格、创建订单、扣减萝卜币、扣减库存和发放背包权益在服务端购买流程内完成。
+
+移动端和 WebOS 均复用同一组私有接口：
+
+```http
+GET /api/v1/Shop/CheckCanBuy/{productId}?quantity=1
+POST /api/v1/Shop/Purchase
+```
+
+`Purchase` 请求体包含：
+
+```json
+{
+  "productId": "2060964941900283904",
+  "quantity": 1,
+  "paymentPassword": "123456"
+}
+```
+
+契约要求：
+
+- `productId`、订单 ID、用户 ID 等外部传递的 long 标识在前端应按字符串保留，避免 JavaScript 大整数精度丢失。
+- `CheckCanBuy` 只做购买资格预检，返回 `VoCanBuy / VoReason`，不创建订单、不扣款、不扣库存。
+- `Purchase` 在失败时返回失败响应，并在 `responseData.errorMessage` 或响应消息中给出明确原因；调用端不应把失败响应当作成功订单处理。
+- Flutter 当前固定购买 `1` 件商品，成功后打开订单详情确认结果；WebOS 私域商城可继续按既有数量选择和购买弹窗承接。
+- 购物车、退款、权益激活和道具使用不属于当前移动端购买契约。
+
 ### 4.2.1 创建订单服务
 
 ```csharp

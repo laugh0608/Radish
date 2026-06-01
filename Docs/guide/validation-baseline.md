@@ -564,9 +564,9 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 
 ## Flutter Android 人工验收分层
 
-截至 `2026-05-04`，Flutter Android MVP 第一轮 RC 已完成并给出 Go 结论。后续若改动 `Clients/radish.flutter` 下 Android 壳层、`discover / forum / docs / profile` 原生页面、handoff、Android Back、OIDC 回调、本地复访状态、签名配置或 release 构建脚本，仍应按本节补对应开发阶段或 release 前验证。当前人工验收优先覆盖已经具备真实入口、真实数据或可稳定手工触发的链路：登录、退出、会话恢复、`discover / forum / docs / profile` 真实只读读取、forum feed、forum detail、评论阅读、评论分页、评论发布 / 回复、detail 原地登录续接、docs 搜索 / 内链、公开商城列表与只读详情、公开详情链接复制、profile 复访、轻回应发布，以及已登录壳层的轻量 forum notification 列表回流。
+截至 `2026-05-04`，Flutter Android MVP 第一轮 RC 已完成并给出 Go 结论。后续若改动 `Clients/radish.flutter` 下 Android 壳层、`discover / forum / docs / profile` 原生页面、handoff、Android Back、OIDC 回调、本地复访状态、签名配置或 release 构建脚本，仍应按本节补对应开发阶段或 release 前验证。当前人工验收优先覆盖已经具备真实入口、真实数据或可稳定手工触发的链路：登录、退出、会话恢复、`discover / forum / docs / profile` 真实读取、forum feed、forum detail、评论阅读、评论分页、评论发布 / 回复、纯文本发帖、detail 原地登录续接、docs 搜索 / 内链、公开商城列表与商品详情、登录态单商品购买、公开详情链接复制、profile 复访、最近访问、轻回应发布，以及已登录壳层的通知列表回流和单条已读。
 
-轻量 forum notification 回流当前使用站内通知列表作为可测来源：用另一个账号在 Web / 桌面端评论或回复目标用户的帖子 / 评论，接收账号登录 Flutter 后打开 `Forum notification` 列表并选择通知，应能回到对应 forum detail，并在通知携带 `commentId` 时落到评论上下文；详情返回后应回到打开通知前所在 tab。系统通知栏推送、完整通知中心、标记已读、删除通知和通知设置仍不属于当前 Android MVP 阻断项。Forum detail 登录回流还需确认：匿名态从轻回应区或评论区登录后，应分别回到当前轻回应区或评论输入上下文；后续轻回应发布只刷新轻回应墙和局部成功提示，根评论发布或回复只局部更新评论区，不刷新正文、轻回应或来源 tab。具体 checklist 以 `Clients/radish.flutter/README.md` 为准。
+通知回流当前使用站内通知列表作为可测来源：用另一个账号在 Web / 桌面端评论或回复目标用户的帖子 / 评论，接收账号登录 Flutter 后打开通知列表并选择通知，应能回到对应 forum detail，并在通知携带 `commentId` 时落到评论上下文；详情返回后应回到打开通知前所在 tab。单条未读通知可显式标记已读，成功后局部更新状态，失败时保留原状态并提示错误。系统通知栏推送、完整通知中心、批量已读、删除通知和通知设置仍不属于当前 Android MVP 阻断项。Forum detail 登录回流还需确认：匿名态从轻回应区或评论区登录后，应分别回到当前轻回应区或评论输入上下文；后续轻回应发布只刷新轻回应墙和局部成功提示，根评论发布或回复只局部更新评论区，不刷新正文、轻回应或来源 tab。具体 checklist 以 `Clients/radish.flutter/README.md` 为准。
 
 Android MVP 本地 release APK 发布候选当前已完成首轮收口。涉及 Android 包身份、release signing、main manifest 权限、Gateway 基址或 RC 构建脚本时，除 Dart / Android 平台自动化外，还应确认：
 
