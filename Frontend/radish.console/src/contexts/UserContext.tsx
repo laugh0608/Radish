@@ -46,7 +46,7 @@ export function UserProvider({ children }: UserProviderProps) {
       } else {
         if (tokenUserName) {
           setUser({
-            voUserId: 0,
+            voUserId: '',
             voUserName: tokenUserName,
             voTenantId: 0,
             roles: [],
@@ -60,7 +60,7 @@ export function UserProvider({ children }: UserProviderProps) {
       log.error('UserContext', 'Failed to fetch user info:', error);
       if (tokenUserName) {
         setUser({
-          voUserId: 0,
+          voUserId: '',
           voUserName: tokenUserName,
           voTenantId: 0,
           roles: [],

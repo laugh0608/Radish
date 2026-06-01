@@ -2,7 +2,7 @@
  * 用户信息类型（与后端CurrentUserVo对应）
  */
 export interface UserInfo {
-  voUserId: number;
+  voUserId: string;
   voUserName: string;
   voTenantId: number;
   roles?: string[];
@@ -15,7 +15,7 @@ export interface UserInfo {
  * 用户列表项类型（与后端UserVo对应）
  */
 export interface UserListItem {
-  uuid: number;
+  uuid: string;
   voLoginName: string;
   voUserName: string;
   voUserEmail: string;

@@ -5,7 +5,7 @@ import type { UserInfo } from '../types/user';
 type ApiRecord = Record<string, unknown>;
 
 export interface MyProfileInfo {
-  voUserId: number;
+  voUserId: string;
   voUserName: string;
   voUserEmail: string;
   voRealName: string;
@@ -30,7 +30,7 @@ export interface UpdateMyProfileRequest {
 }
 
 export interface UserTimePreferenceVo {
-  voUserId: number;
+  voUserId: string;
   voTimeZoneId: string;
   voIsCustomized: boolean;
   voSystemDefaultTimeZoneId: string;
@@ -61,6 +61,18 @@ function toNumber(value: unknown): number {
 
 function toStringValue(value: unknown, fallback = ''): string {
   return typeof value === 'string' ? value : fallback;
+}
+
+function toIdString(value: unknown): string {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  return '';
 }
 
 function toOptionalString(value: unknown): string | undefined {
@@ -129,7 +141,7 @@ function toParsedResponse<T>(response: ParsedApiResponse<unknown>, data?: T): Pa
 
 function mapMyProfile(raw: ApiRecord): MyProfileInfo {
   return {
-    voUserId: toNumber(raw.voUserId ?? raw.VoUserId),
+    voUserId: toIdString(raw.voUserId ?? raw.VoUserId),
     voUserName: toStringValue(raw.voUserName ?? raw.VoUserName),
     voUserEmail: toStringValue(raw.voUserEmail ?? raw.VoUserEmail),
     voRealName: toStringValue(raw.voRealName ?? raw.VoRealName),
@@ -146,7 +158,7 @@ function mapMyProfile(raw: ApiRecord): MyProfileInfo {
 
 function mapTimePreference(raw: ApiRecord): UserTimePreferenceVo {
   return {
-    voUserId: toNumber(raw.voUserId ?? raw.VoUserId),
+    voUserId: toIdString(raw.voUserId ?? raw.VoUserId),
     voTimeZoneId: toStringValue(raw.voTimeZoneId ?? raw.VoTimeZoneId),
     voIsCustomized: toBoolean(raw.voIsCustomized ?? raw.VoIsCustomized),
     voSystemDefaultTimeZoneId: toStringValue(raw.voSystemDefaultTimeZoneId ?? raw.VoSystemDefaultTimeZoneId, 'Asia/Shanghai'),
@@ -184,7 +196,7 @@ export const userApi = {
         ?? backendData.Permissions
       );
       const mappedData: UserInfo = {
-        voUserId: toNumber(backendData.voUserId ?? backendData.VoUserId),
+        voUserId: toIdString(backendData.voUserId ?? backendData.VoUserId),
         voUserName: toStringValue(backendData.voUserName ?? backendData.VoUserName),
         voTenantId: toNumber(backendData.voTenantId ?? backendData.VoTenantId),
         voAvatarUrl: toOptionalString(backendData.voAvatarUrl ?? backendData.VoAvatarUrl),
