@@ -269,6 +269,116 @@ class UserQuickReplyPage {
   final List<UserQuickReplySummary> items;
 }
 
+class UserBrowseHistoryItem {
+  const UserBrowseHistoryItem({
+    required this.id,
+    required this.targetType,
+    required this.targetTypeDisplay,
+    required this.targetId,
+    required this.title,
+    required this.viewCount,
+    required this.lastViewTime,
+    this.targetSlug,
+    this.summary,
+    this.coverImage,
+    this.routePath,
+  });
+
+  factory UserBrowseHistoryItem.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+    final targetType = _readString(map['voTargetType']) ?? 'Unknown';
+
+    return UserBrowseHistoryItem(
+      id: _readRequiredId(map, 'voId'),
+      targetType: targetType,
+      targetTypeDisplay: _readString(map['voTargetTypeDisplay']) ??
+          _formatTargetType(targetType),
+      targetId: _readRequiredId(map, 'voTargetId'),
+      targetSlug: _readString(map['voTargetSlug']),
+      title: _readString(map['voTitle']) ?? '未命名记录',
+      summary: _readString(map['voSummary']),
+      coverImage: _readString(map['voCoverImage']),
+      routePath: _readString(map['voRoutePath']),
+      viewCount: _readInt(map['voViewCount']) ?? 0,
+      lastViewTime: _readString(map['voLastViewTime']) ?? '',
+    );
+  }
+
+  final String id;
+  final String targetType;
+  final String targetTypeDisplay;
+  final String targetId;
+  final String? targetSlug;
+  final String title;
+  final String? summary;
+  final String? coverImage;
+  final String? routePath;
+  final int viewCount;
+  final String lastViewTime;
+
+  String get navigationId {
+    final normalizedRoutePath = routePath?.trim();
+    if (normalizedRoutePath != null && normalizedRoutePath.isNotEmpty) {
+      final routedId = _readLastPathSegment(normalizedRoutePath);
+      if (routedId != null) {
+        return routedId;
+      }
+    }
+
+    final normalizedSlug = targetSlug?.trim();
+    if (normalizedSlug != null && normalizedSlug.isNotEmpty) {
+      return normalizedSlug;
+    }
+
+    return targetId;
+  }
+
+  bool get canOpen {
+    final normalizedType = targetType.trim().toLowerCase();
+    return navigationId.trim().isNotEmpty &&
+        (normalizedType == 'post' ||
+            normalizedType == 'wiki' ||
+            normalizedType == 'product');
+  }
+}
+
+class UserBrowseHistoryPage {
+  const UserBrowseHistoryPage({
+    required this.page,
+    required this.pageSize,
+    required this.total,
+    required this.items,
+  });
+
+  factory UserBrowseHistoryPage.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+    final data = map['voItems'];
+    final items = data is List
+        ? data.map(UserBrowseHistoryItem.fromJson).toList()
+        : const <UserBrowseHistoryItem>[];
+
+    return UserBrowseHistoryPage(
+      page: _readInt(map['voPageIndex']) ?? 1,
+      pageSize: _readInt(map['voPageSize']) ?? items.length,
+      total: _readInt(map['voTotal']) ?? items.length,
+      items: items,
+    );
+  }
+
+  final int page;
+  final int pageSize;
+  final int total;
+  final List<UserBrowseHistoryItem> items;
+
+  int get pageCount {
+    if (pageSize <= 0 || total <= 0) {
+      return 1;
+    }
+
+    return (total + pageSize - 1) ~/ pageSize;
+  }
+}
+
 Map<String, Object?> _readJsonMap(Object? json) {
   if (json is Map) {
     return Map<String, Object?>.from(json.cast<Object?, Object?>());
@@ -305,4 +415,33 @@ int? _readInt(Object? value) {
   }
 
   return int.tryParse(value?.toString() ?? '');
+}
+
+String _formatTargetType(String targetType) {
+  switch (targetType.trim().toLowerCase()) {
+    case 'post':
+      return '帖子';
+    case 'product':
+      return '商品';
+    case 'wiki':
+      return '文档';
+    default:
+      return targetType.trim().isEmpty ? '记录' : targetType.trim();
+  }
+}
+
+String? _readLastPathSegment(String routePath) {
+  final normalized = routePath.trim();
+  if (normalized.isEmpty) {
+    return null;
+  }
+
+  final uri = Uri.tryParse(normalized);
+  final segments =
+      uri?.pathSegments.where((segment) => segment.isNotEmpty).toList();
+  if (segments == null || segments.isEmpty) {
+    return null;
+  }
+
+  return Uri.decodeComponent(segments.last);
 }

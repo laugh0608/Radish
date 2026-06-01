@@ -28,6 +28,12 @@ abstract class ProfileRepository {
     required int pageSize,
     required String accessToken,
   });
+
+  Future<UserBrowseHistoryPage> getMyBrowseHistory({
+    required int pageIndex,
+    required int pageSize,
+    required String accessToken,
+  });
 }
 
 class HttpProfileRepository implements ProfileRepository {
@@ -133,6 +139,27 @@ class HttpProfileRepository implements ProfileRepository {
       uri: uri,
       bearerToken: accessToken,
       decode: UserQuickReplyPage.fromJson,
+    );
+  }
+
+  @override
+  Future<UserBrowseHistoryPage> getMyBrowseHistory({
+    required int pageIndex,
+    required int pageSize,
+    required String accessToken,
+  }) {
+    final uri = endpoints.resolveApi(
+      '/api/v1/User/GetMyBrowseHistory',
+      queryParameters: {
+        'pageIndex': pageIndex.toString(),
+        'pageSize': pageSize.toString(),
+      },
+    );
+
+    return apiClient.get(
+      uri: uri,
+      bearerToken: accessToken,
+      decode: UserBrowseHistoryPage.fromJson,
     );
   }
 }

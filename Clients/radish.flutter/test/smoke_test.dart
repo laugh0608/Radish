@@ -219,7 +219,7 @@ void main() {
         discoverRepository: _FakeDiscoverRepository(),
         docsRepository: _FakeDocsRepository(),
         forumRepository: _FakeForumRepository(),
-        profileRepository: _FakeProfileRepository(),
+        profileRepository: _SeededProfileRepository(),
         shopRepository: const _SeededShopRepository(),
         walletRepository: const _SeededWalletRepository(),
         experienceRepository: const _SeededExperienceRepository(),
@@ -235,6 +235,7 @@ void main() {
     expect(find.text('查看背包'), findsOneWidget);
     expect(find.text('查看胡萝卜资产'), findsOneWidget);
     expect(find.text('查看经验记录'), findsOneWidget);
+    expect(find.text('查看最近访问'), findsOneWidget);
 
     await tester.tap(find.text('查看商城订单'));
     await tester.pumpAndSettle();
@@ -329,6 +330,32 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('查看经验记录'), findsOneWidget);
+
+    await tester.tap(find.text('查看最近访问'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('最近访问'), findsWidgets);
+    expect(find.text('已加载 3 / 3 条记录'), findsOneWidget);
+    expect(find.text('论坛详情回流'), findsOneWidget);
+    expect(find.text('Native docs'), findsOneWidget);
+    expect(find.text('Early Access Badge'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilledButton, '打开详情').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('商品详情'), findsWidgets);
+    expect(find.text('来源：浏览记录'), findsOneWidget);
+    expect(find.text('返回最近访问'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('最近访问'), findsWidgets);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('查看最近访问'), findsOneWidget);
   });
 
   testWidgets('discover handoff opens guest profile target in shell',
@@ -3880,6 +3907,20 @@ class _FakeProfileRepository implements ProfileRepository {
       items: [],
     );
   }
+
+  @override
+  Future<UserBrowseHistoryPage> getMyBrowseHistory({
+    required int pageIndex,
+    required int pageSize,
+    required String accessToken,
+  }) async {
+    return const UserBrowseHistoryPage(
+      page: 1,
+      pageSize: 20,
+      total: 0,
+      items: [],
+    );
+  }
 }
 
 class _SeededLeaderboardRepository implements LeaderboardRepository {
@@ -4155,6 +4196,52 @@ class _SeededProfileRepository implements ProfileRepository {
           postTitle: '论坛详情回流',
           content: '这个回流很好用',
           createTime: '2026-04-20T09:10:00Z',
+        ),
+      ],
+    );
+  }
+
+  @override
+  Future<UserBrowseHistoryPage> getMyBrowseHistory({
+    required int pageIndex,
+    required int pageSize,
+    required String accessToken,
+  }) async {
+    return const UserBrowseHistoryPage(
+      page: 1,
+      pageSize: 20,
+      total: 3,
+      items: [
+        UserBrowseHistoryItem(
+          id: 'history-post-42',
+          targetType: 'Post',
+          targetTypeDisplay: '帖子',
+          targetId: '42',
+          title: '论坛详情回流',
+          routePath: '/forum/post/post-42',
+          viewCount: 3,
+          lastViewTime: '2026-04-20T09:20:00Z',
+        ),
+        UserBrowseHistoryItem(
+          id: 'history-docs-42',
+          targetType: 'Wiki',
+          targetTypeDisplay: '文档',
+          targetId: '43',
+          targetSlug: 'native-docs',
+          title: 'Native docs',
+          routePath: '/docs/native-docs',
+          viewCount: 2,
+          lastViewTime: '2026-04-20T09:10:00Z',
+        ),
+        UserBrowseHistoryItem(
+          id: 'history-product-42',
+          targetType: 'Product',
+          targetTypeDisplay: '商品',
+          targetId: '1001',
+          title: 'Early Access Badge',
+          routePath: '/shop/products/1001',
+          viewCount: 1,
+          lastViewTime: '2026-04-20T09:00:00Z',
         ),
       ],
     );

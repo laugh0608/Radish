@@ -31,6 +31,7 @@ class ProfilePage extends StatefulWidget {
     this.onOpenShopInventory,
     this.onOpenWallet,
     this.onOpenExperience,
+    this.onOpenBrowseHistory,
     this.onRequestSignIn,
     super.key,
   });
@@ -53,6 +54,7 @@ class ProfilePage extends StatefulWidget {
   final VoidCallback? onOpenShopInventory;
   final VoidCallback? onOpenWallet;
   final VoidCallback? onOpenExperience;
+  final VoidCallback? onOpenBrowseHistory;
   final Future<void> Function()? onRequestSignIn;
 
   @override
@@ -273,6 +275,12 @@ class _ProfilePageState extends State<ProfilePage> {
                     onPressed: widget.onOpenExperience,
                     icon: const Icon(Icons.auto_graph_outlined),
                     label: const Text('查看经验记录'),
+                  ),
+                if (isMyProfile && widget.onOpenBrowseHistory != null)
+                  FilledButton.tonalIcon(
+                    onPressed: widget.onOpenBrowseHistory,
+                    icon: const Icon(Icons.manage_search_outlined),
+                    label: const Text('查看最近访问'),
                   ),
                 if (hasTargetUser)
                   FilledButton.tonalIcon(

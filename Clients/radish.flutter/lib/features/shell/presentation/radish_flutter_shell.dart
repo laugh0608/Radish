@@ -20,6 +20,7 @@ import '../../../features/leaderboard/data/leaderboard_repository.dart';
 import '../../../features/leaderboard/presentation/leaderboard_page.dart';
 import '../../../features/notifications/data/notification_repository.dart';
 import '../../../features/profile/data/profile_repository.dart';
+import '../../../features/profile/presentation/browse_history_page.dart';
 import '../../../features/discover/presentation/discover_page.dart';
 import '../../../features/docs/presentation/docs_page.dart';
 import '../../../features/forum/presentation/forum_page.dart';
@@ -616,6 +617,32 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     );
   }
 
+  Future<void> _openBrowseHistoryFromProfile() async {
+    final accessToken =
+        widget.sessionController.state.session?.accessToken.trim();
+    if (accessToken == null || accessToken.isEmpty) {
+      await _startLoginForProfile();
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => BrowseHistoryPage(
+          environment: widget.environment,
+          repository: widget.profileRepository,
+          shopRepository: widget.shopRepository,
+          accessToken: accessToken,
+          onOpenForumDetailTarget: _openForumDetailTarget,
+          onOpenDocsDetailTarget: _openDocsDetailTarget,
+        ),
+      ),
+    );
+  }
+
   void _resumeRecentDocumentTarget() {
     final target = _recentDocumentTarget;
     if (target == null) {
@@ -1036,6 +1063,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
             onOpenShopInventory: _openShopInventoryFromProfile,
             onOpenWallet: _openWalletFromProfile,
             onOpenExperience: _openExperienceFromProfile,
+            onOpenBrowseHistory: _openBrowseHistoryFromProfile,
             onRequestSignIn: _startLoginForProfile,
           ),
         ];

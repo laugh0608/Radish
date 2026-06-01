@@ -1739,6 +1739,53 @@ class _SuccessProfileRepository implements ProfileRepository {
       ],
     );
   }
+
+  @override
+  Future<UserBrowseHistoryPage> getMyBrowseHistory({
+    required int pageIndex,
+    required int pageSize,
+    required String accessToken,
+  }) async {
+    return const UserBrowseHistoryPage(
+      page: 1,
+      pageSize: 20,
+      total: 3,
+      items: [
+        UserBrowseHistoryItem(
+          id: 'history-post-1',
+          targetType: 'Post',
+          targetTypeDisplay: '帖子',
+          targetId: '1001',
+          title: 'Native profile follow-up',
+          summary: 'Expand the public profile beyond a single info card.',
+          routePath: '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f801',
+          viewCount: 2,
+          lastViewTime: '2026-04-20T09:30:00Z',
+        ),
+        UserBrowseHistoryItem(
+          id: 'history-docs-1',
+          targetType: 'Wiki',
+          targetTypeDisplay: '文档',
+          targetId: '1002',
+          targetSlug: 'flutter-docs-scope',
+          title: 'Radish Flutter docs scope',
+          routePath: '/docs/flutter-docs-scope',
+          viewCount: 1,
+          lastViewTime: '2026-04-20T09:20:00Z',
+        ),
+        UserBrowseHistoryItem(
+          id: 'history-product-1',
+          targetType: 'Product',
+          targetTypeDisplay: '商品',
+          targetId: '1003',
+          title: 'Early Access Badge',
+          routePath: '/shop/products/1003',
+          viewCount: 1,
+          lastViewTime: '2026-04-20T09:10:00Z',
+        ),
+      ],
+    );
+  }
 }
 
 class _LongTextProfileRepository extends _SuccessProfileRepository {
@@ -1849,6 +1896,15 @@ class _FailingProfileRepository implements ProfileRepository {
     required String accessToken,
   }) {
     throw const RadishApiClientException('轻回应服务暂时不可用');
+  }
+
+  @override
+  Future<UserBrowseHistoryPage> getMyBrowseHistory({
+    required int pageIndex,
+    required int pageSize,
+    required String accessToken,
+  }) {
+    throw const RadishApiClientException('浏览记录服务暂时不可用');
   }
 }
 
