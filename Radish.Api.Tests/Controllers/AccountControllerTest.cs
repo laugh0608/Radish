@@ -8,12 +8,14 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Moq;
 using OpenIddict.Abstractions;
 using Radish.Auth.Controllers;
 using Radish.Auth.Resources;
+using Radish.Auth.ViewModels.Account;
 using Radish.Common.HttpContextTool;
 using Radish.Common.HelpTool;
 using Radish.IService;
@@ -26,6 +28,48 @@ namespace Radish.Api.Tests.Controllers;
 [TestSubject(typeof(AccountController))]
 public class AccountControllerTest
 {
+    [Fact]
+    public async Task Register_ShouldGrantRegistrationReward_WhenUserCreated()
+    {
+        const long userId = 123456;
+        var userServiceMock = new Mock<IUserService>();
+        userServiceMock
+            .Setup(service => service.QueryAsync(It.IsAny<Expression<Func<User, bool>>>()))
+            .ReturnsAsync(new List<UserVo>());
+        userServiceMock
+            .Setup(service => service.AddAsync(It.IsAny<User>()))
+            .ReturnsAsync(userId);
+
+        var errorsLocalizer = new Mock<IStringLocalizer<Errors>>();
+        var applicationManager = new Mock<IOpenIddictApplicationManager>();
+        var coinService = new Mock<ICoinService>();
+        coinService
+            .Setup(service => service.GrantRegistrationRewardAsync(userId))
+            .ReturnsAsync("TXN_REGISTER_123456");
+
+        var httpContext = new DefaultHttpContext();
+        var controller = new AccountController(errorsLocalizer.Object, userServiceMock.Object, applicationManager.Object, coinService.Object)
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = httpContext
+            },
+            TempData = new TempDataDictionary(httpContext, Mock.Of<ITempDataProvider>())
+        };
+
+        var result = await controller.Register(new RegisterViewModel
+        {
+            Username = "newuser",
+            Password = "test123456",
+            ConfirmPassword = "test123456",
+            Email = "newuser@radish.test"
+        });
+
+        var redirect = Assert.IsType<RedirectToActionResult>(result);
+        Assert.Equal("Login", redirect.ActionName);
+        coinService.Verify(service => service.GrantRegistrationRewardAsync(userId), Times.Once);
+    }
+
     [Fact]
     public async Task Login_ShouldSignInAndRedirect_WhenCredentialsValid()
     {
@@ -77,8 +121,12 @@ public class AccountControllerTest
 
         var applicationManager = new Mock<IOpenIddictApplicationManager>();
         applicationManager.Setup(m => m.FindByClientIdAsync(It.IsAny<string>(), default)).ReturnsAsync((object?)null);
+        var coinService = new Mock<ICoinService>();
+        coinService
+            .Setup(service => service.GrantRegistrationRewardAsync(userVo.Uuid))
+            .ReturnsAsync("TXN_REGISTER_1");
 
-        var controller = new AccountController(errorsLocalizer.Object, userServiceMock.Object, applicationManager.Object)
+        var controller = new AccountController(errorsLocalizer.Object, userServiceMock.Object, applicationManager.Object, coinService.Object)
         {
             ControllerContext = new ControllerContext
             {
@@ -113,5 +161,6 @@ public class AccountControllerTest
         Assert.DoesNotContain(signInPrincipal.Claims, claim => claim.Type == ClaimTypes.NameIdentifier);
         Assert.DoesNotContain(signInPrincipal.Claims, claim => claim.Type == ClaimTypes.Name);
         Assert.DoesNotContain(signInPrincipal.Claims, claim => claim.Type == ClaimTypes.Role);
+        coinService.Verify(service => service.GrantRegistrationRewardAsync(userVo.Uuid), Times.Once);
     }
 }

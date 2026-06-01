@@ -19,9 +19,15 @@ namespace Radish.Service;
 public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
 {
     private readonly IUserBalanceRepository _userBalanceRepository;
+    private readonly IBaseRepository<User> _userRepository;
     private readonly IBaseRepository<CoinTransaction> _coinTransactionRepository;
     private readonly IBaseRepository<BalanceChangeLog> _balanceChangeLogRepository;
     private readonly IPaymentPasswordService _paymentPasswordService;
+
+    private const long RegistrationRewardAmount = 50;
+    private const string RegistrationRewardTransactionType = "SYSTEM_GRANT";
+    private const string RegistrationRewardBusinessType = "UserRegistration";
+    private const string RegistrationRewardRemark = "新用户注册奖励";
 
     /// <summary>乐观锁冲突重试次数</summary>
     private const int MaxRetryCount = 3;
@@ -32,12 +38,14 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
     public CoinService(
         IMapper mapper,
         IUserBalanceRepository userBalanceRepository,
+        IBaseRepository<User> userRepository,
         IBaseRepository<CoinTransaction> coinTransactionRepository,
         IBaseRepository<BalanceChangeLog> balanceChangeLogRepository,
         IPaymentPasswordService paymentPasswordService)
         : base(mapper, userBalanceRepository)
     {
         _userBalanceRepository = userBalanceRepository;
+        _userRepository = userRepository;
         _coinTransactionRepository = coinTransactionRepository;
         _balanceChangeLogRepository = balanceChangeLogRepository;
         _paymentPasswordService = paymentPasswordService;
@@ -52,6 +60,8 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
     {
         try
         {
+            await EnsureUserExistsAsync(userId);
+
             var userBalance = await _userBalanceRepository.QueryFirstAsync(b => b.UserId == userId && !b.IsDeleted);
 
             if (userBalance == null)
@@ -190,6 +200,8 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
                 throw new ArgumentException("交易类型不能为空", nameof(transactionType));
             }
 
+            await EnsureUserExistsAsync(userId);
+
             Log.Information("开始发放萝卜币：用户={UserId}, 金额={Amount}, 类型={TransactionType}",
                 userId, amount, transactionType);
 
@@ -212,6 +224,34 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
     }
 
     /// <summary>
+    /// 确保用户已获得注册默认奖励。
+    /// </summary>
+    public async Task<string> GrantRegistrationRewardAsync(long userId)
+    {
+        await EnsureUserExistsAsync(userId);
+
+        var existingReward = await _coinTransactionRepository.QueryFirstAsync(t =>
+            t.ToUserId == userId &&
+            t.TransactionType == RegistrationRewardTransactionType &&
+            t.BusinessType == RegistrationRewardBusinessType &&
+            t.BusinessId == userId &&
+            t.Status == "SUCCESS");
+
+        if (existingReward != null)
+        {
+            return existingReward.TransactionNo;
+        }
+
+        return await GrantCoinAsync(
+            userId,
+            RegistrationRewardAmount,
+            RegistrationRewardTransactionType,
+            RegistrationRewardBusinessType,
+            userId,
+            RegistrationRewardRemark);
+    }
+
+    /// <summary>
     /// 扣除萝卜币（商城消费等）
     /// </summary>
     public async Task<(long transactionId, string transactionNo)> ConsumeCoinAsync(
@@ -227,6 +267,8 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
             {
                 throw new ArgumentException("扣除金额必须大于 0", nameof(amount));
             }
+
+            await EnsureUserExistsAsync(userId);
 
             Log.Information("开始扣除萝卜币：用户={UserId}, 金额={Amount}, 业务={BusinessType}, 业务ID={BusinessId}",
                 userId, amount, businessType, businessId);
@@ -942,6 +984,8 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
                 throw new ArgumentException("调整原因不能为空", nameof(reason));
             }
 
+            await EnsureUserExistsAsync(userId);
+
             Log.Information("管理员调整余额：用户={UserId}, 金额={DeltaAmount}, 操作员={OperatorName}, 原因={Reason}",
                 userId, deltaAmount, operatorName, reason);
 
@@ -1114,6 +1158,20 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
 
         // 理论上不会执行到这里，但为了类型安全
         throw lastException ?? new ConcurrencyException("重试失败");
+    }
+
+    private async Task EnsureUserExistsAsync(long userId)
+    {
+        if (userId <= 0)
+        {
+            throw new ArgumentException("用户 ID 必须大于 0", nameof(userId));
+        }
+
+        var user = await _userRepository.QueryFirstAsync(u => u.Id == userId && !u.IsDeleted);
+        if (user == null)
+        {
+            throw new InvalidOperationException($"用户不存在或已删除：{userId}");
+        }
     }
 
     private static bool IsUniqueConstraintConflict(Exception ex, string? token = null)

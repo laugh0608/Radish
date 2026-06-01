@@ -32,13 +32,13 @@ public class AccountController : Controller
     private readonly IStringLocalizer<Errors> _errorsLocalizer;
     private readonly IUserService _userService;
     private readonly IOpenIddictApplicationManager _applicationManager;
-    private readonly ICoinService? _coinService;
+    private readonly ICoinService _coinService;
 
     public AccountController(
         IStringLocalizer<Errors> errorsLocalizer,
         IUserService userService,
         IOpenIddictApplicationManager applicationManager,
-        ICoinService? coinService = null)  // 可选注入，避免循环依赖
+        ICoinService coinService)
     {
         _errorsLocalizer = errorsLocalizer;
         _userService = userService;
@@ -111,6 +111,8 @@ public class AccountController : Controller
             TempData["LoginError"] = _errorsLocalizer["auth.login.error.invalidCredentials"].Value;
             return RedirectToAction(nameof(Login), new { returnUrl, username });
         }
+
+        await _coinService.GrantRegistrationRewardAsync(user.Uuid);
 
         // 3. 密码验证成功，生成会话
         var userId = user.Uuid.ToString();
@@ -258,32 +260,8 @@ public class AccountController : Controller
             Log.Information("用户 {Username} (ID: {UserId}) 注册成功", model.Username, userId);
 
             // 5. 发放注册奖励（50 胡萝卜）
-            if (_coinService != null)
-            {
-                try
-                {
-                    var transactionNo = await _coinService.GrantCoinAsync(
-                        userId: userId,
-                        amount: 50,  // 50 胡萝卜
-                        transactionType: "SYSTEM_GRANT",
-                        businessType: "UserRegistration",
-                        businessId: userId,
-                        remark: "新用户注册奖励"
-                    );
-
-                    Log.Information("用户 {UserId} 注册奖励发放成功，流水号: {TransactionNo}", userId, transactionNo);
-                }
-                catch (Exception ex)
-                {
-                    // 注册奖励发放失败不应影响注册流程
-                    // 记录错误日志，后续可通过对账任务补发
-                    Log.Error(ex, "用户 {UserId} 注册奖励发放失败", userId);
-                }
-            }
-            else
-            {
-                Log.Warning("CoinService 未注入，跳过注册奖励发放");
-            }
+            var transactionNo = await _coinService.GrantRegistrationRewardAsync(userId);
+            Log.Information("用户 {UserId} 注册奖励发放成功，流水号: {TransactionNo}", userId, transactionNo);
 
             // 6. 注册成功，跳转到登录页
             TempData["RegisterSuccess"] = "注册成功！已赠送 50 胡萝卜，请登录。";
