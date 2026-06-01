@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AntModal, AntInput } from '@radish/ui';
 import { SearchOutlined } from '@radish/ui';
-import { useUser } from '@/contexts/UserContext';
+import { useUser } from '@/hooks/useUser';
 import { getSearchableRoutes } from '@/router/routeMeta';
 import './GlobalSearch.css';
 
@@ -125,20 +125,4 @@ export function GlobalSearch({ visible, onClose }: GlobalSearchProps) {
       </div>
     </AntModal>
   );
-}
-
-export function useGlobalSearchHotkey(onOpen: () => void) {
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        onOpen();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [onOpen]);
 }

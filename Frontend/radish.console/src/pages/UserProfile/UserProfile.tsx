@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useUser } from '@/contexts/UserContext';
+import { useUser } from '@/hooks/useUser';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   AntInput as Input,
