@@ -1072,6 +1072,9 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
             authController: widget.authController,
             onOpenProfileUser: _openProfileUserFromCurrentTab,
             onOpenForumDetailTarget: _openForumDetailTarget,
+            onRequestSignInForForum: () => _startLoginForTarget(
+              const ShellPostLoginTarget(tabIndex: _forumTabIndex),
+            ),
             onRequestSignInForDetail: _startLoginForForumDetail,
             onConsumeActiveDetailLoginTarget:
                 _clearInPlaceForumDetailLoginTarget,

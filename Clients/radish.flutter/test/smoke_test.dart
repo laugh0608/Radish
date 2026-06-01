@@ -3348,6 +3348,16 @@ class _LinkedDocsRepository extends _FakeDocsRepository {
 
 class _FakeForumRepository implements ForumRepository {
   @override
+  Future<List<ForumCategorySummary>> getTopCategories() async {
+    return const [
+      ForumCategorySummary(
+        id: 'category-1',
+        name: 'General',
+      ),
+    ];
+  }
+
+  @override
   Future<ForumPostPage> getPostPage({
     required int pageIndex,
     required int pageSize,
@@ -3467,9 +3477,30 @@ class _FakeForumRepository implements ForumRepository {
   }) async {
     return 'comment-created';
   }
+
+  @override
+  Future<String> createPost({
+    required String title,
+    required String content,
+    required String categoryId,
+    required List<String> tagNames,
+    required String accessToken,
+  }) async {
+    return 'post-created';
+  }
 }
 
 class _SeededForumRepository implements ForumRepository {
+  @override
+  Future<List<ForumCategorySummary>> getTopCategories() async {
+    return const [
+      ForumCategorySummary(
+        id: 'category-1',
+        name: 'General',
+      ),
+    ];
+  }
+
   @override
   Future<ForumPostPage> getPostPage({
     required int pageIndex,
@@ -3687,9 +3718,30 @@ class _SeededForumRepository implements ForumRepository {
   }) async {
     return 'comment-created';
   }
+
+  @override
+  Future<String> createPost({
+    required String title,
+    required String content,
+    required String categoryId,
+    required List<String> tagNames,
+    required String accessToken,
+  }) async {
+    return 'post-created';
+  }
 }
 
 class _SeededBigIdForumRepository implements ForumRepository {
+  @override
+  Future<List<ForumCategorySummary>> getTopCategories() async {
+    return const [
+      ForumCategorySummary(
+        id: '9',
+        name: 'Engineering',
+      ),
+    ];
+  }
+
   @override
   Future<ForumPostPage> getPostPage({
     required int pageIndex,
@@ -3842,6 +3894,17 @@ class _SeededBigIdForumRepository implements ForumRepository {
     String? replyToUserName,
   }) async {
     return 'comment-created';
+  }
+
+  @override
+  Future<String> createPost({
+    required String title,
+    required String content,
+    required String categoryId,
+    required List<String> tagNames,
+    required String accessToken,
+  }) async {
+    return '2042219067430928399';
   }
 }
 

@@ -3,6 +3,8 @@ import '../../../core/network/radish_api_endpoints.dart';
 import 'forum_models.dart';
 
 abstract class ForumRepository {
+  Future<List<ForumCategorySummary>> getTopCategories();
+
   Future<ForumPostPage> getPostPage({
     required int pageIndex,
     required int pageSize,
@@ -53,6 +55,14 @@ abstract class ForumRepository {
     String? replyToCommentSnapshot,
     String? replyToUserName,
   });
+
+  Future<String> createPost({
+    required String title,
+    required String content,
+    required String categoryId,
+    required List<String> tagNames,
+    required String accessToken,
+  });
 }
 
 class HttpForumRepository implements ForumRepository {
@@ -63,6 +73,16 @@ class HttpForumRepository implements ForumRepository {
 
   final RadishApiClient apiClient;
   final RadishApiEndpoints endpoints;
+
+  @override
+  Future<List<ForumCategorySummary>> getTopCategories() {
+    final uri = endpoints.resolveApi('/api/v1/Category/GetTopCategories');
+
+    return apiClient.get(
+      uri: uri,
+      decode: _readForumCategories,
+    );
+  }
 
   @override
   Future<ForumPostPage> getPostPage({
@@ -245,6 +265,48 @@ class HttpForumRepository implements ForumRepository {
       decode: _readCreatedCommentId,
     );
   }
+
+  @override
+  Future<String> createPost({
+    required String title,
+    required String content,
+    required String categoryId,
+    required List<String> tagNames,
+    required String accessToken,
+  }) {
+    final normalizedTitle = title.trim();
+    final normalizedContent = content.trim();
+    final normalizedCategoryId = categoryId.trim();
+    final normalizedTags = tagNames
+        .map((tag) => tag.trim())
+        .where((tag) => tag.isNotEmpty)
+        .toSet()
+        .toList();
+    final uri = endpoints.resolveApi('/api/v1/Post/Publish');
+
+    return apiClient.post(
+      uri: uri,
+      body: {
+        'title': normalizedTitle,
+        'content': normalizedContent,
+        'contentType': 'text',
+        'categoryId':
+            int.tryParse(normalizedCategoryId) ?? normalizedCategoryId,
+        'tagNames': normalizedTags,
+        'isQuestion': false,
+      },
+      bearerToken: accessToken,
+      decode: _readCreatedPostId,
+    );
+  }
+}
+
+List<ForumCategorySummary> _readForumCategories(Object? json) {
+  if (json is! List) {
+    return const <ForumCategorySummary>[];
+  }
+
+  return json.map(ForumCategorySummary.fromJson).toList();
 }
 
 Object? _readNumericOrString(String? value) {
@@ -265,6 +327,15 @@ String _readCreatedCommentId(Object? json) {
   final value = json?.toString().trim();
   if (value == null || value.isEmpty) {
     throw const FormatException('Missing created comment id.');
+  }
+
+  return value;
+}
+
+String _readCreatedPostId(Object? json) {
+  final value = json?.toString().trim();
+  if (value == null || value.isEmpty) {
+    throw const FormatException('Missing created post id.');
   }
 
   return value;

@@ -749,6 +749,16 @@ void main() {
 
 abstract class _BaseForumRepository implements ForumRepository {
   @override
+  Future<List<ForumCategorySummary>> getTopCategories() async {
+    return const [
+      ForumCategorySummary(
+        id: 'category-1',
+        name: 'General',
+      ),
+    ];
+  }
+
+  @override
   Future<ForumPostPage> getPostPage({
     required int pageIndex,
     required int pageSize,
@@ -870,6 +880,17 @@ abstract class _BaseForumRepository implements ForumRepository {
     String? replyToUserName,
   }) async {
     return 'comment-created';
+  }
+
+  @override
+  Future<String> createPost({
+    required String title,
+    required String content,
+    required String categoryId,
+    required List<String> tagNames,
+    required String accessToken,
+  }) async {
+    return 'post-created';
   }
 }
 

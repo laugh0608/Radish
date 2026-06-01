@@ -57,6 +57,31 @@ extension ForumFeedSortApiValue on ForumFeedSort {
   }
 }
 
+class ForumCategorySummary {
+  const ForumCategorySummary({
+    required this.id,
+    required this.name,
+    this.slug,
+    this.description,
+  });
+
+  factory ForumCategorySummary.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+
+    return ForumCategorySummary(
+      id: _readRequiredId(map, 'voId'),
+      name: _readString(map['voName']) ?? '未命名分类',
+      slug: _readString(map['voSlug']),
+      description: _readString(map['voDescription']),
+    );
+  }
+
+  final String id;
+  final String name;
+  final String? slug;
+  final String? description;
+}
+
 class ForumPostSummary {
   const ForumPostSummary({
     required this.id,
