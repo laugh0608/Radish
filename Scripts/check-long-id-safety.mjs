@@ -17,6 +17,8 @@ const textExtensions = new Set(['.ts', '.tsx', '.dart']);
 const longIdNamePattern = '(?:vo)?(?:UserId|PostId|CommentId|ProductId|OrderId|NotificationId|TransactionId|ReportId|TargetContentId|TargetPostId|TargetCommentId|TargetChannelId|TargetMessageId|TargetUserId|ReporterUserId|ActionId|BusinessId|FromUserId|ToUserId|OperatorId|SourceReportId|SourceOrderId|SourceProductId|UserBenefitId|ReplyToCommentId|ChannelId|MessageId|uuid)';
 const longIdExpressionPattern = '(?:userId|postId|commentId|productId|orderId|notificationId|transactionId|reportId|targetContentId|targetPostId|targetCommentId|targetUserId|reporterUserId|actionId|businessId|fromUserId|toUserId|operatorId|sourceReportId|sourceOrderId|sourceProductId|userBenefitId|replyToCommentId|channelId|messageId|uuid)';
 const genericLongIdExpressionPattern = '(?:\\.voId\\b|\\[(?:\'voId\'|"voId")\\])';
+const longIdMapKeyPattern = `(?:voId|${longIdNamePattern})`;
+const dartLongIdAccessorPattern = `(?:\\.voId\\b|\\[(?:'|")${longIdMapKeyPattern}(?:'|")\\])`;
 
 const tsRules = [
   {
@@ -40,12 +42,22 @@ const dartRules = [
   {
     id: 'dart-long-id-int-type',
     description: '外部 LongId 字段/参数不得声明为 int；请使用 String 字符串契约',
-    test: (line) => new RegExp(`\\b(?:final\\s+)?int\\??\\s+${longIdExpressionPattern}\\b`, 'i').test(line),
+    test: (line) => new RegExp(`\\b(?:final\\s+)?int\\??\\s+(?:${longIdExpressionPattern}|voId)\\b`, 'i').test(line),
   },
   {
     id: 'dart-long-id-int-conversion',
     description: '外部 LongId 不得提前 int.parse/int.tryParse 转换；请保持字符串透传',
-    test: (line) => new RegExp(`\\bint\\.(?:parse|tryParse)\\s*\\([^\\n)]*${longIdExpressionPattern}`, 'i').test(line),
+    test: (line) => new RegExp(`\\bint\\.(?:parse|tryParse)\\s*\\([^\\n)]*(?:${longIdExpressionPattern}|${dartLongIdAccessorPattern})`, 'i').test(line),
+  },
+  {
+    id: 'dart-long-id-numeric-reader',
+    description: '外部 LongId 不得通过 _readInt/readInt 等数值 helper 解析；请使用字符串读取与规范化函数',
+    test: (line) => new RegExp(`\\b_?read(?:Required|Optional)?(?:Int|Number)\\s*\\([^\\n)]*${dartLongIdAccessorPattern}`, 'i').test(line),
+  },
+  {
+    id: 'dart-long-id-int-cast',
+    description: '外部 LongId 不得通过 as int 或 toInt() 数值化；请保持字符串透传',
+    test: (line) => new RegExp(`${dartLongIdAccessorPattern}[^\\n;]*(?:\\bas\\s+int\\b|\\.toInt\\s*\\()`, 'i').test(line),
   },
 ];
 
