@@ -179,7 +179,7 @@ export const useShopData = (t: TFunction) => {
   }, [t, setError]);
 
   // 检查是否可以购买
-  const checkCanBuy = useCallback(async (productId: LongId, quantity: number = 1) => {
+  const checkCanBuy = useCallback(async (productId: LongId, quantity: number = 1): Promise<ProductBuyCheckResult | null> => {
     setState(prev => ({ ...prev, checkingCanBuy: true }));
     try {
       const result = await shopApi.checkCanBuy(productId, quantity, t);
@@ -189,6 +189,7 @@ export const useShopData = (t: TFunction) => {
           canBuyProduct: result.data || null,
           checkingCanBuy: false
         }));
+        return result.data;
       } else {
         throw new Error(result.message || '检查购买权限失败');
       }
@@ -196,6 +197,7 @@ export const useShopData = (t: TFunction) => {
       log.error('检查购买权限失败:', error);
       setError(error instanceof Error ? error.message : '检查购买权限失败');
       setState(prev => ({ ...prev, checkingCanBuy: false }));
+      return null;
     }
   }, [t, setError]);
 

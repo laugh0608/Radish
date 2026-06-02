@@ -156,7 +156,7 @@ class _ShopOrderDetailPageState extends State<ShopOrderDetailPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            '查看当前账号的订单状态和发放记录。Flutter 本批只读，不开放取消订单、支付口令或权益激活。',
+            '查看当前账号的订单状态和发放记录。Flutter 当前支持从单商品详情购买并回到订单结果，本页不开放取消订单、权益激活或道具使用。',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 20),
@@ -168,7 +168,7 @@ class _ShopOrderDetailPageState extends State<ShopOrderDetailPage> {
               order == null
                   ? '正在准备订单 ${widget.orderId}'
                   : '正在查看订单 ${order.orderNo}',
-              '当前不支持购买、取消订单、支付口令、权益激活或道具使用',
+              '订单详情当前只读，不支持取消订单、权益激活或道具使用',
             ],
           ),
           const SizedBox(height: 16),

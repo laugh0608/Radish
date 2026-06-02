@@ -193,7 +193,7 @@ class _ShopProductListPageState extends State<ShopProductListPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            '浏览公开商品列表。当前只读，不开放购买、订单、背包或支付操作。',
+            '浏览公开商品列表，可进入商品详情查看并在登录后发起单商品购买。',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 20),
@@ -201,8 +201,8 @@ class _ShopProductListPageState extends State<ShopProductListPage> {
             title: '当前能力',
             items: [
               '当前环境：${widget.environment.name}',
-              '展示公开商品列表与只读商品详情',
-              '当前不支持购买、订单、背包、支付口令或权益激活',
+              '展示公开商品列表并承接商品详情',
+              '购买仅在商品详情开放，不扩展购物车、退款、权益激活或道具使用',
               _isLoading ? '正在准备公开商品列表' : '已加载 ${_products.length} 个商品',
             ],
           ),

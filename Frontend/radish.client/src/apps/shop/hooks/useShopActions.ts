@@ -3,7 +3,7 @@ import { log } from '@/utils/logger';
 import { useUserStore } from '@/stores/userStore';
 import type { TFunction } from 'i18next';
 import type { LongId } from '@/api/user';
-import type { Product } from '@/types/shop';
+import type { Product, ProductBuyCheckResult } from '@/types/shop';
 import * as shopApi from '@/api/shop';
 import { isPaymentPasscodeUpgradeRequiredError } from '@/utils/paymentPasscode';
 import type { ShopAppState } from '../ShopApp';
@@ -15,7 +15,7 @@ interface UseShopActionsProps {
   setError: (error: string | null) => void;
   loadProducts: (categoryId?: string, productType?: shopApi.ProductTypeValue, keyword?: string, pageIndex?: number, pageSize?: number) => Promise<void>;
   loadProductDetail: (productId: LongId) => Promise<void>;
-  checkCanBuy: (productId: LongId, quantity?: number) => Promise<void>;
+  checkCanBuy: (productId: LongId, quantity?: number) => Promise<ProductBuyCheckResult | null>;
   loadOrders: (status?: shopApi.OrderStatusValue, pageIndex?: number, pageSize?: number) => Promise<void>;
   loadOrderDetail: (orderId: LongId) => Promise<void>;
   loadInventory: () => Promise<void>;
@@ -69,8 +69,11 @@ export const useShopActions = (props: UseShopActionsProps) => {
       await loadProductDetail(productId);
     }
 
-    // 检查是否可以购买
-    await checkCanBuy(productId);
+    const buyCheck = await checkCanBuy(productId);
+    if (!buyCheck?.canBuy) {
+      setError(buyCheck?.reason?.trim() || t('shop.unavailable'));
+      return;
+    }
 
     setPurchasePasscodeUpgradePrompt(null);
     setIsPurchaseModalOpen(true);
