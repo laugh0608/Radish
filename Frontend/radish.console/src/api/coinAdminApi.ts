@@ -15,7 +15,7 @@ export interface UserBalanceVo {
 }
 
 export interface CoinTransactionVo {
-  voId: number;
+  voId: string | number;
   voTransactionNo: string;
   voFromUserId?: number | string | null;
   voFromUserName?: string | null;
@@ -32,6 +32,8 @@ export interface CoinTransactionVo {
   voBusinessType?: string | null;
   voBusinessId?: number | string | null;
   voRemark?: string | null;
+  voCreateBy: string;
+  voCreateId: string | number;
   voCreateTime: string;
 }
 

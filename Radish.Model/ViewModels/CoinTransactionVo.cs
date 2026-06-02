@@ -120,6 +120,16 @@ public class CoinTransactionVo
     public string? VoRemark { get; set; }
 
     /// <summary>
+    /// 创建者名称
+    /// </summary>
+    public string VoCreateBy { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 创建者 ID
+    /// </summary>
+    public long VoCreateId { get; set; }
+
+    /// <summary>
     /// 创建时间
     /// </summary>
     public DateTime VoCreateTime { get; set; }

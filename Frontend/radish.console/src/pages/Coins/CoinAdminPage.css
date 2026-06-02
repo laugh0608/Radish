@@ -28,9 +28,32 @@
   width: 100%;
 }
 
+.coin-admin-transaction-filters {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) minmax(140px, 1fr) auto;
+  gap: 12px;
+}
+
+.coin-admin-signed-amount {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.coin-admin-signed-amount--positive {
+  color: #2f7a4f;
+}
+
+.coin-admin-signed-amount--negative {
+  color: #a64242;
+}
+
 @media (max-width: 768px) {
   .coin-admin-page .admin-feature-header,
   .coin-admin-section-title {
     align-items: flex-start;
+  }
+
+  .coin-admin-transaction-filters {
+    grid-template-columns: 1fr;
   }
 }
