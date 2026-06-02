@@ -16,6 +16,7 @@ const scanRoots = [
 const textExtensions = new Set(['.ts', '.tsx', '.dart']);
 const longIdNamePattern = '(?:vo)?(?:UserId|PostId|CommentId|ProductId|OrderId|NotificationId|TransactionId|ReportId|TargetContentId|TargetPostId|TargetCommentId|TargetChannelId|TargetMessageId|TargetUserId|ReporterUserId|ActionId|BusinessId|FromUserId|ToUserId|OperatorId|SourceReportId|SourceOrderId|SourceProductId|UserBenefitId|ReplyToCommentId|ChannelId|MessageId|uuid)';
 const longIdExpressionPattern = '(?:userId|postId|commentId|productId|orderId|notificationId|transactionId|reportId|targetContentId|targetPostId|targetCommentId|targetUserId|reporterUserId|actionId|businessId|fromUserId|toUserId|operatorId|sourceReportId|sourceOrderId|sourceProductId|userBenefitId|replyToCommentId|channelId|messageId|uuid)';
+const genericLongIdExpressionPattern = '(?:\\.voId\\b|\\[(?:\'voId\'|"voId")\\])';
 
 const tsRules = [
   {
@@ -27,6 +28,11 @@ const tsRules = [
     id: 'ts-long-id-number-conversion',
     description: '外部 LongId 不得提前 Number/parseInt 转换；请保持字符串透传或使用字符串规范化函数',
     test: (line) => new RegExp(`\\b(?:Number|Number\\.parseInt|parseInt)\\s*\\([^\\n)]*${longIdExpressionPattern}`, 'i').test(line),
+  },
+  {
+    id: 'ts-generic-vo-id-number-conversion',
+    description: '泛型 voId 承载外部 LongId 时不得提前 Number/parseInt 转换；请保持字符串透传或使用字符串规范化函数',
+    test: (line) => new RegExp(`\\b(?:Number|Number\\.parseInt|parseInt)\\s*\\([^\\n)]*${genericLongIdExpressionPattern}`, 'i').test(line),
   },
 ];
 

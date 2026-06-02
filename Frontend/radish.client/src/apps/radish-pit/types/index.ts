@@ -1,6 +1,7 @@
 /**
  * 萝卜坑应用类型定义
  */
+import type { LongId } from '@/api/user';
 
 // 导航标签类型
 export type TabType = 'overview' | 'transfer' | 'history' | 'security' | 'statistics';
@@ -16,7 +17,7 @@ export interface AccountStats {
 
 // 转账表单数据
 export interface TransferFormData {
-  recipientId: number;
+  recipientId: LongId;
   recipientName: string;
   amount: number;
   note?: string;

@@ -518,7 +518,7 @@ npm run check:host-runtime -- --details --report-file .tmp/host-runtime-report.m
 - 权限扫描失败：优先看 `Scripts/check-console-permissions.mjs` 输出中的四层对齐差异
 - 身份语义扫描失败：优先看 `Scripts/check-identity-claims.mjs` 输出中的命中位置，确认是否回退到原始 Claim 解析或直接字符串判断
 - 若命中 `AccountController / AuthorizationController / UserInfoController`：优先按 Phase 4 口径确认是否误恢复了历史输出承诺，而不是直接放宽白名单
-- 后端构建 / 测试失败：优先看 `Scripts/dotnet-local.ps1` 包装后的 `dotnet` 输出
+- 后端构建 / 测试失败：优先看验证入口打印出的 `dotnet` 命令输出；Windows 默认经 `Scripts/dotnet-local.ps1` 包装，macOS / Linux 默认直接执行 `dotnet`
 - `doctor` / `verify` 失败：优先核对当前环境配置、`MainDb` / `Databases` 与关键 `ConnId`
 - 如果是 Wiki / 文档链路，额外确认 `doctor` 是否已报告 `WikiDocument.Visibility`、`AllowedRoles`、`AllowedPermissions` 等缺列；旧 SQLite 库需要重新执行 `DbMigrate apply` 触发自动补齐
 - `check:repo-quality-contract` 失败：优先回到 workflow / ruleset / 本地 `validate:ci` contract，而不是先改业务代码
@@ -588,9 +588,9 @@ PC/Tauri 当前后置到纯 Web 与 Flutter 主线之后，不再默认绑定 We
 
 ## 受限环境说明
 
-在某些受限 Windows 沙盒中，顶层 shell 可以执行 `npm run ...`，但 Node 脚本内部再次拉起 `node / npm / powershell` 子进程可能被系统直接拒绝。
+在某些受限沙盒中，顶层 shell 可以执行 `npm run ...`，但 Node 脚本内部再次拉起 `node / npm / dotnet / powershell` 子进程可能被系统直接拒绝。
 
-当前仓库脚本已经尽量减少对 `cmd.exe /c` 的依赖，并统一走共享执行层；但如果仍看到“当前受限环境禁止从 Node 脚本再拉起外部进程”这类提示，说明问题不在业务脚本逻辑，而在当前运行环境的子进程边界。
+当前仓库脚本已经尽量减少对 `cmd.exe /c` 的依赖，并统一走共享执行层；验证入口按平台分流：Windows 使用 PowerShell 包装脚本，macOS / Linux 直接执行 `dotnet`。如果仍看到“当前受限环境禁止从 Node 脚本再拉起外部进程”这类提示，说明问题不在业务脚本逻辑，而在当前运行环境的子进程边界。
 
 这种情况下，优先做法是：
 
