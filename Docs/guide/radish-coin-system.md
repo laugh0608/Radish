@@ -37,5 +37,6 @@
 - Flutter 商品详情可通过商城购买链路消费胡萝卜；移动端不开放转账、打赏、调账、冻结治理或管理员复核。
 - 注册默认奖励、登录补偿和首个管理员初始化统一走 `CoinService.GrantRegistrationRewardAsync`，确保真实用户具备默认胡萝卜。
 - 余额查询、发放、扣除和管理员调账前必须校验真实用户存在；Console 不应为不存在的 UserId 创建余额记录。
+- 商城购买扣款流水以 `TransactionType=CONSUME`、`BusinessType=Order`、`BusinessId=OrderId` 关联订单；Console 可从订单详情跳到对应流水筛选结果，用于资产一致性排查。
 
 ---

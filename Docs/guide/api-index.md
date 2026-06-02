@@ -148,6 +148,10 @@
 - `Shop/GetOrder/{orderId}`
 - `Shop/GetMyBenefits`
 - `Shop/GetMyInventory`
+- `Shop/AdminGetOrders`
+- `Coin/AdminGetTransactions`
+
+管理端购买排障当前依赖订单与胡萝卜流水的业务上下文关联：商城购买扣款流水使用 `transactionType=CONSUME`、`businessType=Order`、`businessId=OrderId`，Console 可从订单详情跳转到上述筛选结果。
 
 ### 其他专题
 

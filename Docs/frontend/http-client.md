@@ -344,7 +344,7 @@ configureApiClient({
 
 // 商品数据类型
 export interface Product {
-  voId: number;
+  voId: string | number;
   voName: string;
   voDescription: string;
   voPrice: number;
@@ -677,15 +677,18 @@ export const productApi = {
 ```typescript
 // ✅ 正确：定义类型
 interface Product {
-  voId: number;
+  voId: string | number;
   voName: string;
   voPrice: number;
 }
 
 const response = await apiGet<Product>('/api/v1/Shop/GetProduct?id=1');
 
+// 外部 LongId 只做字符串透传或 string | number 过渡，不提前 Number(...) 转换
+const productId = String(response.data?.voId ?? '');
+
 // ❌ 错误：不定义类型
-const response = await apiGet('/api/v1/Shop/GetProduct?id=1');
+const untypedResponse = await apiGet('/api/v1/Shop/GetProduct?id=1');
 ```
 
 ## 常见问题

@@ -74,7 +74,7 @@
 - Flutter forum 当前的登录、回流与轻互动语义也已进一步明确：详情页允许匿名用户从评论区或轻回应区原地发起 OIDC 登录，并在浏览器回跳后继续保留当前 `postPublicId / postId / commentId` 上下文；已登录壳层可读取最近少量 forum 通知并回到帖子 / 评论上下文，通知、个人公开页、我的轻回应与最近浏览回流均优先消费 `postPublicId`，旧 `postId` 只保留为字符串 fallback；进入详情后再使用真实 `VoId` 执行评论、轻回应和定位类内部接口，不把公开标识误传给内部接口；评论发布 / 回复成功只更新评论区，轻回应发布成功只更新轻回应墙与局部反馈，不刷新正文或来源 tab；但发帖编辑器、点赞、投票、编辑、完整通知中心与系统通知栏推送仍不在当前边界内
 - Flutter 公开主页当前会记录发现页、forum 作者入口和榜单来源；公开主页内继续打开帖子 / 评论详情后，Android Back 先回公开主页，再回原来源 tab，不把用户强制留在 profile tab
 - Flutter 原生 docs detail 当前复用 Web 公开 docs 路由口径：公开文档正文里的 `/docs/:slug`、完整公开 URL、`docs/:slug`、`./:slug` 与普通相对 slug 链接会继续打开原生 docs detail；页内锚点、附件路径和非 docs 链接不在 Flutter 内扩成外部跳转或附件治理
-- Flutter 原生 shop 当前只承接公开商城列表与只读商品详情，发现页来源回发现页、列表来源回商城列表；购买、订单、背包、支付口令和权益激活仍留在 Web / 工作台回流链路内
+- Flutter 原生 shop 当前承接公开商城列表、商品详情、登录态单商品购买、订单列表、订单详情、背包和来源订单 / 商品查看；发现页来源回发现页、列表来源回商城列表。移动端购买固定为单商品动作，先检查购买资格，再输入支付口令并在成功后进入订单详情；购物车、退款、权益激活、道具使用和 Console 治理仍不在 Flutter 边界内
 - Flutter 原生 forum / docs / shop detail 的公开链接展示与复制使用当前 Gateway Base URL 加 Web 公开路由，不复制内部 handoff、`radish://` deep link、API 地址、来源 tab 或评论定位状态；当前只提供剪贴板复制，不接系统分享 SDK、海报生成或分享统计
 - 公开详情页来源返回使用 `history.state` 保留来源语义，不污染公开 URL、canonical、分享链接或 sitemap；公开商品详情需要继续购买时，当前通过 `/desktop?app=shop&productId=...` 桥接到 WebOS 保留入口，未登录用户可保存该返回路径并在 OIDC 回调后恢复到原商品详情。订单详情、订单列表和背包入口分别通过 `/desktop?app=shop&orderId=...`、`/desktop?app=shop&view=orders`、`/desktop?app=shop&view=inventory` 承接，并要求登录后消费
 - HTTPS Gateway 下的公开页面会把本地 HTTP 媒体、favicon、头像和 Markdown 附件归一到当前 Gateway origin；公开分享链接通过运行时公开域名配置生成，docs 分享保留锚点，canonical / sitemap 不携带临时来源状态
