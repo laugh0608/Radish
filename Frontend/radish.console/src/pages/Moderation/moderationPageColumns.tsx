@@ -18,6 +18,7 @@ import {
   buildQueueTargetNavigationInput,
   getManualActionTypeText,
   getReasonTypeLabel,
+  hasPositiveLongId,
   resolveOpenTarget,
   type ActionLogPreset,
   type ManualActionPreset,
@@ -125,7 +126,7 @@ export function createModerationQueueColumns(
                 {record.voTargetNavigationStatus === 'Unsupported' ? '暂不支持回看' : '目标已失效'}
               </span>
             ) : null}
-            {record.voTargetUserId > 0 ? (
+            {hasPositiveLongId(record.voTargetUserId) ? (
               <Button
                 size="small"
                 onClick={() => {
@@ -138,7 +139,7 @@ export function createModerationQueueColumns(
                 查看目标动作
               </Button>
             ) : null}
-            {actions.canReview && record.voTargetUserId > 0 ? (
+            {actions.canReview && hasPositiveLongId(record.voTargetUserId) ? (
               <Button
                 size="small"
                 onClick={() => {
@@ -166,7 +167,7 @@ export function createModerationQueueColumns(
                 size="small"
                 onClick={() => {
                   actions.onApplyActionLogPreset({
-                    targetUserId: record.voTargetUserId > 0 ? String(record.voTargetUserId) : undefined,
+                    targetUserId: hasPositiveLongId(record.voTargetUserId) ? String(record.voTargetUserId) : undefined,
                     sourceReportId: String(record.voReportId),
                     hint: `已带入举报单 #${record.voReportId} 关联的治理动作日志。`,
                   });

@@ -229,7 +229,7 @@ class HttpForumRepository implements ForumRepository {
     return apiClient.post(
       uri: uri,
       body: {
-        'postId': int.tryParse(normalizedPostId) ?? normalizedPostId,
+        'postId': normalizedPostId,
         'content': normalizedContent,
       },
       bearerToken: accessToken,
@@ -254,10 +254,10 @@ class HttpForumRepository implements ForumRepository {
     return apiClient.post(
       uri: uri,
       body: {
-        'postId': int.tryParse(normalizedPostId) ?? normalizedPostId,
+        'postId': normalizedPostId,
         'content': normalizedContent,
-        'parentId': _readNumericOrString(parentId),
-        'replyToCommentId': _readNumericOrString(replyToCommentId),
+        'parentId': _readNullableString(parentId),
+        'replyToCommentId': _readNullableString(replyToCommentId),
         'replyToCommentSnapshot': _readNullableString(replyToCommentSnapshot),
         'replyToUserName': _readNullableString(replyToUserName),
       },
@@ -290,8 +290,7 @@ class HttpForumRepository implements ForumRepository {
         'title': normalizedTitle,
         'content': normalizedContent,
         'contentType': 'text',
-        'categoryId':
-            int.tryParse(normalizedCategoryId) ?? normalizedCategoryId,
+        'categoryId': normalizedCategoryId,
         'tagNames': normalizedTags,
         'isQuestion': false,
       },
@@ -307,15 +306,6 @@ List<ForumCategorySummary> _readForumCategories(Object? json) {
   }
 
   return json.map(ForumCategorySummary.fromJson).toList();
-}
-
-Object? _readNumericOrString(String? value) {
-  final normalized = _readNullableString(value);
-  if (normalized == null) {
-    return null;
-  }
-
-  return int.tryParse(normalized) ?? normalized;
 }
 
 String? _readNullableString(String? value) {

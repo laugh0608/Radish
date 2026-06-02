@@ -5,6 +5,7 @@
 
 import { apiGet, configureApiClient, type PagedResponse } from '@radish/http';
 import { getApiBaseUrl } from '@/config/env';
+import type { LongId } from './user';
 
 // 配置 API 客户端
 configureApiClient({
@@ -15,7 +16,7 @@ configureApiClient({
  * 用户经验值 Vo（直接使用后端字段名）
  */
 export interface ExperienceData {
-  voUserId: number;
+  voUserId: LongId;
   voUserName?: string;
   voAvatarUrl?: string;
   voCurrentLevel: number;
@@ -42,13 +43,13 @@ export interface ExperienceData {
  */
 export interface ExpTransactionData {
   voId: number;
-  voUserId: number;
+  voUserId: LongId;
   voUserName?: string;
   voExpType: string;  // 后端字段名
   voExpTypeDisplay: string;  // 后端字段名
   voExpAmount: number;  // 后端字段名（经验值变动量）
   voBusinessType?: string;  // 后端字段名
-  voBusinessId?: number;  // 后端字段名
+  voBusinessId?: LongId;  // 后端字段名
   voRemark?: string;  // 后端字段名（备注）
   voExpBefore: number;
   voExpAfter: number;
@@ -62,7 +63,7 @@ export interface ExpTransactionData {
  * 排行榜项目 Vo（直接使用后端字段名）
  */
 export interface LeaderboardItemData {
-  voUserId: number;
+  voUserId: LongId;
   voUserName?: string;
   voAvatarUrl?: string;
   voCurrentLevel: number;

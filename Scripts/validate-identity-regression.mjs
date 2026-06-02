@@ -58,11 +58,24 @@ function runStep(title, command, commandArgs) {
 
 const npmCommand = resolveNpmCommand();
 const powerShellCommand = resolvePowerShellCommand();
-
-if (!powerShellCommand) {
-  console.error('[identity] 未找到可用的 PowerShell (`pwsh` 或 `powershell`)。');
-  process.exit(1);
-}
+const backendTestCommand = powerShellCommand ?? 'dotnet';
+const backendTestArgs = powerShellCommand
+  ? [
+      '-ExecutionPolicy',
+      'Bypass',
+      '-File',
+      'Scripts/dotnet-local.ps1',
+      'test',
+      'Radish.Api.Tests',
+      '--filter',
+      identityTestFilter,
+    ]
+  : [
+      'test',
+      'Radish.Api.Tests',
+      '--filter',
+      identityTestFilter,
+    ];
 
 const steps = [
   {
@@ -76,22 +89,21 @@ const steps = [
     args: ['run', 'check:identity-protocol-output'],
   },
   {
+    title: '外部 LongId 字符串安全扫描',
+    command: npmCommand,
+    args: ['run', 'check:long-id-safety'],
+  },
+  {
     title: '身份语义后端定向测试',
-    command: powerShellCommand,
-    args: [
-      '-ExecutionPolicy',
-      'Bypass',
-      '-File',
-      'Scripts/dotnet-local.ps1',
-      'test',
-      'Radish.Api.Tests',
-      '--filter',
-      identityTestFilter,
-    ],
+    command: backendTestCommand,
+    args: backendTestArgs,
   },
 ];
 
 console.log('[identity] 模式：identity-regression');
+if (!powerShellCommand) {
+  console.log('[identity] 未找到 PowerShell，后端定向测试回退为直接执行 dotnet test。');
+}
 
 for (const step of steps) {
   runStep(step.title, step.command, step.args);

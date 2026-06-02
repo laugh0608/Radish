@@ -1,5 +1,6 @@
 import { apiGet, apiPost, configureApiClient } from '@radish/http';
 import { getApiBaseUrl } from '@/config/env';
+import type { LongId } from './user';
 
 configureApiClient({
   baseUrl: getApiBaseUrl(),
@@ -11,7 +12,7 @@ export interface TimeSettingsVo {
 }
 
 export interface UserTimePreferenceVo {
-  voUserId: number;
+  voUserId: LongId;
   voTimeZoneId: string;
   voIsCustomized: boolean;
   voSystemDefaultTimeZoneId: string;

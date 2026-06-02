@@ -15,7 +15,6 @@
 ## 统一入口
 
 根目录现提供以下命令：
-
 ```bash
 npm run setup:hooks
 npm run check:repo-hygiene
@@ -31,6 +30,7 @@ npm run collect:change-regression-record
 npm run check:public-head-smoke
 npm run check:identity-impact
 npm run check:identity-impact:staged
+npm run check:long-id-safety
 npm run validate:baseline
 npm run validate:baseline:quick
 npm run validate:baseline:host
@@ -133,7 +133,7 @@ npm run validate:ci
   - 当前其 `Summary` 也会固定补 `Route / TriageScope / TriageCode / NextStage` 四个摘要字段，和 `validate:baseline:host` 保持同一套分诊摘要口径
 - `validate:identity`
   - 身份语义专题聚合入口，不替代默认 baseline
-  - 分别执行运行时散点 Claim 读取扫描与协议输出回退扫描
+  - 分别执行运行时散点 Claim 读取、协议输出回退风险与外部 LongId 字符串安全扫描
   - 运行身份语义后端定向测试，覆盖 `ClaimsPrincipalNormalizer`、`HttpContextUser`、`AccountController`、`AuthorizationController`、`UserInfoController`
 - `validate:ci`
   - 本地复现当前 `Repo Quality` 的最小执行面
