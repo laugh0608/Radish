@@ -30,7 +30,7 @@ interface UserStats {
 }
 
 interface UserInfoCardProps {
-  userId: number;
+  userId: LongId;
   userName: string;
   stats?: UserStats;
   loading?: boolean;
@@ -221,7 +221,7 @@ export const UserInfoCard = ({
 
         // 更新全局 userStore，使 Dock 栏能实时刷新头像
         setUser({
-          userId,
+          userId: String(userId),
           userName: currentProfile.voUserName,
           nickname: currentProfile.voUserName,
           tenantId: tenantId,

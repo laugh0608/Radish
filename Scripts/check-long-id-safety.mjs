@@ -14,10 +14,6 @@ const scanRoots = [
 ];
 
 const textExtensions = new Set(['.ts', '.tsx', '.dart']);
-const excludedPrefixes = [
-  'Frontend/radish.client/src/services/',
-];
-
 const longIdNamePattern = '(?:vo)?(?:UserId|PostId|CommentId|ProductId|OrderId|NotificationId|TransactionId|ReportId|TargetContentId|TargetPostId|TargetCommentId|TargetChannelId|TargetMessageId|TargetUserId|ReporterUserId|ActionId|BusinessId|FromUserId|ToUserId|OperatorId|SourceReportId|SourceOrderId|SourceProductId|UserBenefitId|ReplyToCommentId|ChannelId|MessageId|uuid)';
 const longIdExpressionPattern = '(?:userId|postId|commentId|productId|orderId|notificationId|transactionId|reportId|targetContentId|targetPostId|targetCommentId|targetUserId|reporterUserId|actionId|businessId|fromUserId|toUserId|operatorId|sourceReportId|sourceOrderId|sourceProductId|userBenefitId|replyToCommentId|channelId|messageId|uuid)';
 
@@ -84,10 +80,6 @@ function shouldSkipLine(line) {
 
 function collectFindings(filePath) {
   const repoPath = toRepoPath(filePath);
-  if (excludedPrefixes.some((prefix) => repoPath.startsWith(prefix))) {
-    return [];
-  }
-
   const extension = extname(filePath);
   const rules = extension === '.dart' ? dartRules : tsRules;
   const lines = readFileSync(filePath, 'utf8').split(/\r?\n/);

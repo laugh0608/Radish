@@ -113,7 +113,7 @@ export const LeaderboardApp = () => {
       return;
     }
 
-    if (String(item.voUserId) === String(currentUserId ?? 0)) {
+    if (String(item.voUserId) === String(currentUserId || '0')) {
       openApp('profile');
       return;
     }

@@ -242,7 +242,7 @@ export const ForumApp = () => {
   const actionsState = useForumActions({
     t,
     isAuthenticated: loggedIn,
-    userId: userId ?? 0,
+    userId: userId || '0',
     commentSortBy: dataState.commentSortBy,
     loadedCommentPages: dataState.loadedCommentPages,
     questionAnswerSort: dataState.questionAnswerSort,
@@ -487,7 +487,7 @@ export const ForumApp = () => {
       return;
     }
 
-    if (String(dataState.selectedPost.voAuthorId) === String(userId ?? 0)) {
+    if (String(dataState.selectedPost.voAuthorId) === String(userId || '0')) {
       setFollowStatus(null);
       return;
     }
@@ -550,7 +550,7 @@ export const ForumApp = () => {
       return;
     }
 
-    if (String(targetUserId) === String(userId ?? 0)) {
+    if (String(targetUserId) === String(userId || '0')) {
       openApp('profile');
       return;
     }
@@ -688,7 +688,7 @@ export const ForumApp = () => {
                 isLiked={actionsState.likedPosts.has(String(dataState.selectedPost.voId))}
                 isAuthenticated={loggedIn}
                 showFloatingTools={showDetailFloatingTools}
-                currentUserId={userId ?? 0}
+                currentUserId={userId || '0'}
                 commentSortBy={dataState.commentSortBy}
                 questionAnswerSort={dataState.questionAnswerSort}
                 questionAnswerFilter={dataState.questionAnswerFilter}

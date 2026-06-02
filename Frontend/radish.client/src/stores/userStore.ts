@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { UserInfo } from '@/desktop/types';
+import { normalizePositiveLongIdKey } from '@/utils/longId';
 
 interface UserStore extends UserInfo {
   /** 设置用户信息 */
@@ -13,11 +14,11 @@ interface UserStore extends UserInfo {
 }
 
 const defaultUser: UserInfo = {
-  userId: 0,
+  userId: '',
   userName: '',
   loginName: '',
   nickname: '',
-  tenantId: 0,
+  tenantId: '0',
   roles: [],
   permissions: []
 };
@@ -46,6 +47,6 @@ export const useUserStore = create<UserStore>((set, get) => ({
 
   isAuthenticated: () => {
     const { userId } = get();
-    return userId > 0;
+    return normalizePositiveLongIdKey(userId) !== null;
   }
 }));
