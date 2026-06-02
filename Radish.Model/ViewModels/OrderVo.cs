@@ -74,6 +74,9 @@ public class OrderVo
         _ => "未知"
     };
 
+    /// <summary>扣款交易 ID</summary>
+    public long? VoCoinTransactionId { get; set; }
+
     /// <summary>权益到期时间</summary>
     public DateTime? VoBenefitExpiresAt { get; set; }
 

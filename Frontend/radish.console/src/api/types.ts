@@ -162,6 +162,7 @@ export interface Order {
   voTotalPrice: number;
   voStatus: string;
   voStatusDisplay: string;
+  voCoinTransactionId?: string | number | null;
   voBenefitExpiresAt?: string | null;
   voDurationDisplay?: string | null;
   voCreateTime: string;

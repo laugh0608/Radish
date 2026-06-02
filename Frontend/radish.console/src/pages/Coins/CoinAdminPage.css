@@ -30,7 +30,7 @@
 
 .coin-admin-transaction-filters {
   display: grid;
-  grid-template-columns: minmax(160px, 1fr) minmax(140px, 1fr) auto;
+  grid-template-columns: minmax(150px, 1fr) minmax(130px, 1fr) minmax(130px, 1fr) minmax(130px, 1fr) auto auto;
   gap: 12px;
 }
 

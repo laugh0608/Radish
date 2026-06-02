@@ -61,6 +61,8 @@ export async function getTransactionsByUserId(params: {
   pageSize?: number;
   transactionType?: string;
   status?: string;
+  businessType?: string;
+  businessId?: string | number;
 }): Promise<PagedResponse<CoinTransactionVo>> {
   const searchParams = new URLSearchParams({
     userId: String(params.userId),
@@ -74,6 +76,14 @@ export async function getTransactionsByUserId(params: {
 
   if (params.status) {
     searchParams.set('status', params.status);
+  }
+
+  if (params.businessType) {
+    searchParams.set('businessType', params.businessType);
+  }
+
+  if (params.businessId !== undefined) {
+    searchParams.set('businessId', String(params.businessId));
   }
 
   const response = await apiGet<PagedResponse<CoinTransactionVo>>(

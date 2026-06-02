@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   AntInput as Input,
   AntSelect as Select,
@@ -28,6 +29,11 @@ import './CoinAdminPage.css';
 function normalizePositiveLongIdInput(value: string): string | undefined {
   const trimmed = value.trim();
   return /^[1-9]\d*$/.test(trimmed) ? trimmed : undefined;
+}
+
+function normalizeTextFilterInput(value: string): string | undefined {
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
 }
 
 function formatDisplayTime(time?: string | null): string {
@@ -65,18 +71,39 @@ const TRANSACTION_STATUS_OPTIONS = [
   { value: 'FAILED', label: '失败' },
 ];
 
+function normalizeOptionQuery(
+  value: string | null,
+  options: Array<{ value: string; label: string }>
+): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  return options.some((option) => option.value === value) ? value : undefined;
+}
+
 export const CoinAdminPage = () => {
   useDocumentTitle('胡萝卜管理');
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const queryUserIdFromUrl = normalizePositiveLongIdInput(searchParams.get('userId') ?? '');
+  const queryTransactionType = normalizeOptionQuery(searchParams.get('transactionType'), TRANSACTION_TYPE_OPTIONS);
+  const queryTransactionStatus = normalizeOptionQuery(searchParams.get('status'), TRANSACTION_STATUS_OPTIONS);
+  const queryBusinessType = normalizeTextFilterInput(searchParams.get('businessType') ?? '');
+  const queryBusinessId = normalizePositiveLongIdInput(searchParams.get('businessId') ?? '');
+  const returnTo = searchParams.get('returnTo');
 
-  const [queryUserId, setQueryUserId] = useState('');
+  const [queryUserId, setQueryUserId] = useState(queryUserIdFromUrl ?? '');
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
   const [balance, setBalance] = useState<UserBalanceVo | null>(null);
   const [transactions, setTransactions] = useState<CoinTransactionVo[]>([]);
   const [transactionTotal, setTransactionTotal] = useState(0);
   const [transactionPageIndex, setTransactionPageIndex] = useState(1);
   const [transactionPageSize, setTransactionPageSize] = useState(10);
-  const [transactionTypeFilter, setTransactionTypeFilter] = useState<string | undefined>();
-  const [transactionStatusFilter, setTransactionStatusFilter] = useState<string | undefined>();
+  const [transactionTypeFilter, setTransactionTypeFilter] = useState<string | undefined>(queryTransactionType);
+  const [transactionStatusFilter, setTransactionStatusFilter] = useState<string | undefined>(queryTransactionStatus);
+  const [businessTypeFilter, setBusinessTypeFilter] = useState<string | undefined>(queryBusinessType);
+  const [businessIdFilter, setBusinessIdFilter] = useState<string | undefined>(queryBusinessId);
   const [loading, setLoading] = useState(false);
   const [transactionLoading, setTransactionLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -115,7 +142,9 @@ export const CoinAdminPage = () => {
     pageIndex = transactionPageIndex,
     pageSize = transactionPageSize,
     transactionType = transactionTypeFilter,
-    status = transactionStatusFilter
+    status = transactionStatusFilter,
+    businessType = businessTypeFilter,
+    businessId = businessIdFilter
   ) => {
     try {
       setTransactionLoading(true);
@@ -125,6 +154,8 @@ export const CoinAdminPage = () => {
         pageSize,
         transactionType,
         status,
+        businessType,
+        businessId,
       });
       setTransactions(result.data);
       setTransactionTotal(result.dataCount);
@@ -169,6 +200,15 @@ export const CoinAdminPage = () => {
     await loadTransactions(userId, 1, transactionPageSize);
   };
 
+  useEffect(() => {
+    if (!queryUserIdFromUrl) {
+      return;
+    }
+
+    form.setFieldValue('userId', queryUserIdFromUrl);
+    void loadBalance(queryUserIdFromUrl);
+  }, []);
+
   const handleAdjust = async () => {
     try {
       const values = await form.validateFields();
@@ -201,7 +241,15 @@ export const CoinAdminPage = () => {
     const nextValue = typeof value === 'string' && value.length > 0 ? value : undefined;
     setTransactionTypeFilter(nextValue);
     if (loadedUserId) {
-      void loadTransactions(loadedUserId, 1, transactionPageSize, nextValue, transactionStatusFilter);
+      void loadTransactions(
+        loadedUserId,
+        1,
+        transactionPageSize,
+        nextValue,
+        transactionStatusFilter,
+        businessTypeFilter,
+        businessIdFilter
+      );
     }
   };
 
@@ -209,15 +257,49 @@ export const CoinAdminPage = () => {
     const nextValue = typeof value === 'string' && value.length > 0 ? value : undefined;
     setTransactionStatusFilter(nextValue);
     if (loadedUserId) {
-      void loadTransactions(loadedUserId, 1, transactionPageSize, transactionTypeFilter, nextValue);
+      void loadTransactions(
+        loadedUserId,
+        1,
+        transactionPageSize,
+        transactionTypeFilter,
+        nextValue,
+        businessTypeFilter,
+        businessIdFilter
+      );
+    }
+  };
+
+  const handleBusinessFilterSearch = () => {
+    const nextBusinessType = businessTypeFilter ? normalizeTextFilterInput(businessTypeFilter) : undefined;
+    const nextBusinessId = businessIdFilter ? normalizePositiveLongIdInput(businessIdFilter) : undefined;
+    setBusinessTypeFilter(nextBusinessType);
+    setBusinessIdFilter(nextBusinessId);
+
+    if (businessIdFilter && !nextBusinessId) {
+      message.error('请输入有效的业务 ID');
+      return;
+    }
+
+    if (loadedUserId) {
+      void loadTransactions(
+        loadedUserId,
+        1,
+        transactionPageSize,
+        transactionTypeFilter,
+        transactionStatusFilter,
+        nextBusinessType,
+        nextBusinessId
+      );
     }
   };
 
   const clearTransactionFilters = () => {
     setTransactionTypeFilter(undefined);
     setTransactionStatusFilter(undefined);
+    setBusinessTypeFilter(undefined);
+    setBusinessIdFilter(undefined);
     if (loadedUserId) {
-      void loadTransactions(loadedUserId, 1, transactionPageSize, undefined, undefined);
+      void loadTransactions(loadedUserId, 1, transactionPageSize, undefined, undefined, undefined, undefined);
     }
   };
 
@@ -306,6 +388,11 @@ export const CoinAdminPage = () => {
             <p className="admin-feature-subtle">支持按用户查询余额、回看交易流水，并执行正负向调账。</p>
           </div>
           <div className="coin-admin-header-actions">
+            {returnTo ? (
+              <Button onClick={() => navigate(returnTo)}>
+                返回来源
+              </Button>
+            ) : null}
             <Button icon={<ReloadOutlined />} onClick={() => {
               void loadBalance(loadedUserId ?? undefined);
             }}>
@@ -438,6 +525,23 @@ export const CoinAdminPage = () => {
                 disabled={!loadedUserId}
                 onChange={handleTransactionStatusChange}
               />
+              <Input
+                value={businessTypeFilter ?? ''}
+                placeholder="业务类型"
+                disabled={!loadedUserId}
+                onChange={(event) => setBusinessTypeFilter(event.target.value)}
+                onPressEnter={handleBusinessFilterSearch}
+              />
+              <Input
+                value={businessIdFilter ?? ''}
+                placeholder="业务 ID"
+                disabled={!loadedUserId}
+                onChange={(event) => setBusinessIdFilter(event.target.value.trim())}
+                onPressEnter={handleBusinessFilterSearch}
+              />
+              <Button disabled={!loadedUserId} onClick={handleBusinessFilterSearch}>
+                筛选业务
+              </Button>
               <Button disabled={!loadedUserId} onClick={clearTransactionFilters}>
                 清空筛选
               </Button>

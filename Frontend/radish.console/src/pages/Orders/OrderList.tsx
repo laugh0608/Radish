@@ -134,6 +134,7 @@ export const OrderList = () => {
   const canRemarkOrder = usePermission(CONSOLE_PERMISSIONS.ordersRemark);
   const canViewUsers = usePermission(CONSOLE_PERMISSIONS.usersView);
   const canViewProducts = usePermission(CONSOLE_PERMISSIONS.productsView);
+  const canViewCoins = usePermission(CONSOLE_PERMISSIONS.coinsView);
 
   const [detailVisible, setDetailVisible] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | number | undefined>();
@@ -265,6 +266,19 @@ export const OrderList = () => {
     navigate(
       `/products?productId=${encodeURIComponent(String(order.voProductId))}&openDetail=1&returnTo=${encodeURIComponent(returnTo)}`,
     );
+  };
+
+  const handleViewCoinTransaction = (order: Order) => {
+    const returnTo = `${location.pathname}${location.search}`;
+    const searchParams = new URLSearchParams({
+      userId: String(order.voUserId),
+      transactionType: 'CONSUME',
+      businessType: 'Order',
+      businessId: String(order.voId),
+      returnTo,
+    });
+
+    navigate(`/coins?${searchParams.toString()}`);
   };
 
   const handleRetry = (order: Order) => {
@@ -638,6 +652,7 @@ export const OrderList = () => {
         }}
         onViewUser={canViewUsers ? handleViewUser : undefined}
         onViewProduct={canViewProducts ? handleViewProduct : undefined}
+        onViewCoinTransaction={canViewCoins ? handleViewCoinTransaction : undefined}
         onSaveRemark={handleSaveRemark}
       />
 
