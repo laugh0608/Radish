@@ -133,7 +133,7 @@ npm run validate:ci
   - 当前其 `Summary` 也会固定补 `Route / TriageScope / TriageCode / NextStage` 四个摘要字段，和 `validate:baseline:host` 保持同一套分诊摘要口径
 - `validate:identity`
   - 身份语义专题聚合入口，不替代默认 baseline
-  - 分别执行运行时散点 Claim 读取、协议输出回退风险与外部 LongId 字符串安全扫描
+  - 分别执行运行时散点 Claim 读取、协议输出回退风险与外部 LongId 字符串安全扫描；`2026-06-02` 起，外部 LongId 字符串安全扫描已作为固定子项接入，覆盖 Console / Web / Flutter 高信号外部 ID 口径，并按 Windows 与 macOS / Linux 分流脚本入口
   - 运行身份语义后端定向测试，覆盖 `ClaimsPrincipalNormalizer`、`HttpContextUser`、`AccountController`、`AuthorizationController`、`UserInfoController`
 - `validate:ci`
   - 本地复现当前 `Repo Quality` 的最小执行面

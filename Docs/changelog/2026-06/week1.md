@@ -11,3 +11,15 @@
 - 今日提交回顾后已确认规划入口、`P3-8-D` 专题、`ID 与联邦路线图`、6 月开发日志和收工交接记录需要同步；本轮没有新增数据库结构、权限模型、视觉 token、Pencil 设计稿、部署配置或运行时环境变量。
 - 今日验证覆盖 Flutter 定向测试、`flutter analyze`、必要时全量 `flutter test`，后端定向测试与 `dotnet build Radish.slnx -c Debug`，Console `type-check / test / build`，以及仓库级 `git diff --check`。
 - 收工前补 [2026-06-01 收工回顾与明日事项](/records/daily-handoff-2026-06-01)：明日先做 Flutter 单商品购买真实数据复核；若购买 / 资产链路仍有阻断，优先修该链路，若通过则推进 `ID Phase A` 外部 LongId 字符串安全自动化守护。
+
+## 2026-06-02
+
+- Flutter 单商品购买真实数据人工复核已通过，确认登录态商品详情购买、支付口令、订单结果、余额 / 失败提示和返回状态可以闭合。
+- Console 胡萝卜调账审计缺口已修复：按用户查询余额和管理员调账继续校验真实用户，避免错误 UserId 被建立余额后误导购买链路。
+- `ID Phase A` 首批自动化守护已落地：新增 `npm run check:long-id-safety`，扫描 Console / Web / Flutter 高信号外部 LongId 边界，并接入 `validate:identity`；验证脚本已按 Windows 与 macOS / Linux 分流，避免跨平台误报。
+- `radish.client` 登录会话内部 ID 口径已迁为字符串：`userStore / authBootstrap / tokenClaims / authSession` 等状态不再把当前用户和租户 ID 拉入 JavaScript 精度域。
+- Flutter LongId 安全扫描已加强：Dart map 读取、`int.tryParse`、`_readInt / readInt`、`as int` 和 `toInt()` 等回潮形态纳入守护。
+- Web 工作台购买回流已收紧资格检查：购买回流前读取 `CheckCanBuy` 结果，资格不通过时不再打开支付口令弹窗；Flutter 商城商品、订单和背包文案同步保持当前单商品购买与只读承接边界。
+- Console 订单扣款流水追踪已补强：订单详情输出扣款流水 ID，可跳转到 `BusinessType=Order / BusinessId=OrderId` 的胡萝卜流水筛选结果；管理端流水查询支持业务上下文筛选，便于从订单定位扣款、从流水回看用户和商品上下文。
+- 今日验证覆盖 `dotnet test Radish.Api.Tests --filter CoinServiceTest`、`npm run type-check --workspace=radish.console`、`npm run type-check --workspace=radish.client`、`npm run test --workspace=radish.client`、`npm run check:long-id-safety`、`npm run validate:identity`、Flutter 定向测试、`npm run check:repo-hygiene:changed` 与 `git diff --check`。
+- 收工前补 [2026-06-02 收工回顾与明日事项](/records/daily-handoff-2026-06-02)：明日先做 `ID Phase A` 第三轮外部 ID 契约审计，若未发现高风险缺口，再回到购买 / 资产链路做跨端排障复核。

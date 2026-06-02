@@ -227,7 +227,9 @@ Radish 未来联邦的最小公共节点定义为：
 - 当前执行策略不是“立刻把外部契约全量切到 `PublicId`”，而是先把仍保留 `LongId` 的外部边界收口为字符串安全过渡契约
 - `2026-05-07` 已确认的首批治理面包括：通知 `extData`、window `appParams` / deep link、公开 DTO / 路由参数 / 回跳参数、`Profile / Shop / Wiki / Forum / Public Forum` 与 Console 用户 ID 入口；这些边界禁止提前 `Number(...)`
 - `2026-06-01` Console 用户 ID 入口已按该口径回拉：当前用户、个人资料和用户列表的 `VoUserId / uuid` 保持字符串传递，避免后台展示或调账动作因 JavaScript 大整数精度丢失指向错误用户；后续应补自动化检查，防止 Console / Flutter / Web 外部 LongId 回到 `number` 类型
-- `2026-06-02` 已补首批自动化守护：`npm run check:long-id-safety` 扫描 Console / Web / Flutter 高信号外部 ID 边界，并纳入 `validate:identity`，用于阻止外部 LongId 回到纯 `number / int` 或提前数值化转换
+- `2026-06-02` 已补首批自动化守护：`npm run check:long-id-safety` 扫描 Console / Web / Flutter 高信号外部 ID 边界，并纳入 `validate:identity`，用于阻止外部 LongId 回到纯 `number / int` 或提前数值化转换；该脚本已兼容 Windows 与 macOS / Linux 验证入口
+- `2026-06-02` 第二轮内部会话审计已完成：`radish.client` 的 `userStore / authBootstrap / tokenClaims / authSession` 等登录会话状态中，当前用户和租户 ID 以字符串保存和传递，避免工作台登录回流、个人资料和商城链路把外部 UserId 拉入 JavaScript 精度域
+- `2026-06-02` Flutter LongId 安全扫描已扩展到 Dart map 读取、`int.parse / int.tryParse`、`_readInt / readInt`、`as int` 与 `toInt()` 等回潮形态；后续第三轮应优先审计 `@radish/http`、Console API 类型和 Flutter 仓储的剩余外部 ID 契约
 - 上述冻结要求不是“远期优化建议”，而是当前主线稳定性约束；forum 公开阅读链路已经因大整数精度丢失发生过真实回归
 
 ### Phase B：核心聚合双标识
