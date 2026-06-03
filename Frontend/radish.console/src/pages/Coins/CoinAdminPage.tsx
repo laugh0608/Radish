@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   AntInput as Input,
   AntSelect as Select,
@@ -85,6 +85,7 @@ function normalizeOptionQuery(
 export const CoinAdminPage = () => {
   useDocumentTitle('胡萝卜管理');
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const queryUserIdFromUrl = normalizePositiveLongIdInput(searchParams.get('userId') ?? '');
   const queryTransactionType = normalizeOptionQuery(searchParams.get('transactionType'), TRANSACTION_TYPE_OPTIONS);
@@ -135,6 +136,26 @@ export const CoinAdminPage = () => {
       default:
         return 'default';
     }
+  };
+
+  const getCurrentReturnTo = () => `${location.pathname}${location.search}`;
+
+  const handleViewOrderFromTransaction = (transaction: CoinTransactionVo) => {
+    if (transaction.voBusinessType !== 'Order' || !transaction.voBusinessId) {
+      return;
+    }
+
+    const orderSearchParams = new URLSearchParams({
+      orderId: String(transaction.voBusinessId),
+      openDetail: '1',
+      returnTo: getCurrentReturnTo(),
+    });
+
+    if (loadedUserId) {
+      orderSearchParams.set('userId', loadedUserId);
+    }
+
+    navigate(`/orders?${orderSearchParams.toString()}`);
   };
 
   const loadTransactions = async (
@@ -364,6 +385,18 @@ export const CoinAdminPage = () => {
       },
     },
     {
+      title: '操作',
+      key: 'action',
+      width: 120,
+      render: (_: unknown, record) => (
+        record.voBusinessType === 'Order' && record.voBusinessId ? (
+          <Button onClick={() => handleViewOrderFromTransaction(record)}>
+            查看订单
+          </Button>
+        ) : '-'
+      ),
+    },
+    {
       title: '流水号',
       dataIndex: 'voTransactionNo',
       key: 'voTransactionNo',
@@ -388,7 +421,7 @@ export const CoinAdminPage = () => {
             <p className="admin-feature-subtle">支持按用户查询余额、回看交易流水，并执行正负向调账。</p>
           </div>
           <div className="coin-admin-header-actions">
-            {returnTo ? (
+            {returnTo?.startsWith('/') ? (
               <Button onClick={() => navigate(returnTo)}>
                 返回来源
               </Button>
@@ -552,7 +585,7 @@ export const CoinAdminPage = () => {
               columns={transactionColumns}
               dataSource={transactions}
               loading={transactionLoading}
-              scroll={{ x: 1220 }}
+              scroll={{ x: 1340 }}
               style={{ marginTop: 20 }}
               pagination={{
                 current: transactionPageIndex,
