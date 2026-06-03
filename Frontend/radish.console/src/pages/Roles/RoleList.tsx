@@ -34,7 +34,7 @@ export const RoleList = () => {
   const [loading, setLoading] = useState(false);
   const [formVisible, setFormVisible] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
-  const [editingRoleId, setEditingRoleId] = useState<number>();
+  const [editingRoleId, setEditingRoleId] = useState<string>();
   const canViewRoles = usePermission(CONSOLE_PERMISSIONS.rolesView);
   const canCreateRole = usePermission(CONSOLE_PERMISSIONS.rolesCreate);
   const canEditRole = usePermission(CONSOLE_PERMISSIONS.rolesEdit);
@@ -80,7 +80,7 @@ export const RoleList = () => {
   };
 
   // 删除角色
-  const handleDelete = async (voId: number) => {
+  const handleDelete = async (voId: string) => {
     try {
       await deleteRole(voId);
       message.success('删除角色成功');
@@ -92,7 +92,7 @@ export const RoleList = () => {
   };
 
   // 启用/禁用角色
-  const handleToggleStatus = async (voId: number, enabled: boolean) => {
+  const handleToggleStatus = async (voId: string, enabled: boolean) => {
     try {
       await toggleRoleStatus(voId, enabled);
       message.success(enabled ? '启用角色成功' : '禁用角色成功');

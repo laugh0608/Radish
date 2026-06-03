@@ -1,16 +1,16 @@
 import { apiGet, apiPost } from '@radish/http';
 
 export interface ResourceApiBindingVo {
-  voResourceId: number;
+  voResourceId: string;
   voResourceKey: string;
-  voApiModuleId: number;
+  voApiModuleId: string;
   voApiModuleName: string;
   voLinkUrl: string;
   voRelationType: string;
 }
 
 export interface ConsoleResourceTreeNodeVo {
-  voId: number;
+  voId: string;
   voTitle: string;
   voResourceKey: string;
   voResourceType: string;
@@ -21,19 +21,19 @@ export interface ConsoleResourceTreeNodeVo {
 }
 
 export interface RoleAuthorizationSnapshotVo {
-  voRoleId: number;
+  voRoleId: string;
   voRoleName: string;
   voRoleDescription: string;
   voRoleIsEnabled: boolean;
   voLastModifyTime?: string;
-  voGrantedResourceIds: number[];
+  voGrantedResourceIds: string[];
   voGrantedPermissionKeys: string[];
   voDerivedApiModules: ResourceApiBindingVo[];
 }
 
 export interface SaveRoleAuthorizationRequest {
-  roleId: number;
-  resourceIds: number[];
+  roleId: string;
+  resourceIds: string[];
   expectedModifyTime?: string;
 }
 
@@ -50,9 +50,9 @@ export async function getResourceTree(): Promise<ConsoleResourceTreeNodeVo[]> {
   return response.data;
 }
 
-export async function getRoleAuthorization(roleId: number): Promise<RoleAuthorizationSnapshotVo> {
+export async function getRoleAuthorization(roleId: string): Promise<RoleAuthorizationSnapshotVo> {
   const response = await apiGet<RoleAuthorizationSnapshotVo>(
-    `/api/v1/ConsoleAuthorization/GetRoleAuthorization?roleId=${roleId}`,
+    `/api/v1/ConsoleAuthorization/GetRoleAuthorization?roleId=${encodeURIComponent(roleId)}`,
     { withAuth: true }
   );
 
@@ -63,9 +63,9 @@ export async function getRoleAuthorization(roleId: number): Promise<RoleAuthoriz
   return response.data;
 }
 
-export async function getRolePermissionPreview(roleId: number): Promise<ResourceApiBindingVo[]> {
+export async function getRolePermissionPreview(roleId: string): Promise<ResourceApiBindingVo[]> {
   const response = await apiGet<ResourceApiBindingVo[]>(
-    `/api/v1/ConsoleAuthorization/GetRolePermissionPreview?roleId=${roleId}`,
+    `/api/v1/ConsoleAuthorization/GetRolePermissionPreview?roleId=${encodeURIComponent(roleId)}`,
     { withAuth: true }
   );
 

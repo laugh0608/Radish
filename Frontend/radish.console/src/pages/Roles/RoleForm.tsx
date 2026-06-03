@@ -14,7 +14,7 @@ import { log } from '@/utils/logger';
 interface RoleFormProps {
   visible: boolean;
   mode: 'create' | 'edit';
-  roleId?: number;
+  roleId?: string;
   onCancel: () => void;
   onSuccess: () => void;
 }
@@ -35,7 +35,7 @@ export const RoleForm = ({ visible, mode, roleId, onCancel, onSuccess }: RoleFor
   ];
 
   // 加载角色详情（编辑模式）
-  const loadRoleDetail = async (id: number) => {
+  const loadRoleDetail = async (id: string) => {
     try {
       setInitialLoading(true);
       const role = await getRoleById(id);

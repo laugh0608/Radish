@@ -14,8 +14,8 @@ const scanRoots = [
 ];
 
 const textExtensions = new Set(['.ts', '.tsx', '.dart']);
-const longIdNamePattern = '(?:vo)?(?:UserId|PostId|CommentId|ProductId|OrderId|NotificationId|TransactionId|ReportId|TargetContentId|TargetPostId|TargetCommentId|TargetChannelId|TargetMessageId|TargetUserId|ReporterUserId|ActionId|BusinessId|TenantId|FromUserId|ToUserId|OperatorId|SourceReportId|SourceOrderId|SourceProductId|UserBenefitId|ReplyToCommentId|CategoryId|AttachmentId|ChannelId|MessageId|uuid)';
-const longIdExpressionPattern = '(?:userId|postId|commentId|productId|orderId|notificationId|transactionId|reportId|targetContentId|targetPostId|targetCommentId|targetChannelId|targetMessageId|targetUserId|reporterUserId|actionId|businessId|tenantId|fromUserId|toUserId|operatorId|sourceReportId|sourceOrderId|sourceProductId|userBenefitId|replyToCommentId|categoryId|attachmentId|channelId|messageId|uuid)';
+const longIdNamePattern = '(?:vo)?(?:UserId|PostId|CommentId|ProductId|OrderId|NotificationId|TransactionId|ReportId|TargetContentId|TargetPostId|TargetCommentId|TargetChannelId|TargetMessageId|TargetUserId|ReporterUserId|ActionId|BusinessId|TenantId|FromUserId|ToUserId|OperatorId|SourceReportId|SourceOrderId|SourceProductId|UserBenefitId|ReplyToCommentId|CategoryId|AttachmentId|ChannelId|MessageId|RoleId|ResourceId|ApiModuleId|uuid)';
+const longIdExpressionPattern = '(?:userId|postId|commentId|productId|orderId|notificationId|transactionId|reportId|targetContentId|targetPostId|targetCommentId|targetChannelId|targetMessageId|targetUserId|reporterUserId|actionId|businessId|tenantId|fromUserId|toUserId|operatorId|sourceReportId|sourceOrderId|sourceProductId|userBenefitId|replyToCommentId|categoryId|attachmentId|channelId|messageId|roleId|resourceId|apiModuleId|uuid)';
 const tsLongIdDeclarationPattern = `(?:${longIdNamePattern}|${longIdExpressionPattern})`;
 const genericLongIdExpressionPattern = '(?:\\.voId\\b|\\[(?:\'voId\'|"voId")\\])';
 const longIdMapKeyPattern = `(?:voId|${longIdNamePattern})`;
@@ -41,6 +41,13 @@ const tsRules = [
     id: 'ts-generic-vo-id-number-conversion',
     description: '泛型 voId 承载外部 LongId 时不得提前 Number/parseInt 转换；请保持字符串透传或使用字符串规范化函数',
     test: (line) => new RegExp(`\\b(?:Number|Number\\.parseInt|parseInt)\\s*\\([^\\n)]*${genericLongIdExpressionPattern}`, 'i').test(line),
+  },
+  {
+    id: 'ts-console-auth-vo-id-number-type',
+    description: 'Console 角色/授权 API 的 voId 承载外部 LongId，不得声明为 number',
+    test: (line, repoPath) =>
+      repoPath === 'Frontend/radish.console/src/api/roleApi.ts' &&
+      /\bvoId\??\s*:\s*number(?:\s*[;,)=}]|\s*\|\s*(?:null|undefined))/.test(line),
   },
 ];
 
@@ -116,7 +123,7 @@ function collectFindings(filePath) {
     }
 
     for (const rule of rules) {
-      if (!rule.test(line)) {
+      if (!rule.test(line, repoPath)) {
         continue;
       }
 

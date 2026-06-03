@@ -9,7 +9,7 @@ import { apiGet, apiPost, apiPut, apiDelete } from '@radish/http';
  * 角色数据类型（使用 vo 前缀，与后端 VO 保持一致）
  */
 export interface RoleVo {
-  voId: number;
+  voId: string;
   voRoleName: string;
   voRoleDescription: string;
   voOrderSort: number;
@@ -17,10 +17,10 @@ export interface RoleVo {
   voAuthorityScope: number;
   voIsEnabled: boolean;
   voIsDeleted: boolean;
-  voCreateId: number;
+  voCreateId: string;
   voCreateBy: string;
   voCreateTime: string;
-  voModifyId?: number;
+  voModifyId?: string;
   voModifyBy?: string;
   voModifyTime?: string;
 }
@@ -41,7 +41,7 @@ export interface CreateRoleRequest {
  * 角色更新请求类型（使用 vo 前缀）
  */
 export interface UpdateRoleRequest extends CreateRoleRequest {
-  voId: number;
+  voId: string;
 }
 
 /**
@@ -60,8 +60,11 @@ export async function getRoleList(): Promise<RoleVo[]> {
 /**
  * 根据ID获取角色详情
  */
-export async function getRoleById(id: number): Promise<RoleVo> {
-  const response = await apiGet<RoleVo>(`/api/v1/Role/GetRoleById?id=${id}`, { withAuth: true });
+export async function getRoleById(id: string): Promise<RoleVo> {
+  const response = await apiGet<RoleVo>(
+    `/api/v1/Role/GetRoleById?id=${encodeURIComponent(id)}`,
+    { withAuth: true }
+  );
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '获取角色详情失败');
@@ -86,13 +89,17 @@ export async function createRole(roleData: CreateRoleRequest): Promise<RoleVo> {
 /**
  * 更新角色
  */
-export async function updateRole(id: number, roleData: CreateRoleRequest): Promise<RoleVo> {
+export async function updateRole(id: string, roleData: CreateRoleRequest): Promise<RoleVo> {
   const voData: UpdateRoleRequest = {
     voId: id,
     ...roleData
   };
 
-  const response = await apiPut<RoleVo>(`/api/v1/Role/UpdateRole?id=${id}`, voData, { withAuth: true });
+  const response = await apiPut<RoleVo>(
+    `/api/v1/Role/UpdateRole?id=${encodeURIComponent(id)}`,
+    voData,
+    { withAuth: true }
+  );
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '更新角色失败');
@@ -104,8 +111,11 @@ export async function updateRole(id: number, roleData: CreateRoleRequest): Promi
 /**
  * 删除角色
  */
-export async function deleteRole(id: number): Promise<boolean> {
-  const response = await apiDelete(`/api/v1/Role/DeleteRole?id=${id}`, { withAuth: true });
+export async function deleteRole(id: string): Promise<boolean> {
+  const response = await apiDelete(
+    `/api/v1/Role/DeleteRole?id=${encodeURIComponent(id)}`,
+    { withAuth: true }
+  );
 
   if (!response.ok) {
     throw new Error(response.message || '删除角色失败');
@@ -117,8 +127,12 @@ export async function deleteRole(id: number): Promise<boolean> {
 /**
  * 启用/禁用角色
  */
-export async function toggleRoleStatus(id: number, enabled: boolean): Promise<RoleVo> {
-  const response = await apiPut<RoleVo>(`/api/v1/Role/ToggleRoleStatus?id=${id}&enabled=${enabled}`, {}, { withAuth: true });
+export async function toggleRoleStatus(id: string, enabled: boolean): Promise<RoleVo> {
+  const response = await apiPut<RoleVo>(
+    `/api/v1/Role/ToggleRoleStatus?id=${encodeURIComponent(id)}&enabled=${enabled}`,
+    {},
+    { withAuth: true }
+  );
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '操作失败');

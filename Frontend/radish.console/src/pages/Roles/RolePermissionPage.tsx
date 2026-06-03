@@ -27,7 +27,7 @@ import './RolePermissionPage.css';
 
 interface ResourceIndexItem {
   node: ConsoleResourceTreeNodeVo;
-  parentId: number | null;
+  parentId: string | null;
 }
 
 interface NodeVisualState {
@@ -53,9 +53,9 @@ function deduplicateApiBindings(bindings: ResourceApiBindingVo[]): ResourceApiBi
 
 function buildResourceIndex(
   nodes: ConsoleResourceTreeNodeVo[],
-  parentId: number | null = null,
-  index = new Map<number, ResourceIndexItem>()
-): Map<number, ResourceIndexItem> {
+  parentId: string | null = null,
+  index = new Map<string, ResourceIndexItem>()
+): Map<string, ResourceIndexItem> {
   nodes.forEach((node) => {
     index.set(node.voId, { node, parentId });
     buildResourceIndex(node.voChildren ?? [], node.voId, index);
@@ -64,14 +64,14 @@ function buildResourceIndex(
   return index;
 }
 
-function collectDescendantIds(node: ConsoleResourceTreeNodeVo): number[] {
+function collectDescendantIds(node: ConsoleResourceTreeNodeVo): string[] {
   return [
     node.voId,
     ...node.voChildren.flatMap((child) => collectDescendantIds(child)),
   ];
 }
 
-function ensureAncestorSelection(selectedIds: Set<number>, resourceIndex: Map<number, ResourceIndexItem>): Set<number> {
+function ensureAncestorSelection(selectedIds: Set<string>, resourceIndex: Map<string, ResourceIndexItem>): Set<string> {
   const normalized = new Set(selectedIds);
 
   normalized.forEach((resourceId) => {
@@ -86,7 +86,7 @@ function ensureAncestorSelection(selectedIds: Set<number>, resourceIndex: Map<nu
   return normalized;
 }
 
-function collectPermissionKeys(nodes: ConsoleResourceTreeNodeVo[], selectedIds: Set<number>): string[] {
+function collectPermissionKeys(nodes: ConsoleResourceTreeNodeVo[], selectedIds: Set<string>): string[] {
   const keys = new Set<string>();
 
   const walk = (currentNodes: ConsoleResourceTreeNodeVo[]) => {
@@ -106,7 +106,7 @@ function collectPermissionKeys(nodes: ConsoleResourceTreeNodeVo[], selectedIds: 
   return Array.from(keys).sort((left, right) => left.localeCompare(right, 'zh-CN'));
 }
 
-function collectPreviewBindings(nodes: ConsoleResourceTreeNodeVo[], selectedIds: Set<number>): ResourceApiBindingVo[] {
+function collectPreviewBindings(nodes: ConsoleResourceTreeNodeVo[], selectedIds: Set<string>): ResourceApiBindingVo[] {
   const bindings: ResourceApiBindingVo[] = [];
 
   const walk = (currentNodes: ConsoleResourceTreeNodeVo[]) => {
@@ -128,8 +128,8 @@ function collectPreviewBindings(nodes: ConsoleResourceTreeNodeVo[], selectedIds:
 
 function buildVisualState(
   node: ConsoleResourceTreeNodeVo,
-  selectedIds: Set<number>,
-  cache: Map<number, NodeVisualState>
+  selectedIds: Set<string>,
+  cache: Map<string, NodeVisualState>
 ): NodeVisualState {
   const cached = cache.get(node.voId);
   if (cached) {
@@ -163,9 +163,9 @@ function buildVisualState(
 interface ResourceNodeProps {
   node: ConsoleResourceTreeNodeVo;
   level: number;
-  selectedIds: Set<number>;
+  selectedIds: Set<string>;
   onToggle: (node: ConsoleResourceTreeNodeVo, checked: boolean) => void;
-  visualStateCache: Map<number, NodeVisualState>;
+  visualStateCache: Map<string, NodeVisualState>;
 }
 
 function ResourceNode({
@@ -238,14 +238,14 @@ export const RolePermissionPage = () => {
   const navigate = useNavigate();
   const { roleId } = useParams<{ roleId: string }>();
   const canEditRole = usePermission(CONSOLE_PERMISSIONS.rolesEdit);
-  const numericRoleId = Number(roleId);
+  const normalizedRoleId = roleId?.trim();
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [resourceTree, setResourceTree] = useState<ConsoleResourceTreeNodeVo[]>([]);
   const [snapshot, setSnapshot] = useState<RoleAuthorizationSnapshotVo | null>(null);
   const [savedPreview, setSavedPreview] = useState<ResourceApiBindingVo[]>([]);
-  const [selectedResourceIds, setSelectedResourceIds] = useState<number[]>([]);
+  const [selectedResourceIds, setSelectedResourceIds] = useState<string[]>([]);
 
   const resourceIndex = useMemo(() => buildResourceIndex(resourceTree), [resourceTree]);
   const selectedResourceIdSet = useMemo(() => new Set(selectedResourceIds), [selectedResourceIds]);
@@ -263,8 +263,8 @@ export const RolePermissionPage = () => {
       return false;
     }
 
-    const currentIds = [...selectedResourceIds].sort((left, right) => left - right);
-    const savedIds = [...snapshot.voGrantedResourceIds].sort((left, right) => left - right);
+    const currentIds = [...selectedResourceIds].sort((left, right) => left.localeCompare(right, 'zh-CN'));
+    const savedIds = [...snapshot.voGrantedResourceIds].sort((left, right) => left.localeCompare(right, 'zh-CN'));
 
     if (currentIds.length !== savedIds.length) {
       return true;
@@ -274,7 +274,7 @@ export const RolePermissionPage = () => {
   }, [selectedResourceIds, snapshot]);
 
   const loadAuthorization = async () => {
-    if (!Number.isFinite(numericRoleId) || numericRoleId <= 0) {
+    if (!normalizedRoleId || !/^[1-9]\d*$/u.test(normalizedRoleId)) {
       message.error('角色 ID 无效');
       navigate('/roles', { replace: true });
       return;
@@ -284,8 +284,8 @@ export const RolePermissionPage = () => {
       setLoading(true);
       const [tree, currentSnapshot, preview] = await Promise.all([
         getResourceTree(),
-        getRoleAuthorization(numericRoleId),
-        getRolePermissionPreview(numericRoleId),
+        getRoleAuthorization(normalizedRoleId),
+        getRolePermissionPreview(normalizedRoleId),
       ]);
 
       setResourceTree(tree);
@@ -302,7 +302,7 @@ export const RolePermissionPage = () => {
 
   useEffect(() => {
     void loadAuthorization();
-  }, [numericRoleId]);
+  }, [normalizedRoleId]);
 
   const handleToggleNode = (node: ConsoleResourceTreeNodeVo, checked: boolean) => {
     const nextSelectedIds = new Set(selectedResourceIds);
@@ -310,11 +310,11 @@ export const RolePermissionPage = () => {
     if (checked) {
       nextSelectedIds.add(node.voId);
       const normalized = ensureAncestorSelection(nextSelectedIds, resourceIndex);
-      setSelectedResourceIds(Array.from(normalized).sort((left, right) => left - right));
+      setSelectedResourceIds(Array.from(normalized).sort((left, right) => left.localeCompare(right, 'zh-CN')));
     } else {
       const descendants = collectDescendantIds(node);
       descendants.forEach((resourceId) => nextSelectedIds.delete(resourceId));
-      setSelectedResourceIds(Array.from(nextSelectedIds).sort((left, right) => left - right));
+      setSelectedResourceIds(Array.from(nextSelectedIds).sort((left, right) => left.localeCompare(right, 'zh-CN')));
     }
   };
 
@@ -327,7 +327,7 @@ export const RolePermissionPage = () => {
       setSaving(true);
       await saveRoleAuthorization({
         roleId: snapshot.voRoleId,
-        resourceIds: [...selectedResourceIds].sort((left, right) => left - right),
+        resourceIds: [...selectedResourceIds].sort((left, right) => left.localeCompare(right, 'zh-CN')),
         expectedModifyTime: snapshot.voLastModifyTime,
       });
       message.success('角色权限保存成功');
@@ -340,7 +340,7 @@ export const RolePermissionPage = () => {
     }
   };
 
-  const visualStateCache = useMemo(() => new Map<number, NodeVisualState>(), [selectedResourceIds]);
+  const visualStateCache = useMemo(() => new Map<string, NodeVisualState>(), [selectedResourceIds]);
 
   return (
     <div className="admin-feature-page role-permission-page">
