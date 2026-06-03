@@ -78,7 +78,7 @@
 
 - 服务端内部仍可使用 Snowflake `long` 主键。
 - API 响应、通知 `extData`、公开路由、深链参数、Console 查询参数和 Flutter handoff 中的外部对象 ID，前端都应按字符串消费。
-- JavaScript / TypeScript 侧禁止把用户 ID、帖子 ID、评论 ID、订单 ID、商品 ID、通知 ID 等外部 long 标识提前转成 `number`。
+- JavaScript / TypeScript 侧禁止把用户 ID、帖子 ID、评论 ID、订单 ID、商品 ID、通知 ID、角色 ID、资源 ID、API 模块 ID 等外部 long 标识提前转成 `number`。
 - Dart / Flutter 侧也应优先把外部对象 ID 建模为 `String`，只有分页、数量、金额、排序权重和枚举状态等真实数值进入 `int`。
 - 需要正式切换 `PublicId` 的对象按 [ID 与联邦路线图](/architecture/id-and-federation-roadmap) 推进；当前要求先保证仍暴露的 LongId 字符串安全。
 
@@ -97,6 +97,7 @@
 - 获取访问令牌
 - 做最小链路验证
 - 验证租户相关接口与上下文
+- 读取和更新当前登录用户基础个人资料：`User/GetMyProfile`、`User/UpdateMyProfile`
 
 ### 社区与论坛
 

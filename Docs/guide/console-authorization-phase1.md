@@ -429,6 +429,8 @@ RouteGuard / usePermission
 - `ResourceIds`
 - `ExpectedModifyTime`
 
+前端 / HTTP 边界中，`VoRoleId`、`VoGrantedResourceIds`、`VoResourceId`、`VoApiModuleId`、`RoleId` 和 `ResourceIds` 均按字符串消费和传递。后端实体仍可使用 `long`，前端不得用 `Number(...)`、`parseInt(...)` 或 `number[]` 承接这些授权对象 ID。
+
 一期建议只做“整页覆盖保存”，不做复杂增量 patch。
 
 ### 6.4 Repository / Service / Controller
@@ -771,6 +773,7 @@ CurrentUser permissions
 6. `System/Admin` 默认全集不受回归影响
 7. `Hangfire` 仍可通过统一权限模型控制
 8. 文档、种子、接口实现与前端页面口径保持一致
+9. 角色授权页中的角色 / 资源 / API 模块 ID 在前端保持字符串契约，并由 LongId 守护防止回潮
 
 ---
 
