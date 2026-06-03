@@ -10,6 +10,7 @@ import 'package:radish_flutter/core/network/radish_api_endpoints.dart';
 import 'package:radish_flutter/features/shop/data/shop_models.dart';
 import 'package:radish_flutter/features/shop/data/shop_repository.dart';
 import 'package:radish_flutter/features/shop/presentation/shop_product_detail_page.dart';
+import 'package:radish_flutter/features/wallet/data/wallet_repository.dart';
 
 void main() {
   testWidgets('renders public shop product detail with login purchase boundary',
@@ -26,6 +27,7 @@ void main() {
         home: ShopProductDetailPage(
           environment: AppEnvironment.development(),
           repository: _SuccessShopRepository(),
+          walletRepository: EmptyWalletRepository(),
           productId: '4001',
           initialTitle: 'Profile Rename Card',
         ),
@@ -68,6 +70,7 @@ void main() {
         home: ShopProductDetailPage(
           environment: AppEnvironment.development(),
           repository: _FailingShopRepository(),
+          walletRepository: EmptyWalletRepository(),
           productId: '4001',
         ),
       ),
@@ -92,6 +95,7 @@ void main() {
         home: ShopProductDetailPage(
           environment: AppEnvironment.development(),
           repository: _SuccessShopRepository(),
+          walletRepository: EmptyWalletRepository(),
           productId: '4001',
           accessToken: 'access-token',
         ),
@@ -131,6 +135,7 @@ void main() {
         home: ShopProductDetailPage(
           environment: const AppEnvironment.development(),
           repository: const _SuccessShopRepository(),
+          walletRepository: const EmptyWalletRepository(),
           productId: '4001',
           sessionController: sessionController,
           onRequestSignIn: () async {
@@ -171,6 +176,7 @@ void main() {
         home: ShopProductDetailPage(
           environment: AppEnvironment.development(),
           repository: _PurchaseFailingShopRepository(),
+          walletRepository: EmptyWalletRepository(),
           productId: '4001',
           accessToken: 'access-token',
         ),

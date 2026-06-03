@@ -5,6 +5,7 @@ import 'package:radish_flutter/core/network/radish_api_client.dart';
 import 'package:radish_flutter/features/shop/data/shop_models.dart';
 import 'package:radish_flutter/features/shop/data/shop_repository.dart';
 import 'package:radish_flutter/features/shop/presentation/shop_product_list_page.dart';
+import 'package:radish_flutter/features/wallet/data/wallet_repository.dart';
 
 void main() {
   testWidgets('renders public shop product list and opens detail',
@@ -19,6 +20,7 @@ void main() {
         home: ShopProductListPage(
           environment: AppEnvironment.development(),
           repository: _SeededShopRepository(),
+          walletRepository: EmptyWalletRepository(),
         ),
       ),
     );
@@ -58,6 +60,7 @@ void main() {
         home: ShopProductListPage(
           environment: AppEnvironment.development(),
           repository: _FailingShopRepository(),
+          walletRepository: EmptyWalletRepository(),
         ),
       ),
     );

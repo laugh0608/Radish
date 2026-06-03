@@ -161,12 +161,14 @@ public class CoinController : ControllerBase
         [FromQuery] int pageIndex = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] string? transactionType = null,
-        [FromQuery] string? status = null)
+        [FromQuery] string? status = null,
+        [FromQuery] string? businessType = null,
+        [FromQuery] long? businessId = null)
     {
         var userId = Current.UserId;
 
         var transactions = await _coinService.GetTransactionsAsync(
-            userId, pageIndex, pageSize, transactionType, status);
+            userId, pageIndex, pageSize, transactionType, status, businessType, businessId);
 
         return new MessageModel
         {

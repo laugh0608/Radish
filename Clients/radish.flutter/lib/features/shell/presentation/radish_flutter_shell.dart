@@ -553,6 +553,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
         builder: (context) => ShopProductDetailPage(
           environment: widget.environment,
           repository: widget.shopRepository,
+          walletRepository: widget.walletRepository,
           productId: productId,
           initialTitle: product.name,
           sessionController: widget.sessionController,
@@ -571,6 +572,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
         builder: (context) => ShopProductListPage(
           environment: widget.environment,
           repository: widget.shopRepository,
+          walletRepository: widget.walletRepository,
           sessionController: widget.sessionController,
           authController: widget.authController,
           onRequestSignIn: () => _startLoginForTarget(
@@ -598,6 +600,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
         builder: (context) => ShopOrderListPage(
           environment: widget.environment,
           repository: widget.shopRepository,
+          walletRepository: widget.walletRepository,
           accessToken: accessToken,
         ),
       ),
@@ -621,6 +624,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
         builder: (context) => ShopInventoryPage(
           environment: widget.environment,
           repository: widget.shopRepository,
+          walletRepository: widget.walletRepository,
           accessToken: accessToken,
         ),
       ),
@@ -691,6 +695,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
           environment: widget.environment,
           repository: widget.profileRepository,
           shopRepository: widget.shopRepository,
+          walletRepository: widget.walletRepository,
           accessToken: accessToken,
           onOpenForumDetailTarget: _openForumDetailTarget,
           onOpenDocsDetailTarget: _openDocsDetailTarget,

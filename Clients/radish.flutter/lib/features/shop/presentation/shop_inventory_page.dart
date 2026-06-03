@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../core/config/app_environment.dart';
 import '../../../core/network/radish_api_client.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
+import '../../wallet/data/wallet_repository.dart';
 import '../data/shop_models.dart';
 import '../data/shop_repository.dart';
 import 'shop_order_detail_page.dart';
@@ -14,12 +15,14 @@ class ShopInventoryPage extends StatefulWidget {
   const ShopInventoryPage({
     required this.environment,
     required this.repository,
+    required this.walletRepository,
     required this.accessToken,
     super.key,
   });
 
   final AppEnvironment environment;
   final ShopRepository repository;
+  final WalletRepository walletRepository;
   final String accessToken;
 
   @override
@@ -115,6 +118,7 @@ class _ShopInventoryPageState extends State<ShopInventoryPage> {
         builder: (context) => ShopOrderDetailPage(
           environment: widget.environment,
           repository: widget.repository,
+          walletRepository: widget.walletRepository,
           accessToken: widget.accessToken,
           orderId: normalizedOrderId,
           sourceLabel: '背包来源',
@@ -135,6 +139,7 @@ class _ShopInventoryPageState extends State<ShopInventoryPage> {
         builder: (context) => ShopProductDetailPage(
           environment: widget.environment,
           repository: widget.repository,
+          walletRepository: widget.walletRepository,
           productId: normalizedProductId,
           sourceLabel: '背包来源',
           returnLabel: '返回背包',

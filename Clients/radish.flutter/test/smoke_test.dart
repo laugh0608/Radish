@@ -251,6 +251,23 @@ void main() {
     expect(find.text('来源：订单列表'), findsOneWidget);
     expect(find.text('完成支付'), findsOneWidget);
     expect(find.text('订单完成'), findsOneWidget);
+    expect(find.text('扣款流水'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, '查看扣款流水'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilledButton, '查看扣款流水'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('订单扣款流水'), findsWidgets);
+    expect(find.text('返回订单详情'), findsOneWidget);
+    expect(find.text('当前筛选：Order #9001'), findsOneWidget);
+    expect(find.text('已加载 1 / 1 条流水'), findsOneWidget);
+    expect(find.text('匹配流水'), findsOneWidget);
+    expect(find.text('商城消费'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('订单详情'), findsWidgets);
 
     await tester.pageBack();
     await tester.pumpAndSettle();
@@ -3024,6 +3041,7 @@ class _SeededShopRepository implements ShopRepository {
       totalPrice: 120,
       status: 'Completed',
       statusDisplay: '已完成',
+      coinTransactionId: 'coin-2',
       durationDisplay: '永久',
       createTime: '2026-05-31T08:00:00Z',
       paidTime: '2026-05-31T08:00:30Z',
@@ -3099,52 +3117,82 @@ class _SeededWalletRepository implements WalletRepository {
     required String accessToken,
     required int pageIndex,
     required int pageSize,
+    String? transactionType,
+    String? status,
+    String? businessType,
+    String? businessId,
   }) async {
-    return const CoinTransactionPage(
+    const transactions = [
+      CoinTransaction(
+        id: 'coin-1',
+        transactionNo: 'CT202605310001',
+        fromUserId: null,
+        fromUserName: null,
+        toUserId: 'user-42',
+        toUserName: 'user-42',
+        amount: 1800,
+        amountDisplay: '1.800',
+        fee: 0,
+        feeDisplay: '0.000',
+        transactionType: 'SYSTEM_GRANT',
+        transactionTypeDisplay: '系统赠送',
+        status: 'SUCCESS',
+        statusDisplay: '成功',
+        remark: '新账号奖励',
+        createTime: '2026-05-31T08:00:00Z',
+      ),
+      CoinTransaction(
+        id: 'coin-2',
+        transactionNo: 'CT202605310002',
+        fromUserId: 'user-42',
+        fromUserName: 'user-42',
+        toUserId: null,
+        toUserName: null,
+        amount: 600,
+        amountDisplay: '0.600',
+        fee: 0,
+        feeDisplay: '0.000',
+        transactionType: 'CONSUME',
+        transactionTypeDisplay: '商城消费',
+        status: 'SUCCESS',
+        statusDisplay: '成功',
+        businessType: 'Order',
+        businessId: '9001',
+        remark: '购买 Profile Rename Card',
+        createTime: '2026-05-31T08:30:00Z',
+      ),
+    ];
+    final filteredTransactions = transactions.where((transaction) {
+      if (transactionType != null &&
+          transactionType.trim().isNotEmpty &&
+          transaction.transactionType != transactionType.trim()) {
+        return false;
+      }
+      if (status != null &&
+          status.trim().isNotEmpty &&
+          transaction.status != status.trim()) {
+        return false;
+      }
+      if (businessType != null &&
+          businessType.trim().isNotEmpty &&
+          transaction.businessType != businessType.trim()) {
+        return false;
+      }
+      if (businessId != null &&
+          businessId.trim().isNotEmpty &&
+          transaction.businessId != businessId.trim()) {
+        return false;
+      }
+
+      return true;
+    }).toList();
+
+    return CoinTransactionPage(
       page: 1,
       pageSize: 20,
-      dataCount: 2,
+      dataCount: filteredTransactions.length,
       pageCount: 1,
-      transactions: [
-        CoinTransaction(
-          id: 'coin-1',
-          transactionNo: 'CT202605310001',
-          fromUserId: null,
-          fromUserName: null,
-          toUserId: 'user-42',
-          toUserName: 'user-42',
-          amount: 1800,
-          amountDisplay: '1.800',
-          fee: 0,
-          feeDisplay: '0.000',
-          transactionType: 'SYSTEM_GRANT',
-          transactionTypeDisplay: '系统赠送',
-          status: 'SUCCESS',
-          statusDisplay: '成功',
-          remark: '新账号奖励',
-          createTime: '2026-05-31T08:00:00Z',
-        ),
-        CoinTransaction(
-          id: 'coin-2',
-          transactionNo: 'CT202605310002',
-          fromUserId: 'user-42',
-          fromUserName: 'user-42',
-          toUserId: null,
-          toUserName: null,
-          amount: 600,
-          amountDisplay: '0.600',
-          fee: 0,
-          feeDisplay: '0.000',
-          transactionType: 'CONSUME',
-          transactionTypeDisplay: '商城消费',
-          status: 'SUCCESS',
-          statusDisplay: '成功',
-          businessType: 'Order',
-          businessId: '9001',
-          remark: '购买 Profile Rename Card',
-          createTime: '2026-05-31T08:30:00Z',
-        ),
-      ],
+      transactions: filteredTransactions,
     );
   }
 }

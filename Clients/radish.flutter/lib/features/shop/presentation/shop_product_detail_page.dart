@@ -8,6 +8,7 @@ import '../../../core/config/app_environment.dart';
 import '../../../core/network/radish_api_client.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
 import '../../../shared/widgets/public_link_copy_panel.dart';
+import '../../wallet/data/wallet_repository.dart';
 import '../data/shop_models.dart';
 import '../data/shop_repository.dart';
 import 'shop_order_detail_page.dart';
@@ -16,6 +17,7 @@ class ShopProductDetailPage extends StatefulWidget {
   const ShopProductDetailPage({
     required this.environment,
     required this.repository,
+    required this.walletRepository,
     required this.productId,
     this.initialTitle,
     this.sourceLabel = '发现页商城精选',
@@ -29,6 +31,7 @@ class ShopProductDetailPage extends StatefulWidget {
 
   final AppEnvironment environment;
   final ShopRepository repository;
+  final WalletRepository walletRepository;
   final String productId;
   final String? initialTitle;
   final String sourceLabel;
@@ -348,6 +351,7 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
             builder: (context) => ShopOrderDetailPage(
               environment: widget.environment,
               repository: widget.repository,
+              walletRepository: widget.walletRepository,
               accessToken: accessToken,
               orderId: orderId,
               sourceLabel: '购买结果',

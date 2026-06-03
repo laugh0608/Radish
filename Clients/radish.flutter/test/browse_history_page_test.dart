@@ -8,6 +8,7 @@ import 'package:radish_flutter/features/profile/data/profile_models.dart';
 import 'package:radish_flutter/features/profile/data/profile_repository.dart';
 import 'package:radish_flutter/features/profile/presentation/browse_history_page.dart';
 import 'package:radish_flutter/features/shop/data/shop_repository.dart';
+import 'package:radish_flutter/features/wallet/data/wallet_repository.dart';
 
 void main() {
   testWidgets('renders browse history and opens native handoff targets', (
@@ -27,6 +28,7 @@ void main() {
           environment: const AppEnvironment.development(),
           repository: const _BrowseHistoryRepository(),
           shopRepository: const EmptyShopRepository(),
+          walletRepository: const EmptyWalletRepository(),
           accessToken: 'access-token',
           onOpenForumDetailTarget: openedForumTargets.add,
           onOpenDocsDetailTarget: openedDocsTargets.add,
@@ -80,6 +82,7 @@ void main() {
           environment: const AppEnvironment.development(),
           repository: repository,
           shopRepository: const EmptyShopRepository(),
+          walletRepository: const EmptyWalletRepository(),
           accessToken: 'access-token',
         ),
       ),

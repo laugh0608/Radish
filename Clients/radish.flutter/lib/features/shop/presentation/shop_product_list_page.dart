@@ -7,6 +7,7 @@ import '../../../core/auth/session_controller.dart';
 import '../../../core/config/app_environment.dart';
 import '../../../core/network/radish_api_client.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
+import '../../wallet/data/wallet_repository.dart';
 import '../data/shop_models.dart';
 import '../data/shop_repository.dart';
 import 'shop_product_detail_page.dart';
@@ -15,6 +16,7 @@ class ShopProductListPage extends StatefulWidget {
   const ShopProductListPage({
     required this.environment,
     required this.repository,
+    required this.walletRepository,
     this.accessToken,
     this.sessionController,
     this.authController,
@@ -24,6 +26,7 @@ class ShopProductListPage extends StatefulWidget {
 
   final AppEnvironment environment;
   final ShopRepository repository;
+  final WalletRepository walletRepository;
   final String? accessToken;
   final SessionController? sessionController;
   final NativeAuthController? authController;
@@ -163,6 +166,7 @@ class _ShopProductListPageState extends State<ShopProductListPage> {
         builder: (context) => ShopProductDetailPage(
           environment: widget.environment,
           repository: widget.repository,
+          walletRepository: widget.walletRepository,
           productId: productId,
           initialTitle: product.name,
           sourceLabel: '公开商品列表',

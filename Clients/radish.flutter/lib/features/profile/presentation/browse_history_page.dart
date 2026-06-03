@@ -8,6 +8,7 @@ import '../../../features/docs/data/docs_models.dart';
 import '../../../features/forum/data/forum_models.dart';
 import '../../../features/shop/data/shop_repository.dart';
 import '../../../features/shop/presentation/shop_product_detail_page.dart';
+import '../../../features/wallet/data/wallet_repository.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
 import '../data/profile_models.dart';
 import '../data/profile_repository.dart';
@@ -17,6 +18,7 @@ class BrowseHistoryPage extends StatefulWidget {
     required this.environment,
     required this.repository,
     required this.shopRepository,
+    required this.walletRepository,
     required this.accessToken,
     this.onOpenForumDetailTarget,
     this.onOpenDocsDetailTarget,
@@ -26,6 +28,7 @@ class BrowseHistoryPage extends StatefulWidget {
   final AppEnvironment environment;
   final ProfileRepository repository;
   final ShopRepository shopRepository;
+  final WalletRepository walletRepository;
   final String accessToken;
   final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
   final ValueChanged<DocsDetailHandoffTarget>? onOpenDocsDetailTarget;
@@ -184,6 +187,7 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage> {
             builder: (context) => ShopProductDetailPage(
               environment: widget.environment,
               repository: widget.shopRepository,
+              walletRepository: widget.walletRepository,
               productId: item.navigationId,
               initialTitle: item.title,
               sourceLabel: '浏览记录',

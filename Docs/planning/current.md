@@ -89,6 +89,7 @@
   - `2026-06-02` Flutter 单商品购买真实数据人工复核已通过，随后 Web 工作台购买回流补资格检查，避免资格不通过时仍打开支付口令弹窗
   - `ID Phase A` 第二轮已推进：`radish.client` 登录会话内部 `userId / tenantId` 迁为字符串口径，`npm run check:long-id-safety` 已接入 `validate:identity`，Flutter LongId 扫描已覆盖 map 读取、`int.tryParse`、`_readInt` 和 `as int` 等回潮形态
   - Console 订单 / 胡萝卜流水排障链路已补强：订单详情可展示扣款流水 ID，并按 `BusinessType=Order / BusinessId=OrderId` 跳转定位对应胡萝卜流水；管理端流水查询支持业务上下文筛选
+  - Flutter 订单 / 胡萝卜流水排障链路已补强：原生订单详情可在存在扣款流水 ID 时进入筛选后的资产流水页，用户侧 `Coin/GetTransactions` 支持按 `businessType / businessId` 查询；本轮仍不扩展退款、权益使用、转账、调账或完整资产中心
   - 项目仍处于单人开发期和功能建设期，没有稳定用户反馈和专职测试，不能把“等待真实使用观察”作为默认主线
 
 ## 当前执行入口
@@ -136,7 +137,7 @@
 ## 明日事项
 
 - 第一顺位：先做 `ID Phase A` 第三轮审计，聚焦 `@radish/http`、Console API 类型和 Flutter 仓储中仍作为外部契约暴露的 `voId / voUserId / tenantId / businessId`，判断哪些应继续迁为字符串，哪些是内部计算例外
-- 第二顺位：若 ID 审计未发现高风险缺口，回到购买 / 资产链路做跨端排障复核：从 Flutter 订单、Console 订单、胡萝卜流水和用户详情四个入口确认同一笔购买能互相定位
+- 第二顺位：若 ID 审计未发现高风险缺口，回到购买 / 资产链路做跨端排障复核收尾：从 Flutter 订单、Console 订单、胡萝卜流水和用户详情四个入口确认同一笔购买能互相定位
 - 第三顺位：若继续开发功能，优先选择单一真实用户动作或单一治理排障动作，不扩展完整移动商城、完整资产中心或完整财务后台
 - 继续遵守受控写入边界：每次只推进一个真实用户动作，不扩展完整通知中心、完整移动商城、完整创作器、富文本、推送、权益使用、退款或 WebOS 新功能
 - 本轮不启动完整 `PublicId` 全量迁移、数据库主键迁移、联邦预研或大范围 UI 重构

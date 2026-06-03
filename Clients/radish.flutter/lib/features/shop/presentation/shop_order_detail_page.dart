@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import '../../../core/config/app_environment.dart';
 import '../../../core/network/radish_api_client.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
+import '../../wallet/data/wallet_repository.dart';
+import '../../wallet/presentation/wallet_page.dart';
 import '../data/shop_models.dart';
 import '../data/shop_repository.dart';
 import 'shop_product_detail_page.dart';
@@ -13,6 +15,7 @@ class ShopOrderDetailPage extends StatefulWidget {
   const ShopOrderDetailPage({
     required this.environment,
     required this.repository,
+    required this.walletRepository,
     required this.accessToken,
     required this.orderId,
     this.initialTitle,
@@ -23,6 +26,7 @@ class ShopOrderDetailPage extends StatefulWidget {
 
   final AppEnvironment environment;
   final ShopRepository repository;
+  final WalletRepository walletRepository;
   final String accessToken;
   final String orderId;
   final String? initialTitle;
@@ -126,11 +130,36 @@ class _ShopOrderDetailPageState extends State<ShopOrderDetailPage> {
         builder: (context) => ShopProductDetailPage(
           environment: widget.environment,
           repository: widget.repository,
+          walletRepository: widget.walletRepository,
           productId: productId,
           initialTitle: order.productName,
           sourceLabel: '订单详情',
           returnLabel: '返回订单详情',
           accessToken: widget.accessToken,
+        ),
+      ),
+    );
+  }
+
+  void _openCoinTransaction(ShopOrderDetail order) {
+    final orderId = order.id.trim();
+    if (orderId.isEmpty) {
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => WalletPage(
+          environment: widget.environment,
+          repository: widget.walletRepository,
+          accessToken: widget.accessToken,
+          title: '订单扣款流水',
+          description:
+              '查看订单 ${order.orderNo} 对应的胡萝卜扣款流水，用于核对购买后的资产变动。本页只读，不开放转账、退款或调账操作。',
+          returnLabel: '返回订单详情',
+          transactionType: 'CONSUME',
+          businessType: 'Order',
+          businessId: orderId,
         ),
       ),
     );
@@ -207,6 +236,7 @@ class _ShopOrderDetailPageState extends State<ShopOrderDetailPage> {
             _ShopOrderDetailContent(
               order: order,
               onOpenProduct: () => _openProduct(order),
+              onOpenCoinTransaction: () => _openCoinTransaction(order),
             ),
           ],
         ],
@@ -219,10 +249,12 @@ class _ShopOrderDetailContent extends StatelessWidget {
   const _ShopOrderDetailContent({
     required this.order,
     required this.onOpenProduct,
+    required this.onOpenCoinTransaction,
   });
 
   final ShopOrderDetail order;
   final VoidCallback onOpenProduct;
+  final VoidCallback onOpenCoinTransaction;
 
   @override
   Widget build(BuildContext context) {
@@ -250,27 +282,29 @@ class _ShopOrderDetailContent extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Text(order.productName, style: textTheme.headlineSmall),
+            const SizedBox(height: 8),
+            Text(
+              '${order.totalPrice} 胡萝卜',
+              style: textTheme.titleLarge,
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(order.productName, style: textTheme.headlineSmall),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${order.totalPrice} 胡萝卜',
-                        style: textTheme.titleLarge,
-                      ),
-                    ],
-                  ),
-                ),
-                FilledButton.tonalIcon(
+                OutlinedButton.icon(
                   onPressed: onOpenProduct,
                   icon: const Icon(Icons.open_in_new),
                   label: const Text('查看商品'),
                 ),
+                if (order.coinTransactionId?.trim().isNotEmpty == true) ...[
+                  FilledButton.tonalIcon(
+                    onPressed: onOpenCoinTransaction,
+                    icon: const Icon(Icons.account_balance_wallet_outlined),
+                    label: const Text('查看扣款流水'),
+                  ),
+                ],
               ],
             ),
             const SizedBox(height: 20),
@@ -314,6 +348,8 @@ class _ShopOrderMetaGrid extends StatelessWidget {
       ('合计', '${order.totalPrice} 胡萝卜'),
       if (order.durationDisplay != null) ('有效期', order.durationDisplay!),
       if (order.benefitExpiresAt != null) ('权益到期', order.benefitExpiresAt!),
+      if (order.coinTransactionId?.trim().isNotEmpty == true)
+        ('扣款流水', order.coinTransactionId!.trim()),
     ];
 
     return Wrap(

@@ -13,12 +13,26 @@ class WalletPage extends StatefulWidget {
     required this.environment,
     required this.repository,
     required this.accessToken,
+    this.title = '胡萝卜资产',
+    this.description = '查看当前账号的可用余额、冻结余额和最近流水。Flutter 本批只读，不开放转账、打赏、调账或支付操作。',
+    this.returnLabel = '返回我的',
+    this.transactionType,
+    this.status,
+    this.businessType,
+    this.businessId,
     super.key,
   });
 
   final AppEnvironment environment;
   final WalletRepository repository;
   final String accessToken;
+  final String title;
+  final String description;
+  final String returnLabel;
+  final String? transactionType;
+  final String? status;
+  final String? businessType;
+  final String? businessId;
 
   @override
   State<WalletPage> createState() => _WalletPageState();
@@ -51,7 +65,11 @@ class _WalletPageState extends State<WalletPage> {
     super.didUpdateWidget(oldWidget);
 
     if (oldWidget.repository != widget.repository ||
-        oldWidget.accessToken != widget.accessToken) {
+        oldWidget.accessToken != widget.accessToken ||
+        oldWidget.transactionType != widget.transactionType ||
+        oldWidget.status != widget.status ||
+        oldWidget.businessType != widget.businessType ||
+        oldWidget.businessId != widget.businessId) {
       unawaited(_loadInitial());
     }
   }
@@ -105,6 +123,10 @@ class _WalletPageState extends State<WalletPage> {
         accessToken: widget.accessToken,
         pageIndex: pageIndex,
         pageSize: _pageSize,
+        transactionType: widget.transactionType,
+        status: widget.status,
+        businessType: widget.businessType,
+        businessId: widget.businessId,
       );
       final balance = await balanceFuture;
       final page = await transactionsFuture;
@@ -161,18 +183,18 @@ class _WalletPageState extends State<WalletPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('胡萝卜资产'),
+        title: Text(widget.title),
       ),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
           Text(
-            '胡萝卜资产',
+            widget.title,
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 8),
           Text(
-            '查看当前账号的可用余额、冻结余额和最近流水。Flutter 本批只读，不开放转账、打赏、调账或支付操作。',
+            widget.description,
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 20),
@@ -181,6 +203,8 @@ class _WalletPageState extends State<WalletPage> {
             items: [
               '当前环境：${widget.environment.name}',
               '登录态只读查看胡萝卜余额和交易流水',
+              if (widget.businessType != null && widget.businessId != null)
+                '当前筛选：${widget.businessType} #${widget.businessId}',
               '当前不支持转账、打赏、调账或支付操作',
               _isLoading
                   ? '正在准备资产信息'
@@ -195,7 +219,7 @@ class _WalletPageState extends State<WalletPage> {
               OutlinedButton.icon(
                 onPressed: () => Navigator.of(context).maybePop(),
                 icon: const Icon(Icons.arrow_back),
-                label: const Text('返回我的'),
+                label: Text(widget.returnLabel),
               ),
               FilledButton.tonalIcon(
                 onPressed: _isLoading || _isRefreshing ? null : _refresh,
@@ -224,12 +248,19 @@ class _WalletPageState extends State<WalletPage> {
             _CoinBalanceCard(balance: balance),
             const SizedBox(height: 16),
             Text(
-              '最近流水',
+              widget.businessType != null && widget.businessId != null
+                  ? '匹配流水'
+                  : '最近流水',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             if (_transactions.isEmpty)
-              const _WalletEmptyState(message: '当前账号暂无胡萝卜流水。')
+              _WalletEmptyState(
+                message:
+                    widget.businessType != null && widget.businessId != null
+                        ? '当前订单暂无匹配的胡萝卜流水。'
+                        : '当前账号暂无胡萝卜流水。',
+              )
             else ...[
               ..._transactions.map(
                 (transaction) => _CoinTransactionCard(
@@ -428,6 +459,20 @@ class _CoinTransactionCard extends StatelessWidget {
               Text(
                 transaction.remark!,
                 maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+              ),
+            if (transaction.businessType != null ||
+                transaction.businessId != null)
+              Text(
+                [
+                  transaction.businessType ?? '业务',
+                  if (transaction.businessId != null)
+                    '#${transaction.businessId}',
+                ].join(' '),
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
