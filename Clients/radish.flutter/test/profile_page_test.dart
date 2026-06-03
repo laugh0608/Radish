@@ -105,6 +105,136 @@ void main() {
     expect(find.text('评论 comment-1'), findsNothing);
   });
 
+  testWidgets('edits my profile and refreshes the public summary', (
+    tester,
+  ) async {
+    final repository = _EditableProfileRepository();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: '2042219067430928384',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: '2042219067430928384',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ProfilePage(
+            sessionController: sessionController,
+            authController: authController,
+            repository: repository,
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    expect(find.text('Radish Author'), findsOneWidget);
+
+    await tester.tap(find.text('编辑资料'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('编辑个人资料'), findsOneWidget);
+    await tester.enterText(
+      find.byKey(const Key('profile-edit-user-name')),
+      'native_user',
+    );
+    await tester.enterText(
+      find.byKey(const Key('profile-edit-email')),
+      'native@example.com',
+    );
+    await tester.enterText(
+      find.byKey(const Key('profile-edit-real-name')),
+      'Native Author',
+    );
+    await tester.enterText(
+      find.byKey(const Key('profile-edit-age')),
+      '26',
+    );
+    await tester.enterText(
+      find.byKey(const Key('profile-edit-address')),
+      '移动端资料维护',
+    );
+
+    await tester.tap(find.text('保存'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('编辑个人资料'), findsNothing);
+    expect(find.text('个人资料更新成功'), findsOneWidget);
+    expect(find.text('Native Author'), findsOneWidget);
+    expect(repository.updateCount, 1);
+    expect(repository.lastRequest?.userName, 'native_user');
+    expect(repository.lastRequest?.userEmail, 'native@example.com');
+    expect(repository.lastRequest?.realName, 'Native Author');
+    expect(repository.lastRequest?.age, 26);
+    expect(repository.lastRequest?.address, '移动端资料维护');
+  });
+
+  testWidgets(
+      'keeps profile editor open and current profile unchanged on save failure',
+      (
+    tester,
+  ) async {
+    final repository = _ProfileUpdateFailingRepository();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: '2042219067430928384',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: '2042219067430928384',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _NoopSessionRefreshService(),
+    );
+    final authController = _buildAuthController(sessionController);
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ProfilePage(
+            sessionController: sessionController,
+            authController: authController,
+            repository: repository,
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    expect(find.text('Radish Author'), findsOneWidget);
+
+    await tester.tap(find.text('编辑资料'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('profile-edit-user-name')),
+      'taken_user',
+    );
+
+    await tester.tap(find.text('保存'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('编辑个人资料'), findsOneWidget);
+    expect(find.text('用户名已被占用'), findsOneWidget);
+    expect(find.text('taken_user'), findsOneWidget);
+    expect(find.text('Native Author'), findsNothing);
+    expect(repository.updateCount, 1);
+  });
+
   testWidgets('keeps long profile text constrained on narrow screens', (
     tester,
   ) async {
@@ -1786,6 +1916,100 @@ class _SuccessProfileRepository implements ProfileRepository {
       ],
     );
   }
+
+  @override
+  Future<MyProfileInfo> getMyProfile({
+    required String accessToken,
+  }) async {
+    return const MyProfileInfo(
+      userId: '2042219067430928384',
+      userName: 'luobo',
+      userEmail: 'luobo@example.com',
+      realName: 'Radish Author',
+      sex: 0,
+      age: 24,
+      address: 'Radish base',
+      createTime: '2026-04-20T08:00:00Z',
+    );
+  }
+
+  @override
+  Future<void> updateMyProfile({
+    required UpdateMyProfileRequest request,
+    required String accessToken,
+  }) {
+    throw UnimplementedError();
+  }
+}
+
+class _EditableProfileRepository extends _SuccessProfileRepository {
+  MyProfileInfo _profile = const MyProfileInfo(
+    userId: '2042219067430928384',
+    userName: 'luobo',
+    userEmail: 'luobo@example.com',
+    realName: 'Radish Author',
+    sex: 0,
+    age: 24,
+    address: 'Radish base',
+    createTime: '2026-04-20T08:00:00Z',
+  );
+
+  UpdateMyProfileRequest? lastRequest;
+  int updateCount = 0;
+
+  @override
+  Future<PublicProfileSummary> getPublicProfile({
+    required String userId,
+  }) async {
+    return PublicProfileSummary(
+      userId: userId,
+      userName: _profile.userName,
+      displayName: _profile.realName,
+      createTime: _profile.createTime,
+    );
+  }
+
+  @override
+  Future<MyProfileInfo> getMyProfile({
+    required String accessToken,
+  }) async {
+    return _profile;
+  }
+
+  @override
+  Future<void> updateMyProfile({
+    required UpdateMyProfileRequest request,
+    required String accessToken,
+  }) async {
+    updateCount += 1;
+    lastRequest = request;
+    _profile = MyProfileInfo(
+      userId: _profile.userId,
+      userName: request.userName,
+      userEmail: request.userEmail,
+      realName: request.realName ?? '',
+      sex: request.sex ?? _profile.sex,
+      age: request.age ?? 0,
+      birth: request.birth ?? _profile.birth,
+      address: request.address ?? '',
+      createTime: _profile.createTime,
+      avatarAttachmentId: _profile.avatarAttachmentId,
+      avatarUrl: _profile.avatarUrl,
+      avatarThumbnailUrl: _profile.avatarThumbnailUrl,
+    );
+  }
+}
+
+class _ProfileUpdateFailingRepository extends _EditableProfileRepository {
+  @override
+  Future<void> updateMyProfile({
+    required UpdateMyProfileRequest request,
+    required String accessToken,
+  }) async {
+    updateCount += 1;
+    lastRequest = request;
+    throw const RadishApiClientException('用户名已被占用');
+  }
 }
 
 class _LongTextProfileRepository extends _SuccessProfileRepository {
@@ -1905,6 +2129,21 @@ class _FailingProfileRepository implements ProfileRepository {
     required String accessToken,
   }) {
     throw const RadishApiClientException('浏览记录服务暂时不可用');
+  }
+
+  @override
+  Future<MyProfileInfo> getMyProfile({
+    required String accessToken,
+  }) {
+    throw const RadishApiClientException('个人资料服务暂时不可用');
+  }
+
+  @override
+  Future<void> updateMyProfile({
+    required UpdateMyProfileRequest request,
+    required String accessToken,
+  }) {
+    throw const RadishApiClientException('个人资料服务暂时不可用');
   }
 }
 

@@ -4065,6 +4065,21 @@ class _FakeProfileRepository implements ProfileRepository {
       items: [],
     );
   }
+
+  @override
+  Future<MyProfileInfo> getMyProfile({
+    required String accessToken,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> updateMyProfile({
+    required UpdateMyProfileRequest request,
+    required String accessToken,
+  }) {
+    throw UnimplementedError();
+  }
 }
 
 class _SeededLeaderboardRepository implements LeaderboardRepository {
@@ -4413,6 +4428,21 @@ class _SeededProfileRepository implements ProfileRepository {
         ),
       ],
     );
+  }
+
+  @override
+  Future<MyProfileInfo> getMyProfile({
+    required String accessToken,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> updateMyProfile({
+    required UpdateMyProfileRequest request,
+    required String accessToken,
+  }) {
+    throw UnimplementedError();
   }
 }
 

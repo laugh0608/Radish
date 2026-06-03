@@ -379,6 +379,89 @@ class UserBrowseHistoryPage {
   }
 }
 
+class MyProfileInfo {
+  const MyProfileInfo({
+    required this.userId,
+    required this.userName,
+    required this.userEmail,
+    required this.realName,
+    required this.sex,
+    required this.age,
+    required this.address,
+    required this.createTime,
+    this.birth,
+    this.avatarAttachmentId,
+    this.avatarUrl,
+    this.avatarThumbnailUrl,
+  });
+
+  factory MyProfileInfo.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+
+    return MyProfileInfo(
+      userId: _readRequiredId(map, 'voUserId'),
+      userName: _readString(map['voUserName']) ?? '',
+      userEmail: _readString(map['voUserEmail']) ?? '',
+      realName: _readString(map['voRealName']) ?? '',
+      sex: _readInt(map['voSex']) ?? 0,
+      age: _readInt(map['voAge']) ?? 0,
+      birth: _readString(map['voBirth']),
+      address: _readString(map['voAddress']) ?? '',
+      createTime: _readString(map['voCreateTime']) ?? '',
+      avatarAttachmentId: _readString(map['voAvatarAttachmentId']),
+      avatarUrl: _readString(map['voAvatarUrl']),
+      avatarThumbnailUrl: _readString(map['voAvatarThumbnailUrl']),
+    );
+  }
+
+  final String userId;
+  final String userName;
+  final String userEmail;
+  final String realName;
+  final int sex;
+  final int age;
+  final String? birth;
+  final String address;
+  final String createTime;
+  final String? avatarAttachmentId;
+  final String? avatarUrl;
+  final String? avatarThumbnailUrl;
+
+  String get displayName => realName.trim().isEmpty ? userName : realName;
+}
+
+class UpdateMyProfileRequest {
+  const UpdateMyProfileRequest({
+    required this.userName,
+    required this.userEmail,
+    this.realName,
+    this.sex,
+    this.age,
+    this.birth,
+    this.address,
+  });
+
+  final String userName;
+  final String userEmail;
+  final String? realName;
+  final int? sex;
+  final int? age;
+  final String? birth;
+  final String? address;
+
+  Map<String, Object?> toJson() {
+    return {
+      'userName': userName,
+      'userEmail': userEmail,
+      'realName': realName,
+      'sex': sex,
+      'age': age,
+      'birth': birth,
+      'address': address,
+    };
+  }
+}
+
 Map<String, Object?> _readJsonMap(Object? json) {
   if (json is Map) {
     return Map<String, Object?>.from(json.cast<Object?, Object?>());

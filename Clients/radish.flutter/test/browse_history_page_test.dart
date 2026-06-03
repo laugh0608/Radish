@@ -191,6 +191,21 @@ class _BrowseHistoryRepository implements ProfileRepository {
   }) {
     throw UnimplementedError();
   }
+
+  @override
+  Future<MyProfileInfo> getMyProfile({
+    required String accessToken,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> updateMyProfile({
+    required UpdateMyProfileRequest request,
+    required String accessToken,
+  }) {
+    throw UnimplementedError();
+  }
 }
 
 class _FailingRefreshBrowseHistoryRepository extends _BrowseHistoryRepository {
