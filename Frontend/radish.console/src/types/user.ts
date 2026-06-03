@@ -4,7 +4,7 @@
 export interface UserInfo {
   voUserId: string;
   voUserName: string;
-  voTenantId: number;
+  voTenantId: string;
   roles?: string[];
   permissions?: string[];
   voAvatarUrl?: string;
@@ -25,5 +25,5 @@ export interface UserListItem {
   voCreateTime: string;
   voUpdateTime?: string;
   voIsDeleted: boolean;
-  voTenantId: number;
+  voTenantId: string;
 }

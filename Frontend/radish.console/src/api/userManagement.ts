@@ -69,7 +69,7 @@ function mapUserListItem(raw: ApiRecord): UserListItem {
     voCreateTime: toStringValue(raw.voCreateTime ?? raw.VoCreateTime),
     voUpdateTime: toOptionalString(raw.voUpdateTime ?? raw.VoUpdateTime),
     voIsDeleted: toBoolean(raw.voIsDeleted ?? raw.VoIsDeleted),
-    voTenantId: toNumber(raw.voTenantId ?? raw.VoTenantId),
+    voTenantId: toIdString(raw.voTenantId ?? raw.VoTenantId),
   };
 }
 
@@ -189,9 +189,9 @@ export const userManagementApi = {
   /**
    * 获取用户统计信息
    */
-  async getUserStats(userId?: number): Promise<ParsedApiResponse<UserStats>> {
+  async getUserStats(userId?: string): Promise<ParsedApiResponse<UserStats>> {
     const url = userId
-      ? `/api/v1/User/GetUserStats?userId=${userId}`
+      ? `/api/v1/User/GetUserStats?userId=${encodeURIComponent(userId)}`
       : '/api/v1/User/GetUserStats';
     return apiGet<UserStats>(url, { withAuth: true });
   },

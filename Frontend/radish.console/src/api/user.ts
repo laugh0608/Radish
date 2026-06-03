@@ -198,7 +198,7 @@ export const userApi = {
       const mappedData: UserInfo = {
         voUserId: toIdString(backendData.voUserId ?? backendData.VoUserId),
         voUserName: toStringValue(backendData.voUserName ?? backendData.VoUserName),
-        voTenantId: toNumber(backendData.voTenantId ?? backendData.VoTenantId),
+        voTenantId: toIdString(backendData.voTenantId ?? backendData.VoTenantId),
         voAvatarUrl: toOptionalString(backendData.voAvatarUrl ?? backendData.VoAvatarUrl),
         voAvatarThumbnailUrl: toOptionalString(backendData.voAvatarThumbnailUrl ?? backendData.VoAvatarThumbnailUrl),
         roles: resolvedRoles,

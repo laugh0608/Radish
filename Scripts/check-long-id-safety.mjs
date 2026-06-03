@@ -14,8 +14,8 @@ const scanRoots = [
 ];
 
 const textExtensions = new Set(['.ts', '.tsx', '.dart']);
-const longIdNamePattern = '(?:vo)?(?:UserId|PostId|CommentId|ProductId|OrderId|NotificationId|TransactionId|ReportId|TargetContentId|TargetPostId|TargetCommentId|TargetChannelId|TargetMessageId|TargetUserId|ReporterUserId|ActionId|BusinessId|FromUserId|ToUserId|OperatorId|SourceReportId|SourceOrderId|SourceProductId|UserBenefitId|ReplyToCommentId|ChannelId|MessageId|uuid)';
-const longIdExpressionPattern = '(?:userId|postId|commentId|productId|orderId|notificationId|transactionId|reportId|targetContentId|targetPostId|targetCommentId|targetUserId|reporterUserId|actionId|businessId|fromUserId|toUserId|operatorId|sourceReportId|sourceOrderId|sourceProductId|userBenefitId|replyToCommentId|channelId|messageId|uuid)';
+const longIdNamePattern = '(?:vo)?(?:UserId|PostId|CommentId|ProductId|OrderId|NotificationId|TransactionId|ReportId|TargetContentId|TargetPostId|TargetCommentId|TargetChannelId|TargetMessageId|TargetUserId|ReporterUserId|ActionId|BusinessId|TenantId|FromUserId|ToUserId|OperatorId|SourceReportId|SourceOrderId|SourceProductId|UserBenefitId|ReplyToCommentId|ChannelId|MessageId|uuid)';
+const longIdExpressionPattern = '(?:userId|postId|commentId|productId|orderId|notificationId|transactionId|reportId|targetContentId|targetPostId|targetCommentId|targetUserId|reporterUserId|actionId|businessId|tenantId|fromUserId|toUserId|operatorId|sourceReportId|sourceOrderId|sourceProductId|userBenefitId|replyToCommentId|channelId|messageId|uuid)';
 const genericLongIdExpressionPattern = '(?:\\.voId\\b|\\[(?:\'voId\'|"voId")\\])';
 const longIdMapKeyPattern = `(?:voId|${longIdNamePattern})`;
 const dartLongIdAccessorPattern = `(?:\\.voId\\b|\\[(?:'|")${longIdMapKeyPattern}(?:'|")\\])`;
