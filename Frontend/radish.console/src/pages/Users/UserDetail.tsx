@@ -29,7 +29,7 @@ import '../adminFeature.css';
 import './UserDetail.css';
 
 interface UserDetailData {
-  uuid: string | number;
+  uuid: string;
   userName: string;
   loginName: string;
   email: string;

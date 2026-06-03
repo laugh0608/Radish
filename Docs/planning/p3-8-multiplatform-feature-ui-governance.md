@@ -160,6 +160,7 @@
 - 胡萝卜资产发放与调账口径已回拉治理：注册默认奖励统一收敛到 `CoinService.GrantRegistrationRewardAsync`，普通注册、登录补偿和首个管理员初始化复用同一契约；`CoinService` 在余额查询、发放、扣除和管理员调账前校验真实用户，`Coin/GetBalanceByUserId` 与 `Coin/AdminAdjustBalance` 对不存在用户返回明确错误，避免 Console 对错误 UserId 建立余额后用户侧购买仍显示 `0`。
 - Console 用户 ID 字符串安全已按 `ID Phase A` 回拉：`UserContext`、个人资料和用户列表中的 `VoUserId / uuid` 不再进入 JavaScript `number` 精度域，Console 展示、详情跳转和调账动作统一保留服务端字符串 ID；后续需要补自动化检查，防止外部 LongId 在 Console / Flutter / Web 边界重新被 `Number(...)` 或 `number` 类型吸收。
 - `ID Phase A` 首批自动化守护已落地：`npm run check:long-id-safety` 纳入 `validate:identity`，并扩展 Flutter Dart 扫描规则，覆盖 map 读取、`int.tryParse`、`_readInt`、`as int` 等高信号回潮形态。
+- `ID Phase A` 第三轮已继续推进：`radish.client`、`radish.console` 与 `@radish/ui` 的用户、租户、通知、商城、经验、胡萝卜、公开主页与附件相关高信号外部 ID 类型收敛为字符串；LongId 守护补充 `string | number` 联合类型扫描，避免兼容类型继续绕过检查。
 - Console 订单 / 胡萝卜流水排障链路已补强：订单详情输出扣款流水 ID，订单详情可跳转到 `BusinessType=Order / BusinessId=OrderId` 的胡萝卜流水筛选结果；管理端流水查询支持业务上下文筛选，便于从购买结果定位扣款流水、再回看用户和商品上下文。
 - Flutter 订单 / 胡萝卜流水排障链路已补强：用户侧 `Coin/GetTransactions` 支持按 `businessType / businessId` 筛选，原生订单详情在存在扣款流水 ID 时可进入筛选后的资产流水页，并保留订单详情返回语义；本轮仍不扩展退款、权益使用、转账、调账或完整资产中心。
 - 阶段约束已复盘：移动 Web 公开视图逐页打磨、Console 剩余页面默认迁移和 Flutter “只能只读”的总门禁可以结束；后续保留范围门禁，允许成熟 API 支撑的单一用户动作进入受控写入评估。

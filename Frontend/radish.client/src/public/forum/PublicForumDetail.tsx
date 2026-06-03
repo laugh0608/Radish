@@ -683,7 +683,7 @@ export const PublicForumDetail = ({
                   total={quickReplyTotal}
                   loading={loadingQuickReplies}
                   isAuthenticated={false}
-                  currentUserId={0}
+                  currentUserId="0"
                   mode="readOnly"
                 />
               </>
@@ -743,7 +743,7 @@ export const PublicForumDetail = ({
                     loadingMoreRootComments={loadingMoreComments}
                     hasPost={true}
                     displayTimeZone={displayTimeZone}
-                    currentUserId={0}
+                    currentUserId="0"
                     highlightedCommentId={highlightedCommentId}
                     expandedRootCommentId={commentNavigationTarget?.expandedRootCommentId}
                     rootCommentTotal={commentTotal}

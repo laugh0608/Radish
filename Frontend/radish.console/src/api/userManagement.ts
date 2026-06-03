@@ -169,7 +169,7 @@ export const userManagementApi = {
   /**
    * 获取用户详情
    */
-  async getUserById(id: string | number): Promise<ParsedApiResponse<UserListItem>> {
+  async getUserById(id: string): Promise<ParsedApiResponse<UserListItem>> {
     const response = await apiGet<ApiRecord | ApiRecord[]>(
       `/api/v1/User/GetUserById/${encodeURIComponent(String(id))}`,
       { withAuth: true }

@@ -75,7 +75,7 @@ export interface ForumActionsHandlers {
   setIsEditModalOpen: (open: boolean) => void;
 
   // 帖子操作
-  handleSelectPost: (postId: string | number) => Promise<PostDetail | null>;
+  handleSelectPost: (postId: LongId) => Promise<PostDetail | null>;
   handlePublishPost: (
     title: string,
     content: string,
@@ -154,9 +154,9 @@ interface UseForumActionsParams {
   setQuestionAnswerFilter: (filterBy: QuestionAnswerFilter) => void;
   setSearchKeyword: (keyword: string) => void;
   setError: (error: string | null) => void;
-  loadPostDetail: (postId: string | number, answerSortOverride?: QuestionAnswerSort) => Promise<PostDetail | null>;
-  loadComments: (postId: string | number, pageCount?: number) => Promise<void>;
-  loadQuickReplies: (postId: string | number) => Promise<void>;
+  loadPostDetail: (postId: LongId, answerSortOverride?: QuestionAnswerSort) => Promise<PostDetail | null>;
+  loadComments: (postId: LongId, pageCount?: number) => Promise<void>;
+  loadQuickReplies: (postId: LongId) => Promise<void>;
   loadPosts: () => Promise<void>;
   resetCommentSort: () => void;
 }
@@ -291,7 +291,7 @@ export const useForumActions = (
   };
 
   // 选择帖子
-  const handleSelectPost = async (postId: string | number): Promise<PostDetail | null> => {
+  const handleSelectPost = async (postId: LongId): Promise<PostDetail | null> => {
     resetCommentSort();
     setQuestionAnswerSort('default');
     setQuestionAnswerFilter('all');

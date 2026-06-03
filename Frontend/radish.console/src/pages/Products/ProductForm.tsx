@@ -36,7 +36,7 @@ interface ProductFormProps {
 }
 
 type ProductFormValues = Omit<CreateProductDto, 'expiresAt'> & {
-  id?: string | number;
+  id?: string;
   expiresAt?: Dayjs;
 };
 

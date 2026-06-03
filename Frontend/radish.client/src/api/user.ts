@@ -16,7 +16,7 @@ configureApiClient({
  * 用户提及选项（使用 vo 前缀，与后端 VO 保持一致）
  */
 export interface UserMentionOption {
-  voId: number | string;  // 后端返回long类型会被序列化为字符串
+  voId: string;  // 后端返回 long 类型会被序列化为字符串
   voUserName: string;
   voDisplayName?: string | null;
   voAvatar?: string | null;
@@ -29,7 +29,7 @@ export interface VoPagedResult<T> {
   voPageSize: number;
 }
 
-export type LongId = number | string;
+export type LongId = string;
 
 export interface PageModel<T> {
   page: number;

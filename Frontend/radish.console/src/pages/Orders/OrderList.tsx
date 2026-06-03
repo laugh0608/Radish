@@ -145,7 +145,7 @@ export const OrderList = () => {
   const canViewCoins = usePermission(CONSOLE_PERMISSIONS.coinsView);
 
   const [detailVisible, setDetailVisible] = useState(false);
-  const [selectedOrderId, setSelectedOrderId] = useState<string | number | undefined>();
+  const [selectedOrderId, setSelectedOrderId] = useState<string | undefined>();
   const [selectedOrderPreview, setSelectedOrderPreview] = useState<Order | undefined>();
   const [detailReloadToken, setDetailReloadToken] = useState(0);
 

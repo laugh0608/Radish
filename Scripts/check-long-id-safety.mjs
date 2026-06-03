@@ -23,8 +23,13 @@ const dartLongIdAccessorPattern = `(?:\\.voId\\b|\\[(?:'|")${longIdMapKeyPattern
 const tsRules = [
   {
     id: 'ts-long-id-number-type',
-    description: '外部 LongId 字段/参数不得声明为纯 number；请使用 string 或 string | number 过渡契约',
+    description: '外部 LongId 字段/参数不得声明为纯 number；请使用 string 字符串契约',
     test: (line) => new RegExp(`\\b${longIdNamePattern}\\??\\s*:\\s*number(?:\\s*[;,)=}]|\\s*\\|\\s*(?:null|undefined))`).test(line),
+  },
+  {
+    id: 'ts-long-id-string-number-union-type',
+    description: '外部 LongId 字段/参数不得声明为 string | number 兼容契约；请收敛为 string',
+    test: (line) => new RegExp(`\\b${longIdNamePattern}\\??\\s*:\\s*(?:string\\s*\\|\\s*number|number\\s*\\|\\s*string)(?:\\s*\\|\\s*(?:null|undefined))*`).test(line),
   },
   {
     id: 'ts-long-id-number-conversion',

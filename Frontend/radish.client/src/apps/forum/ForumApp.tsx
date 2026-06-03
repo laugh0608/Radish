@@ -269,8 +269,8 @@ export const ForumApp = () => {
   });
 
   const navigateToComment = useCallback(async (
-    postId: string | number,
-    commentId: string | number,
+    postId: LongId,
+    commentId: LongId,
     navigationKey: string
   ) => {
     const navigation = await getCommentNavigation(

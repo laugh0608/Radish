@@ -59,7 +59,7 @@ export const CommentTree = ({
   hasPost = false,
   showTitle = true,
   displayTimeZone,
-  currentUserId = 0,
+  currentUserId = '0',
   highlightedCommentId = null,
   expandedRootCommentId,
   pageSize = 10,

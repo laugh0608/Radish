@@ -88,7 +88,7 @@ export const PostDetail = ({
   onAnswerSortChange,
   onAnswerFilterChange,
   isAuthenticated = false,
-  currentUserId = 0,
+  currentUserId = '0',
   canToggleTop = false,
   onToggleTop,
   onEdit,

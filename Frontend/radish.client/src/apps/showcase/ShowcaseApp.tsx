@@ -29,7 +29,7 @@ const sections: Array<{ id: SectionId; name: string }> = [
 ];
 
 const mockExperienceData: ExperienceData = {
-  voUserId: 1024,
+  voUserId: '1024',
   voCurrentLevel: 12,
   voCurrentLevelName: '青瓷旅者',
   voCurrentExp: 3680,

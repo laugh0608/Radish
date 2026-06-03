@@ -246,7 +246,7 @@ export const CommentNode = ({
   node,
   level,
   displayTimeZone,
-  currentUserId = 0,
+  currentUserId = '0',
   highlightedCommentId = null,
   expandedRootCommentId,
   pageSize = 10,
@@ -271,7 +271,7 @@ export const CommentNode = ({
 }: CommentNodeProps) => {
   const { t } = useTranslation();
   // 判断是否是作者本人
-  const isAuthor = !isSameLongId(currentUserId, 0) && isSameLongId(node.voAuthorId, currentUserId);
+  const isAuthor = !isSameLongId(currentUserId, '0') && isSameLongId(node.voAuthorId, currentUserId);
 
   // 编辑权限交给后端最终判定（时间窗口/次数限制由服务端配置控制）
   const canEdit = isAuthor;

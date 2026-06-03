@@ -1,7 +1,7 @@
 import { apiGet, apiPost, type PagedResponse } from '@radish/http';
 
 export interface UserBalanceVo {
-  voUserId: number | string;
+  voUserId: string;
   voBalance: number;
   voBalanceDisplay: string;
   voFrozenBalance: number;
@@ -15,11 +15,11 @@ export interface UserBalanceVo {
 }
 
 export interface CoinTransactionVo {
-  voId: string | number;
+  voId: string;
   voTransactionNo: string;
-  voFromUserId?: number | string | null;
+  voFromUserId?: string | null;
   voFromUserName?: string | null;
-  voToUserId?: number | string | null;
+  voToUserId?: string | null;
   voToUserName?: string | null;
   voAmount: number;
   voAmountDisplay: string;
@@ -30,20 +30,20 @@ export interface CoinTransactionVo {
   voStatus: string;
   voStatusDisplay: string;
   voBusinessType?: string | null;
-  voBusinessId?: number | string | null;
+  voBusinessId?: string | null;
   voRemark?: string | null;
   voCreateBy: string;
-  voCreateId: string | number;
+  voCreateId: string;
   voCreateTime: string;
 }
 
 export interface AdminAdjustBalanceRequest {
-  userId: string | number;
+  userId: string;
   deltaAmount: number;
   reason: string;
 }
 
-export async function getBalanceByUserId(userId: string | number): Promise<UserBalanceVo> {
+export async function getBalanceByUserId(userId: string): Promise<UserBalanceVo> {
   const response = await apiGet<UserBalanceVo>(
     `/api/v1/Coin/GetBalanceByUserId?userId=${encodeURIComponent(String(userId))}`,
     { withAuth: true }
@@ -56,13 +56,13 @@ export async function getBalanceByUserId(userId: string | number): Promise<UserB
 }
 
 export async function getTransactionsByUserId(params: {
-  userId: string | number;
+  userId: string;
   pageIndex?: number;
   pageSize?: number;
   transactionType?: string;
   status?: string;
   businessType?: string;
-  businessId?: string | number;
+  businessId?: string;
 }): Promise<PagedResponse<CoinTransactionVo>> {
   const searchParams = new URLSearchParams({
     userId: String(params.userId),

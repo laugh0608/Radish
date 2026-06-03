@@ -9,11 +9,11 @@ import { log } from '@/utils/logger';
 import { AUTH_TOKEN_EXPIRED_EVENT } from './authSession';
 
 export interface CurrentUser {
-  voUserId: string | number;
+  voUserId: string;
   voUserName: string;
   voLoginName?: string;
   voNickname?: string;
-  voTenantId: string | number;
+  voTenantId: string;
   voAvatarUrl?: string;
   voAvatarThumbnailUrl?: string;
   voRoleNames?: string[];

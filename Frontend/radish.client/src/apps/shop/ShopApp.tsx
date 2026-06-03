@@ -34,7 +34,7 @@ export interface ShopAppState {
 
 function normalizePositiveLongId(value: unknown): LongId | undefined {
   if (typeof value === 'number') {
-    return Number.isSafeInteger(value) && value > 0 ? value : undefined;
+    return Number.isSafeInteger(value) && value > 0 ? String(value) : undefined;
   }
 
   if (typeof value !== 'string') {

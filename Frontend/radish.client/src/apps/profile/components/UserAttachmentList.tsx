@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import styles from './UserAttachmentList.module.css';
 
 interface Attachment {
-  voId: string | number;
+  voId: string;
   voOriginalName: string;
   voExtension?: string;
   voFileSize: number;
@@ -68,7 +68,7 @@ export const UserAttachmentList = ({ apiBaseUrl, displayTimeZone }: UserAttachme
   const [keyword, setKeyword] = useState('');
 
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const [deleteTargetId, setDeleteTargetId] = useState<string | number | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const authHeader = useMemo(() => {
     const token = tokenService.getAccessToken();
@@ -146,7 +146,7 @@ export const UserAttachmentList = ({ apiBaseUrl, displayTimeZone }: UserAttachme
     [t]
   );
 
-  const openDeleteConfirm = (id: string | number) => {
+  const openDeleteConfirm = (id: string) => {
     setDeleteTargetId(id);
     setConfirmDeleteOpen(true);
   };

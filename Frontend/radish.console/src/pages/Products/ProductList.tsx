@@ -60,7 +60,7 @@ function parseBooleanQuery(value: string | null): boolean {
 }
 
 function buildProductDetailSearchParams(params: {
-  productId?: string | number;
+  productId?: string;
   openDetail?: boolean;
   returnTo?: string | null;
 }): URLSearchParams {
@@ -105,7 +105,7 @@ export const ProductList = () => {
   const [editingProduct, setEditingProduct] = useState<Product | undefined>();
 
   const [detailVisible, setDetailVisible] = useState(false);
-  const [selectedProductId, setSelectedProductId] = useState<string | number | undefined>();
+  const [selectedProductId, setSelectedProductId] = useState<string | undefined>();
   const [selectedProductSnapshot, setSelectedProductSnapshot] = useState<Product | undefined>();
   const [detailReloadToken, setDetailReloadToken] = useState(0);
   const [deletingProduct, setDeletingProduct] = useState<Product | undefined>();
@@ -138,7 +138,7 @@ export const ProductList = () => {
   const enabledProducts = products.filter((product) => product.voIsEnabled).length;
 
   const syncDetailSearchParams = (
-    productId?: string | number,
+    productId?: string,
     openDetail?: boolean,
     replace: boolean = false,
     returnTo?: string | null,
@@ -230,7 +230,7 @@ export const ProductList = () => {
     });
   };
 
-  const handleOpenDetail = (productId: string | number, product?: Product, syncQuery: boolean = false) => {
+  const handleOpenDetail = (productId: string, product?: Product, syncQuery: boolean = false) => {
     setSelectedProductId(productId);
     setSelectedProductSnapshot(product);
     setDetailVisible(true);
