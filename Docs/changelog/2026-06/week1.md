@@ -23,3 +23,13 @@
 - Console 订单扣款流水追踪已补强：订单详情输出扣款流水 ID，可跳转到 `BusinessType=Order / BusinessId=OrderId` 的胡萝卜流水筛选结果；管理端流水查询支持业务上下文筛选，便于从订单定位扣款、从流水回看用户和商品上下文。
 - 今日验证覆盖 `dotnet test Radish.Api.Tests --filter CoinServiceTest`、`npm run type-check --workspace=radish.console`、`npm run type-check --workspace=radish.client`、`npm run test --workspace=radish.client`、`npm run check:long-id-safety`、`npm run validate:identity`、Flutter 定向测试、`npm run check:repo-hygiene:changed` 与 `git diff --check`。
 - 收工前补 [2026-06-02 收工回顾与明日事项](/records/daily-handoff-2026-06-02)：明日先做 `ID Phase A` 第三轮外部 ID 契约审计，若未发现高风险缺口，再回到购买 / 资产链路做跨端排障复核。
+
+## 2026-06-03
+
+- Console 订单 / 胡萝卜流水排障链路继续补强：订单详情展示扣款流水 ID，并可按 `BusinessType=Order / BusinessId=OrderId` 跳转到胡萝卜流水筛选；管理端流水查询支持业务上下文筛选。
+- Console 角色授权链路按 `ID Phase A` 回拉：角色 ID、资源 ID、API 模块 ID 在角色列表、角色编辑、授权快照、资源树勾选、权限预览和保存请求中保持字符串契约；LongId 守护补 `RoleId / ResourceId / ApiModuleId` 与角色 API `voId` 回潮扫描。
+- `P3-8-D` 排障复核已阶段收口：Flutter 订单、Console 订单、胡萝卜流水和用户详情四个入口可围绕同一笔购买按订单 ID、业务类型、业务 ID、扣款流水和用户上下文互相定位。
+- Flutter 登录态个人资料编辑已完成：登录态“我的”页新增“编辑资料”入口，复用 `User/GetMyProfile` 与 `User/UpdateMyProfile` 私有契约，支持用户名、邮箱、展示名称、年龄和地址的加载、校验、保存中、失败提示与保存成功后刷新原生公开资料摘要；本轮不扩展头像上传、完整账号设置、密码修改或关注管理。
+- 今日文档同步复核确认：`current.md`、`P3-8` 专题文档、6 月开发日志和日交接记录需要同步；没有新增数据库结构、权限模型、视觉 token、Pencil 设计稿、部署配置或运行时环境变量，因此架构说明、视觉规范、设计源文件和部署说明无需跟随更新。
+- 今日验证覆盖 `npm run check:console-permissions`、`npm run build --workspace=radish.console`、`npm run check:long-id-safety`、`flutter test test/profile_page_test.dart`、`flutter test`、`flutter analyze`、`npm run check:repo-hygiene:changed` 与 `git diff --check`。
+- 收工前补 [2026-06-03 收工回顾与明日事项](/records/daily-handoff-2026-06-03)：明日先做 Flutter 个人资料写入后的跨端展示一致性复核与必要修复，确认同一用户在 Flutter、纯 Web、Console 和论坛作者展示中的用户名、展示名称和头像口径一致。
