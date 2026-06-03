@@ -225,7 +225,7 @@ export interface DocumentUploadOptions {
   /**
    * 业务 ID（可选）
    */
-  businessId?: number | string;
+  businessId?: string;
 
   /**
    * 上传进度回调
@@ -422,7 +422,7 @@ export async function uploadDocument(
  * @returns 附件信息
  */
 export async function getAttachmentById(
-  id: number | string,
+  id: string,
   t: TFunction
 ): Promise<AttachmentInfo> {
   const url = `${getApiBaseUrl()}/api/v1/Attachment/GetById/${id}`;
@@ -451,7 +451,7 @@ export async function getAttachmentById(
  */
 export async function getAttachmentsByBusiness(
   businessType: string,
-  businessId: number | string,
+  businessId: string,
   t: TFunction
 ): Promise<AttachmentInfo[]> {
   const url = `${getApiBaseUrl()}/api/v1/Attachment/GetByBusiness?businessType=${encodeURIComponent(businessType)}&businessId=${businessId}`;
@@ -537,9 +537,9 @@ export async function deleteAttachmentsBatch(
  * @param t i18n 翻译函数
  */
 export async function updateAttachmentBusinessAssociation(
-  id: number | string,
+  id: string,
   businessType: string,
-  businessId: number | string,
+  businessId: string,
   t: TFunction
 ): Promise<void> {
   const url = `${getApiBaseUrl()}/api/v1/Attachment/UpdateBusinessAssociation/${id}?businessType=${encodeURIComponent(businessType)}&businessId=${businessId}`;

@@ -9,13 +9,13 @@ export type ContentReportTargetType = 'Post' | 'Comment' | 'PostQuickReply' | 'C
 
 export interface SubmitContentReportRequest {
   targetType: ContentReportTargetType;
-  targetContentId: number | string;
+  targetContentId: string;
   reasonType: string;
   reasonDetail?: string;
 }
 
-export async function submitContentReport(request: SubmitContentReportRequest): Promise<number> {
-  const response = await apiPost<number>('/api/v1/ContentModeration/Report', request, { withAuth: true });
+export async function submitContentReport(request: SubmitContentReportRequest): Promise<string> {
+  const response = await apiPost<string>('/api/v1/ContentModeration/Report', request, { withAuth: true });
 
   if (!response.ok || response.data === undefined) {
     throw new Error(response.message || '举报提交失败');

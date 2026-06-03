@@ -151,7 +151,7 @@ export function mergeCommentChildren(
   });
 }
 
-export function buildActiveSectionTitle(categories: Category[], selectedCategoryId: number | null, fallback: string): string {
+export function buildActiveSectionTitle(categories: Category[], selectedCategoryId: string | null, fallback: string): string {
   if (!selectedCategoryId) {
     return fallback;
   }

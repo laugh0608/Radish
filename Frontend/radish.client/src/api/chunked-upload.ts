@@ -63,7 +63,7 @@ export interface UploadSession {
   /**
    * 最终附件 ID（完成后）
    */
-  attachmentId?: number;
+  attachmentId?: string;
 
   /**
    * 过期时间
@@ -108,7 +108,7 @@ export interface CreateSessionOptions {
   /**
    * 业务 ID（可选）
    */
-  businessId?: number | string;
+  businessId?: string;
 }
 
 /**

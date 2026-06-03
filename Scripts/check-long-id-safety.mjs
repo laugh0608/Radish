@@ -14,8 +14,9 @@ const scanRoots = [
 ];
 
 const textExtensions = new Set(['.ts', '.tsx', '.dart']);
-const longIdNamePattern = '(?:vo)?(?:UserId|PostId|CommentId|ProductId|OrderId|NotificationId|TransactionId|ReportId|TargetContentId|TargetPostId|TargetCommentId|TargetChannelId|TargetMessageId|TargetUserId|ReporterUserId|ActionId|BusinessId|TenantId|FromUserId|ToUserId|OperatorId|SourceReportId|SourceOrderId|SourceProductId|UserBenefitId|ReplyToCommentId|ChannelId|MessageId|uuid)';
-const longIdExpressionPattern = '(?:userId|postId|commentId|productId|orderId|notificationId|transactionId|reportId|targetContentId|targetPostId|targetCommentId|targetUserId|reporterUserId|actionId|businessId|tenantId|fromUserId|toUserId|operatorId|sourceReportId|sourceOrderId|sourceProductId|userBenefitId|replyToCommentId|channelId|messageId|uuid)';
+const longIdNamePattern = '(?:vo)?(?:UserId|PostId|CommentId|ProductId|OrderId|NotificationId|TransactionId|ReportId|TargetContentId|TargetPostId|TargetCommentId|TargetChannelId|TargetMessageId|TargetUserId|ReporterUserId|ActionId|BusinessId|TenantId|FromUserId|ToUserId|OperatorId|SourceReportId|SourceOrderId|SourceProductId|UserBenefitId|ReplyToCommentId|CategoryId|AttachmentId|ChannelId|MessageId|uuid)';
+const longIdExpressionPattern = '(?:userId|postId|commentId|productId|orderId|notificationId|transactionId|reportId|targetContentId|targetPostId|targetCommentId|targetChannelId|targetMessageId|targetUserId|reporterUserId|actionId|businessId|tenantId|fromUserId|toUserId|operatorId|sourceReportId|sourceOrderId|sourceProductId|userBenefitId|replyToCommentId|categoryId|attachmentId|channelId|messageId|uuid)';
+const tsLongIdDeclarationPattern = `(?:${longIdNamePattern}|${longIdExpressionPattern})`;
 const genericLongIdExpressionPattern = '(?:\\.voId\\b|\\[(?:\'voId\'|"voId")\\])';
 const longIdMapKeyPattern = `(?:voId|${longIdNamePattern})`;
 const dartLongIdAccessorPattern = `(?:\\.voId\\b|\\[(?:'|")${longIdMapKeyPattern}(?:'|")\\])`;
@@ -24,12 +25,12 @@ const tsRules = [
   {
     id: 'ts-long-id-number-type',
     description: '外部 LongId 字段/参数不得声明为纯 number；请使用 string 字符串契约',
-    test: (line) => new RegExp(`\\b${longIdNamePattern}\\??\\s*:\\s*number(?:\\s*[;,)=}]|\\s*\\|\\s*(?:null|undefined))`).test(line),
+    test: (line) => new RegExp(`\\b${tsLongIdDeclarationPattern}\\??\\s*:\\s*number(?:\\s*[;,)=}]|\\s*\\|\\s*(?:null|undefined))`).test(line),
   },
   {
     id: 'ts-long-id-string-number-union-type',
     description: '外部 LongId 字段/参数不得声明为 string | number 兼容契约；请收敛为 string',
-    test: (line) => new RegExp(`\\b${longIdNamePattern}\\??\\s*:\\s*(?:string\\s*\\|\\s*number|number\\s*\\|\\s*string)(?:\\s*\\|\\s*(?:null|undefined))*`).test(line),
+    test: (line) => new RegExp(`\\b${tsLongIdDeclarationPattern}\\??\\s*:\\s*(?:string\\s*\\|\\s*number|number\\s*\\|\\s*string)(?:\\s*\\|\\s*(?:null|undefined))*`).test(line),
   },
   {
     id: 'ts-long-id-number-conversion',

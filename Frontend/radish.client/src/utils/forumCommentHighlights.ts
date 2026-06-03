@@ -17,7 +17,7 @@ export function createForumCommentHighlightMap<T>(
 
 export function getForumCommentHighlight<T>(
   highlights: ReadonlyMap<string, T>,
-  postId: string | number
+  postId: string
 ): T | undefined {
-  return highlights.get(String(postId));
+  return highlights.get(postId);
 }

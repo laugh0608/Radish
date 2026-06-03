@@ -77,7 +77,7 @@ export interface ForumDataState {
   categories: Category[];
   fixedTags: Tag[];
   hotTags: Tag[];
-  selectedCategoryId: number | null;
+  selectedCategoryId: LongId | null;
   selectedTagName: string | null;
   posts: PostItem[];
   selectedPost: PostDetail | null;
@@ -123,7 +123,7 @@ export interface ForumDataState {
 }
 
 export interface ForumDataActions {
-  setSelectedCategoryId: (id: number | null) => void;
+  setSelectedCategoryId: (id: LongId | null) => void;
   setSelectedTagName: (tagName: string | null) => void;
   setSelectedPost: Dispatch<SetStateAction<PostDetail | null>>;
   setComments: Dispatch<SetStateAction<CommentNode[]>>;
@@ -157,7 +157,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   const [categories, setCategories] = useState<Category[]>([]);
   const [fixedTags, setFixedTags] = useState<Tag[]>([]);
   const [hotTags, setHotTags] = useState<Tag[]>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<LongId | null>(null);
   const [selectedTagName, setSelectedTagName] = useState<string | null>(null);
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [selectedPost, setSelectedPost] = useState<PostDetail | null>(null);

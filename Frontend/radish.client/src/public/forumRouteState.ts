@@ -4,7 +4,7 @@ export type PublicSearchTimeRange = 'all' | '24h' | '7d' | '30d' | 'custom';
 
 export interface PublicForumListRoute {
   kind: 'list';
-  categoryId: number | null;
+  categoryId: string | null;
   sortBy: PublicListSort;
   page: number;
 }
@@ -159,7 +159,7 @@ function parseListRoute(search: string): PublicForumListRoute {
   const params = new URLSearchParams(search);
   return {
     kind: 'list',
-    categoryId: normalizePositiveInteger(params.get('category') ?? undefined) ?? null,
+    categoryId: normalizePositiveIntegerString(params.get('category') ?? undefined) ?? null,
     sortBy: normalizeSortBy(params.get('sort')),
     page: normalizePositiveInteger(params.get('page') ?? undefined) ?? 1
   };
@@ -211,7 +211,7 @@ export function parsePublicForumRoute(pathname: string, search: string): PublicF
   }
 
   const categoryMatched = pathname.match(/^\/forum\/category\/(\d+)\/?$/);
-  const categoryId = normalizePositiveInteger(categoryMatched?.[1]);
+  const categoryId = normalizePositiveIntegerString(categoryMatched?.[1]);
   if (categoryId) {
     const route = parseListRoute(search);
     return {

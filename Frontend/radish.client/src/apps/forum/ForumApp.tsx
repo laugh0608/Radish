@@ -593,7 +593,7 @@ export const ForumApp = () => {
     dataState.resetCommentSort();
   };
 
-  const handleSelectCategory = (categoryId: number) => {
+  const handleSelectCategory = (categoryId: LongId) => {
     setIsSearchView(false);
     setCommentNavigationTarget(null);
     setCommentNavigationNotice(null);

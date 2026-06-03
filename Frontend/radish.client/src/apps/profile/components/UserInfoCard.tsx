@@ -52,7 +52,7 @@ interface ProfileInfo {
   voBirth?: string | null;
   voAddress: string;
   voCreateTime: string;
-  voAvatarAttachmentId?: number | string | null;
+  voAvatarAttachmentId?: string | null;
   voAvatarUrl?: string | null;
   voAvatarThumbnailUrl?: string | null;
 }

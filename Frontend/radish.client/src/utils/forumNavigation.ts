@@ -15,9 +15,9 @@ export interface ForumWindowParams {
 }
 
 export interface ForumAppParamTarget {
-  postId?: string | number;
-  postPublicId?: string | number;
-  commentId?: string | number;
+  postId?: string;
+  postPublicId?: string;
+  commentId?: string;
   intent?: string | null;
 }
 

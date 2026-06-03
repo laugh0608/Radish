@@ -21,6 +21,7 @@ import { uploadDocument, uploadImage } from '@/api/attachment';
 import { redirectToLogin } from '@/services/auth';
 import { buildDesktopForumReturnPath } from '@/services/authReturnPath';
 import { useUserStore } from '@/stores/userStore';
+import type { LongId } from '@/api/user';
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
 import { RichTextMarkdownEditor } from './RichTextMarkdownEditor';
 import styles from './PublishPostModal.module.css';
@@ -29,12 +30,12 @@ interface PublishPostModalProps {
   isOpen: boolean;
   isAuthenticated: boolean;
   categories: Category[];
-  selectedCategoryId: number | null;
+  selectedCategoryId: LongId | null;
   onClose: () => void;
   onPublish: (
     title: string,
     content: string,
-    categoryId: number,
+    categoryId: LongId,
     tagNames: string[],
     isQuestion?: boolean,
     poll?: CreatePollRequest | null,
@@ -43,7 +44,7 @@ interface PublishPostModalProps {
 }
 
 interface CategorySelectionSnapshot {
-  id: number;
+  id: LongId;
   name: string;
 }
 
@@ -51,7 +52,7 @@ interface PublishPostDraft {
   title?: string;
   content?: string;
   tags?: string[];
-  categoryId?: number | null;
+  categoryId?: LongId | null;
   categoryName?: string | null;
   composerMode?: 'markdown' | 'rich';
   isQuestion?: boolean;
@@ -95,9 +96,9 @@ const MarkdownEditor = lazy(() =>
 
 const findCategorySnapshot = (
   categories: Category[],
-  targetCategoryId: number | null | undefined
+  targetCategoryId: LongId | null | undefined
 ): CategorySelectionSnapshot | null => {
-  if (!targetCategoryId || targetCategoryId <= 0) {
+  if (!targetCategoryId) {
     return null;
   }
 
@@ -135,7 +136,7 @@ export const PublishPostModal = ({
   const [generateMultipleSizes, setGenerateMultipleSizes] = useState(false);
   const [imageScalePercent, setImageScalePercent] = useState<number>(75);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [categoryId, setCategoryId] = useState<number | null>(selectedCategoryId);
+  const [categoryId, setCategoryId] = useState<LongId | null>(selectedCategoryId);
   const [selectedCategorySnapshot, setSelectedCategorySnapshot] = useState<CategorySelectionSnapshot | null>(
     () => findCategorySnapshot(categories, selectedCategoryId)
   );
@@ -181,7 +182,7 @@ export const PublishPostModal = ({
     }
   }, [t]);
 
-  const applyCategorySelection = useCallback((nextCategoryId: number | null, snapshot?: CategorySelectionSnapshot | null) => {
+  const applyCategorySelection = useCallback((nextCategoryId: LongId | null, snapshot?: CategorySelectionSnapshot | null) => {
     setCategoryId(nextCategoryId);
     setSelectedCategorySnapshot(snapshot ?? findCategorySnapshot(categories, nextCategoryId));
   }, [categories]);
@@ -202,9 +203,11 @@ export const PublishPostModal = ({
       }
 
       const draft = JSON.parse(savedDraft) as PublishPostDraft;
-      if (draft.title || draft.content || draft.tags?.length || typeof draft.categoryId === 'number') {
+      if (draft.title || draft.content || draft.tags?.length || typeof draft.categoryId === 'string') {
         const draftIsQuestion = Boolean(draft.isQuestion);
-        const draftCategoryId = typeof draft.categoryId === 'number' ? draft.categoryId : selectedCategoryId;
+        const draftCategoryId = typeof draft.categoryId === 'string' && draft.categoryId.trim()
+          ? draft.categoryId
+          : selectedCategoryId;
         const draftCategorySnapshot = findCategorySnapshot(categories, draftCategoryId) ?? (
           draftCategoryId && draft.categoryName
             ? {
@@ -421,7 +424,7 @@ export const PublishPostModal = ({
       });
     }
 
-    if (!categoryId || categoryId <= 0) {
+    if (!categoryId) {
       issues.push({
         code: 'category',
         label: '分类',
@@ -1062,7 +1065,7 @@ export const PublishPostModal = ({
                 value={categoryId ?? ''}
                 onChange={(event) => {
                   const value = event.target.value;
-                  applyCategorySelection(value ? Number(value) : null);
+                  applyCategorySelection(value || null);
                   setCategoryError(null);
                 }}
                 className={`${styles.control} ${showBlockingIssues && blockingIssues.some((issue) => issue.code === 'category') ? styles.controlAttention : ''}`}

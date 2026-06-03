@@ -1,6 +1,6 @@
 import { apiGet, apiPost } from '@radish/http';
 
-export type ConsoleLongId = string | number;
+export type ConsoleLongId = string;
 
 export interface VoPagedResult<T> {
   voItems: T[];

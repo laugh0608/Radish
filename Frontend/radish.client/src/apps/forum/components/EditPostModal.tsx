@@ -23,7 +23,7 @@ interface EditPostModalProps {
   post: PostDetail | null;
   categories: Category[];
   onClose: () => void;
-  onSave: (postId: LongId, title: string, content: string, categoryId: number, tagNames: string[]) => Promise<void>;
+  onSave: (postId: LongId, title: string, content: string, categoryId: LongId, tagNames: string[]) => Promise<void>;
 }
 
 const IMAGE_SCALE_OPTIONS = [30, 50, 70, 75, 100] as const;
@@ -52,7 +52,7 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
   const [allTagNames, setAllTagNames] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [categoryId, setCategoryId] = useState<number | null>(null);
+  const [categoryId, setCategoryId] = useState<LongId | null>(null);
   const [tagError, setTagError] = useState<string | null>(null);
   const [categoryError, setCategoryError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -174,7 +174,7 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
       return;
     }
 
-    if (!categoryId || categoryId <= 0) {
+    if (!categoryId) {
       setCategoryError(t('forum.editPost.categoryRequired'));
       return;
     }
@@ -325,7 +325,7 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
             value={categoryId ?? ''}
             onChange={e => {
               const value = e.target.value;
-              setCategoryId(value ? Number(value) : null);
+              setCategoryId(value || null);
               setCategoryError(null);
             }}
             className={styles.categorySelect}

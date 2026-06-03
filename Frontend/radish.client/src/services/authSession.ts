@@ -10,13 +10,9 @@ export const TokenRefreshFailureReason = {
 
 export type TokenRefreshFailureReason = (typeof TokenRefreshFailureReason)[keyof typeof TokenRefreshFailureReason];
 
-export function hasAuthenticatedSession(authenticated: boolean, userId: string | number | null | undefined): boolean {
+export function hasAuthenticatedSession(authenticated: boolean, userId: string | null | undefined): boolean {
   if (!authenticated) {
     return false;
-  }
-
-  if (typeof userId === 'number') {
-    return Number.isSafeInteger(userId) && userId > 0;
   }
 
   if (typeof userId !== 'string') {

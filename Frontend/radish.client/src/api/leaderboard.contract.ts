@@ -39,7 +39,7 @@ export const LeaderboardCategory = {
 
 export type LeaderboardCategory = (typeof LeaderboardCategory)[keyof typeof LeaderboardCategory];
 
-export type LeaderboardLongId = number | string;
+export type LeaderboardLongId = string;
 
 /**
  * 排行榜类型 Vo

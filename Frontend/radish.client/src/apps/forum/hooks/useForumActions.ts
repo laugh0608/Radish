@@ -79,7 +79,7 @@ export interface ForumActionsHandlers {
   handlePublishPost: (
     title: string,
     content: string,
-    categoryId: number,
+    categoryId: LongId,
     tagNames: string[],
     isQuestion?: boolean,
     poll?: CreatePollRequest | null,
@@ -95,7 +95,7 @@ export interface ForumActionsHandlers {
   handleLikePost: (postId: LongId) => Promise<void>;
   handleEditPost: (postId: LongId) => void;
   handleViewPostHistory: (postId: LongId) => Promise<void>;
-  handleSaveEdit: (postId: LongId, title: string, content: string, categoryId: number, tagNames: string[]) => Promise<void>;
+  handleSaveEdit: (postId: LongId, title: string, content: string, categoryId: LongId, tagNames: string[]) => Promise<void>;
   handleTogglePostTop: (isTop: boolean) => Promise<void>;
   handleDeletePost: (postId: LongId) => void;
   confirmDeletePost: () => Promise<void>;
@@ -139,7 +139,7 @@ interface UseForumActionsParams {
   commentSortBy: 'newest' | 'hottest' | null;
   loadedCommentPages: number;
   questionAnswerSort: QuestionAnswerSort;
-  selectedCategoryId: number | null;
+  selectedCategoryId: LongId | null;
   selectedTagName: string | null;
   selectedPost: PostDetail | null;
   setSelectedPost: Dispatch<SetStateAction<PostDetail | null>>;
@@ -324,13 +324,13 @@ export const useForumActions = (
   const handlePublishPost = async (
     title: string,
     content: string,
-    categoryId: number,
+    categoryId: LongId,
     tagNames: string[],
     isQuestion?: boolean,
     poll?: CreatePollRequest | null,
     lottery?: CreateLotteryRequest | null
   ) => {
-    if (categoryId <= 0) {
+    if (!categoryId) {
       const message = '请先选择分类';
       setError(message);
       throw new Error(message);
@@ -649,7 +649,7 @@ export const useForumActions = (
   };
 
   // 保存编辑
-  const handleSaveEdit = async (postId: LongId, title: string, content: string, categoryId: number, tagNames: string[]) => {
+  const handleSaveEdit = async (postId: LongId, title: string, content: string, categoryId: LongId, tagNames: string[]) => {
     setError(null);
     try {
       await updatePost({ postId, title, content, categoryId, tagNames }, t);
@@ -806,14 +806,14 @@ export const useForumActions = (
       const now = new Date().toISOString();
       const parentId = replyTo?.parentCommentId ?? null;
 
-      const isSameId = (a: number | string | null | undefined, b: number | string | null | undefined) => {
+      const isSameId = (a: LongId | null | undefined, b: LongId | null | undefined) => {
         if (a == null || b == null) return false;
         return String(a) === String(b);
       };
 
       const mergeCommentIntoTree = (
         list: CommentNode[],
-        targetParentId: number | string | null,
+        targetParentId: LongId | null,
         comment: CommentNode
       ): CommentNode[] => {
         if (!targetParentId) {
