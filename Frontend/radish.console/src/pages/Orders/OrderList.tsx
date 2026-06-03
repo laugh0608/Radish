@@ -22,6 +22,7 @@ import {
 } from '@radish/ui';
 import {
   adminGetOrders,
+  adminGetOrder,
   adminRemarkOrder,
   retryGrantBenefit,
   getOrderStatusColor,
@@ -72,6 +73,7 @@ function parseBooleanQuery(value: string | null): boolean {
 }
 
 function buildOrderSearchParams(params: {
+  orderId?: string;
   userId?: string;
   status?: OrderStatus;
   productId?: string;
@@ -82,6 +84,10 @@ function buildOrderSearchParams(params: {
 }): URLSearchParams {
   const searchParams = new URLSearchParams();
   const normalizedOrderNo = params.orderNo?.trim() ?? '';
+
+  if (params.orderId !== undefined) {
+    searchParams.set('orderId', params.orderId.toString());
+  }
 
   if (params.userId !== undefined) {
     searchParams.set('userId', params.userId.toString());
@@ -120,12 +126,14 @@ export const OrderList = () => {
   const location = useLocation();
   const [urlSearchParams, setUrlSearchParams] = useSearchParams();
   const queryUserId = parseLongIdQuery(urlSearchParams.get('userId'));
+  const queryOrderId = parseLongIdQuery(urlSearchParams.get('orderId'));
   const queryStatus = parseOrderStatusQuery(urlSearchParams.get('status'));
   const queryProductId = parseLongIdQuery(urlSearchParams.get('productId'));
   const queryOrderNo = (urlSearchParams.get('orderNo') ?? '').trim();
   const queryPageIndex = parsePositiveIntQuery(urlSearchParams.get('pageIndex')) ?? DEFAULT_PAGE_INDEX;
   const queryPageSize = parsePositiveIntQuery(urlSearchParams.get('pageSize')) ?? DEFAULT_PAGE_SIZE;
   const queryOpenDetail = parseBooleanQuery(urlSearchParams.get('openDetail'));
+  const returnTo = urlSearchParams.get('returnTo');
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
@@ -151,6 +159,7 @@ export const OrderList = () => {
   const [draftOrderNo, setDraftOrderNo] = useState(queryOrderNo);
   const activeFilterCount = [
     queryUserId,
+    queryOrderId,
     queryStatus !== undefined ? 'status' : undefined,
     queryProductId,
     queryOrderNo,
@@ -160,6 +169,7 @@ export const OrderList = () => {
   const pageTotalPrice = orders.reduce((sum, order) => sum + order.voTotalPrice, 0);
 
   const syncSearchParams = (params: {
+    orderId?: string;
     userId?: string;
     status?: OrderStatus;
     productId?: string;
@@ -197,13 +207,20 @@ export const OrderList = () => {
         : current);
 
       if (queryOpenDetail) {
-        const targetOrder = queryOrderNo
+        const targetOrder = queryOrderId
+          ? response.data.find((item) => String(item.voId) === queryOrderId)
+          : queryOrderNo
           ? response.data.find((item) => item.voOrderNo === queryOrderNo)
           : response.data.length === 1 ? response.data[0] : undefined;
 
         if (targetOrder) {
           setSelectedOrderId(targetOrder.voId);
           setSelectedOrderPreview(targetOrder);
+          setDetailVisible(true);
+        } else if (queryOrderId) {
+          const detail = await adminGetOrder(queryOrderId);
+          setSelectedOrderId(detail.voId);
+          setSelectedOrderPreview(detail);
           setDetailVisible(true);
         }
       }
@@ -223,6 +240,7 @@ export const OrderList = () => {
     void loadOrders();
   }, [
     queryUserId,
+    queryOrderId,
     queryStatus,
     queryProductId,
     queryOrderNo,
@@ -497,7 +515,14 @@ export const OrderList = () => {
             </h2>
             <p className="admin-feature-subtle">查看商城订单、定位用户与商品，并处理发放失败重试和管理员备注。</p>
           </div>
-          <Tag>{canRemarkOrder ? '可备注' : '只读'}</Tag>
+          <Space wrap>
+            {returnTo?.startsWith('/') ? (
+              <Button onClick={() => navigate(returnTo)}>
+                返回来源
+              </Button>
+            ) : null}
+            <Tag>{canRemarkOrder ? '可备注' : '只读'}</Tag>
+          </Space>
         </div>
       </section>
 

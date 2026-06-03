@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   Button,
+  Space,
   Tag,
   Table,
   message,
@@ -40,6 +41,7 @@ interface UserDetailData {
 export const UserDetail = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const returnTo = searchParams.get('returnTo');
   useDocumentTitle('用户详情');
@@ -99,6 +101,34 @@ export const UserDetail = () => {
     }
 
     navigate('/users');
+  };
+
+  const getCurrentReturnTo = () => `${location.pathname}${location.search}`;
+
+  const handleViewOrderFromTransaction = (transaction: CoinTransactionVo) => {
+    if (transaction.voBusinessType !== 'Order' || !transaction.voBusinessId) {
+      return;
+    }
+
+    const searchParams = new URLSearchParams({
+      orderId: String(transaction.voBusinessId),
+      openDetail: '1',
+      returnTo: getCurrentReturnTo(),
+    });
+
+    navigate(`/orders?${searchParams.toString()}`);
+  };
+
+  const handleViewCoinTransactionFromOrder = (order: Order) => {
+    const searchParams = new URLSearchParams({
+      userId: String(order.voUserId),
+      transactionType: 'CONSUME',
+      businessType: 'Order',
+      businessId: String(order.voId),
+      returnTo: getCurrentReturnTo(),
+    });
+
+    navigate(`/coins?${searchParams.toString()}`);
   };
 
   // 加载用户详情
@@ -235,6 +265,18 @@ export const UserDetail = () => {
       width: 180,
       render: (time: string) => formatDisplayTime(time),
     },
+    {
+      title: '操作',
+      key: 'action',
+      width: 120,
+      render: (_: unknown, record) => (
+        record.voBusinessType === 'Order' && record.voBusinessId ? (
+          <Button onClick={() => handleViewOrderFromTransaction(record)}>
+            查看订单
+          </Button>
+        ) : '-'
+      ),
+    },
   ];
 
   // 订单表格列
@@ -278,11 +320,26 @@ export const UserDetail = () => {
     {
       title: '操作',
       key: 'action',
-      width: 120,
+      width: 200,
       render: (_: unknown, record: Order) => (
-        <Button onClick={() => navigate(`/orders?orderNo=${encodeURIComponent(record.voOrderNo)}&openDetail=1`)}>
-          治理详情
-        </Button>
+        <Space wrap>
+          <Button onClick={() => {
+            const searchParams = new URLSearchParams({
+              orderId: String(record.voId),
+              openDetail: '1',
+              returnTo: getCurrentReturnTo(),
+            });
+
+            navigate(`/orders?${searchParams.toString()}`);
+          }}>
+            治理详情
+          </Button>
+          {record.voCoinTransactionId ? (
+            <Button onClick={() => handleViewCoinTransactionFromOrder(record)}>
+              扣款流水
+            </Button>
+          ) : null}
+        </Space>
       ),
     },
   ];
