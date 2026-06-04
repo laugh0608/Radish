@@ -773,7 +773,7 @@ CurrentUser permissions
 6. `System/Admin` 默认全集不受回归影响
 7. `Hangfire` 仍可通过统一权限模型控制
 8. 文档、种子、接口实现与前端页面口径保持一致
-9. 角色授权页中的角色 / 资源 / API 模块 ID 在前端保持字符串契约，并由 LongId 守护防止回潮
+9. 角色授权页中的角色 / 资源 / API 模块 ID 及授权资源 ID 集合在前端保持字符串契约，并由 LongId 守护防止 `number` / `number[]` 回潮
 
 ---
 
