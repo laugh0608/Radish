@@ -288,6 +288,55 @@ void main() {
     expect(find.text('帖子已发布，正在打开详情。'), findsOneWidget);
   });
 
+  testWidgets('opens created post detail with public route after publishing',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repository = _CreatedPostPublicRouteForumRepository();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: 'access-token-42',
+          refreshToken: 'refresh-token-42',
+          userId: 'user-42',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: const _NoopSessionRefreshService(),
+    );
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumPage(
+          environment: const AppEnvironment.development(),
+          repository: repository,
+          sessionController: sessionController,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.enterText(_forumTextFieldByLabel('标题'), 'Flutter 新帖公开链路');
+    await tester.enterText(_forumTextFieldByLabel('标签'), 'flutter, 链路');
+    await tester.enterText(
+      _forumTextFieldByLabel('正文'),
+      '发布后应打开带 PublicId 的公开详情。',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, '发布帖子'));
+    await tester.pumpAndSettle();
+
+    expect(repository.createPostRequests, hasLength(1));
+    expect(repository.lastDetailPostId, 'post-created-1');
+    expect(find.text('Flutter 新帖公开链路'), findsWidgets);
+    expect(find.text('/forum/post/pst_created_flutter'), findsOneWidget);
+    expect(find.text('/forum/post/post-created-1'), findsNothing);
+  });
+
   testWidgets('opens forum detail handoff target from external shell state',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
@@ -573,6 +622,30 @@ class _SuccessForumRepository implements ForumRepository {
       ),
     );
     return 'post-created-1';
+  }
+}
+
+class _CreatedPostPublicRouteForumRepository extends _SuccessForumRepository {
+  String? lastDetailPostId;
+
+  @override
+  Future<ForumPostDetail> getPostDetail({
+    required String postId,
+  }) async {
+    lastDetailPostId = postId;
+    return const ForumPostDetail(
+      id: 'post-created-1',
+      publicId: 'pst_created_flutter',
+      title: 'Flutter 新帖公开链路',
+      content: '发布后应打开带 PublicId 的公开详情。',
+      contentType: 'text',
+      categoryId: '9',
+      categoryName: 'Engineering',
+      authorId: 'user-42',
+      authorName: '我',
+      tagNames: ['flutter', '链路'],
+      createTime: '2026-06-04T08:00:00Z',
+    );
   }
 }
 
