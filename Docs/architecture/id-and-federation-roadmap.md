@@ -232,6 +232,7 @@ Radish 未来联邦的最小公共节点定义为：
 - `2026-06-02` Flutter LongId 安全扫描已扩展到 Dart map 读取、`int.parse / int.tryParse`、`_readInt / readInt`、`as int` 与 `toInt()` 等回潮形态
 - `2026-06-03` 第三轮外部 ID 契约审计已收口：`radish.client`、`radish.console`、`@radish/ui` 和 Flutter 仓储中的高信号外部 ID 继续收敛为字符串，LongId 守护补充 `string | number` 联合类型、小写 ID 声明和业务上下文参数扫描
 - `2026-06-03` Console 角色授权链路已纳入 Phase A：`RoleId / ResourceId / ApiModuleId`、授权快照、资源树、接口预览和保存请求均按字符串传递，前端不得把这些授权对象 ID 转成 JavaScript `number`
+- `2026-06-04` LongId 自动化守护已补授权资源 ID 集合扫描：`resourceIds / voGrantedResourceIds / selectedResourceIds` 等集合不得声明为 `number[]`、`string[] | number[]`，也不得通过 `.map(Number)` 批量数值化
 - 上述冻结要求不是“远期优化建议”，而是当前主线稳定性约束；forum 公开阅读链路已经因大整数精度丢失发生过真实回归
 
 ### Phase B：核心聚合双标识

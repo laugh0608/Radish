@@ -33,3 +33,15 @@
 - 今日文档同步复核确认：`current.md`、`P3-8` 专题文档、6 月开发日志和日交接记录需要同步；没有新增数据库结构、权限模型、视觉 token、Pencil 设计稿、部署配置或运行时环境变量，因此架构说明、视觉规范、设计源文件和部署说明无需跟随更新。
 - 今日验证覆盖 `npm run check:console-permissions`、`npm run build --workspace=radish.console`、`npm run check:long-id-safety`、`flutter test test/profile_page_test.dart`、`flutter test`、`flutter analyze`、`npm run check:repo-hygiene:changed` 与 `git diff --check`。
 - 收工前补 [2026-06-03 收工回顾与明日事项](/records/daily-handoff-2026-06-03)：明日先做 Flutter 个人资料写入后的跨端展示一致性复核与必要修复，确认同一用户在 Flutter、纯 Web、Console 和论坛作者展示中的用户名、展示名称和头像口径一致。
+
+## 2026-06-04
+
+- Flutter 个人资料写入后的跨端展示一致性已完成治理与复核：论坛帖子、评论、回复目标和轻回应展示名回到当前用户资料口径，Console 用户详情同步展示名称字段。
+- Flutter 纯文本发帖守护继续补齐：发帖成功后原生详情读取 `VoPublicId` 并展示 `/forum/post/:publicId` 公开链接；发帖失败时保留标题、标签和正文草稿，不误触发详情跳转或成功态。
+- Flutter 订单 / 背包 / 钱包回流继续补强：订单详情扣款流水入口改为基于订单 ID；订单详情刷新失败保留现有订单上下文，背包来源订单 / 商品加载失败可明确返回背包，钱包按 `Order #orderId` 筛选无结果或刷新失败仍保留筛选上下文。
+- Flutter 通知和购买后确认小闭环已推进：未读 forum 通知打开详情前会尝试单条标记已读，失败不阻断详情打开；订单详情新增“查看背包发放”入口，可从订单返回背包发放确认。
+- Flutter 最近访问公开路由守护已完成：浏览记录中的 forum / docs 入口优先使用 `targetSlug` / `PublicId`，旧 `routePath` 只作为缺少公开标识时的回退，避免内部 LongId 回潮到公开详情入口。
+- Console 授权 ID 集合守护已补强：`check-long-id-safety` 覆盖 `resourceIds / voGrantedResourceIds / selectedResourceIds` 等授权资源 ID 集合的 `number[]`、`string[] | number[]`、`Set<number>` 和 `.map(Number)` 回潮。
+- 今日文档同步复核确认：`current.md`、`P3-8` 专题、`ID 与联邦路线图`、`Console 核心概念`、6 月开发日志、记录索引和日交接记录需要同步；没有新增数据库结构、权限模型、视觉 token、Pencil 设计稿、部署配置或运行时环境变量，因此视觉规范、设计源文件、部署说明和 API 说明书无需跟随更新。
+- 今日验证覆盖 Flutter 定向测试、`flutter analyze`、`npm run check:console-permissions`、`npm run check:long-id-safety`、`npm run validate:identity`、`npm run check:repo-hygiene:changed` 与 `git diff --check`；`validate:identity` 中后端身份语义定向测试 14 个通过，输出仍有既有 XML 注释 warning。
+- 收工前补 [2026-06-04 收工回顾与明日事项](/records/daily-handoff-2026-06-04)：明日优先审计 Flutter 纯文本发帖登录回流与草稿恢复；如运行时已满足，只补定向守护或文档结论。
