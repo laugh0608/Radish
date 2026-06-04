@@ -260,6 +260,7 @@ class _ShopOrderDetailContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final statusText = order.statusDisplay ?? order.status;
+    final canOpenCoinTransaction = order.id.trim().isNotEmpty;
 
     return Card(
       child: Padding(
@@ -298,7 +299,7 @@ class _ShopOrderDetailContent extends StatelessWidget {
                   icon: const Icon(Icons.open_in_new),
                   label: const Text('查看商品'),
                 ),
-                if (order.coinTransactionId?.trim().isNotEmpty == true) ...[
+                if (canOpenCoinTransaction) ...[
                   FilledButton.tonalIcon(
                     onPressed: onOpenCoinTransaction,
                     icon: const Icon(Icons.account_balance_wallet_outlined),

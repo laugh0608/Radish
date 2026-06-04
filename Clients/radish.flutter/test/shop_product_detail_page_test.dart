@@ -10,6 +10,7 @@ import 'package:radish_flutter/core/network/radish_api_endpoints.dart';
 import 'package:radish_flutter/features/shop/data/shop_models.dart';
 import 'package:radish_flutter/features/shop/data/shop_repository.dart';
 import 'package:radish_flutter/features/shop/presentation/shop_product_detail_page.dart';
+import 'package:radish_flutter/features/wallet/data/wallet_models.dart';
 import 'package:radish_flutter/features/wallet/data/wallet_repository.dart';
 
 void main() {
@@ -95,7 +96,7 @@ void main() {
         home: ShopProductDetailPage(
           environment: AppEnvironment.development(),
           repository: _SuccessShopRepository(),
-          walletRepository: EmptyWalletRepository(),
+          walletRepository: _OrderTransactionWalletRepository(),
           productId: '4001',
           accessToken: 'access-token',
         ),
@@ -113,6 +114,15 @@ void main() {
     expect(find.text('订单详情'), findsWidgets);
     expect(find.text('订单 RO202605310001'), findsOneWidget);
     expect(find.text('返回商品详情'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, '查看扣款流水'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilledButton, '查看扣款流水'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('订单扣款流水'), findsWidgets);
+    expect(find.text('返回订单详情'), findsOneWidget);
+    expect(find.text('当前筛选：Order #9001'), findsOneWidget);
+    expect(find.text('商城消费'), findsOneWidget);
   });
 
   testWidgets('login request returns to product purchase panel',
@@ -430,6 +440,67 @@ class _PurchaseFailingShopRepository extends _SuccessShopRepository {
     return const ShopPurchaseResult(
       success: false,
       errorMessage: '支付口令错误',
+    );
+  }
+}
+
+class _OrderTransactionWalletRepository implements WalletRepository {
+  const _OrderTransactionWalletRepository();
+
+  @override
+  Future<CoinBalance> getBalance({
+    required String accessToken,
+  }) async {
+    return const CoinBalance(
+      userId: 'user-42',
+      balance: 880,
+      balanceDisplay: '880.000',
+      frozenBalance: 0,
+      frozenBalanceDisplay: '0.000',
+      totalEarned: 1200,
+      totalSpent: 120,
+      totalTransferredIn: 0,
+      totalTransferredOut: 0,
+    );
+  }
+
+  @override
+  Future<CoinTransactionPage> getTransactions({
+    required String accessToken,
+    required int pageIndex,
+    required int pageSize,
+    String? transactionType,
+    String? status,
+    String? businessType,
+    String? businessId,
+  }) async {
+    return CoinTransactionPage(
+      page: 1,
+      pageSize: pageSize,
+      dataCount: 1,
+      pageCount: 1,
+      transactions: [
+        CoinTransaction(
+          id: 'coin-2',
+          transactionNo: 'TXN202605310001',
+          fromUserId: 'user-42',
+          fromUserName: '我',
+          toUserId: 'shop',
+          toUserName: '商城',
+          amount: 120,
+          amountDisplay: '120.000',
+          fee: 0,
+          feeDisplay: '0.000',
+          transactionType: transactionType ?? 'CONSUME',
+          transactionTypeDisplay: '商城消费',
+          status: status ?? 'SUCCESS',
+          statusDisplay: '成功',
+          businessType: businessType,
+          businessId: businessId,
+          remark: '购买 Profile Rename Card',
+          createTime: '2026-05-31T08:00:30Z',
+        ),
+      ],
     );
   }
 }
