@@ -317,6 +317,14 @@ class UserBrowseHistoryItem {
   final String lastViewTime;
 
   String get navigationId {
+    final normalizedType = targetType.trim().toLowerCase();
+    final normalizedSlug = targetSlug?.trim();
+    if ((normalizedType == 'post' || normalizedType == 'wiki') &&
+        normalizedSlug != null &&
+        normalizedSlug.isNotEmpty) {
+      return normalizedSlug;
+    }
+
     final normalizedRoutePath = routePath?.trim();
     if (normalizedRoutePath != null && normalizedRoutePath.isNotEmpty) {
       final routedId = _readLastPathSegment(normalizedRoutePath);
@@ -325,12 +333,29 @@ class UserBrowseHistoryItem {
       }
     }
 
-    final normalizedSlug = targetSlug?.trim();
     if (normalizedSlug != null && normalizedSlug.isNotEmpty) {
       return normalizedSlug;
     }
 
     return targetId;
+  }
+
+  String get displayRoutePath {
+    final normalizedNavigationId = navigationId.trim();
+    if (normalizedNavigationId.isEmpty) {
+      return routePath ?? targetId;
+    }
+
+    switch (targetType.trim().toLowerCase()) {
+      case 'post':
+        return '/forum/post/$normalizedNavigationId';
+      case 'wiki':
+        return '/docs/$normalizedNavigationId';
+      case 'product':
+        return '/shop/product/$normalizedNavigationId';
+      default:
+        return routePath ?? normalizedNavigationId;
+    }
   }
 
   bool get canOpen {

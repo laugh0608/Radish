@@ -420,7 +420,7 @@ class _BrowseHistoryRouteChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final routeText = item.routePath ?? item.navigationId;
+    final routeText = item.displayRoutePath;
 
     return Container(
       constraints: const BoxConstraints(maxWidth: 320),

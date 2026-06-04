@@ -43,6 +43,11 @@ void main() {
     expect(find.text('Native profile follow-up'), findsOneWidget);
     expect(find.text('Radish Flutter docs scope'), findsOneWidget);
     expect(find.text('Early Access Badge'), findsOneWidget);
+    expect(
+      find.text('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f801'),
+      findsOneWidget,
+    );
+    expect(find.text('/forum/post/2042219067430928384'), findsNothing);
 
     await tester.tap(find.widgetWithText(FilledButton, '打开详情').first);
     await tester.pumpAndSettle();
@@ -119,10 +124,11 @@ class _BrowseHistoryRepository implements ProfileRepository {
           id: 'history-post-1',
           targetType: 'Post',
           targetTypeDisplay: '帖子',
-          targetId: '1001',
+          targetId: '2042219067430928384',
+          targetSlug: 'pst_018f6b6f7c7d70008f8f8f8f8f8f801',
           title: 'Native profile follow-up',
           summary: 'Expand the public profile beyond a single info card.',
-          routePath: '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f801',
+          routePath: '/forum/post/2042219067430928384',
           viewCount: 2,
           lastViewTime: '2026-04-20T09:30:00Z',
         ),
