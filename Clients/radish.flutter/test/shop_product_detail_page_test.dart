@@ -9,9 +9,12 @@ import 'package:radish_flutter/core/network/radish_api_client.dart';
 import 'package:radish_flutter/core/network/radish_api_endpoints.dart';
 import 'package:radish_flutter/features/shop/data/shop_models.dart';
 import 'package:radish_flutter/features/shop/data/shop_repository.dart';
+import 'package:radish_flutter/features/shop/presentation/shop_inventory_page.dart';
+import 'package:radish_flutter/features/shop/presentation/shop_order_detail_page.dart';
 import 'package:radish_flutter/features/shop/presentation/shop_product_detail_page.dart';
 import 'package:radish_flutter/features/wallet/data/wallet_models.dart';
 import 'package:radish_flutter/features/wallet/data/wallet_repository.dart';
+import 'package:radish_flutter/features/wallet/presentation/wallet_page.dart';
 
 void main() {
   testWidgets('renders public shop product detail with login purchase boundary',
@@ -123,6 +126,129 @@ void main() {
     expect(find.text('返回订单详情'), findsOneWidget);
     expect(find.text('当前筛选：Order #9001'), findsOneWidget);
     expect(find.text('商城消费'), findsOneWidget);
+  });
+
+  testWidgets('order detail refresh failure keeps current order context',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final repository = _RefreshFailingOrderRepository();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ShopOrderDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: repository,
+          walletRepository: const EmptyWalletRepository(),
+          accessToken: 'access-token',
+          orderId: '9001',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('订单 RO202605310001'), findsOneWidget);
+    expect(find.text('Profile Rename Card'), findsOneWidget);
+
+    await tester.tap(find.text('刷新订单'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('订单详情刷新失败'), findsOneWidget);
+    expect(find.text('订单 RO202605310001'), findsOneWidget);
+    expect(find.text('Profile Rename Card'), findsOneWidget);
+    expect(find.text('正在查看订单 RO202605310001'), findsOneWidget);
+  });
+
+  testWidgets('inventory source failures show explicit state and return',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ShopInventoryPage(
+          environment: AppEnvironment.development(),
+          repository: _BrokenInventorySourceRepository(),
+          walletRepository: EmptyWalletRepository(),
+          accessToken: 'access-token',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('我的背包'), findsWidgets);
+    expect(find.text('查看来源订单'), findsOneWidget);
+    expect(find.text('查看来源商品'), findsWidgets);
+
+    await tester.tap(find.text('查看来源订单'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('暂时无法加载订单详情'), findsOneWidget);
+    expect(find.text('来源订单不存在'), findsOneWidget);
+    expect(find.text('返回背包'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('我的背包'), findsWidgets);
+
+    await tester.tap(find.text('查看来源商品').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('暂时无法加载商品详情'), findsOneWidget);
+    expect(find.text('来源商品不存在'), findsOneWidget);
+    expect(find.text('返回背包'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('我的背包'), findsWidgets);
+  });
+
+  testWidgets('wallet order filter empty and refresh failure keep context',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final repository = _EmptyThenRefreshFailingWalletRepository();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: WalletPage(
+          environment: const AppEnvironment.development(),
+          repository: repository,
+          accessToken: 'access-token',
+          title: '订单扣款流水',
+          returnLabel: '返回订单详情',
+          transactionType: 'CONSUME',
+          businessType: 'Order',
+          businessId: '9001',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('订单扣款流水'), findsWidgets);
+    expect(find.text('返回订单详情'), findsOneWidget);
+    expect(find.text('当前筛选：Order #9001'), findsOneWidget);
+    expect(find.text('当前订单暂无匹配的胡萝卜流水。'), findsOneWidget);
+    expect(find.text('已加载 0 / 0 条流水'), findsOneWidget);
+
+    await tester.tap(find.text('刷新资产'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('刷新失败：资产刷新失败'), findsOneWidget);
+    expect(find.text('当前筛选：Order #9001'), findsOneWidget);
+    expect(find.text('当前订单暂无匹配的胡萝卜流水。'), findsOneWidget);
+    expect(find.text('880 胡萝卜'), findsOneWidget);
   });
 
   testWidgets('login request returns to product purchase panel',
@@ -440,6 +566,126 @@ class _PurchaseFailingShopRepository extends _SuccessShopRepository {
     return const ShopPurchaseResult(
       success: false,
       errorMessage: '支付口令错误',
+    );
+  }
+}
+
+class _RefreshFailingOrderRepository extends _SuccessShopRepository {
+  int _orderDetailRequests = 0;
+
+  @override
+  Future<ShopOrderDetail> getOrderDetail({
+    required String accessToken,
+    required String orderId,
+  }) {
+    _orderDetailRequests += 1;
+    if (_orderDetailRequests > 1) {
+      throw const RadishApiClientException('订单详情刷新失败');
+    }
+
+    return super.getOrderDetail(
+      accessToken: accessToken,
+      orderId: orderId,
+    );
+  }
+}
+
+class _BrokenInventorySourceRepository extends _SuccessShopRepository {
+  const _BrokenInventorySourceRepository();
+
+  @override
+  Future<ShopProductDetail> getProductDetail({
+    required String productId,
+  }) {
+    throw const RadishApiClientException('来源商品不存在');
+  }
+
+  @override
+  Future<ShopOrderDetail> getOrderDetail({
+    required String accessToken,
+    required String orderId,
+  }) {
+    throw const RadishApiClientException('来源订单不存在');
+  }
+
+  @override
+  Future<List<ShopUserBenefit>> getMyBenefits({
+    required String accessToken,
+  }) async {
+    return const [
+      ShopUserBenefit(
+        id: 'benefit-1',
+        benefitType: 'Badge',
+        benefitTypeDisplay: '徽章',
+        benefitName: '早鸟徽章',
+        sourceType: 'Order',
+        sourceTypeDisplay: '商城订单',
+        sourceOrderId: '9001',
+        sourceProductId: '4001',
+        isActive: true,
+        isExpired: false,
+      ),
+    ];
+  }
+
+  @override
+  Future<List<ShopInventoryItem>> getMyInventory({
+    required String accessToken,
+  }) async {
+    return const [
+      ShopInventoryItem(
+        id: 'inventory-1',
+        consumableType: 'ProfileRename',
+        consumableTypeDisplay: '改名卡',
+        itemName: 'Profile Rename Card',
+        quantity: 1,
+        sourceProductId: '4001',
+      ),
+    ];
+  }
+}
+
+class _EmptyThenRefreshFailingWalletRepository implements WalletRepository {
+  int _balanceRequests = 0;
+
+  @override
+  Future<CoinBalance> getBalance({
+    required String accessToken,
+  }) async {
+    _balanceRequests += 1;
+    if (_balanceRequests > 1) {
+      throw const RadishApiClientException('资产刷新失败');
+    }
+
+    return const CoinBalance(
+      userId: 'user-42',
+      balance: 880,
+      balanceDisplay: '880.000',
+      frozenBalance: 0,
+      frozenBalanceDisplay: '0.000',
+      totalEarned: 1200,
+      totalSpent: 120,
+      totalTransferredIn: 0,
+      totalTransferredOut: 0,
+    );
+  }
+
+  @override
+  Future<CoinTransactionPage> getTransactions({
+    required String accessToken,
+    required int pageIndex,
+    required int pageSize,
+    String? transactionType,
+    String? status,
+    String? businessType,
+    String? businessId,
+  }) async {
+    return CoinTransactionPage(
+      page: pageIndex,
+      pageSize: pageSize,
+      dataCount: 0,
+      pageCount: 1,
+      transactions: const [],
     );
   }
 }
