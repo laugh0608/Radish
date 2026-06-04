@@ -98,7 +98,7 @@ void main() {
       const MaterialApp(
         home: ShopProductDetailPage(
           environment: AppEnvironment.development(),
-          repository: _SuccessShopRepository(),
+          repository: _PurchaseInventoryShopRepository(),
           walletRepository: _OrderTransactionWalletRepository(),
           productId: '4001',
           accessToken: 'access-token',
@@ -117,7 +117,24 @@ void main() {
     expect(find.text('订单详情'), findsWidgets);
     expect(find.text('订单 RO202605310001'), findsOneWidget);
     expect(find.text('返回商品详情'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, '查看背包发放'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, '查看扣款流水'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilledButton, '查看背包发放'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('我的背包'), findsWidgets);
+    expect(find.text('来源：订单详情'), findsOneWidget);
+    expect(find.text('返回订单详情'), findsOneWidget);
+    expect(find.text('订单发放徽章'), findsOneWidget);
+    expect(find.text('Profile Rename Card'), findsOneWidget);
+    expect(find.text('查看来源订单'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('订单详情'), findsWidgets);
+    expect(find.text('订单 RO202605310001'), findsOneWidget);
 
     await tester.tap(find.widgetWithText(FilledButton, '查看扣款流水'));
     await tester.pumpAndSettle();
@@ -160,6 +177,45 @@ void main() {
     expect(find.text('订单 RO202605310001'), findsOneWidget);
     expect(find.text('Profile Rename Card'), findsOneWidget);
     expect(find.text('正在查看订单 RO202605310001'), findsOneWidget);
+  });
+
+  testWidgets('order detail inventory entry keeps return on load failure',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ShopOrderDetailPage(
+          environment: AppEnvironment.development(),
+          repository: _OrderInventoryFailingRepository(),
+          walletRepository: EmptyWalletRepository(),
+          accessToken: 'access-token',
+          orderId: '9001',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('订单 RO202605310001'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, '查看背包发放'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilledButton, '查看背包发放'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('暂时无法加载背包'), findsOneWidget);
+    expect(find.text('背包发放暂时不可用'), findsOneWidget);
+    expect(find.text('来源：订单详情'), findsOneWidget);
+    expect(find.text('返回订单详情'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('订单详情'), findsWidgets);
+    expect(find.text('订单 RO202605310001'), findsOneWidget);
   });
 
   testWidgets('inventory source failures show explicit state and return',
@@ -567,6 +623,64 @@ class _PurchaseFailingShopRepository extends _SuccessShopRepository {
       success: false,
       errorMessage: '支付口令错误',
     );
+  }
+}
+
+class _PurchaseInventoryShopRepository extends _SuccessShopRepository {
+  const _PurchaseInventoryShopRepository();
+
+  @override
+  Future<List<ShopUserBenefit>> getMyBenefits({
+    required String accessToken,
+  }) async {
+    return const [
+      ShopUserBenefit(
+        id: 'benefit-order-1',
+        benefitType: 'Badge',
+        benefitTypeDisplay: '徽章',
+        benefitName: '订单发放徽章',
+        sourceType: 'Order',
+        sourceTypeDisplay: '商城订单',
+        sourceOrderId: '9001',
+        sourceProductId: '4001',
+        isActive: true,
+        isExpired: false,
+      ),
+    ];
+  }
+
+  @override
+  Future<List<ShopInventoryItem>> getMyInventory({
+    required String accessToken,
+  }) async {
+    return const [
+      ShopInventoryItem(
+        id: 'inventory-order-1',
+        consumableType: 'ProfileRename',
+        consumableTypeDisplay: '改名卡',
+        itemName: 'Profile Rename Card',
+        quantity: 1,
+        sourceProductId: '4001',
+      ),
+    ];
+  }
+}
+
+class _OrderInventoryFailingRepository extends _SuccessShopRepository {
+  const _OrderInventoryFailingRepository();
+
+  @override
+  Future<List<ShopUserBenefit>> getMyBenefits({
+    required String accessToken,
+  }) {
+    throw const RadishApiClientException('背包发放暂时不可用');
+  }
+
+  @override
+  Future<List<ShopInventoryItem>> getMyInventory({
+    required String accessToken,
+  }) {
+    throw const RadishApiClientException('背包发放暂时不可用');
   }
 }
 

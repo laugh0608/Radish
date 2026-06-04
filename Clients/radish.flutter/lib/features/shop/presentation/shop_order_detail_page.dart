@@ -9,6 +9,7 @@ import '../../wallet/data/wallet_repository.dart';
 import '../../wallet/presentation/wallet_page.dart';
 import '../data/shop_models.dart';
 import '../data/shop_repository.dart';
+import 'shop_inventory_page.dart';
 import 'shop_product_detail_page.dart';
 
 class ShopOrderDetailPage extends StatefulWidget {
@@ -165,6 +166,21 @@ class _ShopOrderDetailPageState extends State<ShopOrderDetailPage> {
     );
   }
 
+  void _openInventory() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => ShopInventoryPage(
+          environment: widget.environment,
+          repository: widget.repository,
+          walletRepository: widget.walletRepository,
+          accessToken: widget.accessToken,
+          sourceLabel: '订单详情',
+          returnLabel: '返回订单详情',
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final order = _order;
@@ -237,6 +253,7 @@ class _ShopOrderDetailPageState extends State<ShopOrderDetailPage> {
               order: order,
               onOpenProduct: () => _openProduct(order),
               onOpenCoinTransaction: () => _openCoinTransaction(order),
+              onOpenInventory: _openInventory,
             ),
           ],
         ],
@@ -250,11 +267,13 @@ class _ShopOrderDetailContent extends StatelessWidget {
     required this.order,
     required this.onOpenProduct,
     required this.onOpenCoinTransaction,
+    required this.onOpenInventory,
   });
 
   final ShopOrderDetail order;
   final VoidCallback onOpenProduct;
   final VoidCallback onOpenCoinTransaction;
+  final VoidCallback onOpenInventory;
 
   @override
   Widget build(BuildContext context) {
@@ -306,6 +325,11 @@ class _ShopOrderDetailContent extends StatelessWidget {
                     label: const Text('查看扣款流水'),
                   ),
                 ],
+                FilledButton.tonalIcon(
+                  onPressed: onOpenInventory,
+                  icon: const Icon(Icons.inventory_2_outlined),
+                  label: const Text('查看背包发放'),
+                ),
               ],
             ),
             const SizedBox(height: 20),

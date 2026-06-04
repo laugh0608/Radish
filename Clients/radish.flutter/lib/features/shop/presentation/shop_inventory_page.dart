@@ -17,6 +17,8 @@ class ShopInventoryPage extends StatefulWidget {
     required this.repository,
     required this.walletRepository,
     required this.accessToken,
+    this.sourceLabel = '我的',
+    this.returnLabel = '返回我的',
     super.key,
   });
 
@@ -24,6 +26,8 @@ class ShopInventoryPage extends StatefulWidget {
   final ShopRepository repository;
   final WalletRepository walletRepository;
   final String accessToken;
+  final String sourceLabel;
+  final String returnLabel;
 
   @override
   State<ShopInventoryPage> createState() => _ShopInventoryPageState();
@@ -175,6 +179,7 @@ class _ShopInventoryPageState extends State<ShopInventoryPage> {
             title: '当前能力',
             items: [
               '当前环境：${widget.environment.name}',
+              '来源：${widget.sourceLabel}',
               '登录态只读查看权益和道具',
               '当前不支持激活权益、取消激活、使用道具或权益配置',
               _isLoading
@@ -190,7 +195,7 @@ class _ShopInventoryPageState extends State<ShopInventoryPage> {
               OutlinedButton.icon(
                 onPressed: () => Navigator.of(context).maybePop(),
                 icon: const Icon(Icons.arrow_back),
-                label: const Text('返回我的'),
+                label: Text(widget.returnLabel),
               ),
               FilledButton.tonalIcon(
                 onPressed: _isLoading || _isRefreshing ? null : _refresh,
