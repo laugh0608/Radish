@@ -24,6 +24,7 @@ public class PostServiceTest
     public async Task FillPostAvatarAndInteractorsAsync_Should_Fill_AuthorAvatar()
     {
         var attachmentService = new Mock<IAttachmentService>(MockBehavior.Strict);
+        var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Strict);
         attachmentService
             .Setup(service => service.GetLatestAvatarAssetMapAsync(It.Is<IReadOnlyCollection<long>>(userIds =>
                 userIds.Contains(2001))))
@@ -36,6 +37,21 @@ public class PostServiceTest
                     ThumbnailUrl = "/_assets/attachments/3001/thumbnail"
                 }
             });
+        userRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<User, bool>>?>()))
+            .ReturnsAsync(
+            [
+                new User(new UserInitializationOptions("luobo-login", "pwd")
+                {
+                    UserName = "luobo",
+                    UserEmail = "luobo@example.com",
+                    UserRealName = "萝卜作者"
+                })
+                {
+                    Id = 2001,
+                    IsDeleted = false
+                }
+            ]);
 
         var service = new PostService(
             Mock.Of<IMapper>(),
@@ -56,7 +72,8 @@ public class PostServiceTest
             Mock.Of<IExperienceService>(),
             Mock.Of<IBaseRepository<PostEditHistory>>(),
             attachmentService.Object,
-            Options.Create(new ForumEditHistoryOptions()));
+            Options.Create(new ForumEditHistoryOptions()),
+            userRepository: userRepository.Object);
 
         var posts = new List<PostVo>
         {
@@ -71,7 +88,9 @@ public class PostServiceTest
         await service.FillPostAvatarAndInteractorsAsync(posts);
 
         Assert.Equal("/_assets/attachments/3001", posts[0].VoAuthorAvatarUrl);
+        Assert.Equal("萝卜作者", posts[0].VoAuthorName);
         attachmentService.VerifyAll();
+        userRepository.VerifyAll();
     }
 
     [Fact]

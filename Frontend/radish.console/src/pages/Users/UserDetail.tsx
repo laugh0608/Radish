@@ -31,6 +31,7 @@ import './UserDetail.css';
 interface UserDetailData {
   uuid: string;
   userName: string;
+  displayName: string;
   loginName: string;
   email: string;
   isEnabled: boolean;
@@ -62,6 +63,7 @@ export const UserDetail = () => {
   const mapUserDetail = (item: UserListItem): UserDetailData => ({
     uuid: item.uuid,
     userName: item.voUserName || '-',
+    displayName: item.voUserRealName || '-',
     loginName: item.voLoginName || '-',
     email: item.voUserEmail || '-',
     isEnabled: item.voIsEnable,
@@ -432,6 +434,7 @@ export const UserDetail = () => {
             </div>
             <Descriptions column={2}>
               <Descriptions.Item label="用户名">{user.userName}</Descriptions.Item>
+              <Descriptions.Item label="展示名称">{user.displayName}</Descriptions.Item>
               <Descriptions.Item label="登录名">{user.loginName}</Descriptions.Item>
               <Descriptions.Item label="邮箱">{user.email}</Descriptions.Item>
               <Descriptions.Item label="用户 ID">{user.uuid}</Descriptions.Item>

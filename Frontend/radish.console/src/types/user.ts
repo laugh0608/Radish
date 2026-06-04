@@ -18,6 +18,7 @@ export interface UserListItem {
   uuid: string;
   voLoginName: string;
   voUserName: string;
+  voUserRealName: string;
   voUserEmail: string;
   voAvatarUrl?: string;
   voAvatarThumbnailUrl?: string;

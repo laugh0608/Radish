@@ -569,15 +569,28 @@ public partial class PostService
             .ToList();
 
         Dictionary<long, string> avatarUrlMap = new();
+        Dictionary<long, string> displayNameMap = new();
         if (userIds.Count > 0)
         {
             avatarUrlMap = (await _attachmentService.GetLatestAvatarAssetMapAsync(userIds))
                 .Where(entry => !string.IsNullOrWhiteSpace(entry.Value.Url))
                 .ToDictionary(entry => entry.Key, entry => entry.Value.Url);
+
+            if (_userRepository != null)
+            {
+                displayNameMap = ForumDisplayNameHelper.BuildMap(await _userRepository.QueryAsync(user =>
+                    userIds.Contains(user.Id) &&
+                    !user.IsDeleted));
+            }
         }
 
         foreach (var post in posts)
         {
+            if (displayNameMap.TryGetValue(post.VoAuthorId, out var authorDisplayName))
+            {
+                post.VoAuthorName = authorDisplayName;
+            }
+
             if (avatarUrlMap.TryGetValue(post.VoAuthorId, out var authorAvatarUrl))
             {
                 post.VoAuthorAvatarUrl = authorAvatarUrl;
@@ -587,6 +600,11 @@ public partial class PostService
             {
                 foreach (var answer in post.VoQuestion.VoAnswers.Where(answer => answer.VoAuthorId > 0))
                 {
+                    if (displayNameMap.TryGetValue(answer.VoAuthorId, out var answerDisplayName))
+                    {
+                        answer.VoAuthorName = answerDisplayName;
+                    }
+
                     if (avatarUrlMap.TryGetValue(answer.VoAuthorId, out var answerAvatarUrl))
                     {
                         answer.VoAuthorAvatarUrl = answerAvatarUrl;
@@ -604,7 +622,7 @@ public partial class PostService
                 .Select(comment => new PostInteractorVo
                 {
                     VoUserId = comment.AuthorId,
-                    VoUserName = comment.AuthorName,
+                    VoUserName = displayNameMap.GetValueOrDefault(comment.AuthorId, comment.AuthorName),
                     VoAvatarUrl = avatarUrlMap.GetValueOrDefault(comment.AuthorId)
                 })
                 .ToList();
