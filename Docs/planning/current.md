@@ -93,7 +93,7 @@
   - Console 订单 / 胡萝卜流水排障链路已补强：订单详情可展示扣款流水 ID，并按 `BusinessType=Order / BusinessId=OrderId` 跳转定位对应胡萝卜流水；管理端流水查询支持业务上下文筛选
   - Flutter 订单 / 胡萝卜流水排障链路已补强：原生订单详情可在存在扣款流水 ID 时进入筛选后的资产流水页，用户侧 `Coin/GetTransactions` 支持按 `businessType / businessId` 查询；本轮仍不扩展退款、权益使用、转账、调账或完整资产中心
   - 购买 / 资产链路跨端排障复核已收口：Flutter 订单、Console 订单、胡萝卜流水和用户详情四个入口已能围绕同一笔购买按订单 ID、业务类型、业务 ID、扣款流水和用户上下文互相定位；后续不继续扩展完整移动商城、完整资产中心或完整财务后台
-  - Console 角色授权链路已按 `ID Phase A` 回拉：角色 ID、资源 ID 和 API 模块 ID 在角色列表、角色编辑、授权快照、资源树勾选、权限预览和保存请求中保持字符串契约，`check-long-id-safety` 已补角色 / 资源 / API 模块 ID 回潮扫描
+  - Console 角色授权链路已按 `ID Phase A` 回拉：角色 ID、资源 ID 和 API 模块 ID 在角色列表、角色编辑、授权快照、资源树勾选、权限预览和保存请求中保持字符串契约，`check-long-id-safety` 已补角色 / 资源 / API 模块 ID 及授权资源 ID 集合回潮扫描
   - Flutter 登录态个人资料编辑已推进：登录态“我的”页可编辑用户名、邮箱、展示名称、年龄和地址，复用 `User/GetMyProfile` 与 `User/UpdateMyProfile` 私有契约，保存成功后刷新原生公开资料摘要；本轮不扩展头像上传、完整账号设置或关注管理
   - Flutter 个人资料写入后的跨端展示一致性已完成治理与人工复核：论坛帖子 / 评论 / 轻回应作者展示名回到当前用户资料口径，Console 用户详情补展示名称，同一用户在 Flutter、公开主页、Console 与论坛作者展示中未发现新问题
   - `ID Phase A` 自动化守护复扫已通过：`validate:identity` 未发现身份语义、协议输出或外部 LongId 字符串安全回归

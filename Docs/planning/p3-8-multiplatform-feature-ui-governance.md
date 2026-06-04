@@ -165,7 +165,7 @@
 - Console 订单 / 胡萝卜流水排障链路已补强：订单详情输出扣款流水 ID，订单详情可跳转到 `BusinessType=Order / BusinessId=OrderId` 的胡萝卜流水筛选结果；管理端流水查询支持业务上下文筛选，便于从购买结果定位扣款流水、再回看用户和商品上下文。
 - Flutter 订单 / 胡萝卜流水排障链路已补强：用户侧 `Coin/GetTransactions` 支持按 `businessType / businessId` 筛选，原生订单详情在存在扣款流水 ID 时可进入筛选后的资产流水页，并保留订单详情返回语义；本轮仍不扩展退款、权益使用、转账、调账或完整资产中心。
 - 购买 / 资产链路跨端排障复核已收口：Flutter 订单详情可按扣款流水 ID 进入筛选后的资产流水，Console 订单详情可按 `BusinessType=Order / BusinessId=OrderId` 定位胡萝卜流水，管理端流水查询可保留业务上下文筛选，用户详情页保留最近订单和最近胡萝卜流水作为用户维度入口；四个入口围绕订单 ID、业务类型、业务 ID、扣款流水和用户上下文形成同一笔购买的定位路径。本轮不扩展退款、权益使用、转账、调账、完整资产中心或完整财务后台。
-- Console 角色授权链路 ID 契约复核已收口：角色列表、角色编辑、授权快照、资源树、权限预览和保存请求中的角色 ID、资源 ID、API 模块 ID 均保持字符串传递，不再进入 JavaScript `number` 精度域；授权页的资源勾选、父级继承、接口预览、脏数据比较和保存排序同步按字符串 ID 工作。`check-long-id-safety` 已补 `RoleId / ResourceId / ApiModuleId` 与角色 API `voId` 回潮扫描，`check:console-permissions` 继续确认路由、前端权限、后端权限、资源映射和种子对象对齐。
+- Console 角色授权链路 ID 契约复核已收口：角色列表、角色编辑、授权快照、资源树、权限预览和保存请求中的角色 ID、资源 ID、API 模块 ID 均保持字符串传递，不再进入 JavaScript `number` 精度域；授权页的资源勾选、父级继承、接口预览、脏数据比较和保存排序同步按字符串 ID 工作。`check-long-id-safety` 已补 `RoleId / ResourceId / ApiModuleId`、授权资源 ID 集合与角色 API `voId` 回潮扫描，`check:console-permissions` 继续确认路由、前端权限、后端权限、资源映射和种子对象对齐。
 - Flutter 登录态个人资料编辑已完成：登录态“我的”页新增“编辑资料”入口，编辑对话框复用 `/api/v1/User/GetMyProfile` 与 `/api/v1/User/UpdateMyProfile` 私有契约，支持用户名、邮箱、展示名称、年龄和地址的加载、校验、保存中、失败提示与保存成功后刷新原生公开资料摘要。本轮不扩展头像上传、关注管理、完整账号设置、密码修改或 WebOS 新功能。
 - Flutter 个人资料跨端展示一致性已完成治理与人工复核：用户保存展示名称后，Flutter “我的”页 / 原生公开主页、纯 Web 公开主页、Console 用户详情和论坛作者展示保持当前资料口径；论坛帖子、评论、回复目标与轻回应返回当前 `UserRealName -> UserName` 展示名，Console 用户详情补齐 `VoUserRealName` 展示。人工复核未发现新缺口。
 - `ID Phase A` 自动化守护复扫已通过：`validate:identity` 覆盖身份 Claim 运行时读取、协议输出、外部 LongId 字符串安全扫描和身份语义后端定向测试，未发现新回归；后续仅在新增外部 ID 边界、扫描命中或真实编译暴露问题时回拉。
