@@ -12,6 +12,7 @@ import 'package:radish_flutter/core/auth/session_refresh_service.dart';
 import 'package:radish_flutter/core/auth/session_store.dart';
 import 'package:radish_flutter/core/config/app_environment.dart';
 import 'package:radish_flutter/core/platform/app_lifecycle_gateway.dart';
+import 'package:radish_flutter/core/network/radish_api_client.dart';
 import 'package:radish_flutter/features/discover/data/discover_models.dart';
 import 'package:radish_flutter/features/discover/data/discover_repository.dart';
 import 'package:radish_flutter/features/docs/data/docs_follow_up_store.dart';
@@ -2645,6 +2646,160 @@ void main() {
     expect(find.text('通知 3 条'), findsOneWidget);
   });
 
+  testWidgets('opening unread forum notification marks it read before detail',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final notificationRepository = _MutableForumNotificationRepository()
+      ..notifications = const [
+        NotificationListItem(
+          id: 'notification-forum-comment',
+          notificationId: 'forum-1',
+          notification: NotificationPayload(
+            title: '帖子被评论',
+            content: '有人评论了你的帖子。',
+            type: 'CommentReplied',
+            businessType: 'Comment',
+            createdAt: null,
+            extData: {
+              'app': 'forum',
+              'postId': '2042219067430928384',
+              'commentId': 'comment-big-1',
+            },
+          ),
+          isRead: false,
+          createdAt: '2026-05-31T08:31:00',
+        ),
+      ];
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: 'user-42',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: 'user-42',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _SeededBigIdForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+        notificationRepository: notificationRepository,
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('我的').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('通知 1 条'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('帖子被评论'), findsOneWidget);
+    expect(find.textContaining('评论 · 未读'), findsOneWidget);
+
+    await tester.tap(find.text('帖子被评论'));
+    await tester.pumpAndSettle();
+
+    expect(notificationRepository.markedReadNotificationIds, ['forum-1']);
+    expect(find.text('帖子详情'), findsWidgets);
+    expect(find.text('通知回流'), findsWidgets);
+    expect(find.text('Big id root comment'), findsOneWidget);
+  });
+
+  testWidgets('forum notification opens detail when auto mark read fails',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final notificationRepository = _MutableForumNotificationRepository()
+      ..markAsReadError = const RadishApiClientException('已读接口不可用')
+      ..notifications = const [
+        NotificationListItem(
+          id: 'notification-forum-comment',
+          notificationId: 'forum-1',
+          notification: NotificationPayload(
+            title: '帖子被评论',
+            content: '有人评论了你的帖子。',
+            type: 'CommentReplied',
+            businessType: 'Comment',
+            createdAt: null,
+            extData: {
+              'app': 'forum',
+              'postId': '2042219067430928384',
+              'commentId': 'comment-big-1',
+            },
+          ),
+          isRead: false,
+          createdAt: '2026-05-31T08:31:00',
+        ),
+      ];
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: 'user-42',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: 'user-42',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _SeededBigIdForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+        notificationRepository: notificationRepository,
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('我的').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('通知 1 条'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('帖子被评论'));
+    await tester.pumpAndSettle();
+
+    expect(notificationRepository.markedReadNotificationIds, isEmpty);
+    expect(find.text('帖子详情'), findsWidgets);
+    expect(find.text('通知回流'), findsWidgets);
+    expect(
+      find.text('通知已打开，标记已读失败：已读接口不可用'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('forum notification chip explains failure empty and refresh',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
@@ -4216,6 +4371,7 @@ class _FakeForumNotificationRepository implements NotificationRepository {
 
 class _MutableForumNotificationRepository implements NotificationRepository {
   ForumDetailHandoffTarget? target;
+  List<NotificationListItem>? notifications;
   Object? error;
   Object? markAsReadError;
   int callCount = 0;
@@ -4226,6 +4382,17 @@ class _MutableForumNotificationRepository implements NotificationRepository {
     required String accessToken,
     int pageSize = 20,
   }) async {
+    final notifications = this.notifications;
+    if (notifications != null) {
+      callCount += 1;
+      final error = this.error;
+      if (error != null) {
+        throw error;
+      }
+
+      return NotificationPage(notifications: notifications);
+    }
+
     final targets = await getForumTargets(
       accessToken: accessToken,
       pageSize: pageSize,

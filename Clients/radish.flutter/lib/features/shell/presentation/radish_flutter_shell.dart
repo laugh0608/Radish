@@ -483,7 +483,8 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       return;
     }
 
-    final selectedTarget = await showModalBottomSheet<ForumDetailHandoffTarget>(
+    final selectedNotification =
+        await showModalBottomSheet<_NotificationSelection>(
       context: context,
       showDragHandle: true,
       builder: (context) => _NotificationListSheet(
@@ -491,11 +492,39 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
         onMarkAsRead: _markNotificationAsRead,
       ),
     );
-    if (!mounted || selectedTarget == null) {
+    if (!mounted || selectedNotification == null) {
       return;
     }
 
-    _openForumDetailTarget(selectedTarget);
+    final markReadIssueMessage = await _markSelectedNotificationAsRead(
+      selectedNotification.notification,
+    );
+    if (!mounted) {
+      return;
+    }
+
+    if (markReadIssueMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('通知已打开，标记已读失败：$markReadIssueMessage'),
+        ),
+      );
+    }
+
+    _openForumDetailTarget(selectedNotification.target);
+  }
+
+  Future<String?> _markSelectedNotificationAsRead(
+    NotificationListItem notification,
+  ) {
+    final notificationId = notification.notificationId?.trim();
+    if (notification.isRead ||
+        notificationId == null ||
+        notificationId.isEmpty) {
+      return Future<String?>.value();
+    }
+
+    return _markNotificationAsRead(notification);
   }
 
   Future<String?> _markNotificationAsRead(
@@ -1522,7 +1551,12 @@ class _NotificationListSheetState extends State<_NotificationListSheet> {
                     isMarkingRead: isMarking,
                     onOpen: target == null
                         ? null
-                        : () => Navigator.of(context).pop(target),
+                        : () => Navigator.of(context).pop(
+                              _NotificationSelection(
+                                notification: notification,
+                                target: target,
+                              ),
+                            ),
                     onMarkAsRead: notification.isRead || notificationId == null
                         ? null
                         : () => _markAsRead(notification),
@@ -1535,6 +1569,16 @@ class _NotificationListSheetState extends State<_NotificationListSheet> {
       ),
     );
   }
+}
+
+class _NotificationSelection {
+  const _NotificationSelection({
+    required this.notification,
+    required this.target,
+  });
+
+  final NotificationListItem notification;
+  final ForumDetailHandoffTarget target;
 }
 
 class _NotificationListTile extends StatelessWidget {
