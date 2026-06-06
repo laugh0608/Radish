@@ -45,3 +45,14 @@
 - 今日文档同步复核确认：`current.md`、`P3-8` 专题、`ID 与联邦路线图`、`Console 核心概念`、6 月开发日志、记录索引和日交接记录需要同步；没有新增数据库结构、权限模型、视觉 token、Pencil 设计稿、部署配置或运行时环境变量，因此视觉规范、设计源文件、部署说明和 API 说明书无需跟随更新。
 - 今日验证覆盖 Flutter 定向测试、`flutter analyze`、`npm run check:console-permissions`、`npm run check:long-id-safety`、`npm run validate:identity`、`npm run check:repo-hygiene:changed` 与 `git diff --check`；`validate:identity` 中后端身份语义定向测试 14 个通过，输出仍有既有 XML 注释 warning。
 - 收工前补 [2026-06-04 收工回顾与明日事项](/records/daily-handoff-2026-06-04)：明日优先审计 Flutter 纯文本发帖登录回流与草稿恢复；如运行时已满足，只补定向守护或文档结论。
+
+## 2026-06-06
+
+- Flutter 纯文本发帖登录回流与草稿恢复已收口：匿名态从发帖表单提交会保留页面存活期间的草稿，登录回调后回到发帖表单继续发布；提交失败继续保留草稿且不误打开详情。
+- 公开 forum 详情分享预览一致性已补守护：旧 LongId 路径加载到 `VoPublicId` 后，运行时 canonical、OpenGraph 与 JSON-LD 会刷新到同一个 PublicId 公开路径，旧路径仅保留打开兼容。
+- Flutter 背包来源回流 LongId 口径已回拉：来源订单 / 商品入口按正则规范化的字符串 LongId 承接，不再通过 `int.tryParse` 数值化，并补非规范来源 ID 守护。
+- Console 订单 / 胡萝卜流水 / 商品排障回流继续补强：订单 URL 状态和商品 URL 状态均抽出可测 helper，详情关闭、分页、筛选、重置和相关订单跳转会保留合法 `returnTo`，LongId 查询参数保持字符串和同源相对路径约束。
+- Console 角色授权链路已补并发保存守护：资源 / API 模块 ID、祖先补选、接口预览去重和保存 payload 排序继续保持字符串契约，保存中禁用保存按钮并阻止重复提交。
+- 今日文档同步复核确认：`current.md`、`P3-8` 专题、Flutter handoff、Console 核心概念、公开 SEO 分享基线、`ID 与联邦路线图`、6 月开发日志、记录索引和日交接记录需要同步；没有新增数据库结构、权限模型、视觉 token、Pencil 设计稿、部署配置或运行时环境变量。
+- 今日验证覆盖 `radish.console test / type-check / build`、Flutter 定向测试与 `flutter analyze`、`radish.client` 定向测试 / type-check、`validate:identity`、public head smoke self-test 与 `check:repo-hygiene:changed`；`validate:identity` 输出仍有既有 XML 注释 warning。
+- 收工前补 [2026-06-06 收工回顾与明日事项](/records/daily-handoff-2026-06-06)：明日优先围绕购买 / 订单 / 背包跨端回流做一天级可验收批次，复核 Flutter、纯 Web / `/desktop` 与 Console 排障之间的返回、确认、筛选上下文和 LongId 字符串契约。

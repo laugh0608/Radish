@@ -137,6 +137,8 @@ Console 会展示和消费大量服务端 Snowflake long 标识，例如用户 I
 - `CurrentUserVo.VoUserId`、个人资料 `VoUserId`、用户列表 `uuid` 等用户标识在 Console 前端统一按 `string` 保存和传递。
 - 用户详情跳转、订单跳用户、胡萝卜余额查询和管理员调账都应保留服务端返回的字符串 ID。
 - 角色授权相关的 `RoleId / ResourceId / ApiModuleId` 同样属于外部对象 ID：`RoleVo.VoId`、授权快照 `VoRoleId / VoGrantedResourceIds`、资源树 `VoId`、接口预览 `VoResourceId / VoApiModuleId` 和保存请求 `roleId / resourceIds` 都按字符串传递；授权资源 ID 集合也不得写成 `number[]` 或通过 `.map(Number)` 批量数值化。
+- 角色授权保存期间必须阻止重复提交，避免同一份旧 `expectedModifyTime` 被连续请求触发伪并发冲突；保存 payload 的资源 ID 排序和接口预览去重继续按字符串 ID 执行。
+- 商品、订单和胡萝卜流水之间的排障跳转应通过受控 URL 状态 helper 构造，`orderId / productId / businessId` 等查询参数保持字符串，`returnTo` 只接受同源相对路径，关闭详情、分页、筛选和重置时应保留合法排障来源。
 - 页面展示可以直接显示字符串，不需要格式化为数字。
 - 只有分页页码、数量、金额、状态枚举等业务数值可以进入 `number`。
 - 新增 Console API 类型时，如果字段语义是外部对象 ID，即使后端类型是 `long`，前端类型也应写成 `string` 或 `string | number` 后立即归一为 `string`。
