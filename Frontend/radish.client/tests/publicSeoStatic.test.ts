@@ -55,3 +55,13 @@ test('公开社区发现页应使用统一公开分享入口', () => {
   assert.match(source, /buildPublicShareUrl\(buildPublicDiscoverPath\(route\)\)/);
   assert.match(source, /discover\.public\.shareAction/);
 });
+
+test('公开论坛详情加载后应刷新详情 head 并复用同一个 canonical', () => {
+  const source = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumDetail.tsx'), 'utf8');
+
+  assert.match(source, /applyPublicHead/);
+  assert.match(source, /buildForumPostPublicHead/);
+  assert.match(source, /const postHead = buildForumPostPublicHead\(post, commentId, coverImageUrl\);/);
+  assert.match(source, /applyPublicHead\(postHead\);/);
+  assert.match(source, /canonicalPath: postHead\.canonicalPath/);
+});

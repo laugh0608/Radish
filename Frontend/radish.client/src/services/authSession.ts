@@ -15,6 +15,10 @@ export function hasAuthenticatedSession(authenticated: boolean, userId: string |
     return false;
   }
 
+  if (typeof userId === 'number') {
+    return Number.isSafeInteger(userId) && userId > 0;
+  }
+
   if (typeof userId !== 'string') {
     return false;
   }

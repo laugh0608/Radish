@@ -19,7 +19,7 @@ import { CommentTree } from '@/apps/forum/components/CommentTree';
 import { PostDetail as ForumPostDetail } from '@/apps/forum/components/PostDetail';
 import { PostQuickReplyWall } from '@/apps/forum/components/PostQuickReplyWall';
 import { buildPublicForumPath } from '../forumRouteState';
-import { buildPublicShareUrl } from '../publicHead';
+import { applyPublicHead, buildPublicShareUrl } from '../publicHead';
 import {
   applyPublicStructuredData,
   buildForumPostStructuredData,
@@ -34,6 +34,7 @@ import { usePublicShareLink } from '../hooks/usePublicShareLink';
 import { PublicStatusCard } from './PublicStatusCard';
 import {
   createForumReadingGuide,
+  buildForumPostPublicHead,
   detailGuideDefinition,
   getForumPostRouteIdentifier,
   isSameLongId,
@@ -290,18 +291,18 @@ export const PublicForumDetail = ({
       return;
     }
 
+    const coverImageUrl = resolveMediaUrl(post.voCoverImage);
+    const postHead = buildForumPostPublicHead(post, commentId, coverImageUrl);
+    applyPublicHead(postHead);
+
     const structuredPost = {
       ...post,
-      voCoverImage: resolveMediaUrl(post.voCoverImage),
+      voCoverImage: coverImageUrl,
     };
-    const routePostId = getForumPostRouteIdentifier(post);
-    const canonicalPath = buildPublicForumPath(commentId
-      ? { kind: 'detail', postId: routePostId, commentId }
-      : { kind: 'detail', postId: routePostId });
 
     applyPublicStructuredData(buildForumPostStructuredData({
       post: structuredPost,
-      canonicalPath,
+      canonicalPath: postHead.canonicalPath,
     }));
 
     return removePublicStructuredData;
