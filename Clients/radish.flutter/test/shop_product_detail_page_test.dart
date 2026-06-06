@@ -267,6 +267,33 @@ void main() {
     expect(find.text('我的背包'), findsWidgets);
   });
 
+  testWidgets('inventory source actions require canonical LongId strings',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ShopInventoryPage(
+          environment: AppEnvironment.development(),
+          repository: _NonCanonicalInventorySourceRepository(),
+          walletRepository: EmptyWalletRepository(),
+          accessToken: 'access-token',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('我的背包'), findsWidgets);
+    expect(find.text('非规范来源权益'), findsOneWidget);
+    expect(find.text('非规范来源道具'), findsOneWidget);
+    expect(find.text('查看来源订单'), findsNothing);
+    expect(find.text('查看来源商品'), findsNothing);
+  });
+
   testWidgets('wallet order filter empty and refresh failure keep context',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
@@ -754,6 +781,46 @@ class _BrokenInventorySourceRepository extends _SuccessShopRepository {
         itemName: 'Profile Rename Card',
         quantity: 1,
         sourceProductId: '4001',
+      ),
+    ];
+  }
+}
+
+class _NonCanonicalInventorySourceRepository extends _SuccessShopRepository {
+  const _NonCanonicalInventorySourceRepository();
+
+  @override
+  Future<List<ShopUserBenefit>> getMyBenefits({
+    required String accessToken,
+  }) async {
+    return const [
+      ShopUserBenefit(
+        id: 'benefit-invalid-source',
+        benefitType: 'Badge',
+        benefitTypeDisplay: '徽章',
+        benefitName: '非规范来源权益',
+        sourceType: 'Order',
+        sourceTypeDisplay: '商城订单',
+        sourceOrderId: '09001',
+        sourceProductId: 'product-4001',
+        isActive: true,
+        isExpired: false,
+      ),
+    ];
+  }
+
+  @override
+  Future<List<ShopInventoryItem>> getMyInventory({
+    required String accessToken,
+  }) async {
+    return const [
+      ShopInventoryItem(
+        id: 'inventory-invalid-source',
+        consumableType: 'ProfileRename',
+        consumableTypeDisplay: '改名卡',
+        itemName: '非规范来源道具',
+        quantity: 1,
+        sourceProductId: '0004001',
       ),
     ];
   }

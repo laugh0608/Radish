@@ -112,7 +112,7 @@ class _ShopInventoryPageState extends State<ShopInventoryPage> {
   }
 
   void _openSourceOrder(String? orderId) {
-    final normalizedOrderId = _normalizePositiveId(orderId);
+    final normalizedOrderId = _normalizePositiveLongId(orderId);
     if (normalizedOrderId == null) {
       return;
     }
@@ -133,7 +133,7 @@ class _ShopInventoryPageState extends State<ShopInventoryPage> {
   }
 
   void _openSourceProduct(String? productId) {
-    final normalizedProductId = _normalizePositiveId(productId);
+    final normalizedProductId = _normalizePositiveLongId(productId);
     if (normalizedProductId == null) {
       return;
     }
@@ -356,9 +356,9 @@ class _ShopBenefitCard extends StatelessWidget {
             : '未激活';
     final sourceText = benefit.sourceTypeDisplay ?? benefit.sourceType;
     final canOpenSourceOrder =
-        _normalizePositiveId(benefit.sourceOrderId) != null;
+        _normalizePositiveLongId(benefit.sourceOrderId) != null;
     final canOpenSourceProduct =
-        _normalizePositiveId(benefit.sourceProductId) != null;
+        _normalizePositiveLongId(benefit.sourceProductId) != null;
 
     return DecoratedBox(
       decoration: _itemDecoration(context),
@@ -430,7 +430,7 @@ class _ShopInventoryItemCard extends StatelessWidget {
     final title =
         item.itemName ?? item.consumableTypeDisplay ?? item.consumableType;
     final canOpenSourceProduct =
-        _normalizePositiveId(item.sourceProductId) != null;
+        _normalizePositiveLongId(item.sourceProductId) != null;
 
     return DecoratedBox(
       decoration: _itemDecoration(context),
@@ -470,18 +470,15 @@ class _ShopInventoryItemCard extends StatelessWidget {
   }
 }
 
-String? _normalizePositiveId(String? value) {
+String? _normalizePositiveLongId(String? value) {
   final normalizedValue = value?.trim();
   if (normalizedValue == null || normalizedValue.isEmpty) {
     return null;
   }
 
-  final parsedValue = int.tryParse(normalizedValue);
-  if (parsedValue == null || parsedValue <= 0) {
-    return null;
-  }
-
-  return normalizedValue;
+  return RegExp(r'^[1-9]\d*$').hasMatch(normalizedValue)
+      ? normalizedValue
+      : null;
 }
 
 BoxDecoration _itemDecoration(BuildContext context) {
