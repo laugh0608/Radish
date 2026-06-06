@@ -109,6 +109,7 @@
   - Console 角色授权链路已补并发保存守护：角色授权纯 helper 已覆盖资源 / API 模块 LongId 字符串口径、祖先补选、接口预览去重和保存 payload 排序，保存中会禁用保存按钮并阻止重复提交，避免旧 `expectedModifyTime` 触发伪并发冲突
   - 公开 forum 详情分享预览一致性已补守护：旧 LongId 公开详情加载到 `VoPublicId` 后会刷新 canonical / OpenGraph / JSON-LD 到同一个 PublicId 路径；`hasAuthenticatedSession` 与论坛评论高亮读取保留运行时旧 number 输入兼容，但 TypeScript 契约继续保持 LongId 字符串口径
   - `P3-8-D` Flutter 背包来源回流 LongId 口径已回拉：来源订单 / 商品入口改为正则规范化的字符串 LongId，不再通过 `int.tryParse` 数值化，补非规范来源 ID 守护；本轮不扩展完整移动商城、权益使用、退款或 PublicId 全量迁移
+  - Console 商品 / 订单排障回流已补守护：商品详情 URL 状态抽出为可测 helper，商品详情进入相关订单会携带当前商品详情作为 `returnTo`，并保留原订单来源上下文；LongId 查询参数与返回来源继续保持字符串和同源相对路径约束
   - 项目仍处于单人开发期和功能建设期，没有稳定用户反馈和专职测试，不能把“等待真实使用观察”作为默认主线
 
 ## 当前执行入口
