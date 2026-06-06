@@ -32,93 +32,19 @@ import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
 import type { Order, OrderStatus } from '../../api/types';
 import { OrderDetail } from './OrderDetail';
+import {
+  DEFAULT_ORDER_PAGE_INDEX,
+  DEFAULT_ORDER_PAGE_SIZE,
+  buildOrderSearchParams,
+  normalizeConsoleReturnTo,
+  parseBooleanQuery,
+  parseLongIdQuery,
+  parseOrderStatusQuery,
+  parsePositiveIntQuery,
+} from './orderListUrlState';
 import { log } from '../../utils/logger';
 import '../adminFeature.css';
 import './OrderList.css';
-
-const DEFAULT_PAGE_INDEX = 1;
-const DEFAULT_PAGE_SIZE = 20;
-
-function parsePositiveIntQuery(value: string | null): number | undefined {
-  if (!value) {
-    return undefined;
-  }
-
-  const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
-}
-
-function parseLongIdQuery(value: string | null): string | undefined {
-  if (!value) {
-    return undefined;
-  }
-
-  const trimmed = value.trim();
-  return /^\d+$/u.test(trimmed) ? trimmed : undefined;
-}
-
-function parseOrderStatusQuery(value: string | null): OrderStatus | undefined {
-  if (!value) {
-    return undefined;
-  }
-
-  const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed >= 0 && parsed <= 5
-    ? parsed as OrderStatus
-    : undefined;
-}
-
-function parseBooleanQuery(value: string | null): boolean {
-  return value === '1' || value === 'true';
-}
-
-function buildOrderSearchParams(params: {
-  orderId?: string;
-  userId?: string;
-  status?: OrderStatus;
-  productId?: string;
-  orderNo?: string;
-  pageIndex?: number;
-  pageSize?: number;
-  openDetail?: boolean;
-}): URLSearchParams {
-  const searchParams = new URLSearchParams();
-  const normalizedOrderNo = params.orderNo?.trim() ?? '';
-
-  if (params.orderId !== undefined) {
-    searchParams.set('orderId', params.orderId.toString());
-  }
-
-  if (params.userId !== undefined) {
-    searchParams.set('userId', params.userId.toString());
-  }
-
-  if (params.status !== undefined) {
-    searchParams.set('status', params.status.toString());
-  }
-
-  if (params.productId !== undefined) {
-    searchParams.set('productId', params.productId.toString());
-  }
-
-  if (normalizedOrderNo) {
-    searchParams.set('orderNo', normalizedOrderNo);
-  }
-
-  if ((params.pageIndex ?? DEFAULT_PAGE_INDEX) !== DEFAULT_PAGE_INDEX) {
-    searchParams.set('pageIndex', String(params.pageIndex));
-  }
-
-  if ((params.pageSize ?? DEFAULT_PAGE_SIZE) !== DEFAULT_PAGE_SIZE) {
-    searchParams.set('pageSize', String(params.pageSize));
-  }
-
-  if (params.openDetail) {
-    searchParams.set('openDetail', '1');
-  }
-
-  return searchParams;
-}
 
 export const OrderList = () => {
   useDocumentTitle('订单管理');
@@ -130,10 +56,10 @@ export const OrderList = () => {
   const queryStatus = parseOrderStatusQuery(urlSearchParams.get('status'));
   const queryProductId = parseLongIdQuery(urlSearchParams.get('productId'));
   const queryOrderNo = (urlSearchParams.get('orderNo') ?? '').trim();
-  const queryPageIndex = parsePositiveIntQuery(urlSearchParams.get('pageIndex')) ?? DEFAULT_PAGE_INDEX;
-  const queryPageSize = parsePositiveIntQuery(urlSearchParams.get('pageSize')) ?? DEFAULT_PAGE_SIZE;
+  const queryPageIndex = parsePositiveIntQuery(urlSearchParams.get('pageIndex')) ?? DEFAULT_ORDER_PAGE_INDEX;
+  const queryPageSize = parsePositiveIntQuery(urlSearchParams.get('pageSize')) ?? DEFAULT_ORDER_PAGE_SIZE;
   const queryOpenDetail = parseBooleanQuery(urlSearchParams.get('openDetail'));
-  const returnTo = urlSearchParams.get('returnTo');
+  const returnTo = normalizeConsoleReturnTo(urlSearchParams.get('returnTo'));
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
@@ -178,7 +104,7 @@ export const OrderList = () => {
     pageSize?: number;
     openDetail?: boolean;
   }, replace: boolean = false) => {
-    setUrlSearchParams(buildOrderSearchParams(params), { replace });
+    setUrlSearchParams(buildOrderSearchParams({ ...params, returnTo }), { replace });
   };
 
   useEffect(() => {
@@ -256,14 +182,14 @@ export const OrderList = () => {
       status: draftStatus,
       productId: draftProductId,
       orderNo: draftOrderNo,
-      pageIndex: DEFAULT_PAGE_INDEX,
+      pageIndex: DEFAULT_ORDER_PAGE_INDEX,
       pageSize: queryPageSize,
     });
   };
 
   const handleReset = () => {
     syncSearchParams({
-      pageIndex: DEFAULT_PAGE_INDEX,
+      pageIndex: DEFAULT_ORDER_PAGE_INDEX,
       pageSize: queryPageSize,
     });
   };
