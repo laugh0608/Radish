@@ -39,6 +39,13 @@ Finder _forumCommentTextField({String hintText = '写下你的评论...'}) {
   );
 }
 
+Finder _forumTextFieldByLabel(String labelText) {
+  return find.byWidgetPredicate(
+    (widget) =>
+        widget is TextField && widget.decoration?.labelText == labelText,
+  );
+}
+
 void main() {
   testWidgets('restores into guest shell when no session exists',
       (tester) async {
@@ -1844,6 +1851,96 @@ void main() {
     expect(find.text('已回到评论区，可以继续发布。'), findsOneWidget);
     expect(find.text('发布评论'), findsOneWidget);
     expect(find.text('登录后评论'), findsNothing);
+  });
+
+  testWidgets('forum post sign-in keeps draft and publishes after callback',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+    final gateway = InMemoryNativeAuthGateway();
+    final authController = NativeAuthController(
+      environment: const AppEnvironment.development(),
+      sessionController: sessionController,
+      gateway: gateway,
+      exchangeService: _FakeAuthorizationCodeExchangeService(
+        nextSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: 'user-214',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: 'user-214',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+    );
+    final repository = _RecordingPostForumRepository();
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: authController,
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: repository,
+        profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.tap(find.text('论坛'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(_forumTextFieldByLabel('标题'), '登录回流发帖');
+    await tester.enterText(_forumTextFieldByLabel('标签'), 'flutter, 回流');
+    await tester.enterText(
+      _forumTextFieldByLabel('正文'),
+      '匿名态进入登录后，回来继续发布同一份草稿。',
+    );
+
+    gateway.setPendingCallback(
+      const NativeAuthCallbackPayload(
+        type: NativeAuthCallbackType.login,
+        code: 'post-login-code',
+      ),
+    );
+    await tester.tap(find.widgetWithText(FilledButton, '发布帖子'));
+    await tester.pumpAndSettle();
+
+    expect(repository.createPostRequests, isEmpty);
+    expect(find.text('登录后可继续提交当前帖子。'), findsOneWidget);
+    expect(find.text('登录回流发帖'), findsOneWidget);
+    expect(find.text('匿名态进入登录后，回来继续发布同一份草稿。'), findsOneWidget);
+
+    await authController.consumePendingCallback();
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('已登录'), findsWidgets);
+    expect(find.text('已回到发帖表单，可以继续发布。'), findsOneWidget);
+    expect(find.text('登录回流发帖'), findsOneWidget);
+    expect(find.text('匿名态进入登录后，回来继续发布同一份草稿。'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilledButton, '发布帖子'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(repository.createPostRequests, hasLength(1));
+    expect(repository.createPostRequests.single.title, '登录回流发帖');
+    expect(repository.createPostRequests.single.categoryId, 'category-1');
+    expect(repository.createPostRequests.single.tagNames, ['flutter', '回流']);
+    expect(repository.createPostRequests.single.accessToken, isNotEmpty);
+    expect(find.text('/forum/post/post-created'), findsOneWidget);
+    expect(find.text('帖子详情'), findsWidgets);
   });
 
   testWidgets('forum feed opens native public detail page', (tester) async {
@@ -3958,6 +4055,47 @@ class _SeededForumRepository implements ForumRepository {
   }) async {
     return 'post-created';
   }
+}
+
+class _RecordingPostForumRepository extends _SeededForumRepository {
+  final List<_ForumCreatePostRequest> createPostRequests =
+      <_ForumCreatePostRequest>[];
+
+  @override
+  Future<String> createPost({
+    required String title,
+    required String content,
+    required String categoryId,
+    required List<String> tagNames,
+    required String accessToken,
+  }) async {
+    createPostRequests.add(
+      _ForumCreatePostRequest(
+        title: title,
+        content: content,
+        categoryId: categoryId,
+        tagNames: tagNames,
+        accessToken: accessToken,
+      ),
+    );
+    return 'post-created';
+  }
+}
+
+class _ForumCreatePostRequest {
+  const _ForumCreatePostRequest({
+    required this.title,
+    required this.content,
+    required this.categoryId,
+    required this.tagNames,
+    required this.accessToken,
+  });
+
+  final String title;
+  final String content;
+  final String categoryId;
+  final List<String> tagNames;
+  final String accessToken;
 }
 
 class _SeededBigIdForumRepository implements ForumRepository {
