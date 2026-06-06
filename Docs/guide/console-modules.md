@@ -14,8 +14,8 @@
 | Applications | ✅ 已接入 | 表格 CRUD | `console.applications.*` | ✅ 已补齐 | 列表/新增/编辑/删除/重置密钥已闭环 |
 | Users | ✅ 已接入 | 表格 CRUD + 详情 | `console.users.view` | ✅ 已补齐 | 用户详情、资产、经验、订单摘要已接入 |
 | Roles | ✅ 已接入 | 表格 CRUD + 权限配置 | `console.roles.*` | ✅ 已补齐 | 角色详情、编辑和权限配置链路已闭环 |
-| Products | ✅ 已接入 | 表格 CRUD | `console.products.*` | ✅ 已补齐 | `GetCategories` 辅助接口已纳入 |
-| Orders | ✅ 已接入 | 表格 CRUD + 详情弹层 | `console.orders.*` | ✅ 已补齐 | 查看、重试、管理员备注和扣款流水定位已接入 |
+| Products | ✅ 已接入 | 表格 CRUD | `console.products.*` | ✅ 已补齐 | 商品详情与相关订单排障回流已接入，`GetCategories` 辅助接口已纳入 |
+| Orders | ✅ 已接入 | 表格 CRUD + 详情弹层 | `console.orders.*` | ✅ 已补齐 | 查看、重试、管理员备注、商品来源返回和扣款流水定位已接入 |
 | Tags | ✅ 已接入 | 表格 CRUD | `console.tags.*` | ✅ 已补齐 | 页面与资源映射已对齐 |
 | Stickers | ✅ 已接入 | 表格 CRUD | `console.stickers.*` | ✅ 已补齐 | 编码校验与批量上传辅助接口已纳入 |
 | SystemConfig | ✅ 已接入 | 表格 CRUD + 配置面板 | `console.system-config.*` | ✅ 已补齐 | 编辑详情与站点图标链路已闭环 |
@@ -124,6 +124,7 @@
 - ✅ 页面与按钮权限已接入
 - ✅ 辅助接口资源种子已补齐
 - ✅ 已按表格 CRUD 页面基座对齐
+- ✅ 商品详情进入相关订单时保留当前商品详情 `returnTo`，并继续保持商品 / 订单 ID 字符串查询参数
 - ⏸️ `AdminGetProduct` 未被当前页面实际使用，暂不纳入额外补齐范围
 
 ## 3.7 Orders
@@ -141,6 +142,7 @@
 - ✅ 管理员备注已接入独立权限，适用于失败 / 异常订单留痕
 - ✅ 仪表盘最近订单现已支持携带 `orderNo` 深链进入订单页，并自动展开目标订单详情
 - ✅ 订单详情已展示扣款流水 ID；拥有 `console.coins.view` 时可跳转到对应胡萝卜流水筛选结果
+- ✅ 从商品详情或胡萝卜流水进入订单页时，订单详情关闭、分页、筛选和重置会保留合法 `returnTo`
 - ✅ 已按表格 CRUD 页面基座对齐
 - ⏸️ 更完整的订单处理后台不在本阶段展开
 
@@ -209,6 +211,7 @@
 
 - 用户余额查询、业务流水筛选、管理员调账、交易摘要和表单字段仍沿用既有接口与权限判断。
 - 业务流水筛选支持 `businessType / businessId`，当前用于从订单详情定位购买扣款流水。
+- 从订单详情进入流水筛选时，`businessId` 保持订单 ID 字符串；若流水页回看订单，应继续使用同源相对 `returnTo`，不接受外部 URL。
 - 调账属于高风险后台动作，页面必须保留明确原因、金额方向和提交反馈。
 
 ### 当前状态

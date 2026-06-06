@@ -70,6 +70,18 @@
 - 匿名态不得误显空订单或空背包；应先保存原 `/desktop` 深链，完成登录态恢复，再打开目标视图。
 - ShopApp 内部私有视图也会显示明确登录门禁状态；该门禁是用户意图保留，不是空数据兜底。
 
+## Console 排障回流
+
+Console 商品、订单和胡萝卜流水之间存在管理端排障回流，但它不是公开 URL，也不是 `/desktop` 工作台深链。
+
+当前规则：
+
+- `ProductList` 与 `OrderList` 使用各自 URL 状态 helper 构造查询参数，避免页面内临时拼接跳转字符串。
+- 商品详情进入相关订单时，应把当前商品详情上下文作为 `returnTo` 传给订单页；订单页若本身来自其他合法来源，也要继续保留原来源。
+- 订单详情关闭、分页、筛选和重置应保留合法 `returnTo`，避免从胡萝卜流水或商品详情定位订单后丢失排障上下文。
+- `orderId / productId / businessId / userId` 等外部 LongId 查询参数都按字符串读取和写回，不进入 JavaScript `number`。
+- `returnTo` 只接受同源相对路径；外部 URL、协议相对 URL 和无法解析的来源必须丢弃。
+
 ## 验证要点
 
 - 从 `/shop/product/:productId` 进入 `/desktop?app=shop&productId=:productId` 后，应打开同一商品详情。
@@ -78,3 +90,4 @@
 - `/desktop?app=shop&view=orders` 应打开订单列表。
 - `/desktop?app=shop&view=inventory` 应打开背包。
 - 复制公开商品链接时仍应复制 `/shop/product/:productId` canonical，而不是 `/desktop` 深链。
+- 从 Console 商品详情进入相关订单、从订单进入扣款流水、从流水回看订单时，应保留合法来源返回，并保持所有 LongId 查询参数为字符串。

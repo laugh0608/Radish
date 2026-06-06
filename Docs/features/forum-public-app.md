@@ -2,7 +2,7 @@
 
 > Radish 公开内容壳层中的 forum 阅读入口说明。
 >
-> **最后更新**: 2026.05.16
+> **最后更新**: 2026.06.06
 
 ## 定位
 
@@ -16,7 +16,7 @@
 - `/forum/type/:type`：公开类型流，当前用于 `recommend`、`hot`、`newest`。
 - `/forum/search`：公开搜索结果，支持关键词、时间范围、排序与分页。
 - `/forum/tag/:tagId`：公开标签聚合阅读。
-- `/forum/post/:postId`：公开帖子详情；当前参数可以是 `Post.PublicId` 或旧 long 字符串，公开分享、canonical 和回流入口优先生成 `PublicId` 路径，旧 long 仅保留兼容读取。
+- `/forum/post/:postId`：公开帖子详情；当前参数可以是 `Post.PublicId` 或旧 long 字符串，公开分享、canonical、OpenGraph、JSON-LD 和回流入口优先生成 `PublicId` 路径，旧 long 仅保留兼容读取。
 
 ## 前端结构
 
@@ -42,6 +42,7 @@ Frontend/radish.client/src/public/forum/
 - 公开页共享的加载、空态和错误态优先复用 `PublicStatusCard.tsx`。
 - 公开 forum 与桌面 forum 可以复用 API 和展示语义，但不能复刻桌面工作台的写入型交互。
 - 公开 forum 的用户可见文案不应把旧 long 帖子 ID、评论 ID、作者 ID 或分类 ID 当作标题 / 摘要 fallback；这些标识只能继续作为兼容路由、内部点击或定位参数使用。
+- 旧 long 详情路径加载成功后，如果详情接口返回 `VoPublicId`，运行时 head 必须把 canonical、OpenGraph URL 与 JSON-LD 统一刷新到 `/forum/post/:publicId`，不能继续把旧 long 路径作为分享预览主口径。
 
 ## 相关文档
 

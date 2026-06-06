@@ -239,6 +239,7 @@ POST /api/v1/Shop/Purchase
 - WebOS / Flutter 调用购买前都应先消费 `CheckCanBuy` 结果；资格不通过时只展示原因，不打开支付口令弹窗，不提交 `Purchase`。
 - Flutter 当前固定购买 `1` 件商品，成功后打开订单详情确认结果；WebOS 私域商城可继续按既有数量选择和购买弹窗承接。
 - `Purchase` 扣款成功后会把胡萝卜流水 ID 写入订单的 `CoinTransactionId`；管理端 `OrderVo.VoCoinTransactionId` 用于从订单详情定位对应扣款流水。
+- Console 订单排障入口按 `BusinessType=Order / BusinessId=OrderId` 定位胡萝卜流水；订单页 URL 状态、商品相关订单跳转和流水回看订单时，`orderId / productId / businessId / userId` 都保持字符串查询参数，`returnTo` 只接受同源相对路径。
 - 购物车、退款、权益激活和道具使用不属于当前移动端购买契约。
 
 ### 4.2.1 创建订单服务
