@@ -659,7 +659,83 @@ void main() {
     expect(find.text('Profile Rename Card'), findsWidgets);
     expect(find.text('单商品购买'), findsOneWidget);
     expect(find.text('登录后购买'), findsOneWidget);
-    expect(find.text('/shop/product/product-4001'), findsOneWidget);
+    expect(find.text('/shop/product/4001'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('继续阅读'), findsOneWidget);
+    expect(find.text('商城精选'), findsOneWidget);
+    expect(find.text('Profile Rename Card'), findsOneWidget);
+  });
+
+  testWidgets(
+      'authenticated discover product purchase returns to discover context',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: 'user-42',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: 'user-42',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _SeededDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _FakeForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        shopRepository: const _SeededShopRepository(),
+        walletRepository: const _SeededWalletRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('查看详情'),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.tap(find.text('查看详情'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('来源：发现页商城精选'), findsOneWidget);
+    expect(find.text('/shop/product/4001'), findsOneWidget);
+    expect(find.text('当前可购买'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), '123456');
+    await tester.tap(find.text('确认购买 1 件'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('订单详情'), findsWidgets);
+    expect(find.text('来源：购买结果'), findsOneWidget);
+    expect(find.text('返回商品详情'), findsOneWidget);
+    expect(find.text('订单 RO202605310001'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('商品详情'), findsWidgets);
+    expect(find.text('Profile Rename Card'), findsWidgets);
 
     await tester.pageBack();
     await tester.pumpAndSettle();
@@ -708,7 +784,7 @@ void main() {
 
     expect(find.text('公开商城'), findsWidgets);
     expect(find.text('商品列表'), findsOneWidget);
-    expect(find.text('/shop/product/product-4001'), findsOneWidget);
+    expect(find.text('/shop/product/4001'), findsOneWidget);
 
     await tester.tap(find.text('查看详情'));
     await tester.pumpAndSettle();
@@ -3159,7 +3235,7 @@ class _SeededDiscoverRepository implements DiscoverRepository {
       documents: [],
       products: [
         DiscoverProductSummary(
-          id: 'product-4001',
+          id: '4001',
           name: 'Profile Rename Card',
           productType: 'Consumable',
           price: 120,
@@ -3186,7 +3262,7 @@ class _SeededShopRepository implements ShopRepository {
       pageCount: 1,
       products: [
         ShopProductSummary(
-          id: 'product-4001',
+          id: '4001',
           name: 'Profile Rename Card',
           productType: '消耗品',
           price: 120,
@@ -3205,7 +3281,7 @@ class _SeededShopRepository implements ShopRepository {
     required String productId,
   }) async {
     return const ShopProductDetail(
-      id: 'product-4001',
+      id: '4001',
       name: 'Profile Rename Card',
       description: 'Use this read-only detail to confirm the item scope.',
       categoryName: 'Profile tools',
