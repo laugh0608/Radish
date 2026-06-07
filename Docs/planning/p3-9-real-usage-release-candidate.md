@@ -110,7 +110,7 @@
    - 批次记录见：[P3-9-D Console 排障与治理入口整备记录（2026-06-07）](/records/p3-9-d-console-troubleshooting-governance-record-2026-06-07)。
 5. `P3-9-E 发布候选路径总回归与收口结论`
    - 汇总 `P3-9-A / B / C / D` 的自动化证据、人工复核清单和已知风险。
-   - 自动化总回归已通过，未启动本地服务，人工复核步骤见：[P3-9-E 发布候选路径总回归与收口结论（2026-06-07）](/records/p3-9-e-release-candidate-total-regression-record-2026-06-07)。
+   - 自动化总回归已通过，未启动本地服务，人工复核待执行。
 
 ## 验证口径
 

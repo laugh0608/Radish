@@ -76,7 +76,6 @@
 - [p3-9-b-login-mobile-main-path-record-2026-06-07](/records/p3-9-b-login-mobile-main-path-record-2026-06-07)
 - [p3-9-c-public-visitor-sharing-record-2026-06-07](/records/p3-9-c-public-visitor-sharing-record-2026-06-07)
 - [p3-9-d-console-troubleshooting-governance-record-2026-06-07](/records/p3-9-d-console-troubleshooting-governance-record-2026-06-07)
-- [p3-9-e-release-candidate-total-regression-record-2026-06-07](/records/p3-9-e-release-candidate-total-regression-record-2026-06-07)
 - [p3-9-release-candidate-main-path-acceptance-matrix-2026-06-07](/records/p3-9-release-candidate-main-path-acceptance-matrix-2026-06-07)
 - [p3-8-d-flutter-next-candidate-matrix-2026-05-28](/records/p3-8-d-flutter-next-candidate-matrix-2026-05-28)
 - [webos-workspace-p0-p1-screening-record-2026-05-18](/records/webos-workspace-p0-p1-screening-record-2026-05-18)
