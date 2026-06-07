@@ -234,6 +234,7 @@ Radish 未来联邦的最小公共节点定义为：
 - `2026-06-03` Console 角色授权链路已纳入 Phase A：`RoleId / ResourceId / ApiModuleId`、授权快照、资源树、接口预览和保存请求均按字符串传递，前端不得把这些授权对象 ID 转成 JavaScript `number`
 - `2026-06-04` LongId 自动化守护已补授权资源 ID 集合扫描：`resourceIds / voGrantedResourceIds / selectedResourceIds` 等集合不得声明为 `number[]`、`string[] | number[]`，也不得通过 `.map(Number)` 批量数值化
 - `2026-06-06` Flutter 背包来源订单 / 商品、Console 商品 / 订单 / 胡萝卜流水排障 URL 状态继续纳入 Phase A：外部对象 ID 查询参数、来源返回和业务上下文字段都按字符串传递，禁止通过 `int.tryParse`、`Number(...)` 或 `.map(Number)` 数值化；forum 旧 LongId 公开详情加载后刷新 canonical 到 `VoPublicId` 属于 `Post` 既有 PublicId 试点守护，不代表启动完整 `PublicId` 全量迁移
+- `2026-06-07` Flutter 商品购买、余额展示、订单 / 背包来源回流和 Console 商品 / 订单 / 用户 / 胡萝卜流水排障继续按字符串 LongId 传递；公开 forum 详情、公开集合页和结构化数据优先使用已有 `Post.PublicId` 与 canonical 口径，docs / shop / user 仍处在旧标识兼容阶段，不代表启动完整 `PublicId` 全量迁移
 - 上述冻结要求不是“远期优化建议”，而是当前主线稳定性约束；forum 公开阅读链路已经因大整数精度丢失发生过真实回归
 
 ### Phase B：核心聚合双标识

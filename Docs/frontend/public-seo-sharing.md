@@ -6,7 +6,7 @@
 
 > 仅 `radish.client` 的公开内容壳层需要对搜索引擎和外链分享友好；`radish.console`、登录后 WebOS 工作台和治理类页面默认不做 SEO 要求。
 >
-> 当前已完成首批公开增长基线：运行时 head / canonical、运行时公开域名配置、公开详情分享入口、公开个人页复制链接入口、运行时 JSON-LD、API + Gateway 动态 sitemap、浏览器可见资源 URL 归一，以及 forum / docs / shop 公开详情首包 head snapshot 注入。完整正文 SSR / SSG、预渲染和公开个人页动态 sitemap 继续后置。
+> 当前已完成首批公开增长基线：运行时 head / canonical、运行时公开域名配置、公开详情分享入口、公开个人页复制链接入口、公开详情与集合页运行时 JSON-LD、API + Gateway 动态 sitemap、浏览器可见资源 URL 归一，以及 forum / docs / shop 公开详情首包 head snapshot 注入。完整正文 SSR / SSG、预渲染和公开个人页动态 sitemap 继续后置。
 
 ##### 10.5.1 当前公开 URL 范围
 
@@ -57,6 +57,7 @@ forum / docs / shop 三类公开详情还会在 Gateway 层做首包 head snapsh
 
 `Frontend/radish.client/src/public/publicStructuredData.ts` 负责运行时 JSON-LD 的构建、注入、复用和清理。
 
+- 公开集合页：`discover / leaderboard / forum / docs / shop` 的非详情路由输出 `CollectionPage`；其他公开非详情路由输出 `WebPage`。
 - forum detail：输出 `BlogPosting`，优先使用 `PostVo.VoPublicId` canonical。
 - docs detail：输出 `Article`，使用 `/docs/:slug` canonical。
 - shop detail：输出 `Product`，不把积分价格伪装成法币 offer。
