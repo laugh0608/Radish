@@ -28,6 +28,7 @@ test('商品详情 URL helper 应拒绝非法返回来源并保持 LongId 字符
   assert.equal(parseProductLongIdQuery('2042219067430928384.1'), undefined);
   assert.equal(normalizeProductReturnTo('/products?openDetail=1'), '/products?openDetail=1');
   assert.equal(normalizeProductReturnTo('//radishx.com/orders'), undefined);
+  assert.equal(normalizeProductReturnTo('/\\radishx.com/orders'), undefined);
   assert.equal(normalizeProductReturnTo('https://radishx.com/orders'), undefined);
 });
 

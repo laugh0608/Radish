@@ -19,6 +19,7 @@ import {
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
+import { normalizeConsoleReturnTo } from '@/utils/returnTo';
 import { userManagementApi } from '@/api/userManagement';
 import { getBalanceByUserId, getTransactionsByUserId, type CoinTransactionVo, type UserBalanceVo } from '@/api/coinAdminApi';
 import { getUserExperience, type UserExperienceVo } from '@/api/experienceAdminApi';
@@ -44,7 +45,7 @@ export const UserDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const returnTo = searchParams.get('returnTo');
+  const returnTo = normalizeConsoleReturnTo(searchParams.get('returnTo'));
   useDocumentTitle('用户详情');
   const canViewUsers = usePermission(CONSOLE_PERMISSIONS.usersView);
   const canViewCoins = usePermission(CONSOLE_PERMISSIONS.coinsView);
@@ -97,7 +98,7 @@ export const UserDetail = () => {
   );
 
   const handleBack = () => {
-    if (returnTo?.startsWith('/')) {
+    if (returnTo) {
       navigate(returnTo);
       return;
     }

@@ -1,3 +1,5 @@
+import { normalizeConsoleReturnTo } from '../../utils/returnTo.ts';
+
 export function parseProductLongIdQuery(value: string | null): string | undefined {
   if (!value) {
     return undefined;
@@ -11,12 +13,7 @@ export function parseProductBooleanQuery(value: string | null): boolean {
   return value === '1' || value === 'true';
 }
 
-export function normalizeProductReturnTo(value?: string | null): string | undefined {
-  const normalized = value?.trim();
-  return normalized?.startsWith('/') && !normalized.startsWith('//')
-    ? normalized
-    : undefined;
-}
+export const normalizeProductReturnTo = normalizeConsoleReturnTo;
 
 export function buildProductDetailSearchParams(params: {
   productId?: string;

@@ -1,4 +1,7 @@
 import type { OrderStatus } from '../../api/types';
+import { normalizeConsoleReturnTo } from '../../utils/returnTo.ts';
+
+export { normalizeConsoleReturnTo };
 
 export const DEFAULT_ORDER_PAGE_INDEX = 1;
 export const DEFAULT_ORDER_PAGE_SIZE = 20;
@@ -18,7 +21,7 @@ export function parseLongIdQuery(value: string | null): string | undefined {
   }
 
   const trimmed = value.trim();
-  return /^\d+$/u.test(trimmed) ? trimmed : undefined;
+  return /^[1-9]\d*$/u.test(trimmed) ? trimmed : undefined;
 }
 
 export function parseOrderStatusQuery(value: string | null): OrderStatus | undefined {
@@ -34,13 +37,6 @@ export function parseOrderStatusQuery(value: string | null): OrderStatus | undef
 
 export function parseBooleanQuery(value: string | null): boolean {
   return value === '1' || value === 'true';
-}
-
-export function normalizeConsoleReturnTo(value?: string | null): string | undefined {
-  const normalized = value?.trim();
-  return normalized?.startsWith('/') && !normalized.startsWith('//')
-    ? normalized
-    : undefined;
 }
 
 export function buildOrderSearchParams(params: {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   AntInput as Input,
@@ -23,6 +23,7 @@ import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
+import { normalizeConsoleReturnTo } from '@/utils/returnTo';
 import '../adminFeature.css';
 import './CoinAdminPage.css';
 
@@ -92,7 +93,7 @@ export const CoinAdminPage = () => {
   const queryTransactionStatus = normalizeOptionQuery(searchParams.get('status'), TRANSACTION_STATUS_OPTIONS);
   const queryBusinessType = normalizeTextFilterInput(searchParams.get('businessType') ?? '');
   const queryBusinessId = normalizePositiveLongIdInput(searchParams.get('businessId') ?? '');
-  const returnTo = searchParams.get('returnTo');
+  const returnTo = normalizeConsoleReturnTo(searchParams.get('returnTo'));
 
   const [queryUserId, setQueryUserId] = useState(queryUserIdFromUrl ?? '');
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
@@ -109,6 +110,7 @@ export const CoinAdminPage = () => {
   const [transactionLoading, setTransactionLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [form] = Form.useForm<CoinAdjustFormValues>();
+  const initialQueryUserLoadedRef = useRef(false);
   const canAdjust = usePermission(CONSOLE_PERMISSIONS.coinsAdjust);
 
   const getSignedCoinAmount = (transaction: CoinTransactionVo, userId: string) => {
@@ -158,7 +160,7 @@ export const CoinAdminPage = () => {
     navigate(`/orders?${orderSearchParams.toString()}`);
   };
 
-  const loadTransactions = async (
+  const loadTransactions = useCallback(async (
     userId: string,
     pageIndex = transactionPageIndex,
     pageSize = transactionPageSize,
@@ -190,9 +192,16 @@ export const CoinAdminPage = () => {
     } finally {
       setTransactionLoading(false);
     }
-  };
+  }, [
+    businessIdFilter,
+    businessTypeFilter,
+    transactionPageIndex,
+    transactionPageSize,
+    transactionStatusFilter,
+    transactionTypeFilter,
+  ]);
 
-  const loadBalance = async (targetUserId?: string) => {
+  const loadBalance = useCallback(async (targetUserId?: string) => {
     const userId = targetUserId ?? normalizePositiveLongIdInput(queryUserId);
     if (!userId) {
       message.error('请输入有效的用户 ID');
@@ -219,16 +228,17 @@ export const CoinAdminPage = () => {
     }
 
     await loadTransactions(userId, 1, transactionPageSize);
-  };
+  }, [form, loadTransactions, queryUserId, transactionPageSize]);
 
   useEffect(() => {
-    if (!queryUserIdFromUrl) {
+    if (initialQueryUserLoadedRef.current || !queryUserIdFromUrl) {
       return;
     }
 
+    initialQueryUserLoadedRef.current = true;
     form.setFieldValue('userId', queryUserIdFromUrl);
     void loadBalance(queryUserIdFromUrl);
-  }, []);
+  }, [form, loadBalance, queryUserIdFromUrl]);
 
   const handleAdjust = async () => {
     try {
@@ -421,7 +431,7 @@ export const CoinAdminPage = () => {
             <p className="admin-feature-subtle">支持按用户查询余额、回看交易流水，并执行正负向调账。</p>
           </div>
           <div className="coin-admin-header-actions">
-            {returnTo?.startsWith('/') ? (
+            {returnTo ? (
               <Button onClick={() => navigate(returnTo)}>
                 返回来源
               </Button>
