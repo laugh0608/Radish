@@ -24,6 +24,7 @@ import { userManagementApi } from '@/api/userManagement';
 import { getBalanceByUserId, getTransactionsByUserId, type CoinTransactionVo, type UserBalanceVo } from '@/api/coinAdminApi';
 import { getUserExperience, type UserExperienceVo } from '@/api/experienceAdminApi';
 import { adminGetOrders, getOrderStatusColor, getOrderStatusDisplay } from '@/api/shopApi';
+import { buildOrderDetailPath } from '@/pages/Orders/orderListUrlState';
 import type { Order } from '@/api/types';
 import type { UserListItem } from '@/types/user';
 import '../adminFeature.css';
@@ -113,13 +114,10 @@ export const UserDetail = () => {
       return;
     }
 
-    const searchParams = new URLSearchParams({
+    navigate(buildOrderDetailPath({
       orderId: String(transaction.voBusinessId),
-      openDetail: '1',
       returnTo: getCurrentReturnTo(),
-    });
-
-    navigate(`/orders?${searchParams.toString()}`);
+    }));
   };
 
   const handleViewCoinTransactionFromOrder = (order: Order) => {
@@ -327,13 +325,10 @@ export const UserDetail = () => {
       render: (_: unknown, record: Order) => (
         <Space wrap>
           <Button onClick={() => {
-            const searchParams = new URLSearchParams({
+            navigate(buildOrderDetailPath({
               orderId: String(record.voId),
-              openDetail: '1',
               returnTo: getCurrentReturnTo(),
-            });
-
-            navigate(`/orders?${searchParams.toString()}`);
+            }));
           }}>
             治理详情
           </Button>

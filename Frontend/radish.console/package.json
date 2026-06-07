@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "test": "node --test --test-isolation=none ./tests/tokenClaims.test.ts ./tests/orderListUrlState.test.ts ./tests/productListUrlState.test.ts ./tests/rolePermissionHelpers.test.ts",
+    "test": "node --test --test-isolation=none ./tests/tokenClaims.test.ts ./tests/orderListUrlState.test.ts ./tests/productListUrlState.test.ts ./tests/rolePermissionHelpers.test.ts ./tests/consoleTroubleshootingPathContracts.test.ts",
     "type-check": "tsc --noEmit",
     "lint": "eslint .",
     "preview": "vite preview"

@@ -35,6 +35,7 @@ import { OrderDetail } from './OrderDetail';
 import {
   DEFAULT_ORDER_PAGE_INDEX,
   DEFAULT_ORDER_PAGE_SIZE,
+  buildOrderDetailSearchParams,
   buildOrderSearchParams,
   normalizeConsoleReturnTo,
   parseBooleanQuery,
@@ -198,6 +199,18 @@ export const OrderList = () => {
     setSelectedOrderId(order.voId);
     setSelectedOrderPreview(order);
     setDetailVisible(true);
+    setUrlSearchParams(
+      buildOrderDetailSearchParams({
+        orderId: String(order.voId),
+        userId: queryUserId,
+        status: queryStatus,
+        productId: queryProductId,
+        orderNo: queryOrderNo,
+        pageIndex: queryPageIndex,
+        pageSize: queryPageSize,
+        returnTo,
+      }),
+    );
   };
 
   const handleViewUser = (order: Order) => {

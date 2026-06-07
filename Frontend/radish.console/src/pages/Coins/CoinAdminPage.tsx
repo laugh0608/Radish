@@ -22,6 +22,7 @@ import {
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { usePermission } from '@/hooks/usePermission';
+import { buildOrderDetailPath } from '@/pages/Orders/orderListUrlState';
 import { log } from '@/utils/logger';
 import { normalizeConsoleReturnTo } from '@/utils/returnTo';
 import '../adminFeature.css';
@@ -147,17 +148,11 @@ export const CoinAdminPage = () => {
       return;
     }
 
-    const orderSearchParams = new URLSearchParams({
+    navigate(buildOrderDetailPath({
       orderId: String(transaction.voBusinessId),
-      openDetail: '1',
+      userId: loadedUserId ?? undefined,
       returnTo: getCurrentReturnTo(),
-    });
-
-    if (loadedUserId) {
-      orderSearchParams.set('userId', loadedUserId);
-    }
-
-    navigate(`/orders?${orderSearchParams.toString()}`);
+    }));
   };
 
   const loadTransactions = useCallback(async (

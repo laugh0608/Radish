@@ -39,7 +39,7 @@ export function parseBooleanQuery(value: string | null): boolean {
   return value === '1' || value === 'true';
 }
 
-export function buildOrderSearchParams(params: {
+export interface OrderSearchParamsInput {
   orderId?: string;
   userId?: string;
   status?: OrderStatus;
@@ -49,7 +49,13 @@ export function buildOrderSearchParams(params: {
   pageSize?: number;
   openDetail?: boolean;
   returnTo?: string | null;
-}): URLSearchParams {
+}
+
+export type OrderDetailSearchParamsInput = Omit<OrderSearchParamsInput, 'openDetail' | 'orderId'> & {
+  orderId: string;
+};
+
+export function buildOrderSearchParams(params: OrderSearchParamsInput): URLSearchParams {
   const searchParams = new URLSearchParams();
   const normalizedOrderNo = params.orderNo?.trim() ?? '';
   const normalizedReturnTo = normalizeConsoleReturnTo(params.returnTo);
@@ -91,4 +97,17 @@ export function buildOrderSearchParams(params: {
   }
 
   return searchParams;
+}
+
+export function buildOrderDetailSearchParams(params: OrderDetailSearchParamsInput): URLSearchParams {
+  return buildOrderSearchParams({
+    ...params,
+    openDetail: true,
+  });
+}
+
+export function buildOrderDetailPath(params: OrderDetailSearchParamsInput): string {
+  const searchParams = buildOrderDetailSearchParams(params);
+
+  return `/orders?${searchParams.toString()}`;
 }

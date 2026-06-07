@@ -48,6 +48,7 @@ import {
   parseProductBooleanQuery,
   parseProductLongIdQuery,
 } from './productListUrlState';
+import { buildOrderSearchParams } from '../Orders/orderListUrlState';
 import { getAvatarUrl } from '../../config/env';
 import { log } from '../../utils/logger';
 import '../adminFeature.css';
@@ -275,7 +276,8 @@ export const ProductList = () => {
       productId,
       returnTo: queryReturnTo,
     });
-    const searchParams = new URLSearchParams({
+
+    const searchParams = buildOrderSearchParams({
       productId,
       returnTo,
     });
