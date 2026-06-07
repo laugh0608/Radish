@@ -6,6 +6,13 @@ import {
   resolveInitialEntryPath,
 } from '../src/bootstrap/entryRoute.ts';
 import {
+  buildPublicCanonicalUrl,
+  buildPublicRouteHead,
+  buildPublicShareUrl,
+  publicDefaultOrigin,
+} from '../src/public/publicHead.ts';
+import type { PublicRouteDescriptor } from '../src/public/publicRouteNavigation.ts';
+import {
   buildDesktopForumPostReturnPath,
   buildDesktopShopOrderReturnPath,
   buildDesktopShopPrivateViewReturnPath,
@@ -35,6 +42,78 @@ test('P3-9 访客根入口应进入纯 Web 公开发现页', () => {
   }), BROWSER_PUBLIC_ENTRY_PATH);
   assert.equal(isPublicContentPathname(BROWSER_PUBLIC_ENTRY_PATH), true);
   assert.equal(isPublicContentPathname('/desktop'), false);
+});
+
+test('P3-9 公开详情 head 与分享链接应保持发布候选预览契约', () => {
+  const routes: Array<{
+    route: PublicRouteDescriptor;
+    canonicalPath: string;
+    sharePath: string;
+    type: 'article' | 'product' | 'profile';
+  }> = [
+    {
+      route: {
+        app: 'forum',
+        route: {
+          kind: 'detail',
+          postId: '2042219067430920000',
+          postPublicId,
+          commentId,
+        },
+      },
+      canonicalPath: `/forum/post/${postPublicId}?commentId=${commentId}`,
+      sharePath: `/forum/post/${postPublicId}?commentId=${commentId}`,
+      type: 'article',
+    },
+    {
+      route: {
+        app: 'docs',
+        route: {
+          kind: 'detail',
+          slug: 'release-candidate-guide',
+          anchor: 'mobile-path',
+        },
+      },
+      canonicalPath: '/docs/release-candidate-guide#mobile-path',
+      sharePath: '/docs/release-candidate-guide#mobile-path',
+      type: 'article',
+    },
+    {
+      route: {
+        app: 'shop',
+        route: {
+          kind: 'detail',
+          productId,
+        },
+      },
+      canonicalPath: `/shop/product/${productId}`,
+      sharePath: `/shop/product/${productId}`,
+      type: 'product',
+    },
+    {
+      route: {
+        app: 'profile',
+        route: {
+          kind: 'detail',
+          userId: '2042219067430928390',
+          tab: 'posts',
+          page: 1,
+        },
+      },
+      canonicalPath: '/u/2042219067430928390',
+      sharePath: '/u/2042219067430928390',
+      type: 'profile',
+    },
+  ];
+
+  for (const { route, canonicalPath, sharePath, type } of routes) {
+    const head = buildPublicRouteHead(route);
+
+    assert.equal(head.canonicalPath, canonicalPath);
+    assert.equal(head.type, type);
+    assert.equal(buildPublicCanonicalUrl(head.canonicalPath), `${publicDefaultOrigin}${canonicalPath.split('#')[0]}`);
+    assert.equal(buildPublicShareUrl(sharePath), `${publicDefaultOrigin}${sharePath}`);
+  }
 });
 
 test('P3-9 公开商品购买入口应保持同一商品上下文并可被登录回流保存', () => {
