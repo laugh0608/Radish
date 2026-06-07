@@ -6,6 +6,7 @@ import '../../../core/config/app_environment.dart';
 import '../../../core/network/radish_api_client.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
 import '../../wallet/data/wallet_repository.dart';
+import '../data/shop_long_id.dart';
 import '../data/shop_models.dart';
 import '../data/shop_repository.dart';
 import 'shop_order_detail_page.dart';
@@ -112,7 +113,7 @@ class _ShopInventoryPageState extends State<ShopInventoryPage> {
   }
 
   void _openSourceOrder(String? orderId) {
-    final normalizedOrderId = _normalizePositiveLongId(orderId);
+    final normalizedOrderId = normalizeShopPositiveLongId(orderId);
     if (normalizedOrderId == null) {
       return;
     }
@@ -133,7 +134,7 @@ class _ShopInventoryPageState extends State<ShopInventoryPage> {
   }
 
   void _openSourceProduct(String? productId) {
-    final normalizedProductId = _normalizePositiveLongId(productId);
+    final normalizedProductId = normalizeShopPositiveLongId(productId);
     if (normalizedProductId == null) {
       return;
     }
@@ -356,9 +357,9 @@ class _ShopBenefitCard extends StatelessWidget {
             : '未激活';
     final sourceText = benefit.sourceTypeDisplay ?? benefit.sourceType;
     final canOpenSourceOrder =
-        _normalizePositiveLongId(benefit.sourceOrderId) != null;
+        normalizeShopPositiveLongId(benefit.sourceOrderId) != null;
     final canOpenSourceProduct =
-        _normalizePositiveLongId(benefit.sourceProductId) != null;
+        normalizeShopPositiveLongId(benefit.sourceProductId) != null;
 
     return DecoratedBox(
       decoration: _itemDecoration(context),
@@ -430,7 +431,7 @@ class _ShopInventoryItemCard extends StatelessWidget {
     final title =
         item.itemName ?? item.consumableTypeDisplay ?? item.consumableType;
     final canOpenSourceProduct =
-        _normalizePositiveLongId(item.sourceProductId) != null;
+        normalizeShopPositiveLongId(item.sourceProductId) != null;
 
     return DecoratedBox(
       decoration: _itemDecoration(context),
@@ -468,17 +469,6 @@ class _ShopInventoryItemCard extends StatelessWidget {
       ),
     );
   }
-}
-
-String? _normalizePositiveLongId(String? value) {
-  final normalizedValue = value?.trim();
-  if (normalizedValue == null || normalizedValue.isEmpty) {
-    return null;
-  }
-
-  return RegExp(r'^[1-9]\d*$').hasMatch(normalizedValue)
-      ? normalizedValue
-      : null;
 }
 
 BoxDecoration _itemDecoration(BuildContext context) {

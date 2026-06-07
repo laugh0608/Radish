@@ -179,6 +179,34 @@ void main() {
     expect(find.text('正在查看订单 RO202605310001'), findsOneWidget);
   });
 
+  testWidgets('order detail source actions require canonical LongId strings',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ShopOrderDetailPage(
+          environment: AppEnvironment.development(),
+          repository: _NonCanonicalOrderReferenceRepository(),
+          walletRepository: EmptyWalletRepository(),
+          accessToken: 'access-token',
+          orderId: '9001',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('订单 RO202605310001'), findsOneWidget);
+    expect(find.text('Profile Rename Card'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, '查看商品'), findsNothing);
+    expect(find.widgetWithText(FilledButton, '查看扣款流水'), findsNothing);
+    expect(find.widgetWithText(FilledButton, '查看背包发放'), findsOneWidget);
+  });
+
   testWidgets('order detail inventory entry keeps return on load failure',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
@@ -727,6 +755,32 @@ class _RefreshFailingOrderRepository extends _SuccessShopRepository {
     return super.getOrderDetail(
       accessToken: accessToken,
       orderId: orderId,
+    );
+  }
+}
+
+class _NonCanonicalOrderReferenceRepository extends _SuccessShopRepository {
+  const _NonCanonicalOrderReferenceRepository();
+
+  @override
+  Future<ShopOrderDetail> getOrderDetail({
+    required String accessToken,
+    required String orderId,
+  }) async {
+    return const ShopOrderDetail(
+      id: '09001',
+      orderNo: 'RO202605310001',
+      productId: 'product-4001',
+      productName: 'Profile Rename Card',
+      productType: 'Consumable',
+      productTypeDisplay: '消耗品',
+      quantity: 1,
+      unitPrice: 120,
+      totalPrice: 120,
+      status: 'Completed',
+      statusDisplay: '已完成',
+      createTime: '2026-05-31T08:00:00Z',
+      completedTime: '2026-05-31T08:01:00Z',
     );
   }
 }

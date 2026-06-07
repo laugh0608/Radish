@@ -7,6 +7,7 @@ import '../../../core/network/radish_api_client.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
 import '../../wallet/data/wallet_repository.dart';
 import '../../wallet/presentation/wallet_page.dart';
+import '../data/shop_long_id.dart';
 import '../data/shop_models.dart';
 import '../data/shop_repository.dart';
 import 'shop_inventory_page.dart';
@@ -121,8 +122,8 @@ class _ShopOrderDetailPageState extends State<ShopOrderDetailPage> {
   }
 
   void _openProduct(ShopOrderDetail order) {
-    final productId = order.productId.trim();
-    if (productId.isEmpty) {
+    final productId = normalizeShopPositiveLongId(order.productId);
+    if (productId == null) {
       return;
     }
 
@@ -143,8 +144,8 @@ class _ShopOrderDetailPageState extends State<ShopOrderDetailPage> {
   }
 
   void _openCoinTransaction(ShopOrderDetail order) {
-    final orderId = order.id.trim();
-    if (orderId.isEmpty) {
+    final orderId = normalizeShopPositiveLongId(order.id);
+    if (orderId == null) {
       return;
     }
 
@@ -279,7 +280,9 @@ class _ShopOrderDetailContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final statusText = order.statusDisplay ?? order.status;
-    final canOpenCoinTransaction = order.id.trim().isNotEmpty;
+    final canOpenProduct = normalizeShopPositiveLongId(order.productId) != null;
+    final canOpenCoinTransaction =
+        normalizeShopPositiveLongId(order.id) != null;
 
     return Card(
       child: Padding(
@@ -313,11 +316,12 @@ class _ShopOrderDetailContent extends StatelessWidget {
               spacing: 12,
               runSpacing: 8,
               children: [
-                OutlinedButton.icon(
-                  onPressed: onOpenProduct,
-                  icon: const Icon(Icons.open_in_new),
-                  label: const Text('查看商品'),
-                ),
+                if (canOpenProduct)
+                  OutlinedButton.icon(
+                    onPressed: onOpenProduct,
+                    icon: const Icon(Icons.open_in_new),
+                    label: const Text('查看商品'),
+                  ),
                 if (canOpenCoinTransaction) ...[
                   FilledButton.tonalIcon(
                     onPressed: onOpenCoinTransaction,
