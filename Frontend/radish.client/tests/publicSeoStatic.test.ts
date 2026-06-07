@@ -56,6 +56,14 @@ test('公开社区发现页应使用统一公开分享入口', () => {
   assert.match(source, /discover\.public\.shareAction/);
 });
 
+test('公开入口应为所有公开路由应用通用 JSON-LD', () => {
+  const source = readFileSync(resolve(clientRoot, 'src/public/PublicEntry.tsx'), 'utf8');
+
+  assert.match(source, /applyPublicStructuredData/);
+  assert.match(source, /buildPublicRouteStructuredData\(route\)/);
+  assert.match(source, /return removePublicStructuredData/);
+});
+
 test('公开论坛详情加载后应刷新详情 head 并复用同一个 canonical', () => {
   const source = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumDetail.tsx'), 'utf8');
 

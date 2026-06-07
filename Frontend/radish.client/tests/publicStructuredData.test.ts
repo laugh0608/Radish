@@ -5,6 +5,7 @@ import {
   buildDocsArticleStructuredData,
   buildForumPostStructuredData,
   buildProfilePageStructuredData,
+  buildPublicRouteStructuredData,
   buildShopProductStructuredData,
   publicStructuredDataScriptId,
   removePublicStructuredData,
@@ -173,6 +174,62 @@ test('buildProfilePageStructuredData 应生成 ProfilePage JSON-LD 且不使用�
 
   assert.equal(data['@type'], 'ProfilePage');
   assert.equal(data.name, '萝卜用户 - Radish 用户公开主页');
+  assert.equal(JSON.stringify(data).includes('"name":"2042219067430928384"'), false);
+});
+
+test('buildPublicRouteStructuredData 应为公开发现和榜单生成聚合页 JSON-LD', () => {
+  const discoverData = buildPublicRouteStructuredData({
+    app: 'discover',
+    route: { kind: 'home', section: 'shop' },
+  });
+  const leaderboardData = buildPublicRouteStructuredData({
+    app: 'leaderboard',
+    route: { kind: 'list', typeSlug: 'post-count', page: 2 },
+  });
+
+  assert.equal(discoverData['@type'], 'CollectionPage');
+  assert.equal(discoverData.url, `${publicDefaultOrigin}/discover?section=shop`);
+  assert.equal(leaderboardData['@type'], 'CollectionPage');
+  assert.equal(leaderboardData.url, `${publicDefaultOrigin}/leaderboard/post-count?page=2`);
+});
+
+test('buildPublicRouteStructuredData 应把公开浏览页识别为聚合页', () => {
+  const routes = [
+    {
+      app: 'forum',
+      route: { kind: 'search', keyword: 'radish', sortBy: 'newest', timeRange: 'all', page: 1 },
+    },
+    {
+      app: 'docs',
+      route: { kind: 'search', keyword: 'release', page: 1 },
+    },
+    {
+      app: 'shop',
+      route: { kind: 'products', categoryId: 'digital', keyword: 'vip', page: 2 },
+    },
+  ] as const;
+
+  for (const route of routes) {
+    const data = buildPublicRouteStructuredData(route);
+    assert.equal(data['@type'], 'CollectionPage');
+    assert.equal(typeof data.url, 'string');
+  }
+});
+
+test('buildPublicRouteStructuredData 不应把数字公开 ID 写成页面名称', () => {
+  const data = buildPublicRouteStructuredData({
+    app: 'profile',
+    route: {
+      kind: 'detail',
+      userId: '2042219067430928384',
+      tab: 'posts',
+      page: 1,
+    },
+  });
+
+  assert.equal(data['@type'], 'WebPage');
+  assert.equal(data.url, `${publicDefaultOrigin}/u/2042219067430928384`);
+  assert.equal(data.name, '用户公开主页 - Radish');
   assert.equal(JSON.stringify(data).includes('"name":"2042219067430928384"'), false);
 });
 

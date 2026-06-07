@@ -2,7 +2,13 @@ import type { PostDetail } from '@/api/forum';
 import type { Product } from '@/api/shop';
 import type { PublicUserProfile, PublicUserStats } from '@/api/user';
 import type { WikiDocumentDetailVo } from '@/apps/wiki/types/wiki';
-import { buildPublicCanonicalUrl, publicDefaultDescription, publicSiteName } from './publicHead.ts';
+import {
+  buildPublicCanonicalUrl,
+  buildPublicRouteHead,
+  publicDefaultDescription,
+  publicSiteName,
+} from './publicHead.ts';
+import type { PublicRouteDescriptor } from './publicRouteNavigation.ts';
 
 export const publicStructuredDataScriptId = 'radish-public-structured-data';
 
@@ -207,6 +213,38 @@ export function buildProfilePageStructuredData(options: BuildProfileStructuredDa
         },
       ],
     },
+  });
+}
+
+function isPublicRouteCollectionPage(route: PublicRouteDescriptor): boolean {
+  if (route.app === 'discover' || route.app === 'leaderboard') {
+    return true;
+  }
+
+  if (route.app === 'forum' || route.app === 'docs' || route.app === 'shop') {
+    return route.route.kind !== 'detail';
+  }
+
+  return false;
+}
+
+export function buildPublicRouteStructuredData(route: PublicRouteDescriptor, origin?: string): JsonLdObject {
+  const head = buildPublicRouteHead(route);
+  const canonicalUrl = buildPublicCanonicalUrl(head.canonicalPath, origin);
+  const pageType = isPublicRouteCollectionPage(route) ? 'CollectionPage' : 'WebPage';
+
+  return withContext({
+    '@type': pageType,
+    name: normalizeText(head.title),
+    description: normalizeText(head.description),
+    url: canonicalUrl,
+    mainEntityOfPage: canonicalUrl,
+    isPartOf: {
+      '@type': 'WebSite',
+      name: publicSiteName,
+      url: buildPublicCanonicalUrl('/', origin),
+    },
+    publisher: buildOrganization(),
   });
 }
 
