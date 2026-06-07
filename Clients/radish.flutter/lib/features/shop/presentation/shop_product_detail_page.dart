@@ -8,6 +8,7 @@ import '../../../core/config/app_environment.dart';
 import '../../../core/network/radish_api_client.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
 import '../../../shared/widgets/public_link_copy_panel.dart';
+import '../../wallet/data/wallet_models.dart';
 import '../../wallet/data/wallet_repository.dart';
 import '../data/shop_long_id.dart';
 import '../data/shop_models.dart';
@@ -51,17 +52,21 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
       TextEditingController();
   ShopProductDetail? _product;
   ShopProductBuyCheckResult? _buyCheck;
+  CoinBalance? _coinBalance;
   bool _isLoading = true;
   bool _isRefreshing = false;
   bool _isCheckingCanBuy = false;
+  bool _isLoadingBalance = false;
   bool _isPurchasing = false;
   bool _wasAuthenticated = false;
   bool _requestedSignInFromPurchase = false;
   String? _errorMessage;
   String? _purchaseNotice;
   String? _purchaseErrorMessage;
+  String? _balanceErrorMessage;
   int _requestId = 0;
   int _buyCheckRequestId = 0;
+  int _balanceRequestId = 0;
 
   @override
   void initState() {
@@ -79,9 +84,16 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
     if (oldWidget.repository != widget.repository ||
         oldWidget.productId != widget.productId) {
       _buyCheck = null;
+      _coinBalance = null;
       _purchaseNotice = null;
       _purchaseErrorMessage = null;
+      _balanceErrorMessage = null;
       unawaited(_load(keepCurrentProduct: false));
+    }
+
+    if (oldWidget.walletRepository != widget.walletRepository ||
+        oldWidget.accessToken != widget.accessToken) {
+      unawaited(_loadBalance(keepCurrentBalance: _coinBalance != null));
     }
 
     if (oldWidget.sessionController != widget.sessionController) {
@@ -89,6 +101,7 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
       widget.sessionController?.addListener(_handleSessionStateChanged);
       _wasAuthenticated =
           widget.sessionController?.state.isAuthenticated ?? false;
+      unawaited(_loadBalance(keepCurrentBalance: _coinBalance != null));
     }
   }
 
@@ -141,6 +154,7 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
       final loadedProductId = normalizeShopPositiveLongId(product.id);
       if (_currentAccessToken != null && loadedProductId != null) {
         unawaited(_checkCanBuy(loadedProductId));
+        unawaited(_loadBalance(keepCurrentBalance: true));
       }
     } on RadishApiClientException catch (error) {
       _setFailure(requestId, error.message);
@@ -192,6 +206,15 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
       if (productId != null && productId.trim().isNotEmpty) {
         unawaited(_checkCanBuy(productId));
       }
+      unawaited(_loadBalance(keepCurrentBalance: false));
+    } else if (_wasAuthenticated && !isAuthenticated) {
+      setState(() {
+        _buyCheck = null;
+        _coinBalance = null;
+        _isCheckingCanBuy = false;
+        _isLoadingBalance = false;
+        _balanceErrorMessage = null;
+      });
     }
 
     _wasAuthenticated = isAuthenticated;
@@ -271,6 +294,66 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
       _buyCheck = null;
       _isCheckingCanBuy = false;
       _purchaseErrorMessage = message;
+    });
+  }
+
+  Future<CoinBalance?> _loadBalance({
+    required bool keepCurrentBalance,
+  }) async {
+    final accessToken = _currentAccessToken;
+    final requestId = ++_balanceRequestId;
+    if (accessToken == null) {
+      if (!mounted) {
+        return null;
+      }
+
+      setState(() {
+        _coinBalance = null;
+        _isLoadingBalance = false;
+        _balanceErrorMessage = null;
+      });
+      return null;
+    }
+
+    setState(() {
+      _isLoadingBalance = true;
+      _balanceErrorMessage = null;
+      if (!keepCurrentBalance) {
+        _coinBalance = null;
+      }
+    });
+
+    try {
+      final balance = await widget.walletRepository.getBalance(
+        accessToken: accessToken,
+      );
+      if (!mounted || requestId != _balanceRequestId) {
+        return null;
+      }
+
+      setState(() {
+        _coinBalance = balance;
+        _isLoadingBalance = false;
+        _balanceErrorMessage = null;
+      });
+      return balance;
+    } on RadishApiClientException catch (error) {
+      _setBalanceFailure(requestId, error.message);
+    } on FormatException catch (error) {
+      _setBalanceFailure(requestId, '余额返回格式异常：${error.message}');
+    }
+
+    return null;
+  }
+
+  void _setBalanceFailure(int requestId, String message) {
+    if (!mounted || requestId != _balanceRequestId) {
+      return;
+    }
+
+    setState(() {
+      _isLoadingBalance = false;
+      _balanceErrorMessage = message;
     });
   }
 
@@ -364,6 +447,7 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
         _purchaseErrorMessage = null;
         _purchaseNotice = _buildPurchaseSuccessNotice(result);
       });
+      unawaited(_loadBalance(keepCurrentBalance: true));
 
       final orderId = normalizeShopPositiveLongId(result.orderId);
       if (orderId == null) {
@@ -390,6 +474,7 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
 
       if (mounted) {
         unawaited(_checkCanBuy(productId));
+        unawaited(_loadBalance(keepCurrentBalance: true));
       }
     } on RadishApiClientException catch (error) {
       _setPurchaseFailure(error.message);
@@ -485,11 +570,14 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
               isAuthenticated: _isAuthenticated,
               authState: widget.authController?.state,
               buyCheck: _buyCheck,
+              coinBalance: _coinBalance,
               isCheckingCanBuy: _isCheckingCanBuy,
+              isLoadingBalance: _isLoadingBalance,
               isPurchasing: _isPurchasing,
               paymentPasswordController: _paymentPasswordController,
               purchaseNotice: _purchaseNotice,
               purchaseErrorMessage: _purchaseErrorMessage,
+              balanceErrorMessage: _balanceErrorMessage,
               onRequestSignIn: _requestSignInForPurchase,
               onRefreshBuyCheck: () => _checkCanBuy(product.id),
               onSubmitPurchase: _submitPurchase,
@@ -652,6 +740,7 @@ class _ShopProductDetailContent extends StatelessWidget {
     required this.product,
     required this.isAuthenticated,
     required this.isCheckingCanBuy,
+    required this.isLoadingBalance,
     required this.isPurchasing,
     required this.paymentPasswordController,
     required this.onRequestSignIn,
@@ -659,8 +748,10 @@ class _ShopProductDetailContent extends StatelessWidget {
     required this.onSubmitPurchase,
     this.authState,
     this.buyCheck,
+    this.coinBalance,
     this.purchaseNotice,
     this.purchaseErrorMessage,
+    this.balanceErrorMessage,
   });
 
   final AppEnvironment environment;
@@ -668,11 +759,14 @@ class _ShopProductDetailContent extends StatelessWidget {
   final bool isAuthenticated;
   final NativeAuthState? authState;
   final ShopProductBuyCheckResult? buyCheck;
+  final CoinBalance? coinBalance;
   final bool isCheckingCanBuy;
+  final bool isLoadingBalance;
   final bool isPurchasing;
   final TextEditingController paymentPasswordController;
   final String? purchaseNotice;
   final String? purchaseErrorMessage;
+  final String? balanceErrorMessage;
   final VoidCallback onRequestSignIn;
   final VoidCallback onRefreshBuyCheck;
   final VoidCallback onSubmitPurchase;
@@ -737,11 +831,14 @@ class _ShopProductDetailContent extends StatelessWidget {
               isAuthenticated: isAuthenticated,
               authState: authState,
               buyCheck: buyCheck,
+              coinBalance: coinBalance,
               isCheckingCanBuy: isCheckingCanBuy,
+              isLoadingBalance: isLoadingBalance,
               isPurchasing: isPurchasing,
               paymentPasswordController: paymentPasswordController,
               notice: purchaseNotice,
               errorMessage: purchaseErrorMessage,
+              balanceErrorMessage: balanceErrorMessage,
               onRequestSignIn: onRequestSignIn,
               onRefreshBuyCheck: onRefreshBuyCheck,
               onSubmitPurchase: onSubmitPurchase,
@@ -805,6 +902,7 @@ class _ShopPurchasePanel extends StatelessWidget {
     required this.product,
     required this.isAuthenticated,
     required this.isCheckingCanBuy,
+    required this.isLoadingBalance,
     required this.isPurchasing,
     required this.paymentPasswordController,
     required this.onRequestSignIn,
@@ -812,19 +910,24 @@ class _ShopPurchasePanel extends StatelessWidget {
     required this.onSubmitPurchase,
     this.authState,
     this.buyCheck,
+    this.coinBalance,
     this.notice,
     this.errorMessage,
+    this.balanceErrorMessage,
   });
 
   final ShopProductDetail product;
   final bool isAuthenticated;
   final NativeAuthState? authState;
   final ShopProductBuyCheckResult? buyCheck;
+  final CoinBalance? coinBalance;
   final bool isCheckingCanBuy;
+  final bool isLoadingBalance;
   final bool isPurchasing;
   final TextEditingController paymentPasswordController;
   final String? notice;
   final String? errorMessage;
+  final String? balanceErrorMessage;
   final VoidCallback onRequestSignIn;
   final VoidCallback onRefreshBuyCheck;
   final VoidCallback onSubmitPurchase;
@@ -882,6 +985,12 @@ class _ShopPurchasePanel extends StatelessWidget {
                 label: Text(authState?.isBusy == true ? '正在登录' : '登录后购买'),
               ),
             ] else ...[
+              _ShopBalanceSummary(
+                balance: coinBalance,
+                isLoading: isLoadingBalance,
+                errorMessage: balanceErrorMessage,
+              ),
+              const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -940,6 +1049,59 @@ class _ShopPurchasePanel extends StatelessWidget {
             ],
             const SizedBox(height: 12),
             const Text('本批只支持当前商品直接购买 1 件；购物车、退款、权益使用和完整移动商城不在本次范围。'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ShopBalanceSummary extends StatelessWidget {
+  const _ShopBalanceSummary({
+    required this.isLoading,
+    this.balance,
+    this.errorMessage,
+  });
+
+  final CoinBalance? balance;
+  final bool isLoading;
+  final String? errorMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final normalizedErrorMessage = errorMessage?.trim();
+    final balance = this.balance;
+
+    final text = balance != null
+        ? '当前余额：${balance.balance} 胡萝卜'
+        : isLoading
+            ? '正在读取当前余额...'
+            : normalizedErrorMessage != null &&
+                    normalizedErrorMessage.isNotEmpty
+                ? '当前余额读取失败：$normalizedErrorMessage'
+                : '当前余额待读取';
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.account_balance_wallet_outlined,
+              color: normalizedErrorMessage != null &&
+                      normalizedErrorMessage.isNotEmpty
+                  ? colorScheme.error
+                  : colorScheme.primary,
+            ),
+            const SizedBox(width: 10),
+            Expanded(child: Text(text)),
           ],
         ),
       ),

@@ -155,6 +155,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('当前可购买'), findsOneWidget);
+    expect(find.text('当前余额：880 胡萝卜'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField), '123456');
     await tester.tap(find.text('确认购买 1 件'));
