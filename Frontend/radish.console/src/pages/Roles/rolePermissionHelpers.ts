@@ -56,6 +56,38 @@ export function collectDescendantIds(node: ConsoleResourceTreeNodeVo): string[] 
   ];
 }
 
+function hasSelectedDescendant(node: ConsoleResourceTreeNodeVo, selectedIds: Set<string>): boolean {
+  return node.voChildren.some((child) => (
+    selectedIds.has(child.voId) || hasSelectedDescendant(child, selectedIds)
+  ));
+}
+
+function pruneDetachedAncestorSelections(
+  selectedIds: Set<string>,
+  resourceIndex: Map<string, ResourceIndexItem>
+): Set<string> {
+  const normalized = new Set(selectedIds);
+  let changed = true;
+
+  while (changed) {
+    changed = false;
+
+    normalized.forEach((resourceId) => {
+      const item = resourceIndex.get(resourceId);
+      if (!item || item.node.voChildren.length <= 0) {
+        return;
+      }
+
+      if (!hasSelectedDescendant(item.node, normalized)) {
+        normalized.delete(resourceId);
+        changed = true;
+      }
+    });
+  }
+
+  return normalized;
+}
+
 export function sortResourceIds(resourceIds: Iterable<string>): string[] {
   return Array.from(new Set(
     Array.from(resourceIds)
@@ -80,6 +112,27 @@ export function ensureAncestorSelection(
   });
 
   return normalized;
+}
+
+export function buildNextSelectedResourceIds(params: {
+  currentSelectedIds: Iterable<string>;
+  node: ConsoleResourceTreeNodeVo;
+  checked: boolean;
+  resourceIndex: Map<string, ResourceIndexItem>;
+}): string[] {
+  const nextSelectedIds = new Set(sortResourceIds(params.currentSelectedIds));
+  const targetIds = collectDescendantIds(params.node);
+
+  if (params.checked) {
+    targetIds.forEach((resourceId) => nextSelectedIds.add(resourceId));
+  } else {
+    targetIds.forEach((resourceId) => nextSelectedIds.delete(resourceId));
+  }
+
+  const withAncestors = ensureAncestorSelection(nextSelectedIds, params.resourceIndex);
+  const normalized = pruneDetachedAncestorSelections(withAncestors, params.resourceIndex);
+
+  return sortResourceIds(normalized);
 }
 
 export function collectPermissionKeys(nodes: ConsoleResourceTreeNodeVo[], selectedIds: Set<string>): string[] {
@@ -174,4 +227,12 @@ export function shouldDisableRoleAuthorizationSave(params: {
   saving: boolean;
 }): boolean {
   return !params.canEditRole || !params.isDirty || params.loading || params.saving;
+}
+
+export function shouldDisableRoleAuthorizationToggle(params: {
+  canEditRole: boolean;
+  loading: boolean;
+  saving: boolean;
+}): boolean {
+  return !params.canEditRole || params.loading || params.saving;
 }

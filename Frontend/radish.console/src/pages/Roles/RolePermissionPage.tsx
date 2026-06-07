@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Button,
@@ -23,14 +23,14 @@ import {
 } from '@/api/consoleAuthorization';
 import {
   buildResourceIndex,
+  buildNextSelectedResourceIds,
   buildRoleAuthorizationSavePayload,
   buildVisualState,
-  collectDescendantIds,
   collectPermissionKeys,
   collectPreviewBindings,
-  ensureAncestorSelection,
   isValidRoleId,
   shouldDisableRoleAuthorizationSave,
+  shouldDisableRoleAuthorizationToggle,
   sortResourceIds,
   type NodeVisualState,
 } from './rolePermissionHelpers';
@@ -44,6 +44,7 @@ interface ResourceNodeProps {
   selectedIds: Set<string>;
   onToggle: (node: ConsoleResourceTreeNodeVo, checked: boolean) => void;
   visualStateCache: Map<string, NodeVisualState>;
+  disabled: boolean;
 }
 
 function ResourceNode({
@@ -52,6 +53,7 @@ function ResourceNode({
   selectedIds,
   onToggle,
   visualStateCache,
+  disabled,
 }: ResourceNodeProps) {
   const state = buildVisualState(node, selectedIds, visualStateCache);
 
@@ -64,6 +66,7 @@ function ResourceNode({
         <Checkbox
           checked={state.checked}
           indeterminate={state.indeterminate}
+          disabled={disabled}
           onChange={(event) => onToggle(node, event.target.checked)}
         >
           <span className="role-permission-node__title">{node.voTitle}</span>
@@ -102,6 +105,7 @@ function ResourceNode({
               selectedIds={selectedIds}
               onToggle={onToggle}
               visualStateCache={visualStateCache}
+              disabled={disabled}
             />
           ))}
         </div>
@@ -158,8 +162,13 @@ export const RolePermissionPage = () => {
     loading,
     saving,
   });
+  const toggleDisabled = shouldDisableRoleAuthorizationToggle({
+    canEditRole,
+    loading,
+    saving,
+  });
 
-  const loadAuthorization = async () => {
+  const loadAuthorization = useCallback(async () => {
     if (!isValidRoleId(normalizedRoleId)) {
       message.error('角色 ID 无效');
       navigate('/roles', { replace: true });
@@ -184,24 +193,23 @@ export const RolePermissionPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate, normalizedRoleId]);
 
   useEffect(() => {
     void loadAuthorization();
-  }, [normalizedRoleId]);
+  }, [loadAuthorization]);
 
   const handleToggleNode = (node: ConsoleResourceTreeNodeVo, checked: boolean) => {
-    const nextSelectedIds = new Set(selectedResourceIds);
-
-    if (checked) {
-      nextSelectedIds.add(node.voId);
-      const normalized = ensureAncestorSelection(nextSelectedIds, resourceIndex);
-      setSelectedResourceIds(Array.from(normalized).sort((left, right) => left.localeCompare(right, 'zh-CN')));
-    } else {
-      const descendants = collectDescendantIds(node);
-      descendants.forEach((resourceId) => nextSelectedIds.delete(resourceId));
-      setSelectedResourceIds(Array.from(nextSelectedIds).sort((left, right) => left.localeCompare(right, 'zh-CN')));
+    if (toggleDisabled) {
+      return;
     }
+
+    setSelectedResourceIds(buildNextSelectedResourceIds({
+      currentSelectedIds: selectedResourceIds,
+      node,
+      checked,
+      resourceIndex,
+    }));
   };
 
   const handleSave = async () => {
@@ -228,7 +236,7 @@ export const RolePermissionPage = () => {
     }
   };
 
-  const visualStateCache = useMemo(() => new Map<string, NodeVisualState>(), [selectedResourceIds]);
+  const visualStateCache = new Map<string, NodeVisualState>();
 
   return (
     <div className="admin-feature-page role-permission-page">
@@ -249,6 +257,7 @@ export const RolePermissionPage = () => {
           <div className="role-permission-page__actions">
             <Button
               icon={<ReloadOutlined />}
+              disabled={loading || saving}
               onClick={() => {
                 void loadAuthorization();
               }}
@@ -344,6 +353,7 @@ export const RolePermissionPage = () => {
                 selectedIds={selectedResourceIdSet}
                 onToggle={handleToggleNode}
                 visualStateCache={visualStateCache}
+                disabled={toggleDisabled}
               />
             ))}
           </div>
