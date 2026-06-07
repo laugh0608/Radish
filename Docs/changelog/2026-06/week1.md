@@ -56,3 +56,16 @@
 - 今日文档同步复核确认：`current.md`、`P3-8` 专题、Flutter handoff、Console 核心概念、公开 SEO 分享基线、`ID 与联邦路线图`、6 月开发日志、记录索引和日交接记录需要同步；没有新增数据库结构、权限模型、视觉 token、Pencil 设计稿、部署配置或运行时环境变量。
 - 今日验证覆盖 `radish.console test / type-check / build`、Flutter 定向测试与 `flutter analyze`、`radish.client` 定向测试 / type-check、`validate:identity`、public head smoke self-test 与 `check:repo-hygiene:changed`；`validate:identity` 输出仍有既有 XML 注释 warning。
 - 收工前补 [2026-06-06 收工回顾与明日事项](/records/daily-handoff-2026-06-06)：明日优先围绕购买 / 订单 / 背包跨端回流做一天级可验收批次，复核 Flutter、纯 Web / `/desktop` 与 Console 排障之间的返回、确认、筛选上下文和 LongId 字符串契约。
+
+## 2026-06-07
+
+- 主线从 `P3-8-D` 切到 `P3-9 真实使用主路径产品化与发布候选整备`：当前不再继续把购买 / 订单 / 背包、权限授权或 ID 守护作为无限期默认主线，而是按访客、登录移动用户和 Console 管理员三类真实路径做批次级验收、成组修复和发布候选准备。
+- `P3-9-A` 已完成当前入口文档、P3-9 专题、发布候选主路径验收矩阵和 client 公开路径契约守护；首批矩阵明确入口可达、状态恢复、公开链接、身份契约、失败态、治理效率和范围控制。
+- `P3-9-B` 已完成 Flutter 登录移动用户主路径整备：修正发现页商城商品 LongId 测试夹具，补登录态从发现商品详情购买 1 件、进入订单详情、返回商品详情再回到发现来源的壳层守护；晚间人工复核暴露商品详情购买检查失败态与余额不可见问题后，已补 Flutter API 失败态识别、商品详情余额展示和购买后余额刷新。
+- `P3-9-C` 已完成访客公开访问与分享整备：公开 forum / docs / shop 结构化数据、canonical / OpenGraph / JSON-LD、公开链接和登录 / 工作台承接守护已补齐。
+- `P3-9-D` 已完成 Console 管理员排障入口整备：用户、订单、商品、胡萝卜流水与角色授权路径继续保持字符串 ID、合法 `returnTo`、加载 / 保存 / 无权限状态和排障返回上下文。
+- 发布候选路径自动化总回归已执行并通过：client / console / Flutter 定向验证、`validate:identity`、public head smoke self-test、`validate:baseline:quick` 与提权后的 `validate:baseline` 均通过；`validate:identity` 中后端身份语义定向测试 14 个通过，仍有既有 XML 注释 warning。
+- 晚间人工复核后确认下一步先由用户复测 Flutter 登录态商品详情余额、购买资格检查、单商品购买、订单详情、背包发放和胡萝卜资产 / 流水；若无新增 `P0/P1`，转入 `PR -> master` 前扩大验证和合并材料准备。
+- 跨端信息架构口径已补入 P3-9 专题和前端多壳层策略：Flutter 后续可评估 `发现 / 消息 / 更多 / 我的`，但不要求 Web / PC / Tauri 照搬；跨端一致性优先体现在任务归属、入口命名、登录恢复、返回语义和错误状态。
+- 今日文档同步复核确认：`current.md`、P3-9 专题、P3-9-B 批次记录、前端多壳层策略、Flutter handoff 手册、6 月周志和月志需要同步；没有新增数据库结构、权限模型、视觉 token、Pencil 设计稿、部署配置或运行时环境变量，因此架构说明、视觉规范、部署说明和 API 说明书无需跟随更新。
+- 今日验证覆盖 `flutter test test/radish_api_client_test.dart test/shop_product_detail_page_test.dart`、`flutter test`、`flutter analyze`、`npm run test --workspace=radish.client`、`npm run type-check --workspace=radish.client`、`npm run test --workspace=radish.console`、`npm run type-check --workspace=radish.console`、`npm run build --workspace=radish.client`、`npm run build --workspace=radish.console`、`npm run validate:identity`、`npm run validate:baseline:quick`、`npm run validate:baseline`、`npm run check:repo-hygiene:changed` 与 `git diff --check`。
