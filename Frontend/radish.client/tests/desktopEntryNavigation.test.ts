@@ -190,12 +190,36 @@ test('parseDesktopExternalEntry 应解析 desktop 商城订单列表和背包入
 
 test('parseDesktopExternalEntry 应拒绝非法商城参数', () => {
   assert.equal(parseDesktopExternalEntry('/desktop', '?app=shop&productId=0'), null);
+  assert.equal(parseDesktopExternalEntry('/desktop', '?app=shop&productId=02042219067430928384'), null);
   assert.equal(parseDesktopExternalEntry('/desktop', '?app=shop&productId=abc'), null);
   assert.equal(parseDesktopExternalEntry('/desktop', '?app=shop&productId=2042219067430928384&intent=orders'), null);
   assert.equal(parseDesktopExternalEntry('/desktop', '?app=shop&intent=purchase'), null);
   assert.equal(parseDesktopExternalEntry('/desktop', '?app=shop&orderId=0'), null);
+  assert.equal(parseDesktopExternalEntry('/desktop', '?app=shop&orderId=02042219067430928384'), null);
   assert.equal(parseDesktopExternalEntry('/desktop', '?app=shop&view=profile'), null);
   assert.equal(parseDesktopExternalEntry('/desktop', '?app=shop'), null);
+});
+
+test('parseDesktopExternalEntry 应拒绝混合的商城目标参数', () => {
+  assert.equal(
+    parseDesktopExternalEntry(
+      '/desktop',
+      '?app=shop&productId=2042219067430928384&orderId=2042219067430928385',
+    ),
+    null,
+  );
+  assert.equal(
+    parseDesktopExternalEntry('/desktop', '?app=shop&productId=2042219067430928384&view=inventory'),
+    null,
+  );
+  assert.equal(
+    parseDesktopExternalEntry('/desktop', '?app=shop&orderId=2042219067430928385&view=orders'),
+    null,
+  );
+  assert.equal(
+    parseDesktopExternalEntry('/desktop', '?app=shop&productId=abc&orderId=2042219067430928385'),
+    null,
+  );
 });
 
 test('stripDesktopExternalEntrySearch 应仅移除已处理的 desktop 跳转参数', () => {

@@ -9,6 +9,7 @@ import '../../../core/network/radish_api_client.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
 import '../../../shared/widgets/public_link_copy_panel.dart';
 import '../../wallet/data/wallet_repository.dart';
+import '../data/shop_long_id.dart';
 import '../data/shop_models.dart';
 import '../data/shop_repository.dart';
 import 'shop_order_detail_page.dart';
@@ -105,9 +106,9 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
   Future<void> _load({
     required bool keepCurrentProduct,
   }) async {
-    final productId = widget.productId.trim();
-    if (productId.isEmpty) {
-      _setFailure(++_requestId, '商品详情入口缺少商品 ID。');
+    final productId = normalizeShopPositiveLongId(widget.productId);
+    if (productId == null) {
+      _setFailure(++_requestId, '商品详情入口缺少有效商品 ID。');
       return;
     }
 
@@ -137,8 +138,9 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
         _errorMessage = null;
       });
 
-      if (_currentAccessToken != null) {
-        unawaited(_checkCanBuy(product.id));
+      final loadedProductId = normalizeShopPositiveLongId(product.id);
+      if (_currentAccessToken != null && loadedProductId != null) {
+        unawaited(_checkCanBuy(loadedProductId));
       }
     } on RadishApiClientException catch (error) {
       _setFailure(requestId, error.message);
@@ -212,6 +214,16 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
   }
 
   Future<ShopProductBuyCheckResult?> _checkCanBuy(String productId) async {
+    final normalizedProductId = normalizeShopPositiveLongId(productId);
+    if (normalizedProductId == null) {
+      setState(() {
+        _buyCheck = null;
+        _isCheckingCanBuy = false;
+        _purchaseErrorMessage = '商品 ID 不是规范 LongId，无法检查购买资格。';
+      });
+      return null;
+    }
+
     final accessToken = _currentAccessToken;
     if (accessToken == null) {
       setState(() {
@@ -230,7 +242,7 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
     try {
       final result = await widget.repository.checkCanBuy(
         accessToken: accessToken,
-        productId: productId,
+        productId: normalizedProductId,
       );
       if (!mounted || requestId != _buyCheckRequestId) {
         return null;
@@ -291,9 +303,18 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
       return;
     }
 
+    final productId = normalizeShopPositiveLongId(product.id);
+    if (productId == null) {
+      setState(() {
+        _purchaseErrorMessage = '商品 ID 不是规范 LongId，无法发起购买。';
+        _purchaseNotice = null;
+      });
+      return;
+    }
+
     var buyCheck = _buyCheck;
     if (buyCheck == null || !buyCheck.canBuy) {
-      buyCheck = await _checkCanBuy(product.id);
+      buyCheck = await _checkCanBuy(productId);
     }
 
     if (!mounted || buyCheck == null) {
@@ -319,7 +340,7 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
     try {
       final result = await widget.repository.purchaseProduct(
         accessToken: accessToken,
-        productId: product.id,
+        productId: productId,
         paymentPassword: paymentPassword,
       );
       if (!mounted) {
@@ -344,25 +365,31 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
         _purchaseNotice = _buildPurchaseSuccessNotice(result);
       });
 
-      final orderId = result.orderId?.trim();
-      if (orderId != null && orderId.isNotEmpty) {
-        await Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (context) => ShopOrderDetailPage(
-              environment: widget.environment,
-              repository: widget.repository,
-              walletRepository: widget.walletRepository,
-              accessToken: accessToken,
-              orderId: orderId,
-              sourceLabel: '购买结果',
-              returnLabel: '返回商品详情',
-            ),
-          ),
-        );
+      final orderId = normalizeShopPositiveLongId(result.orderId);
+      if (orderId == null) {
+        setState(() {
+          _purchaseErrorMessage =
+              '购买成功，但返回的订单 ID 不是规范 LongId，已留在商品详情，请到订单列表核对。';
+        });
+        return;
       }
 
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (context) => ShopOrderDetailPage(
+            environment: widget.environment,
+            repository: widget.repository,
+            walletRepository: widget.walletRepository,
+            accessToken: accessToken,
+            orderId: orderId,
+            sourceLabel: '购买结果',
+            returnLabel: '返回商品详情',
+          ),
+        ),
+      );
+
       if (mounted) {
-        unawaited(_checkCanBuy(product.id));
+        unawaited(_checkCanBuy(productId));
       }
     } on RadishApiClientException catch (error) {
       _setPurchaseFailure(error.message);

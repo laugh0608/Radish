@@ -94,8 +94,20 @@ function parseForumDesktopEntry(query: URLSearchParams): DesktopExternalEntryTar
 }
 
 function parseShopDesktopEntry(query: URLSearchParams): DesktopExternalEntryTarget | null {
-  const productId = normalizePositiveIntegerString(query.get('productId'));
-  if (productId) {
+  const hasProductId = query.has('productId');
+  const hasOrderId = query.has('orderId');
+  const hasView = query.has('view');
+  const targetCount = [hasProductId, hasOrderId, hasView].filter(Boolean).length;
+  if (targetCount > 1) {
+    return null;
+  }
+
+  if (hasProductId) {
+    const productId = normalizePositiveIntegerString(query.get('productId'));
+    if (!productId) {
+      return null;
+    }
+
     const intent = query.get('intent')?.trim();
     if (query.has('intent') && intent !== 'purchase') {
       return null;
@@ -118,8 +130,12 @@ function parseShopDesktopEntry(query: URLSearchParams): DesktopExternalEntryTarg
     return null;
   }
 
-  const orderId = normalizePositiveIntegerString(query.get('orderId'));
-  if (orderId) {
+  if (hasOrderId) {
+    const orderId = normalizePositiveIntegerString(query.get('orderId'));
+    if (!orderId) {
+      return null;
+    }
+
     return {
       appId: 'shop',
       appParams: { orderId },
@@ -128,8 +144,12 @@ function parseShopDesktopEntry(query: URLSearchParams): DesktopExternalEntryTarg
     };
   }
 
-  const view = query.get('view')?.trim().toLowerCase();
-  if (view === 'orders' || view === 'inventory') {
+  if (hasView) {
+    const view = query.get('view')?.trim().toLowerCase();
+    if (view !== 'orders' && view !== 'inventory') {
+      return null;
+    }
+
     return {
       appId: 'shop',
       appParams: { initialView: view },

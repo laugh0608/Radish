@@ -87,6 +87,52 @@ void main() {
     expect(find.text('重试'), findsOneWidget);
   });
 
+  testWidgets('detail entries reject non-canonical LongId before requests',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final productRepository = _RecordingShopRepository();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ShopProductDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: productRepository,
+          walletRepository: const EmptyWalletRepository(),
+          productId: '0004001',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('暂时无法加载商品详情'), findsOneWidget);
+    expect(find.text('商品详情入口缺少有效商品 ID。'), findsOneWidget);
+    expect(productRepository.productDetailRequests, 0);
+
+    final orderRepository = _RecordingShopRepository();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ShopOrderDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: orderRepository,
+          walletRepository: const EmptyWalletRepository(),
+          accessToken: 'access-token',
+          orderId: '09001',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('暂时无法加载订单详情'), findsOneWidget);
+    expect(find.text('订单详情入口缺少有效订单 ID。'), findsOneWidget);
+    expect(orderRepository.orderDetailRequests, 0);
+  });
+
   testWidgets('authenticated user purchases product and opens order result',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
@@ -129,6 +175,20 @@ void main() {
     expect(find.text('订单发放徽章'), findsOneWidget);
     expect(find.text('Profile Rename Card'), findsOneWidget);
     expect(find.text('查看来源订单'), findsOneWidget);
+    expect(find.text('查看来源商品'), findsWidgets);
+
+    await tester.tap(find.text('查看来源商品').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('商品详情'), findsWidgets);
+    expect(find.text('来源：背包来源'), findsOneWidget);
+    expect(find.text('返回背包'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('我的背包'), findsWidgets);
+    expect(find.text('来源：订单详情'), findsOneWidget);
 
     await tester.pageBack();
     await tester.pumpAndSettle();
@@ -439,6 +499,38 @@ void main() {
     expect(find.text('商品详情'), findsWidgets);
   });
 
+  testWidgets('purchase result requires canonical order id before navigation',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ShopProductDetailPage(
+          environment: AppEnvironment.development(),
+          repository: _NonCanonicalPurchaseResultRepository(),
+          walletRepository: EmptyWalletRepository(),
+          productId: '4001',
+          accessToken: 'access-token',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '123456');
+    await tester.tap(find.text('确认购买 1 件'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('购买成功，但返回的订单 ID 不是规范 LongId，已留在商品详情，请到订单列表核对。'),
+      findsOneWidget,
+    );
+    expect(find.text('商品详情'), findsWidgets);
+    expect(find.text('订单详情'), findsNothing);
+  });
+
   test('http shop repository uses public product detail endpoint', () async {
     final apiClient = _RecordingShopApiClient();
     final repository = HttpShopRepository(
@@ -678,6 +770,48 @@ class _PurchaseFailingShopRepository extends _SuccessShopRepository {
       success: false,
       errorMessage: '支付口令错误',
     );
+  }
+}
+
+class _NonCanonicalPurchaseResultRepository extends _SuccessShopRepository {
+  const _NonCanonicalPurchaseResultRepository();
+
+  @override
+  Future<ShopPurchaseResult> purchaseProduct({
+    required String accessToken,
+    required String productId,
+    required String paymentPassword,
+    int quantity = 1,
+  }) async {
+    return const ShopPurchaseResult(
+      success: true,
+      orderId: '09001',
+      orderNo: 'RO202605310001',
+      deductedCoins: 120,
+      remainingBalance: 880,
+    );
+  }
+}
+
+class _RecordingShopRepository extends _SuccessShopRepository {
+  int productDetailRequests = 0;
+  int orderDetailRequests = 0;
+
+  @override
+  Future<ShopProductDetail> getProductDetail({
+    required String productId,
+  }) {
+    productDetailRequests += 1;
+    return super.getProductDetail(productId: productId);
+  }
+
+  @override
+  Future<ShopOrderDetail> getOrderDetail({
+    required String accessToken,
+    required String orderId,
+  }) {
+    orderDetailRequests += 1;
+    return super.getOrderDetail(accessToken: accessToken, orderId: orderId);
   }
 }
 

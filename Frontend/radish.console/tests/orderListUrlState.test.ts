@@ -40,9 +40,11 @@ test('buildOrderSearchParams 关闭详情后仍保留来源返回参数', () => 
 test('订单 URL helper 应保留 LongId 字符串并拒绝非法返回来源', () => {
   assert.equal(parseLongIdQuery('2042219067430928384'), '2042219067430928384');
   assert.equal(parseLongIdQuery('0'), undefined);
+  assert.equal(parseLongIdQuery('00'), undefined);
   assert.equal(parseLongIdQuery('02042219067430928384'), undefined);
   assert.equal(parseLongIdQuery('2042219067430928384.1'), undefined);
   assert.equal(normalizeConsoleReturnTo('/orders?openDetail=1'), '/orders?openDetail=1');
+  assert.equal(normalizeConsoleReturnTo('/orders?orderId=2042219067430928384&openDetail=1'), '/orders?orderId=2042219067430928384&openDetail=1');
   assert.equal(normalizeConsoleReturnTo('//radishx.com/coins'), undefined);
   assert.equal(normalizeConsoleReturnTo('/\\radishx.com/coins'), undefined);
   assert.equal(normalizeConsoleReturnTo('https://radishx.com/coins'), undefined);

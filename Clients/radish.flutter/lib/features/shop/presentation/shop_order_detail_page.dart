@@ -70,9 +70,9 @@ class _ShopOrderDetailPageState extends State<ShopOrderDetailPage> {
   Future<void> _load({
     required bool keepCurrentOrder,
   }) async {
-    final orderId = widget.orderId.trim();
-    if (orderId.isEmpty) {
-      _setFailure(++_requestId, '订单详情入口缺少订单 ID。');
+    final orderId = normalizeShopPositiveLongId(widget.orderId);
+    if (orderId == null) {
+      _setFailure(++_requestId, '订单详情入口缺少有效订单 ID。');
       return;
     }
 
