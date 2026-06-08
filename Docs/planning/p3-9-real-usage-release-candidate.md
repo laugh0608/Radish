@@ -1,6 +1,6 @@
 # P3-9 真实使用主路径产品化与发布候选整备
 
-> 状态：`进行中（已合并到 master，进入发布候选落地准备）`
+> 状态：`已阶段收口（已合并到 master，本轮跳过发布，转入维护回拉线）`
 >
 > 启动日期：2026-06-07（Asia/Shanghai）
 >
@@ -10,7 +10,7 @@
 
 `P3-8-D` 已围绕纯 Web、移动 Web、Flutter 与 Console 做了多轮主路径缺口补齐，覆盖公开访问、登录回流、购买 / 订单 / 背包、胡萝卜流水、权限授权和 LongId 字符串契约。继续把这些路径作为默认日常主线反复深挖，收益已经下降。
 
-项目还没有进入稳定运营期，也不适合直接切到 Phase 4。当前更需要把已经打通的能力组织成少量真实用户可以连续完成的产品路径，并用发布候选口径做批次级验收、成组修复和收口结论。
+项目还没有进入稳定运营期，也不适合直接切到 Phase 4。本批已把已经打通的能力组织成少量真实用户可以连续完成的产品路径，并用发布候选口径完成批次级验收、成组修复和收口结论。
 
 ## 阶段目标
 
@@ -75,7 +75,7 @@ Flutter 后续可评估把底部栏整理为 `发现 / 消息 / 更多 / 我的`
 
 该评估不要求 Web / PC / Tauri 照搬移动端底部栏。跨端一致性优先体现在任务归属、入口命名、登录恢复、返回语义和错误状态上；Web 端继续保持纯 Web 公开访问与 WebOS `/desktop` 保留入口，PC 壳层继续保持工作台 / Dock / 窗口心智。
 
-本口径属于后续产品信息架构规划，不进入当前 `P3-9` 发布候选落地准备范围；当前只处理合并后验证、部署准备或真实复核暴露的主路径阻断、状态恢复或身份契约问题。
+本口径已转入 [P3-10 跨端信息架构与下一批开发任务选择](/planning/p3-10-cross-platform-information-architecture)。P3-9 后续只处理复核或真实使用暴露的主路径阻断、状态恢复或身份契约问题。
 
 ## 当前合并后状态
 
@@ -83,7 +83,7 @@ Flutter 后续可评估把底部栏整理为 `发现 / 消息 / 更多 / 我的`
 
 访客公开访问、公开分享、来源返回与 Console 管理员排障路径抽查未发现新增阻断。`dev -> master` PR #54 已合并，合并提交为 `00540521`，`Repo Quality` 的 `Repo Hygiene / Frontend Lint / Baseline Quick / Identity Guard` 四项检查已通过。
 
-合并后本地最小验证已完成：`validate:ci` 通过；因规划入口命中默认执行面 / 门禁资产，已补 `validate:identity` 并通过。下一步转入发布候选部署前材料收口：确认 tag / 镜像 / 部署 / smoke / 回滚目标待执行项，再按 `M15` 口径进入真实发布或部署动作。
+合并后本地验证已完成：`validate:ci` 通过；因规划入口命中默认执行面 / 门禁资产，已补 `validate:identity` 并通过。本轮明确跳过发布：不创建 tag、不等待镜像、不进入 M15 测试 / 生产部署流程。下一主线进入 [P3-10 跨端信息架构与下一批开发任务选择](/planning/p3-10-cross-platform-information-architecture)。
 
 ## 当前门禁
 
@@ -97,7 +97,7 @@ Flutter 后续可评估把底部栏整理为 `发现 / 消息 / 更多 / 我的`
 
 - 大页面重设计、端点级视觉治理和跨页面视觉体系变更原则上先更新 Pencil。
 - 外部 LongId、PublicId、登录回流和 Console returnTo 契约必须继续强守护。
-- 真实发布 / 部署前必须按 [验证基线说明](/guide/validation-baseline) 与 [M15 最小交付与部署基线](/guide/m15-delivery-baseline) 补必要验证和留痕。
+- 后续若重新决定真实发布 / 部署，必须按 [验证基线说明](/guide/validation-baseline) 与 [M15 最小交付与部署基线](/guide/m15-delivery-baseline) 补必要验证和留痕。
 
 ## 当前不做
 
@@ -130,8 +130,8 @@ Flutter 后续可评估把底部栏整理为 `发现 / 消息 / 更多 / 我的`
    - 批次记录见：[P3-9-E 发布候选 PR 前收口记录（2026-06-08）](/records/p3-9-e-release-candidate-pr-prep-record-2026-06-08)。
 6. `P3-9-F 合并后发布候选落地准备`
    - 已确认 PR #54 合并结果、`Repo Quality` 与本地验证入口一致。
-   - 当前整理 tag / 镜像 / 部署 / smoke / 回滚目标待执行项。
-   - 不把尚未发生的 tag、镜像产出或部署复核写成已完成事实。
+   - 本轮跳过发布，不创建 tag、不等待镜像、不进入部署复核。
+   - 后续进入 `P3-10`，P3-9 仅保留维护回拉。
    - 批次记录见：[P3-9-F 合并后发布候选准备记录（2026-06-08）](/records/p3-9-f-post-merge-release-candidate-prep-record-2026-06-08)。
 
 ## 验证口径
@@ -162,10 +162,10 @@ flutter test
 flutter analyze
 ```
 
-发布候选合并后默认先执行：
+合并后规划和门禁文档调整默认先执行：
 
 ```bash
 npm run validate:ci
 ```
 
-若进入真实发布 / 部署准备，再按 [验证基线说明](/guide/validation-baseline) 与 [M15 最小交付与部署基线](/guide/m15-delivery-baseline) 选择 `validate:baseline:host`、`check:host-runtime` 或部署后复核记录。
+后续若重新决定进入真实发布 / 部署准备，再按 [验证基线说明](/guide/validation-baseline) 与 [M15 最小交付与部署基线](/guide/m15-delivery-baseline) 选择 `validate:baseline:host`、`check:host-runtime` 或部署后复核记录。

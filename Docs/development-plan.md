@@ -7,7 +7,7 @@
 ## 当前状态
 
 - **当前里程碑**：`第三开发阶段：真实使用增长与长期契约治理`
-- **当前主线**：`P3-9 发布候选合并后落地准备`
+- **当前主线**：`P3-10 跨端信息架构与下一批开发任务选择`
 - **最近结论**：
   - `2026-04-06` 完成首版真实发布 `v26.3.2-release`，第一开发阶段结束。
   - 第二开发阶段已完成公开内容壳层、Flutter Android MVP、Tauri + WebOS 桌面壳、多端路线分工和产品治理收口。
@@ -18,12 +18,15 @@
   - `P3-7-C` 已完成 WikiApp、ChatApp、ContentModerationService 与 ExperienceService 首批热区治理，继续拆低风险候选不再作为默认主线。
   - `P3-8-A / B / C` 已完成多端功能缺口与 UI 设计入口审计、Flutter 公开榜单、Console 治理工作台设计端点和 Console 高频页面类型试点。
   - `P3-8-D` 已完成纯 Web、移动 Web、Flutter、Console 围绕公开访问、登录回流、购买 / 订单 / 背包、胡萝卜流水、权限授权和 LongId 字符串契约的多轮治理，可以作为默认主线阶段收口。
-  - `P3-9` 首批真实使用主路径已经完成自动化总回归、人工复核、`dev -> master` PR #54 合并和 `Repo Quality` 四项检查，当前进入合并后发布候选落地准备。
+  - `P3-9` 首批真实使用主路径已经完成自动化总回归、人工复核、`dev -> master` PR #54 合并和 `Repo Quality` 四项检查。
+  - 本轮明确跳过发布，不创建 tag，不进入 M15 测试 / 生产部署流程；项目继续处于第三开发阶段的功能建设期，而不是生产稳定运营期。
+  - 当前进入 `P3-10`：围绕 Web、Flutter、PC/Tauri、Console 的功能与 UI 差距，重新梳理信息架构、任务归属和下一批开发优先级。
 
 ## 当前主线入口
 
 - [当前进行中](/planning/current)
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
+- [P3-10 跨端信息架构与下一批开发任务选择](/planning/p3-10-cross-platform-information-architecture)
 - [P3-9 真实使用主路径产品化与发布候选整备](/planning/p3-9-real-usage-release-candidate)
 - [P3-8 多端功能补全与 UI 设计治理](/planning/p3-8-multiplatform-feature-ui-governance)
 - [前端多壳层策略](/frontend/shell-strategy)
@@ -32,11 +35,11 @@
 
 ## 当前开发精力
 
-- `45%`：P3-9 合并后发布候选落地准备，重点是合并后最小验证、tag / 镜像 / 部署前材料、smoke 清单和回滚目标说明。
-- `25%`：M14 / M15 发布部署前置维护，重点是 `validate:baseline:host`、宿主只读自检、运行态健康检查和发布留痕入口。
-- `15%`：P3-9 主路径维护回拉，只处理 Flutter 商城 / 钱包、登录恢复、公开链接、LongId / PublicId 或 Console 排障阻断。
-- `10%`：下一批产品设计评估，先评估 Flutter `发现 / 消息 / 更多 / 我的` 信息架构的跨端任务归属和入口命名。
-- `5%`：WebOS `/desktop`、P3-8-D / ID Phase A / Console UI 维护线，只处理新增命中、真实编译错误或明显视觉断裂。
+- `40%`：P3-10 跨端任务归属与信息架构评估，重点是 Web、Flutter、PC/Tauri、Console 的入口命名、导航结构和用户任务边界。
+- `30%`：下一批开发候选矩阵，重点是功能缺口、UI 差距、真实使用价值、实现成本和验证成本排序。
+- `15%`：Flutter 体验结构评估，重点是 `发现 / 消息 / 更多 / 我的` 是否成立，以及商城、通知、资产、个人资料等任务归属。
+- `10%`：纯 Web 与 PC/Tauri 边界评估，重点是公开访问、登录后轻量链路、WebOS `/desktop` 保留入口和 Tauri 后置增强边界。
+- `5%`：P3-9 / P3-8-D / ID Phase A / Console UI 维护线，只处理新增命中、真实编译错误或明显视觉断裂。
 
 ## 已确认的多端方向
 
@@ -62,15 +65,13 @@
 
 ## 下一顺位
 
-- `P3-9-F 合并后发布候选落地准备`
-  - 确认 `master` 合并结果、`Repo Quality` 和本地验证入口一致。
-  - 整理 tag、镜像、部署、smoke、回滚目标和发布候选记录，不把尚未发生的部署写成已完成。
-  - 若准备真实部署，再按 [M15 最小交付与部署基线](/guide/m15-delivery-baseline) 和 [验证基线说明](/guide/validation-baseline) 补 `validate:baseline:host` 与宿主复核。
+- `P3-10-A 跨端任务归属与信息架构评估`
+  - 梳理 Web、Flutter、PC/Tauri、Console 分别承接哪些真实用户任务。
+  - 明确入口命名、导航结构、返回语义、登录恢复、错误态和跨端一致性要求。
+  - 产出下一批开发候选矩阵，先排序再开工。
 - `P3-9 主路径维护回拉`
-  - 只在合并后验证、真实部署或人工复核暴露主路径阻断时回拉。
+  - 只在后续复核或真实使用暴露主路径阻断时回拉。
   - 不恢复 P3-8-D 购买 / 订单 / 背包、权限授权或 ID 守护的无限期深挖。
-- `后续产品设计评估`
-  - Flutter `发现 / 消息 / 更多 / 我的` 只先评估信息架构，不抢占发布候选落地准备。
 - `P3-8-D / P3-7-C3 / P3-6` 维护线
   - 只在真实问题、发布候选验收或合并前回归暴露高信号断点时回拉。
 
@@ -93,7 +94,8 @@
 
 ## 明确后置
 
-- 跳过 P3-9 发布候选整备，直接进入 Phase 4 稳定运营或大规模发布运维。
+- 把跳过发布误判为进入 Phase 4 稳定运营或大规模发布运维。
+- 创建本轮发布 tag、等待镜像或进入 M15 测试 / 生产部署流程。
 - 继续把 P3-8-D 购买 / 订单 / 背包、权限授权或 ID 守护作为无限期默认主线。
 - 继续把 Console 页面微调作为默认主线。
 - Flutter 受控写入之外的完整移动写入能力套件。
@@ -112,4 +114,4 @@
 
 - `Docs/index.md`、`Docs/README.md`、`Docs/development-plan.md`、`Docs/planning/current.md` 等关键入口只描述最近阶段和进度，不承载长背景。
 - 功能批次、验证命令、人工验收记录和历史事实默认写入 `Docs/changelog/`、`Docs/planning/archive.md` 或对应专题文档。
-- 判断阶段定义时，以本页、[当前进行中](/planning/current)、[第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)、[P3-9 真实使用主路径产品化与发布候选整备](/planning/p3-9-real-usage-release-candidate) 与 [已完成摘要](/planning/archive) 为准。
+- 判断阶段定义时，以本页、[当前进行中](/planning/current)、[第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)、[P3-10 跨端信息架构与下一批开发任务选择](/planning/p3-10-cross-platform-information-architecture) 与 [已完成摘要](/planning/archive) 为准。
