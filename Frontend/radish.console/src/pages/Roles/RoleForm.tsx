@@ -8,7 +8,7 @@ import {
   AntSelect as Select,
   message,
 } from '@radish/ui';
-import { createRole, updateRole, getRoleById, type RoleVo, type CreateRoleRequest } from '@/api/roleApi';
+import { createRole, updateRole, getRoleById, type CreateRoleRequest } from '@/api/roleApi';
 import { log } from '@/utils/logger';
 
 interface RoleFormProps {
