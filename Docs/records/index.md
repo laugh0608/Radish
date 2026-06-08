@@ -82,6 +82,7 @@
 - [p3-8-d-flutter-next-candidate-matrix-2026-05-28](/records/p3-8-d-flutter-next-candidate-matrix-2026-05-28)
 - [webos-workspace-p0-p1-screening-record-2026-05-18](/records/webos-workspace-p0-p1-screening-record-2026-05-18)
 - [console-ui-consistency-evaluation-2026-05-18](/records/console-ui-consistency-evaluation-2026-05-18)
+- [daily-handoff-2026-06-08](/records/daily-handoff-2026-06-08)
 - [daily-handoff-2026-06-06](/records/daily-handoff-2026-06-06)
 - [daily-handoff-2026-06-04](/records/daily-handoff-2026-06-04)
 - [daily-handoff-2026-06-03](/records/daily-handoff-2026-06-03)
