@@ -193,6 +193,7 @@ _pkginfo.txt
 !*.[Cc]ache/
 
 # Others
+.DS_Store
 ClientBin/
 ~$*
 *~
