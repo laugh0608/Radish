@@ -1,0 +1,513 @@
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Icon } from '@radish/ui/icon';
+import { PostCard } from '@/apps/forum/components/PostCard';
+import type { WikiDocumentVo } from '@/apps/wiki/types/wiki';
+import { getProductTypeDisplay, type ProductListItem } from '@/api/shop';
+import type { PostItem } from '@/api/forum';
+import { resolveMediaUrl } from '@/utils/media';
+import styles from './PublicDiscoverApp.module.css';
+
+type DiscoverFeedItem =
+  | {
+      key: string;
+      kind: 'post';
+      post: PostItem;
+    }
+  | {
+      key: string;
+      kind: 'document';
+      document: WikiDocumentVo;
+    }
+  | {
+      key: string;
+      kind: 'product';
+      product: ProductListItem;
+    };
+
+interface PublicDiscoverFeedProps {
+  forumPosts: PostItem[];
+  documents: WikiDocumentVo[];
+  products: ProductListItem[];
+  loadingForum: boolean;
+  loadingDocs: boolean;
+  loadingShop: boolean;
+  forumError: string | null;
+  docsError: string | null;
+  shopError: string | null;
+  displayTimeZone: string;
+  locale: string;
+  onReload: () => void;
+  onOpenPost: (post: PostItem) => void;
+  onOpenTag: (tagSlug: string) => void;
+  onOpenQuestion: () => void;
+  onOpenPoll: () => void;
+  onOpenLottery: () => void;
+  onOpenDocument: (document: WikiDocumentVo) => void;
+  onOpenProduct: (product: ProductListItem) => void;
+  onOpenForum: () => void;
+  onOpenDocs: () => void;
+  onOpenShop: () => void;
+}
+
+interface DiscoverFeedItemCardProps {
+  item: DiscoverFeedItem;
+  displayTimeZone: string;
+  locale: string;
+  onOpenPost: (post: PostItem) => void;
+  onOpenTag: (tagSlug: string) => void;
+  onOpenQuestion: () => void;
+  onOpenPoll: () => void;
+  onOpenLottery: () => void;
+  onOpenDocument: (document: WikiDocumentVo) => void;
+  onOpenProduct: (product: ProductListItem) => void;
+}
+
+interface FeedStatusCardProps {
+  tone: 'loading' | 'error' | 'empty';
+  title: string;
+  description: string;
+  primaryAction?: {
+    label: string;
+    onClick: () => void;
+  };
+}
+
+function FeedStatusCard({
+  tone,
+  title,
+  description,
+  primaryAction,
+}: FeedStatusCardProps) {
+  const icon = tone === 'loading'
+    ? 'mdi:progress-clock'
+    : tone === 'empty'
+      ? 'mdi:text-box-search-outline'
+      : 'mdi:alert-circle-outline';
+
+  return (
+    <div className={styles.statusCard} data-tone={tone}>
+      <div className={styles.statusIcon}>
+        <Icon icon={icon} size={20} />
+      </div>
+      <div className={styles.statusBody}>
+        <h3 className={styles.statusTitle}>{title}</h3>
+        <p className={styles.statusDescription}>{description}</p>
+        {primaryAction && (
+          <div className={styles.statusActions}>
+            <button type="button" className={styles.secondaryButton} onClick={primaryAction.onClick}>
+              {primaryAction.label}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function formatDocumentMeta(document: WikiDocumentVo, locale: string, fallback: string): string {
+  const source = document.voPublishedAt || document.voModifyTime || document.voCreateTime;
+  if (!source) {
+    return fallback;
+  }
+
+  const parsed = new Date(source);
+  if (Number.isNaN(parsed.getTime())) {
+    return fallback;
+  }
+
+  return parsed.toLocaleDateString(locale, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+}
+
+export function isRecentDocument(document: WikiDocumentVo): boolean {
+  const source = document.voPublishedAt || document.voModifyTime || document.voCreateTime;
+  if (!source) {
+    return false;
+  }
+
+  const parsed = new Date(source);
+  if (Number.isNaN(parsed.getTime())) {
+    return false;
+  }
+
+  const ageMs = Date.now() - parsed.getTime();
+  return ageMs >= 0 && ageMs <= 1000 * 60 * 60 * 24 * 30;
+}
+
+export function buildDocumentSummary(
+  document: WikiDocumentVo,
+  locale: string,
+  t: (key: string, options?: Record<string, unknown>) => string
+): string {
+  const summary = document.voSummary?.trim();
+  if (summary) {
+    return summary;
+  }
+
+  const source = document.voPublishedAt || document.voModifyTime || document.voCreateTime;
+  if (source) {
+    const parsed = new Date(source);
+    if (!Number.isNaN(parsed.getTime())) {
+      const formattedDate = parsed.toLocaleDateString(locale, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+      return t('discover.public.documentFallbackSummaryWithDate', { date: formattedDate });
+    }
+  }
+
+  return t('discover.public.documentFallbackSummary');
+}
+
+export function buildProductSummary(
+  product: ProductListItem,
+  t: (key: string, options?: Record<string, unknown>) => string
+): string {
+  const productType = getProductTypeDisplay(product.voProductType);
+  const duration = product.voDurationDisplay?.trim();
+  const soldCount = product.voSoldCount ?? 0;
+
+  if (duration) {
+    return t('discover.public.productDurationSummary', { type: productType, duration });
+  }
+
+  if (product.voHasDiscount) {
+    return t('discover.public.productDiscountSummary', { type: productType });
+  }
+
+  if (soldCount > 0) {
+    return t('discover.public.productSoldSummary', { type: productType, count: soldCount });
+  }
+
+  return t('discover.public.productFallbackSummary');
+}
+
+function buildDiscoverFeedItems(
+  posts: PostItem[],
+  documents: WikiDocumentVo[],
+  products: ProductListItem[]
+): DiscoverFeedItem[] {
+  const items: DiscoverFeedItem[] = [];
+  let documentIndex = 0;
+  let productIndex = 0;
+
+  posts.forEach((post, index) => {
+    items.push({
+      key: `post-${post.voId}`,
+      kind: 'post',
+      post,
+    });
+
+    if ((index === 0 || index === 2 || index === 5) && documentIndex < documents.length) {
+      const document = documents[documentIndex];
+      items.push({
+        key: `document-${document.voId}`,
+        kind: 'document',
+        document,
+      });
+      documentIndex += 1;
+    }
+
+    if ((index === 1 || index === 4) && productIndex < products.length) {
+      const product = products[productIndex];
+      items.push({
+        key: `product-${product.voId}`,
+        kind: 'product',
+        product,
+      });
+      productIndex += 1;
+    }
+  });
+
+  while (documentIndex < documents.length || productIndex < products.length) {
+    if (documentIndex < documents.length) {
+      const document = documents[documentIndex];
+      items.push({
+        key: `document-${document.voId}`,
+        kind: 'document',
+        document,
+      });
+      documentIndex += 1;
+    }
+
+    if (productIndex < products.length) {
+      const product = products[productIndex];
+      items.push({
+        key: `product-${product.voId}`,
+        kind: 'product',
+        product,
+      });
+      productIndex += 1;
+    }
+  }
+
+  return items.slice(0, 14);
+}
+
+function DiscoverFeedItemCard({
+  item,
+  displayTimeZone,
+  locale,
+  onOpenPost,
+  onOpenTag,
+  onOpenQuestion,
+  onOpenPoll,
+  onOpenLottery,
+  onOpenDocument,
+  onOpenProduct,
+}: DiscoverFeedItemCardProps) {
+  const { t } = useTranslation();
+
+  if (item.kind === 'post') {
+    return (
+      <article className={styles.feedPostItem}>
+        <div className={styles.feedItemHeader}>
+          <span className={styles.feedItemType}>
+            <Icon icon="mdi:forum-outline" size={15} />
+            <span>{t('discover.public.streamPostLabel')}</span>
+          </span>
+          <span className={styles.feedItemSource}>{t('discover.public.streamSourceForum')}</span>
+        </div>
+        <PostCard
+          post={item.post}
+          displayTimeZone={displayTimeZone}
+          onClick={() => onOpenPost(item.post)}
+          variant="publicCompact"
+          onTagClick={(_, tagSlug) => onOpenTag(tagSlug)}
+          onQuestionClick={onOpenQuestion}
+          onPollClick={onOpenPoll}
+          onLotteryClick={onOpenLottery}
+        />
+      </article>
+    );
+  }
+
+  if (item.kind === 'document') {
+    const document = item.document;
+    return (
+      <article className={styles.feedContentItem}>
+        <button type="button" className={styles.feedContentButton} onClick={() => onOpenDocument(document)}>
+          <div className={styles.feedItemHeader}>
+            <span className={styles.feedItemType}>
+              <Icon icon="mdi:file-document-outline" size={15} />
+              <span>{t('discover.public.streamDocLabel')}</span>
+            </span>
+            <span className={styles.feedItemSource}>{t('discover.public.streamSourceDocs')}</span>
+          </div>
+          <div className={styles.itemChipRow}>
+            <span className={styles.itemChip}>{t('discover.public.docsItemReadable')}</span>
+            <span className={styles.itemChip}>
+              {isRecentDocument(document)
+                ? t('discover.public.docsItemRecent')
+                : t('discover.public.docsItemSearchable')}
+            </span>
+          </div>
+          <h3 className={styles.feedContentTitle}>{document.voTitle}</h3>
+          <p className={styles.feedContentSummary}>
+            {buildDocumentSummary(document, locale, t)}
+          </p>
+          <span className={styles.feedMetaLine}>
+            <Icon icon="mdi:calendar-blank-outline" size={16} />
+            <span>{formatDocumentMeta(document, locale, t('discover.public.documentMetaFallback'))}</span>
+          </span>
+        </button>
+      </article>
+    );
+  }
+
+  const product = item.product;
+  const imageUrl = resolveMediaUrl(product.voCoverImage || product.voIcon);
+  return (
+    <article className={styles.feedContentItem}>
+      <button type="button" className={styles.feedContentButton} onClick={() => onOpenProduct(product)}>
+        <div className={styles.feedItemHeader}>
+          <span className={styles.feedItemType}>
+            <Icon icon="mdi:storefront-outline" size={15} />
+            <span>{t('discover.public.streamProductLabel')}</span>
+          </span>
+          <span className={styles.feedItemSource}>{t('discover.public.streamSourceShop')}</span>
+        </div>
+        <div className={styles.feedProductHead}>
+          {imageUrl ? (
+            <img className={styles.feedProductImage} src={imageUrl} alt={product.voName} />
+          ) : (
+            <span className={styles.feedProductImageFallback}>
+              <Icon icon="mdi:gift-outline" size={24} />
+            </span>
+          )}
+          <div className={styles.feedProductBody}>
+            <div className={styles.itemChipRow}>
+              <span className={styles.itemChip}>{getProductTypeDisplay(product.voProductType)}</span>
+              {product.voHasDiscount ? (
+                <span className={`${styles.itemChip} ${styles.itemChipAccent}`}>
+                  {t('discover.public.shopItemDiscount')}
+                </span>
+              ) : null}
+            </div>
+            <h3 className={styles.feedContentTitle}>{product.voName}</h3>
+          </div>
+        </div>
+        <p className={styles.feedContentSummary}>{buildProductSummary(product, t)}</p>
+        <span className={styles.feedMetaLine}>
+          <Icon icon="mdi:carrot" size={16} />
+          <span>{product.voPrice.toLocaleString()} {t('shop.currency.carrot')}</span>
+        </span>
+      </button>
+    </article>
+  );
+}
+
+export function PublicDiscoverFeed({
+  forumPosts,
+  documents,
+  products,
+  loadingForum,
+  loadingDocs,
+  loadingShop,
+  forumError,
+  docsError,
+  shopError,
+  displayTimeZone,
+  locale,
+  onReload,
+  onOpenPost,
+  onOpenTag,
+  onOpenQuestion,
+  onOpenPoll,
+  onOpenLottery,
+  onOpenDocument,
+  onOpenProduct,
+  onOpenForum,
+  onOpenDocs,
+  onOpenShop,
+}: PublicDiscoverFeedProps) {
+  const { t } = useTranslation();
+  const feedItems = useMemo(
+    () => buildDiscoverFeedItems(forumPosts, documents, products),
+    [documents, forumPosts, products]
+  );
+  const feedErrorCount = [forumError, docsError, shopError].filter(Boolean).length;
+  const feedIsLoading = loadingForum || loadingDocs || loadingShop;
+  const feedState = feedIsLoading
+    ? 'loading'
+    : feedErrorCount > 0
+      ? 'partial'
+      : feedItems.length === 0
+        ? 'empty'
+        : 'ready';
+  const feedStatusLabel = feedIsLoading
+    ? t('discover.public.streamStateLoading')
+    : feedErrorCount > 0
+      ? t('discover.public.streamStatePartial')
+      : feedItems.length === 0
+        ? t('discover.public.streamStateEmpty')
+        : t('discover.public.streamStateReady');
+  const feedStatusDescription = feedIsLoading
+    ? t('discover.public.streamStateLoadingDescription')
+    : feedErrorCount > 0
+      ? t('discover.public.streamStatePartialDescription')
+      : feedItems.length === 0
+        ? t('discover.public.streamEmptyDescription')
+        : t('discover.public.streamStateReadyDescription', { count: feedItems.length });
+
+  return (
+    <section className={`${styles.sectionCard} ${styles.streamSection}`}>
+      <div className={styles.streamHeader}>
+        <div className={styles.sectionHeading}>
+          <p className={styles.streamKicker}>{t('discover.public.streamKicker')}</p>
+          <h2 className={styles.sectionTitle}>{t('discover.public.streamTitle')}</h2>
+          <p className={styles.sectionDescription}>{t('discover.public.streamDescription')}</p>
+        </div>
+        <div className={styles.streamStatusPanel} data-state={feedState}>
+          <span className={styles.streamStatusLabel}>{feedStatusLabel}</span>
+          <span className={styles.streamStatusText}>{feedStatusDescription}</span>
+        </div>
+      </div>
+
+      {feedItems.length > 0 ? (
+        <>
+          {feedErrorCount > 0 && (
+            <div className={styles.inlineNotice} data-tone="warning">
+              <Icon icon="mdi:alert-circle-outline" size={16} />
+              <span>{t('discover.public.streamPartialNotice')}</span>
+              <button type="button" className={styles.inlineNoticeAction} onClick={onReload}>
+                {t('common.retry')}
+              </button>
+            </div>
+          )}
+
+          <div className={styles.feedGrid}>
+            {feedItems.map((item) => (
+              <DiscoverFeedItemCard
+                key={item.key}
+                item={item}
+                displayTimeZone={displayTimeZone}
+                locale={locale}
+                onOpenPost={onOpenPost}
+                onOpenTag={onOpenTag}
+                onOpenQuestion={onOpenQuestion}
+                onOpenPoll={onOpenPoll}
+                onOpenLottery={onOpenLottery}
+                onOpenDocument={onOpenDocument}
+                onOpenProduct={onOpenProduct}
+              />
+            ))}
+          </div>
+
+          <div className={styles.streamFooter}>
+            <div className={styles.streamBoundaryPanel}>
+              <span className={styles.streamBoundaryIcon}>
+                <Icon icon="mdi:message-heart-outline" size={20} />
+              </span>
+              <div className={styles.streamBoundaryCopy}>
+                <h3 className={styles.streamBoundaryTitle}>{t('discover.public.streamInteractionTitle')}</h3>
+                <p className={styles.streamBoundaryDescription}>{t('discover.public.streamInteractionDescription')}</p>
+              </div>
+            </div>
+            <div className={styles.streamActionRow}>
+              <button type="button" className={styles.secondaryButton} onClick={onOpenForum}>
+                <Icon icon="mdi:forum-outline" size={18} />
+                <span>{t('discover.public.viewAllForum')}</span>
+              </button>
+              <button type="button" className={styles.secondaryButton} onClick={onOpenDocs}>
+                <Icon icon="mdi:file-document-outline" size={18} />
+                <span>{t('discover.public.viewAllDocs')}</span>
+              </button>
+              <button type="button" className={styles.secondaryButton} onClick={onOpenShop}>
+                <Icon icon="mdi:storefront-outline" size={18} />
+                <span>{t('discover.public.viewAllShop')}</span>
+              </button>
+            </div>
+          </div>
+        </>
+      ) : feedIsLoading ? (
+        <FeedStatusCard
+          tone="loading"
+          title={t('discover.public.streamLoadingTitle')}
+          description={t('discover.public.streamLoadingDescription')}
+        />
+      ) : feedErrorCount > 0 ? (
+        <FeedStatusCard
+          tone="error"
+          title={t('discover.public.streamLoadFailedTitle')}
+          description={t('discover.public.streamLoadFailedDescription')}
+          primaryAction={{
+            label: t('common.retry'),
+            onClick: onReload
+          }}
+        />
+      ) : (
+        <FeedStatusCard
+          tone="empty"
+          title={t('discover.public.streamEmptyTitle')}
+          description={t('discover.public.streamEmptyDescription')}
+        />
+      )}
+    </section>
+  );
+}
