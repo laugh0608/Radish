@@ -12,6 +12,7 @@ public class UserProfile : Profile
     {
         CreateMap<User, UserVo>()
             .ForMember(a => a.Uuid, o => o.MapFrom(d => d.Id))
+            .ForMember(a => a.VoPublicId, o => o.MapFrom(d => d.PublicId))
             .ForMember(a => a.VoLoginName, o => o.MapFrom(d => d.LoginName))
             .ForMember(a => a.VoUserName, o => o.MapFrom(d => d.UserName))
             .ForMember(a => a.VoUserEmail, o => o.MapFrom(d => d.UserEmail))
@@ -39,6 +40,7 @@ public class UserProfile : Profile
 
         CreateMap<UserVo, User>()
             .ForMember(a => a.Id, o => o.MapFrom(d => d.Uuid))
+            .ForMember(a => a.PublicId, o => o.MapFrom(d => d.VoPublicId))
             .ForMember(a => a.LoginName, o => o.MapFrom(d => d.VoLoginName))
             .ForMember(a => a.UserName, o => o.MapFrom(d => d.VoUserName))
             .ForMember(a => a.UserEmail, o => o.MapFrom(d => d.VoUserEmail))

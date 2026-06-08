@@ -7,12 +7,25 @@ namespace Radish.IService;
 /// <summary>用户服务接口类</summary>
 public interface IUserService : IBaseService<User, UserVo>
 {
+    /// <summary>写入用户前确保公开访问标识存在。</summary>
+    new Task<long> AddAsync(User entity);
+
+    /// <summary>批量写入用户前确保公开访问标识存在。</summary>
+    new Task<int> AddRangeAsync(List<User> entities);
+
     /// <summary>
     /// 根据登录名获取可登录用户
     /// </summary>
     /// <param name="loginName">登录名</param>
     /// <returns>单个用户视图模型，不存在则返回 null</returns>
     Task<UserVo?> GetEnabledUserByLoginNameAsync(string loginName);
+
+    /// <summary>
+    /// 根据公开主页标识获取可公开访问的用户。
+    /// </summary>
+    /// <param name="identifier">用户公开标识或旧 LongId 字符串</param>
+    /// <returns>用户视图模型，不存在则返回 null</returns>
+    Task<UserVo?> GetPublicUserByIdentifierAsync(string identifier);
 
     /// <summary>
     /// 通过登录用户名和登录密码查询用户的角色名称

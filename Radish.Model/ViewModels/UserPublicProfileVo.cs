@@ -7,6 +7,8 @@ public class UserPublicProfileVo
 {
     public long VoUserId { get; set; }
 
+    public string? VoPublicId { get; set; }
+
     public string VoUserName { get; set; } = string.Empty;
 
     public string? VoDisplayName { get; set; }

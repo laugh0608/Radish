@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -14,8 +14,11 @@ namespace Radish.Model;
     nameof(LoginName), OrderByType.Asc,
     nameof(IsDeleted), OrderByType.Asc,
     nameof(IsEnable), OrderByType.Asc)]
+[SugarIndex("idx_user_public_id", nameof(PublicId), OrderByType.Asc, IsUnique = true)]
 public class User : RootEntityTKey<long>, ITenantEntity
 {
+    public const string PublicIdPrefix = "usr_";
+
     /// <summary>初始化默认用户实例</summary>
     public User()
     {
@@ -48,6 +51,7 @@ public class User : RootEntityTKey<long>, ITenantEntity
     private void InitializeDefaults()
     {
         LoginName = string.Empty;
+        PublicId = GeneratePublicId();
         UserName = string.Empty;
         UserEmail = string.Empty;
         LoginPassword = string.Empty;
@@ -218,6 +222,27 @@ public class User : RootEntityTKey<long>, ITenantEntity
             .ToList();
     }
 
+    public static string EnsurePublicId(string? currentPublicId)
+    {
+        var normalizedPublicId = currentPublicId?.Trim();
+        return HasPublicIdFormat(normalizedPublicId)
+            ? normalizedPublicId!.ToLowerInvariant()
+            : GeneratePublicId();
+    }
+
+    public static string GeneratePublicId()
+    {
+        return $"{PublicIdPrefix}{Guid.CreateVersion7():N}";
+    }
+
+    public static bool HasPublicIdFormat(string? value)
+    {
+        var normalized = value?.Trim();
+        return normalized is { Length: 36 } &&
+               normalized.StartsWith(PublicIdPrefix, StringComparison.OrdinalIgnoreCase) &&
+               normalized[PublicIdPrefix.Length..].All(Uri.IsHexDigit);
+    }
+
     #region 登录相关
 
     /// <summary>登录账号 1 LoginName</summary>
@@ -227,6 +252,11 @@ public class User : RootEntityTKey<long>, ITenantEntity
     /// </remarks>
     [SugarColumn(Length = 200, IsNullable = true)]
     public string LoginName { get; set; } = string.Empty;
+
+    /// <summary>用户公开访问标识</summary>
+    /// <remarks>首批用于公开主页、分享链接和跨端回流，不替代数据库主键</remarks>
+    [SugarColumn(Length = 40, IsNullable = true)]
+    public string? PublicId { get; set; }
 
     /// <summary>登录账号 2 UserName</summary>
     /// <remarks>不可为空，最大 200 字符</remarks>

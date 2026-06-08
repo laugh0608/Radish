@@ -588,19 +588,20 @@ public class UserController : ControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
-    public async Task<MessageModel> GetPublicProfile(long userId)
+    public async Task<MessageModel> GetPublicProfile(string? identifier = null, string? userId = null)
     {
-        if (userId <= 0)
+        var requestedIdentifier = !string.IsNullOrWhiteSpace(identifier) ? identifier : userId;
+        if (string.IsNullOrWhiteSpace(requestedIdentifier))
         {
             return new MessageModel
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "用户 ID 无效"
+                MessageInfo = "用户标识无效"
             };
         }
 
-        var user = await _userService.QueryFirstAsync(u => u.Id == userId && !u.IsDeleted && u.IsEnable);
+        var user = await _userService.GetPublicUserByIdentifierAsync(requestedIdentifier);
         if (user == null)
         {
             return new MessageModel
@@ -611,11 +612,12 @@ public class UserController : ControllerBase
             };
         }
 
-        var avatar = await _attachmentService.GetLatestAvatarAssetAsync(userId);
+        var avatar = await _attachmentService.GetLatestAvatarAssetAsync(user.Uuid);
 
         var profile = new UserPublicProfileVo
         {
             VoUserId = user.Uuid,
+            VoPublicId = user.VoPublicId,
             VoUserName = user.VoUserName,
             VoDisplayName = string.IsNullOrWhiteSpace(user.VoUserRealName) ? null : user.VoUserRealName,
             VoCreateTime = user.VoCreateTime,

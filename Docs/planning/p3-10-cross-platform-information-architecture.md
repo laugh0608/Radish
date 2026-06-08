@@ -127,6 +127,16 @@
 | `P3-10-B5 神评 / 沙发稳定性` | 稳定窗口、并列展示、替换阈值、奖励幂等、旧数据兼容 | 先统一后端 current 语义和前端展示，不扩大为完整推荐系统 |
 | `P3-10-B6 Token 不活跃过期` | `IdleSession` 配置项、前端活跃写入、后端 refresh / session 判定、退出登录 UX | 在前三项方案稳定后推进，避免打断当前 Web 入口改造 |
 
+## 首批代码推进记录
+
+截至 2026-06-08，`P3-10-B1 / B3` 已进入首批代码实现：
+
+- `P3-10-B1 Web 首页信息流`：`/discover` 已从公开导航聚合页改为可持续浏览的信息流，首批复用公开帖子、公开文档和商品数据；继续保留公开 head、分享、移动 / PC 布局和登录后轻互动边界，不引入完整推荐系统、个人圈子或联邦社交。
+- `P3-10-B3 User PublicId`：新增 `User.PublicId` 公开标识，公开主页和榜单契约开始输出 `VoPublicId / VoUserPublicId`；`/u/:id` 支持 `usr_...` 与历史 LongId 双读，公开帖子 / 评论 / 统计等内部接口仍使用 LongId。
+- `DbMigrate` 已纳入 `User.PublicId` 缺列补齐、旧用户 PublicId 回填和 `idx_user_public_id` 唯一索引补丁；旧 SQLite 开发库需先执行 `DbMigrate apply` 并重启 API / Gateway 后再复核运行时。
+
+本批仍明确不做数据库主键迁移，不启动完整 PublicId 全量 rollout，不把评论、附件、文档、频道、通知等其他对象一次性改完。
+
 ## 候选任务排序规则
 
 优先级从高到低：

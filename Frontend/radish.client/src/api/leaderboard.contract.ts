@@ -65,6 +65,7 @@ export interface UnifiedLeaderboardItemData {
 
   // 用户信息（用户类排行榜）
   voUserId?: LeaderboardLongId;
+  voUserPublicId?: string | null;
   voUserName?: string;
   voAvatarUrl?: string;
   voCurrentLevel?: number;

@@ -30,6 +30,7 @@ export interface VoPagedResult<T> {
 }
 
 export type LongId = string;
+export type PublicUserIdentifier = string;
 
 export interface PageModel<T> {
   page: number;
@@ -55,6 +56,7 @@ export interface UserBrowseHistoryItem {
 
 export interface PublicUserProfile {
   voUserId: LongId;
+  voPublicId?: string | null;
   voUserName: string;
   voDisplayName?: string | null;
   voCreateTime: string;
@@ -141,9 +143,9 @@ export async function getMyBrowseHistory(
   return response.data;
 }
 
-export async function getPublicProfile(userId: LongId): Promise<PublicUserProfile> {
+export async function getPublicProfile(identifier: PublicUserIdentifier): Promise<PublicUserProfile> {
   const response = await apiGet<PublicUserProfile>(
-    `/api/v1/User/GetPublicProfile?userId=${encodeURIComponent(String(userId))}`
+    `/api/v1/User/GetPublicProfile?identifier=${encodeURIComponent(String(identifier))}`
   );
 
   if (!response.ok || !response.data) {

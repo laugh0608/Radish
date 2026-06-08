@@ -29,17 +29,26 @@ function normalizePositiveInteger(value: string | undefined): number | undefined
   return parsed;
 }
 
-function normalizePositiveIntegerString(value: string | undefined): string | undefined {
+function normalizeProfileIdentifier(value: string | undefined): string | undefined {
   if (!value) {
     return undefined;
   }
 
-  const normalized = value.trim();
-  if (!/^[1-9]\d*$/.test(normalized)) {
+  let normalized: string;
+  try {
+    normalized = decodeURIComponent(value).trim();
+  } catch {
     return undefined;
   }
+  if (/^[1-9]\d*$/.test(normalized)) {
+    return normalized;
+  }
 
-  return normalized;
+  if (/^usr_[0-9a-f]{32}$/i.test(normalized)) {
+    return normalized.toLowerCase();
+  }
+
+  return undefined;
 }
 
 function normalizeTab(value: string | null): PublicProfileTab {
@@ -47,8 +56,8 @@ function normalizeTab(value: string | null): PublicProfileTab {
 }
 
 export function parsePublicProfileRoute(pathname: string, search: string): PublicProfileRoute | null {
-  const matched = pathname.match(/^\/u\/([1-9]\d*)\/?$/);
-  const userId = normalizePositiveIntegerString(matched?.[1]);
+  const matched = pathname.match(/^\/u\/([^/?#]+)\/?$/);
+  const userId = normalizeProfileIdentifier(matched?.[1]);
   if (!userId) {
     return null;
   }
@@ -72,5 +81,6 @@ export function buildPublicProfilePath(route: PublicProfileRoute): string {
   }
 
   const query = search.toString();
-  return query ? `/u/${route.userId}?${query}` : `/u/${route.userId}`;
+  const encodedUserId = encodeURIComponent(route.userId);
+  return query ? `/u/${encodedUserId}?${query}` : `/u/${encodedUserId}`;
 }

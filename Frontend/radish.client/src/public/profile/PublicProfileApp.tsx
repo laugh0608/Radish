@@ -164,6 +164,16 @@ function buildExcerpt(post: PublicUserPost): string {
   return content.length > 120 ? `${content.slice(0, 120)}...` : content;
 }
 
+function resolveProfileRouteIdentifier(profile: PublicUserProfile | null, fallbackIdentifier: string): string {
+  const publicId = profile?.voPublicId?.trim();
+  if (publicId) {
+    return publicId;
+  }
+
+  const internalUserId = profile?.voUserId ? String(profile.voUserId) : '';
+  return internalUserId || fallbackIdentifier;
+}
+
 export const PublicProfileApp = ({
   route,
   backAction,
@@ -199,12 +209,12 @@ export const PublicProfileApp = ({
     const loadProfile = async () => {
       setLoadingProfile(true);
       setProfileError(null);
+      setProfile(null);
+      setStats(null);
 
       try {
-        const [profileResult, statsResult] = await Promise.all([
-          getPublicProfile(route.userId),
-          getPublicUserStats(route.userId),
-        ]);
+        const profileResult = await getPublicProfile(route.userId);
+        const statsResult = await getPublicUserStats(profileResult.voUserId);
 
         if (requestId !== profileRequestIdRef.current) {
           return;
@@ -231,16 +241,43 @@ export const PublicProfileApp = ({
     void loadProfile();
   }, [profileReloadToken, route.userId]);
 
+  const profileRouteIdentifier = useMemo(
+    () => resolveProfileRouteIdentifier(profile, route.userId),
+    [profile, route.userId]
+  );
+
+  useEffect(() => {
+    if (!profile || profileRouteIdentifier === route.userId) {
+      return;
+    }
+
+    onNavigate({
+      kind: 'detail',
+      userId: profileRouteIdentifier,
+      tab: route.tab,
+      page: route.page,
+    }, { replace: true });
+  }, [onNavigate, profile, profileRouteIdentifier, route.page, route.tab, route.userId]);
+
   useEffect(() => {
     const requestId = ++contentRequestIdRef.current;
 
     const loadContent = async () => {
+      if (!profile?.voUserId) {
+        setPosts([]);
+        setComments([]);
+        setTotalPages(1);
+        setLoadingContent(false);
+        return;
+      }
+
+      const internalUserId = profile.voUserId;
       setLoadingContent(true);
       setContentError(null);
 
       try {
         if (route.tab === 'posts') {
-          const pageModel = await getPublicUserPosts(route.userId, route.page, 10);
+          const pageModel = await getPublicUserPosts(internalUserId, route.page, 10);
           if (requestId !== contentRequestIdRef.current) {
             return;
           }
@@ -249,7 +286,7 @@ export const PublicProfileApp = ({
           if (route.page > nextTotalPages) {
             onNavigate({
               kind: 'detail',
-              userId: route.userId,
+              userId: profileRouteIdentifier,
               tab: route.tab,
               page: nextTotalPages
             }, { replace: true });
@@ -262,7 +299,7 @@ export const PublicProfileApp = ({
           return;
         }
 
-        const pageModel = await getPublicUserComments(route.userId, route.page, 10);
+        const pageModel = await getPublicUserComments(internalUserId, route.page, 10);
         if (requestId !== contentRequestIdRef.current) {
           return;
         }
@@ -271,7 +308,7 @@ export const PublicProfileApp = ({
         if (route.page > nextTotalPages) {
           onNavigate({
             kind: 'detail',
-            userId: route.userId,
+            userId: profileRouteIdentifier,
             tab: route.tab,
             page: nextTotalPages
           }, { replace: true });
@@ -299,7 +336,7 @@ export const PublicProfileApp = ({
     };
 
     void loadContent();
-  }, [contentReloadToken, onNavigate, route.page, route.tab, route.userId]);
+  }, [contentReloadToken, onNavigate, profile?.voUserId, profileRouteIdentifier, route.page, route.tab]);
 
   useEffect(() => {
     if (loadingProfile) {
@@ -330,14 +367,14 @@ export const PublicProfileApp = ({
       imageUrl: avatarUrl,
       canonicalPath: buildPublicProfilePath({
         kind: 'detail',
-        userId: String(profile.voUserId),
+        userId: profileRouteIdentifier,
         tab: route.tab,
         page: route.page,
       }),
     }));
 
     return removePublicStructuredData;
-  }, [avatarUrl, profile, route.page, route.tab, stats]);
+  }, [avatarUrl, profile, profileRouteIdentifier, route.page, route.tab, stats]);
 
   const displayName = profile?.voDisplayName?.trim() || null;
   const userName = profile?.voUserName?.trim() || t('common.userFallback', { id: route.userId });
@@ -345,14 +382,13 @@ export const PublicProfileApp = ({
   const backLabel = backLabelKey ? t(backLabelKey) : t('profile.public.backToForum');
   const handleBack = backAction?.onBack ?? onNavigateToForumList;
   const buildProfileShareUrl = useCallback(() => {
-    const profileUserId = String(profile?.voUserId ?? route.userId);
     return buildPublicShareUrl(buildPublicProfilePath({
       kind: 'detail',
-      userId: profileUserId,
+      userId: profileRouteIdentifier,
       tab: route.tab,
       page: route.page,
     }));
-  }, [profile?.voUserId, route.page, route.tab, route.userId]);
+  }, [profileRouteIdentifier, route.page, route.tab]);
   const { copyShareLink, shareBusy, shareState } = usePublicShareLink({
     buildShareUrl: buildProfileShareUrl,
   });
@@ -364,7 +400,7 @@ export const PublicProfileApp = ({
 
     onNavigate({
       kind: 'detail',
-      userId: route.userId,
+      userId: profileRouteIdentifier,
       tab,
       page: 1
     }, { replace: true });
@@ -647,7 +683,7 @@ export const PublicProfileApp = ({
                     className={styles.paginationButton}
                     onClick={() => onNavigate({
                       kind: 'detail',
-                      userId: route.userId,
+                      userId: profileRouteIdentifier,
                       tab: route.tab,
                       page: Math.max(1, route.page - 1)
                     }, { replace: true })}
@@ -663,7 +699,7 @@ export const PublicProfileApp = ({
                     className={styles.paginationButton}
                     onClick={() => onNavigate({
                       kind: 'detail',
-                      userId: route.userId,
+                      userId: profileRouteIdentifier,
                       tab: route.tab,
                       page: Math.min(totalPages, route.page + 1)
                     }, { replace: true })}

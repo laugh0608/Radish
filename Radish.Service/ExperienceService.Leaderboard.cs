@@ -40,6 +40,7 @@ public partial class ExperienceService
             // 获取用户信息
             var userIds = pagedData.Select(e => e.UserId).ToList();
             var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id));
+            await EnsureLeaderboardUserPublicIdsAsync(users);
             var userDict = users.ToDictionary(u => u.Id);
 
             // 获取等级配置
@@ -66,6 +67,7 @@ public partial class ExperienceService
                 {
                     VoRank = rank,
                     VoUserId = exp.UserId,
+                    VoUserPublicId = user.PublicId,
                     VoUserName = user.UserName,
                     VoCurrentLevel = exp.CurrentLevel,
                     VoCurrentLevelName = levelConfigDict.ContainsKey(exp.CurrentLevel)
@@ -97,6 +99,37 @@ public partial class ExperienceService
         {
             Log.Error(ex, "获取排行榜失败");
             throw;
+        }
+    }
+
+    private async Task EnsureLeaderboardUserPublicIdsAsync(List<User> users)
+    {
+        foreach (var user in users)
+        {
+            if (!string.IsNullOrWhiteSpace(user.PublicId))
+            {
+                user.PublicId = user.PublicId.Trim();
+                continue;
+            }
+
+            var publicId = User.EnsurePublicId(user.PublicId);
+            var affectedRows = await _userRepository.UpdateColumnsAsync(
+                item => new User { PublicId = publicId },
+                item => item.Id == user.Id &&
+                        !item.IsDeleted &&
+                        (item.PublicId == null || item.PublicId == string.Empty));
+
+            if (affectedRows > 0)
+            {
+                user.PublicId = publicId;
+                continue;
+            }
+
+            var refreshedUser = await _userRepository.QueryByIdAsync(user.Id);
+            if (!string.IsNullOrWhiteSpace(refreshedUser?.PublicId))
+            {
+                user.PublicId = refreshedUser.PublicId.Trim();
+            }
         }
     }
 

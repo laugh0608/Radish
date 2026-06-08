@@ -16,6 +16,7 @@ namespace Radish.Service;
 /// <summary>用户服务类</summary>
 public class UserService : BaseService<User, UserVo>, IUserService
 {
+    private readonly IBaseRepository<User> _userBaseRepository;
     private readonly IUserRepository _userRepository;
     private readonly IBaseRepository<Role> _roleRepository;
     private readonly IBaseRepository<UserRole> _userRoleRepository;
@@ -28,10 +29,27 @@ public class UserService : BaseService<User, UserVo>, IUserService
         IConsoleAuthorizationService consoleAuthorizationService) : base(mapper, baseRepository)
     {
         _departmentService = departmentService;
+        _userBaseRepository = baseRepository;
         _userRepository = userRepository;
         _roleRepository = roleRepository;
         _userRoleRepository = userRoleRepository;
         _consoleAuthorizationService = consoleAuthorizationService;
+    }
+
+    public new async Task<long> AddAsync(User entity)
+    {
+        entity.PublicId = User.EnsurePublicId(entity.PublicId);
+        return await base.AddAsync(entity);
+    }
+
+    public new async Task<int> AddRangeAsync(List<User> entities)
+    {
+        foreach (var entity in entities)
+        {
+            entity.PublicId = User.EnsurePublicId(entity.PublicId);
+        }
+
+        return await base.AddRangeAsync(entities);
     }
 
     /// <summary>
@@ -51,6 +69,72 @@ public class UserService : BaseService<User, UserVo>, IUserService
             u.LoginName == normalizedLoginName &&
             u.IsDeleted == false &&
             u.IsEnable);
+    }
+
+    public async Task<UserVo?> GetPublicUserByIdentifierAsync(string identifier)
+    {
+        var normalizedIdentifier = identifier?.Trim();
+        if (string.IsNullOrWhiteSpace(normalizedIdentifier))
+        {
+            return null;
+        }
+
+        User? user;
+        if (User.HasPublicIdFormat(normalizedIdentifier))
+        {
+            var normalizedPublicId = normalizedIdentifier.ToLowerInvariant();
+            user = await _userBaseRepository.QueryFirstAsync(u =>
+                u.PublicId == normalizedPublicId &&
+                !u.IsDeleted &&
+                u.IsEnable);
+        }
+        else if (long.TryParse(normalizedIdentifier, out var userId) && userId > 0)
+        {
+            user = await _userBaseRepository.QueryFirstAsync(u =>
+                u.Id == userId &&
+                !u.IsDeleted &&
+                u.IsEnable);
+        }
+        else
+        {
+            return null;
+        }
+
+        if (user == null)
+        {
+            return null;
+        }
+
+        await EnsureUserPublicIdBackfilledAsync(user);
+        return Mapper.Map<UserVo>(user);
+    }
+
+    private async Task EnsureUserPublicIdBackfilledAsync(User user)
+    {
+        if (!string.IsNullOrWhiteSpace(user.PublicId))
+        {
+            user.PublicId = user.PublicId.Trim();
+            return;
+        }
+
+        var publicId = User.EnsurePublicId(user.PublicId);
+        var affectedRows = await _userBaseRepository.UpdateColumnsAsync(
+            item => new User { PublicId = publicId },
+            item => item.Id == user.Id &&
+                    !item.IsDeleted &&
+                    (item.PublicId == null || item.PublicId == string.Empty));
+
+        if (affectedRows > 0)
+        {
+            user.PublicId = publicId;
+            return;
+        }
+
+        var refreshedUser = await _userBaseRepository.QueryByIdAsync(user.Id);
+        if (!string.IsNullOrWhiteSpace(refreshedUser?.PublicId))
+        {
+            user.PublicId = refreshedUser.PublicId.Trim();
+        }
     }
 
     /// <summary>

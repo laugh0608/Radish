@@ -462,11 +462,12 @@ export const PublicLeaderboardApp = ({
   };
 
   const handleOpenUserProfile = (item: UnifiedLeaderboardItemData) => {
-    if (!item.voUserId) {
+    const profileIdentifier = item.voUserPublicId?.trim() || (item.voUserId ? String(item.voUserId) : '');
+    if (!profileIdentifier) {
       return;
     }
 
-    onNavigateToProfile?.(String(item.voUserId));
+    onNavigateToProfile?.(profileIdentifier);
   };
 
   const handleOpenProductDetail = (item: UnifiedLeaderboardItemData) => {

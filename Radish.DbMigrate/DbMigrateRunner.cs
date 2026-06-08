@@ -136,8 +136,83 @@ internal static class DbMigrateRunner
             .ToLowerInvariant();
         var mainDb = dbScope.GetConnectionScope(normalizedMainDbConnId);
         EnsureBootstrapStateSchema(mainDb);
+        EnsureUserPublicIdSchema(mainDb);
         EnsureUserLoginIndex(mainDb);
         EnsureForumIndexes(mainDb);
+    }
+
+    private static void EnsureUserPublicIdSchema(ISqlSugarClient db)
+    {
+        const string indexName = "idx_user_public_id";
+
+        var entityInfo = db.EntityMaintenance.GetEntityInfo<User>();
+        var tableName = entityInfo.DbTableName;
+        if (!db.DbMaintenance.IsAnyTable(tableName, false))
+        {
+            return;
+        }
+
+        var publicIdColumnName = GetColumnName(entityInfo, nameof(User.PublicId));
+        if (string.IsNullOrWhiteSpace(publicIdColumnName))
+        {
+            return;
+        }
+
+        if (!db.DbMaintenance.IsAnyColumn(tableName, publicIdColumnName, false))
+        {
+            db.CodeFirst.InitTables<User>();
+            Console.WriteLine("[Radish.DbMigrate] 已同步 User.PublicId 字段。");
+        }
+
+        if (!db.DbMaintenance.IsAnyColumn(tableName, publicIdColumnName, false))
+        {
+            Console.WriteLine("[Radish.DbMigrate] User.PublicId 字段仍未补齐，已跳过旧用户 PublicId 回填。");
+            return;
+        }
+
+        BackfillMissingUserPublicIds(db);
+
+        if (db.DbMaintenance.IsAnyIndex(indexName))
+        {
+            return;
+        }
+
+        var created = db.DbMaintenance.CreateIndex(tableName, [nameof(User.PublicId)], indexName, true);
+        Console.WriteLine(created
+            ? $"[Radish.DbMigrate] 已补齐唯一索引 {indexName}。"
+            : $"[Radish.DbMigrate] 唯一索引 {indexName} 创建未生效，请检查数据库状态。");
+    }
+
+    private static void BackfillMissingUserPublicIds(ISqlSugarClient db)
+    {
+        var userIds = db.Queryable<User>()
+            .Where(user => user.PublicId == null || user.PublicId == string.Empty)
+            .Select(user => user.Id)
+            .ToList();
+
+        if (userIds.Count == 0)
+        {
+            return;
+        }
+
+        var updatedCount = 0;
+        foreach (var userId in userIds)
+        {
+            var publicId = User.GeneratePublicId();
+            var affectedRows = db.Updateable<User>()
+                .SetColumns(user => new User
+                {
+                    PublicId = publicId,
+                    UpdateTime = DateTime.Now
+                })
+                .Where(user => user.Id == userId &&
+                               (user.PublicId == null || user.PublicId == string.Empty))
+                .ExecuteCommand();
+
+            updatedCount += affectedRows > 0 ? 1 : 0;
+        }
+
+        Console.WriteLine($"[Radish.DbMigrate] 已为 {updatedCount} 个旧用户补齐 PublicId。");
     }
 
     private static void EnsureBootstrapStateSchema(ISqlSugarClient db)

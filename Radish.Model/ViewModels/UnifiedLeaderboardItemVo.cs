@@ -38,6 +38,11 @@ public class UnifiedLeaderboardItemVo
     public long? VoUserId { get; set; }
 
     /// <summary>
+    /// 用户公开访问标识
+    /// </summary>
+    public string? VoUserPublicId { get; set; }
+
+    /// <summary>
     /// 用户名
     /// </summary>
     public string? VoUserName { get; set; }

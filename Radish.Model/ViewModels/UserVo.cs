@@ -1,8 +1,9 @@
-﻿namespace Radish.Model.ViewModels;
+namespace Radish.Model.ViewModels;
 
 public class UserVo
 {
     public long Uuid { get; set; }
+    public string? VoPublicId { get; set; }
     public string VoLoginName { get; set; } = string.Empty;
     public string VoUserName { get; set; } = string.Empty;
     public string VoUserEmail { get; set; } = string.Empty;
