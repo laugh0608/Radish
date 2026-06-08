@@ -7,7 +7,7 @@
 ## 当前状态
 
 - **当前里程碑**：`第三开发阶段：真实使用增长与长期契约治理`
-- **当前主线**：`P3-10 跨端信息架构与下一批开发任务选择`
+- **当前主线**：`P3-10 Web-first 信息架构与下一批开发任务选择`
 - **最近结论**：
   - `2026-04-06` 完成首版真实发布 `v26.3.2-release`，第一开发阶段结束。
   - 第二开发阶段已完成公开内容壳层、Flutter Android MVP、Tauri + WebOS 桌面壳、多端路线分工和产品治理收口。
@@ -20,13 +20,15 @@
   - `P3-8-D` 已完成纯 Web、移动 Web、Flutter、Console 围绕公开访问、登录回流、购买 / 订单 / 背包、胡萝卜流水、权限授权和 LongId 字符串契约的多轮治理，可以作为默认主线阶段收口。
   - `P3-9` 首批真实使用主路径已经完成自动化总回归、人工复核、`dev -> master` PR #54 合并和 `Repo Quality` 四项检查。
   - 本轮明确跳过发布，不创建 tag，不进入 M15 测试 / 生产部署流程；项目继续处于第三开发阶段的功能建设期，而不是生产稳定运营期。
-  - 当前进入 `P3-10`：围绕 Web、Flutter、PC/Tauri、Console 的功能与 UI 差距，重新梳理信息架构、任务归属和下一批开发优先级。
+  - 当前进入 `P3-10`：优先围绕 Web 默认入口、首页信息流 / 个人圈子边界、PublicId 分批、评论互动治理、Token 不活跃过期、UI 改造和历史功能规划回拉，重新梳理任务归属和下一批开发优先级。
+  - Flutter 暂从当前第一顺位后移，在 Web 信息架构和 API 契约稳定后继续承接移动原生复访、通知、消息和轻互动。
 
 ## 当前主线入口
 
 - [当前进行中](/planning/current)
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
-- [P3-10 跨端信息架构与下一批开发任务选择](/planning/p3-10-cross-platform-information-architecture)
+- [P3-10 Web-first 信息架构与下一批开发任务选择](/planning/p3-10-cross-platform-information-architecture)
+- [Radish 电子宠物开发计划](/features/radish-pet-roadmap)
 - [P3-9 真实使用主路径产品化与发布候选整备](/planning/p3-9-real-usage-release-candidate)
 - [P3-8 多端功能补全与 UI 设计治理](/planning/p3-8-multiplatform-feature-ui-governance)
 - [前端多壳层策略](/frontend/shell-strategy)
@@ -35,11 +37,12 @@
 
 ## 当前开发精力
 
-- `40%`：P3-10 跨端任务归属与信息架构评估，重点是 Web、Flutter、PC/Tauri、Console 的入口命名、导航结构和用户任务边界。
-- `30%`：下一批开发候选矩阵，重点是功能缺口、UI 差距、真实使用价值、实现成本和验证成本排序。
-- `15%`：Flutter 体验结构评估，重点是 `发现 / 消息 / 更多 / 我的` 是否成立，以及商城、通知、资产、个人资料等任务归属。
-- `10%`：纯 Web 与 PC/Tauri 边界评估，重点是公开访问、登录后轻量链路、WebOS `/desktop` 保留入口和 Tauri 后置增强边界。
-- `5%`：P3-9 / P3-8-D / ID Phase A / Console UI 维护线，只处理新增命中、真实编译错误或明显视觉断裂。
+- `35%`：Web 首页信息流、个人圈子边界和去 WebOS 化迁移图，重点是默认入口、公开 / 登录后轻互动、移动浏览器和 PC 浏览器体验。
+- `25%`：PublicId 分批 rollout、评论实时 / 神评稳定性、Token 不活跃过期等长期契约治理。
+- `20%`：历史功能规划回拉扫描和下一批开发候选矩阵，重点是仍符合当前 Web-first 方向的功能缺口。
+- `10%`：Web UI 改造与设计源文件准备，重点是首页、详情页、个人页和评论区。
+- `5%`：Radish 电子宠物规划，先定义玩法边界、经济系统约束和 Web-first 路线。
+- `5%`：P3-9 / P3-8-D / ID Phase A / Console UI / Flutter 维护线，只处理新增命中、真实编译错误或明显视觉断裂。
 
 ## 已确认的多端方向
 
@@ -50,7 +53,7 @@
 2. **Android / iOS**
    - 使用 Flutter 移动原生安装包路线。
    - Android MVP 已完成第一轮；iOS 后续单独评估。
-   - Flutter 可在成熟 API 支撑下推进同一工作流的一组受控写入动作，但不扩展成完整移动能力套件。
+   - Flutter 暂不作为当前第一顺位；可在成熟 API 支撑下于后续批次推进同一工作流的一组受控写入动作，但不扩展成完整移动能力套件。
 3. **WebOS `/desktop`**
    - 仅作为历史桌面工作台保留入口。
    - 不再承接新增功能；既有高价值能力按价值逐步迁移到纯 Web 或 Flutter。
@@ -65,9 +68,9 @@
 
 ## 下一顺位
 
-- `P3-10-A 跨端任务归属与信息架构评估`
-  - 梳理 Web、Flutter、PC/Tauri、Console 分别承接哪些真实用户任务。
-  - 明确入口命名、导航结构、返回语义、登录恢复、错误态和跨端一致性要求。
+- `P3-10-A Web-first 任务归属与历史功能规划回拉评估`
+  - 梳理 Web 首页信息流、个人圈子、PublicId、评论互动、Token 不活跃过期、UI 改造、Radish 电子宠物和旧功能规划回拉候选。
+  - 明确入口命名、URL / PublicId 契约、返回语义、登录恢复、错误态和跨端一致性要求。
   - 产出下一批开发候选矩阵，先排序再开工。
 - `P3-9 主路径维护回拉`
   - 只在后续复核或真实使用暴露主路径阻断时回拉。
@@ -81,6 +84,7 @@
 - 社区联邦化：公开社区对象优先按 `ActivityPub + WebFinger` 方向预留。
 - 租户语义调整：长期产品语义转向 `instance / node / space / group / category`。
 - 多端客户端长期保持分工清晰：纯 Web 负责低门槛访问、PC / 移动浏览器和登录后轻量链路，Flutter 负责移动原生体验，WebOS 只作为 `/desktop` 保留迁移线，PC/Tauri 后置且只增强纯 Web。
+- Web 首页长期按信息流和个人圈子边界演进；完整联邦社交、推荐算法平台和个人圈子实现需在 PublicId / FederationId 方向明确后逐步推进。
 - UI 长期治理以设计源文件、视觉 token、共享组件和端点实现同步为准，不让各端继续自然分叉。
 - 详细方案见：[标识体系与社区联邦长期路线](/architecture/id-and-federation-roadmap)。
 
@@ -99,6 +103,8 @@
 - 继续把 P3-8-D 购买 / 订单 / 背包、权限授权或 ID 守护作为无限期默认主线。
 - 继续把 Console 页面微调作为默认主线。
 - Flutter 受控写入之外的完整移动写入能力套件。
+- Flutter 当前抢占 Web 默认入口、信息流、ID 契约和评论互动治理主线。
+- 首页瀑布流、个人圈子、推荐算法和 ActivityPub / WebFinger 一次性合并实施。
 - 一次性启动完整移动商城、完整通知中心、完整资产中心、完整创作器或完整浏览历史治理。
 - 完整 `PublicId` 全量迁移、数据库主键迁移与 ActivityPub / WebFinger 实现。
 - `Gateway & BFF` 深化。
@@ -114,4 +120,4 @@
 
 - `Docs/index.md`、`Docs/README.md`、`Docs/development-plan.md`、`Docs/planning/current.md` 等关键入口只描述最近阶段和进度，不承载长背景。
 - 功能批次、验证命令、人工验收记录和历史事实默认写入 `Docs/changelog/`、`Docs/planning/archive.md` 或对应专题文档。
-- 判断阶段定义时，以本页、[当前进行中](/planning/current)、[第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)、[P3-10 跨端信息架构与下一批开发任务选择](/planning/p3-10-cross-platform-information-architecture) 与 [已完成摘要](/planning/archive) 为准。
+- 判断阶段定义时，以本页、[当前进行中](/planning/current)、[第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)、[P3-10 Web-first 信息架构与下一批开发任务选择](/planning/p3-10-cross-platform-information-architecture) 与 [已完成摘要](/planning/archive) 为准。

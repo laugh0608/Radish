@@ -75,7 +75,7 @@ Flutter 后续可评估把底部栏整理为 `发现 / 消息 / 更多 / 我的`
 
 该评估不要求 Web / PC / Tauri 照搬移动端底部栏。跨端一致性优先体现在任务归属、入口命名、登录恢复、返回语义和错误状态上；Web 端继续保持纯 Web 公开访问与 WebOS `/desktop` 保留入口，PC 壳层继续保持工作台 / Dock / 窗口心智。
 
-本口径已转入 [P3-10 跨端信息架构与下一批开发任务选择](/planning/p3-10-cross-platform-information-architecture)。P3-9 后续只处理复核或真实使用暴露的主路径阻断、状态恢复或身份契约问题。
+本口径已转入 [P3-10 Web-first 信息架构与下一批开发任务选择](/planning/p3-10-cross-platform-information-architecture)。P3-9 后续只处理复核或真实使用暴露的主路径阻断、状态恢复或身份契约问题。
 
 ## 当前合并后状态
 
@@ -83,7 +83,7 @@ Flutter 后续可评估把底部栏整理为 `发现 / 消息 / 更多 / 我的`
 
 访客公开访问、公开分享、来源返回与 Console 管理员排障路径抽查未发现新增阻断。`dev -> master` PR #54 已合并，合并提交为 `00540521`，`Repo Quality` 的 `Repo Hygiene / Frontend Lint / Baseline Quick / Identity Guard` 四项检查已通过。
 
-合并后本地验证已完成：`validate:ci` 通过；因规划入口命中默认执行面 / 门禁资产，已补 `validate:identity` 并通过。本轮明确跳过发布：不创建 tag、不等待镜像、不进入 M15 测试 / 生产部署流程。下一主线进入 [P3-10 跨端信息架构与下一批开发任务选择](/planning/p3-10-cross-platform-information-architecture)。
+合并后本地验证已完成：`validate:ci` 通过；因规划入口命中默认执行面 / 门禁资产，已补 `validate:identity` 并通过。本轮明确跳过发布：不创建 tag、不等待镜像、不进入 M15 测试 / 生产部署流程。下一主线进入 [P3-10 Web-first 信息架构与下一批开发任务选择](/planning/p3-10-cross-platform-information-architecture)。
 
 ## 当前门禁
 
