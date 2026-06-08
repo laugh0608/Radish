@@ -15,7 +15,7 @@
   - `/forum`、`/forum/search`、`/forum/category/:categoryId`、`/forum/tag/:tagSlug`、`/forum/question`、`/forum/poll`、`/forum/lottery`
   - `/forum/post/:postId`
   - `/docs`、`/docs/search`、`/docs/:slug`
-  - `/u/:userId`
+  - `/u/:identifier`，其中 `identifier` 优先为 `User.PublicId`，旧 LongId 字符串保留兼容读取
   - `/leaderboard`
   - `/shop`、`/shop/products`、`/shop/product/:productId`
 - 登录后功能不进入公开 SEO 范围，例如发帖、编辑、订单、背包、设置、Console 与治理后台。
@@ -51,7 +51,8 @@ forum / docs / shop 三类公开详情还会在 Gateway 层做首包 head snapsh
 - forum detail 在 `PostVo.VoPublicId` 可用时使用 `/forum/post/:postPublicId` 作为 canonical 和复制链接；旧 long 版 `/forum/post/:postId` 继续兼容读取。
 - 旧 long 版 forum detail 如果加载成功并拿到 `PostVo.VoPublicId`，运行时 canonical、Open Graph URL 与 JSON-LD 也必须刷新到 `/forum/post/:postPublicId`，避免同一帖子同时暴露两套分享预览主口径。
 - 公开壳层内部生成 forum detail 链接时也应优先使用 `PostVo.VoPublicId`，包括 `/discover` 摘要卡、forum 列表 / 搜索 / 标签页和个人公开页内容入口；只有缺少 PublicId 时才回退旧 long 字符串。
-- shop detail 当前仍以 `/shop/product/:productId` 作为 canonical 兼容路径，公开个人页当前仍以 `/u/:userId` 作为 canonical 兼容路径，但运行时 title、description 与页面说明不应直接回显 `productId / userId`；docs detail 同理优先展示 slug、标题或正文摘要，旧 long 兼容路径只承担打开能力，不作为普通用户可读文案。
+- 公开个人页在 `UserPublicProfileVo.VoPublicId` 可用时使用 `/u/:publicId` 作为 canonical 和复制链接；旧 LongId 版 `/u/:userId` 继续兼容读取，加载成功后运行时应规范化到 `/u/usr_...`。
+- shop detail 当前仍以 `/shop/product/:productId` 作为 canonical 兼容路径，但运行时 title、description 与页面说明不应直接回显 `productId`；docs detail 同理优先展示 slug、标题或正文摘要，旧 long 兼容路径只承担打开能力，不作为普通用户可读文案。
 
 ##### 10.5.4 结构化数据
 
@@ -61,7 +62,7 @@ forum / docs / shop 三类公开详情还会在 Gateway 层做首包 head snapsh
 - forum detail：输出 `BlogPosting`，优先使用 `PostVo.VoPublicId` canonical。
 - docs detail：输出 `Article`，使用 `/docs/:slug` canonical。
 - shop detail：输出 `Product`，不把积分价格伪装成法币 offer。
-- 公开个人页：输出 `ProfilePage / Person`，不把长数字用户 ID 当作可见名称。
+- 公开个人页：输出 `ProfilePage / Person`，canonical 优先使用 `User.PublicId`，不把长数字用户 ID 当作可见名称。
 - 路由切换、详情数据缺失或组件卸载时必须清理旧 JSON-LD，避免公开详情之间残留错误结构化数据。
 
 ##### 10.5.5 robots 与动态 sitemap
@@ -70,7 +71,7 @@ forum / docs / shop 三类公开详情还会在 Gateway 层做首包 head snapsh
 - `/sitemap.xml` 与 `/sitemaps/{fileName}` 当前由 Gateway 高优先级路由转发到 API，不应被前端 SPA catch-all 覆盖。
 - API 输出 sitemap index 与 `static / forum / docs / shop` 分片；forum 优先使用 `/forum/post/{VoPublicId}`，docs 使用 `/docs/{slug}`，shop 使用 `/shop/product/{productId}`。
 - sitemap `<loc>` 必须使用公开 Gateway origin。配置优先使用 `GatewayService:PublicUrl` / `RADISH_PUBLIC_URL`；经 Gateway 转发到 API 时，允许使用安全的 `X-Forwarded-Proto / X-Forwarded-Host` 回推公开 origin。
-- 首批不把 `/u/:id` 公开个人页纳入动态 sitemap，除非先完成用户隐私、展示意愿和外部标识方案评审。
+- 首批不把 `/u/:id` 公开个人页纳入动态 sitemap；即使 User PublicId 已落地，动态 sitemap 仍需先完成用户隐私、展示意愿和收录策略评审。
 
 ##### 10.5.6 浏览器可见资源 URL
 

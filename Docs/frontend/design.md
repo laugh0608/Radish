@@ -53,13 +53,13 @@
 - Android / iOS 移动安装包继续以 Flutter 为主线；Capacitor Android spike 已清理出当前代码，只保留历史记录作为公开只读 React 页面复用的技术参考，不进入登录态移动端产品化路线
 - Windows / macOS / Linux 桌面安装包曾完成 `Tauri 壳 + WebOS 桌面工作台` 个人开发阶段验证；路线复盘后，PC/Tauri 放到最后再评估，若重启应增强纯 Web 体验，不再默认绑定 WebOS。Tauri 不是移动端替代方案，也不是原生 UI 重写路线
 - WebOS 桌面工作台当前已补首批“继续使用”复访面板：桌面首页按最近应用、最近浏览、我的轻回应分组承接已登录用户的回到工作台场景；最近应用使用本地轻量记录，最近浏览与我的轻回应复用既有 API 与工作台打开能力；forum 回流统一优先使用 `postPublicId`，旧 `postId` 仅作为兼容 fallback，docs / shop 仍保留现有 slug 或 long 路由兼容但不把旧 long 路径作为用户可见文案；该面板不等于完整历史中心，不扩删除 / 清空、跨端同步或新的后端 API
-- 公开内容壳层当前已完成 forum、docs、个人公开页、公开榜单与公开商城浏览五个首批入口，并继续补到 forum 公开分类、forum 公开搜索与 docs 公开搜索首批：`/forum`、`/forum/category/:categoryId`、`/forum/search`、`/forum/post/:postId`、`/docs`、`/docs/search`、`/docs/:slug`、`/u/:id`、`/leaderboard`、`/leaderboard/:type`、`/shop`、`/shop/products` 与 `/shop/product/:productId` 都已可直接进入公开阅读壳层；其中 forum detail 路由参数当前可承接 `Post.PublicId` 或旧 long 字符串，canonical / 分享 / 回流优先使用 `PublicId`
+- 公开内容壳层当前已完成 forum、docs、个人公开页、公开榜单与公开商城浏览五个首批入口，并继续补到 forum 公开分类、forum 公开搜索与 docs 公开搜索首批：`/forum`、`/forum/category/:categoryId`、`/forum/search`、`/forum/post/:postId`、`/docs`、`/docs/search`、`/docs/:slug`、`/u/:id`、`/leaderboard`、`/leaderboard/:type`、`/shop`、`/shop/products` 与 `/shop/product/:productId` 都已可直接进入公开阅读壳层；其中 forum detail 路由参数当前可承接 `Post.PublicId` 或旧 long 字符串，公开个人页路由参数当前可承接 `User.PublicId` 或旧 long 字符串，canonical / 分享 / 回流优先使用 `PublicId`
 - 纯 Web 已开始承担根路径 `/` 与默认浏览器入口；普通浏览器 `/` 当前进入 `/discover` 公开分发页，公开内容壳层的已有路径是纯 Web 主线的第一批基础，不再回塞进 WebOS 窗口系统
 - 公开内容壳层当前已形成共享头部视觉基线：forum / docs / discover / leaderboard / shop / `u/:id` 在窄屏下统一使用品牌字、图标与按钮 token，避免同一公开壳层内继续出现专题主题色、图标色和主按钮色各自漂移
 - Console 当前已形成 `Case Desk` 设计方向：低饱和暖灰 / 纸色背景、轻侧栏、克制边框、明确按钮层级和可扫描的后台信息密度，设计稿见 `Docs/frontend/design-sources/console-governance-workbench.pen`；该方向可作为 `radish.client` 后续重新设计时的视觉气质参考，但不直接复刻 Console 的管理后台信息结构
 - Console 当前按页面类型选择实现基座：治理页使用“队列 / 详情 / 动作留痕”，表格 CRUD 使用“指标 / 工具条 / 表格 / 摘要栏”，设置页使用“分组导航 / 设置列 / 影响范围”，调度总览使用“关键指标 / 快捷操作 / 最近事项 / 右侧入口”；新增或明显改动页面优先复用 `--console-*` token、`AdminLayout` 和 `adminFeature.css`
-- `/discover` 当前已形成更明确的公开分发节奏：forum / docs / leaderboard / shop 四张摘要卡默认优先预览本页对应区块，同时保留明确的“直接进入公开页”动作，不再把整卡点击简单等同为专题直跳
-- `/discover` 当前也会记住最近一次摘要预览或区块来源；从公开专题页顶部回到“社区发现”时，会优先回到上一次阅读区块，而不是每次都丢回页首
+- `/discover` 当前已从公开导航聚合页推进为公开内容流：首屏和内容区会复用公开帖子、公开文档、商品和榜单入口，让用户先在同一页面判断下一步阅读路径，再进入 forum / docs / leaderboard / shop / 公开主页
+- `/discover` 当前继续保留公开来源返回；从公开专题页顶部回到“社区发现”时，应优先回到公开发现语境，而不是每次都丢回桌面或其他专题默认页
 - 公开内容壳层当前仍保持分批只读阅读边界：forum 不承载发帖、评论提交、投票提交，文档阅读不承载编辑、发布、回收站或版本历史等桌面治理交互
 - forum 公开分类、公开标签、公开结构化类型与公开搜索首批当前只承载分类 / 标签 / 类型上下文、关键词检索、帖子列表阅读、排序分页与详情回跳上下文；标签 SEO 深化仍放在后续规划
 - 个人公开页首批当前只承载公开资料、公开统计、公开帖子与公开评论阅读；不把编辑资料、浏览记录、附件管理或完整关系链治理搬进公开壳层
@@ -70,7 +70,7 @@
 - 公开商城当前也已开始补结构化只读导览：`/shop` 与 `/shop/products` 会强调“先看内容 / 继续进入 / 不在这里”，商品详情则会明确“详情重点 / 继续去向 / 工作台边界”，避免把公开浏览误读成可直接购买
 - 公开 docs 搜索当前也已开始补结构化只读导览：`/docs/search` 会强调“先看结果 / 继续进入 / 不在这里”，把关键词检索、结果回跳与桌面治理边界拆清楚
 - 公开入口的图片展示当前继续沿附件运行时 URL 口径：商品、榜单与社区分发页若引用仍有效的业务附件，不应再因后台清理误删而退化成前端 404 坏图
-- `/discover` 首屏摘要卡当前优先表达“整卡预览本页区块 + 独立按钮直达公开页”的双层动作关系；forum / docs / leaderboard / shop 分区推荐项在窄屏下也要保持一致的信息密度与留白节奏
+- `/discover` 内容流卡片在 PC 与移动视角下都要保持可扫描的信息密度、稳定高度和清晰去向；forum / docs / leaderboard / shop 分区推荐项在窄屏下也要保持一致的留白节奏
 - Flutter forum 当前的登录、回流与轻互动语义也已进一步明确：详情页允许匿名用户从评论区或轻回应区原地发起 OIDC 登录，并在浏览器回跳后继续保留当前 `postPublicId / postId / commentId` 上下文；已登录壳层可读取最近 forum 通知并回到帖子 / 评论上下文，未读 forum 通知打开详情前会尝试标记已读；通知、个人公开页、我的轻回应与最近访问回流均优先消费 `postPublicId / targetSlug / PublicId`，旧 `postId / routePath` 只保留为字符串 fallback；进入详情后再使用真实 `VoId` 执行评论、轻回应和定位类内部接口，不把公开标识误传给内部接口；纯文本发帖成功后打开新帖详情并使用详情返回的 `Post.PublicId` 展示公开链接，失败保留输入；评论发布 / 回复成功只更新评论区，轻回应发布成功只更新轻回应墙与局部反馈，不刷新正文或来源 tab；但富文本、附件、点赞、投票、编辑、完整通知中心与系统通知栏推送仍不在当前边界内
 - Flutter 公开主页当前会记录发现页、forum 作者入口和榜单来源；公开主页内继续打开帖子 / 评论详情后，Android Back 先回公开主页，再回原来源 tab，不把用户强制留在 profile tab
 - Flutter 登录态“我的”页当前承接基础个人资料编辑：读取 `User/GetMyProfile`，保存 `User/UpdateMyProfile`，支持用户名、邮箱、展示名称、年龄和地址；保存成功刷新原生公开资料摘要。头像上传、密码修改、完整账号设置和关注管理仍不在当前 Flutter 边界内

@@ -6,7 +6,7 @@
 
 ## 多端入口边界
 
-- 纯 Web 公开壳层：`/leaderboard` 与 `/leaderboard/:type` 承载公开榜单阅读，用户类榜单条目可跳转 `/u/:id` 公开主页；商品类榜单当前仍保持只读展示，不直接进入购买、订单或背包流程。
+- 纯 Web 公开壳层：`/leaderboard` 与 `/leaderboard/:type` 承载公开榜单阅读，用户类榜单条目优先通过 `voUserPublicId` 跳转 `/u/usr_...` 公开主页，缺少公开标识时才兼容旧 `/u/:userId`；商品类榜单当前仍保持只读展示，不直接进入购买、订单或背包流程。
 - WebOS 保留入口：历史桌面工作台内仍可打开榜单应用，但不作为新增能力默认承载层。
 - Flutter 移动客户端：原生 `榜单` tab 已承载经验榜只读入口；经验榜用户条目可打开原生公开主页，并通过 Android Back 返回榜单。Flutter 当前不扩展商品榜购买、我的经验明细或管理员调整能力。
 
@@ -155,6 +155,7 @@ public class UnifiedLeaderboardItemVo
 
     // 用户信息（用户类排行榜）
     public long? VoUserId { get; set; }
+    public string? VoUserPublicId { get; set; }
     public string? VoUserName { get; set; }
     public string? VoAvatarUrl { get; set; }
     public int? VoCurrentLevel { get; set; }
@@ -180,6 +181,7 @@ public class UnifiedLeaderboardItemVo
 - 统一的数据结构支持用户和商品两种实体类型
 - 可选字段设计，根据排行榜类型填充不同字段
 - 前端可根据 `VoCategory` 字段选择不同的渲染组件
+- 用户类榜单同时保留 `VoUserId` 和 `VoUserPublicId`：前者继续服务内部接口，后者服务公开主页跳转与分享。
 
 ### 前端实现
 
@@ -327,7 +329,7 @@ useEffect(() => {
   const rank = (pageIndex - 1) * 50 + index + 1;
 
   if (item.voCategory === LeaderboardCategory.User) {
-    return <UserLeaderboardItem key={item.voUserId} item={item} rank={rank} />;
+    return <UserLeaderboardItem key={item.voUserPublicId ?? item.voUserId} item={item} rank={rank} />;
   } else {
     return <ProductLeaderboardItem key={item.voProductId} item={item} rank={rank} />;
   }
