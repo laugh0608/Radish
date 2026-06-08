@@ -1,6 +1,6 @@
 # P3-9 真实使用主路径产品化与发布候选整备
 
-> 状态：`进行中（人工复核已通过，进入 PR 前扩大验证与合并材料准备）`
+> 状态：`进行中（已合并到 master，进入发布候选落地准备）`
 >
 > 启动日期：2026-06-07（Asia/Shanghai）
 >
@@ -75,13 +75,15 @@ Flutter 后续可评估把底部栏整理为 `发现 / 消息 / 更多 / 我的`
 
 该评估不要求 Web / PC / Tauri 照搬移动端底部栏。跨端一致性优先体现在任务归属、入口命名、登录恢复、返回语义和错误状态上；Web 端继续保持纯 Web 公开访问与 WebOS `/desktop` 保留入口，PC 壳层继续保持工作台 / Dock / 窗口心智。
 
-本口径属于后续产品信息架构规划，不进入当前 `P3-9` 发布候选合并准备范围；当前只处理扩大验证暴露的主路径阻断、状态恢复或身份契约问题。
+本口径属于后续产品信息架构规划，不进入当前 `P3-9` 发布候选落地准备范围；当前只处理合并后验证、部署准备或真实复核暴露的主路径阻断、状态恢复或身份契约问题。
 
-## 当前人工复核状态
+## 当前合并后状态
 
 截至 `2026-06-08`，自动化总回归已通过，人工复核未暴露新增 `P0/P1`。此前 Flutter 登录态商城 / 钱包路径暴露的商品详情余额展示、购买资格检查失败态和购买后余额刷新问题已完成修复复测；单商品购买、订单详情、背包发放、钱包余额与流水入口未发现新增阻断。
 
-访客公开访问、公开分享、来源返回与 Console 管理员排障路径抽查未发现新增阻断。下一步转入 `PR -> master` 前扩大验证与合并材料准备，重点收口自动化证据、人工复核结论、已知风险和合并建议。
+访客公开访问、公开分享、来源返回与 Console 管理员排障路径抽查未发现新增阻断。`dev -> master` PR #54 已合并，合并提交为 `00540521`，`Repo Quality` 的 `Repo Hygiene / Frontend Lint / Baseline Quick / Identity Guard` 四项检查已通过。
+
+合并后本地最小验证已完成：`validate:ci` 通过；因规划入口命中默认执行面 / 门禁资产，已补 `validate:identity` 并通过。下一步转入发布候选部署前材料收口：确认 tag / 镜像 / 部署 / smoke / 回滚目标待执行项，再按 `M15` 口径进入真实发布或部署动作。
 
 ## 当前门禁
 
@@ -95,7 +97,7 @@ Flutter 后续可评估把底部栏整理为 `发现 / 消息 / 更多 / 我的`
 
 - 大页面重设计、端点级视觉治理和跨页面视觉体系变更原则上先更新 Pencil。
 - 外部 LongId、PublicId、登录回流和 Console returnTo 契约必须继续强守护。
-- PR 合并到 `master` 前必须按 [验证基线说明](/guide/validation-baseline) 扩大验证和留痕。
+- 真实发布 / 部署前必须按 [验证基线说明](/guide/validation-baseline) 与 [M15 最小交付与部署基线](/guide/m15-delivery-baseline) 补必要验证和留痕。
 
 ## 当前不做
 
@@ -126,6 +128,11 @@ Flutter 后续可评估把底部栏整理为 `发现 / 消息 / 更多 / 我的`
    - 汇总 `P3-9-A / B / C / D` 的自动化证据、人工复核清单和已知风险。
    - 自动化总回归和人工复核已通过；当前进入 `PR -> master` 前扩大验证与合并材料准备。
    - 批次记录见：[P3-9-E 发布候选 PR 前收口记录（2026-06-08）](/records/p3-9-e-release-candidate-pr-prep-record-2026-06-08)。
+6. `P3-9-F 合并后发布候选落地准备`
+   - 已确认 PR #54 合并结果、`Repo Quality` 与本地验证入口一致。
+   - 当前整理 tag / 镜像 / 部署 / smoke / 回滚目标待执行项。
+   - 不把尚未发生的 tag、镜像产出或部署复核写成已完成事实。
+   - 批次记录见：[P3-9-F 合并后发布候选准备记录（2026-06-08）](/records/p3-9-f-post-merge-release-candidate-prep-record-2026-06-08)。
 
 ## 验证口径
 
@@ -155,4 +162,10 @@ flutter test
 flutter analyze
 ```
 
-发布候选或 PR 合并到 `master` 前，再按 [验证基线说明](/guide/validation-baseline) 选择 `validate:baseline:quick`、`validate:baseline` 或 `validate:baseline:host`。
+发布候选合并后默认先执行：
+
+```bash
+npm run validate:ci
+```
+
+若进入真实发布 / 部署准备，再按 [验证基线说明](/guide/validation-baseline) 与 [M15 最小交付与部署基线](/guide/m15-delivery-baseline) 选择 `validate:baseline:host`、`check:host-runtime` 或部署后复核记录。
