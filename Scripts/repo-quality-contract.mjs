@@ -4,6 +4,7 @@ export const REPO_QUALITY_REQUIRED_CHECKS = [
   'Repo Hygiene',
   'Frontend Lint',
   'Baseline Quick',
+  'Backend Guard',
   'Identity Guard',
 ];
 
@@ -31,6 +32,18 @@ export const REPO_QUALITY_WORKFLOW_JOBS = [
     checkName: 'Baseline Quick',
     requiredFragments: [
       "run: npm run validate:baseline:quick",
+    ],
+  },
+  {
+    jobId: 'backend-guard',
+    checkName: 'Backend Guard',
+    requiredFragments: [
+      'node Scripts/collect-changed-files.mjs',
+      '--write=changed-files.txt',
+      'node Scripts/check-backend-impact.mjs --stdin-z --format=github-output < changed-files.txt >> "$GITHUB_OUTPUT"',
+      "if: steps.backend-impact.outputs.impacted == 'true'",
+      'run: npm run validate:backend',
+      'Backend Guard skipped: no backend/API-related files changed.',
     ],
   },
   {
@@ -67,6 +80,8 @@ export const REPO_QUALITY_LOCAL_STEPS = [
 
 export const IDENTITY_GUARD_CHECK_NAME = 'Identity Guard';
 export const IDENTITY_GUARD_VALIDATE_ARGS = ['run', 'validate:identity'];
+export const BACKEND_GUARD_CHECK_NAME = 'Backend Guard';
+export const BACKEND_GUARD_VALIDATE_ARGS = ['run', 'validate:backend'];
 
 export const VALIDATE_CI_PACKAGE_SCRIPT = 'node Scripts/validate-ci.mjs';
 export const CHECK_REPO_QUALITY_CONTRACT_PACKAGE_SCRIPT =

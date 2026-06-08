@@ -1,6 +1,9 @@
 import fs from 'node:fs/promises';
 import process from 'node:process';
 
+import {
+  collectBackendImpactReasonGroups,
+} from './backend-impact-rules.mjs';
 import { collectChangedFiles } from './changed-files.mjs';
 import {
   collectIdentityImpactReasonGroups,
@@ -8,7 +11,7 @@ import {
 } from './identity-impact-rules.mjs';
 import { writeSummaryActionReport } from './m14-reporting.mjs';
 import { runCommand } from './process-runner.mjs';
-import { parseSummaryActionReport } from './summary-action-report.mjs';
+import { getFieldValue, parseSummaryActionReport } from './summary-action-report.mjs';
 
 const args = process.argv.slice(2);
 const repoRoot = process.cwd();
@@ -210,7 +213,7 @@ function buildChangeSummaryLines(files, changedFilesEvaluated) {
   return lines;
 }
 
-function buildTopicLines(reportMap, reasonGroups) {
+function buildTopicLines(reportMap, backendReasonGroups, identityReasonGroups) {
   const topics = [];
 
   if (reportMap.ci?.parsed) {
@@ -221,7 +224,11 @@ function buildTopicLines(reportMap, reasonGroups) {
     topics.push('默认验证基线');
   }
 
-  if (reasonGroups.length > 0) {
+  if (backendReasonGroups.length > 0) {
+    topics.push('后端 / API 影响面');
+  }
+
+  if (identityReasonGroups.length > 0) {
     topics.push('身份语义影响面');
   }
 
@@ -234,7 +241,7 @@ function buildTopicLines(reportMap, reasonGroups) {
     : ['- 当前未读取到自动化报告；如需补齐本节，请先生成对应报告。'];
 }
 
-function getIdentitySectionLines(reasonGroups, files, changedFilesEvaluated) {
+function getImpactSectionLines(reasonGroups, files, changedFilesEvaluated) {
   if (!changedFilesEvaluated) {
     return [
       '- 命中情况：未评估',
@@ -266,6 +273,7 @@ function buildAutomationStatusLines(reportMap) {
     ['npm run validate:baseline', '未执行'],
     ['npm run validate:baseline:host', '未执行'],
     ['npm run validate:ci', '未执行'],
+    ['npm run validate:backend', '未执行'],
   ]);
   const detailMap = new Map();
 
@@ -287,6 +295,16 @@ function buildAutomationStatusLines(reportMap) {
   if (reportMap.ci?.parsed) {
     statusMap.set('npm run validate:ci', reportMap.ci.parsed.overall === 'passed' ? '通过' : '阻塞');
     detailMap.set('npm run validate:ci', reportMap.ci.parsed.sourcePath);
+
+    const backendMode = getFieldValue(reportMap.ci.parsed.summary, 'BackendGuardMode');
+    const backendStatus = getFieldValue(reportMap.ci.parsed.summary, 'BackendGuardStatus');
+    if (backendStatus) {
+      statusMap.set('npm run validate:backend', backendStatus === 'passed' ? '通过' : '阻塞');
+      detailMap.set('npm run validate:backend', reportMap.ci.parsed.sourcePath);
+    } else if (backendMode === 'skipped') {
+      statusMap.set('npm run validate:backend', '未执行（未命中后端 / API 影响面）');
+      detailMap.set('npm run validate:backend', reportMap.ci.parsed.sourcePath);
+    }
   }
 
   for (const [command, status] of statusMap.entries()) {
@@ -330,6 +348,16 @@ function inferFailureClassification(reportEntries) {
       description: source
         ? `\`${source.title || source.route || 'report'}\` 报告命中了 contract 漂移相关分诊码。`
         : '报告命中了 contract 漂移相关分诊码。',
+    };
+  }
+
+  if (reports.some((report) => report.triageScope.includes('backend-regression'))) {
+    const source = reports.find((report) => report.triageScope.includes('backend-regression'));
+    return {
+      label: '后端 / API 专题失败',
+      description: source
+        ? `\`${source.title || source.route || 'report'}\` 报告命中了后端 / API 专题分诊范围。`
+        : '报告命中了后端 / API 专题分诊范围。',
     };
   }
 
@@ -398,7 +426,8 @@ function buildMarkdown({
   scope,
   changedFiles,
   changedFilesEvaluated,
-  reasonGroups,
+  backendReasonGroups,
+  identityReasonGroups,
   reportMap,
 }) {
   const failure = inferFailureClassification(Object.values(reportMap));
@@ -412,8 +441,9 @@ function buildMarkdown({
     `- 变更范围：${scope}`,
     '',
     ...renderSection('变更摘要', buildChangeSummaryLines(changedFiles, changedFilesEvaluated)),
-    ...renderSection('影响专题', buildTopicLines(reportMap, reasonGroups)),
-    ...renderSection('身份语义影响面（按需）', getIdentitySectionLines(reasonGroups, changedFiles, changedFilesEvaluated)),
+    ...renderSection('影响专题', buildTopicLines(reportMap, backendReasonGroups, identityReasonGroups)),
+    ...renderSection('后端 / API 影响面（按需）', getImpactSectionLines(backendReasonGroups, changedFiles, changedFilesEvaluated)),
+    ...renderSection('身份语义影响面（按需）', getImpactSectionLines(identityReasonGroups, changedFiles, changedFilesEvaluated)),
     ...renderSection('自动化执行', buildAutomationStatusLines(reportMap)),
     ...renderSection('专题回归', [
       '- 无（当前脚本只汇总自动化报告；如本轮还执行了 `HttpTest`、专题脚本或专题手册，请手动补充）。',
@@ -477,7 +507,8 @@ try {
   console.warn(error instanceof Error ? error.message : String(error));
 }
 
-const reasonGroups = collectIdentityImpactReasonGroups(changedFiles);
+const backendReasonGroups = collectBackendImpactReasonGroups(changedFiles);
+const identityReasonGroups = collectIdentityImpactReasonGroups(changedFiles);
 const reportMap = {
   ci: await readOptionalReport(reportFiles.ci),
   baselineQuick: await readOptionalReport(reportFiles.baselineQuick),
@@ -493,7 +524,8 @@ const markdown = buildMarkdown({
   scope,
   changedFiles,
   changedFilesEvaluated,
-  reasonGroups,
+  backendReasonGroups,
+  identityReasonGroups,
   reportMap,
 });
 

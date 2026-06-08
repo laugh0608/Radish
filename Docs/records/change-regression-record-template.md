@@ -44,8 +44,10 @@
    - 只写本次改了什么，不展开成 changelog
 3. **影响专题**
    - 明确命中哪些专题回归，不写成“已全量验证”
-4. **身份语义影响面（按需）**
+4. **后端 / 身份语义影响面（按需）**
+   - 若命中 `Backend Guard` 或需要追加 `validate:backend`，写清“为什么命中”
    - 若命中 `Identity Guard` 或需要追加 `validate:identity`，写清“为什么命中”
+   - 推荐直接复用 `check:backend-impact` 输出的原因类别
    - 推荐直接复用 `check:identity-impact` 输出的原因类别
 5. **自动化执行**
    - 例如 `validate:baseline:quick` / `full` / `host` / `validate:ci`
@@ -59,7 +61,7 @@
    - 若命中测试部署 / 生产部署、反代、证书或 `RADISH_PUBLIC_URL` 变更，补一段部署后最小复核结论
    - 推荐直接复用 [M14 部署后最小复核记录模板](/records/m14-deployment-review-record-template)
 9. **故障归类 / 环境边界（按需）**
-   - 若出现失败或跳过，标注 `contract 漂移 / 默认执行面失败 / 身份语义专题失败 / 受限环境边界`
+   - 若出现失败或跳过，标注 `contract 漂移 / 默认执行面失败 / 后端 / API 专题失败 / 身份语义专题失败 / 受限环境边界`
    - 若无可写“无”
 10. **结论**
    - 当前工程判断，例如“可合并”“可转维护”“仍需继续观察”
@@ -85,6 +87,11 @@
 - <topic 1>
 - <topic 2>
 
+### 后端 / API 影响面（按需）
+
+- 命中情况：命中 / 未命中
+- 命中原因：后端宿主 / 服务 / 数据模型 / 后端门禁资产 / 无
+
 ### 身份语义影响面（按需）
 
 - 命中情况：命中 / 未命中
@@ -96,6 +103,7 @@
 - `npm run validate:baseline`：通过 / 阻塞 / 未执行
 - `npm run validate:baseline:host`：通过 / 阻塞 / 未执行
 - `npm run validate:ci`：通过 / 阻塞 / 未执行
+- `npm run validate:backend`：通过 / 阻塞 / 未执行
 
 ### 专题回归
 

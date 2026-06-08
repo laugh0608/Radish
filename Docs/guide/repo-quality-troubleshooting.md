@@ -12,12 +12,13 @@
 
 优先不要把所有失败都笼统归为“CI 挂了”。
 
-当前最常见的分流只有 5 类：
+当前最常见的分流只有 6 类：
 
 | 你看到的现象 | 实际归类 | 先看哪里 |
 | --- | --- | --- |
 | `npm run check:repo-quality-contract` 失败 | 门禁契约漂移 | 本页第 2 节 |
 | `npm run validate:ci` 失败，但某个子步骤本身报错 | 默认执行面里的具体检查失败 | 本页第 3 节 |
+| `validate:ci` 里只在命中后端 / API 影响面时追加 `validate:backend`，而这一步失败 | 后端 / API 专题回归失败 | 本页第 3.4 节 |
 | `validate:ci` 里只在命中身份语义影响面时追加 `validate:identity`，而这一步失败 | 身份语义专题回归失败 | 本页第 4 节 |
 | 输出“当前受限环境禁止从 Node 脚本再拉起外部进程”或类似 `EPERM / EINVAL` 提示 | 运行环境边界，不是门禁语义回归 | 本页第 5 节 |
 | 后端很多历史 warning、或 Windows 下 DLL 被占用 | 历史噪音 / 本机宿主占用，不等于本轮 `Repo Quality` 回归 | 本页第 6 节 |
@@ -33,7 +34,7 @@ npm run validate:ci
 
 - `check:repo-quality-contract` 先回答“门禁定义有没有漂移”
 - `validate:ci` 再回答“当前默认执行面里到底是哪一步真的失败了”
-- 若需要给 PR、回归记录或维护记录补说明，默认把结论回写成四类之一：`contract 漂移`、`默认执行面失败`、`身份语义专题失败`、`受限环境边界`
+- 若需要给 PR、回归记录或维护记录补说明，默认把结论回写成五类之一：`contract 漂移`、`默认执行面失败`、`后端 / API 专题失败`、`身份语义专题失败`、`受限环境边界`
 
 ## 2. `check:repo-quality-contract` 失败时
 
@@ -45,7 +46,7 @@ npm run validate:ci
 2. `.github/rulesets/master-protection.json`
 3. 本地 `npm run validate:ci`
 
-并且不仅校验 required check 名称，还会校验 `repo-quality.yml` 四个 job 的关键命令片段。
+并且不仅校验 required check 名称，还会校验 `repo-quality.yml` 各 job 的关键命令片段。
 
 ### 2.1 常见原因
 
@@ -53,6 +54,7 @@ npm run validate:ci
 - ruleset required checks 改了，但本地 `validate:ci` 仍在复现旧门禁
 - workflow 名字没变，但关键命令片段变了
   - 例如 changed-only 入口不再走统一 collector
+  - 或 `Backend Guard` 不再按 `check:backend-impact` 条件触发
   - 或 `Identity Guard` 不再按 `check:identity-impact` 条件触发
 - 本地 `validate:ci` 的执行面改了，但 contract 没同步
 
@@ -68,7 +70,7 @@ npm run validate:ci
 
 - 如果你改的是门禁定义，必须同时更新 contract 与文档，不要只改 workflow
 - 如果你只是想让本地更快通过，不要绕开 contract；先解释为什么 required checks 或命令语义应该变化
-- 如果是 `Identity Guard` 触发条件变化，优先回到统一 impact 规则源，而不是在 workflow 里单独补一份路径清单
+- 如果是 `Backend Guard` 或 `Identity Guard` 触发条件变化，优先回到统一 impact 规则源，而不是在 workflow 里单独补一份路径清单
 
 ## 3. `validate:ci` 失败时
 
@@ -79,7 +81,8 @@ npm run validate:ci
 1. `check:repo-hygiene:changed`
 2. `lint:changed`
 3. `validate:baseline:quick`
-4. 仅在命中身份语义影响面时追加 `validate:identity`
+4. 仅在命中后端 / API 影响面时追加 `validate:backend`
+5. 仅在命中身份语义影响面时追加 `validate:identity`
 
 因此这类失败必须继续往下拆。
 
@@ -126,7 +129,17 @@ npm run collect:changed
 - identity impact 自校验失败：看 `Scripts/check-identity-impact.mjs`
 - 身份语义扫描失败：看 `Scripts/check-identity-claims.mjs`
 
-### 3.4 只在命中身份语义影响面时追加 `validate:identity`
+### 3.4 只在命中后端 / API 影响面时追加 `validate:backend`
+
+若 `validate:ci` 多跑了 `validate:backend`，说明当前改动命中了后端统一 impact 规则源。先确认命中文件是否属于后端宿主、服务、模型、仓储、DbMigrate、后端测试、后端配置或后端门禁资产。
+
+失败时优先看 `dotnet build Radish.slnx -c Debug` 与 `dotnet test Radish.Api.Tests` 的原始输出。若需要单独看 impact 判定，可运行：
+
+```bash
+npm run check:backend-impact
+```
+
+### 3.5 只在命中身份语义影响面时追加 `validate:identity`
 
 若 `validate:ci` 最后多跑了一段 `validate:identity`，说明当前改动已命中统一 impact 规则源，不要先怀疑 workflow 多跑了。
 
@@ -197,7 +210,7 @@ npm run check:identity-impact
 - `dotnet build` / `dotnet test` 中原本就存在的历史 warnings
 - Windows 本机有宿主正在运行，导致 `bin\Debug` 下 DLL 被锁
 
-这两类问题都需要处理，但它们和“required checks 名称漂移”“workflow 语义漂移”“Identity Guard 触发条件漂移”不是一类故障。
+这两类问题都需要处理，但它们和“required checks 名称漂移”“workflow 语义漂移”“Backend Guard / Identity Guard 触发条件漂移”不是一类故障。
 
 处理顺序建议：
 
@@ -207,12 +220,15 @@ npm run check:identity-impact
 
 ## 7. 维护时的单一真相源
 
-若后续继续调整 `Repo Quality / validate:ci / Identity Guard`，优先把以下文件视为同一组资产一起维护：
+若后续继续调整 `Repo Quality / validate:ci / Backend Guard / Identity Guard`，优先把以下文件视为同一组资产一起维护：
 
 - [repo-quality.yml](/D:/Code/Radish/.github/workflows/repo-quality.yml)
 - [master-protection.json](/D:/Code/Radish/.github/rulesets/master-protection.json)
+- [backend-impact-rules.mjs](/D:/Code/Radish/Scripts/backend-impact-rules.mjs)
+- [check-backend-impact.mjs](/D:/Code/Radish/Scripts/check-backend-impact.mjs)
 - [repo-quality-contract.mjs](/D:/Code/Radish/Scripts/repo-quality-contract.mjs)
 - [validate-ci.mjs](/D:/Code/Radish/Scripts/validate-ci.mjs)
+- [validate-backend-regression.mjs](/D:/Code/Radish/Scripts/validate-backend-regression.mjs)
 - [validation-baseline.md](/D:/Code/Radish/Docs/guide/validation-baseline.md)
 - [identity-claim-regression-playbook.md](/D:/Code/Radish/Docs/guide/identity-claim-regression-playbook.md)
 - [change-regression-record-template.md](/D:/Code/Radish/Docs/records/change-regression-record-template.md)

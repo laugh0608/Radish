@@ -3,6 +3,8 @@ import path from 'node:path';
 import process from 'node:process';
 
 import {
+  BACKEND_GUARD_CHECK_NAME,
+  BACKEND_GUARD_VALIDATE_ARGS,
   CHECK_REPO_QUALITY_CONTRACT_PACKAGE_SCRIPT,
   IDENTITY_GUARD_CHECK_NAME,
   IDENTITY_GUARD_VALIDATE_ARGS,
@@ -131,9 +133,13 @@ function assertValidateCiContract(validateCiSource, failures) {
   const requiredFragments = [
     "from './repo-quality-contract.mjs'",
     "from './process-runner.mjs'",
+    "from './backend-impact-rules.mjs'",
     'REPO_QUALITY_LOCAL_STEPS',
+    'BACKEND_GUARD_VALIDATE_ARGS',
+    'BACKEND_GUARD_CHECK_NAME',
     'IDENTITY_GUARD_VALIDATE_ARGS',
     'IDENTITY_GUARD_CHECK_NAME',
+    'collectBackendImpactMatches',
     'collectIdentityImpactMatches',
     "runCommand('npm', args, {",
     "runCommand('node', commandArgs, {",
@@ -203,6 +209,7 @@ const rulesetRequiredChecks = parseRulesetRequiredChecks(rulesetContent);
 const packageScripts = packageJsonContent.scripts ?? {};
 const localCheckNames = [
   ...REPO_QUALITY_LOCAL_STEPS.map((step) => step.checkName),
+  BACKEND_GUARD_CHECK_NAME,
   IDENTITY_GUARD_CHECK_NAME,
 ];
 
@@ -249,7 +256,41 @@ assertPackageScript(
   failures
 );
 
+assertPackageScript(
+  packageScripts,
+  'validate:backend',
+  'node Scripts/validate-backend-regression.mjs',
+  failures
+);
+
+assertPackageScript(
+  packageScripts,
+  'check:backend-impact',
+  'node Scripts/run-with-changed-files.mjs --mode=worktree -- node Scripts/check-backend-impact.mjs --stdin-z',
+  failures
+);
+
+assertPackageScript(
+  packageScripts,
+  'type-check',
+  'npm run type-check --workspace=@radish/http && npm run type-check --workspace=@radish/ui && npm run type-check --workspace=radish.client && npm run type-check --workspace=radish.console',
+  failures
+);
+
+assertPackageScript(
+  packageScripts,
+  'type-check:http',
+  'npm run type-check --workspace=@radish/http',
+  failures
+);
+
 assertValidateCiContract(validateCiSource, failures);
+
+if (JSON.stringify(BACKEND_GUARD_VALIDATE_ARGS) !== JSON.stringify(['run', 'validate:backend'])) {
+  failures.push(
+    `Backend Guard 的本地追加验证入口漂移。\n  期望: run validate:backend\n  实际: ${BACKEND_GUARD_VALIDATE_ARGS.join(' ')}`
+  );
+}
 
 if (JSON.stringify(IDENTITY_GUARD_VALIDATE_ARGS) !== JSON.stringify(['run', 'validate:identity'])) {
   failures.push(
