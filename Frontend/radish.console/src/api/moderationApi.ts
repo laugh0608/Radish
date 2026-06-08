@@ -1,5 +1,7 @@
 import { apiGet, apiPost } from '@radish/http';
 
+export type ConsoleLongId = string;
+
 export interface VoPagedResult<T> {
   voItems: T[];
   voTotal: number;
@@ -8,21 +10,21 @@ export interface VoPagedResult<T> {
 }
 
 export interface ContentReportQueueItemVo {
-  voReportId: number;
+  voReportId: ConsoleLongId;
   voTargetType: string;
-  voTargetContentId: number;
-  voTargetPostId?: number | null;
-  voTargetCommentId?: number | null;
-  voTargetChannelId?: number | null;
-  voTargetMessageId?: number | null;
+  voTargetContentId: ConsoleLongId;
+  voTargetPostId?: ConsoleLongId | null;
+  voTargetCommentId?: ConsoleLongId | null;
+  voTargetChannelId?: ConsoleLongId | null;
+  voTargetMessageId?: ConsoleLongId | null;
   voTargetNavigationStatus: string;
   voTargetNavigationMessage?: string | null;
   voTargetSnapshotTitle?: string | null;
   voTargetSnapshotSummary?: string | null;
   voTargetSnapshotIsPersisted: boolean;
-  voTargetUserId: number;
+  voTargetUserId: ConsoleLongId;
   voTargetUserName?: string | null;
-  voReporterUserId: number;
+  voReporterUserId: ConsoleLongId;
   voReporterUserName: string;
   voReasonType: string;
   voReasonDetail?: string | null;
@@ -36,18 +38,18 @@ export interface ContentReportQueueItemVo {
 }
 
 export interface UserModerationActionVo {
-  voActionId: number;
-  voTargetUserId: number;
+  voActionId: ConsoleLongId;
+  voTargetUserId: ConsoleLongId;
   voTargetUserName?: string | null;
   voActionType: string;
   voReason: string;
-  voSourceReportId?: number | null;
+  voSourceReportId?: ConsoleLongId | null;
   voSourceReportTargetType?: string | null;
-  voSourceReportTargetContentId?: number | null;
-  voSourceReportTargetPostId?: number | null;
-  voSourceReportTargetCommentId?: number | null;
-  voSourceReportTargetChannelId?: number | null;
-  voSourceReportTargetMessageId?: number | null;
+  voSourceReportTargetContentId?: ConsoleLongId | null;
+  voSourceReportTargetPostId?: ConsoleLongId | null;
+  voSourceReportTargetCommentId?: ConsoleLongId | null;
+  voSourceReportTargetChannelId?: ConsoleLongId | null;
+  voSourceReportTargetMessageId?: ConsoleLongId | null;
   voSourceReportTargetNavigationStatus: string;
   voSourceReportTargetNavigationMessage?: string | null;
   voSourceReportTargetSnapshotTitle?: string | null;
@@ -62,7 +64,7 @@ export interface UserModerationActionVo {
 }
 
 export interface ReviewContentReportRequest {
-  reportId: number;
+  reportId: ConsoleLongId;
   isApproved: boolean;
   actionType: number;
   durationHours?: number | null;
@@ -70,18 +72,18 @@ export interface ReviewContentReportRequest {
 }
 
 export interface ApplyUserModerationActionRequest {
-  targetUserId: number;
+  targetUserId: ConsoleLongId;
   actionType: number;
   durationHours?: number | null;
   reason?: string;
-  sourceReportId?: number | null;
+  sourceReportId?: ConsoleLongId | null;
 }
 
 export interface ContentModerationActionLogQuery {
   pageIndex?: number;
   pageSize?: number;
-  targetUserId?: number;
-  sourceReportId?: number;
+  targetUserId?: ConsoleLongId;
+  sourceReportId?: ConsoleLongId;
   actionType?: string;
   isActive?: boolean;
   keyword?: string;

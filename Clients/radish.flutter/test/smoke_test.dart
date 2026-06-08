@@ -12,6 +12,7 @@ import 'package:radish_flutter/core/auth/session_refresh_service.dart';
 import 'package:radish_flutter/core/auth/session_store.dart';
 import 'package:radish_flutter/core/config/app_environment.dart';
 import 'package:radish_flutter/core/platform/app_lifecycle_gateway.dart';
+import 'package:radish_flutter/core/network/radish_api_client.dart';
 import 'package:radish_flutter/features/discover/data/discover_models.dart';
 import 'package:radish_flutter/features/discover/data/discover_repository.dart';
 import 'package:radish_flutter/features/docs/data/docs_follow_up_store.dart';
@@ -35,6 +36,13 @@ import 'package:radish_flutter/features/wallet/data/wallet_repository.dart';
 Finder _forumCommentTextField({String hintText = '写下你的评论...'}) {
   return find.byWidgetPredicate(
     (widget) => widget is TextField && widget.decoration?.hintText == hintText,
+  );
+}
+
+Finder _forumTextFieldByLabel(String labelText) {
+  return find.byWidgetPredicate(
+    (widget) =>
+        widget is TextField && widget.decoration?.labelText == labelText,
   );
 }
 
@@ -251,6 +259,23 @@ void main() {
     expect(find.text('来源：订单列表'), findsOneWidget);
     expect(find.text('完成支付'), findsOneWidget);
     expect(find.text('订单完成'), findsOneWidget);
+    expect(find.text('扣款流水'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, '查看扣款流水'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilledButton, '查看扣款流水'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('订单扣款流水'), findsWidgets);
+    expect(find.text('返回订单详情'), findsOneWidget);
+    expect(find.text('当前筛选：Order #9001'), findsOneWidget);
+    expect(find.text('已加载 1 / 1 条流水'), findsOneWidget);
+    expect(find.text('匹配流水'), findsOneWidget);
+    expect(find.text('商城消费'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('订单详情'), findsWidgets);
 
     await tester.pageBack();
     await tester.pumpAndSettle();
@@ -634,7 +659,83 @@ void main() {
     expect(find.text('Profile Rename Card'), findsWidgets);
     expect(find.text('单商品购买'), findsOneWidget);
     expect(find.text('登录后购买'), findsOneWidget);
-    expect(find.text('/shop/product/product-4001'), findsOneWidget);
+    expect(find.text('/shop/product/4001'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('继续阅读'), findsOneWidget);
+    expect(find.text('商城精选'), findsOneWidget);
+    expect(find.text('Profile Rename Card'), findsOneWidget);
+  });
+
+  testWidgets(
+      'authenticated discover product purchase returns to discover context',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: 'user-42',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: 'user-42',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _SeededDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _FakeForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        shopRepository: const _SeededShopRepository(),
+        walletRepository: const _SeededWalletRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('查看详情'),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.tap(find.text('查看详情'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('来源：发现页商城精选'), findsOneWidget);
+    expect(find.text('/shop/product/4001'), findsOneWidget);
+    expect(find.text('当前可购买'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), '123456');
+    await tester.tap(find.text('确认购买 1 件'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('订单详情'), findsWidgets);
+    expect(find.text('来源：购买结果'), findsOneWidget);
+    expect(find.text('返回商品详情'), findsOneWidget);
+    expect(find.text('订单 RO202605310001'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('商品详情'), findsWidgets);
+    expect(find.text('Profile Rename Card'), findsWidgets);
 
     await tester.pageBack();
     await tester.pumpAndSettle();
@@ -683,7 +784,7 @@ void main() {
 
     expect(find.text('公开商城'), findsWidgets);
     expect(find.text('商品列表'), findsOneWidget);
-    expect(find.text('/shop/product/product-4001'), findsOneWidget);
+    expect(find.text('/shop/product/4001'), findsOneWidget);
 
     await tester.tap(find.text('查看详情'));
     await tester.pumpAndSettle();
@@ -1828,6 +1929,96 @@ void main() {
     expect(find.text('登录后评论'), findsNothing);
   });
 
+  testWidgets('forum post sign-in keeps draft and publishes after callback',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+    final gateway = InMemoryNativeAuthGateway();
+    final authController = NativeAuthController(
+      environment: const AppEnvironment.development(),
+      sessionController: sessionController,
+      gateway: gateway,
+      exchangeService: _FakeAuthorizationCodeExchangeService(
+        nextSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: 'user-214',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: 'user-214',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+    );
+    final repository = _RecordingPostForumRepository();
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: authController,
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: repository,
+        profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.tap(find.text('论坛'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(_forumTextFieldByLabel('标题'), '登录回流发帖');
+    await tester.enterText(_forumTextFieldByLabel('标签'), 'flutter, 回流');
+    await tester.enterText(
+      _forumTextFieldByLabel('正文'),
+      '匿名态进入登录后，回来继续发布同一份草稿。',
+    );
+
+    gateway.setPendingCallback(
+      const NativeAuthCallbackPayload(
+        type: NativeAuthCallbackType.login,
+        code: 'post-login-code',
+      ),
+    );
+    await tester.tap(find.widgetWithText(FilledButton, '发布帖子'));
+    await tester.pumpAndSettle();
+
+    expect(repository.createPostRequests, isEmpty);
+    expect(find.text('登录后可继续提交当前帖子。'), findsOneWidget);
+    expect(find.text('登录回流发帖'), findsOneWidget);
+    expect(find.text('匿名态进入登录后，回来继续发布同一份草稿。'), findsOneWidget);
+
+    await authController.consumePendingCallback();
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('已登录'), findsWidgets);
+    expect(find.text('已回到发帖表单，可以继续发布。'), findsOneWidget);
+    expect(find.text('登录回流发帖'), findsOneWidget);
+    expect(find.text('匿名态进入登录后，回来继续发布同一份草稿。'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilledButton, '发布帖子'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(repository.createPostRequests, hasLength(1));
+    expect(repository.createPostRequests.single.title, '登录回流发帖');
+    expect(repository.createPostRequests.single.categoryId, 'category-1');
+    expect(repository.createPostRequests.single.tagNames, ['flutter', '回流']);
+    expect(repository.createPostRequests.single.accessToken, isNotEmpty);
+    expect(find.text('/forum/post/post-created'), findsOneWidget);
+    expect(find.text('帖子详情'), findsWidgets);
+  });
+
   testWidgets('forum feed opens native public detail page', (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
     tester.view.devicePixelRatio = 1.0;
@@ -2628,6 +2819,160 @@ void main() {
     expect(find.text('通知 3 条'), findsOneWidget);
   });
 
+  testWidgets('opening unread forum notification marks it read before detail',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final notificationRepository = _MutableForumNotificationRepository()
+      ..notifications = const [
+        NotificationListItem(
+          id: 'notification-forum-comment',
+          notificationId: 'forum-1',
+          notification: NotificationPayload(
+            title: '帖子被评论',
+            content: '有人评论了你的帖子。',
+            type: 'CommentReplied',
+            businessType: 'Comment',
+            createdAt: null,
+            extData: {
+              'app': 'forum',
+              'postId': '2042219067430928384',
+              'commentId': 'comment-big-1',
+            },
+          ),
+          isRead: false,
+          createdAt: '2026-05-31T08:31:00',
+        ),
+      ];
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: 'user-42',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: 'user-42',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _SeededBigIdForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+        notificationRepository: notificationRepository,
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('我的').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('通知 1 条'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('帖子被评论'), findsOneWidget);
+    expect(find.textContaining('评论 · 未读'), findsOneWidget);
+
+    await tester.tap(find.text('帖子被评论'));
+    await tester.pumpAndSettle();
+
+    expect(notificationRepository.markedReadNotificationIds, ['forum-1']);
+    expect(find.text('帖子详情'), findsWidgets);
+    expect(find.text('通知回流'), findsWidgets);
+    expect(find.text('Big id root comment'), findsOneWidget);
+  });
+
+  testWidgets('forum notification opens detail when auto mark read fails',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final notificationRepository = _MutableForumNotificationRepository()
+      ..markAsReadError = const RadishApiClientException('已读接口不可用')
+      ..notifications = const [
+        NotificationListItem(
+          id: 'notification-forum-comment',
+          notificationId: 'forum-1',
+          notification: NotificationPayload(
+            title: '帖子被评论',
+            content: '有人评论了你的帖子。',
+            type: 'CommentReplied',
+            businessType: 'Comment',
+            createdAt: null,
+            extData: {
+              'app': 'forum',
+              'postId': '2042219067430928384',
+              'commentId': 'comment-big-1',
+            },
+          ),
+          isRead: false,
+          createdAt: '2026-05-31T08:31:00',
+        ),
+      ];
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: _buildJwt(
+            userId: 'user-42',
+            expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+          ),
+          refreshToken: 'refresh-token',
+          userId: 'user-42',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: _FakeSessionRefreshService.missing(),
+    );
+
+    await tester.pumpWidget(
+      RadishApp(
+        environment: const AppEnvironment.development(),
+        sessionController: sessionController,
+        authController: _buildAuthController(sessionController),
+        discoverRepository: _FakeDiscoverRepository(),
+        docsRepository: _FakeDocsRepository(),
+        forumRepository: _SeededBigIdForumRepository(),
+        profileRepository: _FakeProfileRepository(),
+        followUpStore: InMemoryForumFollowUpStore(),
+        notificationRepository: notificationRepository,
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('我的').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('通知 1 条'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('帖子被评论'));
+    await tester.pumpAndSettle();
+
+    expect(notificationRepository.markedReadNotificationIds, isEmpty);
+    expect(find.text('帖子详情'), findsWidgets);
+    expect(find.text('通知回流'), findsWidgets);
+    expect(
+      find.text('通知已打开，标记已读失败：已读接口不可用'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('forum notification chip explains failure empty and refresh',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
@@ -2890,7 +3235,7 @@ class _SeededDiscoverRepository implements DiscoverRepository {
       documents: [],
       products: [
         DiscoverProductSummary(
-          id: 'product-4001',
+          id: '4001',
           name: 'Profile Rename Card',
           productType: 'Consumable',
           price: 120,
@@ -2917,7 +3262,7 @@ class _SeededShopRepository implements ShopRepository {
       pageCount: 1,
       products: [
         ShopProductSummary(
-          id: 'product-4001',
+          id: '4001',
           name: 'Profile Rename Card',
           productType: '消耗品',
           price: 120,
@@ -2936,7 +3281,7 @@ class _SeededShopRepository implements ShopRepository {
     required String productId,
   }) async {
     return const ShopProductDetail(
-      id: 'product-4001',
+      id: '4001',
       name: 'Profile Rename Card',
       description: 'Use this read-only detail to confirm the item scope.',
       categoryName: 'Profile tools',
@@ -3024,6 +3369,7 @@ class _SeededShopRepository implements ShopRepository {
       totalPrice: 120,
       status: 'Completed',
       statusDisplay: '已完成',
+      coinTransactionId: 'coin-2',
       durationDisplay: '永久',
       createTime: '2026-05-31T08:00:00Z',
       paidTime: '2026-05-31T08:00:30Z',
@@ -3099,52 +3445,82 @@ class _SeededWalletRepository implements WalletRepository {
     required String accessToken,
     required int pageIndex,
     required int pageSize,
+    String? transactionType,
+    String? status,
+    String? businessType,
+    String? businessId,
   }) async {
-    return const CoinTransactionPage(
+    const transactions = [
+      CoinTransaction(
+        id: 'coin-1',
+        transactionNo: 'CT202605310001',
+        fromUserId: null,
+        fromUserName: null,
+        toUserId: 'user-42',
+        toUserName: 'user-42',
+        amount: 1800,
+        amountDisplay: '1.800',
+        fee: 0,
+        feeDisplay: '0.000',
+        transactionType: 'SYSTEM_GRANT',
+        transactionTypeDisplay: '系统赠送',
+        status: 'SUCCESS',
+        statusDisplay: '成功',
+        remark: '新账号奖励',
+        createTime: '2026-05-31T08:00:00Z',
+      ),
+      CoinTransaction(
+        id: 'coin-2',
+        transactionNo: 'CT202605310002',
+        fromUserId: 'user-42',
+        fromUserName: 'user-42',
+        toUserId: null,
+        toUserName: null,
+        amount: 600,
+        amountDisplay: '0.600',
+        fee: 0,
+        feeDisplay: '0.000',
+        transactionType: 'CONSUME',
+        transactionTypeDisplay: '商城消费',
+        status: 'SUCCESS',
+        statusDisplay: '成功',
+        businessType: 'Order',
+        businessId: '9001',
+        remark: '购买 Profile Rename Card',
+        createTime: '2026-05-31T08:30:00Z',
+      ),
+    ];
+    final filteredTransactions = transactions.where((transaction) {
+      if (transactionType != null &&
+          transactionType.trim().isNotEmpty &&
+          transaction.transactionType != transactionType.trim()) {
+        return false;
+      }
+      if (status != null &&
+          status.trim().isNotEmpty &&
+          transaction.status != status.trim()) {
+        return false;
+      }
+      if (businessType != null &&
+          businessType.trim().isNotEmpty &&
+          transaction.businessType != businessType.trim()) {
+        return false;
+      }
+      if (businessId != null &&
+          businessId.trim().isNotEmpty &&
+          transaction.businessId != businessId.trim()) {
+        return false;
+      }
+
+      return true;
+    }).toList();
+
+    return CoinTransactionPage(
       page: 1,
       pageSize: 20,
-      dataCount: 2,
+      dataCount: filteredTransactions.length,
       pageCount: 1,
-      transactions: [
-        CoinTransaction(
-          id: 'coin-1',
-          transactionNo: 'CT202605310001',
-          fromUserId: null,
-          fromUserName: null,
-          toUserId: 'user-42',
-          toUserName: 'user-42',
-          amount: 1800,
-          amountDisplay: '1.800',
-          fee: 0,
-          feeDisplay: '0.000',
-          transactionType: 'SYSTEM_GRANT',
-          transactionTypeDisplay: '系统赠送',
-          status: 'SUCCESS',
-          statusDisplay: '成功',
-          remark: '新账号奖励',
-          createTime: '2026-05-31T08:00:00Z',
-        ),
-        CoinTransaction(
-          id: 'coin-2',
-          transactionNo: 'CT202605310002',
-          fromUserId: 'user-42',
-          fromUserName: 'user-42',
-          toUserId: null,
-          toUserName: null,
-          amount: 600,
-          amountDisplay: '0.600',
-          fee: 0,
-          feeDisplay: '0.000',
-          transactionType: 'CONSUME',
-          transactionTypeDisplay: '商城消费',
-          status: 'SUCCESS',
-          statusDisplay: '成功',
-          businessType: 'Order',
-          businessId: '9001',
-          remark: '购买 Profile Rename Card',
-          createTime: '2026-05-31T08:30:00Z',
-        ),
-      ],
+      transactions: filteredTransactions,
     );
   }
 }
@@ -3757,6 +4133,47 @@ class _SeededForumRepository implements ForumRepository {
   }
 }
 
+class _RecordingPostForumRepository extends _SeededForumRepository {
+  final List<_ForumCreatePostRequest> createPostRequests =
+      <_ForumCreatePostRequest>[];
+
+  @override
+  Future<String> createPost({
+    required String title,
+    required String content,
+    required String categoryId,
+    required List<String> tagNames,
+    required String accessToken,
+  }) async {
+    createPostRequests.add(
+      _ForumCreatePostRequest(
+        title: title,
+        content: content,
+        categoryId: categoryId,
+        tagNames: tagNames,
+        accessToken: accessToken,
+      ),
+    );
+    return 'post-created';
+  }
+}
+
+class _ForumCreatePostRequest {
+  const _ForumCreatePostRequest({
+    required this.title,
+    required this.content,
+    required this.categoryId,
+    required this.tagNames,
+    required this.accessToken,
+  });
+
+  final String title;
+  final String content;
+  final String categoryId;
+  final List<String> tagNames;
+  final String accessToken;
+}
+
 class _SeededBigIdForumRepository implements ForumRepository {
   @override
   Future<List<ForumCategorySummary>> getTopCategories() async {
@@ -4017,6 +4434,21 @@ class _FakeProfileRepository implements ProfileRepository {
       items: [],
     );
   }
+
+  @override
+  Future<MyProfileInfo> getMyProfile({
+    required String accessToken,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> updateMyProfile({
+    required UpdateMyProfileRequest request,
+    required String accessToken,
+  }) {
+    throw UnimplementedError();
+  }
 }
 
 class _SeededLeaderboardRepository implements LeaderboardRepository {
@@ -4153,6 +4585,7 @@ class _FakeForumNotificationRepository implements NotificationRepository {
 
 class _MutableForumNotificationRepository implements NotificationRepository {
   ForumDetailHandoffTarget? target;
+  List<NotificationListItem>? notifications;
   Object? error;
   Object? markAsReadError;
   int callCount = 0;
@@ -4163,6 +4596,17 @@ class _MutableForumNotificationRepository implements NotificationRepository {
     required String accessToken,
     int pageSize = 20,
   }) async {
+    final notifications = this.notifications;
+    if (notifications != null) {
+      callCount += 1;
+      final error = this.error;
+      if (error != null) {
+        throw error;
+      }
+
+      return NotificationPage(notifications: notifications);
+    }
+
     final targets = await getForumTargets(
       accessToken: accessToken,
       pageSize: pageSize,
@@ -4365,6 +4809,21 @@ class _SeededProfileRepository implements ProfileRepository {
         ),
       ],
     );
+  }
+
+  @override
+  Future<MyProfileInfo> getMyProfile({
+    required String accessToken,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> updateMyProfile({
+    required UpdateMyProfileRequest request,
+    required String accessToken,
+  }) {
+    throw UnimplementedError();
   }
 }
 

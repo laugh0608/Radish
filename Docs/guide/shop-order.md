@@ -127,6 +127,11 @@ public class Order : RootEntityTKey<long>, ITenantEntity
     public DateTime? PaidTime { get; set; }
 
     /// <summary>
+    /// 扣款交易 ID
+    /// </summary>
+    public long? CoinTransactionId { get; set; }
+
+    /// <summary>
     /// 完成时间（权益发放时间）
     /// </summary>
     public DateTime? CompletedTime { get; set; }
@@ -231,7 +236,10 @@ POST /api/v1/Shop/Purchase
 - `productId`、订单 ID、用户 ID 等外部传递的 long 标识在前端应按字符串保留，避免 JavaScript 大整数精度丢失。
 - `CheckCanBuy` 只做购买资格预检，返回 `VoCanBuy / VoReason`，不创建订单、不扣款、不扣库存。
 - `Purchase` 在失败时返回失败响应，并在 `responseData.errorMessage` 或响应消息中给出明确原因；调用端不应把失败响应当作成功订单处理。
+- WebOS / Flutter 调用购买前都应先消费 `CheckCanBuy` 结果；资格不通过时只展示原因，不打开支付口令弹窗，不提交 `Purchase`。
 - Flutter 当前固定购买 `1` 件商品，成功后打开订单详情确认结果；WebOS 私域商城可继续按既有数量选择和购买弹窗承接。
+- `Purchase` 扣款成功后会把胡萝卜流水 ID 写入订单的 `CoinTransactionId`；管理端 `OrderVo.VoCoinTransactionId` 用于从订单详情定位对应扣款流水。
+- Console 订单排障入口按 `BusinessType=Order / BusinessId=OrderId` 定位胡萝卜流水；订单页 URL 状态、商品相关订单跳转和流水回看订单时，`orderId / productId / businessId / userId` 都保持字符串查询参数，`returnTo` 只接受同源相对路径。
 - 购物车、退款、权益激活和道具使用不属于当前移动端购买契约。
 
 ### 4.2.1 创建订单服务

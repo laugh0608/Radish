@@ -202,7 +202,7 @@ export async function getTopCategories(t: TFunction): Promise<Category[]> {
 /**
  * 按 ID 获取分类详情
  */
-export async function getCategoryById(categoryId: number | string, t: TFunction): Promise<Category> {
+export async function getCategoryById(categoryId: string, t: TFunction): Promise<Category> {
   void t;
   const response = await apiGet<Category>(
     `/api/v1/Category/GetById/${categoryId}`,
@@ -229,7 +229,7 @@ export async function getCategoryById(categoryId: number | string, t: TFunction)
  * @param keyword 搜索关键词（搜索标题和内容）
  */
 export async function getPostList(
-  categoryId: number | null,
+  categoryId: LongId | null,
   t: TFunction,
   pageIndex: number = 1,
   pageSize: number = 20,
@@ -246,7 +246,7 @@ export async function getPostList(
 ): Promise<PageModel<PostItem>> {
   void t;
   const params = new URLSearchParams();
-  if (categoryId) params.set('categoryId', categoryId.toString());
+  if (categoryId) params.set('categoryId', categoryId);
   params.set('pageIndex', pageIndex.toString());
   params.set('pageSize', pageSize.toString());
   params.set('sortBy', sortBy);

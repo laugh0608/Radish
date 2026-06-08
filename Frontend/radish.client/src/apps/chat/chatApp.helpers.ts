@@ -207,7 +207,7 @@ export function findMentionContext(text: string, cursor: number): MentionContext
   };
 }
 
-export function getDraftStorageKey(userId: number, channelId: EntityIdValue): string {
+export function getDraftStorageKey(userId: EntityIdValue, channelId: EntityIdValue): string {
   return `${userId}:${getEntityKey(channelId)}`;
 }
 
@@ -242,8 +242,8 @@ export function writeDraftMap(nextMap: ChannelDraftMap): void {
   window.localStorage.setItem(CHAT_DRAFT_STORAGE_KEY, JSON.stringify(nextMap));
 }
 
-export function loadChannelDraft(userId: number, channelId: EntityIdValue): ChannelDraft | null {
-  if (userId <= 0 || !isPersistedEntityId(channelId)) {
+export function loadChannelDraft(userId: EntityIdValue, channelId: EntityIdValue): ChannelDraft | null {
+  if (!isPersistedEntityId(userId) || !isPersistedEntityId(channelId)) {
     return null;
   }
 
@@ -253,13 +253,13 @@ export function loadChannelDraft(userId: number, channelId: EntityIdValue): Chan
 }
 
 export function persistChannelDraft(
-  userId: number,
+  userId: EntityIdValue,
   channelId: EntityIdValue,
   content: string,
   replyTarget: ChannelMessageVo | null,
   pendingImage: PendingImageDraft | null
 ): void {
-  if (userId <= 0 || !isPersistedEntityId(channelId)) {
+  if (!isPersistedEntityId(userId) || !isPersistedEntityId(channelId)) {
     return;
   }
 
@@ -281,7 +281,7 @@ export function persistChannelDraft(
   writeDraftMap(draftMap);
 }
 
-export function clearChannelDraft(userId: number, channelId: EntityIdValue): void {
+export function clearChannelDraft(userId: EntityIdValue, channelId: EntityIdValue): void {
   persistChannelDraft(userId, channelId, '', null, null);
 }
 

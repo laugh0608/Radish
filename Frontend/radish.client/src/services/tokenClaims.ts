@@ -1,7 +1,7 @@
 export interface AccessTokenIdentity {
-  userId: number;
+  userId: string;
   userName: string;
-  tenantId: number;
+  tenantId: string;
   roles: string[];
 }
 
@@ -11,17 +11,22 @@ const legacyNameIdentifierClaim = 'http://schemas.xmlsoap.org/ws/2005/05/identit
 const legacyNameClaim = 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name';
 const legacyRoleClaim = 'http://schemas.microsoft.com/ws/2008/06/identity/claims/role';
 
-function parseNumericClaim(value: unknown): number | null {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return Math.trunc(value);
+function parseIntegerClaim(value: unknown, allowZero = false): string | null {
+  if (typeof value === 'number') {
+    if (!Number.isSafeInteger(value) || value < 0 || (!allowZero && value === 0)) {
+      return null;
+    }
+
+    return String(value);
   }
 
-  if (typeof value === 'string') {
-    const parsed = Number.parseInt(value, 10);
-    return Number.isFinite(parsed) ? parsed : null;
+  if (typeof value !== 'string') {
+    return null;
   }
 
-  return null;
+  const normalized = value.trim();
+  const pattern = allowZero ? /^(0|[1-9]\d*)$/ : /^[1-9]\d*$/;
+  return pattern.test(normalized) ? normalized : null;
 }
 
 function parseStringClaim(value: unknown): string | null {
@@ -87,8 +92,8 @@ export function getRolesFromTokenPayload(payload: JwtPayload): string[] {
 }
 
 export function getUserIdentityFromTokenPayload(payload: JwtPayload): AccessTokenIdentity | null {
-  const userId = parseNumericClaim(payload.sub ?? payload[legacyNameIdentifierClaim]);
-  if (!userId || userId <= 0) {
+  const userId = parseIntegerClaim(payload.sub ?? payload[legacyNameIdentifierClaim]);
+  if (!userId) {
     return null;
   }
 
@@ -97,7 +102,7 @@ export function getUserIdentityFromTokenPayload(payload: JwtPayload): AccessToke
     ?? parseStringClaim(payload[legacyNameClaim])
     ?? String(userId);
 
-  const tenantId = parseNumericClaim(payload.tenant_id ?? payload.TenantId) ?? 0;
+  const tenantId = parseIntegerClaim(payload.tenant_id ?? payload.TenantId, true) ?? '0';
 
   return {
     userId,

@@ -1,7 +1,7 @@
 # Console 权限 / 菜单 / 按钮管理一期设计方案
 
-> 最后更新：2026-03-24
-> 状态：一期已实现，进入联调与边界补齐
+> 最后更新：2026-06-06
+> 状态：一期已实现，进入稳定维护与边界补齐
 
 关联文档：
 - [开发路线图](/development-plan)
@@ -429,6 +429,8 @@ RouteGuard / usePermission
 - `ResourceIds`
 - `ExpectedModifyTime`
 
+前端 / HTTP 边界中，`VoRoleId`、`VoGrantedResourceIds`、`VoResourceId`、`VoApiModuleId`、`RoleId` 和 `ResourceIds` 均按字符串消费和传递。后端实体仍可使用 `long`，前端不得用 `Number(...)`、`parseInt(...)` 或 `number[]` 承接这些授权对象 ID。
+
 一期建议只做“整页覆盖保存”，不做复杂增量 patch。
 
 ### 6.4 Repository / Service / Controller
@@ -572,6 +574,8 @@ CurrentUser permissions
    - 重置
    - 返回角色列表
 
+保存按钮在请求进行中必须进入保存中 / 禁用状态，并阻止重复提交。同一份授权快照的 `expectedModifyTime` 只应随一次保存请求提交；若用户需要继续调整，应等待保存完成后重新基于最新快照编辑。
+
 ### 7.3 授权树规则
 
 授权树按模块组织，例如：
@@ -654,6 +658,7 @@ CurrentUser permissions
 效果：
 
 - 覆盖该角色当前一期纳管范围内的 Console 授权
+- 请求中的 `ExpectedModifyTime` 用于并发保护；前端应阻止保存中的重复提交，避免同一旧快照连续请求造成伪并发冲突
 
 ### 8.4 获取接口预览
 
@@ -771,6 +776,8 @@ CurrentUser permissions
 6. `System/Admin` 默认全集不受回归影响
 7. `Hangfire` 仍可通过统一权限模型控制
 8. 文档、种子、接口实现与前端页面口径保持一致
+9. 角色授权页中的角色 / 资源 / API 模块 ID 及授权资源 ID 集合在前端保持字符串契约，并由 LongId 守护防止 `number` / `number[]` 回潮
+10. 角色授权保存中禁用保存入口并阻止重复提交；保存完成后才能基于最新快照继续编辑
 
 ---
 

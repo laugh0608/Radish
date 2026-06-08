@@ -27,6 +27,7 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
     private readonly ForumQuickReplyOptions _options;
     private readonly INotificationService? _notificationService;
     private readonly ILogger<PostQuickReplyService>? _logger;
+    private readonly IBaseRepository<User>? _userRepository;
 
     public PostQuickReplyService(
         IMapper mapper,
@@ -36,7 +37,8 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
         IOptions<ForumQuickReplyOptions> options,
         IAttachmentService? attachmentService = null,
         INotificationService? notificationService = null,
-        ILogger<PostQuickReplyService>? logger = null)
+        ILogger<PostQuickReplyService>? logger = null,
+        IBaseRepository<User>? userRepository = null)
         : base(mapper, baseRepository)
     {
         _postQuickReplyRepository = baseRepository;
@@ -46,6 +48,7 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
         _attachmentService = attachmentService;
         _notificationService = notificationService;
         _logger = logger;
+        _userRepository = userRepository;
     }
 
     public async Task<PostQuickReplyWallVo> GetRecentByPostIdAsync(long postId, int take)
@@ -72,7 +75,7 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
             SqlSugar.OrderByType.Desc);
 
         var replyVos = Mapper.Map<List<PostQuickReplyVo>>(items);
-        await FillAuthorAvatarUrlsAsync(replyVos);
+        await FillAuthorProfilesAsync(replyVos);
 
         return new PostQuickReplyWallVo
         {
@@ -207,7 +210,7 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
 
         var replyVo = Mapper.Map<PostQuickReplyVo>(entity);
         replyVo.VoId = quickReplyId;
-        await FillAuthorAvatarUrlsAsync([replyVo]);
+        await FillAuthorProfilesAsync([replyVo]);
         await TrySendPostQuickReplyNotificationAsync(post, entity, replyVo.VoAuthorAvatarUrl);
 
         return replyVo;
@@ -288,9 +291,9 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
         }
     }
 
-    private async Task FillAuthorAvatarUrlsAsync(List<PostQuickReplyVo> replies)
+    private async Task FillAuthorProfilesAsync(List<PostQuickReplyVo> replies)
     {
-        if (_attachmentService == null || replies.Count == 0)
+        if (replies.Count == 0)
         {
             return;
         }
@@ -306,12 +309,29 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
             return;
         }
 
-        var avatarMap = (await _attachmentService.GetLatestAvatarAssetMapAsync(userIds))
-            .Where(entry => !string.IsNullOrWhiteSpace(entry.Value.Url))
-            .ToDictionary(entry => entry.Key, entry => entry.Value.Url);
+        Dictionary<long, string> avatarMap = new();
+        if (_attachmentService != null)
+        {
+            avatarMap = (await _attachmentService.GetLatestAvatarAssetMapAsync(userIds))
+                .Where(entry => !string.IsNullOrWhiteSpace(entry.Value.Url))
+                .ToDictionary(entry => entry.Key, entry => entry.Value.Url);
+        }
+
+        Dictionary<long, string> displayNameMap = new();
+        if (_userRepository != null)
+        {
+            displayNameMap = ForumDisplayNameHelper.BuildMap(await _userRepository.QueryAsync(user =>
+                userIds.Contains(user.Id) &&
+                !user.IsDeleted));
+        }
 
         foreach (var reply in replies)
         {
+            if (displayNameMap.TryGetValue(reply.VoAuthorId, out var displayName))
+            {
+                reply.VoAuthorName = displayName;
+            }
+
             if (avatarMap.TryGetValue(reply.VoAuthorId, out var avatarUrl))
             {
                 reply.VoAuthorAvatarUrl = avatarUrl;

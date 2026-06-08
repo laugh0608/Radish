@@ -92,7 +92,7 @@ export function isPublicForumCategoryNotFoundError(message: string | null | unde
 }
 
 export function resolvePublicForumCategoryLoadState(input: {
-  categoryId: number | null;
+  categoryId: string | null;
   loadingCategory: boolean;
   hasCategory: boolean;
   categoryError: string | null;

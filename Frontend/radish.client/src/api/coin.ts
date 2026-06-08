@@ -5,6 +5,7 @@
 import { apiGet, apiPost, configureApiClient, type PagedResponse } from '@radish/http';
 import type { TFunction } from 'i18next';
 import { getApiBaseUrl } from '@/config/env';
+import type { LongId } from './user';
 
 // 配置 API 客户端
 configureApiClient({
@@ -203,7 +204,7 @@ export function formatCoinAmount(amount: number | undefined | null, mode: 'carro
  * 转账请求参数
  */
 export interface TransferRequest {
-  toUserId: number;
+  toUserId: LongId;
   amount: number;
   remark?: string;
   paymentPassword: string;

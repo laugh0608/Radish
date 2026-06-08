@@ -87,13 +87,17 @@ public interface ICoinService : IBaseService<UserBalance, UserBalanceVo>
     /// <param name="pageSize">每页数量</param>
     /// <param name="transactionType">交易类型（可选，用于筛选）</param>
     /// <param name="status">交易状态（可选，用于筛选）</param>
+    /// <param name="businessType">业务类型（可选，用于定位业务流水）</param>
+    /// <param name="businessId">业务 ID（可选，用于定位业务流水）</param>
     /// <returns>分页的交易记录</returns>
     Task<PageModel<CoinTransactionVo>> GetTransactionsAsync(
         long userId,
         int pageIndex,
         int pageSize,
         string? transactionType = null,
-        string? status = null);
+        string? status = null,
+        string? businessType = null,
+        long? businessId = null);
 
     /// <summary>
     /// 根据交易流水号获取交易详情

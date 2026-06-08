@@ -35,6 +35,7 @@ import {
   buildManualModerationStatusSnapshot,
   buildQueueTargetDisplayInput,
   getActionTypeText,
+  hasPositiveLongId,
   resolveMissingTargetMessage,
   resolveOpenTarget,
   toOptionalString,
@@ -189,16 +190,16 @@ export const ModerationPage = () => {
       setLoadingLogs(true);
       const targetUserIdText = overrides?.targetUserId ?? logTargetUserId;
       const sourceReportIdText = overrides?.sourceReportId ?? logSourceReportId;
-      const targetUserId = Number(toPositiveLongString(targetUserIdText ?? '') ?? 0);
-      const sourceReportId = Number(toPositiveLongString(sourceReportIdText ?? '') ?? 0);
+      const targetUserId = toPositiveLongString(targetUserIdText ?? '');
+      const sourceReportId = toPositiveLongString(sourceReportIdText ?? '');
       const actionType = overrides?.actionType ?? logActionTypeFilter;
       const isActiveFilter = overrides?.isActive ?? logIsActiveFilter;
       const keyword = overrides?.keyword ?? logKeyword;
       const page = await getActionLogs({
         pageIndex: targetPageIndex,
         pageSize: targetPageSize,
-        targetUserId: Number.isFinite(targetUserId) && targetUserId > 0 ? targetUserId : undefined,
-        sourceReportId: Number.isFinite(sourceReportId) && sourceReportId > 0 ? sourceReportId : undefined,
+        targetUserId,
+        sourceReportId,
         actionType: actionType || undefined,
         isActive: isActiveFilter === 'active' ? true : isActiveFilter === 'inactive' ? false : undefined,
         keyword: keyword || undefined,
@@ -356,7 +357,7 @@ export const ModerationPage = () => {
       const page = await getActionLogs({
         pageIndex: 1,
         pageSize: 20,
-        targetUserId: Number(normalizedTargetUserId),
+        targetUserId: normalizedTargetUserId,
         isActive: true,
       });
       if (requestId !== manualStatusRequestIdRef.current) {
@@ -448,7 +449,7 @@ export const ModerationPage = () => {
       await loadQueue();
       if (values.isApproved && values.actionType > 0) {
         applyActionLogPreset({
-          targetUserId: reviewedItem.voTargetUserId > 0 ? String(reviewedItem.voTargetUserId) : undefined,
+          targetUserId: hasPositiveLongId(reviewedItem.voTargetUserId) ? String(reviewedItem.voTargetUserId) : undefined,
           sourceReportId: String(reviewedItem.voReportId),
           actionType: values.actionType === 1 ? 'Mute' : values.actionType === 2 ? 'Ban' : undefined,
           isActive: 'active',
@@ -491,13 +492,13 @@ export const ModerationPage = () => {
 
       setSubmittingManualAction(true);
       const result = await applyUserModerationAction({
-        targetUserId: Number(normalizedTargetUserId),
+        targetUserId: normalizedTargetUserId,
         actionType: values.actionType,
         durationHours: values.actionType === MANUAL_ACTION_TYPE.mute || values.actionType === MANUAL_ACTION_TYPE.ban
           ? values.durationHours ?? null
           : null,
         reason: toOptionalString(values.reason),
-        sourceReportId: normalizedSourceReportId ? Number(normalizedSourceReportId) : null,
+        sourceReportId: normalizedSourceReportId ?? null,
       });
 
       const actionText = getActionTypeText(result.voActionType);

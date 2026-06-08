@@ -9,11 +9,11 @@ import { log } from '@/utils/logger';
 import { AUTH_TOKEN_EXPIRED_EVENT } from './authSession';
 
 export interface CurrentUser {
-  voUserId: number;
+  voUserId: string;
   voUserName: string;
   voLoginName?: string;
   voNickname?: string;
-  voTenantId: number;
+  voTenantId: string;
   voAvatarUrl?: string;
   voAvatarThumbnailUrl?: string;
   voRoleNames?: string[];
@@ -50,17 +50,22 @@ class CurrentUserRequestError extends Error {
   }
 }
 
-function parseIdentityNumber(value: unknown): number {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return Math.trunc(value);
+function normalizeIdentityId(value: unknown, allowZero = false): string | null {
+  if (typeof value === 'number') {
+    if (!Number.isSafeInteger(value) || value < 0 || (!allowZero && value === 0)) {
+      return null;
+    }
+
+    return String(value);
   }
 
-  if (typeof value === 'string') {
-    const parsed = Number.parseInt(value, 10);
-    return Number.isFinite(parsed) ? parsed : 0;
+  if (typeof value !== 'string') {
+    return null;
   }
 
-  return 0;
+  const normalized = value.trim();
+  const pattern = allowZero ? /^(0|[1-9]\d*)$/ : /^[1-9]\d*$/;
+  return pattern.test(normalized) ? normalized : null;
 }
 
 function isCurrentUserLike(value: unknown): value is CurrentUser {
@@ -69,7 +74,7 @@ function isCurrentUserLike(value: unknown): value is CurrentUser {
   }
 
   const candidate = value as Partial<CurrentUser>;
-  return parseIdentityNumber(candidate.voUserId) > 0
+  return normalizeIdentityId(candidate.voUserId) !== null
     && typeof candidate.voUserName === 'string'
     && candidate.voUserName.trim().length > 0;
 }
@@ -91,8 +96,8 @@ function matchesTokenIdentity(user: CurrentUser, token?: string | null): boolean
     return false;
   }
 
-  return parseIdentityNumber(user.voUserId) === identity.userId
-    && parseIdentityNumber(user.voTenantId) === identity.tenantId;
+  return normalizeIdentityId(user.voUserId) === identity.userId
+    && (normalizeIdentityId(user.voTenantId, true) ?? '0') === identity.tenantId;
 }
 
 function consumeCachedCurrentUser(token: string): CurrentUser | null {
@@ -169,11 +174,11 @@ function setUserFromCurrentUser(user: CurrentUser, token?: string | null) {
     || (user.voUserName.trim() && user.voUserName.trim() !== loginName ? user.voUserName : undefined);
 
   setUser({
-    userId: typeof user.voUserId === 'string' ? parseInt(user.voUserId, 10) : user.voUserId,
+    userId: normalizeIdentityId(user.voUserId) ?? '',
     userName: user.voUserName,
     loginName,
     nickname,
-    tenantId: typeof user.voTenantId === 'string' ? parseInt(user.voTenantId, 10) : user.voTenantId,
+    tenantId: normalizeIdentityId(user.voTenantId, true) ?? '0',
     roles: resolveUserRoles(user, token),
     permissions: [
       ...(Array.isArray(user.voPermissions) ? user.voPermissions : []),
@@ -212,7 +217,7 @@ function buildCurrentUserFromToken(token?: string | null): CurrentUser | null {
   }
 
   const currentStoreUser = useUserStore.getState();
-  const sameUser = currentStoreUser.userId > 0
+  const sameUser = currentStoreUser.userId !== ''
     && currentStoreUser.userId === identity.userId
     && currentStoreUser.tenantId === identity.tenantId;
 

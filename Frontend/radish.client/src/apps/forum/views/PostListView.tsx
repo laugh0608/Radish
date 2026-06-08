@@ -18,7 +18,7 @@ import styles from './PostListView.module.css';
 interface PostListViewProps {
   // 数据
   categories: Category[];
-  selectedCategoryId: number | null;
+  selectedCategoryId: LongId | null;
   selectedTagName?: string | null;
   posts: PostItem[];
   postGodComments: Map<string, CommentHighlight>;

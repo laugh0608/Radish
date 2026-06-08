@@ -6,6 +6,7 @@ import {
   printSummaryActionReport,
   writeSummaryActionReport,
 } from './m14-reporting.mjs';
+import { createDotNetCommand } from './dotnet-command.mjs';
 import { formatCommand, runCommand } from './process-runner.mjs';
 
 const rawArgs = process.argv.slice(2);
@@ -33,28 +34,6 @@ function getArgValue(flagName, defaultValue) {
 
 function resolveNpmCommand() {
   return 'npm';
-}
-
-function resolvePowerShellCommand() {
-  if (process.platform === 'win32') {
-    return 'powershell';
-  }
-
-  const preferred = ['pwsh'];
-
-  for (const command of preferred) {
-    const result = runCommand(command, ['-NoLogo', '-NoProfile', '-Command', '$PSVersionTable.PSVersion.ToString()'], {
-      cwd: repoRoot,
-      encoding: 'utf8',
-      stdio: 'pipe',
-    });
-
-    if (result.status === 0) {
-      return command;
-    }
-  }
-
-  return null;
 }
 
 function printHostValidationGuidance(failedStep) {
@@ -292,13 +271,6 @@ const withHostChecks = hasFlag('--with-host-checks');
 const reportFile = getArgValue('--report-file', '');
 const showReport = hasFlag('--report') || reportFile.length > 0;
 const npmCommand = resolveNpmCommand();
-const needsPowerShell = !isQuick || withHostChecks;
-const powerShellCommand = needsPowerShell ? resolvePowerShellCommand() : null;
-
-if (needsPowerShell && !powerShellCommand) {
-  console.error('[baseline] 未找到可用的 PowerShell (`pwsh` 或 `powershell`)。');
-  process.exit(1);
-}
 
 const steps = [
   {
@@ -340,61 +312,63 @@ const steps = [
 ];
 
 if (!isQuick) {
+  const backendBuild = createDotNetCommand([
+    'build',
+    'Radish.slnx',
+    '-c',
+    'Debug',
+  ], { cwd: repoRoot });
+  const backendTest = createDotNetCommand([
+    'test',
+    'Radish.Api.Tests',
+  ], { cwd: repoRoot });
+
   steps.push(
     {
       title: '后端解决方案构建',
       phase: 'baseline',
-      command: powerShellCommand,
-      args: [
-        '-ExecutionPolicy',
-        'Bypass',
-        '-File',
-        'Scripts/dotnet-local.ps1',
-        'build',
-        'Radish.slnx',
-        '-c',
-        'Debug',
-      ],
+      command: backendBuild.command,
+      args: backendBuild.args,
     },
     {
       title: '后端测试',
       phase: 'baseline',
-      command: powerShellCommand,
-      args: [
-        '-ExecutionPolicy',
-        'Bypass',
-        '-File',
-        'Scripts/dotnet-local.ps1',
-        'test',
-        'Radish.Api.Tests',
-      ],
+      command: backendTest.command,
+      args: backendTest.args,
     }
   );
 }
 
 if (!isQuick && withHostChecks) {
+  const dbMigrateDoctor = createDotNetCommand([
+    'run',
+    '--no-build',
+    '--project',
+    'Radish.DbMigrate/Radish.DbMigrate.csproj',
+    '--',
+    'doctor',
+  ], { cwd: repoRoot });
+  const dbMigrateVerify = createDotNetCommand([
+    'run',
+    '--no-build',
+    '--project',
+    'Radish.DbMigrate/Radish.DbMigrate.csproj',
+    '--',
+    'verify',
+  ], { cwd: repoRoot });
+
   steps.push(
     {
       title: 'DbMigrate doctor 只读自检',
       phase: 'doctor',
-      command: powerShellCommand,
-      args: [
-        '-ExecutionPolicy',
-        'Bypass',
-        '-Command',
-        '& ./Scripts/dotnet-local.ps1 run --no-build --project Radish.DbMigrate/Radish.DbMigrate.csproj -- doctor',
-      ],
+      command: dbMigrateDoctor.command,
+      args: dbMigrateDoctor.args,
     },
     {
       title: 'DbMigrate verify 只读自检',
       phase: 'verify',
-      command: powerShellCommand,
-      args: [
-        '-ExecutionPolicy',
-        'Bypass',
-        '-Command',
-        '& ./Scripts/dotnet-local.ps1 run --no-build --project Radish.DbMigrate/Radish.DbMigrate.csproj -- verify',
-      ],
+      command: dbMigrateVerify.command,
+      args: dbMigrateVerify.args,
     }
   );
 }

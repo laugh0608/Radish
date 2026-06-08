@@ -290,6 +290,7 @@ class ShopOrderDetail {
     this.cancelReason,
     this.failReason,
     this.userRemark,
+    this.coinTransactionId,
   });
 
   factory ShopOrderDetail.fromJson(Object? json) {
@@ -316,6 +317,7 @@ class ShopOrderDetail {
       cancelReason: _readString(map['voCancelReason']),
       failReason: _readString(map['voFailReason']),
       userRemark: _readString(map['voUserRemark']),
+      coinTransactionId: _readString(map['voCoinTransactionId']),
     );
   }
 
@@ -339,6 +341,7 @@ class ShopOrderDetail {
   final String? cancelReason;
   final String? failReason;
   final String? userRemark;
+  final String? coinTransactionId;
 }
 
 class ShopUserBenefit {

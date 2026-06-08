@@ -37,13 +37,13 @@ export type QuestionAnswerFilter = 'all' | 'accepted';
  * 分类 Vo
  */
 export interface Category {
-  voId: number;
+  voId: LongId;
   voName: string;
   voSlug: string;
   voDescription?: string | null;
   voIcon?: string | null;
   voCoverImage?: string | null;
-  voParentId?: number | null;
+  voParentId?: LongId | null;
   voLevel?: number;
   voOrderSort?: number;
   voPostCount?: number;
@@ -58,7 +58,7 @@ export interface Category {
  * 标签 Vo
  */
 export interface Tag {
-  voId: number;
+  voId: LongId;
   voName: string;
   voSlug: string;
   voDescription?: string | null;
@@ -246,7 +246,7 @@ export interface PostItem {
   voSummary?: string | null;
   voTags?: string;
   voTagSlugs?: string[];
-  voCategoryId: number;
+  voCategoryId: LongId;
   voCategoryName?: string | null;
   voAuthorId: LongId;
   voAuthorName?: string | null;
@@ -286,7 +286,7 @@ export interface PostDetail {
   voContent: string;
   voContentType?: string;
   voCoverImage?: string | null;
-  voCategoryId: number;
+  voCategoryId: LongId;
   voCategoryName?: string | null;
   voAuthorId: LongId;
   voAuthorName?: string | null;
@@ -523,7 +523,7 @@ export interface PostLikeResult {
 export interface PublishPostRequest {
   title: string;
   content: string;
-  categoryId: number;
+  categoryId: LongId;
   tagNames: string[];
   isQuestion?: boolean;
   poll?: CreatePollRequest | null;
@@ -537,7 +537,7 @@ export interface UpdatePostRequest {
   postId: LongId;
   title: string;
   content: string;
-  categoryId?: number;
+  categoryId?: LongId;
   tagNames: string[];
 }
 

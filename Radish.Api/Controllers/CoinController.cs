@@ -161,12 +161,14 @@ public class CoinController : ControllerBase
         [FromQuery] int pageIndex = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] string? transactionType = null,
-        [FromQuery] string? status = null)
+        [FromQuery] string? status = null,
+        [FromQuery] string? businessType = null,
+        [FromQuery] long? businessId = null)
     {
         var userId = Current.UserId;
 
         var transactions = await _coinService.GetTransactionsAsync(
-            userId, pageIndex, pageSize, transactionType, status);
+            userId, pageIndex, pageSize, transactionType, status, businessType, businessId);
 
         return new MessageModel
         {
@@ -223,6 +225,8 @@ public class CoinController : ControllerBase
     /// <param name="pageSize">每页数量</param>
     /// <param name="transactionType">交易类型（可选，用于筛选）</param>
     /// <param name="status">交易状态（可选，用于筛选）</param>
+    /// <param name="businessType">业务类型（可选，用于定位业务流水）</param>
+    /// <param name="businessId">业务 ID（可选，用于定位业务流水）</param>
     /// <returns>分页交易记录</returns>
     [HttpGet]
     [RequireConsolePermission(ConsolePermissions.CoinsView)]
@@ -234,7 +238,9 @@ public class CoinController : ControllerBase
         [FromQuery] int pageIndex = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] string? transactionType = null,
-        [FromQuery] string? status = null)
+        [FromQuery] string? status = null,
+        [FromQuery] string? businessType = null,
+        [FromQuery] long? businessId = null)
     {
         if (userId <= 0)
         {
@@ -251,7 +257,9 @@ public class CoinController : ControllerBase
             pageIndex,
             pageSize,
             transactionType,
-            status);
+            status,
+            businessType,
+            businessId);
 
         return new MessageModel
         {

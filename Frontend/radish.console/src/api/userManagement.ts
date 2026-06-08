@@ -62,6 +62,7 @@ function mapUserListItem(raw: ApiRecord): UserListItem {
     uuid: toIdString(raw.uuid ?? raw.Uuid),
     voLoginName: toStringValue(raw.voLoginName ?? raw.VoLoginName),
     voUserName: toStringValue(raw.voUserName ?? raw.VoUserName),
+    voUserRealName: toStringValue(raw.voUserRealName ?? raw.VoUserRealName),
     voUserEmail: toStringValue(raw.voUserEmail ?? raw.VoUserEmail),
     voAvatarUrl: toOptionalString(raw.voAvatarUrl ?? raw.VoAvatarUrl),
     voAvatarThumbnailUrl: toOptionalString(raw.voAvatarThumbnailUrl ?? raw.VoAvatarThumbnailUrl),
@@ -69,7 +70,7 @@ function mapUserListItem(raw: ApiRecord): UserListItem {
     voCreateTime: toStringValue(raw.voCreateTime ?? raw.VoCreateTime),
     voUpdateTime: toOptionalString(raw.voUpdateTime ?? raw.VoUpdateTime),
     voIsDeleted: toBoolean(raw.voIsDeleted ?? raw.VoIsDeleted),
-    voTenantId: toNumber(raw.voTenantId ?? raw.VoTenantId),
+    voTenantId: toIdString(raw.voTenantId ?? raw.VoTenantId),
   };
 }
 
@@ -169,7 +170,7 @@ export const userManagementApi = {
   /**
    * 获取用户详情
    */
-  async getUserById(id: string | number): Promise<ParsedApiResponse<UserListItem>> {
+  async getUserById(id: string): Promise<ParsedApiResponse<UserListItem>> {
     const response = await apiGet<ApiRecord | ApiRecord[]>(
       `/api/v1/User/GetUserById/${encodeURIComponent(String(id))}`,
       { withAuth: true }
@@ -189,9 +190,9 @@ export const userManagementApi = {
   /**
    * 获取用户统计信息
    */
-  async getUserStats(userId?: number): Promise<ParsedApiResponse<UserStats>> {
+  async getUserStats(userId?: string): Promise<ParsedApiResponse<UserStats>> {
     const url = userId
-      ? `/api/v1/User/GetUserStats?userId=${userId}`
+      ? `/api/v1/User/GetUserStats?userId=${encodeURIComponent(userId)}`
       : '/api/v1/User/GetUserStats';
     return apiGet<UserStats>(url, { withAuth: true });
   },

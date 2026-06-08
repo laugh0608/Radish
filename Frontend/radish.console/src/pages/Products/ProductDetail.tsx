@@ -14,7 +14,7 @@ import {
 
 interface ProductDetailProps {
   visible: boolean;
-  productId?: string | number;
+  productId?: string;
   fallbackProduct?: Product;
   reloadToken?: number;
   onClose: () => void;

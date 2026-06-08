@@ -523,7 +523,9 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         int pageIndex,
         int pageSize,
         string? transactionType = null,
-        string? status = null)
+        string? status = null,
+        string? businessType = null,
+        long? businessId = null)
     {
         try
         {
@@ -539,6 +541,16 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
             if (!string.IsNullOrWhiteSpace(status))
             {
                 whereExpression.And(t => t.Status == status);
+            }
+
+            if (!string.IsNullOrWhiteSpace(businessType))
+            {
+                whereExpression.And(t => t.BusinessType == businessType);
+            }
+
+            if (businessId.HasValue)
+            {
+                whereExpression.And(t => t.BusinessId == businessId.Value);
             }
 
             // 2. 查询分页数据

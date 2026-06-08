@@ -44,7 +44,6 @@ import {
   persistChannelDraft,
   resolveAttachmentAssetUrl,
   resolveMediaUrl,
-  toNumericId,
   type MentionContext,
   type MessageFocusTarget,
   type MessageNavigationTarget,
@@ -127,7 +126,6 @@ export const ChatApp = () => {
     pendingImage: null,
   });
 
-  const currentUserIdValue = useMemo(() => toNumericId(currentUserId), [currentUserId]);
   const currentUserIdKey = useMemo(() => getEntityKey(currentUserId), [currentUserId]);
   const currentUserNameValue = useMemo(
     () => currentUserName?.trim() || t('common.unknownUser'),
@@ -606,7 +604,7 @@ export const ChatApp = () => {
   ]);
 
   const handleOpenReport = useCallback((targetType: ContentReportTargetType, targetId: number) => {
-    if (currentUserIdValue <= 0) {
+    if (!currentUserIdKey) {
       toast.error(t('report.loginRequired'));
       return;
     }
@@ -616,15 +614,15 @@ export const ChatApp = () => {
     }
 
     setReportTarget({ targetType, targetId });
-  }, [currentUserIdValue, t]);
+  }, [currentUserIdKey, t]);
 
   const resetComposer = useCallback((channelId: EntityIdValue) => {
     setMessageInput('');
     setReplyTarget(null);
     setPendingImage(null);
     closeMentionDropdown();
-    clearChannelDraft(currentUserIdValue, channelId);
-  }, [closeMentionDropdown, currentUserIdValue]);
+    clearChannelDraft(currentUserIdKey, channelId);
+  }, [closeMentionDropdown, currentUserIdKey]);
 
   const createTempMessageId = useCallback(() => {
     const nextId = tempMessageIdRef.current;
@@ -652,7 +650,7 @@ export const ChatApp = () => {
     voId: params.tempMessageId,
     voClientRequestId: params.clientRequestId,
     voChannelId: params.channelId,
-    voUserId: currentUserIdKey || currentUserIdValue,
+    voUserId: currentUserIdKey,
     voUserName: currentUserNameValue,
     voUserAvatarUrl: currentUserAvatarUrlValue,
     voType: params.type,
@@ -667,7 +665,7 @@ export const ChatApp = () => {
     voLocalStatus: 'sending',
     voLocalError: null,
     };
-  }, [currentUserAvatarUrlValue, currentUserIdKey, currentUserIdValue, currentUserNameValue]);
+  }, [currentUserAvatarUrlValue, currentUserIdKey, currentUserNameValue]);
 
   const sendOptimisticMessage = useCallback(async (
     optimisticMessage: ChannelMessageVo,
@@ -809,7 +807,7 @@ export const ChatApp = () => {
         setPendingImage(nextPendingImage);
       } else {
         persistChannelDraft(
-          currentUserIdValue,
+          currentUserIdKey,
           targetChannelId,
           draftContentSnapshot,
           draftReplyTargetSnapshot,
@@ -823,7 +821,7 @@ export const ChatApp = () => {
       setUploadingImage(false);
       setTimeout(() => setImageUploadProgress(0), 400);
     }
-  }, [currentUserIdValue, t, uploadingImage]);
+  }, [currentUserIdKey, t, uploadingImage]);
 
   const handleImageSelected = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -1022,7 +1020,7 @@ export const ChatApp = () => {
     const previousChannelId = previousChannelIdRef.current;
     if (previousChannelId && !areEntityIdsEqual(previousChannelId, activeChannelId)) {
       persistChannelDraft(
-        currentUserIdValue,
+        currentUserIdKey,
         previousChannelId,
         composerStateRef.current.messageInput,
         composerStateRef.current.replyTarget,
@@ -1044,7 +1042,7 @@ export const ChatApp = () => {
       return;
     }
 
-    const draft = loadChannelDraft(currentUserIdValue, activeChannelId);
+    const draft = loadChannelDraft(currentUserIdKey, activeChannelId);
     setMessageInput(draft?.content ?? '');
     setReplyTarget(draft?.replyTarget ?? null);
     setPendingImage(draft?.pendingImage ?? null);
@@ -1068,15 +1066,15 @@ export const ChatApp = () => {
       window.clearTimeout(initialMemberTimer);
       void chatHub.leaveChannel(activeChannelId);
     };
-  }, [activeChannelId, clearMessageHighlight, closeMentionDropdown, currentUserIdValue, loadInitialHistory, loadMessageWindow, loadOnlineMembers]);
+  }, [activeChannelId, clearMessageHighlight, closeMentionDropdown, currentUserIdKey, loadInitialHistory, loadMessageWindow, loadOnlineMembers]);
 
   useEffect(() => {
     if (!activeChannelId || !areEntityIdsEqual(loadedDraftChannelRef.current, activeChannelId)) {
       return;
     }
 
-    persistChannelDraft(currentUserIdValue, activeChannelId, messageInput, replyTarget, pendingImage);
-  }, [activeChannelId, currentUserIdValue, messageInput, pendingImage, replyTarget]);
+    persistChannelDraft(currentUserIdKey, activeChannelId, messageInput, replyTarget, pendingImage);
+  }, [activeChannelId, currentUserIdKey, messageInput, pendingImage, replyTarget]);
 
   useEffect(() => {
     if (!activeChannelId) {

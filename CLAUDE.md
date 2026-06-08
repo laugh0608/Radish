@@ -1,6 +1,10 @@
-# CLAUDE.md
+# CLAUDE 指南
 
 本文件为 Claude Code 提供 Radish 项目的独立协作说明。
+
+## 称呼
+
+- 对话结束总结时，请称呼我为 `萝卜`
 
 ## 语言规范
 

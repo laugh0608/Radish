@@ -486,7 +486,7 @@ export const PublicShopApp = ({
     });
   };
 
-  const handleOpenProductDetail = (productId: number | string) => {
+  const handleOpenProductDetail = (productId: string) => {
     onNavigate({
       kind: 'detail',
       productId: String(productId)

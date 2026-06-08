@@ -6,7 +6,7 @@ import './ExperienceBar.css';
  * 直接使用后端 Vo 字段名，前端适配后端
  */
 export interface ExperienceData {
-  voUserId: number;
+  voUserId: string;
   voCurrentExp: number;
   voCurrentLevel: number;
   voNextLevelExp: number;

@@ -70,6 +70,11 @@ import {
   type PublicRouteSourceState,
 } from './publicRouteNavigation';
 import { applyPublicHead, buildPublicRouteHead } from './publicHead';
+import {
+  applyPublicStructuredData,
+  buildPublicRouteStructuredData,
+  removePublicStructuredData,
+} from './publicStructuredData';
 export type {
   PublicListSort,
 } from './forumRouteState';
@@ -219,6 +224,11 @@ export const PublicEntry = () => {
 
   useEffect(() => {
     applyPublicHead(buildPublicRouteHead(route));
+  }, [route]);
+
+  useEffect(() => {
+    applyPublicStructuredData(buildPublicRouteStructuredData(route));
+    return removePublicStructuredData;
   }, [route]);
 
   useEffect(() => {

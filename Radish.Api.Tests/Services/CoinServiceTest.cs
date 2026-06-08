@@ -452,6 +452,104 @@ public class CoinServiceTest
 
     #endregion
 
+    #region 交易记录查询测试
+
+    [Fact]
+    public async Task GetTransactionsAsync_ShouldFilterByBusinessContext()
+    {
+        const long userId = 123456;
+        const long orderId = 7001;
+        var transactions = new List<CoinTransaction>
+        {
+            new()
+            {
+                Id = 101,
+                FromUserId = userId,
+                Amount = 300,
+                TransactionType = "CONSUME",
+                Status = "SUCCESS",
+                BusinessType = "Order",
+                BusinessId = orderId,
+                CreateTime = new DateTime(2026, 5, 30, 10, 0, 0)
+            },
+            new()
+            {
+                Id = 102,
+                FromUserId = userId,
+                Amount = 300,
+                TransactionType = "CONSUME",
+                Status = "SUCCESS",
+                BusinessType = "Order",
+                BusinessId = 8001,
+                CreateTime = new DateTime(2026, 5, 30, 11, 0, 0)
+            },
+            new()
+            {
+                Id = 103,
+                ToUserId = userId,
+                Amount = 100,
+                TransactionType = "ADMIN_ADJUST",
+                Status = "SUCCESS",
+                BusinessType = "Admin",
+                BusinessId = 1,
+                CreateTime = new DateTime(2026, 5, 30, 12, 0, 0)
+            }
+        };
+
+        _coinTransactionRepositoryMock
+            .Setup(r => r.QueryPageAsync(
+                It.IsAny<Expression<Func<CoinTransaction, bool>>>(),
+                1,
+                20,
+                It.IsAny<Expression<Func<CoinTransaction, object>>>(),
+                OrderByType.Desc))
+            .ReturnsAsync((
+                Expression<Func<CoinTransaction, bool>> whereExpression,
+                int pageIndex,
+                int pageSize,
+                Expression<Func<CoinTransaction, object>>? orderByExpression,
+                OrderByType orderByType) =>
+            {
+                var predicate = NormalizeCoinTransactionExpression(whereExpression).Compile();
+                var filtered = transactions.Where(predicate).ToList();
+                return (filtered, filtered.Count);
+            });
+
+        _mapperMock
+            .Setup(m => m.Map<List<CoinTransactionVo>>(It.IsAny<List<CoinTransaction>>()))
+            .Returns((List<CoinTransaction> source) => source.Select(transaction => new CoinTransactionVo
+            {
+                VoId = transaction.Id,
+                VoFromUserId = transaction.FromUserId,
+                VoToUserId = transaction.ToUserId,
+                VoAmount = transaction.Amount,
+                VoTransactionType = transaction.TransactionType,
+                VoStatus = transaction.Status,
+                VoBusinessType = transaction.BusinessType,
+                VoBusinessId = transaction.BusinessId,
+                VoCreateTime = transaction.CreateTime
+            }).ToList());
+
+        var service = CreateCoinService();
+
+        var result = await service.GetTransactionsAsync(
+            userId,
+            1,
+            20,
+            "CONSUME",
+            "SUCCESS",
+            "Order",
+            orderId);
+
+        Assert.Equal(1, result.DataCount);
+        Assert.Single(result.Data);
+        Assert.Equal(101, result.Data[0].VoId);
+        Assert.Equal("Order", result.Data[0].VoBusinessType);
+        Assert.Equal(orderId, result.Data[0].VoBusinessId);
+    }
+
+    #endregion
+
     #region 管理员调账测试
 
     /// <summary>
@@ -540,6 +638,30 @@ public class CoinServiceTest
             _balanceChangeLogRepositoryMock.Object,
             paymentPasswordService ?? new Mock<IPaymentPasswordService>().Object
         );
+    }
+
+    private static Expression<Func<CoinTransaction, bool>> NormalizeCoinTransactionExpression(
+        Expression<Func<CoinTransaction, bool>> expression)
+    {
+        var parameter = Expression.Parameter(typeof(CoinTransaction), "transaction");
+        var body = new CoinTransactionParameterReplaceVisitor(parameter).Visit(expression.Body);
+
+        return Expression.Lambda<Func<CoinTransaction, bool>>(body!, parameter);
+    }
+
+    private sealed class CoinTransactionParameterReplaceVisitor : ExpressionVisitor
+    {
+        private readonly ParameterExpression _parameter;
+
+        public CoinTransactionParameterReplaceVisitor(ParameterExpression parameter)
+        {
+            _parameter = parameter;
+        }
+
+        protected override Expression VisitParameter(ParameterExpression node)
+        {
+            return node.Type == typeof(CoinTransaction) ? _parameter : base.VisitParameter(node);
+        }
     }
 
     #endregion

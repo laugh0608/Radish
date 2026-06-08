@@ -15,7 +15,6 @@
 ## 统一入口
 
 根目录现提供以下命令：
-
 ```bash
 npm run setup:hooks
 npm run check:repo-hygiene
@@ -31,6 +30,7 @@ npm run collect:change-regression-record
 npm run check:public-head-smoke
 npm run check:identity-impact
 npm run check:identity-impact:staged
+npm run check:long-id-safety
 npm run validate:baseline
 npm run validate:baseline:quick
 npm run validate:baseline:host
@@ -133,7 +133,7 @@ npm run validate:ci
   - 当前其 `Summary` 也会固定补 `Route / TriageScope / TriageCode / NextStage` 四个摘要字段，和 `validate:baseline:host` 保持同一套分诊摘要口径
 - `validate:identity`
   - 身份语义专题聚合入口，不替代默认 baseline
-  - 分别执行运行时散点 Claim 读取扫描与协议输出回退扫描
+  - 分别执行运行时散点 Claim 读取、协议输出回退风险与外部 LongId 字符串安全扫描；外部 LongId 字符串安全扫描已作为固定子项接入，覆盖 Console / Web / Flutter 高信号外部 ID、ID 集合类型与数值化转换口径，并按 Windows 与 macOS / Linux 分流脚本入口
   - 运行身份语义后端定向测试，覆盖 `ClaimsPrincipalNormalizer`、`HttpContextUser`、`AccountController`、`AuthorizationController`、`UserInfoController`
 - `validate:ci`
   - 本地复现当前 `Repo Quality` 的最小执行面
@@ -192,7 +192,7 @@ https://localhost:5000/console/
 
 - 公开阅读：`/forum/post/:postId` 直链在移动公开壳层下打开时，帖子 ID 保持原始字符串；该参数可为 `Post.PublicId` 或旧 long 字符串，新增分享 / 回流入口默认优先生成 `PublicId` 路径
 - 通知跳转：通知中心点击 forum 相关通知时，优先消费字符串化 `extData.postPublicId`，缺失时再回退旧 `postId` 字符串；不因大整数 ID 被前端当作 `number` 拒绝
-- 浏览回跳：个人主页浏览记录、桌面最近浏览和 Flutter 最近阅读命中 forum 帖子时，`routePath / targetId` 回跳不再经过 `Number(...)` 降精度，且优先使用 `postPublicId` 回到详情
+- 浏览回跳：个人主页浏览记录、桌面最近浏览和 Flutter 最近访问命中 forum / docs 时，`routePath / targetId` 回跳不再经过 `Number(...)` 降精度，且优先使用 `postPublicId / targetSlug / PublicId` 回到详情
 - 我的轻回应回看：WebOS 与 Flutter 从“我的轻回应”回到帖子详情时，优先使用 `VoPostPublicId`，旧 `VoPostId` 只作为字符串 fallback；详情加载成功后再使用真实内部 `VoId` 访问评论、轻回应和定位接口
 - 深链 / 窗口参数：`openOrReuseApp('forum', appParams)` 与 forum 窗口首屏解析对 `postPublicId / postId / commentId` 继续保持字符串口径，先用 `postPublicId` 或旧 `postId` 确定帖子，再用 `commentId` 做评论定位
 - 可见文案：公开分享、通知、最近阅读、我的轻回应、个人公开页回跳和 forum 详情普通文案不应展示长帖子 ID、评论 ID、作者 ID 或分类 ID；旧 long 只承担兼容打开或内部定位
@@ -518,7 +518,7 @@ npm run check:host-runtime -- --details --report-file .tmp/host-runtime-report.m
 - 权限扫描失败：优先看 `Scripts/check-console-permissions.mjs` 输出中的四层对齐差异
 - 身份语义扫描失败：优先看 `Scripts/check-identity-claims.mjs` 输出中的命中位置，确认是否回退到原始 Claim 解析或直接字符串判断
 - 若命中 `AccountController / AuthorizationController / UserInfoController`：优先按 Phase 4 口径确认是否误恢复了历史输出承诺，而不是直接放宽白名单
-- 后端构建 / 测试失败：优先看 `Scripts/dotnet-local.ps1` 包装后的 `dotnet` 输出
+- 后端构建 / 测试失败：优先看验证入口打印出的 `dotnet` 命令输出；Windows 默认经 `Scripts/dotnet-local.ps1` 包装，macOS / Linux 默认直接执行 `dotnet`
 - `doctor` / `verify` 失败：优先核对当前环境配置、`MainDb` / `Databases` 与关键 `ConnId`
 - 如果是 Wiki / 文档链路，额外确认 `doctor` 是否已报告 `WikiDocument.Visibility`、`AllowedRoles`、`AllowedPermissions` 等缺列；旧 SQLite 库需要重新执行 `DbMigrate apply` 触发自动补齐
 - `check:repo-quality-contract` 失败：优先回到 workflow / ruleset / 本地 `validate:ci` contract，而不是先改业务代码
@@ -564,9 +564,9 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 
 ## Flutter Android 人工验收分层
 
-截至 `2026-05-04`，Flutter Android MVP 第一轮 RC 已完成并给出 Go 结论。后续若改动 `Clients/radish.flutter` 下 Android 壳层、`discover / forum / docs / profile` 原生页面、handoff、Android Back、OIDC 回调、本地复访状态、签名配置或 release 构建脚本，仍应按本节补对应开发阶段或 release 前验证。当前人工验收优先覆盖已经具备真实入口、真实数据或可稳定手工触发的链路：登录、退出、会话恢复、`discover / forum / docs / profile` 真实读取、forum feed、forum detail、评论阅读、评论分页、评论发布 / 回复、纯文本发帖、detail 原地登录续接、docs 搜索 / 内链、公开商城列表与商品详情、登录态单商品购买、公开详情链接复制、profile 复访、最近访问、轻回应发布，以及已登录壳层的通知列表回流和单条已读。
+截至 `2026-05-04`，Flutter Android MVP 第一轮 RC 已完成并给出 Go 结论。后续若改动 `Clients/radish.flutter` 下 Android 壳层、`discover / forum / docs / profile` 原生页面、handoff、Android Back、OIDC 回调、本地复访状态、签名配置或 release 构建脚本，仍应按本节补对应开发阶段或 release 前验证。当前人工验收优先覆盖已经具备真实入口、真实数据或可稳定手工触发的链路：登录、退出、会话恢复、`discover / forum / docs / profile` 真实读取、forum feed、forum detail、评论阅读、评论分页、评论发布 / 回复、纯文本发帖与失败草稿保留、detail 原地登录续接、docs 搜索 / 内链、公开商城列表与商品详情、登录态单商品购买、订单 / 背包 / 钱包回流、公开详情链接复制、profile 复访、最近访问公开路由、轻回应发布，以及已登录壳层的通知列表回流和单条已读。
 
-通知回流当前使用站内通知列表作为可测来源：用另一个账号在 Web / 桌面端评论或回复目标用户的帖子 / 评论，接收账号登录 Flutter 后打开通知列表并选择通知，应能回到对应 forum detail，并在通知携带 `commentId` 时落到评论上下文；详情返回后应回到打开通知前所在 tab。单条未读通知可显式标记已读，成功后局部更新状态，失败时保留原状态并提示错误。系统通知栏推送、完整通知中心、批量已读、删除通知和通知设置仍不属于当前 Android MVP 阻断项。Forum detail 登录回流还需确认：匿名态从轻回应区或评论区登录后，应分别回到当前轻回应区或评论输入上下文；后续轻回应发布只刷新轻回应墙和局部成功提示，根评论发布或回复只局部更新评论区，不刷新正文、轻回应或来源 tab。具体 checklist 以 `Clients/radish.flutter/README.md` 为准。
+通知回流当前使用站内通知列表作为可测来源：用另一个账号在 Web / 桌面端评论或回复目标用户的帖子 / 评论，接收账号登录 Flutter 后打开通知列表并选择通知，应能回到对应 forum detail，并在通知携带 `commentId` 时落到评论上下文；详情返回后应回到打开通知前所在 tab。单条未读通知可显式标记已读，成功后局部更新状态，失败时保留原状态并提示错误；未读 forum 通知打开详情前也会尝试标记已读，失败不阻断详情打开。系统通知栏推送、完整通知中心、批量已读、删除通知和通知设置仍不属于当前 Android MVP 阻断项。Forum detail 登录回流还需确认：匿名态从轻回应区、评论区或后续发帖入口登录后，应分别回到当前轻回应区、评论输入上下文或发帖表单；后续轻回应发布只刷新轻回应墙和局部成功提示，根评论发布或回复只局部更新评论区，不刷新正文、轻回应或来源 tab。具体 checklist 以 `Clients/radish.flutter/README.md` 为准。
 
 Android MVP 本地 release APK 发布候选当前已完成首轮收口。涉及 Android 包身份、release signing、main manifest 权限、Gateway 基址或 RC 构建脚本时，除 Dart / Android 平台自动化外，还应确认：
 
@@ -588,9 +588,9 @@ PC/Tauri 当前后置到纯 Web 与 Flutter 主线之后，不再默认绑定 We
 
 ## 受限环境说明
 
-在某些受限 Windows 沙盒中，顶层 shell 可以执行 `npm run ...`，但 Node 脚本内部再次拉起 `node / npm / powershell` 子进程可能被系统直接拒绝。
+在某些受限沙盒中，顶层 shell 可以执行 `npm run ...`，但 Node 脚本内部再次拉起 `node / npm / dotnet / powershell` 子进程可能被系统直接拒绝。
 
-当前仓库脚本已经尽量减少对 `cmd.exe /c` 的依赖，并统一走共享执行层；但如果仍看到“当前受限环境禁止从 Node 脚本再拉起外部进程”这类提示，说明问题不在业务脚本逻辑，而在当前运行环境的子进程边界。
+当前仓库脚本已经尽量减少对 `cmd.exe /c` 的依赖，并统一走共享执行层；验证入口按平台分流：Windows 使用 PowerShell 包装脚本，macOS / Linux 直接执行 `dotnet`。如果仍看到“当前受限环境禁止从 Node 脚本再拉起外部进程”这类提示，说明问题不在业务脚本逻辑，而在当前运行环境的子进程边界。
 
 这种情况下，优先做法是：
 

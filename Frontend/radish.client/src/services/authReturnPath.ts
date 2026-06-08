@@ -73,7 +73,7 @@ export function buildCurrentDesktopReturnPath(
 }
 
 export function buildDesktopShopProductReturnPath(
-  productId: string | number,
+  productId: string,
   options: { intent?: 'purchase' | null } = {},
 ): string | null {
   const normalizedProductId = String(productId).trim();
@@ -92,7 +92,7 @@ export function buildDesktopShopProductReturnPath(
   return `/desktop?${query.toString()}`;
 }
 
-export function buildDesktopShopOrderReturnPath(orderId: string | number): string | null {
+export function buildDesktopShopOrderReturnPath(orderId: string): string | null {
   const normalizedOrderId = String(orderId).trim();
   if (!/^[1-9]\d*$/.test(normalizedOrderId)) {
     return null;
@@ -124,9 +124,9 @@ export function buildDesktopForumReturnPath(): string {
 }
 
 export function buildDesktopForumPostReturnPath(target: {
-  postId?: string | number | null;
+  postId?: string | null;
   postPublicId?: string | null;
-  commentId?: string | number | null;
+  commentId?: string | null;
   intent?: 'comment' | 'quickReply' | null;
 }): string | null {
   const normalizedPostPublicId = target.postPublicId?.trim().toLowerCase();

@@ -91,7 +91,7 @@ export async function adminGetProducts(params: {
 /**
  * 获取商品详情（管理后台）
  */
-export async function adminGetProduct(productId: string | number): Promise<Product> {
+export async function adminGetProduct(productId: string): Promise<Product> {
   const response = await apiGet<Product>(
     `/api/v1/Shop/AdminGetProduct/${encodeURIComponent(String(productId))}`,
     { withAuth: true }
@@ -107,8 +107,8 @@ export async function adminGetProduct(productId: string | number): Promise<Produ
 /**
  * 创建商品
  */
-export async function createProduct(product: CreateProductDto): Promise<string | number> {
-  const response = await apiPost<string | number>('/api/v1/Shop/CreateProduct', product, { withAuth: true });
+export async function createProduct(product: CreateProductDto): Promise<string> {
+  const response = await apiPost<string>('/api/v1/Shop/CreateProduct', product, { withAuth: true });
 
   if (!response.ok || response.data === undefined) {
     throw new Error(response.message || '创建商品失败');
@@ -131,7 +131,7 @@ export async function updateProduct(product: UpdateProductDto): Promise<void> {
 /**
  * 删除商品
  */
-export async function deleteProduct(productId: string | number): Promise<void> {
+export async function deleteProduct(productId: string): Promise<void> {
   const response = await apiDelete<null>(
     `/api/v1/Shop/DeleteProduct/${encodeURIComponent(String(productId))}`,
     { withAuth: true }
@@ -151,8 +151,8 @@ export async function adminGetOrders(params: {
   status?: OrderStatus;
   pageIndex?: number;
   pageSize?: number;
-  userId?: string | number;
-  productId?: string | number;
+  userId?: string;
+  productId?: string;
   orderNo?: string;
 }): Promise<PagedResponse<Order>> {
   const searchParams = new URLSearchParams();
@@ -179,7 +179,7 @@ export async function adminGetOrders(params: {
 /**
  * 获取订单详情（管理后台）
  */
-export async function adminGetOrder(orderId: string | number): Promise<Order> {
+export async function adminGetOrder(orderId: string): Promise<Order> {
   const response = await apiGet<Order>(
     `/api/v1/Shop/AdminGetOrder/${encodeURIComponent(String(orderId))}`,
     { withAuth: true }
@@ -257,7 +257,7 @@ export function getProductTypeDisplay(type: string): string {
 /**
  * 重试发放权益
  */
-export async function retryGrantBenefit(orderId: string | number): Promise<void> {
+export async function retryGrantBenefit(orderId: string): Promise<void> {
   const response = await apiPost<null>(
     `/api/v1/Shop/RetryGrantBenefit/${encodeURIComponent(String(orderId))}`,
     {},
@@ -272,7 +272,7 @@ export async function retryGrantBenefit(orderId: string | number): Promise<void>
 /**
  * 管理员备注订单
  */
-export async function adminRemarkOrder(orderId: string | number, remark: string): Promise<void> {
+export async function adminRemarkOrder(orderId: string, remark: string): Promise<void> {
   const response = await apiPost<null>(
     `/api/v1/Shop/AdminRemarkOrder/${encodeURIComponent(String(orderId))}`,
     { remark },
@@ -287,7 +287,7 @@ export async function adminRemarkOrder(orderId: string | number, remark: string)
 /**
  * 商品上架
  */
-export async function putOnSale(productId: string | number): Promise<void> {
+export async function putOnSale(productId: string): Promise<void> {
   const response = await apiPost<null>(
     `/api/v1/Shop/PutOnSale/${encodeURIComponent(String(productId))}`,
     undefined,
@@ -302,7 +302,7 @@ export async function putOnSale(productId: string | number): Promise<void> {
 /**
  * 商品下架
  */
-export async function takeOffSale(productId: string | number): Promise<void> {
+export async function takeOffSale(productId: string): Promise<void> {
   const response = await apiPost<null>(
     `/api/v1/Shop/TakeOffSale/${encodeURIComponent(String(productId))}`,
     undefined,

@@ -10,6 +10,9 @@ const positiveCases = [
   { file: 'Radish.Auth/Controllers/AccountController.cs', reasonKeys: ['auth-protocol-output'] },
   { file: 'Radish.Common/HttpContextTool/CurrentUser.cs', reasonKeys: ['identity-runtime'] },
   { file: 'Frontend/radish.http/src/oidc-callback.ts', reasonKeys: ['official-consumer'] },
+  { file: 'Frontend/radish.console/src/api/moderationApi.ts', reasonKeys: ['external-long-id-contract'] },
+  { file: 'Clients/radish.flutter/lib/features/forum/data/forum_repository.dart', reasonKeys: ['external-long-id-contract'] },
+  { file: 'Scripts/check-long-id-safety.mjs', reasonKeys: ['default-flow-asset'] },
   { file: 'Radish.Api.Tests/HttpTest/Radish.Api.AuthFlow.http', reasonKeys: ['official-consumer'] },
   { file: 'Docs/guide/identity-claim-regression-playbook.md', reasonKeys: ['default-flow-asset'] },
   { file: 'Docs/guide/validation-baseline.md', reasonKeys: ['default-flow-asset'] },
@@ -33,6 +36,7 @@ const negativeCases = [
   'Docs/changelog/2026-04/week1.md',
   'Docs/planning/backlog.md',
   'Frontend/radish.client/src/pages/Desktop/index.tsx',
+  'Frontend/radish.console/src/pages/Settings/Settings.tsx',
   'Scripts/collect-changed-files.mjs',
   'README.md',
 ];

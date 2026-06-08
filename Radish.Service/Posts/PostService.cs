@@ -38,6 +38,7 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
     private readonly INotificationService _notificationService;
     private readonly INotificationDedupService _dedupService;
     private readonly IExperienceService _experienceService;
+    private readonly IBaseRepository<User>? _userRepository;
     private readonly IBaseRepository<PostEditHistory> _postEditHistoryRepository;
     private readonly ForumEditHistoryOptions _editHistoryOptions;
     private readonly IBaseRepository<Attachment>? _attachmentRepository;
@@ -68,7 +69,8 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
         IBaseRepository<PostLottery>? postLotteryRepository = null,
         IBaseRepository<PostLotteryWinner>? postLotteryWinnerRepository = null,
         IBaseRepository<Comment>? commentRepository = null,
-        IBaseRepository<CommentHighlight>? commentHighlightRepository = null)
+        IBaseRepository<CommentHighlight>? commentHighlightRepository = null,
+        IBaseRepository<User>? userRepository = null)
         : base(mapper, baseRepository)
     {
         _postRepository = baseRepository;
@@ -93,6 +95,7 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
         _notificationService = notificationService;
         _dedupService = dedupService;
         _experienceService = experienceService;
+        _userRepository = userRepository;
         _postEditHistoryRepository = postEditHistoryRepository;
         _editHistoryOptions = editHistoryOptions.Value;
         _attachmentRepository = attachmentRepository;

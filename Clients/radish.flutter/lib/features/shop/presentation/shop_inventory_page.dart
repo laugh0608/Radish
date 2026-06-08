@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import '../../../core/config/app_environment.dart';
 import '../../../core/network/radish_api_client.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
+import '../../wallet/data/wallet_repository.dart';
+import '../data/shop_long_id.dart';
 import '../data/shop_models.dart';
 import '../data/shop_repository.dart';
 import 'shop_order_detail_page.dart';
@@ -14,13 +16,19 @@ class ShopInventoryPage extends StatefulWidget {
   const ShopInventoryPage({
     required this.environment,
     required this.repository,
+    required this.walletRepository,
     required this.accessToken,
+    this.sourceLabel = '我的',
+    this.returnLabel = '返回我的',
     super.key,
   });
 
   final AppEnvironment environment;
   final ShopRepository repository;
+  final WalletRepository walletRepository;
   final String accessToken;
+  final String sourceLabel;
+  final String returnLabel;
 
   @override
   State<ShopInventoryPage> createState() => _ShopInventoryPageState();
@@ -105,7 +113,7 @@ class _ShopInventoryPageState extends State<ShopInventoryPage> {
   }
 
   void _openSourceOrder(String? orderId) {
-    final normalizedOrderId = _normalizePositiveId(orderId);
+    final normalizedOrderId = normalizeShopPositiveLongId(orderId);
     if (normalizedOrderId == null) {
       return;
     }
@@ -115,6 +123,7 @@ class _ShopInventoryPageState extends State<ShopInventoryPage> {
         builder: (context) => ShopOrderDetailPage(
           environment: widget.environment,
           repository: widget.repository,
+          walletRepository: widget.walletRepository,
           accessToken: widget.accessToken,
           orderId: normalizedOrderId,
           sourceLabel: '背包来源',
@@ -125,7 +134,7 @@ class _ShopInventoryPageState extends State<ShopInventoryPage> {
   }
 
   void _openSourceProduct(String? productId) {
-    final normalizedProductId = _normalizePositiveId(productId);
+    final normalizedProductId = normalizeShopPositiveLongId(productId);
     if (normalizedProductId == null) {
       return;
     }
@@ -135,6 +144,7 @@ class _ShopInventoryPageState extends State<ShopInventoryPage> {
         builder: (context) => ShopProductDetailPage(
           environment: widget.environment,
           repository: widget.repository,
+          walletRepository: widget.walletRepository,
           productId: normalizedProductId,
           sourceLabel: '背包来源',
           returnLabel: '返回背包',
@@ -170,6 +180,7 @@ class _ShopInventoryPageState extends State<ShopInventoryPage> {
             title: '当前能力',
             items: [
               '当前环境：${widget.environment.name}',
+              '来源：${widget.sourceLabel}',
               '登录态只读查看权益和道具',
               '当前不支持激活权益、取消激活、使用道具或权益配置',
               _isLoading
@@ -185,7 +196,7 @@ class _ShopInventoryPageState extends State<ShopInventoryPage> {
               OutlinedButton.icon(
                 onPressed: () => Navigator.of(context).maybePop(),
                 icon: const Icon(Icons.arrow_back),
-                label: const Text('返回我的'),
+                label: Text(widget.returnLabel),
               ),
               FilledButton.tonalIcon(
                 onPressed: _isLoading || _isRefreshing ? null : _refresh,
@@ -346,9 +357,9 @@ class _ShopBenefitCard extends StatelessWidget {
             : '未激活';
     final sourceText = benefit.sourceTypeDisplay ?? benefit.sourceType;
     final canOpenSourceOrder =
-        _normalizePositiveId(benefit.sourceOrderId) != null;
+        normalizeShopPositiveLongId(benefit.sourceOrderId) != null;
     final canOpenSourceProduct =
-        _normalizePositiveId(benefit.sourceProductId) != null;
+        normalizeShopPositiveLongId(benefit.sourceProductId) != null;
 
     return DecoratedBox(
       decoration: _itemDecoration(context),
@@ -420,7 +431,7 @@ class _ShopInventoryItemCard extends StatelessWidget {
     final title =
         item.itemName ?? item.consumableTypeDisplay ?? item.consumableType;
     final canOpenSourceProduct =
-        _normalizePositiveId(item.sourceProductId) != null;
+        normalizeShopPositiveLongId(item.sourceProductId) != null;
 
     return DecoratedBox(
       decoration: _itemDecoration(context),
@@ -458,20 +469,6 @@ class _ShopInventoryItemCard extends StatelessWidget {
       ),
     );
   }
-}
-
-String? _normalizePositiveId(String? value) {
-  final normalizedValue = value?.trim();
-  if (normalizedValue == null || normalizedValue.isEmpty) {
-    return null;
-  }
-
-  final parsedValue = int.tryParse(normalizedValue);
-  if (parsedValue == null || parsedValue <= 0) {
-    return null;
-  }
-
-  return normalizedValue;
 }
 
 BoxDecoration _itemDecoration(BuildContext context) {

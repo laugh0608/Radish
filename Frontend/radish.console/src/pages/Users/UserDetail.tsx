@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   Button,
+  Space,
   Tag,
   Table,
   message,
@@ -18,18 +19,21 @@ import {
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
+import { normalizeConsoleReturnTo } from '@/utils/returnTo';
 import { userManagementApi } from '@/api/userManagement';
 import { getBalanceByUserId, getTransactionsByUserId, type CoinTransactionVo, type UserBalanceVo } from '@/api/coinAdminApi';
 import { getUserExperience, type UserExperienceVo } from '@/api/experienceAdminApi';
 import { adminGetOrders, getOrderStatusColor, getOrderStatusDisplay } from '@/api/shopApi';
+import { buildOrderDetailPath } from '@/pages/Orders/orderListUrlState';
 import type { Order } from '@/api/types';
 import type { UserListItem } from '@/types/user';
 import '../adminFeature.css';
 import './UserDetail.css';
 
 interface UserDetailData {
-  uuid: string | number;
+  uuid: string;
   userName: string;
+  displayName: string;
   loginName: string;
   email: string;
   isEnabled: boolean;
@@ -40,8 +44,9 @@ interface UserDetailData {
 export const UserDetail = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
-  const returnTo = searchParams.get('returnTo');
+  const returnTo = normalizeConsoleReturnTo(searchParams.get('returnTo'));
   useDocumentTitle('用户详情');
   const canViewUsers = usePermission(CONSOLE_PERMISSIONS.usersView);
   const canViewCoins = usePermission(CONSOLE_PERMISSIONS.coinsView);
@@ -60,6 +65,7 @@ export const UserDetail = () => {
   const mapUserDetail = (item: UserListItem): UserDetailData => ({
     uuid: item.uuid,
     userName: item.voUserName || '-',
+    displayName: item.voUserRealName || '-',
     loginName: item.voLoginName || '-',
     email: item.voUserEmail || '-',
     isEnabled: item.voIsEnable,
@@ -93,12 +99,37 @@ export const UserDetail = () => {
   );
 
   const handleBack = () => {
-    if (returnTo?.startsWith('/')) {
+    if (returnTo) {
       navigate(returnTo);
       return;
     }
 
     navigate('/users');
+  };
+
+  const getCurrentReturnTo = () => `${location.pathname}${location.search}`;
+
+  const handleViewOrderFromTransaction = (transaction: CoinTransactionVo) => {
+    if (transaction.voBusinessType !== 'Order' || !transaction.voBusinessId) {
+      return;
+    }
+
+    navigate(buildOrderDetailPath({
+      orderId: String(transaction.voBusinessId),
+      returnTo: getCurrentReturnTo(),
+    }));
+  };
+
+  const handleViewCoinTransactionFromOrder = (order: Order) => {
+    const searchParams = new URLSearchParams({
+      userId: String(order.voUserId),
+      transactionType: 'CONSUME',
+      businessType: 'Order',
+      businessId: String(order.voId),
+      returnTo: getCurrentReturnTo(),
+    });
+
+    navigate(`/coins?${searchParams.toString()}`);
   };
 
   // 加载用户详情
@@ -235,6 +266,18 @@ export const UserDetail = () => {
       width: 180,
       render: (time: string) => formatDisplayTime(time),
     },
+    {
+      title: '操作',
+      key: 'action',
+      width: 120,
+      render: (_: unknown, record) => (
+        record.voBusinessType === 'Order' && record.voBusinessId ? (
+          <Button onClick={() => handleViewOrderFromTransaction(record)}>
+            查看订单
+          </Button>
+        ) : '-'
+      ),
+    },
   ];
 
   // 订单表格列
@@ -278,11 +321,23 @@ export const UserDetail = () => {
     {
       title: '操作',
       key: 'action',
-      width: 120,
+      width: 200,
       render: (_: unknown, record: Order) => (
-        <Button onClick={() => navigate(`/orders?orderNo=${encodeURIComponent(record.voOrderNo)}&openDetail=1`)}>
-          治理详情
-        </Button>
+        <Space wrap>
+          <Button onClick={() => {
+            navigate(buildOrderDetailPath({
+              orderId: String(record.voId),
+              returnTo: getCurrentReturnTo(),
+            }));
+          }}>
+            治理详情
+          </Button>
+          {record.voCoinTransactionId ? (
+            <Button onClick={() => handleViewCoinTransactionFromOrder(record)}>
+              扣款流水
+            </Button>
+          ) : null}
+        </Space>
       ),
     },
   ];
@@ -375,6 +430,7 @@ export const UserDetail = () => {
             </div>
             <Descriptions column={2}>
               <Descriptions.Item label="用户名">{user.userName}</Descriptions.Item>
+              <Descriptions.Item label="展示名称">{user.displayName}</Descriptions.Item>
               <Descriptions.Item label="登录名">{user.loginName}</Descriptions.Item>
               <Descriptions.Item label="邮箱">{user.email}</Descriptions.Item>
               <Descriptions.Item label="用户 ID">{user.uuid}</Descriptions.Item>

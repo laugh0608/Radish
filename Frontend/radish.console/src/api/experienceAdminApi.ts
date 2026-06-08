@@ -1,7 +1,7 @@
 import { apiGet, apiPost, type PagedResponse } from '@radish/http';
 
 export interface UserExperienceVo {
-  voUserId: number | string;
+  voUserId: string;
   voUserName?: string | null;
   voAvatarUrl?: string | null;
   voCurrentLevel: number;
@@ -32,8 +32,8 @@ export interface LevelConfigVo {
 }
 
 export interface UserExpDailyStatsVo {
-  voId: number | string;
-  voUserId: number | string;
+  voId: string;
+  voUserId: string;
   voStatDate: string;
   voExpEarned: number;
   voExpFromPost: number;
@@ -85,8 +85,8 @@ export interface UserExpGovernanceRecommendationVo {
 }
 
 export interface UserExperienceGovernanceActionVo {
-  voActionId: number | string;
-  voTargetUserId: number | string;
+  voActionId: string;
+  voTargetUserId: string;
   voTargetUserName?: string | null;
   voActionType: 'Review' | 'Freeze' | 'Unfreeze' | 'Unknown' | string;
   voActionTypeDisplay: string;
@@ -102,7 +102,7 @@ export interface UserExperienceGovernanceActionVo {
   voRecommendationTitle?: string | null;
   voRecommendationReason?: string | null;
   voFrozenUntil?: string | null;
-  voOperatorId: number | string;
+  voOperatorId: string;
   voOperatorName?: string | null;
   voCreateTime: string;
 }
@@ -127,16 +127,16 @@ export interface UserExpDailyStatsWindowVo {
 }
 
 export interface ExpTransactionVo {
-  voId: number | string;
-  voUserId: number | string;
+  voId: string;
+  voUserId: string;
   voUserName?: string | null;
-  voOperatorId: number | string;
+  voOperatorId: string;
   voOperatorName?: string | null;
   voExpType: string;
   voExpTypeDisplay: string;
   voExpAmount: number;
   voBusinessType?: string | null;
-  voBusinessId?: number | string | null;
+  voBusinessId?: string | null;
   voRemark?: string | null;
   voExpBefore: number;
   voExpAfter: number;
@@ -146,19 +146,19 @@ export interface ExpTransactionVo {
 }
 
 export interface AdminAdjustExperienceRequest {
-  userId: string | number;
+  userId: string;
   deltaExp: number;
   reason?: string;
 }
 
 export interface AdminFreezeExperienceRequest {
-  userId: string | number;
+  userId: string;
   reason: string;
   frozenUntil?: string;
 }
 
 export interface AdminRecordExperienceGovernanceReviewRequest {
-  userId: string | number;
+  userId: string;
   reviewResult: 'NoIssue' | 'Observe' | 'FreezeSuggest';
   remark: string;
   windowDays?: number;
@@ -169,7 +169,7 @@ export interface AdminRecordExperienceGovernanceReviewRequest {
   recommendationReason?: string;
 }
 
-export async function getUserExperience(userId: string | number): Promise<UserExperienceVo> {
+export async function getUserExperience(userId: string): Promise<UserExperienceVo> {
   const response = await apiGet<UserExperienceVo>(
     `/api/v1/Experience/GetUserExperience/${encodeURIComponent(String(userId))}`,
     { withAuth: true }
@@ -191,7 +191,7 @@ export async function getLevelConfigs(): Promise<LevelConfigVo[]> {
 }
 
 export async function getUserDailyStats(
-  userId: string | number,
+  userId: string,
   days: number = 7
 ): Promise<UserExpDailyStatsWindowVo> {
   const searchParams = new URLSearchParams({
@@ -209,7 +209,7 @@ export async function getUserDailyStats(
 }
 
 export async function getUserGovernanceActions(
-  userId: string | number,
+  userId: string,
   take: number = 20
 ): Promise<UserExperienceGovernanceActionVo[]> {
   const searchParams = new URLSearchParams({
@@ -227,7 +227,7 @@ export async function getUserGovernanceActions(
 }
 
 export async function getUserTransactions(params: {
-  userId: string | number;
+  userId: string;
   pageIndex?: number;
   pageSize?: number;
   expType?: string;
@@ -276,7 +276,7 @@ export async function adminFreezeExperience(request: AdminFreezeExperienceReques
   }
 }
 
-export async function adminUnfreezeExperience(userId: string | number): Promise<void> {
+export async function adminUnfreezeExperience(userId: string): Promise<void> {
   const response = await apiPost(
     '/api/v1/Experience/AdminUnfreezeExperience',
     { userId },

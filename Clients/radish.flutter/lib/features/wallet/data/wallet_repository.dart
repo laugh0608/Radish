@@ -11,6 +11,10 @@ abstract class WalletRepository {
     required String accessToken,
     required int pageIndex,
     required int pageSize,
+    String? transactionType,
+    String? status,
+    String? businessType,
+    String? businessId,
   });
 }
 
@@ -29,6 +33,10 @@ class EmptyWalletRepository implements WalletRepository {
     required String accessToken,
     required int pageIndex,
     required int pageSize,
+    String? transactionType,
+    String? status,
+    String? businessType,
+    String? businessId,
   }) {
     throw const RadishApiClientException('胡萝卜流水暂时不可用');
   }
@@ -66,17 +74,34 @@ class HttpWalletRepository implements WalletRepository {
     required String accessToken,
     required int pageIndex,
     required int pageSize,
+    String? transactionType,
+    String? status,
+    String? businessType,
+    String? businessId,
   }) {
     final normalizedAccessToken = accessToken.trim();
     if (normalizedAccessToken.isEmpty) {
       throw const RadishApiClientException('请先登录后查看胡萝卜流水');
     }
 
+    final normalizedTransactionType = transactionType?.trim();
+    final normalizedStatus = status?.trim();
+    final normalizedBusinessType = businessType?.trim();
+    final normalizedBusinessId = businessId?.trim();
     final uri = endpoints.resolveApi(
       '/api/v1/Coin/GetTransactions',
       queryParameters: {
         'pageIndex': pageIndex.clamp(1, 9999).toString(),
         'pageSize': pageSize.clamp(1, 50).toString(),
+        if (normalizedTransactionType != null &&
+            normalizedTransactionType.isNotEmpty)
+          'transactionType': normalizedTransactionType,
+        if (normalizedStatus != null && normalizedStatus.isNotEmpty)
+          'status': normalizedStatus,
+        if (normalizedBusinessType != null && normalizedBusinessType.isNotEmpty)
+          'businessType': normalizedBusinessType,
+        if (normalizedBusinessId != null && normalizedBusinessId.isNotEmpty)
+          'businessId': normalizedBusinessId,
       },
     );
 

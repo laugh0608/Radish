@@ -17,9 +17,9 @@ test('getUserIdentityFromTokenPayload 应优先使用标准 claims', () => {
   });
 
   assert.deepEqual(identity, {
-    userId: 101,
+    userId: '101',
     userName: 'standard-user',
-    tenantId: 9,
+    tenantId: '9',
     roles: ['Admin', 'User', 'Auditor'],
   });
 });
@@ -33,11 +33,35 @@ test('getUserIdentityFromTokenPayload 在标准 claims 缺失时应 fallback 到
   });
 
   assert.deepEqual(identity, {
-    userId: 202,
+    userId: '202',
     userName: 'legacy-user',
-    tenantId: 12,
+    tenantId: '12',
     roles: ['LegacyAdmin', 'LegacyUser'],
   });
+});
+
+test('getUserIdentityFromTokenPayload 应保留大整数用户 ID 字符串精度', () => {
+  const identity = getUserIdentityFromTokenPayload({
+    sub: '2042219067430928384',
+    preferred_username: 'long-id-user',
+    tenant_id: '2042219067430928001',
+  });
+
+  assert.deepEqual(identity, {
+    userId: '2042219067430928384',
+    userName: 'long-id-user',
+    tenantId: '2042219067430928001',
+    roles: [],
+  });
+});
+
+test('getUserIdentityFromTokenPayload 不接受已不安全的数值型大整数身份', () => {
+  const identity = getUserIdentityFromTokenPayload({
+    sub: Number('2042219067430928384'),
+    preferred_username: 'unsafe-number-user',
+  });
+
+  assert.equal(identity, null);
 });
 
 test('getRolesFromTokenPayload 在标准角色存在时不应混入 legacy role URI', () => {

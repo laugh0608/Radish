@@ -41,7 +41,7 @@ export function UserProvider({ children }: UserProviderProps) {
           setUser({
             voUserId: '',
             voUserName: tokenUserName,
-            voTenantId: 0,
+            voTenantId: '',
             roles: [],
             permissions: [],
           } satisfies UserInfo);
@@ -55,7 +55,7 @@ export function UserProvider({ children }: UserProviderProps) {
         setUser({
           voUserId: '',
           voUserName: tokenUserName,
-          voTenantId: 0,
+          voTenantId: '',
           roles: [],
           permissions: [],
         } satisfies UserInfo);

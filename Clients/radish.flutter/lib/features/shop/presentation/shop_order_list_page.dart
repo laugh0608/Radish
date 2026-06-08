@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../core/config/app_environment.dart';
 import '../../../core/network/radish_api_client.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
+import '../../wallet/data/wallet_repository.dart';
 import '../data/shop_models.dart';
 import '../data/shop_repository.dart';
 import 'shop_order_detail_page.dart';
@@ -13,12 +14,14 @@ class ShopOrderListPage extends StatefulWidget {
   const ShopOrderListPage({
     required this.environment,
     required this.repository,
+    required this.walletRepository,
     required this.accessToken,
     super.key,
   });
 
   final AppEnvironment environment;
   final ShopRepository repository;
+  final WalletRepository walletRepository;
   final String accessToken;
 
   @override
@@ -159,6 +162,7 @@ class _ShopOrderListPageState extends State<ShopOrderListPage> {
         builder: (context) => ShopOrderDetailPage(
           environment: widget.environment,
           repository: widget.repository,
+          walletRepository: widget.walletRepository,
           accessToken: widget.accessToken,
           orderId: orderId,
           initialTitle: order.productName,
@@ -184,7 +188,7 @@ class _ShopOrderListPageState extends State<ShopOrderListPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            '查看当前账号的商城订单。Flutter 本批只读，不开放购买、取消订单或支付口令操作。',
+            '查看当前账号的商城订单，并可进入订单详情核对购买结果和发放状态。',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 20),
@@ -193,7 +197,7 @@ class _ShopOrderListPageState extends State<ShopOrderListPage> {
             items: [
               '当前环境：${widget.environment.name}',
               '登录态只读查看订单列表',
-              '当前不支持购买、取消订单、支付口令或权益激活',
+              '本页不发起购买、取消订单、支付口令或权益激活操作',
               _isLoading
                   ? '正在准备订单列表'
                   : '已加载 ${_orders.length} / $_dataCount 个订单',

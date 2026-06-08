@@ -98,6 +98,7 @@ test('buildDesktopShopProductReturnPath 应构造商品上下文恢复路径并�
   );
   assert.equal(buildDesktopShopProductReturnPath(12), '/desktop?app=shop&productId=12');
   assert.equal(buildDesktopShopProductReturnPath(0), null);
+  assert.equal(buildDesktopShopProductReturnPath('02042219067430928384'), null);
   assert.equal(buildDesktopShopProductReturnPath('abc'), null);
 });
 
@@ -108,6 +109,7 @@ test('商城订单和背包返回路径应保持字符串 ID 并收敛到 deskto
   );
   assert.equal(buildDesktopShopOrderReturnPath(15), '/desktop?app=shop&orderId=15');
   assert.equal(buildDesktopShopOrderReturnPath('0'), null);
+  assert.equal(buildDesktopShopOrderReturnPath('02042219067430928385'), null);
   assert.equal(buildDesktopShopOrderReturnPath('abc'), null);
   assert.equal(buildDesktopShopPrivateViewReturnPath('orders'), '/desktop?app=shop&view=orders');
   assert.equal(buildDesktopShopPrivateViewReturnPath('inventory'), '/desktop?app=shop&view=inventory');

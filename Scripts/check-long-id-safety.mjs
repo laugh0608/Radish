@@ -1,0 +1,269 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import { dirname, extname, join, relative, resolve, sep } from 'node:path';
+import process from 'node:process';
+import { fileURLToPath } from 'node:url';
+
+const scriptDir = dirname(fileURLToPath(import.meta.url));
+const repoRoot = resolve(scriptDir, '..');
+
+const scanRoots = [
+  'Frontend/radish.client/src',
+  'Frontend/radish.console/src',
+  'Frontend/radish.http/src',
+  'Clients/radish.flutter/lib',
+];
+
+const textExtensions = new Set(['.ts', '.tsx', '.dart']);
+const longIdPascalNames = [
+  'UserId',
+  'PostId',
+  'CommentId',
+  'ProductId',
+  'OrderId',
+  'NotificationId',
+  'TransactionId',
+  'ReportId',
+  'TargetContentId',
+  'TargetPostId',
+  'TargetCommentId',
+  'TargetChannelId',
+  'TargetMessageId',
+  'TargetUserId',
+  'ReporterUserId',
+  'ActionId',
+  'BusinessId',
+  'TenantId',
+  'FromUserId',
+  'ToUserId',
+  'OperatorId',
+  'SourceReportId',
+  'SourceOrderId',
+  'SourceProductId',
+  'UserBenefitId',
+  'ReplyToCommentId',
+  'CategoryId',
+  'AttachmentId',
+  'ChannelId',
+  'MessageId',
+  'RoleId',
+  'ResourceId',
+  'ApiModuleId',
+  'uuid',
+];
+const longIdCamelNames = [
+  'userId',
+  'postId',
+  'commentId',
+  'productId',
+  'orderId',
+  'notificationId',
+  'transactionId',
+  'reportId',
+  'targetContentId',
+  'targetPostId',
+  'targetCommentId',
+  'targetChannelId',
+  'targetMessageId',
+  'targetUserId',
+  'reporterUserId',
+  'actionId',
+  'businessId',
+  'tenantId',
+  'fromUserId',
+  'toUserId',
+  'operatorId',
+  'sourceReportId',
+  'sourceOrderId',
+  'sourceProductId',
+  'userBenefitId',
+  'replyToCommentId',
+  'categoryId',
+  'attachmentId',
+  'channelId',
+  'messageId',
+  'roleId',
+  'resourceId',
+  'apiModuleId',
+  'uuid',
+];
+const explicitLongIdCollectionNames = ['voGrantedResourceIds', 'selectedResourceIds'];
+const longIdNamePattern = `(?:vo)?(?:${longIdPascalNames.join('|')})`;
+const longIdExpressionPattern = `(?:${longIdCamelNames.join('|')})`;
+const longIdCollectionNamePattern = `(?:(?:vo)?(?:${longIdPascalNames.map((name) => `${name}s`).join('|')})|${explicitLongIdCollectionNames.join('|')})`;
+const longIdCollectionExpressionPattern = `(?:${longIdCamelNames.map((name) => `${name}s`).join('|')}|${explicitLongIdCollectionNames.join('|')})`;
+const tsLongIdDeclarationPattern = `(?:${longIdNamePattern}|${longIdExpressionPattern})`;
+const tsLongIdCollectionDeclarationPattern = `(?:${longIdCollectionNamePattern}|${longIdCollectionExpressionPattern})`;
+const tsLongIdAnyDeclarationPattern = `(?:${tsLongIdDeclarationPattern}|${tsLongIdCollectionDeclarationPattern})`;
+const tsLongIdConversionExpressionPattern = `(?:${longIdExpressionPattern}|${longIdCollectionExpressionPattern})`;
+const tsNumberArrayTypePattern = '(?:number\\s*\\[\\]|Array\\s*<\\s*number\\s*>|ReadonlyArray\\s*<\\s*number\\s*>)';
+const tsStringArrayTypePattern = '(?:string\\s*\\[\\]|Array\\s*<\\s*string\\s*>|ReadonlyArray\\s*<\\s*string\\s*>)';
+const genericLongIdExpressionPattern = '(?:\\.voId\\b|\\[(?:\'voId\'|"voId")\\])';
+const longIdMapKeyPattern = `(?:voId|${longIdNamePattern})`;
+const dartLongIdAccessorPattern = `(?:\\.voId\\b|\\[(?:'|")${longIdMapKeyPattern}(?:'|")\\])`;
+
+const tsRules = [
+  {
+    id: 'ts-long-id-number-type',
+    description: '外部 LongId 字段/参数不得声明为纯 number；请使用 string 字符串契约',
+    test: (line) => new RegExp(`\\b${tsLongIdDeclarationPattern}\\??\\s*:\\s*number(?:\\s*[;,)=}]|\\s*\\|\\s*(?:null|undefined))`).test(line),
+  },
+  {
+    id: 'ts-long-id-number-array-type',
+    description: '外部 LongId 集合字段/参数不得声明为 number[]；请使用 string[] 字符串契约',
+    test: (line) => new RegExp(`\\b${tsLongIdCollectionDeclarationPattern}\\??\\s*:\\s*${tsNumberArrayTypePattern}(?:\\s*[;,)=}]|\\s*\\|\\s*(?:null|undefined))`).test(line),
+  },
+  {
+    id: 'ts-long-id-string-number-union-type',
+    description: '外部 LongId 字段/参数不得声明为 string | number 兼容契约；请收敛为 string',
+    test: (line) => new RegExp(`\\b${tsLongIdAnyDeclarationPattern}\\??\\s*:\\s*(?:string\\s*\\|\\s*number|number\\s*\\|\\s*string)(?:\\s*\\|\\s*(?:null|undefined))*`).test(line),
+  },
+  {
+    id: 'ts-long-id-string-number-array-union-type',
+    description: '外部 LongId 集合字段/参数不得声明为 string[] | number[] 兼容契约；请收敛为 string[]',
+    test: (line) => new RegExp(`\\b${tsLongIdCollectionDeclarationPattern}\\??\\s*:\\s*(?:${tsStringArrayTypePattern}\\s*\\|\\s*${tsNumberArrayTypePattern}|${tsNumberArrayTypePattern}\\s*\\|\\s*${tsStringArrayTypePattern})(?:\\s*\\|\\s*(?:null|undefined))*`).test(line),
+  },
+  {
+    id: 'ts-long-id-number-array-generic',
+    description: '外部 LongId 集合状态/容器不得使用 number 泛型；请使用 string[] / Set<string>',
+    test: (line) => {
+      const longIdCollectionName = new RegExp(`\\b${tsLongIdCollectionDeclarationPattern}\\b`);
+      const numericCollectionGeneric = new RegExp(`(?:useState\\s*<\\s*${tsNumberArrayTypePattern}\\s*>|(?:new\\s+)?Set\\s*<\\s*number\\s*>|(?:new\\s+)?Array\\s*<\\s*number\\s*>)`);
+      return longIdCollectionName.test(line) && numericCollectionGeneric.test(line);
+    },
+  },
+  {
+    id: 'ts-long-id-number-conversion',
+    description: '外部 LongId 不得提前 Number/parseInt 转换；请保持字符串透传或使用字符串规范化函数',
+    test: (line) => new RegExp(`\\b(?:Number|Number\\.parseInt|parseInt)\\s*\\([^\\n)]*${tsLongIdConversionExpressionPattern}`, 'i').test(line),
+  },
+  {
+    id: 'ts-long-id-array-number-map',
+    description: '外部 LongId 集合不得通过 .map(Number) 批量数值化；请保持字符串透传',
+    test: (line) => new RegExp(`\\b${longIdCollectionExpressionPattern}\\b[^\\n;]*\\.map\\s*\\(\\s*(?:Number|Number\\.parseInt|parseInt)\\b`, 'i').test(line),
+  },
+  {
+    id: 'ts-generic-vo-id-number-conversion',
+    description: '泛型 voId 承载外部 LongId 时不得提前 Number/parseInt 转换；请保持字符串透传或使用字符串规范化函数',
+    test: (line) => new RegExp(`\\b(?:Number|Number\\.parseInt|parseInt)\\s*\\([^\\n)]*${genericLongIdExpressionPattern}`, 'i').test(line),
+  },
+  {
+    id: 'ts-console-auth-vo-id-number-type',
+    description: 'Console 角色/授权 API 的 voId 承载外部 LongId，不得声明为 number',
+    test: (line, repoPath) =>
+      repoPath === 'Frontend/radish.console/src/api/roleApi.ts' &&
+      /\bvoId\??\s*:\s*number(?:\s*[;,)=}]|\s*\|\s*(?:null|undefined))/.test(line),
+  },
+];
+
+const dartRules = [
+  {
+    id: 'dart-long-id-int-type',
+    description: '外部 LongId 字段/参数不得声明为 int；请使用 String 字符串契约',
+    test: (line) => new RegExp(`\\b(?:final\\s+)?int\\??\\s+(?:${longIdExpressionPattern}|voId)\\b`, 'i').test(line),
+  },
+  {
+    id: 'dart-long-id-int-conversion',
+    description: '外部 LongId 不得提前 int.parse/int.tryParse 转换；请保持字符串透传',
+    test: (line) => new RegExp(`\\bint\\.(?:parse|tryParse)\\s*\\([^\\n)]*(?:${longIdExpressionPattern}|${dartLongIdAccessorPattern})`, 'i').test(line),
+  },
+  {
+    id: 'dart-long-id-numeric-reader',
+    description: '外部 LongId 不得通过 _readInt/readInt 等数值 helper 解析；请使用字符串读取与规范化函数',
+    test: (line) => new RegExp(`\\b_?read(?:Required|Optional)?(?:Int|Number)\\s*\\([^\\n)]*${dartLongIdAccessorPattern}`, 'i').test(line),
+  },
+  {
+    id: 'dart-long-id-int-cast',
+    description: '外部 LongId 不得通过 as int 或 toInt() 数值化；请保持字符串透传',
+    test: (line) => new RegExp(`${dartLongIdAccessorPattern}[^\\n;]*(?:\\bas\\s+int\\b|\\.toInt\\s*\\()`, 'i').test(line),
+  },
+];
+
+function toRepoPath(filePath) {
+  return relative(repoRoot, filePath).split(sep).join('/');
+}
+
+function getFiles(rootPath) {
+  const files = [];
+  const stack = [rootPath];
+
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (!current) {
+      continue;
+    }
+
+    for (const entry of readdirSync(current, { withFileTypes: true })) {
+      const fullPath = join(current, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(fullPath);
+        continue;
+      }
+
+      if (textExtensions.has(extname(entry.name))) {
+        files.push(fullPath);
+      }
+    }
+  }
+
+  return files.sort();
+}
+
+function shouldSkipLine(line) {
+  const trimmed = line.trim();
+  return !trimmed || trimmed.startsWith('//') || trimmed.includes('long-id-scan: ignore');
+}
+
+function collectFindings(filePath) {
+  const repoPath = toRepoPath(filePath);
+  const extension = extname(filePath);
+  const rules = extension === '.dart' ? dartRules : tsRules;
+  const lines = readFileSync(filePath, 'utf8').split(/\r?\n/);
+  const findings = [];
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (shouldSkipLine(line)) {
+      continue;
+    }
+
+    for (const rule of rules) {
+      if (!rule.test(line, repoPath)) {
+        continue;
+      }
+
+      findings.push({
+        file: repoPath,
+        line: index + 1,
+        rule: rule.id,
+        description: rule.description,
+        content: line.trim(),
+      });
+    }
+  }
+
+  return findings;
+}
+
+const scanFiles = scanRoots
+  .map((root) => join(repoRoot, root))
+  .flatMap(getFiles);
+
+const findings = scanFiles.flatMap(collectFindings);
+
+console.log('[LongId 字符串安全扫描]');
+console.log(`- 扫描目录：${scanRoots.join(', ')}`);
+console.log(`- 扫描文件：${scanFiles.length} 个`);
+console.log('- 规则：外部对象 ID 禁止纯 number/int 类型、数值集合类型与提前数值化转换');
+
+if (findings.length === 0) {
+  console.log('- 结果：未发现外部 LongId 字符串安全回归。');
+  process.exit(0);
+}
+
+console.error(`- 结果：发现 ${findings.length} 条疑似 LongId 安全回归。`);
+for (const finding of findings) {
+  console.error(`  - [${finding.rule}] ${finding.file}:${finding.line} ${finding.description}`);
+  console.error(`    ${finding.content}`);
+}
+
+process.exit(1);

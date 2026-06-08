@@ -14,7 +14,7 @@ export interface BootstrapCreateAdminRequest {
 }
 
 export interface BootstrapAdminCreated {
-  voUserId: string | number;
+  voUserId: string;
   voLoginName: string;
 }
 

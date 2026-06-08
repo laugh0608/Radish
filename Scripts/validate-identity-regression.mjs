@@ -1,5 +1,6 @@
 import process from 'node:process';
 
+import { createDotNetCommand } from './dotnet-command.mjs';
 import { formatCommand, runCommand } from './process-runner.mjs';
 
 const repoRoot = process.cwd();
@@ -13,28 +14,6 @@ const identityTestFilter = [
 
 function resolveNpmCommand() {
   return 'npm';
-}
-
-function resolvePowerShellCommand() {
-  if (process.platform === 'win32') {
-    return 'powershell';
-  }
-
-  const preferred = ['pwsh'];
-
-  for (const command of preferred) {
-    const result = runCommand(command, ['-NoLogo', '-NoProfile', '-Command', '$PSVersionTable.PSVersion.ToString()'], {
-      cwd: repoRoot,
-      encoding: 'utf8',
-      stdio: 'pipe',
-    });
-
-    if (result.status === 0) {
-      return command;
-    }
-  }
-
-  return null;
 }
 
 function runStep(title, command, commandArgs) {
@@ -57,12 +36,12 @@ function runStep(title, command, commandArgs) {
 }
 
 const npmCommand = resolveNpmCommand();
-const powerShellCommand = resolvePowerShellCommand();
-
-if (!powerShellCommand) {
-  console.error('[identity] 未找到可用的 PowerShell (`pwsh` 或 `powershell`)。');
-  process.exit(1);
-}
+const backendTest = createDotNetCommand([
+  'test',
+  'Radish.Api.Tests',
+  '--filter',
+  identityTestFilter,
+], { cwd: repoRoot });
 
 const steps = [
   {
@@ -76,18 +55,14 @@ const steps = [
     args: ['run', 'check:identity-protocol-output'],
   },
   {
+    title: '外部 LongId 字符串安全扫描',
+    command: npmCommand,
+    args: ['run', 'check:long-id-safety'],
+  },
+  {
     title: '身份语义后端定向测试',
-    command: powerShellCommand,
-    args: [
-      '-ExecutionPolicy',
-      'Bypass',
-      '-File',
-      'Scripts/dotnet-local.ps1',
-      'test',
-      'Radish.Api.Tests',
-      '--filter',
-      identityTestFilter,
-    ],
+    command: backendTest.command,
+    args: backendTest.args,
   },
 ];
 

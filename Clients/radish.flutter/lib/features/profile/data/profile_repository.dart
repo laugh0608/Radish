@@ -34,6 +34,19 @@ abstract class ProfileRepository {
     required int pageSize,
     required String accessToken,
   });
+
+  Future<MyProfileInfo> getMyProfile({
+    required String accessToken,
+  }) {
+    throw UnimplementedError('getMyProfile is not implemented.');
+  }
+
+  Future<void> updateMyProfile({
+    required UpdateMyProfileRequest request,
+    required String accessToken,
+  }) {
+    throw UnimplementedError('updateMyProfile is not implemented.');
+  }
 }
 
 class HttpProfileRepository implements ProfileRepository {
@@ -160,6 +173,34 @@ class HttpProfileRepository implements ProfileRepository {
       uri: uri,
       bearerToken: accessToken,
       decode: UserBrowseHistoryPage.fromJson,
+    );
+  }
+
+  @override
+  Future<MyProfileInfo> getMyProfile({
+    required String accessToken,
+  }) {
+    final uri = endpoints.resolveApi('/api/v1/User/GetMyProfile');
+
+    return apiClient.get(
+      uri: uri,
+      bearerToken: accessToken,
+      decode: MyProfileInfo.fromJson,
+    );
+  }
+
+  @override
+  Future<void> updateMyProfile({
+    required UpdateMyProfileRequest request,
+    required String accessToken,
+  }) {
+    final uri = endpoints.resolveApi('/api/v1/User/UpdateMyProfile');
+
+    return apiClient.post(
+      uri: uri,
+      body: request.toJson(),
+      bearerToken: accessToken,
+      decode: (_) {},
     );
   }
 }

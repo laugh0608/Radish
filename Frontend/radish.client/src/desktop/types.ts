@@ -72,7 +72,7 @@ export interface WindowState {
  */
 export interface UserInfo {
   /** 用户 ID */
-  userId: number;
+  userId: string;
   /** 用户名 */
   userName: string;
   /** 登录名 */
@@ -80,7 +80,7 @@ export interface UserInfo {
   /** 昵称 */
   nickname?: string;
   /** 租户 ID */
-  tenantId: number;
+  tenantId: string;
   /** 用户角色 */
   roles?: string[];
   /** 用户权限 */

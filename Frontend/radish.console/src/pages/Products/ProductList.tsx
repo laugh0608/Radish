@@ -41,53 +41,26 @@ import {
   getUnsupportedSaleReason,
   getUnsupportedSaleStatusLabel,
 } from './productDisplay';
+import {
+  buildProductDetailReturnTo,
+  buildProductDetailSearchParams,
+  normalizeProductReturnTo,
+  parseProductBooleanQuery,
+  parseProductLongIdQuery,
+} from './productListUrlState';
+import { buildOrderSearchParams } from '../Orders/orderListUrlState';
 import { getAvatarUrl } from '../../config/env';
 import { log } from '../../utils/logger';
 import '../adminFeature.css';
 import './ProductList.css';
 
-function parseLongIdQuery(value: string | null): string | undefined {
-  if (!value) {
-    return undefined;
-  }
-
-  const trimmed = value.trim();
-  return /^\d+$/u.test(trimmed) ? trimmed : undefined;
-}
-
-function parseBooleanQuery(value: string | null): boolean {
-  return value === '1' || value === 'true';
-}
-
-function buildProductDetailSearchParams(params: {
-  productId?: string | number;
-  openDetail?: boolean;
-  returnTo?: string | null;
-}): URLSearchParams {
-  const searchParams = new URLSearchParams();
-
-  if (params.productId !== undefined) {
-    searchParams.set('productId', String(params.productId));
-  }
-
-  if (params.openDetail) {
-    searchParams.set('openDetail', '1');
-  }
-
-  if (params.returnTo) {
-    searchParams.set('returnTo', params.returnTo);
-  }
-
-  return searchParams;
-}
-
 export const ProductList = () => {
   useDocumentTitle('商品管理');
   const navigate = useNavigate();
   const [urlSearchParams, setUrlSearchParams] = useSearchParams();
-  const queryProductId = parseLongIdQuery(urlSearchParams.get('productId'));
-  const queryOpenDetail = parseBooleanQuery(urlSearchParams.get('openDetail'));
-  const queryReturnTo = urlSearchParams.get('returnTo');
+  const queryProductId = parseProductLongIdQuery(urlSearchParams.get('productId'));
+  const queryOpenDetail = parseProductBooleanQuery(urlSearchParams.get('openDetail'));
+  const queryReturnTo = normalizeProductReturnTo(urlSearchParams.get('returnTo'));
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [loading, setLoading] = useState(false);
@@ -105,7 +78,7 @@ export const ProductList = () => {
   const [editingProduct, setEditingProduct] = useState<Product | undefined>();
 
   const [detailVisible, setDetailVisible] = useState(false);
-  const [selectedProductId, setSelectedProductId] = useState<string | number | undefined>();
+  const [selectedProductId, setSelectedProductId] = useState<string | undefined>();
   const [selectedProductSnapshot, setSelectedProductSnapshot] = useState<Product | undefined>();
   const [detailReloadToken, setDetailReloadToken] = useState(0);
   const [deletingProduct, setDeletingProduct] = useState<Product | undefined>();
@@ -138,7 +111,7 @@ export const ProductList = () => {
   const enabledProducts = products.filter((product) => product.voIsEnabled).length;
 
   const syncDetailSearchParams = (
-    productId?: string | number,
+    productId?: string,
     openDetail?: boolean,
     replace: boolean = false,
     returnTo?: string | null,
@@ -230,7 +203,7 @@ export const ProductList = () => {
     });
   };
 
-  const handleOpenDetail = (productId: string | number, product?: Product, syncQuery: boolean = false) => {
+  const handleOpenDetail = (productId: string, product?: Product, syncQuery: boolean = false) => {
     setSelectedProductId(productId);
     setSelectedProductSnapshot(product);
     setDetailVisible(true);
@@ -298,11 +271,22 @@ export const ProductList = () => {
   };
 
   const handleViewOrders = (product: Product) => {
-    navigate(`/orders?productId=${encodeURIComponent(String(product.voId))}`);
+    const productId = String(product.voId);
+    const returnTo = buildProductDetailReturnTo({
+      productId,
+      returnTo: queryReturnTo,
+    });
+
+    const searchParams = buildOrderSearchParams({
+      productId,
+      returnTo,
+    });
+
+    navigate(`/orders?${searchParams.toString()}`);
   };
 
   const handleReturnToSource = () => {
-    if (queryReturnTo?.startsWith('/')) {
+    if (queryReturnTo) {
       navigate(queryReturnTo);
     }
   };

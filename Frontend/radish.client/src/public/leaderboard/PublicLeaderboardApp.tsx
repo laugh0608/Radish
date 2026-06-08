@@ -267,7 +267,7 @@ export const PublicLeaderboardApp = ({
   const pageRef = useRef<HTMLDivElement>(null);
   const requestIdRef = useRef(0);
   const userId = useUserStore((state) => state.userId);
-  const isLoggedIn = userId > 0;
+  const isLoggedIn = userId !== '';
   const [items, setItems] = useState<UnifiedLeaderboardItemData[]>([]);
   const [types, setTypes] = useState<LeaderboardTypeData[]>(() => createFallbackLeaderboardTypes(t));
   const [totalPages, setTotalPages] = useState(1);

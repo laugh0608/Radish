@@ -22,6 +22,7 @@ import {
 } from '@radish/ui';
 import {
   adminGetOrders,
+  adminGetOrder,
   adminRemarkOrder,
   retryGrantBenefit,
   getOrderStatusColor,
@@ -31,88 +32,20 @@ import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
 import type { Order, OrderStatus } from '../../api/types';
 import { OrderDetail } from './OrderDetail';
+import {
+  DEFAULT_ORDER_PAGE_INDEX,
+  DEFAULT_ORDER_PAGE_SIZE,
+  buildOrderDetailSearchParams,
+  buildOrderSearchParams,
+  normalizeConsoleReturnTo,
+  parseBooleanQuery,
+  parseLongIdQuery,
+  parseOrderStatusQuery,
+  parsePositiveIntQuery,
+} from './orderListUrlState';
 import { log } from '../../utils/logger';
 import '../adminFeature.css';
 import './OrderList.css';
-
-const DEFAULT_PAGE_INDEX = 1;
-const DEFAULT_PAGE_SIZE = 20;
-
-function parsePositiveIntQuery(value: string | null): number | undefined {
-  if (!value) {
-    return undefined;
-  }
-
-  const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
-}
-
-function parseLongIdQuery(value: string | null): string | undefined {
-  if (!value) {
-    return undefined;
-  }
-
-  const trimmed = value.trim();
-  return /^\d+$/u.test(trimmed) ? trimmed : undefined;
-}
-
-function parseOrderStatusQuery(value: string | null): OrderStatus | undefined {
-  if (!value) {
-    return undefined;
-  }
-
-  const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed >= 0 && parsed <= 5
-    ? parsed as OrderStatus
-    : undefined;
-}
-
-function parseBooleanQuery(value: string | null): boolean {
-  return value === '1' || value === 'true';
-}
-
-function buildOrderSearchParams(params: {
-  userId?: string;
-  status?: OrderStatus;
-  productId?: string;
-  orderNo?: string;
-  pageIndex?: number;
-  pageSize?: number;
-  openDetail?: boolean;
-}): URLSearchParams {
-  const searchParams = new URLSearchParams();
-  const normalizedOrderNo = params.orderNo?.trim() ?? '';
-
-  if (params.userId !== undefined) {
-    searchParams.set('userId', params.userId.toString());
-  }
-
-  if (params.status !== undefined) {
-    searchParams.set('status', params.status.toString());
-  }
-
-  if (params.productId !== undefined) {
-    searchParams.set('productId', params.productId.toString());
-  }
-
-  if (normalizedOrderNo) {
-    searchParams.set('orderNo', normalizedOrderNo);
-  }
-
-  if ((params.pageIndex ?? DEFAULT_PAGE_INDEX) !== DEFAULT_PAGE_INDEX) {
-    searchParams.set('pageIndex', String(params.pageIndex));
-  }
-
-  if ((params.pageSize ?? DEFAULT_PAGE_SIZE) !== DEFAULT_PAGE_SIZE) {
-    searchParams.set('pageSize', String(params.pageSize));
-  }
-
-  if (params.openDetail) {
-    searchParams.set('openDetail', '1');
-  }
-
-  return searchParams;
-}
 
 export const OrderList = () => {
   useDocumentTitle('订单管理');
@@ -120,12 +53,14 @@ export const OrderList = () => {
   const location = useLocation();
   const [urlSearchParams, setUrlSearchParams] = useSearchParams();
   const queryUserId = parseLongIdQuery(urlSearchParams.get('userId'));
+  const queryOrderId = parseLongIdQuery(urlSearchParams.get('orderId'));
   const queryStatus = parseOrderStatusQuery(urlSearchParams.get('status'));
   const queryProductId = parseLongIdQuery(urlSearchParams.get('productId'));
   const queryOrderNo = (urlSearchParams.get('orderNo') ?? '').trim();
-  const queryPageIndex = parsePositiveIntQuery(urlSearchParams.get('pageIndex')) ?? DEFAULT_PAGE_INDEX;
-  const queryPageSize = parsePositiveIntQuery(urlSearchParams.get('pageSize')) ?? DEFAULT_PAGE_SIZE;
+  const queryPageIndex = parsePositiveIntQuery(urlSearchParams.get('pageIndex')) ?? DEFAULT_ORDER_PAGE_INDEX;
+  const queryPageSize = parsePositiveIntQuery(urlSearchParams.get('pageSize')) ?? DEFAULT_ORDER_PAGE_SIZE;
   const queryOpenDetail = parseBooleanQuery(urlSearchParams.get('openDetail'));
+  const returnTo = normalizeConsoleReturnTo(urlSearchParams.get('returnTo'));
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
@@ -134,9 +69,10 @@ export const OrderList = () => {
   const canRemarkOrder = usePermission(CONSOLE_PERMISSIONS.ordersRemark);
   const canViewUsers = usePermission(CONSOLE_PERMISSIONS.usersView);
   const canViewProducts = usePermission(CONSOLE_PERMISSIONS.productsView);
+  const canViewCoins = usePermission(CONSOLE_PERMISSIONS.coinsView);
 
   const [detailVisible, setDetailVisible] = useState(false);
-  const [selectedOrderId, setSelectedOrderId] = useState<string | number | undefined>();
+  const [selectedOrderId, setSelectedOrderId] = useState<string | undefined>();
   const [selectedOrderPreview, setSelectedOrderPreview] = useState<Order | undefined>();
   const [detailReloadToken, setDetailReloadToken] = useState(0);
 
@@ -150,6 +86,7 @@ export const OrderList = () => {
   const [draftOrderNo, setDraftOrderNo] = useState(queryOrderNo);
   const activeFilterCount = [
     queryUserId,
+    queryOrderId,
     queryStatus !== undefined ? 'status' : undefined,
     queryProductId,
     queryOrderNo,
@@ -159,6 +96,7 @@ export const OrderList = () => {
   const pageTotalPrice = orders.reduce((sum, order) => sum + order.voTotalPrice, 0);
 
   const syncSearchParams = (params: {
+    orderId?: string;
     userId?: string;
     status?: OrderStatus;
     productId?: string;
@@ -167,7 +105,7 @@ export const OrderList = () => {
     pageSize?: number;
     openDetail?: boolean;
   }, replace: boolean = false) => {
-    setUrlSearchParams(buildOrderSearchParams(params), { replace });
+    setUrlSearchParams(buildOrderSearchParams({ ...params, returnTo }), { replace });
   };
 
   useEffect(() => {
@@ -196,13 +134,20 @@ export const OrderList = () => {
         : current);
 
       if (queryOpenDetail) {
-        const targetOrder = queryOrderNo
+        const targetOrder = queryOrderId
+          ? response.data.find((item) => String(item.voId) === queryOrderId)
+          : queryOrderNo
           ? response.data.find((item) => item.voOrderNo === queryOrderNo)
           : response.data.length === 1 ? response.data[0] : undefined;
 
         if (targetOrder) {
           setSelectedOrderId(targetOrder.voId);
           setSelectedOrderPreview(targetOrder);
+          setDetailVisible(true);
+        } else if (queryOrderId) {
+          const detail = await adminGetOrder(queryOrderId);
+          setSelectedOrderId(detail.voId);
+          setSelectedOrderPreview(detail);
           setDetailVisible(true);
         }
       }
@@ -222,6 +167,7 @@ export const OrderList = () => {
     void loadOrders();
   }, [
     queryUserId,
+    queryOrderId,
     queryStatus,
     queryProductId,
     queryOrderNo,
@@ -237,14 +183,14 @@ export const OrderList = () => {
       status: draftStatus,
       productId: draftProductId,
       orderNo: draftOrderNo,
-      pageIndex: DEFAULT_PAGE_INDEX,
+      pageIndex: DEFAULT_ORDER_PAGE_INDEX,
       pageSize: queryPageSize,
     });
   };
 
   const handleReset = () => {
     syncSearchParams({
-      pageIndex: DEFAULT_PAGE_INDEX,
+      pageIndex: DEFAULT_ORDER_PAGE_INDEX,
       pageSize: queryPageSize,
     });
   };
@@ -253,6 +199,18 @@ export const OrderList = () => {
     setSelectedOrderId(order.voId);
     setSelectedOrderPreview(order);
     setDetailVisible(true);
+    setUrlSearchParams(
+      buildOrderDetailSearchParams({
+        orderId: String(order.voId),
+        userId: queryUserId,
+        status: queryStatus,
+        productId: queryProductId,
+        orderNo: queryOrderNo,
+        pageIndex: queryPageIndex,
+        pageSize: queryPageSize,
+        returnTo,
+      }),
+    );
   };
 
   const handleViewUser = (order: Order) => {
@@ -265,6 +223,19 @@ export const OrderList = () => {
     navigate(
       `/products?productId=${encodeURIComponent(String(order.voProductId))}&openDetail=1&returnTo=${encodeURIComponent(returnTo)}`,
     );
+  };
+
+  const handleViewCoinTransaction = (order: Order) => {
+    const returnTo = `${location.pathname}${location.search}`;
+    const searchParams = new URLSearchParams({
+      userId: String(order.voUserId),
+      transactionType: 'CONSUME',
+      businessType: 'Order',
+      businessId: String(order.voId),
+      returnTo,
+    });
+
+    navigate(`/coins?${searchParams.toString()}`);
   };
 
   const handleRetry = (order: Order) => {
@@ -483,7 +454,14 @@ export const OrderList = () => {
             </h2>
             <p className="admin-feature-subtle">查看商城订单、定位用户与商品，并处理发放失败重试和管理员备注。</p>
           </div>
-          <Tag>{canRemarkOrder ? '可备注' : '只读'}</Tag>
+          <Space wrap>
+            {returnTo?.startsWith('/') ? (
+              <Button onClick={() => navigate(returnTo)}>
+                返回来源
+              </Button>
+            ) : null}
+            <Tag>{canRemarkOrder ? '可备注' : '只读'}</Tag>
+          </Space>
         </div>
       </section>
 
@@ -638,6 +616,7 @@ export const OrderList = () => {
         }}
         onViewUser={canViewUsers ? handleViewUser : undefined}
         onViewProduct={canViewProducts ? handleViewProduct : undefined}
+        onViewCoinTransaction={canViewCoins ? handleViewCoinTransaction : undefined}
         onSaveRemark={handleSaveRemark}
       />
 

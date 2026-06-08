@@ -4,6 +4,7 @@ import { PasscodeInput } from '@radish/ui';
 import { getPaymentPasscodeValidationMessage } from '@/utils/paymentPasscode';
 import { formatCoinAmount, validateTransferAmount, debounce } from '../../utils';
 import { searchUsersForMention, type UserMentionOption } from '@/api/user';
+import { normalizePositiveLongIdKey } from '@/utils/longId';
 import { useTranslation } from 'react-i18next';
 import type { TransferFormData } from '../../types';
 import styles from './TransferForm.module.css';
@@ -86,14 +87,18 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
 
     // 如果用户清空了搜索框，也清空选中的用户ID
     if (!query.trim()) {
-      handleInputChange('recipientId', 0);
+      handleInputChange('recipientId', '');
     }
   };
 
   const handleUserSelect = (user: UserMentionOption) => {
-    // 将用户ID转换为数字（后端返回的可能是字符串）
-    const userId = typeof user.voId === 'string' ? parseInt(user.voId, 10) : user.voId;
+    const userId = normalizePositiveLongIdKey(user.voId);
     const displayName = user.voDisplayName || user.voUserName || '未知用户';
+
+    if (!userId) {
+      setErrors(prev => ({ ...prev, recipientId: '用户 ID 无效，请重新选择接收方' }));
+      return;
+    }
 
     setFormData(prev => ({
       ...prev,
@@ -109,9 +114,10 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
+    const recipientId = normalizePositiveLongIdKey(formData.recipientId);
 
     // 验证接收方
-    if (!formData.recipientId || formData.recipientId <= 0) {
+    if (!recipientId) {
       newErrors.recipientId = '请选择接收方用户';
     }
 
@@ -148,7 +154,7 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
     }
 
     const transferData: TransferFormData = {
-      recipientId: formData.recipientId!,
+      recipientId: normalizePositiveLongIdKey(formData.recipientId)!,
       recipientName: formData.recipientName!,
       amount: formData.amount!,
       note: formData.note || '',

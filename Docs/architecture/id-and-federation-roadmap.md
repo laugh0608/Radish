@@ -2,7 +2,7 @@
 
 > 状态：已确认方向，暂不进入当前主线
 >
-> 最后更新：2026-05-13（Asia/Shanghai）
+> 最后更新：2026-06-06（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -227,6 +227,14 @@ Radish 未来联邦的最小公共节点定义为：
 - 当前执行策略不是“立刻把外部契约全量切到 `PublicId`”，而是先把仍保留 `LongId` 的外部边界收口为字符串安全过渡契约
 - `2026-05-07` 已确认的首批治理面包括：通知 `extData`、window `appParams` / deep link、公开 DTO / 路由参数 / 回跳参数、`Profile / Shop / Wiki / Forum / Public Forum` 与 Console 用户 ID 入口；这些边界禁止提前 `Number(...)`
 - `2026-06-01` Console 用户 ID 入口已按该口径回拉：当前用户、个人资料和用户列表的 `VoUserId / uuid` 保持字符串传递，避免后台展示或调账动作因 JavaScript 大整数精度丢失指向错误用户；后续应补自动化检查，防止 Console / Flutter / Web 外部 LongId 回到 `number` 类型
+- `2026-06-02` 已补首批自动化守护：`npm run check:long-id-safety` 扫描 Console / Web / Flutter 高信号外部 ID 边界，并纳入 `validate:identity`，用于阻止外部 LongId 回到纯 `number / int` 或提前数值化转换；该脚本已兼容 Windows 与 macOS / Linux 验证入口
+- `2026-06-02` 第二轮内部会话审计已完成：`radish.client` 的 `userStore / authBootstrap / tokenClaims / authSession` 等登录会话状态中，当前用户和租户 ID 以字符串保存和传递，避免工作台登录回流、个人资料和商城链路把外部 UserId 拉入 JavaScript 精度域
+- `2026-06-02` Flutter LongId 安全扫描已扩展到 Dart map 读取、`int.parse / int.tryParse`、`_readInt / readInt`、`as int` 与 `toInt()` 等回潮形态
+- `2026-06-03` 第三轮外部 ID 契约审计已收口：`radish.client`、`radish.console`、`@radish/ui` 和 Flutter 仓储中的高信号外部 ID 继续收敛为字符串，LongId 守护补充 `string | number` 联合类型、小写 ID 声明和业务上下文参数扫描
+- `2026-06-03` Console 角色授权链路已纳入 Phase A：`RoleId / ResourceId / ApiModuleId`、授权快照、资源树、接口预览和保存请求均按字符串传递，前端不得把这些授权对象 ID 转成 JavaScript `number`
+- `2026-06-04` LongId 自动化守护已补授权资源 ID 集合扫描：`resourceIds / voGrantedResourceIds / selectedResourceIds` 等集合不得声明为 `number[]`、`string[] | number[]`，也不得通过 `.map(Number)` 批量数值化
+- `2026-06-06` Flutter 背包来源订单 / 商品、Console 商品 / 订单 / 胡萝卜流水排障 URL 状态继续纳入 Phase A：外部对象 ID 查询参数、来源返回和业务上下文字段都按字符串传递，禁止通过 `int.tryParse`、`Number(...)` 或 `.map(Number)` 数值化；forum 旧 LongId 公开详情加载后刷新 canonical 到 `VoPublicId` 属于 `Post` 既有 PublicId 试点守护，不代表启动完整 `PublicId` 全量迁移
+- `2026-06-07` Flutter 商品购买、余额展示、订单 / 背包来源回流和 Console 商品 / 订单 / 用户 / 胡萝卜流水排障继续按字符串 LongId 传递；公开 forum 详情、公开集合页和结构化数据优先使用已有 `Post.PublicId` 与 canonical 口径，docs / shop / user 仍处在旧标识兼容阶段，不代表启动完整 `PublicId` 全量迁移
 - 上述冻结要求不是“远期优化建议”，而是当前主线稳定性约束；forum 公开阅读链路已经因大整数精度丢失发生过真实回归
 
 ### Phase B：核心聚合双标识

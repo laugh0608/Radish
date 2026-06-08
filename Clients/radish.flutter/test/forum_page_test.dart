@@ -288,6 +288,179 @@ void main() {
     expect(find.text('帖子已发布，正在打开详情。'), findsOneWidget);
   });
 
+  testWidgets('opens created post detail with public route after publishing',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repository = _CreatedPostPublicRouteForumRepository();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: 'access-token-42',
+          refreshToken: 'refresh-token-42',
+          userId: 'user-42',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: const _NoopSessionRefreshService(),
+    );
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumPage(
+          environment: const AppEnvironment.development(),
+          repository: repository,
+          sessionController: sessionController,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.enterText(_forumTextFieldByLabel('标题'), 'Flutter 新帖公开链路');
+    await tester.enterText(_forumTextFieldByLabel('标签'), 'flutter, 链路');
+    await tester.enterText(
+      _forumTextFieldByLabel('正文'),
+      '发布后应打开带 PublicId 的公开详情。',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, '发布帖子'));
+    await tester.pumpAndSettle();
+
+    expect(repository.createPostRequests, hasLength(1));
+    expect(repository.lastDetailPostId, 'post-created-1');
+    expect(find.text('Flutter 新帖公开链路'), findsWidgets);
+    expect(find.text('/forum/post/pst_created_flutter'), findsOneWidget);
+    expect(find.text('/forum/post/post-created-1'), findsNothing);
+  });
+
+  testWidgets('keeps post draft when publishing fails', (tester) async {
+    tester.view.physicalSize = const Size(1200, 2600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repository = _CreatePostFailingForumRepository();
+    final openedTargets = <ForumDetailHandoffTarget>[];
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: 'access-token-42',
+          refreshToken: 'refresh-token-42',
+          userId: 'user-42',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: const _NoopSessionRefreshService(),
+    );
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumPage(
+          environment: const AppEnvironment.development(),
+          repository: repository,
+          sessionController: sessionController,
+          onOpenForumDetailTarget: openedTargets.add,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.enterText(_forumTextFieldByLabel('标题'), '失败后保留草稿');
+    await tester.enterText(_forumTextFieldByLabel('标签'), 'flutter, 失败');
+    await tester.enterText(
+      _forumTextFieldByLabel('正文'),
+      '发帖失败后应该留在当前表单。',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, '发布帖子'));
+    await tester.pumpAndSettle();
+
+    expect(repository.createPostRequests, hasLength(1));
+    expect(openedTargets, isEmpty);
+    expect(find.text('发帖服务暂时不可用'), findsOneWidget);
+    expect(find.text('帖子已发布，正在打开详情。'), findsNothing);
+    expect(find.text('失败后保留草稿'), findsOneWidget);
+    expect(find.text('发帖失败后应该留在当前表单。'), findsOneWidget);
+  });
+
+  testWidgets('keeps anonymous post draft through sign-in and publish',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repository = _SuccessForumRepository();
+    final openedTargets = <ForumDetailHandoffTarget>[];
+    var signInRequestCount = 0;
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: const _NoopSessionRefreshService(),
+    );
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumPage(
+          environment: const AppEnvironment.development(),
+          repository: repository,
+          sessionController: sessionController,
+          onOpenForumDetailTarget: openedTargets.add,
+          onRequestSignInForForum: () async {
+            signInRequestCount += 1;
+          },
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.enterText(_forumTextFieldByLabel('标题'), '匿名发帖登录回流');
+    await tester.enterText(_forumTextFieldByLabel('标签'), 'flutter, 登录');
+    await tester.enterText(
+      _forumTextFieldByLabel('正文'),
+      '登录前填写的纯文本草稿应该留在表单里。',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, '发布帖子'));
+    await tester.pumpAndSettle();
+
+    expect(signInRequestCount, 1);
+    expect(repository.createPostRequests, isEmpty);
+    expect(find.text('登录后可继续提交当前帖子。'), findsOneWidget);
+    expect(find.text('匿名发帖登录回流'), findsOneWidget);
+    expect(find.text('登录前填写的纯文本草稿应该留在表单里。'), findsOneWidget);
+
+    await sessionController.setSession(
+      AuthSession(
+        accessToken: 'access-token-42',
+        refreshToken: 'refresh-token-42',
+        userId: 'user-42',
+        expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('已回到发帖表单，可以继续发布。'), findsOneWidget);
+    expect(find.text('匿名发帖登录回流'), findsOneWidget);
+    expect(find.text('登录前填写的纯文本草稿应该留在表单里。'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilledButton, '发布帖子'));
+    await tester.pumpAndSettle();
+
+    expect(repository.createPostRequests, hasLength(1));
+    expect(repository.createPostRequests.single.title, '匿名发帖登录回流');
+    expect(repository.createPostRequests.single.categoryId, '9');
+    expect(repository.createPostRequests.single.accessToken, 'access-token-42');
+    expect(openedTargets, hasLength(1));
+    expect(openedTargets.single.postId, 'post-created-1');
+    expect(openedTargets.single.initialTitle, '匿名发帖登录回流');
+  });
+
   testWidgets('opens forum detail handoff target from external shell state',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
@@ -573,6 +746,52 @@ class _SuccessForumRepository implements ForumRepository {
       ),
     );
     return 'post-created-1';
+  }
+}
+
+class _CreatedPostPublicRouteForumRepository extends _SuccessForumRepository {
+  String? lastDetailPostId;
+
+  @override
+  Future<ForumPostDetail> getPostDetail({
+    required String postId,
+  }) async {
+    lastDetailPostId = postId;
+    return const ForumPostDetail(
+      id: 'post-created-1',
+      publicId: 'pst_created_flutter',
+      title: 'Flutter 新帖公开链路',
+      content: '发布后应打开带 PublicId 的公开详情。',
+      contentType: 'text',
+      categoryId: '9',
+      categoryName: 'Engineering',
+      authorId: 'user-42',
+      authorName: '我',
+      tagNames: ['flutter', '链路'],
+      createTime: '2026-06-04T08:00:00Z',
+    );
+  }
+}
+
+class _CreatePostFailingForumRepository extends _SuccessForumRepository {
+  @override
+  Future<String> createPost({
+    required String title,
+    required String content,
+    required String categoryId,
+    required List<String> tagNames,
+    required String accessToken,
+  }) async {
+    createPostRequests.add(
+      _CreatePostRequest(
+        title: title,
+        content: content,
+        categoryId: categoryId,
+        tagNames: tagNames,
+        accessToken: accessToken,
+      ),
+    );
+    throw const RadishApiClientException('发帖服务暂时不可用');
   }
 }
 

@@ -35,6 +35,7 @@ const identityImpactRuleGroups = [
       'Scripts/check-identity-claims.mjs',
       'Scripts/check-identity-impact.mjs',
       'Scripts/check-identity-impact-self-test.mjs',
+      'Scripts/check-long-id-safety.mjs',
       'Scripts/check-repo-quality-contract.mjs',
       'Scripts/identity-impact-rules.mjs',
       'Scripts/repo-quality-contract.mjs',
@@ -45,6 +46,7 @@ const identityImpactRuleGroups = [
       '.github/rulesets/master-protection.json',
       '.github/PULL_REQUEST_TEMPLATE.md',
       'Docs/architecture/identity-claim-convergence.md',
+      'Docs/architecture/id-and-federation-roadmap.md',
       'Docs/guide/validation-baseline.md',
       'Docs/guide/regression-index.md',
       'Docs/guide/dev-first-regression-record.md',
@@ -57,6 +59,24 @@ const identityImpactRuleGroups = [
     pathPrefixes: [
       'Docs/guide/identity-claim-',
       'Docs/architecture/identity-claim-',
+    ],
+  },
+  {
+    key: 'external-long-id-contract',
+    label: '外部 LongId 字符串安全边界',
+    exactPaths: [
+      'Frontend/radish.client/src/utils/longId.ts',
+      'Frontend/radish.console/src/api/moderationApi.ts',
+      'Frontend/radish.console/src/pages/Moderation/ModerationPage.tsx',
+      'Frontend/radish.console/src/pages/Moderation/moderationPageHelpers.ts',
+      'Frontend/radish.console/src/pages/Moderation/moderationPageColumns.tsx',
+      'Clients/radish.flutter/lib/features/forum/data/forum_repository.dart',
+    ],
+    pathPrefixes: [
+      'Frontend/radish.client/src/api/',
+      'Frontend/radish.client/src/public/',
+      'Frontend/radish.console/src/api/',
+      'Clients/radish.flutter/lib/features/',
     ],
   },
 ];

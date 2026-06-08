@@ -4,8 +4,8 @@ import styles from './CategoryList.module.css';
 
 interface CategoryListProps {
   categories: Category[];
-  selectedCategoryId: number | null;
-  onSelectCategory: (categoryId: number) => void;
+  selectedCategoryId: Category['voId'] | null;
+  onSelectCategory: (categoryId: Category['voId']) => void;
   loading?: boolean;
 }
 

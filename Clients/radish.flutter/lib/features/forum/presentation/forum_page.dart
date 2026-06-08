@@ -58,10 +58,15 @@ class _ForumPageState extends State<ForumPage> {
   String? _postSubmitSuccessMessage;
   bool _isLoadingCategories = true;
   bool _isSubmittingPost = false;
+  bool _isWaitingForPublishingSignIn = false;
+  bool _wasAuthenticated = false;
 
   @override
   void initState() {
     super.initState();
+    _wasAuthenticated =
+        widget.sessionController?.state.isAuthenticated ?? false;
+    widget.sessionController?.addListener(_handleSessionStateChanged);
     _controller = ForumFeedController(
       repository: widget.repository,
     );
@@ -89,6 +94,13 @@ class _ForumPageState extends State<ForumPage> {
       unawaited(_loadCategories());
     }
 
+    if (oldWidget.sessionController != widget.sessionController) {
+      oldWidget.sessionController?.removeListener(_handleSessionStateChanged);
+      _wasAuthenticated =
+          widget.sessionController?.state.isAuthenticated ?? false;
+      widget.sessionController?.addListener(_handleSessionStateChanged);
+    }
+
     if (oldWidget.handoffTarget != null && widget.handoffTarget == null) {
       _handledHandoffSignature = null;
     }
@@ -102,6 +114,7 @@ class _ForumPageState extends State<ForumPage> {
 
   @override
   void dispose() {
+    widget.sessionController?.removeListener(_handleSessionStateChanged);
     _controller.dispose();
     _postTitleController.dispose();
     _postContentController.dispose();
@@ -216,6 +229,28 @@ class _ForumPageState extends State<ForumPage> {
     );
   }
 
+  void _handleSessionStateChanged() {
+    if (!mounted) {
+      return;
+    }
+
+    final isAuthenticated =
+        widget.sessionController?.state.isAuthenticated ?? false;
+    final shouldResumePublishing =
+        !_wasAuthenticated && isAuthenticated && _isWaitingForPublishingSignIn;
+    _wasAuthenticated = isAuthenticated;
+
+    if (!shouldResumePublishing) {
+      return;
+    }
+
+    setState(() {
+      _isWaitingForPublishingSignIn = false;
+      _postSubmitIssueMessage = null;
+      _postSubmitSuccessMessage = '已回到发帖表单，可以继续发布。';
+    });
+  }
+
   void _openHandoffTargetIfNeeded() {
     if (!mounted) {
       return;
@@ -298,6 +333,10 @@ class _ForumPageState extends State<ForumPage> {
 
   Future<void> _requestSignInForPublishing() async {
     final onRequestSignIn = widget.onRequestSignInForForum;
+    if (onRequestSignIn != null || widget.authController != null) {
+      _isWaitingForPublishingSignIn = true;
+    }
+
     if (onRequestSignIn != null) {
       await onRequestSignIn();
       return;
@@ -339,6 +378,7 @@ class _ForumPageState extends State<ForumPage> {
 
     setState(() {
       _isSubmittingPost = true;
+      _isWaitingForPublishingSignIn = false;
       _postSubmitIssueMessage = null;
       _postSubmitSuccessMessage = null;
     });

@@ -63,7 +63,7 @@ export interface AttachmentInfo {
   /**
    * 附件 ID
    */
-  voId: number | string;
+  voId: string;
 
   /**
    * 原始文件名
@@ -108,7 +108,7 @@ export interface AttachmentInfo {
   /**
    * 上传者 ID
    */
-  voUploaderId?: number | string;
+  voUploaderId?: string;
 
   /**
    * 上传者名称
@@ -123,7 +123,7 @@ export interface AttachmentInfo {
   /**
    * 业务 ID
    */
-  voBusinessId?: number | string | null;
+  voBusinessId?: string | null;
 
   /**
    * 是否公开
@@ -169,7 +169,7 @@ export interface ImageUploadOptions {
   /**
    * 业务 ID（可选，稍后可通过 UpdateBusinessAssociation 更新）
    */
-  businessId?: number | string;
+  businessId?: string;
 
   /**
    * 是否生成缩略图
@@ -225,7 +225,7 @@ export interface DocumentUploadOptions {
   /**
    * 业务 ID（可选）
    */
-  businessId?: number | string;
+  businessId?: string;
 
   /**
    * 上传进度回调
@@ -422,7 +422,7 @@ export async function uploadDocument(
  * @returns 附件信息
  */
 export async function getAttachmentById(
-  id: number | string,
+  id: string,
   t: TFunction
 ): Promise<AttachmentInfo> {
   const url = `${getApiBaseUrl()}/api/v1/Attachment/GetById/${id}`;
@@ -451,7 +451,7 @@ export async function getAttachmentById(
  */
 export async function getAttachmentsByBusiness(
   businessType: string,
-  businessId: number | string,
+  businessId: string,
   t: TFunction
 ): Promise<AttachmentInfo[]> {
   const url = `${getApiBaseUrl()}/api/v1/Attachment/GetByBusiness?businessType=${encodeURIComponent(businessType)}&businessId=${businessId}`;
@@ -477,7 +477,7 @@ export async function getAttachmentsByBusiness(
  * @param t i18n 翻译函数
  */
 export async function deleteAttachment(
-  id: number | string,
+  id: string,
   t: TFunction
 ): Promise<void> {
   const url = `${getApiBaseUrl()}/api/v1/Attachment/Delete/${id}`;
@@ -504,7 +504,7 @@ export async function deleteAttachment(
  * @param t i18n 翻译函数
  */
 export async function deleteAttachmentsBatch(
-  ids: (number | string)[],
+  ids: string[],
   t: TFunction
 ): Promise<void> {
   const url = `${getApiBaseUrl()}/api/v1/Attachment/DeleteBatch`;
@@ -537,9 +537,9 @@ export async function deleteAttachmentsBatch(
  * @param t i18n 翻译函数
  */
 export async function updateAttachmentBusinessAssociation(
-  id: number | string,
+  id: string,
   businessType: string,
-  businessId: number | string,
+  businessId: string,
   t: TFunction
 ): Promise<void> {
   const url = `${getApiBaseUrl()}/api/v1/Attachment/UpdateBusinessAssociation/${id}?businessType=${encodeURIComponent(businessType)}&businessId=${businessId}`;

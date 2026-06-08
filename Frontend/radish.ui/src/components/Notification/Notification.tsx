@@ -5,7 +5,7 @@ export interface NotificationTextOverrides {
   delete?: string;
 }
 
-export type NotificationItemId = number | string;
+export type NotificationItemId = string;
 type NotificationReferenceId = NotificationItemId;
 
 /**

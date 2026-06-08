@@ -9,8 +9,14 @@ import {
 
 test('hasAuthenticatedSession 只有在认证状态和用户身份同时存在时才返回 true', () => {
   assert.equal(hasAuthenticatedSession(true, 1), true);
+  assert.equal(hasAuthenticatedSession(true, '1'), true);
+  assert.equal(hasAuthenticatedSession(true, '2042219067430928384'), true);
   assert.equal(hasAuthenticatedSession(true, 0), false);
+  assert.equal(hasAuthenticatedSession(true, ''), false);
+  assert.equal(hasAuthenticatedSession(true, '0'), false);
+  assert.equal(hasAuthenticatedSession(true, Number('2042219067430928384')), false);
   assert.equal(hasAuthenticatedSession(false, 1), false);
+  assert.equal(hasAuthenticatedSession(false, '2042219067430928384'), false);
 });
 
 test('classifyTokenRefreshFailure 应识别 refresh token 失效与服务端错误', () => {

@@ -72,7 +72,7 @@ function buildProfileRequestKey(scope: string, ...parts: Array<string | number>)
 
 function normalizePositiveLongId(value: unknown): LongId | undefined {
   if (typeof value === 'number') {
-    return Number.isSafeInteger(value) && value > 0 ? value : undefined;
+    return Number.isSafeInteger(value) && value > 0 ? String(value) : undefined;
   }
 
   if (typeof value !== 'string') {
@@ -196,7 +196,7 @@ export const ProfileApp = () => {
   const { openApp } = useWindowStore();
   const currentWindow = useCurrentWindow();
   const params = useMemo(() => parseProfileWindowParams(currentWindow?.appParams), [currentWindow?.appParams]);
-  const authenticatedUserId = userId > 0 ? userId : undefined;
+  const authenticatedUserId = userId ? userId : undefined;
   const viewingUserId = params.userId ?? authenticatedUserId;
   const viewingUserIdKey = viewingUserId ? String(viewingUserId) : '';
   const authenticatedUserIdKey = authenticatedUserId ? String(authenticatedUserId) : '';

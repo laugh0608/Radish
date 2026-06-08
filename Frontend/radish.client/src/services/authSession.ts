@@ -10,8 +10,20 @@ export const TokenRefreshFailureReason = {
 
 export type TokenRefreshFailureReason = (typeof TokenRefreshFailureReason)[keyof typeof TokenRefreshFailureReason];
 
-export function hasAuthenticatedSession(authenticated: boolean, userId: number): boolean {
-  return authenticated && userId > 0;
+export function hasAuthenticatedSession(authenticated: boolean, userId: string | null | undefined): boolean {
+  if (!authenticated) {
+    return false;
+  }
+
+  if (typeof userId === 'number') {
+    return Number.isSafeInteger(userId) && userId > 0;
+  }
+
+  if (typeof userId !== 'string') {
+    return false;
+  }
+
+  return /^[1-9]\d*$/.test(userId.trim());
 }
 
 export function classifyTokenRefreshFailure(status?: number, error?: unknown): TokenRefreshFailureReason {

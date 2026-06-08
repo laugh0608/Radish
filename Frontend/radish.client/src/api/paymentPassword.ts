@@ -5,6 +5,7 @@
 import { apiGet, apiPost, configureApiClient, type PagedResponse } from '@radish/http';
 import type { TFunction } from 'i18next';
 import { getApiBaseUrl } from '@/config/env';
+import type { LongId } from './user';
 
 // 配置 API 客户端
 configureApiClient({
@@ -16,7 +17,7 @@ configureApiClient({
  */
 export interface PaymentPasswordStatus {
   voId: number;
-  voUserId: number;
+  voUserId: LongId;
   voFailedAttempts: number;
   voIsLocked: boolean;
   voLockedUntil?: string;

@@ -14,7 +14,9 @@ import type {
   PublicForumTagRoute,
   PublicForumTypeRoute,
 } from '../forumRouteState';
+import { buildPublicForumPath } from '../forumRouteState.ts';
 import type { PublicReadingGuideItem } from '../components/PublicReadingGuide';
+import { publicDefaultDescription, type PublicHeadDescriptor } from '../publicHead.ts';
 
 interface PublicGuideDefinition {
   titleKey: string;
@@ -102,6 +104,55 @@ export function getForumPostRouteIdentifier(
   return post.voPublicId?.trim() || String(post.voId);
 }
 
+function normalizePublicHeadText(value: string | number | null | undefined): string | undefined {
+  const normalized = String(value ?? '').replace(/\s+/g, ' ').trim();
+  return normalized || undefined;
+}
+
+function stripMarkdownForPublicHead(value: string | null | undefined): string | undefined {
+  const normalized = normalizePublicHeadText(
+    value
+      ?.replace(/```[\s\S]*?```/g, ' ')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/!\[[^\]]*]\([^)]*\)/g, ' ')
+      .replace(/\[([^\]]+)]\([^)]*\)/g, '$1')
+      .replace(/[#>*_~-]+/g, ' ')
+  );
+  return normalized;
+}
+
+function truncatePublicHeadText(value: string | undefined, maxLength: number): string | undefined {
+  if (!value || value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
+export function buildForumPostPublicHead(
+  post: Pick<PostDetail, 'voId' | 'voPublicId' | 'voTitle' | 'voSummary' | 'voContent'>,
+  commentId?: string,
+  imageUrl?: string | null
+): PublicHeadDescriptor {
+  const postIdentifier = getForumPostRouteIdentifier(post);
+  const canonicalPath = buildPublicForumPath(commentId
+    ? { kind: 'detail', postId: postIdentifier, commentId }
+    : { kind: 'detail', postId: postIdentifier });
+  const title = normalizePublicHeadText(post.voTitle) ?? '论坛帖子';
+  const description = truncatePublicHeadText(
+    normalizePublicHeadText(post.voSummary) ?? stripMarkdownForPublicHead(post.voContent),
+    160
+  ) ?? publicDefaultDescription;
+
+  return {
+    title: `${title} - Radish 论坛`,
+    description,
+    canonicalPath,
+    type: 'article',
+    ...(imageUrl ? { imageUrl } : {}),
+  };
+}
+
 export function createForumReadingGuide(
   t: TFunction,
   definition: PublicGuideDefinition
@@ -151,7 +202,7 @@ export function mergeCommentChildren(
   });
 }
 
-export function buildActiveSectionTitle(categories: Category[], selectedCategoryId: number | null, fallback: string): string {
+export function buildActiveSectionTitle(categories: Category[], selectedCategoryId: string | null, fallback: string): string {
   if (!selectedCategoryId) {
     return fallback;
   }

@@ -21,6 +21,12 @@ WebOS 商城当前在权益卡片上展示购买来源回访。当 `UserBenefitV
 
 不要把 `UserBenefitVo` 的订单来源字段误迁移为 `UserInventory` 的统一订单来源契约；消耗品订单级追溯应单独评估契约与前端展示。
 
+来源字段虽然在后端实体中仍是 long 主键，但前端和移动端只按规范字符串 LongId 处理：
+
+- `VoSourceOrderId / VoSourceProductId` 进入 WebOS、Flutter 或 Console 回访入口时不得通过 `Number(...)`、`parseInt(...)`、`int.tryParse` 等路径数值化。
+- 来源 ID 应先按正整数 LongId 字符串做格式校验；不规范来源应禁用来源入口或展示明确错误，不应被数值化后误打开订单 / 商品。
+- 消耗品只承接 `VoSourceProductId` 的相关商品回访，不因前端需要返回状态而扩展出统一订单来源字段。
+
 ### 5.1.2 背包物品模型补充
 
 > **2026-03 对齐说明**：背包道具图标同样已经收口为“附件快照 Id + 运行时 URL 派生”。实体层以 `ItemIconAttachmentId` 为真值，列表 / 详情展示时再解析 `ItemIcon`。

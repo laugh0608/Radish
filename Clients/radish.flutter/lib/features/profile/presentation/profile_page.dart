@@ -10,6 +10,7 @@ import '../../../shared/widgets/public_link_copy_panel.dart';
 import '../data/profile_models.dart';
 import '../data/profile_repository.dart';
 import 'profile_controller.dart';
+import 'profile_edit_dialog.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({
@@ -112,6 +113,27 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Future<void> _openProfileEditor(String accessToken) async {
+    final updated = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return ProfileEditDialog(
+          repository: widget.repository,
+          accessToken: accessToken,
+        );
+      },
+    );
+
+    if (updated != true || !mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('个人资料更新成功')),
+    );
+    await _controller.refresh(accessToken: accessToken);
+  }
+
   String? _resolveTargetUserId(SessionState sessionState) {
     final publicUserId = _normalizeUserId(widget.publicUserId);
     if (publicUserId != null) {
@@ -172,7 +194,7 @@ class _ProfilePageState extends State<ProfilePage> {
             Text(
               isViewingPublicProfile
                   ? '查看这个用户的公开资料、公开统计和最近公开内容。当前不开放关注、私信或资料治理操作。'
-                  : '查看我的公开资料、公开统计和最近公开内容。当前不开放资料编辑、关注管理和完整账号设置。',
+                  : '查看我的公开资料、公开统计和最近公开内容。当前支持维护基础资料，不开放关注管理和完整账号设置。',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 20),
@@ -195,7 +217,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 if (authState.lastErrorMessage != null &&
                     authState.lastErrorMessage!.isNotEmpty)
                   '认证提示：${authState.lastErrorMessage}',
-                '当前不支持编辑资料、关注管理、完整浏览记录或工作台操作',
+                isMyProfile
+                    ? '当前支持编辑基础资料；头像、关注管理和完整账号设置后续单独评估'
+                    : '当前不支持编辑资料、关注管理、完整浏览记录或工作台操作',
               ],
             ),
             const SizedBox(height: 16),
@@ -243,6 +267,14 @@ class _ProfilePageState extends State<ProfilePage> {
                     onPressed: widget.onOpenMyProfile,
                     icon: const Icon(Icons.person_outline),
                     label: const Text('回到我的主页'),
+                  ),
+                if (isMyProfile)
+                  FilledButton.tonalIcon(
+                    onPressed: profileState.isBusy
+                        ? null
+                        : () => _openProfileEditor(session.accessToken),
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('编辑资料'),
                   ),
                 if (!isViewingPublicProfile &&
                     hasRecentPublicProfile &&

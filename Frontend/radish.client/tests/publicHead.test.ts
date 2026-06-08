@@ -7,6 +7,7 @@ import {
   publicDefaultOrigin,
   type PublicHeadDescriptor,
 } from '../src/public/publicHead.ts';
+import { buildForumPostPublicHead } from '../src/public/forum/publicForumUtils.ts';
 import type { PublicRouteDescriptor } from '../src/public/publicRouteNavigation.ts';
 
 test('buildPublicCanonicalUrl 应使用默认公开域名并移除锚点', () => {
@@ -112,6 +113,28 @@ test('buildPublicRouteHead 应优先使用论坛帖子 PublicId 生成 canonical
     description: '阅读 Radish 公开论坛帖子，查看讨论内容与社区互动。',
     canonicalPath: '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?commentId=8',
     type: 'article',
+  });
+});
+
+test('buildForumPostPublicHead 应在详情加载后用 PublicId 刷新 canonical 与分享预览文案', () => {
+  const head = buildForumPostPublicHead(
+    {
+      voId: '2042219067430928384',
+      voPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+      voTitle: '  公开帖子标题  ',
+      voSummary: '  公开摘要\n内容  ',
+      voContent: '# 标题\n\n正文内容',
+    },
+    '2042219067430928385',
+    'https://cdn.example.test/post.png'
+  );
+
+  assert.deepEqual<PublicHeadDescriptor>(head, {
+    title: '公开帖子标题 - Radish 论坛',
+    description: '公开摘要 内容',
+    canonicalPath: '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?commentId=2042219067430928385',
+    type: 'article',
+    imageUrl: 'https://cdn.example.test/post.png',
   });
 });
 

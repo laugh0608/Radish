@@ -1,11 +1,11 @@
 interface PublicProfilePostForumTargetSource {
-  voId: string | number | bigint;
+  voId: string;
   voPublicId?: string | null;
 }
 
 interface PublicProfileCommentForumTargetSource {
-  voId: string | number | bigint;
-  voPostId: string | number | bigint;
+  voId: string;
+  voPostId: string;
   voPostPublicId?: string | null;
 }
 

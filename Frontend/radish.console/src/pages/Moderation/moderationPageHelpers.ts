@@ -1,4 +1,5 @@
 import {
+  type ConsoleLongId,
   type ContentReportQueueItemVo,
   type UserModerationActionVo,
 } from '@/api/moderationApi';
@@ -117,10 +118,10 @@ export interface ManualActionPreset {
 }
 
 export interface ManualActiveModerationStatus {
-  actionId: number;
+  actionId: ConsoleLongId;
   actionType: 'Mute' | 'Ban';
   reason: string;
-  sourceReportId?: number | null;
+  sourceReportId?: ConsoleLongId | null;
   endTime?: string | null;
 }
 
@@ -132,11 +133,11 @@ export interface ManualModerationStatusSnapshot {
 
 interface ModerationTargetNavigationInput {
   targetType: string | null | undefined;
-  targetContentId?: number | null;
-  targetPostId?: number | null;
-  targetCommentId?: number | null;
-  targetChannelId?: number | null;
-  targetMessageId?: number | null;
+  targetContentId?: ConsoleLongId | null;
+  targetPostId?: ConsoleLongId | null;
+  targetCommentId?: ConsoleLongId | null;
+  targetChannelId?: ConsoleLongId | null;
+  targetMessageId?: ConsoleLongId | null;
 }
 
 interface ModerationOpenTarget {
@@ -153,7 +154,7 @@ export interface ModerationTargetDisplayInput extends ModerationTargetNavigation
   snapshotTitle?: string | null;
   snapshotSummary?: string | null;
   snapshotIsPersisted?: boolean;
-  targetUserId?: number | null;
+  targetUserId?: ConsoleLongId | null;
   targetUserName?: string | null;
   showTargetUser?: boolean;
 }
@@ -173,6 +174,10 @@ export function toOptionalString(value: unknown): string | undefined {
 export function toPositiveLongString(value: string): string | undefined {
   const trimmed = value.trim();
   return /^[1-9]\d*$/.test(trimmed) ? trimmed : undefined;
+}
+
+export function hasPositiveLongId(value: unknown): boolean {
+  return toPositiveLongString(String(value ?? '')) !== undefined;
 }
 
 export function getActionTypeText(value: string | null | undefined): string {
@@ -205,7 +210,7 @@ export function getManualActionTypeText(value: ManualActionTypeValue | null | un
   }
 }
 
-function buildDesktopChatTargetUrl(channelId: number, messageId: number): string {
+function buildDesktopChatTargetUrl(channelId: ConsoleLongId, messageId: ConsoleLongId): string {
   const url = new URL('/desktop', getApiBaseUrl());
   url.searchParams.set('app', 'chat');
   url.searchParams.set('channelId', String(channelId));
@@ -213,29 +218,27 @@ function buildDesktopChatTargetUrl(channelId: number, messageId: number): string
   return url.toString();
 }
 
-function buildPublicForumTargetUrl(postId: number, commentId?: number | null): string {
-  const url = new URL(`/forum/post/${postId}`, getApiBaseUrl());
-  if (commentId && commentId > 0) {
+function buildPublicForumTargetUrl(postId: ConsoleLongId, commentId?: ConsoleLongId | null): string {
+  const url = new URL(`/forum/post/${encodeURIComponent(String(postId))}`, getApiBaseUrl());
+  if (hasPositiveLongId(commentId)) {
     url.searchParams.set('commentId', String(commentId));
   }
 
   return url.toString();
 }
 
-function buildPublicShopTargetUrl(productId: number): string {
-  return new URL(`/shop/product/${productId}`, getApiBaseUrl()).toString();
+function buildPublicShopTargetUrl(productId: ConsoleLongId): string {
+  return new URL(`/shop/product/${encodeURIComponent(String(productId))}`, getApiBaseUrl()).toString();
 }
 
 export function canOpenChatTarget(
   targetType: string | null | undefined,
-  channelId: number | null | undefined,
-  messageId: number | null | undefined
+  channelId: ConsoleLongId | null | undefined,
+  messageId: ConsoleLongId | null | undefined
 ): boolean {
   return targetType === 'ChatMessage'
-    && !!channelId
-    && channelId > 0
-    && !!messageId
-    && messageId > 0;
+    && hasPositiveLongId(channelId)
+    && hasPositiveLongId(messageId);
 }
 
 export function resolveNavigationStatusLabel(status: string | null | undefined): { color: string; label: string } {
@@ -369,37 +372,37 @@ export function resolveOpenTarget(input: ModerationTargetNavigationStateInput): 
   if (canOpenChatTarget(targetType, input.targetChannelId, input.targetMessageId)) {
     return {
       label: '打开聊天定位',
-      url: buildDesktopChatTargetUrl(Number(input.targetChannelId), Number(input.targetMessageId)),
+      url: buildDesktopChatTargetUrl(input.targetChannelId!, input.targetMessageId!),
     };
   }
 
-  if (targetType === 'Post' && input.targetPostId && input.targetPostId > 0) {
+  if (targetType === 'Post' && hasPositiveLongId(input.targetPostId)) {
     return {
       label: '打开帖子详情',
-      url: buildPublicForumTargetUrl(Number(input.targetPostId)),
+      url: buildPublicForumTargetUrl(input.targetPostId!),
     };
   }
 
-  if (targetType === 'Comment' && input.targetPostId && input.targetPostId > 0) {
+  if (targetType === 'Comment' && hasPositiveLongId(input.targetPostId)) {
     const targetCommentId = input.targetCommentId ?? input.targetContentId;
     const isFallback = navigationStatus === 'Fallback';
     return {
       label: isFallback ? '打开所属帖子' : '打开评论定位',
-      url: buildPublicForumTargetUrl(Number(input.targetPostId), isFallback ? undefined : targetCommentId),
+      url: buildPublicForumTargetUrl(input.targetPostId!, isFallback ? undefined : targetCommentId),
     };
   }
 
-  if (targetType === 'PostQuickReply' && input.targetPostId && input.targetPostId > 0) {
+  if (targetType === 'PostQuickReply' && hasPositiveLongId(input.targetPostId)) {
     return {
       label: '打开所属帖子',
-      url: buildPublicForumTargetUrl(Number(input.targetPostId)),
+      url: buildPublicForumTargetUrl(input.targetPostId!),
     };
   }
 
-  if (targetType === 'Product' && input.targetContentId && input.targetContentId > 0) {
+  if (targetType === 'Product' && hasPositiveLongId(input.targetContentId)) {
     return {
       label: '打开商品详情',
-      url: buildPublicShopTargetUrl(Number(input.targetContentId)),
+      url: buildPublicShopTargetUrl(input.targetContentId!),
     };
   }
 

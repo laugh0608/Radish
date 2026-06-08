@@ -10,8 +10,8 @@ export interface ChatWindowParams {
 }
 
 export interface ChatAppParamTarget {
-  channelId: string | number;
-  messageId?: string | number;
+  channelId: string;
+  messageId?: string;
 }
 
 function normalizePositiveIntegerString(value: unknown): string | undefined {

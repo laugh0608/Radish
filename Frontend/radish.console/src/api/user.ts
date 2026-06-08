@@ -14,7 +14,7 @@ export interface MyProfileInfo {
   voBirth?: string | null;
   voAddress: string;
   voCreateTime: string;
-  voAvatarAttachmentId?: number | string | null;
+  voAvatarAttachmentId?: string | null;
   voAvatarUrl?: string | null;
   voAvatarThumbnailUrl?: string | null;
 }
@@ -87,9 +87,9 @@ function toBoolean(value: unknown): boolean {
   return typeof value === 'boolean' ? value : false;
 }
 
-function toAttachmentId(value: unknown): number | string | null {
+function toAttachmentId(value: unknown): string | null {
   if (typeof value === 'number' && Number.isFinite(value)) {
-    return value;
+    return String(value);
   }
 
   if (typeof value === 'string') {
@@ -198,7 +198,7 @@ export const userApi = {
       const mappedData: UserInfo = {
         voUserId: toIdString(backendData.voUserId ?? backendData.VoUserId),
         voUserName: toStringValue(backendData.voUserName ?? backendData.VoUserName),
-        voTenantId: toNumber(backendData.voTenantId ?? backendData.VoTenantId),
+        voTenantId: toIdString(backendData.voTenantId ?? backendData.VoTenantId),
         voAvatarUrl: toOptionalString(backendData.voAvatarUrl ?? backendData.VoAvatarUrl),
         voAvatarThumbnailUrl: toOptionalString(backendData.voAvatarThumbnailUrl ?? backendData.VoAvatarThumbnailUrl),
         roles: resolvedRoles,

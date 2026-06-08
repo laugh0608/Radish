@@ -6,13 +6,14 @@ import type { Order } from '../../api/types';
 
 interface OrderDetailProps {
   visible: boolean;
-  orderId?: string | number;
+  orderId?: string;
   fallbackOrder?: Order;
   reloadToken?: number;
   onClose: () => void;
   onRetry?: () => void;
   onViewUser?: (order: Order) => void;
   onViewProduct?: (order: Order) => void;
+  onViewCoinTransaction?: (order: Order) => void;
   canRemark?: boolean;
   savingRemark?: boolean;
   onSaveRemark?: (remark: string) => void;
@@ -40,6 +41,7 @@ export const OrderDetail = ({
   onRetry,
   onViewUser,
   onViewProduct,
+  onViewCoinTransaction,
   canRemark = false,
   savingRemark = false,
   onSaveRemark,
@@ -135,6 +137,11 @@ export const OrderDetail = ({
           {currentOrder && onViewProduct ? (
             <Button onClick={() => onViewProduct(currentOrder)}>
               查看商品
+            </Button>
+          ) : null}
+          {currentOrder?.voCoinTransactionId && onViewCoinTransaction ? (
+            <Button onClick={() => onViewCoinTransaction(currentOrder)}>
+              查看扣款流水
             </Button>
           ) : null}
           {currentOrder?.voStatus === 'Failed' && onRetry ? (
@@ -237,6 +244,10 @@ export const OrderDetail = ({
               <span style={{ color: '#ff4d4f', fontWeight: 'bold', fontSize: '16px' }}>
                 {currentOrder.voTotalPrice} 胡萝卜
               </span>
+            </Descriptions.Item>
+
+            <Descriptions.Item label="扣款流水 ID" span={2}>
+              {currentOrder.voCoinTransactionId || '-'}
             </Descriptions.Item>
 
             <Descriptions.Item label="有效期" span={2}>

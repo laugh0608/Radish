@@ -6,7 +6,7 @@
 
 > 仅 `radish.client` 的公开内容壳层需要对搜索引擎和外链分享友好；`radish.console`、登录后 WebOS 工作台和治理类页面默认不做 SEO 要求。
 >
-> 当前已完成首批公开增长基线：运行时 head / canonical、运行时公开域名配置、公开详情分享入口、公开个人页复制链接入口、运行时 JSON-LD、API + Gateway 动态 sitemap、浏览器可见资源 URL 归一，以及 forum / docs / shop 公开详情首包 head snapshot 注入。完整正文 SSR / SSG、预渲染和公开个人页动态 sitemap 继续后置。
+> 当前已完成首批公开增长基线：运行时 head / canonical、运行时公开域名配置、公开详情分享入口、公开个人页复制链接入口、公开详情与集合页运行时 JSON-LD、API + Gateway 动态 sitemap、浏览器可见资源 URL 归一，以及 forum / docs / shop 公开详情首包 head snapshot 注入。完整正文 SSR / SSG、预渲染和公开个人页动态 sitemap 继续后置。
 
 ##### 10.5.1 当前公开 URL 范围
 
@@ -49,6 +49,7 @@ forum / docs / shop 三类公开详情还会在 Gateway 层做首包 head snapsh
 - Flutter docs detail 使用 `/docs/:slug` 复制链接，并继续避免把 16 位以上纯数字旧 long 路径当作公开可读 slug；shop detail 使用 `/shop/product/:productId`。
 - 公开详情来源返回当前使用 `history.state` 保存，不写入 URL query；刷新或浏览器历史恢复后可继续返回原公开来源，但复制链接、canonical、Open Graph 与 sitemap 都必须忽略该状态。
 - forum detail 在 `PostVo.VoPublicId` 可用时使用 `/forum/post/:postPublicId` 作为 canonical 和复制链接；旧 long 版 `/forum/post/:postId` 继续兼容读取。
+- 旧 long 版 forum detail 如果加载成功并拿到 `PostVo.VoPublicId`，运行时 canonical、Open Graph URL 与 JSON-LD 也必须刷新到 `/forum/post/:postPublicId`，避免同一帖子同时暴露两套分享预览主口径。
 - 公开壳层内部生成 forum detail 链接时也应优先使用 `PostVo.VoPublicId`，包括 `/discover` 摘要卡、forum 列表 / 搜索 / 标签页和个人公开页内容入口；只有缺少 PublicId 时才回退旧 long 字符串。
 - shop detail 当前仍以 `/shop/product/:productId` 作为 canonical 兼容路径，公开个人页当前仍以 `/u/:userId` 作为 canonical 兼容路径，但运行时 title、description 与页面说明不应直接回显 `productId / userId`；docs detail 同理优先展示 slug、标题或正文摘要，旧 long 兼容路径只承担打开能力，不作为普通用户可读文案。
 
@@ -56,6 +57,7 @@ forum / docs / shop 三类公开详情还会在 Gateway 层做首包 head snapsh
 
 `Frontend/radish.client/src/public/publicStructuredData.ts` 负责运行时 JSON-LD 的构建、注入、复用和清理。
 
+- 公开集合页：`discover / leaderboard / forum / docs / shop` 的非详情路由输出 `CollectionPage`；其他公开非详情路由输出 `WebPage`。
 - forum detail：输出 `BlogPosting`，优先使用 `PostVo.VoPublicId` canonical。
 - docs detail：输出 `Article`，使用 `/docs/:slug` canonical。
 - shop detail：输出 `Product`，不把积分价格伪装成法币 offer。

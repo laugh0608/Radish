@@ -8,6 +8,7 @@ import 'package:radish_flutter/features/profile/data/profile_models.dart';
 import 'package:radish_flutter/features/profile/data/profile_repository.dart';
 import 'package:radish_flutter/features/profile/presentation/browse_history_page.dart';
 import 'package:radish_flutter/features/shop/data/shop_repository.dart';
+import 'package:radish_flutter/features/wallet/data/wallet_repository.dart';
 
 void main() {
   testWidgets('renders browse history and opens native handoff targets', (
@@ -27,6 +28,7 @@ void main() {
           environment: const AppEnvironment.development(),
           repository: const _BrowseHistoryRepository(),
           shopRepository: const EmptyShopRepository(),
+          walletRepository: const EmptyWalletRepository(),
           accessToken: 'access-token',
           onOpenForumDetailTarget: openedForumTargets.add,
           onOpenDocsDetailTarget: openedDocsTargets.add,
@@ -41,6 +43,11 @@ void main() {
     expect(find.text('Native profile follow-up'), findsOneWidget);
     expect(find.text('Radish Flutter docs scope'), findsOneWidget);
     expect(find.text('Early Access Badge'), findsOneWidget);
+    expect(
+      find.text('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f801'),
+      findsOneWidget,
+    );
+    expect(find.text('/forum/post/2042219067430928384'), findsNothing);
 
     await tester.tap(find.widgetWithText(FilledButton, '打开详情').first);
     await tester.pumpAndSettle();
@@ -80,6 +87,7 @@ void main() {
           environment: const AppEnvironment.development(),
           repository: repository,
           shopRepository: const EmptyShopRepository(),
+          walletRepository: const EmptyWalletRepository(),
           accessToken: 'access-token',
         ),
       ),
@@ -116,10 +124,11 @@ class _BrowseHistoryRepository implements ProfileRepository {
           id: 'history-post-1',
           targetType: 'Post',
           targetTypeDisplay: '帖子',
-          targetId: '1001',
+          targetId: '2042219067430928384',
+          targetSlug: 'pst_018f6b6f7c7d70008f8f8f8f8f8f801',
           title: 'Native profile follow-up',
           summary: 'Expand the public profile beyond a single info card.',
-          routePath: '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f801',
+          routePath: '/forum/post/2042219067430928384',
           viewCount: 2,
           lastViewTime: '2026-04-20T09:30:00Z',
         ),
@@ -184,6 +193,21 @@ class _BrowseHistoryRepository implements ProfileRepository {
   Future<UserQuickReplyPage> getMyQuickReplies({
     required int pageIndex,
     required int pageSize,
+    required String accessToken,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<MyProfileInfo> getMyProfile({
+    required String accessToken,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> updateMyProfile({
+    required UpdateMyProfileRequest request,
     required String accessToken,
   }) {
     throw UnimplementedError();

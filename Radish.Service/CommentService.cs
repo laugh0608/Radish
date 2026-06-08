@@ -39,6 +39,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
     private readonly IBaseRepository<CommentEditHistory> _commentEditHistoryRepository;
     private readonly ForumEditHistoryOptions _editHistoryOptions;
     private readonly IBaseRepository<Attachment>? _attachmentRepository;
+    private readonly IBaseRepository<User>? _userRepository;
 
     public CommentService(
         IMapper mapper,
@@ -55,7 +56,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         IOptions<CommentHighlightOptions> highlightOptions,
         IBaseRepository<CommentEditHistory> commentEditHistoryRepository,
         IOptions<ForumEditHistoryOptions> editHistoryOptions,
-        IBaseRepository<Attachment>? attachmentRepository = null)
+        IBaseRepository<Attachment>? attachmentRepository = null,
+        IBaseRepository<User>? userRepository = null)
         : base(mapper, baseRepository)
     {
         _commentRepository = baseRepository;
@@ -72,6 +74,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         _commentEditHistoryRepository = commentEditHistoryRepository;
         _editHistoryOptions = editHistoryOptions.Value;
         _attachmentRepository = attachmentRepository;
+        _userRepository = userRepository;
     }
 
     /// <summary>
@@ -699,13 +702,13 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             await FillHighlightStatusAsync(postId, commentVos);
         }
 
-        await FillAuthorAvatarUrlsAsync(commentVos);
+        await FillAuthorProfilesAsync(commentVos);
         return (commentVos, total);
     }
 
-    private async Task FillAuthorAvatarUrlsAsync(List<CommentVo> comments)
+    private async Task FillAuthorProfilesAsync(List<CommentVo> comments)
     {
-        if (_attachmentRepository == null || comments.Count <= 0)
+        if (comments.Count <= 0)
         {
             return;
         }
@@ -717,22 +720,36 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             return;
         }
 
-        var avatarAttachments = await _attachmentRepository.QueryAsync(attachment =>
-            attachment.BusinessType == "Avatar" &&
-            attachment.BusinessId.HasValue &&
-            authorIds.Contains(attachment.BusinessId.Value) &&
-            attachment.IsEnabled &&
-            !attachment.IsDeleted);
+        var userIds = authorIds.ToList();
 
-        var avatarMap = avatarAttachments
-            .Where(attachment => attachment.BusinessId.HasValue)
-            .OrderByDescending(attachment => attachment.CreateTime)
-            .GroupBy(attachment => attachment.BusinessId!.Value)
-            .ToDictionary(
-                group => group.Key,
-                group => (string?)_attachmentUrlResolver.ResolveAttachmentUrl(group.First().Id));
+        Dictionary<long, string?> avatarMap = new();
+        if (_attachmentRepository != null)
+        {
+            var avatarAttachments = await _attachmentRepository.QueryAsync(attachment =>
+                attachment.BusinessType == "Avatar" &&
+                attachment.BusinessId.HasValue &&
+                userIds.Contains(attachment.BusinessId.Value) &&
+                attachment.IsEnabled &&
+                !attachment.IsDeleted);
 
-        ApplyAuthorAvatarUrls(comments, avatarMap);
+            avatarMap = avatarAttachments
+                .Where(attachment => attachment.BusinessId.HasValue)
+                .OrderByDescending(attachment => attachment.CreateTime)
+                .GroupBy(attachment => attachment.BusinessId!.Value)
+                .ToDictionary(
+                    group => group.Key,
+                    group => (string?)_attachmentUrlResolver.ResolveAttachmentUrl(group.First().Id));
+        }
+
+        Dictionary<long, string> displayNameMap = new();
+        if (_userRepository != null)
+        {
+            displayNameMap = ForumDisplayNameHelper.BuildMap(await _userRepository.QueryAsync(user =>
+                userIds.Contains(user.Id) &&
+                !user.IsDeleted));
+        }
+
+        ApplyAuthorProfiles(comments, avatarMap, displayNameMap);
     }
 
     private static void CollectAuthorIds(IEnumerable<CommentVo> comments, ISet<long> authorIds)
@@ -744,6 +761,11 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                 authorIds.Add(comment.VoAuthorId);
             }
 
+            if (comment.VoReplyToUserId is > 0)
+            {
+                authorIds.Add(comment.VoReplyToUserId.Value);
+            }
+
             if (comment.VoChildren?.Any() == true)
             {
                 CollectAuthorIds(comment.VoChildren, authorIds);
@@ -751,10 +773,24 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         }
     }
 
-    private static void ApplyAuthorAvatarUrls(IEnumerable<CommentVo> comments, IReadOnlyDictionary<long, string?> avatarMap)
+    private static void ApplyAuthorProfiles(
+        IEnumerable<CommentVo> comments,
+        IReadOnlyDictionary<long, string?> avatarMap,
+        IReadOnlyDictionary<long, string> displayNameMap)
     {
         foreach (var comment in comments)
         {
+            if (displayNameMap.TryGetValue(comment.VoAuthorId, out var authorDisplayName))
+            {
+                comment.VoAuthorName = authorDisplayName;
+            }
+
+            if (comment.VoReplyToUserId is > 0 &&
+                displayNameMap.TryGetValue(comment.VoReplyToUserId.Value, out var replyToDisplayName))
+            {
+                comment.VoReplyToUserName = replyToDisplayName;
+            }
+
             if (avatarMap.TryGetValue(comment.VoAuthorId, out var avatarUrl) &&
                 !string.IsNullOrWhiteSpace(avatarUrl))
             {
@@ -763,7 +799,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
 
             if (comment.VoChildren?.Any() == true)
             {
-                ApplyAuthorAvatarUrls(comment.VoChildren, avatarMap);
+                ApplyAuthorProfiles(comment.VoChildren, avatarMap, displayNameMap);
             }
         }
     }
@@ -803,7 +839,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             }
         }
 
-        await FillAuthorAvatarUrlsAsync(commentVos);
+        await FillAuthorProfilesAsync(commentVos);
         return (commentVos, total);
     }
 
