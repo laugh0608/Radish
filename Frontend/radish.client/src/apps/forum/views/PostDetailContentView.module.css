@@ -89,6 +89,13 @@
   line-height: 1.6;
 }
 
+.commentTypingNotice {
+  margin: 4px 0 0;
+  color: var(--theme-text-tertiary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .commentButton {
   padding: 12px 24px;
   font-size: 14px;

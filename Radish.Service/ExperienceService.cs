@@ -227,6 +227,20 @@ namespace Radish.Service;
         }
     }
 
+    public async Task<bool> HasExperienceTransactionAsync(long userId, string expType, string businessType, long businessId)
+    {
+        if (userId <= 0 || businessId <= 0 || string.IsNullOrWhiteSpace(expType) || string.IsNullOrWhiteSpace(businessType))
+        {
+            return false;
+        }
+
+        return await _expTransactionRepository.QueryExistsAsync(transaction =>
+            transaction.UserId == userId &&
+            transaction.ExpType == expType &&
+            transaction.BusinessType == businessType &&
+            transaction.BusinessId == businessId);
+    }
+
     /// <summary>
     /// 经验值发放内部实现（带乐观锁和事务）
     /// </summary>

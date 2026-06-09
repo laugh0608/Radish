@@ -5,6 +5,7 @@ import { useUserStore } from '@/stores/userStore';
 import { useWindowStore } from '@/stores/windowStore';
 import { log } from '@/utils/logger';
 import { createForumCommentHighlightMap } from '@/utils/forumCommentHighlights';
+import { commentHub, type CommentTypingRealtimeEvent } from '@/services/commentHub';
 import { ConfirmDialog } from '@radish/ui/confirm-dialog';
 import { ContentReportModal } from '@/components/ContentReportModal';
 import {
@@ -27,6 +28,14 @@ import type { LongId } from '@/api/user';
 import { getMyTimePreference, getTimeSettings } from '@/api/time';
 import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId, resolveTimeZoneId } from '@/utils/dateTime';
 import { parseForumWindowParams } from '@/utils/forumNavigation';
+import {
+  applyCommentHighlightEvent,
+  hasCommentInTree,
+  isSameCommentId,
+  removeCommentFromTree,
+  updateCommentLikeCount,
+  upsertCommentInTree
+} from './utils/commentRealtimeTree';
 import { CategoryList } from './components/CategoryList';
 import { TagSection } from './components/TagSection';
 import { TrendingSidebar } from './components/TrendingSidebar';
@@ -116,7 +125,10 @@ export const ForumApp = () => {
   const [reportTarget, setReportTarget] = useState<{ targetType: ContentReportTargetType; targetId: LongId } | null>(null);
   const [commentNavigationTarget, setCommentNavigationTarget] = useState<ForumCommentNavigationTarget | null>(null);
   const [commentNavigationNotice, setCommentNavigationNotice] = useState<string | null>(null);
+  const [commentTypingUserNames, setCommentTypingUserNames] = useState<string[]>([]);
   const searchRequestIdRef = useRef(0);
+  const commentTypingUsersRef = useRef(new Map<string, string>());
+  const commentTypingTimersRef = useRef(new Map<string, number>());
   const [followStatus, setFollowStatus] = useState<UserFollowStatus | null>(null);
   const [followLoading, setFollowLoading] = useState(false);
   const windowParams = parseForumWindowParams(currentWindow?.appParams);
@@ -126,6 +138,20 @@ export const ForumApp = () => {
     const normalized = role.trim().toLowerCase();
     return normalized === 'admin' || normalized === 'system';
   });
+
+  const syncCommentTypingUsers = useCallback(() => {
+    setCommentTypingUserNames([...commentTypingUsersRef.current.values()]);
+  }, []);
+
+  const clearCommentTypingUsers = useCallback(() => {
+    for (const timer of commentTypingTimersRef.current.values()) {
+      window.clearTimeout(timer);
+    }
+
+    commentTypingTimersRef.current.clear();
+    commentTypingUsersRef.current.clear();
+    setCommentTypingUserNames([]);
+  }, []);
 
   useEffect(() => {
     const element = containerShellRef.current;
@@ -238,6 +264,31 @@ export const ForumApp = () => {
   // 数据管理
   const dataState = useForumData(t);
 
+  const registerCommentTypingUser = useCallback((payload: CommentTypingRealtimeEvent) => {
+    if (!dataState.selectedPost || !isSameCommentId(payload.voPostId, dataState.selectedPost.voId)) {
+      return;
+    }
+
+    if (isSameCommentId(payload.voUserId, userId || '0')) {
+      return;
+    }
+
+    const userKey = String(payload.voUserId);
+    const userName = payload.voUserName?.trim() || t('common.unknownUser');
+    const oldTimer = commentTypingTimersRef.current.get(userKey);
+    if (oldTimer) {
+      window.clearTimeout(oldTimer);
+    }
+
+    commentTypingUsersRef.current.set(userKey, userName);
+    commentTypingTimersRef.current.set(userKey, window.setTimeout(() => {
+      commentTypingUsersRef.current.delete(userKey);
+      commentTypingTimersRef.current.delete(userKey);
+      syncCommentTypingUsers();
+    }, 3200));
+    syncCommentTypingUsers();
+  }, [dataState.selectedPost, syncCommentTypingUsers, t, userId]);
+
   // 事件处理
   const actionsState = useForumActions({
     t,
@@ -267,6 +318,90 @@ export const ForumApp = () => {
     loadPosts: dataState.loadPosts,
     resetCommentSort: dataState.resetCommentSort
   });
+
+  useEffect(() => {
+    const postId = dataState.selectedPost?.voId;
+    if (!postId) {
+      clearCommentTypingUsers();
+      return;
+    }
+
+    void commentHub.joinPost(postId);
+
+    const unsubscribeCreated = commentHub.subscribe('CommentCreated', (payload) => {
+      if (!isSameCommentId(payload.voPostId, postId) || !payload.voComment) {
+        return;
+      }
+
+      dataState.setComments((current) => {
+        const exists = hasCommentInTree(current, payload.voComment!.voId);
+        if (!exists && !payload.voComment!.voParentId) {
+          dataState.setCommentTotal((total) => total + 1);
+        }
+
+        return upsertCommentInTree(current, payload.voComment!, dataState.commentSortBy);
+      });
+    });
+
+    const unsubscribeUpdated = commentHub.subscribe('CommentUpdated', (payload) => {
+      if (!isSameCommentId(payload.voPostId, postId) || !payload.voComment) {
+        return;
+      }
+
+      dataState.setComments((current) => upsertCommentInTree(current, payload.voComment!, dataState.commentSortBy));
+    });
+
+    const unsubscribeDeleted = commentHub.subscribe('CommentDeleted', (payload) => {
+      if (!isSameCommentId(payload.voPostId, postId)) {
+        return;
+      }
+
+      dataState.setComments((current) => {
+        const exists = hasCommentInTree(current, payload.voCommentId);
+        if (exists && !payload.voParentCommentId) {
+          dataState.setCommentTotal((total) => Math.max(0, total - 1));
+        }
+
+        return removeCommentFromTree(current, payload.voCommentId);
+      });
+    });
+
+    const unsubscribeLikeChanged = commentHub.subscribe('CommentLikeChanged', (payload) => {
+      if (!isSameCommentId(payload.voPostId, postId) || typeof payload.voLikeCount !== 'number') {
+        return;
+      }
+
+      dataState.setComments((current) => updateCommentLikeCount(current, payload.voCommentId, payload.voLikeCount!));
+    });
+
+    const unsubscribeHighlightsChanged = commentHub.subscribe('CommentHighlightsChanged', (payload) => {
+      if (!isSameCommentId(payload.voPostId, postId)) {
+        return;
+      }
+
+      dataState.setComments((current) => applyCommentHighlightEvent(current, payload));
+    });
+
+    const unsubscribeTyping = commentHub.subscribe('CommentTyping', registerCommentTypingUser);
+
+    return () => {
+      unsubscribeCreated();
+      unsubscribeUpdated();
+      unsubscribeDeleted();
+      unsubscribeLikeChanged();
+      unsubscribeHighlightsChanged();
+      unsubscribeTyping();
+      clearCommentTypingUsers();
+      void commentHub.leavePost(postId);
+    };
+  }, [
+    clearCommentTypingUsers,
+    dataState.commentSortBy,
+    dataState.selectedPost?.voId,
+    dataState.setCommentTotal,
+    dataState.setComments,
+    registerCommentTypingUser
+  ]);
 
   const navigateToComment = useCallback(async (
     postId: LongId,
@@ -696,6 +831,7 @@ export const ForumApp = () => {
                 followStatus={followStatus}
                 followLoading={followLoading}
                 commentNavigationTarget={commentNavigationTarget}
+                commentTypingUserNames={commentTypingUserNames}
                 onBack={() => {
                   setCommentNavigationTarget(null);
                   setCommentNavigationNotice(null);
@@ -729,6 +865,11 @@ export const ForumApp = () => {
                 onLoadMoreChildren={actionsState.handleLoadMoreChildren}
                 onLoadMoreComments={dataState.loadMoreComments}
                 onCreateComment={actionsState.handleCreateComment}
+                onCommentTyping={() => {
+                  if (dataState.selectedPost?.voId) {
+                    void commentHub.startTyping(dataState.selectedPost.voId, actionsState.replyTo?.targetCommentId ?? null);
+                  }
+                }}
                 onCancelReply={actionsState.handleCancelReply}
                 onReactionError={dataState.setError}
                 onToggleFollow={handleToggleFollow}

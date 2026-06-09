@@ -231,6 +231,12 @@ public class CoinRewardService : ICoinRewardService
     {
         try
         {
+            var alreadyGranted = await CheckRewardExistsAsync("GOD_COMMENT", commentId, authorId);
+            if (alreadyGranted)
+            {
+                return CoinRewardResult.Failure("该评论已发放过神评奖励");
+            }
+
             // 计算总奖励：基础 + 点赞加成
             var totalReward = GOD_COMMENT_BASE + (likeCount * GOD_COMMENT_LIKE_BONUS);
 
@@ -263,6 +269,12 @@ public class CoinRewardService : ICoinRewardService
     {
         try
         {
+            var alreadyGranted = await CheckRewardExistsAsync("SOFA", commentId, authorId);
+            if (alreadyGranted)
+            {
+                return CoinRewardResult.Failure("该评论已发放过沙发奖励");
+            }
+
             // 计算总奖励：基础 + 点赞加成
             var totalReward = SOFA_BASE + (likeCount * SOFA_LIKE_BONUS);
 

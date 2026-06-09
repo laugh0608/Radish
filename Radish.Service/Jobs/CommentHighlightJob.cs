@@ -231,6 +231,20 @@ public class CommentHighlightJob
                                 Log.Information("准备发放神评经验值：CommentId={CommentId}, AuthorId={AuthorId}",
                                     currentTopComment.Id, currentTopComment.AuthorId);
 
+                                var exists = await _experienceService.HasExperienceTransactionAsync(
+                                    currentTopComment.AuthorId,
+                                    "GOD_COMMENT",
+                                    "Comment",
+                                    currentTopComment.Id);
+
+                                if (exists)
+                                {
+                                    Log.Information("神评经验值已发放过，跳过：CommentId={CommentId}, AuthorId={AuthorId}",
+                                        currentTopComment.Id,
+                                        currentTopComment.AuthorId);
+                                    return;
+                                }
+
                                 var expResult = await _experienceService.GrantExperienceAsync(
                                     userId: currentTopComment.AuthorId,
                                     amount: 50,
@@ -443,6 +457,20 @@ public class CommentHighlightJob
                             {
                                 Log.Information("准备发放沙发经验值：CommentId={CommentId}, AuthorId={AuthorId}",
                                     currentTopChild.Id, currentTopChild.AuthorId);
+
+                                var exists = await _experienceService.HasExperienceTransactionAsync(
+                                    currentTopChild.AuthorId,
+                                    "SOFA_COMMENT",
+                                    "Comment",
+                                    currentTopChild.Id);
+
+                                if (exists)
+                                {
+                                    Log.Information("沙发经验值已发放过，跳过：CommentId={CommentId}, AuthorId={AuthorId}",
+                                        currentTopChild.Id,
+                                        currentTopChild.AuthorId);
+                                    return;
+                                }
 
                                 var expResult = await _experienceService.GrantExperienceAsync(
                                     userId: currentTopChild.AuthorId,

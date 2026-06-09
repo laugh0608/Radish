@@ -1,3 +1,5 @@
+using Radish.Model.ViewModels;
+
 namespace Radish.Model.DtoModels;
 
 /// <summary>评论点赞操作结果DTO</summary>
@@ -8,4 +10,7 @@ public class CommentLikeResultDto
 
     /// <summary>最新点赞总数</summary>
     public int LikeCount { get; set; }
+
+    /// <summary>点赞后触发的高亮重算结果</summary>
+    public CommentHighlightRecheckResultVo? HighlightRecheckResult { get; set; }
 }

@@ -12,15 +12,23 @@ public interface ICommentService : IBaseService<Comment, CommentVo>
     /// 添加评论
     /// </summary>
     /// <param name="comment">评论实体</param>
-    /// <returns>评论 Id</returns>
-    Task<long> AddCommentAsync(Comment comment);
+    /// <returns>评论 Id 与写入后的高亮重算结果</returns>
+    Task<(long commentId, CommentHighlightRecheckResultVo highlightRecheckResult)> AddCommentAsync(Comment comment);
+
+    /// <summary>
+    /// 获取单条评论详情（带作者展示、点赞状态和高亮状态）
+    /// </summary>
+    /// <param name="commentId">评论 Id</param>
+    /// <param name="userId">当前用户 Id（可选，用于填充点赞状态）</param>
+    /// <returns>评论详情，不存在时返回 null</returns>
+    Task<CommentVo?> GetCommentDetailAsync(long commentId, long? userId = null);
 
     /// <summary>
     /// 触发神评/沙发实时重算
     /// </summary>
     /// <param name="postId">帖子 Id</param>
     /// <param name="parentCommentId">父评论 Id（为空表示重算神评，不为空表示重算该父评论下沙发）</param>
-    Task TriggerHighlightRecheckAsync(long postId, long? parentCommentId = null);
+    Task<CommentHighlightRecheckResultVo> TriggerHighlightRecheckAsync(long postId, long? parentCommentId = null);
 
     /// <summary>
     /// 更新评论点赞次数

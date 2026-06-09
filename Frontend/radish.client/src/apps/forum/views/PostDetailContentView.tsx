@@ -56,6 +56,7 @@ interface PostDetailContentViewProps {
     expandedRootCommentId?: LongId;
     navigationKey: string;
   } | null;
+  commentTypingUserNames?: string[];
 
   onBack: () => void;
   onLike: (postId: LongId) => void;
@@ -85,6 +86,7 @@ interface PostDetailContentViewProps {
   ) => Promise<CommentNode[]>;
   onLoadMoreComments: (postId: LongId) => Promise<void>;
   onCreateComment: (content: string) => Promise<void>;
+  onCommentTyping?: () => void;
   onCancelReply: () => void;
   onReactionError?: (message: string) => void;
   onToggleFollow: (targetUserId: LongId, isFollowing: boolean) => Promise<void>;
@@ -140,6 +142,7 @@ export const PostDetailContentView = ({
   followStatus,
   followLoading,
   commentNavigationTarget = null,
+  commentTypingUserNames = [],
   onBack,
   onLike,
   onVotePoll,
@@ -164,6 +167,7 @@ export const PostDetailContentView = ({
   onLoadMoreChildren,
   onLoadMoreComments,
   onCreateComment,
+  onCommentTyping,
   onCancelReply,
   onReactionError,
   onToggleFollow,
@@ -175,7 +179,7 @@ export const PostDetailContentView = ({
   workspaceIntent = null,
   workspaceIntentKey = null,
 }: PostDetailContentViewProps) => {
-  const { t } = useTranslation();
+  const { i18n, t } = useTranslation();
   const [isCommentSheetOpen, setIsCommentSheetOpen] = useState(false);
   const [highlightedCommentId, setHighlightedCommentId] = useState<LongId | null>(null);
   const [commentAnchorVersion, setCommentAnchorVersion] = useState(0);
@@ -201,6 +205,14 @@ export const PostDetailContentView = ({
     }),
     [post.voId, post.voPublicId, replyTo?.targetCommentId],
   );
+  const commentTypingText = useMemo(() => {
+    if (commentTypingUserNames.length === 0) {
+      return '';
+    }
+
+    const separator = i18n.language.startsWith('zh') ? '、' : ', ';
+    return `${commentTypingUserNames.join(separator)}${t('forum.comment.typingSuffix')}`;
+  }, [commentTypingUserNames, i18n.language, t]);
 
   const registerCommentAnchor = useCallback((commentId: LongId, element: HTMLDivElement | null) => {
     const commentIdKey = String(commentId);
@@ -426,6 +438,11 @@ export const PostDetailContentView = ({
             <div>
               <h3 className={styles.discussionTitle}>{t('forum.quickReply.discussionTitle')}</h3>
               <p className={styles.discussionSubtitle}>{t('forum.quickReply.discussionSubtitle')}</p>
+              {commentTypingText && (
+                <p className={styles.commentTypingNotice}>
+                  {commentTypingText}
+                </p>
+              )}
             </div>
             <button className={styles.commentButton} onClick={handleOpenCommentSheet}>
               {t('forum.quickReply.openDiscussion')}
@@ -511,6 +528,7 @@ export const PostDetailContentView = ({
                 submitText={t('forum.submitDiscussion')}
                 placeholder={t('forum.discussionPlaceholder')}
                 loginReturnPath={commentLoginReturnPath}
+                onTyping={onCommentTyping}
                 stickerGroups={stickerGroups}
                 onStickerSelect={(selection) => {
                   void handleStickerSelect(selection);

@@ -296,6 +296,11 @@ export const CommentNode = ({
   const [childSortBy, setChildSortBy] = useState<'newest' | 'hottest' | null>(null); // null表示默认排序(时间升序)
   const [hasPreloadedChildren, setHasPreloadedChildren] = useState(false);
 
+  useEffect(() => {
+    setIsLiked(node.voIsLiked ?? false);
+    setLikeCount(node.voLikeCount ?? 0);
+  }, [node.voId, node.voIsLiked, node.voLikeCount]);
+
   const commentImages = useMemo(() => extractCommentImages(node.voContent), [node.voContent]);
   const commentHtml = useMemo(() => renderCommentHtml(node.voContent, stickerMap), [node.voContent, stickerMap]);
   const replyToUserName = useMemo(() => node.voReplyToUserName?.trim() || '', [node.voReplyToUserName]);
@@ -318,17 +323,21 @@ export const CommentNode = ({
   // 找出所有沙发（后端标记的）
   const sofaComments = loadedChildren.filter(c => c.voIsSofa);
 
-  // 找出当前点赞数最高的沙发（用于置顶显示）
-  const topSofaComment = sofaComments.length > 0
+  // 找出当前沙发（用于置顶显示，支持并列）
+  const topSofaComments = sofaComments.length > 0
     ? [...sofaComments].sort((a, b) => {
+        const rankDiff = (a.voHighlightRank ?? 999) - (b.voHighlightRank ?? 999);
+        if (rankDiff !== 0) {
+          return rankDiff;
+        }
         // 先按点赞数降序
         if ((b.voLikeCount || 0) !== (a.voLikeCount || 0)) {
           return (b.voLikeCount || 0) - (a.voLikeCount || 0);
         }
         // 点赞数相同时按时间降序（最新的在前）
         return new Date(b.voCreateTime || 0).getTime() - new Date(a.voCreateTime || 0).getTime();
-      })[0]
-    : null;
+      })
+    : [];
 
   const hasChildren = (node.voChildrenTotal && node.voChildrenTotal > 0) || (node.voChildren && node.voChildren.length > 0);
   const totalChildren = node.voChildrenTotal ?? node.voChildren?.length ?? 0;
@@ -529,24 +538,25 @@ export const CommentNode = ({
 
     // 收起状态下：优先展示“沙发”（如果有），否则展示当前已加载子评论里最热的一条
     const collapsedPreview = (() => {
-      if (topSofaComment) return topSofaComment;
+      if (topSofaComments.length > 0) return topSofaComments;
       if (loadedChildren.length === 0) return null;
 
-      return [...loadedChildren].sort((a, b) => {
+      return [[...loadedChildren].sort((a, b) => {
         const likeDiff = (b.voLikeCount || 0) - (a.voLikeCount || 0);
         if (likeDiff !== 0) return likeDiff;
         return new Date(b.voCreateTime || 0).getTime() - new Date(a.voCreateTime || 0).getTime();
-      })[0];
+      })[0]];
     })();
 
     if (!isExpanded) {
-      return collapsedPreview ? [collapsedPreview] : [];
+      return collapsedPreview ?? [];
     }
 
-    if (childSortBy === null && topSofaComment) {
-      // 展开且未手动排序：当前点赞数最高的沙发置顶 + 其他按时间升序
-      const others = loadedChildren.filter(c => !isSameLongId(c.voId, topSofaComment.voId));
-      return [topSofaComment, ...others];
+    if (childSortBy === null && topSofaComments.length > 0) {
+      // 展开且未手动排序：当前沙发置顶 + 其他按时间升序
+      const topIds = new Set(topSofaComments.map(comment => String(comment.voId)));
+      const others = loadedChildren.filter(c => !topIds.has(String(c.voId)));
+      return [...topSofaComments, ...others];
     }
 
     // 展开且手动排序：按排序结果显示

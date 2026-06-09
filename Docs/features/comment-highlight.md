@@ -4,7 +4,7 @@
 >
 > **版本**: v26.3.0
 >
-> **最后更新**: 2026.03.01
+> **最后更新**: 2026.06.09
 
 ---
 
@@ -17,8 +17,9 @@
 - **自动统计**：每天凌晨 1 点自动统计前一天的神评和沙发
 - **事件驱动重算**：评论新增、删除、点赞切换后触发服务端实时重算
 - **历史追溯**：保留所有历史记录，支持查看神评/沙发变化趋势
-- **追加机制**：点赞数变化时追加新记录，旧记录保留
-- **动态置顶**：前端始终显示当前点赞数最高的神评/沙发
+- **当前快照**：当前高亮记录会同步点赞数、排名和内容快照，旧记录保留为历史
+- **稳定置顶**：前端显示当前神评/沙发，支持并列置顶和稳定窗口内防抖
+- **实时推送**：评论创建、更新、删除、点赞和高亮变化通过 `/hub/comment` 广播给 Web 详情页
 - **性能优化**：使用索引、并行加载、错误容错
 
 ---
@@ -37,8 +38,9 @@
 
 **业务规则**：
 - 一个帖子可以有多个神评（历史记录）
-- 每天统计一次，点赞数变化时追加新记录
-- 前端始终显示当前点赞数最高的神评置顶
+- 当前最高点赞数可以产生多条并列神评
+- 当前高亮记录会同步点赞数、排名和内容快照，不因点赞数变化重复追加同一条 current 历史
+- 稳定窗口内，只有新候选明显领先时才替换当前神评
 
 ### 沙发（Sofa Comment）
 
@@ -52,8 +54,9 @@
 
 **业务规则**：
 - 每个父评论可以有多个沙发（历史记录）
-- 每天统计一次，点赞数变化时追加新记录
-- 前端始终显示当前点赞数最高的沙发置顶
+- 当前最高点赞数可以产生多条并列沙发
+- 当前高亮记录会同步点赞数、排名和内容快照，不因点赞数变化重复追加同一条 current 历史
+- 稳定窗口内，只有新候选明显领先时才替换当前沙发
 
 ---
 
@@ -96,17 +99,20 @@
 
 如果多个评论点赞数相同，都会被标记为神评/沙发，但 `Rank` 字段会记录排名（1, 2, 3...）。
 
-### 事件驱动实时重算机制（2026-02）
+### 事件驱动实时重算机制（2026-06）
 
 除定时任务外，当前已补齐评论写路径的实时重算：
 
 - **新增评论后重算**：`CommentService.AddCommentAsync` 成功写入后触发 `TriggerHighlightRecheckAsync`。
 - **删除评论后重算**：`CommentController.Delete` 删除完成后触发 `TriggerHighlightRecheckAsync`。
-- **点赞切换后重算**：`CommentService.ToggleCommentLikeAsync` 复用统一入口 `TriggerHighlightRecheckInBackground` 异步触发。
+- **点赞切换后重算**：`CommentService.ToggleLikeAsync` 同步触发 `TriggerHighlightRecheckAsync`，并把高亮变化结果返回给 API 层广播。
+- **编辑评论后重算**：`CommentController.Update` 更新评论详情后重算当前高亮快照。
 
 说明：
-- 当前“实时”是**服务端状态实时重算**，用于保证后续查询结果及时一致。
-- 前端主动推送刷新（SignalR 广播神评/沙发变化）仍在后续规划内。
+- 当前“实时”同时包含服务端状态重算和 SignalR 推送。
+- `/hub/comment` 按 `post-comments:{postId}` 分组广播评论创建、更新、删除、点赞和 `CommentHighlightsChanged`。
+- typing 事件同样走 `/hub/comment`，匿名用户可订阅帖子评论组，typing 上报要求连接中存在有效用户。
+- Flutter 暂未接入本实时链路，后续复用稳定 API 和事件语义。
 
 ---
 
@@ -134,7 +140,7 @@
 | `IsCurrent` | `bool` | 是否当前有效（最新一次统计） |
 | `TenantId` | `long` | 租户 ID |
 | `CreateTime` | `DateTime` | 创建时间 |
-| `CreateBy` | `string` | 创建者（固定为 "CommentHighlightJob"） |
+| `CreateBy` | `string` | 创建者（如 `CommentHighlightJob`、`CommentService.RealTime`） |
 
 **索引设计**：
 
@@ -511,7 +517,14 @@ const topSofaComment = sofaComments.length > 0
     "CommentHighlight": {
       "Enable": true,
       "Schedule": "0 1 * * *",
-      "Description": "神评/沙发统计任务，每天凌晨 1 点执行"
+      "Description": "神评/沙发统计任务，每天凌晨 1 点执行",
+      "RealtimeUpdate": true,
+      "CacheEnabled": true,
+      "CacheTTLMinutes": 60,
+      "MinParentCommentCount": 5,
+      "MinChildCommentCount": 3,
+      "StabilityWindowMinutes": 10,
+      "ReplacementMinLikeDelta": 2
     }
   }
 }
@@ -527,58 +540,32 @@ const topSofaComment = sofaComments.length > 0
 - `0 2 * * *`：每天凌晨 2 点
 - `0 */6 * * *`：每 6 小时执行一次
 
+**稳定性配置说明**：
+
+- `RealtimeUpdate`：是否在评论写路径触发实时重算。
+- `StabilityWindowMinutes`：当前高亮创建后的稳定窗口；窗口内避免同赞数或微弱变化频繁替换。
+- `ReplacementMinLikeDelta`：稳定窗口内新候选替换当前高亮所需的最小点赞领先数。
+
 ---
 
 ### 任务注册
 
-**文件位置**：`Radish.Api/Program.cs`
-
-**注册代码**：
-
-```csharp
-// 神评/沙发统计任务
-var commentHighlightConfig = builder.Configuration.GetSection("Hangfire:CommentHighlight");
-if (commentHighlightConfig.GetValue<bool>("Enable", true))
-{
-    var schedule = commentHighlightConfig["Schedule"] ?? "0 1 * * *";
-
-    RecurringJob.AddOrUpdate<CommentHighlightJob>(
-        "comment-highlight-stat",
-        job => job.ExecuteAsync(null),
-        schedule,
-        new RecurringJobOptions
-        {
-            TimeZone = TimeZoneInfo.Local
-        });
-
-    Log.Information("[Hangfire] 已注册定时任务: comment-highlight-stat (计划: {Schedule})", schedule);
-}
-```
+`Radish.Api/Program.cs` 读取 `Hangfire:CommentHighlight` 注册 `comment-highlight-stat` 定时任务；实时重算入口在评论写路径内触发，不依赖等待定时任务。
 
 ---
 
 ## 使用指南
 
-### 启动后端
-
-```bash
-dotnet run --project Radish.Api/Radish.Api.csproj
-```
-
 ### 手动触发统计任务
 
-**方式 1：通过 API**（需要管理员权限）
+**通过 API**（需要管理员权限）
 
 ```bash
 POST http://localhost:5100/api/v1/CommentHighlight/TriggerStatJob
 Authorization: Bearer {your_admin_token}
 ```
 
-**方式 2：通过 Hangfire Dashboard**
-
-1. 访问 `http://localhost:5100/hangfire`
-2. 找到 `comment-highlight-stat` 任务
-3. 点击 "Trigger now" 按钮
+也可以通过 Hangfire Dashboard 手动触发 `comment-highlight-stat`。
 
 ### 查看统计结果
 
@@ -596,17 +583,7 @@ GET http://localhost:5100/api/v1/CommentHighlight/GetCurrentSofas?parentCommentI
 
 ### 前端测试
 
-1. 启动前端开发服务器：
-   ```bash
-   npm run dev --workspace=radish.client
-   ```
-
-2. 访问论坛应用：`http://localhost:3000`
-
-3. 查看评论区：
-   - 神评会显示金色"神评"徽章
-   - 沙发会显示绿色"沙发"徽章
-   - 默认排序时，神评/沙发会置顶显示
+访问论坛详情页或公开详情页，验证神评、沙发徽章、并列置顶、评论实时事件和 typing 提示。
 
 ---
 
@@ -697,14 +674,14 @@ comment:highlight:sofa:{parentCommentId}
 
 ## 未来优化方向
 
-### 1. 前端实时推送（SignalR）
+### 1. 多端实时接入
 
-**当前状态**：服务端实时重算已完成，前端主动推送未完成。
+**当前状态**：Web 详情页和公开详情页已接入 `/hub/comment`，Flutter 暂未接入。
 
-**实现方案**：
-- 当评论点赞数变化时，实时推送给前端
-- 前端动态更新神评/沙发标识
-- 无需等待定时任务执行
+**后续方向**：
+- Flutter 复用 `CommentCreated / CommentUpdated / CommentDeleted / CommentLikeChanged / CommentHighlightsChanged / CommentTyping` 事件语义
+- 补移动端断线恢复后的评论刷新策略
+- 按真实使用情况评估是否加入通知偏好和容量治理
 
 ### 2. 缓存优化
 
@@ -778,8 +755,11 @@ comment:highlight:sofa:{parentCommentId}
 
 - **实体类**：`Radish.Model/CommentHighlight.cs`
 - **视图模型**：`Radish.Model/ViewModels/CommentHighlightVo.cs`
+- **实时事件模型**：`Radish.Model/ViewModels/CommentHighlightRecheckResultVo.cs`、`CommentRealtimeEventVo.cs`
 - **定时任务**：`Radish.Service/Jobs/CommentHighlightJob.cs`
 - **控制器**：`Radish.Api/Controllers/CommentHighlightController.cs`
+- **评论 Hub**：`Radish.Api/Hubs/CommentHub.cs`
+- **评论推送服务**：`Radish.Api/Services/CommentRealtimePushService.cs`
 - **AutoMapper**：`Radish.Extension/AutoMapperExtension/CustomProfiles/ForumProfile.cs`
 - **配置文件**：`Radish.Api/appsettings.json`
 - **任务注册**：`Radish.Api/Program.cs`
@@ -789,6 +769,8 @@ comment:highlight:sofa:{parentCommentId}
 
 - **类型定义**：`Frontend/radish.client/src/types/forum.ts`
 - **API 服务**：`Frontend/radish.client/src/api/forum.ts`
+- **评论 Hub 客户端**：`Frontend/radish.client/src/services/commentHub.ts`
+- **实时评论树工具**：`Frontend/radish.client/src/apps/forum/utils/commentRealtimeTree.ts`
 - **主应用**：`Frontend/radish.client/src/apps/forum/ForumApp.tsx`
 - **评论树**：`Frontend/radish.client/src/apps/forum/components/CommentTree.tsx`
 - **评论节点**：`Frontend/radish.client/src/apps/forum/components/CommentNode.tsx`

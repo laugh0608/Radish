@@ -13,11 +13,19 @@ import {
 } from '@/api/forum';
 import type { LongId } from '@/api/user';
 import { buildDesktopForumPostReturnPath } from '@/services/authReturnPath';
+import { commentHub } from '@/services/commentHub';
 import { log } from '@/utils/logger';
 import { resolveMediaUrl } from '@/utils/media';
 import { CommentTree } from '@/apps/forum/components/CommentTree';
 import { PostDetail as ForumPostDetail } from '@/apps/forum/components/PostDetail';
 import { PostQuickReplyWall } from '@/apps/forum/components/PostQuickReplyWall';
+import {
+  applyCommentHighlightEvent,
+  hasCommentInTree,
+  removeCommentFromTree,
+  updateCommentLikeCount,
+  upsertCommentInTree
+} from '@/apps/forum/utils/commentRealtimeTree';
 import { buildPublicForumPath } from '../forumRouteState';
 import { applyPublicHead, buildPublicShareUrl } from '../publicHead';
 import {
@@ -276,6 +284,78 @@ export const PublicForumDetail = ({
       }
     };
   }, []);
+
+  useEffect(() => {
+    const resolvedPostId = post?.voId;
+    if (!resolvedPostId) {
+      return;
+    }
+
+    void commentHub.joinPost(resolvedPostId);
+
+    const unsubscribeCreated = commentHub.subscribe('CommentCreated', (payload) => {
+      if (!isSameLongId(payload.voPostId, resolvedPostId) || !payload.voComment) {
+        return;
+      }
+
+      setComments((current) => {
+        const exists = hasCommentInTree(current, payload.voComment!.voId);
+        if (!exists && !payload.voComment!.voParentId) {
+          setCommentTotal((total) => total + 1);
+        }
+
+        return upsertCommentInTree(current, payload.voComment!, commentSortBy);
+      });
+    });
+
+    const unsubscribeUpdated = commentHub.subscribe('CommentUpdated', (payload) => {
+      if (!isSameLongId(payload.voPostId, resolvedPostId) || !payload.voComment) {
+        return;
+      }
+
+      setComments((current) => upsertCommentInTree(current, payload.voComment!, commentSortBy));
+    });
+
+    const unsubscribeDeleted = commentHub.subscribe('CommentDeleted', (payload) => {
+      if (!isSameLongId(payload.voPostId, resolvedPostId)) {
+        return;
+      }
+
+      setComments((current) => {
+        const exists = hasCommentInTree(current, payload.voCommentId);
+        if (exists && !payload.voParentCommentId) {
+          setCommentTotal((total) => Math.max(0, total - 1));
+        }
+
+        return removeCommentFromTree(current, payload.voCommentId);
+      });
+    });
+
+    const unsubscribeLikeChanged = commentHub.subscribe('CommentLikeChanged', (payload) => {
+      if (!isSameLongId(payload.voPostId, resolvedPostId) || typeof payload.voLikeCount !== 'number') {
+        return;
+      }
+
+      setComments((current) => updateCommentLikeCount(current, payload.voCommentId, payload.voLikeCount!));
+    });
+
+    const unsubscribeHighlightsChanged = commentHub.subscribe('CommentHighlightsChanged', (payload) => {
+      if (!isSameLongId(payload.voPostId, resolvedPostId)) {
+        return;
+      }
+
+      setComments((current) => applyCommentHighlightEvent(current, payload));
+    });
+
+    return () => {
+      unsubscribeCreated();
+      unsubscribeUpdated();
+      unsubscribeDeleted();
+      unsubscribeLikeChanged();
+      unsubscribeHighlightsChanged();
+      void commentHub.leavePost(resolvedPostId);
+    };
+  }, [commentSortBy, post?.voId]);
 
   useEffect(() => {
     if (!post?.voTitle) {

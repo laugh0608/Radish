@@ -26,6 +26,7 @@ interface CreateCommentFormProps {
   submitText?: string;
   placeholder?: string;
   loginReturnPath?: string | null;
+  onTyping?: () => void;
 }
 
 const MENTION_PANEL_WIDTH = 320;
@@ -128,6 +129,7 @@ export const CreateCommentForm = ({
   submitText,
   placeholder,
   loginReturnPath,
+  onTyping,
 }: CreateCommentFormProps) => {
   const { t } = useTranslation();
   const [content, setContent] = useState('');
@@ -136,6 +138,7 @@ export const CreateCommentForm = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
+  const lastTypingSentAtRef = useRef(0);
 
   // @提及功能状态
   const [showMention, setShowMention] = useState(false);
@@ -223,6 +226,20 @@ export const CreateCommentForm = ({
     setShowMention(false);
   };
 
+  const notifyTyping = useCallback(() => {
+    if (!onTyping || !isAuthenticated || !hasPost) {
+      return;
+    }
+
+    const now = Date.now();
+    if (now - lastTypingSentAtRef.current < 2000) {
+      return;
+    }
+
+    lastTypingSentAtRef.current = now;
+    onTyping();
+  }, [hasPost, isAuthenticated, onTyping]);
+
   const handleLoginClick = () => {
     redirectToLogin({ returnPath: loginReturnPath });
   };
@@ -233,6 +250,9 @@ export const CreateCommentForm = ({
     const cursorPos = e.target.selectionStart;
 
     setContent(newContent);
+    if (newContent.trim()) {
+      notifyTyping();
+    }
 
     // 查找光标前最近的@符号
     const textBeforeCursor = newContent.substring(0, cursorPos);
