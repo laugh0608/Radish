@@ -634,6 +634,8 @@ OpenIddict 使用 EF Core 存储，`Radish.Auth` 负责 OIDC Server 与种子数
 - 默认值为 `false`，此时 `Radish.DbMigrate apply / seed` 只创建角色、权限、Console 授权、论坛 / 商城 / 等级等系统基础数据，不创建 `system / admin / test` 开发账号、默认密码、默认头像或用户角色绑定。
 - `RadishDeployment:Stage` 用于区分种子安全边界，当前允许值为 `local / test / production`；未配置或未知阶段不允许创建开发默认账号。
 - 当 `Seed:DeveloperDefaultsEnabled=true` 时，`DbMigrate` 只允许在 `RadishDeployment:Stage=local/test` 下继续执行；若阶段为 `production`、未配置或未知值，会直接失败退出，避免生产误开固定账号。
+- 本地直接运行 `Radish.DbMigrate` 时，可在仓库根目录或 `Radish.DbMigrate/` 下创建未提交的 `appsettings.Local.json`，设置 `RadishDeployment:Stage=local` 与 `Seed:DeveloperDefaultsEnabled=true` 后再执行 `apply`。
+- `DbMigrate` 控制台输出的 `Environment` 是 .NET 宿主环境名；未显式设置 `DOTNET_ENVIRONMENT` 时可能显示 `Production`，但开发默认账号是否允许创建以 `RadishDeployment:Stage` 与 `Seed:DeveloperDefaultsEnabled` 为准。
 - 本地容器验证使用 `Deploy/docker-compose.local.yaml`，显式设置 `RadishDeployment__Stage=local` 与 `Seed__DeveloperDefaultsEnabled=true`，保留开发演示账号的开箱体验。
 - 受控测试环境如确需固定开发账号，可在 `.env` 中显式设置 `RADISH_DEPLOYMENT_STAGE=test` 与 `RADISH_SEED_DEVELOPER_DEFAULTS_ENABLED=true`；普通测试部署建议继续保持关闭，并通过首个管理员初始化或环境负责人创建测试账号。
 - 生产部署必须设置或保持 `RADISH_DEPLOYMENT_STAGE=production` 与 `RADISH_SEED_DEVELOPER_DEFAULTS_ENABLED=false`；生产环境严禁开启开发默认用户种子。
