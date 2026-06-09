@@ -218,7 +218,7 @@ graph LR
 - 迁移策略：
   - 开发：通过 `Radish.DbMigrate` 执行 `doctor / init / apply`，在开发库内走 `CreateDatabase()` + `InitTables()` 自动建表 / 补列。
   - 测试 / 生产：先以 `DbMigrate init` 同步基线库，再生成并审核版本化差异 SQL（建议 `Deploy/sql/*.sql`），上线前显式执行。
-- 数据初始化：`Radish.DbMigrate/InitialDataSeeder.cs` 负责创建默认分类、管理员、积分规则及其他基础种子数据。
+- 数据初始化：`Radish.DbMigrate/InitialDataSeeder.cs` 负责创建角色、租户、部门、权限、Console 授权、论坛 / 商城 / 等级等系统基础数据；`system / admin / test` 开发默认账号、默认密码、默认头像和用户角色绑定受 `Seed:DeveloperDefaultsEnabled` 与 `RadishDeployment:Stage=local/test` 共同约束，测试 / 生产默认不创建。
 - PostgreSQL 特性利用：JSONB 列（存储自定义配置）、`tsvector` 搜索、行级锁（积分/库存扣减）。
 
 ## 前端架构与规范

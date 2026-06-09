@@ -110,8 +110,11 @@
 
 说明：
 - 当前“实时”同时包含服务端状态重算和 SignalR 推送。
-- `/hub/comment` 按 `post-comments:{postId}` 分组广播评论创建、更新、删除、点赞和 `CommentHighlightsChanged`。
-- typing 事件同样走 `/hub/comment`，匿名用户可订阅帖子评论组，typing 上报要求连接中存在有效用户。
+- `/hub/comment` 按 `post-comments:{postId}` 分组广播 `CommentCreated / CommentUpdated / CommentDeleted / CommentLikeChanged / CommentHighlightsChanged`。
+- `CommentTyping` 同样走 `/hub/comment`；匿名用户可以 `JoinPost` 订阅帖子评论组，但 `StartTyping` 上报要求连接中存在有效用户。
+- 前端连接通过当前 `tokenService.getAccessToken()` 生成 `access_token`，自动重连后会重新加入已订阅帖子分组，避免连接恢复后停留在未入组状态。
+- Web 工作台详情页订阅全部评论事件和 typing，公开详情页订阅评论 / 点赞 / 高亮变化事件但不展示 typing 输入提示，保持匿名公开页只读边界。
+- 评论树合并以 `voCommentId / voParentCommentId / voRootCommentId` 为准：创建和更新走 upsert，删除走树内移除，点赞只更新目标评论点赞数，高亮变化只更新当前神评 / 沙发标识。
 - Flutter 暂未接入本实时链路，后续复用稳定 API 和事件语义。
 
 ---

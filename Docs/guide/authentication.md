@@ -148,7 +148,7 @@ new OpenIddictApplicationDescriptor
 1. 访问 `https://localhost:5000/scalar`（通过 Gateway）
 2. 点击右上角 **Authenticate** 按钮
 3. 选择 **oauth2** 认证方式，点击 **Authorize**
-4. 使用当前环境有效账号登录；仅当本地或受控测试环境显式开启开发默认用户种子时，才可使用开发演示账号 `test / test123456`
+4. 使用当前环境有效账号登录；仅当本地或受控测试环境显式开启开发默认用户种子时，才可使用开发演示账号 `admin / admin123456` 或 `test / test123456`
 5. 确认授权后，所有 API 请求将自动携带 Bearer Token
 
 ### 4.2 官方客户端（Web / Flutter 共享 `radish-client`）
@@ -1284,7 +1284,7 @@ options.AddPreferredSecuritySchemes("oauth2")
 2. 点击右上角 **Authenticate** 按钮
 3. 选择 **oauth2** 认证方式
 4. 点击 **Authorize** 按钮
-5. 使用当前环境有效账号登录；仅当本地或受控测试环境显式开启开发默认用户种子时，才可使用开发演示账号 `test / test123456`
+5. 使用当前环境有效账号登录；仅当本地或受控测试环境显式开启开发默认用户种子时，才可使用开发演示账号 `admin / admin123456` 或 `test / test123456`
 6. 确认授权后，所有 API 请求将自动携带 Bearer Token
 
 ### 15.3 客户端配置

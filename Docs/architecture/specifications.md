@@ -536,7 +536,7 @@ git push origin v26.1.1.3003
 6. **数据初始化与回填（配合 DbMigrate seed）**
    - 若新增字段需要默认业务数据（例如为所有历史用户回填某个状态），建议：
      - 在迁移 SQL 中加入安全的 `UPDATE` 语句，或
-     - 在 `Radish.DbMigrate` 中实现 `seed` 子命令，集中处理默认管理员、角色、租户、基础参数等数据初始化。
+     - 在 `Radish.DbMigrate` 中实现 `seed` 子命令，集中处理角色、租户、权限、Console 授权、论坛 / 商城 / 等级等系统基础数据，以及受 `Seed:DeveloperDefaultsEnabled` 与 `RadishDeployment:Stage=local/test` 保护的开发默认账号。
    - 推荐执行顺序：先运行 `doctor` 做只读检查，再执行 `seed`；若 `doctor` 报告结构缺失，可先执行 `init`。`verify` 当前同样属于 `Radish.DbMigrate` 的只读检查，不承担 EF migration 历史链校验职责。
    - 数据初始化脚本同样应纳入版本管理，并在上线流程中显式执行。
 
