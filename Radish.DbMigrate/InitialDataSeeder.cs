@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
+using System.IO;
 using System.Threading.Tasks;
 using Radish.Common;
 using Radish.Model;
@@ -32,23 +34,67 @@ internal static partial class InitialDataSeeder
         return false;
     }
 
-    private static async Task RunSeedStepAsync(string name, Func<Task> action, ICollection<string> completedSteps)
+    private static async Task<int> RunSeedStepAsync(string name, Func<Task> action)
     {
         var stopwatch = Stopwatch.StartNew();
-        Console.WriteLine($"[Radish.DbMigrate] [Seed] 开始：{name}");
+        var originalOut = Console.Out;
+        using var capturedOutput = new StringWriter(CultureInfo.InvariantCulture);
+
+        Console.SetOut(capturedOutput);
 
         try
         {
             await action();
             stopwatch.Stop();
-            completedSteps.Add(name);
-            Console.WriteLine($"[Radish.DbMigrate] [Seed] 完成：{name} ({stopwatch.ElapsedMilliseconds} ms)");
+            Console.SetOut(originalOut);
+
+            var detailLines = GetCapturedSeedDetailLines(capturedOutput.ToString());
+            Console.WriteLine($"[Radish.DbMigrate] [Seed] 完成：{name}，明细 {detailLines.Count} 条 ({stopwatch.ElapsedMilliseconds} ms)");
+            return detailLines.Count;
         }
         catch
         {
             stopwatch.Stop();
-            Console.WriteLine($"[Radish.DbMigrate] [Seed] 失败：{name} ({stopwatch.ElapsedMilliseconds} ms)");
+            Console.SetOut(originalOut);
+
+            var detailLines = GetCapturedSeedDetailLines(capturedOutput.ToString());
+            Console.WriteLine($"[Radish.DbMigrate] [Seed] 失败：{name}，失败前明细 {detailLines.Count} 条 ({stopwatch.ElapsedMilliseconds} ms)");
+            WriteCapturedSeedDetails(name, detailLines);
             throw;
+        }
+        finally
+        {
+            Console.SetOut(originalOut);
+        }
+    }
+
+    private static IReadOnlyList<string> GetCapturedSeedDetailLines(string output)
+    {
+        var detailLines = new List<string>();
+        using var reader = new StringReader(output);
+
+        while (reader.ReadLine() is { } line)
+        {
+            if (!string.IsNullOrWhiteSpace(line))
+            {
+                detailLines.Add(line);
+            }
+        }
+
+        return detailLines;
+    }
+
+    private static void WriteCapturedSeedDetails(string name, IReadOnlyCollection<string> detailLines)
+    {
+        if (detailLines.Count == 0)
+        {
+            return;
+        }
+
+        Console.WriteLine($"[Radish.DbMigrate] [Seed] {name} 失败前明细：");
+        foreach (var line in detailLines)
+        {
+            Console.WriteLine(line);
         }
     }
 
@@ -76,7 +122,8 @@ internal static partial class InitialDataSeeder
 
     public static async Task SeedAsync(ISqlSugarClient db, IServiceProvider services)
     {
-        var completedSteps = new List<string>();
+        var completedStepCount = 0;
+        var totalDetailLineCount = 0;
         var developerDefaultsSeed = EvaluateDeveloperDefaultsSeed();
         var seedSteps = new List<(string Name, Func<Task> Action)>
         {
@@ -114,13 +161,10 @@ internal static partial class InitialDataSeeder
 
         foreach (var step in seedSteps)
         {
-            await RunSeedStepAsync(step.Name, step.Action, completedSteps);
+            totalDetailLineCount += await RunSeedStepAsync(step.Name, step.Action);
+            completedStepCount++;
         }
 
-        Console.WriteLine("[Radish.DbMigrate] ✓ Seed 完成，共执行以下步骤：");
-        foreach (var step in completedSteps)
-        {
-            Console.WriteLine($"  - {step}");
-        }
+        Console.WriteLine($"[Radish.DbMigrate] ✓ Seed 完成，共执行 {completedStepCount} 个分类，明细合计 {totalDetailLineCount} 条。");
     }
 }
