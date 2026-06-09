@@ -72,6 +72,8 @@ public static class SqlSugarSetup
             BaseDbConfig.AllConfigs.Add(config);
         });
 
+        EnsureSqliteProviderInitialized();
+
         if (BaseDbConfig.LogConfig is null)
         {
             throw new ApplicationException("未配置 Log 库连接");
@@ -162,6 +164,14 @@ public static class SqlSugarSetup
                 });
             });
         });
+    }
+
+    private static void EnsureSqliteProviderInitialized()
+    {
+        if (BaseDbConfig.AllConfigs.Any(config => config.DbType == SqlSugar.DbType.Sqlite))
+        {
+            SQLitePCL.Batteries_V2.Init();
+        }
     }
 
     /// <summary>
