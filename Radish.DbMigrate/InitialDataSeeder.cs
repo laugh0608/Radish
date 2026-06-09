@@ -67,16 +67,17 @@ internal static partial class InitialDataSeeder
         return Task.CompletedTask;
     }
 
-    private static bool IsDeveloperDefaultsEnabled()
+    private static DeveloperDefaultsSeedDecision EvaluateDeveloperDefaultsSeed()
     {
-        var configured = AppSettingsTool.RadishApp("Seed", "DeveloperDefaultsEnabled");
-        return bool.TryParse(configured, out var enabled) && enabled;
+        var enabledValue = AppSettingsTool.RadishApp("Seed", "DeveloperDefaultsEnabled");
+        var stageValue = AppSettingsTool.RadishApp("RadishDeployment", "Stage");
+        return DeveloperDefaultsSeedPolicy.Evaluate(enabledValue, stageValue);
     }
 
     public static async Task SeedAsync(ISqlSugarClient db, IServiceProvider services)
     {
         var completedSteps = new List<string>();
-        var developerDefaultsEnabled = IsDeveloperDefaultsEnabled();
+        var developerDefaultsSeed = EvaluateDeveloperDefaultsSeed();
         var seedSteps = new List<(string Name, Func<Task> Action)>
         {
             ("角色", () => SeedRolesAsync(db)),
@@ -96,8 +97,9 @@ internal static partial class InitialDataSeeder
             ("表情包默认数据", SeedStickerDefaultsAsync)
         };
 
-        if (developerDefaultsEnabled)
+        if (developerDefaultsSeed.ShouldSeed)
         {
+            Console.WriteLine($"[Radish.DbMigrate] {developerDefaultsSeed.Message}");
             seedSteps.InsertRange(3,
             [
                 ("开发默认用户", () => SeedUsersAsync(db)),
@@ -107,7 +109,7 @@ internal static partial class InitialDataSeeder
         }
         else
         {
-            Console.WriteLine("[Radish.DbMigrate] Seed:DeveloperDefaultsEnabled=false，跳过 system/admin/test 开发默认账号、默认密码、默认头像和用户角色绑定。");
+            Console.WriteLine($"[Radish.DbMigrate] {developerDefaultsSeed.Message}");
         }
 
         foreach (var step in seedSteps)

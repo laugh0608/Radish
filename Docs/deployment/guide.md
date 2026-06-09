@@ -277,7 +277,7 @@ docker compose -f Deploy/docker-compose.local.yaml up -d
 本地容器验证口径如下：
 
 - `dbmigrate`：先执行一次 `apply`，自动补齐共享业务库表结构与基础数据
-- `Seed__DeveloperDefaultsEnabled=true`：允许创建 `system / admin / test` 开发演示账号、默认密码、默认头像与用户角色绑定，仅用于本地容器验证
+- `RadishDeployment__Stage=local` 与 `Seed__DeveloperDefaultsEnabled=true`：允许创建 `system / admin / test` 开发演示账号、默认密码、默认头像与用户角色绑定，仅用于本地容器验证
 - `gateway`：对外监听 `https://localhost:5000`
 - `api`：容器内监听 `5100`
 - `auth`：容器内监听 `5200`
@@ -292,10 +292,11 @@ docker compose -f Deploy/docker-compose.local.yaml up -d
 - `RADISH_IMAGE_TRACK`：测试部署使用 `test`，生产部署使用 `release`；默认会分别拉取 `test-latest` 或 `release-latest`
 - `RADISH_IMAGE_TAG`：默认注释；只有需要固定到明确 `v*-test` 或 `v*-release` tag 时再启用
 - `RADISH_PUBLIC_URL`
+- `RADISH_DEPLOYMENT_STAGE`：生产使用 `production`；受控测试环境只有在确需开发默认账号时才设为 `test`
 - `RADISH_POSTGRES_PASSWORD`
 - `RADISH_REDIS_PASSWORD`
 - `RADISH_POSTGRES_DATA_PATH / RADISH_REDIS_DATA_PATH / RADISH_AUTH_CERTS_PATH`：默认分别为 `../DeployData/Postgres`、`../DeployData/Redis`、`../DeployData/AuthCerts`
-- `RADISH_SEED_DEVELOPER_DEFAULTS_ENABLED`：测试 / 生产保持默认 `false`，不要开启开发默认账号种子
+- `RADISH_SEED_DEVELOPER_DEFAULTS_ENABLED`：生产必须保持 `false`；受控测试环境若显式设置 `RADISH_DEPLOYMENT_STAGE=test`，可按需开启开发默认账号种子
 - `RADISH_AUTH_SIGNING_CERT_PASSWORD`：建议部署前用 `openssl rand -hex 32` 生成
 - `RADISH_AUTH_ENCRYPTION_CERT_PASSWORD`：建议部署前另行用 `openssl rand -hex 32` 生成
 
@@ -316,7 +317,8 @@ docker compose up -d
 部署态默认约定如下：
 
 - `postgres / redis` 会先完成健康检查，随后 `dbmigrate` 执行一次 `apply`，自动初始化 / 补齐共享业务库表结构与基础数据
-- `Seed__DeveloperDefaultsEnabled=false`，`dbmigrate apply` 不会创建默认 `admin` 账号、默认密码或 `system / test` 开发账号
+- 默认 `RadishDeployment__Stage=production` 且 `Seed__DeveloperDefaultsEnabled=false`，`dbmigrate apply` 不会创建默认 `admin` 账号、默认密码或 `system / test` 开发账号
+- 若误把 `Seed__DeveloperDefaultsEnabled=true` 带入生产或未配置安全阶段，`dbmigrate apply` 会直接失败退出；不要通过改阶段绕过生产防护
 - 首次打开 `RADISH_PUBLIC_URL` 根入口时，`radish.client` 会检测是否尚无 `System / Admin` 管理员；若没有管理员，会进入首个管理员初始化页，要求部署人员设置账号和强密码
 - 首个管理员初始化只能在“尚无管理员”状态下使用；初始化完成后该入口会关闭，后续按正常 OIDC 登录和管理流程进入系统
 - `RADISH_IMAGE_REGISTRY / RADISH_IMAGE_TRACK / RADISH_IMAGE_TAG` 共同决定五个 `GHCR` 镜像地址；未设置 `RADISH_IMAGE_TAG` 时按 `RADISH_IMAGE_TRACK` 使用浮动别名，设置后优先使用固定版本 tag
@@ -328,7 +330,7 @@ docker compose up -d
 - `GatewayRuntime__EnableHttpsRedirection=false`
 - `Databases` 中的 `Main / Log / Message / Chat`、`OpenIddict:Database` 与 `Hangfire` 都会通过环境变量覆盖为 PostgreSQL 连接；`Deploy/postgres-init/create-radish-databases.sh` 会在首次初始化 PostgreSQL 数据目录时补齐 `Log / Message / Chat / OpenIddict / Hangfire` 等非主库数据库
 - `Redis__Enable=true`，缓存层默认走 Redis，不再回落到内存缓存
-- 登录页不再暴露内置测试账号提示；测试 / 生产部署必须通过首个管理员初始化或已有真实账号登录
+- 登录页不再暴露内置测试账号提示；未开启开发默认用户种子的测试环境和所有生产环境，必须通过首个管理员初始化或已有真实账号登录
 - `PostgreSQL / Redis / Auth 证书` 默认持久化到宿主机 `../DeployData/Postgres`、`../DeployData/Redis`、`../DeployData/AuthCerts`，不再使用 Docker 命名卷；`../DataBases` 仍只作为 Radish 应用运行数据目录挂载到 `/app/DataBases`
 - 首次部署前建议手动创建 `../DeployData/*`、`../DataBases` 与 `../Logs`；Docker 也可能自动创建 bind mount 目录，但测试 / 生产环境不要依赖该行为。若容器启动时报权限错误，再按容器日志调整对应目录 owner / 权限
 - `Auth` 会把 OIDC signing / encryption 证书写入 `RADISH_AUTH_CERTS_PATH`，`Api` 只读复用同一份 signing 证书做本地 JWT 验签

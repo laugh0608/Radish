@@ -1352,7 +1352,7 @@ builder.Services.AddApiVersioning(options =>
 
 **v1 接口：**
 ```
-GET /api/v1/Login/GetJwtToken?name=admin&pass=123456
+GET /api/v1/Login/GetJwtToken?name={loginName}&pass={password}
 GET /api/v1/User/GetUserList
 GET /api/v1/User/GetUserById/123456789
 ```

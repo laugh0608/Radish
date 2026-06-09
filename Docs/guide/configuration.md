@@ -286,7 +286,7 @@ services:
 - 测试部署与生产部署下，`Radish.Api` 需要额外读取与 `Radish.Auth` 共享的 signing 证书路径和密码：
   - `OpenIddict__Encryption__SigningCertificatePath`
   - `OpenIddict__Encryption__SigningCertificatePassword`
-- `Seed:DeveloperDefaultsEnabled` 控制 `DbMigrate` 是否创建 `system / admin / test` 开发账号和默认密码；测试 / 生产部署默认保持 `false`，本地容器验证通过 `Deploy/docker-compose.local.yaml` 显式开启
+- `Seed:DeveloperDefaultsEnabled` 控制 `DbMigrate` 是否创建 `system / admin / test` 开发账号和默认密码；只有 `RadishDeployment:Stage=local/test` 时允许开启，生产环境必须保持关闭
 - 该证书应与 `Auth` 使用的 signing `.pfx` 保持同源，并以只读方式挂载给 `Api`，用于本地 JWT 验签。
 
 详细配置说明请参考 `Radish.Gateway/README.md`
@@ -620,6 +620,9 @@ OpenIddict 使用 EF Core 存储，`Radish.Auth` 负责 OIDC Server 与种子数
 
 ```json
 {
+  "RadishDeployment": {
+    "Stage": "production"
+  },
   "Seed": {
     "DeveloperDefaultsEnabled": false
   }
@@ -629,9 +632,12 @@ OpenIddict 使用 EF Core 存储，`Radish.Auth` 负责 OIDC Server 与种子数
 规则：
 
 - 默认值为 `false`，此时 `Radish.DbMigrate apply / seed` 只创建角色、权限、Console 授权、论坛 / 商城 / 等级等系统基础数据，不创建 `system / admin / test` 开发账号、默认密码、默认头像或用户角色绑定。
-- 测试 / 生产部署使用 `Deploy/docker-compose.yaml`，`.env.example` 中 `RADISH_SEED_DEVELOPER_DEFAULTS_ENABLED=false`，应保持安全默认值。
-- 本地容器验证使用 `Deploy/docker-compose.local.yaml`，显式设置 `Seed__DeveloperDefaultsEnabled=true`，保留开发演示账号的开箱体验。
-- Auth 登录页不再展示任何内置测试账号提示；即使本地容器验证显式创建了开发演示账号，也应通过文档或人工约定获得账号信息。
+- `RadishDeployment:Stage` 用于区分种子安全边界，当前允许值为 `local / test / production`；未配置或未知阶段不允许创建开发默认账号。
+- 当 `Seed:DeveloperDefaultsEnabled=true` 时，`DbMigrate` 只允许在 `RadishDeployment:Stage=local/test` 下继续执行；若阶段为 `production`、未配置或未知值，会直接失败退出，避免生产误开固定账号。
+- 本地容器验证使用 `Deploy/docker-compose.local.yaml`，显式设置 `RadishDeployment__Stage=local` 与 `Seed__DeveloperDefaultsEnabled=true`，保留开发演示账号的开箱体验。
+- 受控测试环境如确需固定开发账号，可在 `.env` 中显式设置 `RADISH_DEPLOYMENT_STAGE=test` 与 `RADISH_SEED_DEVELOPER_DEFAULTS_ENABLED=true`；普通测试部署建议继续保持关闭，并通过首个管理员初始化或环境负责人创建测试账号。
+- 生产部署必须设置或保持 `RADISH_DEPLOYMENT_STAGE=production` 与 `RADISH_SEED_DEVELOPER_DEFAULTS_ENABLED=false`；生产环境严禁开启开发默认用户种子。
+- Auth 登录页不再展示任何内置测试账号提示；即使本地或受控测试环境显式创建了开发演示账号，也应通过文档或人工约定获得账号信息。
 - OpenIddict 官方客户端种子不受该开关影响；`radish-client / radish-console / radish-scalar` 与 `radish-api scope` 仍由 `Radish.Auth` 启动时维护，并跟随 `RADISH_PUBLIC_URL` / Issuer 更新回调地址。
 
 新测试 / 生产环境首次部署后，访问 `RADISH_PUBLIC_URL` 根入口；当系统检测到还没有 `System / Admin` 管理员时，前端会进入首个管理员初始化页。初始化页要求部署人员输入账号和强密码，后端会做服务端校验和并发保护。已有管理员后，初始化接口不可再创建账号。
@@ -710,6 +716,7 @@ Gateway 在测试 / 生产部署中推荐复制 `Deploy/.env.example` 为 `Deplo
 
 ```bash
 RADISH_PUBLIC_URL=https://radish.com
+RADISH_DEPLOYMENT_STAGE=production
 RADISH_SEED_DEVELOPER_DEFAULTS_ENABLED=false
 GatewayService__PublicUrl=https://radish.com
 FrontendService__BaseUrl=https://radish.com

@@ -19,6 +19,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Radish.Api\Radish.Api.csproj" />
     <ProjectReference Include="..\Radish.Auth\Radish.Auth.csproj" />
+    <ProjectReference Include="..\Radish.DbMigrate\Radish.DbMigrate.csproj" />
     <ProjectReference Include="..\Radish.Gateway\Radish.Gateway.csproj" />
     <ProjectReference Include="..\Radish.Service\Radish.Service.csproj" />
     <ProjectReference Include="..\Radish.Repository\Radish.Repository.csproj" />
