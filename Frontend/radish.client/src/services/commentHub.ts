@@ -52,6 +52,7 @@ class CommentHubService {
   private connection: signalR.HubConnection | null = null;
   private isStarting = false;
   private startRequestId = 0;
+  private joinedPosts = new Map<string, LongId>();
   private listeners: {
     [K in CommentRealtimeEventName]: Set<Listener<K>>;
   } = {
@@ -111,6 +112,8 @@ class CommentHubService {
   }
 
   async joinPost(postId: LongId): Promise<void> {
+    const postKey = String(postId);
+    this.joinedPosts.set(postKey, postId);
     await this.ensureConnected();
     if (this.connection?.state !== signalR.HubConnectionState.Connected) {
       return;
@@ -124,6 +127,8 @@ class CommentHubService {
   }
 
   async leavePost(postId: LongId): Promise<void> {
+    const postKey = String(postId);
+    this.joinedPosts.delete(postKey);
     if (this.connection?.state !== signalR.HubConnectionState.Connected) {
       return;
     }
@@ -172,6 +177,7 @@ class CommentHubService {
 
     this.connection.onreconnected(() => {
       log.debug('CommentHub', '重连成功');
+      void this.rejoinPosts();
     });
 
     this.connection.onclose((error) => {
@@ -186,6 +192,20 @@ class CommentHubService {
     this.connection.on('CommentLikeChanged', (payload: CommentRealtimeEvent) => this.emit('CommentLikeChanged', payload));
     this.connection.on('CommentHighlightsChanged', (payload: CommentHighlightRealtimeEvent) => this.emit('CommentHighlightsChanged', payload));
     this.connection.on('CommentTyping', (payload: CommentTypingRealtimeEvent) => this.emit('CommentTyping', payload));
+  }
+
+  private async rejoinPosts(): Promise<void> {
+    if (this.connection?.state !== signalR.HubConnectionState.Connected || this.joinedPosts.size === 0) {
+      return;
+    }
+
+    for (const postId of this.joinedPosts.values()) {
+      try {
+        await this.connection.invoke('JoinPost', postId);
+      } catch (error) {
+        log.warn('CommentHub', '重连后恢复帖子评论组失败:', error);
+      }
+    }
   }
 
   private emit<TEventName extends CommentRealtimeEventName>(
