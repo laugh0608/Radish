@@ -145,6 +145,8 @@ public class OrderServiceTest
     [Fact]
     public async Task PurchaseAsync_ShouldFailAndRestoreStockWhenConsumeCoinFails()
     {
+        new ServiceCollection().ConfigureApplication();
+
         const long userId = 9527;
         const long productId = 100201;
         const long orderId = 7004;
