@@ -34,6 +34,7 @@
 - [配置管理](/guide/configuration)
 - [鉴权与授权指南](/guide/authentication)
 - [认证服务实现说明](/guide/authentication-service)
+- [Token 不活跃过期治理](/guide/auth-idle-session)
 - [Gateway 服务网关](/guide/gateway)
 - [数据库总览](/guide/database-overview)
 - [数据库连接管理](/guide/database-connection)
