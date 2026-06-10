@@ -345,11 +345,11 @@ public class NotificationService : INotificationService
                 _logger.LogInformation(
                     "[NotificationService] 标记全部已读成功，UserId: {UserId}, Count: {Count}",
                     userId, affectedRows);
-
-                // 使用缓存服务设置未读数为 0
-                await _cacheService.SetUnreadCountAsync(userId, 0);
-                await _pushService.PushUnreadCountAsync(userId, 0);
             }
+
+            // “全部已读”是收敛命令：即使数据库没有新更新行，也要修正可能残留的未读数缓存。
+            await _cacheService.SetUnreadCountAsync(userId, 0);
+            await _pushService.PushUnreadCountAsync(userId, 0);
 
             return affectedRows;
         }
