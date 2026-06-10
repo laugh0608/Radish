@@ -64,7 +64,7 @@ public class RetentionRewardJob
         {
             // 查询所有当前的神评（IsCurrent = true）
             var currentGodComments = await _highlightRepository.QueryAsync(
-                h => h.HighlightType == 1 && h.IsCurrent);
+                h => h.HighlightType == 1 && h.LikeCount > 0 && h.IsCurrent);
 
             if (!currentGodComments.Any())
             {
@@ -140,7 +140,7 @@ public class RetentionRewardJob
         {
             // 查询所有当前的沙发（IsCurrent = true）
             var currentSofas = await _highlightRepository.QueryAsync(
-                h => h.HighlightType == 2 && h.IsCurrent);
+                h => h.HighlightType == 2 && h.LikeCount > 0 && h.IsCurrent);
 
             if (!currentSofas.Any())
             {

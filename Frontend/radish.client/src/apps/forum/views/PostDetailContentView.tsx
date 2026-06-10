@@ -86,7 +86,7 @@ interface PostDetailContentViewProps {
   ) => Promise<CommentNode[]>;
   onLoadMoreComments: (postId: LongId) => Promise<void>;
   onCreateComment: (content: string) => Promise<void>;
-  onCommentTyping?: () => void;
+  onCommentTyping?: (commentId?: LongId | null) => void;
   onCancelReply: () => void;
   onReactionError?: (message: string) => void;
   onToggleFollow: (targetUserId: LongId, isFollowing: boolean) => Promise<void>;
@@ -474,6 +474,7 @@ export const PostDetailContentView = ({
                 onReplyComment(target);
                 setIsCommentSheetOpen(true);
               }}
+              onCommentTyping={onCommentTyping}
               onLoadMoreChildren={handleLoadMoreChildren}
               onLoadMoreRootComments={() => onLoadMoreComments(post.voId)}
               stickerMap={stickerMap}

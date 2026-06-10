@@ -50,23 +50,33 @@ public class CommentHighlightController : ControllerBase
 
         if (cached != null && cached.Any())
         {
-            return new MessageModel
+            var validCached = SortCurrentHighlights(cached);
+            if (validCached.Count != cached.Count)
             {
-                IsSuccess = true,
-                StatusCode = (int)HttpStatusCodeEnum.Success,
-                MessageInfo = "获取成功（缓存）",
-                ResponseData = cached
-            };
+                await _caching.RemoveAsync(cacheKey);
+            }
+
+            if (validCached.Any())
+            {
+                return new MessageModel
+                {
+                    IsSuccess = true,
+                    StatusCode = (int)HttpStatusCodeEnum.Success,
+                    MessageInfo = "获取成功（缓存）",
+                    ResponseData = validCached
+                };
+            }
         }
 
         // 缓存未命中，查询数据库
         var godComments = await _highlightService.QueryAsync(
             h => h.PostId == postId &&
                  h.HighlightType == 1 &&
+                 h.LikeCount > 0 &&
                  h.IsCurrent);
 
         // 在内存中按排名升序排序
-        var sortedComments = godComments.OrderBy(h => h.VoRank).ToList();
+        var sortedComments = SortCurrentHighlights(godComments);
 
         // 写入缓存（TTL 1小时）
         if (sortedComments.Any())
@@ -125,10 +135,20 @@ public class CommentHighlightController : ControllerBase
             var cached = await _caching.GetAsync<List<CommentHighlightVo>>(cacheKey);
             if (cached != null && cached.Any())
             {
-                var top = cached.OrderBy(h => h.VoRank).FirstOrDefault();
+                var sortedCached = SortCurrentHighlights(cached);
+                if (sortedCached.Count != cached.Count)
+                {
+                    await _caching.RemoveAsync(cacheKey);
+                }
+
+                var top = sortedCached.FirstOrDefault();
                 if (top != null)
                 {
                     result[postId] = top;
+                }
+                else
+                {
+                    missingIds.Add(postId);
                 }
             }
             else
@@ -142,11 +162,12 @@ public class CommentHighlightController : ControllerBase
             var highlights = await _highlightService.QueryAsync(
                 h => missingIds.Contains(h.PostId) &&
                      h.HighlightType == 1 &&
+                     h.LikeCount > 0 &&
                      h.IsCurrent);
 
             foreach (var group in highlights.GroupBy(h => h.VoPostId))
             {
-                var sorted = group.OrderBy(h => h.VoRank).ToList();
+                var sorted = SortCurrentHighlights(group);
                 if (sorted.Count == 0)
                 {
                     continue;
@@ -185,23 +206,33 @@ public class CommentHighlightController : ControllerBase
 
         if (cached != null && cached.Any())
         {
-            return new MessageModel
+            var validCached = SortCurrentHighlights(cached);
+            if (validCached.Count != cached.Count)
             {
-                IsSuccess = true,
-                StatusCode = (int)HttpStatusCodeEnum.Success,
-                MessageInfo = "获取成功（缓存）",
-                ResponseData = cached
-            };
+                await _caching.RemoveAsync(cacheKey);
+            }
+
+            if (validCached.Any())
+            {
+                return new MessageModel
+                {
+                    IsSuccess = true,
+                    StatusCode = (int)HttpStatusCodeEnum.Success,
+                    MessageInfo = "获取成功（缓存）",
+                    ResponseData = validCached
+                };
+            }
         }
 
         // 缓存未命中，查询数据库
         var sofas = await _highlightService.QueryAsync(
             h => h.ParentCommentId == parentCommentId &&
                  h.HighlightType == 2 &&
+                 h.LikeCount > 0 &&
                  h.IsCurrent);
 
         // 在内存中按排名升序排序
-        var sortedSofas = sofas.OrderBy(h => h.VoRank).ToList();
+        var sortedSofas = SortCurrentHighlights(sofas);
 
         // 写入缓存（TTL 1小时）
         if (sortedSofas.Any())
@@ -229,7 +260,7 @@ public class CommentHighlightController : ControllerBase
     public async Task<MessageModel> CheckHighlight(long commentId)
     {
         var highlight = await _highlightService.QueryFirstAsync(
-            h => h.CommentId == commentId && h.IsCurrent);
+            h => h.CommentId == commentId && h.LikeCount > 0 && h.IsCurrent);
 
         return new MessageModel
         {
@@ -321,6 +352,7 @@ public class CommentHighlightController : ControllerBase
         var trend = await _highlightService.QueryAsync(
             h => h.PostId == postId &&
                  h.HighlightType == 1 &&
+                 h.LikeCount > 0 &&
                  h.StatDate >= startDate);
 
         // 在内存中按统计日期降序排序
@@ -333,5 +365,14 @@ public class CommentHighlightController : ControllerBase
             MessageInfo = "获取成功",
             ResponseData = sortedTrend
         };
+    }
+
+    private static List<CommentHighlightVo> SortCurrentHighlights(IEnumerable<CommentHighlightVo> highlights)
+    {
+        return highlights
+            .Where(highlight => highlight.VoLikeCount > 0)
+            .OrderBy(highlight => highlight.VoRank)
+            .ThenBy(highlight => highlight.VoId)
+            .ToList();
     }
 }

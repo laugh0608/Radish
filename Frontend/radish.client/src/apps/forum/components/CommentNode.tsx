@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import { buildAttachmentAssetUrl, parseAttachmentMarkdownUrl, resolveConfiguredMediaUrl } from '@radish/ui';
@@ -28,6 +28,7 @@ interface CommentNodeProps {
   onViewHistory?: (commentId: LongId) => void;
   onLike?: (commentId: LongId) => Promise<{ isLiked: boolean; likeCount: number }>;
   onReply?: (target: CommentReplyTarget) => void;
+  onTyping?: (commentId: LongId) => void;
   onLoadMoreChildren?: (parentId: LongId, pageIndex: number, pageSize: number) => Promise<CommentNodeType[]>;
   stickerMap?: MarkdownStickerMap;
   reactionMap?: Record<string, ReactionSummaryVo[]>;
@@ -256,6 +257,7 @@ export const CommentNode = ({
   onViewHistory,
   onLike,
   onReply,
+  onTyping,
   onLoadMoreChildren,
   stickerMap,
   reactionMap = {},
@@ -283,6 +285,7 @@ export const CommentNode = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const lastEditTypingSentAtRef = useRef(0);
 
   // 本地点赞状态（用于乐观更新）
   const [isLiked, setIsLiked] = useState(node.voIsLiked ?? false);
@@ -431,6 +434,20 @@ export const CommentNode = ({
     setEditError(null);
     setIsEditing(true);
   };
+
+  const notifyEditTyping = useCallback(() => {
+    if (!onTyping || !isAuthenticated) {
+      return;
+    }
+
+    const now = Date.now();
+    if (now - lastEditTypingSentAtRef.current < 2000) {
+      return;
+    }
+
+    lastEditTypingSentAtRef.current = now;
+    onTyping(node.voId);
+  }, [isAuthenticated, node.voId, onTyping]);
 
   // 保存编辑
   const handleSaveEdit = async () => {
@@ -650,6 +667,9 @@ export const CommentNode = ({
             value={editContent}
             onChange={(e) => {
               setEditContent(e.target.value);
+              if (e.target.value.trim()) {
+                notifyEditTyping();
+              }
               if (editError) {
                 setEditError(null);
               }
@@ -825,6 +845,7 @@ export const CommentNode = ({
                   onEdit={onEdit}
                   onLike={onLike}
                   onReply={onReply}
+                  onTyping={onTyping}
                   onLoadMoreChildren={undefined} // 2级结构，子评论不再加载更多
                   stickerMap={stickerMap}
                   reactionMap={reactionMap}

@@ -1026,6 +1026,7 @@ public partial class PostService
         var highlights = await _commentHighlightRepository.QueryAsync(highlight =>
             postIds.Contains(highlight.PostId) &&
             highlight.HighlightType == 1 &&
+            highlight.LikeCount > 0 &&
             highlight.IsCurrent);
 
         return highlights

@@ -78,6 +78,19 @@ function isSameLongId(left: LongId | null | undefined, right: LongId | null | un
   return String(left) === String(right);
 }
 
+function applyGodCommentPreviewToPost(post: PostItem, postId: LongId, highlight: CommentHighlight | null): PostItem {
+  if (!isSameLongId(post.voId, postId)) {
+    return post;
+  }
+
+  return {
+    ...post,
+    voGodCommentId: highlight?.voCommentId ?? null,
+    voGodCommentAuthorName: highlight?.voAuthorName ?? null,
+    voGodCommentContentSnapshot: highlight?.voContentSnapshot ?? null
+  };
+}
+
 function mergeCommentChildren(
   comments: CommentNode[],
   parentCommentId: LongId,
@@ -264,6 +277,31 @@ export const ForumApp = () => {
   // 数据管理
   const dataState = useForumData(t);
 
+  const applySearchGodCommentPreviewUpdate = useCallback((postId: LongId, highlight: CommentHighlight | null) => {
+    const postKey = String(postId);
+    setSearchPostGodComments(prev => {
+      const next = new Map(prev);
+      if (highlight) {
+        next.set(postKey, highlight);
+      } else {
+        next.delete(postKey);
+      }
+      return next;
+    });
+    setSearchPosts(prev => prev.map(post => applyGodCommentPreviewToPost(post, postId, highlight)));
+  }, []);
+
+  const refreshGodCommentPreviewForPost = useCallback(async (postId: LongId) => {
+    try {
+      const result = await getCurrentGodCommentsBatch([postId], t);
+      const highlight = result[String(postId)] ?? null;
+      dataState.applyGodCommentPreviewUpdate(postId, highlight);
+      applySearchGodCommentPreviewUpdate(postId, highlight);
+    } catch (error) {
+      log.warn('实时刷新帖子神评预览失败:', error);
+    }
+  }, [applySearchGodCommentPreviewUpdate, dataState.applyGodCommentPreviewUpdate, t]);
+
   const registerCommentTypingUser = useCallback((payload: CommentTypingRealtimeEvent) => {
     if (!dataState.selectedPost || !isSameCommentId(payload.voPostId, dataState.selectedPost.voId)) {
       return;
@@ -380,6 +418,17 @@ export const ForumApp = () => {
       }
 
       dataState.setComments((current) => applyCommentHighlightEvent(current, payload));
+      if (payload.voHighlightType !== 1) {
+        return;
+      }
+
+      if ((payload.voCurrentCommentIds ?? []).length === 0) {
+        dataState.applyGodCommentPreviewUpdate(payload.voPostId, null);
+        applySearchGodCommentPreviewUpdate(payload.voPostId, null);
+        return;
+      }
+
+      void refreshGodCommentPreviewForPost(payload.voPostId);
     });
 
     const unsubscribeTyping = commentHub.subscribe('CommentTyping', registerCommentTypingUser);
@@ -398,9 +447,12 @@ export const ForumApp = () => {
     clearCommentTypingUsers,
     dataState.commentSortBy,
     dataState.selectedPost?.voId,
+    dataState.applyGodCommentPreviewUpdate,
     dataState.setCommentTotal,
     dataState.setComments,
-    registerCommentTypingUser
+    registerCommentTypingUser,
+    applySearchGodCommentPreviewUpdate,
+    refreshGodCommentPreviewForPost
   ]);
 
   const navigateToComment = useCallback(async (
@@ -865,9 +917,12 @@ export const ForumApp = () => {
                 onLoadMoreChildren={actionsState.handleLoadMoreChildren}
                 onLoadMoreComments={dataState.loadMoreComments}
                 onCreateComment={actionsState.handleCreateComment}
-                onCommentTyping={() => {
+                onCommentTyping={(commentId) => {
                   if (dataState.selectedPost?.voId) {
-                    void commentHub.startTyping(dataState.selectedPost.voId, actionsState.replyTo?.targetCommentId ?? null);
+                    void commentHub.startTyping(
+                      dataState.selectedPost.voId,
+                      commentId ?? actionsState.replyTo?.targetCommentId ?? null
+                    );
                   }
                 }}
                 onCancelReply={actionsState.handleCancelReply}

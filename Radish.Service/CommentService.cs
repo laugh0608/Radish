@@ -1152,6 +1152,12 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                 h => h.PostId == postId && h.HighlightType == 1 && h.IsCurrent);
 
             var topLikeCount = topComments.First().LikeCount;
+            if (topLikeCount <= 0)
+            {
+                result.VoChanged = await ClearCurrentHighlightsAsync(existingHighlights, $"god_comments:post:{postId}");
+                return result;
+            }
+
             var desiredComments = topComments
                 .Where(comment => comment.LikeCount == topLikeCount)
                 .ToList();
@@ -1242,6 +1248,12 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                 h => h.ParentCommentId == parentCommentId && h.HighlightType == 2 && h.IsCurrent);
 
             var topLikeCount = topChildren.First().LikeCount;
+            if (topLikeCount <= 0)
+            {
+                result.VoChanged = await ClearCurrentHighlightsAsync(existingHighlights, $"sofas:parent:{parentCommentId}");
+                return result;
+            }
+
             var desiredChildren = topChildren
                 .Where(child => child.LikeCount == topLikeCount)
                 .ToList();
@@ -1273,6 +1285,21 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         }
 
         return result;
+    }
+
+    private async Task<bool> ClearCurrentHighlightsAsync(List<CommentHighlight> existingHighlights, string cacheKey)
+    {
+        if (!existingHighlights.Any())
+        {
+            return false;
+        }
+
+        var currentHighlightIds = existingHighlights.Select(highlight => highlight.Id).ToList();
+        await _highlightRepository.UpdateColumnsAsync(
+            it => new CommentHighlight { IsCurrent = false },
+            highlight => currentHighlightIds.Contains(highlight.Id));
+        await _caching.RemoveAsync(cacheKey);
+        return true;
     }
 
     private bool ShouldKeepExistingHighlights(List<CommentHighlight> existingHighlights, List<Comment> desiredComments)
@@ -1524,7 +1551,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
     private async Task FillSingleHighlightStatusAsync(CommentVo comment)
     {
         var highlight = await _highlightRepository.QueryFirstAsync(
-            h => h.CommentId == comment.VoId && h.IsCurrent);
+            h => h.CommentId == comment.VoId && h.LikeCount > 0 && h.IsCurrent);
 
         if (highlight == null)
         {
@@ -1555,7 +1582,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         {
             // 1. 查询该帖子的所有当前神评
             var godComments = await _highlightRepository.QueryAsync(
-                h => h.PostId == postId && h.HighlightType == 1 && h.IsCurrent);
+                h => h.PostId == postId && h.HighlightType == 1 && h.LikeCount > 0 && h.IsCurrent);
 
             var godCommentMap = godComments.ToDictionary(h => h.CommentId, h => h.Rank);
 
@@ -1567,6 +1594,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                 h => h.ParentCommentId != null &&
                      parentCommentIds.Contains(h.ParentCommentId.Value) &&
                      h.HighlightType == 2 &&
+                     h.LikeCount > 0 &&
                      h.IsCurrent);
 
             Log.Information("[CommentService] 填充沙发标识：PostId={PostId}, 父评论数={RootCount}, 查询到沙发数={SofaCount}",

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { log } from '@/utils/logger';
 import type { Dispatch, SetStateAction } from 'react';
 import type { TFunction } from 'i18next';
@@ -72,6 +72,19 @@ function isSameLongId(left: LongId | null | undefined, right: LongId | null | un
   return String(left) === String(right);
 }
 
+function applyGodCommentPreviewToPost(post: PostItem, postId: LongId, highlight: CommentHighlight | null): PostItem {
+  if (!isSameLongId(post.voId, postId)) {
+    return post;
+  }
+
+  return {
+    ...post,
+    voGodCommentId: highlight?.voCommentId ?? null,
+    voGodCommentAuthorName: highlight?.voAuthorName ?? null,
+    voGodCommentContentSnapshot: highlight?.voContentSnapshot ?? null
+  };
+}
+
 export interface ForumDataState {
   // 数据状态
   categories: Category[];
@@ -130,6 +143,7 @@ export interface ForumDataActions {
   setQuickReplies: Dispatch<SetStateAction<PostQuickReply[]>>;
   setQuickReplyTotal: Dispatch<SetStateAction<number>>;
   setCommentTotal: Dispatch<SetStateAction<number>>;
+  applyGodCommentPreviewUpdate: (postId: LongId, highlight: CommentHighlight | null) => void;
   setCurrentPage: (page: number) => void;
   setSortBy: (sortBy: ForumPostSortBy) => void;
   setCommentSortBy: (sortBy: 'newest' | 'hottest' | null) => void;
@@ -410,6 +424,21 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     });
   };
 
+  const applyGodCommentPreviewUpdate = useCallback((postId: LongId, highlight: CommentHighlight | null) => {
+    const postKey = String(postId);
+    setPostGodComments(prev => {
+      const next = new Map(prev);
+      if (highlight) {
+        next.set(postKey, highlight);
+      } else {
+        next.delete(postKey);
+      }
+      return next;
+    });
+    setPosts(prev => prev.map(post => applyGodCommentPreviewToPost(post, postId, highlight)));
+    setHotPosts(prev => prev.map(post => applyGodCommentPreviewToPost(post, postId, highlight)));
+  }, []);
+
   // 加载帖子详情
   const loadPostDetail = async (postId: LongId, answerSortOverride?: QuestionAnswerSort): Promise<PostDetail | null> => {
     setLoadingPostDetail(true);
@@ -620,6 +649,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     setQuickReplies,
     setQuickReplyTotal,
     setCommentTotal,
+    applyGodCommentPreviewUpdate,
     setCurrentPage,
     setSortBy,
     setCommentSortBy,

@@ -137,6 +137,13 @@ public class CommentHighlightJob
                          h.IsCurrent);
 
                 var currentTopComment = topComments.First();
+                if (currentTopComment.LikeCount <= 0)
+                {
+                    await _highlightRepository.UpdateColumnsAsync(
+                        it => new CommentHighlight { IsCurrent = false },
+                        h => h.PostId == postId && h.HighlightType == 1 && h.IsCurrent);
+                    continue;
+                }
 
                 // 如果当前神评与历史记录不同，或者点赞数有变化，则追加新记录
                 bool shouldAdd = existingHighlight == null ||
@@ -364,6 +371,15 @@ public class CommentHighlightJob
                          h.IsCurrent);
 
                 var currentTopChild = topChildren.First();
+                if (currentTopChild.LikeCount <= 0)
+                {
+                    await _highlightRepository.UpdateColumnsAsync(
+                        it => new CommentHighlight { IsCurrent = false },
+                        h => h.ParentCommentId == parentId &&
+                             h.HighlightType == 2 &&
+                             h.IsCurrent);
+                    continue;
+                }
 
                 bool shouldAdd = existingHighlight == null ||
                                 existingHighlight.CommentId != currentTopChild.Id ||

@@ -13,7 +13,7 @@ import {
 } from '@/api/forum';
 import type { LongId } from '@/api/user';
 import { buildDesktopForumPostReturnPath } from '@/services/authReturnPath';
-import { commentHub } from '@/services/commentHub';
+import { commentHub, type CommentTypingRealtimeEvent } from '@/services/commentHub';
 import { log } from '@/utils/logger';
 import { resolveMediaUrl } from '@/utils/media';
 import { CommentTree } from '@/apps/forum/components/CommentTree';
@@ -84,7 +84,7 @@ export const PublicForumDetail = ({
   onOpenPoll,
   onOpenLottery
 }: PublicForumDetailProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [post, setPost] = useState<PostDetail | null>(null);
   const [comments, setComments] = useState<CommentNode[]>([]);
   const [quickReplies, setQuickReplies] = useState<PostQuickReply[]>([]);
@@ -102,14 +102,61 @@ export const PublicForumDetail = ({
   const [commentPagingError, setCommentPagingError] = useState<string | null>(null);
   const [commentNavigationTarget, setCommentNavigationTarget] = useState<PublicForumCommentNavigationTarget | null>(null);
   const [commentNavigationNotice, setCommentNavigationNotice] = useState<string | null>(null);
+  const [commentTypingUserNames, setCommentTypingUserNames] = useState<string[]>([]);
   const [highlightedCommentId, setHighlightedCommentId] = useState<LongId | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const requestIdRef = useRef(0);
   const commentAnchorMapRef = useRef(new Map<string, HTMLDivElement>());
   const handledCommentNavigationRef = useRef<string | null>(null);
   const highlightTimeoutRef = useRef<number | null>(null);
+  const commentTypingUsersRef = useRef(new Map<string, string>());
+  const commentTypingTimersRef = useRef(new Map<string, number>());
   const commentNoticeRef = useRef<HTMLDivElement | null>(null);
   const commentPageSize = 20;
+
+  const syncCommentTypingUsers = useCallback(() => {
+    setCommentTypingUserNames([...commentTypingUsersRef.current.values()]);
+  }, []);
+
+  const clearCommentTypingUsers = useCallback(() => {
+    for (const timer of commentTypingTimersRef.current.values()) {
+      window.clearTimeout(timer);
+    }
+
+    commentTypingTimersRef.current.clear();
+    commentTypingUsersRef.current.clear();
+    setCommentTypingUserNames([]);
+  }, []);
+
+  const registerCommentTypingUser = useCallback((payload: CommentTypingRealtimeEvent) => {
+    if (!post?.voId || !isSameLongId(payload.voPostId, post.voId)) {
+      return;
+    }
+
+    const userKey = String(payload.voUserId);
+    const userName = payload.voUserName?.trim() || t('common.unknownUser');
+    const oldTimer = commentTypingTimersRef.current.get(userKey);
+    if (oldTimer) {
+      window.clearTimeout(oldTimer);
+    }
+
+    commentTypingUsersRef.current.set(userKey, userName);
+    commentTypingTimersRef.current.set(userKey, window.setTimeout(() => {
+      commentTypingUsersRef.current.delete(userKey);
+      commentTypingTimersRef.current.delete(userKey);
+      syncCommentTypingUsers();
+    }, 3200));
+    syncCommentTypingUsers();
+  }, [post?.voId, syncCommentTypingUsers, t]);
+
+  const commentTypingText = useMemo(() => {
+    if (commentTypingUserNames.length === 0) {
+      return null;
+    }
+
+    const separator = i18n.language.startsWith('zh') ? '、' : ', ';
+    return `${commentTypingUserNames.join(separator)}${t('forum.comment.typingSuffix')}`;
+  }, [commentTypingUserNames, i18n.language, t]);
 
   useEffect(() => {
     const requestId = ++requestIdRef.current;
@@ -124,6 +171,7 @@ export const PublicForumDetail = ({
       setCommentPagingError(null);
       setCommentNavigationTarget(null);
       setCommentNavigationNotice(null);
+      clearCommentTypingUsers();
       setHighlightedCommentId(null);
       let resolvedPostId: LongId = postId;
 
@@ -275,7 +323,7 @@ export const PublicForumDetail = ({
     };
 
     void loadDetail();
-  }, [commentId, commentSortBy, postId, reloadToken, t]);
+  }, [clearCommentTypingUsers, commentId, commentSortBy, postId, reloadToken, t]);
 
   useEffect(() => {
     return () => {
@@ -346,6 +394,7 @@ export const PublicForumDetail = ({
 
       setComments((current) => applyCommentHighlightEvent(current, payload));
     });
+    const unsubscribeTyping = commentHub.subscribe('CommentTyping', registerCommentTypingUser);
 
     return () => {
       unsubscribeCreated();
@@ -353,9 +402,11 @@ export const PublicForumDetail = ({
       unsubscribeDeleted();
       unsubscribeLikeChanged();
       unsubscribeHighlightsChanged();
+      unsubscribeTyping();
+      clearCommentTypingUsers();
       void commentHub.leavePost(resolvedPostId);
     };
-  }, [commentSortBy, post?.voId]);
+  }, [clearCommentTypingUsers, commentSortBy, post?.voId, registerCommentTypingUser]);
 
   useEffect(() => {
     if (!post?.voTitle) {
@@ -797,6 +848,12 @@ export const PublicForumDetail = ({
               {commentNavigationNotice && (
                 <div ref={commentNoticeRef} className={styles.inlineNotice} data-tone="warning">
                   <span className={styles.inlineNoticeText}>{commentNavigationNotice}</span>
+                </div>
+              )}
+
+              {commentTypingText && (
+                <div className={styles.inlineNotice}>
+                  <span className={styles.inlineNoticeText}>{commentTypingText}</span>
                 </div>
               )}
 

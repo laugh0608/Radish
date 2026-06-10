@@ -36,6 +36,7 @@ interface CommentTreeProps {
   onViewCommentHistory?: (commentId: LongId) => void;
   onLikeComment?: (commentId: LongId) => Promise<{ isLiked: boolean; likeCount: number }>;
   onReplyComment?: (target: CommentReplyTarget) => void;
+  onCommentTyping?: (commentId: LongId) => void;
   onLoadMoreChildren?: (parentId: LongId, pageIndex: number, pageSize: number) => Promise<CommentNodeType[]>;
   onLoadMoreRootComments?: () => Promise<void>;
   onSortChange?: (sortBy: 'newest' | 'hottest') => void;
@@ -72,6 +73,7 @@ export const CommentTree = ({
   onViewCommentHistory,
   onLikeComment,
   onReplyComment,
+  onCommentTyping,
   onLoadMoreChildren,
   onLoadMoreRootComments,
   onSortChange,
@@ -175,6 +177,7 @@ export const CommentTree = ({
             onViewHistory={onViewCommentHistory}
             onLike={onLikeComment}
             onReply={onReplyComment}
+            onTyping={onCommentTyping}
             onLoadMoreChildren={onLoadMoreChildren}
             stickerMap={stickerMap}
             reactionMap={reactionMap}
