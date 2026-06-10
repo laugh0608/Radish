@@ -25,6 +25,9 @@ public class UserFollowUserVo
     /// <summary>用户 ID</summary>
     public long VoUserId { get; set; }
 
+    /// <summary>用户公开 ID</summary>
+    public string? VoPublicId { get; set; }
+
     /// <summary>用户名</summary>
     public string VoUserName { get; set; } = string.Empty;
 

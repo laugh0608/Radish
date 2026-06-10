@@ -1,11 +1,14 @@
 const AUTH_RETURN_PATH_STORAGE_KEY = 'radish:auth:return-path';
 const AUTH_RETURN_PATH_BASE_URL = 'https://radish.local';
+const CIRCLE_RETURN_TABS = new Set(['feed', 'following', 'followers']);
 
 interface AuthReturnLocation {
   pathname: string;
   search?: string;
   hash?: string;
 }
+
+export type CircleReturnTab = 'feed' | 'following' | 'followers';
 
 function getSessionStorage(): Storage | null {
   if (typeof window === 'undefined') {
@@ -31,6 +34,10 @@ export function normalizeAuthReturnPath(value: string | null | undefined): strin
       ? url.pathname.slice(0, -1)
       : url.pathname;
 
+    if (pathname === '/circle') {
+      return normalizeCircleReturnPath(url);
+    }
+
     if (pathname !== '/desktop') {
       return null;
     }
@@ -39,6 +46,44 @@ export function normalizeAuthReturnPath(value: string | null | undefined): strin
   } catch {
     return null;
   }
+}
+
+function normalizeCircleReturnPath(url: URL): string | null {
+  if (url.hash) {
+    return null;
+  }
+
+  const normalized = new URLSearchParams();
+  for (const key of url.searchParams.keys()) {
+    if (key !== 'tab' && key !== 'page') {
+      return null;
+    }
+  }
+
+  const tab = url.searchParams.get('tab');
+  if (tab) {
+    if (!CIRCLE_RETURN_TABS.has(tab)) {
+      return null;
+    }
+
+    if (tab !== 'feed') {
+      normalized.set('tab', tab);
+    }
+  }
+
+  const page = url.searchParams.get('page');
+  if (page) {
+    if (!/^[1-9]\d*$/.test(page)) {
+      return null;
+    }
+
+    if (page !== '1') {
+      normalized.set('page', page);
+    }
+  }
+
+  const query = normalized.toString();
+  return query ? `/circle?${query}` : '/circle';
 }
 
 export function rememberAuthReturnPath(returnPath: string | null | undefined, storage = getSessionStorage()): boolean {
@@ -70,6 +115,31 @@ export function buildCurrentDesktopReturnPath(
   }
 
   return normalizeAuthReturnPath(`${location.pathname}${location.search ?? ''}${location.hash ?? ''}`);
+}
+
+export function buildCircleReturnPath(options: { tab?: CircleReturnTab; page?: number | string } = {}): string | null {
+  const query = new URLSearchParams();
+  if (options.tab && options.tab !== 'feed') {
+    if (!CIRCLE_RETURN_TABS.has(options.tab)) {
+      return null;
+    }
+
+    query.set('tab', options.tab);
+  }
+
+  if (options.page != null) {
+    const normalizedPage = String(options.page).trim();
+    if (!/^[1-9]\d*$/.test(normalizedPage)) {
+      return null;
+    }
+
+    if (normalizedPage !== '1') {
+      query.set('page', normalizedPage);
+    }
+  }
+
+  const search = query.toString();
+  return search ? `/circle?${search}` : '/circle';
 }
 
 export function buildDesktopShopProductReturnPath(

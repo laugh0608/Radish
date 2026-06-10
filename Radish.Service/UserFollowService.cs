@@ -196,6 +196,7 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
 
         var userIds = relations.Select(r => r.FollowerUserId).Distinct().ToList();
         var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id) && u.IsEnable && !u.IsDeleted);
+        await EnsureFollowUserPublicIdsAsync(users);
         var userMap = users.ToDictionary(u => u.Id, u => u);
         var avatarMap = await LoadAvatarUrlMapAsync(userIds);
 
@@ -241,6 +242,7 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
 
         var userIds = relations.Select(r => r.FollowingUserId).Distinct().ToList();
         var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id) && u.IsEnable && !u.IsDeleted);
+        await EnsureFollowUserPublicIdsAsync(users);
         var userMap = users.ToDictionary(u => u.Id, u => u);
         var avatarMap = await LoadAvatarUrlMapAsync(userIds);
 
@@ -450,12 +452,44 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
         return new UserFollowUserVo
         {
             VoUserId = user.Id,
+            VoPublicId = string.IsNullOrWhiteSpace(user.PublicId) ? null : user.PublicId.Trim(),
             VoUserName = user.UserName,
             VoDisplayName = string.IsNullOrWhiteSpace(user.UserRealName) ? null : user.UserRealName,
             VoAvatarUrl = string.IsNullOrWhiteSpace(avatarUrl) ? null : avatarUrl,
             VoIsMutualFollow = isMutualFollow,
             VoFollowTime = followTime
         };
+    }
+
+    private async Task EnsureFollowUserPublicIdsAsync(List<User> users)
+    {
+        foreach (var user in users)
+        {
+            if (!string.IsNullOrWhiteSpace(user.PublicId))
+            {
+                user.PublicId = user.PublicId.Trim();
+                continue;
+            }
+
+            var publicId = User.EnsurePublicId(user.PublicId);
+            var affectedRows = await _userRepository.UpdateColumnsAsync(
+                item => new User { PublicId = publicId },
+                item => item.Id == user.Id &&
+                        !item.IsDeleted &&
+                        (item.PublicId == null || item.PublicId == string.Empty));
+
+            if (affectedRows > 0)
+            {
+                user.PublicId = publicId;
+                continue;
+            }
+
+            var refreshedUser = await _userRepository.QueryByIdAsync(user.Id);
+            if (!string.IsNullOrWhiteSpace(refreshedUser?.PublicId))
+            {
+                user.PublicId = refreshedUser.PublicId.Trim();
+            }
+        }
     }
 
     private static int NormalizePageIndex(int pageIndex)

@@ -22,6 +22,7 @@ export interface UserFollowSummary {
 
 export interface UserFollowUser {
   voUserId: LongId;
+  voPublicId?: string | null;
   voUserName: string;
   voDisplayName?: string | null;
   voAvatarUrl?: string | null;

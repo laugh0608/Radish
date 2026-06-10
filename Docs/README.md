@@ -42,6 +42,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [视觉颜色参考](./frontend/visual-color-reference.md)
 - [UI 设计灵感参考](./frontend/ui-design-inspiration.md)
 - [文档系统方案](./guide/document-system.md)
+- [个人圈子](./features/circle.md)
 - [论坛投票 MVP 设计方案](./features/forum-poll-mvp.md)
 - [论坛问答 MVP 设计方案](./features/forum-qa-mvp.md)
 

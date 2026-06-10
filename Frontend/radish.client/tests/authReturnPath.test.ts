@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  buildCircleReturnPath,
   buildCurrentDesktopReturnPath,
   buildDesktopForumPostReturnPath,
   buildDesktopForumReturnPath,
@@ -40,15 +41,30 @@ class MemoryStorage implements Storage {
   }
 }
 
-test('normalizeAuthReturnPath 只接受 desktop 相对路径', () => {
+test('normalizeAuthReturnPath 只接受 desktop 深链和 circle 私域入口', () => {
   assert.equal(normalizeAuthReturnPath('/desktop?app=shop&productId=2042219067430928384'), '/desktop?app=shop&productId=2042219067430928384');
   assert.equal(normalizeAuthReturnPath('/desktop?app=forum&postId=2042219067430928384'), '/desktop?app=forum&postId=2042219067430928384');
   assert.equal(normalizeAuthReturnPath('/desktop/?app=shop&view=orders'), '/desktop/?app=shop&view=orders');
+  assert.equal(normalizeAuthReturnPath('/circle'), '/circle');
+  assert.equal(normalizeAuthReturnPath('/circle/?tab=following&page=2'), '/circle?tab=following&page=2');
+  assert.equal(normalizeAuthReturnPath('/circle?tab=feed&page=1'), '/circle');
+  assert.equal(normalizeAuthReturnPath('/circle?tab=hot'), null);
+  assert.equal(normalizeAuthReturnPath('/circle?from=discover'), null);
+  assert.equal(normalizeAuthReturnPath('/circle#feed'), null);
   assert.equal(normalizeAuthReturnPath('/discover'), null);
   assert.equal(normalizeAuthReturnPath('/oidc/callback'), null);
   assert.equal(normalizeAuthReturnPath('https://radishx.com/desktop?app=shop'), null);
   assert.equal(normalizeAuthReturnPath('//radishx.com/desktop?app=shop'), null);
   assert.equal(normalizeAuthReturnPath('/desktop\\?app=shop'), null);
+});
+
+test('buildCircleReturnPath 应构造圈子登录回流路径并收敛默认参数', () => {
+  assert.equal(buildCircleReturnPath(), '/circle');
+  assert.equal(buildCircleReturnPath({ tab: 'feed', page: 1 }), '/circle');
+  assert.equal(buildCircleReturnPath({ tab: 'following' }), '/circle?tab=following');
+  assert.equal(buildCircleReturnPath({ tab: 'followers', page: 3 }), '/circle?tab=followers&page=3');
+  assert.equal(buildCircleReturnPath({ page: '0' }), null);
+  assert.equal(buildCircleReturnPath({ page: 'abc' }), null);
 });
 
 test('rememberAuthReturnPath 和 consumeAuthReturnPath 应一次性保存并消费合法路径', () => {

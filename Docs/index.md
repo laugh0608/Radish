@@ -70,6 +70,7 @@ features:
 - [国际化指南](/architecture/i18n)
 - [文档系统方案](/guide/document-system)
 - [公开内容 SEO 与分享基线](/frontend/public-seo-sharing)
+- [个人圈子](/features/circle)
 - [论坛投票 MVP 设计方案](/features/forum-poll-mvp)
 - [论坛问答 MVP 设计方案](/features/forum-qa-mvp)
 

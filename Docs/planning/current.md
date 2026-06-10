@@ -29,6 +29,7 @@
   - `P3-10-A` 已完成初版任务归属、历史功能规划回拉和源码复核。
   - `P3-10-B1 / B3` 首批代码已完成：`/discover` 已调整为 Web-first 公开信息流，User PublicId 公开主页 / 榜单契约已落地并通过 PC 视角浏览器复核。
   - `P3-10-B4 / B5` 首批代码已完成：新增评论实时 Hub、Web / 公开详情订阅、typing 提示、评论树事件合并、神评 / 沙发稳定窗口、并列展示与奖励幂等；`dotnet build`、`dotnet test Radish.Api.Tests`、评论定向测试和 `radish.client` 构建均已通过。
+  - `P3-10-B2` 首批代码已完成：`/circle` 作为登录态个人圈子入口落地，发现 / 论坛 / 圈子职责分工已写入 P3-10 专题，关系链用户项补 `VoPublicId` 并支持 `/u/usr_...` 公开主页入口。
 
 ## 当前执行入口
 
@@ -36,6 +37,7 @@
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
 - [P3-10 Web-first 信息架构与下一批开发任务选择](/planning/p3-10-cross-platform-information-architecture)
 - [Radish 电子宠物开发计划](/features/radish-pet-roadmap)
+- [个人圈子](/features/circle)
 - [P3-9 真实使用主路径产品化与发布候选整备](/planning/p3-9-real-usage-release-candidate)
 - [P3-8 多端功能补全与 UI 设计治理](/planning/p3-8-multiplatform-feature-ui-governance)
 - [前端多壳层策略](/frontend/shell-strategy)
@@ -46,7 +48,7 @@
 1. **收口 P3-10-B / C Web-first 首批代码**
    - 第一组开发入口为 Web 首页信息流、用户 PublicId / 公开主页契约、评论实时 / 神评稳定性。
    - 评论实时与神评稳定性已进入本地验证通过状态，后续优先做双用户人工联调和发布候选前批次级回归。
-   - Token 不活跃过期、个人圈子边界、Web UI 改造和 Radish 电子宠物继续作为同阶段候选，不抢占首批实现。
+   - Token 不活跃过期、Web UI 改造和 Radish 电子宠物继续作为同阶段候选，不抢占已完成的 Web 信息架构首批入口。
    - 只把能改善真实使用路径、跨端一致性、登录恢复、对象标识契约、评论互动或治理效率的问题纳入当前主线。
 2. **把 P3-8-D 降级为维护与回拉线**
    - 移动 Web 公开页逐页打磨、Console 剩余页面迁移、购买 / 订单 / 背包重复复核、ID Phase A 广泛扫描不再作为默认日常主线。
@@ -61,11 +63,11 @@
 - `P3-10-B4 / B5 评论实时与神评稳定性回归`
   - 使用 Gateway + Web 详情页做双用户联调，覆盖评论创建 / 更新 / 删除 / 点赞 / typing / 神评变化。
   - 关注 SignalR 断线恢复、匿名详情页订阅、登录态 token 续接和奖励幂等旧数据兼容。
-- `P3-10-B2 个人圈子产品边界`
-  - 在评论实时和用户公开标识基础上，继续界定关注流、个人公开页和登录后轻互动的边界。
-  - 先定 URL、对象类型、PublicId 和隐私边界，不直接实现 ActivityPub / WebFinger。
 - `P3-10-B6 Token 不活跃过期`
   - 在评论互动治理方案稳定后推进，避免会话治理打断当前 Web 产品形态建设。
+- `P3-10-B2 个人圈子维护与回归`
+  - 继续按 [个人圈子](/features/circle) 中的 `/circle` 登录态私域、`/forum` 讨论对象权威归属、`/discover` 公开分发面分工复核。
+  - 如后续扩展关系链，只补真实复访需要的关注动态和用户跳转，不直接实现 ActivityPub / WebFinger、推荐算法、短动态或转发 / 引用。
 - `P3-10-B1 / B3 维护与回归`
   - 将 `/discover` 从公开导航聚合页调整为可持续浏览的内容流方案。
   - 继续保留公开 head、分享、移动 / PC 布局、LongId 兼容读取和 PublicId 分享路由回归。
@@ -74,8 +76,8 @@
 
 - 第一顺位：围绕 `P3-10-B4 / B5` 做双用户主路径联调，优先覆盖 Gateway 下的 Web 详情页、公开详情页匿名订阅、登录用户评论创建 / 更新 / 删除 / 点赞 / typing / 神评变化。
 - 第二顺位：联调暴露问题时，按事件契约、Hub 入组 / 重连、登录态 token 续接、前端评论树合并和奖励幂等边界成组修复，并执行对应精准验证。
-- 第三顺位：评论实时链路稳定后推进 `P3-10-B2` 个人圈子产品边界，先定 URL、对象类型、PublicId、隐私边界和登录后轻互动范围，不直接实现完整关注流或联邦社交。
-- 第四顺位：进入 `P3-10-B6` Token 不活跃过期方案前，整理前端活跃记录、refresh 校验、退出登录 UX 与 Hub 连接恢复的交互边界。
+- 第三顺位：进入 `P3-10-B6` Token 不活跃过期方案前，整理前端活跃记录、refresh 校验、退出登录 UX 与 Hub 连接恢复的交互边界。
+- 第四顺位：保留 `P3-10-B2` 圈子回归入口，复核 `/circle` 登录回流、关注动态、关注 / 粉丝列表、`/u/usr_...` 跳转和论坛详情跳转。
 - 第五顺位：保留 `P3-10-B1 / B3` 回归入口，必要时复核 `/discover`、`/leaderboard`、`/u/usr_...`、公开 head 与 `DbMigrate apply` 后的旧库补列结果；不要回到 P3-8-D 购买 / 订单 / 背包或 Console 低频页面筛查作为默认主线。
 
 ## 并行维护项

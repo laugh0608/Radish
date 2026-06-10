@@ -13,6 +13,7 @@ import {
 } from '../src/public/publicHead.ts';
 import type { PublicRouteDescriptor } from '../src/public/publicRouteNavigation.ts';
 import {
+  buildCircleReturnPath,
   buildDesktopForumPostReturnPath,
   buildDesktopShopOrderReturnPath,
   buildDesktopShopPrivateViewReturnPath,
@@ -192,4 +193,13 @@ test('P3-9 登录回流不接受公开路径、外部 URL、协议相对 URL 或
   assert.equal(normalizeAuthReturnPath('https://radishx.com/desktop?app=shop'), null);
   assert.equal(normalizeAuthReturnPath('//radishx.com/desktop?app=shop'), null);
   assert.equal(normalizeAuthReturnPath('/desktop\\?app=shop'), null);
+});
+
+test('P3-10 圈子入口应是登录态私域回流路径而不是公开内容路由', () => {
+  const circleReturnPath = buildCircleReturnPath({ tab: 'following', page: 2 });
+  assert.equal(circleReturnPath, '/circle?tab=following&page=2');
+  assert.equal(normalizeAuthReturnPath(circleReturnPath), circleReturnPath);
+  assert.equal(isPublicContentPathname('/circle'), false);
+  assert.equal(isPublicContentPathname('/circle/'), false);
+  assert.equal(normalizeAuthReturnPath('/circle?tab=hot'), null);
 });
