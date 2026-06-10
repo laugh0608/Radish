@@ -25,6 +25,7 @@
 - [快速开始](/guide/getting-started)
 - [本地运行与排障手册](/guide/operations-runbook)
 - [验证基线说明](/guide/validation-baseline)
+- [页面真实联调与浏览器 Smoke 规则](/guide/browser-smoke)
 - [专题回归索引](/guide/regression-index)
 - [Repo Quality 故障分诊手册](/guide/repo-quality-troubleshooting)
 

@@ -6,6 +6,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 
 - [文档首页](./index.md)
 - [快速开始](./guide/getting-started.md)
+- [页面真实联调与浏览器 Smoke 规则](./guide/browser-smoke.md)
 - [开发路线图总览](./development-plan.md)
 - [第三开发阶段：真实使用增长与长期契约治理](./planning/phase-three-real-usage-contract-governance.md)
 - [首版 dev 边界](./planning/dev-first-scope.md)

@@ -34,6 +34,7 @@ features:
 ## 快速入口
 
 - [快速开始](/guide/getting-started) - 环境、初始化、验证与启动方式
+- [页面真实联调与浏览器 Smoke 规则](/guide/browser-smoke) - 页面联调默认覆盖 PC 与移动端视图
 - [架构总览](/architecture/overview) - 系统拓扑、项目职责与关键约定
 - [开发规范](/architecture/specifications) - 分层约束、编码规范与协作规则
 - [前端设计](/frontend/design) - 纯 Web、Flutter、WebOS 保留入口与应用集成方式
