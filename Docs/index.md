@@ -58,6 +58,7 @@ features:
 
 - [Guide 手册索引](/guide/)
 - [认证与权限](/guide/authentication)
+- [Token 不活跃过期治理](/guide/auth-idle-session)
 - [API 说明索引](/guide/api-index)
 - [数据库总览](/guide/database-overview)
 - [本地运行与排障手册](/guide/operations-runbook)

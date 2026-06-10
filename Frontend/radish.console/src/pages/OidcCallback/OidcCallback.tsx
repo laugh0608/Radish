@@ -53,6 +53,7 @@ export function OidcCallback() {
           expires_in: tokenSet.expires_in || 3600, // 默认 1 小时
           token_type: tokenSet.token_type || 'Bearer',
         });
+        tokenService.recordSessionActivity(true);
         log.debug('OidcCallback', '登录后 Token 状态', tokenService.getTokenDebugInfo());
         window.dispatchEvent(new CustomEvent('auth:token-updated'));
 

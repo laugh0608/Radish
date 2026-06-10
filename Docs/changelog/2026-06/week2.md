@@ -23,3 +23,15 @@
 - 文档同步复核确认：评论功能说明、P3-10 专题、配置管理、部署指南、快速开始、6 月月志 / 周志、记录索引和日交接记录需要同步；今天没有新增视觉 token、Pencil 设计源、Console 权限模型或正式发布部署流程，相关视觉规范、设计源文件和 Console 权限说明无需跟随更新。
 - 今日验证覆盖评论定向测试、奖励定向测试、`dotnet test Radish.Api.Tests`、`dotnet build Radish.DbMigrate/Radish.DbMigrate.csproj -c Debug`、`npm run build --workspace=radish.client`、`npm run type-check --workspace=@radish/http` 和 `git diff --check`；双用户浏览器联调因自动化临时运行时不稳定，改由人工继续执行。
 - 收工前补 [2026-06-09 收工回顾与明日事项](/records/daily-handoff-2026-06-09)：明日优先做评论实时双用户主路径联调，发现问题后按事件契约、Hub 入组 / 重连、token 续接、前端树合并和奖励幂等边界成组修复；稳定后推进 `P3-10-B2` 个人圈子产品边界。
+
+## 2026-06-10
+
+- `P3-10-B4 / B5` 评论实时与神评稳定性人工联调已由用户确认通过，转入维护和发布候选前批次级回归线。
+- `P3-10-B2` 首批代码已完成：新增 `/circle` 登录态个人圈子入口，承接关注动态、我的关注和我的粉丝；发现 / 论坛 / 圈子的职责分工已写入 P3-10 专题，关系链用户项补 `VoPublicId` 并支持 `/u/usr_...` 跳转。
+- 评论实时高亮一致性完成修复：高亮变化事件、前端评论树合并和并列神评 / 沙发展示继续保持与 B5 稳定性口径一致。
+- 通知全部已读缓存残留完成修复：全部已读后未读数缓存和列表状态不再残留旧未读提示。
+- 页面真实联调规则已补视图基线：PC 默认 `1920x1080`，移动端默认使用 `390x844 @ DPR 3` 或 `412x915 @ DPR 3` 的高分屏口径；`1280x720` 只作为窄桌面兼容补充。
+- `P3-10-B6` Token 不活跃过期治理首批代码已完成：Auth refresh idle 校验、refresh token 最近活跃 claim、前端页面活动记录、refresh 参数、idle 过期退出、Console 请求前异步 refresh、通知 / 聊天 Hub 停连和评论 Hub 匿名恢复已落地。
+- B6 运行时说明已拆到 [Token 不活跃过期治理](/guide/auth-idle-session)，避免继续向超长认证说明追加细节；[当前进行中](/planning/current) 与 P3-10 专题已同步下一步联调和后续开发入口。
+- 今日验证覆盖 `dotnet test Radish.Api.Tests`、`npm run test --workspace=radish.client`、`npm run type-check --workspace=@radish/http`、`npm run type-check --workspace=radish.console`、`npm run build --workspace=radish.client`、`npm run build --workspace=radish.console`、`npm run validate:identity`、`npm run check:repo-hygiene:changed` 和 `git diff --check`。
+- B6 页面真实联调放到 2026-06-11：本机 Gateway / Vite 服务未运行，且 AI 协作规则不直接启动 `dotnet run` 或 `npm run dev`；明日由用户启动服务后按 Gateway 覆盖 PC + 移动视图。

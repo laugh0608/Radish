@@ -1,6 +1,6 @@
 # P3-10 Web-first 信息架构与下一批开发任务选择
 
-> 状态：`进行中（P3-10-B1 / B2 / B3 / B4 / B5 首批代码完成，准备 B6 会话治理方案）`
+> 状态：`进行中（P3-10-B1 / B2 / B3 / B4 / B5 / B6 首批代码完成，准备 B6 页面真实联调）`
 >
 > 启动日期：2026-06-08（Asia/Shanghai）
 >
@@ -133,7 +133,7 @@
 | `P3-10-B7 Web UI 改造与去 WebOS 化迁移图` | 纯 Web / UI | 默认浏览器入口形成稳定产品体验，减少 WebOS 历史感 | Web、WebOS、Console 历史样式和入口语义仍分叉 | 大页面先走设计源文件；实现时做桌面 / 移动截图验证 | 不删除 `/desktop`，不做移动版 WebOS |
 | `P3-10-B8 Radish 电子宠物规划` | Web-first / 玩法 | 为萝卜币、经验、日常复访和轻社区互动提供长期玩法容器 | 尚无独立规划文档与经济边界 | 先写专题路线，避免过早落代码造成数值和治理债务 | 不在当前批次实现完整游戏系统 |
 
-当前 `P3-10-B1`、`P3-10-B3`、`P3-10-B4 / B5` 已完成首批代码推进；下一步先对评论实时链路做双用户人工联调，再进入 `P3-10-B2 / B6` 的产品边界和会话治理方案收口。
+当前 `P3-10-B1`、`P3-10-B2`、`P3-10-B3`、`P3-10-B4 / B5` 和 `P3-10-B6` 已完成首批代码推进；下一步先对 B6 会话治理做 Gateway 下 PC + 移动视图人工联调，再进入 Web UI 改造或 Radish 电子宠物专题。
 
 ## P3-10-B 收口条件
 
@@ -174,15 +174,24 @@
 - 公开主页入口白名单已同步支持 `/u/usr_...`，避免 User PublicId 路由被误判为 WebOS 工作台入口。
 - 本批仍不新增短动态、转发、引用、私信、推荐算法、ActivityPub / WebFinger 或新的圈子内容对象。
 
+截至 2026-06-10，`P3-10-B6` 已完成首批代码实现：
+
+- Auth Server 新增 `OpenIddict:Server:IdleSession` 配置，refresh token 成功签发 / 刷新时写入最近活跃 claim，刷新校验超过 idle 窗口后返回 `invalid_grant / session_idle_expired`；运行时口径见 [Token 不活跃过期治理](/guide/auth-idle-session)。
+- `radish.client` 和 `radish.console` 已接入页面活动记录，refresh 请求附加 `radish_last_active_at`；本地判定或服务端返回 idle 过期时清理 token，Console 跳回 `/console/login?auto=1&reason=idle`。
+- 通知和聊天 Hub 在会话过期后停止连接；评论 Hub 支持断开后按已加入帖子组以匿名连接恢复，公开详情页订阅不因登录态过期整体失效。
+- 共享 `@radish/http` 请求拦截器已支持异步等待，Console 的请求前 refresh 才能真正更新 Authorization。
+- 本批仍不拉长 access token，不把 idle 过期处理为 endsession，不新增全端 E2E 平台；运行时体验需按 `Docs/guide/browser-smoke.md` 使用 Gateway 覆盖 PC 与移动视图。
+
 ## 明日开发建议
 
-明日第一顺位围绕 `P3-10-B4 / B5` 做双用户主路径联调，建议按以下顺序推进：
+明日第一顺位围绕 `P3-10-B6` 做页面真实联调，建议按以下顺序推进：
 
-1. 使用 Gateway 下的 Web 详情页和公开详情页做人工验证，覆盖匿名订阅、登录用户评论创建 / 更新 / 删除 / 点赞 / typing / 神评变化。
-2. 若联调暴露问题，按事件契约、Hub 入组 / 重连、登录态 token 续接、前端评论树合并和奖励幂等边界成组修复，并执行对应精准验证。
-3. 评论链路稳定后，先进入 `P3-10-B2` 个人圈子边界，写清 URL、对象类型、PublicId、隐私边界和登录后轻互动范围。
-4. `P3-10-B6` Token 不活跃过期在评论互动稳定后推进，先整理前端活跃记录、refresh 校验、退出登录 UX 与 Hub 连接恢复的交互边界。
-5. 不启动完整 E2E 平台，不把 Flutter 评论实时、完整关注流、联邦社交或完整通知偏好治理并入本批。
+1. 按 [页面真实联调](/guide/browser-smoke) 使用 Gateway 覆盖 PC 与移动端视图，重点验证登录成功后活动时间写入、refresh 请求附加 `radish_last_active_at`、长时间不活跃后退出登录 UX。
+2. 覆盖页面恢复场景：前台恢复、`pageshow`、focus、受保护页面请求前 refresh、Console 登录页回跳和公开详情页继续匿名阅读。
+3. 覆盖 Hub 场景：通知 / 聊天在 token idle 过期后停止，评论详情页连接可恢复为匿名订阅，重新登录后可重新进入登录态互动。
+4. 若联调暴露问题，按 Auth refresh 判定、前端活动记录、退出登录 UX、Hub token factory / 重连和页面恢复入口成组修复，并执行对应精准验证。
+5. 若 B6 联调通过且没有新的阻断，进入 `P3-10-B7 Web UI 改造与去 WebOS 化迁移图`：先审 `/discover`、`/forum` 详情、`/u/usr_...`、`/circle` 和 Console 高频入口的页面层级、设计边界与验证矩阵，再选择同一组高价值入口推进代码。
+6. 不启动完整 E2E 平台，不把 Flutter 完整会话治理、完整通知偏好或设备管理并入本批；不把 WebOS `/desktop` 作为新增功能承载方向。
 
 ## 候选任务排序规则
 

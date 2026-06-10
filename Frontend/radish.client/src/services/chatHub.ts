@@ -74,7 +74,7 @@ class ChatHubService {
 
       this.connection = new signalR.HubConnectionBuilder()
         .withUrl(getHubUrl(), {
-          accessTokenFactory: () => tokenService.getAccessToken() || '',
+          accessTokenFactory: async () => await tokenService.getValidAccessToken() || '',
         })
         .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
         .configureLogging(signalR.LogLevel.Information)

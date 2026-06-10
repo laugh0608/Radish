@@ -83,7 +83,7 @@ class CommentHubService {
 
       this.connection = new signalR.HubConnectionBuilder()
         .withUrl(getHubUrl(), {
-          accessTokenFactory: () => tokenService.getAccessToken() || '',
+          accessTokenFactory: async () => await tokenService.getValidAccessToken() || '',
         })
         .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
         .configureLogging(signalR.LogLevel.Information)
@@ -109,6 +109,39 @@ class CommentHubService {
     } finally {
       this.isStarting = false;
     }
+  }
+
+  async stop(): Promise<void> {
+    this.startRequestId++;
+
+    if (!this.connection) {
+      return;
+    }
+
+    try {
+      await this.connection.stop();
+      log.debug('CommentHub', '连接已断开');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!message.includes('Failed to start the HttpConnection before stop() was called')) {
+        log.warn('CommentHub', '关闭连接失败:', error);
+      }
+    } finally {
+      this.connection = null;
+      this.isStarting = false;
+    }
+  }
+
+  async restart(): Promise<void> {
+    const shouldRejoin = this.joinedPosts.size > 0;
+    await this.stop();
+
+    if (!shouldRejoin) {
+      return;
+    }
+
+    await this.start();
+    await this.rejoinPosts();
   }
 
   async joinPost(postId: LongId): Promise<void> {

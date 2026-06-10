@@ -26,6 +26,8 @@ export function setupApiInterceptors() {
           const validToken = await tokenService.getValidAccessToken();
           if (validToken) {
             (options.headers as Record<string, string>).Authorization = `Bearer ${validToken}`;
+          } else {
+            delete (options.headers as Record<string, string>).Authorization;
           }
         } catch (error) {
           log.error('ApiInterceptor', '获取有效 Token 失败', error);
@@ -52,12 +54,16 @@ export function setupApiInterceptors() {
         log.warn('ApiInterceptor', '收到 401 响应，可能需要重新登录', tokenService.getTokenDebugInfo());
 
         // 清除 Token 并跳转到登录页
-        tokenService.clearTokens();
+        const previousClearReason = tokenService.getLastSessionClearReason();
+        tokenService.clearTokens(previousClearReason ?? undefined);
 
         // 如果当前不在登录页，跳转到登录页
         const isLoginPage = window.location.pathname.endsWith('/login');
         if (!isLoginPage) {
-          window.location.href = '/console/login?auto=1';
+          const reason = tokenService.getLastSessionClearReason() === 'idle_session_expired'
+            ? '&reason=idle'
+            : '';
+          window.location.href = `/console/login?auto=1${reason}`;
         }
       }
     },

@@ -6,7 +6,10 @@ import { log } from '@/utils/logger';
 import { getAuthBaseUrl } from '@/config/env';
 import {
   classifyTokenRefreshFailure,
+  clearAuthSessionActivity,
   dispatchAuthTokenExpired,
+  getAuthSessionRefreshParameters,
+  isAuthSessionIdleExpired,
   shouldInvalidateSessionAfterRefreshFailure,
   TokenRefreshFailureReason,
   type TokenRefreshFailureReason as TokenRefreshFailureReasonValue,
@@ -173,6 +176,7 @@ class TokenService {
     localStorage.removeItem(this.TOKEN_EXPIRES_KEY);
     localStorage.removeItem(this.TOKEN_REFRESH_AT_KEY);
     localStorage.removeItem(this.CURRENT_USER_CACHE_KEY);
+    clearAuthSessionActivity();
     this.refreshPromise = null;
     this.stopAutoRefresh(); // 清除 Token 时停止自动刷新
     log.debug('TokenService', 'Token 信息已清除');
@@ -306,6 +310,15 @@ class TokenService {
       return this.refreshPromise;
     }
 
+    if (this.isIdleSessionExpired()) {
+      const error = new TokenRefreshError(
+        '会话因长时间未使用已过期',
+        TokenRefreshFailureReason.IdleSessionExpired,
+      );
+      this.handleRefreshFailure(error);
+      throw error;
+    }
+
     const refreshToken = this.getRefreshToken();
     if (!refreshToken) {
       const error = new TokenRefreshError(
@@ -346,13 +359,20 @@ class TokenService {
           grant_type: 'refresh_token',
           refresh_token: refreshToken,
           client_id: CLIENT_ID,
+          ...this.getRefreshRequestParameters(),
         }),
       });
 
       if (!response.ok) {
+        const details = await this.extractTokenRefreshErrorDetails(response);
+        const reason = details?.includes('session_idle_expired')
+          ? TokenRefreshFailureReason.IdleSessionExpired
+          : classifyTokenRefreshFailure(response.status);
         throw new TokenRefreshError(
-          `Token 刷新失败: ${response.status} ${response.statusText}`,
-          classifyTokenRefreshFailure(response.status),
+          details
+            ? `Token 刷新失败: ${response.status} ${response.statusText} (${details})`
+            : `Token 刷新失败: ${response.status} ${response.statusText}`,
+          reason,
           response.status,
         );
       }
@@ -390,6 +410,15 @@ class TokenService {
       return null;
     }
 
+    if (this.isIdleSessionExpired()) {
+      const error = new TokenRefreshError(
+        '会话因长时间未使用已过期',
+        TokenRefreshFailureReason.IdleSessionExpired,
+      );
+      this.handleRefreshFailure(error);
+      return null;
+    }
+
     // 如果 Token 即将过期，尝试刷新
     if (this.isTokenExpiringSoon()) {
       try {
@@ -423,6 +452,16 @@ class TokenService {
       const token = this.getAccessToken();
       if (!token) {
         log.debug('TokenService', '没有 Token，停止自动刷新');
+        this.stopAutoRefresh();
+        return;
+      }
+
+      if (this.isIdleSessionExpired()) {
+        const error = new TokenRefreshError(
+          '会话因长时间未使用已过期',
+          TokenRefreshFailureReason.IdleSessionExpired,
+        );
+        this.handleRefreshFailure(error);
         this.stopAutoRefresh();
         return;
       }
@@ -489,6 +528,32 @@ class TokenService {
 
     const interval = Math.floor(remainingMs / 2);
     return Math.min(this.MAX_CHECK_INTERVAL_MS, Math.max(this.MIN_CHECK_INTERVAL_MS, interval));
+  }
+
+  isIdleSessionExpired(): boolean {
+    return Boolean(this.getAccessToken()) && isAuthSessionIdleExpired();
+  }
+
+  getRefreshRequestParameters(): Record<string, string> {
+    return getAuthSessionRefreshParameters();
+  }
+
+  private async extractTokenRefreshErrorDetails(response: Response): Promise<string | null> {
+    try {
+      const text = await response.text();
+      if (!text.trim()) {
+        return null;
+      }
+
+      try {
+        const parsed = JSON.parse(text) as { error?: string; error_description?: string };
+        return [parsed.error, parsed.error_description].filter(Boolean).join(': ') || text;
+      } catch {
+        return text;
+      }
+    } catch {
+      return null;
+    }
   }
 
   private migrateLegacyTokenStorage(): void {
