@@ -30,6 +30,8 @@
 - 代码热区拆分候选：超大公开页面、超大 Service、Flutter 大页面
 - 用户留存轻闭环：通知、复访、轻互动与公开分享的回流链路
 - `P3-10` Web-first 评估：Web 首页信息流、个人圈子边界、去 WebOS 化迁移、评论实时 / 编辑状态、神评稳定性、Token 不活跃过期与历史功能规划回拉扫描
+- 用户身份语义与公开索引：已新增 [用户身份语义与公开索引](/architecture/user-identity-semantics)，后续作为注册、登录、公开搜索、艾特、邮箱通知和 Console 用户排障的前置契约
+- 系统设置治理：已新增 [系统设置治理专题](/guide/system-settings-governance)，后续作为 Console 设置中心、默认值恢复、高危二次确认和审计能力的前置专题
 - Radish 电子宠物：已新增 [开发计划](/features/radish-pet-roadmap)，当前仅作为玩法、经济和 Web-first 路线规划，不进入代码实现
 
 ## 第二开发阶段后续池
@@ -52,6 +54,7 @@
 
 - `ID Architecture`：为核心聚合引入 `InternalId / PublicId / FederationId` 分层，冻结新接口继续暴露 `long` 主键的扩散
 - `PublicId Rollout`：优先为 `User / Post / Comment / Attachment / Channel / Notification / WikiDocument` 设计并落地 `PublicId`；当前只回拉最小试点方案，全量 rollout 仍后置
+- `User Identity Semantics`：登录名、邮箱、展示名、公开索引与 `PublicId` 分层治理，避免继续把私有登录凭证和公开展示名混用
 - `Snowflake Exit Strategy`：待外部契约完成 `PublicId` 化后，再评估内部 Snowflake 主键向数据库 `sequence / identity` 的迁移窗口
 - `Federation Readiness`：为未来联邦预留本地对象 / 远端对象、canonical URI、收发队列、签名与重试边界
 - `ActivityPub / WebFinger`：作为未来公开社区联邦首选方向预研，不纳入第二阶段前半程主线
@@ -72,6 +75,13 @@
 - 更完整权限中心、审计与共享接口治理
 - Console 前端后续治理应优先复用 `@radish/ui` 的组件、交互反馈与主题 token，逐步收敛历史页面的自定义样式和重复组件，保持 Console 与 Radish 其他前端入口的视觉一致性
 - 不在第二阶段前半程启动
+
+### 系统设置治理专题
+
+- 后置专题入口：[系统设置治理专题](/guide/system-settings-governance)
+- 当前结论：现有 `SystemConfig` 可作为覆盖值存储基础，但长期应升级为设置定义、代码级默认值、覆盖值、风险等级、二次确认和审计历史
+- 首批候选包括登录名 / 展示名长度、标题 / 正文最小长度、站点品牌等低到中风险设置
+- 安全会话、奖励数值、审核阈值和资产相关高危设置需等二次确认与审计基础完成后再开放
 
 ### `Gateway & BFF` 深化
 

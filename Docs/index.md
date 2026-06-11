@@ -37,6 +37,7 @@ features:
 - [页面真实联调与浏览器 Smoke 规则](/guide/browser-smoke) - 页面联调默认覆盖 PC 与移动端视图
 - [架构总览](/architecture/overview) - 系统拓扑、项目职责与关键约定
 - [开发规范](/architecture/specifications) - 分层约束、编码规范与协作规则
+- [用户身份语义与公开索引](/architecture/user-identity-semantics) - 登录名、邮箱、展示名、PublicId 与公开索引的长期契约
 - [前端设计](/frontend/design) - 纯 Web、Flutter、WebOS 保留入口与应用集成方式
 - [前端多壳层策略](/frontend/shell-strategy) - 多端壳层职责分工
 - [Flutter 移动端 handoff 与回流说明](/guide/flutter-mobile-handoff) - 移动原生来源返回、登录回流与公开链接口径
@@ -66,6 +67,7 @@ features:
 - [记录与验收索引](/records/)
 - [Console 权限 / 菜单 / 按钮管理一期设计方案](/guide/console-authorization-phase1)
 - [配置管理](/guide/configuration)
+- [系统设置治理专题](/guide/system-settings-governance)
 - [服务网关](/guide/gateway)
 - [视觉主题规范](/frontend/visual-theme-spec)
 - [视觉颜色参考](/frontend/visual-color-reference)

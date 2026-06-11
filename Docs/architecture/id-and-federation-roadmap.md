@@ -9,6 +9,7 @@
 > - [开发路线图](/development-plan)
 > - [未来规划 / Backlog](/planning/backlog)
 > - [开发框架说明](/architecture/framework)
+> - [用户身份语义与公开索引](/architecture/user-identity-semantics)
 > - [多租户隔离实施与审计](/architecture/tenant-isolation)
 
 ## 1. 文档结论

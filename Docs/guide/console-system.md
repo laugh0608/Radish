@@ -15,6 +15,7 @@ Console 管理后台系统文档较长，为便于阅读已拆分为多篇文档
 - [Console 权限治理 V1](/guide/console-permission-governance) - 当前最重要的治理专题文档
 - [Console 权限覆盖矩阵](/guide/console-permission-coverage-matrix) - 路由 / 前端权限 / 后端映射 / 种子的对照表
 - [Console 权限 / 菜单 / 按钮管理一期设计方案](/guide/console-authorization-phase1) - `Console-ext` 第一阶段的专题设计文档
+- [系统设置治理专题](/guide/system-settings-governance) - 设置定义、默认值、覆盖值、风险等级、二次确认与审计规则
 
 ---
 

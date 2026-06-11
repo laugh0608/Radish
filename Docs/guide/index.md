@@ -63,6 +63,7 @@
 - [Console 权限 / 菜单 / 按钮管理一期设计方案](/guide/console-authorization-phase1)
 - [Console 架构说明](/guide/console-architecture)
 - [Console 系统说明](/guide/console-system)
+- [系统设置治理专题](/guide/system-settings-governance)
 - [Console 样式与 Token 使用说明](/frontend/console-style-guide)
 
 ### 领域专题说明

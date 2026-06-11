@@ -87,11 +87,13 @@
 ## 长期方向与当前衔接
 
 - 标识体系升级：`InternalId / PublicId / FederationId` 分层，`PublicId` 长期优先 `UUIDv7`。
+- 用户身份语义升级：登录名与邮箱作为私有登录凭证，展示名与公开索引用于页面展示、搜索和艾特，详见 [用户身份语义与公开索引](/architecture/user-identity-semantics)。
 - 社区联邦化：公开社区对象优先按 `ActivityPub + WebFinger` 方向预留。
 - 租户语义调整：长期产品语义转向 `instance / node / space / group / category`。
 - 多端客户端长期保持分工清晰：纯 Web 负责低门槛访问、PC / 移动浏览器和登录后轻量链路，Flutter 负责移动原生体验，WebOS 只作为 `/desktop` 保留迁移线，PC/Tauri 后置且只增强纯 Web。
 - Web 首页长期按信息流和个人圈子边界演进；完整联邦社交、推荐算法平台和个人圈子实现需在 PublicId / FederationId 方向明确后逐步推进。
 - UI 长期治理以设计源文件、视觉 token、共享组件和端点实现同步为准，不让各端继续自然分叉。
+- Console 系统设置长期从简单 key-value 升级为“设置定义 + 默认值 + 覆盖值 + 风险等级 + 审计”的治理中心，详见 [系统设置治理专题](/guide/system-settings-governance)。
 - 详细方案见：[标识体系与社区联邦长期路线](/architecture/id-and-federation-roadmap)。
 
 ## 并行维护
@@ -117,7 +119,7 @@
 - Redis 与缓存治理专题：多实例 SignalR Backplane、聊天室在线状态、通知未读原子计数、上传限流、商城 / 萝卜币幂等与并发保护、排行榜 / 热点读模型缓存，详见 [Redis 与缓存治理专题](/planning/redis-cache-governance)。
 - `Console-ext Phase 2+`。
 - 开放平台第三方接入 / SDK。
-- 邮件通知系统。
+- 邮件通知系统；实施前应先完成邮箱必填、邮箱登录凭证和通知设置治理的基础专题。
 - 完整 `PWA / Service Worker / 离线能力`。
 - 完整 Playwright / E2E 平台。
 - 完整可观测性平台、Tracing / Metrics 大阶段。
