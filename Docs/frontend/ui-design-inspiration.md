@@ -34,6 +34,23 @@
 | 1Panel | `onepanel-file-manager-table.png` | 运维文件表格、工具条、操作列和浅蓝侧栏 |
 | 1Panel | `onepanel-app-store-card-grid.png` | 应用市场卡片栅格、筛选和分页 |
 | 1Panel | `onepanel-monitoring-dashboard-charts.png` | 监控图表大面板、时间筛选和多图表布局 |
+| MiMo Code | `mimo-code-hero-desktop.png` | 淡色东方纹理、极简顶部导航、轻量按钮与命令框视觉 |
+| MiMo Code | `mimo-code-feature-desktop-1.png` | 技术截图与水墨背景融合、浅纸色承托和低对比装饰 |
+| MiMo Code | `mimo-code-feature-desktop-2.png` | 低饱和水墨背景、代码截图承托、标题与正文留白 |
+| MiMo Code | `mimo-code-mobile-hero-feature.png` | 移动端背景细节压缩、轻按钮尺寸和浮动入口避让 |
+| MiMo Code | `mimo-code-mobile-feature-list.png` | 移动端图文层级、浅底内容块和固定浮动操作避让 |
+
+### 淡雅古风 UI 参考
+
+MiMo Code 的参考价值不在 AI 编程产品本身，也不在它的营销首页结构，而在“现代 UI + 淡雅东方视觉”的组合方式。Radish 的根路径仍应承接 `/discover` 公开内容流，不因为参考外部页面而改成品牌营销首页、首屏产品承诺或能力介绍页。
+
+- 浅纸色、水墨、书页、山水、云纹和萝卜 IP 线稿只作为边缘、分区收边、空态、顶部弱背景或内容承托，不压低 `/discover` 的内容密度。
+- 帖子列表、公开文档、圈子摘要、用户卡片和 Console 截图可以嵌入轻纹理、细边框和浅底层级中，但不额外拆成宽幅能力介绍 band。
+- 中文标题可使用衬线字体制造书卷感，正文和按钮仍保持清晰无衬线，避免整页都变成复古字体。
+- 按钮、命令框、浮动入口都保持细边框、浅底和小面积强调，不使用厚重渐变、强红金或国潮海报式冲击。
+- 移动端优先保证信息流可读和连续浏览，背景纹理进一步减弱，不能把内容列表改造成纵向宣传卡片。
+
+Radish 不能直接复刻 MiMo Code 的品牌、飞天素材、安装命令、页面结构、CTA 组合和文案。后续应将这种视觉方法转化为 Radish 自己的萝卜、山水、文档、社区和治理语义。
 
 ## 总体设计语言
 
