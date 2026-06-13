@@ -370,6 +370,8 @@ export const PostQuickReplyWall = ({
                   {lane.items.map((reply) => {
                     const avatarUrl = resolveMediaUrl(reply.voAuthorAvatarUrl);
                     const isOwner = String(reply.voAuthorId) === String(currentUserId);
+                    const canDelete = !isReadOnly && isOwner && Boolean(onDelete);
+                    const canReport = !isReadOnly && !isOwner && Boolean(onReport);
                     const authorName = reply.voAuthorName?.trim() || t('common.unknownUser');
 
                     return (
@@ -387,7 +389,7 @@ export const PostQuickReplyWall = ({
                         <span className={styles.author}>{authorName}</span>
                         <span className={styles.content}>{reply.voContent}</span>
 
-                        {!isReadOnly && isOwner ? (
+                        {canDelete ? (
                           <button
                             type="button"
                             className={styles.actionButton}
@@ -402,11 +404,11 @@ export const PostQuickReplyWall = ({
                               size={15}
                             />
                           </button>
-                        ) : !isReadOnly && onReport ? (
+                        ) : canReport ? (
                           <button
                             type="button"
                             className={styles.actionButton}
-                            onClick={() => onReport(reply.voId)}
+                            onClick={() => onReport?.(reply.voId)}
                             title={t('report.action')}
                           >
                             <Icon icon="mdi:alert-circle-outline" size={15} />
@@ -427,6 +429,7 @@ export const PostQuickReplyWall = ({
           const authorName = reply.voAuthorName?.trim() || t('common.unknownUser');
           const avatarUrl = resolveMediaUrl(reply.voAuthorAvatarUrl);
           const isOwner = String(reply.voAuthorId) === String(currentUserId);
+          const canShowAction = !isReadOnly && ((isOwner && Boolean(onDelete)) || (!isOwner && Boolean(onReport)));
 
           return (
             <div
@@ -447,7 +450,7 @@ export const PostQuickReplyWall = ({
               </div>
               <span className={styles.author}>{authorName}</span>
               <span className={styles.content}>{reply.voContent}</span>
-              {!isReadOnly && (
+              {canShowAction && (
                 <button type="button" className={styles.actionButton} tabIndex={-1}>
                   <Icon icon={isOwner ? 'mdi:trash-can-outline' : 'mdi:alert-circle-outline'} size={15} />
                 </button>
@@ -457,7 +460,7 @@ export const PostQuickReplyWall = ({
         })}
       </div>
 
-      {!isReadOnly && (
+      {!isReadOnly && onDelete && (
         <ConfirmDialog
           isOpen={pendingDeleteId !== null}
           title={t('forum.confirmDeleteTitle')}

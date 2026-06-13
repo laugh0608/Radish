@@ -28,7 +28,6 @@ import { PostDetail as ForumPostDetail } from '@/apps/forum/components/PostDetai
 import { PostQuickReplyWall } from '@/apps/forum/components/PostQuickReplyWall';
 import {
   applyCommentHighlightEvent,
-  hasCommentInTree,
   removeCommentFromTree,
   updateCommentLikeCount,
   upsertCommentInTree
@@ -59,6 +58,10 @@ import styles from './PublicForumApp.module.css';
 
 type RootCommentSort = 'newest' | 'hottest' | null;
 const COMMENT_NAVIGATION_CHILD_PAGE_SIZE = 5;
+
+const buildRootCommentIdSet = (rootComments: CommentNode[]): Set<string> => (
+  new Set(rootComments.map((comment) => String(comment.voId)))
+);
 
 interface PublicForumCommentNavigationTarget {
   commentId: LongId;
@@ -129,8 +132,73 @@ export const PublicForumDetail = ({
   const commentTypingUsersRef = useRef(new Map<string, string>());
   const commentTypingTimersRef = useRef(new Map<string, number>());
   const commentNoticeRef = useRef<HTMLDivElement | null>(null);
+  const countedRootCommentIdsRef = useRef(new Set<string>());
+  const deletedRootCommentIdsRef = useRef(new Set<string>());
   const commentPageSize = 20;
   const isAuthenticated = authStoreAuthenticated && isUserAuthenticated();
+
+  const syncCountedRootComments = useCallback((rootComments: CommentNode[]) => {
+    countedRootCommentIdsRef.current = buildRootCommentIdSet(rootComments);
+    deletedRootCommentIdsRef.current.clear();
+  }, []);
+
+  const applyPostCommentCountDelta = useCallback((delta: number) => {
+    setPost((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+        voCommentCount: Math.max(0, (current.voCommentCount ?? 0) + delta)
+      };
+    });
+  }, []);
+
+  const syncPostCommentCount = useCallback((count: number | null | undefined) => {
+    if (typeof count !== 'number') {
+      return;
+    }
+
+    setPost((current) => (
+      current
+        ? {
+            ...current,
+            voCommentCount: Math.max(0, count)
+          }
+        : current
+    ));
+  }, []);
+
+  const registerRootCommentCount = useCallback((commentId: LongId, parentCommentId?: LongId | null): boolean => {
+    if (parentCommentId) {
+      return false;
+    }
+
+    const commentKey = String(commentId);
+    if (countedRootCommentIdsRef.current.has(commentKey)) {
+      return false;
+    }
+
+    countedRootCommentIdsRef.current.add(commentKey);
+    deletedRootCommentIdsRef.current.delete(commentKey);
+    return true;
+  }, []);
+
+  const registerRootCommentRemoval = useCallback((commentId: LongId, parentCommentId?: LongId | null): boolean => {
+    if (parentCommentId) {
+      return false;
+    }
+
+    const commentKey = String(commentId);
+    if (deletedRootCommentIdsRef.current.has(commentKey)) {
+      return false;
+    }
+
+    deletedRootCommentIdsRef.current.add(commentKey);
+    countedRootCommentIdsRef.current.delete(commentKey);
+    return true;
+  }, []);
 
   const syncCommentTypingUsers = useCallback(() => {
     setCommentTypingUserNames([...commentTypingUsersRef.current.values()]);
@@ -297,8 +365,10 @@ export const PublicForumDetail = ({
             }
           }
 
+          syncCountedRootComments(nextComments);
           setComments(nextComments);
           setCommentTotal(rootComments.voTotal ?? 0);
+          syncPostCommentCount(rootComments.voTotal);
           setLoadedCommentPages((rootComments.voItems?.length ?? 0) > 0 ? (rootComments.voPageIndex ?? 1) : 0);
           setCommentError(null);
           setCommentNavigationTarget(navigation ? {
@@ -310,6 +380,7 @@ export const PublicForumDetail = ({
           } : null);
         } else {
           setComments([]);
+          syncCountedRootComments([]);
           setCommentTotal(0);
           setLoadedCommentPages(0);
           const message = rootCommentsResult.reason instanceof Error
@@ -341,7 +412,16 @@ export const PublicForumDetail = ({
     };
 
     void loadDetail();
-  }, [clearCommentTypingUsers, commentId, commentSortBy, postId, reloadToken, t]);
+  }, [
+    clearCommentTypingUsers,
+    commentId,
+    commentSortBy,
+    postId,
+    reloadToken,
+    syncCountedRootComments,
+    syncPostCommentCount,
+    t
+  ]);
 
   useEffect(() => {
     return () => {
@@ -364,14 +444,17 @@ export const PublicForumDetail = ({
         return;
       }
 
-      setComments((current) => {
-        const exists = hasCommentInTree(current, payload.voComment!.voId);
-        if (!exists && !payload.voComment!.voParentId) {
-          setCommentTotal((total) => total + 1);
-        }
+      const shouldIncrementTotal = registerRootCommentCount(
+        payload.voComment.voId,
+        payload.voComment.voParentId
+      );
 
-        return upsertCommentInTree(current, payload.voComment!, commentSortBy);
-      });
+      setComments((current) => upsertCommentInTree(current, payload.voComment!, commentSortBy));
+
+      if (shouldIncrementTotal) {
+        setCommentTotal((total) => total + 1);
+        applyPostCommentCountDelta(1);
+      }
     });
 
     const unsubscribeUpdated = commentHub.subscribe('CommentUpdated', (payload) => {
@@ -387,14 +470,17 @@ export const PublicForumDetail = ({
         return;
       }
 
-      setComments((current) => {
-        const exists = hasCommentInTree(current, payload.voCommentId);
-        if (exists && !payload.voParentCommentId) {
-          setCommentTotal((total) => Math.max(0, total - 1));
-        }
+      const shouldDecrementTotal = registerRootCommentRemoval(
+        payload.voCommentId,
+        payload.voParentCommentId
+      );
 
-        return removeCommentFromTree(current, payload.voCommentId);
-      });
+      setComments((current) => removeCommentFromTree(current, payload.voCommentId));
+
+      if (shouldDecrementTotal) {
+        setCommentTotal((total) => Math.max(0, total - 1));
+        applyPostCommentCountDelta(-1);
+      }
     });
 
     const unsubscribeLikeChanged = commentHub.subscribe('CommentLikeChanged', (payload) => {
@@ -424,7 +510,15 @@ export const PublicForumDetail = ({
       clearCommentTypingUsers();
       void commentHub.leavePost(resolvedPostId);
     };
-  }, [clearCommentTypingUsers, commentSortBy, post?.voId, registerCommentTypingUser]);
+  }, [
+    applyPostCommentCountDelta,
+    clearCommentTypingUsers,
+    commentSortBy,
+    post?.voId,
+    registerCommentTypingUser,
+    registerRootCommentCount,
+    registerRootCommentRemoval
+  ]);
 
   useEffect(() => {
     if (!post?.voTitle) {
@@ -525,8 +619,10 @@ export const PublicForumDetail = ({
         );
 
         nextComments = rootComments.voItems ?? [];
+        syncCountedRootComments(nextComments);
         setComments(nextComments);
         setCommentTotal(rootComments.voTotal ?? 0);
+        syncPostCommentCount(rootComments.voTotal);
         setLoadedCommentPages((rootComments.voItems?.length ?? 0) > 0 ? (rootComments.voPageIndex ?? navigation.voRootPageIndex) : 0);
       }
 
@@ -568,7 +664,17 @@ export const PublicForumDetail = ({
     } catch {
       setCommentNavigationNotice(t('forum.commentNavigation.notice'));
     }
-  }, [commentPageSize, commentSortBy, comments, loadedCommentPages, post?.voId, postId, t]);
+  }, [
+    commentPageSize,
+    commentSortBy,
+    comments,
+    loadedCommentPages,
+    post?.voId,
+    postId,
+    syncCountedRootComments,
+    syncPostCommentCount,
+    t
+  ]);
 
   const registerCommentAnchor = (targetCommentId: LongId, element: HTMLDivElement | null) => {
     const targetCommentIdKey = String(targetCommentId);
@@ -641,6 +747,9 @@ export const PublicForumDetail = ({
       const nextPage = loadedCommentPages + 1;
       const pageData = await getRootCommentsPage(post?.voId ?? postId, nextPage, commentPageSize, commentSortBy || 'default', t);
       const nextItems = pageData.voItems ?? [];
+      for (const item of nextItems) {
+        countedRootCommentIdsRef.current.add(String(item.voId));
+      }
 
       setComments((current) => {
         const existingIds = new Set(current.map((item) => item.voId));
@@ -648,6 +757,7 @@ export const PublicForumDetail = ({
         return [...current, ...appended];
       });
       setCommentTotal((current) => pageData.voTotal ?? current);
+      syncPostCommentCount(pageData.voTotal);
       if (nextItems.length > 0) {
         setLoadedCommentPages(nextPage);
       }
@@ -783,14 +893,14 @@ export const PublicForumDetail = ({
         voIsSofa: false
       };
 
-      setComments((current) => {
-        const exists = hasCommentInTree(current, newComment.voId);
-        if (!exists) {
-          setCommentTotal((total) => total + 1);
-        }
+      const shouldIncrementTotal = registerRootCommentCount(newComment.voId, newComment.voParentId);
 
-        return upsertCommentInTree(current, newComment, commentSortBy);
-      });
+      setComments((current) => upsertCommentInTree(current, newComment, commentSortBy));
+
+      if (shouldIncrementTotal) {
+        setCommentTotal((total) => total + 1);
+        applyPostCommentCountDelta(1);
+      }
       setCommentNavigationTarget({
         commentId: createdCommentId,
         navigationKey: `${post.voId}:${createdCommentId}:created:${Date.now()}`
@@ -809,6 +919,8 @@ export const PublicForumDetail = ({
     currentUserName,
     isAuthenticated,
     post?.voId,
+    registerRootCommentCount,
+    applyPostCommentCountDelta,
     submittingComment,
     t
   ]);
