@@ -7,7 +7,7 @@ import {
 } from './leaderboardRouteState.ts';
 import { buildPublicProfilePath } from './profileRouteState.ts';
 import { buildPublicShopPath } from './shopRouteState.ts';
-import type { PublicRouteDescriptor } from './publicRouteNavigation.ts';
+import type { PublicContentRouteDescriptor } from './publicRouteNavigation.ts';
 
 export const publicSiteName = 'Radish';
 export const publicDefaultOrigin = 'https://radishx.com';
@@ -96,7 +96,7 @@ export function buildPublicShareUrl(publicPath: string, origin?: string): string
   return new URL(publicPath, resolvePublicOrigin(origin)).toString();
 }
 
-function buildDiscoverHead(route: PublicRouteDescriptor & { app: 'discover' }): PublicHeadDescriptor {
+function buildDiscoverHead(route: PublicContentRouteDescriptor & { app: 'discover' }): PublicHeadDescriptor {
   return {
     title: `社区发现 - ${publicSiteName}`,
     description: '浏览 Radish 的公开内容、社区动态、文档入口、榜单与商城推荐。',
@@ -104,7 +104,7 @@ function buildDiscoverHead(route: PublicRouteDescriptor & { app: 'discover' }): 
   };
 }
 
-function buildForumHead(route: PublicRouteDescriptor & { app: 'forum' }): PublicHeadDescriptor {
+function buildForumHead(route: PublicContentRouteDescriptor & { app: 'forum' }): PublicHeadDescriptor {
   const canonicalPath = buildPublicForumPath(route.route);
   if (route.route.kind === 'detail') {
     return {
@@ -171,7 +171,7 @@ function buildForumHead(route: PublicRouteDescriptor & { app: 'forum' }): Public
   };
 }
 
-function buildDocsHead(route: PublicRouteDescriptor & { app: 'docs' }): PublicHeadDescriptor {
+function buildDocsHead(route: PublicContentRouteDescriptor & { app: 'docs' }): PublicHeadDescriptor {
   const canonicalPath = buildPublicDocsPath(route.route);
   if (route.route.kind === 'detail') {
     if (isNumericRouteIdentifier(route.route.slug)) {
@@ -207,7 +207,7 @@ function buildDocsHead(route: PublicRouteDescriptor & { app: 'docs' }): PublicHe
   };
 }
 
-function buildProfileHead(route: PublicRouteDescriptor & { app: 'profile' }): PublicHeadDescriptor {
+function buildProfileHead(route: PublicContentRouteDescriptor & { app: 'profile' }): PublicHeadDescriptor {
   return {
     title: `用户公开主页 - ${publicSiteName}`,
     description: '查看 Radish 用户的公开主页、帖子与评论记录。',
@@ -216,7 +216,7 @@ function buildProfileHead(route: PublicRouteDescriptor & { app: 'profile' }): Pu
   };
 }
 
-function buildLeaderboardHead(route: PublicRouteDescriptor & { app: 'leaderboard' }): PublicHeadDescriptor {
+function buildLeaderboardHead(route: PublicContentRouteDescriptor & { app: 'leaderboard' }): PublicHeadDescriptor {
   const definition = getPublicLeaderboardRouteDefinitionBySlug(route.route.typeSlug);
   return {
     title: `${definition.slug} 榜单 - ${publicSiteName}`,
@@ -225,7 +225,7 @@ function buildLeaderboardHead(route: PublicRouteDescriptor & { app: 'leaderboard
   };
 }
 
-function buildShopHead(route: PublicRouteDescriptor & { app: 'shop' }): PublicHeadDescriptor {
+function buildShopHead(route: PublicContentRouteDescriptor & { app: 'shop' }): PublicHeadDescriptor {
   const canonicalPath = buildPublicShopPath(route.route);
   if (route.route.kind === 'detail') {
     return {
@@ -252,7 +252,7 @@ function buildShopHead(route: PublicRouteDescriptor & { app: 'shop' }): PublicHe
   };
 }
 
-export function buildPublicRouteHead(route: PublicRouteDescriptor): PublicHeadDescriptor {
+export function buildPublicRouteHead(route: PublicContentRouteDescriptor): PublicHeadDescriptor {
   if (route.app === 'discover') {
     return buildDiscoverHead(route);
   }

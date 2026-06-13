@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { getApiBaseUrl } from '@/config/env';
@@ -12,8 +12,13 @@ import {
 } from '@/api/userFollow';
 import type { PostItem } from '@/types/forum';
 import { PublicShellHeader } from '@/public/components/PublicShellHeader';
-import { buildPublicForumPath } from '@/public/forumRouteState';
-import { buildPublicProfilePath } from '@/public/profileRouteState';
+import { buildPublicForumPath, type PublicForumDetailRoute } from '@/public/forumRouteState';
+import { buildPublicProfilePath, type PublicProfileRoute } from '@/public/profileRouteState';
+import {
+  createPublicRouteSourceState,
+  rememberPublicRouteSourceTransfer,
+  type PublicContentRouteDescriptor
+} from '@/public/publicRouteNavigation';
 import { bootstrapAuth, hydrateAuthUser } from '@/services/authBootstrap';
 import { redirectToLogin } from '@/services/auth';
 import { buildCircleReturnPath } from '@/services/authReturnPath';
@@ -41,23 +46,32 @@ function resolveInitialCircleRoute(): CircleRoute {
   return parseCircleRoute(window.location.pathname, window.location.search) ?? createDefaultCircleRoute();
 }
 
-function buildPostPath(post: PostItem): string {
+function buildPostRoute(post: PostItem): PublicForumDetailRoute {
   const publicId = post.voPublicId?.trim();
-  return buildPublicForumPath({
+  return {
     kind: 'detail',
     postId: String(post.voId),
     ...(publicId ? { postPublicId: publicId } : {})
-  });
+  };
 }
 
-function buildUserPath(user: UserFollowUser): string {
+function buildUserRoute(user: UserFollowUser): PublicProfileRoute {
   const publicId = user.voPublicId?.trim();
-  return buildPublicProfilePath({
+  return {
     kind: 'detail',
     userId: publicId || String(user.voUserId),
     tab: 'posts',
     page: 1
-  });
+  };
+}
+
+function shouldHandleCircleSourceLink(event: MouseEvent<HTMLAnchorElement>): boolean {
+  return !event.defaultPrevented
+    && event.button === 0
+    && !event.metaKey
+    && !event.ctrlKey
+    && !event.shiftKey
+    && !event.altKey;
 }
 
 function buildAvatarText(name: string): string {
@@ -218,6 +232,25 @@ export const CircleApp = () => {
     navigateToRoute({ ...route, page: Math.min(Math.max(1, page), totalPages) });
   };
 
+  const rememberCircleSourceForPublicTarget = (
+    event: MouseEvent<HTMLAnchorElement>,
+    targetPath: string,
+    targetRoute: PublicContentRouteDescriptor
+  ) => {
+    if (!shouldHandleCircleSourceLink(event)) {
+      return;
+    }
+
+    rememberPublicRouteSourceTransfer(
+      targetPath,
+      createPublicRouteSourceState(
+        {},
+        { app: 'circle', route },
+        targetRoute
+      )
+    );
+  };
+
   const renderUserAvatar = (user: UserFollowUser) => {
     const displayName = user.voDisplayName?.trim() || user.voUserName.trim() || t('common.unknownUser');
     const userIdKey = String(user.voUserId);
@@ -257,26 +290,35 @@ export const CircleApp = () => {
 
     return (
       <div className={styles.feedList}>
-        {feedItems.map((item) => (
-          <article key={item.voId} className={styles.feedItem}>
-            <a className={styles.feedTitle} href={buildPostPath(item)}>
-              {item.voTitle}
-            </a>
-            {item.voSummary ? <p className={styles.feedSummary}>{item.voSummary}</p> : null}
-            <div className={styles.metaRow}>
-              <span>{t('circle.author', { name: item.voAuthorName || t('common.unknownUser') })}</span>
-              {item.voCreateTime ? <span>{formatDateTimeByTimeZone(item.voCreateTime, displayTimeZone)}</span> : null}
-              <span className={styles.metric}>
-                <Icon icon="mdi:comment-text-outline" size={15} />
-                <span>{item.voCommentCount || 0}</span>
-              </span>
-              <span className={styles.metric}>
-                <Icon icon="mdi:heart-outline" size={15} />
-                <span>{item.voLikeCount || 0}</span>
-              </span>
-            </div>
-          </article>
-        ))}
+        {feedItems.map((item) => {
+          const postRoute = buildPostRoute(item);
+          const postPath = buildPublicForumPath(postRoute);
+
+          return (
+            <article key={item.voId} className={styles.feedItem}>
+              <a
+                className={styles.feedTitle}
+                href={postPath}
+                onClick={(event) => rememberCircleSourceForPublicTarget(event, postPath, { app: 'forum', route: postRoute })}
+              >
+                {item.voTitle}
+              </a>
+              {item.voSummary ? <p className={styles.feedSummary}>{item.voSummary}</p> : null}
+              <div className={styles.metaRow}>
+                <span>{t('circle.author', { name: item.voAuthorName || t('common.unknownUser') })}</span>
+                {item.voCreateTime ? <span>{formatDateTimeByTimeZone(item.voCreateTime, displayTimeZone)}</span> : null}
+                <span className={styles.metric}>
+                  <Icon icon="mdi:comment-text-outline" size={15} />
+                  <span>{item.voCommentCount || 0}</span>
+                </span>
+                <span className={styles.metric}>
+                  <Icon icon="mdi:heart-outline" size={15} />
+                  <span>{item.voLikeCount || 0}</span>
+                </span>
+              </div>
+            </article>
+          );
+        })}
       </div>
     );
   };
@@ -288,22 +330,32 @@ export const CircleApp = () => {
 
     return (
       <div className={styles.userList}>
-        {userItems.map((user) => (
-          <a key={user.voUserId} className={styles.userItem} href={buildUserPath(user)}>
-            {renderUserAvatar(user)}
-            <span className={styles.userBody}>
-              <span className={styles.userNameRow}>
-                <span className={styles.userName}>{user.voUserName}</span>
-                {user.voDisplayName ? <span className={styles.userDisplayName}>{user.voDisplayName}</span> : null}
-                {user.voIsMutualFollow ? <span className={styles.mutualBadge}>{t('circle.mutualFollow')}</span> : null}
+        {userItems.map((user) => {
+          const userRoute = buildUserRoute(user);
+          const userPath = buildPublicProfilePath(userRoute);
+
+          return (
+            <a
+              key={user.voUserId}
+              className={styles.userItem}
+              href={userPath}
+              onClick={(event) => rememberCircleSourceForPublicTarget(event, userPath, { app: 'profile', route: userRoute })}
+            >
+              {renderUserAvatar(user)}
+              <span className={styles.userBody}>
+                <span className={styles.userNameRow}>
+                  <span className={styles.userName}>{user.voUserName}</span>
+                  {user.voDisplayName ? <span className={styles.userDisplayName}>{user.voDisplayName}</span> : null}
+                  {user.voIsMutualFollow ? <span className={styles.mutualBadge}>{t('circle.mutualFollow')}</span> : null}
+                </span>
+                <span className={styles.userMeta}>
+                  {t('circle.followTime', { time: formatDateTimeByTimeZone(user.voFollowTime, displayTimeZone) })}
+                </span>
               </span>
-              <span className={styles.userMeta}>
-                {t('circle.followTime', { time: formatDateTimeByTimeZone(user.voFollowTime, displayTimeZone) })}
-              </span>
-            </span>
-            <Icon icon="mdi:chevron-right" size={20} />
-          </a>
-        ))}
+              <Icon icon="mdi:chevron-right" size={20} />
+            </a>
+          );
+        })}
       </div>
     );
   };

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getApiBaseUrl } from '@/config/env';
 import { bootstrapAuth } from '@/services/authBootstrap';
+import { buildCirclePath } from '@/circle/circleRouteState';
 import { PublicDiscoverApp } from './discover/PublicDiscoverApp';
 import { PublicForumApp } from './forum/PublicForumApp';
 import { PublicDocsApp } from './docs/PublicDocsApp';
@@ -59,12 +60,14 @@ import type {
   PublicShopRoute,
 } from './shopRouteState';
 import {
+  consumePublicRouteSourceTransfer,
   createPublicRouteSourceState,
   resolveDocsDetailBackMode,
   resolveForumDetailBackMode,
   resolveProfileBackMode,
   resolveShopDetailBackMode,
   shouldCommitPublicRouteUpdate,
+  type PublicContentRouteDescriptor,
   type PublicDetailBackMode,
   type PublicRouteDescriptor,
   type PublicRouteSourceState,
@@ -92,6 +95,12 @@ interface PublicNavigateOptions {
 }
 
 function readPublicRouteSourceState(): PublicRouteSourceState {
+  const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  const transferState = consumePublicRouteSourceTransfer(currentPath);
+  if (transferState) {
+    return transferState;
+  }
+
   const historyState = window.history.state;
   if (!historyState || typeof historyState !== 'object') {
     return {};
@@ -113,7 +122,7 @@ function buildPublicHistoryState(sourceState: PublicRouteSourceState): Record<st
   return nextHistoryState;
 }
 
-function parsePublicRoute(): PublicRouteDescriptor {
+function parsePublicRoute(): PublicContentRouteDescriptor {
   const discoverRoute = parsePublicDiscoverRoute(window.location.pathname, window.location.search);
   if (discoverRoute) {
     return {
@@ -163,6 +172,10 @@ function parsePublicRoute(): PublicRouteDescriptor {
 }
 
 function buildPublicPath(nextRoute: PublicRouteDescriptor): string {
+  if (nextRoute.app === 'circle') {
+    return buildCirclePath(nextRoute.route);
+  }
+
   if (nextRoute.app === 'discover') {
     return buildPublicDiscoverPath(nextRoute.route);
   }
@@ -186,7 +199,7 @@ function buildPublicPath(nextRoute: PublicRouteDescriptor): string {
 
 export const PublicEntry = () => {
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
-  const [route, setRoute] = useState<PublicRouteDescriptor>(() => parsePublicRoute());
+  const [route, setRoute] = useState<PublicContentRouteDescriptor>(() => parsePublicRoute());
   const [lastDiscoverRoute, setLastDiscoverRoute] = useState<PublicDiscoverRoute>(() => {
     const parsedRoute = parsePublicDiscoverRoute(window.location.pathname, window.location.search);
     return parsedRoute ?? createDefaultPublicDiscoverRoute();
@@ -204,6 +217,10 @@ export const PublicEntry = () => {
     return parsedRoute.kind === 'products' ? parsedRoute : createDefaultPublicShopProductsRoute();
   });
   const [routeSourceState, setRouteSourceState] = useState<PublicRouteSourceState>(() => readPublicRouteSourceState());
+
+  useEffect(() => {
+    window.history.replaceState(buildPublicHistoryState(routeSourceState), '');
+  }, [routeSourceState]);
 
   useEffect(() => {
     const cleanup = bootstrapAuth({ apiBaseUrl });
@@ -260,6 +277,11 @@ export const PublicEntry = () => {
     const currentRoute = parsePublicRoute();
     const nextPath = buildPublicPath(nextRoute);
     const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+
+    if (nextRoute.app === 'circle') {
+      window.location.href = nextPath;
+      return;
+    }
 
     if (!shouldCommitPublicRouteUpdate(currentRoute, nextRoute, currentPath, nextPath)) {
       return;

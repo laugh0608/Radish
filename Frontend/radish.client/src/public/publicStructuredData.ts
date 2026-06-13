@@ -8,7 +8,7 @@ import {
   publicDefaultDescription,
   publicSiteName,
 } from './publicHead.ts';
-import type { PublicRouteDescriptor } from './publicRouteNavigation.ts';
+import type { PublicContentRouteDescriptor } from './publicRouteNavigation.ts';
 
 export const publicStructuredDataScriptId = 'radish-public-structured-data';
 
@@ -216,7 +216,7 @@ export function buildProfilePageStructuredData(options: BuildProfileStructuredDa
   });
 }
 
-function isPublicRouteCollectionPage(route: PublicRouteDescriptor): boolean {
+function isPublicRouteCollectionPage(route: PublicContentRouteDescriptor): boolean {
   if (route.app === 'discover' || route.app === 'leaderboard') {
     return true;
   }
@@ -228,7 +228,7 @@ function isPublicRouteCollectionPage(route: PublicRouteDescriptor): boolean {
   return false;
 }
 
-export function buildPublicRouteStructuredData(route: PublicRouteDescriptor, origin?: string): JsonLdObject {
+export function buildPublicRouteStructuredData(route: PublicContentRouteDescriptor, origin?: string): JsonLdObject {
   const head = buildPublicRouteHead(route);
   const canonicalUrl = buildPublicCanonicalUrl(head.canonicalPath, origin);
   const pageType = isPublicRouteCollectionPage(route) ? 'CollectionPage' : 'WebPage';

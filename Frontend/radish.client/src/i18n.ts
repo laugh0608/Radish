@@ -386,6 +386,7 @@ const resources = {
             'public.shell.backToLeaderboard': 'Back to leaderboard',
             'public.shell.backToShop': 'Back to shop',
             'public.shell.backToShopProducts': 'Back to product list',
+            'public.shell.backToCircle': 'Back to my circle',
             ...welcomeEn,
             ...welcomeOpenSourceEn,
 
@@ -1924,6 +1925,7 @@ const resources = {
             'public.shell.backToLeaderboard': '返回榜单',
             'public.shell.backToShop': '返回商城',
             'public.shell.backToShopProducts': '返回商品列表',
+            'public.shell.backToCircle': '返回我的圈子',
             ...welcomeZh,
             ...welcomeOpenSourceZh,
 

@@ -4,6 +4,9 @@ import type { PublicForumBrowseRoute, PublicForumRoute } from './forumRouteState
 import type { PublicLeaderboardRoute } from './leaderboardRouteState';
 import type { PublicProfileRoute } from './profileRouteState';
 import type { PublicShopRoute } from './shopRouteState';
+import type { CircleRoute } from '../circle/circleRouteState';
+
+const PUBLIC_ROUTE_SOURCE_TRANSFER_STORAGE_KEY = 'radish:public-route-source-transfer';
 
 export type PublicRouteDescriptor =
   | { app: 'discover'; route: PublicDiscoverRoute }
@@ -11,7 +14,10 @@ export type PublicRouteDescriptor =
   | { app: 'docs'; route: PublicDocsRoute }
   | { app: 'profile'; route: PublicProfileRoute }
   | { app: 'leaderboard'; route: PublicLeaderboardRoute }
-  | { app: 'shop'; route: PublicShopRoute };
+  | { app: 'shop'; route: PublicShopRoute }
+  | { app: 'circle'; route: CircleRoute };
+
+export type PublicContentRouteDescriptor = Exclude<PublicRouteDescriptor, { app: 'circle' }>;
 
 export type PublicDetailBackMode =
   | 'discover'
@@ -21,7 +27,8 @@ export type PublicDetailBackMode =
   | 'profile'
   | 'leaderboard'
   | 'shop'
-  | 'shopProducts';
+  | 'shopProducts'
+  | 'circle';
 
 export interface PublicRouteSourceState {
   forumDetailSourceRoute?: PublicRouteDescriptor | null;
@@ -32,6 +39,23 @@ export interface PublicRouteSourceState {
 
 export interface PublicRouteSourceStateOptions {
   preserveExisting?: boolean;
+}
+
+interface PublicRouteSourceTransfer {
+  targetPath: string;
+  sourceState: PublicRouteSourceState;
+}
+
+function getSessionStorage(): Storage | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
 }
 
 function isForumBrowseDescriptor(
@@ -80,8 +104,80 @@ export function getPublicDetailBackLabelKey(mode: PublicDetailBackMode | null | 
       return 'public.shell.backToShop';
     case 'shopProducts':
       return 'public.shell.backToShopProducts';
+    case 'circle':
+      return 'public.shell.backToCircle';
     default:
       return null;
+  }
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function normalizePublicPath(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  if (!trimmed || !trimmed.startsWith('/') || trimmed.startsWith('//') || trimmed.includes('\\')) {
+    return null;
+  }
+
+  try {
+    const url = new URL(trimmed, 'https://radish.local');
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return null;
+  }
+}
+
+export function rememberPublicRouteSourceTransfer(
+  targetPath: string,
+  sourceState: PublicRouteSourceState,
+  storage = getSessionStorage()
+): boolean {
+  const normalizedTargetPath = normalizePublicPath(targetPath);
+  if (!normalizedTargetPath || !storage) {
+    return false;
+  }
+
+  const transfer: PublicRouteSourceTransfer = {
+    targetPath: normalizedTargetPath,
+    sourceState
+  };
+
+  try {
+    storage.setItem(PUBLIC_ROUTE_SOURCE_TRANSFER_STORAGE_KEY, JSON.stringify(transfer));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function consumePublicRouteSourceTransfer(
+  currentPath: string,
+  storage = getSessionStorage()
+): PublicRouteSourceState | null {
+  const normalizedCurrentPath = normalizePublicPath(currentPath);
+  if (!normalizedCurrentPath || !storage) {
+    return null;
+  }
+
+  try {
+    const rawTransfer = storage.getItem(PUBLIC_ROUTE_SOURCE_TRANSFER_STORAGE_KEY);
+    storage.removeItem(PUBLIC_ROUTE_SOURCE_TRANSFER_STORAGE_KEY);
+    if (!rawTransfer) {
+      return null;
+    }
+
+    const transfer = JSON.parse(rawTransfer) as unknown;
+    if (!isPlainObject(transfer) || !isPlainObject(transfer.sourceState)) {
+      return null;
+    }
+
+    return normalizePublicPath(typeof transfer.targetPath === 'string' ? transfer.targetPath : null) === normalizedCurrentPath
+      ? transfer.sourceState as PublicRouteSourceState
+      : null;
+  } catch {
+    return null;
   }
 }
 
@@ -207,7 +303,11 @@ export function resolveProfileBackMode(sourceRoute: PublicRouteDescriptor | null
     return null;
   }
 
-  return sourceRoute.app === 'discover' ? 'discover' : 'source';
+  if (sourceRoute.app === 'discover' || sourceRoute.app === 'circle') {
+    return sourceRoute.app;
+  }
+
+  return 'source';
 }
 
 export function resolveShopDetailBackMode(sourceRoute: PublicRouteDescriptor | null): PublicDetailBackMode | null {
