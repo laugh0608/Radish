@@ -63,6 +63,9 @@ class TokenService {
   private readonly TOKEN_KEY = 'radish_console_access_token';
   private readonly REFRESH_TOKEN_KEY = 'radish_console_refresh_token';
   private readonly TOKEN_EXPIRES_KEY = 'radish_console_token_expires_at';
+  private readonly TOKEN_REFRESH_AT_KEY = 'radish_console_token_refresh_at';
+  private readonly MIN_REFRESH_BUFFER_SECONDS = 30;
+  private readonly MAX_REFRESH_BUFFER_SECONDS = 300;
 
   static getInstance(): TokenService {
     if (!TokenService.instance) {
@@ -108,6 +111,11 @@ class TokenService {
   getTokenExpiresAt(): number | null {
     const expiresAt = localStorage.getItem(this.TOKEN_EXPIRES_KEY);
     return expiresAt ? parseInt(expiresAt, 10) : null;
+  }
+
+  getTokenRefreshAt(): number | null {
+    const refreshAt = localStorage.getItem(this.TOKEN_REFRESH_AT_KEY);
+    return refreshAt ? parseInt(refreshAt, 10) : null;
   }
 
   private maskToken(token: string | null): string | null {
@@ -191,14 +199,18 @@ class TokenService {
     }
 
     // 存储真实过期时间，刷新窗口由 isTokenExpiringSoon 控制
+    const refreshBufferSeconds = this.getRefreshBufferSeconds(tokenInfo.expires_in);
     const expiresAt = Date.now() + Math.max(0, tokenInfo.expires_in) * 1000;
+    const refreshAt = Date.now() + Math.max(tokenInfo.expires_in - refreshBufferSeconds, 0) * 1000;
     localStorage.setItem(this.TOKEN_EXPIRES_KEY, expiresAt.toString());
+    localStorage.setItem(this.TOKEN_REFRESH_AT_KEY, refreshAt.toString());
     this.missingRefreshTokenWarned = false;
     this.lastSessionClearReason = null;
 
     log.debug('TokenService', 'Token 信息已更新', {
       expires_in: tokenInfo.expires_in,
       expires_at: new Date(expiresAt).toISOString(),
+      refresh_at: new Date(refreshAt).toISOString(),
     });
     this.logTokenDebug('setTokenInfo');
   }
@@ -211,6 +223,7 @@ class TokenService {
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.REFRESH_TOKEN_KEY);
     localStorage.removeItem(this.TOKEN_EXPIRES_KEY);
+    localStorage.removeItem(this.TOKEN_REFRESH_AT_KEY);
     this.clearSessionActivity();
     this.refreshPromise = null;
     this.missingRefreshTokenWarned = false;
@@ -226,13 +239,18 @@ class TokenService {
    * 检查 Token 是否即将过期
    */
   isTokenExpiringSoon(): boolean {
+    const refreshAt = this.getTokenRefreshAt();
+    if (refreshAt) {
+      return Date.now() >= refreshAt;
+    }
+
     const expiresAt = this.getTokenExpiresAt();
     if (!expiresAt) {
       return true; // 没有过期时间信息，认为需要刷新
     }
 
-    // 提前 5 分钟刷新
-    return Date.now() >= expiresAt - 300000;
+    // 兼容旧数据：没有 refreshAt 时只在临近过期时刷新，避免 5 分钟 token 刚签发就被拦在刷新前置等待。
+    return Date.now() >= expiresAt - this.MIN_REFRESH_BUFFER_SECONDS * 1000;
   }
 
   /**
@@ -518,6 +536,18 @@ class TokenService {
     clearInterval(this.refreshTimer);
     this.refreshTimer = null;
     log.debug('TokenService', '停止自动刷新定时器');
+  }
+
+  private getRefreshBufferSeconds(expiresInSeconds: number): number {
+    if (!Number.isFinite(expiresInSeconds) || expiresInSeconds <= 0) {
+      return this.MIN_REFRESH_BUFFER_SECONDS;
+    }
+
+    const dynamicBuffer = Math.floor(expiresInSeconds * 0.2);
+    return Math.min(
+      this.MAX_REFRESH_BUFFER_SECONDS,
+      Math.max(this.MIN_REFRESH_BUFFER_SECONDS, dynamicBuffer)
+    );
   }
 
   private parseJwt(token: string): JwtPayload | null {

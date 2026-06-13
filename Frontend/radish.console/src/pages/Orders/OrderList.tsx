@@ -47,6 +47,19 @@ import { log } from '../../utils/logger';
 import '../adminFeature.css';
 import './OrderList.css';
 
+function normalizeOrderPrice(value: unknown): number {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : 0;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number(value.trim());
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  return 0;
+}
+
 export const OrderList = () => {
   useDocumentTitle('订单管理');
   const navigate = useNavigate();
@@ -93,7 +106,7 @@ export const OrderList = () => {
   ].filter(Boolean).length;
   const failedOrders = orders.filter((order) => order.voStatus === 'Failed').length;
   const completedOrders = orders.filter((order) => order.voStatus === 'Completed').length;
-  const pageTotalPrice = orders.reduce((sum, order) => sum + order.voTotalPrice, 0);
+  const pageTotalPrice = orders.reduce((sum, order) => sum + normalizeOrderPrice(order.voTotalPrice), 0);
 
   const syncSearchParams = (params: {
     orderId?: string;
@@ -360,8 +373,8 @@ export const OrderList = () => {
       dataIndex: 'voUnitPrice',
       key: 'voUnitPrice',
       width: 120,
-      render: (price: number) => (
-        <span className="order-list-price">{price} 胡萝卜</span>
+      render: (price: unknown) => (
+        <span className="order-list-price">{normalizeOrderPrice(price)} 胡萝卜</span>
       ),
     },
     {
@@ -369,9 +382,9 @@ export const OrderList = () => {
       dataIndex: 'voTotalPrice',
       key: 'voTotalPrice',
       width: 120,
-      render: (price: number) => (
+      render: (price: unknown) => (
         <span className="order-list-price order-list-price--total">
-          {price} 胡萝卜
+          {normalizeOrderPrice(price)} 胡萝卜
         </span>
       ),
     },
