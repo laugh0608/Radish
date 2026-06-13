@@ -2,7 +2,7 @@
 
 > Radish 登录态个人圈子 `/circle` 的产品边界、职责分工与维护约束。
 >
-> **最后更新**: 2026.06.10
+> **最后更新**: 2026.06.13
 
 ## 定位
 
@@ -30,6 +30,8 @@
 - 工作台边界：不使用 `/desktop?app=...` 表达圈子状态
 
 `/circle` 属于纯 Web 登录态页面，但不属于 public content shell。入口识别应和 `/discover`、`/forum`、`/u/:identifier` 分开维护。
+
+从 `/circle` 普通点击进入 `/forum/post/:postPublicId` 或 `/u/:userPublicId` 时，前端可写入一次性来源转交，让公开详情页或公开个人页显示“返回我的圈子”。该状态只服务当前标签页的返回语义，不进入公开 URL、canonical、分享链接、sitemap 或 JSON-LD。
 
 ## 对象与接口
 
@@ -84,5 +86,6 @@ Radish.Api/Controllers/UserFollowController.cs
 - `/circle` 不被 `isPublicContentPathname` 识别为公开内容路由。
 - 关注动态卡片进入 `/forum/post/:postPublicId`。
 - 关注 / 粉丝用户进入 `/u/usr_...`。
+- 从圈子进入公开帖子详情或公开个人页后，应能返回原来的圈子 tab/page；新开标签和复制链接仍只保留公开 URL。
 - 公开主页 `/u/usr_...` 能被入口白名单识别并进入公开壳层。
 - `radish.client` 构建、路由 / 回流测试、`UserFollow` 后端测试通过。

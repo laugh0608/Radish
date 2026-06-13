@@ -35,3 +35,12 @@
 - B6 运行时说明已拆到 [Token 不活跃过期治理](/guide/auth-idle-session)，避免继续向超长认证说明追加细节；[当前进行中](/planning/current) 与 P3-10 专题已同步下一步联调和后续开发入口。
 - 今日验证覆盖 `dotnet test Radish.Api.Tests`、`npm run test --workspace=radish.client`、`npm run type-check --workspace=@radish/http`、`npm run type-check --workspace=radish.console`、`npm run build --workspace=radish.client`、`npm run build --workspace=radish.console`、`npm run validate:identity`、`npm run check:repo-hygiene:changed` 和 `git diff --check`。
 - B6 页面真实联调放到 2026-06-11：本机 Gateway / Vite 服务未运行，且 AI 协作规则不直接启动 `dotnet run` 或 `npm run dev`；明日由用户启动服务后按 Gateway 覆盖 PC + 移动视图。
+
+## 2026-06-13
+
+- B6 Gateway 首轮真实联调完成：Console 登录授权、refresh 请求参数、刷新后受保护页、Web 登录态页面、通知 / 聊天 Hub 和评论 Hub 均未发现新增代码阻断；移动 DPR 与真实 7 天 idle 仍保留为发布候选前补验项。
+- B7 公共壳层与公开详情首批回迁完成：公共页头部统一为“社区发现 / 我的圈子 / 工作台”，`/circle` 自身只保留“社区发现 + 工作台”，`/desktop` 保留但不作为新增功能主动作；论坛公开详情已支持登录后直接发布轻回应和根评论，公开边界文案同步对齐。
+- `P3-10-C` 公开链接契约完成首批推进：公开发现、公开论坛列表 / 搜索 / 标签 / 类型流和公开个人页内容项输出真实公开 URL，普通点击保留公开壳层来源返回，新开标签和复制链接使用公开路径。
+- `/circle` 到公开详情 / 公开个人页来源返回契约完成：关注动态进入 `/forum/post/:postPublicId`、关注 / 粉丝用户进入 `/u/usr_...` 后可返回“我的圈子”；公开内容路由与可返回来源路由已拆分，避免 `/circle` 进入 public head / JSON-LD。
+- Gateway PC / 移动视图复核覆盖 `/discover`、公开帖子详情、公开个人页、`/circle` 和 `/desktop`；PC 普通点击通过，移动端因 Chrome 插件鼠标事件派发超时，使用唯一链接 / 按钮键盘激活验证路由事件与来源返回，不把触控点击写成已验证。
+- 文档同步复核确认：已同步 [当前进行中](/planning/current)、P3-10 专题、[个人圈子](/features/circle)、[前端多壳层策略](/frontend/shell-strategy)、6 月月志 / 周志和日交接记录；今天没有新增视觉 token、Pencil 设计源、部署配置、数据库结构或 Console 权限模型，视觉规范、设计源文件、部署说明和权限说明无需跟随更新。
