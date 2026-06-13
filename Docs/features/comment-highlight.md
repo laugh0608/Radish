@@ -4,7 +4,7 @@
 >
 > **版本**: v26.3.0
 >
-> **最后更新**: 2026.06.10
+> **最后更新**: 2026.06.13
 
 ---
 
@@ -113,7 +113,7 @@
 - `/hub/comment` 按 `post-comments:{postId}` 分组广播 `CommentCreated / CommentUpdated / CommentDeleted / CommentLikeChanged / CommentHighlightsChanged`。
 - `CommentTyping` 同样走 `/hub/comment`；匿名用户可以 `JoinPost` 订阅帖子评论组，但 `StartTyping` 上报要求连接中存在有效用户。
 - 前端连接通过当前 `tokenService.getAccessToken()` 生成 `access_token`，自动重连后会重新加入已订阅帖子分组，避免连接恢复后停留在未入组状态。
-- Web 工作台详情页订阅全部评论事件和 typing，公开详情页订阅评论 / 点赞 / 高亮变化事件但不展示 typing 输入提示，保持匿名公开页只读边界。
+- Web 工作台详情页订阅全部评论事件和 typing；公开详情页订阅评论 / 点赞 / 高亮变化事件并支持登录后根评论发布，但不展示 typing 输入提示，也不开放评论回复、点赞、编辑或删除的公开交互。匿名公开页仍保持阅读边界。
 - 评论树合并以 `voCommentId / voParentCommentId / voRootCommentId` 为准：创建和更新走 upsert，删除走树内移除，点赞只更新目标评论点赞数，高亮变化只更新当前神评 / 沙发标识。
 - 页面初次加载、分页加载和断线恢复后的主动拉取仍以评论详情接口返回的高亮字段为权威；`CommentHighlightsChanged` 只负责把已加载评论节点的当前高亮状态同步到前端，不能替代列表 / 详情接口的状态回填。
 - Flutter 暂未接入本实时链路，后续复用稳定 API 和事件语义。

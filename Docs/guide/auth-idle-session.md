@@ -45,6 +45,7 @@
 - `radish.client` 和 `radish.console` 都会在本地先判定 idle 过期，避免继续发送已知失效的 refresh 请求。
 - 收到 `session_idle_expired` 或本地判定过期后，清理 access token、refresh token、过期时间和最近活跃时间。
 - `radish.console` 跳转到 `/console/login?auto=1&reason=idle`。
+- `radish.console` 和 `radish.client` 都会在保存 token 时写入 `refresh_at`；刷新前置窗口按 `expires_in` 动态计算，并设置最小 / 最大边界，避免短有效期 token 刚签发就因为固定 5 分钟缓冲立即进入刷新循环。
 - `radish.client` 触发统一 token 过期事件，通知 / 聊天 Hub 停止连接，评论 Hub 断开后按已加入帖子组以匿名连接恢复。
 - 重新登录成功后会强制刷新最近活跃时间，避免继承旧 idle 状态。
 

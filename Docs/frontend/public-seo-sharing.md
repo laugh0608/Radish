@@ -20,6 +20,7 @@
   - `/shop`、`/shop/products`、`/shop/product/:productId`
 - 登录后功能不进入公开 SEO 范围，例如发帖、编辑、订单、背包、设置、Console 与治理后台。
 - 桌面工作台入口继续由 `/desktop` 承载；公开 URL 命中时优先渲染公开内容壳层，而不是完整 WebOS 桌面 Shell。
+- `/circle` 是登录后“我的圈子”关系流入口，不进入公开 SEO、sitemap、canonical 或分享页范围；它可以在当前标签页中把来源状态一次性交接给后续公开详情，但不能把圈子来源写入公开 URL。
 
 ##### 10.5.2 当前 head 契约
 
@@ -50,7 +51,9 @@ forum / docs / shop 三类公开详情还会在 Gateway 层做首包 head snapsh
 - 公开详情来源返回当前使用 `history.state` 保存，不写入 URL query；刷新或浏览器历史恢复后可继续返回原公开来源，但复制链接、canonical、Open Graph 与 sitemap 都必须忽略该状态。
 - forum detail 在 `PostVo.VoPublicId` 可用时使用 `/forum/post/:postPublicId` 作为 canonical 和复制链接；旧 long 版 `/forum/post/:postId` 继续兼容读取。
 - 旧 long 版 forum detail 如果加载成功并拿到 `PostVo.VoPublicId`，运行时 canonical、Open Graph URL 与 JSON-LD 也必须刷新到 `/forum/post/:postPublicId`，避免同一帖子同时暴露两套分享预览主口径。
-- 公开壳层内部生成 forum detail 链接时也应优先使用 `PostVo.VoPublicId`，包括 `/discover` 摘要卡、forum 列表 / 搜索 / 标签页和个人公开页内容入口；只有缺少 PublicId 时才回退旧 long 字符串。
+- 公开壳层内部生成 forum detail 链接时也应优先使用 `PostVo.VoPublicId`，包括 `/discover` 摘要卡、forum 列表 / 搜索 / 标签页、类型流、个人公开页内容入口和圈子内容跳转；只有缺少 PublicId 时才回退旧 long 字符串。
+- 公开内容卡片必须输出真实公开 `href`。普通点击可用 `history.state` 或当前标签页一次性转移状态保留来源返回；右键打开新标签、复制链接、canonical、OpenGraph、JSON-LD、sitemap 和 Gateway 首包 head snapshot 只基于真实公开路径。
+- forum detail 登录参与参数只允许用于认证回流，例如 `/forum/post/:postId?intent=comment` 或 `/forum/post/:postId?commentId=:commentId&intent=quickReply`；这些参数不属于 canonical、分享链接、OpenGraph、JSON-LD 或 sitemap。
 - 公开个人页在 `UserPublicProfileVo.VoPublicId` 可用时使用 `/u/:publicId` 作为 canonical 和复制链接；旧 LongId 版 `/u/:userId` 继续兼容读取，加载成功后运行时应规范化到 `/u/usr_...`。
 - shop detail 当前仍以 `/shop/product/:productId` 作为 canonical 兼容路径，但运行时 title、description 与页面说明不应直接回显 `productId`；docs detail 同理优先展示 slug、标题或正文摘要，旧 long 兼容路径只承担打开能力，不作为普通用户可读文案。
 
