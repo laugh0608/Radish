@@ -635,6 +635,8 @@ export const PublicDiscoverApp = ({
           onNavigate({ kind: 'home' }, { replace: true });
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
+        circleLabel={t('public.shell.circleAction')}
+        desktopLabel={t('public.shell.desktopAction')}
       />
 
       <main className={styles.main}>

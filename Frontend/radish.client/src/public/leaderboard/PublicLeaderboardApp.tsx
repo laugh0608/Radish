@@ -487,6 +487,8 @@ export const PublicLeaderboardApp = ({
         onBrandClick={() => onNavigate(createDefaultPublicLeaderboardRoute())}
         onNavigateToDiscover={onNavigateToDiscover}
         discoverLabel={t('public.shell.discoverAction')}
+        circleLabel={t('public.shell.circleAction')}
+        desktopLabel={t('public.shell.desktopAction')}
       />
 
       <main className={styles.main}>

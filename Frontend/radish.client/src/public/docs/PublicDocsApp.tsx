@@ -476,6 +476,8 @@ export const PublicDocsApp = ({
         onBrandClick={() => onNavigate(createDefaultDocsListRoute())}
         onNavigateToDiscover={onNavigateToDiscover}
         discoverLabel={t('public.shell.discoverAction')}
+        circleLabel={t('public.shell.circleAction')}
+        desktopLabel={t('public.shell.desktopAction')}
       />
 
       <main className={styles.main}>

@@ -81,10 +81,6 @@
   margin-left: auto;
 }
 
-.heroActionsSolo {
-  justify-content: flex-end;
-}
-
 .actionButton,
 .desktopLink {
   display: inline-flex;
@@ -108,12 +104,31 @@
   cursor: pointer;
 }
 
+.primaryAction {
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 28%, transparent);
+  background: color-mix(in srgb, var(--theme-brand-soft) 58%, white 42%);
+  color: var(--theme-brand-primary);
+}
+
+.secondaryAction {
+  border-color: color-mix(in srgb, var(--theme-border-strong) 82%, transparent);
+  background: color-mix(in srgb, var(--theme-bg-surface) 88%, white 12%);
+  color: var(--theme-text-primary);
+  font-weight: 600;
+}
+
 .desktopLink {
   border: 1px solid var(--theme-border-strong);
   background: color-mix(in srgb, var(--theme-bg-surface) 84%, white 16%);
   color: var(--theme-text-primary);
   font-size: 13px;
   font-weight: 600;
+}
+
+.actionLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .actionButton:hover,
@@ -142,10 +157,6 @@
     gap: 8px;
     flex: 0 0 auto;
     flex-wrap: nowrap;
-  }
-
-  .heroActionsSolo {
-    justify-content: flex-end;
   }
 
   .brand {
@@ -178,6 +189,7 @@
     min-width: 0;
   }
 
+  .secondaryAction,
   .desktopLink {
     width: 36px;
     min-width: 36px;
@@ -185,8 +197,13 @@
     border-radius: 999px;
   }
 
-  .desktopLink span {
+  .secondaryAction .actionLabel,
+  .desktopLink .actionLabel {
     display: none;
+  }
+
+  .primaryAction .actionLabel {
+    max-width: 6.5rem;
   }
 
   .brandSubline {
@@ -217,5 +234,15 @@
   .actionButton,
   .desktopLink {
     min-height: 34px;
+  }
+
+  .secondaryAction,
+  .desktopLink {
+    width: 34px;
+    min-width: 34px;
+  }
+
+  .primaryAction .actionLabel {
+    max-width: 5rem;
   }
 }
