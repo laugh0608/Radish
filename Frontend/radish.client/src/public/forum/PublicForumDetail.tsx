@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
+import { toast } from '@radish/ui/toast';
 import {
+  createComment,
+  createPostQuickReply,
   getCommentNavigation,
   getChildComments,
   getPostById,
@@ -12,11 +15,15 @@ import {
   type PostQuickReply,
 } from '@/api/forum';
 import type { LongId } from '@/api/user';
-import { buildDesktopForumPostReturnPath } from '@/services/authReturnPath';
+import { buildPublicForumPostReturnPath } from '@/services/authReturnPath';
+import { redirectToLogin } from '@/services/auth';
 import { commentHub, type CommentTypingRealtimeEvent } from '@/services/commentHub';
+import { useAuthStore } from '@/stores/authStore';
+import { useUserStore } from '@/stores/userStore';
 import { log } from '@/utils/logger';
 import { resolveMediaUrl } from '@/utils/media';
 import { CommentTree } from '@/apps/forum/components/CommentTree';
+import { CreateCommentForm } from '@/apps/forum/components/CreateCommentForm';
 import { PostDetail as ForumPostDetail } from '@/apps/forum/components/PostDetail';
 import { PostQuickReplyWall } from '@/apps/forum/components/PostQuickReplyWall';
 import {
@@ -26,7 +33,7 @@ import {
   updateCommentLikeCount,
   upsertCommentInTree
 } from '@/apps/forum/utils/commentRealtimeTree';
-import { buildPublicForumPath } from '../forumRouteState';
+import { buildPublicForumPath, type PublicForumDetailIntent } from '../forumRouteState';
 import { applyPublicHead, buildPublicShareUrl } from '../publicHead';
 import {
   applyPublicStructuredData,
@@ -62,6 +69,7 @@ interface PublicForumCommentNavigationTarget {
 interface PublicForumDetailProps {
   postId: string;
   commentId?: string;
+  intent?: PublicForumDetailIntent;
   displayTimeZone: string;
   backLabel: string;
   onBack: () => void;
@@ -75,6 +83,7 @@ interface PublicForumDetailProps {
 export const PublicForumDetail = ({
   postId,
   commentId,
+  intent,
   displayTimeZone,
   backLabel,
   onBack,
@@ -85,6 +94,11 @@ export const PublicForumDetail = ({
   onOpenLottery
 }: PublicForumDetailProps) => {
   const { t, i18n } = useTranslation();
+  const authStoreAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isUserAuthenticated = useUserStore((state) => state.isAuthenticated);
+  const currentUserId = useUserStore((state) => state.userId);
+  const currentUserName = useUserStore((state) => state.userName);
+  const currentUserAvatarUrl = useUserStore((state) => state.avatarThumbnailUrl || state.avatarUrl || null);
   const [post, setPost] = useState<PostDetail | null>(null);
   const [comments, setComments] = useState<CommentNode[]>([]);
   const [quickReplies, setQuickReplies] = useState<PostQuickReply[]>([]);
@@ -104,6 +118,9 @@ export const PublicForumDetail = ({
   const [commentNavigationNotice, setCommentNavigationNotice] = useState<string | null>(null);
   const [commentTypingUserNames, setCommentTypingUserNames] = useState<string[]>([]);
   const [highlightedCommentId, setHighlightedCommentId] = useState<LongId | null>(null);
+  const [submittingComment, setSubmittingComment] = useState(false);
+  const [quickReplyFocusKey, setQuickReplyFocusKey] = useState<string | null>(null);
+  const [commentFocusKey, setCommentFocusKey] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const requestIdRef = useRef(0);
   const commentAnchorMapRef = useRef(new Map<string, HTMLDivElement>());
@@ -113,6 +130,7 @@ export const PublicForumDetail = ({
   const commentTypingTimersRef = useRef(new Map<string, number>());
   const commentNoticeRef = useRef<HTMLDivElement | null>(null);
   const commentPageSize = 20;
+  const isAuthenticated = authStoreAuthenticated && isUserAuthenticated();
 
   const syncCommentTypingUsers = useCallback(() => {
     setCommentTypingUserNames([...commentTypingUsersRef.current.values()]);
@@ -449,20 +467,31 @@ export const PublicForumDetail = ({
   const { copyShareLink, shareBusy, shareState } = usePublicShareLink({
     buildShareUrl: buildForumShareUrl,
   });
-  const desktopCommentEntryUrl = post
-    ? buildDesktopForumPostReturnPath({
+  const commentReturnPath = post
+    ? buildPublicForumPostReturnPath({
       postId: post.voId,
       postPublicId: post.voPublicId,
+      commentId,
       intent: 'comment',
     })
     : null;
-  const desktopQuickReplyEntryUrl = post
-    ? buildDesktopForumPostReturnPath({
+  const quickReplyReturnPath = post
+    ? buildPublicForumPostReturnPath({
       postId: post.voId,
       postPublicId: post.voPublicId,
+      commentId,
       intent: 'quickReply',
     })
     : null;
+  const routeIntentFocusKey = post && intent
+    ? `${post.voId}:${commentId ?? 'root'}:${intent}`
+    : null;
+  const quickReplyAutoFocusKey = intent === 'quickReply'
+    ? routeIntentFocusKey
+    : quickReplyFocusKey;
+  const commentAutoFocusKey = intent === 'comment'
+    ? routeIntentFocusKey
+    : commentFocusKey;
 
   const navigateToComment = useCallback(async (
     targetCommentId: LongId,
@@ -645,6 +674,153 @@ export const PublicForumDetail = ({
       return [];
     }
   };
+
+  const handleQuickReplyAction = useCallback(() => {
+    if (!quickReplyReturnPath) {
+      return;
+    }
+
+    if (!isAuthenticated) {
+      redirectToLogin({ returnPath: quickReplyReturnPath });
+      return;
+    }
+
+    setQuickReplyFocusKey(`${quickReplyReturnPath}:${Date.now()}`);
+  }, [isAuthenticated, quickReplyReturnPath]);
+
+  const handleCommentAction = useCallback(() => {
+    if (!commentReturnPath) {
+      return;
+    }
+
+    if (!isAuthenticated) {
+      redirectToLogin({ returnPath: commentReturnPath });
+      return;
+    }
+
+    setCommentFocusKey(`${commentReturnPath}:${Date.now()}`);
+  }, [commentReturnPath, isAuthenticated]);
+
+  const handleCreateQuickReply = useCallback(async (content: string) => {
+    if (!post?.voId) {
+      throw new Error(t('forum.public.postNotFoundTitle'));
+    }
+
+    const normalizedContent = content.trim().replace(/\s+/g, ' ');
+    if (!normalizedContent) {
+      return;
+    }
+
+    const quickReply = await createPostQuickReply(
+      {
+        postId: post.voId,
+        content: normalizedContent
+      },
+      t
+    );
+
+    setQuickReplies((current) => {
+      const next = [
+        quickReply,
+        ...current.filter((item) => !isSameLongId(item.voId, quickReply.voId))
+      ];
+      return next.slice(0, 30);
+    });
+    setQuickReplyTotal((current) => current + 1);
+  }, [post?.voId, t]);
+
+  const handleCreateComment = useCallback(async (content: string) => {
+    const normalizedContent = content.trim();
+    if (!normalizedContent || submittingComment) {
+      return;
+    }
+
+    if (!post?.voId) {
+      toast.error(t('forum.public.postNotFoundTitle'));
+      return;
+    }
+
+    if (!isAuthenticated) {
+      redirectToLogin({ returnPath: commentReturnPath });
+      return;
+    }
+
+    setSubmittingComment(true);
+    try {
+      const createdCommentId = await createComment(
+        {
+          postId: post.voId,
+          content: normalizedContent,
+          parentId: null,
+          replyToCommentId: null,
+          replyToCommentSnapshot: null,
+          replyToUserId: null,
+          replyToUserName: null
+        },
+        t
+      );
+      const now = new Date().toISOString();
+      const newComment: CommentNode = {
+        voId: createdCommentId,
+        voPostId: post.voId,
+        voContent: normalizedContent,
+        voAuthorId: currentUserId || '0',
+        voAuthorName: currentUserName?.trim() || t('common.unknownUser'),
+        voAuthorAvatarUrl: currentUserAvatarUrl,
+        voParentId: null,
+        voRootId: null,
+        voReplyToCommentId: null,
+        voReplyToCommentSnapshot: null,
+        voReplyToUserId: null,
+        voReplyToUserName: null,
+        voLevel: 0,
+        voLikeCount: 0,
+        voIsLiked: false,
+        voCreateTime: now,
+        voChildren: [],
+        voChildrenTotal: 0,
+        voIsGodComment: false,
+        voIsSofa: false
+      };
+
+      setComments((current) => {
+        const exists = hasCommentInTree(current, newComment.voId);
+        if (!exists) {
+          setCommentTotal((total) => total + 1);
+        }
+
+        return upsertCommentInTree(current, newComment, commentSortBy);
+      });
+      setCommentNavigationTarget({
+        commentId: createdCommentId,
+        navigationKey: `${post.voId}:${createdCommentId}:created:${Date.now()}`
+      });
+      toast.success(t('forum.comment.submitSuccess'));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('forum.comment.submitFailed'));
+    } finally {
+      setSubmittingComment(false);
+    }
+  }, [
+    commentReturnPath,
+    commentSortBy,
+    currentUserAvatarUrl,
+    currentUserId,
+    currentUserName,
+    isAuthenticated,
+    post?.voId,
+    submittingComment,
+    t
+  ]);
+
+  const handleCommentTyping = useCallback(() => {
+    if (!post?.voId || !isAuthenticated) {
+      return;
+    }
+
+    void commentHub.startTyping(post.voId);
+  }, [isAuthenticated, post?.voId]);
+
   const detailState = resolvePublicForumDetailLoadState({
     loadingPost,
     hasPost: !!post,
@@ -747,7 +923,7 @@ export const PublicForumDetail = ({
               items={readingGuide.items}
             />
 
-            {(desktopCommentEntryUrl || desktopQuickReplyEntryUrl) && (
+            {(commentReturnPath || quickReplyReturnPath) && (
               <section className={styles.workspaceActionPanel}>
                 <div className={styles.workspaceActionCopy}>
                   <h2 className={styles.workspaceActionTitle}>{t('forum.public.workspaceActionTitle')}</h2>
@@ -756,17 +932,17 @@ export const PublicForumDetail = ({
                   </p>
                 </div>
                 <div className={styles.workspaceActionButtons}>
-                  {desktopQuickReplyEntryUrl && (
-                    <a className={styles.workspaceActionButton} href={desktopQuickReplyEntryUrl}>
+                  {quickReplyReturnPath && (
+                    <button type="button" className={styles.workspaceActionButton} onClick={handleQuickReplyAction}>
                       <Icon icon="mdi:message-flash-outline" size={18} />
                       <span>{t('forum.public.workspaceQuickReplyAction')}</span>
-                    </a>
+                    </button>
                   )}
-                  {desktopCommentEntryUrl && (
-                    <a className={styles.workspaceActionButton} href={desktopCommentEntryUrl}>
+                  {commentReturnPath && (
+                    <button type="button" className={styles.workspaceActionButton} onClick={handleCommentAction}>
                       <Icon icon="mdi:comment-text-outline" size={18} />
                       <span>{t('forum.public.workspaceCommentAction')}</span>
-                    </a>
+                    </button>
                   )}
                 </div>
               </section>
@@ -814,9 +990,11 @@ export const PublicForumDetail = ({
                   replies={quickReplies}
                   total={quickReplyTotal}
                   loading={loadingQuickReplies}
-                  isAuthenticated={false}
-                  currentUserId="0"
-                  mode="readOnly"
+                  isAuthenticated={isAuthenticated}
+                  currentUserId={currentUserId || '0'}
+                  onCreate={handleCreateQuickReply}
+                  loginReturnPath={quickReplyReturnPath}
+                  autoFocusComposerKey={quickReplyAutoFocusKey}
                 />
               </>
             )}
@@ -857,6 +1035,24 @@ export const PublicForumDetail = ({
                 </div>
               )}
 
+              <div className={styles.commentComposerPanel}>
+                <CreateCommentForm
+                  isAuthenticated={isAuthenticated}
+                  hasPost={Boolean(post?.voId)}
+                  onSubmit={(content) => {
+                    void handleCreateComment(content);
+                  }}
+                  disabled={submittingComment}
+                  variant="inline"
+                  title={t('forum.joinDiscussion')}
+                  submitText={t('forum.submitDiscussion')}
+                  placeholder={t('forum.discussionPlaceholder')}
+                  loginReturnPath={commentReturnPath}
+                  onTyping={handleCommentTyping}
+                  autoFocusKey={commentAutoFocusKey}
+                />
+              </div>
+
               {commentSectionState === 'error' ? (
                 <PublicStatusCard
                   tone="error"
@@ -881,7 +1077,7 @@ export const PublicForumDetail = ({
                     loadingMoreRootComments={loadingMoreComments}
                     hasPost={true}
                     displayTimeZone={displayTimeZone}
-                    currentUserId="0"
+                    currentUserId={currentUserId || '0'}
                     highlightedCommentId={highlightedCommentId}
                     expandedRootCommentId={commentNavigationTarget?.expandedRootCommentId}
                     rootCommentTotal={commentTotal}
@@ -892,6 +1088,7 @@ export const PublicForumDetail = ({
                     onSortChange={setCommentSortBy}
                     onLoadMoreChildren={handleLoadMoreChildren}
                     onLoadMoreRootComments={handleLoadMoreComments}
+                    isAuthenticated={isAuthenticated}
                     showTitle={false}
                     onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
                     onNavigateToComment={(targetCommentId) => void navigateToComment(

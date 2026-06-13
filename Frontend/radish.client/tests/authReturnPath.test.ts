@@ -8,6 +8,7 @@ import {
   buildDesktopShopOrderReturnPath,
   buildDesktopShopPrivateViewReturnPath,
   buildDesktopShopProductReturnPath,
+  buildPublicForumPostReturnPath,
   consumeAuthReturnPath,
   normalizeAuthReturnPath,
   rememberAuthReturnPath,
@@ -41,16 +42,28 @@ class MemoryStorage implements Storage {
   }
 }
 
-test('normalizeAuthReturnPath 只接受 desktop 深链和 circle 私域入口', () => {
+test('normalizeAuthReturnPath 只接受 desktop 深链、circle 私域入口和公开论坛详情参与意图', () => {
   assert.equal(normalizeAuthReturnPath('/desktop?app=shop&productId=2042219067430928384'), '/desktop?app=shop&productId=2042219067430928384');
   assert.equal(normalizeAuthReturnPath('/desktop?app=forum&postId=2042219067430928384'), '/desktop?app=forum&postId=2042219067430928384');
   assert.equal(normalizeAuthReturnPath('/desktop/?app=shop&view=orders'), '/desktop/?app=shop&view=orders');
   assert.equal(normalizeAuthReturnPath('/circle'), '/circle');
   assert.equal(normalizeAuthReturnPath('/circle/?tab=following&page=2'), '/circle?tab=following&page=2');
   assert.equal(normalizeAuthReturnPath('/circle?tab=feed&page=1'), '/circle');
+  assert.equal(
+    normalizeAuthReturnPath('/forum/post/PST_018F6B6F7C7D70008F8F8F8F8F8F8F8F?intent=comment'),
+    '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=comment',
+  );
+  assert.equal(
+    normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=quickReply&commentId=2042219067430928385'),
+    '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?commentId=2042219067430928385&intent=quickReply',
+  );
   assert.equal(normalizeAuthReturnPath('/circle?tab=hot'), null);
   assert.equal(normalizeAuthReturnPath('/circle?from=discover'), null);
   assert.equal(normalizeAuthReturnPath('/circle#feed'), null);
+  assert.equal(normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f'), null);
+  assert.equal(normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=edit'), null);
+  assert.equal(normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=comment&from=discover'), null);
+  assert.equal(normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=comment#discussion'), null);
   assert.equal(normalizeAuthReturnPath('/discover'), null);
   assert.equal(normalizeAuthReturnPath('/oidc/callback'), null);
   assert.equal(normalizeAuthReturnPath('https://radishx.com/desktop?app=shop'), null);
@@ -158,6 +171,41 @@ test('论坛返回路径应支持工作台首页、帖子和评论上下文', ()
     buildDesktopForumPostReturnPath({
       postId: '2042219067430928384',
       commentId: 'comment-1',
+    }),
+    null,
+  );
+});
+
+test('公开论坛详情返回路径只支持评论和轻回应登录意图', () => {
+  assert.equal(
+    buildPublicForumPostReturnPath({
+      postPublicId: 'PST_018F6B6F7C7D70008F8F8F8F8F8F8F8F',
+      commentId: '2042219067430928385',
+      intent: 'comment',
+    }),
+    '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?commentId=2042219067430928385&intent=comment',
+  );
+  assert.equal(
+    buildPublicForumPostReturnPath({
+      postId: '2042219067430928384',
+      intent: 'quickReply',
+    }),
+    '/forum/post/2042219067430928384?intent=quickReply',
+  );
+  assert.equal(buildPublicForumPostReturnPath({ postId: '0', intent: 'comment' }), null);
+  assert.equal(buildPublicForumPostReturnPath({ postPublicId: 'post-42', intent: 'comment' }), null);
+  assert.equal(
+    buildPublicForumPostReturnPath({
+      postId: '2042219067430928384',
+      commentId: 'comment-1',
+      intent: 'comment',
+    }),
+    null,
+  );
+  assert.equal(
+    buildPublicForumPostReturnPath({
+      postId: '2042219067430928384',
+      intent: 'edit' as never,
     }),
     null,
   );

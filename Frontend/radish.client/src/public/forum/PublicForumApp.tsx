@@ -127,9 +127,10 @@ export const PublicForumApp = ({
       <main className={styles.main}>
         {route.kind === 'detail' ? (
           <PublicForumDetail
-            key={`detail-${route.postId}-${route.commentId ?? 'none'}`}
+            key={`detail-${route.postId}-${route.commentId ?? 'none'}-${route.intent ?? 'read'}`}
             postId={route.postId}
             commentId={route.commentId}
+            intent={route.intent}
             displayTimeZone={displayTimeZone}
             backLabel={detailBackLabel}
             onBack={handleForumDetailBack}

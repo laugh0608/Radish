@@ -1,6 +1,8 @@
 const AUTH_RETURN_PATH_STORAGE_KEY = 'radish:auth:return-path';
 const AUTH_RETURN_PATH_BASE_URL = 'https://radish.local';
 const CIRCLE_RETURN_TABS = new Set(['feed', 'following', 'followers']);
+const PUBLIC_FORUM_POST_PUBLIC_ID_PATTERN = /^pst_[a-f0-9]{32}$/;
+const POSITIVE_LONG_ID_PATTERN = /^[1-9]\d*$/;
 
 interface AuthReturnLocation {
   pathname: string;
@@ -9,6 +11,7 @@ interface AuthReturnLocation {
 }
 
 export type CircleReturnTab = 'feed' | 'following' | 'followers';
+export type PublicForumPostReturnIntent = 'comment' | 'quickReply';
 
 function getSessionStorage(): Storage | null {
   if (typeof window === 'undefined') {
@@ -38,6 +41,10 @@ export function normalizeAuthReturnPath(value: string | null | undefined): strin
       return normalizeCircleReturnPath(url);
     }
 
+    if (pathname.startsWith('/forum/post/')) {
+      return normalizePublicForumPostReturnPath(url, pathname);
+    }
+
     if (pathname !== '/desktop') {
       return null;
     }
@@ -46,6 +53,71 @@ export function normalizeAuthReturnPath(value: string | null | undefined): strin
   } catch {
     return null;
   }
+}
+
+function normalizeForumPostIdentifier(value: string | null | undefined): string | null {
+  const normalized = value?.trim();
+  if (!normalized) {
+    return null;
+  }
+
+  const lowered = normalized.toLowerCase();
+  if (PUBLIC_FORUM_POST_PUBLIC_ID_PATTERN.test(lowered)) {
+    return lowered;
+  }
+
+  return POSITIVE_LONG_ID_PATTERN.test(normalized) ? normalized : null;
+}
+
+function normalizePublicForumPostReturnPath(url: URL, normalizedPathname: string): string | null {
+  if (url.hash) {
+    return null;
+  }
+
+  const matched = normalizedPathname.match(/^\/forum\/post\/([^/]+)$/);
+  if (!matched) {
+    return null;
+  }
+
+  let rawPostIdentifier = '';
+  try {
+    rawPostIdentifier = decodeURIComponent(matched[1]);
+  } catch {
+    return null;
+  }
+
+  const postIdentifier = normalizeForumPostIdentifier(rawPostIdentifier);
+  if (!postIdentifier) {
+    return null;
+  }
+
+  for (const key of url.searchParams.keys()) {
+    if (key !== 'commentId' && key !== 'intent') {
+      return null;
+    }
+  }
+
+  if (url.searchParams.getAll('commentId').length > 1 || url.searchParams.getAll('intent').length !== 1) {
+    return null;
+  }
+
+  const commentId = url.searchParams.get('commentId');
+  if (commentId && !POSITIVE_LONG_ID_PATTERN.test(commentId)) {
+    return null;
+  }
+
+  const intent = url.searchParams.get('intent');
+  if (intent !== 'comment' && intent !== 'quickReply') {
+    return null;
+  }
+
+  const query = new URLSearchParams();
+  if (commentId) {
+    query.set('commentId', commentId);
+  }
+  query.set('intent', intent);
+
+  return `/forum/post/${encodeURIComponent(postIdentifier)}?${query.toString()}`;
 }
 
 function normalizeCircleReturnPath(url: URL): string | null {
@@ -230,4 +302,36 @@ export function buildDesktopForumPostReturnPath(target: {
   }
 
   return `/desktop?${query.toString()}`;
+}
+
+export function buildPublicForumPostReturnPath(target: {
+  postId?: string | null;
+  postPublicId?: string | null;
+  commentId?: string | null;
+  intent: PublicForumPostReturnIntent;
+}): string | null {
+  if (target.intent !== 'comment' && target.intent !== 'quickReply') {
+    return null;
+  }
+
+  const normalizedPostPublicId = normalizeForumPostIdentifier(target.postPublicId);
+  const normalizedPostId = normalizeForumPostIdentifier(target.postId);
+  const normalizedCommentId = target.commentId == null ? '' : String(target.commentId).trim();
+  const postIdentifier = normalizedPostPublicId ?? normalizedPostId;
+
+  if (!postIdentifier) {
+    return null;
+  }
+
+  if (normalizedCommentId && !POSITIVE_LONG_ID_PATTERN.test(normalizedCommentId)) {
+    return null;
+  }
+
+  const query = new URLSearchParams();
+  if (normalizedCommentId) {
+    query.set('commentId', normalizedCommentId);
+  }
+  query.set('intent', target.intent);
+
+  return normalizeAuthReturnPath(`/forum/post/${encodeURIComponent(postIdentifier)}?${query.toString()}`);
 }

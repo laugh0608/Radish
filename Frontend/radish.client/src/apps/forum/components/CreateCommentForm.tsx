@@ -27,6 +27,7 @@ interface CreateCommentFormProps {
   placeholder?: string;
   loginReturnPath?: string | null;
   onTyping?: () => void;
+  autoFocusKey?: string | null;
 }
 
 const MENTION_PANEL_WIDTH = 320;
@@ -130,6 +131,7 @@ export const CreateCommentForm = ({
   placeholder,
   loginReturnPath,
   onTyping,
+  autoFocusKey = null,
 }: CreateCommentFormProps) => {
   const { t } = useTranslation();
   const [content, setContent] = useState('');
@@ -139,6 +141,7 @@ export const CreateCommentForm = ({
   const imageInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
   const lastTypingSentAtRef = useRef(0);
+  const handledAutoFocusKeyRef = useRef<string | null>(null);
 
   // @提及功能状态
   const [showMention, setShowMention] = useState(false);
@@ -203,6 +206,22 @@ export const CreateCommentForm = ({
     textareaRef.current.focus();
     textareaRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [replyTo, isAuthenticated, hasPost]);
+
+  useEffect(() => {
+    if (
+      !autoFocusKey
+      || handledAutoFocusKeyRef.current === autoFocusKey
+      || !textareaRef.current
+      || !isAuthenticated
+      || !hasPost
+    ) {
+      return;
+    }
+
+    handledAutoFocusKeyRef.current = autoFocusKey;
+    textareaRef.current.focus();
+    textareaRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [autoFocusKey, isAuthenticated, hasPost]);
 
   const normalizeCode = (value: string): string => value.trim().toLowerCase();
 

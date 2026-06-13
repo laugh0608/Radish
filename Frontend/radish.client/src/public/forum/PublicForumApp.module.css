@@ -488,9 +488,11 @@
   border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 26%, transparent);
   background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
   color: var(--theme-brand-primary);
+  font-family: inherit;
   font-size: 13px;
   font-weight: 700;
   text-decoration: none;
+  cursor: pointer;
   transition: transform var(--theme-transition-standard), box-shadow var(--theme-transition-standard), background var(--theme-transition-standard);
 }
 
@@ -653,6 +655,11 @@
   background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
   padding: 20px;
   min-width: 0;
+}
+
+.commentComposerPanel {
+  min-width: 0;
+  margin-bottom: 16px;
 }
 
 .commentHeading {
