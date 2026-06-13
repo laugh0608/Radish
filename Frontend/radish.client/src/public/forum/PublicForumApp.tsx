@@ -118,7 +118,7 @@ export const PublicForumApp = ({
       <PublicShellHeader
         brandMark="论"
         brandName={t('desktop.apps.forum.name')}
-        brandSubline="Public Content Shell"
+        brandSubline={t('forum.public.shellLabel')}
         onBrandClick={() => onNavigate({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 })}
         onNavigateToDiscover={onNavigateToDiscover}
         discoverLabel={t('public.shell.discoverAction')}

@@ -12,76 +12,6 @@
   overflow-y: auto;
 }
 
-.hero {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  backdrop-filter: blur(18px);
-  background: color-mix(in srgb, var(--theme-bg) 78%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--theme-border) 72%, transparent);
-}
-
-.heroInner {
-  width: min(1120px, calc(100% - 32px));
-  max-width: 100%;
-  margin: 0 auto;
-  min-height: 72px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 14px;
-  border: none;
-  background: transparent;
-  padding: 0;
-  cursor: pointer;
-  color: inherit;
-}
-
-.brandMark {
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 92%, #fff 8%) 0%, color-mix(in srgb, var(--theme-primary) 60%, #d8b56a 40%) 100%);
-  color: #fffaf0;
-  font-size: 18px;
-  font-weight: 700;
-  box-shadow: 0 14px 30px color-mix(in srgb, var(--theme-primary) 24%, transparent);
-}
-
-.brandText {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.brandName {
-  font-size: 1rem;
-  font-weight: 700;
-}
-
-.brandSubline {
-  font-size: 0.78rem;
-  color: var(--theme-text-secondary);
-}
-
-.desktopLink {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--theme-text-secondary);
-  text-decoration: none;
-  font-size: 0.92rem;
-}
-
 .main {
   width: min(1120px, calc(100% - 24px));
   max-width: 100%;
@@ -1220,7 +1150,6 @@
 }
 
 @media (max-width: 720px) {
-  .heroInner,
   .main {
     width: calc(100% - 20px);
   }
@@ -1250,10 +1179,6 @@
 
   .statusActions {
     flex-direction: column;
-  }
-
-  .desktopLink {
-    display: none;
   }
 
   .pageTitle {
