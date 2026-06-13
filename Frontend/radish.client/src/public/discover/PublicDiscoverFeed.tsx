@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { PostCard } from '@/apps/forum/components/PostCard';
@@ -6,6 +6,10 @@ import type { WikiDocumentVo } from '@/apps/wiki/types/wiki';
 import { getProductTypeDisplay, type ProductListItem } from '@/api/shop';
 import type { PostItem } from '@/api/forum';
 import { resolveMediaUrl } from '@/utils/media';
+import { buildPublicDocsPath } from '../docsRouteState';
+import { buildPublicForumPath } from '../forumRouteState';
+import { getForumPostRouteIdentifier } from '../forum/publicForumUtils';
+import { buildPublicShopPath } from '../shopRouteState';
 import styles from './PublicDiscoverApp.module.css';
 
 type DiscoverFeedItem =
@@ -103,6 +107,18 @@ function FeedStatusCard({
       </div>
     </div>
   );
+}
+
+function handleFeedLinkClick(
+  event: MouseEvent<HTMLAnchorElement>,
+  action: () => void
+) {
+  if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+    return;
+  }
+
+  event.preventDefault();
+  action();
 }
 
 export function formatDocumentMeta(document: WikiDocumentVo, locale: string, fallback: string): string {
@@ -264,6 +280,7 @@ function DiscoverFeedItemCard({
   const { t } = useTranslation();
 
   if (item.kind === 'post') {
+    const postHref = buildPublicForumPath({ kind: 'detail', postId: getForumPostRouteIdentifier(item.post) });
     return (
       <article className={styles.feedPostItem}>
         <div className={styles.feedItemHeader}>
@@ -277,6 +294,7 @@ function DiscoverFeedItemCard({
           post={item.post}
           displayTimeZone={displayTimeZone}
           onClick={() => onOpenPost(item.post)}
+          href={postHref}
           variant="publicCompact"
           onTagClick={(_, tagSlug) => onOpenTag(tagSlug)}
           onQuestionClick={onOpenQuestion}
@@ -289,9 +307,14 @@ function DiscoverFeedItemCard({
 
   if (item.kind === 'document') {
     const document = item.document;
+    const documentHref = buildPublicDocsPath({ kind: 'detail', slug: document.voSlug });
     return (
       <article className={styles.feedContentItem}>
-        <button type="button" className={styles.feedContentButton} onClick={() => onOpenDocument(document)}>
+        <a
+          className={styles.feedContentButton}
+          href={documentHref}
+          onClick={(event) => handleFeedLinkClick(event, () => onOpenDocument(document))}
+        >
           <div className={styles.feedItemHeader}>
             <span className={styles.feedItemType}>
               <Icon icon="mdi:file-document-outline" size={15} />
@@ -315,16 +338,21 @@ function DiscoverFeedItemCard({
             <Icon icon="mdi:calendar-blank-outline" size={16} />
             <span>{formatDocumentMeta(document, locale, t('discover.public.documentMetaFallback'))}</span>
           </span>
-        </button>
+        </a>
       </article>
     );
   }
 
   const product = item.product;
   const imageUrl = resolveMediaUrl(product.voCoverImage || product.voIcon);
+  const productHref = buildPublicShopPath({ kind: 'detail', productId: String(product.voId) });
   return (
     <article className={styles.feedContentItem}>
-      <button type="button" className={styles.feedContentButton} onClick={() => onOpenProduct(product)}>
+      <a
+        className={styles.feedContentButton}
+        href={productHref}
+        onClick={(event) => handleFeedLinkClick(event, () => onOpenProduct(product))}
+      >
         <div className={styles.feedItemHeader}>
           <span className={styles.feedItemType}>
             <Icon icon="mdi:storefront-outline" size={15} />
@@ -357,7 +385,7 @@ function DiscoverFeedItemCard({
           <Icon icon="mdi:carrot" size={16} />
           <span>{product.voPrice.toLocaleString()} {t('shop.currency.carrot')}</span>
         </span>
-      </button>
+      </a>
     </article>
   );
 }

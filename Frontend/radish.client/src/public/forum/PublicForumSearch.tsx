@@ -15,7 +15,7 @@ import type {
   PublicListSort,
   PublicSearchTimeRange,
 } from '../forumRouteState';
-import { createDefaultSearchRoute } from '../forumRouteState';
+import { buildPublicForumPath, createDefaultSearchRoute } from '../forumRouteState';
 import { usePublicReplaceRouteSync } from '../usePublicReplaceRouteSync';
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import {
@@ -482,6 +482,7 @@ export const PublicForumSearch = ({
                 post={post}
                 displayTimeZone={displayTimeZone}
                 onClick={() => onOpenPost(getForumPostRouteIdentifier(post))}
+                href={buildPublicForumPath({ kind: 'detail', postId: getForumPostRouteIdentifier(post) })}
                 variant="publicCompact"
                 onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
                 onTagClick={(_, tagSlug) => onOpenTag?.(tagSlug)}

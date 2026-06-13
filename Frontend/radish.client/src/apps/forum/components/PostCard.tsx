@@ -10,6 +10,7 @@ interface PostCardProps {
   post: PostItem;
   displayTimeZone: string;
   onClick: () => void;
+  href?: string;
   variant?: 'default' | 'publicCompact';
   onAuthorClick?: (userId: LongId, userName?: string | null, avatarUrl?: string | null) => void;
   onTagClick?: (tagName: string, tagSlug: string) => void;
@@ -26,6 +27,7 @@ export const PostCard = ({
   post,
   displayTimeZone,
   onClick,
+  href,
   variant = 'default',
   onAuthorClick,
   onTagClick,
@@ -125,6 +127,16 @@ export const PostCard = ({
   const handleStatusClick = (event: MouseEvent<HTMLButtonElement>, onClick?: () => void) => {
     event.stopPropagation();
     onClick?.();
+  };
+
+  const handlePrimaryLinkClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    event.stopPropagation();
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+      return;
+    }
+
+    event.preventDefault();
+    onClick();
   };
 
   const renderAvatar = (
@@ -241,7 +253,13 @@ export const PostCard = ({
             </div>
           )}
 
-          <h3 className={styles.title}>{post.voTitle}</h3>
+          <h3 className={styles.title}>
+            {href ? (
+              <a className={styles.titleLink} href={href} onClick={handlePrimaryLinkClick}>
+                {post.voTitle}
+              </a>
+            ) : post.voTitle}
+          </h3>
 
           <div className={styles.metaRow}>
             <span className={styles.categoryChip}>{categoryName}</span>

@@ -16,6 +16,7 @@ import type {
   PublicForumTagRoute,
   PublicListSort,
 } from '../forumRouteState';
+import { buildPublicForumPath } from '../forumRouteState';
 import { usePublicReplaceRouteSync } from '../usePublicReplaceRouteSync';
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import {
@@ -442,6 +443,7 @@ export const PublicForumTag = ({
                 post={post}
                 displayTimeZone={displayTimeZone}
                 onClick={() => onOpenPost(getForumPostRouteIdentifier(post))}
+                href={buildPublicForumPath({ kind: 'detail', postId: getForumPostRouteIdentifier(post) })}
                 variant="publicCompact"
                 onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
                 onTagClick={(_, tagSlug) => onOpenTag?.(tagSlug)}

@@ -17,7 +17,7 @@ import { getForumPostRouteIdentifier } from '../forum/publicForumUtils';
 import { buildPublicDiscoverPath, type PublicDiscoverRoute } from '../discoverRouteState';
 import type { PublicDocsRoute } from '../docsRouteState';
 import { createDefaultPublicLeaderboardRoute, type PublicLeaderboardRoute } from '../leaderboardRouteState';
-import type { PublicForumRoute } from '../forumRouteState';
+import { buildPublicForumPath, type PublicForumRoute } from '../forumRouteState';
 import type { PublicShopRoute } from '../shopRouteState';
 import { createDefaultPublicShopProductsRoute } from '../shopRouteState';
 import { buildPublicShareUrl } from '../publicHead';
@@ -898,6 +898,7 @@ export const PublicDiscoverApp = ({
                       post={post}
                       displayTimeZone={displayTimeZone}
                       onClick={() => runFromSection('forum', () => onNavigateToForum({ kind: 'detail', postId: getForumPostRouteIdentifier(post) }))}
+                      href={buildPublicForumPath({ kind: 'detail', postId: getForumPostRouteIdentifier(post) })}
                       variant="publicCompact"
                       onTagClick={(_, tagSlug) => runFromSection('forum', () => onNavigateToForum({ kind: 'tag', tagSlug, sortBy: 'newest', page: 1 }))}
                       onQuestionClick={() => runFromSection('forum', () => onNavigateToForum({ kind: 'question', sortBy: 'newest', page: 1 }))}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import {
@@ -14,6 +14,7 @@ import {
 import { DEFAULT_TIME_ZONE, formatDateTimeByTimeZone, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
 import { buildPublicProfilePath, type PublicProfileRoute, type PublicProfileTab } from '../profileRouteState';
+import { buildPublicForumPath } from '../forumRouteState';
 import {
   getPublicDetailBackLabelKey,
   type PublicDetailBackMode,
@@ -71,6 +72,21 @@ const profileGuideBoundaryItems = [
   'profile.public.readingGuide.boundaryItemHistory',
   'profile.public.readingGuide.boundaryItemWorkspace',
 ] as const;
+
+function buildProfileForumTargetHref(postId: string, commentId?: string): string {
+  return buildPublicForumPath(commentId
+    ? { kind: 'detail', postId, commentId }
+    : { kind: 'detail', postId });
+}
+
+function shouldHandleProfileLinkInternally(event: MouseEvent<HTMLAnchorElement>): boolean {
+  return !event.defaultPrevented
+    && event.button === 0
+    && !event.metaKey
+    && !event.ctrlKey
+    && !event.shiftKey
+    && !event.altKey;
+}
 
 interface PublicStatusCardProps {
   tone: PublicStatusTone;
@@ -406,6 +422,19 @@ export const PublicProfileApp = ({
     }, { replace: true });
   };
 
+  const handleForumTargetLinkClick = (
+    event: MouseEvent<HTMLAnchorElement>,
+    postId: string,
+    commentId?: string
+  ) => {
+    if (!shouldHandleProfileLinkInternally(event)) {
+      return;
+    }
+
+    event.preventDefault();
+    onNavigateToForumPost(postId, commentId);
+  };
+
   return (
     <div className={styles.page} ref={pageRef}>
       <PublicShellHeader
@@ -603,30 +632,33 @@ export const PublicProfileApp = ({
                   />
                 ) : (
                   <div className={styles.list}>
-                    {posts.map((post) => (
-                      <article
-                        key={String(post.voId)}
-                        className={styles.contentItem}
-                        onClick={() => {
-                          const target = resolvePublicProfilePostForumTarget(post);
-                          onNavigateToForumPost(target.postId);
-                        }}
-                      >
-                        <div className={styles.itemTopRow}>
-                          <span className={styles.itemType}>{t('profile.tab.userPosts')}</span>
-                          <span className={styles.itemTime}>
-                            {formatDateTimeByTimeZone(post.voCreateTime, displayTimeZone)}
-                          </span>
-                        </div>
-                        <h3 className={styles.itemTitle}>{post.voTitle}</h3>
-                        <p className={styles.itemExcerpt}>{buildExcerpt(post) || t('profile.public.noSummary')}</p>
-                        <div className={styles.itemMeta}>
-                          <span>{t('profile.stats.likes', { count: post.voLikeCount ?? 0 })}</span>
-                          <span>{t('profile.stats.comments', { count: post.voCommentCount ?? 0 })}</span>
-                          <span>{t('forum.postDetail.views', { count: post.voViewCount ?? 0 })}</span>
-                        </div>
-                      </article>
-                    ))}
+                    {posts.map((post) => {
+                      const target = resolvePublicProfilePostForumTarget(post);
+                      const href = buildProfileForumTargetHref(target.postId);
+
+                      return (
+                        <a
+                          key={String(post.voId)}
+                          className={styles.contentItem}
+                          href={href}
+                          onClick={(event) => handleForumTargetLinkClick(event, target.postId)}
+                        >
+                          <div className={styles.itemTopRow}>
+                            <span className={styles.itemType}>{t('profile.tab.userPosts')}</span>
+                            <span className={styles.itemTime}>
+                              {formatDateTimeByTimeZone(post.voCreateTime, displayTimeZone)}
+                            </span>
+                          </div>
+                          <h3 className={styles.itemTitle}>{post.voTitle}</h3>
+                          <p className={styles.itemExcerpt}>{buildExcerpt(post) || t('profile.public.noSummary')}</p>
+                          <div className={styles.itemMeta}>
+                            <span>{t('profile.stats.likes', { count: post.voLikeCount ?? 0 })}</span>
+                            <span>{t('profile.stats.comments', { count: post.voCommentCount ?? 0 })}</span>
+                            <span>{t('forum.postDetail.views', { count: post.voViewCount ?? 0 })}</span>
+                          </div>
+                        </a>
+                      );
+                    })}
                   </div>
                 )
               ) : comments.length === 0 ? (
@@ -637,44 +669,37 @@ export const PublicProfileApp = ({
                 />
               ) : (
                 <div className={styles.list}>
-                  {comments.map((comment) => (
-                    <article
-                      key={String(comment.voId)}
-                      className={styles.contentItem}
-                      onClick={() => {
-                        const target = resolvePublicProfileCommentForumTarget(comment);
-                        onNavigateToForumPost(target.postId, target.commentId);
-                      }}
-                    >
-                      <div className={styles.itemTopRow}>
-                        <span className={styles.itemType}>{t('profile.tab.userComments')}</span>
-                        <span className={styles.itemTime}>
-                          {formatDateTimeByTimeZone(comment.voCreateTime, displayTimeZone)}
-                        </span>
-                      </div>
-                      {comment.voReplyToUserName && (
-                        <p className={styles.replyMeta}>
-                          @{comment.voReplyToUserName}
-                          {comment.voReplyToCommentSnapshot ? ` · ${comment.voReplyToCommentSnapshot}` : ''}
-                        </p>
-                      )}
-                      <p className={styles.commentContent}>{comment.voContent}</p>
-                      <div className={styles.itemMeta}>
-                        <span>{t('profile.stats.likes', { count: comment.voLikeCount ?? 0 })}</span>
-                        <button
-                          type="button"
-                          className={styles.inlineLinkButton}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            const target = resolvePublicProfileCommentForumTarget(comment);
-                            onNavigateToForumPost(target.postId, target.commentId);
-                          }}
-                        >
-                          {t('profile.public.openPost')}
-                        </button>
-                      </div>
-                    </article>
-                  ))}
+                  {comments.map((comment) => {
+                    const target = resolvePublicProfileCommentForumTarget(comment);
+                    const href = buildProfileForumTargetHref(target.postId, target.commentId);
+
+                    return (
+                      <a
+                        key={String(comment.voId)}
+                        className={styles.contentItem}
+                        href={href}
+                        onClick={(event) => handleForumTargetLinkClick(event, target.postId, target.commentId)}
+                      >
+                        <div className={styles.itemTopRow}>
+                          <span className={styles.itemType}>{t('profile.tab.userComments')}</span>
+                          <span className={styles.itemTime}>
+                            {formatDateTimeByTimeZone(comment.voCreateTime, displayTimeZone)}
+                          </span>
+                        </div>
+                        {comment.voReplyToUserName && (
+                          <p className={styles.replyMeta}>
+                            @{comment.voReplyToUserName}
+                            {comment.voReplyToCommentSnapshot ? ` · ${comment.voReplyToCommentSnapshot}` : ''}
+                          </p>
+                        )}
+                        <p className={styles.commentContent}>{comment.voContent}</p>
+                        <div className={styles.itemMeta}>
+                          <span>{t('profile.stats.likes', { count: comment.voLikeCount ?? 0 })}</span>
+                          <span className={styles.inlineLinkButton}>{t('profile.public.openPost')}</span>
+                        </div>
+                      </a>
+                    );
+                  })}
                 </div>
               )}
 

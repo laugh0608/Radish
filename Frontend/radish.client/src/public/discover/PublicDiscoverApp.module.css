@@ -606,10 +606,16 @@
   background: transparent;
   color: inherit;
   cursor: pointer;
+  text-decoration: none;
   text-align: left;
   padding: 14px;
   display: grid;
   gap: 10px;
+}
+
+.feedContentButton:focus-visible {
+  outline: 2px solid var(--theme-brand-primary);
+  outline-offset: -4px;
 }
 
 .feedContentButton:hover .feedContentTitle {
