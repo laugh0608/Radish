@@ -25,6 +25,8 @@ interface CreateCommentFormProps {
   title?: string;
   submitText?: string;
   placeholder?: string;
+  loginPromptText?: string;
+  loginButtonText?: string;
   loginReturnPath?: string | null;
   onLoginRequired?: (returnPath?: string | null) => void;
   onTyping?: () => void;
@@ -130,6 +132,8 @@ export const CreateCommentForm = ({
   title,
   submitText,
   placeholder,
+  loginPromptText,
+  loginButtonText,
   loginReturnPath,
   onLoginRequired,
   onTyping,
@@ -158,6 +162,8 @@ export const CreateCommentForm = ({
   const resolvedTitle = title ?? t('forum.comment.title');
   const resolvedSubmitText = submitText ?? t('forum.submitDiscussion');
   const resolvedPlaceholder = placeholder ?? t('forum.discussionPlaceholder');
+  const resolvedLoginPromptText = loginPromptText ?? t('forum.comment.loginPrompt');
+  const resolvedLoginButtonText = loginButtonText ?? t('forum.comment.loginButton');
   const isEditorDisabled = !isAuthenticated || !hasPost || disabled || uploading;
 
   useEffect(() => {
@@ -526,9 +532,9 @@ export const CreateCommentForm = ({
     <div className={containerClassName}>
       {!isAuthenticated && (
         <div className={styles.loginPrompt}>
-          {t('forum.comment.loginPrompt')}
+          {resolvedLoginPromptText}
           <button type="button" onClick={handleLoginClick} className={styles.loginButton}>
-            {t('forum.comment.loginButton')}
+            {resolvedLoginButtonText}
           </button>
         </div>
       )}

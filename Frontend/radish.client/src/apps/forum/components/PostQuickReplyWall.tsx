@@ -27,6 +27,8 @@ interface PostQuickReplyWallProps {
   onCreate?: (content: string) => Promise<void>;
   onDelete?: (quickReplyId: LongId) => Promise<void>;
   onReport?: (quickReplyId: LongId) => void;
+  loginPromptText?: string;
+  loginButtonText?: string;
   loginReturnPath?: string | null;
   onLoginRequired?: (returnPath?: string | null) => void;
   autoFocusComposerKey?: string | null;
@@ -86,6 +88,8 @@ export const PostQuickReplyWall = ({
   onCreate,
   onDelete,
   onReport,
+  loginPromptText,
+  loginButtonText,
   loginReturnPath,
   onLoginRequired,
   autoFocusComposerKey = null,
@@ -102,6 +106,8 @@ export const PostQuickReplyWall = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const handledAutoFocusKeyRef = useRef<string | null>(null);
   const measureRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const resolvedLoginPromptText = loginPromptText ?? t('forum.quickReply.loginPrompt');
+  const resolvedLoginButtonText = loginButtonText ?? t('forum.quickReply.loginButton');
 
   const normalizedContent = useMemo(
     () => content.trim().replace(/\s+/g, ' '),
@@ -313,7 +319,7 @@ export const PostQuickReplyWall = ({
             <textarea
               ref={textareaRef}
               className={styles.textarea}
-              placeholder={isAuthenticated ? t('forum.quickReply.placeholder') : t('forum.quickReply.loginPrompt')}
+              placeholder={isAuthenticated ? t('forum.quickReply.placeholder') : resolvedLoginPromptText}
               value={content}
               onChange={(event) => setContent(event.target.value.slice(0, MAX_LENGTH))}
               onKeyDown={handleComposerKeyDown}
@@ -345,7 +351,7 @@ export const PostQuickReplyWall = ({
               </button>
             ) : (
               <button type="button" className={styles.loginButton} onClick={handleLogin}>
-                {t('forum.quickReply.loginButton')}
+                {resolvedLoginButtonText}
               </button>
             )}
           </div>
