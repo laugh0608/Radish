@@ -766,14 +766,58 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         }
 
         Dictionary<long, string> displayNameMap = new();
+        Dictionary<long, string> publicIdMap = new();
         if (_userRepository != null)
         {
-            displayNameMap = ForumDisplayNameHelper.BuildMap(await _userRepository.QueryAsync(user =>
+            var users = await _userRepository.QueryAsync(user =>
                 userIds.Contains(user.Id) &&
-                !user.IsDeleted));
+                !user.IsDeleted);
+            await EnsureCommentUserPublicIdsAsync(users);
+
+            displayNameMap = ForumDisplayNameHelper.BuildMap(users);
+            publicIdMap = users
+                .Where(user => !string.IsNullOrWhiteSpace(user.PublicId))
+                .GroupBy(user => user.Id)
+                .ToDictionary(group => group.Key, group => group.First().PublicId!.Trim());
         }
 
-        ApplyAuthorProfiles(comments, avatarMap, displayNameMap);
+        ApplyAuthorProfiles(comments, avatarMap, displayNameMap, publicIdMap);
+    }
+
+    private async Task EnsureCommentUserPublicIdsAsync(List<User> users)
+    {
+        if (_userRepository == null)
+        {
+            return;
+        }
+
+        foreach (var user in users)
+        {
+            if (!string.IsNullOrWhiteSpace(user.PublicId))
+            {
+                user.PublicId = user.PublicId.Trim();
+                continue;
+            }
+
+            var publicId = User.EnsurePublicId(user.PublicId);
+            var affectedRows = await _userRepository.UpdateColumnsAsync(
+                item => new User { PublicId = publicId },
+                item => item.Id == user.Id &&
+                        !item.IsDeleted &&
+                        (item.PublicId == null || item.PublicId == string.Empty));
+
+            if (affectedRows > 0)
+            {
+                user.PublicId = publicId;
+                continue;
+            }
+
+            var refreshedUser = await _userRepository.QueryByIdAsync(user.Id);
+            if (!string.IsNullOrWhiteSpace(refreshedUser?.PublicId))
+            {
+                user.PublicId = refreshedUser.PublicId.Trim();
+            }
+        }
     }
 
     private static void CollectAuthorIds(IEnumerable<CommentVo> comments, ISet<long> authorIds)
@@ -800,10 +844,16 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
     private static void ApplyAuthorProfiles(
         IEnumerable<CommentVo> comments,
         IReadOnlyDictionary<long, string?> avatarMap,
-        IReadOnlyDictionary<long, string> displayNameMap)
+        IReadOnlyDictionary<long, string> displayNameMap,
+        IReadOnlyDictionary<long, string> publicIdMap)
     {
         foreach (var comment in comments)
         {
+            if (publicIdMap.TryGetValue(comment.VoAuthorId, out var authorPublicId))
+            {
+                comment.VoAuthorPublicId = authorPublicId;
+            }
+
             if (displayNameMap.TryGetValue(comment.VoAuthorId, out var authorDisplayName))
             {
                 comment.VoAuthorName = authorDisplayName;
@@ -823,7 +873,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
 
             if (comment.VoChildren?.Any() == true)
             {
-                ApplyAuthorProfiles(comment.VoChildren, avatarMap, displayNameMap);
+                ApplyAuthorProfiles(comment.VoChildren, avatarMap, displayNameMap, publicIdMap);
             }
         }
     }

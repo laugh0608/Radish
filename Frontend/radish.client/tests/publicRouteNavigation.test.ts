@@ -417,6 +417,27 @@ test('公开来源转交应按目标路径一次性消费', () => {
   );
 });
 
+test('公开来源转交应支持登录参与意图返回路径', () => {
+  const storage = new MemoryStorage();
+  const circleRoute: PublicRouteDescriptor = {
+    app: 'circle',
+    route: { tab: 'feed', page: 1 }
+  };
+  const forumDetailRoute: PublicRouteDescriptor = {
+    app: 'forum',
+    route: {
+      kind: 'detail',
+      postId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f821',
+      intent: 'comment',
+    }
+  };
+  const sourceState = createPublicRouteSourceState({}, circleRoute, forumDetailRoute);
+  const targetPath = '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f821?intent=comment';
+
+  assert.equal(rememberPublicRouteSourceTransfer(targetPath, sourceState, storage), true);
+  assert.deepEqual(consumePublicRouteSourceTransfer(targetPath, storage), sourceState);
+});
+
 test('shouldCommitPublicRouteUpdate 对同 app 同路径的 replace 导航返回 false', () => {
   const currentRoute: PublicRouteDescriptor = {
     app: 'forum',

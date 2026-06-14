@@ -8,6 +8,7 @@ import type {
 import {
   getPublicDetailBackLabelKey,
   type PublicDetailBackMode,
+  type PublicRouteSourceState,
 } from '../publicRouteNavigation';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { PublicForumDetail } from './PublicForumDetail';
@@ -23,6 +24,7 @@ import styles from './PublicForumApp.module.css';
 interface PublicForumAppProps {
   route: PublicForumRoute;
   fallbackBrowseRoute: PublicForumBrowseRoute;
+  routeSourceState?: PublicRouteSourceState | null;
   detailBackAction?: {
     mode: PublicDetailBackMode;
     onBack: () => void;
@@ -40,6 +42,7 @@ interface PublicForumAppProps {
 export const PublicForumApp = ({
   route,
   fallbackBrowseRoute,
+  routeSourceState,
   detailBackAction,
   onNavigate,
   onNavigateToDiscover,
@@ -133,6 +136,7 @@ export const PublicForumApp = ({
             postId={route.postId}
             commentId={route.commentId}
             intent={route.intent}
+            sourceState={routeSourceState}
             displayTimeZone={displayTimeZone}
             backLabel={detailBackLabel}
             onBack={handleForumDetailBack}

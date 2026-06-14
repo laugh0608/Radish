@@ -472,6 +472,7 @@ export const PublicEntry = () => {
     <PublicForumApp
       route={route.route}
       fallbackBrowseRoute={lastForumBrowseRoute}
+      routeSourceState={routeSourceState}
       detailBackAction={forumDetailBackAction}
       onNavigate={navigateToForumRoute}
       onNavigateToDiscover={navigateToDiscoverRoute}

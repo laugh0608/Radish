@@ -8,7 +8,7 @@ import type { PostItem } from '@/api/forum';
 import { resolveMediaUrl } from '@/utils/media';
 import { buildPublicDocsPath } from '../docsRouteState';
 import { buildPublicForumPath } from '../forumRouteState';
-import { getForumPostRouteIdentifier } from '../forum/publicForumUtils';
+import { getForumPostRouteIdentifier, resolvePublicProfileUserId } from '../forum/publicForumUtils';
 import { buildPublicShopPath } from '../shopRouteState';
 import styles from './PublicDiscoverApp.module.css';
 
@@ -296,6 +296,7 @@ function DiscoverFeedItemCard({
           onClick={() => onOpenPost(item.post)}
           href={postHref}
           variant="publicCompact"
+          resolveAuthorProfileId={resolvePublicProfileUserId}
           onTagClick={(_, tagSlug) => onOpenTag(tagSlug)}
           onQuestionClick={onOpenQuestion}
           onPollClick={onOpenPoll}

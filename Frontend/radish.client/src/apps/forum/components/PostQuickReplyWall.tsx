@@ -28,6 +28,7 @@ interface PostQuickReplyWallProps {
   onDelete?: (quickReplyId: LongId) => Promise<void>;
   onReport?: (quickReplyId: LongId) => void;
   loginReturnPath?: string | null;
+  onLoginRequired?: (returnPath?: string | null) => void;
   autoFocusComposerKey?: string | null;
 }
 
@@ -86,6 +87,7 @@ export const PostQuickReplyWall = ({
   onDelete,
   onReport,
   loginReturnPath,
+  onLoginRequired,
   autoFocusComposerKey = null,
 }: PostQuickReplyWallProps) => {
   const { t } = useTranslation();
@@ -242,6 +244,11 @@ export const PostQuickReplyWall = ({
   }, [measuredWidths, replies, wallWidth]);
 
   const handleLogin = () => {
+    if (onLoginRequired) {
+      onLoginRequired(loginReturnPath);
+      return;
+    }
+
     redirectToLogin({ returnPath: loginReturnPath });
   };
 

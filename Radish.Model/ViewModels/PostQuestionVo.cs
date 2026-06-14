@@ -35,6 +35,9 @@ public class PostAnswerVo
     /// <summary>作者 ID</summary>
     public long VoAuthorId { get; set; }
 
+    /// <summary>作者公开访问标识</summary>
+    public string? VoAuthorPublicId { get; set; }
+
     /// <summary>作者名称</summary>
     public string VoAuthorName { get; set; } = string.Empty;
 

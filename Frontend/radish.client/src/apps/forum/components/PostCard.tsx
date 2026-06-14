@@ -13,6 +13,7 @@ interface PostCardProps {
   href?: string;
   variant?: 'default' | 'publicCompact';
   onAuthorClick?: (userId: LongId, userName?: string | null, avatarUrl?: string | null) => void;
+  resolveAuthorProfileId?: (userId: LongId, publicId?: string | null) => LongId;
   onTagClick?: (tagName: string, tagSlug: string) => void;
   onQuestionClick?: () => void;
   onPollClick?: () => void;
@@ -30,6 +31,7 @@ export const PostCard = ({
   href,
   variant = 'default',
   onAuthorClick,
+  resolveAuthorProfileId,
   onTagClick,
   onQuestionClick,
   onPollClick,
@@ -112,7 +114,11 @@ export const PostCard = ({
 
   const handleAuthorClick = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    onAuthorClick?.(post.voAuthorId, post.voAuthorName, post.voAuthorAvatarUrl);
+    onAuthorClick?.(
+      resolveAuthorProfileId?.(post.voAuthorId, post.voAuthorPublicId) ?? post.voAuthorId,
+      post.voAuthorName,
+      post.voAuthorAvatarUrl
+    );
   };
 
   const handleTagClick = (event: MouseEvent<HTMLButtonElement>, tagName: string, tagSlug?: string) => {

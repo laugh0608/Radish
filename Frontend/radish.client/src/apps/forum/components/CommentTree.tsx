@@ -48,6 +48,7 @@ interface CommentTreeProps {
   isReactionPending?: (commentId: LongId) => boolean;
   onRequireReactionLogin?: () => void;
   onAuthorClick?: (userId: LongId, userName?: string | null, avatarUrl?: string | null) => void;
+  resolveAuthorProfileId?: (userId: LongId, publicId?: string | null) => LongId;
   onReportComment?: (commentId: LongId) => void;
   registerCommentAnchor?: (commentId: LongId, element: HTMLDivElement | null) => void;
   onNavigateToComment?: (commentId: LongId) => Promise<void> | void;
@@ -85,6 +86,7 @@ export const CommentTree = ({
   isReactionPending,
   onRequireReactionLogin,
   onAuthorClick,
+  resolveAuthorProfileId,
   onReportComment,
   registerCommentAnchor,
   onNavigateToComment,
@@ -187,6 +189,7 @@ export const CommentTree = ({
             isReactionPending={isReactionPending}
             onRequireReactionLogin={onRequireReactionLogin}
             onAuthorClick={onAuthorClick}
+            resolveAuthorProfileId={resolveAuthorProfileId}
             onReport={onReportComment}
             registerCommentAnchor={registerCommentAnchor}
             onNavigateToComment={onNavigateToComment}

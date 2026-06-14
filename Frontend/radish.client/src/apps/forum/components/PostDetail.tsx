@@ -55,6 +55,7 @@ interface PostDetailProps {
   followLoading?: boolean;
   onToggleFollow?: (targetUserId: LongId, isFollowing: boolean) => Promise<void>;
   onAuthorClick?: (userId: LongId, userName?: string | null, avatarUrl?: string | null) => void;
+  resolveAuthorProfileId?: (userId: LongId, publicId?: string | null) => LongId;
   onTagClick?: (tagName: string, tagSlug: string) => void;
   onQuestionClick?: () => void;
   onPollClick?: () => void;
@@ -104,6 +105,7 @@ export const PostDetail = ({
   followLoading = false,
   onToggleFollow,
   onAuthorClick,
+  resolveAuthorProfileId,
   onTagClick,
   onQuestionClick,
   onPollClick,
@@ -112,6 +114,8 @@ export const PostDetail = ({
 }: PostDetailProps) => {
   const { t } = useTranslation();
   const isReadOnly = mode === 'readOnly';
+  const resolveProfileUserId = (userId: LongId, publicId?: string | null): LongId =>
+    resolveAuthorProfileId?.(userId, publicId) ?? userId;
   const anonymousUserLabel = t('forum.postCard.anonymousUser');
   const unknownTimeLabel = t('forum.postCard.unknownTime');
   const parsedTags = post?.voTags
@@ -406,7 +410,11 @@ export const PostDetail = ({
             <button
               type="button"
               className={styles.authorLink}
-              onClick={() => onAuthorClick?.(post.voAuthorId, post.voAuthorName, post.voAuthorAvatarUrl)}
+              onClick={() => onAuthorClick?.(
+                resolveProfileUserId(post.voAuthorId, post.voAuthorPublicId),
+                post.voAuthorName,
+                post.voAuthorAvatarUrl
+              )}
             >
               <span
                 className={styles.authorAvatar}
@@ -638,7 +646,11 @@ export const PostDetail = ({
                         <button
                           type="button"
                           className={styles.lotteryWinnerName}
-                          onClick={() => onAuthorClick?.(winner.voUserId, winner.voUserName, null)}
+                          onClick={() => onAuthorClick?.(
+                            resolveProfileUserId(winner.voUserId, winner.voUserPublicId),
+                            winner.voUserName,
+                            null
+                          )}
                         >
                           {winner.voUserName}
                         </button>
@@ -760,7 +772,11 @@ export const PostDetail = ({
                           <button
                             type="button"
                             className={styles.answerAuthorButton}
-                            onClick={() => onAuthorClick?.(answer.voAuthorId, answer.voAuthorName, answer.voAuthorAvatarUrl)}
+                            onClick={() => onAuthorClick?.(
+                              resolveProfileUserId(answer.voAuthorId, answer.voAuthorPublicId),
+                              answer.voAuthorName,
+                              answer.voAuthorAvatarUrl
+                            )}
                             title={t('forum.postDetail.answerProfileTitle', { name: answerAuthorName })}
                           >
                             <span

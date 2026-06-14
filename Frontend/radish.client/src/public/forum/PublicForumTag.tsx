@@ -25,6 +25,7 @@ import {
   createForumReadingGuide,
   formatTagPostCount,
   getForumPostRouteIdentifier,
+  resolvePublicProfileUserId,
   tagGuideDefinition,
 } from './publicForumUtils';
 import {
@@ -445,6 +446,7 @@ export const PublicForumTag = ({
                 onClick={() => onOpenPost(getForumPostRouteIdentifier(post))}
                 href={buildPublicForumPath({ kind: 'detail', postId: getForumPostRouteIdentifier(post) })}
                 variant="publicCompact"
+                resolveAuthorProfileId={resolvePublicProfileUserId}
                 onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
                 onTagClick={(_, tagSlug) => onOpenTag?.(tagSlug)}
                 onQuestionClick={onOpenQuestion}

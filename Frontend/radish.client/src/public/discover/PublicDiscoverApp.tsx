@@ -13,7 +13,7 @@ import { getProductTypeDisplay, getProducts, type ProductListItem } from '@/api/
 import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
 import { getPublicWikiList } from '../docs/publicDocsApi';
-import { getForumPostRouteIdentifier } from '../forum/publicForumUtils';
+import { getForumPostRouteIdentifier, resolvePublicProfileUserId } from '../forum/publicForumUtils';
 import { buildPublicDiscoverPath, type PublicDiscoverRoute } from '../discoverRouteState';
 import type { PublicDocsRoute } from '../docsRouteState';
 import { createDefaultPublicLeaderboardRoute, type PublicLeaderboardRoute } from '../leaderboardRouteState';
@@ -900,6 +900,7 @@ export const PublicDiscoverApp = ({
                       onClick={() => runFromSection('forum', () => onNavigateToForum({ kind: 'detail', postId: getForumPostRouteIdentifier(post) }))}
                       href={buildPublicForumPath({ kind: 'detail', postId: getForumPostRouteIdentifier(post) })}
                       variant="publicCompact"
+                      resolveAuthorProfileId={resolvePublicProfileUserId}
                       onTagClick={(_, tagSlug) => runFromSection('forum', () => onNavigateToForum({ kind: 'tag', tagSlug, sortBy: 'newest', page: 1 }))}
                       onQuestionClick={() => runFromSection('forum', () => onNavigateToForum({ kind: 'question', sortBy: 'newest', page: 1 }))}
                       onPollClick={() => runFromSection('forum', () => onNavigateToForum({ kind: 'poll', sortBy: 'newest', page: 1 }))}

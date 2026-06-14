@@ -26,6 +26,7 @@ interface CreateCommentFormProps {
   submitText?: string;
   placeholder?: string;
   loginReturnPath?: string | null;
+  onLoginRequired?: (returnPath?: string | null) => void;
   onTyping?: () => void;
   autoFocusKey?: string | null;
 }
@@ -130,6 +131,7 @@ export const CreateCommentForm = ({
   submitText,
   placeholder,
   loginReturnPath,
+  onLoginRequired,
   onTyping,
   autoFocusKey = null,
 }: CreateCommentFormProps) => {
@@ -260,6 +262,11 @@ export const CreateCommentForm = ({
   }, [hasPost, isAuthenticated, onTyping]);
 
   const handleLoginClick = () => {
+    if (onLoginRequired) {
+      onLoginRequired(loginReturnPath);
+      return;
+    }
+
     redirectToLogin({ returnPath: loginReturnPath });
   };
 

@@ -30,6 +30,7 @@ import {
   formatCategoryPostCount,
   getForumPostRouteIdentifier,
   listGuideDefinition,
+  resolvePublicProfileUserId,
 } from './publicForumUtils';
 import {
   resolvePublicForumCategoryLoadState,
@@ -545,6 +546,7 @@ export const PublicForumList = ({
                 onClick={() => onOpenPost(getForumPostRouteIdentifier(post))}
                 href={buildPublicForumPath({ kind: 'detail', postId: getForumPostRouteIdentifier(post) })}
                 variant="publicCompact"
+                resolveAuthorProfileId={resolvePublicProfileUserId}
                 onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
                 onTagClick={(_, tagSlug) => onOpenTag?.(tagSlug)}
                 onQuestionClick={onOpenQuestion}

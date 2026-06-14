@@ -27,6 +27,7 @@ import {
   lotteryGuideDefinition,
   pollGuideDefinition,
   questionGuideDefinition,
+  resolvePublicProfileUserId,
 } from './publicForumUtils';
 import {
   resolvePublicForumReadSectionState,
@@ -382,6 +383,7 @@ export const PublicForumTypeFeed = ({
                 onClick={() => onOpenPost(getForumPostRouteIdentifier(post))}
                 href={buildPublicForumPath({ kind: 'detail', postId: getForumPostRouteIdentifier(post) })}
                 variant="publicCompact"
+                resolveAuthorProfileId={resolvePublicProfileUserId}
                 onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
                 onTagClick={(_, tagSlug) => onOpenTag?.(tagSlug)}
                 onQuestionClick={onOpenQuestion}

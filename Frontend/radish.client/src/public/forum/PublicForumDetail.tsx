@@ -33,6 +33,10 @@ import {
   upsertCommentInTree
 } from '@/apps/forum/utils/commentRealtimeTree';
 import { buildPublicForumPath, type PublicForumDetailIntent } from '../forumRouteState';
+import {
+  rememberPublicRouteSourceTransfer,
+  type PublicRouteSourceState,
+} from '../publicRouteNavigation';
 import { applyPublicHead, buildPublicShareUrl } from '../publicHead';
 import {
   applyPublicStructuredData,
@@ -53,6 +57,7 @@ import {
   getForumPostRouteIdentifier,
   isSameLongId,
   mergeCommentChildren,
+  resolvePublicProfileUserId,
 } from './publicForumUtils';
 import styles from './PublicForumApp.module.css';
 
@@ -73,6 +78,7 @@ interface PublicForumDetailProps {
   postId: string;
   commentId?: string;
   intent?: PublicForumDetailIntent;
+  sourceState?: PublicRouteSourceState | null;
   displayTimeZone: string;
   backLabel: string;
   onBack: () => void;
@@ -87,6 +93,7 @@ export const PublicForumDetail = ({
   postId,
   commentId,
   intent,
+  sourceState,
   displayTimeZone,
   backLabel,
   onBack,
@@ -587,6 +594,14 @@ export const PublicForumDetail = ({
     ? routeIntentFocusKey
     : commentFocusKey;
 
+  const redirectToDetailLogin = useCallback((returnPath: string | null | undefined) => {
+    if (returnPath && sourceState) {
+      rememberPublicRouteSourceTransfer(returnPath, sourceState);
+    }
+
+    redirectToLogin({ returnPath });
+  }, [sourceState]);
+
   const navigateToComment = useCallback(async (
     targetCommentId: LongId,
     navigationKey: string
@@ -791,12 +806,12 @@ export const PublicForumDetail = ({
     }
 
     if (!isAuthenticated) {
-      redirectToLogin({ returnPath: quickReplyReturnPath });
+      redirectToDetailLogin(quickReplyReturnPath);
       return;
     }
 
     setQuickReplyFocusKey(`${quickReplyReturnPath}:${Date.now()}`);
-  }, [isAuthenticated, quickReplyReturnPath]);
+  }, [isAuthenticated, quickReplyReturnPath, redirectToDetailLogin]);
 
   const handleCommentAction = useCallback(() => {
     if (!commentReturnPath) {
@@ -804,12 +819,12 @@ export const PublicForumDetail = ({
     }
 
     if (!isAuthenticated) {
-      redirectToLogin({ returnPath: commentReturnPath });
+      redirectToDetailLogin(commentReturnPath);
       return;
     }
 
     setCommentFocusKey(`${commentReturnPath}:${Date.now()}`);
-  }, [commentReturnPath, isAuthenticated]);
+  }, [commentReturnPath, isAuthenticated, redirectToDetailLogin]);
 
   const handleCreateQuickReply = useCallback(async (content: string) => {
     if (!post?.voId) {
@@ -851,7 +866,7 @@ export const PublicForumDetail = ({
     }
 
     if (!isAuthenticated) {
-      redirectToLogin({ returnPath: commentReturnPath });
+      redirectToDetailLogin(commentReturnPath);
       return;
     }
 
@@ -921,6 +936,7 @@ export const PublicForumDetail = ({
     post?.voId,
     registerRootCommentCount,
     applyPostCommentCountDelta,
+    redirectToDetailLogin,
     submittingComment,
     t
   ]);
@@ -1068,6 +1084,7 @@ export const PublicForumDetail = ({
               isAuthenticated={false}
               showSectionTitle={false}
               onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
+              resolveAuthorProfileId={resolvePublicProfileUserId}
               onTagClick={(_, tagSlug) => onOpenTag?.(tagSlug)}
               onQuestionClick={onOpenQuestion}
               onPollClick={onOpenPoll}
@@ -1106,6 +1123,7 @@ export const PublicForumDetail = ({
                   currentUserId={currentUserId || '0'}
                   onCreate={handleCreateQuickReply}
                   loginReturnPath={quickReplyReturnPath}
+                  onLoginRequired={redirectToDetailLogin}
                   autoFocusComposerKey={quickReplyAutoFocusKey}
                 />
               </>
@@ -1160,6 +1178,7 @@ export const PublicForumDetail = ({
                   submitText={t('forum.submitDiscussion')}
                   placeholder={t('forum.discussionPlaceholder')}
                   loginReturnPath={commentReturnPath}
+                  onLoginRequired={redirectToDetailLogin}
                   onTyping={handleCommentTyping}
                   autoFocusKey={commentAutoFocusKey}
                 />
@@ -1203,6 +1222,7 @@ export const PublicForumDetail = ({
                     isAuthenticated={isAuthenticated}
                     showTitle={false}
                     onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
+                    resolveAuthorProfileId={resolvePublicProfileUserId}
                     onNavigateToComment={(targetCommentId) => void navigateToComment(
                       targetCommentId,
                       `inline:${postId}:${targetCommentId}:${Date.now()}`

@@ -38,6 +38,7 @@ interface CommentNodeProps {
   isReactionPending?: (commentId: LongId) => boolean;
   onRequireReactionLogin?: () => void;
   onAuthorClick?: (userId: LongId, userName?: string | null, avatarUrl?: string | null) => void;
+  resolveAuthorProfileId?: (userId: LongId, publicId?: string | null) => LongId;
   onReport?: (commentId: LongId) => void;
   registerCommentAnchor?: (commentId: LongId, element: HTMLDivElement | null) => void;
   onNavigateToComment?: (commentId: LongId) => void | Promise<void>;
@@ -267,6 +268,7 @@ export const CommentNode = ({
   isReactionPending,
   onRequireReactionLogin,
   onAuthorClick,
+  resolveAuthorProfileId,
   onReport,
   registerCommentAnchor,
   onNavigateToComment,
@@ -590,7 +592,11 @@ export const CommentNode = ({
         <button
           type="button"
           className={styles.authorButton}
-          onClick={() => onAuthorClick?.(node.voAuthorId, node.voAuthorName, node.voAuthorAvatarUrl)}
+          onClick={() => onAuthorClick?.(
+            resolveAuthorProfileId?.(node.voAuthorId, node.voAuthorPublicId) ?? node.voAuthorId,
+            node.voAuthorName,
+            node.voAuthorAvatarUrl
+          )}
           title={t('forum.comment.authorProfileTitle', { name: node.voAuthorName })}
         >
           <span
@@ -855,6 +861,7 @@ export const CommentNode = ({
                   isReactionPending={isReactionPending}
                   onRequireReactionLogin={onRequireReactionLogin}
                   onAuthorClick={onAuthorClick}
+                  resolveAuthorProfileId={resolveAuthorProfileId}
                   onReport={onReport}
                   registerCommentAnchor={registerCommentAnchor}
                   onNavigateToComment={onNavigateToComment}
