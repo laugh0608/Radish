@@ -395,8 +395,10 @@ export const PublicProfileApp = ({
   const displayName = profile?.voDisplayName?.trim() || null;
   const userName = profile?.voUserName?.trim() || t('common.userFallback', { id: route.userId });
   const backLabelKey = getPublicDetailBackLabelKey(backAction?.mode);
-  const backLabel = backLabelKey ? t(backLabelKey) : t('profile.public.backToForum');
-  const handleBack = backAction?.onBack ?? onNavigateToForumList;
+  const backLabel = backLabelKey
+    ? t(backLabelKey)
+    : t(onNavigateToDiscover ? 'public.shell.backToDiscover' : 'profile.public.backToForum');
+  const handleBack = backAction?.onBack ?? onNavigateToDiscover ?? onNavigateToForumList;
   const buildProfileShareUrl = useCallback(() => {
     return buildPublicShareUrl(buildPublicProfilePath({
       kind: 'detail',

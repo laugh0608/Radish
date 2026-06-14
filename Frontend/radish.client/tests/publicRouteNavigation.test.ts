@@ -164,6 +164,38 @@ test('shouldCaptureForumDetailSource 应在从圈子进入 forum 详情时记录
   assert.equal(getPublicDetailBackLabelKey(resolveForumDetailBackMode(currentRoute)), 'public.shell.backToCircle');
 });
 
+test('createPublicRouteSourceState 应保留圈子到公开个人页再到帖子详情的来源链路', () => {
+  const circleRoute: PublicRouteDescriptor = {
+    app: 'circle',
+    route: { tab: 'following', page: 2 }
+  };
+  const profileRoute: PublicRouteDescriptor = {
+    app: 'profile',
+    route: {
+      kind: 'detail',
+      userId: 'usr_018f6b6f7c7d70008f8f8f8f8f8f821',
+      tab: 'posts',
+      page: 1
+    }
+  };
+  const forumDetailRoute: PublicRouteDescriptor = {
+    app: 'forum',
+    route: {
+      kind: 'detail',
+      postId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f821'
+    }
+  };
+
+  const profileState = createPublicRouteSourceState({}, circleRoute, profileRoute);
+  assert.deepEqual(profileState.profileSourceRoute, circleRoute);
+  assert.equal(resolveProfileBackMode(profileState.profileSourceRoute), 'circle');
+
+  const forumState = createPublicRouteSourceState(profileState, profileRoute, forumDetailRoute);
+  assert.deepEqual(forumState.profileSourceRoute, circleRoute);
+  assert.deepEqual(forumState.forumDetailSourceRoute, profileRoute);
+  assert.equal(resolveForumDetailBackMode(forumState.forumDetailSourceRoute), 'profile');
+});
+
 test('shouldCaptureShopDetailSource 应在从 discover 或商城列表进入商品详情时记录来源', () => {
   const discoverRoute: PublicRouteDescriptor = {
     app: 'discover',

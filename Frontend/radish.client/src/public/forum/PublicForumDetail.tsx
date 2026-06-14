@@ -1063,13 +1063,21 @@ export const PublicForumDetail = ({
                   {quickReplyReturnPath && (
                     <button type="button" className={styles.workspaceActionButton} onClick={handleQuickReplyAction}>
                       <Icon icon="mdi:message-flash-outline" size={18} />
-                      <span>{t('forum.public.workspaceQuickReplyAction')}</span>
+                      <span>
+                        {isAuthenticated
+                          ? t('forum.public.workspaceQuickReplyAction')
+                          : t('forum.public.workspaceQuickReplyLoginAction')}
+                      </span>
                     </button>
                   )}
                   {commentReturnPath && (
                     <button type="button" className={styles.workspaceActionButton} onClick={handleCommentAction}>
                       <Icon icon="mdi:comment-text-outline" size={18} />
-                      <span>{t('forum.public.workspaceCommentAction')}</span>
+                      <span>
+                        {isAuthenticated
+                          ? t('forum.public.workspaceCommentAction')
+                          : t('forum.public.workspaceCommentLoginAction')}
+                      </span>
                     </button>
                   )}
                 </div>

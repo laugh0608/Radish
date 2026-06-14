@@ -63,7 +63,7 @@ export const PublicForumApp = ({
     route.kind !== 'detail' ? buildBrowseRouteKey(route) : null
   ), [route]);
   const detailBackLabelKey = getPublicDetailBackLabelKey(detailBackAction?.mode);
-  const detailBackLabel = detailBackLabelKey ? t(detailBackLabelKey) : t('forum.backToList');
+  const detailBackLabel = detailBackLabelKey ? t(detailBackLabelKey) : t('public.shell.backToForum');
   const handleForumDetailBack = detailBackAction?.onBack ?? (() => onNavigate(fallbackBrowseRoute));
 
   useEffect(() => {
