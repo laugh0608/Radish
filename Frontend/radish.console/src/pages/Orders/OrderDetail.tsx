@@ -200,7 +200,7 @@ export const OrderDetail = ({
               {formatDateTime(currentOrder.voCancelledTime)}
             </Descriptions.Item>
 
-            <Descriptions.Item label="取消原因">
+            <Descriptions.Item label="取消原因" span={2}>
               {currentOrder.voCancelReason || '-'}
             </Descriptions.Item>
 
