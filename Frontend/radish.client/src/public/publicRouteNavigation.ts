@@ -16,11 +16,12 @@ export type PublicRouteDescriptor =
   | { app: 'leaderboard'; route: PublicLeaderboardRoute }
   | { app: 'shop'; route: PublicShopRoute }
   | { app: 'circle'; route: CircleRoute }
+  | { app: 'me'; route: { kind: 'index' } }
   | { app: 'notifications'; route: { kind: 'index' } };
 
 export type PublicContentRouteDescriptor = Exclude<
   PublicRouteDescriptor,
-  { app: 'circle' } | { app: 'notifications' }
+  { app: 'circle' } | { app: 'me' } | { app: 'notifications' }
 >;
 
 export type PublicDetailBackMode =
@@ -33,6 +34,7 @@ export type PublicDetailBackMode =
   | 'shop'
   | 'shopProducts'
   | 'circle'
+  | 'me'
   | 'notifications';
 
 export interface PublicRouteSourceState {
@@ -111,6 +113,8 @@ export function getPublicDetailBackLabelKey(mode: PublicDetailBackMode | null | 
       return 'public.shell.backToShopProducts';
     case 'circle':
       return 'public.shell.backToCircle';
+    case 'me':
+      return 'public.shell.backToMe';
     case 'notifications':
       return 'public.shell.backToNotifications';
     default:
@@ -302,7 +306,11 @@ export function resolveDocsDetailBackMode(sourceRoute: PublicRouteDescriptor | n
     return null;
   }
 
-  return sourceRoute.app === 'discover' ? 'discover' : 'source';
+  if (sourceRoute.app === 'discover' || sourceRoute.app === 'me') {
+    return sourceRoute.app;
+  }
+
+  return 'source';
 }
 
 export function resolveProfileBackMode(sourceRoute: PublicRouteDescriptor | null): PublicDetailBackMode | null {
@@ -310,7 +318,12 @@ export function resolveProfileBackMode(sourceRoute: PublicRouteDescriptor | null
     return null;
   }
 
-  if (sourceRoute.app === 'discover' || sourceRoute.app === 'circle' || sourceRoute.app === 'notifications') {
+  if (
+    sourceRoute.app === 'discover'
+    || sourceRoute.app === 'circle'
+    || sourceRoute.app === 'me'
+    || sourceRoute.app === 'notifications'
+  ) {
     return sourceRoute.app;
   }
 

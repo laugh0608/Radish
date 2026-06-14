@@ -8,6 +8,7 @@ import {
   buildDesktopShopOrderReturnPath,
   buildDesktopShopPrivateViewReturnPath,
   buildDesktopShopProductReturnPath,
+  buildMeReturnPath,
   buildNotificationsReturnPath,
   buildPublicForumPostReturnPath,
   consumeAuthReturnPath,
@@ -43,7 +44,7 @@ class MemoryStorage implements Storage {
   }
 }
 
-test('normalizeAuthReturnPath 只接受 desktop 深链、circle/notifications 私域入口和公开论坛详情参与意图', () => {
+test('normalizeAuthReturnPath 只接受 desktop 深链、circle/me/notifications 私域入口和公开论坛详情参与意图', () => {
   assert.equal(normalizeAuthReturnPath('/desktop?app=shop&productId=2042219067430928384'), '/desktop?app=shop&productId=2042219067430928384');
   assert.equal(normalizeAuthReturnPath('/desktop?app=forum&postId=2042219067430928384'), '/desktop?app=forum&postId=2042219067430928384');
   assert.equal(normalizeAuthReturnPath('/desktop/?app=shop&view=orders'), '/desktop/?app=shop&view=orders');
@@ -52,6 +53,8 @@ test('normalizeAuthReturnPath 只接受 desktop 深链、circle/notifications �
   assert.equal(normalizeAuthReturnPath('/circle?tab=feed&page=1'), '/circle');
   assert.equal(normalizeAuthReturnPath('/notifications'), '/notifications');
   assert.equal(normalizeAuthReturnPath('/notifications/'), '/notifications');
+  assert.equal(normalizeAuthReturnPath('/me'), '/me');
+  assert.equal(normalizeAuthReturnPath('/me/'), '/me');
   assert.equal(
     normalizeAuthReturnPath('/forum/post/PST_018F6B6F7C7D70008F8F8F8F8F8F8F8F?intent=comment'),
     '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=comment',
@@ -65,6 +68,8 @@ test('normalizeAuthReturnPath 只接受 desktop 深链、circle/notifications �
   assert.equal(normalizeAuthReturnPath('/circle#feed'), null);
   assert.equal(normalizeAuthReturnPath('/notifications?filter=unread'), null);
   assert.equal(normalizeAuthReturnPath('/notifications#unread'), null);
+  assert.equal(normalizeAuthReturnPath('/me?tab=assets'), null);
+  assert.equal(normalizeAuthReturnPath('/me#growth'), null);
   assert.equal(normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f'), null);
   assert.equal(normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=edit'), null);
   assert.equal(normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=comment&from=discover'), null);
@@ -78,6 +83,10 @@ test('normalizeAuthReturnPath 只接受 desktop 深链、circle/notifications �
 
 test('buildNotificationsReturnPath 应构造通知复访登录回流路径', () => {
   assert.equal(buildNotificationsReturnPath(), '/notifications');
+});
+
+test('buildMeReturnPath 应构造我的状态登录回流路径', () => {
+  assert.equal(buildMeReturnPath(), '/me');
 });
 
 test('buildCircleReturnPath 应构造圈子登录回流路径并收敛默认参数', () => {

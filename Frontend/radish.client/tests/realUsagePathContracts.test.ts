@@ -18,6 +18,7 @@ import {
   buildDesktopShopOrderReturnPath,
   buildDesktopShopPrivateViewReturnPath,
   buildDesktopShopProductReturnPath,
+  buildMeReturnPath,
   buildNotificationsReturnPath,
   buildPublicForumPostReturnPath,
   normalizeAuthReturnPath,
@@ -230,4 +231,13 @@ test('P3-10 通知复访入口应是登录态私域回流路径而不是公开�
   assert.equal(isPublicContentPathname('/notifications'), false);
   assert.equal(isPublicContentPathname('/notifications/'), false);
   assert.equal(normalizeAuthReturnPath('/notifications?filter=unread'), null);
+});
+
+test('P3-10 我的状态入口应是登录态私域回流路径而不是公开内容路由', () => {
+  const meReturnPath = buildMeReturnPath();
+  assert.equal(meReturnPath, '/me');
+  assert.equal(normalizeAuthReturnPath(meReturnPath), meReturnPath);
+  assert.equal(isPublicContentPathname('/me'), false);
+  assert.equal(isPublicContentPathname('/me/'), false);
+  assert.equal(normalizeAuthReturnPath('/me?tab=assets'), null);
 });

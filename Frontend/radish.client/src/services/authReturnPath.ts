@@ -1,5 +1,6 @@
 const AUTH_RETURN_PATH_STORAGE_KEY = 'radish:auth:return-path';
 const AUTH_RETURN_PATH_BASE_URL = 'https://radish.local';
+const ME_RETURN_PATH = '/me';
 const NOTIFICATIONS_RETURN_PATH = '/notifications';
 const CIRCLE_RETURN_TABS = new Set(['feed', 'following', 'followers']);
 const PUBLIC_FORUM_POST_PUBLIC_ID_PATTERN = /^pst_[a-f0-9]{32}$/;
@@ -44,6 +45,10 @@ export function normalizeAuthReturnPath(value: string | null | undefined): strin
 
     if (pathname === NOTIFICATIONS_RETURN_PATH) {
       return normalizeNotificationsReturnPath(url);
+    }
+
+    if (pathname === ME_RETURN_PATH) {
+      return normalizeMeReturnPath(url);
     }
 
     if (pathname.startsWith('/forum/post/')) {
@@ -171,6 +176,14 @@ function normalizeNotificationsReturnPath(url: URL): string | null {
   return NOTIFICATIONS_RETURN_PATH;
 }
 
+function normalizeMeReturnPath(url: URL): string | null {
+  if (url.search || url.hash) {
+    return null;
+  }
+
+  return ME_RETURN_PATH;
+}
+
 export function rememberAuthReturnPath(returnPath: string | null | undefined, storage = getSessionStorage()): boolean {
   const normalized = normalizeAuthReturnPath(returnPath);
   if (!normalized || !storage) {
@@ -229,6 +242,10 @@ export function buildCircleReturnPath(options: { tab?: CircleReturnTab; page?: n
 
 export function buildNotificationsReturnPath(): string {
   return NOTIFICATIONS_RETURN_PATH;
+}
+
+export function buildMeReturnPath(): string {
+  return ME_RETURN_PATH;
 }
 
 export function buildDesktopShopProductReturnPath(

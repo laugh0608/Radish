@@ -182,6 +182,40 @@ test('shouldCaptureForumDetailSource 应在从通知中心进入 forum 详情时
   assert.equal(getPublicDetailBackLabelKey(resolveForumDetailBackMode(currentRoute)), 'public.shell.backToNotifications');
 });
 
+test('公开详情应支持从我的状态返回', () => {
+  const meRoute: PublicRouteDescriptor = {
+    app: 'me',
+    route: { kind: 'index' }
+  };
+  const forumDetailRoute: PublicRouteDescriptor = {
+    app: 'forum',
+    route: {
+      kind: 'detail',
+      postId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f821',
+    }
+  };
+  const profileRoute: PublicRouteDescriptor = {
+    app: 'profile',
+    route: {
+      kind: 'detail',
+      userId: 'usr_018f6b6f7c7d70008f8f8f8f8f8f821',
+      tab: 'posts',
+      page: 1,
+    }
+  };
+
+  const forumState = createPublicRouteSourceState({}, meRoute, forumDetailRoute);
+  const profileState = createPublicRouteSourceState({}, meRoute, profileRoute);
+
+  assert.deepEqual(forumState.forumDetailSourceRoute, meRoute);
+  assert.deepEqual(profileState.profileSourceRoute, meRoute);
+  assert.equal(resolveForumDetailBackMode(meRoute), 'me');
+  assert.equal(resolveDocsDetailBackMode(meRoute), 'me');
+  assert.equal(resolveProfileBackMode(meRoute), 'me');
+  assert.equal(resolveShopDetailBackMode(meRoute), 'me');
+  assert.equal(getPublicDetailBackLabelKey('me'), 'public.shell.backToMe');
+});
+
 test('createPublicRouteSourceState 应保留圈子到公开个人页再到帖子详情的来源链路', () => {
   const circleRoute: PublicRouteDescriptor = {
     app: 'circle',

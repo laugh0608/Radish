@@ -5,6 +5,7 @@ import {
   CAPACITOR_PUBLIC_ENTRY_PATH,
   OIDC_CALLBACK_PATH,
   isCirclePathname,
+  isMePathname,
   isNotificationsPathname,
   isPublicContentPathname,
   resolveInitialEntryPath,
@@ -57,6 +58,7 @@ test('isPublicContentPathname 应识别公开内容路由', () => {
   assert.equal(isPublicContentPathname('/leaderboard/post-count'), true);
   assert.equal(isPublicContentPathname('/shop/product/2042219067430928384'), true);
   assert.equal(isPublicContentPathname('/circle'), false);
+  assert.equal(isPublicContentPathname('/me'), false);
   assert.equal(isPublicContentPathname('/notifications'), false);
   assert.equal(isPublicContentPathname('/desktop'), false);
   assert.equal(isPublicContentPathname(OIDC_CALLBACK_PATH), false);
@@ -74,4 +76,11 @@ test('isNotificationsPathname 应单独识别登录态通知复访入口', () =>
   assert.equal(isNotificationsPathname('/notifications/'), true);
   assert.equal(isNotificationsPathname('/discover'), false);
   assert.equal(isNotificationsPathname('/forum'), false);
+});
+
+test('isMePathname 应单独识别登录态我的状态入口', () => {
+  assert.equal(isMePathname('/me'), true);
+  assert.equal(isMePathname('/me/'), true);
+  assert.equal(isMePathname('/discover'), false);
+  assert.equal(isMePathname('/u/usr_018f6b6f7c7d70008f8f8f8f8f8f8f8f'), false);
 });

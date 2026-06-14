@@ -180,6 +180,10 @@ function buildPublicPath(nextRoute: PublicRouteDescriptor): string {
     return '/notifications';
   }
 
+  if (nextRoute.app === 'me') {
+    return '/me';
+  }
+
   if (nextRoute.app === 'discover') {
     return buildPublicDiscoverPath(nextRoute.route);
   }
@@ -282,7 +286,7 @@ export const PublicEntry = () => {
     const nextPath = buildPublicPath(nextRoute);
     const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
-    if (nextRoute.app === 'circle' || nextRoute.app === 'notifications') {
+    if (nextRoute.app === 'circle' || nextRoute.app === 'me' || nextRoute.app === 'notifications') {
       window.location.href = nextPath;
       return;
     }
