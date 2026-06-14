@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   AntInput as Input,
   AntModal as Modal,
@@ -47,6 +48,11 @@ import {
   type ModerationTargetNavigationStateInput,
   type QueuePreset,
 } from './moderationPageHelpers';
+import {
+  parseModerationLongIdQuery,
+  parseModerationSectionQuery,
+} from './moderationPageUrlState';
+import { normalizeConsoleReturnTo } from '@/utils/returnTo';
 import { ModerationTargetDisplay } from './moderationPageRenderers';
 import {
   createModerationLogColumns,
@@ -58,6 +64,12 @@ import '../adminFeature.css';
 
 export const ModerationPage = () => {
   useDocumentTitle('内容治理');
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const querySection = parseModerationSectionQuery(searchParams.get('section'));
+  const queryTargetUserId = parseModerationLongIdQuery(searchParams.get('targetUserId'));
+  const querySourceReportId = parseModerationLongIdQuery(searchParams.get('sourceReportId'));
+  const returnTo = normalizeConsoleReturnTo(searchParams.get('returnTo'));
 
   const [form] = Form.useForm();
   const [manualActionForm] = Form.useForm();
@@ -65,6 +77,7 @@ export const ModerationPage = () => {
   const manualActionSectionRef = useRef<HTMLElement | null>(null);
   const logSectionRef = useRef<HTMLElement | null>(null);
   const manualStatusRequestIdRef = useRef(0);
+  const appliedUrlPresetRef = useRef<string | null>(null);
   const [loadingQueue, setLoadingQueue] = useState(false);
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [queueItems, setQueueItems] = useState<ContentReportQueueItemVo[]>([]);
@@ -400,6 +413,58 @@ export const ModerationPage = () => {
     void loadManualActionStatus(normalizedTargetUserId);
   };
 
+  useEffect(() => {
+    if (!querySection && !queryTargetUserId && !querySourceReportId) {
+      return;
+    }
+
+    const presetKey = [
+      querySection ?? 'logs',
+      queryTargetUserId ?? '',
+      querySourceReportId ?? '',
+      returnTo ?? '',
+    ].join(':');
+    if (appliedUrlPresetRef.current === presetKey) {
+      return;
+    }
+
+    appliedUrlPresetRef.current = presetKey;
+
+    if (querySection === 'queue') {
+      if (!querySourceReportId) {
+        focusQueueSection();
+        return;
+      }
+
+      applyQueuePreset({
+        keyword: querySourceReportId,
+        hint: `已从排障入口带入举报单 #${querySourceReportId}，可继续回看原始审核记录与目标快照。`,
+      });
+      return;
+    }
+
+    if (querySection === 'manual') {
+      applyManualActionPreset({
+        targetUserId: queryTargetUserId,
+        sourceReportId: querySourceReportId,
+        hint: queryTargetUserId
+          ? `已从排障入口带入用户 #${queryTargetUserId}，可继续执行禁言 / 封禁 / 解除动作。`
+          : '已进入手动治理区，请先输入目标用户 ID。',
+      });
+      return;
+    }
+
+    applyActionLogPreset({
+      targetUserId: queryTargetUserId,
+      sourceReportId: querySourceReportId,
+      hint: queryTargetUserId
+        ? `已从排障入口带入用户 #${queryTargetUserId} 的治理动作日志。`
+        : '已进入治理动作日志，可继续按用户或举报单筛选。',
+    });
+    // URL presets are applied once per query key; depending on non-memoized page commands would replay them on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [querySection, querySourceReportId, queryTargetUserId, returnTo]);
+
   const resetManualActionForm = () => {
     manualActionForm.resetFields();
     setManualActionContextHint(null);
@@ -554,11 +619,18 @@ export const ModerationPage = () => {
             <h2>内容治理</h2>
             <p className="admin-feature-subtle">举报队列、手动治理动作与治理日志统一在 Console 收口。</p>
           </div>
-          <Button icon={<ReloadOutlined />} onClick={() => {
-            void Promise.all([loadQueue(), loadLogs()]);
-          }}>
-            刷新
-          </Button>
+          <Space wrap>
+            {returnTo ? (
+              <Button onClick={() => navigate(returnTo)}>
+                返回来源
+              </Button>
+            ) : null}
+            <Button icon={<ReloadOutlined />} onClick={() => {
+              void Promise.all([loadQueue(), loadLogs()]);
+            }}>
+              刷新
+            </Button>
+          </Space>
         </div>
       </section>
 
