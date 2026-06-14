@@ -58,6 +58,7 @@
 - [Flutter 移动端 handoff 与回流说明](/guide/flutter-mobile-handoff)
 - [通知系统实现说明](/guide/notification-implementation)
 - [通知系统实时推送方案](/guide/notification-realtime)
+- [纯 Web 私域复访入口设计说明](/frontend/private-web-revisit)
 - [Console 权限治理 V1](/guide/console-permission-governance)
 - [Console 权限覆盖矩阵](/guide/console-permission-coverage-matrix)
 - [Console 权限 / 菜单 / 按钮管理一期设计方案](/guide/console-authorization-phase1)

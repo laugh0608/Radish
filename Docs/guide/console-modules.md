@@ -12,7 +12,7 @@
 | --- | --- | --- | --- | --- | --- |
 | Dashboard | ✅ 已接入 | 调度总览 | `console.dashboard.view` | ✅ 已补齐 | 最近订单受 `console.orders.view` 约束 |
 | Applications | ✅ 已接入 | 表格 CRUD | `console.applications.*` | ✅ 已补齐 | 列表/新增/编辑/删除/重置密钥已闭环 |
-| Users | ✅ 已接入 | 表格 CRUD + 详情 | `console.users.view` | ✅ 已补齐 | 用户详情、资产、经验、订单摘要已接入 |
+| Users | ✅ 已接入 | 表格 CRUD + 详情 | `console.users.view` | ✅ 已补齐 | 用户详情、资产、经验、订单摘要和内容治理入口已接入 |
 | Roles | ✅ 已接入 | 表格 CRUD + 权限配置 | `console.roles.*` | ✅ 已补齐 | 角色详情、编辑和权限配置链路已闭环 |
 | Products | ✅ 已接入 | 表格 CRUD | `console.products.*` | ✅ 已补齐 | 商品详情与相关订单排障回流已接入，`GetCategories` 辅助接口已纳入 |
 | Orders | ✅ 已接入 | 表格 CRUD + 详情弹层 | `console.orders.*` | ✅ 已补齐 | 查看、重试、管理员备注、商品来源返回和扣款流水定位已接入 |
@@ -21,7 +21,7 @@
 | SystemConfig | ✅ 已接入 | 表格 CRUD + 配置面板 | `console.system-config.*` | ✅ 已补齐 | 编辑详情与站点图标链路已闭环 |
 | Coins | ✅ 已接入 | 工具型页面 | `console.coins.*` | ✅ 已补齐 | 用户余额查询、业务流水筛选与管理员调账已接入 |
 | Experience | ✅ 已接入 | 治理工作台 | `console.experience.*` | ✅ 已补齐 | 经验观察、流水、冻结、调整和等级配置已接入 |
-| Moderation | ✅ 已接入 | 治理工作台 | `console.moderation.*` | ✅ 已补齐 | 举报审核、手动治理和治理日志已接入 |
+| Moderation | ✅ 已接入 | 治理工作台 | `console.moderation.*` | ✅ 已补齐 | 举报审核、手动治理、治理日志和用户过滤 URL 状态已接入 |
 | Settings / Profile | ✅ 已接入 | 设置 / 个人资料 | 登录态 | 不适用 | 个人偏好、密码修改、头像上传和资料保存不走 Console 专属权限树 |
 | Hangfire | ✅ 已接入 | 特殊入口 | `console.hangfire.view` | ✅ 已补齐 | 通过特殊入口授权过滤器校验 |
 
@@ -84,6 +84,7 @@
 - ✅ 页面访问闭环完成
 - ✅ 误暴露入口收口完成
 - ✅ 用户详情已接入基础信息、资产、经验和订单摘要，按详情型页面基座承载
+- ✅ 用户详情可进入内容治理并带入目标用户过滤，继续排查该用户相关举报、手动治理和治理日志
 - ⏸️ 创建用户、强制下线、重置密码等管理动作仍未重新开放
 
 ## 3.5 Roles
@@ -242,6 +243,7 @@
 
 - ✅ 已按治理工作台结构承载
 - ✅ 审核队列、手动动作区和治理日志保留同页人工复核工作流
+- ✅ 支持从用户详情或 URL 状态带入目标用户过滤，方便用户排障与内容治理串联
 
 ## 3.14 Settings / Profile
 

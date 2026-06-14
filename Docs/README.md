@@ -39,6 +39,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 
 - [前端设计](./frontend/design.md)
 - [前端多壳层策略](./frontend/shell-strategy.md)
+- [纯 Web 私域复访入口](./frontend/private-web-revisit.md)
 - [Flutter 移动端 handoff 与回流说明](./guide/flutter-mobile-handoff.md)
 - [公开内容 SEO 与分享基线](./frontend/public-seo-sharing.md)
 - [Console 样式与 Token 使用说明](./frontend/console-style-guide.md)

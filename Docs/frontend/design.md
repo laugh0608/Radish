@@ -55,6 +55,7 @@
 - WebOS 桌面工作台当前已补首批“继续使用”复访面板：桌面首页按最近应用、最近浏览、我的轻回应分组承接已登录用户的回到工作台场景；最近应用使用本地轻量记录，最近浏览与我的轻回应复用既有 API 与工作台打开能力；forum 回流统一优先使用 `postPublicId`，旧 `postId` 仅作为兼容 fallback，docs / shop 仍保留现有 slug 或 long 路由兼容但不把旧 long 路径作为用户可见文案；该面板不等于完整历史中心，不扩删除 / 清空、跨端同步或新的后端 API
 - 公开内容壳层当前已完成 `/discover`、forum、docs、个人公开页、公开榜单与公开商城浏览入口，并继续补到 forum 公开分类、forum 公开搜索与 docs 公开搜索首批：`/discover`、`/forum`、`/forum/category/:categoryId`、`/forum/search`、`/forum/post/:postId`、`/docs`、`/docs/search`、`/docs/:slug`、`/u/:id`、`/leaderboard`、`/leaderboard/:type`、`/shop`、`/shop/products` 与 `/shop/product/:productId` 都已可直接进入公开壳层；其中 forum detail 路由参数当前可承接 `Post.PublicId` 或旧 long 字符串，公开个人页路由参数当前可承接 `User.PublicId` 或旧 long 字符串，canonical / 分享 / 普通内容入口优先使用 `PublicId`
 - 纯 Web 已开始承担根路径 `/` 与默认浏览器入口；普通浏览器 `/` 当前进入 `/discover` 公开分发页，公开内容壳层的已有路径是纯 Web 主线的第一批基础，不再回塞进 WebOS 窗口系统
+- 纯 Web 登录态私域复访入口当前已覆盖 `/notifications`、`/me`、`/messages`：分别承接通知列表 / 目标分流、个人状态 / 成长 / 资产只读概览、会话 / 消息定位；这三类路由不进入公开 sitemap，不替代 `/desktop` 的完整工作台能力，细节见 [纯 Web 私域复访入口设计说明](/frontend/private-web-revisit)
 - 公开内容壳层当前已形成共享头部视觉和动作基线：forum / docs / discover / leaderboard / shop / `u/:id` 在窄屏下统一使用品牌字、图标与按钮 token；主动作收口为“社区发现 / 我的圈子 / 工作台”，其中 `/desktop` 保留为历史工作台入口，不作为新增公开功能的主动作
 - Console 当前已形成 `Case Desk` 设计方向：低饱和暖灰 / 纸色背景、轻侧栏、克制边框、明确按钮层级和可扫描的后台信息密度，设计稿见 `Docs/frontend/design-sources/console-governance-workbench.pen`；该方向可作为 `radish.client` 后续重新设计时的视觉气质参考，但不直接复刻 Console 的管理后台信息结构
 - Console 当前按页面类型选择实现基座：治理页使用“队列 / 详情 / 动作留痕”，表格 CRUD 使用“指标 / 工具条 / 表格 / 摘要栏”，设置页使用“分组导航 / 设置列 / 影响范围”，调度总览使用“关键指标 / 快捷操作 / 最近事项 / 右侧入口”；新增或明显改动页面优先复用 `--console-*` token、`AdminLayout` 和 `adminFeature.css`
@@ -63,6 +64,7 @@
 - 公开内容卡片当前要求输出真实公开 `href`：普通点击可以通过 `history.state` 保留来源返回，新标签打开、复制链接、canonical、OpenGraph、JSON-LD 和 sitemap 不携带来源状态或桌面窗口参数
 - 公开内容壳层当前仍保持分批阅读优先边界：forum 公开详情已开放登录后轻回应和根评论发布，但不承载发帖、评论回复、点赞、投票提交、编辑、删除、治理或完整通知中心；文档阅读不承载编辑、发布、回收站或版本历史等桌面治理交互
 - `/circle` 当前作为“我的圈子”登录后关系流入口，不进入公开 SEO 或分享范围；未登录访问走登录回流，登录后保留圈子来源，并允许继续把来源状态一次性交接给公开详情
+- `/notifications`、`/me`、`/messages` 进入公开详情或公开个人页时同样使用一次性来源转交，返回文案分别保持“通知中心 / 我的状态 / 消息”；新开标签、复制链接、canonical、OpenGraph 和 sitemap 仍只保留公开 URL
 - forum 公开分类、公开标签、公开结构化类型与公开搜索首批当前只承载分类 / 标签 / 类型上下文、关键词检索、帖子列表阅读、排序分页与详情回跳上下文；标签 SEO 深化仍放在后续规划
 - 个人公开页首批当前只承载公开资料、公开统计、公开帖子与公开评论阅读；不把编辑资料、浏览记录、附件管理或完整关系链治理搬进公开壳层
 - 个人公开页首屏当前也已开始补“公开主页阅读说明”这一类只读说明增强：优先解释基础资料、公开帖子 / 评论阅读与工作台边界，而不是把个人治理或账号历史动作误带进公开壳层
