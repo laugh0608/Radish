@@ -346,8 +346,8 @@ export const MeApp = () => {
     ? formatDateTimeByTimeZone(dashboardData.loadedAt, displayTimeZone)
     : null;
 
-  const openSelfPublicProfile = useCallback(() => {
-    if (!selfProfileRoute || !selfProfilePath) {
+  const rememberSelfPublicProfileSource = useCallback((event: MouseEvent<HTMLAnchorElement>) => {
+    if (!selfProfileRoute || !selfProfilePath || !shouldHandlePlainLinkClick(event)) {
       return;
     }
 
@@ -357,7 +357,6 @@ export const MeApp = () => {
       { app: 'profile', route: selfProfileRoute }
     );
     rememberPublicRouteSourceTransfer(selfProfilePath, sourceState);
-    window.location.href = selfProfilePath;
   }, [selfProfilePath, selfProfileRoute]);
 
   const rememberSourceForHistoryLink = useCallback((event: MouseEvent<HTMLAnchorElement>, href: string) => {
@@ -414,15 +413,25 @@ export const MeApp = () => {
             </div>
           </div>
           <div className={styles.identityActions}>
-            <button
-              type="button"
-              className={styles.primaryButton}
-              onClick={openSelfPublicProfile}
-              disabled={!selfProfileRoute}
-            >
-              <Icon icon="mdi:account-arrow-right-outline" size={18} />
-              <span>{t('me.openPublicProfile')}</span>
-            </button>
+            {selfProfilePath ? (
+              <a
+                className={styles.primaryButton}
+                href={selfProfilePath}
+                onClick={rememberSelfPublicProfileSource}
+              >
+                <Icon icon="mdi:account-arrow-right-outline" size={18} />
+                <span>{t('me.openPublicProfile')}</span>
+              </a>
+            ) : (
+              <button
+                type="button"
+                className={styles.primaryButton}
+                disabled
+              >
+                <Icon icon="mdi:account-arrow-right-outline" size={18} />
+                <span>{t('me.openPublicProfile')}</span>
+              </button>
+            )}
             <a className={styles.secondaryButton} href="/circle">
               <Icon icon="mdi:account-group-outline" size={18} />
               <span>{t('me.openCircle')}</span>
