@@ -184,13 +184,20 @@ public static class SqlSugarSetup
     /// </remarks>
     private static string ResolveSqlAopUser()
     {
-        var userName = App.CurrentUser.UserName;
-        if (!string.IsNullOrWhiteSpace(userName))
+        try
         {
-            return userName;
-        }
+            var userName = App.CurrentUser.UserName;
+            if (!string.IsNullOrWhiteSpace(userName))
+            {
+                return userName;
+            }
 
-        return App.HttpContext == null ? "System" : "Anonymous";
+            return App.HttpContext == null ? "System" : "Anonymous";
+        }
+        catch (ObjectDisposedException)
+        {
+            return "System";
+        }
     }
 
     private static string ResolveOperateName(ISqlSugarClient dbProvider)
