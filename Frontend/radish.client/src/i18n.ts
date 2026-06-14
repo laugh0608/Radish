@@ -387,6 +387,7 @@ const resources = {
             'public.shell.backToShop': 'Back to shop',
             'public.shell.backToShopProducts': 'Back to product list',
             'public.shell.backToCircle': 'Back to my circle',
+            'public.shell.backToNotifications': 'Back to notifications',
             ...welcomeEn,
             ...welcomeOpenSourceEn,
 
@@ -395,6 +396,9 @@ const resources = {
             'dock.openProfile': 'Open profile',
 
             'notification.title': 'Notifications',
+            'notification.web.shellSubline': 'Notification revisit',
+            'notification.web.loading': 'Loading notifications...',
+            'notification.web.redirecting': 'Redirecting to sign in...',
             'notification.unreadCount': '{{count}} unread',
             'notification.allRead': 'All read',
             'notification.markAllRead': 'Mark all as read',
@@ -1930,6 +1934,7 @@ const resources = {
             'public.shell.backToShop': '返回商城',
             'public.shell.backToShopProducts': '返回商品列表',
             'public.shell.backToCircle': '返回我的圈子',
+            'public.shell.backToNotifications': '返回通知中心',
             ...welcomeZh,
             ...welcomeOpenSourceZh,
 
@@ -1938,6 +1943,9 @@ const resources = {
             'dock.openProfile': '打开个人主页',
 
             'notification.title': '通知中心',
+            'notification.web.shellSubline': '通知复访',
+            'notification.web.loading': '正在载入通知中心...',
+            'notification.web.redirecting': '正在前往登录...',
             'notification.unreadCount': '{{count}} 条未读',
             'notification.allRead': '全部已读',
             'notification.markAllRead': '全部已读',

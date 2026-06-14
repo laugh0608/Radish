@@ -1,5 +1,6 @@
 import { TAURI_DESKTOP_ENTRY_PATH } from '../platform/tauriBridge.ts';
 import { isCirclePathname } from '../circle/circleRouteState.ts';
+import { isNotificationsPathname } from '../notifications/notificationRouteState.ts';
 import { isPublicDiscoverPathname } from '../public/discoverRouteState.ts';
 
 export const BROWSER_PUBLIC_ENTRY_PATH = '/discover';
@@ -45,4 +46,4 @@ export function isPublicContentPathname(pathname: string): boolean {
   );
 }
 
-export { isCirclePathname };
+export { isCirclePathname, isNotificationsPathname };

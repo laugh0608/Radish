@@ -18,6 +18,7 @@ import {
   buildDesktopShopOrderReturnPath,
   buildDesktopShopPrivateViewReturnPath,
   buildDesktopShopProductReturnPath,
+  buildNotificationsReturnPath,
   buildPublicForumPostReturnPath,
   normalizeAuthReturnPath,
 } from '../src/services/authReturnPath.ts';
@@ -220,4 +221,13 @@ test('P3-10 圈子入口应是登录态私域回流路径而不是公开内容�
   assert.equal(isPublicContentPathname('/circle'), false);
   assert.equal(isPublicContentPathname('/circle/'), false);
   assert.equal(normalizeAuthReturnPath('/circle?tab=hot'), null);
+});
+
+test('P3-10 通知复访入口应是登录态私域回流路径而不是公开内容路由', () => {
+  const notificationsReturnPath = buildNotificationsReturnPath();
+  assert.equal(notificationsReturnPath, '/notifications');
+  assert.equal(normalizeAuthReturnPath(notificationsReturnPath), notificationsReturnPath);
+  assert.equal(isPublicContentPathname('/notifications'), false);
+  assert.equal(isPublicContentPathname('/notifications/'), false);
+  assert.equal(normalizeAuthReturnPath('/notifications?filter=unread'), null);
 });

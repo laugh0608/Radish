@@ -14,6 +14,7 @@ import {
 import {
   OIDC_CALLBACK_PATH,
   isCirclePathname,
+  isNotificationsPathname,
   isPublicContentPathname,
   resolveInitialEntryPath,
 } from '@/bootstrap/entryRoute';
@@ -24,6 +25,7 @@ import 'highlight.js/styles/github-dark.css';
 
 const OidcCallbackPage = lazy(() => import('./auth/OidcCallbackPage.tsx').then((module) => ({ default: module.OidcCallbackPage })));
 const CircleEntry = lazy(() => import('./circle/CircleEntry.tsx').then((module) => ({ default: module.CircleEntry })));
+const NotificationsEntry = lazy(() => import('./notifications/NotificationsEntry.tsx').then((module) => ({ default: module.NotificationsEntry })));
 const RootEntry = lazy(() => import('./desktop/RootEntry.tsx').then((module) => ({ default: module.RootEntry })));
 const PublicEntry = lazy(() => import('./public/PublicEntry.tsx').then((module) => ({ default: module.PublicEntry })));
 
@@ -66,9 +68,18 @@ if (initialEntryPath) {
 
 const isOidcCallback = isBrowser && window.location.pathname === OIDC_CALLBACK_PATH;
 const isCircleRoute = isBrowser && isCirclePathname(window.location.pathname);
+const isNotificationsRoute = isBrowser && isNotificationsPathname(window.location.pathname);
 const isPublicContentRoute = isBrowser && isPublicContentPathname(window.location.pathname);
 
-const Page = isOidcCallback ? OidcCallbackPage : isCircleRoute ? CircleEntry : isPublicContentRoute ? PublicEntry : RootEntry;
+const Page = isOidcCallback
+  ? OidcCallbackPage
+  : isNotificationsRoute
+    ? NotificationsEntry
+    : isCircleRoute
+      ? CircleEntry
+      : isPublicContentRoute
+        ? PublicEntry
+        : RootEntry;
 
 initializeTheme();
 void applySiteBranding(getApiBaseUrl());

@@ -15,9 +15,13 @@ export type PublicRouteDescriptor =
   | { app: 'profile'; route: PublicProfileRoute }
   | { app: 'leaderboard'; route: PublicLeaderboardRoute }
   | { app: 'shop'; route: PublicShopRoute }
-  | { app: 'circle'; route: CircleRoute };
+  | { app: 'circle'; route: CircleRoute }
+  | { app: 'notifications'; route: { kind: 'index' } };
 
-export type PublicContentRouteDescriptor = Exclude<PublicRouteDescriptor, { app: 'circle' }>;
+export type PublicContentRouteDescriptor = Exclude<
+  PublicRouteDescriptor,
+  { app: 'circle' } | { app: 'notifications' }
+>;
 
 export type PublicDetailBackMode =
   | 'discover'
@@ -28,7 +32,8 @@ export type PublicDetailBackMode =
   | 'leaderboard'
   | 'shop'
   | 'shopProducts'
-  | 'circle';
+  | 'circle'
+  | 'notifications';
 
 export interface PublicRouteSourceState {
   forumDetailSourceRoute?: PublicRouteDescriptor | null;
@@ -106,6 +111,8 @@ export function getPublicDetailBackLabelKey(mode: PublicDetailBackMode | null | 
       return 'public.shell.backToShopProducts';
     case 'circle':
       return 'public.shell.backToCircle';
+    case 'notifications':
+      return 'public.shell.backToNotifications';
     default:
       return null;
   }
@@ -303,7 +310,7 @@ export function resolveProfileBackMode(sourceRoute: PublicRouteDescriptor | null
     return null;
   }
 
-  if (sourceRoute.app === 'discover' || sourceRoute.app === 'circle') {
+  if (sourceRoute.app === 'discover' || sourceRoute.app === 'circle' || sourceRoute.app === 'notifications') {
     return sourceRoute.app;
   }
 

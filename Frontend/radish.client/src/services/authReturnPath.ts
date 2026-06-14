@@ -1,5 +1,6 @@
 const AUTH_RETURN_PATH_STORAGE_KEY = 'radish:auth:return-path';
 const AUTH_RETURN_PATH_BASE_URL = 'https://radish.local';
+const NOTIFICATIONS_RETURN_PATH = '/notifications';
 const CIRCLE_RETURN_TABS = new Set(['feed', 'following', 'followers']);
 const PUBLIC_FORUM_POST_PUBLIC_ID_PATTERN = /^pst_[a-f0-9]{32}$/;
 const POSITIVE_LONG_ID_PATTERN = /^[1-9]\d*$/;
@@ -39,6 +40,10 @@ export function normalizeAuthReturnPath(value: string | null | undefined): strin
 
     if (pathname === '/circle') {
       return normalizeCircleReturnPath(url);
+    }
+
+    if (pathname === NOTIFICATIONS_RETURN_PATH) {
+      return normalizeNotificationsReturnPath(url);
     }
 
     if (pathname.startsWith('/forum/post/')) {
@@ -158,6 +163,14 @@ function normalizeCircleReturnPath(url: URL): string | null {
   return query ? `/circle?${query}` : '/circle';
 }
 
+function normalizeNotificationsReturnPath(url: URL): string | null {
+  if (url.search || url.hash) {
+    return null;
+  }
+
+  return NOTIFICATIONS_RETURN_PATH;
+}
+
 export function rememberAuthReturnPath(returnPath: string | null | undefined, storage = getSessionStorage()): boolean {
   const normalized = normalizeAuthReturnPath(returnPath);
   if (!normalized || !storage) {
@@ -212,6 +225,10 @@ export function buildCircleReturnPath(options: { tab?: CircleReturnTab; page?: n
 
   const search = query.toString();
   return search ? `/circle?${search}` : '/circle';
+}
+
+export function buildNotificationsReturnPath(): string {
+  return NOTIFICATIONS_RETURN_PATH;
 }
 
 export function buildDesktopShopProductReturnPath(
