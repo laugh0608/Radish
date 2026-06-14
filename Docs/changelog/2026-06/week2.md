@@ -44,3 +44,14 @@
 - `/circle` 到公开详情 / 公开个人页来源返回契约完成：关注动态进入 `/forum/post/:postPublicId`、关注 / 粉丝用户进入 `/u/usr_...` 后可返回“我的圈子”；公开内容路由与可返回来源路由已拆分，避免 `/circle` 进入 public head / JSON-LD。
 - Gateway PC / 移动视图复核覆盖 `/discover`、公开帖子详情、公开个人页、`/circle` 和 `/desktop`；PC 普通点击通过，移动端因 Chrome 插件鼠标事件派发超时，使用唯一链接 / 按钮键盘激活验证路由事件与来源返回，不把触控点击写成已验证。
 - 文档同步复核确认：已同步 [当前进行中](/planning/current)、P3-10 专题、[个人圈子](/features/circle)、[前端多壳层策略](/frontend/shell-strategy)、6 月月志 / 周志和日交接记录；今天没有新增视觉 token、Pencil 设计源、部署配置、数据库结构或 Console 权限模型，视觉规范、设计源文件、部署说明和权限说明无需跟随更新。
+
+## 2026-06-14
+
+- 公开作者 PublicId 与登录来源返回继续补齐：论坛详情、评论树、轻回应墙、发现流、公开论坛列表 / 搜索 / 标签 / 类型流和公开个人内容项已补作者公开标识与登录后来源恢复，公开详情参与文案同步对齐 Web-first 语义。
+- Console 高频治理入口完成串联：用户排障页可进入内容治理上下文，内容治理页支持 URL 状态承接用户过滤；订单详情描述布局完成小修，不继续回到 Console 低频页面逐页筛查。
+- B7 WebOS 功能迁移口径完成收口判断：`/desktop` 继续作为历史工作台保留入口，不把 WebOS 全量迁移作为 B8 前置门槛。
+- `/notifications` 纯 Web 通知复访入口落地：接入主路由、登录恢复、通知列表、目标分流和 Web / WebOS 通知中心组件复用；聊天通知目标转向 `/messages`，订单等仍保留工作台深链。
+- `/me` 纯 Web 我的状态入口落地：聚合公开主页入口、个人状态、成长、资产只读概览和最近复访，并支持从公开主页返回“我的状态”；完整资料编辑、完整钱包、安全设置和完整经验图表继续后置。
+- `/messages` 纯 Web 消息复访入口落地：复用现有聊天 API、Chat Hub、频道列表和历史定位，支持通知中的 `channelId/messageId` 定位以及公开个人页返回“消息”；私聊、搜索、Reaction、阅读回执、移动系统通知和设备级会话治理继续后置。
+- Gateway 真实 smoke 已覆盖 `/me`、`/notifications`、`/messages` 的 PC `1920x1080` 与移动 `390x844 @ DPR 3` 视图；真实通知链路用 `admin` 提及 `test` 验证 extData 到 `/messages?channelId=...&messageId=...`，用户手测确认纯 Web 通知单击可跳转。
+- 文档同步复核确认：已同步 [当前进行中](/planning/current)、[开发路线图](/development-plan)、P3-10 专题、[前端多壳层策略](/frontend/shell-strategy)、6 月月志 / 周志和日交接记录；今天没有新增数据库结构、运行时环境变量、部署流程、视觉 token、Pencil 设计源或 Console 权限模型，相关说明无需跟随更新。
