@@ -1,6 +1,7 @@
 import { TAURI_DESKTOP_ENTRY_PATH } from '../platform/tauriBridge.ts';
 import { isCirclePathname } from '../circle/circleRouteState.ts';
 import { isMePathname } from '../me/meRouteState.ts';
+import { isMessagesPathname } from '../messages/messagesRouteState.ts';
 import { isNotificationsPathname } from '../notifications/notificationRouteState.ts';
 import { isPublicDiscoverPathname } from '../public/discoverRouteState.ts';
 
@@ -47,5 +48,5 @@ export function isPublicContentPathname(pathname: string): boolean {
   );
 }
 
-export { isCirclePathname, isNotificationsPathname };
+export { isCirclePathname, isMessagesPathname, isNotificationsPathname };
 export { isMePathname };

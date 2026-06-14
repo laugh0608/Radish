@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getApiBaseUrl } from '@/config/env';
 import { bootstrapAuth } from '@/services/authBootstrap';
 import { buildCirclePath } from '@/circle/circleRouteState';
+import { buildMessagesPath } from '@/messages/messagesRouteState';
 import { PublicDiscoverApp } from './discover/PublicDiscoverApp';
 import { PublicForumApp } from './forum/PublicForumApp';
 import { PublicDocsApp } from './docs/PublicDocsApp';
@@ -184,6 +185,10 @@ function buildPublicPath(nextRoute: PublicRouteDescriptor): string {
     return '/me';
   }
 
+  if (nextRoute.app === 'messages') {
+    return buildMessagesPath(nextRoute.route);
+  }
+
   if (nextRoute.app === 'discover') {
     return buildPublicDiscoverPath(nextRoute.route);
   }
@@ -286,7 +291,12 @@ export const PublicEntry = () => {
     const nextPath = buildPublicPath(nextRoute);
     const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
-    if (nextRoute.app === 'circle' || nextRoute.app === 'me' || nextRoute.app === 'notifications') {
+    if (
+      nextRoute.app === 'circle'
+      || nextRoute.app === 'me'
+      || nextRoute.app === 'messages'
+      || nextRoute.app === 'notifications'
+    ) {
       window.location.href = nextPath;
       return;
     }

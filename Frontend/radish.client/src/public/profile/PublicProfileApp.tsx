@@ -39,7 +39,7 @@ interface PublicProfileAppProps {
     mode: PublicDetailBackMode;
     onBack: () => void;
   } | null;
-  onNavigate: (route: PublicProfileRoute, options?: { replace?: boolean }) => void;
+  onNavigate: (route: PublicProfileRoute, options?: { replace?: boolean; preserveSourceState?: boolean }) => void;
   onNavigateToDiscover?: () => void;
   onNavigateToForumList: () => void;
   onNavigateToForumPost: (postId: string, commentId?: string) => void;
@@ -272,7 +272,7 @@ export const PublicProfileApp = ({
       userId: profileRouteIdentifier,
       tab: route.tab,
       page: route.page,
-    }, { replace: true });
+    }, { replace: true, preserveSourceState: true });
   }, [onNavigate, profile, profileRouteIdentifier, route.page, route.tab, route.userId]);
 
   useEffect(() => {

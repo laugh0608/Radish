@@ -5,6 +5,7 @@ import type { PublicLeaderboardRoute } from './leaderboardRouteState';
 import type { PublicProfileRoute } from './profileRouteState';
 import type { PublicShopRoute } from './shopRouteState';
 import type { CircleRoute } from '../circle/circleRouteState';
+import type { MessagesRoute } from '../messages/messagesRouteState';
 
 const PUBLIC_ROUTE_SOURCE_TRANSFER_STORAGE_KEY = 'radish:public-route-source-transfer';
 
@@ -17,11 +18,12 @@ export type PublicRouteDescriptor =
   | { app: 'shop'; route: PublicShopRoute }
   | { app: 'circle'; route: CircleRoute }
   | { app: 'me'; route: { kind: 'index' } }
+  | { app: 'messages'; route: MessagesRoute }
   | { app: 'notifications'; route: { kind: 'index' } };
 
 export type PublicContentRouteDescriptor = Exclude<
   PublicRouteDescriptor,
-  { app: 'circle' } | { app: 'me' } | { app: 'notifications' }
+  { app: 'circle' } | { app: 'me' } | { app: 'messages' } | { app: 'notifications' }
 >;
 
 export type PublicDetailBackMode =
@@ -35,6 +37,7 @@ export type PublicDetailBackMode =
   | 'shopProducts'
   | 'circle'
   | 'me'
+  | 'messages'
   | 'notifications';
 
 export interface PublicRouteSourceState {
@@ -115,6 +118,8 @@ export function getPublicDetailBackLabelKey(mode: PublicDetailBackMode | null | 
       return 'public.shell.backToCircle';
     case 'me':
       return 'public.shell.backToMe';
+    case 'messages':
+      return 'public.shell.backToMessages';
     case 'notifications':
       return 'public.shell.backToNotifications';
     default:
@@ -322,6 +327,7 @@ export function resolveProfileBackMode(sourceRoute: PublicRouteDescriptor | null
     sourceRoute.app === 'discover'
     || sourceRoute.app === 'circle'
     || sourceRoute.app === 'me'
+    || sourceRoute.app === 'messages'
     || sourceRoute.app === 'notifications'
   ) {
     return sourceRoute.app;

@@ -6,6 +6,7 @@ import {
   OIDC_CALLBACK_PATH,
   isCirclePathname,
   isMePathname,
+  isMessagesPathname,
   isNotificationsPathname,
   isPublicContentPathname,
   resolveInitialEntryPath,
@@ -59,6 +60,7 @@ test('isPublicContentPathname 应识别公开内容路由', () => {
   assert.equal(isPublicContentPathname('/shop/product/2042219067430928384'), true);
   assert.equal(isPublicContentPathname('/circle'), false);
   assert.equal(isPublicContentPathname('/me'), false);
+  assert.equal(isPublicContentPathname('/messages'), false);
   assert.equal(isPublicContentPathname('/notifications'), false);
   assert.equal(isPublicContentPathname('/desktop'), false);
   assert.equal(isPublicContentPathname(OIDC_CALLBACK_PATH), false);
@@ -83,4 +85,11 @@ test('isMePathname 应单独识别登录态我的状态入口', () => {
   assert.equal(isMePathname('/me/'), true);
   assert.equal(isMePathname('/discover'), false);
   assert.equal(isMePathname('/u/usr_018f6b6f7c7d70008f8f8f8f8f8f8f8f'), false);
+});
+
+test('isMessagesPathname 应单独识别登录态消息复访入口', () => {
+  assert.equal(isMessagesPathname('/messages'), true);
+  assert.equal(isMessagesPathname('/messages/'), true);
+  assert.equal(isMessagesPathname('/notifications'), false);
+  assert.equal(isMessagesPathname('/desktop'), false);
 });

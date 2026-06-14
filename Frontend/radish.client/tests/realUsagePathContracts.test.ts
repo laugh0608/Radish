@@ -19,6 +19,7 @@ import {
   buildDesktopShopPrivateViewReturnPath,
   buildDesktopShopProductReturnPath,
   buildMeReturnPath,
+  buildMessagesReturnPath,
   buildNotificationsReturnPath,
   buildPublicForumPostReturnPath,
   normalizeAuthReturnPath,
@@ -231,6 +232,18 @@ test('P3-10 通知复访入口应是登录态私域回流路径而不是公开�
   assert.equal(isPublicContentPathname('/notifications'), false);
   assert.equal(isPublicContentPathname('/notifications/'), false);
   assert.equal(normalizeAuthReturnPath('/notifications?filter=unread'), null);
+});
+
+test('P3-10 消息复访入口应是登录态私域回流路径而不是公开内容路由', () => {
+  const messagesReturnPath = buildMessagesReturnPath({
+    channelId: '2042219067430928390',
+    messageId: '2042219067430928391',
+  });
+  assert.equal(messagesReturnPath, '/messages?channelId=2042219067430928390&messageId=2042219067430928391');
+  assert.equal(normalizeAuthReturnPath(messagesReturnPath), messagesReturnPath);
+  assert.equal(isPublicContentPathname('/messages'), false);
+  assert.equal(isPublicContentPathname('/messages/'), false);
+  assert.equal(normalizeAuthReturnPath('/messages?messageId=2042219067430928391'), null);
 });
 
 test('P3-10 我的状态入口应是登录态私域回流路径而不是公开内容路由', () => {

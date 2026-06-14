@@ -216,6 +216,69 @@ test('公开详情应支持从我的状态返回', () => {
   assert.equal(getPublicDetailBackLabelKey('me'), 'public.shell.backToMe');
 });
 
+test('公开个人页应支持从消息入口返回', () => {
+  const messagesRoute: PublicRouteDescriptor = {
+    app: 'messages',
+    route: {
+      channelId: '2042219067430928390',
+      messageId: '2042219067430928391',
+    },
+  };
+  const profileRoute: PublicRouteDescriptor = {
+    app: 'profile',
+    route: {
+      kind: 'detail',
+      userId: '2042219067430928384',
+      tab: 'posts',
+      page: 1,
+    },
+  };
+
+  const profileState = createPublicRouteSourceState({}, messagesRoute, profileRoute);
+
+  assert.deepEqual(profileState.profileSourceRoute, messagesRoute);
+  assert.equal(resolveProfileBackMode(messagesRoute), 'messages');
+  assert.equal(getPublicDetailBackLabelKey('messages'), 'public.shell.backToMessages');
+});
+
+test('公开个人页规范化用户标识时应保留消息来源', () => {
+  const messagesRoute: PublicRouteDescriptor = {
+    app: 'messages',
+    route: {
+      channelId: '2042219067430928390',
+      messageId: '2042219067430928391',
+    },
+  };
+  const numericProfileRoute: PublicRouteDescriptor = {
+    app: 'profile',
+    route: {
+      kind: 'detail',
+      userId: '2042219067430928384',
+      tab: 'posts',
+      page: 1,
+    },
+  };
+  const publicIdProfileRoute: PublicRouteDescriptor = {
+    app: 'profile',
+    route: {
+      kind: 'detail',
+      userId: 'usr_018f6b6f7c7d70008f8f8f8f8f8f821',
+      tab: 'posts',
+      page: 1,
+    },
+  };
+
+  const preservedState = createPublicRouteSourceState(
+    { profileSourceRoute: messagesRoute },
+    numericProfileRoute,
+    publicIdProfileRoute,
+    { preserveExisting: true }
+  );
+
+  assert.deepEqual(preservedState.profileSourceRoute, messagesRoute);
+  assert.equal(resolveProfileBackMode(preservedState.profileSourceRoute), 'messages');
+});
+
 test('createPublicRouteSourceState 应保留圈子到公开个人页再到帖子详情的来源链路', () => {
   const circleRoute: PublicRouteDescriptor = {
     app: 'circle',

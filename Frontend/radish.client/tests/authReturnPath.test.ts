@@ -9,6 +9,7 @@ import {
   buildDesktopShopPrivateViewReturnPath,
   buildDesktopShopProductReturnPath,
   buildMeReturnPath,
+  buildMessagesReturnPath,
   buildNotificationsReturnPath,
   buildPublicForumPostReturnPath,
   consumeAuthReturnPath,
@@ -44,7 +45,7 @@ class MemoryStorage implements Storage {
   }
 }
 
-test('normalizeAuthReturnPath 只接受 desktop 深链、circle/me/notifications 私域入口和公开论坛详情参与意图', () => {
+test('normalizeAuthReturnPath 只接受 desktop 深链、circle/me/messages/notifications 私域入口和公开论坛详情参与意图', () => {
   assert.equal(normalizeAuthReturnPath('/desktop?app=shop&productId=2042219067430928384'), '/desktop?app=shop&productId=2042219067430928384');
   assert.equal(normalizeAuthReturnPath('/desktop?app=forum&postId=2042219067430928384'), '/desktop?app=forum&postId=2042219067430928384');
   assert.equal(normalizeAuthReturnPath('/desktop/?app=shop&view=orders'), '/desktop/?app=shop&view=orders');
@@ -53,6 +54,11 @@ test('normalizeAuthReturnPath 只接受 desktop 深链、circle/me/notifications
   assert.equal(normalizeAuthReturnPath('/circle?tab=feed&page=1'), '/circle');
   assert.equal(normalizeAuthReturnPath('/notifications'), '/notifications');
   assert.equal(normalizeAuthReturnPath('/notifications/'), '/notifications');
+  assert.equal(normalizeAuthReturnPath('/messages'), '/messages');
+  assert.equal(
+    normalizeAuthReturnPath('/messages/?channelId=2042219067430928390&messageId=2042219067430928391'),
+    '/messages?channelId=2042219067430928390&messageId=2042219067430928391',
+  );
   assert.equal(normalizeAuthReturnPath('/me'), '/me');
   assert.equal(normalizeAuthReturnPath('/me/'), '/me');
   assert.equal(
@@ -68,6 +74,10 @@ test('normalizeAuthReturnPath 只接受 desktop 深链、circle/me/notifications
   assert.equal(normalizeAuthReturnPath('/circle#feed'), null);
   assert.equal(normalizeAuthReturnPath('/notifications?filter=unread'), null);
   assert.equal(normalizeAuthReturnPath('/notifications#unread'), null);
+  assert.equal(normalizeAuthReturnPath('/messages?messageId=2042219067430928391'), null);
+  assert.equal(normalizeAuthReturnPath('/messages?channelId=0'), null);
+  assert.equal(normalizeAuthReturnPath('/messages?channelId=2042219067430928390&messageId=abc'), null);
+  assert.equal(normalizeAuthReturnPath('/messages?channelId=2042219067430928390&from=notification'), null);
   assert.equal(normalizeAuthReturnPath('/me?tab=assets'), null);
   assert.equal(normalizeAuthReturnPath('/me#growth'), null);
   assert.equal(normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f'), null);
@@ -83,6 +93,19 @@ test('normalizeAuthReturnPath 只接受 desktop 深链、circle/me/notifications
 
 test('buildNotificationsReturnPath 应构造通知复访登录回流路径', () => {
   assert.equal(buildNotificationsReturnPath(), '/notifications');
+});
+
+test('buildMessagesReturnPath 应构造消息复访登录回流路径', () => {
+  assert.equal(buildMessagesReturnPath(), '/messages');
+  assert.equal(
+    buildMessagesReturnPath({
+      channelId: '2042219067430928390',
+      messageId: '2042219067430928391',
+    }),
+    '/messages?channelId=2042219067430928390&messageId=2042219067430928391',
+  );
+  assert.equal(buildMessagesReturnPath({ channelId: '0' }), null);
+  assert.equal(buildMessagesReturnPath({ messageId: '2042219067430928391' }), null);
 });
 
 test('buildMeReturnPath 应构造我的状态登录回流路径', () => {

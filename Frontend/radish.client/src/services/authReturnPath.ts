@@ -1,3 +1,5 @@
+import { buildMessagesPath, MESSAGES_ENTRY_PATH, type MessagesRoute } from '../messages/messagesRouteState.ts';
+
 const AUTH_RETURN_PATH_STORAGE_KEY = 'radish:auth:return-path';
 const AUTH_RETURN_PATH_BASE_URL = 'https://radish.local';
 const ME_RETURN_PATH = '/me';
@@ -45,6 +47,10 @@ export function normalizeAuthReturnPath(value: string | null | undefined): strin
 
     if (pathname === NOTIFICATIONS_RETURN_PATH) {
       return normalizeNotificationsReturnPath(url);
+    }
+
+    if (pathname === MESSAGES_ENTRY_PATH) {
+      return normalizeMessagesReturnPath(url);
     }
 
     if (pathname === ME_RETURN_PATH) {
@@ -176,6 +182,46 @@ function normalizeNotificationsReturnPath(url: URL): string | null {
   return NOTIFICATIONS_RETURN_PATH;
 }
 
+function normalizeMessagesReturnPath(url: URL): string | null {
+  if (url.hash) {
+    return null;
+  }
+
+  for (const key of url.searchParams.keys()) {
+    if (key !== 'channelId' && key !== 'messageId') {
+      return null;
+    }
+  }
+
+  if (url.searchParams.getAll('channelId').length > 1 || url.searchParams.getAll('messageId').length > 1) {
+    return null;
+  }
+
+  const hasChannelId = url.searchParams.has('channelId');
+  const hasMessageId = url.searchParams.has('messageId');
+  if (!hasChannelId && !hasMessageId) {
+    return MESSAGES_ENTRY_PATH;
+  }
+
+  if (!hasChannelId) {
+    return null;
+  }
+
+  const normalized = buildMessagesReturnPath({
+    channelId: url.searchParams.get('channelId') ?? undefined,
+    messageId: url.searchParams.get('messageId') ?? undefined,
+  });
+  if (!normalized) {
+    return null;
+  }
+
+  if (hasMessageId && !normalized.includes('messageId=')) {
+    return null;
+  }
+
+  return normalized;
+}
+
 function normalizeMeReturnPath(url: URL): string | null {
   if (url.search || url.hash) {
     return null;
@@ -242,6 +288,20 @@ export function buildCircleReturnPath(options: { tab?: CircleReturnTab; page?: n
 
 export function buildNotificationsReturnPath(): string {
   return NOTIFICATIONS_RETURN_PATH;
+}
+
+export function buildMessagesReturnPath(route: MessagesRoute = {}): string | null {
+  const hasTarget = route.channelId != null || route.messageId != null;
+  const path = buildMessagesPath(route);
+  if (hasTarget && path === MESSAGES_ENTRY_PATH) {
+    return null;
+  }
+
+  if (route.messageId != null && !path.includes('messageId=')) {
+    return null;
+  }
+
+  return path;
 }
 
 export function buildMeReturnPath(): string {

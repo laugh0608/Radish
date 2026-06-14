@@ -1,6 +1,7 @@
 import { buildPublicForumPath } from '../public/forumRouteState.ts';
 import { buildPublicProfilePath } from '../public/profileRouteState.ts';
 import type { PublicRouteSourceState } from '../public/publicRouteNavigation.ts';
+import { buildMessagesPath } from '../messages/messagesRouteState.ts';
 import { parseChatNotificationNavigation } from './chatNavigation.ts';
 import { parseForumNotificationNavigation } from './forumNavigation.ts';
 
@@ -53,11 +54,8 @@ export function resolveWebNotificationNavigation(
   const chatNavigation = parseChatNotificationNavigation(notification.extData);
   if (chatNavigation) {
     return {
-      surface: 'desktop',
-      href: buildDesktopPath('chat', {
-        channelId: chatNavigation.channelId,
-        ...(chatNavigation.messageId ? { messageId: chatNavigation.messageId } : {})
-      })
+      surface: 'web',
+      href: buildMessagesPath(chatNavigation)
     };
   }
 

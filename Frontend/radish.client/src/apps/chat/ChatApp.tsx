@@ -59,7 +59,17 @@ const PAGE_SIZE = 50;
 const MEMBER_REFRESH_INTERVAL_MS = 15_000;
 const MESSAGE_HIGHLIGHT_DURATION_MS = 2_600;
 
-export const ChatApp = () => {
+export interface ChatAppProfileNavigationTarget {
+  userId: EntityIdValue;
+  userName?: string | null;
+  avatarUrl?: string | null;
+}
+
+interface ChatAppProps {
+  onOpenUserProfile?: (target: ChatAppProfileNavigationTarget) => void;
+}
+
+export const ChatApp = ({ onOpenUserProfile }: ChatAppProps = {}) => {
   const { t } = useTranslation();
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
   const currentWindow = useCurrentWindow();
@@ -235,6 +245,15 @@ export const ChatApp = () => {
       return;
     }
 
+    if (onOpenUserProfile) {
+      onOpenUserProfile({
+        userId: targetUserId,
+        userName: targetUserName ?? null,
+        avatarUrl: avatarUrl ?? null,
+      });
+      return;
+    }
+
     if (targetUserIdKey === currentUserIdKey) {
       openApp('profile');
       return;
@@ -245,7 +264,7 @@ export const ChatApp = () => {
       userName: targetUserName?.trim() || getFallbackUserName(targetUserIdKey, t),
       avatarUrl: avatarUrl ?? null,
     });
-  }, [currentUserIdKey, openApp, t]);
+  }, [currentUserIdKey, onOpenUserProfile, openApp, t]);
 
   const renderAvatarButton = useCallback((
     targetUserId: EntityIdValue,
@@ -264,11 +283,7 @@ export const ChatApp = () => {
         className={`${styles.avatarButton} ${className ?? ''}`.trim()}
         onClick={() => {
           if (canOpenProfile) {
-            openApp('profile', {
-              userId: targetUserId,
-              userName: normalizedName,
-              avatarUrl: avatarUrl ?? null,
-            });
+            handleOpenUserProfile(targetUserId, normalizedName, avatarUrl);
           }
         }}
         disabled={!canOpenProfile}
@@ -283,7 +298,7 @@ export const ChatApp = () => {
         )}
       </button>
     );
-  }, [apiBaseUrl, openApp, t]);
+  }, [apiBaseUrl, handleOpenUserProfile, t]);
 
   const renderAvatarVisual = useCallback((
     targetUserName: string | null | undefined,
