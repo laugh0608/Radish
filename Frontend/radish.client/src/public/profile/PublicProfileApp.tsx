@@ -392,8 +392,11 @@ export const PublicProfileApp = ({
     return removePublicStructuredData;
   }, [avatarUrl, profile, profileRouteIdentifier, route.page, route.tab, stats]);
 
-  const displayName = profile?.voDisplayName?.trim() || null;
-  const userName = profile?.voUserName?.trim() || t('common.userFallback', { id: route.userId });
+  const displayName = profile?.voDisplayName?.trim()
+    || profile?.voUserName?.trim()
+    || t('common.userFallback', { id: route.userId });
+  const displayHandle = profile?.voDisplayHandle?.trim()
+    || (profile?.voPublicIndex ? `${displayName}#${String(profile.voPublicIndex).trim()}` : null);
   const backLabelKey = getPublicDetailBackLabelKey(backAction?.mode);
   const backLabel = backLabelKey
     ? t(backLabelKey)
@@ -497,21 +500,21 @@ export const PublicProfileApp = ({
               <div className={styles.identityRow}>
                 <div
                   className={styles.avatar}
-                  style={avatarUrl ? undefined : buildAvatarStyle(userName)}
+                  style={avatarUrl ? undefined : buildAvatarStyle(displayName)}
                   aria-hidden="true"
                 >
                   {avatarUrl ? (
-                    <img className={styles.avatarImage} src={avatarUrl} alt={userName} loading="lazy" />
+                    <img className={styles.avatarImage} src={avatarUrl} alt={displayName} loading="lazy" />
                   ) : (
-                    buildAvatarText(userName)
+                    buildAvatarText(displayName)
                   )}
                 </div>
 
                 <div className={styles.identityBody}>
                   <div className={styles.identityText}>
-                    <h1 className={styles.userName}>{userName}</h1>
-                    {displayName && (
-                      <p className={styles.displayName}>{t('profile.displayName', { name: displayName })}</p>
+                    <h1 className={styles.userName}>{displayName}</h1>
+                    {displayHandle && (
+                      <p className={styles.displayName}>{displayHandle}</p>
                     )}
                     <p className={styles.joinedAt}>
                       {t('profile.publicSince', {

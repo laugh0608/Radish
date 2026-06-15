@@ -59,14 +59,19 @@ public class AccountControllerTest
 
         var result = await controller.Register(new RegisterViewModel
         {
-            Username = "newuser",
+            Username = "NewUser",
             Password = "test123456",
             ConfirmPassword = "test123456",
-            Email = "newuser@radish.test"
+            Email = "NewUser@Radish.TEST"
         });
 
         var redirect = Assert.IsType<RedirectToActionResult>(result);
         Assert.Equal("Login", redirect.ActionName);
+        Assert.Equal("newuser", redirect.RouteValues?["username"]);
+        userServiceMock.Verify(service => service.AddAsync(It.Is<User>(user =>
+            user.LoginName == "newuser" &&
+            user.UserEmail == "newuser@radish.test" &&
+            user.UserName == "newuser")), Times.Once);
         coinService.Verify(service => service.GrantRegistrationRewardAsync(userId), Times.Once);
     }
 

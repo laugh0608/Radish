@@ -81,6 +81,7 @@
 - [p3-9-release-candidate-main-path-acceptance-matrix-2026-06-07](/records/p3-9-release-candidate-main-path-acceptance-matrix-2026-06-07)
 - [p3-10-b8-pet-phase-b-contract-record-2026-06-15](/records/p3-10-b8-pet-phase-b-contract-record-2026-06-15)
 - [p3-10-b8-pet-release-candidate-regression-record-2026-06-15](/records/p3-10-b8-pet-release-candidate-regression-record-2026-06-15)
+- [p3-10-b9-user-identity-first-batch-record-2026-06-15](/records/p3-10-b9-user-identity-first-batch-record-2026-06-15)
 - [p3-8-d-flutter-next-candidate-matrix-2026-05-28](/records/p3-8-d-flutter-next-candidate-matrix-2026-05-28)
 - [webos-workspace-p0-p1-screening-record-2026-05-18](/records/webos-workspace-p0-p1-screening-record-2026-05-18)
 - [console-ui-consistency-evaluation-2026-05-18](/records/console-ui-consistency-evaluation-2026-05-18)

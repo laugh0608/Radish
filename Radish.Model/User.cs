@@ -15,9 +15,12 @@ namespace Radish.Model;
     nameof(IsDeleted), OrderByType.Asc,
     nameof(IsEnable), OrderByType.Asc)]
 [SugarIndex("idx_user_public_id", nameof(PublicId), OrderByType.Asc, IsUnique = true)]
+[SugarIndex("idx_user_public_index", nameof(PublicIndex), OrderByType.Asc, IsUnique = true)]
 public class User : RootEntityTKey<long>, ITenantEntity
 {
     public const string PublicIdPrefix = "usr_";
+    public const long ReservedPublicIndexMax = 999;
+    public const long PublicIndexStart = 1000;
 
     /// <summary>初始化默认用户实例</summary>
     public User()
@@ -243,6 +246,26 @@ public class User : RootEntityTKey<long>, ITenantEntity
                normalized[PublicIdPrefix.Length..].All(Uri.IsHexDigit);
     }
 
+    public static bool HasAssignedPublicIndex(long? publicIndex)
+    {
+        return publicIndex.HasValue && publicIndex.Value > 0;
+    }
+
+    public static string NormalizeDisplayName(string? userName, long? userId = null)
+    {
+        var normalized = userName?.Trim();
+        return string.IsNullOrWhiteSpace(normalized)
+            ? userId.HasValue && userId.Value > 0 ? $"User-{userId.Value}" : "User"
+            : normalized;
+    }
+
+    public static string? BuildDisplayHandle(string? userName, long? publicIndex, long? userId = null)
+    {
+        return HasAssignedPublicIndex(publicIndex)
+            ? $"{NormalizeDisplayName(userName, userId)}#{publicIndex!.Value}"
+            : null;
+    }
+
     #region 登录相关
 
     /// <summary>登录账号 1 LoginName</summary>
@@ -258,8 +281,13 @@ public class User : RootEntityTKey<long>, ITenantEntity
     [SugarColumn(Length = 40, IsNullable = true)]
     public string? PublicId { get; set; }
 
-    /// <summary>登录账号 2 UserName</summary>
-    /// <remarks>不可为空，最大 200 字符</remarks>
+    /// <summary>公开索引号</summary>
+    /// <remarks>普通用户从 1000 起，1-999 保留给系统、种子和内部账号。</remarks>
+    [SugarColumn(IsNullable = true)]
+    public long? PublicIndex { get; set; }
+
+    /// <summary>公开展示名</summary>
+    /// <remarks>数据库列沿用 UserName，语义上不再作为登录凭证。</remarks>
     [SugarColumn(Length = 200, IsNullable = true)]
     public string UserName { get; set; } = string.Empty;
 

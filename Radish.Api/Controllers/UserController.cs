@@ -559,6 +559,9 @@ public class UserController : ControllerBase
         var profile = new UserProfileVo
         {
             VoUserId = user.Uuid,
+            VoPublicId = user.VoPublicId,
+            VoPublicIndex = user.VoPublicIndex,
+            VoDisplayHandle = user.VoDisplayHandle,
             VoUserName = user.VoUserName,
             VoUserEmail = user.VoUserEmail,
             VoRealName = user.VoUserRealName,
@@ -618,8 +621,10 @@ public class UserController : ControllerBase
         {
             VoUserId = user.Uuid,
             VoPublicId = user.VoPublicId,
+            VoPublicIndex = user.VoPublicIndex,
             VoUserName = user.VoUserName,
-            VoDisplayName = string.IsNullOrWhiteSpace(user.VoUserRealName) ? null : user.VoUserRealName,
+            VoDisplayName = user.VoDisplayName,
+            VoDisplayHandle = user.VoDisplayHandle,
             VoCreateTime = user.VoCreateTime,
             VoAvatarUrl = avatar?.Url,
             VoAvatarThumbnailUrl = avatar?.ThumbnailUrl
@@ -680,13 +685,13 @@ public class UserController : ControllerBase
         var birth = dto.Birth;
         var now = DateTime.UtcNow;
 
-        if (normalizedUserName != null && normalizedUserName.Length > 200)
+        if (normalizedUserName != null && !IsValidDisplayName(normalizedUserName, out var displayNameError))
         {
             return new MessageModel
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "用户名长度不能超过 200"
+                MessageInfo = displayNameError
             };
         }
 
@@ -755,24 +760,6 @@ public class UserController : ControllerBase
                 StatusCode = (int)HttpStatusCodeEnum.BadRequest,
                 MessageInfo = "年龄不能为负数"
             };
-        }
-
-        if (normalizedUserName != null)
-        {
-            var nameExists = await _userService.QueryExistsAsync(u =>
-                u.UserName == normalizedUserName &&
-                !u.IsDeleted &&
-                u.Id != userId);
-
-            if (nameExists)
-            {
-                return new MessageModel
-                {
-                    IsSuccess = false,
-                    StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                    MessageInfo = "用户名已被占用"
-                };
-            }
         }
 
         if (normalizedUserEmail != null)
@@ -1037,5 +1024,36 @@ public class UserController : ControllerBase
             MessageInfo = $"已推送未读数 {unreadCount} 到用户 {userId}",
             ResponseData = new TestPushResultVo { VoUserId = userId, VoUnreadCount = unreadCount }
         };
+    }
+
+    private static bool IsValidDisplayName(string value, out string errorMessage)
+    {
+        if (value.Length < 2 || value.Length > 24)
+        {
+            errorMessage = "显示名长度必须在 2-24 个字符之间";
+            return false;
+        }
+
+        if (value.Any(char.IsControl) || value.Contains('\n') || value.Contains('\r') || value.Contains('\t'))
+        {
+            errorMessage = "显示名不能包含控制字符";
+            return false;
+        }
+
+        if (value.Contains("  ", StringComparison.Ordinal))
+        {
+            errorMessage = "显示名不能包含连续空格";
+            return false;
+        }
+
+        char[] blockedChars = ['#', '@', '/', '\\', '?', '&', '=', '<', '>'];
+        if (value.IndexOfAny(blockedChars) >= 0)
+        {
+            errorMessage = "显示名不能包含 #、@、URL 分隔符或 HTML 控制字符";
+            return false;
+        }
+
+        errorMessage = string.Empty;
+        return true;
     }
 }

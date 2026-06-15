@@ -188,6 +188,7 @@ export function buildShopProductStructuredData(options: BuildShopProductStructur
 
 export function buildProfilePageStructuredData(options: BuildProfileStructuredDataOptions): JsonLdObject {
   const displayName = normalizeText(options.profile.voDisplayName) ?? normalizeText(options.profile.voUserName) ?? 'Radish 用户';
+  const displayHandle = normalizeText(options.profile.voDisplayHandle);
   const canonicalUrl = toCanonicalUrl(options);
 
   return withContext({
@@ -198,7 +199,7 @@ export function buildProfilePageStructuredData(options: BuildProfileStructuredDa
     mainEntity: {
       '@type': 'Person',
       name: displayName,
-      alternateName: normalizeText(options.profile.voUserName),
+      alternateName: displayHandle ?? normalizeText(options.profile.voUserName),
       image: normalizeText(options.imageUrl),
       interactionStatistic: [
         {

@@ -8,7 +8,7 @@
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
 - **当前主线**：`P3-10 Web-first 首页信息流与关键契约开发`
-- **复核日期**：`2026-06-14`
+- **复核日期**：`2026-06-15`
 - **最近结论**：
   - `P3-1` 至 `P3-5` 已完成公开内容增长、PublicId 试点、留存回流、动态 sitemap 与详情 head snapshot 首批建设。
   - `P3-6` 公开增长部署观察已收口，本地 Gateway 与生产公开域名 `https://radishx.com` 的 public head smoke 均通过，转入维护线。
@@ -46,6 +46,9 @@
   - `P3-10-B8` Phase B 体验补漏与契约测试已完成：`/pet` 已补状态洞察、状态等级、动作冷却展示和照顾反馈；后端定向测试覆盖重复领取、只读查询、幂等、每日上限、冷却、状态边界、动作状态和日志空态；当前转入发布候选前批次级回归线，不直接启动经济、商城、社区任务奖励或 Flutter 承接。
   - `P3-10-B8` 发布候选前批次级回归已完成：后端定向 / 完整测试、`radish.client` 测试 / 类型检查 / 构建、身份契约、迁移 SQL 自检和 Gateway PC / 移动页面补验均通过；已补 `/pet` 登录回流契约测试，未发现需要阻断的真实缺口。
   - `P3-10-B8` 合并前自动化总验证已完成：`validate:baseline`、`validate:identity`、`validate:baseline:host`、迁移 SQL 重放、`git diff --check` 均通过；最新运行态健康复查因本机 API/Auth 未监听未闭合，如 PR 需要最新健康端点结论，重启宿主后复跑 `check:host-runtime`。
+  - 本轮不合并 B8，按整体计划直接进入 `P3-10-B9 用户身份语义与公开索引`。
+  - `P3-10-B9` 首批代码与自动化验证已完成：新增 `User.PublicIndex` / `DisplayHandle`，注册登录名和邮箱规范化，登录支持登录名或邮箱，公开资料 / 榜单 / 关系链 / 艾特搜索 / Console 用户排障展示切换为公开句柄，`DbMigrate` 与 PostgreSQL 差异 SQL 补齐公开索引入口；后端完整测试、`radish.client` / `radish.console` 构建、`validate:identity` 与 `validate:baseline:quick` 均通过。
+  - `P3-10-B9` 运行态 Gateway 页面 smoke 当前未闭合：提权后 `check:host-runtime` 仍显示 API/Auth 端口未监听，`5000` 由 macOS `ControlCe` 占用并超时；待宿主恢复后再补 PC / 移动页面抽查。
 
 ## 当前执行入口
 
@@ -53,6 +56,8 @@
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
 - [P3-10 Web-first 信息架构与下一批开发任务选择](/planning/p3-10-cross-platform-information-architecture)
 - [Radish 电子宠物开发计划](/features/radish-pet-roadmap)
+- [用户身份语义与公开索引](/architecture/user-identity-semantics)
+- [P3-10-B9 用户身份语义首批记录](/records/p3-10-b9-user-identity-first-batch-record-2026-06-15)
 - [个人圈子](/features/circle)
 - [Token 不活跃过期治理](/guide/auth-idle-session)
 - [P3-9 真实使用主路径产品化与发布候选整备](/planning/p3-9-real-usage-release-candidate)
@@ -62,13 +67,10 @@
 
 ## 当前目标
 
-1. **收口 P3-10-B7 / C 公开入口治理与 WebOS 功能迁移图**
-   - 第一组开发入口为 Web 首页信息流、用户 PublicId / 公开主页契约、评论实时 / 神评稳定性和 Token 不活跃过期。
-   - 评论实时与神评稳定性已完成人工联调，后续只保留发布候选前批次级回归。
-   - Token 不活跃过期已完成首批代码与 Gateway 首轮真实联调；移动 DPR 视图和真实 7 天 idle 等待留到工具条件满足或发布候选前补验。
-   - `P3-10-B7 / C` 的公开内容链接、公开参与、登录恢复、来源返回、公共头部和 Console 高频治理入口默认收口；后续只在真实缺口、发布候选回归或新增路径暴露问题时回拉。
-   - `/notifications`、`/me`、`/messages` 已承接进入 B8 前需要的通知、个人状态、成长 / 资产只读和会话 / 消息复访前置能力；B7 可转入维护收口，不把完整聊天、完整钱包、完整个人中心或 WebOS 全量迁移作为 B8 前置门槛。
-   - 只把能改善真实使用路径、跨端一致性、登录恢复、对象标识契约、评论互动、用户复访或治理效率的问题纳入当前主线。
+1. **推进 P3-10-B9 用户身份语义与公开索引**
+   - 首批目标是把登录凭证、公开展示、公开搜索和 Console 排障语义拆清楚：`LoginName / Email` 保持私有，`DisplayName#PublicIndex` 用于页面展示、榜单、关系链和艾特搜索，`PublicId` 继续承担公开路由和分享回流。
+   - 首批代码已完成模型、注册 / 登录、公开资料、榜单、关系链、艾特搜索、Console 用户列表 / 详情和迁移入口；当前保留 Gateway 运行态 PC / 移动补验。
+   - 后续只在真实缺口、发布候选回归或跨端承接需要时继续扩展，不把数据库主键迁移、ActivityPub / WebFinger、邮箱通知系统或 Console 高风险账号字段治理并入本批。
 2. **把 P3-8-D 降级为维护与回拉线**
    - 移动 Web 公开页逐页打磨、Console 剩余页面迁移、购买 / 订单 / 背包重复复核、ID Phase A 广泛扫描不再作为默认日常主线。
    - 新增外部 ID 边界、扫描命中、真实编译错误或发布候选验收暴露问题时，再做定向治理。
@@ -79,10 +81,12 @@
 
 ## 下一顺位
 
-- `P3-10-B8 Radish 电子宠物规划`
-  - B8 已完成开发前冻结口径、Phase B 首批代码、Gateway PC / 移动首轮联调、首批体验补漏、后端契约测试补强、发布候选前批次级回归和合并前自动化总验证；代码与迁移侧已具备进入 `dev -> master` PR 的条件。
-  - 本地开发库使用 `dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init` 或 `apply` 补齐新表；测试 / 生产上线前使用 `Deploy/sql/20260615_add_pet_tables.sql` 作为版本化差异 SQL 审核入口。
-  - 若 PR 说明需要最新运行态健康端点结论，先由开发者恢复 Gateway / API / Auth 宿主，再复跑 `npm run check:host-runtime -- --details --report`。
+- `P3-10-B9 用户身份语义与公开索引`
+  - 首批代码已完成并通过自动化验证；下一步在宿主恢复后补 Gateway `1920x1080` 与 `390x844` 视图抽查，重点覆盖注册文案、登录名或邮箱登录、公开个人页、公开榜单、关系链用户项、艾特搜索和 Console 用户列表 / 详情。
+  - 测试 / 生产上线前使用 `Deploy/sql/20260615_add_user_public_index.sql` 作为 PostgreSQL 版本化差异 SQL 审核入口；本地 SQLite 开发库继续通过 `Radish.DbMigrate init/apply` 自动补列、回填和建索引。
+  - 后续不把 `DisplayName#PublicIndex` 替代 `PublicId` 路由，不展示登录名 / 邮箱到公开页面，不启动数据库主键迁移、邮箱通知系统、ActivityPub / WebFinger 或 Console 高风险账号字段治理。
+- `P3-10-B8 Radish 电子宠物维护线`
+  - B8 已完成开发前冻结口径、Phase B 首批代码、Gateway PC / 移动首轮联调、首批体验补漏、后端契约测试补强、发布候选前批次级回归和合并前自动化总验证；本轮不继续合并动作，转入维护回拉。
   - 经济消耗、商城物品、社区任务奖励、经验反向加成、Console 配置 UI、首页组件和公开个人主页默认展示继续后置。
 - `P3-10-B7 WebOS 功能迁移图收口`
   - `/notifications`、`/me`、`/messages` 三个纯 Web 私域复访入口已完成首批代码和 Gateway PC / 移动 smoke；后续只在新真实缺口、发布候选回归或 WebOS 保留入口阻断时回拉。
@@ -101,8 +105,8 @@
 
 ## 明日事项
 
-- 第一顺位：`P3-10-B8 Radish 电子宠物` 已完成合并前自动化总验证；下一步可准备 `dev -> master` PR 说明，若要求最新运行态健康结论，先恢复宿主并复跑 `check:host-runtime`。
-- 第二顺位：若 B8 后续总回归暴露真实缺口，再按契约测试、服务端数值规则、前端反馈展示和 Gateway 页面路径成组修复。
+- 第一顺位：`P3-10-B9 用户身份语义与公开索引` 已完成首批代码和自动化验证；宿主恢复后补 Gateway PC / 移动页面 smoke，并按页面实测结果决定是否需要成组修复。
+- 第二顺位：B9 若继续推进，只处理公开身份语义真实缺口：注册 / 登录文案、公开展示句柄、艾特搜索、榜单 / 关系链、Console 排障入口和迁移入口；不扩展到联邦协议或邮箱通知。
 - 第三顺位：保留 `P3-10-B7 WebOS 功能迁移图收口` 维护入口，只在发布候选回归、用户真实复访路径或新缺口暴露时回拉 `/notifications`、`/me`、`/messages`。
 - 第四顺位：保留 `P3-10-B6` 补验入口，工具条件满足时补移动 DPR 视图；发布候选前再做真实 idle 与 Hub 停连 / 匿名恢复批次级回归。
 - 第五顺位：保留 `P3-10-B2` 圈子回归入口，复核 `/circle` 登录回流、关注动态、关注 / 粉丝列表、`/u/usr_...` 跳转和论坛详情跳转。

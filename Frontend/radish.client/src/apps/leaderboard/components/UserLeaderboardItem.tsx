@@ -9,7 +9,11 @@ interface UserLeaderboardItemProps {
 }
 
 export const UserLeaderboardItem = ({ item, getRankIcon, getRankClass, onUserClick }: UserLeaderboardItemProps) => {
-  const userName = item.voUserName?.trim() || (item.voUserId ? `用户 ${item.voUserId}` : '未知用户');
+  const userName = item.voUserDisplayName?.trim()
+    || item.voUserName?.trim()
+    || (item.voUserId ? `用户 ${item.voUserId}` : '未知用户');
+  const displayHandle = item.voUserDisplayHandle?.trim()
+    || (item.voUserPublicIndex ? `${userName}#${String(item.voUserPublicIndex).trim()}` : null);
 
   return (
     <div
@@ -30,6 +34,7 @@ export const UserLeaderboardItem = ({ item, getRankIcon, getRankClass, onUserCli
         <div className={styles.level} style={{ color: item.voThemeColor || 'var(--theme-text-placeholder)' }}>
           Lv.{item.voCurrentLevel} {item.voCurrentLevelName}
         </div>
+        {displayHandle && <div className={styles.userHandle}>{displayHandle}</div>}
       </div>
 
       <div className={styles.exp}>

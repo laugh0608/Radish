@@ -60,6 +60,10 @@ function toParsedResponse<T>(response: ParsedApiResponse<unknown>, data?: T): Pa
 function mapUserListItem(raw: ApiRecord): UserListItem {
   return {
     uuid: toIdString(raw.uuid ?? raw.Uuid),
+    voPublicId: toOptionalString(raw.voPublicId ?? raw.VoPublicId),
+    voPublicIndex: toIdString(raw.voPublicIndex ?? raw.VoPublicIndex),
+    voDisplayName: toOptionalString(raw.voDisplayName ?? raw.VoDisplayName),
+    voDisplayHandle: toOptionalString(raw.voDisplayHandle ?? raw.VoDisplayHandle),
     voLoginName: toStringValue(raw.voLoginName ?? raw.VoLoginName),
     voUserName: toStringValue(raw.voUserName ?? raw.VoUserName),
     voUserRealName: toStringValue(raw.voUserRealName ?? raw.VoUserRealName),

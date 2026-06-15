@@ -62,7 +62,7 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
       const users = await searchUsersForMention(keyword, t);
       return users.map((user) => ({
         id: user.voId,
-        userName: user.voUserName,
+        userName: user.voDisplayHandle || user.voUserName,
         displayName: user.voDisplayName,
         avatar: user.voAvatar
       }));

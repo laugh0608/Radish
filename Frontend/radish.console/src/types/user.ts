@@ -16,6 +16,10 @@ export interface UserInfo {
  */
 export interface UserListItem {
   uuid: string;
+  voPublicId?: string;
+  voPublicIndex?: string;
+  voDisplayName?: string;
+  voDisplayHandle?: string;
   voLoginName: string;
   voUserName: string;
   voUserRealName: string;

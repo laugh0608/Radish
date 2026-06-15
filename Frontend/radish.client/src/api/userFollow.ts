@@ -23,8 +23,10 @@ export interface UserFollowSummary {
 export interface UserFollowUser {
   voUserId: LongId;
   voPublicId?: string | null;
+  voPublicIndex?: string | number | null;
   voUserName: string;
   voDisplayName?: string | null;
+  voDisplayHandle?: string | null;
   voAvatarUrl?: string | null;
   voIsMutualFollow: boolean;
   voFollowTime: string;

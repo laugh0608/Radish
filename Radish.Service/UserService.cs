@@ -16,6 +16,7 @@ namespace Radish.Service;
 /// <summary>用户服务类</summary>
 public class UserService : BaseService<User, UserVo>, IUserService
 {
+    private const int PublicIndexAllocationMaxAttempts = 5;
     private readonly IBaseRepository<User> _userBaseRepository;
     private readonly IUserRepository _userRepository;
     private readonly IBaseRepository<Role> _roleRepository;
@@ -38,15 +39,36 @@ public class UserService : BaseService<User, UserVo>, IUserService
 
     public new async Task<long> AddAsync(User entity)
     {
-        entity.PublicId = User.EnsurePublicId(entity.PublicId);
+        var allocatedPublicIndex = !User.HasAssignedPublicIndex(entity.PublicIndex);
+        await EnsureUserPublicIdentifiersAsync(entity);
+
+        for (var attempt = 1; attempt <= PublicIndexAllocationMaxAttempts; attempt++)
+        {
+            try
+            {
+                return await base.AddAsync(entity);
+            }
+            catch (Exception ex) when (allocatedPublicIndex &&
+                                       attempt < PublicIndexAllocationMaxAttempts &&
+                                       IsUniqueConstraintConflict(ex, nameof(User.PublicIndex)))
+            {
+                entity.PublicIndex = await AllocateNextPublicIndexAsync(entity.PublicIndex);
+            }
+        }
+
         return await base.AddAsync(entity);
     }
 
     public new async Task<int> AddRangeAsync(List<User> entities)
     {
+        var nextPublicIndex = await AllocateNextPublicIndexAsync();
         foreach (var entity in entities)
         {
             entity.PublicId = User.EnsurePublicId(entity.PublicId);
+            if (!User.HasAssignedPublicIndex(entity.PublicIndex))
+            {
+                entity.PublicIndex = nextPublicIndex++;
+            }
         }
 
         return await base.AddRangeAsync(entities);
@@ -64,9 +86,13 @@ public class UserService : BaseService<User, UserVo>, IUserService
             return null;
         }
 
-        var normalizedLoginName = loginName.Trim();
+        var rawIdentifier = loginName.Trim();
+        var normalizedIdentifier = rawIdentifier.ToLowerInvariant();
         return await QueryFirstAsync(u =>
-            u.LoginName == normalizedLoginName &&
+            (u.LoginName == rawIdentifier ||
+             u.LoginName == normalizedIdentifier ||
+             u.UserEmail == rawIdentifier ||
+             u.UserEmail == normalizedIdentifier) &&
             u.IsDeleted == false &&
             u.IsEnable);
     }
@@ -105,35 +131,93 @@ public class UserService : BaseService<User, UserVo>, IUserService
             return null;
         }
 
-        await EnsureUserPublicIdBackfilledAsync(user);
+        await EnsureUserPublicIdentityBackfilledAsync(user);
         return Mapper.Map<UserVo>(user);
     }
 
-    private async Task EnsureUserPublicIdBackfilledAsync(User user)
+    private async Task EnsureUserPublicIdentifiersAsync(User user)
     {
-        if (!string.IsNullOrWhiteSpace(user.PublicId))
+        user.PublicId = User.EnsurePublicId(user.PublicId);
+        if (!User.HasAssignedPublicIndex(user.PublicIndex))
         {
-            user.PublicId = user.PublicId.Trim();
+            user.PublicIndex = await AllocateNextPublicIndexAsync();
+        }
+    }
+
+    private async Task<long> AllocateNextPublicIndexAsync(long? floor = null)
+    {
+        var maxPublicIndexTask = _userBaseRepository.QueryMaxAsync<long?>(
+            item => item.PublicIndex,
+            item => item.PublicIndex >= User.PublicIndexStart);
+        var maxPublicIndex = maxPublicIndexTask == null ? null : await maxPublicIndexTask;
+        var baseline = Math.Max(
+            maxPublicIndex.GetValueOrDefault(User.PublicIndexStart - 1),
+            floor.GetValueOrDefault(User.PublicIndexStart - 1));
+
+        return baseline + 1;
+    }
+
+    private async Task EnsureUserPublicIdentityBackfilledAsync(User user)
+    {
+        var missingPublicId = string.IsNullOrWhiteSpace(user.PublicId);
+        var missingPublicIndex = !User.HasAssignedPublicIndex(user.PublicIndex);
+
+        if (!missingPublicId)
+        {
+            user.PublicId = user.PublicId?.Trim();
+        }
+
+        if (!missingPublicId && !missingPublicIndex)
+        {
             return;
         }
 
-        var publicId = User.EnsurePublicId(user.PublicId);
-        var affectedRows = await _userBaseRepository.UpdateColumnsAsync(
-            item => new User { PublicId = publicId },
-            item => item.Id == user.Id &&
-                    !item.IsDeleted &&
-                    (item.PublicId == null || item.PublicId == string.Empty));
-
-        if (affectedRows > 0)
+        for (var attempt = 1; attempt <= PublicIndexAllocationMaxAttempts; attempt++)
         {
-            user.PublicId = publicId;
-            return;
+            var publicId = missingPublicId ? User.EnsurePublicId(user.PublicId) : user.PublicId;
+            var publicIndex = missingPublicIndex ? await AllocateNextPublicIndexAsync(user.PublicIndex) : user.PublicIndex;
+
+            try
+            {
+                var affectedRows = await _userBaseRepository.UpdateColumnsAsync(
+                    item => new User
+                    {
+                        PublicId = publicId,
+                        PublicIndex = publicIndex,
+                        UpdateTime = DateTime.Now
+                    },
+                    item => item.Id == user.Id &&
+                            !item.IsDeleted &&
+                            ((missingPublicId && (item.PublicId == null || item.PublicId == string.Empty)) ||
+                             (missingPublicIndex && (item.PublicIndex == null || item.PublicIndex <= 0))));
+
+                if (affectedRows > 0)
+                {
+                    user.PublicId = publicId;
+                    user.PublicIndex = publicIndex;
+                    return;
+                }
+            }
+            catch (Exception ex) when (missingPublicIndex &&
+                                       attempt < PublicIndexAllocationMaxAttempts &&
+                                       IsUniqueConstraintConflict(ex, nameof(User.PublicIndex)))
+            {
+                user.PublicIndex = publicIndex;
+                continue;
+            }
+
+            break;
         }
 
         var refreshedUser = await _userBaseRepository.QueryByIdAsync(user.Id);
         if (!string.IsNullOrWhiteSpace(refreshedUser?.PublicId))
         {
             user.PublicId = refreshedUser.PublicId.Trim();
+        }
+
+        if (User.HasAssignedPublicIndex(refreshedUser?.PublicIndex))
+        {
+            user.PublicIndex = refreshedUser!.PublicIndex;
         }
     }
 
@@ -320,8 +404,8 @@ public class UserService : BaseService<User, UserVo>, IUserService
     /// <returns>用户提及视图模型列表</returns>
     public async Task<List<UserMentionVo>> SearchUsersForMentionAsync(string keyword, long tenantId, int limit = 10)
     {
-        // 参数验证
-        if (string.IsNullOrWhiteSpace(keyword))
+        var search = UserPublicSearchCriteria.Parse(keyword);
+        if (search == null)
         {
             return new List<UserMentionVo>();
         }
@@ -335,30 +419,178 @@ public class UserService : BaseService<User, UserVo>, IUserService
         // 多查询一些结果用于排序（最多100条）
         var fetchSize = Math.Min(limit * 3, 100);
 
-        // 使用分页查询，取第一页，按用户名排序
-        var (data, _) = await base.QueryPageAsync(
-            whereExpression: u => u.UserName.Contains(keyword)
-                                  && u.TenantId == normalizedTenantId
+        var (users, _) = await _userBaseRepository.QueryPageAsync(
+            whereExpression: u => u.TenantId == normalizedTenantId
                                   && u.IsEnable
-                                  && !u.IsDeleted,
+                                  && !u.IsDeleted
+                                  && ((search.MatchDisplayName && u.UserName.Contains(search.DisplayNameKeyword))
+                                      || (search.MatchPublicIndex && search.PublicIndex != null && u.PublicIndex == search.PublicIndex)
+                                      || (search.DisplayHandleName != null &&
+                                          search.PublicIndex != null &&
+                                          u.UserName == search.DisplayHandleName &&
+                                          u.PublicIndex == search.PublicIndex)
+                                      || (search.PublicId != null && u.PublicId == search.PublicId)),
             pageIndex: 1,
             pageSize: fetchSize,
             orderByExpression: u => u.UserName,
             orderByType: OrderByType.Asc
         );
 
-        // 在应用层按匹配度排序：
-        // 1. 优先显示以关键词开头的用户（不区分大小写）
-        // 2. 然后按字母顺序排序
-        // 3. 最后取limit个结果
+        await EnsureUsersPublicIdentityBackfilledAsync(users);
+        var data = Mapper.Map<List<UserVo>>(users);
+
         var sorted = data
-            .OrderBy(u => u.VoUserName.StartsWith(keyword, StringComparison.OrdinalIgnoreCase) ? 0 : 1)
-            .ThenBy(u => u.VoUserName)
+            .OrderBy(u => GetMentionMatchRank(u, search))
+            .ThenBy(u => u.VoDisplayName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(u => u.VoPublicIndex ?? long.MaxValue)
             .Take(limit)
             .ToList();
 
-        // 映射到UserMentionVo
-        var result = base.Mapper.Map<List<UserMentionVo>>(sorted);
+        var result = Mapper.Map<List<UserMentionVo>>(sorted);
         return result;
+    }
+
+    private async Task EnsureUsersPublicIdentityBackfilledAsync(List<User> users)
+    {
+        foreach (var user in users)
+        {
+            await EnsureUserPublicIdentityBackfilledAsync(user);
+        }
+    }
+
+    private static int GetMentionMatchRank(UserVo user, UserPublicSearchCriteria search)
+    {
+        if (search.DisplayHandleName != null &&
+            search.PublicIndex != null &&
+            user.VoPublicIndex == search.PublicIndex &&
+            string.Equals(user.VoDisplayName, search.DisplayHandleName, StringComparison.OrdinalIgnoreCase))
+        {
+            return 0;
+        }
+
+        if (search.MatchDisplayName &&
+            !string.IsNullOrWhiteSpace(user.VoDisplayName) &&
+            user.VoDisplayName.StartsWith(search.DisplayNameKeyword, StringComparison.OrdinalIgnoreCase))
+        {
+            return 1;
+        }
+
+        if (search.PublicIndex != null && user.VoPublicIndex == search.PublicIndex)
+        {
+            return 2;
+        }
+
+        if (search.PublicId != null && string.Equals(user.VoPublicId, search.PublicId, StringComparison.OrdinalIgnoreCase))
+        {
+            return 3;
+        }
+
+        return 4;
+    }
+
+    private static bool IsUniqueConstraintConflict(Exception ex, string token)
+    {
+        var current = ex;
+        while (current != null)
+        {
+            if (!string.IsNullOrWhiteSpace(current.Message) &&
+                (current.Message.Contains("UNIQUE constraint failed", StringComparison.OrdinalIgnoreCase) ||
+                 current.Message.Contains("duplicate key", StringComparison.OrdinalIgnoreCase) ||
+                 current.Message.Contains("23505", StringComparison.OrdinalIgnoreCase)) &&
+                (current.Message.Contains(token, StringComparison.OrdinalIgnoreCase) ||
+                 current.Message.Contains("idx_user_public_index", StringComparison.OrdinalIgnoreCase)))
+            {
+                return true;
+            }
+
+            current = current.InnerException!;
+        }
+
+        return false;
+    }
+
+    private sealed class UserPublicSearchCriteria
+    {
+        private UserPublicSearchCriteria(
+            string displayNameKeyword,
+            string? displayHandleName,
+            long? publicIndex,
+            string? publicId,
+            bool matchDisplayName,
+            bool matchPublicIndex)
+        {
+            DisplayNameKeyword = displayNameKeyword;
+            DisplayHandleName = displayHandleName;
+            PublicIndex = publicIndex;
+            PublicId = publicId;
+            MatchDisplayName = matchDisplayName;
+            MatchPublicIndex = matchPublicIndex;
+        }
+
+        public string DisplayNameKeyword { get; }
+
+        public string? DisplayHandleName { get; }
+
+        public long? PublicIndex { get; }
+
+        public string? PublicId { get; }
+
+        public bool MatchDisplayName { get; }
+
+        public bool MatchPublicIndex { get; }
+
+        public static UserPublicSearchCriteria? Parse(string? keyword)
+        {
+            var normalizedKeyword = keyword?.Trim();
+            if (string.IsNullOrWhiteSpace(normalizedKeyword))
+            {
+                return null;
+            }
+
+            var displayNameKeyword = normalizedKeyword;
+            string? displayHandleName = null;
+            long? publicIndex = null;
+            var matchDisplayName = true;
+            var matchPublicIndex = false;
+            var publicId = User.HasPublicIdFormat(normalizedKeyword)
+                ? normalizedKeyword.ToLowerInvariant()
+                : null;
+            if (publicId != null)
+            {
+                matchDisplayName = false;
+            }
+
+            var separatorIndex = normalizedKeyword.LastIndexOf('#');
+            if (separatorIndex > 0 && separatorIndex < normalizedKeyword.Length - 1)
+            {
+                var displayNamePart = normalizedKeyword[..separatorIndex].Trim();
+                var publicIndexPart = normalizedKeyword[(separatorIndex + 1)..].Trim();
+                if (!string.IsNullOrWhiteSpace(displayNamePart) &&
+                    long.TryParse(publicIndexPart, out var parsedHandleIndex) &&
+                    parsedHandleIndex > 0)
+                {
+                    displayHandleName = displayNamePart;
+                    displayNameKeyword = displayNamePart;
+                    publicIndex = parsedHandleIndex;
+                    matchDisplayName = false;
+                    matchPublicIndex = false;
+                }
+            }
+            else if (long.TryParse(normalizedKeyword.TrimStart('#'), out var parsedPublicIndex) &&
+                     parsedPublicIndex > 0)
+            {
+                publicIndex = parsedPublicIndex;
+                displayNameKeyword = normalizedKeyword.TrimStart('#');
+                matchPublicIndex = true;
+            }
+
+            return new UserPublicSearchCriteria(
+                displayNameKeyword,
+                displayHandleName,
+                publicIndex,
+                publicId,
+                matchDisplayName,
+                matchPublicIndex);
+        }
     }
 }

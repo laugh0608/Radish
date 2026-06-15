@@ -4,6 +4,9 @@ public class UserVo
 {
     public long Uuid { get; set; }
     public string? VoPublicId { get; set; }
+    public long? VoPublicIndex { get; set; }
+    public string VoDisplayName { get; set; } = string.Empty;
+    public string? VoDisplayHandle { get; set; }
     public string VoLoginName { get; set; } = string.Empty;
     public string VoUserName { get; set; } = string.Empty;
     public string VoUserEmail { get; set; } = string.Empty;

@@ -660,7 +660,11 @@ export const PublicLeaderboardApp = ({
               <div className={styles.list}>
                 {items.map((item) => item.voCategory === LeaderboardCategory.User ? (
                   (() => {
-                    const userName = item.voUserName?.trim() || t('common.userFallback', { id: item.voUserId || '?' });
+                    const userName = item.voUserDisplayName?.trim()
+                      || item.voUserName?.trim()
+                      || t('common.userFallback', { id: item.voUserId || '?' });
+                    const displayHandle = item.voUserDisplayHandle?.trim()
+                      || (item.voUserPublicIndex ? `${userName}#${String(item.voUserPublicIndex).trim()}` : null);
                     const avatarUrl = resolveMediaUrl(item.voAvatarUrl);
                     return (
                       <button
@@ -695,6 +699,9 @@ export const PublicLeaderboardApp = ({
                             <span className={`${styles.itemTitle} ${styles.userName}`}>{userName}</span>
                             {item.voIsCurrentUser && (
                               <span className={styles.currentUserBadge}>{t('leaderboard.public.currentUser')}</span>
+                            )}
+                            {displayHandle && (
+                              <span className={styles.itemDescription}>{displayHandle}</span>
                             )}
                           </div>
                         </div>

@@ -4,6 +4,12 @@ public class UserProfileVo
 {
     public long VoUserId { get; set; }
 
+    public string? VoPublicId { get; set; }
+
+    public long? VoPublicIndex { get; set; }
+
+    public string? VoDisplayHandle { get; set; }
+
     public string VoUserName { get; set; } = string.Empty;
 
     public string VoUserEmail { get; set; } = string.Empty;

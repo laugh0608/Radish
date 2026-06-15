@@ -17,8 +17,11 @@ configureApiClient({
  */
 export interface UserMentionOption {
   voId: string;  // 后端返回 long 类型会被序列化为字符串
+  voPublicId?: string | null;
+  voPublicIndex?: string | number | null;
   voUserName: string;
   voDisplayName?: string | null;
+  voDisplayHandle?: string | null;
   voAvatar?: string | null;
 }
 
@@ -57,8 +60,10 @@ export interface UserBrowseHistoryItem {
 export interface PublicUserProfile {
   voUserId: LongId;
   voPublicId?: string | null;
+  voPublicIndex?: string | number | null;
   voUserName: string;
   voDisplayName?: string | null;
+  voDisplayHandle?: string | null;
   voCreateTime: string;
   voAvatarUrl?: string | null;
   voAvatarThumbnailUrl?: string | null;

@@ -51,6 +51,7 @@ public class UserFollowServiceTest
                     Id = 20002,
                     UserName = "alice",
                     PublicId = publicId,
+                    PublicIndex = 1086,
                     IsEnable = true
                 }
             });
@@ -67,6 +68,8 @@ public class UserFollowServiceTest
 
         Assert.Single(result.VoItems);
         Assert.Equal(publicId, result.VoItems[0].VoPublicId);
+        Assert.Equal(1086, result.VoItems[0].VoPublicIndex);
+        Assert.Equal("alice#1086", result.VoItems[0].VoDisplayHandle);
     }
 
     [Fact]
@@ -106,6 +109,11 @@ public class UserFollowServiceTest
                 It.IsAny<Expression<Func<User, User>>>(),
                 It.IsAny<Expression<Func<User, bool>>>()))
             .ReturnsAsync(1);
+        harness.UserRepository
+            .Setup(repository => repository.QueryMaxAsync(
+                It.IsAny<Expression<Func<User, long?>>>(),
+                It.IsAny<Expression<Func<User, bool>>>()))
+            .ReturnsAsync(1085);
         harness.AttachmentRepository
             .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<Attachment, bool>>>()))
             .ReturnsAsync(new List<Attachment>());
@@ -119,6 +127,7 @@ public class UserFollowServiceTest
 
         Assert.Single(result.VoItems);
         Assert.StartsWith("usr_", result.VoItems[0].VoPublicId);
+        Assert.Equal(1086, result.VoItems[0].VoPublicIndex);
         harness.UserRepository.Verify(repository => repository.UpdateColumnsAsync(
             It.IsAny<Expression<Func<User, User>>>(),
             It.IsAny<Expression<Func<User, bool>>>()), Times.Once);

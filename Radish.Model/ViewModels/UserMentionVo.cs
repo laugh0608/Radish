@@ -12,14 +12,29 @@ public class UserMentionVo
     public long VoId { get; set; }
 
     /// <summary>
-    /// 用户名（登录名）
+    /// 用户公开 ID
+    /// </summary>
+    public string? VoPublicId { get; set; }
+
+    /// <summary>
+    /// 用户公开索引号
+    /// </summary>
+    public long? VoPublicIndex { get; set; }
+
+    /// <summary>
+    /// 公开展示名的历史字段
     /// </summary>
     public string VoUserName { get; set; } = string.Empty;
 
     /// <summary>
-    /// 显示名称（昵称）
+    /// 公开展示名
     /// </summary>
     public string? VoDisplayName { get; set; }
+
+    /// <summary>
+    /// 公开显示句柄
+    /// </summary>
+    public string? VoDisplayHandle { get; set; }
 
     /// <summary>
     /// 用户头像URL

@@ -453,8 +453,10 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
         {
             VoUserId = user.Id,
             VoPublicId = string.IsNullOrWhiteSpace(user.PublicId) ? null : user.PublicId.Trim(),
-            VoUserName = user.UserName,
-            VoDisplayName = string.IsNullOrWhiteSpace(user.UserRealName) ? null : user.UserRealName,
+            VoPublicIndex = user.PublicIndex,
+            VoUserName = User.NormalizeDisplayName(user.UserName, user.Id),
+            VoDisplayName = User.NormalizeDisplayName(user.UserName, user.Id),
+            VoDisplayHandle = User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id),
             VoAvatarUrl = string.IsNullOrWhiteSpace(avatarUrl) ? null : avatarUrl,
             VoIsMutualFollow = isMutualFollow,
             VoFollowTime = followTime
@@ -465,22 +467,37 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
     {
         foreach (var user in users)
         {
-            if (!string.IsNullOrWhiteSpace(user.PublicId))
+            var missingPublicId = string.IsNullOrWhiteSpace(user.PublicId);
+            var missingPublicIndex = !User.HasAssignedPublicIndex(user.PublicIndex);
+
+            if (!missingPublicId)
             {
-                user.PublicId = user.PublicId.Trim();
+                user.PublicId = user.PublicId?.Trim();
+            }
+
+            if (!missingPublicId && !missingPublicIndex)
+            {
                 continue;
             }
 
-            var publicId = User.EnsurePublicId(user.PublicId);
+            var publicId = missingPublicId ? User.EnsurePublicId(user.PublicId) : user.PublicId;
+            var publicIndex = missingPublicIndex ? await AllocateNextPublicIndexAsync() : user.PublicIndex;
             var affectedRows = await _userRepository.UpdateColumnsAsync(
-                item => new User { PublicId = publicId },
+                item => new User
+                {
+                    PublicId = publicId,
+                    PublicIndex = publicIndex,
+                    UpdateTime = DateTime.Now
+                },
                 item => item.Id == user.Id &&
                         !item.IsDeleted &&
-                        (item.PublicId == null || item.PublicId == string.Empty));
+                        ((missingPublicId && (item.PublicId == null || item.PublicId == string.Empty)) ||
+                         (missingPublicIndex && (item.PublicIndex == null || item.PublicIndex <= 0))));
 
             if (affectedRows > 0)
             {
                 user.PublicId = publicId;
+                user.PublicIndex = publicIndex;
                 continue;
             }
 
@@ -489,7 +506,22 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
             {
                 user.PublicId = refreshedUser.PublicId.Trim();
             }
+
+            if (User.HasAssignedPublicIndex(refreshedUser?.PublicIndex))
+            {
+                user.PublicIndex = refreshedUser!.PublicIndex;
+            }
         }
+    }
+
+    private async Task<long> AllocateNextPublicIndexAsync()
+    {
+        var maxPublicIndexTask = _userRepository.QueryMaxAsync<long?>(
+            item => item.PublicIndex,
+            item => item.PublicIndex >= User.PublicIndexStart);
+        var maxPublicIndex = maxPublicIndexTask == null ? null : await maxPublicIndexTask;
+
+        return maxPublicIndex.GetValueOrDefault(User.PublicIndexStart - 1) + 1;
     }
 
     private static int NormalizePageIndex(int pageIndex)

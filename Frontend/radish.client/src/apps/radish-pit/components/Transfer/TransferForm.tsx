@@ -94,6 +94,7 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
   const handleUserSelect = (user: UserMentionOption) => {
     const userId = normalizePositiveLongIdKey(user.voId);
     const displayName = user.voDisplayName || user.voUserName || '未知用户';
+    const displayHandle = user.voDisplayHandle || displayName;
 
     if (!userId) {
       setErrors(prev => ({ ...prev, recipientId: '用户 ID 无效，请重新选择接收方' }));
@@ -103,9 +104,9 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
     setFormData(prev => ({
       ...prev,
       recipientId: userId,
-      recipientName: displayName
+      recipientName: displayHandle
     }));
-    setUserSearchQuery(displayName);
+    setUserSearchQuery(displayHandle);
     setShowUserDropdown(false);
 
     // 清除用户相关错误
@@ -219,6 +220,9 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
                 <div className={styles.userDropdown}>
                   {userSearchResults.map((user) => {
                     const displayName = user.voDisplayName || user.voUserName || '未知用户';
+                    const displayHandle = user.voDisplayHandle || (
+                      user.voPublicIndex ? `${displayName}#${String(user.voPublicIndex).trim()}` : null
+                    );
                     return (
                       <div
                         key={user.voId}
@@ -234,8 +238,8 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
                         </div>
                         <div className={styles.userInfo}>
                           <div className={styles.userName}>{displayName}</div>
-                          {user.voDisplayName && user.voUserName && user.voDisplayName !== user.voUserName && (
-                            <div className={styles.userLoginName}>@{user.voUserName}</div>
+                          {displayHandle && (
+                            <div className={styles.userLoginName}>{displayHandle}</div>
                           )}
                         </div>
                       </div>

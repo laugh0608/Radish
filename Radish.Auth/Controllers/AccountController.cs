@@ -29,6 +29,19 @@ namespace Radish.Auth.Controllers;
 [Route("[controller]/[action]")]
 public class AccountController : Controller
 {
+    private static readonly HashSet<string> ReservedLoginNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "admin",
+        "administrator",
+        "system",
+        "root",
+        "support",
+        "official",
+        "bot",
+        "moderator",
+        "radish"
+    };
+
     private readonly IStringLocalizer<Errors> _errorsLocalizer;
     private readonly IUserService _userService;
     private readonly IOpenIddictApplicationManager _applicationManager;
@@ -215,33 +228,44 @@ public class AccountController : Controller
 
         try
         {
-            // 2. 检查用户名是否已存在
-            var existingUsers = await _userService.QueryAsync(u => u.LoginName == model.Username);
-            if (existingUsers.Any())
+            var loginName = model.Username.Trim().ToLowerInvariant();
+            var email = model.Email?.Trim().ToLowerInvariant();
+            if (ReservedLoginNames.Contains(loginName))
             {
-                TempData["RegisterError"] = "用户名已存在";
+                TempData["RegisterError"] = "该登录名为系统保留账号，请更换";
                 return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
             }
 
-            // 3. 检查邮箱是否已存在（如果提供了邮箱）
-            if (!string.IsNullOrWhiteSpace(model.Email))
+            if (string.IsNullOrWhiteSpace(email))
             {
-                var existingEmails = await _userService.QueryAsync(u => u.UserEmail == model.Email);
-                if (existingEmails.Any())
-                {
-                    TempData["RegisterError"] = "邮箱已被注册";
-                    return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
-                }
+                TempData["RegisterError"] = "电子邮箱不能为空";
+                return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
+            }
+
+            // 2. 检查用户名是否已存在
+            var existingUsers = await _userService.QueryAsync(u => u.LoginName == loginName);
+            if (existingUsers.Any())
+            {
+                TempData["RegisterError"] = "登录名已存在";
+                return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
+            }
+
+            // 3. 检查邮箱是否已存在
+            var existingEmails = await _userService.QueryAsync(u => u.UserEmail == email);
+            if (existingEmails.Any())
+            {
+                TempData["RegisterError"] = "邮箱已被注册";
+                return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
             }
 
             // 4. 创建用户（使用 Argon2id 哈希密码）
             var hashedPassword = PasswordHasher.HashPassword(model.Password);
             var newUser = new Radish.Model.User
             {
-                LoginName = model.Username,
+                LoginName = loginName,
                 LoginPassword = hashedPassword,
-                UserEmail = model.Email ?? string.Empty,  // 处理 null 值
-                UserName = model.Username,  // 默认昵称与用户名相同
+                UserEmail = email,
+                UserName = loginName,
                 UserRealName = string.Empty,
                 UserBirth = null,  // 明确设置为 null
                 UserAddress = string.Empty,
@@ -257,7 +281,7 @@ public class AccountController : Controller
 
             var userId = await _userService.AddAsync(newUser);
 
-            Log.Information("用户 {Username} (ID: {UserId}) 注册成功", model.Username, userId);
+            Log.Information("用户 {Username} (ID: {UserId}) 注册成功", loginName, userId);
 
             // 5. 发放注册奖励（50 胡萝卜）
             var transactionNo = await _coinService.GrantRegistrationRewardAsync(userId);
@@ -265,7 +289,7 @@ public class AccountController : Controller
 
             // 6. 注册成功，跳转到登录页
             TempData["RegisterSuccess"] = "注册成功！已赠送 50 胡萝卜，请登录。";
-            return RedirectToAction(nameof(Login), new { returnUrl = model.ReturnUrl, username = model.Username });
+            return RedirectToAction(nameof(Login), new { returnUrl = model.ReturnUrl, username = loginName });
         }
         catch (Exception ex)
         {

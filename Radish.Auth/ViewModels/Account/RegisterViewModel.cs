@@ -11,8 +11,8 @@ public sealed class RegisterViewModel
     /// 用户名
     /// </summary>
     [Required(ErrorMessage = "用户名不能为空")]
-    [StringLength(50, MinimumLength = 3, ErrorMessage = "用户名长度必须在 3-50 个字符之间")]
-    [RegularExpression(@"^[a-zA-Z0-9_\u4e00-\u9fa5]+$", ErrorMessage = "用户名只能包含字母、数字、下划线和中文")]
+    [StringLength(32, MinimumLength = 3, ErrorMessage = "登录名长度必须在 3-32 个字符之间")]
+    [RegularExpression(@"^(?=.*[a-zA-Z])[a-zA-Z0-9]+$", ErrorMessage = "登录名只能包含字母和数字，且至少包含一个字母")]
     public string Username { get; set; } = string.Empty;
 
     /// <summary>
@@ -32,10 +32,11 @@ public sealed class RegisterViewModel
     public string ConfirmPassword { get; set; } = string.Empty;
 
     /// <summary>
-    /// 电子邮箱（可选）
+    /// 电子邮箱
     /// </summary>
+    [Required(ErrorMessage = "电子邮箱不能为空")]
     [EmailAddress(ErrorMessage = "邮箱格式不正确")]
-    [StringLength(100, ErrorMessage = "邮箱长度不能超过 100 个字符")]
+    [StringLength(254, ErrorMessage = "邮箱长度不能超过 254 个字符")]
     public string? Email { get; set; }
 
     /// <summary>
