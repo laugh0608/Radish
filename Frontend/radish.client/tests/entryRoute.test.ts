@@ -8,6 +8,7 @@ import {
   isMePathname,
   isMessagesPathname,
   isNotificationsPathname,
+  isPetPathname,
   isPublicContentPathname,
   resolveInitialEntryPath,
 } from '../src/bootstrap/entryRoute.ts';
@@ -62,6 +63,7 @@ test('isPublicContentPathname 应识别公开内容路由', () => {
   assert.equal(isPublicContentPathname('/me'), false);
   assert.equal(isPublicContentPathname('/messages'), false);
   assert.equal(isPublicContentPathname('/notifications'), false);
+  assert.equal(isPublicContentPathname('/pet'), false);
   assert.equal(isPublicContentPathname('/desktop'), false);
   assert.equal(isPublicContentPathname(OIDC_CALLBACK_PATH), false);
 });
@@ -92,4 +94,11 @@ test('isMessagesPathname 应单独识别登录态消息复访入口', () => {
   assert.equal(isMessagesPathname('/messages/'), true);
   assert.equal(isMessagesPathname('/notifications'), false);
   assert.equal(isMessagesPathname('/desktop'), false);
+});
+
+test('isPetPathname 应单独识别登录态电子宠物入口', () => {
+  assert.equal(isPetPathname('/pet'), true);
+  assert.equal(isPetPathname('/pet/'), false);
+  assert.equal(isPetPathname('/discover'), false);
+  assert.equal(isPetPathname('/desktop'), false);
 });
