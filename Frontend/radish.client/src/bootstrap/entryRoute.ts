@@ -3,6 +3,7 @@ import { isCirclePathname } from '../circle/circleRouteState.ts';
 import { isMePathname } from '../me/meRouteState.ts';
 import { isMessagesPathname } from '../messages/messagesRouteState.ts';
 import { isNotificationsPathname } from '../notifications/notificationRouteState.ts';
+import { isPetPathname } from '../pet/petRouteState.ts';
 import { isPublicDiscoverPathname } from '../public/discoverRouteState.ts';
 
 export const BROWSER_PUBLIC_ENTRY_PATH = '/discover';
@@ -50,3 +51,4 @@ export function isPublicContentPathname(pathname: string): boolean {
 
 export { isCirclePathname, isMessagesPathname, isNotificationsPathname };
 export { isMePathname };
+export { isPetPathname };

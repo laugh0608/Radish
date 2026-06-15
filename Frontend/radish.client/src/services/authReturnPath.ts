@@ -1,4 +1,5 @@
 import { buildMessagesPath, MESSAGES_ENTRY_PATH, type MessagesRoute } from '../messages/messagesRouteState.ts';
+import { PET_ENTRY_PATH } from '../pet/petRouteState.ts';
 
 const AUTH_RETURN_PATH_STORAGE_KEY = 'radish:auth:return-path';
 const AUTH_RETURN_PATH_BASE_URL = 'https://radish.local';
@@ -55,6 +56,10 @@ export function normalizeAuthReturnPath(value: string | null | undefined): strin
 
     if (pathname === ME_RETURN_PATH) {
       return normalizeMeReturnPath(url);
+    }
+
+    if (pathname === PET_ENTRY_PATH) {
+      return normalizePetReturnPath(url);
     }
 
     if (pathname.startsWith('/forum/post/')) {
@@ -230,6 +235,14 @@ function normalizeMeReturnPath(url: URL): string | null {
   return ME_RETURN_PATH;
 }
 
+function normalizePetReturnPath(url: URL): string | null {
+  if (url.search || url.hash) {
+    return null;
+  }
+
+  return PET_ENTRY_PATH;
+}
+
 export function rememberAuthReturnPath(returnPath: string | null | undefined, storage = getSessionStorage()): boolean {
   const normalized = normalizeAuthReturnPath(returnPath);
   if (!normalized || !storage) {
@@ -306,6 +319,10 @@ export function buildMessagesReturnPath(route: MessagesRoute = {}): string | nul
 
 export function buildMeReturnPath(): string {
   return ME_RETURN_PATH;
+}
+
+export function buildPetReturnPath(): string {
+  return PET_ENTRY_PATH;
 }
 
 export function buildDesktopShopProductReturnPath(

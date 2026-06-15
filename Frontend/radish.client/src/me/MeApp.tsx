@@ -4,6 +4,7 @@ import { ExperienceBar } from '@radish/ui/experience-bar';
 import { Icon } from '@radish/ui/icon';
 import { coinApi, type CoinTransaction, type UserBalance } from '@/api/coin';
 import { experienceApi, type ExperienceData, type ExpTransactionData } from '@/api/experience';
+import { getMyPet, type PetProfile } from '@/api/pet';
 import {
   getMyBrowseHistory,
   getPublicProfile,
@@ -30,10 +31,11 @@ import { resolveMediaUrl } from '@/utils/media';
 import { buildMePath } from './meRouteState';
 import styles from './MeApp.module.css';
 
-type MeDataErrorKey = 'profile' | 'experience' | 'assets' | 'browse';
+type MeDataErrorKey = 'profile' | 'experience' | 'assets' | 'browse' | 'pet';
 
 interface MeDashboardData {
   publicProfile: PublicUserProfile | null;
+  pet: PetProfile | null;
   experience: ExperienceData | null;
   expTransactions: ExpTransactionData[];
   balance: UserBalance | null;
@@ -45,6 +47,7 @@ interface MeDashboardData {
 
 const initialDashboardData: MeDashboardData = {
   publicProfile: null,
+  pet: null,
   experience: null,
   expTransactions: [],
   balance: null,
@@ -261,6 +264,7 @@ export const MeApp = () => {
       balanceResult,
       coinTransactionsResult,
       browseHistoryResult,
+      petResult,
     ] = await Promise.allSettled([
       getPublicProfile(userId),
       experienceApi.getMyExperience(),
@@ -268,6 +272,7 @@ export const MeApp = () => {
       coinApi.getBalance(),
       coinApi.getTransactions(1, 5),
       getMyBrowseHistory(1, 5),
+      getMyPet(),
     ]);
 
     const errors: MeDashboardData['errors'] = {};
@@ -298,9 +303,14 @@ export const MeApp = () => {
       errors.browse = getErrorMessage(browseHistoryResult.reason, t('me.error.browse'));
       log.warn('MeApp', '加载最近访问失败', browseHistoryResult.reason);
     }
+    if (petResult.status === 'rejected') {
+      errors.pet = getErrorMessage(petResult.reason, t('me.error.pet'));
+      log.warn('MeApp', '加载电子宠物摘要失败', petResult.reason);
+    }
 
     setDashboardData({
       publicProfile: profileResult.status === 'fulfilled' ? profileResult.value : null,
+      pet: petResult.status === 'fulfilled' ? petResult.value : null,
       experience: experienceResult.status === 'fulfilled' ? experienceResult.value : null,
       expTransactions: expTransactionsResult.status === 'fulfilled' ? expTransactionsResult.value?.data ?? [] : [],
       balance: balanceResult.status === 'fulfilled' ? balanceResult.value : null,
@@ -342,6 +352,7 @@ export const MeApp = () => {
   const profilePublicId = dashboardData.publicProfile?.voPublicId?.trim();
   const experience = dashboardData.experience;
   const balance = dashboardData.balance;
+  const pet = dashboardData.pet;
   const loadedAtLabel = dashboardData.loadedAt
     ? formatDateTimeByTimeZone(dashboardData.loadedAt, displayTimeZone)
     : null;
@@ -440,6 +451,10 @@ export const MeApp = () => {
               <Icon icon="mdi:bell-outline" size={18} />
               <span>{t('me.openNotifications')}</span>
             </a>
+            <a className={styles.secondaryButton} href="/pet">
+              <Icon icon="mdi:leaf" size={18} />
+              <span>{t('me.openPet')}</span>
+            </a>
           </div>
         </section>
 
@@ -524,6 +539,30 @@ export const MeApp = () => {
               </>
             ) : (
               <p className={styles.emptyText}>{t('me.revisitEmpty')}</p>
+            )}
+          </article>
+
+          <article className={styles.summaryCard}>
+            <div className={styles.cardHeader}>
+              <Icon icon="mdi:leaf" size={22} />
+              <h3>{t('me.petTitle')}</h3>
+            </div>
+            {dashboardData.errors.pet ? (
+              <p className={styles.errorText}>{dashboardData.errors.pet}</p>
+            ) : pet ? (
+              <>
+                <div className={styles.balanceValue}>{pet.voName}</div>
+                <div className={styles.metricRow}>
+                  <span>{t('me.petMood')}</span>
+                  <strong>{pet.voMoodDisplay}</strong>
+                </div>
+                <div className={styles.metricRow}>
+                  <span>{t('me.petStage')}</span>
+                  <strong>{pet.voGrowthStageName}</strong>
+                </div>
+              </>
+            ) : (
+              <p className={styles.emptyText}>{t('me.petEmpty')}</p>
             )}
           </article>
         </section>

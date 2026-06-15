@@ -17,6 +17,7 @@ import {
   isMePathname,
   isMessagesPathname,
   isNotificationsPathname,
+  isPetPathname,
   isPublicContentPathname,
   resolveInitialEntryPath,
 } from '@/bootstrap/entryRoute';
@@ -30,6 +31,7 @@ const CircleEntry = lazy(() => import('./circle/CircleEntry.tsx').then((module) 
 const MeEntry = lazy(() => import('./me/MeEntry.tsx').then((module) => ({ default: module.MeEntry })));
 const MessagesEntry = lazy(() => import('./messages/MessagesEntry.tsx').then((module) => ({ default: module.MessagesEntry })));
 const NotificationsEntry = lazy(() => import('./notifications/NotificationsEntry.tsx').then((module) => ({ default: module.NotificationsEntry })));
+const PetEntry = lazy(() => import('./pet/PetEntry.tsx').then((module) => ({ default: module.PetEntry })));
 const RootEntry = lazy(() => import('./desktop/RootEntry.tsx').then((module) => ({ default: module.RootEntry })));
 const PublicEntry = lazy(() => import('./public/PublicEntry.tsx').then((module) => ({ default: module.PublicEntry })));
 
@@ -75,6 +77,7 @@ const isCircleRoute = isBrowser && isCirclePathname(window.location.pathname);
 const isMeRoute = isBrowser && isMePathname(window.location.pathname);
 const isMessagesRoute = isBrowser && isMessagesPathname(window.location.pathname);
 const isNotificationsRoute = isBrowser && isNotificationsPathname(window.location.pathname);
+const isPetRoute = isBrowser && isPetPathname(window.location.pathname);
 const isPublicContentRoute = isBrowser && isPublicContentPathname(window.location.pathname);
 
 const Page = isOidcCallback
@@ -83,13 +86,15 @@ const Page = isOidcCallback
     ? MessagesEntry
     : isNotificationsRoute
       ? NotificationsEntry
-      : isMeRoute
-        ? MeEntry
-        : isCircleRoute
-          ? CircleEntry
-          : isPublicContentRoute
-            ? PublicEntry
-            : RootEntry;
+      : isPetRoute
+        ? PetEntry
+        : isMeRoute
+          ? MeEntry
+          : isCircleRoute
+            ? CircleEntry
+            : isPublicContentRoute
+              ? PublicEntry
+              : RootEntry;
 
 initializeTheme();
 void applySiteBranding(getApiBaseUrl());

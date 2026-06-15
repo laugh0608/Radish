@@ -28,6 +28,7 @@ public class AutoMapperConfig
         cfg.AddProfile<WikiProfile>();
         cfg.AddProfile<ContentModerationProfile>();
         cfg.AddProfile<ConsoleAuthorizationProfile>();
+        cfg.AddProfile<PetMappingProfile>();
     }
 
     #region 已弃用
