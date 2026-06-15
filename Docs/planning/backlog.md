@@ -30,9 +30,9 @@
 - 代码热区拆分候选：超大公开页面、超大 Service、Flutter 大页面
 - 用户留存轻闭环：通知、复访、轻互动与公开分享的回流链路
 - `P3-10` Web-first 评估：Web 首页信息流、个人圈子边界、去 WebOS 化迁移、评论实时 / 编辑状态、神评稳定性、Token 不活跃过期与历史功能规划回拉扫描
-- 用户身份语义与公开索引：已新增 [用户身份语义与公开索引](/architecture/user-identity-semantics)，后续作为注册、登录、公开搜索、艾特、邮箱通知和 Console 用户排障的前置契约
+- 用户身份语义与公开索引：已新增 [用户身份语义与公开索引](/architecture/user-identity-semantics)，`P3-10-B9` 首批已完成公开索引、公开句柄、注册 / 登录规范化、艾特搜索和 Console 展示；联邦协议、邮箱通知系统和数据库主键迁移仍后置
 - 系统设置治理：已新增 [系统设置治理专题](/guide/system-settings-governance)，后续作为 Console 设置中心、默认值恢复、高危二次确认和审计能力的前置专题
-- Radish 电子宠物：已新增 [开发计划](/features/radish-pet-roadmap)，当前仅作为玩法、经济和 Web-first 路线规划，不进入代码实现
+- Radish 电子宠物：已新增 [开发计划](/features/radish-pet-roadmap)，`P3-10-B8` Phase B 已完成首批代码、体验补漏、契约测试和回归；经济消耗、商城物品、社区任务奖励、经验反向加成、Console 配置 UI、首页组件和公开个人主页默认展示仍后置
 
 ## 第二开发阶段后续池
 
