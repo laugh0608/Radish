@@ -17,7 +17,8 @@
 .statCard,
 .actionPanel,
 .profilePanel,
-.logPanel {
+.logPanel,
+.insightPanel {
   border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
   background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
@@ -90,10 +91,25 @@
   color: color-mix(in srgb, var(--theme-accent-jade) 76%, var(--theme-text-primary) 24%);
 }
 
+.petPortrait[data-intent="thriving"] {
+  background:
+    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--theme-accent-jade) 30%, white 70%) 0 22%, transparent 23%),
+    color-mix(in srgb, var(--theme-brand-soft) 78%, white 22%);
+}
+
 .petPortrait[data-mood="hungry"],
 .petPortrait[data-mood="messy"],
 .petPortrait[data-mood="tired"] {
   color: var(--theme-accent-earth);
+}
+
+.petPortrait[data-intent="hungry"],
+.petPortrait[data-intent="messy"],
+.petPortrait[data-intent="tired"] {
+  border-color: color-mix(in srgb, var(--theme-accent-earth) 42%, transparent);
+  background:
+    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--theme-accent-earth) 24%, white 76%) 0 22%, transparent 23%),
+    color-mix(in srgb, var(--theme-bg-muted) 72%, white 28%);
 }
 
 .claimBody,
@@ -103,7 +119,7 @@
 
 .kicker {
   margin: 0 0 6px;
-  color: var(--theme-text-tertiary);
+  color: var(--theme-text-muted);
   font-size: 12px;
   font-weight: 700;
 }
@@ -208,11 +224,109 @@
 .errorBanner {
   margin: 0 0 14px;
   padding: 12px 14px;
-  border: 1px solid color-mix(in srgb, var(--theme-danger) 28%, transparent);
+  border: 1px solid color-mix(in srgb, var(--theme-state-danger) 28%, transparent);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-danger) 10%, var(--theme-bg-surface) 90%);
-  color: var(--theme-danger);
+  background: color-mix(in srgb, var(--theme-state-danger) 10%, var(--theme-bg-surface) 90%);
+  color: var(--theme-state-danger);
   font-size: 14px;
+}
+
+.feedbackBanner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--theme-accent-jade) 32%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--theme-accent-jade) 10%, var(--theme-bg-surface) 90%);
+  color: var(--theme-text-primary);
+  font-size: 14px;
+}
+
+.feedbackBanner > svg {
+  color: var(--theme-accent-jade);
+  margin-top: 1px;
+}
+
+.feedbackBody {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.feedbackBody strong,
+.feedbackBody span {
+  overflow-wrap: anywhere;
+}
+
+.feedbackBody span {
+  color: var(--theme-text-secondary);
+  line-height: 1.55;
+}
+
+.feedbackDeltas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.feedbackDeltas em {
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: color-mix(in srgb, var(--theme-brand-soft) 70%, white 30%);
+  color: var(--theme-brand-primary);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.insightPanel {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 14px 16px;
+}
+
+.insightPanel[data-intent="hungry"],
+.insightPanel[data-intent="messy"],
+.insightPanel[data-intent="tired"] {
+  border-color: color-mix(in srgb, var(--theme-accent-earth) 36%, var(--theme-border-soft) 64%);
+}
+
+.insightIcon {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--theme-brand-primary);
+  background: color-mix(in srgb, var(--theme-brand-soft) 72%, white 28%);
+}
+
+.insightPanel[data-intent="hungry"] .insightIcon,
+.insightPanel[data-intent="messy"] .insightIcon,
+.insightPanel[data-intent="tired"] .insightIcon {
+  color: var(--theme-accent-earth);
+  background: color-mix(in srgb, var(--theme-accent-earth) 16%, var(--theme-bg-surface) 84%);
+}
+
+.insightPanel h2 {
+  margin: 0;
+  color: var(--theme-text-primary);
+  font-size: 16px;
+}
+
+.insightPanel p {
+  margin: 4px 0 0;
+  color: var(--theme-text-secondary);
+  font-size: 13px;
+  line-height: 1.65;
 }
 
 .statGrid {
@@ -225,6 +339,14 @@
 .statCard {
   min-width: 0;
   padding: 16px;
+}
+
+.statCard[data-level="watch"] {
+  border-color: color-mix(in srgb, var(--theme-accent-earth) 30%, var(--theme-border-soft) 70%);
+}
+
+.statCard[data-level="critical"] {
+  border-color: color-mix(in srgb, var(--theme-state-danger) 32%, var(--theme-border-soft) 68%);
 }
 
 .statHeader {
@@ -255,6 +377,21 @@
   display: block;
   border-radius: inherit;
   background: linear-gradient(90deg, var(--theme-accent-jade), var(--theme-brand-primary));
+}
+
+.statCard[data-level="watch"] .statTrack span {
+  background: linear-gradient(90deg, var(--theme-accent-earth), var(--theme-accent-earth));
+}
+
+.statCard[data-level="critical"] .statTrack span {
+  background: linear-gradient(90deg, var(--theme-state-danger), var(--theme-accent-earth));
+}
+
+.statLevel {
+  margin: 9px 0 0;
+  color: var(--theme-text-muted);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .actionPanel,
@@ -311,6 +448,14 @@
   opacity: 0.62;
 }
 
+.actionButton[data-availability="ready"] {
+  background: color-mix(in srgb, var(--theme-brand-soft) 38%, var(--theme-bg-surface) 62%);
+}
+
+.actionButton[data-availability="pending"] {
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 38%, var(--theme-border-soft) 62%);
+}
+
 .actionButton strong {
   font-size: 15px;
 }
@@ -320,6 +465,31 @@
   color: var(--theme-text-secondary);
   font-size: 12px;
   line-height: 1.45;
+}
+
+.actionStatus {
+  display: inline-flex;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: color-mix(in srgb, var(--theme-bg-surface) 82%, white 18%);
+  font-weight: 800;
+}
+
+.actionButton[data-availability="ready"] .actionStatus {
+  color: var(--theme-brand-primary);
+  background: color-mix(in srgb, var(--theme-brand-soft) 72%, white 28%);
+}
+
+.actionButton[data-availability="cooldown"] .actionStatus,
+.actionButton[data-availability="usedUp"] .actionStatus {
+  color: var(--theme-accent-earth);
+  background: color-mix(in srgb, var(--theme-accent-earth) 14%, var(--theme-bg-surface) 86%);
+}
+
+.actionPreview {
+  margin-top: auto;
+  color: var(--theme-text-muted) !important;
 }
 
 .contentGrid {

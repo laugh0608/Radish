@@ -21,6 +21,15 @@ import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
 import { DEFAULT_TIME_ZONE, formatDateTimeByTimeZone, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { log } from '@/utils/logger';
+import {
+  getCooldownDisplayParts,
+  getPetLogStatDeltas,
+  resolvePetActionAvailability,
+  resolvePetStatLevel,
+  resolvePetStatusInsight,
+  type PetStatDelta,
+  type PetStatKey,
+} from './petPresentation';
 import { buildPetPath } from './petRouteState';
 import styles from './PetApp.module.css';
 
@@ -28,6 +37,18 @@ interface PetPageData {
   pet: PetProfile | null;
   logs: PetStatLog[];
   loadedAt: string | null;
+}
+
+interface FeedbackNotice {
+  kind: 'success';
+  titleKey: string;
+  descriptionKey: string;
+  values?: Record<string, number | string>;
+  deltas?: PetStatDelta[];
+}
+
+interface LoadPetDataOptions {
+  silent?: boolean;
 }
 
 const initialPageData: PetPageData = {
@@ -43,11 +64,24 @@ const actionIcons: Record<string, string> = {
   rest: 'mdi:sleep',
 };
 
+const statLabelKeys: Record<PetStatKey, string> = {
+  voSatiety: 'pet.stat.satiety',
+  voCleanliness: 'pet.stat.cleanliness',
+  voEnergy: 'pet.stat.energy',
+};
+
 const statKeys = [
-  { key: 'voSatiety', labelKey: 'pet.stat.satiety', icon: 'mdi:food-apple-outline' },
-  { key: 'voCleanliness', labelKey: 'pet.stat.cleanliness', icon: 'mdi:sparkles' },
-  { key: 'voEnergy', labelKey: 'pet.stat.energy', icon: 'mdi:lightning-bolt-outline' },
+  { key: 'voSatiety', labelKey: statLabelKeys.voSatiety, icon: 'mdi:food-apple-outline' },
+  { key: 'voCleanliness', labelKey: statLabelKeys.voCleanliness, icon: 'mdi:sparkles' },
+  { key: 'voEnergy', labelKey: statLabelKeys.voEnergy, icon: 'mdi:lightning-bolt-outline' },
 ] as const;
+
+const actionPreviewKeys: Record<string, string> = {
+  feed: 'pet.care.preview.feed',
+  clean: 'pet.care.preview.clean',
+  play: 'pet.care.preview.play',
+  rest: 'pet.care.preview.rest',
+};
 
 function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error && error.message.trim() ? error.message : fallback;
@@ -62,6 +96,10 @@ function buildIdempotencyKey(actionType: PetCareActionType): string {
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   return `web:${actionType}:${randomPart}`;
+}
+
+function formatSignedValue(value: number): string {
+  return value > 0 ? `+${value}` : `${value}`;
 }
 
 export const PetApp = () => {
@@ -82,6 +120,8 @@ export const PetApp = () => {
   const [claiming, setClaiming] = useState(false);
   const [activeAction, setActiveAction] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<FeedbackNotice | null>(null);
+  const [nowTick, setNowTick] = useState(() => Date.now());
 
   useEffect(() => {
     const cleanup = bootstrapAuth({ apiBaseUrl });
@@ -127,13 +167,16 @@ export const PetApp = () => {
     });
   }, [authReady, loggedIn, redirecting]);
 
-  const loadPetData = useCallback(async () => {
+  const loadPetData = useCallback(async (options: LoadPetDataOptions = {}) => {
     if (!loggedIn) {
       return;
     }
 
     setLoading(true);
-    setError(null);
+    if (!options.silent) {
+      setError(null);
+      setFeedback(null);
+    }
     try {
       const pet = await getMyPet();
       const logs = pet ? (await getPetLogs(1, 8)).voItems : [];
@@ -142,11 +185,14 @@ export const PetApp = () => {
         logs,
         loadedAt: new Date().toISOString(),
       });
+      setNowTick(Date.now());
       setProfileName(pet?.voName ?? '');
       setIsPublic(pet?.voIsPublic ?? false);
     } catch (err) {
       const message = getErrorMessage(err, t('pet.error.load'));
-      setError(message);
+      if (!options.silent) {
+        setError(message);
+      }
       log.warn('PetApp', '加载电子宠物失败', err);
     } finally {
       setLoading(false);
@@ -159,10 +205,24 @@ export const PetApp = () => {
     }
   }, [authReady, loadPetData, loggedIn]);
 
+  useEffect(() => {
+    const actions = pageData.pet?.voCareActions ?? [];
+    const hasCooldown = actions.some(action => resolvePetActionAvailability(action, Date.now()).kind === 'cooldown');
+    if (!hasCooldown) {
+      return;
+    }
+
+    const timerId = window.setInterval(() => {
+      setNowTick(Date.now());
+    }, 30000);
+    return () => window.clearInterval(timerId);
+  }, [pageData.pet?.voCareActions]);
+
   const handleClaim = useCallback(async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setClaiming(true);
     setError(null);
+    setFeedback(null);
     try {
       const pet = await claimPet({ name: claimName.trim() || undefined });
       setPageData({
@@ -173,6 +233,13 @@ export const PetApp = () => {
       setProfileName(pet.voName);
       setIsPublic(pet.voIsPublic);
       setClaimName('');
+      setNowTick(Date.now());
+      setFeedback({
+        kind: 'success',
+        titleKey: 'pet.feedback.claimed.title',
+        descriptionKey: 'pet.feedback.claimed.description',
+        values: { name: pet.voName },
+      });
     } catch (err) {
       const message = getErrorMessage(err, t('pet.error.claim'));
       setError(message);
@@ -190,6 +257,7 @@ export const PetApp = () => {
 
     setSavingProfile(true);
     setError(null);
+    setFeedback(null);
     try {
       const pet = await updatePetProfile({
         name: profileName.trim() || pageData.pet.voName,
@@ -202,6 +270,12 @@ export const PetApp = () => {
       }));
       setProfileName(pet.voName);
       setIsPublic(pet.voIsPublic);
+      setNowTick(Date.now());
+      setFeedback({
+        kind: 'success',
+        titleKey: 'pet.feedback.profileSaved.title',
+        descriptionKey: 'pet.feedback.profileSaved.description',
+      });
     } catch (err) {
       const message = getErrorMessage(err, t('pet.error.save'));
       setError(message);
@@ -212,12 +286,14 @@ export const PetApp = () => {
   }, [isPublic, pageData.pet, profileName, t]);
 
   const handleCare = useCallback(async (action: PetCareActionState) => {
-    if (!action.voCanUse || activeAction) {
+    const availability = resolvePetActionAvailability(action, nowTick);
+    if (availability.kind !== 'ready' || activeAction) {
       return;
     }
 
     setActiveAction(action.voActionType);
     setError(null);
+    setFeedback(null);
     try {
       const result = await carePet({
         actionType: action.voActionType,
@@ -230,15 +306,64 @@ export const PetApp = () => {
       }));
       setProfileName(result.voPet.voName);
       setIsPublic(result.voPet.voIsPublic);
+      setNowTick(Date.now());
+      setFeedback({
+        kind: 'success',
+        titleKey: 'pet.feedback.care.title',
+        descriptionKey: 'pet.feedback.care.description',
+        values: {
+          action: result.voLog.voActionName,
+          message: result.voMessage || result.voLog.voMessage,
+          growth: result.voLog.voGrowthDelta,
+        },
+        deltas: getPetLogStatDeltas(result.voLog),
+      });
     } catch (err) {
       const message = getErrorMessage(err, t('pet.error.care'));
       setError(message);
       log.warn('PetApp', '照顾电子宠物失败', err);
-      void loadPetData();
+      void loadPetData({ silent: true });
     } finally {
       setActiveAction(null);
     }
-  }, [activeAction, loadPetData, t]);
+  }, [activeAction, loadPetData, nowTick, t]);
+
+  const formatCooldownLabel = useCallback((cooldownMs: number) => {
+    const parts = getCooldownDisplayParts(cooldownMs);
+    if (!parts) {
+      return null;
+    }
+
+    return t('pet.care.cooldownRemaining', {
+      value: parts.value,
+      unit: t(`pet.care.cooldownUnit.${parts.unit}`),
+    });
+  }, [t]);
+
+  const renderFeedback = () => {
+    if (!feedback) {
+      return null;
+    }
+
+    return (
+      <section className={styles.feedbackBanner} data-kind={feedback.kind} aria-live="polite">
+        <Icon icon="mdi:check-circle-outline" size={20} />
+        <div className={styles.feedbackBody}>
+          <strong>{t(feedback.titleKey, feedback.values)}</strong>
+          <span>{t(feedback.descriptionKey, feedback.values)}</span>
+          {feedback.deltas?.length ? (
+            <div className={styles.feedbackDeltas}>
+              {feedback.deltas.map(delta => (
+                <em key={delta.statKey}>
+                  {t(statLabelKeys[delta.statKey])} {formatSignedValue(delta.value)}
+                </em>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </section>
+    );
+  };
 
   const renderStatusPanel = (title: string, description: string, icon = 'mdi:leaf') => (
     <section className={styles.statusPanel}>
@@ -278,6 +403,7 @@ export const PetApp = () => {
   );
 
   const renderPetDashboard = (pet: PetProfile) => {
+    const insight = resolvePetStatusInsight(pet);
     const loadedAtLabel = pageData.loadedAt
       ? formatDateTimeByTimeZone(pageData.loadedAt, displayTimeZone)
       : null;
@@ -285,7 +411,7 @@ export const PetApp = () => {
     return (
       <>
         <section className={styles.heroPanel}>
-          <div className={styles.petPortrait} data-mood={pet.voMood} aria-hidden="true">
+          <div className={styles.petPortrait} data-mood={pet.voMood} data-intent={insight.intent} aria-hidden="true">
             <span>萝</span>
           </div>
           <div className={styles.heroBody}>
@@ -310,11 +436,22 @@ export const PetApp = () => {
           </div>
         </section>
 
+        <section className={styles.insightPanel} data-intent={insight.intent}>
+          <div className={styles.insightIcon}>
+            <Icon icon={insight.icon} size={22} />
+          </div>
+          <div>
+            <h2>{t(insight.titleKey)}</h2>
+            <p>{t(insight.descriptionKey)}</p>
+          </div>
+        </section>
+
         <section className={styles.statGrid}>
           {statKeys.map((stat) => {
             const value = clampPercent(pet[stat.key]);
+            const level = resolvePetStatLevel(value);
             return (
-              <article className={styles.statCard} key={stat.key}>
+              <article className={styles.statCard} data-level={level} key={stat.key}>
                 <div className={styles.statHeader}>
                   <Icon icon={stat.icon} size={20} />
                   <span>{t(stat.labelKey)}</span>
@@ -323,6 +460,7 @@ export const PetApp = () => {
                 <div className={styles.statTrack} aria-hidden="true">
                   <span style={{ width: `${value}%` }} />
                 </div>
+                <p className={styles.statLevel}>{t(`pet.stat.level.${level}`)}</p>
               </article>
             );
           })}
@@ -338,16 +476,22 @@ export const PetApp = () => {
           <div className={styles.actionGrid}>
             {pet.voCareActions.map((action) => {
               const pending = activeAction === action.voActionType;
+              const availability = resolvePetActionAvailability(action, nowTick);
+              const cooldownLabel = availability.kind === 'cooldown'
+                ? formatCooldownLabel(availability.cooldownMs)
+                : null;
               const nextLabel = action.voNextAvailableAt
                 ? formatDateTimeByTimeZone(action.voNextAvailableAt, displayTimeZone)
                 : null;
+              const availabilityKey = pending ? 'pending' : availability.kind;
 
               return (
                 <button
                   type="button"
                   key={action.voActionType}
                   className={styles.actionButton}
-                  disabled={!action.voCanUse || !!activeAction}
+                  data-availability={availabilityKey}
+                  disabled={availability.kind !== 'ready' || !!activeAction}
                   onClick={() => void handleCare(action)}
                 >
                   <Icon
@@ -361,7 +505,10 @@ export const PetApp = () => {
                       ? t('pet.care.remaining', { count: action.voRemainingToday })
                       : t('pet.care.usedUp')}
                   </span>
-                  {!action.voCanUse && nextLabel ? <small>{t('pet.care.nextAt', { time: nextLabel })}</small> : null}
+                  <small className={styles.actionStatus}>{t(`pet.care.availability.${availabilityKey}`)}</small>
+                  {cooldownLabel ? <small>{cooldownLabel}</small> : null}
+                  {availability.kind === 'cooldown' && nextLabel ? <small>{t('pet.care.nextAt', { time: nextLabel })}</small> : null}
+                  <small className={styles.actionPreview}>{t(actionPreviewKeys[action.voActionType] ?? 'pet.care.preview.default')}</small>
                 </button>
               );
             })}
@@ -441,6 +588,7 @@ export const PetApp = () => {
     return (
       <>
         {error ? <p className={styles.errorBanner}>{error}</p> : null}
+        {renderFeedback()}
         {pageData.pet ? renderPetDashboard(pageData.pet) : renderClaimPanel()}
       </>
     );
