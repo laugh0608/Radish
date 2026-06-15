@@ -45,6 +45,7 @@
   - `P3-10-B8` 首轮联调前暴露本地主库缺少 `PetProfile` / `PetStatLog` 的迁移问题；已补版本化 SQL `Deploy/sql/20260615_add_pet_tables.sql`，本地经 `DbMigrate init/apply` 同步后已验证恢复。
   - `P3-10-B8` Phase B 体验补漏与契约测试已完成：`/pet` 已补状态洞察、状态等级、动作冷却展示和照顾反馈；后端定向测试覆盖重复领取、只读查询、幂等、每日上限、冷却、状态边界、动作状态和日志空态；当前转入发布候选前批次级回归线，不直接启动经济、商城、社区任务奖励或 Flutter 承接。
   - `P3-10-B8` 发布候选前批次级回归已完成：后端定向 / 完整测试、`radish.client` 测试 / 类型检查 / 构建、身份契约、迁移 SQL 自检和 Gateway PC / 移动页面补验均通过；已补 `/pet` 登录回流契约测试，未发现需要阻断的真实缺口。
+  - `P3-10-B8` 合并前自动化总验证已完成：`validate:baseline`、`validate:identity`、`validate:baseline:host`、迁移 SQL 重放、`git diff --check` 均通过；最新运行态健康复查因本机 API/Auth 未监听未闭合，如 PR 需要最新健康端点结论，重启宿主后复跑 `check:host-runtime`。
 
 ## 当前执行入口
 
@@ -79,8 +80,9 @@
 ## 下一顺位
 
 - `P3-10-B8 Radish 电子宠物规划`
-  - B8 已完成开发前冻结口径、Phase B 首批代码、Gateway PC / 移动首轮联调、首批体验补漏、后端契约测试补强和发布候选前批次级回归；后续只在发布候选总回归、准备合并或真实缺口暴露时回拉。
+  - B8 已完成开发前冻结口径、Phase B 首批代码、Gateway PC / 移动首轮联调、首批体验补漏、后端契约测试补强、发布候选前批次级回归和合并前自动化总验证；代码与迁移侧已具备进入 `dev -> master` PR 的条件。
   - 本地开发库使用 `dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init` 或 `apply` 补齐新表；测试 / 生产上线前使用 `Deploy/sql/20260615_add_pet_tables.sql` 作为版本化差异 SQL 审核入口。
+  - 若 PR 说明需要最新运行态健康端点结论，先由开发者恢复 Gateway / API / Auth 宿主，再复跑 `npm run check:host-runtime -- --details --report`。
   - 经济消耗、商城物品、社区任务奖励、经验反向加成、Console 配置 UI、首页组件和公开个人主页默认展示继续后置。
 - `P3-10-B7 WebOS 功能迁移图收口`
   - `/notifications`、`/me`、`/messages` 三个纯 Web 私域复访入口已完成首批代码和 Gateway PC / 移动 smoke；后续只在新真实缺口、发布候选回归或 WebOS 保留入口阻断时回拉。
@@ -99,7 +101,7 @@
 
 ## 明日事项
 
-- 第一顺位：`P3-10-B8 Radish 电子宠物` 发布候选前批次级回归已收口；若准备合并或发布，再执行对应粒度的总验证与留痕，不继续扩展经济消耗、商城物品、社区任务奖励、经验反向加成、Console 配置 UI、首页组件或公开个人主页默认展示。
+- 第一顺位：`P3-10-B8 Radish 电子宠物` 已完成合并前自动化总验证；下一步可准备 `dev -> master` PR 说明，若要求最新运行态健康结论，先恢复宿主并复跑 `check:host-runtime`。
 - 第二顺位：若 B8 后续总回归暴露真实缺口，再按契约测试、服务端数值规则、前端反馈展示和 Gateway 页面路径成组修复。
 - 第三顺位：保留 `P3-10-B7 WebOS 功能迁移图收口` 维护入口，只在发布候选回归、用户真实复访路径或新缺口暴露时回拉 `/notifications`、`/me`、`/messages`。
 - 第四顺位：保留 `P3-10-B6` 补验入口，工具条件满足时补移动 DPR 视图；发布候选前再做真实 idle 与 Hub 停连 / 匿名恢复批次级回归。

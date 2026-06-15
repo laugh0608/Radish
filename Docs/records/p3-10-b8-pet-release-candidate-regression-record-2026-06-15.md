@@ -5,6 +5,8 @@
 > 执行时间：2026-06-15 20:52 CST（Asia/Shanghai）
 >
 > Gateway 补验时间：2026-06-15 21:25 CST（Asia/Shanghai）
+>
+> 合并前验证时间：2026-06-15 21:35 CST（Asia/Shanghai）
 
 ## 批次结论
 
@@ -81,6 +83,54 @@ sqlite3 /private/tmp/radish-pet-schema-check-20260615.db ".schema PetStatLog"
 
 - Browser 视口能力只能设置宽高，不能强制 DPR；移动 `390x844` 实测 DPR 为 `1`，不写作 `DPR 3` 通过。
 - `https://127.0.0.1:5000` 仅作为隔离登录态的辅助入口尝试，不是本项目文档约定的 Gateway / OIDC 入口；正式结论以 `https://localhost:5000` 为准。
+
+## 合并前验证
+
+执行目录：仓库根目录 `/Users/luobo/Code/Radish`
+
+```bash
+npm run validate:baseline -- --report --report-file .tmp/p3-10-b8-merge-validate-baseline.md
+npm run validate:identity
+npm run validate:baseline:host -- --report --report-file .tmp/p3-10-b8-merge-validate-host.md
+sqlite3 /private/tmp/radish-pet-schema-check-merge-20260615.db ".read Deploy/sql/20260615_add_pet_tables.sql"
+sqlite3 /private/tmp/radish-pet-schema-check-merge-20260615.db ".read Deploy/sql/20260615_add_pet_tables.sql"
+sqlite3 /private/tmp/radish-pet-schema-check-merge-20260615.db ".schema PetProfile"
+sqlite3 /private/tmp/radish-pet-schema-check-merge-20260615.db ".schema PetStatLog"
+git diff --check
+npm run check:repo-hygiene:changed
+```
+
+结果：
+
+- `validate:baseline` 通过，报告已落盘到 `.tmp/p3-10-b8-merge-validate-baseline.md`。
+- `validate:identity` 通过，身份语义运行时扫描、协议输出扫描、LongId 字符串安全扫描和后端定向测试均未发现回归。
+- `validate:baseline:host` 首次在沙盒内因 `dotnet test` Socket 权限被拦截；按沙盒规则提权后重跑通过，报告已落盘到 `.tmp/p3-10-b8-merge-validate-host.md`。
+- `validate:baseline:host` 已覆盖前端类型检查、`radish.client` `252` 个测试、Console 权限链路扫描、Repo Quality contract 自校验、身份语义影响面判定自校验、身份语义防回归扫描、后端解决方案构建、后端 `439` 个测试、`DbMigrate doctor` 和 `DbMigrate verify`。
+- `DbMigrate doctor / verify` 均显示主库业务表已齐全，当前环境可直接执行 `init / seed`。
+- 迁移 SQL 在临时 SQLite 库中重复执行两次通过，`PetProfile` / `PetStatLog` 表结构和索引均可落下。
+- `git diff --check` 通过。
+- `check:repo-hygiene:changed` 当前无待检查文件。
+
+运行态健康复查：
+
+```bash
+npm run check:host-runtime -- --details --report --report-file .tmp/p3-10-b8-merge-host-runtime.md
+lsof -nP -iTCP:5000 -sTCP:LISTEN
+lsof -nP -iTCP:5100 -sTCP:LISTEN
+lsof -nP -iTCP:5200 -sTCP:LISTEN
+```
+
+结果：
+
+- `check:host-runtime` 在沙盒内对 localhost 三个宿主均 `no-response`；提权后重跑仍未通过。
+- 提权后分类为：Gateway `/health` 和 `/healthz` 超时，API / Auth `5100 / 5200` 端口未监听。
+- `lsof` 显示 `5000` 当前由 macOS `ControlCe` 监听，`5100` 与 `5200` 无监听进程；本轮运行态健康复查未能代表 Radish Gateway / API / Auth 实际健康状态。
+- 该项记录为本机宿主状态边界，不改变本轮代码、迁移和 Gateway 页面补验结论；如果发起 PR 前要求再次闭合运行态健康，需要开发者重新启动宿主后复跑 `npm run check:host-runtime -- --details --report`。
+
+合并前结论：
+
+- 代码 / 测试 / 身份语义 / 数据库迁移预检均已通过，B8 当前具备从代码与迁移角度进入 `dev -> master` PR 的条件。
+- 运行态页面 smoke 已在 21:25 通过；21:35 的健康端点复查受本机宿主未运行影响，若 PR 需要写入最新运行态健康结论，应在宿主恢复后补跑健康检查。
 
 ## 后续边界
 
