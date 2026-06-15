@@ -1,6 +1,6 @@
 # Radish 电子宠物开发计划
 
-> 状态：`Phase B 首批代码已落地，经济与社区任务仍后置`
+> 状态：`Phase B 首批代码与 Gateway 首轮联调已落地，经济与社区任务仍后置`
 >
 > 创建日期：2026-06-08（Asia/Shanghai）
 >
@@ -60,12 +60,21 @@ Radish 电子宠物是面向长期复访、轻互动和社区陪伴感的 Web-fi
 - `/me` 已新增宠物摘要入口，只展示名称、心情和成长阶段，不替代完整宠物页面。
 - 登录恢复已允许 `/pet` return path；未登录访问 `/pet` 会进入登录后返回。
 - 首批本地验证已通过：`dotnet test Radish.Api.Tests`、`npm run build --workspace=radish.client`。
+- Gateway 首轮联调已通过：`/pet` 领取、四类照顾动作、刷新稳定、最近照顾流水、每日次数 / 冷却和 `/me` 宠物摘要均完成 PC / 移动视图复核。
 
 本批仍不做：
 
 - 不接入萝卜币消耗、商城物品、社区任务奖励、经验反向加成或 Console 配置 UI。
 - 不在首页信息流增加宠物组件，不进入公开 sitemap。
 - 不在公开个人主页默认展示宠物私域状态；公开宠物名片能力继续作为后续入口评估。
+
+首轮联调记录：
+
+- 2026-06-15 Gateway 首轮联调已验证 `/pet` 未登录会进入 OIDC 登录页，种子账号 `test / test123456` 登录后可回流到 `/pet`。
+- 迁移前阻断不是前端路由问题，而是本地主库尚未同步新增表，API 抛出 `SQLite Error 1: 'no such table: PetProfile'`；本地执行 `DbMigrate init/apply` 并重启 API 后已恢复。
+- 迁移后通过 `https://localhost:5000` 验证领取 `联调萝卜`、喂食 / 清洁 / 互动 / 休息、状态数值变化、成长流水、冷却禁用、刷新持久化和 `/me` 摘要。
+- PC 视图使用 `1920x1080`，移动视图使用 `390x844 @ DPR 3`，未发现横向溢出或新增浏览器 warning / error。
+- 测试 / 生产上线前使用 `Deploy/sql/20260615_add_pet_tables.sql` 作为 `PetProfile` / `PetStatLog` 版本化差异 SQL 审核入口。
 
 ## 首批能力范围
 

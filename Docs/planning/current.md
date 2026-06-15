@@ -41,7 +41,8 @@
   - `P3-10-B7` 第二批迁移代码已推进纯 Web 我的状态入口：`/me` 作为登录态私域入口聚合公开主页、成长、资产和最近复访，只读承接个人状态 / 经验 / 资产高价值复访，不搬迁转账、支付密码、完整钱包或完整个人中心。
   - `P3-10-B7` 第三批迁移代码已推进纯 Web 消息复访入口：`/messages` 作为登录态私域入口承接聊天通知中的会话 / 消息定位、登录恢复和公开个人页来源返回；完整聊天平台、私聊、搜索、Reaction、移动系统通知和设备级会话治理继续后置。
   - `P3-10-B7` WebOS 功能迁移图已完成进入 B8 前的首批收口判断：`/notifications`、`/me`、`/messages` 均已完成代码、定向测试、`radish.client` type-check / build 和 Gateway PC / 移动 smoke；用户真实手测确认纯 Web 通知单击可跳转，不再因 Chrome 插件自动化单击不稳定阻塞 B7 收口。
-  - `P3-10-B8` 已完成电子宠物开发前冻结口径和 Phase B 首批代码：新增 `PetProfile` / `PetStatLog`、`PetController`、`/pet` 登录态私域页面、`/me` 宠物摘要、领取 / 命名 / 基础照顾 / 状态流水闭环；`dotnet test Radish.Api.Tests` 与 `radish.client` 构建通过。
+  - `P3-10-B8` 已完成电子宠物开发前冻结口径、Phase B 首批代码与 Gateway 首轮联调：新增 `PetProfile` / `PetStatLog`、`PetController`、`/pet` 登录态私域页面、`/me` 宠物摘要、领取 / 命名 / 基础照顾 / 状态流水闭环；`dotnet test Radish.Api.Tests`、`radish.client` 构建和 Gateway PC / 移动 smoke 通过。
+  - `P3-10-B8` 首轮联调前暴露本地主库缺少 `PetProfile` / `PetStatLog` 的迁移问题；已补版本化 SQL `Deploy/sql/20260615_add_pet_tables.sql`，本地经 `DbMigrate init/apply` 同步后已验证恢复。
 
 ## 当前执行入口
 
@@ -76,7 +77,8 @@
 ## 下一顺位
 
 - `P3-10-B8 Radish 电子宠物规划`
-  - B8 已完成开发前冻结口径和 Phase B 首批代码；下一步进入真实数据库迁移后的接口 smoke、Gateway PC / 移动视图复核和首批体验补漏。
+  - B8 已完成开发前冻结口径、Phase B 首批代码和 Gateway PC / 移动首轮闭环；下一步进入首批体验补漏。
+  - 本地开发库使用 `dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init` 或 `apply` 补齐新表；测试 / 生产上线前使用 `Deploy/sql/20260615_add_pet_tables.sql` 作为版本化差异 SQL 审核入口。
   - 经济消耗、商城物品、社区任务奖励、经验反向加成、Console 配置 UI、首页组件和公开个人主页默认展示继续后置。
 - `P3-10-B7 WebOS 功能迁移图收口`
   - `/notifications`、`/me`、`/messages` 三个纯 Web 私域复访入口已完成首批代码和 Gateway PC / 移动 smoke；后续只在新真实缺口、发布候选回归或 WebOS 保留入口阻断时回拉。
@@ -95,8 +97,8 @@
 
 ## 明日事项
 
-- 第一顺位：围绕 `P3-10-B8 Radish 电子宠物` 首批代码做真实数据库迁移后的接口 smoke 与 Gateway PC / 移动视图复核，重点覆盖 `/pet` 未登录回流、领取、刷新稳定、四类照顾动作、每日次数 / 冷却、`/me` 摘要入口和最近流水。
-- 第二顺位：只做 Phase B 体验补漏；经济消耗、商城物品、社区任务奖励、经验反向加成、Console 配置 UI、首页组件和公开个人主页默认展示继续后置。
+- 第一顺位：围绕 `P3-10-B8 Radish 电子宠物` 做 Phase B 体验补漏，优先处理首轮 Gateway 联调中暴露的真实体验问题；经济消耗、商城物品、社区任务奖励、经验反向加成、Console 配置 UI、首页组件和公开个人主页默认展示继续后置。
+- 第二顺位：补充 B8 发布候选前批次级验证记录，覆盖 `/pet` 未登录回流、领取、刷新稳定、四类照顾动作、每日次数 / 冷却、`/me` 摘要入口、最近流水和数据库迁移差异 SQL。
 - 第三顺位：保留 `P3-10-B7 WebOS 功能迁移图收口` 维护入口，只在发布候选回归、用户真实复访路径或新缺口暴露时回拉 `/notifications`、`/me`、`/messages`。
 - 第四顺位：保留 `P3-10-B6` 补验入口，工具条件满足时补移动 DPR 视图；发布候选前再做真实 idle 与 Hub 停连 / 匿名恢复批次级回归。
 - 第五顺位：保留 `P3-10-B2` 圈子回归入口，复核 `/circle` 登录回流、关注动态、关注 / 粉丝列表、`/u/usr_...` 跳转和论坛详情跳转。
@@ -122,7 +124,7 @@
 - 不把 Tauri 当作原生 UI 重写路线或 WebOS 默认分发路线。
 - 不做“移动版 WebOS”，新功能默认不进入 WebOS。
 - 不把 WebOS 所有功能全量迁移设为下一阶段前置门禁。
-- 不在 WebOS 迁移图收口前直接启动电子宠物代码实现。
+- 不再把 WebOS 全量迁移作为电子宠物后续迭代的前置门槛。
 - 不让 PC 客户端抢占纯 Web / Flutter 主线。
 - 不让 Flutter 抢占当前 Web 默认入口、信息流、ID 契约和评论互动治理主线。
 - 不把首页瀑布流、个人圈子、推荐算法和联邦社交一次性混成同一个开发任务。
