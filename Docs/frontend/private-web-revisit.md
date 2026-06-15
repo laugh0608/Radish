@@ -2,7 +2,7 @@
 
 > 状态：执行中
 >
-> 最后更新：2026-06-14（Asia/Shanghai）
+> 最后更新：2026-06-15（Asia/Shanghai）
 >
 > 本文说明纯 Web 登录态私域复访入口的当前设计边界。阶段进度、验证流水和日结记录不写入本文。
 
@@ -10,15 +10,16 @@
 
 纯 Web 私域复访入口用于让登录用户在普通浏览器中直达高价值私域场景，不需要先进入 WebOS `/desktop` 工作台。
 
-当前已落地三个入口：
+当前已落地四个入口：
 
 | 路由 | 主要任务 | 数据边界 | 不承担 |
 | --- | --- | --- | --- |
 | `/notifications` | 查看站内通知、标记已读、删除、从通知进入目标内容 | 通知列表、未读数、通知目标分流 | 完整通知偏好、通知聚合策略、系统通知栏推送 |
 | `/me` | 查看我的状态、公开主页入口、成长 / 资产只读摘要、最近复访 | 公开资料、经验摘要、经验明细、胡萝卜余额、近期流水、最近浏览 | 完整资料编辑、完整钱包、转账、支付密码、安全设置、完整浏览历史中心 |
 | `/messages` | 复访聊天频道、定位通知中的消息、从成员进入公开主页后返回消息 | 频道列表、消息历史、`channelId/messageId` 定位、Chat Hub | 完整聊天平台重构、私聊、消息搜索、Reaction、置顶、阅读回执、移动系统通知 |
+| `/pet` | 领取和照顾当前用户电子宠物、查看状态与最近流水 | 宠物主档、四类照顾动作、每日次数 / 冷却、最近状态流水 | 萝卜币消耗、商城物品、社区任务奖励、Console 数值配置、公开宠物名片默认展示 |
 
-这三类入口是登录态页面，不进入公开 sitemap，不输出 public head / canonical / JSON-LD，也不替代 WebOS `/desktop` 的完整工作台能力。
+这些入口是登录态页面，不进入公开 sitemap，不输出 public head / canonical / JSON-LD，也不替代 WebOS `/desktop` 的完整工作台能力。
 
 ## 路由与登录恢复
 
@@ -27,6 +28,7 @@
 | `/notifications` | 只允许无 query / hash 的 `/notifications` | 匿名访问时保存 `/notifications`，登录后回到通知列表 |
 | `/me` | 只允许无 query / hash 的 `/me` | 匿名访问时保存 `/me`，登录后回到我的状态 |
 | `/messages` | `/messages` 或 `/messages?channelId={id}&messageId={id}` | 匿名访问时保留合法频道 / 消息参数，登录后恢复定位 |
+| `/pet` | 只允许无 query / hash 的 `/pet` | 匿名访问时保存 `/pet`，登录后回到电子宠物页面 |
 
 `channelId` 和 `messageId` 必须保持字符串口径，并通过聊天参数解析器校验。外部来源不得把 Snowflake ID 转成 JavaScript `number` 后再拼 URL。
 
@@ -58,6 +60,7 @@
 | `/notifications` | `/forum/post/:id`、`/u/:id` | 返回通知中心 |
 | `/me` | `/u/:id`、最近复访中的公开详情 | 返回我的状态 |
 | `/messages` | `/u/:id` | 返回消息 |
+| `/pet` | 后续公开宠物名片或公开个人页 | 返回电子宠物 |
 
 普通点击使用来源转交；新开标签、复制链接和分享链接只保留公开 URL。
 
@@ -68,8 +71,9 @@ WebOS `/desktop` 继续保留聊天、通知中心、个人中心、萝卜坑、
 - 通知：列表、已读、删除和目标分流。
 - 我的：个人状态、公开主页、成长 / 资产只读摘要和最近复访。
 - 消息：频道列表、会话复访、通知消息定位和基础发送。
+- 宠物：领取、命名、状态展示、四类照顾动作、每日次数 / 冷却展示和最近流水。
 
-后续若要迁移完整聊天、完整钱包、完整个人中心或通知偏好，必须重新评审产品边界和验证范围。
+后续若要迁移完整聊天、完整钱包、完整个人中心、通知偏好、宠物经济系统或公开宠物名片，必须重新评审产品边界和验证范围。
 
 ## 实现入口
 
@@ -78,6 +82,9 @@ WebOS `/desktop` 继续保留聊天、通知中心、个人中心、萝卜坑、
 - `Frontend/radish.client/src/notifications/NotificationsApp.tsx`
 - `Frontend/radish.client/src/me/MeApp.tsx`
 - `Frontend/radish.client/src/messages/MessagesApp.tsx`
+- `Frontend/radish.client/src/pet/PetEntry.tsx`
+- `Frontend/radish.client/src/pet/PetApp.tsx`
+- `Frontend/radish.client/src/pet/petRouteState.ts`
 - `Frontend/radish.client/src/bootstrap/entryRoute.ts`
 - `Frontend/radish.client/src/services/authReturnPath.ts`
 - `Frontend/radish.client/src/utils/notificationNavigation.ts`
@@ -87,12 +94,14 @@ WebOS `/desktop` 继续保留聊天、通知中心、个人中心、萝卜坑、
 - 通知列表复用 `Frontend/radish.client/src/apps/notification/NotificationCenter.tsx`。
 - 消息入口复用 `Frontend/radish.client/src/apps/chat/ChatApp.tsx` 和 `ChatHub`。
 - 公开来源返回复用 `publicRouteNavigation` 的一次性来源转交。
+- 宠物接口统一通过 `Frontend/radish.client/src/api/pet.ts` 调用 `@radish/http`，展示派生集中在 `Frontend/radish.client/src/pet/petPresentation.ts`。
 
 ## 验证口径
 
 改动这些入口时，按风险分层覆盖：
 
 - 路由与登录恢复：`authReturnPath.test.ts`、`entryRoute.test.ts`。
+- 电子宠物入口与展示派生：`authReturnPath.test.ts`、`entryRoute.test.ts`、`petPresentation.test.ts`。
 - 通知分流：`notificationNavigation.test.ts`。
 - 来源返回：`publicRouteNavigation.test.ts`、`realUsagePathContracts.test.ts`。
 - 前端类型与构建：`npm run type-check --workspace=radish.client`、`npm run build --workspace=radish.client`。

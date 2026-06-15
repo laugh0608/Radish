@@ -165,6 +165,14 @@ RadishUser#1087
 
 迁移期允许保留当前注册页结构，但应尽快调整文案：`Username` 不再同时表示登录名和展示名。
 
+当前首批实现口径：
+
+- `Account/Register` 当前收集 `Username`、`Email`、密码和确认密码，其中 `Username` 已按私有 `LoginName` 处理并统一小写保存。
+- `Email` 已在注册阶段必填并统一小写保存；登录查找同时匹配 `LoginName` 与 `Email` 的原值和小写规范化值。
+- `User.UserName` 当前仍作为公开展示名历史列，注册时默认等于 `LoginName`；公开页面和搜索结果不得把这个默认值重新解释为登录凭证。
+- `UserService.AddAsync` 负责分配 `PublicId` 与 `PublicIndex`，并在公开资料、榜单、关系链和提及搜索结果中输出 `DisplayHandle`。
+- `User/SearchForMention` 当前只匹配公开字段：`DisplayName`、`PublicIndex`、完整 `DisplayName#PublicIndex` 与 `PublicId`；不匹配 `LoginName` 或 `Email`。
+
 ## 10. 租户与角色
 
 租户、角色不需要复制用户身份的复杂度。长期建议统一为：
@@ -191,7 +199,7 @@ RadishUser#1087
 
 - 增加 `PublicIndex`。（已完成首批）
 - `PublicIndex` 使用 `long / Int64`，数据库列使用 `BIGINT` 或等价类型。（已完成首批）
-- 补规范化字段或等价唯一索引：`LoginNameNormalized`、`EmailNormalized`。
+- 补规范化字段或等价唯一索引：`LoginNameNormalized`、`EmailNormalized`；首批已通过统一小写保存、查询规范化和注册唯一性检查承接运行时语义，后续如需要大小写保留展示值，再补独立规范化列。
 - 注册要求邮箱必填，并拆分登录名与展示名。（首批已要求邮箱必填，展示名仍沿用登录名默认值）
 - 登录支持登录名或邮箱。（已完成首批）
 - 开发种子补固定保留公开索引。（已完成首批）

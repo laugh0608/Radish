@@ -55,6 +55,7 @@ forum / docs / shop 三类公开详情还会在 Gateway 层做首包 head snapsh
 - 公开内容卡片必须输出真实公开 `href`。普通点击可用 `history.state` 或当前标签页一次性转移状态保留来源返回；右键打开新标签、复制链接、canonical、OpenGraph、JSON-LD、sitemap 和 Gateway 首包 head snapshot 只基于真实公开路径。
 - forum detail 登录参与参数只允许用于认证回流，例如 `/forum/post/:postId?intent=comment` 或 `/forum/post/:postId?commentId=:commentId&intent=quickReply`；这些参数不属于 canonical、分享链接、OpenGraph、JSON-LD 或 sitemap。
 - 公开个人页在 `UserPublicProfileVo.VoPublicId` 可用时使用 `/u/:publicId` 作为 canonical 和复制链接；旧 LongId 版 `/u/:userId` 继续兼容读取，加载成功后运行时应规范化到 `/u/usr_...`。
+- 公开个人页的可见名称、title、description、Open Graph 和 JSON-LD 优先使用 `UserPublicProfileVo.VoDisplayHandle`，缺失时再由 `VoDisplayName + VoPublicIndex` 派生；不得使用 `LoginName`、`Email`、内部 `VoUserId` 或旧 LongId 路径作为普通用户可见名称。
 - shop detail 当前仍以 `/shop/product/:productId` 作为 canonical 兼容路径，但运行时 title、description 与页面说明不应直接回显 `productId`；docs detail 同理优先展示 slug、标题或正文摘要，旧 long 兼容路径只承担打开能力，不作为普通用户可读文案。
 
 ##### 10.5.4 结构化数据
@@ -65,7 +66,7 @@ forum / docs / shop 三类公开详情还会在 Gateway 层做首包 head snapsh
 - forum detail：输出 `BlogPosting`，优先使用 `PostVo.VoPublicId` canonical。
 - docs detail：输出 `Article`，使用 `/docs/:slug` canonical。
 - shop detail：输出 `Product`，不把积分价格伪装成法币 offer。
-- 公开个人页：输出 `ProfilePage / Person`，canonical 优先使用 `User.PublicId`，不把长数字用户 ID 当作可见名称。
+- 公开个人页：输出 `ProfilePage / Person`，canonical 优先使用 `User.PublicId`，`name` 优先使用 `DisplayHandle`，不把长数字用户 ID、登录名或邮箱当作可见名称。
 - 路由切换、详情数据缺失或组件卸载时必须清理旧 JSON-LD，避免公开详情之间残留错误结构化数据。
 
 ##### 10.5.5 robots 与动态 sitemap

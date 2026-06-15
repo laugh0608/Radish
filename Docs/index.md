@@ -40,7 +40,7 @@ features:
 - [用户身份语义与公开索引](/architecture/user-identity-semantics) - 登录名、邮箱、展示名、PublicId 与公开索引的长期契约
 - [前端设计](/frontend/design) - 纯 Web、Flutter、WebOS 保留入口与应用集成方式
 - [前端多壳层策略](/frontend/shell-strategy) - 多端壳层职责分工
-- [纯 Web 私域复访入口](/frontend/private-web-revisit) - `/notifications`、`/me`、`/messages` 的登录恢复、来源返回与通知分流
+- [纯 Web 私域复访入口](/frontend/private-web-revisit) - `/notifications`、`/me`、`/messages`、`/pet` 的登录恢复、来源返回与私域边界
 - [Flutter 移动端 handoff 与回流说明](/guide/flutter-mobile-handoff) - 移动原生来源返回、登录回流与公开链接口径
 
 ## 当前协作
@@ -76,6 +76,7 @@ features:
 - [文档系统方案](/guide/document-system)
 - [公开内容 SEO 与分享基线](/frontend/public-seo-sharing)
 - [纯 Web 私域复访入口](/frontend/private-web-revisit)
+- [Radish 电子宠物](/features/radish-pet-roadmap)
 - [个人圈子](/features/circle)
 - [论坛投票 MVP 设计方案](/features/forum-poll-mvp)
 - [论坛问答 MVP 设计方案](/features/forum-qa-mvp)
