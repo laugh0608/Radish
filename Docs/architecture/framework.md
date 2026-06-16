@@ -137,6 +137,7 @@ PostgreSQL / SQLite
   - 依赖 `Radish.Core` 接口与 `Radish.Repository` 实现，通过 `IUnitOfWork` 控制 SQLSugar 上下文。
   - 对外仅返回 DTO/Vo，禁止把 `Radish.Model` 中的实体直接暴露给 Controller；实体需在此层通过 AutoMapper（一律在 `Radish.Extension/AutoMapperSetup` 注册）转换为视图模型。
   - 当单个服务承担同一聚合下的多段复杂逻辑时，可在服务目录下继续按聚合建子目录，并使用 `partial class` 按职责拆分实现文件；例如论坛帖子服务可落在 `Radish.Service/Posts/PostService*.cs`，分别承载查询、发布、编辑、互动逻辑。
+  - 业务运营参数统一通过 `ISystemSettingProvider` 读取代码默认值叠加 Console 覆盖值后的强类型设置；部署配置、密钥和启动前配置仍走 `appsettings` / 环境变量，不进入系统设置中心。
 - `Radish.Core`
   - 聚合根（Post、Comment、Category、UserProfile、PointLedger、ShopItem 等）、值对象、领域事件。
   - 定义仓储接口与领域服务，例如 `IPostRepository`, `IPointPolicyService`。

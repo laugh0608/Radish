@@ -7,6 +7,7 @@
 > 关联文档：
 >
 > - [配置管理](/guide/configuration)
+> - [运行时配置边界与系统设置](/guide/runtime-configuration-boundaries)
 > - [Console 系统说明](/guide/console-system)
 > - [Console 权限治理 V1](/guide/console-permission-governance)
 > - [用户身份语义与公开索引](/architecture/user-identity-semantics)
@@ -161,6 +162,17 @@ SystemConfig 覆盖值
 - 服务层消费强类型设置，不把字符串 key 散落到业务代码。
 
 当前首批消费点为帖子发布 / 编辑和评论发布 / 编辑：标题、正文和评论内容最小长度通过 `ISystemSettingProvider` 读取，读取顺序为代码默认值、JSON 覆盖值、类型转换与范围校验。
+
+### 7.1 开发接入清单
+
+新增系统设置时，开发者应按以下顺序接入：
+
+1. 在 `SystemConfigDefaults` 注册设置定义，包含 `Key`、`Category`、`Name`、`Description`、`ValueType`、`DefaultValue`、风险等级、生效方式和必要的数值范围。
+2. 判断是否属于运营参数。部署密钥、数据库连接、证书、OIDC 密钥、会话安全策略、高危资产设置和宠物经济数值不得进入 Console 编辑。
+3. 业务服务通过 `ISystemSettingProvider` 获取强类型值，不直接读取 JSON 记录，也不在业务代码里手写兜底默认值。
+4. Console 只能保存已注册设置的覆盖值；恢复默认时删除覆盖值并回到代码默认值。
+5. Low 设置可普通保存；Medium 设置必须填写修改原因并确认风险等级 / 设置键；High / Critical 当前不开放编辑。
+6. 设置变更必须写入系统设置专用审计历史。
 
 ## 8. Console 交互要求
 

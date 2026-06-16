@@ -2,7 +2,7 @@
 
 ## 概述
 
-Radish 项目只保留三种配置文件：共享 `appsettings.Shared.json`、宿主默认 `appsettings.json`、本地覆盖 `appsettings.Local.json`。敏感数据不进入 Git，部署差异统一通过环境变量覆盖。
+Radish 项目只保留三种配置文件：共享 `appsettings.Shared.json`、宿主默认 `appsettings.json`、本地覆盖 `appsettings.Local.json`。敏感数据不进入 Git，部署差异统一通过环境变量覆盖。运营可调参数与 Console 系统设置的职责边界见 [运行时配置边界与系统设置](/guide/runtime-configuration-boundaries)。
 
 ## 配置文件结构
 

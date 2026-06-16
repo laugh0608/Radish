@@ -68,6 +68,7 @@ features:
 - [记录与验收索引](/records/)
 - [Console 权限 / 菜单 / 按钮管理一期设计方案](/guide/console-authorization-phase1)
 - [配置管理](/guide/configuration)
+- [运行时配置边界与系统设置](/guide/runtime-configuration-boundaries)
 - [系统设置治理专题](/guide/system-settings-governance)
 - [服务网关](/guide/gateway)
 - [视觉主题规范](/frontend/visual-theme-spec)

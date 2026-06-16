@@ -383,7 +383,7 @@ git push origin v26.1.1.3003
 - 这是因为 Auth 项目需要访问用户、角色、权限、租户等业务数据来验证身份和权限
 - **OpenIddict 数据库**（`Radish.OpenIddict.db`）是独立的，仅由 Auth 项目使用，存储 OIDC 认证相关数据
 - **所有数据库文件统一存放在解决方案根目录的 `DataBases/` 文件夹**
-- `DataBases/SystemConfigs/system-configs.json` 用于 `SystemConfig` 模块的本地 JSON 持久化，属于运行时数据文件，不是源码或数据库种子文件
+- `DataBases/SystemConfigs/system-configs.json` 保存已注册系统设置的 Console 覆盖值，`system-config-change-logs.json` 保存变更审计历史；详细边界见 [系统设置治理专题](/guide/system-settings-governance) 与 [运行时配置边界与系统设置](/guide/runtime-configuration-boundaries)
 - 面向人工审阅的本地 JSON 持久化文件应优先保持 UTF-8 可读文本落盘；中文默认直写，仅保留 JSON 语法必需或序列化器仍要求保留的转义
 - `DataBases/` 目录下的运行时生成文件默认不纳入 Git；除仓库已显式放行的种子静态资源外，不得把本地状态文件作为源码资产提交
 

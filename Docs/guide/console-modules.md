@@ -189,21 +189,26 @@
 ### 当前边界
 
 - 查看：`console.system-config.view`
-- 创建：`console.system-config.create`
 - 编辑：`console.system-config.edit`
-- 删除：`console.system-config.delete`
+- 创建：`console.system-config.create`（兼容旧路由，后端拒绝 Console 新增未知设置）
+- 删除：`console.system-config.delete`（兼容旧路由，语义收敛为恢复默认）
 - 公开站点设置：`GET /api/v1/SystemConfig/GetPublicSiteSettings`（匿名读取，不纳入 Console 权限）
 
 ### 当前状态
 
 - ✅ 页面访问闭环完成
 - ✅ 编辑详情资源映射已对齐
-- ✅ 系统配置当前已改为本地 JSON 持久化，默认落盘到 `DataBases/SystemConfigs/system-configs.json`
+- ✅ 系统设置已收敛为代码级设置定义 + 默认值 + JSON 覆盖值，Console 默认只展示已注册设置
+- ✅ 覆盖值默认落盘到 `DataBases/SystemConfigs/system-configs.json`
 - ✅ `system-configs.json` 当前按“UTF-8 + 中文直写、仅保留必要 JSON 转义”的策略落盘，便于本地排障、人工审阅与差异比对
 - ✅ `DataBases/SystemConfigs/system-configs.json` 属于运行时本地状态文件，不作为源码资产提交，继续遵循 `DataBases/` 目录忽略规则
+- ✅ 系统设置变更历史落盘到 `DataBases/SystemConfigs/system-config-change-logs.json`，用于记录旧值、新值、默认值、原因、风险等级、生效方式、操作者、IP、User-Agent 和时间
+- ✅ 当前开放 `Site.Branding.FaviconUrl`、`Content.PostTitle.MinLength`、`Content.PostBody.MinLength`、`Comment.Body.MinLength`
+- ✅ Medium 设置必须填写修改原因并确认风险等级 / 设置键，High / Critical 设置不开放编辑
 - ✅ SystemConfig 页面已支持站点 favicon `.ico` 上传、预览与恢复默认
 - ✅ 默认站点图标已固定为 `/uploads/DefaultIco/bailuobo.ico`，默认种子文件位于 `DataBases/Uploads/DefaultIco/bailuobo.ico`
 - ✅ `radish.client / radish.console` 当前都通过公开站点设置接口读取 favicon，标签页图标不再写死在前端静态资源中
+- ✅ 帖子标题 / 正文最小长度和评论内容最小长度已通过 `ISystemSettingProvider` 接入业务发布 / 编辑路径
 - ✅ 已按表格 CRUD + 配置面板页面基座对齐
 
 ## 3.11 Coins

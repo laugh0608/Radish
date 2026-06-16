@@ -52,7 +52,7 @@
 | Moderation | `/moderation` | `console.moderation.view` | `console.moderation.review` | `ContentModeration/GetReviewQueue`、`Review`、`ApplyUserAction`、`GetActionLogs` | ✅ | 当前已纳管 `Post / Comment / PostQuickReply / ChatMessage / Product` 举报审核链路，并支持创建时快照、当前状态、回看与失效降级并列展示 |
 | Coins | `/coins` | `console.coins.view` | `console.coins.adjust` | `Coin/GetBalanceByUserId`、`Coin/AdminGetTransactions`、`AdminAdjustBalance` | ✅ | 管理端查询指定用户余额、交易流水与调账能力；流水支持按业务类型 / 业务 ID 定位订单扣款；调账后同页刷新 `ADMIN_ADJUST` 流水用于人工复核 |
 | Experience | `/experience` | `console.experience.view` | `console.experience.adjust/freeze/recalculate` | `Experience/GetUserExperience/.+`、`GetUserDailyStats/.+`、`GetUserTransactions/.+`、`GetUserGovernanceActions/.+`、`GetLevelConfigs`、`AdminAdjustExperience`、`AdminFreezeExperience`、`AdminUnfreezeExperience`、`AdminRecordGovernanceReview`、`RecalculateLevelConfigs` | ✅ | `GetLevelConfigs` 为公开接口；每日统计、经验流水与治理留痕共同支撑 Console 经验治理回看与人工复核 |
-| SystemConfig | `/system-config` | `console.system-config.view` | `console.system-config.create/edit/delete` | `SystemConfig/GetSystemConfigs`、`GetConfigCategories`、`GetConfigById`、`CreateConfig`、`UpdateConfig`、`DeleteConfig` | ✅ | 编辑详情链路已覆盖 |
+| SystemConfig | `/system-config` | `console.system-config.view` | `console.system-config.create/edit/delete` | `SystemConfig/GetSystemConfigs`、`GetConfigCategories`、`GetConfigById`、`UpdateConfig`、`RestoreConfigDefault`、`GetConfigChangeLogs`、`CreateConfig`、`DeleteConfig` | ✅ | `CreateConfig` 兼容旧路由但拒绝新增未知设置；`DeleteConfig` 兼容旧路由并收敛为恢复默认；Medium 设置要求原因与确认参数 |
 | Hangfire | `/hangfire` | `console.hangfire.view` | 无 | `/hangfire(/.*)?` | ✅ | 特殊入口，走 `HangfireAuthorizationFilter` |
 
 ## 3. `authOnly` 路由矩阵
