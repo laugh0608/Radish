@@ -153,6 +153,8 @@ RadishUser#1087
 
 公开用户资料 DTO 后续应逐步移除 `VoUserId`，以 `VoPublicId`、`VoDisplayName`、`VoPublicIndex` 和派生 `VoDisplayHandle` 为主。
 
+当前治理批次先完成公开资料后续内容查询的解耦：公开资料页加载统计、帖子和评论时应使用 `PublicId` / 公开 identifier，不再读取资料 DTO 中的 `VoUserId` 作为后续请求参数。`VoUserId` 暂时保留在 DTO 中仅用于兼容窗口和内部排障，等公开页面、公开 API 和索引入口全部不再依赖内部 LongId 后，再单独安排字段退场。
+
 ## 9. 注册与登录流程
 
 正式目标流程：
@@ -193,7 +195,7 @@ RadishUser#1087
 - 固定本页字段语义。
 - 明确 `LoginName`、`Email` 不再公开展示。
 - 明确 `UserName` 后续收敛为 `DisplayName`。
-- 将公开资料逐步从 `VoUserId` 切向 `VoPublicId` 与公开索引。
+- 将公开资料逐步从 `VoUserId` 切向 `VoPublicId` 与公开索引；公开资料的统计、帖子和评论内容查询已先切换到公开 identifier。
 
 ### Phase B：模型与注册链路调整
 

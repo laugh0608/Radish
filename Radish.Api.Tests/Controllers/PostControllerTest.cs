@@ -290,6 +290,86 @@ public class PostControllerTest
     }
 
     [Fact]
+    public async Task GetPublicUserPosts_Should_Resolve_PublicIdentifier_Before_Querying_Posts()
+    {
+        var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
+        var moderationServiceMock = new Mock<IContentModerationService>(MockBehavior.Strict);
+        var attachmentServiceMock = new Mock<IBaseService<Attachment, AttachmentVo>>(MockBehavior.Strict);
+        var commentServiceMock = new Mock<IBaseService<Comment, CommentVo>>(MockBehavior.Strict);
+        var userServiceMock = new Mock<IUserService>(MockBehavior.Strict);
+        Expression<Func<Post, bool>>? capturedPredicate = null;
+
+        userServiceMock
+            .Setup(service => service.GetPublicUserByIdentifierAsync("usr_018f6b6f7c7d70008f8f8f8f8f8f8f8f"))
+            .ReturnsAsync(new UserVo
+            {
+                Uuid = 20003,
+                VoPublicId = "usr_018f6b6f7c7d70008f8f8f8f8f8f8f8f",
+                VoDisplayName = "Alice",
+                VoUserName = "Alice"
+            });
+        postServiceMock
+            .Setup(service => service.QueryPageAsync(
+                It.IsAny<Expression<Func<Post, bool>>>(),
+                2,
+                10,
+                It.IsAny<Expression<Func<Post, object>>>(),
+                OrderByType.Desc))
+            .Callback<Expression<Func<Post, bool>>, int, int, Expression<Func<Post, object>>, OrderByType>(
+                (predicate, _, _, _, _) => capturedPredicate = predicate)
+            .ReturnsAsync((new List<PostVo>
+            {
+                new()
+                {
+                    VoId = 9527,
+                    VoTitle = "公开作者帖子",
+                    VoAuthorId = 20003
+                }
+            }, 1));
+
+        var controller = CreateController(
+            postServiceMock.Object,
+            moderationServiceMock.Object,
+            attachmentServiceMock.Object,
+            commentServiceMock.Object,
+            userService: userServiceMock.Object);
+
+        var result = await controller.GetPublicUserPosts(
+            "usr_018f6b6f7c7d70008f8f8f8f8f8f8f8f",
+            pageIndex: 2,
+            pageSize: 10);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(200, result.StatusCode);
+
+        var pageModel = Assert.IsType<PageModel<PostVo>>(result.ResponseData);
+        Assert.Single(pageModel.Data);
+        Assert.NotNull(capturedPredicate);
+        var predicate = capturedPredicate!.Compile();
+        Assert.True(predicate(new Post
+        {
+            AuthorId = 20003,
+            IsPublished = true,
+            IsDeleted = false
+        }));
+        Assert.False(predicate(new Post
+        {
+            AuthorId = 20004,
+            IsPublished = true,
+            IsDeleted = false
+        }));
+        Assert.False(predicate(new Post
+        {
+            AuthorId = 20003,
+            IsPublished = false,
+            IsDeleted = false
+        }));
+        userServiceMock.Verify(
+            service => service.GetPublicUserByIdentifierAsync("usr_018f6b6f7c7d70008f8f8f8f8f8f8f8f"),
+            Times.Once);
+    }
+
+    [Fact]
     public async Task GetList_Should_Pass_TagSlug_To_ForumQuery()
     {
         var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
@@ -1003,7 +1083,8 @@ public class PostControllerTest
         IBaseService<Attachment, AttachmentVo> attachmentService,
         IBaseService<Comment, CommentVo> commentService,
         CurrentUser? currentUser = null,
-        IUserBrowseHistoryService? browseHistoryService = null)
+        IUserBrowseHistoryService? browseHistoryService = null,
+        IUserService? userService = null)
     {
         Mock.Get(postService)
             .Setup(service => service.FillPostAvatarAndInteractorsAsync(It.IsAny<List<PostVo>>()))
@@ -1026,6 +1107,7 @@ public class PostControllerTest
 
         return new PostController(
             postService,
+            userService ?? new Mock<IUserService>(MockBehavior.Strict).Object,
             moderationService,
             attachmentServiceAdapter,
             commentService,

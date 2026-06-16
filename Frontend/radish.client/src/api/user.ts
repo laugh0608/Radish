@@ -160,9 +160,9 @@ export async function getPublicProfile(identifier: PublicUserIdentifier): Promis
   return response.data;
 }
 
-export async function getPublicUserStats(userId: LongId): Promise<PublicUserStats> {
+export async function getPublicUserStats(identifier: PublicUserIdentifier): Promise<PublicUserStats> {
   const response = await apiGet<PublicUserStats>(
-    `/api/v1/User/GetUserStats?userId=${encodeURIComponent(String(userId))}`
+    `/api/v1/User/GetPublicUserStats?identifier=${encodeURIComponent(String(identifier))}`
   );
 
   if (!response.ok || !response.data) {
@@ -173,12 +173,12 @@ export async function getPublicUserStats(userId: LongId): Promise<PublicUserStat
 }
 
 export async function getPublicUserPosts(
-  userId: LongId,
+  identifier: PublicUserIdentifier,
   pageIndex: number = 1,
   pageSize: number = 10
 ): Promise<PageModel<PublicUserPost>> {
   const response = await apiGet<PageModel<PublicUserPost>>(
-    `/api/v1/Post/GetUserPosts?userId=${encodeURIComponent(String(userId))}&pageIndex=${pageIndex}&pageSize=${pageSize}`
+    `/api/v1/Post/GetPublicUserPosts?identifier=${encodeURIComponent(String(identifier))}&pageIndex=${pageIndex}&pageSize=${pageSize}`
   );
 
   if (!response.ok || !response.data) {
@@ -189,12 +189,12 @@ export async function getPublicUserPosts(
 }
 
 export async function getPublicUserComments(
-  userId: LongId,
+  identifier: PublicUserIdentifier,
   pageIndex: number = 1,
   pageSize: number = 10
 ): Promise<PageModel<PublicUserComment>> {
   const response = await apiGet<PageModel<PublicUserComment>>(
-    `/api/v1/Comment/GetUserComments?userId=${encodeURIComponent(String(userId))}&pageIndex=${pageIndex}&pageSize=${pageSize}`
+    `/api/v1/Comment/GetPublicUserComments?identifier=${encodeURIComponent(String(identifier))}&pageIndex=${pageIndex}&pageSize=${pageSize}`
   );
 
   if (!response.ok || !response.data) {

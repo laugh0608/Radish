@@ -5,6 +5,7 @@
 @BrowseHistory_ProductId = 在这里填入一个存在的 productId
 @BrowseHistory_WikiId = 在这里填入一个存在的 wiki documentId
 @BrowseHistory_WikiSlug = 可选：在这里填入一个存在的 wiki slug
+@Public_UserIdentifier = usr_在这里填入用户PublicId，兼容期也可填旧LongId字符串
 
 ### 获取个人资料
 GET {{Gateway_HostAddress}}/api/v1/User/GetMyProfile
@@ -76,3 +77,19 @@ Authorization: Bearer {{Access_Token}}
 GET {{Gateway_HostAddress}}/api/v1/User/GetMyBrowseHistory?pageIndex=2&pageSize=10
 Accept: application/json
 Authorization: Bearer {{Access_Token}}
+
+### 获取公开资料
+GET {{Gateway_HostAddress}}/api/v1/User/GetPublicProfile?identifier={{Public_UserIdentifier}}
+Accept: application/json
+
+### 通过公开标识获取公开资料统计
+GET {{Gateway_HostAddress}}/api/v1/User/GetPublicUserStats?identifier={{Public_UserIdentifier}}
+Accept: application/json
+
+### 通过公开标识获取公开帖子列表
+GET {{Gateway_HostAddress}}/api/v1/Post/GetPublicUserPosts?identifier={{Public_UserIdentifier}}&pageIndex=1&pageSize=10
+Accept: application/json
+
+### 通过公开标识获取公开评论列表
+GET {{Gateway_HostAddress}}/api/v1/Comment/GetPublicUserComments?identifier={{Public_UserIdentifier}}&pageIndex=1&pageSize=10
+Accept: application/json

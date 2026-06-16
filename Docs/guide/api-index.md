@@ -127,6 +127,7 @@
 
 - 当前用户资料
 - 公开资料：`User/GetPublicProfile` 的 `identifier` 支持 `usr_...` PublicId 与旧 LongId 字符串双读，返回 `UserPublicProfileVo.VoPublicId / VoPublicIndex / VoDisplayName / VoDisplayHandle / VoUserId`
+- 公开资料内容：`User/GetPublicUserStats`、`Post/GetPublicUserPosts`、`Comment/GetPublicUserComments` 均使用 `identifier` 查询公开用户内容，公开页面不得再通过 `UserPublicProfileVo.VoUserId` 串接后续请求
 - 当前用户资料：`User/GetMyProfile` 返回 `VoPublicId / VoPublicIndex / VoDisplayHandle`，同时保留本人可见的 `VoUserName / VoUserEmail`
 - 提及搜索：`User/SearchForMention` 只面向登录态用户，搜索范围限定为 `DisplayName`、`PublicIndex`、完整 `DisplayName#PublicIndex` 或 `PublicId`；不得把 `LoginName`、`Email` 或内部 `Id` 做普通用户公开搜索字段
 - 我的浏览历史 / 最近访问

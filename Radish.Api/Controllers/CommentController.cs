@@ -27,6 +27,7 @@ public class CommentController : ControllerBase
 {
     private readonly ICommentService _commentService;
     private readonly IPostService _postService;
+    private readonly IUserService _userService;
     private readonly IContentModerationService _contentModerationService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
     private readonly CommentRealtimePushService _commentRealtimePushService;
@@ -34,12 +35,14 @@ public class CommentController : ControllerBase
     public CommentController(
         ICommentService commentService,
         IPostService postService,
+        IUserService userService,
         IContentModerationService contentModerationService,
         ICurrentUserAccessor currentUserAccessor,
         CommentRealtimePushService commentRealtimePushService)
     {
         _commentService = commentService;
         _postService = postService;
+        _userService = userService;
         _contentModerationService = contentModerationService;
         _currentUserAccessor = currentUserAccessor;
         _commentRealtimePushService = commentRealtimePushService;
@@ -349,6 +352,47 @@ public class CommentController : ControllerBase
             MessageInfo = "获取成功",
             ResponseData = pageModel
         };
+    }
+
+    /// <summary>
+    /// 通过公开标识获取指定用户的评论列表
+    /// </summary>
+    /// <param name="identifier">用户 PublicId 或兼容期 LongId 字符串</param>
+    /// <param name="pageIndex">页码（从 1 开始）</param>
+    /// <param name="pageSize">每页数量（默认 20）</param>
+    /// <returns>分页评论列表</returns>
+    [HttpGet]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    public async Task<MessageModel> GetPublicUserComments(
+        string? identifier,
+        int pageIndex = 1,
+        int pageSize = 20)
+    {
+        if (string.IsNullOrWhiteSpace(identifier))
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "用户标识无效"
+            };
+        }
+
+        var user = await _userService.GetPublicUserByIdentifierAsync(identifier);
+        if (user == null)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = "用户不存在"
+            };
+        }
+
+        return await GetUserComments(user.Uuid, pageIndex, pageSize);
     }
 
     private async Task FillCommentPostPublicIdsAsync(List<CommentVo> comments)

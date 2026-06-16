@@ -508,6 +508,42 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
+    /// 通过公开标识获取用户统计信息
+    /// </summary>
+    /// <param name="identifier">用户 PublicId 或兼容期 LongId 字符串</param>
+    /// <returns>用户统计信息（发帖数、评论数、获赞数）</returns>
+    [HttpGet]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    public async Task<MessageModel> GetPublicUserStats(string? identifier)
+    {
+        if (string.IsNullOrWhiteSpace(identifier))
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "用户标识无效"
+            };
+        }
+
+        var user = await _userService.GetPublicUserByIdentifierAsync(identifier);
+        if (user == null)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = "用户不存在"
+            };
+        }
+
+        return await GetUserStats(user.Uuid);
+    }
+
+    /// <summary>
     /// 搜索用户（用于@提及功能）
     /// </summary>
     /// <param name="keyword">搜索关键词（匹配用户名）</param>

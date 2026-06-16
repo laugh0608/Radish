@@ -186,8 +186,7 @@ function resolveProfileRouteIdentifier(profile: PublicUserProfile | null, fallba
     return publicId;
   }
 
-  const internalUserId = profile?.voUserId ? String(profile.voUserId) : '';
-  return internalUserId || fallbackIdentifier;
+  return fallbackIdentifier;
 }
 
 export const PublicProfileApp = ({
@@ -229,8 +228,10 @@ export const PublicProfileApp = ({
       setStats(null);
 
       try {
-        const profileResult = await getPublicProfile(route.userId);
-        const statsResult = await getPublicUserStats(profileResult.voUserId);
+        const [profileResult, statsResult] = await Promise.all([
+          getPublicProfile(route.userId),
+          getPublicUserStats(route.userId),
+        ]);
 
         if (requestId !== profileRequestIdRef.current) {
           return;
@@ -279,7 +280,7 @@ export const PublicProfileApp = ({
     const requestId = ++contentRequestIdRef.current;
 
     const loadContent = async () => {
-      if (!profile?.voUserId) {
+      if (!profile) {
         setPosts([]);
         setComments([]);
         setTotalPages(1);
@@ -287,13 +288,12 @@ export const PublicProfileApp = ({
         return;
       }
 
-      const internalUserId = profile.voUserId;
       setLoadingContent(true);
       setContentError(null);
 
       try {
         if (route.tab === 'posts') {
-          const pageModel = await getPublicUserPosts(internalUserId, route.page, 10);
+          const pageModel = await getPublicUserPosts(profileRouteIdentifier, route.page, 10);
           if (requestId !== contentRequestIdRef.current) {
             return;
           }
@@ -315,7 +315,7 @@ export const PublicProfileApp = ({
           return;
         }
 
-        const pageModel = await getPublicUserComments(internalUserId, route.page, 10);
+        const pageModel = await getPublicUserComments(profileRouteIdentifier, route.page, 10);
         if (requestId !== contentRequestIdRef.current) {
           return;
         }
@@ -352,19 +352,22 @@ export const PublicProfileApp = ({
     };
 
     void loadContent();
-  }, [contentReloadToken, onNavigate, profile?.voUserId, profileRouteIdentifier, route.page, route.tab]);
+  }, [contentReloadToken, onNavigate, profile, profileRouteIdentifier, route.page, route.tab]);
 
   useEffect(() => {
     if (loadingProfile) {
       return;
     }
 
-    const nextTitle = profile?.voUserName?.trim()
-      ? `${profile.voUserName} · ${t('profile.public.title')}`
+    const titleName = profile?.voDisplayHandle?.trim()
+      || profile?.voDisplayName?.trim()
+      || profile?.voUserName?.trim();
+    const nextTitle = titleName
+      ? `${titleName} · ${t('profile.public.title')}`
       : t('profile.public.title');
 
     document.title = nextTitle;
-  }, [loadingProfile, profile?.voUserName, t]);
+  }, [loadingProfile, profile?.voDisplayHandle, profile?.voDisplayName, profile?.voUserName, t]);
 
   const avatarUrl = useMemo(
     () => resolveMediaUrl(profile?.voAvatarThumbnailUrl || profile?.voAvatarUrl),
