@@ -6,6 +6,7 @@ import {
   Space,
   Tag,
   message,
+  AntModal as Modal,
   AntSelect as Select,
   AntInput as Input,
   type TableColumnsType,
@@ -15,6 +16,7 @@ import type { UploadProps } from 'antd';
 import {
   PlusOutlined,
   EditOutlined,
+  ClockCircleOutlined,
   ReloadOutlined,
   SearchOutlined,
   SettingOutlined,
@@ -22,8 +24,10 @@ import {
 import {
   getSystemConfigs,
   getConfigCategories,
+  getConfigChangeLogs,
   updateConfig,
   restoreConfigDefault,
+  type SystemConfigChangeLogVo,
   type SystemConfigVo,
 } from '@/api/systemConfigApi';
 import { uploadAttachmentImage } from '@/api/attachmentApi';
@@ -48,6 +52,10 @@ export const SystemConfigList = () => {
   const [faviconSaving, setFaviconSaving] = useState(false);
   const [formVisible, setFormVisible] = useState(false);
   const [editingConfigId, setEditingConfigId] = useState<number>();
+  const [historyVisible, setHistoryVisible] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyConfig, setHistoryConfig] = useState<SystemConfigVo>();
+  const [historyLogs, setHistoryLogs] = useState<SystemConfigChangeLogVo[]>([]);
   const canViewSystemConfig = usePermission(CONSOLE_PERMISSIONS.systemConfigView);
   const canEditSystemConfig = usePermission(CONSOLE_PERMISSIONS.systemConfigEdit);
 
@@ -129,7 +137,11 @@ export const SystemConfigList = () => {
 
     try {
       setFaviconSaving(true);
-      await restoreConfigDefault(faviconConfig.voId);
+      await restoreConfigDefault(faviconConfig.voId, {
+        reason: '恢复站点 favicon 默认值',
+        confirmRiskLevel: faviconConfig.voRiskLevel,
+        confirmKey: faviconConfig.voKey,
+      });
       message.success('已恢复为默认站点图标');
       await loadConfigs();
     } catch (error) {
@@ -185,6 +197,9 @@ export const SystemConfigList = () => {
       await updateConfig(faviconConfig.voId, {
         value: uploaded.url,
         isEnabled: true,
+        reason: `上传站点 favicon：${file.name}`,
+        confirmRiskLevel: faviconConfig.voRiskLevel,
+        confirmKey: faviconConfig.voKey,
       });
       await loadConfigs();
       options.onSuccess?.(uploaded);
@@ -204,6 +219,22 @@ export const SystemConfigList = () => {
   const handleEdit = (record: SystemConfigVo) => {
     setEditingConfigId(record.voId);
     setFormVisible(true);
+  };
+
+  const handleViewHistory = async (record: SystemConfigVo) => {
+    setHistoryConfig(record);
+    setHistoryVisible(true);
+    setHistoryLoading(true);
+    try {
+      const logs = await getConfigChangeLogs(record.voId, 20);
+      setHistoryLogs(logs);
+    } catch (error) {
+      log.error('SystemConfigList', '加载系统设置变更历史失败:', error);
+      message.error(error instanceof Error ? error.message : '加载系统设置变更历史失败');
+      setHistoryLogs([]);
+    } finally {
+      setHistoryLoading(false);
+    }
   };
 
   // 表单提交成功
@@ -246,6 +277,78 @@ export const SystemConfigList = () => {
     };
     return modeMap[effectiveMode] || effectiveMode;
   };
+
+  const formatChangeAction = (actionType: string) => {
+    const actionMap: Record<string, string> = {
+      UpdateOverride: '更新覆盖值',
+      RestoreDefault: '恢复默认',
+    };
+    return actionMap[actionType] || actionType;
+  };
+
+  const formatOperator = (record: SystemConfigChangeLogVo) => {
+    if (record.voOperatorUserName && record.voOperatorUserId) {
+      return `${record.voOperatorUserName} #${record.voOperatorUserId}`;
+    }
+    return record.voOperatorUserName || (record.voOperatorUserId ? `#${record.voOperatorUserId}` : '-');
+  };
+
+  const historyColumns: TableColumnsType<SystemConfigChangeLogVo> = [
+    {
+      title: '时间',
+      dataIndex: 'voCreateTime',
+      key: 'voCreateTime',
+      width: 170,
+      render: (time: string) => time ? new Date(time).toLocaleString('zh-CN') : '-',
+    },
+    {
+      title: '动作',
+      dataIndex: 'voActionType',
+      key: 'voActionType',
+      width: 110,
+      render: (actionType: string) => (
+        <Tag color={actionType === 'RestoreDefault' ? 'default' : 'processing'}>
+          {formatChangeAction(actionType)}
+        </Tag>
+      ),
+    },
+    {
+      title: '旧值',
+      dataIndex: 'voOldValue',
+      key: 'voOldValue',
+      width: 180,
+      ellipsis: true,
+      render: (value: string) => value || '-',
+    },
+    {
+      title: '新值',
+      dataIndex: 'voNewValue',
+      key: 'voNewValue',
+      width: 180,
+      ellipsis: true,
+      render: (value: string) => value || '-',
+    },
+    {
+      title: '原因',
+      dataIndex: 'voReason',
+      key: 'voReason',
+      width: 220,
+      ellipsis: true,
+    },
+    {
+      title: '操作者',
+      key: 'operator',
+      width: 150,
+      render: (_, record) => formatOperator(record),
+    },
+    {
+      title: '来源',
+      dataIndex: 'voRequestIp',
+      key: 'voRequestIp',
+      width: 140,
+      render: (ip: string) => ip || '-',
+    },
+  ];
 
   // 表格列定义
   const columns: TableColumnsType<SystemConfigVo> = [
@@ -366,7 +469,7 @@ export const SystemConfigList = () => {
     {
       title: '操作',
       key: 'action',
-      width: 160,
+      width: 230,
       fixed: 'right',
       render: (_, record) => (
         <Space size="small">
@@ -378,6 +481,16 @@ export const SystemConfigList = () => {
             disabled={!canEditSystemConfig || !record.voIsEditable}
           >
             编辑
+          </Button>
+          <Button
+            variant="ghost"
+            size="small"
+            icon={<ClockCircleOutlined />}
+            onClick={() => {
+              void handleViewHistory(record);
+            }}
+          >
+            历史
           </Button>
         </Space>
       ),
@@ -562,6 +675,34 @@ export const SystemConfigList = () => {
         onCancel={() => setFormVisible(false)}
         onSuccess={handleFormSuccess}
       />
+
+      <Modal
+        title="系统设置变更历史"
+        open={historyVisible}
+        onCancel={() => {
+          setHistoryVisible(false);
+          setHistoryConfig(undefined);
+          setHistoryLogs([]);
+        }}
+        footer={null}
+        width={960}
+        destroyOnHidden
+      >
+        <div className="system-config-history-summary">
+          <span>{historyConfig?.voName || '系统设置'}</span>
+          {historyConfig ? <code>{historyConfig.voKey}</code> : null}
+          {historyConfig ? <Tag color={getRiskTagColor(historyConfig.voRiskLevel)}>{historyConfig.voRiskLevel}</Tag> : null}
+        </div>
+        <Table
+          columns={historyColumns}
+          dataSource={historyLogs}
+          rowKey="voId"
+          loading={historyLoading}
+          pagination={false}
+          scroll={{ x: 1150 }}
+          locale={{ emptyText: '暂无变更历史' }}
+        />
+      </Modal>
     </div>
   );
 };

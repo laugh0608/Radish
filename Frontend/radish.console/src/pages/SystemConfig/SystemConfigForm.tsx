@@ -40,6 +40,7 @@ export const SystemConfigForm = ({
       setConfig(nextConfig);
       form.setFieldsValue({
         value: nextConfig.voEffectiveValue,
+        reason: '',
       });
     } catch (error) {
       log.error('SystemConfigForm', '加载系统设置详情失败:', error);
@@ -67,6 +68,9 @@ export const SystemConfigForm = ({
       await updateConfig(configId, {
         value: processedValue,
         isEnabled: true,
+        reason: String(values.reason).trim(),
+        confirmRiskLevel: config.voRiskLevel,
+        confirmKey: config.voKey,
       });
       message.success('系统设置已更新');
       onSuccess();
@@ -191,6 +195,21 @@ export const SystemConfigForm = ({
           ]}
         >
           {renderValueInput()}
+        </Form.Item>
+        <Form.Item
+          name="reason"
+          label="修改原因"
+          rules={[
+            { required: true, message: '请填写修改原因' },
+            { max: 500, message: '修改原因不能超过 500 个字符' },
+          ]}
+        >
+          <Input.TextArea
+            placeholder="说明本次修改的背景、影响范围或回滚依据"
+            rows={3}
+            showCount
+            maxLength={500}
+          />
         </Form.Item>
       </Form>
     </Modal>

@@ -14,10 +14,14 @@ namespace Radish.Service;
 public class SystemConfigService : ISystemConfigService
 {
     private readonly ISystemConfigRepository _systemConfigRepository;
+    private readonly ISystemConfigChangeLogRepository _systemConfigChangeLogRepository;
 
-    public SystemConfigService(ISystemConfigRepository systemConfigRepository)
+    public SystemConfigService(
+        ISystemConfigRepository systemConfigRepository,
+        ISystemConfigChangeLogRepository systemConfigChangeLogRepository)
     {
         _systemConfigRepository = systemConfigRepository;
+        _systemConfigChangeLogRepository = systemConfigChangeLogRepository;
     }
 
     public async Task<List<SystemConfigVo>> GetSystemConfigsAsync()
@@ -59,7 +63,7 @@ public class SystemConfigService : ISystemConfigService
         throw new InvalidOperationException("系统设置由代码注册，不支持通过 Console 新增未知配置");
     }
 
-    public async Task<SystemConfigVo?> UpdateConfigAsync(long id, UpdateSystemConfigDto request)
+    public async Task<SystemConfigVo?> UpdateConfigAsync(long id, UpdateSystemConfigDto request, SystemConfigChangeContext? context = null)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -70,10 +74,23 @@ public class SystemConfigService : ISystemConfigService
         }
 
         EnsureEditable(definition);
+        EnsureChangeConfirmation(definition, request.Reason, request.ConfirmRiskLevel, request.ConfirmKey);
+
+        var existedRecord = await _systemConfigRepository.GetByKeyAsync(definition.Key);
+        var oldEffectiveValue = GetEffectiveValue(definition, existedRecord);
 
         if (!request.IsEnabled)
         {
             await _systemConfigRepository.DeleteByKeyAsync(definition.Key);
+            await CreateChangeLogIfChangedAsync(
+                definition,
+                SystemConfigChangeAction.RestoreDefault,
+                oldEffectiveValue,
+                definition.DefaultValue,
+                request.Reason,
+                request.ConfirmRiskLevel,
+                request.ConfirmKey,
+                context);
             return MapToVo(definition, null);
         }
 
@@ -81,10 +98,18 @@ public class SystemConfigService : ISystemConfigService
         if (string.Equals(normalizedValue, definition.DefaultValue, StringComparison.Ordinal))
         {
             await _systemConfigRepository.DeleteByKeyAsync(definition.Key);
+            await CreateChangeLogIfChangedAsync(
+                definition,
+                SystemConfigChangeAction.RestoreDefault,
+                oldEffectiveValue,
+                definition.DefaultValue,
+                request.Reason,
+                request.ConfirmRiskLevel,
+                request.ConfirmKey,
+                context);
             return MapToVo(definition, null);
         }
 
-        var existedRecord = await _systemConfigRepository.GetByKeyAsync(definition.Key);
         var now = DateTime.Now;
         SystemConfigRecord updatedRecord;
 
@@ -117,10 +142,20 @@ public class SystemConfigService : ISystemConfigService
                 ?? throw new InvalidOperationException("系统设置覆盖值更新失败");
         }
 
+        await CreateChangeLogIfChangedAsync(
+            definition,
+            SystemConfigChangeAction.UpdateOverride,
+            oldEffectiveValue,
+            normalizedValue,
+            request.Reason,
+            request.ConfirmRiskLevel,
+            request.ConfirmKey,
+            context);
+
         return MapToVo(definition, updatedRecord);
     }
 
-    public async Task<SystemConfigVo?> RestoreConfigDefaultAsync(long id)
+    public async Task<SystemConfigVo?> RestoreConfigDefaultAsync(long id, RestoreSystemConfigDefaultDto? request = null, SystemConfigChangeContext? context = null)
     {
         var definition = await GetDefinitionByRequestIdAsync(id);
         if (definition == null)
@@ -129,14 +164,41 @@ public class SystemConfigService : ISystemConfigService
         }
 
         EnsureEditable(definition);
+        EnsureChangeConfirmation(definition, request?.Reason, request?.ConfirmRiskLevel, request?.ConfirmKey);
+        var existedRecord = await _systemConfigRepository.GetByKeyAsync(definition.Key);
+        var oldEffectiveValue = GetEffectiveValue(definition, existedRecord);
         await _systemConfigRepository.DeleteByKeyAsync(definition.Key);
+        await CreateChangeLogIfChangedAsync(
+            definition,
+            SystemConfigChangeAction.RestoreDefault,
+            oldEffectiveValue,
+            definition.DefaultValue,
+            request?.Reason,
+            request?.ConfirmRiskLevel,
+            request?.ConfirmKey,
+            context);
         return MapToVo(definition, null);
     }
 
-    public async Task<bool> DeleteConfigAsync(long id)
+    public async Task<bool> DeleteConfigAsync(long id, SystemConfigChangeContext? context = null)
     {
-        var restored = await RestoreConfigDefaultAsync(id);
+        var restored = await RestoreConfigDefaultAsync(
+            id,
+            new RestoreSystemConfigDefaultDto { Reason = "通过兼容删除接口恢复默认" },
+            context);
         return restored != null;
+    }
+
+    public async Task<List<SystemConfigChangeLogVo>?> GetConfigChangeLogsAsync(long id, int take = 20)
+    {
+        var definition = await GetDefinitionByRequestIdAsync(id);
+        if (definition == null)
+        {
+            return null;
+        }
+
+        var records = await _systemConfigChangeLogRepository.GetByKeyAsync(definition.Key, take);
+        return records.Select(MapChangeLogToVo).ToList();
     }
 
     public async Task<PublicSiteSettingsVo> GetPublicSiteSettingsAsync()
@@ -186,6 +248,37 @@ public class SystemConfigService : ISystemConfigService
         if (!definition.RiskLevel.Equals(SystemConfigRiskLevel.Low, StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException($"当前仅允许修改低风险系统设置：{definition.Key}");
+        }
+    }
+
+    private static void EnsureChangeConfirmation(
+        SystemConfigDefinition definition,
+        string? reason,
+        string? confirmRiskLevel,
+        string? confirmKey)
+    {
+        if (definition.RiskLevel.Equals(SystemConfigRiskLevel.Low, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        if (!string.Equals(confirmRiskLevel?.Trim(), definition.RiskLevel, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException($"系统设置 {definition.Key} 需要确认风险等级 {definition.RiskLevel}");
+        }
+
+        if (definition.RiskLevel.Equals(SystemConfigRiskLevel.High, StringComparison.OrdinalIgnoreCase) ||
+            definition.RiskLevel.Equals(SystemConfigRiskLevel.Critical, StringComparison.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrWhiteSpace(reason))
+            {
+                throw new InvalidOperationException($"系统设置 {definition.Key} 需要填写修改原因");
+            }
+
+            if (!string.Equals(confirmKey?.Trim(), definition.Key, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"系统设置 {definition.Key} 需要确认设置键");
+            }
         }
     }
 
@@ -247,10 +340,52 @@ public class SystemConfigService : ISystemConfigService
             && !string.Equals(record.Value.Trim(), definition.DefaultValue, StringComparison.Ordinal);
     }
 
+    private static string GetEffectiveValue(SystemConfigDefinition definition, SystemConfigRecord? record)
+    {
+        return HasEnabledOverride(definition, record) ? record!.Value.Trim() : definition.DefaultValue;
+    }
+
+    private async Task CreateChangeLogIfChangedAsync(
+        SystemConfigDefinition definition,
+        string actionType,
+        string oldValue,
+        string newValue,
+        string? reason,
+        string? confirmRiskLevel,
+        string? confirmKey,
+        SystemConfigChangeContext? context)
+    {
+        if (string.Equals(oldValue, newValue, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        await _systemConfigChangeLogRepository.CreateAsync(new SystemConfigChangeLogRecord
+        {
+            Category = definition.Category,
+            Key = definition.Key,
+            Name = definition.Name,
+            ActionType = actionType,
+            OldValue = FormatAuditValue(definition, oldValue),
+            NewValue = FormatAuditValue(definition, newValue),
+            DefaultValue = FormatAuditValue(definition, definition.DefaultValue) ?? string.Empty,
+            Reason = NormalizeChangeReason(reason, actionType),
+            RiskLevel = definition.RiskLevel,
+            EffectiveMode = definition.EffectiveMode,
+            ConfirmRiskLevel = NormalizeAuditText(confirmRiskLevel, 40),
+            ConfirmKey = NormalizeAuditText(confirmKey, 200),
+            OperatorUserId = context?.OperatorUserId,
+            OperatorUserName = NormalizeAuditText(context?.OperatorUserName, 100),
+            RequestIp = NormalizeAuditText(context?.RequestIp, 100),
+            UserAgent = NormalizeAuditText(context?.UserAgent, 500),
+            CreateTime = DateTime.Now
+        });
+    }
+
     private static SystemConfigVo MapToVo(SystemConfigDefinition definition, SystemConfigRecord? record)
     {
         var isOverridden = HasEnabledOverride(definition, record);
-        var effectiveValue = isOverridden ? record!.Value.Trim() : definition.DefaultValue;
+        var effectiveValue = GetEffectiveValue(definition, record);
 
         return new SystemConfigVo
         {
@@ -272,5 +407,64 @@ public class SystemConfigService : ISystemConfigService
             VoCreateTime = isOverridden ? record?.CreateTime : null,
             VoModifyTime = isOverridden ? record?.ModifyTime : null
         };
+    }
+
+    private static SystemConfigChangeLogVo MapChangeLogToVo(SystemConfigChangeLogRecord record)
+    {
+        return new SystemConfigChangeLogVo
+        {
+            VoId = record.Id,
+            VoCategory = record.Category,
+            VoKey = record.Key,
+            VoName = record.Name,
+            VoActionType = record.ActionType,
+            VoOldValue = record.OldValue,
+            VoNewValue = record.NewValue,
+            VoDefaultValue = record.DefaultValue,
+            VoReason = record.Reason,
+            VoRiskLevel = record.RiskLevel,
+            VoEffectiveMode = record.EffectiveMode,
+            VoConfirmRiskLevel = record.ConfirmRiskLevel,
+            VoConfirmKey = record.ConfirmKey,
+            VoOperatorUserId = record.OperatorUserId,
+            VoOperatorUserName = record.OperatorUserName,
+            VoRequestIp = record.RequestIp,
+            VoUserAgent = record.UserAgent,
+            VoCreateTime = record.CreateTime
+        };
+    }
+
+    private static string NormalizeChangeReason(string? reason, string actionType)
+    {
+        var normalizedReason = NormalizeAuditText(reason, 500);
+        if (!string.IsNullOrWhiteSpace(normalizedReason))
+        {
+            return normalizedReason;
+        }
+
+        return actionType.Equals(SystemConfigChangeAction.RestoreDefault, StringComparison.Ordinal)
+            ? "恢复默认"
+            : "未填写";
+    }
+
+    private static string? FormatAuditValue(SystemConfigDefinition definition, string? value)
+    {
+        if (value == null)
+        {
+            return null;
+        }
+
+        return definition.IsSensitive ? "***" : NormalizeAuditText(value, 2000);
+    }
+
+    private static string? NormalizeAuditText(string? value, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var trimmedValue = value.Trim();
+        return trimmedValue.Length <= maxLength ? trimmedValue : trimmedValue[..maxLength];
     }
 }

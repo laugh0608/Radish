@@ -29,6 +29,30 @@ export interface SystemConfigVo {
 }
 
 /**
+ * 系统设置变更审计数据类型
+ */
+export interface SystemConfigChangeLogVo {
+  voId: number;
+  voCategory: string;
+  voKey: string;
+  voName: string;
+  voActionType: 'UpdateOverride' | 'RestoreDefault' | string;
+  voOldValue?: string;
+  voNewValue?: string;
+  voDefaultValue: string;
+  voReason: string;
+  voRiskLevel: 'Low' | 'Medium' | 'High' | 'Critical';
+  voEffectiveMode: 'Immediate' | 'RestartRequired' | string;
+  voConfirmRiskLevel?: string;
+  voConfirmKey?: string;
+  voOperatorUserId?: number;
+  voOperatorUserName?: string;
+  voRequestIp?: string;
+  voUserAgent?: string;
+  voCreateTime: string;
+}
+
+/**
  * 设置覆盖值请求类型
  */
 export interface ConfigRequest {
@@ -39,6 +63,9 @@ export interface ConfigRequest {
   description?: string;
   type?: 'string' | 'number' | 'boolean' | 'json';
   isEnabled?: boolean;
+  reason?: string;
+  confirmRiskLevel?: string;
+  confirmKey?: string;
 }
 
 /**
@@ -109,11 +136,38 @@ export async function updateConfig(id: number, configData: ConfigRequest): Promi
 /**
  * 恢复系统设置默认值
  */
-export async function restoreConfigDefault(id: number): Promise<SystemConfigVo> {
-  const response = await apiPut<SystemConfigVo>(`/api/v1/SystemConfig/RestoreConfigDefault?id=${id}`, {}, { withAuth: true });
+export async function restoreConfigDefault(
+  id: number,
+  request?: Pick<ConfigRequest, 'reason' | 'confirmRiskLevel' | 'confirmKey'>
+): Promise<SystemConfigVo> {
+  const response = await apiPut<SystemConfigVo>(
+    `/api/v1/SystemConfig/RestoreConfigDefault?id=${id}`,
+    {
+      reason: request?.reason || '恢复默认值',
+      confirmRiskLevel: request?.confirmRiskLevel,
+      confirmKey: request?.confirmKey,
+    },
+    { withAuth: true }
+  );
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '恢复默认失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 获取系统设置变更历史
+ */
+export async function getConfigChangeLogs(id: number, take = 20): Promise<SystemConfigChangeLogVo[]> {
+  const response = await apiGet<SystemConfigChangeLogVo[]>(
+    `/api/v1/SystemConfig/GetConfigChangeLogs?id=${id}&take=${take}`,
+    { withAuth: true }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '获取系统设置变更历史失败');
   }
 
   return response.data;

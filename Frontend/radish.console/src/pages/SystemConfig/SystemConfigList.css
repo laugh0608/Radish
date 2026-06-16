@@ -126,6 +126,31 @@
   margin-top: 16px;
 }
 
+.system-config-history-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+  color: var(--console-text-secondary);
+}
+
+.system-config-history-summary > span {
+  color: var(--console-text-primary);
+  font-weight: 650;
+}
+
+.system-config-history-summary code {
+  max-width: 100%;
+  padding: 4px 8px;
+  border-radius: var(--console-radius-control);
+  background: var(--console-bg-muted);
+  color: var(--console-text-secondary);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 @media (max-width: 768px) {
   .system-config-list-page .admin-feature-header {
     align-items: flex-start;
