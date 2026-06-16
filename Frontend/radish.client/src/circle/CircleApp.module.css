@@ -220,7 +220,7 @@
   color: var(--theme-brand-primary);
 }
 
-.userDisplayName,
+.userDisplayHandle,
 .userMeta {
   color: var(--theme-text-secondary);
   font-size: 13px;

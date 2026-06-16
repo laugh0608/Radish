@@ -331,6 +331,9 @@ export const CircleApp = () => {
     return (
       <div className={styles.userList}>
         {userItems.map((user) => {
+          const displayName = user.voDisplayName?.trim() || user.voUserName.trim() || t('common.unknownUser');
+          const displayHandle = user.voDisplayHandle?.trim()
+            || (user.voPublicIndex ? `${displayName}#${String(user.voPublicIndex).trim()}` : null);
           const userRoute = buildUserRoute(user);
           const userPath = buildPublicProfilePath(userRoute);
 
@@ -344,8 +347,8 @@ export const CircleApp = () => {
               {renderUserAvatar(user)}
               <span className={styles.userBody}>
                 <span className={styles.userNameRow}>
-                  <span className={styles.userName}>{user.voUserName}</span>
-                  {user.voDisplayName ? <span className={styles.userDisplayName}>{user.voDisplayName}</span> : null}
+                  <span className={styles.userName}>{displayName}</span>
+                  {displayHandle ? <span className={styles.userDisplayHandle}>{displayHandle}</span> : null}
                   {user.voIsMutualFollow ? <span className={styles.mutualBadge}>{t('circle.mutualFollow')}</span> : null}
                 </span>
                 <span className={styles.userMeta}>
