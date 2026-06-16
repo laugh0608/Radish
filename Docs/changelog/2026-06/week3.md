@@ -13,3 +13,14 @@
 - B9 自动化验证已通过：后端完整测试 `443` 个、B9 定向测试、`radish.client` / `radish.console` 构建、`validate:identity`、`validate:baseline:quick`、`dotnet build Radish.slnx -c Debug`、`git diff --check` 与 repo hygiene 均通过。
 - B9 Gateway 运行态页面 smoke 当前未闭合：提权后 `check:host-runtime` 仍显示 API/Auth `5100 / 5200` 未监听，`5000` 由 macOS `ControlCe` 占用并超时；待宿主恢复后补 PC / 移动页面验收。
 - 收工前补 [2026-06-15 收工回顾与明日事项](/records/daily-handoff-2026-06-15)：明日先补 B9 运行态验收；若无阻断，再进入 `P3-10-B10 系统设置治理` 的方案与首批低风险能力评审。
+
+## 2026-06-16
+
+- 已完成圈子关系链公开句柄展示对齐和公开标识查询公开资料内容补点，B9 用户身份语义进入维护线；后续只在发布候选、跨端承接或真实缺口暴露时回拉。
+- Console 反馈上下文完成修复，避免动态调用 `message` 等 AntD 反馈 API 时脱离 `App` 上下文。
+- `P3-10-B10` 系统设置治理首批完成：系统设置从自由 key-value 收敛为代码级设置定义、默认值、覆盖值、风险等级、生效方式和低风险恢复默认入口；Console 只展示已注册设置，旧未注册 JSON 记录不作为运营设置展示。
+- `P3-10-B10` 第二批完成：新增系统设置专用变更审计、修改原因 / 确认参数基础和 Console 历史查看入口；`Site.Branding.FaviconUrl` 仍作为首个低风险可编辑示例。
+- `P3-10-B10` 第三批完成：新增 `ISystemSettingProvider` 统一读取入口，注册 `Content.PostTitle.MinLength`、`Content.PostBody.MinLength`、`Comment.Body.MinLength`，并将帖子 / 评论发布与编辑路径接入动态最小长度校验。
+- Medium 设置编辑已开放受控写入：后端要求修改原因、确认风险等级和确认设置键，High / Critical 仍拒绝编辑；Console 编辑弹窗已补风险提示。
+- 今日验证：`dotnet test Radish.Api.Tests` 通过 `456` 个测试，`npm run build --workspace=radish.console` 通过，`git diff --check` 通过。
+- B10 Gateway 页面联调未闭合：当前本机 `https://localhost:5000` 不可达，`5000` 被 macOS `ControlCe` 占用，`3000 / 3100 / 5100 / 5200` 未发现 Radish 监听进程；待运行态恢复后补 PC / 移动页面验收。

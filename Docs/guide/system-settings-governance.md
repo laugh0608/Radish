@@ -1,6 +1,6 @@
 # 系统设置治理专题
 
-> 状态：首批实现推进中，已进入设置定义注册表、低风险覆盖值与变更审计基础治理
+> 状态：首批实现推进中，已进入设置定义注册表、低 / 中风险覆盖值、变更审计与统一读取入口治理
 >
 > 最后更新：2026-06-16（Asia/Shanghai）
 >
@@ -22,7 +22,7 @@ Radish 需要一个长期的系统设置中心，但它不应只是把 `appsetti
 - 高危设置必须二次确认，并写入审计日志。
 - 每个设置都具备类型、分组、校验规则、说明和恢复默认能力。
 
-当前项目已将 `SystemConfig` 首批收敛为代码级设置定义注册表 + JSON 覆盖值存储：Console 默认只展示已注册设置，历史未注册 key-value 记录不作为运营设置暴露，`Site.Branding.FaviconUrl` 作为第一个低风险可编辑示例。第二批已补系统设置专用变更审计、修改原因 / 确认参数基础和 Console 历史查看入口，但未扩大可编辑范围。
+当前项目已将 `SystemConfig` 首批收敛为代码级设置定义注册表 + JSON 覆盖值存储：Console 默认只展示已注册设置，历史未注册 key-value 记录不作为运营设置暴露。`Site.Branding.FaviconUrl` 作为第一个低风险可编辑示例；第二批已补系统设置专用变更审计、修改原因 / 确认参数基础和 Console 历史查看入口；第三批已新增 `ISystemSettingProvider`，并开放 `Content.PostTitle.MinLength`、`Content.PostBody.MinLength`、`Comment.Body.MinLength` 三个内容 / 评论长度设置。
 
 ## 2. 目标与非目标
 
@@ -106,11 +106,13 @@ Radish 需要一个长期的系统设置中心，但它不应只是把 `appsetti
 | 风险等级 | 示例 | Console 要求 |
 | --- | --- | --- |
 | `Low` | 页面展示文案、普通长度限制 | 普通保存，显示变更摘要 |
-| `Medium` | 注册字段长度、内容长度、通知默认开关 | 保存前确认影响范围 |
+| `Medium` | 注册字段长度、内容长度、通知默认开关 | 填写原因、确认风险等级与设置键、写审计日志 |
 | `High` | 会话过期、登录失败锁定、奖励数值、审核阈值 | 二次确认、填写原因、写审计日志 |
 | `Critical` | 会影响大面积访问、权限、安全或资产的设置 | 重新认证、输入确认短语、必要时只允许超级管理员操作 |
 
 高危设置不能只依赖前端弹窗，后端必须校验权限、风险等级、确认参数和审计要求。
+
+当前实现只允许 `Low` / `Medium` 可编辑设置写入覆盖值；`Medium` 设置必须带修改原因、确认风险等级和确认设置键。`High` / `Critical` 仍由后端拒绝，不因前端提交参数而开放。
 
 ## 6. 审计与历史
 
@@ -132,7 +134,7 @@ Radish 需要一个长期的系统设置中心，但它不应只是把 `appsetti
 
 ## 7. 读取与生效
 
-后端业务代码不应直接读取 `SystemConfigRecord`。建议新增统一读取入口，例如：
+后端业务代码不应直接读取 `SystemConfigRecord`。当前已新增统一读取入口：
 
 ```text
 ISystemSettingProvider
@@ -152,11 +154,13 @@ SystemConfig 覆盖值
 
 实现约束：
 
-- 类型转换失败应暴露为配置错误，不应静默回退掩盖问题。
+- 类型转换失败或覆盖值越界应暴露为配置错误，不应静默回退掩盖问题。
 - 低风险即时设置可以缓存并支持刷新。
 - 需要重启或任务下次运行生效的设置必须在 Console 明确标识。
 - 多实例部署时，后续需要缓存失效广播或短 TTL 策略。
 - 服务层消费强类型设置，不把字符串 key 散落到业务代码。
+
+当前首批消费点为帖子发布 / 编辑和评论发布 / 编辑：标题、正文和评论内容最小长度通过 `ISystemSettingProvider` 读取，读取顺序为代码默认值、JSON 覆盖值、类型转换与范围校验。
 
 ## 8. Console 交互要求
 
@@ -187,9 +191,10 @@ SystemConfig 覆盖值
 
 - `GetSystemConfigs` 返回注册定义叠加覆盖值后的设置列表。
 - `GetConfigById` 使用设置定义 ID 查询，兼容旧覆盖记录 ID 回查已注册定义。
-- `UpdateConfig` 只允许写入低风险、可编辑的注册设置覆盖值，并接收修改原因、确认风险等级和确认设置键参数，成功变更后写入系统设置专用审计历史。
+- `UpdateConfig` 只允许写入 `Low` / `Medium`、可编辑的注册设置覆盖值；`Medium` 必须接收修改原因、确认风险等级和确认设置键参数，成功变更后写入系统设置专用审计历史。
 - `RestoreConfigDefault` 删除覆盖值并回到代码默认值，同样接收原因 / 确认参数并写入审计历史。
 - `GetConfigChangeLogs` 查询已注册设置的最近变更历史。
+- `ISystemSettingProvider` 面向业务服务提供统一读取入口，覆盖值非法时直接暴露配置错误。
 - 旧 `CreateConfig` 路由保留兼容但拒绝 Console 新增未知设置。
 - 旧 `DeleteConfig` 路由保留兼容，语义收敛为恢复默认。
 - 新环境不再自动种子商城、萝卜币、经验、上传等未治理示例配置；已有 JSON 记录保留但不默认暴露。
@@ -210,6 +215,8 @@ SystemConfig 覆盖值
 | `Site.Branding.FaviconUrl` | `/uploads/DefaultIco/bailuobo.ico` | Low |
 
 安全会话、奖励数值、审核阈值和资产相关设置应等审计与二次确认基础完成后再开放。
+
+当前已注册并可在 Console 展示的设置为：`Site.Branding.FaviconUrl`、`Content.PostTitle.MinLength`、`Content.PostBody.MinLength`、`Comment.Body.MinLength`。账号身份设置仍等待 Auth / API 契约统一后再进入评审。
 
 ## 11. 实施阶段建议
 
@@ -233,7 +240,7 @@ SystemConfig 覆盖值
 - 支持恢复默认。
 - 写入基础审计。
 - 后端服务通过统一 provider 消费设置。
-- 当前仅开放 `Site.Branding.FaviconUrl` 低风险覆盖值编辑与恢复默认；第二批已补修改原因、确认参数基础、审计历史写入和 Console 历史查看入口。Medium 及以上设置仍不开放编辑，后续需在逐项确认影响范围和二次确认策略后再放开。
+- 当前已开放 `Site.Branding.FaviconUrl` 低风险覆盖值编辑与恢复默认，并开放帖子标题 / 正文、评论内容最小长度设置；第二批已补修改原因、确认参数基础、审计历史写入和 Console 历史查看入口，第三批已补统一 provider 与首批业务消费点。High / Critical 仍不开放编辑，后续需在逐项确认影响范围、二次确认策略和权限边界后再放开。
 
 ### Phase D：高危设置治理
 
