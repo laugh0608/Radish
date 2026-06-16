@@ -1,12 +1,12 @@
 /**
- * 系统配置 API 客户端
+ * 系统设置 API 客户端
  * 使用后端 Vo 字段名
  */
 
 import { apiGet, apiPost, apiPut, apiDelete } from '@radish/http';
 
 /**
- * 系统配置数据类型（使用 Vo 前缀）
+ * 系统设置数据类型（使用 Vo 前缀）
  */
 export interface SystemConfigVo {
   voId: number;
@@ -14,15 +14,22 @@ export interface SystemConfigVo {
   voKey: string;
   voName: string;
   voValue: string;
+  voDefaultValue: string;
+  voEffectiveValue: string;
   voDescription?: string;
   voType: 'string' | 'number' | 'boolean' | 'json';
   voIsEnabled: boolean;
-  voCreateTime: string;
+  voIsOverridden: boolean;
+  voRiskLevel: 'Low' | 'Medium' | 'High' | 'Critical';
+  voEffectiveMode: 'Immediate' | 'RestartRequired' | string;
+  voIsEditable: boolean;
+  voIsSensitive: boolean;
+  voCreateTime?: string;
   voModifyTime?: string;
 }
 
 /**
- * 配置创建/更新请求类型
+ * 设置覆盖值请求类型
  */
 export interface ConfigRequest {
   category?: string;
@@ -35,13 +42,13 @@ export interface ConfigRequest {
 }
 
 /**
- * 获取系统配置列表
+ * 获取系统设置列表
  */
 export async function getSystemConfigs(): Promise<SystemConfigVo[]> {
   const response = await apiGet<SystemConfigVo[]>('/api/v1/SystemConfig/GetSystemConfigs', { withAuth: true });
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取系统配置失败');
+    throw new Error(response.message || '获取系统设置失败');
   }
 
   return response.data;
@@ -74,39 +81,52 @@ export async function getConfigById(id: number): Promise<SystemConfigVo> {
 }
 
 /**
- * 创建系统配置
+ * 兼容旧创建接口，后端会拒绝未知设置创建
  */
 export async function createConfig(configData: ConfigRequest & { category: string; key: string; name: string }): Promise<SystemConfigVo> {
   const response = await apiPost<SystemConfigVo>('/api/v1/SystemConfig/CreateConfig', configData, { withAuth: true });
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '创建配置失败');
+    throw new Error(response.message || '系统设置不支持通过 Console 新增');
   }
 
   return response.data;
 }
 
 /**
- * 更新系统配置
+ * 更新系统设置覆盖值
  */
 export async function updateConfig(id: number, configData: ConfigRequest): Promise<SystemConfigVo> {
   const response = await apiPut<SystemConfigVo>(`/api/v1/SystemConfig/UpdateConfig?id=${id}`, configData, { withAuth: true });
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '更新配置失败');
+    throw new Error(response.message || '更新系统设置失败');
   }
 
   return response.data;
 }
 
 /**
- * 删除系统配置
+ * 恢复系统设置默认值
+ */
+export async function restoreConfigDefault(id: number): Promise<SystemConfigVo> {
+  const response = await apiPut<SystemConfigVo>(`/api/v1/SystemConfig/RestoreConfigDefault?id=${id}`, {}, { withAuth: true });
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '恢复默认失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 兼容旧删除接口，后端语义为恢复默认
  */
 export async function deleteConfig(id: number): Promise<boolean> {
   const response = await apiDelete(`/api/v1/SystemConfig/DeleteConfig?id=${id}`, { withAuth: true });
 
   if (!response.ok) {
-    throw new Error(response.message || '删除配置失败');
+    throw new Error(response.message || '恢复默认失败');
   }
 
   return true;

@@ -173,6 +173,7 @@ internal static partial class InitialDataSeeder
         new(61081, "/api/v1/SystemConfig/CreateConfig", "Action"),
         new(61082, "/api/v1/SystemConfig/GetConfigById", "View"),
         new(61082, "/api/v1/SystemConfig/UpdateConfig", "Action"),
+        new(61082, "/api/v1/SystemConfig/RestoreConfigDefault", "Action"),
         new(61083, "/api/v1/SystemConfig/DeleteConfig", "Action"),
         new(61090, "/hangfire(/.*)?", "View")
     ];

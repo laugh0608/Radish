@@ -1,8 +1,8 @@
 # 系统设置治理专题
 
-> 状态：专题方案已确认，等待排期进入实现
+> 状态：首批实现推进中，已进入设置定义注册表与低风险覆盖值治理
 >
-> 最后更新：2026-06-11（Asia/Shanghai）
+> 最后更新：2026-06-16（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -22,7 +22,7 @@ Radish 需要一个长期的系统设置中心，但它不应只是把 `appsetti
 - 高危设置必须二次确认，并写入审计日志。
 - 每个设置都具备类型、分组、校验规则、说明和恢复默认能力。
 
-当前项目已有 `SystemConfig`、Console 系统配置权限和站点 favicon 配置持久化能力，后续应在此基础上升级为“设置定义 + 覆盖值 + 审计”的治理体系。
+当前项目已将 `SystemConfig` 首批收敛为代码级设置定义注册表 + JSON 覆盖值存储：Console 默认只展示已注册设置，历史未注册 key-value 记录不作为运营设置暴露，`Site.Branding.FaviconUrl` 作为第一个低风险可编辑示例。
 
 ## 2. 目标与非目标
 
@@ -174,12 +174,22 @@ SystemConfig 覆盖值
 
 当前 `SystemConfigRecord` 可作为覆盖值存储的基础，但需要逐步补齐治理能力：
 
-- 当前 `Category / Key / Name / Value / Type / IsEnabled` 可保留。
+- 当前 `Category / Key / Name / Value / Type / IsEnabled` 作为覆盖值记录保留。
 - `DefaultValue`、`RiskLevel`、`EffectiveMode`、`ValidationRule` 不建议只存在数据库里，应由代码级定义提供。
-- `SystemConfigDefaults` 可扩展为设置定义注册表，或拆成更清晰的领域设置定义。
-- `Site.Branding.FaviconUrl` 可作为首个迁移示例：默认值来自代码，Console 修改写覆盖值，恢复默认移除覆盖。
+- `SystemConfigDefaults` 首批已承担设置定义注册表职责；后续设置数量增加后，可再按领域拆成更清晰的定义文件。
+- `Site.Branding.FaviconUrl` 是首个迁移示例：默认值来自代码，Console 修改写覆盖值，恢复默认移除覆盖。
 
 长期不建议让管理员任意创建未知 key。创建自定义 key 可以保留给开发或插件体系，普通运营设置应来自已注册定义。
+
+首批实现的接口语义：
+
+- `GetSystemConfigs` 返回注册定义叠加覆盖值后的设置列表。
+- `GetConfigById` 使用设置定义 ID 查询，兼容旧覆盖记录 ID 回查已注册定义。
+- `UpdateConfig` 只允许写入低风险、可编辑的注册设置覆盖值。
+- `RestoreConfigDefault` 删除覆盖值并回到代码默认值。
+- 旧 `CreateConfig` 路由保留兼容但拒绝 Console 新增未知设置。
+- 旧 `DeleteConfig` 路由保留兼容，语义收敛为恢复默认。
+- 新环境不再自动种子商城、萝卜币、经验、上传等未治理示例配置；已有 JSON 记录保留但不默认暴露。
 
 ## 10. 首批候选设置
 
@@ -205,12 +215,14 @@ SystemConfig 覆盖值
 - 固定本页治理口径。
 - 梳理现有 `SystemConfig` 使用点。
 - 定义设置注册表、风险等级和默认值模型。
+- 当前首批已落地 `SystemConfigDefaults` 注册表、`SystemConfigDefinition`、风险等级、生效方式和默认值字段。
 
 ### Phase B：只读设置中心
 
 - Console 展示设置定义、默认值和当前覆盖值。
 - 支持搜索、分类和查看生效方式。
 - 不开放高危修改。
+- 当前首批已按已注册定义展示系统设置，未注册历史记录不作为运营设置展示。
 
 ### Phase C：低风险可编辑
 
@@ -218,6 +230,7 @@ SystemConfig 覆盖值
 - 支持恢复默认。
 - 写入基础审计。
 - 后端服务通过统一 provider 消费设置。
+- 当前首批仅开放 `Site.Branding.FaviconUrl` 低风险覆盖值编辑与恢复默认；Medium 及以上设置仍等待确认、原因和审计历史基础完成后开放。
 
 ### Phase D：高危设置治理
 

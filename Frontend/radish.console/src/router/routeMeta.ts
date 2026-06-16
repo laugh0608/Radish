@@ -137,7 +137,7 @@ export const consoleRouteMeta: readonly ConsoleRouteMeta[] = [
   {
     key: 'system-config',
     path: '/system-config',
-    title: '系统配置',
+    title: '系统设置',
     requiredPermission: CONSOLE_PERMISSIONS.systemConfigView,
     sidebarVisible: true,
     searchVisible: true,

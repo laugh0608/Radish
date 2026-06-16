@@ -410,6 +410,15 @@ internal static partial class InitialDataSeeder
             },
             new
             {
+                ApiModuleId = 50048L,
+                ApiModuleName = "Restore system config default",
+                LinkUrl = "/api/v1/SystemConfig/RestoreConfigDefault",
+                ControllerName = "SystemConfig",
+                ActionName = "RestoreConfigDefault",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
                 ApiModuleId = 50046L,
                 ApiModuleName = "Get dashboard stats",
                 LinkUrl = "/api/v1/Statistics/GetDashboardStats",

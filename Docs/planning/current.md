@@ -7,7 +7,7 @@
 ## 当前状态
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
-- **当前主线**：`P3-10 Web-first 首页信息流与关键契约开发`
+- **当前主线**：`P3-10-B10 系统设置治理首批实现`
 - **复核日期**：`2026-06-15`
 - **最近结论**：
   - `P3-1` 至 `P3-5` 已完成公开内容增长、PublicId 试点、留存回流、动态 sitemap 与详情 head snapshot 首批建设。
@@ -47,8 +47,8 @@
   - `P3-10-B8` 发布候选前批次级回归已完成：后端定向 / 完整测试、`radish.client` 测试 / 类型检查 / 构建、身份契约、迁移 SQL 自检和 Gateway PC / 移动页面补验均通过；已补 `/pet` 登录回流契约测试，未发现需要阻断的真实缺口。
   - `P3-10-B8` 合并前自动化总验证已完成：`validate:baseline`、`validate:identity`、`validate:baseline:host`、迁移 SQL 重放、`git diff --check` 均通过；最新运行态健康复查因本机 API/Auth 未监听未闭合，如 PR 需要最新健康端点结论，重启宿主后复跑 `check:host-runtime`。
   - 本轮不合并 B8，按整体计划直接进入 `P3-10-B9 用户身份语义与公开索引`。
-  - `P3-10-B9` 首批代码与自动化验证已完成：新增 `User.PublicIndex` / `DisplayHandle`，注册登录名和邮箱规范化，登录支持登录名或邮箱，公开资料 / 榜单 / 关系链 / 艾特搜索 / Console 用户排障展示切换为公开句柄，`DbMigrate` 与 PostgreSQL 差异 SQL 补齐公开索引入口；后端完整测试、`radish.client` / `radish.console` 构建、`validate:identity` 与 `validate:baseline:quick` 均通过。
-  - `P3-10-B9` 运行态 Gateway 页面 smoke 当前未闭合：提权后 `check:host-runtime` 仍显示 API/Auth 端口未监听，`5000` 由 macOS `ControlCe` 占用并超时；待宿主恢复后再补 PC / 移动页面抽查。
+  - `P3-10-B9` 首批代码、自动化验证和 Gateway PC / 移动页面补验已完成：新增 `User.PublicIndex` / `DisplayHandle`，注册登录名和邮箱规范化，登录支持登录名或邮箱，公开资料 / 榜单 / 关系链 / 艾特搜索 / Console 用户排障展示切换为公开句柄，`DbMigrate` 与 PostgreSQL 差异 SQL 补齐公开索引入口；后续转入维护线。
+  - `P3-10-B10` 已进入首批实现：系统设置从自由 key-value 收敛为代码级设置定义、默认值、覆盖值、风险等级、生效方式和低风险恢复默认入口；不把部署密钥、宠物经济数值或高危资产 / 会话设置搬进 Console。
 
 ## 当前执行入口
 
@@ -57,6 +57,7 @@
 - [P3-10 Web-first 信息架构与下一批开发任务选择](/planning/p3-10-cross-platform-information-architecture)
 - [Radish 电子宠物开发计划](/features/radish-pet-roadmap)
 - [用户身份语义与公开索引](/architecture/user-identity-semantics)
+- [系统设置治理专题](/guide/system-settings-governance)
 - [P3-10-B9 用户身份语义首批记录](/records/p3-10-b9-user-identity-first-batch-record-2026-06-15)
 - [个人圈子](/features/circle)
 - [Token 不活跃过期治理](/guide/auth-idle-session)
@@ -67,10 +68,10 @@
 
 ## 当前目标
 
-1. **推进 P3-10-B9 用户身份语义与公开索引**
-   - 首批目标是把登录凭证、公开展示、公开搜索和 Console 排障语义拆清楚：`LoginName / Email` 保持私有，`DisplayName#PublicIndex` 用于页面展示、榜单、关系链和艾特搜索，`PublicId` 继续承担公开路由和分享回流。
-   - 首批代码已完成模型、注册 / 登录、公开资料、榜单、关系链、艾特搜索、Console 用户列表 / 详情和迁移入口；当前保留 Gateway 运行态 PC / 移动补验。
-   - 后续只在真实缺口、发布候选回归或跨端承接需要时继续扩展，不把数据库主键迁移、ActivityPub / WebFinger、邮箱通知系统或 Console 高风险账号字段治理并入本批。
+1. **推进 P3-10-B10 系统设置治理**
+   - 首批目标是把 Console 系统设置从自由 key-value 收敛为代码级设置定义、默认值、覆盖值、风险等级和生效方式。
+   - 当前先开放低风险 `Site.Branding.FaviconUrl` 覆盖值编辑与恢复默认；未注册历史 JSON 记录不作为运营设置展示。
+   - 后续不把部署密钥、宠物经济数值、高危资产 / 会话设置或基础设施配置直接搬进 Console。
 2. **把 P3-8-D 降级为维护与回拉线**
    - 移动 Web 公开页逐页打磨、Console 剩余页面迁移、购买 / 订单 / 背包重复复核、ID Phase A 广泛扫描不再作为默认日常主线。
    - 新增外部 ID 边界、扫描命中、真实编译错误或发布候选验收暴露问题时，再做定向治理。
@@ -81,10 +82,13 @@
 
 ## 下一顺位
 
-- `P3-10-B9 用户身份语义与公开索引`
-  - 首批代码已完成并通过自动化验证；下一步在宿主恢复后补 Gateway `1920x1080` 与 `390x844` 视图抽查，重点覆盖注册文案、登录名或邮箱登录、公开个人页、公开榜单、关系链用户项、艾特搜索和 Console 用户列表 / 详情。
-  - 测试 / 生产上线前使用 `Deploy/sql/20260615_add_user_public_index.sql` 作为 PostgreSQL 版本化差异 SQL 审核入口；本地 SQLite 开发库继续通过 `Radish.DbMigrate init/apply` 自动补列、回填和建索引。
-  - 后续不把 `DisplayName#PublicIndex` 替代 `PublicId` 路由，不展示登录名 / 邮箱到公开页面，不启动数据库主键迁移、邮箱通知系统、ActivityPub / WebFinger 或 Console 高风险账号字段治理。
+- `P3-10-B10 系统设置治理`
+  - 首批推进设置定义注册表、默认值、覆盖值、风险等级、低风险编辑和恢复默认；Console 不再把未注册 JSON 记录作为运营设置展示。
+  - 当前仅开放 `Site.Branding.FaviconUrl` 低风险覆盖值；Medium 及以上设置等待原因、确认和审计历史基础完成后再开放。
+  - 不把部署密钥、宠物经济数值、高危资产 / 会话设置或基础设施配置直接搬进 Console。
+- `P3-10-B9 用户身份语义与公开索引维护线`
+  - 首批代码、自动化验证和 Gateway PC / 移动页面补验已完成；测试 / 生产上线前使用 `Deploy/sql/20260615_add_user_public_index.sql` 作为 PostgreSQL 版本化差异 SQL 审核入口。
+  - 后续只在发布候选、跨端承接或真实缺口暴露时回拉，不把 `DisplayName#PublicIndex` 替代 `PublicId` 路由，不启动数据库主键迁移、邮箱通知系统、ActivityPub / WebFinger 或 Console 高风险账号字段治理。
 - `P3-10-B8 Radish 电子宠物维护线`
   - B8 已完成开发前冻结口径、Phase B 首批代码、Gateway PC / 移动首轮联调、首批体验补漏、后端契约测试补强、发布候选前批次级回归和合并前自动化总验证；本轮不继续合并动作，转入维护回拉。
   - 经济消耗、商城物品、社区任务奖励、经验反向加成、Console 配置 UI、首页组件和公开个人主页默认展示继续后置。
@@ -105,9 +109,9 @@
 
 ## 明日事项
 
-- 第一顺位：`P3-10-B9 用户身份语义与公开索引` 补运行态验收。开发者恢复 Gateway / API / Auth 后，先跑 `check:host-runtime`，再通过 Gateway 覆盖 PC `1920x1080` 与移动 `390x844`，重点看注册文案、登录名或邮箱登录、公开个人页、公开榜单、关系链用户项、艾特搜索和 Console 用户列表 / 详情。
-- 第二顺位：若 B9 页面验收暴露真实问题，按同一问题族成组修复：后端契约测试、服务端身份规则、前端公开句柄展示、Console 排障展示、Gateway 页面路径和迁移入口同步补齐。
-- 第三顺位：若 B9 运行态验收无阻断，将 B9 转入维护线，进入 `P3-10-B10 系统设置治理` 的方案与首批实现评审。先确认设置定义、默认值、覆盖值、风险等级、审计和低风险配置入口，不把部署密钥、宠物经济数值或高危资产 / 会话设置直接搬进 Console。
+- 第一顺位：`P3-10-B10 系统设置治理` 完成首批实现验证与 Console 联调。重点看注册定义列表、默认值 / 当前值、覆盖状态、风险等级、生效方式、favicon 上传和恢复默认。
+- 第二顺位：若 B10 暴露真实缺口，按同一问题族成组修复：后端定义模型、覆盖值存储、权限映射、Console 展示和公开站点设置读取同步补齐。
+- 第三顺位：`P3-10-B9 用户身份语义与公开索引` 转入维护线，只在发布候选、跨端承接或真实缺口暴露时回拉。
 - 第四顺位：保留 `P3-10-B8 Radish 电子宠物` 维护入口，只在发布候选回归或真实页面缺口暴露时回拉；经济消耗、商城物品、社区任务奖励、经验反向加成、Console 配置 UI、首页组件和公开个人主页默认展示继续后置。
 - 第五顺位：保留 `P3-10-B7 / B6 / B2 / B1 / B3` 回归入口，只在发布候选、宿主恢复后的真实 smoke 或新增缺口暴露时复核；不要回到 P3-8-D 购买 / 订单 / 背包或 Console 低频页面筛查作为默认主线。
 

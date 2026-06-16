@@ -4,139 +4,97 @@ import {
   Form,
   AntInput as Input,
   AntSelect as Select,
-  Switch,
+  Descriptions,
+  Tag,
   message,
 } from '@radish/ui';
 import {
-  createConfig,
   updateConfig,
   getConfigById,
-  type ConfigRequest,
+  type SystemConfigVo,
 } from '@/api/systemConfigApi';
 import { log } from '@/utils/logger';
 
 interface SystemConfigFormProps {
   visible: boolean;
-  mode: 'create' | 'edit';
   configId?: number;
-  categories: string[];
   onCancel: () => void;
   onSuccess: () => void;
 }
 
 export const SystemConfigForm = ({
   visible,
-  mode,
   configId,
-  categories,
   onCancel,
   onSuccess,
 }: SystemConfigFormProps) => {
   const [form] = Form.useForm();
+  const [config, setConfig] = useState<SystemConfigVo>();
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(false);
 
-  // 配置类型选项
-  const typeOptions = [
-    { label: '字符串', value: 'string' },
-    { label: '数字', value: 'number' },
-    { label: '布尔值', value: 'boolean' },
-    { label: 'JSON', value: 'json' },
-  ];
-
-  // 加载配置详情（编辑模式）
   const loadConfigDetail = async (id: number) => {
     try {
       setInitialLoading(true);
-      const config = await getConfigById(id);
+      const nextConfig = await getConfigById(id);
+      setConfig(nextConfig);
       form.setFieldsValue({
-        category: config.voCategory,
-        key: config.voKey,
-        name: config.voName,
-        value: config.voValue,
-        description: config.voDescription,
-        type: config.voType,
-        isEnabled: config.voIsEnabled,
+        value: nextConfig.voEffectiveValue,
       });
     } catch (error) {
-      log.error('SystemConfigForm', '加载配置详情失败:', error);
-      message.error('加载配置详情失败');
+      log.error('SystemConfigForm', '加载系统设置详情失败:', error);
+      message.error('加载系统设置详情失败');
     } finally {
       setInitialLoading(false);
     }
   };
 
-  // 提交表单
   const handleSubmit = async () => {
+    if (!configId || !config) {
+      message.error('系统设置尚未加载完成');
+      return;
+    }
+
     try {
       const values = await form.validateFields();
       setLoading(true);
 
-      // 根据类型转换值
-      let processedValue = values.value;
-      if (values.type === 'number') {
+      let processedValue = String(values.value);
+      if (config.voType === 'number') {
         processedValue = String(Number(values.value));
-      } else if (values.type === 'boolean') {
-        processedValue = String(Boolean(values.value));
       }
 
-      const configData: ConfigRequest = {
+      await updateConfig(configId, {
         value: processedValue,
-        description: values.description,
-        isEnabled: values.isEnabled,
-      };
-
-      if (mode === 'create') {
-        await createConfig({
-          ...configData,
-          category: values.category,
-          key: values.key,
-          name: values.name,
-          type: values.type,
-        });
-        message.success('创建配置成功');
-      } else if (mode === 'edit' && configId) {
-        await updateConfig(configId, configData);
-        message.success('更新配置成功');
-      }
-
+        isEnabled: true,
+      });
+      message.success('系统设置已更新');
       onSuccess();
     } catch (error) {
-      log.error('SystemConfigForm', '提交表单失败:', error);
-      message.error(mode === 'create' ? '创建配置失败' : '更新配置失败');
+      log.error('SystemConfigForm', '提交系统设置失败:', error);
+      message.error(error instanceof Error ? error.message : '更新系统设置失败');
     } finally {
       setLoading(false);
     }
   };
 
-  // 重置表单
   const handleCancel = () => {
     form.resetFields();
+    setConfig(undefined);
     onCancel();
   };
 
-  // 监听 visible 和 configId 变化
   useEffect(() => {
-    if (visible) {
-      if (mode === 'edit' && configId) {
-        loadConfigDetail(configId);
-      } else {
-        // 创建模式，设置默认值
-        form.setFieldsValue({
-          type: 'string',
-          isEnabled: true,
-        });
-      }
+    if (visible && configId) {
+      void loadConfigDetail(configId);
     } else {
       form.resetFields();
+      setConfig(undefined);
     }
-  }, [visible, mode, configId, form]);
+  }, [visible, configId, form]);
 
-  // 根据类型渲染值输入框
   const renderValueInput = () => {
-    const type = form.getFieldValue('type');
-
-    switch (type) {
+    switch (config?.voType) {
       case 'number':
         return (
           <Input
@@ -150,119 +108,82 @@ export const SystemConfigForm = ({
             placeholder="请选择布尔值"
             options={[
               { label: 'true', value: 'true' },
-              { label: 'false', value: 'false' }
+              { label: 'false', value: 'false' },
             ]}
           />
         );
       case 'json':
         return (
           <Input.TextArea
-            placeholder="请输入JSON格式的值"
+            placeholder="请输入 JSON 格式的值"
             rows={4}
             showCount
           />
         );
       default:
         return (
-          <Input placeholder="请输入配置值" />
+          <Input placeholder="请输入设置值" />
         );
     }
   };
 
   return (
     <Modal
-      title={mode === 'create' ? '新增配置' : '编辑配置'}
+      title="编辑系统设置"
       open={visible}
       onOk={handleSubmit}
       onCancel={handleCancel}
       confirmLoading={loading}
-      width={600}
+      okButtonProps={{
+        disabled: initialLoading || !config?.voIsEditable,
+      }}
+      width={640}
       destroyOnHidden
       forceRender
     >
+      {config ? (
+        <Descriptions
+          column={1}
+          size="small"
+          bordered
+          items={[
+            { key: 'category', label: '分类', children: config.voCategory },
+            { key: 'key', label: '设置键', children: <code>{config.voKey}</code> },
+            { key: 'default', label: '默认值', children: config.voDefaultValue },
+            {
+              key: 'risk',
+              label: '风险等级',
+              children: <Tag color={config.voRiskLevel === 'Low' ? 'success' : 'warning'}>{config.voRiskLevel}</Tag>,
+            },
+            { key: 'mode', label: '生效方式', children: config.voEffectiveMode === 'Immediate' ? '立即生效' : config.voEffectiveMode },
+          ]}
+        />
+      ) : null}
+
       <Form
         form={form}
         layout="vertical"
-        disabled={initialLoading}
+        disabled={initialLoading || !config?.voIsEditable}
+        className="system-config-edit-form"
       >
         <Form.Item
-          name="category"
-          label="配置分类"
-          rules={[
-            { required: true, message: '请选择配置分类' },
-          ]}
-        >
-          <Select
-            placeholder="请选择配置分类"
-            showSearch
-            allowClear
-            disabled={mode === 'edit'}
-            options={categories.map(category => ({ label: category, value: category }))}
-          />
-        </Form.Item>
-
-        <Form.Item
-          name="key"
-          label="配置键"
-          rules={[
-            { required: true, message: '请输入配置键' },
-            { pattern: /^[a-zA-Z][a-zA-Z0-9._]*$/, message: '配置键必须以字母开头，只能包含字母、数字、点和下划线' },
-          ]}
-        >
-          <Input
-            placeholder="请输入配置键，如：Shop.OrderTimeoutMinutes"
-            disabled={mode === 'edit'}
-          />
-        </Form.Item>
-
-        <Form.Item
-          name="name"
-          label="配置名称"
-          rules={[
-            { required: true, message: '请输入配置名称' },
-            { max: 100, message: '配置名称不能超过100个字符' },
-          ]}
-        >
-          <Input
-            placeholder="请输入配置名称"
-            disabled={mode === 'edit'}
-          />
-        </Form.Item>
-
-        <Form.Item
-          name="type"
-          label="配置类型"
-          rules={[
-            { required: true, message: '请选择配置类型' },
-          ]}
-        >
-          <Select
-            placeholder="请选择配置类型"
-            options={typeOptions}
-            disabled={mode === 'edit'}
-            onChange={() => {
-              // 类型改变时清空值
-              form.setFieldValue('value', '');
-            }}
-          />
-        </Form.Item>
-
-        <Form.Item
           name="value"
-          label="配置值"
+          label="覆盖值"
           rules={[
-            { required: true, message: '请输入配置值' },
+            { required: true, message: '请输入设置值' },
             {
               validator: async (_, value) => {
-                const type = form.getFieldValue('type');
-                if (type === 'number' && isNaN(Number(value))) {
+                if (!config) {
+                  return;
+                }
+                if (config.voType === 'number' && Number.isNaN(Number(value))) {
                   throw new Error('请输入有效的数字');
                 }
-                if (type === 'json') {
+                if (config.voType === 'json') {
                   try {
                     JSON.parse(value);
                   } catch {
-                    throw new Error('请输入有效的JSON格式');
+                    throw new Error('请输入有效的 JSON 格式');
                   }
                 }
               },
@@ -270,29 +191,6 @@ export const SystemConfigForm = ({
           ]}
         >
           {renderValueInput()}
-        </Form.Item>
-
-        <Form.Item
-          name="description"
-          label="配置描述"
-          rules={[
-            { max: 500, message: '配置描述不能超过500个字符' },
-          ]}
-        >
-          <Input.TextArea
-            placeholder="请输入配置描述"
-            rows={3}
-            showCount
-            maxLength={500}
-          />
-        </Form.Item>
-
-        <Form.Item
-          name="isEnabled"
-          label="启用状态"
-          valuePropName="checked"
-        >
-          <Switch checkedChildren="启用" unCheckedChildren="禁用" />
         </Form.Item>
       </Form>
     </Modal>

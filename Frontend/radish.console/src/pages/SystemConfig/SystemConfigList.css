@@ -122,6 +122,10 @@
   text-overflow: ellipsis;
 }
 
+.system-config-edit-form {
+  margin-top: 16px;
+}
+
 @media (max-width: 768px) {
   .system-config-list-page .admin-feature-header {
     align-items: flex-start;

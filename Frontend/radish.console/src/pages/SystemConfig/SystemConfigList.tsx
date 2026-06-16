@@ -6,7 +6,6 @@ import {
   Space,
   Tag,
   message,
-  Popconfirm,
   AntSelect as Select,
   AntInput as Input,
   type TableColumnsType,
@@ -16,7 +15,6 @@ import type { UploadProps } from 'antd';
 import {
   PlusOutlined,
   EditOutlined,
-  DeleteOutlined,
   ReloadOutlined,
   SearchOutlined,
   SettingOutlined,
@@ -24,8 +22,8 @@ import {
 import {
   getSystemConfigs,
   getConfigCategories,
-  deleteConfig,
   updateConfig,
+  restoreConfigDefault,
   type SystemConfigVo,
 } from '@/api/systemConfigApi';
 import { uploadAttachmentImage } from '@/api/attachmentApi';
@@ -41,7 +39,7 @@ const SITE_FAVICON_KEY = 'Site.Branding.FaviconUrl';
 const DEFAULT_SITE_FAVICON_PATH = '/uploads/DefaultIco/bailuobo.ico';
 
 export const SystemConfigList = () => {
-  useDocumentTitle('系统配置');
+  useDocumentTitle('系统设置');
   const [configs, setConfigs] = useState<SystemConfigVo[]>([]);
   const [filteredConfigs, setFilteredConfigs] = useState<SystemConfigVo[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
@@ -49,12 +47,9 @@ export const SystemConfigList = () => {
   const [faviconUploading, setFaviconUploading] = useState(false);
   const [faviconSaving, setFaviconSaving] = useState(false);
   const [formVisible, setFormVisible] = useState(false);
-  const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [editingConfigId, setEditingConfigId] = useState<number>();
   const canViewSystemConfig = usePermission(CONSOLE_PERMISSIONS.systemConfigView);
-  const canCreateSystemConfig = usePermission(CONSOLE_PERMISSIONS.systemConfigCreate);
   const canEditSystemConfig = usePermission(CONSOLE_PERMISSIONS.systemConfigEdit);
-  const canDeleteSystemConfig = usePermission(CONSOLE_PERMISSIONS.systemConfigDelete);
 
   // 筛选条件
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -64,7 +59,7 @@ export const SystemConfigList = () => {
     searchKeyword.trim() ? 'keyword' : undefined,
   ].filter(Boolean).length;
 
-  // 加载配置列表
+  // 加载系统设置列表
   const loadConfigs = async () => {
     try {
       setLoading(true);
@@ -72,20 +67,20 @@ export const SystemConfigList = () => {
       setConfigs(data);
       setFilteredConfigs(data);
     } catch (error) {
-      log.error('SystemConfigList', '加载配置列表失败:', error);
-      message.error('加载配置列表失败');
+      log.error('SystemConfigList', '加载系统设置列表失败:', error);
+      message.error('加载系统设置列表失败');
     } finally {
       setLoading(false);
     }
   };
 
-  // 加载配置分类
+  // 加载系统设置分类
   const loadCategories = async () => {
     try {
       const data = await getConfigCategories();
       setCategories(data);
     } catch (error) {
-      log.error('SystemConfigList', '加载配置分类失败:', error);
+      log.error('SystemConfigList', '加载系统设置分类失败:', error);
     }
   };
 
@@ -98,7 +93,7 @@ export const SystemConfigList = () => {
     void loadCategories();
   }, [canViewSystemConfig]);
 
-  // 筛选配置
+  // 筛选系统设置
   useEffect(() => {
     let filtered = configs;
 
@@ -121,9 +116,10 @@ export const SystemConfigList = () => {
   }, [configs, selectedCategory, searchKeyword]);
 
   const faviconConfig = configs.find((config) => config.voKey === SITE_FAVICON_KEY);
-  const faviconPreviewUrl = getAvatarUrl(faviconConfig?.voValue || DEFAULT_SITE_FAVICON_PATH);
-  const isUsingDefaultFavicon = !faviconConfig || faviconConfig.voValue === DEFAULT_SITE_FAVICON_PATH;
-  const enabledConfigs = filteredConfigs.filter((config) => config.voIsEnabled).length;
+  const faviconPreviewUrl = getAvatarUrl(faviconConfig?.voEffectiveValue || DEFAULT_SITE_FAVICON_PATH);
+  const isUsingDefaultFavicon = !faviconConfig || !faviconConfig.voIsOverridden;
+  const overriddenConfigs = filteredConfigs.filter((config) => config.voIsOverridden).length;
+  const editableConfigs = filteredConfigs.filter((config) => config.voIsEditable).length;
 
   const handleRestoreDefaultFavicon = async () => {
     if (!faviconConfig) {
@@ -133,11 +129,7 @@ export const SystemConfigList = () => {
 
     try {
       setFaviconSaving(true);
-      await updateConfig(faviconConfig.voId, {
-        value: DEFAULT_SITE_FAVICON_PATH,
-        description: faviconConfig.voDescription,
-        isEnabled: true,
-      });
+      await restoreConfigDefault(faviconConfig.voId);
       message.success('已恢复为默认站点图标');
       await loadConfigs();
     } catch (error) {
@@ -192,7 +184,6 @@ export const SystemConfigList = () => {
       setFaviconSaving(true);
       await updateConfig(faviconConfig.voId, {
         value: uploaded.url,
-        description: faviconConfig.voDescription,
         isEnabled: true,
       });
       await loadConfigs();
@@ -209,30 +200,10 @@ export const SystemConfigList = () => {
     }
   };
 
-  // 新增配置
-  const handleCreate = () => {
-    setFormMode('create');
-    setEditingConfigId(undefined);
-    setFormVisible(true);
-  };
-
-  // 编辑配置
+  // 编辑系统设置覆盖值
   const handleEdit = (record: SystemConfigVo) => {
-    setFormMode('edit');
     setEditingConfigId(record.voId);
     setFormVisible(true);
-  };
-
-  // 删除配置
-  const handleDelete = async (id: number) => {
-    try {
-      await deleteConfig(id);
-      message.success('删除配置成功');
-      loadConfigs();
-    } catch (error) {
-      log.error('SystemConfigList', '删除配置失败:', error);
-      message.error('删除配置失败');
-    }
   };
 
   // 表单提交成功
@@ -258,13 +229,31 @@ export const SystemConfigList = () => {
     return colorMap[type] || 'default';
   };
 
+  const getRiskTagColor = (riskLevel: string) => {
+    const colorMap: Record<string, string> = {
+      Low: 'success',
+      Medium: 'warning',
+      High: 'error',
+      Critical: 'magenta',
+    };
+    return colorMap[riskLevel] || 'default';
+  };
+
+  const formatEffectiveMode = (effectiveMode: string) => {
+    const modeMap: Record<string, string> = {
+      Immediate: '立即生效',
+      RestartRequired: '重启生效',
+    };
+    return modeMap[effectiveMode] || effectiveMode;
+  };
+
   // 表格列定义
   const columns: TableColumnsType<SystemConfigVo> = [
     {
       title: 'ID',
       dataIndex: 'voId',
       key: 'voId',
-      width: 80,
+      width: 70,
     },
     {
       title: '分类',
@@ -276,16 +265,16 @@ export const SystemConfigList = () => {
       ),
     },
     {
-      title: '配置名称',
+      title: '设置名称',
       dataIndex: 'voName',
       key: 'voName',
       width: 150,
     },
     {
-      title: '配置键',
+      title: '设置键',
       dataIndex: 'voKey',
       key: 'voKey',
-      width: 200,
+      width: 220,
       render: (key: string) => (
         <code className="system-config-key-code">
           {key}
@@ -293,10 +282,10 @@ export const SystemConfigList = () => {
       ),
     },
     {
-      title: '配置值',
-      dataIndex: 'voValue',
-      key: 'voValue',
-      width: 150,
+      title: '当前值',
+      dataIndex: 'voEffectiveValue',
+      key: 'voEffectiveValue',
+      width: 190,
       ellipsis: true,
       render: (value: string, record) => {
         if (record.voType === 'boolean') {
@@ -316,6 +305,43 @@ export const SystemConfigList = () => {
       },
     },
     {
+      title: '默认值',
+      dataIndex: 'voDefaultValue',
+      key: 'voDefaultValue',
+      width: 180,
+      ellipsis: true,
+      render: (value: string) => <span>{value}</span>,
+    },
+    {
+      title: '覆盖状态',
+      dataIndex: 'voIsOverridden',
+      key: 'voIsOverridden',
+      width: 100,
+      render: (isOverridden: boolean) => (
+        <Tag color={isOverridden ? 'processing' : 'default'}>
+          {isOverridden ? '已覆盖' : '使用默认'}
+        </Tag>
+      ),
+    },
+    {
+      title: '风险',
+      dataIndex: 'voRiskLevel',
+      key: 'voRiskLevel',
+      width: 90,
+      render: (riskLevel: string) => (
+        <Tag color={getRiskTagColor(riskLevel)}>{riskLevel}</Tag>
+      ),
+    },
+    {
+      title: '生效方式',
+      dataIndex: 'voEffectiveMode',
+      key: 'voEffectiveMode',
+      width: 110,
+      render: (effectiveMode: string) => (
+        <Tag>{formatEffectiveMode(effectiveMode)}</Tag>
+      ),
+    },
+    {
       title: '类型',
       dataIndex: 'voType',
       key: 'voType',
@@ -331,17 +357,7 @@ export const SystemConfigList = () => {
       ellipsis: true,
     },
     {
-      title: '状态',
-      key: 'status',
-      width: 80,
-      render: (_, record) => (
-        <Tag color={record.voIsEnabled ? 'success' : 'error'}>
-          {record.voIsEnabled ? '启用' : '禁用'}
-        </Tag>
-      ),
-    },
-    {
-      title: '修改时间',
+      title: '覆盖时间',
       dataIndex: 'voModifyTime',
       key: 'voModifyTime',
       width: 180,
@@ -359,29 +375,10 @@ export const SystemConfigList = () => {
             size="small"
             icon={<EditOutlined />}
             onClick={() => handleEdit(record)}
-            disabled={!canEditSystemConfig}
+            disabled={!canEditSystemConfig || !record.voIsEditable}
           >
             编辑
           </Button>
-          {canDeleteSystemConfig ? (
-            record.voKey === SITE_FAVICON_KEY ? null : (
-            <Popconfirm
-              title="确认删除"
-              description="确定要删除这个配置吗？此操作不可恢复。"
-              onConfirm={() => handleDelete(record.voId)}
-              okText="确定"
-              cancelText="取消"
-            >
-              <Button
-                variant="danger"
-                size="small"
-                icon={<DeleteOutlined />}
-              >
-                删除
-              </Button>
-            </Popconfirm>
-            )
-          ) : null}
         </Space>
       ),
     },
@@ -392,9 +389,9 @@ export const SystemConfigList = () => {
         <div className="admin-feature-header">
           <div>
             <h2>
-              <SettingOutlined /> 系统配置
+              <SettingOutlined /> 系统设置
             </h2>
-            <p className="admin-feature-subtle">维护站点基础配置、分类配置项和品牌图标入口。</p>
+            <p className="admin-feature-subtle">按注册定义查看默认值、当前覆盖值、风险等级和生效方式。</p>
           </div>
           <div className="system-config-header-actions">
             <Button
@@ -403,22 +400,13 @@ export const SystemConfigList = () => {
             >
               刷新
             </Button>
-            {canCreateSystemConfig ? (
-              <Button
-                variant="primary"
-                icon={<PlusOutlined />}
-                onClick={handleCreate}
-              >
-                新增配置
-              </Button>
-            ) : null}
           </div>
         </div>
       </section>
 
-      <section className="admin-feature-metrics" aria-label="系统配置指标">
+      <section className="admin-feature-metrics" aria-label="系统设置指标">
         <div className="admin-feature-metric">
-          全部配置
+          注册设置
           <strong>{configs.length}</strong>
         </div>
         <div className="admin-feature-metric">
@@ -426,12 +414,12 @@ export const SystemConfigList = () => {
           <strong>{filteredConfigs.length}</strong>
         </div>
         <div className="admin-feature-metric">
-          当前启用
-          <strong>{enabledConfigs}</strong>
+          已覆盖
+          <strong>{overriddenConfigs}</strong>
         </div>
         <div className="admin-feature-metric">
-          配置分类
-          <strong>{categories.length}</strong>
+          可编辑
+          <strong>{editableConfigs}</strong>
         </div>
       </section>
 
@@ -450,13 +438,16 @@ export const SystemConfigList = () => {
                 <div className="branding-card__title-row">
                   <h3 className="branding-card__title">网站标签页图标</h3>
                   <Tag color={isUsingDefaultFavicon ? 'default' : 'processing'}>
-                    {isUsingDefaultFavicon ? '默认种子' : '自定义图标'}
+                    {isUsingDefaultFavicon ? '使用默认' : '已覆盖'}
+                  </Tag>
+                  <Tag color="success">
+                    Low
                   </Tag>
                 </div>
                 <p className="branding-card__description">
-                  当前浏览器标签页左侧显示的站点图标。默认种子文件来自 `DataBases/Uploads/DefaultIco/bailuobo.ico`。
+                  当前浏览器标签页左侧显示的站点图标。默认文件来自 `DataBases/Uploads/DefaultIco/bailuobo.ico`，修改后立即生效。
                 </p>
-                <code className="branding-card__value">{faviconConfig?.voValue || DEFAULT_SITE_FAVICON_PATH}</code>
+                <code className="branding-card__value">{faviconConfig?.voEffectiveValue || DEFAULT_SITE_FAVICON_PATH}</code>
               </div>
             </div>
             <div className="branding-card__actions">
@@ -493,9 +484,9 @@ export const SystemConfigList = () => {
             </div>
           </section>
 
-          <section className="admin-table-toolbar" aria-label="系统配置筛选">
+          <section className="admin-table-toolbar" aria-label="系统设置筛选">
             <div className="admin-table-toolbar__title">
-              <span>筛选配置</span>
+              <span>筛选设置</span>
               <Tag>{activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}</Tag>
             </div>
             <div className="admin-table-toolbar__filters">
@@ -509,7 +500,7 @@ export const SystemConfigList = () => {
               />
               <Input
                 className="system-config-filter-input"
-                placeholder="搜索配置名称、键或描述"
+                placeholder="搜索设置名称、键或描述"
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
                 prefix={<SearchOutlined />}
@@ -530,35 +521,35 @@ export const SystemConfigList = () => {
                 showQuickJumper: true,
                 showTotal: (total) => `共 ${total} 条`,
               }}
-              scroll={{ x: 1400 }}
+              scroll={{ x: 1700 }}
             />
           </section>
         </main>
 
         <aside className="admin-table-aside">
-          <h3>配置摘要</h3>
-          <p className="admin-feature-subtle">用于核对当前配置范围、品牌图标状态和编辑权限。</p>
+          <h3>设置摘要</h3>
+          <p className="admin-feature-subtle">用于核对当前注册设置范围、品牌图标状态和编辑权限。</p>
           <div className="admin-table-summary">
             <div className="admin-table-summary__item">
               <span className="admin-table-summary__label">查询范围</span>
               <span className="admin-table-summary__value">
-                {activeFilterCount > 0 ? `${activeFilterCount} 个筛选条件` : '全部配置'}
+                {activeFilterCount > 0 ? `${activeFilterCount} 个筛选条件` : '全部设置'}
               </span>
             </div>
             <div className="admin-table-summary__item">
               <span className="admin-table-summary__label">站点图标</span>
               <span className="admin-table-summary__value">
-                {isUsingDefaultFavicon ? '默认种子' : '自定义图标'}
+                {isUsingDefaultFavicon ? '使用默认' : '已覆盖'}
               </span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">配置分类</span>
+              <span className="admin-table-summary__label">设置分类</span>
               <span className="admin-table-summary__value">{categories.length} 类</span>
             </div>
             <div className="admin-table-summary__item">
               <span className="admin-table-summary__label">编辑权限</span>
               <span className="admin-table-summary__value">
-                {canEditSystemConfig ? '可编辑配置' : '仅可查看配置'}
+                {canEditSystemConfig ? '可编辑低风险设置' : '仅可查看设置'}
               </span>
             </div>
           </div>
@@ -567,9 +558,7 @@ export const SystemConfigList = () => {
 
       <SystemConfigForm
         visible={formVisible}
-        mode={formMode}
         configId={editingConfigId}
-        categories={categories}
         onCancel={() => setFormVisible(false)}
         onSuccess={handleFormSuccess}
       />

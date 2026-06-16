@@ -18,6 +18,8 @@ public interface ISystemConfigService
 
     Task<SystemConfigVo?> UpdateConfigAsync(long id, UpdateSystemConfigDto request);
 
+    Task<SystemConfigVo?> RestoreConfigDefaultAsync(long id);
+
     Task<bool> DeleteConfigAsync(long id);
 
     Task<PublicSiteSettingsVo> GetPublicSiteSettingsAsync();

@@ -110,6 +110,28 @@ public class SystemConfigController : ControllerBase
         }
     }
 
+    /// <summary>恢复系统设置默认值</summary>
+    [HttpPut]
+    [RequireConsolePermission(ConsolePermissions.SystemConfigEdit)]
+    [ProducesResponseType(typeof(MessageModel<SystemConfigVo>), StatusCodes.Status200OK)]
+    public async Task<MessageModel<SystemConfigVo>> RestoreConfigDefault(long id)
+    {
+        try
+        {
+            var config = await _systemConfigService.RestoreConfigDefaultAsync(id);
+            if (config == null)
+            {
+                return MessageModel<SystemConfigVo>.Failed("配置不存在");
+            }
+
+            return MessageModel<SystemConfigVo>.Success("已恢复默认", config);
+        }
+        catch (Exception ex)
+        {
+            return MessageModel<SystemConfigVo>.Failed($"恢复默认失败：{ex.Message}");
+        }
+    }
+
     /// <summary>创建系统配置</summary>
     [HttpPost]
     [RequireConsolePermission(ConsolePermissions.SystemConfigCreate)]
@@ -141,11 +163,11 @@ public class SystemConfigController : ControllerBase
         try
         {
             var deleted = await _systemConfigService.DeleteConfigAsync(id);
-            return deleted ? MessageModel.Success("删除成功") : MessageModel.Failed("配置不存在");
+            return deleted ? MessageModel.Success("已恢复默认") : MessageModel.Failed("配置不存在");
         }
         catch (Exception ex)
         {
-            return MessageModel.Failed($"删除配置失败：{ex.Message}");
+            return MessageModel.Failed($"恢复默认失败：{ex.Message}");
         }
     }
 
