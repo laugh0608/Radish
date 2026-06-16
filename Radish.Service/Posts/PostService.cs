@@ -42,6 +42,7 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
     private readonly IBaseRepository<PostEditHistory> _postEditHistoryRepository;
     private readonly ForumEditHistoryOptions _editHistoryOptions;
     private readonly IBaseRepository<Attachment>? _attachmentRepository;
+    private readonly ISystemSettingProvider _systemSettingProvider;
 
     public PostService(
         IMapper mapper,
@@ -63,6 +64,7 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
         IBaseRepository<PostEditHistory> postEditHistoryRepository,
         IAttachmentService attachmentService,
         IOptions<ForumEditHistoryOptions> editHistoryOptions,
+        ISystemSettingProvider systemSettingProvider,
         IPostRepository? postCustomRepository = null,
         ICommentRepository? commentCustomRepository = null,
         IBaseRepository<Attachment>? attachmentRepository = null,
@@ -99,5 +101,24 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
         _postEditHistoryRepository = postEditHistoryRepository;
         _editHistoryOptions = editHistoryOptions.Value;
         _attachmentRepository = attachmentRepository;
+        _systemSettingProvider = systemSettingProvider;
+    }
+
+    private async Task ValidatePostContentSettingsAsync(string title, string content)
+    {
+        var minTitleLength = await _systemSettingProvider.GetInt32Async(SystemConfigDefaults.PostTitleMinLengthKey);
+        var minBodyLength = await _systemSettingProvider.GetInt32Async(SystemConfigDefaults.PostBodyMinLengthKey);
+        var trimmedTitle = title.Trim();
+        var trimmedContent = content.Trim();
+
+        if (trimmedTitle.Length < minTitleLength)
+        {
+            throw new ArgumentException($"帖子标题不能少于 {minTitleLength} 个字符");
+        }
+
+        if (trimmedContent.Length < minBodyLength)
+        {
+            throw new ArgumentException($"帖子内容不能少于 {minBodyLength} 个字符");
+        }
     }
 }

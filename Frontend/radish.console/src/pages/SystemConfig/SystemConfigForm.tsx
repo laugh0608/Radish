@@ -164,6 +164,12 @@ export const SystemConfigForm = ({
         />
       ) : null}
 
+      {config && config.voRiskLevel !== 'Low' ? (
+        <div className="system-config-risk-note">
+          保存该设置会影响内容发布规则，需填写修改原因并写入变更审计。
+        </div>
+      ) : null}
+
       <Form
         form={form}
         layout="vertical"

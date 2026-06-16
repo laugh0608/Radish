@@ -50,7 +50,7 @@ public class SystemConfigServiceTest
 
         var configs = await service.GetSystemConfigsAsync();
 
-        Assert.Single(configs);
+        Assert.Equal(SystemConfigDefaults.Definitions.Count, configs.Count);
         var faviconConfig = configs[0];
         Assert.Equal(SystemConfigDefaults.SiteFaviconKey, faviconConfig.VoKey);
         Assert.Equal(SystemConfigDefaults.DefaultSiteFaviconPath, faviconConfig.VoDefaultValue);
@@ -58,6 +58,101 @@ public class SystemConfigServiceTest
         Assert.False(faviconConfig.VoIsOverridden);
         Assert.Equal(SystemConfigRiskLevel.Low, faviconConfig.VoRiskLevel);
         Assert.Null(faviconConfig.VoModifyTime);
+    }
+
+    [Fact]
+    public async Task UpdateConfigAsync_ShouldRejectMediumSettingWithoutReason()
+    {
+        var definition = SystemConfigDefaults.GetDefinitionByKey(SystemConfigDefaults.PostTitleMinLengthKey)!;
+        var service = CreateService(new Mock<ISystemConfigRepository>());
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await service.UpdateConfigAsync(definition.Id, new UpdateSystemConfigDto
+            {
+                Value = "4",
+                IsEnabled = true,
+                Reason = " ",
+                ConfirmRiskLevel = definition.RiskLevel,
+                ConfirmKey = definition.Key
+            }));
+
+        Assert.Contains("需要填写修改原因", exception.Message);
+    }
+
+    [Fact]
+    public async Task UpdateConfigAsync_ShouldCreateOverrideForRegisteredMediumRiskSetting()
+    {
+        var definition = SystemConfigDefaults.GetDefinitionByKey(SystemConfigDefaults.PostTitleMinLengthKey)!;
+        var repository = new Mock<ISystemConfigRepository>();
+        var logRepository = new Mock<ISystemConfigChangeLogRepository>();
+        SystemConfigRecord? capturedRecord = null;
+        SystemConfigChangeLogRecord? capturedLog = null;
+
+        repository
+            .Setup(item => item.GetByKeyAsync(definition.Key))
+            .ReturnsAsync((SystemConfigRecord?)null);
+        repository
+            .Setup(item => item.CreateAsync(It.IsAny<SystemConfigRecord>()))
+            .Callback<SystemConfigRecord>(record => capturedRecord = record)
+            .ReturnsAsync((SystemConfigRecord record) =>
+            {
+                record.Id = 21;
+                return record;
+            });
+        logRepository
+            .Setup(item => item.CreateAsync(It.IsAny<SystemConfigChangeLogRecord>()))
+            .Callback<SystemConfigChangeLogRecord>(record => capturedLog = record)
+            .ReturnsAsync((SystemConfigChangeLogRecord record) =>
+            {
+                record.Id = 3;
+                return record;
+            });
+
+        var service = CreateService(repository, logRepository);
+
+        var updatedConfig = await service.UpdateConfigAsync(definition.Id, new UpdateSystemConfigDto
+        {
+            Value = "4",
+            IsEnabled = true,
+            Reason = "提高标题有效信息量",
+            ConfirmRiskLevel = definition.RiskLevel,
+            ConfirmKey = definition.Key
+        });
+
+        Assert.NotNull(updatedConfig);
+        Assert.True(updatedConfig!.VoIsOverridden);
+        Assert.Equal("4", updatedConfig.VoEffectiveValue);
+        Assert.NotNull(capturedRecord);
+        Assert.Equal(definition.Key, capturedRecord!.Key);
+        Assert.Equal("4", capturedRecord.Value);
+        Assert.NotNull(capturedLog);
+        Assert.Equal(SystemConfigRiskLevel.Medium, capturedLog!.RiskLevel);
+        Assert.Equal(definition.RiskLevel, capturedLog.ConfirmRiskLevel);
+        Assert.Equal(definition.Key, capturedLog.ConfirmKey);
+        Assert.Equal("提高标题有效信息量", capturedLog.Reason);
+    }
+
+    [Fact]
+    public async Task UpdateConfigAsync_ShouldRejectNumberOutOfDefinitionRange()
+    {
+        var definition = SystemConfigDefaults.GetDefinitionByKey(SystemConfigDefaults.PostTitleMinLengthKey)!;
+        var repository = new Mock<ISystemConfigRepository>();
+        repository
+            .Setup(item => item.GetByKeyAsync(definition.Key))
+            .ReturnsAsync((SystemConfigRecord?)null);
+        var service = CreateService(repository);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await service.UpdateConfigAsync(definition.Id, new UpdateSystemConfigDto
+            {
+                Value = "201",
+                IsEnabled = true,
+                Reason = "验证范围",
+                ConfirmRiskLevel = definition.RiskLevel,
+                ConfirmKey = definition.Key
+            }));
+
+        Assert.Contains("不能大于 200", exception.Message);
     }
 
     [Fact]

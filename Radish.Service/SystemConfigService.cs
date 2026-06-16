@@ -1,5 +1,3 @@
-using System.Globalization;
-using System.Text.Json;
 using Radish.IRepository;
 using Radish.IService;
 using Radish.Model;
@@ -94,7 +92,7 @@ public class SystemConfigService : ISystemConfigService
             return MapToVo(definition, null);
         }
 
-        var normalizedValue = NormalizeAndValidateValue(definition, request.Value);
+        var normalizedValue = SystemConfigValueNormalizer.NormalizeAndValidateValue(definition, request.Value);
         if (string.Equals(normalizedValue, definition.DefaultValue, StringComparison.Ordinal))
         {
             await _systemConfigRepository.DeleteByKeyAsync(definition.Key);
@@ -206,10 +204,10 @@ public class SystemConfigService : ISystemConfigService
         var definition = SystemConfigDefaults.GetDefinitionByKey(SystemConfigDefaults.SiteFaviconKey)
             ?? throw new InvalidOperationException($"系统设置定义不存在：{SystemConfigDefaults.SiteFaviconKey}");
         var faviconRecord = await _systemConfigRepository.GetByKeyAsync(definition.Key);
-        var usesDefaultFavicon = !HasEnabledOverride(definition, faviconRecord);
+        var usesDefaultFavicon = !SystemConfigValueNormalizer.HasEnabledOverride(definition, faviconRecord);
         var faviconUrl = usesDefaultFavicon
             ? definition.DefaultValue
-            : faviconRecord!.Value.Trim();
+            : SystemConfigValueNormalizer.GetEffectiveValue(definition, faviconRecord);
 
         return new PublicSiteSettingsVo
         {
@@ -245,9 +243,10 @@ public class SystemConfigService : ISystemConfigService
             throw new InvalidOperationException($"系统设置不允许在 Console 修改：{definition.Key}");
         }
 
-        if (!definition.RiskLevel.Equals(SystemConfigRiskLevel.Low, StringComparison.OrdinalIgnoreCase))
+        if (!definition.RiskLevel.Equals(SystemConfigRiskLevel.Low, StringComparison.OrdinalIgnoreCase) &&
+            !definition.RiskLevel.Equals(SystemConfigRiskLevel.Medium, StringComparison.OrdinalIgnoreCase))
         {
-            throw new InvalidOperationException($"当前仅允许修改低风险系统设置：{definition.Key}");
+            throw new InvalidOperationException($"当前仅允许修改 Low / Medium 风险系统设置：{definition.Key}");
         }
     }
 
@@ -267,82 +266,20 @@ public class SystemConfigService : ISystemConfigService
             throw new InvalidOperationException($"系统设置 {definition.Key} 需要确认风险等级 {definition.RiskLevel}");
         }
 
-        if (definition.RiskLevel.Equals(SystemConfigRiskLevel.High, StringComparison.OrdinalIgnoreCase) ||
-            definition.RiskLevel.Equals(SystemConfigRiskLevel.Critical, StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrWhiteSpace(reason))
         {
-            if (string.IsNullOrWhiteSpace(reason))
-            {
-                throw new InvalidOperationException($"系统设置 {definition.Key} 需要填写修改原因");
-            }
-
-            if (!string.Equals(confirmKey?.Trim(), definition.Key, StringComparison.Ordinal))
-            {
-                throw new InvalidOperationException($"系统设置 {definition.Key} 需要确认设置键");
-            }
-        }
-    }
-
-    private static string NormalizeAndValidateValue(SystemConfigDefinition definition, string value)
-    {
-        var trimmedValue = value.Trim();
-        if (string.IsNullOrWhiteSpace(trimmedValue))
-        {
-            throw new InvalidOperationException("系统设置值不能为空");
+            throw new InvalidOperationException($"系统设置 {definition.Key} 需要填写修改原因");
         }
 
-        return definition.ValueType.ToLowerInvariant() switch
+        if (!string.Equals(confirmKey?.Trim(), definition.Key, StringComparison.Ordinal))
         {
-            "number" => NormalizeNumberValue(trimmedValue),
-            "boolean" => NormalizeBooleanValue(trimmedValue),
-            "json" => NormalizeJsonValue(trimmedValue),
-            _ => trimmedValue
-        };
-    }
-
-    private static string NormalizeNumberValue(string value)
-    {
-        if (!decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out var number))
-        {
-            throw new InvalidOperationException("系统设置值必须是有效数字");
+            throw new InvalidOperationException($"系统设置 {definition.Key} 需要确认设置键");
         }
-
-        return number.ToString(CultureInfo.InvariantCulture);
-    }
-
-    private static string NormalizeBooleanValue(string value)
-    {
-        if (!bool.TryParse(value, out var boolValue))
-        {
-            throw new InvalidOperationException("系统设置值必须是 true 或 false");
-        }
-
-        return boolValue.ToString().ToLowerInvariant();
-    }
-
-    private static string NormalizeJsonValue(string value)
-    {
-        try
-        {
-            using var _ = JsonDocument.Parse(value);
-            return value;
-        }
-        catch (JsonException ex)
-        {
-            throw new InvalidOperationException("系统设置值必须是有效 JSON", ex);
-        }
-    }
-
-    private static bool HasEnabledOverride(SystemConfigDefinition definition, SystemConfigRecord? record)
-    {
-        return record != null
-            && record.IsEnabled
-            && !string.IsNullOrWhiteSpace(record.Value)
-            && !string.Equals(record.Value.Trim(), definition.DefaultValue, StringComparison.Ordinal);
     }
 
     private static string GetEffectiveValue(SystemConfigDefinition definition, SystemConfigRecord? record)
     {
-        return HasEnabledOverride(definition, record) ? record!.Value.Trim() : definition.DefaultValue;
+        return SystemConfigValueNormalizer.GetEffectiveValue(definition, record);
     }
 
     private async Task CreateChangeLogIfChangedAsync(
@@ -384,7 +321,7 @@ public class SystemConfigService : ISystemConfigService
 
     private static SystemConfigVo MapToVo(SystemConfigDefinition definition, SystemConfigRecord? record)
     {
-        var isOverridden = HasEnabledOverride(definition, record);
+        var isOverridden = SystemConfigValueNormalizer.HasEnabledOverride(definition, record);
         var effectiveValue = GetEffectiveValue(definition, record);
 
         return new SystemConfigVo

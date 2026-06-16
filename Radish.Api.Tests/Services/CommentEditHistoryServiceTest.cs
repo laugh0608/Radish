@@ -93,7 +93,8 @@ public class CommentEditHistoryServiceTest
             attachmentUrlResolver.Object,
             Options.Create(highlightOptions),
             commentEditHistoryRepository.Object,
-            Options.Create(editOptions));
+            Options.Create(editOptions),
+            CreateDefaultSystemSettingProvider());
 
         // Act
         var (success, message) = await service.UpdateCommentAsync(comment.Id, "new-content", comment.AuthorId, "test-user", isAdmin: false);
@@ -173,7 +174,8 @@ public class CommentEditHistoryServiceTest
             attachmentUrlResolver.Object,
             Options.Create(new CommentHighlightOptions()),
             commentEditHistoryRepository.Object,
-            Options.Create(editOptions));
+            Options.Create(editOptions),
+            CreateDefaultSystemSettingProvider());
 
         var (success, message) = await service.UpdateCommentAsync(comment.Id, "new-content", comment.AuthorId, "test-user", isAdmin: false);
 
@@ -269,7 +271,8 @@ public class CommentEditHistoryServiceTest
             attachmentUrlResolver.Object,
             Options.Create(highlightOptions),
             commentEditHistoryRepository.Object,
-            Options.Create(editOptions));
+            Options.Create(editOptions),
+            CreateDefaultSystemSettingProvider());
 
         // Act
         var (success, message) = await service.UpdateCommentAsync(comment.Id, "new-content", comment.AuthorId, "admin-user", isAdmin: true);
@@ -278,5 +281,15 @@ public class CommentEditHistoryServiceTest
         success.ShouldBeTrue();
         message.ShouldBe("编辑成功");
         commentRepository.Verify(r => r.UpdateAsync(It.IsAny<Comment>()), Times.Once);
+    }
+
+    private static ISystemSettingProvider CreateDefaultSystemSettingProvider()
+    {
+        var provider = new Mock<ISystemSettingProvider>();
+        provider
+            .Setup(item => item.GetInt32Async(SystemConfigDefaults.CommentBodyMinLengthKey))
+            .ReturnsAsync(int.Parse(SystemConfigDefaults.DefaultCommentBodyMinLength));
+
+        return provider.Object;
     }
 }

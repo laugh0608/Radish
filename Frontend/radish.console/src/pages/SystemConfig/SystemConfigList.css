@@ -126,6 +126,16 @@
   margin-top: 16px;
 }
 
+.system-config-risk-note {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--console-warning-border);
+  border-radius: var(--console-radius-control);
+  background: var(--console-warning-bg);
+  color: var(--console-warning-text);
+  line-height: 1.6;
+}
+
 .system-config-history-summary {
   display: flex;
   align-items: center;

@@ -40,6 +40,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
     private readonly ForumEditHistoryOptions _editHistoryOptions;
     private readonly IBaseRepository<Attachment>? _attachmentRepository;
     private readonly IBaseRepository<User>? _userRepository;
+    private readonly ISystemSettingProvider _systemSettingProvider;
 
     public CommentService(
         IMapper mapper,
@@ -56,6 +57,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         IOptions<CommentHighlightOptions> highlightOptions,
         IBaseRepository<CommentEditHistory> commentEditHistoryRepository,
         IOptions<ForumEditHistoryOptions> editHistoryOptions,
+        ISystemSettingProvider systemSettingProvider,
         IBaseRepository<Attachment>? attachmentRepository = null,
         IBaseRepository<User>? userRepository = null)
         : base(mapper, baseRepository)
@@ -75,6 +77,18 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         _editHistoryOptions = editHistoryOptions.Value;
         _attachmentRepository = attachmentRepository;
         _userRepository = userRepository;
+        _systemSettingProvider = systemSettingProvider;
+    }
+
+    private async Task ValidateCommentContentSettingsAsync(string content)
+    {
+        var minContentLength = await _systemSettingProvider.GetInt32Async(SystemConfigDefaults.CommentBodyMinLengthKey);
+        var trimmedContent = content.Trim();
+
+        if (trimmedContent.Length < minContentLength)
+        {
+            throw new ArgumentException($"评论内容不能少于 {minContentLength} 个字符");
+        }
     }
 
     /// <summary>
@@ -82,6 +96,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
     /// </summary>
     public async Task<(long commentId, CommentHighlightRecheckResultVo highlightRecheckResult)> AddCommentAsync(Comment comment)
     {
+        await ValidateCommentContentSettingsAsync(comment.Content);
+
         Comment? replyTargetComment = null;
 
         if (!comment.ParentId.HasValue)
@@ -1029,6 +1045,15 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         if (string.IsNullOrWhiteSpace(newContent))
         {
             return (false, "评论内容不能为空");
+        }
+
+        try
+        {
+            await ValidateCommentContentSettingsAsync(newContent);
+        }
+        catch (ArgumentException ex)
+        {
+            return (false, ex.Message);
         }
 
         var safeUserName = string.IsNullOrWhiteSpace(userName) ? "System" : userName;

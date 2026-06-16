@@ -139,7 +139,22 @@ public class CommentController : ControllerBase
             TenantId = Current.TenantId
         });
 
-        var (commentId, highlightRecheckResult) = await _commentService.AddCommentAsync(comment);
+        long commentId;
+        CommentHighlightRecheckResultVo highlightRecheckResult;
+        try
+        {
+            (commentId, highlightRecheckResult) = await _commentService.AddCommentAsync(comment);
+        }
+        catch (ArgumentException ex)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = ex.Message
+            };
+        }
+
         var createdComment = await _commentService.GetCommentDetailAsync(commentId, Current.UserId);
         if (createdComment != null)
         {

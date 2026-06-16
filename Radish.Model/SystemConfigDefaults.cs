@@ -43,6 +43,12 @@ public sealed class SystemConfigDefinition
 
     public string DefaultValue { get; init; } = string.Empty;
 
+    public decimal? MinNumberValue { get; init; }
+
+    public decimal? MaxNumberValue { get; init; }
+
+    public bool RequiresInteger { get; init; }
+
     public string RiskLevel { get; init; } = SystemConfigRiskLevel.Low;
 
     public string EffectiveMode { get; init; } = SystemConfigEffectiveMode.Immediate;
@@ -72,6 +78,57 @@ public static class SystemConfigDefaults
             EffectiveMode = SystemConfigEffectiveMode.Immediate,
             IsEditable = true,
             IsSensitive = false
+        },
+        new()
+        {
+            Id = 2,
+            Category = ContentPublishingCategory,
+            Key = PostTitleMinLengthKey,
+            Name = "帖子标题最小长度",
+            Description = "发帖和编辑帖子时标题至少需要达到的字符数。",
+            ValueType = "number",
+            DefaultValue = DefaultPostTitleMinLength,
+            MinNumberValue = 1,
+            MaxNumberValue = 200,
+            RequiresInteger = true,
+            RiskLevel = SystemConfigRiskLevel.Medium,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
+        },
+        new()
+        {
+            Id = 3,
+            Category = ContentPublishingCategory,
+            Key = PostBodyMinLengthKey,
+            Name = "帖子正文最小长度",
+            Description = "发帖和编辑帖子时正文至少需要达到的字符数。",
+            ValueType = "number",
+            DefaultValue = DefaultPostBodyMinLength,
+            MinNumberValue = 1,
+            MaxNumberValue = 50000,
+            RequiresInteger = true,
+            RiskLevel = SystemConfigRiskLevel.Medium,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
+        },
+        new()
+        {
+            Id = 4,
+            Category = CommentInteractionCategory,
+            Key = CommentBodyMinLengthKey,
+            Name = "评论内容最小长度",
+            Description = "发表评论和编辑评论时内容至少需要达到的字符数。",
+            ValueType = "number",
+            DefaultValue = DefaultCommentBodyMinLength,
+            MinNumberValue = 1,
+            MaxNumberValue = 2000,
+            RequiresInteger = true,
+            RiskLevel = SystemConfigRiskLevel.Low,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
         }
     ];
 
@@ -92,6 +149,30 @@ public static class SystemConfigDefaults
 
     /// <summary>默认 favicon 相对地址</summary>
     public const string DefaultSiteFaviconPath = "/uploads/DefaultIco/bailuobo.ico";
+
+    /// <summary>内容发布分类</summary>
+    public const string ContentPublishingCategory = "内容发布";
+
+    /// <summary>评论互动分类</summary>
+    public const string CommentInteractionCategory = "评论互动";
+
+    /// <summary>帖子标题最小长度配置键</summary>
+    public const string PostTitleMinLengthKey = "Content.PostTitle.MinLength";
+
+    /// <summary>帖子正文最小长度配置键</summary>
+    public const string PostBodyMinLengthKey = "Content.PostBody.MinLength";
+
+    /// <summary>评论内容最小长度配置键</summary>
+    public const string CommentBodyMinLengthKey = "Comment.Body.MinLength";
+
+    /// <summary>默认帖子标题最小长度</summary>
+    public const string DefaultPostTitleMinLength = "3";
+
+    /// <summary>默认帖子正文最小长度</summary>
+    public const string DefaultPostBodyMinLength = "10";
+
+    /// <summary>默认评论内容最小长度</summary>
+    public const string DefaultCommentBodyMinLength = "1";
 
     /// <summary>已注册系统设置定义</summary>
     public static IReadOnlyList<SystemConfigDefinition> Definitions => DefinitionItems;

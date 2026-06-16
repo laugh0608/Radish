@@ -202,6 +202,17 @@ public class CommentNavigationServiceTest
             attachmentUrlResolver.Object,
             Options.Create(new CommentHighlightOptions()),
             commentEditHistoryRepository.Object,
-            Options.Create(new ForumEditHistoryOptions()));
+            Options.Create(new ForumEditHistoryOptions()),
+            CreateDefaultSystemSettingProvider());
+    }
+
+    private static ISystemSettingProvider CreateDefaultSystemSettingProvider()
+    {
+        var provider = new Mock<ISystemSettingProvider>();
+        provider
+            .Setup(item => item.GetInt32Async(SystemConfigDefaults.CommentBodyMinLengthKey))
+            .ReturnsAsync(int.Parse(SystemConfigDefaults.DefaultCommentBodyMinLength));
+
+        return provider.Object;
     }
 }

@@ -305,6 +305,16 @@ public class PostController : ControllerBase
             };
         }
 
+        if (string.IsNullOrWhiteSpace(request.Content))
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "帖子内容不能为空"
+            };
+        }
+
         var normalizedTagNames = request.TagNames?
             .Where(tag => !string.IsNullOrWhiteSpace(tag))
             .Select(tag => tag.Trim())
