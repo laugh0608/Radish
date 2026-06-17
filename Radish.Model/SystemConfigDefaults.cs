@@ -297,6 +297,78 @@ public static class SystemConfigDefaults
             EffectiveMode = SystemConfigEffectiveMode.Immediate,
             IsEditable = true,
             IsSensitive = false
+        },
+        new()
+        {
+            Id = 14,
+            Category = CommentInteractionCategory,
+            Key = QuickReplyDefaultTakeKey,
+            Name = "轻回应默认返回条数",
+            Description = "帖子详情未指定返回条数时默认加载的轻回应数量。",
+            ImpactSummary = "影响帖子详情轻回应墙的默认加载数量，数值过大会增加列表查询与页面渲染压力。",
+            ValueType = "number",
+            DefaultValue = DefaultQuickReplyDefaultTake,
+            MinNumberValue = 1,
+            MaxNumberValue = 100,
+            RequiresInteger = true,
+            RiskLevel = SystemConfigRiskLevel.Low,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
+        },
+        new()
+        {
+            Id = 15,
+            Category = CommentInteractionCategory,
+            Key = QuickReplyMaxTakeKey,
+            Name = "轻回应最大返回条数",
+            Description = "帖子详情轻回应墙单次最多允许返回的轻回应数量。",
+            ImpactSummary = "影响帖子详情轻回应墙单次查询上限，数值过大会增加接口查询与页面渲染压力。",
+            ValueType = "number",
+            DefaultValue = DefaultQuickReplyMaxTake,
+            MinNumberValue = 1,
+            MaxNumberValue = 100,
+            RequiresInteger = true,
+            RiskLevel = SystemConfigRiskLevel.Medium,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
+        },
+        new()
+        {
+            Id = 16,
+            Category = CommentInteractionCategory,
+            Key = QuickReplyPerPostCooldownSecondsKey,
+            Name = "轻回应单帖冷却秒数",
+            Description = "同一用户在同一帖子下连续发送轻回应需要等待的秒数。",
+            ImpactSummary = "影响轻回应发布频率限制，数值过低会削弱刷屏治理，数值过高会增加正常互动阻力。",
+            ValueType = "number",
+            DefaultValue = DefaultQuickReplyPerPostCooldownSeconds,
+            MinNumberValue = 1,
+            MaxNumberValue = 3600,
+            RequiresInteger = true,
+            RiskLevel = SystemConfigRiskLevel.Medium,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
+        },
+        new()
+        {
+            Id = 17,
+            Category = CommentInteractionCategory,
+            Key = QuickReplyDuplicateWindowSecondsKey,
+            Name = "轻回应重复内容窗口秒数",
+            Description = "同一用户在同一帖子下重复发送相同轻回应内容的去重时间窗口。",
+            ImpactSummary = "影响轻回应重复内容治理，数值过低会削弱重复刷屏治理，数值过高会增加正常重复表达阻力。",
+            ValueType = "number",
+            DefaultValue = DefaultQuickReplyDuplicateWindowSeconds,
+            MinNumberValue = 1,
+            MaxNumberValue = 86400,
+            RequiresInteger = true,
+            RiskLevel = SystemConfigRiskLevel.Medium,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
         }
     ];
 
@@ -363,6 +435,18 @@ public static class SystemConfigDefaults
     /// <summary>轻回应内容最大长度配置键</summary>
     public const string QuickReplyMaxContentLengthKey = "Comment.QuickReply.MaxContentLength";
 
+    /// <summary>轻回应默认返回条数配置键</summary>
+    public const string QuickReplyDefaultTakeKey = "Comment.QuickReply.DefaultTake";
+
+    /// <summary>轻回应最大返回条数配置键</summary>
+    public const string QuickReplyMaxTakeKey = "Comment.QuickReply.MaxTake";
+
+    /// <summary>轻回应单帖冷却秒数配置键</summary>
+    public const string QuickReplyPerPostCooldownSecondsKey = "Comment.QuickReply.PerPostCooldownSeconds";
+
+    /// <summary>轻回应重复内容窗口秒数配置键</summary>
+    public const string QuickReplyDuplicateWindowSecondsKey = "Comment.QuickReply.DuplicateWindowSeconds";
+
     /// <summary>默认帖子标题最小长度</summary>
     public const string DefaultPostTitleMinLength = "3";
 
@@ -398,6 +482,18 @@ public static class SystemConfigDefaults
 
     /// <summary>默认轻回应内容最大长度</summary>
     public const string DefaultQuickReplyMaxContentLength = "10";
+
+    /// <summary>默认轻回应默认返回条数</summary>
+    public const string DefaultQuickReplyDefaultTake = "30";
+
+    /// <summary>默认轻回应最大返回条数</summary>
+    public const string DefaultQuickReplyMaxTake = "60";
+
+    /// <summary>默认轻回应单帖冷却秒数</summary>
+    public const string DefaultQuickReplyPerPostCooldownSeconds = "30";
+
+    /// <summary>默认轻回应重复内容窗口秒数</summary>
+    public const string DefaultQuickReplyDuplicateWindowSeconds = "300";
 
     /// <summary>已注册系统设置定义</summary>
     public static IReadOnlyList<SystemConfigDefinition> Definitions => DefinitionItems;

@@ -274,6 +274,83 @@ public class PostQuickReplyServiceTest
         postRepository.VerifyAll();
     }
 
+    [Fact(DisplayName = "轻回应墙应使用系统设置中的返回条数上限")]
+    public async Task GetRecentByPostIdAsync_ShouldUseSystemSettingTakeLimits()
+    {
+        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+        var quickReplyRepository = new Mock<IBaseRepository<PostQuickReply>>(MockBehavior.Strict);
+        var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
+        var caching = new Mock<ICaching>(MockBehavior.Strict);
+        var notificationService = new Mock<INotificationService>(MockBehavior.Strict);
+        var logger = new Mock<ILogger<PostQuickReplyService>>();
+
+        postRepository
+            .Setup(repository => repository.QueryByIdAsync(1004))
+            .ReturnsAsync(new Post(new PostInitializationOptions("轻回应墙帖子", "正文"))
+            {
+                Id = 1004,
+                IsPublished = true,
+                IsEnabled = true
+            });
+
+        quickReplyRepository
+            .Setup(repository => repository.QueryPageAsync(
+                It.IsAny<Expression<Func<PostQuickReply, bool>>?>(),
+                1,
+                3,
+                It.IsAny<Expression<Func<PostQuickReply, object>>?>(),
+                OrderByType.Desc))
+            .ReturnsAsync((new List<PostQuickReply>(), 0));
+
+        mapper
+            .Setup(m => m.Map<List<PostQuickReplyVo>>(It.IsAny<List<PostQuickReply>>()))
+            .Returns(new List<PostQuickReplyVo>());
+
+        var service = CreateService(
+            mapper,
+            quickReplyRepository,
+            postRepository,
+            caching,
+            notificationService,
+            logger,
+            quickReplyDefaultTake: 2,
+            quickReplyMaxTake: 3);
+
+        var result = await service.GetRecentByPostIdAsync(1004, 10);
+
+        result.VoItems.Count.ShouldBe(0);
+        result.VoTotal.ShouldBe(0);
+        quickReplyRepository.VerifyAll();
+        postRepository.VerifyAll();
+        mapper.VerifyAll();
+    }
+
+    [Fact(DisplayName = "轻回应墙应拒绝默认返回条数大于最大返回条数的系统设置")]
+    public async Task GetRecentByPostIdAsync_ShouldExposeInvalidTakeSettings()
+    {
+        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+        var quickReplyRepository = new Mock<IBaseRepository<PostQuickReply>>(MockBehavior.Strict);
+        var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
+        var caching = new Mock<ICaching>(MockBehavior.Strict);
+        var notificationService = new Mock<INotificationService>(MockBehavior.Strict);
+        var logger = new Mock<ILogger<PostQuickReplyService>>();
+
+        var service = CreateService(
+            mapper,
+            quickReplyRepository,
+            postRepository,
+            caching,
+            notificationService,
+            logger,
+            quickReplyDefaultTake: 10,
+            quickReplyMaxTake: 5);
+
+        var exception = await Should.ThrowAsync<InvalidOperationException>(async () =>
+            await service.GetRecentByPostIdAsync(1004, 0));
+
+        exception.Message.ShouldBe("轻回应返回条数系统设置无效：默认返回条数不能大于最大返回条数");
+    }
+
     [Fact(DisplayName = "创建轻回应应使用系统设置中的内容长度上限")]
     public async Task CreateAsync_ShouldUseSystemSettingMaxContentLength()
     {
@@ -303,6 +380,50 @@ public class PostQuickReplyServiceTest
         exception.Message.ShouldBe("轻回应内容不能超过3个字符");
     }
 
+    [Fact(DisplayName = "创建轻回应应使用系统设置中的冷却秒数")]
+    public async Task CreateAsync_ShouldUseSystemSettingCooldownSeconds()
+    {
+        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+        var quickReplyRepository = new Mock<IBaseRepository<PostQuickReply>>(MockBehavior.Strict);
+        var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
+        var caching = new Mock<ICaching>(MockBehavior.Strict);
+        var notificationService = new Mock<INotificationService>(MockBehavior.Strict);
+        var logger = new Mock<ILogger<PostQuickReplyService>>();
+
+        postRepository
+            .Setup(repository => repository.QueryByIdAsync(1005))
+            .ReturnsAsync(new Post(new PostInitializationOptions("冷却帖子", "正文"))
+            {
+                Id = 1005,
+                IsPublished = true,
+                IsEnabled = true
+            });
+
+        caching
+            .Setup(cache => cache.ExistsAsync("post_quick_reply:cooldown:3001:1005"))
+            .ReturnsAsync(true);
+
+        var service = CreateService(
+            mapper,
+            quickReplyRepository,
+            postRepository,
+            caching,
+            notificationService,
+            logger,
+            quickReplyPerPostCooldownSeconds: 9);
+
+        var exception = await Should.ThrowAsync<InvalidOperationException>(async () =>
+            await service.CreateAsync(new CreatePostQuickReplyDto
+            {
+                PostId = 1005,
+                Content = "好耶"
+            }, 3001, "quick-user", 1));
+
+        exception.Message.ShouldBe("发送过于频繁，请9秒后再试");
+        caching.VerifyAll();
+        postRepository.VerifyAll();
+    }
+
     private static PostQuickReplyService CreateService(
         Mock<IMapper> mapper,
         Mock<IBaseRepository<PostQuickReply>> quickReplyRepository,
@@ -310,12 +431,28 @@ public class PostQuickReplyServiceTest
         Mock<ICaching> caching,
         Mock<INotificationService> notificationService,
         Mock<ILogger<PostQuickReplyService>> logger,
-        int maxContentLength = 10)
+        int maxContentLength = 10,
+        int quickReplyDefaultTake = 30,
+        int quickReplyMaxTake = 60,
+        int quickReplyPerPostCooldownSeconds = 30,
+        int quickReplyDuplicateWindowSeconds = 300)
     {
         var systemSettingProvider = new Mock<ISystemSettingProvider>(MockBehavior.Strict);
         systemSettingProvider
             .Setup(provider => provider.GetInt32Async(SystemConfigDefaults.QuickReplyMaxContentLengthKey))
             .ReturnsAsync(maxContentLength);
+        systemSettingProvider
+            .Setup(provider => provider.GetInt32Async(SystemConfigDefaults.QuickReplyDefaultTakeKey))
+            .ReturnsAsync(quickReplyDefaultTake);
+        systemSettingProvider
+            .Setup(provider => provider.GetInt32Async(SystemConfigDefaults.QuickReplyMaxTakeKey))
+            .ReturnsAsync(quickReplyMaxTake);
+        systemSettingProvider
+            .Setup(provider => provider.GetInt32Async(SystemConfigDefaults.QuickReplyPerPostCooldownSecondsKey))
+            .ReturnsAsync(quickReplyPerPostCooldownSeconds);
+        systemSettingProvider
+            .Setup(provider => provider.GetInt32Async(SystemConfigDefaults.QuickReplyDuplicateWindowSecondsKey))
+            .ReturnsAsync(quickReplyDuplicateWindowSeconds);
 
         return new PostQuickReplyService(
             mapper.Object,
@@ -325,11 +462,7 @@ public class PostQuickReplyServiceTest
             systemSettingProvider.Object,
             Options.Create(new ForumQuickReplyOptions
             {
-                Enable = true,
-                PerPostCooldownSeconds = 30,
-                DuplicateWindowSeconds = 300,
-                DefaultTake = 30,
-                MaxTake = 60
+                Enable = true
             }),
             attachmentService: null,
             notificationService: notificationService.Object,

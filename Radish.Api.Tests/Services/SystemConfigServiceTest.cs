@@ -115,6 +115,30 @@ public class SystemConfigServiceTest
         Assert.Equal(1m, quickReplyMaxConfig.VoMinNumberValue);
         Assert.Equal(24m, quickReplyMaxConfig.VoMaxNumberValue);
         Assert.Contains("轻回应", quickReplyMaxConfig.VoImpactSummary);
+
+        var quickReplyDefaultTakeConfig = configs.Single(config => config.VoKey == SystemConfigDefaults.QuickReplyDefaultTakeKey);
+        Assert.Equal(SystemConfigDefaults.DefaultQuickReplyDefaultTake, quickReplyDefaultTakeConfig.VoDefaultValue);
+        Assert.Equal(SystemConfigRiskLevel.Low, quickReplyDefaultTakeConfig.VoRiskLevel);
+        Assert.Equal(1m, quickReplyDefaultTakeConfig.VoMinNumberValue);
+        Assert.Equal(100m, quickReplyDefaultTakeConfig.VoMaxNumberValue);
+
+        var quickReplyMaxTakeConfig = configs.Single(config => config.VoKey == SystemConfigDefaults.QuickReplyMaxTakeKey);
+        Assert.Equal(SystemConfigDefaults.DefaultQuickReplyMaxTake, quickReplyMaxTakeConfig.VoDefaultValue);
+        Assert.Equal(SystemConfigRiskLevel.Medium, quickReplyMaxTakeConfig.VoRiskLevel);
+        Assert.Equal(1m, quickReplyMaxTakeConfig.VoMinNumberValue);
+        Assert.Equal(100m, quickReplyMaxTakeConfig.VoMaxNumberValue);
+
+        var quickReplyCooldownConfig = configs.Single(config => config.VoKey == SystemConfigDefaults.QuickReplyPerPostCooldownSecondsKey);
+        Assert.Equal(SystemConfigDefaults.DefaultQuickReplyPerPostCooldownSeconds, quickReplyCooldownConfig.VoDefaultValue);
+        Assert.Equal(SystemConfigRiskLevel.Medium, quickReplyCooldownConfig.VoRiskLevel);
+        Assert.Equal(1m, quickReplyCooldownConfig.VoMinNumberValue);
+        Assert.Equal(3600m, quickReplyCooldownConfig.VoMaxNumberValue);
+
+        var quickReplyDuplicateWindowConfig = configs.Single(config => config.VoKey == SystemConfigDefaults.QuickReplyDuplicateWindowSecondsKey);
+        Assert.Equal(SystemConfigDefaults.DefaultQuickReplyDuplicateWindowSeconds, quickReplyDuplicateWindowConfig.VoDefaultValue);
+        Assert.Equal(SystemConfigRiskLevel.Medium, quickReplyDuplicateWindowConfig.VoRiskLevel);
+        Assert.Equal(1m, quickReplyDuplicateWindowConfig.VoMinNumberValue);
+        Assert.Equal(86400m, quickReplyDuplicateWindowConfig.VoMaxNumberValue);
     }
 
     [Fact]
