@@ -184,7 +184,7 @@ public class CommentEditHistoryServiceTest
         commentRepository.Verify(r => r.UpdateAsync(It.IsAny<Comment>()), Times.Never);
     }
 
-    [Fact(DisplayName = "管理员可越过次数与时间窗口限制")] 
+    [Fact(DisplayName = "管理员可越过次数与时间窗口限制")]
     public async Task UpdateCommentAsync_ShouldSucceed_WhenAdminBypassEnabled()
     {
         // Arrange
@@ -283,12 +283,93 @@ public class CommentEditHistoryServiceTest
         commentRepository.Verify(r => r.UpdateAsync(It.IsAny<Comment>()), Times.Once);
     }
 
-    private static ISystemSettingProvider CreateDefaultSystemSettingProvider()
+    [Fact(DisplayName = "评论超过系统设置最大长度应失败")]
+    public async Task UpdateCommentAsync_ShouldFail_WhenContentExceedsConfiguredMaxLength()
+    {
+        var mapper = new Mock<IMapper>();
+        var commentRepository = new Mock<IBaseRepository<Comment>>();
+        var userCommentLikeRepository = new Mock<IBaseRepository<UserCommentLike>>();
+        var highlightRepository = new Mock<IBaseRepository<CommentHighlight>>();
+        var commentEditHistoryRepository = new Mock<IBaseRepository<CommentEditHistory>>();
+        var postService = new Mock<IPostService>();
+        var caching = new Mock<ICaching>();
+        var coinRewardService = new Mock<ICoinRewardService>();
+        var notificationService = new Mock<INotificationService>();
+        var dedupService = new Mock<INotificationDedupService>();
+        var experienceService = new Mock<IExperienceService>();
+        var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>();
+
+        var comment = new Comment
+        {
+            Id = 1004,
+            PostId = 2001,
+            AuthorId = 3001,
+            AuthorName = "test-user",
+            Content = "old-content",
+            CreateTime = DateTime.Now,
+            IsDeleted = false,
+            TenantId = 1
+        };
+
+        commentRepository
+            .Setup(r => r.QueryByIdAsync(comment.Id))
+            .ReturnsAsync(comment);
+
+        commentEditHistoryRepository
+            .Setup(r => r.QueryCountAsync(It.IsAny<Expression<Func<CommentEditHistory, bool>>?>()))
+            .ReturnsAsync(0);
+
+        var editOptions = new ForumEditHistoryOptions
+        {
+            Enable = true,
+            Comment = new ForumCommentEditHistoryOptions
+            {
+                EnableHistory = true,
+                MaxEditCount = 2,
+                HistorySaveEditCount = 2,
+                MaxHistoryRecords = 2,
+                EditWindowMinutes = 5
+            },
+            AdminOverride = new ForumEditHistoryAdminOverrideOptions
+            {
+                BypassEditCountLimit = true,
+                BypassCommentEditWindow = true
+            }
+        };
+
+        var service = new CommentService(
+            mapper.Object,
+            commentRepository.Object,
+            userCommentLikeRepository.Object,
+            highlightRepository.Object,
+            postService.Object,
+            caching.Object,
+            coinRewardService.Object,
+            notificationService.Object,
+            dedupService.Object,
+            experienceService.Object,
+            attachmentUrlResolver.Object,
+            Options.Create(new CommentHighlightOptions()),
+            commentEditHistoryRepository.Object,
+            Options.Create(editOptions),
+            CreateDefaultSystemSettingProvider(commentBodyMaxLength: 3));
+
+        var (success, message) = await service.UpdateCommentAsync(comment.Id, "超过长度", comment.AuthorId, "test-user", isAdmin: false);
+
+        success.ShouldBeFalse();
+        message.ShouldBe("评论内容不能超过 3 个字符");
+        commentRepository.Verify(r => r.UpdateAsync(It.IsAny<Comment>()), Times.Never);
+    }
+
+    private static ISystemSettingProvider CreateDefaultSystemSettingProvider(int? commentBodyMaxLength = null)
     {
         var provider = new Mock<ISystemSettingProvider>();
         provider
             .Setup(item => item.GetInt32Async(SystemConfigDefaults.CommentBodyMinLengthKey))
             .ReturnsAsync(int.Parse(SystemConfigDefaults.DefaultCommentBodyMinLength));
+        provider
+            .Setup(item => item.GetInt32Async(SystemConfigDefaults.CommentBodyMaxLengthKey))
+            .ReturnsAsync(commentBodyMaxLength ?? int.Parse(SystemConfigDefaults.DefaultCommentBodyMaxLength));
 
         return provider.Object;
     }

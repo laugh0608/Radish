@@ -102,6 +102,24 @@ public static class SystemConfigDefaults
         },
         new()
         {
+            Id = 5,
+            Category = ContentPublishingCategory,
+            Key = PostTitleMaxLengthKey,
+            Name = "帖子标题最大长度",
+            Description = "发帖和编辑帖子时标题最多允许的字符数。",
+            ImpactSummary = "影响发帖和编辑帖子时的标题长度上限校验，不能超过帖子标题数据库字段长度。",
+            ValueType = "number",
+            DefaultValue = DefaultPostTitleMaxLength,
+            MinNumberValue = 1,
+            MaxNumberValue = 200,
+            RequiresInteger = true,
+            RiskLevel = SystemConfigRiskLevel.Medium,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
+        },
+        new()
+        {
             Id = 3,
             Category = ContentPublishingCategory,
             Key = PostBodyMinLengthKey,
@@ -120,6 +138,42 @@ public static class SystemConfigDefaults
         },
         new()
         {
+            Id = 6,
+            Category = ContentPublishingCategory,
+            Key = PostBodyMaxLengthKey,
+            Name = "帖子正文最大长度",
+            Description = "发帖和编辑帖子时正文最多允许的字符数。",
+            ImpactSummary = "影响发帖和编辑帖子时的正文长度上限校验，默认贴合 API 请求模型的正文长度上限。",
+            ValueType = "number",
+            DefaultValue = DefaultPostBodyMaxLength,
+            MinNumberValue = 1,
+            MaxNumberValue = 50000,
+            RequiresInteger = true,
+            RiskLevel = SystemConfigRiskLevel.Medium,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
+        },
+        new()
+        {
+            Id = 7,
+            Category = ContentPublishingCategory,
+            Key = PostSummaryMaxLengthKey,
+            Name = "帖子摘要最大长度",
+            Description = "发布和编辑帖子时自动生成摘要最多保留的字符数。",
+            ImpactSummary = "影响公开列表、发现流、个人主页和分享摘要中的帖子摘要长度，不能超过帖子摘要数据库字段长度。",
+            ValueType = "number",
+            DefaultValue = DefaultPostSummaryMaxLength,
+            MinNumberValue = 20,
+            MaxNumberValue = 500,
+            RequiresInteger = true,
+            RiskLevel = SystemConfigRiskLevel.Low,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
+        },
+        new()
+        {
             Id = 4,
             Category = CommentInteractionCategory,
             Key = CommentBodyMinLengthKey,
@@ -132,6 +186,24 @@ public static class SystemConfigDefaults
             MaxNumberValue = 2000,
             RequiresInteger = true,
             RiskLevel = SystemConfigRiskLevel.Low,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
+        },
+        new()
+        {
+            Id = 8,
+            Category = CommentInteractionCategory,
+            Key = CommentBodyMaxLengthKey,
+            Name = "评论内容最大长度",
+            Description = "发表评论和编辑评论时内容最多允许的字符数。",
+            ImpactSummary = "影响发表评论和编辑评论时的内容长度上限校验，不能超过评论内容数据库字段长度。",
+            ValueType = "number",
+            DefaultValue = DefaultCommentBodyMaxLength,
+            MinNumberValue = 1,
+            MaxNumberValue = 2000,
+            RequiresInteger = true,
+            RiskLevel = SystemConfigRiskLevel.Medium,
             EffectiveMode = SystemConfigEffectiveMode.Immediate,
             IsEditable = true,
             IsSensitive = false
@@ -165,20 +237,44 @@ public static class SystemConfigDefaults
     /// <summary>帖子标题最小长度配置键</summary>
     public const string PostTitleMinLengthKey = "Content.PostTitle.MinLength";
 
+    /// <summary>帖子标题最大长度配置键</summary>
+    public const string PostTitleMaxLengthKey = "Content.PostTitle.MaxLength";
+
     /// <summary>帖子正文最小长度配置键</summary>
     public const string PostBodyMinLengthKey = "Content.PostBody.MinLength";
+
+    /// <summary>帖子正文最大长度配置键</summary>
+    public const string PostBodyMaxLengthKey = "Content.PostBody.MaxLength";
+
+    /// <summary>帖子摘要最大长度配置键</summary>
+    public const string PostSummaryMaxLengthKey = "Content.PostSummary.MaxLength";
 
     /// <summary>评论内容最小长度配置键</summary>
     public const string CommentBodyMinLengthKey = "Comment.Body.MinLength";
 
+    /// <summary>评论内容最大长度配置键</summary>
+    public const string CommentBodyMaxLengthKey = "Comment.Body.MaxLength";
+
     /// <summary>默认帖子标题最小长度</summary>
     public const string DefaultPostTitleMinLength = "3";
+
+    /// <summary>默认帖子标题最大长度</summary>
+    public const string DefaultPostTitleMaxLength = "200";
 
     /// <summary>默认帖子正文最小长度</summary>
     public const string DefaultPostBodyMinLength = "10";
 
+    /// <summary>默认帖子正文最大长度</summary>
+    public const string DefaultPostBodyMaxLength = "50000";
+
+    /// <summary>默认帖子摘要最大长度</summary>
+    public const string DefaultPostSummaryMaxLength = "200";
+
     /// <summary>默认评论内容最小长度</summary>
     public const string DefaultCommentBodyMinLength = "1";
+
+    /// <summary>默认评论内容最大长度</summary>
+    public const string DefaultCommentBodyMaxLength = "2000";
 
     /// <summary>已注册系统设置定义</summary>
     public static IReadOnlyList<SystemConfigDefinition> Definitions => DefinitionItems;

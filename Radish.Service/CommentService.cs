@@ -83,11 +83,22 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
     private async Task ValidateCommentContentSettingsAsync(string content)
     {
         var minContentLength = await _systemSettingProvider.GetInt32Async(SystemConfigDefaults.CommentBodyMinLengthKey);
+        var maxContentLength = await _systemSettingProvider.GetInt32Async(SystemConfigDefaults.CommentBodyMaxLengthKey);
         var trimmedContent = content.Trim();
+
+        if (minContentLength > maxContentLength)
+        {
+            throw new InvalidOperationException("系统设置配置错误：评论内容最小长度不能大于最大长度");
+        }
 
         if (trimmedContent.Length < minContentLength)
         {
             throw new ArgumentException($"评论内容不能少于 {minContentLength} 个字符");
+        }
+
+        if (trimmedContent.Length > maxContentLength)
+        {
+            throw new ArgumentException($"评论内容不能超过 {maxContentLength} 个字符");
         }
     }
 

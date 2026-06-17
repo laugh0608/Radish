@@ -69,6 +69,18 @@ public class SystemConfigServiceTest
         Assert.Equal(200m, postTitleConfig.VoMaxNumberValue);
         Assert.True(postTitleConfig.VoRequiresInteger);
         Assert.Contains("标题长度校验", postTitleConfig.VoImpactSummary);
+
+        var postTitleMaxConfig = configs.Single(config => config.VoKey == SystemConfigDefaults.PostTitleMaxLengthKey);
+        Assert.Equal(SystemConfigDefaults.DefaultPostTitleMaxLength, postTitleMaxConfig.VoDefaultValue);
+        Assert.Equal(SystemConfigRiskLevel.Medium, postTitleMaxConfig.VoRiskLevel);
+        Assert.Equal(1m, postTitleMaxConfig.VoMinNumberValue);
+        Assert.Equal(200m, postTitleMaxConfig.VoMaxNumberValue);
+
+        var postSummaryMaxConfig = configs.Single(config => config.VoKey == SystemConfigDefaults.PostSummaryMaxLengthKey);
+        Assert.Equal(SystemConfigDefaults.DefaultPostSummaryMaxLength, postSummaryMaxConfig.VoDefaultValue);
+        Assert.Equal(SystemConfigRiskLevel.Low, postSummaryMaxConfig.VoRiskLevel);
+        Assert.Equal(20m, postSummaryMaxConfig.VoMinNumberValue);
+        Assert.Equal(500m, postSummaryMaxConfig.VoMaxNumberValue);
     }
 
     [Fact]

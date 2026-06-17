@@ -2425,15 +2425,68 @@ public class PostServiceTest
         Assert.Equal("问答帖、投票和抽奖暂时互斥", exception.Message);
     }
 
-    private static ISystemSettingProvider CreateDefaultSystemSettingProvider()
+    [Fact]
+    public async Task PublishPostAsync_Should_Reject_When_TitleExceedsConfiguredMaxLength()
+    {
+        var service = new PostService(
+            new Mock<IMapper>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<Post>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<UserPostLike>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<PostTag>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<Category>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<Tag>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<PostPoll>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<PostPollOption>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<PostPollVote>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<PostQuestion>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<PostAnswer>>(MockBehavior.Strict).Object,
+            new Mock<ITagService>(MockBehavior.Strict).Object,
+            new Mock<ICoinRewardService>(MockBehavior.Strict).Object,
+            new Mock<INotificationService>(MockBehavior.Strict).Object,
+            new Mock<INotificationDedupService>(MockBehavior.Strict).Object,
+            new Mock<IExperienceService>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<PostEditHistory>>(MockBehavior.Strict).Object,
+            Mock.Of<IAttachmentService>(),
+            Options.Create(new ForumEditHistoryOptions()),
+            CreateDefaultSystemSettingProvider(postTitleMaxLength: 3));
+
+        var post = new Post(new PostInitializationOptions("标题超长", "这是一段符合默认最小长度要求的正文"))
+        {
+            AuthorId = 9527,
+            AuthorName = "Tester",
+            TenantId = 9,
+            IsPublished = true
+        };
+
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() => service.PublishPostAsync(
+            post,
+            tagNames: ["公告"],
+            allowCreateTag: false));
+
+        Assert.Equal("帖子标题不能超过 3 个字符", exception.Message);
+    }
+
+    private static ISystemSettingProvider CreateDefaultSystemSettingProvider(
+        int? postTitleMaxLength = null,
+        int? postBodyMaxLength = null,
+        int? postSummaryMaxLength = null)
     {
         var provider = new Mock<ISystemSettingProvider>();
         provider
             .Setup(item => item.GetInt32Async(SystemConfigDefaults.PostTitleMinLengthKey))
             .ReturnsAsync(int.Parse(SystemConfigDefaults.DefaultPostTitleMinLength));
         provider
+            .Setup(item => item.GetInt32Async(SystemConfigDefaults.PostTitleMaxLengthKey))
+            .ReturnsAsync(postTitleMaxLength ?? int.Parse(SystemConfigDefaults.DefaultPostTitleMaxLength));
+        provider
             .Setup(item => item.GetInt32Async(SystemConfigDefaults.PostBodyMinLengthKey))
             .ReturnsAsync(int.Parse(SystemConfigDefaults.DefaultPostBodyMinLength));
+        provider
+            .Setup(item => item.GetInt32Async(SystemConfigDefaults.PostBodyMaxLengthKey))
+            .ReturnsAsync(postBodyMaxLength ?? int.Parse(SystemConfigDefaults.DefaultPostBodyMaxLength));
+        provider
+            .Setup(item => item.GetInt32Async(SystemConfigDefaults.PostSummaryMaxLengthKey))
+            .ReturnsAsync(postSummaryMaxLength ?? int.Parse(SystemConfigDefaults.DefaultPostSummaryMaxLength));
 
         return provider.Object;
     }

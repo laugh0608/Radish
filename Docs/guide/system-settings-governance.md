@@ -23,7 +23,7 @@ Radish 需要一个长期的系统设置中心，但它不应只是把 `appsetti
 - 高危设置必须二次确认，并写入审计日志。
 - 每个设置都具备类型、分组、校验规则、说明和恢复默认能力。
 
-当前项目已将 `SystemConfig` 首批收敛为代码级设置定义注册表 + JSON 覆盖值存储：Console 默认只展示已注册设置，历史未注册 key-value 记录不作为运营设置暴露。`Site.Branding.FaviconUrl` 作为第一个低风险可编辑示例；第二批已补系统设置专用变更审计、修改原因 / 确认参数基础和 Console 历史查看入口；第三批已新增 `ISystemSettingProvider`，并开放 `Content.PostTitle.MinLength`、`Content.PostBody.MinLength`、`Comment.Body.MinLength` 三个内容 / 评论长度设置；第四批已将数值范围、整数约束和影响范围摘要从设置定义暴露到 Console，并让数字控件按规则约束输入。
+当前项目已将 `SystemConfig` 首批收敛为代码级设置定义注册表 + JSON 覆盖值存储：Console 默认只展示已注册设置，历史未注册 key-value 记录不作为运营设置暴露。`Site.Branding.FaviconUrl` 作为第一个低风险可编辑示例；第二批已补系统设置专用变更审计、修改原因 / 确认参数基础和 Console 历史查看入口；第三批已新增 `ISystemSettingProvider`，并开放 `Content.PostTitle.MinLength`、`Content.PostBody.MinLength`、`Comment.Body.MinLength` 三个内容 / 评论长度设置；第四批已将数值范围、整数约束和影响范围摘要从设置定义暴露到 Console，并让数字控件按规则约束输入；第五批继续沿内容发布边界补齐标题 / 正文 / 评论最大长度和自动摘要长度设置。
 
 ## 2. 目标与非目标
 
@@ -162,7 +162,7 @@ SystemConfig 覆盖值
 - 多实例部署时，后续需要缓存失效广播或短 TTL 策略。
 - 服务层消费强类型设置，不把字符串 key 散落到业务代码。
 
-当前首批消费点为帖子发布 / 编辑和评论发布 / 编辑：标题、正文和评论内容最小长度通过 `ISystemSettingProvider` 读取，读取顺序为代码默认值、JSON 覆盖值、类型转换与范围校验。
+当前首批消费点为帖子发布 / 编辑和评论发布 / 编辑：标题、正文和评论内容长度边界通过 `ISystemSettingProvider` 读取，帖子摘要自动截断长度也通过同一入口读取；读取顺序为代码默认值、JSON 覆盖值、类型转换与范围校验。
 
 ### 7.1 开发接入清单
 
@@ -225,13 +225,17 @@ SystemConfig 覆盖值
 | `UserIdentity.DisplayName.MinLength` | `2` | Medium |
 | `UserIdentity.DisplayName.MaxLength` | `24` | Medium |
 | `Content.PostTitle.MinLength` | `3` | Medium |
+| `Content.PostTitle.MaxLength` | `200` | Medium |
 | `Content.PostBody.MinLength` | `10` | Medium |
+| `Content.PostBody.MaxLength` | `50000` | Medium |
+| `Content.PostSummary.MaxLength` | `200` | Low |
 | `Comment.Body.MinLength` | `1` | Low |
+| `Comment.Body.MaxLength` | `2000` | Medium |
 | `Site.Branding.FaviconUrl` | `/uploads/DefaultIco/bailuobo.ico` | Low |
 
 安全会话、奖励数值、审核阈值和资产相关设置应等审计与二次确认基础完成后再开放。
 
-当前已注册并可在 Console 展示的设置为：`Site.Branding.FaviconUrl`、`Content.PostTitle.MinLength`、`Content.PostBody.MinLength`、`Comment.Body.MinLength`。账号身份设置仍等待 Auth / API 契约统一后再进入评审。
+当前已注册并可在 Console 展示的设置为：`Site.Branding.FaviconUrl`、`Content.PostTitle.MinLength`、`Content.PostTitle.MaxLength`、`Content.PostBody.MinLength`、`Content.PostBody.MaxLength`、`Content.PostSummary.MaxLength`、`Comment.Body.MinLength`、`Comment.Body.MaxLength`。账号身份设置仍等待 Auth / API 契约统一后再进入评审。
 
 ## 11. 实施阶段建议
 
@@ -255,7 +259,7 @@ SystemConfig 覆盖值
 - 支持恢复默认。
 - 写入基础审计。
 - 后端服务通过统一 provider 消费设置。
-- 当前已开放 `Site.Branding.FaviconUrl` 低风险覆盖值编辑与恢复默认，并开放帖子标题 / 正文、评论内容最小长度设置；第二批已补修改原因、确认参数基础、审计历史写入和 Console 历史查看入口，第三批已补统一 provider 与首批业务消费点，第四批已补校验规则元数据和数字编辑控件约束。High / Critical 仍不开放编辑，后续需在逐项确认影响范围、二次确认策略和权限边界后再放开。
+- 当前已开放 `Site.Branding.FaviconUrl` 低风险覆盖值编辑与恢复默认，并开放帖子标题 / 正文、评论内容最小 / 最大长度和帖子自动摘要长度设置；第二批已补修改原因、确认参数基础、审计历史写入和 Console 历史查看入口，第三批已补统一 provider 与首批业务消费点，第四批已补校验规则元数据和数字编辑控件约束，第五批将内容发布上限与实体 / DTO 硬边界对齐。High / Critical 仍不开放编辑，后续需在逐项确认影响范围、二次确认策略和权限边界后再放开。
 
 ### Phase D：高危设置治理
 

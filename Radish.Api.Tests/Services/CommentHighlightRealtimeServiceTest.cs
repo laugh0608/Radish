@@ -269,6 +269,9 @@ public class CommentHighlightRealtimeServiceTest
         provider
             .Setup(item => item.GetInt32Async(SystemConfigDefaults.CommentBodyMinLengthKey))
             .ReturnsAsync(int.Parse(SystemConfigDefaults.DefaultCommentBodyMinLength));
+        provider
+            .Setup(item => item.GetInt32Async(SystemConfigDefaults.CommentBodyMaxLengthKey))
+            .ReturnsAsync(int.Parse(SystemConfigDefaults.DefaultCommentBodyMaxLength));
 
         return provider.Object;
     }
