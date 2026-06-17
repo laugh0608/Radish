@@ -7,7 +7,7 @@
 ## 当前状态
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
-- **当前主线**：`P3-10-B10 系统设置治理第五批实现`
+- **当前主线**：`P3-10-B10 系统设置治理第六批实现`
 - **复核日期**：`2026-06-17`
 - **最近结论**：
   - `P3-1` 至 `P3-5` 已完成公开内容增长、PublicId 试点、留存回流、动态 sitemap 与详情 head snapshot 首批建设。
@@ -53,6 +53,7 @@
   - `P3-10-B10` 第三批已推进统一读取入口与首批内容长度设置：新增 `ISystemSettingProvider`，开放 `Content.PostTitle.MinLength`、`Content.PostBody.MinLength`、`Comment.Body.MinLength`，帖子 / 评论发布与编辑路径改为读取代码默认值叠加覆盖值后的强类型设置；High / Critical 仍不开放编辑。
   - `P3-10-B10` 第四批已推进设置校验规则可视化与编辑控件收敛：后端从代码级设置定义暴露数值范围、整数约束和影响范围摘要，Console 数字控件按规则限制输入并展示校验规则 / 影响范围；后端定向测试、`radish.console` 构建和 Gateway PC / 移动页面补验已通过。
   - `P3-10-B10` 第五批已推进内容发布上限设置：开放帖子标题最大长度、帖子正文最大长度、帖子摘要最大长度和评论内容最大长度，帖子 / 评论发布与编辑路径统一读取上下限设置并与 DTO / 实体硬边界对齐；后端构建、定向测试、完整测试和 `radish.console` 构建已通过，Gateway PC / 移动页面补验因本机 5000 / 3100 / 5100 端口未监听未闭合。
+  - `P3-10-B10` 第六批已推进论坛轻回应内容最大长度设置：新增 `Comment.QuickReply.MaxContentLength`，轻回应发布路径改为通过 `ISystemSettingProvider` 读取上限，旧 `ForumQuickReply.MaxContentLength` 配置入口已移除；后端测试、Debug 构建和 Console 新增设置项的 Gateway PC / 移动页面补验均已通过。
 
 ## 当前执行入口
 
@@ -87,9 +88,9 @@
 ## 下一顺位
 
 - `P3-10-B10 系统设置治理`
-  - 已推进设置定义注册表、默认值、覆盖值、风险等级、低风险编辑、恢复默认、修改原因 / 确认参数基础、变更审计历史、统一读取入口、帖子 / 评论长度边界设置、帖子摘要长度设置、校验规则元数据和数字编辑控件约束；Console 不再把未注册 JSON 记录作为运营设置展示。
-  - 当前开放 `Site.Branding.FaviconUrl`、`Content.PostTitle.MinLength`、`Content.PostTitle.MaxLength`、`Content.PostBody.MinLength`、`Content.PostBody.MaxLength`、`Content.PostSummary.MaxLength`、`Comment.Body.MinLength`、`Comment.Body.MaxLength`；Medium 设置必须填写原因并确认风险等级 / 设置键，High / Critical 仍不开放编辑。
-  - 第五批代码侧验证已完成；下一步在宿主恢复监听后补 Gateway PC / 移动页面补验，再评审下一组低 / 中风险设置候选。
+  - 已推进设置定义注册表、默认值、覆盖值、风险等级、低风险编辑、恢复默认、修改原因 / 确认参数基础、变更审计历史、统一读取入口、帖子 / 评论 / 轻回应长度边界设置、帖子摘要长度设置、校验规则元数据和数字编辑控件约束；Console 不再把未注册 JSON 记录作为运营设置展示。
+  - 当前开放 `Site.Branding.FaviconUrl`、`Content.PostTitle.MinLength`、`Content.PostTitle.MaxLength`、`Content.PostBody.MinLength`、`Content.PostBody.MaxLength`、`Content.PostSummary.MaxLength`、`Comment.Body.MinLength`、`Comment.Body.MaxLength`、`Comment.QuickReply.MaxContentLength`；Medium 设置必须填写原因并确认风险等级 / 设置键，High / Critical 仍不开放编辑。
+  - 第六批代码侧验证与 Gateway PC / 移动页面补验已完成；下一步评审账号身份设置契约或下一组低 / 中风险候选。
   - 不把部署密钥、宠物经济数值、高危资产 / 会话设置或基础设施配置直接搬进 Console。
 - `P3-10-B9 用户身份语义与公开索引维护线`
   - 首批代码、自动化验证和 Gateway PC / 移动页面补验已完成；测试 / 生产上线前使用 `Deploy/sql/20260615_add_user_public_index.sql` 作为 PostgreSQL 版本化差异 SQL 审核入口。
@@ -114,12 +115,12 @@
 
 ## 明日事项
 
-- 第一顺位：`P3-10-B10 系统设置治理` 在宿主恢复监听后补第五批 Gateway PC / 移动页面补验。
-- 第二顺位：评审下一组低 / 中风险设置候选；优先选择已有业务消费点、边界清楚、可定向验证的设置，不开放 High / Critical。
+- 第一顺位：`P3-10-B10 系统设置治理` 评审账号身份设置契约或下一组低 / 中风险设置候选；优先选择已有业务消费点、边界清楚、可定向验证的设置，不开放 High / Critical。
+- 第二顺位：若候选落入账号身份资料，先确认 Auth / API / Console / 公开展示契约、风险等级和停止线，不直接把高风险账号字段开放到 Console。
 - 第三顺位：若新增候选设置会扩大 Console 编辑面，先补专题文档中的设置定义、影响范围、验证规则和停止线，再进入代码实现。
 - 第四顺位：若 B10 暴露真实缺口，按同一问题族成组修复：后端定义模型、覆盖值存储、统一读取入口、Console 展示、公开站点设置读取和业务消费路径同步补齐。
 - 第五顺位：`P3-10-B9 用户身份语义与公开索引` 转入维护线，只在发布候选、跨端承接或真实缺口暴露时回拉。
-- 第六顺位：保留 `P3-10-B8 Radish 电子宠物` 与 `P3-10-B7 / B6 / B2 / B1 / B3` 维护入口，只在发布候选回归、宿主恢复后的真实 smoke 或新增缺口暴露时复核；经济扩展、完整聊天、完整钱包、Flutter 系统通知和 P3-8-D 购买 / 订单 / 背包重复筛查继续后置。
+- 第六顺位：保留 `P3-10-B8 Radish 电子宠物` 与 `P3-10-B7 / B6 / B2 / B1 / B3` 维护入口，只在发布候选回归、真实 smoke 或新增缺口暴露时复核；经济扩展、完整聊天、完整钱包、Flutter 系统通知和 P3-8-D 购买 / 订单 / 背包重复筛查继续后置。
 
 ## 并行维护项
 

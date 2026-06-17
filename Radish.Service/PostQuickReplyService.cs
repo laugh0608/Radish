@@ -24,6 +24,7 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
     private readonly IBaseRepository<Post> _postRepository;
     private readonly ICaching _caching;
     private readonly IAttachmentService? _attachmentService;
+    private readonly ISystemSettingProvider _systemSettingProvider;
     private readonly ForumQuickReplyOptions _options;
     private readonly INotificationService? _notificationService;
     private readonly ILogger<PostQuickReplyService>? _logger;
@@ -34,6 +35,7 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
         IBaseRepository<PostQuickReply> baseRepository,
         IBaseRepository<Post> postRepository,
         ICaching caching,
+        ISystemSettingProvider systemSettingProvider,
         IOptions<ForumQuickReplyOptions> options,
         IAttachmentService? attachmentService = null,
         INotificationService? notificationService = null,
@@ -44,6 +46,7 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
         _postQuickReplyRepository = baseRepository;
         _postRepository = postRepository;
         _caching = caching;
+        _systemSettingProvider = systemSettingProvider;
         _options = options.Value;
         _attachmentService = attachmentService;
         _notificationService = notificationService;
@@ -168,9 +171,10 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
             throw new ArgumentException("轻回应内容不能为空");
         }
 
-        if (normalizedContent.Length > Math.Max(1, _options.MaxContentLength))
+        var maxContentLength = await GetMaxContentLengthAsync();
+        if (normalizedContent.Length > maxContentLength)
         {
-            throw new ArgumentException($"轻回应内容不能超过{Math.Max(1, _options.MaxContentLength)}个字符");
+            throw new ArgumentException($"轻回应内容不能超过{maxContentLength}个字符");
         }
 
         var post = await EnsurePostExistsAsync(request.PostId);
@@ -289,6 +293,11 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
         {
             throw new InvalidOperationException("轻回应功能当前未启用");
         }
+    }
+
+    private async Task<int> GetMaxContentLengthAsync()
+    {
+        return await _systemSettingProvider.GetInt32Async(SystemConfigDefaults.QuickReplyMaxContentLengthKey);
     }
 
     private async Task FillAuthorProfilesAsync(List<PostQuickReplyVo> replies)

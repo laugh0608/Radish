@@ -207,6 +207,24 @@ public static class SystemConfigDefaults
             EffectiveMode = SystemConfigEffectiveMode.Immediate,
             IsEditable = true,
             IsSensitive = false
+        },
+        new()
+        {
+            Id = 9,
+            Category = CommentInteractionCategory,
+            Key = QuickReplyMaxContentLengthKey,
+            Name = "轻回应内容最大长度",
+            Description = "论坛详情轻回应最多允许的字符数。",
+            ImpactSummary = "影响帖子详情轻回应发布时的内容长度上限校验，不能超过轻回应 API 请求模型的硬上限。",
+            ValueType = "number",
+            DefaultValue = DefaultQuickReplyMaxContentLength,
+            MinNumberValue = 1,
+            MaxNumberValue = 24,
+            RequiresInteger = true,
+            RiskLevel = SystemConfigRiskLevel.Low,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
         }
     ];
 
@@ -255,6 +273,9 @@ public static class SystemConfigDefaults
     /// <summary>评论内容最大长度配置键</summary>
     public const string CommentBodyMaxLengthKey = "Comment.Body.MaxLength";
 
+    /// <summary>轻回应内容最大长度配置键</summary>
+    public const string QuickReplyMaxContentLengthKey = "Comment.QuickReply.MaxContentLength";
+
     /// <summary>默认帖子标题最小长度</summary>
     public const string DefaultPostTitleMinLength = "3";
 
@@ -275,6 +296,9 @@ public static class SystemConfigDefaults
 
     /// <summary>默认评论内容最大长度</summary>
     public const string DefaultCommentBodyMaxLength = "2000";
+
+    /// <summary>默认轻回应内容最大长度</summary>
+    public const string DefaultQuickReplyMaxContentLength = "10";
 
     /// <summary>已注册系统设置定义</summary>
     public static IReadOnlyList<SystemConfigDefinition> Definitions => DefinitionItems;

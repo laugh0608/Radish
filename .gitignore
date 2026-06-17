@@ -207,6 +207,7 @@ node_modules/
 orleans.codegen.cs
 .codex-logs/
 .codex-build/
+.playwright-cli/
 .dotnet-home/
 .dotnet-cli/
 .nuget/

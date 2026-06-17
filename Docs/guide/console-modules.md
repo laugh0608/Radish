@@ -203,12 +203,12 @@
 - ✅ `system-configs.json` 当前按“UTF-8 + 中文直写、仅保留必要 JSON 转义”的策略落盘，便于本地排障、人工审阅与差异比对
 - ✅ `DataBases/SystemConfigs/system-configs.json` 属于运行时本地状态文件，不作为源码资产提交，继续遵循 `DataBases/` 目录忽略规则
 - ✅ 系统设置变更历史落盘到 `DataBases/SystemConfigs/system-config-change-logs.json`，用于记录旧值、新值、默认值、原因、风险等级、生效方式、操作者、IP、User-Agent 和时间
-- ✅ 当前开放 `Site.Branding.FaviconUrl`、`Content.PostTitle.MinLength`、`Content.PostBody.MinLength`、`Comment.Body.MinLength`
+- ✅ 当前开放 `Site.Branding.FaviconUrl`、帖子标题 / 正文 / 摘要长度、评论内容长度和论坛轻回应内容最大长度设置
 - ✅ Medium 设置必须填写修改原因并确认风险等级 / 设置键，High / Critical 设置不开放编辑
 - ✅ SystemConfig 页面已支持站点 favicon `.ico` 上传、预览与恢复默认
 - ✅ 默认站点图标已固定为 `/uploads/DefaultIco/bailuobo.ico`，默认种子文件位于 `DataBases/Uploads/DefaultIco/bailuobo.ico`
 - ✅ `radish.client / radish.console` 当前都通过公开站点设置接口读取 favicon，标签页图标不再写死在前端静态资源中
-- ✅ 帖子标题 / 正文最小长度和评论内容最小长度已通过 `ISystemSettingProvider` 接入业务发布 / 编辑路径
+- ✅ 帖子标题 / 正文 / 摘要长度、评论内容长度和论坛轻回应内容最大长度已通过 `ISystemSettingProvider` 接入业务发布 / 编辑路径
 - ✅ 已按表格 CRUD + 配置面板页面基座对齐
 
 ## 3.11 Coins

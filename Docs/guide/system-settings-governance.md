@@ -231,11 +231,12 @@ SystemConfig 覆盖值
 | `Content.PostSummary.MaxLength` | `200` | Low |
 | `Comment.Body.MinLength` | `1` | Low |
 | `Comment.Body.MaxLength` | `2000` | Medium |
+| `Comment.QuickReply.MaxContentLength` | `10` | Low |
 | `Site.Branding.FaviconUrl` | `/uploads/DefaultIco/bailuobo.ico` | Low |
 
 安全会话、奖励数值、审核阈值和资产相关设置应等审计与二次确认基础完成后再开放。
 
-当前已注册并可在 Console 展示的设置为：`Site.Branding.FaviconUrl`、`Content.PostTitle.MinLength`、`Content.PostTitle.MaxLength`、`Content.PostBody.MinLength`、`Content.PostBody.MaxLength`、`Content.PostSummary.MaxLength`、`Comment.Body.MinLength`、`Comment.Body.MaxLength`。账号身份设置仍等待 Auth / API 契约统一后再进入评审。
+当前已注册并可在 Console 展示的设置为：`Site.Branding.FaviconUrl`、`Content.PostTitle.MinLength`、`Content.PostTitle.MaxLength`、`Content.PostBody.MinLength`、`Content.PostBody.MaxLength`、`Content.PostSummary.MaxLength`、`Comment.Body.MinLength`、`Comment.Body.MaxLength`、`Comment.QuickReply.MaxContentLength`。账号身份设置仍等待 Auth / API 契约统一后再进入评审。
 
 ## 11. 实施阶段建议
 
@@ -259,7 +260,7 @@ SystemConfig 覆盖值
 - 支持恢复默认。
 - 写入基础审计。
 - 后端服务通过统一 provider 消费设置。
-- 当前已开放 `Site.Branding.FaviconUrl` 低风险覆盖值编辑与恢复默认，并开放帖子标题 / 正文、评论内容最小 / 最大长度和帖子自动摘要长度设置；第二批已补修改原因、确认参数基础、审计历史写入和 Console 历史查看入口，第三批已补统一 provider 与首批业务消费点，第四批已补校验规则元数据和数字编辑控件约束，第五批将内容发布上限与实体 / DTO 硬边界对齐。High / Critical 仍不开放编辑，后续需在逐项确认影响范围、二次确认策略和权限边界后再放开。
+- 当前已开放 `Site.Branding.FaviconUrl` 低风险覆盖值编辑与恢复默认，并开放帖子标题 / 正文、评论内容最小 / 最大长度、帖子自动摘要长度和论坛轻回应内容最大长度设置；第二批已补修改原因、确认参数基础、审计历史写入和 Console 历史查看入口，第三批已补统一 provider 与首批业务消费点，第四批已补校验规则元数据和数字编辑控件约束，第五批将内容发布上限与实体 / DTO 硬边界对齐，第六批继续将轻回应长度纳入评论互动同族设置。High / Critical 仍不开放编辑，后续需在逐项确认影响范围、二次确认策略和权限边界后再放开。
 
 ### Phase D：高危设置治理
 

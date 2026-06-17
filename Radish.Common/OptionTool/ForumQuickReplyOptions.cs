@@ -14,9 +14,6 @@ public sealed class ForumQuickReplyOptions : IConfigurableOptions
     /// <summary>最大返回条数</summary>
     public int MaxTake { get; set; } = 60;
 
-    /// <summary>单条最大长度</summary>
-    public int MaxContentLength { get; set; } = 24;
-
     /// <summary>单用户单帖发送冷却秒数</summary>
     public int PerPostCooldownSeconds { get; set; } = 30;
 

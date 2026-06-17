@@ -81,6 +81,13 @@ public class SystemConfigServiceTest
         Assert.Equal(SystemConfigRiskLevel.Low, postSummaryMaxConfig.VoRiskLevel);
         Assert.Equal(20m, postSummaryMaxConfig.VoMinNumberValue);
         Assert.Equal(500m, postSummaryMaxConfig.VoMaxNumberValue);
+
+        var quickReplyMaxConfig = configs.Single(config => config.VoKey == SystemConfigDefaults.QuickReplyMaxContentLengthKey);
+        Assert.Equal(SystemConfigDefaults.DefaultQuickReplyMaxContentLength, quickReplyMaxConfig.VoDefaultValue);
+        Assert.Equal(SystemConfigRiskLevel.Low, quickReplyMaxConfig.VoRiskLevel);
+        Assert.Equal(1m, quickReplyMaxConfig.VoMinNumberValue);
+        Assert.Equal(24m, quickReplyMaxConfig.VoMaxNumberValue);
+        Assert.Contains("轻回应", quickReplyMaxConfig.VoImpactSummary);
     }
 
     [Fact]

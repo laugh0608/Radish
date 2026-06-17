@@ -274,23 +274,58 @@ public class PostQuickReplyServiceTest
         postRepository.VerifyAll();
     }
 
+    [Fact(DisplayName = "创建轻回应应使用系统设置中的内容长度上限")]
+    public async Task CreateAsync_ShouldUseSystemSettingMaxContentLength()
+    {
+        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+        var quickReplyRepository = new Mock<IBaseRepository<PostQuickReply>>(MockBehavior.Strict);
+        var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
+        var caching = new Mock<ICaching>(MockBehavior.Strict);
+        var notificationService = new Mock<INotificationService>(MockBehavior.Strict);
+        var logger = new Mock<ILogger<PostQuickReplyService>>();
+
+        var service = CreateService(
+            mapper,
+            quickReplyRepository,
+            postRepository,
+            caching,
+            notificationService,
+            logger,
+            maxContentLength: 3);
+
+        var exception = await Should.ThrowAsync<ArgumentException>(async () =>
+            await service.CreateAsync(new CreatePostQuickReplyDto
+            {
+                PostId = 1004,
+                Content = "abcd"
+            }, 3001, "quick-user", 1));
+
+        exception.Message.ShouldBe("轻回应内容不能超过3个字符");
+    }
+
     private static PostQuickReplyService CreateService(
         Mock<IMapper> mapper,
         Mock<IBaseRepository<PostQuickReply>> quickReplyRepository,
         Mock<IBaseRepository<Post>> postRepository,
         Mock<ICaching> caching,
         Mock<INotificationService> notificationService,
-        Mock<ILogger<PostQuickReplyService>> logger)
+        Mock<ILogger<PostQuickReplyService>> logger,
+        int maxContentLength = 10)
     {
+        var systemSettingProvider = new Mock<ISystemSettingProvider>(MockBehavior.Strict);
+        systemSettingProvider
+            .Setup(provider => provider.GetInt32Async(SystemConfigDefaults.QuickReplyMaxContentLengthKey))
+            .ReturnsAsync(maxContentLength);
+
         return new PostQuickReplyService(
             mapper.Object,
             quickReplyRepository.Object,
             postRepository.Object,
             caching.Object,
+            systemSettingProvider.Object,
             Options.Create(new ForumQuickReplyOptions
             {
                 Enable = true,
-                MaxContentLength = 10,
                 PerPostCooldownSeconds = 30,
                 DuplicateWindowSeconds = 300,
                 DefaultTake = 30,
