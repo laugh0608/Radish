@@ -7,7 +7,7 @@
 ## 当前状态
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
-- **当前主线**：`P3-10 阶段整理与下一主线准备`
+- **当前主线**：`P3-10-D Web 信息流 / UI 结构整理`
 - **复核日期**：`2026-06-17`
 - **最近结论**：
   - `P3-1` 至 `P3-5` 已完成公开内容增长、PublicId 试点、留存回流、动态 sitemap 与详情 head snapshot 首批建设。
@@ -58,7 +58,8 @@
   - `P3-10-B10` 第八批已推进论坛轻回应剩余运营参数：新增 `Comment.QuickReply.DefaultTake`、`Comment.QuickReply.MaxTake`、`Comment.QuickReply.PerPostCooldownSeconds`、`Comment.QuickReply.DuplicateWindowSeconds`，轻回应列表返回条数、单帖冷却和重复内容窗口改为通过 `ISystemSettingProvider` 读取；旧 `ForumQuickReply` 数值配置从宿主配置移除，`ForumQuickReply.Enable` 功能开关仍保留在 `appsettings`，不开放到 Console。后端定向测试、完整测试、Debug 构建、`radish.console` 构建和 Gateway PC / 移动页面补验均已通过。
   - `P3-10-B10` 第九批已推进神评 / 沙发稳定性运营参数：新增 `Comment.Highlight.StabilityWindowMinutes`、`Comment.Highlight.ReplacementMinLikeDelta`，神评 / 沙发实时重算稳定窗口和替换阈值改为通过 `ISystemSettingProvider` 读取；旧 `CommentHighlight` 稳定窗口数值配置从宿主配置移除，任务启停、调度、扫描窗口、触发评论数量门槛和奖励数值仍不开放到 Console。后端定向测试、完整测试、Debug 构建和 `radish.console` 构建均已通过；真实页面 smoke 改为较大阶段推进完成或发布候选前集中执行，不作为每个系统设置批次的默认要求。
   - `P3-10-B10` 低 / 中风险系统设置首轮治理已阶段收束：当前开放 19 个设置，覆盖品牌 favicon、账号身份长度、内容发布长度、轻回应运营参数、神评 / 沙发稳定窗口和替换阈值。第九批后不继续默认追加第十批设置；评论 typing 节流、神评触发评论数量门槛、内容发布频率限制、论坛编辑历史策略、基础设施、安全会话、资产、奖励和高风险账号字段均转入后续独立评审或维护观察。
-  - `P3-10` B1-B10 已完成首批代码推进或阶段收束；下一步先做阶段整理与自动化验证准备，随后进入 Web 信息流 / UI 结构整理。Flutter 承接准备排在 Web 默认入口和 API 契约稳定之后；真实页面 smoke 继续等较大阶段收口、准备合并或用户启动宿主后集中执行。
+  - `P3-10` B1-B10 已完成首批代码推进或阶段收束；阶段级真实联调 smoke 已完成，当前转入 Web 信息流 / UI 结构整理。Flutter 承接准备排在 Web 默认入口和 API 契约稳定之后。
+  - `P3-10` 阶段真实联调 smoke 已完成：Gateway / Api / Auth 健康检查通过，论坛详情 / 文档详情 public head smoke 通过，PC `1920x1080` 与移动 `390x844` 视图覆盖 `/discover`、公开帖子详情、公开文档详情、`/leaderboard`、`/shop`、`/circle` 和 `/console/` 授权确认页，未发现阻断问题；DPR 与 Console 深层设置页仍保留限制说明。
 
 ## 当前执行入口
 
@@ -78,10 +79,10 @@
 
 ## 当前目标
 
-1. **推进 P3-10 阶段整理与下一主线准备**
-   - B1-B10 已完成首批推进或阶段收束，当前先同步路线图总览、专题文档和验证口径，避免继续围绕已收束批次反复扩面。
-   - 阶段整理后，下一开发主线优先进入 Web 信息流 / UI 结构整理；先确认页面结构、信息密度、Pencil / 设计边界和验证入口，再进入代码。
-   - 自动化验证按准备合并到 `master` 或发布候选节点集中执行；真实页面 smoke 等用户启动项目后覆盖 PC / 移动。
+1. **推进 P3-10-D Web 信息流 / UI 结构整理**
+   - 阶段级真实联调 smoke 已完成，当前可以从阶段整理转入 P3-10-D。
+   - 下一步先确认 `/discover`、公开帖子详情、公开文档详情、公开个人页、`/circle`、`/me` 和轻互动入口的信息结构、真实内容密度、视觉层级和返回语义。
+   - 大页面结构、跨页面视觉体系或端点级视觉治理先更新设计源文件 / Pencil；小范围状态、文案、按钮或行为等价修正不被阻塞。
 2. **把 P3-8-D 降级为维护与回拉线**
    - 移动 Web 公开页逐页打磨、Console 剩余页面迁移、购买 / 订单 / 背包重复复核、ID Phase A 广泛扫描不再作为默认日常主线。
    - 新增外部 ID 边界、扫描命中、真实编译错误或发布候选验收暴露问题时，再做定向治理。
@@ -93,13 +94,12 @@
 
 ## 下一顺位
 
-- `P3-10 阶段整理与自动化验证准备`
-  - B1-B10 已完成首批代码推进或阶段收束，当前先收齐规划入口、路线图总览、验证口径和维护线，不继续从 B10 追加系统设置批次。
-  - 若准备合并到 `master`，再集中跑 `validate:baseline`、`validate:identity`、必要的 host runtime 检查和真实页面 PC / 移动 smoke；真实页面 smoke 仍等用户启动宿主后执行。
 - `P3-10-D Web 信息流 / UI 结构整理`
-  - 下一开发主线优先从 Web 默认入口、公开发现、论坛详情、公开个人页、圈子、`/me` 与轻互动入口的结构整理开始。
+  - 当前主线优先从 Web 默认入口、公开发现、论坛详情、公开个人页、圈子、`/me` 与轻互动入口的结构整理开始。
   - 大页面结构、跨页面视觉体系或端点级视觉治理先更新设计源文件 / Pencil；小范围状态、文案、按钮或行为等价修正不被阻塞。
   - 不把首页瀑布流、个人圈子、推荐算法、联邦社交和完整 Flutter 承接一次性合并实施。
+- `P3-10 阶段整理与自动化验证维护线`
+  - B1-B10 已完成首批代码推进或阶段收束，阶段级真实联调 smoke 已完成；后续准备合并到 `master` 时再集中跑完整 baseline、identity、host runtime 和必要页面补验。
 - `P3-10-B10 系统设置治理维护线`
   - 已推进设置定义注册表、默认值、覆盖值、风险等级、低风险编辑、恢复默认、修改原因 / 确认参数基础、变更审计历史、统一读取入口、帖子 / 评论 / 轻回应长度边界设置、帖子摘要长度设置、轻回应返回条数 / 冷却 / 去重窗口设置、神评 / 沙发稳定窗口 / 替换阈值设置、校验规则元数据和数字编辑控件约束；Console 不再把未注册 JSON 记录作为运营设置展示。
   - 当前开放 `Site.Branding.FaviconUrl`、`UserIdentity.LoginName.MinLength`、`UserIdentity.LoginName.MaxLength`、`UserIdentity.DisplayName.MinLength`、`UserIdentity.DisplayName.MaxLength`、`Content.PostTitle.MinLength`、`Content.PostTitle.MaxLength`、`Content.PostBody.MinLength`、`Content.PostBody.MaxLength`、`Content.PostSummary.MaxLength`、`Comment.Body.MinLength`、`Comment.Body.MaxLength`、`Comment.QuickReply.MaxContentLength`、`Comment.QuickReply.DefaultTake`、`Comment.QuickReply.MaxTake`、`Comment.QuickReply.PerPostCooldownSeconds`、`Comment.QuickReply.DuplicateWindowSeconds`、`Comment.Highlight.StabilityWindowMinutes`、`Comment.Highlight.ReplacementMinLikeDelta`；Medium 设置必须填写原因并确认风险等级 / 设置键，High / Critical 仍不开放编辑。
@@ -128,10 +128,9 @@
 
 ## 明日事项
 
-- 第一顺位：完成 `P3-10` 阶段整理与路线图同步，保持 `current.md`、`development-plan.md` 和 P3-10 专题一致。
-- 第二顺位：准备阶段级自动化验证；若进入合并或发布候选整备，再集中执行 baseline / identity / host runtime 与真实页面 PC + 移动 smoke。
-- 第三顺位：进入 `P3-10-D Web 信息流 / UI 结构整理`，先做信息结构、设计边界和验证入口确认，再进入页面代码。
-- 第四顺位：保留 `P3-10-B10 / B9 / B8 / B7 / B6 / B2 / B1 / B3` 维护入口，只在发布候选回归、真实 smoke 或新增缺口暴露时复核；系统设置扩面、经济扩展、完整聊天、完整钱包、Flutter 系统通知和 P3-8-D 购买 / 订单 / 背包重复筛查继续后置。
+- 第一顺位：推进 `P3-10-D Web 信息流 / UI 结构整理`，先做信息结构、设计边界和验证入口确认，再进入页面代码。
+- 第二顺位：保留阶段级验证维护线；准备合并或发布候选整备时再集中执行 baseline / identity / host runtime 与真实页面 PC + 移动 smoke。
+- 第三顺位：保留 `P3-10-B10 / B9 / B8 / B7 / B6 / B2 / B1 / B3` 维护入口，只在发布候选回归、真实 smoke 或新增缺口暴露时复核；系统设置扩面、经济扩展、完整聊天、完整钱包、Flutter 系统通知和 P3-8-D 购买 / 订单 / 背包重复筛查继续后置。
 
 ## 并行维护项
 
