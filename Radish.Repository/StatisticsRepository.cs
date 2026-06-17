@@ -17,74 +17,79 @@ public class StatisticsRepository : BaseRepository<User>, IStatisticsRepository
     /// <inheritdoc />
     public async Task<int> GetTotalOrderCountAsync()
     {
-        return await CreateTenantQueryableFor<Order>()
+        return await ExecuteDbOperationAsync(() => CreateTenantQueryableFor<Order>()
             .Where(order => !order.IsDeleted)
-            .CountAsync();
+            .CountAsync());
     }
 
     /// <inheritdoc />
     public async Task<int> GetTotalProductCountAsync()
     {
-        return await CreateTenantQueryableFor<Product>()
+        return await ExecuteDbOperationAsync(() => CreateTenantQueryableFor<Product>()
             .Where(product => !product.IsDeleted)
-            .CountAsync();
+            .CountAsync());
     }
 
     /// <inheritdoc />
     public async Task<int> GetOrderCountAsync(DateTime? startTime = null, DateTime? endTimeExclusive = null)
     {
-        var query = CreateTenantQueryableFor<Order>()
-            .Where(order => !order.IsDeleted);
-
-        if (startTime.HasValue)
+        return await ExecuteDbOperationAsync(() =>
         {
-            query = query.Where(order => order.CreateTime >= startTime.Value);
-        }
+            var query = CreateTenantQueryableFor<Order>()
+                .Where(order => !order.IsDeleted);
 
-        if (endTimeExclusive.HasValue)
-        {
-            query = query.Where(order => order.CreateTime < endTimeExclusive.Value);
-        }
+            if (startTime.HasValue)
+            {
+                query = query.Where(order => order.CreateTime >= startTime.Value);
+            }
 
-        return await query.CountAsync();
+            if (endTimeExclusive.HasValue)
+            {
+                query = query.Where(order => order.CreateTime < endTimeExclusive.Value);
+            }
+
+            return query.CountAsync();
+        });
     }
 
     /// <inheritdoc />
     public async Task<decimal> GetCompletedOrderRevenueAsync(DateTime? startTime = null, DateTime? endTimeExclusive = null)
     {
-        var query = CreateTenantQueryableFor<Order>()
-            .Where(order => order.Status == OrderStatus.Completed && !order.IsDeleted);
-
-        if (startTime.HasValue)
+        return await ExecuteDbOperationAsync(() =>
         {
-            query = query.Where(order => order.CreateTime >= startTime.Value);
-        }
+            var query = CreateTenantQueryableFor<Order>()
+                .Where(order => order.Status == OrderStatus.Completed && !order.IsDeleted);
 
-        if (endTimeExclusive.HasValue)
-        {
-            query = query.Where(order => order.CreateTime < endTimeExclusive.Value);
-        }
+            if (startTime.HasValue)
+            {
+                query = query.Where(order => order.CreateTime >= startTime.Value);
+            }
 
-        var revenue = await query.SumAsync(order => order.TotalPrice);
-        return revenue;
+            if (endTimeExclusive.HasValue)
+            {
+                query = query.Where(order => order.CreateTime < endTimeExclusive.Value);
+            }
+
+            return query.SumAsync(order => order.TotalPrice);
+        });
     }
 
     /// <inheritdoc />
     public async Task<List<ProductSalesRankingAggregate>> GetProductSalesRankingAsync(int limit)
     {
-        var result = await CreateTenantQueryableFor<Order>()
-            .Where(order => order.Status == OrderStatus.Completed && !order.IsDeleted)
-            .GroupBy(order => new { order.ProductId, order.ProductName })
-            .Select(order => new
-            {
-                order.ProductId,
-                order.ProductName,
-                SalesCount = SqlFunc.AggregateSum(order.Quantity),
-                Revenue = SqlFunc.AggregateSum(order.TotalPrice)
-            })
-            .OrderByDescending(item => item.SalesCount)
-            .Take(limit)
-            .ToListAsync();
+        var result = await ExecuteDbOperationAsync(() => CreateTenantQueryableFor<Order>()
+                .Where(order => order.Status == OrderStatus.Completed && !order.IsDeleted)
+                .GroupBy(order => new { order.ProductId, order.ProductName })
+                .Select(order => new
+                {
+                    order.ProductId,
+                    order.ProductName,
+                    SalesCount = SqlFunc.AggregateSum(order.Quantity),
+                    Revenue = SqlFunc.AggregateSum(order.TotalPrice)
+                })
+                .OrderByDescending(item => item.SalesCount)
+                .Take(limit)
+                .ToListAsync());
 
         return result
             .Select(item => new ProductSalesRankingAggregate
@@ -100,16 +105,16 @@ public class StatisticsRepository : BaseRepository<User>, IStatisticsRepository
     /// <inheritdoc />
     public async Task<List<UserLevelDistributionAggregate>> GetUserExperienceLevelDistributionAsync()
     {
-        var result = await CreateTenantQueryableFor<UserExperience>()
-            .Where(experience => experience.UserId > 0 && !experience.IsDeleted)
-            .GroupBy(experience => experience.CurrentLevel)
-            .Select(experience => new
-            {
-                Level = experience.CurrentLevel,
-                UserCount = SqlFunc.AggregateCount(experience.UserId)
-            })
-            .OrderBy(item => item.Level)
-            .ToListAsync();
+        var result = await ExecuteDbOperationAsync(() => CreateTenantQueryableFor<UserExperience>()
+                .Where(experience => experience.UserId > 0 && !experience.IsDeleted)
+                .GroupBy(experience => experience.CurrentLevel)
+                .Select(experience => new
+                {
+                    Level = experience.CurrentLevel,
+                    UserCount = SqlFunc.AggregateCount(experience.UserId)
+                })
+                .OrderBy(item => item.Level)
+                .ToListAsync());
 
         return result
             .Select(item => new UserLevelDistributionAggregate
@@ -123,15 +128,15 @@ public class StatisticsRepository : BaseRepository<User>, IStatisticsRepository
     /// <inheritdoc />
     public async Task<int> GetUserExperienceUserCountAsync()
     {
-        return await CreateTenantQueryableFor<UserExperience>()
+        return await ExecuteDbOperationAsync(() => CreateTenantQueryableFor<UserExperience>()
             .Where(experience => experience.UserId > 0 && !experience.IsDeleted)
-            .CountAsync();
+            .CountAsync());
     }
 
     /// <inheritdoc />
     public async Task<List<LevelConfigAggregate>> GetLevelConfigsAsync()
     {
-        var configs = await CreateTenantQueryableFor<LevelConfig>()
+        var configs = await ExecuteDbOperationAsync(() => CreateTenantQueryableFor<LevelConfig>()
             .Where(config => config.IsEnabled)
             .OrderBy(config => config.Level)
             .Select(config => new LevelConfigAggregate
@@ -139,7 +144,7 @@ public class StatisticsRepository : BaseRepository<User>, IStatisticsRepository
                 Level = config.Level,
                 LevelName = config.LevelName
             })
-            .ToListAsync();
+            .ToListAsync());
 
         return configs;
     }
