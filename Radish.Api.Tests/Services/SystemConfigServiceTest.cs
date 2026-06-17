@@ -139,6 +139,22 @@ public class SystemConfigServiceTest
         Assert.Equal(SystemConfigRiskLevel.Medium, quickReplyDuplicateWindowConfig.VoRiskLevel);
         Assert.Equal(1m, quickReplyDuplicateWindowConfig.VoMinNumberValue);
         Assert.Equal(86400m, quickReplyDuplicateWindowConfig.VoMaxNumberValue);
+
+        var highlightStabilityWindowConfig = configs.Single(config => config.VoKey == SystemConfigDefaults.CommentHighlightStabilityWindowMinutesKey);
+        Assert.Equal(SystemConfigDefaults.DefaultCommentHighlightStabilityWindowMinutes, highlightStabilityWindowConfig.VoDefaultValue);
+        Assert.Equal(SystemConfigRiskLevel.Medium, highlightStabilityWindowConfig.VoRiskLevel);
+        Assert.Equal(0m, highlightStabilityWindowConfig.VoMinNumberValue);
+        Assert.Equal(1440m, highlightStabilityWindowConfig.VoMaxNumberValue);
+        Assert.True(highlightStabilityWindowConfig.VoRequiresInteger);
+        Assert.Contains("神评 / 沙发实时重算", highlightStabilityWindowConfig.VoImpactSummary);
+
+        var highlightReplacementDeltaConfig = configs.Single(config => config.VoKey == SystemConfigDefaults.CommentHighlightReplacementMinLikeDeltaKey);
+        Assert.Equal(SystemConfigDefaults.DefaultCommentHighlightReplacementMinLikeDelta, highlightReplacementDeltaConfig.VoDefaultValue);
+        Assert.Equal(SystemConfigRiskLevel.Medium, highlightReplacementDeltaConfig.VoRiskLevel);
+        Assert.Equal(1m, highlightReplacementDeltaConfig.VoMinNumberValue);
+        Assert.Equal(1000m, highlightReplacementDeltaConfig.VoMaxNumberValue);
+        Assert.True(highlightReplacementDeltaConfig.VoRequiresInteger);
+        Assert.Contains("神评 / 沙发替换敏感度", highlightReplacementDeltaConfig.VoImpactSummary);
     }
 
     [Fact]

@@ -369,6 +369,42 @@ public static class SystemConfigDefaults
             EffectiveMode = SystemConfigEffectiveMode.Immediate,
             IsEditable = true,
             IsSensitive = false
+        },
+        new()
+        {
+            Id = 18,
+            Category = CommentInteractionCategory,
+            Key = CommentHighlightStabilityWindowMinutesKey,
+            Name = "神评稳定窗口分钟数",
+            Description = "神评或沙发出现新候选时，在该窗口内仅当新候选达到最小点赞领先数才替换当前展示。",
+            ImpactSummary = "影响点赞或取消点赞触发的神评 / 沙发实时重算。设置为 0 时关闭稳定窗口；不改变任务启停、扫描调度、奖励数值或触发评论数量门槛。",
+            ValueType = "number",
+            DefaultValue = DefaultCommentHighlightStabilityWindowMinutes,
+            MinNumberValue = 0,
+            MaxNumberValue = 1440,
+            RequiresInteger = true,
+            RiskLevel = SystemConfigRiskLevel.Medium,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
+        },
+        new()
+        {
+            Id = 19,
+            Category = CommentInteractionCategory,
+            Key = CommentHighlightReplacementMinLikeDeltaKey,
+            Name = "神评替换最小点赞领先数",
+            Description = "稳定窗口内，新神评或沙发候选替换当前展示所需的最小点赞领先数。",
+            ImpactSummary = "影响稳定窗口内神评 / 沙发替换敏感度。数值越高越稳定，数值越低越容易替换；不改变奖励金额、每日上限或神评生成资格。",
+            ValueType = "number",
+            DefaultValue = DefaultCommentHighlightReplacementMinLikeDelta,
+            MinNumberValue = 1,
+            MaxNumberValue = 1000,
+            RequiresInteger = true,
+            RiskLevel = SystemConfigRiskLevel.Medium,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
         }
     ];
 
@@ -447,6 +483,12 @@ public static class SystemConfigDefaults
     /// <summary>轻回应重复内容窗口秒数配置键</summary>
     public const string QuickReplyDuplicateWindowSecondsKey = "Comment.QuickReply.DuplicateWindowSeconds";
 
+    /// <summary>神评稳定窗口分钟数配置键</summary>
+    public const string CommentHighlightStabilityWindowMinutesKey = "Comment.Highlight.StabilityWindowMinutes";
+
+    /// <summary>神评替换最小点赞领先数配置键</summary>
+    public const string CommentHighlightReplacementMinLikeDeltaKey = "Comment.Highlight.ReplacementMinLikeDelta";
+
     /// <summary>默认帖子标题最小长度</summary>
     public const string DefaultPostTitleMinLength = "3";
 
@@ -494,6 +536,12 @@ public static class SystemConfigDefaults
 
     /// <summary>默认轻回应重复内容窗口秒数</summary>
     public const string DefaultQuickReplyDuplicateWindowSeconds = "300";
+
+    /// <summary>默认神评稳定窗口分钟数</summary>
+    public const string DefaultCommentHighlightStabilityWindowMinutes = "10";
+
+    /// <summary>默认神评替换最小点赞领先数</summary>
+    public const string DefaultCommentHighlightReplacementMinLikeDelta = "2";
 
     /// <summary>已注册系统设置定义</summary>
     public static IReadOnlyList<SystemConfigDefinition> Definitions => DefinitionItems;

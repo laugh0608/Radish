@@ -40,11 +40,4 @@ public sealed class CommentHighlightOptions : IConfigurableOptions
     /// <summary>沙发触发最小子评论数</summary>
     /// <remarks>父评论的子评论数必须大于此值才会产生沙发</remarks>
     public int MinChildCommentCount { get; set; } = 3;
-
-    /// <summary>当前神评/沙发稳定窗口（分钟）</summary>
-    /// <remarks>窗口内仅当新候选明显领先时才替换，避免同赞数或微弱变化造成展示抖动</remarks>
-    public int StabilityWindowMinutes { get; set; } = 10;
-
-    /// <summary>稳定窗口内替换所需的最小点赞领先数</summary>
-    public int ReplacementMinLikeDelta { get; set; } = 2;
 }

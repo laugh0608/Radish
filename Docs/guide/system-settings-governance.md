@@ -23,7 +23,7 @@ Radish 需要一个长期的系统设置中心，但它不应只是把 `appsetti
 - 高危设置必须二次确认，并写入审计日志。
 - 每个设置都具备类型、分组、校验规则、说明和恢复默认能力。
 
-当前项目已将 `SystemConfig` 首批收敛为代码级设置定义注册表 + JSON 覆盖值存储：Console 默认只展示已注册设置，历史未注册 key-value 记录不作为运营设置暴露。`Site.Branding.FaviconUrl` 作为第一个低风险可编辑示例；第二批已补系统设置专用变更审计、修改原因 / 确认参数基础和 Console 历史查看入口；第三批已新增 `ISystemSettingProvider`，并开放内容 / 评论长度设置；第四批已将数值范围、整数约束和影响范围摘要从设置定义暴露到 Console，并让数字控件按规则约束输入；第五批继续沿内容发布边界补齐标题 / 正文 / 评论最大长度和自动摘要长度设置；第六批将轻回应长度纳入评论互动同族设置；第七批将登录名和展示名长度接入账号身份设置；第八批继续治理轻回应剩余运营参数，开放默认返回条数、最大返回条数、单帖冷却秒数和重复内容窗口秒数。`ForumQuickReply.Enable` 仍作为宿主功能开关保留在 `appsettings`，不进入 Console 系统设置。
+当前项目已将 `SystemConfig` 首批收敛为代码级设置定义注册表 + JSON 覆盖值存储：Console 默认只展示已注册设置，历史未注册 key-value 记录不作为运营设置暴露。`Site.Branding.FaviconUrl` 作为第一个低风险可编辑示例；第二批已补系统设置专用变更审计、修改原因 / 确认参数基础和 Console 历史查看入口；第三批已新增 `ISystemSettingProvider`，并开放内容 / 评论长度设置；第四批已将数值范围、整数约束和影响范围摘要从设置定义暴露到 Console，并让数字控件按规则约束输入；第五批继续沿内容发布边界补齐标题 / 正文 / 评论最大长度和自动摘要长度设置；第六批将轻回应长度纳入评论互动同族设置；第七批将登录名和展示名长度接入账号身份设置；第八批继续治理轻回应剩余运营参数，开放默认返回条数、最大返回条数、单帖冷却秒数和重复内容窗口秒数；第九批开放神评 / 沙发稳定窗口和替换阈值。`ForumQuickReply.Enable` 仍作为宿主功能开关保留在 `appsettings`，不进入 Console 系统设置。
 
 ## 2. 目标与非目标
 
@@ -162,7 +162,7 @@ SystemConfig 覆盖值
 - 多实例部署时，后续需要缓存失效广播或短 TTL 策略。
 - 服务层消费强类型设置，不把字符串 key 散落到业务代码。
 
-当前消费点包括帖子发布 / 编辑、评论发布 / 编辑、论坛轻回应发布 / 列表、Auth 注册登录名校验和个人资料展示名校验：标题、正文、摘要、评论、轻回应、登录名和展示名长度边界，以及轻回应返回条数、单帖冷却秒数和重复内容窗口秒数通过 `ISystemSettingProvider` 读取；读取顺序为代码默认值、JSON 覆盖值、类型转换与范围校验。
+当前消费点包括帖子发布 / 编辑、评论发布 / 编辑、论坛轻回应发布 / 列表、评论神评 / 沙发实时重算、Auth 注册登录名校验和个人资料展示名校验：标题、正文、摘要、评论、轻回应、登录名和展示名长度边界，轻回应返回条数、单帖冷却秒数、重复内容窗口秒数，以及神评 / 沙发稳定窗口和替换阈值通过 `ISystemSettingProvider` 读取；读取顺序为代码默认值、JSON 覆盖值、类型转换与范围校验。
 
 ### 7.1 开发接入清单
 
@@ -236,11 +236,13 @@ SystemConfig 覆盖值
 | `Comment.QuickReply.MaxTake` | `60` | Medium |
 | `Comment.QuickReply.PerPostCooldownSeconds` | `30` | Medium |
 | `Comment.QuickReply.DuplicateWindowSeconds` | `300` | Medium |
+| `Comment.Highlight.StabilityWindowMinutes` | `10` | Medium |
+| `Comment.Highlight.ReplacementMinLikeDelta` | `2` | Medium |
 | `Site.Branding.FaviconUrl` | `/uploads/DefaultIco/bailuobo.ico` | Low |
 
 安全会话、奖励数值、审核阈值和资产相关设置应等审计与二次确认基础完成后再开放。
 
-当前已注册并可在 Console 展示的设置为：`Site.Branding.FaviconUrl`、`UserIdentity.LoginName.MinLength`、`UserIdentity.LoginName.MaxLength`、`UserIdentity.DisplayName.MinLength`、`UserIdentity.DisplayName.MaxLength`、`Content.PostTitle.MinLength`、`Content.PostTitle.MaxLength`、`Content.PostBody.MinLength`、`Content.PostBody.MaxLength`、`Content.PostSummary.MaxLength`、`Comment.Body.MinLength`、`Comment.Body.MaxLength`、`Comment.QuickReply.MaxContentLength`、`Comment.QuickReply.DefaultTake`、`Comment.QuickReply.MaxTake`、`Comment.QuickReply.PerPostCooldownSeconds`、`Comment.QuickReply.DuplicateWindowSeconds`。账号身份本批只开放长度边界，不开放邮箱、登录凭证、高风险账号字段或 Console 账号变更动作；轻回应本批只开放内容长度、返回条数、冷却和重复内容窗口，不开放 `ForumQuickReply.Enable` 功能开关。
+当前已注册并可在 Console 展示的设置为：`Site.Branding.FaviconUrl`、`UserIdentity.LoginName.MinLength`、`UserIdentity.LoginName.MaxLength`、`UserIdentity.DisplayName.MinLength`、`UserIdentity.DisplayName.MaxLength`、`Content.PostTitle.MinLength`、`Content.PostTitle.MaxLength`、`Content.PostBody.MinLength`、`Content.PostBody.MaxLength`、`Content.PostSummary.MaxLength`、`Comment.Body.MinLength`、`Comment.Body.MaxLength`、`Comment.QuickReply.MaxContentLength`、`Comment.QuickReply.DefaultTake`、`Comment.QuickReply.MaxTake`、`Comment.QuickReply.PerPostCooldownSeconds`、`Comment.QuickReply.DuplicateWindowSeconds`、`Comment.Highlight.StabilityWindowMinutes`、`Comment.Highlight.ReplacementMinLikeDelta`。账号身份本批只开放长度边界，不开放邮箱、登录凭证、高风险账号字段或 Console 账号变更动作；轻回应本批只开放内容长度、返回条数、冷却和重复内容窗口，不开放 `ForumQuickReply.Enable` 功能开关；神评本批只开放稳定窗口和替换阈值，不开放任务启停、调度、扫描窗口、触发评论数量门槛或奖励数值。
 
 ## 11. 实施阶段建议
 
@@ -264,7 +266,7 @@ SystemConfig 覆盖值
 - 支持恢复默认。
 - 写入基础审计。
 - 后端服务通过统一 provider 消费设置。
-- 当前已开放 `Site.Branding.FaviconUrl` 低风险覆盖值编辑与恢复默认，并开放帖子标题 / 正文、评论内容最小 / 最大长度、帖子自动摘要长度、论坛轻回应内容最大长度、轻回应返回条数、轻回应冷却 / 去重窗口、登录名长度和展示名长度设置；第二批已补修改原因、确认参数基础、审计历史写入和 Console 历史查看入口，第三批已补统一 provider 与首批业务消费点，第四批已补校验规则元数据和数字编辑控件约束，第五批将内容发布上限与实体 / DTO 硬边界对齐，第六批继续将轻回应长度纳入评论互动同族设置，第七批将账号身份长度设置接入 Auth / API 现有校验点，第八批将轻回应剩余运营参数接入轻回应列表与发布频率治理。High / Critical 仍不开放编辑，后续需在逐项确认影响范围、二次确认策略和权限边界后再放开。
+- 当前已开放 `Site.Branding.FaviconUrl` 低风险覆盖值编辑与恢复默认，并开放帖子标题 / 正文、评论内容最小 / 最大长度、帖子自动摘要长度、论坛轻回应内容最大长度、轻回应返回条数、轻回应冷却 / 去重窗口、登录名长度、展示名长度、神评稳定窗口和神评替换阈值设置；第二批已补修改原因、确认参数基础、审计历史写入和 Console 历史查看入口，第三批已补统一 provider 与首批业务消费点，第四批已补校验规则元数据和数字编辑控件约束，第五批将内容发布上限与实体 / DTO 硬边界对齐，第六批继续将轻回应长度纳入评论互动同族设置，第七批将账号身份长度设置接入 Auth / API 现有校验点，第八批将轻回应剩余运营参数接入轻回应列表与发布频率治理，第九批将神评稳定窗口和替换阈值接入神评 / 沙发实时重算。High / Critical 仍不开放编辑，后续需在逐项确认影响范围、二次确认策略和权限边界后再放开。
 
 ### Phase D：高危设置治理
 
@@ -280,3 +282,4 @@ SystemConfig 覆盖值
 - 不让业务代码继续散落读取字符串配置。
 - 不开放邮箱、登录凭证、高风险账号字段或 Console 账号变更动作；账号身份设置先限制在已明确消费点的长度边界。
 - 不开放 `ForumQuickReply.Enable` 功能开关；轻回应是否启用继续由宿主配置控制。
+- 不开放神评任务启停、Cron 调度、扫描窗口、缓存策略、神评 / 沙发触发评论数量门槛或奖励数值；这些参数继续逐项评审，不随稳定窗口和替换阈值一起进入 Console。

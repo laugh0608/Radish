@@ -153,7 +153,7 @@ https://localhost:5000/console/
 
 `http://localhost:3000` 与 `http://localhost:3100` 只作为 Vite dev server 直连端口，用于 HMR、前端资源路径或局部 UI 调试。直连 Console dev server 时必须带 `/console/` base，例如 `http://localhost:3100/console/`。
 
-涉及用户真实路径、登录回跳、Console 管理后台、公开壳层、API 转发、静态资源路径或部署口径时，不要默认绕过 Gateway 直接访问前端 dev server；页面真实联调和浏览器 smoke 默认同时覆盖 PC 与移动端视图，完整规则见 [页面真实联调与浏览器 Smoke 规则](/guide/browser-smoke)。
+涉及用户真实路径、登录回跳、Console 管理后台、公开壳层、API 转发、静态资源路径或部署口径时，不要默认绕过 Gateway 直接访问前端 dev server。页面真实联调和浏览器 smoke 不作为每个本地提交或每个低 / 中风险设置批次的默认前置门槛；默认在较大阶段推进完成、准备合并到 `master`、发布候选整备或用户可见页面明显变化时集中执行。执行 smoke 时仍同时覆盖 PC 与移动端视图，完整规则见 [页面真实联调与浏览器 Smoke 规则](/guide/browser-smoke)。
 
 ### 0. 执行粒度约定
 

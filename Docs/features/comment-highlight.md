@@ -526,9 +526,7 @@ const topSofaComment = sofaComments.length > 0
       "CacheEnabled": true,
       "CacheTTLMinutes": 60,
       "MinParentCommentCount": 5,
-      "MinChildCommentCount": 3,
-      "StabilityWindowMinutes": 10,
-      "ReplacementMinLikeDelta": 2
+      "MinChildCommentCount": 3
     }
   }
 }
@@ -544,11 +542,12 @@ const topSofaComment = sofaComments.length > 0
 - `0 2 * * *`：每天凌晨 2 点
 - `0 */6 * * *`：每 6 小时执行一次
 
-**稳定性配置说明**：
+**实时重算配置说明**：
 
 - `RealtimeUpdate`：是否在评论写路径触发实时重算。
-- `StabilityWindowMinutes`：当前高亮创建后的稳定窗口；窗口内避免同赞数或微弱变化频繁替换。
-- `ReplacementMinLikeDelta`：稳定窗口内新候选替换当前高亮所需的最小点赞领先数。
+- `MinParentCommentCount` / `MinChildCommentCount`：神评 / 沙发生成资格门槛，继续由宿主配置管理，不进入 Console。
+- `Comment.Highlight.StabilityWindowMinutes`：当前高亮创建后的稳定窗口，已迁入 Console 系统设置。
+- `Comment.Highlight.ReplacementMinLikeDelta`：稳定窗口内新候选替换当前高亮所需的最小点赞领先数，已迁入 Console 系统设置。
 
 ---
 

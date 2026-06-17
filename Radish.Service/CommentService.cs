@@ -1248,7 +1248,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                 .Where(comment => comment.LikeCount == topLikeCount)
                 .ToList();
 
-            if (ShouldKeepExistingHighlights(existingHighlights, desiredComments))
+            if (await ShouldKeepExistingHighlightsAsync(existingHighlights, desiredComments))
             {
                 result.VoCurrentCommentIds = existingHighlights.Select(highlight => highlight.CommentId).ToList();
                 return result;
@@ -1344,7 +1344,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                 .Where(child => child.LikeCount == topLikeCount)
                 .ToList();
 
-            if (ShouldKeepExistingHighlights(existingHighlights, desiredChildren))
+            if (await ShouldKeepExistingHighlightsAsync(existingHighlights, desiredChildren))
             {
                 result.VoCurrentCommentIds = existingHighlights.Select(highlight => highlight.CommentId).ToList();
                 return result;
@@ -1388,7 +1388,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         return true;
     }
 
-    private bool ShouldKeepExistingHighlights(List<CommentHighlight> existingHighlights, List<Comment> desiredComments)
+    private async Task<bool> ShouldKeepExistingHighlightsAsync(List<CommentHighlight> existingHighlights, List<Comment> desiredComments)
     {
         if (!existingHighlights.Any() || !desiredComments.Any())
         {
@@ -1403,7 +1403,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             return false;
         }
 
-        var stabilityWindowMinutes = Math.Max(0, _highlightOptions.StabilityWindowMinutes);
+        var stabilityWindowMinutes = await _systemSettingProvider.GetInt32Async(
+            SystemConfigDefaults.CommentHighlightStabilityWindowMinutesKey);
         if (stabilityWindowMinutes <= 0)
         {
             return false;
@@ -1417,7 +1418,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
 
         var existingBestLikeCount = existingHighlights.Max(highlight => highlight.LikeCount);
         var desiredBestLikeCount = desiredComments.Max(comment => comment.LikeCount);
-        var requiredDelta = Math.Max(1, _highlightOptions.ReplacementMinLikeDelta);
+        var requiredDelta = await _systemSettingProvider.GetInt32Async(
+            SystemConfigDefaults.CommentHighlightReplacementMinLikeDeltaKey);
 
         return desiredBestLikeCount - existingBestLikeCount < requiredDelta;
     }

@@ -7,7 +7,7 @@
 ## 当前状态
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
-- **当前主线**：`P3-10-B10 系统设置治理第八批实现`
+- **当前主线**：`P3-10-B10 系统设置治理第九批实现`
 - **复核日期**：`2026-06-17`
 - **最近结论**：
   - `P3-1` 至 `P3-5` 已完成公开内容增长、PublicId 试点、留存回流、动态 sitemap 与详情 head snapshot 首批建设。
@@ -56,6 +56,7 @@
   - `P3-10-B10` 第六批已推进论坛轻回应内容最大长度设置：新增 `Comment.QuickReply.MaxContentLength`，轻回应发布路径改为通过 `ISystemSettingProvider` 读取上限，旧 `ForumQuickReply.MaxContentLength` 配置入口已移除；后端测试、Debug 构建和 Console 新增设置项的 Gateway PC / 移动页面补验均已通过。
   - `P3-10-B10` 第七批已推进账号身份长度设置：新增 `UserIdentity.LoginName.MinLength`、`UserIdentity.LoginName.MaxLength`、`UserIdentity.DisplayName.MinLength`、`UserIdentity.DisplayName.MaxLength`，Auth 注册和 API 个人资料展示名校验改为通过 `ISystemSettingProvider` 读取上下限；本批不开放邮箱、登录凭证、高风险账号字段或 Console 账号变更动作，后端定向测试、完整测试、Debug 构建、`radish.console` 构建和 Gateway PC / 移动页面补验均已通过。
   - `P3-10-B10` 第八批已推进论坛轻回应剩余运营参数：新增 `Comment.QuickReply.DefaultTake`、`Comment.QuickReply.MaxTake`、`Comment.QuickReply.PerPostCooldownSeconds`、`Comment.QuickReply.DuplicateWindowSeconds`，轻回应列表返回条数、单帖冷却和重复内容窗口改为通过 `ISystemSettingProvider` 读取；旧 `ForumQuickReply` 数值配置从宿主配置移除，`ForumQuickReply.Enable` 功能开关仍保留在 `appsettings`，不开放到 Console。后端定向测试、完整测试、Debug 构建、`radish.console` 构建和 Gateway PC / 移动页面补验均已通过。
+  - `P3-10-B10` 第九批已推进神评 / 沙发稳定性运营参数：新增 `Comment.Highlight.StabilityWindowMinutes`、`Comment.Highlight.ReplacementMinLikeDelta`，神评 / 沙发实时重算稳定窗口和替换阈值改为通过 `ISystemSettingProvider` 读取；旧 `CommentHighlight` 稳定窗口数值配置从宿主配置移除，任务启停、调度、扫描窗口、触发评论数量门槛和奖励数值仍不开放到 Console。后端定向测试、完整测试、Debug 构建和 `radish.console` 构建均已通过；真实页面 smoke 改为较大阶段推进完成或发布候选前集中执行，不作为每个系统设置批次的默认要求。
 
 ## 当前执行入口
 
@@ -77,7 +78,7 @@
 
 1. **推进 P3-10-B10 系统设置治理**
    - 首批目标是把 Console 系统设置从自由 key-value 收敛为代码级设置定义、默认值、覆盖值、风险等级和生效方式。
-   - 当前已补低风险 `Site.Branding.FaviconUrl` 覆盖值编辑、恢复默认、变更审计、修改原因 / 确认参数基础、历史查看入口、统一读取入口、帖子 / 评论长度边界设置消费、帖子摘要长度设置、轻回应内容 / 返回条数 / 冷却 / 去重窗口设置、校验规则元数据和数字编辑控件约束；未注册历史 JSON 记录不作为运营设置展示。
+   - 当前已补低风险 `Site.Branding.FaviconUrl` 覆盖值编辑、恢复默认、变更审计、修改原因 / 确认参数基础、历史查看入口、统一读取入口、帖子 / 评论长度边界设置消费、帖子摘要长度设置、轻回应内容 / 返回条数 / 冷却 / 去重窗口设置、神评 / 沙发稳定窗口 / 替换阈值设置、校验规则元数据和数字编辑控件约束；未注册历史 JSON 记录不作为运营设置展示。
    - 后续不把部署密钥、宠物经济数值、高危资产 / 会话设置或基础设施配置直接搬进 Console。
 2. **把 P3-8-D 降级为维护与回拉线**
    - 移动 Web 公开页逐页打磨、Console 剩余页面迁移、购买 / 订单 / 背包重复复核、ID Phase A 广泛扫描不再作为默认日常主线。
@@ -86,13 +87,14 @@
    - Flutter 不再作为本批第一顺位；成熟 API 支撑的一组同一工作流动作可以在后续跨端承接批次进入受控写入。
    - 大页面重设计、端点级视觉治理和跨页面视觉体系变更仍先更新 Pencil；小范围功能、状态、表单、文案或行为等价修正不被 Pencil 阻塞。
    - 本地验证继续按风险分层；完整 baseline 默认放在准备合并到 `master` 前或发布部署节点。
+   - 真实页面 smoke 不再按每个本地提交或每个低 / 中风险设置批次执行；默认在较大阶段推进完成、准备合并到 `master`、发布候选整备或用户可见页面明显变化时集中覆盖。
 
 ## 下一顺位
 
 - `P3-10-B10 系统设置治理`
-  - 已推进设置定义注册表、默认值、覆盖值、风险等级、低风险编辑、恢复默认、修改原因 / 确认参数基础、变更审计历史、统一读取入口、帖子 / 评论 / 轻回应长度边界设置、帖子摘要长度设置、轻回应返回条数 / 冷却 / 去重窗口设置、校验规则元数据和数字编辑控件约束；Console 不再把未注册 JSON 记录作为运营设置展示。
-  - 当前开放 `Site.Branding.FaviconUrl`、`UserIdentity.LoginName.MinLength`、`UserIdentity.LoginName.MaxLength`、`UserIdentity.DisplayName.MinLength`、`UserIdentity.DisplayName.MaxLength`、`Content.PostTitle.MinLength`、`Content.PostTitle.MaxLength`、`Content.PostBody.MinLength`、`Content.PostBody.MaxLength`、`Content.PostSummary.MaxLength`、`Comment.Body.MinLength`、`Comment.Body.MaxLength`、`Comment.QuickReply.MaxContentLength`、`Comment.QuickReply.DefaultTake`、`Comment.QuickReply.MaxTake`、`Comment.QuickReply.PerPostCooldownSeconds`、`Comment.QuickReply.DuplicateWindowSeconds`；Medium 设置必须填写原因并确认风险等级 / 设置键，High / Critical 仍不开放编辑。
-  - 第八批代码侧验证与 Gateway PC / 移动页面补验已完成；下一步评审下一组低 / 中风险候选。
+  - 已推进设置定义注册表、默认值、覆盖值、风险等级、低风险编辑、恢复默认、修改原因 / 确认参数基础、变更审计历史、统一读取入口、帖子 / 评论 / 轻回应长度边界设置、帖子摘要长度设置、轻回应返回条数 / 冷却 / 去重窗口设置、神评 / 沙发稳定窗口 / 替换阈值设置、校验规则元数据和数字编辑控件约束；Console 不再把未注册 JSON 记录作为运营设置展示。
+  - 当前开放 `Site.Branding.FaviconUrl`、`UserIdentity.LoginName.MinLength`、`UserIdentity.LoginName.MaxLength`、`UserIdentity.DisplayName.MinLength`、`UserIdentity.DisplayName.MaxLength`、`Content.PostTitle.MinLength`、`Content.PostTitle.MaxLength`、`Content.PostBody.MinLength`、`Content.PostBody.MaxLength`、`Content.PostSummary.MaxLength`、`Comment.Body.MinLength`、`Comment.Body.MaxLength`、`Comment.QuickReply.MaxContentLength`、`Comment.QuickReply.DefaultTake`、`Comment.QuickReply.MaxTake`、`Comment.QuickReply.PerPostCooldownSeconds`、`Comment.QuickReply.DuplicateWindowSeconds`、`Comment.Highlight.StabilityWindowMinutes`、`Comment.Highlight.ReplacementMinLikeDelta`；Medium 设置必须填写原因并确认风险等级 / 设置键，High / Critical 仍不开放编辑。
+  - 第九批代码侧验证已完成；真实页面 smoke 改为较大阶段推进完成或发布候选前集中执行。下一步评审下一组低 / 中风险候选。
   - 不把部署密钥、宠物经济数值、高危资产 / 会话设置或基础设施配置直接搬进 Console。
 - `P3-10-B9 用户身份语义与公开索引维护线`
   - 首批代码、自动化验证和 Gateway PC / 移动页面补验已完成；测试 / 生产上线前使用 `Deploy/sql/20260615_add_user_public_index.sql` 作为 PostgreSQL 版本化差异 SQL 审核入口。
