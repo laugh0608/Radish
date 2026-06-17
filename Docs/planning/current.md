@@ -7,7 +7,7 @@
 ## 当前状态
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
-- **当前主线**：`P3-10-B10 系统设置治理第九批实现`
+- **当前主线**：`P3-10-B10 系统设置治理阶段收束`
 - **复核日期**：`2026-06-17`
 - **最近结论**：
   - `P3-1` 至 `P3-5` 已完成公开内容增长、PublicId 试点、留存回流、动态 sitemap 与详情 head snapshot 首批建设。
@@ -57,6 +57,7 @@
   - `P3-10-B10` 第七批已推进账号身份长度设置：新增 `UserIdentity.LoginName.MinLength`、`UserIdentity.LoginName.MaxLength`、`UserIdentity.DisplayName.MinLength`、`UserIdentity.DisplayName.MaxLength`，Auth 注册和 API 个人资料展示名校验改为通过 `ISystemSettingProvider` 读取上下限；本批不开放邮箱、登录凭证、高风险账号字段或 Console 账号变更动作，后端定向测试、完整测试、Debug 构建、`radish.console` 构建和 Gateway PC / 移动页面补验均已通过。
   - `P3-10-B10` 第八批已推进论坛轻回应剩余运营参数：新增 `Comment.QuickReply.DefaultTake`、`Comment.QuickReply.MaxTake`、`Comment.QuickReply.PerPostCooldownSeconds`、`Comment.QuickReply.DuplicateWindowSeconds`，轻回应列表返回条数、单帖冷却和重复内容窗口改为通过 `ISystemSettingProvider` 读取；旧 `ForumQuickReply` 数值配置从宿主配置移除，`ForumQuickReply.Enable` 功能开关仍保留在 `appsettings`，不开放到 Console。后端定向测试、完整测试、Debug 构建、`radish.console` 构建和 Gateway PC / 移动页面补验均已通过。
   - `P3-10-B10` 第九批已推进神评 / 沙发稳定性运营参数：新增 `Comment.Highlight.StabilityWindowMinutes`、`Comment.Highlight.ReplacementMinLikeDelta`，神评 / 沙发实时重算稳定窗口和替换阈值改为通过 `ISystemSettingProvider` 读取；旧 `CommentHighlight` 稳定窗口数值配置从宿主配置移除，任务启停、调度、扫描窗口、触发评论数量门槛和奖励数值仍不开放到 Console。后端定向测试、完整测试、Debug 构建和 `radish.console` 构建均已通过；真实页面 smoke 改为较大阶段推进完成或发布候选前集中执行，不作为每个系统设置批次的默认要求。
+  - `P3-10-B10` 低 / 中风险系统设置首轮治理已阶段收束：当前开放 19 个设置，覆盖品牌 favicon、账号身份长度、内容发布长度、轻回应运营参数、神评 / 沙发稳定窗口和替换阈值。第九批后不继续默认追加第十批设置；评论 typing 节流、神评触发评论数量门槛、内容发布频率限制、论坛编辑历史策略、基础设施、安全会话、资产、奖励和高风险账号字段均转入后续独立评审或维护观察。
 
 ## 当前执行入口
 
@@ -76,10 +77,10 @@
 
 ## 当前目标
 
-1. **推进 P3-10-B10 系统设置治理**
+1. **收束 P3-10-B10 系统设置治理**
    - 首批目标是把 Console 系统设置从自由 key-value 收敛为代码级设置定义、默认值、覆盖值、风险等级和生效方式。
    - 当前已补低风险 `Site.Branding.FaviconUrl` 覆盖值编辑、恢复默认、变更审计、修改原因 / 确认参数基础、历史查看入口、统一读取入口、帖子 / 评论长度边界设置消费、帖子摘要长度设置、轻回应内容 / 返回条数 / 冷却 / 去重窗口设置、神评 / 沙发稳定窗口 / 替换阈值设置、校验规则元数据和数字编辑控件约束；未注册历史 JSON 记录不作为运营设置展示。
-   - 后续不把部署密钥、宠物经济数值、高危资产 / 会话设置或基础设施配置直接搬进 Console。
+   - 当前阶段不再默认追加设置批次；后续只在真实运营缺口、发布候选回归或独立专题评审确认边界后回拉。
 2. **把 P3-8-D 降级为维护与回拉线**
    - 移动 Web 公开页逐页打磨、Console 剩余页面迁移、购买 / 订单 / 背包重复复核、ID Phase A 广泛扫描不再作为默认日常主线。
    - 新增外部 ID 边界、扫描命中、真实编译错误或发布候选验收暴露问题时，再做定向治理。
@@ -94,8 +95,8 @@
 - `P3-10-B10 系统设置治理`
   - 已推进设置定义注册表、默认值、覆盖值、风险等级、低风险编辑、恢复默认、修改原因 / 确认参数基础、变更审计历史、统一读取入口、帖子 / 评论 / 轻回应长度边界设置、帖子摘要长度设置、轻回应返回条数 / 冷却 / 去重窗口设置、神评 / 沙发稳定窗口 / 替换阈值设置、校验规则元数据和数字编辑控件约束；Console 不再把未注册 JSON 记录作为运营设置展示。
   - 当前开放 `Site.Branding.FaviconUrl`、`UserIdentity.LoginName.MinLength`、`UserIdentity.LoginName.MaxLength`、`UserIdentity.DisplayName.MinLength`、`UserIdentity.DisplayName.MaxLength`、`Content.PostTitle.MinLength`、`Content.PostTitle.MaxLength`、`Content.PostBody.MinLength`、`Content.PostBody.MaxLength`、`Content.PostSummary.MaxLength`、`Comment.Body.MinLength`、`Comment.Body.MaxLength`、`Comment.QuickReply.MaxContentLength`、`Comment.QuickReply.DefaultTake`、`Comment.QuickReply.MaxTake`、`Comment.QuickReply.PerPostCooldownSeconds`、`Comment.QuickReply.DuplicateWindowSeconds`、`Comment.Highlight.StabilityWindowMinutes`、`Comment.Highlight.ReplacementMinLikeDelta`；Medium 设置必须填写原因并确认风险等级 / 设置键，High / Critical 仍不开放编辑。
-  - 第九批代码侧验证已完成；真实页面 smoke 改为较大阶段推进完成或发布候选前集中执行。下一步评审下一组低 / 中风险候选。
-  - 不把部署密钥、宠物经济数值、高危资产 / 会话设置或基础设施配置直接搬进 Console。
+  - 第九批代码侧验证已完成；真实页面 smoke 改为较大阶段推进完成或发布候选前集中执行。低 / 中风险首轮治理当前阶段收束，不继续把候选参数默认排成第十批。
+  - 不把评论 typing 节流、神评触发评论数量门槛、内容发布频率限制、论坛编辑历史策略、部署密钥、宠物经济数值、高危资产 / 会话设置或基础设施配置直接搬进 Console；论坛编辑历史如需治理，应作为编辑权限 / 历史保留专题独立评审。
 - `P3-10-B9 用户身份语义与公开索引维护线`
   - 首批代码、自动化验证和 Gateway PC / 移动页面补验已完成；测试 / 生产上线前使用 `Deploy/sql/20260615_add_user_public_index.sql` 作为 PostgreSQL 版本化差异 SQL 审核入口。
   - 后续只在发布候选、跨端承接或真实缺口暴露时回拉，不把 `DisplayName#PublicIndex` 替代 `PublicId` 路由，不启动数据库主键迁移、邮箱通知系统、ActivityPub / WebFinger 或 Console 高风险账号字段治理。
@@ -119,12 +120,10 @@
 
 ## 明日事项
 
-- 第一顺位：`P3-10-B10 系统设置治理` 评审下一组低 / 中风险设置候选；优先选择已有业务消费点、边界清楚、可定向验证的设置，不开放 High / Critical。
-- 第二顺位：若后续候选继续落入账号身份资料，先确认 Auth / API / Console / 公开展示契约、风险等级和停止线，不直接把高风险账号字段开放到 Console。
-- 第三顺位：若新增候选设置会扩大 Console 编辑面，先补专题文档中的设置定义、影响范围、验证规则和停止线，再进入代码实现。
-- 第四顺位：若 B10 暴露真实缺口，按同一问题族成组修复：后端定义模型、覆盖值存储、统一读取入口、Console 展示、公开站点设置读取和业务消费路径同步补齐。
-- 第五顺位：`P3-10-B9 用户身份语义与公开索引` 转入维护线，只在发布候选、跨端承接或真实缺口暴露时回拉。
-- 第六顺位：保留 `P3-10-B8 Radish 电子宠物` 与 `P3-10-B7 / B6 / B2 / B1 / B3` 维护入口，只在发布候选回归、真实 smoke 或新增缺口暴露时复核；经济扩展、完整聊天、完整钱包、Flutter 系统通知和 P3-8-D 购买 / 订单 / 背包重复筛查继续后置。
+- 第一顺位：完成 `P3-10-B10 系统设置治理` 阶段收束，不继续默认追加低 / 中风险设置批次；后续只在真实运营缺口、发布候选回归或独立专题评审确认后回拉。
+- 第二顺位：做 `P3-10` 阶段整理与后续主线选择，优先判断是进入 Web 信息流 / UI 结构整理、Flutter 承接准备，还是发布候选前自动化总验证。
+- 第三顺位：若后续重新开放系统设置候选，先确认设置定义、影响范围、风险等级、验证规则和停止线；High / Critical、基础设施、安全会话、资产、奖励、宠物经济和高风险账号字段继续不开放。
+- 第四顺位：保留 `P3-10-B9 用户身份语义与公开索引`、`P3-10-B8 Radish 电子宠物` 与 `P3-10-B7 / B6 / B2 / B1 / B3` 维护入口，只在发布候选回归、真实 smoke 或新增缺口暴露时复核；经济扩展、完整聊天、完整钱包、Flutter 系统通知和 P3-8-D 购买 / 订单 / 背包重复筛查继续后置。
 
 ## 并行维护项
 
