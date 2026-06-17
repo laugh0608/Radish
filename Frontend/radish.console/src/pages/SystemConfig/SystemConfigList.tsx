@@ -11,7 +11,7 @@ import {
   AntInput as Input,
   type TableColumnsType,
 } from '@radish/ui';
-import { Upload } from 'antd';
+import { Grid, Upload } from 'antd';
 import type { UploadProps } from 'antd';
 import {
   PlusOutlined,
@@ -58,6 +58,8 @@ export const SystemConfigList = () => {
   const [historyLogs, setHistoryLogs] = useState<SystemConfigChangeLogVo[]>([]);
   const canViewSystemConfig = usePermission(CONSOLE_PERMISSIONS.systemConfigView);
   const canEditSystemConfig = usePermission(CONSOLE_PERMISSIONS.systemConfigEdit);
+  const screens = Grid.useBreakpoint();
+  const isCompactTable = !screens.md;
 
   // 筛选条件
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -293,6 +295,73 @@ export const SystemConfigList = () => {
     return record.voOperatorUserName || (record.voOperatorUserId ? `#${record.voOperatorUserId}` : '-');
   };
 
+  const renderEffectiveValue = (value: string, record: SystemConfigVo) => {
+    if (record.voType === 'boolean') {
+      return <Tag color={value === 'true' ? 'success' : 'error'}>{value}</Tag>;
+    }
+    if (record.voKey === SITE_FAVICON_KEY) {
+      return (
+        <div className="favicon-cell">
+          {faviconPreviewUrl ? (
+            <img src={faviconPreviewUrl} alt="站点图标预览" className="favicon-cell__image" />
+          ) : null}
+          <span className="favicon-cell__value">{value}</span>
+        </div>
+      );
+    }
+    return <span>{value}</span>;
+  };
+
+  const renderConfigActions = (record: SystemConfigVo, compact = false) => (
+    <Space
+      className="system-config-action-space"
+      size={compact ? 4 : 'small'}
+      direction={compact ? 'vertical' : 'horizontal'}
+    >
+      <Button
+        variant="ghost"
+        size="small"
+        icon={<EditOutlined />}
+        aria-label={compact ? '编辑' : undefined}
+        title={compact ? '编辑' : undefined}
+        onClick={() => handleEdit(record)}
+        disabled={!canEditSystemConfig || !record.voIsEditable}
+      >
+        {compact ? null : '编辑'}
+      </Button>
+      <Button
+        variant="ghost"
+        size="small"
+        icon={<ClockCircleOutlined />}
+        aria-label={compact ? '历史' : undefined}
+        title={compact ? '历史' : undefined}
+        onClick={() => {
+          void handleViewHistory(record);
+        }}
+      >
+        {compact ? null : '历史'}
+      </Button>
+    </Space>
+  );
+
+  const renderCompactConfig = (record: SystemConfigVo) => (
+    <div className="system-config-mobile-config">
+      <div className="system-config-mobile-config__header">
+        <span className="system-config-mobile-config__name">{record.voName}</span>
+        <Tag color="cyan">{record.voCategory}</Tag>
+      </div>
+      <code className="system-config-key-code system-config-key-code--mobile">
+        {record.voKey}
+      </code>
+      <div className="system-config-mobile-config__value">
+        <span className="system-config-mobile-config__label">当前值</span>
+        <div className="system-config-mobile-config__current">
+          {renderEffectiveValue(record.voEffectiveValue, record)}
+        </div>
+      </div>
+    </div>
+  );
+
   const historyColumns: TableColumnsType<SystemConfigChangeLogVo> = [
     {
       title: '时间',
@@ -350,8 +419,7 @@ export const SystemConfigList = () => {
     },
   ];
 
-  // 表格列定义
-  const columns: TableColumnsType<SystemConfigVo> = [
+  const desktopColumns: TableColumnsType<SystemConfigVo> = [
     {
       title: 'ID',
       dataIndex: 'voId',
@@ -390,22 +458,7 @@ export const SystemConfigList = () => {
       key: 'voEffectiveValue',
       width: 190,
       ellipsis: true,
-      render: (value: string, record) => {
-        if (record.voType === 'boolean') {
-          return <Tag color={value === 'true' ? 'success' : 'error'}>{value}</Tag>;
-        }
-        if (record.voKey === SITE_FAVICON_KEY) {
-          return (
-            <div className="favicon-cell">
-              {faviconPreviewUrl ? (
-                <img src={faviconPreviewUrl} alt="站点图标预览" className="favicon-cell__image" />
-              ) : null}
-              <span className="favicon-cell__value">{value}</span>
-            </div>
-          );
-        }
-        return <span>{value}</span>;
-      },
+      render: renderEffectiveValue,
     },
     {
       title: '默认值',
@@ -471,31 +524,28 @@ export const SystemConfigList = () => {
       key: 'action',
       width: 230,
       fixed: 'right',
-      render: (_, record) => (
-        <Space size="small">
-          <Button
-            variant="ghost"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-            disabled={!canEditSystemConfig || !record.voIsEditable}
-          >
-            编辑
-          </Button>
-          <Button
-            variant="ghost"
-            size="small"
-            icon={<ClockCircleOutlined />}
-            onClick={() => {
-              void handleViewHistory(record);
-            }}
-          >
-            历史
-          </Button>
-        </Space>
-      ),
+      render: (_, record) => renderConfigActions(record),
     },
   ];
+
+  const compactColumns: TableColumnsType<SystemConfigVo> = [
+    {
+      title: '设置',
+      key: 'compactConfig',
+      width: 224,
+      render: (_, record) => renderCompactConfig(record),
+    },
+    {
+      title: '操作',
+      key: 'action',
+      width: 60,
+      render: (_, record) => renderConfigActions(record, true),
+    },
+  ];
+
+  const tableColumns = isCompactTable ? compactColumns : desktopColumns;
+  const tableScrollX = isCompactTable ? 292 : 1700;
+
   return (
     <div className="admin-feature-page system-config-list-page">
       <section className="admin-feature-card">
@@ -625,7 +675,7 @@ export const SystemConfigList = () => {
 
           <section className="admin-table-panel">
             <Table
-              columns={columns}
+              columns={tableColumns}
               dataSource={filteredConfigs}
               rowKey="voId"
               loading={loading}
@@ -634,7 +684,7 @@ export const SystemConfigList = () => {
                 showQuickJumper: true,
                 showTotal: (total) => `共 ${total} 条`,
               }}
-              scroll={{ x: 1700 }}
+              scroll={{ x: tableScrollX }}
             />
           </section>
         </main>

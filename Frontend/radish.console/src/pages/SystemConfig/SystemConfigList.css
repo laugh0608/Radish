@@ -83,6 +83,9 @@
   background: var(--console-bg-muted);
   color: var(--console-text-secondary);
   font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .branding-card__value {
@@ -120,6 +123,57 @@
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  overflow-wrap: anywhere;
+}
+
+.system-config-action-space {
+  white-space: nowrap;
+}
+
+.system-config-mobile-config {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.system-config-mobile-config__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.system-config-mobile-config__name {
+  min-width: 0;
+  color: var(--console-text-primary);
+  font-weight: 650;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.system-config-key-code--mobile {
+  display: block;
+  width: fit-content;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.system-config-mobile-config__value {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.system-config-mobile-config__label {
+  color: var(--console-text-secondary);
+  font-size: 12px;
+}
+
+.system-config-mobile-config__current {
+  min-width: 0;
+  color: var(--console-text-primary);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .system-config-edit-form {
@@ -169,5 +223,27 @@
   .branding-card__main {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .system-config-list-page .admin-table-panel {
+    padding: 12px;
+  }
+
+  .system-config-list-page .ant-table-cell {
+    vertical-align: top;
+  }
+
+  .system-config-list-page .ant-table-tbody > tr > td {
+    padding: 12px 10px;
+  }
+
+  .system-config-list-page .ant-table-tbody > tr > td:last-child {
+    padding-left: 4px;
+  }
+
+  .system-config-list-page .system-config-action-space .ant-btn {
+    width: 36px;
+    justify-content: center;
+    padding-inline: 6px;
   }
 }
