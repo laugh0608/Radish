@@ -29,8 +29,20 @@ public class SystemConfigVo
     /// <summary>配置描述</summary>
     public string? VoDescription { get; set; }
 
+    /// <summary>影响范围摘要</summary>
+    public string? VoImpactSummary { get; set; }
+
     /// <summary>配置类型（string/number/boolean/json）</summary>
     public string VoType { get; set; } = "string";
+
+    /// <summary>数字最小值</summary>
+    public decimal? VoMinNumberValue { get; set; }
+
+    /// <summary>数字最大值</summary>
+    public decimal? VoMaxNumberValue { get; set; }
+
+    /// <summary>数字设置是否必须为整数</summary>
+    public bool VoRequiresInteger { get; set; }
 
     /// <summary>覆盖值是否启用</summary>
     public bool VoIsEnabled { get; set; } = true;

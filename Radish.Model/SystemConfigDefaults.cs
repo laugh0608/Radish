@@ -39,6 +39,8 @@ public sealed class SystemConfigDefinition
 
     public string Description { get; init; } = string.Empty;
 
+    public string ImpactSummary { get; init; } = string.Empty;
+
     public string ValueType { get; init; } = "string";
 
     public string DefaultValue { get; init; } = string.Empty;
@@ -72,6 +74,7 @@ public static class SystemConfigDefaults
             Key = SiteFaviconKey,
             Name = SiteFaviconName,
             Description = "浏览器标签页显示的网站图标，默认使用 DataBases/Uploads/DefaultIco/bailuobo.ico。",
+            ImpactSummary = "影响 Console 与公开 Web 的浏览器标签页图标显示。",
             ValueType = "string",
             DefaultValue = DefaultSiteFaviconPath,
             RiskLevel = SystemConfigRiskLevel.Low,
@@ -86,6 +89,7 @@ public static class SystemConfigDefaults
             Key = PostTitleMinLengthKey,
             Name = "帖子标题最小长度",
             Description = "发帖和编辑帖子时标题至少需要达到的字符数。",
+            ImpactSummary = "影响发帖和编辑帖子时的标题长度校验。",
             ValueType = "number",
             DefaultValue = DefaultPostTitleMinLength,
             MinNumberValue = 1,
@@ -103,6 +107,7 @@ public static class SystemConfigDefaults
             Key = PostBodyMinLengthKey,
             Name = "帖子正文最小长度",
             Description = "发帖和编辑帖子时正文至少需要达到的字符数。",
+            ImpactSummary = "影响发帖和编辑帖子时的正文长度校验。",
             ValueType = "number",
             DefaultValue = DefaultPostBodyMinLength,
             MinNumberValue = 1,
@@ -120,6 +125,7 @@ public static class SystemConfigDefaults
             Key = CommentBodyMinLengthKey,
             Name = "评论内容最小长度",
             Description = "发表评论和编辑评论时内容至少需要达到的字符数。",
+            ImpactSummary = "影响发表评论和编辑评论时的内容长度校验。",
             ValueType = "number",
             DefaultValue = DefaultCommentBodyMinLength,
             MinNumberValue = 1,

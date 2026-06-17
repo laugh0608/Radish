@@ -1,8 +1,8 @@
 # 系统设置治理专题
 
-> 状态：首批实现推进中，已进入设置定义注册表、低 / 中风险覆盖值、变更审计与统一读取入口治理
+> 状态：首批实现推进中，已进入设置定义注册表、低 / 中风险覆盖值、变更审计、统一读取入口与校验规则可视化治理
 >
-> 最后更新：2026-06-16（Asia/Shanghai）
+> 最后更新：2026-06-17（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -23,7 +23,7 @@ Radish 需要一个长期的系统设置中心，但它不应只是把 `appsetti
 - 高危设置必须二次确认，并写入审计日志。
 - 每个设置都具备类型、分组、校验规则、说明和恢复默认能力。
 
-当前项目已将 `SystemConfig` 首批收敛为代码级设置定义注册表 + JSON 覆盖值存储：Console 默认只展示已注册设置，历史未注册 key-value 记录不作为运营设置暴露。`Site.Branding.FaviconUrl` 作为第一个低风险可编辑示例；第二批已补系统设置专用变更审计、修改原因 / 确认参数基础和 Console 历史查看入口；第三批已新增 `ISystemSettingProvider`，并开放 `Content.PostTitle.MinLength`、`Content.PostBody.MinLength`、`Comment.Body.MinLength` 三个内容 / 评论长度设置。
+当前项目已将 `SystemConfig` 首批收敛为代码级设置定义注册表 + JSON 覆盖值存储：Console 默认只展示已注册设置，历史未注册 key-value 记录不作为运营设置暴露。`Site.Branding.FaviconUrl` 作为第一个低风险可编辑示例；第二批已补系统设置专用变更审计、修改原因 / 确认参数基础和 Console 历史查看入口；第三批已新增 `ISystemSettingProvider`，并开放 `Content.PostTitle.MinLength`、`Content.PostBody.MinLength`、`Comment.Body.MinLength` 三个内容 / 评论长度设置；第四批已将数值范围、整数约束和影响范围摘要从设置定义暴露到 Console，并让数字控件按规则约束输入。
 
 ## 2. 目标与非目标
 
@@ -57,9 +57,10 @@ Radish 需要一个长期的系统设置中心，但它不应只是把 `appsetti
 | `Category` | 分组，例如 `账号身份`、`内容发布`、`安全会话` |
 | `Name` | Console 展示名称 |
 | `Description` | 用途、影响范围和注意事项 |
+| `ImpactSummary` | 影响范围摘要，供 Console 保存前核对 |
 | `ValueType` | `string`、`number`、`boolean`、`enum`、`json`、`duration` 等 |
 | `DefaultValue` | 代码级默认值 |
-| `ValidationRule` | 最小值、最大值、正则、枚举项或 JSON schema |
+| `ValidationRule` | 最小值、最大值、整数约束、正则、枚举项或 JSON schema |
 | `RiskLevel` | `Low`、`Medium`、`High`、`Critical` |
 | `EffectiveMode` | 立即生效、缓存刷新后生效、重启后生效、任务下次运行生效 |
 | `Scope` | 首批建议只做全局设置，后续再评估租户 / 用户级覆盖 |
@@ -167,7 +168,7 @@ SystemConfig 覆盖值
 
 新增系统设置时，开发者应按以下顺序接入：
 
-1. 在 `SystemConfigDefaults` 注册设置定义，包含 `Key`、`Category`、`Name`、`Description`、`ValueType`、`DefaultValue`、风险等级、生效方式和必要的数值范围。
+1. 在 `SystemConfigDefaults` 注册设置定义，包含 `Key`、`Category`、`Name`、`Description`、`ImpactSummary`、`ValueType`、`DefaultValue`、风险等级、生效方式和必要的数值范围 / 整数约束。
 2. 判断是否属于运营参数。部署密钥、数据库连接、证书、OIDC 密钥、会话安全策略、高危资产设置和宠物经济数值不得进入 Console 编辑。
 3. 业务服务通过 `ISystemSettingProvider` 获取强类型值，不直接读取 JSON 记录，也不在业务代码里手写兜底默认值。
 4. Console 只能保存已注册设置的覆盖值；恢复默认时删除覆盖值并回到代码默认值。
@@ -183,6 +184,7 @@ SystemConfig 覆盖值
 - 支持恢复默认。
 - 支持查看修改历史。
 - 保存前展示变更摘要。
+- 数字设置必须展示范围、整数约束和影响范围摘要；前端控件按规则限制输入，后端仍作为最终校验权威。
 - 高危设置要求二次确认和填写原因。
 - 敏感设置默认脱敏，不允许复制明文。
 
@@ -203,6 +205,7 @@ SystemConfig 覆盖值
 
 - `GetSystemConfigs` 返回注册定义叠加覆盖值后的设置列表。
 - `GetConfigById` 使用设置定义 ID 查询，兼容旧覆盖记录 ID 回查已注册定义。
+- 设置列表 / 详情返回 `MinNumberValue`、`MaxNumberValue`、`RequiresInteger` 与 `ImpactSummary`，供 Console 展示校验规则与影响范围。
 - `UpdateConfig` 只允许写入 `Low` / `Medium`、可编辑的注册设置覆盖值；`Medium` 必须接收修改原因、确认风险等级和确认设置键参数，成功变更后写入系统设置专用审计历史。
 - `RestoreConfigDefault` 删除覆盖值并回到代码默认值，同样接收原因 / 确认参数并写入审计历史。
 - `GetConfigChangeLogs` 查询已注册设置的最近变更历史。
@@ -252,7 +255,7 @@ SystemConfig 覆盖值
 - 支持恢复默认。
 - 写入基础审计。
 - 后端服务通过统一 provider 消费设置。
-- 当前已开放 `Site.Branding.FaviconUrl` 低风险覆盖值编辑与恢复默认，并开放帖子标题 / 正文、评论内容最小长度设置；第二批已补修改原因、确认参数基础、审计历史写入和 Console 历史查看入口，第三批已补统一 provider 与首批业务消费点。High / Critical 仍不开放编辑，后续需在逐项确认影响范围、二次确认策略和权限边界后再放开。
+- 当前已开放 `Site.Branding.FaviconUrl` 低风险覆盖值编辑与恢复默认，并开放帖子标题 / 正文、评论内容最小长度设置；第二批已补修改原因、确认参数基础、审计历史写入和 Console 历史查看入口，第三批已补统一 provider 与首批业务消费点，第四批已补校验规则元数据和数字编辑控件约束。High / Critical 仍不开放编辑，后续需在逐项确认影响范围、二次确认策略和权限边界后再放开。
 
 ### Phase D：高危设置治理
 

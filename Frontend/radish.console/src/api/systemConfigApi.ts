@@ -17,7 +17,11 @@ export interface SystemConfigVo {
   voDefaultValue: string;
   voEffectiveValue: string;
   voDescription?: string;
+  voImpactSummary?: string;
   voType: 'string' | 'number' | 'boolean' | 'json';
+  voMinNumberValue?: number | null;
+  voMaxNumberValue?: number | null;
+  voRequiresInteger: boolean;
   voIsEnabled: boolean;
   voIsOverridden: boolean;
   voRiskLevel: 'Low' | 'Medium' | 'High' | 'Critical';

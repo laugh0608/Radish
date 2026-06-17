@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Moq;
 using Radish.IRepository;
@@ -57,7 +58,17 @@ public class SystemConfigServiceTest
         Assert.Equal(SystemConfigDefaults.DefaultSiteFaviconPath, faviconConfig.VoEffectiveValue);
         Assert.False(faviconConfig.VoIsOverridden);
         Assert.Equal(SystemConfigRiskLevel.Low, faviconConfig.VoRiskLevel);
+        Assert.Null(faviconConfig.VoMinNumberValue);
+        Assert.Null(faviconConfig.VoMaxNumberValue);
+        Assert.False(faviconConfig.VoRequiresInteger);
+        Assert.Contains("标签页图标", faviconConfig.VoImpactSummary);
         Assert.Null(faviconConfig.VoModifyTime);
+
+        var postTitleConfig = configs.Single(config => config.VoKey == SystemConfigDefaults.PostTitleMinLengthKey);
+        Assert.Equal(1m, postTitleConfig.VoMinNumberValue);
+        Assert.Equal(200m, postTitleConfig.VoMaxNumberValue);
+        Assert.True(postTitleConfig.VoRequiresInteger);
+        Assert.Contains("标题长度校验", postTitleConfig.VoImpactSummary);
     }
 
     [Fact]
