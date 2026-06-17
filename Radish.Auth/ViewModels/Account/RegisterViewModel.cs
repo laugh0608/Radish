@@ -11,9 +11,18 @@ public sealed class RegisterViewModel
     /// 用户名
     /// </summary>
     [Required(ErrorMessage = "用户名不能为空")]
-    [StringLength(32, MinimumLength = 3, ErrorMessage = "登录名长度必须在 3-32 个字符之间")]
     [RegularExpression(@"^(?=.*[a-zA-Z])[a-zA-Z0-9]+$", ErrorMessage = "登录名只能包含字母和数字，且至少包含一个字母")]
     public string Username { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 登录名最小长度
+    /// </summary>
+    public int LoginNameMinLength { get; set; } = 3;
+
+    /// <summary>
+    /// 登录名最大长度
+    /// </summary>
+    public int LoginNameMaxLength { get; set; } = 32;
 
     /// <summary>
     /// 密码

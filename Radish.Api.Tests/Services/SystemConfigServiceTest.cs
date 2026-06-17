@@ -64,6 +64,33 @@ public class SystemConfigServiceTest
         Assert.Contains("标签页图标", faviconConfig.VoImpactSummary);
         Assert.Null(faviconConfig.VoModifyTime);
 
+        var loginNameMinConfig = configs.Single(config => config.VoKey == SystemConfigDefaults.LoginNameMinLengthKey);
+        Assert.Equal(SystemConfigDefaults.DefaultLoginNameMinLength, loginNameMinConfig.VoDefaultValue);
+        Assert.Equal(SystemConfigRiskLevel.Medium, loginNameMinConfig.VoRiskLevel);
+        Assert.Equal(1m, loginNameMinConfig.VoMinNumberValue);
+        Assert.Equal(32m, loginNameMinConfig.VoMaxNumberValue);
+        Assert.True(loginNameMinConfig.VoRequiresInteger);
+        Assert.Contains("Auth 注册页", loginNameMinConfig.VoImpactSummary);
+
+        var loginNameMaxConfig = configs.Single(config => config.VoKey == SystemConfigDefaults.LoginNameMaxLengthKey);
+        Assert.Equal(SystemConfigDefaults.DefaultLoginNameMaxLength, loginNameMaxConfig.VoDefaultValue);
+        Assert.Equal(SystemConfigRiskLevel.Medium, loginNameMaxConfig.VoRiskLevel);
+        Assert.Equal(1m, loginNameMaxConfig.VoMinNumberValue);
+        Assert.Equal(32m, loginNameMaxConfig.VoMaxNumberValue);
+
+        var displayNameMinConfig = configs.Single(config => config.VoKey == SystemConfigDefaults.DisplayNameMinLengthKey);
+        Assert.Equal(SystemConfigDefaults.DefaultDisplayNameMinLength, displayNameMinConfig.VoDefaultValue);
+        Assert.Equal(SystemConfigRiskLevel.Medium, displayNameMinConfig.VoRiskLevel);
+        Assert.Equal(1m, displayNameMinConfig.VoMinNumberValue);
+        Assert.Equal(24m, displayNameMinConfig.VoMaxNumberValue);
+        Assert.Contains("公开展示名", displayNameMinConfig.VoImpactSummary);
+
+        var displayNameMaxConfig = configs.Single(config => config.VoKey == SystemConfigDefaults.DisplayNameMaxLengthKey);
+        Assert.Equal(SystemConfigDefaults.DefaultDisplayNameMaxLength, displayNameMaxConfig.VoDefaultValue);
+        Assert.Equal(SystemConfigRiskLevel.Medium, displayNameMaxConfig.VoRiskLevel);
+        Assert.Equal(1m, displayNameMaxConfig.VoMinNumberValue);
+        Assert.Equal(24m, displayNameMaxConfig.VoMaxNumberValue);
+
         var postTitleConfig = configs.Single(config => config.VoKey == SystemConfigDefaults.PostTitleMinLengthKey);
         Assert.Equal(1m, postTitleConfig.VoMinNumberValue);
         Assert.Equal(200m, postTitleConfig.VoMaxNumberValue);

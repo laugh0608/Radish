@@ -17,7 +17,9 @@
     var clientName = string.IsNullOrWhiteSpace(client.DisplayName) ? (isZh ? "Radish 社区" : "Radish Community") : client.DisplayName;
     var developerLabel = isZh ? "开发者" : "Developer";
     var usernameLabel = isZh ? "登录名" : "Login name";
-    var usernamePlaceholder = isZh ? "3-32 位小写字母或数字，至少包含一个字母" : "3-32 lowercase letters or numbers, at least one letter";
+    var usernamePlaceholder = isZh
+        ? $"{Model.LoginNameMinLength}-{Model.LoginNameMaxLength} 位小写字母或数字，至少包含一个字母"
+        : $"{Model.LoginNameMinLength}-{Model.LoginNameMaxLength} lowercase letters or numbers, at least one letter";
     var passwordLabel = isZh ? "密码" : "Password";
     var passwordPlaceholder = isZh ? "至少 6 个字符" : "At least 6 characters";
     var confirmPasswordLabel = isZh ? "确认密码" : "Confirm password";

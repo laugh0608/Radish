@@ -44,6 +44,7 @@ public class UserController : ControllerBase
     private readonly IUserBrowseHistoryService _userBrowseHistoryService;
     private readonly IUserTimePreferenceService _userTimePreferenceService;
     private readonly INotificationPushService _notificationPushService;
+    private readonly ISystemSettingProvider _systemSettingProvider;
     private readonly TimeOptions _timeOptions;
 
     public UserController(
@@ -55,6 +56,7 @@ public class UserController : ControllerBase
         IUserTimePreferenceService userTimePreferenceService,
         IAttachmentService attachmentService,
         INotificationPushService notificationPushService,
+        ISystemSettingProvider systemSettingProvider,
         IOptions<TimeOptions> timeOptions)
     {
         _userService = userService;
@@ -64,6 +66,7 @@ public class UserController : ControllerBase
         _userBrowseHistoryService = userBrowseHistoryService;
         _userTimePreferenceService = userTimePreferenceService;
         _notificationPushService = notificationPushService;
+        _systemSettingProvider = systemSettingProvider;
         _attachmentService = attachmentService;
         _timeOptions = timeOptions.Value;
     }
@@ -721,14 +724,18 @@ public class UserController : ControllerBase
         var birth = dto.Birth;
         var now = DateTime.UtcNow;
 
-        if (normalizedUserName != null && !IsValidDisplayName(normalizedUserName, out var displayNameError))
+        if (normalizedUserName != null)
         {
-            return new MessageModel
+            var displayNameLengthRule = await GetDisplayNameLengthRuleAsync();
+            if (!IsValidDisplayName(normalizedUserName, displayNameLengthRule.MinLength, displayNameLengthRule.MaxLength, out var displayNameError))
             {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = displayNameError
-            };
+                return new MessageModel
+                {
+                    IsSuccess = false,
+                    StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                    MessageInfo = displayNameError
+                };
+            }
         }
 
         if (normalizedUserEmail != null)
@@ -1062,11 +1069,23 @@ public class UserController : ControllerBase
         };
     }
 
-    private static bool IsValidDisplayName(string value, out string errorMessage)
+    private async Task<(int MinLength, int MaxLength)> GetDisplayNameLengthRuleAsync()
     {
-        if (value.Length < 2 || value.Length > 24)
+        var minLength = await _systemSettingProvider.GetInt32Async(SystemConfigDefaults.DisplayNameMinLengthKey);
+        var maxLength = await _systemSettingProvider.GetInt32Async(SystemConfigDefaults.DisplayNameMaxLengthKey);
+        if (minLength > maxLength)
         {
-            errorMessage = "显示名长度必须在 2-24 个字符之间";
+            throw new InvalidOperationException("展示名长度系统设置无效：最小长度不能大于最大长度");
+        }
+
+        return (minLength, maxLength);
+    }
+
+    private static bool IsValidDisplayName(string value, int minLength, int maxLength, out string errorMessage)
+    {
+        if (value.Length < minLength || value.Length > maxLength)
+        {
+            errorMessage = $"显示名长度必须在 {minLength}-{maxLength} 个字符之间";
             return false;
         }
 

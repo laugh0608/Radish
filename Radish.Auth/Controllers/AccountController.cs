@@ -12,6 +12,7 @@ using Radish.Auth.ViewModels.Account;
 using Radish.Common.HttpContextTool;
 using Radish.Common.HelpTool;
 using Radish.IService;
+using Radish.Model;
 using Radish.Model.OpenIddict;
 using System.Linq;
 using Microsoft.AspNetCore.WebUtilities;
@@ -46,17 +47,20 @@ public class AccountController : Controller
     private readonly IUserService _userService;
     private readonly IOpenIddictApplicationManager _applicationManager;
     private readonly ICoinService _coinService;
+    private readonly ISystemSettingProvider _systemSettingProvider;
 
     public AccountController(
         IStringLocalizer<Errors> errorsLocalizer,
         IUserService userService,
         IOpenIddictApplicationManager applicationManager,
-        ICoinService coinService)
+        ICoinService coinService,
+        ISystemSettingProvider systemSettingProvider)
     {
         _errorsLocalizer = errorsLocalizer;
         _userService = userService;
         _applicationManager = applicationManager;
         _coinService = coinService;
+        _systemSettingProvider = systemSettingProvider;
     }
 
     [HttpGet]
@@ -197,12 +201,15 @@ public class AccountController : Controller
     [HttpGet]
     public async Task<IActionResult> Register(string? returnUrl = null)
     {
+        var loginNameLengthRule = await GetLoginNameLengthRuleAsync();
         var model = new RegisterViewModel
         {
             ReturnUrl = returnUrl,
             ErrorMessage = TempData["RegisterError"] as string,
             SuccessMessage = TempData["RegisterSuccess"] as string,
-            Client = await ResolveClientAsync(returnUrl)
+            Client = await ResolveClientAsync(returnUrl),
+            LoginNameMinLength = loginNameLengthRule.MinLength,
+            LoginNameMaxLength = loginNameLengthRule.MaxLength
         };
 
         return View(model);
@@ -230,6 +237,13 @@ public class AccountController : Controller
         {
             var loginName = model.Username.Trim().ToLowerInvariant();
             var email = model.Email?.Trim().ToLowerInvariant();
+            var loginNameLengthRule = await GetLoginNameLengthRuleAsync();
+            if (!IsLoginNameLengthValid(loginName, loginNameLengthRule.MinLength, loginNameLengthRule.MaxLength, out var loginNameLengthError))
+            {
+                TempData["RegisterError"] = loginNameLengthError;
+                return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
+            }
+
             if (ReservedLoginNames.Contains(loginName))
             {
                 TempData["RegisterError"] = "该登录名为系统保留账号，请更换";
@@ -297,6 +311,30 @@ public class AccountController : Controller
             TempData["RegisterError"] = $"注册失败：{ex.Message}";
             return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
         }
+    }
+
+    private async Task<(int MinLength, int MaxLength)> GetLoginNameLengthRuleAsync()
+    {
+        var minLength = await _systemSettingProvider.GetInt32Async(SystemConfigDefaults.LoginNameMinLengthKey);
+        var maxLength = await _systemSettingProvider.GetInt32Async(SystemConfigDefaults.LoginNameMaxLengthKey);
+        if (minLength > maxLength)
+        {
+            throw new InvalidOperationException("登录名长度系统设置无效：最小长度不能大于最大长度");
+        }
+
+        return (minLength, maxLength);
+    }
+
+    private static bool IsLoginNameLengthValid(string loginName, int minLength, int maxLength, out string errorMessage)
+    {
+        if (loginName.Length < minLength || loginName.Length > maxLength)
+        {
+            errorMessage = $"登录名长度必须在 {minLength}-{maxLength} 个字符之间";
+            return false;
+        }
+
+        errorMessage = string.Empty;
+        return true;
     }
 
     private async Task<ClientSummaryViewModel> ResolveClientAsync(string? returnUrl)

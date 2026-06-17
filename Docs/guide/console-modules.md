@@ -203,7 +203,7 @@
 - ✅ `system-configs.json` 当前按“UTF-8 + 中文直写、仅保留必要 JSON 转义”的策略落盘，便于本地排障、人工审阅与差异比对
 - ✅ `DataBases/SystemConfigs/system-configs.json` 属于运行时本地状态文件，不作为源码资产提交，继续遵循 `DataBases/` 目录忽略规则
 - ✅ 系统设置变更历史落盘到 `DataBases/SystemConfigs/system-config-change-logs.json`，用于记录旧值、新值、默认值、原因、风险等级、生效方式、操作者、IP、User-Agent 和时间
-- ✅ 当前开放 `Site.Branding.FaviconUrl`、帖子标题 / 正文 / 摘要长度、评论内容长度和论坛轻回应内容最大长度设置
+- ✅ 当前开放 `Site.Branding.FaviconUrl`、账号身份长度、帖子标题 / 正文 / 摘要长度、评论内容长度和论坛轻回应内容最大长度设置
 - ✅ Medium 设置必须填写修改原因并确认风险等级 / 设置键，High / Critical 设置不开放编辑
 - ✅ SystemConfig 页面已支持站点 favicon `.ico` 上传、预览与恢复默认
 - ✅ 默认站点图标已固定为 `/uploads/DefaultIco/bailuobo.ico`，默认种子文件位于 `DataBases/Uploads/DefaultIco/bailuobo.ico`

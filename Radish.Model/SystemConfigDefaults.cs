@@ -84,6 +84,78 @@ public static class SystemConfigDefaults
         },
         new()
         {
+            Id = 10,
+            Category = UserIdentityCategory,
+            Key = LoginNameMinLengthKey,
+            Name = "登录名最小长度",
+            Description = "注册账号时登录名至少需要达到的字符数。",
+            ImpactSummary = "影响 Auth 注册页登录名长度校验，不改变登录名字符规则、唯一性规则或登录凭证语义。",
+            ValueType = "number",
+            DefaultValue = DefaultLoginNameMinLength,
+            MinNumberValue = 1,
+            MaxNumberValue = 32,
+            RequiresInteger = true,
+            RiskLevel = SystemConfigRiskLevel.Medium,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
+        },
+        new()
+        {
+            Id = 11,
+            Category = UserIdentityCategory,
+            Key = LoginNameMaxLengthKey,
+            Name = "登录名最大长度",
+            Description = "注册账号时登录名最多允许的字符数。",
+            ImpactSummary = "影响 Auth 注册页登录名长度校验，上限不超过登录名字段与既有身份契约允许范围。",
+            ValueType = "number",
+            DefaultValue = DefaultLoginNameMaxLength,
+            MinNumberValue = 1,
+            MaxNumberValue = 32,
+            RequiresInteger = true,
+            RiskLevel = SystemConfigRiskLevel.Medium,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
+        },
+        new()
+        {
+            Id = 12,
+            Category = UserIdentityCategory,
+            Key = DisplayNameMinLengthKey,
+            Name = "展示名最小长度",
+            Description = "用户更新公开展示名时至少需要达到的字符数。",
+            ImpactSummary = "影响个人资料更新中的公开展示名长度校验，不改变 PublicId、PublicIndex、登录名或邮箱语义。",
+            ValueType = "number",
+            DefaultValue = DefaultDisplayNameMinLength,
+            MinNumberValue = 1,
+            MaxNumberValue = 24,
+            RequiresInteger = true,
+            RiskLevel = SystemConfigRiskLevel.Medium,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
+        },
+        new()
+        {
+            Id = 13,
+            Category = UserIdentityCategory,
+            Key = DisplayNameMaxLengthKey,
+            Name = "展示名最大长度",
+            Description = "用户更新公开展示名时最多允许的字符数。",
+            ImpactSummary = "影响个人资料更新中的公开展示名长度校验，上限不超过展示名字段与公开句柄展示约束。",
+            ValueType = "number",
+            DefaultValue = DefaultDisplayNameMaxLength,
+            MinNumberValue = 1,
+            MaxNumberValue = 24,
+            RequiresInteger = true,
+            RiskLevel = SystemConfigRiskLevel.Medium,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
+        },
+        new()
+        {
             Id = 2,
             Category = ContentPublishingCategory,
             Key = PostTitleMinLengthKey,
@@ -246,11 +318,26 @@ public static class SystemConfigDefaults
     /// <summary>默认 favicon 相对地址</summary>
     public const string DefaultSiteFaviconPath = "/uploads/DefaultIco/bailuobo.ico";
 
+    /// <summary>账号身份分类</summary>
+    public const string UserIdentityCategory = "账号身份";
+
     /// <summary>内容发布分类</summary>
     public const string ContentPublishingCategory = "内容发布";
 
     /// <summary>评论互动分类</summary>
     public const string CommentInteractionCategory = "评论互动";
+
+    /// <summary>登录名最小长度配置键</summary>
+    public const string LoginNameMinLengthKey = "UserIdentity.LoginName.MinLength";
+
+    /// <summary>登录名最大长度配置键</summary>
+    public const string LoginNameMaxLengthKey = "UserIdentity.LoginName.MaxLength";
+
+    /// <summary>展示名最小长度配置键</summary>
+    public const string DisplayNameMinLengthKey = "UserIdentity.DisplayName.MinLength";
+
+    /// <summary>展示名最大长度配置键</summary>
+    public const string DisplayNameMaxLengthKey = "UserIdentity.DisplayName.MaxLength";
 
     /// <summary>帖子标题最小长度配置键</summary>
     public const string PostTitleMinLengthKey = "Content.PostTitle.MinLength";
@@ -278,6 +365,18 @@ public static class SystemConfigDefaults
 
     /// <summary>默认帖子标题最小长度</summary>
     public const string DefaultPostTitleMinLength = "3";
+
+    /// <summary>默认登录名最小长度</summary>
+    public const string DefaultLoginNameMinLength = "3";
+
+    /// <summary>默认登录名最大长度</summary>
+    public const string DefaultLoginNameMaxLength = "32";
+
+    /// <summary>默认展示名最小长度</summary>
+    public const string DefaultDisplayNameMinLength = "2";
+
+    /// <summary>默认展示名最大长度</summary>
+    public const string DefaultDisplayNameMaxLength = "24";
 
     /// <summary>默认帖子标题最大长度</summary>
     public const string DefaultPostTitleMaxLength = "200";
