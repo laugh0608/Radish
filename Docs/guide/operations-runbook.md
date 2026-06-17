@@ -112,16 +112,17 @@ npm run type-check --workspace=@radish/http
 2. `appsettings.Local.json` 或环境变量是否覆盖了连接串
 3. 当前改动是否应同步数据库结构治理文档
 
-### SQLite 本地并发读异常
+### SQLite 本地并发读写异常
 
-本地 SQLite 场景下，`BaseRepository` 的部分通用读路径会使用同步读取 fallback，并按“连接配置 + 连接串”串行化执行，覆盖 `QueryAsync`、分页查询、数量查询和存在性检查等基础读入口。这个策略用于降低默认 SQLite + Hangfire 后台任务并发读取时出现 `reader is closed / FieldCount when reader is closed` 的概率；它不改变 PostgreSQL 等外部数据库的异步查询路径，也不应被视为生产高并发数据库方案。
+本地 SQLite 场景下，`BaseRepository` 会按“连接配置 + 连接串”串行化执行同一 SQLite 文件上的通用仓储操作，覆盖插入、更新、删除 / 软删除、恢复、列表查询、分页查询、数量查询、存在性检查、联查、分表查询、去重和聚合等基础入口。这个策略用于降低默认 SQLite + Hangfire 后台任务或本地测试并发读写时出现 `database is locked`、`reader is closed / FieldCount when reader is closed` 以及连接生命周期异常的概率；它不改变 PostgreSQL 等外部数据库的异步查询路径，也不应被视为生产高并发数据库方案。
 
 若仍在本地 SQLite 中观察到类似异常，优先确认：
 
-1. 相关读取是否经过 `BaseRepository` 通用读入口，或是否存在绕过仓储的直接 `Db.Queryable`。
-2. 是否有 Hangfire 后台任务与前台请求同时高频读取同一 SQLite 文件。
-3. 是否已执行最新 `DbMigrate apply`，并重启相关宿主确认连接初始化已重新生效。
-4. 若异常来自持续写入或多实例竞争，应优先切换 PostgreSQL，而不是继续扩大 SQLite 兜底。
+1. 相关读写是否经过 `BaseRepository` 通用入口，或子类仓储自定义 SQLSugar 操作是否复用了 `ExecuteDbOperationAsync`。
+2. 是否仍存在 Service 层绕过仓储直接访问 `Db.Queryable` / `ISqlSugarClient`。
+3. 是否有 Hangfire 后台任务、前台请求或测试用例同时高频读写同一 SQLite 文件。
+4. 是否已执行最新 `DbMigrate apply`，并重启相关宿主确认连接初始化已重新生效。
+5. 若异常来自持续写入、多实例竞争或接近生产流量的压测，应优先切换 PostgreSQL，而不是继续扩大 SQLite 兜底。
 
 ## 7. 接手某个问题时的阅读顺序
 
