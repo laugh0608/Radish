@@ -24,7 +24,7 @@
   position: relative;
   overflow: hidden;
   border-radius: 28px;
-  padding: 28px;
+  padding: 22px;
   background:
     linear-gradient(145deg, color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%) 0%, color-mix(in srgb, var(--theme-brand-soft) 34%, var(--theme-bg-surface) 66%) 100%);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
@@ -79,11 +79,11 @@
 }
 
 .pageIntro {
-  max-width: 760px;
-  margin: 14px 0 0;
+  max-width: 680px;
+  margin: 10px 0 0;
   color: var(--theme-text-secondary);
   font-size: 1rem;
-  line-height: 1.75;
+  line-height: 1.65;
 }
 
 .heroGuideGrid {
@@ -135,7 +135,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 22px;
+  margin-top: 18px;
 }
 
 .primaryButton,
@@ -208,9 +208,9 @@
 
 .summaryGrid {
   display: grid;
-  gap: 14px;
+  gap: 12px;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin-top: 24px;
+  margin-top: 18px;
 }
 
 .summaryCard {
@@ -485,7 +485,15 @@
 }
 
 .streamSection {
+  margin-top: 14px;
+}
+
+.guideSection {
   margin-top: 18px;
+}
+
+.guideSection .heroGuideGrid {
+  margin-top: 0;
 }
 
 .streamHeader {

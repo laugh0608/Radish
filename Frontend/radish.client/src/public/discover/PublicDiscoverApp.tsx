@@ -648,20 +648,6 @@ export const PublicDiscoverApp = ({
           <h1 className={styles.pageTitle}>{t('discover.public.pageTitle')}</h1>
           <p className={styles.pageIntro}>{t('discover.public.pageIntro')}</p>
 
-          <div className={styles.heroGuideGrid}>
-            {discoverGuideItems.map((item) => (
-              <article key={item.titleKey} className={styles.heroGuideCard}>
-                <span className={styles.heroGuideIcon} aria-hidden="true">
-                  <Icon icon={item.icon} size={18} />
-                </span>
-                <div className={styles.heroGuideBody}>
-                  <h2 className={styles.heroGuideTitle}>{t(item.titleKey)}</h2>
-                  <p className={styles.heroGuideDescription}>{t(item.descriptionKey)}</p>
-                </div>
-              </article>
-            ))}
-          </div>
-
           <div className={styles.heroActions}>
             <button
               type="button"
@@ -764,6 +750,22 @@ export const PublicDiscoverApp = ({
           onOpenDocs={() => runFromSection('docs', () => onNavigateToDocs({ kind: 'list' }))}
           onOpenShop={() => runFromSection('shop', () => onNavigateToShop(createDefaultPublicShopProductsRoute()))}
         />
+
+        <section className={`${styles.sectionCard} ${styles.guideSection}`}>
+          <div className={styles.heroGuideGrid}>
+            {discoverGuideItems.map((item) => (
+              <article key={item.titleKey} className={styles.heroGuideCard}>
+                <span className={styles.heroGuideIcon} aria-hidden="true">
+                  <Icon icon={item.icon} size={18} />
+                </span>
+                <div className={styles.heroGuideBody}>
+                  <h2 className={styles.heroGuideTitle}>{t(item.titleKey)}</h2>
+                  <p className={styles.heroGuideDescription}>{t(item.descriptionKey)}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
 
         <div className={styles.sectionGrid}>
           <section className={styles.sectionCard}>
