@@ -501,6 +501,17 @@
   box-shadow: 0 10px 18px color-mix(in srgb, var(--theme-brand-primary) 14%, transparent);
 }
 
+.workspaceActionButtonPrimary {
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 68%, transparent);
+  background: var(--theme-brand-primary);
+  color: #fff;
+  box-shadow: 0 10px 18px color-mix(in srgb, var(--theme-brand-primary) 12%, transparent);
+}
+
+.workspaceActionButtonPrimary:hover {
+  background: color-mix(in srgb, var(--theme-brand-primary) 92%, black 8%);
+}
+
 .postList {
   padding: 20px 20px 24px;
   flex: 1 0 auto;

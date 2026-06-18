@@ -18,11 +18,13 @@ import { resolveMediaUrl } from '@/utils/media';
 import styles from './PostQuickReplyWall.module.css';
 
 interface PostQuickReplyWallProps {
+  sectionId?: string;
   replies: PostQuickReply[];
   total: number;
   loading: boolean;
   isAuthenticated: boolean;
   currentUserId: LongId;
+  titleHeadingLevel?: QuickReplyTitleHeadingLevel;
   mode?: 'interactive' | 'readOnly';
   onCreate?: (content: string) => Promise<void>;
   onDelete?: (quickReplyId: LongId) => Promise<void>;
@@ -40,10 +42,28 @@ interface QuickReplyLaneLayout {
   shouldAnimate: boolean;
 }
 
+type QuickReplyTitleHeadingLevel = 2 | 3;
+
 const MAX_LENGTH = 10;
 const LANE_COUNT = 3;
 const PILL_GAP = 10;
 const DEFAULT_WALL_WIDTH = 960;
+
+const renderQuickReplyTitle = (title: string, headingLevel: QuickReplyTitleHeadingLevel, titleId: string) => {
+  if (headingLevel === 2) {
+    return (
+      <h2 id={titleId} className={styles.title}>
+        {title}
+      </h2>
+    );
+  }
+
+  return (
+    <h3 id={titleId} className={styles.title}>
+      {title}
+    </h3>
+  );
+};
 
 const buildAvatarText = (name: string): string => {
   const normalized = name.trim();
@@ -79,11 +99,13 @@ const getTrackStyle = (overflowWidth: number): CSSProperties => ({
 } as CSSProperties);
 
 export const PostQuickReplyWall = ({
+  sectionId = 'forum-quick-reply-section',
   replies,
   total,
   loading,
   isAuthenticated,
   currentUserId,
+  titleHeadingLevel = 3,
   mode = 'interactive',
   onCreate,
   onDelete,
@@ -108,6 +130,7 @@ export const PostQuickReplyWall = ({
   const measureRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const resolvedLoginPromptText = loginPromptText ?? t('forum.quickReply.loginPrompt');
   const resolvedLoginButtonText = loginButtonText ?? t('forum.quickReply.loginButton');
+  const titleId = `${sectionId}-title`;
 
   const normalizedContent = useMemo(
     () => content.trim().replace(/\s+/g, ' '),
@@ -300,13 +323,11 @@ export const PostQuickReplyWall = ({
   };
 
   return (
-    <section className={styles.section} aria-labelledby="forum-quick-reply-title">
+    <section id={sectionId} className={styles.section} aria-labelledby={titleId}>
       <div className={styles.header}>
         <div className={styles.headerMain}>
           <div className={styles.titleRow}>
-            <h3 id="forum-quick-reply-title" className={styles.title}>
-              {t('forum.quickReply.title')}
-            </h3>
+            {renderQuickReplyTitle(t('forum.quickReply.title'), titleHeadingLevel, titleId)}
             <span className={styles.total}>{t('forum.quickReply.total', { count: total })}</span>
           </div>
           <p className={styles.subtitle}>{t('forum.quickReply.subtitle')}</p>

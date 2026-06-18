@@ -63,6 +63,8 @@ import styles from './PublicForumApp.module.css';
 
 type RootCommentSort = 'newest' | 'hottest' | null;
 const COMMENT_NAVIGATION_CHILD_PAGE_SIZE = 5;
+const QUICK_REPLY_SECTION_ID = 'public-forum-quick-replies';
+const COMMENT_SECTION_ID = 'public-forum-comments';
 
 const buildRootCommentIdSet = (rootComments: CommentNode[]): Set<string> => (
   new Set(rootComments.map((comment) => String(comment.voId)))
@@ -1077,7 +1079,12 @@ export const PublicForumDetail = ({
                 </div>
                 <div className={styles.workspaceActionButtons}>
                   {quickReplyReturnPath && (
-                    <button type="button" className={styles.workspaceActionButton} onClick={handleQuickReplyAction}>
+                    <button
+                      type="button"
+                      className={`${styles.workspaceActionButton} ${styles.workspaceActionButtonPrimary}`}
+                      aria-controls={QUICK_REPLY_SECTION_ID}
+                      onClick={handleQuickReplyAction}
+                    >
                       <Icon icon="mdi:message-flash-outline" size={18} />
                       <span>
                         {isAuthenticated
@@ -1087,7 +1094,12 @@ export const PublicForumDetail = ({
                     </button>
                   )}
                   {commentReturnPath && (
-                    <button type="button" className={styles.workspaceActionButton} onClick={handleCommentAction}>
+                    <button
+                      type="button"
+                      className={styles.workspaceActionButton}
+                      aria-controls={COMMENT_SECTION_ID}
+                      onClick={handleCommentAction}
+                    >
                       <Icon icon="mdi:comment-text-outline" size={18} />
                       <span>
                         {isAuthenticated
@@ -1125,11 +1137,13 @@ export const PublicForumDetail = ({
                   </div>
                 )}
                 <PostQuickReplyWall
+                  sectionId={QUICK_REPLY_SECTION_ID}
                   replies={quickReplies}
                   total={quickReplyTotal}
                   loading={loadingQuickReplies}
                   isAuthenticated={isAuthenticated}
                   currentUserId={currentUserId || '0'}
+                  titleHeadingLevel={2}
                   onCreate={handleCreateQuickReply}
                   loginPromptText={t('forum.public.quickReplyLoginPrompt')}
                   loginButtonText={t('forum.public.workspaceQuickReplyLoginAction')}
@@ -1140,10 +1154,16 @@ export const PublicForumDetail = ({
               </>
             )}
 
-            <section className={styles.commentSection}>
+            <section
+              id={COMMENT_SECTION_ID}
+              className={styles.commentSection}
+              aria-labelledby={`${COMMENT_SECTION_ID}-title`}
+            >
               <div className={styles.commentHeading}>
                 <div>
-                  <h2 className={styles.commentTitle}>{t('forum.commentTree.title')}</h2>
+                  <h2 id={`${COMMENT_SECTION_ID}-title`} className={styles.commentTitle}>
+                    {t('forum.commentTree.title')}
+                  </h2>
                   <p className={styles.commentIntro}>{t('forum.quickReply.discussionSubtitle')}</p>
                 </div>
                 <div className={styles.commentSummary}>
