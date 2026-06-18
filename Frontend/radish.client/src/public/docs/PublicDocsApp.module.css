@@ -459,7 +459,7 @@
 
 .docCardMeta,
 .articleMetaRail,
-.articleMetaGrid {
+.articleMetaValues {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -533,10 +533,6 @@
   font-size: clamp(30px, 4vw, 42px);
 }
 
-.articleMetaGrid {
-  padding: 0 20px 18px;
-}
-
 .metaChip {
   display: inline-flex;
   align-items: center;
@@ -554,6 +550,41 @@
   white-space: normal;
 }
 
+.articleMetaGrid {
+  padding: 0 20px 18px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.articleMetaGroup {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
+  background: color-mix(in srgb, var(--theme-bg-surface) 86%, white 14%);
+}
+
+.articleMetaLabel {
+  color: var(--theme-brand-primary);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.articleBoundaryNote {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--theme-text-secondary);
+  font-size: 13px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
 .articleBody {
   padding: 8px 20px 28px;
   min-width: 0;
@@ -568,6 +599,10 @@
 
 @media (max-width: 840px) {
   .listLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .articleMetaGrid {
     grid-template-columns: 1fr;
   }
 }

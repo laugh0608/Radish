@@ -593,9 +593,10 @@ export const PublicProfileApp = ({
 
             <section className={styles.contentCard}>
               <div className={styles.contentHeader}>
-                <div>
-                  <p className={styles.kicker}>Phase 2-2</p>
+                <div className={styles.contentHeaderText}>
+                  <p className={styles.kicker}>{t('profile.public.contentKicker')}</p>
                   <h2 className={styles.sectionTitle}>{t('profile.public.contentTitle')}</h2>
+                  <p className={styles.contentDescription}>{t('profile.public.contentDescription')}</p>
                 </div>
                 <div className={styles.tabs}>
                   <button
@@ -659,10 +660,16 @@ export const PublicProfileApp = ({
                           </div>
                           <h3 className={styles.itemTitle}>{post.voTitle}</h3>
                           <p className={styles.itemExcerpt}>{buildExcerpt(post) || t('profile.public.noSummary')}</p>
-                          <div className={styles.itemMeta}>
-                            <span>{t('profile.stats.likes', { count: post.voLikeCount ?? 0 })}</span>
-                            <span>{t('profile.stats.comments', { count: post.voCommentCount ?? 0 })}</span>
-                            <span>{t('forum.postDetail.views', { count: post.voViewCount ?? 0 })}</span>
+                          <div className={styles.itemFooter}>
+                            <div className={styles.itemMeta}>
+                              <span>{t('profile.stats.likes', { count: post.voLikeCount ?? 0 })}</span>
+                              <span>{t('profile.stats.comments', { count: post.voCommentCount ?? 0 })}</span>
+                              <span>{t('forum.postDetail.views', { count: post.voViewCount ?? 0 })}</span>
+                            </div>
+                            <span className={styles.itemAction}>
+                              <Icon icon="mdi:arrow-right" size={16} />
+                              <span>{t('profile.public.openPostDetail')}</span>
+                            </span>
                           </div>
                         </a>
                       );
@@ -701,9 +708,14 @@ export const PublicProfileApp = ({
                           </p>
                         )}
                         <p className={styles.commentContent}>{comment.voContent}</p>
-                        <div className={styles.itemMeta}>
-                          <span>{t('profile.stats.likes', { count: comment.voLikeCount ?? 0 })}</span>
-                          <span className={styles.inlineLinkButton}>{t('profile.public.openPost')}</span>
+                        <div className={styles.itemFooter}>
+                          <div className={styles.itemMeta}>
+                            <span>{t('profile.stats.likes', { count: comment.voLikeCount ?? 0 })}</span>
+                          </div>
+                          <span className={styles.itemAction}>
+                            <Icon icon="mdi:comment-arrow-right-outline" size={16} />
+                            <span>{t('profile.public.openCommentContext')}</span>
+                          </span>
                         </div>
                       </a>
                     );
