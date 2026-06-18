@@ -1283,16 +1283,6 @@ const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigat
 
         {detailState === 'ready' && documentDetail && (
           <>
-            <PublicReadingGuide
-              label={t('wiki.public.detailGuideKicker')}
-              title={t('wiki.public.detailGuideTitle')}
-              description={t('wiki.public.detailGuideDescription')}
-              items={detailGuideItems.map((item) => ({
-                label: t(item.labelKey),
-                value: t(item.valueKey),
-              }))}
-            />
-
             <article className={styles.articleCard}>
               <div className={styles.articleHeader}>
                 <div className={styles.articleHeaderMain}>
@@ -1323,6 +1313,16 @@ const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigat
                 <MarkdownRenderer content={documentDetail.voMarkdownContent} className={styles.markdownContent} />
               </div>
             </article>
+
+            <PublicReadingGuide
+              label={t('wiki.public.detailGuideKicker')}
+              title={t('wiki.public.detailGuideTitle')}
+              description={t('wiki.public.detailGuideDescription')}
+              items={detailGuideItems.map((item) => ({
+                label: t(item.labelKey),
+                value: t(item.valueKey),
+              }))}
+            />
           </>
         )}
       </div>

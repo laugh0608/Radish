@@ -1044,6 +1044,21 @@ export const PublicForumDetail = ({
 
         {detailState.kind === 'ready' && (
           <>
+            <ForumPostDetail
+              post={post}
+              loading={false}
+              displayTimeZone={displayTimeZone}
+              mode="readOnly"
+              isAuthenticated={false}
+              showSectionTitle={false}
+              onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
+              resolveAuthorProfileId={resolvePublicProfileUserId}
+              onTagClick={(_, tagSlug) => onOpenTag?.(tagSlug)}
+              onQuestionClick={onOpenQuestion}
+              onPollClick={onOpenPoll}
+              onLotteryClick={onOpenLottery}
+            />
+
             <PublicReadingGuide
               label={readingGuide.label}
               title={readingGuide.title}
@@ -1083,21 +1098,6 @@ export const PublicForumDetail = ({
                 </div>
               </section>
             )}
-
-            <ForumPostDetail
-              post={post}
-              loading={false}
-              displayTimeZone={displayTimeZone}
-              mode="readOnly"
-              isAuthenticated={false}
-              showSectionTitle={false}
-              onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
-              resolveAuthorProfileId={resolvePublicProfileUserId}
-              onTagClick={(_, tagSlug) => onOpenTag?.(tagSlug)}
-              onQuestionClick={onOpenQuestion}
-              onPollClick={onOpenPoll}
-              onLotteryClick={onOpenLottery}
-            />
 
             {quickReplySectionState === 'error' ? (
               <section className={styles.sectionShell}>

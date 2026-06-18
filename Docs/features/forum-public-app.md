@@ -2,7 +2,7 @@
 
 > Radish 公开内容壳层中的 forum 阅读入口说明。
 >
-> **最后更新**: 2026.06.13
+> **最后更新**: 2026.06.18
 
 ## 定位
 
@@ -46,6 +46,7 @@ Frontend/radish.client/src/public/forum/
 - 公开 forum 与桌面 forum 可以复用 API 和展示语义；公开详情只允许轻回应与根评论两类轻参与，其余写入型交互不应从桌面工作台直接搬入公开页。
 - 公开 forum 的用户可见文案不应把旧 long 帖子 ID、评论 ID、作者 ID 或分类 ID 当作标题 / 摘要 fallback；这些标识只能继续作为兼容路由、内部点击或定位参数使用。
 - 旧 long 详情路径加载成功后，如果详情接口返回 `VoPublicId`，运行时 head 必须把 canonical、OpenGraph URL 与 JSON-LD 统一刷新到 `/forum/post/:publicId`，不能继续把旧 long 路径作为分享预览主口径。
+- 公开详情首屏优先展示帖子正文和关键统计；阅读边界说明与登录后轻参与入口应放在正文之后，避免说明型内容抢占真实阅读入口。
 - 公开详情的轻回应输入复用帖子轻回应独立模型；根评论输入复用评论发布接口但只提交 `parentId = null`，不开放评论回复、点赞、投票、编辑或治理入口。
 - 公开详情登录回流只接受 `commentId` 与 `intent` 两类查询参数，且 `intent` 必须是 `comment` 或 `quickReply`；普通公开来源、专题返回和分享复制继续使用 `history.state` 或 canonical 路径承载。
 
