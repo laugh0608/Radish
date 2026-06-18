@@ -423,38 +423,42 @@ export const MeApp = () => {
               {loadedAtLabel ? <span>{t('me.refreshedAt', { time: loadedAtLabel })}</span> : null}
             </div>
           </div>
-          <div className={styles.identityActions}>
-            {selfProfilePath ? (
-              <a
-                className={styles.primaryButton}
-                href={selfProfilePath}
-                onClick={rememberSelfPublicProfileSource}
-              >
-                <Icon icon="mdi:account-arrow-right-outline" size={18} />
-                <span>{t('me.openPublicProfile')}</span>
+          <div className={styles.identityActions} aria-label={t('me.actionsLabel')}>
+            <div className={styles.primaryActionSlot}>
+              {selfProfilePath ? (
+                <a
+                  className={styles.primaryButton}
+                  href={selfProfilePath}
+                  onClick={rememberSelfPublicProfileSource}
+                >
+                  <Icon icon="mdi:account-arrow-right-outline" size={18} />
+                  <span>{t('me.openPublicProfile')}</span>
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  className={styles.primaryButton}
+                  disabled
+                >
+                  <Icon icon="mdi:account-arrow-right-outline" size={18} />
+                  <span>{t('me.openPublicProfile')}</span>
+                </button>
+              )}
+            </div>
+            <div className={styles.secondaryActionGroup}>
+              <a className={styles.secondaryButton} href="/circle">
+                <Icon icon="mdi:account-group-outline" size={18} />
+                <span>{t('me.openCircle')}</span>
               </a>
-            ) : (
-              <button
-                type="button"
-                className={styles.primaryButton}
-                disabled
-              >
-                <Icon icon="mdi:account-arrow-right-outline" size={18} />
-                <span>{t('me.openPublicProfile')}</span>
-              </button>
-            )}
-            <a className={styles.secondaryButton} href="/circle">
-              <Icon icon="mdi:account-group-outline" size={18} />
-              <span>{t('me.openCircle')}</span>
-            </a>
-            <a className={styles.secondaryButton} href="/notifications">
-              <Icon icon="mdi:bell-outline" size={18} />
-              <span>{t('me.openNotifications')}</span>
-            </a>
-            <a className={styles.secondaryButton} href="/pet">
-              <Icon icon="mdi:leaf" size={18} />
-              <span>{t('me.openPet')}</span>
-            </a>
+              <a className={styles.secondaryButton} href="/notifications">
+                <Icon icon="mdi:bell-outline" size={18} />
+                <span>{t('me.openNotifications')}</span>
+              </a>
+              <a className={styles.secondaryButton} href="/pet">
+                <Icon icon="mdi:leaf" size={18} />
+                <span>{t('me.openPet')}</span>
+              </a>
+            </div>
           </div>
         </section>
 

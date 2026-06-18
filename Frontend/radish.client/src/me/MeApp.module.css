@@ -104,11 +104,31 @@
 }
 
 .identityActions {
+  min-width: 220px;
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+}
+
+.primaryActionSlot,
+.secondaryActionGroup {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.primaryActionSlot {
+  width: 100%;
+}
+
+.primaryActionSlot .primaryButton {
+  width: 100%;
+}
+
+.secondaryActionGroup {
+  max-width: 360px;
 }
 
 .primaryButton,
@@ -367,6 +387,7 @@
   .identityActions {
     grid-column: 1 / -1;
     justify-content: flex-start;
+    justify-items: start;
   }
 
   .summaryGrid,
@@ -405,6 +426,9 @@
   .identityActions,
   .toolbar {
     align-items: stretch;
+  }
+
+  .toolbar {
     flex-direction: column;
   }
 
@@ -412,6 +436,13 @@
   .secondaryButton,
   .refreshButton {
     width: 100%;
+  }
+
+  .primaryActionSlot,
+  .secondaryActionGroup {
+    width: 100%;
+    max-width: none;
+    flex-direction: column;
   }
 
   .browseItem {

@@ -18,12 +18,49 @@
   overflow: auto;
 }
 
-.toolbar {
+.intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 20px;
+  padding: 4px 0 18px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--theme-border-soft);
+}
+
+.introBody {
+  min-width: 0;
+}
+
+.kicker {
+  margin: 0 0 8px;
+  color: var(--theme-text-tertiary);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.introTitle {
+  margin: 0;
+  color: var(--theme-text-primary);
+  font-size: 28px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.introDescription {
+  max-width: 680px;
+  margin: 10px 0 0;
+  color: var(--theme-text-secondary);
+  line-height: 1.7;
+}
+
+.introActions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  margin-bottom: 16px;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .summary {
@@ -31,6 +68,7 @@
   align-items: stretch;
   gap: 10px;
   flex-wrap: wrap;
+  margin-top: 16px;
 }
 
 .summaryItem {
@@ -107,6 +145,42 @@
   color: var(--theme-brand-primary);
 }
 
+.contentBlock {
+  min-width: 0;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.sectionHeader h2 {
+  margin: 0;
+  color: var(--theme-text-primary);
+  font-size: 20px;
+}
+
+.sectionHeader p {
+  margin: 6px 0 0;
+  color: var(--theme-text-secondary);
+  line-height: 1.7;
+}
+
+.resultCount {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 999px;
+  color: var(--theme-text-secondary);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
 .content {
   min-height: 320px;
 }
@@ -130,6 +204,11 @@
 
 .feedItem {
   padding: 18px;
+}
+
+.feedHeading {
+  margin: 0;
+  font-size: inherit;
 }
 
 .feedTitle {
@@ -302,8 +381,18 @@
     padding-top: 14px;
   }
 
-  .toolbar {
+  .intro {
+    grid-template-columns: 1fr;
     align-items: stretch;
+    gap: 14px;
+    padding-bottom: 16px;
+  }
+
+  .introTitle {
+    font-size: 24px;
+  }
+
+  .introActions {
     flex-direction: column;
   }
 
@@ -318,6 +407,16 @@
 
   .forumLink {
     width: 100%;
+  }
+
+  .sectionHeader {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .resultCount {
+    align-self: flex-start;
   }
 
   .tabs {

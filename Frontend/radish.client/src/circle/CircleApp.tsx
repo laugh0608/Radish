@@ -296,13 +296,15 @@ export const CircleApp = () => {
 
           return (
             <article key={item.voId} className={styles.feedItem}>
-              <a
-                className={styles.feedTitle}
-                href={postPath}
-                onClick={(event) => rememberCircleSourceForPublicTarget(event, postPath, { app: 'forum', route: postRoute })}
-              >
-                {item.voTitle}
-              </a>
+              <h3 className={styles.feedHeading}>
+                <a
+                  className={styles.feedTitle}
+                  href={postPath}
+                  onClick={(event) => rememberCircleSourceForPublicTarget(event, postPath, { app: 'forum', route: postRoute })}
+                >
+                  {item.voTitle}
+                </a>
+              </h3>
               {item.voSummary ? <p className={styles.feedSummary}>{item.voSummary}</p> : null}
               <div className={styles.metaRow}>
                 <span>{t('circle.author', { name: item.voAuthorName || t('common.unknownUser') })}</span>
@@ -414,22 +416,33 @@ export const CircleApp = () => {
       />
 
       <main className={styles.main}>
-        <header className={styles.toolbar}>
-          <div className={styles.summary}>
-            <div className={styles.summaryItem}>
-              <span>{t('circle.summary.following')}</span>
-              <strong>{summary.voFollowingCount}</strong>
-            </div>
-            <div className={styles.summaryItem}>
-              <span>{t('circle.summary.followers')}</span>
-              <strong>{summary.voFollowerCount}</strong>
+        <section className={styles.intro}>
+          <div className={styles.introBody}>
+            <p className={styles.kicker}>{t('circle.heroKicker')}</p>
+            <h1 className={styles.introTitle}>{t('circle.heroTitle')}</h1>
+            <p className={styles.introDescription}>{t('circle.heroDescription')}</p>
+            <div className={styles.summary} aria-label={t('circle.summaryLabel')}>
+              <div className={styles.summaryItem}>
+                <span>{t('circle.summary.following')}</span>
+                <strong>{summary.voFollowingCount}</strong>
+              </div>
+              <div className={styles.summaryItem}>
+                <span>{t('circle.summary.followers')}</span>
+                <strong>{summary.voFollowerCount}</strong>
+              </div>
             </div>
           </div>
-          <a className={styles.forumLink} href="/forum">
-            <Icon icon="mdi:forum-outline" size={18} />
-            <span>{t('circle.forumAction')}</span>
-          </a>
-        </header>
+          <div className={styles.introActions}>
+            <a className={styles.forumLink} href="/forum">
+              <Icon icon="mdi:forum-outline" size={18} />
+              <span>{t('circle.forumAction')}</span>
+            </a>
+            <a className={styles.forumLink} href="/me">
+              <Icon icon="mdi:account-circle-outline" size={18} />
+              <span>{t('circle.meAction')}</span>
+            </a>
+          </div>
+        </section>
 
         <nav className={styles.tabs} aria-label={t('circle.tabsLabel')}>
           {(['feed', 'following', 'followers'] as CircleTab[]).map((tab) => (
@@ -437,6 +450,7 @@ export const CircleApp = () => {
               key={tab}
               type="button"
               className={`${styles.tab} ${route.tab === tab ? styles.activeTab : ''}`}
+              aria-current={route.tab === tab ? 'page' : undefined}
               onClick={() => switchTab(tab)}
             >
               {t(`circle.tab.${tab}`)}
@@ -444,7 +458,18 @@ export const CircleApp = () => {
           ))}
         </nav>
 
-        <section className={styles.content}>{renderContent()}</section>
+        <section className={styles.contentBlock} aria-labelledby="circle-section-title">
+          <div className={styles.sectionHeader}>
+            <div>
+              <h2 id="circle-section-title">{t(`circle.section.${route.tab}.title`)}</h2>
+              <p>{t(`circle.section.${route.tab}.description`)}</p>
+            </div>
+            {authReady && loggedIn && !errorMessage ? (
+              <span className={styles.resultCount}>{t('circle.resultCount', { count: total })}</span>
+            ) : null}
+          </div>
+          <div className={styles.content}>{renderContent()}</div>
+        </section>
 
         {authReady && loggedIn && !loading && !errorMessage && totalPages > 1 ? (
           <div className={styles.pagination}>
