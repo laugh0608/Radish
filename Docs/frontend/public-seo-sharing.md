@@ -49,6 +49,7 @@ forum / docs / shop 三类公开详情还会在 Gateway 层做首包 head snapsh
 - Flutter forum detail 只有在 `PostVo.VoPublicId` 可用时生成 `/forum/post/:postPublicId` 复制链接；旧 long `postId` 仍可作为打开兼容 fallback，但不作为面向用户的分享地址。
 - Flutter docs detail 使用 `/docs/:slug` 复制链接，并继续避免把 16 位以上纯数字旧 long 路径当作公开可读 slug；shop detail 使用 `/shop/product/:productId`。
 - 公开详情来源返回当前使用 `history.state` 保存，不写入 URL query；刷新或浏览器历史恢复后可继续返回原公开来源，但复制链接、canonical、Open Graph 与 sitemap 都必须忽略该状态。
+- 公开详情加载完成后如果需要把旧标识或非规范路径替换为 canonical 路径，例如 `/u/:longId -> /u/usr_...`、docs slug 归一或 forum 旧 long 路径归一，`replaceState` / 应用内 `replace` 必须保留当前标签页的来源返回状态；规范化 URL 不能把“返回社区发现 / 我的圈子 / 我的状态 / 消息”等语义清空。
 - forum detail 在 `PostVo.VoPublicId` 可用时使用 `/forum/post/:postPublicId` 作为 canonical 和复制链接；旧 long 版 `/forum/post/:postId` 继续兼容读取。
 - 旧 long 版 forum detail 如果加载成功并拿到 `PostVo.VoPublicId`，运行时 canonical、Open Graph URL 与 JSON-LD 也必须刷新到 `/forum/post/:postPublicId`，避免同一帖子同时暴露两套分享预览主口径。
 - 公开壳层内部生成 forum detail 链接时也应优先使用 `PostVo.VoPublicId`，包括 `/discover` 摘要卡、forum 列表 / 搜索 / 标签页、类型流、个人公开页内容入口和圈子内容跳转；只有缺少 PublicId 时才回退旧 long 字符串。
@@ -75,7 +76,7 @@ forum / docs / shop 三类公开详情还会在 Gateway 层做首包 head snapsh
 - `/sitemap.xml` 与 `/sitemaps/{fileName}` 当前由 Gateway 高优先级路由转发到 API，不应被前端 SPA catch-all 覆盖。
 - API 输出 sitemap index 与 `static / forum / docs / shop` 分片；forum 优先使用 `/forum/post/{VoPublicId}`，docs 使用 `/docs/{slug}`，shop 使用 `/shop/product/{productId}`。
 - sitemap `<loc>` 必须使用公开 Gateway origin。配置优先使用 `GatewayService:PublicUrl` / `RADISH_PUBLIC_URL`；经 Gateway 转发到 API 时，允许使用安全的 `X-Forwarded-Proto / X-Forwarded-Host` 回推公开 origin。
-- 首批不把 `/u/:id` 公开个人页纳入动态 sitemap；即使 User PublicId 已落地，动态 sitemap 仍需先完成用户隐私、展示意愿和收录策略评审。
+- 首批不把 `/u/:identifier` 公开个人页纳入动态 sitemap；即使 User PublicId 已落地，动态 sitemap 仍需先完成用户隐私、展示意愿和收录策略评审。
 
 ##### 10.5.6 浏览器可见资源 URL
 
