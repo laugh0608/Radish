@@ -21,12 +21,15 @@ const MarkdownEditor = lazy(() =>
   import('@radish/ui/markdown-editor').then((module) => ({ default: module.MarkdownEditor }))
 );
 
+type PostTitleHeadingLevel = 1 | 2 | 3 | 4;
+
 interface PostDetailProps {
   post: PostDetailType | null;
   loading?: boolean;
   displayTimeZone: string;
   mode?: 'interactive' | 'readOnly';
   showSectionTitle?: boolean;
+  postTitleHeadingLevel?: PostTitleHeadingLevel;
   isLiked?: boolean;
   onLike?: (postId: LongId) => void;
   onVotePoll?: (optionId: number) => Promise<void>;
@@ -71,12 +74,29 @@ const isSameLongId = (left: LongId | null | undefined, right: LongId | null | un
   return String(left) === String(right);
 };
 
+const renderPostTitle = (title: string, headingLevel: PostTitleHeadingLevel) => {
+  if (headingLevel === 1) {
+    return <h1 className={styles.postTitle}>{title}</h1>;
+  }
+
+  if (headingLevel === 2) {
+    return <h2 className={styles.postTitle}>{title}</h2>;
+  }
+
+  if (headingLevel === 3) {
+    return <h3 className={styles.postTitle}>{title}</h3>;
+  }
+
+  return <h4 className={styles.postTitle}>{title}</h4>;
+};
+
 export const PostDetail = ({
   post,
   loading = false,
   displayTimeZone,
   mode = 'interactive',
   showSectionTitle = true,
+  postTitleHeadingLevel = 4,
   isLiked = false,
   onLike,
   onVotePoll,
@@ -383,7 +403,7 @@ export const PostDetail = ({
     <div className={styles.container}>
       {showSectionTitle && <h3 className={styles.title}>{t('forum.postDetail.title')}</h3>}
       <div className={styles.postContent}>
-        <h4 className={styles.postTitle}>{post.voTitle}</h4>
+        {renderPostTitle(post.voTitle, postTitleHeadingLevel)}
         {isQuestionPost && (
           <div className={styles.statusRow}>
             {onQuestionClick ? (

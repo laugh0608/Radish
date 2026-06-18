@@ -1051,6 +1051,7 @@ export const PublicForumDetail = ({
               mode="readOnly"
               isAuthenticated={false}
               showSectionTitle={false}
+              postTitleHeadingLevel={1}
               onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
               resolveAuthorProfileId={resolvePublicProfileUserId}
               onTagClick={(_, tagSlug) => onOpenTag?.(tagSlug)}
