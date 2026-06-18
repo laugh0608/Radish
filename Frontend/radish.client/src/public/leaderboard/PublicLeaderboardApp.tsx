@@ -496,7 +496,7 @@ export const PublicLeaderboardApp = ({
           <div className={styles.sectionHeader}>
             <div className={styles.sectionHeading}>
               <div className={styles.sectionTitleRow}>
-                <p className={styles.kicker}>Phase 2-2</p>
+                <p className={styles.kicker}>{t('leaderboard.public.lightweightGuide.label')}</p>
                 <span className={styles.readOnlyBadge}>{t('leaderboard.public.readOnlyBadge')}</span>
               </div>
               <h1 className={styles.pageTitle}>{activeTypeConfig.voName}</h1>

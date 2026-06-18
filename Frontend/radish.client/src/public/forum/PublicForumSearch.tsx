@@ -306,7 +306,7 @@ export const PublicForumSearch = ({
     <section className={`${styles.sectionCard} ${styles.listSectionCard}`}>
       <div className={styles.sectionHeader}>
         <div className={styles.sectionHeading}>
-          <p className={styles.kicker}>Phase 2-2</p>
+          <p className={styles.kicker}>{t('forum.public.guide.label')}</p>
           <div className={styles.searchTopbar}>
             <button type="button" className={styles.backButton} onClick={onBackToList}>
               <Icon icon="mdi:arrow-left" size={18} />
