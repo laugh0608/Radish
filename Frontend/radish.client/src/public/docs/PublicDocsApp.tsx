@@ -89,7 +89,7 @@ interface PublicDocsAppProps {
     mode: PublicDetailBackMode;
     onBack: () => void;
   } | null;
-  onNavigate: (route: PublicDocsRoute, options?: { replace?: boolean }) => void;
+  onNavigate: (route: PublicDocsRoute, options?: { replace?: boolean; preserveSourceState?: boolean }) => void;
   onNavigateToDiscover?: () => void;
 }
 
@@ -748,7 +748,7 @@ interface PublicDocsSearchProps {
   scrollContainerRef: RefObject<HTMLDivElement | null>;
   restoreScrollTop: number | null;
   onScrollRestored: () => void;
-  onNavigate: (route: PublicDocsRoute, options?: { replace?: boolean }) => void;
+  onNavigate: (route: PublicDocsRoute, options?: { replace?: boolean; preserveSourceState?: boolean }) => void;
   onBrowseDirectory: () => void;
   onOpenDocument: (slug: string) => void;
 }
@@ -1066,7 +1066,7 @@ interface PublicDocsDetailProps {
   displayTimeZone: string;
   backLabel: string;
   onBack: () => void;
-  onNavigate: (route: PublicDocsRoute, options?: { replace?: boolean }) => void;
+  onNavigate: (route: PublicDocsRoute, options?: { replace?: boolean; preserveSourceState?: boolean }) => void;
 }
 
 const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigate }: PublicDocsDetailProps) => {
@@ -1153,7 +1153,7 @@ const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigat
       return;
     }
 
-    onNavigate(canonicalRoute, { replace: true });
+    onNavigate(canonicalRoute, { replace: true, preserveSourceState: true });
   }, [documentDetail?.voSlug, onNavigate, route]);
 
   useEffect(() => {

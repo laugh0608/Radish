@@ -335,27 +335,27 @@ export const PublicEntry = () => {
     setRoute(nextRoute);
   }, []);
 
-  const navigateToDocsRoute = useCallback((nextRoute: PublicDocsRoute, options?: { replace?: boolean }) => {
+  const navigateToDocsRoute = useCallback((nextRoute: PublicDocsRoute, options?: PublicNavigateOptions) => {
     navigateToRoute({ app: 'docs', route: nextRoute }, options);
   }, [navigateToRoute]);
 
-  const navigateToDiscoverRoute = useCallback((nextRoute?: PublicDiscoverRoute, options?: { replace?: boolean }) => {
+  const navigateToDiscoverRoute = useCallback((nextRoute?: PublicDiscoverRoute, options?: PublicNavigateOptions) => {
     navigateToRoute({ app: 'discover', route: nextRoute ?? lastDiscoverRoute }, options);
   }, [lastDiscoverRoute, navigateToRoute]);
 
-  const navigateToForumRoute = useCallback((nextRoute: PublicForumRoute, options?: { replace?: boolean }) => {
+  const navigateToForumRoute = useCallback((nextRoute: PublicForumRoute, options?: PublicNavigateOptions) => {
     navigateToRoute({ app: 'forum', route: nextRoute }, options);
   }, [navigateToRoute]);
 
-  const navigateToProfileRoute = useCallback((nextRoute: PublicProfileRoute, options?: { replace?: boolean }) => {
+  const navigateToProfileRoute = useCallback((nextRoute: PublicProfileRoute, options?: PublicNavigateOptions) => {
     navigateToRoute({ app: 'profile', route: nextRoute }, options);
   }, [navigateToRoute]);
 
-  const navigateToLeaderboardRoute = useCallback((nextRoute: PublicLeaderboardRoute, options?: { replace?: boolean }) => {
+  const navigateToLeaderboardRoute = useCallback((nextRoute: PublicLeaderboardRoute, options?: PublicNavigateOptions) => {
     navigateToRoute({ app: 'leaderboard', route: nextRoute }, options);
   }, [navigateToRoute]);
 
-  const navigateToShopRoute = useCallback((nextRoute: PublicShopRoute, options?: { replace?: boolean }) => {
+  const navigateToShopRoute = useCallback((nextRoute: PublicShopRoute, options?: PublicNavigateOptions) => {
     navigateToRoute({ app: 'shop', route: nextRoute }, options);
   }, [navigateToRoute]);
 
