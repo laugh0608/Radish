@@ -327,7 +327,7 @@
 }
 
 .shareFeedback[data-state='error'] {
-  color: var(--theme-danger, #b42318);
+  color: var(--theme-state-danger, #bb5b54);
 }
 
 .primaryButton:disabled,

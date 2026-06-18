@@ -244,7 +244,7 @@
 }
 
 .errorText {
-  color: var(--theme-danger);
+  color: var(--theme-state-danger);
 }
 
 .detailGrid {
@@ -306,8 +306,8 @@
 }
 
 .itemIcon[data-tone="negative"] {
-  color: var(--theme-danger);
-  background: color-mix(in srgb, var(--theme-danger) 13%, white 87%);
+  color: var(--theme-state-danger);
+  background: color-mix(in srgb, var(--theme-state-danger) 13%, white 87%);
 }
 
 .itemBody {

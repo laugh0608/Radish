@@ -113,7 +113,7 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
     setErrors(prev => ({ ...prev, recipientId: '', recipientName: '' }));
   };
 
-  const validateForm = (): boolean => {
+  const validateForm = (): Record<string, string> => {
     const newErrors: Record<string, string> = {};
     const recipientId = normalizePositiveLongIdKey(formData.recipientId);
 
@@ -143,14 +143,15 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return newErrors;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
-      log.debug('TransferForm', '表单验证失败', errors);
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      log.debug('TransferForm', '表单验证失败', validationErrors);
       return;
     }
 
@@ -162,7 +163,11 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
       paymentPassword: formData.paymentPassword!
     };
 
-    log.debug('TransferForm', '提交转账表单', transferData);
+    log.debug('TransferForm', '提交转账表单', {
+      recipientId: transferData.recipientId,
+      amount: transferData.amount,
+      hasNote: Boolean(transferData.note?.trim())
+    });
     onSubmit(transferData);
   };
 
