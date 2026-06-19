@@ -3,7 +3,23 @@ import test from 'node:test';
 import {
   resolvePublicProfileCommentForumTarget,
   resolvePublicProfilePostForumTarget,
+  resolvePublicProfileRouteIdentifier,
 } from '../src/public/profile/publicProfileNavigation.ts';
+
+test('resolvePublicProfileRouteIdentifier 应只使用有效 User PublicId', () => {
+  assert.equal(
+    resolvePublicProfileRouteIdentifier(
+      { voPublicId: ' USR_019EA76872BF787981AD3E9D3C6A3417 ' },
+      '2042219067430928384',
+    ),
+    'usr_019ea76872bf787981ad3e9d3c6a3417',
+  );
+  assert.equal(
+    resolvePublicProfileRouteIdentifier({ voPublicId: 'usr_not-a-route-id' }, '2042219067430928384'),
+    '2042219067430928384',
+  );
+  assert.equal(resolvePublicProfileRouteIdentifier(null, '2042219067430928384'), '2042219067430928384');
+});
 
 test('resolvePublicProfilePostForumTarget 应优先使用帖子 PublicId', () => {
   const target = resolvePublicProfilePostForumTarget({

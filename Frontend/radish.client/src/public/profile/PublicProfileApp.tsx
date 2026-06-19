@@ -30,6 +30,7 @@ import { usePublicShareLink } from '../hooks/usePublicShareLink';
 import {
   resolvePublicProfileCommentForumTarget,
   resolvePublicProfilePostForumTarget,
+  resolvePublicProfileRouteIdentifier,
 } from './publicProfileNavigation';
 import styles from './PublicProfileApp.module.css';
 
@@ -180,15 +181,6 @@ function buildExcerpt(post: PublicUserPost): string {
   return content.length > 120 ? `${content.slice(0, 120)}...` : content;
 }
 
-function resolveProfileRouteIdentifier(profile: PublicUserProfile | null, fallbackIdentifier: string): string {
-  const publicId = profile?.voPublicId?.trim();
-  if (publicId) {
-    return publicId;
-  }
-
-  return fallbackIdentifier;
-}
-
 export const PublicProfileApp = ({
   route,
   backAction,
@@ -259,7 +251,7 @@ export const PublicProfileApp = ({
   }, [profileReloadToken, route.userId]);
 
   const profileRouteIdentifier = useMemo(
-    () => resolveProfileRouteIdentifier(profile, route.userId),
+    () => resolvePublicProfileRouteIdentifier(profile, route.userId),
     [profile, route.userId]
   );
 
