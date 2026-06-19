@@ -49,3 +49,14 @@
 - 公开详情 canonical / 规范化跳转已保留来源返回状态，避免从发现、圈子或公开个人页进入详情后被规范化替换覆盖返回语义。
 - 今日验证按开发中风险分层执行：`radish.client` 构建、`git diff --check` 和 `npm run check:repo-hygiene:changed` 已覆盖代码批次；真实页面 smoke 未执行，留到阶段收口、准备合并或用户确认前后端已启动后集中覆盖。
 - 收工前补 [2026-06-18 收工回顾与明日事项](/records/daily-handoff-2026-06-18)，同步 current、P3-10 专题、月 / 周 / 年开发日志和记录索引。
+
+## 2026-06-19
+
+- `P3-10-D` 阶段收束完成：公开文档、公开商城、公开榜单、公开个人页、公开论坛浏览、公开壳层头部和 `/me` 最近访问来源语义完成多批链接 / 标识 / 来源契约治理；公开用户路由 ID 回退收敛为字符串契约。
+- `P3-10-D` 合并前验证与 PR 准备判断完成：`validate:baseline`、`validate:identity`、`check:host-runtime -- --details`、`radish.client` build、Gateway PC / 移动真实页面复核和 `validate:ci -- --report` 已通过；用户明确暂不创建 PR，D 批次转维护回拉。
+- 前端敏感日志治理完成：`radish.client`、`radish.console` 与 `@radish/http` 统一敏感字段脱敏，三端测试、type-check、`validate:baseline:quick`、`validate:ci`、lint 和仓库卫生检查均已通过。
+- 支付口令哈希升级完成：新支付口令写入 Argon2id v2，历史 SHA256 支付口令验证成功后自动升级，null 旧口令仍要求重置。
+- 支付 / 转账幂等治理完成首批代码：商城购买与萝卜币转账接入 `idempotencyKey`、请求摘要绑定和终态响应重放；新增幂等记录实体、服务、测试和 PostgreSQL 差异 SQL。
+- warning 清理完成：SQLitePCLRaw 安全版本、`CoinController` XML 参数说明、Console 兼容权限扫描豁免和 Forum 评论 chunk warning 已收口，后端构建、client build、`validate:ci`、NuGet vulnerability scan 和仓库卫生检查均已通过。
+- 新增 [写操作可靠性与并发保护治理](/guide/write-operation-reliability-governance)，作为支付 / 转账幂等之后的治理入口；明日第一顺位是 `WOG-1 写操作分级盘点`，先输出写入口矩阵、候选排序和不做范围，再决定代码批次。
+- 收工前补 [2026-06-19 收工回顾与明日事项](/records/daily-handoff-2026-06-19)，同步 current、P3-10 专题、路线图、月 / 周 / 年开发日志和记录索引。
