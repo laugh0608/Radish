@@ -38,6 +38,7 @@ interface PublicProfileAppProps {
   route: PublicProfileRoute;
   backAction?: {
     mode: PublicDetailBackMode;
+    href?: string;
     onBack: () => void;
   } | null;
   onNavigate: (route: PublicProfileRoute, options?: { replace?: boolean; preserveSourceState?: boolean }) => void;
@@ -95,10 +96,12 @@ interface PublicStatusCardProps {
   description: string;
   primaryAction?: {
     label: string;
+    href?: string;
     onClick: () => void;
   };
   secondaryAction?: {
     label: string;
+    href?: string;
     onClick: () => void;
   };
 }
@@ -128,16 +131,46 @@ function PublicStatusCard({
         <p className={styles.statusDescription}>{description}</p>
         {(primaryAction || secondaryAction) && (
           <div className={styles.statusActions}>
-            {primaryAction && (
+            {primaryAction && (primaryAction.href ? (
+              <a
+                className={styles.primaryButton}
+                href={primaryAction.href}
+                onClick={(event) => {
+                  if (!shouldHandleProfileLinkInternally(event)) {
+                    return;
+                  }
+
+                  event.preventDefault();
+                  primaryAction.onClick();
+                }}
+              >
+                {primaryAction.label}
+              </a>
+            ) : (
               <button type="button" className={styles.primaryButton} onClick={primaryAction.onClick}>
                 {primaryAction.label}
               </button>
-            )}
-            {secondaryAction && (
+            ))}
+            {secondaryAction && (secondaryAction.href ? (
+              <a
+                className={styles.secondaryButton}
+                href={secondaryAction.href}
+                onClick={(event) => {
+                  if (!shouldHandleProfileLinkInternally(event)) {
+                    return;
+                  }
+
+                  event.preventDefault();
+                  secondaryAction.onClick();
+                }}
+              >
+                {secondaryAction.label}
+              </a>
+            ) : (
               <button type="button" className={styles.secondaryButton} onClick={secondaryAction.onClick}>
                 {secondaryAction.label}
               </button>
-            )}
+            ))}
           </div>
         )}
       </div>
@@ -397,6 +430,10 @@ export const PublicProfileApp = ({
     ? t(backLabelKey)
     : t(onNavigateToDiscover ? 'public.shell.backToDiscover' : 'profile.public.backToForum');
   const handleBack = backAction?.onBack ?? onNavigateToDiscover ?? onNavigateToForumList;
+  const backHref = backAction?.href
+    ?? (onNavigateToDiscover
+      ? '/discover'
+      : buildPublicForumPath({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 }));
   const buildProfileShareUrl = useCallback(() => {
     return buildPublicShareUrl(buildPublicProfilePath({
       kind: 'detail',
@@ -420,6 +457,27 @@ export const PublicProfileApp = ({
       tab,
       page: 1
     }, { replace: true });
+  };
+
+  const handleProfileRouteLinkClick = (
+    event: MouseEvent<HTMLAnchorElement>,
+    nextRoute: PublicProfileRoute
+  ) => {
+    if (!shouldHandleProfileLinkInternally(event)) {
+      return;
+    }
+
+    event.preventDefault();
+    onNavigate(nextRoute, { replace: true });
+  };
+
+  const handleBackLinkClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (!shouldHandleProfileLinkInternally(event)) {
+      return;
+    }
+
+    event.preventDefault();
+    handleBack();
   };
 
   const handleForumTargetLinkClick = (
@@ -468,6 +526,7 @@ export const PublicProfileApp = ({
                 }}
             secondaryAction={{
               label: backLabel,
+              href: backHref,
               onClick: handleBack
             }}
           />
@@ -486,10 +545,10 @@ export const PublicProfileApp = ({
                   {shareState === 'success' ? t('profile.public.shareSuccess') : t('profile.public.shareFailed')}
                 </p>
               )}
-              <button type="button" className={styles.summaryBackLink} onClick={handleBack}>
+              <a className={styles.summaryBackLink} href={backHref} onClick={handleBackLinkClick}>
                 <Icon icon="mdi:arrow-left" size={16} />
                 <span>{backLabel}</span>
-              </button>
+              </a>
               <p className={styles.summaryIntro}>{t('profile.public.intro')}</p>
 
               <div className={styles.identityRow}>
@@ -591,20 +650,36 @@ export const PublicProfileApp = ({
                   <p className={styles.contentDescription}>{t('profile.public.contentDescription')}</p>
                 </div>
                 <div className={styles.tabs}>
-                  <button
-                    type="button"
+                  <a
                     className={`${styles.tabButton} ${route.tab === 'posts' ? styles.tabButtonActive : ''}`}
-                    onClick={() => handleTabChange('posts')}
+                    href={buildPublicProfilePath({ kind: 'detail', userId: profileRouteIdentifier, tab: 'posts', page: 1 })}
+                    aria-current={route.tab === 'posts' ? 'page' : undefined}
+                    onClick={(event) => {
+                      if (!shouldHandleProfileLinkInternally(event)) {
+                        return;
+                      }
+
+                      event.preventDefault();
+                      handleTabChange('posts');
+                    }}
                   >
                     {t('profile.tab.userPosts')}
-                  </button>
-                  <button
-                    type="button"
+                  </a>
+                  <a
                     className={`${styles.tabButton} ${route.tab === 'comments' ? styles.tabButtonActive : ''}`}
-                    onClick={() => handleTabChange('comments')}
+                    href={buildPublicProfilePath({ kind: 'detail', userId: profileRouteIdentifier, tab: 'comments', page: 1 })}
+                    aria-current={route.tab === 'comments' ? 'page' : undefined}
+                    onClick={(event) => {
+                      if (!shouldHandleProfileLinkInternally(event)) {
+                        return;
+                      }
+
+                      event.preventDefault();
+                      handleTabChange('comments');
+                    }}
                   >
                     {t('profile.tab.userComments')}
-                  </button>
+                  </a>
                 </div>
               </div>
 
@@ -717,35 +792,55 @@ export const PublicProfileApp = ({
 
               {totalPages > 1 && !loadingContent && !contentError && (
                 <div className={styles.pagination}>
-                  <button
-                    type="button"
-                    className={styles.paginationButton}
-                    onClick={() => onNavigate({
-                      kind: 'detail',
-                      userId: profileRouteIdentifier,
-                      tab: route.tab,
-                      page: Math.max(1, route.page - 1)
-                    }, { replace: true })}
-                    disabled={route.page === 1}
-                  >
-                    {t('common.previousPage')}
-                  </button>
+                  {route.page === 1 ? (
+                    <button type="button" className={styles.paginationButton} disabled>
+                      {t('common.previousPage')}
+                    </button>
+                  ) : (
+                    <a
+                      className={styles.paginationButton}
+                      href={buildPublicProfilePath({
+                        kind: 'detail',
+                        userId: profileRouteIdentifier,
+                        tab: route.tab,
+                        page: route.page - 1
+                      })}
+                      onClick={(event) => handleProfileRouteLinkClick(event, {
+                        kind: 'detail',
+                        userId: profileRouteIdentifier,
+                        tab: route.tab,
+                        page: route.page - 1
+                      })}
+                    >
+                      {t('common.previousPage')}
+                    </a>
+                  )}
                   <span className={styles.pageInfo}>
                     {t('common.pageInfo', { current: route.page, total: totalPages })}
                   </span>
-                  <button
-                    type="button"
-                    className={styles.paginationButton}
-                    onClick={() => onNavigate({
-                      kind: 'detail',
-                      userId: profileRouteIdentifier,
-                      tab: route.tab,
-                      page: Math.min(totalPages, route.page + 1)
-                    }, { replace: true })}
-                    disabled={route.page === totalPages}
-                  >
-                    {t('common.nextPage')}
-                  </button>
+                  {route.page === totalPages ? (
+                    <button type="button" className={styles.paginationButton} disabled>
+                      {t('common.nextPage')}
+                    </button>
+                  ) : (
+                    <a
+                      className={styles.paginationButton}
+                      href={buildPublicProfilePath({
+                        kind: 'detail',
+                        userId: profileRouteIdentifier,
+                        tab: route.tab,
+                        page: route.page + 1
+                      })}
+                      onClick={(event) => handleProfileRouteLinkClick(event, {
+                        kind: 'detail',
+                        userId: profileRouteIdentifier,
+                        tab: route.tab,
+                        page: route.page + 1
+                      })}
+                    >
+                      {t('common.nextPage')}
+                    </a>
+                  )}
                 </div>
               )}
             </section>

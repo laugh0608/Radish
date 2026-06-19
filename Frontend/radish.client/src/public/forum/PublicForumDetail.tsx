@@ -1021,6 +1021,7 @@ export const PublicForumDetail = ({
             description={t('forum.public.postNotFoundDescription')}
             secondaryAction={{
               label: backLabel,
+              href: backHref,
               onClick: onBack
             }}
           />
@@ -1037,6 +1038,7 @@ export const PublicForumDetail = ({
             }}
             secondaryAction={{
               label: backLabel,
+              href: backHref,
               onClick: onBack
             }}
           />

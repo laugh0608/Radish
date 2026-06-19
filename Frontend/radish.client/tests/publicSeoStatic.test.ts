@@ -60,6 +60,25 @@ test('公开个人页内容查询不应依赖内部用户 ID', () => {
   assert.match(source, /getPublicUserComments\(profileRouteIdentifier, route\.page, 10\)/);
 });
 
+test('公开个人页返回、tab 和分页应提供公开链接并保留壳层导航拦截', () => {
+  const source = readFileSync(resolve(clientRoot, 'src/public/profile/PublicProfileApp.tsx'), 'utf8');
+  const stylesSource = readFileSync(resolve(clientRoot, 'src/public/profile/PublicProfileApp.module.css'), 'utf8');
+
+  assert.match(source, /href\?: string;/);
+  assert.match(source, /function shouldHandleProfileLinkInternally/);
+  assert.match(source, /const backHref = backAction\?\.href/);
+  assert.match(source, /href=\{primaryAction\.href\}/);
+  assert.match(source, /href=\{secondaryAction\.href\}/);
+  assert.match(source, /href=\{backHref\}/);
+  assert.match(source, /href=\{buildPublicProfilePath\(\{ kind: 'detail', userId: profileRouteIdentifier, tab: 'posts', page: 1 \}\)\}/);
+  assert.match(source, /href=\{buildPublicProfilePath\(\{ kind: 'detail', userId: profileRouteIdentifier, tab: 'comments', page: 1 \}\)\}/);
+  assert.match(source, /page: route\.page - 1/);
+  assert.match(source, /page: route\.page \+ 1/);
+  assert.match(source, /handleProfileRouteLinkClick\(event,/);
+  assert.match(stylesSource, /\.summaryBackLink[\s\S]*text-decoration: none;/);
+  assert.match(stylesSource, /\.tabButton[\s\S]*white-space: nowrap;/);
+});
+
 test('公开社区发现页应使用统一公开分享入口', () => {
   const source = readFileSync(resolve(clientRoot, 'src/public/discover/PublicDiscoverApp.tsx'), 'utf8');
 
@@ -170,6 +189,7 @@ test('公开论坛浏览入口应提供公开链接并保留壳层导航拦截',
   assert.match(statusSource, /href=\{secondaryAction\.href\}/);
   assert.match(appSource, /const detailBackHref = detailBackAction\?\.href \?\? buildPublicForumPath\(fallbackBrowseRoute\);/);
   assert.match(detailSource, /href=\{backHref\}/);
+  assert.match(detailSource, /secondaryAction=\{\{[\s\S]*label: backLabel,[\s\S]*href: backHref,[\s\S]*onClick: onBack[\s\S]*\}\}/);
   assert.match(listSource, /PublicForumPagination/);
   assert.match(listSource, /route=\{createDefaultSearchRoute\(\)\}/);
   assert.match(listSource, /route=\{buildListRoute\(1, selectedCategoryId, 'hottest'\)\}/);
