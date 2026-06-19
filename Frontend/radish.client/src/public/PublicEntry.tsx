@@ -87,6 +87,7 @@ const PUBLIC_ROUTE_SOURCE_STATE_KEY = 'radishPublicRouteSource';
 
 interface PublicBackAction {
   mode: PublicDetailBackMode;
+  href?: string;
   onBack: () => void;
 }
 
@@ -404,6 +405,7 @@ export const PublicEntry = () => {
 
     return {
       mode,
+      href: buildPublicPath(routeSourceState.forumDetailSourceRoute),
       onBack: () => navigateToRoute(routeSourceState.forumDetailSourceRoute!, { preserveSourceState: true })
     };
   }, [navigateToRoute, routeSourceState.forumDetailSourceRoute]);
@@ -416,6 +418,7 @@ export const PublicEntry = () => {
 
     return {
       mode,
+      href: buildPublicPath(routeSourceState.docsDetailSourceRoute),
       onBack: () => navigateToRoute(routeSourceState.docsDetailSourceRoute!, { preserveSourceState: true })
     };
   }, [navigateToRoute, routeSourceState.docsDetailSourceRoute]);
@@ -428,6 +431,7 @@ export const PublicEntry = () => {
 
     return {
       mode,
+      href: buildPublicPath(routeSourceState.profileSourceRoute),
       onBack: () => navigateToRoute(routeSourceState.profileSourceRoute!, { preserveSourceState: true })
     };
   }, [navigateToRoute, routeSourceState.profileSourceRoute]);
@@ -440,6 +444,7 @@ export const PublicEntry = () => {
 
     return {
       mode,
+      href: buildPublicPath(routeSourceState.shopDetailSourceRoute),
       onBack: () => navigateToRoute(routeSourceState.shopDetailSourceRoute!, { preserveSourceState: true })
     };
   }, [navigateToRoute, routeSourceState.shopDetailSourceRoute]);

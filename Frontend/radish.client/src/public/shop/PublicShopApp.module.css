@@ -124,6 +124,7 @@
   border-radius: 999px;
   font-weight: 700;
   cursor: pointer;
+  text-decoration: none;
   transition: transform var(--theme-transition-standard), box-shadow var(--theme-transition-standard), background var(--theme-transition-standard), color var(--theme-transition-standard);
 }
 
@@ -144,7 +145,6 @@
   background: linear-gradient(135deg, var(--theme-brand-primary) 0%, color-mix(in srgb, var(--theme-accent-earth) 44%, var(--theme-brand-primary) 56%) 100%);
   color: #fffaf0;
   box-shadow: 0 12px 28px color-mix(in srgb, var(--theme-brand-primary) 22%, transparent);
-  text-decoration: none;
 }
 
 .inlineTextButton {

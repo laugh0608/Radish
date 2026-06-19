@@ -108,6 +108,7 @@
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+  text-decoration: none;
   transition: transform var(--theme-transition-standard), box-shadow var(--theme-transition-standard);
 }
 
@@ -133,7 +134,9 @@
 
 .categoryCard,
 .productCard {
+  color: inherit;
   cursor: pointer;
+  text-decoration: none;
   transition: transform var(--theme-transition-standard), box-shadow var(--theme-transition-standard), border-color var(--theme-transition-standard);
 }
 

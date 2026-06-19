@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { ShopHome } from '@/apps/shop/pages/ShopHome';
@@ -40,6 +40,7 @@ interface PublicShopAppProps {
   fallbackProductsRoute: PublicShopProductsRoute;
   detailBackAction?: {
     mode: PublicDetailBackMode;
+    href?: string;
     onBack: () => void;
   } | null;
   onNavigate: (route: PublicShopRoute, options?: { replace?: boolean }) => void;
@@ -54,10 +55,12 @@ interface PublicStatusCardProps {
   description: string;
   primaryAction?: {
     label: string;
+    href?: string;
     onClick: () => void;
   };
   secondaryAction?: {
     label: string;
+    href?: string;
     onClick: () => void;
   };
 }
@@ -71,6 +74,24 @@ interface PublicGuideDefinition {
   titleKey: string;
   descriptionKey: string;
   items: readonly PublicGuideItemDefinition[];
+}
+
+function shouldHandlePublicShopLink(event: MouseEvent<HTMLAnchorElement>): boolean {
+  return !event.defaultPrevented
+    && event.button === 0
+    && !event.metaKey
+    && !event.ctrlKey
+    && !event.shiftKey
+    && !event.altKey;
+}
+
+function handlePublicShopLinkClick(event: MouseEvent<HTMLAnchorElement>, action: () => void) {
+  if (!shouldHandlePublicShopLink(event)) {
+    return;
+  }
+
+  event.preventDefault();
+  action();
 }
 
 function PublicStatusCard({ tone, title, description, primaryAction, secondaryAction }: PublicStatusCardProps) {
@@ -93,14 +114,34 @@ function PublicStatusCard({ tone, title, description, primaryAction, secondaryAc
         {(primaryAction || secondaryAction) && (
           <div className={styles.statusActions}>
             {primaryAction && (
-              <button type="button" className={styles.primaryButton} onClick={primaryAction.onClick}>
-                {primaryAction.label}
-              </button>
+              primaryAction.href ? (
+                <a
+                  className={styles.primaryButton}
+                  href={primaryAction.href}
+                  onClick={(event) => handlePublicShopLinkClick(event, primaryAction.onClick)}
+                >
+                  {primaryAction.label}
+                </a>
+              ) : (
+                <button type="button" className={styles.primaryButton} onClick={primaryAction.onClick}>
+                  {primaryAction.label}
+                </button>
+              )
             )}
             {secondaryAction && (
-              <button type="button" className={styles.secondaryButton} onClick={secondaryAction.onClick}>
-                {secondaryAction.label}
-              </button>
+              secondaryAction.href ? (
+                <a
+                  className={styles.secondaryButton}
+                  href={secondaryAction.href}
+                  onClick={(event) => handlePublicShopLinkClick(event, secondaryAction.onClick)}
+                >
+                  {secondaryAction.label}
+                </a>
+              ) : (
+                <button type="button" className={styles.secondaryButton} onClick={secondaryAction.onClick}>
+                  {secondaryAction.label}
+                </button>
+              )
             )}
           </div>
         )}
@@ -504,6 +545,7 @@ export const PublicShopApp = ({
 
   const detailBackLabelKey = getPublicDetailBackLabelKey(detailBackAction?.mode);
   const detailBackLabel = detailBackLabelKey ? t(detailBackLabelKey) : t('shop.public.backToProducts');
+  const detailBackHref = detailBackAction?.href ?? buildPublicShopPath(fallbackProductsRoute);
   const detailBackHint = detailBackAction?.mode === 'discover'
     ? t('shop.public.detailBackHintDiscover')
     : detailBackAction
@@ -545,6 +587,9 @@ export const PublicShopApp = ({
           featuredProducts={featuredProducts}
           loading={categoriesLoading || featuredLoading}
           bannerTitleLevel="h2"
+          getCategoryHref={(categoryId) => buildPublicShopPath({ kind: 'products', categoryId, page: 1 })}
+          getProductHref={(productId) => buildPublicShopPath({ kind: 'detail', productId: String(productId) })}
+          viewAllProductsHref={buildPublicShopPath(createDefaultPublicShopProductsRoute())}
           onCategoryClick={handleOpenProducts}
           onProductClick={handleOpenProductDetail}
           onViewAllProducts={() => handleOpenProducts()}
@@ -570,6 +615,7 @@ export const PublicShopApp = ({
           }}
           secondaryAction={{
             label: t('shop.public.backToHome'),
+            href: buildPublicShopPath(createDefaultPublicShopRoute()),
             onClick: () => onNavigate(createDefaultPublicShopRoute())
           }}
         />
@@ -600,6 +646,20 @@ export const PublicShopApp = ({
           searchKeyword={route.keyword}
           loading={productsLoading}
           titleLevel="h2"
+          backHref={buildPublicShopPath(createDefaultPublicShopRoute())}
+          getCategoryHref={(categoryId) => buildPublicShopPath({
+            kind: 'products',
+            categoryId,
+            keyword: route.keyword,
+            page: 1
+          })}
+          getProductHref={(productId) => buildPublicShopPath({ kind: 'detail', productId: String(productId) })}
+          getPageHref={(page) => buildPublicShopPath({
+            kind: 'products',
+            categoryId: validatedCategoryId,
+            keyword: route.keyword,
+            page
+          })}
           onCategoryChange={(categoryId) => {
             onNavigate({
               kind: 'products',
@@ -660,6 +720,7 @@ export const PublicShopApp = ({
               }}
           secondaryAction={{
             label: detailBackLabel,
+            href: detailBackHref,
             onClick: handleBackFromDetail
           }}
         />
@@ -674,6 +735,7 @@ export const PublicShopApp = ({
           description={t('shop.public.notFoundDescription')}
           secondaryAction={{
             label: detailBackLabel,
+            href: detailBackHref,
             onClick: handleBackFromDetail
           }}
         />
@@ -694,10 +756,14 @@ export const PublicShopApp = ({
       <article className={styles.detailCard}>
         <div className={styles.detailTopbar}>
           <div className={styles.detailTopbarActions}>
-            <button type="button" className={styles.secondaryButton} onClick={handleBackFromDetail}>
+            <a
+              className={styles.secondaryButton}
+              href={detailBackHref}
+              onClick={(event) => handlePublicShopLinkClick(event, handleBackFromDetail)}
+            >
               <Icon icon="mdi:arrow-left" size={18} />
               <span>{detailBackLabel}</span>
-            </button>
+            </a>
             <button
               type="button"
               className={styles.secondaryButton}
@@ -843,13 +909,13 @@ export const PublicShopApp = ({
               <p className={styles.pageIntro}>{t('shop.public.pageIntro')}</p>
             </div>
             <div className={styles.sectionActions}>
-              <button
-                type="button"
+              <a
                 className={styles.ghostButton}
-                onClick={() => onNavigate(createDefaultPublicShopProductsRoute())}
+                href={buildPublicShopPath(createDefaultPublicShopProductsRoute())}
+                onClick={(event) => handlePublicShopLinkClick(event, () => onNavigate(createDefaultPublicShopProductsRoute()))}
               >
                 {t('shop.public.browseProducts')}
-              </button>
+              </a>
             </div>
           </div>
 

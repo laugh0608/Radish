@@ -68,6 +68,50 @@ test('公开社区发现页应使用统一公开分享入口', () => {
   assert.match(source, /discover\.public\.shareAction/);
 });
 
+test('公开社区发现页应为跨入口导航提供公开链接并保留壳层导航拦截', () => {
+  const source = readFileSync(resolve(clientRoot, 'src/public/discover/PublicDiscoverApp.tsx'), 'utf8');
+
+  assert.match(source, /buildPublicDocsPath/);
+  assert.match(source, /buildPublicLeaderboardPath/);
+  assert.match(source, /buildPublicShopPath/);
+  assert.match(source, /shouldHandlePublicDiscoverLink\(event\)/);
+  assert.match(source, /href=\{forumListHref\}/);
+  assert.match(source, /href=\{docsSearchHref\}/);
+  assert.match(source, /href=\{shopProductsHref\}/);
+  assert.match(source, /href=\{item\.href\}/);
+  assert.match(source, /href=\{buildPublicForumPath\(tagRoute\)\}/);
+  assert.match(source, /href=\{buildPublicDocsPath\(\{ kind: 'detail', slug: document\.voSlug \}\)\}/);
+  assert.match(source, /const leaderboardHref = buildPublicLeaderboardPath\(leaderboardRoute\);/);
+  assert.match(source, /href=\{leaderboardHref\}/);
+  assert.match(source, /const productHref = buildPublicShopPath\(productRoute\);/);
+  assert.match(source, /href=\{productHref\}/);
+  assert.match(source, /handlePublicDiscoverLinkClick\(event,/);
+});
+
+test('公开商城复用的商品列表组件应提供公开链接能力', () => {
+  const shopSource = readFileSync(resolve(clientRoot, 'src/public/shop/PublicShopApp.tsx'), 'utf8');
+  const shopHomeSource = readFileSync(resolve(clientRoot, 'src/apps/shop/pages/ShopHome.tsx'), 'utf8');
+  const productListSource = readFileSync(resolve(clientRoot, 'src/apps/shop/pages/ProductList.tsx'), 'utf8');
+  const publicEntrySource = readFileSync(resolve(clientRoot, 'src/public/PublicEntry.tsx'), 'utf8');
+
+  assert.match(shopHomeSource, /getCategoryHref\?: \(categoryId: string\) => string;/);
+  assert.match(shopHomeSource, /getProductHref\?: \(productId: LongId\) => string;/);
+  assert.match(shopHomeSource, /viewAllProductsHref\?: string;/);
+  assert.match(shopHomeSource, /href=\{categoryHref\}/);
+  assert.match(shopHomeSource, /href=\{productHref\}/);
+  assert.match(productListSource, /backHref\?: string;/);
+  assert.match(productListSource, /getCategoryHref\?: \(categoryId\?: string\) => string;/);
+  assert.match(productListSource, /getPageHref\?: \(page: number\) => string;/);
+  assert.match(productListSource, /href=\{backHref\}/);
+  assert.match(productListSource, /href=\{getCategoryHref\(String\(category\.voId\)\)\}/);
+  assert.match(productListSource, /href=\{getPageHref\(pageNum\)\}/);
+  assert.match(productListSource, /href=\{productHref\}/);
+  assert.match(shopSource, /getCategoryHref=\{\(categoryId\) => buildPublicShopPath\(\{ kind: 'products', categoryId, page: 1 \}\)\}/);
+  assert.match(shopSource, /getPageHref=\{\(page\) => buildPublicShopPath\(\{/);
+  assert.match(shopSource, /href=\{detailBackHref\}/);
+  assert.match(publicEntrySource, /href: buildPublicPath\(routeSourceState\.shopDetailSourceRoute\)/);
+});
+
 test('公开入口应为所有公开路由应用通用 JSON-LD', () => {
   const source = readFileSync(resolve(clientRoot, 'src/public/PublicEntry.tsx'), 'utf8');
 
