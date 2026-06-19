@@ -10,7 +10,12 @@
 
     <!-- Rust native outputs (built by cargo) -->
     <RadishRustTargetDir>$(MSBuildThisFileDirectory)Lib/radish.lib/target</RadishRustTargetDir>
+    <SQLitePCLRawLibESqlite3Version>3.50.3</SQLitePCLRawLibESqlite3Version>
   </PropertyGroup>
+
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'Radish.Core' and '$(MSBuildProjectName)' != 'Radish.Shared' and '$(MSBuildProjectName)' != 'Radish.Extension'">
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="$(SQLitePCLRawLibESqlite3Version)" PrivateAssets="all" />
+  </ItemGroup>
 
   <!--
     将 Rust 原生库（radish_lib）自动复制到可执行项目的输出目录。

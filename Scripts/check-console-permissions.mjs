@@ -13,6 +13,7 @@ const backendPermissionsPath = join(repoRoot, 'Radish.Common/PermissionTool/Cons
 const identitySeederPath = join(repoRoot, 'Radish.DbMigrate/InitialDataSeeder.Identity.cs');
 const consoleAuthorizationSeederPath = join(repoRoot, 'Radish.DbMigrate/InitialDataSeeder.ConsoleAuthorization.cs');
 const entryOnlyPermissions = new Set(['console.access']);
+const compatibilityOnlyPermissions = new Set(['console.system-config.create', 'console.system-config.delete']);
 
 function readText(filePath) {
   return readFileSync(filePath, 'utf8');
@@ -231,7 +232,11 @@ try {
     )
   );
   const mappedButNotFrontendPermissions = sortStrings(difference(mappingPermissionValues, frontendPermissionValues));
-  const unusedFrontendPermissions = sortStrings(difference(frontendPermissionValues, referencedPermissionValues));
+  const unusedFrontendPermissions = sortStrings(
+    difference(frontendPermissionValues, referencedPermissionValues).filter(
+      (permission) => !compatibilityOnlyPermissions.has(permission)
+    )
+  );
 
   const routesMissingPermission = routes
     .filter((route) => !route.authOnly && !route.permissionKey)
@@ -296,6 +301,7 @@ try {
   console.log(`- DbMigrate 种子 LinkUrl：${seedUrls.length} 条`);
   console.log(`- ConsoleResourceApiSeed：${consoleResourceApiSeedUrls.length} 条`);
   console.log(`- 入口权限豁免：${entryOnlyPermissions.size} 项`);
+  console.log(`- 兼容权限豁免：${compatibilityOnlyPermissions.size} 项`);
 
   printSection('authOnly 路由', sortStrings(authOnlyPaths));
   printSection('警告', warnings);
