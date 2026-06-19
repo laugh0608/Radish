@@ -58,6 +58,16 @@
    - 生产外部访问必须走 HTTPS Gateway / 反向代理。
    - API / Auth 直连 HTTP 只允许作为内部或本地开发入口，不作为公开入口。
 
+## 前端敏感日志治理口径
+
+本批只处理统一 logger 的出参脱敏，不改变接口协议、请求体结构、密码存储、支付口令验证或业务幂等。
+
+- 覆盖范围：`radish.client` 与 `radish.console` 的统一 `log.debug / info / warn / error / table`，以及 `@radish/http` 内部直接 `console.error` 的错误对象输出。
+- 脱敏字段：`paymentPassword`、`paymentPasscode`、`password`、`pwd`、`passcode`、`currentPassword`、`newPassword`、`confirmPassword`、`oldPassword`、`accessToken`、`refreshToken`、`idToken`、`token`、`secret`、`apiKey`、`api_key`。
+- 匹配规则：字段名大小写不敏感，并忽略 `_`、`-` 等分隔符，例如 `new_password` 与 `newPassword` 等价。
+- 处理方式：递归复制普通对象和数组，敏感字段值替换为 `[REDACTED]`；循环引用替换为 `[Circular]`；`Error` 对象保留 `name / message / stack` 并脱敏其可枚举附加字段。
+- 验证入口：`radish.client`、`radish.console` 与 `@radish/http` 各自补敏感日志 node 测试；开发中优先跑对应 workspace 测试、类型检查、`git diff --check` 和变更文件仓库卫生检查。
+
 ## 未来可评审的加强项
 
 1. 开放 API / 服务端到服务端签名。

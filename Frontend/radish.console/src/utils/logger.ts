@@ -1,4 +1,5 @@
 import { env } from '@/config/env';
+import { sanitizeLogArgs, sanitizeLogValue } from './logSanitizer';
 
 /**
  * 日志级别
@@ -9,6 +10,9 @@ export enum LogLevel {
   WARN = 2,
   ERROR = 3,
 }
+
+type LogArgs = unknown[];
+type LogTableData = Record<string, unknown> | unknown[];
 
 /**
  * 日志工具类
@@ -34,73 +38,77 @@ class Logger {
   /**
    * 调试日志（仅在 debug 模式下输出）
    */
-  debug(message: string, ...args: any[]): void;
-  debug(tag: string, message: string, ...args: any[]): void;
-  debug(tagOrMessage: string, messageOrArg?: any, ...args: any[]): void {
+  debug(message: string, ...args: LogArgs): void;
+  debug(tag: string, message: string, ...args: LogArgs): void;
+  debug(tagOrMessage: string, messageOrArg?: unknown, ...args: LogArgs): void {
     if (!this.enabled || this.minLevel > LogLevel.DEBUG) {
       return;
     }
 
     const hasTag = typeof messageOrArg === 'string';
+    const hasExtraArgs = messageOrArg !== undefined || args.length > 0;
     const tag = hasTag ? tagOrMessage : undefined;
     const message = hasTag ? messageOrArg : tagOrMessage;
-    const finalArgs = hasTag ? args : [messageOrArg, ...args];
+    const finalArgs = hasTag ? args : hasExtraArgs ? [messageOrArg, ...args] : [];
 
-    console.log(this.formatPrefix('DEBUG', tag), message, ...finalArgs);
+    console.log(this.formatPrefix('DEBUG', tag), message, ...sanitizeLogArgs(finalArgs));
   }
 
   /**
    * 信息日志（仅在 debug 模式下输出）
    */
-  info(message: string, ...args: any[]): void;
-  info(tag: string, message: string, ...args: any[]): void;
-  info(tagOrMessage: string, messageOrArg?: any, ...args: any[]): void {
+  info(message: string, ...args: LogArgs): void;
+  info(tag: string, message: string, ...args: LogArgs): void;
+  info(tagOrMessage: string, messageOrArg?: unknown, ...args: LogArgs): void {
     if (!this.enabled || this.minLevel > LogLevel.INFO) {
       return;
     }
 
     const hasTag = typeof messageOrArg === 'string';
+    const hasExtraArgs = messageOrArg !== undefined || args.length > 0;
     const tag = hasTag ? tagOrMessage : undefined;
     const message = hasTag ? messageOrArg : tagOrMessage;
-    const finalArgs = hasTag ? args : [messageOrArg, ...args];
+    const finalArgs = hasTag ? args : hasExtraArgs ? [messageOrArg, ...args] : [];
 
-    console.info(this.formatPrefix('INFO', tag), message, ...finalArgs);
+    console.info(this.formatPrefix('INFO', tag), message, ...sanitizeLogArgs(finalArgs));
   }
 
   /**
    * 警告日志（总是输出）
    */
-  warn(message: string, ...args: any[]): void;
-  warn(tag: string, message: string, ...args: any[]): void;
-  warn(tagOrMessage: string, messageOrArg?: any, ...args: any[]): void {
+  warn(message: string, ...args: LogArgs): void;
+  warn(tag: string, message: string, ...args: LogArgs): void;
+  warn(tagOrMessage: string, messageOrArg?: unknown, ...args: LogArgs): void {
     if (this.minLevel > LogLevel.WARN) {
       return;
     }
 
     const hasTag = typeof messageOrArg === 'string';
+    const hasExtraArgs = messageOrArg !== undefined || args.length > 0;
     const tag = hasTag ? tagOrMessage : undefined;
     const message = hasTag ? messageOrArg : tagOrMessage;
-    const finalArgs = hasTag ? args : [messageOrArg, ...args];
+    const finalArgs = hasTag ? args : hasExtraArgs ? [messageOrArg, ...args] : [];
 
-    console.warn(this.formatPrefix('WARN', tag), message, ...finalArgs);
+    console.warn(this.formatPrefix('WARN', tag), message, ...sanitizeLogArgs(finalArgs));
   }
 
   /**
    * 错误日志（总是输出）
    */
-  error(message: string, ...args: any[]): void;
-  error(tag: string, message: string, ...args: any[]): void;
-  error(tagOrMessage: string, messageOrArg?: any, ...args: any[]): void {
+  error(message: string, ...args: LogArgs): void;
+  error(tag: string, message: string, ...args: LogArgs): void;
+  error(tagOrMessage: string, messageOrArg?: unknown, ...args: LogArgs): void {
     if (this.minLevel > LogLevel.ERROR) {
       return;
     }
 
     const hasTag = typeof messageOrArg === 'string';
+    const hasExtraArgs = messageOrArg !== undefined || args.length > 0;
     const tag = hasTag ? tagOrMessage : undefined;
     const message = hasTag ? messageOrArg : tagOrMessage;
-    const finalArgs = hasTag ? args : [messageOrArg, ...args];
+    const finalArgs = hasTag ? args : hasExtraArgs ? [messageOrArg, ...args] : [];
 
-    console.error(this.formatPrefix('ERROR', tag), message, ...finalArgs);
+    console.error(this.formatPrefix('ERROR', tag), message, ...sanitizeLogArgs(finalArgs));
   }
 
   /**
@@ -132,12 +140,12 @@ class Logger {
   /**
    * 表格日志（仅在 debug 模式下输出）
    */
-  table(data: any): void {
+  table(data: LogTableData): void {
     if (!this.enabled) {
       return;
     }
 
-    console.table(data);
+    console.table(sanitizeLogValue(data) as LogTableData);
   }
 
   /**

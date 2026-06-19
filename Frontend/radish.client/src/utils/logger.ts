@@ -1,4 +1,5 @@
 import { env } from '@/config/env';
+import { sanitizeLogArgs, sanitizeLogValue } from './logSanitizer';
 
 /**
  * 日志级别
@@ -52,7 +53,7 @@ class Logger {
     const message = hasTag ? messageOrArg : tagOrMessage;
     const finalArgs = hasTag ? args : hasExtraArgs ? [messageOrArg, ...args] : [];
 
-    console.log(this.formatPrefix('DEBUG', tag), message, ...finalArgs);
+    console.log(this.formatPrefix('DEBUG', tag), message, ...sanitizeLogArgs(finalArgs));
   }
 
   /**
@@ -71,7 +72,7 @@ class Logger {
     const message = hasTag ? messageOrArg : tagOrMessage;
     const finalArgs = hasTag ? args : hasExtraArgs ? [messageOrArg, ...args] : [];
 
-    console.info(this.formatPrefix('INFO', tag), message, ...finalArgs);
+    console.info(this.formatPrefix('INFO', tag), message, ...sanitizeLogArgs(finalArgs));
   }
 
   /**
@@ -90,7 +91,7 @@ class Logger {
     const message = hasTag ? messageOrArg : tagOrMessage;
     const finalArgs = hasTag ? args : hasExtraArgs ? [messageOrArg, ...args] : [];
 
-    console.warn(this.formatPrefix('WARN', tag), message, ...finalArgs);
+    console.warn(this.formatPrefix('WARN', tag), message, ...sanitizeLogArgs(finalArgs));
   }
 
   /**
@@ -109,7 +110,7 @@ class Logger {
     const message = hasTag ? messageOrArg : tagOrMessage;
     const finalArgs = hasTag ? args : hasExtraArgs ? [messageOrArg, ...args] : [];
 
-    console.error(this.formatPrefix('ERROR', tag), message, ...finalArgs);
+    console.error(this.formatPrefix('ERROR', tag), message, ...sanitizeLogArgs(finalArgs));
   }
 
   /**
@@ -146,7 +147,7 @@ class Logger {
       return;
     }
 
-    console.table(data);
+    console.table(sanitizeLogValue(data) as LogTableData);
   }
 
   /**
