@@ -101,12 +101,17 @@ export function isSameLongId(left: LongId | null | undefined, right: LongId | nu
 export function getForumPostRouteIdentifier(
   post: Pick<PostItem, 'voId' | 'voPublicId'> | Pick<PostDetail, 'voId' | 'voPublicId'>
 ): string {
-  return post.voPublicId?.trim() || String(post.voId);
+  const normalizedPublicId = post.voPublicId?.trim().toLowerCase();
+  return normalizedPublicId && /^pst_[a-f0-9]{32}$/.test(normalizedPublicId)
+    ? normalizedPublicId
+    : String(post.voId);
 }
 
 export function resolvePublicProfileUserId(userId: LongId, publicId?: string | null): LongId {
-  const normalizedPublicId = publicId?.trim();
-  return normalizedPublicId || String(userId);
+  const normalizedPublicId = publicId?.trim().toLowerCase();
+  return normalizedPublicId && /^usr_[0-9a-f]{32}$/.test(normalizedPublicId)
+    ? normalizedPublicId
+    : String(userId);
 }
 
 function normalizePublicHeadText(value: string | number | null | undefined): string | undefined {
