@@ -149,6 +149,17 @@ function buildBrowseHistoryHref(item: UserBrowseHistoryItem): string | null {
   return null;
 }
 
+function isPublicDocsDetailPath(pathname: string): boolean {
+  const normalizedPathname = pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+  const docsPathPrefix = '/docs/';
+  if (!normalizedPathname.startsWith(docsPathPrefix) || normalizedPathname === '/docs/search') {
+    return false;
+  }
+
+  const slugSegment = normalizedPathname.slice(docsPathPrefix.length);
+  return slugSegment.length > 0 && !slugSegment.includes('/');
+}
+
 function buildSourceStateForHref(href: string): PublicRouteSourceState | null {
   const normalizedPath = normalizeInternalPath(href);
   if (!normalizedPath) {
@@ -160,7 +171,7 @@ function buildSourceStateForHref(href: string): PublicRouteSourceState | null {
     return { forumDetailSourceRoute: meRouteDescriptor };
   }
 
-  if (pathname.startsWith('/docs/')) {
+  if (isPublicDocsDetailPath(pathname)) {
     return { docsDetailSourceRoute: meRouteDescriptor };
   }
 
