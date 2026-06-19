@@ -20,6 +20,7 @@ import {
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { buildPublicShareUrl } from '../publicHead';
+import { resolvePublicUserRouteIdentifier } from '../publicId';
 import { usePublicShareLink } from '../hooks/usePublicShareLink';
 import { resolveMediaUrl } from '@/utils/media';
 import styles from './PublicLeaderboardApp.module.css';
@@ -257,7 +258,10 @@ function buildAvatarText(name: string | undefined, fallback: string): string {
 }
 
 function resolveLeaderboardUserProfileIdentifier(item: UnifiedLeaderboardItemData): string {
-  return item.voUserPublicId?.trim() || (item.voUserId ? String(item.voUserId) : '');
+  return resolvePublicUserRouteIdentifier({
+    voPublicId: item.voUserPublicId,
+    voUserId: item.voUserId,
+  }) ?? '';
 }
 
 export const PublicLeaderboardApp = ({

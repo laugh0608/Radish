@@ -13,6 +13,11 @@ import {
 import type { PostItem } from '@/types/forum';
 import { PublicShellHeader } from '@/public/components/PublicShellHeader';
 import { buildPublicForumPath, type PublicForumDetailRoute } from '@/public/forumRouteState';
+import {
+  normalizePublicPostId,
+  resolvePublicPostRouteIdentifier,
+  resolvePublicUserRouteIdentifier,
+} from '@/public/publicId';
 import { buildPublicProfilePath, type PublicProfileRoute } from '@/public/profileRouteState';
 import {
   createPublicRouteSourceState,
@@ -47,19 +52,18 @@ function resolveInitialCircleRoute(): CircleRoute {
 }
 
 function buildPostRoute(post: PostItem): PublicForumDetailRoute {
-  const publicId = post.voPublicId?.trim();
+  const publicId = normalizePublicPostId(post.voPublicId);
   return {
     kind: 'detail',
-    postId: String(post.voId),
+    postId: resolvePublicPostRouteIdentifier(post),
     ...(publicId ? { postPublicId: publicId } : {})
   };
 }
 
 function buildUserRoute(user: UserFollowUser): PublicProfileRoute {
-  const publicId = user.voPublicId?.trim();
   return {
     kind: 'detail',
-    userId: publicId || String(user.voUserId),
+    userId: resolvePublicUserRouteIdentifier(user) ?? String(user.voUserId),
     tab: 'posts',
     page: 1
   };

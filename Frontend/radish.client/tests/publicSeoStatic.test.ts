@@ -85,3 +85,18 @@ test('公开论坛详情加载后应刷新详情 head 并复用同一个 canonic
   assert.match(source, /applyPublicHead\(postHead\);/);
   assert.match(source, /canonicalPath: postHead\.canonicalPath/);
 });
+
+test('登录态私域入口生成公开链接前应复用 PublicId 校验', () => {
+  const circleSource = readFileSync(resolve(clientRoot, 'src/circle/CircleApp.tsx'), 'utf8');
+  const meSource = readFileSync(resolve(clientRoot, 'src/me/MeApp.tsx'), 'utf8');
+  const leaderboardSource = readFileSync(resolve(clientRoot, 'src/public/leaderboard/PublicLeaderboardApp.tsx'), 'utf8');
+
+  assert.match(circleSource, /resolvePublicPostRouteIdentifier/);
+  assert.match(circleSource, /resolvePublicUserRouteIdentifier/);
+  assert.doesNotMatch(circleSource, /voPublicId\?\.trim\(\)/);
+  assert.match(meSource, /resolvePublicUserRouteIdentifier/);
+  assert.match(meSource, /normalizePublicUserId/);
+  assert.doesNotMatch(meSource, /voPublicId\?\.trim\(\)/);
+  assert.match(leaderboardSource, /resolvePublicUserRouteIdentifier/);
+  assert.doesNotMatch(leaderboardSource, /voUserPublicId\?\.trim\(\)/);
+});

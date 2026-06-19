@@ -17,6 +17,7 @@ import type {
 import { buildPublicForumPath } from '../forumRouteState.ts';
 import type { PublicReadingGuideItem } from '../components/PublicReadingGuide';
 import { publicDefaultDescription, type PublicHeadDescriptor } from '../publicHead.ts';
+import { normalizePublicPostId, normalizePublicUserId } from '../publicId.ts';
 
 interface PublicGuideDefinition {
   titleKey: string;
@@ -101,17 +102,11 @@ export function isSameLongId(left: LongId | null | undefined, right: LongId | nu
 export function getForumPostRouteIdentifier(
   post: Pick<PostItem, 'voId' | 'voPublicId'> | Pick<PostDetail, 'voId' | 'voPublicId'>
 ): string {
-  const normalizedPublicId = post.voPublicId?.trim().toLowerCase();
-  return normalizedPublicId && /^pst_[a-f0-9]{32}$/.test(normalizedPublicId)
-    ? normalizedPublicId
-    : String(post.voId);
+  return normalizePublicPostId(post.voPublicId) ?? String(post.voId);
 }
 
 export function resolvePublicProfileUserId(userId: LongId, publicId?: string | null): LongId {
-  const normalizedPublicId = publicId?.trim().toLowerCase();
-  return normalizedPublicId && /^usr_[0-9a-f]{32}$/.test(normalizedPublicId)
-    ? normalizedPublicId
-    : String(userId);
+  return normalizePublicUserId(publicId) ?? String(userId);
 }
 
 function normalizePublicHeadText(value: string | number | null | undefined): string | undefined {

@@ -13,6 +13,7 @@ import {
 } from '@/api/user';
 import { getApiBaseUrl } from '@/config/env';
 import { PublicShellHeader } from '@/public/components/PublicShellHeader';
+import { normalizePublicUserId, resolvePublicUserRouteIdentifier } from '@/public/publicId';
 import { buildPublicProfilePath, type PublicProfileRoute } from '@/public/profileRouteState';
 import {
   createPublicRouteSourceState,
@@ -75,13 +76,7 @@ function formatSignedNumber(value: number): string {
 }
 
 function resolveProfileIdentifier(profile: PublicUserProfile | null, fallbackUserId: string): string | null {
-  const publicId = profile?.voPublicId?.trim();
-  if (publicId) {
-    return publicId;
-  }
-
-  const userId = String(profile?.voUserId || fallbackUserId).trim();
-  return userId ? userId : null;
+  return resolvePublicUserRouteIdentifier(profile, fallbackUserId);
 }
 
 function buildSelfProfileRoute(profile: PublicUserProfile | null, fallbackUserId: string): PublicProfileRoute | null {
@@ -349,7 +344,7 @@ export const MeApp = () => {
     || userName?.trim()
     || loginName?.trim()
     || userId;
-  const profilePublicId = dashboardData.publicProfile?.voPublicId?.trim();
+  const profilePublicId = normalizePublicUserId(dashboardData.publicProfile?.voPublicId);
   const experience = dashboardData.experience;
   const balance = dashboardData.balance;
   const pet = dashboardData.pet;

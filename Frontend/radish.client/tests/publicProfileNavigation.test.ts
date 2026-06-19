@@ -5,6 +5,51 @@ import {
   resolvePublicProfilePostForumTarget,
   resolvePublicProfileRouteIdentifier,
 } from '../src/public/profile/publicProfileNavigation.ts';
+import {
+  normalizePublicPostId,
+  normalizePublicUserId,
+  resolvePublicPostRouteIdentifier,
+  resolvePublicUserRouteIdentifier,
+} from '../src/public/publicId.ts';
+
+test('公开 PublicId 规范化应拒绝无效路由标识', () => {
+  assert.equal(
+    normalizePublicUserId(' USR_019EA76872BF787981AD3E9D3C6A3417 '),
+    'usr_019ea76872bf787981ad3e9d3c6a3417',
+  );
+  assert.equal(normalizePublicUserId('usr_not-a-route-id'), null);
+  assert.equal(
+    normalizePublicPostId(' PST_018F6B6F7C7D70008F8F8F8F8F8F8F8F '),
+    'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+  );
+  assert.equal(normalizePublicPostId('pst_not-a-route-id'), null);
+});
+
+test('公开路由标识应优先使用有效 PublicId 并回退 LongId', () => {
+  assert.equal(
+    resolvePublicPostRouteIdentifier({
+      voId: '2042219067430928384',
+      voPublicId: 'PST_018F6B6F7C7D70008F8F8F8F8F8F8F8F',
+    }),
+    'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+  );
+  assert.equal(
+    resolvePublicPostRouteIdentifier({ voId: '2042219067430928384', voPublicId: 'pst_invalid' }),
+    '2042219067430928384',
+  );
+  assert.equal(
+    resolvePublicUserRouteIdentifier({
+      voUserId: '2042219067430928384',
+      voPublicId: 'USR_019EA76872BF787981AD3E9D3C6A3417',
+    }),
+    'usr_019ea76872bf787981ad3e9d3c6a3417',
+  );
+  assert.equal(
+    resolvePublicUserRouteIdentifier({ voUserId: '2042219067430928384', voPublicId: 'usr_invalid' }),
+    '2042219067430928384',
+  );
+  assert.equal(resolvePublicUserRouteIdentifier({ voUserId: '0', voPublicId: null }), null);
+});
 
 test('resolvePublicProfileRouteIdentifier 应只使用有效 User PublicId', () => {
   assert.equal(
