@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -10,6 +11,7 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Service;
+using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
 using Radish.Shared.Security;
 using Xunit;
@@ -140,6 +142,332 @@ public class OrderServiceTest
                 request.Password == "274958"
                 && request.BusinessType == "ShopPurchase"
                 && request.BusinessId == productId.ToString())), Times.Once);
+    }
+
+    [Fact]
+    public async Task PurchaseAsync_ShouldReplaySucceededIdempotencyRecordWithoutAssetWrite()
+    {
+        const long userId = 9527;
+        const long productId = 100063;
+        const string idempotencyKey = "shop:replay";
+        var replayResult = new PurchaseResultDto
+        {
+            Success = true,
+            OrderId = 7002,
+            OrderNo = "ORD_7002",
+            DeductedCoins = 50,
+            RemainingBalance = 950
+        };
+
+        var product = new Product
+        {
+            Id = productId,
+            Name = "复用测试道具",
+            CategoryId = "effect",
+            ProductType = ProductType.Consumable,
+            ConsumableType = ConsumableType.ExpCard,
+            Price = 50,
+            StockType = StockType.Unlimited,
+            DurationType = DurationType.Permanent,
+            IsEnabled = true,
+            IsOnSale = true,
+            CreateTime = DateTime.Now,
+            CreateBy = "System"
+        };
+
+        var mapper = new Mock<IMapper>(MockBehavior.Loose);
+        var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Loose);
+        var productRepository = new Mock<IBaseRepository<Product>>(MockBehavior.Loose);
+        var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Loose);
+        var productService = new Mock<IProductService>(MockBehavior.Loose);
+        var userBenefitService = new Mock<IUserBenefitService>(MockBehavior.Loose);
+        var coinService = new Mock<ICoinService>(MockBehavior.Loose);
+        var paymentPasswordService = new Mock<IPaymentPasswordService>(MockBehavior.Loose);
+        var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Loose);
+        var operationIdempotencyService = new Mock<IOperationIdempotencyService>(MockBehavior.Loose);
+
+        productService
+            .Setup(service => service.CheckCanBuyAsync(userId, productId, 1))
+            .ReturnsAsync((true, null as string));
+        productRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<Product, bool>>?>()))
+            .ReturnsAsync(product);
+        coinService
+            .Setup(service => service.GetBalanceAsync(userId))
+            .ReturnsAsync(new UserBalanceVo { VoUserId = userId, VoBalance = 1000 });
+        paymentPasswordService
+            .Setup(service => service.VerifyPaymentPasswordAsync(userId, It.IsAny<VerifyPaymentPasswordRequest>()))
+            .ReturnsAsync(new PaymentPasswordVerifyResult { IsSuccess = true });
+        operationIdempotencyService
+            .Setup(service => service.NormalizeKey(idempotencyKey))
+            .Returns(idempotencyKey);
+        operationIdempotencyService
+            .Setup(service => service.CreateRequestSnapshot(It.IsAny<IReadOnlyDictionary<string, object?>>()))
+            .Returns(new OperationIdempotencyRequestSnapshot
+            {
+                RequestHash = "hash-a",
+                RequestSummary = "{}"
+            });
+        operationIdempotencyService
+            .Setup(service => service.BeginAsync(It.IsAny<OperationIdempotencyBeginRequest>()))
+            .ReturnsAsync(new OperationIdempotencyBeginResult
+            {
+                Status = OperationIdempotencyBeginStatus.Succeeded,
+                RecordId = 9001,
+                ResponsePayload = "payload"
+            });
+        operationIdempotencyService
+            .Setup(service => service.DeserializeResponse<PurchaseResultDto>("payload"))
+            .Returns(replayResult);
+
+        var service = new OrderService(
+            mapper.Object,
+            orderRepository.Object,
+            productRepository.Object,
+            userRepository.Object,
+            productService.Object,
+            userBenefitService.Object,
+            coinService.Object,
+            paymentPasswordService.Object,
+            attachmentUrlResolver.Object,
+            operationIdempotencyService.Object,
+            notificationService: null);
+
+        var result = await service.PurchaseAsync(userId, new CreateOrderDto
+        {
+            ProductId = productId,
+            Quantity = 1,
+            PaymentPassword = "274958",
+            IdempotencyKey = idempotencyKey
+        });
+
+        Assert.True(result.Success, result.ErrorMessage);
+        Assert.Equal(replayResult.OrderId, result.OrderId);
+        Assert.Equal(replayResult.OrderNo, result.OrderNo);
+        productService.Verify(service => service.DeductStockAsync(It.IsAny<long>(), It.IsAny<int>()), Times.Never);
+        orderRepository.Verify(repository => repository.AddAsync(It.IsAny<Order>()), Times.Never);
+        coinService.Verify(service => service.ConsumeCoinAsync(
+            It.IsAny<long>(),
+            It.IsAny<long>(),
+            It.IsAny<string?>(),
+            It.IsAny<long?>(),
+            It.IsAny<string?>()), Times.Never);
+        userBenefitService.Verify(service => service.GrantBenefitAsync(
+            It.IsAny<long>(),
+            It.IsAny<Product>(),
+            It.IsAny<long>(),
+            It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task PurchaseAsync_ShouldRejectConflictingIdempotencyKeyBeforeAssetWrite()
+    {
+        const long userId = 9527;
+        const long productId = 100064;
+        const string idempotencyKey = "shop:conflict";
+
+        var product = new Product
+        {
+            Id = productId,
+            Name = "冲突测试道具",
+            CategoryId = "effect",
+            ProductType = ProductType.Consumable,
+            ConsumableType = ConsumableType.ExpCard,
+            Price = 50,
+            StockType = StockType.Limited,
+            Stock = 2,
+            DurationType = DurationType.Permanent,
+            IsEnabled = true,
+            IsOnSale = true,
+            CreateTime = DateTime.Now,
+            CreateBy = "System"
+        };
+
+        var mapper = new Mock<IMapper>(MockBehavior.Loose);
+        var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Loose);
+        var productRepository = new Mock<IBaseRepository<Product>>(MockBehavior.Loose);
+        var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Loose);
+        var productService = new Mock<IProductService>(MockBehavior.Loose);
+        var userBenefitService = new Mock<IUserBenefitService>(MockBehavior.Loose);
+        var coinService = new Mock<ICoinService>(MockBehavior.Loose);
+        var paymentPasswordService = new Mock<IPaymentPasswordService>(MockBehavior.Loose);
+        var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Loose);
+        var operationIdempotencyService = new Mock<IOperationIdempotencyService>(MockBehavior.Loose);
+
+        productService
+            .Setup(service => service.CheckCanBuyAsync(userId, productId, 1))
+            .ReturnsAsync((true, null as string));
+        productRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<Product, bool>>?>()))
+            .ReturnsAsync(product);
+        coinService
+            .Setup(service => service.GetBalanceAsync(userId))
+            .ReturnsAsync(new UserBalanceVo { VoUserId = userId, VoBalance = 1000 });
+        paymentPasswordService
+            .Setup(service => service.VerifyPaymentPasswordAsync(userId, It.IsAny<VerifyPaymentPasswordRequest>()))
+            .ReturnsAsync(new PaymentPasswordVerifyResult { IsSuccess = true });
+        operationIdempotencyService
+            .Setup(service => service.NormalizeKey(idempotencyKey))
+            .Returns(idempotencyKey);
+        operationIdempotencyService
+            .Setup(service => service.CreateRequestSnapshot(It.IsAny<IReadOnlyDictionary<string, object?>>()))
+            .Returns(new OperationIdempotencyRequestSnapshot
+            {
+                RequestHash = "hash-b",
+                RequestSummary = "{}"
+            });
+        operationIdempotencyService
+            .Setup(service => service.BeginAsync(It.IsAny<OperationIdempotencyBeginRequest>()))
+            .ReturnsAsync(new OperationIdempotencyBeginResult
+            {
+                Status = OperationIdempotencyBeginStatus.Conflict,
+                Message = "幂等键已被不同请求使用"
+            });
+
+        var service = new OrderService(
+            mapper.Object,
+            orderRepository.Object,
+            productRepository.Object,
+            userRepository.Object,
+            productService.Object,
+            userBenefitService.Object,
+            coinService.Object,
+            paymentPasswordService.Object,
+            attachmentUrlResolver.Object,
+            operationIdempotencyService.Object,
+            notificationService: null);
+
+        var result = await service.PurchaseAsync(userId, new CreateOrderDto
+        {
+            ProductId = productId,
+            Quantity = 1,
+            PaymentPassword = "274958",
+            IdempotencyKey = idempotencyKey
+        });
+
+        Assert.False(result.Success);
+        Assert.Equal("幂等键已被不同请求使用", result.ErrorMessage);
+        productService.Verify(service => service.DeductStockAsync(It.IsAny<long>(), It.IsAny<int>()), Times.Never);
+        orderRepository.Verify(repository => repository.AddAsync(It.IsAny<Order>()), Times.Never);
+        coinService.Verify(service => service.ConsumeCoinAsync(
+            It.IsAny<long>(),
+            It.IsAny<long>(),
+            It.IsAny<string?>(),
+            It.IsAny<long?>(),
+            It.IsAny<string?>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task PurchaseAsync_ShouldStoreTerminalFailure_WhenAssetBoundaryWasEntered()
+    {
+        const long userId = 9527;
+        const long productId = 100065;
+        const string idempotencyKey = "shop:terminal-failure";
+        OperationIdempotencyCompletionRequest? completionRequest = null;
+
+        var product = new Product
+        {
+            Id = productId,
+            Name = "异常边界测试道具",
+            CategoryId = "effect",
+            ProductType = ProductType.Consumable,
+            ConsumableType = ConsumableType.ExpCard,
+            Price = 50,
+            StockType = StockType.Limited,
+            Stock = 2,
+            DurationType = DurationType.Permanent,
+            IsEnabled = true,
+            IsOnSale = true,
+            CreateTime = DateTime.Now,
+            CreateBy = "System"
+        };
+
+        var mapper = new Mock<IMapper>(MockBehavior.Loose);
+        var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Loose);
+        var productRepository = new Mock<IBaseRepository<Product>>(MockBehavior.Loose);
+        var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Loose);
+        var productService = new Mock<IProductService>(MockBehavior.Loose);
+        var userBenefitService = new Mock<IUserBenefitService>(MockBehavior.Loose);
+        var coinService = new Mock<ICoinService>(MockBehavior.Loose);
+        var paymentPasswordService = new Mock<IPaymentPasswordService>(MockBehavior.Loose);
+        var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Loose);
+        var operationIdempotencyService = new Mock<IOperationIdempotencyService>(MockBehavior.Loose);
+
+        productService
+            .Setup(service => service.CheckCanBuyAsync(userId, productId, 1))
+            .ReturnsAsync((true, null as string));
+        productRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<Product, bool>>?>()))
+            .ReturnsAsync(product);
+        coinService
+            .Setup(service => service.GetBalanceAsync(userId))
+            .ReturnsAsync(new UserBalanceVo { VoUserId = userId, VoBalance = 1000 });
+        paymentPasswordService
+            .Setup(service => service.VerifyPaymentPasswordAsync(userId, It.IsAny<VerifyPaymentPasswordRequest>()))
+            .ReturnsAsync(new PaymentPasswordVerifyResult { IsSuccess = true });
+        operationIdempotencyService
+            .Setup(service => service.NormalizeKey(idempotencyKey))
+            .Returns(idempotencyKey);
+        operationIdempotencyService
+            .Setup(service => service.CreateRequestSnapshot(It.IsAny<IReadOnlyDictionary<string, object?>>()))
+            .Returns(new OperationIdempotencyRequestSnapshot
+            {
+                RequestHash = "hash-c",
+                RequestSummary = "{}"
+            });
+        operationIdempotencyService
+            .Setup(service => service.BeginAsync(It.IsAny<OperationIdempotencyBeginRequest>()))
+            .ReturnsAsync(new OperationIdempotencyBeginResult
+            {
+                Status = OperationIdempotencyBeginStatus.Started,
+                RecordId = 9005
+            });
+        productService
+            .Setup(service => service.DeductStockAsync(productId, 1))
+            .ReturnsAsync(true);
+        orderRepository
+            .Setup(repository => repository.AddAsync(It.IsAny<Order>()))
+            .ThrowsAsync(new InvalidOperationException("订单写入失败"));
+        operationIdempotencyService
+            .Setup(service => service.SerializeResponse(It.IsAny<PurchaseResultDto>()))
+            .Returns("payload");
+        operationIdempotencyService
+            .Setup(service => service.CompleteSuccessAsync(It.IsAny<OperationIdempotencyCompletionRequest>()))
+            .Callback<OperationIdempotencyCompletionRequest>(request => completionRequest = request)
+            .Returns(Task.CompletedTask);
+
+        var service = new OrderService(
+            mapper.Object,
+            orderRepository.Object,
+            productRepository.Object,
+            userRepository.Object,
+            productService.Object,
+            userBenefitService.Object,
+            coinService.Object,
+            paymentPasswordService.Object,
+            attachmentUrlResolver.Object,
+            operationIdempotencyService.Object,
+            notificationService: null);
+
+        var result = await service.PurchaseAsync(userId, new CreateOrderDto
+        {
+            ProductId = productId,
+            Quantity = 1,
+            PaymentPassword = "274958",
+            IdempotencyKey = idempotencyKey
+        });
+
+        Assert.False(result.Success);
+        Assert.Equal("购买失败，请稍后重试", result.ErrorMessage);
+        Assert.NotNull(completionRequest);
+        Assert.Equal(9005, completionRequest!.RecordId);
+        Assert.Equal("Order", completionRequest.ResourceType);
+        Assert.Equal("购买失败，请稍后重试", completionRequest.ErrorMessage);
+        Assert.Equal("payload", completionRequest.ResponsePayload);
+        operationIdempotencyService.Verify(service => service.CompleteFailureAsync(
+            It.IsAny<long>(),
+            It.IsAny<string?>(),
+            It.IsAny<string?>()), Times.Never);
     }
 
     [Fact]

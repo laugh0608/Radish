@@ -89,7 +89,8 @@ export const useShopActions = (props: UseShopActionsProps) => {
   const handleConfirmPurchase = useCallback(async (
     productId: LongId,
     quantity: number = 1,
-    paymentPassword: string
+    paymentPassword: string,
+    idempotencyKey: string
   ) => {
     if (!isAuthenticated) {
       setError(t('shop.loginRequired'));
@@ -101,7 +102,8 @@ export const useShopActions = (props: UseShopActionsProps) => {
       const result = await shopApi.purchaseProduct({
         productId,
         quantity,
-        paymentPassword
+        paymentPassword,
+        idempotencyKey
       }, t);
 
       if (result.ok && result.data?.success) {

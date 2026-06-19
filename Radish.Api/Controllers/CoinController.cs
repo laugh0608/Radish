@@ -322,7 +322,8 @@ public class CoinController : ControllerBase
                 request.ToUserId,
                 request.Amount,
                 request.PaymentPassword,
-                request.Remark
+                request.Remark,
+                request.IdempotencyKey
             );
 
             return new MessageModel

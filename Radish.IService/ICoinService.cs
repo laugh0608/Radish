@@ -118,13 +118,15 @@ public interface ICoinService : IBaseService<UserBalance, UserBalanceVo>
     /// <param name="amount">转账金额（胡萝卜）</param>
     /// <param name="paymentPassword">支付密码</param>
     /// <param name="remark">备注（可选）</param>
+    /// <param name="idempotencyKey">幂等键（可选）</param>
     /// <returns>交易流水号</returns>
     Task<string> TransferAsync(
         long fromUserId,
         long toUserId,
         long amount,
         string paymentPassword,
-        string? remark = null);
+        string? remark = null,
+        string? idempotencyKey = null);
 
     #endregion
 
