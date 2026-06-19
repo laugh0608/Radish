@@ -43,6 +43,7 @@
 - [日志规范与实现说明](/guide/logging)
 - [密码安全](/guide/password-security)
 - [密码传输与请求签名临时评审](/guide/password-transport-and-request-signature)
+- [支付与转账幂等治理](/guide/payment-idempotency-governance)
 - [速率限制](/guide/rate-limiting)
 
 ### 接口与发布运行

@@ -53,8 +53,8 @@
 2. 支付口令哈希升级（已完成首批）。
    - 新设置 / 修改支付口令直接写入 `PasscodeVersion = 2` 的 Argon2id 哈希。
    - `PasscodeVersion = 1` 记录验证成功后自动升级到 v2；验证失败仍走失败计数和锁定规则，不升级。
-3. 支付 / 转账幂等与重放边界（待评审）。
-   - 商城购买、萝卜币转账等写操作后续可增加 `idempotencyKey`、业务上下文绑定和短窗口重复提交保护。
+3. 支付 / 转账幂等与重放边界（待首批代码实现）。
+   - 商城购买、萝卜币转账等写操作后续可增加 `idempotencyKey`、业务上下文绑定和短窗口重复提交保护，方案见 [支付与转账幂等治理](/guide/payment-idempotency-governance)。
    - 该能力优先解决重复点击、网络重试和请求重放带来的业务一致性问题，不替代支付口令验证。
 4. 生产入口收口。
    - 生产外部访问必须走 HTTPS Gateway / 反向代理。
@@ -109,4 +109,5 @@
 - 登录密码存储与验证：[密码安全](/guide/password-security)
 - OIDC / Token / 会话安全：[鉴权与授权指南](/guide/authentication)
 - 支付与萝卜币风控：[萝卜币安全与扩展](/guide/radish-coin-security-tech)
+- 支付 / 转账幂等：[支付与转账幂等治理](/guide/payment-idempotency-governance)
 - 开放 API 签名与第三方接入：未来开放平台专题
