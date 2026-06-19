@@ -218,6 +218,7 @@ test('登录态私域入口生成公开链接前应复用 PublicId 校验', () =
   const circleSource = readFileSync(resolve(clientRoot, 'src/circle/CircleApp.tsx'), 'utf8');
   const meSource = readFileSync(resolve(clientRoot, 'src/me/MeApp.tsx'), 'utf8');
   const leaderboardSource = readFileSync(resolve(clientRoot, 'src/public/leaderboard/PublicLeaderboardApp.tsx'), 'utf8');
+  const publicIdSource = readFileSync(resolve(clientRoot, 'src/public/publicId.ts'), 'utf8');
 
   assert.match(circleSource, /resolvePublicPostRouteIdentifier/);
   assert.match(circleSource, /resolvePublicUserRouteIdentifier/);
@@ -234,6 +235,7 @@ test('登录态私域入口生成公开链接前应复用 PublicId 校验', () =
   assert.doesNotMatch(meSource, /voPublicId\?\.trim\(\)/);
   assert.match(leaderboardSource, /resolvePublicUserRouteIdentifier/);
   assert.doesNotMatch(leaderboardSource, /voUserPublicId\?\.trim\(\)/);
+  assert.doesNotMatch(publicIdSource, /string \| number/);
 });
 
 test('公开榜单条目应提供公开详情链接并保留壳层导航拦截', () => {

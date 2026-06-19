@@ -1,10 +1,10 @@
 interface PublicPostIdentifierSource {
-  voId: string | number;
+  voId: string;
   voPublicId?: string | null;
 }
 
 interface PublicUserIdentifierSource {
-  voUserId?: string | number | null;
+  voUserId?: string | null;
   voPublicId?: string | null;
 }
 
@@ -32,7 +32,7 @@ export function resolvePublicPostRouteIdentifier(post: PublicPostIdentifierSourc
 
 export function resolvePublicUserRouteIdentifier(
   user: PublicUserIdentifierSource | null,
-  fallbackUserId?: string | number | null,
+  fallbackUserId?: string | null,
 ): string | null {
   const publicId = normalizePublicUserId(user?.voPublicId);
   if (publicId) {
