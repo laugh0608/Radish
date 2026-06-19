@@ -83,6 +83,8 @@
 - [p3-10-b8-pet-release-candidate-regression-record-2026-06-15](/records/p3-10-b8-pet-release-candidate-regression-record-2026-06-15)
 - [p3-10-b9-user-identity-first-batch-record-2026-06-15](/records/p3-10-b9-user-identity-first-batch-record-2026-06-15)
 - [p3-10-stage-smoke-record-2026-06-17](/records/p3-10-stage-smoke-record-2026-06-17)
+- [p3-10-d-pre-merge-validation-record-2026-06-19](/records/p3-10-d-pre-merge-validation-record-2026-06-19)
+- [p3-10-d-web-feed-pr-prep-record-2026-06-19](/records/p3-10-d-web-feed-pr-prep-record-2026-06-19)
 - [p3-8-d-flutter-next-candidate-matrix-2026-05-28](/records/p3-8-d-flutter-next-candidate-matrix-2026-05-28)
 - [webos-workspace-p0-p1-screening-record-2026-05-18](/records/webos-workspace-p0-p1-screening-record-2026-05-18)
 - [console-ui-consistency-evaluation-2026-05-18](/records/console-ui-consistency-evaluation-2026-05-18)
