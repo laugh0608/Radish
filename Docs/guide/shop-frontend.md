@@ -216,43 +216,11 @@ export const ProductList = () => {
 └─────────────────────────────────────────────────────┘
 ```
 
-**组件实现**：
-```typescript
-// ProductDetail.tsx
-export const ProductDetail = () => {
-  const { id } = useParams();
-  const { data: product, isLoading } = useProduct(id);
-  const [quantity, setQuantity] = useState(1);
-  const { mutate: purchase, isPending } = usePurchase();
+**实现口径**：
 
-  const handlePurchase = () => {
-    Modal.confirm({
-      title: '确认购买',
-      content: `确认购买「${product.name}」×${quantity}，共需 ${product.price * quantity} 萝卜币？`,
-      onOk: () => {
-        purchase({ productId: product.id, quantity });
-      }
-    });
-  };
-
-  if (isLoading) return <Skeleton />;
-
-  return (
-    <div className="product-detail">
-      <ProductImage src={resolveMediaUrl(product.voCoverImage || product.voIcon)} />
-      <ProductInfo product={product}>
-        <QuantitySelector value={quantity} onChange={setQuantity} max={10} />
-        <PurchaseButton
-          onClick={handlePurchase}
-          loading={isPending}
-          price={product.price * quantity}
-        />
-      </ProductInfo>
-      <ProductDescription content={product.description} />
-    </div>
-  );
-};
-```
+- 商品详情页负责展示商品、数量选择和购买入口，不直接在页面内提交购买。
+- 购买动作必须进入 `PurchaseModal`，由弹窗收集支付口令并生成 `shop:{uuid}` 幂等键后调用 `purchaseProduct`。
+- 商品详情和购买弹窗都不得记录支付口令、完整请求体或 token。
 
 **实现落地补充（2026-02）**：
 - 商品详情首屏布局已优化为“左侧 1:1 主图 + 右侧信息区”对齐模式，提升窗口态阅读效率。
@@ -559,45 +527,11 @@ export const ProductCard = ({ product, onClick, showActions = true }: ProductCar
 ```
 
 **PurchaseModal - 购买确认弹窗**：
-```typescript
-interface PurchaseModalProps {
-  visible: boolean;
-  product: Product;
-  quantity: number;
-  onConfirm: () => void;
-  onCancel: () => void;
-}
 
-export const PurchaseModal = ({
-  visible,
-  product,
-  quantity,
-  onConfirm,
-  onCancel
-}: PurchaseModalProps) => {
-  const totalPrice = product.price * quantity;
-  const { data: balance } = useCoinBalance();
-
-  return (
-    <Modal
-      title="确认购买"
-      visible={visible}
-      onOk={onConfirm}
-      onCancel={onCancel}
-      okText="确认购买"
-      cancelText="取消"
-    >
-      <div className="purchase-modal">
-        <ProductSummary product={product} quantity={quantity} />
-        <PriceSummary totalPrice={totalPrice} balance={balance} />
-        {balance < totalPrice && (
-          <Alert type="warning" message="萝卜币余额不足，请先充值" />
-        )}
-      </div>
-    </Modal>
-  );
-};
-```
+- 用户打开购买弹窗或切换商品时生成新的 `shop:{uuid}` 幂等键；同一次确认提交和网络重试继续使用同一个 key。
+- 用户修改商品数量、关闭弹窗或重新打开弹窗后，应生成新的 key，避免把不同请求绑定到同一个幂等记录。
+- 弹窗必须使用 `PasscodeInput` 收集支付口令，并在提交时把 `productId`、`quantity`、`paymentPassword` 和 `idempotencyKey` 传给 `purchaseProduct`。
+- 支付口令只随请求体提交，不进入日志；购买成功日志只能记录扣除金额、余额等非敏感结果。
 
 **CoinBalance - 萝卜币余额显示**：
 ```typescript
@@ -719,132 +653,11 @@ export const UseConsumableModal = ({
 
 ### 7.4.1 API 请求层
 
-使用 `TanStack Query` (React Query) 管理服务端状态：
-
-```typescript
-// api/shop.ts
-export const shopApi = {
-  // 商品相关
-  getProducts: (params: ProductQueryParams) =>
-    request.get<PageModel<Product>>('/api/shop/products', { params }),
-
-  getProductDetail: (id: number) =>
-    request.get<ProductDetail>(`/api/shop/products/${id}`),
-
-  // 订单相关
-  createOrder: (data: OrderCreateInput) =>
-    request.post<OrderResult>('/api/shop/purchase', data),
-
-  getOrders: (params: OrderQueryParams) =>
-    request.get<PageModel<Order>>('/api/orders', { params }),
-
-  getOrderDetail: (id: number) =>
-    request.get<OrderDetail>(`/api/orders/${id}`),
-
-  cancelOrder: (id: number) =>
-    request.post<boolean>(`/api/orders/${id}/cancel`),
-
-  // 背包相关
-  getInventory: () =>
-    request.get<UserInventory>('/api/inventory'),
-
-  useConsumable: (id: number, data: UseConsumableInput) =>
-    request.post<UseConsumableResult>(`/api/inventory/${id}/use`, data),
-
-  equipItem: (id: number) =>
-    request.post<boolean>(`/api/inventory/${id}/equip`),
-
-  unequipItem: (id: number) =>
-    request.post<boolean>(`/api/inventory/${id}/unequip`),
-
-  // 萝卜币余额
-  getCoinBalance: () =>
-    request.get<number>('/api/coins/balance')
-};
-```
+使用 `TanStack Query` 管理服务端状态，并统一通过 `@radish/http` / `src/api/shop.ts` 发起请求。购买入口为 `POST /api/v1/Shop/Purchase`，请求类型为 `CreateOrderRequest`，包含 `productId`、`quantity`、`paymentPassword`、可选 `idempotencyKey` 和 `userRemark`。
 
 ### 7.4.2 React Query Hooks
 
-```typescript
-// hooks/useShop.ts
-export const useProducts = (params: ProductQueryParams) => {
-  return useQuery({
-    queryKey: ['products', params],
-    queryFn: () => shopApi.getProducts(params)
-  });
-};
-
-export const useProduct = (id: number) => {
-  return useQuery({
-    queryKey: ['product', id],
-    queryFn: () => shopApi.getProductDetail(id)
-  });
-};
-
-export const usePurchase = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: shopApi.createOrder,
-    onSuccess: () => {
-      // 刷新订单列表和余额
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['coinBalance'] });
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
-
-      notification.success({
-        message: '购买成功',
-        description: '商品已成功购买，权益已发放到背包'
-      });
-    },
-    onError: (error: any) => {
-      notification.error({
-        message: '购买失败',
-        description: error.response?.data?.msg || '购买失败，请重试'
-      });
-    }
-  });
-};
-
-export const useOrders = (params: OrderQueryParams) => {
-  return useQuery({
-    queryKey: ['orders', params],
-    queryFn: () => shopApi.getOrders(params)
-  });
-};
-
-export const useInventory = () => {
-  return useQuery({
-    queryKey: ['inventory'],
-    queryFn: shopApi.getInventory
-  });
-};
-
-export const useConsumableItem = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ inventoryId, ...data }: UseConsumableParams) =>
-      shopApi.useConsumable(inventoryId, data),
-    onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ['inventory'] });
-
-      notification.success({
-        message: '使用成功',
-        description: result.message
-      });
-    }
-  });
-};
-
-export const useCoinBalance = () => {
-  return useQuery({
-    queryKey: ['coinBalance'],
-    queryFn: shopApi.getCoinBalance,
-    staleTime: 30000 // 30 秒内不重新请求
-  });
-};
-```
+购买成功后应刷新订单、余额、背包和购买资格；购买失败时只展示服务端错误信息，不把完整错误对象、支付口令或幂等键写入日志。商品、订单、背包和余额查询继续使用稳定 query key，避免购买后页面状态滞留。
 
 ### 7.4.3 本地状态管理
 
@@ -1266,7 +1079,7 @@ export class ShopErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Shop Error:', error, errorInfo);
+    log.error('Shop Error', { error, errorInfo });
   }
 
   render() {

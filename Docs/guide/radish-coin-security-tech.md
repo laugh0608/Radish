@@ -187,16 +187,15 @@ catch
 
 ### 11.2 幂等性保证
 
-**交易流水号机制**：
-- 每笔交易生成唯一流水号（雪花ID + 业务前缀）
-- 数据库唯一索引防止重复提交
-- 客户端重试时使用相同流水号
+萝卜币转账当前使用服务端幂等记录，而不是要求客户端生成交易流水号。
 
-**示例**：
-```csharp
-string transactionNo = $"TXN_{SnowFlakeSingle.Instance.NextId()}";
-// 插入时如果流水号重复，返回已有记录（幂等）
-```
+- Web 官方转账流程生成 `coin-transfer:{uuid}` 幂等键。
+- 服务端以 `TenantId + UserId + OperationType + IdempotencyKey` 建立唯一约束，并把收款人、金额和备注写入请求摘要。
+- 同 key 同摘要重复提交时返回同一交易流水号；同 key 不同摘要拒绝执行，避免客户端误复用 key。
+- 交易流水号仍由服务端在真实交易写入时生成，客户端不能指定交易流水号。
+- 支付口令不进入请求摘要、幂等记录日志或前端日志。
+
+商城购买使用同一套 `OperationIdempotencyRecord` 机制，具体见 [支付与转账幂等治理](/guide/payment-idempotency-governance)。
 
 ### 11.3 性能优化
 
@@ -210,4 +209,3 @@ string transactionNo = $"TXN_{SnowFlakeSingle.Instance.NextId()}";
 - 用户余额按用户ID哈希分库（未来百万用户时）
 
 ---
-

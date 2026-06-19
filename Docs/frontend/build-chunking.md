@@ -33,6 +33,7 @@
 - Showcase 已从桶导入迁移到子路径导入，`app-showcase` 从约 `751.21 kB` 降至约 `410.06 kB`。
 - `forum-detail-view` 已从约 `349.00 kB` 拆分为：`forum-detail-view` 约 `5.49 kB`、`forum-detail-post` 约 `3.91 kB`、`forum-detail-comments` 约 `19.85 kB`。
 - 商城工作台已完成页级拆分：`ShopApp` 按首页、商品列表 / 详情、订单列表 / 详情、背包和购买弹窗懒加载，并通过 `shop-products`、`shop-orders`、`shop-inventory`、`shop-purchase` 等 chunk 分组承载，`app-shop` 已从超过 500k 的历史 warning 收敛到约 `27.39 kB`。
-- 当前已无超过 500k 的业务 chunk。
+- 论坛评论工具链已进一步拆为 `forum-comments-tree`、`forum-comments-editor`、`forum-comments-reactions`、`forum-comments-stickers` 等分组；评论编辑器仍会携带 Markdown 预览、上传、艾特和贴纸工具，属于已知重交互 chunk。
+- `radish.client` 当前将 `chunkSizeWarningLimit` 设为 `800`，用于匹配论坛评论工具链的已知体积边界；若后续出现新的超限 warning，应先判断是否来自新增重依赖或分包规则失效，不能只提高阈值掩盖问题。
 
 ##

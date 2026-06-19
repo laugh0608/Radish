@@ -41,6 +41,7 @@
 - [数据库连接管理](/guide/database-connection)
 - [数据库结构变更协作口径](/guide/database-schema-change-governance)
 - [日志规范与实现说明](/guide/logging)
+- [前端日志与敏感字段脱敏](/guide/frontend-logging)
 - [密码安全](/guide/password-security)
 - [密码传输与请求签名临时评审](/guide/password-transport-and-request-signature)
 - [支付与转账幂等治理](/guide/payment-idempotency-governance)

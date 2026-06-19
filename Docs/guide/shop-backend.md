@@ -176,8 +176,7 @@ public interface IProductService
 public interface IOrderService
 {
     // 订单创建
-    Task<OrderResultVo> CreateOrderAsync(long userId, OrderCreateVo input);
-    Task<OrderResultVo> CreateOrderWithIdempotencyAsync(long userId, OrderCreateVo input, string idempotencyKey);
+    Task<PurchaseResultDto> PurchaseAsync(long userId, CreateOrderDto input);
 
     // 订单查询
     Task<PageModel<OrderListVo>> GetUserOrdersAsync(long userId, OrderQueryVo query);
@@ -196,9 +195,16 @@ public interface IOrderService
 
 **关键特性**：
 - 事务保证：使用 `[UseTran]` 特性确保订单创建的原子性
-- 幂等性：使用缓存防止重复下单
+- 幂等性：`CreateOrderDto.IdempotencyKey` 非空时，通过 `OperationIdempotencyRecord` 绑定用户、操作类型、幂等键和请求摘要；同 key 同摘要终态重放，同 key 不同摘要拒绝执行
 - 限流：检查用户下单频率，防止刷单
 - 超时处理：定时任务自动取消 30 分钟未支付的订单
+
+当前实现补充：
+
+- 购买入口为 `POST /api/v1/Shop/Purchase`，DTO 使用 `CreateOrderDto`，包含 `ProductId`、`Quantity`、`PaymentPassword`、可选 `IdempotencyKey` 和 `UserRemark`。
+- 请求摘要只包含商品、数量和备注等业务字段，不包含 `PaymentPassword`、登录 token 或前端本地状态。
+- 支付口令验证通过后才进入幂等记录创建 / 读取；支付口令错误不占用幂等键。
+- 首批 Web 官方购买流程生成 `shop:{uuid}` 幂等键；服务端暂不强制旧客户端传 key，未传 key 时沿用既有写入流程但不提供幂等保护。
 
 ### 6.3.3 InventoryService
 
@@ -317,11 +323,11 @@ public class ShopController : ControllerBase
     /// <summary>
     /// 购买商品
     /// </summary>
-    [HttpPost("purchase")]
-    public async Task<MessageModel<OrderResultVo>> Purchase([FromBody] OrderCreateVo input)
+    [HttpPost]
+    public async Task<MessageModel<PurchaseResultDto>> Purchase([FromBody] CreateOrderDto input)
     {
         var userId = GetCurrentUserId();
-        var result = await _orderService.CreateOrderAsync(userId, input);
+        var result = await _orderService.PurchaseAsync(userId, input);
         return Success(result);
     }
 }

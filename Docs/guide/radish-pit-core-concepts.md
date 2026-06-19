@@ -94,8 +94,9 @@ interface CoinTransaction {
 interface UserPaymentPassword {
   id: number;                    // 主键ID
   userId: number;                // 用户ID
-  passwordHash: string;          // 密码哈希值
-  salt: string;                  // 盐值
+  passwordHash: string;          // 密码哈希值，v2 为 Argon2id 编码串
+  salt: string;                  // 旧版 SHA256 盐值，v2 保留为空字符串
+  passcodeVersion?: number;      // 1=SHA256旧版，2=Argon2id当前版
   failedAttempts: number;        // 失败尝试次数
   lockedUntil?: Date;            // 锁定到期时间
   lastUsedTime?: Date;           // 最后使用时间
@@ -115,6 +116,7 @@ interface UserPaymentPassword {
 | 日累计转账限额 | 500万胡萝卜 | 单日转账总额限制 |
 | 转账手续费 | 0胡萝卜 | 当前免手续费 |
 | 转账冷却时间 | 10秒 | 防止频繁操作 |
+| 重复提交保护 | `coin-transfer:{uuid}` | 同 key 同摘要重试返回同一终态 |
 
 #### 支付密码规则
 
