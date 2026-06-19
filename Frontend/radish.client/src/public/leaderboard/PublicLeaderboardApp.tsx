@@ -275,6 +275,15 @@ function shouldHandlePublicLeaderboardLink(event: MouseEvent<HTMLAnchorElement>)
     && !event.altKey;
 }
 
+function handlePublicLeaderboardLinkClick(event: MouseEvent<HTMLAnchorElement>, action: () => void) {
+  if (!shouldHandlePublicLeaderboardLink(event)) {
+    return;
+  }
+
+  event.preventDefault();
+  action();
+}
+
 export const PublicLeaderboardApp = ({
   route,
   onNavigate,
@@ -544,16 +553,21 @@ export const PublicLeaderboardApp = ({
             <div className={styles.tabRail}>
               {types.map((type) => {
                 const typeSlug = getPublicLeaderboardRouteDefinitionByType(type.voType).slug;
+                const typeRoute = {
+                  ...createDefaultPublicLeaderboardRoute(),
+                  typeSlug,
+                };
                 return (
-                  <button
+                  <a
                     key={type.voType}
-                    type="button"
                     className={`${styles.tabButton} ${route.typeSlug === typeSlug ? styles.tabButtonActive : ''}`}
-                    onClick={() => handleTypeChange(typeSlug)}
+                    href={buildPublicLeaderboardPath(typeRoute)}
+                    aria-current={route.typeSlug === typeSlug ? 'page' : undefined}
+                    onClick={(event) => handlePublicLeaderboardLinkClick(event, () => handleTypeChange(typeSlug))}
                   >
                     <Icon icon={type.voIcon} size={18} />
                     <span>{type.voName}</span>
-                  </button>
+                  </a>
                 );
               })}
             </div>
@@ -832,34 +846,45 @@ export const PublicLeaderboardApp = ({
 
           {totalPages > 1 && !loading && !error && (
             <div className={styles.pagination}>
-              <button
-                type="button"
-                className={styles.paginationButton}
-                onClick={() => onNavigate({ kind: 'list', typeSlug: route.typeSlug, page: Math.max(1, route.page - 1) })}
-                disabled={route.page === 1}
-              >
-                {t('common.previousPage')}
-              </button>
+              {route.page === 1 ? (
+                <button type="button" className={styles.paginationButton} disabled>
+                  {t('common.previousPage')}
+                </button>
+              ) : (
+                <a
+                  className={styles.paginationButton}
+                  href={buildPublicLeaderboardPath({ kind: 'list', typeSlug: route.typeSlug, page: route.page - 1 })}
+                  onClick={(event) => handlePublicLeaderboardLinkClick(event, () => onNavigate({ kind: 'list', typeSlug: route.typeSlug, page: route.page - 1 }))}
+                >
+                  {t('common.previousPage')}
+                </a>
+              )}
               <div className={styles.pageNumbers}>
                 {visiblePages.map((page) => (
-                  <button
+                  <a
                     key={page}
-                    type="button"
                     className={`${styles.pageNumberButton} ${page === route.page ? styles.pageNumberButtonActive : ''}`}
-                    onClick={() => onNavigate({ kind: 'list', typeSlug: route.typeSlug, page })}
+                    href={buildPublicLeaderboardPath({ kind: 'list', typeSlug: route.typeSlug, page })}
+                    aria-current={page === route.page ? 'page' : undefined}
+                    onClick={(event) => handlePublicLeaderboardLinkClick(event, () => onNavigate({ kind: 'list', typeSlug: route.typeSlug, page }))}
                   >
                     {page}
-                  </button>
+                  </a>
                 ))}
               </div>
-              <button
-                type="button"
-                className={styles.paginationButton}
-                onClick={() => onNavigate({ kind: 'list', typeSlug: route.typeSlug, page: Math.min(totalPages, route.page + 1) })}
-                disabled={route.page >= totalPages}
-              >
-                {t('common.nextPage')}
-              </button>
+              {route.page >= totalPages ? (
+                <button type="button" className={styles.paginationButton} disabled>
+                  {t('common.nextPage')}
+                </button>
+              ) : (
+                <a
+                  className={styles.paginationButton}
+                  href={buildPublicLeaderboardPath({ kind: 'list', typeSlug: route.typeSlug, page: route.page + 1 })}
+                  onClick={(event) => handlePublicLeaderboardLinkClick(event, () => onNavigate({ kind: 'list', typeSlug: route.typeSlug, page: route.page + 1 }))}
+                >
+                  {t('common.nextPage')}
+                </a>
+              )}
             </div>
           )}
         </section>

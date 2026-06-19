@@ -193,6 +193,7 @@
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
+  text-decoration: none;
   transition: all var(--theme-transition-standard);
 }
 
@@ -827,6 +828,9 @@
 
 .paginationButton,
 .pageNumberButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid var(--theme-border-strong);
   background: var(--theme-bg-surface);
   color: var(--theme-text-primary);
@@ -836,6 +840,7 @@
   padding: 8px 14px;
   font-size: 13px;
   font-weight: 600;
+  text-decoration: none;
   transition: all var(--theme-transition-standard);
 }
 

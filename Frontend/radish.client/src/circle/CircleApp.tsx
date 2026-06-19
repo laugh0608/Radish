@@ -449,17 +449,28 @@ export const CircleApp = () => {
         </section>
 
         <nav className={styles.tabs} aria-label={t('circle.tabsLabel')}>
-          {(['feed', 'following', 'followers'] as CircleTab[]).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              className={`${styles.tab} ${route.tab === tab ? styles.activeTab : ''}`}
-              aria-current={route.tab === tab ? 'page' : undefined}
-              onClick={() => switchTab(tab)}
-            >
-              {t(`circle.tab.${tab}`)}
-            </button>
-          ))}
+          {(['feed', 'following', 'followers'] as CircleTab[]).map((tab) => {
+            const href = buildCirclePath({ tab, page: 1 });
+
+            return (
+              <a
+                key={tab}
+                className={`${styles.tab} ${route.tab === tab ? styles.activeTab : ''}`}
+                href={href}
+                aria-current={route.tab === tab ? 'page' : undefined}
+                onClick={(event) => {
+                  if (!shouldHandleCircleSourceLink(event)) {
+                    return;
+                  }
+
+                  event.preventDefault();
+                  switchTab(tab);
+                }}
+              >
+                {t(`circle.tab.${tab}`)}
+              </a>
+            );
+          })}
         </nav>
 
         <section className={styles.contentBlock} aria-labelledby="circle-section-title">
@@ -477,23 +488,47 @@ export const CircleApp = () => {
 
         {authReady && loggedIn && !loading && !errorMessage && totalPages > 1 ? (
           <div className={styles.pagination}>
-            <button
-              type="button"
-              className={styles.pageButton}
-              disabled={route.page <= 1}
-              onClick={() => movePage(route.page - 1)}
-            >
-              {t('common.previousPage')}
-            </button>
+            {route.page <= 1 ? (
+              <button type="button" className={styles.pageButton} disabled>
+                {t('common.previousPage')}
+              </button>
+            ) : (
+              <a
+                className={styles.pageButton}
+                href={buildCirclePath({ ...route, page: route.page - 1 })}
+                onClick={(event) => {
+                  if (!shouldHandleCircleSourceLink(event)) {
+                    return;
+                  }
+
+                  event.preventDefault();
+                  movePage(route.page - 1);
+                }}
+              >
+                {t('common.previousPage')}
+              </a>
+            )}
             <span>{t('common.pageInfo', { current: route.page, total: totalPages })}</span>
-            <button
-              type="button"
-              className={styles.pageButton}
-              disabled={route.page >= totalPages}
-              onClick={() => movePage(route.page + 1)}
-            >
-              {t('common.nextPage')}
-            </button>
+            {route.page >= totalPages ? (
+              <button type="button" className={styles.pageButton} disabled>
+                {t('common.nextPage')}
+              </button>
+            ) : (
+              <a
+                className={styles.pageButton}
+                href={buildCirclePath({ ...route, page: route.page + 1 })}
+                onClick={(event) => {
+                  if (!shouldHandleCircleSourceLink(event)) {
+                    return;
+                  }
+
+                  event.preventDefault();
+                  movePage(route.page + 1);
+                }}
+              >
+                {t('common.nextPage')}
+              </a>
+            )}
           </div>
         ) : null}
       </main>

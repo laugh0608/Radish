@@ -70,6 +70,7 @@ test('公开社区发现页应使用统一公开分享入口', () => {
 
 test('公开社区发现页应为跨入口导航提供公开链接并保留壳层导航拦截', () => {
   const source = readFileSync(resolve(clientRoot, 'src/public/discover/PublicDiscoverApp.tsx'), 'utf8');
+  const feedSource = readFileSync(resolve(clientRoot, 'src/public/discover/PublicDiscoverFeed.tsx'), 'utf8');
 
   assert.match(source, /buildPublicDocsPath/);
   assert.match(source, /buildPublicLeaderboardPath/);
@@ -86,6 +87,27 @@ test('公开社区发现页应为跨入口导航提供公开链接并保留壳�
   assert.match(source, /const productHref = buildPublicShopPath\(productRoute\);/);
   assert.match(source, /href=\{productHref\}/);
   assert.match(source, /handlePublicDiscoverLinkClick\(event,/);
+  assert.match(feedSource, /href=\{buildPublicForumPath\(\{ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 \}\)\}/);
+  assert.match(feedSource, /href=\{buildPublicDocsPath\(\{ kind: 'list' \}\)\}/);
+  assert.match(feedSource, /href=\{buildPublicShopPath\(\{ kind: 'home' \}\)\}/);
+  assert.match(feedSource, /handleFeedLinkClick\(event, onOpenForum\)/);
+});
+
+test('公开文档浏览和详情返回应提供公开链接并保留壳层导航拦截', () => {
+  const source = readFileSync(resolve(clientRoot, 'src/public/docs/PublicDocsApp.tsx'), 'utf8');
+  const stylesSource = readFileSync(resolve(clientRoot, 'src/public/docs/PublicDocsApp.module.css'), 'utf8');
+
+  assert.match(source, /function handlePublicDocsLinkClick/);
+  assert.match(source, /const detailBackHref = detailBackAction\?\.href \?\? buildPublicDocsPath\(fallbackBrowseRoute\);/);
+  assert.match(source, /href=\{searchHref\}/);
+  assert.match(source, /const href = buildPublicDocsPath\(\{ kind: 'detail', slug: row\.slug \}\);/);
+  assert.match(source, /const href = buildPublicDocsPath\(\{ kind: 'detail', slug: document\.voSlug \}\);/);
+  assert.match(source, /href=\{browseDirectoryHref\}/);
+  assert.match(source, /href=\{buildPublicDocsPath\(\{ \.\.\.route, page: route\.page - 1 \}\)\}/);
+  assert.match(source, /href=\{buildPublicDocsPath\(\{ \.\.\.route, page: route\.page \+ 1 \}\)\}/);
+  assert.match(source, /href=\{backHref\}/);
+  assert.match(stylesSource, /\.directoryItem[\s\S]*text-decoration: none;/);
+  assert.match(stylesSource, /\.docCard[\s\S]*text-decoration: none;/);
 });
 
 test('公开商城复用的商品列表组件应提供公开链接能力', () => {
@@ -168,6 +190,10 @@ test('登录态私域入口生成公开链接前应复用 PublicId 校验', () =
 
   assert.match(circleSource, /resolvePublicPostRouteIdentifier/);
   assert.match(circleSource, /resolvePublicUserRouteIdentifier/);
+  assert.match(circleSource, /const href = buildCirclePath\(\{ tab, page: 1 \}\);/);
+  assert.match(circleSource, /href=\{href\}/);
+  assert.match(circleSource, /href=\{buildCirclePath\(\{ \.\.\.route, page: route\.page - 1 \}\)\}/);
+  assert.match(circleSource, /href=\{buildCirclePath\(\{ \.\.\.route, page: route\.page \+ 1 \}\)\}/);
   assert.doesNotMatch(circleSource, /voPublicId\?\.trim\(\)/);
   assert.match(meSource, /resolvePublicUserRouteIdentifier/);
   assert.match(meSource, /normalizePublicUserId/);
@@ -183,8 +209,13 @@ test('公开榜单条目应提供公开详情链接并保留壳层导航拦截',
   assert.match(source, /buildPublicShopPath\(\{ kind: 'detail', productId \}\)/);
   assert.match(source, /href=\{profileHref\}/);
   assert.match(source, /href=\{productHref\}/);
+  assert.match(source, /href=\{buildPublicLeaderboardPath\(typeRoute\)\}/);
+  assert.match(source, /href=\{buildPublicLeaderboardPath\(\{ kind: 'list', typeSlug: route\.typeSlug, page: route\.page - 1 \}\)\}/);
+  assert.match(source, /href=\{buildPublicLeaderboardPath\(\{ kind: 'list', typeSlug: route\.typeSlug, page \}\)\}/);
+  assert.match(source, /href=\{buildPublicLeaderboardPath\(\{ kind: 'list', typeSlug: route\.typeSlug, page: route\.page \+ 1 \}\)\}/);
   assert.match(source, /handleUserProfileLinkClick\(event, profileIdentifier\)/);
   assert.match(source, /handleProductDetailLinkClick\(event, productId\)/);
+  assert.match(source, /handlePublicLeaderboardLinkClick\(event,/);
   assert.match(source, /event\.preventDefault\(\);/);
   assert.doesNotMatch(source, /onClick=\{\(\) => handleOpenUserProfile\(item\)\}/);
   assert.doesNotMatch(source, /onClick=\{\(\) => handleOpenProductDetail\(item\)\}/);

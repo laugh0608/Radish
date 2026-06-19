@@ -87,6 +87,7 @@ interface PublicDocsAppProps {
   fallbackBrowseRoute: PublicDocsBrowseRoute;
   detailBackAction?: {
     mode: PublicDetailBackMode;
+    href?: string;
     onBack: () => void;
   } | null;
   onNavigate: (route: PublicDocsRoute, options?: { replace?: boolean; preserveSourceState?: boolean }) => void;
@@ -126,10 +127,12 @@ interface PublicStatusCardProps {
   compact?: boolean;
   primaryAction?: {
     label: string;
+    href?: string;
     onClick: () => void;
   };
   secondaryAction?: {
     label: string;
+    href?: string;
     onClick: () => void;
   };
 }
@@ -277,6 +280,24 @@ function writePublicDocsScrollTop(container: HTMLDivElement | null, top: number)
   }
 }
 
+function shouldHandlePublicDocsLink(event: MouseEvent<HTMLAnchorElement>): boolean {
+  return !event.defaultPrevented
+    && event.button === 0
+    && !event.metaKey
+    && !event.ctrlKey
+    && !event.shiftKey
+    && !event.altKey;
+}
+
+function handlePublicDocsLinkClick(event: MouseEvent<HTMLAnchorElement>, action: () => void) {
+  if (!shouldHandlePublicDocsLink(event)) {
+    return;
+  }
+
+  event.preventDefault();
+  action();
+}
+
 function usePublicDocsScrollRestore({
   isReady,
   restoreScrollTop,
@@ -356,14 +377,34 @@ function PublicStatusCard({
         {(primaryAction || secondaryAction) && (
           <div className={styles.statusActions}>
             {primaryAction && (
-              <button type="button" className={styles.primaryButton} onClick={primaryAction.onClick}>
-                {primaryAction.label}
-              </button>
+              primaryAction.href ? (
+                <a
+                  className={styles.primaryButton}
+                  href={primaryAction.href}
+                  onClick={(event) => handlePublicDocsLinkClick(event, primaryAction.onClick)}
+                >
+                  {primaryAction.label}
+                </a>
+              ) : (
+                <button type="button" className={styles.primaryButton} onClick={primaryAction.onClick}>
+                  {primaryAction.label}
+                </button>
+              )
             )}
             {secondaryAction && (
-              <button type="button" className={styles.secondaryButton} onClick={secondaryAction.onClick}>
-                {secondaryAction.label}
-              </button>
+              secondaryAction.href ? (
+                <a
+                  className={styles.secondaryButton}
+                  href={secondaryAction.href}
+                  onClick={(event) => handlePublicDocsLinkClick(event, secondaryAction.onClick)}
+                >
+                  {secondaryAction.label}
+                </a>
+              ) : (
+                <button type="button" className={styles.secondaryButton} onClick={secondaryAction.onClick}>
+                  {secondaryAction.label}
+                </button>
+              )
             )}
           </div>
         )}
@@ -506,6 +547,7 @@ export const PublicDocsApp = ({
       ? t('wiki.public.backToSearch')
       : t('wiki.public.backToList');
   const handleDocsDetailBack = detailBackAction?.onBack ?? (() => onNavigate(fallbackBrowseRoute));
+  const detailBackHref = detailBackAction?.href ?? buildPublicDocsPath(fallbackBrowseRoute);
 
   return (
     <div className={styles.page} ref={pageRef}>
@@ -527,6 +569,7 @@ export const PublicDocsApp = ({
             route={route}
             displayTimeZone={displayTimeZone}
             backLabel={backLabel}
+            backHref={detailBackHref}
             onBack={handleDocsDetailBack}
             onNavigate={onNavigate}
           />
@@ -605,6 +648,7 @@ const PublicDocsList = ({
 
   const treeRows = useMemo(() => flattenPublicDocsTree(tree), [tree]);
   const listCards = useMemo(() => documents.slice(0, 12), [documents]);
+  const searchHref = buildPublicDocsPath(createDefaultDocsSearchRoute());
   const hasAnyContent = treeRows.length > 0 || listCards.length > 0;
   const isLoading = (loadingTree || loadingDocuments) && !hasAnyContent;
   const isError = !hasAnyContent && Boolean(treeError || listError);
@@ -619,10 +663,14 @@ const PublicDocsList = ({
           <p className={styles.pageIntro}>{t('wiki.public.pageIntro')}</p>
         </div>
         <div className={styles.sectionActions}>
-          <button type="button" className={styles.secondaryButton} onClick={onOpenSearch}>
+          <a
+            className={styles.secondaryButton}
+            href={searchHref}
+            onClick={(event) => handlePublicDocsLinkClick(event, onOpenSearch)}
+          >
             <Icon icon="mdi:magnify" size={18} />
             <span>{t('wiki.public.searchAction')}</span>
-          </button>
+          </a>
         </div>
       </div>
 
@@ -695,22 +743,26 @@ const PublicDocsList = ({
                   />
                 ) : (
                   <div className={styles.directoryList}>
-                    {treeRows.map((row) => (
-                      <button
-                        key={row.id}
-                        type="button"
-                        className={styles.directoryItem}
-                        onClick={() => onOpenDocument(row.slug)}
-                      >
-                        <span className={styles.directoryPrefix} style={{ marginLeft: `${row.depth * 14}px` }}>
-                          {row.depth > 0 ? '└' : '•'}
-                        </span>
-                        <span className={styles.directoryTitle}>{row.title}</span>
-                        {row.childCount > 0 && (
-                          <span className={styles.directoryMeta}>{t('wiki.public.childCount', { count: row.childCount })}</span>
-                        )}
-                      </button>
-                    ))}
+                    {treeRows.map((row) => {
+                      const href = buildPublicDocsPath({ kind: 'detail', slug: row.slug });
+
+                      return (
+                        <a
+                          key={row.id}
+                          className={styles.directoryItem}
+                          href={href}
+                          onClick={(event) => handlePublicDocsLinkClick(event, () => onOpenDocument(row.slug))}
+                        >
+                          <span className={styles.directoryPrefix} style={{ marginLeft: `${row.depth * 14}px` }}>
+                            {row.depth > 0 ? '└' : '•'}
+                          </span>
+                          <span className={styles.directoryTitle}>{row.title}</span>
+                          {row.childCount > 0 && (
+                            <span className={styles.directoryMeta}>{t('wiki.public.childCount', { count: row.childCount })}</span>
+                          )}
+                        </a>
+                      );
+                    })}
                   </div>
                 )}
               </section>
@@ -733,27 +785,31 @@ const PublicDocsList = ({
                   />
                 ) : (
                   <div className={styles.cardList}>
-                    {listCards.map((document) => (
-                      <button
-                        key={document.voId}
-                        type="button"
-                        className={styles.docCard}
-                        onClick={() => onOpenDocument(document.voSlug)}
-                      >
-                        <div className={styles.docCardMeta}>
-                          <span className={styles.metaChip}>{toVisibilityText(t, document.voVisibility)}</span>
-                          <span className={styles.metaChip}>{toStatusText(t, document.voStatus)}</span>
-                        </div>
-                        <h3 className={styles.docCardTitle}>{document.voTitle}</h3>
-                        <p className={styles.docCardSummary}>
-                          {document.voSummary?.trim() || t('wiki.public.summaryFallback')}
-                        </p>
-                        <div className={styles.docCardFooter}>
-                          <span>{formatDateTimeByTimeZone(document.voModifyTime || document.voCreateTime, displayTimeZone)}</span>
-                          <span className={styles.docCardAction}>{t('wiki.public.openDocument')}</span>
-                        </div>
-                      </button>
-                    ))}
+                    {listCards.map((document) => {
+                      const href = buildPublicDocsPath({ kind: 'detail', slug: document.voSlug });
+
+                      return (
+                        <a
+                          key={document.voId}
+                          className={styles.docCard}
+                          href={href}
+                          onClick={(event) => handlePublicDocsLinkClick(event, () => onOpenDocument(document.voSlug))}
+                        >
+                          <div className={styles.docCardMeta}>
+                            <span className={styles.metaChip}>{toVisibilityText(t, document.voVisibility)}</span>
+                            <span className={styles.metaChip}>{toStatusText(t, document.voStatus)}</span>
+                          </div>
+                          <h3 className={styles.docCardTitle}>{document.voTitle}</h3>
+                          <p className={styles.docCardSummary}>
+                            {document.voSummary?.trim() || t('wiki.public.summaryFallback')}
+                          </p>
+                          <div className={styles.docCardFooter}>
+                            <span>{formatDateTimeByTimeZone(document.voModifyTime || document.voCreateTime, displayTimeZone)}</span>
+                            <span className={styles.docCardAction}>{t('wiki.public.openDocument')}</span>
+                          </div>
+                        </a>
+                      );
+                    })}
                   </div>
                 )}
               </section>
@@ -885,6 +941,7 @@ const PublicDocsSearch = ({
   const isLoading = hasKeyword && searchState.loading && !hasResults;
   const isError = hasKeyword && !searchState.loading && !hasResults && Boolean(searchState.error);
   const isEmpty = hasKeyword && !searchState.loading && !hasResults && !searchState.error;
+  const browseDirectoryHref = buildPublicDocsPath(createDefaultDocsListRoute());
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -924,10 +981,14 @@ const PublicDocsSearch = ({
           </p>
         </div>
         <div className={styles.sectionActions}>
-          <button type="button" className={styles.secondaryButton} onClick={onBrowseDirectory}>
+          <a
+            className={styles.secondaryButton}
+            href={browseDirectoryHref}
+            onClick={(event) => handlePublicDocsLinkClick(event, onBrowseDirectory)}
+          >
             <Icon icon="mdi:arrow-left" size={18} />
             <span>{t('wiki.public.backToList')}</span>
-          </button>
+          </a>
         </div>
       </div>
 
@@ -986,6 +1047,7 @@ const PublicDocsSearch = ({
             description={t('wiki.public.searchIdleDescription')}
             secondaryAction={{
               label: t('wiki.public.backToList'),
+              href: browseDirectoryHref,
               onClick: onBrowseDirectory
             }}
           />
@@ -1006,6 +1068,7 @@ const PublicDocsSearch = ({
             }}
             secondaryAction={{
               label: t('wiki.public.backToList'),
+              href: browseDirectoryHref,
               onClick: onBrowseDirectory
             }}
           />
@@ -1026,55 +1089,69 @@ const PublicDocsSearch = ({
             </div>
 
             <div className={styles.searchResultList}>
-              {searchState.documents.map((document) => (
-                <button
-                  key={document.voId}
-                  type="button"
-                  className={`${styles.docCard} ${styles.searchResultCard}`}
-                  onClick={() => onOpenDocument(document.voSlug)}
-                >
-                  <div className={styles.docCardMeta}>
-                    <span className={styles.metaChip}>{toVisibilityText(t, document.voVisibility)}</span>
-                    <span className={styles.metaChip}>{toStatusText(t, document.voStatus)}</span>
-                    <span className={styles.metaChip}>{t('wiki.meta.slug', { value: document.voSlug })}</span>
-                  </div>
-                  <h2 className={styles.searchResultTitle}>{document.voTitle}</h2>
-                  <p className={styles.docCardSummary}>
-                    {document.voSummary?.trim() || t('wiki.public.summaryFallback')}
-                  </p>
-                  <div className={styles.searchResultMeta}>
-                    <span>{t('wiki.meta.source', { value: toSourceText(t, document.voSourceType) })}</span>
-                    <span>{formatDateTimeByTimeZone(document.voModifyTime || document.voCreateTime, displayTimeZone)}</span>
-                  </div>
-                  <div className={styles.docCardFooter}>
-                    <span>{t('wiki.public.searchOpenHint')}</span>
-                    <span className={styles.docCardAction}>{t('wiki.public.openDocument')}</span>
-                  </div>
-                </button>
-              ))}
+              {searchState.documents.map((document) => {
+                const href = buildPublicDocsPath({ kind: 'detail', slug: document.voSlug });
+
+                return (
+                  <a
+                    key={document.voId}
+                    className={`${styles.docCard} ${styles.searchResultCard}`}
+                    href={href}
+                    onClick={(event) => handlePublicDocsLinkClick(event, () => onOpenDocument(document.voSlug))}
+                  >
+                    <div className={styles.docCardMeta}>
+                      <span className={styles.metaChip}>{toVisibilityText(t, document.voVisibility)}</span>
+                      <span className={styles.metaChip}>{toStatusText(t, document.voStatus)}</span>
+                      <span className={styles.metaChip}>{t('wiki.meta.slug', { value: document.voSlug })}</span>
+                    </div>
+                    <h2 className={styles.searchResultTitle}>{document.voTitle}</h2>
+                    <p className={styles.docCardSummary}>
+                      {document.voSummary?.trim() || t('wiki.public.summaryFallback')}
+                    </p>
+                    <div className={styles.searchResultMeta}>
+                      <span>{t('wiki.meta.source', { value: toSourceText(t, document.voSourceType) })}</span>
+                      <span>{formatDateTimeByTimeZone(document.voModifyTime || document.voCreateTime, displayTimeZone)}</span>
+                    </div>
+                    <div className={styles.docCardFooter}>
+                      <span>{t('wiki.public.searchOpenHint')}</span>
+                      <span className={styles.docCardAction}>{t('wiki.public.openDocument')}</span>
+                    </div>
+                  </a>
+                );
+              })}
             </div>
 
             {searchState.totalPages > 1 && (
               <div className={styles.paginationBar}>
-                <button
-                  type="button"
-                  className={styles.secondaryButton}
-                  onClick={() => handleChangePage(route.page - 1)}
-                  disabled={route.page <= 1}
-                >
-                  {t('common.previousPage')}
-                </button>
+                {route.page <= 1 ? (
+                  <button type="button" className={styles.secondaryButton} disabled>
+                    {t('common.previousPage')}
+                  </button>
+                ) : (
+                  <a
+                    className={styles.secondaryButton}
+                    href={buildPublicDocsPath({ ...route, page: route.page - 1 })}
+                    onClick={(event) => handlePublicDocsLinkClick(event, () => handleChangePage(route.page - 1))}
+                  >
+                    {t('common.previousPage')}
+                  </a>
+                )}
                 <span className={styles.paginationInfo}>
                   {t('common.pageInfo', { current: route.page, total: searchState.totalPages })}
                 </span>
-                <button
-                  type="button"
-                  className={styles.secondaryButton}
-                  onClick={() => handleChangePage(route.page + 1)}
-                  disabled={route.page >= searchState.totalPages}
-                >
-                  {t('common.nextPage')}
-                </button>
+                {route.page >= searchState.totalPages ? (
+                  <button type="button" className={styles.secondaryButton} disabled>
+                    {t('common.nextPage')}
+                  </button>
+                ) : (
+                  <a
+                    className={styles.secondaryButton}
+                    href={buildPublicDocsPath({ ...route, page: route.page + 1 })}
+                    onClick={(event) => handlePublicDocsLinkClick(event, () => handleChangePage(route.page + 1))}
+                  >
+                    {t('common.nextPage')}
+                  </a>
+                )}
               </div>
             )}
           </section>
@@ -1088,11 +1165,12 @@ interface PublicDocsDetailProps {
   route: PublicDocsRoute & { kind: 'detail' };
   displayTimeZone: string;
   backLabel: string;
+  backHref: string;
   onBack: () => void;
   onNavigate: (route: PublicDocsRoute, options?: { replace?: boolean; preserveSourceState?: boolean }) => void;
 }
 
-const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigate }: PublicDocsDetailProps) => {
+const PublicDocsDetail = ({ route, displayTimeZone, backLabel, backHref, onBack, onNavigate }: PublicDocsDetailProps) => {
   const { t } = useTranslation();
   const [documentDetail, setDocumentDetail] = useState<WikiDocumentDetailVo | null>(null);
   const [loading, setLoading] = useState(false);
@@ -1259,10 +1337,14 @@ const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigat
     <section className={styles.sectionCard}>
       <div className={styles.detailTopbar}>
         <div className={styles.detailTopbarActions}>
-          <button type="button" className={styles.secondaryButton} onClick={onBack}>
+          <a
+            className={styles.secondaryButton}
+            href={backHref}
+            onClick={(event) => handlePublicDocsLinkClick(event, onBack)}
+          >
             <Icon icon="mdi:arrow-left" size={18} />
             <span>{backLabel}</span>
-          </button>
+          </a>
           <button type="button" className={styles.secondaryButton} onClick={() => void copyShareLink()} disabled={shareBusy}>
             <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={18} />
             <span>{shareBusy ? t('wiki.public.shareSubmitting') : t('wiki.public.shareAction')}</span>
@@ -1291,6 +1373,7 @@ const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigat
             description={t('wiki.public.notFoundDescription')}
             secondaryAction={{
               label: backLabel,
+              href: backHref,
               onClick: onBack
             }}
           />
@@ -1307,6 +1390,7 @@ const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigat
             }}
             secondaryAction={{
               label: backLabel,
+              href: backHref,
               onClick: onBack
             }}
           />
