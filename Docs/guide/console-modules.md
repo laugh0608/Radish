@@ -12,7 +12,7 @@
 | --- | --- | --- | --- | --- | --- |
 | Dashboard | ✅ 已接入 | 调度总览 | `console.dashboard.view` | ✅ 已补齐 | 最近订单受 `console.orders.view` 约束 |
 | Applications | ✅ 已接入 | 表格 CRUD | `console.applications.*` | ✅ 已补齐 | 列表/新增/编辑/删除/重置密钥已闭环 |
-| Users | ✅ 已接入 | 表格 CRUD + 详情 | `console.users.view` | ✅ 已补齐 | 用户详情、资产、经验、订单摘要已接入 |
+| Users | ✅ 已接入 | 表格 CRUD + 详情 | `console.users.view` | ✅ 已补齐 | 用户详情、资产、经验、订单摘要和内容治理入口已接入 |
 | Roles | ✅ 已接入 | 表格 CRUD + 权限配置 | `console.roles.*` | ✅ 已补齐 | 角色详情、编辑和权限配置链路已闭环 |
 | Products | ✅ 已接入 | 表格 CRUD | `console.products.*` | ✅ 已补齐 | 商品详情与相关订单排障回流已接入，`GetCategories` 辅助接口已纳入 |
 | Orders | ✅ 已接入 | 表格 CRUD + 详情弹层 | `console.orders.*` | ✅ 已补齐 | 查看、重试、管理员备注、商品来源返回和扣款流水定位已接入 |
@@ -21,7 +21,7 @@
 | SystemConfig | ✅ 已接入 | 表格 CRUD + 配置面板 | `console.system-config.*` | ✅ 已补齐 | 编辑详情与站点图标链路已闭环 |
 | Coins | ✅ 已接入 | 工具型页面 | `console.coins.*` | ✅ 已补齐 | 用户余额查询、业务流水筛选与管理员调账已接入 |
 | Experience | ✅ 已接入 | 治理工作台 | `console.experience.*` | ✅ 已补齐 | 经验观察、流水、冻结、调整和等级配置已接入 |
-| Moderation | ✅ 已接入 | 治理工作台 | `console.moderation.*` | ✅ 已补齐 | 举报审核、手动治理和治理日志已接入 |
+| Moderation | ✅ 已接入 | 治理工作台 | `console.moderation.*` | ✅ 已补齐 | 举报审核、手动治理、治理日志和用户过滤 URL 状态已接入 |
 | Settings / Profile | ✅ 已接入 | 设置 / 个人资料 | 登录态 | 不适用 | 个人偏好、密码修改、头像上传和资料保存不走 Console 专属权限树 |
 | Hangfire | ✅ 已接入 | 特殊入口 | `console.hangfire.view` | ✅ 已补齐 | 通过特殊入口授权过滤器校验 |
 
@@ -84,6 +84,7 @@
 - ✅ 页面访问闭环完成
 - ✅ 误暴露入口收口完成
 - ✅ 用户详情已接入基础信息、资产、经验和订单摘要，按详情型页面基座承载
+- ✅ 用户详情可进入内容治理并带入目标用户过滤，继续排查该用户相关举报、手动治理和治理日志
 - ⏸️ 创建用户、强制下线、重置密码等管理动作仍未重新开放
 
 ## 3.5 Roles
@@ -188,21 +189,27 @@
 ### 当前边界
 
 - 查看：`console.system-config.view`
-- 创建：`console.system-config.create`
 - 编辑：`console.system-config.edit`
-- 删除：`console.system-config.delete`
+- 创建：`console.system-config.create`（兼容旧路由，后端拒绝 Console 新增未知设置）
+- 删除：`console.system-config.delete`（兼容旧路由，语义收敛为恢复默认）
 - 公开站点设置：`GET /api/v1/SystemConfig/GetPublicSiteSettings`（匿名读取，不纳入 Console 权限）
 
 ### 当前状态
 
 - ✅ 页面访问闭环完成
 - ✅ 编辑详情资源映射已对齐
-- ✅ 系统配置当前已改为本地 JSON 持久化，默认落盘到 `DataBases/SystemConfigs/system-configs.json`
+- ✅ 系统设置已收敛为代码级设置定义 + 默认值 + JSON 覆盖值，Console 默认只展示已注册设置
+- ✅ 覆盖值默认落盘到 `DataBases/SystemConfigs/system-configs.json`
 - ✅ `system-configs.json` 当前按“UTF-8 + 中文直写、仅保留必要 JSON 转义”的策略落盘，便于本地排障、人工审阅与差异比对
 - ✅ `DataBases/SystemConfigs/system-configs.json` 属于运行时本地状态文件，不作为源码资产提交，继续遵循 `DataBases/` 目录忽略规则
+- ✅ 系统设置变更历史落盘到 `DataBases/SystemConfigs/system-config-change-logs.json`，用于记录旧值、新值、默认值、原因、风险等级、生效方式、操作者、IP、User-Agent 和时间
+- ✅ 当前开放 `Site.Branding.FaviconUrl`、账号身份长度、帖子标题 / 正文 / 摘要长度、评论内容长度、论坛轻回应内容 / 返回条数 / 冷却 / 去重窗口，以及神评 / 沙发稳定窗口和替换阈值设置
+- ✅ Medium 设置必须填写修改原因并确认风险等级 / 设置键，High / Critical 设置不开放编辑
+- ✅ 数字设置已展示数值范围、整数约束和影响范围摘要，前端控件按规则约束输入，后端仍是最终校验权威
 - ✅ SystemConfig 页面已支持站点 favicon `.ico` 上传、预览与恢复默认
 - ✅ 默认站点图标已固定为 `/uploads/DefaultIco/bailuobo.ico`，默认种子文件位于 `DataBases/Uploads/DefaultIco/bailuobo.ico`
 - ✅ `radish.client / radish.console` 当前都通过公开站点设置接口读取 favicon，标签页图标不再写死在前端静态资源中
+- ✅ 帖子标题 / 正文 / 摘要长度、评论内容长度、论坛轻回应内容 / 返回条数 / 冷却 / 去重窗口，以及神评 / 沙发稳定窗口和替换阈值已通过 `ISystemSettingProvider` 接入业务发布 / 编辑 / 列表 / 实时重算路径
 - ✅ 已按表格 CRUD + 配置面板页面基座对齐
 
 ## 3.11 Coins
@@ -242,6 +249,7 @@
 
 - ✅ 已按治理工作台结构承载
 - ✅ 审核队列、手动动作区和治理日志保留同页人工复核工作流
+- ✅ 支持从用户详情或 URL 状态带入目标用户过滤，方便用户排障与内容治理串联
 
 ## 3.14 Settings / Profile
 

@@ -24,6 +24,7 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
     private readonly IBaseRepository<Post> _postRepository;
     private readonly ICaching _caching;
     private readonly IAttachmentService? _attachmentService;
+    private readonly ISystemSettingProvider _systemSettingProvider;
     private readonly ForumQuickReplyOptions _options;
     private readonly INotificationService? _notificationService;
     private readonly ILogger<PostQuickReplyService>? _logger;
@@ -34,6 +35,7 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
         IBaseRepository<PostQuickReply> baseRepository,
         IBaseRepository<Post> postRepository,
         ICaching caching,
+        ISystemSettingProvider systemSettingProvider,
         IOptions<ForumQuickReplyOptions> options,
         IAttachmentService? attachmentService = null,
         INotificationService? notificationService = null,
@@ -44,6 +46,7 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
         _postQuickReplyRepository = baseRepository;
         _postRepository = postRepository;
         _caching = caching;
+        _systemSettingProvider = systemSettingProvider;
         _options = options.Value;
         _attachmentService = attachmentService;
         _notificationService = notificationService;
@@ -60,9 +63,8 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
 
         EnsureFeatureEnabled();
 
-        var defaultTake = Math.Max(1, _options.DefaultTake);
-        var maxTake = Math.Max(defaultTake, _options.MaxTake);
-        var safeTake = Math.Clamp(take <= 0 ? defaultTake : take, 1, maxTake);
+        var takeSettings = await GetTakeSettingsAsync();
+        var safeTake = Math.Clamp(take <= 0 ? takeSettings.DefaultTake : take, 1, takeSettings.MaxTake);
         await EnsurePostExistsAsync(postId);
 
         var (items, total) = await _postQuickReplyRepository.QueryPageAsync(
@@ -168,9 +170,10 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
             throw new ArgumentException("轻回应内容不能为空");
         }
 
-        if (normalizedContent.Length > Math.Max(1, _options.MaxContentLength))
+        var maxContentLength = await GetMaxContentLengthAsync();
+        if (normalizedContent.Length > maxContentLength)
         {
-            throw new ArgumentException($"轻回应内容不能超过{Math.Max(1, _options.MaxContentLength)}个字符");
+            throw new ArgumentException($"轻回应内容不能超过{maxContentLength}个字符");
         }
 
         var post = await EnsurePostExistsAsync(request.PostId);
@@ -179,7 +182,8 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
             throw new InvalidOperationException("当前帖子已锁定，无法发送轻回应");
         }
 
-        await EnsureRateLimitAsync(userId, request.PostId, normalizedContent);
+        var rateLimitSettings = await GetRateLimitSettingsAsync();
+        await EnsureRateLimitAsync(userId, request.PostId, normalizedContent, rateLimitSettings);
 
         var safeUserName = string.IsNullOrWhiteSpace(userName) ? $"User-{userId}" : userName.Trim();
         var entity = new PostQuickReply
@@ -202,11 +206,11 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
         await _caching.SetStringAsync(
             BuildCooldownCacheKey(userId, request.PostId),
             "1",
-            TimeSpan.FromSeconds(Math.Max(1, _options.PerPostCooldownSeconds)));
+            TimeSpan.FromSeconds(rateLimitSettings.PerPostCooldownSeconds));
         await _caching.SetStringAsync(
             BuildDuplicateCacheKey(userId, request.PostId, normalizedContent),
             "1",
-            TimeSpan.FromSeconds(Math.Max(1, _options.DuplicateWindowSeconds)));
+            TimeSpan.FromSeconds(rateLimitSettings.DuplicateWindowSeconds));
 
         var replyVo = Mapper.Map<PostQuickReplyVo>(entity);
         replyVo.VoId = quickReplyId;
@@ -268,12 +272,16 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
         return post;
     }
 
-    private async Task EnsureRateLimitAsync(long userId, long postId, string normalizedContent)
+    private async Task EnsureRateLimitAsync(
+        long userId,
+        long postId,
+        string normalizedContent,
+        QuickReplyRateLimitSettings rateLimitSettings)
     {
         var cooldownCacheKey = BuildCooldownCacheKey(userId, postId);
         if (await _caching.ExistsAsync(cooldownCacheKey))
         {
-            throw new InvalidOperationException($"发送过于频繁，请{Math.Max(1, _options.PerPostCooldownSeconds)}秒后再试");
+            throw new InvalidOperationException($"发送过于频繁，请{rateLimitSettings.PerPostCooldownSeconds}秒后再试");
         }
 
         var duplicateCacheKey = BuildDuplicateCacheKey(userId, postId, normalizedContent);
@@ -289,6 +297,33 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
         {
             throw new InvalidOperationException("轻回应功能当前未启用");
         }
+    }
+
+    private async Task<int> GetMaxContentLengthAsync()
+    {
+        return await _systemSettingProvider.GetInt32Async(SystemConfigDefaults.QuickReplyMaxContentLengthKey);
+    }
+
+    private async Task<QuickReplyTakeSettings> GetTakeSettingsAsync()
+    {
+        var defaultTake = await _systemSettingProvider.GetInt32Async(SystemConfigDefaults.QuickReplyDefaultTakeKey);
+        var maxTake = await _systemSettingProvider.GetInt32Async(SystemConfigDefaults.QuickReplyMaxTakeKey);
+        if (defaultTake > maxTake)
+        {
+            throw new InvalidOperationException("轻回应返回条数系统设置无效：默认返回条数不能大于最大返回条数");
+        }
+
+        return new QuickReplyTakeSettings(defaultTake, maxTake);
+    }
+
+    private async Task<QuickReplyRateLimitSettings> GetRateLimitSettingsAsync()
+    {
+        var perPostCooldownSeconds = await _systemSettingProvider.GetInt32Async(
+            SystemConfigDefaults.QuickReplyPerPostCooldownSecondsKey);
+        var duplicateWindowSeconds = await _systemSettingProvider.GetInt32Async(
+            SystemConfigDefaults.QuickReplyDuplicateWindowSecondsKey);
+
+        return new QuickReplyRateLimitSettings(perPostCooldownSeconds, duplicateWindowSeconds);
     }
 
     private async Task FillAuthorProfilesAsync(List<PostQuickReplyVo> replies)
@@ -400,4 +435,8 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(value));
         return Convert.ToHexString(bytes);
     }
+
+    private sealed record QuickReplyTakeSettings(int DefaultTake, int MaxTake);
+
+    private sealed record QuickReplyRateLimitSettings(int PerPostCooldownSeconds, int DuplicateWindowSeconds);
 }

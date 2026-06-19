@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
+using System.IO;
 using System.Threading.Tasks;
 using Radish.Common;
 using Radish.Model;
@@ -32,23 +34,67 @@ internal static partial class InitialDataSeeder
         return false;
     }
 
-    private static async Task RunSeedStepAsync(string name, Func<Task> action, ICollection<string> completedSteps)
+    private static async Task<int> RunSeedStepAsync(string name, Func<Task> action)
     {
         var stopwatch = Stopwatch.StartNew();
-        Console.WriteLine($"[Radish.DbMigrate] [Seed] 开始：{name}");
+        var originalOut = Console.Out;
+        using var capturedOutput = new StringWriter(CultureInfo.InvariantCulture);
+
+        Console.SetOut(capturedOutput);
 
         try
         {
             await action();
             stopwatch.Stop();
-            completedSteps.Add(name);
-            Console.WriteLine($"[Radish.DbMigrate] [Seed] 完成：{name} ({stopwatch.ElapsedMilliseconds} ms)");
+            Console.SetOut(originalOut);
+
+            var detailLines = GetCapturedSeedDetailLines(capturedOutput.ToString());
+            Console.WriteLine($"[Radish.DbMigrate] [Seed] 完成：{name}，明细 {detailLines.Count} 条 ({stopwatch.ElapsedMilliseconds} ms)");
+            return detailLines.Count;
         }
         catch
         {
             stopwatch.Stop();
-            Console.WriteLine($"[Radish.DbMigrate] [Seed] 失败：{name} ({stopwatch.ElapsedMilliseconds} ms)");
+            Console.SetOut(originalOut);
+
+            var detailLines = GetCapturedSeedDetailLines(capturedOutput.ToString());
+            Console.WriteLine($"[Radish.DbMigrate] [Seed] 失败：{name}，失败前明细 {detailLines.Count} 条 ({stopwatch.ElapsedMilliseconds} ms)");
+            WriteCapturedSeedDetails(name, detailLines);
             throw;
+        }
+        finally
+        {
+            Console.SetOut(originalOut);
+        }
+    }
+
+    private static IReadOnlyList<string> GetCapturedSeedDetailLines(string output)
+    {
+        var detailLines = new List<string>();
+        using var reader = new StringReader(output);
+
+        while (reader.ReadLine() is { } line)
+        {
+            if (!string.IsNullOrWhiteSpace(line))
+            {
+                detailLines.Add(line);
+            }
+        }
+
+        return detailLines;
+    }
+
+    private static void WriteCapturedSeedDetails(string name, IReadOnlyCollection<string> detailLines)
+    {
+        if (detailLines.Count == 0)
+        {
+            return;
+        }
+
+        Console.WriteLine($"[Radish.DbMigrate] [Seed] {name} 失败前明细：");
+        foreach (var line in detailLines)
+        {
+            Console.WriteLine(line);
         }
     }
 
@@ -67,16 +113,18 @@ internal static partial class InitialDataSeeder
         return Task.CompletedTask;
     }
 
-    private static bool IsDeveloperDefaultsEnabled()
+    private static DeveloperDefaultsSeedDecision EvaluateDeveloperDefaultsSeed()
     {
-        var configured = AppSettingsTool.RadishApp("Seed", "DeveloperDefaultsEnabled");
-        return bool.TryParse(configured, out var enabled) && enabled;
+        var enabledValue = AppSettingsTool.RadishApp("Seed", "DeveloperDefaultsEnabled");
+        var stageValue = AppSettingsTool.RadishApp("RadishDeployment", "Stage");
+        return DeveloperDefaultsSeedPolicy.Evaluate(enabledValue, stageValue);
     }
 
     public static async Task SeedAsync(ISqlSugarClient db, IServiceProvider services)
     {
-        var completedSteps = new List<string>();
-        var developerDefaultsEnabled = IsDeveloperDefaultsEnabled();
+        var completedStepCount = 0;
+        var totalDetailLineCount = 0;
+        var developerDefaultsSeed = EvaluateDeveloperDefaultsSeed();
         var seedSteps = new List<(string Name, Func<Task> Action)>
         {
             ("角色", () => SeedRolesAsync(db)),
@@ -96,8 +144,9 @@ internal static partial class InitialDataSeeder
             ("表情包默认数据", SeedStickerDefaultsAsync)
         };
 
-        if (developerDefaultsEnabled)
+        if (developerDefaultsSeed.ShouldSeed)
         {
+            Console.WriteLine($"[Radish.DbMigrate] {developerDefaultsSeed.Message}");
             seedSteps.InsertRange(3,
             [
                 ("开发默认用户", () => SeedUsersAsync(db)),
@@ -107,18 +156,15 @@ internal static partial class InitialDataSeeder
         }
         else
         {
-            Console.WriteLine("[Radish.DbMigrate] Seed:DeveloperDefaultsEnabled=false，跳过 system/admin/test 开发默认账号、默认密码、默认头像和用户角色绑定。");
+            Console.WriteLine($"[Radish.DbMigrate] {developerDefaultsSeed.Message}");
         }
 
         foreach (var step in seedSteps)
         {
-            await RunSeedStepAsync(step.Name, step.Action, completedSteps);
+            totalDetailLineCount += await RunSeedStepAsync(step.Name, step.Action);
+            completedStepCount++;
         }
 
-        Console.WriteLine("[Radish.DbMigrate] ✓ Seed 完成，共执行以下步骤：");
-        foreach (var step in completedSteps)
-        {
-            Console.WriteLine($"  - {step}");
-        }
+        Console.WriteLine($"[Radish.DbMigrate] ✓ Seed 完成，共执行 {completedStepCount} 个分类，明细合计 {totalDetailLineCount} 条。");
     }
 }

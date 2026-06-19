@@ -7,9 +7,15 @@ public class UserPublicProfileVo
 {
     public long VoUserId { get; set; }
 
+    public string? VoPublicId { get; set; }
+
+    public long? VoPublicIndex { get; set; }
+
     public string VoUserName { get; set; } = string.Empty;
 
     public string? VoDisplayName { get; set; }
+
+    public string? VoDisplayHandle { get; set; }
 
     public DateTime VoCreateTime { get; set; }
 

@@ -37,6 +37,7 @@ const identityImpactRuleGroups = [
       'Scripts/check-identity-impact-self-test.mjs',
       'Scripts/check-long-id-safety.mjs',
       'Scripts/check-repo-quality-contract.mjs',
+      'Scripts/changed-files.mjs',
       'Scripts/identity-impact-rules.mjs',
       'Scripts/repo-quality-contract.mjs',
       'Scripts/validate-ci.mjs',

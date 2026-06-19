@@ -112,7 +112,10 @@ export const UserList = () => {
             icon={<UserOutlined />}
           />
           <div className="user-list-identity__content">
-            <div className="user-list-identity__name">{record.voUserName}</div>
+            <div className="user-list-identity__name">{record.voDisplayName || record.voUserName}</div>
+            {record.voDisplayHandle && (
+              <div className="user-list-identity__email">{record.voDisplayHandle}</div>
+            )}
             {record.voUserEmail && (
               <div className="user-list-identity__email">{record.voUserEmail}</div>
             )}

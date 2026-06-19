@@ -87,6 +87,44 @@ jobs:
       - name: Run quick baseline validation
         run: npm run validate:baseline:quick
 
+  backend-guard:
+    name: Backend Guard
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Collect changed files
+        run: node Scripts/collect-changed-files.mjs --base="${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}" --head="${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}" --include-all-on-empty-base --write=changed-files.txt
+
+      - name: Detect backend impact
+        id: backend-impact
+        shell: bash
+        run: node Scripts/check-backend-impact.mjs --stdin-z --format=github-output < changed-files.txt >> "$GITHUB_OUTPUT"
+
+      - name: Setup .NET SDK
+        if: steps.backend-impact.outputs.impacted == 'true'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Run backend API validation
+        if: steps.backend-impact.outputs.impacted == 'true'
+        run: npm run validate:backend
+
+      - name: Skip backend guard when unaffected
+        if: steps.backend-impact.outputs.impacted != 'true'
+        shell: bash
+        run: |
+          echo "Backend Guard skipped: no backend/API-related files changed."
+
   identity-guard:
     name: Identity Guard
     runs-on: ubuntu-latest

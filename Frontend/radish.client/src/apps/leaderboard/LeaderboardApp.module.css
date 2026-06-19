@@ -215,6 +215,13 @@
   font-weight: 500;
 }
 
+.userHandle {
+  color: var(--theme-text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
 .exp {
   display: flex;
   flex-direction: column;

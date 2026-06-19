@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
+import { toast } from '@radish/ui/toast';
 import {
+  createComment,
+  createPostQuickReply,
   getCommentNavigation,
   getChildComments,
   getPostById,
@@ -12,13 +15,28 @@ import {
   type PostQuickReply,
 } from '@/api/forum';
 import type { LongId } from '@/api/user';
-import { buildDesktopForumPostReturnPath } from '@/services/authReturnPath';
+import { buildPublicForumPostReturnPath } from '@/services/authReturnPath';
+import { redirectToLogin } from '@/services/auth';
+import { commentHub, type CommentTypingRealtimeEvent } from '@/services/commentHub';
+import { useAuthStore } from '@/stores/authStore';
+import { useUserStore } from '@/stores/userStore';
 import { log } from '@/utils/logger';
 import { resolveMediaUrl } from '@/utils/media';
 import { CommentTree } from '@/apps/forum/components/CommentTree';
+import { CreateCommentForm } from '@/apps/forum/components/CreateCommentForm';
 import { PostDetail as ForumPostDetail } from '@/apps/forum/components/PostDetail';
 import { PostQuickReplyWall } from '@/apps/forum/components/PostQuickReplyWall';
-import { buildPublicForumPath } from '../forumRouteState';
+import {
+  applyCommentHighlightEvent,
+  removeCommentFromTree,
+  updateCommentLikeCount,
+  upsertCommentInTree
+} from '@/apps/forum/utils/commentRealtimeTree';
+import { buildPublicForumPath, type PublicForumDetailIntent } from '../forumRouteState';
+import {
+  rememberPublicRouteSourceTransfer,
+  type PublicRouteSourceState,
+} from '../publicRouteNavigation';
 import { applyPublicHead, buildPublicShareUrl } from '../publicHead';
 import {
   applyPublicStructuredData,
@@ -39,11 +57,18 @@ import {
   getForumPostRouteIdentifier,
   isSameLongId,
   mergeCommentChildren,
+  resolvePublicProfileUserId,
 } from './publicForumUtils';
 import styles from './PublicForumApp.module.css';
 
 type RootCommentSort = 'newest' | 'hottest' | null;
 const COMMENT_NAVIGATION_CHILD_PAGE_SIZE = 5;
+const QUICK_REPLY_SECTION_ID = 'public-forum-quick-replies';
+const COMMENT_SECTION_ID = 'public-forum-comments';
+
+const buildRootCommentIdSet = (rootComments: CommentNode[]): Set<string> => (
+  new Set(rootComments.map((comment) => String(comment.voId)))
+);
 
 interface PublicForumCommentNavigationTarget {
   commentId: LongId;
@@ -54,6 +79,8 @@ interface PublicForumCommentNavigationTarget {
 interface PublicForumDetailProps {
   postId: string;
   commentId?: string;
+  intent?: PublicForumDetailIntent;
+  sourceState?: PublicRouteSourceState | null;
   displayTimeZone: string;
   backLabel: string;
   onBack: () => void;
@@ -67,6 +94,8 @@ interface PublicForumDetailProps {
 export const PublicForumDetail = ({
   postId,
   commentId,
+  intent,
+  sourceState,
   displayTimeZone,
   backLabel,
   onBack,
@@ -76,7 +105,12 @@ export const PublicForumDetail = ({
   onOpenPoll,
   onOpenLottery
 }: PublicForumDetailProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const authStoreAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isUserAuthenticated = useUserStore((state) => state.isAuthenticated);
+  const currentUserId = useUserStore((state) => state.userId);
+  const currentUserName = useUserStore((state) => state.userName);
+  const currentUserAvatarUrl = useUserStore((state) => state.avatarThumbnailUrl || state.avatarUrl || null);
   const [post, setPost] = useState<PostDetail | null>(null);
   const [comments, setComments] = useState<CommentNode[]>([]);
   const [quickReplies, setQuickReplies] = useState<PostQuickReply[]>([]);
@@ -94,14 +128,130 @@ export const PublicForumDetail = ({
   const [commentPagingError, setCommentPagingError] = useState<string | null>(null);
   const [commentNavigationTarget, setCommentNavigationTarget] = useState<PublicForumCommentNavigationTarget | null>(null);
   const [commentNavigationNotice, setCommentNavigationNotice] = useState<string | null>(null);
+  const [commentTypingUserNames, setCommentTypingUserNames] = useState<string[]>([]);
   const [highlightedCommentId, setHighlightedCommentId] = useState<LongId | null>(null);
+  const [submittingComment, setSubmittingComment] = useState(false);
+  const [quickReplyFocusKey, setQuickReplyFocusKey] = useState<string | null>(null);
+  const [commentFocusKey, setCommentFocusKey] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const requestIdRef = useRef(0);
   const commentAnchorMapRef = useRef(new Map<string, HTMLDivElement>());
   const handledCommentNavigationRef = useRef<string | null>(null);
   const highlightTimeoutRef = useRef<number | null>(null);
+  const commentTypingUsersRef = useRef(new Map<string, string>());
+  const commentTypingTimersRef = useRef(new Map<string, number>());
   const commentNoticeRef = useRef<HTMLDivElement | null>(null);
+  const countedRootCommentIdsRef = useRef(new Set<string>());
+  const deletedRootCommentIdsRef = useRef(new Set<string>());
   const commentPageSize = 20;
+  const isAuthenticated = authStoreAuthenticated && isUserAuthenticated();
+
+  const syncCountedRootComments = useCallback((rootComments: CommentNode[]) => {
+    countedRootCommentIdsRef.current = buildRootCommentIdSet(rootComments);
+    deletedRootCommentIdsRef.current.clear();
+  }, []);
+
+  const applyPostCommentCountDelta = useCallback((delta: number) => {
+    setPost((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+        voCommentCount: Math.max(0, (current.voCommentCount ?? 0) + delta)
+      };
+    });
+  }, []);
+
+  const syncPostCommentCount = useCallback((count: number | null | undefined) => {
+    if (typeof count !== 'number') {
+      return;
+    }
+
+    setPost((current) => (
+      current
+        ? {
+            ...current,
+            voCommentCount: Math.max(0, count)
+          }
+        : current
+    ));
+  }, []);
+
+  const registerRootCommentCount = useCallback((commentId: LongId, parentCommentId?: LongId | null): boolean => {
+    if (parentCommentId) {
+      return false;
+    }
+
+    const commentKey = String(commentId);
+    if (countedRootCommentIdsRef.current.has(commentKey)) {
+      return false;
+    }
+
+    countedRootCommentIdsRef.current.add(commentKey);
+    deletedRootCommentIdsRef.current.delete(commentKey);
+    return true;
+  }, []);
+
+  const registerRootCommentRemoval = useCallback((commentId: LongId, parentCommentId?: LongId | null): boolean => {
+    if (parentCommentId) {
+      return false;
+    }
+
+    const commentKey = String(commentId);
+    if (deletedRootCommentIdsRef.current.has(commentKey)) {
+      return false;
+    }
+
+    deletedRootCommentIdsRef.current.add(commentKey);
+    countedRootCommentIdsRef.current.delete(commentKey);
+    return true;
+  }, []);
+
+  const syncCommentTypingUsers = useCallback(() => {
+    setCommentTypingUserNames([...commentTypingUsersRef.current.values()]);
+  }, []);
+
+  const clearCommentTypingUsers = useCallback(() => {
+    for (const timer of commentTypingTimersRef.current.values()) {
+      window.clearTimeout(timer);
+    }
+
+    commentTypingTimersRef.current.clear();
+    commentTypingUsersRef.current.clear();
+    setCommentTypingUserNames([]);
+  }, []);
+
+  const registerCommentTypingUser = useCallback((payload: CommentTypingRealtimeEvent) => {
+    if (!post?.voId || !isSameLongId(payload.voPostId, post.voId)) {
+      return;
+    }
+
+    const userKey = String(payload.voUserId);
+    const userName = payload.voUserName?.trim() || t('common.unknownUser');
+    const oldTimer = commentTypingTimersRef.current.get(userKey);
+    if (oldTimer) {
+      window.clearTimeout(oldTimer);
+    }
+
+    commentTypingUsersRef.current.set(userKey, userName);
+    commentTypingTimersRef.current.set(userKey, window.setTimeout(() => {
+      commentTypingUsersRef.current.delete(userKey);
+      commentTypingTimersRef.current.delete(userKey);
+      syncCommentTypingUsers();
+    }, 3200));
+    syncCommentTypingUsers();
+  }, [post?.voId, syncCommentTypingUsers, t]);
+
+  const commentTypingText = useMemo(() => {
+    if (commentTypingUserNames.length === 0) {
+      return null;
+    }
+
+    const separator = i18n.language.startsWith('zh') ? '、' : ', ';
+    return `${commentTypingUserNames.join(separator)}${t('forum.comment.typingSuffix')}`;
+  }, [commentTypingUserNames, i18n.language, t]);
 
   useEffect(() => {
     const requestId = ++requestIdRef.current;
@@ -116,6 +266,7 @@ export const PublicForumDetail = ({
       setCommentPagingError(null);
       setCommentNavigationTarget(null);
       setCommentNavigationNotice(null);
+      clearCommentTypingUsers();
       setHighlightedCommentId(null);
       let resolvedPostId: LongId = postId;
 
@@ -223,8 +374,10 @@ export const PublicForumDetail = ({
             }
           }
 
+          syncCountedRootComments(nextComments);
           setComments(nextComments);
           setCommentTotal(rootComments.voTotal ?? 0);
+          syncPostCommentCount(rootComments.voTotal);
           setLoadedCommentPages((rootComments.voItems?.length ?? 0) > 0 ? (rootComments.voPageIndex ?? 1) : 0);
           setCommentError(null);
           setCommentNavigationTarget(navigation ? {
@@ -236,6 +389,7 @@ export const PublicForumDetail = ({
           } : null);
         } else {
           setComments([]);
+          syncCountedRootComments([]);
           setCommentTotal(0);
           setLoadedCommentPages(0);
           const message = rootCommentsResult.reason instanceof Error
@@ -267,7 +421,16 @@ export const PublicForumDetail = ({
     };
 
     void loadDetail();
-  }, [commentId, commentSortBy, postId, reloadToken, t]);
+  }, [
+    clearCommentTypingUsers,
+    commentId,
+    commentSortBy,
+    postId,
+    reloadToken,
+    syncCountedRootComments,
+    syncPostCommentCount,
+    t
+  ]);
 
   useEffect(() => {
     return () => {
@@ -276,6 +439,95 @@ export const PublicForumDetail = ({
       }
     };
   }, []);
+
+  useEffect(() => {
+    const resolvedPostId = post?.voId;
+    if (!resolvedPostId) {
+      return;
+    }
+
+    void commentHub.joinPost(resolvedPostId);
+
+    const unsubscribeCreated = commentHub.subscribe('CommentCreated', (payload) => {
+      if (!isSameLongId(payload.voPostId, resolvedPostId) || !payload.voComment) {
+        return;
+      }
+
+      const shouldIncrementTotal = registerRootCommentCount(
+        payload.voComment.voId,
+        payload.voComment.voParentId
+      );
+
+      setComments((current) => upsertCommentInTree(current, payload.voComment!, commentSortBy));
+
+      if (shouldIncrementTotal) {
+        setCommentTotal((total) => total + 1);
+        applyPostCommentCountDelta(1);
+      }
+    });
+
+    const unsubscribeUpdated = commentHub.subscribe('CommentUpdated', (payload) => {
+      if (!isSameLongId(payload.voPostId, resolvedPostId) || !payload.voComment) {
+        return;
+      }
+
+      setComments((current) => upsertCommentInTree(current, payload.voComment!, commentSortBy));
+    });
+
+    const unsubscribeDeleted = commentHub.subscribe('CommentDeleted', (payload) => {
+      if (!isSameLongId(payload.voPostId, resolvedPostId)) {
+        return;
+      }
+
+      const shouldDecrementTotal = registerRootCommentRemoval(
+        payload.voCommentId,
+        payload.voParentCommentId
+      );
+
+      setComments((current) => removeCommentFromTree(current, payload.voCommentId));
+
+      if (shouldDecrementTotal) {
+        setCommentTotal((total) => Math.max(0, total - 1));
+        applyPostCommentCountDelta(-1);
+      }
+    });
+
+    const unsubscribeLikeChanged = commentHub.subscribe('CommentLikeChanged', (payload) => {
+      if (!isSameLongId(payload.voPostId, resolvedPostId) || typeof payload.voLikeCount !== 'number') {
+        return;
+      }
+
+      setComments((current) => updateCommentLikeCount(current, payload.voCommentId, payload.voLikeCount!));
+    });
+
+    const unsubscribeHighlightsChanged = commentHub.subscribe('CommentHighlightsChanged', (payload) => {
+      if (!isSameLongId(payload.voPostId, resolvedPostId)) {
+        return;
+      }
+
+      setComments((current) => applyCommentHighlightEvent(current, payload));
+    });
+    const unsubscribeTyping = commentHub.subscribe('CommentTyping', registerCommentTypingUser);
+
+    return () => {
+      unsubscribeCreated();
+      unsubscribeUpdated();
+      unsubscribeDeleted();
+      unsubscribeLikeChanged();
+      unsubscribeHighlightsChanged();
+      unsubscribeTyping();
+      clearCommentTypingUsers();
+      void commentHub.leavePost(resolvedPostId);
+    };
+  }, [
+    applyPostCommentCountDelta,
+    clearCommentTypingUsers,
+    commentSortBy,
+    post?.voId,
+    registerCommentTypingUser,
+    registerRootCommentCount,
+    registerRootCommentRemoval
+  ]);
 
   useEffect(() => {
     if (!post?.voTitle) {
@@ -318,20 +570,39 @@ export const PublicForumDetail = ({
   const { copyShareLink, shareBusy, shareState } = usePublicShareLink({
     buildShareUrl: buildForumShareUrl,
   });
-  const desktopCommentEntryUrl = post
-    ? buildDesktopForumPostReturnPath({
+  const commentReturnPath = post
+    ? buildPublicForumPostReturnPath({
       postId: post.voId,
       postPublicId: post.voPublicId,
+      commentId,
       intent: 'comment',
     })
     : null;
-  const desktopQuickReplyEntryUrl = post
-    ? buildDesktopForumPostReturnPath({
+  const quickReplyReturnPath = post
+    ? buildPublicForumPostReturnPath({
       postId: post.voId,
       postPublicId: post.voPublicId,
+      commentId,
       intent: 'quickReply',
     })
     : null;
+  const routeIntentFocusKey = post && intent
+    ? `${post.voId}:${commentId ?? 'root'}:${intent}`
+    : null;
+  const quickReplyAutoFocusKey = intent === 'quickReply'
+    ? routeIntentFocusKey
+    : quickReplyFocusKey;
+  const commentAutoFocusKey = intent === 'comment'
+    ? routeIntentFocusKey
+    : commentFocusKey;
+
+  const redirectToDetailLogin = useCallback((returnPath: string | null | undefined) => {
+    if (returnPath && sourceState) {
+      rememberPublicRouteSourceTransfer(returnPath, sourceState);
+    }
+
+    redirectToLogin({ returnPath });
+  }, [sourceState]);
 
   const navigateToComment = useCallback(async (
     targetCommentId: LongId,
@@ -365,8 +636,10 @@ export const PublicForumDetail = ({
         );
 
         nextComments = rootComments.voItems ?? [];
+        syncCountedRootComments(nextComments);
         setComments(nextComments);
         setCommentTotal(rootComments.voTotal ?? 0);
+        syncPostCommentCount(rootComments.voTotal);
         setLoadedCommentPages((rootComments.voItems?.length ?? 0) > 0 ? (rootComments.voPageIndex ?? navigation.voRootPageIndex) : 0);
       }
 
@@ -408,7 +681,17 @@ export const PublicForumDetail = ({
     } catch {
       setCommentNavigationNotice(t('forum.commentNavigation.notice'));
     }
-  }, [commentPageSize, commentSortBy, comments, loadedCommentPages, post?.voId, postId, t]);
+  }, [
+    commentPageSize,
+    commentSortBy,
+    comments,
+    loadedCommentPages,
+    post?.voId,
+    postId,
+    syncCountedRootComments,
+    syncPostCommentCount,
+    t
+  ]);
 
   const registerCommentAnchor = (targetCommentId: LongId, element: HTMLDivElement | null) => {
     const targetCommentIdKey = String(targetCommentId);
@@ -481,6 +764,9 @@ export const PublicForumDetail = ({
       const nextPage = loadedCommentPages + 1;
       const pageData = await getRootCommentsPage(post?.voId ?? postId, nextPage, commentPageSize, commentSortBy || 'default', t);
       const nextItems = pageData.voItems ?? [];
+      for (const item of nextItems) {
+        countedRootCommentIdsRef.current.add(String(item.voId));
+      }
 
       setComments((current) => {
         const existingIds = new Set(current.map((item) => item.voId));
@@ -488,6 +774,7 @@ export const PublicForumDetail = ({
         return [...current, ...appended];
       });
       setCommentTotal((current) => pageData.voTotal ?? current);
+      syncPostCommentCount(pageData.voTotal);
       if (nextItems.length > 0) {
         setLoadedCommentPages(nextPage);
       }
@@ -514,6 +801,156 @@ export const PublicForumDetail = ({
       return [];
     }
   };
+
+  const handleQuickReplyAction = useCallback(() => {
+    if (!quickReplyReturnPath) {
+      return;
+    }
+
+    if (!isAuthenticated) {
+      redirectToDetailLogin(quickReplyReturnPath);
+      return;
+    }
+
+    setQuickReplyFocusKey(`${quickReplyReturnPath}:${Date.now()}`);
+  }, [isAuthenticated, quickReplyReturnPath, redirectToDetailLogin]);
+
+  const handleCommentAction = useCallback(() => {
+    if (!commentReturnPath) {
+      return;
+    }
+
+    if (!isAuthenticated) {
+      redirectToDetailLogin(commentReturnPath);
+      return;
+    }
+
+    setCommentFocusKey(`${commentReturnPath}:${Date.now()}`);
+  }, [commentReturnPath, isAuthenticated, redirectToDetailLogin]);
+
+  const handleCreateQuickReply = useCallback(async (content: string) => {
+    if (!post?.voId) {
+      throw new Error(t('forum.public.postNotFoundTitle'));
+    }
+
+    const normalizedContent = content.trim().replace(/\s+/g, ' ');
+    if (!normalizedContent) {
+      return;
+    }
+
+    const quickReply = await createPostQuickReply(
+      {
+        postId: post.voId,
+        content: normalizedContent
+      },
+      t
+    );
+
+    setQuickReplies((current) => {
+      const next = [
+        quickReply,
+        ...current.filter((item) => !isSameLongId(item.voId, quickReply.voId))
+      ];
+      return next.slice(0, 30);
+    });
+    setQuickReplyTotal((current) => current + 1);
+  }, [post?.voId, t]);
+
+  const handleCreateComment = useCallback(async (content: string) => {
+    const normalizedContent = content.trim();
+    if (!normalizedContent || submittingComment) {
+      return;
+    }
+
+    if (!post?.voId) {
+      toast.error(t('forum.public.postNotFoundTitle'));
+      return;
+    }
+
+    if (!isAuthenticated) {
+      redirectToDetailLogin(commentReturnPath);
+      return;
+    }
+
+    setSubmittingComment(true);
+    try {
+      const createdCommentId = await createComment(
+        {
+          postId: post.voId,
+          content: normalizedContent,
+          parentId: null,
+          replyToCommentId: null,
+          replyToCommentSnapshot: null,
+          replyToUserId: null,
+          replyToUserName: null
+        },
+        t
+      );
+      const now = new Date().toISOString();
+      const newComment: CommentNode = {
+        voId: createdCommentId,
+        voPostId: post.voId,
+        voContent: normalizedContent,
+        voAuthorId: currentUserId || '0',
+        voAuthorName: currentUserName?.trim() || t('common.unknownUser'),
+        voAuthorAvatarUrl: currentUserAvatarUrl,
+        voParentId: null,
+        voRootId: null,
+        voReplyToCommentId: null,
+        voReplyToCommentSnapshot: null,
+        voReplyToUserId: null,
+        voReplyToUserName: null,
+        voLevel: 0,
+        voLikeCount: 0,
+        voIsLiked: false,
+        voCreateTime: now,
+        voChildren: [],
+        voChildrenTotal: 0,
+        voIsGodComment: false,
+        voIsSofa: false
+      };
+
+      const shouldIncrementTotal = registerRootCommentCount(newComment.voId, newComment.voParentId);
+
+      setComments((current) => upsertCommentInTree(current, newComment, commentSortBy));
+
+      if (shouldIncrementTotal) {
+        setCommentTotal((total) => total + 1);
+        applyPostCommentCountDelta(1);
+      }
+      setCommentNavigationTarget({
+        commentId: createdCommentId,
+        navigationKey: `${post.voId}:${createdCommentId}:created:${Date.now()}`
+      });
+      toast.success(t('forum.comment.submitSuccess'));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('forum.comment.submitFailed'));
+    } finally {
+      setSubmittingComment(false);
+    }
+  }, [
+    commentReturnPath,
+    commentSortBy,
+    currentUserAvatarUrl,
+    currentUserId,
+    currentUserName,
+    isAuthenticated,
+    post?.voId,
+    registerRootCommentCount,
+    applyPostCommentCountDelta,
+    redirectToDetailLogin,
+    submittingComment,
+    t
+  ]);
+
+  const handleCommentTyping = useCallback(() => {
+    if (!post?.voId || !isAuthenticated) {
+      return;
+    }
+
+    void commentHub.startTyping(post.voId);
+  }, [isAuthenticated, post?.voId]);
+
   const detailState = resolvePublicForumDetailLoadState({
     loadingPost,
     hasPost: !!post,
@@ -609,6 +1046,22 @@ export const PublicForumDetail = ({
 
         {detailState.kind === 'ready' && (
           <>
+            <ForumPostDetail
+              post={post}
+              loading={false}
+              displayTimeZone={displayTimeZone}
+              mode="readOnly"
+              isAuthenticated={false}
+              showSectionTitle={false}
+              postTitleHeadingLevel={1}
+              onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
+              resolveAuthorProfileId={resolvePublicProfileUserId}
+              onTagClick={(_, tagSlug) => onOpenTag?.(tagSlug)}
+              onQuestionClick={onOpenQuestion}
+              onPollClick={onOpenPoll}
+              onLotteryClick={onOpenLottery}
+            />
+
             <PublicReadingGuide
               label={readingGuide.label}
               title={readingGuide.title}
@@ -616,7 +1069,7 @@ export const PublicForumDetail = ({
               items={readingGuide.items}
             />
 
-            {(desktopCommentEntryUrl || desktopQuickReplyEntryUrl) && (
+            {(commentReturnPath || quickReplyReturnPath) && (
               <section className={styles.workspaceActionPanel}>
                 <div className={styles.workspaceActionCopy}>
                   <h2 className={styles.workspaceActionTitle}>{t('forum.public.workspaceActionTitle')}</h2>
@@ -625,35 +1078,39 @@ export const PublicForumDetail = ({
                   </p>
                 </div>
                 <div className={styles.workspaceActionButtons}>
-                  {desktopQuickReplyEntryUrl && (
-                    <a className={styles.workspaceActionButton} href={desktopQuickReplyEntryUrl}>
+                  {quickReplyReturnPath && (
+                    <button
+                      type="button"
+                      className={`${styles.workspaceActionButton} ${styles.workspaceActionButtonPrimary}`}
+                      aria-controls={QUICK_REPLY_SECTION_ID}
+                      onClick={handleQuickReplyAction}
+                    >
                       <Icon icon="mdi:message-flash-outline" size={18} />
-                      <span>{t('forum.public.workspaceQuickReplyAction')}</span>
-                    </a>
+                      <span>
+                        {isAuthenticated
+                          ? t('forum.public.workspaceQuickReplyAction')
+                          : t('forum.public.workspaceQuickReplyLoginAction')}
+                      </span>
+                    </button>
                   )}
-                  {desktopCommentEntryUrl && (
-                    <a className={styles.workspaceActionButton} href={desktopCommentEntryUrl}>
+                  {commentReturnPath && (
+                    <button
+                      type="button"
+                      className={styles.workspaceActionButton}
+                      aria-controls={COMMENT_SECTION_ID}
+                      onClick={handleCommentAction}
+                    >
                       <Icon icon="mdi:comment-text-outline" size={18} />
-                      <span>{t('forum.public.workspaceCommentAction')}</span>
-                    </a>
+                      <span>
+                        {isAuthenticated
+                          ? t('forum.public.workspaceCommentAction')
+                          : t('forum.public.workspaceCommentLoginAction')}
+                      </span>
+                    </button>
                   )}
                 </div>
               </section>
             )}
-
-            <ForumPostDetail
-              post={post}
-              loading={false}
-              displayTimeZone={displayTimeZone}
-              mode="readOnly"
-              isAuthenticated={false}
-              showSectionTitle={false}
-              onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
-              onTagClick={(_, tagSlug) => onOpenTag?.(tagSlug)}
-              onQuestionClick={onOpenQuestion}
-              onPollClick={onOpenPoll}
-              onLotteryClick={onOpenLottery}
-            />
 
             {quickReplySectionState === 'error' ? (
               <section className={styles.sectionShell}>
@@ -680,20 +1137,33 @@ export const PublicForumDetail = ({
                   </div>
                 )}
                 <PostQuickReplyWall
+                  sectionId={QUICK_REPLY_SECTION_ID}
                   replies={quickReplies}
                   total={quickReplyTotal}
                   loading={loadingQuickReplies}
-                  isAuthenticated={false}
-                  currentUserId="0"
-                  mode="readOnly"
+                  isAuthenticated={isAuthenticated}
+                  currentUserId={currentUserId || '0'}
+                  titleHeadingLevel={2}
+                  onCreate={handleCreateQuickReply}
+                  loginPromptText={t('forum.public.quickReplyLoginPrompt')}
+                  loginButtonText={t('forum.public.workspaceQuickReplyLoginAction')}
+                  loginReturnPath={quickReplyReturnPath}
+                  onLoginRequired={redirectToDetailLogin}
+                  autoFocusComposerKey={quickReplyAutoFocusKey}
                 />
               </>
             )}
 
-            <section className={styles.commentSection}>
+            <section
+              id={COMMENT_SECTION_ID}
+              className={styles.commentSection}
+              aria-labelledby={`${COMMENT_SECTION_ID}-title`}
+            >
               <div className={styles.commentHeading}>
                 <div>
-                  <h2 className={styles.commentTitle}>{t('forum.commentTree.title')}</h2>
+                  <h2 id={`${COMMENT_SECTION_ID}-title`} className={styles.commentTitle}>
+                    {t('forum.commentTree.title')}
+                  </h2>
                   <p className={styles.commentIntro}>{t('forum.quickReply.discussionSubtitle')}</p>
                 </div>
                 <div className={styles.commentSummary}>
@@ -720,6 +1190,33 @@ export const PublicForumDetail = ({
                 </div>
               )}
 
+              {commentTypingText && (
+                <div className={styles.inlineNotice}>
+                  <span className={styles.inlineNoticeText}>{commentTypingText}</span>
+                </div>
+              )}
+
+              <div className={styles.commentComposerPanel}>
+                <CreateCommentForm
+                  isAuthenticated={isAuthenticated}
+                  hasPost={Boolean(post?.voId)}
+                  onSubmit={(content) => {
+                    void handleCreateComment(content);
+                  }}
+                  disabled={submittingComment}
+                  variant="inline"
+                  title={t('forum.joinDiscussion')}
+                  submitText={t('forum.submitDiscussion')}
+                  placeholder={t('forum.discussionPlaceholder')}
+                  loginPromptText={t('forum.public.commentLoginPrompt')}
+                  loginButtonText={t('forum.public.workspaceCommentLoginAction')}
+                  loginReturnPath={commentReturnPath}
+                  onLoginRequired={redirectToDetailLogin}
+                  onTyping={handleCommentTyping}
+                  autoFocusKey={commentAutoFocusKey}
+                />
+              </div>
+
               {commentSectionState === 'error' ? (
                 <PublicStatusCard
                   tone="error"
@@ -744,7 +1241,7 @@ export const PublicForumDetail = ({
                     loadingMoreRootComments={loadingMoreComments}
                     hasPost={true}
                     displayTimeZone={displayTimeZone}
-                    currentUserId="0"
+                    currentUserId={currentUserId || '0'}
                     highlightedCommentId={highlightedCommentId}
                     expandedRootCommentId={commentNavigationTarget?.expandedRootCommentId}
                     rootCommentTotal={commentTotal}
@@ -755,8 +1252,10 @@ export const PublicForumDetail = ({
                     onSortChange={setCommentSortBy}
                     onLoadMoreChildren={handleLoadMoreChildren}
                     onLoadMoreRootComments={handleLoadMoreComments}
+                    isAuthenticated={isAuthenticated}
                     showTitle={false}
                     onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
+                    resolveAuthorProfileId={resolvePublicProfileUserId}
                     onNavigateToComment={(targetCommentId) => void navigateToComment(
                       targetCommentId,
                       `inline:${postId}:${targetCommentId}:${Date.now()}`

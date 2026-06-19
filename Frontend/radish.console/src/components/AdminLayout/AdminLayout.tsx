@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useUser } from '../../hooks/useUser';
 import {
@@ -36,6 +36,18 @@ import './AdminLayout.css';
 
 const { Header, Sider, Content } = Layout;
 
+const MOBILE_SIDEBAR_MEDIA_QUERY = '(max-width: 768px)';
+const DESKTOP_COLLAPSED_WIDTH = 88;
+const MOBILE_COLLAPSED_WIDTH = 64;
+
+function isMobileSidebarLayout(): boolean {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return window.matchMedia(MOBILE_SIDEBAR_MEDIA_QUERY).matches;
+}
+
 const menuIconMap: Record<string, ReactNode> = {
   dashboard: <DashboardOutlined />,
   applications: <AppstoreOutlined />,
@@ -58,7 +70,8 @@ export interface AdminLayoutProps {
 }
 
 export function AdminLayout({ children }: AdminLayoutProps) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => isMobileSidebarLayout());
+  const [isMobileLayout, setIsMobileLayout] = useState(() => isMobileSidebarLayout());
   const [searchVisible, setSearchVisible] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -99,8 +112,35 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   ];
 
   const handleToggle = () => {
+    if (isMobileLayout) {
+      setCollapsed(true);
+      return;
+    }
+
     setCollapsed(!collapsed);
   };
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia(MOBILE_SIDEBAR_MEDIA_QUERY);
+    const syncMobileLayout = () => {
+      const matches = mediaQuery.matches;
+      setIsMobileLayout(matches);
+      if (matches) {
+        setCollapsed(true);
+      }
+    };
+
+    syncMobileLayout();
+    mediaQuery.addEventListener('change', syncMobileLayout);
+
+    return () => {
+      mediaQuery.removeEventListener('change', syncMobileLayout);
+    };
+  }, []);
 
   const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
     const path = sidebarRoutes.find((route) => route.key === key)?.path;
@@ -143,7 +183,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         collapsible
         collapsed={collapsed}
         width={268}
-        collapsedWidth={88}
+        collapsedWidth={isMobileLayout ? MOBILE_COLLAPSED_WIDTH : DESKTOP_COLLAPSED_WIDTH}
         className="admin-sider"
       >
         <div className="admin-logo">

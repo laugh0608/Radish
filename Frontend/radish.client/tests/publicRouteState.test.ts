@@ -18,6 +18,10 @@ import {
   buildPublicLeaderboardPath,
   parsePublicLeaderboardRoute,
 } from '../src/public/leaderboardRouteState.ts';
+import {
+  buildPublicForumPath,
+  parsePublicForumRoute,
+} from '../src/public/forumRouteState.ts';
 
 test('parsePublicDocsRoute 应解析 docs 搜索与分页参数', () => {
   const route = parsePublicDocsRoute('/docs/search', '?q=radish&page=3');
@@ -210,4 +214,33 @@ test('buildPublicLeaderboardPath 应稳定回写默认与非默认榜单路径',
 
   assert.equal(defaultPath, '/leaderboard');
   assert.equal(typedPath, '/leaderboard/post-count?page=3');
+});
+
+test('parsePublicForumRoute 应解析公开帖子详情评论定位与参与意图', () => {
+  const route = parsePublicForumRoute(
+    '/forum/post/PST_018F6B6F7C7D70008F8F8F8F8F8F8F8F',
+    '?intent=quickReply&commentId=2042219067430928385'
+  );
+
+  assert.deepEqual(route, {
+    kind: 'detail',
+    postId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+    postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+    commentId: '2042219067430928385',
+    intent: 'quickReply',
+  });
+});
+
+test('buildPublicForumPath 应稳定回写公开帖子详情 intent 参数', () => {
+  const path = buildPublicForumPath({
+    kind: 'detail',
+    postId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+    commentId: '2042219067430928385',
+    intent: 'comment',
+  });
+
+  assert.equal(
+    path,
+    '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?commentId=2042219067430928385&intent=comment'
+  );
 });

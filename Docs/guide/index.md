@@ -25,20 +25,24 @@
 - [快速开始](/guide/getting-started)
 - [本地运行与排障手册](/guide/operations-runbook)
 - [验证基线说明](/guide/validation-baseline)
+- [页面真实联调与浏览器 Smoke 规则](/guide/browser-smoke)
 - [专题回归索引](/guide/regression-index)
 - [Repo Quality 故障分诊手册](/guide/repo-quality-troubleshooting)
 
 ### 基础设施与安全
 
 - [配置管理](/guide/configuration)
+- [运行时配置边界与系统设置](/guide/runtime-configuration-boundaries)
 - [鉴权与授权指南](/guide/authentication)
 - [认证服务实现说明](/guide/authentication-service)
+- [Token 不活跃过期治理](/guide/auth-idle-session)
 - [Gateway 服务网关](/guide/gateway)
 - [数据库总览](/guide/database-overview)
 - [数据库连接管理](/guide/database-connection)
 - [数据库结构变更协作口径](/guide/database-schema-change-governance)
 - [日志规范与实现说明](/guide/logging)
 - [密码安全](/guide/password-security)
+- [密码传输与请求签名临时评审](/guide/password-transport-and-request-signature)
 - [速率限制](/guide/rate-limiting)
 
 ### 接口与发布运行
@@ -56,11 +60,13 @@
 - [Flutter 移动端 handoff 与回流说明](/guide/flutter-mobile-handoff)
 - [通知系统实现说明](/guide/notification-implementation)
 - [通知系统实时推送方案](/guide/notification-realtime)
+- [纯 Web 私域复访入口设计说明](/frontend/private-web-revisit)
 - [Console 权限治理 V1](/guide/console-permission-governance)
 - [Console 权限覆盖矩阵](/guide/console-permission-coverage-matrix)
 - [Console 权限 / 菜单 / 按钮管理一期设计方案](/guide/console-authorization-phase1)
 - [Console 架构说明](/guide/console-architecture)
 - [Console 系统说明](/guide/console-system)
+- [系统设置治理专题](/guide/system-settings-governance)
 - [Console 样式与 Token 使用说明](/frontend/console-style-guide)
 
 ### 领域专题说明
@@ -88,6 +94,8 @@
   - [radish-pit-core-concepts](/guide/radish-pit-core-concepts)
   - [radish-pit-backend](/guide/radish-pit-backend)
   - [radish-pit-frontend](/guide/radish-pit-frontend)
+- Radish Pet：
+  - [radish-pet-roadmap](/features/radish-pet-roadmap)
 
 ## 二、专项评审与迁移说明
 

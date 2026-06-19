@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  consumePublicRouteSourceTransfer,
   createPublicRouteSourceState,
   getPublicDetailBackLabelKey,
+  rememberPublicRouteSourceTransfer,
   resolveDocsDetailBackMode,
   resolveForumDetailBackMode,
   resolveProfileBackMode,
@@ -14,6 +16,34 @@ import {
   shouldCaptureShopDetailSource,
   type PublicRouteDescriptor,
 } from '../src/public/publicRouteNavigation.ts';
+
+class MemoryStorage implements Storage {
+  private readonly values = new Map<string, string>();
+
+  get length(): number {
+    return this.values.size;
+  }
+
+  clear(): void {
+    this.values.clear();
+  }
+
+  getItem(key: string): string | null {
+    return this.values.get(key) ?? null;
+  }
+
+  key(index: number): string | null {
+    return Array.from(this.values.keys())[index] ?? null;
+  }
+
+  removeItem(key: string): void {
+    this.values.delete(key);
+  }
+
+  setItem(key: string, value: string): void {
+    this.values.set(key, value);
+  }
+}
 
 test('shouldCaptureForumDetailSource 应在从 discover 进入帖子详情时记录来源', () => {
   const currentRoute: PublicRouteDescriptor = {
@@ -116,6 +146,171 @@ test('shouldCaptureForumDetailSource 应在从公开个人页回 forum 详情时
   assert.equal(resolveForumDetailBackMode(currentRoute), 'profile');
 });
 
+test('shouldCaptureForumDetailSource 应在从圈子进入 forum 详情时记录 circle 来源', () => {
+  const currentRoute: PublicRouteDescriptor = {
+    app: 'circle',
+    route: { tab: 'feed', page: 2 }
+  };
+  const nextRoute: PublicRouteDescriptor = {
+    app: 'forum',
+    route: {
+      kind: 'detail',
+      postId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f821',
+    }
+  };
+
+  assert.equal(shouldCaptureForumDetailSource(currentRoute, nextRoute), true);
+  assert.equal(resolveForumDetailBackMode(currentRoute), 'circle');
+  assert.equal(getPublicDetailBackLabelKey(resolveForumDetailBackMode(currentRoute)), 'public.shell.backToCircle');
+});
+
+test('shouldCaptureForumDetailSource 应在从通知中心进入 forum 详情时记录 notifications 来源', () => {
+  const currentRoute: PublicRouteDescriptor = {
+    app: 'notifications',
+    route: { kind: 'index' }
+  };
+  const nextRoute: PublicRouteDescriptor = {
+    app: 'forum',
+    route: {
+      kind: 'detail',
+      postId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f821',
+    }
+  };
+
+  assert.equal(shouldCaptureForumDetailSource(currentRoute, nextRoute), true);
+  assert.equal(resolveForumDetailBackMode(currentRoute), 'notifications');
+  assert.equal(getPublicDetailBackLabelKey(resolveForumDetailBackMode(currentRoute)), 'public.shell.backToNotifications');
+});
+
+test('公开详情应支持从我的状态返回', () => {
+  const meRoute: PublicRouteDescriptor = {
+    app: 'me',
+    route: { kind: 'index' }
+  };
+  const forumDetailRoute: PublicRouteDescriptor = {
+    app: 'forum',
+    route: {
+      kind: 'detail',
+      postId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f821',
+    }
+  };
+  const profileRoute: PublicRouteDescriptor = {
+    app: 'profile',
+    route: {
+      kind: 'detail',
+      userId: 'usr_018f6b6f7c7d70008f8f8f8f8f8f821',
+      tab: 'posts',
+      page: 1,
+    }
+  };
+
+  const forumState = createPublicRouteSourceState({}, meRoute, forumDetailRoute);
+  const profileState = createPublicRouteSourceState({}, meRoute, profileRoute);
+
+  assert.deepEqual(forumState.forumDetailSourceRoute, meRoute);
+  assert.deepEqual(profileState.profileSourceRoute, meRoute);
+  assert.equal(resolveForumDetailBackMode(meRoute), 'me');
+  assert.equal(resolveDocsDetailBackMode(meRoute), 'me');
+  assert.equal(resolveProfileBackMode(meRoute), 'me');
+  assert.equal(resolveShopDetailBackMode(meRoute), 'me');
+  assert.equal(getPublicDetailBackLabelKey('me'), 'public.shell.backToMe');
+});
+
+test('公开个人页应支持从消息入口返回', () => {
+  const messagesRoute: PublicRouteDescriptor = {
+    app: 'messages',
+    route: {
+      channelId: '2042219067430928390',
+      messageId: '2042219067430928391',
+    },
+  };
+  const profileRoute: PublicRouteDescriptor = {
+    app: 'profile',
+    route: {
+      kind: 'detail',
+      userId: '2042219067430928384',
+      tab: 'posts',
+      page: 1,
+    },
+  };
+
+  const profileState = createPublicRouteSourceState({}, messagesRoute, profileRoute);
+
+  assert.deepEqual(profileState.profileSourceRoute, messagesRoute);
+  assert.equal(resolveProfileBackMode(messagesRoute), 'messages');
+  assert.equal(getPublicDetailBackLabelKey('messages'), 'public.shell.backToMessages');
+});
+
+test('公开个人页规范化用户标识时应保留消息来源', () => {
+  const messagesRoute: PublicRouteDescriptor = {
+    app: 'messages',
+    route: {
+      channelId: '2042219067430928390',
+      messageId: '2042219067430928391',
+    },
+  };
+  const numericProfileRoute: PublicRouteDescriptor = {
+    app: 'profile',
+    route: {
+      kind: 'detail',
+      userId: '2042219067430928384',
+      tab: 'posts',
+      page: 1,
+    },
+  };
+  const publicIdProfileRoute: PublicRouteDescriptor = {
+    app: 'profile',
+    route: {
+      kind: 'detail',
+      userId: 'usr_018f6b6f7c7d70008f8f8f8f8f8f821',
+      tab: 'posts',
+      page: 1,
+    },
+  };
+
+  const preservedState = createPublicRouteSourceState(
+    { profileSourceRoute: messagesRoute },
+    numericProfileRoute,
+    publicIdProfileRoute,
+    { preserveExisting: true }
+  );
+
+  assert.deepEqual(preservedState.profileSourceRoute, messagesRoute);
+  assert.equal(resolveProfileBackMode(preservedState.profileSourceRoute), 'messages');
+});
+
+test('createPublicRouteSourceState 应保留圈子到公开个人页再到帖子详情的来源链路', () => {
+  const circleRoute: PublicRouteDescriptor = {
+    app: 'circle',
+    route: { tab: 'following', page: 2 }
+  };
+  const profileRoute: PublicRouteDescriptor = {
+    app: 'profile',
+    route: {
+      kind: 'detail',
+      userId: 'usr_018f6b6f7c7d70008f8f8f8f8f8f821',
+      tab: 'posts',
+      page: 1
+    }
+  };
+  const forumDetailRoute: PublicRouteDescriptor = {
+    app: 'forum',
+    route: {
+      kind: 'detail',
+      postId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f821'
+    }
+  };
+
+  const profileState = createPublicRouteSourceState({}, circleRoute, profileRoute);
+  assert.deepEqual(profileState.profileSourceRoute, circleRoute);
+  assert.equal(resolveProfileBackMode(profileState.profileSourceRoute), 'circle');
+
+  const forumState = createPublicRouteSourceState(profileState, profileRoute, forumDetailRoute);
+  assert.deepEqual(forumState.profileSourceRoute, circleRoute);
+  assert.deepEqual(forumState.forumDetailSourceRoute, profileRoute);
+  assert.equal(resolveForumDetailBackMode(forumState.forumDetailSourceRoute), 'profile');
+});
+
 test('shouldCaptureShopDetailSource 应在从 discover 或商城列表进入商品详情时记录来源', () => {
   const discoverRoute: PublicRouteDescriptor = {
     app: 'discover',
@@ -208,12 +403,22 @@ test('resolveProfileBackMode 应把 discover 与其他公开来源区分为不�
     app: 'discover',
     route: { kind: 'home' }
   };
+  const circleSource: PublicRouteDescriptor = {
+    app: 'circle',
+    route: { tab: 'following', page: 2 }
+  };
   const forumDetailSource: PublicRouteDescriptor = {
     app: 'forum',
     route: { kind: 'detail', postId: '88' }
   };
+  const notificationsSource: PublicRouteDescriptor = {
+    app: 'notifications',
+    route: { kind: 'index' }
+  };
 
   assert.equal(resolveProfileBackMode(discoverSource), 'discover');
+  assert.equal(resolveProfileBackMode(circleSource), 'circle');
+  assert.equal(resolveProfileBackMode(notificationsSource), 'notifications');
   assert.equal(resolveProfileBackMode(forumDetailSource), 'source');
 });
 
@@ -315,6 +520,74 @@ test('createPublicRouteSourceState 在来源返回导航中应保留既有来源
 
   assert.deepEqual(preservedState.forumDetailSourceRoute, discoverRoute);
   assert.deepEqual(preservedState.profileSourceRoute, forumDetailRoute);
+});
+
+test('公开来源转交应按目标路径一次性消费', () => {
+  const storage = new MemoryStorage();
+  const circleRoute: PublicRouteDescriptor = {
+    app: 'circle',
+    route: { tab: 'feed', page: 1 }
+  };
+  const forumDetailRoute: PublicRouteDescriptor = {
+    app: 'forum',
+    route: { kind: 'detail', postId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f821' }
+  };
+  const sourceState = createPublicRouteSourceState({}, circleRoute, forumDetailRoute);
+
+  assert.equal(
+    rememberPublicRouteSourceTransfer(
+      '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f821',
+      sourceState,
+      storage
+    ),
+    true
+  );
+  assert.equal(
+    consumePublicRouteSourceTransfer('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f821?commentId=1', storage),
+    null
+  );
+  assert.equal(
+    consumePublicRouteSourceTransfer('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f821', storage),
+    null
+  );
+
+  assert.equal(
+    rememberPublicRouteSourceTransfer(
+      '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f821',
+      sourceState,
+      storage
+    ),
+    true
+  );
+  assert.deepEqual(
+    consumePublicRouteSourceTransfer('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f821', storage),
+    sourceState
+  );
+  assert.equal(
+    consumePublicRouteSourceTransfer('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f821', storage),
+    null
+  );
+});
+
+test('公开来源转交应支持登录参与意图返回路径', () => {
+  const storage = new MemoryStorage();
+  const circleRoute: PublicRouteDescriptor = {
+    app: 'circle',
+    route: { tab: 'feed', page: 1 }
+  };
+  const forumDetailRoute: PublicRouteDescriptor = {
+    app: 'forum',
+    route: {
+      kind: 'detail',
+      postId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f821',
+      intent: 'comment',
+    }
+  };
+  const sourceState = createPublicRouteSourceState({}, circleRoute, forumDetailRoute);
+  const targetPath = '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f821?intent=comment';
+
+  assert.equal(rememberPublicRouteSourceTransfer(targetPath, sourceState, storage), true);
+  assert.deepEqual(consumePublicRouteSourceTransfer(targetPath, storage), sourceState);
 });
 
 test('shouldCommitPublicRouteUpdate 对同 app 同路径的 replace 导航返回 false', () => {

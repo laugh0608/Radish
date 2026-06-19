@@ -15,6 +15,7 @@ import type {
   PublicForumRouteSort,
   PublicForumTypeRoute,
 } from '../forumRouteState';
+import { buildPublicForumPath } from '../forumRouteState';
 import { usePublicReplaceRouteSync } from '../usePublicReplaceRouteSync';
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import { PublicStatusCard } from './PublicStatusCard';
@@ -26,6 +27,7 @@ import {
   lotteryGuideDefinition,
   pollGuideDefinition,
   questionGuideDefinition,
+  resolvePublicProfileUserId,
 } from './publicForumUtils';
 import {
   resolvePublicForumReadSectionState,
@@ -288,7 +290,7 @@ export const PublicForumTypeFeed = ({
     <section className={`${styles.sectionCard} ${styles.listSectionCard}`}>
       <div className={styles.sectionHeader}>
         <div className={styles.sectionHeading}>
-          <p className={styles.kicker}>Phase 2-2</p>
+          <p className={styles.kicker}>{t('forum.public.guide.label')}</p>
           <div className={styles.searchTopbar}>
             <button type="button" className={styles.backButton} onClick={onBackToList}>
               <Icon icon="mdi:arrow-left" size={18} />
@@ -379,7 +381,9 @@ export const PublicForumTypeFeed = ({
                 post={post}
                 displayTimeZone={displayTimeZone}
                 onClick={() => onOpenPost(getForumPostRouteIdentifier(post))}
+                href={buildPublicForumPath({ kind: 'detail', postId: getForumPostRouteIdentifier(post) })}
                 variant="publicCompact"
+                resolveAuthorProfileId={resolvePublicProfileUserId}
                 onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
                 onTagClick={(_, tagSlug) => onOpenTag?.(tagSlug)}
                 onQuestionClick={onOpenQuestion}

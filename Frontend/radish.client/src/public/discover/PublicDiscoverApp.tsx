@@ -13,16 +13,23 @@ import { getProductTypeDisplay, getProducts, type ProductListItem } from '@/api/
 import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
 import { getPublicWikiList } from '../docs/publicDocsApi';
-import { getForumPostRouteIdentifier } from '../forum/publicForumUtils';
+import { getForumPostRouteIdentifier, resolvePublicProfileUserId } from '../forum/publicForumUtils';
 import { buildPublicDiscoverPath, type PublicDiscoverRoute } from '../discoverRouteState';
 import type { PublicDocsRoute } from '../docsRouteState';
 import { createDefaultPublicLeaderboardRoute, type PublicLeaderboardRoute } from '../leaderboardRouteState';
-import type { PublicForumRoute } from '../forumRouteState';
+import { buildPublicForumPath, type PublicForumRoute } from '../forumRouteState';
 import type { PublicShopRoute } from '../shopRouteState';
 import { createDefaultPublicShopProductsRoute } from '../shopRouteState';
 import { buildPublicShareUrl } from '../publicHead';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { usePublicShareLink } from '../hooks/usePublicShareLink';
+import {
+  buildDocumentSummary,
+  buildProductSummary,
+  formatDocumentMeta,
+  isRecentDocument,
+} from './publicDiscoverFeedUtils';
+import { PublicDiscoverFeed } from './PublicDiscoverFeed';
 import styles from './PublicDiscoverApp.module.css';
 
 type DiscoverRouteKey = 'forum' | 'docs' | 'leaderboard' | 'shop';
@@ -316,81 +323,6 @@ function SectionStatusCard({
   );
 }
 
-function formatDocumentMeta(document: WikiDocumentVo, locale: string, fallback: string): string {
-  const source = document.voPublishedAt || document.voModifyTime || document.voCreateTime;
-  if (!source) {
-    return fallback;
-  }
-
-  const parsed = new Date(source);
-  if (Number.isNaN(parsed.getTime())) {
-    return fallback;
-  }
-
-  return parsed.toLocaleDateString(locale, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
-}
-
-function isRecentDocument(document: WikiDocumentVo): boolean {
-  const source = document.voPublishedAt || document.voModifyTime || document.voCreateTime;
-  if (!source) {
-    return false;
-  }
-
-  const parsed = new Date(source);
-  if (Number.isNaN(parsed.getTime())) {
-    return false;
-  }
-
-  const ageMs = Date.now() - parsed.getTime();
-  return ageMs >= 0 && ageMs <= 1000 * 60 * 60 * 24 * 30;
-}
-
-function buildDocumentSummary(document: WikiDocumentVo, locale: string, t: (key: string, options?: Record<string, unknown>) => string): string {
-  const summary = document.voSummary?.trim();
-  if (summary) {
-    return summary;
-  }
-
-  const source = document.voPublishedAt || document.voModifyTime || document.voCreateTime;
-  if (source) {
-    const parsed = new Date(source);
-    if (!Number.isNaN(parsed.getTime())) {
-      const formattedDate = parsed.toLocaleDateString(locale, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
-      return t('discover.public.documentFallbackSummaryWithDate', { date: formattedDate });
-    }
-  }
-
-  return t('discover.public.documentFallbackSummary');
-}
-
-function buildProductSummary(product: ProductListItem, t: (key: string, options?: Record<string, unknown>) => string): string {
-  const productType = getProductTypeDisplay(product.voProductType);
-  const duration = product.voDurationDisplay?.trim();
-  const soldCount = product.voSoldCount ?? 0;
-
-  if (duration) {
-    return t('discover.public.productDurationSummary', { type: productType, duration });
-  }
-
-  if (product.voHasDiscount) {
-    return t('discover.public.productDiscountSummary', { type: productType });
-  }
-
-  if (soldCount > 0) {
-    return t('discover.public.productSoldSummary', { type: productType, count: soldCount });
-  }
-
-  return t('discover.public.productFallbackSummary');
-}
-
 export const PublicDiscoverApp = ({
   route,
   onNavigate,
@@ -439,7 +371,7 @@ export const PublicDiscoverApp = ({
 
       try {
         const [postPage, tagList] = await Promise.all([
-          getPostList(null, t, 1, 4, 'newest'),
+          getPostList(null, t, 1, 8, 'newest'),
           getHotTags(t, 6)
         ]);
 
@@ -469,7 +401,7 @@ export const PublicDiscoverApp = ({
       setDocsError(null);
 
       try {
-        const result = await getPublicWikiList({ pageIndex: 1, pageSize: 4 });
+        const result = await getPublicWikiList({ pageIndex: 1, pageSize: 5 });
         if (cancelled) {
           return;
         }
@@ -703,30 +635,18 @@ export const PublicDiscoverApp = ({
           onNavigate({ kind: 'home' }, { replace: true });
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
+        circleLabel={t('public.shell.circleAction')}
+        desktopLabel={t('public.shell.desktopAction')}
       />
 
       <main className={styles.main}>
         <section className={styles.heroCard}>
           <div className={styles.heroTitleRow}>
-            <p className={styles.kicker}>Phase 2-2</p>
+            <p className={styles.kicker}>P3-10</p>
             <span className={styles.readOnlyBadge}>{t('discover.public.readOnlyBadge')}</span>
           </div>
           <h1 className={styles.pageTitle}>{t('discover.public.pageTitle')}</h1>
           <p className={styles.pageIntro}>{t('discover.public.pageIntro')}</p>
-
-          <div className={styles.heroGuideGrid}>
-            {discoverGuideItems.map((item) => (
-              <article key={item.titleKey} className={styles.heroGuideCard}>
-                <span className={styles.heroGuideIcon} aria-hidden="true">
-                  <Icon icon={item.icon} size={18} />
-                </span>
-                <div className={styles.heroGuideBody}>
-                  <h2 className={styles.heroGuideTitle}>{t(item.titleKey)}</h2>
-                  <p className={styles.heroGuideDescription}>{t(item.descriptionKey)}</p>
-                </div>
-              </article>
-            ))}
-          </div>
 
           <div className={styles.heroActions}>
             <button
@@ -800,6 +720,47 @@ export const PublicDiscoverApp = ({
                     <Icon icon="mdi:arrow-right-circle-outline" size={16} />
                     <span>{t('discover.public.summaryOpenAction')}</span>
                   </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <PublicDiscoverFeed
+          forumPosts={forumPosts}
+          documents={docs}
+          products={products}
+          loadingForum={loadingForum}
+          loadingDocs={loadingDocs}
+          loadingShop={loadingShop}
+          forumError={forumError}
+          docsError={docsError}
+          shopError={shopError}
+          displayTimeZone={displayTimeZone}
+          locale={i18n.language}
+          onReload={() => setReloadToken((current) => current + 1)}
+          onOpenPost={(post) => runFromSection('forum', () => onNavigateToForum({ kind: 'detail', postId: getForumPostRouteIdentifier(post) }))}
+          onOpenTag={(tagSlug) => runFromSection('forum', () => onNavigateToForum({ kind: 'tag', tagSlug, sortBy: 'newest', page: 1 }))}
+          onOpenQuestion={() => runFromSection('forum', () => onNavigateToForum({ kind: 'question', sortBy: 'newest', page: 1 }))}
+          onOpenPoll={() => runFromSection('forum', () => onNavigateToForum({ kind: 'poll', sortBy: 'newest', page: 1 }))}
+          onOpenLottery={() => runFromSection('forum', () => onNavigateToForum({ kind: 'lottery', sortBy: 'newest', page: 1 }))}
+          onOpenDocument={(document) => runFromSection('docs', () => onNavigateToDocs({ kind: 'detail', slug: document.voSlug }))}
+          onOpenProduct={(product) => runFromSection('shop', () => onNavigateToShop({ kind: 'detail', productId: String(product.voId) }))}
+          onOpenForum={() => runFromSection('forum', () => onNavigateToForum({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 }))}
+          onOpenDocs={() => runFromSection('docs', () => onNavigateToDocs({ kind: 'list' }))}
+          onOpenShop={() => runFromSection('shop', () => onNavigateToShop(createDefaultPublicShopProductsRoute()))}
+        />
+
+        <section className={`${styles.sectionCard} ${styles.guideSection}`}>
+          <div className={styles.heroGuideGrid}>
+            {discoverGuideItems.map((item) => (
+              <article key={item.titleKey} className={styles.heroGuideCard}>
+                <span className={styles.heroGuideIcon} aria-hidden="true">
+                  <Icon icon={item.icon} size={18} />
+                </span>
+                <div className={styles.heroGuideBody}>
+                  <h2 className={styles.heroGuideTitle}>{t(item.titleKey)}</h2>
+                  <p className={styles.heroGuideDescription}>{t(item.descriptionKey)}</p>
                 </div>
               </article>
             ))}
@@ -939,7 +900,9 @@ export const PublicDiscoverApp = ({
                       post={post}
                       displayTimeZone={displayTimeZone}
                       onClick={() => runFromSection('forum', () => onNavigateToForum({ kind: 'detail', postId: getForumPostRouteIdentifier(post) }))}
+                      href={buildPublicForumPath({ kind: 'detail', postId: getForumPostRouteIdentifier(post) })}
                       variant="publicCompact"
+                      resolveAuthorProfileId={resolvePublicProfileUserId}
                       onTagClick={(_, tagSlug) => runFromSection('forum', () => onNavigateToForum({ kind: 'tag', tagSlug, sortBy: 'newest', page: 1 }))}
                       onQuestionClick={() => runFromSection('forum', () => onNavigateToForum({ kind: 'question', sortBy: 'newest', page: 1 }))}
                       onPollClick={() => runFromSection('forum', () => onNavigateToForum({ kind: 'poll', sortBy: 'newest', page: 1 }))}

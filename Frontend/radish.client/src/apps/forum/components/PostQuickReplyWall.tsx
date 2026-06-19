@@ -18,16 +18,21 @@ import { resolveMediaUrl } from '@/utils/media';
 import styles from './PostQuickReplyWall.module.css';
 
 interface PostQuickReplyWallProps {
+  sectionId?: string;
   replies: PostQuickReply[];
   total: number;
   loading: boolean;
   isAuthenticated: boolean;
   currentUserId: LongId;
+  titleHeadingLevel?: QuickReplyTitleHeadingLevel;
   mode?: 'interactive' | 'readOnly';
   onCreate?: (content: string) => Promise<void>;
   onDelete?: (quickReplyId: LongId) => Promise<void>;
   onReport?: (quickReplyId: LongId) => void;
+  loginPromptText?: string;
+  loginButtonText?: string;
   loginReturnPath?: string | null;
+  onLoginRequired?: (returnPath?: string | null) => void;
   autoFocusComposerKey?: string | null;
 }
 
@@ -37,10 +42,28 @@ interface QuickReplyLaneLayout {
   shouldAnimate: boolean;
 }
 
+type QuickReplyTitleHeadingLevel = 2 | 3;
+
 const MAX_LENGTH = 10;
 const LANE_COUNT = 3;
 const PILL_GAP = 10;
 const DEFAULT_WALL_WIDTH = 960;
+
+const renderQuickReplyTitle = (title: string, headingLevel: QuickReplyTitleHeadingLevel, titleId: string) => {
+  if (headingLevel === 2) {
+    return (
+      <h2 id={titleId} className={styles.title}>
+        {title}
+      </h2>
+    );
+  }
+
+  return (
+    <h3 id={titleId} className={styles.title}>
+      {title}
+    </h3>
+  );
+};
 
 const buildAvatarText = (name: string): string => {
   const normalized = name.trim();
@@ -76,16 +99,21 @@ const getTrackStyle = (overflowWidth: number): CSSProperties => ({
 } as CSSProperties);
 
 export const PostQuickReplyWall = ({
+  sectionId = 'forum-quick-reply-section',
   replies,
   total,
   loading,
   isAuthenticated,
   currentUserId,
+  titleHeadingLevel = 3,
   mode = 'interactive',
   onCreate,
   onDelete,
   onReport,
+  loginPromptText,
+  loginButtonText,
   loginReturnPath,
+  onLoginRequired,
   autoFocusComposerKey = null,
 }: PostQuickReplyWallProps) => {
   const { t } = useTranslation();
@@ -100,6 +128,9 @@ export const PostQuickReplyWall = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const handledAutoFocusKeyRef = useRef<string | null>(null);
   const measureRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const resolvedLoginPromptText = loginPromptText ?? t('forum.quickReply.loginPrompt');
+  const resolvedLoginButtonText = loginButtonText ?? t('forum.quickReply.loginButton');
+  const titleId = `${sectionId}-title`;
 
   const normalizedContent = useMemo(
     () => content.trim().replace(/\s+/g, ' '),
@@ -242,6 +273,11 @@ export const PostQuickReplyWall = ({
   }, [measuredWidths, replies, wallWidth]);
 
   const handleLogin = () => {
+    if (onLoginRequired) {
+      onLoginRequired(loginReturnPath);
+      return;
+    }
+
     redirectToLogin({ returnPath: loginReturnPath });
   };
 
@@ -287,13 +323,11 @@ export const PostQuickReplyWall = ({
   };
 
   return (
-    <section className={styles.section} aria-labelledby="forum-quick-reply-title">
+    <section id={sectionId} className={styles.section} aria-labelledby={titleId}>
       <div className={styles.header}>
         <div className={styles.headerMain}>
           <div className={styles.titleRow}>
-            <h3 id="forum-quick-reply-title" className={styles.title}>
-              {t('forum.quickReply.title')}
-            </h3>
+            {renderQuickReplyTitle(t('forum.quickReply.title'), titleHeadingLevel, titleId)}
             <span className={styles.total}>{t('forum.quickReply.total', { count: total })}</span>
           </div>
           <p className={styles.subtitle}>{t('forum.quickReply.subtitle')}</p>
@@ -306,7 +340,7 @@ export const PostQuickReplyWall = ({
             <textarea
               ref={textareaRef}
               className={styles.textarea}
-              placeholder={isAuthenticated ? t('forum.quickReply.placeholder') : t('forum.quickReply.loginPrompt')}
+              placeholder={isAuthenticated ? t('forum.quickReply.placeholder') : resolvedLoginPromptText}
               value={content}
               onChange={(event) => setContent(event.target.value.slice(0, MAX_LENGTH))}
               onKeyDown={handleComposerKeyDown}
@@ -338,7 +372,7 @@ export const PostQuickReplyWall = ({
               </button>
             ) : (
               <button type="button" className={styles.loginButton} onClick={handleLogin}>
-                {t('forum.quickReply.loginButton')}
+                {resolvedLoginButtonText}
               </button>
             )}
           </div>
@@ -370,6 +404,8 @@ export const PostQuickReplyWall = ({
                   {lane.items.map((reply) => {
                     const avatarUrl = resolveMediaUrl(reply.voAuthorAvatarUrl);
                     const isOwner = String(reply.voAuthorId) === String(currentUserId);
+                    const canDelete = !isReadOnly && isOwner && Boolean(onDelete);
+                    const canReport = !isReadOnly && !isOwner && Boolean(onReport);
                     const authorName = reply.voAuthorName?.trim() || t('common.unknownUser');
 
                     return (
@@ -387,7 +423,7 @@ export const PostQuickReplyWall = ({
                         <span className={styles.author}>{authorName}</span>
                         <span className={styles.content}>{reply.voContent}</span>
 
-                        {!isReadOnly && isOwner ? (
+                        {canDelete ? (
                           <button
                             type="button"
                             className={styles.actionButton}
@@ -402,11 +438,11 @@ export const PostQuickReplyWall = ({
                               size={15}
                             />
                           </button>
-                        ) : !isReadOnly && onReport ? (
+                        ) : canReport ? (
                           <button
                             type="button"
                             className={styles.actionButton}
-                            onClick={() => onReport(reply.voId)}
+                            onClick={() => onReport?.(reply.voId)}
                             title={t('report.action')}
                           >
                             <Icon icon="mdi:alert-circle-outline" size={15} />
@@ -427,6 +463,7 @@ export const PostQuickReplyWall = ({
           const authorName = reply.voAuthorName?.trim() || t('common.unknownUser');
           const avatarUrl = resolveMediaUrl(reply.voAuthorAvatarUrl);
           const isOwner = String(reply.voAuthorId) === String(currentUserId);
+          const canShowAction = !isReadOnly && ((isOwner && Boolean(onDelete)) || (!isOwner && Boolean(onReport)));
 
           return (
             <div
@@ -447,7 +484,7 @@ export const PostQuickReplyWall = ({
               </div>
               <span className={styles.author}>{authorName}</span>
               <span className={styles.content}>{reply.voContent}</span>
-              {!isReadOnly && (
+              {canShowAction && (
                 <button type="button" className={styles.actionButton} tabIndex={-1}>
                   <Icon icon={isOwner ? 'mdi:trash-can-outline' : 'mdi:alert-circle-outline'} size={15} />
                 </button>
@@ -457,7 +494,7 @@ export const PostQuickReplyWall = ({
         })}
       </div>
 
-      {!isReadOnly && (
+      {!isReadOnly && onDelete && (
         <ConfirmDialog
           isOpen={pendingDeleteId !== null}
           title={t('forum.confirmDeleteTitle')}

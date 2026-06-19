@@ -31,6 +31,8 @@ public partial class PostService
             throw new ArgumentException("帖子内容不能为空", nameof(content));
         }
 
+        var contentSettings = await ValidatePostContentSettingsAsync(title, content);
+
         var normalizedTagNames = NormalizeTagNamesOrThrow(tagNames, nameof(tagNames), "编辑帖子时至少需要一个标签");
 
         var post = await _postRepository.QueryByIdAsync(postId);
@@ -97,6 +99,7 @@ public partial class PostService
 
         post.Title = trimmedTitle;
         post.Content = trimmedContent;
+        ApplyPostSummarySettings(post, contentSettings);
         post.CategoryId = targetCategoryId;
         post.EditCount = nextEditSequence;
         post.ModifyTime = DateTime.Now;

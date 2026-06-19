@@ -10,6 +10,12 @@ import styles from './Transfer.module.css';
 
 type TransferStep = 'form' | 'confirm' | 'result';
 
+const createTransferLogMeta = (transferData: TransferFormData) => ({
+  recipientId: transferData.recipientId,
+  amount: transferData.amount,
+  hasNote: Boolean(transferData.note?.trim())
+});
+
 /**
  * 转账功能组件
  */
@@ -27,7 +33,7 @@ export const Transfer = ({ onNavigate }: TransferProps) => {
   const { transfer, loading: transferLoading } = useTransfer();
 
   const handleFormSubmit = (formData: TransferFormData) => {
-    log.debug('Transfer', '提交转账表单', formData);
+    log.debug('Transfer', '提交转账表单', createTransferLogMeta(formData));
     setTransferData(formData);
     setCurrentStep('confirm');
   };
@@ -36,7 +42,7 @@ export const Transfer = ({ onNavigate }: TransferProps) => {
     if (!transferData) return;
 
     try {
-      log.debug('Transfer', '确认转账', transferData);
+      log.debug('Transfer', '确认转账', createTransferLogMeta(transferData));
       const result = await transfer(transferData);
       setTransferResult(result);
       setCurrentStep('result');

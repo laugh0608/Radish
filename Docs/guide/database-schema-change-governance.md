@@ -36,6 +36,27 @@
 5. 若本次改动涉及历史数据回填，可在迁移 SQL 中补安全的 `UPDATE`，或在 `Radish.DbMigrate` 的 `seed` 流程中补受控初始化逻辑。
 6. 在测试 / 生产部署前先执行本次版本对应的 SQL，再启动新版本宿主，并用 `doctor` / `verify` 做最小只读复核。
 
+## 显式结构补丁示例
+
+当结构变更同时包含“新增字段 + 历史数据回填 + 唯一索引”时，开发库可以由 `DbMigrate` 显式补丁承接，但测试 / 生产仍需要版本化 SQL。
+
+当前代表案例包括用户公开标识与电子宠物首批表：
+
+### `User.PublicId` 与 `User.PublicIndex`
+
+- 实体声明：`User.PublicId` 为可空字符串列，并声明 `idx_user_public_id` 唯一索引。
+- 实体声明：`User.PublicIndex` 为可空 `long / Int64` 列，并声明 `idx_user_public_index` 唯一索引；普通用户公开索引从 `1000` 起，`1-999` 保留给系统、种子和内部账号。
+- 开发库补丁：`DbMigrate apply` 会在旧库缺列时补齐字段，为旧用户回填 `usr_` + UUIDv7，并补唯一索引。
+- 发布前 SQL：正式发布候选仍要生成旧版本到新版本的差异 SQL，至少覆盖新增列、旧用户回填、保留公开索引回填和唯一索引创建；当前入口为 `Deploy/sql/20260615_add_user_public_index.sql`。
+- 运行时边界：Api / Gateway 启动时不自动执行 `InitTables`，避免宿主启动隐式改变测试 / 生产结构。
+
+### `PetProfile` 与 `PetStatLog`
+
+- 实体声明：`PetProfile` 承接每用户一只电子宠物主档，包含 `PublicId`、用户、名称、形态、成长阶段、状态数值、公开展示开关和最后照顾时间；`PetStatLog` 承接状态变化流水。
+- 开发库路径：本地仍通过 `Radish.DbMigrate init/apply` 按实体同步 SQLite / 开发库结构。
+- 发布前 SQL：测试 / 生产使用 `Deploy/sql/20260615_add_pet_tables.sql` 作为版本化差异 SQL 审核入口，覆盖两张表和 `PublicId`、`UserId`、`PetProfileId + CreateTime` 等索引。
+- 运行时边界：`Pet/GetMy` 只读查询不隐式创建宠物；表结构缺失应通过迁移修复，不在 API 启动或查询链路中临时建表。
+
 ## 边界
 
 - 表、字段、索引、约束这类 schema 变更，必须进入“实体定义 + DbMigrate + 版本化 SQL”这条正式路径。

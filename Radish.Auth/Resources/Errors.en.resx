@@ -22,7 +22,7 @@
     <value>Sign in with your Radish account and authorize access for the current client.</value>
   </data>
   <data name="auth.login.usernameLabel" xml:space="preserve">
-    <value>Username</value>
+    <value>Login name or email</value>
   </data>
   <data name="auth.login.passwordLabel" xml:space="preserve">
     <value>Password</value>

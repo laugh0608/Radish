@@ -21,6 +21,7 @@ import {
 } from '@radish/ui';
 import { adminGetOrders, getOrderStatusColor } from '@/api/shopApi';
 import { getDashboardStats, type DashboardStatsVo } from '@/api/statisticsApi';
+import { buildOrderDetailPath } from '@/pages/Orders/orderListUrlState';
 import type { Order } from '@/api/types';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
@@ -93,12 +94,11 @@ export const Dashboard = () => {
     void loadRecentOrders();
   }, [canViewOrders]);
 
-  const handleOpenOrderDetail = (orderNo: string) => {
-    const searchParams = new URLSearchParams({
-      orderNo,
-      openDetail: '1',
-    });
-    navigate(`/orders?${searchParams.toString()}`);
+  const handleOpenOrderDetail = (order: Order) => {
+    navigate(buildOrderDetailPath({
+      orderId: String(order.voId),
+      returnTo: '/',
+    }));
   };
 
   const orderColumns: TableColumnsType<Order> = [
@@ -146,7 +146,7 @@ export const Dashboard = () => {
           variant="ghost"
           size="small"
           icon={<EyeOutlined />}
-          onClick={() => handleOpenOrderDetail(record.voOrderNo)}
+          onClick={() => handleOpenOrderDetail(record)}
         >
           查看
         </Button>

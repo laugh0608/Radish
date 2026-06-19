@@ -44,6 +44,7 @@ public class UserController : ControllerBase
     private readonly IUserBrowseHistoryService _userBrowseHistoryService;
     private readonly IUserTimePreferenceService _userTimePreferenceService;
     private readonly INotificationPushService _notificationPushService;
+    private readonly ISystemSettingProvider _systemSettingProvider;
     private readonly TimeOptions _timeOptions;
 
     public UserController(
@@ -55,6 +56,7 @@ public class UserController : ControllerBase
         IUserTimePreferenceService userTimePreferenceService,
         IAttachmentService attachmentService,
         INotificationPushService notificationPushService,
+        ISystemSettingProvider systemSettingProvider,
         IOptions<TimeOptions> timeOptions)
     {
         _userService = userService;
@@ -64,6 +66,7 @@ public class UserController : ControllerBase
         _userBrowseHistoryService = userBrowseHistoryService;
         _userTimePreferenceService = userTimePreferenceService;
         _notificationPushService = notificationPushService;
+        _systemSettingProvider = systemSettingProvider;
         _attachmentService = attachmentService;
         _timeOptions = timeOptions.Value;
     }
@@ -508,6 +511,42 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
+    /// 通过公开标识获取用户统计信息
+    /// </summary>
+    /// <param name="identifier">用户 PublicId 或兼容期 LongId 字符串</param>
+    /// <returns>用户统计信息（发帖数、评论数、获赞数）</returns>
+    [HttpGet]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    public async Task<MessageModel> GetPublicUserStats(string? identifier)
+    {
+        if (string.IsNullOrWhiteSpace(identifier))
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "用户标识无效"
+            };
+        }
+
+        var user = await _userService.GetPublicUserByIdentifierAsync(identifier);
+        if (user == null)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = "用户不存在"
+            };
+        }
+
+        return await GetUserStats(user.Uuid);
+    }
+
+    /// <summary>
     /// 搜索用户（用于@提及功能）
     /// </summary>
     /// <param name="keyword">搜索关键词（匹配用户名）</param>
@@ -559,6 +598,9 @@ public class UserController : ControllerBase
         var profile = new UserProfileVo
         {
             VoUserId = user.Uuid,
+            VoPublicId = user.VoPublicId,
+            VoPublicIndex = user.VoPublicIndex,
+            VoDisplayHandle = user.VoDisplayHandle,
             VoUserName = user.VoUserName,
             VoUserEmail = user.VoUserEmail,
             VoRealName = user.VoUserRealName,
@@ -588,19 +630,20 @@ public class UserController : ControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
-    public async Task<MessageModel> GetPublicProfile(long userId)
+    public async Task<MessageModel> GetPublicProfile(string? identifier = null, string? userId = null)
     {
-        if (userId <= 0)
+        var requestedIdentifier = !string.IsNullOrWhiteSpace(identifier) ? identifier : userId;
+        if (string.IsNullOrWhiteSpace(requestedIdentifier))
         {
             return new MessageModel
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "用户 ID 无效"
+                MessageInfo = "用户标识无效"
             };
         }
 
-        var user = await _userService.QueryFirstAsync(u => u.Id == userId && !u.IsDeleted && u.IsEnable);
+        var user = await _userService.GetPublicUserByIdentifierAsync(requestedIdentifier);
         if (user == null)
         {
             return new MessageModel
@@ -611,13 +654,16 @@ public class UserController : ControllerBase
             };
         }
 
-        var avatar = await _attachmentService.GetLatestAvatarAssetAsync(userId);
+        var avatar = await _attachmentService.GetLatestAvatarAssetAsync(user.Uuid);
 
         var profile = new UserPublicProfileVo
         {
             VoUserId = user.Uuid,
+            VoPublicId = user.VoPublicId,
+            VoPublicIndex = user.VoPublicIndex,
             VoUserName = user.VoUserName,
-            VoDisplayName = string.IsNullOrWhiteSpace(user.VoUserRealName) ? null : user.VoUserRealName,
+            VoDisplayName = user.VoDisplayName,
+            VoDisplayHandle = user.VoDisplayHandle,
             VoCreateTime = user.VoCreateTime,
             VoAvatarUrl = avatar?.Url,
             VoAvatarThumbnailUrl = avatar?.ThumbnailUrl
@@ -678,14 +724,18 @@ public class UserController : ControllerBase
         var birth = dto.Birth;
         var now = DateTime.UtcNow;
 
-        if (normalizedUserName != null && normalizedUserName.Length > 200)
+        if (normalizedUserName != null)
         {
-            return new MessageModel
+            var displayNameLengthRule = await GetDisplayNameLengthRuleAsync();
+            if (!IsValidDisplayName(normalizedUserName, displayNameLengthRule.MinLength, displayNameLengthRule.MaxLength, out var displayNameError))
             {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "用户名长度不能超过 200"
-            };
+                return new MessageModel
+                {
+                    IsSuccess = false,
+                    StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                    MessageInfo = displayNameError
+                };
+            }
         }
 
         if (normalizedUserEmail != null)
@@ -753,24 +803,6 @@ public class UserController : ControllerBase
                 StatusCode = (int)HttpStatusCodeEnum.BadRequest,
                 MessageInfo = "年龄不能为负数"
             };
-        }
-
-        if (normalizedUserName != null)
-        {
-            var nameExists = await _userService.QueryExistsAsync(u =>
-                u.UserName == normalizedUserName &&
-                !u.IsDeleted &&
-                u.Id != userId);
-
-            if (nameExists)
-            {
-                return new MessageModel
-                {
-                    IsSuccess = false,
-                    StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                    MessageInfo = "用户名已被占用"
-                };
-            }
         }
 
         if (normalizedUserEmail != null)
@@ -1035,5 +1067,48 @@ public class UserController : ControllerBase
             MessageInfo = $"已推送未读数 {unreadCount} 到用户 {userId}",
             ResponseData = new TestPushResultVo { VoUserId = userId, VoUnreadCount = unreadCount }
         };
+    }
+
+    private async Task<(int MinLength, int MaxLength)> GetDisplayNameLengthRuleAsync()
+    {
+        var minLength = await _systemSettingProvider.GetInt32Async(SystemConfigDefaults.DisplayNameMinLengthKey);
+        var maxLength = await _systemSettingProvider.GetInt32Async(SystemConfigDefaults.DisplayNameMaxLengthKey);
+        if (minLength > maxLength)
+        {
+            throw new InvalidOperationException("展示名长度系统设置无效：最小长度不能大于最大长度");
+        }
+
+        return (minLength, maxLength);
+    }
+
+    private static bool IsValidDisplayName(string value, int minLength, int maxLength, out string errorMessage)
+    {
+        if (value.Length < minLength || value.Length > maxLength)
+        {
+            errorMessage = $"显示名长度必须在 {minLength}-{maxLength} 个字符之间";
+            return false;
+        }
+
+        if (value.Any(char.IsControl) || value.Contains('\n') || value.Contains('\r') || value.Contains('\t'))
+        {
+            errorMessage = "显示名不能包含控制字符";
+            return false;
+        }
+
+        if (value.Contains("  ", StringComparison.Ordinal))
+        {
+            errorMessage = "显示名不能包含连续空格";
+            return false;
+        }
+
+        char[] blockedChars = ['#', '@', '/', '\\', '?', '&', '=', '<', '>'];
+        if (value.IndexOfAny(blockedChars) >= 0)
+        {
+            errorMessage = "显示名不能包含 #、@、URL 分隔符或 HTML 控制字符";
+            return false;
+        }
+
+        errorMessage = string.Empty;
+        return true;
     }
 }

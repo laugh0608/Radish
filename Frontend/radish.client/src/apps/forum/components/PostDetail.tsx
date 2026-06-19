@@ -21,12 +21,15 @@ const MarkdownEditor = lazy(() =>
   import('@radish/ui/markdown-editor').then((module) => ({ default: module.MarkdownEditor }))
 );
 
+type PostTitleHeadingLevel = 1 | 2 | 3 | 4;
+
 interface PostDetailProps {
   post: PostDetailType | null;
   loading?: boolean;
   displayTimeZone: string;
   mode?: 'interactive' | 'readOnly';
   showSectionTitle?: boolean;
+  postTitleHeadingLevel?: PostTitleHeadingLevel;
   isLiked?: boolean;
   onLike?: (postId: LongId) => void;
   onVotePoll?: (optionId: number) => Promise<void>;
@@ -55,6 +58,7 @@ interface PostDetailProps {
   followLoading?: boolean;
   onToggleFollow?: (targetUserId: LongId, isFollowing: boolean) => Promise<void>;
   onAuthorClick?: (userId: LongId, userName?: string | null, avatarUrl?: string | null) => void;
+  resolveAuthorProfileId?: (userId: LongId, publicId?: string | null) => LongId;
   onTagClick?: (tagName: string, tagSlug: string) => void;
   onQuestionClick?: () => void;
   onPollClick?: () => void;
@@ -70,12 +74,29 @@ const isSameLongId = (left: LongId | null | undefined, right: LongId | null | un
   return String(left) === String(right);
 };
 
+const renderPostTitle = (title: string, headingLevel: PostTitleHeadingLevel) => {
+  if (headingLevel === 1) {
+    return <h1 className={styles.postTitle}>{title}</h1>;
+  }
+
+  if (headingLevel === 2) {
+    return <h2 className={styles.postTitle}>{title}</h2>;
+  }
+
+  if (headingLevel === 3) {
+    return <h3 className={styles.postTitle}>{title}</h3>;
+  }
+
+  return <h4 className={styles.postTitle}>{title}</h4>;
+};
+
 export const PostDetail = ({
   post,
   loading = false,
   displayTimeZone,
   mode = 'interactive',
   showSectionTitle = true,
+  postTitleHeadingLevel = 4,
   isLiked = false,
   onLike,
   onVotePoll,
@@ -104,6 +125,7 @@ export const PostDetail = ({
   followLoading = false,
   onToggleFollow,
   onAuthorClick,
+  resolveAuthorProfileId,
   onTagClick,
   onQuestionClick,
   onPollClick,
@@ -112,6 +134,8 @@ export const PostDetail = ({
 }: PostDetailProps) => {
   const { t } = useTranslation();
   const isReadOnly = mode === 'readOnly';
+  const resolveProfileUserId = (userId: LongId, publicId?: string | null): LongId =>
+    resolveAuthorProfileId?.(userId, publicId) ?? userId;
   const anonymousUserLabel = t('forum.postCard.anonymousUser');
   const unknownTimeLabel = t('forum.postCard.unknownTime');
   const parsedTags = post?.voTags
@@ -379,7 +403,7 @@ export const PostDetail = ({
     <div className={styles.container}>
       {showSectionTitle && <h3 className={styles.title}>{t('forum.postDetail.title')}</h3>}
       <div className={styles.postContent}>
-        <h4 className={styles.postTitle}>{post.voTitle}</h4>
+        {renderPostTitle(post.voTitle, postTitleHeadingLevel)}
         {isQuestionPost && (
           <div className={styles.statusRow}>
             {onQuestionClick ? (
@@ -406,7 +430,11 @@ export const PostDetail = ({
             <button
               type="button"
               className={styles.authorLink}
-              onClick={() => onAuthorClick?.(post.voAuthorId, post.voAuthorName, post.voAuthorAvatarUrl)}
+              onClick={() => onAuthorClick?.(
+                resolveProfileUserId(post.voAuthorId, post.voAuthorPublicId),
+                post.voAuthorName,
+                post.voAuthorAvatarUrl
+              )}
             >
               <span
                 className={styles.authorAvatar}
@@ -638,7 +666,11 @@ export const PostDetail = ({
                         <button
                           type="button"
                           className={styles.lotteryWinnerName}
-                          onClick={() => onAuthorClick?.(winner.voUserId, winner.voUserName, null)}
+                          onClick={() => onAuthorClick?.(
+                            resolveProfileUserId(winner.voUserId, winner.voUserPublicId),
+                            winner.voUserName,
+                            null
+                          )}
                         >
                           {winner.voUserName}
                         </button>
@@ -760,7 +792,11 @@ export const PostDetail = ({
                           <button
                             type="button"
                             className={styles.answerAuthorButton}
-                            onClick={() => onAuthorClick?.(answer.voAuthorId, answer.voAuthorName, answer.voAuthorAvatarUrl)}
+                            onClick={() => onAuthorClick?.(
+                              resolveProfileUserId(answer.voAuthorId, answer.voAuthorPublicId),
+                              answer.voAuthorName,
+                              answer.voAuthorAvatarUrl
+                            )}
                             title={t('forum.postDetail.answerProfileTitle', { name: answerAuthorName })}
                           >
                             <span

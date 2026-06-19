@@ -21,7 +21,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
 {
     private readonly SqlSugarScope _dbScopeBase;
     private static readonly ConcurrentDictionary<Type, List<PropertyInfo>> DateTimePropertyCache = new();
-    private static readonly ConcurrentDictionary<string, SemaphoreSlim> SqliteSyncReadLocks =
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> SqliteOperationLocks =
         new(StringComparer.OrdinalIgnoreCase);
     private static readonly bool IsTenantScopedEntity = typeof(ITenantEntity).IsAssignableFrom(typeof(TEntity));
 
@@ -145,7 +145,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         }
     }
 
-    private bool TryGetSqliteSyncReadLockKey(out string lockKey)
+    private bool TryGetSqliteOperationLockKey(out string lockKey)
     {
         var config = DbClientBase.CurrentConnectionConfig;
         if (config?.DbType != DbType.Sqlite)
@@ -158,17 +158,41 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         return true;
     }
 
-    private static async Task<TResult> ExecuteSqliteSyncReadAsync<TResult>(string lockKey, Func<TResult> readAction)
+    protected async Task<TResult> ExecuteDbOperationAsync<TResult>(Func<Task<TResult>> operation)
     {
-        var readLock = SqliteSyncReadLocks.GetOrAdd(lockKey, _ => new SemaphoreSlim(1, 1));
-        await readLock.WaitAsync();
+        if (!TryGetSqliteOperationLockKey(out var lockKey))
+        {
+            return await operation();
+        }
+
+        var operationLock = SqliteOperationLocks.GetOrAdd(lockKey, _ => new SemaphoreSlim(1, 1));
+        await operationLock.WaitAsync();
         try
         {
-            return readAction();
+            return await operation();
         }
         finally
         {
-            readLock.Release();
+            operationLock.Release();
+        }
+    }
+
+    protected async Task<TResult> ExecuteDbOperationAsync<TResult>(Func<TResult> operation)
+    {
+        if (!TryGetSqliteOperationLockKey(out var lockKey))
+        {
+            return operation();
+        }
+
+        var operationLock = SqliteOperationLocks.GetOrAdd(lockKey, _ => new SemaphoreSlim(1, 1));
+        await operationLock.WaitAsync();
+        try
+        {
+            return operation();
+        }
+        finally
+        {
+            operationLock.Release();
         }
     }
 
@@ -318,16 +342,17 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         // 自动检测实体是否配置了分表，如果是则自动调用 .SplitTable()
         var splitTableAttr = typeof(TEntity).GetCustomAttribute<SplitTableAttribute>();
 
-        if (splitTableAttr != null)
+        return await ExecuteDbOperationAsync(async () =>
         {
-            var splitInsert = DbClientBase.Insertable(entity).SplitTable();
-            return await splitInsert.ExecuteReturnSnowflakeIdAsync();
-        }
-        else
-        {
+            if (splitTableAttr != null)
+            {
+                var splitInsert = DbClientBase.Insertable(entity).SplitTable();
+                return await splitInsert.ExecuteReturnSnowflakeIdAsync();
+            }
+
             var insert = DbClientBase.Insertable(entity);
             return await insert.ExecuteReturnSnowflakeIdAsync();
-        }
+        });
     }
 
     /// <summary>批量写入实体数据</summary>
@@ -354,18 +379,19 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
 
         // 🚀 使用 ExecuteReturnSnowflakeIdListAsync 为每条记录生成唯一的 Snowflake ID
         // 避免批量插入时产生重复 ID 导致 UNIQUE constraint 错误
-        if (splitTableAttr != null)
+        return await ExecuteDbOperationAsync(async () =>
         {
-            var splitInsertable = DbClientBase.Insertable(entities).SplitTable();
-            var ids = await splitInsertable.ExecuteReturnSnowflakeIdListAsync();
-            return ids.Count;
-        }
-        else
-        {
+            if (splitTableAttr != null)
+            {
+                var splitInsertable = DbClientBase.Insertable(entities).SplitTable();
+                var splitIds = await splitInsertable.ExecuteReturnSnowflakeIdListAsync();
+                return splitIds.Count;
+            }
+
             var insertable = DbClientBase.Insertable(entities);
-            var ids = await insertable.ExecuteReturnSnowflakeIdListAsync();
-            return ids.Count;
-        }
+            var insertedIds = await insertable.ExecuteReturnSnowflakeIdListAsync();
+            return insertedIds.Count;
+        });
     }
 
     /// <summary>分表-写入实体数据</summary>
@@ -384,9 +410,12 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             softDeleteEntity.DeletedBy = null;
         }
 
-        var insert = DbClientBase.Insertable(entity).SplitTable();
-        // 插入并返回雪花ID并且自动赋值 Id
-        return await insert.ExecuteReturnSnowflakeIdListAsync();
+        return await ExecuteDbOperationAsync(async () =>
+        {
+            var insert = DbClientBase.Insertable(entity).SplitTable();
+            // 插入并返回雪花ID并且自动赋值 Id
+            return await insert.ExecuteReturnSnowflakeIdListAsync();
+        });
     }
 
     #endregion
@@ -470,7 +499,8 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         }
 
         // 先查询实体是否存在（包括已删除的）
-        var entity = await CreateTenantQueryable(includeDeleted: true).InSingleAsync(id);
+        var entity = await ExecuteDbOperationAsync(
+            () => CreateTenantQueryable(includeDeleted: true).InSingleAsync(id));
         if (entity == null)
         {
             return false;
@@ -500,7 +530,8 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         }
 
         // 查询要恢复的实体（包括已删除的）
-        var entities = await CreateTenantQueryable(includeDeleted: true).Where(whereExpression).ToListAsync();
+        var entities = await ExecuteDbOperationAsync(
+            () => CreateTenantQueryable(includeDeleted: true).Where(whereExpression).ToListAsync());
         if (!entities.Any())
         {
             return 0;
@@ -547,8 +578,11 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             return false;
         }
 
-        var deleteable = DbClientBase.Deleteable(entity);
-        return await deleteable.ExecuteCommandHasChangeAsync();
+        return await ExecuteDbOperationAsync(async () =>
+        {
+            var deleteable = DbClientBase.Deleteable(entity);
+            return await deleteable.ExecuteCommandHasChangeAsync();
+        });
     }
 
     /// <summary>根据条件删除（物理删除）</summary>
@@ -558,8 +592,11 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     public async Task<int> DeleteAsync(Expression<Func<TEntity, bool>> whereExpression)
     {
         var scopedWhereExpression = BuildScopedWhereExpression(whereExpression);
-        var deleteable = DbClientBase.Deleteable<TEntity>().Where(scopedWhereExpression);
-        return await deleteable.ExecuteCommandAsync();
+        return await ExecuteDbOperationAsync(async () =>
+        {
+            var deleteable = DbClientBase.Deleteable<TEntity>().Where(scopedWhereExpression);
+            return await deleteable.ExecuteCommandAsync();
+        });
     }
 
     /// <summary>批量删除（物理删除）</summary>
@@ -575,8 +612,11 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
 
         var whereExpression = BuildIdsFilterExpression<TEntity>(ids);
         var scopedWhereExpression = BuildScopedWhereExpression(whereExpression);
-        var deleteable = DbClientBase.Deleteable<TEntity>().Where(scopedWhereExpression);
-        return await deleteable.ExecuteCommandAsync();
+        return await ExecuteDbOperationAsync(async () =>
+        {
+            var deleteable = DbClientBase.Deleteable<TEntity>().Where(scopedWhereExpression);
+            return await deleteable.ExecuteCommandAsync();
+        });
     }
 
     #endregion
@@ -594,8 +634,11 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             return false;
         }
 
-        var updateable = DbClientBase.Updateable(entity);
-        return await updateable.ExecuteCommandHasChangeAsync();
+        return await ExecuteDbOperationAsync(async () =>
+        {
+            var updateable = DbClientBase.Updateable(entity);
+            return await updateable.ExecuteCommandHasChangeAsync();
+        });
     }
 
     /// <summary>批量更新实体数据</summary>
@@ -625,8 +668,11 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             NormalizeEntityDateTimeToUtc(entity);
         }
 
-        var updateable = DbClientBase.Updateable(updateEntities);
-        return await updateable.ExecuteCommandAsync();
+        return await ExecuteDbOperationAsync(async () =>
+        {
+            var updateable = DbClientBase.Updateable(updateEntities);
+            return await updateable.ExecuteCommandAsync();
+        });
     }
 
     /// <summary>更新指定列</summary>
@@ -644,8 +690,11 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             return false;
         }
 
-        var updateable = DbClientBase.Updateable(entity).UpdateColumns(updateColumns);
-        return await updateable.ExecuteCommandHasChangeAsync();
+        return await ExecuteDbOperationAsync(async () =>
+        {
+            var updateable = DbClientBase.Updateable(entity).UpdateColumns(updateColumns);
+            return await updateable.ExecuteCommandHasChangeAsync();
+        });
     }
 
     /// <summary>统一将实体中的 DateTime/DateTime? 字段规范为 UTC，保证落库一致性</summary>
@@ -703,8 +752,11 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     public async Task<int> UpdateColumnsAsync(Expression<Func<TEntity, TEntity>> updateColumns, Expression<Func<TEntity, bool>> whereExpression)
     {
         var scopedWhereExpression = BuildScopedWhereExpression(whereExpression);
-        var updateable = DbClientBase.Updateable<TEntity>().SetColumns(updateColumns).Where(scopedWhereExpression);
-        return await updateable.ExecuteCommandAsync();
+        return await ExecuteDbOperationAsync(async () =>
+        {
+            var updateable = DbClientBase.Updateable<TEntity>().SetColumns(updateColumns).Where(scopedWhereExpression);
+            return await updateable.ExecuteCommandAsync();
+        });
     }
 
     #endregion
@@ -716,7 +768,8 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <returns>实体对象，如果不存在则返回 null</returns>
     public async Task<TEntity?> QueryByIdAsync(long id)
     {
-        return await CreateTenantQueryable().Where("Id = @id", new { id }).FirstAsync();
+        return await ExecuteDbOperationAsync(
+            () => CreateTenantQueryable().Where("Id = @id", new { id }).FirstAsync());
     }
 
     /// <summary>查询第一条数据</summary>
@@ -724,13 +777,16 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <returns>实体对象，如果不存在则返回 null</returns>
     public async Task<TEntity?> QueryFirstAsync(Expression<Func<TEntity, bool>>? whereExpression = null)
     {
-        var query = CreateTenantQueryable();
-        if (whereExpression != null)
+        return await ExecuteDbOperationAsync(() =>
         {
-            query = query.Where(whereExpression);
-        }
+            var query = CreateTenantQueryable();
+            if (whereExpression != null)
+            {
+                query = query.Where(whereExpression);
+            }
 
-        return await query.FirstAsync();
+            return query.FirstAsync();
+        });
     }
 
     /// <summary>查询单条数据（多条会抛异常）</summary>
@@ -738,7 +794,8 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <returns>实体对象，如果不存在则返回 null</returns>
     public async Task<TEntity?> QuerySingleAsync(Expression<Func<TEntity, bool>> whereExpression)
     {
-        return await CreateTenantQueryable().SingleAsync(whereExpression);
+        return await ExecuteDbOperationAsync(
+            () => CreateTenantQueryable().SingleAsync(whereExpression));
     }
 
     /// <summary>按照 Where 表达式查询</summary>
@@ -748,18 +805,16 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     {
         // DbBase 是 ISqlSugarClient 单例注入的，所以多次查询的 HASH 是一样的，对应的是 Service 层的 Repository 不是单例
         // await Console.Out.WriteLineAsync($"DbBase HashCode: {DbBase.GetHashCode().ToString()}");
-        var query = CreateTenantQueryable();
-        if (whereExpression != null)
+        return await ExecuteDbOperationAsync(() =>
         {
-            query = query.Where(whereExpression);
-        }
+            var query = CreateTenantQueryable();
+            if (whereExpression != null)
+            {
+                query = query.Where(whereExpression);
+            }
 
-        if (TryGetSqliteSyncReadLockKey(out var sqliteReadLockKey))
-        {
-            return await ExecuteSqliteSyncReadAsync(sqliteReadLockKey, query.ToList);
-        }
-
-        return await query.ToListAsync();
+            return query.ToListAsync();
+        });
     }
 
     /// <summary>按照 Where 表达式查询（使用缓存）</summary>
@@ -770,13 +825,16 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     {
         // return await DbClientBase.Queryable<TEntity>().WhereIF(whereExpression != null, whereExpression).WithCache().ToListAsync();
         // 缓存时间默认为 10 s
-        var query = CreateTenantQueryable();
-        if (whereExpression != null)
+        return await ExecuteDbOperationAsync(() =>
         {
-            query = query.Where(whereExpression);
-        }
+            var query = CreateTenantQueryable();
+            if (whereExpression != null)
+            {
+                query = query.Where(whereExpression);
+            }
 
-        return await query.WithCacheIF(true, cacheTime).ToListAsync();
+            return query.WithCacheIF(true, cacheTime).ToListAsync();
+        });
     }
 
     /// <summary>分页查询</summary>
@@ -793,6 +851,29 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         Expression<Func<TEntity, object>>? orderByExpression = null,
         OrderByType orderByType = OrderByType.Asc)
     {
+        if (TryGetSqliteOperationLockKey(out _))
+        {
+            return await ExecuteDbOperationAsync(() =>
+            {
+                var query = CreateTenantQueryable();
+                if (whereExpression != null)
+                {
+                    query = query.Where(whereExpression);
+                }
+
+                if (orderByExpression != null)
+                {
+                    query = orderByType == OrderByType.Asc
+                        ? query.OrderBy(orderByExpression)
+                        : query.OrderByDescending(orderByExpression);
+                }
+
+                var syncTotalCount = 0;
+                var syncData = query.ToPageList(pageIndex, pageSize, ref syncTotalCount);
+                return (syncData, syncTotalCount);
+            });
+        }
+
         RefAsync<int> totalCount = 0;
         var query = CreateTenantQueryable();
         if (whereExpression != null)
@@ -805,16 +886,6 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             query = orderByType == OrderByType.Asc
                 ? query.OrderBy(orderByExpression)
                 : query.OrderByDescending(orderByExpression);
-        }
-
-        if (TryGetSqliteSyncReadLockKey(out var sqliteReadLockKey))
-        {
-            return await ExecuteSqliteSyncReadAsync(sqliteReadLockKey, () =>
-            {
-                var syncTotalCount = 0;
-                var syncData = query.ToPageList(pageIndex, pageSize, ref syncTotalCount);
-                return (syncData, syncTotalCount);
-            });
         }
 
         var data = await query.ToPageListAsync(pageIndex, pageSize, totalCount);
@@ -832,6 +903,36 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         Expression<Func<TEntity, object>>? thenByExpression,
         OrderByType thenByType)
     {
+        if (TryGetSqliteOperationLockKey(out _))
+        {
+            return await ExecuteDbOperationAsync(() =>
+            {
+                var query = CreateTenantQueryable();
+                if (whereExpression != null)
+                {
+                    query = query.Where(whereExpression);
+                }
+
+                // 主排序
+                if (orderByExpression != null)
+                {
+                    query = orderByType == OrderByType.Asc
+                        ? query.OrderBy(orderByExpression)
+                        : query.OrderByDescending(orderByExpression);
+                }
+
+                // 次级排序
+                if (thenByExpression != null)
+                {
+                    query = query.OrderBy(thenByExpression, thenByType);
+                }
+
+                var syncTotalCount = 0;
+                var syncData = query.ToPageList(pageIndex, pageSize, ref syncTotalCount);
+                return (syncData, syncTotalCount);
+            });
+        }
+
         RefAsync<int> totalCount = 0;
         var query = CreateTenantQueryable();
         if (whereExpression != null)
@@ -853,16 +954,6 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             query = query.OrderBy(thenByExpression, thenByType);
         }
 
-        if (TryGetSqliteSyncReadLockKey(out var sqliteReadLockKey))
-        {
-            return await ExecuteSqliteSyncReadAsync(sqliteReadLockKey, () =>
-            {
-                var syncTotalCount = 0;
-                var syncData = query.ToPageList(pageIndex, pageSize, ref syncTotalCount);
-                return (syncData, syncTotalCount);
-            });
-        }
-
         var data = await query.ToPageListAsync(pageIndex, pageSize, totalCount);
 
         return (data, totalCount);
@@ -873,18 +964,16 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <returns>记录数</returns>
     public async Task<int> QueryCountAsync(Expression<Func<TEntity, bool>>? whereExpression = null)
     {
-        var query = CreateTenantQueryable();
-        if (whereExpression != null)
+        return await ExecuteDbOperationAsync(() =>
         {
-            query = query.Where(whereExpression);
-        }
+            var query = CreateTenantQueryable();
+            if (whereExpression != null)
+            {
+                query = query.Where(whereExpression);
+            }
 
-        if (TryGetSqliteSyncReadLockKey(out var sqliteReadLockKey))
-        {
-            return await ExecuteSqliteSyncReadAsync(sqliteReadLockKey, query.Count);
-        }
-
-        return await query.CountAsync();
+            return query.CountAsync();
+        });
     }
 
     /// <summary>查询是否存在</summary>
@@ -892,13 +981,11 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <returns>是否存在</returns>
     public async Task<bool> QueryExistsAsync(Expression<Func<TEntity, bool>> whereExpression)
     {
-        var query = CreateTenantQueryable();
-        if (TryGetSqliteSyncReadLockKey(out var sqliteReadLockKey))
+        return await ExecuteDbOperationAsync(() =>
         {
-            return await ExecuteSqliteSyncReadAsync(sqliteReadLockKey, () => query.Any(whereExpression));
-        }
-
-        return await query.AnyAsync(whereExpression);
+            var query = CreateTenantQueryable();
+            return query.AnyAsync(whereExpression);
+        });
     }
 
     /// <summary>
@@ -917,19 +1004,22 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         Expression<Func<T, T2, T3, TResult>> selectExpression,
         Expression<Func<T, T2, T3, bool>>? whereLambda = null) where T : class, new()
     {
-        var query = DbClientBase.Queryable(joinExpression);
-        var tenantFilter = BuildTenantJoinFilterExpression<T, T2, T3>();
-        if (tenantFilter != null)
+        return await ExecuteDbOperationAsync(() =>
         {
-            query = query.Where(tenantFilter);
-        }
+            var query = DbClientBase.Queryable(joinExpression);
+            var tenantFilter = BuildTenantJoinFilterExpression<T, T2, T3>();
+            if (tenantFilter != null)
+            {
+                query = query.Where(tenantFilter);
+            }
 
-        if (whereLambda != null)
-        {
-            query = query.Where(whereLambda);
-        }
+            if (whereLambda != null)
+            {
+                query = query.Where(whereLambda);
+            }
 
-        return await query.Select(selectExpression).ToListAsync();
+            return query.Select(selectExpression).ToListAsync();
+        });
     }
 
     /// <summary>分表-按照 Where 表达式查询</summary>
@@ -939,16 +1029,19 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     public async Task<List<TEntity>> QuerySplitAsync(Expression<Func<TEntity, bool>>? whereExpression,
         string orderByFields = "Id")
     {
-        var query = CreateTenantQueryable()
-            .SplitTable()
-            .OrderByIF(!string.IsNullOrEmpty(orderByFields), orderByFields);
-
-        if (whereExpression != null)
+        return await ExecuteDbOperationAsync(() =>
         {
-            query = query.Where(whereExpression);
-        }
+            var query = CreateTenantQueryable()
+                .SplitTable()
+                .OrderByIF(!string.IsNullOrEmpty(orderByFields), orderByFields);
 
-        return await query.ToListAsync();
+            if (whereExpression != null)
+            {
+                query = query.Where(whereExpression);
+            }
+
+            return query.ToListAsync();
+        });
     }
 
     /// <summary>查询不同的字段值列表（去重）</summary>
@@ -960,13 +1053,16 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         Expression<Func<TEntity, TResult>> selectExpression,
         Expression<Func<TEntity, bool>>? whereExpression = null)
     {
-        var query = CreateTenantQueryable();
-        if (whereExpression != null)
+        return await ExecuteDbOperationAsync(() =>
         {
-            query = query.Where(whereExpression);
-        }
+            var query = CreateTenantQueryable();
+            if (whereExpression != null)
+            {
+                query = query.Where(whereExpression);
+            }
 
-        return await query.Select(selectExpression).Distinct().ToListAsync();
+            return query.Select(selectExpression).Distinct().ToListAsync();
+        });
     }
 
     /// <summary>查询字段求和（聚合）</summary>
@@ -978,13 +1074,16 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         Expression<Func<TEntity, TResult>> selectExpression,
         Expression<Func<TEntity, bool>>? whereExpression = null)
     {
-        var query = CreateTenantQueryable();
-        if (whereExpression != null)
+        return await ExecuteDbOperationAsync(() =>
         {
-            query = query.Where(whereExpression);
-        }
+            var query = CreateTenantQueryable();
+            if (whereExpression != null)
+            {
+                query = query.Where(whereExpression);
+            }
 
-        return await query.SumAsync(selectExpression);
+            return query.SumAsync(selectExpression);
+        });
     }
 
     /// <summary>根据多个 ID 批量查询实体</summary>
@@ -997,7 +1096,8 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             return new List<TEntity>();
         }
 
-        return await CreateTenantQueryable().In(ids).ToListAsync();
+        return await ExecuteDbOperationAsync(
+            () => CreateTenantQueryable().In(ids).ToListAsync());
     }
 
     /// <summary>查询字段最大值（聚合）</summary>
@@ -1009,13 +1109,16 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         Expression<Func<TEntity, TResult>> selectExpression,
         Expression<Func<TEntity, bool>>? whereExpression = null)
     {
-        var query = CreateTenantQueryable();
-        if (whereExpression != null)
+        return await ExecuteDbOperationAsync(() =>
         {
-            query = query.Where(whereExpression);
-        }
+            var query = CreateTenantQueryable();
+            if (whereExpression != null)
+            {
+                query = query.Where(whereExpression);
+            }
 
-        return await query.MaxAsync(selectExpression);
+            return query.MaxAsync(selectExpression);
+        });
     }
 
     /// <summary>查询字段最小值（聚合）</summary>
@@ -1027,13 +1130,16 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         Expression<Func<TEntity, TResult>> selectExpression,
         Expression<Func<TEntity, bool>>? whereExpression = null)
     {
-        var query = CreateTenantQueryable();
-        if (whereExpression != null)
+        return await ExecuteDbOperationAsync(() =>
         {
-            query = query.Where(whereExpression);
-        }
+            var query = CreateTenantQueryable();
+            if (whereExpression != null)
+            {
+                query = query.Where(whereExpression);
+            }
 
-        return await query.MinAsync(selectExpression);
+            return query.MinAsync(selectExpression);
+        });
     }
 
     /// <summary>查询字段平均值（聚合）</summary>
@@ -1044,13 +1150,16 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         Expression<Func<TEntity, decimal>> selectExpression,
         Expression<Func<TEntity, bool>>? whereExpression = null)
     {
-        var query = CreateTenantQueryable();
-        if (whereExpression != null)
+        return await ExecuteDbOperationAsync(() =>
         {
-            query = query.Where(whereExpression);
-        }
+            var query = CreateTenantQueryable();
+            if (whereExpression != null)
+            {
+                query = query.Where(whereExpression);
+            }
 
-        return await query.AvgAsync(selectExpression);
+            return query.AvgAsync(selectExpression);
+        });
     }
 
     /// <summary>带排序的列表查询</summary>
@@ -1065,22 +1174,25 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         OrderByType orderByType = OrderByType.Asc,
         int take = 0)
     {
-        var query = CreateTenantQueryable();
-        if (whereExpression != null)
+        return await ExecuteDbOperationAsync(() =>
         {
-            query = query.Where(whereExpression);
-        }
+            var query = CreateTenantQueryable();
+            if (whereExpression != null)
+            {
+                query = query.Where(whereExpression);
+            }
 
-        query = orderByType == OrderByType.Asc
-            ? query.OrderBy(orderByExpression)
-            : query.OrderByDescending(orderByExpression);
+            query = orderByType == OrderByType.Asc
+                ? query.OrderBy(orderByExpression)
+                : query.OrderByDescending(orderByExpression);
 
-        if (take > 0)
-        {
-            query = query.Take(take);
-        }
+            if (take > 0)
+            {
+                query = query.Take(take);
+            }
 
-        return await query.ToListAsync();
+            return query.ToListAsync();
+        });
     }
 
     #endregion

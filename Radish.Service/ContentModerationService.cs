@@ -131,23 +131,53 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
         var hasKeyword = !string.IsNullOrWhiteSpace(normalizedKeyword);
         var hasKeywordLongId = long.TryParse(normalizedKeyword, out var keywordLongId) && keywordLongId > 0;
 
-        Expression<Func<ContentReport, bool>> whereExpression = report =>
-            !report.IsDeleted &&
-            (!normalizedStatus.HasValue || report.Status == normalizedStatus.Value) &&
-            (!normalizedTargetType.HasValue || report.ReportTargetType == normalizedTargetType.Value) &&
-            (normalizedReasonType == null || report.ReasonType == normalizedReasonType) &&
-            (!hasKeyword ||
-             (hasKeywordLongId &&
-              (report.Id == keywordLongId ||
-               report.TargetContentId == keywordLongId ||
-               report.TargetUserId == keywordLongId ||
-               report.ReporterUserId == keywordLongId)) ||
-             (report.TargetSnapshotTitle != null && report.TargetSnapshotTitle.Contains(normalizedKeyword!)) ||
-             (report.TargetSnapshotSummary != null && report.TargetSnapshotSummary.Contains(normalizedKeyword!)) ||
-             (report.TargetUserName != null && report.TargetUserName.Contains(normalizedKeyword!)) ||
-             report.ReporterUserName.Contains(normalizedKeyword!) ||
-             report.ReasonType.Contains(normalizedKeyword!) ||
-             (report.ReasonDetail != null && report.ReasonDetail.Contains(normalizedKeyword!)));
+        Expression<Func<ContentReport, bool>> whereExpression = report => !report.IsDeleted;
+
+        if (normalizedStatus.HasValue)
+        {
+            var status = normalizedStatus.Value;
+            whereExpression = AndWhere(whereExpression, report => report.Status == status);
+        }
+
+        if (normalizedTargetType.HasValue)
+        {
+            var targetType = normalizedTargetType.Value;
+            whereExpression = AndWhere(whereExpression, report => report.ReportTargetType == targetType);
+        }
+
+        if (normalizedReasonType != null)
+        {
+            whereExpression = AndWhere(whereExpression, report => report.ReasonType == normalizedReasonType);
+        }
+
+        if (hasKeyword)
+        {
+            var keyword = normalizedKeyword!;
+            if (hasKeywordLongId)
+            {
+                whereExpression = AndWhere(whereExpression, report =>
+                    report.Id == keywordLongId ||
+                    report.TargetContentId == keywordLongId ||
+                    report.TargetUserId == keywordLongId ||
+                    report.ReporterUserId == keywordLongId ||
+                    (report.TargetSnapshotTitle != null && report.TargetSnapshotTitle.Contains(keyword)) ||
+                    (report.TargetSnapshotSummary != null && report.TargetSnapshotSummary.Contains(keyword)) ||
+                    (report.TargetUserName != null && report.TargetUserName.Contains(keyword)) ||
+                    report.ReporterUserName.Contains(keyword) ||
+                    report.ReasonType.Contains(keyword) ||
+                    (report.ReasonDetail != null && report.ReasonDetail.Contains(keyword)));
+            }
+            else
+            {
+                whereExpression = AndWhere(whereExpression, report =>
+                    (report.TargetSnapshotTitle != null && report.TargetSnapshotTitle.Contains(keyword)) ||
+                    (report.TargetSnapshotSummary != null && report.TargetSnapshotSummary.Contains(keyword)) ||
+                    (report.TargetUserName != null && report.TargetUserName.Contains(keyword)) ||
+                    report.ReporterUserName.Contains(keyword) ||
+                    report.ReasonType.Contains(keyword) ||
+                    (report.ReasonDetail != null && report.ReasonDetail.Contains(keyword)));
+            }
+        }
 
         if (normalizedNavigationStatus == null)
         {
@@ -464,20 +494,56 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
         var hasKeyword = !string.IsNullOrWhiteSpace(normalizedKeyword);
         var hasKeywordLongId = long.TryParse(normalizedKeyword, out var keywordLongId) && keywordLongId > 0;
 
+        Expression<Func<UserModerationAction, bool>> whereExpression = action => !action.IsDeleted;
+
+        if (normalizedTargetUserId.HasValue)
+        {
+            var targetUserId = normalizedTargetUserId.Value;
+            whereExpression = AndWhere(whereExpression, action => action.TargetUserId == targetUserId);
+        }
+
+        if (normalizedSourceReportId.HasValue)
+        {
+            var sourceReportId = normalizedSourceReportId.Value;
+            whereExpression = AndWhere(whereExpression, action => action.SourceReportId == sourceReportId);
+        }
+
+        if (normalizedActionType.HasValue)
+        {
+            var actionType = normalizedActionType.Value;
+            whereExpression = AndWhere(whereExpression, action => action.ActionType == actionType);
+        }
+
+        if (query.IsActive.HasValue)
+        {
+            var isActive = query.IsActive.Value;
+            whereExpression = AndWhere(whereExpression, action => action.IsActive == isActive);
+        }
+
+        if (hasKeyword)
+        {
+            var keyword = normalizedKeyword!;
+            if (hasKeywordLongId)
+            {
+                whereExpression = AndWhere(whereExpression, action =>
+                    action.Id == keywordLongId ||
+                    action.TargetUserId == keywordLongId ||
+                    action.SourceReportId == keywordLongId ||
+                    (action.TargetUserName != null && action.TargetUserName.Contains(keyword)) ||
+                    action.Reason.Contains(keyword) ||
+                    action.CreateBy.Contains(keyword));
+            }
+            else
+            {
+                whereExpression = AndWhere(whereExpression, action =>
+                    (action.TargetUserName != null && action.TargetUserName.Contains(keyword)) ||
+                    action.Reason.Contains(keyword) ||
+                    action.CreateBy.Contains(keyword));
+            }
+        }
+
         var (actions, totalCount) = await _moderationActionRepository.QueryPageAsync(
-            a => !a.IsDeleted
-                 && (!normalizedTargetUserId.HasValue || a.TargetUserId == normalizedTargetUserId.Value)
-                 && (!normalizedSourceReportId.HasValue || (a.SourceReportId.HasValue && a.SourceReportId.Value == normalizedSourceReportId.Value))
-                 && (!normalizedActionType.HasValue || a.ActionType == normalizedActionType.Value)
-                 && (!query.IsActive.HasValue || a.IsActive == query.IsActive.Value)
-                 && (!hasKeyword
-                     || (hasKeywordLongId
-                         && (a.Id == keywordLongId
-                             || a.TargetUserId == keywordLongId
-                             || (a.SourceReportId.HasValue && a.SourceReportId.Value == keywordLongId)))
-                     || (a.TargetUserName != null && a.TargetUserName.Contains(normalizedKeyword!))
-                     || a.Reason.Contains(normalizedKeyword!)
-                     || a.CreateBy.Contains(normalizedKeyword!)),
+            whereExpression,
             safePageIndex,
             safePageSize,
             a => a.CreateTime,
@@ -679,6 +745,19 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
         return NormalizeQueueKeyword(keyword);
     }
 
+    private static Expression<Func<TEntity, bool>> AndWhere<TEntity>(
+        Expression<Func<TEntity, bool>> current,
+        Expression<Func<TEntity, bool>> next)
+    {
+        var parameter = current.Parameters[0];
+        var nextBody = new ParameterReplaceVisitor(next.Parameters[0], parameter).Visit(next.Body)
+            ?? throw new InvalidOperationException("查询条件表达式组合失败");
+
+        return Expression.Lambda<Func<TEntity, bool>>(
+            Expression.AndAlso(current.Body, nextBody),
+            parameter);
+    }
+
     private static string? NormalizeOptionalFilter(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
@@ -802,5 +881,22 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
         }
 
         return Math.Min(pageSize, 50);
+    }
+
+    private sealed class ParameterReplaceVisitor : ExpressionVisitor
+    {
+        private readonly ParameterExpression _source;
+        private readonly ParameterExpression _target;
+
+        public ParameterReplaceVisitor(ParameterExpression source, ParameterExpression target)
+        {
+            _source = source;
+            _target = target;
+        }
+
+        protected override Expression VisitParameter(ParameterExpression node)
+        {
+            return node == _source ? _target : base.VisitParameter(node);
+        }
     }
 }

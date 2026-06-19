@@ -13,16 +13,21 @@
 @gatewayBase = https://localhost:5000
 @apiBase = http://localhost:5100
 
+### 开发演示账号口径：
+### - 仅当 Seed:DeveloperDefaultsEnabled=true 且 RadishDeployment:Stage=local/test 时，DbMigrate 才会创建 system/admin/test 开发默认账号。
+### - 本地容器验证默认开启该种子，可使用 test / test123456 做联调。
+### - 生产环境严禁开启开发默认用户种子；生产和未开启种子的测试环境应使用首个管理员初始化或环境负责人提供的真实测试账号。
+
 ########################################################
 ### A. 直连 Auth：授权码流程（浏览器 + .http）
 ########################################################
 
-### A.1 在浏览器中登录测试用户（直连 Auth）
+### A.1 在浏览器中登录当前环境账号（直连 Auth）
 ### 步骤：
 ### 1) 打开浏览器访问：
 ###    {{authBase}}/Account/Login
 ###    http://localhost:5200/Account/Login
-### 2) 使用测试账号登录：
+### 2) 使用当前环境有效账号登录；若本地/受控测试环境已开启开发默认用户种子，可使用：
 ###    用户名: test
 ###    密  码: test123456
 ###
@@ -33,7 +38,7 @@
 ### 1) 浏览器访问：
 ###    {{authBase}}/connect/authorize?response_type=code&client_id=radish-client&redirect_uri=https%3A%2F%2Flocalhost%3A5000%2Foidc%2Fcallback&scope=openid%20profile%20offline_access%20radish-api
 ###    http://localhost:5200/connect/authorize?response_type=code&client_id=radish-client&redirect_uri=https%3A%2F%2Flocalhost%3A5000%2Foidc%2Fcallback&scope=openid%20profile%20offline_access%20radish-api
-### 2) 如果未登录，会跳到登录页，用上面的 test 账号登录；
+### 2) 如果未登录，会跳到登录页，用上面的当前环境账号登录；
 ### 3) 登录/授权成功后，会跳转到：
 ###    https://localhost:5000/oidc/callback?code=xxxxx
 ### 4) 从回调 URL 中复制 `code=` 后面的那一段值，粘到下面的 @authCode 变量里。
@@ -100,12 +105,12 @@ refresh_token={{refreshToken}}
 ### B. 经 Gateway 的授权码流程（推荐按生产入口习惯）
 ########################################################
 
-### B.1 在浏览器中通过 Gateway 登录测试用户
+### B.1 在浏览器中通过 Gateway 登录当前环境账号
 ### 步骤：
 ### 1) 打开浏览器访问：
 ###    {{gatewayBase}}/Account/Login
 ###    https://localhost:5000/Account/Login
-### 2) 使用测试账号登录：
+### 2) 使用当前环境有效账号登录；若本地/受控测试环境已开启开发默认用户种子，可使用：
 ###    用户名: test
 ###    密  码: test123456
 

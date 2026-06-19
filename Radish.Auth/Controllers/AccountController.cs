@@ -12,6 +12,7 @@ using Radish.Auth.ViewModels.Account;
 using Radish.Common.HttpContextTool;
 using Radish.Common.HelpTool;
 using Radish.IService;
+using Radish.Model;
 using Radish.Model.OpenIddict;
 using System.Linq;
 using Microsoft.AspNetCore.WebUtilities;
@@ -29,21 +30,37 @@ namespace Radish.Auth.Controllers;
 [Route("[controller]/[action]")]
 public class AccountController : Controller
 {
+    private static readonly HashSet<string> ReservedLoginNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "admin",
+        "administrator",
+        "system",
+        "root",
+        "support",
+        "official",
+        "bot",
+        "moderator",
+        "radish"
+    };
+
     private readonly IStringLocalizer<Errors> _errorsLocalizer;
     private readonly IUserService _userService;
     private readonly IOpenIddictApplicationManager _applicationManager;
     private readonly ICoinService _coinService;
+    private readonly ISystemSettingProvider _systemSettingProvider;
 
     public AccountController(
         IStringLocalizer<Errors> errorsLocalizer,
         IUserService userService,
         IOpenIddictApplicationManager applicationManager,
-        ICoinService coinService)
+        ICoinService coinService,
+        ISystemSettingProvider systemSettingProvider)
     {
         _errorsLocalizer = errorsLocalizer;
         _userService = userService;
         _applicationManager = applicationManager;
         _coinService = coinService;
+        _systemSettingProvider = systemSettingProvider;
     }
 
     [HttpGet]
@@ -184,12 +201,15 @@ public class AccountController : Controller
     [HttpGet]
     public async Task<IActionResult> Register(string? returnUrl = null)
     {
+        var loginNameLengthRule = await GetLoginNameLengthRuleAsync();
         var model = new RegisterViewModel
         {
             ReturnUrl = returnUrl,
             ErrorMessage = TempData["RegisterError"] as string,
             SuccessMessage = TempData["RegisterSuccess"] as string,
-            Client = await ResolveClientAsync(returnUrl)
+            Client = await ResolveClientAsync(returnUrl),
+            LoginNameMinLength = loginNameLengthRule.MinLength,
+            LoginNameMaxLength = loginNameLengthRule.MaxLength
         };
 
         return View(model);
@@ -215,33 +235,51 @@ public class AccountController : Controller
 
         try
         {
-            // 2. 检查用户名是否已存在
-            var existingUsers = await _userService.QueryAsync(u => u.LoginName == model.Username);
-            if (existingUsers.Any())
+            var loginName = model.Username.Trim().ToLowerInvariant();
+            var email = model.Email?.Trim().ToLowerInvariant();
+            var loginNameLengthRule = await GetLoginNameLengthRuleAsync();
+            if (!IsLoginNameLengthValid(loginName, loginNameLengthRule.MinLength, loginNameLengthRule.MaxLength, out var loginNameLengthError))
             {
-                TempData["RegisterError"] = "用户名已存在";
+                TempData["RegisterError"] = loginNameLengthError;
                 return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
             }
 
-            // 3. 检查邮箱是否已存在（如果提供了邮箱）
-            if (!string.IsNullOrWhiteSpace(model.Email))
+            if (ReservedLoginNames.Contains(loginName))
             {
-                var existingEmails = await _userService.QueryAsync(u => u.UserEmail == model.Email);
-                if (existingEmails.Any())
-                {
-                    TempData["RegisterError"] = "邮箱已被注册";
-                    return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
-                }
+                TempData["RegisterError"] = "该登录名为系统保留账号，请更换";
+                return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
+            }
+
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                TempData["RegisterError"] = "电子邮箱不能为空";
+                return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
+            }
+
+            // 2. 检查用户名是否已存在
+            var existingUsers = await _userService.QueryAsync(u => u.LoginName == loginName);
+            if (existingUsers.Any())
+            {
+                TempData["RegisterError"] = "登录名已存在";
+                return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
+            }
+
+            // 3. 检查邮箱是否已存在
+            var existingEmails = await _userService.QueryAsync(u => u.UserEmail == email);
+            if (existingEmails.Any())
+            {
+                TempData["RegisterError"] = "邮箱已被注册";
+                return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
             }
 
             // 4. 创建用户（使用 Argon2id 哈希密码）
             var hashedPassword = PasswordHasher.HashPassword(model.Password);
             var newUser = new Radish.Model.User
             {
-                LoginName = model.Username,
+                LoginName = loginName,
                 LoginPassword = hashedPassword,
-                UserEmail = model.Email ?? string.Empty,  // 处理 null 值
-                UserName = model.Username,  // 默认昵称与用户名相同
+                UserEmail = email,
+                UserName = loginName,
                 UserRealName = string.Empty,
                 UserBirth = null,  // 明确设置为 null
                 UserAddress = string.Empty,
@@ -257,7 +295,7 @@ public class AccountController : Controller
 
             var userId = await _userService.AddAsync(newUser);
 
-            Log.Information("用户 {Username} (ID: {UserId}) 注册成功", model.Username, userId);
+            Log.Information("用户 {Username} (ID: {UserId}) 注册成功", loginName, userId);
 
             // 5. 发放注册奖励（50 胡萝卜）
             var transactionNo = await _coinService.GrantRegistrationRewardAsync(userId);
@@ -265,7 +303,7 @@ public class AccountController : Controller
 
             // 6. 注册成功，跳转到登录页
             TempData["RegisterSuccess"] = "注册成功！已赠送 50 胡萝卜，请登录。";
-            return RedirectToAction(nameof(Login), new { returnUrl = model.ReturnUrl, username = model.Username });
+            return RedirectToAction(nameof(Login), new { returnUrl = model.ReturnUrl, username = loginName });
         }
         catch (Exception ex)
         {
@@ -273,6 +311,30 @@ public class AccountController : Controller
             TempData["RegisterError"] = $"注册失败：{ex.Message}";
             return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
         }
+    }
+
+    private async Task<(int MinLength, int MaxLength)> GetLoginNameLengthRuleAsync()
+    {
+        var minLength = await _systemSettingProvider.GetInt32Async(SystemConfigDefaults.LoginNameMinLengthKey);
+        var maxLength = await _systemSettingProvider.GetInt32Async(SystemConfigDefaults.LoginNameMaxLengthKey);
+        if (minLength > maxLength)
+        {
+            throw new InvalidOperationException("登录名长度系统设置无效：最小长度不能大于最大长度");
+        }
+
+        return (minLength, maxLength);
+    }
+
+    private static bool IsLoginNameLengthValid(string loginName, int minLength, int maxLength, out string errorMessage)
+    {
+        if (loginName.Length < minLength || loginName.Length > maxLength)
+        {
+            errorMessage = $"登录名长度必须在 {minLength}-{maxLength} 个字符之间";
+            return false;
+        }
+
+        errorMessage = string.Empty;
+        return true;
     }
 
     private async Task<ClientSummaryViewModel> ResolveClientAsync(string? returnUrl)

@@ -8,7 +8,7 @@ import {
   publicDefaultDescription,
   publicSiteName,
 } from './publicHead.ts';
-import type { PublicRouteDescriptor } from './publicRouteNavigation.ts';
+import type { PublicContentRouteDescriptor } from './publicRouteNavigation.ts';
 
 export const publicStructuredDataScriptId = 'radish-public-structured-data';
 
@@ -188,6 +188,7 @@ export function buildShopProductStructuredData(options: BuildShopProductStructur
 
 export function buildProfilePageStructuredData(options: BuildProfileStructuredDataOptions): JsonLdObject {
   const displayName = normalizeText(options.profile.voDisplayName) ?? normalizeText(options.profile.voUserName) ?? 'Radish 用户';
+  const displayHandle = normalizeText(options.profile.voDisplayHandle);
   const canonicalUrl = toCanonicalUrl(options);
 
   return withContext({
@@ -198,7 +199,7 @@ export function buildProfilePageStructuredData(options: BuildProfileStructuredDa
     mainEntity: {
       '@type': 'Person',
       name: displayName,
-      alternateName: normalizeText(options.profile.voUserName),
+      alternateName: displayHandle ?? normalizeText(options.profile.voUserName),
       image: normalizeText(options.imageUrl),
       interactionStatistic: [
         {
@@ -216,7 +217,7 @@ export function buildProfilePageStructuredData(options: BuildProfileStructuredDa
   });
 }
 
-function isPublicRouteCollectionPage(route: PublicRouteDescriptor): boolean {
+function isPublicRouteCollectionPage(route: PublicContentRouteDescriptor): boolean {
   if (route.app === 'discover' || route.app === 'leaderboard') {
     return true;
   }
@@ -228,7 +229,7 @@ function isPublicRouteCollectionPage(route: PublicRouteDescriptor): boolean {
   return false;
 }
 
-export function buildPublicRouteStructuredData(route: PublicRouteDescriptor, origin?: string): JsonLdObject {
+export function buildPublicRouteStructuredData(route: PublicContentRouteDescriptor, origin?: string): JsonLdObject {
   const head = buildPublicRouteHead(route);
   const canonicalUrl = buildPublicCanonicalUrl(head.canonicalPath, origin);
   const pageType = isPublicRouteCollectionPage(route) ? 'CollectionPage' : 'WebPage';

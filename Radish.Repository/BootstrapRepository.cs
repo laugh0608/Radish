@@ -84,7 +84,8 @@ public class BootstrapRepository : IBootstrapRepository
                 CreateTime = initializedAt,
                 UpdateTime = initializedAt,
                 CriticalModifyTime = initializedAt,
-                LastErrorTime = initializedAt
+                LastErrorTime = initializedAt,
+                PublicIndex = await AllocateNextPublicIndexAsync(db)
             };
 
             var userId = await db.Insertable(administrator).ExecuteReturnSnowflakeIdAsync();
@@ -203,5 +204,14 @@ public class BootstrapRepository : IBootstrapRepository
         }
 
         return false;
+    }
+
+    private static async Task<long> AllocateNextPublicIndexAsync(ISqlSugarClient db)
+    {
+        var maxPublicIndex = await db.Queryable<User>()
+            .Where(user => user.PublicIndex >= User.PublicIndexStart)
+            .MaxAsync(user => user.PublicIndex);
+
+        return maxPublicIndex.GetValueOrDefault(User.PublicIndexStart - 1) + 1;
     }
 }

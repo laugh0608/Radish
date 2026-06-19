@@ -1,6 +1,7 @@
 export type PublicListSort = 'newest' | 'hottest';
 export type PublicForumRouteSort = 'newest' | 'hottest' | 'pending' | 'answers' | 'votes' | 'deadline';
 export type PublicSearchTimeRange = 'all' | '24h' | '7d' | '30d' | 'custom';
+export type PublicForumDetailIntent = 'comment' | 'quickReply';
 
 export interface PublicForumListRoute {
   kind: 'list';
@@ -37,6 +38,7 @@ export interface PublicForumDetailRoute {
   postId: string;
   postPublicId?: string;
   commentId?: string;
+  intent?: PublicForumDetailIntent;
 }
 
 export type PublicForumBrowseRoute =
@@ -115,6 +117,10 @@ function normalizePostPublicId(value: string | undefined): string | undefined {
 
   const normalized = value.trim().toLowerCase();
   return /^pst_[a-f0-9]{32}$/.test(normalized) ? normalized : undefined;
+}
+
+function normalizeDetailIntent(value: string | null): PublicForumDetailIntent | undefined {
+  return value === 'comment' || value === 'quickReply' ? value : undefined;
 }
 
 function normalizeSortBy(value: string | null): PublicListSort {
@@ -239,11 +245,13 @@ export function parsePublicForumRoute(pathname: string, search: string): PublicF
   if (postId || postPublicId) {
     const params = new URLSearchParams(search);
     const commentId = normalizePositiveIntegerString(params.get('commentId') ?? undefined);
+    const intent = normalizeDetailIntent(params.get('intent'));
     return {
       kind: 'detail',
       postId: postId ?? postPublicId!,
       ...(postPublicId ? { postPublicId } : {}),
-      ...(commentId ? { commentId } : {})
+      ...(commentId ? { commentId } : {}),
+      ...(intent ? { intent } : {})
     };
   }
 
@@ -255,6 +263,9 @@ export function buildPublicForumPath(route: PublicForumRoute): string {
     const search = new URLSearchParams();
     if (route.commentId) {
       search.set('commentId', route.commentId);
+    }
+    if (route.intent) {
+      search.set('intent', route.intent);
     }
 
     const queryString = search.toString();

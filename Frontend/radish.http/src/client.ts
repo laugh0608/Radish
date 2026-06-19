@@ -3,7 +3,7 @@ import type {
   ApiRequestOptions,
   ParsedApiResponse,
 } from './types';
-import { shouldRefreshToken, tryRefreshToken } from './token-refresh';
+import { shouldRefreshToken, TokenRefreshErrorType, tryRefreshToken } from './token-refresh';
 
 /**
  * API 客户端配置
@@ -16,7 +16,7 @@ interface ApiClientConfig {
   /** 获取 token 的函数 */
   getToken?: () => string | null;
   /** 请求拦截器 */
-  onRequest?: (url: string, options: RequestInit) => void;
+  onRequest?: (url: string, options: RequestInit) => void | Promise<void>;
   /** 响应拦截器 */
   onResponse?: (response: Response) => void;
   /** 错误拦截器 */
@@ -101,7 +101,7 @@ export async function apiFetch(
   };
 
   // 请求拦截器
-  currentConfig.onRequest?.(url.toString(), fetchOptions);
+  await currentConfig.onRequest?.(url.toString(), fetchOptions);
 
   // 超时控制
   const timeoutMs = timeout || currentConfig.timeout;
@@ -141,9 +141,18 @@ export async function apiFetch(
 
         return retryResponse;
       } catch (refreshError) {
-        // Token 刷新失败，触发全局登出事件
+        // Refresh Token 确认失效时触发全局登出事件；网络或服务端错误保留原响应交给调用方处理。
         console.error('[API Client] Token refresh failed:', refreshError);
-        window.dispatchEvent(new CustomEvent('auth:token-expired'));
+        const errorType = (refreshError as { errorType?: TokenRefreshErrorType }).errorType;
+        if (errorType === TokenRefreshErrorType.InvalidRefreshToken) {
+          const error = (refreshError as { error?: Error }).error;
+          const reason = error?.message.includes('session_idle_expired')
+            ? 'idle_session_expired'
+            : undefined;
+          window.dispatchEvent(new CustomEvent('auth:token-expired', {
+            detail: { reason },
+          }));
+        }
         return response;
       }
     }

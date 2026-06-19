@@ -38,5 +38,5 @@
 }
 
 .error {
-  color: var(--theme-danger);
+  color: var(--theme-state-danger);
 }

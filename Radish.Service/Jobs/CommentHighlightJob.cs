@@ -137,6 +137,13 @@ public class CommentHighlightJob
                          h.IsCurrent);
 
                 var currentTopComment = topComments.First();
+                if (currentTopComment.LikeCount <= 0)
+                {
+                    await _highlightRepository.UpdateColumnsAsync(
+                        it => new CommentHighlight { IsCurrent = false },
+                        h => h.PostId == postId && h.HighlightType == 1 && h.IsCurrent);
+                    continue;
+                }
 
                 // 如果当前神评与历史记录不同，或者点赞数有变化，则追加新记录
                 bool shouldAdd = existingHighlight == null ||
@@ -230,6 +237,20 @@ public class CommentHighlightJob
                             {
                                 Log.Information("准备发放神评经验值：CommentId={CommentId}, AuthorId={AuthorId}",
                                     currentTopComment.Id, currentTopComment.AuthorId);
+
+                                var exists = await _experienceService.HasExperienceTransactionAsync(
+                                    currentTopComment.AuthorId,
+                                    "GOD_COMMENT",
+                                    "Comment",
+                                    currentTopComment.Id);
+
+                                if (exists)
+                                {
+                                    Log.Information("神评经验值已发放过，跳过：CommentId={CommentId}, AuthorId={AuthorId}",
+                                        currentTopComment.Id,
+                                        currentTopComment.AuthorId);
+                                    return;
+                                }
 
                                 var expResult = await _experienceService.GrantExperienceAsync(
                                     userId: currentTopComment.AuthorId,
@@ -350,6 +371,15 @@ public class CommentHighlightJob
                          h.IsCurrent);
 
                 var currentTopChild = topChildren.First();
+                if (currentTopChild.LikeCount <= 0)
+                {
+                    await _highlightRepository.UpdateColumnsAsync(
+                        it => new CommentHighlight { IsCurrent = false },
+                        h => h.ParentCommentId == parentId &&
+                             h.HighlightType == 2 &&
+                             h.IsCurrent);
+                    continue;
+                }
 
                 bool shouldAdd = existingHighlight == null ||
                                 existingHighlight.CommentId != currentTopChild.Id ||
@@ -443,6 +473,20 @@ public class CommentHighlightJob
                             {
                                 Log.Information("准备发放沙发经验值：CommentId={CommentId}, AuthorId={AuthorId}",
                                     currentTopChild.Id, currentTopChild.AuthorId);
+
+                                var exists = await _experienceService.HasExperienceTransactionAsync(
+                                    currentTopChild.AuthorId,
+                                    "SOFA_COMMENT",
+                                    "Comment",
+                                    currentTopChild.Id);
+
+                                if (exists)
+                                {
+                                    Log.Information("沙发经验值已发放过，跳过：CommentId={CommentId}, AuthorId={AuthorId}",
+                                        currentTopChild.Id,
+                                        currentTopChild.AuthorId);
+                                    return;
+                                }
 
                                 var expResult = await _experienceService.GrantExperienceAsync(
                                     userId: currentTopChild.AuthorId,

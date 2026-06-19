@@ -32,6 +32,12 @@
   color: var(--console-danger-text);
 }
 
+.user-detail-case-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 @media (max-width: 768px) {
   .user-detail-page .admin-feature-header {
     align-items: flex-start;

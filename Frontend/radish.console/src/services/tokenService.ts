@@ -22,6 +22,8 @@ interface TokenRefreshResponse {
   token_type: string;
 }
 
+type SessionClearReason = 'idle_session_expired';
+
 export interface TokenDebugInfo {
   hasAccessToken: boolean;
   accessTokenPreview: string | null;
@@ -34,8 +36,17 @@ export interface TokenDebugInfo {
   remainingSeconds: number | null;
   isExpiringSoon: boolean;
   isExpired: boolean;
+  lastActiveAtTimestamp: number | null;
+  lastActiveAtIso: string | null;
+  isIdleSessionExpired: boolean;
   hasRefreshInProgress: boolean;
 }
+
+const IDLE_SESSION_LAST_ACTIVE_STORAGE_KEY = 'radish_console_session_last_active_at';
+const IDLE_SESSION_REFRESH_PARAMETER = 'radish_last_active_at';
+const DEFAULT_IDLE_SESSION_TIMEOUT_MS = 7 * 24 * 60 * 60 * 1000;
+const DEFAULT_IDLE_SESSION_CLOCK_SKEW_MS = 60 * 1000;
+const DEFAULT_ACTIVITY_WRITE_THROTTLE_MS = 60_000;
 
 /**
  * Token 管理服务
@@ -47,10 +58,14 @@ class TokenService {
   private refreshPromise: Promise<string> | null = null;
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
   private missingRefreshTokenWarned = false;
+  private lastSessionClearReason: SessionClearReason | null = null;
   private readonly AUTO_REFRESH_CHECK_INTERVAL_MS = 30000;
   private readonly TOKEN_KEY = 'radish_console_access_token';
   private readonly REFRESH_TOKEN_KEY = 'radish_console_refresh_token';
   private readonly TOKEN_EXPIRES_KEY = 'radish_console_token_expires_at';
+  private readonly TOKEN_REFRESH_AT_KEY = 'radish_console_token_refresh_at';
+  private readonly MIN_REFRESH_BUFFER_SECONDS = 30;
+  private readonly MAX_REFRESH_BUFFER_SECONDS = 300;
 
   static getInstance(): TokenService {
     if (!TokenService.instance) {
@@ -98,6 +113,11 @@ class TokenService {
     return expiresAt ? parseInt(expiresAt, 10) : null;
   }
 
+  getTokenRefreshAt(): number | null {
+    const refreshAt = localStorage.getItem(this.TOKEN_REFRESH_AT_KEY);
+    return refreshAt ? parseInt(refreshAt, 10) : null;
+  }
+
   private maskToken(token: string | null): string | null {
     if (!token) {
       return null;
@@ -118,6 +138,14 @@ class TokenService {
     return new Date(expiresAt).toISOString();
   }
 
+  private formatEpochSeconds(epochSeconds: number | null): string | null {
+    if (!epochSeconds || !Number.isFinite(epochSeconds)) {
+      return null;
+    }
+
+    return new Date(epochSeconds * 1000).toISOString();
+  }
+
   private getRemainingSeconds(expiresAt: number | null): number | null {
     if (!expiresAt || !Number.isFinite(expiresAt)) {
       return null;
@@ -131,6 +159,7 @@ class TokenService {
     const refreshToken = this.getRefreshToken();
     const expiresAt = this.getTokenExpiresAt();
     const remainingSeconds = this.getRemainingSeconds(expiresAt);
+    const lastActiveAt = this.getSessionLastActiveAt();
 
     return {
       hasAccessToken: !!accessToken,
@@ -144,12 +173,19 @@ class TokenService {
       remainingSeconds,
       isExpiringSoon: this.isTokenExpiringSoon(),
       isExpired: this.isTokenExpired(),
+      lastActiveAtTimestamp: lastActiveAt,
+      lastActiveAtIso: this.formatEpochSeconds(lastActiveAt),
+      isIdleSessionExpired: this.isIdleSessionExpired(),
       hasRefreshInProgress: this.refreshPromise !== null,
     };
   }
 
   logTokenDebug(stage: string): void {
     log.debug('TokenService', `Token 状态快照 (${stage})`, this.getTokenDebugInfo());
+  }
+
+  getLastSessionClearReason(): SessionClearReason | null {
+    return this.lastSessionClearReason;
   }
 
   /**
@@ -163,13 +199,18 @@ class TokenService {
     }
 
     // 存储真实过期时间，刷新窗口由 isTokenExpiringSoon 控制
+    const refreshBufferSeconds = this.getRefreshBufferSeconds(tokenInfo.expires_in);
     const expiresAt = Date.now() + Math.max(0, tokenInfo.expires_in) * 1000;
+    const refreshAt = Date.now() + Math.max(tokenInfo.expires_in - refreshBufferSeconds, 0) * 1000;
     localStorage.setItem(this.TOKEN_EXPIRES_KEY, expiresAt.toString());
+    localStorage.setItem(this.TOKEN_REFRESH_AT_KEY, refreshAt.toString());
     this.missingRefreshTokenWarned = false;
+    this.lastSessionClearReason = null;
 
     log.debug('TokenService', 'Token 信息已更新', {
       expires_in: tokenInfo.expires_in,
       expires_at: new Date(expiresAt).toISOString(),
+      refresh_at: new Date(refreshAt).toISOString(),
     });
     this.logTokenDebug('setTokenInfo');
   }
@@ -177,13 +218,16 @@ class TokenService {
   /**
    * 清除所有 Token 信息
    */
-  clearTokens(): void {
+  clearTokens(reason?: SessionClearReason): void {
     const beforeClear = this.getTokenDebugInfo();
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.REFRESH_TOKEN_KEY);
     localStorage.removeItem(this.TOKEN_EXPIRES_KEY);
+    localStorage.removeItem(this.TOKEN_REFRESH_AT_KEY);
+    this.clearSessionActivity();
     this.refreshPromise = null;
     this.missingRefreshTokenWarned = false;
+    this.lastSessionClearReason = reason ?? null;
     this.stopAutoRefresh();
     log.debug('TokenService', 'Token 信息已清除', {
       before: beforeClear,
@@ -195,13 +239,18 @@ class TokenService {
    * 检查 Token 是否即将过期
    */
   isTokenExpiringSoon(): boolean {
+    const refreshAt = this.getTokenRefreshAt();
+    if (refreshAt) {
+      return Date.now() >= refreshAt;
+    }
+
     const expiresAt = this.getTokenExpiresAt();
     if (!expiresAt) {
       return true; // 没有过期时间信息，认为需要刷新
     }
 
-    // 提前 5 分钟刷新
-    return Date.now() >= expiresAt - 300000;
+    // 兼容旧数据：没有 refreshAt 时只在临近过期时刷新，避免 5 分钟 token 刚签发就被拦在刷新前置等待。
+    return Date.now() >= expiresAt - this.MIN_REFRESH_BUFFER_SECONDS * 1000;
   }
 
   /**
@@ -216,6 +265,91 @@ class TokenService {
     return Date.now() >= expiresAt;
   }
 
+  recordSessionActivity(force = false, nowMs = Date.now()): number | null {
+    const currentSeconds = Math.floor(nowMs / 1000);
+    const previousSeconds = this.getSessionLastActiveAt();
+
+    if (!force && previousSeconds !== null && nowMs - previousSeconds * 1000 < DEFAULT_ACTIVITY_WRITE_THROTTLE_MS) {
+      return previousSeconds;
+    }
+
+    localStorage.setItem(IDLE_SESSION_LAST_ACTIVE_STORAGE_KEY, String(currentSeconds));
+    return currentSeconds;
+  }
+
+  clearSessionActivity(): void {
+    localStorage.removeItem(IDLE_SESSION_LAST_ACTIVE_STORAGE_KEY);
+  }
+
+  isIdleSessionExpired(nowMs = Date.now()): boolean {
+    if (!this.getAccessToken()) {
+      return false;
+    }
+
+    const lastActiveAt = this.getSessionLastActiveAt();
+    if (lastActiveAt === null) {
+      return false;
+    }
+
+    return nowMs > lastActiveAt * 1000 + DEFAULT_IDLE_SESSION_TIMEOUT_MS + DEFAULT_IDLE_SESSION_CLOCK_SKEW_MS;
+  }
+
+  getRefreshRequestParameters(): Record<string, string> {
+    const lastActiveAt = this.getSessionLastActiveAt();
+    return lastActiveAt === null
+      ? {}
+      : { [IDLE_SESSION_REFRESH_PARAMETER]: String(lastActiveAt) };
+  }
+
+  startActivityTracking(onIdleExpired?: () => void): () => void {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return () => {};
+    }
+
+    const handleActivity = () => {
+      if (document.visibilityState === 'hidden') {
+        return;
+      }
+
+      if (!this.getAccessToken()) {
+        this.clearSessionActivity();
+        return;
+      }
+
+      if (this.isIdleSessionExpired()) {
+        onIdleExpired?.();
+        return;
+      }
+
+      this.recordSessionActivity();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        handleActivity();
+      }
+    };
+
+    const passiveOptions: AddEventListenerOptions = { passive: true };
+    window.addEventListener('focus', handleActivity);
+    window.addEventListener('pageshow', handleActivity);
+    window.addEventListener('pointerdown', handleActivity, passiveOptions);
+    window.addEventListener('keydown', handleActivity);
+    window.addEventListener('scroll', handleActivity, passiveOptions);
+    window.addEventListener('touchstart', handleActivity, passiveOptions);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleActivity);
+      window.removeEventListener('pageshow', handleActivity);
+      window.removeEventListener('pointerdown', handleActivity);
+      window.removeEventListener('keydown', handleActivity);
+      window.removeEventListener('scroll', handleActivity);
+      window.removeEventListener('touchstart', handleActivity);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }
+
   /**
    * 刷新访问令牌
    */
@@ -224,6 +358,11 @@ class TokenService {
     if (this.refreshPromise) {
       log.debug('TokenService', '复用进行中的 Token 刷新请求');
       return this.refreshPromise;
+    }
+
+    if (this.isIdleSessionExpired()) {
+      this.clearTokens('idle_session_expired');
+      throw new Error('会话因长时间未使用已过期，请重新登录');
     }
 
     const refreshToken = this.getRefreshToken();
@@ -259,11 +398,17 @@ class TokenService {
           grant_type: 'refresh_token',
           refresh_token: refreshToken,
           client_id: 'radish-console',
+          ...this.getRefreshRequestParameters(),
         }),
       });
 
       if (!response.ok) {
-        throw new Error(`Token 刷新失败: ${response.status} ${response.statusText}`);
+        const details = await this.extractTokenRefreshErrorDetails(response);
+        throw new Error(
+          details
+            ? `Token 刷新失败: ${response.status} ${response.statusText} (${details})`
+            : `Token 刷新失败: ${response.status} ${response.statusText}`,
+        );
       }
 
       const tokenData: TokenRefreshResponse = await response.json();
@@ -282,7 +427,10 @@ class TokenService {
       log.error('TokenService', 'Token 刷新失败', error);
 
       // 刷新失败，清除所有 Token
-      this.clearTokens();
+      const clearReason = error instanceof Error && error.message.includes('session_idle_expired')
+        ? 'idle_session_expired'
+        : undefined;
+      this.clearTokens(clearReason);
 
       throw error;
     }
@@ -295,6 +443,12 @@ class TokenService {
     const currentToken = this.getAccessToken();
 
     if (!currentToken) {
+      return null;
+    }
+
+    if (this.isIdleSessionExpired()) {
+      log.warn('TokenService', '会话因长时间未使用已过期，清理会话并触发重新登录', this.getTokenDebugInfo());
+      this.clearTokens('idle_session_expired');
       return null;
     }
 
@@ -349,6 +503,12 @@ class TokenService {
         return;
       }
 
+      if (this.isIdleSessionExpired()) {
+        log.warn('TokenService', '自动刷新检测到不活跃会话过期，停止自动刷新');
+        this.clearTokens('idle_session_expired');
+        return;
+      }
+
       if (!this.isTokenExpiringSoon()) {
         return;
       }
@@ -378,6 +538,18 @@ class TokenService {
     log.debug('TokenService', '停止自动刷新定时器');
   }
 
+  private getRefreshBufferSeconds(expiresInSeconds: number): number {
+    if (!Number.isFinite(expiresInSeconds) || expiresInSeconds <= 0) {
+      return this.MIN_REFRESH_BUFFER_SECONDS;
+    }
+
+    const dynamicBuffer = Math.floor(expiresInSeconds * 0.2);
+    return Math.min(
+      this.MAX_REFRESH_BUFFER_SECONDS,
+      Math.max(this.MIN_REFRESH_BUFFER_SECONDS, dynamicBuffer)
+    );
+  }
+
   private parseJwt(token: string): JwtPayload | null {
     try {
       const base64Url = token.split('.')[1];
@@ -394,6 +566,34 @@ class TokenService {
           .join('')
       );
       return JSON.parse(jsonPayload);
+    } catch {
+      return null;
+    }
+  }
+
+  private getSessionLastActiveAt(): number | null {
+    const value = localStorage.getItem(IDLE_SESSION_LAST_ACTIVE_STORAGE_KEY);
+    if (!value) {
+      return null;
+    }
+
+    const parsed = Number.parseInt(value.trim(), 10);
+    return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
+  }
+
+  private async extractTokenRefreshErrorDetails(response: Response): Promise<string | null> {
+    try {
+      const text = await response.text();
+      if (!text.trim()) {
+        return null;
+      }
+
+      try {
+        const parsed = JSON.parse(text) as { error?: string; error_description?: string };
+        return [parsed.error, parsed.error_description].filter(Boolean).join(': ') || text;
+      } catch {
+        return text;
+      }
     } catch {
       return null;
     }

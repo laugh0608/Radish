@@ -94,6 +94,7 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
   const handleUserSelect = (user: UserMentionOption) => {
     const userId = normalizePositiveLongIdKey(user.voId);
     const displayName = user.voDisplayName || user.voUserName || '未知用户';
+    const displayHandle = user.voDisplayHandle || displayName;
 
     if (!userId) {
       setErrors(prev => ({ ...prev, recipientId: '用户 ID 无效，请重新选择接收方' }));
@@ -103,16 +104,16 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
     setFormData(prev => ({
       ...prev,
       recipientId: userId,
-      recipientName: displayName
+      recipientName: displayHandle
     }));
-    setUserSearchQuery(displayName);
+    setUserSearchQuery(displayHandle);
     setShowUserDropdown(false);
 
     // 清除用户相关错误
     setErrors(prev => ({ ...prev, recipientId: '', recipientName: '' }));
   };
 
-  const validateForm = (): boolean => {
+  const validateForm = (): Record<string, string> => {
     const newErrors: Record<string, string> = {};
     const recipientId = normalizePositiveLongIdKey(formData.recipientId);
 
@@ -142,14 +143,15 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return newErrors;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
-      log.debug('TransferForm', '表单验证失败', errors);
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      log.debug('TransferForm', '表单验证失败', validationErrors);
       return;
     }
 
@@ -161,7 +163,11 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
       paymentPassword: formData.paymentPassword!
     };
 
-    log.debug('TransferForm', '提交转账表单', transferData);
+    log.debug('TransferForm', '提交转账表单', {
+      recipientId: transferData.recipientId,
+      amount: transferData.amount,
+      hasNote: Boolean(transferData.note?.trim())
+    });
     onSubmit(transferData);
   };
 
@@ -219,6 +225,9 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
                 <div className={styles.userDropdown}>
                   {userSearchResults.map((user) => {
                     const displayName = user.voDisplayName || user.voUserName || '未知用户';
+                    const displayHandle = user.voDisplayHandle || (
+                      user.voPublicIndex ? `${displayName}#${String(user.voPublicIndex).trim()}` : null
+                    );
                     return (
                       <div
                         key={user.voId}
@@ -234,8 +243,8 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
                         </div>
                         <div className={styles.userInfo}>
                           <div className={styles.userName}>{displayName}</div>
-                          {user.voDisplayName && user.voUserName && user.voDisplayName !== user.voUserName && (
-                            <div className={styles.userLoginName}>@{user.voUserName}</div>
+                          {displayHandle && (
+                            <div className={styles.userLoginName}>{displayHandle}</div>
                           )}
                         </div>
                       </div>

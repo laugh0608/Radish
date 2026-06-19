@@ -200,7 +200,7 @@ Route Meta / RouteGuard / usePermission
 
 当前推荐：**优先采用方案 A 或 B，不建议在 V1 尾声引入新的权限族**。
 
-已确认并落地：**方案 B（最小实现）**
+已确认并落地：**方案 B（基础收口方案）**
 
 - 仅对 `Attachment/UploadImage` 的 `Sticker` / `StickerCover` 业务类型做收口
 - 复用既有 `console.stickers.create/edit/batch-upload` 权限键

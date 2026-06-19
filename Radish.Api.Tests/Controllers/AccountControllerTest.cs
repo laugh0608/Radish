@@ -48,7 +48,12 @@ public class AccountControllerTest
             .ReturnsAsync("TXN_REGISTER_123456");
 
         var httpContext = new DefaultHttpContext();
-        var controller = new AccountController(errorsLocalizer.Object, userServiceMock.Object, applicationManager.Object, coinService.Object)
+        var controller = new AccountController(
+            errorsLocalizer.Object,
+            userServiceMock.Object,
+            applicationManager.Object,
+            coinService.Object,
+            CreateSystemSettingProvider())
         {
             ControllerContext = new ControllerContext
             {
@@ -59,15 +64,57 @@ public class AccountControllerTest
 
         var result = await controller.Register(new RegisterViewModel
         {
-            Username = "newuser",
+            Username = "NewUser",
+            Password = "test123456",
+            ConfirmPassword = "test123456",
+            Email = "NewUser@Radish.TEST"
+        });
+
+        var redirect = Assert.IsType<RedirectToActionResult>(result);
+        Assert.Equal("Login", redirect.ActionName);
+        Assert.Equal("newuser", redirect.RouteValues?["username"]);
+        userServiceMock.Verify(service => service.AddAsync(It.Is<User>(user =>
+            user.LoginName == "newuser" &&
+            user.UserEmail == "newuser@radish.test" &&
+            user.UserName == "newuser")), Times.Once);
+        coinService.Verify(service => service.GrantRegistrationRewardAsync(userId), Times.Once);
+    }
+
+    [Fact]
+    public async Task Register_ShouldRejectLoginNameShorterThanSystemSetting()
+    {
+        var userServiceMock = new Mock<IUserService>();
+        var errorsLocalizer = new Mock<IStringLocalizer<Errors>>();
+        var applicationManager = new Mock<IOpenIddictApplicationManager>();
+        var coinService = new Mock<ICoinService>();
+        var httpContext = new DefaultHttpContext();
+        var controller = new AccountController(
+            errorsLocalizer.Object,
+            userServiceMock.Object,
+            applicationManager.Object,
+            coinService.Object,
+            CreateSystemSettingProvider(loginNameMinLength: 5))
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = httpContext
+            },
+            TempData = new TempDataDictionary(httpContext, Mock.Of<ITempDataProvider>())
+        };
+
+        var result = await controller.Register(new RegisterViewModel
+        {
+            Username = "abc",
             Password = "test123456",
             ConfirmPassword = "test123456",
             Email = "newuser@radish.test"
         });
 
         var redirect = Assert.IsType<RedirectToActionResult>(result);
-        Assert.Equal("Login", redirect.ActionName);
-        coinService.Verify(service => service.GrantRegistrationRewardAsync(userId), Times.Once);
+        Assert.Equal("Register", redirect.ActionName);
+        Assert.Equal("登录名长度必须在 5-32 个字符之间", controller.TempData["RegisterError"]);
+        userServiceMock.Verify(service => service.AddAsync(It.IsAny<User>()), Times.Never);
+        coinService.Verify(service => service.GrantRegistrationRewardAsync(It.IsAny<long>()), Times.Never);
     }
 
     [Fact]
@@ -126,7 +173,12 @@ public class AccountControllerTest
             .Setup(service => service.GrantRegistrationRewardAsync(userVo.Uuid))
             .ReturnsAsync("TXN_REGISTER_1");
 
-        var controller = new AccountController(errorsLocalizer.Object, userServiceMock.Object, applicationManager.Object, coinService.Object)
+        var controller = new AccountController(
+            errorsLocalizer.Object,
+            userServiceMock.Object,
+            applicationManager.Object,
+            coinService.Object,
+            CreateSystemSettingProvider())
         {
             ControllerContext = new ControllerContext
             {
@@ -162,5 +214,19 @@ public class AccountControllerTest
         Assert.DoesNotContain(signInPrincipal.Claims, claim => claim.Type == ClaimTypes.Name);
         Assert.DoesNotContain(signInPrincipal.Claims, claim => claim.Type == ClaimTypes.Role);
         coinService.Verify(service => service.GrantRegistrationRewardAsync(userVo.Uuid), Times.Once);
+    }
+
+    private static ISystemSettingProvider CreateSystemSettingProvider(
+        int? loginNameMinLength = null,
+        int? loginNameMaxLength = null)
+    {
+        var provider = new Mock<ISystemSettingProvider>();
+        provider
+            .Setup(item => item.GetInt32Async(SystemConfigDefaults.LoginNameMinLengthKey))
+            .ReturnsAsync(loginNameMinLength ?? int.Parse(SystemConfigDefaults.DefaultLoginNameMinLength));
+        provider
+            .Setup(item => item.GetInt32Async(SystemConfigDefaults.LoginNameMaxLengthKey))
+            .ReturnsAsync(loginNameMaxLength ?? int.Parse(SystemConfigDefaults.DefaultLoginNameMaxLength));
+        return provider.Object;
     }
 }

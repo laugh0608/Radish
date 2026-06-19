@@ -7,7 +7,10 @@ import {
   publicDefaultOrigin,
   type PublicHeadDescriptor,
 } from '../src/public/publicHead.ts';
-import { buildForumPostPublicHead } from '../src/public/forum/publicForumUtils.ts';
+import {
+  buildForumPostPublicHead,
+  resolvePublicProfileUserId,
+} from '../src/public/forum/publicForumUtils.ts';
 import type { PublicRouteDescriptor } from '../src/public/publicRouteNavigation.ts';
 
 test('buildPublicCanonicalUrl 应使用默认公开域名并移除锚点', () => {
@@ -15,6 +18,15 @@ test('buildPublicCanonicalUrl 应使用默认公开域名并移除锚点', () =>
     buildPublicCanonicalUrl('/docs/Guide#intro'),
     `${publicDefaultOrigin}/docs/Guide`
   );
+});
+
+test('resolvePublicProfileUserId 应优先使用 User PublicId 并兼容 LongId', () => {
+  assert.equal(
+    resolvePublicProfileUserId('2042219067430928384', ' usr_019ea76872bf787981ad3e9d3c6a3417 '),
+    'usr_019ea76872bf787981ad3e9d3c6a3417'
+  );
+  assert.equal(resolvePublicProfileUserId('2042219067430928384', null), '2042219067430928384');
+  assert.equal(resolvePublicProfileUserId('2042219067430928384', '   '), '2042219067430928384');
 });
 
 test('buildPublicCanonicalUrl 应保留规范化查询参数', () => {

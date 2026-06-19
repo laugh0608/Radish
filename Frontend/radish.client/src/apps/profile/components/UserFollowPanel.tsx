@@ -287,27 +287,33 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
 
     return (
       <div className={styles.list}>
-        {users.map(user => (
-          <article
-            key={user.voUserId}
-            className={styles.userItem}
-            onClick={() => onUserClick?.(user.voUserId, user.voUserName, user.voAvatarUrl, user.voDisplayName)}
-            style={{ cursor: onUserClick ? 'pointer' : 'default' }}
-          >
-            <div className={styles.userMain}>
-              <div className={styles.userNameRow}>
-                {renderUserAvatar(user)}
-                <span className={styles.userName}>{user.voUserName}</span>
-                {user.voDisplayName ? <span className={styles.userDisplay}>({user.voDisplayName})</span> : null}
-                {user.voIsMutualFollow ? <span className={styles.mutualBadge}>{t('profile.social.mutualFollow')}</span> : null}
+        {users.map(user => {
+          const displayName = user.voDisplayName?.trim() || user.voUserName.trim() || t('common.unknownUser');
+          const displayHandle = user.voDisplayHandle?.trim()
+            || (user.voPublicIndex ? `${displayName}#${String(user.voPublicIndex).trim()}` : null);
+
+          return (
+            <article
+              key={user.voUserId}
+              className={styles.userItem}
+              onClick={() => onUserClick?.(user.voUserId, user.voUserName, user.voAvatarUrl, displayName)}
+              style={{ cursor: onUserClick ? 'pointer' : 'default' }}
+            >
+              <div className={styles.userMain}>
+                <div className={styles.userNameRow}>
+                  {renderUserAvatar(user)}
+                  <span className={styles.userName}>{displayName}</span>
+                  {displayHandle ? <span className={styles.userDisplay}>({displayHandle})</span> : null}
+                  {user.voIsMutualFollow ? <span className={styles.mutualBadge}>{t('profile.social.mutualFollow')}</span> : null}
+                </div>
+                <div className={styles.userMeta}>
+                  {t('profile.social.followTime', { time: formatDateTimeByTimeZone(user.voFollowTime, displayTimeZone) })}
+                </div>
               </div>
-              <div className={styles.userMeta}>
-                {t('profile.social.followTime', { time: formatDateTimeByTimeZone(user.voFollowTime, displayTimeZone) })}
-              </div>
-            </div>
-            <Icon icon="mdi:chevron-right" size={20} />
-          </article>
-        ))}
+              <Icon icon="mdi:chevron-right" size={20} />
+            </article>
+          );
+        })}
       </div>
     );
   };

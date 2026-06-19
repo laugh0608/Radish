@@ -81,6 +81,10 @@
 - JavaScript / TypeScript 侧禁止把用户 ID、帖子 ID、评论 ID、订单 ID、商品 ID、通知 ID、角色 ID、资源 ID、API 模块 ID 等外部 long 标识提前转成 `number`。
 - Dart / Flutter 侧也应优先把外部对象 ID 建模为 `String`，只有分页、数量、金额、排序权重和枚举状态等真实数值进入 `int`。
 - 需要正式切换 `PublicId` 的对象按 [ID 与联邦路线图](/architecture/id-and-federation-roadmap) 推进；当前要求先保证仍暴露的 LongId 字符串安全。
+- 当前已进入 PublicId 首批的对象：
+  - `Post.PublicId`：公开 forum 详情、分享、canonical、通知和回流优先使用。
+  - `User.PublicId`：公开主页和公开榜单用户跳转优先使用；公开帖子 / 评论 / 统计等内部接口仍使用 LongId 字符串。
+- 用户公开展示不使用登录名或邮箱。公开页面、公开榜单、提及搜索和关系链结果优先展示 `DisplayName#PublicIndex` 派生出的 `DisplayHandle`；`PublicIndex` 只用于展示、搜索和人工辨识，不替代 `PublicId` 作为公开路由主键。
 
 ## 3. 当前模块索引
 
@@ -122,8 +126,37 @@
 对应范围：
 
 - 当前用户资料
-- 公开资料
+- 公开资料：`User/GetPublicProfile` 的 `identifier` 支持 `usr_...` PublicId 与旧 LongId 字符串双读，返回 `UserPublicProfileVo.VoPublicId / VoPublicIndex / VoDisplayName / VoDisplayHandle / VoUserId`
+- 公开资料内容：`User/GetPublicUserStats`、`Post/GetPublicUserPosts`、`Comment/GetPublicUserComments` 均使用 `identifier` 查询公开用户内容，公开页面不得再通过 `UserPublicProfileVo.VoUserId` 串接后续请求
+- 当前用户资料：`User/GetMyProfile` 返回 `VoPublicId / VoPublicIndex / VoDisplayHandle`，同时保留本人可见的 `VoUserName / VoUserEmail`
+- 提及搜索：`User/SearchForMention` 只面向登录态用户，搜索范围限定为 `DisplayName`、`PublicIndex`、完整 `DisplayName#PublicIndex` 或 `PublicId`；不得把 `LoginName`、`Email` 或内部 `Id` 做普通用户公开搜索字段
 - 我的浏览历史 / 最近访问
+
+### 公开榜单
+
+公开榜单以 Scalar / OpenAPI 和 [排行榜系统](/features/leaderboard) 为准。当前重点接口包括：
+
+- `Leaderboard/GetLeaderboard`
+- `Leaderboard/GetTypes`
+- `Leaderboard/GetMyRank`
+
+用户类榜单项同时返回内部用户 ID 和公开用户 ID：
+
+- `voUserId`：内部 LongId 字符串，继续用于需要内部用户 ID 的接口。
+- `voUserPublicId`：`usr_...` 公开标识，公开主页跳转与分享优先使用。
+- `voUserPublicIndex / voUserDisplayName / voUserDisplayHandle`：公开展示与人工辨识字段，页面展示优先使用 `voUserDisplayHandle`，不要回显登录名或邮箱。
+
+### 电子宠物
+
+电子宠物接口以 Scalar / OpenAPI 和 [Radish 电子宠物开发计划](/features/radish-pet-roadmap) 为准。当前 `PetController` 全部需要登录态 `Client` 授权，使用当前用户身份定位自己的宠物：
+
+- `GET /api/v1/Pet/GetMy`：读取当前用户宠物状态；未领取时返回明确空态，不隐式创建宠物。
+- `POST /api/v1/Pet/Claim`：领取默认宠物；同一用户重复领取返回已有宠物，不创建多只宠物。
+- `PUT /api/v1/Pet/UpdateProfile`：更新宠物名称或公开展示开关；当前不处理装饰购买或经济消耗。
+- `POST /api/v1/Pet/Care`：执行 `feed / clean / play / rest` 四类照顾动作；服务端校验幂等键、每日次数、冷却、状态上下限和成长阶段。
+- `GET /api/v1/Pet/GetLogs`：查询当前用户宠物状态流水；未领取时返回分页空态。
+
+`PetProfileVo` 会返回宠物 `VoPublicId`、名称、形态、成长阶段、心情、饱食度、清洁度、精力、成长值、公开展示开关、最后照顾时间和 `VoCareActions`。前端只展示动作可用性与反馈，不计算最终状态；状态变化以服务端返回和 `PetStatLogVo` 为准。
 
 ### 附件与上传
 

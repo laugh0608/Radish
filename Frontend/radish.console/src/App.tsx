@@ -13,6 +13,20 @@ setupApiInterceptors();
 
 function App() {
   useEffect(() => {
+    const stopActivityTracking = tokenService.startActivityTracking(() => {
+      log.warn('App', 'Console 会话因长时间未使用已过期');
+      tokenService.clearTokens('idle_session_expired');
+
+      const isLoginPage = window.location.pathname.endsWith('/login');
+      if (!isLoginPage) {
+        window.location.href = '/console/login?auto=1&reason=idle';
+      }
+    });
+
+    return stopActivityTracking;
+  }, []);
+
+  useEffect(() => {
     if (!env.tokenAutoRefreshDebug) {
       return;
     }

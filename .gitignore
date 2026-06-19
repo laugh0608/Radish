@@ -193,6 +193,7 @@ _pkginfo.txt
 !*.[Cc]ache/
 
 # Others
+.DS_Store
 ClientBin/
 ~$*
 *~
@@ -206,6 +207,7 @@ node_modules/
 orleans.codegen.cs
 .codex-logs/
 .codex-build/
+.playwright-cli/
 .dotnet-home/
 .dotnet-cli/
 .nuget/

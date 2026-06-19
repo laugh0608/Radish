@@ -47,6 +47,16 @@ public interface IExperienceService : IBaseService<UserExperience, UserExperienc
         string? remark = null);
 
     /// <summary>
+    /// 检查指定业务经验流水是否已存在
+    /// </summary>
+    /// <param name="userId">用户 ID</param>
+    /// <param name="expType">经验值类型</param>
+    /// <param name="businessType">业务类型</param>
+    /// <param name="businessId">业务 ID</param>
+    /// <returns>是否已存在</returns>
+    Task<bool> HasExperienceTransactionAsync(long userId, string expType, string businessType, long businessId);
+
+    /// <summary>
     /// 批量发放经验值
     /// </summary>
     /// <param name="grantInfos">发放信息列表</param>

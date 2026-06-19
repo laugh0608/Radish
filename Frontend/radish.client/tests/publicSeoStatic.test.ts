@@ -48,6 +48,18 @@ test('公开个人页应保持只读边界，不直接暴露关注写操作', ()
   assert.doesNotMatch(source, /getFollowStatus\(/);
 });
 
+test('公开个人页内容查询不应依赖内部用户 ID', () => {
+  const source = readFileSync(resolve(clientRoot, 'src/public/profile/PublicProfileApp.tsx'), 'utf8');
+
+  assert.doesNotMatch(source, /voUserId/);
+  assert.doesNotMatch(source, /GetUserStats/);
+  assert.doesNotMatch(source, /GetUserPosts/);
+  assert.doesNotMatch(source, /GetUserComments/);
+  assert.match(source, /getPublicUserStats\(route\.userId\)/);
+  assert.match(source, /getPublicUserPosts\(profileRouteIdentifier, route\.page, 10\)/);
+  assert.match(source, /getPublicUserComments\(profileRouteIdentifier, route\.page, 10\)/);
+});
+
 test('公开社区发现页应使用统一公开分享入口', () => {
   const source = readFileSync(resolve(clientRoot, 'src/public/discover/PublicDiscoverApp.tsx'), 'utf8');
 

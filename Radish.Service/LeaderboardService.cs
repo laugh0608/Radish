@@ -220,6 +220,7 @@ public class LeaderboardService : ILeaderboardService
 
         var userIds = pagedData.Select(e => e.UserId).ToList();
         var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id));
+        await EnsureLeaderboardUserPublicIdsAsync(users);
         var userDict = users.ToDictionary(u => u.Id);
         var avatarUrlMap = await LoadUserAvatarUrlMapAsync(userIds);
 
@@ -244,7 +245,11 @@ public class LeaderboardService : ILeaderboardService
                 VoCategory = LeaderboardCategory.User,
                 VoRank = rank,
                 VoUserId = exp.UserId,
-                VoUserName = user.UserName,
+                VoUserPublicId = user.PublicId,
+                VoUserPublicIndex = user.PublicIndex,
+                VoUserName = User.NormalizeDisplayName(user.UserName, user.Id),
+                VoUserDisplayName = User.NormalizeDisplayName(user.UserName, user.Id),
+                VoUserDisplayHandle = User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id),
                 VoAvatarUrl = avatarUrlMap.GetValueOrDefault(exp.UserId),
                 VoCurrentLevel = exp.CurrentLevel,
                 VoCurrentLevelName = levelConfigDict.TryGetValue(exp.CurrentLevel, out var config)
@@ -310,6 +315,7 @@ public class LeaderboardService : ILeaderboardService
 
         var userIds = pagedData.Select(b => b.UserId).ToList();
         var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id));
+        await EnsureLeaderboardUserPublicIdsAsync(users);
         var userDict = users.ToDictionary(u => u.Id);
         var avatarUrlMap = await LoadUserAvatarUrlMapAsync(userIds);
 
@@ -341,7 +347,11 @@ public class LeaderboardService : ILeaderboardService
                 VoCategory = LeaderboardCategory.User,
                 VoRank = rank,
                 VoUserId = balance.UserId,
-                VoUserName = user.UserName,
+                VoUserPublicId = user.PublicId,
+                VoUserPublicIndex = user.PublicIndex,
+                VoUserName = User.NormalizeDisplayName(user.UserName, user.Id),
+                VoUserDisplayName = User.NormalizeDisplayName(user.UserName, user.Id),
+                VoUserDisplayHandle = User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id),
                 VoAvatarUrl = avatarUrlMap.GetValueOrDefault(balance.UserId),
                 VoCurrentLevel = level,
                 VoCurrentLevelName = levelConfigDict.TryGetValue(level, out var config)
@@ -393,6 +403,7 @@ public class LeaderboardService : ILeaderboardService
 
         var userIds = pagedData.Select(b => b.UserId).ToList();
         var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id));
+        await EnsureLeaderboardUserPublicIdsAsync(users);
         var userDict = users.ToDictionary(u => u.Id);
         var avatarUrlMap = await LoadUserAvatarUrlMapAsync(userIds);
 
@@ -424,7 +435,11 @@ public class LeaderboardService : ILeaderboardService
                 VoCategory = LeaderboardCategory.User,
                 VoRank = rank,
                 VoUserId = balance.UserId,
-                VoUserName = user.UserName,
+                VoUserPublicId = user.PublicId,
+                VoUserPublicIndex = user.PublicIndex,
+                VoUserName = User.NormalizeDisplayName(user.UserName, user.Id),
+                VoUserDisplayName = User.NormalizeDisplayName(user.UserName, user.Id),
+                VoUserDisplayHandle = User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id),
                 VoAvatarUrl = avatarUrlMap.GetValueOrDefault(balance.UserId),
                 VoCurrentLevel = level,
                 VoCurrentLevelName = levelConfigDict.TryGetValue(level, out var config)
@@ -469,6 +484,7 @@ public class LeaderboardService : ILeaderboardService
 
         var userIds = rankingData.Select(r => r.UserId).ToList();
         var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id));
+        await EnsureLeaderboardUserPublicIdsAsync(users);
         var userDict = users.ToDictionary(u => u.Id);
         var avatarUrlMap = await LoadUserAvatarUrlMapAsync(userIds);
 
@@ -500,7 +516,11 @@ public class LeaderboardService : ILeaderboardService
                 VoCategory = LeaderboardCategory.User,
                 VoRank = rank,
                 VoUserId = userId,
-                VoUserName = user.UserName,
+                VoUserPublicId = user.PublicId,
+                VoUserPublicIndex = user.PublicIndex,
+                VoUserName = User.NormalizeDisplayName(user.UserName, user.Id),
+                VoUserDisplayName = User.NormalizeDisplayName(user.UserName, user.Id),
+                VoUserDisplayHandle = User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id),
                 VoAvatarUrl = avatarUrlMap.GetValueOrDefault(userId),
                 VoCurrentLevel = level,
                 VoCurrentLevelName = levelConfigDict.TryGetValue(level, out var config)
@@ -645,6 +665,7 @@ public class LeaderboardService : ILeaderboardService
     {
         var userIds = rankingData.Select(r => r.UserId).ToList();
         var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id));
+        await EnsureLeaderboardUserPublicIdsAsync(users);
         var userDict = users.ToDictionary(u => u.Id);
         var avatarUrlMap = await LoadUserAvatarUrlMapAsync(userIds);
 
@@ -676,7 +697,11 @@ public class LeaderboardService : ILeaderboardService
                 VoCategory = LeaderboardCategory.User,
                 VoRank = rank,
                 VoUserId = userId,
-                VoUserName = user.UserName,
+                VoUserPublicId = user.PublicId,
+                VoUserPublicIndex = user.PublicIndex,
+                VoUserName = User.NormalizeDisplayName(user.UserName, user.Id),
+                VoUserDisplayName = User.NormalizeDisplayName(user.UserName, user.Id),
+                VoUserDisplayHandle = User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id),
                 VoAvatarUrl = avatarUrlMap.GetValueOrDefault(userId),
                 VoCurrentLevel = level,
                 VoCurrentLevelName = levelConfigDict.TryGetValue(level, out var config)
@@ -716,6 +741,67 @@ public class LeaderboardService : ILeaderboardService
             PageCount = pageCount,
             Data = data
         };
+    }
+
+    private async Task EnsureLeaderboardUserPublicIdsAsync(List<User> users)
+    {
+        foreach (var user in users)
+        {
+            var missingPublicId = string.IsNullOrWhiteSpace(user.PublicId);
+            var missingPublicIndex = !User.HasAssignedPublicIndex(user.PublicIndex);
+
+            if (!missingPublicId)
+            {
+                user.PublicId = user.PublicId?.Trim();
+            }
+
+            if (!missingPublicId && !missingPublicIndex)
+            {
+                continue;
+            }
+
+            var publicId = missingPublicId ? User.EnsurePublicId(user.PublicId) : user.PublicId;
+            var publicIndex = missingPublicIndex ? await AllocateNextPublicIndexAsync() : user.PublicIndex;
+            var affectedRows = await _userRepository.UpdateColumnsAsync(
+                item => new User
+                {
+                    PublicId = publicId,
+                    PublicIndex = publicIndex,
+                    UpdateTime = DateTime.Now
+                },
+                item => item.Id == user.Id &&
+                        !item.IsDeleted &&
+                        ((missingPublicId && (item.PublicId == null || item.PublicId == string.Empty)) ||
+                         (missingPublicIndex && (item.PublicIndex == null || item.PublicIndex <= 0))));
+
+            if (affectedRows > 0)
+            {
+                user.PublicId = publicId;
+                user.PublicIndex = publicIndex;
+                continue;
+            }
+
+            var refreshedUser = await _userRepository.QueryByIdAsync(user.Id);
+            if (!string.IsNullOrWhiteSpace(refreshedUser?.PublicId))
+            {
+                user.PublicId = refreshedUser.PublicId.Trim();
+            }
+
+            if (User.HasAssignedPublicIndex(refreshedUser?.PublicIndex))
+            {
+                user.PublicIndex = refreshedUser!.PublicIndex;
+            }
+        }
+    }
+
+    private async Task<long> AllocateNextPublicIndexAsync()
+    {
+        var maxPublicIndexTask = _userRepository.QueryMaxAsync<long?>(
+            item => item.PublicIndex,
+            item => item.PublicIndex >= User.PublicIndexStart);
+        var maxPublicIndex = maxPublicIndexTask == null ? null : await maxPublicIndexTask;
+
+        return maxPublicIndex.GetValueOrDefault(User.PublicIndexStart - 1) + 1;
     }
 
     private async Task<Dictionary<long, string>> LoadUserAvatarUrlMapAsync(IReadOnlyCollection<long> userIds)

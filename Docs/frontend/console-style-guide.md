@@ -1,7 +1,7 @@
 # Console 样式与 Token 使用说明
 
 > 入口页：[前端设计文档](/frontend/design)  
-> 最后更新：2026-05-24
+> 最后更新：2026-06-13
 
 本文说明 `radish.console` 后续新增或改动页面时的局部样式口径。Console 后续视觉方向以 `Docs/frontend/design-sources/console-governance-workbench.pen` 中的 `Case Desk` 系列画板为当前设计基准。
 
@@ -11,6 +11,8 @@
 - `@radish/ui` 已提供按钮、表格、表单、弹窗、确认框、骨架屏、图标、Toast 等基础能力；新增页面不应再创建重复的本地基础控件。
 - Console 局部样式先以 `index.css` 中的 `--console-*` CSS 变量承接主题 token，再由 `AdminLayout.css` 与 `adminFeature.css` 消费。
 - 新增 / 明显改动页面优先按 `Case Desk` 风格收敛；历史页面不要求一次性改写，但进入重做或大幅调整时应对齐该方向。
+- `AdminLayout` 在窄屏下保持独立后台形态：`<= 768px` 时侧栏默认收敛到 64px 宽，顶部栏和内容区按剩余宽度排布，不把侧栏覆盖到主内容上。
+- Console token 生命周期由 `services/tokenService.ts` 统一维护，页面和 API 层不应各自实现独立刷新计时；刷新前置窗口使用 `refresh_at` 和动态缓冲。
 - `radish.client` 后续重新设计时可以参考 Console 的低饱和配色、侧栏节奏、按钮层级和工作台信息组织，但不直接照搬 Console 的管理后台结构。
 
 ## 2. Case Desk 视觉方向
@@ -103,7 +105,7 @@
 ## 5. 页面样式分层
 
 - `index.css`：只放 Console 根级 token、全局 box model、`body` 与 `#root` 基础样式。
-- `AdminLayout.css`：只放后台壳层、侧边栏、顶部栏、内容区等布局样式。
+- `AdminLayout.css`：只放后台壳层、侧边栏、顶部栏、内容区等布局样式；移动端侧栏收敛规则也归这里维护，不下沉到业务页面。
 - `adminFeature.css`：承接通用功能页结构，例如功能页容器、卡片、标题区、banner、指标网格、表单栅格。
 - 具体页面 CSS：只放该页面不可复用的布局或业务状态样式，避免复制 `adminFeature.css` 已有结构。
 
@@ -115,3 +117,4 @@
 - 不为了统一而改动无关历史页面；只有新增页面、可见缺陷修复、明确反馈触达或已进入重做范围的页面才顺带收敛。
 - Console 样式治理不改变公开内容壳层、WebOS 桌面、Tauri 壳或 `radish.client` 主题切换规则。
 - 从设计稿进入实现时，先沉淀 `--console-*` token 和通用壳层 / 按钮 / 标签 / 面板样式，再按页面类型拆局部 CSS，避免每页复制一套颜色和圆角。
+- 高频表格页、治理页和设置页在移动视角下应以横向滚动、列密度和摘要区域折叠处理复杂信息，不应通过扩大页面最小宽度把主内容推出视口。

@@ -730,7 +730,7 @@ export const PublicShopApp = ({
 
           <div className={styles.detailBody}>
             <div className={styles.detailTitleRow}>
-              <p className={styles.kicker}>Phase 2-2</p>
+              <p className={styles.kicker}>{t('shop.public.guideKicker')}</p>
               <span className={styles.metaChip}>{getProductTypeDisplay(selectedProduct.voProductType)}</span>
               {selectedProduct.voCategoryName?.trim() && (
                 <span className={styles.metaChip}>{selectedProduct.voCategoryName}</span>
@@ -825,6 +825,8 @@ export const PublicShopApp = ({
         onBrandClick={() => onNavigate(createDefaultPublicShopRoute())}
         onNavigateToDiscover={onNavigateToDiscover}
         discoverLabel={t('public.shell.discoverAction')}
+        circleLabel={t('public.shell.circleAction')}
+        desktopLabel={t('public.shell.desktopAction')}
       />
 
       <main className={styles.main}>
@@ -832,7 +834,7 @@ export const PublicShopApp = ({
           <div className={styles.sectionHeader}>
             <div className={styles.sectionHeading}>
               <div className={styles.sectionTitleRow}>
-                <p className={styles.kicker}>Phase 2-2</p>
+                <p className={styles.kicker}>{t('shop.public.guideKicker')}</p>
                 <span className={styles.readOnlyBadge}>{t('shop.public.readOnlyBadge')}</span>
               </div>
               <h1 className={styles.pageTitle}>{pageTitle}</h1>

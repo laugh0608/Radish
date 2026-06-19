@@ -563,6 +563,7 @@ public partial class PostService
         var userIds = posts
             .Select(post => post.VoAuthorId)
             .Concat(posts.SelectMany(post => post.VoQuestion?.VoAnswers ?? []).Select(answer => answer.VoAuthorId))
+            .Concat(posts.SelectMany(post => post.VoLottery?.VoWinners ?? []).Select(winner => winner.VoUserId))
             .Concat(recentComments.Select(comment => comment.AuthorId))
             .Where(userId => userId > 0)
             .Distinct()
@@ -570,6 +571,7 @@ public partial class PostService
 
         Dictionary<long, string> avatarUrlMap = new();
         Dictionary<long, string> displayNameMap = new();
+        Dictionary<long, string> publicIdMap = new();
         if (userIds.Count > 0)
         {
             avatarUrlMap = (await _attachmentService.GetLatestAvatarAssetMapAsync(userIds))
@@ -578,14 +580,26 @@ public partial class PostService
 
             if (_userRepository != null)
             {
-                displayNameMap = ForumDisplayNameHelper.BuildMap(await _userRepository.QueryAsync(user =>
+                var users = await _userRepository.QueryAsync(user =>
                     userIds.Contains(user.Id) &&
-                    !user.IsDeleted));
+                    !user.IsDeleted);
+                await EnsurePostUserPublicIdsAsync(users);
+
+                displayNameMap = ForumDisplayNameHelper.BuildMap(users);
+                publicIdMap = users
+                    .Where(user => !string.IsNullOrWhiteSpace(user.PublicId))
+                    .GroupBy(user => user.Id)
+                    .ToDictionary(group => group.Key, group => group.First().PublicId!.Trim());
             }
         }
 
         foreach (var post in posts)
         {
+            if (publicIdMap.TryGetValue(post.VoAuthorId, out var authorPublicId))
+            {
+                post.VoAuthorPublicId = authorPublicId;
+            }
+
             if (displayNameMap.TryGetValue(post.VoAuthorId, out var authorDisplayName))
             {
                 post.VoAuthorName = authorDisplayName;
@@ -600,6 +614,11 @@ public partial class PostService
             {
                 foreach (var answer in post.VoQuestion.VoAnswers.Where(answer => answer.VoAuthorId > 0))
                 {
+                    if (publicIdMap.TryGetValue(answer.VoAuthorId, out var answerAuthorPublicId))
+                    {
+                        answer.VoAuthorPublicId = answerAuthorPublicId;
+                    }
+
                     if (displayNameMap.TryGetValue(answer.VoAuthorId, out var answerDisplayName))
                     {
                         answer.VoAuthorName = answerDisplayName;
@@ -608,6 +627,22 @@ public partial class PostService
                     if (avatarUrlMap.TryGetValue(answer.VoAuthorId, out var answerAvatarUrl))
                     {
                         answer.VoAuthorAvatarUrl = answerAvatarUrl;
+                    }
+                }
+            }
+
+            if (post.VoLottery?.VoWinners?.Count > 0)
+            {
+                foreach (var winner in post.VoLottery.VoWinners.Where(winner => winner.VoUserId > 0))
+                {
+                    if (publicIdMap.TryGetValue(winner.VoUserId, out var winnerPublicId))
+                    {
+                        winner.VoUserPublicId = winnerPublicId;
+                    }
+
+                    if (displayNameMap.TryGetValue(winner.VoUserId, out var winnerDisplayName))
+                    {
+                        winner.VoUserName = winnerDisplayName;
                     }
                 }
             }
@@ -626,6 +661,42 @@ public partial class PostService
                     VoAvatarUrl = avatarUrlMap.GetValueOrDefault(comment.AuthorId)
                 })
                 .ToList();
+        }
+    }
+
+    private async Task EnsurePostUserPublicIdsAsync(List<User> users)
+    {
+        if (_userRepository == null)
+        {
+            return;
+        }
+
+        foreach (var user in users)
+        {
+            if (!string.IsNullOrWhiteSpace(user.PublicId))
+            {
+                user.PublicId = user.PublicId.Trim();
+                continue;
+            }
+
+            var publicId = User.EnsurePublicId(user.PublicId);
+            var affectedRows = await _userRepository.UpdateColumnsAsync(
+                item => new User { PublicId = publicId },
+                item => item.Id == user.Id &&
+                        !item.IsDeleted &&
+                        (item.PublicId == null || item.PublicId == string.Empty));
+
+            if (affectedRows > 0)
+            {
+                user.PublicId = publicId;
+                continue;
+            }
+
+            var refreshedUser = await _userRepository.QueryByIdAsync(user.Id);
+            if (!string.IsNullOrWhiteSpace(refreshedUser?.PublicId))
+            {
+                user.PublicId = refreshedUser.PublicId.Trim();
+            }
         }
     }
 
@@ -1026,6 +1097,7 @@ public partial class PostService
         var highlights = await _commentHighlightRepository.QueryAsync(highlight =>
             postIds.Contains(highlight.PostId) &&
             highlight.HighlightType == 1 &&
+            highlight.LikeCount > 0 &&
             highlight.IsCurrent);
 
         return highlights

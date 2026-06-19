@@ -1,12 +1,18 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  buildCircleReturnPath,
   buildCurrentDesktopReturnPath,
   buildDesktopForumPostReturnPath,
   buildDesktopForumReturnPath,
   buildDesktopShopOrderReturnPath,
   buildDesktopShopPrivateViewReturnPath,
   buildDesktopShopProductReturnPath,
+  buildMeReturnPath,
+  buildMessagesReturnPath,
+  buildNotificationsReturnPath,
+  buildPetReturnPath,
+  buildPublicForumPostReturnPath,
   consumeAuthReturnPath,
   normalizeAuthReturnPath,
   rememberAuthReturnPath,
@@ -40,15 +46,88 @@ class MemoryStorage implements Storage {
   }
 }
 
-test('normalizeAuthReturnPath 只接受 desktop 相对路径', () => {
+test('normalizeAuthReturnPath 只接受 desktop 深链、circle/me/messages/notifications/pet 私域入口和公开论坛详情参与意图', () => {
   assert.equal(normalizeAuthReturnPath('/desktop?app=shop&productId=2042219067430928384'), '/desktop?app=shop&productId=2042219067430928384');
   assert.equal(normalizeAuthReturnPath('/desktop?app=forum&postId=2042219067430928384'), '/desktop?app=forum&postId=2042219067430928384');
   assert.equal(normalizeAuthReturnPath('/desktop/?app=shop&view=orders'), '/desktop/?app=shop&view=orders');
+  assert.equal(normalizeAuthReturnPath('/circle'), '/circle');
+  assert.equal(normalizeAuthReturnPath('/circle/?tab=following&page=2'), '/circle?tab=following&page=2');
+  assert.equal(normalizeAuthReturnPath('/circle?tab=feed&page=1'), '/circle');
+  assert.equal(normalizeAuthReturnPath('/notifications'), '/notifications');
+  assert.equal(normalizeAuthReturnPath('/notifications/'), '/notifications');
+  assert.equal(normalizeAuthReturnPath('/messages'), '/messages');
+  assert.equal(
+    normalizeAuthReturnPath('/messages/?channelId=2042219067430928390&messageId=2042219067430928391'),
+    '/messages?channelId=2042219067430928390&messageId=2042219067430928391',
+  );
+  assert.equal(normalizeAuthReturnPath('/me'), '/me');
+  assert.equal(normalizeAuthReturnPath('/me/'), '/me');
+  assert.equal(normalizeAuthReturnPath('/pet'), '/pet');
+  assert.equal(normalizeAuthReturnPath('/pet/'), '/pet');
+  assert.equal(
+    normalizeAuthReturnPath('/forum/post/PST_018F6B6F7C7D70008F8F8F8F8F8F8F8F?intent=comment'),
+    '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=comment',
+  );
+  assert.equal(
+    normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=quickReply&commentId=2042219067430928385'),
+    '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?commentId=2042219067430928385&intent=quickReply',
+  );
+  assert.equal(normalizeAuthReturnPath('/circle?tab=hot'), null);
+  assert.equal(normalizeAuthReturnPath('/circle?from=discover'), null);
+  assert.equal(normalizeAuthReturnPath('/circle#feed'), null);
+  assert.equal(normalizeAuthReturnPath('/notifications?filter=unread'), null);
+  assert.equal(normalizeAuthReturnPath('/notifications#unread'), null);
+  assert.equal(normalizeAuthReturnPath('/messages?messageId=2042219067430928391'), null);
+  assert.equal(normalizeAuthReturnPath('/messages?channelId=0'), null);
+  assert.equal(normalizeAuthReturnPath('/messages?channelId=2042219067430928390&messageId=abc'), null);
+  assert.equal(normalizeAuthReturnPath('/messages?channelId=2042219067430928390&from=notification'), null);
+  assert.equal(normalizeAuthReturnPath('/me?tab=assets'), null);
+  assert.equal(normalizeAuthReturnPath('/me#growth'), null);
+  assert.equal(normalizeAuthReturnPath('/pet?from=me'), null);
+  assert.equal(normalizeAuthReturnPath('/pet#care'), null);
+  assert.equal(normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f'), null);
+  assert.equal(normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=edit'), null);
+  assert.equal(normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=comment&from=discover'), null);
+  assert.equal(normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=comment#discussion'), null);
   assert.equal(normalizeAuthReturnPath('/discover'), null);
   assert.equal(normalizeAuthReturnPath('/oidc/callback'), null);
   assert.equal(normalizeAuthReturnPath('https://radishx.com/desktop?app=shop'), null);
   assert.equal(normalizeAuthReturnPath('//radishx.com/desktop?app=shop'), null);
   assert.equal(normalizeAuthReturnPath('/desktop\\?app=shop'), null);
+});
+
+test('buildNotificationsReturnPath 应构造通知复访登录回流路径', () => {
+  assert.equal(buildNotificationsReturnPath(), '/notifications');
+});
+
+test('buildMessagesReturnPath 应构造消息复访登录回流路径', () => {
+  assert.equal(buildMessagesReturnPath(), '/messages');
+  assert.equal(
+    buildMessagesReturnPath({
+      channelId: '2042219067430928390',
+      messageId: '2042219067430928391',
+    }),
+    '/messages?channelId=2042219067430928390&messageId=2042219067430928391',
+  );
+  assert.equal(buildMessagesReturnPath({ channelId: '0' }), null);
+  assert.equal(buildMessagesReturnPath({ messageId: '2042219067430928391' }), null);
+});
+
+test('buildMeReturnPath 应构造我的状态登录回流路径', () => {
+  assert.equal(buildMeReturnPath(), '/me');
+});
+
+test('buildPetReturnPath 应构造电子宠物登录回流路径', () => {
+  assert.equal(buildPetReturnPath(), '/pet');
+});
+
+test('buildCircleReturnPath 应构造圈子登录回流路径并收敛默认参数', () => {
+  assert.equal(buildCircleReturnPath(), '/circle');
+  assert.equal(buildCircleReturnPath({ tab: 'feed', page: 1 }), '/circle');
+  assert.equal(buildCircleReturnPath({ tab: 'following' }), '/circle?tab=following');
+  assert.equal(buildCircleReturnPath({ tab: 'followers', page: 3 }), '/circle?tab=followers&page=3');
+  assert.equal(buildCircleReturnPath({ page: '0' }), null);
+  assert.equal(buildCircleReturnPath({ page: 'abc' }), null);
 });
 
 test('rememberAuthReturnPath 和 consumeAuthReturnPath 应一次性保存并消费合法路径', () => {
@@ -142,6 +221,41 @@ test('论坛返回路径应支持工作台首页、帖子和评论上下文', ()
     buildDesktopForumPostReturnPath({
       postId: '2042219067430928384',
       commentId: 'comment-1',
+    }),
+    null,
+  );
+});
+
+test('公开论坛详情返回路径只支持评论和轻回应登录意图', () => {
+  assert.equal(
+    buildPublicForumPostReturnPath({
+      postPublicId: 'PST_018F6B6F7C7D70008F8F8F8F8F8F8F8F',
+      commentId: '2042219067430928385',
+      intent: 'comment',
+    }),
+    '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?commentId=2042219067430928385&intent=comment',
+  );
+  assert.equal(
+    buildPublicForumPostReturnPath({
+      postId: '2042219067430928384',
+      intent: 'quickReply',
+    }),
+    '/forum/post/2042219067430928384?intent=quickReply',
+  );
+  assert.equal(buildPublicForumPostReturnPath({ postId: '0', intent: 'comment' }), null);
+  assert.equal(buildPublicForumPostReturnPath({ postPublicId: 'post-42', intent: 'comment' }), null);
+  assert.equal(
+    buildPublicForumPostReturnPath({
+      postId: '2042219067430928384',
+      commentId: 'comment-1',
+      intent: 'comment',
+    }),
+    null,
+  );
+  assert.equal(
+    buildPublicForumPostReturnPath({
+      postId: '2042219067430928384',
+      intent: 'edit' as never,
     }),
     null,
   );

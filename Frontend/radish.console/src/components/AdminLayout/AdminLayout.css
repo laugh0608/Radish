@@ -226,3 +226,67 @@
 .admin-breadcrumb .ant-breadcrumb-link {
   color: var(--console-text-secondary);
 }
+
+@media (max-width: 768px) {
+  .admin-sider {
+    padding: 0 8px;
+  }
+
+  .admin-sider.ant-layout-sider-collapsed .admin-logo {
+    height: 70px;
+    padding: 0;
+  }
+
+  .admin-sider.ant-layout-sider-collapsed .admin-logo-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+
+  .admin-sider.ant-layout-sider-collapsed .ant-menu-item {
+    width: 48px;
+  }
+
+  .admin-layout > .ant-layout,
+  .admin-layout > .ant-layout.collapsed {
+    margin-left: 64px;
+    width: calc(100% - 64px);
+    min-width: 0;
+  }
+
+  .admin-header {
+    height: 64px;
+    padding: 0 12px;
+  }
+
+  .admin-header-right {
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .admin-search-icon {
+    margin-right: 0;
+  }
+
+  .admin-user {
+    gap: 6px;
+    padding: 6px;
+    min-width: 0;
+  }
+
+  .admin-username {
+    max-width: 88px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .admin-content {
+    padding: 18px 14px 22px;
+    min-width: 0;
+  }
+
+  .admin-breadcrumb {
+    margin-bottom: 18px;
+  }
+}

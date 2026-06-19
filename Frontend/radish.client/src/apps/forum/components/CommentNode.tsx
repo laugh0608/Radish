@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import { buildAttachmentAssetUrl, parseAttachmentMarkdownUrl, resolveConfiguredMediaUrl } from '@radish/ui';
@@ -28,6 +28,7 @@ interface CommentNodeProps {
   onViewHistory?: (commentId: LongId) => void;
   onLike?: (commentId: LongId) => Promise<{ isLiked: boolean; likeCount: number }>;
   onReply?: (target: CommentReplyTarget) => void;
+  onTyping?: (commentId: LongId) => void;
   onLoadMoreChildren?: (parentId: LongId, pageIndex: number, pageSize: number) => Promise<CommentNodeType[]>;
   stickerMap?: MarkdownStickerMap;
   reactionMap?: Record<string, ReactionSummaryVo[]>;
@@ -37,6 +38,7 @@ interface CommentNodeProps {
   isReactionPending?: (commentId: LongId) => boolean;
   onRequireReactionLogin?: () => void;
   onAuthorClick?: (userId: LongId, userName?: string | null, avatarUrl?: string | null) => void;
+  resolveAuthorProfileId?: (userId: LongId, publicId?: string | null) => LongId;
   onReport?: (commentId: LongId) => void;
   registerCommentAnchor?: (commentId: LongId, element: HTMLDivElement | null) => void;
   onNavigateToComment?: (commentId: LongId) => void | Promise<void>;
@@ -256,6 +258,7 @@ export const CommentNode = ({
   onViewHistory,
   onLike,
   onReply,
+  onTyping,
   onLoadMoreChildren,
   stickerMap,
   reactionMap = {},
@@ -265,6 +268,7 @@ export const CommentNode = ({
   isReactionPending,
   onRequireReactionLogin,
   onAuthorClick,
+  resolveAuthorProfileId,
   onReport,
   registerCommentAnchor,
   onNavigateToComment,
@@ -283,6 +287,7 @@ export const CommentNode = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const lastEditTypingSentAtRef = useRef(0);
 
   // 本地点赞状态（用于乐观更新）
   const [isLiked, setIsLiked] = useState(node.voIsLiked ?? false);
@@ -295,6 +300,11 @@ export const CommentNode = ({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [childSortBy, setChildSortBy] = useState<'newest' | 'hottest' | null>(null); // null表示默认排序(时间升序)
   const [hasPreloadedChildren, setHasPreloadedChildren] = useState(false);
+
+  useEffect(() => {
+    setIsLiked(node.voIsLiked ?? false);
+    setLikeCount(node.voLikeCount ?? 0);
+  }, [node.voId, node.voIsLiked, node.voLikeCount]);
 
   const commentImages = useMemo(() => extractCommentImages(node.voContent), [node.voContent]);
   const commentHtml = useMemo(() => renderCommentHtml(node.voContent, stickerMap), [node.voContent, stickerMap]);
@@ -318,17 +328,21 @@ export const CommentNode = ({
   // 找出所有沙发（后端标记的）
   const sofaComments = loadedChildren.filter(c => c.voIsSofa);
 
-  // 找出当前点赞数最高的沙发（用于置顶显示）
-  const topSofaComment = sofaComments.length > 0
+  // 找出当前沙发（用于置顶显示，支持并列）
+  const topSofaComments = sofaComments.length > 0
     ? [...sofaComments].sort((a, b) => {
+        const rankDiff = (a.voHighlightRank ?? 999) - (b.voHighlightRank ?? 999);
+        if (rankDiff !== 0) {
+          return rankDiff;
+        }
         // 先按点赞数降序
         if ((b.voLikeCount || 0) !== (a.voLikeCount || 0)) {
           return (b.voLikeCount || 0) - (a.voLikeCount || 0);
         }
         // 点赞数相同时按时间降序（最新的在前）
         return new Date(b.voCreateTime || 0).getTime() - new Date(a.voCreateTime || 0).getTime();
-      })[0]
-    : null;
+      })
+    : [];
 
   const hasChildren = (node.voChildrenTotal && node.voChildrenTotal > 0) || (node.voChildren && node.voChildren.length > 0);
   const totalChildren = node.voChildrenTotal ?? node.voChildren?.length ?? 0;
@@ -422,6 +436,20 @@ export const CommentNode = ({
     setEditError(null);
     setIsEditing(true);
   };
+
+  const notifyEditTyping = useCallback(() => {
+    if (!onTyping || !isAuthenticated) {
+      return;
+    }
+
+    const now = Date.now();
+    if (now - lastEditTypingSentAtRef.current < 2000) {
+      return;
+    }
+
+    lastEditTypingSentAtRef.current = now;
+    onTyping(node.voId);
+  }, [isAuthenticated, node.voId, onTyping]);
 
   // 保存编辑
   const handleSaveEdit = async () => {
@@ -529,24 +557,25 @@ export const CommentNode = ({
 
     // 收起状态下：优先展示“沙发”（如果有），否则展示当前已加载子评论里最热的一条
     const collapsedPreview = (() => {
-      if (topSofaComment) return topSofaComment;
+      if (topSofaComments.length > 0) return topSofaComments;
       if (loadedChildren.length === 0) return null;
 
-      return [...loadedChildren].sort((a, b) => {
+      return [[...loadedChildren].sort((a, b) => {
         const likeDiff = (b.voLikeCount || 0) - (a.voLikeCount || 0);
         if (likeDiff !== 0) return likeDiff;
         return new Date(b.voCreateTime || 0).getTime() - new Date(a.voCreateTime || 0).getTime();
-      })[0];
+      })[0]];
     })();
 
     if (!isExpanded) {
-      return collapsedPreview ? [collapsedPreview] : [];
+      return collapsedPreview ?? [];
     }
 
-    if (childSortBy === null && topSofaComment) {
-      // 展开且未手动排序：当前点赞数最高的沙发置顶 + 其他按时间升序
-      const others = loadedChildren.filter(c => !isSameLongId(c.voId, topSofaComment.voId));
-      return [topSofaComment, ...others];
+    if (childSortBy === null && topSofaComments.length > 0) {
+      // 展开且未手动排序：当前沙发置顶 + 其他按时间升序
+      const topIds = new Set(topSofaComments.map(comment => String(comment.voId)));
+      const others = loadedChildren.filter(c => !topIds.has(String(c.voId)));
+      return [...topSofaComments, ...others];
     }
 
     // 展开且手动排序：按排序结果显示
@@ -563,7 +592,11 @@ export const CommentNode = ({
         <button
           type="button"
           className={styles.authorButton}
-          onClick={() => onAuthorClick?.(node.voAuthorId, node.voAuthorName, node.voAuthorAvatarUrl)}
+          onClick={() => onAuthorClick?.(
+            resolveAuthorProfileId?.(node.voAuthorId, node.voAuthorPublicId) ?? node.voAuthorId,
+            node.voAuthorName,
+            node.voAuthorAvatarUrl
+          )}
           title={t('forum.comment.authorProfileTitle', { name: node.voAuthorName })}
         >
           <span
@@ -640,6 +673,9 @@ export const CommentNode = ({
             value={editContent}
             onChange={(e) => {
               setEditContent(e.target.value);
+              if (e.target.value.trim()) {
+                notifyEditTyping();
+              }
               if (editError) {
                 setEditError(null);
               }
@@ -815,6 +851,7 @@ export const CommentNode = ({
                   onEdit={onEdit}
                   onLike={onLike}
                   onReply={onReply}
+                  onTyping={onTyping}
                   onLoadMoreChildren={undefined} // 2级结构，子评论不再加载更多
                   stickerMap={stickerMap}
                   reactionMap={reactionMap}
@@ -824,6 +861,7 @@ export const CommentNode = ({
                   isReactionPending={isReactionPending}
                   onRequireReactionLogin={onRequireReactionLogin}
                   onAuthorClick={onAuthorClick}
+                  resolveAuthorProfileId={resolveAuthorProfileId}
                   onReport={onReport}
                   registerCommentAnchor={registerCommentAnchor}
                   onNavigateToComment={onNavigateToComment}

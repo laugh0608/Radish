@@ -16,9 +16,29 @@ public class LeaderboardItemVo
     public long VoUserId { get; set; }
 
     /// <summary>
-    /// 用户名
+    /// 用户公开访问标识
+    /// </summary>
+    public string? VoUserPublicId { get; set; }
+
+    /// <summary>
+    /// 用户公开索引号
+    /// </summary>
+    public long? VoUserPublicIndex { get; set; }
+
+    /// <summary>
+    /// 用户公开展示名的历史字段
     /// </summary>
     public string VoUserName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 用户公开展示名
+    /// </summary>
+    public string? VoUserDisplayName { get; set; }
+
+    /// <summary>
+    /// 用户公开显示句柄
+    /// </summary>
+    public string? VoUserDisplayHandle { get; set; }
 
     /// <summary>
     /// 头像 URL

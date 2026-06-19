@@ -90,6 +90,9 @@ export type { NotificationCenterProps } from './Notification/NotificationCenter'
 export { NotificationList } from './Notification/NotificationList';
 export type { NotificationListProps } from './Notification/NotificationList';
 
+export { AntdFeedbackBridge, message, notification } from './AntdFeedbackBridge';
+export type { AntdFeedbackBridgeProps } from './AntdFeedbackBridge';
+
 export { ExperienceBar } from './ExperienceBar/ExperienceBar';
 export type { ExperienceBarProps, ExperienceData } from './ExperienceBar/ExperienceBar';
 
@@ -143,8 +146,6 @@ export {
   Table,
   // Feedback
   Modal as AntModal,
-  message,
-  notification,
   Result,
   // Data Display
   Tag,

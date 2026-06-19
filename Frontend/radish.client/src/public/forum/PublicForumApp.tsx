@@ -8,6 +8,7 @@ import type {
 import {
   getPublicDetailBackLabelKey,
   type PublicDetailBackMode,
+  type PublicRouteSourceState,
 } from '../publicRouteNavigation';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { PublicForumDetail } from './PublicForumDetail';
@@ -23,6 +24,7 @@ import styles from './PublicForumApp.module.css';
 interface PublicForumAppProps {
   route: PublicForumRoute;
   fallbackBrowseRoute: PublicForumBrowseRoute;
+  routeSourceState?: PublicRouteSourceState | null;
   detailBackAction?: {
     mode: PublicDetailBackMode;
     onBack: () => void;
@@ -40,6 +42,7 @@ interface PublicForumAppProps {
 export const PublicForumApp = ({
   route,
   fallbackBrowseRoute,
+  routeSourceState,
   detailBackAction,
   onNavigate,
   onNavigateToDiscover,
@@ -60,7 +63,7 @@ export const PublicForumApp = ({
     route.kind !== 'detail' ? buildBrowseRouteKey(route) : null
   ), [route]);
   const detailBackLabelKey = getPublicDetailBackLabelKey(detailBackAction?.mode);
-  const detailBackLabel = detailBackLabelKey ? t(detailBackLabelKey) : t('forum.backToList');
+  const detailBackLabel = detailBackLabelKey ? t(detailBackLabelKey) : t('public.shell.backToForum');
   const handleForumDetailBack = detailBackAction?.onBack ?? (() => onNavigate(fallbackBrowseRoute));
 
   useEffect(() => {
@@ -118,18 +121,22 @@ export const PublicForumApp = ({
       <PublicShellHeader
         brandMark="论"
         brandName={t('desktop.apps.forum.name')}
-        brandSubline="Public Content Shell"
+        brandSubline={t('forum.public.shellLabel')}
         onBrandClick={() => onNavigate({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 })}
         onNavigateToDiscover={onNavigateToDiscover}
         discoverLabel={t('public.shell.discoverAction')}
+        circleLabel={t('public.shell.circleAction')}
+        desktopLabel={t('public.shell.desktopAction')}
       />
 
       <main className={styles.main}>
         {route.kind === 'detail' ? (
           <PublicForumDetail
-            key={`detail-${route.postId}-${route.commentId ?? 'none'}`}
+            key={`detail-${route.postId}-${route.commentId ?? 'none'}-${route.intent ?? 'read'}`}
             postId={route.postId}
             commentId={route.commentId}
+            intent={route.intent}
+            sourceState={routeSourceState}
             displayTimeZone={displayTimeZone}
             backLabel={detailBackLabel}
             onBack={handleForumDetailBack}

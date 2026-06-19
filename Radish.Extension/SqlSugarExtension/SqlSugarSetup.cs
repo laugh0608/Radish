@@ -72,6 +72,8 @@ public static class SqlSugarSetup
             BaseDbConfig.AllConfigs.Add(config);
         });
 
+        EnsureSqliteProviderInitialized();
+
         if (BaseDbConfig.LogConfig is null)
         {
             throw new ApplicationException("未配置 Log 库连接");
@@ -164,6 +166,14 @@ public static class SqlSugarSetup
         });
     }
 
+    private static void EnsureSqliteProviderInitialized()
+    {
+        if (BaseDbConfig.AllConfigs.Any(config => config.DbType == SqlSugar.DbType.Sqlite))
+        {
+            SQLitePCL.Batteries_V2.Init();
+        }
+    }
+
     /// <summary>
     /// 解析 SQL AOP 日志中的操作人
     /// </summary>
@@ -174,13 +184,20 @@ public static class SqlSugarSetup
     /// </remarks>
     private static string ResolveSqlAopUser()
     {
-        var userName = App.CurrentUser.UserName;
-        if (!string.IsNullOrWhiteSpace(userName))
+        try
         {
-            return userName;
-        }
+            var userName = App.CurrentUser.UserName;
+            if (!string.IsNullOrWhiteSpace(userName))
+            {
+                return userName;
+            }
 
-        return App.HttpContext == null ? "System" : "Anonymous";
+            return App.HttpContext == null ? "System" : "Anonymous";
+        }
+        catch (ObjectDisposedException)
+        {
+            return "System";
+        }
     }
 
     private static string ResolveOperateName(ISqlSugarClient dbProvider)

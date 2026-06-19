@@ -15,6 +15,7 @@ import {
   TrophyOutlined,
   WalletOutlined,
   LeftOutlined,
+  SafetyOutlined,
 } from '@radish/ui';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
@@ -25,6 +26,7 @@ import { getBalanceByUserId, getTransactionsByUserId, type CoinTransactionVo, ty
 import { getUserExperience, type UserExperienceVo } from '@/api/experienceAdminApi';
 import { adminGetOrders, getOrderStatusColor, getOrderStatusDisplay } from '@/api/shopApi';
 import { buildOrderDetailPath } from '@/pages/Orders/orderListUrlState';
+import { buildModerationPath } from '@/pages/Moderation/moderationPageUrlState';
 import type { Order } from '@/api/types';
 import type { UserListItem } from '@/types/user';
 import '../adminFeature.css';
@@ -34,6 +36,7 @@ interface UserDetailData {
   uuid: string;
   userName: string;
   displayName: string;
+  displayHandle: string;
   loginName: string;
   email: string;
   isEnabled: boolean;
@@ -52,6 +55,8 @@ export const UserDetail = () => {
   const canViewCoins = usePermission(CONSOLE_PERMISSIONS.coinsView);
   const canViewOrders = usePermission(CONSOLE_PERMISSIONS.ordersView);
   const canViewExperience = usePermission(CONSOLE_PERMISSIONS.experienceView);
+  const canViewModeration = usePermission(CONSOLE_PERMISSIONS.moderationView);
+  const canReviewModeration = usePermission(CONSOLE_PERMISSIONS.moderationReview);
 
   const [loading, setLoading] = useState(false);
   const [coinLoading, setCoinLoading] = useState(false);
@@ -65,7 +70,8 @@ export const UserDetail = () => {
   const mapUserDetail = (item: UserListItem): UserDetailData => ({
     uuid: item.uuid,
     userName: item.voUserName || '-',
-    displayName: item.voUserRealName || '-',
+    displayName: item.voDisplayName || item.voUserName || '-',
+    displayHandle: item.voDisplayHandle || '-',
     loginName: item.voLoginName || '-',
     email: item.voUserEmail || '-',
     isEnabled: item.voIsEnable,
@@ -130,6 +136,30 @@ export const UserDetail = () => {
     });
 
     navigate(`/coins?${searchParams.toString()}`);
+  };
+
+  const handleViewModerationLogs = () => {
+    if (!userId) {
+      return;
+    }
+
+    navigate(buildModerationPath({
+      section: 'logs',
+      targetUserId: userId,
+      returnTo: getCurrentReturnTo(),
+    }));
+  };
+
+  const handleOpenManualModeration = () => {
+    if (!userId) {
+      return;
+    }
+
+    navigate(buildModerationPath({
+      section: 'manual',
+      targetUserId: userId,
+      returnTo: getCurrentReturnTo(),
+    }));
   };
 
   // 加载用户详情
@@ -431,6 +461,7 @@ export const UserDetail = () => {
             <Descriptions column={2}>
               <Descriptions.Item label="用户名">{user.userName}</Descriptions.Item>
               <Descriptions.Item label="展示名称">{user.displayName}</Descriptions.Item>
+              <Descriptions.Item label="公开句柄">{user.displayHandle}</Descriptions.Item>
               <Descriptions.Item label="登录名">{user.loginName}</Descriptions.Item>
               <Descriptions.Item label="邮箱">{user.email}</Descriptions.Item>
               <Descriptions.Item label="用户 ID">{user.uuid}</Descriptions.Item>
@@ -497,6 +528,18 @@ export const UserDetail = () => {
         <aside className="admin-table-aside">
           <h3>用户摘要</h3>
           <p className="admin-feature-subtle">用于核对当前用户跨模块数据可见性和返回来源。</p>
+          <div className="user-detail-case-actions">
+            {canViewModeration ? (
+              <Button icon={<SafetyOutlined />} onClick={handleViewModerationLogs}>
+                查看治理记录
+              </Button>
+            ) : null}
+            {canReviewModeration ? (
+              <Button variant="primary" icon={<SafetyOutlined />} onClick={handleOpenManualModeration}>
+                手动治理
+              </Button>
+            ) : null}
+          </div>
           <div className="admin-table-summary">
             <div className="admin-table-summary__item">
               <span className="admin-table-summary__label">用户 ID</span>
@@ -513,6 +556,12 @@ export const UserDetail = () => {
             <div className="admin-table-summary__item">
               <span className="admin-table-summary__label">订单权限</span>
               <span className="admin-table-summary__value">{canViewOrders ? '可查看购买记录' : '无订单查看权限'}</span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">治理权限</span>
+              <span className="admin-table-summary__value">
+                {canReviewModeration ? '可执行手动治理' : canViewModeration ? '可查看治理记录' : '无治理查看权限'}
+              </span>
             </div>
           </div>
         </aside>

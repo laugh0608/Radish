@@ -15,7 +15,7 @@ import type {
   PublicListSort,
   PublicSearchTimeRange,
 } from '../forumRouteState';
-import { createDefaultSearchRoute } from '../forumRouteState';
+import { buildPublicForumPath, createDefaultSearchRoute } from '../forumRouteState';
 import { usePublicReplaceRouteSync } from '../usePublicReplaceRouteSync';
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import {
@@ -24,6 +24,7 @@ import {
   buildVisiblePages,
   createForumReadingGuide,
   getForumPostRouteIdentifier,
+  resolvePublicProfileUserId,
   searchGuideDefinition,
 } from './publicForumUtils';
 import { resolvePublicForumReadSectionState } from './publicForumViewState';
@@ -305,7 +306,7 @@ export const PublicForumSearch = ({
     <section className={`${styles.sectionCard} ${styles.listSectionCard}`}>
       <div className={styles.sectionHeader}>
         <div className={styles.sectionHeading}>
-          <p className={styles.kicker}>Phase 2-2</p>
+          <p className={styles.kicker}>{t('forum.public.guide.label')}</p>
           <div className={styles.searchTopbar}>
             <button type="button" className={styles.backButton} onClick={onBackToList}>
               <Icon icon="mdi:arrow-left" size={18} />
@@ -482,7 +483,9 @@ export const PublicForumSearch = ({
                 post={post}
                 displayTimeZone={displayTimeZone}
                 onClick={() => onOpenPost(getForumPostRouteIdentifier(post))}
+                href={buildPublicForumPath({ kind: 'detail', postId: getForumPostRouteIdentifier(post) })}
                 variant="publicCompact"
+                resolveAuthorProfileId={resolvePublicProfileUserId}
                 onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
                 onTagClick={(_, tagSlug) => onOpenTag?.(tagSlug)}
                 onQuestionClick={onOpenQuestion}

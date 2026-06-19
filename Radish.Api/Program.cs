@@ -53,6 +53,7 @@ using Radish.Service.Jobs;
 using Radish.Api.Filters;
 using Radish.Api.HealthChecks;
 using Radish.Api.Hubs;
+using Radish.Api.Services;
 using Radish.Model;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Radish.IRepository.Base;
@@ -299,6 +300,7 @@ builder.Services.AddSignalR(options =>
 
 // 注册通知推送服务（基于 SignalR）
 builder.Services.AddScoped<INotificationPushService, Radish.Api.Services.NotificationPushService>();
+builder.Services.AddScoped<CommentRealtimePushService>();
 
 // 注册 SqlSugar 服务
 builder.Services.AddSqlSugarSetup();
@@ -387,7 +389,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     path, !string.IsNullOrWhiteSpace(accessToken));
 
                 if (!string.IsNullOrWhiteSpace(accessToken)
-                    && (path.StartsWithSegments("/hub/notification") || path.StartsWithSegments("/hub/chat")))
+                    && (path.StartsWithSegments("/hub/notification") ||
+                        path.StartsWithSegments("/hub/chat") ||
+                        path.StartsWithSegments("/hub/comment")))
                 {
                     context.Token = accessToken;
                     Log.Information("[JWT] 从 query string 提取 token 成功");
@@ -600,6 +604,7 @@ app.UseAuditLogSetup();
 // 映射 SignalR Hub 端点
 app.MapHub<NotificationHub>("/hub/notification");
 app.MapHub<ChatHub>("/hub/chat");
+app.MapHub<CommentHub>("/hub/comment");
 
 app.MapControllers();
 // 映射健康检查端点

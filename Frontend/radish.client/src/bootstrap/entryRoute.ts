@@ -1,4 +1,9 @@
 import { TAURI_DESKTOP_ENTRY_PATH } from '../platform/tauriBridge.ts';
+import { isCirclePathname } from '../circle/circleRouteState.ts';
+import { isMePathname } from '../me/meRouteState.ts';
+import { isMessagesPathname } from '../messages/messagesRouteState.ts';
+import { isNotificationsPathname } from '../notifications/notificationRouteState.ts';
+import { isPetPathname } from '../pet/petRouteState.ts';
 import { isPublicDiscoverPathname } from '../public/discoverRouteState.ts';
 
 export const BROWSER_PUBLIC_ENTRY_PATH = '/discover';
@@ -38,8 +43,12 @@ export function isPublicContentPathname(pathname: string): boolean {
     || pathname.startsWith('/leaderboard/')
     || pathname === '/docs'
     || pathname.startsWith('/docs/')
-    || /^\/u\/[1-9]\d*\/?$/.test(pathname)
+    || /^\/u\/(?:[1-9]\d*|usr_[0-9a-f]{32})\/?$/i.test(pathname)
     || pathname === '/__documents__'
     || pathname.startsWith('/__documents__/')
   );
 }
+
+export { isCirclePathname, isMessagesPathname, isNotificationsPathname };
+export { isMePathname };
+export { isPetPathname };

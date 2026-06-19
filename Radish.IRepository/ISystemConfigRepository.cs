@@ -18,4 +18,6 @@ public interface ISystemConfigRepository
     Task<SystemConfigRecord?> UpdateAsync(SystemConfigRecord record);
 
     Task<bool> DeleteAsync(long id);
+
+    Task<bool> DeleteByKeyAsync(string key);
 }

@@ -136,8 +136,215 @@ internal static class DbMigrateRunner
             .ToLowerInvariant();
         var mainDb = dbScope.GetConnectionScope(normalizedMainDbConnId);
         EnsureBootstrapStateSchema(mainDb);
+        EnsureUserPublicIdentitySchema(mainDb);
         EnsureUserLoginIndex(mainDb);
         EnsureForumIndexes(mainDb);
+    }
+
+    private static void EnsureUserPublicIdentitySchema(ISqlSugarClient db)
+    {
+        const string publicIdIndexName = "idx_user_public_id";
+        const string publicIndexIndexName = "idx_user_public_index";
+
+        var entityInfo = db.EntityMaintenance.GetEntityInfo<User>();
+        var tableName = entityInfo.DbTableName;
+        if (!db.DbMaintenance.IsAnyTable(tableName, false))
+        {
+            return;
+        }
+
+        var publicIdColumnName = GetColumnName(entityInfo, nameof(User.PublicId));
+        if (string.IsNullOrWhiteSpace(publicIdColumnName))
+        {
+            return;
+        }
+
+        var publicIndexColumnName = GetColumnName(entityInfo, nameof(User.PublicIndex));
+        if (string.IsNullOrWhiteSpace(publicIndexColumnName))
+        {
+            return;
+        }
+
+        if (!db.DbMaintenance.IsAnyColumn(tableName, publicIdColumnName, false) ||
+            !db.DbMaintenance.IsAnyColumn(tableName, publicIndexColumnName, false))
+        {
+            db.CodeFirst.InitTables<User>();
+            Console.WriteLine("[Radish.DbMigrate] 已同步 User 公共身份字段。");
+        }
+
+        if (!db.DbMaintenance.IsAnyColumn(tableName, publicIdColumnName, false))
+        {
+            Console.WriteLine("[Radish.DbMigrate] User.PublicId 字段仍未补齐，已跳过旧用户 PublicId 回填。");
+        }
+        else
+        {
+            BackfillMissingUserPublicIds(db);
+        }
+
+        if (!db.DbMaintenance.IsAnyColumn(tableName, publicIndexColumnName, false))
+        {
+            Console.WriteLine("[Radish.DbMigrate] User.PublicIndex 字段仍未补齐，已跳过旧用户 PublicIndex 回填。");
+        }
+        else
+        {
+            NormalizeReservedUserPublicIndexes(db);
+            BackfillMissingUserPublicIndexes(db);
+        }
+
+        if (!db.DbMaintenance.IsAnyIndex(publicIdIndexName))
+        {
+            var created = db.DbMaintenance.CreateIndex(tableName, [nameof(User.PublicId)], publicIdIndexName, true);
+            Console.WriteLine(created
+                ? $"[Radish.DbMigrate] 已补齐唯一索引 {publicIdIndexName}。"
+                : $"[Radish.DbMigrate] 唯一索引 {publicIdIndexName} 创建未生效，请检查数据库状态。");
+        }
+
+        if (!db.DbMaintenance.IsAnyIndex(publicIndexIndexName))
+        {
+            var created = db.DbMaintenance.CreateIndex(tableName, [nameof(User.PublicIndex)], publicIndexIndexName, true);
+            Console.WriteLine(created
+                ? $"[Radish.DbMigrate] 已补齐唯一索引 {publicIndexIndexName}。"
+                : $"[Radish.DbMigrate] 唯一索引 {publicIndexIndexName} 创建未生效，请检查数据库状态。");
+        }
+    }
+
+    private static void BackfillMissingUserPublicIds(ISqlSugarClient db)
+    {
+        var userIds = db.Queryable<User>()
+            .Where(user => user.PublicId == null || user.PublicId == string.Empty)
+            .Select(user => user.Id)
+            .ToList();
+
+        if (userIds.Count == 0)
+        {
+            return;
+        }
+
+        var updatedCount = 0;
+        foreach (var userId in userIds)
+        {
+            var publicId = User.GeneratePublicId();
+            var affectedRows = db.Updateable<User>()
+                .SetColumns(user => new User
+                {
+                    PublicId = publicId,
+                    UpdateTime = DateTime.Now
+                })
+                .Where(user => user.Id == userId &&
+                               (user.PublicId == null || user.PublicId == string.Empty))
+                .ExecuteCommand();
+
+            updatedCount += affectedRows > 0 ? 1 : 0;
+        }
+
+        Console.WriteLine($"[Radish.DbMigrate] 已为 {updatedCount} 个旧用户补齐 PublicId。");
+    }
+
+    private static void BackfillMissingUserPublicIndexes(ISqlSugarClient db)
+    {
+        var users = db.Queryable<User>()
+            .Where(user => user.PublicIndex == null || user.PublicIndex <= 0)
+            .OrderBy(user => user.Id)
+            .ToList();
+
+        if (users.Count == 0)
+        {
+            return;
+        }
+
+        var nextPublicIndex = ResolveNextNormalUserPublicIndex(db);
+        var updatedCount = 0;
+
+        foreach (var user in users)
+        {
+            var publicIndex = ResolveReservedPublicIndex(user) ?? nextPublicIndex++;
+            if (db.Queryable<User>().Any(item => item.Id != user.Id && item.PublicIndex == publicIndex))
+            {
+                publicIndex = nextPublicIndex++;
+            }
+
+            var affectedRows = db.Updateable<User>()
+                .SetColumns(item => new User
+                {
+                    PublicIndex = publicIndex,
+                    UpdateTime = DateTime.Now
+                })
+                .Where(item => item.Id == user.Id &&
+                               (item.PublicIndex == null || item.PublicIndex <= 0))
+                .ExecuteCommand();
+
+            updatedCount += affectedRows > 0 ? 1 : 0;
+        }
+
+        Console.WriteLine($"[Radish.DbMigrate] 已为 {updatedCount} 个旧用户补齐 PublicIndex。");
+    }
+
+    private static void NormalizeReservedUserPublicIndexes(ISqlSugarClient db)
+    {
+        const long systemUserId = 20000;
+        const long adminUserId = 20001;
+        const long testUserId = 20002;
+
+        var clearedCount = db.Updateable<User>()
+            .SetColumns(user => new User
+            {
+                PublicIndex = null,
+                UpdateTime = DateTime.Now
+            })
+            .Where(user => user.Id != systemUserId &&
+                           user.Id != adminUserId &&
+                           user.Id != testUserId &&
+                           (user.PublicIndex == 1 ||
+                            user.PublicIndex == 2 ||
+                            user.PublicIndex == 3))
+            .ExecuteCommand();
+
+        if (clearedCount > 0)
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 已释放 {clearedCount} 个非种子用户占用的保留 PublicIndex。");
+        }
+
+        CorrectSeedUserPublicIndex(db, systemUserId, 1);
+        CorrectSeedUserPublicIndex(db, adminUserId, 2);
+        CorrectSeedUserPublicIndex(db, testUserId, 3);
+    }
+
+    private static void CorrectSeedUserPublicIndex(ISqlSugarClient db, long userId, long publicIndex)
+    {
+        var updatedCount = db.Updateable<User>()
+            .SetColumns(user => new User
+            {
+                PublicIndex = publicIndex,
+                UpdateTime = DateTime.Now
+            })
+            .Where(user => user.Id == userId &&
+                           (user.PublicIndex == null || user.PublicIndex != publicIndex))
+            .ExecuteCommand();
+
+        if (updatedCount > 0)
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 已纠正种子用户 Id={userId} 的 PublicIndex={publicIndex}。");
+        }
+    }
+
+    private static long ResolveNextNormalUserPublicIndex(ISqlSugarClient db)
+    {
+        var maxPublicIndex = db.Queryable<User>()
+            .Where(user => user.PublicIndex >= User.PublicIndexStart)
+            .Max(user => user.PublicIndex);
+
+        return maxPublicIndex.GetValueOrDefault(User.PublicIndexStart - 1) + 1;
+    }
+
+    private static long? ResolveReservedPublicIndex(User user)
+    {
+        return user.Id switch
+        {
+            20000 => 1,
+            20001 => 2,
+            20002 => 3,
+            _ => null
+        };
     }
 
     private static void EnsureBootstrapStateSchema(ISqlSugarClient db)

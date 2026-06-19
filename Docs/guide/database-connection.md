@@ -220,6 +220,18 @@ public class InformationLog : BaseLog
 await _db.Insertable(new InformationLog { /*...*/ }).ExecuteCommandAsync();
 ```
 
+## SQLite 本地串行化策略
+
+默认本地开发可以使用 SQLite，但 SQLite 单文件在同一进程内遇到前台请求、后台任务和测试并发读写时，容易出现连接等待、锁冲突或 reader 生命周期异常。当前 `BaseRepository<TEntity>` 对 SQLite 连接提供本地串行化保护：
+
+- 只在当前连接 `DbType = Sqlite` 时启用；PostgreSQL、MySQL、SQL Server 等外部数据库继续使用原有异步执行路径。
+- 串行化粒度为 `ConfigId + ConnectionString`，不同 SQLite 文件之间互不阻塞，同一个 SQLite 文件的仓储操作按顺序执行。
+- 覆盖 `BaseRepository` 通用入口，包括插入、批量插入、更新、删除 / 软删除、恢复、单条查询、列表查询、分页、数量、存在性、联查、分表查询、去重、聚合和排序查询。
+- 子类仓储如果绕过通用方法直接组合 SQLSugar 查询，应复用 `ExecuteDbOperationAsync` 包裹自定义数据库操作，避免重新暴露 SQLite 并发问题。
+- Service 层仍不得直接访问 `_repository.Db.Queryable` 或 `ISqlSugarClient`；需要新查询能力时，优先扩展仓储方法。
+
+该策略只用于降低本地 SQLite 开发、测试和后台任务并发时的偶发失败，不是生产高并发数据库方案。测试 / 生产环境仍应优先使用 PostgreSQL，并通过索引、事务和数据库自身并发控制解决真实并发问题。
+
 ## 多租户配置
 
 ### Log 数据库的特殊处理

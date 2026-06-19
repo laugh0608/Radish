@@ -196,6 +196,7 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
 
         var userIds = relations.Select(r => r.FollowerUserId).Distinct().ToList();
         var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id) && u.IsEnable && !u.IsDeleted);
+        await EnsureFollowUserPublicIdsAsync(users);
         var userMap = users.ToDictionary(u => u.Id, u => u);
         var avatarMap = await LoadAvatarUrlMapAsync(userIds);
 
@@ -241,6 +242,7 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
 
         var userIds = relations.Select(r => r.FollowingUserId).Distinct().ToList();
         var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id) && u.IsEnable && !u.IsDeleted);
+        await EnsureFollowUserPublicIdsAsync(users);
         var userMap = users.ToDictionary(u => u.Id, u => u);
         var avatarMap = await LoadAvatarUrlMapAsync(userIds);
 
@@ -450,12 +452,76 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
         return new UserFollowUserVo
         {
             VoUserId = user.Id,
-            VoUserName = user.UserName,
-            VoDisplayName = string.IsNullOrWhiteSpace(user.UserRealName) ? null : user.UserRealName,
+            VoPublicId = string.IsNullOrWhiteSpace(user.PublicId) ? null : user.PublicId.Trim(),
+            VoPublicIndex = user.PublicIndex,
+            VoUserName = User.NormalizeDisplayName(user.UserName, user.Id),
+            VoDisplayName = User.NormalizeDisplayName(user.UserName, user.Id),
+            VoDisplayHandle = User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id),
             VoAvatarUrl = string.IsNullOrWhiteSpace(avatarUrl) ? null : avatarUrl,
             VoIsMutualFollow = isMutualFollow,
             VoFollowTime = followTime
         };
+    }
+
+    private async Task EnsureFollowUserPublicIdsAsync(List<User> users)
+    {
+        foreach (var user in users)
+        {
+            var missingPublicId = string.IsNullOrWhiteSpace(user.PublicId);
+            var missingPublicIndex = !User.HasAssignedPublicIndex(user.PublicIndex);
+
+            if (!missingPublicId)
+            {
+                user.PublicId = user.PublicId?.Trim();
+            }
+
+            if (!missingPublicId && !missingPublicIndex)
+            {
+                continue;
+            }
+
+            var publicId = missingPublicId ? User.EnsurePublicId(user.PublicId) : user.PublicId;
+            var publicIndex = missingPublicIndex ? await AllocateNextPublicIndexAsync() : user.PublicIndex;
+            var affectedRows = await _userRepository.UpdateColumnsAsync(
+                item => new User
+                {
+                    PublicId = publicId,
+                    PublicIndex = publicIndex,
+                    UpdateTime = DateTime.Now
+                },
+                item => item.Id == user.Id &&
+                        !item.IsDeleted &&
+                        ((missingPublicId && (item.PublicId == null || item.PublicId == string.Empty)) ||
+                         (missingPublicIndex && (item.PublicIndex == null || item.PublicIndex <= 0))));
+
+            if (affectedRows > 0)
+            {
+                user.PublicId = publicId;
+                user.PublicIndex = publicIndex;
+                continue;
+            }
+
+            var refreshedUser = await _userRepository.QueryByIdAsync(user.Id);
+            if (!string.IsNullOrWhiteSpace(refreshedUser?.PublicId))
+            {
+                user.PublicId = refreshedUser.PublicId.Trim();
+            }
+
+            if (User.HasAssignedPublicIndex(refreshedUser?.PublicIndex))
+            {
+                user.PublicIndex = refreshedUser!.PublicIndex;
+            }
+        }
+    }
+
+    private async Task<long> AllocateNextPublicIndexAsync()
+    {
+        var maxPublicIndexTask = _userRepository.QueryMaxAsync<long?>(
+            item => item.PublicIndex,
+            item => item.PublicIndex >= User.PublicIndexStart);
+        var maxPublicIndex = maxPublicIndexTask == null ? null : await maxPublicIndexTask;
+
+        return maxPublicIndex.GetValueOrDefault(User.PublicIndexStart - 1) + 1;
     }
 
     private static int NormalizePageIndex(int pageIndex)

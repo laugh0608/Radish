@@ -114,6 +114,7 @@ export interface PostLotteryWinner {
   voId: LongId;
   voLotteryId: LongId;
   voUserId: LongId;
+  voUserPublicId?: string | null;
   voUserName: string;
   voCommentId?: LongId | null;
   voCommentContentSnapshot?: string | null;
@@ -159,6 +160,7 @@ export interface PostAnswer {
   voAnswerId: LongId;
   voPostId: LongId;
   voAuthorId: LongId;
+  voAuthorPublicId?: string | null;
   voAuthorName: string;
   voAuthorAvatarUrl?: string | null;
   voContent: string;
@@ -249,6 +251,7 @@ export interface PostItem {
   voCategoryId: LongId;
   voCategoryName?: string | null;
   voAuthorId: LongId;
+  voAuthorPublicId?: string | null;
   voAuthorName?: string | null;
   voAuthorAvatarUrl?: string | null;
   voLatestInteractors?: PostInteractor[];
@@ -289,6 +292,7 @@ export interface PostDetail {
   voCategoryId: LongId;
   voCategoryName?: string | null;
   voAuthorId: LongId;
+  voAuthorPublicId?: string | null;
   voAuthorName?: string | null;
   voAuthorAvatarUrl?: string | null;
   voTags?: string;
@@ -327,6 +331,7 @@ export interface CommentNode {
   voPostId: LongId;
   voContent: string;
   voAuthorId: LongId;
+  voAuthorPublicId?: string | null;
   voAuthorName: string;
   voAuthorAvatarUrl?: string | null;
   voParentId?: LongId | null;

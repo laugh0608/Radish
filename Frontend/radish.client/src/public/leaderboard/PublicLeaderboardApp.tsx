@@ -462,11 +462,12 @@ export const PublicLeaderboardApp = ({
   };
 
   const handleOpenUserProfile = (item: UnifiedLeaderboardItemData) => {
-    if (!item.voUserId) {
+    const profileIdentifier = item.voUserPublicId?.trim() || (item.voUserId ? String(item.voUserId) : '');
+    if (!profileIdentifier) {
       return;
     }
 
-    onNavigateToProfile?.(String(item.voUserId));
+    onNavigateToProfile?.(profileIdentifier);
   };
 
   const handleOpenProductDetail = (item: UnifiedLeaderboardItemData) => {
@@ -486,6 +487,8 @@ export const PublicLeaderboardApp = ({
         onBrandClick={() => onNavigate(createDefaultPublicLeaderboardRoute())}
         onNavigateToDiscover={onNavigateToDiscover}
         discoverLabel={t('public.shell.discoverAction')}
+        circleLabel={t('public.shell.circleAction')}
+        desktopLabel={t('public.shell.desktopAction')}
       />
 
       <main className={styles.main}>
@@ -493,7 +496,7 @@ export const PublicLeaderboardApp = ({
           <div className={styles.sectionHeader}>
             <div className={styles.sectionHeading}>
               <div className={styles.sectionTitleRow}>
-                <p className={styles.kicker}>Phase 2-2</p>
+                <p className={styles.kicker}>{t('leaderboard.public.lightweightGuide.label')}</p>
                 <span className={styles.readOnlyBadge}>{t('leaderboard.public.readOnlyBadge')}</span>
               </div>
               <h1 className={styles.pageTitle}>{activeTypeConfig.voName}</h1>
@@ -657,7 +660,11 @@ export const PublicLeaderboardApp = ({
               <div className={styles.list}>
                 {items.map((item) => item.voCategory === LeaderboardCategory.User ? (
                   (() => {
-                    const userName = item.voUserName?.trim() || t('common.userFallback', { id: item.voUserId || '?' });
+                    const userName = item.voUserDisplayName?.trim()
+                      || item.voUserName?.trim()
+                      || t('common.userFallback', { id: item.voUserId || '?' });
+                    const displayHandle = item.voUserDisplayHandle?.trim()
+                      || (item.voUserPublicIndex ? `${userName}#${String(item.voUserPublicIndex).trim()}` : null);
                     const avatarUrl = resolveMediaUrl(item.voAvatarUrl);
                     return (
                       <button
@@ -692,6 +699,9 @@ export const PublicLeaderboardApp = ({
                             <span className={`${styles.itemTitle} ${styles.userName}`}>{userName}</span>
                             {item.voIsCurrentUser && (
                               <span className={styles.currentUserBadge}>{t('leaderboard.public.currentUser')}</span>
+                            )}
+                            {displayHandle && (
+                              <span className={styles.itemDescription}>{displayHandle}</span>
                             )}
                           </div>
                         </div>

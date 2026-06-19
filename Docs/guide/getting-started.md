@@ -39,6 +39,19 @@ npm install
 - `Radish.Auth/appsettings.Local.json`
 - `Radish.Gateway/appsettings.Local.json`
 
+如果本地直接执行 `Radish.DbMigrate apply`，并且需要创建 `system / admin / test` 开发默认账号，也可以在仓库根目录创建未提交的 `appsettings.Local.json`，只覆盖：
+
+```json
+{
+  "RadishDeployment": {
+    "Stage": "local"
+  },
+  "Seed": {
+    "DeveloperDefaultsEnabled": true
+  }
+}
+```
+
 配置约束与示例见 [配置管理](/guide/configuration)。
 
 ## 4. 推荐最小验证

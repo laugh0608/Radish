@@ -73,6 +73,7 @@ public class PostServiceTest
             Mock.Of<IBaseRepository<PostEditHistory>>(),
             attachmentService.Object,
             Options.Create(new ForumEditHistoryOptions()),
+            CreateDefaultSystemSettingProvider(),
             userRepository: userRepository.Object);
 
         var posts = new List<PostVo>
@@ -198,7 +199,8 @@ public class PostServiceTest
             experienceService.Object,
             postEditHistoryRepository.Object,
             Mock.Of<IAttachmentService>(),
-            Options.Create(new ForumEditHistoryOptions()));
+            Options.Create(new ForumEditHistoryOptions()),
+            CreateDefaultSystemSettingProvider());
 
         var posts = new List<PostVo>
         {
@@ -261,7 +263,7 @@ public class PostServiceTest
         var postEditHistoryRepository = new Mock<IBaseRepository<PostEditHistory>>(MockBehavior.Strict);
         var mapper = new Mock<IMapper>(MockBehavior.Strict);
 
-        var post = new Post(new PostInitializationOptions("问答详情帖", "这个问题怎么解？")
+        var post = new Post(new PostInitializationOptions("问答详情帖", "这个问题应该怎么分析和解决？")
         {
             AuthorId = 9527,
             AuthorName = "Tester",
@@ -308,7 +310,7 @@ public class PostServiceTest
             {
                 VoId = 1004,
                 VoTitle = "问答详情帖",
-                VoContent = "这个问题怎么解？",
+                VoContent = "这个问题应该怎么分析和解决？",
                 VoAuthorId = 9527,
                 VoAuthorName = "Tester"
             });
@@ -341,7 +343,8 @@ public class PostServiceTest
             experienceService.Object,
             postEditHistoryRepository.Object,
             Mock.Of<IAttachmentService>(),
-            Options.Create(new ForumEditHistoryOptions()));
+            Options.Create(new ForumEditHistoryOptions()),
+            CreateDefaultSystemSettingProvider());
 
         var result = await service.GetPostDetailAsync(1004, viewerUserId: null);
 
@@ -444,7 +447,8 @@ public class PostServiceTest
             experienceService.Object,
             postEditHistoryRepository.Object,
             Mock.Of<IAttachmentService>(),
-            Options.Create(new ForumEditHistoryOptions()));
+            Options.Create(new ForumEditHistoryOptions()),
+            CreateDefaultSystemSettingProvider());
 
         var result = await service.GetPostDetailAsync(1006, viewerUserId: null);
 
@@ -607,7 +611,8 @@ public class PostServiceTest
             experienceService.Object,
             postEditHistoryRepository.Object,
             Mock.Of<IAttachmentService>(),
-            Options.Create(new ForumEditHistoryOptions()));
+            Options.Create(new ForumEditHistoryOptions()),
+            CreateDefaultSystemSettingProvider());
 
         var result = await service.GetPostDetailAsync(1005, viewerUserId: null);
 
@@ -669,7 +674,8 @@ public class PostServiceTest
             experienceService.Object,
             postEditHistoryRepository.Object,
             Mock.Of<IAttachmentService>(),
-            Options.Create(new ForumEditHistoryOptions()));
+            Options.Create(new ForumEditHistoryOptions()),
+            CreateDefaultSystemSettingProvider());
 
         var (data, totalCount) = await service.GetPollPostPageAsync(sortBy: "newest");
 
@@ -811,7 +817,8 @@ public class PostServiceTest
             experienceService.Object,
             postEditHistoryRepository.Object,
             Mock.Of<IAttachmentService>(),
-            Options.Create(new ForumEditHistoryOptions()));
+            Options.Create(new ForumEditHistoryOptions()),
+            CreateDefaultSystemSettingProvider());
 
         var (closedPosts, closedTotalCount) = await service.GetPollPostPageAsync(sortBy: "newest", isClosed: true);
         var (activePosts, activeTotalCount) = await service.GetPollPostPageAsync(sortBy: "newest", isClosed: false);
@@ -956,7 +963,8 @@ public class PostServiceTest
             experienceService.Object,
             postEditHistoryRepository.Object,
             Mock.Of<IAttachmentService>(),
-            Options.Create(new ForumEditHistoryOptions()));
+            Options.Create(new ForumEditHistoryOptions()),
+            CreateDefaultSystemSettingProvider());
 
         var (data, totalCount) = await service.GetPollPostPageAsync(sortBy: "votes");
 
@@ -1114,7 +1122,8 @@ public class PostServiceTest
             experienceService.Object,
             postEditHistoryRepository.Object,
             Mock.Of<IAttachmentService>(),
-            Options.Create(new ForumEditHistoryOptions()));
+            Options.Create(new ForumEditHistoryOptions()),
+            CreateDefaultSystemSettingProvider());
 
         var (data, totalCount) = await service.GetPollPostPageAsync(sortBy: "deadline");
 
@@ -1251,7 +1260,8 @@ public class PostServiceTest
             experienceService.Object,
             postEditHistoryRepository.Object,
             Mock.Of<IAttachmentService>(),
-            Options.Create(new ForumEditHistoryOptions()));
+            Options.Create(new ForumEditHistoryOptions()),
+            CreateDefaultSystemSettingProvider());
 
         var result = await service.AddAnswerAsync(1006, "  先检查数据库连接。  ", 2001, "Alice", 9);
 
@@ -1391,7 +1401,8 @@ public class PostServiceTest
             experienceService.Object,
             postEditHistoryRepository.Object,
             Mock.Of<IAttachmentService>(),
-            Options.Create(new ForumEditHistoryOptions()));
+            Options.Create(new ForumEditHistoryOptions()),
+            CreateDefaultSystemSettingProvider());
 
         var result = await service.AcceptAnswerAsync(1007, 4004, 9527, "Owner");
 
@@ -1474,7 +1485,8 @@ public class PostServiceTest
             experienceService.Object,
             postEditHistoryRepository.Object,
             Mock.Of<IAttachmentService>(),
-            Options.Create(new ForumEditHistoryOptions()));
+            Options.Create(new ForumEditHistoryOptions()),
+            CreateDefaultSystemSettingProvider());
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.AcceptAnswerAsync(1008, 4005, 9527, "Owner"));
@@ -1536,7 +1548,7 @@ public class PostServiceTest
             .Setup(repository => repository.UpdateAsync(It.Is<Post>(item =>
                 item.Id == 2001 &&
                 item.Title == "更新后的问题标题" &&
-                item.Content == "更新后的问题内容" &&
+                item.Content == "更新后的问题内容已经补充完整" &&
                 item.EditCount == 1 &&
                 item.ModifyBy == "Owner" &&
                 item.ModifyId == 9527)))
@@ -1573,7 +1585,7 @@ public class PostServiceTest
                 history.OldTitle == "原问题标题" &&
                 history.NewTitle == "更新后的问题标题" &&
                 history.OldContent == "原问题内容" &&
-                history.NewContent == "更新后的问题内容" &&
+                history.NewContent == "更新后的问题内容已经补充完整" &&
                 history.EditorId == 9527 &&
                 history.EditorName == "Owner" &&
                 history.TenantId == 9 &&
@@ -1625,12 +1637,13 @@ public class PostServiceTest
                     MaxEditCount = 20,
                     MaxHistoryRecords = 20
                 }
-            }));
+            }),
+            CreateDefaultSystemSettingProvider());
 
         await service.UpdatePostAsync(
             2001,
             "更新后的问题标题",
-            "更新后的问题内容",
+            "更新后的问题内容已经补充完整",
             null,
             ["问答"],
             allowCreateTag: false,
@@ -1729,7 +1742,8 @@ public class PostServiceTest
             experienceService.Object,
             postEditHistoryRepository.Object,
             Mock.Of<IAttachmentService>(),
-            Options.Create(new ForumEditHistoryOptions()));
+            Options.Create(new ForumEditHistoryOptions()),
+            CreateDefaultSystemSettingProvider());
 
         var (result, total) = await service.GetPostEditHistoryPageAsync(2001, 0, 200);
 
@@ -1875,9 +1889,10 @@ public class PostServiceTest
             experienceService.Object,
             postEditHistoryRepository.Object,
             Mock.Of<IAttachmentService>(),
-            Options.Create(new ForumEditHistoryOptions()));
+            Options.Create(new ForumEditHistoryOptions()),
+            CreateDefaultSystemSettingProvider());
 
-        var post = new Post(new PostInitializationOptions("投票帖", "今天吃什么")
+        var post = new Post(new PostInitializationOptions("投票帖", "今天中午大家一起吃什么比较合适")
         {
             AuthorId = 9527,
             AuthorName = "Tester",
@@ -2014,9 +2029,10 @@ public class PostServiceTest
             experienceService.Object,
             postEditHistoryRepository.Object,
             Mock.Of<IAttachmentService>(),
-            Options.Create(new ForumEditHistoryOptions()));
+            Options.Create(new ForumEditHistoryOptions()),
+            CreateDefaultSystemSettingProvider());
 
-        var post = new Post(new PostInitializationOptions("短时投票帖", "三分钟后截止")
+        var post = new Post(new PostInitializationOptions("短时投票帖", "三分钟后截止的短时投票正文")
         {
             AuthorId = 9527,
             AuthorName = "Tester",
@@ -2147,9 +2163,10 @@ public class PostServiceTest
             experienceService.Object,
             postEditHistoryRepository.Object,
             Mock.Of<IAttachmentService>(),
-            Options.Create(new ForumEditHistoryOptions()));
+            Options.Create(new ForumEditHistoryOptions()),
+            CreateDefaultSystemSettingProvider());
 
-        var post = new Post(new PostInitializationOptions("问答帖", "这个问题怎么解？")
+        var post = new Post(new PostInitializationOptions("问答帖", "这个问题应该怎么分析和解决？")
         {
             AuthorId = 9527,
             AuthorName = "Tester",
@@ -2277,9 +2294,10 @@ public class PostServiceTest
             postEditHistoryRepository.Object,
             Mock.Of<IAttachmentService>(),
             Options.Create(new ForumEditHistoryOptions()),
+            CreateDefaultSystemSettingProvider(),
             postLotteryRepository: postLotteryRepository.Object);
 
-        var post = new Post(new PostInitializationOptions("抽奖帖", "评论参与抽奖")
+        var post = new Post(new PostInitializationOptions("抽奖帖", "评论参与抽奖并说明参与理由")
         {
             AuthorId = 9527,
             AuthorName = "Tester",
@@ -2330,9 +2348,10 @@ public class PostServiceTest
             new Mock<IBaseRepository<PostEditHistory>>(MockBehavior.Strict).Object,
             Mock.Of<IAttachmentService>(),
             Options.Create(new ForumEditHistoryOptions()),
+            CreateDefaultSystemSettingProvider(),
             postLotteryRepository: new Mock<IBaseRepository<PostLottery>>(MockBehavior.Strict).Object);
 
-        var post = new Post(new PostInitializationOptions("抽奖帖", "评论参与抽奖"))
+        var post = new Post(new PostInitializationOptions("抽奖帖", "评论参与抽奖并说明参与理由"))
         {
             AuthorId = 9527,
             AuthorName = "Tester",
@@ -2379,7 +2398,8 @@ public class PostServiceTest
             new Mock<IExperienceService>(MockBehavior.Strict).Object,
             new Mock<IBaseRepository<PostEditHistory>>(MockBehavior.Strict).Object,
             Mock.Of<IAttachmentService>(),
-            Options.Create(new ForumEditHistoryOptions()));
+            Options.Create(new ForumEditHistoryOptions()),
+            CreateDefaultSystemSettingProvider());
 
         var post = new Post(new PostInitializationOptions("冲突功能帖", "正文"))
         {
@@ -2403,5 +2423,71 @@ public class PostServiceTest
             allowCreateTag: false));
 
         Assert.Equal("问答帖、投票和抽奖暂时互斥", exception.Message);
+    }
+
+    [Fact]
+    public async Task PublishPostAsync_Should_Reject_When_TitleExceedsConfiguredMaxLength()
+    {
+        var service = new PostService(
+            new Mock<IMapper>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<Post>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<UserPostLike>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<PostTag>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<Category>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<Tag>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<PostPoll>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<PostPollOption>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<PostPollVote>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<PostQuestion>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<PostAnswer>>(MockBehavior.Strict).Object,
+            new Mock<ITagService>(MockBehavior.Strict).Object,
+            new Mock<ICoinRewardService>(MockBehavior.Strict).Object,
+            new Mock<INotificationService>(MockBehavior.Strict).Object,
+            new Mock<INotificationDedupService>(MockBehavior.Strict).Object,
+            new Mock<IExperienceService>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<PostEditHistory>>(MockBehavior.Strict).Object,
+            Mock.Of<IAttachmentService>(),
+            Options.Create(new ForumEditHistoryOptions()),
+            CreateDefaultSystemSettingProvider(postTitleMaxLength: 3));
+
+        var post = new Post(new PostInitializationOptions("标题超长", "这是一段符合默认最小长度要求的正文"))
+        {
+            AuthorId = 9527,
+            AuthorName = "Tester",
+            TenantId = 9,
+            IsPublished = true
+        };
+
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() => service.PublishPostAsync(
+            post,
+            tagNames: ["公告"],
+            allowCreateTag: false));
+
+        Assert.Equal("帖子标题不能超过 3 个字符", exception.Message);
+    }
+
+    private static ISystemSettingProvider CreateDefaultSystemSettingProvider(
+        int? postTitleMaxLength = null,
+        int? postBodyMaxLength = null,
+        int? postSummaryMaxLength = null)
+    {
+        var provider = new Mock<ISystemSettingProvider>();
+        provider
+            .Setup(item => item.GetInt32Async(SystemConfigDefaults.PostTitleMinLengthKey))
+            .ReturnsAsync(int.Parse(SystemConfigDefaults.DefaultPostTitleMinLength));
+        provider
+            .Setup(item => item.GetInt32Async(SystemConfigDefaults.PostTitleMaxLengthKey))
+            .ReturnsAsync(postTitleMaxLength ?? int.Parse(SystemConfigDefaults.DefaultPostTitleMaxLength));
+        provider
+            .Setup(item => item.GetInt32Async(SystemConfigDefaults.PostBodyMinLengthKey))
+            .ReturnsAsync(int.Parse(SystemConfigDefaults.DefaultPostBodyMinLength));
+        provider
+            .Setup(item => item.GetInt32Async(SystemConfigDefaults.PostBodyMaxLengthKey))
+            .ReturnsAsync(postBodyMaxLength ?? int.Parse(SystemConfigDefaults.DefaultPostBodyMaxLength));
+        provider
+            .Setup(item => item.GetInt32Async(SystemConfigDefaults.PostSummaryMaxLengthKey))
+            .ReturnsAsync(postSummaryMaxLength ?? int.Parse(SystemConfigDefaults.DefaultPostSummaryMaxLength));
+
+        return provider.Object;
     }
 }

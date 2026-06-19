@@ -483,8 +483,8 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 return (null, null);
             }
 
-            // 4. 增加下载次数（异步，不影响下载）
-            _ = Task.Run(async () => await IncrementDownloadCountAsync(attachmentId));
+            // 4. 增加下载次数。该服务为 scoped，不能在请求外的 Task.Run 中继续复用。
+            await IncrementDownloadCountAsync(attachmentId);
 
             return (stream, MapToAssetDto(attachment));
         }

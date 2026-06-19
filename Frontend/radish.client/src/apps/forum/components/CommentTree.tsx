@@ -8,14 +8,6 @@ import type { StickerPickerGroup } from '@radish/ui/sticker-picker';
 import { CommentNode } from './CommentNode';
 import styles from './CommentTree.module.css';
 
-const isSameLongId = (left: LongId | null | undefined, right: LongId | null | undefined): boolean => {
-  if (left == null || right == null) {
-    return false;
-  }
-
-  return String(left) === String(right);
-};
-
 interface CommentTreeProps {
   comments: CommentNodeType[];
   loading?: boolean;
@@ -36,6 +28,7 @@ interface CommentTreeProps {
   onViewCommentHistory?: (commentId: LongId) => void;
   onLikeComment?: (commentId: LongId) => Promise<{ isLiked: boolean; likeCount: number }>;
   onReplyComment?: (target: CommentReplyTarget) => void;
+  onCommentTyping?: (commentId: LongId) => void;
   onLoadMoreChildren?: (parentId: LongId, pageIndex: number, pageSize: number) => Promise<CommentNodeType[]>;
   onLoadMoreRootComments?: () => Promise<void>;
   onSortChange?: (sortBy: 'newest' | 'hottest') => void;
@@ -47,6 +40,7 @@ interface CommentTreeProps {
   isReactionPending?: (commentId: LongId) => boolean;
   onRequireReactionLogin?: () => void;
   onAuthorClick?: (userId: LongId, userName?: string | null, avatarUrl?: string | null) => void;
+  resolveAuthorProfileId?: (userId: LongId, publicId?: string | null) => LongId;
   onReportComment?: (commentId: LongId) => void;
   registerCommentAnchor?: (commentId: LongId, element: HTMLDivElement | null) => void;
   onNavigateToComment?: (commentId: LongId) => Promise<void> | void;
@@ -72,6 +66,7 @@ export const CommentTree = ({
   onViewCommentHistory,
   onLikeComment,
   onReplyComment,
+  onCommentTyping,
   onLoadMoreChildren,
   onLoadMoreRootComments,
   onSortChange,
@@ -83,6 +78,7 @@ export const CommentTree = ({
   isReactionPending,
   onRequireReactionLogin,
   onAuthorClick,
+  resolveAuthorProfileId,
   onReportComment,
   registerCommentAnchor,
   onNavigateToComment,
@@ -93,32 +89,37 @@ export const CommentTree = ({
     return comments.filter(c => c.voIsGodComment);
   }, [comments]);
 
-  // 找出当前点赞数最高的神评（用于置顶显示）
-  const topGodComment = useMemo(() => {
-    if (godComments.length === 0) return null;
+  // 找出当前神评（用于置顶显示，支持并列）
+  const topGodComments = useMemo(() => {
+    if (godComments.length === 0) return [];
     return [...godComments].sort((a, b) => {
+      const rankDiff = (a.voHighlightRank ?? 999) - (b.voHighlightRank ?? 999);
+      if (rankDiff !== 0) {
+        return rankDiff;
+      }
       // 先按点赞数降序
       if ((b.voLikeCount || 0) !== (a.voLikeCount || 0)) {
         return (b.voLikeCount || 0) - (a.voLikeCount || 0);
       }
       // 点赞数相同时按创建时间降序（最新的在前）
       return new Date(b.voCreateTime || 0).getTime() - new Date(a.voCreateTime || 0).getTime();
-    })[0];
+    });
   }, [godComments]);
 
   // 根据排序状态决定显示顺序
   const displayComments = useMemo(() => {
     if (comments.length === 0) return [];
 
-    if (sortBy === null && topGodComment) {
-      // 默认排序：当前点赞数最高的神评置顶 + 其他按时间升序
-      const others = comments.filter(c => !isSameLongId(c.voId, topGodComment.voId));
-      return [topGodComment, ...others];
+    if (sortBy === null && topGodComments.length > 0) {
+      // 默认排序：当前神评置顶 + 其他按时间升序
+      const topIds = new Set(topGodComments.map(comment => String(comment.voId)));
+      const others = comments.filter(c => !topIds.has(String(c.voId)));
+      return [...topGodComments, ...others];
     }
 
     // 手动排序时，直接使用后端返回的顺序（此时不再需要前端重新排序）
     return comments;
-  }, [comments, sortBy, topGodComment]);
+  }, [comments, sortBy, topGodComments]);
   const hasMoreRootComments = hasPost && loadedRootCommentCount < rootCommentTotal;
 
   return (
@@ -170,6 +171,7 @@ export const CommentTree = ({
             onViewHistory={onViewCommentHistory}
             onLike={onLikeComment}
             onReply={onReplyComment}
+            onTyping={onCommentTyping}
             onLoadMoreChildren={onLoadMoreChildren}
             stickerMap={stickerMap}
             reactionMap={reactionMap}
@@ -179,6 +181,7 @@ export const CommentTree = ({
             isReactionPending={isReactionPending}
             onRequireReactionLogin={onRequireReactionLogin}
             onAuthorClick={onAuthorClick}
+            resolveAuthorProfileId={resolveAuthorProfileId}
             onReport={onReportComment}
             registerCommentAnchor={registerCommentAnchor}
             onNavigateToComment={onNavigateToComment}

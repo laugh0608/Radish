@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getApiBaseUrl } from '@/config/env';
 import { bootstrapAuth } from '@/services/authBootstrap';
+import { buildCirclePath } from '@/circle/circleRouteState';
+import { buildMessagesPath } from '@/messages/messagesRouteState';
 import { PublicDiscoverApp } from './discover/PublicDiscoverApp';
 import { PublicForumApp } from './forum/PublicForumApp';
 import { PublicDocsApp } from './docs/PublicDocsApp';
@@ -59,12 +61,14 @@ import type {
   PublicShopRoute,
 } from './shopRouteState';
 import {
+  consumePublicRouteSourceTransfer,
   createPublicRouteSourceState,
   resolveDocsDetailBackMode,
   resolveForumDetailBackMode,
   resolveProfileBackMode,
   resolveShopDetailBackMode,
   shouldCommitPublicRouteUpdate,
+  type PublicContentRouteDescriptor,
   type PublicDetailBackMode,
   type PublicRouteDescriptor,
   type PublicRouteSourceState,
@@ -92,6 +96,12 @@ interface PublicNavigateOptions {
 }
 
 function readPublicRouteSourceState(): PublicRouteSourceState {
+  const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  const transferState = consumePublicRouteSourceTransfer(currentPath);
+  if (transferState) {
+    return transferState;
+  }
+
   const historyState = window.history.state;
   if (!historyState || typeof historyState !== 'object') {
     return {};
@@ -113,7 +123,7 @@ function buildPublicHistoryState(sourceState: PublicRouteSourceState): Record<st
   return nextHistoryState;
 }
 
-function parsePublicRoute(): PublicRouteDescriptor {
+function parsePublicRoute(): PublicContentRouteDescriptor {
   const discoverRoute = parsePublicDiscoverRoute(window.location.pathname, window.location.search);
   if (discoverRoute) {
     return {
@@ -163,6 +173,22 @@ function parsePublicRoute(): PublicRouteDescriptor {
 }
 
 function buildPublicPath(nextRoute: PublicRouteDescriptor): string {
+  if (nextRoute.app === 'circle') {
+    return buildCirclePath(nextRoute.route);
+  }
+
+  if (nextRoute.app === 'notifications') {
+    return '/notifications';
+  }
+
+  if (nextRoute.app === 'me') {
+    return '/me';
+  }
+
+  if (nextRoute.app === 'messages') {
+    return buildMessagesPath(nextRoute.route);
+  }
+
   if (nextRoute.app === 'discover') {
     return buildPublicDiscoverPath(nextRoute.route);
   }
@@ -186,7 +212,7 @@ function buildPublicPath(nextRoute: PublicRouteDescriptor): string {
 
 export const PublicEntry = () => {
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
-  const [route, setRoute] = useState<PublicRouteDescriptor>(() => parsePublicRoute());
+  const [route, setRoute] = useState<PublicContentRouteDescriptor>(() => parsePublicRoute());
   const [lastDiscoverRoute, setLastDiscoverRoute] = useState<PublicDiscoverRoute>(() => {
     const parsedRoute = parsePublicDiscoverRoute(window.location.pathname, window.location.search);
     return parsedRoute ?? createDefaultPublicDiscoverRoute();
@@ -204,6 +230,10 @@ export const PublicEntry = () => {
     return parsedRoute.kind === 'products' ? parsedRoute : createDefaultPublicShopProductsRoute();
   });
   const [routeSourceState, setRouteSourceState] = useState<PublicRouteSourceState>(() => readPublicRouteSourceState());
+
+  useEffect(() => {
+    window.history.replaceState(buildPublicHistoryState(routeSourceState), '');
+  }, [routeSourceState]);
 
   useEffect(() => {
     const cleanup = bootstrapAuth({ apiBaseUrl });
@@ -261,6 +291,16 @@ export const PublicEntry = () => {
     const nextPath = buildPublicPath(nextRoute);
     const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
+    if (
+      nextRoute.app === 'circle'
+      || nextRoute.app === 'me'
+      || nextRoute.app === 'messages'
+      || nextRoute.app === 'notifications'
+    ) {
+      window.location.href = nextPath;
+      return;
+    }
+
     if (!shouldCommitPublicRouteUpdate(currentRoute, nextRoute, currentPath, nextPath)) {
       return;
     }
@@ -295,27 +335,27 @@ export const PublicEntry = () => {
     setRoute(nextRoute);
   }, []);
 
-  const navigateToDocsRoute = useCallback((nextRoute: PublicDocsRoute, options?: { replace?: boolean }) => {
+  const navigateToDocsRoute = useCallback((nextRoute: PublicDocsRoute, options?: PublicNavigateOptions) => {
     navigateToRoute({ app: 'docs', route: nextRoute }, options);
   }, [navigateToRoute]);
 
-  const navigateToDiscoverRoute = useCallback((nextRoute?: PublicDiscoverRoute, options?: { replace?: boolean }) => {
+  const navigateToDiscoverRoute = useCallback((nextRoute?: PublicDiscoverRoute, options?: PublicNavigateOptions) => {
     navigateToRoute({ app: 'discover', route: nextRoute ?? lastDiscoverRoute }, options);
   }, [lastDiscoverRoute, navigateToRoute]);
 
-  const navigateToForumRoute = useCallback((nextRoute: PublicForumRoute, options?: { replace?: boolean }) => {
+  const navigateToForumRoute = useCallback((nextRoute: PublicForumRoute, options?: PublicNavigateOptions) => {
     navigateToRoute({ app: 'forum', route: nextRoute }, options);
   }, [navigateToRoute]);
 
-  const navigateToProfileRoute = useCallback((nextRoute: PublicProfileRoute, options?: { replace?: boolean }) => {
+  const navigateToProfileRoute = useCallback((nextRoute: PublicProfileRoute, options?: PublicNavigateOptions) => {
     navigateToRoute({ app: 'profile', route: nextRoute }, options);
   }, [navigateToRoute]);
 
-  const navigateToLeaderboardRoute = useCallback((nextRoute: PublicLeaderboardRoute, options?: { replace?: boolean }) => {
+  const navigateToLeaderboardRoute = useCallback((nextRoute: PublicLeaderboardRoute, options?: PublicNavigateOptions) => {
     navigateToRoute({ app: 'leaderboard', route: nextRoute }, options);
   }, [navigateToRoute]);
 
-  const navigateToShopRoute = useCallback((nextRoute: PublicShopRoute, options?: { replace?: boolean }) => {
+  const navigateToShopRoute = useCallback((nextRoute: PublicShopRoute, options?: PublicNavigateOptions) => {
     navigateToRoute({ app: 'shop', route: nextRoute }, options);
   }, [navigateToRoute]);
 
@@ -450,6 +490,7 @@ export const PublicEntry = () => {
     <PublicForumApp
       route={route.route}
       fallbackBrowseRoute={lastForumBrowseRoute}
+      routeSourceState={routeSourceState}
       detailBackAction={forumDetailBackAction}
       onNavigate={navigateToForumRoute}
       onNavigateToDiscover={navigateToDiscoverRoute}

@@ -28,6 +28,9 @@ public partial class PostService
         }
 
         var normalizedTagNames = NormalizeTagNamesOrThrow(tagNames, nameof(tagNames), "发布帖子时至少需要一个标签");
+        var contentSettings = await ValidatePostContentSettingsAsync(post.Title, post.Content);
+        ApplyPostSummarySettings(post, contentSettings);
+
         var operatorName = string.IsNullOrWhiteSpace(post.AuthorName) ? "System" : post.AuthorName;
         post.PublicId = EnsurePostPublicId(post.PublicId);
 

@@ -54,14 +54,27 @@ public class TenantIsolationRegressionTests
                 (where, _, _, _, _) => capturedWhere = where)
             .ReturnsAsync((new List<User>
             {
-                new() { Id = 1, UserName = "alice", TenantId = 0, IsEnable = true, IsDeleted = false }
+                new()
+                {
+                    Id = 1,
+                    UserName = "alice",
+                    PublicId = "usr_018f6b6f7c7d70008f8f8f8f8f8f8f8f",
+                    PublicIndex = 1000,
+                    TenantId = 0,
+                    IsEnable = true,
+                    IsDeleted = false
+                }
             }, 1));
 
         mapper.Setup(m => m.Map<List<UserVo>>(It.IsAny<List<User>>()))
             .Returns<List<User>>(users => users.Select(u => new UserVo
             {
                 Uuid = u.Id,
+                VoPublicId = u.PublicId,
+                VoPublicIndex = u.PublicIndex,
                 VoUserName = u.UserName,
+                VoDisplayName = u.UserName,
+                VoDisplayHandle = User.BuildDisplayHandle(u.UserName, u.PublicIndex, u.Id),
                 VoTenantId = u.TenantId,
                 VoIsEnable = u.IsEnable,
                 VoIsDeleted = u.IsDeleted
@@ -71,8 +84,11 @@ public class TenantIsolationRegressionTests
             .Returns<List<UserVo>>(users => users.Select(u => new UserMentionVo
             {
                 VoId = u.Uuid,
+                VoPublicId = u.VoPublicId,
+                VoPublicIndex = u.VoPublicIndex,
                 VoUserName = u.VoUserName,
-                VoDisplayName = u.VoUserName
+                VoDisplayName = u.VoDisplayName,
+                VoDisplayHandle = u.VoDisplayHandle
             }).ToList());
 
         var service = new UserService(

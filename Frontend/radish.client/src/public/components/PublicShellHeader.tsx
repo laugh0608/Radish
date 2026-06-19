@@ -8,6 +8,10 @@ interface PublicShellHeaderProps {
   onBrandClick: () => void;
   onNavigateToDiscover?: () => void;
   discoverLabel?: string;
+  circleHref?: string;
+  circleLabel?: string;
+  showCircleAction?: boolean;
+  desktopHref?: string;
   desktopLabel?: string;
 }
 
@@ -18,8 +22,14 @@ export const PublicShellHeader = ({
   onBrandClick,
   onNavigateToDiscover,
   discoverLabel = '发现',
+  circleHref = '/circle',
+  circleLabel = '圈子',
+  showCircleAction = true,
+  desktopHref = '/desktop',
   desktopLabel = '工作台'
 }: PublicShellHeaderProps) => {
+  const shouldShowCircleAction = showCircleAction && circleHref.trim().length > 0;
+
   return (
     <header className={styles.hero}>
       <div className={styles.heroInner}>
@@ -30,16 +40,32 @@ export const PublicShellHeader = ({
             <span className={styles.brandSubline}>{brandSubline}</span>
           </span>
         </button>
-        <div className={`${styles.heroActions} ${onNavigateToDiscover ? '' : styles.heroActionsSolo}`}>
+        <div className={styles.heroActions}>
           {onNavigateToDiscover ? (
-            <button type="button" className={styles.actionButton} onClick={onNavigateToDiscover}>
+            <button
+              type="button"
+              className={`${styles.actionButton} ${styles.primaryAction}`}
+              onClick={onNavigateToDiscover}
+              title={discoverLabel}
+            >
               <Icon icon="mdi:compass-outline" size={18} />
-              <span>{discoverLabel}</span>
+              <span className={styles.actionLabel}>{discoverLabel}</span>
             </button>
           ) : null}
-          <a className={styles.desktopLink} href="/desktop" aria-label={desktopLabel} title={desktopLabel}>
+          {shouldShowCircleAction ? (
+            <a
+              className={`${styles.actionButton} ${onNavigateToDiscover ? styles.secondaryAction : styles.primaryAction}`}
+              href={circleHref}
+              aria-label={circleLabel}
+              title={circleLabel}
+            >
+              <Icon icon="mdi:account-group-outline" size={18} />
+              <span className={styles.actionLabel}>{circleLabel}</span>
+            </a>
+          ) : null}
+          <a className={styles.desktopLink} href={desktopHref} aria-label={desktopLabel} title={desktopLabel}>
             <Icon icon="mdi:view-dashboard-outline" size={18} />
-            <span>{desktopLabel}</span>
+            <span className={styles.actionLabel}>{desktopLabel}</span>
           </a>
         </div>
       </div>

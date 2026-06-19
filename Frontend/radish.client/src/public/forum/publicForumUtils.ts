@@ -104,6 +104,11 @@ export function getForumPostRouteIdentifier(
   return post.voPublicId?.trim() || String(post.voId);
 }
 
+export function resolvePublicProfileUserId(userId: LongId, publicId?: string | null): LongId {
+  const normalizedPublicId = publicId?.trim();
+  return normalizedPublicId || String(userId);
+}
+
 function normalizePublicHeadText(value: string | number | null | undefined): string | undefined {
   const normalized = String(value ?? '').replace(/\s+/g, ' ').trim();
   return normalized || undefined;

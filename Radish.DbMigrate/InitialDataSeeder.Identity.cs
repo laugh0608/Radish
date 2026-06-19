@@ -13,6 +13,10 @@ namespace Radish.DbMigrate;
 
 internal static partial class InitialDataSeeder
 {
+    private const long SystemPublicIndex = 1;
+    private const long AdminPublicIndex = 2;
+    private const long TestPublicIndex = 3;
+
     /// <summary>初始化用户时区偏好（默认值来自 Time:DefaultTimeZoneId）</summary>
     private static async Task SeedUserTimePreferencesAsync(ISqlSugarClient db)
     {
@@ -402,6 +406,15 @@ internal static partial class InitialDataSeeder
                 LinkUrl = "/api/v1/SystemConfig/DeleteConfig",
                 ControllerName = "SystemConfig",
                 ActionName = "DeleteConfig",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50048L,
+                ApiModuleName = "Restore system config default",
+                LinkUrl = "/api/v1/SystemConfig/RestoreConfigDefault",
+                ControllerName = "SystemConfig",
+                ActionName = "RestoreConfigDefault",
                 Roles = new[] { 10000L, 10001L }
             },
             new
@@ -1306,6 +1319,7 @@ internal static partial class InitialDataSeeder
             var systemUser = new User(systemUserOptions)
             {
                 Id = systemUserId,
+                PublicIndex = SystemPublicIndex,
             };
 
             try
@@ -1319,6 +1333,7 @@ internal static partial class InitialDataSeeder
                     {
                         TenantId = publicTenantId,
                         DepartmentId = devDeptId,
+                        PublicIndex = SystemPublicIndex,
                         UpdateTime = DateTime.Now
                     })
                     .Where(u => u.Id == systemUserId)
@@ -1338,14 +1353,16 @@ internal static partial class InitialDataSeeder
                 .SetColumns(u => new User
                 {
                     TenantId = publicTenantId,
+                    PublicIndex = SystemPublicIndex,
                     UpdateTime = DateTime.Now
                 })
-                .Where(u => u.Id == systemUserId && u.TenantId != publicTenantId)
+                .Where(u => u.Id == systemUserId &&
+                            (u.TenantId != publicTenantId || u.PublicIndex != SystemPublicIndex))
                 .ExecuteCommandAsync();
 
             Console.WriteLine(updated > 0
-                ? $"[Radish.DbMigrate] 已将 system 用户租户纠正为 {publicTenantId}。"
-                : $"[Radish.DbMigrate] 已存在 Id={systemUserId} 的 system 用户，且租户已是 {publicTenantId}，跳过。");
+                ? $"[Radish.DbMigrate] 已将 system 用户租户纠正为 {publicTenantId}，PublicIndex={SystemPublicIndex}。"
+                : $"[Radish.DbMigrate] 已存在 Id={systemUserId} 的 system 用户，且租户与 PublicIndex 已正确，跳过。");
         }
 
         // 创建 admin 用户
@@ -1372,6 +1389,7 @@ internal static partial class InitialDataSeeder
             var adminUser = new User(adminUserOptions)
             {
                 Id = adminUserId,
+                PublicIndex = AdminPublicIndex,
             };
 
             try
@@ -1385,6 +1403,7 @@ internal static partial class InitialDataSeeder
                     {
                         TenantId = publicTenantId,
                         DepartmentId = devDeptId,
+                        PublicIndex = AdminPublicIndex,
                         UpdateTime = DateTime.Now
                     })
                     .Where(u => u.Id == adminUserId)
@@ -1404,14 +1423,16 @@ internal static partial class InitialDataSeeder
                 .SetColumns(u => new User
                 {
                     TenantId = publicTenantId,
+                    PublicIndex = AdminPublicIndex,
                     UpdateTime = DateTime.Now
                 })
-                .Where(u => u.Id == adminUserId && u.TenantId != publicTenantId)
+                .Where(u => u.Id == adminUserId &&
+                            (u.TenantId != publicTenantId || u.PublicIndex != AdminPublicIndex))
                 .ExecuteCommandAsync();
 
             Console.WriteLine(updated > 0
-                ? $"[Radish.DbMigrate] 已将 admin 用户租户纠正为 {publicTenantId}。"
-                : $"[Radish.DbMigrate] 已存在 Id={adminUserId} 的 admin 用户，且租户已是 {publicTenantId}，跳过。");
+                ? $"[Radish.DbMigrate] 已将 admin 用户租户纠正为 {publicTenantId}，PublicIndex={AdminPublicIndex}。"
+                : $"[Radish.DbMigrate] 已存在 Id={adminUserId} 的 admin 用户，且租户与 PublicIndex 已正确，跳过。");
         }
 
         // 创建 test 用户
@@ -1438,6 +1459,7 @@ internal static partial class InitialDataSeeder
             var testUser = new User(testUserOptions)
             {
                 Id = testUserId,
+                PublicIndex = TestPublicIndex,
             };
 
             try
@@ -1451,6 +1473,7 @@ internal static partial class InitialDataSeeder
                     {
                         TenantId = publicTenantId,
                         DepartmentId = devDeptId,
+                        PublicIndex = TestPublicIndex,
                         UpdateTime = DateTime.Now
                     })
                     .Where(u => u.Id == testUserId)
@@ -1470,14 +1493,16 @@ internal static partial class InitialDataSeeder
                 .SetColumns(u => new User
                 {
                     TenantId = publicTenantId,
+                    PublicIndex = TestPublicIndex,
                     UpdateTime = DateTime.Now
                 })
-                .Where(u => u.Id == testUserId && u.TenantId != publicTenantId)
+                .Where(u => u.Id == testUserId &&
+                            (u.TenantId != publicTenantId || u.PublicIndex != TestPublicIndex))
                 .ExecuteCommandAsync();
 
             Console.WriteLine(updated > 0
-                ? $"[Radish.DbMigrate] 已将 test 用户租户纠正为 {publicTenantId}。"
-                : $"[Radish.DbMigrate] 已存在 Id={testUserId} 的 test 用户，且租户已是 {publicTenantId}，跳过。");
+                ? $"[Radish.DbMigrate] 已将 test 用户租户纠正为 {publicTenantId}，PublicIndex={TestPublicIndex}。"
+                : $"[Radish.DbMigrate] 已存在 Id={testUserId} 的 test 用户，且租户与 PublicIndex 已正确，跳过。");
         }
 
         await SeedDefaultUserAvatarsAsync(db, publicTenantId);

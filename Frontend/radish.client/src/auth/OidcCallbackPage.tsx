@@ -4,6 +4,7 @@ import { OidcCallbackError, redeemOidcAuthorizationCode } from '@radish/http';
 import i18n from '@/i18n';
 import { getApiBaseUrl, getAuthBaseUrl } from '@/config/env';
 import { hydrateAuthUser } from '@/services/authBootstrap';
+import { recordAuthSessionActivity } from '@/services/authSession';
 import { consumeAuthReturnPath } from '@/services/authReturnPath';
 import { tokenService } from '@/services/tokenService';
 import { getOidcRedirectUri } from '@/platform/tauriBridge';
@@ -64,6 +65,7 @@ export function OidcCallbackPage() {
         } else {
           tokenService.setTokenInfoFromJwt(tokenSet.access_token, tokenSet.refresh_token);
         }
+        recordAuthSessionActivity({ force: true });
 
         if (cancelled) {
           return;

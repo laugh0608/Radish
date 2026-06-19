@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Api.Services;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
@@ -26,19 +27,25 @@ public class CommentController : ControllerBase
 {
     private readonly ICommentService _commentService;
     private readonly IPostService _postService;
+    private readonly IUserService _userService;
     private readonly IContentModerationService _contentModerationService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
+    private readonly CommentRealtimePushService _commentRealtimePushService;
 
     public CommentController(
         ICommentService commentService,
         IPostService postService,
+        IUserService userService,
         IContentModerationService contentModerationService,
-        ICurrentUserAccessor currentUserAccessor)
+        ICurrentUserAccessor currentUserAccessor,
+        CommentRealtimePushService commentRealtimePushService)
     {
         _commentService = commentService;
         _postService = postService;
+        _userService = userService;
         _contentModerationService = contentModerationService;
         _currentUserAccessor = currentUserAccessor;
+        _commentRealtimePushService = commentRealtimePushService;
     }
 
     private CurrentUser Current => _currentUserAccessor.Current;
@@ -132,7 +139,29 @@ public class CommentController : ControllerBase
             TenantId = Current.TenantId
         });
 
-        var commentId = await _commentService.AddCommentAsync(comment);
+        long commentId;
+        CommentHighlightRecheckResultVo highlightRecheckResult;
+        try
+        {
+            (commentId, highlightRecheckResult) = await _commentService.AddCommentAsync(comment);
+        }
+        catch (ArgumentException ex)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = ex.Message
+            };
+        }
+
+        var createdComment = await _commentService.GetCommentDetailAsync(commentId, Current.UserId);
+        if (createdComment != null)
+        {
+            await _commentRealtimePushService.PushCreatedAsync(createdComment);
+        }
+        await _commentRealtimePushService.PushHighlightChangedAsync(highlightRecheckResult);
+
         return new MessageModel
         {
             IsSuccess = true,
@@ -155,6 +184,22 @@ public class CommentController : ControllerBase
         try
         {
             var result = await _commentService.ToggleLikeAsync(Current.UserId, commentId);
+            var comment = await _commentService.GetCommentDetailAsync(commentId, Current.UserId);
+            if (comment != null)
+            {
+                await _commentRealtimePushService.PushLikeChangedAsync(
+                    comment.VoPostId,
+                    comment.VoId,
+                    comment.VoParentId,
+                    comment.VoRootId,
+                    result.LikeCount);
+            }
+
+            if (result.HighlightRecheckResult != null)
+            {
+                await _commentRealtimePushService.PushHighlightChangedAsync(result.HighlightRecheckResult);
+            }
+
             return new MessageModel
             {
                 IsSuccess = true,
@@ -324,6 +369,47 @@ public class CommentController : ControllerBase
         };
     }
 
+    /// <summary>
+    /// 通过公开标识获取指定用户的评论列表
+    /// </summary>
+    /// <param name="identifier">用户 PublicId 或兼容期 LongId 字符串</param>
+    /// <param name="pageIndex">页码（从 1 开始）</param>
+    /// <param name="pageSize">每页数量（默认 20）</param>
+    /// <returns>分页评论列表</returns>
+    [HttpGet]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    public async Task<MessageModel> GetPublicUserComments(
+        string? identifier,
+        int pageIndex = 1,
+        int pageSize = 20)
+    {
+        if (string.IsNullOrWhiteSpace(identifier))
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "用户标识无效"
+            };
+        }
+
+        var user = await _userService.GetPublicUserByIdentifierAsync(identifier);
+        if (user == null)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = "用户不存在"
+            };
+        }
+
+        return await GetUserComments(user.Uuid, pageIndex, pageSize);
+    }
+
     private async Task FillCommentPostPublicIdsAsync(List<CommentVo> comments)
     {
         var postIds = comments
@@ -404,7 +490,13 @@ public class CommentController : ControllerBase
             c => c.Id == commentId);
 
         // 删除后触发神评/沙发重算
-        await _commentService.TriggerHighlightRecheckAsync(comment.VoPostId, comment.VoParentId);
+        var highlightRecheckResult = await _commentService.TriggerHighlightRecheckAsync(comment.VoPostId, comment.VoParentId);
+        await _commentRealtimePushService.PushDeletedAsync(
+            comment.VoPostId,
+            comment.VoId,
+            comment.VoParentId,
+            comment.VoRootId);
+        await _commentRealtimePushService.PushHighlightChangedAsync(highlightRecheckResult);
 
         return new MessageModel
         {
@@ -483,6 +575,14 @@ public class CommentController : ControllerBase
                 StatusCode = (int)statusCode,
                 MessageInfo = message
             };
+        }
+
+        var updatedComment = await _commentService.GetCommentDetailAsync(request.CommentId, Current.UserId);
+        if (updatedComment != null)
+        {
+            var highlightRecheckResult = await _commentService.TriggerHighlightRecheckAsync(updatedComment.VoPostId, updatedComment.VoParentId);
+            await _commentRealtimePushService.PushUpdatedAsync(updatedComment);
+            await _commentRealtimePushService.PushHighlightChangedAsync(highlightRecheckResult);
         }
 
         return new MessageModel

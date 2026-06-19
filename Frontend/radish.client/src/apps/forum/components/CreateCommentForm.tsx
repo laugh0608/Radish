@@ -25,7 +25,12 @@ interface CreateCommentFormProps {
   title?: string;
   submitText?: string;
   placeholder?: string;
+  loginPromptText?: string;
+  loginButtonText?: string;
   loginReturnPath?: string | null;
+  onLoginRequired?: (returnPath?: string | null) => void;
+  onTyping?: () => void;
+  autoFocusKey?: string | null;
 }
 
 const MENTION_PANEL_WIDTH = 320;
@@ -127,7 +132,12 @@ export const CreateCommentForm = ({
   title,
   submitText,
   placeholder,
+  loginPromptText,
+  loginButtonText,
   loginReturnPath,
+  onLoginRequired,
+  onTyping,
+  autoFocusKey = null,
 }: CreateCommentFormProps) => {
   const { t } = useTranslation();
   const [content, setContent] = useState('');
@@ -136,6 +146,8 @@ export const CreateCommentForm = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
+  const lastTypingSentAtRef = useRef(0);
+  const handledAutoFocusKeyRef = useRef<string | null>(null);
 
   // @提及功能状态
   const [showMention, setShowMention] = useState(false);
@@ -150,6 +162,8 @@ export const CreateCommentForm = ({
   const resolvedTitle = title ?? t('forum.comment.title');
   const resolvedSubmitText = submitText ?? t('forum.submitDiscussion');
   const resolvedPlaceholder = placeholder ?? t('forum.discussionPlaceholder');
+  const resolvedLoginPromptText = loginPromptText ?? t('forum.comment.loginPrompt');
+  const resolvedLoginButtonText = loginButtonText ?? t('forum.comment.loginButton');
   const isEditorDisabled = !isAuthenticated || !hasPost || disabled || uploading;
 
   useEffect(() => {
@@ -201,6 +215,22 @@ export const CreateCommentForm = ({
     textareaRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [replyTo, isAuthenticated, hasPost]);
 
+  useEffect(() => {
+    if (
+      !autoFocusKey
+      || handledAutoFocusKeyRef.current === autoFocusKey
+      || !textareaRef.current
+      || !isAuthenticated
+      || !hasPost
+    ) {
+      return;
+    }
+
+    handledAutoFocusKeyRef.current = autoFocusKey;
+    textareaRef.current.focus();
+    textareaRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [autoFocusKey, isAuthenticated, hasPost]);
+
   const normalizeCode = (value: string): string => value.trim().toLowerCase();
 
   const escapeMarkdownAlt = (value: string): string => value.replace(/[\][]/g, '').trim();
@@ -223,7 +253,26 @@ export const CreateCommentForm = ({
     setShowMention(false);
   };
 
+  const notifyTyping = useCallback(() => {
+    if (!onTyping || !isAuthenticated || !hasPost) {
+      return;
+    }
+
+    const now = Date.now();
+    if (now - lastTypingSentAtRef.current < 2000) {
+      return;
+    }
+
+    lastTypingSentAtRef.current = now;
+    onTyping();
+  }, [hasPost, isAuthenticated, onTyping]);
+
   const handleLoginClick = () => {
+    if (onLoginRequired) {
+      onLoginRequired(loginReturnPath);
+      return;
+    }
+
     redirectToLogin({ returnPath: loginReturnPath });
   };
 
@@ -233,6 +282,9 @@ export const CreateCommentForm = ({
     const cursorPos = e.target.selectionStart;
 
     setContent(newContent);
+    if (newContent.trim()) {
+      notifyTyping();
+    }
 
     // 查找光标前最近的@符号
     const textBeforeCursor = newContent.substring(0, cursorPos);
@@ -266,7 +318,7 @@ export const CreateCommentForm = ({
       const users = await searchUsersForMention(keyword, t);
       return users.map(user => ({
         id: user.voId,
-        userName: user.voUserName,
+        userName: user.voDisplayHandle || user.voUserName,
         displayName: user.voDisplayName,
         avatar: user.voAvatar
       }));
@@ -480,9 +532,9 @@ export const CreateCommentForm = ({
     <div className={containerClassName}>
       {!isAuthenticated && (
         <div className={styles.loginPrompt}>
-          {t('forum.comment.loginPrompt')}
+          {resolvedLoginPromptText}
           <button type="button" onClick={handleLoginClick} className={styles.loginButton}>
-            {t('forum.comment.loginButton')}
+            {resolvedLoginButtonText}
           </button>
         </div>
       )}

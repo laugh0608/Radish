@@ -40,6 +40,7 @@ public partial class ExperienceService
             // 获取用户信息
             var userIds = pagedData.Select(e => e.UserId).ToList();
             var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id));
+            await EnsureLeaderboardUserPublicIdsAsync(users);
             var userDict = users.ToDictionary(u => u.Id);
 
             // 获取等级配置
@@ -66,7 +67,11 @@ public partial class ExperienceService
                 {
                     VoRank = rank,
                     VoUserId = exp.UserId,
-                    VoUserName = user.UserName,
+                    VoUserPublicId = user.PublicId,
+                    VoUserPublicIndex = user.PublicIndex,
+                    VoUserName = User.NormalizeDisplayName(user.UserName, user.Id),
+                    VoUserDisplayName = User.NormalizeDisplayName(user.UserName, user.Id),
+                    VoUserDisplayHandle = User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id),
                     VoCurrentLevel = exp.CurrentLevel,
                     VoCurrentLevelName = levelConfigDict.ContainsKey(exp.CurrentLevel)
                         ? levelConfigDict[exp.CurrentLevel].LevelName
@@ -98,6 +103,67 @@ public partial class ExperienceService
             Log.Error(ex, "获取排行榜失败");
             throw;
         }
+    }
+
+    private async Task EnsureLeaderboardUserPublicIdsAsync(List<User> users)
+    {
+        foreach (var user in users)
+        {
+            var missingPublicId = string.IsNullOrWhiteSpace(user.PublicId);
+            var missingPublicIndex = !User.HasAssignedPublicIndex(user.PublicIndex);
+
+            if (!missingPublicId)
+            {
+                user.PublicId = user.PublicId?.Trim();
+            }
+
+            if (!missingPublicId && !missingPublicIndex)
+            {
+                continue;
+            }
+
+            var publicId = missingPublicId ? User.EnsurePublicId(user.PublicId) : user.PublicId;
+            var publicIndex = missingPublicIndex ? await AllocateNextPublicIndexAsync() : user.PublicIndex;
+            var affectedRows = await _userRepository.UpdateColumnsAsync(
+                item => new User
+                {
+                    PublicId = publicId,
+                    PublicIndex = publicIndex,
+                    UpdateTime = DateTime.Now
+                },
+                item => item.Id == user.Id &&
+                        !item.IsDeleted &&
+                        ((missingPublicId && (item.PublicId == null || item.PublicId == string.Empty)) ||
+                         (missingPublicIndex && (item.PublicIndex == null || item.PublicIndex <= 0))));
+
+            if (affectedRows > 0)
+            {
+                user.PublicId = publicId;
+                user.PublicIndex = publicIndex;
+                continue;
+            }
+
+            var refreshedUser = await _userRepository.QueryByIdAsync(user.Id);
+            if (!string.IsNullOrWhiteSpace(refreshedUser?.PublicId))
+            {
+                user.PublicId = refreshedUser.PublicId.Trim();
+            }
+
+            if (User.HasAssignedPublicIndex(refreshedUser?.PublicIndex))
+            {
+                user.PublicIndex = refreshedUser!.PublicIndex;
+            }
+        }
+    }
+
+    private async Task<long> AllocateNextPublicIndexAsync()
+    {
+        var maxPublicIndexTask = _userRepository.QueryMaxAsync<long?>(
+            item => item.PublicIndex,
+            item => item.PublicIndex >= User.PublicIndexStart);
+        var maxPublicIndex = maxPublicIndexTask == null ? null : await maxPublicIndexTask;
+
+        return maxPublicIndex.GetValueOrDefault(User.PublicIndexStart - 1) + 1;
     }
 
     /// <summary>

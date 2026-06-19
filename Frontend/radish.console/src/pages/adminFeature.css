@@ -493,9 +493,58 @@
     padding: 0;
   }
 
+  .admin-feature-card,
+  .admin-table-panel,
+  .admin-table-toolbar,
+  .admin-table-aside,
+  .admin-overview-panel,
+  .admin-overview-aside,
+  .admin-settings-nav,
+  .admin-settings-aside,
+  .admin-setting-section {
+    padding: 16px;
+  }
+
+  .admin-feature-header {
+    align-items: flex-start;
+  }
+
+  .admin-feature-header > .ant-space {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .admin-feature-header > .ant-space > .ant-space-item {
+    max-width: 100%;
+  }
+
   .admin-table-toolbar__filters .ant-input,
   .admin-table-toolbar__filters .ant-select {
     width: 100% !important;
+    min-width: 0;
+  }
+
+  .admin-feature-header > .ant-space .ant-input,
+  .admin-feature-header > .ant-space .ant-select {
+    width: min(100%, 220px) !important;
+    max-width: 100%;
+  }
+
+  .admin-feature-grid,
+  .admin-feature-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .governance-workbench,
+  .governance-workbench--without-actions,
+  .governance-workbench--experience,
+  .governance-workbench--experience .governance-workbench__actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .moderation-manual-status__grid,
+  .moderation-manual-action-form__grid {
+    grid-template-columns: 1fr;
   }
 
   .admin-overview-panel__title,

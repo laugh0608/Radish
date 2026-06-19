@@ -16,14 +16,15 @@
     var serviceDescription = string.IsNullOrWhiteSpace(client.Description) ? (isZh ? "Radish 统一身份认证服务" : "Radish unified identity service") : client.Description;
     var clientName = string.IsNullOrWhiteSpace(client.DisplayName) ? (isZh ? "Radish 社区" : "Radish Community") : client.DisplayName;
     var developerLabel = isZh ? "开发者" : "Developer";
-    var usernameLabel = isZh ? "用户名" : "Username";
-    var usernamePlaceholder = isZh ? "3-50 个字符，支持字母、数字、下划线、中文" : "3-50 characters, letters, numbers, underscores, or Chinese";
+    var usernameLabel = isZh ? "登录名" : "Login name";
+    var usernamePlaceholder = isZh
+        ? $"{Model.LoginNameMinLength}-{Model.LoginNameMaxLength} 位小写字母或数字，至少包含一个字母"
+        : $"{Model.LoginNameMinLength}-{Model.LoginNameMaxLength} lowercase letters or numbers, at least one letter";
     var passwordLabel = isZh ? "密码" : "Password";
     var passwordPlaceholder = isZh ? "至少 6 个字符" : "At least 6 characters";
     var confirmPasswordLabel = isZh ? "确认密码" : "Confirm password";
     var confirmPasswordPlaceholder = isZh ? "再次输入密码" : "Enter the password again";
     var emailLabel = isZh ? "电子邮箱" : "Email";
-    var optionalLabel = isZh ? "可选" : "Optional";
     var emailPlaceholder = isZh ? "用于找回密码和接收通知" : "Used for password recovery and notifications";
     var submitText = isZh ? "立即注册" : "Create account";
     var loginPrompt = isZh ? "已有账号？" : "Already have an account?";
@@ -619,8 +620,8 @@
                     </div>
 
                     <div class="form-group">
-                        <label>@emailLabel <span class="optional">(@optionalLabel)</span></label>
-                        <input type="email" name="email" asp-for="Email" placeholder="@emailPlaceholder" autocomplete="email" />
+                        <label>@emailLabel</label>
+                        <input type="email" name="email" asp-for="Email" placeholder="@emailPlaceholder" autocomplete="email" required />
                     </div>
 
                     <div class="button-group">

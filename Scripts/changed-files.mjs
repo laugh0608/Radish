@@ -71,5 +71,8 @@ export function collectChangedFiles({
     return unique(runGit(repoRoot, ['ls-files', '-z']));
   }
 
-  return unique(runGit(repoRoot, ['diff', '--name-only', '--diff-filter=ACMR', '-z']));
+  return unique([
+    ...runGit(repoRoot, ['diff', '--name-only', '--diff-filter=ACMR', '-z']),
+    ...runGit(repoRoot, ['diff', '--cached', '--name-only', '--diff-filter=ACMR', '-z']),
+  ]);
 }

@@ -49,7 +49,7 @@ export function Login() {
         <div className="login-info">
           <h2>Radish Console</h2>
           <p>现代化社区平台管理控制台</p>
-          <p>统一管理用户、应用、权限和系统配置</p>
+          <p>统一管理用户、应用、权限和系统设置</p>
 
           <div className="login-info-features">
             <div className="login-info-feature">

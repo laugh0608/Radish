@@ -1,14 +1,16 @@
 # 论坛轻回应墙 Phase 1 设计
 
-> 状态：Web / Console 治理闭环已补齐，Flutter Android 已形成轻回应读写与评论区协同边界
+> 状态：Web 工作台、公开详情、Console 治理与 Flutter Android 均已形成轻回应读写边界
 >
-> 最后更新：2026-05-28（Asia/Shanghai）
+> 最后更新：2026-06-17（Asia/Shanghai）
 >
 > 关联文档：
 >
 > - [当前进行中](/planning/current)
 > - [第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform)
 > - [论坛应用功能说明](/features/forum-features)
+> - [系统设置治理专题](/guide/system-settings-governance)
+> - [运行时配置边界与系统设置](/guide/runtime-configuration-boundaries)
 > - [前端设计文档](/frontend/design)
 
 ## 1. 背景
@@ -40,8 +42,10 @@
   - `Radish.IService/IPostQuickReplyService.cs`
   - `Radish.Service/PostQuickReplyService.cs`
   - `Radish.Api/Controllers/PostQuickReplyController.cs`
-- 轻回应治理与配置已接入：
-  - `Radish.Api/appsettings.json` 中的 `ForumQuickReply`
+- 轻回应治理与运营参数已接入：
+  - `Radish.Model/SystemConfigDefaults.cs`
+  - `Radish.Service/PostQuickReplyService.cs`
+  - `Radish.Api/appsettings.json` 中的 `ForumQuickReply.Enable`
   - `Radish.Service/ContentModerationService.cs`
   - `Radish.Model/ViewModels/ContentModerationVo.cs`
   - `Frontend/radish.client/src/components/ContentReportModal.tsx`
@@ -56,6 +60,10 @@
   - `Frontend/radish.client/src/api/forum.ts`
   - `Frontend/radish.client/src/types/forum.ts`
   - `Frontend/radish.client/src/i18n.ts`
+- 公开 forum 详情已接入同一轻回应模型：
+  - `Frontend/radish.client/src/public/forum/PublicForumDetail.tsx`
+  - 匿名用户可读取轻回应墙，登录用户可在公开详情直接发布轻回应。
+  - 匿名用户触发轻回应时保存 `/forum/post/:postId?intent=quickReply` 一次性登录回流；该 `intent` 不进入 canonical、分享链接、OpenGraph、JSON-LD 或 sitemap。
 - Flutter Android forum detail 已接入最小轻回应读写闭环：
   - `Clients/radish.flutter/lib/core/network/radish_api_client.dart`
   - `Clients/radish.flutter/lib/features/forum/data/forum_models.dart`
@@ -105,14 +113,16 @@
 
 - “独立建模 / 独立接口 / 独立治理边界 / 三段式插入位”已经成立；
 - 当前不再讨论“是否继续复用 Comment / Reaction 临时拼装”；
-- 当前 Web 主线重心已从“基础实现”转向“治理闭环收口 + 审核效率优化”；
+- 当前 Web 主线重心已从“基础实现”转向“治理闭环收口 + 公开详情轻参与契约稳定”；
 - 当前“我的轻回应”回看入口已作为轻量回流链路落地到个人主页，通知跳转也已完成基础回流，不再属于预留项；回看入口与通知回流均优先使用 `postPublicId` 打开 forum detail，旧 `postId` 只作为字符串 fallback。
 - 论坛现有帖子 / 评论类通知当前已完成统一导航载荷收口，可稳定跳回帖子详情。
 - 论坛评论精确定位链路已落地：带 `commentId` 打开 forum 时，帖子详情页在评论加载完成后可自动滚动到目标评论，并给出一次性高亮提示；若目标评论不在当前首屏评论数据中，会按所需页数补齐根评论 / 子评论数据。
 - 轻回应专属通知基础回流已落地：他人在你的帖子下发布轻回应时，当前会给帖子作者发送一条论坛通知，并支持从通知中心跳回帖子详情。
 - `radish.console` 的 `Moderation` 审核台当前已支持轻回应真实回看，可从审核队列或治理动作日志回跳到对应帖子详情。
 - 轻回应举报的目标摘要当前会在创建举报时固化；审核台并列展示“创建时快照”和“当前状态”，目标后续被删除、编辑或下线时仍保留历史证据并给出失效降级态。
+- Web 公开 forum 详情当前已开放登录后轻回应发布：公开页只承担轻回应输入、成功前插与计数更新；删除、编辑、治理、通知中心、点赞、投票和其他桌面工作台动作不进入公开轻回应墙。
 - Flutter Android 当前已完成客户端轻回应读写链路：详情页按“正文 -> 轻回应 -> 评论区”展示，匿名可读取最近轻回应，已登录可发布一句轻回应，并复用详情页原地登录续接；从轻回应区发起登录后，会回到当前帖子轻回应区并提示可继续发布；通知、个人公开页和我的轻回应回流优先携带 `postPublicId`，进入详情后再使用真实 `VoId` 调轻回应与评论相关内部接口；评论区当前已开放已登录态根评论发布和根评论 / 子评论回复，但删除、举报、轻回应治理、点赞、投票与编辑治理不进入当前 Flutter 边界。
+- 轻回应内容长度、默认返回条数、单次最大返回条数、同帖冷却秒数和重复内容窗口秒数已进入 Console 系统设置，业务路径通过 `ISystemSettingProvider` 读取代码默认值叠加覆盖值；`ForumQuickReply.Enable` 仍是宿主功能开关，不开放给 Console 运营修改。
 
 ## 3. 目标
 
@@ -128,6 +138,7 @@
 - 不在每条评论下重复渲染轻回应入口。
 - 不引入贴纸、表情包、附件、图片、Markdown、`@提及`。
 - 不把轻回应并入评论树、评论计数、神评 / 沙发链路或抽奖参与统计。
+- 不在公开详情暴露轻回应删除、编辑、治理或通知中心动作；公开详情只负责轻回应发布和最近轻回应展示。
 
 ## 5. 名称与用户文案
 
@@ -285,7 +296,7 @@ PostQuickReply
 
 首版默认：
 
-- `take` 默认值走配置
+- `take` 默认值走 `Comment.QuickReply.DefaultTake` 系统设置；请求值不能超过 `Comment.QuickReply.MaxTake`
 - 仅返回 `Visible && !IsDeleted`
 - 按 `CreateTime DESC`
 
@@ -338,7 +349,7 @@ PostQuickReply
 
 ## 10.1 内容长度
 
-- 单条长度上限走集中配置，默认：`10`
+- 单条长度上限走 `Comment.QuickReply.MaxContentLength` 系统设置，默认：`10`
 - 前端显示剩余字数或当前字数
 - 最终以后端校验为准
 
@@ -350,7 +361,7 @@ PostQuickReply
 
 ## 10.2 频率限制
 
-- 单用户单帖冷却走集中配置，默认：`30 秒 / 1 条`
+- 单用户单帖冷却走 `Comment.QuickReply.PerPostCooldownSeconds` 系统设置，默认：`30 秒 / 1 条`
 
 实现建议：
 
@@ -359,7 +370,7 @@ PostQuickReply
 
 ## 10.3 重复发送限制
 
-- 单用户同帖、相同 `NormalizedContent` 的重复发送窗口走集中配置，默认：`5 分钟内禁止重复发送`
+- 单用户同帖、相同 `NormalizedContent` 的重复发送窗口走 `Comment.QuickReply.DuplicateWindowSeconds` 系统设置，默认：`5 分钟内禁止重复发送`
 
 目的：
 
@@ -408,7 +419,8 @@ PostQuickReply
 
 - 新增独立 Service / Controller，不挂到 `CommentService`
 - 独立接口、独立 DTO、独立 Vo
-- 配置集中收口到 `ForumQuickReply` 配置段，不在服务中硬编码长度、查询条数和限频窗口
+- 运营参数通过 `ISystemSettingProvider` 读取系统设置，不在服务中硬编码长度、查询条数、冷却和重复窗口
+- `ForumQuickReply.Enable` 只保留为宿主功能开关；如需调整开关，仍走 `appsettings` / 环境变量，不通过 Console 系统设置
 - 独立治理校验：
   - 长度限制
   - 冷却限制
@@ -518,6 +530,7 @@ Flutter Android 客户端基础验证建议：
 - 不支持贴纸、表情包、附件、Markdown、`@提及`
 - 基础链路已落地，当前执行重点转向治理闭环稳定化与审核效率优化
 - 轻回应已纳入统一治理台，支持真实回看、失效降级以及“创建时快照 / 当前状态”并列展示
+- 轻回应内容长度、列表条数、冷却和重复内容窗口由系统设置治理；功能启停仍保留在宿主配置
 - Flutter Android 先承载轻回应读写与评论区协同边界，不把 Web / 桌面端完整治理能力一次性搬入原生客户端
 
 后续若要支持贴纸型轻回应，应进入后续阶段单独评估，不并入当前 Phase 1。

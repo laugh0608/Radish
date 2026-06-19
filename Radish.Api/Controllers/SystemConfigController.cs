@@ -21,10 +21,14 @@ namespace Radish.Api.Controllers;
 public class SystemConfigController : ControllerBase
 {
     private readonly ISystemConfigService _systemConfigService;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
-    public SystemConfigController(ISystemConfigService systemConfigService)
+    public SystemConfigController(
+        ISystemConfigService systemConfigService,
+        ICurrentUserAccessor currentUserAccessor)
     {
         _systemConfigService = systemConfigService;
+        _currentUserAccessor = currentUserAccessor;
     }
 
     /// <summary>获取系统配置列表</summary>
@@ -96,7 +100,7 @@ public class SystemConfigController : ControllerBase
                 return MessageModel<SystemConfigVo>.Failed("请求参数不能为空");
             }
 
-            var config = await _systemConfigService.UpdateConfigAsync(id, request);
+            var config = await _systemConfigService.UpdateConfigAsync(id, request, BuildChangeContext());
             if (config == null)
             {
                 return MessageModel<SystemConfigVo>.Failed("配置不存在");
@@ -107,6 +111,50 @@ public class SystemConfigController : ControllerBase
         catch (Exception ex)
         {
             return MessageModel<SystemConfigVo>.Failed($"更新配置失败：{ex.Message}");
+        }
+    }
+
+    /// <summary>恢复系统设置默认值</summary>
+    [HttpPut]
+    [RequireConsolePermission(ConsolePermissions.SystemConfigEdit)]
+    [ProducesResponseType(typeof(MessageModel<SystemConfigVo>), StatusCodes.Status200OK)]
+    public async Task<MessageModel<SystemConfigVo>> RestoreConfigDefault(long id, [FromBody] RestoreSystemConfigDefaultDto? request = null)
+    {
+        try
+        {
+            var config = await _systemConfigService.RestoreConfigDefaultAsync(id, request, BuildChangeContext());
+            if (config == null)
+            {
+                return MessageModel<SystemConfigVo>.Failed("配置不存在");
+            }
+
+            return MessageModel<SystemConfigVo>.Success("已恢复默认", config);
+        }
+        catch (Exception ex)
+        {
+            return MessageModel<SystemConfigVo>.Failed($"恢复默认失败：{ex.Message}");
+        }
+    }
+
+    /// <summary>获取系统设置变更历史</summary>
+    [HttpGet]
+    [RequireConsolePermission(ConsolePermissions.SystemConfigView)]
+    [ProducesResponseType(typeof(MessageModel<List<SystemConfigChangeLogVo>>), StatusCodes.Status200OK)]
+    public async Task<MessageModel<List<SystemConfigChangeLogVo>>> GetConfigChangeLogs(long id, int take = 20)
+    {
+        try
+        {
+            var logs = await _systemConfigService.GetConfigChangeLogsAsync(id, take);
+            if (logs == null)
+            {
+                return MessageModel<List<SystemConfigChangeLogVo>>.Failed("配置不存在");
+            }
+
+            return MessageModel<List<SystemConfigChangeLogVo>>.Success("获取成功", logs);
+        }
+        catch (Exception ex)
+        {
+            return MessageModel<List<SystemConfigChangeLogVo>>.Failed($"获取变更历史失败：{ex.Message}");
         }
     }
 
@@ -140,12 +188,12 @@ public class SystemConfigController : ControllerBase
     {
         try
         {
-            var deleted = await _systemConfigService.DeleteConfigAsync(id);
-            return deleted ? MessageModel.Success("删除成功") : MessageModel.Failed("配置不存在");
+            var deleted = await _systemConfigService.DeleteConfigAsync(id, BuildChangeContext());
+            return deleted ? MessageModel.Success("已恢复默认") : MessageModel.Failed("配置不存在");
         }
         catch (Exception ex)
         {
-            return MessageModel.Failed($"删除配置失败：{ex.Message}");
+            return MessageModel.Failed($"恢复默认失败：{ex.Message}");
         }
     }
 
@@ -164,5 +212,31 @@ public class SystemConfigController : ControllerBase
         {
             return MessageModel<PublicSiteSettingsVo>.Failed($"获取公开站点设置失败：{ex.Message}");
         }
+    }
+
+    private SystemConfigChangeContext BuildChangeContext()
+    {
+        var current = _currentUserAccessor.Current;
+        return new SystemConfigChangeContext
+        {
+            OperatorUserId = current.UserId > 0 ? current.UserId : null,
+            OperatorUserName = string.IsNullOrWhiteSpace(current.UserName) ? null : current.UserName.Trim(),
+            RequestIp = GetClientIpAddress(),
+            UserAgent = Request.Headers["User-Agent"].ToString()
+        };
+    }
+
+    private string? GetClientIpAddress()
+    {
+        var forwardedFor = Request.Headers["X-Forwarded-For"].FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(forwardedFor))
+        {
+            return forwardedFor.Split(',')[0].Trim();
+        }
+
+        var realIp = Request.Headers["X-Real-IP"].FirstOrDefault();
+        return string.IsNullOrWhiteSpace(realIp)
+            ? HttpContext.Connection.RemoteIpAddress?.ToString()
+            : realIp;
     }
 }

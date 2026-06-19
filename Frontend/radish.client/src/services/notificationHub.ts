@@ -140,7 +140,7 @@ class NotificationHubService {
       // 创建新连接
       this.connection = new signalR.HubConnectionBuilder()
         .withUrl(getHubUrl(), {
-          accessTokenFactory: () => token,
+          accessTokenFactory: async () => await tokenService.getValidAccessToken() || '',
           // 移除 skipNegotiation，让 SignalR 先协商再升级到 WebSocket
           // 这样可以兼容 YARP 反向代理
         })

@@ -15,11 +15,12 @@
   - `/forum`、`/forum/search`、`/forum/category/:categoryId`、`/forum/tag/:tagSlug`、`/forum/question`、`/forum/poll`、`/forum/lottery`
   - `/forum/post/:postId`
   - `/docs`、`/docs/search`、`/docs/:slug`
-  - `/u/:userId`
+  - `/u/:identifier`，其中 `identifier` 优先为 `User.PublicId`，旧 LongId 字符串保留兼容读取
   - `/leaderboard`
   - `/shop`、`/shop/products`、`/shop/product/:productId`
 - 登录后功能不进入公开 SEO 范围，例如发帖、编辑、订单、背包、设置、Console 与治理后台。
 - 桌面工作台入口继续由 `/desktop` 承载；公开 URL 命中时优先渲染公开内容壳层，而不是完整 WebOS 桌面 Shell。
+- `/circle` 是登录后“我的圈子”关系流入口，不进入公开 SEO、sitemap、canonical 或分享页范围；它可以在当前标签页中把来源状态一次性交接给后续公开详情，但不能把圈子来源写入公开 URL。
 
 ##### 10.5.2 当前 head 契约
 
@@ -48,10 +49,15 @@ forum / docs / shop 三类公开详情还会在 Gateway 层做首包 head snapsh
 - Flutter forum detail 只有在 `PostVo.VoPublicId` 可用时生成 `/forum/post/:postPublicId` 复制链接；旧 long `postId` 仍可作为打开兼容 fallback，但不作为面向用户的分享地址。
 - Flutter docs detail 使用 `/docs/:slug` 复制链接，并继续避免把 16 位以上纯数字旧 long 路径当作公开可读 slug；shop detail 使用 `/shop/product/:productId`。
 - 公开详情来源返回当前使用 `history.state` 保存，不写入 URL query；刷新或浏览器历史恢复后可继续返回原公开来源，但复制链接、canonical、Open Graph 与 sitemap 都必须忽略该状态。
+- 公开详情加载完成后如果需要把旧标识或非规范路径替换为 canonical 路径，例如 `/u/:longId -> /u/usr_...`、docs slug 归一或 forum 旧 long 路径归一，`replaceState` / 应用内 `replace` 必须保留当前标签页的来源返回状态；规范化 URL 不能把“返回社区发现 / 我的圈子 / 我的状态 / 消息”等语义清空。
 - forum detail 在 `PostVo.VoPublicId` 可用时使用 `/forum/post/:postPublicId` 作为 canonical 和复制链接；旧 long 版 `/forum/post/:postId` 继续兼容读取。
 - 旧 long 版 forum detail 如果加载成功并拿到 `PostVo.VoPublicId`，运行时 canonical、Open Graph URL 与 JSON-LD 也必须刷新到 `/forum/post/:postPublicId`，避免同一帖子同时暴露两套分享预览主口径。
-- 公开壳层内部生成 forum detail 链接时也应优先使用 `PostVo.VoPublicId`，包括 `/discover` 摘要卡、forum 列表 / 搜索 / 标签页和个人公开页内容入口；只有缺少 PublicId 时才回退旧 long 字符串。
-- shop detail 当前仍以 `/shop/product/:productId` 作为 canonical 兼容路径，公开个人页当前仍以 `/u/:userId` 作为 canonical 兼容路径，但运行时 title、description 与页面说明不应直接回显 `productId / userId`；docs detail 同理优先展示 slug、标题或正文摘要，旧 long 兼容路径只承担打开能力，不作为普通用户可读文案。
+- 公开壳层内部生成 forum detail 链接时也应优先使用 `PostVo.VoPublicId`，包括 `/discover` 摘要卡、forum 列表 / 搜索 / 标签页、类型流、个人公开页内容入口和圈子内容跳转；只有缺少 PublicId 时才回退旧 long 字符串。
+- 公开内容卡片必须输出真实公开 `href`。普通点击可用 `history.state` 或当前标签页一次性转移状态保留来源返回；右键打开新标签、复制链接、canonical、OpenGraph、JSON-LD、sitemap 和 Gateway 首包 head snapshot 只基于真实公开路径。
+- forum detail 登录参与参数只允许用于认证回流，例如 `/forum/post/:postId?intent=comment` 或 `/forum/post/:postId?commentId=:commentId&intent=quickReply`；这些参数不属于 canonical、分享链接、OpenGraph、JSON-LD 或 sitemap。
+- 公开个人页在 `UserPublicProfileVo.VoPublicId` 可用时使用 `/u/:publicId` 作为 canonical 和复制链接；旧 LongId 版 `/u/:userId` 继续兼容读取，加载成功后运行时应规范化到 `/u/usr_...`。
+- 公开个人页的可见名称、title、description、Open Graph 和 JSON-LD 优先使用 `UserPublicProfileVo.VoDisplayHandle`，缺失时再由 `VoDisplayName + VoPublicIndex` 派生；不得使用 `LoginName`、`Email`、内部 `VoUserId` 或旧 LongId 路径作为普通用户可见名称。
+- shop detail 当前仍以 `/shop/product/:productId` 作为 canonical 兼容路径，但运行时 title、description 与页面说明不应直接回显 `productId`；docs detail 同理优先展示 slug、标题或正文摘要，旧 long 兼容路径只承担打开能力，不作为普通用户可读文案。
 
 ##### 10.5.4 结构化数据
 
@@ -61,7 +67,7 @@ forum / docs / shop 三类公开详情还会在 Gateway 层做首包 head snapsh
 - forum detail：输出 `BlogPosting`，优先使用 `PostVo.VoPublicId` canonical。
 - docs detail：输出 `Article`，使用 `/docs/:slug` canonical。
 - shop detail：输出 `Product`，不把积分价格伪装成法币 offer。
-- 公开个人页：输出 `ProfilePage / Person`，不把长数字用户 ID 当作可见名称。
+- 公开个人页：输出 `ProfilePage / Person`，canonical 优先使用 `User.PublicId`，`name` 优先使用 `DisplayHandle`，不把长数字用户 ID、登录名或邮箱当作可见名称。
 - 路由切换、详情数据缺失或组件卸载时必须清理旧 JSON-LD，避免公开详情之间残留错误结构化数据。
 
 ##### 10.5.5 robots 与动态 sitemap
@@ -70,7 +76,7 @@ forum / docs / shop 三类公开详情还会在 Gateway 层做首包 head snapsh
 - `/sitemap.xml` 与 `/sitemaps/{fileName}` 当前由 Gateway 高优先级路由转发到 API，不应被前端 SPA catch-all 覆盖。
 - API 输出 sitemap index 与 `static / forum / docs / shop` 分片；forum 优先使用 `/forum/post/{VoPublicId}`，docs 使用 `/docs/{slug}`，shop 使用 `/shop/product/{productId}`。
 - sitemap `<loc>` 必须使用公开 Gateway origin。配置优先使用 `GatewayService:PublicUrl` / `RADISH_PUBLIC_URL`；经 Gateway 转发到 API 时，允许使用安全的 `X-Forwarded-Proto / X-Forwarded-Host` 回推公开 origin。
-- 首批不把 `/u/:id` 公开个人页纳入动态 sitemap，除非先完成用户隐私、展示意愿和外部标识方案评审。
+- 首批不把 `/u/:identifier` 公开个人页纳入动态 sitemap；即使 User PublicId 已落地，动态 sitemap 仍需先完成用户隐私、展示意愿和收录策略评审。
 
 ##### 10.5.6 浏览器可见资源 URL
 

@@ -15,6 +15,11 @@ export function AuthenticatedLayout() {
     return <Navigate to="/login?auto=1" replace />;
   }
 
+  if (tokenService.isIdleSessionExpired()) {
+    tokenService.clearTokens('idle_session_expired');
+    return <Navigate to="/login?auto=1&reason=idle" replace />;
+  }
+
   if (tokenService.isTokenExpired()) {
     tokenService.clearTokens();
     return <Navigate to="/login?auto=1" replace />;

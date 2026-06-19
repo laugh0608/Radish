@@ -12,6 +12,10 @@ public class UserProfile : Profile
     {
         CreateMap<User, UserVo>()
             .ForMember(a => a.Uuid, o => o.MapFrom(d => d.Id))
+            .ForMember(a => a.VoPublicId, o => o.MapFrom(d => d.PublicId))
+            .ForMember(a => a.VoPublicIndex, o => o.MapFrom(d => d.PublicIndex))
+            .ForMember(a => a.VoDisplayName, o => o.MapFrom(d => User.NormalizeDisplayName(d.UserName, d.Id)))
+            .ForMember(a => a.VoDisplayHandle, o => o.MapFrom(d => User.BuildDisplayHandle(d.UserName, d.PublicIndex, d.Id)))
             .ForMember(a => a.VoLoginName, o => o.MapFrom(d => d.LoginName))
             .ForMember(a => a.VoUserName, o => o.MapFrom(d => d.UserName))
             .ForMember(a => a.VoUserEmail, o => o.MapFrom(d => d.UserEmail))
@@ -39,6 +43,8 @@ public class UserProfile : Profile
 
         CreateMap<UserVo, User>()
             .ForMember(a => a.Id, o => o.MapFrom(d => d.Uuid))
+            .ForMember(a => a.PublicId, o => o.MapFrom(d => d.VoPublicId))
+            .ForMember(a => a.PublicIndex, o => o.MapFrom(d => d.VoPublicIndex))
             .ForMember(a => a.LoginName, o => o.MapFrom(d => d.VoLoginName))
             .ForMember(a => a.UserName, o => o.MapFrom(d => d.VoUserName))
             .ForMember(a => a.UserEmail, o => o.MapFrom(d => d.VoUserEmail))
@@ -66,14 +72,22 @@ public class UserProfile : Profile
 
         // User → UserMentionVo（用于@提及功能的用户搜索）
         CreateMap<User, UserMentionVo>()
-            .ForMember(dest => dest.VoDisplayName, opt => opt.MapFrom(src => src.UserRealName))
+            .ForMember(dest => dest.VoId, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.VoPublicId, opt => opt.MapFrom(src => src.PublicId))
+            .ForMember(dest => dest.VoPublicIndex, opt => opt.MapFrom(src => src.PublicIndex))
+            .ForMember(dest => dest.VoUserName, opt => opt.MapFrom(src => User.NormalizeDisplayName(src.UserName, src.Id)))
+            .ForMember(dest => dest.VoDisplayName, opt => opt.MapFrom(src => User.NormalizeDisplayName(src.UserName, src.Id)))
+            .ForMember(dest => dest.VoDisplayHandle, opt => opt.MapFrom(src => User.BuildDisplayHandle(src.UserName, src.PublicIndex, src.Id)))
             .ForMember(dest => dest.VoAvatar, opt => opt.MapFrom(src => (string?)null)); // 暂无头像字段
 
         // UserVo → UserMentionVo（用于从Service层返回的UserVo转换）
         CreateMap<UserVo, UserMentionVo>()
             .ForMember(dest => dest.VoId, opt => opt.MapFrom(src => src.Uuid))
-            .ForMember(dest => dest.VoUserName, opt => opt.MapFrom(src => src.VoUserName))
-            .ForMember(dest => dest.VoDisplayName, opt => opt.MapFrom(src => src.VoUserRealName))
+            .ForMember(dest => dest.VoPublicId, opt => opt.MapFrom(src => src.VoPublicId))
+            .ForMember(dest => dest.VoPublicIndex, opt => opt.MapFrom(src => src.VoPublicIndex))
+            .ForMember(dest => dest.VoUserName, opt => opt.MapFrom(src => src.VoDisplayName))
+            .ForMember(dest => dest.VoDisplayName, opt => opt.MapFrom(src => src.VoDisplayName))
+            .ForMember(dest => dest.VoDisplayHandle, opt => opt.MapFrom(src => src.VoDisplayHandle))
             .ForMember(dest => dest.VoAvatar, opt => opt.MapFrom(src => (string?)null)); // 暂无头像字段
 
         // User → CurrentUserVo（用于获取当前用户信息）

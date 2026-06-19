@@ -59,7 +59,17 @@ const PAGE_SIZE = 50;
 const MEMBER_REFRESH_INTERVAL_MS = 15_000;
 const MESSAGE_HIGHLIGHT_DURATION_MS = 2_600;
 
-export const ChatApp = () => {
+export interface ChatAppProfileNavigationTarget {
+  userId: EntityIdValue;
+  userName?: string | null;
+  avatarUrl?: string | null;
+}
+
+interface ChatAppProps {
+  onOpenUserProfile?: (target: ChatAppProfileNavigationTarget) => void;
+}
+
+export const ChatApp = ({ onOpenUserProfile }: ChatAppProps = {}) => {
   const { t } = useTranslation();
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
   const currentWindow = useCurrentWindow();
@@ -235,6 +245,15 @@ export const ChatApp = () => {
       return;
     }
 
+    if (onOpenUserProfile) {
+      onOpenUserProfile({
+        userId: targetUserId,
+        userName: targetUserName ?? null,
+        avatarUrl: avatarUrl ?? null,
+      });
+      return;
+    }
+
     if (targetUserIdKey === currentUserIdKey) {
       openApp('profile');
       return;
@@ -245,7 +264,7 @@ export const ChatApp = () => {
       userName: targetUserName?.trim() || getFallbackUserName(targetUserIdKey, t),
       avatarUrl: avatarUrl ?? null,
     });
-  }, [currentUserIdKey, openApp, t]);
+  }, [currentUserIdKey, onOpenUserProfile, openApp, t]);
 
   const renderAvatarButton = useCallback((
     targetUserId: EntityIdValue,
@@ -264,11 +283,7 @@ export const ChatApp = () => {
         className={`${styles.avatarButton} ${className ?? ''}`.trim()}
         onClick={() => {
           if (canOpenProfile) {
-            openApp('profile', {
-              userId: targetUserId,
-              userName: normalizedName,
-              avatarUrl: avatarUrl ?? null,
-            });
+            handleOpenUserProfile(targetUserId, normalizedName, avatarUrl);
           }
         }}
         disabled={!canOpenProfile}
@@ -283,7 +298,7 @@ export const ChatApp = () => {
         )}
       </button>
     );
-  }, [apiBaseUrl, openApp, t]);
+  }, [apiBaseUrl, handleOpenUserProfile, t]);
 
   const renderAvatarVisual = useCallback((
     targetUserName: string | null | undefined,
@@ -372,7 +387,10 @@ export const ChatApp = () => {
       return;
     }
 
-    const targetName = option.voUserName?.trim() || getFallbackUserName(targetId, t);
+    const targetName = option.voDisplayHandle?.trim()
+      || option.voDisplayName?.trim()
+      || option.voUserName?.trim()
+      || getFallbackUserName(targetId, t);
     const mentionToken = `@[${targetName}](${targetId}) `;
     const nextValue = `${messageInput.slice(0, mentionContext.start)}${mentionToken}${messageInput.slice(mentionContext.end)}`;
     const nextCursor = mentionContext.start + mentionToken.length;
@@ -1391,8 +1409,11 @@ export const ChatApp = () => {
                       ) : (
                         mentionOptions.map((option, index) => {
                           const optionId = normalizeEntityId(option.voId) ?? `mention-${index}`;
-                          const optionName = option.voUserName?.trim() || getFallbackUserName(optionId, t);
-                          const optionDisplayName = option.voDisplayName?.trim();
+                          const optionDisplayName = option.voDisplayName?.trim()
+                            || option.voUserName?.trim()
+                            || getFallbackUserName(optionId, t);
+                          const optionName = option.voDisplayHandle?.trim()
+                            || (option.voPublicIndex ? `${optionDisplayName}#${String(option.voPublicIndex).trim()}` : optionDisplayName);
                           const optionAvatarUrl = resolveMediaUrl(apiBaseUrl, option.voAvatar);
 
                           return (
@@ -1415,7 +1436,7 @@ export const ChatApp = () => {
                               )}
                               <span className={styles.mentionMeta}>
                                 <span className={styles.mentionLabel}>@{optionName}</span>
-                                {optionDisplayName && optionDisplayName !== optionName ? (
+                                {optionDisplayName !== optionName ? (
                                   <span className={styles.mentionDisplayName}>{optionDisplayName}</span>
                                 ) : null}
                               </span>

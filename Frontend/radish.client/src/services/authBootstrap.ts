@@ -2,11 +2,21 @@ import { configureApiClient, configureTokenRefresh, TokenRefreshErrorType } from
 import { parseApiResponse, type ApiResponse } from '@radish/http';
 import { getAuthBaseUrl } from '@/config/env';
 import { tokenService } from '@/services/tokenService';
+import { chatHub } from '@/services/chatHub';
+import { commentHub } from '@/services/commentHub';
+import { notificationHub } from '@/services/notificationHub';
 import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
 import i18n from '@/i18n';
 import { log } from '@/utils/logger';
-import { AUTH_TOKEN_EXPIRED_EVENT } from './authSession';
+import {
+  AUTH_TOKEN_EXPIRED_EVENT,
+  clearAuthSessionActivity,
+  dispatchAuthTokenExpired,
+  getAuthSessionRefreshParameters,
+  startAuthSessionActivityTracking,
+  TokenRefreshFailureReason,
+} from './authSession';
 
 export interface CurrentUser {
   voUserId: string;
@@ -415,6 +425,7 @@ export function bootstrapAuth(options: AuthBootstrapOptions): () => void {
   configureTokenRefresh({
     refreshEndpoint: `${authServerBaseUrl}/connect/token`,
     getRefreshToken: () => tokenService.getRefreshToken(),
+    getRefreshParameters: () => getAuthSessionRefreshParameters(),
     onTokenRefreshed: (accessToken, refreshToken) => {
       if (typeof window === 'undefined') return;
       tokenService.setTokenInfoFromJwt(accessToken, refreshToken);
@@ -438,10 +449,30 @@ export function bootstrapAuth(options: AuthBootstrapOptions): () => void {
     }
   }
 
-  const handleTokenExpired = () => {
-    log.warn('AuthBootstrap', '收到 Token 过期事件，执行登出');
-    authStore.logout();
+  const handleTokenExpired = (event: Event) => {
+    const reason = event instanceof CustomEvent
+      ? (event.detail as { reason?: string } | undefined)?.reason
+      : undefined;
+    log.warn('AuthBootstrap', '收到 Token 过期事件，执行登出', { reason });
+    void (async () => {
+      await Promise.all([
+        notificationHub.stop(),
+        chatHub.stop(),
+      ]);
+      await authStore.logout();
+      await commentHub.restart();
+    })();
   };
+  const stopActivityTracking = startAuthSessionActivityTracking({
+    onIdleExpired: () => {
+      if (tokenService.getAccessToken()) {
+        dispatchAuthTokenExpired(TokenRefreshFailureReason.IdleSessionExpired);
+        return;
+      }
+
+      clearAuthSessionActivity();
+    },
+  });
   let lastForegroundSyncAt = 0;
   let foregroundSyncPromise: Promise<CurrentUser | null> | null = null;
 
@@ -493,6 +524,7 @@ export function bootstrapAuth(options: AuthBootstrapOptions): () => void {
     document.removeEventListener('visibilitychange', handleVisibilityChange);
     window.removeEventListener('focus', handleWindowFocus);
     window.removeEventListener('pageshow', handlePageShow);
+    stopActivityTracking();
     tokenService.stopAutoRefresh();
   };
 }

@@ -89,7 +89,7 @@ interface PublicDocsAppProps {
     mode: PublicDetailBackMode;
     onBack: () => void;
   } | null;
-  onNavigate: (route: PublicDocsRoute, options?: { replace?: boolean }) => void;
+  onNavigate: (route: PublicDocsRoute, options?: { replace?: boolean; preserveSourceState?: boolean }) => void;
   onNavigateToDiscover?: () => void;
 }
 
@@ -177,6 +177,23 @@ function toStatusText(t: (key: string, options?: Record<string, unknown>) => str
       return t('wiki.status.archived');
     default:
       return t('wiki.status.draft');
+  }
+}
+
+function toSourceText(t: (key: string, options?: Record<string, unknown>) => string, sourceType?: string | null): string {
+  switch ((sourceType || '').trim().toLowerCase()) {
+    case 'manual':
+      return t('wiki.source.manual');
+    case 'imported':
+      return t('wiki.source.imported');
+    case 'custom':
+      return t('wiki.source.custom');
+    case 'builtin':
+      return t('wiki.source.builtin');
+    case 'rollback':
+      return t('wiki.source.rollback');
+    default:
+      return sourceType?.trim() || t('wiki.source.unknown');
   }
 }
 
@@ -476,6 +493,8 @@ export const PublicDocsApp = ({
         onBrandClick={() => onNavigate(createDefaultDocsListRoute())}
         onNavigateToDiscover={onNavigateToDiscover}
         discoverLabel={t('public.shell.discoverAction')}
+        circleLabel={t('public.shell.circleAction')}
+        desktopLabel={t('public.shell.desktopAction')}
       />
 
       <main className={styles.main}>
@@ -572,7 +591,7 @@ const PublicDocsList = ({
     <section className={styles.sectionCard}>
       <div className={styles.sectionHeader}>
         <div className={styles.sectionHeading}>
-          <p className={styles.kicker}>Phase 2-2</p>
+          <p className={styles.kicker}>{t('wiki.public.listGuideKicker')}</p>
           <h1 className={styles.pageTitle}>{t('wiki.public.pageTitle')}</h1>
           <p className={styles.pageIntro}>{t('wiki.public.pageIntro')}</p>
         </div>
@@ -729,7 +748,7 @@ interface PublicDocsSearchProps {
   scrollContainerRef: RefObject<HTMLDivElement | null>;
   restoreScrollTop: number | null;
   onScrollRestored: () => void;
-  onNavigate: (route: PublicDocsRoute, options?: { replace?: boolean }) => void;
+  onNavigate: (route: PublicDocsRoute, options?: { replace?: boolean; preserveSourceState?: boolean }) => void;
   onBrowseDirectory: () => void;
   onOpenDocument: (slug: string) => void;
 }
@@ -873,7 +892,7 @@ const PublicDocsSearch = ({
     <section className={styles.sectionCard}>
       <div className={styles.sectionHeader}>
         <div className={styles.sectionHeading}>
-          <p className={styles.kicker}>Phase 2-2</p>
+          <p className={styles.kicker}>{t('wiki.public.searchGuideKicker')}</p>
           <h1 className={styles.pageTitle}>
             {hasKeyword ? t('wiki.public.searchResultTitle', { keyword: appliedKeyword }) : t('wiki.public.searchTitle')}
           </h1>
@@ -1001,7 +1020,7 @@ const PublicDocsSearch = ({
                     {document.voSummary?.trim() || t('wiki.public.summaryFallback')}
                   </p>
                   <div className={styles.searchResultMeta}>
-                    <span>{t('wiki.meta.source', { value: document.voSourceType })}</span>
+                    <span>{t('wiki.meta.source', { value: toSourceText(t, document.voSourceType) })}</span>
                     <span>{formatDateTimeByTimeZone(document.voModifyTime || document.voCreateTime, displayTimeZone)}</span>
                   </div>
                   <div className={styles.docCardFooter}>
@@ -1047,7 +1066,7 @@ interface PublicDocsDetailProps {
   displayTimeZone: string;
   backLabel: string;
   onBack: () => void;
-  onNavigate: (route: PublicDocsRoute, options?: { replace?: boolean }) => void;
+  onNavigate: (route: PublicDocsRoute, options?: { replace?: boolean; preserveSourceState?: boolean }) => void;
 }
 
 const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigate }: PublicDocsDetailProps) => {
@@ -1134,7 +1153,7 @@ const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigat
       return;
     }
 
-    onNavigate(canonicalRoute, { replace: true });
+    onNavigate(canonicalRoute, { replace: true, preserveSourceState: true });
   }, [documentDetail?.voSlug, onNavigate, route]);
 
   useEffect(() => {
@@ -1281,16 +1300,6 @@ const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigat
 
         {detailState === 'ready' && documentDetail && (
           <>
-            <PublicReadingGuide
-              label={t('wiki.public.detailGuideKicker')}
-              title={t('wiki.public.detailGuideTitle')}
-              description={t('wiki.public.detailGuideDescription')}
-              items={detailGuideItems.map((item) => ({
-                label: t(item.labelKey),
-                value: t(item.valueKey),
-              }))}
-            />
-
             <article className={styles.articleCard}>
               <div className={styles.articleHeader}>
                 <div className={styles.articleHeaderMain}>
@@ -1303,24 +1312,52 @@ const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigat
                 <div className={styles.articleMetaRail}>
                   <span className={styles.metaChip}>{toVisibilityText(t, documentDetail.voVisibility)}</span>
                   <span className={styles.metaChip}>{toStatusText(t, documentDetail.voStatus)}</span>
-                  <span className={styles.metaChip}>{t('wiki.meta.slug', { value: documentDetail.voSlug })}</span>
                 </div>
               </div>
 
               <div className={styles.articleMetaGrid}>
-                <span className={styles.metaChip}>{t('wiki.meta.source', { value: documentDetail.voSourceType })}</span>
-                <span className={styles.metaChip}>
-                  {t('wiki.meta.updated', { value: formatDateTimeByTimeZone(documentDetail.voModifyTime || documentDetail.voCreateTime, displayTimeZone) })}
-                </span>
-                <span className={styles.metaChip}>
-                  {t('wiki.meta.created', { value: formatDateTimeByTimeZone(documentDetail.voCreateTime, displayTimeZone) })}
-                </span>
+                <section className={styles.articleMetaGroup}>
+                  <span className={styles.articleMetaLabel}>{t('wiki.public.detailAccessLabel')}</span>
+                  <div className={styles.articleMetaValues}>
+                    <span className={styles.metaChip}>{toVisibilityText(t, documentDetail.voVisibility)}</span>
+                    <span className={styles.metaChip}>{toStatusText(t, documentDetail.voStatus)}</span>
+                  </div>
+                </section>
+                <section className={styles.articleMetaGroup}>
+                  <span className={styles.articleMetaLabel}>{t('wiki.public.detailDocumentLabel')}</span>
+                  <div className={styles.articleMetaValues}>
+                    <span className={styles.metaChip}>{t('wiki.meta.slug', { value: documentDetail.voSlug })}</span>
+                    <span className={styles.metaChip}>{t('wiki.meta.source', { value: toSourceText(t, documentDetail.voSourceType) })}</span>
+                  </div>
+                </section>
+                <section className={styles.articleMetaGroup}>
+                  <span className={styles.articleMetaLabel}>{t('wiki.public.detailTimelineLabel')}</span>
+                  <div className={styles.articleMetaValues}>
+                    <span className={styles.metaChip}>
+                      {t('wiki.meta.updated', { value: formatDateTimeByTimeZone(documentDetail.voModifyTime || documentDetail.voCreateTime, displayTimeZone) })}
+                    </span>
+                    <span className={styles.metaChip}>
+                      {t('wiki.meta.created', { value: formatDateTimeByTimeZone(documentDetail.voCreateTime, displayTimeZone) })}
+                    </span>
+                  </div>
+                </section>
+                <p className={styles.articleBoundaryNote}>{t('wiki.public.detailBoundaryNote')}</p>
               </div>
 
               <div ref={articleBodyRef} className={styles.articleBody} onClick={handleMarkdownLinkClick}>
                 <MarkdownRenderer content={documentDetail.voMarkdownContent} className={styles.markdownContent} />
               </div>
             </article>
+
+            <PublicReadingGuide
+              label={t('wiki.public.detailGuideKicker')}
+              title={t('wiki.public.detailGuideTitle')}
+              description={t('wiki.public.detailGuideDescription')}
+              items={detailGuideItems.map((item) => ({
+                label: t(item.labelKey),
+                value: t(item.valueKey),
+              }))}
+            />
           </>
         )}
       </div>

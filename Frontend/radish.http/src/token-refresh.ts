@@ -31,6 +31,8 @@ interface TokenRefreshConfig {
   clientId?: string;
   /** 获取 refresh_token 的函数 */
   getRefreshToken: () => string | null;
+  /** 获取刷新请求附加参数的函数 */
+  getRefreshParameters?: () => Record<string, string | null | undefined>;
   /** Token 刷新成功回调 */
   onTokenRefreshed: (accessToken: string, refreshToken?: string) => void;
   /** Token 刷新失败回调 */
@@ -59,6 +61,10 @@ export function getTokenRefreshConfig(): TokenRefreshConfig | null {
  * 判断错误类型
  */
 function determineErrorType(error: unknown, status?: number): TokenRefreshErrorType {
+  if (error instanceof Error && error.message.includes('session_idle_expired')) {
+    return TokenRefreshErrorType.InvalidRefreshToken;
+  }
+
   // 401/400 表示 Refresh Token 无效
   if (status === 401 || status === 400) {
     return TokenRefreshErrorType.InvalidRefreshToken;
@@ -97,6 +103,14 @@ async function refreshAccessToken(): Promise<string> {
   body.set('grant_type', 'refresh_token');
   body.set('client_id', clientId);
   body.set('refresh_token', refreshToken);
+  const refreshParameters = refreshConfig.getRefreshParameters?.();
+  if (refreshParameters) {
+    for (const [key, value] of Object.entries(refreshParameters)) {
+      if (value !== undefined && value !== null && value.trim().length > 0) {
+        body.set(key, value);
+      }
+    }
+  }
 
   try {
     const response = await fetch(refreshConfig.refreshEndpoint, {
@@ -108,7 +122,8 @@ async function refreshAccessToken(): Promise<string> {
     });
 
     if (!response.ok) {
-      const error = new Error(`Token refresh failed: HTTP ${response.status}`);
+      const details = await extractTokenRefreshErrorDetails(response);
+      const error = new Error(details ? `Token refresh failed: HTTP ${response.status} (${details})` : `Token refresh failed: HTTP ${response.status}`);
       const errorType = determineErrorType(error, response.status);
       throw { error, errorType };
     }
@@ -137,6 +152,24 @@ async function refreshAccessToken(): Promise<string> {
     const error = err instanceof Error ? err : new Error(String(err));
     const errorType = determineErrorType(error);
     throw { error, errorType };
+  }
+}
+
+async function extractTokenRefreshErrorDetails(response: Response): Promise<string | null> {
+  try {
+    const text = await response.text();
+    if (!text.trim()) {
+      return null;
+    }
+
+    try {
+      const parsed = JSON.parse(text) as { error?: string; error_description?: string };
+      return [parsed.error, parsed.error_description].filter(Boolean).join(': ') || text;
+    } catch {
+      return text;
+    }
+  } catch {
+    return null;
   }
 }
 

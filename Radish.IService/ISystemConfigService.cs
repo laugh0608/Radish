@@ -16,9 +16,13 @@ public interface ISystemConfigService
 
     Task<SystemConfigVo> CreateConfigAsync(CreateSystemConfigDto request);
 
-    Task<SystemConfigVo?> UpdateConfigAsync(long id, UpdateSystemConfigDto request);
+    Task<SystemConfigVo?> UpdateConfigAsync(long id, UpdateSystemConfigDto request, SystemConfigChangeContext? context = null);
 
-    Task<bool> DeleteConfigAsync(long id);
+    Task<SystemConfigVo?> RestoreConfigDefaultAsync(long id, RestoreSystemConfigDefaultDto? request = null, SystemConfigChangeContext? context = null);
+
+    Task<bool> DeleteConfigAsync(long id, SystemConfigChangeContext? context = null);
+
+    Task<List<SystemConfigChangeLogVo>?> GetConfigChangeLogsAsync(long id, int take = 20);
 
     Task<PublicSiteSettingsVo> GetPublicSiteSettingsAsync();
 }

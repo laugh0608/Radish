@@ -8,6 +8,7 @@
 - **想知道代码分层/约束/规范**：[开发规范](/architecture/specifications)
 - **想看更细的后端/网关实现要点**：[开发框架说明](/architecture/framework)
 - **想看长期 ID 体系与社区联邦方向**：[标识体系与社区联邦长期路线](/architecture/id-and-federation-roadmap)
+- **想看用户登录名、邮箱、展示名与公开索引边界**：[用户身份语义与公开索引](/architecture/user-identity-semantics)
 - **想看当前迭代计划与进度**：[开发路线图](/development-plan) / [开发日志](/changelog/)
 - **想理解前端入口分工（纯 Web / Flutter / WebOS 保留入口）**：[前端设计](/frontend/design)
 - **想理解统一入口与路由转发**：[Gateway 服务网关](/guide/gateway)

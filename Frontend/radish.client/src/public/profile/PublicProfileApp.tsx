@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import {
@@ -14,6 +14,7 @@ import {
 import { DEFAULT_TIME_ZONE, formatDateTimeByTimeZone, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
 import { buildPublicProfilePath, type PublicProfileRoute, type PublicProfileTab } from '../profileRouteState';
+import { buildPublicForumPath } from '../forumRouteState';
 import {
   getPublicDetailBackLabelKey,
   type PublicDetailBackMode,
@@ -38,7 +39,7 @@ interface PublicProfileAppProps {
     mode: PublicDetailBackMode;
     onBack: () => void;
   } | null;
-  onNavigate: (route: PublicProfileRoute, options?: { replace?: boolean }) => void;
+  onNavigate: (route: PublicProfileRoute, options?: { replace?: boolean; preserveSourceState?: boolean }) => void;
   onNavigateToDiscover?: () => void;
   onNavigateToForumList: () => void;
   onNavigateToForumPost: (postId: string, commentId?: string) => void;
@@ -71,6 +72,21 @@ const profileGuideBoundaryItems = [
   'profile.public.readingGuide.boundaryItemHistory',
   'profile.public.readingGuide.boundaryItemWorkspace',
 ] as const;
+
+function buildProfileForumTargetHref(postId: string, commentId?: string): string {
+  return buildPublicForumPath(commentId
+    ? { kind: 'detail', postId, commentId }
+    : { kind: 'detail', postId });
+}
+
+function shouldHandleProfileLinkInternally(event: MouseEvent<HTMLAnchorElement>): boolean {
+  return !event.defaultPrevented
+    && event.button === 0
+    && !event.metaKey
+    && !event.ctrlKey
+    && !event.shiftKey
+    && !event.altKey;
+}
 
 interface PublicStatusCardProps {
   tone: PublicStatusTone;
@@ -164,6 +180,15 @@ function buildExcerpt(post: PublicUserPost): string {
   return content.length > 120 ? `${content.slice(0, 120)}...` : content;
 }
 
+function resolveProfileRouteIdentifier(profile: PublicUserProfile | null, fallbackIdentifier: string): string {
+  const publicId = profile?.voPublicId?.trim();
+  if (publicId) {
+    return publicId;
+  }
+
+  return fallbackIdentifier;
+}
+
 export const PublicProfileApp = ({
   route,
   backAction,
@@ -199,6 +224,8 @@ export const PublicProfileApp = ({
     const loadProfile = async () => {
       setLoadingProfile(true);
       setProfileError(null);
+      setProfile(null);
+      setStats(null);
 
       try {
         const [profileResult, statsResult] = await Promise.all([
@@ -231,16 +258,42 @@ export const PublicProfileApp = ({
     void loadProfile();
   }, [profileReloadToken, route.userId]);
 
+  const profileRouteIdentifier = useMemo(
+    () => resolveProfileRouteIdentifier(profile, route.userId),
+    [profile, route.userId]
+  );
+
+  useEffect(() => {
+    if (!profile || profileRouteIdentifier === route.userId) {
+      return;
+    }
+
+    onNavigate({
+      kind: 'detail',
+      userId: profileRouteIdentifier,
+      tab: route.tab,
+      page: route.page,
+    }, { replace: true, preserveSourceState: true });
+  }, [onNavigate, profile, profileRouteIdentifier, route.page, route.tab, route.userId]);
+
   useEffect(() => {
     const requestId = ++contentRequestIdRef.current;
 
     const loadContent = async () => {
+      if (!profile) {
+        setPosts([]);
+        setComments([]);
+        setTotalPages(1);
+        setLoadingContent(false);
+        return;
+      }
+
       setLoadingContent(true);
       setContentError(null);
 
       try {
         if (route.tab === 'posts') {
-          const pageModel = await getPublicUserPosts(route.userId, route.page, 10);
+          const pageModel = await getPublicUserPosts(profileRouteIdentifier, route.page, 10);
           if (requestId !== contentRequestIdRef.current) {
             return;
           }
@@ -249,7 +302,7 @@ export const PublicProfileApp = ({
           if (route.page > nextTotalPages) {
             onNavigate({
               kind: 'detail',
-              userId: route.userId,
+              userId: profileRouteIdentifier,
               tab: route.tab,
               page: nextTotalPages
             }, { replace: true });
@@ -262,7 +315,7 @@ export const PublicProfileApp = ({
           return;
         }
 
-        const pageModel = await getPublicUserComments(route.userId, route.page, 10);
+        const pageModel = await getPublicUserComments(profileRouteIdentifier, route.page, 10);
         if (requestId !== contentRequestIdRef.current) {
           return;
         }
@@ -271,7 +324,7 @@ export const PublicProfileApp = ({
         if (route.page > nextTotalPages) {
           onNavigate({
             kind: 'detail',
-            userId: route.userId,
+            userId: profileRouteIdentifier,
             tab: route.tab,
             page: nextTotalPages
           }, { replace: true });
@@ -299,19 +352,22 @@ export const PublicProfileApp = ({
     };
 
     void loadContent();
-  }, [contentReloadToken, onNavigate, route.page, route.tab, route.userId]);
+  }, [contentReloadToken, onNavigate, profile, profileRouteIdentifier, route.page, route.tab]);
 
   useEffect(() => {
     if (loadingProfile) {
       return;
     }
 
-    const nextTitle = profile?.voUserName?.trim()
-      ? `${profile.voUserName} · ${t('profile.public.title')}`
+    const titleName = profile?.voDisplayHandle?.trim()
+      || profile?.voDisplayName?.trim()
+      || profile?.voUserName?.trim();
+    const nextTitle = titleName
+      ? `${titleName} · ${t('profile.public.title')}`
       : t('profile.public.title');
 
     document.title = nextTitle;
-  }, [loadingProfile, profile?.voUserName, t]);
+  }, [loadingProfile, profile?.voDisplayHandle, profile?.voDisplayName, profile?.voUserName, t]);
 
   const avatarUrl = useMemo(
     () => resolveMediaUrl(profile?.voAvatarThumbnailUrl || profile?.voAvatarUrl),
@@ -330,29 +386,33 @@ export const PublicProfileApp = ({
       imageUrl: avatarUrl,
       canonicalPath: buildPublicProfilePath({
         kind: 'detail',
-        userId: String(profile.voUserId),
+        userId: profileRouteIdentifier,
         tab: route.tab,
         page: route.page,
       }),
     }));
 
     return removePublicStructuredData;
-  }, [avatarUrl, profile, route.page, route.tab, stats]);
+  }, [avatarUrl, profile, profileRouteIdentifier, route.page, route.tab, stats]);
 
-  const displayName = profile?.voDisplayName?.trim() || null;
-  const userName = profile?.voUserName?.trim() || t('common.userFallback', { id: route.userId });
+  const displayName = profile?.voDisplayName?.trim()
+    || profile?.voUserName?.trim()
+    || t('common.userFallback', { id: route.userId });
+  const displayHandle = profile?.voDisplayHandle?.trim()
+    || (profile?.voPublicIndex ? `${displayName}#${String(profile.voPublicIndex).trim()}` : null);
   const backLabelKey = getPublicDetailBackLabelKey(backAction?.mode);
-  const backLabel = backLabelKey ? t(backLabelKey) : t('profile.public.backToForum');
-  const handleBack = backAction?.onBack ?? onNavigateToForumList;
+  const backLabel = backLabelKey
+    ? t(backLabelKey)
+    : t(onNavigateToDiscover ? 'public.shell.backToDiscover' : 'profile.public.backToForum');
+  const handleBack = backAction?.onBack ?? onNavigateToDiscover ?? onNavigateToForumList;
   const buildProfileShareUrl = useCallback(() => {
-    const profileUserId = String(profile?.voUserId ?? route.userId);
     return buildPublicShareUrl(buildPublicProfilePath({
       kind: 'detail',
-      userId: profileUserId,
+      userId: profileRouteIdentifier,
       tab: route.tab,
       page: route.page,
     }));
-  }, [profile?.voUserId, route.page, route.tab, route.userId]);
+  }, [profileRouteIdentifier, route.page, route.tab]);
   const { copyShareLink, shareBusy, shareState } = usePublicShareLink({
     buildShareUrl: buildProfileShareUrl,
   });
@@ -364,10 +424,23 @@ export const PublicProfileApp = ({
 
     onNavigate({
       kind: 'detail',
-      userId: route.userId,
+      userId: profileRouteIdentifier,
       tab,
       page: 1
     }, { replace: true });
+  };
+
+  const handleForumTargetLinkClick = (
+    event: MouseEvent<HTMLAnchorElement>,
+    postId: string,
+    commentId?: string
+  ) => {
+    if (!shouldHandleProfileLinkInternally(event)) {
+      return;
+    }
+
+    event.preventDefault();
+    onNavigateToForumPost(postId, commentId);
   };
 
   return (
@@ -379,6 +452,8 @@ export const PublicProfileApp = ({
         onBrandClick={() => pageRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
         onNavigateToDiscover={onNavigateToDiscover}
         discoverLabel={t('public.shell.discoverAction')}
+        circleLabel={t('public.shell.circleAction')}
+        desktopLabel={t('public.shell.desktopAction')}
       />
 
       <main className={styles.main}>
@@ -428,21 +503,21 @@ export const PublicProfileApp = ({
               <div className={styles.identityRow}>
                 <div
                   className={styles.avatar}
-                  style={avatarUrl ? undefined : buildAvatarStyle(userName)}
+                  style={avatarUrl ? undefined : buildAvatarStyle(displayName)}
                   aria-hidden="true"
                 >
                   {avatarUrl ? (
-                    <img className={styles.avatarImage} src={avatarUrl} alt={userName} loading="lazy" />
+                    <img className={styles.avatarImage} src={avatarUrl} alt={displayName} loading="lazy" />
                   ) : (
-                    buildAvatarText(userName)
+                    buildAvatarText(displayName)
                   )}
                 </div>
 
                 <div className={styles.identityBody}>
                   <div className={styles.identityText}>
-                    <h1 className={styles.userName}>{userName}</h1>
-                    {displayName && (
-                      <p className={styles.displayName}>{t('profile.displayName', { name: displayName })}</p>
+                    <h1 className={styles.userName}>{displayName}</h1>
+                    {displayHandle && (
+                      <p className={styles.displayName}>{displayHandle}</p>
                     )}
                     <p className={styles.joinedAt}>
                       {t('profile.publicSince', {
@@ -518,9 +593,10 @@ export const PublicProfileApp = ({
 
             <section className={styles.contentCard}>
               <div className={styles.contentHeader}>
-                <div>
-                  <p className={styles.kicker}>Phase 2-2</p>
+                <div className={styles.contentHeaderText}>
+                  <p className={styles.kicker}>{t('profile.public.contentKicker')}</p>
                   <h2 className={styles.sectionTitle}>{t('profile.public.contentTitle')}</h2>
+                  <p className={styles.contentDescription}>{t('profile.public.contentDescription')}</p>
                 </div>
                 <div className={styles.tabs}>
                   <button
@@ -565,30 +641,39 @@ export const PublicProfileApp = ({
                   />
                 ) : (
                   <div className={styles.list}>
-                    {posts.map((post) => (
-                      <article
-                        key={String(post.voId)}
-                        className={styles.contentItem}
-                        onClick={() => {
-                          const target = resolvePublicProfilePostForumTarget(post);
-                          onNavigateToForumPost(target.postId);
-                        }}
-                      >
-                        <div className={styles.itemTopRow}>
-                          <span className={styles.itemType}>{t('profile.tab.userPosts')}</span>
-                          <span className={styles.itemTime}>
-                            {formatDateTimeByTimeZone(post.voCreateTime, displayTimeZone)}
-                          </span>
-                        </div>
-                        <h3 className={styles.itemTitle}>{post.voTitle}</h3>
-                        <p className={styles.itemExcerpt}>{buildExcerpt(post) || t('profile.public.noSummary')}</p>
-                        <div className={styles.itemMeta}>
-                          <span>{t('profile.stats.likes', { count: post.voLikeCount ?? 0 })}</span>
-                          <span>{t('profile.stats.comments', { count: post.voCommentCount ?? 0 })}</span>
-                          <span>{t('forum.postDetail.views', { count: post.voViewCount ?? 0 })}</span>
-                        </div>
-                      </article>
-                    ))}
+                    {posts.map((post) => {
+                      const target = resolvePublicProfilePostForumTarget(post);
+                      const href = buildProfileForumTargetHref(target.postId);
+
+                      return (
+                        <a
+                          key={String(post.voId)}
+                          className={styles.contentItem}
+                          href={href}
+                          onClick={(event) => handleForumTargetLinkClick(event, target.postId)}
+                        >
+                          <div className={styles.itemTopRow}>
+                            <span className={styles.itemType}>{t('profile.tab.userPosts')}</span>
+                            <span className={styles.itemTime}>
+                              {formatDateTimeByTimeZone(post.voCreateTime, displayTimeZone)}
+                            </span>
+                          </div>
+                          <h3 className={styles.itemTitle}>{post.voTitle}</h3>
+                          <p className={styles.itemExcerpt}>{buildExcerpt(post) || t('profile.public.noSummary')}</p>
+                          <div className={styles.itemFooter}>
+                            <div className={styles.itemMeta}>
+                              <span>{t('profile.stats.likes', { count: post.voLikeCount ?? 0 })}</span>
+                              <span>{t('profile.stats.comments', { count: post.voCommentCount ?? 0 })}</span>
+                              <span>{t('forum.postDetail.views', { count: post.voViewCount ?? 0 })}</span>
+                            </div>
+                            <span className={styles.itemAction}>
+                              <Icon icon="mdi:arrow-right" size={16} />
+                              <span>{t('profile.public.openPostDetail')}</span>
+                            </span>
+                          </div>
+                        </a>
+                      );
+                    })}
                   </div>
                 )
               ) : comments.length === 0 ? (
@@ -599,44 +684,42 @@ export const PublicProfileApp = ({
                 />
               ) : (
                 <div className={styles.list}>
-                  {comments.map((comment) => (
-                    <article
-                      key={String(comment.voId)}
-                      className={styles.contentItem}
-                      onClick={() => {
-                        const target = resolvePublicProfileCommentForumTarget(comment);
-                        onNavigateToForumPost(target.postId, target.commentId);
-                      }}
-                    >
-                      <div className={styles.itemTopRow}>
-                        <span className={styles.itemType}>{t('profile.tab.userComments')}</span>
-                        <span className={styles.itemTime}>
-                          {formatDateTimeByTimeZone(comment.voCreateTime, displayTimeZone)}
-                        </span>
-                      </div>
-                      {comment.voReplyToUserName && (
-                        <p className={styles.replyMeta}>
-                          @{comment.voReplyToUserName}
-                          {comment.voReplyToCommentSnapshot ? ` · ${comment.voReplyToCommentSnapshot}` : ''}
-                        </p>
-                      )}
-                      <p className={styles.commentContent}>{comment.voContent}</p>
-                      <div className={styles.itemMeta}>
-                        <span>{t('profile.stats.likes', { count: comment.voLikeCount ?? 0 })}</span>
-                        <button
-                          type="button"
-                          className={styles.inlineLinkButton}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            const target = resolvePublicProfileCommentForumTarget(comment);
-                            onNavigateToForumPost(target.postId, target.commentId);
-                          }}
-                        >
-                          {t('profile.public.openPost')}
-                        </button>
-                      </div>
-                    </article>
-                  ))}
+                  {comments.map((comment) => {
+                    const target = resolvePublicProfileCommentForumTarget(comment);
+                    const href = buildProfileForumTargetHref(target.postId, target.commentId);
+
+                    return (
+                      <a
+                        key={String(comment.voId)}
+                        className={styles.contentItem}
+                        href={href}
+                        onClick={(event) => handleForumTargetLinkClick(event, target.postId, target.commentId)}
+                      >
+                        <div className={styles.itemTopRow}>
+                          <span className={styles.itemType}>{t('profile.tab.userComments')}</span>
+                          <span className={styles.itemTime}>
+                            {formatDateTimeByTimeZone(comment.voCreateTime, displayTimeZone)}
+                          </span>
+                        </div>
+                        {comment.voReplyToUserName && (
+                          <p className={styles.replyMeta}>
+                            @{comment.voReplyToUserName}
+                            {comment.voReplyToCommentSnapshot ? ` · ${comment.voReplyToCommentSnapshot}` : ''}
+                          </p>
+                        )}
+                        <p className={styles.commentContent}>{comment.voContent}</p>
+                        <div className={styles.itemFooter}>
+                          <div className={styles.itemMeta}>
+                            <span>{t('profile.stats.likes', { count: comment.voLikeCount ?? 0 })}</span>
+                          </div>
+                          <span className={styles.itemAction}>
+                            <Icon icon="mdi:comment-arrow-right-outline" size={16} />
+                            <span>{t('profile.public.openCommentContext')}</span>
+                          </span>
+                        </div>
+                      </a>
+                    );
+                  })}
                 </div>
               )}
 
@@ -647,7 +730,7 @@ export const PublicProfileApp = ({
                     className={styles.paginationButton}
                     onClick={() => onNavigate({
                       kind: 'detail',
-                      userId: route.userId,
+                      userId: profileRouteIdentifier,
                       tab: route.tab,
                       page: Math.max(1, route.page - 1)
                     }, { replace: true })}
@@ -663,7 +746,7 @@ export const PublicProfileApp = ({
                     className={styles.paginationButton}
                     onClick={() => onNavigate({
                       kind: 'detail',
-                      userId: route.userId,
+                      userId: profileRouteIdentifier,
                       tab: route.tab,
                       page: Math.min(totalPages, route.page + 1)
                     }, { replace: true })}

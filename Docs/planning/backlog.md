@@ -29,15 +29,20 @@
 - `PublicId` 最小试点方案：`Post` 首批已完成，不做全量迁移；历史补齐或扩面仍需单独评估
 - 代码热区拆分候选：超大公开页面、超大 Service、Flutter 大页面
 - 用户留存轻闭环：通知、复访、轻互动与公开分享的回流链路
+- `P3-10` Web-first 评估：Web 首页信息流、个人圈子边界、去 WebOS 化迁移、评论实时 / 编辑状态、神评稳定性、Token 不活跃过期与历史功能规划回拉扫描
+- 用户身份语义与公开索引：已新增 [用户身份语义与公开索引](/architecture/user-identity-semantics)，`P3-10-B9` 首批已完成公开索引、公开句柄、注册 / 登录规范化、艾特搜索和 Console 展示；联邦协议、邮箱通知系统和数据库主键迁移仍后置
+- 系统设置治理：已新增 [系统设置治理专题](/guide/system-settings-governance)，后续作为 Console 设置中心、默认值恢复、高危二次确认和审计能力的前置专题
+- Radish 电子宠物：已新增 [开发计划](/features/radish-pet-roadmap)，`P3-10-B8` Phase B 已完成首批代码、体验补漏、契约测试和回归；经济消耗、商城物品、社区任务奖励、经验反向加成、Console 配置 UI、首页组件和公开个人主页默认展示仍后置
 
 ## 第二开发阶段后续池
 
 ### 社区深化第二批
 
-- `Notification Realtime P2` 更深能力：通知聚合、偏好设置、容量治理
-- `Chat App P2`：私聊、消息搜索、Reaction、消息置顶、阅读回执、权限细化
-- `P3-ext / P4-ext / P5-ext`：论坛投票 / 问答 / 抽奖更深增强
+- `Notification Realtime P2` 更深能力：通知聚合、偏好设置、容量治理；其中神评通知与评论实时相关事件先进入 `P3-10` 方案评估
+- `Chat App P2`：私聊、消息搜索、Reaction、消息置顶、阅读回执、权限细化；当前后移到 Web 信息流和评论实时方案之后
+- `P3-ext / P4-ext / P5-ext`：论坛投票 / 问答 / 抽奖更深增强；当前只把活动内容卡片、问答排序输入和治理风险作为 `P3-10` 信息流设计参考
 - 经验 / 等级 / 排行榜的更深防刷策略和后台治理增强（基础治理已回拉到当前规划）
+- 标签导流、热门标签、标签相关推荐和标签 SEO 深化：当前作为 Web 首页 / 信息流内容组织输入，是否进入实现由 `P3-10` 候选矩阵决定
 
 ### 多端深化后置项
 
@@ -49,6 +54,7 @@
 
 - `ID Architecture`：为核心聚合引入 `InternalId / PublicId / FederationId` 分层，冻结新接口继续暴露 `long` 主键的扩散
 - `PublicId Rollout`：优先为 `User / Post / Comment / Attachment / Channel / Notification / WikiDocument` 设计并落地 `PublicId`；当前只回拉最小试点方案，全量 rollout 仍后置
+- `User Identity Semantics`：登录名、邮箱、展示名、公开索引与 `PublicId` 分层治理，避免继续把私有登录凭证和公开展示名混用
 - `Snowflake Exit Strategy`：待外部契约完成 `PublicId` 化后，再评估内部 Snowflake 主键向数据库 `sequence / identity` 的迁移窗口
 - `Federation Readiness`：为未来联邦预留本地对象 / 远端对象、canonical URI、收发队列、签名与重试边界
 - `ActivityPub / WebFinger`：作为未来公开社区联邦首选方向预研，不纳入第二阶段前半程主线
@@ -70,6 +76,13 @@
 - Console 前端后续治理应优先复用 `@radish/ui` 的组件、交互反馈与主题 token，逐步收敛历史页面的自定义样式和重复组件，保持 Console 与 Radish 其他前端入口的视觉一致性
 - 不在第二阶段前半程启动
 
+### 系统设置治理专题
+
+- 后置专题入口：[系统设置治理专题](/guide/system-settings-governance)
+- 当前结论：现有 `SystemConfig` 已作为覆盖值存储基础进入 B10 实现，系统设置已升级为设置定义、代码级默认值、覆盖值、风险等级、确认参数、审计历史和统一读取入口
+- 首批已开放站点 favicon、标题 / 正文最小长度、评论最小长度等低到中风险设置；登录名 / 展示名长度等待 Auth / API 契约统一后再评审
+- 安全会话、奖励数值、审核阈值和资产相关高危设置需等二次确认与审计基础完成后再开放
+
 ### `Gateway & BFF` 深化
 
 - 暂缓，不作为第二阶段前半程目标
@@ -79,6 +92,14 @@
 
 - 第三方接入、SDK、应用生态开放
 - 不在第二阶段前半程启动
+
+### 安全传输与请求签名治理
+
+- 临时专题入口：[密码传输与请求签名临时评审](/guide/password-transport-and-request-signature)
+- 当前结论：浏览器前端不做通用 RSA / AES 字段加密或参数 `sign`；普通 Web 请求继续以 HTTPS、服务端鉴权、权限校验、限流、审计、慢哈希和业务幂等为主。
+- 前端支付口令日志脱敏属于低风险维护修复，可在不启动完整签名专题的情况下优先处理。
+- 支付口令哈希迁移到 Argon2id、购买 / 转账 `idempotencyKey` 与短窗口重放治理，作为资产链路稳定前的后置安全增强候选。
+- 只有开放平台、第三方回调、Webhook、服务端到服务端调用或更高风险资产动作出现明确需求时，再评审 HMAC-SHA256 请求签名、nonce 去重、body hash、时间窗口、WebAuthn / OTP 等加强项。
 
 ### Later
 

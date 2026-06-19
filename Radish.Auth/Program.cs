@@ -23,6 +23,7 @@ using SqlSugar;
 using System.Globalization;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Options;
+using OpenIddict.Server;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.IdentityModel.Tokens.Jwt;
@@ -162,6 +163,7 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 // 配置强类型 Options
 builder.Services.AddAllOptionRegister();
 builder.Services.Configure<AuthorizationConsentOptions>(builder.Configuration.GetSection("AuthorizationConsent"));
+builder.Services.Configure<IdleSessionOptions>(builder.Configuration.GetSection("OpenIddict:Server:IdleSession"));
 
 // 配置 ForwardedHeaders，让 Auth Server 能识别通过 Gateway 转发的原始请求信息
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
@@ -317,6 +319,14 @@ builder.Services.AddOpenIddict()
         options.SetAccessTokenLifetime(TimeSpan.FromMinutes(accessMinutes));
         options.SetRefreshTokenLifetime(TimeSpan.FromMinutes(refreshMinutes));
         options.SetAuthorizationCodeLifetime(TimeSpan.FromMinutes(codeMinutes));
+
+        options.AddEventHandler<OpenIddictServerEvents.ValidateTokenRequestContext>(handler =>
+            handler.SetOrder(OpenIddictServerHandlers.Exchange.ValidateAuthentication.Descriptor.Order + 1_000)
+                .UseScopedHandler<ValidateIdleSessionTokenRequestHandler>());
+
+        options.AddEventHandler<OpenIddictServerEvents.ProcessSignInContext>(handler =>
+            handler.SetOrder(OpenIddictServerHandlers.PrepareRefreshTokenPrincipal.Descriptor.Order + 1_000)
+                .UseScopedHandler<AttachIdleSessionRefreshTokenHandler>());
 
         // 配置加密和签名证书（默认使用 certs/dev-auth-cert.pfx）
         var useDevelopmentKeys = openIddictCertificateSection.GetValue<bool?>("UseDevelopmentKeys") ?? false;

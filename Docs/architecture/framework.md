@@ -137,6 +137,7 @@ PostgreSQL / SQLite
   - 依赖 `Radish.Core` 接口与 `Radish.Repository` 实现，通过 `IUnitOfWork` 控制 SQLSugar 上下文。
   - 对外仅返回 DTO/Vo，禁止把 `Radish.Model` 中的实体直接暴露给 Controller；实体需在此层通过 AutoMapper（一律在 `Radish.Extension/AutoMapperSetup` 注册）转换为视图模型。
   - 当单个服务承担同一聚合下的多段复杂逻辑时，可在服务目录下继续按聚合建子目录，并使用 `partial class` 按职责拆分实现文件；例如论坛帖子服务可落在 `Radish.Service/Posts/PostService*.cs`，分别承载查询、发布、编辑、互动逻辑。
+  - 业务运营参数统一通过 `ISystemSettingProvider` 读取代码默认值叠加 Console 覆盖值后的强类型设置；部署配置、密钥和启动前配置仍走 `appsettings` / 环境变量，不进入系统设置中心。
 - `Radish.Core`
   - 聚合根（Post、Comment、Category、UserProfile、PointLedger、ShopItem 等）、值对象、领域事件。
   - 定义仓储接口与领域服务，例如 `IPostRepository`, `IPointPolicyService`。
@@ -218,7 +219,7 @@ graph LR
 - 迁移策略：
   - 开发：通过 `Radish.DbMigrate` 执行 `doctor / init / apply`，在开发库内走 `CreateDatabase()` + `InitTables()` 自动建表 / 补列。
   - 测试 / 生产：先以 `DbMigrate init` 同步基线库，再生成并审核版本化差异 SQL（建议 `Deploy/sql/*.sql`），上线前显式执行。
-- 数据初始化：`Radish.DbMigrate/InitialDataSeeder.cs` 负责创建默认分类、管理员、积分规则及其他基础种子数据。
+- 数据初始化：`Radish.DbMigrate/InitialDataSeeder.cs` 负责创建角色、租户、部门、权限、Console 授权、论坛 / 商城 / 等级等系统基础数据；`system / admin / test` 开发默认账号、默认密码、默认头像和用户角色绑定受 `Seed:DeveloperDefaultsEnabled` 与 `RadishDeployment:Stage=local/test` 共同约束，测试 / 生产默认不创建。
 - PostgreSQL 特性利用：JSONB 列（存储自定义配置）、`tsvector` 搜索、行级锁（积分/库存扣减）。
 
 ## 前端架构与规范

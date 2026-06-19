@@ -17,6 +17,7 @@ import type {
   PublicForumListRoute,
   PublicListSort,
 } from '../forumRouteState';
+import { buildPublicForumPath } from '../forumRouteState';
 import { usePublicReplaceRouteSync } from '../usePublicReplaceRouteSync';
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import {
@@ -29,6 +30,7 @@ import {
   formatCategoryPostCount,
   getForumPostRouteIdentifier,
   listGuideDefinition,
+  resolvePublicProfileUserId,
 } from './publicForumUtils';
 import {
   resolvePublicForumCategoryLoadState,
@@ -347,7 +349,7 @@ export const PublicForumList = ({
     <section className={`${styles.sectionCard} ${styles.listSectionCard}`}>
       <div className={styles.sectionHeader}>
         <div className={styles.sectionHeading}>
-          <p className={styles.kicker}>Phase 2-2</p>
+          <p className={styles.kicker}>{t('forum.public.guide.label')}</p>
           <h1 className={styles.pageTitle}>{activeTitle}</h1>
           <p className={styles.pageIntro}>{activeIntro}</p>
           {activeCategory && (
@@ -542,7 +544,9 @@ export const PublicForumList = ({
                 post={post}
                 displayTimeZone={displayTimeZone}
                 onClick={() => onOpenPost(getForumPostRouteIdentifier(post))}
+                href={buildPublicForumPath({ kind: 'detail', postId: getForumPostRouteIdentifier(post) })}
                 variant="publicCompact"
+                resolveAuthorProfileId={resolvePublicProfileUserId}
                 onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
                 onTagClick={(_, tagSlug) => onOpenTag?.(tagSlug)}
                 onQuestionClick={onOpenQuestion}
