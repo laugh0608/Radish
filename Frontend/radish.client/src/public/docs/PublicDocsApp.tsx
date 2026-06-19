@@ -197,6 +197,29 @@ function toSourceText(t: (key: string, options?: Record<string, unknown>) => str
   }
 }
 
+function normalizeMarkdownHeadingText(value: string): string {
+  return value.replace(/[ \t]+#+[ \t]*$/, '').trim();
+}
+
+function stripDuplicateLeadingMarkdownTitle(markdown: string, title: string): string {
+  const normalizedTitle = normalizeMarkdownHeadingText(title);
+  if (!markdown || !normalizedTitle) {
+    return markdown;
+  }
+
+  const leadingTitleMatch = markdown.match(/^(\uFEFF?(?:[ \t]*(?:\r?\n))*[ \t]{0,3})#(?!#)[ \t]+([^\r\n]*?)(?:\r?\n|$)/);
+  if (!leadingTitleMatch) {
+    return markdown;
+  }
+
+  const leadingTitle = normalizeMarkdownHeadingText(leadingTitleMatch[2] ?? '');
+  if (leadingTitle !== normalizedTitle) {
+    return markdown;
+  }
+
+  return markdown.slice(leadingTitleMatch[0].length).replace(/^[ \t]*(?:\r?\n)/, '');
+}
+
 function buildBrowseRouteKey(route: PublicDocsBrowseRoute): string {
   return buildPublicDocsPath(route);
 }
@@ -1081,6 +1104,17 @@ const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigat
     slug: documentDetail?.voSlug || route.slug,
     anchor: route.anchor
   });
+  const articleMarkdownContent = useMemo(
+    () => stripDuplicateLeadingMarkdownTitle(
+      documentDetail?.voMarkdownContent || '',
+      documentDetail?.voTitle || ''
+    ),
+    [documentDetail?.voMarkdownContent, documentDetail?.voTitle]
+  );
+  const resolveArticleLinkHref = useCallback(
+    (href: string) => rewritePublicDocsHref(href, getCurrentOrigin(), currentDocsPath),
+    [currentDocsPath]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -1155,26 +1189,6 @@ const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigat
 
     onNavigate(canonicalRoute, { replace: true, preserveSourceState: true });
   }, [documentDetail?.voSlug, onNavigate, route]);
-
-  useEffect(() => {
-    const container = articleBodyRef.current;
-    if (!container) {
-      return;
-    }
-
-    const currentOrigin = getCurrentOrigin();
-    container.querySelectorAll<HTMLAnchorElement>('a[href]').forEach((anchor) => {
-      const href = anchor.getAttribute('href') ?? anchor.href;
-      if (!href) {
-        return;
-      }
-
-      const rewrittenHref = rewritePublicDocsHref(href, currentOrigin, currentDocsPath);
-      if (rewrittenHref) {
-        anchor.setAttribute('href', rewrittenHref);
-      }
-    });
-  }, [currentDocsPath, documentDetail?.voId, documentDetail?.voMarkdownContent]);
 
   useEffect(() => {
     if (!route.anchor || !documentDetail || typeof globalThis.document === 'undefined') {
@@ -1345,7 +1359,11 @@ const PublicDocsDetail = ({ route, displayTimeZone, backLabel, onBack, onNavigat
               </div>
 
               <div ref={articleBodyRef} className={styles.articleBody} onClick={handleMarkdownLinkClick}>
-                <MarkdownRenderer content={documentDetail.voMarkdownContent} className={styles.markdownContent} />
+                <MarkdownRenderer
+                  content={articleMarkdownContent}
+                  className={styles.markdownContent}
+                  resolveLinkHref={resolveArticleLinkHref}
+                />
               </div>
             </article>
 
