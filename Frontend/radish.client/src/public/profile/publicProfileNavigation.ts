@@ -14,24 +14,24 @@ interface PublicProfileForumTarget {
   commentId?: string;
 }
 
-const normalizeRouteId = (value: string | null | undefined) => {
+const normalizePostPublicId = (value: string | null | undefined) => {
   if (typeof value !== 'string') {
     return null;
   }
 
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
+  const normalized = value.trim().toLowerCase();
+  return /^pst_[a-f0-9]{32}$/.test(normalized) ? normalized : null;
 };
 
 export const resolvePublicProfilePostForumTarget = (
   post: PublicProfilePostForumTargetSource,
 ): PublicProfileForumTarget => ({
-  postId: normalizeRouteId(post.voPublicId) ?? String(post.voId),
+  postId: normalizePostPublicId(post.voPublicId) ?? String(post.voId),
 });
 
 export const resolvePublicProfileCommentForumTarget = (
   comment: PublicProfileCommentForumTargetSource,
 ): PublicProfileForumTarget => ({
-  postId: normalizeRouteId(comment.voPostPublicId) ?? String(comment.voPostId),
+  postId: normalizePostPublicId(comment.voPostPublicId) ?? String(comment.voPostId),
   commentId: String(comment.voId),
 });
