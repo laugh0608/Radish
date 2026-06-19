@@ -5,5 +5,5 @@ export function buildPetPath(): string {
 }
 
 export function isPetPathname(pathname: string): boolean {
-  return pathname === PET_ENTRY_PATH;
+  return pathname === PET_ENTRY_PATH || pathname === `${PET_ENTRY_PATH}/`;
 }

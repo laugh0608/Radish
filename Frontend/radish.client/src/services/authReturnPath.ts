@@ -153,6 +153,10 @@ function normalizeCircleReturnPath(url: URL): string | null {
     }
   }
 
+  if (url.searchParams.getAll('tab').length > 1 || url.searchParams.getAll('page').length > 1) {
+    return null;
+  }
+
   const tab = url.searchParams.get('tab');
   if (tab) {
     if (!CIRCLE_RETURN_TABS.has(tab)) {

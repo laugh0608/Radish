@@ -98,7 +98,7 @@ test('isMessagesPathname 应单独识别登录态消息复访入口', () => {
 
 test('isPetPathname 应单独识别登录态电子宠物入口', () => {
   assert.equal(isPetPathname('/pet'), true);
-  assert.equal(isPetPathname('/pet/'), false);
+  assert.equal(isPetPathname('/pet/'), true);
   assert.equal(isPetPathname('/discover'), false);
   assert.equal(isPetPathname('/desktop'), false);
 });

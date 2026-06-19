@@ -73,6 +73,8 @@ test('normalizeAuthReturnPath 只接受 desktop 深链、circle/me/messages/noti
     '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?commentId=2042219067430928385&intent=quickReply',
   );
   assert.equal(normalizeAuthReturnPath('/circle?tab=hot'), null);
+  assert.equal(normalizeAuthReturnPath('/circle?tab=following&tab=followers'), null);
+  assert.equal(normalizeAuthReturnPath('/circle?page=2&page=3'), null);
   assert.equal(normalizeAuthReturnPath('/circle?from=discover'), null);
   assert.equal(normalizeAuthReturnPath('/circle#feed'), null);
   assert.equal(normalizeAuthReturnPath('/notifications?filter=unread'), null);
