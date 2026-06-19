@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import {
@@ -22,6 +22,8 @@ import { PublicShellHeader } from '../components/PublicShellHeader';
 import { buildPublicShareUrl } from '../publicHead';
 import { resolvePublicUserRouteIdentifier } from '../publicId';
 import { usePublicShareLink } from '../hooks/usePublicShareLink';
+import { buildPublicProfilePath } from '../profileRouteState';
+import { buildPublicShopPath } from '../shopRouteState';
 import { resolveMediaUrl } from '@/utils/media';
 import styles from './PublicLeaderboardApp.module.css';
 
@@ -264,6 +266,15 @@ function resolveLeaderboardUserProfileIdentifier(item: UnifiedLeaderboardItemDat
   }) ?? '';
 }
 
+function shouldHandlePublicLeaderboardLink(event: MouseEvent<HTMLAnchorElement>): boolean {
+  return !event.defaultPrevented
+    && event.button === 0
+    && !event.metaKey
+    && !event.ctrlKey
+    && !event.shiftKey
+    && !event.altKey;
+}
+
 export const PublicLeaderboardApp = ({
   route,
   onNavigate,
@@ -469,21 +480,22 @@ export const PublicLeaderboardApp = ({
     });
   };
 
-  const handleOpenUserProfile = (item: UnifiedLeaderboardItemData) => {
-    const profileIdentifier = resolveLeaderboardUserProfileIdentifier(item);
-    if (!profileIdentifier) {
+  const handleUserProfileLinkClick = (event: MouseEvent<HTMLAnchorElement>, profileIdentifier: string) => {
+    if (!onNavigateToProfile || !shouldHandlePublicLeaderboardLink(event)) {
       return;
     }
 
-    onNavigateToProfile?.(profileIdentifier);
+    event.preventDefault();
+    onNavigateToProfile(profileIdentifier);
   };
 
-  const handleOpenProductDetail = (item: UnifiedLeaderboardItemData) => {
-    if (!item.voProductId) {
+  const handleProductDetailLinkClick = (event: MouseEvent<HTMLAnchorElement>, productId: string) => {
+    if (!onNavigateToShopProduct || !shouldHandlePublicLeaderboardLink(event)) {
       return;
     }
 
-    onNavigateToShopProduct?.(String(item.voProductId));
+    event.preventDefault();
+    onNavigateToShopProduct(productId);
   };
 
   return (
@@ -675,14 +687,11 @@ export const PublicLeaderboardApp = ({
                     const displayHandle = item.voUserDisplayHandle?.trim()
                       || (item.voUserPublicIndex ? `${userName}#${String(item.voUserPublicIndex).trim()}` : null);
                     const avatarUrl = resolveMediaUrl(item.voAvatarUrl);
-                    return (
-                      <button
-                        key={`${item.voLeaderboardType}-${profileIdentifier || 'unknown'}-${item.voRank}`}
-                        type="button"
-                        className={`${styles.listItem} ${styles.userListItem} ${item.voIsCurrentUser ? styles.listItemCurrentUser : ''}`}
-                        onClick={() => handleOpenUserProfile(item)}
-                        disabled={!profileIdentifier}
-                      >
+                    const profileHref = profileIdentifier
+                      ? buildPublicProfilePath({ kind: 'detail', userId: profileIdentifier, tab: 'posts', page: 1 })
+                      : null;
+                    const userItemContent = (
+                      <>
                         <div className={styles.userHeaderRow}>
                           <div className={styles.userIdentityCluster}>
                             <div className={styles.rankBadge} data-rank={item.voRank <= 3 ? item.voRank : undefined}>
@@ -726,20 +735,35 @@ export const PublicLeaderboardApp = ({
                             {Number(item.voPrimaryValue || 0).toLocaleString()} {item.voPrimaryLabel || activeTypeConfig.voPrimaryLabel}
                           </span>
                         </div>
+                      </>
+                    );
+
+                    return profileHref ? (
+                      <a
+                        key={`${item.voLeaderboardType}-${profileIdentifier}-${item.voRank}`}
+                        className={`${styles.listItem} ${styles.userListItem} ${item.voIsCurrentUser ? styles.listItemCurrentUser : ''}`}
+                        href={profileHref}
+                        onClick={(event) => handleUserProfileLinkClick(event, profileIdentifier)}
+                      >
+                        {userItemContent}
+                      </a>
+                    ) : (
+                      <button
+                        key={`${item.voLeaderboardType}-${profileIdentifier || 'unknown'}-${item.voRank}`}
+                        type="button"
+                        className={`${styles.listItem} ${styles.userListItem} ${item.voIsCurrentUser ? styles.listItemCurrentUser : ''}`}
+                        disabled
+                      >
+                        {userItemContent}
                       </button>
                     );
                   })()
                 ) : (() => {
                   const productIconUrl = resolveMediaUrl(item.voProductIcon);
-                  const canOpenProductDetail = !!item.voProductId && !!onNavigateToShopProduct;
-                  return (
-                    <button
-                      key={`${item.voLeaderboardType}-${String(item.voProductId)}-${item.voRank}`}
-                      type="button"
-                      className={`${styles.listItem} ${styles.productListItem}`}
-                      onClick={() => handleOpenProductDetail(item)}
-                      disabled={!canOpenProductDetail}
-                    >
+                  const productId = item.voProductId ? String(item.voProductId) : '';
+                  const productHref = productId ? buildPublicShopPath({ kind: 'detail', productId }) : null;
+                  const productItemContent = (
+                    <>
                       <div className={styles.rankBadge} data-rank={item.voRank <= 3 ? item.voRank : undefined}>
                         {item.voRank <= 3 ? (
                           <span className={styles.rankMedal}>
@@ -779,6 +803,26 @@ export const PublicLeaderboardApp = ({
                         <span className={styles.metricValue}>{Number(item.voPrimaryValue || 0).toLocaleString()}</span>
                         <span className={styles.metricLabel}>{item.voPrimaryLabel || activeTypeConfig.voPrimaryLabel}</span>
                       </div>
+                    </>
+                  );
+
+                  return productHref ? (
+                    <a
+                      key={`${item.voLeaderboardType}-${productId}-${item.voRank}`}
+                      className={`${styles.listItem} ${styles.productListItem}`}
+                      href={productHref}
+                      onClick={(event) => handleProductDetailLinkClick(event, productId)}
+                    >
+                      {productItemContent}
+                    </a>
+                  ) : (
+                    <button
+                      key={`${item.voLeaderboardType}-${String(item.voProductId)}-${item.voRank}`}
+                      type="button"
+                      className={`${styles.listItem} ${styles.productListItem}`}
+                      disabled
+                    >
+                      {productItemContent}
                     </button>
                   );
                 })())}

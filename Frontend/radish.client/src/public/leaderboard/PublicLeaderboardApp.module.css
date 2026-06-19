@@ -484,6 +484,7 @@
   color: inherit;
   font: inherit;
   text-align: left;
+  text-decoration: none;
   transition: all var(--theme-transition-standard);
   min-width: 0;
 }

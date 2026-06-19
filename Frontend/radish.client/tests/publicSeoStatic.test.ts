@@ -100,3 +100,17 @@ test('登录态私域入口生成公开链接前应复用 PublicId 校验', () =
   assert.match(leaderboardSource, /resolvePublicUserRouteIdentifier/);
   assert.doesNotMatch(leaderboardSource, /voUserPublicId\?\.trim\(\)/);
 });
+
+test('公开榜单条目应提供公开详情链接并保留壳层导航拦截', () => {
+  const source = readFileSync(resolve(clientRoot, 'src/public/leaderboard/PublicLeaderboardApp.tsx'), 'utf8');
+
+  assert.match(source, /buildPublicProfilePath\(\{ kind: 'detail', userId: profileIdentifier, tab: 'posts', page: 1 \}\)/);
+  assert.match(source, /buildPublicShopPath\(\{ kind: 'detail', productId \}\)/);
+  assert.match(source, /href=\{profileHref\}/);
+  assert.match(source, /href=\{productHref\}/);
+  assert.match(source, /handleUserProfileLinkClick\(event, profileIdentifier\)/);
+  assert.match(source, /handleProductDetailLinkClick\(event, productId\)/);
+  assert.match(source, /event\.preventDefault\(\);/);
+  assert.doesNotMatch(source, /onClick=\{\(\) => handleOpenUserProfile\(item\)\}/);
+  assert.doesNotMatch(source, /onClick=\{\(\) => handleOpenProductDetail\(item\)\}/);
+});
