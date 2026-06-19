@@ -256,6 +256,10 @@ function buildAvatarText(name: string | undefined, fallback: string): string {
   return source.charAt(0).toUpperCase();
 }
 
+function resolveLeaderboardUserProfileIdentifier(item: UnifiedLeaderboardItemData): string {
+  return item.voUserPublicId?.trim() || (item.voUserId ? String(item.voUserId) : '');
+}
+
 export const PublicLeaderboardApp = ({
   route,
   onNavigate,
@@ -462,7 +466,7 @@ export const PublicLeaderboardApp = ({
   };
 
   const handleOpenUserProfile = (item: UnifiedLeaderboardItemData) => {
-    const profileIdentifier = item.voUserPublicId?.trim() || (item.voUserId ? String(item.voUserId) : '');
+    const profileIdentifier = resolveLeaderboardUserProfileIdentifier(item);
     if (!profileIdentifier) {
       return;
     }
@@ -660,19 +664,20 @@ export const PublicLeaderboardApp = ({
               <div className={styles.list}>
                 {items.map((item) => item.voCategory === LeaderboardCategory.User ? (
                   (() => {
+                    const profileIdentifier = resolveLeaderboardUserProfileIdentifier(item);
                     const userName = item.voUserDisplayName?.trim()
                       || item.voUserName?.trim()
-                      || t('common.userFallback', { id: item.voUserId || '?' });
+                      || t('common.userFallback', { id: profileIdentifier || '?' });
                     const displayHandle = item.voUserDisplayHandle?.trim()
                       || (item.voUserPublicIndex ? `${userName}#${String(item.voUserPublicIndex).trim()}` : null);
                     const avatarUrl = resolveMediaUrl(item.voAvatarUrl);
                     return (
                       <button
-                        key={`${item.voLeaderboardType}-${String(item.voUserId)}-${item.voRank}`}
+                        key={`${item.voLeaderboardType}-${profileIdentifier || 'unknown'}-${item.voRank}`}
                         type="button"
                         className={`${styles.listItem} ${styles.userListItem} ${item.voIsCurrentUser ? styles.listItemCurrentUser : ''}`}
                         onClick={() => handleOpenUserProfile(item)}
-                        disabled={!item.voUserId}
+                        disabled={!profileIdentifier}
                       >
                         <div className={styles.userHeaderRow}>
                           <div className={styles.userIdentityCluster}>
