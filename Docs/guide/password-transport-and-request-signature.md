@@ -1,8 +1,10 @@
 # 密码传输与请求签名临时评审
 
-> 状态：`临时专题 / 待后续归并`
+> 状态：`临时专题 / 前端敏感日志治理已完成，后续加强项待评审`
 >
 > 记录日期：`2026-06-18`（Asia/Shanghai）
+>
+> 更新日期：`2026-06-19`（Asia/Shanghai）
 >
 > 适用范围：登录密码、注册密码、支付口令、商城购买、萝卜币转账，以及未来开放 API / 服务端到服务端调用的请求签名边界。
 
@@ -18,9 +20,9 @@
 3. 数据库存储不是明文。
    - 登录密码使用 `PasswordHasher` 的 Argon2id 哈希。
    - 支付口令存储 `PasswordHash` + `Salt`，不是明文；但当前实现是 `SHA256(salt + password)`，对 6 位数字口令的离线抗爆破能力弱于 Argon2id。
-4. 审计日志已有基础脱敏，但仍需补前端日志治理。
+4. 审计日志已有基础脱敏，前端敏感日志治理已完成首批收口。
    - API 审计中顶层字段包含 `password / pwd / secret / token / apikey / api_key` 时会整段请求体脱敏。
-   - `radish-pit` 转账表单当前存在把 `TransferFormData` 写入 debug 日志的路径，存在泄露 `paymentPassword` 的风险；该项可作为低风险维护修复优先处理。
+   - `a3d7df4f` 已在 `radish.client`、`radish.console` 与 `@radish/http` 统一脱敏敏感字段日志，覆盖 `paymentPassword`、登录 / 重置密码字段、token、secret 和 api key 等常见对象日志路径。
 
 ## 浏览器前端不做通用 sign
 
@@ -45,10 +47,10 @@
 
 ## 短期治理建议
 
-1. 前端敏感日志脱敏。
-   - 移除或脱敏包含 `paymentPassword`、`password`、`currentPassword`、`newPassword`、`confirmPassword` 的日志参数。
-   - 后续可在统一 logger 增加递归敏感字段清理，避免新代码误传对象。
-2. 支付口令哈希升级。
+1. 前端敏感日志脱敏（已完成）。
+   - 已统一脱敏包含 `paymentPassword`、`password`、`currentPassword`、`newPassword`、`confirmPassword` 的日志参数。
+   - 后续只在新增 logger 或新命中路径时按同一脱敏工具维护，不再作为下一批默认开发项。
+2. 支付口令哈希升级（待评审）。
    - 后续将支付口令迁移到 Argon2id 或等价慢哈希。
    - 利用 `PasscodeVersion` 做兼容升级：旧版本验证通过后写回新版本哈希。
 3. 支付 / 转账幂等与重放边界。
@@ -60,7 +62,7 @@
 
 ## 前端敏感日志治理口径
 
-本批只处理统一 logger 的出参脱敏，不改变接口协议、请求体结构、密码存储、支付口令验证或业务幂等。
+本批只处理统一 logger 的出参脱敏，不改变接口协议、请求体结构、密码存储、支付口令验证或业务幂等。该批已在 `a3d7df4f` 完成，后续进入维护线。
 
 - 覆盖范围：`radish.client` 与 `radish.console` 的统一 `log.debug / info / warn / error / table`，以及 `@radish/http` 内部直接 `console.error` 的错误对象输出。
 - 脱敏字段：`paymentPassword`、`paymentPasscode`、`password`、`pwd`、`passcode`、`currentPassword`、`newPassword`、`confirmPassword`、`oldPassword`、`accessToken`、`refreshToken`、`idToken`、`token`、`secret`、`apiKey`、`api_key`。
