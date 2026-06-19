@@ -8,14 +8,6 @@ import type { StickerPickerGroup } from '@radish/ui/sticker-picker';
 import { CommentNode } from './CommentNode';
 import styles from './CommentTree.module.css';
 
-const isSameLongId = (left: LongId | null | undefined, right: LongId | null | undefined): boolean => {
-  if (left == null || right == null) {
-    return false;
-  }
-
-  return String(left) === String(right);
-};
-
 interface CommentTreeProps {
   comments: CommentNodeType[];
   loading?: boolean;

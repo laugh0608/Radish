@@ -134,7 +134,7 @@ public class PublicSitemapServiceTest
 
         var service = CreateService(cache, postRepository, wikiDocumentRepository, productRepository);
 
-        var xml = await service.GetSectionXmlAsync("forum", 1, "https://example.test");
+        var xml = await service.GetSectionXmlAsync("forum", 1, "https://query-fails.example.test");
 
         Assert.Contains("<urlset", xml);
         Assert.DoesNotContain("<url>", xml);

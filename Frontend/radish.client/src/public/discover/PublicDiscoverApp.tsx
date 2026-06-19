@@ -24,12 +24,12 @@ import { buildPublicShareUrl } from '../publicHead';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { usePublicShareLink } from '../hooks/usePublicShareLink';
 import {
-  PublicDiscoverFeed,
   buildDocumentSummary,
   buildProductSummary,
   formatDocumentMeta,
   isRecentDocument,
-} from './PublicDiscoverFeed';
+} from './publicDiscoverFeedUtils';
+import { PublicDiscoverFeed } from './PublicDiscoverFeed';
 import styles from './PublicDiscoverApp.module.css';
 
 type DiscoverRouteKey = 'forum' | 'docs' | 'leaderboard' | 'shop';
