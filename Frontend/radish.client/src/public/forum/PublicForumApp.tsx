@@ -5,6 +5,7 @@ import type {
   PublicForumBrowseRoute,
   PublicForumRoute,
 } from '../forumRouteState';
+import { buildPublicForumPath } from '../forumRouteState';
 import {
   getPublicDetailBackLabelKey,
   type PublicDetailBackMode,
@@ -27,6 +28,7 @@ interface PublicForumAppProps {
   routeSourceState?: PublicRouteSourceState | null;
   detailBackAction?: {
     mode: PublicDetailBackMode;
+    href?: string;
     onBack: () => void;
   } | null;
   onNavigate: (route: PublicForumRoute, options?: { replace?: boolean }) => void;
@@ -64,6 +66,7 @@ export const PublicForumApp = ({
   ), [route]);
   const detailBackLabelKey = getPublicDetailBackLabelKey(detailBackAction?.mode);
   const detailBackLabel = detailBackLabelKey ? t(detailBackLabelKey) : t('public.shell.backToForum');
+  const detailBackHref = detailBackAction?.href ?? buildPublicForumPath(fallbackBrowseRoute);
   const handleForumDetailBack = detailBackAction?.onBack ?? (() => onNavigate(fallbackBrowseRoute));
 
   useEffect(() => {
@@ -139,6 +142,7 @@ export const PublicForumApp = ({
             sourceState={routeSourceState}
             displayTimeZone={displayTimeZone}
             backLabel={detailBackLabel}
+            backHref={detailBackHref}
             onBack={handleForumDetailBack}
             onOpenAuthorProfile={onNavigateToProfile}
             onOpenTag={onNavigateToTag}

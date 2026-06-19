@@ -130,6 +130,37 @@ test('公开论坛详情加载后应刷新详情 head 并复用同一个 canonic
   assert.match(source, /canonicalPath: postHead\.canonicalPath/);
 });
 
+test('公开论坛浏览入口应提供公开链接并保留壳层导航拦截', () => {
+  const linksSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumLinks.tsx'), 'utf8');
+  const handlersSource = readFileSync(resolve(clientRoot, 'src/public/forum/publicForumLinkHandlers.ts'), 'utf8');
+  const statusSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicStatusCard.tsx'), 'utf8');
+  const appSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumApp.tsx'), 'utf8');
+  const detailSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumDetail.tsx'), 'utf8');
+  const listSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumList.tsx'), 'utf8');
+  const searchSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumSearch.tsx'), 'utf8');
+  const tagSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumTag.tsx'), 'utf8');
+  const typeSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumTypeFeed.tsx'), 'utf8');
+
+  assert.match(linksSource, /href=\{buildPublicForumPath\(route\)\}/);
+  assert.match(linksSource, /handlePublicForumLinkClick\(event, onNavigate\)/);
+  assert.match(handlersSource, /event\.button === 0/);
+  assert.match(statusSource, /href=\{primaryAction\.href\}/);
+  assert.match(statusSource, /href=\{secondaryAction\.href\}/);
+  assert.match(appSource, /const detailBackHref = detailBackAction\?\.href \?\? buildPublicForumPath\(fallbackBrowseRoute\);/);
+  assert.match(detailSource, /href=\{backHref\}/);
+  assert.match(listSource, /PublicForumPagination/);
+  assert.match(listSource, /route=\{createDefaultSearchRoute\(\)\}/);
+  assert.match(listSource, /route=\{buildListRoute\(1, selectedCategoryId, 'hottest'\)\}/);
+  assert.match(listSource, /route=\{buildListRoute\(1, nextCategoryId\)\}/);
+  assert.match(searchSource, /route=\{backToListRoute\}/);
+  assert.match(searchSource, /route=\{defaultSearchRoute\}/);
+  assert.match(searchSource, /route=\{buildSearchRoute\(1, sortBy, value\)\}/);
+  assert.match(tagSource, /route=\{searchTagRoute\}/);
+  assert.match(tagSource, /href: buildPublicForumPath\(backToListRoute\)/);
+  assert.match(typeSource, /route=\{buildTypeRoute\(1, option\.value\)\}/);
+  assert.match(typeSource, /PublicForumPagination/);
+});
+
 test('登录态私域入口生成公开链接前应复用 PublicId 校验', () => {
   const circleSource = readFileSync(resolve(clientRoot, 'src/circle/CircleApp.tsx'), 'utf8');
   const meSource = readFileSync(resolve(clientRoot, 'src/me/MeApp.tsx'), 'utf8');

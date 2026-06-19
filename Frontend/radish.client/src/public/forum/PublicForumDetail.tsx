@@ -59,6 +59,7 @@ import {
   mergeCommentChildren,
   resolvePublicProfileUserId,
 } from './publicForumUtils';
+import { handlePublicForumLinkClick } from './publicForumLinkHandlers';
 import styles from './PublicForumApp.module.css';
 
 type RootCommentSort = 'newest' | 'hottest' | null;
@@ -83,6 +84,7 @@ interface PublicForumDetailProps {
   sourceState?: PublicRouteSourceState | null;
   displayTimeZone: string;
   backLabel: string;
+  backHref: string;
   onBack: () => void;
   onOpenAuthorProfile?: (userId: string) => void;
   onOpenTag?: (tagSlug: string) => void;
@@ -98,6 +100,7 @@ export const PublicForumDetail = ({
   sourceState,
   displayTimeZone,
   backLabel,
+  backHref,
   onBack,
   onOpenAuthorProfile,
   onOpenTag,
@@ -982,10 +985,14 @@ export const PublicForumDetail = ({
     <section className={`${styles.sectionCard} ${styles.detailSectionCard}`}>
       <div className={styles.detailTopbar}>
         <div className={styles.detailTopbarActions}>
-          <button type="button" className={styles.backButton} onClick={onBack}>
+          <a
+            className={styles.backButton}
+            href={backHref}
+            onClick={(event) => handlePublicForumLinkClick(event, onBack)}
+          >
             <Icon icon="mdi:arrow-left" size={18} />
             <span>{backLabel}</span>
-          </button>
+          </a>
           <button type="button" className={styles.secondaryButton} onClick={() => void copyShareLink()} disabled={shareBusy}>
             <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={18} />
             <span>{shareBusy ? t('forum.public.shareSubmitting') : t('forum.public.shareAction')}</span>
