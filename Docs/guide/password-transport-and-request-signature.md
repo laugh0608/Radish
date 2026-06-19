@@ -1,6 +1,6 @@
 # 密码传输与请求签名临时评审
 
-> 状态：`临时专题 / 前端敏感日志治理已完成，后续加强项待评审`
+> 状态：`临时专题 / 前端敏感日志与支付口令哈希升级已完成，后续加强项待评审`
 >
 > 记录日期：`2026-06-18`（Asia/Shanghai）
 >
@@ -19,7 +19,7 @@
    - 生产不应公开暴露 `http://localhost:5100`、`http://localhost:5200` 这类直连 HTTP 入口。
 3. 数据库存储不是明文。
    - 登录密码使用 `PasswordHasher` 的 Argon2id 哈希。
-   - 支付口令存储 `PasswordHash` + `Salt`，不是明文；但当前实现是 `SHA256(salt + password)`，对 6 位数字口令的离线抗爆破能力弱于 Argon2id。
+   - 支付口令新写入版本使用 `PasscodeVersion = 2` 与 Argon2id 哈希；历史 `PasscodeVersion = 1` 的 `SHA256(salt + password)` 记录在验证成功后自动写回 v2，`PasscodeVersion = null` 等更旧记录仍要求用户重置。
 4. 审计日志已有基础脱敏，前端敏感日志治理已完成首批收口。
    - API 审计中顶层字段包含 `password / pwd / secret / token / apikey / api_key` 时会整段请求体脱敏。
    - `a3d7df4f` 已在 `radish.client`、`radish.console` 与 `@radish/http` 统一脱敏敏感字段日志，覆盖 `paymentPassword`、登录 / 重置密码字段、token、secret 和 api key 等常见对象日志路径。
@@ -50,10 +50,10 @@
 1. 前端敏感日志脱敏（已完成）。
    - 已统一脱敏包含 `paymentPassword`、`password`、`currentPassword`、`newPassword`、`confirmPassword` 的日志参数。
    - 后续只在新增 logger 或新命中路径时按同一脱敏工具维护，不再作为下一批默认开发项。
-2. 支付口令哈希升级（待评审）。
-   - 后续将支付口令迁移到 Argon2id 或等价慢哈希。
-   - 利用 `PasscodeVersion` 做兼容升级：旧版本验证通过后写回新版本哈希。
-3. 支付 / 转账幂等与重放边界。
+2. 支付口令哈希升级（已完成首批）。
+   - 新设置 / 修改支付口令直接写入 `PasscodeVersion = 2` 的 Argon2id 哈希。
+   - `PasscodeVersion = 1` 记录验证成功后自动升级到 v2；验证失败仍走失败计数和锁定规则，不升级。
+3. 支付 / 转账幂等与重放边界（待评审）。
    - 商城购买、萝卜币转账等写操作后续可增加 `idempotencyKey`、业务上下文绑定和短窗口重复提交保护。
    - 该能力优先解决重复点击、网络重试和请求重放带来的业务一致性问题，不替代支付口令验证。
 4. 生产入口收口。
@@ -69,6 +69,16 @@
 - 匹配规则：字段名大小写不敏感，并忽略 `_`、`-` 等分隔符，例如 `new_password` 与 `newPassword` 等价。
 - 处理方式：递归复制普通对象和数组，敏感字段值替换为 `[REDACTED]`；循环引用替换为 `[Circular]`；`Error` 对象保留 `name / message / stack` 并脱敏其可枚举附加字段。
 - 验证入口：`radish.client`、`radish.console` 与 `@radish/http` 各自补敏感日志 node 测试；开发中优先跑对应 workspace 测试、类型检查、`git diff --check` 和变更文件仓库卫生检查。
+
+## 支付口令哈希升级口径
+
+本批只升级支付口令存储 / 验证哈希版本，不改变接口协议、请求体字段、商城购买流程、萝卜币转账业务语义或前端输入规则。
+
+- 版本口径：`PasscodeVersion = 2` 为当前 Argon2id 版本；`PasscodeVersion = 1` 为可验证并自动升级的 SHA256 旧版本；`PasscodeVersion = null` 或未知版本仍按旧口令废弃处理，提示用户重置。
+- 新写入：设置支付口令、重置旧口令和修改支付口令均写入 v2，`PasswordHash` 保存 Argon2id 编码串，`Salt` 保留为空字符串以兼容现有表结构。
+- 自动升级：商城购买、萝卜币转账或独立验证路径中，v1 口令验证成功后立即写回 v2；验证失败不升级，仍累计失败次数并按既有锁定规则处理。
+- 验证入口：`PaymentPasswordServiceTest` 覆盖 v2 新写入、v2 验证成功、v1 正确验证后自动升级、v1 错误不升级和 null 旧口令重置提示。
+- 不做范围：不启动字段级加密、浏览器通用 `sign`、支付 / 转账幂等、安全会话、完整钱包、经济扩展或资产风控扩面。
 
 ## 未来可评审的加强项
 

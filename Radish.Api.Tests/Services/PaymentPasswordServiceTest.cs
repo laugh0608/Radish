@@ -1,6 +1,7 @@
 using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Radish.Common.HelpTool;
 using Radish.IRepository;
 using Radish.IService;
 using Radish.Model.Models;
@@ -8,6 +9,8 @@ using Radish.Model.ViewModels;
 using Radish.Service;
 using Radish.Shared.Security;
 using System;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -59,7 +62,8 @@ public class PaymentPasswordServiceTest
         Assert.Equal(userId, savedPasscode!.UserId);
         Assert.Equal(5, savedPasscode.StrengthLevel);
         Assert.NotEmpty(savedPasscode.PasswordHash);
-        Assert.NotEmpty(savedPasscode.Salt);
+        Assert.Empty(savedPasscode.Salt);
+        Assert.True(PasswordHasher.VerifyPassword("274958", savedPasscode.PasswordHash));
         Assert.True(savedPasscode.IsEnabled);
         Assert.Equal(0, savedPasscode.FailedAttempts);
         Assert.Equal(PaymentPasscodeRules.CurrentPasscodeVersion, savedPasscode.PasscodeVersion);
@@ -103,7 +107,8 @@ public class PaymentPasswordServiceTest
         Assert.NotNull(updatedPasscode);
         Assert.Equal(PaymentPasscodeRules.CurrentPasscodeVersion, updatedPasscode!.PasscodeVersion);
         Assert.NotEqual("legacy-hash", updatedPasscode.PasswordHash);
-        Assert.NotEqual("legacy-salt", updatedPasscode.Salt);
+        Assert.Empty(updatedPasscode.Salt);
+        Assert.True(PasswordHasher.VerifyPassword("274958", updatedPasscode.PasswordHash));
         repository.VerifyAll();
     }
 
@@ -138,6 +143,126 @@ public class PaymentPasswordServiceTest
         repository.VerifyAll();
     }
 
+    [Fact]
+    public async Task VerifyPaymentPasswordAsync_ShouldVerifyCurrentArgon2idPasscode()
+    {
+        const long userId = 9527;
+        var repository = new Mock<IPaymentPasswordRepository>(MockBehavior.Strict);
+        repository
+            .Setup(store => store.GetByUserIdAsync(userId))
+            .ReturnsAsync(new UserPaymentPassword
+            {
+                UserId = userId,
+                PasswordHash = PasswordHasher.HashPassword("274958"),
+                Salt = string.Empty,
+                PasscodeVersion = PaymentPasscodeRules.CurrentPasscodeVersion,
+                IsEnabled = true
+            });
+        repository
+            .Setup(store => store.ResetFailedAttemptsAsync(userId))
+            .ReturnsAsync(true);
+        repository
+            .Setup(store => store.UpdateLastUsedTimeAsync(userId))
+            .ReturnsAsync(true);
+
+        var service = CreateService(repository);
+
+        var result = await service.VerifyPaymentPasswordAsync(userId, new VerifyPaymentPasswordRequest
+        {
+            Password = "274958",
+            BusinessType = "ShopPurchase"
+        });
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(5, result.RemainingAttempts);
+        repository.VerifyAll();
+    }
+
+    [Fact]
+    public async Task VerifyPaymentPasswordAsync_ShouldUpgradeSha256Passcode_WhenPasswordCorrect()
+    {
+        const long userId = 9527;
+        UserPaymentPassword? upgradedPasscode = null;
+        var (legacyHash, legacySalt) = CreateLegacySha256Passcode("274958");
+        var existingPasscode = new UserPaymentPassword
+        {
+            UserId = userId,
+            PasswordHash = legacyHash,
+            Salt = legacySalt,
+            PasscodeVersion = PaymentPasscodeRules.LegacySha256PasscodeVersion,
+            IsEnabled = true
+        };
+
+        var repository = new Mock<IPaymentPasswordRepository>(MockBehavior.Strict);
+        repository
+            .Setup(store => store.GetByUserIdAsync(userId))
+            .ReturnsAsync(existingPasscode);
+        repository
+            .Setup(store => store.UpdateAsync(existingPasscode))
+            .Callback<UserPaymentPassword>(entity => upgradedPasscode = entity)
+            .ReturnsAsync(true);
+        repository
+            .Setup(store => store.ResetFailedAttemptsAsync(userId))
+            .ReturnsAsync(true);
+        repository
+            .Setup(store => store.UpdateLastUsedTimeAsync(userId))
+            .ReturnsAsync(true);
+
+        var service = CreateService(repository);
+
+        var result = await service.VerifyPaymentPasswordAsync(userId, new VerifyPaymentPasswordRequest
+        {
+            Password = "274958",
+            BusinessType = "CoinTransfer"
+        });
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(upgradedPasscode);
+        Assert.NotEqual(legacyHash, upgradedPasscode!.PasswordHash);
+        Assert.Empty(upgradedPasscode.Salt);
+        Assert.Equal(PaymentPasscodeRules.CurrentPasscodeVersion, upgradedPasscode.PasscodeVersion);
+        Assert.True(PasswordHasher.VerifyPassword("274958", upgradedPasscode.PasswordHash));
+        repository.VerifyAll();
+    }
+
+    [Fact]
+    public async Task VerifyPaymentPasswordAsync_ShouldNotUpgradeSha256Passcode_WhenPasswordIncorrect()
+    {
+        const long userId = 9527;
+        var (legacyHash, legacySalt) = CreateLegacySha256Passcode("274958");
+        var existingPasscode = new UserPaymentPassword
+        {
+            UserId = userId,
+            PasswordHash = legacyHash,
+            Salt = legacySalt,
+            PasscodeVersion = PaymentPasscodeRules.LegacySha256PasscodeVersion,
+            IsEnabled = true
+        };
+
+        var repository = new Mock<IPaymentPasswordRepository>(MockBehavior.Strict);
+        repository
+            .Setup(store => store.GetByUserIdAsync(userId))
+            .ReturnsAsync(existingPasscode);
+        repository
+            .Setup(store => store.UpdateFailedAttemptsAsync(userId, 1, null))
+            .ReturnsAsync(true);
+
+        var service = CreateService(repository);
+
+        var result = await service.VerifyPaymentPasswordAsync(userId, new VerifyPaymentPasswordRequest
+        {
+            Password = "274959",
+            BusinessType = "CoinTransfer"
+        });
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(4, result.RemainingAttempts);
+        Assert.Equal(PaymentPasscodeRules.LegacySha256PasscodeVersion, existingPasscode.PasscodeVersion);
+        Assert.Equal(legacyHash, existingPasscode.PasswordHash);
+        Assert.Equal(legacySalt, existingPasscode.Salt);
+        repository.VerifyAll();
+    }
+
     [Theory]
     [InlineData("", 0)]
     [InlineData("12", 0)]
@@ -160,5 +285,19 @@ public class PaymentPasswordServiceTest
             new Mock<IAuditLogService>(MockBehavior.Loose).Object,
             new Mock<IMapper>(MockBehavior.Loose).Object,
             new Mock<ILogger<PaymentPasswordService>>(MockBehavior.Loose).Object);
+    }
+
+    private static (string Hash, string Salt) CreateLegacySha256Passcode(string passcode)
+    {
+        var saltBytes = Encoding.UTF8.GetBytes("legacy-sha256-test-salt");
+        var passwordBytes = Encoding.UTF8.GetBytes(passcode);
+        var combinedBytes = new byte[saltBytes.Length + passwordBytes.Length];
+        Buffer.BlockCopy(saltBytes, 0, combinedBytes, 0, saltBytes.Length);
+        Buffer.BlockCopy(passwordBytes, 0, combinedBytes, saltBytes.Length, passwordBytes.Length);
+
+        using var sha256 = SHA256.Create();
+        return (
+            Convert.ToBase64String(sha256.ComputeHash(combinedBytes)),
+            Convert.ToBase64String(saltBytes));
     }
 }
