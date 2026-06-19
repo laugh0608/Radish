@@ -9,6 +9,7 @@ interface ShopHomeProps {
   categories: ProductCategory[];
   featuredProducts: ProductListItem[];
   loading: boolean;
+  bannerTitleLevel?: 'h1' | 'h2';
   onCategoryClick: (categoryId: string) => void;
   onProductClick: (productId: LongId) => void;
   onViewAllProducts: () => void;
@@ -18,12 +19,14 @@ export const ShopHome = ({
   categories,
   featuredProducts,
   loading,
+  bannerTitleLevel = 'h1',
   onCategoryClick,
   onProductClick,
   onViewAllProducts
 }: ShopHomeProps) => {
   const { t } = useTranslation();
   const visibleCategories = categories.filter((category) => (category.voProductCount ?? 0) > 0);
+  const BannerTitle = bannerTitleLevel;
 
   const handleCategoryImageError = (event: SyntheticEvent<HTMLImageElement>) => {
     event.currentTarget.style.display = 'none';
@@ -45,7 +48,7 @@ export const ShopHome = ({
       {/* 欢迎横幅 */}
       <div className={styles.banner}>
         <div className={styles.bannerContent}>
-          <h1 className={styles.bannerTitle}>🛒 {t('shop.welcomeTitle')}</h1>
+          <BannerTitle className={styles.bannerTitle}>🛒 {t('shop.welcomeTitle')}</BannerTitle>
           <p className={styles.bannerSubtitle}>{t('shop.welcomeSubtitle')}</p>
         </div>
       </div>

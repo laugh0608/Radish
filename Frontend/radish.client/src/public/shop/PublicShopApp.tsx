@@ -544,6 +544,7 @@ export const PublicShopApp = ({
           categories={categories}
           featuredProducts={featuredProducts}
           loading={categoriesLoading || featuredLoading}
+          bannerTitleLevel="h2"
           onCategoryClick={handleOpenProducts}
           onProductClick={handleOpenProductDetail}
           onViewAllProducts={() => handleOpenProducts()}
@@ -598,6 +599,7 @@ export const PublicShopApp = ({
           totalPages={totalPages}
           searchKeyword={route.keyword}
           loading={productsLoading}
+          titleLevel="h2"
           onCategoryChange={(categoryId) => {
             onNavigate({
               kind: 'products',
@@ -736,7 +738,7 @@ export const PublicShopApp = ({
                 <span className={styles.metaChip}>{selectedProduct.voCategoryName}</span>
               )}
             </div>
-            <h1 className={styles.detailTitle}>{selectedProduct.voName}</h1>
+            <h2 className={styles.detailTitle}>{selectedProduct.voName}</h2>
             <p className={styles.detailSummary}>{t('shop.public.detailIntro')}</p>
 
             <div className={styles.priceBlock}>

@@ -14,6 +14,7 @@ interface ProductListProps {
   totalPages: number;
   searchKeyword?: string;
   loading: boolean;
+  titleLevel?: 'h1' | 'h2';
   onCategoryChange: (categoryId?: string) => void;
   onProductClick: (productId: LongId) => void;
   onSearchChange: (keyword: string) => void;
@@ -29,6 +30,7 @@ export const ProductList = ({
   totalPages,
   searchKeyword,
   loading,
+  titleLevel = 'h1',
   onCategoryChange,
   onProductClick,
   onSearchChange,
@@ -40,6 +42,7 @@ export const ProductList = ({
   const visibleCategories = categories.filter((category) => (category.voProductCount ?? 0) > 0);
   const hasSelectedVisibleCategory = !!selectedCategoryId
     && visibleCategories.some((category) => String(category.voId) === selectedCategoryId);
+  const Title = titleLevel;
 
   useEffect(() => {
     setSearchInput(searchKeyword || '');
@@ -76,7 +79,7 @@ export const ProductList = ({
         <button className={styles.backButton} onClick={onBack}>
           ← {t('shop.back')}
         </button>
-        <h1 className={styles.title}>{getCurrentCategoryName()}</h1>
+        <Title className={styles.title}>{getCurrentCategoryName()}</Title>
       </div>
 
       {/* 搜索和筛选栏 */}
