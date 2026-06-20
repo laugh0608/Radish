@@ -142,6 +142,7 @@ internal static class DbMigrateRunner
         EnsureForumIndexes(mainDb);
         EnsureLikeRelationIndexes(mainDb);
         EnsureInventoryBenefitReliabilitySchema(mainDb);
+        EnsureRewardBusinessKeySchema(mainDb);
     }
 
     private static void EnsureUserPublicIdentitySchema(ISqlSugarClient db)
@@ -568,6 +569,123 @@ internal static class DbMigrateRunner
             [nameof(UserInventoryGrantRecord.TenantId), nameof(UserInventoryGrantRecord.InventoryId)]);
     }
 
+    private static void EnsureRewardBusinessKeySchema(ISqlSugarClient db)
+    {
+        BackfillCoinRewardBusinessKeys(db);
+        BackfillExperienceRewardBusinessKeys(db);
+
+        EnsureIndex(
+            db,
+            db.EntityMaintenance.GetEntityInfo<CoinTransaction>().DbTableName,
+            "idx_coin_reward_business_key",
+            [nameof(CoinTransaction.TenantId), nameof(CoinTransaction.RewardBusinessKey)],
+            unique: true);
+
+        EnsureIndex(
+            db,
+            db.EntityMaintenance.GetEntityInfo<ExpTransaction>().DbTableName,
+            "idx_exp_reward_business_key",
+            [nameof(ExpTransaction.TenantId), nameof(ExpTransaction.RewardBusinessKey)],
+            unique: true);
+    }
+
+    private static void BackfillCoinRewardBusinessKeys(ISqlSugarClient db)
+    {
+        var tableName = db.EntityMaintenance.GetEntityInfo<CoinTransaction>().DbTableName;
+        if (!db.DbMaintenance.IsAnyTable(tableName, false))
+        {
+            return;
+        }
+
+        var transactions = db.Queryable<CoinTransaction>()
+            .Where(transaction => transaction.Status == "SUCCESS")
+            .ToList()
+            .Select(transaction => new
+            {
+                Transaction = transaction,
+                RewardBusinessKey = BuildCoinRewardBusinessKey(transaction)
+            })
+            .Where(item => !string.IsNullOrWhiteSpace(item.RewardBusinessKey))
+            .ToList();
+
+        var updatedCount = 0;
+        foreach (var group in transactions.GroupBy(item => new { item.Transaction.TenantId, item.RewardBusinessKey }))
+        {
+            if (group.Any(item => item.Transaction.RewardBusinessKey == item.RewardBusinessKey))
+            {
+                continue;
+            }
+
+            var keeper = group
+                .OrderBy(item => item.Transaction.CreateTime)
+                .ThenBy(item => item.Transaction.Id)
+                .First()
+                .Transaction;
+
+            updatedCount += db.Updateable<CoinTransaction>()
+                .SetColumns(transaction => new CoinTransaction
+                {
+                    RewardBusinessKey = group.Key.RewardBusinessKey,
+                    ModifyTime = DateTime.Now
+                })
+                .Where(transaction => transaction.Id == keeper.Id && transaction.RewardBusinessKey == null)
+                .ExecuteCommand();
+        }
+
+        if (updatedCount > 0)
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 已回填 {updatedCount} 条萝卜币奖励业务键。");
+        }
+    }
+
+    private static void BackfillExperienceRewardBusinessKeys(ISqlSugarClient db)
+    {
+        var tableName = db.EntityMaintenance.GetEntityInfo<ExpTransaction>().DbTableName;
+        if (!db.DbMaintenance.IsAnyTable(tableName, false))
+        {
+            return;
+        }
+
+        var transactions = db.Queryable<ExpTransaction>()
+            .ToList()
+            .Select(transaction => new
+            {
+                Transaction = transaction,
+                RewardBusinessKey = BuildExperienceRewardBusinessKey(transaction)
+            })
+            .Where(item => !string.IsNullOrWhiteSpace(item.RewardBusinessKey))
+            .ToList();
+
+        var updatedCount = 0;
+        foreach (var group in transactions.GroupBy(item => new { item.Transaction.TenantId, item.RewardBusinessKey }))
+        {
+            if (group.Any(item => item.Transaction.RewardBusinessKey == item.RewardBusinessKey))
+            {
+                continue;
+            }
+
+            var keeper = group
+                .OrderBy(item => item.Transaction.CreateTime)
+                .ThenBy(item => item.Transaction.Id)
+                .First()
+                .Transaction;
+
+            updatedCount += db.Updateable<ExpTransaction>()
+                .SetColumns(transaction => new ExpTransaction
+                {
+                    RewardBusinessKey = group.Key.RewardBusinessKey,
+                    ModifyTime = DateTime.Now
+                })
+                .Where(transaction => transaction.Id == keeper.Id && transaction.RewardBusinessKey == null)
+                .ExecuteCommand();
+        }
+
+        if (updatedCount > 0)
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 已回填 {updatedCount} 条经验奖励业务键。");
+        }
+    }
+
     private static void NormalizeUserBenefitPurchaseSources(ISqlSugarClient db)
     {
         var benefitTableName = db.EntityMaintenance.GetEntityInfo<UserBenefit>().DbTableName;
@@ -877,6 +995,103 @@ internal static class DbMigrateRunner
     private static string NormalizeInventoryItemValue(string? itemValue)
     {
         return itemValue ?? string.Empty;
+    }
+
+    private static string? BuildCoinRewardBusinessKey(CoinTransaction transaction)
+    {
+        if (!transaction.ToUserId.HasValue || !transaction.BusinessId.HasValue)
+        {
+            return null;
+        }
+
+        var userId = transaction.ToUserId.Value;
+        var businessId = transaction.BusinessId.Value;
+        var dayKey = transaction.CreateTime.ToString("yyyyMMdd");
+
+        return transaction.BusinessType switch
+        {
+            "POST_LIKE" => $"coin:post-like:author:{userId}:post:{businessId}:day:{dayKey}",
+            "POST_LIKE_ACTION" => $"coin:post-like:giver:{userId}:post:{businessId}:day:{dayKey}",
+            "COMMENT_LIKE" => $"coin:comment-like:author:{userId}:comment:{businessId}:day:{dayKey}",
+            "COMMENT_LIKE_ACTION" => $"coin:comment-like:giver:{userId}:comment:{businessId}:day:{dayKey}",
+            "COMMENT_POST" => $"coin:comment-create:author:{userId}:comment:{businessId}",
+            "COMMENT_REPLY" => $"coin:comment-reply:author:{userId}:comment:{businessId}:day:{dayKey}",
+            "GOD_COMMENT" => $"coin:highlight-base:god-comment:author:{userId}:comment:{businessId}",
+            "SOFA" => $"coin:highlight-base:sofa:author:{userId}:comment:{businessId}",
+            _ when TryParseRetentionRewardBusinessType(transaction.BusinessType, out var highlightType, out var week) =>
+                $"coin:highlight-retention:{highlightType}:highlight:{businessId}:week:{week}:author:{userId}",
+            _ => null
+        };
+    }
+
+    private static string? BuildExperienceRewardBusinessKey(ExpTransaction transaction)
+    {
+        if (transaction.UserId <= 0)
+        {
+            return null;
+        }
+
+        var userId = transaction.UserId;
+        var dayKey = transaction.CreatedDate.ToString("yyyyMMdd");
+        var targetType = transaction.BusinessType?.ToLowerInvariant();
+
+        return transaction.ExpType switch
+        {
+            "POST_CREATE" when transaction.BusinessId.HasValue =>
+                $"exp:post-create:author:{userId}:post:{transaction.BusinessId.Value}",
+            "FIRST_POST" => $"exp:first-post:user:{userId}",
+            "COMMENT_CREATE" when transaction.BusinessId.HasValue =>
+                $"exp:comment-create:author:{userId}:comment:{transaction.BusinessId.Value}",
+            "FIRST_COMMENT" => $"exp:first-comment:user:{userId}",
+            "RECEIVE_LIKE" when transaction.BusinessId.HasValue && (targetType == "post" || targetType == "comment") =>
+                $"exp:receive-like:{targetType}:user:{userId}:target:{transaction.BusinessId.Value}:day:{dayKey}",
+            "GIVE_LIKE" when transaction.BusinessId.HasValue && (targetType == "post" || targetType == "comment") =>
+                $"exp:give-like:{targetType}:user:{userId}:target:{transaction.BusinessId.Value}:day:{dayKey}",
+            "GOD_COMMENT" when transaction.BusinessId.HasValue =>
+                $"exp:highlight-base:god-comment:author:{userId}:comment:{transaction.BusinessId.Value}",
+            "SOFA_COMMENT" when transaction.BusinessId.HasValue =>
+                $"exp:highlight-base:sofa:author:{userId}:comment:{transaction.BusinessId.Value}",
+            _ => null
+        };
+    }
+
+    private static bool TryParseRetentionRewardBusinessType(string? businessType, out string highlightType, out int week)
+    {
+        highlightType = string.Empty;
+        week = 0;
+
+        if (string.IsNullOrWhiteSpace(businessType))
+        {
+            return false;
+        }
+
+        const string suffixPrefix = "_RETENTION_W";
+        var suffixIndex = businessType.IndexOf(suffixPrefix, StringComparison.Ordinal);
+        if (suffixIndex <= 0)
+        {
+            return false;
+        }
+
+        var rawHighlightType = businessType[..suffixIndex];
+        var rawWeek = businessType[(suffixIndex + suffixPrefix.Length)..];
+        if (!int.TryParse(rawWeek, out week) || week is < 1 or > 3)
+        {
+            return false;
+        }
+
+        if (string.Equals(rawHighlightType, "GodComment", StringComparison.OrdinalIgnoreCase))
+        {
+            highlightType = "god-comment";
+            return true;
+        }
+
+        if (string.Equals(rawHighlightType, "Sofa", StringComparison.OrdinalIgnoreCase))
+        {
+            highlightType = "sofa";
+            return true;
+        }
+
+        return false;
     }
 
     private static void PrintHelp()

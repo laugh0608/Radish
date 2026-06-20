@@ -164,17 +164,23 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                 // 4.2 评论发布经验值奖励 +5 经验
                 Serilog.Log.Information("准备发放评论经验值：CommentId={CommentId}, AuthorId={AuthorId}", commentId, comment.AuthorId);
 
-                var expGrantResult = await _experienceService.GrantExperienceAsync(
+                var expGrantResult = await _experienceService.GrantExperienceOnceAsync(
                     userId: comment.AuthorId,
                     amount: 5,
                     expType: "COMMENT_CREATE",
+                    rewardBusinessKey: $"exp:comment-create:author:{comment.AuthorId}:comment:{commentId}",
                     businessType: "Comment",
                     businessId: commentId,
                     remark: "发布评论");
 
-                if (expGrantResult)
+                if (expGrantResult.Granted)
                 {
                     Serilog.Log.Information("评论经验值发放成功：CommentId={CommentId}, AuthorId={AuthorId}, Amount=5",
+                        commentId, comment.AuthorId);
+                }
+                else if (expGrantResult.AlreadyGranted)
+                {
+                    Serilog.Log.Debug("评论经验值已发放过，跳过：CommentId={CommentId}, AuthorId={AuthorId}",
                         commentId, comment.AuthorId);
                 }
                 else
@@ -194,17 +200,23 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                 {
                     Serilog.Log.Information("检测到首次评论，准备发放额外奖励：AuthorId={AuthorId}", comment.AuthorId);
 
-                    var firstCommentResult = await _experienceService.GrantExperienceAsync(
+                    var firstCommentResult = await _experienceService.GrantExperienceOnceAsync(
                         userId: comment.AuthorId,
                         amount: 10,
                         expType: "FIRST_COMMENT",
+                        rewardBusinessKey: $"exp:first-comment:user:{comment.AuthorId}",
                         businessType: "Comment",
                         businessId: commentId,
                         remark: "首次评论奖励");
 
-                    if (firstCommentResult)
+                    if (firstCommentResult.Granted)
                     {
                         Serilog.Log.Information("首次评论经验值奖励发放成功：CommentId={CommentId}, AuthorId={AuthorId}, Amount=10",
+                            commentId, comment.AuthorId);
+                    }
+                    else if (firstCommentResult.AlreadyGranted)
+                    {
+                        Serilog.Log.Debug("首次评论经验值奖励已发放过，跳过：CommentId={CommentId}, AuthorId={AuthorId}",
                             commentId, comment.AuthorId);
                     }
                     else
@@ -491,17 +503,24 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                         commentId, likeResult.AuthorId, userId);
 
                     // 4.2.1 被点赞者获得 +2 经验
-                    var receiverExpResult = await _experienceService.GrantExperienceAsync(
+                    var rewardDateKey = DateTime.Today.ToString("yyyyMMdd");
+                    var receiverExpResult = await _experienceService.GrantExperienceOnceAsync(
                         userId: likeResult.AuthorId,
                         amount: 2,
                         expType: "RECEIVE_LIKE",
+                        rewardBusinessKey: $"exp:receive-like:comment:user:{likeResult.AuthorId}:target:{commentId}:day:{rewardDateKey}",
                         businessType: "Comment",
                         businessId: commentId,
                         remark: "评论被点赞");
 
-                    if (receiverExpResult)
+                    if (receiverExpResult.Granted)
                     {
                         Serilog.Log.Information("评论被点赞经验值发放成功：CommentId={CommentId}, 作者={AuthorId}, Amount=2",
+                            commentId, likeResult.AuthorId);
+                    }
+                    else if (receiverExpResult.AlreadyGranted)
+                    {
+                        Serilog.Log.Debug("评论被点赞经验值已发放过，跳过：CommentId={CommentId}, 作者={AuthorId}",
                             commentId, likeResult.AuthorId);
                     }
                     else
@@ -511,17 +530,23 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                     }
 
                     // 4.2.2 点赞者获得 +1 经验
-                    var giverExpResult = await _experienceService.GrantExperienceAsync(
+                    var giverExpResult = await _experienceService.GrantExperienceOnceAsync(
                         userId: userId,
                         amount: 1,
                         expType: "GIVE_LIKE",
+                        rewardBusinessKey: $"exp:give-like:comment:user:{userId}:target:{commentId}:day:{rewardDateKey}",
                         businessType: "Comment",
                         businessId: commentId,
                         remark: "点赞评论");
 
-                    if (giverExpResult)
+                    if (giverExpResult.Granted)
                     {
                         Serilog.Log.Information("点赞评论经验值发放成功：CommentId={CommentId}, 点赞者={LikerId}, Amount=1",
+                            commentId, userId);
+                    }
+                    else if (giverExpResult.AlreadyGranted)
+                    {
+                        Serilog.Log.Debug("点赞评论经验值已发放过，跳过：CommentId={CommentId}, 点赞者={LikerId}",
                             commentId, userId);
                     }
                     else
@@ -1420,7 +1445,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                 var likeIncrement = comment.LikeCount - existing.LikeCount;
                 if (likeIncrement > 0)
                 {
-                    GrantHighlightLikeBonusInBackground(existing.Id, existing.AuthorId, likeIncrement, highlightType);
+                    GrantHighlightLikeBonusInBackground(existing.Id, existing.AuthorId, likeIncrement, highlightType, comment.LikeCount);
                 }
 
                 if (existing.LikeCount != comment.LikeCount ||
@@ -1519,7 +1544,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         });
     }
 
-    private void GrantHighlightLikeBonusInBackground(long highlightId, long authorId, int likeIncrement, int highlightType)
+    private void GrantHighlightLikeBonusInBackground(long highlightId, long authorId, int likeIncrement, int highlightType, int likeCountAfter)
     {
         _ = Task.Run(async () =>
         {
@@ -1530,7 +1555,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                     highlightId,
                     authorId,
                     likeIncrement,
-                    highlightTypeName);
+                    highlightTypeName,
+                    likeCountAfter);
 
                 if (rewardResult.IsSuccess)
                 {
@@ -1557,32 +1583,33 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         var amount = isGodComment ? 50 : 30;
         var remark = isGodComment ? "评论成为神评" : "评论成为沙发";
 
-        var exists = await _experienceService.HasExperienceTransactionAsync(
-            highlight.AuthorId,
-            expType,
-            "Comment",
-            highlight.CommentId);
+        var rewardBusinessKey = isGodComment
+            ? $"exp:highlight-base:god-comment:author:{highlight.AuthorId}:comment:{highlight.CommentId}"
+            : $"exp:highlight-base:sofa:author:{highlight.AuthorId}:comment:{highlight.CommentId}";
 
-        if (exists)
-        {
-            return;
-        }
-
-        var expResult = await _experienceService.GrantExperienceAsync(
+        var expResult = await _experienceService.GrantExperienceOnceAsync(
             userId: highlight.AuthorId,
             amount: amount,
             expType: expType,
+            rewardBusinessKey: rewardBusinessKey,
             businessType: "Comment",
             businessId: highlight.CommentId,
             remark: remark);
 
-        if (expResult)
+        if (expResult.Granted)
         {
             Log.Information("{HighlightType}经验值奖励发放成功：CommentId={CommentId}, AuthorId={AuthorId}, Amount={Amount}",
                 isGodComment ? "神评" : "沙发",
                 highlight.CommentId,
                 highlight.AuthorId,
                 amount);
+        }
+        else if (expResult.AlreadyGranted)
+        {
+            Log.Debug("{HighlightType}经验值已发放过，跳过：CommentId={CommentId}, AuthorId={AuthorId}",
+                isGodComment ? "神评" : "沙发",
+                highlight.CommentId,
+                highlight.AuthorId);
         }
     }
 

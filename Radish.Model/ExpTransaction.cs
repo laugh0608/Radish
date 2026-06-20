@@ -12,6 +12,7 @@ namespace Radish.Model;
 [SugarIndex("idx_exp_type", nameof(ExpType), OrderByType.Asc)]
 [SugarIndex("idx_created_at", nameof(CreateTime), OrderByType.Desc)]
 [SugarIndex("idx_dedup", nameof(UserId), OrderByType.Asc, nameof(ExpType), OrderByType.Asc, nameof(BusinessType), OrderByType.Asc, nameof(BusinessId), OrderByType.Asc, nameof(CreatedDate), OrderByType.Asc)]
+[SugarIndex("idx_exp_reward_business_key", nameof(TenantId), OrderByType.Asc, nameof(RewardBusinessKey), OrderByType.Asc, IsUnique = true)]
 public class ExpTransaction : RootEntityTKey<long>, ITenantEntity
 {
     /// <summary>初始化默认经验值交易记录实例</summary>
@@ -28,6 +29,7 @@ public class ExpTransaction : RootEntityTKey<long>, ITenantEntity
         ExpAmount = 0;
         BusinessType = string.Empty;
         BusinessId = null;
+        RewardBusinessKey = null;
         Remark = string.Empty;
         ExpBefore = 0;
         ExpAfter = 0;
@@ -87,6 +89,11 @@ public class ExpTransaction : RootEntityTKey<long>, ITenantEntity
     /// <remarks>可空（如 PostId、CommentId 等）</remarks>
     [SugarColumn(IsNullable = true, ColumnDescription = "业务ID")]
     public long? BusinessId { get; set; }
+
+    /// <summary>奖励业务去重键</summary>
+    /// <remarks>仅需要幂等保护的奖励流水填写；非奖励经验变动保持 NULL。</remarks>
+    [SugarColumn(Length = 200, IsNullable = true, ColumnDescription = "奖励业务去重键")]
+    public string? RewardBusinessKey { get; set; }
 
     /// <summary>备注</summary>
     /// <remarks>可空，最大 500 字符</remarks>

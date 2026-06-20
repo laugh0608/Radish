@@ -191,17 +191,24 @@ public partial class PostService
                     Serilog.Log.Information("准备发放帖子点赞经验值：PostId={PostId}, 作者={AuthorId}, 点赞者={LikerId}",
                         postId, likeResult.AuthorId, userId);
 
-                    var receiverExpResult = await _experienceService.GrantExperienceAsync(
+                    var rewardDateKey = DateTime.Today.ToString("yyyyMMdd");
+                    var receiverExpResult = await _experienceService.GrantExperienceOnceAsync(
                         userId: likeResult.AuthorId,
                         amount: 2,
                         expType: "RECEIVE_LIKE",
+                        rewardBusinessKey: $"exp:receive-like:post:user:{likeResult.AuthorId}:target:{postId}:day:{rewardDateKey}",
                         businessType: "Post",
                         businessId: postId,
                         remark: "帖子被点赞");
 
-                    if (receiverExpResult)
+                    if (receiverExpResult.Granted)
                     {
                         Serilog.Log.Information("帖子被点赞经验值发放成功：PostId={PostId}, 作者={AuthorId}, Amount=2",
+                            postId, likeResult.AuthorId);
+                    }
+                    else if (receiverExpResult.AlreadyGranted)
+                    {
+                        Serilog.Log.Debug("帖子被点赞经验值已发放过，跳过：PostId={PostId}, 作者={AuthorId}",
                             postId, likeResult.AuthorId);
                     }
                     else
@@ -210,17 +217,23 @@ public partial class PostService
                             postId, likeResult.AuthorId);
                     }
 
-                    var giverExpResult = await _experienceService.GrantExperienceAsync(
+                    var giverExpResult = await _experienceService.GrantExperienceOnceAsync(
                         userId: userId,
                         amount: 1,
                         expType: "GIVE_LIKE",
+                        rewardBusinessKey: $"exp:give-like:post:user:{userId}:target:{postId}:day:{rewardDateKey}",
                         businessType: "Post",
                         businessId: postId,
                         remark: "点赞帖子");
 
-                    if (giverExpResult)
+                    if (giverExpResult.Granted)
                     {
                         Serilog.Log.Information("点赞帖子经验值发放成功：PostId={PostId}, 点赞者={LikerId}, Amount=1",
+                            postId, userId);
+                    }
+                    else if (giverExpResult.AlreadyGranted)
+                    {
+                        Serilog.Log.Debug("点赞帖子经验值已发放过，跳过：PostId={PostId}, 点赞者={LikerId}",
                             postId, userId);
                     }
                     else

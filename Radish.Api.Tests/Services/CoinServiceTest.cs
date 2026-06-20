@@ -340,6 +340,51 @@ public class CoinServiceTest
         Assert.Equal(50, userBalance.TotalEarned);
     }
 
+    [Fact]
+    public async Task GrantCoinOnceAsync_ShouldReturnExistingTransaction_WhenRewardBusinessKeyExists()
+    {
+        const long userId = 123456;
+        const string rewardBusinessKey = "coin:post-like:author:123456:post:7001:day:20260620";
+        var existingTransaction = new CoinTransaction
+        {
+            TenantId = 0,
+            ToUserId = userId,
+            Amount = 2,
+            TransactionType = "LIKE_REWARD",
+            BusinessType = "POST_LIKE",
+            BusinessId = 7001,
+            RewardBusinessKey = rewardBusinessKey,
+            Status = "SUCCESS",
+            TransactionNo = "TXN_EXISTING_REWARD"
+        };
+
+        _coinTransactionRepositoryMock
+            .Setup(r => r.QueryFirstAsync(It.IsAny<Expression<Func<CoinTransaction, bool>>>()))
+            .ReturnsAsync((Expression<Func<CoinTransaction, bool>> expression) =>
+                expression.Compile()(existingTransaction) ? existingTransaction : null);
+
+        var service = CreateCoinService();
+
+        var result = await service.GrantCoinOnceAsync(
+            userId,
+            2,
+            "LIKE_REWARD",
+            rewardBusinessKey,
+            "POST_LIKE",
+            7001,
+            "帖子被点赞奖励");
+
+        Assert.True(result.AlreadyGranted);
+        Assert.False(result.Granted);
+        Assert.Equal("TXN_EXISTING_REWARD", result.TransactionNo);
+        _coinTransactionRepositoryMock.Verify(r => r.AddAsync(It.IsAny<CoinTransaction>()), Times.Never);
+        _userBalanceRepositoryMock.Verify(
+            r => r.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<UserBalance, UserBalance>>>(),
+                It.IsAny<Expression<Func<UserBalance, bool>>>()),
+            Times.Never);
+    }
+
     [Theory]
     [InlineData(0, "扣除金额必须大于 0")]
     [InlineData(-100, "扣除金额必须大于 0")]

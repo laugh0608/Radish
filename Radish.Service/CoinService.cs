@@ -11,6 +11,7 @@ using Radish.Model.ViewModels;
 using Radish.Common.CoreTool;
 using Radish.Shared.Constants;
 using Radish.Shared.Security;
+using Radish.Repository.UnitOfWorks;
 using Radish.Service.Base;
 using Serilog;
 using SqlSugar;
@@ -26,11 +27,13 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
     private readonly IBaseRepository<BalanceChangeLog> _balanceChangeLogRepository;
     private readonly IPaymentPasswordService _paymentPasswordService;
     private readonly IOperationIdempotencyService? _operationIdempotencyService;
+    private readonly IUnitOfWorkManage? _unitOfWorkManage;
 
     private const long RegistrationRewardAmount = 50;
     private const string RegistrationRewardTransactionType = "SYSTEM_GRANT";
     private const string RegistrationRewardBusinessType = "UserRegistration";
     private const string RegistrationRewardRemark = "新用户注册奖励";
+    private const int RewardBusinessKeyMaxLength = 200;
 
     /// <summary>乐观锁冲突重试次数</summary>
     private const int MaxRetryCount = 3;
@@ -45,7 +48,8 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         IBaseRepository<CoinTransaction> coinTransactionRepository,
         IBaseRepository<BalanceChangeLog> balanceChangeLogRepository,
         IPaymentPasswordService paymentPasswordService,
-        IOperationIdempotencyService? operationIdempotencyService = null)
+        IOperationIdempotencyService? operationIdempotencyService = null,
+        IUnitOfWorkManage? unitOfWorkManage = null)
         : base(mapper, userBalanceRepository)
     {
         _userBalanceRepository = userBalanceRepository;
@@ -54,6 +58,7 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         _balanceChangeLogRepository = balanceChangeLogRepository;
         _paymentPasswordService = paymentPasswordService;
         _operationIdempotencyService = operationIdempotencyService;
+        _unitOfWorkManage = unitOfWorkManage;
     }
 
     #region 余额查询
@@ -229,6 +234,79 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
     }
 
     /// <summary>
+    /// 按奖励业务键发放一次萝卜币。
+    /// </summary>
+    public async Task<CoinGrantOnceResult> GrantCoinOnceAsync(
+        long userId,
+        long amount,
+        string transactionType,
+        string rewardBusinessKey,
+        string? businessType = null,
+        long? businessId = null,
+        string? remark = null)
+    {
+        var normalizedRewardBusinessKey = NormalizeRewardBusinessKey(rewardBusinessKey);
+        long? tenantId = null;
+
+        try
+        {
+            if (amount <= 0)
+            {
+                throw new ArgumentException("发放金额必须大于 0", nameof(amount));
+            }
+
+            if (string.IsNullOrWhiteSpace(transactionType))
+            {
+                throw new ArgumentException("交易类型不能为空", nameof(transactionType));
+            }
+
+            var user = await EnsureUserExistsAsync(userId);
+            tenantId = user.TenantId;
+
+            return await ExecuteWithRetryAsync(async () =>
+                await ExecuteRewardUnitOfWorkAsync(async () =>
+                {
+                    var existingReward = await QuerySuccessfulRewardTransactionAsync(tenantId.Value, normalizedRewardBusinessKey);
+                    if (existingReward != null)
+                    {
+                        return CoinGrantOnceResult.Existing(existingReward.TransactionNo);
+                    }
+
+                    var transactionNo = await GrantCoinInternalAsync(
+                        userId,
+                        amount,
+                        transactionType,
+                        businessType,
+                        businessId,
+                        remark,
+                        normalizedRewardBusinessKey,
+                        tenantId.Value);
+
+                    return CoinGrantOnceResult.NewGrant(transactionNo);
+                }));
+        }
+        catch (Exception ex) when (IsUniqueConstraintConflict(ex))
+        {
+            var existingReward = tenantId.HasValue
+                ? await QuerySuccessfulRewardTransactionAsync(tenantId.Value, normalizedRewardBusinessKey)
+                : await QuerySuccessfulRewardTransactionByKeyOnlyAsync(normalizedRewardBusinessKey);
+            if (existingReward != null)
+            {
+                return CoinGrantOnceResult.Existing(existingReward.TransactionNo);
+            }
+
+            Log.Warning(ex, "奖励业务键 {RewardBusinessKey} 已被占用但未找到成功流水", normalizedRewardBusinessKey);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "按业务键发放萝卜币失败：用户={UserId}, 金额={Amount}, 类型={TransactionType}, RewardBusinessKey={RewardBusinessKey}",
+                userId, amount, transactionType, normalizedRewardBusinessKey);
+            throw;
+        }
+    }
+
+    /// <summary>
     /// 确保用户已获得注册默认奖励。
     /// </summary>
     public async Task<string> GrantRegistrationRewardAsync(long userId)
@@ -305,7 +383,9 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         string transactionType,
         string? businessType,
         long? businessId,
-        string? remark)
+        string? remark,
+        string? rewardBusinessKey = null,
+        long? tenantId = null)
     {
         // 1. 确保用户余额记录存在
         var userBalance = await _userBalanceRepository.QueryFirstAsync(b => b.UserId == userId && !b.IsDeleted);
@@ -330,7 +410,9 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
             Status = "PENDING",
             BusinessType = businessType,
             BusinessId = businessId,
+            RewardBusinessKey = rewardBusinessKey,
             Remark = remark,
+            TenantId = tenantId ?? userBalance.TenantId,
             CreateTime = DateTime.Now,
             CreateBy = "System",
             CreateId = 0
@@ -370,6 +452,7 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
             BalanceBefore = balanceBefore,
             BalanceAfter = balanceBefore + amount,
             ChangeType = "EARN",
+            TenantId = tenantId ?? userBalance.TenantId,
             CreateTime = DateTime.Now,
             CreateBy = "System",
             CreateId = 0
@@ -1224,7 +1307,7 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         throw lastException ?? new ConcurrencyException("重试失败");
     }
 
-    private async Task EnsureUserExistsAsync(long userId)
+    private async Task<User> EnsureUserExistsAsync(long userId)
     {
         if (userId <= 0)
         {
@@ -1236,6 +1319,59 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         {
             throw new InvalidOperationException($"用户不存在或已删除：{userId}");
         }
+
+        return user;
+    }
+
+    private async Task<T> ExecuteRewardUnitOfWorkAsync<T>(Func<Task<T>> action)
+    {
+        if (_unitOfWorkManage == null)
+        {
+            return await action();
+        }
+
+        using var unitOfWork = _unitOfWorkManage.CreateUnitOfWork();
+        try
+        {
+            var result = await action();
+            unitOfWork.Commit();
+            return result;
+        }
+        catch
+        {
+            throw;
+        }
+    }
+
+    private static string NormalizeRewardBusinessKey(string rewardBusinessKey)
+    {
+        var normalized = rewardBusinessKey.Trim();
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            throw new ArgumentException("奖励业务键不能为空", nameof(rewardBusinessKey));
+        }
+
+        if (normalized.Length > RewardBusinessKeyMaxLength)
+        {
+            throw new ArgumentException($"奖励业务键长度不能超过 {RewardBusinessKeyMaxLength}", nameof(rewardBusinessKey));
+        }
+
+        return normalized;
+    }
+
+    private async Task<CoinTransaction?> QuerySuccessfulRewardTransactionAsync(long tenantId, string rewardBusinessKey)
+    {
+        return await _coinTransactionRepository.QueryFirstAsync(transaction =>
+            transaction.TenantId == tenantId &&
+            transaction.RewardBusinessKey == rewardBusinessKey &&
+            transaction.Status == "SUCCESS");
+    }
+
+    private async Task<CoinTransaction?> QuerySuccessfulRewardTransactionByKeyOnlyAsync(string rewardBusinessKey)
+    {
+        return await _coinTransactionRepository.QueryFirstAsync(transaction =>
+            transaction.RewardBusinessKey == rewardBusinessKey &&
+            transaction.Status == "SUCCESS");
     }
 
     private static bool IsUniqueConstraintConflict(Exception ex, string? token = null)

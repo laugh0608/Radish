@@ -90,6 +90,64 @@ public class ExperienceServiceTest
     }
 
     [Fact]
+    public async Task GrantExperienceOnceAsync_ShouldReturnExisting_WhenRewardBusinessKeyExists()
+    {
+        const long userId = 9527;
+        const string rewardBusinessKey = "exp:post-create:author:9527:post:7001";
+
+        var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Strict);
+        userRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<User, bool>>?>()))
+            .ReturnsAsync(new User
+            {
+                Id = userId,
+                TenantId = 0,
+                IsDeleted = false
+            });
+
+        var expTransactionRepository = new Mock<IBaseRepository<ExpTransaction>>(MockBehavior.Strict);
+        var existingTransaction = new ExpTransaction
+        {
+            Id = 9001,
+            TenantId = 0,
+            UserId = userId,
+            ExpType = "POST_CREATE",
+            BusinessType = "Post",
+            BusinessId = 7001,
+            RewardBusinessKey = rewardBusinessKey
+        };
+        expTransactionRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<ExpTransaction, bool>>?>()))
+            .ReturnsAsync((Expression<Func<ExpTransaction, bool>>? expression) =>
+                expression?.Compile()(existingTransaction) == true ? existingTransaction : null);
+
+        var userExpRepository = new Mock<IBaseRepository<UserExperience>>(MockBehavior.Strict);
+        var service = CreateService(
+            userExpRepository: userExpRepository,
+            expTransactionRepository: expTransactionRepository,
+            userRepository: userRepository);
+
+        var result = await service.GrantExperienceOnceAsync(
+            userId,
+            20,
+            "POST_CREATE",
+            rewardBusinessKey,
+            "Post",
+            7001,
+            "发布帖子");
+
+        result.AlreadyGranted.ShouldBeTrue();
+        result.Granted.ShouldBeFalse();
+        result.Skipped.ShouldBeFalse();
+        userExpRepository.Verify(
+            repository => repository.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<UserExperience, UserExperience>>>(),
+                It.IsAny<Expression<Func<UserExperience, bool>>>()),
+            Times.Never);
+        expTransactionRepository.Verify(repository => repository.AddAsync(It.IsAny<ExpTransaction>()), Times.Never);
+    }
+
+    [Fact]
     public async Task GetLevelConfigsAsync_ShouldUseCacheBetweenCalls()
     {
         var levelConfigs = new List<LevelConfig>

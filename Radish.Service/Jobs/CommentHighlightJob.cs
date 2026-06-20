@@ -213,7 +213,8 @@ public class CommentHighlightJob
                                     existingHighlight.Id,
                                     currentTopComment.AuthorId,
                                     likeIncrement,
-                                    "GodComment");
+                                    "GodComment",
+                                    currentTopComment.LikeCount);
 
                                 if (rewardResult.IsSuccess)
                                 {
@@ -238,32 +239,25 @@ public class CommentHighlightJob
                                 Log.Information("准备发放神评经验值：CommentId={CommentId}, AuthorId={AuthorId}",
                                     currentTopComment.Id, currentTopComment.AuthorId);
 
-                                var exists = await _experienceService.HasExperienceTransactionAsync(
-                                    currentTopComment.AuthorId,
-                                    "GOD_COMMENT",
-                                    "Comment",
-                                    currentTopComment.Id);
-
-                                if (exists)
-                                {
-                                    Log.Information("神评经验值已发放过，跳过：CommentId={CommentId}, AuthorId={AuthorId}",
-                                        currentTopComment.Id,
-                                        currentTopComment.AuthorId);
-                                    return;
-                                }
-
-                                var expResult = await _experienceService.GrantExperienceAsync(
+                                var expResult = await _experienceService.GrantExperienceOnceAsync(
                                     userId: currentTopComment.AuthorId,
                                     amount: 50,
                                     expType: "GOD_COMMENT",
+                                    rewardBusinessKey: $"exp:highlight-base:god-comment:author:{currentTopComment.AuthorId}:comment:{currentTopComment.Id}",
                                     businessType: "Comment",
                                     businessId: currentTopComment.Id,
                                     remark: "评论成为神评");
 
-                                if (expResult)
+                                if (expResult.Granted)
                                 {
                                     Log.Information("神评经验值奖励发放成功：CommentId={CommentId}, AuthorId={AuthorId}, Amount=50",
                                         currentTopComment.Id, currentTopComment.AuthorId);
+                                }
+                                else if (expResult.AlreadyGranted)
+                                {
+                                    Log.Information("神评经验值已发放过，跳过：CommentId={CommentId}, AuthorId={AuthorId}",
+                                        currentTopComment.Id,
+                                        currentTopComment.AuthorId);
                                 }
                                 else
                                 {
@@ -449,7 +443,8 @@ public class CommentHighlightJob
                                     existingHighlight.Id,
                                     currentTopChild.AuthorId,
                                     likeIncrement,
-                                    "Sofa");
+                                    "Sofa",
+                                    currentTopChild.LikeCount);
 
                                 if (rewardResult.IsSuccess)
                                 {
@@ -474,32 +469,25 @@ public class CommentHighlightJob
                                 Log.Information("准备发放沙发经验值：CommentId={CommentId}, AuthorId={AuthorId}",
                                     currentTopChild.Id, currentTopChild.AuthorId);
 
-                                var exists = await _experienceService.HasExperienceTransactionAsync(
-                                    currentTopChild.AuthorId,
-                                    "SOFA_COMMENT",
-                                    "Comment",
-                                    currentTopChild.Id);
-
-                                if (exists)
-                                {
-                                    Log.Information("沙发经验值已发放过，跳过：CommentId={CommentId}, AuthorId={AuthorId}",
-                                        currentTopChild.Id,
-                                        currentTopChild.AuthorId);
-                                    return;
-                                }
-
-                                var expResult = await _experienceService.GrantExperienceAsync(
+                                var expResult = await _experienceService.GrantExperienceOnceAsync(
                                     userId: currentTopChild.AuthorId,
                                     amount: 30,
                                     expType: "SOFA_COMMENT",
+                                    rewardBusinessKey: $"exp:highlight-base:sofa:author:{currentTopChild.AuthorId}:comment:{currentTopChild.Id}",
                                     businessType: "Comment",
                                     businessId: currentTopChild.Id,
                                     remark: "评论成为沙发");
 
-                                if (expResult)
+                                if (expResult.Granted)
                                 {
                                     Log.Information("沙发经验值奖励发放成功：CommentId={CommentId}, AuthorId={AuthorId}, Amount=30",
                                         currentTopChild.Id, currentTopChild.AuthorId);
+                                }
+                                else if (expResult.AlreadyGranted)
+                                {
+                                    Log.Information("沙发经验值已发放过，跳过：CommentId={CommentId}, AuthorId={AuthorId}",
+                                        currentTopChild.Id,
+                                        currentTopChild.AuthorId);
                                 }
                                 else
                                 {

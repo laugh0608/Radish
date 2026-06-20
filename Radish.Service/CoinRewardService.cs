@@ -47,45 +47,46 @@ public class CoinRewardService : ICoinRewardService
         {
             var today = DateTime.Today;
 
-            // 1. 检查是否已发放过（同一用户对同一帖子每日仅奖励一次）
-            var alreadyGranted = await CheckRewardExistsAsync("POST_LIKE", postId, authorId, today);
-            if (alreadyGranted)
-            {
-                Log.Debug("帖子 {PostId} 今日已向作者 {AuthorId} 发放过点赞奖励，跳过", postId, authorId);
-                return CoinRewardResult.Failure("今日已发放过点赞奖励");
-            }
-
             // 2. 检查点赞者今日奖励是否已达上限
             var likerLimitReached = await CheckDailyLikeRewardLimitAsync(likerId);
 
             // 3. 发放作者奖励 +2 胡萝卜
-            var authorTxNo = await _coinService.GrantCoinAsync(
+            var authorGrant = await _coinService.GrantCoinOnceAsync(
                 userId: authorId,
                 amount: LIKE_REWARD_AUTHOR,
                 transactionType: "LIKE_REWARD",
+                rewardBusinessKey: BuildDailyRewardKey("coin:post-like:author", authorId, "post", postId, today),
                 businessType: "POST_LIKE",
                 businessId: postId,
                 remark: $"帖子被点赞奖励"
             );
 
             // 4. 发放点赞者奖励 +1 胡萝卜（如未达上限）
-            string? likerTxNo = null;
+            CoinGrantOnceResult? likerGrant = null;
             if (!likerLimitReached)
             {
-                likerTxNo = await _coinService.GrantCoinAsync(
+                likerGrant = await _coinService.GrantCoinOnceAsync(
                     userId: likerId,
                     amount: LIKE_REWARD_LIKER,
                     transactionType: "LIKE_REWARD",
+                    rewardBusinessKey: BuildDailyRewardKey("coin:post-like:giver", likerId, "post", postId, today),
                     businessType: "POST_LIKE_ACTION",
                     businessId: postId,
                     remark: $"点赞互动奖励"
                 );
             }
 
+            if (!authorGrant.Granted && likerGrant?.Granted != true)
+            {
+                return CoinRewardResult.Failure("今日已发放过点赞奖励");
+            }
+
             Log.Information("点赞奖励发放成功：帖子={PostId}, 作者={AuthorId} (+{AuthorReward}), 点赞者={LikerId} (+{LikerReward})",
                 postId, authorId, LIKE_REWARD_AUTHOR, likerId, likerLimitReached ? 0 : LIKE_REWARD_LIKER);
 
-            return CoinRewardResult.Success(authorTxNo, LIKE_REWARD_AUTHOR + (likerLimitReached ? 0 : LIKE_REWARD_LIKER));
+            var transactionNo = authorGrant.Granted ? authorGrant.TransactionNo : likerGrant?.TransactionNo ?? authorGrant.TransactionNo;
+            var amount = (authorGrant.Granted ? LIKE_REWARD_AUTHOR : 0) + (likerGrant?.Granted == true ? LIKE_REWARD_LIKER : 0);
+            return CoinRewardResult.Success(transactionNo, amount);
         }
         catch (Exception ex)
         {
@@ -104,40 +105,43 @@ public class CoinRewardService : ICoinRewardService
         {
             var today = DateTime.Today;
 
-            // 检查是否已发放过
-            var alreadyGranted = await CheckRewardExistsAsync("COMMENT_LIKE", commentId, authorId, today);
-            if (alreadyGranted)
-            {
-                return CoinRewardResult.Failure("今日已发放过评论点赞奖励");
-            }
-
             // 检查点赞者上限
             var likerLimitReached = await CheckDailyLikeRewardLimitAsync(likerId);
 
             // 发放作者奖励
-            var authorTxNo = await _coinService.GrantCoinAsync(
+            var authorGrant = await _coinService.GrantCoinOnceAsync(
                 userId: authorId,
                 amount: LIKE_REWARD_AUTHOR,
                 transactionType: "LIKE_REWARD",
+                rewardBusinessKey: BuildDailyRewardKey("coin:comment-like:author", authorId, "comment", commentId, today),
                 businessType: "COMMENT_LIKE",
                 businessId: commentId,
                 remark: $"评论被点赞奖励"
             );
 
             // 发放点赞者奖励
+            CoinGrantOnceResult? likerGrant = null;
             if (!likerLimitReached)
             {
-                await _coinService.GrantCoinAsync(
+                likerGrant = await _coinService.GrantCoinOnceAsync(
                     userId: likerId,
                     amount: LIKE_REWARD_LIKER,
                     transactionType: "LIKE_REWARD",
+                    rewardBusinessKey: BuildDailyRewardKey("coin:comment-like:giver", likerId, "comment", commentId, today),
                     businessType: "COMMENT_LIKE_ACTION",
                     businessId: commentId,
                     remark: $"点赞评论互动奖励"
                 );
             }
 
-            return CoinRewardResult.Success(authorTxNo, LIKE_REWARD_AUTHOR + (likerLimitReached ? 0 : LIKE_REWARD_LIKER));
+            if (!authorGrant.Granted && likerGrant?.Granted != true)
+            {
+                return CoinRewardResult.Failure("今日已发放过评论点赞奖励");
+            }
+
+            var transactionNo = authorGrant.Granted ? authorGrant.TransactionNo : likerGrant?.TransactionNo ?? authorGrant.TransactionNo;
+            var amount = (authorGrant.Granted ? LIKE_REWARD_AUTHOR : 0) + (likerGrant?.Granted == true ? LIKE_REWARD_LIKER : 0);
+            return CoinRewardResult.Success(transactionNo, amount);
         }
         catch (Exception ex)
         {
@@ -159,19 +163,25 @@ public class CoinRewardService : ICoinRewardService
         try
         {
             // 发放评论奖励 +1 胡萝卜
-            var txNo = await _coinService.GrantCoinAsync(
+            var grant = await _coinService.GrantCoinOnceAsync(
                 userId: authorId,
                 amount: COMMENT_REWARD,
                 transactionType: "COMMENT_REWARD",
+                rewardBusinessKey: $"coin:comment-create:author:{authorId}:comment:{commentId}",
                 businessType: "COMMENT_POST",
                 businessId: commentId,
                 remark: $"发表评论奖励"
             );
 
+            if (!grant.Granted)
+            {
+                return CoinRewardResult.Failure("评论奖励已发放过");
+            }
+
             Log.Information("评论奖励发放成功：评论={CommentId}, 作者={AuthorId}, 金额={Amount}",
                 commentId, authorId, COMMENT_REWARD);
 
-            return CoinRewardResult.Success(txNo, COMMENT_REWARD);
+            return CoinRewardResult.Success(grant.TransactionNo, COMMENT_REWARD);
         }
         catch (Exception ex)
         {
@@ -193,24 +203,20 @@ public class CoinRewardService : ICoinRewardService
         {
             var today = DateTime.Today;
 
-            // 检查是否已发放过（每日一次）
-            var alreadyGranted = await CheckRewardExistsAsync("COMMENT_REPLY", parentCommentId, parentAuthorId, today);
-            if (alreadyGranted)
-            {
-                return CoinRewardResult.Failure("今日已发放过评论被回复奖励");
-            }
-
             // 发放奖励 +1 胡萝卜
-            var txNo = await _coinService.GrantCoinAsync(
+            var grant = await _coinService.GrantCoinOnceAsync(
                 userId: parentAuthorId,
                 amount: COMMENT_REPLY_REWARD,
                 transactionType: "COMMENT_REWARD",
+                rewardBusinessKey: BuildDailyRewardKey("coin:comment-reply:author", parentAuthorId, "comment", parentCommentId, today),
                 businessType: "COMMENT_REPLY",
                 businessId: parentCommentId,
                 remark: $"评论被回复奖励"
             );
 
-            return CoinRewardResult.Success(txNo, COMMENT_REPLY_REWARD);
+            return grant.Granted
+                ? CoinRewardResult.Success(grant.TransactionNo, COMMENT_REPLY_REWARD)
+                : CoinRewardResult.Failure("今日已发放过评论被回复奖励");
         }
         catch (Exception ex)
         {
@@ -231,28 +237,28 @@ public class CoinRewardService : ICoinRewardService
     {
         try
         {
-            var alreadyGranted = await CheckRewardExistsAsync("GOD_COMMENT", commentId, authorId);
-            if (alreadyGranted)
-            {
-                return CoinRewardResult.Failure("该评论已发放过神评奖励");
-            }
-
             // 计算总奖励：基础 + 点赞加成
             var totalReward = GOD_COMMENT_BASE + (likeCount * GOD_COMMENT_LIKE_BONUS);
 
-            var txNo = await _coinService.GrantCoinAsync(
+            var grant = await _coinService.GrantCoinOnceAsync(
                 userId: authorId,
                 amount: totalReward,
                 transactionType: "HIGHLIGHT_REWARD",
+                rewardBusinessKey: $"coin:highlight-base:god-comment:author:{authorId}:comment:{commentId}",
                 businessType: "GOD_COMMENT",
                 businessId: commentId,
                 remark: $"神评奖励（基础 {GOD_COMMENT_BASE} + 点赞加成 {likeCount}×{GOD_COMMENT_LIKE_BONUS}）"
             );
 
+            if (!grant.Granted)
+            {
+                return CoinRewardResult.Failure("该评论已发放过神评奖励");
+            }
+
             Log.Information("神评奖励发放成功：评论={CommentId}, 作者={AuthorId}, 点赞数={LikeCount}, 奖励={TotalReward}",
                 commentId, authorId, likeCount, totalReward);
 
-            return CoinRewardResult.Success(txNo, totalReward);
+            return CoinRewardResult.Success(grant.TransactionNo, totalReward);
         }
         catch (Exception ex)
         {
@@ -269,28 +275,28 @@ public class CoinRewardService : ICoinRewardService
     {
         try
         {
-            var alreadyGranted = await CheckRewardExistsAsync("SOFA", commentId, authorId);
-            if (alreadyGranted)
-            {
-                return CoinRewardResult.Failure("该评论已发放过沙发奖励");
-            }
-
             // 计算总奖励：基础 + 点赞加成
             var totalReward = SOFA_BASE + (likeCount * SOFA_LIKE_BONUS);
 
-            var txNo = await _coinService.GrantCoinAsync(
+            var grant = await _coinService.GrantCoinOnceAsync(
                 userId: authorId,
                 amount: totalReward,
                 transactionType: "HIGHLIGHT_REWARD",
+                rewardBusinessKey: $"coin:highlight-base:sofa:author:{authorId}:comment:{commentId}",
                 businessType: "SOFA",
                 businessId: commentId,
                 remark: $"沙发奖励（基础 {SOFA_BASE} + 点赞加成 {likeCount}×{SOFA_LIKE_BONUS}）"
             );
 
+            if (!grant.Granted)
+            {
+                return CoinRewardResult.Failure("该评论已发放过沙发奖励");
+            }
+
             Log.Information("沙发奖励发放成功：评论={CommentId}, 作者={AuthorId}, 点赞数={LikeCount}, 奖励={TotalReward}",
                 commentId, authorId, likeCount, totalReward);
 
-            return CoinRewardResult.Success(txNo, totalReward);
+            return CoinRewardResult.Success(grant.TransactionNo, totalReward);
         }
         catch (Exception ex)
         {
@@ -307,7 +313,8 @@ public class CoinRewardService : ICoinRewardService
         long highlightId,
         long userId,
         int likeIncrement,
-        string highlightType)
+        string highlightType,
+        int? likeCountAfter = null)
     {
         try
         {
@@ -316,20 +323,29 @@ public class CoinRewardService : ICoinRewardService
                 return CoinRewardResult.Failure("点赞增量必须大于 0");
             }
 
+            if (!likeCountAfter.HasValue || likeCountAfter.Value <= 0)
+            {
+                return CoinRewardResult.Failure("点赞结算快照必须大于 0");
+            }
+
             // 根据类型计算加成金额
-            var bonusPerLike = highlightType == "GodComment" ? GOD_COMMENT_LIKE_BONUS : SOFA_LIKE_BONUS;
+            var normalizedHighlightType = NormalizeHighlightType(highlightType);
+            var bonusPerLike = normalizedHighlightType == "GodComment" ? GOD_COMMENT_LIKE_BONUS : SOFA_LIKE_BONUS;
             var totalBonus = likeIncrement * bonusPerLike;
 
-            var txNo = await _coinService.GrantCoinAsync(
+            var grant = await _coinService.GrantCoinOnceAsync(
                 userId: userId,
                 amount: totalBonus,
                 transactionType: "HIGHLIGHT_REWARD",
-                businessType: $"{highlightType}_LIKE_BONUS",
+                rewardBusinessKey: $"coin:highlight-like-bonus:{GetHighlightTypeKey(normalizedHighlightType)}:highlight:{highlightId}:to-like:{likeCountAfter.Value}",
+                businessType: $"{normalizedHighlightType}_LIKE_BONUS",
                 businessId: highlightId,
-                remark: $"{highlightType} 点赞加成奖励（新增 {likeIncrement} 个点赞）"
+                remark: $"{normalizedHighlightType} 点赞加成奖励（新增 {likeIncrement} 个点赞）"
             );
 
-            return CoinRewardResult.Success(txNo, totalBonus);
+            return grant.Granted
+                ? CoinRewardResult.Success(grant.TransactionNo, totalBonus)
+                : CoinRewardResult.Failure("点赞加成奖励已发放过");
         }
         catch (Exception ex)
         {
@@ -356,31 +372,33 @@ public class CoinRewardService : ICoinRewardService
             }
 
             // 检查是否已发放过该周的保留奖励
-            var businessType = $"{highlightType}_RETENTION_W{week}";
-            var alreadyGranted = await CheckRewardExistsAsync(businessType, highlightId, userId);
-            if (alreadyGranted)
-            {
-                Log.Debug("第 {Week} 周保留奖励已发放过：HighlightId={HighlightId}, Type={Type}",
-                    week, highlightId, highlightType);
-                return CoinRewardResult.Failure($"第 {week} 周保留奖励已发放过");
-            }
+            var normalizedHighlightType = NormalizeHighlightType(highlightType);
+            var businessType = $"{normalizedHighlightType}_RETENTION_W{week}";
 
             // 根据类型确定保留奖励金额
-            var retentionReward = highlightType == "GodComment" ? GOD_COMMENT_RETENTION : SOFA_RETENTION;
+            var retentionReward = normalizedHighlightType == "GodComment" ? GOD_COMMENT_RETENTION : SOFA_RETENTION;
 
-            var txNo = await _coinService.GrantCoinAsync(
+            var grant = await _coinService.GrantCoinOnceAsync(
                 userId: userId,
                 amount: retentionReward,
                 transactionType: "HIGHLIGHT_REWARD",
+                rewardBusinessKey: $"coin:highlight-retention:{GetHighlightTypeKey(normalizedHighlightType)}:highlight:{highlightId}:week:{week}:author:{userId}",
                 businessType: businessType,
                 businessId: highlightId,
-                remark: $"{highlightType} 保留奖励（第 {week} 周）"
+                remark: $"{normalizedHighlightType} 保留奖励（第 {week} 周）"
             );
 
-            Log.Information("{HighlightType} 保留奖励发放成功：HighlightId={HighlightId}, 用户={UserId}, 周数={Week}, 奖励={Amount}",
-                highlightType, highlightId, userId, week, retentionReward);
+            if (!grant.Granted)
+            {
+                Log.Debug("第 {Week} 周保留奖励已发放过：HighlightId={HighlightId}, Type={Type}",
+                    week, highlightId, normalizedHighlightType);
+                return CoinRewardResult.Failure($"第 {week} 周保留奖励已发放过");
+            }
 
-            return CoinRewardResult.Success(txNo, retentionReward);
+            Log.Information("{HighlightType} 保留奖励发放成功：HighlightId={HighlightId}, 用户={UserId}, 周数={Week}, 奖励={Amount}",
+                normalizedHighlightType, highlightId, userId, week, retentionReward);
+
+            return CoinRewardResult.Success(grant.TransactionNo, retentionReward);
         }
         catch (Exception ex)
         {
@@ -472,4 +490,28 @@ public class CoinRewardService : ICoinRewardService
     }
 
     #endregion
+
+    private static string BuildDailyRewardKey(
+        string prefix,
+        long userId,
+        string targetType,
+        long targetId,
+        DateTime date)
+    {
+        return $"{prefix}:{userId}:{targetType}:{targetId}:day:{date:yyyyMMdd}";
+    }
+
+    private static string NormalizeHighlightType(string highlightType)
+    {
+        return string.Equals(highlightType, "GodComment", StringComparison.OrdinalIgnoreCase)
+            ? "GodComment"
+            : "Sofa";
+    }
+
+    private static string GetHighlightTypeKey(string highlightType)
+    {
+        return string.Equals(highlightType, "GodComment", StringComparison.OrdinalIgnoreCase)
+            ? "god-comment"
+            : "sofa";
+    }
 }

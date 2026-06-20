@@ -13,6 +13,7 @@ using SqlSugar;
 using System.Linq.Expressions;
 using Radish.IRepository.Base;
 using Radish.Model.DtoModels;
+using Radish.Repository.UnitOfWorks;
 using Radish.Service.Base;
 using Radish.Shared.CustomEnum;
 using System.Text.Encodings.Web;
@@ -34,6 +35,7 @@ namespace Radish.Service;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
     private readonly INotificationService _notificationService;
     private readonly ICaching _caching;
+    private readonly IUnitOfWorkManage? _unitOfWorkManage;
 
     private const string LevelConfigsCacheKey = "experience:level-configs:enabled";
 
@@ -50,6 +52,7 @@ namespace Radish.Service;
     private const int MaxTransactionPageSize = 100;
     private const int DefaultGovernanceActionTake = 20;
     private const int MaxGovernanceActionTake = 50;
+    private const int RewardBusinessKeyMaxLength = 200;
 
     private const string ObservationKindContext = "context";
     private const string ObservationKindAnomaly = "anomaly";
@@ -98,7 +101,8 @@ namespace Radish.Service;
         ICoinService coinService,
         IAttachmentUrlResolver attachmentUrlResolver,
         INotificationService notificationService,
-        ICaching caching)
+        ICaching caching,
+        IUnitOfWorkManage? unitOfWorkManage = null)
         : base(mapper, userExpRepository)
     {
         _userExpRepository = userExpRepository;
@@ -112,6 +116,7 @@ namespace Radish.Service;
         _attachmentUrlResolver = attachmentUrlResolver;
         _notificationService = notificationService;
         _caching = caching;
+        _unitOfWorkManage = unitOfWorkManage;
     }
 
     #region 经验值查询
@@ -227,6 +232,87 @@ namespace Radish.Service;
         }
     }
 
+    public async Task<ExperienceGrantOnceResult> GrantExperienceOnceAsync(
+        long userId,
+        int amount,
+        string expType,
+        string rewardBusinessKey,
+        string? businessType = null,
+        long? businessId = null,
+        string? remark = null)
+    {
+        var normalizedRewardBusinessKey = NormalizeRewardBusinessKey(rewardBusinessKey);
+        long? tenantId = null;
+
+        if (userId <= 0)
+        {
+            Log.Warning("经验值一次性发放失败：userId 无效（{UserId}），amount={Amount}, expType={ExpType}",
+                userId, amount, expType);
+            return ExperienceGrantOnceResult.Skip("userId 无效");
+        }
+
+        if (amount <= 0)
+        {
+            Log.Warning("经验值一次性发放失败：金额必须大于 0，userId={UserId}, amount={Amount}", userId, amount);
+            return ExperienceGrantOnceResult.Skip("金额必须大于 0");
+        }
+
+        var user = await _userRepository.QueryFirstAsync(item => item.Id == userId && !item.IsDeleted);
+        if (user == null)
+        {
+            Log.Warning("经验值一次性发放失败：用户不存在（userId={UserId}）", userId);
+            return ExperienceGrantOnceResult.Skip("用户不存在");
+        }
+
+        tenantId = user.TenantId;
+
+        try
+        {
+            return await ExecuteWithRetryAsync(async () =>
+                await ExecuteRewardUnitOfWorkAsync(async () =>
+                {
+                    var existingTransaction = await QueryRewardExperienceTransactionAsync(tenantId.Value, normalizedRewardBusinessKey);
+                    if (existingTransaction != null)
+                    {
+                        return ExperienceGrantOnceResult.Existing();
+                    }
+
+                    var granted = await GrantExperienceInternalAsync(
+                        userId,
+                        amount,
+                        expType,
+                        businessType,
+                        businessId,
+                        remark,
+                        normalizedRewardBusinessKey,
+                        tenantId.Value);
+
+                    return granted
+                        ? ExperienceGrantOnceResult.NewGrant()
+                        : ExperienceGrantOnceResult.Skip("未满足经验发放条件");
+                }));
+        }
+        catch (Exception ex) when (IsUniqueConstraintConflict(ex))
+        {
+            var existingTransaction = tenantId.HasValue
+                ? await QueryRewardExperienceTransactionAsync(tenantId.Value, normalizedRewardBusinessKey)
+                : await QueryRewardExperienceTransactionByKeyOnlyAsync(normalizedRewardBusinessKey);
+            if (existingTransaction != null)
+            {
+                return ExperienceGrantOnceResult.Existing();
+            }
+
+            Log.Warning(ex, "经验奖励业务键 {RewardBusinessKey} 已被占用但未找到既有流水", normalizedRewardBusinessKey);
+            return ExperienceGrantOnceResult.Skip("奖励业务键冲突");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "经验值一次性发放失败：userId={UserId}, amount={Amount}, expType={ExpType}, RewardBusinessKey={RewardBusinessKey}",
+                userId, amount, expType, normalizedRewardBusinessKey);
+            return ExperienceGrantOnceResult.Skip("发放失败");
+        }
+    }
+
     public async Task<bool> HasExperienceTransactionAsync(long userId, string expType, string businessType, long businessId)
     {
         if (userId <= 0 || businessId <= 0 || string.IsNullOrWhiteSpace(expType) || string.IsNullOrWhiteSpace(businessType))
@@ -251,7 +337,9 @@ namespace Radish.Service;
         string expType,
         string? businessType,
         long? businessId,
-        string? remark)
+        string? remark,
+        string? rewardBusinessKey = null,
+        long? tenantId = null)
     {
         // 1. 获取或初始化用户经验值记录
         // 注意：不要在初始化后立即重新查询，会因事务未提交而查询不到
@@ -327,12 +415,14 @@ namespace Radish.Service;
             ExpAmount = amount,
             BusinessType = businessType,
             BusinessId = businessId,
+            RewardBusinessKey = rewardBusinessKey,
             Remark = remark,
             ExpBefore = oldTotalExp,
             ExpAfter = newTotalExp,
             LevelBefore = oldLevel,
             LevelAfter = newLevel,
             CreatedDate = DateTime.Today,
+            TenantId = tenantId ?? userExp.TenantId,
             CreateTime = DateTime.Now
         };
 
@@ -673,6 +763,72 @@ namespace Radish.Service;
         }
 
         return vo;
+    }
+
+    private async Task<T> ExecuteRewardUnitOfWorkAsync<T>(Func<Task<T>> action)
+    {
+        if (_unitOfWorkManage == null)
+        {
+            return await action();
+        }
+
+        using var unitOfWork = _unitOfWorkManage.CreateUnitOfWork();
+        try
+        {
+            var result = await action();
+            unitOfWork.Commit();
+            return result;
+        }
+        catch
+        {
+            throw;
+        }
+    }
+
+    private static string NormalizeRewardBusinessKey(string rewardBusinessKey)
+    {
+        var normalized = rewardBusinessKey.Trim();
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            throw new ArgumentException("奖励业务键不能为空", nameof(rewardBusinessKey));
+        }
+
+        if (normalized.Length > RewardBusinessKeyMaxLength)
+        {
+            throw new ArgumentException($"奖励业务键长度不能超过 {RewardBusinessKeyMaxLength}", nameof(rewardBusinessKey));
+        }
+
+        return normalized;
+    }
+
+    private async Task<ExpTransaction?> QueryRewardExperienceTransactionAsync(long tenantId, string rewardBusinessKey)
+    {
+        return await _expTransactionRepository.QueryFirstAsync(transaction =>
+            transaction.TenantId == tenantId &&
+            transaction.RewardBusinessKey == rewardBusinessKey);
+    }
+
+    private async Task<ExpTransaction?> QueryRewardExperienceTransactionByKeyOnlyAsync(string rewardBusinessKey)
+    {
+        return await _expTransactionRepository.QueryFirstAsync(transaction =>
+            transaction.RewardBusinessKey == rewardBusinessKey);
+    }
+
+    private static bool IsUniqueConstraintConflict(Exception ex)
+    {
+        for (var current = ex; current != null; current = current.InnerException)
+        {
+            if (!string.IsNullOrWhiteSpace(current.Message) &&
+                (current.Message.Contains("UNIQUE constraint failed", StringComparison.OrdinalIgnoreCase) ||
+                 current.Message.Contains("duplicate key", StringComparison.OrdinalIgnoreCase) ||
+                 current.Message.Contains("23505", StringComparison.OrdinalIgnoreCase) ||
+                 current.Message.Contains("unique", StringComparison.OrdinalIgnoreCase)))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
