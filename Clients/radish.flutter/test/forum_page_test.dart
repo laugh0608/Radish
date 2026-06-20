@@ -82,6 +82,31 @@ void main() {
     });
   });
 
+  test('http forum repository sends answer client submission id', () async {
+    final apiClient = _RecordingForumApiClient();
+    final repository = HttpForumRepository(
+      apiClient: apiClient,
+      endpoints: const RadishApiEndpoints(AppEnvironment.development()),
+    );
+
+    final question = await repository.answerQuestion(
+      postId: 'post-42',
+      content: '回答内容',
+      accessToken: 'access-token',
+      clientSubmissionId: 'forum-answer:test-key',
+    );
+
+    expect(question.postId, 'post-42');
+    expect(question.answerCount, 1);
+    expect(apiClient.lastUri?.path, '/api/v1/Question/Answer');
+    expect(apiClient.lastBearerToken, 'access-token');
+    expect(apiClient.lastBody, {
+      'postId': 'post-42',
+      'content': '回答内容',
+      'clientSubmissionId': 'forum-answer:test-key',
+    });
+  });
+
   test('http forum repository rejects blank client submission id', () async {
     final repository = HttpForumRepository(
       apiClient: _RecordingForumApiClient(),
@@ -118,6 +143,22 @@ void main() {
           (error) => error.message,
           'message',
           '评论请求缺少提交意图 ID',
+        ),
+      ),
+    );
+
+    expect(
+      () => repository.answerQuestion(
+        postId: 'post-42',
+        content: '回答内容',
+        accessToken: 'access-token',
+        clientSubmissionId: ' ',
+      ),
+      throwsA(
+        isA<RadishApiClientException>().having(
+          (error) => error.message,
+          'message',
+          '回答请求缺少提交意图 ID',
         ),
       ),
     );
@@ -662,7 +703,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(consumed, 1);
-    expect(find.text('帖子详情'), findsWidgets);
+    expect(find.text('How to wire Radish Flutter forum reading'), findsWidgets);
     expect(find.text('/forum/post/2042219067430928384'), findsOneWidget);
     expect(find.text('评论'), findsWidgets);
   });
@@ -901,6 +942,30 @@ class _SuccessForumRepository implements ForumRepository {
   }
 
   @override
+  Future<ForumQuestionDetail> answerQuestion({
+    required String postId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {
+    return ForumQuestionDetail(
+      postId: postId,
+      isSolved: false,
+      answerCount: 1,
+      answers: [
+        ForumAnswerSummary(
+          id: 'answer-created',
+          postId: postId,
+          authorId: 'current-user',
+          authorName: 'current',
+          content: content,
+          createTime: '2026-04-18T12:16:00Z',
+        ),
+      ],
+    );
+  }
+
+  @override
   Future<String> createPost({
     required String title,
     required String content,
@@ -1054,6 +1119,16 @@ class _FailingForumRepository implements ForumRepository {
   }
 
   @override
+  Future<ForumQuestionDetail> answerQuestion({
+    required String postId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {
+    throw const RadishApiClientException('回答发布服务暂时不可用');
+  }
+
+  @override
   Future<String> createPost({
     required String title,
     required String content,
@@ -1108,6 +1183,25 @@ class _RecordingForumApiClient implements RadishApiClient {
     lastUri = uri;
     lastBody = body;
     lastBearerToken = bearerToken;
+
+    if (uri.path == '/api/v1/Question/Answer') {
+      return decode({
+        'voPostId': 'post-42',
+        'voIsSolved': false,
+        'voAnswerCount': 1,
+        'voAnswers': const [
+          {
+            'voAnswerId': 'answer-1',
+            'voPostId': 'post-42',
+            'voAuthorId': 'user-1',
+            'voAuthorName': 'radish',
+            'voContent': '回答内容',
+            'voIsAccepted': false,
+            'voCreateTime': '2026-04-20T08:14:00Z',
+          },
+        ],
+      });
+    }
 
     return decode('created-id');
   }

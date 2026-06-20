@@ -57,6 +57,13 @@ abstract class ForumRepository {
     String? replyToUserName,
   });
 
+  Future<ForumQuestionDetail> answerQuestion({
+    required String postId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
+  });
+
   Future<String> createPost({
     required String title,
     required String content,
@@ -272,6 +279,34 @@ class HttpForumRepository implements ForumRepository {
       },
       bearerToken: accessToken,
       decode: _readCreatedCommentId,
+    );
+  }
+
+  @override
+  Future<ForumQuestionDetail> answerQuestion({
+    required String postId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) {
+    final normalizedPostId = postId.trim();
+    final normalizedContent = content.trim();
+    final normalizedClientSubmissionId = clientSubmissionId.trim();
+    if (normalizedClientSubmissionId.isEmpty) {
+      throw const RadishApiClientException('回答请求缺少提交意图 ID');
+    }
+
+    final uri = endpoints.resolveApi('/api/v1/Question/Answer');
+
+    return apiClient.post(
+      uri: uri,
+      body: {
+        'postId': normalizedPostId,
+        'content': normalizedContent,
+        'clientSubmissionId': normalizedClientSubmissionId,
+      },
+      bearerToken: accessToken,
+      decode: ForumQuestionDetail.fromJson,
     );
   }
 

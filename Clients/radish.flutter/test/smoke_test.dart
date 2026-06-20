@@ -3887,6 +3887,30 @@ class _FakeForumRepository implements ForumRepository {
   }
 
   @override
+  Future<ForumQuestionDetail> answerQuestion({
+    required String postId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {
+    return ForumQuestionDetail(
+      postId: postId,
+      isSolved: false,
+      answerCount: 1,
+      answers: [
+        ForumAnswerSummary(
+          id: 'answer-created',
+          postId: postId,
+          authorId: 'user-current',
+          authorName: 'current',
+          content: content,
+          createTime: '2026-04-20T08:14:00Z',
+        ),
+      ],
+    );
+  }
+
+  @override
   Future<String> createPost({
     required String title,
     required String content,
@@ -4130,6 +4154,30 @@ class _SeededForumRepository implements ForumRepository {
   }
 
   @override
+  Future<ForumQuestionDetail> answerQuestion({
+    required String postId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {
+    return ForumQuestionDetail(
+      postId: postId,
+      isSolved: false,
+      answerCount: 1,
+      answers: [
+        ForumAnswerSummary(
+          id: 'answer-created',
+          postId: postId,
+          authorId: 'user-current',
+          authorName: 'current',
+          content: content,
+          createTime: '2026-04-20T11:31:00Z',
+        ),
+      ],
+    );
+  }
+
+  @override
   Future<String> createPost({
     required String title,
     required String content,
@@ -4351,6 +4399,30 @@ class _SeededBigIdForumRepository implements ForumRepository {
     String? replyToUserName,
   }) async {
     return 'comment-created';
+  }
+
+  @override
+  Future<ForumQuestionDetail> answerQuestion({
+    required String postId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {
+    return ForumQuestionDetail(
+      postId: postId,
+      isSolved: false,
+      answerCount: 1,
+      answers: [
+        ForumAnswerSummary(
+          id: 'answer-big-created',
+          postId: postId,
+          authorId: 'current-user',
+          authorName: 'current',
+          content: content,
+          createTime: '2026-04-18T12:21:00Z',
+        ),
+      ],
+    );
   }
 
   @override
