@@ -51,6 +51,7 @@ import type {
   PostQuestion,
   PostAnswer,
   CreateCommentRequest,
+  UpdateCommentRequest,
   CreatePostQuickReplyRequest,
   CommentLikeResult,
   PostLikeResult,
@@ -111,6 +112,7 @@ export type {
   PostQuestion,
   PostAnswer,
   CreateCommentRequest,
+  UpdateCommentRequest,
   CreatePostQuickReplyRequest,
   CommentLikeResult,
   PostLikeResult,
@@ -619,18 +621,11 @@ export async function deletePost(postId: LongId, t: TFunction): Promise<void> {
  * @param request 编辑评论请求参数
  */
 export async function updateComment(
-  request: { commentId: LongId; content: string },
+  request: UpdateCommentRequest,
   t: TFunction
 ): Promise<void> {
   void t;
-  const response = await apiPut<null>(
-    '/api/v1/Comment/Update',
-    {
-      commentId: request.commentId,
-      content: request.content
-    },
-    { withAuth: true }
-  );
+  const response = await apiPut<null>('/api/v1/Comment/Update', request, { withAuth: true });
 
   if (!response.ok) {
     throw new Error(response.message || '编辑评论失败');

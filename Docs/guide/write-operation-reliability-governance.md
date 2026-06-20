@@ -119,7 +119,7 @@ Redis 只在以下条件满足后进入实现评审：
 
 `WOG-6 跨端幂等契约补齐` 已于 `2026-06-20` 完成首批实现，只补 Flutter 单商品购买的 `idempotencyKey`，不纳入 Flutter 转账、完整移动商城或服务端强制 key。后续若要强制服务端 key 或扩展新的移动资产写入口，应重新按写操作可靠性口径评审。
 
-WOG 首轮收束后的下一批推荐候选已切到 [论坛内容发布可靠性与编辑历史治理](/guide/forum-content-write-reliability-governance)。该专题不继续扩大资产幂等范围；首批已按确认方案先推进发帖、评论和回答创建链路的 `clientSubmissionId`、内容指纹短窗口与提交意图记录，帖子 / 评论编辑重试幂等和独立频率限制后续再评审。
+WOG 首轮收束后的下一批推荐候选已切到 [论坛内容发布可靠性与编辑历史治理](/guide/forum-content-write-reliability-governance)。该专题不继续扩大资产幂等范围；创建链路和首批帖子 / 评论编辑重试幂等已按确认方案完成，Web 发帖、评论、回答、帖子编辑和评论编辑均接入 `clientSubmissionId`、内容指纹短窗口与提交意图记录；独立频率限制和 Flutter 论坛写入口承接后续再评审。
 
 ## 与既有专题的关系
 

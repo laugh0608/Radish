@@ -544,6 +544,7 @@ export interface UpdatePostRequest {
   postId: LongId;
   title: string;
   content: string;
+  clientSubmissionId?: string;
   categoryId?: LongId;
   tagNames: string[];
 }
@@ -568,6 +569,15 @@ export interface CreateCommentRequest {
   replyToCommentSnapshot?: string | null;
   replyToUserId?: LongId | null;
   replyToUserName?: string | null;
+}
+
+/**
+ * 编辑评论请求
+ */
+export interface UpdateCommentRequest {
+  commentId: LongId;
+  content: string;
+  clientSubmissionId?: string;
 }
 
 /**

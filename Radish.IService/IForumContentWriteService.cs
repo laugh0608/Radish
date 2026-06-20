@@ -27,13 +27,36 @@ public interface IForumContentWriteService
         string authorName,
         long tenantId,
         string? clientSubmissionId);
+
+    Task<ContentWriteResult<PostEditResult>> UpdatePostAsync(
+        long tenantId,
+        long postId,
+        string title,
+        string content,
+        long? categoryId,
+        List<string>? tagNames,
+        bool allowCreateTag,
+        long operatorId,
+        string operatorName,
+        bool isAdmin,
+        string? clientSubmissionId);
+
+    Task<ContentWriteResult<CommentEditResult>> UpdateCommentAsync(
+        long tenantId,
+        long commentId,
+        string content,
+        long operatorId,
+        string operatorName,
+        bool isAdmin,
+        string? clientSubmissionId);
 }
 
 public enum ContentWriteStatus
 {
     Created = 1,
     Replayed = 2,
-    DuplicateContent = 3
+    DuplicateContent = 3,
+    NoChange = 4
 }
 
 public sealed class ContentWriteResult<T>
@@ -45,6 +68,8 @@ public sealed class ContentWriteResult<T>
     public string? Message { get; init; }
 
     public bool Created => Status == ContentWriteStatus.Created;
+
+    public bool Mutated => Status == ContentWriteStatus.Created;
 
     public static ContentWriteResult<T> CreatedResult(T result, string? message = null)
     {
@@ -75,6 +100,16 @@ public sealed class ContentWriteResult<T>
             Message = message
         };
     }
+
+    public static ContentWriteResult<T> NoChangeResult(T result, string? message = null)
+    {
+        return new ContentWriteResult<T>
+        {
+            Status = ContentWriteStatus.NoChange,
+            Result = result,
+            Message = message
+        };
+    }
 }
 
 public sealed class CommentCreateResult
@@ -82,4 +117,18 @@ public sealed class CommentCreateResult
     public long CommentId { get; init; }
 
     public CommentHighlightRecheckResultVo HighlightRecheckResult { get; init; } = new();
+}
+
+public sealed class PostEditResult
+{
+    public long PostId { get; init; }
+}
+
+public sealed class CommentEditResult
+{
+    public long CommentId { get; init; }
+
+    public long PostId { get; init; }
+
+    public long? ParentId { get; init; }
 }

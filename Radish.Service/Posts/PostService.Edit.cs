@@ -31,8 +31,6 @@ public partial class PostService
             throw new ArgumentException("帖子内容不能为空", nameof(content));
         }
 
-        var contentSettings = await ValidatePostContentSettingsAsync(title, content);
-
         var normalizedTagNames = NormalizeTagNamesOrThrow(tagNames, nameof(tagNames), "编辑帖子时至少需要一个标签");
 
         var post = await _postRepository.QueryByIdAsync(postId);
@@ -40,6 +38,16 @@ public partial class PostService
         {
             throw new InvalidOperationException("帖子不存在");
         }
+
+        var trimmedTitle = title.Trim();
+        var trimmedContent = content.Trim();
+        var targetCategoryId = categoryId ?? post.CategoryId;
+        if (await IsPostEditNoChangeAsync(post, trimmedTitle, trimmedContent, targetCategoryId, normalizedTagNames))
+        {
+            return;
+        }
+
+        var contentSettings = await ValidatePostContentSettingsAsync(trimmedTitle, trimmedContent);
 
         var postOptions = _editHistoryOptions.Post;
         var historyEnabled = _editHistoryOptions.Enable && postOptions.EnableHistory;
@@ -54,7 +62,6 @@ public partial class PostService
             }
         }
 
-        var targetCategoryId = categoryId ?? post.CategoryId;
         if (targetCategoryId > 0 && targetCategoryId != post.CategoryId)
         {
             var oldCategory = await _categoryRepository.QueryByIdAsync(post.CategoryId);
@@ -73,8 +80,6 @@ public partial class PostService
         }
 
         var safeOperatorName = string.IsNullOrWhiteSpace(operatorName) ? "System" : operatorName;
-        var trimmedTitle = title.Trim();
-        var trimmedContent = content.Trim();
         var nextEditSequence = existingEditCount + 1;
 
         if (historyEnabled && nextEditSequence <= Math.Max(0, postOptions.HistorySaveEditCount))
@@ -114,6 +119,46 @@ public partial class PostService
         {
             await TrimPostHistoryAsync(postId, Math.Max(1, postOptions.MaxHistoryRecords));
         }
+    }
+
+    private async Task<bool> IsPostEditNoChangeAsync(
+        Post post,
+        string trimmedTitle,
+        string trimmedContent,
+        long targetCategoryId,
+        List<string> normalizedTagNames)
+    {
+        if (!string.Equals(post.Title?.Trim(), trimmedTitle, StringComparison.Ordinal) ||
+            !string.Equals(post.Content?.Trim(), trimmedContent, StringComparison.Ordinal) ||
+            post.CategoryId != targetCategoryId)
+        {
+            return false;
+        }
+
+        var existingPostTags = await _postTagRepository.QueryAsync(pt => pt.PostId == post.Id);
+        var existingTagIds = existingPostTags
+            .Select(postTag => postTag.TagId)
+            .Distinct()
+            .ToList();
+        var existingTagNames = new List<string>();
+        if (existingTagIds.Count > 0)
+        {
+            var existingTags = await _tagRepository.QueryAsync(tag => existingTagIds.Contains(tag.Id) && !tag.IsDeleted);
+            existingTagNames = existingTags
+                .Select(tag => tag.Name.Trim())
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        var requestedTagNames = normalizedTagNames
+            .Select(tag => tag.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(tag => tag, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        return existingTagNames.SequenceEqual(requestedTagNames, StringComparer.OrdinalIgnoreCase);
     }
 
     public async Task<(List<PostEditHistoryVo> histories, int total)> GetPostEditHistoryPageAsync(long postId, int pageIndex, int pageSize)

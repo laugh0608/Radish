@@ -22,6 +22,84 @@ namespace Radish.Api.Tests.Services;
 /// </summary>
 public class CommentEditHistoryServiceTest
 {
+    [Fact(DisplayName = "评论内容无变化时不应写入编辑历史")]
+    public async Task UpdateCommentAsync_ShouldSkipHistoryAndUpdate_WhenContentIsUnchanged()
+    {
+        var mapper = new Mock<IMapper>();
+        var commentRepository = new Mock<IBaseRepository<Comment>>();
+        var userCommentLikeRepository = new Mock<IBaseRepository<UserCommentLike>>();
+        var highlightRepository = new Mock<IBaseRepository<CommentHighlight>>();
+        var commentEditHistoryRepository = new Mock<IBaseRepository<CommentEditHistory>>();
+        var postService = new Mock<IPostService>();
+        var caching = new Mock<ICaching>();
+        var coinRewardService = new Mock<ICoinRewardService>();
+        var notificationService = new Mock<INotificationService>();
+        var dedupService = new Mock<INotificationDedupService>();
+        var experienceService = new Mock<IExperienceService>();
+        var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>();
+
+        var comment = new Comment
+        {
+            Id = 1001,
+            PostId = 2001,
+            AuthorId = 3001,
+            AuthorName = "test-user",
+            Content = "old-content",
+            CreateTime = DateTime.Now.AddMinutes(-1),
+            IsDeleted = false,
+            TenantId = 1
+        };
+
+        commentRepository
+            .Setup(r => r.QueryByIdAsync(comment.Id))
+            .ReturnsAsync(comment);
+
+        var service = new CommentService(
+            mapper.Object,
+            commentRepository.Object,
+            userCommentLikeRepository.Object,
+            highlightRepository.Object,
+            postService.Object,
+            caching.Object,
+            coinRewardService.Object,
+            notificationService.Object,
+            dedupService.Object,
+            experienceService.Object,
+            attachmentUrlResolver.Object,
+            Options.Create(new CommentHighlightOptions()),
+            commentEditHistoryRepository.Object,
+            Options.Create(new ForumEditHistoryOptions
+            {
+                Enable = true,
+                Comment = new ForumCommentEditHistoryOptions
+                {
+                    EnableHistory = true,
+                    MaxEditCount = 2,
+                    HistorySaveEditCount = 2,
+                    MaxHistoryRecords = 2,
+                    EditWindowMinutes = 5
+                }
+            }),
+            CreateDefaultSystemSettingProvider());
+
+        var (success, message) = await service.UpdateCommentAsync(
+            comment.Id,
+            " old-content ",
+            comment.AuthorId,
+            "test-user",
+            isAdmin: false);
+
+        success.ShouldBeTrue();
+        message.ShouldContain("内容没有变化");
+        commentEditHistoryRepository.Verify(
+            repository => repository.QueryCountAsync(It.IsAny<Expression<Func<CommentEditHistory, bool>>?>()),
+            Times.Never);
+        commentEditHistoryRepository.Verify(
+            repository => repository.AddAsync(It.IsAny<CommentEditHistory>()),
+            Times.Never);
+        commentRepository.Verify(repository => repository.UpdateAsync(It.IsAny<Comment>()), Times.Never);
+    }
+
     [Fact(DisplayName = "普通用户超过次数上限应失败")]
     public async Task UpdateCommentAsync_ShouldFail_WhenReachMaxEditCount_ForNormalUser()
     {

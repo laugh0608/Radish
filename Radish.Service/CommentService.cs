@@ -1006,6 +1006,17 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             return (false, "只有作者本人可以编辑评论");
         }
 
+        if (string.IsNullOrWhiteSpace(newContent))
+        {
+            return (false, "评论内容不能为空");
+        }
+
+        var trimmedContent = newContent.Trim();
+        if (string.Equals(comment.Content?.Trim(), trimmedContent, StringComparison.Ordinal))
+        {
+            return (true, "内容没有变化，无需保存");
+        }
+
         var commentOptions = _editHistoryOptions.Comment;
         var historyEnabled = _editHistoryOptions.Enable && commentOptions.EnableHistory;
         var historyEditCount = await _commentEditHistoryRepository.QueryCountAsync(h => h.CommentId == commentId);
@@ -1028,14 +1039,9 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         }
 
         // 4. 验证内容
-        if (string.IsNullOrWhiteSpace(newContent))
-        {
-            return (false, "评论内容不能为空");
-        }
-
         try
         {
-            await ValidateCommentContentSettingsAsync(newContent);
+            await ValidateCommentContentSettingsAsync(trimmedContent);
         }
         catch (ArgumentException ex)
         {
@@ -1043,7 +1049,6 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         }
 
         var safeUserName = string.IsNullOrWhiteSpace(userName) ? "System" : userName;
-        var trimmedContent = newContent.Trim();
         var nextEditSequence = existingEditCount + 1;
 
         if (historyEnabled)
@@ -1055,7 +1060,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                     CommentId = comment.Id,
                     PostId = comment.PostId,
                     EditSequence = nextEditSequence,
-                    OldContent = comment.Content,
+                    OldContent = comment.Content ?? string.Empty,
                     NewContent = trimmedContent,
                     EditorId = userId,
                     EditorName = safeUserName,

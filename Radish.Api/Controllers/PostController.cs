@@ -636,7 +636,8 @@ public class PostController : ControllerBase
 
         try
         {
-            await _postService.UpdatePostAsync(
+            var editResult = await _forumContentWriteService.UpdatePostAsync(
+                tenantId: Current.TenantId,
                 postId: request.PostId,
                 title: request.Title,
                 content: request.Content,
@@ -645,7 +646,15 @@ public class PostController : ControllerBase
                 allowCreateTag: allowCreateTag,
                 operatorId: Current.UserId,
                 operatorName: Current.UserName,
-                isAdmin: isAdmin);
+                isAdmin: isAdmin,
+                clientSubmissionId: request.ClientSubmissionId);
+
+            return new MessageModel
+            {
+                IsSuccess = true,
+                StatusCode = (int)HttpStatusCodeEnum.Success,
+                MessageInfo = editResult.Message ?? "编辑成功"
+            };
         }
         catch (InvalidOperationException ex)
         {
@@ -665,13 +674,6 @@ public class PostController : ControllerBase
                 MessageInfo = ex.Message
             };
         }
-
-        return new MessageModel
-        {
-            IsSuccess = true,
-            StatusCode = (int)HttpStatusCodeEnum.Success,
-            MessageInfo = "编辑成功"
-        };
     }
 
     /// <summary>

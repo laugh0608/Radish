@@ -12,9 +12,11 @@ public class ForumContentWriteService : IForumContentWriteService
     private const int PostCreateDuplicateWindowSeconds = 180;
     private const int CommentCreateDuplicateWindowSeconds = 60;
     private const int AnswerCreateDuplicateWindowSeconds = 120;
+    private const int EditDuplicateWindowSeconds = 60;
 
     private const string CategoryTargetType = "Category";
     private const string PostTargetType = "Post";
+    private const string CommentTargetType = "Comment";
 
     private readonly IContentSubmissionService _contentSubmissionService;
     private readonly IPostService _postService;
@@ -253,6 +255,169 @@ public class ForumContentWriteService : IForumContentWriteService
         }
     }
 
+    public async Task<ContentWriteResult<PostEditResult>> UpdatePostAsync(
+        long tenantId,
+        long postId,
+        string title,
+        string content,
+        long? categoryId,
+        List<string>? tagNames,
+        bool allowCreateTag,
+        long operatorId,
+        string operatorName,
+        bool isAdmin,
+        string? clientSubmissionId)
+    {
+        var currentPost = await _postService.GetPostDetailAsync(postId, operatorId);
+        var effectiveCategoryId = categoryId ?? currentPost?.VoCategoryId;
+        var snapshot = _contentSubmissionService.CreateRequestSnapshot(
+            BuildPostEditRequestValues(postId, title, content, effectiveCategoryId, tagNames),
+            BuildPostEditFingerprintValues(postId, title, content, effectiveCategoryId, tagNames));
+        var beginResult = await _contentSubmissionService.BeginAsync(new ContentSubmissionBeginRequest
+        {
+            TenantId = tenantId,
+            UserId = operatorId,
+            OperationType = ContentSubmissionOperationTypes.ForumPostEdit,
+            ClientSubmissionId = clientSubmissionId,
+            TargetType = PostTargetType,
+            TargetId = postId,
+            RequestDigest = snapshot.RequestDigest,
+            RequestSummary = snapshot.RequestSummary,
+            ContentFingerprint = snapshot.ContentFingerprint,
+            DuplicateWindowSeconds = EditDuplicateWindowSeconds
+        });
+
+        if (TryResolveReplay(beginResult, ContentSubmissionResultTypes.Post, out var replayPostId))
+        {
+            return beginResult.Status == ContentSubmissionBeginStatus.DuplicateContent
+                ? ContentWriteResult<PostEditResult>.DuplicateContentResult(
+                    new PostEditResult { PostId = replayPostId },
+                    beginResult.Message)
+                : ContentWriteResult<PostEditResult>.ReplayedResult(
+                    new PostEditResult { PostId = replayPostId },
+                    beginResult.Message);
+        }
+
+        EnsureStarted(beginResult);
+
+        if (IsPostEditNoChange(currentPost, title, content, effectiveCategoryId, tagNames))
+        {
+            await CompleteSuccessAsync(beginResult, ContentSubmissionResultTypes.Post, postId, currentPost?.VoPublicId);
+            return ContentWriteResult<PostEditResult>.NoChangeResult(
+                new PostEditResult { PostId = postId },
+                "内容没有变化，无需保存");
+        }
+
+        var postUpdated = false;
+        try
+        {
+            await _postService.UpdatePostAsync(
+                postId,
+                title,
+                content,
+                categoryId,
+                tagNames,
+                allowCreateTag,
+                operatorId,
+                operatorName,
+                isAdmin);
+            postUpdated = true;
+
+            await CompleteSuccessAsync(beginResult, ContentSubmissionResultTypes.Post, postId, currentPost?.VoPublicId);
+            return ContentWriteResult<PostEditResult>.CreatedResult(new PostEditResult { PostId = postId });
+        }
+        catch (Exception ex)
+        {
+            if (postUpdated)
+            {
+                await CompleteSuccessAsync(beginResult, ContentSubmissionResultTypes.Post, postId, currentPost?.VoPublicId);
+                return ContentWriteResult<PostEditResult>.CreatedResult(new PostEditResult { PostId = postId });
+            }
+
+            await CompleteFailureAsync(beginResult, ex);
+            throw;
+        }
+    }
+
+    public async Task<ContentWriteResult<CommentEditResult>> UpdateCommentAsync(
+        long tenantId,
+        long commentId,
+        string content,
+        long operatorId,
+        string operatorName,
+        bool isAdmin,
+        string? clientSubmissionId)
+    {
+        var currentComment = await _commentService.QueryFirstAsync(comment => comment.Id == commentId && !comment.IsDeleted);
+        var snapshot = _contentSubmissionService.CreateRequestSnapshot(
+            BuildCommentEditRequestValues(commentId, content),
+            BuildCommentEditFingerprintValues(commentId, content));
+        var beginResult = await _contentSubmissionService.BeginAsync(new ContentSubmissionBeginRequest
+        {
+            TenantId = tenantId,
+            UserId = operatorId,
+            OperationType = ContentSubmissionOperationTypes.ForumCommentEdit,
+            ClientSubmissionId = clientSubmissionId,
+            TargetType = CommentTargetType,
+            TargetId = commentId,
+            RequestDigest = snapshot.RequestDigest,
+            RequestSummary = snapshot.RequestSummary,
+            ContentFingerprint = snapshot.ContentFingerprint,
+            DuplicateWindowSeconds = EditDuplicateWindowSeconds
+        });
+
+        if (TryResolveReplay(beginResult, ContentSubmissionResultTypes.Comment, out var replayCommentId))
+        {
+            return beginResult.Status == ContentSubmissionBeginStatus.DuplicateContent
+                ? ContentWriteResult<CommentEditResult>.DuplicateContentResult(
+                    BuildCommentEditResult(replayCommentId, currentComment),
+                    beginResult.Message)
+                : ContentWriteResult<CommentEditResult>.ReplayedResult(
+                    BuildCommentEditResult(replayCommentId, currentComment),
+                    beginResult.Message);
+        }
+
+        EnsureStarted(beginResult);
+
+        if (IsCommentEditNoChange(currentComment, content))
+        {
+            await CompleteSuccessAsync(beginResult, ContentSubmissionResultTypes.Comment, commentId, null);
+            return ContentWriteResult<CommentEditResult>.NoChangeResult(
+                BuildCommentEditResult(commentId, currentComment),
+                "内容没有变化，无需保存");
+        }
+
+        var commentUpdated = false;
+        try
+        {
+            var (success, message) = await _commentService.UpdateCommentAsync(
+                commentId,
+                content,
+                operatorId,
+                operatorName,
+                isAdmin);
+            if (!success)
+            {
+                throw new InvalidOperationException(message);
+            }
+
+            commentUpdated = true;
+            await CompleteSuccessAsync(beginResult, ContentSubmissionResultTypes.Comment, commentId, null);
+            return ContentWriteResult<CommentEditResult>.CreatedResult(BuildCommentEditResult(commentId, currentComment), message);
+        }
+        catch (Exception ex)
+        {
+            if (commentUpdated)
+            {
+                await CompleteSuccessAsync(beginResult, ContentSubmissionResultTypes.Comment, commentId, null);
+                return ContentWriteResult<CommentEditResult>.CreatedResult(BuildCommentEditResult(commentId, currentComment));
+            }
+
+            await CompleteFailureAsync(beginResult, ex);
+            throw;
+        }
+    }
+
     private async Task<PostQuestionVo> ResolveQuestionAsync(long postId, long viewerUserId)
     {
         var post = await _postService.GetPostDetailAsync(postId, viewerUserId);
@@ -390,6 +555,89 @@ public class ForumContentWriteService : IForumContentWriteService
     private static IReadOnlyDictionary<string, object?> BuildAnswerCreateFingerprintValues(long postId, string content)
     {
         return BuildAnswerCreateRequestValues(postId, content);
+    }
+
+    private static IReadOnlyDictionary<string, object?> BuildPostEditRequestValues(
+        long postId,
+        string title,
+        string content,
+        long? categoryId,
+        List<string>? tagNames)
+    {
+        return new Dictionary<string, object?>
+        {
+            ["postId"] = postId,
+            ["title"] = title,
+            ["content"] = content,
+            ["categoryId"] = categoryId,
+            ["tagNames"] = NormalizeTagNames(tagNames)
+        };
+    }
+
+    private static IReadOnlyDictionary<string, object?> BuildPostEditFingerprintValues(
+        long postId,
+        string title,
+        string content,
+        long? categoryId,
+        List<string>? tagNames)
+    {
+        return BuildPostEditRequestValues(postId, title, content, categoryId, tagNames);
+    }
+
+    private static IReadOnlyDictionary<string, object?> BuildCommentEditRequestValues(long commentId, string content)
+    {
+        return new Dictionary<string, object?>
+        {
+            ["commentId"] = commentId,
+            ["content"] = content
+        };
+    }
+
+    private static IReadOnlyDictionary<string, object?> BuildCommentEditFingerprintValues(long commentId, string content)
+    {
+        return BuildCommentEditRequestValues(commentId, content);
+    }
+
+    private static bool IsPostEditNoChange(
+        PostVo? currentPost,
+        string title,
+        string content,
+        long? categoryId,
+        List<string>? tagNames)
+    {
+        if (currentPost == null)
+        {
+            return false;
+        }
+
+        return string.Equals(currentPost.VoTitle.Trim(), title.Trim(), StringComparison.Ordinal) &&
+            string.Equals(currentPost.VoContent.Trim(), content.Trim(), StringComparison.Ordinal) &&
+            currentPost.VoCategoryId == categoryId &&
+            NormalizeTagNames(ParseTagNames(currentPost.VoTags))
+                .SequenceEqual(NormalizeTagNames(tagNames), StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static bool IsCommentEditNoChange(CommentVo? currentComment, string content)
+    {
+        return currentComment != null &&
+            string.Equals(currentComment.VoContent?.Trim(), content.Trim(), StringComparison.Ordinal);
+    }
+
+    private static CommentEditResult BuildCommentEditResult(long commentId, CommentVo? currentComment)
+    {
+        return new CommentEditResult
+        {
+            CommentId = commentId,
+            PostId = currentComment?.VoPostId ?? 0,
+            ParentId = currentComment?.VoParentId
+        };
+    }
+
+    private static List<string> ParseTagNames(string? tags)
+    {
+        return string.IsNullOrWhiteSpace(tags)
+            ? []
+            : tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
     }
 
     private static List<string> NormalizeTagNames(List<string>? tagNames)

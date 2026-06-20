@@ -76,6 +76,7 @@ interface PostDetailContentViewProps {
   onCommentSortChange: (sortBy: 'newest' | 'hottest') => void;
   onDeleteComment: (commentId: LongId) => void;
   onEditComment: (commentId: LongId, newContent: string) => Promise<void>;
+  onCancelEditComment: () => void;
   onViewCommentHistory: (commentId: LongId) => void;
   onLikeComment: (commentId: LongId) => Promise<{ isLiked: boolean; likeCount: number }>;
   onReplyComment: (target: CommentReplyTarget) => void;
@@ -161,6 +162,7 @@ export const PostDetailContentView = ({
   onCommentSortChange,
   onDeleteComment,
   onEditComment,
+  onCancelEditComment,
   onViewCommentHistory,
   onLikeComment,
   onReplyComment,
@@ -468,6 +470,7 @@ export const PostDetailContentView = ({
               onSortChange={onCommentSortChange}
               onDeleteComment={onDeleteComment}
               onEditComment={onEditComment}
+              onCancelEditComment={onCancelEditComment}
               onViewCommentHistory={onViewCommentHistory}
               onLikeComment={onLikeComment}
               onReplyComment={(target) => {

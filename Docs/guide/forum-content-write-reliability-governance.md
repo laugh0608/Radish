@@ -1,6 +1,6 @@
 # 论坛内容发布可靠性与编辑历史治理
 
-> 状态：`首批创建链路已完成`
+> 状态：`创建链路与首批编辑重试幂等已完成`
 >
 > 记录日期：`2026-06-20`（Asia/Shanghai）
 >
@@ -17,7 +17,7 @@
 - 发布频率限制按用户、内容类型和目标对象分层，不误伤跨帖子正常互动。
 - 编辑历史继续以现有 `PostEditHistory` / `CommentEditHistory` 为真值，不新增通用编辑历史表。
 
-当前首批代码已按确认方案先覆盖创建链路：`PublishPostDto`、`CreateCommentDto` 与 `CreateAnswerDto` 新增可选 `ClientSubmissionId`，服务端新增 `ContentSubmissionRecord` 作为内容提交意图记录，Web 论坛发帖、评论和回答会按提交意图生成并复用 key。帖子 / 评论编辑只保留操作常量和文档边界，后续进入独立评审。
+当前代码已按确认方案覆盖创建链路和首批编辑重试幂等：`PublishPostDto`、`CreateCommentDto`、`CreateAnswerDto`、`UpdatePostDto` 与 `UpdateCommentDto` 新增可选 `ClientSubmissionId`，服务端新增 `ContentSubmissionRecord` 作为内容提交意图记录，Web 论坛发帖、评论、回答、帖子编辑和评论编辑会按提交意图生成并复用 key。帖子 / 评论编辑历史继续使用既有 `PostEditHistory` / `CommentEditHistory`，不新增通用编辑历史表。
 
 ## 当前代码事实
 
@@ -26,8 +26,8 @@
 | 发帖 | `PublishPostDto` 已支持可选 `ClientSubmissionId`，创建路径经 `ForumContentWriteService.PublishPostAsync` 包装后再进入 `PostService.PublishPostAsync` | 同 key 成功重试返回已有帖子；无 key 时按短窗口内容指纹降低重复发帖 |
 | 评论 | `CreateCommentDto` 已支持可选 `ClientSubmissionId`，创建路径经 `ForumContentWriteService.CreateCommentAsync` 包装后再进入 `CommentService.AddCommentAsync` | 同帖同 key 成功重试返回已有评论；避免重复评论和重复实时事件 |
 | 回答 | `CreateAnswerDto` 已支持可选 `ClientSubmissionId`，创建路径经 `ForumContentWriteService.AddAnswerAsync` 包装后再进入 `PostService.AddAnswerAsync` | 同 key 成功重试返回已有回答，避免同一回答重复创建 |
-| 帖子编辑 | `UpdatePostDto` 进入 `PostService.UpdatePostAsync`，已有编辑次数与历史记录 | 重试编辑不应重复增加编辑次数或历史记录 |
-| 评论编辑 | `UpdateCommentDto` 进入 `CommentService.UpdateCommentAsync`，已有编辑时间窗、次数与历史记录 | 重试编辑不应重复增加编辑次数或历史记录 |
+| 帖子编辑 | `UpdatePostDto` 已支持可选 `ClientSubmissionId`，编辑路径经 `ForumContentWriteService.UpdatePostAsync` 包装后再进入 `PostService.UpdatePostAsync` | 同 key 成功重试不重复更新；无变化保存不写历史、不递增 `EditCount` |
+| 评论编辑 | `UpdateCommentDto` 已支持可选 `ClientSubmissionId`，编辑路径经 `ForumContentWriteService.UpdateCommentAsync` 包装后再进入 `CommentService.UpdateCommentAsync` | 同 key 成功重试不重复更新；无变化保存不写历史、不重复推送评论实时事件 |
 | 编辑历史 | 已存在 `ForumEditHistoryOptions`、`PostEditHistory`、`CommentEditHistory` 和查询接口 | 首批沿用既有模型，不新增 `ContentEditHistory` |
 | 轻回应 | `PostQuickReplyService` 已有内容长度、返回条数、冷却和重复内容窗口设置 | 只做边界复核，不并入本批重做 |
 
@@ -39,26 +39,20 @@
 4. 编辑成功后才写历史；无内容变化、旧提交重试或冲突提交都不新增编辑历史。
 5. 频率限制按业务对象分层，避免用户在不同帖子之间正常参与时被全局拦截。
 
-## 首批范围
+## 已完成范围
 
-本次已确认首批代码先纳入创建链路：
+本次已确认并完成以下范围：
 
 | 类型 | DTO | 服务入口 | 可靠性目标 |
 | --- | --- | --- | --- |
 | 发帖 | `PublishPostDto` | `PostService.PublishPostAsync` | 同 key 重试返回已有帖子，短窗口相同内容提示已提交 |
 | 评论 / 回复 | `CreateCommentDto` | `CommentService.AddCommentAsync` | 同帖同 key 重试返回已有评论，避免重复评论和重复通知 |
 | 问答回答 | `CreateAnswerDto` | `PostService.AddAnswerAsync` | 同 key 重试返回已有回答，避免同一回答重复创建 |
+| 帖子编辑 | `UpdatePostDto` | `PostService.UpdatePostAsync` | 同 key 重试不重复写历史，不重复递增编辑次数；无变化保存不写历史 |
+| 评论编辑 | `UpdateCommentDto` | `CommentService.UpdateCommentAsync` | 同 key 重试不重复写历史，不绕过时间窗与次数限制；无变化保存不写历史、不重复推送实时事件 |
 
-后续保留评审但本批不进入代码实现：
+本阶段不纳入：
 
-| 类型 | DTO | 服务入口 | 后续目标 |
-| --- | --- | --- | --- |
-| 帖子编辑 | `UpdatePostDto` | `PostService.UpdatePostAsync` | 同 key 重试不重复写历史，不重复递增编辑次数 |
-| 评论编辑 | `UpdateCommentDto` | `CommentService.UpdateCommentAsync` | 同 key 重试不重复写历史，不绕过时间窗与次数限制 |
-
-首批不纳入：
-
-- 帖子 / 评论编辑重试幂等代码实现。
 - 独立内容发布频率限制平台或可配置频控。
 - `PostQuickReplyService` 轻回应完整重做。
 - 投票、抽奖开奖、采纳回答、点赞、关注、Reaction 等其他互动写入。
@@ -82,7 +76,7 @@
 | --- | --- |
 | `TenantId` | 租户边界 |
 | `UserId` | 提交用户 |
-| `OperationType` | `ForumPostCreate`、`ForumCommentCreate`、`ForumAnswerCreate`；`ForumPostEdit`、`ForumCommentEdit` 先保留常量 |
+| `OperationType` | `ForumPostCreate`、`ForumCommentCreate`、`ForumAnswerCreate`、`ForumPostEdit`、`ForumCommentEdit` |
 | `ClientSubmissionId` | 客户端生成的提交意图 key |
 | `TargetType` | 目标对象类型，例如 `Post`、`Comment` |
 | `TargetId` | 目标对象 Id；发帖可为空或记录分类 Id 作为上下文 |
@@ -101,7 +95,7 @@
 写入语义：
 
 1. 客户端提交 `clientSubmissionId` 时，服务端先尝试创建 `Pending` 记录。
-2. 创建成功后执行真实发布或编辑，成功后把记录更新为 `Succeeded` 并写入结果。
+2. 创建成功后执行真实发布、回答或编辑，成功后把记录更新为 `Succeeded` 并写入结果。
 3. 唯一冲突时读取已有记录：
    - `RequestDigest` 一致且状态为 `Succeeded`：返回已有结果，不重复写内容。
    - `RequestDigest` 一致且状态为 `Pending`：返回“正在提交，请稍后确认”，不重复执行写入。
@@ -116,8 +110,8 @@
 - 发帖：`forum-post:{uuid}`
 - 评论 / 回复：`forum-comment:{uuid}`
 - 回答：`forum-answer:{uuid}`
-- 帖子编辑：`forum-post-edit:{uuid}`（后续保留）
-- 评论编辑：`forum-comment-edit:{uuid}`（后续保留）
+- 帖子编辑：`forum-post-edit:{uuid}`
+- 评论编辑：`forum-comment-edit:{uuid}`
 
 前端行为：
 
@@ -127,7 +121,7 @@
 - 服务端返回重复提交结果时，跳转到已有内容或展示“刚刚已提交”。
 - 服务端返回频率限制时，展示剩余等待时间。
 
-首批先让 Web 论坛创建路径传 key；旧客户端不传 key 时走内容指纹短窗口保护。后续 Flutter 承接论坛完整写入时复用同一字段和前缀规则。
+Web 论坛创建和首批编辑路径已传 key；旧客户端不传 key 时走内容指纹短窗口保护。后续 Flutter 承接论坛完整写入时复用同一字段和前缀规则。
 
 ### 决策 3：内容指纹只做短窗口保护
 
@@ -150,7 +144,7 @@
 | 发帖 | `180` 秒 | 同用户同类型相同指纹提示“刚刚已发布，请勿重复提交” |
 | 评论 / 回复 | `60` 秒 | 同用户同帖相同指纹提示“刚刚已评论，请勿重复提交” |
 | 回答 | `120` 秒 | 同用户同问答帖相同指纹提示“刚刚已提交回答” |
-| 编辑 | `60` 秒 | 后续评审，相同编辑重试不新增历史，提示内容已保存 |
+| 编辑 | `60` 秒 | 相同编辑重试不新增历史，提示内容已保存或返回已有结果 |
 
 窗口数值首批先做代码默认值，不直接开放到 Console 系统设置。若后续真实运营需要调整，再按系统设置治理专题独立评审。
 
@@ -175,7 +169,7 @@
 
 现有 `PostEditHistory` / `CommentEditHistory` 继续作为编辑历史唯一真值。
 
-建议补齐的规则：
+已落地规则：
 
 1. 内容没有变化时直接返回业务提示，不写历史，不递增 `EditCount`。
 2. 同一 `clientSubmissionId` 重试时返回上一次编辑结果，不写第二条历史。
@@ -200,7 +194,7 @@
 
 ## 验证入口
 
-本批代码需要覆盖：
+本批代码已按以下口径覆盖：
 
 1. 后端定向测试
    - 同一 `clientSubmissionId` 重试发帖只创建一条帖子。
@@ -208,10 +202,12 @@
    - 无 key 的同用户短窗口相同评论被拒绝。
    - `Pending` 重试直接返回“正在提交”。
    - 成功 / 失败完成时正确更新 `ContentSubmissionRecord`。
+   - 帖子 / 评论编辑无变化不写历史、不执行更新。
+   - 评论编辑成功记录重放不再次执行更新。
 2. 后端完整测试
    - `dotnet test Radish.Api.Tests`
 3. 前端契约
-   - `radish.client` 发布、评论、回答请求生成并复用 `clientSubmissionId`。
+   - `radish.client` 发布、评论、回答、帖子编辑和评论编辑请求生成并复用 `clientSubmissionId`。
    - 网络失败重试不生成新 key。
 4. 数据库结构
    - 若新增 `ContentSubmissionRecord` 表，补 `DbMigrate` 路径和版本化 SQL。
@@ -225,7 +221,7 @@
 - 不要求所有客户端立刻强制传 `clientSubmissionId`；旧客户端先走短窗口保护。
 - 不把内容指纹做成长期唯一约束。
 - 不新增通用 `ContentEditHistory`；帖子和评论继续使用现有编辑历史表。
-- 不在本批实现帖子 / 评论编辑重试幂等；编辑操作常量先保留给后续评审。
+- 不新增通用 `ContentEditHistory`，不改变既有编辑历史查询口径。
 - 不在本批实现独立频率限制平台。
 - 不把短窗口、频率限制和编辑历史参数默认开放到 Console 系统设置。
 - 不重做轻回应、投票、抽奖、点赞、关注、Reaction 或通知系统。
@@ -234,12 +230,12 @@
 
 ## 下一步
 
-本批已确认并进入代码实现：
+本批已确认并完成代码实现：
 
 1. 接受新增 `ContentSubmissionRecord` 表作为内容提交意图真值。
-2. 首批只覆盖创建链路，帖子 / 评论编辑重试治理后续再评审。
+2. 覆盖创建链路和首批帖子 / 评论编辑重试治理。
 3. 短窗口默认值采用发帖 `180` 秒、评论 `60` 秒、回答 `120` 秒。
 4. `Pending` 重试直接返回“正在提交”，不等待、不轮询。
 5. Web 首批传 key，Flutter 论坛写入口后续再承接。
 
-完成本批验证后，后续再评审编辑重试幂等、独立频率限制和 Flutter 论坛写入口承接，不顺带扩大资产幂等范围。
+完成本批验证后，后续再评审独立频率限制、Flutter 论坛写入口承接和下一批 P3-10 产品 / 治理增量，不顺带扩大资产幂等范围。

@@ -85,6 +85,29 @@ function buildAnswerSubmissionFingerprint(postId: LongId, content: string): stri
   });
 }
 
+function buildPostEditSubmissionFingerprint(
+  postId: LongId,
+  title: string,
+  content: string,
+  categoryId: LongId,
+  tagNames: string[]
+): string {
+  return JSON.stringify({
+    postId: String(postId),
+    title: title.trim(),
+    content: content.trim(),
+    categoryId: String(categoryId),
+    tagNames: [...tagNames].map(tag => tag.trim()).sort()
+  });
+}
+
+function buildCommentEditSubmissionFingerprint(commentId: LongId, content: string): string {
+  return JSON.stringify({
+    commentId: String(commentId),
+    content: content.trim()
+  });
+}
+
 export interface ForumActionsState {
   // Modal 状态
   isPublishModalOpen: boolean;
@@ -155,6 +178,7 @@ export interface ForumActionsHandlers {
   handleCancelReply: () => void;
   handleCommentLike: (commentId: LongId) => Promise<{ isLiked: boolean; likeCount: number }>;
   handleEditComment: (commentId: LongId, newContent: string) => Promise<void>;
+  handleCancelCommentEdit: () => void;
   handleViewCommentHistory: (commentId: LongId) => Promise<void>;
   handleDeleteComment: (commentId: LongId) => void;
   confirmDeleteComment: () => Promise<void>;
@@ -267,6 +291,8 @@ export const useForumActions = (
   const publishSubmissionRef = useRef<ClientSubmissionState | null>(null);
   const commentSubmissionRef = useRef<ClientSubmissionState | null>(null);
   const answerSubmissionRef = useRef<ClientSubmissionState | null>(null);
+  const postEditSubmissionRef = useRef<ClientSubmissionState | null>(null);
+  const commentEditSubmissionRef = useRef<ClientSubmissionState | null>(null);
   const [postHistories, setPostHistories] = useState<PostEditHistory[]>([]);
   const [commentHistories, setCommentHistories] = useState<CommentEditHistory[]>([]);
   const [postHistoryTotal, setPostHistoryTotal] = useState(0);
@@ -282,6 +308,14 @@ export const useForumActions = (
   const commentHistoryPageSize = 10;
   const [activePostHistoryPostId, setActivePostHistoryPostId] = useState<LongId | null>(null);
   const [activeCommentHistoryCommentId, setActiveCommentHistoryCommentId] = useState<LongId | null>(null);
+
+  const updateEditModalOpen = (open: boolean) => {
+    if (!open) {
+      postEditSubmissionRef.current = null;
+    }
+
+    setIsEditModalOpen(open);
+  };
 
   const toLongIdKey = (value: LongId): string => String(value);
 
@@ -719,9 +753,28 @@ export const useForumActions = (
   const handleSaveEdit = async (postId: LongId, title: string, content: string, categoryId: LongId, tagNames: string[]) => {
     setError(null);
     try {
-      await updatePost({ postId, title, content, categoryId, tagNames }, t);
+      const normalizedTagNames = normalizeTagNames(tagNames);
+      const submissionState = createClientSubmissionState(
+        postEditSubmissionRef.current,
+        'forum-post-edit',
+        buildPostEditSubmissionFingerprint(postId, title, content, categoryId, normalizedTagNames)
+      );
+      postEditSubmissionRef.current = submissionState;
+
+      await updatePost(
+        {
+          postId,
+          title,
+          content,
+          clientSubmissionId: submissionState.clientSubmissionId,
+          categoryId,
+          tagNames: normalizedTagNames
+        },
+        t
+      );
+      postEditSubmissionRef.current = null;
       await Promise.all([loadPostDetail(postId), loadPosts()]);
-      setIsEditModalOpen(false);
+      updateEditModalOpen(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       throw new Error(message);
@@ -752,6 +805,10 @@ export const useForumActions = (
       toast.error(message || '设置帖子置顶状态失败');
       throw err;
     }
+  };
+
+  const handleCancelCommentEdit = () => {
+    commentEditSubmissionRef.current = null;
   };
 
   // 删除帖子
@@ -1011,7 +1068,22 @@ export const useForumActions = (
 
     setError(null);
     try {
-      await updateComment({ commentId, content: newContent }, t);
+      const submissionState = createClientSubmissionState(
+        commentEditSubmissionRef.current,
+        'forum-comment-edit',
+        buildCommentEditSubmissionFingerprint(commentId, newContent)
+      );
+      commentEditSubmissionRef.current = submissionState;
+
+      await updateComment(
+        {
+          commentId,
+          content: newContent,
+          clientSubmissionId: submissionState.clientSubmissionId
+        },
+        t
+      );
+      commentEditSubmissionRef.current = null;
       await loadComments(selectedPost.voId, getLoadedCommentPageCount());
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -1154,7 +1226,7 @@ export const useForumActions = (
 
     // 操作
     setIsPublishModalOpen,
-    setIsEditModalOpen,
+    setIsEditModalOpen: updateEditModalOpen,
     handleSelectPost,
     handlePublishPost,
     handleDrawLottery,
@@ -1179,6 +1251,7 @@ export const useForumActions = (
     handleCancelReply,
     handleCommentLike,
     handleEditComment,
+    handleCancelCommentEdit,
     handleViewCommentHistory,
     handleDeleteComment,
     confirmDeleteComment,

@@ -51,4 +51,8 @@ public class UpdateCommentDto
     [Required(ErrorMessage = "评论内容不能为空")]
     [StringLength(2000, ErrorMessage = "评论内容不能超过2000个字符")]
     public string Content { get; set; } = string.Empty;
+
+    /// <summary>客户端提交意图 ID，用于网络重试和重复提交保护</summary>
+    [StringLength(80, ErrorMessage = "clientSubmissionId 长度不能超过 80 个字符")]
+    public string? ClientSubmissionId { get; set; }
 }

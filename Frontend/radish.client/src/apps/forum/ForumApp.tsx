@@ -911,6 +911,7 @@ export const ForumApp = () => {
                 onCommentSortChange={actionsState.handleCommentSortChange}
                 onDeleteComment={actionsState.handleDeleteComment}
                 onEditComment={actionsState.handleEditComment}
+                onCancelEditComment={actionsState.handleCancelCommentEdit}
                 onViewCommentHistory={actionsState.handleViewCommentHistory}
                 onLikeComment={actionsState.handleCommentLike}
                 onReplyComment={actionsState.handleReplyComment}
