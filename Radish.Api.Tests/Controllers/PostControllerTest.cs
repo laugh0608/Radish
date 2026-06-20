@@ -1104,6 +1104,31 @@ public class PostControllerTest
 
         var attachmentServiceAdapter = attachmentService as IAttachmentService
             ?? new Mock<IAttachmentService>(MockBehavior.Strict).Object;
+        var forumContentWriteServiceMock = new Mock<IForumContentWriteService>(MockBehavior.Strict);
+        forumContentWriteServiceMock
+            .Setup(service => service.PublishPostAsync(
+                It.IsAny<Post>(),
+                It.IsAny<CreatePollDto?>(),
+                It.IsAny<CreateLotteryDto?>(),
+                It.IsAny<bool>(),
+                It.IsAny<List<string>?>(),
+                It.IsAny<bool>(),
+                It.IsAny<string?>()))
+            .Returns(async (
+                Post post,
+                CreatePollDto? poll,
+                CreateLotteryDto? lottery,
+                bool isQuestion,
+                List<string>? tagNames,
+                bool allowCreateTag,
+                string? _) =>
+                ContentWriteResult<long>.CreatedResult(await postService.PublishPostAsync(
+                    post,
+                    poll,
+                    lottery,
+                    isQuestion,
+                    tagNames,
+                    allowCreateTag)));
 
         return new PostController(
             postService,
@@ -1112,6 +1137,7 @@ public class PostControllerTest
             attachmentServiceAdapter,
             commentService,
             browseHistoryService ?? browseHistoryServiceMock.Object,
-            currentUserAccessorMock.Object);
+            currentUserAccessorMock.Object,
+            forumContentWriteServiceMock.Object);
     }
 }

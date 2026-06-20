@@ -16,6 +16,10 @@ public class CreateAnswerDto
     [Required(ErrorMessage = "回答内容不能为空")]
     [StringLength(20000, MinimumLength = 1, ErrorMessage = "回答内容长度必须在1-20000个字符之间")]
     public string Content { get; set; } = string.Empty;
+
+    /// <summary>客户端提交意图 ID，用于网络重试和重复提交保护</summary>
+    [StringLength(80, ErrorMessage = "clientSubmissionId 长度不能超过 80 个字符")]
+    public string? ClientSubmissionId { get; set; }
 }
 
 /// <summary>

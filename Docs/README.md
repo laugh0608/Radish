@@ -31,6 +31,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [Token 不活跃过期治理](./guide/auth-idle-session.md)
 - [运行时配置边界与系统设置](./guide/runtime-configuration-boundaries.md)
 - [系统设置治理专题](./guide/system-settings-governance.md)
+- [论坛内容发布可靠性与编辑历史治理](./guide/forum-content-write-reliability-governance.md)
 - [服务网关](./guide/gateway.md)
 - [部署指南](./deployment/guide.md)
 - [本地运行与排障手册](./guide/operations-runbook.md)

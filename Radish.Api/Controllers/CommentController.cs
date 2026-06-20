@@ -31,6 +31,7 @@ public class CommentController : ControllerBase
     private readonly IContentModerationService _contentModerationService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
     private readonly CommentRealtimePushService _commentRealtimePushService;
+    private readonly IForumContentWriteService _forumContentWriteService;
 
     public CommentController(
         ICommentService commentService,
@@ -38,7 +39,8 @@ public class CommentController : ControllerBase
         IUserService userService,
         IContentModerationService contentModerationService,
         ICurrentUserAccessor currentUserAccessor,
-        CommentRealtimePushService commentRealtimePushService)
+        CommentRealtimePushService commentRealtimePushService,
+        IForumContentWriteService forumContentWriteService)
     {
         _commentService = commentService;
         _postService = postService;
@@ -46,6 +48,7 @@ public class CommentController : ControllerBase
         _contentModerationService = contentModerationService;
         _currentUserAccessor = currentUserAccessor;
         _commentRealtimePushService = commentRealtimePushService;
+        _forumContentWriteService = forumContentWriteService;
     }
 
     private CurrentUser Current => _currentUserAccessor.Current;
@@ -139,11 +142,10 @@ public class CommentController : ControllerBase
             TenantId = Current.TenantId
         });
 
-        long commentId;
-        CommentHighlightRecheckResultVo highlightRecheckResult;
+        ContentWriteResult<CommentCreateResult> writeResult;
         try
         {
-            (commentId, highlightRecheckResult) = await _commentService.AddCommentAsync(comment);
+            writeResult = await _forumContentWriteService.CreateCommentAsync(comment, request.ClientSubmissionId);
         }
         catch (ArgumentException ex)
         {
@@ -155,19 +157,23 @@ public class CommentController : ControllerBase
             };
         }
 
-        var createdComment = await _commentService.GetCommentDetailAsync(commentId, Current.UserId);
-        if (createdComment != null)
+        if (writeResult.Created)
         {
-            await _commentRealtimePushService.PushCreatedAsync(createdComment);
+            var createdComment = await _commentService.GetCommentDetailAsync(writeResult.Result.CommentId, Current.UserId);
+            if (createdComment != null)
+            {
+                await _commentRealtimePushService.PushCreatedAsync(createdComment);
+            }
+
+            await _commentRealtimePushService.PushHighlightChangedAsync(writeResult.Result.HighlightRecheckResult);
         }
-        await _commentRealtimePushService.PushHighlightChangedAsync(highlightRecheckResult);
 
         return new MessageModel
         {
             IsSuccess = true,
             StatusCode = (int)HttpStatusCodeEnum.Success,
-            MessageInfo = "评论成功",
-            ResponseData = commentId
+            MessageInfo = writeResult.Message ?? "评论成功",
+            ResponseData = writeResult.Result.CommentId
         };
     }
 

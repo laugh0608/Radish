@@ -19,6 +19,8 @@
 
 该能力首期仅提供“记录 + 查询”，**不提供版本回滚**。
 
+`2026-06-20` 补充：论坛发布、评论、回答和编辑重试语义已进入 [论坛内容发布可靠性与编辑历史治理](/guide/forum-content-write-reliability-governance) 评审。本页继续作为 `PostEditHistory` / `CommentEditHistory` 的功能说明；提交意图去重、短窗口内容指纹和频率限制以治理专题为准。
+
 ---
 
 ## 核心规则

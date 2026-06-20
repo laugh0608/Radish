@@ -80,6 +80,8 @@
   - `WOG-4 奖励业务键唯一性` 已按确认方案完成首批代码实现：奖励流水和经验流水新增业务去重键，互动奖励、经验奖励、神评 / 沙发基础奖励、点赞加成和保留奖励已收敛到服务端业务键唯一真值。
   - `WOG-5 管理覆盖类写入版本语义` 已按确认方案完成首批代码实现：系统设置覆盖版本、Console 授权旧快照拦截、商品管理版本条件更新和内容举报审核状态条件更新已落地。
   - `WOG-6 跨端幂等契约补齐` 已按确认方案完成首批代码实现：Flutter 单商品购买已生成并提交 `shop:` 幂等键，失败后直接重试复用同一 key，成功或购买意图重置后生成新 key；本批不扩展 Flutter 转账、完整移动商城或服务端强制 key。
+  - `P3-10 后续产品 / 治理增量选择` 已重新筛选下一批候选，推荐先推进 [论坛内容发布可靠性与编辑历史治理](/guide/forum-content-write-reliability-governance)：围绕 `clientSubmissionId`、内容指纹短窗口、分层频率限制和既有 `PostEditHistory` / `CommentEditHistory` 真值形成治理方案。
+  - `论坛内容发布可靠性与编辑历史治理` 首批创建链路已按确认方案完成：新增 `ContentSubmissionRecord` 内容提交意图记录，Web 发帖 / 评论 / 回答生成并复用 `clientSubmissionId`，服务端按请求摘要和短窗口内容指纹处理重复提交；帖子 / 评论编辑重试幂等和独立频率限制后置评审。
 
 ## 当前执行入口
 
@@ -91,6 +93,7 @@
 - [系统设置治理专题](/guide/system-settings-governance)
 - [支付与转账幂等治理](/guide/payment-idempotency-governance)
 - [写操作可靠性与并发保护治理](/guide/write-operation-reliability-governance)
+- [论坛内容发布可靠性与编辑历史治理](/guide/forum-content-write-reliability-governance)
 - [WOG-1 写操作分级盘点记录](/records/wog-1-write-operation-inventory-2026-06-20)
 - [WOG-2 内容互动关系写入与计数一致性方案](/records/wog-2-content-interaction-consistency-plan-2026-06-20)
 - [WOG-3 背包 / 权益发放可靠性方案](/records/wog-3-inventory-benefit-reliability-plan-2026-06-20)
@@ -116,6 +119,7 @@
 2. **选择 P3-10 下一批产品 / 治理增量**
    - 前端敏感日志脱敏、支付口令哈希升级和 [支付与转账幂等治理](/guide/payment-idempotency-governance) 首批代码均已完成，不再作为下一步开发项。
    - [WOG-1 写操作分级盘点记录](/records/wog-1-write-operation-inventory-2026-06-20) 已完成矩阵和候选排序；[WOG-2 内容互动关系写入与计数一致性方案](/records/wog-2-content-interaction-consistency-plan-2026-06-20)、[WOG-3 背包 / 权益发放可靠性方案](/records/wog-3-inventory-benefit-reliability-plan-2026-06-20)、[WOG-4 奖励业务键唯一性方案](/records/wog-4-reward-business-key-uniqueness-plan-2026-06-20)、[WOG-5 管理覆盖类写入版本语义方案](/records/wog-5-management-write-version-semantics-plan-2026-06-20) 与 [WOG-6 跨端幂等契约补齐方案](/records/wog-6-cross-client-idempotency-contract-plan-2026-06-20) 均已确认并完成首批实现。
+   - 下一批推荐候选已切到 [论坛内容发布可靠性与编辑历史治理](/guide/forum-content-write-reliability-governance)，首批已按确认方案完成发帖 / 评论 / 回答创建链路；编辑重试幂等、独立频率限制和 Flutter 论坛写入口承接后续再评审。
 3. **把 P3-8-D 降级为维护与回拉线**
    - 移动 Web 公开页逐页打磨、Console 剩余页面迁移、购买 / 订单 / 背包重复复核、ID Phase A 广泛扫描不再作为默认日常主线。
    - 新增外部 ID 边界、扫描命中、真实编译错误或发布候选验收暴露问题时，再做定向治理。
@@ -127,6 +131,12 @@
 
 ## 下一顺位
 
+- `P3-10 后续治理专题：论坛内容发布可靠性与编辑历史治理`
+  - 新增 [论坛内容发布可靠性与编辑历史治理](/guide/forum-content-write-reliability-governance)，承接 WOG 首轮收束后的下一批产品 / 治理增量选择。
+  - 首批已按确认方案推进 `PublishPostDto`、`CreateCommentDto` 和 `CreateAnswerDto`：Web 端生成并复用 `clientSubmissionId`，服务端用 `ContentSubmissionRecord`、请求摘要和短窗口内容指纹防重复提交。
+  - 编辑历史继续以既有 `PostEditHistory` / `CommentEditHistory` 为真值，不新增通用编辑历史表；帖子 / 评论编辑重试幂等保留为后续评审，不并入本批创建链路。
+  - 本批已确认新增 `ContentSubmissionRecord`、先覆盖创建链路、采用默认短窗口、`Pending` 重试直接返回“正在提交”、Flutter 论坛写入口后续再承接。
+  - 本批不启动独立频率限制平台、完整反垃圾系统、Redis 分布式锁、完整审核平台、轻回应重做、Flutter 转账、完整移动商城或服务端强制资产写入口必须传 key。
 - `P3-10 后续治理专题：写操作可靠性与并发保护`
   - 新增 [写操作可靠性与并发保护治理](/guide/write-operation-reliability-governance)，作为支付 / 转账幂等之后的写操作分级入口。
   - `WOG-1 写操作分级盘点` 已完成，结论见 [WOG-1 写操作分级盘点记录](/records/wog-1-write-operation-inventory-2026-06-20)。
@@ -176,8 +186,8 @@
 
 ## 明日事项
 
-- 先读取本页、[写操作可靠性与并发保护治理](/guide/write-operation-reliability-governance)、[WOG-1 写操作分级盘点记录](/records/wog-1-write-operation-inventory-2026-06-20) 和 [WOG-5 管理覆盖类写入版本语义方案](/records/wog-5-management-write-version-semantics-plan-2026-06-20)，必要时回看 WOG-2 / WOG-3 / WOG-4，确认当前仍处于 `P3-10 后续产品 / 治理增量选择`。
-- 第一顺位：`WOG-6 跨端幂等契约补齐` 首批实现和验证已完成；下一轮先回到 `P3-10 后续产品 / 治理增量选择`，重新筛选边界清楚的产品或治理增量，不默认顺手扩展 Flutter 转账、完整移动商城或服务端强制 key。
+- 先读取本页、[论坛内容发布可靠性与编辑历史治理](/guide/forum-content-write-reliability-governance)、[写操作可靠性与并发保护治理](/guide/write-operation-reliability-governance) 和 [论坛帖子/评论编辑历史设计与实现](/features/forum-edit-history)，确认当前第一顺位已完成论坛内容发布可靠性首批创建链路。
+- 第一顺位：从帖子 / 评论编辑重试幂等、独立频率限制和 Flutter 论坛写入口承接中重新评审下一步，不顺带扩大 Flutter 转账、完整移动商城或服务端强制资产写入口 key。
 - 第二顺位：跳过本轮 PR 创建步骤，保留 [P3-10-D PR 准备记录](/records/p3-10-d-web-feed-pr-prep-record-2026-06-19) 作为后续恢复合并动作的依据。
 - 第三顺位：若真实 smoke、自动化验证或明确缺口重新命中 P3-10-D 阻断 / 清晰一致性问题，再定向回修；不再默认追加第五批链接语义扫尾。
 

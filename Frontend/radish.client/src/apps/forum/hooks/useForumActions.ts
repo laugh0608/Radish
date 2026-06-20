@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { LongId } from '@/api/user';
 import { useUserStore } from '@/stores/userStore';
@@ -38,6 +38,52 @@ import {
   type QuestionAnswerSort,
   type QuestionAnswerFilter
 } from '@/api/forum';
+import {
+  createClientSubmissionState,
+  type ClientSubmissionState
+} from '@/utils/clientSubmission';
+
+function buildPostSubmissionFingerprint(
+  title: string,
+  content: string,
+  categoryId: LongId,
+  tagNames: string[],
+  isQuestion?: boolean,
+  poll?: CreatePollRequest | null,
+  lottery?: CreateLotteryRequest | null
+): string {
+  return JSON.stringify({
+    title: title.trim(),
+    content: content.trim(),
+    categoryId: String(categoryId),
+    tagNames: [...tagNames].map(tag => tag.trim()).sort(),
+    isQuestion: Boolean(isQuestion),
+    poll: poll ?? null,
+    lottery: lottery ?? null
+  });
+}
+
+function buildCommentSubmissionFingerprint(
+  postId: LongId,
+  content: string,
+  replyTo: CommentReplyTarget | null
+): string {
+  return JSON.stringify({
+    postId: String(postId),
+    content: content.trim(),
+    parentId: replyTo?.parentCommentId == null ? null : String(replyTo.parentCommentId),
+    replyToCommentId: replyTo?.targetCommentId == null ? null : String(replyTo.targetCommentId),
+    replyToCommentSnapshot: replyTo?.contentSnapshot ?? null,
+    replyToUserName: replyTo?.authorName ?? null
+  });
+}
+
+function buildAnswerSubmissionFingerprint(postId: LongId, content: string): string {
+  return JSON.stringify({
+    postId: String(postId),
+    content: content.trim()
+  });
+}
 
 export interface ForumActionsState {
   // Modal 状态
@@ -218,6 +264,9 @@ export const useForumActions = (
 
   const [isPostHistoryOpen, setIsPostHistoryOpen] = useState(false);
   const [isCommentHistoryOpen, setIsCommentHistoryOpen] = useState(false);
+  const publishSubmissionRef = useRef<ClientSubmissionState | null>(null);
+  const commentSubmissionRef = useRef<ClientSubmissionState | null>(null);
+  const answerSubmissionRef = useRef<ClientSubmissionState | null>(null);
   const [postHistories, setPostHistories] = useState<PostEditHistory[]>([]);
   const [commentHistories, setCommentHistories] = useState<CommentEditHistory[]>([]);
   const [postHistoryTotal, setPostHistoryTotal] = useState(0);
@@ -351,10 +400,18 @@ export const useForumActions = (
 
     setError(null);
     try {
+      const submissionState = createClientSubmissionState(
+        publishSubmissionRef.current,
+        'forum-post',
+        buildPostSubmissionFingerprint(title, content, categoryId, normalizedTagNames, isQuestion, poll, lottery)
+      );
+      publishSubmissionRef.current = submissionState;
+
       const postId = await publishPost(
         {
           title,
           content,
+          clientSubmissionId: submissionState.clientSubmissionId,
           categoryId,
           tagNames: normalizedTagNames,
           isQuestion: Boolean(isQuestion),
@@ -363,6 +420,7 @@ export const useForumActions = (
         },
         t
       );
+      publishSubmissionRef.current = null;
       setIsPublishModalOpen(false);
       setCurrentPage(1);
       await loadPosts();
@@ -520,14 +578,23 @@ export const useForumActions = (
 
     setError(null);
     try {
+      const submissionState = createClientSubmissionState(
+        answerSubmissionRef.current,
+        'forum-answer',
+        buildAnswerSubmissionFingerprint(selectedPost.voId, trimmedContent)
+      );
+      answerSubmissionRef.current = submissionState;
+
       await answerQuestion(
         {
           postId: selectedPost.voId,
-          content: trimmedContent
+          content: trimmedContent,
+          clientSubmissionId: submissionState.clientSubmissionId
         },
         t
       );
 
+      answerSubmissionRef.current = null;
       toast.success('回答已发布');
       await Promise.all([
         loadPostDetail(selectedPost.voId, questionAnswerSort),
@@ -787,10 +854,18 @@ export const useForumActions = (
 
     setError(null);
     try {
+      const submissionState = createClientSubmissionState(
+        commentSubmissionRef.current,
+        'forum-comment',
+        buildCommentSubmissionFingerprint(selectedPost.voId, content, replyTo)
+      );
+      commentSubmissionRef.current = submissionState;
+
       const commentId = await createComment(
         {
           postId: selectedPost.voId,
           content,
+          clientSubmissionId: submissionState.clientSubmissionId,
           parentId: replyTo?.parentCommentId ?? null,
           replyToCommentId: replyTo?.targetCommentId ?? null,
           replyToCommentSnapshot: replyTo?.contentSnapshot ?? null,
@@ -799,6 +874,7 @@ export const useForumActions = (
         },
         t
       );
+      commentSubmissionRef.current = null;
 
       const userStore = useUserStore.getState();
       const authorName = userStore.userName || '我';

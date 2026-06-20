@@ -18,6 +18,10 @@ public class PublishPostDto
     [StringLength(50000, MinimumLength = 1, ErrorMessage = "帖子内容长度必须在1-50000个字符之间")]
     public string Content { get; set; } = string.Empty;
 
+    /// <summary>客户端提交意图 ID，用于网络重试和重复提交保护</summary>
+    [StringLength(80, ErrorMessage = "clientSubmissionId 长度不能超过 80 个字符")]
+    public string? ClientSubmissionId { get; set; }
+
     /// <summary>内容类型（markdown、html、text）</summary>
     [StringLength(20, ErrorMessage = "内容类型长度不能超过20个字符")]
     public string? ContentType { get; set; }

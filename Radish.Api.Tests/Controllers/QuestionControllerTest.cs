@@ -259,10 +259,33 @@ public class QuestionControllerTest
             UserName = "Tester",
             TenantId = 0
         });
+        var forumContentWriteServiceMock = new Mock<IForumContentWriteService>(MockBehavior.Strict);
+        forumContentWriteServiceMock
+            .Setup(service => service.AddAnswerAsync(
+                It.IsAny<long>(),
+                It.IsAny<string>(),
+                It.IsAny<long>(),
+                It.IsAny<string>(),
+                It.IsAny<long>(),
+                It.IsAny<string?>()))
+            .Returns(async (
+                long postId,
+                string content,
+                long authorId,
+                string authorName,
+                long tenantId,
+                string? _) =>
+                ContentWriteResult<PostQuestionVo>.CreatedResult(await postService.AddAnswerAsync(
+                    postId,
+                    content,
+                    authorId,
+                    authorName,
+                    tenantId)));
 
         return new QuestionController(
             postService,
             moderationService,
-            currentUserAccessorMock.Object);
+            currentUserAccessorMock.Object,
+            forumContentWriteServiceMock.Object);
     }
 }

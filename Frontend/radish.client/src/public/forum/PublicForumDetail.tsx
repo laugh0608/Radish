@@ -22,6 +22,10 @@ import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
 import { log } from '@/utils/logger';
 import { resolveMediaUrl } from '@/utils/media';
+import {
+  createClientSubmissionState,
+  type ClientSubmissionState
+} from '@/utils/clientSubmission';
 import { CommentTree } from '@/apps/forum/components/CommentTree';
 import { CreateCommentForm } from '@/apps/forum/components/CreateCommentForm';
 import { PostDetail as ForumPostDetail } from '@/apps/forum/components/PostDetail';
@@ -66,6 +70,15 @@ type RootCommentSort = 'newest' | 'hottest' | null;
 const COMMENT_NAVIGATION_CHILD_PAGE_SIZE = 5;
 const QUICK_REPLY_SECTION_ID = 'public-forum-quick-replies';
 const COMMENT_SECTION_ID = 'public-forum-comments';
+
+function buildPublicCommentSubmissionFingerprint(postId: LongId, content: string): string {
+  return JSON.stringify({
+    postId: String(postId),
+    content: content.trim(),
+    parentId: null,
+    replyToCommentId: null
+  });
+}
 
 const buildRootCommentIdSet = (rootComments: CommentNode[]): Set<string> => (
   new Set(rootComments.map((comment) => String(comment.voId)))
@@ -146,6 +159,7 @@ export const PublicForumDetail = ({
   const commentNoticeRef = useRef<HTMLDivElement | null>(null);
   const countedRootCommentIdsRef = useRef(new Set<string>());
   const deletedRootCommentIdsRef = useRef(new Set<string>());
+  const commentSubmissionRef = useRef<ClientSubmissionState | null>(null);
   const commentPageSize = 20;
   const isAuthenticated = authStoreAuthenticated && isUserAuthenticated();
 
@@ -877,10 +891,18 @@ export const PublicForumDetail = ({
 
     setSubmittingComment(true);
     try {
+      const submissionState = createClientSubmissionState(
+        commentSubmissionRef.current,
+        'forum-comment',
+        buildPublicCommentSubmissionFingerprint(post.voId, normalizedContent)
+      );
+      commentSubmissionRef.current = submissionState;
+
       const createdCommentId = await createComment(
         {
           postId: post.voId,
           content: normalizedContent,
+          clientSubmissionId: submissionState.clientSubmissionId,
           parentId: null,
           replyToCommentId: null,
           replyToCommentSnapshot: null,
@@ -889,6 +911,7 @@ export const PublicForumDetail = ({
         },
         t
       );
+      commentSubmissionRef.current = null;
       const now = new Date().toISOString();
       const newComment: CommentNode = {
         voId: createdCommentId,

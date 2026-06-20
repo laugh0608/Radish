@@ -70,6 +70,7 @@ features:
 - [配置管理](/guide/configuration)
 - [运行时配置边界与系统设置](/guide/runtime-configuration-boundaries)
 - [系统设置治理专题](/guide/system-settings-governance)
+- [论坛内容发布可靠性与编辑历史治理](/guide/forum-content-write-reliability-governance)
 - [服务网关](/guide/gateway)
 - [视觉主题规范](/frontend/visual-theme-spec)
 - [视觉颜色参考](/frontend/visual-color-reference)

@@ -46,6 +46,7 @@
 - [密码传输与请求签名临时评审](/guide/password-transport-and-request-signature)
 - [支付与转账幂等治理](/guide/payment-idempotency-governance)
 - [写操作可靠性与并发保护治理](/guide/write-operation-reliability-governance)
+- [论坛内容发布可靠性与编辑历史治理](/guide/forum-content-write-reliability-governance)
 - [速率限制](/guide/rate-limiting)
 
 ### 接口与发布运行

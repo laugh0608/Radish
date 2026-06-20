@@ -143,6 +143,7 @@ internal static class DbMigrateRunner
         EnsureLikeRelationIndexes(mainDb);
         EnsureInventoryBenefitReliabilitySchema(mainDb);
         EnsureRewardBusinessKeySchema(mainDb);
+        EnsureContentSubmissionSchema(mainDb);
     }
 
     private static void EnsureUserPublicIdentitySchema(ISqlSugarClient db)
@@ -587,6 +588,41 @@ internal static class DbMigrateRunner
             "idx_exp_reward_business_key",
             [nameof(ExpTransaction.TenantId), nameof(ExpTransaction.RewardBusinessKey)],
             unique: true);
+    }
+
+    private static void EnsureContentSubmissionSchema(ISqlSugarClient db)
+    {
+        var tableName = db.EntityMaintenance.GetEntityInfo<ContentSubmissionRecord>().DbTableName;
+        if (!db.DbMaintenance.IsAnyTable(tableName, false))
+        {
+            db.CodeFirst.InitTables<ContentSubmissionRecord>();
+            Console.WriteLine("[Radish.DbMigrate] 已补齐论坛内容提交意图记录表。");
+        }
+
+        EnsureIndex(
+            db,
+            tableName,
+            "idx_content_submission_client",
+            [nameof(ContentSubmissionRecord.TenantId), nameof(ContentSubmissionRecord.UserId), nameof(ContentSubmissionRecord.OperationType), nameof(ContentSubmissionRecord.ClientSubmissionId)],
+            unique: true);
+
+        EnsureIndex(
+            db,
+            tableName,
+            "idx_content_submission_fingerprint",
+            [nameof(ContentSubmissionRecord.TenantId), nameof(ContentSubmissionRecord.UserId), nameof(ContentSubmissionRecord.OperationType), nameof(ContentSubmissionRecord.ContentFingerprint), nameof(ContentSubmissionRecord.CreateTime)]);
+
+        EnsureIndex(
+            db,
+            tableName,
+            "idx_content_submission_expires",
+            [nameof(ContentSubmissionRecord.ExpiresAt)]);
+
+        EnsureIndex(
+            db,
+            tableName,
+            "idx_content_submission_result",
+            [nameof(ContentSubmissionRecord.ResultType), nameof(ContentSubmissionRecord.ResultId)]);
     }
 
     private static void BackfillCoinRewardBusinessKeys(ISqlSugarClient db)

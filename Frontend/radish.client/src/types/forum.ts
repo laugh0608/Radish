@@ -227,6 +227,7 @@ export interface ClosePollRequest {
 export interface CreateAnswerRequest {
   postId: LongId;
   content: string;
+  clientSubmissionId?: string;
 }
 
 /**
@@ -528,6 +529,7 @@ export interface PostLikeResult {
 export interface PublishPostRequest {
   title: string;
   content: string;
+  clientSubmissionId?: string;
   categoryId: LongId;
   tagNames: string[];
   isQuestion?: boolean;
@@ -560,6 +562,7 @@ export interface SetPostTopRequest {
 export interface CreateCommentRequest {
   postId: LongId;
   content: string;
+  clientSubmissionId?: string;
   parentId?: LongId | null;
   replyToCommentId?: LongId | null;
   replyToCommentSnapshot?: string | null;
