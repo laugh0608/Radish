@@ -13,6 +13,171 @@ public class PostRepository : BaseRepository<Post>, IPostRepository
     {
     }
 
+    public async Task<PostLikePersistenceResult> TogglePostLikeAsync(long userId, long postId)
+    {
+        try
+        {
+            return await ExecuteDbOperationAsync(async () =>
+            {
+                DbProtectedClient.Ado.BeginTran();
+                try
+                {
+                    var result = await TogglePostLikeCoreAsync(userId, postId);
+                    DbProtectedClient.Ado.CommitTran();
+                    return result;
+                }
+                catch
+                {
+                    DbProtectedClient.Ado.RollbackTran();
+                    throw;
+                }
+            });
+        }
+        catch (Exception ex) when (RepositorySqlHelper.IsUniqueConstraintException(ex))
+        {
+            return await ReadCurrentPostLikeResultAsync(userId, postId);
+        }
+    }
+
+    private async Task<PostLikePersistenceResult> TogglePostLikeCoreAsync(long userId, long postId)
+    {
+        var post = await QueryPostForLikeAsync(postId);
+        var existingLike = await QueryPostLikeRelationAsync(post.TenantId, userId, postId);
+
+        if (existingLike is { IsDeleted: false })
+        {
+            var affectedRows = await DbProtectedClient.Updateable<UserPostLike>()
+                .SetColumns(like => new UserPostLike { IsDeleted = true })
+                .Where(like => like.Id == existingLike.Id && !like.IsDeleted)
+                .ExecuteCommandAsync();
+
+            if (affectedRows <= 0)
+            {
+                return await ReadCurrentPostLikeResultCoreAsync(userId, postId, 0);
+            }
+
+            await ApplyPostLikeCountDeltaAsync(postId, -1);
+            var likeCount = await QueryPostLikeCountAsync(postId);
+            return BuildPostLikeResult(post, false, likeCount, -1);
+        }
+
+        if (existingLike is { IsDeleted: true })
+        {
+            var now = DateTime.UtcNow;
+            var affectedRows = await DbProtectedClient.Updateable<UserPostLike>()
+                .SetColumns(like => new UserPostLike
+                {
+                    IsDeleted = false,
+                    LikedAt = now
+                })
+                .Where(like => like.Id == existingLike.Id && like.IsDeleted)
+                .ExecuteCommandAsync();
+
+            if (affectedRows <= 0)
+            {
+                return await ReadCurrentPostLikeResultCoreAsync(userId, postId, 0);
+            }
+
+            await ApplyPostLikeCountDeltaAsync(postId, 1);
+            var likeCount = await QueryPostLikeCountAsync(postId);
+            return BuildPostLikeResult(post, true, likeCount, 1);
+        }
+
+        await DbProtectedClient.Insertable(new UserPostLike
+        {
+            TenantId = post.TenantId,
+            UserId = userId,
+            PostId = postId,
+            LikedAt = DateTime.UtcNow,
+            IsDeleted = false
+        }).ExecuteReturnSnowflakeIdAsync();
+
+        await ApplyPostLikeCountDeltaAsync(postId, 1);
+        var finalLikeCount = await QueryPostLikeCountAsync(postId);
+        return BuildPostLikeResult(post, true, finalLikeCount, 1);
+    }
+
+    private async Task<PostLikePersistenceResult> ReadCurrentPostLikeResultAsync(long userId, long postId)
+    {
+        return await ExecuteDbOperationAsync(() => ReadCurrentPostLikeResultCoreAsync(userId, postId, 0));
+    }
+
+    private async Task<PostLikePersistenceResult> ReadCurrentPostLikeResultCoreAsync(long userId, long postId, int delta)
+    {
+        var post = await QueryPostForLikeAsync(postId);
+        var relation = await QueryPostLikeRelationAsync(post.TenantId, userId, postId);
+        var likeCount = await QueryPostLikeCountAsync(postId);
+        return BuildPostLikeResult(post, relation?.IsDeleted == false, likeCount, delta);
+    }
+
+    private async Task<Post> QueryPostForLikeAsync(long postId)
+    {
+        var post = await CreateTenantQueryableFor<Post>()
+            .Where(post => post.Id == postId && !post.IsDeleted)
+            .FirstAsync();
+
+        return post ?? throw new InvalidOperationException("帖子不存在或已被删除");
+    }
+
+    private async Task<UserPostLike?> QueryPostLikeRelationAsync(long tenantId, long userId, long postId)
+    {
+        return await CreateTenantQueryableFor<UserPostLike>()
+            .Where(like => like.TenantId == tenantId && like.UserId == userId && like.PostId == postId)
+            .OrderBy(like => like.IsDeleted, OrderByType.Asc)
+            .OrderBy(like => like.LikedAt, OrderByType.Desc)
+            .OrderBy(like => like.Id, OrderByType.Desc)
+            .FirstAsync();
+    }
+
+    private async Task ApplyPostLikeCountDeltaAsync(long postId, int delta)
+    {
+        var tableName = RepositorySqlHelper.QuoteIdentifier(DbProtectedClient.EntityMaintenance.GetEntityInfo<Post>().DbTableName);
+        var idColumn = RepositorySqlHelper.QuoteIdentifier(nameof(Post.Id));
+        var likeCountColumn = RepositorySqlHelper.QuoteIdentifier(nameof(Post.LikeCount));
+
+        if (delta > 0)
+        {
+            await DbProtectedClient.Ado.ExecuteCommandAsync(
+                $"UPDATE {tableName} SET {likeCountColumn} = {likeCountColumn} + @delta WHERE {idColumn} = @postId",
+                new SugarParameter("@delta", delta),
+                new SugarParameter("@postId", postId));
+            return;
+        }
+
+        var decrement = Math.Abs(delta);
+        await DbProtectedClient.Ado.ExecuteCommandAsync(
+            $"""
+            UPDATE {tableName}
+            SET {likeCountColumn} = CASE
+                WHEN {likeCountColumn} >= @decrement THEN {likeCountColumn} - @decrement
+                ELSE 0
+            END
+            WHERE {idColumn} = @postId
+            """,
+            new SugarParameter("@decrement", decrement),
+            new SugarParameter("@postId", postId));
+    }
+
+    private async Task<int> QueryPostLikeCountAsync(long postId)
+    {
+        return await CreateTenantQueryableFor<Post>()
+            .Where(post => post.Id == postId)
+            .Select(post => post.LikeCount)
+            .FirstAsync();
+    }
+
+    private static PostLikePersistenceResult BuildPostLikeResult(Post post, bool isLiked, int likeCount, int delta)
+    {
+        return new PostLikePersistenceResult(
+            post.Id,
+            post.AuthorId,
+            post.Title,
+            post.PublicId,
+            isLiked,
+            likeCount,
+            delta);
+    }
+
     public async Task<(List<Post> data, int totalCount)> QueryForumPostPageAsync(
         long? categoryId,
         long? tagId,

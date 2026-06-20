@@ -2,7 +2,7 @@
 
 > 日期：`2026-06-20`（Asia/Shanghai）
 >
-> 状态：`待确认 / 未进入代码`
+> 状态：`已确认 / 首批代码已实现`
 >
 > 关联说明：[写操作可靠性与并发保护治理](/guide/write-operation-reliability-governance)、[WOG-1 写操作分级盘点记录](/records/wog-1-write-operation-inventory-2026-06-20)
 
@@ -11,6 +11,17 @@
 `WOG-2` 只治理帖子 / 评论点赞这条内容互动主路径，目标是让同一用户对同一对象只有一条逻辑关系记录，并让 `Post.LikeCount`、`Comment.LikeCount` 只跟随真实关系变更更新。
 
 本批不改变 API 返回结构，不新增前端参数，不引入 Redis 分布式锁，不扩展完整奖励风控，也不把所有内容互动入口一次性改完。
+
+## 执行结论
+
+`2026-06-20` 已按确认方案完成首批代码实现：
+
+- `UserPostLike`、`UserCommentLike` 已声明用户-目标唯一索引和目标活跃查询索引。
+- 已新增部署态 SQL：`Deploy/sql/20260620_add_like_relation_unique_indexes.sql`，覆盖历史重复关系清理、`LikeCount` 校准和索引创建。
+- `Radish.DbMigrate` 已补本地结构治理入口：本地 `apply` 会规整点赞关系、校准计数并补齐索引。
+- `PostRepository`、`CommentRepository` 已承接点赞关系切换、唯一冲突处理和 `LikeCount` 条件更新。
+- `PostService.ToggleLikeAsync`、`CommentService.ToggleLikeAsync` 已改为根据仓储返回的 `Delta` 触发奖励、经验、通知和评论高亮重算。
+- 已新增定向测试 `LikeRelationConsistencyTest`，覆盖关系复用、计数不为负，以及 `Delta=0` 不触发奖励 / 通知 / 高亮副作用。
 
 ## 当前问题
 
@@ -92,6 +103,13 @@
 5. `git diff --check`
 6. `npm run check:repo-hygiene:changed`
 
+本批已执行：
+
+- `dotnet build Radish.slnx -c Debug`：通过，0 warning / 0 error。
+- `dotnet test Radish.Api.Tests`：通过，`485` 个测试全部通过。
+- `git diff --check`：通过。
+- `npm run check:repo-hygiene:changed`：通过。
+
 ## 停止线
 
 - 不处理发帖 / 评论重复提交策略。
@@ -99,8 +117,8 @@
 - 不把点赞奖励事务流水唯一键并入本批；如果后续仍发现奖励服务自身重复发放，再进入 `WOG-4 奖励业务键唯一性`。
 - 不引入 Redis 锁、队列、Outbox 或通用计数平台。
 
-## 待确认决策
+## 已确认决策
 
-1. 是否同意唯一键采用 `TenantId + UserId + PostId / CommentId`，并在迁移中删除历史重复关系行。
-2. 是否同意把点赞关系切换和计数条件更新下沉到 `PostRepository` / `CommentRepository` 的专属方法。
-3. 是否同意本批保持 API / 前端契约不变，只改后端持久化、迁移 SQL 和定向测试。
+1. 唯一键采用 `TenantId + UserId + PostId / CommentId`，迁移中删除历史重复关系行。
+2. 点赞关系切换和计数条件更新下沉到 `PostRepository` / `CommentRepository` 的专属方法。
+3. 本批保持 API / 前端契约不变，只改后端持久化、迁移 SQL 和定向测试。

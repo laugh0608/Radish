@@ -6,6 +6,9 @@ namespace Radish.Model;
 
 /// <summary>用户评论点赞关系实体</summary>
 /// <remarks>记录用户对评论的点赞关系，支持查询点赞状态和点赞用户列表</remarks>
+[SugarTable("UserCommentLike")]
+[SugarIndex("idx_usercommentlike_tenant_user_comment", nameof(TenantId), OrderByType.Asc, nameof(UserId), OrderByType.Asc, nameof(CommentId), OrderByType.Asc, IsUnique = true)]
+[SugarIndex("idx_usercommentlike_comment_active", nameof(TenantId), OrderByType.Asc, nameof(CommentId), OrderByType.Asc, nameof(IsDeleted), OrderByType.Asc)]
 public class UserCommentLike : RootEntityTKey<long>, ITenantEntity
 {
     /// <summary>

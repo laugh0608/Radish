@@ -139,6 +139,7 @@ internal static class DbMigrateRunner
         EnsureUserPublicIdentitySchema(mainDb);
         EnsureUserLoginIndex(mainDb);
         EnsureForumIndexes(mainDb);
+        EnsureLikeRelationIndexes(mainDb);
     }
 
     private static void EnsureUserPublicIdentitySchema(ISqlSugarClient db)
@@ -492,17 +493,182 @@ internal static class DbMigrateRunner
             [nameof(Post.TenantId), nameof(Post.CategoryId), nameof(Post.IsDeleted), nameof(Post.IsPublished), nameof(Post.CreateTime)]);
     }
 
-    private static void EnsureIndex(ISqlSugarClient db, string tableName, string indexName, string[] columns)
+    private static void EnsureLikeRelationIndexes(ISqlSugarClient db)
+    {
+        NormalizePostLikeRelations(db);
+        NormalizeCommentLikeRelations(db);
+
+        EnsureIndex(
+            db,
+            db.EntityMaintenance.GetEntityInfo<UserPostLike>().DbTableName,
+            "idx_userpostlike_tenant_user_post",
+            [nameof(UserPostLike.TenantId), nameof(UserPostLike.UserId), nameof(UserPostLike.PostId)],
+            unique: true);
+
+        EnsureIndex(
+            db,
+            db.EntityMaintenance.GetEntityInfo<UserPostLike>().DbTableName,
+            "idx_userpostlike_post_active",
+            [nameof(UserPostLike.TenantId), nameof(UserPostLike.PostId), nameof(UserPostLike.IsDeleted)]);
+
+        EnsureIndex(
+            db,
+            db.EntityMaintenance.GetEntityInfo<UserCommentLike>().DbTableName,
+            "idx_usercommentlike_tenant_user_comment",
+            [nameof(UserCommentLike.TenantId), nameof(UserCommentLike.UserId), nameof(UserCommentLike.CommentId)],
+            unique: true);
+
+        EnsureIndex(
+            db,
+            db.EntityMaintenance.GetEntityInfo<UserCommentLike>().DbTableName,
+            "idx_usercommentlike_comment_active",
+            [nameof(UserCommentLike.TenantId), nameof(UserCommentLike.CommentId), nameof(UserCommentLike.IsDeleted)]);
+    }
+
+    private static void NormalizePostLikeRelations(ISqlSugarClient db)
+    {
+        var likeTableName = db.EntityMaintenance.GetEntityInfo<UserPostLike>().DbTableName;
+        var postTableName = db.EntityMaintenance.GetEntityInfo<Post>().DbTableName;
+        if (!db.DbMaintenance.IsAnyTable(likeTableName, false) || !db.DbMaintenance.IsAnyTable(postTableName, false))
+        {
+            return;
+        }
+
+        var likes = db.Queryable<UserPostLike>().ToList();
+        var duplicateIds = likes
+            .GroupBy(like => new { like.TenantId, like.UserId, like.PostId })
+            .SelectMany(group => group
+                .OrderBy(like => like.IsDeleted ? 1 : 0)
+                .ThenByDescending(like => like.LikedAt)
+                .ThenByDescending(like => like.Id)
+                .Skip(1)
+                .Select(like => like.Id))
+            .ToList();
+
+        if (duplicateIds.Count > 0)
+        {
+            db.Deleteable<UserPostLike>()
+                .Where(like => duplicateIds.Contains(like.Id))
+                .ExecuteCommand();
+            Console.WriteLine($"[Radish.DbMigrate] 已清理 {duplicateIds.Count} 条重复帖子点赞关系。");
+        }
+
+        var activeLikeCounts = db.Queryable<UserPostLike>()
+            .Where(like => !like.IsDeleted)
+            .ToList()
+            .GroupBy(like => new { like.TenantId, like.PostId })
+            .ToDictionary(group => (group.Key.TenantId, group.Key.PostId), group => group.Count());
+
+        var posts = db.Queryable<Post>()
+            .Select(post => new Post
+            {
+                Id = post.Id,
+                TenantId = post.TenantId,
+                LikeCount = post.LikeCount
+            })
+            .ToList();
+
+        var updatedCount = 0;
+        foreach (var post in posts)
+        {
+            var expectedCount = activeLikeCounts.GetValueOrDefault((post.TenantId, post.Id), 0);
+            if (post.LikeCount == expectedCount)
+            {
+                continue;
+            }
+
+            updatedCount += db.Updateable<Post>()
+                .SetColumns(target => new Post { LikeCount = expectedCount })
+                .Where(target => target.Id == post.Id)
+                .ExecuteCommand();
+        }
+
+        if (updatedCount > 0)
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 已校准 {updatedCount} 条帖子点赞计数。");
+        }
+    }
+
+    private static void NormalizeCommentLikeRelations(ISqlSugarClient db)
+    {
+        var likeTableName = db.EntityMaintenance.GetEntityInfo<UserCommentLike>().DbTableName;
+        var commentTableName = db.EntityMaintenance.GetEntityInfo<Comment>().DbTableName;
+        if (!db.DbMaintenance.IsAnyTable(likeTableName, false) || !db.DbMaintenance.IsAnyTable(commentTableName, false))
+        {
+            return;
+        }
+
+        var likes = db.Queryable<UserCommentLike>().ToList();
+        var duplicateIds = likes
+            .GroupBy(like => new { like.TenantId, like.UserId, like.CommentId })
+            .SelectMany(group => group
+                .OrderBy(like => like.IsDeleted ? 1 : 0)
+                .ThenByDescending(like => like.LikedAt)
+                .ThenByDescending(like => like.Id)
+                .Skip(1)
+                .Select(like => like.Id))
+            .ToList();
+
+        if (duplicateIds.Count > 0)
+        {
+            db.Deleteable<UserCommentLike>()
+                .Where(like => duplicateIds.Contains(like.Id))
+                .ExecuteCommand();
+            Console.WriteLine($"[Radish.DbMigrate] 已清理 {duplicateIds.Count} 条重复评论点赞关系。");
+        }
+
+        var activeLikeCounts = db.Queryable<UserCommentLike>()
+            .Where(like => !like.IsDeleted)
+            .ToList()
+            .GroupBy(like => new { like.TenantId, like.CommentId })
+            .ToDictionary(group => (group.Key.TenantId, group.Key.CommentId), group => group.Count());
+
+        var comments = db.Queryable<Comment>()
+            .Select(comment => new Comment
+            {
+                Id = comment.Id,
+                TenantId = comment.TenantId,
+                LikeCount = comment.LikeCount
+            })
+            .ToList();
+
+        var updatedCount = 0;
+        foreach (var comment in comments)
+        {
+            var expectedCount = activeLikeCounts.GetValueOrDefault((comment.TenantId, comment.Id), 0);
+            if (comment.LikeCount == expectedCount)
+            {
+                continue;
+            }
+
+            updatedCount += db.Updateable<Comment>()
+                .SetColumns(target => new Comment { LikeCount = expectedCount })
+                .Where(target => target.Id == comment.Id)
+                .ExecuteCommand();
+        }
+
+        if (updatedCount > 0)
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 已校准 {updatedCount} 条评论点赞计数。");
+        }
+    }
+
+    private static void EnsureIndex(
+        ISqlSugarClient db,
+        string tableName,
+        string indexName,
+        string[] columns,
+        bool unique = false)
     {
         if (!db.DbMaintenance.IsAnyTable(tableName, false) || db.DbMaintenance.IsAnyIndex(indexName))
         {
             return;
         }
 
-        var created = db.DbMaintenance.CreateIndex(tableName, columns, indexName, false);
+        var created = db.DbMaintenance.CreateIndex(tableName, columns, indexName, unique);
         Console.WriteLine(created
-            ? $"[Radish.DbMigrate] 已补齐索引 {indexName}。"
-            : $"[Radish.DbMigrate] 索引 {indexName} 创建未生效，请检查数据库状态。");
+            ? $"[Radish.DbMigrate] 已补齐{(unique ? "唯一" : string.Empty)}索引 {indexName}。"
+            : $"[Radish.DbMigrate] {(unique ? "唯一" : string.Empty)}索引 {indexName} 创建未生效，请检查数据库状态。");
     }
 
     private static void PrintHelp()

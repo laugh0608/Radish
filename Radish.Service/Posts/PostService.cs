@@ -18,7 +18,6 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
 
     private readonly IBaseRepository<Post> _postRepository;
     private readonly IPostRepository? _postCustomRepository;
-    private readonly IBaseRepository<UserPostLike> _userPostLikeRepository;
     private readonly IBaseRepository<PostTag> _postTagRepository;
     private readonly IBaseRepository<Category> _categoryRepository;
     private readonly IBaseRepository<Tag> _tagRepository;
@@ -84,7 +83,7 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
     {
         _postRepository = baseRepository;
         _postCustomRepository = postCustomRepository;
-        _userPostLikeRepository = userPostLikeRepository;
+        ArgumentNullException.ThrowIfNull(userPostLikeRepository);
         _postTagRepository = postTagRepository;
         _categoryRepository = categoryRepository;
         _tagRepository = tagRepository;
