@@ -62,6 +62,9 @@ public class SystemConfigVo
     /// <summary>是否敏感设置</summary>
     public bool VoIsSensitive { get; set; }
 
+    /// <summary>写入版本号，默认态为 0</summary>
+    public int VoVersion { get; set; }
+
     /// <summary>创建时间</summary>
     public DateTime? VoCreateTime { get; set; }
 

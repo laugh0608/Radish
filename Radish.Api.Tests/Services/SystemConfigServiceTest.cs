@@ -57,6 +57,7 @@ public class SystemConfigServiceTest
         Assert.Equal(SystemConfigDefaults.DefaultSiteFaviconPath, faviconConfig.VoDefaultValue);
         Assert.Equal(SystemConfigDefaults.DefaultSiteFaviconPath, faviconConfig.VoEffectiveValue);
         Assert.False(faviconConfig.VoIsOverridden);
+        Assert.Equal(0, faviconConfig.VoVersion);
         Assert.Equal(SystemConfigRiskLevel.Low, faviconConfig.VoRiskLevel);
         Assert.Null(faviconConfig.VoMinNumberValue);
         Assert.Null(faviconConfig.VoMaxNumberValue);
@@ -222,6 +223,8 @@ public class SystemConfigServiceTest
         Assert.NotNull(capturedRecord);
         Assert.Equal(definition.Key, capturedRecord!.Key);
         Assert.Equal("4", capturedRecord.Value);
+        Assert.Equal(1, capturedRecord.Version);
+        Assert.Equal(1, updatedConfig.VoVersion);
         Assert.NotNull(capturedLog);
         Assert.Equal(SystemConfigRiskLevel.Medium, capturedLog!.RiskLevel);
         Assert.Equal(definition.RiskLevel, capturedLog.ConfirmRiskLevel);
@@ -250,6 +253,145 @@ public class SystemConfigServiceTest
             }));
 
         Assert.Contains("不能大于 200", exception.Message);
+    }
+
+    [Fact]
+    public async Task UpdateConfigAsync_ShouldUpdateExistingOverrideAndIncrementVersion()
+    {
+        var definition = SystemConfigDefaults.GetDefinitionByKey(SystemConfigDefaults.SiteFaviconKey)!;
+        var repository = new Mock<ISystemConfigRepository>();
+        var logRepository = new Mock<ISystemConfigChangeLogRepository>();
+        SystemConfigRecord? capturedRecord = null;
+        var existedRecord = new SystemConfigRecord
+        {
+            Id = 12,
+            Category = definition.Category,
+            Key = definition.Key,
+            Name = definition.Name,
+            Value = "/uploads/old/site.ico",
+            Type = definition.ValueType,
+            IsEnabled = true,
+            Version = 2,
+            CreateTime = DateTime.Now.AddHours(-2),
+            ModifyTime = DateTime.Now.AddHours(-1)
+        };
+
+        repository
+            .Setup(item => item.GetByKeyAsync(definition.Key))
+            .ReturnsAsync(existedRecord);
+        repository
+            .Setup(item => item.UpdateAsync(It.IsAny<SystemConfigRecord>()))
+            .Callback<SystemConfigRecord>(record => capturedRecord = record)
+            .ReturnsAsync((SystemConfigRecord record) => record);
+        logRepository
+            .Setup(item => item.CreateAsync(It.IsAny<SystemConfigChangeLogRecord>()))
+            .ReturnsAsync((SystemConfigChangeLogRecord record) => record);
+
+        var service = CreateService(repository, logRepository);
+
+        var updatedConfig = await service.UpdateConfigAsync(definition.Id, new UpdateSystemConfigDto
+        {
+            Value = "/uploads/new/site.ico",
+            IsEnabled = true,
+            Reason = "更新站点图标",
+            ConfirmRiskLevel = definition.RiskLevel,
+            ConfirmKey = definition.Key,
+            ExpectedVersion = 2
+        });
+
+        Assert.NotNull(capturedRecord);
+        Assert.Equal("/uploads/new/site.ico", capturedRecord!.Value);
+        Assert.Equal(3, capturedRecord.Version);
+        Assert.NotNull(updatedConfig);
+        Assert.Equal(3, updatedConfig!.VoVersion);
+    }
+
+    [Fact]
+    public async Task UpdateConfigAsync_ShouldTreatDefaultValuedRecordAsDefaultVersion()
+    {
+        var definition = SystemConfigDefaults.GetDefinitionByKey(SystemConfigDefaults.SiteFaviconKey)!;
+        var repository = new Mock<ISystemConfigRepository>();
+        var logRepository = new Mock<ISystemConfigChangeLogRepository>();
+        SystemConfigRecord? capturedRecord = null;
+
+        repository
+            .Setup(item => item.GetByKeyAsync(definition.Key))
+            .ReturnsAsync(new SystemConfigRecord
+            {
+                Id = 12,
+                Category = definition.Category,
+                Key = definition.Key,
+                Name = definition.Name,
+                Value = definition.DefaultValue,
+                Type = definition.ValueType,
+                IsEnabled = true,
+                Version = 5,
+                CreateTime = DateTime.Now.AddHours(-2),
+                ModifyTime = DateTime.Now.AddHours(-1)
+            });
+        repository
+            .Setup(item => item.UpdateAsync(It.IsAny<SystemConfigRecord>()))
+            .Callback<SystemConfigRecord>(record => capturedRecord = record)
+            .ReturnsAsync((SystemConfigRecord record) => record);
+        logRepository
+            .Setup(item => item.CreateAsync(It.IsAny<SystemConfigChangeLogRecord>()))
+            .ReturnsAsync((SystemConfigChangeLogRecord record) => record);
+
+        var service = CreateService(repository, logRepository);
+
+        var updatedConfig = await service.UpdateConfigAsync(definition.Id, new UpdateSystemConfigDto
+        {
+            Value = "/uploads/new/site.ico",
+            IsEnabled = true,
+            Reason = "更新站点图标",
+            ConfirmRiskLevel = definition.RiskLevel,
+            ConfirmKey = definition.Key,
+            ExpectedVersion = 0
+        });
+
+        Assert.NotNull(capturedRecord);
+        Assert.Equal(1, capturedRecord!.Version);
+        Assert.NotNull(updatedConfig);
+        Assert.Equal(1, updatedConfig!.VoVersion);
+    }
+
+    [Fact]
+    public async Task UpdateConfigAsync_ShouldRejectStaleExpectedVersion()
+    {
+        var definition = SystemConfigDefaults.GetDefinitionByKey(SystemConfigDefaults.SiteFaviconKey)!;
+        var repository = new Mock<ISystemConfigRepository>();
+        repository
+            .Setup(item => item.GetByKeyAsync(definition.Key))
+            .ReturnsAsync(new SystemConfigRecord
+            {
+                Id = 12,
+                Category = definition.Category,
+                Key = definition.Key,
+                Name = definition.Name,
+                Value = "/uploads/current/site.ico",
+                Type = definition.ValueType,
+                IsEnabled = true,
+                Version = 3,
+                CreateTime = DateTime.Now.AddHours(-2),
+                ModifyTime = DateTime.Now.AddHours(-1)
+            });
+
+        var service = CreateService(repository);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await service.UpdateConfigAsync(definition.Id, new UpdateSystemConfigDto
+            {
+                Value = "/uploads/new/site.ico",
+                IsEnabled = true,
+                Reason = "更新站点图标",
+                ConfirmRiskLevel = definition.RiskLevel,
+                ConfirmKey = definition.Key,
+                ExpectedVersion = 2
+            }));
+
+        Assert.Equal("系统设置已被其他管理员修改，请刷新后重试", exception.Message);
+        repository.Verify(item => item.UpdateAsync(It.IsAny<SystemConfigRecord>()), Times.Never);
+        repository.Verify(item => item.CreateAsync(It.IsAny<SystemConfigRecord>()), Times.Never);
     }
 
     [Fact]
@@ -306,6 +448,8 @@ public class SystemConfigServiceTest
         Assert.Equal(definition.Category, capturedRecord.Category);
         Assert.Equal(definition.Description, capturedRecord.Description);
         Assert.True(capturedRecord.IsEnabled);
+        Assert.Equal(1, capturedRecord.Version);
+        Assert.Equal(1, updatedConfig.VoVersion);
         Assert.NotNull(capturedLog);
         Assert.Equal(SystemConfigChangeAction.UpdateOverride, capturedLog!.ActionType);
         Assert.Equal(definition.DefaultValue, capturedLog.OldValue);
@@ -375,6 +519,7 @@ public class SystemConfigServiceTest
                 Value = "/uploads/custom/site.ico",
                 Type = definition.ValueType,
                 IsEnabled = true,
+                Version = 2,
                 CreateTime = DateTime.Now.AddHours(-2),
                 ModifyTime = DateTime.Now.AddHours(-1)
             });
@@ -398,7 +543,8 @@ public class SystemConfigServiceTest
             {
                 Reason = "回滚到默认图标",
                 ConfirmRiskLevel = definition.RiskLevel,
-                ConfirmKey = definition.Key
+                ConfirmKey = definition.Key,
+                ExpectedVersion = 2
             },
             new SystemConfigChangeContext
             {

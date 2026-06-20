@@ -513,7 +513,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
 
       if (product) {
         // 更新
-        await updateProduct({ ...dto, id: product.voId } as UpdateProductDto);
+        await updateProduct({ ...dto, id: product.voId, expectedVersion: product.voVersion } as UpdateProductDto);
         message.success('更新成功');
       } else {
         // 创建

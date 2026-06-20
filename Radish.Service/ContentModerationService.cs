@@ -5,6 +5,7 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
+using Radish.Repository.UnitOfWorks;
 using Radish.Service.Base;
 using Radish.Shared.CustomEnum;
 using SqlSugar;
@@ -30,6 +31,7 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
     private readonly IBaseRepository<Product> _productRepository;
     private readonly IBaseRepository<PostQuickReply> _postQuickReplyRepository;
     private readonly IBaseRepository<User> _userRepository;
+    private readonly IUnitOfWorkManage? _unitOfWorkManage;
 
     public ContentModerationService(
         IMapper mapper,
@@ -40,7 +42,8 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
         IChannelMessageRepository channelMessageRepository,
         IBaseRepository<Product> productRepository,
         IBaseRepository<PostQuickReply> postQuickReplyRepository,
-        IBaseRepository<User> userRepository)
+        IBaseRepository<User> userRepository,
+        IUnitOfWorkManage? unitOfWorkManage = null)
         : base(mapper, baseRepository)
     {
         _contentReportRepository = baseRepository;
@@ -51,6 +54,7 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
         _productRepository = productRepository;
         _postQuickReplyRepository = postQuickReplyRepository;
         _userRepository = userRepository;
+        _unitOfWorkManage = unitOfWorkManage;
     }
 
     public async Task<long> SubmitReportAsync(SubmitContentReportDto dto, long reporterUserId, string reporterUserName, long tenantId)
@@ -282,24 +286,61 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
         report.ModifyBy = normalizedReviewerName;
         report.ModifyId = reviewerUserId;
 
-        await _contentReportRepository.UpdateAsync(report);
-
-        if (dto.IsApproved && actionType is ModerationActionTypeEnum.Mute or ModerationActionTypeEnum.Ban)
+        await ExecuteModerationUnitOfWorkAsync(async () =>
         {
-            var actionReason = BuildReviewActionReason(report);
-            await ExecuteActionAsync(
-                report.TargetUserId,
-                report.TargetUserName,
-                actionType,
-                dto.DurationHours,
-                actionReason,
-                report.Id,
-                reviewerUserId,
-                normalizedReviewerName,
-                tenantId > 0 ? tenantId : report.TenantId);
-        }
+            var affected = await _contentReportRepository.UpdateColumnsAsync(
+                r => new ContentReport
+                {
+                    Status = report.Status,
+                    ReviewActionType = report.ReviewActionType,
+                    ReviewDurationHours = report.ReviewDurationHours,
+                    ReviewRemark = report.ReviewRemark,
+                    ReviewedAt = report.ReviewedAt,
+                    ReviewedById = report.ReviewedById,
+                    ReviewedByName = report.ReviewedByName,
+                    ModifyTime = report.ModifyTime,
+                    ModifyBy = report.ModifyBy,
+                    ModifyId = report.ModifyId
+                },
+                r => r.Id == report.Id &&
+                    r.TenantId == report.TenantId &&
+                    r.Status == (int)ContentReportStatusEnum.Pending &&
+                    !r.IsDeleted);
+            if (affected <= 0)
+            {
+                throw new InvalidOperationException("举报单已被处理，请刷新审核队列");
+            }
+
+            if (dto.IsApproved && actionType is ModerationActionTypeEnum.Mute or ModerationActionTypeEnum.Ban)
+            {
+                var actionReason = BuildReviewActionReason(report);
+                await ExecuteActionAsync(
+                    report.TargetUserId,
+                    report.TargetUserName,
+                    actionType,
+                    dto.DurationHours,
+                    actionReason,
+                    report.Id,
+                    reviewerUserId,
+                    normalizedReviewerName,
+                    tenantId > 0 ? tenantId : report.TenantId);
+            }
+        });
 
         return await BuildReportQueueItemAsync(report);
+    }
+
+    private async Task ExecuteModerationUnitOfWorkAsync(Func<Task> action)
+    {
+        if (_unitOfWorkManage == null)
+        {
+            await action();
+            return;
+        }
+
+        using var unitOfWork = _unitOfWorkManage.CreateUnitOfWork();
+        await action();
+        unitOfWork.Commit();
     }
 
     public async Task<UserModerationActionVo> ApplyUserActionAsync(

@@ -80,6 +80,7 @@ public class SystemConfigRepository : ISystemConfigRepository
             var nextRecord = CloneRecord(record);
             nextRecord.Id = records.Count == 0 ? 1 : records.Max(item => item.Id) + 1;
             nextRecord.CreateTime = nextRecord.CreateTime == default ? DateTime.Now : nextRecord.CreateTime;
+            nextRecord.Version = NormalizeVersion(nextRecord.Version);
             records.Add(nextRecord);
             await SaveRecordsCoreAsync(records);
             return CloneRecord(nextRecord);
@@ -103,6 +104,7 @@ public class SystemConfigRepository : ISystemConfigRepository
             }
 
             var nextRecord = CloneRecord(record);
+            nextRecord.Version = NormalizeVersion(nextRecord.Version);
             if (!nextRecord.ModifyTime.HasValue)
             {
                 nextRecord.ModifyTime = DateTime.Now;
@@ -186,6 +188,11 @@ public class SystemConfigRepository : ISystemConfigRepository
             return records;
         }
 
+        foreach (var record in records)
+        {
+            record.Version = NormalizeVersion(record.Version);
+        }
+
         return records;
     }
 
@@ -211,8 +218,14 @@ public class SystemConfigRepository : ISystemConfigRepository
             Description = record.Description,
             Type = record.Type,
             IsEnabled = record.IsEnabled,
+            Version = NormalizeVersion(record.Version),
             CreateTime = record.CreateTime,
             ModifyTime = record.ModifyTime
         };
+    }
+
+    private static int NormalizeVersion(int version)
+    {
+        return version <= 0 ? 1 : version;
     }
 }

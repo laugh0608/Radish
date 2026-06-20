@@ -453,15 +453,50 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                 throw new InvalidOperationException("商品不存在");
             }
 
+            EnsureExpectedProductVersion(product, dto.ExpectedVersion);
+
             Mapper.Map(dto, product);
             product.ModifyId = operatorId;
             product.ModifyBy = operatorName;
             product.ModifyTime = DateTime.Now;
+            product.Version += 1;
 
-            var result = await _productRepository.UpdateAsync(product);
+            var affected = await _productRepository.UpdateColumnsAsync(
+                p => new Product
+                {
+                    Name = product.Name,
+                    Description = product.Description,
+                    IconAttachmentId = product.IconAttachmentId,
+                    CoverAttachmentId = product.CoverAttachmentId,
+                    CategoryId = product.CategoryId,
+                    ProductType = product.ProductType,
+                    BenefitType = product.BenefitType,
+                    ConsumableType = product.ConsumableType,
+                    BenefitValue = product.BenefitValue,
+                    Price = product.Price,
+                    OriginalPrice = product.OriginalPrice,
+                    StockType = product.StockType,
+                    Stock = product.Stock,
+                    LimitPerUser = product.LimitPerUser,
+                    DurationType = product.DurationType,
+                    DurationDays = product.DurationDays,
+                    ExpiresAt = product.ExpiresAt,
+                    SortOrder = product.SortOrder,
+                    IsOnSale = product.IsOnSale,
+                    Version = product.Version,
+                    ModifyId = product.ModifyId,
+                    ModifyBy = product.ModifyBy,
+                    ModifyTime = product.ModifyTime
+                },
+                p => p.Id == dto.Id && p.TenantId == product.TenantId && p.Version == dto.ExpectedVersion && !p.IsDeleted);
+            if (affected <= 0)
+            {
+                throw new InvalidOperationException("商品信息已被其他管理员修改，请刷新后重试");
+            }
+
             Log.Information("更新商品成功：{ProductId}, 操作员={Operator}", dto.Id, operatorName);
 
-            return result;
+            return true;
         }
         catch (Exception ex)
         {
@@ -471,7 +506,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     }
 
     /// <summary>上架商品</summary>
-    public async Task<bool> PutOnSaleAsync(long productId)
+    public async Task<bool> PutOnSaleAsync(long productId, int expectedVersion)
     {
         try
         {
@@ -487,22 +522,25 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             }
 
             EnsureValidProductConfiguration(product.ProductType, product.ConsumableType, product.BenefitValue);
+            EnsureExpectedProductVersion(product, expectedVersion);
 
             var affected = await _productRepository.UpdateColumnsAsync(
                 p => new Product
                 {
                     IsOnSale = true,
                     OnSaleTime = DateTime.Now,
+                    Version = p.Version + 1,
                     ModifyTime = DateTime.Now
                 },
-                p => p.Id == productId && p.TenantId == product.TenantId);
-
-            if (affected > 0)
+                p => p.Id == productId && p.TenantId == product.TenantId && p.Version == expectedVersion && !p.IsDeleted);
+            if (affected <= 0)
             {
-                Log.Information("商品 {ProductId} 上架成功", productId);
+                throw new InvalidOperationException("商品信息已被其他管理员修改，请刷新后重试");
             }
 
-            return affected > 0;
+            Log.Information("商品 {ProductId} 上架成功", productId);
+
+            return true;
         }
         catch (Exception ex)
         {
@@ -564,8 +602,16 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             && parsedValue > 0;
     }
 
+    private static void EnsureExpectedProductVersion(Product product, int expectedVersion)
+    {
+        if (product.Version != expectedVersion)
+        {
+            throw new InvalidOperationException("商品信息已被其他管理员修改，请刷新后重试");
+        }
+    }
+
     /// <summary>下架商品</summary>
-    public async Task<bool> TakeOffSaleAsync(long productId)
+    public async Task<bool> TakeOffSaleAsync(long productId, int expectedVersion)
     {
         try
         {
@@ -575,21 +621,25 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                 return false;
             }
 
+            EnsureExpectedProductVersion(product, expectedVersion);
+
             var affected = await _productRepository.UpdateColumnsAsync(
                 p => new Product
                 {
                     IsOnSale = false,
                     OffSaleTime = DateTime.Now,
+                    Version = p.Version + 1,
                     ModifyTime = DateTime.Now
                 },
-                p => p.Id == productId && p.TenantId == product.TenantId);
-
-            if (affected > 0)
+                p => p.Id == productId && p.TenantId == product.TenantId && p.Version == expectedVersion && !p.IsDeleted);
+            if (affected <= 0)
             {
-                Log.Information("商品 {ProductId} 下架成功", productId);
+                throw new InvalidOperationException("商品信息已被其他管理员修改，请刷新后重试");
             }
 
-            return affected > 0;
+            Log.Information("商品 {ProductId} 下架成功", productId);
+
+            return true;
         }
         catch (Exception ex)
         {

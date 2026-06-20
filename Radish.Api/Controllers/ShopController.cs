@@ -568,11 +568,11 @@ public class ShopController : ControllerBase
     [HttpPost("{productId:long}")]
     [Authorize(Policy = AuthorizationPolicies.Client)]
     [RequireConsolePermission(ConsolePermissions.ProductsToggleSale)]
-    public async Task<MessageModel<bool>> PutOnSale(long productId)
+    public async Task<MessageModel<bool>> PutOnSale(long productId, [FromBody] ProductVersionWriteDto request)
     {
         try
         {
-            var result = await _productService.PutOnSaleAsync(productId);
+            var result = await _productService.PutOnSaleAsync(productId, request.ExpectedVersion);
             return MessageModel<bool>.Success("上架成功", result);
         }
         catch (InvalidOperationException ex)
@@ -587,10 +587,17 @@ public class ShopController : ControllerBase
     [HttpPost("{productId:long}")]
     [Authorize(Policy = AuthorizationPolicies.Client)]
     [RequireConsolePermission(ConsolePermissions.ProductsToggleSale)]
-    public async Task<MessageModel<bool>> TakeOffSale(long productId)
+    public async Task<MessageModel<bool>> TakeOffSale(long productId, [FromBody] ProductVersionWriteDto request)
     {
-        var result = await _productService.TakeOffSaleAsync(productId);
-        return MessageModel<bool>.Success("下架成功", result);
+        try
+        {
+            var result = await _productService.TakeOffSaleAsync(productId, request.ExpectedVersion);
+            return MessageModel<bool>.Success("下架成功", result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return MessageModel<bool>.Message(false, ex.Message, false);
+        }
     }
 
     /// <summary>

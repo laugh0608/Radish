@@ -287,10 +287,10 @@ export async function adminRemarkOrder(orderId: string, remark: string): Promise
 /**
  * 商品上架
  */
-export async function putOnSale(productId: string): Promise<void> {
+export async function putOnSale(productId: string, expectedVersion: number): Promise<void> {
   const response = await apiPost<null>(
     `/api/v1/Shop/PutOnSale/${encodeURIComponent(String(productId))}`,
-    undefined,
+    { expectedVersion },
     { withAuth: true }
   );
 
@@ -302,10 +302,10 @@ export async function putOnSale(productId: string): Promise<void> {
 /**
  * 商品下架
  */
-export async function takeOffSale(productId: string): Promise<void> {
+export async function takeOffSale(productId: string, expectedVersion: number): Promise<void> {
   const response = await apiPost<null>(
     `/api/v1/Shop/TakeOffSale/${encodeURIComponent(String(productId))}`,
-    undefined,
+    { expectedVersion },
     { withAuth: true }
   );
 

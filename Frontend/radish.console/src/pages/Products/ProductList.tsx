@@ -226,10 +226,10 @@ export const ProductList = () => {
   const handleToggleSale = async (product: Product) => {
     try {
       if (product.voIsOnSale) {
-        await takeOffSale(product.voId);
+        await takeOffSale(product.voId, product.voVersion);
         message.success('下架成功');
       } else {
-        await putOnSale(product.voId);
+        await putOnSale(product.voId, product.voVersion);
         message.success('上架成功');
       }
 

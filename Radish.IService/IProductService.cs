@@ -92,13 +92,15 @@ public interface IProductService : IBaseService<Product, ProductVo>
 
     /// <summary>上架商品</summary>
     /// <param name="productId">商品 ID</param>
+    /// <param name="expectedVersion">期望写入版本号</param>
     /// <returns>是否成功</returns>
-    Task<bool> PutOnSaleAsync(long productId);
+    Task<bool> PutOnSaleAsync(long productId, int expectedVersion);
 
     /// <summary>下架商品</summary>
     /// <param name="productId">商品 ID</param>
+    /// <param name="expectedVersion">期望写入版本号</param>
     /// <returns>是否成功</returns>
-    Task<bool> TakeOffSaleAsync(long productId);
+    Task<bool> TakeOffSaleAsync(long productId, int expectedVersion);
 
     /// <summary>获取商品列表（管理后台）</summary>
     /// <param name="categoryId">分类 ID（可选）</param>

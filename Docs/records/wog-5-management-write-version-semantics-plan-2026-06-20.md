@@ -2,7 +2,7 @@
 
 > 日期：`2026-06-20`（Asia/Shanghai）
 >
-> 状态：`待确认 / 进入代码前评审`
+> 状态：`已确认 / 首批代码已实现`
 >
 > 关联说明：[写操作可靠性与并发保护治理](/guide/write-operation-reliability-governance)、[WOG-1 写操作分级盘点记录](/records/wog-1-write-operation-inventory-2026-06-20)、[WOG-4 奖励业务键唯一性方案](/records/wog-4-reward-business-key-uniqueness-plan-2026-06-20)、[系统设置治理专题](/guide/system-settings-governance)
 
@@ -16,6 +16,17 @@
 - 内容举报审核。
 
 本批目标不是把所有管理表统一改造为版本表，也不是新增通用审批平台，而是让高价值管理写入口在管理员打开旧页面、他人已经保存新状态后，能明确返回冲突并要求刷新；审计历史需要能说明提交基于哪个版本或状态。
+
+## 首批实现记录
+
+`2026-06-20` 已按本评审的四项决策完成首批代码实现：
+
+- 系统设置：`SystemConfigRecord.Version`、`SystemConfigVo.VoVersion`、`UpdateSystemConfigDto.ExpectedVersion` 与 `RestoreSystemConfigDefaultDto.ExpectedVersion` 已落地；默认态返回 `VoVersion = 0`，有效覆盖值从 `1` 开始递增，历史 JSON 缺失版本按 `1` 兼容读取，值等于默认值的遗留记录按默认态处理。
+- Console 角色授权：`SaveRoleAuthorizationAsync` 已校验 `ExpectedModifyTime`，软删除、恢复和新增授权关系统一写入本次 `ModifyTime`，旧授权快照会被拒绝。
+- 商品管理：`ProductVo.VoVersion`、`UpdateProductDto.ExpectedVersion` 和上架 / 下架版本请求已接入；编辑、上架、下架均使用 `Product.Version` 条件更新并递增版本。
+- 内容举报审核：`ReviewReportAsync` 已改为 `Status == Pending` 条件更新，受影响行数为 `0` 时返回冲突；审核状态更新与禁言 / 封禁动作创建尝试纳入现有 `IUnitOfWorkManage` 工作单元。
+
+本批同步补充 `SystemConfigServiceTest`、`ConsoleAuthorizationServiceTest`、`ProductServiceTest`、`ContentModerationServiceTest` 和 Console 商品 / 系统设置页面提交版本字段。
 
 ## 当前代码事实
 
@@ -194,7 +205,7 @@ Console 授权暂不新增角色授权版本表。现有前端已经传 `Expecte
 
 ## 测试入口
 
-代码批次确认后建议新增或补充以下测试：
+首批代码已按以下入口补充定向测试，后续扩展同类管理写入时继续沿用该口径：
 
 1. `SystemConfigServiceTest`
    - 更新覆盖值时 `expectedVersion` 匹配才成功，并返回递增后的 `VoVersion`。
@@ -236,9 +247,9 @@ Console 授权暂不新增角色授权版本表。现有前端已经传 `Expecte
 - 不把 Redis 锁、Outbox 或分布式事务作为本批前置。
 - 不改变商品库存扣减、订单购买、权益发放和 WOG-3 / WOG-4 已落地的业务键与幂等口径。
 
-## 待确认决策
+## 已确认决策
 
-1. 系统设置首批是否采用整数 `Version` 作为唯一版本真值，默认态返回 `VoVersion = 0`。
-2. Console 角色授权首批是否沿用已有 `ExpectedModifyTime`，不新增授权版本表。
-3. 商品管理首批是否复用 `Product.Version`，并把编辑 / 上架 / 下架都纳入版本检查。
-4. 内容举报审核首批是否只使用 `Pending` 状态条件更新，不新增 `ContentReport.Version`。
+1. 系统设置首批采用整数 `Version` 作为唯一版本真值，默认态返回 `VoVersion = 0`。
+2. Console 角色授权首批沿用已有 `ExpectedModifyTime`，不新增授权版本表。
+3. 商品管理首批复用 `Product.Version`，编辑 / 上架 / 下架都纳入版本检查。
+4. 内容举报审核首批只使用 `Pending` 状态条件更新，不新增 `ContentReport.Version`。

@@ -205,27 +205,52 @@ public class ConsoleAuthorizationService : IConsoleAuthorizationService
             .ToList();
 
         var normalizedResourceIds = NormalizeSelectedResourceIds(selectedResourceIds, resources);
-        var activeLinks = await _roleConsoleResourceRepository.QueryAsync(link => link.RoleId == dto.RoleId);
+        var currentLatestGrantTime = await GetLatestGrantTimeAsync(dto.RoleId);
+        EnsureExpectedModifyTime(currentLatestGrantTime, dto.ExpectedModifyTime);
+
+        var activeLinks = await _roleConsoleResourceRepository.QueryAsync(link => link.RoleId == dto.RoleId && !link.IsDeleted);
         var activeResourceIds = activeLinks
             .Select(link => link.ConsoleResourceId)
             .Distinct()
             .ToHashSet();
 
+        var now = DateTime.UtcNow;
         var resourceIdsToDelete = activeResourceIds.Except(normalizedResourceIds).ToList();
         if (resourceIdsToDelete.Count > 0)
         {
-            await _roleConsoleResourceRepository.SoftDeleteAsync(
-                link => link.RoleId == dto.RoleId && resourceIdsToDelete.Contains(link.ConsoleResourceId),
-                operatorName);
+            await _roleConsoleResourceRepository.UpdateColumnsAsync(
+                link => new RoleConsoleResource
+                {
+                    IsDeleted = true,
+                    DeletedAt = now,
+                    DeletedBy = operatorName,
+                    ModifyId = operatorId,
+                    ModifyBy = operatorName,
+                    ModifyTime = now
+                },
+                link => link.RoleId == dto.RoleId &&
+                    resourceIdsToDelete.Contains(link.ConsoleResourceId) &&
+                    !link.IsDeleted);
         }
 
         if (normalizedResourceIds.Count > 0)
         {
-            await _roleConsoleResourceRepository.RestoreAsync(
-                link => link.RoleId == dto.RoleId && normalizedResourceIds.Contains(link.ConsoleResourceId));
+            await _roleConsoleResourceRepository.UpdateColumnsAsync(
+                link => new RoleConsoleResource
+                {
+                    IsDeleted = false,
+                    DeletedAt = null,
+                    DeletedBy = null,
+                    ModifyId = operatorId,
+                    ModifyBy = operatorName,
+                    ModifyTime = now
+                },
+                link => link.RoleId == dto.RoleId &&
+                    normalizedResourceIds.Contains(link.ConsoleResourceId) &&
+                    link.IsDeleted);
         }
 
-        var restoredLinks = await _roleConsoleResourceRepository.QueryAsync(link => link.RoleId == dto.RoleId);
+        var restoredLinks = await _roleConsoleResourceRepository.QueryAsync(link => link.RoleId == dto.RoleId && !link.IsDeleted);
         var restoredResourceIds = restoredLinks
             .Select(link => link.ConsoleResourceId)
             .Distinct()
@@ -242,7 +267,7 @@ public class ConsoleAuthorizationService : IConsoleAuthorizationService
                 CreateBy = operatorName,
                 ModifyId = operatorId,
                 ModifyBy = operatorName,
-                ModifyTime = DateTime.UtcNow
+                ModifyTime = now
             })
             .ToList();
 
@@ -252,6 +277,34 @@ public class ConsoleAuthorizationService : IConsoleAuthorizationService
         }
 
         return true;
+    }
+
+    private static void EnsureExpectedModifyTime(DateTime? currentModifyTime, DateTime? expectedModifyTime)
+    {
+        if (!TimestampEquals(currentModifyTime, expectedModifyTime))
+        {
+            throw new InvalidOperationException("角色授权已被其他管理员修改，请刷新后重试");
+        }
+    }
+
+    private static bool TimestampEquals(DateTime? currentModifyTime, DateTime? expectedModifyTime)
+    {
+        if (!currentModifyTime.HasValue || !expectedModifyTime.HasValue)
+        {
+            return currentModifyTime.HasValue == expectedModifyTime.HasValue;
+        }
+
+        return NormalizeTimestamp(currentModifyTime.Value).Ticks == NormalizeTimestamp(expectedModifyTime.Value).Ticks;
+    }
+
+    private static DateTime NormalizeTimestamp(DateTime value)
+    {
+        return value.Kind switch
+        {
+            DateTimeKind.Local => value.ToUniversalTime(),
+            DateTimeKind.Utc => value,
+            _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
+        };
     }
 
     private async Task<List<ConsoleResource>> GetOrderedResourcesAsync()

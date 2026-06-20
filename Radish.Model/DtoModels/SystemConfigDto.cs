@@ -36,6 +36,8 @@ public class UpdateSystemConfigDto
     public string? ConfirmRiskLevel { get; set; }
 
     public string? ConfirmKey { get; set; }
+
+    public int ExpectedVersion { get; set; }
 }
 
 /// <summary>
@@ -48,6 +50,8 @@ public class RestoreSystemConfigDefaultDto
     public string? ConfirmRiskLevel { get; set; }
 
     public string? ConfirmKey { get; set; }
+
+    public int ExpectedVersion { get; set; }
 }
 
 /// <summary>
