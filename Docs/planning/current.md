@@ -87,6 +87,7 @@
 - [支付与转账幂等治理](/guide/payment-idempotency-governance)
 - [写操作可靠性与并发保护治理](/guide/write-operation-reliability-governance)
 - [WOG-1 写操作分级盘点记录](/records/wog-1-write-operation-inventory-2026-06-20)
+- [WOG-2 内容互动关系写入与计数一致性方案](/records/wog-2-content-interaction-consistency-plan-2026-06-20)
 - [P3-10-B9 用户身份语义首批记录](/records/p3-10-b9-user-identity-first-batch-record-2026-06-15)
 - [P3-10-D 合并前验证记录](/records/p3-10-d-pre-merge-validation-record-2026-06-19)
 - [P3-10-D PR 准备记录](/records/p3-10-d-web-feed-pr-prep-record-2026-06-19)
@@ -105,7 +106,7 @@
    - 本轮暂不创建 PR；不再默认追加第五批链接扫尾。若真实复核或验证命中明确缺口，再按同类问题成组修复。
 2. **选择 P3-10 下一批产品 / 治理增量**
    - 前端敏感日志脱敏、支付口令哈希升级和 [支付与转账幂等治理](/guide/payment-idempotency-governance) 首批代码均已完成，不再作为下一步开发项。
-   - [WOG-1 写操作分级盘点记录](/records/wog-1-write-operation-inventory-2026-06-20) 已完成矩阵和候选排序；下一步建议先评审 `WOG-2 内容互动关系写入与计数一致性`，确认帖子 / 评论点赞唯一索引、历史重复数据清理、计数更新和奖励触发方案后再进入代码。
+   - [WOG-1 写操作分级盘点记录](/records/wog-1-write-operation-inventory-2026-06-20) 已完成矩阵和候选排序；[WOG-2 内容互动关系写入与计数一致性方案](/records/wog-2-content-interaction-consistency-plan-2026-06-20) 已输出待确认，确认后再进入代码。
 3. **把 P3-8-D 降级为维护与回拉线**
    - 移动 Web 公开页逐页打磨、Console 剩余页面迁移、购买 / 订单 / 背包重复复核、ID Phase A 广泛扫描不再作为默认日常主线。
    - 新增外部 ID 边界、扫描命中、真实编译错误或发布候选验收暴露问题时，再做定向治理。
@@ -120,7 +121,7 @@
 - `P3-10 后续治理专题：写操作可靠性与并发保护`
   - 新增 [写操作可靠性与并发保护治理](/guide/write-operation-reliability-governance)，作为支付 / 转账幂等之后的写操作分级入口。
   - `WOG-1 写操作分级盘点` 已完成，结论见 [WOG-1 写操作分级盘点记录](/records/wog-1-write-operation-inventory-2026-06-20)。
-  - 下一步建议优先评审 `WOG-2 内容互动关系写入与计数一致性`：帖子 / 评论点赞关系唯一索引、历史重复数据清理、计数条件更新或回算守护、点赞奖励触发边界和定向测试。
+  - [WOG-2 内容互动关系写入与计数一致性方案](/records/wog-2-content-interaction-consistency-plan-2026-06-20) 已输出待确认：帖子 / 评论点赞关系唯一索引、历史重复数据清理、计数条件更新、点赞奖励触发边界和定向测试。
   - `WOG-2` 进入代码前必须先说明方案并等待确认；不直接扩展完整钱包、资产风控、浏览器通用 `sign`、字段级加密、安全会话、Redis 分布式锁平台或完整经济系统。
 - `P3-10-D Web 信息流 / UI 结构整理`
   - 首日已完成 Web 默认入口、公开发现、论坛详情、公开文档详情、公开个人页、圈子、`/me` 与轻互动入口的结构整理和来源返回修正。
@@ -162,8 +163,8 @@
 
 ## 明日事项
 
-- 先读取本页、[写操作可靠性与并发保护治理](/guide/write-operation-reliability-governance) 和 [WOG-1 写操作分级盘点记录](/records/wog-1-write-operation-inventory-2026-06-20)，确认当前仍处于 `P3-10 后续产品 / 治理增量选择`。
-- 第一顺位：输出 `WOG-2 内容互动关系写入与计数一致性` 方案并等待确认。重点说明帖子 / 评论点赞唯一索引、历史重复数据清理、计数条件更新或回算守护、点赞奖励触发边界、迁移 SQL 和定向测试。
+- 先读取本页、[写操作可靠性与并发保护治理](/guide/write-operation-reliability-governance)、[WOG-1 写操作分级盘点记录](/records/wog-1-write-operation-inventory-2026-06-20) 和 [WOG-2 内容互动关系写入与计数一致性方案](/records/wog-2-content-interaction-consistency-plan-2026-06-20)，确认当前仍处于 `P3-10 后续产品 / 治理增量选择`。
+- 第一顺位：确认 `WOG-2 内容互动关系写入与计数一致性` 方案。确认后再进入代码，重点实现帖子 / 评论点赞唯一索引、历史重复数据清理、计数条件更新、点赞奖励触发边界、迁移 SQL 和定向测试。
 - 第二顺位：跳过本轮 PR 创建步骤，保留 [P3-10-D PR 准备记录](/records/p3-10-d-web-feed-pr-prep-record-2026-06-19) 作为后续恢复合并动作的依据。
 - 第三顺位：若真实 smoke、自动化验证或明确缺口重新命中 P3-10-D 阻断 / 清晰一致性问题，再定向回修；不再默认追加第五批链接语义扫尾。
 
