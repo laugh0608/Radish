@@ -22,6 +22,7 @@ abstract class ShopRepository {
     required String accessToken,
     required String productId,
     required String paymentPassword,
+    required String idempotencyKey,
     int quantity = 1,
   });
 
@@ -77,6 +78,7 @@ class EmptyShopRepository implements ShopRepository {
     required String accessToken,
     required String productId,
     required String paymentPassword,
+    required String idempotencyKey,
     int quantity = 1,
   }) {
     throw const RadishApiClientException('购买暂时不可用');
@@ -190,11 +192,13 @@ class HttpShopRepository implements ShopRepository {
     required String accessToken,
     required String productId,
     required String paymentPassword,
+    required String idempotencyKey,
     int quantity = 1,
   }) {
     final normalizedAccessToken = accessToken.trim();
     final normalizedProductId = productId.trim();
     final normalizedPaymentPassword = paymentPassword.trim();
+    final normalizedIdempotencyKey = idempotencyKey.trim();
     if (normalizedAccessToken.isEmpty) {
       throw const RadishApiClientException('请先登录后购买商品');
     }
@@ -203,6 +207,9 @@ class HttpShopRepository implements ShopRepository {
     }
     if (normalizedPaymentPassword.isEmpty) {
       throw const RadishApiClientException('请输入支付口令');
+    }
+    if (normalizedIdempotencyKey.isEmpty) {
+      throw const RadishApiClientException('购买请求缺少幂等键');
     }
 
     final uri = endpoints.resolveApi('/api/v1/Shop/Purchase');
@@ -214,6 +221,7 @@ class HttpShopRepository implements ShopRepository {
         'productId': normalizedProductId,
         'quantity': quantity.clamp(1, 99),
         'paymentPassword': normalizedPaymentPassword,
+        'idempotencyKey': normalizedIdempotencyKey,
       },
       decode: ShopPurchaseResult.fromJson,
     );

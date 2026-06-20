@@ -3315,6 +3315,7 @@ class _SeededShopRepository implements ShopRepository {
     required String accessToken,
     required String productId,
     required String paymentPassword,
+    required String idempotencyKey,
     int quantity = 1,
   }) async {
     return const ShopPurchaseResult(

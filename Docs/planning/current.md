@@ -74,11 +74,12 @@
   - `P3-10 后置安全治理：支付口令哈希升级` 已完成首批代码：新支付口令写入 Argon2id v2，历史 v1 SHA256 口令验证成功后自动升级，null 旧口令仍要求重置；后端定向测试已通过。
   - `P3-10 后置安全治理：支付 / 转账幂等与重放边界` 已完成首批代码、分层验证、仓库卫生检查和本地提交：商城购买 / 萝卜币转账已接入 `idempotencyKey`、请求摘要绑定和终态响应重放；转入发布候选前回归线。
   - 本轮 warning 清理已完成：SQLitePCLRaw 安全版本、`CoinController` XML 参数说明、Console 兼容权限扫描豁免和 Forum 评论 chunk warning 已收口，后端构建、client build、`validate:ci`、NuGet vulnerability scan 和仓库卫生检查均已通过；提交 `fac0150b`。
-  - `WOG-1 写操作分级盘点` 已完成只读代码和文档盘点：资产 / 库存、奖励 / 玩法、内容互动、管理治理、通知 / 消息五类写入口已形成矩阵和候选排序；下一候选为 `WOG-2 内容互动关系写入与计数一致性`，进入代码前需先确认唯一索引、历史重复数据清理和服务层并发处理方案。
+  - `WOG-1 写操作分级盘点` 已完成只读代码和文档盘点：资产 / 库存、奖励 / 玩法、内容互动、管理治理、通知 / 消息五类写入口已形成矩阵和候选排序；`WOG-2` 至 `WOG-6` 已按排序完成首批治理。
   - `WOG-2 内容互动关系写入与计数一致性` 已按确认方案完成首批代码实现：帖子 / 评论点赞关系增加用户-目标唯一索引，历史重复关系清理与计数校准进入部署 SQL 和 DbMigrate，服务层按 `Delta` 控制奖励、通知和高亮重算。
   - `WOG-3 背包 / 权益发放可靠性` 已按确认方案完成首批代码实现：订单级发放幂等、背包聚合唯一键、消耗品发放流水、条件扣减和道具使用事务边界已落地。
   - `WOG-4 奖励业务键唯一性` 已按确认方案完成首批代码实现：奖励流水和经验流水新增业务去重键，互动奖励、经验奖励、神评 / 沙发基础奖励、点赞加成和保留奖励已收敛到服务端业务键唯一真值。
   - `WOG-5 管理覆盖类写入版本语义` 已按确认方案完成首批代码实现：系统设置覆盖版本、Console 授权旧快照拦截、商品管理版本条件更新和内容举报审核状态条件更新已落地。
+  - `WOG-6 跨端幂等契约补齐` 已按确认方案完成首批代码实现：Flutter 单商品购买已生成并提交 `shop:` 幂等键，失败后直接重试复用同一 key，成功或购买意图重置后生成新 key；本批不扩展 Flutter 转账、完整移动商城或服务端强制 key。
 
 ## 当前执行入口
 
@@ -114,7 +115,7 @@
    - 本轮暂不创建 PR；不再默认追加第五批链接扫尾。若真实复核或验证命中明确缺口，再按同类问题成组修复。
 2. **选择 P3-10 下一批产品 / 治理增量**
    - 前端敏感日志脱敏、支付口令哈希升级和 [支付与转账幂等治理](/guide/payment-idempotency-governance) 首批代码均已完成，不再作为下一步开发项。
-   - [WOG-1 写操作分级盘点记录](/records/wog-1-write-operation-inventory-2026-06-20) 已完成矩阵和候选排序；[WOG-2 内容互动关系写入与计数一致性方案](/records/wog-2-content-interaction-consistency-plan-2026-06-20)、[WOG-3 背包 / 权益发放可靠性方案](/records/wog-3-inventory-benefit-reliability-plan-2026-06-20)、[WOG-4 奖励业务键唯一性方案](/records/wog-4-reward-business-key-uniqueness-plan-2026-06-20) 与 [WOG-5 管理覆盖类写入版本语义方案](/records/wog-5-management-write-version-semantics-plan-2026-06-20) 均已确认并完成首批实现。
+   - [WOG-1 写操作分级盘点记录](/records/wog-1-write-operation-inventory-2026-06-20) 已完成矩阵和候选排序；[WOG-2 内容互动关系写入与计数一致性方案](/records/wog-2-content-interaction-consistency-plan-2026-06-20)、[WOG-3 背包 / 权益发放可靠性方案](/records/wog-3-inventory-benefit-reliability-plan-2026-06-20)、[WOG-4 奖励业务键唯一性方案](/records/wog-4-reward-business-key-uniqueness-plan-2026-06-20)、[WOG-5 管理覆盖类写入版本语义方案](/records/wog-5-management-write-version-semantics-plan-2026-06-20) 与 [WOG-6 跨端幂等契约补齐方案](/records/wog-6-cross-client-idempotency-contract-plan-2026-06-20) 均已确认并完成首批实现。
 3. **把 P3-8-D 降级为维护与回拉线**
    - 移动 Web 公开页逐页打磨、Console 剩余页面迁移、购买 / 订单 / 背包重复复核、ID Phase A 广泛扫描不再作为默认日常主线。
    - 新增外部 ID 边界、扫描命中、真实编译错误或发布候选验收暴露问题时，再做定向治理。
@@ -133,7 +134,8 @@
   - [WOG-3 背包 / 权益发放可靠性方案](/records/wog-3-inventory-benefit-reliability-plan-2026-06-20) 已确认并完成首批实现；本批未扩展完整钱包、资产风控、浏览器通用 `sign`、字段级加密、安全会话、Redis 分布式锁平台或完整经济系统。
   - [WOG-4 奖励业务键唯一性方案](/records/wog-4-reward-business-key-uniqueness-plan-2026-06-20) 已确认并完成首批实现；本批未扩展完整经济系统、资产风控平台、Redis 分布式锁、Outbox 或通用奖励平台。
   - [WOG-5 管理覆盖类写入版本语义方案](/records/wog-5-management-write-version-semantics-plan-2026-06-20) 已确认并完成首批实现；本批未扩展通用审批流、所有 Console CRUD 版本化、Redis 锁、Outbox 或分布式事务平台。
-  - [WOG-6 跨端幂等契约补齐方案](/records/wog-6-cross-client-idempotency-contract-plan-2026-06-20) 已输出待确认，建议首批只补 Flutter 单商品购买的 `idempotencyKey`，暂不纳入 Flutter 转账、完整移动商城或服务端强制 key。
+  - [WOG-6 跨端幂等契约补齐方案](/records/wog-6-cross-client-idempotency-contract-plan-2026-06-20) 已确认并完成首批实现：Flutter 单商品购买已生成并提交 `shop:` 幂等键，失败后直接重试复用同一 key；本批未纳入 Flutter 转账、完整移动商城或服务端强制 key。
+  - `WOG-1` 至 `WOG-6` 首轮写操作治理已阶段收束；下一步回到 `P3-10 后续产品 / 治理增量选择`，从边界清楚、与当前真实使用路径匹配的候选中重新排序。
 - `P3-10-D Web 信息流 / UI 结构整理`
   - 首日已完成 Web 默认入口、公开发现、论坛详情、公开文档详情、公开个人页、圈子、`/me` 与轻互动入口的结构整理和来源返回修正。
   - 首轮阶段级 Gateway PC / 移动收口复核已开始，并已修复公开文档详情重复 H1、正文内链公开 URL 口径、公开商城首页 / 列表 / 详情标题层级，以及公开榜单用户项 PublicId-only 跳转判断。
@@ -175,7 +177,7 @@
 ## 明日事项
 
 - 先读取本页、[写操作可靠性与并发保护治理](/guide/write-operation-reliability-governance)、[WOG-1 写操作分级盘点记录](/records/wog-1-write-operation-inventory-2026-06-20) 和 [WOG-5 管理覆盖类写入版本语义方案](/records/wog-5-management-write-version-semantics-plan-2026-06-20)，必要时回看 WOG-2 / WOG-3 / WOG-4，确认当前仍处于 `P3-10 后续产品 / 治理增量选择`。
-- 第一顺位：确认 `WOG-6 跨端幂等契约补齐` 方案；若确认首批范围，则进入 Flutter 单商品购买 `idempotencyKey` 接入代码实现。
+- 第一顺位：`WOG-6 跨端幂等契约补齐` 首批实现和验证已完成；下一轮先回到 `P3-10 后续产品 / 治理增量选择`，重新筛选边界清楚的产品或治理增量，不默认顺手扩展 Flutter 转账、完整移动商城或服务端强制 key。
 - 第二顺位：跳过本轮 PR 创建步骤，保留 [P3-10-D PR 准备记录](/records/p3-10-d-web-feed-pr-prep-record-2026-06-19) 作为后续恢复合并动作的依据。
 - 第三顺位：若真实 smoke、自动化验证或明确缺口重新命中 P3-10-D 阻断 / 清晰一致性问题，再定向回修；不再默认追加第五批链接语义扫尾。
 
