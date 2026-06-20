@@ -50,6 +50,7 @@ abstract class ForumRepository {
     required String postId,
     required String content,
     required String accessToken,
+    required String clientSubmissionId,
     String? parentId,
     String? replyToCommentId,
     String? replyToCommentSnapshot,
@@ -62,6 +63,7 @@ abstract class ForumRepository {
     required String categoryId,
     required List<String> tagNames,
     required String accessToken,
+    required String clientSubmissionId,
   });
 }
 
@@ -242,6 +244,7 @@ class HttpForumRepository implements ForumRepository {
     required String postId,
     required String content,
     required String accessToken,
+    required String clientSubmissionId,
     String? parentId,
     String? replyToCommentId,
     String? replyToCommentSnapshot,
@@ -249,6 +252,11 @@ class HttpForumRepository implements ForumRepository {
   }) {
     final normalizedPostId = postId.trim();
     final normalizedContent = content.trim();
+    final normalizedClientSubmissionId = clientSubmissionId.trim();
+    if (normalizedClientSubmissionId.isEmpty) {
+      throw const RadishApiClientException('评论请求缺少提交意图 ID');
+    }
+
     final uri = endpoints.resolveApi('/api/v1/Comment/Create');
 
     return apiClient.post(
@@ -256,6 +264,7 @@ class HttpForumRepository implements ForumRepository {
       body: {
         'postId': normalizedPostId,
         'content': normalizedContent,
+        'clientSubmissionId': normalizedClientSubmissionId,
         'parentId': _readNullableString(parentId),
         'replyToCommentId': _readNullableString(replyToCommentId),
         'replyToCommentSnapshot': _readNullableString(replyToCommentSnapshot),
@@ -273,10 +282,16 @@ class HttpForumRepository implements ForumRepository {
     required String categoryId,
     required List<String> tagNames,
     required String accessToken,
+    required String clientSubmissionId,
   }) {
     final normalizedTitle = title.trim();
     final normalizedContent = content.trim();
     final normalizedCategoryId = categoryId.trim();
+    final normalizedClientSubmissionId = clientSubmissionId.trim();
+    if (normalizedClientSubmissionId.isEmpty) {
+      throw const RadishApiClientException('发帖请求缺少提交意图 ID');
+    }
+
     final normalizedTags = tagNames
         .map((tag) => tag.trim())
         .where((tag) => tag.isNotEmpty)
@@ -289,6 +304,7 @@ class HttpForumRepository implements ForumRepository {
       body: {
         'title': normalizedTitle,
         'content': normalizedContent,
+        'clientSubmissionId': normalizedClientSubmissionId,
         'contentType': 'text',
         'categoryId': normalizedCategoryId,
         'tagNames': normalizedTags,

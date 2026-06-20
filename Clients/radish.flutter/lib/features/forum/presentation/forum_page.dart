@@ -9,6 +9,7 @@ import '../../../core/network/radish_api_client.dart';
 import '../../../shared/widgets/phase_scope_card.dart';
 import '../data/forum_models.dart';
 import '../data/forum_repository.dart';
+import '../data/forum_submission_key.dart';
 import 'forum_detail_page.dart';
 import 'forum_feed_controller.dart';
 
@@ -56,6 +57,7 @@ class _ForumPageState extends State<ForumPage> {
   String? _categoryLoadIssueMessage;
   String? _postSubmitIssueMessage;
   String? _postSubmitSuccessMessage;
+  ForumSubmissionState? _postSubmissionState;
   bool _isLoadingCategories = true;
   bool _isSubmittingPost = false;
   bool _isWaitingForPublishingSignIn = false;
@@ -91,6 +93,7 @@ class _ForumPageState extends State<ForumPage> {
       );
       _controller.loadInitial();
       _handledHandoffSignature = null;
+      _postSubmissionState = null;
       unawaited(_loadCategories());
     }
 
@@ -352,6 +355,7 @@ class _ForumPageState extends State<ForumPage> {
     final tagNames = _readTagNames(_postTagsController.text);
     final accessToken =
         widget.sessionController?.state.session?.accessToken.trim();
+    final userId = widget.sessionController?.state.session?.userId.trim() ?? '';
 
     final validationMessage = _validatePostDraft(
       title: title,
@@ -384,12 +388,26 @@ class _ForumPageState extends State<ForumPage> {
     });
 
     try {
+      final submissionState = createForumSubmissionState(
+        current: _postSubmissionState,
+        prefix: 'forum-post',
+        fingerprint: buildForumSubmissionFingerprint([
+          userId,
+          title,
+          content,
+          categoryId,
+          tagNames,
+        ]),
+      );
+      _postSubmissionState = submissionState;
+
       final postId = await widget.repository.createPost(
         title: title,
         content: content,
         categoryId: categoryId!,
         tagNames: tagNames,
         accessToken: accessToken,
+        clientSubmissionId: submissionState.clientSubmissionId,
       );
       if (!mounted) {
         return;
@@ -401,6 +419,7 @@ class _ForumPageState extends State<ForumPage> {
         _postTitleController.clear();
         _postContentController.clear();
         _postTagsController.clear();
+        _postSubmissionState = null;
       });
       unawaited(_controller.refresh());
       _openCreatedPost(postId, title);

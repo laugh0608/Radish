@@ -2015,6 +2015,10 @@ void main() {
     expect(repository.createPostRequests.single.categoryId, 'category-1');
     expect(repository.createPostRequests.single.tagNames, ['flutter', '回流']);
     expect(repository.createPostRequests.single.accessToken, isNotEmpty);
+    expect(
+      repository.createPostRequests.single.clientSubmissionId,
+      startsWith('forum-post:'),
+    );
     expect(find.text('/forum/post/post-created'), findsOneWidget);
     expect(find.text('帖子详情'), findsWidgets);
   });
@@ -3873,6 +3877,7 @@ class _FakeForumRepository implements ForumRepository {
     required String postId,
     required String content,
     required String accessToken,
+    required String clientSubmissionId,
     String? parentId,
     String? replyToCommentId,
     String? replyToCommentSnapshot,
@@ -3888,6 +3893,7 @@ class _FakeForumRepository implements ForumRepository {
     required String categoryId,
     required List<String> tagNames,
     required String accessToken,
+    required String clientSubmissionId,
   }) async {
     return 'post-created';
   }
@@ -4114,6 +4120,7 @@ class _SeededForumRepository implements ForumRepository {
     required String postId,
     required String content,
     required String accessToken,
+    required String clientSubmissionId,
     String? parentId,
     String? replyToCommentId,
     String? replyToCommentSnapshot,
@@ -4129,6 +4136,7 @@ class _SeededForumRepository implements ForumRepository {
     required String categoryId,
     required List<String> tagNames,
     required String accessToken,
+    required String clientSubmissionId,
   }) async {
     return 'post-created';
   }
@@ -4145,6 +4153,7 @@ class _RecordingPostForumRepository extends _SeededForumRepository {
     required String categoryId,
     required List<String> tagNames,
     required String accessToken,
+    required String clientSubmissionId,
   }) async {
     createPostRequests.add(
       _ForumCreatePostRequest(
@@ -4153,6 +4162,7 @@ class _RecordingPostForumRepository extends _SeededForumRepository {
         categoryId: categoryId,
         tagNames: tagNames,
         accessToken: accessToken,
+        clientSubmissionId: clientSubmissionId,
       ),
     );
     return 'post-created';
@@ -4166,6 +4176,7 @@ class _ForumCreatePostRequest {
     required this.categoryId,
     required this.tagNames,
     required this.accessToken,
+    required this.clientSubmissionId,
   });
 
   final String title;
@@ -4173,6 +4184,7 @@ class _ForumCreatePostRequest {
   final String categoryId;
   final List<String> tagNames;
   final String accessToken;
+  final String clientSubmissionId;
 }
 
 class _SeededBigIdForumRepository implements ForumRepository {
@@ -4332,6 +4344,7 @@ class _SeededBigIdForumRepository implements ForumRepository {
     required String postId,
     required String content,
     required String accessToken,
+    required String clientSubmissionId,
     String? parentId,
     String? replyToCommentId,
     String? replyToCommentSnapshot,
@@ -4347,6 +4360,7 @@ class _SeededBigIdForumRepository implements ForumRepository {
     required String categoryId,
     required List<String> tagNames,
     required String accessToken,
+    required String clientSubmissionId,
   }) async {
     return '2042219067430928399';
   }

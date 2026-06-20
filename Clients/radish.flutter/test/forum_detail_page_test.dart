@@ -557,8 +557,75 @@ void main() {
     expect(repository.createCommentRequests.single.postId, 'post-42');
     expect(repository.createCommentRequests.single.content, '正式评论内容');
     expect(repository.createCommentRequests.single.accessToken, 'access-token');
+    expect(
+      repository.createCommentRequests.single.clientSubmissionId,
+      startsWith('forum-comment:'),
+    );
     expect(repository.createCommentRequests.single.parentId, isNull);
     expect(repository.createCommentRequests.single.replyToCommentId, isNull);
+  });
+
+  testWidgets('reuses comment submission key when retrying failed comment',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repository = _CommentSubmitFailingForumRepository();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: const SessionRefreshService(
+        environment: AppEnvironment.development(),
+      ),
+    );
+    await sessionController.setSession(
+      AuthSession(
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+        userId: 'user-current',
+        expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: repository,
+          postId: 'post-42',
+          initialTitle: '论坛详情回流',
+          sessionController: sessionController,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    final scrollable = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(
+      find.text('发布评论'),
+      200,
+      scrollable: scrollable,
+    );
+
+    await tester.enterText(_commentTextField(), '失败后复用评论 key');
+    await tester.pump();
+    final commentButton = find.widgetWithText(FilledButton, '发布评论');
+    await tester.ensureVisible(commentButton);
+    await tester.tap(commentButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('重试发布'));
+    await tester.pumpAndSettle();
+
+    expect(repository.createCommentRequests, hasLength(2));
+    expect(
+      repository.createCommentRequests.first.clientSubmissionId,
+      startsWith('forum-comment:'),
+    );
+    expect(
+      repository.createCommentRequests.last.clientSubmissionId,
+      repository.createCommentRequests.first.clientSubmissionId,
+    );
   });
 
   testWidgets('submits reply with parent and target comment context',
@@ -623,6 +690,10 @@ void main() {
     expect(repository.createCommentRequests, hasLength(1));
     expect(repository.createCommentRequests.single.postId, 'post-42');
     expect(repository.createCommentRequests.single.content, '回复一条根评论');
+    expect(
+      repository.createCommentRequests.single.clientSubmissionId,
+      startsWith('forum-comment:'),
+    );
     expect(repository.createCommentRequests.single.parentId, 'comment-1');
     expect(
         repository.createCommentRequests.single.replyToCommentId, 'comment-1');
@@ -874,6 +945,7 @@ abstract class _BaseForumRepository implements ForumRepository {
     required String postId,
     required String content,
     required String accessToken,
+    required String clientSubmissionId,
     String? parentId,
     String? replyToCommentId,
     String? replyToCommentSnapshot,
@@ -889,6 +961,7 @@ abstract class _BaseForumRepository implements ForumRepository {
     required String categoryId,
     required List<String> tagNames,
     required String accessToken,
+    required String clientSubmissionId,
   }) async {
     return 'post-created';
   }
@@ -1144,6 +1217,7 @@ class _RecordingCommentForumRepository extends _PagedForumRepository {
     required String postId,
     required String content,
     required String accessToken,
+    required String clientSubmissionId,
     String? parentId,
     String? replyToCommentId,
     String? replyToCommentSnapshot,
@@ -1154,6 +1228,7 @@ class _RecordingCommentForumRepository extends _PagedForumRepository {
         postId: postId,
         content: content,
         accessToken: accessToken,
+        clientSubmissionId: clientSubmissionId,
         parentId: parentId,
         replyToCommentId: replyToCommentId,
         replyToCommentSnapshot: replyToCommentSnapshot,
@@ -1164,11 +1239,41 @@ class _RecordingCommentForumRepository extends _PagedForumRepository {
   }
 }
 
+class _CommentSubmitFailingForumRepository
+    extends _RecordingCommentForumRepository {
+  @override
+  Future<String> createComment({
+    required String postId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
+    String? parentId,
+    String? replyToCommentId,
+    String? replyToCommentSnapshot,
+    String? replyToUserName,
+  }) async {
+    createCommentRequests.add(
+      _CreateCommentRequest(
+        postId: postId,
+        content: content,
+        accessToken: accessToken,
+        clientSubmissionId: clientSubmissionId,
+        parentId: parentId,
+        replyToCommentId: replyToCommentId,
+        replyToCommentSnapshot: replyToCommentSnapshot,
+        replyToUserName: replyToUserName,
+      ),
+    );
+    throw const RadishApiClientException('评论服务暂时不可用');
+  }
+}
+
 class _CreateCommentRequest {
   const _CreateCommentRequest({
     required this.postId,
     required this.content,
     required this.accessToken,
+    required this.clientSubmissionId,
     required this.parentId,
     required this.replyToCommentId,
     required this.replyToCommentSnapshot,
@@ -1178,6 +1283,7 @@ class _CreateCommentRequest {
   final String postId;
   final String content;
   final String accessToken;
+  final String clientSubmissionId;
   final String? parentId;
   final String? replyToCommentId;
   final String? replyToCommentSnapshot;

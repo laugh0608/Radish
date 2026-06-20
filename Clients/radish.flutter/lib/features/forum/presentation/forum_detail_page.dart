@@ -9,6 +9,7 @@ import '../../../shared/widgets/public_link_copy_panel.dart';
 import '../../../shared/widgets/read_only_markdown_view.dart';
 import '../data/forum_models.dart';
 import '../data/forum_repository.dart';
+import '../data/forum_submission_key.dart';
 import 'forum_child_comment_controller.dart';
 import 'forum_comment_feed_controller.dart';
 import 'forum_detail_controller.dart';
@@ -72,6 +73,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
   String? _commentSubmitErrorMessage;
   String? _commentSubmitSuccessMessage;
   _ForumCommentReplyTarget? _commentReplyTarget;
+  ForumSubmissionState? _commentSubmissionState;
   String? _resolvedPostIdForDependentFeeds;
   String? _startedCommentNavigationSignature;
   static const int _maxPendingNavigationScrollAttempts = 12;
@@ -118,6 +120,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
       _resolvedPostIdForDependentFeeds = null;
       _startedCommentNavigationSignature = null;
       _quickReplyLoginReturnNotice = null;
+      _commentSubmissionState = null;
       return;
     }
 
@@ -133,6 +136,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
       _resolvedPostIdForDependentFeeds = null;
       _startedCommentNavigationSignature = null;
       _quickReplyLoginReturnNotice = null;
+      _commentSubmissionState = null;
     }
 
     final nextCommentId = widget.commentId?.trim();
@@ -438,10 +442,26 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
     });
 
     try {
+      final submissionState = createForumSubmissionState(
+        current: _commentSubmissionState,
+        prefix: 'forum-comment',
+        fingerprint: buildForumSubmissionFingerprint([
+          normalizedUserId,
+          detail.id,
+          normalizedContent,
+          replyTarget?.parentCommentId,
+          replyTarget?.targetCommentId,
+          replyTarget?.contentSnapshot,
+          replyTarget?.authorName,
+        ]),
+      );
+      _commentSubmissionState = submissionState;
+
       final commentId = await widget.repository.createComment(
         postId: detail.id,
         content: normalizedContent,
         accessToken: normalizedAccessToken,
+        clientSubmissionId: submissionState.clientSubmissionId,
         parentId: replyTarget?.parentCommentId,
         replyToCommentId: replyTarget?.targetCommentId,
         replyToCommentSnapshot: replyTarget?.contentSnapshot,
@@ -478,6 +498,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
       setState(() {
         _isSubmittingComment = false;
         _commentReplyTarget = null;
+        _commentSubmissionState = null;
         _commentSubmitErrorMessage = null;
         _commentSubmitSuccessMessage =
             replyTarget == null ? '评论已发布，已显示在评论区顶部。' : '回复已发布，已更新当前评论区。';
@@ -510,12 +531,14 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
       _commentSubmitErrorMessage = null;
       _commentSubmitSuccessMessage = null;
       _commentLoginReturnNotice = null;
+      _commentSubmissionState = null;
     });
   }
 
   void _cancelCommentReply() {
     setState(() {
       _commentReplyTarget = null;
+      _commentSubmissionState = null;
       _commentSubmitErrorMessage = null;
       _commentSubmitSuccessMessage = null;
     });

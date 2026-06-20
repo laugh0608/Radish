@@ -7,6 +7,7 @@ import 'package:radish_flutter/core/auth/session_refresh_service.dart';
 import 'package:radish_flutter/core/auth/session_store.dart';
 import 'package:radish_flutter/core/config/app_environment.dart';
 import 'package:radish_flutter/core/network/radish_api_client.dart';
+import 'package:radish_flutter/core/network/radish_api_endpoints.dart';
 import 'package:radish_flutter/features/forum/data/forum_models.dart';
 import 'package:radish_flutter/features/forum/data/forum_repository.dart';
 import 'package:radish_flutter/features/forum/presentation/forum_page.dart';
@@ -19,6 +20,109 @@ Finder _forumTextFieldByLabel(String labelText) {
 }
 
 void main() {
+  test('http forum repository sends post client submission id', () async {
+    final apiClient = _RecordingForumApiClient();
+    final repository = HttpForumRepository(
+      apiClient: apiClient,
+      endpoints: const RadishApiEndpoints(AppEnvironment.development()),
+    );
+
+    final postId = await repository.createPost(
+      title: 'Flutter 发帖',
+      content: '正文',
+      categoryId: '9',
+      tagNames: const ['flutter', '发布'],
+      accessToken: 'access-token',
+      clientSubmissionId: 'forum-post:test-key',
+    );
+
+    expect(postId, 'created-id');
+    expect(apiClient.lastUri?.path, '/api/v1/Post/Publish');
+    expect(apiClient.lastBearerToken, 'access-token');
+    expect(apiClient.lastBody, {
+      'title': 'Flutter 发帖',
+      'content': '正文',
+      'clientSubmissionId': 'forum-post:test-key',
+      'contentType': 'text',
+      'categoryId': '9',
+      'tagNames': ['flutter', '发布'],
+      'isQuestion': false,
+    });
+  });
+
+  test('http forum repository sends comment client submission id', () async {
+    final apiClient = _RecordingForumApiClient();
+    final repository = HttpForumRepository(
+      apiClient: apiClient,
+      endpoints: const RadishApiEndpoints(AppEnvironment.development()),
+    );
+
+    final commentId = await repository.createComment(
+      postId: 'post-42',
+      content: '评论内容',
+      accessToken: 'access-token',
+      clientSubmissionId: 'forum-comment:test-key',
+      parentId: 'comment-1',
+      replyToCommentId: 'reply-1',
+      replyToCommentSnapshot: '被回复内容',
+      replyToUserName: 'radish',
+    );
+
+    expect(commentId, 'created-id');
+    expect(apiClient.lastUri?.path, '/api/v1/Comment/Create');
+    expect(apiClient.lastBearerToken, 'access-token');
+    expect(apiClient.lastBody, {
+      'postId': 'post-42',
+      'content': '评论内容',
+      'clientSubmissionId': 'forum-comment:test-key',
+      'parentId': 'comment-1',
+      'replyToCommentId': 'reply-1',
+      'replyToCommentSnapshot': '被回复内容',
+      'replyToUserName': 'radish',
+    });
+  });
+
+  test('http forum repository rejects blank client submission id', () async {
+    final repository = HttpForumRepository(
+      apiClient: _RecordingForumApiClient(),
+      endpoints: const RadishApiEndpoints(AppEnvironment.development()),
+    );
+
+    expect(
+      () => repository.createPost(
+        title: 'Flutter 发帖',
+        content: '正文',
+        categoryId: '9',
+        tagNames: const ['flutter'],
+        accessToken: 'access-token',
+        clientSubmissionId: ' ',
+      ),
+      throwsA(
+        isA<RadishApiClientException>().having(
+          (error) => error.message,
+          'message',
+          '发帖请求缺少提交意图 ID',
+        ),
+      ),
+    );
+
+    expect(
+      () => repository.createComment(
+        postId: 'post-42',
+        content: '评论内容',
+        accessToken: 'access-token',
+        clientSubmissionId: ' ',
+      ),
+      throwsA(
+        isA<RadishApiClientException>().having(
+          (error) => error.message,
+          'message',
+          '评论请求缺少提交意图 ID',
+        ),
+      ),
+    );
+  });
+
   testWidgets('renders forum posts from repository', (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
     tester.view.devicePixelRatio = 1.0;
@@ -282,6 +386,10 @@ void main() {
     expect(repository.createPostRequests.single.categoryId, '9');
     expect(repository.createPostRequests.single.tagNames, ['flutter', '发布']);
     expect(repository.createPostRequests.single.accessToken, 'access-token-42');
+    expect(
+      repository.createPostRequests.single.clientSubmissionId,
+      startsWith('forum-post:'),
+    );
     expect(openedTargets, hasLength(1));
     expect(openedTargets.single.postId, 'post-created-1');
     expect(openedTargets.single.initialTitle, 'Flutter 端发帖联调');
@@ -331,6 +439,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repository.createPostRequests, hasLength(1));
+    expect(
+      repository.createPostRequests.single.clientSubmissionId,
+      startsWith('forum-post:'),
+    );
     expect(repository.lastDetailPostId, 'post-created-1');
     expect(find.text('Flutter 新帖公开链路'), findsWidgets);
     expect(find.text('/forum/post/pst_created_flutter'), findsOneWidget);
@@ -386,6 +498,61 @@ void main() {
     expect(find.text('帖子已发布，正在打开详情。'), findsNothing);
     expect(find.text('失败后保留草稿'), findsOneWidget);
     expect(find.text('发帖失败后应该留在当前表单。'), findsOneWidget);
+  });
+
+  testWidgets('reuses post submission key when retrying failed publish',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repository = _CreatePostFailingForumRepository();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+          accessToken: 'access-token-42',
+          refreshToken: 'refresh-token-42',
+          userId: 'user-42',
+          expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+        ),
+      ),
+      refreshService: const _NoopSessionRefreshService(),
+    );
+    await sessionController.restore();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumPage(
+          environment: const AppEnvironment.development(),
+          repository: repository,
+          sessionController: sessionController,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.enterText(_forumTextFieldByLabel('标题'), '失败后复用 key');
+    await tester.enterText(_forumTextFieldByLabel('标签'), 'flutter, 重试');
+    await tester.enterText(
+      _forumTextFieldByLabel('正文'),
+      '同一份发帖草稿重试时应复用提交意图 ID。',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, '发布帖子'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, '发布帖子'));
+    await tester.pumpAndSettle();
+
+    expect(repository.createPostRequests, hasLength(2));
+    expect(
+      repository.createPostRequests.first.clientSubmissionId,
+      startsWith('forum-post:'),
+    );
+    expect(
+      repository.createPostRequests.last.clientSubmissionId,
+      repository.createPostRequests.first.clientSubmissionId,
+    );
   });
 
   testWidgets('keeps anonymous post draft through sign-in and publish',
@@ -456,6 +623,10 @@ void main() {
     expect(repository.createPostRequests.single.title, '匿名发帖登录回流');
     expect(repository.createPostRequests.single.categoryId, '9');
     expect(repository.createPostRequests.single.accessToken, 'access-token-42');
+    expect(
+      repository.createPostRequests.single.clientSubmissionId,
+      startsWith('forum-post:'),
+    );
     expect(openedTargets, hasLength(1));
     expect(openedTargets.single.postId, 'post-created-1');
     expect(openedTargets.single.initialTitle, '匿名发帖登录回流');
@@ -720,6 +891,7 @@ class _SuccessForumRepository implements ForumRepository {
     required String postId,
     required String content,
     required String accessToken,
+    required String clientSubmissionId,
     String? parentId,
     String? replyToCommentId,
     String? replyToCommentSnapshot,
@@ -735,6 +907,7 @@ class _SuccessForumRepository implements ForumRepository {
     required String categoryId,
     required List<String> tagNames,
     required String accessToken,
+    required String clientSubmissionId,
   }) async {
     createPostRequests.add(
       _CreatePostRequest(
@@ -743,6 +916,7 @@ class _SuccessForumRepository implements ForumRepository {
         categoryId: categoryId,
         tagNames: tagNames,
         accessToken: accessToken,
+        clientSubmissionId: clientSubmissionId,
       ),
     );
     return 'post-created-1';
@@ -781,6 +955,7 @@ class _CreatePostFailingForumRepository extends _SuccessForumRepository {
     required String categoryId,
     required List<String> tagNames,
     required String accessToken,
+    required String clientSubmissionId,
   }) async {
     createPostRequests.add(
       _CreatePostRequest(
@@ -789,6 +964,7 @@ class _CreatePostFailingForumRepository extends _SuccessForumRepository {
         categoryId: categoryId,
         tagNames: tagNames,
         accessToken: accessToken,
+        clientSubmissionId: clientSubmissionId,
       ),
     );
     throw const RadishApiClientException('发帖服务暂时不可用');
@@ -868,6 +1044,7 @@ class _FailingForumRepository implements ForumRepository {
     required String postId,
     required String content,
     required String accessToken,
+    required String clientSubmissionId,
     String? parentId,
     String? replyToCommentId,
     String? replyToCommentSnapshot,
@@ -883,6 +1060,7 @@ class _FailingForumRepository implements ForumRepository {
     required String categoryId,
     required List<String> tagNames,
     required String accessToken,
+    required String clientSubmissionId,
   }) async {
     throw const RadishApiClientException('发帖服务暂时不可用');
   }
@@ -895,6 +1073,7 @@ class _CreatePostRequest {
     required this.categoryId,
     required this.tagNames,
     required this.accessToken,
+    required this.clientSubmissionId,
   });
 
   final String title;
@@ -902,6 +1081,46 @@ class _CreatePostRequest {
   final String categoryId;
   final List<String> tagNames;
   final String accessToken;
+  final String clientSubmissionId;
+}
+
+class _RecordingForumApiClient implements RadishApiClient {
+  Uri? lastUri;
+  Object? lastBody;
+  String? lastBearerToken;
+
+  @override
+  Future<T> get<T>({
+    required Uri uri,
+    required JsonFactory<T> decode,
+    String? bearerToken,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<T> post<T>({
+    required Uri uri,
+    required Object? body,
+    required JsonFactory<T> decode,
+    String? bearerToken,
+  }) async {
+    lastUri = uri;
+    lastBody = body;
+    lastBearerToken = bearerToken;
+
+    return decode('created-id');
+  }
+
+  @override
+  Future<T> put<T>({
+    required Uri uri,
+    required Object? body,
+    required JsonFactory<T> decode,
+    String? bearerToken,
+  }) {
+    throw UnimplementedError();
+  }
 }
 
 class _NoopSessionRefreshService extends SessionRefreshService {
