@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.Api.Routing;
 using Radish.Api.Filters;
+using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Common.PermissionTool;
 using Radish.IService;
@@ -391,7 +392,22 @@ public class ShopController : ControllerBase
             return MessageModel<UseItemResultDto>.Message(false, "未登录", default!);
         }
 
-        var result = await _userInventoryService.UseItemAsync(userId, dto);
+        UseItemResultDto result;
+        try
+        {
+            result = await _userInventoryService.UseItemAsync(userId, dto);
+        }
+        catch (BusinessException ex)
+        {
+            result = new UseItemResultDto { Success = false, ErrorMessage = ex.Message };
+            return MessageModel<UseItemResultDto>.Message(false, ex.Message, result);
+        }
+        catch (Exception)
+        {
+            result = new UseItemResultDto { Success = false, ErrorMessage = "使用失败" };
+            return MessageModel<UseItemResultDto>.Message(false, "使用失败", result);
+        }
+
         if (!result.Success)
         {
             return MessageModel<UseItemResultDto>.Message(false, result.ErrorMessage ?? "使用失败", result);
@@ -416,7 +432,22 @@ public class ShopController : ControllerBase
             return MessageModel<UseItemResultDto>.Message(false, "未登录", default!);
         }
 
-        var result = await _userInventoryService.UseRenameCardAsync(userId, inventoryId, newNickname);
+        UseItemResultDto result;
+        try
+        {
+            result = await _userInventoryService.UseRenameCardAsync(userId, inventoryId, newNickname);
+        }
+        catch (BusinessException ex)
+        {
+            result = new UseItemResultDto { Success = false, ErrorMessage = ex.Message };
+            return MessageModel<UseItemResultDto>.Message(false, ex.Message, result);
+        }
+        catch (Exception)
+        {
+            result = new UseItemResultDto { Success = false, ErrorMessage = "使用失败" };
+            return MessageModel<UseItemResultDto>.Message(false, "使用失败", result);
+        }
+
         if (!result.Success)
         {
             return MessageModel<UseItemResultDto>.Message(false, result.ErrorMessage ?? "使用失败", result);

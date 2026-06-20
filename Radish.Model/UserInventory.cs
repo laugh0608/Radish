@@ -14,6 +14,7 @@ namespace Radish.Model;
 [SugarIndex("idx_inventory_user", nameof(UserId), OrderByType.Asc)]
 [SugarIndex("idx_inventory_type", nameof(ConsumableType), OrderByType.Asc)]
 [SugarIndex("idx_inventory_user_type", nameof(UserId), OrderByType.Asc, nameof(ConsumableType), OrderByType.Asc)]
+[SugarIndex("idx_inventory_tenant_user_type_value", nameof(TenantId), OrderByType.Asc, nameof(UserId), OrderByType.Asc, nameof(ConsumableType), OrderByType.Asc, nameof(ItemValue), OrderByType.Asc, IsUnique = true)]
 public class UserInventory : RootEntityTKey<long>, IHasUserId, ITenantEntity
 {
     /// <summary>初始化默认用户背包实例</summary>
@@ -27,6 +28,7 @@ public class UserInventory : RootEntityTKey<long>, IHasUserId, ITenantEntity
     {
         UserId = 0;
         ConsumableType = Shared.CustomEnum.ConsumableType.RenameCard;
+        ItemValue = string.Empty;
         Quantity = 0;
         TenantId = 0;
         CreateTime = DateTime.Now;
@@ -56,8 +58,8 @@ public class UserInventory : RootEntityTKey<long>, IHasUserId, ITenantEntity
     /// - 双倍经验卡：持续小时数
     /// - 置顶卡/高亮卡：持续小时数
     /// </remarks>
-    [SugarColumn(Length = 500, IsNullable = true, ColumnDescription = "道具值")]
-    public string? ItemValue { get; set; }
+    [SugarColumn(Length = 500, IsNullable = false, ColumnDescription = "道具值")]
+    public string ItemValue { get; set; } = string.Empty;
 
     /// <summary>道具名称</summary>
     [SugarColumn(Length = 200, IsNullable = true, ColumnDescription = "道具名称")]

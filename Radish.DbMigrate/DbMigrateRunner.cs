@@ -4,6 +4,7 @@ using Radish.Common;
 using Radish.Common.DbTool;
 using Radish.Model;
 using Radish.Model.Models;
+using Radish.Shared.CustomEnum;
 using SqlSugar;
 
 namespace Radish.DbMigrate;
@@ -140,6 +141,7 @@ internal static class DbMigrateRunner
         EnsureUserLoginIndex(mainDb);
         EnsureForumIndexes(mainDb);
         EnsureLikeRelationIndexes(mainDb);
+        EnsureInventoryBenefitReliabilitySchema(mainDb);
     }
 
     private static void EnsureUserPublicIdentitySchema(ISqlSugarClient db)
@@ -525,6 +527,207 @@ internal static class DbMigrateRunner
             [nameof(UserCommentLike.TenantId), nameof(UserCommentLike.CommentId), nameof(UserCommentLike.IsDeleted)]);
     }
 
+    private static void EnsureInventoryBenefitReliabilitySchema(ISqlSugarClient db)
+    {
+        var grantRecordTableName = db.EntityMaintenance.GetEntityInfo<UserInventoryGrantRecord>().DbTableName;
+        if (!db.DbMaintenance.IsAnyTable(grantRecordTableName, false))
+        {
+            db.CodeFirst.InitTables<UserInventoryGrantRecord>();
+            Console.WriteLine("[Radish.DbMigrate] 已补齐用户背包发放流水表。");
+        }
+
+        NormalizeUserBenefitPurchaseSources(db);
+        NormalizeUserInventoryItems(db);
+        BackfillInventoryGrantRecords(db);
+
+        EnsureIndex(
+            db,
+            db.EntityMaintenance.GetEntityInfo<UserBenefit>().DbTableName,
+            "idx_benefit_tenant_source_order",
+            [nameof(UserBenefit.TenantId), nameof(UserBenefit.SourceOrderId)],
+            unique: true);
+
+        EnsureIndex(
+            db,
+            db.EntityMaintenance.GetEntityInfo<UserInventory>().DbTableName,
+            "idx_inventory_tenant_user_type_value",
+            [nameof(UserInventory.TenantId), nameof(UserInventory.UserId), nameof(UserInventory.ConsumableType), nameof(UserInventory.ItemValue)],
+            unique: true);
+
+        EnsureIndex(
+            db,
+            grantRecordTableName,
+            "idx_inventory_grant_tenant_source_order",
+            [nameof(UserInventoryGrantRecord.TenantId), nameof(UserInventoryGrantRecord.SourceOrderId)],
+            unique: true);
+
+        EnsureIndex(
+            db,
+            grantRecordTableName,
+            "idx_inventory_grant_inventory",
+            [nameof(UserInventoryGrantRecord.TenantId), nameof(UserInventoryGrantRecord.InventoryId)]);
+    }
+
+    private static void NormalizeUserBenefitPurchaseSources(ISqlSugarClient db)
+    {
+        var benefitTableName = db.EntityMaintenance.GetEntityInfo<UserBenefit>().DbTableName;
+        if (!db.DbMaintenance.IsAnyTable(benefitTableName, false))
+        {
+            return;
+        }
+
+        var linkedBenefitIds = db.DbMaintenance.IsAnyTable(db.EntityMaintenance.GetEntityInfo<Order>().DbTableName, false)
+            ? db.Queryable<Order>()
+                .Where(order => order.UserBenefitId.HasValue)
+                .Select(order => order.UserBenefitId!.Value)
+                .ToList()
+                .ToHashSet()
+            : [];
+
+        var benefits = db.Queryable<UserBenefit>()
+            .Where(benefit => benefit.SourceOrderId.HasValue)
+            .ToList();
+
+        var duplicateIds = benefits
+            .GroupBy(benefit => new { benefit.TenantId, benefit.SourceOrderId })
+            .SelectMany(group => group
+                .OrderBy(benefit => linkedBenefitIds.Contains(benefit.Id) ? 0 : 1)
+                .ThenBy(benefit => benefit.IsDeleted ? 1 : 0)
+                .ThenBy(benefit => benefit.CreateTime)
+                .ThenBy(benefit => benefit.Id)
+                .Skip(1)
+                .Select(benefit => benefit.Id))
+            .ToList();
+
+        if (duplicateIds.Count == 0)
+        {
+            return;
+        }
+
+        db.Deleteable<UserBenefit>()
+            .Where(benefit => duplicateIds.Contains(benefit.Id))
+            .ExecuteCommand();
+        Console.WriteLine($"[Radish.DbMigrate] 已清理 {duplicateIds.Count} 条重复订单权益发放记录。");
+    }
+
+    private static void NormalizeUserInventoryItems(ISqlSugarClient db)
+    {
+        var inventoryTableName = db.EntityMaintenance.GetEntityInfo<UserInventory>().DbTableName;
+        if (!db.DbMaintenance.IsAnyTable(inventoryTableName, false))
+        {
+            return;
+        }
+
+        var items = db.Queryable<UserInventory>().ToList();
+        var duplicateIds = new List<long>();
+        var updatedCount = 0;
+
+        foreach (var group in items.GroupBy(item => new
+                 {
+                     item.TenantId,
+                     item.UserId,
+                     item.ConsumableType,
+                     ItemValue = NormalizeInventoryItemValue(item.ItemValue)
+                 }))
+        {
+            var orderedItems = group
+                .OrderBy(item => item.IsDeleted ? 1 : 0)
+                .ThenByDescending(item => item.Quantity)
+                .ThenByDescending(item => item.ModifyTime ?? item.CreateTime)
+                .ThenByDescending(item => item.Id)
+                .ToList();
+            var keeper = orderedItems[0];
+            var totalQuantity = group.Sum(item => Math.Max(item.Quantity, 0));
+            var normalizedItemValue = group.Key.ItemValue;
+
+            if (keeper.ItemValue != normalizedItemValue ||
+                keeper.Quantity != totalQuantity ||
+                keeper.IsDeleted)
+            {
+                updatedCount += db.Updateable<UserInventory>()
+                    .SetColumns(item => new UserInventory
+                    {
+                        ItemValue = normalizedItemValue,
+                        Quantity = totalQuantity,
+                        IsDeleted = false,
+                        ModifyTime = DateTime.UtcNow
+                    })
+                    .Where(item => item.Id == keeper.Id)
+                    .ExecuteCommand();
+            }
+
+            duplicateIds.AddRange(orderedItems.Skip(1).Select(item => item.Id));
+        }
+
+        if (duplicateIds.Count > 0)
+        {
+            db.Deleteable<UserInventory>()
+                .Where(item => duplicateIds.Contains(item.Id))
+                .ExecuteCommand();
+            Console.WriteLine($"[Radish.DbMigrate] 已合并 {duplicateIds.Count} 条重复背包聚合项。");
+        }
+
+        if (updatedCount > 0)
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 已规整 {updatedCount} 条背包聚合项。");
+        }
+    }
+
+    private static void BackfillInventoryGrantRecords(ISqlSugarClient db)
+    {
+        var grantRecordTableName = db.EntityMaintenance.GetEntityInfo<UserInventoryGrantRecord>().DbTableName;
+        var orderTableName = db.EntityMaintenance.GetEntityInfo<Order>().DbTableName;
+        var inventoryTableName = db.EntityMaintenance.GetEntityInfo<UserInventory>().DbTableName;
+        if (!db.DbMaintenance.IsAnyTable(grantRecordTableName, false) ||
+            !db.DbMaintenance.IsAnyTable(orderTableName, false) ||
+            !db.DbMaintenance.IsAnyTable(inventoryTableName, false))
+        {
+            return;
+        }
+
+        var existingSourceOrderIds = db.Queryable<UserInventoryGrantRecord>()
+            .Select(record => record.SourceOrderId)
+            .ToList()
+            .ToHashSet();
+        var inventoryIds = db.Queryable<UserInventory>()
+            .Select(item => item.Id)
+            .ToList()
+            .ToHashSet();
+
+        var records = db.Queryable<Order>()
+            .Where(order =>
+                order.ProductType == ProductType.Consumable &&
+                order.Status == OrderStatus.Completed &&
+                order.UserBenefitId.HasValue &&
+                order.ConsumableType.HasValue)
+            .ToList()
+            .Where(order => !existingSourceOrderIds.Contains(order.Id) && inventoryIds.Contains(order.UserBenefitId!.Value))
+            .Select(order => new UserInventoryGrantRecord
+            {
+                Id = order.Id,
+                TenantId = order.TenantId,
+                UserId = order.UserId,
+                InventoryId = order.UserBenefitId!.Value,
+                SourceOrderId = order.Id,
+                SourceProductId = order.ProductId,
+                ConsumableType = order.ConsumableType!.Value,
+                ItemValue = NormalizeInventoryItemValue(order.BenefitValue),
+                Quantity = Math.Max(order.Quantity, 1),
+                CreateTime = order.CompletedTime ?? order.CreateTime,
+                CreateBy = "System",
+                CreateId = order.UserId
+            })
+            .ToList();
+
+        if (records.Count == 0)
+        {
+            return;
+        }
+
+        db.Insertable(records).ExecuteCommand();
+        Console.WriteLine($"[Radish.DbMigrate] 已回填 {records.Count} 条消耗品订单发放流水。");
+    }
+
     private static void NormalizePostLikeRelations(ISqlSugarClient db)
     {
         var likeTableName = db.EntityMaintenance.GetEntityInfo<UserPostLike>().DbTableName;
@@ -669,6 +872,11 @@ internal static class DbMigrateRunner
         Console.WriteLine(created
             ? $"[Radish.DbMigrate] 已补齐{(unique ? "唯一" : string.Empty)}索引 {indexName}。"
             : $"[Radish.DbMigrate] {(unique ? "唯一" : string.Empty)}索引 {indexName} 创建未生效，请检查数据库状态。");
+    }
+
+    private static string NormalizeInventoryItemValue(string? itemValue)
+    {
+        return itemValue ?? string.Empty;
     }
 
     private static void PrintHelp()

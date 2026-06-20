@@ -1,6 +1,8 @@
 using System.Linq.Expressions;
 using AutoMapper;
 using Radish.Common;
+using Radish.Common.AttributeTool;
+using Radish.Common.Exceptions;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -16,6 +18,7 @@ namespace Radish.Service;
 public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>, IUserInventoryService
 {
     private readonly IBaseRepository<UserInventory> _inventoryRepository;
+    private readonly IUserInventoryRepository _userInventoryRepository;
     private readonly IBaseRepository<User> _userRepository;
     private readonly ICoinService _coinService;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
@@ -24,6 +27,7 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
     public UserInventoryService(
         IMapper mapper,
         IBaseRepository<UserInventory> inventoryRepository,
+        IUserInventoryRepository userInventoryRepository,
         IBaseRepository<User> userRepository,
         ICoinService coinService,
         IAttachmentUrlResolver attachmentUrlResolver,
@@ -31,6 +35,7 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
         : base(mapper, inventoryRepository)
     {
         _inventoryRepository = inventoryRepository;
+        _userInventoryRepository = userInventoryRepository;
         _userRepository = userRepository;
         _coinService = coinService;
         _attachmentUrlResolver = attachmentUrlResolver;
@@ -104,125 +109,120 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
 
     /// <summary>使用道具</summary>
 #pragma warning disable CS0618
+    [UseTran(Propagation = Propagation.Required)]
     public async Task<UseItemResultDto> UseItemAsync(long userId, UseItemDto dto)
     {
-        try
+        if (dto.Quantity < 1)
         {
-            if (dto.Quantity < 1)
-            {
-                return new UseItemResultDto { Success = false, ErrorMessage = "使用数量必须大于 0" };
-            }
-
-            var item = await _inventoryRepository.QueryFirstAsync(
-                i => i.Id == dto.InventoryId && i.UserId == userId);
-
-            if (item == null)
-            {
-                return new UseItemResultDto { Success = false, ErrorMessage = "道具不存在" };
-            }
-
-            if (item.Quantity < dto.Quantity)
-            {
-                return new UseItemResultDto { Success = false, ErrorMessage = "道具数量不足" };
-            }
-
-            if (IsUnavailableConsumableType(item.ConsumableType))
-            {
-                return CreateUnavailableConsumableResult(item.ConsumableType);
-            }
-
-            // 根据道具类型调用不同的使用方法
-            return item.ConsumableType switch
-            {
-                ConsumableType.RenameCard => new UseItemResultDto
-                {
-                    Success = false,
-                    ErrorMessage = "改名卡需要指定新昵称，请使用专用接口"
-                },
-                ConsumableType.ExpCard => await UseExpCardAsync(userId, dto.InventoryId, dto.Quantity),
-                ConsumableType.CoinCard => await UseCoinCardAsync(userId, dto.InventoryId, dto.Quantity),
-                ConsumableType.DoubleExpCard => await UseDoubleExpCardAsync(userId, dto.InventoryId),
-                ConsumableType.PostPinCard => dto.TargetId.HasValue
-                    ? await UsePostPinCardAsync(userId, dto.InventoryId, dto.TargetId.Value)
-                    : new UseItemResultDto { Success = false, ErrorMessage = "置顶卡需要指定帖子 ID" },
-                ConsumableType.PostHighlightCard => dto.TargetId.HasValue
-                    ? await UsePostHighlightCardAsync(userId, dto.InventoryId, dto.TargetId.Value)
-                    : new UseItemResultDto { Success = false, ErrorMessage = "高亮卡需要指定帖子 ID" },
-                ConsumableType.LotteryTicket => CreateUnavailableConsumableResult(ConsumableType.LotteryTicket),
-                _ => new UseItemResultDto { Success = false, ErrorMessage = "不支持的道具类型" }
-            };
+            return new UseItemResultDto { Success = false, ErrorMessage = "使用数量必须大于 0" };
         }
-        catch (Exception ex)
+
+        var item = await _inventoryRepository.QueryFirstAsync(
+            i => i.Id == dto.InventoryId && i.UserId == userId && !i.IsDeleted);
+
+        if (item == null)
         {
-            Log.Error(ex, "使用道具失败：用户={UserId}, 道具={InventoryId}", userId, dto.InventoryId);
-            return new UseItemResultDto { Success = false, ErrorMessage = "使用道具失败" };
+            return new UseItemResultDto { Success = false, ErrorMessage = "道具不存在" };
         }
+
+        if (item.Quantity < dto.Quantity)
+        {
+            return new UseItemResultDto { Success = false, ErrorMessage = "道具数量不足" };
+        }
+
+        if (IsUnavailableConsumableType(item.ConsumableType))
+        {
+            return CreateUnavailableConsumableResult(item.ConsumableType);
+        }
+
+        // 根据道具类型调用不同的使用方法
+        return item.ConsumableType switch
+        {
+            ConsumableType.RenameCard => new UseItemResultDto
+            {
+                Success = false,
+                ErrorMessage = "改名卡需要指定新昵称，请使用专用接口"
+            },
+            ConsumableType.ExpCard => await UseExpCardAsync(userId, dto.InventoryId, dto.Quantity),
+            ConsumableType.CoinCard => await UseCoinCardAsync(userId, dto.InventoryId, dto.Quantity),
+            ConsumableType.DoubleExpCard => await UseDoubleExpCardAsync(userId, dto.InventoryId),
+            ConsumableType.PostPinCard => dto.TargetId.HasValue
+                ? await UsePostPinCardAsync(userId, dto.InventoryId, dto.TargetId.Value)
+                : new UseItemResultDto { Success = false, ErrorMessage = "置顶卡需要指定帖子 ID" },
+            ConsumableType.PostHighlightCard => dto.TargetId.HasValue
+                ? await UsePostHighlightCardAsync(userId, dto.InventoryId, dto.TargetId.Value)
+                : new UseItemResultDto { Success = false, ErrorMessage = "高亮卡需要指定帖子 ID" },
+            ConsumableType.LotteryTicket => CreateUnavailableConsumableResult(ConsumableType.LotteryTicket),
+            _ => new UseItemResultDto { Success = false, ErrorMessage = "不支持的道具类型" }
+        };
     }
 #pragma warning restore CS0618
 
     /// <summary>使用改名卡</summary>
+    [UseTran(Propagation = Propagation.Required)]
     public async Task<UseItemResultDto> UseRenameCardAsync(long userId, long inventoryId, string newNickname)
     {
-        try
+        var item = await _inventoryRepository.QueryFirstAsync(
+            i => i.Id == inventoryId &&
+                 i.UserId == userId &&
+                 i.ConsumableType == ConsumableType.RenameCard &&
+                 !i.IsDeleted);
+
+        if (item == null)
         {
-            var item = await _inventoryRepository.QueryFirstAsync(
-                i => i.Id == inventoryId && i.UserId == userId && i.ConsumableType == ConsumableType.RenameCard);
-
-            if (item == null)
-            {
-                return new UseItemResultDto { Success = false, ErrorMessage = "改名卡不存在" };
-            }
-
-            if (item.Quantity < 1)
-            {
-                return new UseItemResultDto { Success = false, ErrorMessage = "改名卡数量不足" };
-            }
-
-            if (string.IsNullOrWhiteSpace(newNickname))
-            {
-                return new UseItemResultDto { Success = false, ErrorMessage = "新昵称不能为空" };
-            }
-
-            // 检查昵称是否已被使用
-            var existingUser = await _userRepository.QueryFirstAsync(u => u.UserName == newNickname && u.Id != userId);
-            if (existingUser != null)
-            {
-                return new UseItemResultDto { Success = false, ErrorMessage = "该昵称已被使用" };
-            }
-
-            // 更新用户昵称
-            var user = await _userRepository.QueryFirstAsync(u => u.Id == userId);
-            if (user == null)
-            {
-                return new UseItemResultDto { Success = false, ErrorMessage = "用户不存在" };
-            }
-
-            var oldNickname = user.UserName;
-            user.UserName = newNickname;
-            await _userRepository.UpdateAsync(user);
-
-            // 扣减道具
-            var remainingQuantity = item.Quantity - 1;
-            await DeductItemAsync(userId, inventoryId, 1);
-
-            Log.Information("用户 {UserId} 使用改名卡，昵称从 {OldNickname} 改为 {NewNickname}",
-                userId, oldNickname, newNickname);
-
-            return new UseItemResultDto
-            {
-                Success = true,
-                RemainingQuantity = remainingQuantity,
-                EffectDescription = $"昵称已修改为 {newNickname}"
-            };
+            return new UseItemResultDto { Success = false, ErrorMessage = "改名卡不存在" };
         }
-        catch (Exception ex)
+
+        if (item.Quantity < 1)
         {
-            Log.Error(ex, "使用改名卡失败：用户={UserId}", userId);
-            return new UseItemResultDto { Success = false, ErrorMessage = "使用改名卡失败" };
+            return new UseItemResultDto { Success = false, ErrorMessage = "改名卡数量不足" };
         }
+
+        if (string.IsNullOrWhiteSpace(newNickname))
+        {
+            return new UseItemResultDto { Success = false, ErrorMessage = "新昵称不能为空" };
+        }
+
+        // 检查昵称是否已被使用
+        var existingUser = await _userRepository.QueryFirstAsync(u => u.UserName == newNickname && u.Id != userId);
+        if (existingUser != null)
+        {
+            return new UseItemResultDto { Success = false, ErrorMessage = "该昵称已被使用" };
+        }
+
+        var user = await _userRepository.QueryFirstAsync(u => u.Id == userId);
+        if (user == null)
+        {
+            return new UseItemResultDto { Success = false, ErrorMessage = "用户不存在" };
+        }
+
+        var deduction = await _userInventoryRepository.TryDeductItemAsync(userId, inventoryId, 1);
+        if (!deduction.Success)
+        {
+            return new UseItemResultDto { Success = false, ErrorMessage = "改名卡数量不足" };
+        }
+
+        var oldNickname = user.UserName;
+        user.UserName = newNickname;
+        var updated = await _userRepository.UpdateAsync(user);
+        if (!updated)
+        {
+            throw new BusinessException("昵称修改失败，请稍后再试");
+        }
+
+        Log.Information("用户 {UserId} 使用改名卡，昵称从 {OldNickname} 改为 {NewNickname}",
+            userId, oldNickname, newNickname);
+
+        return new UseItemResultDto
+        {
+            Success = true,
+            RemainingQuantity = deduction.RemainingQuantity,
+            EffectDescription = $"昵称已修改为 {newNickname}"
+        };
     }
 
     /// <summary>使用经验卡</summary>
+    [UseTran(Propagation = Propagation.Required)]
     public async Task<UseItemResultDto> UseExpCardAsync(long userId, long inventoryId)
     {
         return await UseExpCardAsync(userId, inventoryId, 1);
@@ -233,7 +233,10 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
         try
         {
             var item = await _inventoryRepository.QueryFirstAsync(
-                i => i.Id == inventoryId && i.UserId == userId && i.ConsumableType == ConsumableType.ExpCard);
+                i => i.Id == inventoryId &&
+                     i.UserId == userId &&
+                     i.ConsumableType == ConsumableType.ExpCard &&
+                     !i.IsDeleted);
 
             if (item == null)
             {
@@ -272,7 +275,12 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
                 return new UseItemResultDto { Success = false, ErrorMessage = "经验卡配置超出范围" };
             }
 
-            // 发放经验值
+            var deduction = await _userInventoryRepository.TryDeductItemAsync(userId, inventoryId, quantity);
+            if (!deduction.Success)
+            {
+                return new UseItemResultDto { Success = false, ErrorMessage = "经验卡数量不足" };
+            }
+
             var grantSuccess = await _experienceService.GrantExperienceAsync(
                 userId,
                 totalExpAmount,
@@ -283,12 +291,8 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
             if (!grantSuccess)
             {
                 Log.Error("用户 {UserId} 使用经验卡失败，经验值服务未完成发放", userId);
-                return new UseItemResultDto { Success = false, ErrorMessage = "经验值发放失败，请稍后再试" };
+                throw new BusinessException("经验值发放失败，请稍后再试");
             }
-
-            // 扣减道具
-            var remainingQuantity = item.Quantity - quantity;
-            await DeductItemAsync(userId, inventoryId, quantity);
 
             Log.Information("用户 {UserId} 使用经验卡 {Quantity} 张，获得 {ExpAmount} 经验值",
                 userId, quantity, totalExpAmount);
@@ -296,18 +300,23 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
             return new UseItemResultDto
             {
                 Success = true,
-                RemainingQuantity = remainingQuantity,
+                RemainingQuantity = deduction.RemainingQuantity,
                 EffectDescription = $"获得 {totalExpAmount} 经验值"
             };
+        }
+        catch (BusinessException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
             Log.Error(ex, "使用经验卡失败：用户={UserId}", userId);
-            return new UseItemResultDto { Success = false, ErrorMessage = "使用经验卡失败" };
+            throw;
         }
     }
 
     /// <summary>使用萝卜币红包</summary>
+    [UseTran(Propagation = Propagation.Required)]
     public async Task<UseItemResultDto> UseCoinCardAsync(long userId, long inventoryId)
     {
         return await UseCoinCardAsync(userId, inventoryId, 1);
@@ -318,7 +327,10 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
         try
         {
             var item = await _inventoryRepository.QueryFirstAsync(
-                i => i.Id == inventoryId && i.UserId == userId && i.ConsumableType == ConsumableType.CoinCard);
+                i => i.Id == inventoryId &&
+                     i.UserId == userId &&
+                     i.ConsumableType == ConsumableType.CoinCard &&
+                     !i.IsDeleted);
 
             if (item == null)
             {
@@ -351,18 +363,27 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
                 return new UseItemResultDto { Success = false, ErrorMessage = "萝卜币红包配置超出范围" };
             }
 
-            // 发放萝卜币
-            await _coinService.GrantCoinAsync(
-                userId,
-                totalCoinAmount,
-                "USE_COIN_CARD",
-                "UserInventory",
-                inventoryId,
-                $"使用萝卜币红包获得 {totalCoinAmount} 胡萝卜");
+            var deduction = await _userInventoryRepository.TryDeductItemAsync(userId, inventoryId, quantity);
+            if (!deduction.Success)
+            {
+                return new UseItemResultDto { Success = false, ErrorMessage = "萝卜币红包数量不足" };
+            }
 
-            // 扣减道具
-            var remainingQuantity = item.Quantity - quantity;
-            await DeductItemAsync(userId, inventoryId, quantity);
+            try
+            {
+                await _coinService.GrantCoinAsync(
+                    userId,
+                    totalCoinAmount,
+                    "USE_COIN_CARD",
+                    "UserInventory",
+                    inventoryId,
+                    $"使用萝卜币红包获得 {totalCoinAmount} 胡萝卜");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "用户 {UserId} 使用萝卜币红包失败，萝卜币服务未完成发放", userId);
+                throw new BusinessException("萝卜币发放失败，请稍后再试", ex);
+            }
 
             Log.Information("用户 {UserId} 使用萝卜币红包 {Quantity} 个，获得 {CoinAmount} 胡萝卜",
                 userId, quantity, totalCoinAmount);
@@ -370,14 +391,18 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
             return new UseItemResultDto
             {
                 Success = true,
-                RemainingQuantity = remainingQuantity,
+                RemainingQuantity = deduction.RemainingQuantity,
                 EffectDescription = $"获得 {totalCoinAmount} 胡萝卜"
             };
+        }
+        catch (BusinessException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
             Log.Error(ex, "使用萝卜币红包失败：用户={UserId}", userId);
-            return new UseItemResultDto { Success = false, ErrorMessage = "使用萝卜币红包失败" };
+            throw;
         }
     }
 
@@ -410,26 +435,15 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
     {
         try
         {
-            var item = await _inventoryRepository.QueryFirstAsync(
-                i => i.Id == inventoryId && i.UserId == userId);
+            var deduction = await _userInventoryRepository.TryDeductItemAsync(userId, inventoryId, quantity);
 
-            if (item == null || item.Quantity < quantity)
-            {
-                return false;
-            }
-
-            item.Quantity -= quantity;
-            item.ModifyTime = DateTime.Now;
-
-            var result = await _inventoryRepository.UpdateAsync(item);
-
-            if (result)
+            if (deduction.Success)
             {
                 Log.Information("扣减道具成功：用户={UserId}, 道具={InventoryId}, 扣减={Quantity}, 剩余={Remaining}",
-                    userId, inventoryId, quantity, item.Quantity);
+                    userId, inventoryId, quantity, deduction.RemainingQuantity);
             }
 
-            return result;
+            return deduction.Success;
         }
         catch (Exception ex)
         {
@@ -450,11 +464,14 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
     {
         try
         {
+            var normalizedItemValue = NormalizeItemValue(itemValue);
+
             // 检查是否已有相同道具
             var existingItem = await _inventoryRepository.QueryFirstAsync(
                 i => i.UserId == userId &&
                      i.ConsumableType == consumableType &&
-                     i.ItemValue == itemValue);
+                     i.ItemValue == normalizedItemValue &&
+                     !i.IsDeleted);
 
             if (existingItem != null)
             {
@@ -475,7 +492,7 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
                 {
                     UserId = userId,
                     ConsumableType = consumableType,
-                    ItemValue = itemValue,
+                    ItemValue = normalizedItemValue,
                     ItemName = itemName,
                     ItemIconAttachmentId = itemIconAttachmentId,
                     Quantity = quantity,
@@ -546,5 +563,10 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
         }
 
         return _attachmentUrlResolver.ResolveAttachmentUrl(attachmentId.Value);
+    }
+
+    private static string NormalizeItemValue(string? itemValue)
+    {
+        return itemValue ?? string.Empty;
     }
 }

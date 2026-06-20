@@ -601,6 +601,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     }
 
     /// <summary>重新发放权益（发放失败时使用）</summary>
+    [UseTran]
     public async Task<bool> RetryGrantBenefitAsync(long orderId)
     {
         try
