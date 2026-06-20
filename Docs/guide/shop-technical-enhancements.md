@@ -423,352 +423,55 @@ public async Task<List<string>> GetSearchHistoryAsync(long userId)
 
 **目标**：防止用户重复下单（网络抖动、重复点击等）
 
-**方案**：基于用户ID + 商品ID + 时间窗口生成幂等键
+**当前方案**：客户端在一次用户确认购买时生成 `shop:{uuid}`，服务端使用 `OperationIdempotencyRecord` 持久化同一次购买请求的状态、请求摘要和终态响应。
 
-```csharp
-/// <summary>
-/// 幂等键生成器
-/// </summary>
-public class IdempotencyKeyGenerator
-{
-    /// <summary>
-    /// 生成幂等键
-    /// </summary>
-    /// <param name="userId">用户ID</param>
-    /// <param name="productId">商品ID</param>
-    /// <param name="windowMinutes">时间窗口（分钟），默认10分钟</param>
-    public static string Generate(long userId, long productId, int windowMinutes = 10)
-    {
-        // 当前时间按窗口对齐
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / (windowMinutes * 60);
-        return $"{userId}:{productId}:{timestamp}";
-    }
-}
-```
+幂等 key 不包含用户 ID、商品 ID 或时间窗口；这些业务字段由服务端请求摘要绑定。这样可以区分“同一次购买重试”和“用户又发起了一次新购买”。
 
 ### 9.3.2 订单创建接口改造
 
-```csharp
-/// <summary>
-/// 创建订单（支持幂等）
-/// </summary>
-[HttpPost("purchase")]
-public async Task<MessageModel<OrderResultVo>> Purchase([FromBody] OrderCreateVo input)
+`POST /api/v1/Shop/Purchase` 请求体当前包含：
+
+```json
 {
-    var userId = GetCurrentUserId();
-
-    // 生成幂等键
-    var idempotencyKey = IdempotencyKeyGenerator.Generate(userId, input.ProductId);
-
-    // 调用幂等服务
-    var result = await _orderService.CreateOrderWithIdempotencyAsync(
-        userId,
-        input,
-        idempotencyKey
-    );
-
-    return Success(result);
+  "productId": "2060964941900283904",
+  "quantity": 1,
+  "paymentPassword": "123456",
+  "idempotencyKey": "shop:550e8400-e29b-41d4-a716-446655440000",
+  "userRemark": "可选备注"
 }
 ```
+
+约束：
+
+- Web 与 Flutter 官方购买流程都应传入 `shop:{uuid}`。
+- 服务端暂不强制旧客户端必须传 key；未传 key 时沿用既有写入流程，但不提供幂等保护。
+- 请求摘要包含 `ProductId`、`Quantity`、`UserRemark`，不包含 `PaymentPassword`、登录 token 或前端本地状态。
+- 支付口令验证通过后才创建 / 读取幂等记录；支付口令错误不占用 key。
 
 ### 9.3.3 幂等实现
 
-```csharp
-public async Task<OrderResultVo> CreateOrderWithIdempotencyAsync(
-    long userId,
-    OrderCreateVo input,
-    string idempotencyKey)
-{
-    var cacheKey = $"order:idempotency:{idempotencyKey}";
+当前不再使用简单缓存键返回订单，也不把 Redis 分布式锁作为购买幂等默认前置。数据库幂等记录是服务端真值：
 
-    // 1. 检查幂等键是否已使用
-    var existingOrderId = await _cache.GetAsync<long?>(cacheKey);
-    if (existingOrderId.HasValue)
-    {
-        Log.Information("订单幂等：用户 {UserId} 重复下单，返回已有订单 {OrderId}",
-            userId, existingOrderId.Value);
+| 场景 | 服务端行为 |
+| --- | --- |
+| 同 key、同摘要、成功终态 | 返回既有订单结果，不重复扣库存、扣币或发放权益 |
+| 同 key、同摘要、处理中 | 返回处理中语义，调用端稍后确认或继续重试 |
+| 同 key、不同摘要 | 拒绝执行，提示 key 已被不同请求使用 |
+| 支付口令错误 | 返回口令错误，不写幂等记录 |
+| 未传 key | 沿用旧流程，不承诺幂等保护 |
 
-        var existingOrder = await _orderRepository.QueryFirstAsync(
-            o => o.Id == existingOrderId.Value
-        );
-
-        return new OrderResultVo
-        {
-            OrderId = existingOrder.Id,
-            OrderNo = existingOrder.OrderNo,
-            Status = existingOrder.Status,
-            Message = "订单已存在（幂等检查）"
-        };
-    }
-
-    // 2. 使用分布式锁防止并发
-    var lockKey = $"order:lock:{userId}:{input.ProductId}";
-    if (!await _distributedLock.TryLockAsync(lockKey, TimeSpan.FromSeconds(10)))
-    {
-        throw new BusinessException("操作过于频繁，请稍后重试");
-    }
-
-    try
-    {
-        // 3. 创建订单
-        var result = await CreateOrderAsync(userId, input);
-
-        // 4. 缓存幂等键（30 分钟）
-        await _cache.SetAsync(cacheKey, result.OrderId, TimeSpan.FromMinutes(30));
-
-        return result;
-    }
-    finally
-    {
-        await _distributedLock.UnlockAsync(lockKey);
-    }
-}
-```
-
-### 9.3.4 分布式锁实现
-
-```csharp
-/// <summary>
-/// 分布式锁接口
-/// </summary>
-public interface IDistributedLock
-{
-    Task<bool> TryLockAsync(string key, TimeSpan expiry);
-    Task UnlockAsync(string key);
-}
-
-/// <summary>
-/// Redis 分布式锁实现
-/// </summary>
-public class RedisDistributedLock : IDistributedLock
-{
-    private readonly IDatabase _redis;
-    private readonly Dictionary<string, string> _tokens = new();
-
-    public async Task<bool> TryLockAsync(string key, TimeSpan expiry)
-    {
-        var token = Guid.NewGuid().ToString("N");
-        var acquired = await _redis.StringSetAsync(
-            key,
-            token,
-            expiry,
-            When.NotExists
-        );
-
-        if (acquired)
-        {
-            _tokens[key] = token;
-        }
-
-        return acquired;
-    }
-
-    public async Task UnlockAsync(string key)
-    {
-        if (!_tokens.TryGetValue(key, out var token))
-            return;
-
-        // Lua 脚本确保原子性
-        var script = @"
-            if redis.call('get', KEYS[1]) == ARGV[1] then
-                return redis.call('del', KEYS[1])
-            else
-                return 0
-            end
-        ";
-
-        await _redis.ScriptEvaluateAsync(script, new RedisKey[] { key }, new RedisValue[] { token });
-
-        _tokens.Remove(key);
-    }
-}
-```
+订单成功后的权益 / 背包发放还具备订单级唯一约束保护：权益类商品使用 `UserBenefit.SourceOrderId`，消耗品类商品使用 `UserInventoryGrantRecord.SourceOrderId`。这层保护用于避免订单重试或人工补偿重复增加资产。
 
 ---
 
 ## 9.4 实时通知推送
 
-### 9.4.1 WebSocket 连接管理
+商城通知不在本页单独维护 WebSocket 样例。当前实现应复用项目统一通知 / SignalR 能力：
 
-```csharp
-/// <summary>
-/// WebSocket 连接管理器
-/// </summary>
-public class WebSocketConnectionManager
-{
-    private readonly ConcurrentDictionary<long, List<WebSocket>> _connections = new();
-
-    public void AddConnection(long userId, WebSocket socket)
-    {
-        _connections.AddOrUpdate(
-            userId,
-            _ => new List<WebSocket> { socket },
-            (_, list) =>
-            {
-                list.Add(socket);
-                return list;
-            }
-        );
-    }
-
-    public void RemoveConnection(long userId, WebSocket socket)
-    {
-        if (_connections.TryGetValue(userId, out var list))
-        {
-            list.Remove(socket);
-            if (list.Count == 0)
-            {
-                _connections.TryRemove(userId, out _);
-            }
-        }
-    }
-
-    public async Task SendToUserAsync(long userId, string message)
-    {
-        if (_connections.TryGetValue(userId, out var list))
-        {
-            var buffer = Encoding.UTF8.GetBytes(message);
-            foreach (var socket in list.ToList())
-            {
-                if (socket.State == WebSocketState.Open)
-                {
-                    try
-                    {
-                        await socket.SendAsync(
-                            new ArraySegment<byte>(buffer),
-                            WebSocketMessageType.Text,
-                            true,
-                            CancellationToken.None
-                        );
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Warning(ex, "WebSocket 发送失败，移除连接");
-                        RemoveConnection(userId, socket);
-                    }
-                }
-            }
-        }
-    }
-}
-```
-
-### 9.4.2 通知推送服务
-
-```csharp
-/// <summary>
-/// 通知推送服务
-/// </summary>
-public class NotificationPushService
-{
-    private readonly WebSocketConnectionManager _connectionManager;
-
-    /// <summary>
-    /// 推送购买成功通知
-    /// </summary>
-    public async Task PushOrderCompletedAsync(Order order)
-    {
-        var message = new
-        {
-            type = "order.completed",
-            data = new
-            {
-                orderId = order.Id,
-                orderNo = order.OrderNo,
-                productName = order.ProductName,
-                paidAmount = order.PaidAmount
-            }
-        };
-
-        await _connectionManager.SendToUserAsync(
-            order.UserId,
-            JsonSerializer.Serialize(message)
-        );
-    }
-
-    /// <summary>
-    /// 推送权益到期提醒
-    /// </summary>
-    public async Task PushBenefitExpiringAsync(long userId, UserInventory inventory)
-    {
-        var message = new
-        {
-            type = "benefit.expiring",
-            data = new
-            {
-                itemName = inventory.ItemName,
-                expiresAt = inventory.ExpiresAt
-            }
-        };
-
-        await _connectionManager.SendToUserAsync(
-            userId,
-            JsonSerializer.Serialize(message)
-        );
-    }
-}
-```
-
-### 9.4.3 前端 WebSocket 连接
-
-```typescript
-// useWebSocket.ts
-export const useWebSocket = () => {
-  const [socket, setSocket] = useState<WebSocket | null>(null);
-
-  useEffect(() => {
-    const token = getAuthToken();
-    const ws = new WebSocket(`wss://api.example.com/ws?token=${token}`);
-
-    ws.onopen = () => {
-      console.log('WebSocket 连接成功');
-    };
-
-    ws.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      handleMessage(message);
-    };
-
-    ws.onerror = (error) => {
-      console.error('WebSocket 错误:', error);
-    };
-
-    ws.onclose = () => {
-      console.log('WebSocket 连接关闭');
-      // 5 秒后重连
-      setTimeout(() => {
-        setSocket(null);
-      }, 5000);
-    };
-
-    setSocket(ws);
-
-    return () => {
-      ws.close();
-    };
-  }, []);
-
-  const handleMessage = (message: any) => {
-    switch (message.type) {
-      case 'order.completed':
-        notification.success({
-          message: '购买成功',
-          description: `您已成功购买「${message.data.productName}」`
-        });
-        break;
-
-      case 'benefit.expiring':
-        notification.warning({
-          message: '权益即将到期',
-          description: `您的「${message.data.itemName}」将于 ${formatDate(message.data.expiresAt)} 到期`
-        });
-        break;
-    }
-  };
-
-  return socket;
-};
-```
+- 购买成功通知携带订单 ID、商品名称和订单跳转载荷。
+- 权益即将到期、发放失败或订单异常通知应使用统一通知模型，保证 WebOS、纯 Web、Flutter 和 Console 排障入口可以复用同一导航载荷。
+- 通知载荷中的 `orderId`、`productId`、`userId` 等服务端 long 标识继续按字符串传递，不进入 JavaScript `number` 或 Dart `int` 数值域。
+- 前端收到通知后只负责打开既有订单、商品或背包入口，不在通知处理器里补写订单状态、库存或背包数量。
 
 ---
 
@@ -1058,8 +761,8 @@ public class OrderCreateVo
 
 1. **图片管理系统**：对象存储 + CDN 方案，支持图片上传、验证、压缩
 2. **商品搜索优化**：PostgreSQL 全文搜索 / ElasticSearch 方案
-3. **幂等性保证**：幂等键 + 分布式锁，防止重复下单
-4. **实时通知推送**：WebSocket 连接管理，实时推送订单、权益通知
+3. **幂等性保证**：`OperationIdempotencyRecord` + 请求摘要 + 订单级发放唯一约束，防止重复下单和重复发放
+4. **实时通知推送**：复用统一通知 / SignalR 能力，推送订单、权益等通知
 5. **数据备份恢复**：自动备份策略，灾难恢复流程
 6. **审计日志**：完整的操作审计，可追溯
 7. **性能监控**：APM 集成，慢查询监控

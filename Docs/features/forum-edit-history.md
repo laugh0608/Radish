@@ -4,7 +4,7 @@
 >
 > **版本**: v26.1.1
 >
-> **最后更新**: 2026.02.10
+> **最后更新**: 2026.06.20
 
 ---
 
@@ -19,7 +19,7 @@
 
 该能力首期仅提供“记录 + 查询”，**不提供版本回滚**。
 
-`2026-06-20` 补充：论坛发布、评论、回答和编辑重试语义已进入 [论坛内容发布可靠性与编辑历史治理](/guide/forum-content-write-reliability-governance) 评审。本页继续作为 `PostEditHistory` / `CommentEditHistory` 的功能说明；提交意图去重、短窗口内容指纹和频率限制以治理专题为准。
+`2026-06-20` 补充：论坛发布、评论、回答和编辑重试语义已进入 [论坛内容发布可靠性与编辑历史治理](/guide/forum-content-write-reliability-governance)。本页继续作为 `PostEditHistory` / `CommentEditHistory` 的功能说明；提交意图去重、短窗口内容指纹和频率限制以治理专题为准。
 
 ---
 
@@ -39,6 +39,9 @@
 
 - 每次成功编辑后，按配置决定是否写入历史。
 - 单条帖子/评论历史超过上限时，删除最旧记录，仅保留最近 N 条。
+- 编辑前后内容没有变化时直接返回业务提示，不写历史，不递增 `EditCount`。
+- 同一 `ClientSubmissionId` 的成功编辑重试返回既有编辑结果，不写第二条历史。
+- 同一 `ClientSubmissionId` 但请求摘要不同视为冲突，不覆盖内容。
 
 ---
 
@@ -138,8 +141,9 @@ dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init
 
 ### 3) 编辑接口行为变化
 
-- `PUT /api/v1/Post/Update`：支持管理员编辑他人帖子；新增次数上限校验与历史记录。
-- `PUT /api/v1/Comment/Update`：支持管理员编辑他人评论；时间窗和次数按配置校验并记录历史。
+- `PUT /api/v1/Post/Update`：支持管理员编辑他人帖子；新增次数上限校验与历史记录；请求体可携带 `ClientSubmissionId` 表示同一次编辑提交意图。
+- `PUT /api/v1/Comment/Update`：支持管理员编辑他人评论；时间窗和次数按配置校验并记录历史；请求体可携带 `ClientSubmissionId` 表示同一次编辑提交意图。
+- `ClientSubmissionId` 不替代权限、时间窗或编辑次数校验；它只用于网络失败、超时或用户重试时识别同一次编辑请求。
 
 ---
 
@@ -164,6 +168,8 @@ dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init
 3. 评论超过 `EditWindowMinutes`：普通用户失败，管理员可通过（开启覆盖时）。
 4. 历史写入次数超过 `HistorySaveEditCount` 后不再新增历史。
 5. 历史记录超过 `MaxHistoryRecords` 后自动裁剪。
+6. 帖子 / 评论编辑无变化时不写历史、不递增编辑次数。
+7. 同一 `ClientSubmissionId` 成功重试不新增历史，同 key 不同请求摘要返回冲突。
 
 ### 联调文件
 

@@ -237,14 +237,23 @@ POST /api/v1/Shop/Purchase
 - `productId`、订单 ID、用户 ID 等外部传递的 long 标识在前端应按字符串保留，避免 JavaScript 大整数精度丢失。
 - `CheckCanBuy` 只做购买资格预检，返回 `VoCanBuy / VoReason`，不创建订单、不扣款、不扣库存。
 - `Purchase` 在失败时返回失败响应，并在 `responseData.errorMessage` 或响应消息中给出明确原因；调用端不应把失败响应当作成功订单处理。
-- Web 官方购买流程应传入 `shop:{uuid}` 幂等键。同一用户同 key 同摘要重试时返回同一订单结果；同 key 但商品、数量或备注不同会被拒绝。
+- Web 与 Flutter 官方购买流程应传入 `shop:{uuid}` 幂等键。同一用户同 key 同摘要重试时返回同一订单结果；同 key 但商品、数量或备注不同会被拒绝。
 - WebOS / Flutter 调用购买前都应先消费 `CheckCanBuy` 结果；资格不通过时只展示原因，不打开支付口令弹窗，不提交 `Purchase`。
-- Flutter 当前固定购买 `1` 件商品，成功后打开订单详情确认结果；WebOS 私域商城可继续按既有数量选择和购买弹窗承接。
+- Flutter 当前固定购买 `1` 件商品，失败重试复用同一 `shop:` 幂等键，成功或购买意图重置后生成新 key；WebOS 私域商城可继续按既有数量选择和购买弹窗承接。
 - `Purchase` 扣款成功后会把胡萝卜流水 ID 写入订单的 `CoinTransactionId`；管理端 `OrderVo.VoCoinTransactionId` 用于从订单详情定位对应扣款流水。
 - Console 订单排障入口按 `BusinessType=Order / BusinessId=OrderId` 定位胡萝卜流水；订单页 URL 状态、商品相关订单跳转和流水回看订单时，`orderId / productId / businessId / userId` 都保持字符串查询参数，`returnTo` 只接受同源相对路径。
 - 购物车、退款、权益激活和道具使用不属于当前移动端购买契约。
 
-### 4.2.1 创建订单服务
+### 4.2.1 订单发放可靠性
+
+订单购买的可靠性分两层：
+
+- 购买请求层：`OperationIdempotencyRecord` 绑定 `TenantId + UserId + OperationType + IdempotencyKey` 和请求摘要，负责同一次购买请求的处理中提示、终态重放和同 key 不同摘要冲突拒绝。
+- 发放结果层：权益类商品通过 `UserBenefit.SourceOrderId` 唯一约束保护，消耗品类商品通过 `UserInventoryGrantRecord.SourceOrderId` 唯一约束保护，避免订单重试、人工重放或异常重试造成重复权益 / 背包数量。
+
+因此，订单重试时不应绕过发放服务直接补写背包；人工排障也应优先通过订单、扣款流水、`UserBenefit.SourceOrderId` 或 `UserInventoryGrantRecord.SourceOrderId` 查证发放事实。
+
+### 4.2.2 创建订单服务
 
 ```csharp
 public class OrderService : IOrderService
@@ -385,7 +394,7 @@ public class OrderService : IOrderService
 }
 ```
 
-### 4.2.2 订单号生成
+### 4.2.3 订单号生成
 
 ```csharp
 private string GenerateOrderNo()
@@ -704,6 +713,7 @@ public async Task<ProductSalesStatsVo> GetProductSalesStatsAsync(
 - 同 key 同摘要终态重放：返回既有订单号、扣款结果和背包发放结果，不重复扣库存、扣币或发放权益。
 - 同 key 不同摘要：拒绝执行，提示幂等键已被不同请求使用。
 - 支付口令验证失败不占用幂等键；已进入资产写入后形成的终态失败响应也会被记录，避免重试造成重复资产写入。
+- 权益 / 背包发放还具备订单级唯一约束保护；即使购买终态重放之外再次触发同一订单发放，也应返回既有发放事实，不重复增加权益或背包数量。
 
 详细接口和服务端记录字段见 [支付与转账幂等治理](/guide/payment-idempotency-governance)。
 

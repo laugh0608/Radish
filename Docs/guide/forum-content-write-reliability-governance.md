@@ -69,11 +69,11 @@
 
 首批已新增专用提交意图记录，而不是复用资产交易的 `OperationIdempotencyRecord`。
 
-建议模型名：
+模型名：
 
 - `ContentSubmissionRecord`
 
-建议字段：
+字段：
 
 | 字段 | 说明 |
 | --- | --- |
@@ -91,9 +91,9 @@
 | `ResultPublicId` | 可选，帖子等公开对象后续可用于回流 |
 | `ExpiresAt` | 去重记录过期时间 |
 
-唯一约束建议：
+唯一约束：
 
-- `TenantId + UserId + Operation + ClientSubmissionId`
+- `TenantId + UserId + OperationType + ClientSubmissionId`
 
 写入语义：
 

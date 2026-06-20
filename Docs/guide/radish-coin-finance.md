@@ -153,9 +153,12 @@ CREATE TABLE coin_transaction (
     fee BIGINT NOT NULL DEFAULT 0,               -- 实际手续费（胡萝卜）
     theoretical_amount DECIMAL(18,6),            -- 理论金额（精确计算）
     rounding_diff DECIMAL(18,6),                 -- 舍入差额
+    reward_business_key VARCHAR(200),            -- 奖励业务去重键，仅奖励流水填写
+    tenant_id BIGINT NOT NULL DEFAULT 0,          -- 租户ID
     -- 其他字段...
     created_at TIMESTAMP NOT NULL,
-    INDEX idx_created_at (created_at)
+    INDEX idx_created_at (created_at),
+    UNIQUE INDEX idx_coin_reward_business_key (tenant_id, reward_business_key)
 );
 ```
 
@@ -332,14 +335,21 @@ CREATE TABLE coin_transaction (
     status VARCHAR(20) NOT NULL,                 -- SUCCESS / FAILED / PENDING
     business_type VARCHAR(50),                   -- 业务类型（点赞/打赏/置顶等）
     business_id BIGINT,                          -- 关联业务ID
+    reward_business_key VARCHAR(200),            -- 奖励业务去重键，仅奖励流水填写
+    tenant_id BIGINT NOT NULL DEFAULT 0,          -- 租户ID
     remark VARCHAR(500),                         -- 备注
     created_at TIMESTAMP NOT NULL,
     INDEX idx_from_user (from_user_id, created_at),
     INDEX idx_to_user (to_user_id, created_at),
     INDEX idx_transaction_no (transaction_no),
-    INDEX idx_created_at (created_at)
+    INDEX idx_created_at (created_at),
+    UNIQUE INDEX idx_coin_reward_business_key (tenant_id, reward_business_key)
 );
 ```
+
+`reward_business_key` 只用于奖励类交易，普通消费、转账、调账等非奖励交易保持 `NULL`。业务键表达“同一自然奖励事实”，例如同一用户同一天因同一帖子被点赞获得作者奖励；同一业务键重复触发时应返回既有成功流水，不重复增加余额。
+
+经验奖励也采用同一规则：`ExpTransaction.RewardBusinessKey` 用于一次性经验奖励，唯一维度为 `TenantId + RewardBusinessKey`。经验流水原有的日粒度 `idx_dedup` 继续保留，但新的奖励发放不应只依赖事后查询判断是否重复。
 
 ### 8.3 交易类型枚举
 
@@ -373,4 +383,3 @@ CREATE TABLE balance_change_log (
 ```
 
 ---
-

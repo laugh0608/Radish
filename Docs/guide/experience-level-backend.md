@@ -34,6 +34,8 @@ CREATE TABLE exp_transaction (
     exp_amount INT NOT NULL,                      -- 经验值变动量(正数=增加)
     business_type VARCHAR(50),                    -- 业务类型(Post/Comment/User)
     business_id BIGINT,                           -- 业务ID
+    reward_business_key VARCHAR(200),             -- 奖励业务去重键，仅一次性奖励填写
+    tenant_id BIGINT NOT NULL DEFAULT 0,           -- 租户ID
     remark VARCHAR(500),                          -- 备注
     exp_before BIGINT NOT NULL,                   -- 变动前经验值
     exp_after BIGINT NOT NULL,                    -- 变动后经验值
@@ -43,9 +45,12 @@ CREATE TABLE exp_transaction (
     created_at TIMESTAMP NOT NULL,
     INDEX idx_user_time (user_id, created_at DESC),
     INDEX idx_type (exp_type),
-    UNIQUE INDEX idx_dedup (user_id, exp_type, business_type, business_id, created_date)
+    UNIQUE INDEX idx_dedup (user_id, exp_type, business_type, business_id, created_date),
+    UNIQUE INDEX idx_exp_reward_business_key (tenant_id, reward_business_key)
 );
 ```
+
+`reward_business_key` 用于表达同一自然经验奖励事实，例如某条评论获得神评基础经验奖励、点赞增量经验奖励或保留奖励。需要一次性发放的奖励应走带业务键的发放入口；同一 `TenantId + RewardBusinessKey` 重复触发时返回既有流水，不重复增加经验。原有 `idx_dedup` 继续用于日粒度规则和历史兼容，但不替代奖励业务键。
 
 ### 4.3 经验值类型枚举
 

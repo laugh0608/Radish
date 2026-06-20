@@ -57,6 +57,14 @@
 - 发布前 SQL：测试 / 生产使用 `Deploy/sql/20260615_add_pet_tables.sql` 作为版本化差异 SQL 审核入口，覆盖两张表和 `PublicId`、`UserId`、`PetProfileId + CreateTime` 等索引。
 - 运行时边界：`Pet/GetMy` 只读查询不隐式创建宠物；表结构缺失应通过迁移修复，不在 API 启动或查询链路中临时建表。
 
+### 2026-06-20 写操作可靠性结构
+
+- 内容提交意图：`ContentSubmissionRecord` 承接论坛发帖、评论、回答、帖子编辑和评论编辑的提交意图记录，发布前 SQL 入口为 `Deploy/sql/20260620_add_content_submission_records.sql`。
+- 内容互动关系：帖子 / 评论点赞关系新增唯一索引和历史重复清理入口，发布前 SQL 入口为 `Deploy/sql/20260620_add_like_relation_unique_indexes.sql`。
+- 背包 / 权益发放：`UserBenefit.SourceOrderId`、`UserInventory` 聚合唯一键和 `UserInventoryGrantRecord` 订单发放流水共同保护发放一致性，发布前 SQL 入口为 `Deploy/sql/20260620_add_inventory_benefit_reliability_guards.sql`。
+- 奖励业务键：`CoinTransaction.RewardBusinessKey` 与 `ExpTransaction.RewardBusinessKey` 用于奖励类流水去重，发布前 SQL 入口为 `Deploy/sql/20260620_add_reward_business_keys.sql`。
+- 运行时边界：这些表、字段和唯一索引是服务端可靠性真值，不应在 API 启动、前端重试或人工排障链路中临时绕过。
+
 ## 边界
 
 - 表、字段、索引、约束这类 schema 变更，必须进入“实体定义 + DbMigrate + 版本化 SQL”这条正式路径。

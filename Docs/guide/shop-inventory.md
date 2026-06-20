@@ -139,7 +139,8 @@ public class InventoryService : IInventoryService
 权益类商品由 `UserBenefitService.GrantBenefitAsync` 发放：
 
 - 先校验商品权益类型、有效期和数量配置。
-- 同类有效权益按当前规则叠加或刷新有效期。
+- 购买来源权益按订单维度去重；`TenantId + SourceOrderId` 是数据库唯一约束，重复发放同一订单时返回既有 `UserBenefit`。
+- 同类有效权益不再依赖“再查同类权益后叠加”作为订单发放真值；订单来源是购买链路追溯和重试保护的主键。
 - 新权益写入 `UserBenefit`，并记录 `SourceOrderId`、`SourceProductId` 与商品图标附件快照。
 - 订单记录保存发放后的 `UserBenefitId`，供订单详情与治理链路追溯。
 - 前端通过 `UserBenefitVo.VoSourceOrderId` / `VoSourceProductId` 展示来源回访入口。
@@ -148,10 +149,23 @@ public class InventoryService : IInventoryService
 
 消耗品仍写入 `UserInventory`：
 
-- 同类型、同参数且仍有效的消耗品可以堆叠数量。
-- 新消耗品记录持有名称、图标附件快照、效果参数、数量、使用期限和商品来源。
+- `UserInventory` 是用户当前持有数量的聚合行；`TenantId + UserId + ConsumableType + ItemValue` 是数据库唯一约束。
+- 每次订单发放先写 `UserInventoryGrantRecord`，`TenantId + SourceOrderId` 是数据库唯一约束；同一订单重复发放时返回既有发放记录对应的背包项，不再次增加数量。
+- 新消耗品记录持有名称、图标附件快照、效果参数、当前数量和商品来源；再次购买相同道具时更新聚合数量、名称 / 图标快照和最后来源商品。
 - 前端可通过 `UserInventoryVo.VoSourceProductId` 展示“相关商品”回访入口。
 - 当前 `UserInventory` 不承载统一订单来源；如果后续需要消耗品订单级追溯，应单独扩展契约与前端展示。
+
+### 5.2.4 发放与扣减可靠性
+
+当前商城购买是一次用户确认后的资产写入：订单、扣款、库存扣减和权益 / 背包发放必须在服务端最终保护重复提交和并发问题。
+
+已落地的运行时规则：
+
+- 权益类商品以 `UserBenefit.SourceOrderId` 作为订单级去重真值，同一订单重复发放不会创建第二条权益。
+- 消耗品类商品以 `UserInventoryGrantRecord.SourceOrderId` 作为订单级发放流水真值，`UserInventory` 只保存当前聚合数量。
+- 背包聚合行按 `TenantId + UserId + ConsumableType + ItemValue` 唯一；并发插入冲突时读取既有聚合行后继续发放流水与数量更新。
+- 道具使用通过 `TryDeductItemAsync` 条件更新扣减数量，条件包含用户、背包项、未删除和 `Quantity >= quantity`；扣减失败时返回数量不足，不先读后无条件写。
+- 订单购买的 `OperationIdempotencyRecord` 负责同一次购买请求的终态重放；权益 / 背包自身的唯一约束负责订单发放阶段的最终保护，两者不能互相替代。
 
 ---
 

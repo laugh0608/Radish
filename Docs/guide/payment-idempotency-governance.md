@@ -92,9 +92,9 @@ public string? IdempotencyKey { get; set; }
 
 ### 兼容策略
 
-首批 Web 官方流程必须生成并传入 `idempotencyKey`。服务端暂不强制旧客户端必须传入 key；未传入时保留现有行为，不提供幂等保护。
+Web 与 Flutter 官方购买流程必须生成并传入 `idempotencyKey`。服务端暂不强制旧客户端必须传入 key；未传入时保留现有行为，不提供幂等保护。
 
-后续 Flutter 或其他客户端承接同一工作流时，应复用同一接口字段和请求摘要口径。等主要客户端都完成接入后，再评审是否将 `idempotencyKey` 调整为强制字段。
+后续其他客户端承接同一工作流时，应复用同一接口字段和请求摘要口径。等主要客户端都完成接入后，再评审是否将 `idempotencyKey` 调整为强制字段。
 
 ## Key 生成口径
 

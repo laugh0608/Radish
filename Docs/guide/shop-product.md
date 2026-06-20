@@ -7,6 +7,8 @@
 ### 3.1.1 商品实体（Product）
 
 > **2026-03 对齐说明**：商品图片字段已经从“直接存 URL”收口为“存附件 Id，URL 运行时派生”。下方模型请以当前代码口径理解：`IconAttachmentId` / `CoverAttachmentId` 为真值，`voIcon` / `voCoverImage` 为展示字段。
+>
+> **2026-06-20 对齐说明**：商品管理写入已接入 `Product.Version` 乐观并发语义。Console 商品详情 / 编辑表单读取 `VoVersion`，更新、上架和下架请求提交 `ExpectedVersion`；版本不匹配时服务端拒绝覆盖并提示刷新后重试。
 
 ```csharp
 /// <summary>
@@ -308,13 +310,14 @@ public async Task<long> CreateProductAsync(ProductCreateVo input)
 
 **更新商品**：
 ```csharp
-public async Task<bool> UpdateProductAsync(long productId, ProductUpdateVo input)
+public async Task<bool> UpdateProductAsync(UpdateProductDto input)
 {
     // 1. 验证商品存在
-    // 2. 验证修改权限
-    // 3. 如果修改了价格，记录价格变更历史
-    // 4. 更新商品信息
-    // 5. 记录操作日志
+    // 2. 校验 input.ExpectedVersion 是否等于当前 Product.Version
+    // 3. 验证修改权限
+    // 4. 如果修改了价格，记录价格变更历史
+    // 5. 条件更新商品信息并递增 Version
+    // 6. 记录操作日志
 }
 ```
 
@@ -332,23 +335,22 @@ public async Task<bool> DeleteProductAsync(long productId)
 ### 3.2.2 商品上下架
 
 ```csharp
-public async Task<bool> SetProductOnSaleAsync(long productId, bool isOnSale)
+public async Task<bool> PutOnSaleAsync(long productId, int expectedVersion)
 {
     var product = await _productRepository.QueryFirstAsync(p => p.Id == productId);
     if (product == null) return false;
 
-    product.IsOnSale = isOnSale;
-    product.OnSaleTime = isOnSale ? DateTime.Now : null;
-    product.UpdateTime = DateTime.Now;
+    if (product.Version != expectedVersion)
+        throw new InvalidOperationException("商品信息已被其他管理员修改，请刷新后重试");
 
-    await _productRepository.UpdateAsync(product);
-
-    // 记录操作日志
-    Log.Information("商品 {ProductId} {Action}", productId, isOnSale ? "上架" : "下架");
+    // 条件更新：WHERE Id = productId AND Version = expectedVersion
+    // 成功后 Version + 1，并记录上架时间 / 修改信息
 
     return true;
 }
 ```
+
+`TakeOffSaleAsync` 使用同样的 `expectedVersion` 规则。前端在保存成功后应重新加载商品详情或列表，拿到新的 `VoVersion` 后再允许下一次编辑 / 上下架。
 
 ### 3.2.3 商品查询
 

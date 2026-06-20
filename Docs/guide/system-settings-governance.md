@@ -2,7 +2,7 @@
 
 > 状态：低 / 中风险首轮治理已阶段收束，进入维护观察与后续独立评审池
 >
-> 最后更新：2026-06-17（Asia/Shanghai）
+> 最后更新：2026-06-20（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -116,7 +116,7 @@ Radish 需要一个长期的系统设置中心，但它不应只是把 `appsetti
 
 高危设置不能只依赖前端弹窗，后端必须校验权限、风险等级、确认参数和审计要求。
 
-当前实现只允许 `Low` / `Medium` 可编辑设置写入覆盖值；`Medium` 设置必须带修改原因、确认风险等级和确认设置键。`High` / `Critical` 仍由后端拒绝，不因前端提交参数而开放。
+当前实现只允许 `Low` / `Medium` 可编辑设置写入覆盖值；`Medium` 设置必须带修改原因、确认风险等级和确认设置键。`High` / `Critical` 仍由后端拒绝，不因前端提交参数而开放。保存和恢复默认还必须携带当前 `VoVersion` 作为 `ExpectedVersion`，避免多个管理员基于旧覆盖值互相覆盖。
 
 ## 6. 审计与历史
 
@@ -208,8 +208,9 @@ SystemConfig 覆盖值
 - `GetSystemConfigs` 返回注册定义叠加覆盖值后的设置列表。
 - `GetConfigById` 使用设置定义 ID 查询，兼容旧覆盖记录 ID 回查已注册定义。
 - 设置列表 / 详情返回 `MinNumberValue`、`MaxNumberValue`、`RequiresInteger` 与 `ImpactSummary`，供 Console 展示校验规则与影响范围。
-- `UpdateConfig` 只允许写入 `Low` / `Medium`、可编辑的注册设置覆盖值；`Medium` 必须接收修改原因、确认风险等级和确认设置键参数，成功变更后写入系统设置专用审计历史。
-- `RestoreConfigDefault` 删除覆盖值并回到代码默认值，同样接收原因 / 确认参数并写入审计历史。
+- 设置列表 / 详情返回 `VoVersion`：没有覆盖值时为 `0`，已有覆盖值时为持久化记录版本号。
+- `UpdateConfig` 只允许写入 `Low` / `Medium`、可编辑的注册设置覆盖值；`Medium` 必须接收修改原因、确认风险等级、确认设置键和 `ExpectedVersion`，成功变更后写入系统设置专用审计历史并递增覆盖记录版本。
+- `RestoreConfigDefault` 删除覆盖值并回到代码默认值，同样接收原因 / 确认参数和 `ExpectedVersion`，版本不匹配时返回“系统设置已被其他管理员修改，请刷新后重试”。
 - `GetConfigChangeLogs` 查询已注册设置的最近变更历史。
 - `ISystemSettingProvider` 面向业务服务提供统一读取入口，覆盖值非法时直接暴露配置错误。
 - 旧 `CreateConfig` 路由保留兼容但拒绝 Console 新增未知设置。
