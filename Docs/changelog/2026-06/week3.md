@@ -60,3 +60,12 @@
 - warning 清理完成：SQLitePCLRaw 安全版本、`CoinController` XML 参数说明、Console 兼容权限扫描豁免和 Forum 评论 chunk warning 已收口，后端构建、client build、`validate:ci`、NuGet vulnerability scan 和仓库卫生检查均已通过。
 - 新增 [写操作可靠性与并发保护治理](/guide/write-operation-reliability-governance)，作为支付 / 转账幂等之后的治理入口；明日第一顺位是 `WOG-1 写操作分级盘点`，先输出写入口矩阵、候选排序和不做范围，再决定代码批次。
 - 收工前补 [2026-06-19 收工回顾与明日事项](/records/daily-handoff-2026-06-19)，同步 current、P3-10 专题、路线图、月 / 周 / 年开发日志和记录索引。
+
+## 2026-06-20
+
+- `WOG-1` 写操作分级盘点完成，输出资产 / 库存、奖励 / 玩法、内容互动、管理治理、通知 / 消息写入口矩阵和候选排序。
+- `WOG-2` 至 `WOG-6` 首轮写操作治理完成：论坛点赞关系与计数一致性、商城订单背包 / 权益发放一致性、奖励业务键唯一性、管理覆盖版本语义和 Flutter 单商品购买幂等 key 承接均已落地。
+- 新增并推进 [论坛内容发布可靠性与编辑历史治理](/guide/forum-content-write-reliability-governance)：Web 发帖、评论、回答、帖子编辑和评论编辑已接入 `clientSubmissionId` 与 `ContentSubmissionRecord`，创建类写入口补短窗口内容指纹和频率限制，编辑无变化不写历史、不递增 `EditCount`。
+- Flutter 原生论坛写入口已承接当前已有能力：纯文本发帖、根评论 / 回复和问答回答均生成并复用 `clientSubmissionId`；失败重试复用同一提交意图 key，成功、对象变化、草稿变化或账号变化后生成新 key。
+- 今日验证按影响面完成：WOG 相关后端 / Flutter 批次测试、`flutter analyze`、`flutter test`、`dotnet test Radish.Api.Tests`、相关构建、`git diff --check` 和仓库卫生检查按批次通过；未启动服务，未执行真实 smoke。
+- 收工前补 [2026-06-20 收工回顾与明日事项](/records/daily-handoff-2026-06-20)，同步 current、P3-10 专题、路线图、写操作治理说明、月 / 周 / 年开发日志和记录索引；明日先评审 Flutter 帖子编辑 / 评论编辑入口是否新增产品能力承接，或切换到下一批 P3-10 产品 / 治理候选。
