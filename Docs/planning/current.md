@@ -95,6 +95,7 @@
 - [WOG-3 背包 / 权益发放可靠性方案](/records/wog-3-inventory-benefit-reliability-plan-2026-06-20)
 - [WOG-4 奖励业务键唯一性方案](/records/wog-4-reward-business-key-uniqueness-plan-2026-06-20)
 - [WOG-5 管理覆盖类写入版本语义方案](/records/wog-5-management-write-version-semantics-plan-2026-06-20)
+- [WOG-6 跨端幂等契约补齐方案](/records/wog-6-cross-client-idempotency-contract-plan-2026-06-20)
 - [P3-10-B9 用户身份语义首批记录](/records/p3-10-b9-user-identity-first-batch-record-2026-06-15)
 - [P3-10-D 合并前验证记录](/records/p3-10-d-pre-merge-validation-record-2026-06-19)
 - [P3-10-D PR 准备记录](/records/p3-10-d-web-feed-pr-prep-record-2026-06-19)
@@ -132,7 +133,7 @@
   - [WOG-3 背包 / 权益发放可靠性方案](/records/wog-3-inventory-benefit-reliability-plan-2026-06-20) 已确认并完成首批实现；本批未扩展完整钱包、资产风控、浏览器通用 `sign`、字段级加密、安全会话、Redis 分布式锁平台或完整经济系统。
   - [WOG-4 奖励业务键唯一性方案](/records/wog-4-reward-business-key-uniqueness-plan-2026-06-20) 已确认并完成首批实现；本批未扩展完整经济系统、资产风控平台、Redis 分布式锁、Outbox 或通用奖励平台。
   - [WOG-5 管理覆盖类写入版本语义方案](/records/wog-5-management-write-version-semantics-plan-2026-06-20) 已确认并完成首批实现；本批未扩展通用审批流、所有 Console CRUD 版本化、Redis 锁、Outbox 或分布式事务平台。
-  - 下一顺位建议进入 `WOG-6 跨端幂等契约补齐` 方案评审，重点收敛未来 Flutter / 多端复用资产写入口的 `idempotencyKey`、请求摘要、终态响应重放和不做范围。
+  - [WOG-6 跨端幂等契约补齐方案](/records/wog-6-cross-client-idempotency-contract-plan-2026-06-20) 已输出待确认，建议首批只补 Flutter 单商品购买的 `idempotencyKey`，暂不纳入 Flutter 转账、完整移动商城或服务端强制 key。
 - `P3-10-D Web 信息流 / UI 结构整理`
   - 首日已完成 Web 默认入口、公开发现、论坛详情、公开文档详情、公开个人页、圈子、`/me` 与轻互动入口的结构整理和来源返回修正。
   - 首轮阶段级 Gateway PC / 移动收口复核已开始，并已修复公开文档详情重复 H1、正文内链公开 URL 口径、公开商城首页 / 列表 / 详情标题层级，以及公开榜单用户项 PublicId-only 跳转判断。
@@ -174,7 +175,7 @@
 ## 明日事项
 
 - 先读取本页、[写操作可靠性与并发保护治理](/guide/write-operation-reliability-governance)、[WOG-1 写操作分级盘点记录](/records/wog-1-write-operation-inventory-2026-06-20) 和 [WOG-5 管理覆盖类写入版本语义方案](/records/wog-5-management-write-version-semantics-plan-2026-06-20)，必要时回看 WOG-2 / WOG-3 / WOG-4，确认当前仍处于 `P3-10 后续产品 / 治理增量选择`。
-- 第一顺位：进入 `WOG-6 跨端幂等契约补齐` 方案评审；进入代码前先确认多端资产写入口、请求摘要和重放边界。
+- 第一顺位：确认 `WOG-6 跨端幂等契约补齐` 方案；若确认首批范围，则进入 Flutter 单商品购买 `idempotencyKey` 接入代码实现。
 - 第二顺位：跳过本轮 PR 创建步骤，保留 [P3-10-D PR 准备记录](/records/p3-10-d-web-feed-pr-prep-record-2026-06-19) 作为后续恢复合并动作的依据。
 - 第三顺位：若真实 smoke、自动化验证或明确缺口重新命中 P3-10-D 阻断 / 清晰一致性问题，再定向回修；不再默认追加第五批链接语义扫尾。
 
