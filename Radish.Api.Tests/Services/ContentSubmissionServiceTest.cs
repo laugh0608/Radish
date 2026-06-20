@@ -9,6 +9,7 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Service;
 using Radish.Shared.Constants;
+using SqlSugar;
 using Xunit;
 
 namespace Radish.Api.Tests.Services;
@@ -187,6 +188,79 @@ public class ContentSubmissionServiceTest
     }
 
     [Fact]
+    public async Task BeginAsync_Should_Return_FrequencyLimited_When_Recent_Success_Exists_In_Scope()
+    {
+        var existing = CreateRecord(
+            id: 8001,
+            operationType: ContentSubmissionOperationTypes.ForumCommentCreate,
+            clientSubmissionId: "auto:old",
+            requestDigest: "digest-old",
+            contentFingerprint: "fingerprint-old",
+            targetType: "Post",
+            targetId: 2001,
+            status: ContentSubmissionStatuses.Succeeded,
+            resultType: ContentSubmissionResultTypes.Comment,
+            resultId: 3001,
+            createTime: DateTime.Now.AddSeconds(-5));
+        var (service, repository) = CreateService([existing], nextId: 9001);
+
+        var result = await service.BeginAsync(CreateBeginRequest(
+            operationType: ContentSubmissionOperationTypes.ForumCommentCreate,
+            clientSubmissionId: "forum-comment:new",
+            targetType: "Post",
+            targetId: 2001,
+            requestDigest: "digest-new",
+            contentFingerprint: "fingerprint-new",
+            frequencyWindowSeconds: 10,
+            frequencyTargetType: "Post",
+            frequencyTargetId: 2001));
+
+        Assert.Equal(ContentSubmissionBeginStatus.FrequencyLimited, result.Status);
+        Assert.Equal(8001, result.RecordId);
+        Assert.Contains("操作过于频繁", result.Message);
+        Assert.InRange(result.RetryAfterSeconds.GetValueOrDefault(), 1, 10);
+
+        repository.Verify(r => r.AddAsync(It.IsAny<ContentSubmissionRecord>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task BeginAsync_Should_Not_FrequencyLimit_When_Scope_Target_Is_Different()
+    {
+        var existing = CreateRecord(
+            id: 8001,
+            operationType: ContentSubmissionOperationTypes.ForumCommentCreate,
+            clientSubmissionId: "auto:old",
+            requestDigest: "digest-old",
+            contentFingerprint: "fingerprint-old",
+            targetType: "Post",
+            targetId: 2002,
+            status: ContentSubmissionStatuses.Succeeded,
+            resultType: ContentSubmissionResultTypes.Comment,
+            resultId: 3001,
+            createTime: DateTime.Now.AddSeconds(-5));
+        var records = new List<ContentSubmissionRecord> { existing };
+        var (service, repository) = CreateService(records, nextId: 9001);
+
+        var result = await service.BeginAsync(CreateBeginRequest(
+            operationType: ContentSubmissionOperationTypes.ForumCommentCreate,
+            clientSubmissionId: "forum-comment:new",
+            targetType: "Post",
+            targetId: 2001,
+            requestDigest: "digest-new",
+            contentFingerprint: "fingerprint-new",
+            frequencyWindowSeconds: 10,
+            frequencyTargetType: "Post",
+            frequencyTargetId: 2001));
+
+        Assert.Equal(ContentSubmissionBeginStatus.Started, result.Status);
+        Assert.Equal(9001, result.RecordId);
+        Assert.Equal(2, records.Count);
+        Assert.Equal("forum-comment:new", records[1].ClientSubmissionId);
+
+        repository.Verify(r => r.AddAsync(It.IsAny<ContentSubmissionRecord>()), Times.Once);
+    }
+
+    [Fact]
     public async Task BeginAsync_Should_Reject_Invalid_Client_Key_Without_Querying_Repository()
     {
         var (service, repository) = CreateService();
@@ -312,6 +386,40 @@ public class ContentSubmissionServiceTest
             .Setup(r => r.QueryByIdAsync(It.IsAny<long>()))
             .Returns((long id) => Task.FromResult(storedRecords.FirstOrDefault(record => record.Id == id)));
         repository
+            .Setup(r => r.QueryPageAsync(
+                It.IsAny<Expression<Func<ContentSubmissionRecord, bool>>?>(),
+                It.IsAny<int>(),
+                It.IsAny<int>(),
+                It.IsAny<Expression<Func<ContentSubmissionRecord, object>>?>(),
+                It.IsAny<OrderByType>()))
+            .Returns((
+                Expression<Func<ContentSubmissionRecord, bool>>? whereExpression,
+                int pageIndex,
+                int pageSize,
+                Expression<Func<ContentSubmissionRecord, object>>? orderByExpression,
+                OrderByType orderByType) =>
+            {
+                var predicate = whereExpression?.Compile();
+                IEnumerable<ContentSubmissionRecord> query = predicate == null
+                    ? storedRecords
+                    : storedRecords.Where(predicate);
+                if (orderByExpression != null)
+                {
+                    var orderBy = orderByExpression.Compile();
+                    query = orderByType == OrderByType.Desc
+                        ? query.OrderByDescending(orderBy)
+                        : query.OrderBy(orderBy);
+                }
+
+                var total = query.Count();
+                var data = query
+                    .Skip((Math.Max(pageIndex, 1) - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                return Task.FromResult((data, total));
+            });
+        repository
             .Setup(r => r.AddAsync(It.IsAny<ContentSubmissionRecord>()))
             .Returns((ContentSubmissionRecord record) =>
             {
@@ -337,7 +445,10 @@ public class ContentSubmissionServiceTest
         string requestDigest = "digest-a",
         string requestSummary = "summary-a",
         string contentFingerprint = "fingerprint-a",
-        int duplicateWindowSeconds = 60)
+        int duplicateWindowSeconds = 60,
+        int frequencyWindowSeconds = 0,
+        string? frequencyTargetType = null,
+        long? frequencyTargetId = null)
     {
         return new ContentSubmissionBeginRequest
         {
@@ -350,7 +461,10 @@ public class ContentSubmissionServiceTest
             RequestDigest = requestDigest,
             RequestSummary = requestSummary,
             ContentFingerprint = contentFingerprint,
-            DuplicateWindowSeconds = duplicateWindowSeconds
+            DuplicateWindowSeconds = duplicateWindowSeconds,
+            FrequencyWindowSeconds = frequencyWindowSeconds,
+            FrequencyTargetType = frequencyTargetType,
+            FrequencyTargetId = frequencyTargetId
         };
     }
 

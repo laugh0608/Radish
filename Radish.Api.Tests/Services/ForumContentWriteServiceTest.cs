@@ -101,6 +101,117 @@ public class ForumContentWriteServiceTest
     }
 
     [Fact]
+    public async Task PublishPostAsync_Should_Pass_Post_Create_Frequency_Window()
+    {
+        var contentSubmissionService = CreateContentSubmissionService();
+        contentSubmissionService
+            .Setup(s => s.CompleteSuccessAsync(It.IsAny<ContentSubmissionCompletionRequest>()))
+            .Returns(Task.CompletedTask);
+
+        var postService = new Mock<IPostService>(MockBehavior.Strict);
+        postService
+            .Setup(s => s.PublishPostAsync(
+                It.IsAny<Post>(),
+                It.IsAny<CreatePollDto?>(),
+                It.IsAny<CreateLotteryDto?>(),
+                It.IsAny<bool>(),
+                It.IsAny<List<string>?>(),
+                It.IsAny<bool>()))
+            .ReturnsAsync(9001);
+
+        var service = CreateService(contentSubmissionService, postService);
+
+        await service.PublishPostAsync(
+            CreatePost(),
+            poll: null,
+            lottery: null,
+            isQuestion: false,
+            tagNames: ["Radish"],
+            allowCreateTag: true,
+            clientSubmissionId: "forum-post:abc");
+
+        contentSubmissionService.Verify(
+            s => s.BeginAsync(It.Is<ContentSubmissionBeginRequest>(request =>
+                request.OperationType == ContentSubmissionOperationTypes.ForumPostCreate &&
+                request.DuplicateWindowSeconds == 180 &&
+                request.FrequencyWindowSeconds == 30 &&
+                request.FrequencyTargetType == null &&
+                request.FrequencyTargetId == null)),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateCommentAsync_Should_Pass_Post_Scoped_Frequency_Window()
+    {
+        var contentSubmissionService = CreateContentSubmissionService();
+        contentSubmissionService
+            .Setup(s => s.CompleteSuccessAsync(It.IsAny<ContentSubmissionCompletionRequest>()))
+            .Returns(Task.CompletedTask);
+
+        var commentService = new Mock<ICommentService>(MockBehavior.Strict);
+        commentService
+            .Setup(s => s.AddCommentAsync(It.IsAny<Comment>()))
+            .ReturnsAsync((3001, new CommentHighlightRecheckResultVo { VoPostId = 2001, VoChanged = false }));
+
+        var service = CreateService(
+            contentSubmissionService,
+            new Mock<IPostService>(MockBehavior.Strict),
+            commentService);
+
+        await service.CreateCommentAsync(CreateComment(), "forum-comment:abc");
+
+        contentSubmissionService.Verify(
+            s => s.BeginAsync(It.Is<ContentSubmissionBeginRequest>(request =>
+                request.OperationType == ContentSubmissionOperationTypes.ForumCommentCreate &&
+                request.TargetType == "Post" &&
+                request.TargetId == 2001 &&
+                request.DuplicateWindowSeconds == 60 &&
+                request.FrequencyWindowSeconds == 10 &&
+                request.FrequencyTargetType == "Post" &&
+                request.FrequencyTargetId == 2001)),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task AddAnswerAsync_Should_Pass_Post_Scoped_Frequency_Window()
+    {
+        var contentSubmissionService = CreateContentSubmissionService();
+        contentSubmissionService
+            .Setup(s => s.CompleteSuccessAsync(It.IsAny<ContentSubmissionCompletionRequest>()))
+            .Returns(Task.CompletedTask);
+
+        var postService = new Mock<IPostService>(MockBehavior.Strict);
+        postService
+            .Setup(s => s.AddAnswerAsync(2001, "排查数据库连接", 42, "Owner", 9))
+            .ReturnsAsync(new PostQuestionVo
+            {
+                VoPostId = 2001,
+                VoAnswerCount = 1
+            });
+
+        var service = CreateService(contentSubmissionService, postService);
+
+        await service.AddAnswerAsync(
+            postId: 2001,
+            content: "排查数据库连接",
+            authorId: 42,
+            authorName: "Owner",
+            tenantId: 9,
+            clientSubmissionId: "forum-answer:abc");
+
+        contentSubmissionService.Verify(
+            s => s.BeginAsync(It.Is<ContentSubmissionBeginRequest>(request =>
+                request.OperationType == ContentSubmissionOperationTypes.ForumAnswerCreate &&
+                request.TargetType == "Post" &&
+                request.TargetId == 2001 &&
+                request.DuplicateWindowSeconds == 120 &&
+                request.FrequencyWindowSeconds == 30 &&
+                request.FrequencyTargetType == "Post" &&
+                request.FrequencyTargetId == 2001)),
+            Times.Once);
+    }
+
+    [Fact]
     public async Task UpdatePostAsync_Should_Return_NoChange_When_Request_Matches_Current_Post()
     {
         var contentSubmissionService = CreateContentSubmissionService();
@@ -336,5 +447,16 @@ public class ForumContentWriteServiceTest
             ContentType = "Markdown",
             PublicId = "pst_test"
         };
+    }
+
+    private static Comment CreateComment()
+    {
+        return new Comment(new CommentInitializationOptions("测试评论")
+        {
+            PostId = 2001,
+            AuthorId = 42,
+            AuthorName = "Owner",
+            TenantId = 9
+        });
     }
 }

@@ -13,6 +13,9 @@ public class ForumContentWriteService : IForumContentWriteService
     private const int CommentCreateDuplicateWindowSeconds = 60;
     private const int AnswerCreateDuplicateWindowSeconds = 120;
     private const int EditDuplicateWindowSeconds = 60;
+    private const int PostCreateFrequencyWindowSeconds = 30;
+    private const int CommentCreateFrequencyWindowSeconds = 10;
+    private const int AnswerCreateFrequencyWindowSeconds = 30;
 
     private const string CategoryTargetType = "Category";
     private const string PostTargetType = "Post";
@@ -55,7 +58,8 @@ public class ForumContentWriteService : IForumContentWriteService
             RequestDigest = snapshot.RequestDigest,
             RequestSummary = snapshot.RequestSummary,
             ContentFingerprint = snapshot.ContentFingerprint,
-            DuplicateWindowSeconds = PostCreateDuplicateWindowSeconds
+            DuplicateWindowSeconds = PostCreateDuplicateWindowSeconds,
+            FrequencyWindowSeconds = PostCreateFrequencyWindowSeconds
         });
 
         if (TryResolveReplay(beginResult, ContentSubmissionResultTypes.Post, out var postId))
@@ -122,7 +126,10 @@ public class ForumContentWriteService : IForumContentWriteService
             RequestDigest = snapshot.RequestDigest,
             RequestSummary = snapshot.RequestSummary,
             ContentFingerprint = snapshot.ContentFingerprint,
-            DuplicateWindowSeconds = CommentCreateDuplicateWindowSeconds
+            DuplicateWindowSeconds = CommentCreateDuplicateWindowSeconds,
+            FrequencyWindowSeconds = CommentCreateFrequencyWindowSeconds,
+            FrequencyTargetType = PostTargetType,
+            FrequencyTargetId = comment.PostId
         });
 
         if (TryResolveReplay(beginResult, ContentSubmissionResultTypes.Comment, out var commentId))
@@ -212,7 +219,10 @@ public class ForumContentWriteService : IForumContentWriteService
             RequestDigest = snapshot.RequestDigest,
             RequestSummary = snapshot.RequestSummary,
             ContentFingerprint = snapshot.ContentFingerprint,
-            DuplicateWindowSeconds = AnswerCreateDuplicateWindowSeconds
+            DuplicateWindowSeconds = AnswerCreateDuplicateWindowSeconds,
+            FrequencyWindowSeconds = AnswerCreateFrequencyWindowSeconds,
+            FrequencyTargetType = PostTargetType,
+            FrequencyTargetId = postId
         });
 
         if (TryResolveReplay(beginResult, ContentSubmissionResultTypes.PostQuestion, out var replayPostId))

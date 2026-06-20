@@ -46,6 +46,12 @@ public sealed class ContentSubmissionBeginRequest
     public string ContentFingerprint { get; init; } = string.Empty;
 
     public int DuplicateWindowSeconds { get; init; }
+
+    public int FrequencyWindowSeconds { get; init; }
+
+    public string? FrequencyTargetType { get; init; }
+
+    public long? FrequencyTargetId { get; init; }
 }
 
 public enum ContentSubmissionBeginStatus
@@ -55,7 +61,8 @@ public enum ContentSubmissionBeginStatus
     Processing = 3,
     Conflict = 4,
     InvalidKey = 5,
-    DuplicateContent = 6
+    DuplicateContent = 6,
+    FrequencyLimited = 7
 }
 
 public sealed class ContentSubmissionBeginResult

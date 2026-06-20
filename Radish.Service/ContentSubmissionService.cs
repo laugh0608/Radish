@@ -86,6 +86,12 @@ public class ContentSubmissionService : IContentSubmissionService
             }
         }
 
+        var frequencyRecord = await QueryRecentFrequencyRecordAsync(request, now);
+        if (frequencyRecord != null)
+        {
+            return ResolveFrequencyRecord(frequencyRecord, now, request.FrequencyWindowSeconds);
+        }
+
         key ??= $"auto:{Guid.NewGuid():N}";
         var record = new ContentSubmissionRecord
         {
@@ -255,6 +261,23 @@ public class ContentSubmissionService : IContentSubmissionService
         return Conflict("内容提交记录状态无效");
     }
 
+    private static ContentSubmissionBeginResult ResolveFrequencyRecord(
+        ContentSubmissionRecord record,
+        DateTime now,
+        int frequencyWindowSeconds)
+    {
+        var retryAfterSeconds = Math.Max(
+            1,
+            (int)Math.Ceiling((record.CreateTime.AddSeconds(frequencyWindowSeconds) - now).TotalSeconds));
+        return new ContentSubmissionBeginResult
+        {
+            Status = ContentSubmissionBeginStatus.FrequencyLimited,
+            RecordId = record.Id,
+            Message = $"操作过于频繁，请{retryAfterSeconds}秒后再试",
+            RetryAfterSeconds = retryAfterSeconds
+        };
+    }
+
     private async Task ResetToPendingAsync(
         ContentSubmissionRecord record,
         ContentSubmissionBeginRequest request,
@@ -316,6 +339,74 @@ public class ContentSubmissionService : IContentSubmissionService
             record.ContentFingerprint == request.ContentFingerprint &&
             record.CreateTime >= cutoff &&
             (record.Status == ContentSubmissionStatuses.Pending || record.Status == ContentSubmissionStatuses.Succeeded));
+    }
+
+    private async Task<ContentSubmissionRecord?> QueryRecentFrequencyRecordAsync(
+        ContentSubmissionBeginRequest request,
+        DateTime now)
+    {
+        if (request.FrequencyWindowSeconds <= 0)
+        {
+            return null;
+        }
+
+        var normalizedTenantId = NormalizeTenantId(request.TenantId);
+        var targetType = NormalizeOptional(request.FrequencyTargetType);
+        var targetId = request.FrequencyTargetId;
+        var cutoff = now.AddSeconds(-request.FrequencyWindowSeconds);
+
+        if (targetType != null && targetId.HasValue)
+        {
+            return await QueryLatestFrequencyRecordAsync(record =>
+                record.TenantId == normalizedTenantId &&
+                record.UserId == request.UserId &&
+                record.OperationType == request.OperationType &&
+                record.TargetType == targetType &&
+                record.TargetId == targetId &&
+                record.CreateTime >= cutoff &&
+                record.Status == ContentSubmissionStatuses.Succeeded);
+        }
+
+        if (targetType != null)
+        {
+            return await QueryLatestFrequencyRecordAsync(record =>
+                record.TenantId == normalizedTenantId &&
+                record.UserId == request.UserId &&
+                record.OperationType == request.OperationType &&
+                record.TargetType == targetType &&
+                record.CreateTime >= cutoff &&
+                record.Status == ContentSubmissionStatuses.Succeeded);
+        }
+
+        if (targetId.HasValue)
+        {
+            return await QueryLatestFrequencyRecordAsync(record =>
+                record.TenantId == normalizedTenantId &&
+                record.UserId == request.UserId &&
+                record.OperationType == request.OperationType &&
+                record.TargetId == targetId &&
+                record.CreateTime >= cutoff &&
+                record.Status == ContentSubmissionStatuses.Succeeded);
+        }
+
+        return await QueryLatestFrequencyRecordAsync(record =>
+            record.TenantId == normalizedTenantId &&
+            record.UserId == request.UserId &&
+            record.OperationType == request.OperationType &&
+            record.CreateTime >= cutoff &&
+            record.Status == ContentSubmissionStatuses.Succeeded);
+    }
+
+    private async Task<ContentSubmissionRecord?> QueryLatestFrequencyRecordAsync(
+        System.Linq.Expressions.Expression<Func<ContentSubmissionRecord, bool>> whereExpression)
+    {
+        var (records, _) = await _recordRepository.QueryPageAsync(
+            whereExpression,
+            1,
+            1,
+            record => record.CreateTime,
+            OrderByType.Desc);
+        return records.FirstOrDefault();
     }
 
     private static SortedDictionary<string, object?> NormalizeValues(
