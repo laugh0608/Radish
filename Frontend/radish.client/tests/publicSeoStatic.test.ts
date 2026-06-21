@@ -43,6 +43,27 @@ test('公开商城详情购买入口应指向正式 Web 购买回流路径', () 
   assert.doesNotMatch(source, /className=\{styles\.primaryLink\} href="\/"/);
 });
 
+test('公开商品榜单文案应指向商品详情购买而不是阻断购买能力', () => {
+  const source = readFileSync(resolve(clientRoot, 'src/i18n.ts'), 'utf8');
+
+  assert.match(
+    source,
+    /'leaderboard\.public\.productGuide\.focusBoundaryValue': 'Leaderboard browsing; purchase continues from product details after sign-in'/
+  );
+  assert.match(
+    source,
+    /'leaderboard\.public\.productGuide\.focusBoundaryValue': '榜单只做展示比较，购买从商品详情登录后继续'/
+  );
+  assert.doesNotMatch(
+    source,
+    /'leaderboard\.public\.productGuide\.focusBoundaryValue': 'Public browsing only, not purchase or account workflows'/
+  );
+  assert.doesNotMatch(
+    source,
+    /'leaderboard\.public\.productGuide\.focusBoundaryValue': '只读浏览，不带购买或账号流程'/
+  );
+});
+
 test('公开个人页应保持只读边界，不直接暴露关注写操作', () => {
   const source = readFileSync(resolve(clientRoot, 'src/public/profile/PublicProfileApp.tsx'), 'utf8');
 

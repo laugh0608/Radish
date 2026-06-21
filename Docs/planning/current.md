@@ -86,7 +86,7 @@
   - `P3-11-A / B / D` 已完成发布候选验收矩阵、轻量复访缺口只读审计和阶段收束决策；暂不恢复 `dev -> master` PR，不创建 tag，不进入 M15 测试 / 生产部署流程，`P3-11-C` 定向回修未触发。
   - 下一主线切换到 `P3-12 Web 完全化与 WebOS 收束`：目标是在 PC / mobile 浏览器中完成项目正式版主路径，让 `/desktop` 退为历史兼容入口；Flutter 暂时后移，等 Web 正式版主路径稳定后再承接受控移动原生增强。
   - `P3-12-A` 功能资产盘点与迁移矩阵已完成只读审计：浏览器根路径和公开阅读路径已基本 Web 化，账户资产、商城购买、订单、库存和资产流水仍存在正式版 Web 缺口；下一开发组定为 `P3-12-B1 账户资产与商城交易 Web 化`，记录见 [P3-12-A WebOS 与 Web 功能资产盘点记录](/records/p3-12-a-webos-web-function-asset-inventory-2026-06-21)。
-  - `P3-12-B1` 账户资产与商城交易 Web 化方案与首批代码侧主路径已完成：新增正式 Web 资产与商城交易 return path，接入 `/me/assets`、`/me/assets/transactions`、`/shop/orders`、`/shop/order/:orderId`、`/shop/inventory`，把 `/me` 完整钱包转向 `/me/assets/transactions`，公开商品详情购买改为 `/shop/product/:productId?intent=purchase` 登录回流并在购买成功后进入 `/shop/order/:orderId`；纯 Web 通知页的订单通知目标也已从桌面深链切到正式 Web 订单路由。定向契约测试、`radish.client` type-check / build 和 `git diff --check` 已通过，真实 PC / mobile Gateway 复核待用户确认前后端已启动后执行。统一 UI 设计后置到页面迁移完成后的 `P3-12-D`，记录见 [P3-12-B1 账户资产与商城交易 Web 化方案](/records/p3-12-b1-account-shop-web-plan-2026-06-21)。
+  - `P3-12-B1` 账户资产与商城交易 Web 化方案与首批代码侧主路径已完成：新增正式 Web 资产与商城交易 return path，接入 `/me/assets`、`/me/assets/transactions`、`/shop/orders`、`/shop/order/:orderId`、`/shop/inventory`，把 `/me` 完整钱包转向 `/me/assets/transactions`，公开商品详情购买改为 `/shop/product/:productId?intent=purchase` 登录回流并在购买成功后进入 `/shop/order/:orderId`；纯 Web 通知页的订单通知目标也已从桌面深链切到正式 Web 订单路由。定向契约测试、`radish.client` type-check / build 和 `git diff --check` 已通过，当前转入 `P3-12-C1` 代码侧残留清理；真实 PC / mobile Gateway 复核放到 B1 + C1 小阶段准备验收时，在用户确认前后端已启动后集中执行。统一 UI 设计后置到页面迁移完成后的 `P3-12-D`，记录见 [P3-12-B1 账户资产与商城交易 Web 化方案](/records/p3-12-b1-account-shop-web-plan-2026-06-21)。
 
 ## 当前执行入口
 
@@ -117,6 +117,7 @@
 - [P3-11 阶段收束决策记录](/records/p3-11-stage-closure-decision-record-2026-06-21)
 - [P3-12-A WebOS 与 Web 功能资产盘点记录](/records/p3-12-a-webos-web-function-asset-inventory-2026-06-21)
 - [P3-12-B1 账户资产与商城交易 Web 化方案](/records/p3-12-b1-account-shop-web-plan-2026-06-21)
+- [P3-12-C1 WebOS 残留入口清理记录](/records/p3-12-c1-webos-residual-cleanup-2026-06-21)
 - [个人圈子](/features/circle)
 - [Token 不活跃过期治理](/guide/auth-idle-session)
 - [P3-9 真实使用主路径产品化与发布候选整备](/planning/p3-9-real-usage-release-candidate)
@@ -129,7 +130,7 @@
 1. **启动 P3-12 Web 完全化与 WebOS 收束**
    - P3-11 已按“暂缓 PR、不发布、不创建 tag”收束；不再把 PR 决策作为当前开发主线。
    - `P3-12-A` 已完成功能资产盘点与迁移矩阵，按“正式版必需 / 发布前建议 / WebOS 保留 / 后置评审”分类 WebOS 与纯 Web 能力。
-   - `P3-12-B1` 方案、路由 / 登录回流契约、商城私域正式 Web 入口、资产正式入口和公开购买回流已完成；下一步在用户确认服务已启动后补 PC / mobile Gateway 复核，再转入与 B1 直接相关的 WebOS 残留入口清理判断。
+   - `P3-12-B1` 方案、路由 / 登录回流契约、商城私域正式 Web 入口、资产正式入口和公开购买回流已完成；下一步先推进与 B1 直接相关的 `P3-12-C1` 代码侧残留清理，真实 PC / mobile Gateway 复核放到 B1 + C1 小阶段准备验收时集中执行。
    - UI 设计与美化专题放到功能迁移齐后的 `P3-12-D`；届时必须统一使用 Pencil 先做设计稿，再更新设计 / 说明文档，最后进入视觉实现。
 2. **保持 P3-10 可恢复合并状态**
    - `P3-10-D` 已完成公开页整理、四批入口语义治理、合并前验证和 PR 合并判断；不再默认追加第五批链接扫尾。
@@ -149,7 +150,7 @@
 - `P3-12 Web 完全化与 WebOS 收束`
   - 新增 [P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)，承接 P3-11 暂缓 PR 后的正式开发主线。
   - `P3-12-A` 已完成只读盘点，结论见 [P3-12-A WebOS 与 Web 功能资产盘点记录](/records/p3-12-a-webos-web-function-asset-inventory-2026-06-21)。
-  - `P3-12-B1` 方案、路由 / 登录回流契约、商城私域正式 Web 入口、资产正式入口、公开购买动作和交易回流替换见 [P3-12-B1 账户资产与商城交易 Web 化方案](/records/p3-12-b1-account-shop-web-plan-2026-06-21)；下一步补 Gateway PC / mobile 复核与 B1 直接残留清理判断。
+  - `P3-12-B1` 方案、路由 / 登录回流契约、商城私域正式 Web 入口、资产正式入口、公开购买动作和交易回流替换见 [P3-12-B1 账户资产与商城交易 Web 化方案](/records/p3-12-b1-account-shop-web-plan-2026-06-21)；`P3-12-C1` 首轮残留清理见 [P3-12-C1 WebOS 残留入口清理记录](/records/p3-12-c1-webos-residual-cleanup-2026-06-21)，真实 Gateway PC / mobile 复核后置到小阶段验收。
   - 功能迁移只迁移正式版产品能力，不迁移 WebOS Dock、窗口系统、桌面背景、窗口几何记忆或桌面 app 外壳；B1 替代路径可用后，只清理与默认产品路径直接冲突的 `/desktop` 回跳。
   - 页面迁移齐后进入 `P3-12-D` 统一 UI 设计与美化专题，并走 Pencil 设计稿 -> 设计 / 说明文档 -> 代码实现 -> PC / mobile 复核。
 - `P3-11 发布候选整备与轻量复访补齐维护线`
@@ -214,8 +215,8 @@
 ## 明日事项
 
 - 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement) 和 [P3-11 阶段收束决策记录](/records/p3-11-stage-closure-decision-record-2026-06-21)，确认当前主线已从 PR 整备切到 Web 正式版开发。
-- 第一顺位：在用户明确确认 API / Auth / Gateway / 前端已启动后，补 B1 PC / mobile Gateway 页面复核，覆盖 `/me/assets`、`/me/assets/transactions`、公开商品购买意图、订单详情和库存入口。
-- 第二顺位：进入 `P3-12-C1` 与 B1 直接相关的 WebOS 残留入口清理判断，只处理默认产品路径仍误回 `/desktop` 的链接、文案和路由假设。
+- 第一顺位：继续 `P3-12-C1` 与 B1 直接相关的 WebOS 残留入口清理判断，只处理默认产品路径仍误回 `/desktop` 的链接、文案和路由假设；开发中优先使用静态测试、类型检查、构建和 `git diff --check`。
+- 第二顺位：B1 + C1 小阶段准备验收时，在用户明确确认 API / Auth / Gateway / 前端已启动后，集中补 PC / mobile Gateway 页面复核，覆盖 `/me/assets`、`/me/assets/transactions`、公开商品购买意图、订单详情和库存入口。
 - 第三顺位：B1 页面迁移齐后进入 `P3-12-D` 统一 UI 设计与美化专题；页面级 UI 设计或跨页面视觉重塑必须先使用 Pencil 做设计稿，再更新设计 / 说明文档，最后进入视觉实现。
 
 ## 并行维护项

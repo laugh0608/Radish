@@ -2,7 +2,7 @@
 
 > 日期：2026-06-21（Asia/Shanghai）
 >
-> 状态：方案已梳理，路由 / 登录回流契约、商城私域正式 Web 入口、资产正式入口、公开购买回流与公开商城 `/desktop` 回跳替换已完成；下一步补 Gateway PC / mobile 复核与 B1 直接残留清理判断，统一 UI 设计后置到页面迁移完成后的 P3-12-D
+> 状态：方案已梳理，路由 / 登录回流契约、商城私域正式 Web 入口、资产正式入口、公开购买回流与公开商城 `/desktop` 回跳替换已完成；当前先推进 B1 直接相关残留清理判断，Gateway PC / mobile 真实复核后置到小阶段验收，统一 UI 设计后置到页面迁移完成后的 P3-12-D
 >
 > 结论：B1 首批应补齐 **正式 Web 资产入口、商城购买、订单、库存 / 权益和交易回流**，并在替代路径可用后替换 `/me` 完整钱包与公开商城购买中的 `/desktop` 回跳。
 
@@ -61,6 +61,7 @@ Git 状态：
 - 购买成功后优先跳 `/shop/order/:orderId`，订单 ID 缺失时回 `/shop/orders`；公开详情 canonical 和分享链接继续归一到 `/shop/product/:productId`。
 - 公开商城与公开发现的商城入口文案已从“购买留在 WebOS / 只读详情”调整为“公开浏览 + 登录购买 + 订单 / 背包私域 Web”。
 - 纯 Web `/notifications` 的订单通知目标已从 `/desktop?app=shop&orderId=...` 切到 `/shop/order/:orderId`，缺失或非法订单 ID 时回 `/shop/orders`；WebOS 通知中心窗口内仍保留打开 WebOS `shop` app 的历史行为。
+- `P3-12-C1` 首轮残留判断已开始，记录见 [P3-12-C1 WebOS 残留入口清理记录](/records/p3-12-c1-webos-residual-cleanup-2026-06-21)：公开商品榜单 / 发现页榜单文案不再把商品详情购买能力描述为“不可购买”，而是明确“榜单只读、购买从商品详情登录后继续、订单 / 背包在私域 Web 路由”。
 
 已验证：
 
@@ -205,8 +206,15 @@ Git 状态：
 - 资产流水导出当前 `TransactionHistory` 会拉取多页数据并生成 CSV；若搬到移动 Web，需确认性能和移动端交互，不应作为 B1 首屏必要动作。
 - 支付口令升级提示已有，但支付口令设置页仍在 WebOS `radish-pit`；B1 可提示后续治理，不应临时引回 `/desktop` 作为主要完成路径。
 
+## C1 残留清理口径
+
+- 开发中先清理与 B1 直接冲突的默认产品路径残留：仍误回 `/desktop` 的链接、购买 / 订单 / 库存文案和 route helper 假设。
+- WebOS `ShopApp`、`radish-pit`、`buildDesktopShop*ReturnPath`、`desktopEntryNavigation` 和对应测试继续作为 `/desktop` 历史入口维护线保留。
+- Gateway PC / mobile 真实页面复核不作为本地连续提交的默认步骤，放到 B1 + C1 小阶段准备验收时，在用户明确确认 API / Auth / Gateway / 前端已启动后集中执行。
+- 页面级 UI 设计、跨页面视觉重塑和统一美化继续后置到 `P3-12-D`。
+
 ## 后续执行顺序
 
-1. 在用户明确确认 API / Auth / Gateway / 前端已启动后做 PC / mobile Gateway 复核，覆盖 `/me/assets`、`/me/assets/transactions`、`/shop/product/:id?intent=purchase`、`/shop/orders`、`/shop/order/:id`、`/shop/inventory` 和购买成功回流。
-2. 进入 `P3-12-C1` 与 B1 直接相关的 WebOS 残留入口清理判断，只处理默认产品路径仍误回 `/desktop` 的链接、文案和路由假设。
+1. 继续 `P3-12-C1` 与 B1 直接相关的 WebOS 残留入口清理判断，只处理默认产品路径仍误回 `/desktop` 的链接、文案和路由假设。
+2. B1 + C1 小阶段准备验收时，在用户明确确认 API / Auth / Gateway / 前端已启动后做 PC / mobile Gateway 复核，覆盖 `/me/assets`、`/me/assets/transactions`、`/shop/product/:id?intent=purchase`、`/shop/orders`、`/shop/order/:id`、`/shop/inventory` 和购买成功回流。
 3. 页面迁移齐后进入 `P3-12-D` 统一 UI 设计与美化专题。
