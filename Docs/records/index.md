@@ -88,6 +88,7 @@
 - [p3-10-next-product-governance-review-2026-06-21](/records/p3-10-next-product-governance-review-2026-06-21)
 - [p3-10-stage-closure-prep-record-2026-06-21](/records/p3-10-stage-closure-prep-record-2026-06-21)
 - [p3-11-release-candidate-acceptance-matrix-2026-06-21](/records/p3-11-release-candidate-acceptance-matrix-2026-06-21)
+- [p3-11-light-revisit-gap-audit-2026-06-21](/records/p3-11-light-revisit-gap-audit-2026-06-21)
 - [wog-1-write-operation-inventory-2026-06-20](/records/wog-1-write-operation-inventory-2026-06-20)
 - [wog-2-content-interaction-consistency-plan-2026-06-20](/records/wog-2-content-interaction-consistency-plan-2026-06-20)
 - [wog-3-inventory-benefit-reliability-plan-2026-06-20](/records/wog-3-inventory-benefit-reliability-plan-2026-06-20)
