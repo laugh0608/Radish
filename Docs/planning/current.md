@@ -136,8 +136,8 @@
 
 - `P3-10 阶段收束准备`
   - [P3-10 后续产品 / 治理增量评审记录](/records/p3-10-next-product-governance-review-2026-06-21) 已完成当前后续候选判断：Flutter 子评论编辑和回答编辑不作为下一批默认代码，后续分别按评论线程编辑能力或问答编辑能力单独评审。
-  - [P3-10 阶段收束准备记录](/records/p3-10-stage-closure-prep-record-2026-06-21) 已明确恢复 `dev -> master` 前必须刷新 `master..dev` 完整提交范围；`P3-10-D` PR 准备记录只作为 Web 信息流 / UI 结构整理子批次依据，不替代后续安全、WOG、论坛可靠性和文档收束提交的批次结论。
-  - 若恢复 `dev -> master` 或进入发布候选整备，再集中执行 `validate:ci -- --report`、baseline、identity、host runtime 和 Gateway PC / 移动真实页面复核；真实 smoke 前必须先确认前后端已经启动。
+  - [P3-10 阶段收束准备记录](/records/p3-10-stage-closure-prep-record-2026-06-21) 已刷新提交本记录前的 `master..dev` 既有范围：共 `47` 个既有提交，覆盖 `P3-10-D` 后续安全、WOG、论坛可靠性、Flutter 承接和文档收束内容；后续新增收束记录提交只更新留痕，不改变前述功能范围判断。
+  - 批次级静态验证已完成：`validate:ci -- --report`、`validate:baseline`、`validate:identity`、`flutter analyze` 和 `flutter test` 均通过；host runtime 与 Gateway PC / 移动真实页面复核只在确认前后端已启动后执行。
 - `P3-10 后续治理专题：论坛内容发布可靠性与编辑历史治理`
   - 新增 [论坛内容发布可靠性与编辑历史治理](/guide/forum-content-write-reliability-governance)，承接 WOG 首轮收束后的下一批产品 / 治理增量选择。
   - 已按确认方案推进 `PublishPostDto`、`CreateCommentDto`、`CreateAnswerDto`、`UpdatePostDto` 和 `UpdateCommentDto`：Web 端生成并复用 `clientSubmissionId`，Flutter 当前已有纯文本发帖、根评论 / 回复、问答回答、作者帖子正文编辑和作者根评论编辑生成并复用同一字段，服务端用 `ContentSubmissionRecord`、请求摘要、短窗口内容指纹和近期成功写入窗口防重复提交与创建类刷屏。
@@ -194,7 +194,7 @@
 ## 明日事项
 
 - 先读取本页、[P3-10 后续产品 / 治理增量评审记录](/records/p3-10-next-product-governance-review-2026-06-21) 和 [P3-10 阶段收束准备记录](/records/p3-10-stage-closure-prep-record-2026-06-21)，确认当前阶段不继续追加默认功能入口。
-- 第一顺位：若恢复 `dev -> master`，先刷新 `master..dev` 完整提交范围，再按阶段收束准备记录集中补自动化验证、运行态检查和真实页面复核；本轮仍不默认创建 PR。
+- 第一顺位：若恢复 `dev -> master` 或发布候选整备，先要求确认前后端已启动，再按阶段收束准备记录补运行态检查和 Gateway PC / 移动真实页面复核；本轮仍不默认创建 PR。
 - 第二顺位：跳过本轮 PR 创建步骤，保留 [P3-10-D PR 准备记录](/records/p3-10-d-web-feed-pr-prep-record-2026-06-19) 作为后续恢复合并动作的依据。
 - 第三顺位：若真实 smoke、自动化验证或明确缺口重新命中 P3-10-D 阻断 / 清晰一致性问题，再定向回修；不再默认追加第五批链接语义扫尾。
 

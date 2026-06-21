@@ -91,7 +91,7 @@
   - 前端敏感日志脱敏、支付口令哈希升级、支付 / 转账幂等首批代码和 `WOG-1` 至 `WOG-6` 首轮写操作治理均已完成；幂等边界与实现状态见 [支付与转账幂等治理](/guide/payment-idempotency-governance) 和 [写操作可靠性与并发保护治理](/guide/write-operation-reliability-governance)。
   - [论坛内容发布可靠性与编辑历史治理](/guide/forum-content-write-reliability-governance) 已完成 Web 发帖、评论、回答、帖子编辑、评论编辑的 `clientSubmissionId` / `ContentSubmissionRecord` 接入，创建类频率限制，以及 Flutter 原生纯文本发帖、根评论 / 回复、问答回答、作者帖子正文编辑和作者根评论编辑写入口承接。
   - [P3-10 后续产品 / 治理增量评审记录](/records/p3-10-next-product-governance-review-2026-06-21) 已确认 Flutter 子评论编辑和回答编辑不进入下一批默认代码；下一步优先做阶段收束准备和入口文档同步。
-  - [P3-10 阶段收束准备记录](/records/p3-10-stage-closure-prep-record-2026-06-21) 已明确恢复 `dev -> master` 前必须刷新完整提交范围，并把 P3-10-D 之后的安全、WOG、论坛可靠性和文档收束提交纳入同一批次判断。
+  - [P3-10 阶段收束准备记录](/records/p3-10-stage-closure-prep-record-2026-06-21) 已刷新提交本记录前的 `master..dev` 既有范围，`47` 个既有提交需作为同一批次进入后续验证判断；后续新增收束记录提交只更新留痕，不改变前述功能范围判断。
   - 当前不直接启动 Flutter 转账、完整移动商城、服务端强制资产写入口 key、独立频率限制平台、完整反垃圾系统、完整审核平台、浏览器通用签名、字段级加密、安全会话、完整钱包、经济扩展、资产风控或 Redis 分布式锁平台。
 - `P3-10-D Web 信息流 / UI 结构整理`
   - 当前已完成阶段收束与 PR 准备判断；用户明确本轮暂不创建 PR。
