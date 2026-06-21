@@ -4,6 +4,8 @@ import { PET_ENTRY_PATH } from '../pet/petRouteState.ts';
 const AUTH_RETURN_PATH_STORAGE_KEY = 'radish:auth:return-path';
 const AUTH_RETURN_PATH_BASE_URL = 'https://radish.local';
 const ME_RETURN_PATH = '/me';
+const ME_ASSETS_RETURN_PATH = '/me/assets';
+const ME_ASSET_TRANSACTIONS_RETURN_PATH = '/me/assets/transactions';
 const NOTIFICATIONS_RETURN_PATH = '/notifications';
 const CIRCLE_RETURN_TABS = new Set(['feed', 'following', 'followers']);
 const PUBLIC_FORUM_POST_PUBLIC_ID_PATTERN = /^pst_[a-f0-9]{32}$/;
@@ -58,12 +60,20 @@ export function normalizeAuthReturnPath(value: string | null | undefined): strin
       return normalizeMeReturnPath(url);
     }
 
+    if (pathname === ME_ASSETS_RETURN_PATH || pathname === ME_ASSET_TRANSACTIONS_RETURN_PATH) {
+      return normalizeMeAssetsReturnPath(url, pathname);
+    }
+
     if (pathname === PET_ENTRY_PATH) {
       return normalizePetReturnPath(url);
     }
 
     if (pathname.startsWith('/forum/post/')) {
       return normalizePublicForumPostReturnPath(url, pathname);
+    }
+
+    if (pathname.startsWith('/shop/')) {
+      return normalizeShopReturnPath(url, pathname);
     }
 
     if (pathname !== '/desktop') {
@@ -239,12 +249,56 @@ function normalizeMeReturnPath(url: URL): string | null {
   return ME_RETURN_PATH;
 }
 
+function normalizeMeAssetsReturnPath(url: URL, pathname: string): string | null {
+  if (url.search || url.hash) {
+    return null;
+  }
+
+  return pathname;
+}
+
 function normalizePetReturnPath(url: URL): string | null {
   if (url.search || url.hash) {
     return null;
   }
 
   return PET_ENTRY_PATH;
+}
+
+function normalizeShopReturnPath(url: URL, normalizedPathname: string): string | null {
+  if (url.hash) {
+    return null;
+  }
+
+  const productMatched = normalizedPathname.match(/^\/shop\/product\/([1-9]\d*)$/);
+  if (productMatched) {
+    for (const key of url.searchParams.keys()) {
+      if (key !== 'intent') {
+        return null;
+      }
+    }
+
+    if (url.searchParams.getAll('intent').length !== 1 || url.searchParams.get('intent') !== 'purchase') {
+      return null;
+    }
+
+    return `/shop/product/${productMatched[1]}?intent=purchase`;
+  }
+
+  if (normalizedPathname === '/shop/orders') {
+    return url.search ? null : '/shop/orders';
+  }
+
+  if (normalizedPathname === '/shop/inventory') {
+    return url.search ? null : '/shop/inventory';
+  }
+
+  const orderMatched = normalizedPathname.match(/^\/shop\/order\/([1-9]\d*)$/);
+  if (orderMatched) {
+    return url.search ? null : `/shop/order/${orderMatched[1]}`;
+  }
+
+  return null;
 }
 
 export function rememberAuthReturnPath(returnPath: string | null | undefined, storage = getSessionStorage()): boolean {
@@ -325,8 +379,42 @@ export function buildMeReturnPath(): string {
   return ME_RETURN_PATH;
 }
 
+export function buildMeAssetsReturnPath(): string {
+  return ME_ASSETS_RETURN_PATH;
+}
+
+export function buildMeAssetTransactionsReturnPath(): string {
+  return ME_ASSET_TRANSACTIONS_RETURN_PATH;
+}
+
 export function buildPetReturnPath(): string {
   return PET_ENTRY_PATH;
+}
+
+export function buildShopProductPurchaseReturnPath(productId: string | number): string | null {
+  const normalizedProductId = String(productId).trim();
+  if (!POSITIVE_LONG_ID_PATTERN.test(normalizedProductId)) {
+    return null;
+  }
+
+  return `/shop/product/${normalizedProductId}?intent=purchase`;
+}
+
+export function buildShopOrdersReturnPath(): string {
+  return '/shop/orders';
+}
+
+export function buildShopOrderReturnPath(orderId: string | number): string | null {
+  const normalizedOrderId = String(orderId).trim();
+  if (!POSITIVE_LONG_ID_PATTERN.test(normalizedOrderId)) {
+    return null;
+  }
+
+  return `/shop/order/${normalizedOrderId}`;
+}
+
+export function buildShopInventoryReturnPath(): string {
+  return '/shop/inventory';
 }
 
 export function buildDesktopShopProductReturnPath(

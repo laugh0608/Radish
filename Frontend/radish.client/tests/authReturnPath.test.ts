@@ -8,11 +8,17 @@ import {
   buildDesktopShopOrderReturnPath,
   buildDesktopShopPrivateViewReturnPath,
   buildDesktopShopProductReturnPath,
+  buildMeAssetTransactionsReturnPath,
+  buildMeAssetsReturnPath,
   buildMeReturnPath,
   buildMessagesReturnPath,
   buildNotificationsReturnPath,
   buildPetReturnPath,
   buildPublicForumPostReturnPath,
+  buildShopInventoryReturnPath,
+  buildShopOrderReturnPath,
+  buildShopOrdersReturnPath,
+  buildShopProductPurchaseReturnPath,
   consumeAuthReturnPath,
   normalizeAuthReturnPath,
   rememberAuthReturnPath,
@@ -46,7 +52,7 @@ class MemoryStorage implements Storage {
   }
 }
 
-test('normalizeAuthReturnPath 只接受 desktop 深链、circle/me/messages/notifications/pet 私域入口和公开论坛详情参与意图', () => {
+test('normalizeAuthReturnPath 只接受受控私域入口、正式 Web 交易回流、desktop 深链和公开论坛详情参与意图', () => {
   assert.equal(normalizeAuthReturnPath('/desktop?app=shop&productId=2042219067430928384'), '/desktop?app=shop&productId=2042219067430928384');
   assert.equal(normalizeAuthReturnPath('/desktop?app=forum&postId=2042219067430928384'), '/desktop?app=forum&postId=2042219067430928384');
   assert.equal(normalizeAuthReturnPath('/desktop/?app=shop&view=orders'), '/desktop/?app=shop&view=orders');
@@ -62,8 +68,17 @@ test('normalizeAuthReturnPath 只接受 desktop 深链、circle/me/messages/noti
   );
   assert.equal(normalizeAuthReturnPath('/me'), '/me');
   assert.equal(normalizeAuthReturnPath('/me/'), '/me');
+  assert.equal(normalizeAuthReturnPath('/me/assets'), '/me/assets');
+  assert.equal(normalizeAuthReturnPath('/me/assets/transactions'), '/me/assets/transactions');
   assert.equal(normalizeAuthReturnPath('/pet'), '/pet');
   assert.equal(normalizeAuthReturnPath('/pet/'), '/pet');
+  assert.equal(
+    normalizeAuthReturnPath('/shop/product/2042219067430928384?intent=purchase'),
+    '/shop/product/2042219067430928384?intent=purchase',
+  );
+  assert.equal(normalizeAuthReturnPath('/shop/orders'), '/shop/orders');
+  assert.equal(normalizeAuthReturnPath('/shop/order/2042219067430928385'), '/shop/order/2042219067430928385');
+  assert.equal(normalizeAuthReturnPath('/shop/inventory'), '/shop/inventory');
   assert.equal(
     normalizeAuthReturnPath('/forum/post/PST_018F6B6F7C7D70008F8F8F8F8F8F8F8F?intent=comment'),
     '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=comment',
@@ -85,8 +100,20 @@ test('normalizeAuthReturnPath 只接受 desktop 深链、circle/me/messages/noti
   assert.equal(normalizeAuthReturnPath('/messages?channelId=2042219067430928390&from=notification'), null);
   assert.equal(normalizeAuthReturnPath('/me?tab=assets'), null);
   assert.equal(normalizeAuthReturnPath('/me#growth'), null);
+  assert.equal(normalizeAuthReturnPath('/me/assets?tab=history'), null);
+  assert.equal(normalizeAuthReturnPath('/me/assets/transactions#latest'), null);
   assert.equal(normalizeAuthReturnPath('/pet?from=me'), null);
   assert.equal(normalizeAuthReturnPath('/pet#care'), null);
+  assert.equal(normalizeAuthReturnPath('/shop/product/2042219067430928384'), null);
+  assert.equal(normalizeAuthReturnPath('/shop/product/2042219067430928384?intent=read'), null);
+  assert.equal(normalizeAuthReturnPath('/shop/product/2042219067430928384?intent=purchase&from=discover'), null);
+  assert.equal(normalizeAuthReturnPath('/shop/product/2042219067430928384?intent=purchase&intent=purchase'), null);
+  assert.equal(normalizeAuthReturnPath('/shop/product/2042219067430928384?intent=purchase#confirm'), null);
+  assert.equal(normalizeAuthReturnPath('/shop/order/0'), null);
+  assert.equal(normalizeAuthReturnPath('/shop/order/02042219067430928385'), null);
+  assert.equal(normalizeAuthReturnPath('/shop/order/2042219067430928385?from=notice'), null);
+  assert.equal(normalizeAuthReturnPath('/shop/orders?page=2'), null);
+  assert.equal(normalizeAuthReturnPath('/shop/inventory?tab=benefits'), null);
   assert.equal(normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f'), null);
   assert.equal(normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=edit'), null);
   assert.equal(normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=comment&from=discover'), null);
@@ -119,8 +146,31 @@ test('buildMeReturnPath 应构造我的状态登录回流路径', () => {
   assert.equal(buildMeReturnPath(), '/me');
 });
 
+test('资产正式 Web 返回路径应只构造受控资产入口', () => {
+  assert.equal(buildMeAssetsReturnPath(), '/me/assets');
+  assert.equal(buildMeAssetTransactionsReturnPath(), '/me/assets/transactions');
+});
+
 test('buildPetReturnPath 应构造电子宠物登录回流路径', () => {
   assert.equal(buildPetReturnPath(), '/pet');
+});
+
+test('商城正式 Web 返回路径应保留购买、订单和库存上下文', () => {
+  assert.equal(
+    buildShopProductPurchaseReturnPath('2042219067430928384'),
+    '/shop/product/2042219067430928384?intent=purchase',
+  );
+  assert.equal(buildShopProductPurchaseReturnPath(12), '/shop/product/12?intent=purchase');
+  assert.equal(buildShopProductPurchaseReturnPath(0), null);
+  assert.equal(buildShopProductPurchaseReturnPath('02042219067430928384'), null);
+  assert.equal(buildShopProductPurchaseReturnPath('abc'), null);
+  assert.equal(buildShopOrdersReturnPath(), '/shop/orders');
+  assert.equal(buildShopOrderReturnPath('2042219067430928385'), '/shop/order/2042219067430928385');
+  assert.equal(buildShopOrderReturnPath(15), '/shop/order/15');
+  assert.equal(buildShopOrderReturnPath('0'), null);
+  assert.equal(buildShopOrderReturnPath('02042219067430928385'), null);
+  assert.equal(buildShopOrderReturnPath('abc'), null);
+  assert.equal(buildShopInventoryReturnPath(), '/shop/inventory');
 });
 
 test('buildCircleReturnPath 应构造圈子登录回流路径并收敛默认参数', () => {

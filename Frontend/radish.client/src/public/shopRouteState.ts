@@ -12,6 +12,7 @@ export interface PublicShopProductsRoute {
 export interface PublicShopDetailRoute {
   kind: 'detail';
   productId: string;
+  intent?: 'purchase';
 }
 
 export type PublicShopRoute =
@@ -76,6 +77,25 @@ function normalizeKeyword(value: string | null): string | undefined {
   return normalized || undefined;
 }
 
+function normalizePurchaseIntent(search: string): 'purchase' | undefined {
+  const params = new URLSearchParams(search);
+  if (params.getAll('intent').length !== 1) {
+    return undefined;
+  }
+
+  return params.get('intent') === 'purchase' ? 'purchase' : undefined;
+}
+
+export function isPublicShopPathname(pathname: string): boolean {
+  return (
+    pathname === '/shop'
+    || pathname === '/shop/'
+    || pathname === '/shop/products'
+    || pathname === '/shop/products/'
+    || /^\/shop\/product\/[1-9]\d*\/?$/.test(pathname)
+  );
+}
+
 export function parsePublicShopRoute(pathname: string, search: string): PublicShopRoute {
   if (pathname === '/shop' || pathname === '/shop/') {
     return createDefaultPublicShopRoute();
@@ -94,7 +114,12 @@ export function parsePublicShopRoute(pathname: string, search: string): PublicSh
   const detailMatched = pathname.match(/^\/shop\/product\/([1-9]\d*)\/?$/);
   const productId = normalizePositiveIntegerString(detailMatched?.[1]);
   if (productId) {
-    return {
+    const intent = normalizePurchaseIntent(search);
+    return intent ? {
+      kind: 'detail',
+      productId,
+      intent
+    } : {
       kind: 'detail',
       productId
     };
@@ -109,7 +134,8 @@ export function buildPublicShopPath(route: PublicShopRoute): string {
   }
 
   if (route.kind === 'detail') {
-    return `/shop/product/${route.productId}`;
+    const path = `/shop/product/${route.productId}`;
+    return route.intent === 'purchase' ? `${path}?intent=purchase` : path;
   }
 
   const search = new URLSearchParams();

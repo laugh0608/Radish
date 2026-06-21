@@ -226,7 +226,9 @@ function buildLeaderboardHead(route: PublicContentRouteDescriptor & { app: 'lead
 }
 
 function buildShopHead(route: PublicContentRouteDescriptor & { app: 'shop' }): PublicHeadDescriptor {
-  const canonicalPath = buildPublicShopPath(route.route);
+  const canonicalPath = route.route.kind === 'detail'
+    ? buildPublicShopPath({ kind: 'detail', productId: route.route.productId })
+    : buildPublicShopPath(route.route);
   if (route.route.kind === 'detail') {
     return {
       title: `商城商品 - Radish 商城`,

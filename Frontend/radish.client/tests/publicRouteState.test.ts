@@ -12,6 +12,7 @@ import {
 } from '../src/public/profileRouteState.ts';
 import {
   buildPublicShopPath,
+  isPublicShopPathname,
   parsePublicShopRoute,
 } from '../src/public/shopRouteState.ts';
 import {
@@ -159,6 +160,22 @@ test('parsePublicShopRoute 应保留商品详情的大整数字符串 ID', () =>
   });
 });
 
+test('parsePublicShopRoute 应保留正式 Web 购买意图并拒绝其他意图', () => {
+  assert.deepEqual(parsePublicShopRoute('/shop/product/2042219067430928384', '?intent=purchase'), {
+    kind: 'detail',
+    productId: '2042219067430928384',
+    intent: 'purchase',
+  });
+  assert.deepEqual(parsePublicShopRoute('/shop/product/2042219067430928384', '?intent=read'), {
+    kind: 'detail',
+    productId: '2042219067430928384',
+  });
+  assert.deepEqual(parsePublicShopRoute('/shop/product/2042219067430928384', '?intent=purchase&intent=purchase'), {
+    kind: 'detail',
+    productId: '2042219067430928384',
+  });
+});
+
 test('parsePublicShopRoute 应拒绝非法商品详情 ID 并回落到商城首页', () => {
   assert.deepEqual(parsePublicShopRoute('/shop/product/0', ''), { kind: 'home' });
   assert.deepEqual(parsePublicShopRoute('/shop/product/abc', ''), { kind: 'home' });
@@ -178,6 +195,24 @@ test('buildPublicShopPath 应回写公开商城列表和详情路径', () => {
 
   assert.equal(productsPath, '/shop/products?category=digital&q=vip&page=5');
   assert.equal(detailPath, '/shop/product/2042219067430928384');
+  assert.equal(
+    buildPublicShopPath({
+      kind: 'detail',
+      productId: '2042219067430928384',
+      intent: 'purchase',
+    }),
+    '/shop/product/2042219067430928384?intent=purchase'
+  );
+});
+
+test('isPublicShopPathname 应只识别公开商城浏览路径', () => {
+  assert.equal(isPublicShopPathname('/shop'), true);
+  assert.equal(isPublicShopPathname('/shop/'), true);
+  assert.equal(isPublicShopPathname('/shop/products'), true);
+  assert.equal(isPublicShopPathname('/shop/product/2042219067430928384'), true);
+  assert.equal(isPublicShopPathname('/shop/orders'), false);
+  assert.equal(isPublicShopPathname('/shop/order/2042219067430928385'), false);
+  assert.equal(isPublicShopPathname('/shop/inventory'), false);
 });
 
 test('parsePublicLeaderboardRoute 应解析类型与分页状态', () => {

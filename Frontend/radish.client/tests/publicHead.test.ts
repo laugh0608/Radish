@@ -207,7 +207,7 @@ test('buildPublicRouteHead 应为 docs 详情生成去重前的路由 canonical 
 test('buildPublicRouteHead 应覆盖商城商品和用户公开页类型', () => {
   const shopHead = buildPublicRouteHead({
     app: 'shop',
-    route: { kind: 'detail', productId: '2042219067430928384' },
+    route: { kind: 'detail', productId: '2042219067430928384', intent: 'purchase' },
   });
   const profileHead = buildPublicRouteHead({
     app: 'profile',

@@ -15,13 +15,13 @@ import type { PublicRouteDescriptor } from '../src/public/publicRouteNavigation.
 import {
   buildCircleReturnPath,
   buildDesktopForumPostReturnPath,
-  buildDesktopShopOrderReturnPath,
-  buildDesktopShopPrivateViewReturnPath,
-  buildDesktopShopProductReturnPath,
   buildMeReturnPath,
   buildMessagesReturnPath,
   buildNotificationsReturnPath,
   buildPublicForumPostReturnPath,
+  buildShopInventoryReturnPath,
+  buildShopOrderReturnPath,
+  buildShopProductPurchaseReturnPath,
   normalizeAuthReturnPath,
 } from '../src/services/authReturnPath.ts';
 import { parseDesktopExternalEntry } from '../src/utils/desktopEntryNavigation.ts';
@@ -121,49 +121,22 @@ test('P3-9 公开详情 head 与分享链接应保持发布候选预览契约', 
   }
 });
 
-test('P3-9 公开商品购买入口应保持同一商品上下文并可被登录回流保存', () => {
-  const returnPath = buildDesktopShopProductReturnPath(productId, { intent: 'purchase' });
-  assert.equal(returnPath, `/desktop?app=shop&productId=${productId}&intent=purchase`);
+test('P3-12 公开商品购买入口应进入正式 Web 购买回流路径', () => {
+  const returnPath = buildShopProductPurchaseReturnPath(productId);
+  assert.equal(returnPath, `/shop/product/${productId}?intent=purchase`);
   assert.equal(normalizeAuthReturnPath(returnPath), returnPath);
-
-  const { pathname, search } = splitDesktopPath(returnPath);
-  assert.deepEqual(parseDesktopExternalEntry(pathname, search), {
-    appId: 'shop',
-    appParams: {
-      productId,
-      intent: 'purchase',
-    },
-    requiresAuthenticatedSession: false,
-    signature: `shop:product:${productId}:purchase`,
-  });
+  assert.equal(isPublicContentPathname(`/shop/product/${productId}`), true);
 });
 
-test('P3-9 订单与背包私有入口应要求登录并保留字符串 ID 契约', () => {
-  const orderReturnPath = buildDesktopShopOrderReturnPath(orderId);
-  assert.equal(orderReturnPath, `/desktop?app=shop&orderId=${orderId}`);
+test('P3-12 订单与背包私有入口应走正式 Web 路径并退出公开内容壳层', () => {
+  const orderReturnPath = buildShopOrderReturnPath(orderId);
+  assert.equal(orderReturnPath, `/shop/order/${orderId}`);
   assert.equal(normalizeAuthReturnPath(orderReturnPath), orderReturnPath);
+  assert.equal(isPublicContentPathname(`/shop/order/${orderId}`), false);
 
-  const orderTarget = splitDesktopPath(orderReturnPath);
-  assert.deepEqual(parseDesktopExternalEntry(orderTarget.pathname, orderTarget.search), {
-    appId: 'shop',
-    appParams: {
-      orderId,
-    },
-    requiresAuthenticatedSession: true,
-    signature: `shop:order:${orderId}`,
-  });
-
-  const inventoryReturnPath = buildDesktopShopPrivateViewReturnPath('inventory');
+  const inventoryReturnPath = buildShopInventoryReturnPath();
   assert.equal(normalizeAuthReturnPath(inventoryReturnPath), inventoryReturnPath);
-  const inventoryTarget = splitDesktopPath(inventoryReturnPath);
-  assert.deepEqual(parseDesktopExternalEntry(inventoryTarget.pathname, inventoryTarget.search), {
-    appId: 'shop',
-    appParams: {
-      initialView: 'inventory',
-    },
-    requiresAuthenticatedSession: true,
-    signature: 'shop:inventory',
-  });
+  assert.equal(isPublicContentPathname(inventoryReturnPath), false);
 });
 
 test('P3-9 公开论坛参与入口应优先使用 PublicId 并保留评论意图', () => {

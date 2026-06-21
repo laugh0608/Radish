@@ -2,7 +2,7 @@
 
 > 日期：2026-06-21（Asia/Shanghai）
 >
-> 状态：方案已梳理，等待进入设计 / 实现
+> 状态：方案已梳理，路由 / 登录回流契约首批代码已完成，继续按既有组件和主题推进正式 Web 功能迁移；统一 UI 设计后置到页面迁移完成后的 P3-12-D
 >
 > 结论：B1 首批应补齐 **正式 Web 资产入口、商城购买、订单、库存 / 权益和交易回流**，并在替代路径可用后替换 `/me` 完整钱包与公开商城购买中的 `/desktop` 回跳。
 
@@ -33,7 +33,30 @@ Git 状态：
 
 - 未启动 Gateway / API / Auth / Vite。
 - 未做 PC / mobile 真实页面复核。
-- 未使用 Pencil；本轮只做功能和路由方案梳理，未进入页面级视觉设计。
+- 未进入统一 UI 设计；本轮按功能迁移节奏推进路由 / 登录回流契约，后续页面接入继续复用既有组件和主题，不做跨页面视觉重塑。
+
+## 首批实现进展
+
+已完成：
+
+- `PublicShopRoute` 支持 `/shop/product/:productId?intent=purchase`，用于保留公开商品购买意图。
+- 公开商城 head canonical 继续归一到 `/shop/product/:productId`，不把购买意图写入公开 canonical。
+- `entryRoute.isPublicContentPathname` 已收窄 `/shop/*` 判断，`/shop/orders`、`/shop/order/:orderId`、`/shop/inventory` 不再进入公开内容壳层。
+- `authReturnPath` 新增正式 Web 资产和商城交易返回路径：
+  - `/me/assets`
+  - `/me/assets/transactions`
+  - `/shop/product/:productId?intent=purchase`
+  - `/shop/orders`
+  - `/shop/order/:orderId`
+  - `/shop/inventory`
+- 保留 `buildDesktopShop*ReturnPath` 作为 `/desktop` 历史入口维护线，未删除 WebOS 深链能力。
+
+已验证：
+
+- `node --test --test-isolation=none ./tests/authReturnPath.test.ts ./tests/publicRouteState.test.ts ./tests/entryRoute.test.ts ./tests/realUsagePathContracts.test.ts ./tests/publicHead.test.ts`
+- `npm run type-check --workspace=radish.client`
+- `npm run build --workspace=radish.client`
+- `git diff --check`
 
 ## 现状判断
 
@@ -132,9 +155,10 @@ Git 状态：
 
 ## UI / Pencil 口径
 
-- 本方案只确认功能、路由和复用边界，不进入页面级视觉设计。
-- 若下一步新增 `/me/assets`、`/shop/orders`、`/shop/inventory` 的正式页面布局或跨页面交易壳层，应先进入 `P3-12-D1` 使用 Pencil 做 PC / mobile 设计稿，再更新设计 / 说明文档，最后实现。
-- 若下一步仅做低风险链接替换、登录回流 helper 或现有组件等价路由接入，不属于页面级视觉重塑，但仍需避免引入 WebOS Dock / 窗口壳层。
+- B1 当前按“功能迁移优先、统一视觉后置”推进：先补正式 Web 资产、购买、订单、库存 / 权益和交易回流路径，页面接入阶段复用既有组件、主题 token 和成熟交互。
+- 迁移期间只允许必要布局适配和路由级承接，不引入新的跨页面视觉体系，不照搬 WebOS Dock、窗口壳层、窗口几何记忆或桌面化导航。
+- 页面迁移齐后再进入 `P3-12-D` 统一 UI 设计与美化专题；届时使用 Pencil 做 PC / mobile 设计稿，更新设计 / 说明文档，再进入视觉实现。
+- 若 B1 过程中确实出现跨页面交易壳层或端点级视觉重塑需求，应先把该部分切到 `P3-12-D`，不阻塞 B1 功能迁移主线。
 
 ## 验证口径
 
@@ -167,9 +191,10 @@ Git 状态：
 
 ## 后续执行顺序
 
-1. 先确认是否需要对 `/me/assets` 和私域商城交易壳做 Pencil 设计稿。
-2. 实现路由状态和登录回流 helper，补契约测试。
-3. 复用现有商城 / 资产组件接入正式 Web 私域入口。
+1. 接入 `/me/assets`、`/me/assets/transactions` 页面入口，复用资产余额与流水能力。
+2. 接入 `/shop/orders`、`/shop/order/:orderId`、`/shop/inventory` 私域交易页面，复用现有商城组件和 hook。
+3. 接入公开商品购买动作和登录回流，购买成功后回到 `/shop/order/:orderId`。
 4. 替换 `/me` 完整钱包和公开商城购买中的 `/desktop` 回跳。
 5. 补定向测试、构建和必要后端交易测试。
 6. 阶段完成后，在用户确认服务已启动后做 PC / mobile Gateway 复核。
+7. 页面迁移齐后进入 `P3-12-D` 统一 UI 设计与美化专题。

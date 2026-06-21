@@ -59,6 +59,9 @@ test('isPublicContentPathname 应识别公开内容路由', () => {
   assert.equal(isPublicContentPathname('/u/usr_018f6b6f7c7d70008f8f8f8f8f8f8f8f'), true);
   assert.equal(isPublicContentPathname('/leaderboard/post-count'), true);
   assert.equal(isPublicContentPathname('/shop/product/2042219067430928384'), true);
+  assert.equal(isPublicContentPathname('/shop/orders'), false);
+  assert.equal(isPublicContentPathname('/shop/order/2042219067430928385'), false);
+  assert.equal(isPublicContentPathname('/shop/inventory'), false);
   assert.equal(isPublicContentPathname('/circle'), false);
   assert.equal(isPublicContentPathname('/me'), false);
   assert.equal(isPublicContentPathname('/messages'), false);

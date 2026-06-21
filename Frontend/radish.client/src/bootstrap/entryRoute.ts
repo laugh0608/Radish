@@ -5,6 +5,7 @@ import { isMessagesPathname } from '../messages/messagesRouteState.ts';
 import { isNotificationsPathname } from '../notifications/notificationRouteState.ts';
 import { isPetPathname } from '../pet/petRouteState.ts';
 import { isPublicDiscoverPathname } from '../public/discoverRouteState.ts';
+import { isPublicShopPathname } from '../public/shopRouteState.ts';
 
 export const BROWSER_PUBLIC_ENTRY_PATH = '/discover';
 export const CAPACITOR_PUBLIC_ENTRY_PATH = '/docs';
@@ -37,8 +38,7 @@ export function isPublicContentPathname(pathname: string): boolean {
     isPublicDiscoverPathname(pathname)
     || pathname === '/forum'
     || pathname.startsWith('/forum/')
-    || pathname === '/shop'
-    || pathname.startsWith('/shop/')
+    || isPublicShopPathname(pathname)
     || pathname === '/leaderboard'
     || pathname.startsWith('/leaderboard/')
     || pathname === '/docs'
