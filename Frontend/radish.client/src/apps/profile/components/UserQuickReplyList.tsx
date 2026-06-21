@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { getMyQuickReplies, type UserPostQuickReply } from '@/api/forum';
@@ -10,6 +10,13 @@ import styles from './UserQuickReplyList.module.css';
 interface UserQuickReplyListProps {
   displayTimeZone: string;
   onItemClick?: (postId: LongId, postPublicId?: string | null) => void;
+  getItemHref?: (postId: LongId, postPublicId?: string | null) => string | null;
+  onItemLinkClick?: (
+    event: MouseEvent<HTMLAnchorElement>,
+    href: string,
+    postId: LongId,
+    postPublicId?: string | null
+  ) => void;
   page?: number;
   onPageChange?: (page: number) => void;
 }
@@ -17,6 +24,8 @@ interface UserQuickReplyListProps {
 export const UserQuickReplyList = ({
   displayTimeZone,
   onItemClick,
+  getItemHref,
+  onItemLinkClick,
   page: controlledPage,
   onPageChange
 }: UserQuickReplyListProps) => {
@@ -66,26 +75,44 @@ export const UserQuickReplyList = ({
   return (
     <div className={styles.container}>
       <div className={styles.list}>
-        {items.map((item) => (
-          <article
-            key={item.voId}
-            className={styles.replyItem}
-            onClick={() => onItemClick?.(item.voPostId, item.voPostPublicId)}
-            style={{ cursor: onItemClick ? 'pointer' : 'default' }}
-          >
-            <h3 className={styles.postTitle}>{item.voPostTitle}</h3>
-            <p className={styles.content}>{item.voContent}</p>
-            <div className={styles.meta}>
-              <span className={styles.metaItem}>
-                <Icon icon="mdi:comment-quote-outline" size={16} />
-                {t('profile.quickReplies.fromPost')}
-              </span>
-              <span className={styles.time}>
-                {formatDateTimeByTimeZone(item.voCreateTime, displayTimeZone)}
-              </span>
-            </div>
-          </article>
-        ))}
+        {items.map((item) => {
+          const href = getItemHref?.(item.voPostId, item.voPostPublicId) ?? null;
+          const body = (
+            <>
+              <h3 className={styles.postTitle}>{item.voPostTitle}</h3>
+              <p className={styles.content}>{item.voContent}</p>
+              <div className={styles.meta}>
+                <span className={styles.metaItem}>
+                  <Icon icon="mdi:comment-quote-outline" size={16} />
+                  {t('profile.quickReplies.fromPost')}
+                </span>
+                <span className={styles.time}>
+                  {formatDateTimeByTimeZone(item.voCreateTime, displayTimeZone)}
+                </span>
+              </div>
+            </>
+          );
+
+          return href ? (
+            <a
+              key={item.voId}
+              className={styles.replyItem}
+              href={href}
+              onClick={(event) => onItemLinkClick?.(event, href, item.voPostId, item.voPostPublicId)}
+            >
+              {body}
+            </a>
+          ) : (
+            <article
+              key={item.voId}
+              className={styles.replyItem}
+              onClick={() => onItemClick?.(item.voPostId, item.voPostPublicId)}
+              style={{ cursor: onItemClick ? 'pointer' : 'default' }}
+            >
+              {body}
+            </article>
+          );
+        })}
       </div>
 
       {totalPages > 1 && (

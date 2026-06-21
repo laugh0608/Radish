@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { getApiBaseUrl } from '@/config/env';
@@ -12,6 +12,12 @@ import styles from './UserBrowseHistoryList.module.css';
 interface UserBrowseHistoryListProps {
   displayTimeZone: string;
   onItemClick?: (item: UserBrowseHistoryItem) => void;
+  getItemHref?: (item: UserBrowseHistoryItem) => string | null;
+  onItemLinkClick?: (
+    event: MouseEvent<HTMLAnchorElement>,
+    href: string,
+    item: UserBrowseHistoryItem
+  ) => void;
   page?: number;
   onPageChange?: (page: number) => void;
 }
@@ -38,6 +44,8 @@ const getTypeIcon = (targetType: string): string => {
 export const UserBrowseHistoryList = ({
   displayTimeZone,
   onItemClick,
+  getItemHref,
+  onItemLinkClick,
   page: controlledPage,
   onPageChange
 }: UserBrowseHistoryListProps) => {
@@ -89,12 +97,9 @@ export const UserBrowseHistoryList = ({
       <div className={styles.list}>
         {items.map((item) => {
           const coverUrl = buildCoverUrl(item.voCoverImage);
-          return (
-            <article
-              key={String(item.voId)}
-              className={styles.card}
-              onClick={() => onItemClick?.(item)}
-            >
+          const href = getItemHref?.(item) ?? null;
+          const body = (
+            <>
               <div className={styles.cover}>
                 {coverUrl ? (
                   <img src={coverUrl} alt={item.voTitle} className={styles.coverImage} loading="lazy" />
@@ -128,6 +133,26 @@ export const UserBrowseHistoryList = ({
                   </span>
                 </div>
               </div>
+            </>
+          );
+
+          return href ? (
+            <a
+              key={String(item.voId)}
+              className={styles.card}
+              href={href}
+              onClick={(event) => onItemLinkClick?.(event, href, item)}
+            >
+              {body}
+            </a>
+          ) : (
+            <article
+              key={String(item.voId)}
+              className={styles.card}
+              onClick={() => onItemClick?.(item)}
+              style={{ cursor: onItemClick ? 'pointer' : 'default' }}
+            >
+              {body}
             </article>
           );
         })}

@@ -497,7 +497,7 @@ export const MeApp = () => {
     rememberPublicRouteSourceTransfer(selfProfilePath, sourceState);
   }, [selfProfilePath, selfProfileRoute]);
 
-  const rememberSourceForHistoryLink = useCallback((event: MouseEvent<HTMLAnchorElement>, href: string) => {
+  const rememberSourceForPublicLink = useCallback((event: MouseEvent<HTMLAnchorElement>, href: string) => {
     if (!shouldHandlePlainLinkClick(event)) {
       return;
     }
@@ -507,30 +507,6 @@ export const MeApp = () => {
       rememberPublicRouteSourceTransfer(href, sourceState);
     }
   }, []);
-
-  const navigateToPublicHrefFromMe = useCallback((href: string) => {
-    const sourceState = buildSourceStateForHref(href);
-    if (sourceState) {
-      rememberPublicRouteSourceTransfer(href, sourceState);
-    }
-
-    window.location.href = href;
-  }, []);
-
-  const navigateToForumPost = useCallback((
-    postId: LongId,
-    postPublicId?: string | null,
-    commentId?: LongId
-  ) => {
-    navigateToPublicHrefFromMe(buildForumDetailHref(postId, postPublicId, commentId));
-  }, [navigateToPublicHrefFromMe]);
-
-  const navigateToBrowseHistoryItem = useCallback((item: UserBrowseHistoryItem) => {
-    const href = buildBrowseHistoryHref(item);
-    if (href) {
-      navigateToPublicHrefFromMe(href);
-    }
-  }, [navigateToPublicHrefFromMe]);
 
   const renderStatusPanel = (title: string, description: string, icon = 'mdi:account-circle-outline') => (
     <section className={styles.statusPanel}>
@@ -619,7 +595,8 @@ export const MeApp = () => {
         displayTimeZone={displayTimeZone}
         page={route.page}
         onPageChange={(page) => navigateToMeRoute({ ...route, page })}
-        onPostClick={(postId, postPublicId) => navigateToForumPost(postId, postPublicId)}
+        getPostHref={(postId, postPublicId) => buildForumDetailHref(postId, postPublicId)}
+        onPostLinkClick={(event, href) => rememberSourceForPublicLink(event, href)}
       />
     ) : route.tab === 'comments' ? (
       <UserCommentList
@@ -628,14 +605,16 @@ export const MeApp = () => {
         displayTimeZone={displayTimeZone}
         page={route.page}
         onPageChange={(page) => navigateToMeRoute({ ...route, page })}
-        onCommentClick={(postId, commentId, postPublicId) => navigateToForumPost(postId, postPublicId, commentId)}
+        getCommentHref={(postId, commentId, postPublicId) => buildForumDetailHref(postId, postPublicId, commentId)}
+        onCommentLinkClick={(event, href) => rememberSourceForPublicLink(event, href)}
       />
     ) : (
       <UserQuickReplyList
         displayTimeZone={displayTimeZone}
         page={route.page}
         onPageChange={(page) => navigateToMeRoute({ ...route, page })}
-        onItemClick={(postId, postPublicId) => navigateToForumPost(postId, postPublicId)}
+        getItemHref={(postId, postPublicId) => buildForumDetailHref(postId, postPublicId)}
+        onItemLinkClick={(event, href) => rememberSourceForPublicLink(event, href)}
       />
     );
 
@@ -661,7 +640,8 @@ export const MeApp = () => {
         displayTimeZone={displayTimeZone}
         page={route.page}
         onPageChange={(page) => navigateToMeRoute({ kind: 'history', page })}
-        onItemClick={navigateToBrowseHistoryItem}
+        getItemHref={buildBrowseHistoryHref}
+        onItemLinkClick={(event, href) => rememberSourceForPublicLink(event, href)}
       />
     );
   };
@@ -1040,7 +1020,7 @@ export const MeApp = () => {
                     <div key={item.voId} className={styles.browseItem}>
                       <div className={styles.itemBody}>
                         {href ? (
-                          <a href={href} onClick={(event) => rememberSourceForHistoryLink(event, href)}>
+                          <a href={href} onClick={(event) => rememberSourceForPublicLink(event, href)}>
                             {item.voTitle}
                           </a>
                         ) : (

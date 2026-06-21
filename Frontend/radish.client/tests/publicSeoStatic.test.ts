@@ -300,6 +300,34 @@ test('登录态私域入口生成公开链接前应复用 PublicId 校验', () =
   assert.doesNotMatch(publicIdSource, /string \| number/);
 });
 
+test('个人中心内容与浏览历史正式页应提供真实公开链接', () => {
+  const meSource = readFileSync(resolve(clientRoot, 'src/me/MeApp.tsx'), 'utf8');
+  const postListSource = readFileSync(resolve(clientRoot, 'src/apps/profile/components/UserPostList.tsx'), 'utf8');
+  const commentListSource = readFileSync(resolve(clientRoot, 'src/apps/profile/components/UserCommentList.tsx'), 'utf8');
+  const quickReplyListSource = readFileSync(resolve(clientRoot, 'src/apps/profile/components/UserQuickReplyList.tsx'), 'utf8');
+  const browseHistoryListSource = readFileSync(resolve(clientRoot, 'src/apps/profile/components/UserBrowseHistoryList.tsx'), 'utf8');
+
+  assert.match(meSource, /getPostHref=\{\(postId, postPublicId\) => buildForumDetailHref\(postId, postPublicId\)\}/);
+  assert.match(
+    meSource,
+    /getCommentHref=\{\(postId, commentId, postPublicId\) => buildForumDetailHref\(postId, postPublicId, commentId\)\}/
+  );
+  assert.match(meSource, /getItemHref=\{\(postId, postPublicId\) => buildForumDetailHref\(postId, postPublicId\)\}/);
+  assert.match(meSource, /getItemHref=\{buildBrowseHistoryHref\}/);
+  assert.match(meSource, /onItemLinkClick=\{\(event, href\) => rememberSourceForPublicLink\(event, href\)\}/);
+  assert.doesNotMatch(meSource, /onPostClick=\{/);
+  assert.doesNotMatch(meSource, /onCommentClick=\{/);
+
+  assert.match(postListSource, /href=\{href\}/);
+  assert.match(postListSource, /onPostLinkClick\?\.\(event, href, post\.voId, post\.voPublicId\)/);
+  assert.match(commentListSource, /href=\{href\}/);
+  assert.match(commentListSource, /onCommentLinkClick\?\.\(/);
+  assert.match(quickReplyListSource, /href=\{href\}/);
+  assert.match(quickReplyListSource, /onItemLinkClick\?\.\(event, href, item\.voPostId, item\.voPostPublicId\)/);
+  assert.match(browseHistoryListSource, /href=\{href\}/);
+  assert.match(browseHistoryListSource, /onItemLinkClick\?\.\(event, href, item\)/);
+});
+
 test('公开榜单条目应提供公开详情链接并保留壳层导航拦截', () => {
   const source = readFileSync(resolve(clientRoot, 'src/public/leaderboard/PublicLeaderboardApp.tsx'), 'utf8');
 

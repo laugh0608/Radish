@@ -2,7 +2,7 @@
 
 > 日期：2026-06-21（Asia/Shanghai）
 >
-> 状态：首批代码已接入并完成代码侧验证
+> 状态：首批代码已接入，正式链接语义补口已完成并通过代码侧验证
 >
 > 结论：`P3-12-B2` 回到 WebOS 到正式 Web 的功能迁移主线，已首批补齐 `/me` 下的我的内容、完整浏览历史、附件管理和经验详情正式路径；关注关系以既有 `/circle` 为权威入口，`/me` 只提供个人中心内的清晰联动，不重复实现关系链页面。
 
@@ -59,6 +59,29 @@ Git 状态：
 
 - 未启动 API / Auth / Gateway / Vite。
 - 未做 PC / mobile Gateway 真实页面复核；该项仍后置到 B2 小阶段准备验收，并且需用户先明确确认前后端已启动。
+
+## 2026-06-21 复核补口
+
+本轮按 B2 剩余缺口复核了 `/me` 新子路径、旧 `ProfileApp` / `ExperienceDetailApp` 复用边界、正式 Web 导航、登录回流、API helper 和 WebOS `window/openApp` 残留依赖。结论：
+
+- `/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 的路由和登录回流已接入，未发现阻断 B3 的缺口。
+- 旧 `ProfileApp` 顶层继续作为 `/desktop` 历史入口维护；正式 `/me` 只复用列表展示和业务 helper，不复用窗口壳层。
+- `ExperienceDetailApp` 不整页搬迁；正式 `/me/experience` 复用经验 API 和必要展示逻辑。
+- 我的内容与浏览历史列表原先可点击但缺少真实 `href`，已补为正式 Web 链接语义：我的帖子、评论、轻回应进入 `/forum/post/*`，浏览历史继续按 Post / Wiki / Product / User 构造公开 URL，并保留来源返回。
+- 列表组件保留 WebOS 旧入口回调能力，只有正式 `/me` 传入 `get*Href` 时渲染真实链接。
+- API helper 仍统一走 `@radish/http`；附件上传保留允许的 `XMLHttpRequest` 上传进度场景，列表、删除和 B2 页面读取不新增 fetch / axios 封装。
+
+本轮追加验证：
+
+- `node --test --test-isolation=none ./Frontend/radish.client/tests/meRouteState.test.ts ./Frontend/radish.client/tests/authReturnPath.test.ts ./Frontend/radish.client/tests/entryRoute.test.ts ./Frontend/radish.client/tests/realUsagePathContracts.test.ts ./Frontend/radish.client/tests/publicSeoStatic.test.ts`
+- `npm run type-check --workspace=radish.client`
+- `npm run build --workspace=radish.client`
+- `git diff --check`
+
+未执行：
+
+- 未启动 API / Auth / Gateway / Vite。
+- 未做 PC / mobile Gateway 真实页面复核；仍放到 B2 / B3 小阶段准备验收时集中执行。
 
 ## 现状判断
 

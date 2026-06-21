@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
@@ -11,6 +11,13 @@ interface UserPostListProps {
   apiBaseUrl?: string;
   displayTimeZone: string;
   onPostClick?: (postId: LongId, postPublicId?: string | null) => void;
+  getPostHref?: (postId: LongId, postPublicId?: string | null) => string | null;
+  onPostLinkClick?: (
+    event: MouseEvent<HTMLAnchorElement>,
+    href: string,
+    postId: LongId,
+    postPublicId?: string | null
+  ) => void;
   page?: number;
   onPageChange?: (page: number) => void;
 }
@@ -19,6 +26,8 @@ export const UserPostList = ({
   userId,
   displayTimeZone,
   onPostClick,
+  getPostHref,
+  onPostLinkClick,
   page: controlledPage,
   onPageChange
 }: UserPostListProps) => {
@@ -67,37 +76,55 @@ export const UserPostList = ({
   return (
     <div className={styles.container}>
       <div className={styles.list}>
-        {posts.map(post => (
-          <div
-            key={post.voId}
-            className={styles.postItem}
-            onClick={() => onPostClick?.(post.voId, post.voPublicId)}
-            style={{ cursor: onPostClick ? 'pointer' : 'default' }}
-          >
-            <h3 className={styles.title}>{post.voTitle}</h3>
-            <p className={styles.content}>
-              {post.voContent?.substring(0, 100) ?? ''}
-              {(post.voContent?.length ?? 0) > 100 && '...'}
-            </p>
-            <div className={styles.meta}>
-              <span className={styles.metaItem}>
-                <Icon icon="mdi:eye" size={16} />
-                {post.voViewCount}
-              </span>
-              <span className={styles.metaItem}>
-                <Icon icon="mdi:heart" size={16} />
-                {post.voLikeCount}
-              </span>
-              <span className={styles.metaItem}>
-                <Icon icon="mdi:comment" size={16} />
-                {post.voCommentCount}
-              </span>
-              <span className={styles.time}>
-                {formatDateTimeByTimeZone(post.voCreateTime, displayTimeZone)}
-              </span>
+        {posts.map(post => {
+          const href = getPostHref?.(post.voId, post.voPublicId) ?? null;
+          const body = (
+            <>
+              <h3 className={styles.title}>{post.voTitle}</h3>
+              <p className={styles.content}>
+                {post.voContent?.substring(0, 100) ?? ''}
+                {(post.voContent?.length ?? 0) > 100 && '...'}
+              </p>
+              <div className={styles.meta}>
+                <span className={styles.metaItem}>
+                  <Icon icon="mdi:eye" size={16} />
+                  {post.voViewCount}
+                </span>
+                <span className={styles.metaItem}>
+                  <Icon icon="mdi:heart" size={16} />
+                  {post.voLikeCount}
+                </span>
+                <span className={styles.metaItem}>
+                  <Icon icon="mdi:comment" size={16} />
+                  {post.voCommentCount}
+                </span>
+                <span className={styles.time}>
+                  {formatDateTimeByTimeZone(post.voCreateTime, displayTimeZone)}
+                </span>
+              </div>
+            </>
+          );
+
+          return href ? (
+            <a
+              key={post.voId}
+              className={styles.postItem}
+              href={href}
+              onClick={(event) => onPostLinkClick?.(event, href, post.voId, post.voPublicId)}
+            >
+              {body}
+            </a>
+          ) : (
+            <div
+              key={post.voId}
+              className={styles.postItem}
+              onClick={() => onPostClick?.(post.voId, post.voPublicId)}
+              style={{ cursor: onPostClick ? 'pointer' : 'default' }}
+            >
+              {body}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {totalPages > 1 && (

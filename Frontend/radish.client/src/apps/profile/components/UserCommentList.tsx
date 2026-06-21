@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
@@ -11,6 +11,14 @@ interface UserCommentListProps {
   apiBaseUrl?: string;
   displayTimeZone: string;
   onCommentClick?: (postId: LongId, commentId: LongId, postPublicId?: string | null) => void;
+  getCommentHref?: (postId: LongId, commentId: LongId, postPublicId?: string | null) => string | null;
+  onCommentLinkClick?: (
+    event: MouseEvent<HTMLAnchorElement>,
+    href: string,
+    postId: LongId,
+    commentId: LongId,
+    postPublicId?: string | null
+  ) => void;
   page?: number;
   onPageChange?: (page: number) => void;
 }
@@ -19,6 +27,8 @@ export const UserCommentList = ({
   userId,
   displayTimeZone,
   onCommentClick,
+  getCommentHref,
+  onCommentLinkClick,
   page: controlledPage,
   onPageChange
 }: UserCommentListProps) => {
@@ -67,25 +77,49 @@ export const UserCommentList = ({
   return (
     <div className={styles.container}>
       <div className={styles.list}>
-        {comments.map(comment => (
-          <div
-            key={comment.voId}
-            className={styles.commentItem}
-            onClick={() => onCommentClick?.(comment.voPostId, comment.voId, comment.voPostPublicId)}
-            style={{ cursor: onCommentClick ? 'pointer' : 'default' }}
-          >
-            <p className={styles.content}>{comment.voContent}</p>
-            <div className={styles.meta}>
-              <span className={styles.metaItem}>
-                <Icon icon="mdi:heart" size={16} />
-                {comment.voLikeCount}
-              </span>
-              <span className={styles.time}>
-                {formatDateTimeByTimeZone(comment.voCreateTime, displayTimeZone)}
-              </span>
+        {comments.map(comment => {
+          const href = getCommentHref?.(comment.voPostId, comment.voId, comment.voPostPublicId) ?? null;
+          const body = (
+            <>
+              <p className={styles.content}>{comment.voContent}</p>
+              <div className={styles.meta}>
+                <span className={styles.metaItem}>
+                  <Icon icon="mdi:heart" size={16} />
+                  {comment.voLikeCount}
+                </span>
+                <span className={styles.time}>
+                  {formatDateTimeByTimeZone(comment.voCreateTime, displayTimeZone)}
+                </span>
+              </div>
+            </>
+          );
+
+          return href ? (
+            <a
+              key={comment.voId}
+              className={styles.commentItem}
+              href={href}
+              onClick={(event) => onCommentLinkClick?.(
+                event,
+                href,
+                comment.voPostId,
+                comment.voId,
+                comment.voPostPublicId
+              )}
+            >
+              {body}
+            </a>
+          ) : (
+            <div
+              key={comment.voId}
+              className={styles.commentItem}
+              onClick={() => onCommentClick?.(comment.voPostId, comment.voId, comment.voPostPublicId)}
+              style={{ cursor: onCommentClick ? 'pointer' : 'default' }}
+            >
+              {body}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {totalPages > 1 && (
