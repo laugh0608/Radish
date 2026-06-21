@@ -21,6 +21,8 @@
 
 `2026-06-20` 补充：论坛发布、评论、回答和编辑重试语义已进入 [论坛内容发布可靠性与编辑历史治理](/guide/forum-content-write-reliability-governance)。本页继续作为 `PostEditHistory` / `CommentEditHistory` 的功能说明；提交意图去重、短窗口内容指纹和频率限制以治理专题为准。
 
+`2026-06-21` 补充：Flutter 首批已承接作者帖子正文编辑和作者根评论编辑，失败重试分别复用 `forum-post-edit:` 与 `forum-comment-edit:` 提交意图 key；子评论编辑、回答编辑和完整编辑器仍后置评审。
+
 ---
 
 ## 核心规则

@@ -141,7 +141,7 @@ class _ForumPageState extends State<ForumPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              '浏览公开帖子，支持最新和热门排序。当前阶段仅提供只读阅读。',
+              '浏览公开帖子，支持最新和热门排序。已登录用户可发布纯文本帖子，作者可在详情页编辑帖子正文和根评论。',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 20),
@@ -150,7 +150,7 @@ class _ForumPageState extends State<ForumPage> {
               items: [
                 '当前环境：${widget.environment.name}',
                 '支持公开帖子列表、帖子详情、评论阅读和登录态纯文本发帖',
-                '当前不支持富文本、附件、投票、抽奖、草稿箱、点赞或编辑',
+                '当前不支持富文本、附件、投票、抽奖、草稿箱、点赞、分类 / 标签编辑或子评论编辑',
                 state.page == null
                     ? '正在准备论坛内容'
                     : '已加载 ${state.page!.posts.length} 条帖子，共 ${state.page!.dataCount} 条',

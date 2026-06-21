@@ -385,6 +385,41 @@ class ForumPostDetail {
       question: question,
     );
   }
+
+  ForumPostDetail copyWith({
+    String? title,
+    String? content,
+    String? updateTime,
+  }) {
+    return ForumPostDetail(
+      id: id,
+      publicId: publicId,
+      title: title ?? this.title,
+      summary: summary,
+      content: content ?? this.content,
+      contentType: contentType,
+      categoryId: categoryId,
+      categoryName: categoryName,
+      authorId: authorId,
+      authorName: authorName,
+      tagNames: tagNames,
+      viewCount: viewCount,
+      likeCount: likeCount,
+      commentCount: commentCount,
+      answerCount: answerCount,
+      isTop: isTop,
+      isEssence: isEssence,
+      isQuestion: isQuestion,
+      isSolved: isSolved,
+      hasPoll: hasPoll,
+      pollIsClosed: pollIsClosed,
+      hasLottery: hasLottery,
+      lotteryIsDrawn: lotteryIsDrawn,
+      createTime: createTime,
+      updateTime: updateTime ?? this.updateTime,
+      question: question,
+    );
+  }
 }
 
 class ForumDetailHandoffTarget {

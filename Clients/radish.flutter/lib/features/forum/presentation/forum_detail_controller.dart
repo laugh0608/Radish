@@ -103,6 +103,28 @@ class ForumDetailController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void applyPostEdit({
+    required String postId,
+    required String title,
+    required String content,
+  }) {
+    final detail = _state.detail;
+    if (detail == null || detail.id.trim() != postId.trim()) {
+      return;
+    }
+
+    _state = _state.copyWith(
+      status: ForumDetailStatus.ready,
+      detail: detail.copyWith(
+        title: title,
+        content: content,
+        updateTime: DateTime.now().toUtc().toIso8601String(),
+      ),
+      clearError: true,
+    );
+    notifyListeners();
+  }
+
   Future<void> _load(String postId) async {
     final requestVersion = ++_requestVersion;
     _state = _state.copyWith(

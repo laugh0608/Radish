@@ -255,6 +255,36 @@ class ForumCommentFeedController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateLoadedRootComment({
+    required String commentId,
+    required String content,
+  }) {
+    var updated = false;
+    final nextComments = _state.comments.map((comment) {
+      if (comment.id != commentId) {
+        return comment;
+      }
+
+      updated = true;
+      return comment.copyWith(
+        content: content,
+        updateTime: DateTime.now().toUtc().toIso8601String(),
+      );
+    }).toList(growable: false);
+
+    if (!updated) {
+      return;
+    }
+
+    _state = _state.copyWith(
+      status: ForumCommentFeedStatus.ready,
+      comments: nextComments,
+      clearError: true,
+      clearLoadMoreError: true,
+    );
+    notifyListeners();
+  }
+
   Future<void> _loadInitial(String postId, {int pageIndex = 1}) async {
     final requestVersion = ++_requestVersion;
     _state = _state.copyWith(

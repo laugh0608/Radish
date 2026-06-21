@@ -107,6 +107,59 @@ void main() {
     });
   });
 
+  test('http forum repository sends post edit client submission id', () async {
+    final apiClient = _RecordingForumApiClient();
+    final repository = HttpForumRepository(
+      apiClient: apiClient,
+      endpoints: const RadishApiEndpoints(AppEnvironment.development()),
+    );
+
+    await repository.updatePost(
+      postId: 'post-42',
+      title: '原帖子标题',
+      content: '编辑后的正文',
+      categoryId: '9',
+      tagNames: const ['flutter', '编辑'],
+      accessToken: 'access-token',
+      clientSubmissionId: 'forum-post-edit:test-key',
+    );
+
+    expect(apiClient.lastUri?.path, '/api/v1/Post/Update');
+    expect(apiClient.lastBearerToken, 'access-token');
+    expect(apiClient.lastBody, {
+      'postId': 'post-42',
+      'title': '原帖子标题',
+      'content': '编辑后的正文',
+      'categoryId': '9',
+      'tagNames': ['flutter', '编辑'],
+      'clientSubmissionId': 'forum-post-edit:test-key',
+    });
+  });
+
+  test('http forum repository sends comment edit client submission id',
+      () async {
+    final apiClient = _RecordingForumApiClient();
+    final repository = HttpForumRepository(
+      apiClient: apiClient,
+      endpoints: const RadishApiEndpoints(AppEnvironment.development()),
+    );
+
+    await repository.updateComment(
+      commentId: 'comment-42',
+      content: '编辑后的评论',
+      accessToken: 'access-token',
+      clientSubmissionId: 'forum-comment-edit:test-key',
+    );
+
+    expect(apiClient.lastUri?.path, '/api/v1/Comment/Update');
+    expect(apiClient.lastBearerToken, 'access-token');
+    expect(apiClient.lastBody, {
+      'commentId': 'comment-42',
+      'content': '编辑后的评论',
+      'clientSubmissionId': 'forum-comment-edit:test-key',
+    });
+  });
+
   test('http forum repository rejects blank client submission id', () async {
     final repository = HttpForumRepository(
       apiClient: _RecordingForumApiClient(),
@@ -159,6 +212,41 @@ void main() {
           (error) => error.message,
           'message',
           '回答请求缺少提交意图 ID',
+        ),
+      ),
+    );
+
+    expect(
+      () => repository.updatePost(
+        postId: 'post-42',
+        title: 'Flutter 发帖',
+        content: '正文',
+        categoryId: '9',
+        tagNames: const ['flutter'],
+        accessToken: 'access-token',
+        clientSubmissionId: ' ',
+      ),
+      throwsA(
+        isA<RadishApiClientException>().having(
+          (error) => error.message,
+          'message',
+          '帖子编辑请求缺少提交意图 ID',
+        ),
+      ),
+    );
+
+    expect(
+      () => repository.updateComment(
+        commentId: 'comment-42',
+        content: '评论内容',
+        accessToken: 'access-token',
+        clientSubmissionId: ' ',
+      ),
+      throwsA(
+        isA<RadishApiClientException>().having(
+          (error) => error.message,
+          'message',
+          '评论编辑请求缺少提交意图 ID',
         ),
       ),
     );
@@ -986,6 +1074,25 @@ class _SuccessForumRepository implements ForumRepository {
     );
     return 'post-created-1';
   }
+
+  @override
+  Future<void> updatePost({
+    required String postId,
+    required String title,
+    required String content,
+    required String categoryId,
+    required List<String> tagNames,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {}
+
+  @override
+  Future<void> updateComment({
+    required String commentId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {}
 }
 
 class _CreatedPostPublicRouteForumRepository extends _SuccessForumRepository {
@@ -1139,6 +1246,29 @@ class _FailingForumRepository implements ForumRepository {
   }) async {
     throw const RadishApiClientException('发帖服务暂时不可用');
   }
+
+  @override
+  Future<void> updatePost({
+    required String postId,
+    required String title,
+    required String content,
+    required String categoryId,
+    required List<String> tagNames,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {
+    throw const RadishApiClientException('帖子编辑服务暂时不可用');
+  }
+
+  @override
+  Future<void> updateComment({
+    required String commentId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {
+    throw const RadishApiClientException('评论编辑服务暂时不可用');
+  }
 }
 
 class _CreatePostRequest {
@@ -1212,8 +1342,12 @@ class _RecordingForumApiClient implements RadishApiClient {
     required Object? body,
     required JsonFactory<T> decode,
     String? bearerToken,
-  }) {
-    throw UnimplementedError();
+  }) async {
+    lastUri = uri;
+    lastBody = body;
+    lastBearerToken = bearerToken;
+
+    return decode(null);
   }
 }
 

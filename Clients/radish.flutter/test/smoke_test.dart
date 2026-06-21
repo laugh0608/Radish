@@ -514,7 +514,12 @@ void main() {
     await tester.tap(find.text('进入论坛'));
     await tester.pumpAndSettle();
 
-    expect(find.text('浏览公开帖子，支持最新和热门排序。当前阶段仅提供只读阅读。'), findsOneWidget);
+    expect(
+      find.text(
+        '浏览公开帖子，支持最新和热门排序。已登录用户可发布纯文本帖子，作者可在详情页编辑帖子正文和根评论。',
+      ),
+      findsOneWidget,
+    );
 
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
@@ -2105,7 +2110,12 @@ void main() {
 
     expect(lifecycleGateway.moveTaskToBackCallCount, 0);
     expect(find.text('论坛详情回流'), findsOneWidget);
-    expect(find.text('浏览公开帖子，支持最新和热门排序。当前阶段仅提供只读阅读。'), findsOneWidget);
+    expect(
+      find.text(
+        '浏览公开帖子，支持最新和热门排序。已登录用户可发布纯文本帖子，作者可在详情页编辑帖子正文和根评论。',
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('shell forum handoff opens native detail and targets comment',
@@ -3921,6 +3931,25 @@ class _FakeForumRepository implements ForumRepository {
   }) async {
     return 'post-created';
   }
+
+  @override
+  Future<void> updatePost({
+    required String postId,
+    required String title,
+    required String content,
+    required String categoryId,
+    required List<String> tagNames,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {}
+
+  @override
+  Future<void> updateComment({
+    required String commentId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {}
 }
 
 class _SeededForumRepository implements ForumRepository {
@@ -4188,6 +4217,25 @@ class _SeededForumRepository implements ForumRepository {
   }) async {
     return 'post-created';
   }
+
+  @override
+  Future<void> updatePost({
+    required String postId,
+    required String title,
+    required String content,
+    required String categoryId,
+    required List<String> tagNames,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {}
+
+  @override
+  Future<void> updateComment({
+    required String commentId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {}
 }
 
 class _RecordingPostForumRepository extends _SeededForumRepository {
@@ -4436,6 +4484,25 @@ class _SeededBigIdForumRepository implements ForumRepository {
   }) async {
     return '2042219067430928399';
   }
+
+  @override
+  Future<void> updatePost({
+    required String postId,
+    required String title,
+    required String content,
+    required String categoryId,
+    required List<String> tagNames,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {}
+
+  @override
+  Future<void> updateComment({
+    required String commentId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {}
 }
 
 class _FakeProfileRepository implements ProfileRepository {
