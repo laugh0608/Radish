@@ -2,6 +2,7 @@ import { buildPublicForumPath } from '../public/forumRouteState.ts';
 import { buildPublicProfilePath } from '../public/profileRouteState.ts';
 import type { PublicRouteSourceState } from '../public/publicRouteNavigation.ts';
 import { buildMessagesPath } from '../messages/messagesRouteState.ts';
+import { buildShopOrderReturnPath, buildShopOrdersReturnPath } from '../services/authReturnPath.ts';
 import { parseChatNotificationNavigation } from './chatNavigation.ts';
 import { parseForumNotificationNavigation } from './forumNavigation.ts';
 
@@ -37,15 +38,6 @@ function normalizePositiveIntegerString(value: unknown): string | null {
 
   const normalized = value.trim();
   return /^[1-9]\d*$/.test(normalized) ? normalized : null;
-}
-
-function buildDesktopPath(appId: string, params: Record<string, string> = {}): string {
-  const query = new URLSearchParams({ app: appId });
-  Object.entries(params).forEach(([key, value]) => {
-    query.set(key, value);
-  });
-
-  return `/desktop?${query.toString()}`;
 }
 
 export function resolveWebNotificationNavigation(
@@ -114,15 +106,10 @@ export function resolveWebNotificationNavigation(
 
   if (businessType === 'Order') {
     const orderId = normalizePositiveIntegerString(notification.businessId);
-    return orderId
-      ? {
-          surface: 'desktop',
-          href: buildDesktopPath('shop', { orderId })
-        }
-      : {
-          surface: 'desktop',
-          href: buildDesktopPath('shop')
-        };
+    return {
+      surface: 'web',
+      href: orderId ? buildShopOrderReturnPath(orderId) ?? buildShopOrdersReturnPath() : buildShopOrdersReturnPath()
+    };
   }
 
   if (businessType === 'Comment') {

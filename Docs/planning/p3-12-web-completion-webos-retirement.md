@@ -57,7 +57,7 @@ P3-12-A 已于 2026-06-21 完成只读盘点。结论：
 
 目标是补齐 Web 正式版主路径，而不是照搬 WebOS 应用壳。
 
-`P3-12-B1` 已完成账户资产与商城交易 Web 化方案梳理和代码侧主路径，结论见 [P3-12-B1 账户资产与商城交易 Web 化方案](/records/p3-12-b1-account-shop-web-plan-2026-06-21)。首批代码已完成路由 / 登录回流契约、商城私域正式 Web 入口、资产正式入口和公开购买回流：新增正式 Web 资产与商城交易 return path，收窄 `/shop/*` 公开路由识别，接入 `/me/assets`、`/me/assets/transactions`、`/shop/orders`、`/shop/order/:orderId`、`/shop/inventory`，公开商品详情购买从 `/desktop` 回跳替换为正式 Web 登录回流，购买成功后进入订单详情。定向契约测试、`radish.client` type-check / build 和 `git diff --check` 已通过；真实 PC / mobile Gateway 复核待用户确认服务已启动后执行，统一 UI 设计放到页面迁移齐后的 `P3-12-D`。
+`P3-12-B1` 已完成账户资产与商城交易 Web 化方案梳理和代码侧主路径，结论见 [P3-12-B1 账户资产与商城交易 Web 化方案](/records/p3-12-b1-account-shop-web-plan-2026-06-21)。首批代码已完成路由 / 登录回流契约、商城私域正式 Web 入口、资产正式入口和公开购买回流：新增正式 Web 资产与商城交易 return path，收窄 `/shop/*` 公开路由识别，接入 `/me/assets`、`/me/assets/transactions`、`/shop/orders`、`/shop/order/:orderId`、`/shop/inventory`，公开商品详情购买从 `/desktop` 回跳替换为正式 Web 登录回流，购买成功后进入订单详情，纯 Web 通知页订单目标也改到正式 Web 订单路由。定向契约测试、`radish.client` type-check / build 和 `git diff --check` 已通过；真实 PC / mobile Gateway 复核待用户确认服务已启动后执行，统一 UI 设计放到页面迁移齐后的 `P3-12-D`。
 
 优先候选：
 

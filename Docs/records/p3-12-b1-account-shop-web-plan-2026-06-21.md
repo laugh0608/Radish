@@ -60,6 +60,7 @@ Git 状态：
 - 公开商品详情已接入登录态初始化、购买资格检查、`PurchaseModal`、支付口令确认、旧口令升级提示和 `purchaseProduct`；未登录时保存正式 Web return path 并跳登录。
 - 购买成功后优先跳 `/shop/order/:orderId`，订单 ID 缺失时回 `/shop/orders`；公开详情 canonical 和分享链接继续归一到 `/shop/product/:productId`。
 - 公开商城与公开发现的商城入口文案已从“购买留在 WebOS / 只读详情”调整为“公开浏览 + 登录购买 + 订单 / 背包私域 Web”。
+- 纯 Web `/notifications` 的订单通知目标已从 `/desktop?app=shop&orderId=...` 切到 `/shop/order/:orderId`，缺失或非法订单 ID 时回 `/shop/orders`；WebOS 通知中心窗口内仍保留打开 WebOS `shop` app 的历史行为。
 
 已验证：
 
@@ -67,6 +68,7 @@ Git 状态：
 - `node --test --test-isolation=none ./tests/shopRouteState.test.ts ./tests/entryRoute.test.ts ./tests/realUsagePathContracts.test.ts ./tests/publicSeoStatic.test.ts`
 - `node --test --test-isolation=none ./tests/meRouteState.test.ts ./tests/entryRoute.test.ts ./tests/authReturnPath.test.ts ./tests/realUsagePathContracts.test.ts ./tests/publicSeoStatic.test.ts`
 - `node --test --test-isolation=none ./tests/publicSeoStatic.test.ts ./tests/publicRouteState.test.ts ./tests/authReturnPath.test.ts ./tests/realUsagePathContracts.test.ts ./tests/publicHead.test.ts`
+- `node --test --test-isolation=none ./tests/notificationNavigation.test.ts ./tests/realUsagePathContracts.test.ts ./tests/authReturnPath.test.ts`
 - `npm run type-check --workspace=radish.client`
 - `npm run build --workspace=radish.client`
 - `git diff --check`

@@ -86,7 +86,7 @@
   - `P3-11-A / B / D` 已完成发布候选验收矩阵、轻量复访缺口只读审计和阶段收束决策；暂不恢复 `dev -> master` PR，不创建 tag，不进入 M15 测试 / 生产部署流程，`P3-11-C` 定向回修未触发。
   - 下一主线切换到 `P3-12 Web 完全化与 WebOS 收束`：目标是在 PC / mobile 浏览器中完成项目正式版主路径，让 `/desktop` 退为历史兼容入口；Flutter 暂时后移，等 Web 正式版主路径稳定后再承接受控移动原生增强。
   - `P3-12-A` 功能资产盘点与迁移矩阵已完成只读审计：浏览器根路径和公开阅读路径已基本 Web 化，账户资产、商城购买、订单、库存和资产流水仍存在正式版 Web 缺口；下一开发组定为 `P3-12-B1 账户资产与商城交易 Web 化`，记录见 [P3-12-A WebOS 与 Web 功能资产盘点记录](/records/p3-12-a-webos-web-function-asset-inventory-2026-06-21)。
-  - `P3-12-B1` 账户资产与商城交易 Web 化方案与首批代码侧主路径已完成：新增正式 Web 资产与商城交易 return path，接入 `/me/assets`、`/me/assets/transactions`、`/shop/orders`、`/shop/order/:orderId`、`/shop/inventory`，把 `/me` 完整钱包转向 `/me/assets/transactions`，公开商品详情购买改为 `/shop/product/:productId?intent=purchase` 登录回流并在购买成功后进入 `/shop/order/:orderId`；定向契约测试、`radish.client` type-check / build 和 `git diff --check` 已通过，真实 PC / mobile Gateway 复核待用户确认前后端已启动后执行。统一 UI 设计后置到页面迁移完成后的 `P3-12-D`，记录见 [P3-12-B1 账户资产与商城交易 Web 化方案](/records/p3-12-b1-account-shop-web-plan-2026-06-21)。
+  - `P3-12-B1` 账户资产与商城交易 Web 化方案与首批代码侧主路径已完成：新增正式 Web 资产与商城交易 return path，接入 `/me/assets`、`/me/assets/transactions`、`/shop/orders`、`/shop/order/:orderId`、`/shop/inventory`，把 `/me` 完整钱包转向 `/me/assets/transactions`，公开商品详情购买改为 `/shop/product/:productId?intent=purchase` 登录回流并在购买成功后进入 `/shop/order/:orderId`；纯 Web 通知页的订单通知目标也已从桌面深链切到正式 Web 订单路由。定向契约测试、`radish.client` type-check / build 和 `git diff --check` 已通过，真实 PC / mobile Gateway 复核待用户确认前后端已启动后执行。统一 UI 设计后置到页面迁移完成后的 `P3-12-D`，记录见 [P3-12-B1 账户资产与商城交易 Web 化方案](/records/p3-12-b1-account-shop-web-plan-2026-06-21)。
 
 ## 当前执行入口
 
