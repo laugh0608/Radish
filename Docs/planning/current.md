@@ -7,7 +7,7 @@
 ## 当前状态
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
-- **当前主线**：`P3-10 阶段收束准备（P3-10-D 已收束，PR 暂缓）`
+- **当前主线**：`P3-11 发布候选整备与轻量复访补齐（PR 暂缓）`
 - **复核日期**：`2026-06-21`
 - **最近结论**：
   - `P3-1` 至 `P3-5` 已完成公开内容增长、PublicId 试点、留存回流、动态 sitemap 与详情 head snapshot 首批建设。
@@ -24,7 +24,7 @@
   - 访客公开访问与 Console 管理员排障路径抽查未暴露新增阻断；`dev -> master` PR #54 已合并，`Repo Quality` 四项检查均通过。
   - P3-9 合并后本地验证已完成：`validate:ci` 通过；因规划入口命中默认执行面 / 门禁资产，已补 `validate:identity` 并通过。
   - 本轮明确跳过发布：不创建 tag，不等待镜像，不进入 M15 测试 / 生产部署流程；P3-9 转入维护与回拉线。
-  - 当前继续第三开发阶段，不进入生产稳定运营；下一主线为 `P3-10`，围绕 Web 默认入口、信息流 / 个人圈子边界、PublicId 分批、评论互动治理、UI 改造和历史功能规划回拉选择下一批开发范围。
+  - 当前继续第三开发阶段，不进入生产稳定运营；`P3-10` 已完成 Web-first 信息架构、长期契约治理和阶段收束准备，下一主线为 `P3-11` 发布候选整备与轻量复访补齐。
   - Flutter 先从当前第一顺位后移，后续在 Web 信息架构与 API 契约稳定后承接移动原生复访、通知、消息和轻互动。
   - `P3-10-A` 已完成初版任务归属、历史功能规划回拉和源码复核。
   - `P3-10-B1 / B3` 首批代码已完成：`/discover` 已调整为 Web-first 公开信息流，User PublicId 公开主页 / 榜单契约已落地并通过 PC 视角浏览器复核。
@@ -82,12 +82,15 @@
   - `WOG-6 跨端幂等契约补齐` 已按确认方案完成首批代码实现：Flutter 单商品购买已生成并提交 `shop:` 幂等键，失败后直接重试复用同一 key，成功或购买意图重置后生成新 key；本批不扩展 Flutter 转账、完整移动商城或服务端强制 key。
   - `P3-10 后续产品 / 治理增量选择` 已重新筛选下一批候选，推荐先推进 [论坛内容发布可靠性与编辑历史治理](/guide/forum-content-write-reliability-governance)：围绕 `clientSubmissionId`、内容指纹短窗口、分层频率限制和既有 `PostEditHistory` / `CommentEditHistory` 真值形成治理方案。
   - `论坛内容发布可靠性与编辑历史治理` 创建链路、首批编辑重试幂等、Flutter 当前论坛写入口承接和创建类频率限制已按确认方案完成：新增 `ContentSubmissionRecord` 内容提交意图记录，Web 发帖 / 评论 / 回答 / 帖子编辑 / 评论编辑生成并复用 `clientSubmissionId`，Flutter 纯文本发帖、根评论 / 回复、问答回答、作者帖子正文编辑和作者根评论编辑生成并复用同一字段；[P3-10 后续产品 / 治理增量评审记录](/records/p3-10-next-product-governance-review-2026-06-21) 已确认 Flutter 子评论编辑和回答编辑不进入下一批默认代码，P3-10 下一步转向阶段收束准备。
+  - `P3-10` 阶段收束准备已完成完整批次范围、验证结论和剩余风险整理；当前暂缓 PR，不继续默认追加功能入口或链接扫尾。
+  - `P3-11` 已启动为“发布候选整备与轻量复访补齐”：先冻结 P3-10 既有代码范围，整理发布候选验收矩阵，再只读筛选纯 Web / Flutter 轻量复访高信号缺口；不默认追加新功能、P3-10-D 第五批链接扫尾或完整移动能力套件。
 
 ## 当前执行入口
 
 - [开发路线图总览](/development-plan)
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
 - [P3-10 Web-first 信息架构与下一批开发任务选择](/planning/p3-10-cross-platform-information-architecture)
+- [P3-11 发布候选整备与轻量复访补齐](/planning/p3-11-release-candidate-light-revisit)
 - [Radish 电子宠物开发计划](/features/radish-pet-roadmap)
 - [用户身份语义与公开索引](/architecture/user-identity-semantics)
 - [系统设置治理专题](/guide/system-settings-governance)
@@ -105,6 +108,7 @@
 - [P3-10-D PR 准备记录](/records/p3-10-d-web-feed-pr-prep-record-2026-06-19)
 - [P3-10 后续产品 / 治理增量评审记录](/records/p3-10-next-product-governance-review-2026-06-21)
 - [P3-10 阶段收束准备记录](/records/p3-10-stage-closure-prep-record-2026-06-21)
+- [P3-11 发布候选验收矩阵](/records/p3-11-release-candidate-acceptance-matrix-2026-06-21)
 - [个人圈子](/features/circle)
 - [Token 不活跃过期治理](/guide/auth-idle-session)
 - [P3-9 真实使用主路径产品化与发布候选整备](/planning/p3-9-real-usage-release-candidate)
@@ -114,15 +118,14 @@
 
 ## 当前目标
 
-1. **收束 P3-10-D Web 信息流 / UI 结构整理**
-   - 首日公开页结构整理、首轮 Gateway PC / 移动运行态复核、四批同类入口语义治理、合并前验证和 PR 合并判断已完成。
-   - 本批已覆盖公开壳层的进入动作、分享 URL、来源返回、登录回流、公开 / 私域边界、标题层级和真实内容密度，范围包括 `/discover`、公开论坛列表 / 搜索 / 标签 / 类型流、公开帖子详情、公开文档详情、公开个人页、`/leaderboard`、`/shop`、`/circle` 和 `/me`。
-   - 本轮暂不创建 PR；不再默认追加第五批链接扫尾。若真实复核或验证命中明确缺口，再按同类问题成组修复。
-2. **收束 P3-10 后续产品 / 治理增量评审**
-   - 前端敏感日志脱敏、支付口令哈希升级和 [支付与转账幂等治理](/guide/payment-idempotency-governance) 首批代码均已完成，不再作为下一步开发项。
-   - [WOG-1 写操作分级盘点记录](/records/wog-1-write-operation-inventory-2026-06-20) 已完成矩阵和候选排序；[WOG-2 内容互动关系写入与计数一致性方案](/records/wog-2-content-interaction-consistency-plan-2026-06-20)、[WOG-3 背包 / 权益发放可靠性方案](/records/wog-3-inventory-benefit-reliability-plan-2026-06-20)、[WOG-4 奖励业务键唯一性方案](/records/wog-4-reward-business-key-uniqueness-plan-2026-06-20)、[WOG-5 管理覆盖类写入版本语义方案](/records/wog-5-management-write-version-semantics-plan-2026-06-20) 与 [WOG-6 跨端幂等契约补齐方案](/records/wog-6-cross-client-idempotency-contract-plan-2026-06-20) 均已确认并完成首批实现。
-   - 下一批推荐候选已切到 [论坛内容发布可靠性与编辑历史治理](/guide/forum-content-write-reliability-governance)，创建链路、首批帖子 / 评论编辑重试幂等、Flutter 纯文本发帖 / 评论 / 回答 / 作者帖子正文编辑 / 作者根评论编辑写入口承接和创建类频率限制已按确认方案完成。
-   - [P3-10 后续产品 / 治理增量评审记录](/records/p3-10-next-product-governance-review-2026-06-21) 已确认 Flutter 子评论编辑和回答编辑不进入下一批默认代码；下一步转向 P3-10 阶段收束准备和入口文档同步。
+1. **启动 P3-11 发布候选整备与轻量复访补齐**
+   - P3-10 当前完整范围已进入阶段收束准备记录；本轮继续暂缓 PR，不创建 tag，不进入 M15 测试 / 生产部署流程。
+   - 第一顺位是建立 P3-11 发布候选验收矩阵，明确 Web、Flutter、后端治理、数据库迁移、身份语义和运行态复核哪些结论可复用、哪些在恢复 PR / 发布候选前必须重跑。
+   - 第二顺位是只读筛选轻量复访缺口，候选限制在 `/notifications`、`/messages`、`/me`、`/circle`、论坛详情和 Flutter 已承接成熟工作流；命中明确缺口后再定向修复。
+2. **保持 P3-10 可恢复合并状态**
+   - `P3-10-D` 已完成公开页整理、四批入口语义治理、合并前验证和 PR 合并判断；不再默认追加第五批链接扫尾。
+   - 前端敏感日志脱敏、支付口令升级、支付 / 转账幂等、`WOG-1` 至 `WOG-6`、论坛内容发布可靠性和 Flutter 作者编辑承接已纳入完整批次范围。
+   - 若恢复 `dev -> master`，必须先刷新 `master..dev` 范围；无新增影响面时复用 P3-10 阶段收束准备记录。
 3. **把 P3-8-D 降级为维护与回拉线**
    - 移动 Web 公开页逐页打磨、Console 剩余页面迁移、购买 / 订单 / 背包重复复核、ID Phase A 广泛扫描不再作为默认日常主线。
    - 新增外部 ID 边界、扫描命中、真实编译错误或发布候选验收暴露问题时，再做定向治理。
@@ -134,9 +137,12 @@
 
 ## 下一顺位
 
-- `P3-10 阶段收束准备`
-  - [P3-10 后续产品 / 治理增量评审记录](/records/p3-10-next-product-governance-review-2026-06-21) 已完成当前后续候选判断：Flutter 子评论编辑和回答编辑不作为下一批默认代码，后续分别按评论线程编辑能力或问答编辑能力单独评审。
-  - [P3-10 阶段收束准备记录](/records/p3-10-stage-closure-prep-record-2026-06-21) 已刷新提交本记录前的 `master..dev` 既有范围：共 `47` 个既有提交，覆盖 `P3-10-D` 后续安全、WOG、论坛可靠性、Flutter 承接和文档收束内容；后续新增收束记录提交只更新留痕，不改变前述功能范围判断。
+- `P3-11 发布候选整备与轻量复访补齐`
+  - 新增 [P3-11 发布候选整备与轻量复访补齐](/planning/p3-11-release-candidate-light-revisit)，承接 P3-10 阶段收束后的下一批范围判断。
+  - 首批工作固定为 `P3-11-A` 发布候选验收矩阵和 `P3-11-B` 轻量复访缺口只读盘点；不直接启动 PR、发布、完整 Flutter 套件、电子宠物经济或第五批链接扫尾。
+  - 若后续命中明确阻断，再进入 `P3-11-C` 最小回修批次；否则保持 P3-10 可恢复合并状态，等待 PR / 发布候选决策。
+- `P3-10 阶段收束准备维护线`
+  - [P3-10 后续产品 / 治理增量评审记录](/records/p3-10-next-product-governance-review-2026-06-21) 与 [P3-10 阶段收束准备记录](/records/p3-10-stage-closure-prep-record-2026-06-21) 已完成当前后续候选和完整批次验证判断。
   - 批次级验证已完成：`validate:ci -- --report`、`validate:baseline`、`validate:identity`、`flutter analyze`、`flutter test`、`check:host-runtime -- --details` 均通过；Gateway 已覆盖匿名公开入口、Console 登录回流和公开详情直链的 PC / 移动真实页面复核。
 - `P3-10 后续治理专题：论坛内容发布可靠性与编辑历史治理`
   - 新增 [论坛内容发布可靠性与编辑历史治理](/guide/forum-content-write-reliability-governance)，承接 WOG 首轮收束后的下一批产品 / 治理增量选择。
@@ -193,10 +199,10 @@
 
 ## 明日事项
 
-- 先读取本页、[P3-10 后续产品 / 治理增量评审记录](/records/p3-10-next-product-governance-review-2026-06-21) 和 [P3-10 阶段收束准备记录](/records/p3-10-stage-closure-prep-record-2026-06-21)，确认当前阶段不继续追加默认功能入口。
-- 第一顺位：若恢复 `dev -> master` 或发布候选整备，先确认本记录之后是否出现新提交、服务配置变化或运行数据变化；无新增影响面时复用阶段收束准备记录，本轮仍不默认创建 PR。
-- 第二顺位：跳过本轮 PR 创建步骤，保留 [P3-10-D PR 准备记录](/records/p3-10-d-web-feed-pr-prep-record-2026-06-19) 作为后续恢复合并动作的依据。
-- 第三顺位：若真实 smoke、自动化验证或明确缺口重新命中 P3-10-D 阻断 / 清晰一致性问题，再定向回修；不再默认追加第五批链接语义扫尾。
+- 先读取本页、[P3-11 发布候选整备与轻量复访补齐](/planning/p3-11-release-candidate-light-revisit) 和 [P3-10 阶段收束准备记录](/records/p3-10-stage-closure-prep-record-2026-06-21)，确认当前阶段不继续追加默认功能入口。
+- 第一顺位：推进 `P3-11-A` 发布候选验收矩阵，刷新 Git 范围并标出可复用验证与必须重跑验证。
+- 第二顺位：推进 `P3-11-B` 轻量复访缺口只读盘点，只筛高信号真实复访问题。
+- 第三顺位：若命中明确缺口，再进入定向回修；否则继续保持 PR 暂缓和 P3-10 可恢复合并状态。
 
 ## 并行维护项
 
@@ -210,6 +216,7 @@
 
 - 不把维护观察继续当作唯一主线。
 - 不等待真实用户反馈出现后才继续开发未完成功能。
+- 不在 P3-11 启动期直接创建 PR 或把阶段整备误扩成新功能开发。
 - 不创建本轮发布 tag，不进入 M15 测试 / 生产部署流程。
 - 不把跳过发布误判为进入生产稳定运营。
 - 不继续把 P3-8-D 购买 / 订单 / 背包、权限授权或 ID 守护作为无限期默认主线。
@@ -232,4 +239,4 @@
 - 本页必须保持简短，面向新会话快速读取。
 - 没有主线切换、优先级变化或新的关键事实，不改本页。
 - 功能开发细节、命令级验证记录、批次流水和历史背景不写入本页。
-- `P3-10` 细节统一写入 [P3-10 Web-first 信息架构与下一批开发任务选择](/planning/p3-10-cross-platform-information-architecture)。
+- `P3-10` 细节统一写入 [P3-10 Web-first 信息架构与下一批开发任务选择](/planning/p3-10-cross-platform-information-architecture)；`P3-11` 范围统一写入 [P3-11 发布候选整备与轻量复访补齐](/planning/p3-11-release-candidate-light-revisit)。
