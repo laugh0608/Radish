@@ -23,10 +23,17 @@
 - 正式 Web 交易主路径未发现仍把 `/me` 完整钱包、公开商品购买、订单通知、订单详情或库存默认导向 `/desktop` 的源码命中。
 - `buildDesktopShop*ReturnPath` 的源码调用集中在 WebOS `ShopApp` / `ProductDetail` 和对应历史深链测试，继续作为 `/desktop` 维护线保留。
 - `/me` 最近访问已通过真实公开 href 返回 `/forum/post/*`、`/docs/*`、`/shop/product/*`、`/u/*`，未复用 WebOS 工作区 opener。
-- 公开商品榜单 / 发现页榜单文案仍存在“只读、不带购买”的旧口径，容易和 B1 后“商品详情可登录购买”冲突；本轮已改为“榜单只读、购买从商品详情登录后继续、订单 / 背包留在私域 Web 路由”。
+- 公开商品榜单 / 发现页榜单文案仍存在“只读、不带购买”的旧口径，容易和 B1 后“商品详情可登录购买”冲突；首轮已改为“榜单只读、购买从商品详情登录后继续、订单 / 背包留在私域 Web 路由”。
+- 第二轮继续收口公开商品推荐语义：删除未使用的旧购买按钮翻译 key，把商品浏览的壳层式旧说法改为“public shop / 公开商城”，避免公开商城购买路径继续带出 WebOS 壳层暗示。
 - `Docs/planning/current.md`、`Docs/planning/p3-12-web-completion-webos-retirement.md` 和 B1 方案记录已改为 C1 代码侧残留清理先行，真实 Gateway PC / mobile 复核放到 B1 + C1 小阶段准备验收时集中执行。
 
 ## 已验证
+
+- `node --test --test-isolation=none ./tests/publicSeoStatic.test.ts ./tests/realUsagePathContracts.test.ts ./tests/authReturnPath.test.ts`：45 个测试通过。
+- `npm run type-check --workspace=radish.client`：通过。
+- `git diff --check`：通过。
+
+第二轮补充验证：
 
 - `node --test --test-isolation=none ./tests/publicSeoStatic.test.ts ./tests/realUsagePathContracts.test.ts ./tests/authReturnPath.test.ts`：45 个测试通过。
 - `npm run type-check --workspace=radish.client`：通过。
