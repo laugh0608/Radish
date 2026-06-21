@@ -69,3 +69,16 @@
 - Flutter 原生论坛写入口已承接当前已有能力：纯文本发帖、根评论 / 回复和问答回答均生成并复用 `clientSubmissionId`；失败重试复用同一提交意图 key，成功、对象变化、草稿变化或账号变化后生成新 key。
 - 今日验证按影响面完成：WOG 相关后端 / Flutter 批次测试、`flutter analyze`、`flutter test`、`dotnet test Radish.Api.Tests`、相关构建、`git diff --check` 和仓库卫生检查按批次通过；未启动服务，未执行真实 smoke。
 - 收工前补 [2026-06-20 收工回顾与明日事项](/records/daily-handoff-2026-06-20)，同步 current、P3-10 专题、路线图、写操作治理说明、月 / 周 / 年开发日志和记录索引；明日先评审 Flutter 帖子编辑 / 评论编辑入口是否新增产品能力承接，或切换到下一批 P3-10 产品 / 治理候选。
+
+## 2026-06-21
+
+- Flutter 作者编辑承接完成：原生端已接入作者帖子正文编辑和作者根评论编辑的 `clientSubmissionId` 复用规则，Flutter 子评论编辑和回答编辑经评审不进入下一批默认代码。
+- `P3-10` 阶段收束准备完成：整理完整批次范围、验证结论和剩余风险；当前暂缓 PR，不创建 tag，不进入发布部署流程。
+- `P3-11` 发布候选整备完成：发布候选验收矩阵、轻量复访缺口只读审计和阶段收束决策均已记录，`P3-11-C` 定向回修未触发。
+- `P3-12 Web 完全化与 WebOS 收束` 启动并完成 `P3-12-A` 功能资产盘点，明确正式 Web 主路径优先，`/desktop` 退为历史兼容入口，Flutter 暂时后移。
+- `P3-12-B1` 账户资产与商城交易 Web 化完成首批代码：正式 Web 资产流水、订单、库存、商城私域入口、公开购买登录回流和订单成功回流均已接入。
+- `P3-12-C1` B1 直接残留首轮清理完成：公开商城、公开账号动作和订单通知中的旧 `/desktop` 语义已收口，后续只在验收或新增阻断命中时回拉。
+- `P3-12-B2` 完整个人中心 Web 化首批代码完成：`/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 已接入，个人中心内容和浏览历史列表补齐正式公开链接语义。
+- `P3-12-B3` 论坛作者态 Web 化首批代码完成：新增 `/forum/compose`，扩展 `/forum/post/:postId?intent=answer|edit|history`，发帖、回答、采纳、作者编辑和编辑历史查看进入正式 Web 路由与登录回流。
+- 今日验证按批次完成：P3-12-B2 / B3 覆盖定向 Node 契约测试、`radish.client` type-check / build、`git diff --check` 和仓库卫生检查；未启动 dev server，未执行真实 Gateway smoke。
+- 收工前补 [2026-06-21 收工回顾与明日事项](/records/daily-handoff-2026-06-21)，同步 current、路线图、P3-12 专题、月 / 周 / 年开发日志和记录索引；明日优先推进 B3 小阶段验收准备，若暂不做运行态验收，则进入 `P3-12-B4` 文档作者态归属裁决。

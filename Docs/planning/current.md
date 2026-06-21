@@ -85,8 +85,8 @@
   - `P3-10` 阶段收束准备已完成完整批次范围、验证结论和剩余风险整理；当前暂缓 PR，不继续默认追加功能入口或链接扫尾。
   - `P3-11-A / B / D` 已完成发布候选验收矩阵、轻量复访缺口只读审计和阶段收束决策；暂不恢复 `dev -> master` PR，不创建 tag，不进入 M15 测试 / 生产部署流程，`P3-11-C` 定向回修未触发。
   - 下一主线切换到 `P3-12 Web 完全化与 WebOS 收束`：目标是在 PC / mobile 浏览器中完成项目正式版主路径，让 `/desktop` 退为历史兼容入口；Flutter 暂时后移，等 Web 正式版主路径稳定后再承接受控移动原生增强。
-  - `P3-12-A` 功能资产盘点与迁移矩阵已完成只读审计：浏览器根路径和公开阅读路径已基本 Web 化，账户资产、商城购买、订单、库存和资产流水仍存在正式版 Web 缺口；下一开发组定为 `P3-12-B1 账户资产与商城交易 Web 化`，记录见 [P3-12-A WebOS 与 Web 功能资产盘点记录](/records/p3-12-a-webos-web-function-asset-inventory-2026-06-21)。
-  - `P3-12-B1` 账户资产与商城交易 Web 化方案与首批代码侧主路径已完成：新增正式 Web 资产与商城交易 return path，接入 `/me/assets`、`/me/assets/transactions`、`/shop/orders`、`/shop/order/:orderId`、`/shop/inventory`，把 `/me` 完整钱包转向 `/me/assets/transactions`，公开商品详情购买改为 `/shop/product/:productId?intent=purchase` 登录回流并在购买成功后进入 `/shop/order/:orderId`；纯 Web 通知页的订单通知目标也已从桌面深链切到正式 Web 订单路由。定向契约测试、`radish.client` type-check / build 和 `git diff --check` 已通过，当前转入 `P3-12-C1` 代码侧残留清理；真实 PC / mobile Gateway 复核放到 B1 + C1 小阶段准备验收时，在用户确认前后端已启动后集中执行。统一 UI 设计后置到页面迁移完成后的 `P3-12-D`，记录见 [P3-12-B1 账户资产与商城交易 Web 化方案](/records/p3-12-b1-account-shop-web-plan-2026-06-21)。
+  - `P3-12-A` 功能资产盘点与迁移矩阵已完成只读审计：浏览器根路径和公开阅读路径已基本 Web 化，账户资产、商城购买、订单、库存和资产流水等正式版 Web 缺口已被拆入后续 B 组迁移，记录见 [P3-12-A WebOS 与 Web 功能资产盘点记录](/records/p3-12-a-webos-web-function-asset-inventory-2026-06-21)。
+  - `P3-12-B1` 账户资产与商城交易 Web 化方案与首批代码侧主路径已完成：新增正式 Web 资产与商城交易 return path，接入 `/me/assets`、`/me/assets/transactions`、`/shop/orders`、`/shop/order/:orderId`、`/shop/inventory`，把 `/me` 完整钱包转向 `/me/assets/transactions`，公开商品详情购买改为 `/shop/product/:productId?intent=purchase` 登录回流并在购买成功后进入 `/shop/order/:orderId`；纯 Web 通知页的订单通知目标也已从桌面深链切到正式 Web 订单路由。`P3-12-C1` 首轮 B1 直接残留清理已完成，后续只在验收或新增阻断命中时回拉；真实 PC / mobile Gateway 复核放到小阶段准备验收时，在用户确认前后端已启动后集中执行。统一 UI 设计后置到页面迁移完成后的 `P3-12-D`，记录见 [P3-12-B1 账户资产与商城交易 Web 化方案](/records/p3-12-b1-account-shop-web-plan-2026-06-21)。
   - `P3-12-B2` 完整个人中心 Web 化首批代码与正式链接语义补口已完成：新增 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 正式 Web 路由、登录回流、页面接入和 API helper 收口；我的内容与浏览历史列表已补真实公开 `href`，关注关系继续以 `/circle` 为权威入口。
   - `P3-12-B3` 论坛作者态 Web 化首批代码已完成：新增 `/forum/compose`，扩展 `/forum/post/:postId?intent=answer|edit|history`，接入发帖、问答回答 / 采纳、作者帖子编辑和帖子编辑历史查看；登录回流走正式 Web 路径，写入继续复用 `clientSubmissionId`，WebOS 三栏工作台、Dock、窗口参数和 `openApp` 语义不迁入正式 Web。真实 PC / mobile Gateway 复核放到 B3 小阶段准备验收时，在用户确认前后端已启动后集中执行，记录见 [P3-12-B3 论坛作者态 Web 化方案](/records/p3-12-b3-forum-author-web-plan-2026-06-21)。
 
@@ -221,9 +221,9 @@
 
 ## 明日事项
 
-- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement) 和 [P3-12-B2 完整个人中心 Web 化方案](/records/p3-12-b2-personal-center-web-plan-2026-06-21)，确认当前主线已回到 WebOS 功能迁移，而不是继续做 C1 维护清扫。
-- 第一顺位：确认并推进 `P3-12-B3` 论坛作者态 Web 化首批代码范围，优先处理 `/forum/compose`、详情受控 `intent=answer|edit|history`、正式 Web 登录回流和写入可靠性延续。
-- 第二顺位：B1 + C1、B2 和 B3 首批准备阶段验收时，在用户明确确认 API / Auth / Gateway / 前端已启动后，集中补 PC / mobile Gateway 页面复核。
+- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[P3-12-B3 论坛作者态 Web 化方案](/records/p3-12-b3-forum-author-web-plan-2026-06-21) 和 [2026-06-21 收工回顾与明日事项](/records/daily-handoff-2026-06-21)，确认 B1 / C1 / B2 / B3 首批代码均已完成，当前不是 C1 扩面清扫或 UI 美化线。
+- 第一顺位：推进 `P3-12-B3` 小阶段验收准备，整理 `/forum/compose`、`/forum/post/:postId?intent=answer|edit|history`、登录回流、作者权限、写入幂等和公开 canonical 的 PC / mobile 验收矩阵；真实 Gateway smoke 必须先等用户明确确认 API / Auth / Gateway / 前端已启动。
+- 第二顺位：若暂不做运行态验收，进入 `P3-12-B4` 文档作者态归属裁决，先盘点现有 WebOS Wiki / Docs、公开文档页、文档写入 API / 路由和 Console 可能归属，再决定正式 Web 管理页、Console 治理页或 WebOS 历史维护线。
 - 第三顺位：个人中心、论坛作者态和文档作者态迁移齐后进入 `P3-12-D` 统一 UI 设计与美化专题；页面级 UI 设计或跨页面视觉重塑必须先使用 Pencil 做设计稿，再更新设计 / 说明文档，最后进入视觉实现。
 
 ## 并行维护项
