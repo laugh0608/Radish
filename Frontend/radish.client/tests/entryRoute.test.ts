@@ -91,6 +91,10 @@ test('isMePathname 应单独识别登录态我的状态入口', () => {
   assert.equal(isMePathname('/me/'), true);
   assert.equal(isMePathname('/me/assets'), true);
   assert.equal(isMePathname('/me/assets/transactions'), true);
+  assert.equal(isMePathname('/me/content'), true);
+  assert.equal(isMePathname('/me/history'), true);
+  assert.equal(isMePathname('/me/attachments'), true);
+  assert.equal(isMePathname('/me/experience'), true);
   assert.equal(isMePathname('/me/assets/history'), false);
   assert.equal(isMePathname('/discover'), false);
   assert.equal(isMePathname('/u/usr_018f6b6f7c7d70008f8f8f8f8f8f8f8f'), false);

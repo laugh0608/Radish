@@ -8,8 +8,12 @@ import {
   buildDesktopShopOrderReturnPath,
   buildDesktopShopPrivateViewReturnPath,
   buildDesktopShopProductReturnPath,
+  buildMeAttachmentsReturnPath,
   buildMeAssetTransactionsReturnPath,
   buildMeAssetsReturnPath,
+  buildMeContentReturnPath,
+  buildMeExperienceReturnPath,
+  buildMeHistoryReturnPath,
   buildMeReturnPath,
   buildMessagesReturnPath,
   buildNotificationsReturnPath,
@@ -70,6 +74,15 @@ test('normalizeAuthReturnPath 只接受受控私域入口、正式 Web 交易回
   assert.equal(normalizeAuthReturnPath('/me/'), '/me');
   assert.equal(normalizeAuthReturnPath('/me/assets'), '/me/assets');
   assert.equal(normalizeAuthReturnPath('/me/assets/transactions'), '/me/assets/transactions');
+  assert.equal(normalizeAuthReturnPath('/me/content'), '/me/content');
+  assert.equal(normalizeAuthReturnPath('/me/content?tab=comments&page=2'), '/me/content?tab=comments&page=2');
+  assert.equal(normalizeAuthReturnPath('/me/content?tab=posts&page=1'), '/me/content');
+  assert.equal(normalizeAuthReturnPath('/me/history?page=3'), '/me/history?page=3');
+  assert.equal(
+    normalizeAuthReturnPath('/me/attachments?businessType=Post&keyword=cover&page=2'),
+    '/me/attachments?businessType=Post&keyword=cover&page=2',
+  );
+  assert.equal(normalizeAuthReturnPath('/me/experience?page=4'), '/me/experience?page=4');
   assert.equal(normalizeAuthReturnPath('/pet'), '/pet');
   assert.equal(normalizeAuthReturnPath('/pet/'), '/pet');
   assert.equal(
@@ -102,6 +115,17 @@ test('normalizeAuthReturnPath 只接受受控私域入口、正式 Web 交易回
   assert.equal(normalizeAuthReturnPath('/me#growth'), null);
   assert.equal(normalizeAuthReturnPath('/me/assets?tab=history'), null);
   assert.equal(normalizeAuthReturnPath('/me/assets/transactions#latest'), null);
+  assert.equal(normalizeAuthReturnPath('/me/content?tab=likes'), null);
+  assert.equal(normalizeAuthReturnPath('/me/content?tab=comments&tab=posts'), null);
+  assert.equal(normalizeAuthReturnPath('/me/content?page=0'), null);
+  assert.equal(normalizeAuthReturnPath('/me/content?from=desktop'), null);
+  assert.equal(normalizeAuthReturnPath('/me/history?page=abc'), null);
+  assert.equal(normalizeAuthReturnPath('/me/history#latest'), null);
+  assert.equal(normalizeAuthReturnPath('/me/attachments?businessType=Secret'), null);
+  assert.equal(normalizeAuthReturnPath('/me/attachments?keyword=a&keyword=b'), null);
+  assert.equal(normalizeAuthReturnPath('/me/attachments?page=0'), null);
+  assert.equal(normalizeAuthReturnPath('/me/experience?page=0'), null);
+  assert.equal(normalizeAuthReturnPath('/me/experience?tab=stats'), null);
   assert.equal(normalizeAuthReturnPath('/pet?from=me'), null);
   assert.equal(normalizeAuthReturnPath('/pet#care'), null);
   assert.equal(normalizeAuthReturnPath('/shop/product/2042219067430928384'), null);
@@ -149,6 +173,27 @@ test('buildMeReturnPath 应构造我的状态登录回流路径', () => {
 test('资产正式 Web 返回路径应只构造受控资产入口', () => {
   assert.equal(buildMeAssetsReturnPath(), '/me/assets');
   assert.equal(buildMeAssetTransactionsReturnPath(), '/me/assets/transactions');
+});
+
+test('个人中心正式 Web 返回路径应只构造受控子入口', () => {
+  assert.equal(buildMeContentReturnPath(), '/me/content');
+  assert.equal(buildMeContentReturnPath({ tab: 'comments', page: 3 }), '/me/content?tab=comments&page=3');
+  assert.equal(buildMeContentReturnPath({ tab: 'quick-replies', page: '2' }), '/me/content?tab=quick-replies&page=2');
+  assert.equal(buildMeContentReturnPath({ tab: 'likes' as never }), null);
+  assert.equal(buildMeContentReturnPath({ page: '0' }), null);
+  assert.equal(buildMeHistoryReturnPath(), '/me/history');
+  assert.equal(buildMeHistoryReturnPath({ page: 2 }), '/me/history?page=2');
+  assert.equal(buildMeHistoryReturnPath({ page: 'abc' }), null);
+  assert.equal(buildMeAttachmentsReturnPath(), '/me/attachments');
+  assert.equal(
+    buildMeAttachmentsReturnPath({ businessType: 'Document', keyword: ' guide ', page: 4 }),
+    '/me/attachments?businessType=Document&keyword=guide&page=4',
+  );
+  assert.equal(buildMeAttachmentsReturnPath({ businessType: 'Secret' as never }), null);
+  assert.equal(buildMeAttachmentsReturnPath({ page: 0 }), null);
+  assert.equal(buildMeExperienceReturnPath(), '/me/experience');
+  assert.equal(buildMeExperienceReturnPath({ page: '5' }), '/me/experience?page=5');
+  assert.equal(buildMeExperienceReturnPath({ page: '0' }), null);
 });
 
 test('buildPetReturnPath 应构造电子宠物登录回流路径', () => {

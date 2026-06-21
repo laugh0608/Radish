@@ -1,13 +1,31 @@
 import { buildMessagesPath, MESSAGES_ENTRY_PATH, type MessagesRoute } from '../messages/messagesRouteState.ts';
+import {
+  buildMePath,
+  ME_ASSET_TRANSACTIONS_PATH,
+  ME_ASSETS_PATH,
+  ME_ATTACHMENTS_PATH,
+  ME_CONTENT_PATH,
+  ME_ENTRY_PATH,
+  ME_EXPERIENCE_PATH,
+  ME_HISTORY_PATH,
+  type MeAttachmentBusinessType,
+  type MeContentTab,
+} from '../me/meRouteState.ts';
 import { PET_ENTRY_PATH } from '../pet/petRouteState.ts';
 
 const AUTH_RETURN_PATH_STORAGE_KEY = 'radish:auth:return-path';
 const AUTH_RETURN_PATH_BASE_URL = 'https://radish.local';
-const ME_RETURN_PATH = '/me';
-const ME_ASSETS_RETURN_PATH = '/me/assets';
-const ME_ASSET_TRANSACTIONS_RETURN_PATH = '/me/assets/transactions';
 const NOTIFICATIONS_RETURN_PATH = '/notifications';
 const CIRCLE_RETURN_TABS = new Set(['feed', 'following', 'followers']);
+const ME_CONTENT_TABS = new Set<MeContentTab>(['posts', 'comments', 'quick-replies']);
+const ME_ATTACHMENT_BUSINESS_TYPES = new Set<MeAttachmentBusinessType>([
+  'All',
+  'General',
+  'Post',
+  'Comment',
+  'Avatar',
+  'Document',
+]);
 const PUBLIC_FORUM_POST_PUBLIC_ID_PATTERN = /^pst_[a-f0-9]{32}$/;
 const POSITIVE_LONG_ID_PATTERN = /^[1-9]\d*$/;
 
@@ -56,12 +74,16 @@ export function normalizeAuthReturnPath(value: string | null | undefined): strin
       return normalizeMessagesReturnPath(url);
     }
 
-    if (pathname === ME_RETURN_PATH) {
-      return normalizeMeReturnPath(url);
-    }
-
-    if (pathname === ME_ASSETS_RETURN_PATH || pathname === ME_ASSET_TRANSACTIONS_RETURN_PATH) {
-      return normalizeMeAssetsReturnPath(url, pathname);
+    if (
+      pathname === ME_ENTRY_PATH
+      || pathname === ME_ASSETS_PATH
+      || pathname === ME_ASSET_TRANSACTIONS_PATH
+      || pathname === ME_CONTENT_PATH
+      || pathname === ME_HISTORY_PATH
+      || pathname === ME_ATTACHMENTS_PATH
+      || pathname === ME_EXPERIENCE_PATH
+    ) {
+      return normalizeMeReturnPath(url, pathname);
     }
 
     if (pathname === PET_ENTRY_PATH) {
@@ -241,20 +263,125 @@ function normalizeMessagesReturnPath(url: URL): string | null {
   return normalized;
 }
 
-function normalizeMeReturnPath(url: URL): string | null {
-  if (url.search || url.hash) {
-    return null;
+function hasOnlySearchParams(url: URL, allowedKeys: Set<string>): boolean {
+  for (const key of url.searchParams.keys()) {
+    if (!allowedKeys.has(key)) {
+      return false;
+    }
   }
 
-  return ME_RETURN_PATH;
+  return true;
 }
 
-function normalizeMeAssetsReturnPath(url: URL, pathname: string): string | null {
-  if (url.search || url.hash) {
+function hasDuplicateSearchParams(url: URL, keys: string[]): boolean {
+  return keys.some((key) => url.searchParams.getAll(key).length > 1);
+}
+
+function normalizePositivePage(value: string | null): number | null {
+  if (!value) {
+    return 1;
+  }
+
+  if (!POSITIVE_LONG_ID_PATTERN.test(value)) {
     return null;
   }
 
-  return pathname;
+  const page = Number(value);
+  return Number.isSafeInteger(page) && page > 0 ? page : null;
+}
+
+function normalizeMeContentReturnPath(url: URL): string | null {
+  if (
+    !hasOnlySearchParams(url, new Set(['tab', 'page']))
+    || hasDuplicateSearchParams(url, ['tab', 'page'])
+  ) {
+    return null;
+  }
+
+  const tab = url.searchParams.get('tab') ?? 'posts';
+  if (!ME_CONTENT_TABS.has(tab as MeContentTab)) {
+    return null;
+  }
+
+  const page = normalizePositivePage(url.searchParams.get('page'));
+  if (!page) {
+    return null;
+  }
+
+  return buildMePath({
+    kind: 'content',
+    tab: tab as MeContentTab,
+    page
+  });
+}
+
+function normalizeMePagedReturnPath(pathname: typeof ME_HISTORY_PATH | typeof ME_EXPERIENCE_PATH, url: URL): string | null {
+  if (
+    !hasOnlySearchParams(url, new Set(['page']))
+    || hasDuplicateSearchParams(url, ['page'])
+  ) {
+    return null;
+  }
+
+  const page = normalizePositivePage(url.searchParams.get('page'));
+  if (!page) {
+    return null;
+  }
+
+  return buildMePath({
+    kind: pathname === ME_HISTORY_PATH ? 'history' : 'experience',
+    page
+  });
+}
+
+function normalizeMeAttachmentsReturnPath(url: URL): string | null {
+  if (
+    !hasOnlySearchParams(url, new Set(['businessType', 'keyword', 'page']))
+    || hasDuplicateSearchParams(url, ['businessType', 'keyword', 'page'])
+  ) {
+    return null;
+  }
+
+  const businessType = url.searchParams.get('businessType') ?? 'All';
+  if (!ME_ATTACHMENT_BUSINESS_TYPES.has(businessType as MeAttachmentBusinessType)) {
+    return null;
+  }
+
+  const page = normalizePositivePage(url.searchParams.get('page'));
+  if (!page) {
+    return null;
+  }
+
+  return buildMePath({
+    kind: 'attachments',
+    businessType: businessType as MeAttachmentBusinessType,
+    keyword: url.searchParams.get('keyword')?.trim() ?? '',
+    page
+  });
+}
+
+function normalizeMeReturnPath(url: URL, pathname: string): string | null {
+  if (url.hash) {
+    return null;
+  }
+
+  if (pathname === ME_ENTRY_PATH || pathname === ME_ASSETS_PATH || pathname === ME_ASSET_TRANSACTIONS_PATH) {
+    return url.search ? null : pathname;
+  }
+
+  if (pathname === ME_CONTENT_PATH) {
+    return normalizeMeContentReturnPath(url);
+  }
+
+  if (pathname === ME_HISTORY_PATH || pathname === ME_EXPERIENCE_PATH) {
+    return normalizeMePagedReturnPath(pathname, url);
+  }
+
+  if (pathname === ME_ATTACHMENTS_PATH) {
+    return normalizeMeAttachmentsReturnPath(url);
+  }
+
+  return null;
 }
 
 function normalizePetReturnPath(url: URL): string | null {
@@ -376,15 +503,80 @@ export function buildMessagesReturnPath(route: MessagesRoute = {}): string | nul
 }
 
 export function buildMeReturnPath(): string {
-  return ME_RETURN_PATH;
+  return ME_ENTRY_PATH;
 }
 
 export function buildMeAssetsReturnPath(): string {
-  return ME_ASSETS_RETURN_PATH;
+  return ME_ASSETS_PATH;
 }
 
 export function buildMeAssetTransactionsReturnPath(): string {
-  return ME_ASSET_TRANSACTIONS_RETURN_PATH;
+  return ME_ASSET_TRANSACTIONS_PATH;
+}
+
+export function buildMeContentReturnPath(route: { tab?: MeContentTab; page?: number | string } = {}): string | null {
+  if (route.tab && !ME_CONTENT_TABS.has(route.tab)) {
+    return null;
+  }
+
+  const page = route.page == null ? 1 : normalizePositivePage(String(route.page).trim());
+  if (!page) {
+    return null;
+  }
+
+  return buildMePath({
+    kind: 'content',
+    tab: route.tab ?? 'posts',
+    page
+  });
+}
+
+export function buildMeHistoryReturnPath(route: { page?: number | string } = {}): string | null {
+  const page = route.page == null ? 1 : normalizePositivePage(String(route.page).trim());
+  if (!page) {
+    return null;
+  }
+
+  return buildMePath({
+    kind: 'history',
+    page
+  });
+}
+
+export function buildMeAttachmentsReturnPath(
+  route: {
+    businessType?: MeAttachmentBusinessType;
+    keyword?: string;
+    page?: number | string;
+  } = {}
+): string | null {
+  if (route.businessType && !ME_ATTACHMENT_BUSINESS_TYPES.has(route.businessType)) {
+    return null;
+  }
+
+  const page = route.page == null ? 1 : normalizePositivePage(String(route.page).trim());
+  if (!page) {
+    return null;
+  }
+
+  return buildMePath({
+    kind: 'attachments',
+    businessType: route.businessType ?? 'All',
+    keyword: route.keyword?.trim() ?? '',
+    page
+  });
+}
+
+export function buildMeExperienceReturnPath(route: { page?: number | string } = {}): string | null {
+  const page = route.page == null ? 1 : normalizePositivePage(String(route.page).trim());
+  if (!page) {
+    return null;
+  }
+
+  return buildMePath({
+    kind: 'experience',
+    page
+  });
 }
 
 export function buildPetReturnPath(): string {

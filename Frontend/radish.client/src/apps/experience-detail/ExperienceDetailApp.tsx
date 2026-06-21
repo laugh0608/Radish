@@ -13,15 +13,24 @@ const PieChart = lazy(() =>
   import('@radish/ui/pie-chart').then((module) => ({ default: module.PieChart }))
 );
 
-export const ExperienceDetailApp = () => {
+interface ExperienceDetailAppProps {
+  pageIndex?: number;
+  onPageIndexChange?: (pageIndex: number) => void;
+}
+
+export const ExperienceDetailApp = ({
+  pageIndex: controlledPageIndex,
+  onPageIndexChange
+}: ExperienceDetailAppProps = {}) => {
   const [experience, setExperience] = useState<ExperienceData | null>(null);
   const [transactions, setTransactions] = useState<ExpTransactionData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [pageIndex, setPageIndex] = useState(1);
+  const [internalPageIndex, setInternalPageIndex] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [days, setDays] = useState<7 | 30>(7);
   const pageSize = 20;
+  const pageIndex = controlledPageIndex ?? internalPageIndex;
 
   useEffect(() => {
     void loadData();
@@ -144,14 +153,23 @@ export const ExperienceDetailApp = () => {
 
   const handlePrevPage = () => {
     if (pageIndex > 1) {
-      setPageIndex(pageIndex - 1);
+      updatePageIndex(pageIndex - 1);
     }
   };
 
   const handleNextPage = () => {
     if (pageIndex < totalPages) {
-      setPageIndex(pageIndex + 1);
+      updatePageIndex(pageIndex + 1);
     }
+  };
+
+  const updatePageIndex = (nextPageIndex: number) => {
+    if (onPageIndexChange) {
+      onPageIndexChange(nextPageIndex);
+      return;
+    }
+
+    setInternalPageIndex(nextPageIndex);
   };
 
   const dailyStats = getDailyStats();

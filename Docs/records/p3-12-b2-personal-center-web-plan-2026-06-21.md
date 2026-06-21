@@ -2,9 +2,9 @@
 
 > 日期：2026-06-21（Asia/Shanghai）
 >
-> 状态：方案与边界梳理完成，准备进入首批代码实现
+> 状态：首批代码已接入并完成代码侧验证
 >
-> 结论：`P3-12-B2` 回到 WebOS 到正式 Web 的功能迁移主线，优先补齐 `/me` 下的我的内容、完整浏览历史、附件管理和经验详情；关注关系以既有 `/circle` 为权威入口，`/me` 只提供个人中心内的清晰联动，不重复实现关系链页面。
+> 结论：`P3-12-B2` 回到 WebOS 到正式 Web 的功能迁移主线，已首批补齐 `/me` 下的我的内容、完整浏览历史、附件管理和经验详情正式路径；关注关系以既有 `/circle` 为权威入口，`/me` 只提供个人中心内的清晰联动，不重复实现关系链页面。
 
 ## 本轮核对
 
@@ -36,6 +36,29 @@ Git 状态：
 - 未启动 API / Auth / Gateway / Vite。
 - 未做 PC / mobile 真实页面复核。
 - 未进入 UI 设计或视觉重塑；本批是功能迁移边界和路由方案，不需要 Pencil。
+
+## 首批代码进展
+
+本批已完成：
+
+- `/meRouteState` 已接入 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience`，并规范化 `tab`、`page`、`businessType` 和 `keyword` query。
+- `authReturnPath` 已白名单个人中心新增正式 Web 路由，拒绝未知 query、hash、非法页码、非法 tab 与非法附件业务类型。
+- `/me` 看板已补我的内容、完整浏览历史、附件管理和经验详情入口；新增子页面继续使用正式 Web 页面容器，不引入 WebOS Dock / 窗口壳层。
+- `UserPostList`、`UserCommentList`、`UserQuickReplyList`、`UserBrowseHistoryList`、`UserAttachmentList` 与 `ExperienceDetailApp` 已支持受控分页或初始化参数，保留 WebOS 旧入口复用能力。
+- 我的帖子、评论和附件列表已从手写 `fetch` / 鉴权头收口到 `@radish/http` API helper；轻回应、浏览历史和经验详情继续复用既有统一 API helper。
+- 我的内容和浏览历史跳转公开详情时使用正式 Web URL 与一次性来源转交，不再依赖 WebOS workspace opener。
+
+本批验证：
+
+- `node --test --test-isolation=none ./tests/meRouteState.test.ts ./tests/authReturnPath.test.ts ./tests/entryRoute.test.ts ./tests/realUsagePathContracts.test.ts`
+- `npm run type-check --workspace=radish.client`
+- `npm run build --workspace=radish.client`
+- `git diff --check`
+
+未执行：
+
+- 未启动 API / Auth / Gateway / Vite。
+- 未做 PC / mobile Gateway 真实页面复核；该项仍后置到 B2 小阶段准备验收，并且需用户先明确确认前后端已启动。
 
 ## 现状判断
 

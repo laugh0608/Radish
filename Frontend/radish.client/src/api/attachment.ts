@@ -4,7 +4,7 @@ import { log } from '@/utils/logger';
  * 附件上传相关的 API 调用
  */
 
-import { configureApiClient, apiFetch, parseApiResponseWithI18n, type ApiResponse } from '@radish/http';
+import { configureApiClient, apiFetch, apiGet, parseApiResponseWithI18n, type ApiResponse } from '@radish/http';
 import type { TFunction } from 'i18next';
 import { getApiBaseUrl } from '@/config/env';
 import { tokenService } from '@/services/tokenService';
@@ -149,6 +149,29 @@ export interface AttachmentInfo {
    * 创建时间
    */
   voCreateTime?: string;
+}
+
+export type MyAttachmentBusinessType = 'All' | 'General' | 'Post' | 'Comment' | 'Avatar' | 'Document';
+
+export interface MyAttachmentItem {
+  voId: string;
+  voOriginalName: string;
+  voExtension?: string;
+  voFileSize: number;
+  voFileSizeFormatted?: string;
+  voMimeType: string;
+  voUrl: string;
+  voThumbnailUrl?: string | null;
+  voBusinessType?: string;
+  voCreateTime: string;
+}
+
+export interface AttachmentPageModel<T> {
+  page: number;
+  pageSize: number;
+  dataCount: number;
+  pageCount: number;
+  data: T[];
 }
 
 /**
@@ -469,6 +492,38 @@ export async function getAttachmentsByBusiness(
   }
 
   return parsed.data;
+}
+
+export async function getMyAttachments(options: {
+  pageIndex?: number;
+  pageSize?: number;
+  businessType?: MyAttachmentBusinessType;
+  keyword?: string;
+} = {}): Promise<AttachmentPageModel<MyAttachmentItem>> {
+  const params = new URLSearchParams({
+    pageIndex: String(options.pageIndex ?? 1),
+    pageSize: String(options.pageSize ?? 10),
+  });
+
+  if (options.businessType && options.businessType !== 'All') {
+    params.set('businessType', options.businessType);
+  }
+
+  const keyword = options.keyword?.trim();
+  if (keyword) {
+    params.set('keyword', keyword);
+  }
+
+  const response = await apiGet<AttachmentPageModel<MyAttachmentItem>>(
+    `/api/v1/Attachment/GetMyAttachments?${params.toString()}`,
+    { withAuth: true }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '加载附件失败');
+  }
+
+  return response.data;
 }
 
 /**

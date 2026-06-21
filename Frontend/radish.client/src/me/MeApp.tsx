@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState, type MouseEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ExperienceBar } from '@radish/ui/experience-bar';
 import { Icon } from '@radish/ui/icon';
@@ -8,11 +8,13 @@ import { getMyPet, type PetProfile } from '@/api/pet';
 import {
   getMyBrowseHistory,
   getPublicProfile,
+  type LongId,
   type PublicUserProfile,
   type UserBrowseHistoryItem,
 } from '@/api/user';
 import { getApiBaseUrl } from '@/config/env';
 import { PublicShellHeader } from '@/public/components/PublicShellHeader';
+import { buildPublicForumPath } from '@/public/forumRouteState';
 import { normalizePublicUserId, resolvePublicUserRouteIdentifier } from '@/public/publicId';
 import { buildPublicProfilePath, type PublicProfileRoute } from '@/public/profileRouteState';
 import {
@@ -24,8 +26,12 @@ import {
 import { redirectToLogin } from '@/services/auth';
 import { bootstrapAuth, hydrateAuthUser } from '@/services/authBootstrap';
 import {
+  buildMeAttachmentsReturnPath,
   buildMeAssetTransactionsReturnPath,
   buildMeAssetsReturnPath,
+  buildMeContentReturnPath,
+  buildMeExperienceReturnPath,
+  buildMeHistoryReturnPath,
   buildMeReturnPath,
 } from '@/services/authReturnPath';
 import { useAuthStore } from '@/stores/authStore';
@@ -34,8 +40,27 @@ import { DEFAULT_TIME_ZONE, formatDateTimeByTimeZone, getBrowserTimeZoneId } fro
 import { log } from '@/utils/logger';
 import { resolveMediaUrl } from '@/utils/media';
 import { MeAssetsPage } from './MeAssetsPage';
-import { buildMePath, createDefaultMeRoute, parseMeRoute, type MeRoute } from './meRouteState';
+import { buildMePath, createDefaultMeRoute, parseMeRoute, type MeContentTab, type MeRoute } from './meRouteState';
 import styles from './MeApp.module.css';
+
+const UserPostList = lazy(() =>
+  import('@/apps/profile/components/UserPostList').then((module) => ({ default: module.UserPostList }))
+);
+const UserCommentList = lazy(() =>
+  import('@/apps/profile/components/UserCommentList').then((module) => ({ default: module.UserCommentList }))
+);
+const UserQuickReplyList = lazy(() =>
+  import('@/apps/profile/components/UserQuickReplyList').then((module) => ({ default: module.UserQuickReplyList }))
+);
+const UserBrowseHistoryList = lazy(() =>
+  import('@/apps/profile/components/UserBrowseHistoryList').then((module) => ({ default: module.UserBrowseHistoryList }))
+);
+const UserAttachmentList = lazy(() =>
+  import('@/apps/profile/components/UserAttachmentList').then((module) => ({ default: module.UserAttachmentList }))
+);
+const ExperienceDetailApp = lazy(() =>
+  import('@/apps/experience-detail/ExperienceDetailApp').then((module) => ({ default: module.ExperienceDetailApp }))
+);
 
 type MeDataErrorKey = 'profile' | 'experience' | 'assets' | 'browse' | 'pet';
 
@@ -67,6 +92,12 @@ const meRouteDescriptor: PublicRouteDescriptor = {
   app: 'me',
   route: { kind: 'index' },
 };
+
+const contentTabs: Array<{ tab: MeContentTab; labelKey: string }> = [
+  { tab: 'posts', labelKey: 'me.content.tab.posts' },
+  { tab: 'comments', labelKey: 'me.content.tab.comments' },
+  { tab: 'quick-replies', labelKey: 'me.content.tab.quickReplies' },
+];
 
 function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error && error.message.trim() ? error.message : fallback;
@@ -154,6 +185,17 @@ function buildBrowseHistoryHref(item: UserBrowseHistoryItem): string | null {
   return null;
 }
 
+function buildForumDetailHref(postId: LongId, postPublicId?: string | null, commentId?: LongId): string {
+  const normalizedPublicId = postPublicId?.trim();
+  const normalizedPostId = String(postId);
+  return buildPublicForumPath({
+    kind: 'detail',
+    postId: normalizedPublicId || normalizedPostId,
+    ...(normalizedPublicId ? { postPublicId: normalizedPublicId } : {}),
+    ...(commentId ? { commentId: String(commentId) } : {})
+  });
+}
+
 function isPublicDocsDetailPath(pathname: string): boolean {
   const normalizedPathname = pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
   const docsPathPrefix = '/docs/';
@@ -205,7 +247,7 @@ function resolveInitialMeRoute(): MeRoute {
     return createDefaultMeRoute();
   }
 
-  return parseMeRoute(window.location.pathname) ?? createDefaultMeRoute();
+  return parseMeRoute(window.location.pathname, window.location.search) ?? createDefaultMeRoute();
 }
 
 function buildMeRouteReturnPath(route: MeRoute): string {
@@ -215,6 +257,26 @@ function buildMeRouteReturnPath(route: MeRoute): string {
 
   if (route.kind === 'assets-transactions') {
     return buildMeAssetTransactionsReturnPath();
+  }
+
+  if (route.kind === 'content') {
+    return buildMeContentReturnPath({ tab: route.tab, page: route.page }) ?? buildMeReturnPath();
+  }
+
+  if (route.kind === 'history') {
+    return buildMeHistoryReturnPath({ page: route.page }) ?? buildMeReturnPath();
+  }
+
+  if (route.kind === 'attachments') {
+    return buildMeAttachmentsReturnPath({
+      businessType: route.businessType,
+      keyword: route.keyword,
+      page: route.page
+    }) ?? buildMeReturnPath();
+  }
+
+  if (route.kind === 'experience') {
+    return buildMeExperienceReturnPath({ page: route.page }) ?? buildMeReturnPath();
   }
 
   return buildMeReturnPath();
@@ -264,7 +326,15 @@ export const MeApp = () => {
       ? t('me.assets.overviewTitle')
       : route.kind === 'assets-transactions'
         ? t('me.assets.transactionsTitle')
-        : t('me.title');
+        : route.kind === 'content'
+          ? t('me.content.title')
+          : route.kind === 'history'
+            ? t('me.history.title')
+            : route.kind === 'attachments'
+              ? t('me.attachments.title')
+              : route.kind === 'experience'
+                ? t('me.experience.detailTitle')
+                : t('me.title');
     document.title = `${title} · Radish`;
   }, [route.kind, t]);
 
@@ -438,6 +508,30 @@ export const MeApp = () => {
     }
   }, []);
 
+  const navigateToPublicHrefFromMe = useCallback((href: string) => {
+    const sourceState = buildSourceStateForHref(href);
+    if (sourceState) {
+      rememberPublicRouteSourceTransfer(href, sourceState);
+    }
+
+    window.location.href = href;
+  }, []);
+
+  const navigateToForumPost = useCallback((
+    postId: LongId,
+    postPublicId?: string | null,
+    commentId?: LongId
+  ) => {
+    navigateToPublicHrefFromMe(buildForumDetailHref(postId, postPublicId, commentId));
+  }, [navigateToPublicHrefFromMe]);
+
+  const navigateToBrowseHistoryItem = useCallback((item: UserBrowseHistoryItem) => {
+    const href = buildBrowseHistoryHref(item);
+    if (href) {
+      navigateToPublicHrefFromMe(href);
+    }
+  }, [navigateToPublicHrefFromMe]);
+
   const renderStatusPanel = (title: string, description: string, icon = 'mdi:account-circle-outline') => (
     <section className={styles.statusPanel}>
       <Icon icon={icon} size={24} />
@@ -447,6 +541,169 @@ export const MeApp = () => {
       </div>
     </section>
   );
+
+  const renderSubPageShell = (
+    title: string,
+    description: string,
+    content: ReactNode,
+    actions?: ReactNode
+  ) => (
+    <section className={styles.subPagePanel}>
+      <div className={styles.subPageHeader}>
+        <div>
+          <p className={styles.kicker}>{t('me.privateCenterKicker')}</p>
+          <h1>{title}</h1>
+          <p>{description}</p>
+        </div>
+        <div className={styles.subPageActions}>
+          {actions}
+          <a
+            className={styles.secondaryButton}
+            href={buildMePath({ kind: 'dashboard' })}
+            onClick={(event) => {
+              if (!shouldHandlePlainLinkClick(event)) {
+                return;
+              }
+
+              event.preventDefault();
+              navigateToMeRoute({ kind: 'dashboard' });
+            }}
+          >
+            <Icon icon="mdi:arrow-left" size={18} />
+            <span>{t('me.assets.backToStatus')}</span>
+          </a>
+        </div>
+      </div>
+      <Suspense fallback={<div className={styles.loadingBlock}>{t('common.loading')}</div>}>
+        {content}
+      </Suspense>
+    </section>
+  );
+
+  const renderContentPage = () => {
+    if (route.kind !== 'content') {
+      return null;
+    }
+
+    const tabActions = (
+      <div className={styles.segmentedTabs} role="tablist" aria-label={t('me.content.tabsLabel')}>
+        {contentTabs.map((item) => {
+          const href = buildMePath({ kind: 'content', tab: item.tab, page: 1 });
+          return (
+            <a
+              key={item.tab}
+              href={href}
+              className={route.tab === item.tab ? styles.segmentedTabActive : styles.segmentedTab}
+              role="tab"
+              aria-selected={route.tab === item.tab}
+              onClick={(event) => {
+                if (!shouldHandlePlainLinkClick(event)) {
+                  return;
+                }
+
+                event.preventDefault();
+                navigateToMeRoute({ kind: 'content', tab: item.tab, page: 1 });
+              }}
+            >
+              {t(item.labelKey)}
+            </a>
+          );
+        })}
+      </div>
+    );
+
+    const pageContent = route.tab === 'posts' ? (
+      <UserPostList
+        userId={userId}
+        apiBaseUrl={apiBaseUrl}
+        displayTimeZone={displayTimeZone}
+        page={route.page}
+        onPageChange={(page) => navigateToMeRoute({ ...route, page })}
+        onPostClick={(postId, postPublicId) => navigateToForumPost(postId, postPublicId)}
+      />
+    ) : route.tab === 'comments' ? (
+      <UserCommentList
+        userId={userId}
+        apiBaseUrl={apiBaseUrl}
+        displayTimeZone={displayTimeZone}
+        page={route.page}
+        onPageChange={(page) => navigateToMeRoute({ ...route, page })}
+        onCommentClick={(postId, commentId, postPublicId) => navigateToForumPost(postId, postPublicId, commentId)}
+      />
+    ) : (
+      <UserQuickReplyList
+        displayTimeZone={displayTimeZone}
+        page={route.page}
+        onPageChange={(page) => navigateToMeRoute({ ...route, page })}
+        onItemClick={(postId, postPublicId) => navigateToForumPost(postId, postPublicId)}
+      />
+    );
+
+    return renderSubPageShell(
+      t('me.content.title'),
+      t('me.content.description'),
+      <>
+        {tabActions}
+        {pageContent}
+      </>
+    );
+  };
+
+  const renderHistoryPage = () => {
+    if (route.kind !== 'history') {
+      return null;
+    }
+
+    return renderSubPageShell(
+      t('me.history.title'),
+      t('me.history.description'),
+      <UserBrowseHistoryList
+        displayTimeZone={displayTimeZone}
+        page={route.page}
+        onPageChange={(page) => navigateToMeRoute({ kind: 'history', page })}
+        onItemClick={navigateToBrowseHistoryItem}
+      />
+    );
+  };
+
+  const renderAttachmentsPage = () => {
+    if (route.kind !== 'attachments') {
+      return null;
+    }
+
+    return renderSubPageShell(
+      t('me.attachments.title'),
+      t('me.attachments.description'),
+      <UserAttachmentList
+        apiBaseUrl={apiBaseUrl}
+        displayTimeZone={displayTimeZone}
+        initialPage={route.page}
+        initialBusinessType={route.businessType}
+        initialKeyword={route.keyword}
+        onStateChange={(state) => navigateToMeRoute({
+          kind: 'attachments',
+          businessType: state.businessType,
+          keyword: state.keyword,
+          page: state.page
+        })}
+      />
+    );
+  };
+
+  const renderExperiencePage = () => {
+    if (route.kind !== 'experience') {
+      return null;
+    }
+
+    return renderSubPageShell(
+      t('me.experience.detailTitle'),
+      t('me.experience.detailDescription'),
+      <ExperienceDetailApp
+        pageIndex={route.page}
+        onPageIndexChange={(page) => navigateToMeRoute({ kind: 'experience', page })}
+      />
+    );
+  };
 
   const renderContent = () => {
     if (!authReady || !loggedIn) {
@@ -468,6 +725,22 @@ export const MeApp = () => {
           onNavigate={navigateToMeRoute}
         />
       );
+    }
+
+    if (route.kind === 'content') {
+      return renderContentPage();
+    }
+
+    if (route.kind === 'history') {
+      return renderHistoryPage();
+    }
+
+    if (route.kind === 'attachments') {
+      return renderAttachmentsPage();
+    }
+
+    if (route.kind === 'experience') {
+      return renderExperiencePage();
     }
 
     return (
@@ -512,9 +785,39 @@ export const MeApp = () => {
               )}
             </div>
             <div className={styles.secondaryActionGroup}>
+              <a
+                className={styles.secondaryButton}
+                href={buildMePath({ kind: 'content', tab: 'posts', page: 1 })}
+                onClick={(event) => {
+                  if (!shouldHandlePlainLinkClick(event)) {
+                    return;
+                  }
+
+                  event.preventDefault();
+                  navigateToMeRoute({ kind: 'content', tab: 'posts', page: 1 });
+                }}
+              >
+                <Icon icon="mdi:file-document-edit-outline" size={18} />
+                <span>{t('me.openContent')}</span>
+              </a>
               <a className={styles.secondaryButton} href="/circle">
                 <Icon icon="mdi:account-group-outline" size={18} />
                 <span>{t('me.openCircle')}</span>
+              </a>
+              <a
+                className={styles.secondaryButton}
+                href={buildMePath({ kind: 'attachments', businessType: 'All', keyword: '', page: 1 })}
+                onClick={(event) => {
+                  if (!shouldHandlePlainLinkClick(event)) {
+                    return;
+                  }
+
+                  event.preventDefault();
+                  navigateToMeRoute({ kind: 'attachments', businessType: 'All', keyword: '', page: 1 });
+                }}
+              >
+                <Icon icon="mdi:paperclip" size={18} />
+                <span>{t('me.openAttachments')}</span>
               </a>
               <a className={styles.secondaryButton} href="/notifications">
                 <Icon icon="mdi:bell-outline" size={18} />
@@ -641,7 +944,19 @@ export const MeApp = () => {
           <article className={styles.detailPanel}>
             <div className={styles.panelHeader}>
               <h3>{t('me.recentExperience')}</h3>
-              <a href="/leaderboard/experience">{t('me.openLeaderboard')}</a>
+              <a
+                href={buildMePath({ kind: 'experience', page: 1 })}
+                onClick={(event) => {
+                  if (!shouldHandlePlainLinkClick(event)) {
+                    return;
+                  }
+
+                  event.preventDefault();
+                  navigateToMeRoute({ kind: 'experience', page: 1 });
+                }}
+              >
+                {t('me.openExperienceDetail')}
+              </a>
             </div>
             {dashboardData.expTransactions.length > 0 ? (
               <div className={styles.itemList}>
@@ -703,7 +1018,19 @@ export const MeApp = () => {
           <article className={styles.detailPanel}>
             <div className={styles.panelHeader}>
               <h3>{t('me.recentBrowse')}</h3>
-              <a href="/discover">{t('me.openDiscover')}</a>
+              <a
+                href={buildMePath({ kind: 'history', page: 1 })}
+                onClick={(event) => {
+                  if (!shouldHandlePlainLinkClick(event)) {
+                    return;
+                  }
+
+                  event.preventDefault();
+                  navigateToMeRoute({ kind: 'history', page: 1 });
+                }}
+              >
+                {t('me.openHistory')}
+              </a>
             </div>
             {dashboardData.browseHistory.length > 0 ? (
               <div className={styles.itemList}>

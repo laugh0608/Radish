@@ -101,6 +101,26 @@ export interface PublicUserComment {
   voReplyToCommentSnapshot?: string | null;
 }
 
+export interface UserPost {
+  voId: LongId;
+  voPublicId?: string | null;
+  voTitle: string;
+  voContent: string;
+  voViewCount: number;
+  voLikeCount: number;
+  voCommentCount: number;
+  voCreateTime: string;
+}
+
+export interface UserComment {
+  voId: LongId;
+  voContent: string;
+  voPostId: LongId;
+  voPostPublicId?: string | null;
+  voLikeCount: number;
+  voCreateTime: string;
+}
+
 /**
  * 搜索用户（用于@提及功能）
  * @param keyword 搜索关键词
@@ -143,6 +163,40 @@ export async function getMyBrowseHistory(
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '加载浏览记录失败');
+  }
+
+  return response.data;
+}
+
+export async function getUserPosts(
+  userId: LongId,
+  pageIndex: number = 1,
+  pageSize: number = 10
+): Promise<PageModel<UserPost>> {
+  const response = await apiGet<PageModel<UserPost>>(
+    `/api/v1/Post/GetUserPosts?userId=${encodeURIComponent(String(userId))}&pageIndex=${pageIndex}&pageSize=${pageSize}`,
+    { withAuth: true }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '加载帖子失败');
+  }
+
+  return response.data;
+}
+
+export async function getUserComments(
+  userId: LongId,
+  pageIndex: number = 1,
+  pageSize: number = 10
+): Promise<PageModel<UserComment>> {
+  const response = await apiGet<PageModel<UserComment>>(
+    `/api/v1/Comment/GetUserComments?userId=${encodeURIComponent(String(userId))}&pageIndex=${pageIndex}&pageSize=${pageSize}`,
+    { withAuth: true }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '加载评论失败');
   }
 
   return response.data;
