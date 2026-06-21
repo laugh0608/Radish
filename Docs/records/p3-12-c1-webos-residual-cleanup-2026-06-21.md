@@ -2,7 +2,7 @@
 
 > 日期：2026-06-21（Asia/Shanghai）
 >
-> 状态：首轮代码侧扫描与文案 / 文档口径修正已完成；真实 Gateway PC / mobile 复核后置到 B1 + C1 小阶段验收
+> 状态：首轮代码侧扫描与文案 / 文档口径修正已完成；当前停止主动扩展 C1，真实 Gateway PC / mobile 复核后置到阶段验收
 
 ## 范围
 
@@ -53,6 +53,6 @@
 
 ## 下一步
 
-1. 继续只针对 B1 交易链路做 C1 残留扫描；若没有新的默认路径冲突，不扩展到 WebOS 全量清扫。
-2. B1 + C1 小阶段准备验收时，再覆盖 `/me/assets`、`/me/assets/transactions`、`/shop/product/:id?intent=purchase`、`/shop/orders`、`/shop/order/:id`、`/shop/inventory` 和购买成功回流的 Gateway PC / mobile 复核。
-3. 页面迁移齐后再进入 `P3-12-D` 统一 UI 设计与美化专题。
+1. 停止把 C1 作为日常主线继续深挖；只有阶段验收或新增阻断命中仍误回 `/desktop` 时再回拉。
+2. 当前进入 `P3-12-B2` 完整个人中心 Web 化，先补 `/me` 下我的内容、浏览历史、附件和经验详情正式路径。
+3. B1 + C1 与后续 B2 首批准备阶段验收时，再覆盖 `/me/assets`、`/me/assets/transactions`、`/shop/product/:id?intent=purchase`、`/shop/orders`、`/shop/order/:id`、`/shop/inventory` 和购买成功回流的 Gateway PC / mobile 复核。

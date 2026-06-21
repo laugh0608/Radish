@@ -2,7 +2,7 @@
 
 > 日期：2026-06-21（Asia/Shanghai）
 >
-> 状态：方案已梳理，路由 / 登录回流契约、商城私域正式 Web 入口、资产正式入口、公开购买回流与公开商城 `/desktop` 回跳替换已完成；当前先推进 B1 直接相关残留清理判断，Gateway PC / mobile 真实复核后置到小阶段验收，统一 UI 设计后置到页面迁移完成后的 P3-12-D
+> 状态：方案已梳理，路由 / 登录回流契约、商城私域正式 Web 入口、资产正式入口、公开购买回流与公开商城 `/desktop` 回跳替换已完成；B1 直接相关残留清理已完成首轮收口，Gateway PC / mobile 真实复核后置到阶段验收，统一 UI 设计后置到页面迁移完成后的 P3-12-D
 >
 > 结论：B1 首批应补齐 **正式 Web 资产入口、商城购买、订单、库存 / 权益和交易回流**，并在替代路径可用后替换 `/me` 完整钱包与公开商城购买中的 `/desktop` 回跳。
 
@@ -215,6 +215,7 @@ Git 状态：
 
 ## 后续执行顺序
 
-1. 继续 `P3-12-C1` 与 B1 直接相关的 WebOS 残留入口清理判断，只处理默认产品路径仍误回 `/desktop` 的链接、文案和路由假设。
-2. B1 + C1 小阶段准备验收时，在用户明确确认 API / Auth / Gateway / 前端已启动后做 PC / mobile Gateway 复核，覆盖 `/me/assets`、`/me/assets/transactions`、`/shop/product/:id?intent=purchase`、`/shop/orders`、`/shop/order/:id`、`/shop/inventory` 和购买成功回流。
-3. 页面迁移齐后进入 `P3-12-D` 统一 UI 设计与美化专题。
+1. `P3-12-C1` 首轮 B1 直接残留清理已完成，后续只在阶段验收或新增阻断命中时回拉，不继续作为日常主线深挖。
+2. 当前进入 `P3-12-B2` 完整个人中心 Web 化，按 [P3-12-B2 完整个人中心 Web 化方案](/records/p3-12-b2-personal-center-web-plan-2026-06-21) 推进 `/me` 子路径。
+3. B1 + C1 与后续 B2 首批准备阶段验收时，在用户明确确认 API / Auth / Gateway / 前端已启动后做 PC / mobile Gateway 复核。
+4. 页面迁移齐后进入 `P3-12-D` 统一 UI 设计与美化专题。

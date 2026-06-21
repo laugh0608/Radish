@@ -118,6 +118,7 @@
 - [P3-12-A WebOS 与 Web 功能资产盘点记录](/records/p3-12-a-webos-web-function-asset-inventory-2026-06-21)
 - [P3-12-B1 账户资产与商城交易 Web 化方案](/records/p3-12-b1-account-shop-web-plan-2026-06-21)
 - [P3-12-C1 WebOS 残留入口清理记录](/records/p3-12-c1-webos-residual-cleanup-2026-06-21)
+- [P3-12-B2 完整个人中心 Web 化方案](/records/p3-12-b2-personal-center-web-plan-2026-06-21)
 - [个人圈子](/features/circle)
 - [Token 不活跃过期治理](/guide/auth-idle-session)
 - [P3-9 真实使用主路径产品化与发布候选整备](/planning/p3-9-real-usage-release-candidate)
@@ -130,7 +131,8 @@
 1. **启动 P3-12 Web 完全化与 WebOS 收束**
    - P3-11 已按“暂缓 PR、不发布、不创建 tag”收束；不再把 PR 决策作为当前开发主线。
    - `P3-12-A` 已完成功能资产盘点与迁移矩阵，按“正式版必需 / 发布前建议 / WebOS 保留 / 后置评审”分类 WebOS 与纯 Web 能力。
-   - `P3-12-B1` 方案、路由 / 登录回流契约、商城私域正式 Web 入口、资产正式入口和公开购买回流已完成；下一步先推进与 B1 直接相关的 `P3-12-C1` 代码侧残留清理，真实 PC / mobile Gateway 复核放到 B1 + C1 小阶段准备验收时集中执行。
+   - `P3-12-B1` 方案、路由 / 登录回流契约、商城私域正式 Web 入口、资产正式入口和公开购买回流已完成；`P3-12-C1` 首轮代码侧残留清理已完成，后续只在验收或新增阻断命中时回拉。
+   - 当前进入 `P3-12-B2` 完整个人中心 Web 化，先补 `/me` 下我的内容、浏览历史、附件和经验详情正式路径；关注关系以 `/circle` 为权威入口，`/me` 只做个人中心联动。
    - UI 设计与美化专题放到功能迁移齐后的 `P3-12-D`；届时必须统一使用 Pencil 先做设计稿，再更新设计 / 说明文档，最后进入视觉实现。
 2. **保持 P3-10 可恢复合并状态**
    - `P3-10-D` 已完成公开页整理、四批入口语义治理、合并前验证和 PR 合并判断；不再默认追加第五批链接扫尾。
@@ -151,6 +153,7 @@
   - 新增 [P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)，承接 P3-11 暂缓 PR 后的正式开发主线。
   - `P3-12-A` 已完成只读盘点，结论见 [P3-12-A WebOS 与 Web 功能资产盘点记录](/records/p3-12-a-webos-web-function-asset-inventory-2026-06-21)。
   - `P3-12-B1` 方案、路由 / 登录回流契约、商城私域正式 Web 入口、资产正式入口、公开购买动作和交易回流替换见 [P3-12-B1 账户资产与商城交易 Web 化方案](/records/p3-12-b1-account-shop-web-plan-2026-06-21)；`P3-12-C1` 首轮残留清理见 [P3-12-C1 WebOS 残留入口清理记录](/records/p3-12-c1-webos-residual-cleanup-2026-06-21)，真实 Gateway PC / mobile 复核后置到小阶段验收。
+  - 当前推进 `P3-12-B2`，方案见 [P3-12-B2 完整个人中心 Web 化方案](/records/p3-12-b2-personal-center-web-plan-2026-06-21)；首批代码应优先补 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 的路由、登录回流和正式 Web 导航语义。
   - 功能迁移只迁移正式版产品能力，不迁移 WebOS Dock、窗口系统、桌面背景、窗口几何记忆或桌面 app 外壳；B1 替代路径可用后，只清理与默认产品路径直接冲突的 `/desktop` 回跳。
   - 页面迁移齐后进入 `P3-12-D` 统一 UI 设计与美化专题，并走 Pencil 设计稿 -> 设计 / 说明文档 -> 代码实现 -> PC / mobile 复核。
 - `P3-11 发布候选整备与轻量复访补齐维护线`
@@ -199,7 +202,7 @@
   - 经济消耗、商城物品、社区任务奖励、经验反向加成、Console 配置 UI、首页组件和公开个人主页默认展示继续后置。
 - `P3-10-B7 WebOS 功能迁移图收口`
   - `/notifications`、`/me`、`/messages` 三个纯 Web 私域复访入口已完成首批代码和 Gateway PC / 移动 smoke；后续只在新真实缺口、发布候选回归或 WebOS 保留入口阻断时回拉。
-  - 论坛、公开详情、发现、圈子、榜单、文档阅读、商城公开浏览、个人状态、通知和消息复访已进入维护补漏；完整聊天平台、完整钱包、完整个人中心和 Flutter 系统通知继续后置。
+  - 论坛、公开详情、发现、圈子、榜单、文档阅读、商城公开浏览、个人状态、通知和消息复访已进入维护补漏；完整钱包已由 P3-12-B1 拆出资产流水正式路径，完整个人中心已进入 P3-12-B2，完整聊天平台和 Flutter 系统通知继续后置。
 - `P3-10-B6 Token 不活跃过期补验`
   - 保留移动 DPR 视图、真实 7 天 idle 等待和发布候选前批次级回归；不因工具限制把首轮联调写成完整全量通过。
   - 继续关注通知 / 聊天授权 Hub 停连、评论匿名订阅恢复、受保护页面重定向和 Console `/console/login?auto=1&reason=idle`。
@@ -214,10 +217,10 @@
 
 ## 明日事项
 
-- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement) 和 [P3-11 阶段收束决策记录](/records/p3-11-stage-closure-decision-record-2026-06-21)，确认当前主线已从 PR 整备切到 Web 正式版开发。
-- 第一顺位：继续 `P3-12-C1` 与 B1 直接相关的 WebOS 残留入口清理判断，只处理默认产品路径仍误回 `/desktop` 的链接、文案和路由假设；开发中优先使用静态测试、类型检查、构建和 `git diff --check`。
-- 第二顺位：B1 + C1 小阶段准备验收时，在用户明确确认 API / Auth / Gateway / 前端已启动后，集中补 PC / mobile Gateway 页面复核，覆盖 `/me/assets`、`/me/assets/transactions`、公开商品购买意图、订单详情和库存入口。
-- 第三顺位：B1 页面迁移齐后进入 `P3-12-D` 统一 UI 设计与美化专题；页面级 UI 设计或跨页面视觉重塑必须先使用 Pencil 做设计稿，再更新设计 / 说明文档，最后进入视觉实现。
+- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement) 和 [P3-12-B2 完整个人中心 Web 化方案](/records/p3-12-b2-personal-center-web-plan-2026-06-21)，确认当前主线已回到 WebOS 功能迁移，而不是继续做 C1 维护清扫。
+- 第一顺位：推进 `P3-12-B2` 首批代码，先补 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 路由契约、登录回流和 API helper 收口，再接页面内容。
+- 第二顺位：B1 + C1 与 B2 首批准备阶段验收时，在用户明确确认 API / Auth / Gateway / 前端已启动后，集中补 PC / mobile Gateway 页面复核。
+- 第三顺位：个人中心、论坛作者态和文档作者态迁移齐后进入 `P3-12-D` 统一 UI 设计与美化专题；页面级 UI 设计或跨页面视觉重塑必须先使用 Pencil 做设计稿，再更新设计 / 说明文档，最后进入视觉实现。
 
 ## 并行维护项
 
