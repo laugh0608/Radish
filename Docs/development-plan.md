@@ -7,7 +7,7 @@
 ## 当前状态
 
 - **当前里程碑**：`第三开发阶段：真实使用增长与长期契约治理`
-- **当前主线**：`P3-11 发布候选整备与轻量复访补齐（PR 暂缓）`
+- **当前主线**：`P3-12 Web 完全化与 WebOS 收束`
 - **最近结论**：
   - `2026-04-06` 完成首版真实发布 `v26.3.2-release`，第一开发阶段结束。
   - 第二开发阶段已完成公开内容壳层、Flutter Android MVP、Tauri + WebOS 桌面壳、多端路线分工和产品治理收口。
@@ -36,7 +36,8 @@
   - `WOG-1` 至 `WOG-6` 首轮写操作治理已完成盘点、内容互动计数一致性、背包 / 权益发放、奖励业务键、管理覆盖版本语义和 Flutter 单商品购买幂等承接。
   - `论坛内容发布可靠性与编辑历史治理` 已完成创建链路、帖子 / 评论编辑重试幂等、创建类频率限制，以及 Flutter 原生纯文本发帖 / 评论 / 回答 / 作者帖子正文编辑 / 作者根评论编辑写入口承接；`2026-06-21` 后续增量评审确认 Flutter 子评论编辑和回答编辑不进入下一批默认代码，P3-10 下一步转向阶段收束准备。
   - `P3-10` 阶段收束准备已完成完整批次范围、验证结论和剩余风险整理；当前暂缓 PR，不继续默认追加功能入口或链接扫尾。
-  - 下一主线切到 `P3-11 发布候选整备与轻量复访补齐`：先整理发布候选验收矩阵，再只读筛选纯 Web / Flutter 轻量复访缺口，命中明确问题后再定向回修。
+  - `P3-11` 已完成发布候选验收矩阵、轻量复访缺口只读审计和阶段收束决策；当前暂缓 PR、不发布、不创建 tag，`P3-11-C` 定向回修未触发。
+  - 下一主线切到 `P3-12 Web 完全化与 WebOS 收束`：在 PC / mobile 浏览器中完成项目正式版主路径，让 `/desktop` 退为历史兼容入口；Flutter 暂时后移。
 
 ## 当前主线入口
 
@@ -44,12 +45,14 @@
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
 - [P3-10 Web-first 信息架构与下一批开发任务选择](/planning/p3-10-cross-platform-information-architecture)
 - [P3-11 发布候选整备与轻量复访补齐](/planning/p3-11-release-candidate-light-revisit)
+- [P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)
 - [Radish 电子宠物开发计划](/features/radish-pet-roadmap)
 - [用户身份语义与公开索引](/architecture/user-identity-semantics)
 - [系统设置治理专题](/guide/system-settings-governance)
 - [支付与转账幂等治理](/guide/payment-idempotency-governance)
 - [写操作可靠性与并发保护治理](/guide/write-operation-reliability-governance)
 - [P3-10 阶段收束准备记录](/records/p3-10-stage-closure-prep-record-2026-06-21)
+- [P3-11 阶段收束决策记录](/records/p3-11-stage-closure-decision-record-2026-06-21)
 - [P3-9 真实使用主路径产品化与发布候选整备](/planning/p3-9-real-usage-release-candidate)
 - [P3-8 多端功能补全与 UI 设计治理](/planning/p3-8-multiplatform-feature-ui-governance)
 - [前端多壳层策略](/frontend/shell-strategy)
@@ -58,13 +61,12 @@
 
 ## 当前开发精力
 
-- `35%`：`P3-11` 发布候选验收矩阵，整理可复用验证、必须重跑验证、剩余风险和恢复 PR / 发布候选决策依据。
-- `20%`：轻量复访缺口只读盘点，聚焦 `/notifications`、`/messages`、`/me`、`/circle`、论坛详情和 Flutter 已承接成熟工作流。
-- `15%`：B10 系统设置、B9 用户身份语义与 B8 电子宠物维护回归，只在发布候选、跨端承接或真实缺口暴露时回拉。
-- `10%`：B7 / C 公开入口、WebOS 功能迁移图和 `/notifications`、`/me`、`/messages` 维护收口，只在真实缺口或发布候选回归暴露问题时回拉。
-- `10%`：用户 PublicId、评论实时 / 神评稳定性、Token 不活跃过期等长期契约发布候选前回归。
-- `5%`：Flutter 承接准备，只围绕成熟 Web / API 工作流做后续评审，不抢占 Web 默认入口主线。
-- `5%`：P3-9 / P3-8-D / ID Phase A 维护线，只处理新增命中、真实编译错误或明显视觉断裂。
+- `35%`：`P3-12-A` 功能资产盘点与迁移矩阵，判断正式版必需、发布前建议、WebOS 保留和后置评审能力。
+- `25%`：首批 Web 正式版必需功能迁移准备，聚焦 PC / mobile 浏览器完整用户路径。
+- `20%`：WebOS 残留清扫与默认入口口径收敛，让 `/desktop` 退为历史兼容入口。
+- `10%`：UI 设计与美化专题准备；页面级或跨页面视觉改造统一先走 Pencil 设计稿，再更新设计 / 说明文档，最后实现。
+- `5%`：P3-11 / P3-10 发布候选前维护线，只处理真实阻断、验证命中或恢复 PR 时的必要回拉。
+- `5%`：Flutter 后移维护线，暂不抢占 Web 正式版主线。
 
 ## 已确认的多端方向
 
@@ -90,10 +92,15 @@
 
 ## 下一顺位
 
-- `P3-11 发布候选整备与轻量复访补齐`
-  - 新增 [P3-11 发布候选整备与轻量复访补齐](/planning/p3-11-release-candidate-light-revisit)，承接 P3-10 收束后的下一批范围判断。
-  - 首批不写代码，先做 `P3-11-A` 发布候选验收矩阵和 `P3-11-B` 轻量复访缺口只读盘点；只在命中明确阻断或高信号一致性问题后进入最小回修批次。
-  - 当前不直接启动 PR、发布 tag、完整 Flutter 能力套件、电子宠物经济扩展、完整推荐 / 联邦社交或 P3-10-D 第五批链接扫尾。
+- `P3-12 Web 完全化与 WebOS 收束`
+  - 新增 [P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)，承接 P3-11 暂缓 PR 后的正式开发主线。
+  - 首批先做 `P3-12-A` 功能资产盘点与迁移矩阵，再按矩阵推进正式版必需 Web 功能迁移。
+  - 功能迁移只迁移产品能力，不迁移 WebOS Dock、窗口系统、桌面背景、窗口几何记忆或桌面 app 外壳。
+  - UI 设计与美化专题必须统一使用 Pencil 先做设计稿，再更新设计 / 说明文档，最后进入代码实现。
+  - 当前不直接启动发布 tag、完整 Flutter 能力套件、电子宠物经济扩展、完整推荐 / 联邦社交或 P3-10-D 第五批链接扫尾。
+- `P3-11 发布候选整备与轻量复访补齐维护线`
+  - `P3-11-A / B / D` 已完成；暂不恢复 PR，不发布，不创建 tag，`P3-11-C` 未触发。
+  - 后续仅在真实验收命中明确阻断或恢复 PR 时按影响面回拉。
 - `P3-10 阶段收束准备维护线`
   - 前端敏感日志脱敏、支付口令哈希升级、支付 / 转账幂等首批代码和 `WOG-1` 至 `WOG-6` 首轮写操作治理均已完成；幂等边界与实现状态见 [支付与转账幂等治理](/guide/payment-idempotency-governance) 和 [写操作可靠性与并发保护治理](/guide/write-operation-reliability-governance)。
   - [论坛内容发布可靠性与编辑历史治理](/guide/forum-content-write-reliability-governance) 已完成 Web 发帖、评论、回答、帖子编辑、评论编辑的 `clientSubmissionId` / `ContentSubmissionRecord` 接入，创建类频率限制，以及 Flutter 原生纯文本发帖、根评论 / 回复、问答回答、作者帖子正文编辑和作者根评论编辑写入口承接。
@@ -146,10 +153,11 @@
 
 - 把跳过发布误判为进入 Phase 4 稳定运营或大规模发布运维。
 - 创建本轮发布 tag、等待镜像或进入 M15 测试 / 生产部署流程。
-- 在 P3-11 启动期直接创建 PR 或把阶段整备误扩成新功能开发。
+- 恢复 P3-11 PR 决策作为当前开发主线。
 - 继续把 P3-8-D 购买 / 订单 / 背包、权限授权或 ID 守护作为无限期默认主线。
 - 继续把 Console 页面微调作为默认主线。
-- 把 WebOS 全部功能迁移设为下一阶段前置门禁。
+- 把 WebOS 形态能力照搬为 Web 正式版。
+- 在 P3-12 UI 设计与美化专题中绕过 Pencil 设计稿直接实施页面级或跨页面视觉改造。
 - 回到 B8 Phase C 经济消耗、商城物品、社区任务奖励、经验反向加成、Console 配置 UI、首页组件或公开个人主页默认展示。
 - Flutter 受控写入之外的完整移动写入能力套件。
 - Flutter 当前抢占 Web 默认入口、信息流、ID 契约和评论互动治理主线。
