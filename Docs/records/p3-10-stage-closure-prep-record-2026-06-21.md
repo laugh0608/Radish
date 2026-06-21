@@ -101,28 +101,26 @@ npm run check:host-runtime -- --details
 | `npm run validate:identity` | 通过 | 运行时 Claim 扫描、协议输出回退风险扫描、外部 LongId 字符串安全扫描和身份语义后端定向测试 `15` 个用例均通过 |
 | `flutter analyze` | 通过 | `Clients/radish.flutter` 未发现分析问题 |
 | `flutter test` | 通过 | `Clients/radish.flutter` 全部 `204` 个测试通过 |
+| `npm run check:host-runtime -- --details` | 通过 | Gateway、Api、Auth 的 `/health` 均返回 `200` |
+| Gateway PC / 移动入口复核 | 通过 | 匿名态覆盖 `/`、`/discover`、`/forum`、`/docs`、`/leaderboard`、`/shop`、`/console/`；`/console/` 按预期进入统一登录回流 |
+| Gateway PC / 移动详情直链复核 | 通过 | 从真实页面链接抽取并覆盖帖子详情、文档正文、商品详情、公开个人页直链；PC 使用 `1920x1080`，移动使用 `390x844 @ DPR 3` |
 
 说明：
 
 - `validate:ci -- --report` 的 changed-only 判定只看到当前未提交文档变更，因此不能单独代表 `master..dev` 全范围后端影响面；本轮已用 `validate:baseline` 和 `validate:identity` 补齐后端 / 身份语义验证。
-- 本轮未执行 `check:host-runtime` 或 Gateway 真实页面 smoke，因为没有启动前后端，也未收到“前后端已经启动”的明确确认。
+- Gateway 真实页面复核为匿名公开路径与 Console 登录回流复核；本轮不覆盖登录后写操作、购买、订单、背包、管理后台登录态页面或生产部署链路。
+- 移动榜单 tab 条为 `overflow-x: auto` 的横向滚动轨道，页面根宽度未出现横向溢出。
 
 ## 当前不启动的工作
 
 - 不创建本轮 PR。
 - 不创建发布 tag。
-- 不启动前后端服务。
-- 不执行真实页面 smoke。
+- 不由 AI 追加启动、重启或替换当前前后端服务。
+- 不扩大到登录后写操作、购买、订单、背包、Console 登录态管理页面或完整 E2E。
 - 不继续默认追加 `P3-10-D` 第五批链接语义扫尾。
 - 不开发 Flutter 子评论编辑、回答编辑或完整移动能力套件。
 - 不启动 Flutter 转账、完整移动商城、服务端强制资产写入口 key、完整反垃圾、完整审核、Redis 分布式锁或完整 E2E 平台。
 
-## 剩余验证口径
+## 后续验证口径
 
-若后续恢复 `dev -> master` PR 或发布候选整备，剩余未闭合项为运行态和真实页面复核：
-
-```bash
-npm run check:host-runtime -- --details
-```
-
-Gateway 页面复核仍需先确认 API / Auth / Gateway / 前端入口已经启动，再按 PC 与移动视图覆盖关键公开入口、登录回流和来源返回链路。
+当前批次已有静态验证、Flutter 验证、宿主运行态和 Gateway PC / 移动页面复核结论。后续若恢复 `dev -> master` PR 或发布候选整备，应先判断是否出现本记录之后的新提交、服务配置变化或运行数据变化；若范围变化，按变化范围重跑对应验证并补充记录。
