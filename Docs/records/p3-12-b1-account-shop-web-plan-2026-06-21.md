@@ -2,7 +2,7 @@
 
 > 日期：2026-06-21（Asia/Shanghai）
 >
-> 状态：方案已梳理，路由 / 登录回流契约首批代码已完成，继续按既有组件和主题推进正式 Web 功能迁移；统一 UI 设计后置到页面迁移完成后的 P3-12-D
+> 状态：方案已梳理，路由 / 登录回流契约与商城私域正式 Web 入口已完成；继续按既有组件和主题推进资产页、公开购买回流与 `/desktop` 回跳替换，统一 UI 设计后置到页面迁移完成后的 P3-12-D
 >
 > 结论：B1 首批应补齐 **正式 Web 资产入口、商城购买、订单、库存 / 权益和交易回流**，并在替代路径可用后替换 `/me` 完整钱包与公开商城购买中的 `/desktop` 回跳。
 
@@ -50,10 +50,14 @@ Git 状态：
   - `/shop/order/:orderId`
   - `/shop/inventory`
 - 保留 `buildDesktopShop*ReturnPath` 作为 `/desktop` 历史入口维护线，未删除 WebOS 深链能力。
+- 新增 `src/shop/ShopEntry.tsx`、`ShopWebApp.tsx` 和 `shopRouteState.ts`，以 `/shop/orders`、`/shop/order/:orderId`、`/shop/inventory` 承接正式 Web 私域商城入口。
+- `main.tsx` 与 `entryRoute` 已把私域商城路由接入 `ShopEntry`，公开 `/shop`、`/shop/products`、`/shop/product/:productId` 继续由公开商城壳层承接。
+- `OrderList`、`OrderDetail`、`Inventory` 已补可选 `href` 能力，正式 Web 入口可为订单详情、返回、来源订单和来源商品提供真实 URL，WebOS 窗口版保持原回调导航。
 
 已验证：
 
 - `node --test --test-isolation=none ./tests/authReturnPath.test.ts ./tests/publicRouteState.test.ts ./tests/entryRoute.test.ts ./tests/realUsagePathContracts.test.ts ./tests/publicHead.test.ts`
+- `node --test --test-isolation=none ./tests/shopRouteState.test.ts ./tests/entryRoute.test.ts ./tests/realUsagePathContracts.test.ts ./tests/publicSeoStatic.test.ts`
 - `npm run type-check --workspace=radish.client`
 - `npm run build --workspace=radish.client`
 - `git diff --check`
@@ -192,9 +196,8 @@ Git 状态：
 ## 后续执行顺序
 
 1. 接入 `/me/assets`、`/me/assets/transactions` 页面入口，复用资产余额与流水能力。
-2. 接入 `/shop/orders`、`/shop/order/:orderId`、`/shop/inventory` 私域交易页面，复用现有商城组件和 hook。
-3. 接入公开商品购买动作和登录回流，购买成功后回到 `/shop/order/:orderId`。
-4. 替换 `/me` 完整钱包和公开商城购买中的 `/desktop` 回跳。
-5. 补定向测试、构建和必要后端交易测试。
-6. 阶段完成后，在用户确认服务已启动后做 PC / mobile Gateway 复核。
-7. 页面迁移齐后进入 `P3-12-D` 统一 UI 设计与美化专题。
+2. 接入公开商品购买动作和登录回流，购买成功后回到 `/shop/order/:orderId`。
+3. 替换 `/me` 完整钱包和公开商城购买中的 `/desktop` 回跳。
+4. 补定向测试、构建和必要后端交易测试。
+5. 阶段完成后，在用户确认服务已启动后做 PC / mobile Gateway 复核。
+6. 页面迁移齐后进入 `P3-12-D` 统一 UI 设计与美化专题。

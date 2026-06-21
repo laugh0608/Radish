@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
   BROWSER_PUBLIC_ENTRY_PATH,
   isPublicContentPathname,
+  isShopPathname,
   resolveInitialEntryPath,
 } from '../src/bootstrap/entryRoute.ts';
 import {
@@ -21,9 +22,11 @@ import {
   buildPublicForumPostReturnPath,
   buildShopInventoryReturnPath,
   buildShopOrderReturnPath,
+  buildShopOrdersReturnPath,
   buildShopProductPurchaseReturnPath,
   normalizeAuthReturnPath,
 } from '../src/services/authReturnPath.ts';
+import { buildShopPath, parseShopRoute } from '../src/shop/shopRouteState.ts';
 import { parseDesktopExternalEntry } from '../src/utils/desktopEntryNavigation.ts';
 
 const productId = '2042219067430928384';
@@ -129,14 +132,27 @@ test('P3-12 公开商品购买入口应进入正式 Web 购买回流路径', () 
 });
 
 test('P3-12 订单与背包私有入口应走正式 Web 路径并退出公开内容壳层', () => {
+  const ordersReturnPath = buildShopOrdersReturnPath();
+  assert.equal(ordersReturnPath, '/shop/orders');
+  assert.equal(normalizeAuthReturnPath(ordersReturnPath), ordersReturnPath);
+  assert.equal(isPublicContentPathname(ordersReturnPath), false);
+  assert.equal(isShopPathname(ordersReturnPath), true);
+
   const orderReturnPath = buildShopOrderReturnPath(orderId);
   assert.equal(orderReturnPath, `/shop/order/${orderId}`);
   assert.equal(normalizeAuthReturnPath(orderReturnPath), orderReturnPath);
   assert.equal(isPublicContentPathname(`/shop/order/${orderId}`), false);
+  assert.equal(isShopPathname(`/shop/order/${orderId}`), true);
+  assert.deepEqual(parseShopRoute(`/shop/order/${orderId}`), {
+    kind: 'order-detail',
+    orderId,
+  });
+  assert.equal(buildShopPath({ kind: 'order-detail', orderId }), `/shop/order/${orderId}`);
 
   const inventoryReturnPath = buildShopInventoryReturnPath();
   assert.equal(normalizeAuthReturnPath(inventoryReturnPath), inventoryReturnPath);
   assert.equal(isPublicContentPathname(inventoryReturnPath), false);
+  assert.equal(isShopPathname(inventoryReturnPath), true);
 });
 
 test('P3-9 公开论坛参与入口应优先使用 PublicId 并保留评论意图', () => {

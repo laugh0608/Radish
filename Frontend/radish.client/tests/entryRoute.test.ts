@@ -10,6 +10,7 @@ import {
   isNotificationsPathname,
   isPetPathname,
   isPublicContentPathname,
+  isShopPathname,
   resolveInitialEntryPath,
 } from '../src/bootstrap/entryRoute.ts';
 import { TAURI_DESKTOP_ENTRY_PATH } from '../src/platform/tauriBridge.ts';
@@ -104,4 +105,14 @@ test('isPetPathname 应单独识别登录态电子宠物入口', () => {
   assert.equal(isPetPathname('/pet/'), true);
   assert.equal(isPetPathname('/discover'), false);
   assert.equal(isPetPathname('/desktop'), false);
+});
+
+test('isShopPathname 应单独识别登录态商城交易入口', () => {
+  assert.equal(isShopPathname('/shop/orders'), true);
+  assert.equal(isShopPathname('/shop/orders/'), true);
+  assert.equal(isShopPathname('/shop/order/2042219067430928385'), true);
+  assert.equal(isShopPathname('/shop/inventory'), true);
+  assert.equal(isShopPathname('/shop'), false);
+  assert.equal(isShopPathname('/shop/product/2042219067430928384'), false);
+  assert.equal(isShopPathname('/desktop'), false);
 });

@@ -11,6 +11,9 @@
 }
 
 .backButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: 1px solid var(--theme-border-strong);
   padding: 8px 16px;
@@ -18,6 +21,7 @@
   cursor: pointer;
   color: var(--theme-text-secondary);
   font-size: 14px;
+  text-decoration: none;
   transition: all 0.2s;
 }
 
@@ -232,6 +236,9 @@
 }
 
 .sourceButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid var(--theme-border-strong);
   border-radius: 6px;
   background: color-mix(in srgb, var(--theme-brand-primary) 8%, var(--theme-bg-surface));
@@ -239,6 +246,7 @@
   cursor: pointer;
   font-size: 12px;
   padding: 5px 10px;
+  text-decoration: none;
   transition: all 0.2s;
 }
 

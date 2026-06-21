@@ -4,6 +4,7 @@ import { isMePathname } from '../me/meRouteState.ts';
 import { isMessagesPathname } from '../messages/messagesRouteState.ts';
 import { isNotificationsPathname } from '../notifications/notificationRouteState.ts';
 import { isPetPathname } from '../pet/petRouteState.ts';
+import { isShopPathname } from '../shop/shopRouteState.ts';
 import { isPublicDiscoverPathname } from '../public/discoverRouteState.ts';
 import { isPublicShopPathname } from '../public/shopRouteState.ts';
 
@@ -52,3 +53,4 @@ export function isPublicContentPathname(pathname: string): boolean {
 export { isCirclePathname, isMessagesPathname, isNotificationsPathname };
 export { isMePathname };
 export { isPetPathname };
+export { isShopPathname };

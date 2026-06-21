@@ -164,6 +164,25 @@ test('公开商城复用的商品列表组件应提供公开链接能力', () =>
   assert.match(publicEntrySource, /href: buildPublicPath\(routeSourceState\.shopDetailSourceRoute\)/);
 });
 
+test('正式 Web 商城交易入口应提供订单与库存真实链接', () => {
+  const shopWebSource = readFileSync(resolve(clientRoot, 'src/shop/ShopWebApp.tsx'), 'utf8');
+  const orderListSource = readFileSync(resolve(clientRoot, 'src/apps/shop/pages/OrderList.tsx'), 'utf8');
+  const orderDetailSource = readFileSync(resolve(clientRoot, 'src/apps/shop/pages/OrderDetail.tsx'), 'utf8');
+  const inventorySource = readFileSync(resolve(clientRoot, 'src/apps/shop/pages/Inventory.tsx'), 'utf8');
+
+  assert.match(shopWebSource, /parseShopRoute\(window\.location\.pathname\)/);
+  assert.match(shopWebSource, /buildShopPath\(\{ kind: 'order-detail', orderId \}\)/);
+  assert.match(shopWebSource, /getSourceOrderHref=\{\(orderId\) => buildShopPath\(\{ kind: 'order-detail', orderId \}\)\}/);
+  assert.match(shopWebSource, /getSourceProductHref=\{\(productId\) => buildPublicShopPath\(\{ kind: 'detail', productId: String\(productId\) \}\)\}/);
+  assert.match(orderListSource, /getOrderHref\?: \(orderId: LongId\) => string;/);
+  assert.match(orderListSource, /href=\{orderHref\}/);
+  assert.match(orderDetailSource, /productHref\?: string;/);
+  assert.match(orderDetailSource, /href=\{productHref\}/);
+  assert.match(inventorySource, /getSourceOrderHref\?: \(orderId: LongId\) => string;/);
+  assert.match(inventorySource, /href=\{sourceOrderHref\}/);
+  assert.match(inventorySource, /href=\{sourceProductHref\}/);
+});
+
 test('公开入口应为所有公开路由应用通用 JSON-LD', () => {
   const source = readFileSync(resolve(clientRoot, 'src/public/PublicEntry.tsx'), 'utf8');
 
