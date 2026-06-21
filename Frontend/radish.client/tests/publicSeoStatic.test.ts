@@ -29,13 +29,17 @@ test('sitemap.xml 应提供第一批公开入口 seed', () => {
   assert.match(sitemap, /<loc>https:\/\/radishx\.com\/shop\/products<\/loc>/);
 });
 
-test('公开商城详情购买回流入口应指向保留工作台路径', () => {
+test('公开商城详情购买入口应指向正式 Web 购买回流路径', () => {
   const source = readFileSync(resolve(clientRoot, 'src/public/shop/PublicShopApp.tsx'), 'utf8');
 
-  assert.match(source, /import \{ buildDesktopShopProductReturnPath \} from '@\/services\/authReturnPath';/);
-  assert.match(source, /const desktopProductEntryUrl = buildDesktopShopProductReturnPath\(selectedProduct\.voId, \{ intent: 'purchase' \}\);/);
-  assert.match(source, /href=\{desktopProductEntryUrl\}/);
-  assert.doesNotMatch(source, /function buildDesktopProductEntryUrl/);
+  assert.match(source, /buildShopProductPurchaseReturnPath/);
+  assert.match(source, /const purchaseReturnPath = buildShopProductPurchaseReturnPath\(selectedProduct\.voId\);/);
+  assert.match(source, /href=\{purchaseReturnPath\}/);
+  assert.match(source, /redirectToLogin\(\{ returnPath \}\)/);
+  assert.match(source, /buildShopOrderReturnPath\(result\.data\.orderId\) \?\? buildShopOrdersReturnPath\(\)/);
+  assert.match(source, /<PurchaseModal/);
+  assert.doesNotMatch(source, /buildDesktopShopProductReturnPath/);
+  assert.doesNotMatch(source, /desktopProductEntryUrl/);
   assert.doesNotMatch(source, /className=\{styles\.primaryLink\} href="\/"/);
 });
 

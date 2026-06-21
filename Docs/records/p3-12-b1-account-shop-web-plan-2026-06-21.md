@@ -2,7 +2,7 @@
 
 > 日期：2026-06-21（Asia/Shanghai）
 >
-> 状态：方案已梳理，路由 / 登录回流契约、商城私域正式 Web 入口和资产正式入口已完成；继续按既有组件和主题推进公开购买回流与公开商城 `/desktop` 回跳替换，统一 UI 设计后置到页面迁移完成后的 P3-12-D
+> 状态：方案已梳理，路由 / 登录回流契约、商城私域正式 Web 入口、资产正式入口、公开购买回流与公开商城 `/desktop` 回跳替换已完成；下一步补 Gateway PC / mobile 复核与 B1 直接残留清理判断，统一 UI 设计后置到页面迁移完成后的 P3-12-D
 >
 > 结论：B1 首批应补齐 **正式 Web 资产入口、商城购买、订单、库存 / 权益和交易回流**，并在替代路径可用后替换 `/me` 完整钱包与公开商城购买中的 `/desktop` 回跳。
 
@@ -56,12 +56,17 @@ Git 状态：
 - `meRouteState` 已把 `/me/assets`、`/me/assets/transactions` 纳入正式 Web 私域路由，`MeApp` 按 route 分支接入 `MeAssetsPage`。
 - `MeAssetsPage` 覆盖余额、冻结余额、累计获得、累计支出、最近流水和完整分页流水，支持交易类型 / 状态基础筛选；未搬迁转账、支付口令、安全日志、统计导出或完整资产风控。
 - `/me` 近期资产面板的“完整钱包”已从 `/desktop?app=radish-pit` 替换为 `/me/assets/transactions`。
+- `PublicShopApp` 已把公开商品详情购买入口从 `buildDesktopShopProductReturnPath` 替换为 `buildShopProductPurchaseReturnPath`，保留真实 `href` 到 `/shop/product/:productId?intent=purchase`。
+- 公开商品详情已接入登录态初始化、购买资格检查、`PurchaseModal`、支付口令确认、旧口令升级提示和 `purchaseProduct`；未登录时保存正式 Web return path 并跳登录。
+- 购买成功后优先跳 `/shop/order/:orderId`，订单 ID 缺失时回 `/shop/orders`；公开详情 canonical 和分享链接继续归一到 `/shop/product/:productId`。
+- 公开商城与公开发现的商城入口文案已从“购买留在 WebOS / 只读详情”调整为“公开浏览 + 登录购买 + 订单 / 背包私域 Web”。
 
 已验证：
 
 - `node --test --test-isolation=none ./tests/authReturnPath.test.ts ./tests/publicRouteState.test.ts ./tests/entryRoute.test.ts ./tests/realUsagePathContracts.test.ts ./tests/publicHead.test.ts`
 - `node --test --test-isolation=none ./tests/shopRouteState.test.ts ./tests/entryRoute.test.ts ./tests/realUsagePathContracts.test.ts ./tests/publicSeoStatic.test.ts`
 - `node --test --test-isolation=none ./tests/meRouteState.test.ts ./tests/entryRoute.test.ts ./tests/authReturnPath.test.ts ./tests/realUsagePathContracts.test.ts ./tests/publicSeoStatic.test.ts`
+- `node --test --test-isolation=none ./tests/publicSeoStatic.test.ts ./tests/publicRouteState.test.ts ./tests/authReturnPath.test.ts ./tests/realUsagePathContracts.test.ts ./tests/publicHead.test.ts`
 - `npm run type-check --workspace=radish.client`
 - `npm run build --workspace=radish.client`
 - `git diff --check`
@@ -81,7 +86,8 @@ Git 状态：
   - `/shop`
   - `/shop/products`
   - `/shop/product/:productId`
-- `PublicShopApp` 明确保持只读边界，商品详情购买动作通过 `buildDesktopShopProductReturnPath(productId, { intent: 'purchase' })` 回桌面商城。
+- `PublicShopApp` 商品详情仍承载公开浏览、head、分享和 JSON-LD；购买动作通过 `/shop/product/:productId?intent=purchase` 进入登录回流，登录后自动恢复购买确认。
+- 购买确认复用 `PurchaseModal` 与 `shopApi.purchaseProduct`，成功后进入 `/shop/order/:orderId`；订单、库存和权益入口仍由正式 Web 私域路由承接。
 - 公开壳层会应用 public head 和结构化数据，不适合作为订单 / 库存等私域页面的长期容器。
 
 ### WebOS `ShopApp`
@@ -149,7 +155,7 @@ Git 状态：
 可直接复用或轻改：
 
 - `ShopHome`、`ProductList`：继续服务公开商城。
-- `ProductDetail`：可复用购买按钮逻辑，但需把未登录 return path 从桌面路径改为正式 Web 路径。
+- `ProductDetail`：继续保留给 WebOS `ShopApp`；公开商品详情已在 `PublicShopApp` 中独立接入正式 Web 购买回流，避免把 WebOS 窗口状态机带入公开壳层。
 - `PurchaseModal`：保留支付口令校验和 `shop:` 幂等键生成。
 - `OrderList`、`OrderDetail`、`Inventory`：作为私域交易页主内容复用，补真实 `href` 和路由回调。
 - `useShopData`、`useShopActions`：可复用 API 编排，但正式 Web 入口应避免依赖窗口状态。
@@ -192,15 +198,13 @@ Git 状态：
 - `entryRoute.isPublicContentPathname` 当前把所有 `/shop/` 都视为公开内容；新增私域交易路由前必须先收窄判断或增加更高优先级入口。
 - `authReturnPath` 目前拒绝 `/shop/product/:id` 普通公开路径；购买登录回流需要新增精确白名单，不能放开整个 `/shop/*`。
 - 公共商城详情有 SEO / JSON-LD 契约；购买动作接入不能破坏公开详情 canonical 和分享链接。
-- `ProductDetail` 当前未登录购买仍构造桌面 return path；正式 Web 使用前必须改为 Web return path。
+- WebOS `ProductDetail` 当前未登录购买仍构造桌面 return path，保留给 `/desktop` 维护线；正式 Web 公开详情不要复用这段未登录回流逻辑。
 - `Inventory` 和 `OrderList` 当前多处使用按钮导航；正式 Web 路由需要补真实 `href`，保持新开标签 / 复制链接可用。
 - 资产流水导出当前 `TransactionHistory` 会拉取多页数据并生成 CSV；若搬到移动 Web，需确认性能和移动端交互，不应作为 B1 首屏必要动作。
 - 支付口令升级提示已有，但支付口令设置页仍在 WebOS `radish-pit`；B1 可提示后续治理，不应临时引回 `/desktop` 作为主要完成路径。
 
 ## 后续执行顺序
 
-1. 接入公开商品购买动作和登录回流，购买成功后回到 `/shop/order/:orderId`。
-2. 替换公开商城购买中的 `/desktop` 回跳；`/me` 完整钱包已转向 `/me/assets/transactions`。
-3. 补定向测试、构建和必要后端交易测试。
-4. 阶段完成后，在用户确认服务已启动后做 PC / mobile Gateway 复核。
-5. 页面迁移齐后进入 `P3-12-D` 统一 UI 设计与美化专题。
+1. 在用户明确确认 API / Auth / Gateway / 前端已启动后做 PC / mobile Gateway 复核，覆盖 `/me/assets`、`/me/assets/transactions`、`/shop/product/:id?intent=purchase`、`/shop/orders`、`/shop/order/:id`、`/shop/inventory` 和购买成功回流。
+2. 进入 `P3-12-C1` 与 B1 直接相关的 WebOS 残留入口清理判断，只处理默认产品路径仍误回 `/desktop` 的链接、文案和路由假设。
+3. 页面迁移齐后进入 `P3-12-D` 统一 UI 设计与美化专题。

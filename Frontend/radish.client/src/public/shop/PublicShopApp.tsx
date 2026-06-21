@@ -3,16 +3,27 @@ import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { ShopHome } from '@/apps/shop/pages/ShopHome';
 import { ProductList } from '@/apps/shop/pages/ProductList';
+import { PurchaseModal } from '@/apps/shop/components/PurchaseModal';
 import {
+  checkCanBuy,
   getCategories,
   getProduct,
   getProducts,
   getProductTypeDisplay,
+  purchaseProduct,
   StockType,
 } from '@/api/shop';
+import type { LongId } from '@/api/user';
 import type { Product, ProductCategory, ProductListItem } from '@/types/shop';
 import { resolveMediaUrl } from '@/utils/media';
-import { buildDesktopShopProductReturnPath } from '@/services/authReturnPath';
+import { getApiBaseUrl } from '@/config/env';
+import { redirectToLogin } from '@/services/auth';
+import { hydrateAuthUser } from '@/services/authBootstrap';
+import { buildShopOrderReturnPath, buildShopOrdersReturnPath, buildShopProductPurchaseReturnPath } from '@/services/authReturnPath';
+import { useAuthStore } from '@/stores/authStore';
+import { useUserStore } from '@/stores/userStore';
+import { log } from '@/utils/logger';
+import { isPaymentPasscodeUpgradeRequiredError } from '@/utils/paymentPasscode';
 import type { PublicShopProductsRoute, PublicShopRoute } from '../shopRouteState';
 import {
   buildPublicShopPath,
@@ -166,6 +177,10 @@ function buildProductsRouteKey(route: PublicShopProductsRoute): string {
   return buildPublicShopPath(route);
 }
 
+function isProductAvailableForPurchase(product: Product): boolean {
+  return product.voInStock === true && product.voIsOnSale === true;
+}
+
 const publicBrowseGuideItems: readonly PublicGuideItemDefinition[] = [
   {
     labelKey: 'shop.public.guideBrowseLabel',
@@ -204,6 +219,10 @@ export const PublicShopApp = ({
   onNavigateToDiscover
 }: PublicShopAppProps) => {
   const { t } = useTranslation();
+  const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const userId = useUserStore(state => state.userId);
+  const loggedIn = isAuthenticated && userId.trim().length > 0;
   const pageRef = useRef<HTMLDivElement>(null);
   const categoryRequestIdRef = useRef(0);
   const listRequestIdRef = useRef(0);
@@ -224,6 +243,13 @@ export const PublicShopApp = ({
   const [totalPages, setTotalPages] = useState(1);
   const [reloadToken, setReloadToken] = useState(0);
   const [categoriesResolved, setCategoriesResolved] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
+  const [purchaseError, setPurchaseError] = useState<string | null>(null);
+  const [checkingPurchaseProductId, setCheckingPurchaseProductId] = useState<LongId | null>(null);
+  const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+  const [purchasing, setPurchasing] = useState(false);
+  const [purchasePasscodeUpgradePrompt, setPurchasePasscodeUpgradePrompt] = useState<string | null>(null);
+  const [handledPurchaseIntentKey, setHandledPurchaseIntentKey] = useState<string | null>(null);
 
   const pageTitle = route.kind === 'detail'
     ? t('shop.public.detailTitle')
@@ -305,6 +331,25 @@ export const PublicShopApp = ({
     nextRouteKey: productsRouteState ? buildProductsRouteKey(canonicalProductsRoute) : '__shop-products-noop__',
     onRouteStateChange: onNavigate
   });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    hydrateAuthUser({ apiBaseUrl })
+      .catch((error) => {
+        log.warn('PublicShopApp', '公开商城登录态初始化失败', error);
+        return null;
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setAuthReady(true);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apiBaseUrl]);
 
   useEffect(() => {
     pageRef.current?.scrollTo({ top: 0, behavior: 'auto' });
@@ -518,6 +563,148 @@ export const PublicShopApp = ({
 
     void loadProductDetail();
   }, [reloadToken, route, t]);
+
+  useEffect(() => {
+    setPurchaseError(null);
+    setPurchasePasscodeUpgradePrompt(null);
+    setIsPurchaseModalOpen(false);
+  }, [route]);
+
+  const handleRequestPurchase = useCallback(async (product: Product) => {
+    const returnPath = buildShopProductPurchaseReturnPath(product.voId);
+    if (!returnPath) {
+      setPurchaseError(t('shop.public.purchaseUnavailable'));
+      return;
+    }
+
+    if (!authReady) {
+      setPurchaseError(t('shop.public.purchaseAuthChecking'));
+      return;
+    }
+
+    if (!loggedIn) {
+      redirectToLogin({ returnPath });
+      return;
+    }
+
+    if (!isProductAvailableForPurchase(product)) {
+      setPurchaseError(product.voInStock === false ? t('shop.outOfStock') : t('shop.unavailable'));
+      return;
+    }
+
+    setCheckingPurchaseProductId(product.voId);
+    setPurchaseError(null);
+    setPurchasePasscodeUpgradePrompt(null);
+
+    try {
+      const result = await checkCanBuy(product.voId, 1, t);
+      if (!result.ok || !result.data) {
+        throw new Error(result.message || t('shop.public.purchaseCheckFailed'));
+      }
+
+      if (!result.data.canBuy) {
+        setPurchaseError(result.data.reason?.trim() || t('shop.unavailable'));
+        return;
+      }
+
+      setIsPurchaseModalOpen(true);
+    } catch (error) {
+      log.error('PublicShopApp', '公开商城购买检查失败', error);
+      setPurchaseError(error instanceof Error ? error.message : t('shop.public.purchaseCheckFailed'));
+    } finally {
+      setCheckingPurchaseProductId(null);
+    }
+  }, [authReady, loggedIn, t]);
+
+  const handleConfirmPurchase = useCallback(async (
+    productId: LongId,
+    quantity: number = 1,
+    paymentPassword: string,
+    idempotencyKey: string
+  ) => {
+    const returnPath = buildShopProductPurchaseReturnPath(productId);
+    if (!loggedIn) {
+      redirectToLogin({ returnPath });
+      return;
+    }
+
+    setPurchasing(true);
+    setPurchaseError(null);
+    try {
+      const result = await purchaseProduct({
+        productId,
+        quantity,
+        paymentPassword,
+        idempotencyKey
+      }, t);
+
+      if (result.ok && result.data?.success) {
+        setPurchasePasscodeUpgradePrompt(null);
+        setIsPurchaseModalOpen(false);
+        window.location.href = result.data.orderId
+          ? buildShopOrderReturnPath(result.data.orderId) ?? buildShopOrdersReturnPath()
+          : buildShopOrdersReturnPath();
+        return;
+      }
+
+      const errorMessage = result.data?.errorMessage || result.message || t('shop.error.purchaseFailed');
+      const requiresPasscodeUpgrade = Boolean(result.data?.requiresPasscodeUpgrade)
+        || isPaymentPasscodeUpgradeRequiredError({
+          code: result.data?.errorCode,
+          message: errorMessage
+        });
+
+      if (requiresPasscodeUpgrade) {
+        setPurchasePasscodeUpgradePrompt(errorMessage);
+        return;
+      }
+
+      throw new Error(errorMessage);
+    } catch (error) {
+      log.error('PublicShopApp', '公开商城购买失败', error);
+      setPurchaseError(error instanceof Error ? error.message : t('shop.error.purchaseFailed'));
+    } finally {
+      setPurchasing(false);
+    }
+  }, [loggedIn, t]);
+
+  useEffect(() => {
+    if (route.kind !== 'detail' || route.intent !== 'purchase' || !selectedProduct || productLoading || !authReady) {
+      return;
+    }
+
+    const intentKey = `purchase:${selectedProduct.voId}`;
+    if (handledPurchaseIntentKey === intentKey || isPurchaseModalOpen || checkingPurchaseProductId !== null || purchasing) {
+      return;
+    }
+
+    setHandledPurchaseIntentKey(intentKey);
+    void handleRequestPurchase(selectedProduct);
+  }, [
+    authReady,
+    checkingPurchaseProductId,
+    handleRequestPurchase,
+    handledPurchaseIntentKey,
+    isPurchaseModalOpen,
+    productLoading,
+    purchasing,
+    route,
+    selectedProduct
+  ]);
+
+  const handleClosePurchaseModal = useCallback(() => {
+    setPurchasePasscodeUpgradePrompt(null);
+    setIsPurchaseModalOpen(false);
+  }, []);
+
+  const handlePurchaseLinkClick = useCallback((event: MouseEvent<HTMLAnchorElement>, product: Product) => {
+    if (!shouldHandlePublicShopLink(event)) {
+      return;
+    }
+
+    event.preventDefault();
+    void handleRequestPurchase(product);
+  }, [handleRequestPurchase]);
 
   const handleOpenProducts = (categoryId?: string) => {
     onNavigate({
@@ -744,7 +931,25 @@ export const PublicShopApp = ({
 
     const coverImageUrl = resolveMediaUrl(selectedProduct.voCoverImage);
     const iconImageUrl = resolveMediaUrl(selectedProduct.voIcon);
-    const desktopProductEntryUrl = buildDesktopShopProductReturnPath(selectedProduct.voId, { intent: 'purchase' });
+    const purchaseReturnPath = buildShopProductPurchaseReturnPath(selectedProduct.voId);
+    const purchaseBusy = checkingPurchaseProductId === selectedProduct.voId || purchasing;
+    const productAvailableForPurchase = isProductAvailableForPurchase(selectedProduct);
+    const purchaseActionLabel = !authReady
+      ? t('shop.public.purchaseAuthChecking')
+      : productAvailableForPurchase
+        ? purchaseBusy
+          ? t('shop.checkingAvailability')
+          : loggedIn
+            ? t('shop.buyNow')
+            : t('shop.loginAndContinuePurchase')
+        : selectedProduct.voInStock === false
+          ? t('shop.outOfStock')
+          : t('shop.unavailable');
+    const purchaseActionIcon = !authReady || purchaseBusy
+      ? 'mdi:progress-clock'
+      : loggedIn
+        ? 'mdi:cart-arrow-right'
+        : 'mdi:login-variant';
     const stockText = selectedProduct.voStockType === StockType.Unlimited
       ? t('shop.stock.unlimited')
       : t('shop.productCount', { count: selectedProduct.voStock ?? 0 });
@@ -840,10 +1045,21 @@ export const PublicShopApp = ({
             <div className={styles.readOnlyPanel}>
               <h2 className={styles.readOnlyTitle}>{t('shop.public.purchaseTitle')}</h2>
               <p className={styles.readOnlyDescription}>{t('shop.public.purchaseDescription')}</p>
-              {desktopProductEntryUrl && (
-                <a className={styles.primaryLink} href={desktopProductEntryUrl}>
-                  <Icon icon="mdi:view-dashboard-outline" size={18} />
-                  <span>{t('shop.public.openDesktop')}</span>
+              {purchaseError && (
+                <p className={styles.purchaseFeedback} data-state="error">
+                  {purchaseError}
+                </p>
+              )}
+              {purchaseReturnPath && (
+                <a
+                  className={styles.primaryLink}
+                  href={purchaseReturnPath}
+                  aria-disabled={!authReady || purchaseBusy || !productAvailableForPurchase}
+                  data-disabled={!authReady || purchaseBusy || !productAvailableForPurchase}
+                  onClick={(event) => handlePurchaseLinkClick(event, selectedProduct)}
+                >
+                  <Icon icon={purchaseActionIcon} size={18} />
+                  <span>{purchaseActionLabel}</span>
                 </a>
               )}
             </div>
@@ -936,6 +1152,23 @@ export const PublicShopApp = ({
           </div>
         </section>
       </main>
+
+      {purchaseError && isPurchaseModalOpen && (
+        <div className={styles.purchaseToast} role="alert">
+          {purchaseError}
+        </div>
+      )}
+
+      {isPurchaseModalOpen && (
+        <PurchaseModal
+          isOpen={isPurchaseModalOpen}
+          product={selectedProduct}
+          loading={purchasing}
+          passcodeUpgradePrompt={purchasePasscodeUpgradePrompt}
+          onClose={handleClosePurchaseModal}
+          onConfirm={handleConfirmPurchase}
+        />
+      )}
     </div>
   );
 };
