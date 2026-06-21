@@ -10,13 +10,14 @@
 
 纯 Web 私域复访入口用于让登录用户在普通浏览器中直达高价值私域场景，不需要先进入 WebOS `/desktop` 工作台。
 
-当前已落地五个入口：
+当前已落地六组入口：
 
 | 路由 | 主要任务 | 数据边界 | 不承担 |
 | --- | --- | --- | --- |
 | `/notifications` | 查看站内通知、标记已读、删除、从通知进入目标内容 | 通知列表、未读数、通知目标分流 | 完整通知偏好、通知聚合策略、系统通知栏推送 |
 | `/circle` | 查看关注动态、我的关注、我的粉丝，并从关系链进入公开帖子或公开个人页 | `UserFollow` 汇总、关注动态、关注 / 粉丝列表、`Post.PublicId`、`User.PublicId` | 推荐算法、短动态、转发 / 引用、私信、联邦协议 |
 | `/me` | 查看我的状态、公开主页入口、资产入口，并在 P3-12-B2 承接完整个人中心子路径 | 公开资料、经验摘要、经验明细、胡萝卜余额、近期流水、我的内容、浏览历史、附件、经验详情 | 完整资料编辑、转账、支付密码、安全设置、资产风控、论坛作者态 |
+| `/shop/orders`、`/shop/order/:orderId`、`/shop/inventory` | 查看商城订单、订单详情和背包；从公开商品详情购买成功后确认订单结果 | 当前用户订单、订单状态、商品快照、背包权益 / 消耗品、订单通知回流 | 公开分享、购物车、退款、权益激活、道具使用、Console 治理 |
 | `/messages` | 复访聊天频道、定位通知中的消息、从成员进入公开主页后返回消息 | 频道列表、消息历史、`channelId/messageId` 定位、Chat Hub | 完整聊天平台重构、私聊、消息搜索、Reaction、置顶、阅读回执、移动系统通知 |
 | `/pet` | 领取和照顾当前用户电子宠物、查看状态与最近流水 | 宠物主档、四类照顾动作、每日次数 / 冷却、最近状态流水 | 萝卜币消耗、商城物品、社区任务奖励、Console 数值配置、公开宠物名片默认展示 |
 
@@ -29,6 +30,7 @@
 | `/notifications` | 只允许无 query / hash 的 `/notifications` | 匿名访问时保存 `/notifications`，登录后回到通知列表 |
 | `/circle` | `/circle` 或 `/circle?tab=feed|following|followers&page={n}` | 匿名访问时保留合法 tab / page，登录后恢复到原圈子分页 |
 | `/me` | `/me`、`/me/assets`、`/me/assets/transactions`；P3-12-B2 扩展 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 的合法 query | 匿名访问时保存合法 `/me` 子路径，登录后回到对应私域页面 |
+| `/shop/*` 私域 | `/shop/orders`、`/shop/order/:orderId`、`/shop/inventory`；公开商品购买意图使用 `/shop/product/:productId?intent=purchase` | 匿名访问时保存合法商城私域路径或购买意图，登录后回到订单 / 背包 / 商品购买上下文 |
 | `/messages` | `/messages` 或 `/messages?channelId={id}&messageId={id}` | 匿名访问时保留合法频道 / 消息参数，登录后恢复定位 |
 | `/pet` | 只允许无 query / hash 的 `/pet` | 匿名访问时保存 `/pet`，登录后回到电子宠物页面 |
 
@@ -75,6 +77,7 @@ WebOS `/desktop` 继续保留聊天、通知中心、个人中心、萝卜坑、
 - 通知：列表、已读、删除和目标分流。
 - 圈子：关注动态、我的关注、我的粉丝和进入公开帖子 / 公开个人页的来源返回。
 - 我的：个人状态、公开主页、资产入口、我的内容、完整浏览历史、附件管理和经验详情；关注关系权威入口仍是 `/circle`。
+- 商城：公开商品详情登录后继续购买、订单列表、订单详情和背包；WebOS 商城窗口继续保留历史深链。
 - 消息：频道列表、会话复访、通知消息定位和基础发送。
 - 宠物：领取、命名、状态展示、四类照顾动作、每日次数 / 冷却展示和最近流水。
 
@@ -90,6 +93,9 @@ WebOS `/desktop` 继续保留聊天、通知中心、个人中心、萝卜坑、
 - `Frontend/radish.client/src/me/MeApp.tsx`
 - `Frontend/radish.client/src/me/MeAssetsPage.tsx`
 - `Frontend/radish.client/src/me/meRouteState.ts`
+- `Frontend/radish.client/src/shop/ShopEntry.tsx`
+- `Frontend/radish.client/src/shop/shopRouteState.ts`
+- `Frontend/radish.client/src/public/shopRouteState.ts`
 - `Frontend/radish.client/src/messages/MessagesApp.tsx`
 - `Frontend/radish.client/src/pet/PetEntry.tsx`
 - `Frontend/radish.client/src/pet/PetApp.tsx`
@@ -113,6 +119,7 @@ WebOS `/desktop` 继续保留聊天、通知中心、个人中心、萝卜坑、
 
 - 路由与登录恢复：`authReturnPath.test.ts`、`entryRoute.test.ts`。
 - 我的状态与个人中心：`meRouteState.test.ts`、`authReturnPath.test.ts`、`entryRoute.test.ts`、`realUsagePathContracts.test.ts`。
+- 商城私域与购买回流：`shopRouteState.test.ts`、`authReturnPath.test.ts`、`entryRoute.test.ts`、`notificationNavigation.test.ts`、`realUsagePathContracts.test.ts`。
 - 圈子入口：`circleRouteState.test.ts`、`authReturnPath.test.ts`、`publicRouteNavigation.test.ts`。
 - 电子宠物入口与展示派生：`authReturnPath.test.ts`、`entryRoute.test.ts`、`petPresentation.test.ts`。
 - 通知分流：`notificationNavigation.test.ts`。

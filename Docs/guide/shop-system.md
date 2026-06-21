@@ -1,6 +1,6 @@
 # 商城系统设计方案
 
-> 版本：v1.10 | 最后更新：2026-06-20 | 状态：用户侧购买、订单、背包来源、公开商城到工作台深链、Flutter 登录态单商品购买 / 余额展示 / 订单 / 背包承接、购买资格回流、Console 商品 / 订单 / 流水排障回流、外部 LongId 字符串口径、购买幂等和订单级权益 / 背包发放可靠性已完成当前阶段目标
+> 版本：v1.11 | 最后更新：2026-06-21 | 状态：用户侧购买、订单、背包来源、正式 Web 购买 / 订单 / 背包路径、WebOS 历史深链保留、Flutter 登录态单商品购买 / 余额展示 / 订单 / 背包承接、购买资格回流、Console 商品 / 订单 / 流水排障回流、外部 LongId 字符串口径、购买幂等和订单级权益 / 背包发放可靠性已完成当前阶段目标
 
 ## 拆分说明
 
@@ -47,9 +47,9 @@
 - ✅ Console 订单详情当前已展示扣款流水 ID，并可跳转到对应 `BusinessType=Order / BusinessId=OrderId` 胡萝卜流水筛选结果，用于排查购买扣款与订单状态
 - ✅ Console 商品 / 订单 / 胡萝卜流水排障回流已收口：商品详情进入相关订单、订单详情关闭、分页、筛选、重置和流水回看都会保留合法 `returnTo`，且所有外部 LongId 查询参数继续按字符串传递
 - ✅ 商城管理人工验收已完成：商品相关订单、详情长 ID、删除确认、订单跳用户 / 商品返回链路和后端商品删除保护均已确认稳定
-- ✅ 公开商城详情已补齐复制 canonical 公共链接入口，方便商品外链分享和公开回流；公开详情仍保持只读浏览边界，不承载订单、背包或购买动作
-- ✅ 公开商城到工作台迁移桥接已成立：公开商品详情可进入 `/desktop?app=shop&productId=...`，订单详情、订单列表和背包可通过 `/desktop?app=shop&orderId=...`、`view=orders`、`view=inventory` 登录后承接
-- ✅ WebOS 私域商城已补齐购买成功进入订单详情、订单通知进入订单详情、订单详情回商品、背包权益来源回订单 / 商品，以及背包消耗品相关商品回访链路
+- ✅ 公开商城详情已补齐复制 canonical 公共链接入口，方便商品外链分享和公开回流；继续购买使用 `/shop/product/:productId?intent=purchase` 登录回流，不把购买意图写入 canonical / sitemap
+- ✅ 正式 Web 商城私域路径已成立：购买成功进入 `/shop/order/:orderId`，订单列表使用 `/shop/orders`，背包使用 `/shop/inventory`，订单通知优先进入正式 Web 订单详情
+- ✅ WebOS 私域商城继续作为 `/desktop` 历史工作台能力保留：`/desktop?app=shop&productId=...`、`orderId=...`、`view=orders`、`view=inventory` 仍用于旧入口和窗口恢复，不再作为普通浏览器默认购买回流目标
 - ✅ Flutter 移动端已补登录态单商品购买、商品详情余额展示、购买后余额刷新、订单列表、订单详情、背包和来源订单 / 商品查看；背包来源订单 / 商品 ID 按规范字符串 LongId 承接，不进入 Dart `int` 数值域；移动端不承接购物车、退款、权益激活或道具使用
 - ✅ Web 与 Flutter 官方购买流程已接入 `shop:{uuid}` 幂等键；服务端用 `OperationIdempotencyRecord` 绑定请求摘要和终态响应，权益 / 背包发放再通过订单级唯一约束防止重复发放
 - ✅ 商城工作台已完成页级懒加载和手动 chunk 细分，历史 `app-shop` chunk warning 已收口
@@ -144,18 +144,22 @@
 - 后端商品删除保护已按“有历史订单即禁止删除”收口，避免破坏历史订单追溯。
 - 商品 / 订单 / 胡萝卜流水之间的排障跳转只使用受控同源相对 `returnTo`，页面关闭、分页、筛选和重置时保留合法来源；`orderId / productId / businessId` 等查询参数不得转成 JavaScript `number`。
 
-### 1.7 WebOS 用户回访现状
+### 1.7 Web 与 WebOS 用户回访现状
+
+- 正式 Web 已承接普通浏览器中的商城私域路径：公开商品详情继续购买时进入 `/shop/product/:productId?intent=purchase`，购买成功后进入 `/shop/order/:orderId`；订单列表为 `/shop/orders`，背包为 `/shop/inventory`。
+- 正式 Web 订单、背包和资产流水均为登录态私域页面，不进入公开 sitemap，不输出 public canonical，也不作为公开分享 URL。
+- 订单通知点击后优先进入正式 Web 订单详情；通知缺少合法订单 ID 时回 `/shop/orders`。
 
 - 商城窗口支持通过 `productId` 或 `orderId` 打开指定商品详情 / 订单详情，供桌面工作台、通知中心和应用内按钮复用。
 - `/desktop` 外部深链当前支持 `app=shop&productId`、`app=shop&orderId`、`app=shop&view=orders` 与 `app=shop&view=inventory`；商品详情可匿名读取，订单和背包入口要求登录后消费。
 - 匿名态打开订单或背包深链时，应先保存原深链并登录，登录成功后回到目标订单详情、订单列表或背包；不得把未登录状态展示为空订单或空背包。
 - 购买成功后，如果后端返回订单 ID，前端立即进入订单详情页，让用户看到订单状态、商品快照和支付结果。
 - 购买入口应先调用购买资格检查；资格不通过时只展示原因，不打开支付口令弹窗，不进入购买请求。
-- 订单通知点击后打开商城订单详情，不再只停留在通知列表。
+- WebOS 订单通知旧载荷仍可打开商城订单详情，不再只停留在通知列表。
 - 订单详情保留回商品详情入口，方便用户从历史订单重新查看商品。
 - 背包的权益卡片会展示购买来源；当 `UserBenefitVo` 带有 `VoSourceOrderId` 或 `VoSourceProductId` 时，用户可从权益来源回到订单或商品。
 - 背包的消耗品卡片会展示相关商品入口；当 `UserInventoryVo` 带有 `VoSourceProductId` 时，用户可从消耗品回到对应商品详情，但不表示消耗品具备订单级来源追溯。
-- 公开 Web 商城仍保持只读边界；购买属于登录后的 WebOS 私域商城或 Flutter 原生商品详情，订单和背包查看同时由 WebOS 私域商城与 Flutter 登录态页面承接。
+- 公开 Web 商城的 canonical 详情仍保持公开阅读和分享边界；购买意图、订单和背包已由正式 Web 私域路径承接。WebOS 私域商城与 Flutter 登录态页面继续作为各自壳层的保留 / 原生承接面。
 
 ### 1.8 Flutter 移动端承接现状
 

@@ -15,7 +15,7 @@
 | `UserBenefitVo` | 前端“我的背包”权益卡片使用的展示契约 | `VoSourceOrderId`、`VoSourceProductId` |
 | `UserInventoryVo` | 前端“我的背包”消耗品卡片使用的展示契约 | `VoSourceProductId`，不承载统一订单来源 |
 
-WebOS 商城当前在权益卡片上展示购买来源回访。当 `UserBenefitVo.VoSourceOrderId` 或 `UserBenefitVo.VoSourceProductId` 有效时，前端分别展示“查看订单”和“查看商品”动作，并打开商城订单详情 / 商品详情。
+正式 Web 和 WebOS 商城当前都在权益卡片上展示购买来源回访。当 `UserBenefitVo.VoSourceOrderId` 或 `UserBenefitVo.VoSourceProductId` 有效时，前端分别展示“查看订单”和“查看商品”动作；正式 Web 优先打开 `/shop/order/:orderId` 与 `/shop/product/:productId`，WebOS 历史入口继续打开商城窗口内订单详情 / 商品详情。
 
 消耗品卡片只展示商品维度的相关回访。当 `UserInventoryVo.VoSourceProductId` 有效时，前端展示“相关商品”动作并打开商城商品详情；它不表示消耗品具备订单级来源追溯。
 
@@ -23,7 +23,7 @@ WebOS 商城当前在权益卡片上展示购买来源回访。当 `UserBenefitV
 
 来源字段虽然在后端实体中仍是 long 主键，但前端和移动端只按规范字符串 LongId 处理：
 
-- `VoSourceOrderId / VoSourceProductId` 进入 WebOS、Flutter 或 Console 回访入口时不得通过 `Number(...)`、`parseInt(...)`、`int.tryParse` 等路径数值化。
+- `VoSourceOrderId / VoSourceProductId` 进入正式 Web、WebOS、Flutter 或 Console 回访入口时不得通过 `Number(...)`、`parseInt(...)`、`int.tryParse` 等路径数值化。
 - 来源 ID 应先按正整数 LongId 字符串做格式校验；不规范来源应禁用来源入口或展示明确错误，不应被数值化后误打开订单 / 商品。
 - 消耗品只承接 `VoSourceProductId` 的相关商品回访，不因前端需要返回状态而扩展出统一订单来源字段。
 

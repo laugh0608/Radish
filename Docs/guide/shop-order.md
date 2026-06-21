@@ -238,8 +238,8 @@ POST /api/v1/Shop/Purchase
 - `CheckCanBuy` 只做购买资格预检，返回 `VoCanBuy / VoReason`，不创建订单、不扣款、不扣库存。
 - `Purchase` 在失败时返回失败响应，并在 `responseData.errorMessage` 或响应消息中给出明确原因；调用端不应把失败响应当作成功订单处理。
 - Web 与 Flutter 官方购买流程应传入 `shop:{uuid}` 幂等键。同一用户同 key 同摘要重试时返回同一订单结果；同 key 但商品、数量或备注不同会被拒绝。
-- WebOS / Flutter 调用购买前都应先消费 `CheckCanBuy` 结果；资格不通过时只展示原因，不打开支付口令弹窗，不提交 `Purchase`。
-- Flutter 当前固定购买 `1` 件商品，失败重试复用同一 `shop:` 幂等键，成功或购买意图重置后生成新 key；WebOS 私域商城可继续按既有数量选择和购买弹窗承接。
+- 正式 Web / WebOS / Flutter 调用购买前都应先消费 `CheckCanBuy` 结果；资格不通过时只展示原因，不打开支付口令弹窗，不提交 `Purchase`。
+- 正式 Web 和 WebOS 私域商城可继续按既有数量选择和购买弹窗承接；Flutter 当前固定购买 `1` 件商品，失败重试复用同一 `shop:` 幂等键，成功或购买意图重置后生成新 key。
 - `Purchase` 扣款成功后会把胡萝卜流水 ID 写入订单的 `CoinTransactionId`；管理端 `OrderVo.VoCoinTransactionId` 用于从订单详情定位对应扣款流水。
 - Console 订单排障入口按 `BusinessType=Order / BusinessId=OrderId` 定位胡萝卜流水；订单页 URL 状态、商品相关订单跳转和流水回看订单时，`orderId / productId / businessId / userId` 都保持字符串查询参数，`returnTo` 只接受同源相对路径。
 - 购物车、退款、权益激活和道具使用不属于当前移动端购买契约。

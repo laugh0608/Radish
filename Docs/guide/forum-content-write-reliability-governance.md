@@ -17,7 +17,7 @@
 - 发布频率限制按用户、内容类型和目标对象分层，不误伤跨帖子正常互动。
 - 编辑历史继续以现有 `PostEditHistory` / `CommentEditHistory` 为真值，不新增通用编辑历史表。
 
-当前代码已按确认方案覆盖创建链路、首批编辑重试幂等和创建类短窗口频率限制：`PublishPostDto`、`CreateCommentDto`、`CreateAnswerDto`、`UpdatePostDto` 与 `UpdateCommentDto` 新增可选 `ClientSubmissionId`，服务端新增 `ContentSubmissionRecord` 作为内容提交意图记录，Web 论坛发帖、评论、回答、帖子编辑和评论编辑会按提交意图生成并复用 key。Flutter 原生纯文本发帖、根评论 / 回复、问答回答、作者帖子正文编辑和作者根评论编辑也已复用同一 `clientSubmissionId` 字段与 `forum-post:` / `forum-comment:` / `forum-answer:` / `forum-post-edit:` / `forum-comment-edit:` 前缀规则。发帖、评论 / 回复和回答已基于近期成功的 `ContentSubmissionRecord` 做创建类短窗口限频；帖子 / 评论编辑历史继续使用既有 `PostEditHistory` / `CommentEditHistory`，不新增通用编辑历史表。
+当前代码已按确认方案覆盖创建链路、首批编辑重试幂等和创建类短窗口频率限制：`PublishPostDto`、`CreateCommentDto`、`CreateAnswerDto`、`UpdatePostDto` 与 `UpdateCommentDto` 新增可选 `ClientSubmissionId`，服务端新增 `ContentSubmissionRecord` 作为内容提交意图记录，Web 论坛发帖、评论、回答、帖子编辑和评论编辑会按提交意图生成并复用 key。正式 Web 首批作者态通过 `/forum/compose` 与 `/forum/post/:postId?intent=answer|edit|history` 复用同一提交意图规则，不新增临时 API 调用通道。Flutter 原生纯文本发帖、根评论 / 回复、问答回答、作者帖子正文编辑和作者根评论编辑也已复用同一 `clientSubmissionId` 字段与 `forum-post:` / `forum-comment:` / `forum-answer:` / `forum-post-edit:` / `forum-comment-edit:` 前缀规则。发帖、评论 / 回复和回答已基于近期成功的 `ContentSubmissionRecord` 做创建类短窗口限频；帖子 / 评论编辑历史继续使用既有 `PostEditHistory` / `CommentEditHistory`，不新增通用编辑历史表。
 
 ## 当前代码事实
 

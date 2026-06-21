@@ -72,9 +72,9 @@ function redirectToLogin(options?: { returnPath?: string | null }): void
 - 用户点击登录按钮
 - 检测到未登录状态
 - Token 过期需要重新登录
-- 登录后需要回到特定工作台上下文，例如公开商品页进入 `/desktop?app=shop&productId=...` 后继续购买
-- 登录后需要回到特定 Web 参与现场，例如 `/circle` 我的圈子，或公开帖子详情的轻回应 / 根评论输入区
-- 登录后需要回到纯 Web 私域入口，例如 `/notifications`、`/me`、`/messages` 或 `/pet`
+- 登录后需要回到特定正式 Web 交易上下文，例如公开商品页进入 `/shop/product/:productId?intent=purchase` 后继续购买，或进入 `/shop/order/:orderId` 查看订单
+- 登录后需要回到特定 Web 参与现场，例如 `/circle` 我的圈子，公开帖子详情的轻回应 / 根评论输入区，或论坛作者态 `/forum/compose`、`intent=answer|edit|history`
+- 登录后需要回到纯 Web 私域入口，例如 `/notifications`、`/me`、`/me/content`、`/me/history`、`/me/attachments`、`/me/experience`、`/messages` 或 `/pet`
 
 **示例**:
 ```typescript
@@ -92,7 +92,7 @@ const handleLogin = () => {
 import { redirectToLogin } from '@/services/auth';
 
 redirectToLogin({
-  returnPath: '/desktop?app=shop&productId=123'
+  returnPath: '/shop/product/123?intent=purchase'
 });
 
 redirectToLogin({
@@ -101,6 +101,10 @@ redirectToLogin({
 
 redirectToLogin({
   returnPath: '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=comment'
+});
+
+redirectToLogin({
+  returnPath: '/forum/compose'
 });
 
 redirectToLogin({
