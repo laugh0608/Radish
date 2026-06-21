@@ -23,13 +23,18 @@ import {
 } from '@/public/publicRouteNavigation';
 import { redirectToLogin } from '@/services/auth';
 import { bootstrapAuth, hydrateAuthUser } from '@/services/authBootstrap';
-import { buildMeReturnPath } from '@/services/authReturnPath';
+import {
+  buildMeAssetTransactionsReturnPath,
+  buildMeAssetsReturnPath,
+  buildMeReturnPath,
+} from '@/services/authReturnPath';
 import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
 import { DEFAULT_TIME_ZONE, formatDateTimeByTimeZone, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { log } from '@/utils/logger';
 import { resolveMediaUrl } from '@/utils/media';
-import { buildMePath } from './meRouteState';
+import { MeAssetsPage } from './MeAssetsPage';
+import { buildMePath, createDefaultMeRoute, parseMeRoute, type MeRoute } from './meRouteState';
 import styles from './MeApp.module.css';
 
 type MeDataErrorKey = 'profile' | 'experience' | 'assets' | 'browse' | 'pet';
@@ -195,6 +200,26 @@ function shouldHandlePlainLinkClick(event: MouseEvent<HTMLAnchorElement>): boole
     && !event.altKey;
 }
 
+function resolveInitialMeRoute(): MeRoute {
+  if (typeof window === 'undefined') {
+    return createDefaultMeRoute();
+  }
+
+  return parseMeRoute(window.location.pathname) ?? createDefaultMeRoute();
+}
+
+function buildMeRouteReturnPath(route: MeRoute): string {
+  if (route.kind === 'assets') {
+    return buildMeAssetsReturnPath();
+  }
+
+  if (route.kind === 'assets-transactions') {
+    return buildMeAssetTransactionsReturnPath();
+  }
+
+  return buildMeReturnPath();
+}
+
 export const MeApp = () => {
   const { t } = useTranslation();
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
@@ -207,6 +232,7 @@ export const MeApp = () => {
   const avatarUrl = useUserStore(state => state.avatarUrl);
   const avatarThumbnailUrl = useUserStore(state => state.avatarThumbnailUrl);
   const loggedIn = isAuthenticated && userId.trim().length > 0;
+  const [route, setRoute] = useState<MeRoute>(() => resolveInitialMeRoute());
   const [authReady, setAuthReady] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
   const [dashboardData, setDashboardData] = useState<MeDashboardData>(initialDashboardData);
@@ -234,16 +260,32 @@ export const MeApp = () => {
   }, [apiBaseUrl]);
 
   useEffect(() => {
-    document.title = `${t('me.title')} · Radish`;
-  }, [t]);
+    const title = route.kind === 'assets'
+      ? t('me.assets.overviewTitle')
+      : route.kind === 'assets-transactions'
+        ? t('me.assets.transactionsTitle')
+        : t('me.title');
+    document.title = `${title} · Radish`;
+  }, [route.kind, t]);
 
   useEffect(() => {
-    const canonicalPath = buildMePath();
+    const handlePopState = () => {
+      setRoute(resolveInitialMeRoute());
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
+  useEffect(() => {
+    const canonicalPath = buildMePath(route);
     const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
     if (currentPath !== canonicalPath) {
       window.history.replaceState(window.history.state, '', canonicalPath);
     }
-  }, []);
+  }, [route]);
 
   useEffect(() => {
     if (!authReady || loggedIn || redirecting) {
@@ -252,9 +294,9 @@ export const MeApp = () => {
 
     setRedirecting(true);
     redirectToLogin({
-      returnPath: buildMeReturnPath()
+      returnPath: buildMeRouteReturnPath(route)
     });
-  }, [authReady, loggedIn, redirecting]);
+  }, [authReady, loggedIn, redirecting, route]);
 
   const loadDashboardData = useCallback(async () => {
     if (!userId.trim()) {
@@ -329,10 +371,19 @@ export const MeApp = () => {
   }, [t, userId]);
 
   useEffect(() => {
-    if (authReady && loggedIn) {
+    if (route.kind === 'dashboard' && authReady && loggedIn) {
       void loadDashboardData();
     }
-  }, [authReady, loadDashboardData, loggedIn]);
+  }, [authReady, loadDashboardData, loggedIn, route.kind]);
+
+  const navigateToMeRoute = useCallback((nextRoute: MeRoute) => {
+    const nextPath = buildMePath(nextRoute);
+    const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (currentPath !== nextPath) {
+      window.history.pushState(window.history.state, '', nextPath);
+    }
+    setRoute(nextRoute);
+  }, []);
 
   const selfProfileRoute = useMemo(
     () => buildSelfProfileRoute(dashboardData.publicProfile, userId),
@@ -408,6 +459,15 @@ export const MeApp = () => {
 
     if (loadingData && !dashboardData.loadedAt) {
       return renderStatusPanel(t('me.loadingTitle'), t('me.loadingDescription'), 'mdi:progress-clock');
+    }
+
+    if (route.kind === 'assets' || route.kind === 'assets-transactions') {
+      return (
+        <MeAssetsPage
+          mode={route.kind === 'assets-transactions' ? 'transactions' : 'overview'}
+          onNavigate={navigateToMeRoute}
+        />
+      );
     }
 
     return (
@@ -606,7 +666,19 @@ export const MeApp = () => {
           <article className={styles.detailPanel}>
             <div className={styles.panelHeader}>
               <h3>{t('me.recentAssets')}</h3>
-              <a href="/desktop?app=radish-pit">{t('me.openFullWallet')}</a>
+              <a
+                href={buildMePath({ kind: 'assets-transactions' })}
+                onClick={(event) => {
+                  if (!shouldHandlePlainLinkClick(event)) {
+                    return;
+                  }
+
+                  event.preventDefault();
+                  navigateToMeRoute({ kind: 'assets-transactions' });
+                }}
+              >
+                {t('me.openFullWallet')}
+              </a>
             </div>
             {dashboardData.coinTransactions.length > 0 ? (
               <div className={styles.itemList}>
@@ -675,7 +747,7 @@ export const MeApp = () => {
         circleLabel={t('public.shell.circleAction')}
         desktopLabel={t('public.shell.desktopAction')}
         onBrandClick={() => {
-          window.location.href = buildMePath();
+          navigateToMeRoute({ kind: 'dashboard' });
         }}
         onNavigateToDiscover={() => {
           window.location.href = '/discover';

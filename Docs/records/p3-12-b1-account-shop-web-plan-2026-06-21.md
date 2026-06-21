@@ -2,7 +2,7 @@
 
 > 日期：2026-06-21（Asia/Shanghai）
 >
-> 状态：方案已梳理，路由 / 登录回流契约与商城私域正式 Web 入口已完成；继续按既有组件和主题推进资产页、公开购买回流与 `/desktop` 回跳替换，统一 UI 设计后置到页面迁移完成后的 P3-12-D
+> 状态：方案已梳理，路由 / 登录回流契约、商城私域正式 Web 入口和资产正式入口已完成；继续按既有组件和主题推进公开购买回流与公开商城 `/desktop` 回跳替换，统一 UI 设计后置到页面迁移完成后的 P3-12-D
 >
 > 结论：B1 首批应补齐 **正式 Web 资产入口、商城购买、订单、库存 / 权益和交易回流**，并在替代路径可用后替换 `/me` 完整钱包与公开商城购买中的 `/desktop` 回跳。
 
@@ -53,11 +53,15 @@ Git 状态：
 - 新增 `src/shop/ShopEntry.tsx`、`ShopWebApp.tsx` 和 `shopRouteState.ts`，以 `/shop/orders`、`/shop/order/:orderId`、`/shop/inventory` 承接正式 Web 私域商城入口。
 - `main.tsx` 与 `entryRoute` 已把私域商城路由接入 `ShopEntry`，公开 `/shop`、`/shop/products`、`/shop/product/:productId` 继续由公开商城壳层承接。
 - `OrderList`、`OrderDetail`、`Inventory` 已补可选 `href` 能力，正式 Web 入口可为订单详情、返回、来源订单和来源商品提供真实 URL，WebOS 窗口版保持原回调导航。
+- `meRouteState` 已把 `/me/assets`、`/me/assets/transactions` 纳入正式 Web 私域路由，`MeApp` 按 route 分支接入 `MeAssetsPage`。
+- `MeAssetsPage` 覆盖余额、冻结余额、累计获得、累计支出、最近流水和完整分页流水，支持交易类型 / 状态基础筛选；未搬迁转账、支付口令、安全日志、统计导出或完整资产风控。
+- `/me` 近期资产面板的“完整钱包”已从 `/desktop?app=radish-pit` 替换为 `/me/assets/transactions`。
 
 已验证：
 
 - `node --test --test-isolation=none ./tests/authReturnPath.test.ts ./tests/publicRouteState.test.ts ./tests/entryRoute.test.ts ./tests/realUsagePathContracts.test.ts ./tests/publicHead.test.ts`
 - `node --test --test-isolation=none ./tests/shopRouteState.test.ts ./tests/entryRoute.test.ts ./tests/realUsagePathContracts.test.ts ./tests/publicSeoStatic.test.ts`
+- `node --test --test-isolation=none ./tests/meRouteState.test.ts ./tests/entryRoute.test.ts ./tests/authReturnPath.test.ts ./tests/realUsagePathContracts.test.ts ./tests/publicSeoStatic.test.ts`
 - `npm run type-check --workspace=radish.client`
 - `npm run build --workspace=radish.client`
 - `git diff --check`
@@ -69,7 +73,7 @@ Git 状态：
 - 当前 `/me` 是登录态状态看板，只识别 `/me` 单一路由。
 - 页面聚合公开资料、成长、资产摘要、最近访问和宠物摘要。
 - 资产区只拉取余额和最近 5 条流水。
-- “完整钱包”仍直接指向 `/desktop?app=radish-pit`。
+- “完整钱包”已改指 `/me/assets/transactions`，继续保留 `/desktop?app=radish-pit` 作为 WebOS 历史入口。
 
 ### 公开 `/shop`
 
@@ -195,9 +199,8 @@ Git 状态：
 
 ## 后续执行顺序
 
-1. 接入 `/me/assets`、`/me/assets/transactions` 页面入口，复用资产余额与流水能力。
-2. 接入公开商品购买动作和登录回流，购买成功后回到 `/shop/order/:orderId`。
-3. 替换 `/me` 完整钱包和公开商城购买中的 `/desktop` 回跳。
-4. 补定向测试、构建和必要后端交易测试。
-5. 阶段完成后，在用户确认服务已启动后做 PC / mobile Gateway 复核。
-6. 页面迁移齐后进入 `P3-12-D` 统一 UI 设计与美化专题。
+1. 接入公开商品购买动作和登录回流，购买成功后回到 `/shop/order/:orderId`。
+2. 替换公开商城购买中的 `/desktop` 回跳；`/me` 完整钱包已转向 `/me/assets/transactions`。
+3. 补定向测试、构建和必要后端交易测试。
+4. 阶段完成后，在用户确认服务已启动后做 PC / mobile Gateway 复核。
+5. 页面迁移齐后进入 `P3-12-D` 统一 UI 设计与美化专题。

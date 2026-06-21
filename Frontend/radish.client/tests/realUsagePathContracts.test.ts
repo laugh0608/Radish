@@ -16,6 +16,8 @@ import type { PublicRouteDescriptor } from '../src/public/publicRouteNavigation.
 import {
   buildCircleReturnPath,
   buildDesktopForumPostReturnPath,
+  buildMeAssetTransactionsReturnPath,
+  buildMeAssetsReturnPath,
   buildMeReturnPath,
   buildMessagesReturnPath,
   buildNotificationsReturnPath,
@@ -26,6 +28,7 @@ import {
   buildShopProductPurchaseReturnPath,
   normalizeAuthReturnPath,
 } from '../src/services/authReturnPath.ts';
+import { buildMePath, parseMeRoute } from '../src/me/meRouteState.ts';
 import { buildShopPath, parseShopRoute } from '../src/shop/shopRouteState.ts';
 import { parseDesktopExternalEntry } from '../src/utils/desktopEntryNavigation.ts';
 
@@ -242,4 +245,23 @@ test('P3-10 我的状态入口应是登录态私域回流路径而不是公开�
   assert.equal(isPublicContentPathname('/me'), false);
   assert.equal(isPublicContentPathname('/me/'), false);
   assert.equal(normalizeAuthReturnPath('/me?tab=assets'), null);
+});
+
+test('P3-12 我的资产入口应走正式 Web 路径并退出公开内容壳层', () => {
+  const assetsReturnPath = buildMeAssetsReturnPath();
+  assert.equal(assetsReturnPath, '/me/assets');
+  assert.equal(normalizeAuthReturnPath(assetsReturnPath), assetsReturnPath);
+  assert.equal(isPublicContentPathname(assetsReturnPath), false);
+  assert.deepEqual(parseMeRoute(assetsReturnPath), {
+    kind: 'assets',
+  });
+
+  const transactionsReturnPath = buildMeAssetTransactionsReturnPath();
+  assert.equal(transactionsReturnPath, '/me/assets/transactions');
+  assert.equal(normalizeAuthReturnPath(transactionsReturnPath), transactionsReturnPath);
+  assert.equal(isPublicContentPathname(transactionsReturnPath), false);
+  assert.deepEqual(parseMeRoute(transactionsReturnPath), {
+    kind: 'assets-transactions',
+  });
+  assert.equal(buildMePath({ kind: 'assets-transactions' }), transactionsReturnPath);
 });
