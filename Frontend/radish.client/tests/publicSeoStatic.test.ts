@@ -274,6 +274,46 @@ test('公开论坛浏览入口应提供公开链接并保留壳层导航拦截',
   assert.match(typeSource, /PublicForumPagination/);
 });
 
+test('公开论坛发帖入口应使用正式 Web 路径和统一论坛发布器', () => {
+  const composeSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumCompose.tsx'), 'utf8');
+  const appSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumApp.tsx'), 'utf8');
+  const publicEntrySource = readFileSync(resolve(clientRoot, 'src/public/PublicEntry.tsx'), 'utf8');
+  const publishModalSource = readFileSync(resolve(clientRoot, 'src/apps/forum/components/PublishPostModal.tsx'), 'utf8');
+
+  assert.match(composeSource, /buildPublicForumComposeReturnPath/);
+  assert.match(composeSource, /publishPost\(/);
+  assert.match(composeSource, /buildPostSubmissionFingerprint/);
+  assert.match(composeSource, /loginReturnPath=\{loginReturnPath\}/);
+  assert.match(composeSource, /onNavigate\(\{ kind: 'detail', postId: publishedPostId \}, \{ replace: true \}\)/);
+  assert.doesNotMatch(composeSource, /buildDesktopForumReturnPath/);
+  assert.match(appSource, /<PublicForumCompose/);
+  assert.match(appSource, /route\.kind === 'compose'/);
+  assert.match(publicEntrySource, /parsedRoute\.kind === 'detail' \|\| parsedRoute\.kind === 'compose'/);
+  assert.match(publicEntrySource, /nextRoute\.route\.kind !== 'detail' && nextRoute\.route\.kind !== 'compose'/);
+  assert.match(publishModalSource, /loginReturnPath\?: string \| null;/);
+  assert.match(publishModalSource, /returnPath: loginReturnPath \?\? buildDesktopForumReturnPath\(\)/);
+});
+
+test('公开论坛详情作者态应使用正式 Web intent 和共享幂等指纹', () => {
+  const detailSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumDetail.tsx'), 'utf8');
+  const postDetailSource = readFileSync(resolve(clientRoot, 'src/apps/forum/components/PostDetail.tsx'), 'utf8');
+
+  assert.match(detailSource, /intent: 'answer'/);
+  assert.match(detailSource, /intent: 'edit'/);
+  assert.match(detailSource, /intent: 'history'/);
+  assert.match(detailSource, /answerQuestion\(/);
+  assert.match(detailSource, /acceptQuestionAnswer\(/);
+  assert.match(detailSource, /updatePost\(/);
+  assert.match(detailSource, /getPostEditHistory\(/);
+  assert.match(detailSource, /buildAnswerSubmissionFingerprint/);
+  assert.match(detailSource, /buildPostEditSubmissionFingerprint/);
+  assert.doesNotMatch(detailSource, /buildDesktopForumPostReturnPath/);
+  assert.doesNotMatch(detailSource, /openApp/);
+  assert.match(postDetailSource, /answerAutoFocusKey\?: string \| null;/);
+  assert.match(postDetailSource, /!isReadOnly && onAnswerQuestion/);
+  assert.match(postDetailSource, /!isReadOnly && onLike/);
+});
+
 test('登录态私域入口生成公开链接前应复用 PublicId 校验', () => {
   const circleSource = readFileSync(resolve(clientRoot, 'src/circle/CircleApp.tsx'), 'utf8');
   const meSource = readFileSync(resolve(clientRoot, 'src/me/MeApp.tsx'), 'utf8');

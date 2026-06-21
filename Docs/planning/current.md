@@ -87,7 +87,8 @@
   - 下一主线切换到 `P3-12 Web 完全化与 WebOS 收束`：目标是在 PC / mobile 浏览器中完成项目正式版主路径，让 `/desktop` 退为历史兼容入口；Flutter 暂时后移，等 Web 正式版主路径稳定后再承接受控移动原生增强。
   - `P3-12-A` 功能资产盘点与迁移矩阵已完成只读审计：浏览器根路径和公开阅读路径已基本 Web 化，账户资产、商城购买、订单、库存和资产流水仍存在正式版 Web 缺口；下一开发组定为 `P3-12-B1 账户资产与商城交易 Web 化`，记录见 [P3-12-A WebOS 与 Web 功能资产盘点记录](/records/p3-12-a-webos-web-function-asset-inventory-2026-06-21)。
   - `P3-12-B1` 账户资产与商城交易 Web 化方案与首批代码侧主路径已完成：新增正式 Web 资产与商城交易 return path，接入 `/me/assets`、`/me/assets/transactions`、`/shop/orders`、`/shop/order/:orderId`、`/shop/inventory`，把 `/me` 完整钱包转向 `/me/assets/transactions`，公开商品详情购买改为 `/shop/product/:productId?intent=purchase` 登录回流并在购买成功后进入 `/shop/order/:orderId`；纯 Web 通知页的订单通知目标也已从桌面深链切到正式 Web 订单路由。定向契约测试、`radish.client` type-check / build 和 `git diff --check` 已通过，当前转入 `P3-12-C1` 代码侧残留清理；真实 PC / mobile Gateway 复核放到 B1 + C1 小阶段准备验收时，在用户确认前后端已启动后集中执行。统一 UI 设计后置到页面迁移完成后的 `P3-12-D`，记录见 [P3-12-B1 账户资产与商城交易 Web 化方案](/records/p3-12-b1-account-shop-web-plan-2026-06-21)。
-  - `P3-12-B2` 完整个人中心 Web 化首批代码与正式链接语义补口已完成：新增 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 正式 Web 路由、登录回流、页面接入和 API helper 收口；我的内容与浏览历史列表已补真实公开 `href`，关注关系继续以 `/circle` 为权威入口。当前进入 `P3-12-B3` 论坛作者态 Web 化方案与首批代码范围确认，真实 PC / mobile Gateway 复核放到小阶段准备验收时，在用户确认前后端已启动后集中执行，记录见 [P3-12-B2 完整个人中心 Web 化方案](/records/p3-12-b2-personal-center-web-plan-2026-06-21) 和 [P3-12-B3 论坛作者态 Web 化方案](/records/p3-12-b3-forum-author-web-plan-2026-06-21)。
+  - `P3-12-B2` 完整个人中心 Web 化首批代码与正式链接语义补口已完成：新增 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 正式 Web 路由、登录回流、页面接入和 API helper 收口；我的内容与浏览历史列表已补真实公开 `href`，关注关系继续以 `/circle` 为权威入口。
+  - `P3-12-B3` 论坛作者态 Web 化首批代码已完成：新增 `/forum/compose`，扩展 `/forum/post/:postId?intent=answer|edit|history`，接入发帖、问答回答 / 采纳、作者帖子编辑和帖子编辑历史查看；登录回流走正式 Web 路径，写入继续复用 `clientSubmissionId`，WebOS 三栏工作台、Dock、窗口参数和 `openApp` 语义不迁入正式 Web。真实 PC / mobile Gateway 复核放到 B3 小阶段准备验收时，在用户确认前后端已启动后集中执行，记录见 [P3-12-B3 论坛作者态 Web 化方案](/records/p3-12-b3-forum-author-web-plan-2026-06-21)。
 
 ## 当前执行入口
 
@@ -134,7 +135,8 @@
    - P3-11 已按“暂缓 PR、不发布、不创建 tag”收束；不再把 PR 决策作为当前开发主线。
    - `P3-12-A` 已完成功能资产盘点与迁移矩阵，按“正式版必需 / 发布前建议 / WebOS 保留 / 后置评审”分类 WebOS 与纯 Web 能力。
    - `P3-12-B1` 方案、路由 / 登录回流契约、商城私域正式 Web 入口、资产正式入口和公开购买回流已完成；`P3-12-C1` 首轮代码侧残留清理已完成，后续只在验收或新增阻断命中时回拉。
-   - `P3-12-B2` 完整个人中心 Web 化首批代码已接入 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience`，并已补正式公开 `href` 导航语义；当前进入 `P3-12-B3` 论坛作者态 Web 化方案与首批代码范围确认。
+   - `P3-12-B2` 完整个人中心 Web 化首批代码已接入 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience`，并已补正式公开 `href` 导航语义。
+   - `P3-12-B3` 论坛作者态 Web 化首批代码已接入 `/forum/compose`、详情 `intent=answer|edit|history`、正式 Web 登录回流、发帖 / 回答 / 编辑 / 历史查看和 `clientSubmissionId` 延续；下一步按 B3 小阶段验收准备，或进入 `P3-12-B4` 文档作者态归属裁决。
    - UI 设计与美化专题放到功能迁移齐后的 `P3-12-D`；届时必须统一使用 Pencil 先做设计稿，再更新设计 / 说明文档，最后进入视觉实现。
 2. **保持 P3-10 可恢复合并状态**
    - `P3-10-D` 已完成公开页整理、四批入口语义治理、合并前验证和 PR 合并判断；不再默认追加第五批链接扫尾。
@@ -155,7 +157,7 @@
   - 新增 [P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)，承接 P3-11 暂缓 PR 后的正式开发主线。
   - `P3-12-A` 已完成只读盘点，结论见 [P3-12-A WebOS 与 Web 功能资产盘点记录](/records/p3-12-a-webos-web-function-asset-inventory-2026-06-21)。
   - `P3-12-B1` 方案、路由 / 登录回流契约、商城私域正式 Web 入口、资产正式入口、公开购买动作和交易回流替换见 [P3-12-B1 账户资产与商城交易 Web 化方案](/records/p3-12-b1-account-shop-web-plan-2026-06-21)；`P3-12-C1` 首轮残留清理见 [P3-12-C1 WebOS 残留入口清理记录](/records/p3-12-c1-webos-residual-cleanup-2026-06-21)，真实 Gateway PC / mobile 复核后置到小阶段验收。
-  - `P3-12-B2` 首批代码已补 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 的路由、登录回流和正式 Web 导航语义，方案见 [P3-12-B2 完整个人中心 Web 化方案](/records/p3-12-b2-personal-center-web-plan-2026-06-21)；`P3-12-B3` 已形成论坛作者态 Web 化方案，首批建议从 `/forum/compose`、详情受控 `intent=answer|edit|history`、正式登录回流和 `clientSubmissionId` 延续入手，见 [P3-12-B3 论坛作者态 Web 化方案](/records/p3-12-b3-forum-author-web-plan-2026-06-21)。
+  - `P3-12-B2` 首批代码已补 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 的路由、登录回流和正式 Web 导航语义，方案见 [P3-12-B2 完整个人中心 Web 化方案](/records/p3-12-b2-personal-center-web-plan-2026-06-21)；`P3-12-B3` 首批代码已补 `/forum/compose`、详情受控 `intent=answer|edit|history`、正式登录回流和 `clientSubmissionId` 延续，见 [P3-12-B3 论坛作者态 Web 化方案](/records/p3-12-b3-forum-author-web-plan-2026-06-21)。下一步是 B3 小阶段验收准备，或继续进入 `P3-12-B4` 文档作者态归属裁决。
   - 功能迁移只迁移正式版产品能力，不迁移 WebOS Dock、窗口系统、桌面背景、窗口几何记忆或桌面 app 外壳；B1 替代路径可用后，只清理与默认产品路径直接冲突的 `/desktop` 回跳。
   - 页面迁移齐后进入 `P3-12-D` 统一 UI 设计与美化专题，并走 Pencil 设计稿 -> 设计 / 说明文档 -> 代码实现 -> PC / mobile 复核。
 - `P3-11 发布候选整备与轻量复访补齐维护线`

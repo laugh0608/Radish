@@ -42,6 +42,11 @@
   flex: 0 0 auto;
 }
 
+.composeSectionCard {
+  flex: 0 0 auto;
+  min-height: min(520px, calc(100dvh - 156px));
+}
+
 .sectionHeader {
   padding: 28px 28px 18px;
   background:
@@ -372,6 +377,14 @@
   font-weight: 700;
   cursor: pointer;
   padding: 0;
+}
+
+.composePanel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 22px 28px 28px;
 }
 
 .errorText {
@@ -801,6 +814,10 @@
     margin-right: 14px;
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .composePanel {
+    padding: 18px 14px 22px;
   }
 
   .errorText {

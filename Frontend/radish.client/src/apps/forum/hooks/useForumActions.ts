@@ -42,71 +42,13 @@ import {
   createClientSubmissionState,
   type ClientSubmissionState
 } from '@/utils/clientSubmission';
-
-function buildPostSubmissionFingerprint(
-  title: string,
-  content: string,
-  categoryId: LongId,
-  tagNames: string[],
-  isQuestion?: boolean,
-  poll?: CreatePollRequest | null,
-  lottery?: CreateLotteryRequest | null
-): string {
-  return JSON.stringify({
-    title: title.trim(),
-    content: content.trim(),
-    categoryId: String(categoryId),
-    tagNames: [...tagNames].map(tag => tag.trim()).sort(),
-    isQuestion: Boolean(isQuestion),
-    poll: poll ?? null,
-    lottery: lottery ?? null
-  });
-}
-
-function buildCommentSubmissionFingerprint(
-  postId: LongId,
-  content: string,
-  replyTo: CommentReplyTarget | null
-): string {
-  return JSON.stringify({
-    postId: String(postId),
-    content: content.trim(),
-    parentId: replyTo?.parentCommentId == null ? null : String(replyTo.parentCommentId),
-    replyToCommentId: replyTo?.targetCommentId == null ? null : String(replyTo.targetCommentId),
-    replyToCommentSnapshot: replyTo?.contentSnapshot ?? null,
-    replyToUserName: replyTo?.authorName ?? null
-  });
-}
-
-function buildAnswerSubmissionFingerprint(postId: LongId, content: string): string {
-  return JSON.stringify({
-    postId: String(postId),
-    content: content.trim()
-  });
-}
-
-function buildPostEditSubmissionFingerprint(
-  postId: LongId,
-  title: string,
-  content: string,
-  categoryId: LongId,
-  tagNames: string[]
-): string {
-  return JSON.stringify({
-    postId: String(postId),
-    title: title.trim(),
-    content: content.trim(),
-    categoryId: String(categoryId),
-    tagNames: [...tagNames].map(tag => tag.trim()).sort()
-  });
-}
-
-function buildCommentEditSubmissionFingerprint(commentId: LongId, content: string): string {
-  return JSON.stringify({
-    commentId: String(commentId),
-    content: content.trim()
-  });
-}
+import {
+  buildAnswerSubmissionFingerprint,
+  buildCommentEditSubmissionFingerprint,
+  buildCommentSubmissionFingerprint,
+  buildPostEditSubmissionFingerprint,
+  buildPostSubmissionFingerprint,
+} from '../utils/forumSubmissionFingerprint';
 
 export interface ForumActionsState {
   // Modal 状态

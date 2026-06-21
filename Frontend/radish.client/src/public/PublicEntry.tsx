@@ -220,7 +220,7 @@ export const PublicEntry = () => {
   });
   const [lastForumBrowseRoute, setLastForumBrowseRoute] = useState<PublicForumBrowseRoute>(() => {
     const parsedRoute = parsePublicForumRoute(window.location.pathname, window.location.search);
-    return parsedRoute.kind === 'detail' ? createDefaultListRoute() : parsedRoute;
+    return parsedRoute.kind === 'detail' || parsedRoute.kind === 'compose' ? createDefaultListRoute() : parsedRoute;
   });
   const [lastDocsBrowseRoute, setLastDocsBrowseRoute] = useState<PublicDocsBrowseRoute>(() => {
     const parsedRoute = parsePublicDocsRoute(window.location.pathname, window.location.search, window.location.hash);
@@ -270,7 +270,7 @@ export const PublicEntry = () => {
       if (nextRoute.app === 'discover') {
         setLastDiscoverRoute(nextRoute.route);
       }
-      if (nextRoute.app === 'forum' && nextRoute.route.kind !== 'detail') {
+      if (nextRoute.app === 'forum' && nextRoute.route.kind !== 'detail' && nextRoute.route.kind !== 'compose') {
         setLastForumBrowseRoute(nextRoute.route);
       }
       if (nextRoute.app === 'docs' && nextRoute.route.kind !== 'detail') {
@@ -323,7 +323,7 @@ export const PublicEntry = () => {
     if (nextRoute.app === 'discover') {
       setLastDiscoverRoute(nextRoute.route);
     }
-    if (nextRoute.app === 'forum' && nextRoute.route.kind !== 'detail') {
+    if (nextRoute.app === 'forum' && nextRoute.route.kind !== 'detail' && nextRoute.route.kind !== 'compose') {
       setLastForumBrowseRoute(nextRoute.route);
     }
     if (nextRoute.app === 'docs' && nextRoute.route.kind !== 'detail') {

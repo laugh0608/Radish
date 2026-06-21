@@ -36,7 +36,7 @@ interface AuthReturnLocation {
 }
 
 export type CircleReturnTab = 'feed' | 'following' | 'followers';
-export type PublicForumPostReturnIntent = 'comment' | 'quickReply';
+export type PublicForumPostReturnIntent = 'comment' | 'quickReply' | 'answer' | 'edit' | 'history';
 
 function getSessionStorage(): Storage | null {
   if (typeof window === 'undefined') {
@@ -88,6 +88,10 @@ export function normalizeAuthReturnPath(value: string | null | undefined): strin
 
     if (pathname === PET_ENTRY_PATH) {
       return normalizePetReturnPath(url);
+    }
+
+    if (pathname === '/forum/compose') {
+      return normalizePublicForumComposeReturnPath(url);
     }
 
     if (pathname.startsWith('/forum/post/')) {
@@ -160,7 +164,17 @@ function normalizePublicForumPostReturnPath(url: URL, normalizedPathname: string
   }
 
   const intent = url.searchParams.get('intent');
-  if (intent !== 'comment' && intent !== 'quickReply') {
+  if (
+    intent !== 'comment'
+    && intent !== 'quickReply'
+    && intent !== 'answer'
+    && intent !== 'edit'
+    && intent !== 'history'
+  ) {
+    return null;
+  }
+
+  if (commentId && intent !== 'comment' && intent !== 'quickReply') {
     return null;
   }
 
@@ -171,6 +185,29 @@ function normalizePublicForumPostReturnPath(url: URL, normalizedPathname: string
   query.set('intent', intent);
 
   return `/forum/post/${encodeURIComponent(postIdentifier)}?${query.toString()}`;
+}
+
+function normalizePublicForumComposeReturnPath(url: URL): string | null {
+  if (url.hash) {
+    return null;
+  }
+
+  for (const key of url.searchParams.keys()) {
+    if (key !== 'category') {
+      return null;
+    }
+  }
+
+  if (url.searchParams.getAll('category').length > 1) {
+    return null;
+  }
+
+  const categoryId = url.searchParams.get('category');
+  if (categoryId && !POSITIVE_LONG_ID_PATTERN.test(categoryId)) {
+    return null;
+  }
+
+  return categoryId ? `/forum/compose?category=${categoryId}` : '/forum/compose';
 }
 
 function normalizeCircleReturnPath(url: URL): string | null {
@@ -609,6 +646,15 @@ export function buildShopInventoryReturnPath(): string {
   return '/shop/inventory';
 }
 
+export function buildPublicForumComposeReturnPath(options: { categoryId?: string | number | null } = {}): string | null {
+  const normalizedCategoryId = options.categoryId == null ? '' : String(options.categoryId).trim();
+  if (normalizedCategoryId && !POSITIVE_LONG_ID_PATTERN.test(normalizedCategoryId)) {
+    return null;
+  }
+
+  return normalizedCategoryId ? `/forum/compose?category=${normalizedCategoryId}` : '/forum/compose';
+}
+
 export function buildDesktopShopProductReturnPath(
   productId: string,
   options: { intent?: 'purchase' | null } = {},
@@ -705,7 +751,13 @@ export function buildPublicForumPostReturnPath(target: {
   commentId?: string | null;
   intent: PublicForumPostReturnIntent;
 }): string | null {
-  if (target.intent !== 'comment' && target.intent !== 'quickReply') {
+  if (
+    target.intent !== 'comment'
+    && target.intent !== 'quickReply'
+    && target.intent !== 'answer'
+    && target.intent !== 'edit'
+    && target.intent !== 'history'
+  ) {
     return null;
   }
 
@@ -719,6 +771,10 @@ export function buildPublicForumPostReturnPath(target: {
   }
 
   if (normalizedCommentId && !POSITIVE_LONG_ID_PATTERN.test(normalizedCommentId)) {
+    return null;
+  }
+
+  if (normalizedCommentId && target.intent !== 'comment' && target.intent !== 'quickReply') {
     return null;
   }
 

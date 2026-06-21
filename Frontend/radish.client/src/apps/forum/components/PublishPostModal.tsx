@@ -31,6 +31,7 @@ interface PublishPostModalProps {
   isAuthenticated: boolean;
   categories: Category[];
   selectedCategoryId: LongId | null;
+  loginReturnPath?: string | null;
   onClose: () => void;
   onPublish: (
     title: string,
@@ -118,6 +119,7 @@ export const PublishPostModal = ({
   isAuthenticated,
   categories,
   selectedCategoryId,
+  loginReturnPath,
   onClose,
   onPublish
 }: PublishPostModalProps) => {
@@ -718,7 +720,7 @@ export const PublishPostModal = ({
   };
 
   const handleLoginClick = () => {
-    redirectToLogin({ returnPath: buildDesktopForumReturnPath() });
+    redirectToLogin({ returnPath: loginReturnPath ?? buildDesktopForumReturnPath() });
   };
 
   const handleImageUpload = async (file: File): Promise<MarkdownImageUploadResult> => {

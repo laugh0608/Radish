@@ -1,7 +1,7 @@
 export type PublicListSort = 'newest' | 'hottest';
 export type PublicForumRouteSort = 'newest' | 'hottest' | 'pending' | 'answers' | 'votes' | 'deadline';
 export type PublicSearchTimeRange = 'all' | '24h' | '7d' | '30d' | 'custom';
-export type PublicForumDetailIntent = 'comment' | 'quickReply';
+export type PublicForumDetailIntent = 'comment' | 'quickReply' | 'answer' | 'edit' | 'history';
 
 export interface PublicForumListRoute {
   kind: 'list';
@@ -41,12 +41,17 @@ export interface PublicForumDetailRoute {
   intent?: PublicForumDetailIntent;
 }
 
+export interface PublicForumComposeRoute {
+  kind: 'compose';
+  categoryId: string | null;
+}
+
 export type PublicForumBrowseRoute =
   | PublicForumListRoute
   | PublicForumTagRoute
   | PublicForumSearchRoute
   | PublicForumTypeRoute;
-export type PublicForumRoute = PublicForumBrowseRoute | PublicForumDetailRoute;
+export type PublicForumRoute = PublicForumBrowseRoute | PublicForumDetailRoute | PublicForumComposeRoute;
 
 export function createDefaultListRoute(): PublicForumListRoute {
   return {
@@ -120,7 +125,13 @@ function normalizePostPublicId(value: string | undefined): string | undefined {
 }
 
 function normalizeDetailIntent(value: string | null): PublicForumDetailIntent | undefined {
-  return value === 'comment' || value === 'quickReply' ? value : undefined;
+  return value === 'comment'
+    || value === 'quickReply'
+    || value === 'answer'
+    || value === 'edit'
+    || value === 'history'
+    ? value
+    : undefined;
 }
 
 function normalizeSortBy(value: string | null): PublicListSort {
@@ -195,9 +206,21 @@ function parseTypeRoute(kind: PublicForumTypeRoute['kind'], search: string): Pub
   };
 }
 
+function parseComposeRoute(search: string): PublicForumComposeRoute {
+  const params = new URLSearchParams(search);
+  return {
+    kind: 'compose',
+    categoryId: normalizePositiveIntegerString(params.get('category') ?? undefined) ?? null
+  };
+}
+
 export function parsePublicForumRoute(pathname: string, search: string): PublicForumRoute {
   if (pathname === '/forum' || pathname === '/forum/') {
     return parseListRoute(search);
+  }
+
+  if (pathname === '/forum/compose' || pathname === '/forum/compose/') {
+    return parseComposeRoute(search);
   }
 
   if (pathname === '/forum/question' || pathname === '/forum/question/') {
@@ -259,6 +282,16 @@ export function parsePublicForumRoute(pathname: string, search: string): PublicF
 }
 
 export function buildPublicForumPath(route: PublicForumRoute): string {
+  if (route.kind === 'compose') {
+    const search = new URLSearchParams();
+    if (route.categoryId) {
+      search.set('category', route.categoryId);
+    }
+
+    const queryString = search.toString();
+    return queryString ? `/forum/compose?${queryString}` : '/forum/compose';
+  }
+
   if (route.kind === 'detail') {
     const search = new URLSearchParams();
     if (route.commentId) {
