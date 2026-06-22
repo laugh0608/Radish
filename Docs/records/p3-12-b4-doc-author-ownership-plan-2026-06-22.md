@@ -2,7 +2,7 @@
 
 > 日期：2026-06-22（Asia/Shanghai）
 >
-> 状态：只读盘点与归属方案已完成；B4-1 正式 Web 文档作者入口首批代码已完成
+> 状态：只读盘点与归属方案已完成；B4-1 正式 Web 文档作者入口首批代码已完成；B4-2 Console 文档治理设计已确认
 >
 > 结论：公开 `/docs` 继续只承载阅读、搜索、正文内链和分享；正式 Web 应新增登录态文档作者页，承接常规创建、编辑、草稿和版本回看；Console 承接发布、撤回、归档、恢复、受限可见性、角色 / 权限配置、内置文档同步观察等治理动作；WebOS `WikiApp` 在替代路径落地前继续作为 `/desktop` 历史维护入口，不再扩展新功能。
 
@@ -163,18 +163,19 @@ Console 负责：
 - 内置文档同步状态观察与只读提示。
 - 与角色授权资源树、API 资源映射、权限覆盖矩阵保持一致。
 
-建议权限键：
+`B4-2` 确认后的首批权限键：
 
 - `console.docs.view`
-- `console.docs.create`
-- `console.docs.edit`
 - `console.docs.publish`
 - `console.docs.archive`
+- `console.docs.delete`
 - `console.docs.restore`
+- `console.docs.permissions`
 - `console.docs.import`
 - `console.docs.rollback`
+- `console.docs.export`
 
-是否把 `create/edit` 同时放在 Console 和正式 Web，需要首批代码前确认。推荐首批先让正式 Web 使用 `SystemOrAdmin` 写入，Console 先做治理页或后续第二批再落地，避免一批同时改两套页面和权限种子。
+首批不新增 `console.docs.create/edit`。创建和正文编辑继续由正式 Web 作者入口承接；Console 首批只做治理入口，避免把正文创作和权限 / 发布治理混成同一职责面。详细口径见 [P3-12-B4-2 Console 文档治理设计](/records/p3-12-b4-2-console-doc-governance-design-2026-06-22)。
 
 ### 4. WebOS 只作为过渡维护入口
 
@@ -218,6 +219,19 @@ Console 负责：
 
 后续 B4 小阶段验收需要在用户确认前后端已启动后，通过 Gateway 覆盖 PC `1920x1080` 与移动 `390x844` CSS 视口的公开 `/docs`、作者入口、创建 / 编辑表单、修订回看和登录回流。
 
+## B4-2 设计承接
+
+2026-06-22 已确认 [P3-12-B4-2 Console 文档治理设计](/records/p3-12-b4-2-console-doc-governance-design-2026-06-22)。
+
+确认后的 Console 职责边界：
+
+- Console 新增文档治理入口，承接全量筛选、发布 / 下架、归档、回收站、权限策略、版本回滚、导入导出和内置文档观察。
+- 正式 Web 作者入口继续负责普通手写文档创建、正文编辑、基础信息编辑和版本回看。
+- 公开 `/docs` 继续只承载阅读、搜索、正文内链和分享。
+- WebOS `WikiApp` 只作为 `/desktop` 历史维护入口保留，不新增正式 Web / Console 权限语义。
+
+设计已明确首批权限键、菜单 / 路由归属、治理专用 API 授权资源、数据状态流转和验证口径。后续代码实现前应以该设计记录为准，不再把公开 `/docs`、Web 作者页和 Console 治理页混成同一职责面。
+
 ## 首批代码建议
 
 ### 推荐 B4-1：正式 Web 作者入口
@@ -254,6 +268,7 @@ Console 负责：
 - 补 Console 资源种子和 API 映射。
 - 为 WikiController 写入 / 治理接口补 `RequireConsolePermission` 或等价资源映射策略。
 - 更新 Console 权限覆盖矩阵。
+- 首批不新增 Console 正文创建 / 编辑权限；若后续确需 Console 内编辑正文，再单独评审 `console.docs.edit`。
 
 该批次应在 B4-1 后再做，避免同时迁移正式 Web 作者入口和 Console 治理中心导致验证面过宽。
 
