@@ -398,7 +398,7 @@ docker compose up -d
 
 > 适用于：新环境第一次部署数据库，或在已有数据库上按版本执行结构迁移。
 >
-> 当前 `Radish.DbMigrate` 管辖范围内的数据库结构真相源是 `SqlSugar Code First + Radish.DbMigrate + 版本化差异 SQL`；完整协作边界见 [数据库结构变更协作口径](/guide/database-schema-change-governance)。
+> 当前 `Radish.DbMigrate` 管辖范围内的正式上线前数据库结构真相源是 `SqlSugar Code First + Radish.DbMigrate`；已有正式数据库后再补发布 SQL。完整协作边界见 [数据库结构变更协作口径](/guide/database-schema-change-governance)。
 
 ### 快速开始：一键初始化（推荐）
 
@@ -450,18 +450,20 @@ dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- apply
      - 扫描 `Radish.Model` 中的实体类型并执行 SqlSugar Code First（`InitTables`），自动创建/补全表结构。
 3. 使用数据库客户端确认结构是否符合预期（表/字段/索引）。
 
-### 生成迁移 SQL 并应用到生产
+### 生成发布 SQL 并应用到生产
+
+> 当前项目尚未进入正式生产数据库阶段；上线前本地 / 测试 SQLite 可按当前实体和 `DbMigrate` 重新初始化，不维护历史发布脚本。以下流程只在已有需要保护的测试 / 生产数据库后启用。
 
 1. 在一套用于对比的测试库上执行 `DbMigrate init`，让其结构同步到最新代码。
-2. 使用数据库工具导出“从当前生产版本 → 新版本”的结构差异 SQL，并保存到仓库（建议放在 `Deploy/sql` 目录按日期/版本命名）。
-3. 在发布新版本前，由 DBA 或 CI/CD 流水线在生产数据库上执行本次版本对应的迁移 SQL：
+2. 使用数据库工具导出“从当前生产版本 → 新版本”的结构差异 SQL，并作为本次发布材料保存、审核。
+3. 在发布新版本前，由 DBA 或 CI/CD 流水线在生产数据库上执行本次版本对应的发布 SQL：
    - 顺序执行所有未执行过的脚本；
    - 执行完成后再滚动升级/重启 API 与 Gateway。
 4. 对于需要回填的数据（例如为历史记录设置新字段的默认值），可以：
-   - 在迁移 SQL 中添加 `UPDATE` 语句，或
+   - 在发布 SQL 中添加 `UPDATE` 语句，或
    - 后续在 `Radish.DbMigrate` 项目中实现 `seed` 子命令统一处理。
 
-> 建议：生产环境中**不要**在 Api/Gateway 启动时自动调用 `InitTables`，避免意外结构变更；所有结构更新应通过经审核的迁移 SQL 或专门的迁移任务执行。
+> 建议：生产环境中**不要**在 Api/Gateway 启动时自动调用 `InitTables`，避免意外结构变更；所有结构更新应通过经审核的发布 SQL 或专门的迁移任务执行。
 
 ### 初始化基础数据（seed 子命令）
 

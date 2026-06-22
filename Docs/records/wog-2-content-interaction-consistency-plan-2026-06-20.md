@@ -17,7 +17,7 @@
 `2026-06-20` 已按确认方案完成首批代码实现：
 
 - `UserPostLike`、`UserCommentLike` 已声明用户-目标唯一索引和目标活跃查询索引。
-- 已新增部署态 SQL：`Deploy/sql/20260620_add_like_relation_unique_indexes.sql`，覆盖历史重复关系清理、`LikeCount` 校准和索引创建。
+- 当时已补阶段性结构脚本，覆盖历史重复关系清理、`LikeCount` 校准和索引创建；2026-06-22 后按上线前数据库口径清理，不再作为当前执行入口。
 - `Radish.DbMigrate` 已补本地结构治理入口：本地 `apply` 会规整点赞关系、校准计数并补齐索引。
 - `PostRepository`、`CommentRepository` 已承接点赞关系切换、唯一冲突处理和 `LikeCount` 条件更新。
 - `PostService.ToggleLikeAsync`、`CommentService.ToggleLikeAsync` 已改为根据仓储返回的 `Delta` 触发奖励、经验、通知和评论高亮重算。
@@ -63,7 +63,7 @@
 3. 删除同组其他重复行。这里删除的是无法继续保留的历史异常关系行，目的是让唯一索引能成为后续真值保护。
 4. 基于活跃关系重新校准 `Post.LikeCount` 和 `Comment.LikeCount`。
 
-部署态补 `Deploy/sql/20260620_add_like_relation_unique_indexes.sql`，覆盖 PostgreSQL 的去重、计数校准和索引创建。本地 SQLite 通过 `Radish.DbMigrate apply / doctor / verify` 承接，必要时在 `DbMigrateRunner` 中补同等结构补丁。
+正式数据库存在后再生成发布 SQL，覆盖目标库的去重、计数校准和索引创建。本地 SQLite 通过 `Radish.DbMigrate apply / doctor / verify` 承接，必要时在 `DbMigrateRunner` 中补同等结构补丁。
 
 ### 3. 持久化流程
 
@@ -99,7 +99,7 @@
 1. `dotnet test Radish.Api.Tests`
 2. 覆盖帖子点赞：新增、取消、恢复、重复并发请求、计数不为负、奖励只触发一次。
 3. 覆盖评论点赞：新增、取消、恢复、重复并发请求、计数不为负、高亮重算只在有效变化时触发。
-4. 覆盖迁移 SQL：历史重复关系清理后唯一索引可创建，`LikeCount` 与活跃关系数量一致。
+4. 覆盖结构同步 / 正式数据库阶段发布 SQL：历史重复关系清理后唯一索引可创建，`LikeCount` 与活跃关系数量一致。
 5. `git diff --check`
 6. `npm run check:repo-hygiene:changed`
 
@@ -121,4 +121,4 @@
 
 1. 唯一键采用 `TenantId + UserId + PostId / CommentId`，迁移中删除历史重复关系行。
 2. 点赞关系切换和计数条件更新下沉到 `PostRepository` / `CommentRepository` 的专属方法。
-3. 本批保持 API / 前端契约不变，只改后端持久化、迁移 SQL 和定向测试。
+3. 本批保持 API / 前端契约不变，只改后端持久化、结构同步入口和定向测试。

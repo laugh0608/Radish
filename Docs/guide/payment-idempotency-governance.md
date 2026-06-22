@@ -38,7 +38,7 @@
 
 截至 `2026-06-19`，首批代码已落地：
 
-- 新增 `OperationIdempotencyRecord` 实体、通用幂等记录服务和 PostgreSQL 差异 SQL `Deploy/sql/20260619_add_operation_idempotency_records.sql`。
+- 新增 `OperationIdempotencyRecord` 实体、通用幂等记录服务和 `Radish.DbMigrate` 结构入口；2026-06-22 后按上线前数据库口径不再维护历史发布脚本。
 - `CreateOrderDto` 与 `TransferDto` 已增加 `IdempotencyKey`，未传 key 时仍保留现有行为。
 - `OrderService.PurchaseAsync` 与 `CoinService.TransferAsync` 已在支付口令验证通过后接入请求摘要、幂等记录创建 / 读取、冲突拒绝、处理中提示和终态响应重放。
 - Web 官方商城购买与萝卜坑转账流程已生成并传入 `shop:{uuid}` / `coin-transfer:{uuid}`。

@@ -44,7 +44,7 @@ git diff --stat master..dev
 | `P3-10-D` Web 信息流 / UI 结构整理 | 公开文档、商城、榜单、个人页、论坛流、公开壳层、来源返回和公开路由 ID 字符串契约 | `radish.client` 构建、公开路由 / LongId 字符串安全、Gateway PC / 移动页面复核 |
 | 前端敏感日志脱敏 | `radish.client`、`radish.console`、`@radish/http` 日志脱敏工具和测试 | 前端测试、type-check、日志脱敏定向测试 |
 | 支付安全与资产幂等 | 支付口令 Argon2id v2、商城购买 / 萝卜币转账幂等、`OperationIdempotencyRecord` | 后端测试、支付口令兼容、请求摘要绑定和终态重放 |
-| `WOG-1` 至 `WOG-6` 写操作治理 | 点赞计数一致性、背包 / 权益发放、奖励业务键、管理写入版本语义、Flutter 单商品购买幂等 | 后端完整测试、迁移 SQL / DbMigrate 自检、Flutter 商城购买重试 |
+| `WOG-1` 至 `WOG-6` 写操作治理 | 点赞计数一致性、背包 / 权益发放、奖励业务键、管理写入版本语义、Flutter 单商品购买幂等 | 后端完整测试、结构同步 / DbMigrate 自检、Flutter 商城购买重试 |
 | 论坛内容发布可靠性 | `ContentSubmissionRecord`、发帖 / 评论 / 回答 / 编辑重试幂等、创建类限频 | 后端论坛定向测试、Web `clientSubmissionId` 契约 |
 | Flutter 论坛承接 | 纯文本发帖、根评论 / 回复、问答回答、作者帖子正文编辑、作者根评论编辑 | `flutter analyze`、`flutter test` |
 | 阶段收束文档 | 后续增量评审和阶段收束准备记录 | 文档卫生、入口文档一致性 |

@@ -10,7 +10,7 @@
 
 ## 批次结论
 
-`P3-10-B8 Phase B` 发布候选前批次级回归已完成，未发现需要阻断的服务端数值规则、前端契约、迁移 SQL 或 Gateway 页面路径缺口。本批发现并补上 `/pet` 登录回流的前端契约测试缺口：`/pet` 现在被显式纳入 `normalizeAuthReturnPath`、`buildPetReturnPath` 和私域入口识别测试，避免后续误删登录恢复能力。
+`P3-10-B8 Phase B` 发布候选前批次级回归已完成，未发现需要阻断的服务端数值规则、前端契约、结构同步或 Gateway 页面路径缺口。本批发现并补上 `/pet` 登录回流的前端契约测试缺口：`/pet` 现在被显式纳入 `normalizeAuthReturnPath`、`buildPetReturnPath` 和私域入口识别测试，避免后续误删登录恢复能力。
 
 开发者启动前后端后，已通过 Gateway `https://localhost:5000` 补验 PC / 移动真实页面。`/pet` 未登录访问会进入 `Radish 统一登录`，种子账号 `test / test123456` 登录后可回流到 `/pet`；已登录页面覆盖刷新、四类照顾动作、每日次数 / 冷却、最近流水和 `/me` 宠物摘要入口。
 
@@ -25,7 +25,7 @@
 | 每日次数 / 冷却 | `PetServiceTest` 覆盖每日上限与冷却；`petPresentation.test.ts` 覆盖次数耗尽、冷却和可用状态展示；Gateway 展示喂食 / 互动冷却、清洁 / 休息今日用完 | 通过 |
 | 最近流水 | `PetServiceTest` 覆盖照顾写流水、未领取日志空态；前端 presentation 测试覆盖流水变化值展示；Gateway 最近照顾按动作追加并置顶 | 通过 |
 | `/me` 宠物摘要入口 | `radish.client` 测试和构建覆盖 `/me` 私域入口仍可识别；Gateway `/me` 展示 `联调萝卜`、心情和阶段，`电子宠物` 链接可回到 `/pet` | 通过 |
-| 迁移入口 | `Deploy/sql/20260615_add_pet_tables.sql` 与实体字段核对，并在 SQLite 临时库重复执行两次，`PetProfile` / `PetStatLog` 表和索引均可落下 | 通过 |
+| 结构同步入口 | 当时已将阶段性结构脚本与实体字段核对，并在 SQLite 临时库重复执行两次，`PetProfile` / `PetStatLog` 表和索引均可落下；2026-06-22 后该脚本已按上线前口径清理 | 历史事实 |
 
 ## 自动化执行
 
@@ -42,9 +42,6 @@ npm run validate:ci
 npm run validate:identity
 git diff --check
 npm run check:repo-hygiene:changed
-sqlite3 /private/tmp/radish-pet-schema-check-20260615.db ".read Deploy/sql/20260615_add_pet_tables.sql"
-sqlite3 /private/tmp/radish-pet-schema-check-20260615.db ".schema PetProfile"
-sqlite3 /private/tmp/radish-pet-schema-check-20260615.db ".schema PetStatLog"
 ```
 
 结果：
@@ -59,7 +56,7 @@ sqlite3 /private/tmp/radish-pet-schema-check-20260615.db ".schema PetStatLog"
 - `validate:identity` 通过，身份语义扫描、LongId 字符串安全扫描和身份语义后端定向测试均未发现回归。
 - `git diff --check` 通过。
 - `check:repo-hygiene:changed` 通过，已检查 `5` 个变更文件，未发现文本卫生问题。
-- 迁移 SQL 在临时 SQLite 库中可重复执行，两个表和五个索引均可创建。
+- 当时阶段性结构脚本在临时 SQLite 库中可重复执行，两个表和五个索引均可创建；2026-06-22 后脚本已按上线前口径清理。
 
 ## Gateway 状态
 
@@ -92,10 +89,6 @@ sqlite3 /private/tmp/radish-pet-schema-check-20260615.db ".schema PetStatLog"
 npm run validate:baseline -- --report --report-file .tmp/p3-10-b8-merge-validate-baseline.md
 npm run validate:identity
 npm run validate:baseline:host -- --report --report-file .tmp/p3-10-b8-merge-validate-host.md
-sqlite3 /private/tmp/radish-pet-schema-check-merge-20260615.db ".read Deploy/sql/20260615_add_pet_tables.sql"
-sqlite3 /private/tmp/radish-pet-schema-check-merge-20260615.db ".read Deploy/sql/20260615_add_pet_tables.sql"
-sqlite3 /private/tmp/radish-pet-schema-check-merge-20260615.db ".schema PetProfile"
-sqlite3 /private/tmp/radish-pet-schema-check-merge-20260615.db ".schema PetStatLog"
 git diff --check
 npm run check:repo-hygiene:changed
 ```
@@ -107,7 +100,7 @@ npm run check:repo-hygiene:changed
 - `validate:baseline:host` 首次在沙盒内因 `dotnet test` Socket 权限被拦截；按沙盒规则提权后重跑通过，报告已落盘到 `.tmp/p3-10-b8-merge-validate-host.md`。
 - `validate:baseline:host` 已覆盖前端类型检查、`radish.client` `252` 个测试、Console 权限链路扫描、Repo Quality contract 自校验、身份语义影响面判定自校验、身份语义防回归扫描、后端解决方案构建、后端 `439` 个测试、`DbMigrate doctor` 和 `DbMigrate verify`。
 - `DbMigrate doctor / verify` 均显示主库业务表已齐全，当前环境可直接执行 `init / seed`。
-- 迁移 SQL 在临时 SQLite 库中重复执行两次通过，`PetProfile` / `PetStatLog` 表结构和索引均可落下。
+- 当时阶段性结构脚本在临时 SQLite 库中重复执行两次通过，`PetProfile` / `PetStatLog` 表结构和索引均可落下；2026-06-22 后脚本已按上线前口径清理。
 - `git diff --check` 通过。
 - `check:repo-hygiene:changed` 当前无待检查文件。
 

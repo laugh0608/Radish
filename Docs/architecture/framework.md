@@ -218,7 +218,8 @@ graph LR
 - 数据库结构变更的完整协作边界见：[数据库结构变更协作口径](/guide/database-schema-change-governance)。
 - 迁移策略：
   - 开发：通过 `Radish.DbMigrate` 执行 `doctor / init / apply`，在开发库内走 `CreateDatabase()` + `InitTables()` 自动建表 / 补列。
-  - 测试 / 生产：先以 `DbMigrate init` 同步基线库，再生成并审核版本化差异 SQL（建议 `Deploy/sql/*.sql`），上线前显式执行。
+  - 正式上线前：测试库优先按当前实体与 `DbMigrate` 初始化干净基线；破坏性 schema 收口后删除本地 SQLite 并重新初始化，不维护上线前历史发布脚本。
+  - 正式上线后：存在需要保护的测试 / 生产数据库时，从已发布基线生成并审核发布 SQL，上线前显式执行。
 - 数据初始化：`Radish.DbMigrate/InitialDataSeeder.cs` 负责创建角色、租户、部门、权限、Console 授权、论坛 / 商城 / 等级等系统基础数据；`system / admin / test` 开发默认账号、默认密码、默认头像和用户角色绑定受 `Seed:DeveloperDefaultsEnabled` 与 `RadishDeployment:Stage=local/test` 共同约束，测试 / 生产默认不创建。
 - PostgreSQL 特性利用：JSONB 列（存储自定义配置）、`tsvector` 搜索、行级锁（积分/库存扣减）。
 

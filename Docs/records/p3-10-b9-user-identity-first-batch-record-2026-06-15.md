@@ -3,6 +3,8 @@
 > 本记录承接 [用户身份语义与公开索引](/architecture/user-identity-semantics) 与 [P3-10 Web-first 信息架构与下一批开发任务选择](/planning/p3-10-cross-platform-information-architecture)。
 >
 > 执行时间：2026-06-15 22:13 CST（Asia/Shanghai）
+>
+> 2026-06-22 更新：`P3-12-B6` 已确认上线前不维护历史发布脚本，本记录中的迁移入口仅保留当时执行事实；当前数据库结构口径以实体、`Radish.DbMigrate` 和本地库重新初始化为准。
 
 ## 批次结论
 
@@ -21,7 +23,7 @@
 | 公开资料与榜单 | 公开个人页、公开结构化数据、公开榜单和工作台榜单展示公开展示名 / 公开句柄 | 通过 |
 | 关系链与提及 | 关注 / 粉丝、聊天提及、论坛提及、转账用户搜索使用公开句柄，不把登录名 / 邮箱作为普通用户搜索字段 | 通过 |
 | Console 排障 | Console 用户列表 / 详情展示公开句柄，同时保留登录名 / 邮箱作为管理员排障信息 | 通过 |
-| 迁移入口 | `DbMigrate` 自动补列、回填、种子保留索引纠偏和唯一索引；`Deploy/sql/20260615_add_user_public_index.sql` 作为 PostgreSQL 部署差异 SQL 审核入口 | 通过 |
+| 结构入口 | 当时通过 `DbMigrate` 自动补列、回填、种子保留索引纠偏和唯一索引，并补过正式数据库结构审核材料；2026-06-22 后不再作为当前执行入口 | 历史事实 |
 | Gateway 页面 | 当前宿主未处于可联调状态，未执行页面 smoke | 待补 |
 
 ## 自动化执行
@@ -60,10 +62,11 @@ npm run check:repo-hygiene:changed
 - `git diff --check` 通过。
 - `check:repo-hygiene:changed` 通过，检查 `50` 个变更文件，未发现文本卫生问题。
 
-## 迁移说明
+## 历史迁移说明
 
-- 测试 / 生产 PostgreSQL 部署使用 `Deploy/sql/20260615_add_user_public_index.sql` 作为版本化差异 SQL 审核入口。
-- 本地 SQLite 开发库不直接重放该 PostgreSQL SQL；继续通过 `Radish.DbMigrate init/apply` 补齐 `User.PublicIndex`、旧用户回填、种子保留索引纠偏和 `idx_user_public_index` 唯一索引。
+- 本批执行时曾补过正式数据库结构审核材料。
+- 2026-06-22 起，项目按正式上线前破坏性 schema 收口处理，不再维护该阶段历史发布脚本。
+- 本地 SQLite 开发库以当前实体和 `Radish.DbMigrate init/apply` 为准；B6 实现完成后按提示删除本地 SQLite 并重新初始化。
 
 ## 后续边界
 
