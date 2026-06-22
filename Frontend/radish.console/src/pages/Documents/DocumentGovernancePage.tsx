@@ -397,7 +397,7 @@ export const DocumentGovernancePage = () => {
       width: 280,
       fixed: 'left',
       render: (_, record) => (
-        <Space direction="vertical" size={2}>
+        <Space orientation="vertical" size={2}>
           <strong>{record.voTitle}</strong>
           <span className="admin-feature-subtle">{record.voSlug}</span>
         </Space>
@@ -668,7 +668,7 @@ export const DocumentGovernancePage = () => {
         {detailLoading ? (
           <p className="admin-feature-subtle">正在加载文档详情...</p>
         ) : detailDocument ? (
-          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
             <Space wrap>
               {getStatusTag(detailDocument.voStatus)}
               {getVisibilityTag(detailDocument.voVisibility)}
@@ -712,7 +712,7 @@ export const DocumentGovernancePage = () => {
         }}
         onCancel={() => setAccessDocument(null)}
       >
-        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+        <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
           <p className="admin-feature-subtle">
             访问策略只影响文档可见性和受限访问列表，不修改正文、发布状态或版本内容。
           </p>
@@ -817,7 +817,7 @@ export const DocumentGovernancePage = () => {
             {revisionDetailLoading ? (
               <p className="admin-feature-subtle">正在加载版本详情...</p>
             ) : revisionDetail ? (
-              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+              <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
                 <Tag color={revisionDetail.voIsCurrent ? 'success' : 'default'}>v{revisionDetail.voVersion}</Tag>
                 <p className="admin-feature-subtle">{revisionDetail.voChangeSummary || '无变更说明'}</p>
                 <Input.TextArea value={revisionDetail.voMarkdownContent} readOnly rows={12} />

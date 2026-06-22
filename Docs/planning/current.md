@@ -89,8 +89,8 @@
   - `P3-12-B1` 账户资产与商城交易 Web 化方案与首批代码侧主路径已完成：新增正式 Web 资产与商城交易 return path，接入 `/me/assets`、`/me/assets/transactions`、`/shop/orders`、`/shop/order/:orderId`、`/shop/inventory`，把 `/me` 完整钱包转向 `/me/assets/transactions`，公开商品详情购买改为 `/shop/product/:productId?intent=purchase` 登录回流并在购买成功后进入 `/shop/order/:orderId`；纯 Web 通知页的订单通知目标也已从桌面深链切到正式 Web 订单路由。`P3-12-C1` 首轮 B1 直接残留清理已完成，后续只在验收或新增阻断命中时回拉；真实 PC / mobile Gateway 复核放到小阶段准备验收时，在用户确认前后端已启动后集中执行。统一 UI 设计后置到页面迁移完成后的 `P3-12-D`，记录见 [P3-12-B1 账户资产与商城交易 Web 化方案](/records/p3-12-b1-account-shop-web-plan-2026-06-21)。
   - `P3-12-B2` 完整个人中心 Web 化首批代码与正式链接语义补口已完成：新增 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 正式 Web 路由、登录回流、页面接入和 API helper 收口；我的内容与浏览历史列表已补真实公开 `href`，关注关系继续以 `/circle` 为权威入口。
   - `P3-12-B3` 论坛作者态 Web 化首批代码与小阶段验收已完成：新增 `/forum/compose`，扩展 `/forum/post/:postId?intent=answer|edit|history`，接入发帖、问答回答 / 采纳、作者帖子编辑和帖子编辑历史查看；登录回流走正式 Web 路径，写入继续复用 `clientSubmissionId`，WebOS 三栏工作台、Dock、窗口参数和 `openApp` 语义不迁入正式 Web。2026-06-22 已补 Gateway PC `1920x1080` 与移动 `390x844` CSS 视口 smoke，公开列表、发帖登录回流、公开详情 canonical 和作者态 `edit/history` return path 均通过；已使用 Browser 插件和种子账号 `admin` 覆盖已登录发帖、作者编辑、编辑历史与问答回答提交成功态，三类 `ContentSubmissionRecord` 均为 `Succeeded`，记录见 [P3-12-B3 论坛作者态 Web 化方案](/records/p3-12-b3-forum-author-web-plan-2026-06-21)。
-  - `P3-12-B4` 文档作者态归属裁决已完成只读盘点和方案记录；`B4-1` 正式 Web 文档作者入口首批代码已完成，新增 `/docs/mine`、`/docs/compose`、`/docs/edit/:id`、`/docs/revisions/:id`，公开 `/docs` 保持阅读 / 搜索 / 分享；`B4-2` Console 文档治理首批代码已完成，新增 `/console/documents` 治理入口、治理专用 API、权限键、资源种子和权限覆盖矩阵，记录见 [P3-12-B4 文档作者态归属裁决](/records/p3-12-b4-doc-author-ownership-plan-2026-06-22) 与 [P3-12-B4-2 Console 文档治理设计](/records/p3-12-b4-2-console-doc-governance-design-2026-06-22)。
-  - 用户已确认 B4 运行态 smoke 等一个更大阶段再集中验收；`P3-12-D1` 统一 UI 设计准备已启动，当前只补设计范围、页面矩阵和 Pencil 设计源拆分，不直接改视觉代码，记录见 [P3-12-D1 统一 UI 设计准备记录](/records/p3-12-d1-unified-ui-design-prep-2026-06-22)。
+  - `P3-12-B4` 文档作者态归属裁决已完成只读盘点和方案记录；`B4-1` 正式 Web 文档作者入口首批代码已完成，新增 `/docs/mine`、`/docs/compose`、`/docs/edit/:id`、`/docs/revisions/:id`，公开 `/docs` 保持阅读 / 搜索 / 分享；`B4-2` Console 文档治理首批代码已完成，新增 `/console/documents` 治理入口、治理专用 API、权限键、资源种子和权限覆盖矩阵；Gateway PC / mobile 阶段 smoke 已完成，记录见 [P3-12-B4 / D1 阶段运行态 Smoke 记录](/records/p3-12-b4-d1-stage-smoke-record-2026-06-22)。
+  - `/messages` 已验证为纯 Web 私域消息复访入口，但完整聊天平台、私聊、搜索、Reaction、移动系统通知和设备级会话治理仍后置；若正式版要求完整聊天平台，应先补 `P3-12-B5` 聊天 Web 化设计，否则可继续进入 `P3-12-D` 统一 UI 设计专题。`P3-12-D1` 当前只补设计范围、页面矩阵和 Pencil 设计源拆分，不直接改视觉代码，记录见 [P3-12-D1 统一 UI 设计准备记录](/records/p3-12-d1-unified-ui-design-prep-2026-06-22)。
 
 ## 当前执行入口
 
@@ -142,7 +142,7 @@
    - `P3-12-B1` 方案、路由 / 登录回流契约、商城私域正式 Web 入口、资产正式入口和公开购买回流已完成；`P3-12-C1` 首轮代码侧残留清理已完成，后续只在验收或新增阻断命中时回拉。
    - `P3-12-B2` 完整个人中心 Web 化首批代码已接入 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience`，并已补正式公开 `href` 导航语义。
    - `P3-12-B3` 论坛作者态 Web 化首批代码和小阶段验收已完成：`/forum/compose`、详情 `intent=answer|edit|history`、正式 Web 登录回流、发帖 / 回答 / 编辑 / 历史查看和 `clientSubmissionId` 延续均已收口。
-   - `P3-12-B4` 文档作者态归属裁决与 `B4-1` 正式 Web 作者入口首批代码已完成；公开 `/docs` 保持阅读态，正式 Web 承接登录态作者页，WebOS Wiki 退为历史维护入口；`B4-2` Console 文档治理首批代码已完成，B4 运行态 smoke 合并到更大阶段集中验收。
+   - `P3-12-B4` 文档作者态归属裁决与 `B4-1` 正式 Web 作者入口首批代码已完成；公开 `/docs` 保持阅读态，正式 Web 承接登录态作者页，WebOS Wiki 退为历史维护入口；`B4-2` Console 文档治理首批代码与阶段运行态 smoke 已完成。
    - `P3-12-D1` 统一 UI 设计准备已启动；页面级 UI 设计与美化必须统一使用 Pencil 先做设计稿，再更新设计 / 说明文档，最后进入视觉实现。本轮 Pencil app 未连接，因此只补设计范围与矩阵，不创建 `.pen` 或改视觉代码。
 2. **保持 P3-10 可恢复合并状态**
    - `P3-10-D` 已完成公开页整理、四批入口语义治理、合并前验证和 PR 合并判断；不再默认追加第五批链接扫尾。
@@ -163,7 +163,7 @@
   - 新增 [P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)，承接 P3-11 暂缓 PR 后的正式开发主线。
   - `P3-12-A` 已完成只读盘点，结论见 [P3-12-A WebOS 与 Web 功能资产盘点记录](/records/p3-12-a-webos-web-function-asset-inventory-2026-06-21)。
   - `P3-12-B1` 方案、路由 / 登录回流契约、商城私域正式 Web 入口、资产正式入口、公开购买动作和交易回流替换见 [P3-12-B1 账户资产与商城交易 Web 化方案](/records/p3-12-b1-account-shop-web-plan-2026-06-21)；`P3-12-C1` 首轮残留清理见 [P3-12-C1 WebOS 残留入口清理记录](/records/p3-12-c1-webos-residual-cleanup-2026-06-21)，真实 Gateway PC / mobile 复核后置到小阶段验收。
-  - `P3-12-B2` 首批代码已补 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 的路由、登录回流和正式 Web 导航语义，方案见 [P3-12-B2 完整个人中心 Web 化方案](/records/p3-12-b2-personal-center-web-plan-2026-06-21)；`P3-12-B3` 首批代码与小阶段验收已完成，见 [P3-12-B3 论坛作者态 Web 化方案](/records/p3-12-b3-forum-author-web-plan-2026-06-21)；`P3-12-B4` 归属裁决、`B4-1` 正式 Web 作者入口和 `B4-2` Console 文档治理首批代码已完成，见 [P3-12-B4 文档作者态归属裁决](/records/p3-12-b4-doc-author-ownership-plan-2026-06-22) 与 [P3-12-B4-2 Console 文档治理设计](/records/p3-12-b4-2-console-doc-governance-design-2026-06-22)。`P3-12-D1` 设计准备已启动，见 [P3-12-D1 统一 UI 设计准备记录](/records/p3-12-d1-unified-ui-design-prep-2026-06-22)。下一步在 Pencil 可用后创建 / 更新设计源文件，再进入视觉实现；B4 smoke 与 D 阶段验收合并执行。
+  - `P3-12-B2` 首批代码已补 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 的路由、登录回流和正式 Web 导航语义，方案见 [P3-12-B2 完整个人中心 Web 化方案](/records/p3-12-b2-personal-center-web-plan-2026-06-21)；`P3-12-B3` 首批代码与小阶段验收已完成，见 [P3-12-B3 论坛作者态 Web 化方案](/records/p3-12-b3-forum-author-web-plan-2026-06-21)；`P3-12-B4` 归属裁决、`B4-1` 正式 Web 作者入口、`B4-2` Console 文档治理和阶段运行态 smoke 已完成，见 [P3-12-B4 文档作者态归属裁决](/records/p3-12-b4-doc-author-ownership-plan-2026-06-22)、[P3-12-B4-2 Console 文档治理设计](/records/p3-12-b4-2-console-doc-governance-design-2026-06-22) 与 [P3-12-B4 / D1 阶段运行态 Smoke 记录](/records/p3-12-b4-d1-stage-smoke-record-2026-06-22)。下一步若不把完整聊天平台纳入正式版前置范围，则在 Pencil 可用后继续 `P3-12-D` 设计稿与说明文档。
   - 功能迁移只迁移正式版产品能力，不迁移 WebOS Dock、窗口系统、桌面背景、窗口几何记忆或桌面 app 外壳；B1 替代路径可用后，只清理与默认产品路径直接冲突的 `/desktop` 回跳。
   - 页面迁移齐后进入 `P3-12-D` 统一 UI 设计与美化专题，并走 Pencil 设计稿 -> 设计 / 说明文档 -> 代码实现 -> PC / mobile 复核。
 - `P3-11 发布候选整备与轻量复访补齐维护线`
@@ -227,7 +227,7 @@
 
 ## 明日事项
 
-- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[P3-12-B4 文档作者态归属裁决](/records/p3-12-b4-doc-author-ownership-plan-2026-06-22)、[P3-12-B4-2 Console 文档治理设计](/records/p3-12-b4-2-console-doc-governance-design-2026-06-22) 和 [P3-12-D1 统一 UI 设计准备记录](/records/p3-12-d1-unified-ui-design-prep-2026-06-22)，确认 B4 运行态验收已后置，当前进入 D1 设计准备而不是直接视觉实现。
+- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[P3-12-B4 文档作者态归属裁决](/records/p3-12-b4-doc-author-ownership-plan-2026-06-22)、[P3-12-B4-2 Console 文档治理设计](/records/p3-12-b4-2-console-doc-governance-design-2026-06-22)、[P3-12-B4 / D1 阶段运行态 Smoke 记录](/records/p3-12-b4-d1-stage-smoke-record-2026-06-22) 和 [P3-12-D1 统一 UI 设计准备记录](/records/p3-12-d1-unified-ui-design-prep-2026-06-22)，确认 `/messages` 是纯 Web 消息复访入口而非完整聊天平台迁移完成。
 - 第一顺位：待 Pencil app 可用后，创建 `public-web-unified-experience.pen`、`private-web-workflows.pen`，并在 `console-governance-workbench.pen` 补文档治理画板；随后更新设计说明。
 - 第二顺位：设计稿与说明确认后，再进入 `P3-12-D` 视觉实现；B4 与 D 的 Gateway PC / mobile smoke 合并到较大阶段执行，必须等用户明确说明前后端已启动。
 

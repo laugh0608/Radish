@@ -318,7 +318,7 @@ export const SystemConfigList = () => {
     <Space
       className="system-config-action-space"
       size={compact ? 4 : 'small'}
-      direction={compact ? 'vertical' : 'horizontal'}
+      orientation={compact ? 'vertical' : 'horizontal'}
     >
       <Button
         variant="ghost"

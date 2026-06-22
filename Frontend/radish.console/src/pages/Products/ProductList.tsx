@@ -385,7 +385,7 @@ export const ProductList = () => {
         const unsupportedStatusLabel = getUnsupportedSaleStatusLabel(record);
 
         return (
-          <Space direction="vertical" size="small">
+          <Space orientation="vertical" size="small">
             <Tag color={record.voIsOnSale ? 'success' : 'default'}>
               {record.voIsOnSale ? '已上架' : '已下架'}
             </Tag>

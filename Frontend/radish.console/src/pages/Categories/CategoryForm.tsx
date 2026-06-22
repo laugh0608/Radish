@@ -233,7 +233,7 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
           >
             <Input style={{ display: 'none' }} />
           </Form.Item>
-          <Space direction="vertical" style={{ width: '100%' }} size={10}>
+          <Space orientation="vertical" style={{ width: '100%' }} size={10}>
             <div
               style={{
                 width: 96,
@@ -298,7 +298,7 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
           >
             <Input style={{ display: 'none' }} />
           </Form.Item>
-          <Space direction="vertical" style={{ width: '100%' }} size={10}>
+          <Space orientation="vertical" style={{ width: '100%' }} size={10}>
             <div
               style={{
                 width: 160,
