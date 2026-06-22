@@ -221,7 +221,7 @@ TenantId + UserId + OperationType + IdempotencyKey
 数据库验证：
 
 - 本地 `Radish.DbMigrate` 能创建幂等记录表。
-- PostgreSQL 差异 SQL 覆盖新表、唯一约束和必要索引。
+- 正式数据库阶段的发布 SQL 覆盖新表、唯一约束和必要索引。
 
 ## 不做范围
 

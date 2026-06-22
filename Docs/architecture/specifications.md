@@ -523,7 +523,7 @@ git push origin v26.1.1.3003
 4. **正式数据库阶段生成发布 SQL**
    - 当前项目正式上线前，测试库可按当前实体和 `DbMigrate` 初始化干净基线，破坏性 schema 收口后删除本地 SQLite 并重新初始化，不维护历史发布脚本。
    - 已存在需要保护的测试 / 生产数据库后，在一套“迁移基线库”上执行 `DbMigrate init` 让结构跟随最新实体。
-   - 使用数据库自带工具或对比工具，生成**从旧版本到新版本**的结构差异 SQL，只包含必要的 `CREATE TABLE` / `ALTER TABLE` / `CREATE INDEX` 等 DDL。
+   - 使用数据库自带工具或对比工具，生成**从旧版本到新版本**的发布 SQL，只包含必要的 `CREATE TABLE` / `ALTER TABLE` / `CREATE INDEX` 等 DDL。
    - 将发布 SQL 作为版本发布材料保存、审核，方便后续审查与回滚。
 
 5. **上线前执行发布 SQL**
