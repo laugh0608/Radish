@@ -14,6 +14,7 @@ import {
 import {
   OIDC_CALLBACK_PATH,
   isCirclePathname,
+  isDocsAuthorPathname,
   isMePathname,
   isMessagesPathname,
   isNotificationsPathname,
@@ -34,6 +35,7 @@ const MessagesEntry = lazy(() => import('./messages/MessagesEntry.tsx').then((mo
 const NotificationsEntry = lazy(() => import('./notifications/NotificationsEntry.tsx').then((module) => ({ default: module.NotificationsEntry })));
 const PetEntry = lazy(() => import('./pet/PetEntry.tsx').then((module) => ({ default: module.PetEntry })));
 const ShopEntry = lazy(() => import('./shop/ShopEntry.tsx').then((module) => ({ default: module.ShopEntry })));
+const DocsAuthorEntry = lazy(() => import('./docs/DocsAuthorEntry.tsx').then((module) => ({ default: module.DocsAuthorEntry })));
 const RootEntry = lazy(() => import('./desktop/RootEntry.tsx').then((module) => ({ default: module.RootEntry })));
 const PublicEntry = lazy(() => import('./public/PublicEntry.tsx').then((module) => ({ default: module.PublicEntry })));
 
@@ -81,6 +83,7 @@ const isMessagesRoute = isBrowser && isMessagesPathname(window.location.pathname
 const isNotificationsRoute = isBrowser && isNotificationsPathname(window.location.pathname);
 const isPetRoute = isBrowser && isPetPathname(window.location.pathname);
 const isShopRoute = isBrowser && isShopPathname(window.location.pathname);
+const isDocsAuthorRoute = isBrowser && isDocsAuthorPathname(window.location.pathname);
 const isPublicContentRoute = isBrowser && isPublicContentPathname(window.location.pathname);
 
 const Page = isOidcCallback
@@ -97,9 +100,11 @@ const Page = isOidcCallback
             ? CircleEntry
             : isShopRoute
               ? ShopEntry
-              : isPublicContentRoute
-                ? PublicEntry
-                : RootEntry;
+              : isDocsAuthorRoute
+                ? DocsAuthorEntry
+                : isPublicContentRoute
+                  ? PublicEntry
+                  : RootEntry;
 
 initializeTheme();
 void applySiteBranding(getApiBaseUrl());

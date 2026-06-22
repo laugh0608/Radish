@@ -8,6 +8,10 @@ import {
   buildDesktopShopOrderReturnPath,
   buildDesktopShopPrivateViewReturnPath,
   buildDesktopShopProductReturnPath,
+  buildDocsAuthorComposeReturnPath,
+  buildDocsAuthorEditReturnPath,
+  buildDocsAuthorMineReturnPath,
+  buildDocsAuthorRevisionsReturnPath,
   buildMeAttachmentsReturnPath,
   buildMeAssetTransactionsReturnPath,
   buildMeAssetsReturnPath,
@@ -115,6 +119,11 @@ test('normalizeAuthReturnPath 只接受受控私域入口、正式 Web 交易回
   );
   assert.equal(normalizeAuthReturnPath('/forum/compose'), '/forum/compose');
   assert.equal(normalizeAuthReturnPath('/forum/compose?category=2042219067430928384'), '/forum/compose?category=2042219067430928384');
+  assert.equal(normalizeAuthReturnPath('/docs/mine'), '/docs/mine');
+  assert.equal(normalizeAuthReturnPath('/docs/mine/'), '/docs/mine');
+  assert.equal(normalizeAuthReturnPath('/docs/compose'), '/docs/compose');
+  assert.equal(normalizeAuthReturnPath('/docs/edit/2042219067430928384'), '/docs/edit/2042219067430928384');
+  assert.equal(normalizeAuthReturnPath('/docs/revisions/2042219067430928384'), '/docs/revisions/2042219067430928384');
   assert.equal(normalizeAuthReturnPath('/circle?tab=hot'), null);
   assert.equal(normalizeAuthReturnPath('/circle?tab=following&tab=followers'), null);
   assert.equal(normalizeAuthReturnPath('/circle?page=2&page=3'), null);
@@ -161,6 +170,15 @@ test('normalizeAuthReturnPath 只接受受控私域入口、正式 Web 交易回
   assert.equal(normalizeAuthReturnPath('/forum/compose?category=2042219067430928384&from=forum'), null);
   assert.equal(normalizeAuthReturnPath('/forum/compose?category=2042219067430928384&category=2042219067430928385'), null);
   assert.equal(normalizeAuthReturnPath('/forum/compose#draft'), null);
+  assert.equal(normalizeAuthReturnPath('/docs/mine?from=public'), null);
+  assert.equal(normalizeAuthReturnPath('/docs/compose#draft'), null);
+  assert.equal(normalizeAuthReturnPath('/docs/edit'), null);
+  assert.equal(normalizeAuthReturnPath('/docs/edit/0'), null);
+  assert.equal(normalizeAuthReturnPath('/docs/edit/02042219067430928384'), null);
+  assert.equal(normalizeAuthReturnPath('/docs/edit/2042219067430928384?mode=full'), null);
+  assert.equal(normalizeAuthReturnPath('/docs/revisions'), null);
+  assert.equal(normalizeAuthReturnPath('/docs/revisions/abc'), null);
+  assert.equal(normalizeAuthReturnPath('/docs/revisions/2042219067430928384#v1'), null);
   assert.equal(normalizeAuthReturnPath('/discover'), null);
   assert.equal(normalizeAuthReturnPath('/oidc/callback'), null);
   assert.equal(normalizeAuthReturnPath('https://radishx.com/desktop?app=shop'), null);
@@ -235,6 +253,21 @@ test('商城正式 Web 返回路径应保留购买、订单和库存上下文', 
   assert.equal(buildShopOrderReturnPath('02042219067430928385'), null);
   assert.equal(buildShopOrderReturnPath('abc'), null);
   assert.equal(buildShopInventoryReturnPath(), '/shop/inventory');
+});
+
+test('文档作者正式 Web 返回路径应保留作者台、创建、编辑和修订上下文', () => {
+  assert.equal(buildDocsAuthorMineReturnPath(), '/docs/mine');
+  assert.equal(buildDocsAuthorComposeReturnPath(), '/docs/compose');
+  assert.equal(buildDocsAuthorEditReturnPath('2042219067430928384'), '/docs/edit/2042219067430928384');
+  assert.equal(buildDocsAuthorEditReturnPath(12), '/docs/edit/12');
+  assert.equal(buildDocsAuthorEditReturnPath('0'), null);
+  assert.equal(buildDocsAuthorEditReturnPath('02042219067430928384'), null);
+  assert.equal(buildDocsAuthorEditReturnPath('abc'), null);
+  assert.equal(buildDocsAuthorRevisionsReturnPath('2042219067430928384'), '/docs/revisions/2042219067430928384');
+  assert.equal(buildDocsAuthorRevisionsReturnPath(12), '/docs/revisions/12');
+  assert.equal(buildDocsAuthorRevisionsReturnPath('0'), null);
+  assert.equal(buildDocsAuthorRevisionsReturnPath('02042219067430928384'), null);
+  assert.equal(buildDocsAuthorRevisionsReturnPath('abc'), null);
 });
 
 test('buildCircleReturnPath 应构造圈子登录回流路径并收敛默认参数', () => {

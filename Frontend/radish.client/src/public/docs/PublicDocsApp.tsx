@@ -9,6 +9,9 @@ import type {
   WikiDocumentVo,
 } from '@/apps/wiki/types/wiki';
 import { WikiDocumentStatus, WikiDocumentVisibility } from '@/apps/wiki/types/wiki';
+import { canUseDocsAuthorTools, isBuiltInWikiDocument } from '@/docs/docsAuthorAccess';
+import { buildDocsAuthorPath } from '@/docs/docsAuthorRouteState';
+import { useUserStore } from '@/stores/userStore';
 import {
   buildPublicDocsPath,
   createDefaultDocsListRoute,
@@ -421,7 +424,9 @@ export const PublicDocsApp = ({
   onNavigateToDiscover
 }: PublicDocsAppProps) => {
   const { t } = useTranslation();
+  const roles = useUserStore((state) => state.roles || []);
   const [displayTimeZone] = useState(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE));
+  const showAuthorTools = useMemo(() => canUseDocsAuthorTools(roles), [roles]);
   const pageRef = useRef<HTMLDivElement>(null);
   const previousRouteRef = useRef<PublicDocsRoute>(route);
   const browseScrollSnapshotRef = useRef<{ routeKey: string; scrollTop: number } | null>(null);
@@ -570,6 +575,7 @@ export const PublicDocsApp = ({
             displayTimeZone={displayTimeZone}
             backLabel={backLabel}
             backHref={detailBackHref}
+            canUseDocsAuthorTools={showAuthorTools}
             onBack={handleDocsDetailBack}
             onNavigate={onNavigate}
           />
@@ -593,6 +599,7 @@ export const PublicDocsApp = ({
             collectionState={collectionState}
             scrollContainerRef={pageRef}
             restoreScrollTop={pendingRestoreScrollTop}
+            canUseDocsAuthorTools={showAuthorTools}
             onScrollRestored={() => setPendingRestoreScrollTop(null)}
             onReload={() => setCollectionReloadToken((current) => current + 1)}
             onOpenSearch={() => onNavigate(createDefaultDocsSearchRoute())}
@@ -612,6 +619,7 @@ interface PublicDocsListProps {
   collectionState: PublicDocsCollectionState;
   scrollContainerRef: RefObject<HTMLDivElement | null>;
   restoreScrollTop: number | null;
+  canUseDocsAuthorTools: boolean;
   onScrollRestored: () => void;
   onReload: () => void;
   onOpenSearch: () => void;
@@ -623,6 +631,7 @@ const PublicDocsList = ({
   collectionState,
   scrollContainerRef,
   restoreScrollTop,
+  canUseDocsAuthorTools,
   onScrollRestored,
   onReload,
   onOpenSearch,
@@ -649,6 +658,7 @@ const PublicDocsList = ({
   const treeRows = useMemo(() => flattenPublicDocsTree(tree), [tree]);
   const listCards = useMemo(() => documents.slice(0, 12), [documents]);
   const searchHref = buildPublicDocsPath(createDefaultDocsSearchRoute());
+  const authorHref = buildDocsAuthorPath({ kind: 'mine' });
   const hasAnyContent = treeRows.length > 0 || listCards.length > 0;
   const isLoading = (loadingTree || loadingDocuments) && !hasAnyContent;
   const isError = !hasAnyContent && Boolean(treeError || listError);
@@ -663,6 +673,12 @@ const PublicDocsList = ({
           <p className={styles.pageIntro}>{t('wiki.public.pageIntro')}</p>
         </div>
         <div className={styles.sectionActions}>
+          {canUseDocsAuthorTools ? (
+            <a className={styles.primaryButton} href={authorHref}>
+              <Icon icon="mdi:pencil-box-outline" size={18} />
+              <span>文档作者台</span>
+            </a>
+          ) : null}
           <a
             className={styles.secondaryButton}
             href={searchHref}
@@ -1166,11 +1182,12 @@ interface PublicDocsDetailProps {
   displayTimeZone: string;
   backLabel: string;
   backHref: string;
+  canUseDocsAuthorTools: boolean;
   onBack: () => void;
   onNavigate: (route: PublicDocsRoute, options?: { replace?: boolean; preserveSourceState?: boolean }) => void;
 }
 
-const PublicDocsDetail = ({ route, displayTimeZone, backLabel, backHref, onBack, onNavigate }: PublicDocsDetailProps) => {
+const PublicDocsDetail = ({ route, displayTimeZone, backLabel, backHref, canUseDocsAuthorTools, onBack, onNavigate }: PublicDocsDetailProps) => {
   const { t } = useTranslation();
   const [documentDetail, setDocumentDetail] = useState<WikiDocumentDetailVo | null>(null);
   const [loading, setLoading] = useState(false);
@@ -1332,6 +1349,13 @@ const PublicDocsDetail = ({ route, displayTimeZone, backLabel, backHref, onBack,
   const { copyShareLink, shareBusy, shareState } = usePublicShareLink({
     buildShareUrl: buildDocsShareUrl,
   });
+  const canEditDocument = documentDetail !== null
+    && canUseDocsAuthorTools
+    && !documentDetail.voIsDeleted
+    && !isBuiltInWikiDocument(documentDetail);
+  const editHref = documentDetail
+    ? buildDocsAuthorPath({ kind: 'edit', documentId: documentDetail.voId })
+    : buildDocsAuthorPath({ kind: 'mine' });
 
   return (
     <section className={styles.sectionCard}>
@@ -1349,6 +1373,12 @@ const PublicDocsDetail = ({ route, displayTimeZone, backLabel, backHref, onBack,
             <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={18} />
             <span>{shareBusy ? t('wiki.public.shareSubmitting') : t('wiki.public.shareAction')}</span>
           </button>
+          {canEditDocument ? (
+            <a className={styles.primaryButton} href={editHref}>
+              <Icon icon="mdi:pencil-outline" size={18} />
+              <span>编辑文档</span>
+            </a>
+          ) : null}
         </div>
         {shareState !== 'idle' && (
           <p className={styles.shareFeedback} data-state={shareState}>

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   BROWSER_PUBLIC_ENTRY_PATH,
+  isDocsAuthorPathname,
   isPublicContentPathname,
   isShopPathname,
   resolveInitialEntryPath,
@@ -16,6 +17,10 @@ import type { PublicRouteDescriptor } from '../src/public/publicRouteNavigation.
 import {
   buildCircleReturnPath,
   buildDesktopForumPostReturnPath,
+  buildDocsAuthorComposeReturnPath,
+  buildDocsAuthorEditReturnPath,
+  buildDocsAuthorMineReturnPath,
+  buildDocsAuthorRevisionsReturnPath,
   buildMeAssetTransactionsReturnPath,
   buildMeAssetsReturnPath,
   buildMeReturnPath,
@@ -37,6 +42,7 @@ const productId = '2042219067430928384';
 const orderId = '2042219067430928385';
 const postPublicId = 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f';
 const commentId = '2042219067430928386';
+const documentId = '2042219067430928387';
 
 function splitDesktopPath(returnPath: string): { pathname: string; search: string } {
   const url = new URL(returnPath, 'https://radish.local');
@@ -281,4 +287,31 @@ test('P3-12 我的资产入口应走正式 Web 路径并退出公开内容壳层
     kind: 'assets-transactions',
   });
   assert.equal(buildMePath({ kind: 'assets-transactions' }), transactionsReturnPath);
+});
+
+test('P3-12 文档作者入口应走正式 Web 路径并退出公开内容壳层', () => {
+  const mineReturnPath = buildDocsAuthorMineReturnPath();
+  assert.equal(mineReturnPath, '/docs/mine');
+  assert.equal(normalizeAuthReturnPath(mineReturnPath), mineReturnPath);
+  assert.equal(isDocsAuthorPathname(mineReturnPath), true);
+  assert.equal(isPublicContentPathname(mineReturnPath), false);
+
+  const composeReturnPath = buildDocsAuthorComposeReturnPath();
+  assert.equal(composeReturnPath, '/docs/compose');
+  assert.equal(normalizeAuthReturnPath(composeReturnPath), composeReturnPath);
+  assert.equal(isDocsAuthorPathname(composeReturnPath), true);
+  assert.equal(isPublicContentPathname(composeReturnPath), false);
+
+  const editReturnPath = buildDocsAuthorEditReturnPath(documentId);
+  assert.equal(editReturnPath, `/docs/edit/${documentId}`);
+  assert.equal(normalizeAuthReturnPath(editReturnPath), editReturnPath);
+  assert.equal(isDocsAuthorPathname(`/docs/edit/${documentId}`), true);
+  assert.equal(isPublicContentPathname(`/docs/edit/${documentId}`), false);
+
+  const revisionsReturnPath = buildDocsAuthorRevisionsReturnPath(documentId);
+  assert.equal(revisionsReturnPath, `/docs/revisions/${documentId}`);
+  assert.equal(normalizeAuthReturnPath(revisionsReturnPath), revisionsReturnPath);
+  assert.equal(isDocsAuthorPathname(`/docs/revisions/${documentId}`), true);
+  assert.equal(isPublicContentPathname(`/docs/revisions/${documentId}`), false);
+  assert.equal(normalizeAuthReturnPath(`/docs/edit/${documentId}?from=public`), null);
 });

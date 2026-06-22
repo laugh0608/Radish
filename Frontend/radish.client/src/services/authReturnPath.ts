@@ -1,5 +1,12 @@
 import { buildMessagesPath, MESSAGES_ENTRY_PATH, type MessagesRoute } from '../messages/messagesRouteState.ts';
 import {
+  buildDocsAuthorPath,
+  DOCS_AUTHOR_COMPOSE_PATH,
+  DOCS_AUTHOR_EDIT_PREFIX,
+  DOCS_AUTHOR_MINE_PATH,
+  DOCS_AUTHOR_REVISIONS_PREFIX,
+} from '../docs/docsAuthorRouteState.ts';
+import {
   buildMePath,
   ME_ASSET_TRANSACTIONS_PATH,
   ME_ASSETS_PATH,
@@ -100,6 +107,15 @@ export function normalizeAuthReturnPath(value: string | null | undefined): strin
 
     if (pathname.startsWith('/shop/')) {
       return normalizeShopReturnPath(url, pathname);
+    }
+
+    if (
+      pathname === DOCS_AUTHOR_MINE_PATH
+      || pathname === DOCS_AUTHOR_COMPOSE_PATH
+      || pathname.startsWith(`${DOCS_AUTHOR_EDIT_PREFIX}/`)
+      || pathname.startsWith(`${DOCS_AUTHOR_REVISIONS_PREFIX}/`)
+    ) {
+      return normalizeDocsAuthorReturnPath(url, pathname);
     }
 
     if (pathname !== '/desktop') {
@@ -465,6 +481,38 @@ function normalizeShopReturnPath(url: URL, normalizedPathname: string): string |
   return null;
 }
 
+function normalizeDocsAuthorReturnPath(url: URL, normalizedPathname: string): string | null {
+  if (url.search || url.hash) {
+    return null;
+  }
+
+  if (normalizedPathname === DOCS_AUTHOR_MINE_PATH) {
+    return DOCS_AUTHOR_MINE_PATH;
+  }
+
+  if (normalizedPathname === DOCS_AUTHOR_COMPOSE_PATH) {
+    return DOCS_AUTHOR_COMPOSE_PATH;
+  }
+
+  const editMatched = normalizedPathname.match(/^\/docs\/edit\/([1-9]\d*)$/);
+  if (editMatched) {
+    return buildDocsAuthorPath({
+      kind: 'edit',
+      documentId: editMatched[1],
+    });
+  }
+
+  const revisionsMatched = normalizedPathname.match(/^\/docs\/revisions\/([1-9]\d*)$/);
+  if (revisionsMatched) {
+    return buildDocsAuthorPath({
+      kind: 'revisions',
+      documentId: revisionsMatched[1],
+    });
+  }
+
+  return null;
+}
+
 export function rememberAuthReturnPath(returnPath: string | null | undefined, storage = getSessionStorage()): boolean {
   const normalized = normalizeAuthReturnPath(returnPath);
   if (!normalized || !storage) {
@@ -644,6 +692,38 @@ export function buildShopOrderReturnPath(orderId: string | number): string | nul
 
 export function buildShopInventoryReturnPath(): string {
   return '/shop/inventory';
+}
+
+export function buildDocsAuthorMineReturnPath(): string {
+  return DOCS_AUTHOR_MINE_PATH;
+}
+
+export function buildDocsAuthorComposeReturnPath(): string {
+  return DOCS_AUTHOR_COMPOSE_PATH;
+}
+
+export function buildDocsAuthorEditReturnPath(documentId: string | number): string | null {
+  const normalizedDocumentId = String(documentId).trim();
+  if (!POSITIVE_LONG_ID_PATTERN.test(normalizedDocumentId)) {
+    return null;
+  }
+
+  return buildDocsAuthorPath({
+    kind: 'edit',
+    documentId: normalizedDocumentId,
+  });
+}
+
+export function buildDocsAuthorRevisionsReturnPath(documentId: string | number): string | null {
+  const normalizedDocumentId = String(documentId).trim();
+  if (!POSITIVE_LONG_ID_PATTERN.test(normalizedDocumentId)) {
+    return null;
+  }
+
+  return buildDocsAuthorPath({
+    kind: 'revisions',
+    documentId: normalizedDocumentId,
+  });
 }
 
 export function buildPublicForumComposeReturnPath(options: { categoryId?: string | number | null } = {}): string | null {

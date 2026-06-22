@@ -17,6 +17,8 @@ export interface PublicDocsDetailRoute {
 export type PublicDocsBrowseRoute = PublicDocsListRoute | PublicDocsSearchRoute;
 export type PublicDocsRoute = PublicDocsBrowseRoute | PublicDocsDetailRoute;
 
+const PUBLIC_DOCS_RESERVED_SLUGS = new Set(['search', 'mine', 'compose', 'edit', 'revisions']);
+
 export function createDefaultDocsListRoute(): PublicDocsListRoute {
   return {
     kind: 'list'
@@ -123,6 +125,10 @@ function parsePublicDocsDetailRoute(pathname: string, hash: string): PublicDocsD
     return null;
   }
 
+  if (pathname.startsWith('/docs/') && PUBLIC_DOCS_RESERVED_SLUGS.has(slug.trim().toLowerCase())) {
+    return null;
+  }
+
   return {
     kind: 'detail',
     slug,
@@ -212,7 +218,7 @@ export function buildPublicDocsPath(route: PublicDocsRoute): string {
     return queryString ? `/docs/search?${queryString}` : '/docs/search';
   }
 
-  const basePath = route.slug.trim().toLowerCase() === 'search'
+  const basePath = PUBLIC_DOCS_RESERVED_SLUGS.has(route.slug.trim().toLowerCase())
     ? `/__documents__/${encodeURIComponent(route.slug)}`
     : `/docs/${encodeURIComponent(route.slug)}`;
   return route.anchor ? `${basePath}#${encodeURIComponent(route.anchor)}` : basePath;

@@ -2,7 +2,7 @@
 
 > 日期：2026-06-22（Asia/Shanghai）
 >
-> 状态：只读盘点与归属方案已完成，等待确认首批代码范围
+> 状态：只读盘点与归属方案已完成；B4-1 正式 Web 文档作者入口首批代码已完成
 >
 > 结论：公开 `/docs` 继续只承载阅读、搜索、正文内链和分享；正式 Web 应新增登录态文档作者页，承接常规创建、编辑、草稿和版本回看；Console 承接发布、撤回、归档、恢复、受限可见性、角色 / 权限配置、内置文档同步观察等治理动作；WebOS `WikiApp` 在替代路径落地前继续作为 `/desktop` 历史维护入口，不再扩展新功能。
 
@@ -192,6 +192,31 @@ Console 负责：
 - 正式 Web 导航入口。
 
 替代路径落地后，再按 P3-12-C 口径清理默认产品路径里的 WebOS 文档回跳和说明。
+
+## B4-1 首批代码结果
+
+2026-06-22 已按本方案完成正式 Web 文档作者入口首批代码：
+
+- 新增 `/docs/mine`、`/docs/compose`、`/docs/edit/:id`、`/docs/revisions/:id`，并在主入口中先于公开内容壳层识别文档作者路径。
+- `/docs/mine` 提供 Wiki 文档列表、创建入口、编辑入口、修订入口和公开阅读链接。
+- `/docs/compose` / `/docs/edit/:id` 复用 Wiki API helper、Markdown 编辑器和 Wiki 附件上传；首批只开放标题、slug、摘要、父级、排序、封面附件、正文和变更摘要，保留既有可见性但不在作者页做治理配置。
+- `/docs/revisions/:id` 支持版本列表和版本详情回看，不开放回滚。
+- 公开 `/docs` 只在 `System/Admin` 登录态下提供“文档作者台”和“编辑文档”真实链接；访客和普通公开阅读体验不变。
+- `authReturnPath` 已纳入受控文档作者路径，只接受无 query / hash 且 ID 合法的作者入口。
+
+本批仍不纳入：
+
+- 发布、撤回、归档、恢复、导入、导出、回滚。
+- 普通非管理员作者权限模型。
+- Console 文档治理权限种子和 API 授权资源。
+- WebOS `WikiApp` 删除或重做。
+
+本轮已完成静态验证：
+
+- `node --test --test-isolation=none ./Frontend/radish.client/tests/publicRouteState.test.ts ./Frontend/radish.client/tests/authReturnPath.test.ts ./Frontend/radish.client/tests/entryRoute.test.ts ./Frontend/radish.client/tests/realUsagePathContracts.test.ts ./Frontend/radish.client/tests/publicSeoStatic.test.ts`
+- `npm run type-check --workspace=radish.client`
+
+后续 B4 小阶段验收需要在用户确认前后端已启动后，通过 Gateway 覆盖 PC `1920x1080` 与移动 `390x844` CSS 视口的公开 `/docs`、作者入口、创建 / 编辑表单、修订回看和登录回流。
 
 ## 首批代码建议
 

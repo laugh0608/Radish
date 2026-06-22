@@ -54,14 +54,30 @@ test('parsePublicDocsRoute 应兼容旧 __documents__ 详情与锚点', () => {
   });
 });
 
-test('buildPublicDocsPath 应为保留字 search 回写 __documents__ 兼容路径', () => {
-  const path = buildPublicDocsPath({
-    kind: 'detail',
-    slug: 'search',
-    anchor: 'intro',
-  });
+test('buildPublicDocsPath 应为 docs 保留字回写 __documents__ 兼容路径', () => {
+  const reservedSlugs = ['search', 'mine', 'compose', 'edit', 'revisions'];
 
-  assert.equal(path, '/__documents__/search#intro');
+  for (const slug of reservedSlugs) {
+    const path = buildPublicDocsPath({
+      kind: 'detail',
+      slug,
+      anchor: 'intro',
+    });
+
+    assert.equal(path, `/__documents__/${slug}#intro`);
+  }
+});
+
+test('parsePublicDocsRoute 应把 docs 作者路径排除在公开文档详情外', () => {
+  assert.deepEqual(parsePublicDocsRoute('/docs/mine'), { kind: 'list' });
+  assert.deepEqual(parsePublicDocsRoute('/docs/compose'), { kind: 'list' });
+  assert.deepEqual(parsePublicDocsRoute('/docs/edit'), { kind: 'list' });
+  assert.deepEqual(parsePublicDocsRoute('/docs/revisions'), { kind: 'list' });
+  assert.deepEqual(parsePublicDocsRoute('/__documents__/mine'), {
+    kind: 'detail',
+    slug: 'mine',
+    anchor: undefined,
+  });
 });
 
 test('resolvePublicDocsRouteFromHref 与 rewritePublicDocsHref 应把站内 docs 链接收口到公开壳层', () => {

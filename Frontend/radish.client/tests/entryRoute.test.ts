@@ -5,6 +5,7 @@ import {
   CAPACITOR_PUBLIC_ENTRY_PATH,
   OIDC_CALLBACK_PATH,
   isCirclePathname,
+  isDocsAuthorPathname,
   isMePathname,
   isMessagesPathname,
   isNotificationsPathname,
@@ -56,6 +57,10 @@ test('isPublicContentPathname 应识别公开内容路由', () => {
   assert.equal(isPublicContentPathname('/discover'), true);
   assert.equal(isPublicContentPathname('/forum/post/2042219067430928384'), true);
   assert.equal(isPublicContentPathname('/docs/Guide'), true);
+  assert.equal(isPublicContentPathname('/docs/mine'), false);
+  assert.equal(isPublicContentPathname('/docs/compose'), false);
+  assert.equal(isPublicContentPathname('/docs/edit/2042219067430928384'), false);
+  assert.equal(isPublicContentPathname('/docs/revisions/2042219067430928384'), false);
   assert.equal(isPublicContentPathname('/u/2042219067430928384'), true);
   assert.equal(isPublicContentPathname('/u/usr_018f6b6f7c7d70008f8f8f8f8f8f8f8f'), true);
   assert.equal(isPublicContentPathname('/leaderboard/post-count'), true);
@@ -122,4 +127,14 @@ test('isShopPathname 应单独识别登录态商城交易入口', () => {
   assert.equal(isShopPathname('/shop'), false);
   assert.equal(isShopPathname('/shop/product/2042219067430928384'), false);
   assert.equal(isShopPathname('/desktop'), false);
+});
+
+test('isDocsAuthorPathname 应单独识别文档作者正式 Web 入口', () => {
+  assert.equal(isDocsAuthorPathname('/docs/mine'), true);
+  assert.equal(isDocsAuthorPathname('/docs/mine/'), true);
+  assert.equal(isDocsAuthorPathname('/docs/compose'), true);
+  assert.equal(isDocsAuthorPathname('/docs/edit/2042219067430928384'), true);
+  assert.equal(isDocsAuthorPathname('/docs/revisions/2042219067430928384'), true);
+  assert.equal(isDocsAuthorPathname('/docs/Guide'), false);
+  assert.equal(isDocsAuthorPathname('/__documents__/mine'), false);
 });
