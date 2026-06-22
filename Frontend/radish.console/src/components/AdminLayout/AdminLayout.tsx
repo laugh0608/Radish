@@ -57,6 +57,7 @@ const menuIconMap: Record<string, ReactNode> = {
   roles: <SafetyOutlined />,
   categories: <AppstoreOutlined />,
   tags: <TagsOutlined />,
+  documents: <FileTextOutlined />,
   stickers: <AppstoreOutlined />,
   moderation: <SafetyOutlined />,
   coins: <WalletOutlined />,

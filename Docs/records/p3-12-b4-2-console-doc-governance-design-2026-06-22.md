@@ -2,13 +2,15 @@
 
 > 日期：2026-06-22（Asia/Shanghai）
 >
-> 状态：设计方案已确认，待代码实现
+> 状态：设计方案已确认；首批代码实现已完成，待用户确认前后端已启动后补 Gateway `/console/` PC / mobile smoke
 >
 > 结论：Console 新增文档治理入口，承接文档全量筛选、发布 / 下架、归档、回收站、权限策略、版本治理、导入导出和内置文档观察；正式 Web 作者入口继续负责普通创建、编辑和版本回看；公开 `/docs` 继续保持阅读、搜索、正文内链和分享；WebOS `WikiApp` 只作为 `/desktop` 历史维护入口保留。
 
 ## 本轮范围
 
-本轮只补设计边界和后续实现口径，不进入代码实现，不启动 API / Auth / Gateway / Vite，不执行真实浏览器 smoke。
+设计阶段先补职责边界和后续实现口径；首批代码阶段已按确认方案落地 Console 文档治理入口、治理专用 API、权限键、资源种子和权限覆盖矩阵。
+
+本轮不启动 API / Auth / Gateway / Vite，不执行真实浏览器 smoke。后续小阶段页面验收必须等用户明确说明前后端已启动后再通过 Gateway 执行。
 
 已核对：
 
@@ -30,6 +32,28 @@
 - `Radish.Shared/CustomEnum/WikiDocumentVisibilityEnum.cs`
 - `Radish.Service/WikiDocumentService.cs`
 - `Radish.Service/WikiDocumentService.BuiltIn.cs`
+
+## 首批实现承接
+
+后端实现：
+
+- 新增 `Wiki/AdminGetList`、`Wiki/AdminGetTree`、`Wiki/AdminGetById/{id}` 治理读取接口，治理读取不复用公开 `/docs` 的发布态、删除态和当前用户可见性过滤。
+- 新增 `Wiki/UpdateAccessPolicy/{id}`，只修改 `Visibility / AllowedRoles / AllowedPermissions` 与修改人信息，不改正文、标题、版本号、发布状态或修订记录。
+- 已将发布、下架、归档、删除、恢复、版本列表、版本详情、回滚、导入和导出纳入 `RequireConsolePermission`，通过 Console 权限键授权。
+- 保留 `Create / Update` 的 `SystemOrAdmin` 授权，不新增 `console.docs.create/edit`。
+- 内置文档继续由服务层 `EnsureDocumentIsEditable` 保护，Console 只观察，不写入。
+
+权限与种子：
+
+- 新增 `console.docs.view/publish/archive/delete/restore/permissions/rollback/import/export`。
+- 同步 `ConsolePermissions.ApiPermissionMappings`、Admin 默认权限、`ApiModule`、`ConsoleResourceSeeds` 与 `ConsoleResourceApiSeeds`。
+- 已更新 [Console 权限覆盖矩阵](/guide/console-permission-coverage-matrix)。
+
+Console 前端：
+
+- 新增 `/console/documents` 对应 Console 内部路由 `/documents`，菜单为“文档治理”。
+- 页面支持治理列表筛选、详情只读查看、状态治理、回收站恢复、访问策略、版本查看 / 回滚、Markdown 导入和导出。
+- 页面不提供正文创建 / 编辑入口，不把 Console 做成第二个文档创作器。
 
 ## 职责边界
 
@@ -220,21 +244,21 @@ Console 治理建议使用治理专用接口或显式治理模式接口：
 
 ## 验证口径
 
-设计文档落地阶段：
+首批代码阶段已执行：
 
-- `git diff --check`
-- `npm run check:repo-hygiene:changed`
+- `npm run check:console-permissions`：通过，四层对象已完成基础对齐。
+- `npm run build --workspace=radish.console`：通过。
+- `dotnet build Radish.slnx -c Debug`：通过。
+- `dotnet test Radish.Api.Tests --filter WikiDocument`：通过，12 项测试通过。
+- `dotnet test Radish.Api.Tests`：通过，530 项测试通过。
+- `git diff --check`：通过。
+- `npm run check:repo-hygiene:changed`：通过，21 个文件未发现文本卫生问题。
 
-代码实现阶段建议：
+收尾验证建议：
 
-- `npm run check:console-permissions`
-- `npm run build --workspace=radish.console`
-- 若修改 API 授权属性或新增治理接口：`dotnet build Radish.slnx -c Debug`
-- 若新增后端行为或权限测试：`dotnet test Radish.Api.Tests`
-- 若触及 `ConsoleResourceSeeds / ConsoleResourceApiSeeds / ApiModule`：运行对应 DbMigrate 只读自检或最小迁移验证
 - 准备小阶段验收时，在用户确认前后端已启动后，通过 Gateway 覆盖 `/console/` PC `1920x1080` 与 mobile `390x844 @ DPR 3`
 
-真实浏览器 smoke 不作为本设计文档落地的必要步骤。
+真实浏览器 smoke 不作为本代码批次的默认步骤。
 
 ## 当前不做
 
@@ -248,4 +272,3 @@ Console 治理建议使用治理专用接口或显式治理模式接口：
 - 不重写内置文档同步策略。
 - 不做公开 docs 页面级 UI 重设计。
 - 不启动 Flutter 文档作者态。
-

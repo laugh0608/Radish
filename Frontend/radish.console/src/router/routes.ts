@@ -11,6 +11,7 @@ export const ROUTES = {
   ROLE_PERMISSIONS: '/roles/:roleId/permissions',
   CATEGORIES: '/categories',
   TAGS: '/tags',
+  DOCUMENTS: '/documents',
   STICKERS: '/stickers',
   MODERATION: '/moderation',
   COINS: '/coins',

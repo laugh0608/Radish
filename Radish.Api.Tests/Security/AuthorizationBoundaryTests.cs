@@ -47,6 +47,8 @@ public class AuthorizationBoundaryTests
     [InlineData("/api/v1/Shop/AdminGetOrder/10001", ConsolePermissions.OrdersView)]
     [InlineData("/api/v1/Experience/GetUserDailyStats/10001", ConsolePermissions.ExperienceView)]
     [InlineData("/api/v1/Experience/GetUserTransactions/10001", ConsolePermissions.ExperienceView)]
+    [InlineData("/api/v1/Wiki/AdminGetById/10001", ConsolePermissions.DocsView)]
+    [InlineData("/api/v1/Wiki/UpdateAccessPolicy/10001", ConsolePermissions.DocsPermissions)]
     public void ConsolePermissions_ShouldResolveConsoleApiMappings(string apiUrl, string expectedPermission)
     {
         var permissions = ConsolePermissions.GetPermissionsByApiUrl(apiUrl);

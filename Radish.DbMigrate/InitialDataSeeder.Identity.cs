@@ -965,6 +965,132 @@ internal static partial class InitialDataSeeder
                 ControllerName = "Experience",
                 ActionName = "AdminRecordGovernanceReview",
                 Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50150L,
+                ApiModuleName = "Admin get wiki documents",
+                LinkUrl = "/api/v1/Wiki/AdminGetList",
+                ControllerName = "Wiki",
+                ActionName = "AdminGetList",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50151L,
+                ApiModuleName = "Admin get wiki tree",
+                LinkUrl = "/api/v1/Wiki/AdminGetTree",
+                ControllerName = "Wiki",
+                ActionName = "AdminGetTree",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50152L,
+                ApiModuleName = "Admin get wiki document detail",
+                LinkUrl = "/api/v1/Wiki/AdminGetById/\\d+",
+                ControllerName = "Wiki",
+                ActionName = "AdminGetById",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50153L,
+                ApiModuleName = "Get wiki revision list",
+                LinkUrl = "/api/v1/Wiki/GetRevisionList/\\d+",
+                ControllerName = "Wiki",
+                ActionName = "GetRevisionList",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50154L,
+                ApiModuleName = "Get wiki revision detail",
+                LinkUrl = "/api/v1/Wiki/GetRevisionDetail/\\d+",
+                ControllerName = "Wiki",
+                ActionName = "GetRevisionDetail",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50155L,
+                ApiModuleName = "Publish wiki document",
+                LinkUrl = "/api/v1/Wiki/Publish/\\d+",
+                ControllerName = "Wiki",
+                ActionName = "Publish",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50156L,
+                ApiModuleName = "Unpublish wiki document",
+                LinkUrl = "/api/v1/Wiki/Unpublish/\\d+",
+                ControllerName = "Wiki",
+                ActionName = "Unpublish",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50157L,
+                ApiModuleName = "Archive wiki document",
+                LinkUrl = "/api/v1/Wiki/Archive/\\d+",
+                ControllerName = "Wiki",
+                ActionName = "Archive",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50158L,
+                ApiModuleName = "Delete wiki document",
+                LinkUrl = "/api/v1/Wiki/Delete/\\d+",
+                ControllerName = "Wiki",
+                ActionName = "Delete",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50159L,
+                ApiModuleName = "Restore wiki document",
+                LinkUrl = "/api/v1/Wiki/Restore/\\d+",
+                ControllerName = "Wiki",
+                ActionName = "Restore",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50160L,
+                ApiModuleName = "Update wiki document access policy",
+                LinkUrl = "/api/v1/Wiki/UpdateAccessPolicy/\\d+",
+                ControllerName = "Wiki",
+                ActionName = "UpdateAccessPolicy",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50161L,
+                ApiModuleName = "Rollback wiki revision",
+                LinkUrl = "/api/v1/Wiki/Rollback/\\d+",
+                ControllerName = "Wiki",
+                ActionName = "Rollback",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50162L,
+                ApiModuleName = "Import wiki markdown",
+                LinkUrl = "/api/v1/Wiki/ImportMarkdown",
+                ControllerName = "Wiki",
+                ActionName = "ImportMarkdown",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50163L,
+                ApiModuleName = "Export wiki markdown",
+                LinkUrl = "/api/v1/Wiki/ExportMarkdown/\\d+",
+                ControllerName = "Wiki",
+                ActionName = "ExportMarkdown",
+                Roles = new[] { 10000L, 10001L }
             }
         };
 

@@ -11,6 +11,7 @@ const applicationsPage = lazy(() => import('../pages/Applications').then(module 
 const categoryListPage = lazy(() => import('../pages/Categories').then(module => ({ default: module.CategoryList })));
 const coinAdminPage = lazy(() => import('../pages/Coins').then(module => ({ default: module.CoinAdminPage })));
 const dashboardPage = lazy(() => import('../pages/Dashboard').then(module => ({ default: module.Dashboard })));
+const documentGovernancePage = lazy(() => import('../pages/Documents').then(module => ({ default: module.DocumentGovernancePage })));
 const experienceAdminPage = lazy(() => import('../pages/Experience').then(module => ({ default: module.ExperienceAdminPage })));
 const loginPage = lazy(() => import('../pages/Login').then(module => ({ default: module.Login })));
 const moderationPage = lazy(() => import('../pages/Moderation').then(module => ({ default: module.ModerationPage })));
@@ -91,6 +92,10 @@ const router = createBrowserRouter(
         {
           path: 'tags',
           element: withRouteGuard('tags', createElement(tagListPage)),
+        },
+        {
+          path: 'documents',
+          element: withRouteGuard('documents', createElement(documentGovernancePage)),
         },
         {
           path: 'stickers',

@@ -39,9 +39,26 @@ public interface IWikiDocumentService : IBaseService<WikiDocument, WikiDocumentV
         bool isAuthenticated = false,
         IReadOnlyCollection<string>? roleNames = null);
 
+    Task<PageModel<WikiDocumentVo>> GetGovernanceListAsync(
+        int pageIndex = 1,
+        int pageSize = 20,
+        string? keyword = null,
+        int? status = null,
+        int? visibility = null,
+        long? parentId = null,
+        string? sourceType = null,
+        bool includeDeleted = false,
+        bool deletedOnly = false);
+
+    Task<List<WikiDocumentTreeNodeVo>> GetGovernanceTreeAsync(bool includeDeleted = false);
+
+    Task<WikiDocumentDetailVo?> GetGovernanceDetailAsync(long id, bool includeDeleted = true);
+
     Task<long> CreateDocumentAsync(CreateWikiDocumentDto createDto, long operatorId, string operatorName, long tenantId);
 
     Task<bool> UpdateDocumentAsync(long id, UpdateWikiDocumentDto updateDto, long operatorId, string operatorName);
+
+    Task<bool> UpdateAccessPolicyAsync(long id, UpdateWikiDocumentAccessPolicyDto updateDto, long operatorId, string operatorName);
 
     Task<bool> DeleteDocumentAsync(long id, long operatorId, string operatorName);
 

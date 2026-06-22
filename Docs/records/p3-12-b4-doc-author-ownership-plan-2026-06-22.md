@@ -2,7 +2,7 @@
 
 > 日期：2026-06-22（Asia/Shanghai）
 >
-> 状态：只读盘点与归属方案已完成；B4-1 正式 Web 文档作者入口首批代码已完成；B4-2 Console 文档治理设计已确认
+> 状态：只读盘点与归属方案已完成；B4-1 正式 Web 文档作者入口首批代码已完成；B4-2 Console 文档治理首批代码已完成
 >
 > 结论：公开 `/docs` 继续只承载阅读、搜索、正文内链和分享；正式 Web 应新增登录态文档作者页，承接常规创建、编辑、草稿和版本回看；Console 承接发布、撤回、归档、恢复、受限可见性、角色 / 权限配置、内置文档同步观察等治理动作；WebOS `WikiApp` 在替代路径落地前继续作为 `/desktop` 历史维护入口，不再扩展新功能。
 
@@ -221,7 +221,7 @@ Console 负责：
 
 ## B4-2 设计承接
 
-2026-06-22 已确认 [P3-12-B4-2 Console 文档治理设计](/records/p3-12-b4-2-console-doc-governance-design-2026-06-22)。
+2026-06-22 已确认并完成 [P3-12-B4-2 Console 文档治理设计](/records/p3-12-b4-2-console-doc-governance-design-2026-06-22) 的首批代码实现。
 
 确认后的 Console 职责边界：
 
@@ -230,7 +230,7 @@ Console 负责：
 - 公开 `/docs` 继续只承载阅读、搜索、正文内链和分享。
 - WebOS `WikiApp` 只作为 `/desktop` 历史维护入口保留，不新增正式 Web / Console 权限语义。
 
-设计已明确首批权限键、菜单 / 路由归属、治理专用 API 授权资源、数据状态流转和验证口径。后续代码实现前应以该设计记录为准，不再把公开 `/docs`、Web 作者页和 Console 治理页混成同一职责面。
+首批代码已补 `/console/documents` 对应内部路由 `/documents`、治理专用 API、权限键、资源种子、权限覆盖矩阵和 Console 页面；后续仍以该设计记录为准，不再把公开 `/docs`、Web 作者页和 Console 治理页混成同一职责面。
 
 ## 首批代码建议
 
@@ -260,17 +260,17 @@ Console 负责：
 5. 验证
    - 路由解析、登录回流、公开 docs 只读边界、真实 `href` 语义和 `radish.client` type-check / build。
 
-### 推荐 B4-2：Console 文档治理入口
+### B4-2：Console 文档治理入口
 
-范围：
+首批已完成范围：
 
 - 新增 Console docs 页面和权限键。
 - 补 Console 资源种子和 API 映射。
-- 为 WikiController 写入 / 治理接口补 `RequireConsolePermission` 或等价资源映射策略。
+- 为 WikiController 写入 / 治理接口补 `RequireConsolePermission`。
 - 更新 Console 权限覆盖矩阵。
 - 首批不新增 Console 正文创建 / 编辑权限；若后续确需 Console 内编辑正文，再单独评审 `console.docs.edit`。
 
-该批次应在 B4-1 后再做，避免同时迁移正式 Web 作者入口和 Console 治理中心导致验证面过宽。
+该批次已在 B4-1 后独立完成，避免同时迁移正式 Web 作者入口和 Console 治理中心导致验证面过宽。
 
 ## 首批不纳入
 
@@ -293,13 +293,18 @@ B4-1 建议验证：
 - `git diff --check`
 - 小阶段验收时，在用户确认前后端已启动后，通过 Gateway 覆盖 PC `1920x1080` 与移动 `390x844` CSS 视口的 `/docs`、`/docs/:slug`、`/docs/mine`、`/docs/compose`、`/docs/edit/:id` 登录回流。
 
-B4-2 建议验证：
+B4-2 已完成验证：
 
+- `npm run check:console-permissions`
 - `npm run build --workspace=radish.console`
-- Console 权限链路扫描。
-- Console 权限覆盖矩阵更新。
-- 后端定向测试或 `dotnet test Radish.Api.Tests`，取决于是否改到 API 授权属性。
-- Gateway `/console/` PC / mobile 复核。
+- `dotnet build Radish.slnx -c Debug`
+- `dotnet test Radish.Api.Tests --filter WikiDocument`
+- `dotnet test Radish.Api.Tests`
+- Console 权限覆盖矩阵已更新。
+
+B4-2 待补验收：
+
+- 在用户确认前后端已启动后，通过 Gateway 覆盖 `/console/documents` PC / mobile 复核。
 
 ## 风险点
 

@@ -95,3 +95,14 @@ public class WikiMarkdownImportDto
 
     public List<string>? AllowedPermissions { get; set; }
 }
+
+/// <summary>更新 Wiki 文档访问策略 DTO</summary>
+public class UpdateWikiDocumentAccessPolicyDto
+{
+    [Range((int)WikiDocumentVisibilityEnum.Public, (int)WikiDocumentVisibilityEnum.Restricted, ErrorMessage = "文档可见性无效")]
+    public int Visibility { get; set; } = (int)WikiDocumentVisibilityEnum.Authenticated;
+
+    public List<string>? AllowedRoles { get; set; }
+
+    public List<string>? AllowedPermissions { get; set; }
+}

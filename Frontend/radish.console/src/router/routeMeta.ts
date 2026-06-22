@@ -95,6 +95,14 @@ export const consoleRouteMeta: readonly ConsoleRouteMeta[] = [
     searchVisible: true,
   },
   {
+    key: 'documents',
+    path: '/documents',
+    title: '文档治理',
+    requiredPermission: CONSOLE_PERMISSIONS.docsView,
+    sidebarVisible: true,
+    searchVisible: true,
+  },
+  {
     key: 'stickers',
     path: '/stickers',
     title: '表情包管理',

@@ -20,4 +20,10 @@ public interface IWikiDocumentRepository : IBaseRepository<WikiDocument>
         OrderByType orderByType,
         Expression<Func<WikiDocument, object>>? thenByExpression,
         OrderByType thenByType);
+
+    /// <summary>查询文档列表（包含已删除数据）</summary>
+    Task<List<WikiDocument>> QueryIncludingDeletedAsync(
+        Expression<Func<WikiDocument, bool>>? whereExpression,
+        Expression<Func<WikiDocument, object>>? orderByExpression,
+        OrderByType orderByType);
 }
