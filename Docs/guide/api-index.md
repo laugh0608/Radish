@@ -132,6 +132,43 @@
 - 提及搜索：`User/SearchForMention` 只面向登录态用户，搜索范围限定为 `DisplayName`、`PublicIndex`、完整 `DisplayName#PublicIndex` 或 `PublicId`；不得把 `LoginName`、`Email` 或内部 `Id` 做普通用户公开搜索字段
 - 我的浏览历史 / 最近访问
 
+### 文档与 Wiki
+
+- `Radish.Api.Wiki.http`
+
+文档接口当前仍由 `WikiController` 承载，外部产品口径统一称为“文档”。入口职责按 [文档系统](/guide/document-system) 拆分：
+
+- 公开 `/docs` 使用只读读取接口：
+  - `Wiki/GetTree`
+  - `Wiki/GetList`
+  - `Wiki/GetBySlug/{slug}`
+  - `Wiki/GetById/{id}`
+- 正式 Web 作者入口当前沿用 `Admin/System` 写权限，使用：
+  - `Wiki/Create`
+  - `Wiki/Update/{id}`
+  - `Wiki/GetRevisionList/{id}`
+  - `Wiki/GetRevisionDetail/{revisionId}`
+- Console `/documents` 使用治理接口：
+  - `Wiki/AdminGetList`
+  - `Wiki/AdminGetTree`
+  - `Wiki/AdminGetById/{id}`
+  - `Wiki/Publish/{id}`
+  - `Wiki/Unpublish/{id}`
+  - `Wiki/Archive/{id}`
+  - `Wiki/Delete/{id}`
+  - `Wiki/Restore/{id}`
+  - `Wiki/UpdateAccessPolicy/{id}`
+  - `Wiki/Rollback/{revisionId}`
+  - `Wiki/ImportMarkdown`
+  - `Wiki/ExportMarkdown/{id}`
+
+权限边界：
+
+- 公开读取接口允许匿名进入，但服务端按文档状态、删除状态、可见性、登录态和角色过滤结果。
+- 作者入口不新增 `console.docs.create` 或 `console.docs.edit`，当前由 `SystemOrAdmin` 后端策略和前端 `Admin/System` 入口可见性共同限制。
+- Console 治理接口必须走 `console.docs.*` 权限映射，权限覆盖见 [Console 权限覆盖矩阵](/guide/console-permission-coverage-matrix)。
+- 固定文档 `SourceType=builtin` 只读，不允许通过作者入口或 Console 回写仓库 `Docs/` 源文件。
+
 ### 公开榜单
 
 公开榜单以 Scalar / OpenAPI 和 [排行榜系统](/features/leaderboard) 为准。当前重点接口包括：
