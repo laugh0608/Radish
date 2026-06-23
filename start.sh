@@ -22,15 +22,15 @@ ensure_command() {
   fi
 }
 
-ensure_command dotnet
-ensure_command npm
-
 invoke_step() {
   local message=$1
   echo "==> $message"
   shift
   "$@"
 }
+
+ensure_dotnet() { ensure_command dotnet; }
+ensure_npm() { ensure_command npm; }
 
 BG_NAMES=()
 BG_PIDS=()
@@ -251,10 +251,12 @@ print_menu() {
 }
 
 build_all() {
+  ensure_dotnet
   ( cd "$ROOT_DIR" && invoke_step "dotnet build Radish.slnx ($CONFIGURATION)" dotnet build Radish.slnx -c "$CONFIGURATION" )
 }
 
 start_api() {
+  ensure_dotnet
   (
     cd "$ROOT_DIR"
     export ASPNETCORE_URLS="http://localhost:5100"
@@ -266,15 +268,17 @@ start_api() {
 }
 
 start_api_no_build() {
+  ensure_dotnet
   ( cd "$ROOT_DIR" && export ASPNETCORE_URLS="http://localhost:5100" && invoke_step "dotnet run API (no-build, http only)" dotnet run --no-build --project "$API_PROJECT" -c "$CONFIGURATION" --launch-profile http )
 }
 
-start_gateway() { ( cd "$ROOT_DIR" && dotnet run --project Radish.Gateway/Radish.Gateway.csproj --launch-profile https ); }
-start_gateway_no_build() { ( cd "$ROOT_DIR" && exec dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj --launch-profile https ); }
-start_frontend() { ( cd "$ROOT_DIR" && exec npm run dev --prefix "$CLIENT_DIR" ); }
-start_console() { ( cd "$ROOT_DIR" && exec npm run dev --prefix "$CONSOLE_DIR" ); }
+start_gateway() { ensure_dotnet; ( cd "$ROOT_DIR" && dotnet run --project Radish.Gateway/Radish.Gateway.csproj --launch-profile https ); }
+start_gateway_no_build() { ensure_dotnet; ( cd "$ROOT_DIR" && exec dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj --launch-profile https ); }
+start_frontend() { ensure_npm; ( cd "$ROOT_DIR" && exec npm run dev --prefix "$CLIENT_DIR" ); }
+start_console() { ensure_npm; ( cd "$ROOT_DIR" && exec npm run dev --prefix "$CONSOLE_DIR" ); }
 
 start_auth() {
+  ensure_dotnet
   (
     cd "$ROOT_DIR"
     export ASPNETCORE_URLS="http://localhost:5200"
@@ -285,9 +289,10 @@ start_auth() {
   )
 }
 
-start_auth_no_build() { ( cd "$ROOT_DIR" && export ASPNETCORE_URLS="http://localhost:5200" && exec dotnet run --no-build --project "$AUTH_PROJECT" -c "$CONFIGURATION" --launch-profile http ); }
+start_auth_no_build() { ensure_dotnet; ( cd "$ROOT_DIR" && export ASPNETCORE_URLS="http://localhost:5200" && exec dotnet run --no-build --project "$AUTH_PROJECT" -c "$CONFIGURATION" --launch-profile http ); }
 
 start_dbmigrate() {
+  ensure_dotnet
   (
     cd "$ROOT_DIR"
     echo
@@ -307,7 +312,7 @@ start_dbmigrate() {
   )
 }
 
-run_tests() { ( cd "$ROOT_DIR" && invoke_step "dotnet test (Radish.Api.Tests)" dotnet test "$TEST_PROJECT" -c "$CONFIGURATION" ); }
+run_tests() { ensure_dotnet; ( cd "$ROOT_DIR" && invoke_step "dotnet test (Radish.Api.Tests)" dotnet test "$TEST_PROJECT" -c "$CONFIGURATION" ); }
 
 start_gateway_auth_api() {
   echo "[组合] 启动 Gateway + Auth + API..."
