@@ -16,10 +16,13 @@
     var serviceDescription = string.IsNullOrWhiteSpace(client.Description) ? (isZh ? "Radish 统一身份认证服务" : "Radish unified identity service") : client.Description;
     var clientName = string.IsNullOrWhiteSpace(client.DisplayName) ? (isZh ? "Radish 社区" : "Radish Community") : client.DisplayName;
     var developerLabel = isZh ? "开发者" : "Developer";
-    var usernameLabel = isZh ? "登录名" : "Login name";
-    var usernamePlaceholder = isZh
-        ? $"{Model.LoginNameMinLength}-{Model.LoginNameMaxLength} 位小写字母或数字，至少包含一个字母"
-        : $"{Model.LoginNameMinLength}-{Model.LoginNameMaxLength} lowercase letters or numbers, at least one letter";
+    var displayNameLabel = isZh ? "展示名" : "Display name";
+    var displayNamePlaceholder = isZh
+        ? $"{Model.DisplayNameMinLength}-{Model.DisplayNameMaxLength} 位中文、英文字母或数字"
+        : $"{Model.DisplayNameMinLength}-{Model.DisplayNameMaxLength} Chinese characters, letters, or numbers";
+    var displayNameHint = isZh
+        ? "展示名会作为公开身份展示，后续修改有次数和频率限制，请慎重设置。"
+        : "This public display name has future change limits, so choose carefully.";
     var passwordLabel = isZh ? "密码" : "Password";
     var passwordPlaceholder = isZh ? "至少 6 个字符" : "At least 6 characters";
     var confirmPasswordLabel = isZh ? "确认密码" : "Confirm password";
@@ -357,6 +360,12 @@
             font-weight: 400;
         }
 
+        .field-hint {
+            color: #64748b;
+            font-size: 0.82rem;
+            line-height: 1.5;
+        }
+
         input[type="text"],
         input[type="email"],
         input[type="password"] {
@@ -583,8 +592,9 @@
                     <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
 
                     <div class="form-group">
-                        <label>@usernameLabel</label>
-                        <input type="text" name="username" asp-for="Username" placeholder="@usernamePlaceholder" autocomplete="username" required />
+                        <label>@displayNameLabel</label>
+                        <input type="text" name="displayName" asp-for="DisplayName" placeholder="@displayNamePlaceholder" autocomplete="nickname" required />
+                        <span class="field-hint">@displayNameHint</span>
                     </div>
 
                     <div class="form-row double">

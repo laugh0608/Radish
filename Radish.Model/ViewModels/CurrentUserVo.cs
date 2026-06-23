@@ -11,14 +11,29 @@ public class CurrentUserVo
     public long VoUserId { get; set; }
 
     /// <summary>
-    /// 用户名
+    /// 展示名（兼容旧前端字段）
     /// </summary>
     public string VoUserName { get; set; } = string.Empty;
 
     /// <summary>
-    /// 登录名
+    /// 展示名
     /// </summary>
-    public string VoLoginName { get; set; } = string.Empty;
+    public string VoDisplayName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 展示名与公开索引组合后的展示句柄
+    /// </summary>
+    public string? VoDisplayHandle { get; set; }
+
+    /// <summary>
+    /// 用户公开访问标识
+    /// </summary>
+    public string? VoPublicId { get; set; }
+
+    /// <summary>
+    /// 用户公开索引号
+    /// </summary>
+    public long? VoPublicIndex { get; set; }
 
     /// <summary>
     /// 昵称

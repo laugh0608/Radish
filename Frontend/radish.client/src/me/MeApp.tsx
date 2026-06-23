@@ -289,7 +289,7 @@ export const MeApp = () => {
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const userId = useUserStore(state => state.userId);
   const userName = useUserStore(state => state.userName);
-  const loginName = useUserStore(state => state.loginName);
+  const displayHandle = useUserStore(state => state.displayHandle);
   const nickname = useUserStore(state => state.nickname);
   const avatarUrl = useUserStore(state => state.avatarUrl);
   const avatarThumbnailUrl = useUserStore(state => state.avatarThumbnailUrl);
@@ -470,11 +470,11 @@ export const MeApp = () => {
     || nickname?.trim()
     || dashboardData.publicProfile?.voUserName?.trim()
     || userName?.trim()
-    || loginName?.trim()
     || t('me.userFallback');
   const accountName = dashboardData.publicProfile?.voUserName?.trim()
+    || dashboardData.publicProfile?.voDisplayHandle?.trim()
+    || displayHandle?.trim()
     || userName?.trim()
-    || loginName?.trim()
     || userId;
   const profilePublicId = normalizePublicUserId(dashboardData.publicProfile?.voPublicId);
   const experience = dashboardData.experience;

@@ -75,24 +75,22 @@ public class UserService : BaseService<User, UserVo>, IUserService
     }
 
     /// <summary>
-    /// 根据登录名获取可登录用户
+    /// 根据邮箱获取可登录用户
     /// </summary>
-    /// <param name="loginName">登录名</param>
+    /// <param name="email">电子邮箱</param>
     /// <returns>用户视图模型</returns>
-    public async Task<UserVo?> GetEnabledUserByLoginNameAsync(string loginName)
+    public async Task<UserVo?> GetEnabledUserByEmailAsync(string email)
     {
-        if (string.IsNullOrWhiteSpace(loginName))
+        if (string.IsNullOrWhiteSpace(email))
         {
             return null;
         }
 
-        var rawIdentifier = loginName.Trim();
-        var normalizedIdentifier = rawIdentifier.ToLowerInvariant();
+        var rawEmail = email.Trim();
+        var normalizedEmail = rawEmail.ToLowerInvariant();
         return await QueryFirstAsync(u =>
-            (u.LoginName == rawIdentifier ||
-             u.LoginName == normalizedIdentifier ||
-             u.UserEmail == rawIdentifier ||
-             u.UserEmail == normalizedIdentifier) &&
+            (u.UserEmail == rawEmail ||
+             u.UserEmail == normalizedEmail) &&
             u.IsDeleted == false &&
             u.IsEnable);
     }

@@ -36,9 +36,9 @@ internal static partial class InitialDataSeeder
 
         var seedItems = new[]
         {
-            new { Id = 71000L, UserId = systemUserId, UserName = "system" },
-            new { Id = 71001L, UserId = adminUserId, UserName = "admin" },
-            new { Id = 71002L, UserId = testUserId, UserName = "test" }
+            new { Id = 71000L, UserId = systemUserId, UserName = "System" },
+            new { Id = 71001L, UserId = adminUserId, UserName = "Admin" },
+            new { Id = 71002L, UserId = testUserId, UserName = "TestUser" }
         };
 
         foreach (var item in seedItems)
@@ -1425,11 +1425,12 @@ internal static partial class InitialDataSeeder
         var systemUserExists = await db.Queryable<User>().AnyAsync(u => u.Id == systemUserId);
         if (!systemUserExists)
         {
-            Console.WriteLine($"[Radish.DbMigrate] 创建默认用户 Id={systemUserId}, LoginName=system...");
+            Console.WriteLine($"[Radish.DbMigrate] 创建默认用户 Id={systemUserId}, Email=system@radish.local...");
 
-            var systemUserOptions = new UserInitializationOptions("system", PasswordHasher.HashPassword("system123456"))
+            var systemUserOptions = new UserInitializationOptions("system@radish.local", PasswordHasher.HashPassword("system123456"))
             {
-                UserName = "system",
+                UserName = "System",
+                UserEmail = "system@radish.local",
                 UserRealName = "System User",
                 UserSex = (int)UserSexEnum.Unknown,
                 UserAge = 30,
@@ -1445,6 +1446,7 @@ internal static partial class InitialDataSeeder
             var systemUser = new User(systemUserOptions)
             {
                 Id = systemUserId,
+                LoginName = string.Empty,
                 PublicIndex = SystemPublicIndex,
             };
 
@@ -1495,11 +1497,12 @@ internal static partial class InitialDataSeeder
         var adminUserExists = await db.Queryable<User>().AnyAsync(u => u.Id == adminUserId);
         if (!adminUserExists)
         {
-            Console.WriteLine($"[Radish.DbMigrate] 创建默认用户 Id={adminUserId}, LoginName=admin...");
+            Console.WriteLine($"[Radish.DbMigrate] 创建默认用户 Id={adminUserId}, Email=admin@radish.local...");
 
-            var adminUserOptions = new UserInitializationOptions("admin", PasswordHasher.HashPassword("admin123456"))
+            var adminUserOptions = new UserInitializationOptions("admin@radish.local", PasswordHasher.HashPassword("admin123456"))
             {
-                UserName = "admin",
+                UserName = "Admin",
+                UserEmail = "admin@radish.local",
                 UserRealName = "Admin User",
                 UserSex = (int)UserSexEnum.Unknown,
                 UserAge = 25,
@@ -1515,6 +1518,7 @@ internal static partial class InitialDataSeeder
             var adminUser = new User(adminUserOptions)
             {
                 Id = adminUserId,
+                LoginName = string.Empty,
                 PublicIndex = AdminPublicIndex,
             };
 
@@ -1565,11 +1569,12 @@ internal static partial class InitialDataSeeder
         var testUserExists = await db.Queryable<User>().AnyAsync(u => u.Id == testUserId);
         if (!testUserExists)
         {
-            Console.WriteLine($"[Radish.DbMigrate] 创建默认用户 Id={testUserId}, LoginName=test...");
+            Console.WriteLine($"[Radish.DbMigrate] 创建默认用户 Id={testUserId}, Email=test@radish.local...");
 
-            var testUserOptions = new UserInitializationOptions("test", PasswordHasher.HashPassword("test123456"))
+            var testUserOptions = new UserInitializationOptions("test@radish.local", PasswordHasher.HashPassword("test123456"))
             {
-                UserName = "test",
+                UserName = "TestUser",
+                UserEmail = "test@radish.local",
                 UserRealName = "Test User",
                 UserSex = (int)UserSexEnum.Unknown,
                 UserAge = 18,
@@ -1585,6 +1590,7 @@ internal static partial class InitialDataSeeder
             var testUser = new User(testUserOptions)
             {
                 Id = testUserId,
+                LoginName = string.Empty,
                 PublicIndex = TestPublicIndex,
             };
 

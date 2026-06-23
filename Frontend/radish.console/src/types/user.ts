@@ -20,7 +20,6 @@ export interface UserListItem {
   voPublicIndex?: string;
   voDisplayName?: string;
   voDisplayHandle?: string;
-  voLoginName: string;
   voUserName: string;
   voUserRealName: string;
   voUserEmail: string;

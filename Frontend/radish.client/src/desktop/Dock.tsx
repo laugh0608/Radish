@@ -33,7 +33,7 @@ export const Dock = () => {
   const { t } = useTranslation();
   const { openWindows, openApp, restoreWindow } = useWindowStore();
   const authAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const { userName, userId, loginName, nickname, avatarUrl, avatarThumbnailUrl, clearUser } = useUserStore();
+  const { userName, userId, displayHandle, nickname, avatarUrl, avatarThumbnailUrl, clearUser } = useUserStore();
   const { unreadCount: storeUnreadCount, connectionState } = useNotificationStore();
   const { currentTheme, cycleTheme } = useTheme();
   const [time, setTime] = useState(new Date());
@@ -83,7 +83,7 @@ export const Dock = () => {
   const avatarImageSrc = avatarLoadError ? undefined : avatarSrc;
   const avatarSeed = userName?.trim() || 'User';
   const avatarFallbackText = buildAvatarText(avatarSeed);
-  const displayUserName = loginName?.trim() || userName?.trim() || '';
+  const displayUserName = displayHandle?.trim() || userName?.trim() || '';
   const displayNickname = nickname?.trim() || userName?.trim() || '';
   const avatarContainerStyle = {
     cursor: loggedIn ? 'pointer' : 'default',

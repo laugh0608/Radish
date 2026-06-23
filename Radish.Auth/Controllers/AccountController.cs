@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Net.Mail;
 using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication;
@@ -30,7 +31,7 @@ namespace Radish.Auth.Controllers;
 [Route("[controller]/[action]")]
 public class AccountController : Controller
 {
-    private static readonly HashSet<string> ReservedLoginNames = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> ReservedDisplayNames = new(StringComparer.OrdinalIgnoreCase)
     {
         "admin",
         "administrator",
@@ -64,12 +65,12 @@ public class AccountController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Login(string? returnUrl = null, string? username = null)
+    public async Task<IActionResult> Login(string? returnUrl = null, string? email = null)
     {
         var model = new LoginViewModel
         {
             ReturnUrl = returnUrl,
-            PrefillUserName = username,
+            PrefillEmail = email,
             ErrorMessage = TempData["LoginError"] as string,
             SuccessMessage = TempData["RegisterSuccess"] as string,
             Client = await ResolveClientAsync(returnUrl)
@@ -81,24 +82,26 @@ public class AccountController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     [EnableRateLimiting("login")]
-    public async Task<IActionResult> Login([FromForm] string username, [FromForm] string password, [FromForm] string? returnUrl = null)
+    public async Task<IActionResult> Login([FromForm] string email, [FromForm] string password, [FromForm] string? returnUrl = null)
     {
         var totalStopwatch = Stopwatch.StartNew();
+        var normalizedEmail = NormalizeEmail(email);
 
-        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+        if (normalizedEmail == null || string.IsNullOrWhiteSpace(password))
         {
             TempData["LoginError"] = _errorsLocalizer["auth.login.error.invalidCredentials"].Value;
-            return RedirectToAction(nameof(Login), new { returnUrl, username });
+            return RedirectToAction(nameof(Login), new { returnUrl, email });
         }
 
-        Log.Information("[Account/Login] 开始处理登录请求，用户名: {UserName}", username);
+        var logEmail = MaskEmailForLog(normalizedEmail);
+        Log.Information("[Account/Login] 开始处理登录请求，邮箱: {Email}", logEmail);
 
         // 1. 查询用户（单用户精确查询，避免列表物化）
         var userQueryStopwatch = Stopwatch.StartNew();
-        var user = await _userService.GetEnabledUserByLoginNameAsync(username);
+        var user = await _userService.GetEnabledUserByEmailAsync(normalizedEmail);
         Log.Information(
-            "[Account/Login] 用户查询完成，用户名: {UserName}, 结果数: {UserCount}, 耗时: {ElapsedMs}ms, 总耗时: {TotalElapsedMs}ms",
-            username,
+            "[Account/Login] 用户查询完成，邮箱: {Email}, 结果数: {UserCount}, 耗时: {ElapsedMs}ms, 总耗时: {TotalElapsedMs}ms",
+            logEmail,
             user == null ? 0 : 1,
             userQueryStopwatch.ElapsedMilliseconds,
             totalStopwatch.ElapsedMilliseconds);
@@ -106,19 +109,19 @@ public class AccountController : Controller
         if (user is null)
         {
             Log.Warning(
-                "[Account/Login] 用户不存在，用户名: {UserName}, 总耗时: {ElapsedMs}ms",
-                username,
+                "[Account/Login] 用户不存在，邮箱: {Email}, 总耗时: {ElapsedMs}ms",
+                logEmail,
                 totalStopwatch.ElapsedMilliseconds);
             TempData["LoginError"] = _errorsLocalizer["auth.login.error.invalidCredentials"].Value;
-            return RedirectToAction(nameof(Login), new { returnUrl, username });
+            return RedirectToAction(nameof(Login), new { returnUrl, email = normalizedEmail });
         }
 
         // 2. 使用 Argon2id 验证密码
         var passwordVerifyStopwatch = Stopwatch.StartNew();
         var isPasswordValid = PasswordHasher.VerifyPassword(password, user.VoLoginPassword);
         Log.Information(
-            "[Account/Login] 密码校验完成，用户名: {UserName}, 结果: {IsValid}, 耗时: {ElapsedMs}ms, 总耗时: {TotalElapsedMs}ms",
-            username,
+            "[Account/Login] 密码校验完成，邮箱: {Email}, 结果: {IsValid}, 耗时: {ElapsedMs}ms, 总耗时: {TotalElapsedMs}ms",
+            logEmail,
             isPasswordValid,
             passwordVerifyStopwatch.ElapsedMilliseconds,
             totalStopwatch.ElapsedMilliseconds);
@@ -126,7 +129,7 @@ public class AccountController : Controller
         if (!isPasswordValid)
         {
             TempData["LoginError"] = _errorsLocalizer["auth.login.error.invalidCredentials"].Value;
-            return RedirectToAction(nameof(Login), new { returnUrl, username });
+            return RedirectToAction(nameof(Login), new { returnUrl, email = normalizedEmail });
         }
 
         await _coinService.GrantRegistrationRewardAsync(user.Uuid);
@@ -138,18 +141,25 @@ public class AccountController : Controller
         var roleQueryStopwatch = Stopwatch.StartNew();
         var roleNames = await _userService.GetUserRoleNamesAsync(user.Uuid);
         Log.Information(
-            "[Account/Login] 角色查询完成，用户名: {UserName}, 角色数: {RoleCount}, 耗时: {ElapsedMs}ms, 总耗时: {TotalElapsedMs}ms",
-            username,
+            "[Account/Login] 角色查询完成，邮箱: {Email}, 角色数: {RoleCount}, 耗时: {ElapsedMs}ms, 总耗时: {TotalElapsedMs}ms",
+            logEmail,
             roleNames.Count,
             roleQueryStopwatch.ElapsedMilliseconds,
             totalStopwatch.ElapsedMilliseconds);
+
+        var displayName = string.IsNullOrWhiteSpace(user.VoDisplayName)
+            ? Radish.Model.User.NormalizeDisplayName(user.VoUserName, user.Uuid)
+            : user.VoDisplayName.Trim();
+        var displayHandle = string.IsNullOrWhiteSpace(user.VoDisplayHandle)
+            ? displayName
+            : user.VoDisplayHandle.Trim();
 
         var claims = new List<Claim>
         {
             // OIDC 标准 claims
             new(OpenIddictConstants.Claims.Subject, userId),
-            new(OpenIddictConstants.Claims.Name, user.VoLoginName ?? username), // 优先使用显示名称
-            new(OpenIddictConstants.Claims.PreferredUsername, user.VoLoginName ?? username),
+            new(OpenIddictConstants.Claims.Name, displayName),
+            new(OpenIddictConstants.Claims.PreferredUsername, displayHandle),
 
             // 多租户标识（与 AuthenticationGuide 中的约定一致）
             new(UserClaimTypes.TenantId, tenantId)
@@ -160,12 +170,6 @@ public class AccountController : Controller
         {
             claims.Add(new Claim(ClaimTypes.Email, user.VoUserEmail));
             claims.Add(new Claim(OpenIddictConstants.Claims.Email, user.VoUserEmail));
-        }
-
-        // 真实姓名 (如果存在)
-        if (!string.IsNullOrWhiteSpace(user.VoUserRealName))
-        {
-            claims.Add(new Claim(OpenIddictConstants.Claims.GivenName, user.VoUserRealName));
         }
 
         // 角色 claims
@@ -180,8 +184,8 @@ public class AccountController : Controller
         var signInStopwatch = Stopwatch.StartNew();
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
         Log.Information(
-            "[Account/Login] Cookie 登录完成，用户名: {UserName}, 耗时: {ElapsedMs}ms, 总耗时: {TotalElapsedMs}ms",
-            username,
+            "[Account/Login] Cookie 登录完成，邮箱: {Email}, 耗时: {ElapsedMs}ms, 总耗时: {TotalElapsedMs}ms",
+            logEmail,
             signInStopwatch.ElapsedMilliseconds,
             totalStopwatch.ElapsedMilliseconds);
 
@@ -201,15 +205,15 @@ public class AccountController : Controller
     [HttpGet]
     public async Task<IActionResult> Register(string? returnUrl = null)
     {
-        var loginNameLengthRule = await GetLoginNameLengthRuleAsync();
+        var displayNameLengthRule = await GetDisplayNameLengthRuleAsync();
         var model = new RegisterViewModel
         {
             ReturnUrl = returnUrl,
             ErrorMessage = TempData["RegisterError"] as string,
             SuccessMessage = TempData["RegisterSuccess"] as string,
             Client = await ResolveClientAsync(returnUrl),
-            LoginNameMinLength = loginNameLengthRule.MinLength,
-            LoginNameMaxLength = loginNameLengthRule.MaxLength
+            DisplayNameMinLength = displayNameLengthRule.MinLength,
+            DisplayNameMaxLength = displayNameLengthRule.MaxLength
         };
 
         return View(model);
@@ -235,36 +239,28 @@ public class AccountController : Controller
 
         try
         {
-            var loginName = model.Username.Trim().ToLowerInvariant();
-            var email = model.Email?.Trim().ToLowerInvariant();
-            var loginNameLengthRule = await GetLoginNameLengthRuleAsync();
-            if (!IsLoginNameLengthValid(loginName, loginNameLengthRule.MinLength, loginNameLengthRule.MaxLength, out var loginNameLengthError))
+            var displayName = model.DisplayName.Trim();
+            var email = NormalizeEmail(model.Email);
+            var displayNameLengthRule = await GetDisplayNameLengthRuleAsync();
+            if (!IsDisplayNameValid(displayName, displayNameLengthRule.MinLength, displayNameLengthRule.MaxLength, out var displayNameError))
             {
-                TempData["RegisterError"] = loginNameLengthError;
+                TempData["RegisterError"] = displayNameError;
                 return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
             }
 
-            if (ReservedLoginNames.Contains(loginName))
+            if (ReservedDisplayNames.Contains(displayName))
             {
-                TempData["RegisterError"] = "该登录名为系统保留账号，请更换";
+                TempData["RegisterError"] = "该展示名为系统保留名称，请更换";
                 return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
             }
 
-            if (string.IsNullOrWhiteSpace(email))
+            if (email == null)
             {
-                TempData["RegisterError"] = "电子邮箱不能为空";
+                TempData["RegisterError"] = "请填写有效的电子邮箱";
                 return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
             }
 
-            // 2. 检查用户名是否已存在
-            var existingUsers = await _userService.QueryAsync(u => u.LoginName == loginName);
-            if (existingUsers.Any())
-            {
-                TempData["RegisterError"] = "登录名已存在";
-                return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
-            }
-
-            // 3. 检查邮箱是否已存在
+            // 2. 检查邮箱是否已存在
             var existingEmails = await _userService.QueryAsync(u => u.UserEmail == email);
             if (existingEmails.Any())
             {
@@ -276,10 +272,10 @@ public class AccountController : Controller
             var hashedPassword = PasswordHasher.HashPassword(model.Password);
             var newUser = new Radish.Model.User
             {
-                LoginName = loginName,
+                LoginName = string.Empty,
                 LoginPassword = hashedPassword,
                 UserEmail = email,
-                UserName = loginName,
+                UserName = displayName,
                 UserRealName = string.Empty,
                 UserBirth = null,  // 明确设置为 null
                 UserAddress = string.Empty,
@@ -295,7 +291,7 @@ public class AccountController : Controller
 
             var userId = await _userService.AddAsync(newUser);
 
-            Log.Information("用户 {Username} (ID: {UserId}) 注册成功", loginName, userId);
+            Log.Information("用户 {DisplayName} (ID: {UserId}) 注册成功", displayName, userId);
 
             // 5. 发放注册奖励（50 胡萝卜）
             var transactionNo = await _coinService.GrantRegistrationRewardAsync(userId);
@@ -303,38 +299,88 @@ public class AccountController : Controller
 
             // 6. 注册成功，跳转到登录页
             TempData["RegisterSuccess"] = "注册成功！已赠送 50 胡萝卜，请登录。";
-            return RedirectToAction(nameof(Login), new { returnUrl = model.ReturnUrl, username = loginName });
+            return RedirectToAction(nameof(Login), new { returnUrl = model.ReturnUrl, email });
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "用户注册失败: {Username}, 错误: {ErrorMessage}", model.Username, ex.Message);
+            Log.Error(ex, "用户注册失败: {DisplayName}, 错误: {ErrorMessage}", model.DisplayName, ex.Message);
             TempData["RegisterError"] = $"注册失败：{ex.Message}";
             return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
         }
     }
 
-    private async Task<(int MinLength, int MaxLength)> GetLoginNameLengthRuleAsync()
+    private async Task<(int MinLength, int MaxLength)> GetDisplayNameLengthRuleAsync()
     {
-        var minLength = await _systemSettingProvider.GetInt32Async(SystemConfigDefaults.LoginNameMinLengthKey);
-        var maxLength = await _systemSettingProvider.GetInt32Async(SystemConfigDefaults.LoginNameMaxLengthKey);
+        var minLength = await _systemSettingProvider.GetInt32Async(SystemConfigDefaults.DisplayNameMinLengthKey);
+        var maxLength = await _systemSettingProvider.GetInt32Async(SystemConfigDefaults.DisplayNameMaxLengthKey);
         if (minLength > maxLength)
         {
-            throw new InvalidOperationException("登录名长度系统设置无效：最小长度不能大于最大长度");
+            throw new InvalidOperationException("展示名长度系统设置无效：最小长度不能大于最大长度");
         }
 
         return (minLength, maxLength);
     }
 
-    private static bool IsLoginNameLengthValid(string loginName, int minLength, int maxLength, out string errorMessage)
+    private static string? NormalizeEmail(string? email)
     {
-        if (loginName.Length < minLength || loginName.Length > maxLength)
+        if (string.IsNullOrWhiteSpace(email))
         {
-            errorMessage = $"登录名长度必须在 {minLength}-{maxLength} 个字符之间";
+            return null;
+        }
+
+        var normalized = email.Trim().ToLowerInvariant();
+        try
+        {
+            _ = new MailAddress(normalized);
+            return normalized;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string MaskEmailForLog(string email)
+    {
+        var normalized = email.Trim();
+        var atIndex = normalized.IndexOf('@', StringComparison.Ordinal);
+        if (atIndex <= 0 || atIndex == normalized.Length - 1)
+        {
+            return "***";
+        }
+
+        var local = normalized[..atIndex];
+        var domain = normalized[(atIndex + 1)..];
+        var maskedLocal = local.Length <= 2
+            ? new string('*', local.Length)
+            : $"{local[0]}***{local[^1]}";
+        return $"{maskedLocal}@{domain}";
+    }
+
+    private static bool IsDisplayNameValid(string displayName, int minLength, int maxLength, out string errorMessage)
+    {
+        if (displayName.Length < minLength || displayName.Length > maxLength)
+        {
+            errorMessage = $"展示名长度必须在 {minLength}-{maxLength} 个字符之间";
+            return false;
+        }
+
+        if (!displayName.All(IsValidDisplayNameCharacter))
+        {
+            errorMessage = "展示名只能包含中文、英文字母和数字";
             return false;
         }
 
         errorMessage = string.Empty;
         return true;
+    }
+
+    private static bool IsValidDisplayNameCharacter(char value)
+    {
+        return (value >= '0' && value <= '9') ||
+               (value >= 'a' && value <= 'z') ||
+               (value >= 'A' && value <= 'Z') ||
+               (value >= '\u4e00' && value <= '\u9fff');
     }
 
     private async Task<ClientSummaryViewModel> ResolveClientAsync(string? returnUrl)

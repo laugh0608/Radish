@@ -48,7 +48,7 @@ public class UserIdentitySemanticsServiceTest
     }
 
     [Fact]
-    public async Task GetEnabledUserByLoginNameAsync_ShouldMatchNormalizedLoginNameAndEmail()
+    public async Task GetEnabledUserByEmailAsync_ShouldMatchNormalizedEmailOnly()
     {
         var harness = CreateHarness();
         var capturedWheres = new List<Expression<Func<User, bool>>?>();
@@ -68,22 +68,16 @@ public class UserIdentitySemanticsServiceTest
             .Callback<Expression<Func<User, bool>>?>(where => capturedWheres.Add(where))
             .ReturnsAsync(user);
 
-        var loginResult = await harness.Service.GetEnabledUserByLoginNameAsync("Alice");
-        var emailResult = await harness.Service.GetEnabledUserByLoginNameAsync("ALICE@EXAMPLE.TEST");
+        var emailResult = await harness.Service.GetEnabledUserByEmailAsync("ALICE@EXAMPLE.TEST");
 
-        Assert.NotNull(loginResult);
         Assert.NotNull(emailResult);
-        Assert.Equal(2, capturedWheres.Count);
+        Assert.Single(capturedWheres);
 
-        var loginPredicate = capturedWheres[0]!.Compile();
-        Assert.True(loginPredicate(user));
-        Assert.True(loginPredicate(CloneUser(user, loginName: "Alice")));
-        Assert.False(loginPredicate(CloneUser(user, loginName: "ignored", userEmail: "alice@example.test")));
-
-        var emailPredicate = capturedWheres[1]!.Compile();
+        var emailPredicate = capturedWheres[0]!.Compile();
         Assert.True(emailPredicate(CloneUser(user, loginName: "ignored", userEmail: "ALICE@EXAMPLE.TEST")));
         Assert.True(emailPredicate(CloneUser(user, loginName: "ignored", userEmail: "alice@example.test")));
         Assert.False(emailPredicate(CloneUser(user, loginName: "ignored", userEmail: "ignored@example.test")));
+        Assert.False(emailPredicate(CloneUser(user, loginName: "ALICE", userEmail: "ignored@example.test")));
     }
 
     [Fact]
@@ -181,7 +175,7 @@ public class UserIdentitySemanticsServiceTest
                 VoUserName = User.NormalizeDisplayName(user.UserName, user.Id),
                 VoDisplayName = User.NormalizeDisplayName(user.UserName, user.Id),
                 VoDisplayHandle = User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id),
-                VoLoginName = user.LoginName,
+                VoLoginName = string.Empty,
                 VoUserEmail = user.UserEmail,
                 VoLoginPassword = user.LoginPassword,
                 VoTenantId = user.TenantId,

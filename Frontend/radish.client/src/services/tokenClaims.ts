@@ -1,6 +1,7 @@
 export interface AccessTokenIdentity {
   userId: string;
   userName: string;
+  displayHandle?: string;
   tenantId: string;
   roles: string[];
 }
@@ -97,16 +98,23 @@ export function getUserIdentityFromTokenPayload(payload: JwtPayload): AccessToke
     return null;
   }
 
-  const userName = parseStringClaim(payload.preferred_username)
-    ?? parseStringClaim(payload.name)
+  const displayName = parseStringClaim(payload.name)
+    ?? parseStringClaim(payload[legacyNameClaim]);
+  const preferredUsername = parseStringClaim(payload.preferred_username);
+  const userName = displayName
+    ?? preferredUsername
     ?? parseStringClaim(payload[legacyNameClaim])
     ?? String(userId);
+  const displayHandle = preferredUsername && preferredUsername !== userName
+    ? preferredUsername
+    : undefined;
 
   const tenantId = parseIntegerClaim(payload.tenant_id ?? payload.TenantId, true) ?? '0';
 
   return {
     userId,
     userName,
+    displayHandle,
     tenantId,
     roles: getRolesFromTokenPayload(payload),
   };

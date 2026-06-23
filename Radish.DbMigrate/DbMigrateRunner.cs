@@ -138,7 +138,7 @@ internal static class DbMigrateRunner
         var mainDb = dbScope.GetConnectionScope(normalizedMainDbConnId);
         EnsureBootstrapStateSchema(mainDb);
         EnsureUserPublicIdentitySchema(mainDb);
-        EnsureUserLoginIndex(mainDb);
+        EnsureUserEmailIndex(mainDb);
         EnsureForumIndexes(mainDb);
         EnsureLikeRelationIndexes(mainDb);
         EnsureInventoryBenefitReliabilitySchema(mainDb);
@@ -454,9 +454,9 @@ internal static class DbMigrateRunner
         return $"\"{identifier.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
     }
 
-    private static void EnsureUserLoginIndex(ISqlSugarClient db)
+    private static void EnsureUserEmailIndex(ISqlSugarClient db)
     {
-        const string indexName = "idx_user_login_active";
+        const string indexName = "idx_user_email_active";
 
         var entityInfo = db.EntityMaintenance.GetEntityInfo<User>();
         var tableName = entityInfo.DbTableName;
@@ -467,7 +467,7 @@ internal static class DbMigrateRunner
 
         var created = db.DbMaintenance.CreateIndex(
             tableName,
-            [nameof(User.TenantId), nameof(User.LoginName), nameof(User.IsDeleted), nameof(User.IsEnable)],
+            [nameof(User.TenantId), nameof(User.UserEmail), nameof(User.IsDeleted), nameof(User.IsEnable)],
             indexName,
             false);
 

@@ -106,7 +106,7 @@ public class UserController : ControllerBase
             result = await _userService.QueryPageAsync(
                 u => !u.IsDeleted &&
                      (u.UserName.Contains(keyword) ||
-                      u.LoginName.Contains(keyword) ||
+                      (u.PublicId != null && u.PublicId.Contains(keyword)) ||
                       (u.UserEmail != null && u.UserEmail.Contains(keyword))),
                 pageIndex, pageSize, u => u.Id, SqlSugar.OrderByType.Desc);
         }
@@ -255,7 +255,7 @@ public class UserController : ControllerBase
     {
         var totalStopwatch = Stopwatch.StartNew();
         var userId = Current.UserId;
-        var userName = Current.UserName;
+        var fallbackDisplayName = Current.UserName;
         var tenantId = Current.TenantId;
         var roles = Current.Roles
             .Where(role => !string.IsNullOrWhiteSpace(role))
@@ -264,8 +264,13 @@ public class UserController : ControllerBase
             .OrderBy(role => role, StringComparer.OrdinalIgnoreCase)
             .ToList();
         var user = await _userService.QueryFirstAsync(u => u.Id == userId && !u.IsDeleted);
-        var loginName = string.IsNullOrWhiteSpace(user?.VoLoginName) ? userName : user.VoLoginName;
-        var nickname = string.IsNullOrWhiteSpace(user?.VoUserName) ? userName : user.VoUserName;
+        var displayName = string.IsNullOrWhiteSpace(user?.VoDisplayName)
+            ? Radish.Model.User.NormalizeDisplayName(fallbackDisplayName, userId)
+            : user.VoDisplayName.Trim();
+        var displayHandle = string.IsNullOrWhiteSpace(user?.VoDisplayHandle)
+            ? null
+            : user.VoDisplayHandle.Trim();
+        var nickname = string.IsNullOrWhiteSpace(user?.VoUserName) ? displayName : user.VoUserName;
 
         Log.Information(
             "[GetUserByHttpContext] 开始处理当前用户信息，用户: {UserId}, 角色数: {RoleCount}",
@@ -316,8 +321,11 @@ public class UserController : ControllerBase
         var userInfo = new CurrentUserVo
         {
             VoUserId = userId,
-            VoUserName = userName,
-            VoLoginName = loginName,
+            VoUserName = displayName,
+            VoDisplayName = displayName,
+            VoDisplayHandle = displayHandle,
+            VoPublicId = user?.VoPublicId,
+            VoPublicIndex = user?.VoPublicIndex,
             VoNickname = nickname,
             VoTenantId = tenantId,
             VoAvatarUrl = avatar?.Url,

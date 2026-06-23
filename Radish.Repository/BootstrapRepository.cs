@@ -27,9 +27,9 @@ public class BootstrapRepository : IBootstrapRepository
     }
 
     public async Task<BootstrapAdminCreationResult> TryCreateFirstAdministratorAsync(
-        string loginName,
+        string displayName,
         string passwordHash,
-        string? email)
+        string email)
     {
         var db = GetMainDb();
 
@@ -45,14 +45,14 @@ public class BootstrapRepository : IBootstrapRepository
                     "系统已存在管理员，初始化入口已关闭");
             }
 
-            var loginNameExists = await db.Queryable<User>()
-                .AnyAsync(u => !u.IsDeleted && u.LoginName == loginName);
-            if (loginNameExists)
+            var emailExists = await db.Queryable<User>()
+                .AnyAsync(u => !u.IsDeleted && u.UserEmail == email);
+            if (emailExists)
             {
                 db.Ado.CommitTran();
                 return BootstrapAdminCreationResult.Failed(
-                    BootstrapAdminCreationStatus.LoginNameTaken,
-                    "登录账号已存在");
+                    BootstrapAdminCreationStatus.EmailTaken,
+                    "邮箱已被注册");
             }
 
             await db.Insertable(new SystemBootstrapState
@@ -67,9 +67,9 @@ public class BootstrapRepository : IBootstrapRepository
 
             var adminRoleId = await EnsureAdminRoleAsync(db);
             var initializedAt = DateTime.UtcNow;
-            var administrator = new User(new UserInitializationOptions(loginName, passwordHash)
+            var administrator = new User(new UserInitializationOptions(email, passwordHash)
             {
-                UserName = loginName,
+                UserName = displayName,
                 UserEmail = email,
                 UserRealName = string.Empty,
                 UserSex = (int)UserSexEnum.Unknown,
@@ -81,6 +81,7 @@ public class BootstrapRepository : IBootstrapRepository
                 Remark = "First administrator initialized by bootstrap"
             })
             {
+                LoginName = string.Empty,
                 CreateTime = initializedAt,
                 UpdateTime = initializedAt,
                 CriticalModifyTime = initializedAt,
@@ -104,14 +105,14 @@ public class BootstrapRepository : IBootstrapRepository
                 {
                     IsCompleted = true,
                     CompletedUserId = userId,
-                    CompletedLoginName = loginName,
+                    CompletedLoginName = email,
                     CompletedTime = DateTime.UtcNow
                 })
                 .Where(state => state.Id == SystemBootstrapState.FirstAdminBootstrapId)
                 .ExecuteCommandAsync();
 
             db.Ado.CommitTran();
-            return BootstrapAdminCreationResult.Created(userId, loginName);
+            return BootstrapAdminCreationResult.Created(userId, displayName, email);
         }
         catch (Exception ex) when (IsUniqueConstraintViolation(ex))
         {

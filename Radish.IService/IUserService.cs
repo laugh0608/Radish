@@ -14,11 +14,11 @@ public interface IUserService : IBaseService<User, UserVo>
     new Task<int> AddRangeAsync(List<User> entities);
 
     /// <summary>
-    /// 根据登录名获取可登录用户
+    /// 根据邮箱获取可登录用户
     /// </summary>
-    /// <param name="loginName">登录名</param>
+    /// <param name="email">电子邮箱</param>
     /// <returns>单个用户视图模型，不存在则返回 null</returns>
-    Task<UserVo?> GetEnabledUserByLoginNameAsync(string loginName);
+    Task<UserVo?> GetEnabledUserByEmailAsync(string email);
 
     /// <summary>
     /// 根据公开主页标识获取可公开访问的用户。

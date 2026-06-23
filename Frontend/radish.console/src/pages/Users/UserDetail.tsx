@@ -37,7 +37,6 @@ interface UserDetailData {
   userName: string;
   displayName: string;
   displayHandle: string;
-  loginName: string;
   email: string;
   isEnabled: boolean;
   createTime: string;
@@ -72,7 +71,6 @@ export const UserDetail = () => {
     userName: item.voUserName || '-',
     displayName: item.voDisplayName || item.voUserName || '-',
     displayHandle: item.voDisplayHandle || '-',
-    loginName: item.voLoginName || '-',
     email: item.voUserEmail || '-',
     isEnabled: item.voIsEnable,
     createTime: item.voCreateTime,
@@ -462,7 +460,6 @@ export const UserDetail = () => {
               <Descriptions.Item label="用户名">{user.userName}</Descriptions.Item>
               <Descriptions.Item label="展示名称">{user.displayName}</Descriptions.Item>
               <Descriptions.Item label="公开句柄">{user.displayHandle}</Descriptions.Item>
-              <Descriptions.Item label="登录名">{user.loginName}</Descriptions.Item>
               <Descriptions.Item label="邮箱">{user.email}</Descriptions.Item>
               <Descriptions.Item label="用户 ID">{user.uuid}</Descriptions.Item>
               <Descriptions.Item label="状态">

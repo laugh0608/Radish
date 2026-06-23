@@ -10,8 +10,8 @@ namespace Radish.Model;
 
 /// <summary>用户实体</summary>
 /// <remarks>对应仓储层生成的内存数据</remarks>
-[SugarIndex("idx_user_login_active", nameof(ITenantEntity.TenantId), OrderByType.Asc,
-    nameof(LoginName), OrderByType.Asc,
+[SugarIndex("idx_user_email_active", nameof(ITenantEntity.TenantId), OrderByType.Asc,
+    nameof(UserEmail), OrderByType.Asc,
     nameof(IsDeleted), OrderByType.Asc,
     nameof(IsEnable), OrderByType.Asc)]
 [SugarIndex("idx_user_public_id", nameof(PublicId), OrderByType.Asc, IsUnique = true)]
@@ -268,10 +268,10 @@ public class User : RootEntityTKey<long>, ITenantEntity
 
     #region 登录相关
 
-    /// <summary>登录账号 1 LoginName</summary>
+    /// <summary>历史登录账号字段</summary>
     /// <remarks>
-    /// <para>优先使用</para>
-    /// <para>不可为空，最大 200 字符</para>
+    /// <para>B6 起不再作为登录凭证，保留用于历史数据兼容。</para>
+    /// <para>最大 200 字符</para>
     /// </remarks>
     [SugarColumn(Length = 200, IsNullable = true)]
     public string LoginName { get; set; } = string.Empty;
@@ -291,7 +291,15 @@ public class User : RootEntityTKey<long>, ITenantEntity
     [SugarColumn(Length = 200, IsNullable = true)]
     public string UserName { get; set; } = string.Empty;
 
-    /// <summary>登录账号 3 UserEmail</summary>
+    /// <summary>公开展示名语义别名</summary>
+    [SugarColumn(IsIgnore = true)]
+    public string DisplayName
+    {
+        get => UserName;
+        set => UserName = value ?? string.Empty;
+    }
+
+    /// <summary>登录邮箱</summary>
     /// <remarks>不可为空，最大 200 字符</remarks>
     [SugarColumn(Length = 200, IsNullable = true)]
     public string UserEmail { get; set; } = string.Empty;

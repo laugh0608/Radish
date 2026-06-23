@@ -71,7 +71,7 @@ public class SystemConfigServiceTest
         Assert.Equal(1m, loginNameMinConfig.VoMinNumberValue);
         Assert.Equal(32m, loginNameMinConfig.VoMaxNumberValue);
         Assert.True(loginNameMinConfig.VoRequiresInteger);
-        Assert.Contains("Auth 注册页", loginNameMinConfig.VoImpactSummary);
+        Assert.Contains("历史数据", loginNameMinConfig.VoImpactSummary);
 
         var loginNameMaxConfig = configs.Single(config => config.VoKey == SystemConfigDefaults.LoginNameMaxLengthKey);
         Assert.Equal(SystemConfigDefaults.DefaultLoginNameMaxLength, loginNameMaxConfig.VoDefaultValue);

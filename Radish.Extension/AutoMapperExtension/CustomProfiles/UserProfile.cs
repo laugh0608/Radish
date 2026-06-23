@@ -16,7 +16,7 @@ public class UserProfile : Profile
             .ForMember(a => a.VoPublicIndex, o => o.MapFrom(d => d.PublicIndex))
             .ForMember(a => a.VoDisplayName, o => o.MapFrom(d => User.NormalizeDisplayName(d.UserName, d.Id)))
             .ForMember(a => a.VoDisplayHandle, o => o.MapFrom(d => User.BuildDisplayHandle(d.UserName, d.PublicIndex, d.Id)))
-            .ForMember(a => a.VoLoginName, o => o.MapFrom(d => d.LoginName))
+            .ForMember(a => a.VoLoginName, o => o.MapFrom(_ => string.Empty))
             .ForMember(a => a.VoUserName, o => o.MapFrom(d => d.UserName))
             .ForMember(a => a.VoUserEmail, o => o.MapFrom(d => d.UserEmail))
             .ForMember(a => a.VoLoginPassword, o => o.MapFrom(d => d.LoginPassword))
@@ -94,7 +94,11 @@ public class UserProfile : Profile
         RecognizeDestinationPrefixes("Vo");
         CreateMap<User, CurrentUserVo>()
             .ForMember(dest => dest.VoUserId, opt => opt.MapFrom(src => src.Id))
-            .ForMember(dest => dest.VoUserName, opt => opt.MapFrom(src => src.UserName));
+            .ForMember(dest => dest.VoUserName, opt => opt.MapFrom(src => User.NormalizeDisplayName(src.UserName, src.Id)))
+            .ForMember(dest => dest.VoDisplayName, opt => opt.MapFrom(src => User.NormalizeDisplayName(src.UserName, src.Id)))
+            .ForMember(dest => dest.VoDisplayHandle, opt => opt.MapFrom(src => User.BuildDisplayHandle(src.UserName, src.PublicIndex, src.Id)))
+            .ForMember(dest => dest.VoPublicId, opt => opt.MapFrom(src => src.PublicId))
+            .ForMember(dest => dest.VoPublicIndex, opt => opt.MapFrom(src => src.PublicIndex));
             // 注意：VoAvatarUrl 和 VoAvatarThumbnailUrl 字段由 UserController.GetUserByHttpContext() 方法手动设置
 
         // UserTimePreference -> UserTimePreferenceVo（用户时区偏好）

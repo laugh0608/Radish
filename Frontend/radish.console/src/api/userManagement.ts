@@ -64,7 +64,6 @@ function mapUserListItem(raw: ApiRecord): UserListItem {
     voPublicIndex: toIdString(raw.voPublicIndex ?? raw.VoPublicIndex),
     voDisplayName: toOptionalString(raw.voDisplayName ?? raw.VoDisplayName),
     voDisplayHandle: toOptionalString(raw.voDisplayHandle ?? raw.VoDisplayHandle),
-    voLoginName: toStringValue(raw.voLoginName ?? raw.VoLoginName),
     voUserName: toStringValue(raw.voUserName ?? raw.VoUserName),
     voUserRealName: toStringValue(raw.voUserRealName ?? raw.VoUserRealName),
     voUserEmail: toStringValue(raw.voUserEmail ?? raw.VoUserEmail),

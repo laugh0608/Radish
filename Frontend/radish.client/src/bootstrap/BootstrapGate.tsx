@@ -73,13 +73,13 @@ export function BootstrapGate({ children }: BootstrapGateProps) {
 }
 
 function FirstAdminBootstrapPage() {
-  const [loginName, setLoginName] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string>();
-  const [createdLoginName, setCreatedLoginName] = useState<string>();
+  const [createdAdmin, setCreatedAdmin] = useState<{ displayName: string; email: string }>();
 
   useEffect(() => {
     document.title = '初始化管理员';
@@ -92,7 +92,7 @@ function FirstAdminBootstrapPage() {
 
     try {
       const response = await createFirstAdministrator({
-        loginName,
+        displayName,
         email,
         password,
         confirmPassword,
@@ -103,7 +103,10 @@ function FirstAdminBootstrapPage() {
         return;
       }
 
-      setCreatedLoginName(response.data.voLoginName);
+      setCreatedAdmin({
+        displayName: response.data.voDisplayName,
+        email: response.data.voEmail,
+      });
     } catch (err) {
       log.error('bootstrap', '创建首个管理员失败', err);
       setMessage(err instanceof Error ? err.message : '初始化失败');
@@ -112,13 +115,15 @@ function FirstAdminBootstrapPage() {
     }
   };
 
-  if (createdLoginName) {
+  if (createdAdmin) {
     return (
       <div className={styles.page}>
         <section className={styles.panel}>
           <p className={styles.kicker}>系统初始化</p>
           <h1>管理员已创建</h1>
-          <p className={styles.description}>使用账号 {createdLoginName} 登录后即可进入工作台和管理入口。</p>
+          <p className={styles.description}>
+            管理员 {createdAdmin.displayName} 已创建。使用邮箱 {createdAdmin.email} 登录后即可进入工作台和管理入口。
+          </p>
           <button type="button" className={styles.primaryButton} onClick={() => redirectToLogin()}>
             登录
           </button>
@@ -133,20 +138,21 @@ function FirstAdminBootstrapPage() {
         <p className={styles.kicker}>首次部署</p>
         <h1>创建首个管理员</h1>
         <p className={styles.description}>
-          当前系统尚无管理员账号。请设置一个新的管理员账号和强密码，初始化完成后默认账号入口会关闭。
+          当前系统尚无管理员账号。请设置管理员展示名、邮箱和强密码，初始化完成后默认账号入口会关闭。
         </p>
 
         <form className={styles.form} onSubmit={handleSubmit}>
           <label className={styles.field}>
-            <span>登录账号</span>
+            <span>展示名</span>
             <input
-              value={loginName}
-              onChange={(event) => setLoginName(event.target.value)}
-              autoComplete="username"
-              minLength={3}
-              maxLength={50}
+              value={displayName}
+              onChange={(event) => setDisplayName(event.target.value)}
+              autoComplete="nickname"
+              minLength={2}
+              maxLength={24}
               required
             />
+            <span className={styles.fieldHint}>展示名会作为公开身份展示，后续修改有次数和频率限制。</span>
           </label>
 
           <label className={styles.field}>
@@ -156,6 +162,7 @@ function FirstAdminBootstrapPage() {
               onChange={(event) => setEmail(event.target.value)}
               autoComplete="email"
               type="email"
+              required
             />
           </label>
 

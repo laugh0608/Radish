@@ -124,12 +124,6 @@ export const UserList = () => {
       ),
     },
     {
-      title: '登录名',
-      dataIndex: 'voLoginName',
-      key: 'voLoginName',
-      width: 180,
-    },
-    {
       title: '状态',
       key: 'status',
       width: 100,

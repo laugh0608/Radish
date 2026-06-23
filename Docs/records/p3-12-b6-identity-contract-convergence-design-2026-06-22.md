@@ -4,7 +4,7 @@
 >
 > 更新：2026-06-23 补充注册页 `DisplayName` 慎重设置提示、改名频率限制文案，以及 `PublicIndex` 靓号保留 / Console 配置规则。
 >
-> 状态：代码前盘点与分批方案已整理，待确认后进入首批代码实现
+> 状态：`B6-1 身份基础与注册登录` 首批代码已完成；后续进入 `B6-2` 公开展示与前端状态全域收敛
 >
 > 结论：本专题承接 [用户身份语义与公开索引](/architecture/user-identity-semantics) 的首批实现，进一步移除 `LoginName` 公开 / 登录链路，固定“邮箱 + 密码”作为登录凭证，并把 `DisplayName`、`DisplayHandle`、`PublicId`、关注备注的职责彻底拆开。当前项目尚未上线且无正式数据库，B6 按破坏性 schema 收口处理，不提供旧库兼容迁移；实现完成后删除本地 SQLite 并重新初始化。
 
@@ -232,12 +232,35 @@ Bootstrap 初始化触点：
 - 改名频率：`Medium`，影响用户行为和搜索 / 艾特稳定性。
 - PublicIndex 靓号保留列表 / 规则：`Medium`，影响后续注册编号分配和人工身份辨识；人工指定保留号动作应记录审计。
 
+## B6-1 实施记录
+
+`2026-06-23` 已完成首批身份基础与注册登录代码落地：
+
+- Auth 登录表单与登录服务固定为 `Email + Password`，不再使用登录名查询；OIDC `name` 输出 `DisplayName`，`preferred_username` 输出 `DisplayHandle`。
+- Auth 注册表单改为 `DisplayName + Email + Password + ConfirmPassword`，注册页已提示展示名公开展示和后续修改频率限制，展示名长度读取 `UserIdentity.DisplayName.MinLength / MaxLength`。
+- Bootstrap 首个管理员初始化改为必填 `DisplayName` 和 `Email`，成功响应返回展示名与邮箱；初始化页提示展示名慎重设置并要求邮箱登录。
+- `CurrentUserVo` 与前端 auth store 不再承载 `LoginName` 作为普通显示身份，改为 `DisplayName / DisplayHandle / PublicId / PublicIndex`；Dock、我的状态和 Console 用户治理移除登录名展示列。
+- 用户列表搜索从 `LoginName` 改为公开标识 / 展示名 / 邮箱排障语义；`UserVo.VoLoginName` 默认不再由实体 `LoginName` 映射输出。
+- 种子用户已改为明确邮箱和展示名；邮箱登录索引从 `idx_user_login_active` 改为 `idx_user_email_active`。
+- 旧 `LoginName` 字段和 `UserName` 数据库列仍作为历史兼容层保留；全域字段重命名、`UserRealName` 公开 fallback 清理、展示名改名治理、邮箱白名单和 `PublicIndex` 靓号保留不包含在 B6-1。
+
+本批验证：
+
+- `dotnet build Radish.slnx -c Debug`
+- `dotnet test Radish.Api.Tests --filter "FullyQualifiedName~AccountControllerTest|FullyQualifiedName~BootstrapServiceTest|FullyQualifiedName~UserIdentitySemanticsServiceTest|FullyQualifiedName~SystemConfigServiceTest"`
+- `dotnet test Radish.Api.Tests`
+- `npm run build --workspace=radish.client`
+- `npm run build --workspace=radish.console`
+- `git diff --check`
+
+本批未执行 Gateway 真实页面 smoke；按项目验证分层，留到 B6 成组功能准备验收或用户明确启动前后端后覆盖。
+
 ## 实施顺序
 
 1. 冻结本专题设计与字段语义。（已完成）
 2. 完成代码前触点盘点和分批方案。（已完成）
-3. `B6-1 身份基础与注册登录`：调整 `User` 实体 / DTO / AutoMapper 命名，固定邮箱 + 密码登录；注册和 Bootstrap 必填 `DisplayName`，注册页补慎重设置和改名限制提示；OIDC claim 与 CurrentUser 不再输出登录名作为普通显示身份。
-4. `B6-2 公开展示与前端状态收敛`：清理 `UserRealName` 公开 fallback、`VoLoginName` 普通前端状态、`VoUserName` 混淆展示；论坛、聊天、榜单、圈子、我的状态、公开个人页、转账搜索和 Console 用户治理统一使用 `DisplayName` / `DisplayHandle`。
+3. `B6-1 身份基础与注册登录`：调整 `User` 实体 / DTO / AutoMapper 命名，固定邮箱 + 密码登录；注册和 Bootstrap 必填 `DisplayName`，注册页补慎重设置和改名限制提示；OIDC claim 与 CurrentUser 不再输出登录名作为普通显示身份。（已完成）
+4. `B6-2 公开展示与前端状态收敛`：清理 `UserRealName` 公开 fallback、`VoLoginName` 普通前端状态、`VoUserName` 混淆展示；论坛、聊天、榜单、圈子、公开个人页、转账搜索和 Console 用户治理统一使用 `DisplayName` / `DisplayHandle`。
 5. `B6-3 展示名变更治理`：新增 `UserDisplayNameChangeRecord`，接入冷却时间、滚动窗口和窗口内最大次数设置；个人资料改名走服务端校验和历史记录，不允许绕过频率限制。
 6. `B6-4 PublicIndex 保留号治理`：新增 `UserIdentity.PublicIndex.ReservedIndexes` 与 `UserIdentity.PublicIndex.VanityRules` 设置，注册和 Bootstrap 分配器在数据库事务内跳过保留靓号；规则变更只影响后续分配。
 7. `B6-5 种子与 DbMigrate 收口`：更新 system / admin / test 种子展示名和保留号；删除身份旧库回填与旧兼容纠偏逻辑；实现后提醒删除本地 SQLite 并重新初始化。

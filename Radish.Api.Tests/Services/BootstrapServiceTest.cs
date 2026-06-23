@@ -37,7 +37,8 @@ public class BootstrapServiceTest
 
         var result = await service.CreateFirstAdministratorAsync(new BootstrapCreateAdminDto
         {
-            LoginName = "admin",
+            DisplayName = "Admin",
+            Email = "admin@radish.test",
             Password = "admin123456",
             ConfirmPassword = "admin123456"
         });
@@ -47,7 +48,7 @@ public class BootstrapServiceTest
             r => r.TryCreateFirstAdministratorAsync(
                 It.IsAny<string>(),
                 It.IsAny<string>(),
-                It.IsAny<string?>()),
+                It.IsAny<string>()),
             Times.Never);
     }
 
@@ -58,9 +59,9 @@ public class BootstrapServiceTest
         var repository = new Mock<IBootstrapRepository>(MockBehavior.Strict);
         var coinService = new Mock<ICoinService>(MockBehavior.Strict);
         repository
-            .Setup(r => r.TryCreateFirstAdministratorAsync("owner", It.IsAny<string>(), "owner@radish.test"))
-            .Callback<string, string, string?>((_, passwordHash, _) => capturedHash = passwordHash)
-            .ReturnsAsync(BootstrapAdminCreationResult.Created(9001, "owner"));
+            .Setup(r => r.TryCreateFirstAdministratorAsync("Owner", It.IsAny<string>(), "owner@radish.test"))
+            .Callback<string, string, string>((_, passwordHash, _) => capturedHash = passwordHash)
+            .ReturnsAsync(BootstrapAdminCreationResult.Created(9001, "Owner", "owner@radish.test"));
         coinService
             .Setup(service => service.GrantRegistrationRewardAsync(9001))
             .ReturnsAsync("TXN_REGISTER_9001");
@@ -69,7 +70,7 @@ public class BootstrapServiceTest
 
         var result = await service.CreateFirstAdministratorAsync(new BootstrapCreateAdminDto
         {
-            LoginName = " owner ",
+            DisplayName = " Owner ",
             Email = " owner@radish.test ",
             Password = "Strong!Pass123",
             ConfirmPassword = "Strong!Pass123"

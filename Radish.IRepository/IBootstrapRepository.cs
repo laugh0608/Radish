@@ -7,7 +7,7 @@ public interface IBootstrapRepository
     Task<bool> AdministratorExistsAsync();
 
     Task<BootstrapAdminCreationResult> TryCreateFirstAdministratorAsync(
-        string loginName,
+        string displayName,
         string passwordHash,
-        string? email);
+        string email);
 }

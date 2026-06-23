@@ -64,7 +64,7 @@ public class AccountControllerTest
 
         var result = await controller.Register(new RegisterViewModel
         {
-            Username = "NewUser",
+            DisplayName = "NewUser",
             Password = "test123456",
             ConfirmPassword = "test123456",
             Email = "NewUser@Radish.TEST"
@@ -72,16 +72,16 @@ public class AccountControllerTest
 
         var redirect = Assert.IsType<RedirectToActionResult>(result);
         Assert.Equal("Login", redirect.ActionName);
-        Assert.Equal("newuser", redirect.RouteValues?["username"]);
+        Assert.Equal("newuser@radish.test", redirect.RouteValues?["email"]);
         userServiceMock.Verify(service => service.AddAsync(It.Is<User>(user =>
-            user.LoginName == "newuser" &&
+            user.LoginName == string.Empty &&
             user.UserEmail == "newuser@radish.test" &&
-            user.UserName == "newuser")), Times.Once);
+            user.UserName == "NewUser")), Times.Once);
         coinService.Verify(service => service.GrantRegistrationRewardAsync(userId), Times.Once);
     }
 
     [Fact]
-    public async Task Register_ShouldRejectLoginNameShorterThanSystemSetting()
+    public async Task Register_ShouldRejectDisplayNameShorterThanRule()
     {
         var userServiceMock = new Mock<IUserService>();
         var errorsLocalizer = new Mock<IStringLocalizer<Errors>>();
@@ -93,7 +93,7 @@ public class AccountControllerTest
             userServiceMock.Object,
             applicationManager.Object,
             coinService.Object,
-            CreateSystemSettingProvider(loginNameMinLength: 5))
+            CreateSystemSettingProvider(displayNameMinLength: 2))
         {
             ControllerContext = new ControllerContext
             {
@@ -104,7 +104,7 @@ public class AccountControllerTest
 
         var result = await controller.Register(new RegisterViewModel
         {
-            Username = "abc",
+            DisplayName = "a",
             Password = "test123456",
             ConfirmPassword = "test123456",
             Email = "newuser@radish.test"
@@ -112,7 +112,7 @@ public class AccountControllerTest
 
         var redirect = Assert.IsType<RedirectToActionResult>(result);
         Assert.Equal("Register", redirect.ActionName);
-        Assert.Equal("登录名长度必须在 5-32 个字符之间", controller.TempData["RegisterError"]);
+        Assert.Equal("展示名长度必须在 2-24 个字符之间", controller.TempData["RegisterError"]);
         userServiceMock.Verify(service => service.AddAsync(It.IsAny<User>()), Times.Never);
         coinService.Verify(service => service.GrantRegistrationRewardAsync(It.IsAny<long>()), Times.Never);
     }
@@ -123,14 +123,16 @@ public class AccountControllerTest
         // Arrange
         var userServiceMock = new Mock<IUserService>();
 
-        const string username = "test";
+        const string email = "test@radish.test";
         const string password = "test123456";
         var hashedPassword = PasswordHasher.HashPassword(password);
 
         var userVo = new UserVo
         {
             Uuid = 1,
-            VoLoginName = username,
+            VoDisplayName = "Tester",
+            VoDisplayHandle = "Tester#1000",
+            VoUserEmail = email,
             VoLoginPassword = hashedPassword,
             VoTenantId = 0,
             VoIsDeleted = false,
@@ -138,7 +140,7 @@ public class AccountControllerTest
         };
 
         userServiceMock
-            .Setup(s => s.GetEnabledUserByLoginNameAsync(username))
+            .Setup(s => s.GetEnabledUserByEmailAsync(email))
             .ReturnsAsync(userVo);
 
         userServiceMock
@@ -189,7 +191,7 @@ public class AccountControllerTest
         var returnUrl = "/connect/authorize";
 
         // Act
-        var result = await controller.Login(username, password, returnUrl);
+        var result = await controller.Login(email, password, returnUrl);
 
         // Assert
         authServiceMock.Verify(
@@ -205,8 +207,8 @@ public class AccountControllerTest
 
         Assert.NotNull(signInPrincipal);
         Assert.Contains(signInPrincipal!.Claims, claim => claim.Type == OpenIddictConstants.Claims.Subject && claim.Value == "1");
-        Assert.Contains(signInPrincipal.Claims, claim => claim.Type == OpenIddictConstants.Claims.Name && claim.Value == username);
-        Assert.Contains(signInPrincipal.Claims, claim => claim.Type == OpenIddictConstants.Claims.PreferredUsername && claim.Value == username);
+        Assert.Contains(signInPrincipal.Claims, claim => claim.Type == OpenIddictConstants.Claims.Name && claim.Value == "Tester");
+        Assert.Contains(signInPrincipal.Claims, claim => claim.Type == OpenIddictConstants.Claims.PreferredUsername && claim.Value == "Tester#1000");
         Assert.Contains(signInPrincipal.Claims, claim => claim.Type == OpenIddictConstants.Claims.Role && claim.Value == "Admin");
         Assert.Contains(signInPrincipal.Claims, claim => claim.Type == UserClaimTypes.TenantId && claim.Value == "0");
 
@@ -218,7 +220,9 @@ public class AccountControllerTest
 
     private static ISystemSettingProvider CreateSystemSettingProvider(
         int? loginNameMinLength = null,
-        int? loginNameMaxLength = null)
+        int? loginNameMaxLength = null,
+        int? displayNameMinLength = null,
+        int? displayNameMaxLength = null)
     {
         var provider = new Mock<ISystemSettingProvider>();
         provider
@@ -227,6 +231,12 @@ public class AccountControllerTest
         provider
             .Setup(item => item.GetInt32Async(SystemConfigDefaults.LoginNameMaxLengthKey))
             .ReturnsAsync(loginNameMaxLength ?? int.Parse(SystemConfigDefaults.DefaultLoginNameMaxLength));
+        provider
+            .Setup(item => item.GetInt32Async(SystemConfigDefaults.DisplayNameMinLengthKey))
+            .ReturnsAsync(displayNameMinLength ?? int.Parse(SystemConfigDefaults.DefaultDisplayNameMinLength));
+        provider
+            .Setup(item => item.GetInt32Async(SystemConfigDefaults.DisplayNameMaxLengthKey))
+            .ReturnsAsync(displayNameMaxLength ?? int.Parse(SystemConfigDefaults.DefaultDisplayNameMaxLength));
         return provider.Object;
     }
 }
