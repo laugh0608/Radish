@@ -32,22 +32,184 @@ invoke_step() {
   "$@"
 }
 
+BG_NAMES=()
 BG_PIDS=()
-add_bg_pid() { BG_PIDS+=("$1"); }
-cleanup() {
-  if ((${#BG_PIDS[@]} == 0)); then
+BG_PGIDS=()
+RECORDED_CLEANUP_PIDS=()
+CLEANUP_STARTED=0
+
+get_process_group_id() {
+  local pid=$1
+  local pgid=""
+  if command -v ps >/dev/null 2>&1; then
+    pgid="$(ps -o pgid= -p "$pid" 2>/dev/null | tr -d '[:space:]' || true)"
+  fi
+  printf '%s' "$pgid"
+}
+
+enable_background_job_control() {
+  if [[ $- != *m* ]]; then
+    set -o monitor 2>/dev/null || true
+  fi
+}
+
+add_bg_process() {
+  local name=$1
+  local pid=$2
+  local pgid=""
+  local shell_pgid=""
+
+  pgid="$(get_process_group_id "$pid")"
+  shell_pgid="$(get_process_group_id "$$")"
+  if [[ -z "$pgid" || -z "$shell_pgid" || "$pgid" == "$shell_pgid" ]]; then
+    pgid=""
+  fi
+
+  BG_NAMES+=("$name")
+  BG_PIDS+=("$pid")
+  BG_PGIDS+=("$pgid")
+}
+
+start_background_service() {
+  local name=$1
+  shift
+
+  enable_background_job_control
+  "$@" &
+  add_bg_process "$name" "$!"
+}
+
+TREE_PIDS=()
+append_child_processes() {
+  local parent_pid=$1
+  local child_pid
+
+  if ! command -v pgrep >/dev/null 2>&1; then
     return
   fi
-  echo
-  echo "==> 正在停止后台服务..."
-  for pid in "${BG_PIDS[@]}"; do
-    if kill -0 "$pid" 2>/dev/null; then
-      echo "  - kill $pid"
-      kill "$pid" 2>/dev/null || true
+
+  while IFS= read -r child_pid; do
+    if [[ -z "$child_pid" ]]; then
+      continue
     fi
+    TREE_PIDS+=("$child_pid")
+    append_child_processes "$child_pid"
+  done < <(pgrep -P "$parent_pid" 2>/dev/null || true)
+}
+
+record_process_tree() {
+  local root_pid=$1
+  local index
+
+  RECORDED_CLEANUP_PIDS+=("$root_pid")
+  TREE_PIDS=()
+  append_child_processes "$root_pid"
+
+  for ((index = 0; index < ${#TREE_PIDS[@]}; index++)); do
+    RECORDED_CLEANUP_PIDS+=("${TREE_PIDS[$index]}")
   done
 }
-trap cleanup EXIT INT TERM
+
+kill_recorded_process_tree() {
+  local root_pid=$1
+  local signal=$2
+  local index
+
+  for ((index = ${#TREE_PIDS[@]} - 1; index >= 0; index--)); do
+    kill "-$signal" "${TREE_PIDS[$index]}" 2>/dev/null || true
+  done
+  kill "-$signal" "$root_pid" 2>/dev/null || true
+}
+
+stop_bg_process() {
+  local name=$1
+  local pid=$2
+  local pgid=$3
+  local signal=$4
+
+  record_process_tree "$pid"
+
+  if [[ -n "$pgid" ]]; then
+    echo "  - $name: kill -$signal process group $pgid"
+    kill "-$signal" -- "-$pgid" 2>/dev/null || true
+  fi
+
+  if kill -0 "$pid" 2>/dev/null; then
+    echo "  - $name: kill -$signal pid $pid"
+  fi
+  kill_recorded_process_tree "$pid" "$signal"
+}
+
+has_running_bg_processes() {
+  local index
+  for ((index = 0; index < ${#BG_PGIDS[@]}; index++)); do
+    if [[ -n "${BG_PGIDS[$index]}" ]] && kill -0 -- "-${BG_PGIDS[$index]}" 2>/dev/null; then
+      return 0
+    fi
+  done
+
+  for ((index = 0; index < ${#BG_PIDS[@]}; index++)); do
+    if kill -0 "${BG_PIDS[$index]}" 2>/dev/null; then
+      return 0
+    fi
+  done
+
+  for ((index = 0; index < ${#RECORDED_CLEANUP_PIDS[@]}; index++)); do
+    if kill -0 "${RECORDED_CLEANUP_PIDS[$index]}" 2>/dev/null; then
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+cleanup() {
+  local exit_code=${1:-$?}
+  local index
+
+  if ((CLEANUP_STARTED == 1)); then
+    return "$exit_code"
+  fi
+  CLEANUP_STARTED=1
+
+  if ((${#BG_PIDS[@]} == 0)); then
+    return "$exit_code"
+  fi
+
+  echo
+  echo "==> 正在停止后台服务..."
+  for ((index = ${#BG_PIDS[@]} - 1; index >= 0; index--)); do
+    stop_bg_process "${BG_NAMES[$index]}" "${BG_PIDS[$index]}" "${BG_PGIDS[$index]}" TERM
+  done
+
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    if ! has_running_bg_processes; then
+      return "$exit_code"
+    fi
+    sleep 0.2
+  done
+
+  echo "==> 后台服务未完全退出，强制结束残留进程..."
+  for ((index = ${#BG_PIDS[@]} - 1; index >= 0; index--)); do
+    stop_bg_process "${BG_NAMES[$index]}" "${BG_PIDS[$index]}" "${BG_PGIDS[$index]}" KILL
+  done
+
+  return "$exit_code"
+}
+
+handle_interrupt() {
+  cleanup 130
+  exit 130
+}
+
+handle_terminate() {
+  cleanup 143
+  exit 143
+}
+
+trap 'cleanup "$?"' EXIT
+trap handle_interrupt INT
+trap handle_terminate TERM
 
 print_banner() {
   cat <<'EOF'
@@ -150,11 +312,9 @@ run_tests() { ( cd "$ROOT_DIR" && invoke_step "dotnet test (Radish.Api.Tests)" d
 start_gateway_auth_api() {
   echo "[组合] 启动 Gateway + Auth + API..."
   build_all
-  start_gateway_no_build &
-  add_bg_pid $!
+  start_background_service "Gateway" start_gateway_no_build
   echo "  - Gateway 已在后台启动 (https://localhost:5000)."
-  start_auth_no_build &
-  add_bg_pid $!
+  start_background_service "Auth" start_auth_no_build
   echo "  - Auth 已在后台启动 (http://localhost:5200)."
   start_api_no_build
 }
@@ -162,25 +322,20 @@ start_gateway_auth_api() {
 start_all() {
   echo "[组合] 一键启动全部服务 (Gateway + API + Auth + Frontend + Console)..."
   build_all
-  start_gateway_no_build &
-  add_bg_pid $!
+  start_background_service "Gateway" start_gateway_no_build
   echo "  - Gateway 已在后台启动 (https://localhost:5000)."
-  start_auth_no_build &
-  add_bg_pid $!
+  start_background_service "Auth" start_auth_no_build
   echo "  - Auth 已在后台启动 (http://localhost:5200)."
-  start_frontend &
-  add_bg_pid $!
+  start_background_service "Frontend" start_frontend
   echo "  - Frontend 已在后台启动 (http://localhost:3000)."
-  start_console &
-  add_bg_pid $!
+  start_background_service "Console" start_console
   echo "  - Console 已在后台启动 (http://localhost:3100)."
   start_api_no_build
 }
 
 start_frontend_console() {
   echo "[组合] 启动 Frontend + Console..."
-  start_frontend &
-  add_bg_pid $!
+  start_background_service "Frontend" start_frontend
   echo "  - Frontend 已在后台启动 (http://localhost:3000)."
   start_console
 }
