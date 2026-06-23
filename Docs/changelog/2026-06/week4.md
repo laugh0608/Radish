@@ -12,3 +12,15 @@
 - 新增 `P3-12-B6 身份语义二次收口设计`：确认登录凭证改为邮箱 + 密码，注册必须填写 `DisplayName`，`DisplayHandle = DisplayName#PublicIndex` 作为用户可见唯一身份；`PublicId` 只用于 URL / 分享 / 传参；`LoginName`、`UserRealName` 和 `usr_...` 普通资料页展示退场。
 - 数据库结构口径完成收束：项目尚未上线且无正式数据库，B6 后续按破坏性 schema 收口处理；未上线阶段历史发布脚本已清理，正式数据库发布 SQL 只在未来真实上线或存在正式数据库后生成。
 - 今日提交回顾见 [2026-06-22 收工回顾与明日事项](/records/daily-handoff-2026-06-22)。明日第一顺位是实现 `P3-12-B5` 的 `/workbench` 功能总入口和公共壳层入口调整；第二顺位是推进 `P3-12-B6` 代码前触点盘点与分批方案。
+
+## 2026-06-23
+
+- `start.sh` 组合启动残留进程问题已修复：组合启动记录后台服务进程组和子进程树，`Ctrl+C` 时先优雅停止，超时后强制清理，避免 `Radish.Auth` / `Radish.Gateway` 残留占用端口。
+- `start.sh` 直接执行不显示菜单的问题已修复：依赖检查延后到具体启动动作，交互式菜单恢复为默认入口。
+- `P3-12-B5` Web 功能总入口首批完成：新增 `/workbench` 功能地图，公共壳层“工作台”改指正式 Web 功能总览，`/desktop` 降级为桌面版 / WebOS 历史入口功能项；Gateway PC / mobile smoke 已记录到 B5 专题。
+- `P3-12-B6` 完成代码前触点盘点和分批方案：明确 B6-1 至 B6-6 的顺序、破坏性 schema 收口口径、注册 / 登录 / Bootstrap / CurrentUser / OIDC / 前端状态 / 公开展示 / Console 用户治理影响面。
+- `P3-12-B6-1` 身份基础与注册登录完成：Auth 固定邮箱 + 密码登录，注册 / Bootstrap 必填 `DisplayName`，注册页补展示名公开展示与改名限制提示，OIDC / CurrentUser 普通显示身份不再输出登录名。
+- `P3-12-B6-2` 公开展示与前端状态收敛完成：论坛、聊天、榜单、圈子、公开个人页、转账搜索、资产流水和 Console 用户治理统一使用 `DisplayName / DisplayHandle`，过滤 `usr_...` 普通可见风险。
+- `P3-12-B6-3` 展示名变更治理完成：新增 `UserDisplayNameChangeRecord`，个人资料改名走 `UserService.ChangeDisplayNameAsync`，接入改名冷却、滚动窗口和窗口内最大次数系统设置。
+- 相关设计 / 说明书已同步：当前规划、P3-12 主线、B5 / B6 专题、用户身份语义、长期 ID 路线、认证服务、系统设置治理、运行时配置边界、记录索引和本开发日志均已对齐今日提交。
+- 今日提交回顾见 [2026-06-23 收工回顾与明日事项](/records/daily-handoff-2026-06-23)。明日第一顺位是 `P3-12-B6-4 PublicIndex 保留号治理`：新增保留靓号列表 / 规则设置，并让注册与 Bootstrap 分配器跳过保留号。

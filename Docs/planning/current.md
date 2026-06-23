@@ -8,7 +8,7 @@
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
 - **当前主线**：`P3-12 Web 完全化与 WebOS 收束`
-- **复核日期**：`2026-06-22`
+- **复核日期**：`2026-06-23`
 - **最近结论**：
   - `P3-1` 至 `P3-5` 已完成公开内容增长、PublicId 试点、留存回流、动态 sitemap 与详情 head snapshot 首批建设。
   - `P3-6` 公开增长部署观察已收口，本地 Gateway 与生产公开域名 `https://radishx.com` 的 public head smoke 均通过，转入维护线。
@@ -232,8 +232,10 @@
 
 ## 明日事项
 
-- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[P3-12-B5 Web 功能总入口设计](/records/p3-12-b5-web-workbench-entry-design-2026-06-22)、[P3-12-B6 身份语义二次收口设计](/records/p3-12-b6-identity-contract-convergence-design-2026-06-22)、[P3-12-D1 统一 UI 设计准备记录](/records/p3-12-d1-unified-ui-design-prep-2026-06-22) 和 [用户身份语义与公开索引](/architecture/user-identity-semantics)，确认 B5 已完成 `/workbench` 与 Gateway PC / mobile smoke，B6-1 已完成注册登录与 CurrentUser / OIDC 首批收敛。
-- 第一顺位：进入 `P3-12-B6-4 PublicIndex 保留号治理`，新增公开索引保留靓号列表 / 规则设置，注册和 Bootstrap 分配器必须跳过保留号，并保留人工分配、修改原因和审计边界。
+- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[P3-12-B6 身份语义二次收口设计](/records/p3-12-b6-identity-contract-convergence-design-2026-06-22)、[用户身份语义与公开索引](/architecture/user-identity-semantics)、[系统设置治理专题](/guide/system-settings-governance) 和 [运行时配置边界与系统设置](/guide/runtime-configuration-boundaries)，确认 B5 `/workbench`、B6-1 注册登录、B6-2 公开展示、B6-3 展示名变更治理均已完成。
+- 第一顺位：推进 `P3-12-B6-4 PublicIndex 保留号治理`，先补设置定义与规则边界，再改 `UserService` / Bootstrap 的公开索引分配器，让普通注册和首个管理员初始化跳过已保留靓号。
+- B6-4 建议范围：新增 `UserIdentity.PublicIndex.ReservedIndexes` 显式保留列表和 `UserIdentity.PublicIndex.VanityRules` 规则设置；保留号解析、重复 / 越界 / 小于 `1000` 的校验必须在服务端完成；规则变更只影响后续分配，不自动改写既有用户。
+- B6-4 验证建议：补用户身份服务和 Bootstrap 定向测试，覆盖默认分配、跳过显式保留号、跳过规则命中号、重复保留号校验和配置错误暴露；开发轮次先跑后端定向测试、`dotnet test Radish.Api.Tests`、`dotnet build Radish.slnx -c Debug` 与 `git diff --check`。
 - B6 涉及接口、数据结构、权限设置或运行时行为变更，代码实现前必须确认破坏性 schema 收口；实现完成后提醒删除本地 SQLite 并重新初始化。
 - 第二顺位：B6 收口后再进入 `P3-12-D` UI 设计专题；待 Pencil app 可用后创建 `public-web-unified-experience.pen`、`private-web-workflows.pen`，并在 `console-governance-workbench.pen` 补文档治理画板，随后更新设计说明并实现视觉专题。
 
