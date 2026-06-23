@@ -2,6 +2,8 @@
 
 > 日期：2026-06-22（Asia/Shanghai）
 >
+> 更新：2026-06-23 补充注册页 `DisplayName` 慎重设置提示、改名频率限制文案，以及 `PublicIndex` 靓号保留 / Console 配置规则。
+>
 > 状态：设计边界已确认，待代码实现
 >
 > 结论：本专题承接 [用户身份语义与公开索引](/architecture/user-identity-semantics) 的首批实现，进一步移除 `LoginName` 公开 / 登录链路，固定“邮箱 + 密码”作为登录凭证，并把 `DisplayName`、`DisplayHandle`、`PublicId`、关注备注的职责彻底拆开。当前项目尚未上线且无正式数据库，B6 按破坏性 schema 收口处理，不提供旧库兼容迁移；实现完成后删除本地 SQLite 并重新初始化。
@@ -45,6 +47,8 @@
 
 不再收集、不再展示、不再允许使用 `LoginName` 登录。
 
+注册页的 `DisplayName` 输入区必须明确提示：该名称会公开展示在个人主页、帖子、评论、聊天、榜单和艾特搜索中，应谨慎设置；后续修改受到次数、冷却时间和滚动窗口频率限制。前端文案只做提示，最终限制由服务端执行。
+
 邮箱规则：
 
 - 邮箱规范化后参与唯一性判断。
@@ -83,7 +87,10 @@
 `PublicIndex` 按注册顺序由后端分配：
 
 - `1-999` 继续保留给系统、官方、种子、内部账号和 bot。
-- 普通注册用户从 `1000` 起。
+- 普通注册用户从 `1000` 起，但自动分配必须跳过已配置的保留靓号。
+- `1000` 之后允许继续保留公开靓号，例如 `1111`、`2222`、`3333`、`1234`、`1314` 等。
+- 靓号保留可以由 Console 维护显式列表，也可以由 Console 维护规则，例如重复数字、顺子、回文或运营自定义 JSON 规则。
+- 靓号规则变更只影响后续分配，不自动改写既有用户；人工指定保留号必须有权限、修改原因和审计。
 - 删除、禁用或注销用户后不回收。
 - 用户改名不改变 `PublicIndex`。
 - 分配必须由服务端在数据库事务内完成，前端不得计算。
@@ -171,24 +178,28 @@ DisplayName#PublicIndex
 - `UserIdentity.DisplayName.ChangeCooldownDays`
 - `UserIdentity.DisplayName.ChangeWindowDays`
 - `UserIdentity.DisplayName.ChangeWindowMaxCount`
+- `UserIdentity.PublicIndex.ReservedIndexes`
+- `UserIdentity.PublicIndex.VanityRules`
 
 风险等级建议：
 
 - 邮箱白名单：`Medium`，修改会影响注册入口。
 - 展示名长度：沿用当前风险等级。
 - 改名频率：`Medium`，影响用户行为和搜索 / 艾特稳定性。
+- PublicIndex 靓号保留列表 / 规则：`Medium`，影响后续注册编号分配和人工身份辨识；人工指定保留号动作应记录审计。
 
 ## 实施顺序
 
 1. 冻结本专题设计与字段语义。
 2. 调整 Auth 注册 / 登录 DTO、校验、页面文案和登录回流。
 3. 新增邮箱白名单设置并接入注册校验。
-4. 新增 `DisplayName` 明确 DTO / 服务命名，替换公开展示 fallback。
+4. 新增 `DisplayName` 明确 DTO / 服务命名，替换公开展示 fallback，并在注册页补慎重设置和改名限制提示。
 5. 新增展示名修改历史和频率限制。
-6. 新增关注备注数据结构、API 和搜索 / 艾特优先级。
-7. 清理 `LoginName`、`UserRealName`、`usr_...` 可见展示和旧字段回退。
-8. 更新种子数据，清理身份相关 `DbMigrate` 旧库兼容逻辑，并保持上线前不维护历史发布脚本的数据库结构口径。
-9. 补身份语义扫描、后端定向测试、前端类型检查和关键页面 smoke。
+6. 新增 `PublicIndex` 靓号保留列表 / 规则设置，并让注册分配器跳过保留号。
+7. 新增关注备注数据结构、API 和搜索 / 艾特优先级。
+8. 清理 `LoginName`、`UserRealName`、`usr_...` 可见展示和旧字段回退。
+9. 更新种子数据，清理身份相关 `DbMigrate` 旧库兼容逻辑，并保持上线前不维护历史发布脚本的数据库结构口径。
+10. 补身份语义扫描、后端定向测试、前端类型检查和关键页面 smoke。
 
 ## 验证口径
 
