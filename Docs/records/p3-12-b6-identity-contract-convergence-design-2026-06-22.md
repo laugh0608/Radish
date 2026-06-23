@@ -4,7 +4,7 @@
 >
 > 更新：2026-06-23 补充注册页 `DisplayName` 慎重设置提示、改名频率限制文案，以及 `PublicIndex` 靓号保留 / Console 配置规则。
 >
-> 状态：设计边界已确认，待代码实现
+> 状态：代码前盘点与分批方案已整理，待确认后进入首批代码实现
 >
 > 结论：本专题承接 [用户身份语义与公开索引](/architecture/user-identity-semantics) 的首批实现，进一步移除 `LoginName` 公开 / 登录链路，固定“邮箱 + 密码”作为登录凭证，并把 `DisplayName`、`DisplayHandle`、`PublicId`、关注备注的职责彻底拆开。当前项目尚未上线且无正式数据库，B6 按破坏性 schema 收口处理，不提供旧库兼容迁移；实现完成后删除本地 SQLite 并重新初始化。
 
@@ -147,6 +147,50 @@ DisplayName#PublicIndex
 - Console 用户排障、权限授权、审计日志展示。
 - 种子数据和本地初始化账号。
 
+## 代码前盘点
+
+`2026-06-23` 已按当前代码完成 B6 实施前触点盘点。
+
+Auth 注册 / 登录触点：
+
+- `Radish.Auth/Controllers/AccountController.cs`：登录表单参数仍为 `username`，登录查询调用 `GetEnabledUserByLoginNameAsync`；注册仍收集 `Username`，并把 `UserName` 默认写成登录名；OIDC `name` / `preferred_username` 仍回填 `VoLoginName`，`given_name` 仍可能输出 `UserRealName`。
+- `Radish.Auth/ViewModels/Account/RegisterViewModel.cs`、`Radish.Auth/Views/Account/Register.cshtml`：注册页仍展示“登录名”输入，没有独立 `DisplayName` 输入和慎重设置 / 改名限制提示。
+- `Radish.IService/IUserService.cs`、`Radish.Service/UserService.cs`：登录查询方法名与参数仍是 `LoginName` 语义；运行时实际已同时匹配登录名和邮箱，B6 需要改为邮箱凭证语义。
+
+Bootstrap 初始化触点：
+
+- `Radish.Model/DtoModels/BootstrapDto.cs`、`Radish.Model/ViewModels/BootstrapVo.cs`：首个管理员创建 DTO / VO 仍输出 `LoginName`。
+- `Radish.Service/BootstrapService.cs`、`Radish.Repository/BootstrapRepository.cs`：首个管理员初始化仍要求 `LoginName`，并把 `UserName` 设置为登录名；`PublicIndex` 分配未跳过 Console 配置的保留靓号。
+- `Frontend/radish.client/src/api/bootstrap.ts`、`Frontend/radish.client/src/bootstrap/BootstrapGate.tsx`：首次部署页仍填写“登录账号”，成功页回显登录名。
+
+后端模型、DTO 与映射触点：
+
+- `Radish.Model/User.cs`：`LoginName`、`UserName`、`UserRealName` 仍同时存在；`UserName` 语义上承接公开展示名但代码和数据库属性名仍混淆；`BuildDisplayHandle` 以 `UserName` 派生。
+- `Radish.Model/ViewModels/UserVo.cs`、`CurrentUserVo.cs`、`UserProfileVo.cs`、`UserMentionVo.cs` 等：仍保留 `VoLoginName`、`VoUserName`、`VoUserRealName` 或 `VoRealName` 等旧字段。
+- `Radish.Extension/AutoMapperExtension/CustomProfiles/UserProfile.cs`：仍把 `UserName` 映射为 `VoUserName`，并额外派生 `VoDisplayName` / `VoDisplayHandle`；反向映射仍允许 `VoLoginName`、`VoUserRealName` 写回实体。
+- `Radish.Model/DtoModels/UpdateMyProfileDto.cs` 与 `UserController.UpdateMyProfile`：个人资料更新仍使用 `UserName` 和 `RealName` 字段；展示名改名次数、冷却和滚动窗口尚未接入。
+
+公开展示、搜索和业务服务触点：
+
+- `Radish.Api/Controllers/UserController.cs`：`GetUserByHttpContext` 仍返回 `VoLoginName`，并用 claim `Current.UserName` 兜底；用户列表搜索仍匹配 `LoginName`；用户资料相关输出仍包含 `VoUserName` / `VoUserRealName`。
+- `Radish.Service/ForumDisplayNameHelper.cs`：论坛作者展示仍优先使用 `UserRealName`，需要改为只使用 `DisplayName` / `DisplayHandle`。
+- `Radish.Service/UserService.cs`：艾特搜索已不匹配登录名和邮箱，但字段仍基于 `UserName`；`PublicIndex` 自动分配未读取保留靓号列表 / 规则。
+- 聊天、评论 typing、排行榜、圈子关系链、经验 / 订单 / 资产流水和通知目标显示仍存在 `UserName` 命名；需要区分“历史显示字段命名清理”和“真实公开文本来源修正”。
+
+前端触点：
+
+- `Frontend/radish.client/src/services/authBootstrap.ts`、`tokenClaims.ts`、`stores/userStore.ts`、`desktop/types.ts`：当前用户状态仍存 `loginName`，token fallback 仍从 `preferred_username` / `name` 读取 `userName`。
+- `Frontend/radish.client/src/desktop/Dock.tsx`、`me/MeApp.tsx`：用户界面仍以 `loginName` 作为显示兜底。
+- 论坛、聊天、公开个人页、排行榜、转账搜索和资产流水已有部分 `DisplayName` / `DisplayHandle` 兜底，但仍存在 `voUserName`、`userName` 和 `usr_...` fallback 风险，需要按页面逐项收敛。
+- `Frontend/radish.console/src/types/user.ts`、`api/userManagement.ts`、`pages/Users/UserList.tsx`、`pages/Users/UserDetail.tsx`：Console 用户治理仍展示登录名、邮箱、展示名和公开句柄；B6 后 Console 可保留邮箱排障上下文，但普通“用户名”列应退场或改名为“展示名 / 公开句柄”。
+
+系统设置与迁移触点：
+
+- `Radish.Model/SystemConfigDefaults.cs`：仍有 `UserIdentity.LoginName.MinLength / MaxLength`；需要移除或降级为历史设置，并新增邮箱白名单、展示名改名频率、`PublicIndex` 保留列表 / 靓号规则。
+- `Radish.DbMigrate/DbMigrateRunner.cs`：仍有 B9 阶段旧用户 `PublicId` / `PublicIndex` 回填和保留号纠偏逻辑；B6 按未上线破坏性 schema 收口后，应删除旧库兼容回填。
+- `Radish.DbMigrate/InitialDataSeeder.Identity.cs`：种子用户仍设置 `UserName = loginName` 与 `UserRealName = "System User" / "Admin User" / "Test User"`；B6 需要改为明确 `DisplayName` 种子和固定保留 `PublicIndex`。
+- `Radish.Api.Tests` 中身份、claim、Bootstrap、用户资料、艾特搜索、论坛作者和 DbMigrate 相关测试需要随字段语义同步调整。
+
 ## 数据库与迁移口径
 
 当前项目尚未上线，没有正式生产数据库；本专题不为旧身份字段提供兼容式数据迁移。
@@ -190,16 +234,21 @@ DisplayName#PublicIndex
 
 ## 实施顺序
 
-1. 冻结本专题设计与字段语义。
-2. 调整 Auth 注册 / 登录 DTO、校验、页面文案和登录回流。
-3. 新增邮箱白名单设置并接入注册校验。
-4. 新增 `DisplayName` 明确 DTO / 服务命名，替换公开展示 fallback，并在注册页补慎重设置和改名限制提示。
-5. 新增展示名修改历史和频率限制。
-6. 新增 `PublicIndex` 靓号保留列表 / 规则设置，并让注册分配器跳过保留号。
-7. 新增关注备注数据结构、API 和搜索 / 艾特优先级。
-8. 清理 `LoginName`、`UserRealName`、`usr_...` 可见展示和旧字段回退。
-9. 更新种子数据，清理身份相关 `DbMigrate` 旧库兼容逻辑，并保持上线前不维护历史发布脚本的数据库结构口径。
-10. 补身份语义扫描、后端定向测试、前端类型检查和关键页面 smoke。
+1. 冻结本专题设计与字段语义。（已完成）
+2. 完成代码前触点盘点和分批方案。（已完成）
+3. `B6-1 身份基础与注册登录`：调整 `User` 实体 / DTO / AutoMapper 命名，固定邮箱 + 密码登录；注册和 Bootstrap 必填 `DisplayName`，注册页补慎重设置和改名限制提示；OIDC claim 与 CurrentUser 不再输出登录名作为普通显示身份。
+4. `B6-2 公开展示与前端状态收敛`：清理 `UserRealName` 公开 fallback、`VoLoginName` 普通前端状态、`VoUserName` 混淆展示；论坛、聊天、榜单、圈子、我的状态、公开个人页、转账搜索和 Console 用户治理统一使用 `DisplayName` / `DisplayHandle`。
+5. `B6-3 展示名变更治理`：新增 `UserDisplayNameChangeRecord`，接入冷却时间、滚动窗口和窗口内最大次数设置；个人资料改名走服务端校验和历史记录，不允许绕过频率限制。
+6. `B6-4 PublicIndex 保留号治理`：新增 `UserIdentity.PublicIndex.ReservedIndexes` 与 `UserIdentity.PublicIndex.VanityRules` 设置，注册和 Bootstrap 分配器在数据库事务内跳过保留靓号；规则变更只影响后续分配。
+7. `B6-5 种子与 DbMigrate 收口`：更新 system / admin / test 种子展示名和保留号；删除身份旧库回填与旧兼容纠偏逻辑；实现后提醒删除本地 SQLite 并重新初始化。
+8. `B6-6 验证与阶段验收`：补身份语义扫描、Auth / Bootstrap / 用户服务 / 展示名修改 / PublicIndex 保留号定向测试、前端类型检查和 Gateway PC / mobile 页面 smoke。
+
+代码实现前确认点：
+
+- 允许破坏性重命名 `User.UserName` 为 `DisplayName`，并让新建本地库生成新列名；不保留旧 SQLite 兼容。
+- `LoginName` 从注册、登录、Bootstrap、CurrentUser、前端 store 和普通页面退场；如数据库层短期仍保留字段，只允许作为历史内部字段，不进入登录凭证和公开展示。
+- `UserRealName` 不再作为公开作者名或资料页名；如保留为本人私密资料字段，需从公开 DTO、论坛 helper 和普通前端显示退场。
+- B6 实现完成后删除本地 SQLite 数据库并重新初始化，不编写旧库兼容迁移。
 
 ## 验证口径
 
