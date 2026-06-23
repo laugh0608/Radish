@@ -5,6 +5,7 @@ import { useUserStore } from '@/stores/userStore';
 import { useWindowStore } from '@/stores/windowStore';
 import { log } from '@/utils/logger';
 import { createForumCommentHighlightMap } from '@/utils/forumCommentHighlights';
+import { resolveVisibleUserDisplayName } from '@/utils/userIdentityDisplay';
 import { commentHub, type CommentTypingRealtimeEvent } from '@/services/commentHub';
 import { ConfirmDialog } from '@radish/ui/confirm-dialog';
 import { ContentReportModal } from '@/components/ContentReportModal';
@@ -312,7 +313,7 @@ export const ForumApp = () => {
     }
 
     const userKey = String(payload.voUserId);
-    const userName = payload.voUserName?.trim() || t('common.unknownUser');
+    const userName = resolveVisibleUserDisplayName({ voUserName: payload.voUserName }, t('common.unknownUser'));
     const oldTimer = commentTypingTimersRef.current.get(userKey);
     if (oldTimer) {
       window.clearTimeout(oldTimer);

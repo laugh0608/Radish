@@ -15,6 +15,7 @@ interface UserStore extends UserInfo {
 
 const defaultUser: UserInfo = {
   userId: '',
+  displayName: '',
   userName: '',
   displayHandle: '',
   publicId: '',
@@ -30,9 +31,11 @@ export const useUserStore = create<UserStore>((set, get) => ({
 
   setUser: (user: UserInfo) => {
     const current = get();
+    const displayName = user.displayName?.trim() || user.userName;
     set({
       userId: user.userId,
-      userName: user.userName,
+      displayName,
+      userName: displayName,
       displayHandle: user.displayHandle ?? current.displayHandle,
       publicId: user.publicId ?? current.publicId,
       publicIndex: user.publicIndex ?? current.publicIndex,

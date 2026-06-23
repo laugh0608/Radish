@@ -1,4 +1,5 @@
 import type { UnifiedLeaderboardItemData } from '@/api/leaderboard';
+import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import styles from '../LeaderboardApp.module.css';
 
 interface UserLeaderboardItemProps {
@@ -9,11 +10,16 @@ interface UserLeaderboardItemProps {
 }
 
 export const UserLeaderboardItem = ({ item, getRankIcon, getRankClass, onUserClick }: UserLeaderboardItemProps) => {
-  const userName = item.voUserDisplayName?.trim()
-    || item.voUserName?.trim()
-    || (item.voUserId ? `用户 ${item.voUserId}` : '未知用户');
-  const displayHandle = item.voUserDisplayHandle?.trim()
-    || (item.voUserPublicIndex ? `${userName}#${String(item.voUserPublicIndex).trim()}` : null);
+  const userName = resolveVisibleUserDisplayName({
+    voDisplayName: item.voUserDisplayName,
+    voDisplayHandle: item.voUserDisplayHandle,
+    voPublicIndex: item.voUserPublicIndex,
+    voUserName: item.voUserName,
+  }, item.voUserId ? `用户 ${item.voUserId}` : '未知用户');
+  const displayHandle = resolveVisibleUserHandle({
+    voDisplayHandle: item.voUserDisplayHandle,
+    voPublicIndex: item.voUserPublicIndex,
+  }, userName);
 
   return (
     <div

@@ -217,7 +217,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             throw new InvalidOperationException("频道不存在或不可用");
         }
 
-        var normalizedUserName = string.IsNullOrWhiteSpace(userName) ? "Unknown" : userName.Trim();
+        var normalizedUserName = await ResolveChatDisplayNameAsync(userId, userName);
         var normalizedContent = request.Content?.Trim();
 
         if (request.Type == MessageType.Text && string.IsNullOrWhiteSpace(normalizedContent))
@@ -509,15 +509,16 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         var users = await _userRepository.QueryAsync(u => onlineUserIds.Contains(u.Id) && !u.IsDeleted);
         var avatarAttachmentMap = await GetUserAvatarAttachmentMapAsync(users.Select(u => u.Id));
         return users
-            .OrderBy(u => u.UserName)
+            .OrderBy(u => BuildChatDisplayName(u, null))
             .Select(u =>
             {
                 var hasAvatarAttachment = avatarAttachmentMap.TryGetValue(u.Id, out var avatarAttachmentId);
+                var displayName = BuildChatDisplayName(u, null);
 
                 return new ChannelMemberVo
                 {
                     VoUserId = u.Id,
-                    VoUserName = u.UserName,
+                    VoUserName = displayName,
                     VoUserAvatarAttachmentId = hasAvatarAttachment ? avatarAttachmentId : null,
                     VoUserAvatarUrl = hasAvatarAttachment
                         ? ResolveAttachmentUrl(avatarAttachmentId)
@@ -526,6 +527,27 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
                 };
             })
             .ToList();
+    }
+
+    private async Task<string> ResolveChatDisplayNameAsync(long userId, string fallback)
+    {
+        if (userId > 0)
+        {
+            var user = await _userRepository.QueryFirstAsync(u => u.Id == userId && !u.IsDeleted);
+            if (user != null)
+            {
+                return BuildChatDisplayName(user, fallback);
+            }
+        }
+
+        return string.IsNullOrWhiteSpace(fallback) ? "Unknown" : fallback.Trim();
+    }
+
+    private static string BuildChatDisplayName(User user, string? fallback)
+    {
+        return User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id)
+            ?? User.NormalizeDisplayName(user.UserName, user.Id)
+            ?? (string.IsNullOrWhiteSpace(fallback) ? $"User-{user.Id}" : fallback!.Trim());
     }
 
     private async Task<ChannelMessageVo?> GetLastMessagePreviewAsync(long channelId)

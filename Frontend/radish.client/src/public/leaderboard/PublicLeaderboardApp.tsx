@@ -25,6 +25,7 @@ import { usePublicShareLink } from '../hooks/usePublicShareLink';
 import { buildPublicProfilePath } from '../profileRouteState';
 import { buildPublicShopPath } from '../shopRouteState';
 import { resolveMediaUrl } from '@/utils/media';
+import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import styles from './PublicLeaderboardApp.module.css';
 
 interface PublicLeaderboardAppProps {
@@ -695,11 +696,16 @@ export const PublicLeaderboardApp = ({
                 {items.map((item) => item.voCategory === LeaderboardCategory.User ? (
                   (() => {
                     const profileIdentifier = resolveLeaderboardUserProfileIdentifier(item);
-                    const userName = item.voUserDisplayName?.trim()
-                      || item.voUserName?.trim()
-                      || t('common.userFallback', { id: profileIdentifier || '?' });
-                    const displayHandle = item.voUserDisplayHandle?.trim()
-                      || (item.voUserPublicIndex ? `${userName}#${String(item.voUserPublicIndex).trim()}` : null);
+                    const userName = resolveVisibleUserDisplayName({
+                      voDisplayName: item.voUserDisplayName,
+                      voDisplayHandle: item.voUserDisplayHandle,
+                      voPublicIndex: item.voUserPublicIndex,
+                      voUserName: item.voUserName,
+                    }, t('common.userFallback', { id: profileIdentifier || '?' }));
+                    const displayHandle = resolveVisibleUserHandle({
+                      voDisplayHandle: item.voUserDisplayHandle,
+                      voPublicIndex: item.voUserPublicIndex,
+                    }, userName);
                     const avatarUrl = resolveMediaUrl(item.voAvatarUrl);
                     const profileHref = profileIdentifier
                       ? buildPublicProfilePath({ kind: 'detail', userId: profileIdentifier, tab: 'posts', page: 1 })

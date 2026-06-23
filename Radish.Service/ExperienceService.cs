@@ -758,7 +758,7 @@ namespace Radish.Service;
         var user = await _userRepository.QueryFirstAsync(u => u.Id == userExp.UserId);
         if (user != null)
         {
-            vo.VoUserName = user.UserName;
+            vo.VoUserName = BuildExperienceUserDisplayName(user);
             // TODO: 设置 AvatarUrl
         }
 

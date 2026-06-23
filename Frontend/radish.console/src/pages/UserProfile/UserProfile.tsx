@@ -18,6 +18,7 @@ import {
 import { SaveOutlined, CameraOutlined } from '@ant-design/icons';
 import { getApiBaseUrl, getAvatarUrl } from '@/config/env';
 import { log } from '@/utils/logger';
+import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import { userApi, type MyProfileInfo } from '@/api/user';
 import { tokenService } from '@/services/tokenService';
 import '../adminFeature.css';
@@ -37,7 +38,7 @@ export const UserProfile = () => {
 
   const setProfileFormValues = useCallback((profile: UserProfileData) => {
     form.setFieldsValue({
-      voUserName: profile.voUserName,
+      voUserName: resolveVisibleUserDisplayName(profile, profile.voUserName),
       voUserEmail: profile.voUserEmail,
       voRealName: profile.voRealName,
       voAge: profile.voAge || undefined,
@@ -101,6 +102,7 @@ export const UserProfile = () => {
 
       setProfileData(prev => prev ? {
         ...prev,
+        voDisplayName: values.voUserName,
         voUserName: values.voUserName,
         voUserEmail: values.voUserEmail,
         voRealName: values.voRealName || '',
@@ -255,6 +257,9 @@ export const UserProfile = () => {
     );
   }
 
+  const profileDisplayName = resolveVisibleUserDisplayName(profileData, profileData.voUserId ? `用户 ${profileData.voUserId}` : '--');
+  const profileDisplayHandle = resolveVisibleUserHandle(profileData, profileDisplayName);
+
   return (
     <div className="admin-feature-page user-profile-page">
       <section className="admin-feature-card">
@@ -302,8 +307,12 @@ export const UserProfile = () => {
 
       <section className="admin-feature-metrics" aria-label="个人资料指标">
         <div className="admin-feature-metric">
-          用户名
-          <strong>{profileData.voUserName || '--'}</strong>
+          展示名称
+          <strong>{profileDisplayName}</strong>
+        </div>
+        <div className="admin-feature-metric">
+          公开句柄
+          <strong>{profileDisplayHandle || '--'}</strong>
         </div>
         <div className="admin-feature-metric">
           角色数量
@@ -355,13 +364,13 @@ export const UserProfile = () => {
             >
               <Form.Item
                 name="voUserName"
-                label="用户名"
+                label="展示名称"
                 rules={[
-                  { required: true, message: '请输入用户名' },
-                  { min: 2, max: 50, message: '用户名长度为2-50个字符' },
+                  { required: true, message: '请输入展示名称' },
+                  { min: 2, max: 50, message: '展示名称长度为2-50个字符' },
                 ]}
               >
-                <Input placeholder="请输入用户名" />
+                <Input placeholder="请输入展示名称" />
               </Form.Item>
 
               <Form.Item

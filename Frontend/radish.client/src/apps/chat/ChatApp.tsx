@@ -20,6 +20,7 @@ import { useWindowStore } from '@/stores/windowStore';
 import { useUserStore } from '@/stores/userStore';
 import { parseChatWindowParams } from '@/utils/chatNavigation';
 import { log } from '@/utils/logger';
+import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import { ContentReportModal } from '@/components/ContentReportModal';
 import type { ChannelMemberVo, ChannelMessageVo, EntityIdValue, SendChannelMessageRequest } from '@/types/chat';
 import {
@@ -90,6 +91,8 @@ export const ChatApp = ({ onOpenUserProfile }: ChatAppProps = {}) => {
     recallMessage,
   } = useChatStore();
   const currentUserId = useUserStore((state) => state.userId);
+  const currentUserDisplayName = useUserStore((state) => state.displayName);
+  const currentUserDisplayHandle = useUserStore((state) => state.displayHandle);
   const currentUserName = useUserStore((state) => state.userName);
   const currentUserAvatarUrl = useUserStore((state) => state.avatarUrl);
   const windowParams = useMemo(() => parseChatWindowParams(currentWindow?.appParams), [currentWindow?.appParams]);
@@ -138,8 +141,11 @@ export const ChatApp = ({ onOpenUserProfile }: ChatAppProps = {}) => {
 
   const currentUserIdKey = useMemo(() => getEntityKey(currentUserId), [currentUserId]);
   const currentUserNameValue = useMemo(
-    () => currentUserName?.trim() || t('common.unknownUser'),
-    [currentUserName, t]
+    () => currentUserDisplayHandle?.trim()
+      || currentUserDisplayName?.trim()
+      || currentUserName?.trim()
+      || t('common.unknownUser'),
+    [currentUserDisplayHandle, currentUserDisplayName, currentUserName, t]
   );
   const currentUserAvatarUrlValue = useMemo(
     () => currentUserAvatarUrl?.trim() || null,
@@ -387,10 +393,8 @@ export const ChatApp = ({ onOpenUserProfile }: ChatAppProps = {}) => {
       return;
     }
 
-    const targetName = option.voDisplayHandle?.trim()
-      || option.voDisplayName?.trim()
-      || option.voUserName?.trim()
-      || getFallbackUserName(targetId, t);
+    const optionDisplayName = resolveVisibleUserDisplayName(option, getFallbackUserName(targetId, t));
+    const targetName = resolveVisibleUserHandle(option, optionDisplayName) || optionDisplayName;
     const mentionToken = `@[${targetName}](${targetId}) `;
     const nextValue = `${messageInput.slice(0, mentionContext.start)}${mentionToken}${messageInput.slice(mentionContext.end)}`;
     const nextCursor = mentionContext.start + mentionToken.length;
@@ -1409,11 +1413,8 @@ export const ChatApp = ({ onOpenUserProfile }: ChatAppProps = {}) => {
                       ) : (
                         mentionOptions.map((option, index) => {
                           const optionId = normalizeEntityId(option.voId) ?? `mention-${index}`;
-                          const optionDisplayName = option.voDisplayName?.trim()
-                            || option.voUserName?.trim()
-                            || getFallbackUserName(optionId, t);
-                          const optionName = option.voDisplayHandle?.trim()
-                            || (option.voPublicIndex ? `${optionDisplayName}#${String(option.voPublicIndex).trim()}` : optionDisplayName);
+                          const optionDisplayName = resolveVisibleUserDisplayName(option, getFallbackUserName(optionId, t));
+                          const optionName = resolveVisibleUserHandle(option, optionDisplayName) || optionDisplayName;
                           const optionAvatarUrl = resolveMediaUrl(apiBaseUrl, option.voAvatar);
 
                           return (

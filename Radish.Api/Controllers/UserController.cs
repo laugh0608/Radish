@@ -609,6 +609,7 @@ public class UserController : ControllerBase
             VoPublicId = user.VoPublicId,
             VoPublicIndex = user.VoPublicIndex,
             VoDisplayHandle = user.VoDisplayHandle,
+            VoDisplayName = user.VoDisplayName,
             VoUserName = user.VoUserName,
             VoUserEmail = user.VoUserEmail,
             VoRealName = user.VoUserRealName,

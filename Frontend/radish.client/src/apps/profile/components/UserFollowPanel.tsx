@@ -17,6 +17,7 @@ import {
 } from '@/api/userFollow';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
+import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import styles from './UserFollowPanel.module.css';
 
 type SocialTab = 'feed' | 'followers' | 'following';
@@ -192,7 +193,7 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
   };
 
   const renderUserAvatar = (user: UserFollowUser) => {
-    const name = user.voDisplayName?.trim() || user.voUserName.trim() || t('common.unknownUser');
+    const name = resolveVisibleUserDisplayName(user, t('common.unknownUser'));
     const userIdKey = String(user.voUserId);
     const avatarUrl = avatarErrorUserIds.has(userIdKey) ? null : resolveMediaUrl(user.voAvatarUrl, apiBaseUrl);
 
@@ -288,15 +289,14 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
     return (
       <div className={styles.list}>
         {users.map(user => {
-          const displayName = user.voDisplayName?.trim() || user.voUserName.trim() || t('common.unknownUser');
-          const displayHandle = user.voDisplayHandle?.trim()
-            || (user.voPublicIndex ? `${displayName}#${String(user.voPublicIndex).trim()}` : null);
+          const displayName = resolveVisibleUserDisplayName(user, t('common.unknownUser'));
+          const displayHandle = resolveVisibleUserHandle(user, displayName);
 
           return (
             <article
               key={user.voUserId}
               className={styles.userItem}
-              onClick={() => onUserClick?.(user.voUserId, user.voUserName, user.voAvatarUrl, displayName)}
+              onClick={() => onUserClick?.(user.voUserId, displayName, user.voAvatarUrl, displayName)}
               style={{ cursor: onUserClick ? 'pointer' : 'default' }}
             >
               <div className={styles.userMain}>

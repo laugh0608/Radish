@@ -9,6 +9,7 @@ import {
   publicSiteName,
 } from './publicHead.ts';
 import type { PublicContentRouteDescriptor } from './publicRouteNavigation.ts';
+import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 
 export const publicStructuredDataScriptId = 'radish-public-structured-data';
 
@@ -187,8 +188,8 @@ export function buildShopProductStructuredData(options: BuildShopProductStructur
 }
 
 export function buildProfilePageStructuredData(options: BuildProfileStructuredDataOptions): JsonLdObject {
-  const displayName = normalizeText(options.profile.voDisplayName) ?? normalizeText(options.profile.voUserName) ?? 'Radish 用户';
-  const displayHandle = normalizeText(options.profile.voDisplayHandle);
+  const displayName = resolveVisibleUserDisplayName(options.profile, 'Radish 用户');
+  const displayHandle = resolveVisibleUserHandle(options.profile, displayName);
   const canonicalUrl = toCanonicalUrl(options);
 
   return withContext({
@@ -199,7 +200,7 @@ export function buildProfilePageStructuredData(options: BuildProfileStructuredDa
     mainEntity: {
       '@type': 'Person',
       name: displayName,
-      alternateName: displayHandle ?? normalizeText(options.profile.voUserName),
+      alternateName: displayHandle,
       image: normalizeText(options.imageUrl),
       interactionStatistic: [
         {

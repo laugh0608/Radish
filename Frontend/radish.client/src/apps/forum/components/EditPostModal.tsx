@@ -13,6 +13,7 @@ import { getAllTags, type Category, type PostDetail } from '@/api/forum';
 import { searchUsersForMention } from '@/api/user';
 import { log } from '@/utils/logger';
 import { useUserStore } from '@/stores/userStore';
+import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import { uploadDocument, uploadImage } from '@/api/attachment';
 import type { LongId } from '@/api/user';
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
@@ -62,8 +63,9 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
       const users = await searchUsersForMention(keyword, t);
       return users.map((user) => ({
         id: user.voId,
-        userName: user.voDisplayHandle || user.voUserName,
-        displayName: user.voDisplayName,
+        userName: resolveVisibleUserHandle(user, resolveVisibleUserDisplayName(user, t('common.unknownUser')))
+          || resolveVisibleUserDisplayName(user, t('common.unknownUser')),
+        displayName: resolveVisibleUserDisplayName(user, t('common.unknownUser')),
         avatar: user.voAvatar
       }));
     } catch (searchError) {

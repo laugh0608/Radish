@@ -74,6 +74,8 @@ export interface UserInfo {
   /** 用户 ID */
   userId: string;
   /** 展示名 */
+  displayName: string;
+  /** 历史展示名别名，保留用于旧组件兼容 */
   userName: string;
   /** 公开展示句柄 */
   displayHandle?: string;

@@ -189,6 +189,7 @@ function setUserFromCurrentUser(user: CurrentUser, token?: string | null) {
 
   setUser({
     userId: normalizeIdentityId(user.voUserId) ?? '',
+    displayName,
     userName: displayName,
     displayHandle,
     publicId: user.voPublicId?.trim() || undefined,
@@ -215,8 +216,8 @@ function buildCurrentUserFromStore(): CurrentUser | null {
 
   return {
     voUserId: userStore.userId,
-    voUserName: userStore.userName,
-    voDisplayName: userStore.userName,
+    voUserName: userStore.displayName,
+    voDisplayName: userStore.displayName,
     voDisplayHandle: userStore.displayHandle,
     voPublicId: userStore.publicId,
     voPublicIndex: userStore.publicIndex,
@@ -243,7 +244,7 @@ function buildCurrentUserFromToken(token?: string | null): CurrentUser | null {
   return {
     voUserId: identity.userId,
     voUserName: identity.userName,
-    voDisplayName: sameUser ? currentStoreUser.userName || identity.userName : identity.userName,
+    voDisplayName: sameUser ? currentStoreUser.displayName || identity.userName : identity.userName,
     voDisplayHandle: sameUser ? currentStoreUser.displayHandle || identity.displayHandle : identity.displayHandle,
     voPublicId: sameUser ? currentStoreUser.publicId : undefined,
     voPublicIndex: sameUser ? currentStoreUser.publicIndex : undefined,

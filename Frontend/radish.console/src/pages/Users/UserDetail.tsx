@@ -21,6 +21,7 @@ import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
 import { normalizeConsoleReturnTo } from '@/utils/returnTo';
+import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import { userManagementApi } from '@/api/userManagement';
 import { getBalanceByUserId, getTransactionsByUserId, type CoinTransactionVo, type UserBalanceVo } from '@/api/coinAdminApi';
 import { getUserExperience, type UserExperienceVo } from '@/api/experienceAdminApi';
@@ -34,7 +35,6 @@ import './UserDetail.css';
 
 interface UserDetailData {
   uuid: string;
-  userName: string;
   displayName: string;
   displayHandle: string;
   email: string;
@@ -66,16 +66,19 @@ export const UserDetail = () => {
   const [coinTransactions, setCoinTransactions] = useState<CoinTransactionVo[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
 
-  const mapUserDetail = (item: UserListItem): UserDetailData => ({
-    uuid: item.uuid,
-    userName: item.voUserName || '-',
-    displayName: item.voDisplayName || item.voUserName || '-',
-    displayHandle: item.voDisplayHandle || '-',
-    email: item.voUserEmail || '-',
-    isEnabled: item.voIsEnable,
-    createTime: item.voCreateTime,
-    lastLoginTime: item.voUpdateTime,
-  });
+  const mapUserDetail = (item: UserListItem): UserDetailData => {
+    const displayName = resolveVisibleUserDisplayName(item, item.uuid ? `用户 ${item.uuid}` : '-');
+
+    return {
+      uuid: item.uuid,
+      displayName,
+      displayHandle: resolveVisibleUserHandle(item, displayName) || '-',
+      email: item.voUserEmail || '-',
+      isEnabled: item.voIsEnable,
+      createTime: item.voCreateTime,
+      lastLoginTime: item.voUpdateTime,
+    };
+  };
 
   const formatDisplayTime = (time?: string | null) => {
     if (!time) return '-';
@@ -457,7 +460,6 @@ export const UserDetail = () => {
               </div>
             </div>
             <Descriptions column={2}>
-              <Descriptions.Item label="用户名">{user.userName}</Descriptions.Item>
               <Descriptions.Item label="展示名称">{user.displayName}</Descriptions.Item>
               <Descriptions.Item label="公开句柄">{user.displayHandle}</Descriptions.Item>
               <Descriptions.Item label="邮箱">{user.email}</Descriptions.Item>

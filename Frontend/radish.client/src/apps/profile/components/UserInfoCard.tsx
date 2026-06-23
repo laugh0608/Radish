@@ -13,6 +13,7 @@ import { useUserStore } from '@/stores/userStore';
 import { tokenService } from '@/services/tokenService';
 import { buildTimeZoneOptions, formatDateTimeByTimeZone, resolveTimeZoneId } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
+import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import type { LongId } from '@/api/user';
 import { reuseInFlightRequest } from '../requestDedup';
 import styles from './UserInfoCard.module.css';
@@ -44,6 +45,10 @@ interface UserInfoCardProps {
 
 interface ProfileInfo {
   voUserId: LongId;
+  voPublicId?: string | null;
+  voPublicIndex?: string | number | null;
+  voDisplayName?: string | null;
+  voDisplayHandle?: string | null;
   voUserName: string;
   voUserEmail: string;
   voRealName: string;
@@ -212,6 +217,7 @@ export const UserInfoCard = ({
 
       if (result.profile) {
         const currentProfile = result.profile;
+        const currentDisplayName = resolveVisibleUserDisplayName(currentProfile, userName);
         log.debug('UserInfoCard', '头像信息:', {
           avatarAttachmentId: currentProfile.voAvatarAttachmentId,
           avatarUrl: currentProfile.voAvatarUrl,
@@ -222,8 +228,14 @@ export const UserInfoCard = ({
         // 更新全局 userStore，使 Dock 栏能实时刷新头像
         setUser({
           userId: String(userId),
-          userName: currentProfile.voUserName,
-          nickname: currentProfile.voUserName,
+          displayName: currentDisplayName,
+          userName: currentDisplayName,
+          displayHandle: currentProfile.voDisplayHandle || undefined,
+          publicId: currentProfile.voPublicId || undefined,
+          publicIndex: typeof currentProfile.voPublicIndex === 'number'
+            ? String(currentProfile.voPublicIndex)
+            : currentProfile.voPublicIndex || undefined,
+          nickname: currentDisplayName,
           tenantId: tenantId,
           roles: roles || ['User'],
           permissions: permissions || [],
@@ -231,7 +243,7 @@ export const UserInfoCard = ({
           avatarThumbnailUrl: currentProfile.voAvatarThumbnailUrl || undefined
         });
 
-        setEditUserName(currentProfile.voUserName || userName);
+        setEditUserName(currentDisplayName);
         setEditUserEmail(currentProfile.voUserEmail || '');
         setEditRealName(currentProfile.voRealName || '');
         setEditAge(String(currentProfile.voAge ?? ''));
@@ -268,10 +280,14 @@ export const UserInfoCard = ({
   }, [apiBaseUrl, profile?.voAvatarThumbnailUrl, profile?.voAvatarUrl]);
 
   const avatarImageSrc = avatarLoadError ? undefined : avatarSrc;
+  const profileDisplayName = resolveVisibleUserDisplayName(profile ?? { voUserName: userName }, userName);
+  const profileDisplayHandle = profile
+    ? resolveVisibleUserHandle(profile, profileDisplayName)
+    : null;
 
   const handleOpenEdit = () => {
     if (profile) {
-      setEditUserName(profile.voUserName || userName);
+      setEditUserName(resolveVisibleUserDisplayName(profile, userName));
       setEditUserEmail(profile.voUserEmail || '');
       setEditRealName(profile.voRealName || '');
       setEditAge(String(profile.voAge ?? ''));
@@ -357,7 +373,7 @@ export const UserInfoCard = ({
               <img
                 className={styles.avatarImg}
                 src={avatarImageSrc}
-                alt={userName}
+                alt={profileDisplayName}
                 onError={handleAvatarError}
               />
             ) : (
@@ -367,9 +383,15 @@ export const UserInfoCard = ({
           <div className={styles.avatarHint}>{t('profile.info.changeAvatar')}</div>
         </div>
         <div className={styles.info}>
-          <h2 className={styles.userName}>{profile?.voUserName || userName}</h2>
+          <h2 className={styles.userName}>{profileDisplayName}</h2>
           <p className={styles.userId}>ID: {userId}</p>
           <div className={styles.profileMeta}>
+            {profileDisplayHandle && (
+              <div className={styles.metaItem}>
+                <Icon icon="mdi:identifier" size={16} />
+                <span>{profileDisplayHandle}</span>
+              </div>
+            )}
             <div className={styles.metaItem}>
               <Icon icon="mdi:email" size={16} />
               <span>{profile?.voUserEmail || t('profile.info.emailUnset')}</span>
@@ -378,12 +400,6 @@ export const UserInfoCard = ({
               <Icon icon="mdi:wallet" size={16} />
               <span>{formatCoinAmount(coinBalance?.voBalance, (key) => t(key))}</span>
             </div>
-            {profile?.voRealName && (
-              <div className={styles.metaItem}>
-                <Icon icon="mdi:account" size={16} />
-                <span>{profile.voRealName}</span>
-              </div>
-            )}
             {profile?.voAddress && (
               <div className={styles.metaItem}>
                 <Icon icon="mdi:map-marker" size={16} />

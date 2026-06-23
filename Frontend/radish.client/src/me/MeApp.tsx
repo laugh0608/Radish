@@ -288,6 +288,7 @@ export const MeApp = () => {
   const displayTimeZone = useMemo(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE), []);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const userId = useUserStore(state => state.userId);
+  const storeDisplayName = useUserStore(state => state.displayName);
   const userName = useUserStore(state => state.userName);
   const displayHandle = useUserStore(state => state.displayHandle);
   const nickname = useUserStore(state => state.nickname);
@@ -468,13 +469,12 @@ export const MeApp = () => {
   );
   const displayName = dashboardData.publicProfile?.voDisplayName?.trim()
     || nickname?.trim()
-    || dashboardData.publicProfile?.voUserName?.trim()
+    || storeDisplayName?.trim()
     || userName?.trim()
     || t('me.userFallback');
-  const accountName = dashboardData.publicProfile?.voUserName?.trim()
-    || dashboardData.publicProfile?.voDisplayHandle?.trim()
+  const accountName = dashboardData.publicProfile?.voDisplayHandle?.trim()
     || displayHandle?.trim()
-    || userName?.trim()
+    || displayName
     || userId;
   const profilePublicId = normalizePublicUserId(dashboardData.publicProfile?.voPublicId);
   const experience = dashboardData.experience;

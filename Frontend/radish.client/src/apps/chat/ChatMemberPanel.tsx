@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { ChannelMemberVo, EntityIdValue } from '@/types/chat';
 import { normalizeEntityId } from '@/types/chat';
 import { getFallbackUserName } from './chatApp.helpers';
+import { resolveVisibleUserDisplayName } from '@/utils/userIdentityDisplay';
 import styles from './ChatApp.module.css';
 
 interface ChatMemberPanelProps {
@@ -54,16 +55,19 @@ export const ChatMemberPanel = ({
           ) : (
             members.map((member) => {
               const memberId = normalizeEntityId(member.voUserId) ?? member.voUserName ?? 'member';
-              const memberName = member.voUserName?.trim() || getFallbackUserName(memberId, t);
+              const memberName = resolveVisibleUserDisplayName(
+                { voUserName: member.voUserName },
+                getFallbackUserName(memberId, t)
+              );
 
               return (
                 <button
                   key={memberId}
                   type="button"
                   className={styles.memberItem}
-                  onClick={() => onOpenUserProfile(member.voUserId, member.voUserName, member.voUserAvatarUrl)}
+                  onClick={() => onOpenUserProfile(member.voUserId, memberName, member.voUserAvatarUrl)}
                 >
-                  {renderAvatarVisual(member.voUserName, member.voUserAvatarUrl, styles.memberAvatar)}
+                  {renderAvatarVisual(memberName, member.voUserAvatarUrl, styles.memberAvatar)}
                   <span className={styles.memberName}>{memberName}</span>
                 </button>
               );

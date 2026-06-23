@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { toast } from '@radish/ui/toast';
+import { resolveVisibleUserDisplayName } from '@/utils/userIdentityDisplay';
 import {
   acceptQuestionAnswer,
   answerQuestion,
@@ -295,7 +296,7 @@ export const PublicForumDetail = ({
     }
 
     const userKey = String(payload.voUserId);
-    const userName = payload.voUserName?.trim() || t('common.unknownUser');
+    const userName = resolveVisibleUserDisplayName({ voUserName: payload.voUserName }, t('common.unknownUser'));
     const oldTimer = commentTypingTimersRef.current.get(userKey);
     if (oldTimer) {
       window.clearTimeout(oldTimer);

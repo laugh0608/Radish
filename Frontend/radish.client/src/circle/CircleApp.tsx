@@ -31,6 +31,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
 import { formatDateTimeByTimeZone, getBrowserTimeZoneId, DEFAULT_TIME_ZONE } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
+import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import { log } from '@/utils/logger';
 import {
   buildCirclePath,
@@ -256,7 +257,7 @@ export const CircleApp = () => {
   };
 
   const renderUserAvatar = (user: UserFollowUser) => {
-    const displayName = user.voDisplayName?.trim() || user.voUserName.trim() || t('common.unknownUser');
+    const displayName = resolveVisibleUserDisplayName(user, t('common.unknownUser'));
     const userIdKey = String(user.voUserId);
     const avatarUrl = avatarErrorUserIds.has(userIdKey) ? null : resolveMediaUrl(user.voAvatarUrl, apiBaseUrl);
 
@@ -337,9 +338,8 @@ export const CircleApp = () => {
     return (
       <div className={styles.userList}>
         {userItems.map((user) => {
-          const displayName = user.voDisplayName?.trim() || user.voUserName.trim() || t('common.unknownUser');
-          const displayHandle = user.voDisplayHandle?.trim()
-            || (user.voPublicIndex ? `${displayName}#${String(user.voPublicIndex).trim()}` : null);
+          const displayName = resolveVisibleUserDisplayName(user, t('common.unknownUser'));
+          const displayHandle = resolveVisibleUserHandle(user, displayName);
           const userRoute = buildUserRoute(user);
           const userPath = buildPublicProfilePath(userRoute);
 

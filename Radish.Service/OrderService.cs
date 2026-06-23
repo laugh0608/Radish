@@ -869,7 +869,10 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         }
 
         var users = await _userRepository.QueryAsync(user => userIds.Contains(user.Id));
-        var userDict = users.ToDictionary(user => user.Id, user => user.UserName);
+        var userDict = users.ToDictionary(
+            user => user.Id,
+            user => User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id)
+                ?? User.NormalizeDisplayName(user.UserName, user.Id));
 
         foreach (var order in orders)
         {

@@ -13,6 +13,7 @@ import {
 } from '@/api/user';
 import { DEFAULT_TIME_ZONE, formatDateTimeByTimeZone, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
+import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import { buildPublicProfilePath, type PublicProfileRoute, type PublicProfileTab } from '../profileRouteState';
 import { buildPublicForumPath } from '../forumRouteState';
 import {
@@ -384,15 +385,18 @@ export const PublicProfileApp = ({
       return;
     }
 
-    const titleName = profile?.voDisplayHandle?.trim()
-      || profile?.voDisplayName?.trim()
-      || profile?.voUserName?.trim();
+    const titleName = profile
+      ? resolveVisibleUserHandle(
+          profile,
+          resolveVisibleUserDisplayName(profile, t('common.userFallback', { id: route.userId }))
+        ) || resolveVisibleUserDisplayName(profile, t('common.userFallback', { id: route.userId }))
+      : null;
     const nextTitle = titleName
       ? `${titleName} · ${t('profile.public.title')}`
       : t('profile.public.title');
 
     document.title = nextTitle;
-  }, [loadingProfile, profile?.voDisplayHandle, profile?.voDisplayName, profile?.voUserName, t]);
+  }, [loadingProfile, profile, route.userId, t]);
 
   const avatarUrl = useMemo(
     () => resolveMediaUrl(profile?.voAvatarThumbnailUrl || profile?.voAvatarUrl),
@@ -420,11 +424,10 @@ export const PublicProfileApp = ({
     return removePublicStructuredData;
   }, [avatarUrl, profile, profileRouteIdentifier, route.page, route.tab, stats]);
 
-  const displayName = profile?.voDisplayName?.trim()
-    || profile?.voUserName?.trim()
-    || t('common.userFallback', { id: route.userId });
-  const displayHandle = profile?.voDisplayHandle?.trim()
-    || (profile?.voPublicIndex ? `${displayName}#${String(profile.voPublicIndex).trim()}` : null);
+  const displayName = profile
+    ? resolveVisibleUserDisplayName(profile, t('common.userFallback', { id: route.userId }))
+    : t('common.userFallback', { id: route.userId });
+  const displayHandle = profile ? resolveVisibleUserHandle(profile, displayName) : null;
   const backLabelKey = getPublicDetailBackLabelKey(backAction?.mode);
   const backLabel = backLabelKey
     ? t(backLabelKey)

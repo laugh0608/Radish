@@ -214,7 +214,7 @@ export const OrderDetail = ({
               {currentOrder.voUserId}
             </Descriptions.Item>
 
-            <Descriptions.Item label="用户名">
+            <Descriptions.Item label="用户展示">
               {currentOrder.voUserName || '未知'}
             </Descriptions.Item>
 

@@ -89,7 +89,7 @@ public class PostServiceTest
         await service.FillPostAvatarAndInteractorsAsync(posts);
 
         Assert.Equal("/_assets/attachments/3001", posts[0].VoAuthorAvatarUrl);
-        Assert.Equal("萝卜作者", posts[0].VoAuthorName);
+        Assert.Equal("luobo", posts[0].VoAuthorName);
         attachmentService.VerifyAll();
         userRepository.VerifyAll();
     }

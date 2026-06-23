@@ -101,7 +101,7 @@ public partial class ExperienceService
         }
 
         var users = await _userRepository.QueryAsync(user => userIds.Contains(user.Id) && !user.IsDeleted);
-        var userNameMap = users.ToDictionary(user => user.Id, user => user.UserName);
+        var userNameMap = users.ToDictionary(user => user.Id, user => BuildExperienceUserDisplayName(user));
 
         for (var index = 0; index < sourceTransactions.Count && index < transactionVos.Count; index++)
         {
@@ -115,6 +115,12 @@ public partial class ExperienceService
     private static int NormalizePositivePageIndex(int pageIndex)
     {
         return pageIndex > 0 ? pageIndex : 1;
+    }
+
+    private static string BuildExperienceUserDisplayName(User user)
+    {
+        return User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id)
+            ?? User.NormalizeDisplayName(user.UserName, user.Id);
     }
 
     private static int NormalizeTransactionPageSize(int pageSize)

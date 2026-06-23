@@ -6,6 +6,10 @@ type ApiRecord = Record<string, unknown>;
 
 export interface MyProfileInfo {
   voUserId: string;
+  voPublicId?: string | null;
+  voPublicIndex?: string | number | null;
+  voDisplayName?: string | null;
+  voDisplayHandle?: string | null;
   voUserName: string;
   voUserEmail: string;
   voRealName: string;
@@ -142,6 +146,10 @@ function toParsedResponse<T>(response: ParsedApiResponse<unknown>, data?: T): Pa
 function mapMyProfile(raw: ApiRecord): MyProfileInfo {
   return {
     voUserId: toIdString(raw.voUserId ?? raw.VoUserId),
+    voPublicId: toNullableString(raw.voPublicId ?? raw.VoPublicId),
+    voPublicIndex: toIdString(raw.voPublicIndex ?? raw.VoPublicIndex),
+    voDisplayName: toNullableString(raw.voDisplayName ?? raw.VoDisplayName),
+    voDisplayHandle: toNullableString(raw.voDisplayHandle ?? raw.VoDisplayHandle),
     voUserName: toStringValue(raw.voUserName ?? raw.VoUserName),
     voUserEmail: toStringValue(raw.voUserEmail ?? raw.VoUserEmail),
     voRealName: toStringValue(raw.voRealName ?? raw.VoRealName),
@@ -197,6 +205,8 @@ export const userApi = {
       );
       const mappedData: UserInfo = {
         voUserId: toIdString(backendData.voUserId ?? backendData.VoUserId),
+        voDisplayName: toOptionalString(backendData.voDisplayName ?? backendData.VoDisplayName),
+        voDisplayHandle: toOptionalString(backendData.voDisplayHandle ?? backendData.VoDisplayHandle),
         voUserName: toStringValue(backendData.voUserName ?? backendData.VoUserName),
         voTenantId: toIdString(backendData.voTenantId ?? backendData.VoTenantId),
         voAvatarUrl: toOptionalString(backendData.voAvatarUrl ?? backendData.VoAvatarUrl),

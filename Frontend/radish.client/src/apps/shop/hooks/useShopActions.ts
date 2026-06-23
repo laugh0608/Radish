@@ -243,6 +243,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
         const currentUser = useUserStore.getState();
         currentUser.setUser({
           userId: currentUser.userId,
+          displayName: newNickname.trim(),
           userName: newNickname.trim(),
           nickname: newNickname.trim(),
           tenantId: currentUser.tenantId,

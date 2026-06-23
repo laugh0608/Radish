@@ -653,13 +653,8 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
             // 3. 映射为 ViewModel
             var transactionVos = Mapper.Map<List<CoinTransactionVo>>(transactions);
 
-            // 4. 补充用户名信息（需要在 Service 层单独设置）
-            // TODO: 后续优化可以批量查询用户名，避免 N+1 查询
-            foreach (var vo in transactionVos)
-            {
-                vo.VoFromUserName = vo.VoFromUserId.HasValue ? "用户" + vo.VoFromUserId : "系统";
-                vo.VoToUserName = vo.VoToUserId.HasValue ? "用户" + vo.VoToUserId : "系统";
-            }
+            // 4. 补充公开身份显示名
+            await FillCoinTransactionUserNamesAsync(transactionVos);
 
             return new PageModel<CoinTransactionVo>
             {
@@ -695,9 +690,8 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
 
             var transactionVo = Mapper.Map<CoinTransactionVo>(transaction);
 
-            // 补充用户名信息
-            transactionVo.VoFromUserName = transactionVo.VoFromUserId.HasValue ? "用户" + transactionVo.VoFromUserId : "系统";
-            transactionVo.VoToUserName = transactionVo.VoToUserId.HasValue ? "用户" + transactionVo.VoToUserId : "系统";
+            // 补充公开身份显示名
+            await FillCoinTransactionUserNamesAsync(new[] { transactionVo });
 
             return transactionVo;
         }
@@ -706,6 +700,57 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
             Log.Error(ex, "根据交易流水号 {TransactionNo} 获取交易详情失败", transactionNo);
             throw;
         }
+    }
+
+    private async Task FillCoinTransactionUserNamesAsync(IReadOnlyCollection<CoinTransactionVo> transactionVos)
+    {
+        if (transactionVos.Count == 0)
+        {
+            return;
+        }
+
+        var userIds = transactionVos
+            .SelectMany(vo => new[] { vo.VoFromUserId, vo.VoToUserId })
+            .Where(userId => userId.HasValue && userId.Value > 0)
+            .Select(userId => userId!.Value)
+            .Distinct()
+            .ToList();
+
+        if (userIds.Count == 0)
+        {
+            foreach (var vo in transactionVos)
+            {
+                vo.VoFromUserName = "系统";
+                vo.VoToUserName = "系统";
+            }
+
+            return;
+        }
+
+        var users = await _userRepository.QueryAsync(user => userIds.Contains(user.Id) && !user.IsDeleted)
+            ?? new List<User>();
+        var userDisplayNameMap = users.ToDictionary(
+            user => user.Id,
+            user => User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id)
+                ?? User.NormalizeDisplayName(user.UserName, user.Id));
+
+        foreach (var vo in transactionVos)
+        {
+            vo.VoFromUserName = ResolveCoinTransactionUserName(vo.VoFromUserId, userDisplayNameMap);
+            vo.VoToUserName = ResolveCoinTransactionUserName(vo.VoToUserId, userDisplayNameMap);
+        }
+    }
+
+    private static string ResolveCoinTransactionUserName(long? userId, IReadOnlyDictionary<long, string> userDisplayNameMap)
+    {
+        if (!userId.HasValue)
+        {
+            return "系统";
+        }
+
+        return userDisplayNameMap.TryGetValue(userId.Value, out var userName)
+            ? userName
+            : $"用户{userId.Value}";
     }
 
     #endregion

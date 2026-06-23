@@ -10,6 +10,7 @@ import {
   type UnifiedLeaderboardItemData,
 } from '@/api/leaderboard';
 import { Icon } from '@radish/ui/icon';
+import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import { UserLeaderboardItem } from './components/UserLeaderboardItem';
 import { ProductLeaderboardItem } from './components/ProductLeaderboardItem';
 import styles from './LeaderboardApp.module.css';
@@ -118,10 +119,22 @@ export const LeaderboardApp = () => {
       return;
     }
 
+    const displayName = resolveVisibleUserDisplayName({
+      voDisplayName: item.voUserDisplayName,
+      voDisplayHandle: item.voUserDisplayHandle,
+      voPublicIndex: item.voUserPublicIndex,
+      voUserName: item.voUserName,
+    }, `用户 ${item.voUserId}`);
+    const displayHandle = resolveVisibleUserHandle({
+      voDisplayHandle: item.voUserDisplayHandle,
+      voPublicIndex: item.voUserPublicIndex,
+    }, displayName);
+
     openApp('profile', {
       userId: item.voUserId,
-      userName: item.voUserName?.trim() || `用户 ${item.voUserId}`,
+      userName: displayHandle || displayName,
       avatarUrl: item.voAvatarUrl?.trim() || null,
+      displayName,
     });
   };
 
