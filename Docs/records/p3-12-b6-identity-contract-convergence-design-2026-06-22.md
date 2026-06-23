@@ -4,7 +4,7 @@
 >
 > 更新：2026-06-23 补充注册页 `DisplayName` 慎重设置提示、改名频率限制文案，以及 `PublicIndex` 靓号保留 / Console 配置规则。
 >
-> 状态：`B6-1 身份基础与注册登录`、`B6-2 公开展示与前端状态收敛` 已完成；后续进入 `B6-3` 展示名变更治理
+> 状态：`B6-1 身份基础与注册登录`、`B6-2 公开展示与前端状态收敛`、`B6-3 展示名变更治理` 已完成；后续进入 `B6-4 PublicIndex 保留号治理`
 >
 > 结论：本专题承接 [用户身份语义与公开索引](/architecture/user-identity-semantics) 的首批实现，进一步移除 `LoginName` 公开 / 登录链路，固定“邮箱 + 密码”作为登录凭证，并把 `DisplayName`、`DisplayHandle`、`PublicId`、关注备注的职责彻底拆开。当前项目尚未上线且无正式数据库，B6 按破坏性 schema 收口处理，不提供旧库兼容迁移；实现完成后删除本地 SQLite 并重新初始化。
 
@@ -73,9 +73,9 @@
 
 - 用户可以修改 `DisplayName`。
 - 修改后 `PublicIndex` 不变，`DisplayHandle` 动态重新派生。
-- 必须限制修改次数和时间间隔。
-- 建议新增 `UserDisplayNameChangeRecord` 记录历史，承接改名前后值、操作者、来源、时间和原因。
-- 建议新增 Console 设置：冷却时间、滚动窗口天数、窗口内最大修改次数。
+- 必须限制修改次数和时间间隔；当前通过 `UserIdentity.DisplayName.ChangeCooldownDays`、`UserIdentity.DisplayName.ChangeWindowDays`、`UserIdentity.DisplayName.ChangeWindowMaxCount` 三个 Console 系统设置治理。
+- `UserDisplayNameChangeRecord` 记录历史，承接改名前后值、操作者、来源、时间和原因。
+- 个人资料改名必须走 `UserService.ChangeDisplayNameAsync` 服务端入口，不允许 Controller 或前端直接写展示名字段绕过治理。
 
 历史内容：
 
@@ -277,13 +277,32 @@ Bootstrap 初始化触点：
 
 本批未执行 Gateway 真实页面 smoke；按项目验证分层，留到 B6 成组功能准备验收或用户明确启动前后端后覆盖。
 
+## B6-3 实施记录
+
+`2026-06-23` 已完成展示名变更治理代码落地：
+
+- 新增 `UserDisplayNameChangeRecord`，记录租户、用户、旧展示名、新展示名、操作人、来源、原因、变更时间和创建信息。
+- 新增 `UserIdentity.DisplayName.ChangeCooldownDays`、`UserIdentity.DisplayName.ChangeWindowDays`、`UserIdentity.DisplayName.ChangeWindowMaxCount` 三个 `Medium` 风险系统设置，默认分别为 `30` 天冷却、`365` 天滚动窗口、窗口内最多 `3` 次，设置为 `0` 时关闭对应限制。
+- `IUserService.ChangeDisplayNameAsync` 成为展示名修改唯一业务入口，统一校验展示名长度 / 保留字符 / 控制字符、冷却时间和滚动窗口次数，并在事务方法中更新用户展示名和写入审计记录。
+- `UserController.UpdateMyProfile` 不再直接写 `UserName` 列；个人资料中的展示名修改委托服务层治理，邮箱、真实姓名、性别、年龄、生日和地址仍沿用个人资料更新路径。
+- 本批不包含 `B6-4` PublicIndex 靓号保留列表 / 规则、邮箱白名单、关注备注、字段全量重命名或本地 SQLite 重建。
+
+本批验证：
+
+- `dotnet test Radish.Api.Tests --filter "FullyQualifiedName~UserIdentitySemanticsServiceTest|FullyQualifiedName~UserControllerProfileTest"`
+- `dotnet test Radish.Api.Tests`
+- `dotnet build Radish.slnx -c Debug`
+- `git diff --check`
+
+本批未执行 Gateway 真实页面 smoke；按项目验证分层，留到 B6 成组功能准备验收或用户明确启动前后端后覆盖。
+
 ## 实施顺序
 
 1. 冻结本专题设计与字段语义。（已完成）
 2. 完成代码前触点盘点和分批方案。（已完成）
 3. `B6-1 身份基础与注册登录`：调整 `User` 实体 / DTO / AutoMapper 命名，固定邮箱 + 密码登录；注册和 Bootstrap 必填 `DisplayName`，注册页补慎重设置和改名限制提示；OIDC claim 与 CurrentUser 不再输出登录名作为普通显示身份。（已完成）
 4. `B6-2 公开展示与前端状态收敛`：清理 `UserRealName` 公开 fallback、`VoLoginName` 普通前端状态、`VoUserName` 混淆展示；论坛、聊天、榜单、圈子、公开个人页、转账搜索和 Console 用户治理统一使用 `DisplayName` / `DisplayHandle`。（已完成）
-5. `B6-3 展示名变更治理`：新增 `UserDisplayNameChangeRecord`，接入冷却时间、滚动窗口和窗口内最大次数设置；个人资料改名走服务端校验和历史记录，不允许绕过频率限制。
+5. `B6-3 展示名变更治理`：新增 `UserDisplayNameChangeRecord`，接入冷却时间、滚动窗口和窗口内最大次数设置；个人资料改名走服务端校验和历史记录，不允许绕过频率限制。（已完成）
 6. `B6-4 PublicIndex 保留号治理`：新增 `UserIdentity.PublicIndex.ReservedIndexes` 与 `UserIdentity.PublicIndex.VanityRules` 设置，注册和 Bootstrap 分配器在数据库事务内跳过保留靓号；规则变更只影响后续分配。
 7. `B6-5 种子与 DbMigrate 收口`：更新 system / admin / test 种子展示名和保留号；删除身份旧库回填与旧兼容纠偏逻辑；实现后提醒删除本地 SQLite 并重新初始化。
 8. `B6-6 验证与阶段验收`：补身份语义扫描、Auth / Bootstrap / 用户服务 / 展示名修改 / PublicIndex 保留号定向测试、前端类型检查和 Gateway PC / mobile 页面 smoke。

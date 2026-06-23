@@ -1,5 +1,6 @@
 using Radish.IService.Base;
 using Radish.Model;
+using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 
 namespace Radish.IService;
@@ -63,6 +64,15 @@ public interface IUserService : IBaseService<User, UserVo>
     /// <param name="newPassword">新密码</param>
     /// <param name="confirmPassword">确认密码</param>
     Task ChangeMyLoginPasswordAsync(long userId, string currentPassword, string newPassword, string confirmPassword);
+
+    /// <summary>
+    /// 修改用户公开展示名，并记录变更审计。
+    /// </summary>
+    /// <param name="userId">目标用户 ID</param>
+    /// <param name="displayName">新的展示名</param>
+    /// <param name="context">变更上下文</param>
+    /// <returns>展示名是否实际发生变化</returns>
+    Task<bool> ChangeDisplayNameAsync(long userId, string displayName, UserDisplayNameChangeContext context);
 
     /// <summary>测试使用同事务</summary>
     /// <remarks>仅为示例，无任何作用</remarks>

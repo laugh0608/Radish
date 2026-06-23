@@ -57,7 +57,7 @@
   - `P3-10-B10` 第七批已推进账号身份长度设置：新增 `UserIdentity.LoginName.MinLength`、`UserIdentity.LoginName.MaxLength`、`UserIdentity.DisplayName.MinLength`、`UserIdentity.DisplayName.MaxLength`，Auth 注册和 API 个人资料展示名校验改为通过 `ISystemSettingProvider` 读取上下限；本批不开放邮箱、登录凭证、高风险账号字段或 Console 账号变更动作，后端定向测试、完整测试、Debug 构建、`radish.console` 构建和 Gateway PC / 移动页面补验均已通过。
   - `P3-10-B10` 第八批已推进论坛轻回应剩余运营参数：新增 `Comment.QuickReply.DefaultTake`、`Comment.QuickReply.MaxTake`、`Comment.QuickReply.PerPostCooldownSeconds`、`Comment.QuickReply.DuplicateWindowSeconds`，轻回应列表返回条数、单帖冷却和重复内容窗口改为通过 `ISystemSettingProvider` 读取；旧 `ForumQuickReply` 数值配置从宿主配置移除，`ForumQuickReply.Enable` 功能开关仍保留在 `appsettings`，不开放到 Console。后端定向测试、完整测试、Debug 构建、`radish.console` 构建和 Gateway PC / 移动页面补验均已通过。
   - `P3-10-B10` 第九批已推进神评 / 沙发稳定性运营参数：新增 `Comment.Highlight.StabilityWindowMinutes`、`Comment.Highlight.ReplacementMinLikeDelta`，神评 / 沙发实时重算稳定窗口和替换阈值改为通过 `ISystemSettingProvider` 读取；旧 `CommentHighlight` 稳定窗口数值配置从宿主配置移除，任务启停、调度、扫描窗口、触发评论数量门槛和奖励数值仍不开放到 Console。后端定向测试、完整测试、Debug 构建和 `radish.console` 构建均已通过；真实页面 smoke 改为较大阶段推进完成或发布候选前集中执行，不作为每个系统设置批次的默认要求。
-  - `P3-10-B10` 低 / 中风险系统设置首轮治理已阶段收束：当前开放 19 个设置，覆盖品牌 favicon、账号身份长度、内容发布长度、轻回应运营参数、神评 / 沙发稳定窗口和替换阈值。第九批后不继续默认追加第十批设置；评论 typing 节流、神评触发评论数量门槛、内容发布频率限制、论坛编辑历史策略、基础设施、安全会话、资产、奖励和高风险账号字段均转入后续独立评审或维护观察。
+  - `P3-10-B10` 低 / 中风险系统设置首轮治理已阶段收束：B10 首轮开放 19 个设置，覆盖品牌 favicon、账号身份长度、内容发布长度、轻回应运营参数、神评 / 沙发稳定窗口和替换阈值；`P3-12-B6-3` 后当前注册设置增至 22 个，新增展示名改名冷却 / 滚动窗口 / 窗口内最大次数。第九批后不继续默认追加第十批设置；评论 typing 节流、神评触发评论数量门槛、内容发布频率限制、论坛编辑历史策略、基础设施、安全会话、资产、奖励和高风险账号字段均转入后续独立评审或维护观察。
   - `P3-10` B1-B10 已完成首批代码推进或阶段收束；阶段级真实联调 smoke 已完成，当前转入 Web 信息流 / UI 结构整理。Flutter 承接准备排在 Web 默认入口和 API 契约稳定之后。
   - `P3-10` 阶段真实联调 smoke 已完成：Gateway / Api / Auth 健康检查通过，论坛详情 / 文档详情 public head smoke 通过，PC `1920x1080` 与移动 `390x844` 视图覆盖 `/discover`、公开帖子详情、公开文档详情、`/leaderboard`、`/shop`、`/circle` 和 `/console/` 授权确认页，未发现阻断问题；DPR 与 Console 深层设置页仍保留限制说明。
   - `P3-10-D` 首日整理已完成：`/discover`、公开帖子详情、`/circle`、`/me`、公开详情轻互动入口、公开文档详情和公开个人页已完成信息结构 / 标题层级 / 公开私域边界首批整理；公开壳层阶段词、入口动作与详情规范化来源返回已完成代码侧修正。
@@ -91,7 +91,7 @@
   - `P3-12-B3` 论坛作者态 Web 化首批代码与小阶段验收已完成：新增 `/forum/compose`，扩展 `/forum/post/:postId?intent=answer|edit|history`，接入发帖、问答回答 / 采纳、作者帖子编辑和帖子编辑历史查看；登录回流走正式 Web 路径，写入继续复用 `clientSubmissionId`，WebOS 三栏工作台、Dock、窗口参数和 `openApp` 语义不迁入正式 Web。2026-06-22 已补 Gateway PC `1920x1080` 与移动 `390x844` CSS 视口 smoke，公开列表、发帖登录回流、公开详情 canonical 和作者态 `edit/history` return path 均通过；已使用 Browser 插件和种子账号 `admin` 覆盖已登录发帖、作者编辑、编辑历史与问答回答提交成功态，三类 `ContentSubmissionRecord` 均为 `Succeeded`，记录见 [P3-12-B3 论坛作者态 Web 化方案](/records/p3-12-b3-forum-author-web-plan-2026-06-21)。
   - `P3-12-B4` 文档作者态归属裁决已完成只读盘点和方案记录；`B4-1` 正式 Web 文档作者入口首批代码已完成，新增 `/docs/mine`、`/docs/compose`、`/docs/edit/:id`、`/docs/revisions/:id`，公开 `/docs` 保持阅读 / 搜索 / 分享；`B4-2` Console 文档治理首批代码已完成，新增 `/console/documents` 治理入口、治理专用 API、权限键、资源种子和权限覆盖矩阵；Gateway PC / mobile 阶段 smoke 已完成，记录见 [P3-12-B4 / D1 阶段运行态 Smoke 记录](/records/p3-12-b4-d1-stage-smoke-record-2026-06-22)。
   - `/messages` 已验证为正式 Web 消息 / 聊天入口；`P3-12-B5` Web 功能总入口首批代码与 Gateway PC / mobile smoke 已完成：新增 `/workbench`，公共壳层“工作台”默认指向正式 Web 功能地图，`/desktop` 保留为“WebOS 桌面版”兼容入口，记录见 [P3-12-B5 Web 功能总入口设计](/records/p3-12-b5-web-workbench-entry-design-2026-06-22)。`P3-12-D1` 当前只补设计范围、页面矩阵和 Pencil 设计源拆分，不直接改视觉代码，记录见 [P3-12-D1 统一 UI 设计准备记录](/records/p3-12-d1-unified-ui-design-prep-2026-06-22)。
-  - `P3-12-B6` 身份语义二次收口设计、代码前盘点、分批方案、`B6-1 身份基础与注册登录` 和 `B6-2 公开展示与前端状态收敛` 代码已完成，记录见 [P3-12-B6 身份语义二次收口设计](/records/p3-12-b6-identity-contract-convergence-design-2026-06-22)。当前已固定 Auth 邮箱 + 密码登录、注册 / Bootstrap 必填 `DisplayName`、OIDC / CurrentUser 普通显示身份不再输出登录名，并把论坛、聊天、榜单、圈子、公开个人页、转账搜索、资产流水和 Console 用户治理收敛到 `DisplayName / DisplayHandle` 口径；下一步进入 `B6-3 展示名变更治理`。
+  - `P3-12-B6` 身份语义二次收口设计、代码前盘点、分批方案、`B6-1 身份基础与注册登录`、`B6-2 公开展示与前端状态收敛` 和 `B6-3 展示名变更治理` 代码已完成，记录见 [P3-12-B6 身份语义二次收口设计](/records/p3-12-b6-identity-contract-convergence-design-2026-06-22)。当前已固定 Auth 邮箱 + 密码登录、注册 / Bootstrap 必填 `DisplayName`、OIDC / CurrentUser 普通显示身份不再输出登录名，把论坛、聊天、榜单、圈子、公开个人页、转账搜索、资产流水和 Console 用户治理收敛到 `DisplayName / DisplayHandle` 口径，并把个人资料改名接入服务端冷却 / 滚动窗口 / 审计记录；下一步进入 `B6-4 PublicIndex 保留号治理`。
 
 ## 当前执行入口
 
@@ -147,7 +147,7 @@
    - `P3-12-B3` 论坛作者态 Web 化首批代码和小阶段验收已完成：`/forum/compose`、详情 `intent=answer|edit|history`、正式 Web 登录回流、发帖 / 回答 / 编辑 / 历史查看和 `clientSubmissionId` 延续均已收口。
    - `P3-12-B4` 文档作者态归属裁决与 `B4-1` 正式 Web 作者入口首批代码已完成；公开 `/docs` 保持阅读态，正式 Web 承接登录态作者页，WebOS Wiki 退为历史维护入口；`B4-2` Console 文档治理首批代码与阶段运行态 smoke 已完成。
    - `P3-12-B5` Web 功能总入口首批代码与 Gateway PC / mobile smoke 已完成：`/workbench` 和公共壳层入口调整已落地，正式 Web 已迁移功能可被集中发现，`/desktop` 退为桌面版兼容入口。
-   - `P3-12-B6` 身份语义二次收口设计、代码前盘点、分批方案、`B6-1` 身份基础与注册登录和 `B6-2` 公开展示与前端状态收敛已完成；该专题触达 Auth、注册登录、公开展示、搜索 / 艾特、资产流水、Console 设置和数据库结构口径，后续按 `B6-3` 至 `B6-6` 分批推进。
+   - `P3-12-B6` 身份语义二次收口设计、代码前盘点、分批方案、`B6-1` 身份基础与注册登录、`B6-2` 公开展示与前端状态收敛和 `B6-3` 展示名变更治理已完成；该专题触达 Auth、注册登录、公开展示、搜索 / 艾特、资产流水、Console 设置和数据库结构口径，后续按 `B6-4` 至 `B6-6` 分批推进。
    - `P3-12-D1` 统一 UI 设计准备已启动；页面级 UI 设计与美化必须统一使用 Pencil 先做设计稿，再更新设计 / 说明文档，最后进入视觉实现。本轮 Pencil app 未连接，因此只补设计范围与矩阵，不创建 `.pen` 或改视觉代码。
 2. **保持 P3-10 可恢复合并状态**
    - `P3-10-D` 已完成公开页整理、四批入口语义治理、合并前验证和 PR 合并判断；不再默认追加第五批链接扫尾。
@@ -168,7 +168,7 @@
   - 新增 [P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)，承接 P3-11 暂缓 PR 后的正式开发主线。
   - `P3-12-A` 已完成只读盘点，结论见 [P3-12-A WebOS 与 Web 功能资产盘点记录](/records/p3-12-a-webos-web-function-asset-inventory-2026-06-21)。
   - `P3-12-B1` 方案、路由 / 登录回流契约、商城私域正式 Web 入口、资产正式入口、公开购买动作和交易回流替换见 [P3-12-B1 账户资产与商城交易 Web 化方案](/records/p3-12-b1-account-shop-web-plan-2026-06-21)；`P3-12-C1` 首轮残留清理见 [P3-12-C1 WebOS 残留入口清理记录](/records/p3-12-c1-webos-residual-cleanup-2026-06-21)，真实 Gateway PC / mobile 复核后置到小阶段验收。
-  - `P3-12-B2` 首批代码已补 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 的路由、登录回流和正式 Web 导航语义，方案见 [P3-12-B2 完整个人中心 Web 化方案](/records/p3-12-b2-personal-center-web-plan-2026-06-21)；`P3-12-B3` 首批代码与小阶段验收已完成，见 [P3-12-B3 论坛作者态 Web 化方案](/records/p3-12-b3-forum-author-web-plan-2026-06-21)；`P3-12-B4` 归属裁决、`B4-1` 正式 Web 作者入口、`B4-2` Console 文档治理和阶段运行态 smoke 已完成，见 [P3-12-B4 文档作者态归属裁决](/records/p3-12-b4-doc-author-ownership-plan-2026-06-22)、[P3-12-B4-2 Console 文档治理设计](/records/p3-12-b4-2-console-doc-governance-design-2026-06-22) 与 [P3-12-B4 / D1 阶段运行态 Smoke 记录](/records/p3-12-b4-d1-stage-smoke-record-2026-06-22)。`P3-12-B5` `/workbench` 首批代码与 Gateway PC / mobile smoke 已完成；`P3-12-B6-1` 身份基础与注册登录、`B6-2` 公开展示与前端状态收敛已完成，下一步进入 `B6-3 展示名变更治理`。
+  - `P3-12-B2` 首批代码已补 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 的路由、登录回流和正式 Web 导航语义，方案见 [P3-12-B2 完整个人中心 Web 化方案](/records/p3-12-b2-personal-center-web-plan-2026-06-21)；`P3-12-B3` 首批代码与小阶段验收已完成，见 [P3-12-B3 论坛作者态 Web 化方案](/records/p3-12-b3-forum-author-web-plan-2026-06-21)；`P3-12-B4` 归属裁决、`B4-1` 正式 Web 作者入口、`B4-2` Console 文档治理和阶段运行态 smoke 已完成，见 [P3-12-B4 文档作者态归属裁决](/records/p3-12-b4-doc-author-ownership-plan-2026-06-22)、[P3-12-B4-2 Console 文档治理设计](/records/p3-12-b4-2-console-doc-governance-design-2026-06-22) 与 [P3-12-B4 / D1 阶段运行态 Smoke 记录](/records/p3-12-b4-d1-stage-smoke-record-2026-06-22)。`P3-12-B5` `/workbench` 首批代码与 Gateway PC / mobile smoke 已完成；`P3-12-B6-1` 身份基础与注册登录、`B6-2` 公开展示与前端状态收敛、`B6-3` 展示名变更治理已完成，下一步进入 `B6-4 PublicIndex 保留号治理`。
   - 功能迁移只迁移正式版产品能力，不迁移 WebOS Dock、窗口系统、桌面背景、窗口几何记忆或桌面 app 外壳；B1 替代路径可用后，只清理与默认产品路径直接冲突的 `/desktop` 回跳。
   - 页面迁移齐后进入 `P3-12-D` 统一 UI 设计与美化专题，并走 Pencil 设计稿 -> 设计 / 说明文档 -> 代码实现 -> PC / mobile 复核。
 - `P3-11 发布候选整备与轻量复访补齐维护线`
@@ -206,7 +206,7 @@
   - B1-B10 已完成首批代码推进或阶段收束，阶段级真实联调 smoke 已完成；后续准备合并到 `master` 时再集中跑完整 baseline、identity、host runtime 和必要页面补验。
 - `P3-10-B10 系统设置治理维护线`
   - 已推进设置定义注册表、默认值、覆盖值、风险等级、低风险编辑、恢复默认、修改原因 / 确认参数基础、变更审计历史、统一读取入口、帖子 / 评论 / 轻回应长度边界设置、帖子摘要长度设置、轻回应返回条数 / 冷却 / 去重窗口设置、神评 / 沙发稳定窗口 / 替换阈值设置、校验规则元数据和数字编辑控件约束；Console 不再把未注册 JSON 记录作为运营设置展示。
-  - 当前开放 `Site.Branding.FaviconUrl`、`UserIdentity.LoginName.MinLength`、`UserIdentity.LoginName.MaxLength`、`UserIdentity.DisplayName.MinLength`、`UserIdentity.DisplayName.MaxLength`、`Content.PostTitle.MinLength`、`Content.PostTitle.MaxLength`、`Content.PostBody.MinLength`、`Content.PostBody.MaxLength`、`Content.PostSummary.MaxLength`、`Comment.Body.MinLength`、`Comment.Body.MaxLength`、`Comment.QuickReply.MaxContentLength`、`Comment.QuickReply.DefaultTake`、`Comment.QuickReply.MaxTake`、`Comment.QuickReply.PerPostCooldownSeconds`、`Comment.QuickReply.DuplicateWindowSeconds`、`Comment.Highlight.StabilityWindowMinutes`、`Comment.Highlight.ReplacementMinLikeDelta`；Medium 设置必须填写原因并确认风险等级 / 设置键，High / Critical 仍不开放编辑。
+  - 当前开放 `Site.Branding.FaviconUrl`、`UserIdentity.LoginName.MinLength`、`UserIdentity.LoginName.MaxLength`、`UserIdentity.DisplayName.MinLength`、`UserIdentity.DisplayName.MaxLength`、`UserIdentity.DisplayName.ChangeCooldownDays`、`UserIdentity.DisplayName.ChangeWindowDays`、`UserIdentity.DisplayName.ChangeWindowMaxCount`、`Content.PostTitle.MinLength`、`Content.PostTitle.MaxLength`、`Content.PostBody.MinLength`、`Content.PostBody.MaxLength`、`Content.PostSummary.MaxLength`、`Comment.Body.MinLength`、`Comment.Body.MaxLength`、`Comment.QuickReply.MaxContentLength`、`Comment.QuickReply.DefaultTake`、`Comment.QuickReply.MaxTake`、`Comment.QuickReply.PerPostCooldownSeconds`、`Comment.QuickReply.DuplicateWindowSeconds`、`Comment.Highlight.StabilityWindowMinutes`、`Comment.Highlight.ReplacementMinLikeDelta`；Medium 设置必须填写原因并确认风险等级 / 设置键，High / Critical 仍不开放编辑。
   - 第九批代码侧验证已完成；真实页面 smoke 改为较大阶段推进完成或发布候选前集中执行。低 / 中风险首轮治理当前阶段收束，不继续把候选参数默认排成第十批。
   - 不把评论 typing 节流、神评触发评论数量门槛、内容发布频率限制、论坛编辑历史策略、部署密钥、宠物经济数值、高危资产 / 会话设置或基础设施配置直接搬进 Console；论坛编辑历史如需治理，应作为编辑权限 / 历史保留专题独立评审。
 - `P3-10-B9 用户身份语义与公开索引维护线`
@@ -233,7 +233,7 @@
 ## 明日事项
 
 - 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[P3-12-B5 Web 功能总入口设计](/records/p3-12-b5-web-workbench-entry-design-2026-06-22)、[P3-12-B6 身份语义二次收口设计](/records/p3-12-b6-identity-contract-convergence-design-2026-06-22)、[P3-12-D1 统一 UI 设计准备记录](/records/p3-12-d1-unified-ui-design-prep-2026-06-22) 和 [用户身份语义与公开索引](/architecture/user-identity-semantics)，确认 B5 已完成 `/workbench` 与 Gateway PC / mobile smoke，B6-1 已完成注册登录与 CurrentUser / OIDC 首批收敛。
-- 第一顺位：进入 `P3-12-B6-3 展示名变更治理`，新增展示名变更记录、冷却时间、滚动窗口和窗口内最大次数校验，个人资料改名必须走服务端治理并同步 Console 设置键口径。
+- 第一顺位：进入 `P3-12-B6-4 PublicIndex 保留号治理`，新增公开索引保留靓号列表 / 规则设置，注册和 Bootstrap 分配器必须跳过保留号，并保留人工分配、修改原因和审计边界。
 - B6 涉及接口、数据结构、权限设置或运行时行为变更，代码实现前必须确认破坏性 schema 收口；实现完成后提醒删除本地 SQLite 并重新初始化。
 - 第二顺位：B6 收口后再进入 `P3-12-D` UI 设计专题；待 Pencil app 可用后创建 `public-web-unified-experience.pen`、`private-web-workflows.pen`，并在 `console-governance-workbench.pen` 补文档治理画板，随后更新设计说明并实现视觉专题。
 

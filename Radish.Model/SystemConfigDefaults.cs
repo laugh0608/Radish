@@ -156,6 +156,60 @@ public static class SystemConfigDefaults
         },
         new()
         {
+            Id = 20,
+            Category = UserIdentityCategory,
+            Key = DisplayNameChangeCooldownDaysKey,
+            Name = "展示名修改冷却天数",
+            Description = "同一用户两次修改公开展示名之间需要等待的天数，设置为 0 时关闭单次冷却限制。",
+            ImpactSummary = "影响个人资料中的公开展示名修改频率，不改变邮箱登录、PublicId 或 PublicIndex 语义。",
+            ValueType = "number",
+            DefaultValue = DefaultDisplayNameChangeCooldownDays,
+            MinNumberValue = 0,
+            MaxNumberValue = 3650,
+            RequiresInteger = true,
+            RiskLevel = SystemConfigRiskLevel.Medium,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
+        },
+        new()
+        {
+            Id = 21,
+            Category = UserIdentityCategory,
+            Key = DisplayNameChangeWindowDaysKey,
+            Name = "展示名修改统计窗口天数",
+            Description = "统计展示名修改次数的滚动窗口天数，设置为 0 时关闭窗口次数限制。",
+            ImpactSummary = "影响个人资料中的公开展示名修改频率，需与展示名修改窗口最大次数配合使用。",
+            ValueType = "number",
+            DefaultValue = DefaultDisplayNameChangeWindowDays,
+            MinNumberValue = 0,
+            MaxNumberValue = 3650,
+            RequiresInteger = true,
+            RiskLevel = SystemConfigRiskLevel.Medium,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
+        },
+        new()
+        {
+            Id = 22,
+            Category = UserIdentityCategory,
+            Key = DisplayNameChangeWindowMaxCountKey,
+            Name = "展示名修改窗口最大次数",
+            Description = "同一用户在统计窗口内最多允许修改展示名的次数，设置为 0 时关闭窗口次数限制。",
+            ImpactSummary = "影响个人资料中的公开展示名修改频率，数值过低会增加正常用户改名阻力，数值过高会削弱身份稳定性。",
+            ValueType = "number",
+            DefaultValue = DefaultDisplayNameChangeWindowMaxCount,
+            MinNumberValue = 0,
+            MaxNumberValue = 100,
+            RequiresInteger = true,
+            RiskLevel = SystemConfigRiskLevel.Medium,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
+        },
+        new()
+        {
             Id = 2,
             Category = ContentPublishingCategory,
             Key = PostTitleMinLengthKey,
@@ -447,6 +501,15 @@ public static class SystemConfigDefaults
     /// <summary>展示名最大长度配置键</summary>
     public const string DisplayNameMaxLengthKey = "UserIdentity.DisplayName.MaxLength";
 
+    /// <summary>展示名修改冷却天数配置键</summary>
+    public const string DisplayNameChangeCooldownDaysKey = "UserIdentity.DisplayName.ChangeCooldownDays";
+
+    /// <summary>展示名修改统计窗口天数配置键</summary>
+    public const string DisplayNameChangeWindowDaysKey = "UserIdentity.DisplayName.ChangeWindowDays";
+
+    /// <summary>展示名修改窗口最大次数配置键</summary>
+    public const string DisplayNameChangeWindowMaxCountKey = "UserIdentity.DisplayName.ChangeWindowMaxCount";
+
     /// <summary>帖子标题最小长度配置键</summary>
     public const string PostTitleMinLengthKey = "Content.PostTitle.MinLength";
 
@@ -503,6 +566,15 @@ public static class SystemConfigDefaults
 
     /// <summary>默认展示名最大长度</summary>
     public const string DefaultDisplayNameMaxLength = "24";
+
+    /// <summary>默认展示名修改冷却天数</summary>
+    public const string DefaultDisplayNameChangeCooldownDays = "30";
+
+    /// <summary>默认展示名修改统计窗口天数</summary>
+    public const string DefaultDisplayNameChangeWindowDays = "365";
+
+    /// <summary>默认展示名修改窗口最大次数</summary>
+    public const string DefaultDisplayNameChangeWindowMaxCount = "3";
 
     /// <summary>默认帖子标题最大长度</summary>
     public const string DefaultPostTitleMaxLength = "200";
