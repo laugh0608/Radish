@@ -21,6 +21,7 @@ import {
   isPetPathname,
   isPublicContentPathname,
   isShopPathname,
+  isWorkbenchPathname,
   resolveInitialEntryPath,
 } from '@/bootstrap/entryRoute';
 import './theme/theme-tokens.css';
@@ -36,6 +37,7 @@ const NotificationsEntry = lazy(() => import('./notifications/NotificationsEntry
 const PetEntry = lazy(() => import('./pet/PetEntry.tsx').then((module) => ({ default: module.PetEntry })));
 const ShopEntry = lazy(() => import('./shop/ShopEntry.tsx').then((module) => ({ default: module.ShopEntry })));
 const DocsAuthorEntry = lazy(() => import('./docs/DocsAuthorEntry.tsx').then((module) => ({ default: module.DocsAuthorEntry })));
+const WorkbenchEntry = lazy(() => import('./workbench/WorkbenchEntry.tsx').then((module) => ({ default: module.WorkbenchEntry })));
 const RootEntry = lazy(() => import('./desktop/RootEntry.tsx').then((module) => ({ default: module.RootEntry })));
 const PublicEntry = lazy(() => import('./public/PublicEntry.tsx').then((module) => ({ default: module.PublicEntry })));
 
@@ -84,6 +86,7 @@ const isNotificationsRoute = isBrowser && isNotificationsPathname(window.locatio
 const isPetRoute = isBrowser && isPetPathname(window.location.pathname);
 const isShopRoute = isBrowser && isShopPathname(window.location.pathname);
 const isDocsAuthorRoute = isBrowser && isDocsAuthorPathname(window.location.pathname);
+const isWorkbenchRoute = isBrowser && isWorkbenchPathname(window.location.pathname);
 const isPublicContentRoute = isBrowser && isPublicContentPathname(window.location.pathname);
 
 const Page = isOidcCallback
@@ -102,9 +105,11 @@ const Page = isOidcCallback
               ? ShopEntry
               : isDocsAuthorRoute
                 ? DocsAuthorEntry
-                : isPublicContentRoute
-                  ? PublicEntry
-                  : RootEntry;
+                : isWorkbenchRoute
+                  ? WorkbenchEntry
+                  : isPublicContentRoute
+                    ? PublicEntry
+                    : RootEntry;
 
 initializeTheme();
 void applySiteBranding(getApiBaseUrl());

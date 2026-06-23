@@ -5,6 +5,7 @@ import {
   isDocsAuthorPathname,
   isPublicContentPathname,
   isShopPathname,
+  isWorkbenchPathname,
   resolveInitialEntryPath,
 } from '../src/bootstrap/entryRoute.ts';
 import {
@@ -314,4 +315,12 @@ test('P3-12 文档作者入口应走正式 Web 路径并退出公开内容壳层
   assert.equal(isDocsAuthorPathname(`/docs/revisions/${documentId}`), true);
   assert.equal(isPublicContentPathname(`/docs/revisions/${documentId}`), false);
   assert.equal(normalizeAuthReturnPath(`/docs/edit/${documentId}?from=public`), null);
+});
+
+test('P3-12 工作台入口应是正式 Web 功能地图而不是公开内容或 WebOS 桌面', () => {
+  assert.equal(isWorkbenchPathname('/workbench'), true);
+  assert.equal(isWorkbenchPathname('/workbench/'), true);
+  assert.equal(isWorkbenchPathname('/desktop'), false);
+  assert.equal(isPublicContentPathname('/workbench'), false);
+  assert.equal(isPublicContentPathname('/workbench/'), false);
 });

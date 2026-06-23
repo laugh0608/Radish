@@ -12,6 +12,7 @@ import {
   isPetPathname,
   isPublicContentPathname,
   isShopPathname,
+  isWorkbenchPathname,
   resolveInitialEntryPath,
 } from '../src/bootstrap/entryRoute.ts';
 import { TAURI_DESKTOP_ENTRY_PATH } from '../src/platform/tauriBridge.ts';
@@ -73,8 +74,16 @@ test('isPublicContentPathname 应识别公开内容路由', () => {
   assert.equal(isPublicContentPathname('/messages'), false);
   assert.equal(isPublicContentPathname('/notifications'), false);
   assert.equal(isPublicContentPathname('/pet'), false);
+  assert.equal(isPublicContentPathname('/workbench'), false);
   assert.equal(isPublicContentPathname('/desktop'), false);
   assert.equal(isPublicContentPathname(OIDC_CALLBACK_PATH), false);
+});
+
+test('isWorkbenchPathname 应单独识别正式 Web 功能总入口', () => {
+  assert.equal(isWorkbenchPathname('/workbench'), true);
+  assert.equal(isWorkbenchPathname('/workbench/'), true);
+  assert.equal(isWorkbenchPathname('/desktop'), false);
+  assert.equal(isWorkbenchPathname('/discover'), false);
 });
 
 test('isCirclePathname 应单独识别登录态圈子入口', () => {

@@ -8,6 +8,7 @@ import { isShopPathname } from '../shop/shopRouteState.ts';
 import { isPublicDiscoverPathname } from '../public/discoverRouteState.ts';
 import { isPublicShopPathname } from '../public/shopRouteState.ts';
 import { isDocsAuthorPathname } from '../docs/docsAuthorRouteState.ts';
+import { isWorkbenchPathname } from '../workbench/workbenchRouteState.ts';
 
 export const BROWSER_PUBLIC_ENTRY_PATH = '/discover';
 export const CAPACITOR_PUBLIC_ENTRY_PATH = '/docs';
@@ -56,3 +57,4 @@ export { isMePathname };
 export { isPetPathname };
 export { isShopPathname };
 export { isDocsAuthorPathname };
+export { isWorkbenchPathname };
