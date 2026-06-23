@@ -923,12 +923,12 @@ db.Aop.OnLogExecuting = (sql, pars) =>
 
 ### SQLite 登录链路偶发慢请求
 
-**问题**：登录页输入账号密码后需要等待数十秒，或标签页长时间后台后再次进入登录流程明显变慢。
+**问题**：登录页输入邮箱和密码后需要等待数十秒，或标签页长时间后台后再次进入登录流程明显变慢。
 
 **建议排查**：
 1. 先看 `Logs/Radish.Auth/Log.txt` 中 `[Account/Login]` 的阶段耗时，确认慢点落在用户查询、密码校验还是角色查询。
 2. 再看 `Logs/Radish.Auth/AopSql/AopSql.txt` 是否出现慢连接、慢查询、慢命令或数据库异常日志。
-3. 如果当前数据库是旧 SQLite 库，先执行一次 `DbMigrate apply`，确认 `idx_user_login_active` 已自动补齐。
+3. 如果当前数据库是旧 SQLite 库，先执行一次 `DbMigrate apply`，确认当前用户身份字段、公开索引和登录查询所需结构已自动补齐。
 4. 如果仍频繁出现连接等待，应优先评估是否存在同库高频写入竞争，必要时把环境从 SQLite 切到 PostgreSQL。
 
 ## 扩展功能

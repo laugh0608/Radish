@@ -189,14 +189,15 @@ ICurrentUserAccessor
 | 语义 | 首选来源 | 兼容来源 | 最终去向 |
 | --- | --- | --- | --- |
 | 用户标识 | `sub` | `ClaimTypes.NameIdentifier`、`jti` | `CurrentUser.UserId` |
-| 用户名 | `name` | `ClaimTypes.Name`、`preferred_username` | `CurrentUser.UserName` |
+| 展示名 | `name` | `ClaimTypes.Name`、`preferred_username` | `CurrentUser.UserName` |
+| 公开展示句柄 | `preferred_username` | `ClaimTypes.Name` | 前端展示兜底；运行时仍以 `CurrentUser.UserName` 作为展示名 |
 | 租户 | `tenant_id` | `TenantId` | `CurrentUser.TenantId` |
 | 角色 | `role` | `ClaimTypes.Role` | `CurrentUser.Roles` |
 | Scope | `scope` | 无 | `CurrentUser.Scopes` |
 
 约束如下：
 
-- **新签发只新增标准 Claim**，历史 Claim 不再继续扩散。
+- **新签发只新增标准 Claim**，历史 Claim 不再继续扩散；B6 后 `name` 表示 `DisplayName`，`preferred_username` 表示 `DisplayHandle`，都不是私有 `LoginName`。
 - **旧 Claim 只作为输入兼容**，不允许再成为新代码的直接依赖。
 - **`CurrentUser` 是唯一输出模型**。
 

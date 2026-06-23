@@ -19,6 +19,7 @@
   - `/leaderboard`
   - `/shop`、`/shop/products`、`/shop/product/:productId`
 - 登录后功能不进入公开 SEO 范围，例如发帖、编辑、订单、背包、设置、Console 与治理后台。
+- `/workbench` 是正式 Web 功能地图，不进入 sitemap、canonical 或公开详情分享范围；公共头部“工作台”可以指向它，但公开内容 canonical 仍只能使用对应公开真实路径。
 - 桌面工作台入口继续由 `/desktop` 承载；公开 URL 命中时优先渲染公开内容壳层，而不是完整 WebOS 桌面 Shell。
 - `/circle` 是登录后“我的圈子”关系流入口，不进入公开 SEO、sitemap、canonical 或分享页范围；它可以在当前标签页中把来源状态一次性交接给后续公开详情，但不能把圈子来源写入公开 URL。
 

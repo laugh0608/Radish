@@ -25,7 +25,7 @@ features:
     details: Common / Shared / Model / Repository / Service / Api 分层明确，便于协作与维护。
   - icon: 🖥️
     title: 纯 Web 与工作台入口
-    details: 普通浏览器默认进入纯 Web 公开入口，/desktop 保留 WebOS 工作台能力。
+    details: 普通浏览器默认进入纯 Web 公开入口，/workbench 承担正式 Web 功能地图，/desktop 保留 WebOS 历史工作台能力。
   - icon: 🗂️
     title: 低噪音入口
     details: 首页只保留高频入口；详细目录、规划和日志拆分到独立页面，减少查找与上下文噪音。
@@ -40,6 +40,7 @@ features:
 - [用户身份语义与公开索引](/architecture/user-identity-semantics) - 登录名、邮箱、展示名、PublicId 与公开索引的长期契约
 - [前端设计](/frontend/design) - 纯 Web、Flutter、WebOS 保留入口与应用集成方式
 - [前端多壳层策略](/frontend/shell-strategy) - 多端壳层职责分工
+- [Web 功能地图](/workbench) - 正式 Web 功能总入口，串联公开、私域、治理与历史桌面入口
 - [纯 Web 私域复访入口](/frontend/private-web-revisit) - `/notifications`、`/me`、`/messages`、`/pet` 的登录恢复、来源返回与私域边界
 - [Flutter 移动端 handoff 与回流说明](/guide/flutter-mobile-handoff) - 移动原生来源返回、登录回流与公开链接口径
 

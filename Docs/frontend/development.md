@@ -9,7 +9,7 @@ Radish 使用 npm workspaces 管理四个前端包：
 ```text
 Frontend/
 ├── radish.http/    # 统一 HTTP 客户端
-├── radish.client/  # 纯 Web 默认入口与 /desktop 工作台保留入口
+├── radish.client/  # 纯 Web 默认入口、/workbench 功能地图与 /desktop 历史工作台保留入口
 ├── radish.console/ # 管理后台
 └── radish.ui/      # 共享 UI 组件与样式
 ```
@@ -18,7 +18,7 @@ Frontend/
 
 - `@radish/http`：统一 API 客户端、认证续期、请求类型
 - `@radish/ui`：共享组件、交互反馈、展示辅助能力
-- `radish.client`：面向普通用户的纯 Web 前台；普通浏览器根路径 `/` 当前进入 `/discover`，WebOS 工作台能力保留在 `/desktop`
+- `radish.client`：面向普通用户的纯 Web 前台；普通浏览器根路径 `/` 当前进入 `/discover`，公共头部“工作台”进入 `/workbench` 功能地图，WebOS 工作台能力保留在 `/desktop`
 - `radish.console`：面向后台治理的独立前端
 
 ## 2. 依赖与链接机制

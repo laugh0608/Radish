@@ -1,6 +1,6 @@
 # 前端设计文档
 
-> Radish 第一开发阶段以前端 **WebOS / 超级应用** 为主入口完成首版交付；第二开发阶段开始演进出公开内容壳层、Flutter 移动客户端与 Tauri 桌面壳验证。`2026-05-25` 路线复盘后，前端主线收敛为 **纯 Web + Flutter**：根路径 `/` 与默认浏览器入口转向纯 Web，`/desktop` 仅保留为 WebOS 历史入口，PC/Tauri 后置且不再绑定 WebOS。`2026-06-21` 起，公开商品购买回流、订单 / 背包、完整个人中心子路径和论坛作者态首批能力已进入正式 Web 路由；WebOS 深链继续作为历史工作台兼容能力保留。本文档描述当前前端事实、演进方向与相关实现约束。
+> Radish 第一开发阶段以前端 **WebOS / 超级应用** 为主入口完成首版交付；第二开发阶段开始演进出公开内容壳层、Flutter 移动客户端与 Tauri 桌面壳验证。`2026-05-25` 路线复盘后，前端主线收敛为 **纯 Web + Flutter**：根路径 `/` 与默认浏览器入口转向纯 Web，`/desktop` 仅保留为 WebOS 历史入口，PC/Tauri 后置且不再绑定 WebOS。`2026-06-21` 起，公开商品购买回流、订单 / 背包、完整个人中心子路径和论坛作者态首批能力已进入正式 Web 路由；`2026-06-23` 起，`/workbench` 承担正式 Web 功能地图，公共头部“工作台”动作默认进入 `/workbench`，再由其中的历史入口进入 `/desktop`。本文档描述当前前端事实、演进方向与相关实现约束。
 
 ## 1. 设计理念
 
@@ -56,7 +56,8 @@
 - 公开内容壳层当前已完成 `/discover`、forum、docs、个人公开页、公开榜单与公开商城浏览入口，并继续补到 forum 公开分类、forum 公开搜索与 docs 公开搜索首批：`/discover`、`/forum`、`/forum/category/:categoryId`、`/forum/search`、`/forum/post/:postId`、`/docs`、`/docs/search`、`/docs/:slug`、`/u/:identifier`、`/leaderboard`、`/leaderboard/:type`、`/shop`、`/shop/products` 与 `/shop/product/:productId` 都已可直接进入公开壳层；其中 forum detail 路由参数当前可承接 `Post.PublicId` 或旧 long 字符串，公开个人页路由参数当前可承接 `User.PublicId` 或旧 long 字符串，canonical / 分享 / 普通内容入口优先使用 `PublicId`
 - 纯 Web 已开始承担根路径 `/` 与默认浏览器入口；普通浏览器 `/` 当前进入 `/discover` 公开分发页，公开内容壳层的已有路径是纯 Web 主线的第一批基础，不再回塞进 WebOS 窗口系统
 - 纯 Web 登录态私域入口当前已覆盖 `/notifications`、`/circle`、`/me`、`/shop/orders`、`/shop/order/:orderId`、`/shop/inventory`、`/messages`、`/pet`：分别承接通知列表 / 目标分流、关注动态与关系链复访、个人状态与完整个人中心子路径、商城购买结果 / 订单 / 背包、会话 / 消息定位、电子宠物领取与照顾；这些路由不进入公开 sitemap，不替代 `/desktop` 的完整工作台能力，细节见 [纯 Web 私域复访入口设计说明](/frontend/private-web-revisit)
-- 公开内容壳层当前已形成共享头部视觉和动作基线：forum / docs / discover / leaderboard / shop / `u/:identifier` 在窄屏下统一使用品牌字、图标与按钮 token；主动作收口为“社区发现 / 我的圈子 / 工作台”，其中 `/desktop` 保留为历史工作台入口，不作为新增公开功能的主动作
+- `/workbench` 当前作为正式 Web 功能总入口，按公开浏览、登录态私域、后台治理和历史桌面四组汇总已迁移功能；公共头部“工作台”动作指向 `/workbench`，`/desktop` 作为 WebOS 历史工作台入口保留在功能地图内
+- 公开内容壳层当前已形成共享头部视觉和动作基线：forum / docs / discover / leaderboard / shop / `u/:identifier` 在窄屏下统一使用品牌字、图标与按钮 token；主动作收口为“社区发现 / 我的圈子 / 工作台”，其中“工作台”进入 `/workbench`，不直接打开 WebOS 桌面壳
 - Console 当前已形成 `Case Desk` 设计方向：低饱和暖灰 / 纸色背景、轻侧栏、克制边框、明确按钮层级和可扫描的后台信息密度，设计稿见 `Docs/frontend/design-sources/console-governance-workbench.pen`；该方向可作为 `radish.client` 后续重新设计时的视觉气质参考，但不直接复刻 Console 的管理后台信息结构
 - Console 当前按页面类型选择实现基座：治理页使用“队列 / 详情 / 动作留痕”，表格 CRUD 使用“指标 / 工具条 / 表格 / 摘要栏”，设置页使用“分组导航 / 设置列 / 影响范围”，调度总览使用“关键指标 / 快捷操作 / 最近事项 / 右侧入口”；新增或明显改动页面优先复用 `--console-*` token、`AdminLayout` 和 `adminFeature.css`
 - `/discover` 当前已从公开导航聚合页推进为公开内容流：首屏和内容区会复用公开帖子、公开文档、商品和榜单入口，让用户先在同一页面判断下一步阅读路径，再进入 forum / docs / leaderboard / shop / 公开主页
