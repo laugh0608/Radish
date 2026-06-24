@@ -24,3 +24,13 @@
 - `P3-12-B6-3` 展示名变更治理完成：新增 `UserDisplayNameChangeRecord`，个人资料改名走 `UserService.ChangeDisplayNameAsync`，接入改名冷却、滚动窗口和窗口内最大次数系统设置。
 - 相关设计 / 说明书已同步：当前规划、P3-12 主线、B5 / B6 专题、用户身份语义、长期 ID 路线、认证服务、系统设置治理、运行时配置边界、记录索引和本开发日志均已对齐今日提交。
 - 今日提交回顾见 [2026-06-23 收工回顾与明日事项](/records/daily-handoff-2026-06-23)。明日第一顺位是 `P3-12-B6-4 PublicIndex 保留号治理`：新增保留靓号列表 / 规则设置，并让注册与 Bootstrap 分配器跳过保留号。
+
+## 2026-06-24
+
+- `P3-12-B6-4` PublicIndex 保留号治理完成：新增显式保留号与靓号规则系统设置，普通注册、批量新增和 Bootstrap 公开索引分配跳过配置命中号。
+- `P3-12-B6-5` 身份旧字段与种子迁移收口完成：后端 `LoginName` / `UserRealName`、个人资料真实姓名输入、登录名系统设置和 DbMigrate 旧身份回填逻辑退场；开发种子账号固定邮箱与 `PublicIndex=1/2/3`。
+- `P3-12-B6-6` 验证契约收紧完成：token、structured data 和 return path 身份语义守护补强，B6 代码侧与启动前验证收口；Gateway PC / mobile 页面 smoke 仍待用户明确前后端启动后补验。
+- Web 联调阻断修复完成：公开 head snapshot 缓存 / middleware / 配置与商城任务空集合处理补强，并补相关测试。
+- `P3-12-D2` 公开 Web 统一体验设计源首批完成：创建 `public-web-unified-experience.pen`，写入公开 Web `rx-*` 变量、`P01` 公开壳层基座和 `P02` 发现内容流；当前仍处于 Pencil 设计源阶段，不进入视觉代码。
+- 相关设计 / 说明书已同步：当前规划、P3-12 主线、前端设计说明、设计源索引、D2 设计源记录、记录索引和本开发日志均已对齐今日提交。
+- 今日提交回顾见 [2026-06-24 收工回顾与明日事项](/records/daily-handoff-2026-06-24)。明日第一顺位是继续补 `public-web-unified-experience.pen`：先做 `P03` 公开详情阅读，再做 `P04` 公开集合页和 `P05` mobile 单列基线。

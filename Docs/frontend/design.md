@@ -58,6 +58,7 @@
 - 纯 Web 登录态私域入口当前已覆盖 `/notifications`、`/circle`、`/me`、`/shop/orders`、`/shop/order/:orderId`、`/shop/inventory`、`/messages`、`/pet`：分别承接通知列表 / 目标分流、关注动态与关系链复访、个人状态与完整个人中心子路径、商城购买结果 / 订单 / 背包、会话 / 消息定位、电子宠物领取与照顾；这些路由不进入公开 sitemap，不替代 `/desktop` 的完整工作台能力，细节见 [纯 Web 私域复访入口设计说明](/frontend/private-web-revisit)
 - `/workbench` 当前作为正式 Web 功能总入口，按公开浏览、登录态私域、后台治理和历史桌面四组汇总已迁移功能；公共头部“工作台”动作指向 `/workbench`，`/desktop` 作为 WebOS 历史工作台入口保留在功能地图内
 - 公开内容壳层当前已形成共享头部视觉和动作基线：forum / docs / discover / leaderboard / shop / `u/:identifier` 在窄屏下统一使用品牌字、图标与按钮 token；主动作收口为“社区发现 / 我的圈子 / 工作台”，其中“工作台”进入 `/workbench`，不直接打开 WebOS 桌面壳
+- `P3-12-D2` 已创建公开 Web 统一体验设计源 `Docs/frontend/design-sources/public-web-unified-experience.pen`，当前包含 `P01` 公开壳层基座和 `P02` 发现内容流；该设计源用于后续公开详情、公开集合页和 mobile 单列基线确认，未完成说明文档前不进入跨页面视觉代码实现
 - Console 当前已形成 `Case Desk` 设计方向：低饱和暖灰 / 纸色背景、轻侧栏、克制边框、明确按钮层级和可扫描的后台信息密度，设计稿见 `Docs/frontend/design-sources/console-governance-workbench.pen`；该方向可作为 `radish.client` 后续重新设计时的视觉气质参考，但不直接复刻 Console 的管理后台信息结构
 - Console 当前按页面类型选择实现基座：治理页使用“队列 / 详情 / 动作留痕”，表格 CRUD 使用“指标 / 工具条 / 表格 / 摘要栏”，设置页使用“分组导航 / 设置列 / 影响范围”，调度总览使用“关键指标 / 快捷操作 / 最近事项 / 右侧入口”；新增或明显改动页面优先复用 `--console-*` token、`AdminLayout` 和 `adminFeature.css`
 - `/discover` 当前已从公开导航聚合页推进为公开内容流：首屏和内容区会复用公开帖子、公开文档、商品和榜单入口，让用户先在同一页面判断下一步阅读路径，再进入 forum / docs / leaderboard / shop / 公开主页

@@ -8,6 +8,8 @@
 
 > 2026-06-22 补充：用户随后明确说明前后端已启动，已补 B4 / D1 阶段运行态 smoke，记录见 [P3-12 B4 / D1 阶段运行态 Smoke 记录](/records/p3-12-b4-d1-stage-smoke-record-2026-06-22)。`/messages` 已验证为正式 Web 消息 / 聊天入口；后续在 UI 设计专题前先插入 [P3-12-B5 Web 功能总入口设计](/records/p3-12-b5-web-workbench-entry-design-2026-06-22) 和 [P3-12-B6 身份语义二次收口设计](/records/p3-12-b6-identity-contract-convergence-design-2026-06-22)，分别解决正式 Web 功能发现与身份字段混用问题。
 
+> 2026-06-24 补充：B5 / B6 已完成代码侧与启动前验证收口；Pencil 可用后已创建 `public-web-unified-experience.pen` 并补公开 Web `P01-P02`，记录见 [P3-12-D2 公开 Web 统一体验设计源记录](/records/p3-12-d2-public-web-unified-design-source-2026-06-24)。后续继续补公开详情、公开集合页和 mobile 单列设计稿。
+
 ## 本轮背景
 
 `P3-12-B1 / C1 / B2 / B3 / B4-1 / B4-2` 已完成首批代码或小阶段验收，正式 Web 已具备账户资产、商城交易、个人中心、论坛作者态、文档作者态和 Console 文档治理的主路径。
@@ -43,7 +45,7 @@
 
 | 设计源 | 状态 | 职责 | 首批画板建议 |
 | --- | --- | --- | --- |
-| `public-web-unified-experience.pen` | 待 Pencil 可用后创建 | 公开 Web 壳层、内容流、公开详情、公开搜索、公开个人页、榜单和公开商城浏览 | `P01` 公开壳层基座、`P02` 发现内容流、`P03` 详情阅读、`P04` 公开集合页、`P05` mobile 单列 |
+| `public-web-unified-experience.pen` | 已创建，`P01-P02` 已完成 | 公开 Web 壳层、内容流、公开详情、公开搜索、公开个人页、榜单和公开商城浏览 | `P01` 公开壳层基座、`P02` 发现内容流、`P03` 详情阅读、`P04` 公开集合页、`P05` mobile 单列 |
 | `private-web-workflows.pen` | 待 Pencil 可用后创建 | 登录态私域和作者态流程，包括 `/me`、资产、订单、背包、通知、消息、圈子、宠物、论坛作者态和文档作者态 | `P01` 私域首页、`P02` 资产 / 订单、`P03` 作者工作台、`P04` 编辑器、`P05` mobile 私域 |
 | `console-governance-workbench.pen` | 已存在 | Console Case Desk 基座，后续只补文档治理差异画板，不重做 Console 全站 | `P09` 文档治理列表 / 版本 / 权限策略，沿用既有 `P01-P08` 基座 |
 
@@ -91,11 +93,12 @@
 
 1. 先完成 `P3-12-B5` 的 `/workbench` 功能总入口和公共壳层入口调整，避免 UI 设计阶段继续以 `/desktop` 作为用户找功能的默认路径。
 2. 再完成 `P3-12-B6` 身份语义二次收口，避免 UI 设计阶段继续围绕 `LoginName`、旧 `UserName`、`UserRealName` 或 `usr_...` 可见文本做界面固化。
-3. Pencil 可用后，创建 `public-web-unified-experience.pen` 与 `private-web-workflows.pen`，并在 `console-governance-workbench.pen` 补 `P09` 文档治理画板。
-4. 每个 `.pen` 首批只画 PC 和 mobile 关键帧，不追求一次覆盖所有状态。
-5. 根据设计稿更新 `Docs/frontend/design.md`、`Docs/frontend/visual-theme-spec.md` 或新增专题说明。
-6. 再进入代码实现，优先沉淀共享 token、公开壳层和作者态通用结构。
-7. B5 / B6 / D 的 Gateway PC / mobile smoke 合并到较大阶段执行，等用户明确说明前后端已启动后再做。
+3. 继续补齐 `public-web-unified-experience.pen` 的 `P03` 公开详情阅读、`P04` 公开集合页和 `P05` mobile 单列关键画板。
+4. 再创建 `private-web-workflows.pen`，并在 `console-governance-workbench.pen` 补 `P09` 文档治理画板。
+5. 每个 `.pen` 首批只画 PC 和 mobile 关键帧，不追求一次覆盖所有状态。
+6. 根据设计稿更新 `Docs/frontend/design.md`、`Docs/frontend/visual-theme-spec.md` 或新增专题说明。
+7. 再进入代码实现，优先沉淀共享 token、公开壳层和作者态通用结构。
+8. B5 / B6 / D 的 Gateway PC / mobile smoke 合并到较大阶段执行，等用户明确说明前后端已启动后再做。
 
 ## 验证口径
 
