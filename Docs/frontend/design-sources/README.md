@@ -11,4 +11,5 @@
 
 当前源文件：
 
+- `public-web-unified-experience.pen`：公开 Web 统一体验设计端点，当前包含 `P01-P02` 编号画板，覆盖公开壳层基座与发现内容流；后续继续补公开详情、公开集合页与移动单列基线。
 - `console-governance-workbench.pen`：Console 治理工作台与后台视觉基座设计端点，当前包含 `P01-P08` 编号画板，覆盖壳层基座、内容审核、经验台账、治理调度、表格 CRUD、设置策略和移动端治理流程参考。
