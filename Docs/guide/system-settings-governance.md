@@ -2,7 +2,7 @@
 
 > 状态：低 / 中风险首轮治理已阶段收束，进入维护观察与后续独立评审池
 >
-> 最后更新：2026-06-23（Asia/Shanghai）
+> 最后更新：2026-06-24（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -251,6 +251,14 @@ SystemConfig 覆盖值
 安全会话、奖励数值、审核阈值和资产相关设置应等审计与二次确认基础完成后再开放。
 
 当前已注册并可在 Console 展示的设置为：`Site.Branding.FaviconUrl`、`UserIdentity.DisplayName.MinLength`、`UserIdentity.DisplayName.MaxLength`、`UserIdentity.DisplayName.ChangeCooldownDays`、`UserIdentity.DisplayName.ChangeWindowDays`、`UserIdentity.DisplayName.ChangeWindowMaxCount`、`UserIdentity.PublicIndex.ReservedIndexes`、`UserIdentity.PublicIndex.VanityRules`、`Content.PostTitle.MinLength`、`Content.PostTitle.MaxLength`、`Content.PostBody.MinLength`、`Content.PostBody.MaxLength`、`Content.PostSummary.MaxLength`、`Comment.Body.MinLength`、`Comment.Body.MaxLength`、`Comment.QuickReply.MaxContentLength`、`Comment.QuickReply.DefaultTake`、`Comment.QuickReply.MaxTake`、`Comment.QuickReply.PerPostCooldownSeconds`、`Comment.QuickReply.DuplicateWindowSeconds`、`Comment.Highlight.StabilityWindowMinutes`、`Comment.Highlight.ReplacementMinLikeDelta`。账号身份本批开放展示名长度边界、展示名改名频率限制和 PublicIndex 自动分配保留号规则，不开放邮箱、登录凭证、高风险账号字段、人工指定 PublicIndex 或 Console 账号变更动作；轻回应本批只开放内容长度、返回条数、冷却和重复内容窗口，不开放 `ForumQuickReply.Enable` 功能开关；神评本批只开放稳定窗口和替换阈值，不开放任务启停、调度、扫描窗口、触发评论数量门槛或奖励数值。
+
+### 10.1 PublicIndex JSON 契约
+
+`UserIdentity.PublicIndex.ReservedIndexes` 和 `UserIdentity.PublicIndex.VanityRules` 是 `Medium` 风险 JSON 设置，后端解析失败时必须暴露配置错误，不能静默回退默认值。当前契约如下：
+
+- `ReservedIndexes` 必须是 JSON 数组，元素只允许整数或整数字符串，值必须在 `long / Int64` 范围内且不小于 `1000`，重复值非法。
+- `VanityRules` 必须是 JSON 对象，只允许 `repeatedDigits`、`ascendingSequence`、`descendingSequence`、`palindrome` 四个键，键值必须是布尔值。
+- `1-999` 是系统保留段，不通过 `ReservedIndexes` 配置；显式保留号和靓号规则只影响普通注册 / Bootstrap 后续自动分配，不回收、不迁移、不自动改写既有用户。
 
 首轮治理后的剩余候选不直接排成新增批次：评论 typing 节流、神评触发评论数量门槛、内容发布频率限制暂不纳入本轮；论坛编辑历史涉及普通用户编辑次数 / 时间窗、历史保留和管理员覆盖，后续如需治理应作为编辑权限与历史保留专题独立评审。
 

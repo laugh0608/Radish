@@ -74,9 +74,9 @@ Flutter 通过 `HttpRadishApiClient` 复用 Radish API 的 `MessageModel` 响应
 已登录我的页当前提供“编辑资料”入口，用于维护移动端基础个人资料。
 
 - 读取接口为 `User/GetMyProfile`，保存接口为 `User/UpdateMyProfile`。
-- 当前可编辑用户名、邮箱、展示名称、年龄和地址；保存成功后刷新原生公开资料摘要。
+- 当前可编辑展示名（接口字段仍兼容 `userName`）、邮箱、年龄和地址；保存成功后刷新原生公开资料摘要。
 - 编辑对话框覆盖加载、字段校验、保存中、保存失败提示和取消返回。
-- forum 作者展示名按 `UserRealName -> UserName -> User-{id}` 口径回读当前资料，Console 用户详情也展示同一展示名称。
+- forum 作者展示名按 `DisplayName -> UserName 兼容字段 -> User-{id}` 口径回读当前资料，Console 用户详情也展示同一展示名称；`UserRealName` 不再作为当前资料展示来源。
 - 头像上传、密码修改、完整账号设置、关注管理和资料治理不进入当前 Flutter 边界。
 
 ## Forum 纯文本发帖

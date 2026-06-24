@@ -6,7 +6,7 @@
 
 > 仅 `radish.client` 的公开内容壳层需要对搜索引擎和外链分享友好；`radish.console`、登录后 WebOS 工作台和治理类页面默认不做 SEO 要求。
 >
-> 当前已完成首批公开增长基线：运行时 head / canonical、运行时公开域名配置、公开详情分享入口、公开个人页复制链接入口、公开详情与集合页运行时 JSON-LD、API + Gateway 动态 sitemap、浏览器可见资源 URL 归一，以及 forum / docs / shop 公开详情首包 head snapshot 注入。完整正文 SSR / SSG、预渲染和公开个人页动态 sitemap 继续后置。
+> 当前已完成首批公开增长基线：运行时 head / canonical、运行时公开域名配置、公开详情分享入口、公开个人页复制链接入口、公开详情与集合页运行时 JSON-LD、API + Gateway 动态 sitemap、浏览器可见资源 URL 归一，以及公开集合页和 forum / docs / shop 公开详情首包 head snapshot 注入。完整正文 SSR / SSG、预渲染和公开个人页动态 sitemap 继续后置。
 
 ##### 10.5.1 当前公开 URL 范围
 
@@ -37,7 +37,22 @@
 
 `Frontend/radish.client/index.html` 只提供 SPA 首包的中文语言、站点默认 title、description 与 Open Graph 基线；页面级标题、摘要、canonical 和分享 URL 由运行时 head helper 根据公开路由补齐。
 
-forum / docs / shop 三类公开详情还会在 Gateway 层做首包 head snapshot 注入：API 提供公开详情 head snapshot，Gateway 在返回前端入口 HTML 前注入 `<title>`、description、canonical、Open Graph、Twitter card 与 JSON-LD。该能力只改首包 `<head>`，不渲染正文 HTML，不改变 React hydrate，也不替代运行时 `publicHead`。
+公开集合页和 forum / docs / shop 三类公开详情还会在 Gateway 层做首包 head snapshot 注入：API 提供公开详情 head snapshot，Gateway 在返回前端入口 HTML 前注入 `<title>`、description、canonical、Open Graph、Twitter card 与 JSON-LD。该能力只改首包 `<head>`，不渲染正文 HTML，不改变 React hydrate，也不替代运行时 `publicHead`。
+
+当前 Gateway 注入范围如下：
+
+- 静态公开集合页：`/discover`、`/forum`、`/docs`、`/leaderboard`、`/shop`，对应 `/api/public-head/static/{routeKey}`。
+- 公开详情页：`/forum/post/{postPublicId 或旧 postId}`、`/docs/{slug}`、`/shop/product/{productId}`。
+- `GET` / `HEAD` 且 `Accept` 允许 HTML 的请求才进入注入；WebSocket、API、静态资源和非 HTML 请求不进入该链路。
+- `/docs/search`、公开个人页 `/u/:identifier`、登录后页面、Console 和治理后台暂不进入 Gateway 首包 head snapshot。
+
+API 侧根据 `GatewayService:PublicUrl` / `RADISH_PUBLIC_URL` 生成公开 canonical；缺省时允许使用安全的 `X-Forwarded-Proto / X-Forwarded-Host` 回推公开 origin。Gateway 调 API 时会根据同一公开 URL 配置补 forwarded headers，避免 API 在反代后生成内部地址。
+
+缓存和回退边界如下：
+
+- API head snapshot 通过统一缓存入口缓存 `20` 分钟；Gateway 前端入口 HTML 缓存 `5` 分钟；Gateway 已注入 HTML 按 `Host + snapshot API path` 缓存 `10` 分钟。
+- API snapshot 返回 `404`、下游请求失败、前端入口 HTML 不可达、注入异常或快照为空时，Gateway 必须失败开放到原 SPA 链路，不输出不完整或错误的 `<head>`。
+- 失败开放只保证用户仍可访问页面，不代表 SEO / 分享预览合格；部署或发布前仍需跑 public head smoke。
 
 ##### 10.5.3 canonical 与分享入口
 
@@ -95,6 +110,6 @@ forum / docs / shop 三类公开详情还会在 Gateway 层做首包 head snapsh
 
 ##### 10.5.8 验证入口
 
-- `npm run check:public-head-smoke`：部署后检查 robots、sitemap 与三类公开详情首包 head。
+- `npm run check:public-head-smoke`：部署后检查 robots、sitemap 与公开集合页 / 详情页首包 head。
 - `Docs/guide/public-head-smoke.md`：记录 sitemap `<loc>` public origin 抽查、外部 canonical 允许参数和本地 HTTPS 自签名证书说明。
 - `node --test --test-isolation=none ./tests/publicStructuredData.test.ts ./tests/publicHead.test.ts`：覆盖运行时 JSON-LD 与公开 head helper。

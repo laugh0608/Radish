@@ -147,34 +147,34 @@ $argon2id$v=19$m=19456,t=2,p=1$saltBase64$hashBase64
 **种子数据示例**：
 ```csharp
 // InitialDataSeeder.cs
+// 使用 Argon2id 存储登录密码哈希
 var systemUser = new User(new UserInitializationOptions(
-    "system",
-    PasswordHasher.HashPassword("system123456")  // 使用 Argon2id
-));
+    "system@radishx.com",
+    PasswordHasher.HashPassword("system123456"))
+{
+    UserName = "system"
+});
 ```
 
 ### 3.3 登录验证流程
 
 ```csharp
 // LoginController.cs / AccountController.cs
-public async Task<IActionResult> Login(string username, string password)
+public async Task<IActionResult> Login(string email, string password)
 {
-    // 1. 查询用户（不再需要对密码进行哈希）
-    var user = await _userService.QueryAsync(u =>
-        u.LoginName == username &&
-        u.IsDeleted == false);
+    var normalizedEmail = email.Trim().ToLowerInvariant();
 
-    if (user.Count == 0)
+    // 1. 按登录邮箱查询用户（不再需要对密码进行哈希）
+    var user = await _userService.GetEnabledUserByEmailAsync(normalizedEmail);
+    if (user is null)
     {
-        return Unauthorized("用户名或密码错误");
+        return Unauthorized("邮箱或密码错误");
     }
 
-    var firstUser = user.FirstOrDefault();
-
     // 2. 验证密码（使用 Argon2.Verify）
-    if (!PasswordHasher.VerifyPassword(password, firstUser.LoginPassword))
+    if (!PasswordHasher.VerifyPassword(password, user.VoLoginPassword))
     {
-        return Unauthorized("用户名或密码错误");
+        return Unauthorized("邮箱或密码错误");
     }
 
     // 3. 生成 Token...
@@ -270,7 +270,8 @@ public class PasswordValidator
 **实现建议**：
 ```csharp
 // 使用 Redis 记录失败次数
-var failKey = $"login:fail:{username}";
+var normalizedEmail = email.Trim().ToLowerInvariant();
+var failKey = $"login:fail:{normalizedEmail}";
 var failCount = await _cache.GetAsync<int>(failKey);
 
 if (failCount >= 5)
@@ -294,7 +295,7 @@ await _cache.SetAsync(failKey, failCount + 1, TimeSpan.FromMinutes(15));
 **禁止的做法**：
 - ❌ 通过邮件直接发送新密码
 - ❌ 使用安全问题（容易被社工）
-- ❌ 允许通过用户名直接重置（需验证身份）
+- ❌ 仅凭邮箱或展示名直接重置，不验证验证码、Token 或其他身份凭证
 
 ### 5.4 会话管理
 
@@ -329,9 +330,13 @@ await _cache.SetAsync($"session:{userId}", userInfo, TimeSpan.FromHours(12));
 ### 6.2 数据库查询优化
 
 ```csharp
-// ✅ 推荐：先按用户名查询（有索引），再验证密码
+// ✅ 推荐：先按规范化邮箱查询（有索引），再验证密码
+var normalizedEmail = email.Trim().ToLowerInvariant();
 var user = await _db.Queryable<User>()
-    .Where(u => u.LoginName == username && !u.IsDeleted)
+    .Where(u =>
+        u.UserEmail == normalizedEmail &&
+        u.IsEnable &&
+        !u.IsDeleted)
     .FirstAsync();
 
 if (user != null && PasswordHasher.VerifyPassword(password, user.LoginPassword))
@@ -347,7 +352,7 @@ var user = allUsers.FirstOrDefault(u =>
 
 **索引建议**：
 ```sql
-CREATE INDEX idx_user_loginname ON User(LoginName) WHERE IsDeleted = false;
+CREATE INDEX idx_user_email_active ON "User"(TenantId, UserEmail, IsDeleted, IsEnable);
 ```
 
 ## 7. 常见问题

@@ -1037,7 +1037,7 @@ public class UserBalance : RootEntityTKey<long>, IDeleteFilter
 - **ViewModel 命名规范**:
   - **类名**: 以 `Vo` 为后缀（如UserVo, ProductVo, OrderVo）
   - **字段名**: 所有字段必须添加 `Vo` 前缀
-    - **UserVo特殊设计**: `Vo`前缀 + 混淆字段名（如VoLoName表示LoginName，VoUsName表示UserName，VoUsPwd表示UserPassword）- 这是安全设计，体现自定义映射能力，保持其特殊性
+    - **UserVo特殊设计**: `Vo` 前缀 + 当前身份兼容字段并存；`VoDisplayName` / `VoDisplayHandle` 是公开展示主字段，`VoUserName` 仅表示历史 `UserName` 数据库列上的展示名兼容，不再表示登录名，禁止新增 `LoginName` / `UserRealName` 视图字段
     - **其他Vo模型**: `Vo`前缀 + 清晰字段名（如VoName, VoDescription, VoCreateTime, VoStatus）- 便于理解和维护
   - **前端适配**: 前端必须适配后端的Vo模型字段名，不得要求后端修改
   - **匿名对象禁用**: Controller方法严禁返回匿名对象，必须使用定义好的Vo类

@@ -257,7 +257,7 @@ Radish 未来联邦的最小公共节点定义为：
 - `P3-2` 试点已先从 `Post` 落地：新帖生成 `pst_` + UUIDv7 编码体，`PostVo` 并行暴露 `VoPublicId / VoId`，forum 公开路由、分享 canonical、通知 `extData`、浏览历史 routePath 和窗口参数优先支持 `postPublicId`，同时保留旧 `postId` 兼容；当时 `User / Product / WikiDocument / Comment` 暂不扩面，后续 `P3-10-B3` 已单独完成 User 首批
 - `P3-4` 留存回流验收已把“公开分享 / 通知 / 最近阅读 / 我的轻回应回到 WebOS 或 Flutter forum 详情”的当前契约收口为：`postPublicId` 优先，旧 long `postId` 只作为字符串 fallback，且普通用户可见文案不再展示长帖子 ID、评论 ID 或旧 long 路径。Flutter forum detail 进入真实详情后，应使用服务端返回的内部 `VoId` 调评论、轻回应和定位接口，不把 `PublicId` 误传给内部接口。docs / shop 仍不纳入本轮全量 `PublicId` 迁移，旧 long 路由只保留打开兼容，页面标题、描述和最近浏览展示不得把 long ID 当作可读内容。
 - `P3-10-B3` 已从 `User` 落地首批：`User.PublicId` 生成 `usr_` + UUIDv7 十六进制体，`UserVo / UserPublicProfileVo / LeaderboardItemVo / UnifiedLeaderboardItemVo` 暴露公开标识；`User/GetPublicProfile` 支持 PublicId 与旧 LongId 双读；`/u/:identifier` 和榜单用户跳转优先使用 PublicId，旧 LongId 只保留兼容读取。
-- `P3-10-B9` 已补用户公开索引首批：`User.PublicIndex` 持久化并唯一，公开资料、榜单、关系链、提及搜索和 Console 排障展示 `DisplayHandle`。`P3-12-B6-1` 后登录凭证已固定为邮箱 + 密码，`LoginName` 只作为历史内部字段保留，不进入注册、登录、公开搜索或公开页面展示。后续靓号保留只影响 `PublicIndex` 自动分配池和人工治理，不改变 `PublicId` 的稳定公开路由职责。
+- `P3-10-B9` 已补用户公开索引首批：`User.PublicIndex` 持久化并唯一，公开资料、榜单、关系链、提及搜索和 Console 排障展示 `DisplayHandle`。`P3-12-B6` 后登录凭证固定为邮箱 + 密码，`LoginName` 已从当前实体、注册 / 登录、Bootstrap、普通 DTO 和新库 schema 退场，不进入公开搜索或公开页面展示。后续靓号保留只影响 `PublicIndex` 自动分配池和人工治理，不改变 `PublicId` 的稳定公开路由职责。
 
 ### Phase C：联邦前置准备
 

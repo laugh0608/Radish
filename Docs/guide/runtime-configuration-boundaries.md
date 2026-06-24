@@ -70,6 +70,7 @@ SystemConfigDefaults 代码级默认值
 - `Comment.Highlight.ReplacementMinLikeDelta`
 
 覆盖值非法或越界时，应暴露为配置错误，不静默回退默认值。
+其中 `UserIdentity.PublicIndex.ReservedIndexes` 必须是保留号 JSON 数组，`UserIdentity.PublicIndex.VanityRules` 必须是受支持布尔规则 JSON 对象；完整契约见 [系统设置治理专题](/guide/system-settings-governance)。
 
 ## 3. Docker Compose 停启后的冲突处理
 
