@@ -3,6 +3,7 @@ using Moq;
 using Radish.Common.HelpTool;
 using Radish.IRepository;
 using Radish.IService;
+using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Service;
 using Xunit;
@@ -19,8 +20,9 @@ public class BootstrapServiceTest
             .Setup(r => r.AdministratorExistsAsync())
             .ReturnsAsync(false);
         var coinService = new Mock<ICoinService>(MockBehavior.Strict);
+        var systemSettingProvider = CreateSystemSettingProvider();
 
-        var service = new BootstrapService(repository.Object, coinService.Object);
+        var service = new BootstrapService(repository.Object, coinService.Object, systemSettingProvider.Object);
 
         var status = await service.GetStatusAsync();
 
@@ -33,7 +35,8 @@ public class BootstrapServiceTest
     {
         var repository = new Mock<IBootstrapRepository>(MockBehavior.Strict);
         var coinService = new Mock<ICoinService>(MockBehavior.Strict);
-        var service = new BootstrapService(repository.Object, coinService.Object);
+        var systemSettingProvider = CreateSystemSettingProvider();
+        var service = new BootstrapService(repository.Object, coinService.Object, systemSettingProvider.Object);
 
         var result = await service.CreateFirstAdministratorAsync(new BootstrapCreateAdminDto
         {
@@ -48,7 +51,8 @@ public class BootstrapServiceTest
             r => r.TryCreateFirstAdministratorAsync(
                 It.IsAny<string>(),
                 It.IsAny<string>(),
-                It.IsAny<string>()),
+                It.IsAny<string>(),
+                It.IsAny<PublicIndexReservationPolicy>()),
             Times.Never);
     }
 
@@ -56,17 +60,27 @@ public class BootstrapServiceTest
     public async Task CreateFirstAdministratorAsync_ShouldPassPasswordHashToRepository()
     {
         string? capturedHash = null;
+        PublicIndexReservationPolicy? capturedPolicy = null;
         var repository = new Mock<IBootstrapRepository>(MockBehavior.Strict);
         var coinService = new Mock<ICoinService>(MockBehavior.Strict);
+        var systemSettingProvider = CreateSystemSettingProvider(reservedIndexes: "[1000]", vanityRules: "{}");
         repository
-            .Setup(r => r.TryCreateFirstAdministratorAsync("Owner", It.IsAny<string>(), "owner@radish.test"))
-            .Callback<string, string, string>((_, passwordHash, _) => capturedHash = passwordHash)
+            .Setup(r => r.TryCreateFirstAdministratorAsync(
+                "Owner",
+                It.IsAny<string>(),
+                "owner@radish.test",
+                It.IsAny<PublicIndexReservationPolicy>()))
+            .Callback<string, string, string, PublicIndexReservationPolicy>((_, passwordHash, _, policy) =>
+            {
+                capturedHash = passwordHash;
+                capturedPolicy = policy;
+            })
             .ReturnsAsync(BootstrapAdminCreationResult.Created(9001, "Owner", "owner@radish.test"));
         coinService
             .Setup(service => service.GrantRegistrationRewardAsync(9001))
             .ReturnsAsync("TXN_REGISTER_9001");
 
-        var service = new BootstrapService(repository.Object, coinService.Object);
+        var service = new BootstrapService(repository.Object, coinService.Object, systemSettingProvider.Object);
 
         var result = await service.CreateFirstAdministratorAsync(new BootstrapCreateAdminDto
         {
@@ -80,6 +94,23 @@ public class BootstrapServiceTest
         Assert.NotNull(capturedHash);
         Assert.NotEqual("Strong!Pass123", capturedHash);
         Assert.True(PasswordHasher.VerifyPassword("Strong!Pass123", capturedHash!));
+        Assert.NotNull(capturedPolicy);
+        Assert.True(capturedPolicy!.ShouldReserve(1000));
+        Assert.False(capturedPolicy.ShouldReserve(1001));
         coinService.Verify(service => service.GrantRegistrationRewardAsync(9001), Times.Once);
+    }
+
+    private static Mock<ISystemSettingProvider> CreateSystemSettingProvider(
+        string? reservedIndexes = null,
+        string? vanityRules = null)
+    {
+        var provider = new Mock<ISystemSettingProvider>(MockBehavior.Strict);
+        provider
+            .Setup(item => item.GetEffectiveValueAsync(SystemConfigDefaults.PublicIndexReservedIndexesKey))
+            .ReturnsAsync(reservedIndexes ?? SystemConfigDefaults.DefaultPublicIndexReservedIndexes);
+        provider
+            .Setup(item => item.GetEffectiveValueAsync(SystemConfigDefaults.PublicIndexVanityRulesKey))
+            .ReturnsAsync(vanityRules ?? SystemConfigDefaults.DefaultPublicIndexVanityRules);
+        return provider;
     }
 }

@@ -29,9 +29,11 @@ public class BootstrapRepository : IBootstrapRepository
     public async Task<BootstrapAdminCreationResult> TryCreateFirstAdministratorAsync(
         string displayName,
         string passwordHash,
-        string email)
+        string email,
+        PublicIndexReservationPolicy publicIndexReservationPolicy)
     {
         var db = GetMainDb();
+        publicIndexReservationPolicy ??= PublicIndexReservationPolicy.Empty;
 
         try
         {
@@ -86,7 +88,7 @@ public class BootstrapRepository : IBootstrapRepository
                 UpdateTime = initializedAt,
                 CriticalModifyTime = initializedAt,
                 LastErrorTime = initializedAt,
-                PublicIndex = await AllocateNextPublicIndexAsync(db)
+                PublicIndex = await AllocateNextPublicIndexAsync(db, publicIndexReservationPolicy)
             };
 
             var userId = await db.Insertable(administrator).ExecuteReturnSnowflakeIdAsync();
@@ -207,12 +209,15 @@ public class BootstrapRepository : IBootstrapRepository
         return false;
     }
 
-    private static async Task<long> AllocateNextPublicIndexAsync(ISqlSugarClient db)
+    private static async Task<long> AllocateNextPublicIndexAsync(
+        ISqlSugarClient db,
+        PublicIndexReservationPolicy publicIndexReservationPolicy)
     {
         var maxPublicIndex = await db.Queryable<User>()
             .Where(user => user.PublicIndex >= User.PublicIndexStart)
             .MaxAsync(user => user.PublicIndex);
 
-        return maxPublicIndex.GetValueOrDefault(User.PublicIndexStart - 1) + 1;
+        return publicIndexReservationPolicy.FindNextAvailableAfter(
+            maxPublicIndex.GetValueOrDefault(User.PublicIndexStart - 1));
     }
 }

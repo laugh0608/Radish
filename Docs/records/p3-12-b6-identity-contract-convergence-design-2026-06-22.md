@@ -4,7 +4,7 @@
 >
 > 更新：2026-06-23 补充注册页 `DisplayName` 慎重设置提示、改名频率限制文案，以及 `PublicIndex` 靓号保留 / Console 配置规则。
 >
-> 状态：`B6-1 身份基础与注册登录`、`B6-2 公开展示与前端状态收敛`、`B6-3 展示名变更治理` 已完成；后续进入 `B6-4 PublicIndex 保留号治理`
+> 状态：`B6-1 身份基础与注册登录`、`B6-2 公开展示与前端状态收敛`、`B6-3 展示名变更治理`、`B6-4 PublicIndex 保留号治理` 已完成；后续进入 `B6-5 种子与 DbMigrate 收口`
 >
 > 结论：本专题承接 [用户身份语义与公开索引](/architecture/user-identity-semantics) 的首批实现，进一步移除 `LoginName` 公开 / 登录链路，固定“邮箱 + 密码”作为登录凭证，并把 `DisplayName`、`DisplayHandle`、`PublicId`、关注备注的职责彻底拆开。当前项目尚未上线且无正式数据库，B6 按破坏性 schema 收口处理，不提供旧库兼容迁移；实现完成后删除本地 SQLite 并重新初始化。
 
@@ -296,6 +296,26 @@ Bootstrap 初始化触点：
 
 本批未执行 Gateway 真实页面 smoke；按项目验证分层，留到 B6 成组功能准备验收或用户明确启动前后端后覆盖。
 
+## B6-4 实施记录
+
+`2026-06-24` 已完成 PublicIndex 保留号治理代码落地：
+
+- 新增 `UserIdentity.PublicIndex.ReservedIndexes` 与 `UserIdentity.PublicIndex.VanityRules` 两个 `Medium` 风险系统设置，默认显式保留 `[1314,5200]`，默认规则启用 `repeatedDigits`、`ascendingSequence`、`descendingSequence` 和 `palindrome`。
+- 新增 `PublicIndexReservationPolicy`，由服务端解析 JSON 设置并校验显式保留号；重复值、小于 `1000`、非整数、超出 `Int64` 和不支持的规则键会暴露为配置错误，不静默回退默认值。
+- `UserService.AddAsync`、`AddRangeAsync` 和公开身份补齐分配器在自动分配 `PublicIndex` 时跳过显式保留号与规则命中号，唯一索引冲突重试逻辑继续保留。
+- `BootstrapService` 在创建首个管理员前读取同一策略，`BootstrapRepository` 在数据库事务内分配并跳过保留号；本批不实现人工指定保留号、权限动作、独立审计工作台或既有用户改写。
+- 规则变更只影响后续自动分配，不回收、不重排、不改写既有用户；`1-999` 仍为系统、官方、种子、内部账号和 bot 保留段，不允许通过显式列表配置给普通自动分配池。
+
+本批验证：
+
+- `dotnet build Radish.slnx -c Debug --no-restore`
+- `dotnet test Radish.Api.Tests --filter "FullyQualifiedName~UserIdentitySemanticsServiceTest|FullyQualifiedName~BootstrapServiceTest|FullyQualifiedName~BootstrapRepositoryTest|FullyQualifiedName~SystemConfigServiceTest"`
+- `dotnet test Radish.Api.Tests`
+- `dotnet build Radish.slnx -c Debug`
+- `git diff --check`
+
+本批未执行 Gateway 真实页面 smoke；按项目验证分层，留到 B6 成组功能准备验收或用户明确启动前后端后覆盖。
+
 ## 实施顺序
 
 1. 冻结本专题设计与字段语义。（已完成）
@@ -303,7 +323,7 @@ Bootstrap 初始化触点：
 3. `B6-1 身份基础与注册登录`：调整 `User` 实体 / DTO / AutoMapper 命名，固定邮箱 + 密码登录；注册和 Bootstrap 必填 `DisplayName`，注册页补慎重设置和改名限制提示；OIDC claim 与 CurrentUser 不再输出登录名作为普通显示身份。（已完成）
 4. `B6-2 公开展示与前端状态收敛`：清理 `UserRealName` 公开 fallback、`VoLoginName` 普通前端状态、`VoUserName` 混淆展示；论坛、聊天、榜单、圈子、公开个人页、转账搜索和 Console 用户治理统一使用 `DisplayName` / `DisplayHandle`。（已完成）
 5. `B6-3 展示名变更治理`：新增 `UserDisplayNameChangeRecord`，接入冷却时间、滚动窗口和窗口内最大次数设置；个人资料改名走服务端校验和历史记录，不允许绕过频率限制。（已完成）
-6. `B6-4 PublicIndex 保留号治理`：新增 `UserIdentity.PublicIndex.ReservedIndexes` 与 `UserIdentity.PublicIndex.VanityRules` 设置，注册和 Bootstrap 分配器在数据库事务内跳过保留靓号；规则变更只影响后续分配。
+6. `B6-4 PublicIndex 保留号治理`：新增 `UserIdentity.PublicIndex.ReservedIndexes` 与 `UserIdentity.PublicIndex.VanityRules` 设置，注册和 Bootstrap 分配器在数据库事务内跳过保留靓号；规则变更只影响后续分配。（已完成）
 7. `B6-5 种子与 DbMigrate 收口`：更新 system / admin / test 种子展示名和保留号；删除身份旧库回填与旧兼容纠偏逻辑；实现后提醒删除本地 SQLite 并重新初始化。
 8. `B6-6 验证与阶段验收`：补身份语义扫描、Auth / Bootstrap / 用户服务 / 展示名修改 / PublicIndex 保留号定向测试、前端类型检查和 Gateway PC / mobile 页面 smoke。
 

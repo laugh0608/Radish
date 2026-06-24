@@ -210,6 +210,36 @@ public static class SystemConfigDefaults
         },
         new()
         {
+            Id = 23,
+            Category = UserIdentityCategory,
+            Key = PublicIndexReservedIndexesKey,
+            Name = "公开索引显式保留号",
+            Description = "普通注册与首个管理员初始化时需要跳过的 PublicIndex 靓号列表，使用 JSON 数组维护。",
+            ImpactSummary = "影响后续账号自动分配 PublicIndex，不自动改写既有用户，不改变 PublicId 或公开路由语义。",
+            ValueType = "json",
+            DefaultValue = DefaultPublicIndexReservedIndexes,
+            RiskLevel = SystemConfigRiskLevel.Medium,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
+        },
+        new()
+        {
+            Id = 24,
+            Category = UserIdentityCategory,
+            Key = PublicIndexVanityRulesKey,
+            Name = "公开索引靓号规则",
+            Description = "普通注册与首个管理员初始化时需要跳过的 PublicIndex 靓号规则，支持 repeatedDigits、ascendingSequence、descendingSequence、palindrome 四类布尔规则。",
+            ImpactSummary = "影响后续账号自动分配 PublicIndex；规则变更只影响新分配，不回收、不重排、不改写既有用户。",
+            ValueType = "json",
+            DefaultValue = DefaultPublicIndexVanityRules,
+            RiskLevel = SystemConfigRiskLevel.Medium,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
+        },
+        new()
+        {
             Id = 2,
             Category = ContentPublishingCategory,
             Key = PostTitleMinLengthKey,
@@ -510,6 +540,12 @@ public static class SystemConfigDefaults
     /// <summary>展示名修改窗口最大次数配置键</summary>
     public const string DisplayNameChangeWindowMaxCountKey = "UserIdentity.DisplayName.ChangeWindowMaxCount";
 
+    /// <summary>公开索引显式保留号配置键</summary>
+    public const string PublicIndexReservedIndexesKey = "UserIdentity.PublicIndex.ReservedIndexes";
+
+    /// <summary>公开索引靓号规则配置键</summary>
+    public const string PublicIndexVanityRulesKey = "UserIdentity.PublicIndex.VanityRules";
+
     /// <summary>帖子标题最小长度配置键</summary>
     public const string PostTitleMinLengthKey = "Content.PostTitle.MinLength";
 
@@ -575,6 +611,12 @@ public static class SystemConfigDefaults
 
     /// <summary>默认展示名修改窗口最大次数</summary>
     public const string DefaultDisplayNameChangeWindowMaxCount = "3";
+
+    /// <summary>默认公开索引显式保留号列表</summary>
+    public const string DefaultPublicIndexReservedIndexes = "[1314,5200]";
+
+    /// <summary>默认公开索引靓号规则</summary>
+    public const string DefaultPublicIndexVanityRules = "{\"repeatedDigits\":true,\"ascendingSequence\":true,\"descendingSequence\":true,\"palindrome\":true}";
 
     /// <summary>默认帖子标题最大长度</summary>
     public const string DefaultPostTitleMaxLength = "200";

@@ -2,6 +2,7 @@ using System.Net.Mail;
 using Radish.Common.HelpTool;
 using Radish.IRepository;
 using Radish.IService;
+using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 
@@ -14,11 +15,16 @@ public class BootstrapService : IBootstrapService
 
     private readonly IBootstrapRepository _bootstrapRepository;
     private readonly ICoinService _coinService;
+    private readonly ISystemSettingProvider _systemSettingProvider;
 
-    public BootstrapService(IBootstrapRepository bootstrapRepository, ICoinService coinService)
+    public BootstrapService(
+        IBootstrapRepository bootstrapRepository,
+        ICoinService coinService,
+        ISystemSettingProvider systemSettingProvider)
     {
         _bootstrapRepository = bootstrapRepository;
         _coinService = coinService;
+        _systemSettingProvider = systemSettingProvider;
     }
 
     public async Task<BootstrapStatusVo> GetStatusAsync()
@@ -72,7 +78,12 @@ public class BootstrapService : IBootstrapService
         }
 
         var passwordHash = PasswordHasher.HashPassword(dto.Password);
-        var result = await _bootstrapRepository.TryCreateFirstAdministratorAsync(displayName, passwordHash, normalizedEmail);
+        var publicIndexReservationPolicy = await GetPublicIndexReservationPolicyAsync();
+        var result = await _bootstrapRepository.TryCreateFirstAdministratorAsync(
+            displayName,
+            passwordHash,
+            normalizedEmail,
+            publicIndexReservationPolicy);
         if (result.Status == BootstrapAdminCreationStatus.Created)
         {
             await _coinService.GrantRegistrationRewardAsync(result.UserId);
@@ -106,5 +117,14 @@ public class BootstrapService : IBootstrapService
         {
             return null;
         }
+    }
+
+    private async Task<PublicIndexReservationPolicy> GetPublicIndexReservationPolicyAsync()
+    {
+        var reservedIndexes = await _systemSettingProvider.GetEffectiveValueAsync(
+            SystemConfigDefaults.PublicIndexReservedIndexesKey);
+        var vanityRules = await _systemSettingProvider.GetEffectiveValueAsync(
+            SystemConfigDefaults.PublicIndexVanityRulesKey);
+        return PublicIndexReservationPolicy.FromSettings(reservedIndexes, vanityRules);
     }
 }

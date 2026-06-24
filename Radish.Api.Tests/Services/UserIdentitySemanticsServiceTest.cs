@@ -49,6 +49,118 @@ public class UserIdentitySemanticsServiceTest
     }
 
     [Fact]
+    public async Task AddAsync_ShouldSkipReservedPublicIndex()
+    {
+        var harness = CreateHarness(
+            reservedIndexes: "[1086]",
+            vanityRules: "{}");
+        var user = new User
+        {
+            LoginName = "tester",
+            UserName = "Tester",
+            UserEmail = "tester@example.test",
+            LoginPassword = "hash",
+            IsEnable = true
+        };
+
+        harness.BaseRepository
+            .Setup(repository => repository.QueryMaxAsync(
+                It.IsAny<Expression<Func<User, long?>>>(),
+                It.IsAny<Expression<Func<User, bool>>>()))
+            .ReturnsAsync(1085);
+        harness.BaseRepository
+            .Setup(repository => repository.AddAsync(It.IsAny<User>()))
+            .ReturnsAsync(20003);
+
+        await harness.Service.AddAsync(user);
+
+        Assert.Equal(1087, user.PublicIndex);
+    }
+
+    [Fact]
+    public async Task AddAsync_ShouldSkipVanityRulePublicIndex()
+    {
+        var harness = CreateHarness(
+            reservedIndexes: "[]",
+            vanityRules: "{\"repeatedDigits\":true}");
+        var user = new User
+        {
+            LoginName = "tester",
+            UserName = "Tester",
+            UserEmail = "tester@example.test",
+            LoginPassword = "hash",
+            IsEnable = true
+        };
+
+        harness.BaseRepository
+            .Setup(repository => repository.QueryMaxAsync(
+                It.IsAny<Expression<Func<User, long?>>>(),
+                It.IsAny<Expression<Func<User, bool>>>()))
+            .ReturnsAsync(1110);
+        harness.BaseRepository
+            .Setup(repository => repository.AddAsync(It.IsAny<User>()))
+            .ReturnsAsync(20003);
+
+        await harness.Service.AddAsync(user);
+
+        Assert.Equal(1112, user.PublicIndex);
+    }
+
+    [Fact]
+    public async Task AddAsync_ShouldExposeDuplicateReservedPublicIndexConfig()
+    {
+        var harness = CreateHarness(
+            reservedIndexes: "[1086,1086]",
+            vanityRules: "{}");
+        var user = new User
+        {
+            LoginName = "tester",
+            UserName = "Tester",
+            UserEmail = "tester@example.test",
+            LoginPassword = "hash",
+            IsEnable = true
+        };
+
+        harness.BaseRepository
+            .Setup(repository => repository.QueryMaxAsync(
+                It.IsAny<Expression<Func<User, long?>>>(),
+                It.IsAny<Expression<Func<User, bool>>>()))
+            .ReturnsAsync(1085);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            harness.Service.AddAsync(user));
+
+        Assert.Contains("重复值", exception.Message);
+    }
+
+    [Fact]
+    public async Task AddAsync_ShouldExposeReservedPublicIndexBelowNormalStart()
+    {
+        var harness = CreateHarness(
+            reservedIndexes: "[999]",
+            vanityRules: "{}");
+        var user = new User
+        {
+            LoginName = "tester",
+            UserName = "Tester",
+            UserEmail = "tester@example.test",
+            LoginPassword = "hash",
+            IsEnable = true
+        };
+
+        harness.BaseRepository
+            .Setup(repository => repository.QueryMaxAsync(
+                It.IsAny<Expression<Func<User, long?>>>(),
+                It.IsAny<Expression<Func<User, bool>>>()))
+            .ReturnsAsync(1085);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            harness.Service.AddAsync(user));
+
+        Assert.Contains("不能小于 1000", exception.Message);
+    }
+
+    [Fact]
     public async Task GetEnabledUserByEmailAsync_ShouldMatchNormalizedEmailOnly()
     {
         var harness = CreateHarness();
@@ -356,7 +468,9 @@ public class UserIdentitySemanticsServiceTest
             Times.Never);
     }
 
-    private static Harness CreateHarness()
+    private static Harness CreateHarness(
+        string? reservedIndexes = null,
+        string? vanityRules = null)
     {
         var mapper = new Mock<IMapper>();
         mapper.Setup(item => item.Map<UserVo>(It.IsAny<User>()))
@@ -407,6 +521,7 @@ public class UserIdentitySemanticsServiceTest
         var departmentService = new Mock<IDepartmentService>();
         var consoleAuthorizationService = new Mock<IConsoleAuthorizationService>();
         var systemSettingProvider = new Mock<ISystemSettingProvider>();
+        SetupPublicIndexSettings(systemSettingProvider, reservedIndexes, vanityRules);
         var service = new UserService(
             departmentService.Object,
             mapper.Object,
@@ -419,6 +534,19 @@ public class UserIdentitySemanticsServiceTest
             systemSettingProvider.Object);
 
         return new Harness(service, baseRepository, displayNameChangeRecordRepository, systemSettingProvider);
+    }
+
+    private static void SetupPublicIndexSettings(
+        Mock<ISystemSettingProvider> systemSettingProvider,
+        string? reservedIndexes,
+        string? vanityRules)
+    {
+        systemSettingProvider
+            .Setup(provider => provider.GetEffectiveValueAsync(SystemConfigDefaults.PublicIndexReservedIndexesKey))
+            .ReturnsAsync(reservedIndexes ?? SystemConfigDefaults.DefaultPublicIndexReservedIndexes);
+        systemSettingProvider
+            .Setup(provider => provider.GetEffectiveValueAsync(SystemConfigDefaults.PublicIndexVanityRulesKey))
+            .ReturnsAsync(vanityRules ?? SystemConfigDefaults.DefaultPublicIndexVanityRules);
     }
 
     private static void SetupDisplayNameSettings(

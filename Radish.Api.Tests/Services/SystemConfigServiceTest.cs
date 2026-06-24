@@ -156,6 +156,20 @@ public class SystemConfigServiceTest
         Assert.Equal(1000m, highlightReplacementDeltaConfig.VoMaxNumberValue);
         Assert.True(highlightReplacementDeltaConfig.VoRequiresInteger);
         Assert.Contains("神评 / 沙发替换敏感度", highlightReplacementDeltaConfig.VoImpactSummary);
+
+        var reservedIndexesConfig = configs.Single(config => config.VoKey == SystemConfigDefaults.PublicIndexReservedIndexesKey);
+        Assert.Equal(SystemConfigDefaults.DefaultPublicIndexReservedIndexes, reservedIndexesConfig.VoDefaultValue);
+        Assert.Equal("json", reservedIndexesConfig.VoType);
+        Assert.Equal(SystemConfigRiskLevel.Medium, reservedIndexesConfig.VoRiskLevel);
+        Assert.Null(reservedIndexesConfig.VoMinNumberValue);
+        Assert.Null(reservedIndexesConfig.VoMaxNumberValue);
+        Assert.Contains("后续账号自动分配 PublicIndex", reservedIndexesConfig.VoImpactSummary);
+
+        var vanityRulesConfig = configs.Single(config => config.VoKey == SystemConfigDefaults.PublicIndexVanityRulesKey);
+        Assert.Equal(SystemConfigDefaults.DefaultPublicIndexVanityRules, vanityRulesConfig.VoDefaultValue);
+        Assert.Equal("json", vanityRulesConfig.VoType);
+        Assert.Equal(SystemConfigRiskLevel.Medium, vanityRulesConfig.VoRiskLevel);
+        Assert.Contains("不回收、不重排、不改写既有用户", vanityRulesConfig.VoImpactSummary);
     }
 
     [Fact]

@@ -68,13 +68,15 @@ public class UserService : BaseService<User, UserVo>, IUserService
 
     public new async Task<int> AddRangeAsync(List<User> entities)
     {
-        var nextPublicIndex = await AllocateNextPublicIndexAsync();
+        var publicIndexBaseline = await ResolvePublicIndexBaselineAsync();
+        var reservationPolicy = await GetPublicIndexReservationPolicyAsync();
         foreach (var entity in entities)
         {
             entity.PublicId = User.EnsurePublicId(entity.PublicId);
             if (!User.HasAssignedPublicIndex(entity.PublicIndex))
             {
-                entity.PublicIndex = nextPublicIndex++;
+                entity.PublicIndex = reservationPolicy.FindNextAvailableAfter(publicIndexBaseline);
+                publicIndexBaseline = entity.PublicIndex.Value;
             }
         }
 
@@ -308,15 +310,29 @@ public class UserService : BaseService<User, UserVo>, IUserService
 
     private async Task<long> AllocateNextPublicIndexAsync(long? floor = null)
     {
+        var baseline = await ResolvePublicIndexBaselineAsync(floor);
+        var reservationPolicy = await GetPublicIndexReservationPolicyAsync();
+        return reservationPolicy.FindNextAvailableAfter(baseline);
+    }
+
+    private async Task<long> ResolvePublicIndexBaselineAsync(long? floor = null)
+    {
         var maxPublicIndexTask = _userBaseRepository.QueryMaxAsync<long?>(
             item => item.PublicIndex,
             item => item.PublicIndex >= User.PublicIndexStart);
         var maxPublicIndex = maxPublicIndexTask == null ? null : await maxPublicIndexTask;
-        var baseline = Math.Max(
+        return Math.Max(
             maxPublicIndex.GetValueOrDefault(User.PublicIndexStart - 1),
             floor.GetValueOrDefault(User.PublicIndexStart - 1));
+    }
 
-        return baseline + 1;
+    private async Task<PublicIndexReservationPolicy> GetPublicIndexReservationPolicyAsync()
+    {
+        var reservedIndexes = await _systemSettingProvider.GetEffectiveValueAsync(
+            SystemConfigDefaults.PublicIndexReservedIndexesKey);
+        var vanityRules = await _systemSettingProvider.GetEffectiveValueAsync(
+            SystemConfigDefaults.PublicIndexVanityRulesKey);
+        return PublicIndexReservationPolicy.FromSettings(reservedIndexes, vanityRules);
     }
 
     private async Task EnsureUserPublicIdentityBackfilledAsync(User user)

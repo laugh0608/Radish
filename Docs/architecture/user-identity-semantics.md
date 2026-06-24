@@ -184,7 +184,7 @@ RadishUser#1087
 - `Account/Register` 当前收集 `DisplayName`、`Email`、密码和确认密码；注册页已提示展示名公开展示和后续修改频率限制。
 - `Email` 已在注册阶段必填并统一小写保存；登录固定按邮箱查询。
 - `User.UserName` 当前仍作为公开展示名历史列，语义上承接 `DisplayName`；公开页面和搜索结果不得把这个字段重新解释为登录凭证。
-- `UserService.AddAsync` 负责分配 `PublicId` 与 `PublicIndex`，并在公开资料、榜单、关系链和提及搜索结果中输出 `DisplayHandle`。
+- `UserService.AddAsync` 负责分配 `PublicId` 与 `PublicIndex`，并在自动分配时跳过已配置的公开索引显式保留号与靓号规则命中号；公开资料、榜单、关系链和提及搜索结果输出 `DisplayHandle`。
 - `User/SearchForMention` 当前只匹配公开字段：`DisplayName`、`PublicIndex`、完整 `DisplayName#PublicIndex` 与 `PublicId`；不匹配 `LoginName` 或 `Email`。
 
 ## 10. 租户与角色
@@ -200,7 +200,7 @@ RadishUser#1087
 
 ## 11. 实施阶段建议
 
-当前实现进度：`P3-10-B9` 首批已完成 `PublicIndex` 持久化、公开句柄派生、公开资料 / 榜单 / 关系链 / 艾特搜索 / Console 用户排障展示切换和迁移入口；`P3-12-B6-1` 已固定邮箱 + 密码登录、注册 / Bootstrap 必填 `DisplayName`；`P3-12-B6-2` 已完成公开展示与前端状态收敛；`P3-12-B6-3` 已完成展示名变更记录、冷却和滚动窗口治理。详见 [P3-10-B9 用户身份语义首批记录](/records/p3-10-b9-user-identity-first-batch-record-2026-06-15) 与 [P3-12-B6 身份语义二次收口设计](/records/p3-12-b6-identity-contract-convergence-design-2026-06-22)。
+当前实现进度：`P3-10-B9` 首批已完成 `PublicIndex` 持久化、公开句柄派生、公开资料 / 榜单 / 关系链 / 艾特搜索 / Console 用户排障展示切换和迁移入口；`P3-12-B6-1` 已固定邮箱 + 密码登录、注册 / Bootstrap 必填 `DisplayName`；`P3-12-B6-2` 已完成公开展示与前端状态收敛；`P3-12-B6-3` 已完成展示名变更记录、冷却和滚动窗口治理；`P3-12-B6-4` 已完成 PublicIndex 显式保留号与靓号规则设置、普通注册 / Bootstrap 自动分配跳过逻辑和定向测试。详见 [P3-10-B9 用户身份语义首批记录](/records/p3-10-b9-user-identity-first-batch-record-2026-06-15) 与 [P3-12-B6 身份语义二次收口设计](/records/p3-12-b6-identity-contract-convergence-design-2026-06-22)。
 
 ### Phase A：文档与契约冻结
 
@@ -218,7 +218,7 @@ RadishUser#1087
 - 注册页展示名输入必须补充公开展示和改名限制提示，避免用户误以为展示名可以无限次随意调整。
 - 登录固定使用邮箱 + 密码。（B6-1 已完成）
 - 开发种子补固定保留公开索引。（已完成首批）
-- `PublicIndex` 分配器补充靓号保留列表 / 规则跳过逻辑；配置入口进入 Console 系统设置或用户治理设置，人工分配保留号必须有权限和审计。（下一顺位：`P3-12-B6-4`）
+- `PublicIndex` 分配器补充靓号保留列表 / 规则跳过逻辑；`UserIdentity.PublicIndex.ReservedIndexes` 与 `UserIdentity.PublicIndex.VanityRules` 已进入 Console 系统设置，人工分配保留号仍需后续权限动作和审计专题承接。（B6-4 已完成自动分配跳过）
 
 ### Phase C：搜索、艾特与 Console 治理
 
