@@ -9,7 +9,7 @@ import {
   publicSiteName,
 } from './publicHead.ts';
 import type { PublicContentRouteDescriptor } from './publicRouteNavigation.ts';
-import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
+import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '../utils/userIdentityDisplay.ts';
 
 export const publicStructuredDataScriptId = 'radish-public-structured-data';
 

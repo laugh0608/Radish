@@ -2,9 +2,9 @@
 
 > 日期：2026-06-22（Asia/Shanghai）
 >
-> 更新：2026-06-23 补充注册页 `DisplayName` 慎重设置提示、改名频率限制文案，以及 `PublicIndex` 靓号保留 / Console 配置规则。
+> 更新：2026-06-24 完成 `B6-5` 种子与 DbMigrate 收口、`B6-6` 代码侧与启动前验证收口。
 >
-> 状态：`B6-1 身份基础与注册登录`、`B6-2 公开展示与前端状态收敛`、`B6-3 展示名变更治理`、`B6-4 PublicIndex 保留号治理` 已完成；后续进入 `B6-5 种子与 DbMigrate 收口`
+> 状态：`B6-1 身份基础与注册登录`、`B6-2 公开展示与前端状态收敛`、`B6-3 展示名变更治理`、`B6-4 PublicIndex 保留号治理`、`B6-5 种子与 DbMigrate 收口`、`B6-6 代码侧与启动前验证` 已完成；Gateway PC / mobile 页面 smoke 待用户明确前后端已启动后补验。
 >
 > 结论：本专题承接 [用户身份语义与公开索引](/architecture/user-identity-semantics) 的首批实现，进一步移除 `LoginName` 公开 / 登录链路，固定“邮箱 + 密码”作为登录凭证，并把 `DisplayName`、`DisplayHandle`、`PublicId`、关注备注的职责彻底拆开。当前项目尚未上线且无正式数据库，B6 按破坏性 schema 收口处理，不提供旧库兼容迁移；实现完成后删除本地 SQLite 并重新初始化。
 
@@ -325,7 +325,7 @@ Bootstrap 初始化触点：
 5. `B6-3 展示名变更治理`：新增 `UserDisplayNameChangeRecord`，接入冷却时间、滚动窗口和窗口内最大次数设置；个人资料改名走服务端校验和历史记录，不允许绕过频率限制。（已完成）
 6. `B6-4 PublicIndex 保留号治理`：新增 `UserIdentity.PublicIndex.ReservedIndexes` 与 `UserIdentity.PublicIndex.VanityRules` 设置，注册和 Bootstrap 分配器在数据库事务内跳过保留靓号；规则变更只影响后续分配。（已完成）
 7. `B6-5 种子与 DbMigrate 收口`：更新 system / admin / test 种子展示名和保留号；删除身份旧库回填与旧兼容纠偏逻辑；实现后提醒删除本地 SQLite 并重新初始化。（已完成）
-8. `B6-6 验证与阶段验收`：补身份语义扫描、Auth / Bootstrap / 用户服务 / 展示名修改 / PublicIndex 保留号定向测试、前端类型检查和 Gateway PC / mobile 页面 smoke。
+8. `B6-6 验证与阶段验收`：补身份语义扫描、Auth / Bootstrap / 用户服务 / 展示名修改 / PublicIndex 保留号定向测试、前端类型检查和 Gateway PC / mobile 页面 smoke。（代码侧与启动前验证已完成；Gateway PC / mobile 页面 smoke 待用户明确前后端已启动后补验）
 
 代码实现前确认点：
 
@@ -341,6 +341,16 @@ Bootstrap 初始化触点：
 - `InitialDataSeeder` 默认账号固定为 `system@radishx.com`、`admin@radishx.com`、`test@radishx.com`，展示名为 `System / Admin / TestUser`，`PublicIndex=1/2/3`。
 - `DbMigrateRunner` 删除旧用户 `PublicId / PublicIndex` 回填、保留号纠偏和旧兼容私有方法；若旧本地 SQLite 结构不匹配，按 B6 要求删除并重新初始化。
 - Web client、Console 和 Flutter 个人资料编辑不再展示或提交真实姓名字段。
+
+`B6-6` 验证结论：
+
+- `npm run test --workspace=radish.client` 通过，覆盖 `authReturnPath`、`tokenClaims`、公开结构化数据和公开 / 私域路由契约等 295 个 client node 测试。
+- `npm run validate:baseline` 通过，覆盖前端 type-check、client node 测试、Console 权限链路扫描、Repo Quality contract、身份影响面自检、身份 claim 扫描、后端 Debug 构建和 `Radish.Api.Tests` 547 个测试。
+- `npm run validate:identity` 通过，覆盖 runtime / protocol 身份 claim 扫描、外部 LongId 字符串安全扫描和 15 个身份后端定向测试。
+- `npm run validate:baseline:host` 在沙盒内首次运行时被 vstest 本地 socket 权限拦截，提权重跑后通过；`DbMigrate doctor / verify` 只读自检均完成。
+- `DbMigrate doctor / verify` 提示当前本地旧 SQLite 缺少 `UserDisplayNameChangeRecord` 表和 `SystemBootstrapState.CompletedEmail` 列；该项符合 B6 破坏性 schema 收口口径，实际启动前按删除 / 初始化或迁移补齐本地库处理，不补旧库兼容迁移。
+- 本批修正 `authReturnPath` 中公开论坛 compose、商城购买和订单回流构造函数的 LongId 参数类型，统一收紧为字符串；同步更新 token claim 测试期望到 `userName / displayHandle` 新语义，并让 `publicStructuredData` 在 Node 原生测试中不依赖 Vite alias。
+- 本批未执行 Gateway PC / mobile 页面 smoke；按项目规则，需先确认 API / Auth / Gateway / 前端已启动后再覆盖注册、登录、`/me`、`/u/:identifier`、`/forum`、`/messages`、艾特搜索、Console 系统设置和用户排障页。
 
 ## 验证口径
 

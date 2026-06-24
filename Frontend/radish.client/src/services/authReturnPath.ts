@@ -668,7 +668,7 @@ export function buildPetReturnPath(): string {
   return PET_ENTRY_PATH;
 }
 
-export function buildShopProductPurchaseReturnPath(productId: string | number): string | null {
+export function buildShopProductPurchaseReturnPath(productId: string): string | null {
   const normalizedProductId = String(productId).trim();
   if (!POSITIVE_LONG_ID_PATTERN.test(normalizedProductId)) {
     return null;
@@ -681,7 +681,7 @@ export function buildShopOrdersReturnPath(): string {
   return '/shop/orders';
 }
 
-export function buildShopOrderReturnPath(orderId: string | number): string | null {
+export function buildShopOrderReturnPath(orderId: string): string | null {
   const normalizedOrderId = String(orderId).trim();
   if (!POSITIVE_LONG_ID_PATTERN.test(normalizedOrderId)) {
     return null;
@@ -726,7 +726,7 @@ export function buildDocsAuthorRevisionsReturnPath(documentId: string | number):
   });
 }
 
-export function buildPublicForumComposeReturnPath(options: { categoryId?: string | number | null } = {}): string | null {
+export function buildPublicForumComposeReturnPath(options: { categoryId?: string | null } = {}): string | null {
   const normalizedCategoryId = options.categoryId == null ? '' : String(options.categoryId).trim();
   if (normalizedCategoryId && !POSITIVE_LONG_ID_PATTERN.test(normalizedCategoryId)) {
     return null;
