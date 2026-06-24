@@ -1,3 +1,4 @@
+using System.Threading;
 using Radish.IService;
 using Radish.IRepository;
 using Radish.IRepository.Base;
@@ -15,6 +16,8 @@ namespace Radish.Service.Jobs;
 /// </remarks>
 public class ShopJob
 {
+    private static readonly SemaphoreSlim TimeoutOrderCancellationLock = new(1, 1);
+
     private readonly IBaseRepository<Order> _orderRepository;
     private readonly IBaseRepository<UserBenefit> _benefitRepository;
     private readonly IOrderService _orderService;
@@ -38,19 +41,29 @@ public class ShopJob
     /// <returns>取消的订单数量</returns>
     public async Task<int> CancelTimeoutOrdersAsync(int timeoutMinutes = 30)
     {
+        if (!await TimeoutOrderCancellationLock.WaitAsync(0))
+        {
+            Log.Warning("[ShopJob] 上一轮超时订单处理仍在执行，跳过本轮");
+            return 0;
+        }
+
         try
         {
-            Log.Information("[ShopJob] 开始处理超时订单，超时时间：{TimeoutMinutes} 分钟", timeoutMinutes);
+            var effectiveTimeoutMinutes = timeoutMinutes > 0 ? timeoutMinutes : 30;
 
-            var cutoffTime = DateTime.Now.AddMinutes(-timeoutMinutes);
+            Log.Information("[ShopJob] 开始处理超时订单，超时时间：{TimeoutMinutes} 分钟", effectiveTimeoutMinutes);
 
-            // 查询超时的待支付订单（排除软删除的记录）
-            var timeoutOrders = await _orderRepository.QueryAsync(o =>
-                o.Status == OrderStatus.Pending &&
-                o.CreateTime < cutoffTime &&
-                !o.IsDeleted);
+            var cutoffTime = DateTime.Now.AddMinutes(-effectiveTimeoutMinutes);
 
-            if (timeoutOrders == null || timeoutOrders.Count == 0)
+            // 先获取待处理订单 ID 快照，避免后台任务长时间持有完整订单读取结果。
+            var timeoutOrderIds = await _orderRepository.QueryDistinctAsync(
+                o => o.Id,
+                o =>
+                    o.Status == OrderStatus.Pending &&
+                    o.CreateTime < cutoffTime &&
+                    !o.IsDeleted);
+
+            if (timeoutOrderIds.Count == 0)
             {
                 Log.Information("[ShopJob] 没有需要取消的超时订单");
                 return 0;
@@ -58,24 +71,23 @@ public class ShopJob
 
             var cancelledCount = 0;
 
-            foreach (var order in timeoutOrders)
+            foreach (var orderId in timeoutOrderIds)
             {
                 try
                 {
-                    var reason = $"订单超时自动取消（超过 {timeoutMinutes} 分钟未支付）";
-                    await _orderService.CancelOrderBySystemAsync(order.Id, reason);
+                    var reason = $"订单超时自动取消（超过 {effectiveTimeoutMinutes} 分钟未支付）";
+                    await _orderService.CancelOrderBySystemAsync(orderId, reason);
                     cancelledCount++;
 
-                    Log.Information("[ShopJob] 已取消超时订单：{OrderNo}，创建时间：{CreateTime}",
-                        order.OrderNo, order.CreateTime);
+                    Log.Information("[ShopJob] 已取消超时订单：{OrderId}", orderId);
                 }
                 catch (InvalidOperationException ex)
                 {
-                    Log.Warning(ex, "[ShopJob] 订单状态已变化，跳过超时取消：{OrderNo}", order.OrderNo);
+                    Log.Warning(ex, "[ShopJob] 订单状态已变化，跳过超时取消：{OrderId}", orderId);
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "[ShopJob] 取消订单失败：{OrderNo}", order.OrderNo);
+                    Log.Error(ex, "[ShopJob] 取消订单失败：{OrderId}", orderId);
                 }
             }
 
@@ -86,6 +98,10 @@ public class ShopJob
         {
             Log.Error(ex, "[ShopJob] 处理超时订单时发生异常");
             return 0;
+        }
+        finally
+        {
+            TimeoutOrderCancellationLock.Release();
         }
     }
 

@@ -1,8 +1,12 @@
 .page {
   min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-app) 94%, white 6%) 0%, var(--theme-bg-muted) 100%);
   color: var(--theme-text-primary);
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .main {

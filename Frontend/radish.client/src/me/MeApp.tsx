@@ -476,7 +476,6 @@ export const MeApp = () => {
     || displayHandle?.trim()
     || displayName
     || userId;
-  const profilePublicId = normalizePublicUserId(dashboardData.publicProfile?.voPublicId);
   const experience = dashboardData.experience;
   const balance = dashboardData.balance;
   const pet = dashboardData.pet;
@@ -738,7 +737,6 @@ export const MeApp = () => {
             <h1 className={styles.title}>{displayName}</h1>
             <div className={styles.identityMeta}>
               <span>@{accountName}</span>
-              <span>{profilePublicId || t('me.publicIdPending')}</span>
               {loadedAtLabel ? <span>{t('me.refreshedAt', { time: loadedAtLabel })}</span> : null}
             </div>
           </div>

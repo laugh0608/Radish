@@ -13,6 +13,38 @@ namespace Radish.Api.Tests.Controllers;
 public class PublicHeadSnapshotControllerTest
 {
     [Fact]
+    public async Task GetStaticRoute_Should_Use_Forwarded_Public_Base_Url_When_Config_Is_Missing()
+    {
+        var capturedPublicBaseUrl = string.Empty;
+        var service = new Mock<IPublicHeadSnapshotService>(MockBehavior.Strict);
+        service
+            .Setup(snapshotService => snapshotService.GetStaticRouteSnapshotAsync("discover", It.IsAny<string>()))
+            .Callback<string, string>((_, publicBaseUrl) => capturedPublicBaseUrl = publicBaseUrl)
+            .ReturnsAsync(new PublicHeadSnapshotVo
+            {
+                VoTitle = "社区发现 - Radish",
+                VoCanonicalUrl = "https://localhost:5000/discover"
+            });
+
+        var controller = new PublicHeadSnapshotController(service.Object, new ConfigurationBuilder().Build())
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            }
+        };
+        controller.Request.Scheme = "http";
+        controller.Request.Host = new HostString("localhost", 5100);
+        controller.Request.Headers["X-Forwarded-Proto"] = "https";
+        controller.Request.Headers["X-Forwarded-Host"] = "localhost:5000";
+
+        var result = await controller.GetStaticRoute("discover");
+
+        Assert.IsType<OkObjectResult>(result);
+        Assert.Equal("https://localhost:5000", capturedPublicBaseUrl);
+    }
+
+    [Fact]
     public async Task GetForumPost_Should_Use_Forwarded_Public_Base_Url_When_Config_Is_Missing()
     {
         var capturedPublicBaseUrl = string.Empty;

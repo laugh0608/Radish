@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Moq;
@@ -36,16 +35,21 @@ public class ShopJobTest
         var orderService = new Mock<IOrderService>(MockBehavior.Strict);
 
         orderRepository
-            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<Order, bool>>?>()))
-            .ReturnsAsync((Expression<Func<Order, bool>>? expression) =>
+            .Setup(repository => repository.QueryDistinctAsync(
+                It.IsAny<Expression<Func<Order, long>>>(),
+                It.IsAny<Expression<Func<Order, bool>>?>()))
+            .ReturnsAsync((
+                Expression<Func<Order, long>> selectExpression,
+                Expression<Func<Order, bool>>? whereExpression) =>
             {
-                if (expression == null)
+                var selector = selectExpression.Compile();
+                if (whereExpression == null)
                 {
-                    return [timeoutOrder];
+                    return [selector(timeoutOrder)];
                 }
 
-                var predicate = expression.Compile();
-                return predicate(timeoutOrder) ? [timeoutOrder] : [];
+                var predicate = whereExpression.Compile();
+                return predicate(timeoutOrder) ? [selector(timeoutOrder)] : [];
             });
         orderService
             .Setup(service => service.CancelOrderBySystemAsync(
@@ -59,5 +63,28 @@ public class ShopJobTest
 
         Assert.Equal(1, result);
         orderService.VerifyAll();
+    }
+
+    [Fact]
+    public async Task CancelTimeoutOrdersAsync_ShouldReturnZero_WhenOrderQueryFails()
+    {
+        var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Strict);
+        var benefitRepository = new Mock<IBaseRepository<UserBenefit>>(MockBehavior.Strict);
+        var orderService = new Mock<IOrderService>(MockBehavior.Strict);
+
+        orderRepository
+            .Setup(repository => repository.QueryDistinctAsync(
+                It.IsAny<Expression<Func<Order, long>>>(),
+                It.IsAny<Expression<Func<Order, bool>>?>()))
+            .ThrowsAsync(new InvalidOperationException("reader closed"));
+
+        var job = new ShopJob(orderRepository.Object, benefitRepository.Object, orderService.Object);
+
+        var result = await job.CancelTimeoutOrdersAsync();
+
+        Assert.Equal(0, result);
+        orderService.Verify(
+            service => service.CancelOrderBySystemAsync(It.IsAny<long>(), It.IsAny<string>()),
+            Times.Never);
     }
 }
