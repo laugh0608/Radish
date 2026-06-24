@@ -609,7 +609,6 @@ public class UserController : ControllerBase
             VoDisplayName = user.VoDisplayName,
             VoUserName = user.VoUserName,
             VoUserEmail = user.VoUserEmail,
-            VoRealName = user.VoUserRealName,
             VoSex = user.VoUserSex,
             VoAge = user.VoUserAge,
             VoBirth = user.VoUserBirth,
@@ -723,7 +722,6 @@ public class UserController : ControllerBase
 
         var normalizedUserName = string.IsNullOrWhiteSpace(dto.UserName) ? null : dto.UserName.Trim();
         var normalizedUserEmail = string.IsNullOrWhiteSpace(dto.UserEmail) ? null : dto.UserEmail.Trim();
-        var normalizedRealName = string.IsNullOrWhiteSpace(dto.RealName) ? null : dto.RealName.Trim();
         var normalizedAddress = string.IsNullOrWhiteSpace(dto.Address) ? null : dto.Address.Trim();
         var sex = dto.Sex;
         var age = dto.Age;
@@ -755,16 +753,6 @@ public class UserController : ControllerBase
                     MessageInfo = "邮箱格式不正确"
                 };
             }
-        }
-
-        if (normalizedRealName != null && normalizedRealName.Length > 50)
-        {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "真实姓名长度不能超过 50"
-            };
         }
 
         if (normalizedAddress != null && normalizedAddress.Length > 2000)
@@ -854,7 +842,6 @@ public class UserController : ControllerBase
             u => new User
             {
                 UserEmail = normalizedUserEmail ?? u.UserEmail,
-                UserRealName = normalizedRealName ?? u.UserRealName,
                 UserSex = sex ?? u.UserSex,
                 UserAge = age ?? u.UserAge,
                 UserBirth = birth ?? u.UserBirth,

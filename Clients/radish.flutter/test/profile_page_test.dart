@@ -139,7 +139,7 @@ void main() {
     );
 
     await tester.pumpAndSettle();
-    expect(find.text('Radish Author'), findsOneWidget);
+    expect(find.text('luobo'), findsOneWidget);
 
     await tester.tap(find.text('编辑资料'));
     await tester.pumpAndSettle();
@@ -152,10 +152,6 @@ void main() {
     await tester.enterText(
       find.byKey(const Key('profile-edit-email')),
       'native@example.com',
-    );
-    await tester.enterText(
-      find.byKey(const Key('profile-edit-real-name')),
-      'Native Author',
     );
     await tester.enterText(
       find.byKey(const Key('profile-edit-age')),
@@ -171,11 +167,10 @@ void main() {
 
     expect(find.text('编辑个人资料'), findsNothing);
     expect(find.text('个人资料更新成功'), findsOneWidget);
-    expect(find.text('Native Author'), findsOneWidget);
+    expect(find.text('native_user'), findsOneWidget);
     expect(repository.updateCount, 1);
     expect(repository.lastRequest?.userName, 'native_user');
     expect(repository.lastRequest?.userEmail, 'native@example.com');
-    expect(repository.lastRequest?.realName, 'Native Author');
     expect(repository.lastRequest?.age, 26);
     expect(repository.lastRequest?.address, '移动端资料维护');
   });
@@ -216,7 +211,7 @@ void main() {
     );
 
     await tester.pumpAndSettle();
-    expect(find.text('Radish Author'), findsOneWidget);
+    expect(find.text('luobo'), findsOneWidget);
 
     await tester.tap(find.text('编辑资料'));
     await tester.pumpAndSettle();
@@ -1925,7 +1920,6 @@ class _SuccessProfileRepository implements ProfileRepository {
       userId: '2042219067430928384',
       userName: 'luobo',
       userEmail: 'luobo@example.com',
-      realName: 'Radish Author',
       sex: 0,
       age: 24,
       address: 'Radish base',
@@ -1947,7 +1941,6 @@ class _EditableProfileRepository extends _SuccessProfileRepository {
     userId: '2042219067430928384',
     userName: 'luobo',
     userEmail: 'luobo@example.com',
-    realName: 'Radish Author',
     sex: 0,
     age: 24,
     address: 'Radish base',
@@ -1964,7 +1957,7 @@ class _EditableProfileRepository extends _SuccessProfileRepository {
     return PublicProfileSummary(
       userId: userId,
       userName: _profile.userName,
-      displayName: _profile.realName,
+      displayName: _profile.displayName,
       createTime: _profile.createTime,
     );
   }
@@ -1987,7 +1980,6 @@ class _EditableProfileRepository extends _SuccessProfileRepository {
       userId: _profile.userId,
       userName: request.userName,
       userEmail: request.userEmail,
-      realName: request.realName ?? '',
       sex: request.sex ?? _profile.sex,
       age: request.age ?? 0,
       birth: request.birth ?? _profile.birth,

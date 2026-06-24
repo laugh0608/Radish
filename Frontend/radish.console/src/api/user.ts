@@ -12,7 +12,6 @@ export interface MyProfileInfo {
   voDisplayHandle?: string | null;
   voUserName: string;
   voUserEmail: string;
-  voRealName: string;
   voSex: number;
   voAge: number;
   voBirth?: string | null;
@@ -26,7 +25,6 @@ export interface MyProfileInfo {
 export interface UpdateMyProfileRequest {
   userName?: string;
   userEmail?: string;
-  realName?: string;
   sex?: number;
   age?: number;
   birth?: string | null;
@@ -152,7 +150,6 @@ function mapMyProfile(raw: ApiRecord): MyProfileInfo {
     voDisplayHandle: toNullableString(raw.voDisplayHandle ?? raw.VoDisplayHandle),
     voUserName: toStringValue(raw.voUserName ?? raw.VoUserName),
     voUserEmail: toStringValue(raw.voUserEmail ?? raw.VoUserEmail),
-    voRealName: toStringValue(raw.voRealName ?? raw.VoRealName),
     voSex: toNumber(raw.voSex ?? raw.VoSex),
     voAge: toNumber(raw.voAge ?? raw.VoAge),
     voBirth: toNullableString(raw.voBirth ?? raw.VoBirth),

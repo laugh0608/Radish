@@ -29,14 +29,6 @@ public interface IUserService : IBaseService<User, UserVo>
     Task<UserVo?> GetPublicUserByIdentifierAsync(string identifier);
 
     /// <summary>
-    /// 通过登录用户名和登录密码查询用户的角色名称
-    /// </summary>
-    /// <param name="loginName">登录用户名</param>
-    /// <param name="loginPwd">登陆密码</param>
-    /// <returns>string RoleName, 可能为多个</returns>
-    Task<string> GetUserRoleNameStrAsync(string loginName, string loginPwd);
-
-    /// <summary>
     /// 根据用户 ID 获取角色名称列表
     /// </summary>
     /// <param name="userId">用户 ID</param>

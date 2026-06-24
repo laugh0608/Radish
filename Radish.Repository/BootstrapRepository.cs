@@ -73,7 +73,6 @@ public class BootstrapRepository : IBootstrapRepository
             {
                 UserName = displayName,
                 UserEmail = email,
-                UserRealName = string.Empty,
                 UserSex = (int)UserSexEnum.Unknown,
                 TenantId = 0,
                 DepartmentId = 0,
@@ -83,7 +82,6 @@ public class BootstrapRepository : IBootstrapRepository
                 Remark = "First administrator initialized by bootstrap"
             })
             {
-                LoginName = string.Empty,
                 CreateTime = initializedAt,
                 UpdateTime = initializedAt,
                 CriticalModifyTime = initializedAt,
@@ -107,7 +105,7 @@ public class BootstrapRepository : IBootstrapRepository
                 {
                     IsCompleted = true,
                     CompletedUserId = userId,
-                    CompletedLoginName = email,
+                    CompletedEmail = email,
                     CompletedTime = DateTime.UtcNow
                 })
                 .Where(state => state.Id == SystemBootstrapState.FirstAdminBootstrapId)

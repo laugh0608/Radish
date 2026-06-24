@@ -40,7 +40,6 @@ export const UserProfile = () => {
     form.setFieldsValue({
       voUserName: resolveVisibleUserDisplayName(profile, profile.voUserName),
       voUserEmail: profile.voUserEmail,
-      voRealName: profile.voRealName,
       voAge: profile.voAge || undefined,
       voAddress: profile.voAddress,
     });
@@ -91,7 +90,6 @@ export const UserProfile = () => {
       const response = await userApi.updateMyProfile({
         userName: values.voUserName?.trim(),
         userEmail: values.voUserEmail?.trim(),
-        realName: values.voRealName?.trim(),
         age: Number.isFinite(age) ? age : undefined,
         address: values.voAddress?.trim(),
       });
@@ -105,7 +103,6 @@ export const UserProfile = () => {
         voDisplayName: values.voUserName,
         voUserName: values.voUserName,
         voUserEmail: values.voUserEmail,
-        voRealName: values.voRealName || '',
         voAge: values.voAge || 0,
         voAddress: values.voAddress || '',
       } : null);
@@ -382,14 +379,6 @@ export const UserProfile = () => {
                 ]}
               >
                 <Input placeholder="请输入邮箱" />
-              </Form.Item>
-
-              <Form.Item
-                name="voRealName"
-                label="真实姓名"
-                rules={[{ max: 50, message: '真实姓名长度不能超过50个字符' }]}
-              >
-                <Input placeholder="请输入真实姓名" />
               </Form.Item>
 
               <Form.Item

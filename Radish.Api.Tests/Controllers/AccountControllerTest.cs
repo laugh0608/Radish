@@ -74,7 +74,6 @@ public class AccountControllerTest
         Assert.Equal("Login", redirect.ActionName);
         Assert.Equal("newuser@radish.test", redirect.RouteValues?["email"]);
         userServiceMock.Verify(service => service.AddAsync(It.Is<User>(user =>
-            user.LoginName == string.Empty &&
             user.UserEmail == "newuser@radish.test" &&
             user.UserName == "NewUser")), Times.Once);
         coinService.Verify(service => service.GrantRegistrationRewardAsync(userId), Times.Once);
@@ -219,18 +218,10 @@ public class AccountControllerTest
     }
 
     private static ISystemSettingProvider CreateSystemSettingProvider(
-        int? loginNameMinLength = null,
-        int? loginNameMaxLength = null,
         int? displayNameMinLength = null,
         int? displayNameMaxLength = null)
     {
         var provider = new Mock<ISystemSettingProvider>();
-        provider
-            .Setup(item => item.GetInt32Async(SystemConfigDefaults.LoginNameMinLengthKey))
-            .ReturnsAsync(loginNameMinLength ?? int.Parse(SystemConfigDefaults.DefaultLoginNameMinLength));
-        provider
-            .Setup(item => item.GetInt32Async(SystemConfigDefaults.LoginNameMaxLengthKey))
-            .ReturnsAsync(loginNameMaxLength ?? int.Parse(SystemConfigDefaults.DefaultLoginNameMaxLength));
         provider
             .Setup(item => item.GetInt32Async(SystemConfigDefaults.DisplayNameMinLengthKey))
             .ReturnsAsync(displayNameMinLength ?? int.Parse(SystemConfigDefaults.DefaultDisplayNameMinLength));

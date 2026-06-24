@@ -16,8 +16,6 @@ public class UserProfileVo
 
     public string VoUserEmail { get; set; } = string.Empty;
 
-    public string VoRealName { get; set; } = string.Empty;
-
     public int VoSex { get; set; }
 
     public int VoAge { get; set; }

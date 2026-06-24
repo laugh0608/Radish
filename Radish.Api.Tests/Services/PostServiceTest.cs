@@ -41,11 +41,10 @@ public class PostServiceTest
             .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<User, bool>>?>()))
             .ReturnsAsync(
             [
-                new User(new UserInitializationOptions("luobo-login", "pwd")
+                new User(new UserInitializationOptions("luobo@example.com", "pwd")
                 {
                     UserName = "luobo",
-                    UserEmail = "luobo@example.com",
-                    UserRealName = "萝卜作者"
+                    UserEmail = "luobo@example.com"
                 })
                 {
                     Id = 2001,

@@ -272,11 +272,9 @@ public class AccountController : Controller
             var hashedPassword = PasswordHasher.HashPassword(model.Password);
             var newUser = new Radish.Model.User
             {
-                LoginName = string.Empty,
                 LoginPassword = hashedPassword,
                 UserEmail = email,
                 UserName = displayName,
-                UserRealName = string.Empty,
                 UserBirth = null,  // 明确设置为 null
                 UserAddress = string.Empty,
                 TenantId = 0,  // 默认租户

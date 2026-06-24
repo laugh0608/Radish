@@ -399,24 +399,6 @@ public class UserService : BaseService<User, UserVo>, IUserService
         }
     }
 
-    /// <summary>
-    /// 通过登录用户名和登录密码查询用户的角色名称
-    /// </summary>
-    /// <param name="loginName">登录用户名</param>
-    /// <param name="loginPwd">登陆密码</param>
-    /// <returns>string RoleName, 可能为多个</returns>
-    public async Task<string> GetUserRoleNameStrAsync(string loginName, string loginPwd)
-    {
-        var user = await QueryFirstAsync(a => a.LoginName == loginName && a.LoginPassword == loginPwd);
-        if (user == null)
-        {
-            return string.Empty;
-        }
-
-        var roleNames = await GetUserRoleNamesAsync(user.Uuid);
-        return string.Join(',', roleNames);
-    }
-
     public async Task<List<string>> GetUserRoleNamesAsync(long userId)
     {
         var userRoles = await _userRoleRepository.QueryAsync(ur => ur.UserId == userId && ur.IsDeleted == false);

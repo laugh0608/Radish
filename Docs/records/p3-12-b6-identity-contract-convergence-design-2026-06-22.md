@@ -284,7 +284,7 @@ Bootstrap 初始化触点：
 - 新增 `UserDisplayNameChangeRecord`，记录租户、用户、旧展示名、新展示名、操作人、来源、原因、变更时间和创建信息。
 - 新增 `UserIdentity.DisplayName.ChangeCooldownDays`、`UserIdentity.DisplayName.ChangeWindowDays`、`UserIdentity.DisplayName.ChangeWindowMaxCount` 三个 `Medium` 风险系统设置，默认分别为 `30` 天冷却、`365` 天滚动窗口、窗口内最多 `3` 次，设置为 `0` 时关闭对应限制。
 - `IUserService.ChangeDisplayNameAsync` 成为展示名修改唯一业务入口，统一校验展示名长度 / 保留字符 / 控制字符、冷却时间和滚动窗口次数，并在事务方法中更新用户展示名和写入审计记录。
-- `UserController.UpdateMyProfile` 不再直接写 `UserName` 列；个人资料中的展示名修改委托服务层治理，邮箱、真实姓名、性别、年龄、生日和地址仍沿用个人资料更新路径。
+- `UserController.UpdateMyProfile` 不再直接写 `UserName` 列；个人资料中的展示名修改委托服务层治理。`P3-12-B6-5` 后真实姓名已从个人资料更新路径移除，邮箱、性别、年龄、生日和地址继续沿用个人资料更新路径。
 - 本批不包含 `B6-4` PublicIndex 靓号保留列表 / 规则、邮箱白名单、关注备注、字段全量重命名或本地 SQLite 重建。
 
 本批验证：
@@ -324,15 +324,23 @@ Bootstrap 初始化触点：
 4. `B6-2 公开展示与前端状态收敛`：清理 `UserRealName` 公开 fallback、`VoLoginName` 普通前端状态、`VoUserName` 混淆展示；论坛、聊天、榜单、圈子、公开个人页、转账搜索和 Console 用户治理统一使用 `DisplayName` / `DisplayHandle`。（已完成）
 5. `B6-3 展示名变更治理`：新增 `UserDisplayNameChangeRecord`，接入冷却时间、滚动窗口和窗口内最大次数设置；个人资料改名走服务端校验和历史记录，不允许绕过频率限制。（已完成）
 6. `B6-4 PublicIndex 保留号治理`：新增 `UserIdentity.PublicIndex.ReservedIndexes` 与 `UserIdentity.PublicIndex.VanityRules` 设置，注册和 Bootstrap 分配器在数据库事务内跳过保留靓号；规则变更只影响后续分配。（已完成）
-7. `B6-5 种子与 DbMigrate 收口`：更新 system / admin / test 种子展示名和保留号；删除身份旧库回填与旧兼容纠偏逻辑；实现后提醒删除本地 SQLite 并重新初始化。
+7. `B6-5 种子与 DbMigrate 收口`：更新 system / admin / test 种子展示名和保留号；删除身份旧库回填与旧兼容纠偏逻辑；实现后提醒删除本地 SQLite 并重新初始化。（已完成）
 8. `B6-6 验证与阶段验收`：补身份语义扫描、Auth / Bootstrap / 用户服务 / 展示名修改 / PublicIndex 保留号定向测试、前端类型检查和 Gateway PC / mobile 页面 smoke。
 
 代码实现前确认点：
 
 - 允许破坏性重命名 `User.UserName` 为 `DisplayName`，并让新建本地库生成新列名；不保留旧 SQLite 兼容。
-- `LoginName` 从注册、登录、Bootstrap、CurrentUser、前端 store 和普通页面退场；如数据库层短期仍保留字段，只允许作为历史内部字段，不进入登录凭证和公开展示。
-- `UserRealName` 不再作为公开作者名或资料页名；如保留为本人私密资料字段，需从公开 DTO、论坛 helper 和普通前端显示退场。
+- `LoginName` 从注册、登录、Bootstrap、CurrentUser、前端 store 和普通页面退场；`P3-12-B6-5` 已进一步从当前实体、普通 DTO、Console 系统设置和新库 schema 物理删除。
+- `UserRealName` 不再作为公开作者名或资料页名；`P3-12-B6-5` 已进一步从当前实体、普通 DTO、个人资料更新接口和 Web / Console / Flutter 个人资料编辑表单物理删除。
 - B6 实现完成后删除本地 SQLite 数据库并重新初始化，不编写旧库兼容迁移。
+
+`B6-5` 实施结论：
+
+- `User` 实体和 `UserInitializationOptions` 改为邮箱 + 密码初始化，不再保留 `LoginName` / `UserRealName` 属性。
+- `SystemConfigDefaults` 移除 `UserIdentity.LoginName.MinLength / MaxLength`，账号身份设置保留展示名长度、展示名改名频率和 PublicIndex 保留号治理。
+- `InitialDataSeeder` 默认账号固定为 `system@radishx.com`、`admin@radishx.com`、`test@radishx.com`，展示名为 `System / Admin / TestUser`，`PublicIndex=1/2/3`。
+- `DbMigrateRunner` 删除旧用户 `PublicId / PublicIndex` 回填、保留号纠偏和旧兼容私有方法；若旧本地 SQLite 结构不匹配，按 B6 要求删除并重新初始化。
+- Web client、Console 和 Flutter 个人资料编辑不再展示或提交真实姓名字段。
 
 ## 验证口径
 

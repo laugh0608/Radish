@@ -25,7 +25,6 @@ public class UserIdentitySemanticsServiceTest
         var harness = CreateHarness();
         var user = new User
         {
-            LoginName = "tester",
             UserName = "Tester",
             UserEmail = "tester@example.test",
             LoginPassword = "hash",
@@ -56,7 +55,6 @@ public class UserIdentitySemanticsServiceTest
             vanityRules: "{}");
         var user = new User
         {
-            LoginName = "tester",
             UserName = "Tester",
             UserEmail = "tester@example.test",
             LoginPassword = "hash",
@@ -85,7 +83,6 @@ public class UserIdentitySemanticsServiceTest
             vanityRules: "{\"repeatedDigits\":true}");
         var user = new User
         {
-            LoginName = "tester",
             UserName = "Tester",
             UserEmail = "tester@example.test",
             LoginPassword = "hash",
@@ -114,7 +111,6 @@ public class UserIdentitySemanticsServiceTest
             vanityRules: "{}");
         var user = new User
         {
-            LoginName = "tester",
             UserName = "Tester",
             UserEmail = "tester@example.test",
             LoginPassword = "hash",
@@ -141,7 +137,6 @@ public class UserIdentitySemanticsServiceTest
             vanityRules: "{}");
         var user = new User
         {
-            LoginName = "tester",
             UserName = "Tester",
             UserEmail = "tester@example.test",
             LoginPassword = "hash",
@@ -168,7 +163,6 @@ public class UserIdentitySemanticsServiceTest
         var user = new User
         {
             Id = 20003,
-            LoginName = "alice",
             UserName = "Alice",
             UserEmail = "alice@example.test",
             LoginPassword = "hash",
@@ -187,14 +181,13 @@ public class UserIdentitySemanticsServiceTest
         Assert.Single(capturedWheres);
 
         var emailPredicate = capturedWheres[0]!.Compile();
-        Assert.True(emailPredicate(CloneUser(user, loginName: "ignored", userEmail: "ALICE@EXAMPLE.TEST")));
-        Assert.True(emailPredicate(CloneUser(user, loginName: "ignored", userEmail: "alice@example.test")));
-        Assert.False(emailPredicate(CloneUser(user, loginName: "ignored", userEmail: "ignored@example.test")));
-        Assert.False(emailPredicate(CloneUser(user, loginName: "ALICE", userEmail: "ignored@example.test")));
+        Assert.True(emailPredicate(CloneUser(user, userEmail: "ALICE@EXAMPLE.TEST")));
+        Assert.True(emailPredicate(CloneUser(user, userEmail: "alice@example.test")));
+        Assert.False(emailPredicate(CloneUser(user, userEmail: "ignored@example.test")));
     }
 
     [Fact]
-    public async Task SearchUsersForMentionAsync_ShouldNotMatchLoginNameOrEmail()
+    public async Task SearchUsersForMentionAsync_ShouldNotMatchEmail()
     {
         var harness = CreateHarness();
         Expression<Func<User, bool>>? capturedWhere = null;
@@ -216,7 +209,6 @@ public class UserIdentitySemanticsServiceTest
         var user = new User
         {
             Id = 20003,
-            LoginName = "secret",
             UserEmail = "secret@example.test",
             UserName = "Public Alice",
             PublicId = "usr_018f6b6f7c7d70008f8f8f8f8f8f8f8f",
@@ -236,7 +228,6 @@ public class UserIdentitySemanticsServiceTest
         var alice = new User
         {
             Id = 20003,
-            LoginName = "alice-login",
             UserEmail = "alice@example.test",
             UserName = "Alice",
             PublicId = "usr_018f6b6f7c7d70008f8f8f8f8f8f8f8f",
@@ -482,7 +473,6 @@ public class UserIdentitySemanticsServiceTest
                 VoUserName = User.NormalizeDisplayName(user.UserName, user.Id),
                 VoDisplayName = User.NormalizeDisplayName(user.UserName, user.Id),
                 VoDisplayHandle = User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id),
-                VoLoginName = string.Empty,
                 VoUserEmail = user.UserEmail,
                 VoLoginPassword = user.LoginPassword,
                 VoTenantId = user.TenantId,
@@ -574,12 +564,11 @@ public class UserIdentitySemanticsServiceTest
             .ReturnsAsync(windowMaxCount);
     }
 
-    private static User CloneUser(User user, string? loginName = null, string? userEmail = null)
+    private static User CloneUser(User user, string? userEmail = null)
     {
         return new User
         {
             Id = user.Id,
-            LoginName = loginName ?? user.LoginName,
             UserName = user.UserName,
             UserEmail = userEmail ?? user.UserEmail,
             LoginPassword = user.LoginPassword,

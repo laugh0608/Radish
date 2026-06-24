@@ -51,7 +51,6 @@ interface ProfileInfo {
   voDisplayHandle?: string | null;
   voUserName: string;
   voUserEmail: string;
-  voRealName: string;
   voSex: number;
   voAge: number;
   voBirth?: string | null;
@@ -168,7 +167,6 @@ export const UserInfoCard = ({
 
   const [editUserName, setEditUserName] = useState('');
   const [editUserEmail, setEditUserEmail] = useState('');
-  const [editRealName, setEditRealName] = useState('');
   const [editAge, setEditAge] = useState('');
   const [editAddress, setEditAddress] = useState('');
   const [customTimeZone, setCustomTimeZone] = useState(displayTimeZone);
@@ -245,7 +243,6 @@ export const UserInfoCard = ({
 
         setEditUserName(currentDisplayName);
         setEditUserEmail(currentProfile.voUserEmail || '');
-        setEditRealName(currentProfile.voRealName || '');
         setEditAge(String(currentProfile.voAge ?? ''));
         setEditAddress(currentProfile.voAddress || '');
       }
@@ -289,7 +286,6 @@ export const UserInfoCard = ({
     if (profile) {
       setEditUserName(resolveVisibleUserDisplayName(profile, userName));
       setEditUserEmail(profile.voUserEmail || '');
-      setEditRealName(profile.voRealName || '');
       setEditAge(String(profile.voAge ?? ''));
       setEditAddress(profile.voAddress || '');
     }
@@ -332,7 +328,6 @@ export const UserInfoCard = ({
         body: JSON.stringify({
           userName: editUserName.trim() || undefined,
           userEmail: editUserEmail.trim() || undefined,
-          realName: editRealName.trim() || undefined,
           age: Number.isFinite(ageNum) ? ageNum : undefined,
           address: editAddress.trim() || undefined
         })
@@ -476,7 +471,6 @@ export const UserInfoCard = ({
         <div className={styles.editForm}>
           <Input label={t('profile.info.form.userName')} value={editUserName} onChange={(e) => setEditUserName(e.target.value)} fullWidth />
           <Input label={t('profile.info.form.email')} value={editUserEmail} onChange={(e) => setEditUserEmail(e.target.value)} fullWidth />
-          <Input label={t('profile.info.form.realName')} value={editRealName} onChange={(e) => setEditRealName(e.target.value)} fullWidth />
           <Input label={t('profile.info.form.age')} value={editAge} onChange={(e) => setEditAge(e.target.value)} fullWidth />
           <Input label={t('profile.info.form.address')} value={editAddress} onChange={(e) => setEditAddress(e.target.value)} fullWidth />
 

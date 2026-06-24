@@ -65,19 +65,7 @@ public class SystemConfigServiceTest
         Assert.Contains("标签页图标", faviconConfig.VoImpactSummary);
         Assert.Null(faviconConfig.VoModifyTime);
 
-        var loginNameMinConfig = configs.Single(config => config.VoKey == SystemConfigDefaults.LoginNameMinLengthKey);
-        Assert.Equal(SystemConfigDefaults.DefaultLoginNameMinLength, loginNameMinConfig.VoDefaultValue);
-        Assert.Equal(SystemConfigRiskLevel.Medium, loginNameMinConfig.VoRiskLevel);
-        Assert.Equal(1m, loginNameMinConfig.VoMinNumberValue);
-        Assert.Equal(32m, loginNameMinConfig.VoMaxNumberValue);
-        Assert.True(loginNameMinConfig.VoRequiresInteger);
-        Assert.Contains("历史数据", loginNameMinConfig.VoImpactSummary);
-
-        var loginNameMaxConfig = configs.Single(config => config.VoKey == SystemConfigDefaults.LoginNameMaxLengthKey);
-        Assert.Equal(SystemConfigDefaults.DefaultLoginNameMaxLength, loginNameMaxConfig.VoDefaultValue);
-        Assert.Equal(SystemConfigRiskLevel.Medium, loginNameMaxConfig.VoRiskLevel);
-        Assert.Equal(1m, loginNameMaxConfig.VoMinNumberValue);
-        Assert.Equal(32m, loginNameMaxConfig.VoMaxNumberValue);
+        Assert.DoesNotContain(configs, config => config.VoKey.StartsWith("UserIdentity.LoginName.", StringComparison.Ordinal));
 
         var displayNameMinConfig = configs.Single(config => config.VoKey == SystemConfigDefaults.DisplayNameMinLengthKey);
         Assert.Equal(SystemConfigDefaults.DefaultDisplayNameMinLength, displayNameMinConfig.VoDefaultValue);

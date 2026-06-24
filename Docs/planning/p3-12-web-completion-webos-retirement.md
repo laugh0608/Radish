@@ -69,7 +69,7 @@ P3-12-A 已于 2026-06-21 完成只读盘点。结论：
 
 `P3-12-B5` 已完成 Web 功能总入口首批代码与 Gateway PC / mobile smoke，结论见 [P3-12-B5 Web 功能总入口设计](/records/p3-12-b5-web-workbench-entry-design-2026-06-22)。`/messages` 已作为正式 Web 消息 / 聊天入口存在，本批不重做聊天室；`/workbench` 已作为正式 Web 功能地图接入公共壳层，公共壳层“工作台”指向 `/workbench`，`/desktop` 降级为“桌面版 / WebOS 历史入口”功能项。
 
-`P3-12-B6` 身份语义二次收口设计已确认，`B6-1 身份基础与注册登录`、`B6-2 公开展示与前端状态收敛`、`B6-3 展示名变更治理`、`B6-4 PublicIndex 保留号治理` 已完成，结论见 [P3-12-B6 身份语义二次收口设计](/records/p3-12-b6-identity-contract-convergence-design-2026-06-22)。本专题从 B5 拆出独立推进：登录凭证改为邮箱 + 密码，注册必须填写 `DisplayName`；`DisplayName` 只允许中文、英文字母和数字，`DisplayHandle = DisplayName#PublicIndex` 作为用户可见唯一身份、搜索和艾特主键；`PublicId` 只用于 URL、分享和前后端传递；`LoginName`、`UserRealName` 公开回退和 `usr_...` 普通资料页展示必须退场。当前项目尚未上线且无正式数据库，B6 按破坏性 schema 收口处理，不为旧本地 SQLite 编写兼容迁移。B6-4 已新增公开索引保留靓号列表 / 规则设置，并让注册和 Bootstrap 分配器在服务端分配时跳过保留号；人工分配、修改原因和审计动作继续后置。邮箱白名单、关注备注、种子数据和上线前数据库结构收口继续按 B6 后续批次推进。
+`P3-12-B6` 身份语义二次收口设计已确认，`B6-1 身份基础与注册登录`、`B6-2 公开展示与前端状态收敛`、`B6-3 展示名变更治理`、`B6-4 PublicIndex 保留号治理`、`B6-5 种子与 DbMigrate 收口` 已完成，结论见 [P3-12-B6 身份语义二次收口设计](/records/p3-12-b6-identity-contract-convergence-design-2026-06-22)。本专题从 B5 拆出独立推进：登录凭证改为邮箱 + 密码，注册必须填写 `DisplayName`；`DisplayName` 只允许中文、英文字母和数字，`DisplayHandle = DisplayName#PublicIndex` 作为用户可见唯一身份、搜索和艾特主键；`PublicId` 只用于 URL、分享和前后端传递；`LoginName`、`UserRealName` 公开回退和 `usr_...` 普通资料页展示必须退场。当前项目尚未上线且无正式数据库，B6 按破坏性 schema 收口处理，不为旧本地 SQLite 编写兼容迁移。B6-5 已物理移除 `LoginName` / `UserRealName` 后端字段、个人资料真实姓名输入、登录名系统设置和 DbMigrate 旧身份回填逻辑，并将开发默认账号固定为 `system/admin/test@radishx.com` 与 `PublicIndex=1/2/3`；下一步进入 B6-6 验证与阶段验收。邮箱白名单、关注备注、人工分配 PublicIndex、修改原因和审计动作继续后置。
 
 优先候选：
 

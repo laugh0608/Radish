@@ -84,42 +84,6 @@ public static class SystemConfigDefaults
         },
         new()
         {
-            Id = 10,
-            Category = UserIdentityCategory,
-            Key = LoginNameMinLengthKey,
-            Name = "登录名最小长度",
-            Description = "历史登录名字段的最小长度兼容配置。",
-            ImpactSummary = "B6 起 Auth 注册与登录不再使用登录名；该配置仅保留给历史数据与旧接口兼容，不影响邮箱登录或展示名规则。",
-            ValueType = "number",
-            DefaultValue = DefaultLoginNameMinLength,
-            MinNumberValue = 1,
-            MaxNumberValue = 32,
-            RequiresInteger = true,
-            RiskLevel = SystemConfigRiskLevel.Medium,
-            EffectiveMode = SystemConfigEffectiveMode.Immediate,
-            IsEditable = true,
-            IsSensitive = false
-        },
-        new()
-        {
-            Id = 11,
-            Category = UserIdentityCategory,
-            Key = LoginNameMaxLengthKey,
-            Name = "登录名最大长度",
-            Description = "历史登录名字段的最大长度兼容配置。",
-            ImpactSummary = "B6 起 Auth 注册与登录不再使用登录名；该配置仅保留给历史数据与旧接口兼容，不影响邮箱登录或展示名规则。",
-            ValueType = "number",
-            DefaultValue = DefaultLoginNameMaxLength,
-            MinNumberValue = 1,
-            MaxNumberValue = 32,
-            RequiresInteger = true,
-            RiskLevel = SystemConfigRiskLevel.Medium,
-            EffectiveMode = SystemConfigEffectiveMode.Immediate,
-            IsEditable = true,
-            IsSensitive = false
-        },
-        new()
-        {
             Id = 12,
             Category = UserIdentityCategory,
             Key = DisplayNameMinLengthKey,
@@ -519,12 +483,6 @@ public static class SystemConfigDefaults
     /// <summary>评论互动分类</summary>
     public const string CommentInteractionCategory = "评论互动";
 
-    /// <summary>登录名最小长度配置键</summary>
-    public const string LoginNameMinLengthKey = "UserIdentity.LoginName.MinLength";
-
-    /// <summary>登录名最大长度配置键</summary>
-    public const string LoginNameMaxLengthKey = "UserIdentity.LoginName.MaxLength";
-
     /// <summary>展示名最小长度配置键</summary>
     public const string DisplayNameMinLengthKey = "UserIdentity.DisplayName.MinLength";
 
@@ -590,12 +548,6 @@ public static class SystemConfigDefaults
 
     /// <summary>默认帖子标题最小长度</summary>
     public const string DefaultPostTitleMinLength = "3";
-
-    /// <summary>默认登录名最小长度</summary>
-    public const string DefaultLoginNameMinLength = "3";
-
-    /// <summary>默认登录名最大长度</summary>
-    public const string DefaultLoginNameMaxLength = "32";
 
     /// <summary>默认展示名最小长度</summary>
     public const string DefaultDisplayNameMinLength = "2";
