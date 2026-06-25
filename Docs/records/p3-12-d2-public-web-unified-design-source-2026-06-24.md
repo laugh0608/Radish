@@ -2,9 +2,9 @@
 
 > 日期：2026-06-24（Asia/Shanghai）
 >
-> 状态：公开 Web 设计源首批完成；不进入视觉代码实现
+> 状态：公开 Web 设计源 `P01-P05` 已补齐；不进入视觉代码实现
 >
-> 结论：`public-web-unified-experience.pen` 已创建并写入 `P01-P02`，覆盖公开壳层基座与 `/discover` 发现内容流桌面视图。后续继续在同一设计源补公开详情阅读、公开集合页和移动单列基线；完成设计稿与说明文档后，再进入实现。
+> 结论：`public-web-unified-experience.pen` 已创建并写入 `P01-P05`，覆盖公开壳层基座、`/discover` 发现内容流、公开详情阅读、公开集合页和移动单列基线。已新增 [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design) 作为实现前口径；当前仍不进入视觉代码实现。
 
 ## 背景
 
@@ -23,6 +23,7 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 已同步登记：
 
 - [设计源文件目录](/frontend/design-sources/README)
+- [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design)
 
 首批变量：
 
@@ -85,6 +86,52 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 - 作者和用户展示优先 `DisplayHandle / DisplayName`；`PublicId` 只用于 URL、分享和传参。
 - 加载、空结果和错误必须保留明确状态槽，不出现空白页。
 
+### `P03 - Public Detail Reading`
+
+职责：
+
+- forum / docs 公开详情阅读基线。
+- 详情标题、作者身份、元信息、正文、登录参与和状态槽顺序。
+- 来源返回、复制公开链接和作者态入口边界。
+- 文档公开阅读与论坛公开参与的差异点。
+
+设计口径：
+
+- 详情页以阅读主栏为主，不把作者工作台、治理台或桌面窗口能力塞进公开阅读页。
+- `DisplayHandle` 面向用户展示，`PublicId` 只用于 URL、分享和传递。
+- 新开标签和复制链接使用公开 URL，来源返回只存在于当前会话语义。
+- forum 作者态和 docs 作者态分别由正式 Web 作者入口承接。
+
+### `P04 - Public Collection Pages`
+
+职责：
+
+- forum 列表 / 搜索 / 分类、docs 搜索、公开个人页、榜单和公开商城浏览集合页基线。
+- 集合页筛选、搜索、排序、分页、真实 URL 和状态槽。
+- 移动端集合筛选折叠顺序的前置约束。
+
+设计口径：
+
+- 集合页 tab、筛选、搜索和分页需要可恢复到 URL 或明确 query 状态。
+- 每个可导航项提供真实公开 `href`，普通点击保留壳层来源语义。
+- 空结果、错误、加载、权限限制和登录参与必须有明确槽位。
+- 公开商城不承载订单、背包、资产或完整私域商城工作台。
+
+### `P05 - Mobile Public Single Column`
+
+职责：
+
+- 移动端公开 Web 单列阅读基线。
+- 状态栏 / 公开头部、页面说明、来源返回、导航分组、主体内容、状态和登录参与顺序。
+- 移动端底部导航参考和“非移动版 WebOS”边界。
+
+设计口径：
+
+- 移动端不依赖横向滚动承载主要筛选。
+- 高级筛选向下展开，当前条件和搜索入口优先可见。
+- 登录参与动作放在明确状态槽内，不打断公开阅读。
+- 不搬运 Dock、窗口系统、桌面背景、窗口几何记忆或 WebOS app 外壳。
+
 ## 验证
 
 Pencil 侧：
@@ -95,22 +142,28 @@ Pencil 侧：
 - `P02`：修正 lucide 图标名 `check-circle-2` 为 `circle-check`。
 - `P02`：复查 `snapshot_layout` 返回 `No layout problems.`
 - `P02`：截图目检未发现明显裁切、坍塌或横向溢出。
+- `P03`：`snapshot_layout` 返回 `No layout problems.`
+- `P03`：截图目检未发现明显裁切、坍塌或横向溢出。
+- `P04`：首次生成后发现 lucide 图标名 `check-circle-2` 不存在；已替换为 `circle-check`。
+- `P04`：复查 `snapshot_layout` 返回 `No layout problems.`
+- `P04`：截图目检未发现明显裁切、坍塌或横向溢出。
+- `P05`：`snapshot_layout` 返回 `No layout problems.`
+- `P05`：截图目检未发现明显裁切、坍塌或横向溢出。
 
 仓库侧：
 
 ```bash
-git diff --check -- Docs/frontend/design-sources/README.md Docs/frontend/design-sources/public-web-unified-experience.pen
+git diff --check -- Docs/frontend/design-sources/README.md Docs/frontend/public-web-unified-experience-design.md Docs/records/p3-12-d2-public-web-unified-design-source-2026-06-24.md
 ```
 
 结果：通过。
 
 ## 后续顺序
 
-1. 继续在 `public-web-unified-experience.pen` 补 `P03 - Public Detail Reading`，覆盖 forum 公开详情与 docs 公开详情的统一阅读基线。
-2. 补 `P04 - Public Collection Pages`，覆盖 forum 列表 / 搜索 / 分类、docs 搜索、公开个人页、榜单和商城公开浏览集合页。
-3. 补 `P05 - Mobile Public Single Column`，固定移动端公开 Web 单列阅读、筛选、来源返回和登录参与策略。
-4. 公开 Web 设计源完成后，更新公开 Web 统一 UI 设计说明，再创建 `private-web-workflows.pen`。
-5. 私域与作者工作流、Console 文档治理画板补齐并说明文档确认后，再进入视觉代码实现与 PC / mobile 复核。
+1. 以 [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design) 和 `P01-P05` 作为公开 Web 视觉实现前口径。
+2. 创建 `private-web-workflows.pen`，承接 `/workbench`、`/me`、资产 / 订单、通知 / 消息 / 圈子 / 宠物、论坛作者态和文档作者态。
+3. 在 `console-governance-workbench.pen` 补文档治理差异画板。
+4. 私域与作者工作流、Console 文档治理画板补齐并说明文档确认后，再进入视觉代码实现与 PC / mobile 复核。
 
 ## 当前不做
 
