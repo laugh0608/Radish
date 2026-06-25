@@ -58,7 +58,10 @@
 - 纯 Web 登录态私域入口当前已覆盖 `/notifications`、`/circle`、`/me`、`/shop/orders`、`/shop/order/:orderId`、`/shop/inventory`、`/messages`、`/pet`：分别承接通知列表 / 目标分流、关注动态与关系链复访、个人状态与完整个人中心子路径、商城购买结果 / 订单 / 背包、会话 / 消息定位、电子宠物领取与照顾；这些路由不进入公开 sitemap，不替代 `/desktop` 的完整工作台能力，细节见 [纯 Web 私域复访入口设计说明](/frontend/private-web-revisit)
 - `/workbench` 当前作为正式 Web 功能总入口，按公开浏览、登录态私域、后台治理和历史桌面四组汇总已迁移功能；公共头部“工作台”动作指向 `/workbench`，`/desktop` 作为 WebOS 历史工作台入口保留在功能地图内
 - 公开内容壳层当前已形成共享头部视觉和动作基线：forum / docs / discover / leaderboard / shop / `u/:identifier` 在窄屏下统一使用品牌字、图标与按钮 token；主动作收口为“社区发现 / 我的圈子 / 工作台”，其中“工作台”进入 `/workbench`，不直接打开 WebOS 桌面壳
-- `P3-12-D2` 已创建公开 Web 统一体验设计源 `Docs/frontend/design-sources/public-web-unified-experience.pen`，当前包含 `P01` 公开壳层基座、`P02` 发现内容流、`P03` 公开详情阅读、`P04` 公开集合页和 `P05` mobile 单列基线；实现口径见 [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design)，进入跨页面视觉代码实现前仍需按设计说明确认边界
+- `P3-12-D2` 已创建公开 Web 统一体验设计源 `Docs/frontend/design-sources/public-web-unified-experience.pen`，当前包含 `P01` 公开壳层基座、`P02` 发现内容流、`P03` 公开详情阅读、`P04` 公开集合页和 `P05` mobile 单列基线；实现口径见 [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design)
+- `P3-12-D3` 已创建私域与作者态 Web 工作流设计源 `Docs/frontend/design-sources/private-web-workflows.pen`，当前包含 `P01` 私域首页、`P02` 资产 / 订单 / 背包、`P03` 作者工作台、`P04` 编辑器 / 版本回看和 `P05` mobile 私域单列；实现口径见 [私域与作者态 Web 工作流设计说明](/frontend/private-web-workflows-design)
+- `P3-12-D4` 已创建 Web UI 共享基座设计源 `Docs/frontend/design-sources/web-ui-foundation.pen`，当前用 `F01` 统一 public / private header 合法变体、按钮 / pill、卡片 / rail、状态槽和移动 shell / tab 样板；跨业务设计源的视觉样式先在 [Web UI 共享基座设计说明](/frontend/web-ui-foundation-design) 确认，再同步到具体 `.pen`
+- 进入跨页面视觉代码实现前，必须先确认对应设计源、设计说明和共享基座是否一致；不得绕过 Pencil 设计稿直接把 public、private 或 Console 的 header、按钮、卡片样式各自写成分叉版本
 - Console 当前已形成 `Case Desk` 设计方向：低饱和暖灰 / 纸色背景、轻侧栏、克制边框、明确按钮层级和可扫描的后台信息密度，设计稿见 `Docs/frontend/design-sources/console-governance-workbench.pen`；该方向可作为 `radish.client` 后续重新设计时的视觉气质参考，但不直接复刻 Console 的管理后台信息结构
 - Console 当前按页面类型选择实现基座：治理页使用“队列 / 详情 / 动作留痕”，表格 CRUD 使用“指标 / 工具条 / 表格 / 摘要栏”，设置页使用“分组导航 / 设置列 / 影响范围”，调度总览使用“关键指标 / 快捷操作 / 最近事项 / 右侧入口”；新增或明显改动页面优先复用 `--console-*` token、`AdminLayout` 和 `adminFeature.css`
 - `/discover` 当前已从公开导航聚合页推进为公开内容流：首屏和内容区会复用公开帖子、公开文档、商品和榜单入口，让用户先在同一页面判断下一步阅读路径，再进入 forum / docs / leaderboard / shop / 公开主页
@@ -385,6 +388,21 @@ export const tokens = {
 - 后续只在真实联调中处理残余边角，不在设计入口继续追加流水
 
 主题与 i18n 落地细节见 [前端主题与 i18n 落地记录](/frontend/theme-i18n-implementation)、[视觉主题规范](/frontend/visual-theme-spec)、[视觉色彩参考](/frontend/visual-color-reference)、[UI 设计灵感参考](/frontend/ui-design-inspiration) 与 [Console 样式与 Token 使用说明](/frontend/console-style-guide)。
+
+### 8.1.2 Web UI 设计源与 Pencil 约束
+
+正式 Web 视觉推进按三层读取：
+
+1. [视觉主题规范](/frontend/visual-theme-spec) 与 [视觉色彩参考](/frontend/visual-color-reference) 固定色彩、主题和 token 语义
+2. [Web UI 共享基座设计说明](/frontend/web-ui-foundation-design) 固定跨 public / private 的 header、按钮、pill、卡片、状态槽和移动 tab 样板
+3. [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design)、[私域与作者态 Web 工作流设计说明](/frontend/private-web-workflows-design) 和 Console 相关设计说明固定业务端点信息架构
+
+Pencil 协作约束：
+
+- `.pen` 文件只通过 Pencil 创建、读取和修改，不使用普通文本工具编辑
+- Pencil 写入以当前活动窗口为准；修改前必须确认目标 `.pen` 已在 Pencil 当前窗口打开
+- 切换 `.pen` 前必须在 Pencil 内手动保存；未保存时切换文件可能丢失更改或让后续写入误落到上一活动文件
+- MCP `filePath` 可辅助读取、截图和布局检查，但不能替代当前活动窗口与手动保存确认
 
 ### 8.2 基础组件
 

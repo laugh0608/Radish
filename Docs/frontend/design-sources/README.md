@@ -22,6 +22,13 @@
 
 - `empty-design-source-template.pen`：空白 Pencil 文件模板，仅用于复制新设计源；不要直接承载业务设计稿。
 
+配套说明：
+
+- [Web UI 共享基座设计说明](../web-ui-foundation-design.md)
+- [公开 Web 统一体验设计说明](../public-web-unified-experience-design.md)
+- [私域与作者态 Web 工作流设计说明](../private-web-workflows-design.md)
+- [Console 治理工作台设计端点](../console-governance-workbench-design.md)
+
 同步规则：
 
 - 跨 public / private / console 共享的 header、按钮、pill、卡片、rail、状态槽和移动 tab 先在 `web-ui-foundation.pen` 确认。

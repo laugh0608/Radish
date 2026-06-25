@@ -39,6 +39,7 @@ features:
 - [开发规范](/architecture/specifications) - 分层约束、编码规范与协作规则
 - [用户身份语义与公开索引](/architecture/user-identity-semantics) - 登录名、邮箱、展示名、PublicId 与公开索引的长期契约
 - [前端设计](/frontend/design) - 纯 Web、Flutter、WebOS 保留入口与应用集成方式
+- [Web UI 共享基座设计](/frontend/web-ui-foundation-design) - public / private 共享 header、按钮、卡片、状态槽和 Pencil 协作约束
 - [前端多壳层策略](/frontend/shell-strategy) - 多端壳层职责分工
 - [Web 功能地图](/workbench) - 正式 Web 功能总入口，串联公开、私域、治理与历史桌面入口
 - [纯 Web 私域复访入口](/frontend/private-web-revisit) - `/notifications`、`/me`、`/messages`、`/pet` 的登录恢复、来源返回与私域边界
@@ -77,6 +78,9 @@ features:
 - [服务网关](/guide/gateway)
 - [视觉主题规范](/frontend/visual-theme-spec)
 - [视觉颜色参考](/frontend/visual-color-reference)
+- [公开 Web 统一体验设计](/frontend/public-web-unified-experience-design)
+- [私域与作者态 Web 工作流设计](/frontend/private-web-workflows-design)
+- [Web UI 共享基座设计](/frontend/web-ui-foundation-design)
 - [国际化指南](/architecture/i18n)
 - [文档系统方案](/guide/document-system)
 - [公开内容 SEO 与分享基线](/frontend/public-seo-sharing)
