@@ -148,7 +148,7 @@
    - `P3-12-B4` 文档作者态归属裁决与 `B4-1` 正式 Web 作者入口首批代码已完成；公开 `/docs` 保持阅读态，正式 Web 承接登录态作者页，WebOS Wiki 退为历史维护入口；`B4-2` Console 文档治理首批代码与阶段运行态 smoke 已完成。
    - `P3-12-B5` Web 功能总入口首批代码与 Gateway PC / mobile smoke 已完成：`/workbench` 和公共壳层入口调整已落地，正式 Web 已迁移功能可被集中发现，`/desktop` 退为桌面版兼容入口。
    - `P3-12-B6` 身份语义二次收口设计、代码前盘点、分批方案、`B6-1` 至 `B6-6` 代码侧与启动前验证已完成；该专题触达 Auth、注册登录、公开展示、搜索 / 艾特、资产流水、Console 设置和数据库结构口径。运行态 Gateway PC / mobile 页面 smoke 待用户明确前后端已启动后补验。
-   - `P3-12-D1` 统一 UI 设计准备已启动；页面级 UI 设计与美化必须统一使用 Pencil 先做设计稿，再更新设计 / 说明文档，最后进入视觉实现。`P3-12-D2` 已创建 `public-web-unified-experience.pen`，并完成 `P01-P05` 公开壳层、发现内容流、公开详情、公开集合页和移动单列画板；当前仍处于设计源和说明文档阶段，不进入视觉代码。
+   - `P3-12-D1` 统一 UI 设计准备已启动；页面级 UI 设计与美化必须统一使用 Pencil 先做设计稿，再更新设计 / 说明文档，最后进入视觉实现。`P3-12-D2` 已创建 `public-web-unified-experience.pen`，并完成 `P01-P05` 公开壳层、发现内容流、公开详情、公开集合页和移动单列画板；`P01-P05` 已按 `1920x1080` 视角完成桌面与移动信息密度收口。`private-web-workflows.pen` 与空白模板文件已落盘，当前仍处于设计源和说明文档阶段，不进入视觉代码。
 2. **保持 P3-10 可恢复合并状态**
    - `P3-10-D` 已完成公开页整理、四批入口语义治理、合并前验证和 PR 合并判断；不再默认追加第五批链接扫尾。
    - 前端敏感日志脱敏、支付口令升级、支付 / 转账幂等、`WOG-1` 至 `WOG-6`、论坛内容发布可靠性和 Flutter 作者编辑承接已纳入完整批次范围。
@@ -232,9 +232,9 @@
 
 ## 明日事项
 
-- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[P3-12-D1 统一 UI 设计准备记录](/records/p3-12-d1-unified-ui-design-prep-2026-06-22)、[P3-12-D2 公开 Web 统一体验设计源记录](/records/p3-12-d2-public-web-unified-design-source-2026-06-24) 和 [设计源文件目录](/frontend/design-sources/README)，确认当前第一顺位是继续补公开 Web 设计源。
-- 第一顺位：基于 `public-web-unified-experience.pen` 的 `P01-P05` 和 [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design)，确认公开 Web 实现边界；若继续设计源阶段，下一步创建 `private-web-workflows.pen`。
-- 第二顺位：补 `private-web-workflows.pen` 的私域 / 作者态关键画板，并在 `console-governance-workbench.pen` 补文档治理差异画板；说明文档确认前不进入跨页面视觉代码实现。
+- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[P3-12-D1 统一 UI 设计准备记录](/records/p3-12-d1-unified-ui-design-prep-2026-06-22)、[P3-12-D2 公开 Web 统一体验设计源记录](/records/p3-12-d2-public-web-unified-design-source-2026-06-24) 和 [设计源文件目录](/frontend/design-sources/README)，确认当前第一顺位是补 `private-web-workflows.pen`。
+- 第一顺位：在已创建的 `private-web-workflows.pen` 写入私域 / 作者态关键画板，覆盖私域首页、资产 / 订单、作者工作台、编辑器 / 版本回看和移动私域。
+- 第二顺位：补 `private-web-workflows.pen` 后，在 `console-governance-workbench.pen` 补文档治理差异画板；说明文档确认前不进入跨页面视觉代码实现。
 - B6 剩余验收项：真实 Gateway PC / mobile 页面 smoke 需要先确认前后端已启动；本地旧 SQLite 若缺少 `UserDisplayNameChangeRecord` 或 `SystemBootstrapState.CompletedEmail`，按 B6 破坏性 schema 口径删除 / 初始化或执行迁移补齐，不编写旧库兼容迁移。
 
 ## 并行维护项

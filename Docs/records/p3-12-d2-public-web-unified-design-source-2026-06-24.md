@@ -4,7 +4,7 @@
 >
 > 状态：公开 Web 设计源 `P01-P05` 已补齐；不进入视觉代码实现
 >
-> 结论：`public-web-unified-experience.pen` 已创建并写入 `P01-P05`，覆盖公开壳层基座、`/discover` 发现内容流、公开详情阅读、公开集合页和移动单列基线。已新增 [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design) 作为实现前口径；当前仍不进入视觉代码实现。
+> 结论：`public-web-unified-experience.pen` 已创建并写入 `P01-P05`，覆盖公开壳层基座、`/discover` 发现内容流、公开详情阅读、公开集合页和移动单列基线。2026-06-25 已完成公开 `P01-P05` 信息密度收口：降低桌面 `P01-P04` 的展示型字号、卡片 padding、section gap 和旧画板高度，补齐 `P01` 公开入口矩阵 / 运行态 rail，修正 `P04` 顶部双激活状态，并补齐 `P05` 移动继续探索 / 登录参与内容。已新增 [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design) 作为实现前口径；当前仍不进入视觉代码实现。
 
 ## 背景
 
@@ -138,17 +138,22 @@ Pencil 侧：
 
 - `P01`：`snapshot_layout` 返回 `No layout problems.`
 - `P01`：截图目检未发现明显裁切、坍塌或横向溢出。
+- `P01`：2026-06-25 按桌面壳层密度收口，压缩 header / context bar / 主卡片 / 右侧 rail，并补齐公开入口矩阵和运行态 rail；复查无布局问题。
 - `P02`：首次生成后发现主体内容被画板高度裁切；已加高画板并复查。
 - `P02`：修正 lucide 图标名 `check-circle-2` 为 `circle-check`。
 - `P02`：复查 `snapshot_layout` 返回 `No layout problems.`
 - `P02`：截图目检未发现明显裁切、坍塌或横向溢出。
+- `P02`：2026-06-25 按桌面信息密度收口，压缩 header / lead / toolbar / 卡片 padding / 右侧 rail 和画板高度；复查无布局问题。
 - `P03`：`snapshot_layout` 返回 `No layout problems.`
 - `P03`：截图目检未发现明显裁切、坍塌或横向溢出。
+- `P03`：2026-06-25 按桌面阅读页密度收口，压缩详情 lead、正文卡片 padding、段落字号和右侧 rail；复查无布局问题。
 - `P04`：首次生成后发现 lucide 图标名 `check-circle-2` 不存在；已替换为 `circle-check`。
 - `P04`：复查 `snapshot_layout` 返回 `No layout problems.`
 - `P04`：截图目检未发现明显裁切、坍塌或横向溢出。
+- `P04`：2026-06-25 按集合页密度收口，压缩 lead / toolbar / 列表项 / 右侧 rail，修正顶部“论坛 / 文档”双激活为单一激活；复查无布局问题。
 - `P05`：`snapshot_layout` 返回 `No layout problems.`
 - `P05`：截图目检未发现明显裁切、坍塌或横向溢出。
+- `P05`：2026-06-25 按移动单列密度收口，补齐继续探索、公开商城和登录参与内容，收住底部留白；复查无布局问题。
 
 仓库侧：
 
