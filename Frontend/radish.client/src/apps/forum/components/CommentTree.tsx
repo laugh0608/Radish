@@ -25,6 +25,7 @@ interface CommentTreeProps {
   sortBy?: 'newest' | 'hottest' | null; // null表示默认排序
   onDeleteComment?: (commentId: LongId) => void;
   onEditComment?: (commentId: LongId, newContent: string) => Promise<void>;
+  onCancelEditComment?: () => void;
   onViewCommentHistory?: (commentId: LongId) => void;
   onLikeComment?: (commentId: LongId) => Promise<{ isLiked: boolean; likeCount: number }>;
   onReplyComment?: (target: CommentReplyTarget) => void;
@@ -63,6 +64,7 @@ export const CommentTree = ({
   sortBy = null,
   onDeleteComment,
   onEditComment,
+  onCancelEditComment,
   onViewCommentHistory,
   onLikeComment,
   onReplyComment,
@@ -168,6 +170,7 @@ export const CommentTree = ({
             isGodComment={comment.voIsGodComment || false}
             onDelete={onDeleteComment}
             onEdit={onEditComment}
+            onCancelEdit={onCancelEditComment}
             onViewHistory={onViewCommentHistory}
             onLike={onLikeComment}
             onReply={onReplyComment}

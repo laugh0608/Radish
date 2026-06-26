@@ -33,7 +33,7 @@ export const Dock = () => {
   const { t } = useTranslation();
   const { openWindows, openApp, restoreWindow } = useWindowStore();
   const authAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const { userName, userId, loginName, nickname, avatarUrl, avatarThumbnailUrl, clearUser } = useUserStore();
+  const { displayName, userName, userId, displayHandle, nickname, avatarUrl, avatarThumbnailUrl, clearUser } = useUserStore();
   const { unreadCount: storeUnreadCount, connectionState } = useNotificationStore();
   const { currentTheme, cycleTheme } = useTheme();
   const [time, setTime] = useState(new Date());
@@ -81,10 +81,10 @@ export const Dock = () => {
 
   const avatarSrc = resolveAvatarUrl(avatarThumbnailUrl || avatarUrl);
   const avatarImageSrc = avatarLoadError ? undefined : avatarSrc;
-  const avatarSeed = userName?.trim() || 'User';
+  const avatarSeed = displayName?.trim() || userName?.trim() || 'User';
   const avatarFallbackText = buildAvatarText(avatarSeed);
-  const displayUserName = loginName?.trim() || userName?.trim() || '';
-  const displayNickname = nickname?.trim() || userName?.trim() || '';
+  const displayUserName = displayHandle?.trim() || displayName?.trim() || userName?.trim() || '';
+  const displayNickname = nickname?.trim() || displayName?.trim() || userName?.trim() || '';
   const avatarContainerStyle = {
     cursor: loggedIn ? 'pointer' : 'default',
     ...(loggedIn && !avatarImageSrc ? buildAvatarStyle(avatarSeed) : {})
@@ -253,7 +253,7 @@ export const Dock = () => {
                     {avatarImageSrc ? (
                       <img
                         src={avatarImageSrc}
-                        alt={userName}
+                        alt={displayName || userName}
                         onError={() => setAvatarLoadError(true)}
                       />
                     ) : (
@@ -265,7 +265,7 @@ export const Dock = () => {
                   <Icon icon="mdi:account-circle-outline" size={40} />
                 )}
               </div>
-              {loggedIn && userName && (
+              {loggedIn && displayUserName && (
                 <div
                   className={styles.userInfo}
                   onClick={() => openApp('profile')}

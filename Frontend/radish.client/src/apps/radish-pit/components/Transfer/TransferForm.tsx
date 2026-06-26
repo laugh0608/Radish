@@ -5,6 +5,7 @@ import { getPaymentPasscodeValidationMessage } from '@/utils/paymentPasscode';
 import { formatCoinAmount, validateTransferAmount, debounce } from '../../utils';
 import { searchUsersForMention, type UserMentionOption } from '@/api/user';
 import { normalizePositiveLongIdKey } from '@/utils/longId';
+import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import { useTranslation } from 'react-i18next';
 import type { TransferFormData } from '../../types';
 import styles from './TransferForm.module.css';
@@ -93,8 +94,8 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
 
   const handleUserSelect = (user: UserMentionOption) => {
     const userId = normalizePositiveLongIdKey(user.voId);
-    const displayName = user.voDisplayName || user.voUserName || '未知用户';
-    const displayHandle = user.voDisplayHandle || displayName;
+    const displayName = resolveVisibleUserDisplayName(user, t('common.unknownUser'));
+    const displayHandle = resolveVisibleUserHandle(user, displayName) || displayName;
 
     if (!userId) {
       setErrors(prev => ({ ...prev, recipientId: '用户 ID 无效，请重新选择接收方' }));
@@ -123,7 +124,7 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
     }
 
     if (!formData.recipientName?.trim()) {
-      newErrors.recipientName = '请输入接收方用户名';
+      newErrors.recipientName = '请输入接收方展示名或公开句柄';
     }
 
     // 验证金额
@@ -210,7 +211,7 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
               <input
                 type="text"
                 className={`${styles.input} ${errors.recipientName ? styles.error : ''}`}
-                placeholder="输入用户名搜索..."
+                placeholder="输入展示名或公开句柄搜索..."
                 value={userSearchQuery}
                 onChange={(e) => handleUserSearch(e.target.value)}
                 onFocus={() => userSearchResults.length > 0 && setShowUserDropdown(true)}
@@ -224,10 +225,8 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
               {showUserDropdown && userSearchResults.length > 0 && (
                 <div className={styles.userDropdown}>
                   {userSearchResults.map((user) => {
-                    const displayName = user.voDisplayName || user.voUserName || '未知用户';
-                    const displayHandle = user.voDisplayHandle || (
-                      user.voPublicIndex ? `${displayName}#${String(user.voPublicIndex).trim()}` : null
-                    );
+                    const displayName = resolveVisibleUserDisplayName(user, t('common.unknownUser'));
+                    const displayHandle = resolveVisibleUserHandle(user, displayName);
                     return (
                       <div
                         key={user.voId}
@@ -244,7 +243,7 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
                         <div className={styles.userInfo}>
                           <div className={styles.userName}>{displayName}</div>
                           {displayHandle && (
-                            <div className={styles.userLoginName}>{displayHandle}</div>
+                            <div className={styles.userHandle}>{displayHandle}</div>
                           )}
                         </div>
                       </div>

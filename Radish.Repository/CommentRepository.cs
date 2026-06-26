@@ -14,6 +14,173 @@ public class CommentRepository : BaseRepository<Comment>, ICommentRepository
     {
     }
 
+    public async Task<CommentLikePersistenceResult> ToggleCommentLikeAsync(long userId, long commentId)
+    {
+        try
+        {
+            return await ExecuteDbOperationAsync(async () =>
+            {
+                DbProtectedClient.Ado.BeginTran();
+                try
+                {
+                    var result = await ToggleCommentLikeCoreAsync(userId, commentId);
+                    DbProtectedClient.Ado.CommitTran();
+                    return result;
+                }
+                catch
+                {
+                    DbProtectedClient.Ado.RollbackTran();
+                    throw;
+                }
+            });
+        }
+        catch (Exception ex) when (RepositorySqlHelper.IsUniqueConstraintException(ex))
+        {
+            return await ReadCurrentCommentLikeResultAsync(userId, commentId);
+        }
+    }
+
+    private async Task<CommentLikePersistenceResult> ToggleCommentLikeCoreAsync(long userId, long commentId)
+    {
+        var comment = await QueryCommentForLikeAsync(commentId);
+        var existingLike = await QueryCommentLikeRelationAsync(comment.TenantId, userId, commentId);
+
+        if (existingLike is { IsDeleted: false })
+        {
+            var affectedRows = await DbProtectedClient.Updateable<UserCommentLike>()
+                .SetColumns(like => new UserCommentLike { IsDeleted = true })
+                .Where(like => like.Id == existingLike.Id && !like.IsDeleted)
+                .ExecuteCommandAsync();
+
+            if (affectedRows <= 0)
+            {
+                return await ReadCurrentCommentLikeResultCoreAsync(userId, commentId, 0);
+            }
+
+            await ApplyCommentLikeCountDeltaAsync(commentId, -1);
+            var likeCount = await QueryCommentLikeCountAsync(commentId);
+            return BuildCommentLikeResult(comment, false, likeCount, -1);
+        }
+
+        if (existingLike is { IsDeleted: true })
+        {
+            var now = DateTime.UtcNow;
+            var affectedRows = await DbProtectedClient.Updateable<UserCommentLike>()
+                .SetColumns(like => new UserCommentLike
+                {
+                    IsDeleted = false,
+                    LikedAt = now
+                })
+                .Where(like => like.Id == existingLike.Id && like.IsDeleted)
+                .ExecuteCommandAsync();
+
+            if (affectedRows <= 0)
+            {
+                return await ReadCurrentCommentLikeResultCoreAsync(userId, commentId, 0);
+            }
+
+            await ApplyCommentLikeCountDeltaAsync(commentId, 1);
+            var likeCount = await QueryCommentLikeCountAsync(commentId);
+            return BuildCommentLikeResult(comment, true, likeCount, 1);
+        }
+
+        await DbProtectedClient.Insertable(new UserCommentLike
+        {
+            TenantId = comment.TenantId,
+            UserId = userId,
+            CommentId = commentId,
+            PostId = comment.PostId,
+            LikedAt = DateTime.UtcNow,
+            IsDeleted = false
+        }).ExecuteReturnSnowflakeIdAsync();
+
+        await ApplyCommentLikeCountDeltaAsync(commentId, 1);
+        var finalLikeCount = await QueryCommentLikeCountAsync(commentId);
+        return BuildCommentLikeResult(comment, true, finalLikeCount, 1);
+    }
+
+    private async Task<CommentLikePersistenceResult> ReadCurrentCommentLikeResultAsync(long userId, long commentId)
+    {
+        return await ExecuteDbOperationAsync(() => ReadCurrentCommentLikeResultCoreAsync(userId, commentId, 0));
+    }
+
+    private async Task<CommentLikePersistenceResult> ReadCurrentCommentLikeResultCoreAsync(long userId, long commentId, int delta)
+    {
+        var comment = await QueryCommentForLikeAsync(commentId);
+        var relation = await QueryCommentLikeRelationAsync(comment.TenantId, userId, commentId);
+        var likeCount = await QueryCommentLikeCountAsync(commentId);
+        return BuildCommentLikeResult(comment, relation?.IsDeleted == false, likeCount, delta);
+    }
+
+    private async Task<Comment> QueryCommentForLikeAsync(long commentId)
+    {
+        var comment = await CreateTenantQueryableFor<Comment>()
+            .Where(comment => comment.Id == commentId && !comment.IsDeleted)
+            .FirstAsync();
+
+        return comment ?? throw new InvalidOperationException("评论不存在或已被删除");
+    }
+
+    private async Task<UserCommentLike?> QueryCommentLikeRelationAsync(long tenantId, long userId, long commentId)
+    {
+        return await CreateTenantQueryableFor<UserCommentLike>()
+            .Where(like => like.TenantId == tenantId && like.UserId == userId && like.CommentId == commentId)
+            .OrderBy(like => like.IsDeleted, OrderByType.Asc)
+            .OrderBy(like => like.LikedAt, OrderByType.Desc)
+            .OrderBy(like => like.Id, OrderByType.Desc)
+            .FirstAsync();
+    }
+
+    private async Task ApplyCommentLikeCountDeltaAsync(long commentId, int delta)
+    {
+        var tableName = RepositorySqlHelper.QuoteIdentifier(DbProtectedClient.EntityMaintenance.GetEntityInfo<Comment>().DbTableName);
+        var idColumn = RepositorySqlHelper.QuoteIdentifier(nameof(Comment.Id));
+        var likeCountColumn = RepositorySqlHelper.QuoteIdentifier(nameof(Comment.LikeCount));
+
+        if (delta > 0)
+        {
+            await DbProtectedClient.Ado.ExecuteCommandAsync(
+                $"UPDATE {tableName} SET {likeCountColumn} = {likeCountColumn} + @delta WHERE {idColumn} = @commentId",
+                new SugarParameter("@delta", delta),
+                new SugarParameter("@commentId", commentId));
+            return;
+        }
+
+        var decrement = Math.Abs(delta);
+        await DbProtectedClient.Ado.ExecuteCommandAsync(
+            $"""
+            UPDATE {tableName}
+            SET {likeCountColumn} = CASE
+                WHEN {likeCountColumn} >= @decrement THEN {likeCountColumn} - @decrement
+                ELSE 0
+            END
+            WHERE {idColumn} = @commentId
+            """,
+            new SugarParameter("@decrement", decrement),
+            new SugarParameter("@commentId", commentId));
+    }
+
+    private async Task<int> QueryCommentLikeCountAsync(long commentId)
+    {
+        return await CreateTenantQueryableFor<Comment>()
+            .Where(comment => comment.Id == commentId)
+            .Select(comment => comment.LikeCount)
+            .FirstAsync();
+    }
+
+    private static CommentLikePersistenceResult BuildCommentLikeResult(Comment comment, bool isLiked, int likeCount, int delta)
+    {
+        return new CommentLikePersistenceResult(
+            comment.Id,
+            comment.PostId,
+            comment.ParentId,
+            comment.AuthorId,
+            comment.Content,
+            isLiked,
+            likeCount,
+            delta);
+    }
+
     public async Task<List<Comment>> QueryLatestInteractorCommentsByPostIdsAsync(
         IReadOnlyDictionary<long, long> postAuthorMap,
         int takePerPost)

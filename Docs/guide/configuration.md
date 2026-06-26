@@ -710,7 +710,7 @@ Gateway 门户页面需要配置服务的公开访问地址，用于页面展示
 - `GatewayService.PublicUrl`：Gateway 自身的公开访问地址（用于门户页面展示）
 - `DownstreamServices.ApiService.BaseUrl`：API 服务的访问地址
 - `DownstreamServices.ApiService.HealthCheckPath`：API 健康检查端点路径
-- `FrontendService.BaseUrl`：前端应用的访问地址
+- `FrontendService.BaseUrl`：前端应用的访问地址；公开 head snapshot 细节见 [公开内容 SEO 与分享基线](/frontend/public-seo-sharing)
 
 #### 生产环境配置
 

@@ -7,6 +7,7 @@ using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
+using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Service.Base;
 using SqlSugar;
@@ -21,20 +22,26 @@ public class UserService : BaseService<User, UserVo>, IUserService
     private readonly IUserRepository _userRepository;
     private readonly IBaseRepository<Role> _roleRepository;
     private readonly IBaseRepository<UserRole> _userRoleRepository;
+    private readonly IBaseRepository<UserDisplayNameChangeRecord> _displayNameChangeRecordRepository;
     private readonly IDepartmentService _departmentService;
     private readonly IConsoleAuthorizationService _consoleAuthorizationService;
+    private readonly ISystemSettingProvider _systemSettingProvider;
 
     public UserService(IDepartmentService departmentService, IMapper mapper,
         IBaseRepository<User> baseRepository, IUserRepository userRepository, IBaseRepository<Role> roleRepository,
         IBaseRepository<UserRole> userRoleRepository,
-        IConsoleAuthorizationService consoleAuthorizationService) : base(mapper, baseRepository)
+        IBaseRepository<UserDisplayNameChangeRecord> displayNameChangeRecordRepository,
+        IConsoleAuthorizationService consoleAuthorizationService,
+        ISystemSettingProvider systemSettingProvider) : base(mapper, baseRepository)
     {
         _departmentService = departmentService;
         _userBaseRepository = baseRepository;
         _userRepository = userRepository;
         _roleRepository = roleRepository;
         _userRoleRepository = userRoleRepository;
+        _displayNameChangeRecordRepository = displayNameChangeRecordRepository;
         _consoleAuthorizationService = consoleAuthorizationService;
+        _systemSettingProvider = systemSettingProvider;
     }
 
     public new async Task<long> AddAsync(User entity)
@@ -61,13 +68,15 @@ public class UserService : BaseService<User, UserVo>, IUserService
 
     public new async Task<int> AddRangeAsync(List<User> entities)
     {
-        var nextPublicIndex = await AllocateNextPublicIndexAsync();
+        var publicIndexBaseline = await ResolvePublicIndexBaselineAsync();
+        var reservationPolicy = await GetPublicIndexReservationPolicyAsync();
         foreach (var entity in entities)
         {
             entity.PublicId = User.EnsurePublicId(entity.PublicId);
             if (!User.HasAssignedPublicIndex(entity.PublicIndex))
             {
-                entity.PublicIndex = nextPublicIndex++;
+                entity.PublicIndex = reservationPolicy.FindNextAvailableAfter(publicIndexBaseline);
+                publicIndexBaseline = entity.PublicIndex.Value;
             }
         }
 
@@ -75,24 +84,22 @@ public class UserService : BaseService<User, UserVo>, IUserService
     }
 
     /// <summary>
-    /// 根据登录名获取可登录用户
+    /// 根据邮箱获取可登录用户
     /// </summary>
-    /// <param name="loginName">登录名</param>
+    /// <param name="email">电子邮箱</param>
     /// <returns>用户视图模型</returns>
-    public async Task<UserVo?> GetEnabledUserByLoginNameAsync(string loginName)
+    public async Task<UserVo?> GetEnabledUserByEmailAsync(string email)
     {
-        if (string.IsNullOrWhiteSpace(loginName))
+        if (string.IsNullOrWhiteSpace(email))
         {
             return null;
         }
 
-        var rawIdentifier = loginName.Trim();
-        var normalizedIdentifier = rawIdentifier.ToLowerInvariant();
+        var rawEmail = email.Trim();
+        var normalizedEmail = rawEmail.ToLowerInvariant();
         return await QueryFirstAsync(u =>
-            (u.LoginName == rawIdentifier ||
-             u.LoginName == normalizedIdentifier ||
-             u.UserEmail == rawIdentifier ||
-             u.UserEmail == normalizedIdentifier) &&
+            (u.UserEmail == rawEmail ||
+             u.UserEmail == normalizedEmail) &&
             u.IsDeleted == false &&
             u.IsEnable);
     }
@@ -135,6 +142,163 @@ public class UserService : BaseService<User, UserVo>, IUserService
         return Mapper.Map<UserVo>(user);
     }
 
+    /// <summary>
+    /// 修改用户公开展示名，并记录变更审计。
+    /// </summary>
+    [UseTran(Propagation = Propagation.Required)]
+    public async Task<bool> ChangeDisplayNameAsync(long userId, string displayName, UserDisplayNameChangeContext context)
+    {
+        if (userId <= 0)
+        {
+            throw new ArgumentException("用户 ID 无效", nameof(userId));
+        }
+
+        if (context == null)
+        {
+            throw new ArgumentNullException(nameof(context));
+        }
+
+        var normalizedDisplayName = displayName?.Trim();
+        if (string.IsNullOrWhiteSpace(normalizedDisplayName))
+        {
+            throw new ArgumentException("显示名不能为空", nameof(displayName));
+        }
+
+        await ValidateDisplayNameAsync(normalizedDisplayName);
+
+        var user = await _userBaseRepository.QueryFirstAsync(u => u.Id == userId && !u.IsDeleted && u.IsEnable);
+        if (user == null)
+        {
+            throw new InvalidOperationException("用户不存在或已禁用");
+        }
+
+        var storedDisplayName = user.UserName?.Trim() ?? string.Empty;
+        if (string.Equals(storedDisplayName, normalizedDisplayName, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var now = DateTime.UtcNow;
+        await EnsureDisplayNameChangeAllowedAsync(user, now);
+
+        var affectedRows = await _userBaseRepository.UpdateColumnsAsync(
+            item => new User
+            {
+                UserName = normalizedDisplayName,
+                UpdateTime = now
+            },
+            item => item.Id == userId && !item.IsDeleted && item.IsEnable);
+
+        if (affectedRows <= 0)
+        {
+            throw new InvalidOperationException("显示名更新失败");
+        }
+
+        var operatorUserId = context.OperatorUserId > 0 ? context.OperatorUserId : userId;
+        var operatorUserName = NormalizeAuditText(context.OperatorUserName, User.NormalizeDisplayName(user.UserName, user.Id), 100);
+        var reason = NormalizeAuditText(context.Reason, "用户个人资料修改", 500);
+        var source = NormalizeAuditText(context.Source, UserDisplayNameChangeSources.Profile, 50);
+
+        await _displayNameChangeRecordRepository.AddAsync(new UserDisplayNameChangeRecord
+        {
+            TenantId = user.TenantId,
+            UserId = user.Id,
+            OldDisplayName = User.NormalizeDisplayName(user.UserName, user.Id),
+            NewDisplayName = normalizedDisplayName,
+            OperatorUserId = operatorUserId,
+            OperatorUserName = operatorUserName,
+            ChangeSource = source,
+            Reason = reason,
+            ChangeTime = now,
+            CreateTime = now,
+            CreateBy = NormalizeAuditText(operatorUserName, "System", 50),
+            CreateId = operatorUserId
+        });
+
+        return true;
+    }
+
+    private async Task ValidateDisplayNameAsync(string displayName)
+    {
+        var minLength = await _systemSettingProvider.GetInt32Async(SystemConfigDefaults.DisplayNameMinLengthKey);
+        var maxLength = await _systemSettingProvider.GetInt32Async(SystemConfigDefaults.DisplayNameMaxLengthKey);
+        if (minLength > maxLength)
+        {
+            throw new InvalidOperationException("展示名长度系统设置无效：最小长度不能大于最大长度");
+        }
+
+        if (displayName.Length < minLength || displayName.Length > maxLength)
+        {
+            throw new ArgumentException($"展示名长度必须在 {minLength}-{maxLength} 个字符之间", nameof(displayName));
+        }
+
+        if (!displayName.All(IsValidDisplayNameCharacter))
+        {
+            throw new ArgumentException("展示名只能包含中文、英文字母和数字", nameof(displayName));
+        }
+    }
+
+    private static bool IsValidDisplayNameCharacter(char value)
+    {
+        return (value >= '0' && value <= '9') ||
+               (value >= 'a' && value <= 'z') ||
+               (value >= 'A' && value <= 'Z') ||
+               (value >= '\u4e00' && value <= '\u9fff');
+    }
+
+    private async Task EnsureDisplayNameChangeAllowedAsync(User user, DateTime now)
+    {
+        var cooldownDays = await _systemSettingProvider.GetInt32Async(SystemConfigDefaults.DisplayNameChangeCooldownDaysKey);
+        var windowDays = await _systemSettingProvider.GetInt32Async(SystemConfigDefaults.DisplayNameChangeWindowDaysKey);
+        var windowMaxCount = await _systemSettingProvider.GetInt32Async(SystemConfigDefaults.DisplayNameChangeWindowMaxCountKey);
+
+        if (cooldownDays < 0 || windowDays < 0 || windowMaxCount < 0)
+        {
+            throw new InvalidOperationException("展示名修改频率系统设置无效：数值不能为负数");
+        }
+
+        if (cooldownDays > 0)
+        {
+            var latestRecords = await _displayNameChangeRecordRepository.QueryWithOrderAsync(
+                item => item.TenantId == user.TenantId && item.UserId == user.Id,
+                item => item.ChangeTime,
+                OrderByType.Desc,
+                1);
+            var latestRecord = latestRecords.FirstOrDefault();
+            if (latestRecord != null)
+            {
+                var nextAllowedTime = latestRecord.ChangeTime.AddDays(cooldownDays);
+                if (nextAllowedTime > now)
+                {
+                    throw new InvalidOperationException($"显示名修改过于频繁，请在 {nextAllowedTime:yyyy-MM-dd HH:mm:ss} 后再修改");
+                }
+            }
+        }
+
+        if (windowDays <= 0 || windowMaxCount <= 0)
+        {
+            return;
+        }
+
+        var windowStartTime = now.AddDays(-windowDays);
+        var changeCount = await _displayNameChangeRecordRepository.QueryCountAsync(item =>
+            item.TenantId == user.TenantId &&
+            item.UserId == user.Id &&
+            item.ChangeTime >= windowStartTime &&
+            item.ChangeTime <= now);
+
+        if (changeCount >= windowMaxCount)
+        {
+            throw new InvalidOperationException($"显示名在 {windowDays} 天内最多可修改 {windowMaxCount} 次");
+        }
+    }
+
+    private static string NormalizeAuditText(string? value, string fallback, int maxLength)
+    {
+        var normalized = string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+        return normalized.Length <= maxLength ? normalized : normalized[..maxLength];
+    }
+
     private async Task EnsureUserPublicIdentifiersAsync(User user)
     {
         user.PublicId = User.EnsurePublicId(user.PublicId);
@@ -146,15 +310,29 @@ public class UserService : BaseService<User, UserVo>, IUserService
 
     private async Task<long> AllocateNextPublicIndexAsync(long? floor = null)
     {
+        var baseline = await ResolvePublicIndexBaselineAsync(floor);
+        var reservationPolicy = await GetPublicIndexReservationPolicyAsync();
+        return reservationPolicy.FindNextAvailableAfter(baseline);
+    }
+
+    private async Task<long> ResolvePublicIndexBaselineAsync(long? floor = null)
+    {
         var maxPublicIndexTask = _userBaseRepository.QueryMaxAsync<long?>(
             item => item.PublicIndex,
             item => item.PublicIndex >= User.PublicIndexStart);
         var maxPublicIndex = maxPublicIndexTask == null ? null : await maxPublicIndexTask;
-        var baseline = Math.Max(
+        return Math.Max(
             maxPublicIndex.GetValueOrDefault(User.PublicIndexStart - 1),
             floor.GetValueOrDefault(User.PublicIndexStart - 1));
+    }
 
-        return baseline + 1;
+    private async Task<PublicIndexReservationPolicy> GetPublicIndexReservationPolicyAsync()
+    {
+        var reservedIndexes = await _systemSettingProvider.GetEffectiveValueAsync(
+            SystemConfigDefaults.PublicIndexReservedIndexesKey);
+        var vanityRules = await _systemSettingProvider.GetEffectiveValueAsync(
+            SystemConfigDefaults.PublicIndexVanityRulesKey);
+        return PublicIndexReservationPolicy.FromSettings(reservedIndexes, vanityRules);
     }
 
     private async Task EnsureUserPublicIdentityBackfilledAsync(User user)
@@ -219,24 +397,6 @@ public class UserService : BaseService<User, UserVo>, IUserService
         {
             user.PublicIndex = refreshedUser!.PublicIndex;
         }
-    }
-
-    /// <summary>
-    /// 通过登录用户名和登录密码查询用户的角色名称
-    /// </summary>
-    /// <param name="loginName">登录用户名</param>
-    /// <param name="loginPwd">登陆密码</param>
-    /// <returns>string RoleName, 可能为多个</returns>
-    public async Task<string> GetUserRoleNameStrAsync(string loginName, string loginPwd)
-    {
-        var user = await QueryFirstAsync(a => a.LoginName == loginName && a.LoginPassword == loginPwd);
-        if (user == null)
-        {
-            return string.Empty;
-        }
-
-        var roleNames = await GetUserRoleNamesAsync(user.Uuid);
-        return string.Join(',', roleNames);
     }
 
     public async Task<List<string>> GetUserRoleNamesAsync(long userId)

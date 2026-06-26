@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 
@@ -14,6 +15,27 @@ import '../data/shop_long_id.dart';
 import '../data/shop_models.dart';
 import '../data/shop_repository.dart';
 import 'shop_order_detail_page.dart';
+
+final Random _purchaseKeyRandom = _createPurchaseKeyRandom();
+
+Random _createPurchaseKeyRandom() {
+  try {
+    return Random.secure();
+  } on UnsupportedError {
+    return Random();
+  }
+}
+
+String _buildPurchaseIdempotencyKey() {
+  final timestamp = DateTime.now().microsecondsSinceEpoch.toRadixString(16);
+  final randomPart = List.generate(
+    4,
+    (_) =>
+        _purchaseKeyRandom.nextInt(1 << 32).toRadixString(16).padLeft(8, '0'),
+  ).join();
+
+  return 'shop:$timestamp-$randomPart';
+}
 
 class ShopProductDetailPage extends StatefulWidget {
   const ShopProductDetailPage({
@@ -64,6 +86,7 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
   String? _purchaseNotice;
   String? _purchaseErrorMessage;
   String? _balanceErrorMessage;
+  String? _purchaseIdempotencyKey;
   int _requestId = 0;
   int _buyCheckRequestId = 0;
   int _balanceRequestId = 0;
@@ -87,12 +110,16 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
       _coinBalance = null;
       _purchaseNotice = null;
       _purchaseErrorMessage = null;
+      _purchaseIdempotencyKey = null;
       _balanceErrorMessage = null;
       unawaited(_load(keepCurrentProduct: false));
     }
 
     if (oldWidget.walletRepository != widget.walletRepository ||
         oldWidget.accessToken != widget.accessToken) {
+      if (oldWidget.accessToken != widget.accessToken) {
+        _purchaseIdempotencyKey = null;
+      }
       unawaited(_loadBalance(keepCurrentBalance: _coinBalance != null));
     }
 
@@ -214,6 +241,7 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
         _isCheckingCanBuy = false;
         _isLoadingBalance = false;
         _balanceErrorMessage = null;
+        _purchaseIdempotencyKey = null;
       });
     }
 
@@ -418,13 +446,16 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
       _isPurchasing = true;
       _purchaseNotice = null;
       _purchaseErrorMessage = null;
+      _purchaseIdempotencyKey ??= _buildPurchaseIdempotencyKey();
     });
 
     try {
+      final idempotencyKey = _purchaseIdempotencyKey!;
       final result = await widget.repository.purchaseProduct(
         accessToken: accessToken,
         productId: productId,
         paymentPassword: paymentPassword,
+        idempotencyKey: idempotencyKey,
       );
       if (!mounted) {
         return;
@@ -446,6 +477,7 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
         _isPurchasing = false;
         _purchaseErrorMessage = null;
         _purchaseNotice = _buildPurchaseSuccessNotice(result);
+        _purchaseIdempotencyKey = null;
       });
       unawaited(_loadBalance(keepCurrentBalance: true));
 

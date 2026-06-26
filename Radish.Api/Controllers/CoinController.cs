@@ -132,6 +132,8 @@ public class CoinController : ControllerBase
     /// <param name="pageSize">每页数量（默认 20）</param>
     /// <param name="transactionType">交易类型（可选，用于筛选）</param>
     /// <param name="status">交易状态（可选，用于筛选）</param>
+    /// <param name="businessType">业务类型（可选，用于筛选）</param>
+    /// <param name="businessId">业务 ID（可选，用于筛选）</param>
     /// <returns>分页的交易记录</returns>
     /// <remarks>
     /// 查询当前登录用户的萝卜币交易记录，支持分页和筛选。
@@ -322,7 +324,8 @@ public class CoinController : ControllerBase
                 request.ToUserId,
                 request.Amount,
                 request.PaymentPassword,
-                request.Remark
+                request.Remark,
+                request.IdempotencyKey
             );
 
             return new MessageModel

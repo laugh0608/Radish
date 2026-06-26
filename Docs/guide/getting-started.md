@@ -76,6 +76,8 @@ pwsh ./start.ps1
 ./start.sh
 ```
 
+`start.sh` 在 Linux/macOS 下会先显示交互式菜单，再按所选动作检查 `dotnet` / `npm` 等依赖。组合启动会把相关服务置于后台并记录进程组 / 子进程树，按下 `Ctrl+C` 时会先优雅停止，超时后强制清理残留进程，避免后端端口继续被占用。
+
 ### 5.2 单服务启动
 
 ```bash
@@ -92,6 +94,8 @@ npm run dev --workspace=radish.console
 ## 6. 常用地址
 
 - Gateway：`https://localhost:5000`
+- Web 功能地图：`https://localhost:5000/workbench`
+- WebOS 历史入口：`https://localhost:5000/desktop`
 - API：`http://localhost:5100`
 - Auth：`http://localhost:5200`
 - Client：`http://localhost:3000`

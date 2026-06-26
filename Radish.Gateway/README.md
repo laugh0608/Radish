@@ -62,6 +62,7 @@ DownstreamServices__AuthService__BaseUrl=http://radish-auth:5200
 补充说明：
 
 - 部署态下，`Api / Auth / Gateway` 三个宿主的 CORS 会优先根据 `RADISH_PUBLIC_URL` 自动收口到单一公开入口。
+- 公开 head snapshot 注入依赖 `DownstreamServices__ApiService__BaseUrl`、`FrontendService__BaseUrl` 与 `GatewayService__PublicUrl` / `RADISH_PUBLIC_URL` 同时正确；快照或入口 HTML 不可达时 Gateway 会回退原 SPA 链路，但 SEO / 分享预览 smoke 会失败。
 - 不建议再通过 `Cors__AllowedOrigins__0` 之类的单索引环境变量覆盖部署态 CORS，否则容易把旧 `localhost` 或旧域名残留进最终白名单。
 
 测试部署额外需要：

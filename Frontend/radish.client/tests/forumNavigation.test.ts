@@ -301,6 +301,26 @@ test('buildPublicForumPath 应为公开评论定位回写 commentId 参数', () 
   assert.equal(path, '/forum/post/2042219067430928384?commentId=2042219067430928385');
 });
 
+test('公开论坛路由应支持发帖入口与作者态详情 intent', () => {
+  assert.deepEqual(parsePublicForumRoute('/forum/compose', '?category=2042219067430928384'), {
+    kind: 'compose',
+    categoryId: '2042219067430928384',
+  });
+  assert.equal(
+    buildPublicForumPath({ kind: 'compose', categoryId: '2042219067430928384' }),
+    '/forum/compose?category=2042219067430928384',
+  );
+  assert.deepEqual(parsePublicForumRoute('/forum/post/2042219067430928384', '?intent=answer'), {
+    kind: 'detail',
+    postId: '2042219067430928384',
+    intent: 'answer',
+  });
+  assert.equal(
+    buildPublicForumPath({ kind: 'detail', postId: '2042219067430928384', intent: 'edit' }),
+    '/forum/post/2042219067430928384?intent=edit',
+  );
+});
+
 test('buildPublicForumPath 应优先使用帖子 PublicId 回写公开阅读直链', () => {
   const path = buildPublicForumPath({
     kind: 'detail',

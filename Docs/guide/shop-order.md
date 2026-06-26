@@ -227,7 +227,8 @@ POST /api/v1/Shop/Purchase
 {
   "productId": "2060964941900283904",
   "quantity": 1,
-  "paymentPassword": "123456"
+  "paymentPassword": "123456",
+  "idempotencyKey": "shop:550e8400-e29b-41d4-a716-446655440000"
 }
 ```
 
@@ -236,13 +237,23 @@ POST /api/v1/Shop/Purchase
 - `productId`、订单 ID、用户 ID 等外部传递的 long 标识在前端应按字符串保留，避免 JavaScript 大整数精度丢失。
 - `CheckCanBuy` 只做购买资格预检，返回 `VoCanBuy / VoReason`，不创建订单、不扣款、不扣库存。
 - `Purchase` 在失败时返回失败响应，并在 `responseData.errorMessage` 或响应消息中给出明确原因；调用端不应把失败响应当作成功订单处理。
-- WebOS / Flutter 调用购买前都应先消费 `CheckCanBuy` 结果；资格不通过时只展示原因，不打开支付口令弹窗，不提交 `Purchase`。
-- Flutter 当前固定购买 `1` 件商品，成功后打开订单详情确认结果；WebOS 私域商城可继续按既有数量选择和购买弹窗承接。
+- Web 与 Flutter 官方购买流程应传入 `shop:{uuid}` 幂等键。同一用户同 key 同摘要重试时返回同一订单结果；同 key 但商品、数量或备注不同会被拒绝。
+- 正式 Web / WebOS / Flutter 调用购买前都应先消费 `CheckCanBuy` 结果；资格不通过时只展示原因，不打开支付口令弹窗，不提交 `Purchase`。
+- 正式 Web 和 WebOS 私域商城可继续按既有数量选择和购买弹窗承接；Flutter 当前固定购买 `1` 件商品，失败重试复用同一 `shop:` 幂等键，成功或购买意图重置后生成新 key。
 - `Purchase` 扣款成功后会把胡萝卜流水 ID 写入订单的 `CoinTransactionId`；管理端 `OrderVo.VoCoinTransactionId` 用于从订单详情定位对应扣款流水。
 - Console 订单排障入口按 `BusinessType=Order / BusinessId=OrderId` 定位胡萝卜流水；订单页 URL 状态、商品相关订单跳转和流水回看订单时，`orderId / productId / businessId / userId` 都保持字符串查询参数，`returnTo` 只接受同源相对路径。
 - 购物车、退款、权益激活和道具使用不属于当前移动端购买契约。
 
-### 4.2.1 创建订单服务
+### 4.2.1 订单发放可靠性
+
+订单购买的可靠性分两层：
+
+- 购买请求层：`OperationIdempotencyRecord` 绑定 `TenantId + UserId + OperationType + IdempotencyKey` 和请求摘要，负责同一次购买请求的处理中提示、终态重放和同 key 不同摘要冲突拒绝。
+- 发放结果层：权益类商品通过 `UserBenefit.SourceOrderId` 唯一约束保护，消耗品类商品通过 `UserInventoryGrantRecord.SourceOrderId` 唯一约束保护，避免订单重试、人工重放或异常重试造成重复权益 / 背包数量。
+
+因此，订单重试时不应绕过发放服务直接补写背包；人工排障也应优先通过订单、扣款流水、`UserBenefit.SourceOrderId` 或 `UserInventoryGrantRecord.SourceOrderId` 查证发放事实。
+
+### 4.2.2 创建订单服务
 
 ```csharp
 public class OrderService : IOrderService
@@ -383,7 +394,7 @@ public class OrderService : IOrderService
 }
 ```
 
-### 4.2.2 订单号生成
+### 4.2.3 订单号生成
 
 ```csharp
 private string GenerateOrderNo()
@@ -693,43 +704,18 @@ public async Task<ProductSalesStatsVo> GetProductSalesStatsAsync(
 
 ### 4.7.1 幂等性保证
 
-```csharp
-/// <summary>
-/// 使用幂等键防止重复下单
-/// </summary>
-public async Task<OrderResultVo> CreateOrderWithIdempotencyAsync(
-    long userId,
-    OrderCreateVo input,
-    string idempotencyKey)
-{
-    // 检查幂等键是否已使用
-    var cacheKey = $"order:idempotency:{userId}:{idempotencyKey}";
-    var existingOrderId = await _cache.GetAsync<long?>(cacheKey);
+商城购买当前使用 `OperationIdempotencyRecord` 记录服务端幂等状态，不再依赖简单缓存键返回订单。
 
-    if (existingOrderId.HasValue)
-    {
-        // 返回已存在的订单
-        var existingOrder = await _orderRepository.QueryFirstAsync(
-            o => o.Id == existingOrderId.Value
-        );
-        return new OrderResultVo
-        {
-            OrderId = existingOrder.Id,
-            OrderNo = existingOrder.OrderNo,
-            Status = existingOrder.Status,
-            Message = "订单已存在"
-        };
-    }
+核心规则：
 
-    // 创建新订单
-    var result = await CreateOrderAsync(userId, input);
+- 唯一维度：`TenantId + UserId + OperationType + IdempotencyKey`。
+- 请求摘要：包含 `ProductId`、`Quantity`、`UserRemark`，不包含 `PaymentPassword`、登录 token 或前端状态。
+- 同 key 同摘要终态重放：返回既有订单号、扣款结果和背包发放结果，不重复扣库存、扣币或发放权益。
+- 同 key 不同摘要：拒绝执行，提示幂等键已被不同请求使用。
+- 支付口令验证失败不占用幂等键；已进入资产写入后形成的终态失败响应也会被记录，避免重试造成重复资产写入。
+- 权益 / 背包发放还具备订单级唯一约束保护；即使购买终态重放之外再次触发同一订单发放，也应返回既有发放事实，不重复增加权益或背包数量。
 
-    // 缓存幂等键（24 小时）
-    await _cache.SetAsync(cacheKey, result.OrderId, TimeSpan.FromHours(24));
-
-    return result;
-}
-```
+详细接口和服务端记录字段见 [支付与转账幂等治理](/guide/payment-idempotency-governance)。
 
 ### 4.7.2 防刷机制
 

@@ -46,6 +46,26 @@ public interface ICoinService : IBaseService<UserBalance, UserBalanceVo>
         string? remark = null);
 
     /// <summary>
+    /// 按奖励业务键发放一次萝卜币。
+    /// </summary>
+    /// <param name="userId">接收用户 ID</param>
+    /// <param name="amount">发放金额（胡萝卜）</param>
+    /// <param name="transactionType">交易类型</param>
+    /// <param name="rewardBusinessKey">服务端生成的奖励业务去重键</param>
+    /// <param name="businessType">业务类型（可选）</param>
+    /// <param name="businessId">业务 ID（可选）</param>
+    /// <param name="remark">备注（可选）</param>
+    /// <returns>发放结果；重复命中时返回既有流水号且不重复改余额</returns>
+    Task<CoinGrantOnceResult> GrantCoinOnceAsync(
+        long userId,
+        long amount,
+        string transactionType,
+        string rewardBusinessKey,
+        string? businessType = null,
+        long? businessId = null,
+        string? remark = null);
+
+    /// <summary>
     /// 确保用户已获得注册默认奖励。
     /// </summary>
     /// <param name="userId">接收用户 ID</param>
@@ -118,13 +138,15 @@ public interface ICoinService : IBaseService<UserBalance, UserBalanceVo>
     /// <param name="amount">转账金额（胡萝卜）</param>
     /// <param name="paymentPassword">支付密码</param>
     /// <param name="remark">备注（可选）</param>
+    /// <param name="idempotencyKey">幂等键（可选）</param>
     /// <returns>交易流水号</returns>
     Task<string> TransferAsync(
         long fromUserId,
         long toUserId,
         long amount,
         string paymentPassword,
-        string? remark = null);
+        string? remark = null,
+        string? idempotencyKey = null);
 
     #endregion
 
@@ -183,4 +205,31 @@ public class CoinGrantInfo
 
     /// <summary>备注（可选）</summary>
     public string? Remark { get; set; }
+}
+
+/// <summary>萝卜币按业务键发放结果。</summary>
+public sealed class CoinGrantOnceResult
+{
+    /// <summary>是否本次新发放。</summary>
+    public bool Granted { get; init; }
+
+    /// <summary>是否命中既有奖励。</summary>
+    public bool AlreadyGranted { get; init; }
+
+    /// <summary>交易流水号。</summary>
+    public string TransactionNo { get; init; } = string.Empty;
+
+    /// <summary>创建新发放结果。</summary>
+    public static CoinGrantOnceResult NewGrant(string transactionNo) => new()
+    {
+        Granted = true,
+        TransactionNo = transactionNo
+    };
+
+    /// <summary>创建已发放结果。</summary>
+    public static CoinGrantOnceResult Existing(string transactionNo) => new()
+    {
+        AlreadyGranted = true,
+        TransactionNo = transactionNo
+    };
 }

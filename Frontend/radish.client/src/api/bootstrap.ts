@@ -7,15 +7,16 @@ export interface BootstrapStatus {
 }
 
 export interface BootstrapCreateAdminRequest {
-  loginName: string;
+  displayName: string;
+  email: string;
   password: string;
   confirmPassword: string;
-  email?: string;
 }
 
 export interface BootstrapAdminCreated {
   voUserId: string;
-  voLoginName: string;
+  voDisplayName: string;
+  voEmail: string;
 }
 
 const bootstrapApiOptions = {

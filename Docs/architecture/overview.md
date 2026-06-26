@@ -19,7 +19,8 @@
 浏览器访问 Gateway (https://localhost:5000)
         │
         ├─ /            → radish.client   (纯 Web 默认入口，当前进入 /discover)
-        ├─ /desktop     → radish.client   (WebOS 保留入口)
+        ├─ /workbench   → radish.client   (正式 Web 功能地图)
+        ├─ /desktop     → radish.client   (WebOS 历史入口)
         ├─ /console     → radish.console  (管理控制台)
         ├─ /api         → Radish.Api      (REST API)
         ├─ /connect/*   → Radish.Auth     (OIDC 端点)
@@ -33,7 +34,7 @@
 - `Radish.Api`：业务 API 宿主（Controller/DI/认证授权/全局异常/Scalar/HealthChecks）
 - `Radish.Auth`：OIDC 认证中心（授权码流程、Token/Session、客户端配置）
 - `Radish.Gateway`：统一入口与反向代理（门户页、路由转发、健康检查聚合等）
-- `radish.client`：普通用户前台（纯 Web 公开 / 轻登录入口 + `/desktop` WebOS 保留入口）
+- `radish.client`：普通用户前台（纯 Web 公开 / 轻登录入口 + `/workbench` 功能地图 + `/desktop` WebOS 历史入口）
 - `radish.console`：管理员控制台（独立 SPA，权限更高，建议独立部署/入口）
 - `radish.ui`：共享 UI 组件库（client/console 复用）
 - `Docs/`：固定项目文档目录（唯一真相源，由 API 启动时同步为内置文档；WebOS `/desktop` 文档应用可继续展示）

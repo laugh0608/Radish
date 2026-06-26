@@ -1,8 +1,10 @@
 # 密码传输与请求签名临时评审
 
-> 状态：`临时专题 / 待后续归并`
+> 状态：`临时专题 / 前端敏感日志与支付口令哈希升级已完成，后续加强项待评审`
 >
 > 记录日期：`2026-06-18`（Asia/Shanghai）
+>
+> 更新日期：`2026-06-19`（Asia/Shanghai）
 >
 > 适用范围：登录密码、注册密码、支付口令、商城购买、萝卜币转账，以及未来开放 API / 服务端到服务端调用的请求签名边界。
 
@@ -17,10 +19,10 @@
    - 生产不应公开暴露 `http://localhost:5100`、`http://localhost:5200` 这类直连 HTTP 入口。
 3. 数据库存储不是明文。
    - 登录密码使用 `PasswordHasher` 的 Argon2id 哈希。
-   - 支付口令存储 `PasswordHash` + `Salt`，不是明文；但当前实现是 `SHA256(salt + password)`，对 6 位数字口令的离线抗爆破能力弱于 Argon2id。
-4. 审计日志已有基础脱敏，但仍需补前端日志治理。
+   - 支付口令新写入版本使用 `PasscodeVersion = 2` 与 Argon2id 哈希；历史 `PasscodeVersion = 1` 的 `SHA256(salt + password)` 记录在验证成功后自动写回 v2，`PasscodeVersion = null` 等更旧记录仍要求用户重置。
+4. 审计日志已有基础脱敏，前端敏感日志治理已完成首批收口。
    - API 审计中顶层字段包含 `password / pwd / secret / token / apikey / api_key` 时会整段请求体脱敏。
-   - `radish-pit` 转账表单当前存在把 `TransferFormData` 写入 debug 日志的路径，存在泄露 `paymentPassword` 的风险；该项可作为低风险维护修复优先处理。
+   - `a3d7df4f` 已在 `radish.client`、`radish.console` 与 `@radish/http` 统一脱敏敏感字段日志，覆盖 `paymentPassword`、登录 / 重置密码字段、token、secret 和 api key 等常见对象日志路径。
 
 ## 浏览器前端不做通用 sign
 
@@ -45,18 +47,38 @@
 
 ## 短期治理建议
 
-1. 前端敏感日志脱敏。
-   - 移除或脱敏包含 `paymentPassword`、`password`、`currentPassword`、`newPassword`、`confirmPassword` 的日志参数。
-   - 后续可在统一 logger 增加递归敏感字段清理，避免新代码误传对象。
-2. 支付口令哈希升级。
-   - 后续将支付口令迁移到 Argon2id 或等价慢哈希。
-   - 利用 `PasscodeVersion` 做兼容升级：旧版本验证通过后写回新版本哈希。
-3. 支付 / 转账幂等与重放边界。
-   - 商城购买、萝卜币转账等写操作后续可增加 `idempotencyKey`、业务上下文绑定和短窗口重复提交保护。
+1. 前端敏感日志脱敏（已完成）。
+   - 已统一脱敏包含 `paymentPassword`、`password`、`currentPassword`、`newPassword`、`confirmPassword` 的日志参数。
+   - 后续只在新增 logger 或新命中路径时按同一脱敏工具维护，不再作为下一批默认开发项。
+2. 支付口令哈希升级（已完成首批）。
+   - 新设置 / 修改支付口令直接写入 `PasscodeVersion = 2` 的 Argon2id 哈希。
+   - `PasscodeVersion = 1` 记录验证成功后自动升级到 v2；验证失败仍走失败计数和锁定规则，不升级。
+3. 支付 / 转账幂等与重放边界（首批代码已实现 / 待发布候选回归）。
+   - 商城购买、萝卜币转账等写操作已接入 `idempotencyKey`、业务上下文绑定和短窗口重复提交保护，方案与实现状态见 [支付与转账幂等治理](/guide/payment-idempotency-governance)。
    - 该能力优先解决重复点击、网络重试和请求重放带来的业务一致性问题，不替代支付口令验证。
 4. 生产入口收口。
    - 生产外部访问必须走 HTTPS Gateway / 反向代理。
    - API / Auth 直连 HTTP 只允许作为内部或本地开发入口，不作为公开入口。
+
+## 前端敏感日志治理口径
+
+本批只处理统一 logger 的出参脱敏，不改变接口协议、请求体结构、密码存储、支付口令验证或业务幂等。该批已在 `a3d7df4f` 完成，后续进入维护线。
+
+- 覆盖范围：`radish.client` 与 `radish.console` 的统一 `log.debug / info / warn / error / table`，以及 `@radish/http` 内部直接 `console.error` 的错误对象输出。
+- 脱敏字段：`paymentPassword`、`paymentPasscode`、`password`、`pwd`、`passcode`、`currentPassword`、`newPassword`、`confirmPassword`、`oldPassword`、`accessToken`、`refreshToken`、`idToken`、`token`、`secret`、`apiKey`、`api_key`。
+- 匹配规则：字段名大小写不敏感，并忽略 `_`、`-` 等分隔符，例如 `new_password` 与 `newPassword` 等价。
+- 处理方式：递归复制普通对象和数组，敏感字段值替换为 `[REDACTED]`；循环引用替换为 `[Circular]`；`Error` 对象保留 `name / message / stack` 并脱敏其可枚举附加字段。
+- 验证入口：`radish.client`、`radish.console` 与 `@radish/http` 各自补敏感日志 node 测试；开发中优先跑对应 workspace 测试、类型检查、`git diff --check` 和变更文件仓库卫生检查。
+
+## 支付口令哈希升级口径
+
+本批只升级支付口令存储 / 验证哈希版本，不改变接口协议、请求体字段、商城购买流程、萝卜币转账业务语义或前端输入规则。
+
+- 版本口径：`PasscodeVersion = 2` 为当前 Argon2id 版本；`PasscodeVersion = 1` 为可验证并自动升级的 SHA256 旧版本；`PasscodeVersion = null` 或未知版本仍按旧口令废弃处理，提示用户重置。
+- 新写入：设置支付口令、重置旧口令和修改支付口令均写入 v2，`PasswordHash` 保存 Argon2id 编码串，`Salt` 保留为空字符串以兼容现有表结构。
+- 自动升级：商城购买、萝卜币转账或独立验证路径中，v1 口令验证成功后立即写回 v2；验证失败不升级，仍累计失败次数并按既有锁定规则处理。
+- 验证入口：`PaymentPasswordServiceTest` 覆盖 v2 新写入、v2 验证成功、v1 正确验证后自动升级、v1 错误不升级和 null 旧口令重置提示。
+- 不做范围：不启动字段级加密、浏览器通用 `sign`、支付 / 转账幂等、安全会话、完整钱包、经济扩展或资产风控扩面。
 
 ## 未来可评审的加强项
 
@@ -87,4 +109,5 @@
 - 登录密码存储与验证：[密码安全](/guide/password-security)
 - OIDC / Token / 会话安全：[鉴权与授权指南](/guide/authentication)
 - 支付与萝卜币风控：[萝卜币安全与扩展](/guide/radish-coin-security-tech)
+- 支付 / 转账幂等：[支付与转账幂等治理](/guide/payment-idempotency-governance)
 - 开放 API 签名与第三方接入：未来开放平台专题

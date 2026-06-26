@@ -30,7 +30,7 @@ export { GlassPanel } from './GlassPanel/GlassPanel';
 export type { GlassPanelProps } from './GlassPanel/GlassPanel';
 
 export { MarkdownRenderer } from './MarkdownRenderer/MarkdownRenderer';
-export type { MarkdownStickerItem, MarkdownStickerMap } from './MarkdownRenderer/MarkdownRenderer';
+export type { MarkdownLinkHrefResolver, MarkdownStickerItem, MarkdownStickerMap } from './MarkdownRenderer/MarkdownRenderer';
 export { ImageLightbox } from './ImageLightbox/ImageLightbox';
 export type { LightboxImageItem } from './ImageLightbox/ImageLightbox';
 

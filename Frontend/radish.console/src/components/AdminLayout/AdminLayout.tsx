@@ -32,6 +32,7 @@ import { tokenService } from '../../services/tokenService';
 import { AppBreadcrumb } from '../Breadcrumb';
 import { GlobalSearch, useGlobalSearchHotkey } from '../GlobalSearch';
 import { getActiveMenuKey, getSidebarRoutes } from '@/router/routeMeta';
+import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import './AdminLayout.css';
 
 const { Header, Sider, Content } = Layout;
@@ -57,6 +58,7 @@ const menuIconMap: Record<string, ReactNode> = {
   roles: <SafetyOutlined />,
   categories: <AppstoreOutlined />,
   tags: <TagsOutlined />,
+  documents: <FileTextOutlined />,
   stickers: <AppstoreOutlined />,
   moderation: <SafetyOutlined />,
   coins: <WalletOutlined />,
@@ -76,6 +78,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading } = useUser();
+  const displayUserName = user
+    ? resolveVisibleUserHandle(user, resolveVisibleUserDisplayName(user, '未知用户'))
+      || resolveVisibleUserDisplayName(user, '未知用户')
+    : '未知用户';
 
   useGlobalSearchHotkey(() => setSearchVisible(true));
 
@@ -237,7 +243,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   src={getAvatarUrl(user?.voAvatarUrl)}
                 />
                 <span className="admin-username">
-                  {loading ? '加载中...' : (user?.voUserName || '未知用户')}
+                  {loading ? '加载中...' : displayUserName}
                 </span>
               </div>
             </Dropdown>

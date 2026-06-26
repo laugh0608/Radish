@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Radish.Common;
 using Radish.Common.CoreTool;
@@ -16,6 +17,24 @@ internal static partial class InitialDataSeeder
     private const long SystemPublicIndex = 1;
     private const long AdminPublicIndex = 2;
     private const long TestPublicIndex = 3;
+
+    internal sealed record DeveloperDefaultUserSeed(
+        long Id,
+        string Key,
+        string DisplayName,
+        string Email,
+        string Password,
+        long PublicIndex,
+        int Age,
+        int BirthYearsAgo,
+        string Remark);
+
+    internal static IReadOnlyList<DeveloperDefaultUserSeed> DeveloperDefaultUserSeeds { get; } =
+    [
+        new(20000, "system", "System", "system@radishx.com", "system123456", SystemPublicIndex, 30, 30, "System administrator user"),
+        new(20001, "admin", "Admin", "admin@radishx.com", "admin123456", AdminPublicIndex, 25, 25, "Administrator user"),
+        new(20002, "test", "TestUser", "test@radishx.com", "test123456", TestPublicIndex, 18, 18, "Test user")
+    ];
 
     /// <summary>初始化用户时区偏好（默认值来自 Time:DefaultTimeZoneId）</summary>
     private static async Task SeedUserTimePreferencesAsync(ISqlSugarClient db)
@@ -36,9 +55,9 @@ internal static partial class InitialDataSeeder
 
         var seedItems = new[]
         {
-            new { Id = 71000L, UserId = systemUserId, UserName = "system" },
-            new { Id = 71001L, UserId = adminUserId, UserName = "admin" },
-            new { Id = 71002L, UserId = testUserId, UserName = "test" }
+            new { Id = 71000L, UserId = systemUserId, UserName = "System" },
+            new { Id = 71001L, UserId = adminUserId, UserName = "Admin" },
+            new { Id = 71002L, UserId = testUserId, UserName = "TestUser" }
         };
 
         foreach (var item in seedItems)
@@ -965,6 +984,132 @@ internal static partial class InitialDataSeeder
                 ControllerName = "Experience",
                 ActionName = "AdminRecordGovernanceReview",
                 Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50150L,
+                ApiModuleName = "Admin get wiki documents",
+                LinkUrl = "/api/v1/Wiki/AdminGetList",
+                ControllerName = "Wiki",
+                ActionName = "AdminGetList",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50151L,
+                ApiModuleName = "Admin get wiki tree",
+                LinkUrl = "/api/v1/Wiki/AdminGetTree",
+                ControllerName = "Wiki",
+                ActionName = "AdminGetTree",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50152L,
+                ApiModuleName = "Admin get wiki document detail",
+                LinkUrl = "/api/v1/Wiki/AdminGetById/\\d+",
+                ControllerName = "Wiki",
+                ActionName = "AdminGetById",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50153L,
+                ApiModuleName = "Get wiki revision list",
+                LinkUrl = "/api/v1/Wiki/GetRevisionList/\\d+",
+                ControllerName = "Wiki",
+                ActionName = "GetRevisionList",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50154L,
+                ApiModuleName = "Get wiki revision detail",
+                LinkUrl = "/api/v1/Wiki/GetRevisionDetail/\\d+",
+                ControllerName = "Wiki",
+                ActionName = "GetRevisionDetail",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50155L,
+                ApiModuleName = "Publish wiki document",
+                LinkUrl = "/api/v1/Wiki/Publish/\\d+",
+                ControllerName = "Wiki",
+                ActionName = "Publish",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50156L,
+                ApiModuleName = "Unpublish wiki document",
+                LinkUrl = "/api/v1/Wiki/Unpublish/\\d+",
+                ControllerName = "Wiki",
+                ActionName = "Unpublish",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50157L,
+                ApiModuleName = "Archive wiki document",
+                LinkUrl = "/api/v1/Wiki/Archive/\\d+",
+                ControllerName = "Wiki",
+                ActionName = "Archive",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50158L,
+                ApiModuleName = "Delete wiki document",
+                LinkUrl = "/api/v1/Wiki/Delete/\\d+",
+                ControllerName = "Wiki",
+                ActionName = "Delete",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50159L,
+                ApiModuleName = "Restore wiki document",
+                LinkUrl = "/api/v1/Wiki/Restore/\\d+",
+                ControllerName = "Wiki",
+                ActionName = "Restore",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50160L,
+                ApiModuleName = "Update wiki document access policy",
+                LinkUrl = "/api/v1/Wiki/UpdateAccessPolicy/\\d+",
+                ControllerName = "Wiki",
+                ActionName = "UpdateAccessPolicy",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50161L,
+                ApiModuleName = "Rollback wiki revision",
+                LinkUrl = "/api/v1/Wiki/Rollback/\\d+",
+                ControllerName = "Wiki",
+                ActionName = "Rollback",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50162L,
+                ApiModuleName = "Import wiki markdown",
+                LinkUrl = "/api/v1/Wiki/ImportMarkdown",
+                ControllerName = "Wiki",
+                ActionName = "ImportMarkdown",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50163L,
+                ApiModuleName = "Export wiki markdown",
+                LinkUrl = "/api/v1/Wiki/ExportMarkdown/\\d+",
+                ControllerName = "Wiki",
+                ActionName = "ExportMarkdown",
+                Roles = new[] { 10000L, 10001L }
             }
         };
 
@@ -1286,226 +1431,97 @@ internal static partial class InitialDataSeeder
     /// <summary>初始化用户相关数据</summary>
     private static async Task SeedUsersAsync(ISqlSugarClient db)
     {
-        // 默认用户 ID
-        const long systemUserId = 20000;
-        const long adminUserId = 20001;
-        const long testUserId = 20002;
-
         // 当前阶段统一按公共租户运行（TenantId = 0）
         const long publicTenantId = 0;
         const long devDeptId = 40000;
 
-        // 创建 system 用户
-        var systemUserExists = await db.Queryable<User>().AnyAsync(u => u.Id == systemUserId);
-        if (!systemUserExists)
+        foreach (var seed in DeveloperDefaultUserSeeds)
         {
-            Console.WriteLine($"[Radish.DbMigrate] 创建默认用户 Id={systemUserId}, LoginName=system...");
-
-            var systemUserOptions = new UserInitializationOptions("system", PasswordHasher.HashPassword("system123456"))
-            {
-                UserName = "system",
-                UserRealName = "System User",
-                UserSex = (int)UserSexEnum.Unknown,
-                UserAge = 30,
-                UserBirth = DateTime.Today.AddYears(-30),
-                TenantId = publicTenantId,
-                DepartmentId = devDeptId,
-                IsEnable = true,
-                IsDeleted = false,
-                StatusCode = (int)UserStatusCodeEnum.Normal,
-                Remark = "System administrator user",
-            };
-
-            var systemUser = new User(systemUserOptions)
-            {
-                Id = systemUserId,
-                PublicIndex = SystemPublicIndex,
-            };
-
-            try
-            {
-                await db.Insertable(systemUser).ExecuteCommandAsync();
-            }
-            catch (Exception ex) when (IsUniqueConstraintViolation(ex, "User.Id"))
-            {
-                var updated = await db.Updateable<User>()
-                    .SetColumns(u => new User
-                    {
-                        TenantId = publicTenantId,
-                        DepartmentId = devDeptId,
-                        PublicIndex = SystemPublicIndex,
-                        UpdateTime = DateTime.Now
-                    })
-                    .Where(u => u.Id == systemUserId)
-                    .ExecuteCommandAsync();
-
-                if (updated <= 0)
-                {
-                    throw;
-                }
-
-                Console.WriteLine($"[Radish.DbMigrate] 检测到 system 用户旧记录，已自动纠正租户与部门信息。");
-            }
-        }
-        else
-        {
-            var updated = await db.Updateable<User>()
-                .SetColumns(u => new User
-                {
-                    TenantId = publicTenantId,
-                    PublicIndex = SystemPublicIndex,
-                    UpdateTime = DateTime.Now
-                })
-                .Where(u => u.Id == systemUserId &&
-                            (u.TenantId != publicTenantId || u.PublicIndex != SystemPublicIndex))
-                .ExecuteCommandAsync();
-
-            Console.WriteLine(updated > 0
-                ? $"[Radish.DbMigrate] 已将 system 用户租户纠正为 {publicTenantId}，PublicIndex={SystemPublicIndex}。"
-                : $"[Radish.DbMigrate] 已存在 Id={systemUserId} 的 system 用户，且租户与 PublicIndex 已正确，跳过。");
-        }
-
-        // 创建 admin 用户
-        var adminUserExists = await db.Queryable<User>().AnyAsync(u => u.Id == adminUserId);
-        if (!adminUserExists)
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 创建默认用户 Id={adminUserId}, LoginName=admin...");
-
-            var adminUserOptions = new UserInitializationOptions("admin", PasswordHasher.HashPassword("admin123456"))
-            {
-                UserName = "admin",
-                UserRealName = "Admin User",
-                UserSex = (int)UserSexEnum.Unknown,
-                UserAge = 25,
-                UserBirth = DateTime.Today.AddYears(-25),
-                TenantId = publicTenantId,
-                DepartmentId = devDeptId,
-                IsEnable = true,
-                IsDeleted = false,
-                StatusCode = (int)UserStatusCodeEnum.Normal,
-                Remark = "Administrator user",
-            };
-
-            var adminUser = new User(adminUserOptions)
-            {
-                Id = adminUserId,
-                PublicIndex = AdminPublicIndex,
-            };
-
-            try
-            {
-                await db.Insertable(adminUser).ExecuteCommandAsync();
-            }
-            catch (Exception ex) when (IsUniqueConstraintViolation(ex, "User.Id"))
-            {
-                var updated = await db.Updateable<User>()
-                    .SetColumns(u => new User
-                    {
-                        TenantId = publicTenantId,
-                        DepartmentId = devDeptId,
-                        PublicIndex = AdminPublicIndex,
-                        UpdateTime = DateTime.Now
-                    })
-                    .Where(u => u.Id == adminUserId)
-                    .ExecuteCommandAsync();
-
-                if (updated <= 0)
-                {
-                    throw;
-                }
-
-                Console.WriteLine($"[Radish.DbMigrate] 检测到 admin 用户旧记录，已自动纠正租户与部门信息。");
-            }
-        }
-        else
-        {
-            var updated = await db.Updateable<User>()
-                .SetColumns(u => new User
-                {
-                    TenantId = publicTenantId,
-                    PublicIndex = AdminPublicIndex,
-                    UpdateTime = DateTime.Now
-                })
-                .Where(u => u.Id == adminUserId &&
-                            (u.TenantId != publicTenantId || u.PublicIndex != AdminPublicIndex))
-                .ExecuteCommandAsync();
-
-            Console.WriteLine(updated > 0
-                ? $"[Radish.DbMigrate] 已将 admin 用户租户纠正为 {publicTenantId}，PublicIndex={AdminPublicIndex}。"
-                : $"[Radish.DbMigrate] 已存在 Id={adminUserId} 的 admin 用户，且租户与 PublicIndex 已正确，跳过。");
-        }
-
-        // 创建 test 用户
-        var testUserExists = await db.Queryable<User>().AnyAsync(u => u.Id == testUserId);
-        if (!testUserExists)
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 创建默认用户 Id={testUserId}, LoginName=test...");
-
-            var testUserOptions = new UserInitializationOptions("test", PasswordHasher.HashPassword("test123456"))
-            {
-                UserName = "test",
-                UserRealName = "Test User",
-                UserSex = (int)UserSexEnum.Unknown,
-                UserAge = 18,
-                UserBirth = DateTime.Today.AddYears(-18),
-                TenantId = publicTenantId,
-                DepartmentId = devDeptId,
-                IsEnable = true,
-                IsDeleted = false,
-                StatusCode = (int)UserStatusCodeEnum.Normal,
-                Remark = "Test user",
-            };
-
-            var testUser = new User(testUserOptions)
-            {
-                Id = testUserId,
-                PublicIndex = TestPublicIndex,
-            };
-
-            try
-            {
-                await db.Insertable(testUser).ExecuteCommandAsync();
-            }
-            catch (Exception ex) when (IsUniqueConstraintViolation(ex, "User.Id"))
-            {
-                var updated = await db.Updateable<User>()
-                    .SetColumns(u => new User
-                    {
-                        TenantId = publicTenantId,
-                        DepartmentId = devDeptId,
-                        PublicIndex = TestPublicIndex,
-                        UpdateTime = DateTime.Now
-                    })
-                    .Where(u => u.Id == testUserId)
-                    .ExecuteCommandAsync();
-
-                if (updated <= 0)
-                {
-                    throw;
-                }
-
-                Console.WriteLine($"[Radish.DbMigrate] 检测到 test 用户旧记录，已自动纠正租户与部门信息。");
-            }
-        }
-        else
-        {
-            var updated = await db.Updateable<User>()
-                .SetColumns(u => new User
-                {
-                    TenantId = publicTenantId,
-                    PublicIndex = TestPublicIndex,
-                    UpdateTime = DateTime.Now
-                })
-                .Where(u => u.Id == testUserId &&
-                            (u.TenantId != publicTenantId || u.PublicIndex != TestPublicIndex))
-                .ExecuteCommandAsync();
-
-            Console.WriteLine(updated > 0
-                ? $"[Radish.DbMigrate] 已将 test 用户租户纠正为 {publicTenantId}，PublicIndex={TestPublicIndex}。"
-                : $"[Radish.DbMigrate] 已存在 Id={testUserId} 的 test 用户，且租户与 PublicIndex 已正确，跳过。");
+            await SeedDefaultUserAsync(db, seed, publicTenantId, devDeptId);
         }
 
         await SeedDefaultUserAvatarsAsync(db, publicTenantId);
+    }
+
+    private static async Task SeedDefaultUserAsync(
+        ISqlSugarClient db,
+        DeveloperDefaultUserSeed seed,
+        long publicTenantId,
+        long devDeptId)
+    {
+        var userExists = await db.Queryable<User>().AnyAsync(u => u.Id == seed.Id);
+        if (!userExists)
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 创建默认用户 Id={seed.Id}, Email={seed.Email}...");
+
+            var userOptions = new UserInitializationOptions(seed.Email, PasswordHasher.HashPassword(seed.Password))
+            {
+                UserName = seed.DisplayName,
+                UserSex = (int)UserSexEnum.Unknown,
+                UserAge = seed.Age,
+                UserBirth = DateTime.Today.AddYears(-seed.BirthYearsAgo),
+                TenantId = publicTenantId,
+                DepartmentId = devDeptId,
+                IsEnable = true,
+                IsDeleted = false,
+                StatusCode = (int)UserStatusCodeEnum.Normal,
+                Remark = seed.Remark,
+            };
+
+            var user = new User(userOptions)
+            {
+                Id = seed.Id,
+                PublicIndex = seed.PublicIndex,
+            };
+
+            try
+            {
+                await db.Insertable(user).ExecuteCommandAsync();
+            }
+            catch (Exception ex) when (IsUniqueConstraintViolation(ex, "User.Id"))
+            {
+                var updated = await CorrectDefaultUserIdentityAsync(db, seed, publicTenantId, devDeptId);
+                if (updated <= 0)
+                {
+                    throw;
+                }
+
+                Console.WriteLine($"[Radish.DbMigrate] 检测到 {seed.Key} 用户旧记录，已自动纠正开发默认身份信息。");
+            }
+
+            return;
+        }
+
+        var corrected = await CorrectDefaultUserIdentityAsync(db, seed, publicTenantId, devDeptId);
+
+        Console.WriteLine(corrected > 0
+            ? $"[Radish.DbMigrate] 已纠正 {seed.Key} 用户身份信息：Email={seed.Email}, DisplayName={seed.DisplayName}, PublicIndex={seed.PublicIndex}。"
+            : $"[Radish.DbMigrate] 已存在 Id={seed.Id} 的 {seed.Key} 用户，且身份信息正确，跳过。");
+    }
+
+    private static Task<int> CorrectDefaultUserIdentityAsync(
+        ISqlSugarClient db,
+        DeveloperDefaultUserSeed seed,
+        long publicTenantId,
+        long devDeptId)
+    {
+        return db.Updateable<User>()
+            .SetColumns(u => new User
+            {
+                TenantId = publicTenantId,
+                DepartmentId = devDeptId,
+                UserName = seed.DisplayName,
+                UserEmail = seed.Email,
+                PublicIndex = seed.PublicIndex,
+                UpdateTime = DateTime.Now
+            })
+            .Where(u => u.Id == seed.Id &&
+                        (u.TenantId != publicTenantId ||
+                         u.DepartmentId != devDeptId ||
+                         u.UserName != seed.DisplayName ||
+                         u.UserEmail != seed.Email ||
+                         u.PublicIndex != seed.PublicIndex))
+            .ExecuteCommandAsync();
     }
 
     private static async Task SeedDefaultUserAvatarsAsync(ISqlSugarClient db, long publicTenantId)

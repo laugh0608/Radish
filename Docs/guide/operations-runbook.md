@@ -13,6 +13,8 @@ pwsh ./start.ps1
 ./start.sh
 ```
 
+`start.sh` 的组合启动会记录后台服务进程组和子进程树。按下 `Ctrl+C` 或收到 `SIGTERM` 时，脚本会先对后台服务发送 `TERM` 并短暂等待；若仍有子进程残留，再发送 `KILL` 清理，避免 `Radish.Auth`、`Radish.Gateway` 或前端 dev server 留在后台占用端口。
+
 ### 单服务启动
 
 适合聚焦单点调试：
@@ -47,6 +49,8 @@ npm run type-check --workspace=@radish/http
 ## 3. 常用观测入口
 
 - Gateway 首页：`https://localhost:5000/`
+- Web 功能地图：`https://localhost:5000/workbench`
+- WebOS 历史入口：`https://localhost:5000/desktop`
 - Gateway 健康检查：
   - `https://localhost:5000/health`
   - `https://localhost:5000/healthz`

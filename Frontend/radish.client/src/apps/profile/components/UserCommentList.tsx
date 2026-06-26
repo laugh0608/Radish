@@ -1,33 +1,43 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { Icon } from '@radish/ui/icon';
-import type { LongId } from '@/api/user';
+import { getUserComments, type LongId, type UserComment } from '@/api/user';
 import styles from './UserCommentList.module.css';
-
-interface Comment {
-  voId: LongId;
-  voContent: string;
-  voPostId: LongId;
-  voPostPublicId?: string | null;
-  voLikeCount: number;
-  voCreateTime: string;
-}
 
 interface UserCommentListProps {
   userId: LongId;
-  apiBaseUrl: string;
+  apiBaseUrl?: string;
   displayTimeZone: string;
   onCommentClick?: (postId: LongId, commentId: LongId, postPublicId?: string | null) => void;
+  getCommentHref?: (postId: LongId, commentId: LongId, postPublicId?: string | null) => string | null;
+  onCommentLinkClick?: (
+    event: MouseEvent<HTMLAnchorElement>,
+    href: string,
+    postId: LongId,
+    commentId: LongId,
+    postPublicId?: string | null
+  ) => void;
+  page?: number;
+  onPageChange?: (page: number) => void;
 }
 
-export const UserCommentList = ({ userId, apiBaseUrl, displayTimeZone, onCommentClick }: UserCommentListProps) => {
+export const UserCommentList = ({
+  userId,
+  displayTimeZone,
+  onCommentClick,
+  getCommentHref,
+  onCommentLinkClick,
+  page: controlledPage,
+  onPageChange
+}: UserCommentListProps) => {
   const { t } = useTranslation();
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [comments, setComments] = useState<UserComment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
+  const [internalPage, setInternalPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const page = controlledPage ?? internalPage;
 
   useEffect(() => {
     loadComments();
@@ -37,19 +47,23 @@ export const UserCommentList = ({ userId, apiBaseUrl, displayTimeZone, onComment
   const loadComments = async () => {
     setLoading(true);
     try {
-      const response = await fetch(
-        `${apiBaseUrl}/api/v1/Comment/GetUserComments?userId=${encodeURIComponent(String(userId))}&pageIndex=${page}&pageSize=10`
-      );
-      const json = await response.json();
-      if (json.isSuccess && json.responseData) {
-        setComments(json.responseData.data || []);
-        setTotalPages(json.responseData.pageCount || 1);
-      }
+      const result = await getUserComments(userId, page, 10);
+      setComments(result.data || []);
+      setTotalPages(result.pageCount || 1);
     } catch (error) {
       log.error('加载评论失败:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const updatePage = (nextPage: number) => {
+    if (onPageChange) {
+      onPageChange(nextPage);
+      return;
+    }
+
+    setInternalPage(nextPage);
   };
 
   if (loading) {
@@ -63,31 +77,55 @@ export const UserCommentList = ({ userId, apiBaseUrl, displayTimeZone, onComment
   return (
     <div className={styles.container}>
       <div className={styles.list}>
-        {comments.map(comment => (
-          <div
-            key={comment.voId}
-            className={styles.commentItem}
-            onClick={() => onCommentClick?.(comment.voPostId, comment.voId, comment.voPostPublicId)}
-            style={{ cursor: onCommentClick ? 'pointer' : 'default' }}
-          >
-            <p className={styles.content}>{comment.voContent}</p>
-            <div className={styles.meta}>
-              <span className={styles.metaItem}>
-                <Icon icon="mdi:heart" size={16} />
-                {comment.voLikeCount}
-              </span>
-              <span className={styles.time}>
-                {formatDateTimeByTimeZone(comment.voCreateTime, displayTimeZone)}
-              </span>
+        {comments.map(comment => {
+          const href = getCommentHref?.(comment.voPostId, comment.voId, comment.voPostPublicId) ?? null;
+          const body = (
+            <>
+              <p className={styles.content}>{comment.voContent}</p>
+              <div className={styles.meta}>
+                <span className={styles.metaItem}>
+                  <Icon icon="mdi:heart" size={16} />
+                  {comment.voLikeCount}
+                </span>
+                <span className={styles.time}>
+                  {formatDateTimeByTimeZone(comment.voCreateTime, displayTimeZone)}
+                </span>
+              </div>
+            </>
+          );
+
+          return href ? (
+            <a
+              key={comment.voId}
+              className={styles.commentItem}
+              href={href}
+              onClick={(event) => onCommentLinkClick?.(
+                event,
+                href,
+                comment.voPostId,
+                comment.voId,
+                comment.voPostPublicId
+              )}
+            >
+              {body}
+            </a>
+          ) : (
+            <div
+              key={comment.voId}
+              className={styles.commentItem}
+              onClick={() => onCommentClick?.(comment.voPostId, comment.voId, comment.voPostPublicId)}
+              style={{ cursor: onCommentClick ? 'pointer' : 'default' }}
+            >
+              {body}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {totalPages > 1 && (
         <div className={styles.pagination}>
           <button
-            onClick={() => setPage(p => Math.max(1, p - 1))}
+            onClick={() => updatePage(Math.max(1, page - 1))}
             disabled={page === 1}
             className={styles.pageButton}
           >
@@ -97,7 +135,7 @@ export const UserCommentList = ({ userId, apiBaseUrl, displayTimeZone, onComment
             {t('common.pageInfo', { current: page, total: totalPages })}
           </span>
           <button
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            onClick={() => updatePage(Math.min(totalPages, page + 1))}
             disabled={page === totalPages}
             className={styles.pageButton}
           >

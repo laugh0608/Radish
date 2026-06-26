@@ -1,6 +1,6 @@
 # 公开详情 Head Smoke 验收
 
-> 用途：部署或发布前快速确认 `P3-5-D1` 公开详情 HTML head 注入、动态 sitemap 与 robots 入口没有被前端 SPA shell 或反代配置覆盖。
+> 用途：部署或发布前快速确认公开集合页 / 详情页 HTML head 注入、动态 sitemap 与 robots 入口没有被前端 SPA shell 或反代配置覆盖。
 
 ## 前提
 
@@ -11,6 +11,7 @@
   - forum：`/forum/post/{postPublicId 或旧 postId}`
   - docs：`/docs/{slug}`
   - shop：`/shop/product/{productId}`
+- 如需覆盖集合页注入，可额外加入 `/discover`、`/forum`、`/docs`、`/leaderboard` 或 `/shop`。
 
 ## 自动 Smoke
 
@@ -47,7 +48,7 @@ npm run check:public-head-smoke -- --base-url https://radishx.com --path /forum/
 - `/robots.txt` 包含 `Sitemap:`，且未被 SPA shell 覆盖。
 - `/sitemap.xml` 返回 sitemap XML，且未被 SPA shell 覆盖。
 - `/sitemap.xml` 与 sitemap index 中各分片的 `<loc>` 均为合法绝对 URL，默认要求 origin 与 `--base-url` 一致。
-- 每条详情首包 HTML 的 `<head>` 包含非通用标题、description、canonical、Open Graph、Twitter card 和 `radish-public-jsonld`。
+- 每条公开路径首包 HTML 的 `<head>` 包含非通用标题、description、canonical、Open Graph、Twitter card 和 `radish-public-jsonld`。
 - JSON-LD 是合法 JSON，且包含 `https://schema.org`、`@type` 与 `url` 或 `mainEntityOfPage`。
 
 失败时会输出定位信息：
@@ -65,7 +66,7 @@ npm run check:public-head-smoke -- --base-url https://radishx.com --path /forum/
 - `stage=status`：优先看 Gateway route、API 转发、公开详情是否存在或是否满足公开过滤。
 - `suspected-spa-shell=yes` 且目标是 `robots.txt` / `sitemap.xml`：优先检查 Gateway 顶层路由优先级，避免被前端 catch-all 覆盖。
 - `sitemap loc assertion` 失败：优先检查 `GatewayService:PublicUrl` / `RADISH_PUBLIC_URL`、`X-Forwarded-Proto` 与 `X-Forwarded-Host`。
-- `public head assertion` 失败：优先检查 API head snapshot、Gateway 注入中间件、Frontend 入口 HTML 可达性和详情公开状态。
+- `public head assertion` 失败：优先检查 API head snapshot、Gateway 注入中间件、Frontend 入口 HTML 可达性和详情公开状态；Gateway 遇到快照 404、下游失败、入口 HTML 不可达或注入异常时会回退原 SPA 链路，因此“页面能打开”不等于 head 注入已经生效。
 
 仅验证脚本自身解析逻辑时执行：
 

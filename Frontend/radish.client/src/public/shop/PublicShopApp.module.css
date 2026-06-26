@@ -124,6 +124,7 @@
   border-radius: 999px;
   font-weight: 700;
   cursor: pointer;
+  text-decoration: none;
   transition: transform var(--theme-transition-standard), box-shadow var(--theme-transition-standard), background var(--theme-transition-standard), color var(--theme-transition-standard);
 }
 
@@ -144,7 +145,12 @@
   background: linear-gradient(135deg, var(--theme-brand-primary) 0%, color-mix(in srgb, var(--theme-accent-earth) 44%, var(--theme-brand-primary) 56%) 100%);
   color: #fffaf0;
   box-shadow: 0 12px 28px color-mix(in srgb, var(--theme-brand-primary) 22%, transparent);
-  text-decoration: none;
+}
+
+.primaryLink[data-disabled='true'] {
+  pointer-events: none;
+  opacity: 0.68;
+  box-shadow: none;
 }
 
 .inlineTextButton {
@@ -292,6 +298,38 @@
   background: color-mix(in srgb, var(--theme-state-danger) 8%, white 92%);
   border: 1px solid color-mix(in srgb, var(--theme-state-danger) 18%, transparent);
   color: var(--theme-state-danger);
+}
+
+.purchaseFeedback {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.purchaseFeedback[data-state='error'] {
+  background: color-mix(in srgb, var(--theme-state-danger) 8%, white 92%);
+  border: 1px solid color-mix(in srgb, var(--theme-state-danger) 18%, transparent);
+  color: var(--theme-state-danger);
+}
+
+.purchaseToast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  z-index: 1100;
+  width: min(420px, calc(100vw - 32px));
+  transform: translateX(-50%);
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--theme-state-danger) 20%, transparent);
+  background: color-mix(in srgb, var(--theme-state-danger) 9%, var(--theme-bg-surface) 91%);
+  box-shadow: var(--theme-shadow-soft);
+  color: var(--theme-state-danger);
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .detailBackHint {
@@ -485,7 +523,8 @@
 .description p,
 .benefitBox,
 .noticeList,
-.shareFeedback {
+.shareFeedback,
+.purchaseFeedback {
   overflow-wrap: anywhere;
 }
 

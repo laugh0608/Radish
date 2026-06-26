@@ -126,6 +126,7 @@ export const SystemConfigForm = ({
         reason: String(values.reason).trim(),
         confirmRiskLevel: config.voRiskLevel,
         confirmKey: config.voKey,
+        expectedVersion: config.voVersion,
       });
       message.success('系统设置已更新');
       onSuccess();

@@ -6,14 +6,9 @@ internal static class ForumDisplayNameHelper
 {
     public static string Build(User user, string fallback)
     {
-        if (!string.IsNullOrWhiteSpace(user.UserRealName))
-        {
-            return user.UserRealName.Trim();
-        }
-
         if (!string.IsNullOrWhiteSpace(user.UserName))
         {
-            return user.UserName.Trim();
+            return User.NormalizeDisplayName(user.UserName, user.Id);
         }
 
         return string.IsNullOrWhiteSpace(fallback) ? $"User-{user.Id}" : fallback.Trim();

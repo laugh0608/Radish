@@ -576,6 +576,8 @@ CurrentUser permissions
 
 保存按钮在请求进行中必须进入保存中 / 禁用状态，并阻止重复提交。同一份授权快照的 `expectedModifyTime` 只应随一次保存请求提交；若用户需要继续调整，应等待保存完成后重新基于最新快照编辑。
 
+`expectedModifyTime` 是角色授权一期的乐观并发令牌。服务端会把当前角色授权关系的最新修改时间与请求中的 `ExpectedModifyTime` 比较，不一致时返回“角色授权已被其他管理员修改，请刷新后重试”。前端不能在保存失败后复用旧快照继续提交。
+
 ### 7.3 授权树规则
 
 授权树按模块组织，例如：
@@ -659,6 +661,7 @@ CurrentUser permissions
 
 - 覆盖该角色当前一期纳管范围内的 Console 授权
 - 请求中的 `ExpectedModifyTime` 用于并发保护；前端应阻止保存中的重复提交，避免同一旧快照连续请求造成伪并发冲突
+- 保存成功后应重新读取角色授权快照，以获取新的 `VoGrantedResourceIds` 与 `VoLastModifyTime`
 
 ### 8.4 获取接口预览
 

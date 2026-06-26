@@ -47,6 +47,26 @@ public interface IExperienceService : IBaseService<UserExperience, UserExperienc
         string? remark = null);
 
     /// <summary>
+    /// 按奖励业务键发放一次经验值。
+    /// </summary>
+    /// <param name="userId">用户 ID</param>
+    /// <param name="amount">经验值数量</param>
+    /// <param name="expType">经验值类型</param>
+    /// <param name="rewardBusinessKey">服务端生成的奖励业务去重键</param>
+    /// <param name="businessType">业务类型（可选）</param>
+    /// <param name="businessId">业务 ID（可选）</param>
+    /// <param name="remark">备注（可选）</param>
+    /// <returns>发放结果；重复命中时不重复改经验和每日统计</returns>
+    Task<ExperienceGrantOnceResult> GrantExperienceOnceAsync(
+        long userId,
+        int amount,
+        string expType,
+        string rewardBusinessKey,
+        string? businessType = null,
+        long? businessId = null,
+        string? remark = null);
+
+    /// <summary>
     /// 检查指定业务经验流水是否已存在
     /// </summary>
     /// <param name="userId">用户 ID</param>
@@ -242,4 +262,39 @@ public class ExpGrantInfo
 
     /// <summary>备注（可选）</summary>
     public string? Remark { get; set; }
+}
+
+/// <summary>经验值按业务键发放结果。</summary>
+public sealed class ExperienceGrantOnceResult
+{
+    /// <summary>是否本次新发放。</summary>
+    public bool Granted { get; init; }
+
+    /// <summary>是否命中既有奖励。</summary>
+    public bool AlreadyGranted { get; init; }
+
+    /// <summary>是否因上限、冻结或参数校验未发放。</summary>
+    public bool Skipped { get; init; }
+
+    /// <summary>失败或跳过原因。</summary>
+    public string? Reason { get; init; }
+
+    /// <summary>创建新发放结果。</summary>
+    public static ExperienceGrantOnceResult NewGrant() => new()
+    {
+        Granted = true
+    };
+
+    /// <summary>创建已发放结果。</summary>
+    public static ExperienceGrantOnceResult Existing() => new()
+    {
+        AlreadyGranted = true
+    };
+
+    /// <summary>创建跳过结果。</summary>
+    public static ExperienceGrantOnceResult Skip(string reason) => new()
+    {
+        Skipped = true,
+        Reason = reason
+    };
 }

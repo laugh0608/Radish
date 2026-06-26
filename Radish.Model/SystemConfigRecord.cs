@@ -21,6 +21,8 @@ public class SystemConfigRecord
 
     public bool IsEnabled { get; set; } = true;
 
+    public int Version { get; set; } = 1;
+
     public DateTime CreateTime { get; set; }
 
     public DateTime? ModifyTime { get; set; }

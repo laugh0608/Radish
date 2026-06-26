@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { PostDetail as PostDetailType, QuestionAnswerFilter, QuestionAnswerSort, ReactionSummaryVo } from '@/api/forum';
 import { uploadDocument, uploadImage } from '@/api/attachment';
@@ -41,6 +41,7 @@ interface PostDetailProps {
   answerFilter?: QuestionAnswerFilter;
   onAnswerSortChange?: (sortBy: QuestionAnswerSort) => Promise<void>;
   onAnswerFilterChange?: (filterBy: QuestionAnswerFilter) => void;
+  answerAutoFocusKey?: string | null;
   isAuthenticated?: boolean;
   currentUserId?: LongId;
   canToggleTop?: boolean;
@@ -108,6 +109,7 @@ export const PostDetail = ({
   answerFilter = 'all',
   onAnswerSortChange,
   onAnswerFilterChange,
+  answerAutoFocusKey,
   isAuthenticated = false,
   currentUserId = '0',
   canToggleTop = false,
@@ -154,14 +156,15 @@ export const PostDetail = ({
   const [isDrawingLottery, setIsDrawingLottery] = useState(false);
   const [isClosingPoll, setIsClosingPoll] = useState(false);
   const [isTogglingTop, setIsTogglingTop] = useState(false);
+  const answerComposerRef = useRef<HTMLDivElement | null>(null);
 
   const isAuthor = !!post && isSameLongId(post.voAuthorId, currentUserId);
-  const showFollowAction = isAuthenticated && !!post && !isAuthor && String(post.voAuthorId) !== '0';
+  const showFollowAction = isAuthenticated && !!post && !isAuthor && String(post.voAuthorId) !== '0' && !!onToggleFollow;
   const question = post?.voQuestion;
   const lottery = post?.voLottery;
   const isQuestionPost = !!post?.voIsQuestion;
   const isLotteryPost = !!post?.voHasLottery && !!lottery;
-  const canAnswerQuestion = isAuthenticated && !isSubmittingAnswer;
+  const canAnswerQuestion = isAuthenticated && !isSubmittingAnswer && !!onAnswerQuestion;
   const canViewQuestionHistory = isQuestionPost && !!onViewHistory;
   const totalAnswerCount = question?.voAnswerCount ?? post?.voAnswerCount ?? 0;
   const drawTimeValue = lottery?.voDrawTime ? new Date(lottery.voDrawTime) : null;
@@ -260,6 +263,23 @@ export const PostDetail = ({
     setIsTogglingTop(false);
   }, [post?.voId, post?.voIsTop]);
 
+  useEffect(() => {
+    if (!answerAutoFocusKey || isReadOnly || !isQuestionPost) {
+      return;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      answerComposerRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [answerAutoFocusKey, isQuestionPost, isReadOnly]);
+
   if (loading) {
     return (
       <div className={styles.container}>
@@ -279,7 +299,7 @@ export const PostDetail = ({
   }
 
   const poll = post.voPoll;
-  const canSubmitPoll = !!poll && !poll.voIsClosed && !poll.voHasVoted && isAuthenticated;
+  const canSubmitPoll = !!poll && !poll.voIsClosed && !poll.voHasVoted && isAuthenticated && !!onVotePoll;
   const canClosePoll = !!poll && !poll.voIsClosed && isAuthor && !!onClosePoll;
   const pollStatusText = !poll
     ? ''
@@ -552,7 +572,7 @@ export const PostDetail = ({
 
             <div className={styles.pollFooter}>
               <span className={styles.pollHint}>{pollStatusText}</span>
-              {!isReadOnly && (
+              {!isReadOnly && (canClosePoll || onVotePoll) && (
                 <div className={styles.pollActionButtons}>
                   {canClosePoll && (
                     <button
@@ -566,14 +586,16 @@ export const PostDetail = ({
                       {isClosingPoll ? t('forum.postDetail.poll.closeLoading') : t('forum.postDetail.poll.close')}
                     </button>
                   )}
-                  <button
-                    type="button"
-                    className={styles.pollSubmitButton}
-                    onClick={handleVoteSubmit}
-                    disabled={!canSubmitPoll || !selectedOptionId || isVoting}
-                  >
-                    {isVoting ? t('forum.postDetail.poll.submitLoading') : t('forum.postDetail.poll.submit')}
-                  </button>
+                  {onVotePoll && (
+                    <button
+                      type="button"
+                      className={styles.pollSubmitButton}
+                      onClick={handleVoteSubmit}
+                      disabled={!canSubmitPoll || !selectedOptionId || isVoting}
+                    >
+                      {isVoting ? t('forum.postDetail.poll.submitLoading') : t('forum.postDetail.poll.submit')}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -775,6 +797,7 @@ export const PostDetail = ({
                   const answerAvatarUrl = resolveMediaUrl(answer.voAuthorAvatarUrl);
                   const canAccept =
                     isAuthor &&
+                    !!onAcceptAnswer &&
                     !question?.voIsSolved &&
                     !answer.voIsAccepted &&
                     !isSameLongId(answer.voAuthorId, currentUserId);
@@ -854,8 +877,8 @@ export const PostDetail = ({
               <p className={styles.questionEmpty}>{questionEmptyText}</p>
             )}
 
-            {!isReadOnly && (
-              <div className={styles.answerComposer}>
+            {!isReadOnly && onAnswerQuestion && (
+              <div className={styles.answerComposer} ref={answerComposerRef}>
                 <label className={styles.answerLabel}>
                   {t('forum.postDetail.question.composeLabel')}
                 </label>
@@ -903,7 +926,7 @@ export const PostDetail = ({
         )}
 
         <div className={styles.actions}>
-          {!isReadOnly ? (
+          {!isReadOnly && onLike ? (
             <button
               type="button"
               onClick={() => onLike?.(post.voId)}
@@ -978,7 +1001,10 @@ export const PostDetail = ({
             />
           )}
 
-          {!isReadOnly && (canToggleTop || isAuthor) && (
+          {!isReadOnly && (
+            canToggleTop
+            || (isAuthor && (onEdit || onDelete || (!isQuestionPost && onViewHistory)))
+          ) && (
             <div className={styles.authorActions}>
               {canToggleTop && (
                 <button
@@ -1001,28 +1027,32 @@ export const PostDetail = ({
 
               {isAuthor && (
                 <>
-                  <button
-                    type="button"
-                    onClick={() => onEdit?.(post.voId)}
-                    className={styles.editButton}
-                    title={t('forum.postDetail.action.editTitle')}
-                  >
-                    <Icon icon="mdi:pencil" size={18} />
-                    {t('forum.postDetail.action.edit')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onDelete?.(post.voId)}
-                    className={styles.deleteButton}
-                    title={t('forum.postDetail.action.deleteTitle')}
-                  >
-                    <Icon icon="mdi:delete" size={18} />
-                    {t('forum.postDetail.action.delete')}
-                  </button>
-                  {!isQuestionPost && (
+                  {onEdit && (
                     <button
                       type="button"
-                      onClick={() => onViewHistory?.(post.voId)}
+                      onClick={() => onEdit(post.voId)}
+                      className={styles.editButton}
+                      title={t('forum.postDetail.action.editTitle')}
+                    >
+                      <Icon icon="mdi:pencil" size={18} />
+                      {t('forum.postDetail.action.edit')}
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      type="button"
+                      onClick={() => onDelete(post.voId)}
+                      className={styles.deleteButton}
+                      title={t('forum.postDetail.action.deleteTitle')}
+                    >
+                      <Icon icon="mdi:delete" size={18} />
+                      {t('forum.postDetail.action.delete')}
+                    </button>
+                  )}
+                  {!isQuestionPost && onViewHistory && (
+                    <button
+                      type="button"
+                      onClick={() => onViewHistory(post.voId)}
                       className={styles.historyButton}
                       title={t('forum.postDetail.action.historyTitle')}
                     >

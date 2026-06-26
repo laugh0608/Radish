@@ -2,7 +2,7 @@
 
 > 状态：低 / 中风险首轮治理已阶段收束，进入维护观察与后续独立评审池
 >
-> 最后更新：2026-06-17（Asia/Shanghai）
+> 最后更新：2026-06-24（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -23,9 +23,11 @@ Radish 需要一个长期的系统设置中心，但它不应只是把 `appsetti
 - 高危设置必须二次确认，并写入审计日志。
 - 每个设置都具备类型、分组、校验规则、说明和恢复默认能力。
 
-当前项目已将 `SystemConfig` 首批收敛为代码级设置定义注册表 + JSON 覆盖值存储：Console 默认只展示已注册设置，历史未注册 key-value 记录不作为运营设置暴露。`Site.Branding.FaviconUrl` 作为第一个低风险可编辑示例；第二批已补系统设置专用变更审计、修改原因 / 确认参数基础和 Console 历史查看入口；第三批已新增 `ISystemSettingProvider`，并开放内容 / 评论长度设置；第四批已将数值范围、整数约束和影响范围摘要从设置定义暴露到 Console，并让数字控件按规则约束输入；第五批继续沿内容发布边界补齐标题 / 正文 / 评论最大长度和自动摘要长度设置；第六批将轻回应长度纳入评论互动同族设置；第七批将登录名和展示名长度接入账号身份设置；第八批继续治理轻回应剩余运营参数，开放默认返回条数、最大返回条数、单帖冷却秒数和重复内容窗口秒数；第九批开放神评 / 沙发稳定窗口和替换阈值。`ForumQuickReply.Enable` 仍作为宿主功能开关保留在 `appsettings`，不进入 Console 系统设置。
+当前项目已将 `SystemConfig` 首批收敛为代码级设置定义注册表 + JSON 覆盖值存储：Console 默认只展示已注册设置，历史未注册 key-value 记录不作为运营设置暴露。`Site.Branding.FaviconUrl` 作为第一个低风险可编辑示例；第二批已补系统设置专用变更审计、修改原因 / 确认参数基础和 Console 历史查看入口；第三批已新增 `ISystemSettingProvider`，并开放内容 / 评论长度设置；第四批已将数值范围、整数约束和影响范围摘要从设置定义暴露到 Console，并让数字控件按规则约束输入；第五批继续沿内容发布边界补齐标题 / 正文 / 评论最大长度和自动摘要长度设置；第六批将轻回应长度纳入评论互动同族设置；第七批将账号身份展示名长度接入设置；第八批继续治理轻回应剩余运营参数，开放默认返回条数、最大返回条数、单帖冷却秒数和重复内容窗口秒数；第九批开放神评 / 沙发稳定窗口和替换阈值；`P3-12-B6-3` 已将展示名改名冷却、滚动窗口和窗口内最大次数纳入账号身份设置；`P3-12-B6-5` 已移除登录名长度设置。`ForumQuickReply.Enable` 仍作为宿主功能开关保留在 `appsettings`，不进入 Console 系统设置。
 
 第九批后，低 / 中风险系统设置首轮治理阶段收束。当前不继续默认开放第十批设置；后续设置扩面只在真实运营缺口、发布候选回归或独立专题评审确认边界后回拉。
+
+`2026-06-24` 身份语义补充：注册页 `DisplayName` 慎重设置提示本身不属于系统设置；展示名改名冷却 / 滚动窗口 / 窗口内最大次数已完成代码级定义、服务端消费和审计记录，进入当前已注册设置。`PublicIndex` 靓号保留列表 / 靓号规则已完成代码级定义、服务端消费和配置错误暴露，进入当前已注册设置；人工指定保留号仍需后续权限动作与审计专题承接。
 
 ## 2. 目标与非目标
 
@@ -55,7 +57,7 @@ Radish 需要一个长期的系统设置中心，但它不应只是把 `appsetti
 
 | 字段 | 说明 |
 | --- | --- |
-| `Key` | 全局唯一键，例如 `UserIdentity.LoginName.MinLength` |
+| `Key` | 全局唯一键，例如 `UserIdentity.DisplayName.MinLength` |
 | `Category` | 分组，例如 `账号身份`、`内容发布`、`安全会话` |
 | `Name` | Console 展示名称 |
 | `Description` | 用途、影响范围和注意事项 |
@@ -92,7 +94,7 @@ Radish 需要一个长期的系统设置中心，但它不应只是把 `appsetti
 
 | 分类 | 示例设置 |
 | --- | --- |
-| `账号身份` | 登录名最小长度、登录名最大长度、展示名最小长度、展示名最大长度、公开索引普通用户起始值 |
+| `账号身份` | 展示名最小长度、展示名最大长度、展示名改名冷却 / 窗口次数、公开索引普通用户起始值、公开索引靓号保留列表 / 规则 |
 | `内容发布` | 标题最小长度、标题最大长度、正文最小长度、正文最大长度、发帖频率 |
 | `评论互动` | 评论最小长度、评论最大长度、typing 节流、神评稳定窗口、神评替换阈值 |
 | `安全会话` | 不活跃过期天数、refresh 容忍窗口、登录失败锁定阈值 |
@@ -116,7 +118,7 @@ Radish 需要一个长期的系统设置中心，但它不应只是把 `appsetti
 
 高危设置不能只依赖前端弹窗，后端必须校验权限、风险等级、确认参数和审计要求。
 
-当前实现只允许 `Low` / `Medium` 可编辑设置写入覆盖值；`Medium` 设置必须带修改原因、确认风险等级和确认设置键。`High` / `Critical` 仍由后端拒绝，不因前端提交参数而开放。
+当前实现只允许 `Low` / `Medium` 可编辑设置写入覆盖值；`Medium` 设置必须带修改原因、确认风险等级和确认设置键。`High` / `Critical` 仍由后端拒绝，不因前端提交参数而开放。保存和恢复默认还必须携带当前 `VoVersion` 作为 `ExpectedVersion`，避免多个管理员基于旧覆盖值互相覆盖。
 
 ## 6. 审计与历史
 
@@ -164,7 +166,7 @@ SystemConfig 覆盖值
 - 多实例部署时，后续需要缓存失效广播或短 TTL 策略。
 - 服务层消费强类型设置，不把字符串 key 散落到业务代码。
 
-当前消费点包括帖子发布 / 编辑、评论发布 / 编辑、论坛轻回应发布 / 列表、评论神评 / 沙发实时重算、Auth 注册登录名校验和个人资料展示名校验：标题、正文、摘要、评论、轻回应、登录名和展示名长度边界，轻回应返回条数、单帖冷却秒数、重复内容窗口秒数，以及神评 / 沙发稳定窗口和替换阈值通过 `ISystemSettingProvider` 读取；读取顺序为代码默认值、JSON 覆盖值、类型转换与范围校验。
+当前消费点包括帖子发布 / 编辑、评论发布 / 编辑、论坛轻回应发布 / 列表、评论神评 / 沙发实时重算、Auth 注册展示名校验、个人资料展示名校验和个人资料展示名改名治理：标题、正文、摘要、评论、轻回应和展示名长度边界，展示名改名冷却 / 滚动窗口 / 窗口内最大次数，PublicIndex 保留号列表 / 靓号规则，轻回应返回条数、单帖冷却秒数、重复内容窗口秒数，以及神评 / 沙发稳定窗口和替换阈值通过 `ISystemSettingProvider` 读取；读取顺序为代码默认值、JSON 覆盖值、类型转换与范围校验。
 
 ### 7.1 开发接入清单
 
@@ -208,8 +210,9 @@ SystemConfig 覆盖值
 - `GetSystemConfigs` 返回注册定义叠加覆盖值后的设置列表。
 - `GetConfigById` 使用设置定义 ID 查询，兼容旧覆盖记录 ID 回查已注册定义。
 - 设置列表 / 详情返回 `MinNumberValue`、`MaxNumberValue`、`RequiresInteger` 与 `ImpactSummary`，供 Console 展示校验规则与影响范围。
-- `UpdateConfig` 只允许写入 `Low` / `Medium`、可编辑的注册设置覆盖值；`Medium` 必须接收修改原因、确认风险等级和确认设置键参数，成功变更后写入系统设置专用审计历史。
-- `RestoreConfigDefault` 删除覆盖值并回到代码默认值，同样接收原因 / 确认参数并写入审计历史。
+- 设置列表 / 详情返回 `VoVersion`：没有覆盖值时为 `0`，已有覆盖值时为持久化记录版本号。
+- `UpdateConfig` 只允许写入 `Low` / `Medium`、可编辑的注册设置覆盖值；`Medium` 必须接收修改原因、确认风险等级、确认设置键和 `ExpectedVersion`，成功变更后写入系统设置专用审计历史并递增覆盖记录版本。
+- `RestoreConfigDefault` 删除覆盖值并回到代码默认值，同样接收原因 / 确认参数和 `ExpectedVersion`，版本不匹配时返回“系统设置已被其他管理员修改，请刷新后重试”。
 - `GetConfigChangeLogs` 查询已注册设置的最近变更历史。
 - `ISystemSettingProvider` 面向业务服务提供统一读取入口，覆盖值非法时直接暴露配置错误。
 - 旧 `CreateConfig` 路由保留兼容但拒绝 Console 新增未知设置。
@@ -222,10 +225,13 @@ SystemConfig 覆盖值
 
 | 设置 | 默认值建议 | 风险 |
 | --- | ---: | --- |
-| `UserIdentity.LoginName.MinLength` | `3` | Medium |
-| `UserIdentity.LoginName.MaxLength` | `32` | Medium |
 | `UserIdentity.DisplayName.MinLength` | `2` | Medium |
 | `UserIdentity.DisplayName.MaxLength` | `24` | Medium |
+| `UserIdentity.DisplayName.ChangeCooldownDays` | `30` | Medium |
+| `UserIdentity.DisplayName.ChangeWindowDays` | `365` | Medium |
+| `UserIdentity.DisplayName.ChangeWindowMaxCount` | `3` | Medium |
+| `UserIdentity.PublicIndex.ReservedIndexes` | `[1314,5200]` | Medium |
+| `UserIdentity.PublicIndex.VanityRules` | `{"repeatedDigits":true,"ascendingSequence":true,"descendingSequence":true,"palindrome":true}` | Medium |
 | `Content.PostTitle.MinLength` | `3` | Medium |
 | `Content.PostTitle.MaxLength` | `200` | Medium |
 | `Content.PostBody.MinLength` | `10` | Medium |
@@ -244,9 +250,19 @@ SystemConfig 覆盖值
 
 安全会话、奖励数值、审核阈值和资产相关设置应等审计与二次确认基础完成后再开放。
 
-当前已注册并可在 Console 展示的设置为：`Site.Branding.FaviconUrl`、`UserIdentity.LoginName.MinLength`、`UserIdentity.LoginName.MaxLength`、`UserIdentity.DisplayName.MinLength`、`UserIdentity.DisplayName.MaxLength`、`Content.PostTitle.MinLength`、`Content.PostTitle.MaxLength`、`Content.PostBody.MinLength`、`Content.PostBody.MaxLength`、`Content.PostSummary.MaxLength`、`Comment.Body.MinLength`、`Comment.Body.MaxLength`、`Comment.QuickReply.MaxContentLength`、`Comment.QuickReply.DefaultTake`、`Comment.QuickReply.MaxTake`、`Comment.QuickReply.PerPostCooldownSeconds`、`Comment.QuickReply.DuplicateWindowSeconds`、`Comment.Highlight.StabilityWindowMinutes`、`Comment.Highlight.ReplacementMinLikeDelta`。账号身份本批只开放长度边界，不开放邮箱、登录凭证、高风险账号字段或 Console 账号变更动作；轻回应本批只开放内容长度、返回条数、冷却和重复内容窗口，不开放 `ForumQuickReply.Enable` 功能开关；神评本批只开放稳定窗口和替换阈值，不开放任务启停、调度、扫描窗口、触发评论数量门槛或奖励数值。
+当前已注册并可在 Console 展示的设置为：`Site.Branding.FaviconUrl`、`UserIdentity.DisplayName.MinLength`、`UserIdentity.DisplayName.MaxLength`、`UserIdentity.DisplayName.ChangeCooldownDays`、`UserIdentity.DisplayName.ChangeWindowDays`、`UserIdentity.DisplayName.ChangeWindowMaxCount`、`UserIdentity.PublicIndex.ReservedIndexes`、`UserIdentity.PublicIndex.VanityRules`、`Content.PostTitle.MinLength`、`Content.PostTitle.MaxLength`、`Content.PostBody.MinLength`、`Content.PostBody.MaxLength`、`Content.PostSummary.MaxLength`、`Comment.Body.MinLength`、`Comment.Body.MaxLength`、`Comment.QuickReply.MaxContentLength`、`Comment.QuickReply.DefaultTake`、`Comment.QuickReply.MaxTake`、`Comment.QuickReply.PerPostCooldownSeconds`、`Comment.QuickReply.DuplicateWindowSeconds`、`Comment.Highlight.StabilityWindowMinutes`、`Comment.Highlight.ReplacementMinLikeDelta`。账号身份本批开放展示名长度边界、展示名改名频率限制和 PublicIndex 自动分配保留号规则，不开放邮箱、登录凭证、高风险账号字段、人工指定 PublicIndex 或 Console 账号变更动作；轻回应本批只开放内容长度、返回条数、冷却和重复内容窗口，不开放 `ForumQuickReply.Enable` 功能开关；神评本批只开放稳定窗口和替换阈值，不开放任务启停、调度、扫描窗口、触发评论数量门槛或奖励数值。
+
+### 10.1 PublicIndex JSON 契约
+
+`UserIdentity.PublicIndex.ReservedIndexes` 和 `UserIdentity.PublicIndex.VanityRules` 是 `Medium` 风险 JSON 设置，后端解析失败时必须暴露配置错误，不能静默回退默认值。当前契约如下：
+
+- `ReservedIndexes` 必须是 JSON 数组，元素只允许整数或整数字符串，值必须在 `long / Int64` 范围内且不小于 `1000`，重复值非法。
+- `VanityRules` 必须是 JSON 对象，只允许 `repeatedDigits`、`ascendingSequence`、`descendingSequence`、`palindrome` 四个键，键值必须是布尔值。
+- `1-999` 是系统保留段，不通过 `ReservedIndexes` 配置；显式保留号和靓号规则只影响普通注册 / Bootstrap 后续自动分配，不回收、不迁移、不自动改写既有用户。
 
 首轮治理后的剩余候选不直接排成新增批次：评论 typing 节流、神评触发评论数量门槛、内容发布频率限制暂不纳入本轮；论坛编辑历史涉及普通用户编辑次数 / 时间窗、历史保留和管理员覆盖，后续如需治理应作为编辑权限与历史保留专题独立评审。
+
+账号身份后续候选也不直接视作第十批：`PublicIndex` 靓号保留显式列表和靓号规则已经作为 B6-4 自动分配治理落地；人工指定保留号、运营活动号、官方号分配和对应权限 / 审计仍需独立评审。
 
 ## 11. 实施阶段建议
 
@@ -270,7 +286,7 @@ SystemConfig 覆盖值
 - 支持恢复默认。
 - 写入基础审计。
 - 后端服务通过统一 provider 消费设置。
-- 当前已开放 `Site.Branding.FaviconUrl` 低风险覆盖值编辑与恢复默认，并开放帖子标题 / 正文、评论内容最小 / 最大长度、帖子自动摘要长度、论坛轻回应内容最大长度、轻回应返回条数、轻回应冷却 / 去重窗口、登录名长度、展示名长度、神评稳定窗口和神评替换阈值设置；第二批已补修改原因、确认参数基础、审计历史写入和 Console 历史查看入口，第三批已补统一 provider 与首批业务消费点，第四批已补校验规则元数据和数字编辑控件约束，第五批将内容发布上限与实体 / DTO 硬边界对齐，第六批继续将轻回应长度纳入评论互动同族设置，第七批将账号身份长度设置接入 Auth / API 现有校验点，第八批将轻回应剩余运营参数接入轻回应列表与发布频率治理，第九批将神评稳定窗口和替换阈值接入神评 / 沙发实时重算。低 / 中风险首轮治理当前阶段收束；High / Critical 仍不开放编辑，后续需在逐项确认影响范围、二次确认策略和权限边界后再放开。
+- 当前已开放 `Site.Branding.FaviconUrl` 低风险覆盖值编辑与恢复默认，并开放帖子标题 / 正文、评论内容最小 / 最大长度、帖子自动摘要长度、论坛轻回应内容最大长度、轻回应返回条数、轻回应冷却 / 去重窗口、展示名长度、展示名改名冷却 / 滚动窗口 / 窗口内最大次数、PublicIndex 显式保留号 / 靓号规则、神评稳定窗口和神评替换阈值设置；第二批已补修改原因、确认参数基础、审计历史写入和 Console 历史查看入口，第三批已补统一 provider 与首批业务消费点，第四批已补校验规则元数据和数字编辑控件约束，第五批将内容发布上限与实体 / DTO 硬边界对齐，第六批继续将轻回应长度纳入评论互动同族设置，第七批将账号身份展示名长度设置接入 Auth / API 现有校验点，第八批将轻回应剩余运营参数接入轻回应列表与发布频率治理，第九批将神评稳定窗口和替换阈值接入神评 / 沙发实时重算，`P3-12-B6-3` 将展示名改名频率接入个人资料改名服务，`P3-12-B6-4` 将 PublicIndex 保留号规则接入注册与 Bootstrap 自动分配，`P3-12-B6-5` 移除登录名长度设置。低 / 中风险首轮治理当前阶段收束；High / Critical 仍不开放编辑，后续需在逐项确认影响范围、二次确认策略和权限边界后再放开。
 
 ### Phase D：高危设置治理
 
@@ -285,6 +301,7 @@ SystemConfig 覆盖值
 - 不一次性迁移所有 `appsettings` 配置。
 - 不让业务代码继续散落读取字符串配置。
 - 不开放邮箱、登录凭证、高风险账号字段或 Console 账号变更动作；账号身份设置先限制在已明确消费点的长度边界。
+- 不开放人工指定 `PublicIndex`、运营活动号分配或官方号分配；当前只治理自动分配时跳过显式保留号与靓号规则。
 - 不开放 `ForumQuickReply.Enable` 功能开关；轻回应是否启用继续由宿主配置控制。
 - 不开放神评任务启停、Cron 调度、扫描窗口、缓存策略、神评 / 沙发触发评论数量门槛或奖励数值；这些参数继续逐项评审，不随稳定窗口和替换阈值一起进入 Console。
 - 不把评论 typing 节流、内容发布频率限制或论坛编辑历史策略作为 B10 第十批直接开放；论坛编辑历史后续如需治理，应先确认编辑权限、普通用户限制、历史保留和管理员覆盖边界。

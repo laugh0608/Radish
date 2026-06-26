@@ -227,6 +227,7 @@ export interface ClosePollRequest {
 export interface CreateAnswerRequest {
   postId: LongId;
   content: string;
+  clientSubmissionId?: string;
 }
 
 /**
@@ -528,6 +529,7 @@ export interface PostLikeResult {
 export interface PublishPostRequest {
   title: string;
   content: string;
+  clientSubmissionId?: string;
   categoryId: LongId;
   tagNames: string[];
   isQuestion?: boolean;
@@ -542,6 +544,7 @@ export interface UpdatePostRequest {
   postId: LongId;
   title: string;
   content: string;
+  clientSubmissionId?: string;
   categoryId?: LongId;
   tagNames: string[];
 }
@@ -560,11 +563,21 @@ export interface SetPostTopRequest {
 export interface CreateCommentRequest {
   postId: LongId;
   content: string;
+  clientSubmissionId?: string;
   parentId?: LongId | null;
   replyToCommentId?: LongId | null;
   replyToCommentSnapshot?: string | null;
   replyToUserId?: LongId | null;
   replyToUserName?: string | null;
+}
+
+/**
+ * 编辑评论请求
+ */
+export interface UpdateCommentRequest {
+  commentId: LongId;
+  content: string;
+  clientSubmissionId?: string;
 }
 
 /**

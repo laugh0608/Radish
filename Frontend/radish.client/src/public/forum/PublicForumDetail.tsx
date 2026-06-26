@@ -1,16 +1,24 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { toast } from '@radish/ui/toast';
+import { resolveVisibleUserDisplayName } from '@/utils/userIdentityDisplay';
 import {
+  acceptQuestionAnswer,
+  answerQuestion,
   createComment,
   createPostQuickReply,
+  getPostEditHistory,
   getCommentNavigation,
   getChildComments,
   getPostById,
   getPostQuickReplyWall,
   getRootCommentsPage,
+  getTopCategories,
+  updatePost,
+  type Category,
   type CommentNode,
+  type PostEditHistory,
   type PostDetail,
   type PostQuickReply,
 } from '@/api/forum';
@@ -22,10 +30,19 @@ import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
 import { log } from '@/utils/logger';
 import { resolveMediaUrl } from '@/utils/media';
+import {
+  createClientSubmissionState,
+  type ClientSubmissionState
+} from '@/utils/clientSubmission';
 import { CommentTree } from '@/apps/forum/components/CommentTree';
 import { CreateCommentForm } from '@/apps/forum/components/CreateCommentForm';
 import { PostDetail as ForumPostDetail } from '@/apps/forum/components/PostDetail';
 import { PostQuickReplyWall } from '@/apps/forum/components/PostQuickReplyWall';
+import {
+  buildAnswerSubmissionFingerprint,
+  buildCommentSubmissionFingerprint,
+  buildPostEditSubmissionFingerprint,
+} from '@/apps/forum/utils/forumSubmissionFingerprint';
 import {
   applyCommentHighlightEvent,
   removeCommentFromTree,
@@ -59,12 +76,21 @@ import {
   mergeCommentChildren,
   resolvePublicProfileUserId,
 } from './publicForumUtils';
+import { handlePublicForumLinkClick } from './publicForumLinkHandlers';
 import styles from './PublicForumApp.module.css';
 
 type RootCommentSort = 'newest' | 'hottest' | null;
 const COMMENT_NAVIGATION_CHILD_PAGE_SIZE = 5;
 const QUICK_REPLY_SECTION_ID = 'public-forum-quick-replies';
 const COMMENT_SECTION_ID = 'public-forum-comments';
+
+const EditPostModal = lazy(() =>
+  import('@/apps/forum/components/EditPostModal').then((module) => ({ default: module.EditPostModal }))
+);
+
+const EditHistoryModal = lazy(() =>
+  import('@/apps/forum/components/EditHistoryModal').then((module) => ({ default: module.EditHistoryModal }))
+);
 
 const buildRootCommentIdSet = (rootComments: CommentNode[]): Set<string> => (
   new Set(rootComments.map((comment) => String(comment.voId)))
@@ -83,6 +109,7 @@ interface PublicForumDetailProps {
   sourceState?: PublicRouteSourceState | null;
   displayTimeZone: string;
   backLabel: string;
+  backHref: string;
   onBack: () => void;
   onOpenAuthorProfile?: (userId: string) => void;
   onOpenTag?: (tagSlug: string) => void;
@@ -98,6 +125,7 @@ export const PublicForumDetail = ({
   sourceState,
   displayTimeZone,
   backLabel,
+  backHref,
   onBack,
   onOpenAuthorProfile,
   onOpenTag,
@@ -133,18 +161,57 @@ export const PublicForumDetail = ({
   const [submittingComment, setSubmittingComment] = useState(false);
   const [quickReplyFocusKey, setQuickReplyFocusKey] = useState<string | null>(null);
   const [commentFocusKey, setCommentFocusKey] = useState<string | null>(null);
+  const [answerFocusKey, setAnswerFocusKey] = useState<string | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isPostHistoryOpen, setIsPostHistoryOpen] = useState(false);
+  const [postHistories, setPostHistories] = useState<PostEditHistory[]>([]);
+  const [postHistoryTotal, setPostHistoryTotal] = useState(0);
+  const [postHistoryPageIndex, setPostHistoryPageIndex] = useState(1);
+  const [postHistoryLoading, setPostHistoryLoading] = useState(false);
+  const [postHistoryError, setPostHistoryError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const requestIdRef = useRef(0);
   const commentAnchorMapRef = useRef(new Map<string, HTMLDivElement>());
   const handledCommentNavigationRef = useRef<string | null>(null);
+  const handledAuthorIntentRef = useRef<string | null>(null);
   const highlightTimeoutRef = useRef<number | null>(null);
   const commentTypingUsersRef = useRef(new Map<string, string>());
   const commentTypingTimersRef = useRef(new Map<string, number>());
   const commentNoticeRef = useRef<HTMLDivElement | null>(null);
   const countedRootCommentIdsRef = useRef(new Set<string>());
   const deletedRootCommentIdsRef = useRef(new Set<string>());
+  const commentSubmissionRef = useRef<ClientSubmissionState | null>(null);
+  const answerSubmissionRef = useRef<ClientSubmissionState | null>(null);
+  const postEditSubmissionRef = useRef<ClientSubmissionState | null>(null);
   const commentPageSize = 20;
+  const postHistoryPageSize = 10;
   const isAuthenticated = authStoreAuthenticated && isUserAuthenticated();
+  const isCurrentUserAuthor = !!post && !!currentUserId && isSameLongId(post.voAuthorId, currentUserId);
+
+  const normalizeTagNames = useCallback((tagNames: string[]): string[] => {
+    const normalized: string[] = [];
+    const seen = new Set<string>();
+
+    for (const tagName of tagNames) {
+      const trimmed = tagName.trim();
+      if (!trimmed) {
+        continue;
+      }
+
+      const normalizedKey = trimmed.toLowerCase();
+      if (seen.has(normalizedKey)) {
+        continue;
+      }
+
+      seen.add(normalizedKey);
+      normalized.push(trimmed);
+    }
+
+    return normalized;
+  }, []);
 
   const syncCountedRootComments = useCallback((rootComments: CommentNode[]) => {
     countedRootCommentIdsRef.current = buildRootCommentIdSet(rootComments);
@@ -229,7 +296,7 @@ export const PublicForumDetail = ({
     }
 
     const userKey = String(payload.voUserId);
-    const userName = payload.voUserName?.trim() || t('common.unknownUser');
+    const userName = resolveVisibleUserDisplayName({ voUserName: payload.voUserName }, t('common.unknownUser'));
     const oldTimer = commentTypingTimersRef.current.get(userKey);
     if (oldTimer) {
       window.clearTimeout(oldTimer);
@@ -586,6 +653,27 @@ export const PublicForumDetail = ({
       intent: 'quickReply',
     })
     : null;
+  const answerReturnPath = post
+    ? buildPublicForumPostReturnPath({
+      postId: post.voId,
+      postPublicId: post.voPublicId,
+      intent: 'answer',
+    })
+    : null;
+  const editReturnPath = post
+    ? buildPublicForumPostReturnPath({
+      postId: post.voId,
+      postPublicId: post.voPublicId,
+      intent: 'edit',
+    })
+    : null;
+  const historyReturnPath = post
+    ? buildPublicForumPostReturnPath({
+      postId: post.voId,
+      postPublicId: post.voPublicId,
+      intent: 'history',
+    })
+    : null;
   const routeIntentFocusKey = post && intent
     ? `${post.voId}:${commentId ?? 'root'}:${intent}`
     : null;
@@ -595,6 +683,9 @@ export const PublicForumDetail = ({
   const commentAutoFocusKey = intent === 'comment'
     ? routeIntentFocusKey
     : commentFocusKey;
+  const answerAutoFocusKey = intent === 'answer'
+    ? routeIntentFocusKey
+    : answerFocusKey;
 
   const redirectToDetailLogin = useCallback((returnPath: string | null | undefined) => {
     if (returnPath && sourceState) {
@@ -828,6 +919,249 @@ export const PublicForumDetail = ({
     setCommentFocusKey(`${commentReturnPath}:${Date.now()}`);
   }, [commentReturnPath, isAuthenticated, redirectToDetailLogin]);
 
+  const loadCategoriesForEdit = useCallback(async (): Promise<Category[]> => {
+    if (categories.length > 0) {
+      return categories;
+    }
+
+    setCategoriesLoading(true);
+    setCategoriesError(null);
+    try {
+      const result = await getTopCategories(t);
+      setCategories(result);
+      return result;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setCategoriesError(message);
+      throw error;
+    } finally {
+      setCategoriesLoading(false);
+    }
+  }, [categories, t]);
+
+  const loadPostHistory = useCallback(async (targetPostId: LongId, pageIndex: number) => {
+    setPostHistoryLoading(true);
+    setPostHistoryError(null);
+    try {
+      const data = await getPostEditHistory(targetPostId, pageIndex, postHistoryPageSize, t);
+      setPostHistories(data.voItems || []);
+      setPostHistoryTotal(data.voTotal || 0);
+      setPostHistoryPageIndex(data.voPageIndex || pageIndex);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setPostHistoryError(message);
+    } finally {
+      setPostHistoryLoading(false);
+    }
+  }, [postHistoryPageSize, t]);
+
+  const handleAnswerAction = useCallback(() => {
+    if (!post?.voId || !answerReturnPath) {
+      return;
+    }
+
+    if (!post.voIsQuestion) {
+      toast.info(t('forum.public.answerQuestionOnly'));
+      return;
+    }
+
+    if (!isAuthenticated) {
+      redirectToDetailLogin(answerReturnPath);
+      return;
+    }
+
+    setAnswerFocusKey(`${answerReturnPath}:${Date.now()}`);
+  }, [answerReturnPath, isAuthenticated, post?.voId, post?.voIsQuestion, redirectToDetailLogin, t]);
+
+  const handleEditPostAction = useCallback(async () => {
+    if (!post?.voId || !editReturnPath) {
+      return;
+    }
+
+    if (!isAuthenticated) {
+      redirectToDetailLogin(editReturnPath);
+      return;
+    }
+
+    if (!isCurrentUserAuthor) {
+      toast.error(t('forum.public.authorOnlyAction'));
+      return;
+    }
+
+    try {
+      await loadCategoriesForEdit();
+      setIsEditModalOpen(true);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(message || t('forum.public.composeCategoriesErrorDescription'));
+    }
+  }, [
+    editReturnPath,
+    isAuthenticated,
+    isCurrentUserAuthor,
+    loadCategoriesForEdit,
+    post?.voId,
+    redirectToDetailLogin,
+    t
+  ]);
+
+  const handleViewPostHistory = useCallback(async () => {
+    if (!post?.voId || !historyReturnPath) {
+      return;
+    }
+
+    if (!isAuthenticated) {
+      redirectToDetailLogin(historyReturnPath);
+      return;
+    }
+
+    if (!isCurrentUserAuthor) {
+      toast.error(t('forum.public.authorOnlyAction'));
+      return;
+    }
+
+    setIsPostHistoryOpen(true);
+    await loadPostHistory(post.voId, 1);
+  }, [
+    historyReturnPath,
+    isAuthenticated,
+    isCurrentUserAuthor,
+    loadPostHistory,
+    post?.voId,
+    redirectToDetailLogin,
+    t
+  ]);
+
+  const handleAnswerQuestion = useCallback(async (content: string) => {
+    const normalizedContent = content.trim();
+    if (!normalizedContent || !post?.voId) {
+      return;
+    }
+
+    if (!post.voIsQuestion) {
+      throw new Error(t('forum.public.answerQuestionOnly'));
+    }
+
+    if (!isAuthenticated) {
+      redirectToDetailLogin(answerReturnPath);
+      throw new Error(t('forum.loginRequiredToReact'));
+    }
+
+    const submissionState = createClientSubmissionState(
+      answerSubmissionRef.current,
+      'forum-answer',
+      buildAnswerSubmissionFingerprint(post.voId, normalizedContent)
+    );
+    answerSubmissionRef.current = submissionState;
+
+    try {
+      await answerQuestion({
+        postId: post.voId,
+        content: normalizedContent,
+        clientSubmissionId: submissionState.clientSubmissionId
+      }, t);
+      answerSubmissionRef.current = null;
+      toast.success(t('forum.public.answerPublished'));
+      setReloadToken((current) => current + 1);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(message || t('forum.public.answerFailed'));
+      throw error;
+    }
+  }, [answerReturnPath, isAuthenticated, post?.voId, post?.voIsQuestion, redirectToDetailLogin, t]);
+
+  const handleAcceptAnswer = useCallback(async (answerId: LongId) => {
+    if (!post?.voId) {
+      return;
+    }
+
+    if (!isAuthenticated) {
+      redirectToDetailLogin(answerReturnPath);
+      throw new Error(t('forum.loginRequiredToReact'));
+    }
+
+    try {
+      await acceptQuestionAnswer({
+        postId: post.voId,
+        answerId
+      }, t);
+      toast.success(t('forum.public.answerAccepted'));
+      setReloadToken((current) => current + 1);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(message || t('forum.public.answerAcceptFailed'));
+      throw error;
+    }
+  }, [answerReturnPath, isAuthenticated, post?.voId, redirectToDetailLogin, t]);
+
+  const handleSavePostEdit = useCallback(async (
+    targetPostId: LongId,
+    title: string,
+    content: string,
+    categoryId: LongId,
+    tagNames: string[]
+  ) => {
+    const normalizedTagNames = normalizeTagNames(tagNames);
+    const submissionState = createClientSubmissionState(
+      postEditSubmissionRef.current,
+      'forum-post-edit',
+      buildPostEditSubmissionFingerprint(targetPostId, title, content, categoryId, normalizedTagNames)
+    );
+    postEditSubmissionRef.current = submissionState;
+
+    try {
+      await updatePost({
+        postId: targetPostId,
+        title,
+        content,
+        clientSubmissionId: submissionState.clientSubmissionId,
+        categoryId,
+        tagNames: normalizedTagNames
+      }, t);
+      postEditSubmissionRef.current = null;
+      setIsEditModalOpen(false);
+      toast.success(t('forum.public.postEditSaved'));
+      setReloadToken((current) => current + 1);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(message || t('forum.public.postEditFailed'));
+      throw error;
+    }
+  }, [normalizeTagNames, t]);
+
+  useEffect(() => {
+    if (!post?.voId || (intent !== 'answer' && intent !== 'edit' && intent !== 'history')) {
+      return;
+    }
+
+    const signature = `${post.voId}:${intent}:${isAuthenticated ? currentUserId || 'auth' : 'guest'}`;
+    if (handledAuthorIntentRef.current === signature) {
+      return;
+    }
+
+    handledAuthorIntentRef.current = signature;
+
+    if (intent === 'answer') {
+      handleAnswerAction();
+      return;
+    }
+
+    if (intent === 'edit') {
+      void handleEditPostAction();
+      return;
+    }
+
+    void handleViewPostHistory();
+  }, [
+    currentUserId,
+    handleAnswerAction,
+    handleEditPostAction,
+    handleViewPostHistory,
+    intent,
+    isAuthenticated,
+    post?.voId
+  ]);
+
   const handleCreateQuickReply = useCallback(async (content: string) => {
     if (!post?.voId) {
       throw new Error(t('forum.public.postNotFoundTitle'));
@@ -874,10 +1208,18 @@ export const PublicForumDetail = ({
 
     setSubmittingComment(true);
     try {
+      const submissionState = createClientSubmissionState(
+        commentSubmissionRef.current,
+        'forum-comment',
+        buildCommentSubmissionFingerprint(post.voId, normalizedContent, null)
+      );
+      commentSubmissionRef.current = submissionState;
+
       const createdCommentId = await createComment(
         {
           postId: post.voId,
           content: normalizedContent,
+          clientSubmissionId: submissionState.clientSubmissionId,
           parentId: null,
           replyToCommentId: null,
           replyToCommentSnapshot: null,
@@ -886,6 +1228,7 @@ export const PublicForumDetail = ({
         },
         t
       );
+      commentSubmissionRef.current = null;
       const now = new Date().toISOString();
       const newComment: CommentNode = {
         voId: createdCommentId,
@@ -982,10 +1325,14 @@ export const PublicForumDetail = ({
     <section className={`${styles.sectionCard} ${styles.detailSectionCard}`}>
       <div className={styles.detailTopbar}>
         <div className={styles.detailTopbarActions}>
-          <button type="button" className={styles.backButton} onClick={onBack}>
+          <a
+            className={styles.backButton}
+            href={backHref}
+            onClick={(event) => handlePublicForumLinkClick(event, onBack)}
+          >
             <Icon icon="mdi:arrow-left" size={18} />
             <span>{backLabel}</span>
-          </button>
+          </a>
           <button type="button" className={styles.secondaryButton} onClick={() => void copyShareLink()} disabled={shareBusy}>
             <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={18} />
             <span>{shareBusy ? t('forum.public.shareSubmitting') : t('forum.public.shareAction')}</span>
@@ -1014,6 +1361,7 @@ export const PublicForumDetail = ({
             description={t('forum.public.postNotFoundDescription')}
             secondaryAction={{
               label: backLabel,
+              href: backHref,
               onClick: onBack
             }}
           />
@@ -1030,6 +1378,7 @@ export const PublicForumDetail = ({
             }}
             secondaryAction={{
               label: backLabel,
+              href: backHref,
               onClick: onBack
             }}
           />
@@ -1050,10 +1399,16 @@ export const PublicForumDetail = ({
               post={post}
               loading={false}
               displayTimeZone={displayTimeZone}
-              mode="readOnly"
-              isAuthenticated={false}
+              mode="interactive"
+              isAuthenticated={isAuthenticated}
+              currentUserId={currentUserId || '0'}
               showSectionTitle={false}
               postTitleHeadingLevel={1}
+              onAnswerQuestion={handleAnswerQuestion}
+              onAcceptAnswer={handleAcceptAnswer}
+              answerAutoFocusKey={answerAutoFocusKey}
+              onEdit={() => void handleEditPostAction()}
+              onViewHistory={() => void handleViewPostHistory()}
               onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
               resolveAuthorProfileId={resolvePublicProfileUserId}
               onTagClick={(_, tagSlug) => onOpenTag?.(tagSlug)}
@@ -1069,7 +1424,7 @@ export const PublicForumDetail = ({
               items={readingGuide.items}
             />
 
-            {(commentReturnPath || quickReplyReturnPath) && (
+            {(commentReturnPath || quickReplyReturnPath || answerReturnPath || (isAuthenticated && isCurrentUserAuthor && (editReturnPath || historyReturnPath))) && (
               <section className={styles.workspaceActionPanel}>
                 <div className={styles.workspaceActionCopy}>
                   <h2 className={styles.workspaceActionTitle}>{t('forum.public.workspaceActionTitle')}</h2>
@@ -1078,10 +1433,24 @@ export const PublicForumDetail = ({
                   </p>
                 </div>
                 <div className={styles.workspaceActionButtons}>
-                  {quickReplyReturnPath && (
+                  {answerReturnPath && post?.voIsQuestion && (
                     <button
                       type="button"
                       className={`${styles.workspaceActionButton} ${styles.workspaceActionButtonPrimary}`}
+                      onClick={handleAnswerAction}
+                    >
+                      <Icon icon="mdi:comment-question-outline" size={18} />
+                      <span>
+                        {isAuthenticated
+                          ? t('forum.public.workspaceAnswerAction')
+                          : t('forum.public.workspaceAnswerLoginAction')}
+                      </span>
+                    </button>
+                  )}
+                  {quickReplyReturnPath && (
+                    <button
+                      type="button"
+                      className={styles.workspaceActionButton}
                       aria-controls={QUICK_REPLY_SECTION_ID}
                       onClick={handleQuickReplyAction}
                     >
@@ -1091,6 +1460,27 @@ export const PublicForumDetail = ({
                           ? t('forum.public.workspaceQuickReplyAction')
                           : t('forum.public.workspaceQuickReplyLoginAction')}
                       </span>
+                    </button>
+                  )}
+                  {editReturnPath && isAuthenticated && isCurrentUserAuthor && (
+                    <button
+                      type="button"
+                      className={styles.workspaceActionButton}
+                      onClick={() => void handleEditPostAction()}
+                      disabled={categoriesLoading}
+                    >
+                      <Icon icon={categoriesLoading ? 'mdi:progress-clock' : 'mdi:pencil-outline'} size={18} />
+                      <span>{categoriesLoading ? t('forum.public.authorCategoriesLoading') : t('forum.public.workspaceEditAction')}</span>
+                    </button>
+                  )}
+                  {historyReturnPath && isAuthenticated && isCurrentUserAuthor && (
+                    <button
+                      type="button"
+                      className={styles.workspaceActionButton}
+                      onClick={() => void handleViewPostHistory()}
+                    >
+                      <Icon icon="mdi:history" size={18} />
+                      <span>{t('forum.public.workspaceHistoryAction')}</span>
                     </button>
                   )}
                   {commentReturnPath && (
@@ -1110,6 +1500,12 @@ export const PublicForumDetail = ({
                   )}
                 </div>
               </section>
+            )}
+
+            {categoriesError && (
+              <div className={styles.inlineNotice} data-tone="warning">
+                <span className={styles.inlineNoticeText}>{categoriesError}</span>
+              </div>
             )}
 
             {quickReplySectionState === 'error' ? (
@@ -1264,6 +1660,45 @@ export const PublicForumDetail = ({
                 </>
               )}
             </section>
+
+            {isEditModalOpen && (
+              <Suspense fallback={null}>
+                <EditPostModal
+                  isOpen={isEditModalOpen}
+                  post={post}
+                  categories={categories}
+                  onClose={() => setIsEditModalOpen(false)}
+                  onSave={handleSavePostEdit}
+                />
+              </Suspense>
+            )}
+
+            {isPostHistoryOpen && (
+              <Suspense fallback={null}>
+                <EditHistoryModal
+                  isOpen={isPostHistoryOpen}
+                  title={t('forum.postDetail.action.history')}
+                  loading={postHistoryLoading}
+                  error={postHistoryError}
+                  items={postHistories}
+                  total={postHistoryTotal}
+                  pageIndex={postHistoryPageIndex}
+                  pageSize={postHistoryPageSize}
+                  onClose={() => setIsPostHistoryOpen(false)}
+                  onPageChange={(nextPageIndex) => {
+                    if (post?.voId) {
+                      void loadPostHistory(post.voId, nextPageIndex);
+                    }
+                  }}
+                  renderContent={(item) => ({
+                    before: item.voOldContent,
+                    after: item.voNewContent,
+                    beforeTitle: 'voOldTitle' in item ? item.voOldTitle : undefined,
+                    afterTitle: 'voNewTitle' in item ? item.voNewTitle : undefined
+                  })}
+                />
+              </Suspense>
+            )}
           </>
         )}
       </div>

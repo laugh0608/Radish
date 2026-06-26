@@ -1,3 +1,4 @@
+import { type MouseEvent } from 'react';
 import { Icon } from '@radish/ui/icon';
 import styles from './PublicShellHeader.module.css';
 
@@ -7,6 +8,7 @@ interface PublicShellHeaderProps {
   brandSubline: string;
   onBrandClick: () => void;
   onNavigateToDiscover?: () => void;
+  discoverHref?: string;
   discoverLabel?: string;
   circleHref?: string;
   circleLabel?: string;
@@ -21,13 +23,16 @@ export const PublicShellHeader = ({
   brandSubline,
   onBrandClick,
   onNavigateToDiscover,
+  discoverHref = '/discover',
   discoverLabel = '发现',
   circleHref = '/circle',
   circleLabel = '圈子',
   showCircleAction = true,
-  desktopHref = '/desktop',
+  desktopHref = '/workbench',
   desktopLabel = '工作台'
 }: PublicShellHeaderProps) => {
+  const normalizedDiscoverHref = discoverHref.trim();
+  const shouldShowDiscoverAction = !!onNavigateToDiscover && normalizedDiscoverHref.length > 0;
   const shouldShowCircleAction = showCircleAction && circleHref.trim().length > 0;
 
   return (
@@ -41,20 +46,28 @@ export const PublicShellHeader = ({
           </span>
         </button>
         <div className={styles.heroActions}>
-          {onNavigateToDiscover ? (
-            <button
-              type="button"
+          {shouldShowDiscoverAction ? (
+            <a
               className={`${styles.actionButton} ${styles.primaryAction}`}
-              onClick={onNavigateToDiscover}
+              href={normalizedDiscoverHref}
+              aria-label={discoverLabel}
               title={discoverLabel}
+              onClick={(event) => {
+                if (!shouldHandlePublicShellLinkClick(event)) {
+                  return;
+                }
+
+                event.preventDefault();
+                onNavigateToDiscover?.();
+              }}
             >
               <Icon icon="mdi:compass-outline" size={18} />
               <span className={styles.actionLabel}>{discoverLabel}</span>
-            </button>
+            </a>
           ) : null}
           {shouldShowCircleAction ? (
             <a
-              className={`${styles.actionButton} ${onNavigateToDiscover ? styles.secondaryAction : styles.primaryAction}`}
+              className={`${styles.actionButton} ${shouldShowDiscoverAction ? styles.secondaryAction : styles.primaryAction}`}
               href={circleHref}
               aria-label={circleLabel}
               title={circleLabel}
@@ -72,3 +85,12 @@ export const PublicShellHeader = ({
     </header>
   );
 };
+
+function shouldHandlePublicShellLinkClick(event: MouseEvent<HTMLAnchorElement>): boolean {
+  return !event.defaultPrevented
+    && event.button === 0
+    && !event.metaKey
+    && !event.ctrlKey
+    && !event.shiftKey
+    && !event.altKey;
+}

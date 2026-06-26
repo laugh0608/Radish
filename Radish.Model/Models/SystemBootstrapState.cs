@@ -16,7 +16,7 @@ public sealed class SystemBootstrapState : RootEntityTKey<long>
     public long? CompletedUserId { get; set; }
 
     [SugarColumn(Length = 200, IsNullable = true)]
-    public string? CompletedLoginName { get; set; }
+    public string? CompletedEmail { get; set; }
 
     public DateTime CreateTime { get; set; } = DateTime.UtcNow;
 

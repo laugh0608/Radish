@@ -5,7 +5,9 @@ namespace Radish.Shared.Security;
 public static class PaymentPasscodeRules
 {
     public const int Length = 6;
-    public const int CurrentPasscodeVersion = 1;
+    public const int LegacySha256PasscodeVersion = 1;
+    public const int Argon2idPasscodeVersion = 2;
+    public const int CurrentPasscodeVersion = Argon2idPasscodeVersion;
     public const string NumericPattern = @"^\d{6}$";
     public const string RepeatedDigitPattern = @"^(\d)\1{5}$";
     public const string EmptyErrorMessage = "支付口令不能为空";
@@ -98,7 +100,19 @@ public static class PaymentPasscodeRules
 
     public static bool RequiresUpgrade(int? passcodeVersion)
     {
-        return passcodeVersion != CurrentPasscodeVersion;
+        return !passcodeVersion.HasValue
+               || passcodeVersion < LegacySha256PasscodeVersion
+               || passcodeVersion > CurrentPasscodeVersion;
+    }
+
+    public static bool CanVerifyAndUpgrade(int? passcodeVersion)
+    {
+        return passcodeVersion == LegacySha256PasscodeVersion;
+    }
+
+    public static bool UsesCurrentHashVersion(int? passcodeVersion)
+    {
+        return passcodeVersion == CurrentPasscodeVersion;
     }
 
     private static bool IsStepSequence(string value, int step)

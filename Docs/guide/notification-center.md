@@ -1,7 +1,7 @@
 # 通知中心使用说明
 
-> **文档版本**：v1.3
-> **最后更新**：2026-06-14
+> **文档版本**：v1.4
+> **最后更新**：2026-06-21
 
 ## 架构定位
 
@@ -40,7 +40,7 @@
 - **路由**: `/notifications`
 - **头部**: 使用公共壳层头部，保留“社区发现 / 我的圈子 / 工作台”动作
 - **登录恢复**: 匿名访问保存 `/notifications` 作为返回路径
-- **目标分流**: 点击通知后优先进入纯 Web 目标，必要时回到 `/desktop` 深链
+- **目标分流**: 点击通知后优先进入纯 Web 目标；只有历史 WebOS 载荷或尚未迁移能力才回到 `/desktop` 深链
 
 ## Flutter 移动端轻量承接
 
@@ -94,7 +94,7 @@ Flutter 登录态壳层会读取当前用户最近站内通知，展示标题、
 | 聊天消息 / 提及，`extData` 带 `channelId/messageId` | `/messages?channelId=...&messageId=...` |
 | forum 帖子 / 评论，`extData` 带 `postPublicId/postId/commentId` | `/forum/post/:id`，并记录“返回通知中心”来源 |
 | 用户关注或用户目标 | `/u/:id`，并记录“返回通知中心”来源 |
-| 订单目标 | `/desktop?app=shop&orderId=...` |
+| 订单目标 | `/shop/order/:orderId`；缺少合法订单 ID 时回 `/shop/orders` |
 | 暂无可定位详情的互动通知 | `/forum` |
 
 跳转来源状态保存在当前标签页的一次性来源转交中，不写入公开 URL、canonical、分享链接或 sitemap。完整规则见 [纯 Web 私域复访入口设计说明](/frontend/private-web-revisit)。

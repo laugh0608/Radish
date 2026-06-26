@@ -7,6 +7,7 @@ import { StickerPicker, type StickerPickerGroup, type StickerPickerSelection } f
 import type { CommentReplyTarget } from '@/api/forum';
 import { searchUsersForMention } from '@/api/user';
 import { redirectToLogin } from '@/services/auth';
+import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import { UserMention, type UserMentionOption as UiUserMentionOption } from '@radish/ui/user-mention';
 import { MarkdownRenderer } from '@radish/ui/markdown-renderer';
 import { uploadImage, uploadDocument } from '@/api/attachment';
@@ -318,8 +319,9 @@ export const CreateCommentForm = ({
       const users = await searchUsersForMention(keyword, t);
       return users.map(user => ({
         id: user.voId,
-        userName: user.voDisplayHandle || user.voUserName,
-        displayName: user.voDisplayName,
+        userName: resolveVisibleUserHandle(user, resolveVisibleUserDisplayName(user, t('common.unknownUser')))
+          || resolveVisibleUserDisplayName(user, t('common.unknownUser')),
+        displayName: resolveVisibleUserDisplayName(user, t('common.unknownUser')),
         avatar: user.voAvatar
       }));
     } catch (error) {

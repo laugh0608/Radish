@@ -18,7 +18,14 @@ interface PurchaseModalProps {
   loading: boolean;
   passcodeUpgradePrompt?: string | null;
   onClose: () => void;
-  onConfirm: (productId: LongId, quantity: number, paymentPassword: string) => void;
+  onConfirm: (productId: LongId, quantity: number, paymentPassword: string, idempotencyKey: string) => void;
+}
+
+function buildPurchaseIdempotencyKey(): string {
+  const randomPart = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return `shop:${randomPart}`;
 }
 
 export const PurchaseModal = ({
@@ -33,6 +40,7 @@ export const PurchaseModal = ({
   const [quantity, setQuantity] = useState(1);
   const [paymentPassword, setPaymentPassword] = useState('');
   const [paymentPasswordError, setPaymentPasswordError] = useState<string | null>(null);
+  const [idempotencyKey, setIdempotencyKey] = useState<string>(() => buildPurchaseIdempotencyKey());
 
   useEffect(() => {
     if (!isOpen) {
@@ -42,6 +50,7 @@ export const PurchaseModal = ({
     setQuantity(1);
     setPaymentPassword('');
     setPaymentPasswordError(null);
+    setIdempotencyKey(buildPurchaseIdempotencyKey());
   }, [isOpen, product?.voId]);
 
   if (!isOpen || !product) {
@@ -51,6 +60,9 @@ export const PurchaseModal = ({
   const handleQuantityChange = (newQuantity: number) => {
     const maxQuantity = (product.voLimitPerUser ?? 0) > 0 ? product.voLimitPerUser! : 99;
     const validQuantity = Math.max(1, Math.min(newQuantity, maxQuantity));
+    if (validQuantity !== quantity) {
+      setIdempotencyKey(buildPurchaseIdempotencyKey());
+    }
     setQuantity(validQuantity);
   };
 
@@ -72,7 +84,7 @@ export const PurchaseModal = ({
     }
 
     setPaymentPasswordError(null);
-    onConfirm(product.voId, quantity, trimmedPassword);
+    onConfirm(product.voId, quantity, trimmedPassword, idempotencyKey);
   };
 
   const totalPrice = product.voPrice * quantity;

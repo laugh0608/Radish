@@ -5,12 +5,14 @@ import type {
   PublicForumBrowseRoute,
   PublicForumRoute,
 } from '../forumRouteState';
+import { buildPublicForumPath } from '../forumRouteState';
 import {
   getPublicDetailBackLabelKey,
   type PublicDetailBackMode,
   type PublicRouteSourceState,
 } from '../publicRouteNavigation';
 import { PublicShellHeader } from '../components/PublicShellHeader';
+import { PublicForumCompose } from './PublicForumCompose';
 import { PublicForumDetail } from './PublicForumDetail';
 import { PublicForumList } from './PublicForumList';
 import { PublicForumSearch } from './PublicForumSearch';
@@ -27,6 +29,7 @@ interface PublicForumAppProps {
   routeSourceState?: PublicRouteSourceState | null;
   detailBackAction?: {
     mode: PublicDetailBackMode;
+    href?: string;
     onBack: () => void;
   } | null;
   onNavigate: (route: PublicForumRoute, options?: { replace?: boolean }) => void;
@@ -60,26 +63,29 @@ export const PublicForumApp = ({
   const browseScrollSnapshotRef = useRef<{ routeKey: string; scrollTop: number } | null>(null);
   const [pendingRestoreScrollTop, setPendingRestoreScrollTop] = useState<number | null>(null);
   const routeBrowseKey = useMemo(() => (
-    route.kind !== 'detail' ? buildBrowseRouteKey(route) : null
+    route.kind !== 'detail' && route.kind !== 'compose' ? buildBrowseRouteKey(route) : null
   ), [route]);
   const detailBackLabelKey = getPublicDetailBackLabelKey(detailBackAction?.mode);
   const detailBackLabel = detailBackLabelKey ? t(detailBackLabelKey) : t('public.shell.backToForum');
+  const detailBackHref = detailBackAction?.href ?? buildPublicForumPath(fallbackBrowseRoute);
   const handleForumDetailBack = detailBackAction?.onBack ?? (() => onNavigate(fallbackBrowseRoute));
 
   useEffect(() => {
     const titleKey = route.kind === 'detail'
       ? 'forum.postDetail.title'
-      : route.kind === 'search'
-        ? 'forum.public.searchTitle'
-        : route.kind === 'tag'
-          ? 'forum.public.tagTitle'
-          : route.kind === 'question'
-            ? 'forum.public.questionTitle'
-            : route.kind === 'poll'
-              ? 'forum.public.pollTitle'
-              : route.kind === 'lottery'
-                ? 'forum.public.lotteryTitle'
-                : 'forum.allPosts';
+      : route.kind === 'compose'
+        ? 'forum.public.composeTitle'
+        : route.kind === 'search'
+          ? 'forum.public.searchTitle'
+          : route.kind === 'tag'
+            ? 'forum.public.tagTitle'
+            : route.kind === 'question'
+              ? 'forum.public.questionTitle'
+              : route.kind === 'poll'
+                ? 'forum.public.pollTitle'
+                : route.kind === 'lottery'
+                  ? 'forum.public.lotteryTitle'
+                  : 'forum.allPosts';
     const nextTitle = `${t('desktop.apps.forum.name')} · ${t(titleKey)}`;
 
     document.title = nextTitle;
@@ -94,14 +100,14 @@ export const PublicForumApp = ({
       return;
     }
 
-    if (previousRoute.kind !== 'detail' && route.kind === 'detail') {
+    if (previousRoute.kind !== 'detail' && previousRoute.kind !== 'compose' && (route.kind === 'detail' || route.kind === 'compose')) {
       browseScrollSnapshotRef.current = {
         routeKey: buildBrowseRouteKey(previousRoute),
         scrollTop: page.scrollTop
       };
       setPendingRestoreScrollTop(null);
       page.scrollTo({ top: 0, behavior: 'auto' });
-    } else if (route.kind !== 'detail') {
+    } else if (route.kind !== 'detail' && route.kind !== 'compose') {
       if (routeBrowseKey && browseScrollSnapshotRef.current?.routeKey === routeBrowseKey) {
         setPendingRestoreScrollTop(browseScrollSnapshotRef.current.scrollTop);
       } else {
@@ -139,12 +145,21 @@ export const PublicForumApp = ({
             sourceState={routeSourceState}
             displayTimeZone={displayTimeZone}
             backLabel={detailBackLabel}
+            backHref={detailBackHref}
             onBack={handleForumDetailBack}
             onOpenAuthorProfile={onNavigateToProfile}
             onOpenTag={onNavigateToTag}
             onOpenQuestion={onNavigateToQuestion}
             onOpenPoll={onNavigateToPoll}
             onOpenLottery={onNavigateToLottery}
+          />
+        ) : route.kind === 'compose' ? (
+          <PublicForumCompose
+            key={`compose-${route.categoryId ?? 'all'}`}
+            categoryId={route.categoryId}
+            fallbackBrowseRoute={fallbackBrowseRoute}
+            onBack={() => onNavigate(fallbackBrowseRoute)}
+            onNavigate={onNavigate}
           />
         ) : route.kind === 'search' ? (
           <PublicForumSearch

@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { ChannelMessageVo, EntityIdValue } from '@/types/chat';
 import { getMessagePreviewText, type PendingImageDraft } from './chatApp.helpers';
+import { resolveVisibleUserDisplayName } from '@/utils/userIdentityDisplay';
 import styles from './ChatApp.module.css';
 
 interface ComposerTypingUser {
@@ -36,6 +37,9 @@ export const ChatComposerStatus = ({
   onRemovePendingImage,
 }: ChatComposerStatusProps) => {
   const { t } = useTranslation();
+  const replyUserName = replyTarget
+    ? resolveVisibleUserDisplayName({ voUserName: replyTarget.voUserName }, t('common.unknownUser'))
+    : null;
 
   return (
     <>
@@ -61,7 +65,7 @@ export const ChatComposerStatus = ({
         <div className={styles.replyPreview}>
           <div className={styles.replyPreviewBody}>
             <div className={styles.replyPreviewLabel}>
-              {t('chat.replyTo', { name: replyTarget.voUserName || t('common.unknownUser') })}
+              {t('chat.replyTo', { name: replyUserName || t('common.unknownUser') })}
             </div>
             <div className={styles.replyPreviewText}>{getMessagePreviewText(replyTarget, t)}</div>
           </div>

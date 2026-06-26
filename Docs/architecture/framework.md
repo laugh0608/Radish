@@ -57,7 +57,7 @@
 | Web Host | ASP.NET Core WebApplication | Program.cs 中最小宿主，按需要拆 Controller/Minimal API |
 | ORM | [SQLSugar](https://github.com/donet5/SqlSugar) | Code First + Migration，仓储层集中管理上下文，支持读写分离配置 |
 | 数据库 | PostgreSQL 16 | 默认端口 5432，连接通过 `ConnectionStrings__Default` 注入 |
-| 前端 | React 19 + Vite + TypeScript | radish.client（纯 Web 默认入口 + `/desktop` WebOS 保留入口）、radish.console（管理控制台）、radish.ui（@radish/ui 组件库）；使用 npm workspaces；当前以 Zustand 与共享 API 客户端为主要前端基线 |
+| 前端 | React 19 + Vite + TypeScript | radish.client（纯 Web 默认入口 + `/workbench` 功能地图 + `/desktop` WebOS 历史入口）、radish.console（管理控制台）、radish.ui（@radish/ui 组件库）；使用 npm workspaces；当前以 Zustand 与共享 API 客户端为主要前端基线 |
 | 前端构建 | Vite Rolldown，ESLint 9，TypeScript | 各项目独立构建：radish.client、radish.console；固定文档统一存放于 `Docs/`，由 API 启动时同步为内置文档，WebOS `/desktop` 文档应用可继续展示 |
 | 测试 | xUnit 3 + Shouldly + Moq，辅以 `HttpTest` | `Radish.Api.Tests` 目录承载后端测试与专题 `.http` 资产；前端当前仅有最小 `node --test` 与 `type-check` 基线 |
 | 日志 / 配置 | Serilog + `Microsoft.Extensions.Configuration` | 支持 JSON + 环境变量 + 用户密钥；生产日志输出到 Console + Seq/Elastic 预留 |
@@ -66,6 +66,7 @@
 ### 本地启动脚本
 
 - `start.ps1`（Windows/PowerShell）与 `start.sh`（Linux/macOS）提供交互式菜单，统一启动/组合 API、Gateway、前端、控制台与认证服务。
+- `start.sh` 直接执行时先显示交互式菜单，依赖检查延后到具体启动动作；组合启动会记录后台服务进程组和子进程树，`Ctrl+C` / `SIGTERM` 时先发送 `TERM`，短暂等待后再对残留进程发送 `KILL`，避免 Gateway / Auth / API 等后台进程残留占用端口。
 - 当前菜单大致包含两类选项：
   - **单服务**：仅启动 `Radish.Api` / `Radish.Gateway` / `radish.client`（前端）/ `radish.console`（控制台）/ `Radish.Auth`，或执行 `Radish.Api.Tests`。
   - **组合启动**：
@@ -79,15 +80,17 @@
 浏览器访问 Gateway (https://localhost:5000)
         │
         ├─→ /         (radish.client - 纯 Web 默认入口，当前进入 /discover)
-        ├─→ /desktop  (radish.client - WebOS 保留入口)
+        ├─→ /workbench (radish.client - 正式 Web 功能地图)
+        ├─→ /desktop  (radish.client - WebOS 历史入口)
         ├─→ /console  (radish.console - 管理控制台)
         ├─→ /api      (Radish.Api - REST API)
         └─→ /scalar   (API 文档)
 
-radish.client (纯 Web + /desktop)  radish.console (独立 SPA)
+radish.client (纯 Web + /workbench + /desktop)  radish.console (独立 SPA)
         │                              │
         ├─ 公开内容壳层                 ├─ OIDC 认证
-        ├─ WebOS 保留入口 (/desktop)     ├─ 独立路由
+        ├─ Web 功能地图 (/workbench)     ├─ 独立路由
+        ├─ WebOS 历史入口 (/desktop)
         └─ 外部应用 (external)          └─ 管理功能
               │
               └─ Console (新标签页打开)
@@ -218,7 +221,8 @@ graph LR
 - 数据库结构变更的完整协作边界见：[数据库结构变更协作口径](/guide/database-schema-change-governance)。
 - 迁移策略：
   - 开发：通过 `Radish.DbMigrate` 执行 `doctor / init / apply`，在开发库内走 `CreateDatabase()` + `InitTables()` 自动建表 / 补列。
-  - 测试 / 生产：先以 `DbMigrate init` 同步基线库，再生成并审核版本化差异 SQL（建议 `Deploy/sql/*.sql`），上线前显式执行。
+  - 正式上线前：测试库优先按当前实体与 `DbMigrate` 初始化干净基线；破坏性 schema 收口后删除本地 SQLite 并重新初始化，不维护上线前历史发布脚本。
+  - 正式上线后：存在需要保护的测试 / 生产数据库时，从已发布基线生成并审核发布 SQL，上线前显式执行。
 - 数据初始化：`Radish.DbMigrate/InitialDataSeeder.cs` 负责创建角色、租户、部门、权限、Console 授权、论坛 / 商城 / 等级等系统基础数据；`system / admin / test` 开发默认账号、默认密码、默认头像和用户角色绑定受 `Seed:DeveloperDefaultsEnabled` 与 `RadishDeployment:Stage=local/test` 共同约束，测试 / 生产默认不创建。
 - PostgreSQL 特性利用：JSONB 列（存储自定义配置）、`tsvector` 搜索、行级锁（积分/库存扣减）。
 

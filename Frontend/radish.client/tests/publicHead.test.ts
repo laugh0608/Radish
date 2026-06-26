@@ -9,6 +9,7 @@ import {
 } from '../src/public/publicHead.ts';
 import {
   buildForumPostPublicHead,
+  getForumPostRouteIdentifier,
   resolvePublicProfileUserId,
 } from '../src/public/forum/publicForumUtils.ts';
 import type { PublicRouteDescriptor } from '../src/public/publicRouteNavigation.ts';
@@ -22,11 +23,29 @@ test('buildPublicCanonicalUrl 应使用默认公开域名并移除锚点', () =>
 
 test('resolvePublicProfileUserId 应优先使用 User PublicId 并兼容 LongId', () => {
   assert.equal(
-    resolvePublicProfileUserId('2042219067430928384', ' usr_019ea76872bf787981ad3e9d3c6a3417 '),
+    resolvePublicProfileUserId('2042219067430928384', ' USR_019EA76872BF787981AD3E9D3C6A3417 '),
     'usr_019ea76872bf787981ad3e9d3c6a3417'
   );
   assert.equal(resolvePublicProfileUserId('2042219067430928384', null), '2042219067430928384');
   assert.equal(resolvePublicProfileUserId('2042219067430928384', '   '), '2042219067430928384');
+  assert.equal(resolvePublicProfileUserId('2042219067430928384', 'usr_not-a-route-id'), '2042219067430928384');
+});
+
+test('getForumPostRouteIdentifier 应只使用有效帖子 PublicId', () => {
+  assert.equal(
+    getForumPostRouteIdentifier({
+      voId: '2042219067430928384',
+      voPublicId: ' PST_018F6B6F7C7D70008F8F8F8F8F8F8F8F ',
+    }),
+    'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f'
+  );
+  assert.equal(
+    getForumPostRouteIdentifier({
+      voId: '2042219067430928384',
+      voPublicId: 'pst_not-a-route-id',
+    }),
+    '2042219067430928384'
+  );
 });
 
 test('buildPublicCanonicalUrl 应保留规范化查询参数', () => {
@@ -188,7 +207,7 @@ test('buildPublicRouteHead 应为 docs 详情生成去重前的路由 canonical 
 test('buildPublicRouteHead 应覆盖商城商品和用户公开页类型', () => {
   const shopHead = buildPublicRouteHead({
     app: 'shop',
-    route: { kind: 'detail', productId: '2042219067430928384' },
+    route: { kind: 'detail', productId: '2042219067430928384', intent: 'purchase' },
   });
   const profileHead = buildPublicRouteHead({
     app: 'profile',

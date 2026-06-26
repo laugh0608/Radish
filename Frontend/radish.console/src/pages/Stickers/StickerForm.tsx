@@ -268,7 +268,7 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
         </Form.Item>
 
         <Form.Item label="图片资源">
-          <Space direction="vertical" style={{ width: '100%' }} size={10}>
+          <Space orientation="vertical" style={{ width: '100%' }} size={10}>
             <div
               style={{
                 width: 120,

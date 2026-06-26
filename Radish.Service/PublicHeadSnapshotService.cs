@@ -15,7 +15,7 @@ using Serilog;
 
 namespace Radish.Service;
 
-/// <summary>公开详情页 HTML head 快照服务。</summary>
+/// <summary>公开页面 HTML head 快照服务。</summary>
 public class PublicHeadSnapshotService : IPublicHeadSnapshotService
 {
     private const string SiteName = "Radish";
@@ -26,6 +26,35 @@ public class PublicHeadSnapshotService : IPublicHeadSnapshotService
     private static readonly Regex MarkdownLinkPattern = new(@"\[([^\]]+)\]\([^\)]+\)", RegexOptions.Compiled | RegexOptions.CultureInvariant);
     private static readonly Regex MarkdownSymbolPattern = new(@"[#>*_`~!\-]+", RegexOptions.Compiled | RegexOptions.CultureInvariant);
     private static readonly Regex WhitespacePattern = new(@"\s+", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+    private static readonly IReadOnlyDictionary<string, StaticRouteHeadDescriptor> StaticRouteHeadDescriptors =
+        new Dictionary<string, StaticRouteHeadDescriptor>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["discover"] = new StaticRouteHeadDescriptor(
+                "社区发现 - Radish",
+                "从同一条 Web-first 内容流浏览 Radish 的公开帖子、可读文档、商品推荐、热门标签与榜单入口。",
+                "/discover",
+                "CollectionPage"),
+            ["forum"] = new StaticRouteHeadDescriptor(
+                "论坛 - Radish",
+                "阅读 Radish 公开帖子列表、分类、标签和近期互动线索，并继续进入公开帖子详情。",
+                "/forum",
+                "CollectionPage"),
+            ["docs"] = new StaticRouteHeadDescriptor(
+                "文档 - Radish",
+                "按目录层级浏览 Radish 公开文档，并进入稳定的只读 Markdown 阅读路径。",
+                "/docs",
+                "CollectionPage"),
+            ["leaderboard"] = new StaticRouteHeadDescriptor(
+                "排行榜 - Radish",
+                "查看 Radish 经验、商品、发帖、评论和人气等公开排行信号。",
+                "/leaderboard",
+                "CollectionPage"),
+            ["shop"] = new StaticRouteHeadDescriptor(
+                "商城 - Radish",
+                "浏览 Radish 公开商城、商品分类、推荐商品和公开商品详情入口。",
+                "/shop",
+                "CollectionPage")
+        };
 
     private readonly ICaching _cache;
     private readonly IBaseRepository<Post> _postRepository;
@@ -65,6 +94,23 @@ public class PublicHeadSnapshotService : IPublicHeadSnapshotService
         _wikiDocumentRepository = wikiDocumentRepository;
         _productRepository = productRepository;
         _attachmentUrlResolver = attachmentUrlResolver;
+    }
+
+    public Task<PublicHeadSnapshotVo?> GetStaticRouteSnapshotAsync(string routeKey, string publicBaseUrl)
+    {
+        var normalizedRouteKey = routeKey.Trim();
+        if (string.IsNullOrWhiteSpace(normalizedRouteKey) ||
+            !StaticRouteHeadDescriptors.TryGetValue(normalizedRouteKey, out var descriptor))
+        {
+            return Task.FromResult<PublicHeadSnapshotVo?>(null);
+        }
+
+        var normalizedBaseUrl = NormalizePublicBaseUrl(publicBaseUrl);
+        var cacheKey = BuildCacheKey("static-route", normalizedRouteKey, normalizedBaseUrl);
+
+        return GetCachedOrGenerateAsync(
+            cacheKey,
+            () => Task.FromResult<PublicHeadSnapshotVo?>(BuildStaticRouteSnapshot(descriptor, normalizedBaseUrl)));
     }
 
     public Task<PublicHeadSnapshotVo?> GetForumPostSnapshotAsync(string postKey, string publicBaseUrl)
@@ -188,6 +234,31 @@ public class PublicHeadSnapshotService : IPublicHeadSnapshotService
             post.IsPublished &&
             post.IsEnabled &&
             !post.IsDeleted);
+    }
+
+    private PublicHeadSnapshotVo BuildStaticRouteSnapshot(StaticRouteHeadDescriptor descriptor, string publicBaseUrl)
+    {
+        var canonicalUrl = CombineUrl(publicBaseUrl, descriptor.CanonicalPath);
+
+        return new PublicHeadSnapshotVo
+        {
+            VoTitle = descriptor.Title,
+            VoDescription = descriptor.Description,
+            VoCanonicalPath = descriptor.CanonicalPath,
+            VoCanonicalUrl = canonicalUrl,
+            VoOpenGraphType = "website",
+            VoJsonLd = BuildJsonLd(new Dictionary<string, object?>
+            {
+                ["@context"] = "https://schema.org",
+                ["@type"] = descriptor.SchemaType,
+                ["name"] = descriptor.Title,
+                ["description"] = descriptor.Description,
+                ["url"] = canonicalUrl,
+                ["mainEntityOfPage"] = canonicalUrl,
+                ["isPartOf"] = BuildNamedThing("WebSite", SiteName),
+                ["publisher"] = BuildNamedThing("Organization", SiteName)
+            })
+        };
     }
 
     private PublicHeadSnapshotVo BuildForumPostSnapshot(Post post, string publicBaseUrl)
@@ -417,4 +488,10 @@ public class PublicHeadSnapshotService : IPublicHeadSnapshotService
         var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(value));
         return Convert.ToHexString(hashBytes[..8]).ToLowerInvariant();
     }
+
+    private sealed record StaticRouteHeadDescriptor(
+        string Title,
+        string Description,
+        string CanonicalPath,
+        string SchemaType);
 }

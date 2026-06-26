@@ -4,6 +4,7 @@ import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
+import { resolveVisibleUserDisplayName } from '@/utils/userIdentityDisplay';
 import styles from './PostCard.module.css';
 
 interface PostCardProps {
@@ -86,7 +87,7 @@ export const PostCard = ({
           .slice(0, 3)
           .map(item => ({
             id: item.voUserId,
-            name: item.voUserName.trim(),
+            name: resolveVisibleUserDisplayName({ voUserName: item.voUserName }, `用户 ${item.voUserId}`),
             avatarUrl: item.voAvatarUrl?.trim() || null
           }))
       : [post.voGodCommentAuthorName, godComment?.authorName]

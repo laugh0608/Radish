@@ -27,6 +27,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
 
     private readonly IBaseRepository<Comment> _commentRepository;
     private readonly IBaseRepository<UserCommentLike> _userCommentLikeRepository;
+    private readonly ICommentRepository? _commentCustomRepository;
     private readonly IBaseRepository<CommentHighlight> _highlightRepository;
     private readonly IPostService _postService;
     private readonly ICaching _caching;
@@ -59,11 +60,13 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         IOptions<ForumEditHistoryOptions> editHistoryOptions,
         ISystemSettingProvider systemSettingProvider,
         IBaseRepository<Attachment>? attachmentRepository = null,
-        IBaseRepository<User>? userRepository = null)
+        IBaseRepository<User>? userRepository = null,
+        ICommentRepository? commentCustomRepository = null)
         : base(mapper, baseRepository)
     {
         _commentRepository = baseRepository;
         _userCommentLikeRepository = userCommentLikeRepository;
+        _commentCustomRepository = commentCustomRepository;
         _highlightRepository = highlightRepository;
         _postService = postService;
         _caching = caching;
@@ -161,17 +164,23 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                 // 4.2 评论发布经验值奖励 +5 经验
                 Serilog.Log.Information("准备发放评论经验值：CommentId={CommentId}, AuthorId={AuthorId}", commentId, comment.AuthorId);
 
-                var expGrantResult = await _experienceService.GrantExperienceAsync(
+                var expGrantResult = await _experienceService.GrantExperienceOnceAsync(
                     userId: comment.AuthorId,
                     amount: 5,
                     expType: "COMMENT_CREATE",
+                    rewardBusinessKey: $"exp:comment-create:author:{comment.AuthorId}:comment:{commentId}",
                     businessType: "Comment",
                     businessId: commentId,
                     remark: "发布评论");
 
-                if (expGrantResult)
+                if (expGrantResult.Granted)
                 {
                     Serilog.Log.Information("评论经验值发放成功：CommentId={CommentId}, AuthorId={AuthorId}, Amount=5",
+                        commentId, comment.AuthorId);
+                }
+                else if (expGrantResult.AlreadyGranted)
+                {
+                    Serilog.Log.Debug("评论经验值已发放过，跳过：CommentId={CommentId}, AuthorId={AuthorId}",
                         commentId, comment.AuthorId);
                 }
                 else
@@ -191,17 +200,23 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                 {
                     Serilog.Log.Information("检测到首次评论，准备发放额外奖励：AuthorId={AuthorId}", comment.AuthorId);
 
-                    var firstCommentResult = await _experienceService.GrantExperienceAsync(
+                    var firstCommentResult = await _experienceService.GrantExperienceOnceAsync(
                         userId: comment.AuthorId,
                         amount: 10,
                         expType: "FIRST_COMMENT",
+                        rewardBusinessKey: $"exp:first-comment:user:{comment.AuthorId}",
                         businessType: "Comment",
                         businessId: commentId,
                         remark: "首次评论奖励");
 
-                    if (firstCommentResult)
+                    if (firstCommentResult.Granted)
                     {
                         Serilog.Log.Information("首次评论经验值奖励发放成功：CommentId={CommentId}, AuthorId={AuthorId}, Amount=10",
+                            commentId, comment.AuthorId);
+                    }
+                    else if (firstCommentResult.AlreadyGranted)
+                    {
+                        Serilog.Log.Debug("首次评论经验值奖励已发放过，跳过：CommentId={CommentId}, AuthorId={AuthorId}",
                             commentId, comment.AuthorId);
                     }
                     else
@@ -461,66 +476,11 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
     /// </summary>
     public async Task<CommentLikeResultDto> ToggleLikeAsync(long userId, long commentId)
     {
-        // 1. 检查评论是否存在
-        var comment = await _commentRepository.QueryByIdAsync(commentId);
-        if (comment == null || comment.IsDeleted)
-        {
-            throw new InvalidOperationException("评论不存在或已被删除");
-        }
+        var likeResult = await (_commentCustomRepository ?? throw new InvalidOperationException("评论专属仓储未注册"))
+            .ToggleCommentLikeAsync(userId, commentId);
 
-        // 2. 检查是否已点赞（排除软删除的记录）
-        var existingLikes = await _userCommentLikeRepository.QueryAsync(
-            x => x.UserId == userId && x.CommentId == commentId && !x.IsDeleted);
-
-        // 同时检查是否有被软删除的点赞记录
-        var deletedLikes = await _userCommentLikeRepository.QueryAsync(
-            x => x.UserId == userId && x.CommentId == commentId && x.IsDeleted);
-
-        bool isLiked;
-        int likeCountDelta;
-
-        if (existingLikes.Any())
-        {
-            // 取消点赞（软删除）
-            await _userCommentLikeRepository.UpdateColumnsAsync(
-                l => new UserCommentLike { IsDeleted = true },
-                l => l.Id == existingLikes.First().Id);
-            isLiked = false;
-            likeCountDelta = -1;
-        }
-        else if (deletedLikes.Any())
-        {
-            // 恢复之前的点赞记录
-            await _userCommentLikeRepository.UpdateColumnsAsync(
-                l => new UserCommentLike {
-                    IsDeleted = false,
-                    LikedAt = DateTime.UtcNow // 更新点赞时间
-                },
-                l => l.Id == deletedLikes.First().Id);
-            isLiked = true;
-            likeCountDelta = 1;
-        }
-        else
-        {
-            // 添加新的点赞记录
-            var newLike = new UserCommentLike
-            {
-                UserId = userId,
-                CommentId = commentId,
-                PostId = comment.PostId,
-                LikedAt = DateTime.UtcNow
-            };
-            await _userCommentLikeRepository.AddAsync(newLike);
-            isLiked = true;
-            likeCountDelta = 1;
-        }
-
-        // 3. 更新评论的点赞计数
-        comment.LikeCount = Math.Max(0, comment.LikeCount + likeCountDelta);
-        await _commentRepository.UpdateAsync(comment);
-
-        // 4. 🎁 发放点赞奖励（仅在点赞时，不在取消点赞时发放）
-        if (isLiked)
+        // 🎁 发放点赞奖励（仅在本次写入真实新增点赞时触发）
+        if (likeResult.Delta > 0)
         {
             _ = Task.Run(async () =>
             {
@@ -529,51 +489,64 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                     // 4.1 发放萝卜币奖励
                     var rewardResult = await _coinRewardService.GrantCommentLikeRewardAsync(
                         commentId,
-                        comment.AuthorId,
+                        likeResult.AuthorId,
                         userId);
 
                     if (rewardResult.IsSuccess)
                     {
                         Log.Information("评论点赞萝卜币奖励发放成功：CommentId={CommentId}, 作者={AuthorId}, 点赞者={LikerId}, 奖励总额={RewardAmount}",
-                            commentId, comment.AuthorId, userId, rewardResult.Amount);
+                            commentId, likeResult.AuthorId, userId, rewardResult.Amount);
                     }
 
                     // 4.2 发放经验值奖励
                     Serilog.Log.Information("准备发放评论点赞经验值：CommentId={CommentId}, 作者={AuthorId}, 点赞者={LikerId}",
-                        commentId, comment.AuthorId, userId);
+                        commentId, likeResult.AuthorId, userId);
 
                     // 4.2.1 被点赞者获得 +2 经验
-                    var receiverExpResult = await _experienceService.GrantExperienceAsync(
-                        userId: comment.AuthorId,
+                    var rewardDateKey = DateTime.Today.ToString("yyyyMMdd");
+                    var receiverExpResult = await _experienceService.GrantExperienceOnceAsync(
+                        userId: likeResult.AuthorId,
                         amount: 2,
                         expType: "RECEIVE_LIKE",
+                        rewardBusinessKey: $"exp:receive-like:comment:user:{likeResult.AuthorId}:target:{commentId}:day:{rewardDateKey}",
                         businessType: "Comment",
                         businessId: commentId,
                         remark: "评论被点赞");
 
-                    if (receiverExpResult)
+                    if (receiverExpResult.Granted)
                     {
                         Serilog.Log.Information("评论被点赞经验值发放成功：CommentId={CommentId}, 作者={AuthorId}, Amount=2",
-                            commentId, comment.AuthorId);
+                            commentId, likeResult.AuthorId);
+                    }
+                    else if (receiverExpResult.AlreadyGranted)
+                    {
+                        Serilog.Log.Debug("评论被点赞经验值已发放过，跳过：CommentId={CommentId}, 作者={AuthorId}",
+                            commentId, likeResult.AuthorId);
                     }
                     else
                     {
                         Serilog.Log.Warning("评论被点赞经验值发放失败：CommentId={CommentId}, 作者={AuthorId}",
-                            commentId, comment.AuthorId);
+                            commentId, likeResult.AuthorId);
                     }
 
                     // 4.2.2 点赞者获得 +1 经验
-                    var giverExpResult = await _experienceService.GrantExperienceAsync(
+                    var giverExpResult = await _experienceService.GrantExperienceOnceAsync(
                         userId: userId,
                         amount: 1,
                         expType: "GIVE_LIKE",
+                        rewardBusinessKey: $"exp:give-like:comment:user:{userId}:target:{commentId}:day:{rewardDateKey}",
                         businessType: "Comment",
                         businessId: commentId,
                         remark: "点赞评论");
 
-                    if (giverExpResult)
+                    if (giverExpResult.Granted)
                     {
                         Serilog.Log.Information("点赞评论经验值发放成功：CommentId={CommentId}, 点赞者={LikerId}, Amount=1",
+                            commentId, userId);
+                    }
+                    else if (giverExpResult.AlreadyGranted)
+                    {
+                        Serilog.Log.Debug("点赞评论经验值已发放过，跳过：CommentId={CommentId}, 点赞者={LikerId}",
                             commentId, userId);
                     }
                     else
@@ -583,11 +556,11 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                     }
 
                     // 4.3 发送点赞通知（不给自己发通知）
-                    if (comment.AuthorId != userId)
+                    if (likeResult.AuthorId != userId)
                     {
                         // 检查是否应该去重
                         var shouldDedup = await _dedupService.ShouldDedupAsync(
-                            comment.AuthorId,
+                            likeResult.AuthorId,
                             NotificationType.CommentLiked,
                             commentId);
 
@@ -595,60 +568,62 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                         {
                             try
                             {
-                                var postDetail = await _postService.GetPostDetailAsync(comment.PostId);
+                                var postDetail = await _postService.GetPostDetailAsync(likeResult.PostId);
                                 await _notificationService.CreateNotificationAsync(new CreateNotificationDto
                                 {
                                     Type = NotificationType.CommentLiked,
                                     Title = "评论被点赞",
-                                    Content = comment.Content,
+                                    Content = likeResult.Content,
                                     Priority = (int)NotificationPriority.Low,
                                     BusinessType = BusinessType.Comment,
                                     BusinessId = commentId,
                                     TriggerId = userId,
                                     TriggerName = null, // TODO: 从用户上下文获取用户名
                                     TriggerAvatar = null, // TODO: 从用户表查询头像
-                                    ReceiverUserIds = new List<long> { comment.AuthorId },
-                                    ExtData = NotificationNavigationHelper.BuildForumNavigationExtData(comment.PostId, commentId, postDetail?.VoPublicId)
+                                    ReceiverUserIds = new List<long> { likeResult.AuthorId },
+                                    ExtData = NotificationNavigationHelper.BuildForumNavigationExtData(likeResult.PostId, commentId, postDetail?.VoPublicId)
                                 });
 
                                 // 记录去重键（5分钟内不重复通知）
                                 await _dedupService.RecordDedupKeyAsync(
-                                    comment.AuthorId,
+                                    likeResult.AuthorId,
                                     NotificationType.CommentLiked,
                                     commentId,
                                     windowSeconds: 300);
 
                                 Log.Information("评论点赞通知发送成功：CommentId={CommentId}, 接收者={ReceiverId}",
-                                    commentId, comment.AuthorId);
+                                    commentId, likeResult.AuthorId);
                             }
                             catch (Exception notifyEx)
                             {
                                 Log.Error(notifyEx, "发送评论点赞通知失败：CommentId={CommentId}, 接收者={ReceiverId}",
-                                    commentId, comment.AuthorId);
+                                    commentId, likeResult.AuthorId);
                             }
                         }
                         else
                         {
                             Log.Debug("评论点赞通知被去重：CommentId={CommentId}, 接收者={ReceiverId}",
-                                commentId, comment.AuthorId);
+                                commentId, likeResult.AuthorId);
                         }
                     }
                 }
                 catch (Exception ex)
                 {
                     Log.Error(ex, "发放评论点赞奖励失败：CommentId={CommentId}, AuthorId={AuthorId}, LikerId={LikerId}, Message={Message}",
-                        commentId, comment.AuthorId, userId, ex.Message);
+                        commentId, likeResult.AuthorId, userId, ex.Message);
                 }
             });
         }
 
-        // 5. 触发神评/沙发检查并把结果返回给 API 层广播
-        var highlightRecheckResult = await TriggerHighlightRecheckAsync(comment.PostId, comment.ParentId);
+        // 触发神评/沙发检查并把结果返回给 API 层广播；重复请求没有真实变化时不重算。
+        var highlightRecheckResult = likeResult.Delta != 0
+            ? await TriggerHighlightRecheckAsync(likeResult.PostId, likeResult.ParentId)
+            : null;
 
         return new CommentLikeResultDto
         {
-            IsLiked = isLiked,
-            LikeCount = comment.LikeCount,
+            IsLiked = likeResult.IsLiked,
+            LikeCount = likeResult.LikeCount,
             HighlightRecheckResult = highlightRecheckResult
         };
     }
@@ -1031,6 +1006,17 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             return (false, "只有作者本人可以编辑评论");
         }
 
+        if (string.IsNullOrWhiteSpace(newContent))
+        {
+            return (false, "评论内容不能为空");
+        }
+
+        var trimmedContent = newContent.Trim();
+        if (string.Equals(comment.Content?.Trim(), trimmedContent, StringComparison.Ordinal))
+        {
+            return (true, "内容没有变化，无需保存");
+        }
+
         var commentOptions = _editHistoryOptions.Comment;
         var historyEnabled = _editHistoryOptions.Enable && commentOptions.EnableHistory;
         var historyEditCount = await _commentEditHistoryRepository.QueryCountAsync(h => h.CommentId == commentId);
@@ -1053,14 +1039,9 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         }
 
         // 4. 验证内容
-        if (string.IsNullOrWhiteSpace(newContent))
-        {
-            return (false, "评论内容不能为空");
-        }
-
         try
         {
-            await ValidateCommentContentSettingsAsync(newContent);
+            await ValidateCommentContentSettingsAsync(trimmedContent);
         }
         catch (ArgumentException ex)
         {
@@ -1068,7 +1049,6 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         }
 
         var safeUserName = string.IsNullOrWhiteSpace(userName) ? "System" : userName;
-        var trimmedContent = newContent.Trim();
         var nextEditSequence = existingEditCount + 1;
 
         if (historyEnabled)
@@ -1080,7 +1060,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                     CommentId = comment.Id,
                     PostId = comment.PostId,
                     EditSequence = nextEditSequence,
-                    OldContent = comment.Content,
+                    OldContent = comment.Content ?? string.Empty,
                     NewContent = trimmedContent,
                     EditorId = userId,
                     EditorName = safeUserName,
@@ -1470,7 +1450,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                 var likeIncrement = comment.LikeCount - existing.LikeCount;
                 if (likeIncrement > 0)
                 {
-                    GrantHighlightLikeBonusInBackground(existing.Id, existing.AuthorId, likeIncrement, highlightType);
+                    GrantHighlightLikeBonusInBackground(existing.Id, existing.AuthorId, likeIncrement, highlightType, comment.LikeCount);
                 }
 
                 if (existing.LikeCount != comment.LikeCount ||
@@ -1569,7 +1549,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         });
     }
 
-    private void GrantHighlightLikeBonusInBackground(long highlightId, long authorId, int likeIncrement, int highlightType)
+    private void GrantHighlightLikeBonusInBackground(long highlightId, long authorId, int likeIncrement, int highlightType, int likeCountAfter)
     {
         _ = Task.Run(async () =>
         {
@@ -1580,7 +1560,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                     highlightId,
                     authorId,
                     likeIncrement,
-                    highlightTypeName);
+                    highlightTypeName,
+                    likeCountAfter);
 
                 if (rewardResult.IsSuccess)
                 {
@@ -1607,32 +1588,33 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         var amount = isGodComment ? 50 : 30;
         var remark = isGodComment ? "评论成为神评" : "评论成为沙发";
 
-        var exists = await _experienceService.HasExperienceTransactionAsync(
-            highlight.AuthorId,
-            expType,
-            "Comment",
-            highlight.CommentId);
+        var rewardBusinessKey = isGodComment
+            ? $"exp:highlight-base:god-comment:author:{highlight.AuthorId}:comment:{highlight.CommentId}"
+            : $"exp:highlight-base:sofa:author:{highlight.AuthorId}:comment:{highlight.CommentId}";
 
-        if (exists)
-        {
-            return;
-        }
-
-        var expResult = await _experienceService.GrantExperienceAsync(
+        var expResult = await _experienceService.GrantExperienceOnceAsync(
             userId: highlight.AuthorId,
             amount: amount,
             expType: expType,
+            rewardBusinessKey: rewardBusinessKey,
             businessType: "Comment",
             businessId: highlight.CommentId,
             remark: remark);
 
-        if (expResult)
+        if (expResult.Granted)
         {
             Log.Information("{HighlightType}经验值奖励发放成功：CommentId={CommentId}, AuthorId={AuthorId}, Amount={Amount}",
                 isGodComment ? "神评" : "沙发",
                 highlight.CommentId,
                 highlight.AuthorId,
                 amount);
+        }
+        else if (expResult.AlreadyGranted)
+        {
+            Log.Debug("{HighlightType}经验值已发放过，跳过：CommentId={CommentId}, AuthorId={AuthorId}",
+                isGodComment ? "神评" : "沙发",
+                highlight.CommentId,
+                highlight.AuthorId);
         }
     }
 

@@ -5,45 +5,27 @@ import { Input } from '@radish/ui/input';
 import { Select } from '@radish/ui/select';
 import { copyToClipboard } from '@/utils/clipboard';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
-import { deleteAttachment } from '@/api/attachment';
-import { tokenService } from '@/services/tokenService';
+import { deleteAttachment, getMyAttachments, type MyAttachmentItem } from '@/api/attachment';
 import { resolveMediaUrl } from '@/utils/media';
 import { useTranslation } from 'react-i18next';
 import styles from './UserAttachmentList.module.css';
 
-interface Attachment {
-  voId: string;
-  voOriginalName: string;
-  voExtension?: string;
-  voFileSize: number;
-  voFileSizeFormatted?: string;
-  voMimeType: string;
-  voUrl: string;
-  voThumbnailUrl?: string | null;
-  voBusinessType?: string;
-  voCreateTime: string;
-}
-
-interface PageModel<T> {
-  page: number;
-  pageSize: number;
-  dataCount: number;
-  pageCount: number;
-  data: T[];
-}
-
-interface ApiResponse<T> {
-  isSuccess: boolean;
-  messageInfo?: string;
-  responseData?: T;
-}
-
 interface UserAttachmentListProps {
   apiBaseUrl: string;
   displayTimeZone: string;
+  initialPage?: number;
+  initialBusinessType?: BusinessTypeFilter;
+  initialKeyword?: string;
+  onStateChange?: (state: UserAttachmentListState) => void;
 }
 
 type BusinessTypeFilter = 'All' | 'General' | 'Post' | 'Comment' | 'Avatar' | 'Document';
+
+interface UserAttachmentListState {
+  page: number;
+  businessType: BusinessTypeFilter;
+  keyword: string;
+}
 
 function isImageExtension(extension: string | undefined | null): boolean {
   if (!extension) return false;
@@ -55,76 +37,60 @@ function resolveUrl(apiBaseUrl: string, url: string): string {
   return resolveMediaUrl(url, apiBaseUrl) ?? '';
 }
 
-export const UserAttachmentList = ({ apiBaseUrl, displayTimeZone }: UserAttachmentListProps) => {
+export const UserAttachmentList = ({
+  apiBaseUrl,
+  displayTimeZone,
+  initialPage = 1,
+  initialBusinessType = 'All',
+  initialKeyword = '',
+  onStateChange
+}: UserAttachmentListProps) => {
   const { t } = useTranslation();
 
-  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [attachments, setAttachments] = useState<MyAttachmentItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(initialPage);
   const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState<string | null>(null);
 
-  const [businessType, setBusinessType] = useState<BusinessTypeFilter>('All');
-  const [keyword, setKeyword] = useState('');
+  const [businessType, setBusinessType] = useState<BusinessTypeFilter>(initialBusinessType);
+  const [keyword, setKeyword] = useState(initialKeyword);
+  const [keywordInput, setKeywordInput] = useState(initialKeyword);
 
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
-  const authHeader = useMemo(() => {
-    const token = tokenService.getAccessToken();
-    return token ? `Bearer ${token}` : undefined;
-  }, []);
+  useEffect(() => {
+    setPage(initialPage);
+  }, [initialPage]);
+
+  useEffect(() => {
+    setBusinessType(initialBusinessType);
+  }, [initialBusinessType]);
+
+  useEffect(() => {
+    setKeyword(initialKeyword);
+    setKeywordInput(initialKeyword);
+  }, [initialKeyword]);
 
   useEffect(() => {
     void loadAttachments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, businessType]);
+  }, [page, businessType, keyword]);
 
   const loadAttachments = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const params = new URLSearchParams({
-        pageIndex: String(page),
-        pageSize: '10'
+      const result = await getMyAttachments({
+        pageIndex: page,
+        pageSize: 10,
+        businessType,
+        keyword
       });
-
-      if (businessType !== 'All') {
-        params.set('businessType', businessType);
-      }
-
-      if (keyword.trim()) {
-        params.set('keyword', keyword.trim());
-      }
-
-      const response = await fetch(
-        `${apiBaseUrl}/api/v1/Attachment/GetMyAttachments?${params.toString()}`,
-        {
-          headers: {
-            Accept: 'application/json',
-            ...(authHeader ? { Authorization: authHeader } : {})
-          }
-        }
-      );
-
-      const json = (await response.json()) as ApiResponse<PageModel<Attachment>>;
-
-      if (!response.ok) {
-        setError(json.messageInfo || t('profile.attachments.requestFailed', { status: response.status }));
-        setAttachments([]);
-        setTotalPages(1);
-        return;
-      }
-
-      if (json.isSuccess && json.responseData) {
-        setAttachments(json.responseData.data || []);
-        setTotalPages(json.responseData.pageCount || 1);
-      } else {
-        setError(json.messageInfo || t('profile.attachments.loadFailed'));
-        setAttachments([]);
-        setTotalPages(1);
-      }
+      setAttachments(result.data || []);
+      setTotalPages(result.pageCount || 1);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setAttachments([]);
@@ -149,6 +115,20 @@ export const UserAttachmentList = ({ apiBaseUrl, displayTimeZone }: UserAttachme
   const openDeleteConfirm = (id: string) => {
     setDeleteTargetId(id);
     setConfirmDeleteOpen(true);
+  };
+
+  const updateAppliedState = (nextState: Partial<UserAttachmentListState>) => {
+    const normalizedState: UserAttachmentListState = {
+      page: nextState.page ?? page,
+      businessType: nextState.businessType ?? businessType,
+      keyword: nextState.keyword ?? keyword
+    };
+
+    setPage(normalizedState.page);
+    setBusinessType(normalizedState.businessType);
+    setKeyword(normalizedState.keyword);
+    setKeywordInput(normalizedState.keyword);
+    onStateChange?.(normalizedState);
   };
 
   const confirmDelete = async () => {
@@ -192,20 +172,25 @@ export const UserAttachmentList = ({ apiBaseUrl, displayTimeZone }: UserAttachme
           options={businessOptions}
           value={businessType}
           onChange={(e) => {
-            setPage(1);
-            setBusinessType(e.target.value as BusinessTypeFilter);
+            updateAppliedState({
+              page: 1,
+              businessType: e.target.value as BusinessTypeFilter,
+              keyword: keywordInput.trim()
+            });
           }}
         />
         <Input
           placeholder={t('profile.attachments.searchPlaceholder')}
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
+          value={keywordInput}
+          onChange={(e) => setKeywordInput(e.target.value)}
         />
         <button
           className={styles.actionButton}
           onClick={() => {
-            setPage(1);
-            void loadAttachments();
+            updateAppliedState({
+              page: 1,
+              keyword: keywordInput.trim()
+            });
           }}
         >
           {t('profile.attachments.search')}
@@ -280,7 +265,7 @@ export const UserAttachmentList = ({ apiBaseUrl, displayTimeZone }: UserAttachme
       {totalPages > 1 && (
         <div className={styles.pagination}>
           <button
-            onClick={() => setPage(p => Math.max(1, p - 1))}
+            onClick={() => updateAppliedState({ page: Math.max(1, page - 1) })}
             disabled={page === 1}
             className={styles.pageButton}
           >
@@ -290,7 +275,7 @@ export const UserAttachmentList = ({ apiBaseUrl, displayTimeZone }: UserAttachme
             {t('common.pageInfo', { current: page, total: totalPages })}
           </span>
           <button
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            onClick={() => updateAppliedState({ page: Math.min(totalPages, page + 1) })}
             disabled={page === totalPages}
             className={styles.pageButton}
           >

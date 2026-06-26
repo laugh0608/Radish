@@ -143,6 +143,7 @@ export const SystemConfigList = () => {
         reason: '恢复站点 favicon 默认值',
         confirmRiskLevel: faviconConfig.voRiskLevel,
         confirmKey: faviconConfig.voKey,
+        expectedVersion: faviconConfig.voVersion,
       });
       message.success('已恢复为默认站点图标');
       await loadConfigs();
@@ -202,6 +203,7 @@ export const SystemConfigList = () => {
         reason: `上传站点 favicon：${file.name}`,
         confirmRiskLevel: faviconConfig.voRiskLevel,
         confirmKey: faviconConfig.voKey,
+        expectedVersion: faviconConfig.voVersion,
       });
       await loadConfigs();
       options.onSuccess?.(uploaded);
@@ -316,7 +318,7 @@ export const SystemConfigList = () => {
     <Space
       className="system-config-action-space"
       size={compact ? 4 : 'small'}
-      direction={compact ? 'vertical' : 'horizontal'}
+      orientation={compact ? 'vertical' : 'horizontal'}
     >
       <Button
         variant="ghost"

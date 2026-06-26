@@ -1,10 +1,12 @@
 # 萝卜坑应用后端设计
 
-> 版本：v1.0 | 最后更新：2026-01-24 | 状态：设计中
+> 版本：v1.0 | 最后更新：2026-06-19 | 状态：实施后维护
 
 本文档详细描述萝卜坑应用的后端技术实现方案。
 
 > 实施记录：截至 2026-05-06，支付密码设置 / 修改已通过 `PaymentPasswordController` 接入真实 API；萝卜坑安全日志不再维护独立 `UserSecurityLog` 表，当前复用全局 `AuditLog` 并通过 `GET /api/v1/PaymentPassword/GetSecurityLogs` 向当前登录用户返回脱敏后的支付密码相关操作日志。
+>
+> 更新记录：截至 2026-06-19，支付口令新写入使用 `PasscodeVersion = 2` 的 Argon2id 哈希；历史 `PasscodeVersion = 1` 的 SHA256 记录在验证成功后自动升级，`PasscodeVersion = null` 等更旧记录仍要求用户重置。萝卜币转账已接入 `idempotencyKey`、请求摘要绑定和终态响应重放。下方旧设计片段仅保留表意，当前实现以 `PaymentPasswordService`、`CoinService` 和 [支付与转账幂等治理](/guide/payment-idempotency-governance) 为准。
 
 ---
 
@@ -74,8 +76,9 @@ CREATE INDEX IX_CoinTransaction_Type_Status ON CoinTransaction(TransactionType, 
 CREATE TABLE UserPaymentPassword (
     Id BIGINT PRIMARY KEY,              -- 雪花ID
     UserId BIGINT NOT NULL UNIQUE,      -- 用户ID，外键关联User表
-    PasswordHash VARCHAR(255) NOT NULL, -- 密码哈希值(BCrypt)
-    Salt VARCHAR(255) NOT NULL,         -- 盐值
+    PasswordHash VARCHAR(255) NOT NULL, -- 密码哈希值(v2 为 Argon2id 编码串)
+    Salt VARCHAR(255) NOT NULL,         -- 旧版 SHA256 盐值；v2 保留为空字符串
+    PasscodeVersion INT,                -- 支付口令哈希版本：1=SHA256旧版，2=Argon2id当前版
     FailedAttempts INT NOT NULL DEFAULT 0, -- 失败尝试次数
     LockedUntil DATETIME,               -- 锁定到期时间
     LastUsedTime DATETIME,              -- 最后使用时间
@@ -151,9 +154,10 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
     /// <param name="amount">转账金额(胡萝卜)</param>
     /// <param name="remark">备注</param>
     /// <param name="paymentPassword">支付密码</param>
+    /// <param name="idempotencyKey">幂等键（可选）</param>
     /// <returns>转账结果</returns>
     public async Task<TransferResultVo> TransferAsync(long fromUserId, long toUserId,
-        long amount, string remark, string paymentPassword)
+        long amount, string paymentPassword, string? remark = null, string? idempotencyKey = null)
     {
         // 1. 验证支付密码
         var passwordValid = await _paymentPasswordService.ValidatePasswordAsync(fromUserId, paymentPassword);
@@ -165,7 +169,10 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         // 2. 检查转账限制
         await CheckTransferLimitAsync(fromUserId, amount);
 
-        // 3. 执行转账事务
+        // 3. 幂等键非空时绑定收款人、金额和备注请求摘要
+        await BeginTransferIdempotencyAsync(fromUserId, toUserId, amount, remark, idempotencyKey);
+
+        // 4. 执行转账事务
         return await ExecuteTransferAsync(fromUserId, toUserId, amount, remark);
     }
 
@@ -282,8 +289,10 @@ public class PaymentPasswordService : IPaymentPasswordService
             throw new BusinessException($"账户已锁定，请于{userPassword.LockedUntil:yyyy-MM-dd HH:mm}后重试");
         }
 
-        // 验证密码
-        var isValid = BCrypt.Net.BCrypt.Verify(password + userPassword.Salt, userPassword.PasswordHash);
+        // 当前实现以 PaymentPasswordService 为准：
+        // v2 使用 Argon2id 验证；v1 SHA256 验证成功后自动写回 v2；
+        // null 或未知版本提示用户重置。这里仅保留版本化校验的伪代码。
+        var isValid = VerifyVersionedPasscode(userPassword, password);
 
         if (isValid)
         {
@@ -391,7 +400,7 @@ public class CoinController : BaseController
     public async Task<ApiResult<TransferResultVo>> Transfer([FromBody] TransferDto dto)
     {
         var userId = GetCurrentUserId();
-        var result = await _coinService.TransferAsync(userId, dto.ToUserId, dto.Amount, dto.Remark, dto.PaymentPassword);
+        var result = await _coinService.TransferAsync(userId, dto.ToUserId, dto.Amount, dto.PaymentPassword, dto.Remark, dto.IdempotencyKey);
         return Success(result);
     }
 
@@ -496,6 +505,9 @@ public class TransferDto
     [Required]
     [StringLength(6, MinimumLength = 6)]
     public string PaymentPassword { get; set; }
+
+    [StringLength(80)]
+    public string? IdempotencyKey { get; set; }
 }
 
 /// <summary>
@@ -512,6 +524,12 @@ public class SetPasswordDto
     public string ConfirmPassword { get; set; }
 }
 ```
+
+转账幂等口径：
+
+- 请求摘要包含 `ToUserId`、`Amount` 和规范化后的 `Remark`，不包含 `PaymentPassword`、登录 token 或前端本地状态。
+- 同一用户、同一 `coin-transfer:{uuid}`、同一摘要重复提交时返回同一交易流水号；同 key 不同摘要会拒绝执行。
+- 支付口令验证失败不占用幂等键；已进入资产写入并形成终态响应后，后续重放只返回既有终态，不重复扣款或入账。
 
 ---
 

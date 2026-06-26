@@ -11,6 +11,7 @@ import {
   resolveMediaUrl,
   toNumericId,
 } from './chatApp.helpers';
+import { resolveVisibleUserDisplayName } from '@/utils/userIdentityDisplay';
 import styles from './ChatApp.module.css';
 
 interface ChatMessageListProps {
@@ -81,6 +82,16 @@ export const ChatMessageList = ({
           const replyText = message.voReplyTo ? getMessagePreviewText(message.voReplyTo, t) : null;
           const messageImageUrl = resolveMediaUrl(apiBaseUrl, message.voImageUrl);
           const canReportMessage = !isMine && !message.voIsRecalled && messageStatus === 'sent' && isPersistedEntityId(message.voId);
+          const messageUserName = resolveVisibleUserDisplayName(
+            { voUserName: message.voUserName },
+            getFallbackUserName(messageUserIdKey, t)
+          );
+          const replyUserName = message.voReplyTo
+            ? resolveVisibleUserDisplayName(
+                { voUserName: message.voReplyTo.voUserName },
+                t('common.unknownUser')
+              )
+            : null;
 
           return (
             <div
@@ -91,7 +102,7 @@ export const ChatMessageList = ({
               <div className={styles.messageMain}>
                 {renderAvatarButton(
                   message.voUserId,
-                  message.voUserName,
+                  messageUserName,
                   message.voUserAvatarUrl
                 )}
 
@@ -100,13 +111,13 @@ export const ChatMessageList = ({
                     <button
                       type="button"
                       className={styles.userNameButton}
-                      onClick={() => onOpenUserProfile(message.voUserId, message.voUserName, message.voUserAvatarUrl)}
+                      onClick={() => onOpenUserProfile(message.voUserId, messageUserName, message.voUserAvatarUrl)}
                       disabled={!canOpenMessageUserProfile}
                       title={canOpenMessageUserProfile
-                        ? t('chat.viewProfile', { name: (message.voUserName || getFallbackUserName(messageUserIdKey, t)).trim() })
+                        ? t('chat.viewProfile', { name: messageUserName })
                         : t('chat.userUnavailable')}
                     >
-                      <span className={styles.userName}>{message.voUserName || t('common.unknownUser')}</span>
+                      <span className={styles.userName}>{messageUserName}</span>
                     </button>
                     <span className={styles.time}>{formatChatTime(message.voCreateTime)}</span>
                     {!message.voIsRecalled && messageStatus === 'sent' && (
@@ -150,7 +161,7 @@ export const ChatMessageList = ({
                       {message.voReplyTo && (
                         <div className={styles.quotedMessage}>
                           <div className={styles.quotedAuthor}>
-                            {t('chat.replyTo', { name: message.voReplyTo.voUserName || t('common.unknownUser') })}
+                            {t('chat.replyTo', { name: replyUserName || t('common.unknownUser') })}
                           </div>
                           <div className={styles.quotedText}>{replyText}</div>
                         </div>

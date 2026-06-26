@@ -13,12 +13,15 @@ import { PostCard } from '@/apps/forum/components/PostCard';
 import { createForumCommentHighlightMap, getForumCommentHighlight } from '@/utils/forumCommentHighlights';
 import { log } from '@/utils/logger';
 import type {
+  PublicForumListRoute,
+  PublicForumSearchRoute,
   PublicForumTagRoute,
   PublicListSort,
 } from '../forumRouteState';
-import { buildPublicForumPath } from '../forumRouteState';
+import { buildPublicForumPath, createDefaultListRoute, createDefaultSearchRoute } from '../forumRouteState';
 import { usePublicReplaceRouteSync } from '../usePublicReplaceRouteSync';
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
+import { PublicForumPagination, PublicForumRouteLink } from './PublicForumLinks';
 import {
   buildTagRouteKey,
   buildVisiblePages,
@@ -287,6 +290,17 @@ export const PublicForumTag = ({
     itemCount: posts.length,
     totalCount: totalPosts
   });
+  const backToListRoute: PublicForumListRoute = createDefaultListRoute();
+  const searchTagRoute: PublicForumSearchRoute = {
+    ...createDefaultSearchRoute(),
+    keyword: selectedTag?.voName ?? ''
+  };
+  const buildTagRoute = (nextPage: number, nextSortBy = sortBy): PublicForumTagRoute => ({
+    kind: 'tag',
+    tagSlug: routeState.tagSlug,
+    sortBy: nextSortBy,
+    page: nextPage
+  });
 
   return (
     <section className={`${styles.sectionCard} ${styles.listSectionCard}`}>
@@ -294,10 +308,14 @@ export const PublicForumTag = ({
         <div className={styles.sectionHeading}>
           <p className={styles.kicker}>{t('forum.public.guide.label')}</p>
           <div className={styles.searchTopbar}>
-            <button type="button" className={styles.backButton} onClick={onBackToList}>
+            <PublicForumRouteLink
+              className={styles.backButton}
+              route={backToListRoute}
+              onNavigate={onBackToList}
+            >
               <Icon icon="mdi:arrow-left" size={18} />
               <span>{t('forum.backToList')}</span>
-            </button>
+            </PublicForumRouteLink>
             <span className={styles.readOnlyBadge}>{t('forum.public.readOnlyBadge')}</span>
           </div>
           <h1 className={styles.pageTitle}>{pageTitle}</h1>
@@ -322,41 +340,41 @@ export const PublicForumTag = ({
 
         <div className={styles.toolbar}>
           <div className={styles.segmented}>
-            <button
-              type="button"
+            <PublicForumRouteLink
               className={styles.segmentButton}
-              onClick={() => onOpenSearch?.(selectedTag?.voName ?? '')}
+              route={searchTagRoute}
+              onNavigate={onOpenSearch ? () => onOpenSearch(selectedTag?.voName ?? '') : undefined}
             >
               <Icon icon="mdi:magnify" size={16} />
               <span>{t('forum.public.searchAction')}</span>
-            </button>
-            <button
-              type="button"
+            </PublicForumRouteLink>
+            <PublicForumRouteLink
               className={styles.segmentButton}
-              onClick={onBackToList}
+              route={backToListRoute}
+              onNavigate={onBackToList}
             >
               {t('forum.allPosts')}
-            </button>
-            <button
-              type="button"
+            </PublicForumRouteLink>
+            <PublicForumRouteLink
               className={`${styles.segmentButton} ${sortBy === 'newest' ? styles.segmentButtonActive : ''}`}
-              onClick={() => {
+              route={buildTagRoute(1, 'newest')}
+              onNavigate={() => {
                 setSortBy('newest');
                 setCurrentPage(1);
               }}
             >
               {t('forum.sort.newest')}
-            </button>
-            <button
-              type="button"
+            </PublicForumRouteLink>
+            <PublicForumRouteLink
               className={`${styles.segmentButton} ${sortBy === 'hottest' ? styles.segmentButtonActive : ''}`}
-              onClick={() => {
+              route={buildTagRoute(1, 'hottest')}
+              onNavigate={() => {
                 setSortBy('hottest');
                 setCurrentPage(1);
               }}
             >
               {t('forum.sort.hottest')}
-            </button>
+            </PublicForumRouteLink>
           </div>
         </div>
 
@@ -396,6 +414,7 @@ export const PublicForumTag = ({
             description={t('forum.public.tagUnavailableDescription')}
             primaryAction={{
               label: t('forum.viewAllPosts'),
+              href: buildPublicForumPath(backToListRoute),
               onClick: onBackToList
             }}
           />
@@ -410,6 +429,7 @@ export const PublicForumTag = ({
             }}
             secondaryAction={{
               label: t('forum.viewAllPosts'),
+              href: buildPublicForumPath(backToListRoute),
               onClick: onBackToList
             }}
           />
@@ -463,34 +483,13 @@ export const PublicForumTag = ({
       </div>
 
       {tagState.kind !== 'notFound' && totalPages > 1 && (
-        <div className={styles.pagination}>
-          <button
-            type="button"
-            className={styles.paginationButton}
-            onClick={() => setCurrentPage((page: number) => Math.max(1, page - 1))}
-            disabled={currentPage === 1}
-          >
-            ‹
-          </button>
-          {visiblePages.map((page) => (
-            <button
-              key={page}
-              type="button"
-              className={`${styles.paginationButton} ${page === currentPage ? styles.paginationButtonActive : ''}`}
-              onClick={() => setCurrentPage(page)}
-            >
-              {page}
-            </button>
-          ))}
-          <button
-            type="button"
-            className={styles.paginationButton}
-            onClick={() => setCurrentPage((page: number) => Math.min(totalPages, page + 1))}
-            disabled={currentPage === totalPages}
-          >
-            ›
-          </button>
-        </div>
+        <PublicForumPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          visiblePages={visiblePages}
+          buildRoute={(page) => buildTagRoute(page)}
+          onPageChange={setCurrentPage}
+        />
       )}
     </section>
   );

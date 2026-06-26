@@ -488,7 +488,7 @@ git push origin v26.1.1.3003
 
 > 目标：保证“以实体为真源（Code First）”，在不直接手改数据库的前提下，让开发环境与生产环境的表结构、安全地跟随代码演进。
 >
-> 本流程仅针对 `Radish.DbMigrate` 管辖的业务库。其正式路径是 `SqlSugar Code First + Radish.DbMigrate + 版本化差异 SQL`，不使用 EF Core `Migrations/*.cs` / `ModelSnapshot.cs` 历史链；完整协作口径见 [数据库结构变更协作口径](/guide/database-schema-change-governance)。
+> 本流程仅针对 `Radish.DbMigrate` 管辖的业务库。正式上线前路径是 `SqlSugar Code First + Radish.DbMigrate`，已有正式数据库后再补发布 SQL；不使用 EF Core `Migrations/*.cs` / `ModelSnapshot.cs` 历史链。完整协作口径见 [数据库结构变更协作口径](/guide/database-schema-change-governance)。
 
 1. **设计与建模**
    - 在 `Radish.Model` 中定义/修改实体类型（继承 `RootEntityTKey<TKey>`），补充字段、注释与 `[SugarColumn]` 等特性。
@@ -520,22 +520,21 @@ git push origin v26.1.1.3003
          - 不会主动删除旧字段。
    - 使用数据库客户端确认表结构是否符合预期（字段名、类型、默认值、索引等）。
 
-4. **生成迁移 SQL（供测试/生产环境使用）**
-   - 在一套“迁移基线库”（例如测试环境数据库）上，同样执行 `DbMigrate init` 让结构跟随最新实体。
-   - 使用数据库自带工具或对比工具，生成**从旧版本到新版本**的结构差异 SQL：
-     - 只包含必要的 `CREATE TABLE` / `ALTER TABLE` / `CREATE INDEX` 等 DDL；
-     - 拆分为按版本管理的文件，例如：`Deploy/sql/2025XXXX_add_user_profile_fields.sql`。
-   - 将迁移 SQL 文件提交到仓库，作为版本的一部分，方便后续审查与回滚。
+4. **正式数据库阶段生成发布 SQL**
+   - 当前项目正式上线前，测试库可按当前实体和 `DbMigrate` 初始化干净基线，破坏性 schema 收口后删除本地 SQLite 并重新初始化，不维护历史发布脚本。
+   - 已存在需要保护的测试 / 生产数据库后，在一套“迁移基线库”上执行 `DbMigrate init` 让结构跟随最新实体。
+   - 使用数据库自带工具或对比工具，生成**从旧版本到新版本**的发布 SQL，只包含必要的 `CREATE TABLE` / `ALTER TABLE` / `CREATE INDEX` 等 DDL。
+   - 将发布 SQL 作为版本发布材料保存、审核，方便后续审查与回滚。
 
-5. **上线前执行迁移 SQL**
+5. **上线前执行发布 SQL**
    - 部署流程中，在启动新版本 API/Gateway 之前：
-     - 由 DBA 或 CI/CD 流水线在目标数据库上按顺序执行本次版本对应的迁移 SQL；
+     - 由 DBA 或 CI/CD 流水线在目标数据库上按顺序执行本次版本对应的发布 SQL；
      - 执行完成后，再发布/切换应用实例。
-   - 生产环境**禁止**在应用启动时自动调用 `InitTables`，所有结构变更必须通过迁移脚本显式执行。
+   - 生产环境**禁止**在应用启动时自动调用 `InitTables`，所有结构变更必须通过发布 SQL 或专门迁移任务显式执行。
 
 6. **数据初始化与回填（配合 DbMigrate seed）**
    - 若新增字段需要默认业务数据（例如为所有历史用户回填某个状态），建议：
-     - 在迁移 SQL 中加入安全的 `UPDATE` 语句，或
+     - 正式数据库阶段在发布 SQL 中加入安全的 `UPDATE` 语句，或
      - 在 `Radish.DbMigrate` 中实现 `seed` 子命令，集中处理角色、租户、权限、Console 授权、论坛 / 商城 / 等级等系统基础数据，以及受 `Seed:DeveloperDefaultsEnabled` 与 `RadishDeployment:Stage=local/test` 保护的开发默认账号。
    - 推荐执行顺序：先运行 `doctor` 做只读检查，再执行 `seed`；若 `doctor` 报告结构缺失，可先执行 `init`。`verify` 当前同样属于 `Radish.DbMigrate` 的只读检查，不承担 EF migration 历史链校验职责。
    - 数据初始化脚本同样应纳入版本管理，并在上线流程中显式执行。
@@ -1038,7 +1037,7 @@ public class UserBalance : RootEntityTKey<long>, IDeleteFilter
 - **ViewModel 命名规范**:
   - **类名**: 以 `Vo` 为后缀（如UserVo, ProductVo, OrderVo）
   - **字段名**: 所有字段必须添加 `Vo` 前缀
-    - **UserVo特殊设计**: `Vo`前缀 + 混淆字段名（如VoLoName表示LoginName，VoUsName表示UserName，VoUsPwd表示UserPassword）- 这是安全设计，体现自定义映射能力，保持其特殊性
+    - **UserVo特殊设计**: `Vo` 前缀 + 当前身份兼容字段并存；`VoDisplayName` / `VoDisplayHandle` 是公开展示主字段，`VoUserName` 仅表示历史 `UserName` 数据库列上的展示名兼容，不再表示登录名，禁止新增 `LoginName` / `UserRealName` 视图字段
     - **其他Vo模型**: `Vo`前缀 + 清晰字段名（如VoName, VoDescription, VoCreateTime, VoStatus）- 便于理解和维护
   - **前端适配**: 前端必须适配后端的Vo模型字段名，不得要求后端修改
   - **匿名对象禁用**: Controller方法严禁返回匿名对象，必须使用定义好的Vo类

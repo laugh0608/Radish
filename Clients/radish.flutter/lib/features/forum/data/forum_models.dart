@@ -168,6 +168,78 @@ class ForumPostSummary {
   }
 }
 
+class ForumAnswerSummary {
+  const ForumAnswerSummary({
+    required this.id,
+    required this.postId,
+    required this.authorId,
+    required this.authorName,
+    required this.content,
+    this.authorPublicId,
+    this.authorAvatarUrl,
+    this.isAccepted = false,
+    this.createTime,
+  });
+
+  factory ForumAnswerSummary.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+
+    return ForumAnswerSummary(
+      id: _readRequiredId(map, 'voAnswerId'),
+      postId: _readRequiredId(map, 'voPostId'),
+      authorId: _readRequiredId(map, 'voAuthorId'),
+      authorPublicId: _readString(map['voAuthorPublicId']),
+      authorName: _readString(map['voAuthorName']) ?? '未知用户',
+      authorAvatarUrl: _readString(map['voAuthorAvatarUrl']),
+      content: _readString(map['voContent']) ?? '',
+      isAccepted: _readBool(map['voIsAccepted']),
+      createTime: _readString(map['voCreateTime']),
+    );
+  }
+
+  final String id;
+  final String postId;
+  final String authorId;
+  final String? authorPublicId;
+  final String authorName;
+  final String? authorAvatarUrl;
+  final String content;
+  final bool isAccepted;
+  final String? createTime;
+}
+
+class ForumQuestionDetail {
+  const ForumQuestionDetail({
+    required this.postId,
+    required this.isSolved,
+    required this.answerCount,
+    required this.answers,
+    this.acceptedAnswerId,
+  });
+
+  factory ForumQuestionDetail.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+    final rawAnswers = map['voAnswers'];
+    final parsedAnswers = rawAnswers is List
+        ? rawAnswers.map(ForumAnswerSummary.fromJson).toList()
+        : const <ForumAnswerSummary>[];
+
+    return ForumQuestionDetail(
+      postId: _readRequiredId(map, 'voPostId'),
+      isSolved: _readBool(map['voIsSolved']),
+      acceptedAnswerId: _readString(map['voAcceptedAnswerId']),
+      answerCount: _readInt(map['voAnswerCount']) ?? parsedAnswers.length,
+      answers: parsedAnswers,
+    );
+  }
+
+  final String postId;
+  final bool isSolved;
+  final String? acceptedAnswerId;
+  final int answerCount;
+  final List<ForumAnswerSummary> answers;
+}
+
 class ForumPostDetail {
   const ForumPostDetail({
     required this.id,
@@ -195,12 +267,14 @@ class ForumPostDetail {
     this.createTime,
     this.updateTime,
     this.publicId,
+    this.question,
   });
 
   factory ForumPostDetail.fromJson(Object? json) {
     final map = _readJsonMap(json);
     final parsedTagNames = _readStringList(map['voTagNames']);
     final fallbackTags = _readCsvList(map['voTags']);
+    final question = _tryReadQuestionDetail(map['voQuestion']);
 
     return ForumPostDetail(
       id: _readRequiredId(map, 'voId'),
@@ -217,7 +291,7 @@ class ForumPostDetail {
       viewCount: _readInt(map['voViewCount']) ?? 0,
       likeCount: _readInt(map['voLikeCount']) ?? 0,
       commentCount: _readInt(map['voCommentCount']) ?? 0,
-      answerCount: _readInt(map['voAnswerCount']) ?? 0,
+      answerCount: _readInt(map['voAnswerCount']) ?? question?.answerCount ?? 0,
       isTop: _readBool(map['voIsTop']),
       isEssence: _readBool(map['voIsEssence']),
       isQuestion: _readBool(map['voIsQuestion']),
@@ -228,6 +302,7 @@ class ForumPostDetail {
       lotteryIsDrawn: _readBool(map['voLotteryIsDrawn']),
       createTime: _readString(map['voCreateTime']),
       updateTime: _readString(map['voUpdateTime']),
+      question: question,
     );
   }
 
@@ -256,6 +331,7 @@ class ForumPostDetail {
   final bool lotteryIsDrawn;
   final String? createTime;
   final String? updateTime;
+  final ForumQuestionDetail? question;
 
   String get publicRouteId {
     final normalizedPublicId = publicId?.trim();
@@ -276,6 +352,72 @@ class ForumPostDetail {
       pollIsClosed: pollIsClosed,
       hasLottery: hasLottery,
       lotteryIsDrawn: lotteryIsDrawn,
+    );
+  }
+
+  ForumPostDetail withQuestion(ForumQuestionDetail question) {
+    return ForumPostDetail(
+      id: id,
+      publicId: publicId,
+      title: title,
+      summary: summary,
+      content: content,
+      contentType: contentType,
+      categoryId: categoryId,
+      categoryName: categoryName,
+      authorId: authorId,
+      authorName: authorName,
+      tagNames: tagNames,
+      viewCount: viewCount,
+      likeCount: likeCount,
+      commentCount: commentCount,
+      answerCount: question.answerCount,
+      isTop: isTop,
+      isEssence: isEssence,
+      isQuestion: true,
+      isSolved: question.isSolved,
+      hasPoll: hasPoll,
+      pollIsClosed: pollIsClosed,
+      hasLottery: hasLottery,
+      lotteryIsDrawn: lotteryIsDrawn,
+      createTime: createTime,
+      updateTime: updateTime,
+      question: question,
+    );
+  }
+
+  ForumPostDetail copyWith({
+    String? title,
+    String? content,
+    String? updateTime,
+  }) {
+    return ForumPostDetail(
+      id: id,
+      publicId: publicId,
+      title: title ?? this.title,
+      summary: summary,
+      content: content ?? this.content,
+      contentType: contentType,
+      categoryId: categoryId,
+      categoryName: categoryName,
+      authorId: authorId,
+      authorName: authorName,
+      tagNames: tagNames,
+      viewCount: viewCount,
+      likeCount: likeCount,
+      commentCount: commentCount,
+      answerCount: answerCount,
+      isTop: isTop,
+      isEssence: isEssence,
+      isQuestion: isQuestion,
+      isSolved: isSolved,
+      hasPoll: hasPoll,
+      pollIsClosed: pollIsClosed,
+      hasLottery: hasLottery,
+      lotteryIsDrawn: lotteryIsDrawn,
+      createTime: createTime,
+      updateTime: updateTime ?? this.updateTime,
+      question: question,
     );
   }
 }
@@ -695,6 +837,14 @@ Map<String, Object?>? _tryReadJsonMap(Object? json) {
   }
 
   return Map<String, Object?>.from(json.cast<Object?, Object?>());
+}
+
+ForumQuestionDetail? _tryReadQuestionDetail(Object? json) {
+  if (_tryReadJsonMap(json) == null) {
+    return null;
+  }
+
+  return ForumQuestionDetail.fromJson(json);
 }
 
 String _readRequiredId(Map<String, Object?> map, String key) {

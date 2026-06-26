@@ -12,6 +12,7 @@ import { searchUsersForMention } from '@/api/user';
 import { uploadImage, uploadDocument } from '@/api/attachment';
 import { redirectToLogin } from '@/services/auth';
 import { buildDesktopForumReturnPath } from '@/services/authReturnPath';
+import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
 import styles from './PublishPostForm.module.css';
 
@@ -44,8 +45,9 @@ export const PublishPostForm = ({
       const users = await searchUsersForMention(keyword, t);
       return users.map((user) => ({
         id: user.voId,
-        userName: user.voDisplayHandle || user.voUserName,
-        displayName: user.voDisplayName,
+        userName: resolveVisibleUserHandle(user, resolveVisibleUserDisplayName(user, t('common.unknownUser')))
+          || resolveVisibleUserDisplayName(user, t('common.unknownUser')),
+        displayName: resolveVisibleUserDisplayName(user, t('common.unknownUser')),
         avatar: user.voAvatar
       }));
     } catch (error) {

@@ -14,7 +14,8 @@
 .statusPanel,
 .identityPanel,
 .summaryCard,
-.detailPanel {
+.detailPanel,
+.subPagePanel {
   border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
   background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
@@ -191,6 +192,78 @@
   margin: 6px 0 0;
   color: var(--theme-text-secondary);
   font-size: 14px;
+}
+
+.subPagePanel {
+  min-width: 0;
+  padding: 20px;
+}
+
+.subPageHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.subPageHeader h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.subPageHeader p:last-child {
+  margin: 8px 0 0;
+  color: var(--theme-text-secondary);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.subPageActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.segmentedTabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.segmentedTab,
+.segmentedTabActive {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--theme-border-soft);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.segmentedTab {
+  color: var(--theme-text-secondary);
+  background: color-mix(in srgb, var(--theme-bg-muted) 58%, white 42%);
+}
+
+.segmentedTabActive {
+  color: #fff;
+  background: var(--theme-brand-primary);
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 72%, transparent);
+}
+
+.loadingBlock {
+  padding: 32px;
+  text-align: center;
+  color: var(--theme-text-secondary);
 }
 
 .summaryGrid {
@@ -424,11 +497,13 @@
   }
 
   .identityActions,
-  .toolbar {
+  .toolbar,
+  .subPageHeader {
     align-items: stretch;
   }
 
-  .toolbar {
+  .toolbar,
+  .subPageHeader {
     flex-direction: column;
   }
 
@@ -439,10 +514,20 @@
   }
 
   .primaryActionSlot,
-  .secondaryActionGroup {
+  .secondaryActionGroup,
+  .subPageActions {
     width: 100%;
     max-width: none;
     flex-direction: column;
+  }
+
+  .subPagePanel {
+    padding: 16px;
+  }
+
+  .segmentedTabs {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 
   .browseItem {

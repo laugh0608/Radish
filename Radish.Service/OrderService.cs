@@ -10,6 +10,7 @@ using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Service.Base;
+using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
 using Radish.Shared.Security;
 using Serilog;
@@ -28,6 +29,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     private readonly ICoinService _coinService;
     private readonly IPaymentPasswordService _paymentPasswordService;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
+    private readonly IOperationIdempotencyService? _operationIdempotencyService;
     private readonly INotificationService? _notificationService;
 
     public OrderService(
@@ -40,6 +42,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         ICoinService coinService,
         IPaymentPasswordService paymentPasswordService,
         IAttachmentUrlResolver attachmentUrlResolver,
+        IOperationIdempotencyService? operationIdempotencyService = null,
         INotificationService? notificationService = null)
         : base(mapper, orderRepository)
     {
@@ -51,6 +54,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         _coinService = coinService;
         _paymentPasswordService = paymentPasswordService;
         _attachmentUrlResolver = attachmentUrlResolver;
+        _operationIdempotencyService = operationIdempotencyService;
         _notificationService = notificationService;
     }
 
@@ -60,6 +64,11 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     [UseTran]
     public async Task<PurchaseResultDto> PurchaseAsync(long userId, CreateOrderDto dto)
     {
+        OperationIdempotencyBeginResult? idempotencyResult = null;
+        var assetWriteStarted = false;
+        long? idempotencyResourceId = null;
+        string? idempotencyResourceNo = null;
+
         try
         {
             Log.Information("用户 {UserId} 开始购买商品 {ProductId}, 数量={Quantity}",
@@ -124,18 +133,30 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 };
             }
 
+            var tenantId = GetCurrentTenantId();
+            idempotencyResult = await BeginPurchaseIdempotencyAsync(tenantId, userId, dto);
+            var replayResult = ResolvePurchaseIdempotencyResult(idempotencyResult);
+            if (replayResult != null)
+            {
+                return replayResult;
+            }
+
             // 6. 扣减库存
             if (product.StockType == StockType.Limited)
             {
                 var stockDeducted = await _productService.DeductStockAsync(dto.ProductId, dto.Quantity);
                 if (!stockDeducted)
                 {
-                    return new PurchaseResultDto { Success = false, ErrorMessage = "库存扣减失败" };
+                    return await CompletePurchaseIdempotencyAsync(
+                        idempotencyResult,
+                        new PurchaseResultDto { Success = false, ErrorMessage = "库存扣减失败" },
+                        shouldOccupyKey: false);
                 }
+
+                assetWriteStarted = true;
             }
 
             // 7. 创建订单
-            var tenantId = NormalizeTenantId(App.CurrentUser.TenantId);
             var order = new Order
             {
                 OrderNo = $"ORD_{SnowFlakeSingle.Instance.NextId()}",
@@ -163,6 +184,9 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
 
             var orderId = await _orderRepository.AddAsync(order);
             order.Id = orderId;
+            assetWriteStarted = true;
+            idempotencyResourceId = orderId;
+            idempotencyResourceNo = order.OrderNo;
 
             // 8. 扣除萝卜币
             try
@@ -192,7 +216,18 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 order.FailReason = $"扣除萝卜币失败：{ex.Message}";
                 await _orderRepository.UpdateAsync(order);
 
-                return new PurchaseResultDto { Success = false, ErrorMessage = "扣除萝卜币失败" };
+                return await CompletePurchaseIdempotencyAsync(
+                    idempotencyResult,
+                    new PurchaseResultDto
+                    {
+                        Success = false,
+                        OrderId = orderId,
+                        OrderNo = order.OrderNo,
+                        ErrorMessage = "扣除萝卜币失败"
+                    },
+                    shouldOccupyKey: assetWriteStarted,
+                    resourceId: orderId,
+                    resourceNo: order.OrderNo);
             }
 
             // 9. 发放权益
@@ -254,7 +289,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             Log.Information("用户 {UserId} 购买商品 {ProductId} 成功，订单号={OrderNo}",
                 userId, dto.ProductId, order.OrderNo);
 
-            return new PurchaseResultDto
+            var purchaseResult = new PurchaseResultDto
             {
                 Success = order.Status == OrderStatus.Completed,
                 OrderId = orderId,
@@ -264,11 +299,32 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 RemainingBalance = newBalance?.VoBalance,
                 ErrorMessage = order.Status == OrderStatus.Failed ? order.FailReason : null
             };
+
+            return await CompletePurchaseIdempotencyAsync(
+                idempotencyResult,
+                purchaseResult,
+                shouldOccupyKey: true,
+                resourceId: orderId,
+                resourceNo: order.OrderNo);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "用户 {UserId} 购买商品 {ProductId} 失败", userId, dto.ProductId);
-            return new PurchaseResultDto { Success = false, ErrorMessage = "购买失败，请稍后重试" };
+
+            var failureResult = new PurchaseResultDto
+            {
+                Success = false,
+                OrderId = idempotencyResourceId,
+                OrderNo = idempotencyResourceNo,
+                ErrorMessage = "购买失败，请稍后重试"
+            };
+
+            return await CompletePurchaseIdempotencyAsync(
+                idempotencyResult,
+                failureResult,
+                shouldOccupyKey: assetWriteStarted,
+                resourceId: idempotencyResourceId,
+                resourceNo: idempotencyResourceNo);
         }
     }
 
@@ -545,6 +601,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     }
 
     /// <summary>重新发放权益（发放失败时使用）</summary>
+    [UseTran]
     public async Task<bool> RetryGrantBenefitAsync(long orderId)
     {
         try
@@ -606,6 +663,141 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     private static long NormalizeTenantId(long tenantId)
     {
         return tenantId > 0 ? tenantId : 0;
+    }
+
+    private static long GetCurrentTenantId()
+    {
+        try
+        {
+            return NormalizeTenantId(App.CurrentUser.TenantId);
+        }
+        catch (Exception ex) when (ex is ArgumentNullException or InvalidOperationException)
+        {
+            return 0;
+        }
+    }
+
+    private async Task<OperationIdempotencyBeginResult?> BeginPurchaseIdempotencyAsync(
+        long tenantId,
+        long userId,
+        CreateOrderDto dto)
+    {
+        if (_operationIdempotencyService == null)
+        {
+            return null;
+        }
+
+        var key = _operationIdempotencyService.NormalizeKey(dto.IdempotencyKey);
+        if (key == null)
+        {
+            return null;
+        }
+
+        var snapshot = _operationIdempotencyService.CreateRequestSnapshot(
+            new Dictionary<string, object?>
+            {
+                ["productId"] = dto.ProductId,
+                ["quantity"] = dto.Quantity,
+                ["userRemark"] = NormalizeRequestSummaryText(dto.UserRemark)
+            });
+
+        return await _operationIdempotencyService.BeginAsync(new OperationIdempotencyBeginRequest
+        {
+            TenantId = tenantId,
+            UserId = userId,
+            OperationType = OperationIdempotencyOperationTypes.ShopPurchase,
+            IdempotencyKey = key,
+            RequestHash = snapshot.RequestHash,
+            RequestSummary = snapshot.RequestSummary
+        });
+    }
+
+    private PurchaseResultDto? ResolvePurchaseIdempotencyResult(OperationIdempotencyBeginResult? idempotencyResult)
+    {
+        if (idempotencyResult == null || idempotencyResult.Status == OperationIdempotencyBeginStatus.Started)
+        {
+            return null;
+        }
+
+        return idempotencyResult.Status switch
+        {
+            OperationIdempotencyBeginStatus.Succeeded => ResolvePurchaseReplayResult(idempotencyResult),
+            OperationIdempotencyBeginStatus.Processing => new PurchaseResultDto
+            {
+                Success = false,
+                ErrorMessage = idempotencyResult.Message ?? "请求处理中，请稍后查询结果或重试"
+            },
+            OperationIdempotencyBeginStatus.Conflict => new PurchaseResultDto
+            {
+                Success = false,
+                ErrorMessage = idempotencyResult.Message ?? "幂等键已被不同请求使用"
+            },
+            OperationIdempotencyBeginStatus.InvalidKey => new PurchaseResultDto
+            {
+                Success = false,
+                ErrorMessage = idempotencyResult.Message ?? "幂等键格式无效"
+            },
+            _ => new PurchaseResultDto
+            {
+                Success = false,
+                ErrorMessage = "幂等记录状态无效"
+            }
+        };
+    }
+
+    private PurchaseResultDto ResolvePurchaseReplayResult(OperationIdempotencyBeginResult idempotencyResult)
+    {
+        var replayResult = _operationIdempotencyService?.DeserializeResponse<PurchaseResultDto>(
+            idempotencyResult.ResponsePayload);
+
+        return replayResult ?? new PurchaseResultDto
+        {
+            Success = false,
+            ErrorMessage = "幂等记录缺少响应，请稍后重试"
+        };
+    }
+
+    private async Task<PurchaseResultDto> CompletePurchaseIdempotencyAsync(
+        OperationIdempotencyBeginResult? idempotencyResult,
+        PurchaseResultDto result,
+        bool shouldOccupyKey,
+        long? resourceId = null,
+        string? resourceNo = null)
+    {
+        if (_operationIdempotencyService == null ||
+            idempotencyResult?.Status != OperationIdempotencyBeginStatus.Started ||
+            !idempotencyResult.RecordId.HasValue)
+        {
+            return result;
+        }
+
+        if (shouldOccupyKey)
+        {
+            await _operationIdempotencyService.CompleteSuccessAsync(new OperationIdempotencyCompletionRequest
+            {
+                RecordId = idempotencyResult.RecordId.Value,
+                ResourceType = OperationIdempotencyResourceTypes.Order,
+                ResourceId = resourceId,
+                ResourceNo = resourceNo,
+                ErrorCode = result.ErrorCode,
+                ErrorMessage = result.ErrorMessage,
+                ResponsePayload = _operationIdempotencyService.SerializeResponse(result)
+            });
+        }
+        else
+        {
+            await _operationIdempotencyService.CompleteFailureAsync(
+                idempotencyResult.RecordId.Value,
+                result.ErrorCode,
+                result.ErrorMessage);
+        }
+
+        return result;
+    }
+
+    private static string NormalizeRequestSummaryText(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? string.Empty : value;
     }
 
     private async Task<bool> CancelPendingOrderAsync(Order order, string cancelReason, string operatorName, long operatorId)
@@ -677,7 +869,10 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         }
 
         var users = await _userRepository.QueryAsync(user => userIds.Contains(user.Id));
-        var userDict = users.ToDictionary(user => user.Id, user => user.UserName);
+        var userDict = users.ToDictionary(
+            user => user.Id,
+            user => User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id)
+                ?? User.NormalizeDisplayName(user.UserName, user.Id));
 
         foreach (var order in orders)
         {

@@ -84,48 +84,12 @@ public static class SystemConfigDefaults
         },
         new()
         {
-            Id = 10,
-            Category = UserIdentityCategory,
-            Key = LoginNameMinLengthKey,
-            Name = "登录名最小长度",
-            Description = "注册账号时登录名至少需要达到的字符数。",
-            ImpactSummary = "影响 Auth 注册页登录名长度校验，不改变登录名字符规则、唯一性规则或登录凭证语义。",
-            ValueType = "number",
-            DefaultValue = DefaultLoginNameMinLength,
-            MinNumberValue = 1,
-            MaxNumberValue = 32,
-            RequiresInteger = true,
-            RiskLevel = SystemConfigRiskLevel.Medium,
-            EffectiveMode = SystemConfigEffectiveMode.Immediate,
-            IsEditable = true,
-            IsSensitive = false
-        },
-        new()
-        {
-            Id = 11,
-            Category = UserIdentityCategory,
-            Key = LoginNameMaxLengthKey,
-            Name = "登录名最大长度",
-            Description = "注册账号时登录名最多允许的字符数。",
-            ImpactSummary = "影响 Auth 注册页登录名长度校验，上限不超过登录名字段与既有身份契约允许范围。",
-            ValueType = "number",
-            DefaultValue = DefaultLoginNameMaxLength,
-            MinNumberValue = 1,
-            MaxNumberValue = 32,
-            RequiresInteger = true,
-            RiskLevel = SystemConfigRiskLevel.Medium,
-            EffectiveMode = SystemConfigEffectiveMode.Immediate,
-            IsEditable = true,
-            IsSensitive = false
-        },
-        new()
-        {
             Id = 12,
             Category = UserIdentityCategory,
             Key = DisplayNameMinLengthKey,
             Name = "展示名最小长度",
-            Description = "用户更新公开展示名时至少需要达到的字符数。",
-            ImpactSummary = "影响个人资料更新中的公开展示名长度校验，不改变 PublicId、PublicIndex、登录名或邮箱语义。",
+            Description = "注册账号与更新公开展示名时至少需要达到的字符数。",
+            ImpactSummary = "影响 Auth 注册页与个人资料更新中的公开展示名长度校验，不改变 PublicId、PublicIndex 或邮箱登录语义。",
             ValueType = "number",
             DefaultValue = DefaultDisplayNameMinLength,
             MinNumberValue = 1,
@@ -142,13 +106,97 @@ public static class SystemConfigDefaults
             Category = UserIdentityCategory,
             Key = DisplayNameMaxLengthKey,
             Name = "展示名最大长度",
-            Description = "用户更新公开展示名时最多允许的字符数。",
-            ImpactSummary = "影响个人资料更新中的公开展示名长度校验，上限不超过展示名字段与公开句柄展示约束。",
+            Description = "注册账号与更新公开展示名时最多允许的字符数。",
+            ImpactSummary = "影响 Auth 注册页与个人资料更新中的公开展示名长度校验，上限不超过展示名字段与公开句柄展示约束。",
             ValueType = "number",
             DefaultValue = DefaultDisplayNameMaxLength,
             MinNumberValue = 1,
             MaxNumberValue = 24,
             RequiresInteger = true,
+            RiskLevel = SystemConfigRiskLevel.Medium,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
+        },
+        new()
+        {
+            Id = 20,
+            Category = UserIdentityCategory,
+            Key = DisplayNameChangeCooldownDaysKey,
+            Name = "展示名修改冷却天数",
+            Description = "同一用户两次修改公开展示名之间需要等待的天数，设置为 0 时关闭单次冷却限制。",
+            ImpactSummary = "影响个人资料中的公开展示名修改频率，不改变邮箱登录、PublicId 或 PublicIndex 语义。",
+            ValueType = "number",
+            DefaultValue = DefaultDisplayNameChangeCooldownDays,
+            MinNumberValue = 0,
+            MaxNumberValue = 3650,
+            RequiresInteger = true,
+            RiskLevel = SystemConfigRiskLevel.Medium,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
+        },
+        new()
+        {
+            Id = 21,
+            Category = UserIdentityCategory,
+            Key = DisplayNameChangeWindowDaysKey,
+            Name = "展示名修改统计窗口天数",
+            Description = "统计展示名修改次数的滚动窗口天数，设置为 0 时关闭窗口次数限制。",
+            ImpactSummary = "影响个人资料中的公开展示名修改频率，需与展示名修改窗口最大次数配合使用。",
+            ValueType = "number",
+            DefaultValue = DefaultDisplayNameChangeWindowDays,
+            MinNumberValue = 0,
+            MaxNumberValue = 3650,
+            RequiresInteger = true,
+            RiskLevel = SystemConfigRiskLevel.Medium,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
+        },
+        new()
+        {
+            Id = 22,
+            Category = UserIdentityCategory,
+            Key = DisplayNameChangeWindowMaxCountKey,
+            Name = "展示名修改窗口最大次数",
+            Description = "同一用户在统计窗口内最多允许修改展示名的次数，设置为 0 时关闭窗口次数限制。",
+            ImpactSummary = "影响个人资料中的公开展示名修改频率，数值过低会增加正常用户改名阻力，数值过高会削弱身份稳定性。",
+            ValueType = "number",
+            DefaultValue = DefaultDisplayNameChangeWindowMaxCount,
+            MinNumberValue = 0,
+            MaxNumberValue = 100,
+            RequiresInteger = true,
+            RiskLevel = SystemConfigRiskLevel.Medium,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
+        },
+        new()
+        {
+            Id = 23,
+            Category = UserIdentityCategory,
+            Key = PublicIndexReservedIndexesKey,
+            Name = "公开索引显式保留号",
+            Description = "普通注册与首个管理员初始化时需要跳过的 PublicIndex 靓号列表，使用 JSON 数组维护。",
+            ImpactSummary = "影响后续账号自动分配 PublicIndex，不自动改写既有用户，不改变 PublicId 或公开路由语义。",
+            ValueType = "json",
+            DefaultValue = DefaultPublicIndexReservedIndexes,
+            RiskLevel = SystemConfigRiskLevel.Medium,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
+        },
+        new()
+        {
+            Id = 24,
+            Category = UserIdentityCategory,
+            Key = PublicIndexVanityRulesKey,
+            Name = "公开索引靓号规则",
+            Description = "普通注册与首个管理员初始化时需要跳过的 PublicIndex 靓号规则，支持 repeatedDigits、ascendingSequence、descendingSequence、palindrome 四类布尔规则。",
+            ImpactSummary = "影响后续账号自动分配 PublicIndex；规则变更只影响新分配，不回收、不重排、不改写既有用户。",
+            ValueType = "json",
+            DefaultValue = DefaultPublicIndexVanityRules,
             RiskLevel = SystemConfigRiskLevel.Medium,
             EffectiveMode = SystemConfigEffectiveMode.Immediate,
             IsEditable = true,
@@ -435,17 +483,26 @@ public static class SystemConfigDefaults
     /// <summary>评论互动分类</summary>
     public const string CommentInteractionCategory = "评论互动";
 
-    /// <summary>登录名最小长度配置键</summary>
-    public const string LoginNameMinLengthKey = "UserIdentity.LoginName.MinLength";
-
-    /// <summary>登录名最大长度配置键</summary>
-    public const string LoginNameMaxLengthKey = "UserIdentity.LoginName.MaxLength";
-
     /// <summary>展示名最小长度配置键</summary>
     public const string DisplayNameMinLengthKey = "UserIdentity.DisplayName.MinLength";
 
     /// <summary>展示名最大长度配置键</summary>
     public const string DisplayNameMaxLengthKey = "UserIdentity.DisplayName.MaxLength";
+
+    /// <summary>展示名修改冷却天数配置键</summary>
+    public const string DisplayNameChangeCooldownDaysKey = "UserIdentity.DisplayName.ChangeCooldownDays";
+
+    /// <summary>展示名修改统计窗口天数配置键</summary>
+    public const string DisplayNameChangeWindowDaysKey = "UserIdentity.DisplayName.ChangeWindowDays";
+
+    /// <summary>展示名修改窗口最大次数配置键</summary>
+    public const string DisplayNameChangeWindowMaxCountKey = "UserIdentity.DisplayName.ChangeWindowMaxCount";
+
+    /// <summary>公开索引显式保留号配置键</summary>
+    public const string PublicIndexReservedIndexesKey = "UserIdentity.PublicIndex.ReservedIndexes";
+
+    /// <summary>公开索引靓号规则配置键</summary>
+    public const string PublicIndexVanityRulesKey = "UserIdentity.PublicIndex.VanityRules";
 
     /// <summary>帖子标题最小长度配置键</summary>
     public const string PostTitleMinLengthKey = "Content.PostTitle.MinLength";
@@ -492,17 +549,26 @@ public static class SystemConfigDefaults
     /// <summary>默认帖子标题最小长度</summary>
     public const string DefaultPostTitleMinLength = "3";
 
-    /// <summary>默认登录名最小长度</summary>
-    public const string DefaultLoginNameMinLength = "3";
-
-    /// <summary>默认登录名最大长度</summary>
-    public const string DefaultLoginNameMaxLength = "32";
-
     /// <summary>默认展示名最小长度</summary>
     public const string DefaultDisplayNameMinLength = "2";
 
     /// <summary>默认展示名最大长度</summary>
     public const string DefaultDisplayNameMaxLength = "24";
+
+    /// <summary>默认展示名修改冷却天数</summary>
+    public const string DefaultDisplayNameChangeCooldownDays = "30";
+
+    /// <summary>默认展示名修改统计窗口天数</summary>
+    public const string DefaultDisplayNameChangeWindowDays = "365";
+
+    /// <summary>默认展示名修改窗口最大次数</summary>
+    public const string DefaultDisplayNameChangeWindowMaxCount = "3";
+
+    /// <summary>默认公开索引显式保留号列表</summary>
+    public const string DefaultPublicIndexReservedIndexes = "[1314,5200]";
+
+    /// <summary>默认公开索引靓号规则</summary>
+    public const string DefaultPublicIndexVanityRules = "{\"repeatedDigits\":true,\"ascendingSequence\":true,\"descendingSequence\":true,\"palindrome\":true}";
 
     /// <summary>默认帖子标题最大长度</summary>
     public const string DefaultPostTitleMaxLength = "200";

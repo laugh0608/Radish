@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import {
@@ -20,8 +20,12 @@ import {
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { buildPublicShareUrl } from '../publicHead';
+import { resolvePublicUserRouteIdentifier } from '../publicId';
 import { usePublicShareLink } from '../hooks/usePublicShareLink';
+import { buildPublicProfilePath } from '../profileRouteState';
+import { buildPublicShopPath } from '../shopRouteState';
 import { resolveMediaUrl } from '@/utils/media';
+import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import styles from './PublicLeaderboardApp.module.css';
 
 interface PublicLeaderboardAppProps {
@@ -256,6 +260,31 @@ function buildAvatarText(name: string | undefined, fallback: string): string {
   return source.charAt(0).toUpperCase();
 }
 
+function resolveLeaderboardUserProfileIdentifier(item: UnifiedLeaderboardItemData): string {
+  return resolvePublicUserRouteIdentifier({
+    voPublicId: item.voUserPublicId,
+    voUserId: item.voUserId,
+  }) ?? '';
+}
+
+function shouldHandlePublicLeaderboardLink(event: MouseEvent<HTMLAnchorElement>): boolean {
+  return !event.defaultPrevented
+    && event.button === 0
+    && !event.metaKey
+    && !event.ctrlKey
+    && !event.shiftKey
+    && !event.altKey;
+}
+
+function handlePublicLeaderboardLinkClick(event: MouseEvent<HTMLAnchorElement>, action: () => void) {
+  if (!shouldHandlePublicLeaderboardLink(event)) {
+    return;
+  }
+
+  event.preventDefault();
+  action();
+}
+
 export const PublicLeaderboardApp = ({
   route,
   onNavigate,
@@ -461,21 +490,22 @@ export const PublicLeaderboardApp = ({
     });
   };
 
-  const handleOpenUserProfile = (item: UnifiedLeaderboardItemData) => {
-    const profileIdentifier = item.voUserPublicId?.trim() || (item.voUserId ? String(item.voUserId) : '');
-    if (!profileIdentifier) {
+  const handleUserProfileLinkClick = (event: MouseEvent<HTMLAnchorElement>, profileIdentifier: string) => {
+    if (!onNavigateToProfile || !shouldHandlePublicLeaderboardLink(event)) {
       return;
     }
 
-    onNavigateToProfile?.(profileIdentifier);
+    event.preventDefault();
+    onNavigateToProfile(profileIdentifier);
   };
 
-  const handleOpenProductDetail = (item: UnifiedLeaderboardItemData) => {
-    if (!item.voProductId) {
+  const handleProductDetailLinkClick = (event: MouseEvent<HTMLAnchorElement>, productId: string) => {
+    if (!onNavigateToShopProduct || !shouldHandlePublicLeaderboardLink(event)) {
       return;
     }
 
-    onNavigateToShopProduct?.(String(item.voProductId));
+    event.preventDefault();
+    onNavigateToShopProduct(productId);
   };
 
   return (
@@ -524,16 +554,21 @@ export const PublicLeaderboardApp = ({
             <div className={styles.tabRail}>
               {types.map((type) => {
                 const typeSlug = getPublicLeaderboardRouteDefinitionByType(type.voType).slug;
+                const typeRoute = {
+                  ...createDefaultPublicLeaderboardRoute(),
+                  typeSlug,
+                };
                 return (
-                  <button
+                  <a
                     key={type.voType}
-                    type="button"
                     className={`${styles.tabButton} ${route.typeSlug === typeSlug ? styles.tabButtonActive : ''}`}
-                    onClick={() => handleTypeChange(typeSlug)}
+                    href={buildPublicLeaderboardPath(typeRoute)}
+                    aria-current={route.typeSlug === typeSlug ? 'page' : undefined}
+                    onClick={(event) => handlePublicLeaderboardLinkClick(event, () => handleTypeChange(typeSlug))}
                   >
                     <Icon icon={type.voIcon} size={18} />
                     <span>{type.voName}</span>
-                  </button>
+                  </a>
                 );
               })}
             </div>
@@ -660,20 +695,23 @@ export const PublicLeaderboardApp = ({
               <div className={styles.list}>
                 {items.map((item) => item.voCategory === LeaderboardCategory.User ? (
                   (() => {
-                    const userName = item.voUserDisplayName?.trim()
-                      || item.voUserName?.trim()
-                      || t('common.userFallback', { id: item.voUserId || '?' });
-                    const displayHandle = item.voUserDisplayHandle?.trim()
-                      || (item.voUserPublicIndex ? `${userName}#${String(item.voUserPublicIndex).trim()}` : null);
+                    const profileIdentifier = resolveLeaderboardUserProfileIdentifier(item);
+                    const userName = resolveVisibleUserDisplayName({
+                      voDisplayName: item.voUserDisplayName,
+                      voDisplayHandle: item.voUserDisplayHandle,
+                      voPublicIndex: item.voUserPublicIndex,
+                      voUserName: item.voUserName,
+                    }, t('common.userFallback', { id: profileIdentifier || '?' }));
+                    const displayHandle = resolveVisibleUserHandle({
+                      voDisplayHandle: item.voUserDisplayHandle,
+                      voPublicIndex: item.voUserPublicIndex,
+                    }, userName);
                     const avatarUrl = resolveMediaUrl(item.voAvatarUrl);
-                    return (
-                      <button
-                        key={`${item.voLeaderboardType}-${String(item.voUserId)}-${item.voRank}`}
-                        type="button"
-                        className={`${styles.listItem} ${styles.userListItem} ${item.voIsCurrentUser ? styles.listItemCurrentUser : ''}`}
-                        onClick={() => handleOpenUserProfile(item)}
-                        disabled={!item.voUserId}
-                      >
+                    const profileHref = profileIdentifier
+                      ? buildPublicProfilePath({ kind: 'detail', userId: profileIdentifier, tab: 'posts', page: 1 })
+                      : null;
+                    const userItemContent = (
+                      <>
                         <div className={styles.userHeaderRow}>
                           <div className={styles.userIdentityCluster}>
                             <div className={styles.rankBadge} data-rank={item.voRank <= 3 ? item.voRank : undefined}>
@@ -717,20 +755,35 @@ export const PublicLeaderboardApp = ({
                             {Number(item.voPrimaryValue || 0).toLocaleString()} {item.voPrimaryLabel || activeTypeConfig.voPrimaryLabel}
                           </span>
                         </div>
+                      </>
+                    );
+
+                    return profileHref ? (
+                      <a
+                        key={`${item.voLeaderboardType}-${profileIdentifier}-${item.voRank}`}
+                        className={`${styles.listItem} ${styles.userListItem} ${item.voIsCurrentUser ? styles.listItemCurrentUser : ''}`}
+                        href={profileHref}
+                        onClick={(event) => handleUserProfileLinkClick(event, profileIdentifier)}
+                      >
+                        {userItemContent}
+                      </a>
+                    ) : (
+                      <button
+                        key={`${item.voLeaderboardType}-${profileIdentifier || 'unknown'}-${item.voRank}`}
+                        type="button"
+                        className={`${styles.listItem} ${styles.userListItem} ${item.voIsCurrentUser ? styles.listItemCurrentUser : ''}`}
+                        disabled
+                      >
+                        {userItemContent}
                       </button>
                     );
                   })()
                 ) : (() => {
                   const productIconUrl = resolveMediaUrl(item.voProductIcon);
-                  const canOpenProductDetail = !!item.voProductId && !!onNavigateToShopProduct;
-                  return (
-                    <button
-                      key={`${item.voLeaderboardType}-${String(item.voProductId)}-${item.voRank}`}
-                      type="button"
-                      className={`${styles.listItem} ${styles.productListItem}`}
-                      onClick={() => handleOpenProductDetail(item)}
-                      disabled={!canOpenProductDetail}
-                    >
+                  const productId = item.voProductId ? String(item.voProductId) : '';
+                  const productHref = productId ? buildPublicShopPath({ kind: 'detail', productId }) : null;
+                  const productItemContent = (
+                    <>
                       <div className={styles.rankBadge} data-rank={item.voRank <= 3 ? item.voRank : undefined}>
                         {item.voRank <= 3 ? (
                           <span className={styles.rankMedal}>
@@ -770,6 +823,26 @@ export const PublicLeaderboardApp = ({
                         <span className={styles.metricValue}>{Number(item.voPrimaryValue || 0).toLocaleString()}</span>
                         <span className={styles.metricLabel}>{item.voPrimaryLabel || activeTypeConfig.voPrimaryLabel}</span>
                       </div>
+                    </>
+                  );
+
+                  return productHref ? (
+                    <a
+                      key={`${item.voLeaderboardType}-${productId}-${item.voRank}`}
+                      className={`${styles.listItem} ${styles.productListItem}`}
+                      href={productHref}
+                      onClick={(event) => handleProductDetailLinkClick(event, productId)}
+                    >
+                      {productItemContent}
+                    </a>
+                  ) : (
+                    <button
+                      key={`${item.voLeaderboardType}-${String(item.voProductId)}-${item.voRank}`}
+                      type="button"
+                      className={`${styles.listItem} ${styles.productListItem}`}
+                      disabled
+                    >
+                      {productItemContent}
                     </button>
                   );
                 })())}
@@ -779,34 +852,45 @@ export const PublicLeaderboardApp = ({
 
           {totalPages > 1 && !loading && !error && (
             <div className={styles.pagination}>
-              <button
-                type="button"
-                className={styles.paginationButton}
-                onClick={() => onNavigate({ kind: 'list', typeSlug: route.typeSlug, page: Math.max(1, route.page - 1) })}
-                disabled={route.page === 1}
-              >
-                {t('common.previousPage')}
-              </button>
+              {route.page === 1 ? (
+                <button type="button" className={styles.paginationButton} disabled>
+                  {t('common.previousPage')}
+                </button>
+              ) : (
+                <a
+                  className={styles.paginationButton}
+                  href={buildPublicLeaderboardPath({ kind: 'list', typeSlug: route.typeSlug, page: route.page - 1 })}
+                  onClick={(event) => handlePublicLeaderboardLinkClick(event, () => onNavigate({ kind: 'list', typeSlug: route.typeSlug, page: route.page - 1 }))}
+                >
+                  {t('common.previousPage')}
+                </a>
+              )}
               <div className={styles.pageNumbers}>
                 {visiblePages.map((page) => (
-                  <button
+                  <a
                     key={page}
-                    type="button"
                     className={`${styles.pageNumberButton} ${page === route.page ? styles.pageNumberButtonActive : ''}`}
-                    onClick={() => onNavigate({ kind: 'list', typeSlug: route.typeSlug, page })}
+                    href={buildPublicLeaderboardPath({ kind: 'list', typeSlug: route.typeSlug, page })}
+                    aria-current={page === route.page ? 'page' : undefined}
+                    onClick={(event) => handlePublicLeaderboardLinkClick(event, () => onNavigate({ kind: 'list', typeSlug: route.typeSlug, page }))}
                   >
                     {page}
-                  </button>
+                  </a>
                 ))}
               </div>
-              <button
-                type="button"
-                className={styles.paginationButton}
-                onClick={() => onNavigate({ kind: 'list', typeSlug: route.typeSlug, page: Math.min(totalPages, route.page + 1) })}
-                disabled={route.page >= totalPages}
-              >
-                {t('common.nextPage')}
-              </button>
+              {route.page >= totalPages ? (
+                <button type="button" className={styles.paginationButton} disabled>
+                  {t('common.nextPage')}
+                </button>
+              ) : (
+                <a
+                  className={styles.paginationButton}
+                  href={buildPublicLeaderboardPath({ kind: 'list', typeSlug: route.typeSlug, page: route.page + 1 })}
+                  onClick={(event) => handlePublicLeaderboardLinkClick(event, () => onNavigate({ kind: 'list', typeSlug: route.typeSlug, page: route.page + 1 }))}
+                >
+                  {t('common.nextPage')}
+                </a>
+              )}
             </div>
           )}
         </section>

@@ -130,7 +130,8 @@ export const useTransfer = () => {
         toUserId: formData.recipientId,
         amount: formData.amount,
         remark: formData.note,
-        paymentPassword: formData.paymentPassword
+        paymentPassword: formData.paymentPassword,
+        idempotencyKey: formData.idempotencyKey
       });
 
       log.info('转账成功:', result);

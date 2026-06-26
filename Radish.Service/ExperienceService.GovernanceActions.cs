@@ -246,8 +246,8 @@ public partial class ExperienceService
             tenantId = targetUser?.TenantId ?? 0;
         }
 
-        var userName = !string.IsNullOrWhiteSpace(targetUser?.UserName)
-            ? targetUser!.UserName!.Trim()
+        var userName = targetUser != null
+            ? BuildExperienceUserDisplayName(targetUser)
             : !string.IsNullOrWhiteSpace(fallbackUserName)
                 ? fallbackUserName.Trim()
                 : $"User-{userId}";

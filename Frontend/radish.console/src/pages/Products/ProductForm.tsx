@@ -513,7 +513,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
 
       if (product) {
         // 更新
-        await updateProduct({ ...dto, id: product.voId } as UpdateProductDto);
+        await updateProduct({ ...dto, id: product.voId, expectedVersion: product.voVersion } as UpdateProductDto);
         message.success('更新成功');
       } else {
         // 创建
@@ -684,7 +684,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
           >
             <Input style={{ display: 'none' }} />
           </Form.Item>
-          <Space direction="vertical" style={{ width: '100%' }} size={10}>
+          <Space orientation="vertical" style={{ width: '100%' }} size={10}>
             <div
               style={{
                 width: 96,
@@ -752,7 +752,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
           >
             <Input style={{ display: 'none' }} />
           </Form.Item>
-          <Space direction="vertical" style={{ width: '100%' }} size={10}>
+          <Space orientation="vertical" style={{ width: '100%' }} size={10}>
             <div
               style={{
                 width: 160,

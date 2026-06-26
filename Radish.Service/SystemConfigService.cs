@@ -75,6 +75,8 @@ public class SystemConfigService : ISystemConfigService
         EnsureChangeConfirmation(definition, request.Reason, request.ConfirmRiskLevel, request.ConfirmKey);
 
         var existedRecord = await _systemConfigRepository.GetByKeyAsync(definition.Key);
+        var effectiveOverrideRecord = GetEffectiveOverrideRecord(definition, existedRecord);
+        EnsureExpectedVersion(effectiveOverrideRecord, request.ExpectedVersion);
         var oldEffectiveValue = GetEffectiveValue(definition, existedRecord);
 
         if (!request.IsEnabled)
@@ -122,6 +124,7 @@ public class SystemConfigService : ISystemConfigService
                 Description = definition.Description,
                 Type = definition.ValueType,
                 IsEnabled = true,
+                Version = 1,
                 CreateTime = now,
                 ModifyTime = now
             });
@@ -134,6 +137,9 @@ public class SystemConfigService : ISystemConfigService
             existedRecord.Description = definition.Description;
             existedRecord.Type = definition.ValueType;
             existedRecord.IsEnabled = true;
+            existedRecord.Version = effectiveOverrideRecord == null
+                ? 1
+                : NormalizeRecordVersion(existedRecord) + 1;
             existedRecord.ModifyTime = now;
 
             updatedRecord = await _systemConfigRepository.UpdateAsync(existedRecord)
@@ -164,6 +170,7 @@ public class SystemConfigService : ISystemConfigService
         EnsureEditable(definition);
         EnsureChangeConfirmation(definition, request?.Reason, request?.ConfirmRiskLevel, request?.ConfirmKey);
         var existedRecord = await _systemConfigRepository.GetByKeyAsync(definition.Key);
+        EnsureExpectedVersion(GetEffectiveOverrideRecord(definition, existedRecord), request?.ExpectedVersion ?? 0);
         var oldEffectiveValue = GetEffectiveValue(definition, existedRecord);
         await _systemConfigRepository.DeleteByKeyAsync(definition.Key);
         await CreateChangeLogIfChangedAsync(
@@ -345,9 +352,29 @@ public class SystemConfigService : ISystemConfigService
             VoEffectiveMode = definition.EffectiveMode,
             VoIsEditable = definition.IsEditable,
             VoIsSensitive = definition.IsSensitive,
+            VoVersion = isOverridden ? NormalizeRecordVersion(record) : 0,
             VoCreateTime = isOverridden ? record?.CreateTime : null,
             VoModifyTime = isOverridden ? record?.ModifyTime : null
         };
+    }
+
+    private static void EnsureExpectedVersion(SystemConfigRecord? record, int expectedVersion)
+    {
+        var currentVersion = record == null ? 0 : NormalizeRecordVersion(record);
+        if (currentVersion != expectedVersion)
+        {
+            throw new InvalidOperationException("系统设置已被其他管理员修改，请刷新后重试");
+        }
+    }
+
+    private static int NormalizeRecordVersion(SystemConfigRecord? record)
+    {
+        return record == null ? 0 : Math.Max(1, record.Version);
+    }
+
+    private static SystemConfigRecord? GetEffectiveOverrideRecord(SystemConfigDefinition definition, SystemConfigRecord? record)
+    {
+        return SystemConfigValueNormalizer.HasEnabledOverride(definition, record) ? record : null;
     }
 
     private static SystemConfigChangeLogVo MapChangeLogToVo(SystemConfigChangeLogRecord record)

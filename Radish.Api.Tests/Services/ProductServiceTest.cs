@@ -286,6 +286,167 @@ public class ProductServiceTest
         productRepository.Verify(repository => repository.UpdateAsync(It.IsAny<Product>()), Times.Never);
     }
 
+    [Fact]
+    public async Task UpdateProductAsync_ShouldRejectWhenExpectedVersionMismatch()
+    {
+        var product = CreateEditableCoinCardProduct();
+        product.Version = 3;
+        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+        var productRepository = CreateProductRepository(product);
+        var categoryRepository = new Mock<IBaseRepository<ProductCategory>>(MockBehavior.Strict);
+        var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Strict);
+        var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
+
+        var service = new ProductService(
+            mapper.Object,
+            productRepository.Object,
+            categoryRepository.Object,
+            orderRepository.Object,
+            attachmentUrlResolver.Object);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.UpdateProductAsync(
+            new UpdateProductDto
+            {
+                Id = product.Id,
+                Name = "新商品名",
+                CategoryId = product.CategoryId,
+                ProductType = product.ProductType,
+                ConsumableType = product.ConsumableType,
+                BenefitValue = product.BenefitValue,
+                Price = product.Price,
+                StockType = product.StockType,
+                Stock = product.Stock,
+                DurationType = DurationType.Permanent,
+                ExpectedVersion = 2
+            },
+            10001,
+            "tester"));
+
+        Assert.Equal("商品信息已被其他管理员修改，请刷新后重试", exception.Message);
+        productRepository.Verify(
+            repository => repository.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<Product, Product>>>(),
+                It.IsAny<Expression<Func<Product, bool>>>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateProductAsync_ShouldUpdateByExpectedVersionAndIncrementVersion()
+    {
+        var product = CreateEditableCoinCardProduct();
+        product.Version = 3;
+        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+        mapper
+            .Setup(m => m.Map(It.IsAny<UpdateProductDto>(), It.IsAny<Product>()))
+            .Callback<UpdateProductDto, Product>((source, target) =>
+            {
+                target.Name = source.Name;
+                target.CategoryId = source.CategoryId;
+                target.ProductType = source.ProductType;
+                target.ConsumableType = source.ConsumableType;
+                target.BenefitValue = source.BenefitValue;
+                target.Price = source.Price;
+                target.StockType = source.StockType;
+                target.Stock = source.Stock;
+                target.DurationType = source.DurationType;
+                target.IsOnSale = source.IsOnSale;
+            })
+            .Returns((UpdateProductDto _, Product target) => target);
+        var productRepository = CreateProductRepository(product);
+        var persistedProduct = CloneProduct(product);
+        Product? patch = null;
+        productRepository
+            .Setup(repository => repository.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<Product, Product>>>(),
+                It.IsAny<Expression<Func<Product, bool>>>()))
+            .ReturnsAsync((Expression<Func<Product, Product>> updateExpression, Expression<Func<Product, bool>> whereExpression) =>
+            {
+                if (!whereExpression.Compile()(persistedProduct))
+                {
+                    return 0;
+                }
+
+                patch = updateExpression.Compile()(persistedProduct);
+                return 1;
+            });
+        var categoryRepository = new Mock<IBaseRepository<ProductCategory>>(MockBehavior.Strict);
+        var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Strict);
+        var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
+
+        var service = new ProductService(
+            mapper.Object,
+            productRepository.Object,
+            categoryRepository.Object,
+            orderRepository.Object,
+            attachmentUrlResolver.Object);
+
+        var result = await service.UpdateProductAsync(
+            new UpdateProductDto
+            {
+                Id = product.Id,
+                Name = "新商品名",
+                CategoryId = product.CategoryId,
+                ProductType = product.ProductType,
+                ConsumableType = product.ConsumableType,
+                BenefitValue = "20",
+                Price = 60,
+                StockType = StockType.Limited,
+                Stock = 8,
+                DurationType = DurationType.Permanent,
+                IsOnSale = true,
+                ExpectedVersion = 3
+            },
+            10001,
+            "tester");
+
+        Assert.True(result);
+        Assert.NotNull(patch);
+        Assert.Equal("新商品名", patch!.Name);
+        Assert.Equal(4, patch.Version);
+    }
+
+    [Fact]
+    public async Task PutOnSaleAsync_ShouldUseExpectedVersionAndIncrementVersion()
+    {
+        var product = CreateEditableCoinCardProduct();
+        product.IsOnSale = false;
+        product.Version = 5;
+        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+        var productRepository = CreateProductRepository(product);
+        Product? patch = null;
+        productRepository
+            .Setup(repository => repository.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<Product, Product>>>(),
+                It.IsAny<Expression<Func<Product, bool>>>()))
+            .ReturnsAsync((Expression<Func<Product, Product>> updateExpression, Expression<Func<Product, bool>> whereExpression) =>
+            {
+                if (!whereExpression.Compile()(product))
+                {
+                    return 0;
+                }
+
+                patch = updateExpression.Compile()(product);
+                return 1;
+            });
+        var categoryRepository = new Mock<IBaseRepository<ProductCategory>>(MockBehavior.Strict);
+        var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Strict);
+        var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
+
+        var service = new ProductService(
+            mapper.Object,
+            productRepository.Object,
+            categoryRepository.Object,
+            orderRepository.Object,
+            attachmentUrlResolver.Object);
+
+        var result = await service.PutOnSaleAsync(product.Id, 5);
+
+        Assert.True(result);
+        Assert.NotNull(patch);
+        Assert.True(patch!.IsOnSale);
+        Assert.Equal(6, patch.Version);
+    }
+
     private static Product CreateLotteryTicketProduct()
     {
         return new Product
@@ -343,6 +504,28 @@ public class ProductServiceTest
         };
     }
 
+    private static Product CreateEditableCoinCardProduct()
+    {
+        return new Product
+        {
+            Id = 100063,
+            Name = "测试红包",
+            CategoryId = "effect",
+            ProductType = ProductType.Consumable,
+            ConsumableType = ConsumableType.CoinCard,
+            BenefitValue = "10",
+            IsEnabled = true,
+            IsOnSale = true,
+            Price = 50,
+            StockType = StockType.Limited,
+            Stock = 10,
+            DurationType = DurationType.Permanent,
+            TenantId = 0,
+            CreateTime = DateTime.Now,
+            CreateBy = "System"
+        };
+    }
+
     private static Mock<IBaseRepository<Product>> CreateProductRepository(Product product)
     {
         var repository = new Mock<IBaseRepository<Product>>(MockBehavior.Strict);
@@ -359,5 +542,36 @@ public class ProductServiceTest
                 return predicate(product) ? product : null;
             });
         return repository;
+    }
+
+    private static Product CloneProduct(Product product)
+    {
+        return new Product
+        {
+            Id = product.Id,
+            Name = product.Name,
+            CategoryId = product.CategoryId,
+            ProductType = product.ProductType,
+            BenefitType = product.BenefitType,
+            ConsumableType = product.ConsumableType,
+            BenefitValue = product.BenefitValue,
+            IsEnabled = product.IsEnabled,
+            IsOnSale = product.IsOnSale,
+            Price = product.Price,
+            OriginalPrice = product.OriginalPrice,
+            StockType = product.StockType,
+            Stock = product.Stock,
+            SoldCount = product.SoldCount,
+            LimitPerUser = product.LimitPerUser,
+            DurationType = product.DurationType,
+            DurationDays = product.DurationDays,
+            ExpiresAt = product.ExpiresAt,
+            SortOrder = product.SortOrder,
+            TenantId = product.TenantId,
+            Version = product.Version,
+            CreateTime = product.CreateTime,
+            CreateBy = product.CreateBy,
+            CreateId = product.CreateId
+        };
     }
 }

@@ -4,6 +4,7 @@ import { userApi } from '../api/user';
 import { tokenService } from '../services/tokenService';
 import { UserContext } from './userContextCore';
 import type { UserInfo } from '../types/user';
+import { resolveVisibleUserDisplayName } from '../utils/userIdentityDisplay';
 
 export interface UserProviderProps {
   children: ReactNode;
@@ -31,15 +32,17 @@ export function UserProvider({ children }: UserProviderProps) {
     try {
       const response = await userApi.getCurrentUser();
       if (response.ok && response.data) {
-        const resolvedUserName = response.data.voUserName?.trim() || tokenUserName || '';
+        const resolvedUserName = resolveVisibleUserDisplayName(response.data, tokenUserName || '');
         setUser({
           ...response.data,
+          voDisplayName: resolvedUserName,
           voUserName: resolvedUserName,
         });
       } else {
         if (tokenUserName) {
           setUser({
             voUserId: '',
+            voDisplayName: tokenUserName,
             voUserName: tokenUserName,
             voTenantId: '',
             roles: [],
@@ -54,6 +57,7 @@ export function UserProvider({ children }: UserProviderProps) {
       if (tokenUserName) {
         setUser({
           voUserId: '',
+          voDisplayName: tokenUserName,
           voUserName: tokenUserName,
           voTenantId: '',
           roles: [],

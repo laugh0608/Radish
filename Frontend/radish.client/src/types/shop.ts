@@ -181,6 +181,7 @@ export interface CreateOrderRequest {
   productId: LongId;
   quantity?: number;
   paymentPassword: string;
+  idempotencyKey?: string;
   userRemark?: string;
 }
 

@@ -83,12 +83,14 @@ public interface ICoinRewardService
     /// <param name="userId">用户 ID</param>
     /// <param name="likeIncrement">点赞增量</param>
     /// <param name="highlightType">类型（GodComment/Sofa）</param>
+    /// <param name="likeCountAfter">本次结算后的点赞数快照</param>
     /// <returns>是否成功发放</returns>
     Task<CoinRewardResult> GrantLikeBonusRewardAsync(
         long highlightId,
         long userId,
         int likeIncrement,
-        string highlightType);
+        string highlightType,
+        int? likeCountAfter = null);
 
     /// <summary>
     /// 发放保留奖励（每周结算）

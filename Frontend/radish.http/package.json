@@ -15,6 +15,7 @@
     "src"
   ],
   "scripts": {
+    "test": "node --test --test-isolation=none ./tests/logSanitizer.test.ts",
     "type-check": "tsc --noEmit"
   },
   "devDependencies": {

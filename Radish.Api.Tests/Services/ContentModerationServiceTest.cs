@@ -234,8 +234,10 @@ public class ContentModerationServiceTest
             .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<ContentReport, bool>>?>()))
             .ReturnsAsync(report);
         contentReportRepository
-            .Setup(repository => repository.UpdateAsync(It.IsAny<ContentReport>()))
-            .ReturnsAsync(true);
+            .Setup(repository => repository.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<ContentReport, ContentReport>>>(),
+                It.IsAny<Expression<Func<ContentReport, bool>>>()))
+            .ReturnsAsync(1);
         channelMessageRepository
             .Setup(repository => repository.QueryByIdsIncludingDeletedAsync(It.Is<List<long>>(ids => ids.Count == 1 && ids[0] == 90003)))
             .ReturnsAsync(new List<ChannelMessage>
@@ -270,6 +272,52 @@ public class ContentModerationServiceTest
         result.VoTargetChannelId.ShouldBe(99);
         result.VoTargetMessageId.ShouldBe(90003);
         result.VoStatus.ShouldBe("Rejected");
+    }
+
+    [Fact]
+    public async Task ReviewReportAsync_Should_Reject_When_Report_Already_Handled_During_Update()
+    {
+        var contentReportRepository = new Mock<IBaseRepository<ContentReport>>(MockBehavior.Strict);
+        var channelMessageRepository = new Mock<IChannelMessageRepository>(MockBehavior.Strict);
+        var service = CreateService(contentReportRepository: contentReportRepository, channelMessageRepository: channelMessageRepository);
+
+        contentReportRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<ContentReport, bool>>?>()))
+            .ReturnsAsync(new ContentReport
+            {
+                Id = 70004,
+                TenantId = 1,
+                ReportTargetType = (int)ContentReportTargetTypeEnum.ChatMessage,
+                TargetContentId = 90007,
+                TargetUserId = 10007,
+                TargetUserName = "target",
+                ReporterUserId = 10001,
+                ReporterUserName = "reporter",
+                ReasonType = "Spam",
+                Status = (int)ContentReportStatusEnum.Pending,
+                CreateTime = new DateTime(2026, 5, 10, 12, 5, 0)
+            });
+        contentReportRepository
+            .Setup(repository => repository.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<ContentReport, ContentReport>>>(),
+                It.IsAny<Expression<Func<ContentReport, bool>>>()))
+            .ReturnsAsync(0);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.ReviewReportAsync(
+            new ReviewContentReportDto
+            {
+                ReportId = 70004,
+                IsApproved = false,
+                ActionType = (int)ModerationActionTypeEnum.None
+            },
+            20001,
+            "reviewer",
+            1));
+
+        exception.Message.ShouldBe("举报单已被处理，请刷新审核队列");
+        channelMessageRepository.Verify(
+            repository => repository.QueryByIdsIncludingDeletedAsync(It.IsAny<List<long>>()),
+            Times.Never);
     }
 
     [Fact]

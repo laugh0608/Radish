@@ -142,6 +142,7 @@ export interface Product {
   voCreateTime: string;
   voOnSaleTime?: string | null;
   voOffSaleTime?: string | null;
+  voVersion: number;
 }
 
 /**
@@ -205,4 +206,5 @@ export interface CreateProductDto {
  */
 export interface UpdateProductDto extends CreateProductDto {
   id: string;
+  expectedVersion: number;
 }

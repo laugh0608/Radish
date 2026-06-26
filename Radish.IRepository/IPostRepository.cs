@@ -6,6 +6,14 @@ namespace Radish.IRepository;
 public interface IPostRepository
 {
     /// <summary>
+    /// 切换帖子点赞关系，并返回本次真实状态变化。
+    /// </summary>
+    /// <param name="userId">操作用户 Id</param>
+    /// <param name="postId">帖子 Id</param>
+    /// <returns>点赞持久化结果</returns>
+    Task<PostLikePersistenceResult> TogglePostLikeAsync(long userId, long postId);
+
+    /// <summary>
     /// 分页查询普通论坛帖子列表
     /// </summary>
     /// <param name="categoryId">分类 Id（可空）</param>
@@ -49,3 +57,13 @@ public interface IPostRepository
         int pageSize,
         string sortBy);
 }
+
+/// <summary>帖子点赞持久化结果。</summary>
+public sealed record PostLikePersistenceResult(
+    long PostId,
+    long AuthorId,
+    string Title,
+    string? PublicId,
+    bool IsLiked,
+    int LikeCount,
+    int Delta);

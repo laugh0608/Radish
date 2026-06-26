@@ -13,6 +13,11 @@ import {
 import type { PostItem } from '@/types/forum';
 import { PublicShellHeader } from '@/public/components/PublicShellHeader';
 import { buildPublicForumPath, type PublicForumDetailRoute } from '@/public/forumRouteState';
+import {
+  normalizePublicPostId,
+  resolvePublicPostRouteIdentifier,
+  resolvePublicUserRouteIdentifier,
+} from '@/public/publicId';
 import { buildPublicProfilePath, type PublicProfileRoute } from '@/public/profileRouteState';
 import {
   createPublicRouteSourceState,
@@ -26,6 +31,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
 import { formatDateTimeByTimeZone, getBrowserTimeZoneId, DEFAULT_TIME_ZONE } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
+import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import { log } from '@/utils/logger';
 import {
   buildCirclePath,
@@ -47,19 +53,18 @@ function resolveInitialCircleRoute(): CircleRoute {
 }
 
 function buildPostRoute(post: PostItem): PublicForumDetailRoute {
-  const publicId = post.voPublicId?.trim();
+  const publicId = normalizePublicPostId(post.voPublicId);
   return {
     kind: 'detail',
-    postId: String(post.voId),
+    postId: resolvePublicPostRouteIdentifier(post),
     ...(publicId ? { postPublicId: publicId } : {})
   };
 }
 
 function buildUserRoute(user: UserFollowUser): PublicProfileRoute {
-  const publicId = user.voPublicId?.trim();
   return {
     kind: 'detail',
-    userId: publicId || String(user.voUserId),
+    userId: resolvePublicUserRouteIdentifier(user) ?? String(user.voUserId),
     tab: 'posts',
     page: 1
   };
@@ -252,7 +257,7 @@ export const CircleApp = () => {
   };
 
   const renderUserAvatar = (user: UserFollowUser) => {
-    const displayName = user.voDisplayName?.trim() || user.voUserName.trim() || t('common.unknownUser');
+    const displayName = resolveVisibleUserDisplayName(user, t('common.unknownUser'));
     const userIdKey = String(user.voUserId);
     const avatarUrl = avatarErrorUserIds.has(userIdKey) ? null : resolveMediaUrl(user.voAvatarUrl, apiBaseUrl);
 
@@ -333,9 +338,8 @@ export const CircleApp = () => {
     return (
       <div className={styles.userList}>
         {userItems.map((user) => {
-          const displayName = user.voDisplayName?.trim() || user.voUserName.trim() || t('common.unknownUser');
-          const displayHandle = user.voDisplayHandle?.trim()
-            || (user.voPublicIndex ? `${displayName}#${String(user.voPublicIndex).trim()}` : null);
+          const displayName = resolveVisibleUserDisplayName(user, t('common.unknownUser'));
+          const displayHandle = resolveVisibleUserHandle(user, displayName);
           const userRoute = buildUserRoute(user);
           const userPath = buildPublicProfilePath(userRoute);
 
@@ -445,17 +449,28 @@ export const CircleApp = () => {
         </section>
 
         <nav className={styles.tabs} aria-label={t('circle.tabsLabel')}>
-          {(['feed', 'following', 'followers'] as CircleTab[]).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              className={`${styles.tab} ${route.tab === tab ? styles.activeTab : ''}`}
-              aria-current={route.tab === tab ? 'page' : undefined}
-              onClick={() => switchTab(tab)}
-            >
-              {t(`circle.tab.${tab}`)}
-            </button>
-          ))}
+          {(['feed', 'following', 'followers'] as CircleTab[]).map((tab) => {
+            const href = buildCirclePath({ tab, page: 1 });
+
+            return (
+              <a
+                key={tab}
+                className={`${styles.tab} ${route.tab === tab ? styles.activeTab : ''}`}
+                href={href}
+                aria-current={route.tab === tab ? 'page' : undefined}
+                onClick={(event) => {
+                  if (!shouldHandleCircleSourceLink(event)) {
+                    return;
+                  }
+
+                  event.preventDefault();
+                  switchTab(tab);
+                }}
+              >
+                {t(`circle.tab.${tab}`)}
+              </a>
+            );
+          })}
         </nav>
 
         <section className={styles.contentBlock} aria-labelledby="circle-section-title">
@@ -473,23 +488,47 @@ export const CircleApp = () => {
 
         {authReady && loggedIn && !loading && !errorMessage && totalPages > 1 ? (
           <div className={styles.pagination}>
-            <button
-              type="button"
-              className={styles.pageButton}
-              disabled={route.page <= 1}
-              onClick={() => movePage(route.page - 1)}
-            >
-              {t('common.previousPage')}
-            </button>
+            {route.page <= 1 ? (
+              <button type="button" className={styles.pageButton} disabled>
+                {t('common.previousPage')}
+              </button>
+            ) : (
+              <a
+                className={styles.pageButton}
+                href={buildCirclePath({ ...route, page: route.page - 1 })}
+                onClick={(event) => {
+                  if (!shouldHandleCircleSourceLink(event)) {
+                    return;
+                  }
+
+                  event.preventDefault();
+                  movePage(route.page - 1);
+                }}
+              >
+                {t('common.previousPage')}
+              </a>
+            )}
             <span>{t('common.pageInfo', { current: route.page, total: totalPages })}</span>
-            <button
-              type="button"
-              className={styles.pageButton}
-              disabled={route.page >= totalPages}
-              onClick={() => movePage(route.page + 1)}
-            >
-              {t('common.nextPage')}
-            </button>
+            {route.page >= totalPages ? (
+              <button type="button" className={styles.pageButton} disabled>
+                {t('common.nextPage')}
+              </button>
+            ) : (
+              <a
+                className={styles.pageButton}
+                href={buildCirclePath({ ...route, page: route.page + 1 })}
+                onClick={(event) => {
+                  if (!shouldHandleCircleSourceLink(event)) {
+                    return;
+                  }
+
+                  event.preventDefault();
+                  movePage(route.page + 1);
+                }}
+              >
+                {t('common.nextPage')}
+              </a>
+            )}
           </div>
         ) : null}
       </main>

@@ -83,7 +83,7 @@ Radish 电子宠物是面向长期复访、轻互动和社区陪伴感的 Web-fi
 - 迁移前阻断不是前端路由问题，而是本地主库尚未同步新增表，API 抛出 `SQLite Error 1: 'no such table: PetProfile'`；本地执行 `DbMigrate init/apply` 并重启 API 后已恢复。
 - 迁移后通过 `https://localhost:5000` 验证领取 `联调萝卜`、喂食 / 清洁 / 互动 / 休息、状态数值变化、成长流水、冷却禁用、刷新持久化和 `/me` 摘要。
 - PC 视图使用 `1920x1080`，移动视图使用 `390x844 @ DPR 3`，未发现横向溢出或新增浏览器 warning / error。
-- 测试 / 生产上线前使用 `Deploy/sql/20260615_add_pet_tables.sql` 作为 `PetProfile` / `PetStatLog` 版本化差异 SQL 审核入口。
+- 2026-06-22 后按上线前数据库结构口径处理：`PetProfile` / `PetStatLog` 以实体和 `Radish.DbMigrate` 为准，不维护该阶段历史发布脚本；存在正式数据库后再生成发布 SQL。
 
 ## Phase B 体验补漏与契约收口记录
 
@@ -103,10 +103,10 @@ Radish 电子宠物是面向长期复访、轻互动和社区陪伴感的 Web-fi
 
 本批结论：
 
-- 后端宠物定向测试、完整 API 测试、`radish.client` 测试 / 类型检查 / 构建、身份契约和迁移 SQL 自检均通过。
+- 后端宠物定向测试、完整 API 测试、`radish.client` 测试 / 类型检查 / 构建、身份契约和结构同步自检均通过。
 - 已补 `/pet` 登录回流前端契约测试，明确 `/pet` 是登录态私域回流入口，不属于公开内容路由。
 - Gateway 真实页面补验已完成：`/pet` 未登录进入 `Radish 统一登录`，种子账号登录后回流 `/pet`；PC `1920x1080` 与移动 `390x844` 覆盖刷新、四类照顾动作、每日次数 / 冷却、最近流水和 `/me` 宠物摘要入口。本轮 Browser 工具不能强制 DPR，移动实测 DPR 为 `1`。
-- 合并前自动化总验证已完成：`validate:baseline`、`validate:identity`、`validate:baseline:host` 和迁移 SQL 重放均通过；最新运行态健康复查因本机 API/Auth 未监听未闭合，若 PR 需要最新健康端点结论，恢复宿主后复跑 `check:host-runtime`。
+- 合并前自动化总验证已完成：`validate:baseline`、`validate:identity`、`validate:baseline:host` 和 DbMigrate 基线重放均通过；最新运行态健康复查因本机 API/Auth 未监听未闭合，若 PR 需要最新健康端点结论，恢复宿主后复跑 `check:host-runtime`。
 
 ## 首批能力范围
 

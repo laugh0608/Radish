@@ -23,6 +23,7 @@ import {
   resolveBrowseHistoryWorkspaceTarget,
 } from '@/utils/workspaceNavigation';
 import { resolveMediaUrl } from '@/utils/media';
+import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import { reuseInFlightRequest } from './requestDedup';
 import styles from './ProfileApp.module.css';
 
@@ -192,7 +193,7 @@ async function fetchProfileTimeState(): Promise<ProfileTimeState> {
 
 export const ProfileApp = () => {
   const { t } = useTranslation();
-  const { userId, userName, isAuthenticated } = useUserStore();
+  const { userId, displayName: storeDisplayName, userName, displayHandle, isAuthenticated } = useUserStore();
   const { openApp } = useWindowStore();
   const currentWindow = useCurrentWindow();
   const params = useMemo(() => parseProfileWindowParams(currentWindow?.appParams), [currentWindow?.appParams]);
@@ -215,11 +216,20 @@ export const ProfileApp = () => {
   const [followLoading, setFollowLoading] = useState(false);
 
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
-  const viewingUserName = publicProfile?.voUserName?.trim()
-    || params.userName?.trim()
-    || userName
+  const viewingDisplayName = publicProfile
+    ? resolveVisibleUserDisplayName(publicProfile, t('common.userFallback', { id: viewingUserIdKey || 0 }))
+    : params.displayName?.trim()
+      || storeDisplayName
+      || userName
+      || t('common.userFallback', { id: viewingUserIdKey || 0 });
+  const viewingDisplayHandle = publicProfile
+    ? resolveVisibleUserHandle(publicProfile, viewingDisplayName)
+    : displayHandle?.trim()
+      || params.userName?.trim()
+      || null;
+  const viewingUserName = viewingDisplayHandle
+    || viewingDisplayName
     || t('common.userFallback', { id: viewingUserIdKey || 0 });
-  const viewingDisplayName = publicProfile?.voDisplayName?.trim() || params.displayName?.trim() || null;
   const externalAvatarUrl = useMemo(
     () => resolveAvatarUrl(
       apiBaseUrl,
@@ -433,7 +443,7 @@ export const ProfileApp = () => {
         {isOwnProfile ? (
           <UserInfoCard
             userId={authenticatedUserId!}
-            userName={viewingUserName}
+            userName={viewingDisplayName}
             stats={stats || undefined}
             loading={loadingStats}
             apiBaseUrl={apiBaseUrl}
@@ -452,14 +462,14 @@ export const ProfileApp = () => {
                 title={viewingDisplayName || viewingUserName}
               >
                 {externalAvatarUrl ? (
-                  <img src={externalAvatarUrl} alt={viewingUserName} className={styles.externalAvatarImage} loading="lazy" />
+                  <img src={externalAvatarUrl} alt={viewingDisplayName} className={styles.externalAvatarImage} loading="lazy" />
                 ) : (
-                  buildAvatarText(viewingUserName)
+                  buildAvatarText(viewingDisplayName)
                 )}
               </div>
               <div className={styles.externalInfo}>
                 <div className={styles.externalNameRow}>
-                  <h2 className={styles.externalName}>{viewingUserName}</h2>
+                  <h2 className={styles.externalName}>{viewingDisplayName}</h2>
                   <button
                     type="button"
                     className={`${styles.followButton} ${followStatus?.voIsFollowing ? styles.followingButton : ''}`}
@@ -478,9 +488,9 @@ export const ProfileApp = () => {
                         : t('forum.postDetail.follow.follow')}
                   </button>
                 </div>
-                {viewingDisplayName ? (
+                {viewingDisplayHandle ? (
                   <div className={styles.externalSubtle}>
-                    {t('profile.displayName', { name: viewingDisplayName })}
+                    {viewingDisplayHandle}
                   </div>
                 ) : null}
                 {publicProfile?.voCreateTime ? (

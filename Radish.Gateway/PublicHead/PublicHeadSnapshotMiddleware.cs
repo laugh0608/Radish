@@ -4,13 +4,22 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace Radish.Gateway.PublicHead;
 
-/// <summary>公开详情页 HTML head 快照注入中间件。</summary>
+/// <summary>公开页面 HTML head 快照注入中间件。</summary>
 public sealed class PublicHeadSnapshotMiddleware
 {
     private static readonly TimeSpan InjectedHtmlCacheTtl = TimeSpan.FromMinutes(10);
     private static readonly Regex ForumPostPathPattern = new("^/forum/post/([^/?#]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
     private static readonly Regex DocsPathPattern = new("^/docs/([^/?#]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
     private static readonly Regex ShopProductPathPattern = new("^/shop/product/([1-9][0-9]*)$", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+    private static readonly IReadOnlyDictionary<string, string> StaticRouteSnapshotApiPaths =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["/discover"] = "/api/public-head/static/discover",
+            ["/forum"] = "/api/public-head/static/forum",
+            ["/docs"] = "/api/public-head/static/docs",
+            ["/leaderboard"] = "/api/public-head/static/leaderboard",
+            ["/shop"] = "/api/public-head/static/shop"
+        };
 
     private readonly RequestDelegate _next;
     private readonly IMemoryCache _memoryCache;
@@ -83,6 +92,12 @@ public sealed class PublicHeadSnapshotMiddleware
         if (string.IsNullOrWhiteSpace(path))
         {
             return false;
+        }
+
+        if (StaticRouteSnapshotApiPaths.TryGetValue(path, out var staticApiPath))
+        {
+            snapshotRequest = new SnapshotRequest(staticApiPath);
+            return true;
         }
 
         var forumMatch = ForumPostPathPattern.Match(path);

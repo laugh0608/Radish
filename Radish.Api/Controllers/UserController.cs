@@ -44,7 +44,6 @@ public class UserController : ControllerBase
     private readonly IUserBrowseHistoryService _userBrowseHistoryService;
     private readonly IUserTimePreferenceService _userTimePreferenceService;
     private readonly INotificationPushService _notificationPushService;
-    private readonly ISystemSettingProvider _systemSettingProvider;
     private readonly TimeOptions _timeOptions;
 
     public UserController(
@@ -56,7 +55,6 @@ public class UserController : ControllerBase
         IUserTimePreferenceService userTimePreferenceService,
         IAttachmentService attachmentService,
         INotificationPushService notificationPushService,
-        ISystemSettingProvider systemSettingProvider,
         IOptions<TimeOptions> timeOptions)
     {
         _userService = userService;
@@ -66,7 +64,6 @@ public class UserController : ControllerBase
         _userBrowseHistoryService = userBrowseHistoryService;
         _userTimePreferenceService = userTimePreferenceService;
         _notificationPushService = notificationPushService;
-        _systemSettingProvider = systemSettingProvider;
         _attachmentService = attachmentService;
         _timeOptions = timeOptions.Value;
     }
@@ -106,7 +103,7 @@ public class UserController : ControllerBase
             result = await _userService.QueryPageAsync(
                 u => !u.IsDeleted &&
                      (u.UserName.Contains(keyword) ||
-                      u.LoginName.Contains(keyword) ||
+                      (u.PublicId != null && u.PublicId.Contains(keyword)) ||
                       (u.UserEmail != null && u.UserEmail.Contains(keyword))),
                 pageIndex, pageSize, u => u.Id, SqlSugar.OrderByType.Desc);
         }
@@ -255,7 +252,7 @@ public class UserController : ControllerBase
     {
         var totalStopwatch = Stopwatch.StartNew();
         var userId = Current.UserId;
-        var userName = Current.UserName;
+        var fallbackDisplayName = Current.UserName;
         var tenantId = Current.TenantId;
         var roles = Current.Roles
             .Where(role => !string.IsNullOrWhiteSpace(role))
@@ -264,8 +261,13 @@ public class UserController : ControllerBase
             .OrderBy(role => role, StringComparer.OrdinalIgnoreCase)
             .ToList();
         var user = await _userService.QueryFirstAsync(u => u.Id == userId && !u.IsDeleted);
-        var loginName = string.IsNullOrWhiteSpace(user?.VoLoginName) ? userName : user.VoLoginName;
-        var nickname = string.IsNullOrWhiteSpace(user?.VoUserName) ? userName : user.VoUserName;
+        var displayName = string.IsNullOrWhiteSpace(user?.VoDisplayName)
+            ? Radish.Model.User.NormalizeDisplayName(fallbackDisplayName, userId)
+            : user.VoDisplayName.Trim();
+        var displayHandle = string.IsNullOrWhiteSpace(user?.VoDisplayHandle)
+            ? null
+            : user.VoDisplayHandle.Trim();
+        var nickname = string.IsNullOrWhiteSpace(user?.VoUserName) ? displayName : user.VoUserName;
 
         Log.Information(
             "[GetUserByHttpContext] 开始处理当前用户信息，用户: {UserId}, 角色数: {RoleCount}",
@@ -316,8 +318,11 @@ public class UserController : ControllerBase
         var userInfo = new CurrentUserVo
         {
             VoUserId = userId,
-            VoUserName = userName,
-            VoLoginName = loginName,
+            VoUserName = displayName,
+            VoDisplayName = displayName,
+            VoDisplayHandle = displayHandle,
+            VoPublicId = user?.VoPublicId,
+            VoPublicIndex = user?.VoPublicIndex,
             VoNickname = nickname,
             VoTenantId = tenantId,
             VoAvatarUrl = avatar?.Url,
@@ -601,9 +606,9 @@ public class UserController : ControllerBase
             VoPublicId = user.VoPublicId,
             VoPublicIndex = user.VoPublicIndex,
             VoDisplayHandle = user.VoDisplayHandle,
+            VoDisplayName = user.VoDisplayName,
             VoUserName = user.VoUserName,
             VoUserEmail = user.VoUserEmail,
-            VoRealName = user.VoUserRealName,
             VoSex = user.VoUserSex,
             VoAge = user.VoUserAge,
             VoBirth = user.VoUserBirth,
@@ -717,26 +722,11 @@ public class UserController : ControllerBase
 
         var normalizedUserName = string.IsNullOrWhiteSpace(dto.UserName) ? null : dto.UserName.Trim();
         var normalizedUserEmail = string.IsNullOrWhiteSpace(dto.UserEmail) ? null : dto.UserEmail.Trim();
-        var normalizedRealName = string.IsNullOrWhiteSpace(dto.RealName) ? null : dto.RealName.Trim();
         var normalizedAddress = string.IsNullOrWhiteSpace(dto.Address) ? null : dto.Address.Trim();
         var sex = dto.Sex;
         var age = dto.Age;
         var birth = dto.Birth;
         var now = DateTime.UtcNow;
-
-        if (normalizedUserName != null)
-        {
-            var displayNameLengthRule = await GetDisplayNameLengthRuleAsync();
-            if (!IsValidDisplayName(normalizedUserName, displayNameLengthRule.MinLength, displayNameLengthRule.MaxLength, out var displayNameError))
-            {
-                return new MessageModel
-                {
-                    IsSuccess = false,
-                    StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                    MessageInfo = displayNameError
-                };
-            }
-        }
 
         if (normalizedUserEmail != null)
         {
@@ -763,16 +753,6 @@ public class UserController : ControllerBase
                     MessageInfo = "邮箱格式不正确"
                 };
             }
-        }
-
-        if (normalizedRealName != null && normalizedRealName.Length > 50)
-        {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "真实姓名长度不能超过 50"
-            };
         }
 
         if (normalizedAddress != null && normalizedAddress.Length > 2000)
@@ -823,12 +803,45 @@ public class UserController : ControllerBase
             }
         }
 
+        if (normalizedUserName != null)
+        {
+            try
+            {
+                await _userService.ChangeDisplayNameAsync(
+                    userId,
+                    normalizedUserName,
+                    new UserDisplayNameChangeContext
+                    {
+                        OperatorUserId = userId,
+                        OperatorUserName = Current.UserName,
+                        Source = UserDisplayNameChangeSources.Profile,
+                        Reason = "用户个人资料修改"
+                    });
+            }
+            catch (ArgumentException ex)
+            {
+                return new MessageModel
+                {
+                    IsSuccess = false,
+                    StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                    MessageInfo = ex.Message
+                };
+            }
+            catch (InvalidOperationException ex)
+            {
+                return new MessageModel
+                {
+                    IsSuccess = false,
+                    StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                    MessageInfo = ex.Message
+                };
+            }
+        }
+
         var affectedRows = await _userService.UpdateColumnsAsync(
             u => new User
             {
-                UserName = normalizedUserName ?? u.UserName,
                 UserEmail = normalizedUserEmail ?? u.UserEmail,
-                UserRealName = normalizedRealName ?? u.UserRealName,
                 UserSex = sex ?? u.UserSex,
                 UserAge = age ?? u.UserAge,
                 UserBirth = birth ?? u.UserBirth,
@@ -1069,46 +1082,4 @@ public class UserController : ControllerBase
         };
     }
 
-    private async Task<(int MinLength, int MaxLength)> GetDisplayNameLengthRuleAsync()
-    {
-        var minLength = await _systemSettingProvider.GetInt32Async(SystemConfigDefaults.DisplayNameMinLengthKey);
-        var maxLength = await _systemSettingProvider.GetInt32Async(SystemConfigDefaults.DisplayNameMaxLengthKey);
-        if (minLength > maxLength)
-        {
-            throw new InvalidOperationException("展示名长度系统设置无效：最小长度不能大于最大长度");
-        }
-
-        return (minLength, maxLength);
-    }
-
-    private static bool IsValidDisplayName(string value, int minLength, int maxLength, out string errorMessage)
-    {
-        if (value.Length < minLength || value.Length > maxLength)
-        {
-            errorMessage = $"显示名长度必须在 {minLength}-{maxLength} 个字符之间";
-            return false;
-        }
-
-        if (value.Any(char.IsControl) || value.Contains('\n') || value.Contains('\r') || value.Contains('\t'))
-        {
-            errorMessage = "显示名不能包含控制字符";
-            return false;
-        }
-
-        if (value.Contains("  ", StringComparison.Ordinal))
-        {
-            errorMessage = "显示名不能包含连续空格";
-            return false;
-        }
-
-        char[] blockedChars = ['#', '@', '/', '\\', '?', '&', '=', '<', '>'];
-        if (value.IndexOfAny(blockedChars) >= 0)
-        {
-            errorMessage = "显示名不能包含 #、@、URL 分隔符或 HTML 控制字符";
-            return false;
-        }
-
-        errorMessage = string.Empty;
-        return true;
-    }
 }

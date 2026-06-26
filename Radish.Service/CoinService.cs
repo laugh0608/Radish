@@ -8,7 +8,10 @@ using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
+using Radish.Common.CoreTool;
+using Radish.Shared.Constants;
 using Radish.Shared.Security;
+using Radish.Repository.UnitOfWorks;
 using Radish.Service.Base;
 using Serilog;
 using SqlSugar;
@@ -23,11 +26,14 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
     private readonly IBaseRepository<CoinTransaction> _coinTransactionRepository;
     private readonly IBaseRepository<BalanceChangeLog> _balanceChangeLogRepository;
     private readonly IPaymentPasswordService _paymentPasswordService;
+    private readonly IOperationIdempotencyService? _operationIdempotencyService;
+    private readonly IUnitOfWorkManage? _unitOfWorkManage;
 
     private const long RegistrationRewardAmount = 50;
     private const string RegistrationRewardTransactionType = "SYSTEM_GRANT";
     private const string RegistrationRewardBusinessType = "UserRegistration";
     private const string RegistrationRewardRemark = "新用户注册奖励";
+    private const int RewardBusinessKeyMaxLength = 200;
 
     /// <summary>乐观锁冲突重试次数</summary>
     private const int MaxRetryCount = 3;
@@ -41,7 +47,9 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         IBaseRepository<User> userRepository,
         IBaseRepository<CoinTransaction> coinTransactionRepository,
         IBaseRepository<BalanceChangeLog> balanceChangeLogRepository,
-        IPaymentPasswordService paymentPasswordService)
+        IPaymentPasswordService paymentPasswordService,
+        IOperationIdempotencyService? operationIdempotencyService = null,
+        IUnitOfWorkManage? unitOfWorkManage = null)
         : base(mapper, userBalanceRepository)
     {
         _userBalanceRepository = userBalanceRepository;
@@ -49,6 +57,8 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         _coinTransactionRepository = coinTransactionRepository;
         _balanceChangeLogRepository = balanceChangeLogRepository;
         _paymentPasswordService = paymentPasswordService;
+        _operationIdempotencyService = operationIdempotencyService;
+        _unitOfWorkManage = unitOfWorkManage;
     }
 
     #region 余额查询
@@ -224,6 +234,79 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
     }
 
     /// <summary>
+    /// 按奖励业务键发放一次萝卜币。
+    /// </summary>
+    public async Task<CoinGrantOnceResult> GrantCoinOnceAsync(
+        long userId,
+        long amount,
+        string transactionType,
+        string rewardBusinessKey,
+        string? businessType = null,
+        long? businessId = null,
+        string? remark = null)
+    {
+        var normalizedRewardBusinessKey = NormalizeRewardBusinessKey(rewardBusinessKey);
+        long? tenantId = null;
+
+        try
+        {
+            if (amount <= 0)
+            {
+                throw new ArgumentException("发放金额必须大于 0", nameof(amount));
+            }
+
+            if (string.IsNullOrWhiteSpace(transactionType))
+            {
+                throw new ArgumentException("交易类型不能为空", nameof(transactionType));
+            }
+
+            var user = await EnsureUserExistsAsync(userId);
+            tenantId = user.TenantId;
+
+            return await ExecuteWithRetryAsync(async () =>
+                await ExecuteRewardUnitOfWorkAsync(async () =>
+                {
+                    var existingReward = await QuerySuccessfulRewardTransactionAsync(tenantId.Value, normalizedRewardBusinessKey);
+                    if (existingReward != null)
+                    {
+                        return CoinGrantOnceResult.Existing(existingReward.TransactionNo);
+                    }
+
+                    var transactionNo = await GrantCoinInternalAsync(
+                        userId,
+                        amount,
+                        transactionType,
+                        businessType,
+                        businessId,
+                        remark,
+                        normalizedRewardBusinessKey,
+                        tenantId.Value);
+
+                    return CoinGrantOnceResult.NewGrant(transactionNo);
+                }));
+        }
+        catch (Exception ex) when (IsUniqueConstraintConflict(ex))
+        {
+            var existingReward = tenantId.HasValue
+                ? await QuerySuccessfulRewardTransactionAsync(tenantId.Value, normalizedRewardBusinessKey)
+                : await QuerySuccessfulRewardTransactionByKeyOnlyAsync(normalizedRewardBusinessKey);
+            if (existingReward != null)
+            {
+                return CoinGrantOnceResult.Existing(existingReward.TransactionNo);
+            }
+
+            Log.Warning(ex, "奖励业务键 {RewardBusinessKey} 已被占用但未找到成功流水", normalizedRewardBusinessKey);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "按业务键发放萝卜币失败：用户={UserId}, 金额={Amount}, 类型={TransactionType}, RewardBusinessKey={RewardBusinessKey}",
+                userId, amount, transactionType, normalizedRewardBusinessKey);
+            throw;
+        }
+    }
+
+    /// <summary>
     /// 确保用户已获得注册默认奖励。
     /// </summary>
     public async Task<string> GrantRegistrationRewardAsync(long userId)
@@ -300,7 +383,9 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         string transactionType,
         string? businessType,
         long? businessId,
-        string? remark)
+        string? remark,
+        string? rewardBusinessKey = null,
+        long? tenantId = null)
     {
         // 1. 确保用户余额记录存在
         var userBalance = await _userBalanceRepository.QueryFirstAsync(b => b.UserId == userId && !b.IsDeleted);
@@ -325,7 +410,9 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
             Status = "PENDING",
             BusinessType = businessType,
             BusinessId = businessId,
+            RewardBusinessKey = rewardBusinessKey,
             Remark = remark,
+            TenantId = tenantId ?? userBalance.TenantId,
             CreateTime = DateTime.Now,
             CreateBy = "System",
             CreateId = 0
@@ -365,6 +452,7 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
             BalanceBefore = balanceBefore,
             BalanceAfter = balanceBefore + amount,
             ChangeType = "EARN",
+            TenantId = tenantId ?? userBalance.TenantId,
             CreateTime = DateTime.Now,
             CreateBy = "System",
             CreateId = 0
@@ -565,13 +653,8 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
             // 3. 映射为 ViewModel
             var transactionVos = Mapper.Map<List<CoinTransactionVo>>(transactions);
 
-            // 4. 补充用户名信息（需要在 Service 层单独设置）
-            // TODO: 后续优化可以批量查询用户名，避免 N+1 查询
-            foreach (var vo in transactionVos)
-            {
-                vo.VoFromUserName = vo.VoFromUserId.HasValue ? "用户" + vo.VoFromUserId : "系统";
-                vo.VoToUserName = vo.VoToUserId.HasValue ? "用户" + vo.VoToUserId : "系统";
-            }
+            // 4. 补充公开身份显示名
+            await FillCoinTransactionUserNamesAsync(transactionVos);
 
             return new PageModel<CoinTransactionVo>
             {
@@ -607,9 +690,8 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
 
             var transactionVo = Mapper.Map<CoinTransactionVo>(transaction);
 
-            // 补充用户名信息
-            transactionVo.VoFromUserName = transactionVo.VoFromUserId.HasValue ? "用户" + transactionVo.VoFromUserId : "系统";
-            transactionVo.VoToUserName = transactionVo.VoToUserId.HasValue ? "用户" + transactionVo.VoToUserId : "系统";
+            // 补充公开身份显示名
+            await FillCoinTransactionUserNamesAsync(new[] { transactionVo });
 
             return transactionVo;
         }
@@ -618,6 +700,57 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
             Log.Error(ex, "根据交易流水号 {TransactionNo} 获取交易详情失败", transactionNo);
             throw;
         }
+    }
+
+    private async Task FillCoinTransactionUserNamesAsync(IReadOnlyCollection<CoinTransactionVo> transactionVos)
+    {
+        if (transactionVos.Count == 0)
+        {
+            return;
+        }
+
+        var userIds = transactionVos
+            .SelectMany(vo => new[] { vo.VoFromUserId, vo.VoToUserId })
+            .Where(userId => userId.HasValue && userId.Value > 0)
+            .Select(userId => userId!.Value)
+            .Distinct()
+            .ToList();
+
+        if (userIds.Count == 0)
+        {
+            foreach (var vo in transactionVos)
+            {
+                vo.VoFromUserName = "系统";
+                vo.VoToUserName = "系统";
+            }
+
+            return;
+        }
+
+        var users = await _userRepository.QueryAsync(user => userIds.Contains(user.Id) && !user.IsDeleted)
+            ?? new List<User>();
+        var userDisplayNameMap = users.ToDictionary(
+            user => user.Id,
+            user => User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id)
+                ?? User.NormalizeDisplayName(user.UserName, user.Id));
+
+        foreach (var vo in transactionVos)
+        {
+            vo.VoFromUserName = ResolveCoinTransactionUserName(vo.VoFromUserId, userDisplayNameMap);
+            vo.VoToUserName = ResolveCoinTransactionUserName(vo.VoToUserId, userDisplayNameMap);
+        }
+    }
+
+    private static string ResolveCoinTransactionUserName(long? userId, IReadOnlyDictionary<long, string> userDisplayNameMap)
+    {
+        if (!userId.HasValue)
+        {
+            return "系统";
+        }
+
+        return userDisplayNameMap.TryGetValue(userId.Value, out var userName)
+            ? userName
+            : $"用户{userId.Value}";
     }
 
     #endregion
@@ -632,8 +765,13 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         long toUserId,
         long amount,
         string paymentPassword,
-        string? remark = null)
+        string? remark = null,
+        string? idempotencyKey = null)
     {
+        OperationIdempotencyBeginResult? idempotencyResult = null;
+        var assetWriteStarted = false;
+        string? completedTransactionNo = null;
+
         try
         {
             // 1. 参数校验
@@ -672,10 +810,28 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
                 throw new InvalidOperationException(verifyResult.ErrorMessage ?? "支付口令验证失败");
             }
 
+            var tenantId = GetCurrentTenantId();
+            idempotencyResult = await BeginTransferIdempotencyAsync(
+                tenantId,
+                fromUserId,
+                toUserId,
+                amount,
+                remark,
+                idempotencyKey);
+            var replayTransactionNo = ResolveTransferIdempotencyResult(idempotencyResult);
+            if (replayTransactionNo != null)
+            {
+                return replayTransactionNo;
+            }
+
             // 3. 使用乐观锁重试策略执行转账操作（最多重试 3 次，指数退避）
+            assetWriteStarted = idempotencyResult?.Status == OperationIdempotencyBeginStatus.Started;
             var transactionNo = await ExecuteWithRetryAsync(async () =>
                 await TransferInternalAsync(fromUserId, toUserId, amount, remark)
             );
+            completedTransactionNo = transactionNo;
+
+            await CompleteTransferIdempotencyAsync(idempotencyResult, transactionNo);
 
             Log.Information("用户转账成功：转出用户={FromUserId}, 转入用户={ToUserId}, 金额={Amount}, 流水号={TransactionNo}",
                 fromUserId, toUserId, amount, transactionNo);
@@ -686,6 +842,30 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         {
             Log.Error(ex, "用户转账失败：转出用户={FromUserId}, 转入用户={ToUserId}, 金额={Amount}",
                 fromUserId, toUserId, amount);
+
+            if (idempotencyResult?.Status == OperationIdempotencyBeginStatus.Started &&
+                idempotencyResult.RecordId.HasValue &&
+                _operationIdempotencyService != null)
+            {
+                if (completedTransactionNo != null)
+                {
+                    await CompleteTransferIdempotencyAsync(idempotencyResult, completedTransactionNo);
+                    return completedTransactionNo;
+                }
+
+                if (assetWriteStarted)
+                {
+                    await CompleteTransferTerminalFailureIdempotencyAsync(idempotencyResult, ex.Message);
+                }
+                else
+                {
+                    await _operationIdempotencyService.CompleteFailureAsync(
+                        idempotencyResult.RecordId.Value,
+                        errorCode: null,
+                        errorMessage: ex.Message);
+                }
+            }
+
             throw;
         }
     }
@@ -1172,7 +1352,7 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         throw lastException ?? new ConcurrencyException("重试失败");
     }
 
-    private async Task EnsureUserExistsAsync(long userId)
+    private async Task<User> EnsureUserExistsAsync(long userId)
     {
         if (userId <= 0)
         {
@@ -1184,6 +1364,59 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         {
             throw new InvalidOperationException($"用户不存在或已删除：{userId}");
         }
+
+        return user;
+    }
+
+    private async Task<T> ExecuteRewardUnitOfWorkAsync<T>(Func<Task<T>> action)
+    {
+        if (_unitOfWorkManage == null)
+        {
+            return await action();
+        }
+
+        using var unitOfWork = _unitOfWorkManage.CreateUnitOfWork();
+        try
+        {
+            var result = await action();
+            unitOfWork.Commit();
+            return result;
+        }
+        catch
+        {
+            throw;
+        }
+    }
+
+    private static string NormalizeRewardBusinessKey(string rewardBusinessKey)
+    {
+        var normalized = rewardBusinessKey.Trim();
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            throw new ArgumentException("奖励业务键不能为空", nameof(rewardBusinessKey));
+        }
+
+        if (normalized.Length > RewardBusinessKeyMaxLength)
+        {
+            throw new ArgumentException($"奖励业务键长度不能超过 {RewardBusinessKeyMaxLength}", nameof(rewardBusinessKey));
+        }
+
+        return normalized;
+    }
+
+    private async Task<CoinTransaction?> QuerySuccessfulRewardTransactionAsync(long tenantId, string rewardBusinessKey)
+    {
+        return await _coinTransactionRepository.QueryFirstAsync(transaction =>
+            transaction.TenantId == tenantId &&
+            transaction.RewardBusinessKey == rewardBusinessKey &&
+            transaction.Status == "SUCCESS");
+    }
+
+    private async Task<CoinTransaction?> QuerySuccessfulRewardTransactionByKeyOnlyAsync(string rewardBusinessKey)
+    {
+        return await _coinTransactionRepository.QueryFirstAsync(transaction =>
+            transaction.RewardBusinessKey == rewardBusinessKey &&
+            transaction.Status == "SUCCESS");
     }
 
     private static bool IsUniqueConstraintConflict(Exception ex, string? token = null)
@@ -1204,6 +1437,142 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         }
 
         return false;
+    }
+
+    private async Task<OperationIdempotencyBeginResult?> BeginTransferIdempotencyAsync(
+        long tenantId,
+        long fromUserId,
+        long toUserId,
+        long amount,
+        string? remark,
+        string? idempotencyKey)
+    {
+        if (_operationIdempotencyService == null)
+        {
+            return null;
+        }
+
+        var key = _operationIdempotencyService.NormalizeKey(idempotencyKey);
+        if (key == null)
+        {
+            return null;
+        }
+
+        var snapshot = _operationIdempotencyService.CreateRequestSnapshot(
+            new Dictionary<string, object?>
+            {
+                ["toUserId"] = toUserId,
+                ["amount"] = amount,
+                ["remark"] = NormalizeRequestSummaryText(remark)
+            });
+
+        return await _operationIdempotencyService.BeginAsync(new OperationIdempotencyBeginRequest
+        {
+            TenantId = tenantId,
+            UserId = fromUserId,
+            OperationType = OperationIdempotencyOperationTypes.CoinTransfer,
+            IdempotencyKey = key,
+            RequestHash = snapshot.RequestHash,
+            RequestSummary = snapshot.RequestSummary
+        });
+    }
+
+    private string? ResolveTransferIdempotencyResult(OperationIdempotencyBeginResult? idempotencyResult)
+    {
+        if (idempotencyResult == null || idempotencyResult.Status == OperationIdempotencyBeginStatus.Started)
+        {
+            return null;
+        }
+
+        switch (idempotencyResult.Status)
+        {
+            case OperationIdempotencyBeginStatus.Succeeded:
+                return ResolveTransferReplayResult(idempotencyResult);
+            case OperationIdempotencyBeginStatus.Processing:
+                throw new InvalidOperationException(idempotencyResult.Message ?? "请求处理中，请稍后查询结果或重试");
+            case OperationIdempotencyBeginStatus.Conflict:
+                throw new ArgumentException(idempotencyResult.Message ?? "幂等键已被不同请求使用");
+            case OperationIdempotencyBeginStatus.InvalidKey:
+                throw new ArgumentException(idempotencyResult.Message ?? "幂等键格式无效");
+            default:
+                throw new InvalidOperationException("幂等记录状态无效");
+        }
+    }
+
+    private string ResolveTransferReplayResult(OperationIdempotencyBeginResult idempotencyResult)
+    {
+        var replayResult = _operationIdempotencyService?.DeserializeResponse<TransactionResultVo>(
+            idempotencyResult.ResponsePayload);
+
+        if (string.IsNullOrWhiteSpace(replayResult?.VoTransactionNo))
+        {
+            throw new InvalidOperationException(
+                idempotencyResult.ErrorMessage ?? "幂等记录缺少响应，请稍后重试");
+        }
+
+        return replayResult.VoTransactionNo;
+    }
+
+    private async Task CompleteTransferIdempotencyAsync(
+        OperationIdempotencyBeginResult? idempotencyResult,
+        string transactionNo)
+    {
+        if (_operationIdempotencyService == null ||
+            idempotencyResult?.Status != OperationIdempotencyBeginStatus.Started ||
+            !idempotencyResult.RecordId.HasValue)
+        {
+            return;
+        }
+
+        await _operationIdempotencyService.CompleteSuccessAsync(new OperationIdempotencyCompletionRequest
+        {
+            RecordId = idempotencyResult.RecordId.Value,
+            ResourceType = OperationIdempotencyResourceTypes.CoinTransaction,
+            ResourceNo = transactionNo,
+            ResponsePayload = _operationIdempotencyService.SerializeResponse(new TransactionResultVo
+            {
+                VoTransactionNo = transactionNo
+            })
+        });
+    }
+
+    private async Task CompleteTransferTerminalFailureIdempotencyAsync(
+        OperationIdempotencyBeginResult idempotencyResult,
+        string errorMessage)
+    {
+        if (_operationIdempotencyService == null || !idempotencyResult.RecordId.HasValue)
+        {
+            return;
+        }
+
+        await _operationIdempotencyService.CompleteSuccessAsync(new OperationIdempotencyCompletionRequest
+        {
+            RecordId = idempotencyResult.RecordId.Value,
+            ErrorMessage = errorMessage,
+            ResponsePayload = _operationIdempotencyService.SerializeResponse(new TransactionResultVo())
+        });
+    }
+
+    private static long NormalizeTenantId(long tenantId)
+    {
+        return tenantId > 0 ? tenantId : 0;
+    }
+
+    private static long GetCurrentTenantId()
+    {
+        try
+        {
+            return NormalizeTenantId(App.CurrentUser.TenantId);
+        }
+        catch (Exception ex) when (ex is ArgumentNullException or InvalidOperationException)
+        {
+            return 0;
+        }
+    }
+
+    private static string NormalizeRequestSummaryText(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? string.Empty : value;
     }
 
     #endregion

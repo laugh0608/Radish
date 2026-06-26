@@ -31,6 +31,7 @@ public class PostController : ControllerBase
     private readonly IContentModerationService _contentModerationService;
     private readonly IUserBrowseHistoryService _userBrowseHistoryService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
+    private readonly IForumContentWriteService _forumContentWriteService;
 
     public PostController(
         IPostService postService,
@@ -39,13 +40,15 @@ public class PostController : ControllerBase
         IAttachmentService? attachmentService,
         IBaseService<Comment, CommentVo>? commentService,
         IUserBrowseHistoryService userBrowseHistoryService,
-        ICurrentUserAccessor currentUserAccessor)
+        ICurrentUserAccessor currentUserAccessor,
+        IForumContentWriteService forumContentWriteService)
     {
         _postService = postService;
         _userService = userService;
         _contentModerationService = contentModerationService;
         _userBrowseHistoryService = userBrowseHistoryService;
         _currentUserAccessor = currentUserAccessor;
+        _forumContentWriteService = forumContentWriteService;
         _ = attachmentService;
         _ = commentService;
     }
@@ -356,13 +359,20 @@ public class PostController : ControllerBase
 
         try
         {
-            var postId = await _postService.PublishPostAsync(post, request.Poll, request.Lottery, request.IsQuestion, normalizedTagNames, allowCreateTag);
+            var publishResult = await _forumContentWriteService.PublishPostAsync(
+                post,
+                request.Poll,
+                request.Lottery,
+                request.IsQuestion,
+                normalizedTagNames,
+                allowCreateTag,
+                request.ClientSubmissionId);
             return new MessageModel
             {
                 IsSuccess = true,
                 StatusCode = (int)HttpStatusCodeEnum.Success,
-                MessageInfo = "发布成功",
-                ResponseData = postId
+                MessageInfo = publishResult.Message ?? "发布成功",
+                ResponseData = publishResult.Result
             };
         }
         catch (InvalidOperationException ex)
@@ -626,7 +636,8 @@ public class PostController : ControllerBase
 
         try
         {
-            await _postService.UpdatePostAsync(
+            var editResult = await _forumContentWriteService.UpdatePostAsync(
+                tenantId: Current.TenantId,
                 postId: request.PostId,
                 title: request.Title,
                 content: request.Content,
@@ -635,7 +646,15 @@ public class PostController : ControllerBase
                 allowCreateTag: allowCreateTag,
                 operatorId: Current.UserId,
                 operatorName: Current.UserName,
-                isAdmin: isAdmin);
+                isAdmin: isAdmin,
+                clientSubmissionId: request.ClientSubmissionId);
+
+            return new MessageModel
+            {
+                IsSuccess = true,
+                StatusCode = (int)HttpStatusCodeEnum.Success,
+                MessageInfo = editResult.Message ?? "编辑成功"
+            };
         }
         catch (InvalidOperationException ex)
         {
@@ -655,13 +674,6 @@ public class PostController : ControllerBase
                 MessageInfo = ex.Message
             };
         }
-
-        return new MessageModel
-        {
-            IsSuccess = true,
-            StatusCode = (int)HttpStatusCodeEnum.Success,
-            MessageInfo = "编辑成功"
-        };
     }
 
     /// <summary>

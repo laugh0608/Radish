@@ -3,6 +3,8 @@
  */
 export interface UserInfo {
   voUserId: string;
+  voDisplayName?: string;
+  voDisplayHandle?: string;
   voUserName: string;
   voTenantId: string;
   roles?: string[];
@@ -20,9 +22,7 @@ export interface UserListItem {
   voPublicIndex?: string;
   voDisplayName?: string;
   voDisplayHandle?: string;
-  voLoginName: string;
   voUserName: string;
-  voUserRealName: string;
   voUserEmail: string;
   voAvatarUrl?: string;
   voAvatarThumbnailUrl?: string;

@@ -22,6 +22,7 @@ export interface TransferFormData {
   amount: number;
   note?: string;
   paymentPassword: string;
+  idempotencyKey?: string;
 }
 
 // 转账结果

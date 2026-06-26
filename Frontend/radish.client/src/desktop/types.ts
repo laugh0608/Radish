@@ -73,10 +73,16 @@ export interface WindowState {
 export interface UserInfo {
   /** 用户 ID */
   userId: string;
-  /** 用户名 */
+  /** 展示名 */
+  displayName: string;
+  /** 历史展示名别名，保留用于旧组件兼容 */
   userName: string;
-  /** 登录名 */
-  loginName?: string;
+  /** 公开展示句柄 */
+  displayHandle?: string;
+  /** 用户公开访问标识 */
+  publicId?: string;
+  /** 用户公开索引号 */
+  publicIndex?: string;
   /** 昵称 */
   nickname?: string;
   /** 租户 ID */

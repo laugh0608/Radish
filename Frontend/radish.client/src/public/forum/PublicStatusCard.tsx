@@ -1,4 +1,5 @@
 import { Icon } from '@radish/ui/icon';
+import { handlePublicForumLinkClick } from './publicForumLinkHandlers';
 import styles from './PublicForumApp.module.css';
 
 type PublicStatusTone = 'loading' | 'empty' | 'error' | 'notFound' | 'info';
@@ -10,10 +11,12 @@ interface PublicStatusCardProps {
   compact?: boolean;
   primaryAction?: {
     label: string;
+    href?: string;
     onClick: () => void;
   };
   secondaryAction?: {
     label: string;
+    href?: string;
     onClick: () => void;
   };
 }
@@ -50,14 +53,34 @@ export function PublicStatusCard({
         {(primaryAction || secondaryAction) && (
           <div className={styles.statusActions}>
             {primaryAction && (
-              <button type="button" className={styles.retryButton} onClick={primaryAction.onClick}>
-                {primaryAction.label}
-              </button>
+              primaryAction.href ? (
+                <a
+                  className={styles.retryButton}
+                  href={primaryAction.href}
+                  onClick={(event) => handlePublicForumLinkClick(event, primaryAction.onClick)}
+                >
+                  {primaryAction.label}
+                </a>
+              ) : (
+                <button type="button" className={styles.retryButton} onClick={primaryAction.onClick}>
+                  {primaryAction.label}
+                </button>
+              )
             )}
             {secondaryAction && (
-              <button type="button" className={styles.secondaryButton} onClick={secondaryAction.onClick}>
-                {secondaryAction.label}
-              </button>
+              secondaryAction.href ? (
+                <a
+                  className={styles.secondaryButton}
+                  href={secondaryAction.href}
+                  onClick={(event) => handlePublicForumLinkClick(event, secondaryAction.onClick)}
+                >
+                  {secondaryAction.label}
+                </a>
+              ) : (
+                <button type="button" className={styles.secondaryButton} onClick={secondaryAction.onClick}>
+                  {secondaryAction.label}
+                </button>
+              )
             )}
           </div>
         )}

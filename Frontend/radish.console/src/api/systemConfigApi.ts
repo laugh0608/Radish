@@ -28,6 +28,7 @@ export interface SystemConfigVo {
   voEffectiveMode: 'Immediate' | 'RestartRequired' | string;
   voIsEditable: boolean;
   voIsSensitive: boolean;
+  voVersion: number;
   voCreateTime?: string;
   voModifyTime?: string;
 }
@@ -70,6 +71,7 @@ export interface ConfigRequest {
   reason?: string;
   confirmRiskLevel?: string;
   confirmKey?: string;
+  expectedVersion: number;
 }
 
 /**
@@ -142,7 +144,7 @@ export async function updateConfig(id: number, configData: ConfigRequest): Promi
  */
 export async function restoreConfigDefault(
   id: number,
-  request?: Pick<ConfigRequest, 'reason' | 'confirmRiskLevel' | 'confirmKey'>
+  request: Pick<ConfigRequest, 'expectedVersion'> & Partial<Pick<ConfigRequest, 'reason' | 'confirmRiskLevel' | 'confirmKey'>>
 ): Promise<SystemConfigVo> {
   const response = await apiPut<SystemConfigVo>(
     `/api/v1/SystemConfig/RestoreConfigDefault?id=${id}`,
@@ -150,6 +152,7 @@ export async function restoreConfigDefault(
       reason: request?.reason || '恢复默认值',
       confirmRiskLevel: request?.confirmRiskLevel,
       confirmKey: request?.confirmKey,
+      expectedVersion: request.expectedVersion,
     },
     { withAuth: true }
   );

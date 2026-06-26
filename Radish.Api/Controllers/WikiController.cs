@@ -1,8 +1,10 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Api.Filters;
 using Radish.Api.Routing;
 using Radish.Common.HttpContextTool;
+using Radish.Common.PermissionTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
@@ -142,6 +144,56 @@ public class WikiController : ControllerBase
         return MessageModel<WikiDocumentDetailVo>.Success("查询成功", result);
     }
 
+    [HttpGet]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.DocsView)]
+    public async Task<MessageModel<PageModel<WikiDocumentVo>>> AdminGetList(
+        int pageIndex = 1,
+        int pageSize = 20,
+        string? keyword = null,
+        int? status = null,
+        int? visibility = null,
+        long? parentId = null,
+        string? sourceType = null,
+        bool includeDeleted = false,
+        bool deletedOnly = false)
+    {
+        var result = await _wikiDocumentService.GetGovernanceListAsync(
+            pageIndex,
+            pageSize,
+            keyword,
+            status,
+            visibility,
+            parentId,
+            sourceType,
+            includeDeleted,
+            deletedOnly);
+        return MessageModel<PageModel<WikiDocumentVo>>.Success("查询成功", result);
+    }
+
+    [HttpGet]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.DocsView)]
+    public async Task<MessageModel<List<WikiDocumentTreeNodeVo>>> AdminGetTree(bool includeDeleted = false)
+    {
+        var result = await _wikiDocumentService.GetGovernanceTreeAsync(includeDeleted);
+        return MessageModel<List<WikiDocumentTreeNodeVo>>.Success("查询成功", result);
+    }
+
+    [HttpGet("{id:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.DocsView)]
+    public async Task<MessageModel<WikiDocumentDetailVo>> AdminGetById(long id, bool includeDeleted = true)
+    {
+        var result = await _wikiDocumentService.GetGovernanceDetailAsync(id, includeDeleted);
+        if (result == null)
+        {
+            return MessageModel<WikiDocumentDetailVo>.Failed("文档不存在", default!);
+        }
+
+        return MessageModel<WikiDocumentDetailVo>.Success("查询成功", result);
+    }
+
     [HttpPost]
     [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     public async Task<MessageModel<long>> Create([FromBody] CreateWikiDocumentDto createDto)
@@ -185,7 +237,8 @@ public class WikiController : ControllerBase
     }
 
     [HttpPost("{id:long}")]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.DocsDelete)]
     public async Task<MessageModel<bool>> Delete(long id)
     {
         try
@@ -202,7 +255,8 @@ public class WikiController : ControllerBase
     }
 
     [HttpPost("{id:long}")]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.DocsRestore)]
     public async Task<MessageModel<bool>> Restore(long id)
     {
         try
@@ -219,7 +273,8 @@ public class WikiController : ControllerBase
     }
 
     [HttpPost("{id:long}")]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.DocsPublish)]
     public async Task<MessageModel<bool>> Publish(long id)
     {
         try
@@ -236,7 +291,8 @@ public class WikiController : ControllerBase
     }
 
     [HttpPost("{id:long}")]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.DocsPublish)]
     public async Task<MessageModel<bool>> Unpublish(long id)
     {
         try
@@ -253,7 +309,8 @@ public class WikiController : ControllerBase
     }
 
     [HttpPost("{id:long}")]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.DocsArchive)]
     public async Task<MessageModel<bool>> Archive(long id)
     {
         try
@@ -269,8 +326,32 @@ public class WikiController : ControllerBase
         }
     }
 
+    [HttpPut("{id:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.DocsPermissions)]
+    public async Task<MessageModel<bool>> UpdateAccessPolicy(long id, [FromBody] UpdateWikiDocumentAccessPolicyDto updateDto)
+    {
+        if (!ModelState.IsValid)
+        {
+            return MessageModel<bool>.Failed("请求参数验证失败", false);
+        }
+
+        try
+        {
+            var updated = await _wikiDocumentService.UpdateAccessPolicyAsync(id, updateDto, Current.UserId, Current.UserName);
+            return updated
+                ? MessageModel<bool>.Success("访问策略已更新", true)
+                : MessageModel<bool>.Failed("文档不存在", false);
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        {
+            return MessageModel<bool>.Failed(ex.Message, false);
+        }
+    }
+
     [HttpGet("{id:long}")]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.DocsView)]
     public async Task<MessageModel<List<WikiDocumentRevisionItemVo>>> GetRevisionList(long id)
     {
         var result = await _wikiDocumentService.GetRevisionListAsync(id);
@@ -278,7 +359,8 @@ public class WikiController : ControllerBase
     }
 
     [HttpGet("{revisionId:long}")]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.DocsView)]
     public async Task<MessageModel<WikiDocumentRevisionDetailVo>> GetRevisionDetail(long revisionId)
     {
         var result = await _wikiDocumentService.GetRevisionDetailAsync(revisionId);
@@ -291,7 +373,8 @@ public class WikiController : ControllerBase
     }
 
     [HttpPost("{revisionId:long}")]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.DocsRollback)]
     public async Task<MessageModel<bool>> Rollback(long revisionId)
     {
         try
@@ -308,7 +391,8 @@ public class WikiController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.DocsImport)]
     [RequestSizeLimit(10 * 1024 * 1024)]
     public async Task<MessageModel<long>> ImportMarkdown([FromForm] WikiMarkdownImportDto importDto)
     {
@@ -329,7 +413,8 @@ public class WikiController : ControllerBase
     }
 
     [HttpGet("{id:long}")]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.DocsExport)]
     public async Task<IActionResult> ExportMarkdown(long id)
     {
         var result = await _wikiDocumentService.ExportMarkdownAsync(id, includeUnpublished: true);

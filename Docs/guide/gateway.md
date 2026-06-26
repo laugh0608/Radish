@@ -96,7 +96,7 @@ Gateway 的配置分为以下几个部分：
 1. **CORS 配置** - 允许的前端域名
 2. **GatewayService** - Gateway 公开访问地址
 3. **DownstreamServices** - 下游服务地址（API、Auth）
-4. **FrontendService** - 前端服务地址
+4. **FrontendService** - 前端服务地址；公开 head snapshot 细节见 [公开内容 SEO 与分享基线](/frontend/public-seo-sharing)
 5. **ReverseProxy** - YARP 路由和集群配置
 
 ### 基础配置 (appsettings.json)
@@ -293,7 +293,7 @@ Gateway 当前已经收束为开发、测试、生产三种明确形态：
 | `RADISH_PUBLIC_URL` | 必填 | 必填 | 系统公开入口，Gateway / Frontend / OIDC 统一围绕它对齐 |
 | `GatewayService__PublicUrl` | 由 Compose 从 `RADISH_PUBLIC_URL` 注入 | 由 Compose 从 `RADISH_PUBLIC_URL` 注入 | Gateway 门户显示与公开入口基准 |
 | `GatewayRuntime__EnableHttpsRedirection` | `false` | `false` | 测试与生产都由外部反代终止 TLS，Gateway 容器内只监听 HTTP |
-| `DownstreamServices__*` / `ReverseProxy__Clusters__*` | 按需覆盖 | 按需覆盖 | 内部服务地址变更时再覆盖，默认 Compose 已给出最小值 |
+| `DownstreamServices__*` / `FrontendService__BaseUrl` / `ReverseProxy__Clusters__*` | 按需覆盖 | 按需覆盖 | 内部服务地址变更时再覆盖，默认 Compose 已给出最小值 |
 
 如果你要看完整部署组合、证书持久化策略与 Nginx 示例，直接参考 [部署与容器指南](/deployment/guide)；如果你要看 Auth OIDC 证书策略，参考 [认证与授权指南](/guide/authentication)。
 

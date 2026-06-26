@@ -21,7 +21,10 @@ import {
 export interface CurrentUser {
   voUserId: string;
   voUserName: string;
-  voLoginName?: string;
+  voDisplayName?: string;
+  voDisplayHandle?: string;
+  voPublicId?: string;
+  voPublicIndex?: string | number;
   voNickname?: string;
   voTenantId: string;
   voAvatarUrl?: string;
@@ -179,14 +182,18 @@ function resolveUserRoles(user: CurrentUser, token?: string | null): string[] {
 
 function setUserFromCurrentUser(user: CurrentUser, token?: string | null) {
   const { setUser } = useUserStore.getState();
-  const loginName = user.voLoginName?.trim() || user.voUserName;
+  const displayName = user.voDisplayName?.trim() || user.voUserName.trim();
+  const displayHandle = user.voDisplayHandle?.trim() || undefined;
   const nickname = user.voNickname?.trim()
-    || (user.voUserName.trim() && user.voUserName.trim() !== loginName ? user.voUserName : undefined);
+    || (displayName && displayHandle && displayName !== displayHandle ? displayName : undefined);
 
   setUser({
     userId: normalizeIdentityId(user.voUserId) ?? '',
-    userName: user.voUserName,
-    loginName,
+    displayName,
+    userName: displayName,
+    displayHandle,
+    publicId: user.voPublicId?.trim() || undefined,
+    publicIndex: typeof user.voPublicIndex === 'number' ? String(user.voPublicIndex) : user.voPublicIndex?.trim(),
     nickname,
     tenantId: normalizeIdentityId(user.voTenantId, true) ?? '0',
     roles: resolveUserRoles(user, token),
@@ -209,8 +216,11 @@ function buildCurrentUserFromStore(): CurrentUser | null {
 
   return {
     voUserId: userStore.userId,
-    voUserName: userStore.userName,
-    voLoginName: userStore.loginName,
+    voUserName: userStore.displayName,
+    voDisplayName: userStore.displayName,
+    voDisplayHandle: userStore.displayHandle,
+    voPublicId: userStore.publicId,
+    voPublicIndex: userStore.publicIndex,
     voNickname: userStore.nickname,
     voTenantId: userStore.tenantId,
     voAvatarUrl: userStore.avatarUrl,
@@ -234,7 +244,10 @@ function buildCurrentUserFromToken(token?: string | null): CurrentUser | null {
   return {
     voUserId: identity.userId,
     voUserName: identity.userName,
-    voLoginName: sameUser ? currentStoreUser.loginName || identity.userName : identity.userName,
+    voDisplayName: sameUser ? currentStoreUser.displayName || identity.userName : identity.userName,
+    voDisplayHandle: sameUser ? currentStoreUser.displayHandle || identity.displayHandle : identity.displayHandle,
+    voPublicId: sameUser ? currentStoreUser.publicId : undefined,
+    voPublicIndex: sameUser ? currentStoreUser.publicIndex : undefined,
     voNickname: sameUser ? currentStoreUser.nickname : undefined,
     voTenantId: identity.tenantId,
     voAvatarUrl: sameUser ? currentStoreUser.avatarUrl : undefined,

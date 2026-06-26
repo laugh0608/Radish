@@ -16,11 +16,9 @@ public class UserProfile : Profile
             .ForMember(a => a.VoPublicIndex, o => o.MapFrom(d => d.PublicIndex))
             .ForMember(a => a.VoDisplayName, o => o.MapFrom(d => User.NormalizeDisplayName(d.UserName, d.Id)))
             .ForMember(a => a.VoDisplayHandle, o => o.MapFrom(d => User.BuildDisplayHandle(d.UserName, d.PublicIndex, d.Id)))
-            .ForMember(a => a.VoLoginName, o => o.MapFrom(d => d.LoginName))
             .ForMember(a => a.VoUserName, o => o.MapFrom(d => d.UserName))
             .ForMember(a => a.VoUserEmail, o => o.MapFrom(d => d.UserEmail))
             .ForMember(a => a.VoLoginPassword, o => o.MapFrom(d => d.LoginPassword))
-            .ForMember(a => a.VoUserRealName, o => o.MapFrom(d => d.UserRealName))
             .ForMember(a => a.VoUserSex, o => o.MapFrom(d => d.UserSex))
             .ForMember(a => a.VoUserAge, o => o.MapFrom(d => d.UserAge))
             .ForMember(a => a.VoUserBirth, o => o.MapFrom(d => d.UserBirth))
@@ -45,11 +43,9 @@ public class UserProfile : Profile
             .ForMember(a => a.Id, o => o.MapFrom(d => d.Uuid))
             .ForMember(a => a.PublicId, o => o.MapFrom(d => d.VoPublicId))
             .ForMember(a => a.PublicIndex, o => o.MapFrom(d => d.VoPublicIndex))
-            .ForMember(a => a.LoginName, o => o.MapFrom(d => d.VoLoginName))
-            .ForMember(a => a.UserName, o => o.MapFrom(d => d.VoUserName))
+            .ForMember(a => a.UserName, o => o.MapFrom(d => !string.IsNullOrWhiteSpace(d.VoDisplayName) ? d.VoDisplayName : d.VoUserName))
             .ForMember(a => a.UserEmail, o => o.MapFrom(d => d.VoUserEmail))
             .ForMember(a => a.LoginPassword, o => o.MapFrom(d => d.VoLoginPassword))
-            .ForMember(a => a.UserRealName, o => o.MapFrom(d => d.VoUserRealName))
             .ForMember(a => a.UserSex, o => o.MapFrom(d => d.VoUserSex))
             .ForMember(a => a.UserAge, o => o.MapFrom(d => d.VoUserAge))
             .ForMember(a => a.UserBirth, o => o.MapFrom(d => d.VoUserBirth))
@@ -94,7 +90,11 @@ public class UserProfile : Profile
         RecognizeDestinationPrefixes("Vo");
         CreateMap<User, CurrentUserVo>()
             .ForMember(dest => dest.VoUserId, opt => opt.MapFrom(src => src.Id))
-            .ForMember(dest => dest.VoUserName, opt => opt.MapFrom(src => src.UserName));
+            .ForMember(dest => dest.VoUserName, opt => opt.MapFrom(src => User.NormalizeDisplayName(src.UserName, src.Id)))
+            .ForMember(dest => dest.VoDisplayName, opt => opt.MapFrom(src => User.NormalizeDisplayName(src.UserName, src.Id)))
+            .ForMember(dest => dest.VoDisplayHandle, opt => opt.MapFrom(src => User.BuildDisplayHandle(src.UserName, src.PublicIndex, src.Id)))
+            .ForMember(dest => dest.VoPublicId, opt => opt.MapFrom(src => src.PublicId))
+            .ForMember(dest => dest.VoPublicIndex, opt => opt.MapFrom(src => src.PublicIndex));
             // 注意：VoAvatarUrl 和 VoAvatarThumbnailUrl 字段由 UserController.GetUserByHttpContext() 方法手动设置
 
         // UserTimePreference -> UserTimePreferenceVo（用户时区偏好）

@@ -1,4 +1,4 @@
-import type { SyntheticEvent } from 'react';
+import type { MouseEvent, SyntheticEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ProductCategory, ProductListItem } from '@/types/shop';
 import type { LongId } from '@/api/user';
@@ -9,25 +9,68 @@ interface ShopHomeProps {
   categories: ProductCategory[];
   featuredProducts: ProductListItem[];
   loading: boolean;
+  bannerTitleLevel?: 'h1' | 'h2';
+  getCategoryHref?: (categoryId: string) => string;
+  getProductHref?: (productId: LongId) => string;
+  viewAllProductsHref?: string;
   onCategoryClick: (categoryId: string) => void;
   onProductClick: (productId: LongId) => void;
   onViewAllProducts: () => void;
+}
+
+function shouldHandleShopHomeLink(event: MouseEvent<HTMLAnchorElement>): boolean {
+  return !event.defaultPrevented
+    && event.button === 0
+    && !event.metaKey
+    && !event.ctrlKey
+    && !event.shiftKey
+    && !event.altKey;
+}
+
+function handleShopHomeLinkClick(event: MouseEvent<HTMLAnchorElement>, action: () => void) {
+  if (!shouldHandleShopHomeLink(event)) {
+    return;
+  }
+
+  event.preventDefault();
+  action();
 }
 
 export const ShopHome = ({
   categories,
   featuredProducts,
   loading,
+  bannerTitleLevel = 'h1',
+  getCategoryHref,
+  getProductHref,
+  viewAllProductsHref,
   onCategoryClick,
   onProductClick,
   onViewAllProducts
 }: ShopHomeProps) => {
   const { t } = useTranslation();
   const visibleCategories = categories.filter((category) => (category.voProductCount ?? 0) > 0);
+  const BannerTitle = bannerTitleLevel;
 
   const handleCategoryImageError = (event: SyntheticEvent<HTMLImageElement>) => {
     event.currentTarget.style.display = 'none';
   };
+
+  const renderViewAllAction = (label: string) => (
+    viewAllProductsHref ? (
+      <a
+        className={styles.viewAllButton}
+        href={viewAllProductsHref}
+        onClick={(event) => handleShopHomeLinkClick(event, onViewAllProducts)}
+      >
+        {label} →
+      </a>
+    ) : (
+      <button type="button" className={styles.viewAllButton} onClick={onViewAllProducts}>
+        {label} →
+      </button>
+    )
+  );
 
   if (loading) {
     return (
@@ -45,7 +88,7 @@ export const ShopHome = ({
       {/* 欢迎横幅 */}
       <div className={styles.banner}>
         <div className={styles.bannerContent}>
-          <h1 className={styles.bannerTitle}>🛒 {t('shop.welcomeTitle')}</h1>
+          <BannerTitle className={styles.bannerTitle}>🛒 {t('shop.welcomeTitle')}</BannerTitle>
           <p className={styles.bannerSubtitle}>{t('shop.welcomeSubtitle')}</p>
         </div>
       </div>
@@ -54,21 +97,16 @@ export const ShopHome = ({
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>{t('shop.categoryTitle')}</h2>
-          <button className={styles.viewAllButton} onClick={onViewAllProducts}>
-            {t('shop.viewAll')} →
-          </button>
+          {renderViewAllAction(t('shop.viewAll'))}
         </div>
 
         <div className={styles.categoriesGrid}>
           {visibleCategories.map((category) => {
+            const categoryId = String(category.voId);
             const categoryIconUrl = resolveMediaUrl(category.voIcon);
-
-            return (
-              <div
-                key={category.voId}
-                className={styles.categoryCard}
-                onClick={() => onCategoryClick(String(category.voId))}
-              >
+            const categoryHref = getCategoryHref?.(categoryId);
+            const categoryContent = (
+              <>
                 <div className={styles.categoryIcon}>
                   {categoryIconUrl ? (
                     <img src={categoryIconUrl} alt={category.voName} onError={handleCategoryImageError} />
@@ -85,6 +123,25 @@ export const ShopHome = ({
                     {t('shop.productCount', { count: category.voProductCount ?? 0 })}
                   </span>
                 </div>
+              </>
+            );
+
+            return categoryHref ? (
+              <a
+                key={category.voId}
+                className={styles.categoryCard}
+                href={categoryHref}
+                onClick={(event) => handleShopHomeLinkClick(event, () => onCategoryClick(categoryId))}
+              >
+                {categoryContent}
+              </a>
+            ) : (
+              <div
+                key={category.voId}
+                className={styles.categoryCard}
+                onClick={() => onCategoryClick(categoryId)}
+              >
+                {categoryContent}
               </div>
             );
           })}
@@ -95,22 +152,16 @@ export const ShopHome = ({
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>{t('shop.featuredProducts')}</h2>
-          <button className={styles.viewAllButton} onClick={onViewAllProducts}>
-            {t('shop.viewMore')} →
-          </button>
+          {renderViewAllAction(t('shop.viewMore'))}
         </div>
 
         <div className={styles.productsGrid}>
           {featuredProducts.map((product) => {
             const coverImageUrl = resolveMediaUrl(product.voCoverImage);
             const iconImageUrl = resolveMediaUrl(product.voIcon);
-
-            return (
-              <div
-                key={product.voId}
-                className={styles.productCard}
-                onClick={() => onProductClick(product.voId)}
-              >
+            const productHref = getProductHref?.(product.voId);
+            const productContent = (
+              <>
                 <div className={styles.productImage}>
                   {coverImageUrl ? (
                     <img src={coverImageUrl} alt={product.voName} />
@@ -158,6 +209,25 @@ export const ShopHome = ({
                     </span>
                   </div>
                 </div>
+              </>
+            );
+
+            return productHref ? (
+              <a
+                key={product.voId}
+                className={styles.productCard}
+                href={productHref}
+                onClick={(event) => handleShopHomeLinkClick(event, () => onProductClick(product.voId))}
+              >
+                {productContent}
+              </a>
+            ) : (
+              <div
+                key={product.voId}
+                className={styles.productCard}
+                onClick={() => onProductClick(product.voId)}
+              >
+                {productContent}
               </div>
             );
           })}

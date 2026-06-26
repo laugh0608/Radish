@@ -18,7 +18,7 @@ public static class BootstrapPasswordPolicy
         "radish123456"
     ];
 
-    public static string? Validate(string loginName, string password, string confirmPassword)
+    public static string? Validate(string displayName, string email, string password, string confirmPassword)
     {
         if (string.IsNullOrWhiteSpace(password))
         {
@@ -43,10 +43,17 @@ public static class BootstrapPasswordPolicy
             return "密码必须同时包含大写字母、小写字母、数字和特殊字符";
         }
 
-        if (!string.IsNullOrWhiteSpace(loginName) &&
-            password.Contains(loginName.Trim(), StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrWhiteSpace(displayName) &&
+            password.Contains(displayName.Trim(), StringComparison.OrdinalIgnoreCase))
         {
-            return "密码不能包含登录账号";
+            return "密码不能包含展示名";
+        }
+
+        var emailLocalPart = email.Split('@', 2)[0];
+        if (!string.IsNullOrWhiteSpace(emailLocalPart) &&
+            password.Contains(emailLocalPart.Trim(), StringComparison.OrdinalIgnoreCase))
+        {
+            return "密码不能包含邮箱前缀";
         }
 
         if (ForbiddenPasswords.Contains(password.Trim(), StringComparer.OrdinalIgnoreCase))

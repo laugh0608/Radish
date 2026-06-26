@@ -3,6 +3,7 @@ import type {
   ApiRequestOptions,
   ParsedApiResponse,
 } from './types';
+import { sanitizeLogValue } from './logSanitizer';
 import { shouldRefreshToken, TokenRefreshErrorType, tryRefreshToken } from './token-refresh';
 
 /**
@@ -142,7 +143,7 @@ export async function apiFetch(
         return retryResponse;
       } catch (refreshError) {
         // Refresh Token 确认失效时触发全局登出事件；网络或服务端错误保留原响应交给调用方处理。
-        console.error('[API Client] Token refresh failed:', refreshError);
+        console.error('[API Client] Token refresh failed:', sanitizeLogValue(refreshError));
         const errorType = (refreshError as { errorType?: TokenRefreshErrorType }).errorType;
         if (errorType === TokenRefreshErrorType.InvalidRefreshToken) {
           const error = (refreshError as { error?: Error }).error;

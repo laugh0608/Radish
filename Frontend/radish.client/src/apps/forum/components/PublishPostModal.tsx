@@ -21,6 +21,7 @@ import { uploadDocument, uploadImage } from '@/api/attachment';
 import { redirectToLogin } from '@/services/auth';
 import { buildDesktopForumReturnPath } from '@/services/authReturnPath';
 import { useUserStore } from '@/stores/userStore';
+import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import type { LongId } from '@/api/user';
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
 import { RichTextMarkdownEditor } from './RichTextMarkdownEditor';
@@ -31,6 +32,7 @@ interface PublishPostModalProps {
   isAuthenticated: boolean;
   categories: Category[];
   selectedCategoryId: LongId | null;
+  loginReturnPath?: string | null;
   onClose: () => void;
   onPublish: (
     title: string,
@@ -118,6 +120,7 @@ export const PublishPostModal = ({
   isAuthenticated,
   categories,
   selectedCategoryId,
+  loginReturnPath,
   onClose,
   onPublish
 }: PublishPostModalProps) => {
@@ -172,8 +175,9 @@ export const PublishPostModal = ({
       const users = await searchUsersForMention(keyword, t);
       return users.map((user) => ({
         id: user.voId,
-        userName: user.voDisplayHandle || user.voUserName,
-        displayName: user.voDisplayName,
+        userName: resolveVisibleUserHandle(user, resolveVisibleUserDisplayName(user, t('common.unknownUser')))
+          || resolveVisibleUserDisplayName(user, t('common.unknownUser')),
+        displayName: resolveVisibleUserDisplayName(user, t('common.unknownUser')),
         avatar: user.voAvatar
       }));
     } catch (error) {
@@ -718,7 +722,7 @@ export const PublishPostModal = ({
   };
 
   const handleLoginClick = () => {
-    redirectToLogin({ returnPath: buildDesktopForumReturnPath() });
+    redirectToLogin({ returnPath: loginReturnPath ?? buildDesktopForumReturnPath() });
   };
 
   const handleImageUpload = async (file: File): Promise<MarkdownImageUploadResult> => {

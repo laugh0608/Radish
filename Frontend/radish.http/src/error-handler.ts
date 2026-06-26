@@ -1,3 +1,5 @@
+import { sanitizeLogValue } from './logSanitizer';
+
 /**
  * 错误处理器类型
  */
@@ -33,7 +35,7 @@ export function configureErrorHandling(config: ErrorHandlingConfig) {
  * 通用错误处理
  */
 export function handleError(error: Error): void {
-  console.error('API Error:', error);
+  console.error('API Error:', sanitizeLogValue(error));
   errorConfig.onError?.(error);
 }
 
@@ -49,7 +51,7 @@ export function handleApiError(code: string, message: string): void {
  * 处理网络错误
  */
 export function handleNetworkError(error: Error): void {
-  console.error('Network Error:', error);
+  console.error('Network Error:', sanitizeLogValue(error));
   errorConfig.onNetworkError?.(error);
 }
 

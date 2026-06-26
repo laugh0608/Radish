@@ -279,7 +279,9 @@
   border-radius: 999px;
   font-size: 13px;
   font-weight: 700;
+  font-family: inherit;
   cursor: pointer;
+  text-decoration: none;
 }
 
 .primaryButton {
@@ -405,6 +407,9 @@
   border-radius: 16px;
   padding: 12px 14px;
   text-align: left;
+  color: inherit;
+  font: inherit;
+  text-decoration: none;
   cursor: pointer;
 }
 
@@ -449,6 +454,9 @@
   background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
   padding: 16px;
   text-align: left;
+  color: inherit;
+  font: inherit;
+  text-decoration: none;
   cursor: pointer;
 }
 

@@ -19,12 +19,15 @@
 }
 
 .postItem {
+  display: block;
   padding: 16px;
   border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
   transition: all 0.2s ease;
   cursor: pointer;
   background: var(--theme-bg-surface);
+  color: inherit;
+  text-decoration: none;
 }
 
 .postItem:hover {

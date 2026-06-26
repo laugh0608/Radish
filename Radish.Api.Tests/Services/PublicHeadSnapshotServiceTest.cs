@@ -15,6 +15,33 @@ namespace Radish.Api.Tests.Services;
 public class PublicHeadSnapshotServiceTest
 {
     [Fact]
+    public async Task GetStaticRouteSnapshotAsync_Should_Build_Public_Static_Route_Head_Snapshot()
+    {
+        var cache = CreateCacheMock();
+        var service = CreateService(cache);
+
+        var snapshot = await service.GetStaticRouteSnapshotAsync("discover", "https://example.test/");
+
+        Assert.NotNull(snapshot);
+        Assert.Equal("社区发现 - Radish", snapshot.VoTitle);
+        Assert.Equal("https://example.test/discover", snapshot.VoCanonicalUrl);
+        Assert.Equal("website", snapshot.VoOpenGraphType);
+        Assert.Contains("\"@type\":\"CollectionPage\"", snapshot.VoJsonLd);
+        Assert.Contains("\"url\":\"https://example.test/discover\"", snapshot.VoJsonLd);
+    }
+
+    [Fact]
+    public async Task GetStaticRouteSnapshotAsync_Should_Return_Null_For_Unknown_Route()
+    {
+        var cache = CreateCacheMock();
+        var service = CreateService(cache);
+
+        var snapshot = await service.GetStaticRouteSnapshotAsync("unknown", "https://example.test/");
+
+        Assert.Null(snapshot);
+    }
+
+    [Fact]
     public async Task GetForumPostSnapshotAsync_Should_Build_Public_Post_Head_Snapshot()
     {
         var cache = CreateCacheMock();

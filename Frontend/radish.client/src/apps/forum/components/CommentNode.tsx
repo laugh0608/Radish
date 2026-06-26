@@ -25,6 +25,7 @@ interface CommentNodeProps {
   isGodComment?: boolean; // 是否是神评
   onDelete?: (commentId: LongId) => void;
   onEdit?: (commentId: LongId, newContent: string) => Promise<void>;
+  onCancelEdit?: () => void;
   onViewHistory?: (commentId: LongId) => void;
   onLike?: (commentId: LongId) => Promise<{ isLiked: boolean; likeCount: number }>;
   onReply?: (target: CommentReplyTarget) => void;
@@ -255,6 +256,7 @@ export const CommentNode = ({
   isGodComment = false,
   onDelete,
   onEdit,
+  onCancelEdit,
   onViewHistory,
   onLike,
   onReply,
@@ -474,6 +476,7 @@ export const CommentNode = ({
     setIsEditing(false);
     setEditContent('');
     setEditError(null);
+    onCancelEdit?.();
   };
 
   // 展开/收起子评论
@@ -849,6 +852,7 @@ export const CommentNode = ({
                   isGodComment={false} // 子评论不可能是神评，沙发标识通过 node.voIsSofa 判断
                   onDelete={onDelete}
                   onEdit={onEdit}
+                  onCancelEdit={onCancelEdit}
                   onLike={onLike}
                   onReply={onReply}
                   onTyping={onTyping}

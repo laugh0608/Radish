@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState, type MouseEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ExperienceBar } from '@radish/ui/experience-bar';
 import { Icon } from '@radish/ui/icon';
@@ -8,11 +8,14 @@ import { getMyPet, type PetProfile } from '@/api/pet';
 import {
   getMyBrowseHistory,
   getPublicProfile,
+  type LongId,
   type PublicUserProfile,
   type UserBrowseHistoryItem,
 } from '@/api/user';
 import { getApiBaseUrl } from '@/config/env';
 import { PublicShellHeader } from '@/public/components/PublicShellHeader';
+import { buildPublicForumPath } from '@/public/forumRouteState';
+import { resolvePublicUserRouteIdentifier } from '@/public/publicId';
 import { buildPublicProfilePath, type PublicProfileRoute } from '@/public/profileRouteState';
 import {
   createPublicRouteSourceState,
@@ -22,14 +25,42 @@ import {
 } from '@/public/publicRouteNavigation';
 import { redirectToLogin } from '@/services/auth';
 import { bootstrapAuth, hydrateAuthUser } from '@/services/authBootstrap';
-import { buildMeReturnPath } from '@/services/authReturnPath';
+import {
+  buildMeAttachmentsReturnPath,
+  buildMeAssetTransactionsReturnPath,
+  buildMeAssetsReturnPath,
+  buildMeContentReturnPath,
+  buildMeExperienceReturnPath,
+  buildMeHistoryReturnPath,
+  buildMeReturnPath,
+} from '@/services/authReturnPath';
 import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
 import { DEFAULT_TIME_ZONE, formatDateTimeByTimeZone, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { log } from '@/utils/logger';
 import { resolveMediaUrl } from '@/utils/media';
-import { buildMePath } from './meRouteState';
+import { MeAssetsPage } from './MeAssetsPage';
+import { buildMePath, createDefaultMeRoute, parseMeRoute, type MeContentTab, type MeRoute } from './meRouteState';
 import styles from './MeApp.module.css';
+
+const UserPostList = lazy(() =>
+  import('@/apps/profile/components/UserPostList').then((module) => ({ default: module.UserPostList }))
+);
+const UserCommentList = lazy(() =>
+  import('@/apps/profile/components/UserCommentList').then((module) => ({ default: module.UserCommentList }))
+);
+const UserQuickReplyList = lazy(() =>
+  import('@/apps/profile/components/UserQuickReplyList').then((module) => ({ default: module.UserQuickReplyList }))
+);
+const UserBrowseHistoryList = lazy(() =>
+  import('@/apps/profile/components/UserBrowseHistoryList').then((module) => ({ default: module.UserBrowseHistoryList }))
+);
+const UserAttachmentList = lazy(() =>
+  import('@/apps/profile/components/UserAttachmentList').then((module) => ({ default: module.UserAttachmentList }))
+);
+const ExperienceDetailApp = lazy(() =>
+  import('@/apps/experience-detail/ExperienceDetailApp').then((module) => ({ default: module.ExperienceDetailApp }))
+);
 
 type MeDataErrorKey = 'profile' | 'experience' | 'assets' | 'browse' | 'pet';
 
@@ -62,6 +93,12 @@ const meRouteDescriptor: PublicRouteDescriptor = {
   route: { kind: 'index' },
 };
 
+const contentTabs: Array<{ tab: MeContentTab; labelKey: string }> = [
+  { tab: 'posts', labelKey: 'me.content.tab.posts' },
+  { tab: 'comments', labelKey: 'me.content.tab.comments' },
+  { tab: 'quick-replies', labelKey: 'me.content.tab.quickReplies' },
+];
+
 function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error && error.message.trim() ? error.message : fallback;
 }
@@ -75,13 +112,7 @@ function formatSignedNumber(value: number): string {
 }
 
 function resolveProfileIdentifier(profile: PublicUserProfile | null, fallbackUserId: string): string | null {
-  const publicId = profile?.voPublicId?.trim();
-  if (publicId) {
-    return publicId;
-  }
-
-  const userId = String(profile?.voUserId || fallbackUserId).trim();
-  return userId ? userId : null;
+  return resolvePublicUserRouteIdentifier(profile, fallbackUserId);
 }
 
 function buildSelfProfileRoute(profile: PublicUserProfile | null, fallbackUserId: string): PublicProfileRoute | null {
@@ -154,6 +185,28 @@ function buildBrowseHistoryHref(item: UserBrowseHistoryItem): string | null {
   return null;
 }
 
+function buildForumDetailHref(postId: LongId, postPublicId?: string | null, commentId?: LongId): string {
+  const normalizedPublicId = postPublicId?.trim();
+  const normalizedPostId = String(postId);
+  return buildPublicForumPath({
+    kind: 'detail',
+    postId: normalizedPublicId || normalizedPostId,
+    ...(normalizedPublicId ? { postPublicId: normalizedPublicId } : {}),
+    ...(commentId ? { commentId: String(commentId) } : {})
+  });
+}
+
+function isPublicDocsDetailPath(pathname: string): boolean {
+  const normalizedPathname = pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+  const docsPathPrefix = '/docs/';
+  if (!normalizedPathname.startsWith(docsPathPrefix) || normalizedPathname === '/docs/search') {
+    return false;
+  }
+
+  const slugSegment = normalizedPathname.slice(docsPathPrefix.length);
+  return slugSegment.length > 0 && !slugSegment.includes('/');
+}
+
 function buildSourceStateForHref(href: string): PublicRouteSourceState | null {
   const normalizedPath = normalizeInternalPath(href);
   if (!normalizedPath) {
@@ -165,7 +218,7 @@ function buildSourceStateForHref(href: string): PublicRouteSourceState | null {
     return { forumDetailSourceRoute: meRouteDescriptor };
   }
 
-  if (pathname.startsWith('/docs/')) {
+  if (isPublicDocsDetailPath(pathname)) {
     return { docsDetailSourceRoute: meRouteDescriptor };
   }
 
@@ -189,18 +242,60 @@ function shouldHandlePlainLinkClick(event: MouseEvent<HTMLAnchorElement>): boole
     && !event.altKey;
 }
 
+function resolveInitialMeRoute(): MeRoute {
+  if (typeof window === 'undefined') {
+    return createDefaultMeRoute();
+  }
+
+  return parseMeRoute(window.location.pathname, window.location.search) ?? createDefaultMeRoute();
+}
+
+function buildMeRouteReturnPath(route: MeRoute): string {
+  if (route.kind === 'assets') {
+    return buildMeAssetsReturnPath();
+  }
+
+  if (route.kind === 'assets-transactions') {
+    return buildMeAssetTransactionsReturnPath();
+  }
+
+  if (route.kind === 'content') {
+    return buildMeContentReturnPath({ tab: route.tab, page: route.page }) ?? buildMeReturnPath();
+  }
+
+  if (route.kind === 'history') {
+    return buildMeHistoryReturnPath({ page: route.page }) ?? buildMeReturnPath();
+  }
+
+  if (route.kind === 'attachments') {
+    return buildMeAttachmentsReturnPath({
+      businessType: route.businessType,
+      keyword: route.keyword,
+      page: route.page
+    }) ?? buildMeReturnPath();
+  }
+
+  if (route.kind === 'experience') {
+    return buildMeExperienceReturnPath({ page: route.page }) ?? buildMeReturnPath();
+  }
+
+  return buildMeReturnPath();
+}
+
 export const MeApp = () => {
   const { t } = useTranslation();
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
   const displayTimeZone = useMemo(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE), []);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const userId = useUserStore(state => state.userId);
+  const storeDisplayName = useUserStore(state => state.displayName);
   const userName = useUserStore(state => state.userName);
-  const loginName = useUserStore(state => state.loginName);
+  const displayHandle = useUserStore(state => state.displayHandle);
   const nickname = useUserStore(state => state.nickname);
   const avatarUrl = useUserStore(state => state.avatarUrl);
   const avatarThumbnailUrl = useUserStore(state => state.avatarThumbnailUrl);
   const loggedIn = isAuthenticated && userId.trim().length > 0;
+  const [route, setRoute] = useState<MeRoute>(() => resolveInitialMeRoute());
   const [authReady, setAuthReady] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
   const [dashboardData, setDashboardData] = useState<MeDashboardData>(initialDashboardData);
@@ -228,16 +323,40 @@ export const MeApp = () => {
   }, [apiBaseUrl]);
 
   useEffect(() => {
-    document.title = `${t('me.title')} · Radish`;
-  }, [t]);
+    const title = route.kind === 'assets'
+      ? t('me.assets.overviewTitle')
+      : route.kind === 'assets-transactions'
+        ? t('me.assets.transactionsTitle')
+        : route.kind === 'content'
+          ? t('me.content.title')
+          : route.kind === 'history'
+            ? t('me.history.title')
+            : route.kind === 'attachments'
+              ? t('me.attachments.title')
+              : route.kind === 'experience'
+                ? t('me.experience.detailTitle')
+                : t('me.title');
+    document.title = `${title} · Radish`;
+  }, [route.kind, t]);
 
   useEffect(() => {
-    const canonicalPath = buildMePath();
+    const handlePopState = () => {
+      setRoute(resolveInitialMeRoute());
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
+  useEffect(() => {
+    const canonicalPath = buildMePath(route);
     const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
     if (currentPath !== canonicalPath) {
       window.history.replaceState(window.history.state, '', canonicalPath);
     }
-  }, []);
+  }, [route]);
 
   useEffect(() => {
     if (!authReady || loggedIn || redirecting) {
@@ -246,9 +365,9 @@ export const MeApp = () => {
 
     setRedirecting(true);
     redirectToLogin({
-      returnPath: buildMeReturnPath()
+      returnPath: buildMeRouteReturnPath(route)
     });
-  }, [authReady, loggedIn, redirecting]);
+  }, [authReady, loggedIn, redirecting, route]);
 
   const loadDashboardData = useCallback(async () => {
     if (!userId.trim()) {
@@ -323,10 +442,19 @@ export const MeApp = () => {
   }, [t, userId]);
 
   useEffect(() => {
-    if (authReady && loggedIn) {
+    if (route.kind === 'dashboard' && authReady && loggedIn) {
       void loadDashboardData();
     }
-  }, [authReady, loadDashboardData, loggedIn]);
+  }, [authReady, loadDashboardData, loggedIn, route.kind]);
+
+  const navigateToMeRoute = useCallback((nextRoute: MeRoute) => {
+    const nextPath = buildMePath(nextRoute);
+    const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (currentPath !== nextPath) {
+      window.history.pushState(window.history.state, '', nextPath);
+    }
+    setRoute(nextRoute);
+  }, []);
 
   const selfProfileRoute = useMemo(
     () => buildSelfProfileRoute(dashboardData.publicProfile, userId),
@@ -341,15 +469,13 @@ export const MeApp = () => {
   );
   const displayName = dashboardData.publicProfile?.voDisplayName?.trim()
     || nickname?.trim()
-    || dashboardData.publicProfile?.voUserName?.trim()
+    || storeDisplayName?.trim()
     || userName?.trim()
-    || loginName?.trim()
     || t('me.userFallback');
-  const accountName = dashboardData.publicProfile?.voUserName?.trim()
-    || userName?.trim()
-    || loginName?.trim()
+  const accountName = dashboardData.publicProfile?.voDisplayHandle?.trim()
+    || displayHandle?.trim()
+    || displayName
     || userId;
-  const profilePublicId = dashboardData.publicProfile?.voPublicId?.trim();
   const experience = dashboardData.experience;
   const balance = dashboardData.balance;
   const pet = dashboardData.pet;
@@ -370,7 +496,7 @@ export const MeApp = () => {
     rememberPublicRouteSourceTransfer(selfProfilePath, sourceState);
   }, [selfProfilePath, selfProfileRoute]);
 
-  const rememberSourceForHistoryLink = useCallback((event: MouseEvent<HTMLAnchorElement>, href: string) => {
+  const rememberSourceForPublicLink = useCallback((event: MouseEvent<HTMLAnchorElement>, href: string) => {
     if (!shouldHandlePlainLinkClick(event)) {
       return;
     }
@@ -391,6 +517,173 @@ export const MeApp = () => {
     </section>
   );
 
+  const renderSubPageShell = (
+    title: string,
+    description: string,
+    content: ReactNode,
+    actions?: ReactNode
+  ) => (
+    <section className={styles.subPagePanel}>
+      <div className={styles.subPageHeader}>
+        <div>
+          <p className={styles.kicker}>{t('me.privateCenterKicker')}</p>
+          <h1>{title}</h1>
+          <p>{description}</p>
+        </div>
+        <div className={styles.subPageActions}>
+          {actions}
+          <a
+            className={styles.secondaryButton}
+            href={buildMePath({ kind: 'dashboard' })}
+            onClick={(event) => {
+              if (!shouldHandlePlainLinkClick(event)) {
+                return;
+              }
+
+              event.preventDefault();
+              navigateToMeRoute({ kind: 'dashboard' });
+            }}
+          >
+            <Icon icon="mdi:arrow-left" size={18} />
+            <span>{t('me.assets.backToStatus')}</span>
+          </a>
+        </div>
+      </div>
+      <Suspense fallback={<div className={styles.loadingBlock}>{t('common.loading')}</div>}>
+        {content}
+      </Suspense>
+    </section>
+  );
+
+  const renderContentPage = () => {
+    if (route.kind !== 'content') {
+      return null;
+    }
+
+    const tabActions = (
+      <div className={styles.segmentedTabs} role="tablist" aria-label={t('me.content.tabsLabel')}>
+        {contentTabs.map((item) => {
+          const href = buildMePath({ kind: 'content', tab: item.tab, page: 1 });
+          return (
+            <a
+              key={item.tab}
+              href={href}
+              className={route.tab === item.tab ? styles.segmentedTabActive : styles.segmentedTab}
+              role="tab"
+              aria-selected={route.tab === item.tab}
+              onClick={(event) => {
+                if (!shouldHandlePlainLinkClick(event)) {
+                  return;
+                }
+
+                event.preventDefault();
+                navigateToMeRoute({ kind: 'content', tab: item.tab, page: 1 });
+              }}
+            >
+              {t(item.labelKey)}
+            </a>
+          );
+        })}
+      </div>
+    );
+
+    const pageContent = route.tab === 'posts' ? (
+      <UserPostList
+        userId={userId}
+        apiBaseUrl={apiBaseUrl}
+        displayTimeZone={displayTimeZone}
+        page={route.page}
+        onPageChange={(page) => navigateToMeRoute({ ...route, page })}
+        getPostHref={(postId, postPublicId) => buildForumDetailHref(postId, postPublicId)}
+        onPostLinkClick={(event, href) => rememberSourceForPublicLink(event, href)}
+      />
+    ) : route.tab === 'comments' ? (
+      <UserCommentList
+        userId={userId}
+        apiBaseUrl={apiBaseUrl}
+        displayTimeZone={displayTimeZone}
+        page={route.page}
+        onPageChange={(page) => navigateToMeRoute({ ...route, page })}
+        getCommentHref={(postId, commentId, postPublicId) => buildForumDetailHref(postId, postPublicId, commentId)}
+        onCommentLinkClick={(event, href) => rememberSourceForPublicLink(event, href)}
+      />
+    ) : (
+      <UserQuickReplyList
+        displayTimeZone={displayTimeZone}
+        page={route.page}
+        onPageChange={(page) => navigateToMeRoute({ ...route, page })}
+        getItemHref={(postId, postPublicId) => buildForumDetailHref(postId, postPublicId)}
+        onItemLinkClick={(event, href) => rememberSourceForPublicLink(event, href)}
+      />
+    );
+
+    return renderSubPageShell(
+      t('me.content.title'),
+      t('me.content.description'),
+      <>
+        {tabActions}
+        {pageContent}
+      </>
+    );
+  };
+
+  const renderHistoryPage = () => {
+    if (route.kind !== 'history') {
+      return null;
+    }
+
+    return renderSubPageShell(
+      t('me.history.title'),
+      t('me.history.description'),
+      <UserBrowseHistoryList
+        displayTimeZone={displayTimeZone}
+        page={route.page}
+        onPageChange={(page) => navigateToMeRoute({ kind: 'history', page })}
+        getItemHref={buildBrowseHistoryHref}
+        onItemLinkClick={(event, href) => rememberSourceForPublicLink(event, href)}
+      />
+    );
+  };
+
+  const renderAttachmentsPage = () => {
+    if (route.kind !== 'attachments') {
+      return null;
+    }
+
+    return renderSubPageShell(
+      t('me.attachments.title'),
+      t('me.attachments.description'),
+      <UserAttachmentList
+        apiBaseUrl={apiBaseUrl}
+        displayTimeZone={displayTimeZone}
+        initialPage={route.page}
+        initialBusinessType={route.businessType}
+        initialKeyword={route.keyword}
+        onStateChange={(state) => navigateToMeRoute({
+          kind: 'attachments',
+          businessType: state.businessType,
+          keyword: state.keyword,
+          page: state.page
+        })}
+      />
+    );
+  };
+
+  const renderExperiencePage = () => {
+    if (route.kind !== 'experience') {
+      return null;
+    }
+
+    return renderSubPageShell(
+      t('me.experience.detailTitle'),
+      t('me.experience.detailDescription'),
+      <ExperienceDetailApp
+        pageIndex={route.page}
+        onPageIndexChange={(page) => navigateToMeRoute({ kind: 'experience', page })}
+      />
+    );
+  };
+
   const renderContent = () => {
     if (!authReady || !loggedIn) {
       return renderStatusPanel(
@@ -402,6 +695,31 @@ export const MeApp = () => {
 
     if (loadingData && !dashboardData.loadedAt) {
       return renderStatusPanel(t('me.loadingTitle'), t('me.loadingDescription'), 'mdi:progress-clock');
+    }
+
+    if (route.kind === 'assets' || route.kind === 'assets-transactions') {
+      return (
+        <MeAssetsPage
+          mode={route.kind === 'assets-transactions' ? 'transactions' : 'overview'}
+          onNavigate={navigateToMeRoute}
+        />
+      );
+    }
+
+    if (route.kind === 'content') {
+      return renderContentPage();
+    }
+
+    if (route.kind === 'history') {
+      return renderHistoryPage();
+    }
+
+    if (route.kind === 'attachments') {
+      return renderAttachmentsPage();
+    }
+
+    if (route.kind === 'experience') {
+      return renderExperiencePage();
     }
 
     return (
@@ -419,7 +737,6 @@ export const MeApp = () => {
             <h1 className={styles.title}>{displayName}</h1>
             <div className={styles.identityMeta}>
               <span>@{accountName}</span>
-              <span>{profilePublicId || t('me.publicIdPending')}</span>
               {loadedAtLabel ? <span>{t('me.refreshedAt', { time: loadedAtLabel })}</span> : null}
             </div>
           </div>
@@ -446,9 +763,39 @@ export const MeApp = () => {
               )}
             </div>
             <div className={styles.secondaryActionGroup}>
+              <a
+                className={styles.secondaryButton}
+                href={buildMePath({ kind: 'content', tab: 'posts', page: 1 })}
+                onClick={(event) => {
+                  if (!shouldHandlePlainLinkClick(event)) {
+                    return;
+                  }
+
+                  event.preventDefault();
+                  navigateToMeRoute({ kind: 'content', tab: 'posts', page: 1 });
+                }}
+              >
+                <Icon icon="mdi:file-document-edit-outline" size={18} />
+                <span>{t('me.openContent')}</span>
+              </a>
               <a className={styles.secondaryButton} href="/circle">
                 <Icon icon="mdi:account-group-outline" size={18} />
                 <span>{t('me.openCircle')}</span>
+              </a>
+              <a
+                className={styles.secondaryButton}
+                href={buildMePath({ kind: 'attachments', businessType: 'All', keyword: '', page: 1 })}
+                onClick={(event) => {
+                  if (!shouldHandlePlainLinkClick(event)) {
+                    return;
+                  }
+
+                  event.preventDefault();
+                  navigateToMeRoute({ kind: 'attachments', businessType: 'All', keyword: '', page: 1 });
+                }}
+              >
+                <Icon icon="mdi:paperclip" size={18} />
+                <span>{t('me.openAttachments')}</span>
               </a>
               <a className={styles.secondaryButton} href="/notifications">
                 <Icon icon="mdi:bell-outline" size={18} />
@@ -575,7 +922,19 @@ export const MeApp = () => {
           <article className={styles.detailPanel}>
             <div className={styles.panelHeader}>
               <h3>{t('me.recentExperience')}</h3>
-              <a href="/leaderboard/experience">{t('me.openLeaderboard')}</a>
+              <a
+                href={buildMePath({ kind: 'experience', page: 1 })}
+                onClick={(event) => {
+                  if (!shouldHandlePlainLinkClick(event)) {
+                    return;
+                  }
+
+                  event.preventDefault();
+                  navigateToMeRoute({ kind: 'experience', page: 1 });
+                }}
+              >
+                {t('me.openExperienceDetail')}
+              </a>
             </div>
             {dashboardData.expTransactions.length > 0 ? (
               <div className={styles.itemList}>
@@ -600,7 +959,19 @@ export const MeApp = () => {
           <article className={styles.detailPanel}>
             <div className={styles.panelHeader}>
               <h3>{t('me.recentAssets')}</h3>
-              <a href="/desktop?app=radish-pit">{t('me.openFullWallet')}</a>
+              <a
+                href={buildMePath({ kind: 'assets-transactions' })}
+                onClick={(event) => {
+                  if (!shouldHandlePlainLinkClick(event)) {
+                    return;
+                  }
+
+                  event.preventDefault();
+                  navigateToMeRoute({ kind: 'assets-transactions' });
+                }}
+              >
+                {t('me.openFullWallet')}
+              </a>
             </div>
             {dashboardData.coinTransactions.length > 0 ? (
               <div className={styles.itemList}>
@@ -625,7 +996,19 @@ export const MeApp = () => {
           <article className={styles.detailPanel}>
             <div className={styles.panelHeader}>
               <h3>{t('me.recentBrowse')}</h3>
-              <a href="/discover">{t('me.openDiscover')}</a>
+              <a
+                href={buildMePath({ kind: 'history', page: 1 })}
+                onClick={(event) => {
+                  if (!shouldHandlePlainLinkClick(event)) {
+                    return;
+                  }
+
+                  event.preventDefault();
+                  navigateToMeRoute({ kind: 'history', page: 1 });
+                }}
+              >
+                {t('me.openHistory')}
+              </a>
             </div>
             {dashboardData.browseHistory.length > 0 ? (
               <div className={styles.itemList}>
@@ -635,7 +1018,7 @@ export const MeApp = () => {
                     <div key={item.voId} className={styles.browseItem}>
                       <div className={styles.itemBody}>
                         {href ? (
-                          <a href={href} onClick={(event) => rememberSourceForHistoryLink(event, href)}>
+                          <a href={href} onClick={(event) => rememberSourceForPublicLink(event, href)}>
                             {item.voTitle}
                           </a>
                         ) : (
@@ -669,7 +1052,7 @@ export const MeApp = () => {
         circleLabel={t('public.shell.circleAction')}
         desktopLabel={t('public.shell.desktopAction')}
         onBrandClick={() => {
-          window.location.href = buildMePath();
+          navigateToMeRoute({ kind: 'dashboard' });
         }}
         onNavigateToDiscover={() => {
           window.location.href = '/discover';

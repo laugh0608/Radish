@@ -2,9 +2,12 @@ using Radish.Model.ViewModels;
 
 namespace Radish.IService;
 
-/// <summary>公开详情页 HTML head 快照服务。</summary>
+/// <summary>公开页面 HTML head 快照服务。</summary>
 public interface IPublicHeadSnapshotService
 {
+    /// <summary>获取公开静态路由 head 快照。</summary>
+    Task<PublicHeadSnapshotVo?> GetStaticRouteSnapshotAsync(string routeKey, string publicBaseUrl);
+
     /// <summary>获取论坛帖子公开 head 快照。</summary>
     Task<PublicHeadSnapshotVo?> GetForumPostSnapshotAsync(string postKey, string publicBaseUrl);
 

@@ -10,8 +10,8 @@ namespace Radish.Model;
 
 /// <summary>用户实体</summary>
 /// <remarks>对应仓储层生成的内存数据</remarks>
-[SugarIndex("idx_user_login_active", nameof(ITenantEntity.TenantId), OrderByType.Asc,
-    nameof(LoginName), OrderByType.Asc,
+[SugarIndex("idx_user_email_active", nameof(ITenantEntity.TenantId), OrderByType.Asc,
+    nameof(UserEmail), OrderByType.Asc,
     nameof(IsDeleted), OrderByType.Asc,
     nameof(IsEnable), OrderByType.Asc)]
 [SugarIndex("idx_user_public_id", nameof(PublicId), OrderByType.Asc, IsUnique = true)]
@@ -28,11 +28,11 @@ public class User : RootEntityTKey<long>, ITenantEntity
         InitializeDefaults();
     }
 
-    /// <summary>通过登录名与密码初始化用户</summary>
-    /// <param name="loginName">登录名</param>
+    /// <summary>通过邮箱与密码初始化用户</summary>
+    /// <param name="userEmail">登录邮箱</param>
     /// <param name="loginPassword">登录密码</param>
-    public User(string loginName, string loginPassword)
-        : this(new UserInitializationOptions(loginName, loginPassword))
+    public User(string userEmail, string loginPassword)
+        : this(new UserInitializationOptions(userEmail, loginPassword))
     {
     }
 
@@ -43,9 +43,8 @@ public class User : RootEntityTKey<long>, ITenantEntity
         options = options ?? throw new ArgumentNullException(nameof(options));
 
         InitializeDefaults();
-        ApplyLoginInformation(options.LoginName, options.LoginPassword, options.UserName, options.UserEmail);
-        ApplyProfileInformation(options.UserRealName, options.UserSex, options.UserAge, options.UserBirth,
-            options.UserAddress);
+        ApplyLoginInformation(options.UserEmail, options.LoginPassword, options.UserName);
+        ApplyProfileInformation(options.UserSex, options.UserAge, options.UserBirth, options.UserAddress);
         ApplyPermissionInformation(options);
         ApplyStatusInformation(options);
     }
@@ -53,12 +52,10 @@ public class User : RootEntityTKey<long>, ITenantEntity
     /// <summary>统一设置默认值</summary>
     private void InitializeDefaults()
     {
-        LoginName = string.Empty;
         PublicId = GeneratePublicId();
         UserName = string.Empty;
         UserEmail = string.Empty;
         LoginPassword = string.Empty;
-        UserRealName = string.Empty;
         UserSex = (int)UserSexEnum.Unknown;
         UserAge = 18;
         UserBirth = null;
@@ -81,27 +78,16 @@ public class User : RootEntityTKey<long>, ITenantEntity
     }
 
     /// <summary>处理登录信息与账号标识</summary>
-    private void ApplyLoginInformation(string loginName, string loginPassword, string? userName, string? userEmail)
+    private void ApplyLoginInformation(string userEmail, string loginPassword, string? userName)
     {
-        LoginName = NormalizeRequired(loginName, nameof(loginName));
+        UserEmail = NormalizeRequired(userEmail, nameof(userEmail));
         LoginPassword = NormalizeRequired(loginPassword, nameof(loginPassword));
-        UserName = !string.IsNullOrWhiteSpace(userName) ? userName.Trim() : LoginName;
-
-        if (!string.IsNullOrWhiteSpace(userEmail))
-        {
-            UserEmail = userEmail.Trim();
-        }
+        UserName = !string.IsNullOrWhiteSpace(userName) ? userName.Trim() : string.Empty;
     }
 
     /// <summary>处理个人信息（非必填）</summary>
-    private void ApplyProfileInformation(string? userRealName, int? userSex, int? userAge, DateTime? userBirth,
-        string? userAddress)
+    private void ApplyProfileInformation(int? userSex, int? userAge, DateTime? userBirth, string? userAddress)
     {
-        if (!string.IsNullOrWhiteSpace(userRealName))
-        {
-            UserRealName = userRealName.Trim();
-        }
-
         if (userSex.HasValue)
         {
             UserSex = Clamp(userSex.Value, (int)UserSexEnum.Unknown, (int)UserSexEnum.Female);
@@ -268,14 +254,6 @@ public class User : RootEntityTKey<long>, ITenantEntity
 
     #region 登录相关
 
-    /// <summary>登录账号 1 LoginName</summary>
-    /// <remarks>
-    /// <para>优先使用</para>
-    /// <para>不可为空，最大 200 字符</para>
-    /// </remarks>
-    [SugarColumn(Length = 200, IsNullable = true)]
-    public string LoginName { get; set; } = string.Empty;
-
     /// <summary>用户公开访问标识</summary>
     /// <remarks>首批用于公开主页、分享链接和跨端回流，不替代数据库主键</remarks>
     [SugarColumn(Length = 40, IsNullable = true)]
@@ -291,7 +269,15 @@ public class User : RootEntityTKey<long>, ITenantEntity
     [SugarColumn(Length = 200, IsNullable = true)]
     public string UserName { get; set; } = string.Empty;
 
-    /// <summary>登录账号 3 UserEmail</summary>
+    /// <summary>公开展示名语义别名</summary>
+    [SugarColumn(IsIgnore = true)]
+    public string DisplayName
+    {
+        get => UserName;
+        set => UserName = value ?? string.Empty;
+    }
+
+    /// <summary>登录邮箱</summary>
     /// <remarks>不可为空，最大 200 字符</remarks>
     [SugarColumn(Length = 200, IsNullable = true)]
     public string UserEmail { get; set; } = string.Empty;
@@ -304,11 +290,6 @@ public class User : RootEntityTKey<long>, ITenantEntity
     #endregion
 
     #region 个人信息相关
-
-    /// <summary>真实姓名</summary>
-    /// <remarks>不可为空，最大 50 字符</remarks>
-    [SugarColumn(Length = 50, IsNullable = true)]
-    public string UserRealName { get; set; } = string.Empty;
 
     /// <summary>性别</summary>
     /// <remarks>
@@ -421,16 +402,13 @@ public class User : RootEntityTKey<long>, ITenantEntity
 public sealed class UserInitializationOptions
 {
     /// <summary>必填项构造</summary>
-    /// <param name="loginName">登录名</param>
+    /// <param name="userEmail">登录邮箱</param>
     /// <param name="loginPassword">登录密码</param>
-    public UserInitializationOptions(string loginName, string loginPassword)
+    public UserInitializationOptions(string userEmail, string loginPassword)
     {
-        LoginName = loginName ?? throw new ArgumentNullException(nameof(loginName));
+        UserEmail = userEmail ?? throw new ArgumentNullException(nameof(userEmail));
         LoginPassword = loginPassword ?? throw new ArgumentNullException(nameof(loginPassword));
     }
-
-    /// <summary>登录名</summary>
-    public string LoginName { get; }
 
     /// <summary>登录密码</summary>
     public string LoginPassword { get; }
@@ -439,10 +417,7 @@ public sealed class UserInitializationOptions
     public string? UserName { get; set; }
 
     /// <summary>登录邮箱</summary>
-    public string? UserEmail { get; set; }
-
-    /// <summary>真实姓名</summary>
-    public string? UserRealName { get; set; }
+    public string UserEmail { get; set; }
 
     /// <summary>性别</summary>
     public int? UserSex { get; set; }  // TODO: 后续可考虑改为 UserSex? 枚举类型

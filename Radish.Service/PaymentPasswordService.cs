@@ -1,5 +1,6 @@
 using AutoMapper;
 using Microsoft.Extensions.Logging;
+using Radish.Common.HelpTool;
 using Radish.Common.Utils;
 using Radish.Common;
 using Radish.IRepository;
@@ -113,16 +114,15 @@ public class PaymentPasswordService : IPaymentPasswordService
                 throw new InvalidOperationException("用户已设置支付口令，请使用修改口令功能");
             }
 
-            // 生成盐值和哈希
-            var salt = GenerateSalt();
-            var passwordHash = HashPassword(request.NewPassword, salt);
+            // 当前版本使用 Argon2id 自带盐值编码，旧 Salt 字段保留为空字符串兼容表结构。
+            var passwordHash = HashCurrentPassword(request.NewPassword);
             var strengthLevel = CheckPasswordStrength(request.NewPassword);
 
             if (existingPassword != null)
             {
                 // 更新现有记录
                 existingPassword.PasswordHash = passwordHash;
-                existingPassword.Salt = salt;
+                existingPassword.Salt = string.Empty;
                 existingPassword.StrengthLevel = strengthLevel;
                 existingPassword.PasscodeVersion = PaymentPasscodeRules.CurrentPasscodeVersion;
                 existingPassword.IsEnabled = true;
@@ -143,7 +143,7 @@ public class PaymentPasswordService : IPaymentPasswordService
                     Id = SnowFlakeSingle.Instance.NextId(),
                     UserId = userId,
                     PasswordHash = passwordHash,
-                    Salt = salt,
+                    Salt = string.Empty,
                     StrengthLevel = strengthLevel,
                     PasscodeVersion = PaymentPasscodeRules.CurrentPasscodeVersion,
                     IsEnabled = true,
@@ -210,15 +210,15 @@ public class PaymentPasswordService : IPaymentPasswordService
                 throw new UnauthorizedAccessException(verifyResult.ErrorMessage ?? "当前支付口令验证失败");
             }
 
-            // 生成新的盐值和哈希
-            var salt = GenerateSalt();
-            var passwordHash = HashPassword(request.NewPassword, salt);
+            // 当前版本使用 Argon2id 自带盐值编码，旧 Salt 字段保留为空字符串兼容表结构。
+            var passwordHash = HashCurrentPassword(request.NewPassword);
             var strengthLevel = CheckPasswordStrength(request.NewPassword);
 
             // 更新密码
             paymentPassword.PasswordHash = passwordHash;
-            paymentPassword.Salt = salt;
+            paymentPassword.Salt = string.Empty;
             paymentPassword.StrengthLevel = strengthLevel;
+            paymentPassword.PasscodeVersion = PaymentPasscodeRules.CurrentPasscodeVersion;
             paymentPassword.FailedAttempts = 0;
             paymentPassword.LockedUntil = null;
             paymentPassword.LastModifiedTime = DateTime.Now;
@@ -290,10 +290,15 @@ public class PaymentPasswordService : IPaymentPasswordService
             }
 
             // 验证密码
-            var isPasswordCorrect = VerifyPassword(request.Password, paymentPassword.PasswordHash, paymentPassword.Salt);
+            var isPasswordCorrect = VerifyStoredPassword(request.Password, paymentPassword);
 
             if (isPasswordCorrect)
             {
+                if (PaymentPasscodeRules.CanVerifyAndUpgrade(paymentPassword.PasscodeVersion))
+                {
+                    await UpgradePaymentPasswordHashAsync(paymentPassword, request.Password);
+                }
+
                 // 密码正确，重置失败次数并更新最后使用时间
                 await _paymentPasswordRepository.ResetFailedAttemptsAsync(userId);
                 await _paymentPasswordRepository.UpdateLastUsedTimeAsync(userId);
@@ -615,25 +620,39 @@ public class PaymentPasswordService : IPaymentPasswordService
         };
     }
 
-    /// <summary>
-    /// 生成盐值
-    /// </summary>
-    /// <returns>盐值</returns>
-    private static string GenerateSalt()
+    private async Task UpgradePaymentPasswordHashAsync(UserPaymentPassword paymentPassword, string password)
     {
-        var saltBytes = new byte[32];
-        using var rng = RandomNumberGenerator.Create();
-        rng.GetBytes(saltBytes);
-        return Convert.ToBase64String(saltBytes);
+        paymentPassword.PasswordHash = HashCurrentPassword(password);
+        paymentPassword.Salt = string.Empty;
+        paymentPassword.PasscodeVersion = PaymentPasscodeRules.CurrentPasscodeVersion;
+        paymentPassword.LastModifiedTime = DateTime.Now;
+        paymentPassword.ModifyTime = DateTime.Now;
+        paymentPassword.ModifyBy = "System";
+        paymentPassword.ModifyId = 0;
+
+        await _paymentPasswordRepository.UpdateAsync(paymentPassword);
+
+        _logger.LogInformation("支付口令哈希已自动升级，用户ID: {UserId}, 版本: {PasscodeVersion}",
+            paymentPassword.UserId, PaymentPasscodeRules.CurrentPasscodeVersion);
     }
 
     /// <summary>
-    /// 哈希密码
+    /// 当前版本哈希密码
+    /// </summary>
+    /// <param name="password">密码</param>
+    /// <returns>哈希值</returns>
+    private static string HashCurrentPassword(string password)
+    {
+        return PasswordHasher.HashPassword(password);
+    }
+
+    /// <summary>
+    /// 旧版本 SHA256 支付口令哈希
     /// </summary>
     /// <param name="password">密码</param>
     /// <param name="salt">盐值</param>
     /// <returns>哈希值</returns>
-    private static string HashPassword(string password, string salt)
+    private static string HashLegacySha256Password(string password, string salt)
     {
         var saltBytes = Convert.FromBase64String(salt);
         var passwordBytes = Encoding.UTF8.GetBytes(password);
@@ -651,13 +670,30 @@ public class PaymentPasswordService : IPaymentPasswordService
     /// 验证密码
     /// </summary>
     /// <param name="password">输入的密码</param>
-    /// <param name="storedHash">存储的哈希值</param>
-    /// <param name="salt">盐值</param>
+    /// <param name="paymentPassword">支付口令实体</param>
     /// <returns>是否匹配</returns>
-    private static bool VerifyPassword(string password, string storedHash, string salt)
+    private static bool VerifyStoredPassword(string password, UserPaymentPassword paymentPassword)
     {
-        var computedHash = HashPassword(password, salt);
-        return computedHash == storedHash;
+        if (PaymentPasscodeRules.UsesCurrentHashVersion(paymentPassword.PasscodeVersion))
+            return PasswordHasher.VerifyPassword(password, paymentPassword.PasswordHash);
+
+        if (PaymentPasscodeRules.CanVerifyAndUpgrade(paymentPassword.PasscodeVersion))
+        {
+            try
+            {
+                var computedHash = HashLegacySha256Password(password, paymentPassword.Salt);
+                var computedBytes = Convert.FromBase64String(computedHash);
+                var storedBytes = Convert.FromBase64String(paymentPassword.PasswordHash);
+                return computedBytes.Length == storedBytes.Length
+                       && CryptographicOperations.FixedTimeEquals(computedBytes, storedBytes);
+            }
+            catch (Exception ex) when (ex is FormatException or ArgumentException)
+            {
+                return false;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>

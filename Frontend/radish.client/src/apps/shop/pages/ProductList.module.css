@@ -34,6 +34,7 @@
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+  text-decoration: none;
 }
 
 .backButton:hover {
@@ -139,6 +140,7 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  text-decoration: none;
   max-width: 100%;
   white-space: normal;
   text-align: left;
@@ -205,7 +207,9 @@
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
   background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
   box-shadow: var(--theme-shadow-soft);
+  color: inherit;
   cursor: pointer;
+  text-decoration: none;
   transition: transform var(--theme-transition-standard), box-shadow var(--theme-transition-standard), border-color var(--theme-transition-standard);
   min-width: 0;
 }
@@ -359,6 +363,7 @@
   background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
   color: var(--theme-text-primary);
   cursor: pointer;
+  text-decoration: none;
   font-size: 13px;
   font-weight: 700;
 }

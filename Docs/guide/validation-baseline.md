@@ -225,9 +225,10 @@ https://localhost:5000/console/
 - 来源返回持久化：公开详情来源返回状态保存在 `history.state`，刷新或浏览器历史恢复后仍应保留来源返回语义，但复制链接、canonical、Open Graph 和 sitemap 不应带入该状态
 - 外部 ID：公开商品详情路由与前端读取链路不会把外部 `productId` 强制扩大成前端 `number`，刷新和回跳时保持原始字符串口径
 - 可见文案：公开商品详情 head title / description、最近浏览卡片和回流提示不应直接回显旧 long `productId`；`/shop/product/:productId` 仍作为当前兼容 canonical 与打开路径保留
-- 只读边界：公开商品详情当前不会误触购买确认、订单、背包、权益使用、举报或其他“我的”能力；如需继续操作，会明确导向 `/desktop?app=shop&productId=...` 工作台商品详情
-- 登录后购买回流：未登录用户从工作台商品详情点击“登录后继续购买”时，应保存 `/desktop?app=shop&productId=...` 一次性返回路径；OIDC 回调成功后恢复到原商品详情，随后购买按钮继续走登录态购买流程
-- 订单 / 背包深链：`/desktop?app=shop&orderId=...`、`/desktop?app=shop&view=orders`、`/desktop?app=shop&view=inventory` 要求登录后消费，匿名态不应误显空订单或空背包
+- 公开详情购买意图：公开商品详情 canonical 仍为 `/shop/product/:productId`；登录后继续购买使用 `/shop/product/:productId?intent=purchase`，该 intent 不进入 canonical、Open Graph 或 sitemap
+- 登录后购买回流：未登录用户从公开商品详情触发购买时，应保存 `/shop/product/:productId?intent=purchase` 一次性返回路径；OIDC 回调成功后恢复到原商品详情，随后购买按钮继续走登录态购买流程
+- 订单 / 背包正式 Web：`/shop/orders`、`/shop/order/:orderId`、`/shop/inventory` 要求登录后消费，匿名态不应误显空订单或空背包；购买成功和订单通知应优先进入正式 Web 订单详情
+- WebOS 深链兼容：`/desktop?app=shop&productId=...`、`orderId=...`、`view=orders`、`view=inventory` 仍作为历史工作台深链保留，但不作为普通浏览器默认购买回流验收目标
 
 当前批次与公开社区分发页首批直接相关的人工确认面：
 
@@ -242,10 +243,11 @@ https://localhost:5000/console/
 
 - 详情直链：`/forum/post/:publicId` 或旧 long 兼容路径在公开壳层下打开时，会直接进入公开帖子详情，不回退到桌面 `Shell`
 - 匿名阅读：未登录状态可以阅读正文、轻回应墙和评论树
-- 登录回流：匿名用户触发轻回应或根评论时，只保存 `/forum/post/:postId?intent=quickReply|comment` 一次性返回路径；OIDC 回调后回到同一详情并聚焦对应输入区
+- 登录回流：匿名用户触发轻回应、根评论、回答、作者编辑或历史查看时，只保存 `/forum/post/:postId?intent=quickReply|comment|answer|edit|history` 一次性返回路径；OIDC 回调后回到同一详情并聚焦对应输入区
+- 发帖入口：`/forum/compose` 未登录访问应保存正式 Web 返回路径，登录后回到发帖现场；发帖成功后进入正式 Web 帖子详情
 - 登录参与：已登录用户可在公开详情直接发布轻回应和根评论，成功后局部更新轻回应墙或评论区
 - 分享边界：复制链接、canonical、OpenGraph、JSON-LD 和 sitemap 不携带 `intent`、`commentId`、来源状态或桌面窗口参数
-- 工作台边界：发帖、评论回复、点赞、投票、编辑、删除、举报治理和完整通知中心仍不进入公开详情主流程
+- 工作台边界：评论回复直达 URL、点赞、投票提交、删除、举报治理和完整通知中心仍不进入公开详情主流程；WebOS 三栏工作台、Dock、窗口参数和 `openApp` 语义不迁入正式 Web 作者态
 
 当前批次与 forum 公开分类首批直接相关的人工确认面：
 

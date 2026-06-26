@@ -4,7 +4,11 @@ import { isMePathname } from '../me/meRouteState.ts';
 import { isMessagesPathname } from '../messages/messagesRouteState.ts';
 import { isNotificationsPathname } from '../notifications/notificationRouteState.ts';
 import { isPetPathname } from '../pet/petRouteState.ts';
+import { isShopPathname } from '../shop/shopRouteState.ts';
 import { isPublicDiscoverPathname } from '../public/discoverRouteState.ts';
+import { isPublicShopPathname } from '../public/shopRouteState.ts';
+import { isDocsAuthorPathname } from '../docs/docsAuthorRouteState.ts';
+import { isWorkbenchPathname } from '../workbench/workbenchRouteState.ts';
 
 export const BROWSER_PUBLIC_ENTRY_PATH = '/discover';
 export const CAPACITOR_PUBLIC_ENTRY_PATH = '/docs';
@@ -37,12 +41,11 @@ export function isPublicContentPathname(pathname: string): boolean {
     isPublicDiscoverPathname(pathname)
     || pathname === '/forum'
     || pathname.startsWith('/forum/')
-    || pathname === '/shop'
-    || pathname.startsWith('/shop/')
+    || isPublicShopPathname(pathname)
     || pathname === '/leaderboard'
     || pathname.startsWith('/leaderboard/')
     || pathname === '/docs'
-    || pathname.startsWith('/docs/')
+    || (pathname.startsWith('/docs/') && !isDocsAuthorPathname(pathname))
     || /^\/u\/(?:[1-9]\d*|usr_[0-9a-f]{32})\/?$/i.test(pathname)
     || pathname === '/__documents__'
     || pathname.startsWith('/__documents__/')
@@ -52,3 +55,6 @@ export function isPublicContentPathname(pathname: string): boolean {
 export { isCirclePathname, isMessagesPathname, isNotificationsPathname };
 export { isMePathname };
 export { isPetPathname };
+export { isShopPathname };
+export { isDocsAuthorPathname };
+export { isWorkbenchPathname };

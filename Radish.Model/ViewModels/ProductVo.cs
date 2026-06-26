@@ -117,6 +117,9 @@ public class ProductVo
     /// <summary>下架时间</summary>
     public DateTime? VoOffSaleTime { get; set; }
 
+    /// <summary>写入版本号</summary>
+    public int VoVersion { get; set; }
+
     /// <summary>创建时间</summary>
     public DateTime VoCreateTime { get; set; }
 }
@@ -234,4 +237,14 @@ public class UpdateProductDto : CreateProductDto
 {
     /// <summary>商品 ID</summary>
     public long Id { get; set; }
+
+    /// <summary>期望写入版本号</summary>
+    public int ExpectedVersion { get; set; }
+}
+
+/// <summary>商品版本写入请求</summary>
+public class ProductVersionWriteDto
+{
+    /// <summary>期望写入版本号</summary>
+    public int ExpectedVersion { get; set; }
 }

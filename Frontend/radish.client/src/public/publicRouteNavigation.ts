@@ -71,7 +71,7 @@ function getSessionStorage(): Storage | null {
 function isForumBrowseDescriptor(
   route: PublicRouteDescriptor | null
 ): route is { app: 'forum'; route: PublicForumBrowseRoute } {
-  return !!route && route.app === 'forum' && route.route.kind !== 'detail';
+  return !!route && route.app === 'forum' && route.route.kind !== 'detail' && route.route.kind !== 'compose';
 }
 
 function isDocsBrowseDescriptor(
@@ -202,6 +202,10 @@ export function shouldCaptureForumDetailSource(
   nextRoute: PublicRouteDescriptor
 ): boolean {
   if (nextRoute.app !== 'forum' || nextRoute.route.kind !== 'detail') {
+    return false;
+  }
+
+  if (currentRoute.app === 'forum' && currentRoute.route.kind === 'compose') {
     return false;
   }
 

@@ -10,11 +10,11 @@ public class UserProfileVo
 
     public string? VoDisplayHandle { get; set; }
 
+    public string? VoDisplayName { get; set; }
+
     public string VoUserName { get; set; } = string.Empty;
 
     public string VoUserEmail { get; set; } = string.Empty;
-
-    public string VoRealName { get; set; } = string.Empty;
 
     public int VoSex { get; set; }
 

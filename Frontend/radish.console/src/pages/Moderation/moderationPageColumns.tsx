@@ -92,7 +92,7 @@ export function createModerationQueueColumns(
       key: 'status',
       width: 160,
       render: (_, record) => (
-        <Space direction="vertical" size={4}>
+        <Space orientation="vertical" size={4}>
           <ReportStatusTag value={record.voStatus} />
           <ActionTypeTag value={record.voReviewActionType} />
         </Space>

@@ -254,7 +254,7 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
           >
             <Input style={{ display: 'none' }} />
           </Form.Item>
-          <Space direction="vertical" style={{ width: '100%' }} size={10}>
+          <Space orientation="vertical" style={{ width: '100%' }} size={10}>
             <div
               style={{
                 width: 96,

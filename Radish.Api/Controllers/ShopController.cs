@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.Api.Routing;
 using Radish.Api.Filters;
+using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Common.PermissionTool;
 using Radish.IService;
@@ -391,7 +392,22 @@ public class ShopController : ControllerBase
             return MessageModel<UseItemResultDto>.Message(false, "未登录", default!);
         }
 
-        var result = await _userInventoryService.UseItemAsync(userId, dto);
+        UseItemResultDto result;
+        try
+        {
+            result = await _userInventoryService.UseItemAsync(userId, dto);
+        }
+        catch (BusinessException ex)
+        {
+            result = new UseItemResultDto { Success = false, ErrorMessage = ex.Message };
+            return MessageModel<UseItemResultDto>.Message(false, ex.Message, result);
+        }
+        catch (Exception)
+        {
+            result = new UseItemResultDto { Success = false, ErrorMessage = "使用失败" };
+            return MessageModel<UseItemResultDto>.Message(false, "使用失败", result);
+        }
+
         if (!result.Success)
         {
             return MessageModel<UseItemResultDto>.Message(false, result.ErrorMessage ?? "使用失败", result);
@@ -416,7 +432,22 @@ public class ShopController : ControllerBase
             return MessageModel<UseItemResultDto>.Message(false, "未登录", default!);
         }
 
-        var result = await _userInventoryService.UseRenameCardAsync(userId, inventoryId, newNickname);
+        UseItemResultDto result;
+        try
+        {
+            result = await _userInventoryService.UseRenameCardAsync(userId, inventoryId, newNickname);
+        }
+        catch (BusinessException ex)
+        {
+            result = new UseItemResultDto { Success = false, ErrorMessage = ex.Message };
+            return MessageModel<UseItemResultDto>.Message(false, ex.Message, result);
+        }
+        catch (Exception)
+        {
+            result = new UseItemResultDto { Success = false, ErrorMessage = "使用失败" };
+            return MessageModel<UseItemResultDto>.Message(false, "使用失败", result);
+        }
+
         if (!result.Success)
         {
             return MessageModel<UseItemResultDto>.Message(false, result.ErrorMessage ?? "使用失败", result);
@@ -537,11 +568,11 @@ public class ShopController : ControllerBase
     [HttpPost("{productId:long}")]
     [Authorize(Policy = AuthorizationPolicies.Client)]
     [RequireConsolePermission(ConsolePermissions.ProductsToggleSale)]
-    public async Task<MessageModel<bool>> PutOnSale(long productId)
+    public async Task<MessageModel<bool>> PutOnSale(long productId, [FromBody] ProductVersionWriteDto request)
     {
         try
         {
-            var result = await _productService.PutOnSaleAsync(productId);
+            var result = await _productService.PutOnSaleAsync(productId, request.ExpectedVersion);
             return MessageModel<bool>.Success("上架成功", result);
         }
         catch (InvalidOperationException ex)
@@ -556,10 +587,17 @@ public class ShopController : ControllerBase
     [HttpPost("{productId:long}")]
     [Authorize(Policy = AuthorizationPolicies.Client)]
     [RequireConsolePermission(ConsolePermissions.ProductsToggleSale)]
-    public async Task<MessageModel<bool>> TakeOffSale(long productId)
+    public async Task<MessageModel<bool>> TakeOffSale(long productId, [FromBody] ProductVersionWriteDto request)
     {
-        var result = await _productService.TakeOffSaleAsync(productId);
-        return MessageModel<bool>.Success("下架成功", result);
+        try
+        {
+            var result = await _productService.TakeOffSaleAsync(productId, request.ExpectedVersion);
+            return MessageModel<bool>.Success("下架成功", result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return MessageModel<bool>.Message(false, ex.Message, false);
+        }
     }
 
     /// <summary>

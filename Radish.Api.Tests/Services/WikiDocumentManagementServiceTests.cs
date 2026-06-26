@@ -14,6 +14,7 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Service;
+using Radish.Shared.CustomEnum;
 using Shouldly;
 using Xunit;
 
@@ -121,6 +122,72 @@ public class WikiDocumentManagementServiceTests
 
         var exception = await Should.ThrowAsync<InvalidOperationException>(() => service.UpdateDocumentAsync(1, dto, 1, "Tester"));
         exception.Message.ShouldBe("父级文档不能设置为当前文档的子孙节点");
+    }
+
+    [Fact(DisplayName = "更新访问策略只应修改可见性与允许列表")]
+    public async Task UpdateAccessPolicyAsync_ShouldOnlyUpdateAccessPolicy()
+    {
+        var document = new WikiDocument
+        {
+            Id = 12,
+            Title = "治理文档",
+            Slug = "governance-doc",
+            MarkdownContent = "# old",
+            SourceType = "Custom",
+            Status = (int)WikiDocumentStatusEnum.Published,
+            Visibility = (int)WikiDocumentVisibilityEnum.Authenticated,
+            Version = 5,
+            IsDeleted = false
+        };
+
+        var repository = new Mock<IWikiDocumentRepository>();
+        repository.Setup(r => r.QueryByIdAsync(12)).ReturnsAsync(document);
+        repository.Setup(r => r.UpdateAsync(It.IsAny<WikiDocument>())).ReturnsAsync(true);
+
+        var service = CreateService(repository);
+        var dto = new UpdateWikiDocumentAccessPolicyDto
+        {
+            Visibility = (int)WikiDocumentVisibilityEnum.Restricted,
+            AllowedRoles = ["Admin", "editor"],
+            AllowedPermissions = ["console.docs.view"]
+        };
+
+        var result = await service.UpdateAccessPolicyAsync(12, dto, 9, "Governance");
+
+        result.ShouldBeTrue();
+        document.Title.ShouldBe("治理文档");
+        document.MarkdownContent.ShouldBe("# old");
+        document.Version.ShouldBe(5);
+        document.Visibility.ShouldBe((int)WikiDocumentVisibilityEnum.Restricted);
+        document.AllowedRoles.ShouldBe("|admin|editor|");
+        document.AllowedPermissions.ShouldBe("|console.docs.view|");
+        document.ModifyId.ShouldBe(9);
+        document.ModifyBy.ShouldBe("Governance");
+    }
+
+    [Fact(DisplayName = "更新固定文档访问策略应被拒绝")]
+    public async Task UpdateAccessPolicyAsync_ShouldThrow_WhenDocumentIsBuiltIn()
+    {
+        var repository = new Mock<IWikiDocumentRepository>();
+        repository.Setup(r => r.QueryByIdAsync(13)).ReturnsAsync(new WikiDocument
+        {
+            Id = 13,
+            Title = "固定文档",
+            Slug = "built-in-doc",
+            SourceType = "BuiltIn",
+            Status = (int)WikiDocumentStatusEnum.Published,
+            Visibility = (int)WikiDocumentVisibilityEnum.Public,
+            IsDeleted = false
+        });
+
+        var service = CreateService(repository);
+        var dto = new UpdateWikiDocumentAccessPolicyDto
+        {
+            Visibility = (int)WikiDocumentVisibilityEnum.Authenticated
+        };
+
+        var exception = await Should.ThrowAsync<InvalidOperationException>(() => service.UpdateAccessPolicyAsync(13, dto, 1, "Tester"));
+        exception.Message.ShouldBe("固定文档为只读内容，请修改 Docs 目录中的源文件");
     }
 
     private static WikiDocumentService CreateService(Mock<IWikiDocumentRepository> wikiDocumentRepository)

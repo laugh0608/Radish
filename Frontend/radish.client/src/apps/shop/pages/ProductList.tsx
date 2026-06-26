@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { LongId } from '@/api/user';
 import type { ProductCategory, ProductListItem } from '@/types/shop';
@@ -14,11 +14,34 @@ interface ProductListProps {
   totalPages: number;
   searchKeyword?: string;
   loading: boolean;
+  titleLevel?: 'h1' | 'h2';
+  backHref?: string;
+  getCategoryHref?: (categoryId?: string) => string;
+  getProductHref?: (productId: LongId) => string;
+  getPageHref?: (page: number) => string;
   onCategoryChange: (categoryId?: string) => void;
   onProductClick: (productId: LongId) => void;
   onSearchChange: (keyword: string) => void;
   onPageChange: (page: number) => void;
   onBack: () => void;
+}
+
+function shouldHandleProductListLink(event: MouseEvent<HTMLAnchorElement>): boolean {
+  return !event.defaultPrevented
+    && event.button === 0
+    && !event.metaKey
+    && !event.ctrlKey
+    && !event.shiftKey
+    && !event.altKey;
+}
+
+function handleProductListLinkClick(event: MouseEvent<HTMLAnchorElement>, action: () => void) {
+  if (!shouldHandleProductListLink(event)) {
+    return;
+  }
+
+  event.preventDefault();
+  action();
 }
 
 export const ProductList = ({
@@ -29,6 +52,11 @@ export const ProductList = ({
   totalPages,
   searchKeyword,
   loading,
+  titleLevel = 'h1',
+  backHref,
+  getCategoryHref,
+  getProductHref,
+  getPageHref,
   onCategoryChange,
   onProductClick,
   onSearchChange,
@@ -40,6 +68,7 @@ export const ProductList = ({
   const visibleCategories = categories.filter((category) => (category.voProductCount ?? 0) > 0);
   const hasSelectedVisibleCategory = !!selectedCategoryId
     && visibleCategories.some((category) => String(category.voId) === selectedCategoryId);
+  const Title = titleLevel;
 
   useEffect(() => {
     setSearchInput(searchKeyword || '');
@@ -73,10 +102,20 @@ export const ProductList = ({
     <div className={styles.container}>
       {/* 顶部导航 */}
       <div className={styles.header}>
-        <button className={styles.backButton} onClick={onBack}>
-          ← {t('shop.back')}
-        </button>
-        <h1 className={styles.title}>{getCurrentCategoryName()}</h1>
+        {backHref ? (
+          <a
+            className={styles.backButton}
+            href={backHref}
+            onClick={(event) => handleProductListLinkClick(event, onBack)}
+          >
+            ← {t('shop.back')}
+          </a>
+        ) : (
+          <button type="button" className={styles.backButton} onClick={onBack}>
+            ← {t('shop.back')}
+          </button>
+        )}
+        <Title className={styles.title}>{getCurrentCategoryName()}</Title>
       </div>
 
       {/* 搜索和筛选栏 */}
@@ -101,20 +140,43 @@ export const ProductList = ({
         </div>
 
         <div className={styles.categoryTabs}>
-          <button
-            className={`${styles.categoryTab} ${!hasSelectedVisibleCategory ? styles.active : ''}`}
-            onClick={() => onCategoryChange(undefined)}
-          >
-            {t('shop.filter.all')}
-          </button>
-          {visibleCategories.map((category) => (
-            <button
-              key={category.voId}
-              className={`${styles.categoryTab} ${selectedCategoryId === String(category.voId) ? styles.active : ''}`}
-              onClick={() => onCategoryChange(String(category.voId))}
+          {getCategoryHref ? (
+            <a
+              className={`${styles.categoryTab} ${!hasSelectedVisibleCategory ? styles.active : ''}`}
+              href={getCategoryHref(undefined)}
+              onClick={(event) => handleProductListLinkClick(event, () => onCategoryChange(undefined))}
             >
-              {category.voName}
+              {t('shop.filter.all')}
+            </a>
+          ) : (
+            <button
+              type="button"
+              className={`${styles.categoryTab} ${!hasSelectedVisibleCategory ? styles.active : ''}`}
+              onClick={() => onCategoryChange(undefined)}
+            >
+              {t('shop.filter.all')}
             </button>
+          )}
+          {visibleCategories.map((category) => (
+            getCategoryHref ? (
+              <a
+                key={category.voId}
+                className={`${styles.categoryTab} ${selectedCategoryId === String(category.voId) ? styles.active : ''}`}
+                href={getCategoryHref(String(category.voId))}
+                onClick={(event) => handleProductListLinkClick(event, () => onCategoryChange(String(category.voId)))}
+              >
+                {category.voName}
+              </a>
+            ) : (
+              <button
+                key={category.voId}
+                type="button"
+                className={`${styles.categoryTab} ${selectedCategoryId === String(category.voId) ? styles.active : ''}`}
+                onClick={() => onCategoryChange(String(category.voId))}
+              >
+                {category.voName}
+              </button>
+            )
           ))}
         </div>
       </div>
@@ -139,13 +201,9 @@ export const ProductList = ({
               {products.map((product) => {
                 const coverImageUrl = resolveMediaUrl(product.voCoverImage);
                 const iconImageUrl = resolveMediaUrl(product.voIcon);
-
-                return (
-                  <div
-                    key={product.voId}
-                    className={styles.productCard}
-                    onClick={() => onProductClick(product.voId)}
-                  >
+                const productHref = getProductHref?.(product.voId);
+                const productContent = (
+                  <>
                     <div className={styles.productImage}>
                       {coverImageUrl ? (
                         <img src={coverImageUrl} alt={product.voName} />
@@ -197,6 +255,25 @@ export const ProductList = ({
                         </span>
                       </div>
                     </div>
+                  </>
+                );
+
+                return productHref ? (
+                  <a
+                    key={product.voId}
+                    className={styles.productCard}
+                    href={productHref}
+                    onClick={(event) => handleProductListLinkClick(event, () => onProductClick(product.voId))}
+                  >
+                    {productContent}
+                  </a>
+                ) : (
+                  <div
+                    key={product.voId}
+                    className={styles.productCard}
+                    onClick={() => onProductClick(product.voId)}
+                  >
+                    {productContent}
                   </div>
                 );
               })}
@@ -205,13 +282,24 @@ export const ProductList = ({
             {/* 分页 */}
             {totalPages > 1 && (
               <div className={styles.pagination}>
-                <button
-                  className={styles.pageButton}
-                  disabled={currentPage <= 1}
-                  onClick={() => onPageChange(currentPage - 1)}
-                >
-                  {t('shop.orders.prevPage')}
-                </button>
+                {getPageHref && currentPage > 1 ? (
+                  <a
+                    className={styles.pageButton}
+                    href={getPageHref(currentPage - 1)}
+                    onClick={(event) => handleProductListLinkClick(event, () => onPageChange(currentPage - 1))}
+                  >
+                    {t('shop.orders.prevPage')}
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    className={styles.pageButton}
+                    disabled={currentPage <= 1}
+                    onClick={() => onPageChange(currentPage - 1)}
+                  >
+                    {t('shop.orders.prevPage')}
+                  </button>
+                )}
 
                 <div className={styles.pageNumbers}>
                   {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
@@ -226,9 +314,20 @@ export const ProductList = ({
                       pageNum = currentPage - 3 + i;
                     }
 
-                    return (
+                    return getPageHref ? (
+                      <a
+                        key={pageNum}
+                        className={`${styles.pageNumber} ${currentPage === pageNum ? styles.active : ''}`}
+                        href={getPageHref(pageNum)}
+                        aria-current={currentPage === pageNum ? 'page' : undefined}
+                        onClick={(event) => handleProductListLinkClick(event, () => onPageChange(pageNum))}
+                      >
+                        {pageNum}
+                      </a>
+                    ) : (
                       <button
                         key={pageNum}
+                        type="button"
                         className={`${styles.pageNumber} ${currentPage === pageNum ? styles.active : ''}`}
                         onClick={() => onPageChange(pageNum)}
                       >
@@ -238,13 +337,24 @@ export const ProductList = ({
                   })}
                 </div>
 
-                <button
-                  className={styles.pageButton}
-                  disabled={currentPage >= totalPages}
-                  onClick={() => onPageChange(currentPage + 1)}
-                >
-                  {t('shop.orders.nextPage')}
-                </button>
+                {getPageHref && currentPage < totalPages ? (
+                  <a
+                    className={styles.pageButton}
+                    href={getPageHref(currentPage + 1)}
+                    onClick={(event) => handleProductListLinkClick(event, () => onPageChange(currentPage + 1))}
+                  >
+                    {t('shop.orders.nextPage')}
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    className={styles.pageButton}
+                    disabled={currentPage >= totalPages}
+                    onClick={() => onPageChange(currentPage + 1)}
+                  >
+                    {t('shop.orders.nextPage')}
+                  </button>
+                )}
               </div>
             )}
           </>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { getMyQuickReplies, type UserPostQuickReply } from '@/api/forum';
@@ -10,17 +10,31 @@ import styles from './UserQuickReplyList.module.css';
 interface UserQuickReplyListProps {
   displayTimeZone: string;
   onItemClick?: (postId: LongId, postPublicId?: string | null) => void;
+  getItemHref?: (postId: LongId, postPublicId?: string | null) => string | null;
+  onItemLinkClick?: (
+    event: MouseEvent<HTMLAnchorElement>,
+    href: string,
+    postId: LongId,
+    postPublicId?: string | null
+  ) => void;
+  page?: number;
+  onPageChange?: (page: number) => void;
 }
 
 export const UserQuickReplyList = ({
   displayTimeZone,
-  onItemClick
+  onItemClick,
+  getItemHref,
+  onItemLinkClick,
+  page: controlledPage,
+  onPageChange
 }: UserQuickReplyListProps) => {
   const { t } = useTranslation();
   const [items, setItems] = useState<UserPostQuickReply[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
+  const [internalPage, setInternalPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const page = controlledPage ?? internalPage;
 
   useEffect(() => {
     const loadQuickReplies = async () => {
@@ -41,6 +55,15 @@ export const UserQuickReplyList = ({
     void loadQuickReplies();
   }, [page]);
 
+  const updatePage = (nextPage: number) => {
+    if (onPageChange) {
+      onPageChange(nextPage);
+      return;
+    }
+
+    setInternalPage(nextPage);
+  };
+
   if (loading) {
     return <div className={styles.loading}>{t('profile.quickReplies.loading')}</div>;
   }
@@ -52,33 +75,51 @@ export const UserQuickReplyList = ({
   return (
     <div className={styles.container}>
       <div className={styles.list}>
-        {items.map((item) => (
-          <article
-            key={item.voId}
-            className={styles.replyItem}
-            onClick={() => onItemClick?.(item.voPostId, item.voPostPublicId)}
-            style={{ cursor: onItemClick ? 'pointer' : 'default' }}
-          >
-            <h3 className={styles.postTitle}>{item.voPostTitle}</h3>
-            <p className={styles.content}>{item.voContent}</p>
-            <div className={styles.meta}>
-              <span className={styles.metaItem}>
-                <Icon icon="mdi:comment-quote-outline" size={16} />
-                {t('profile.quickReplies.fromPost')}
-              </span>
-              <span className={styles.time}>
-                {formatDateTimeByTimeZone(item.voCreateTime, displayTimeZone)}
-              </span>
-            </div>
-          </article>
-        ))}
+        {items.map((item) => {
+          const href = getItemHref?.(item.voPostId, item.voPostPublicId) ?? null;
+          const body = (
+            <>
+              <h3 className={styles.postTitle}>{item.voPostTitle}</h3>
+              <p className={styles.content}>{item.voContent}</p>
+              <div className={styles.meta}>
+                <span className={styles.metaItem}>
+                  <Icon icon="mdi:comment-quote-outline" size={16} />
+                  {t('profile.quickReplies.fromPost')}
+                </span>
+                <span className={styles.time}>
+                  {formatDateTimeByTimeZone(item.voCreateTime, displayTimeZone)}
+                </span>
+              </div>
+            </>
+          );
+
+          return href ? (
+            <a
+              key={item.voId}
+              className={styles.replyItem}
+              href={href}
+              onClick={(event) => onItemLinkClick?.(event, href, item.voPostId, item.voPostPublicId)}
+            >
+              {body}
+            </a>
+          ) : (
+            <article
+              key={item.voId}
+              className={styles.replyItem}
+              onClick={() => onItemClick?.(item.voPostId, item.voPostPublicId)}
+              style={{ cursor: onItemClick ? 'pointer' : 'default' }}
+            >
+              {body}
+            </article>
+          );
+        })}
       </div>
 
       {totalPages > 1 && (
         <div className={styles.pagination}>
           <button
             type="button"
-            onClick={() => setPage((current) => Math.max(1, current - 1))}
+            onClick={() => updatePage(Math.max(1, page - 1))}
             disabled={page === 1}
             className={styles.pageButton}
           >
@@ -89,7 +130,7 @@ export const UserQuickReplyList = ({
           </span>
           <button
             type="button"
-            onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+            onClick={() => updatePage(Math.min(totalPages, page + 1))}
             disabled={page === totalPages}
             className={styles.pageButton}
           >

@@ -5,7 +5,7 @@ using Radish.IService;
 
 namespace Radish.Api.Controllers;
 
-/// <summary>公开详情页 HTML head 快照控制器。</summary>
+/// <summary>公开页面 HTML head 快照控制器。</summary>
 [ApiController]
 [ApiVersionNeutral]
 [AllowAnonymous]
@@ -19,6 +19,13 @@ public class PublicHeadSnapshotController : ControllerBase
     {
         _publicHeadSnapshotService = publicHeadSnapshotService;
         _configuration = configuration;
+    }
+
+    [HttpGet("/api/public-head/static/{routeKey}")]
+    public async Task<IActionResult> GetStaticRoute(string routeKey)
+    {
+        var snapshot = await _publicHeadSnapshotService.GetStaticRouteSnapshotAsync(routeKey, ResolvePublicBaseUrl());
+        return snapshot is null ? NotFound() : Ok(snapshot);
     }
 
     [HttpGet("/api/public-head/forum/post/{postKey}")]

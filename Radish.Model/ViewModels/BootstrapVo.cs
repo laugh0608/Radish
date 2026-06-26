@@ -11,5 +11,7 @@ public sealed class BootstrapAdminCreatedVo
 {
     public long VoUserId { get; set; }
 
-    public string VoLoginName { get; set; } = string.Empty;
+    public string VoDisplayName { get; set; } = string.Empty;
+
+    public string VoEmail { get; set; } = string.Empty;
 }

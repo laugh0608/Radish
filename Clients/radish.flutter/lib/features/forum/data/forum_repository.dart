@@ -50,10 +50,18 @@ abstract class ForumRepository {
     required String postId,
     required String content,
     required String accessToken,
+    required String clientSubmissionId,
     String? parentId,
     String? replyToCommentId,
     String? replyToCommentSnapshot,
     String? replyToUserName,
+  });
+
+  Future<ForumQuestionDetail> answerQuestion({
+    required String postId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
   });
 
   Future<String> createPost({
@@ -62,6 +70,24 @@ abstract class ForumRepository {
     required String categoryId,
     required List<String> tagNames,
     required String accessToken,
+    required String clientSubmissionId,
+  });
+
+  Future<void> updatePost({
+    required String postId,
+    required String title,
+    required String content,
+    required String categoryId,
+    required List<String> tagNames,
+    required String accessToken,
+    required String clientSubmissionId,
+  });
+
+  Future<void> updateComment({
+    required String commentId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
   });
 }
 
@@ -242,6 +268,7 @@ class HttpForumRepository implements ForumRepository {
     required String postId,
     required String content,
     required String accessToken,
+    required String clientSubmissionId,
     String? parentId,
     String? replyToCommentId,
     String? replyToCommentSnapshot,
@@ -249,6 +276,11 @@ class HttpForumRepository implements ForumRepository {
   }) {
     final normalizedPostId = postId.trim();
     final normalizedContent = content.trim();
+    final normalizedClientSubmissionId = clientSubmissionId.trim();
+    if (normalizedClientSubmissionId.isEmpty) {
+      throw const RadishApiClientException('评论请求缺少提交意图 ID');
+    }
+
     final uri = endpoints.resolveApi('/api/v1/Comment/Create');
 
     return apiClient.post(
@@ -256,6 +288,7 @@ class HttpForumRepository implements ForumRepository {
       body: {
         'postId': normalizedPostId,
         'content': normalizedContent,
+        'clientSubmissionId': normalizedClientSubmissionId,
         'parentId': _readNullableString(parentId),
         'replyToCommentId': _readNullableString(replyToCommentId),
         'replyToCommentSnapshot': _readNullableString(replyToCommentSnapshot),
@@ -267,16 +300,50 @@ class HttpForumRepository implements ForumRepository {
   }
 
   @override
+  Future<ForumQuestionDetail> answerQuestion({
+    required String postId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) {
+    final normalizedPostId = postId.trim();
+    final normalizedContent = content.trim();
+    final normalizedClientSubmissionId = clientSubmissionId.trim();
+    if (normalizedClientSubmissionId.isEmpty) {
+      throw const RadishApiClientException('回答请求缺少提交意图 ID');
+    }
+
+    final uri = endpoints.resolveApi('/api/v1/Question/Answer');
+
+    return apiClient.post(
+      uri: uri,
+      body: {
+        'postId': normalizedPostId,
+        'content': normalizedContent,
+        'clientSubmissionId': normalizedClientSubmissionId,
+      },
+      bearerToken: accessToken,
+      decode: ForumQuestionDetail.fromJson,
+    );
+  }
+
+  @override
   Future<String> createPost({
     required String title,
     required String content,
     required String categoryId,
     required List<String> tagNames,
     required String accessToken,
+    required String clientSubmissionId,
   }) {
     final normalizedTitle = title.trim();
     final normalizedContent = content.trim();
     final normalizedCategoryId = categoryId.trim();
+    final normalizedClientSubmissionId = clientSubmissionId.trim();
+    if (normalizedClientSubmissionId.isEmpty) {
+      throw const RadishApiClientException('发帖请求缺少提交意图 ID');
+    }
+
     final normalizedTags = tagNames
         .map((tag) => tag.trim())
         .where((tag) => tag.isNotEmpty)
@@ -289,6 +356,7 @@ class HttpForumRepository implements ForumRepository {
       body: {
         'title': normalizedTitle,
         'content': normalizedContent,
+        'clientSubmissionId': normalizedClientSubmissionId,
         'contentType': 'text',
         'categoryId': normalizedCategoryId,
         'tagNames': normalizedTags,
@@ -296,6 +364,75 @@ class HttpForumRepository implements ForumRepository {
       },
       bearerToken: accessToken,
       decode: _readCreatedPostId,
+    );
+  }
+
+  @override
+  Future<void> updatePost({
+    required String postId,
+    required String title,
+    required String content,
+    required String categoryId,
+    required List<String> tagNames,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) {
+    final normalizedPostId = postId.trim();
+    final normalizedTitle = title.trim();
+    final normalizedContent = content.trim();
+    final normalizedCategoryId = categoryId.trim();
+    final normalizedClientSubmissionId = clientSubmissionId.trim();
+    if (normalizedClientSubmissionId.isEmpty) {
+      throw const RadishApiClientException('帖子编辑请求缺少提交意图 ID');
+    }
+
+    final normalizedTags = tagNames
+        .map((tag) => tag.trim())
+        .where((tag) => tag.isNotEmpty)
+        .toSet()
+        .toList();
+    final uri = endpoints.resolveApi('/api/v1/Post/Update');
+
+    return apiClient.put(
+      uri: uri,
+      body: {
+        'postId': normalizedPostId,
+        'title': normalizedTitle,
+        'content': normalizedContent,
+        'categoryId': normalizedCategoryId,
+        'tagNames': normalizedTags,
+        'clientSubmissionId': normalizedClientSubmissionId,
+      },
+      bearerToken: accessToken,
+      decode: (_) {},
+    );
+  }
+
+  @override
+  Future<void> updateComment({
+    required String commentId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) {
+    final normalizedCommentId = commentId.trim();
+    final normalizedContent = content.trim();
+    final normalizedClientSubmissionId = clientSubmissionId.trim();
+    if (normalizedClientSubmissionId.isEmpty) {
+      throw const RadishApiClientException('评论编辑请求缺少提交意图 ID');
+    }
+
+    final uri = endpoints.resolveApi('/api/v1/Comment/Update');
+
+    return apiClient.put(
+      uri: uri,
+      body: {
+        'commentId': normalizedCommentId,
+        'content': normalizedContent,
+        'clientSubmissionId': normalizedClientSubmissionId,
+      },
+      bearerToken: accessToken,
+      decode: (_) {},
     );
   }
 }

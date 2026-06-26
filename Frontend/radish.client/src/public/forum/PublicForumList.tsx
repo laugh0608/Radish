@@ -17,9 +17,10 @@ import type {
   PublicForumListRoute,
   PublicListSort,
 } from '../forumRouteState';
-import { buildPublicForumPath } from '../forumRouteState';
+import { buildPublicForumPath, createDefaultSearchRoute } from '../forumRouteState';
 import { usePublicReplaceRouteSync } from '../usePublicReplaceRouteSync';
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
+import { PublicForumPagination, PublicForumRouteLink } from './PublicForumLinks';
 import {
   buildActiveSectionTitle,
   buildCategoryIntro,
@@ -344,6 +345,13 @@ export const PublicForumList = ({
     itemCount: posts.length,
     totalCount: totalPosts
   });
+  const buildListRoute = (nextPage: number, nextCategoryId = selectedCategoryId, nextSortBy = sortBy): PublicForumListRoute => ({
+    kind: 'list',
+    categoryId: nextCategoryId,
+    sortBy: nextSortBy,
+    page: nextPage
+  });
+  const allPostsRoute = buildListRoute(1, null);
 
   return (
     <section className={`${styles.sectionCard} ${styles.listSectionCard}`}>
@@ -378,44 +386,44 @@ export const PublicForumList = ({
 
         <div className={styles.toolbar}>
           <div className={styles.segmented}>
-            <button
-              type="button"
+            <PublicForumRouteLink
               className={styles.segmentButton}
-              onClick={() => onOpenSearch?.()}
+              route={createDefaultSearchRoute()}
+              onNavigate={onOpenSearch ? () => onOpenSearch() : undefined}
             >
               <Icon icon="mdi:magnify" size={16} />
               <span>{t('forum.public.searchAction')}</span>
-            </button>
-            <button
-              type="button"
+            </PublicForumRouteLink>
+            <PublicForumRouteLink
               className={`${styles.segmentButton} ${!selectedCategoryId ? styles.segmentButtonActive : ''}`}
-              onClick={() => {
+              route={allPostsRoute}
+              onNavigate={() => {
                 setSelectedCategoryId(null);
                 setCurrentPage(1);
               }}
             >
               {t('forum.allPosts')}
-            </button>
-            <button
-              type="button"
+            </PublicForumRouteLink>
+            <PublicForumRouteLink
               className={`${styles.segmentButton} ${sortBy === 'newest' ? styles.segmentButtonActive : ''}`}
-              onClick={() => {
+              route={buildListRoute(1, selectedCategoryId, 'newest')}
+              onNavigate={() => {
                 setSortBy('newest');
                 setCurrentPage(1);
               }}
             >
               {t('forum.sort.newest')}
-            </button>
-            <button
-              type="button"
+            </PublicForumRouteLink>
+            <PublicForumRouteLink
               className={`${styles.segmentButton} ${sortBy === 'hottest' ? styles.segmentButtonActive : ''}`}
-              onClick={() => {
+              route={buildListRoute(1, selectedCategoryId, 'hottest')}
+              onNavigate={() => {
                 setSortBy('hottest');
                 setCurrentPage(1);
               }}
             >
               {t('forum.sort.hottest')}
-            </button>
+            </PublicForumRouteLink>
           </div>
         </div>
 
@@ -445,19 +453,23 @@ export const PublicForumList = ({
         ) : categories.length === 0 ? (
           <span className={styles.categoryHint}>{t('forum.category.empty')}</span>
         ) : (
-          categories.map((category) => (
-            <button
-              key={category.voId}
-              type="button"
-              className={`${styles.categoryChip} ${selectedCategoryId === category.voId ? styles.categoryChipActive : ''}`}
-              onClick={() => {
-                setSelectedCategoryId((current) => (current === category.voId ? null : category.voId));
-                setCurrentPage(1);
-              }}
-            >
-              {category.voName}
-            </button>
-          ))
+          categories.map((category) => {
+            const nextCategoryId = selectedCategoryId === category.voId ? null : category.voId;
+
+            return (
+              <PublicForumRouteLink
+                key={category.voId}
+                className={`${styles.categoryChip} ${selectedCategoryId === category.voId ? styles.categoryChipActive : ''}`}
+                route={buildListRoute(1, nextCategoryId)}
+                onNavigate={() => {
+                  setSelectedCategoryId(nextCategoryId);
+                  setCurrentPage(1);
+                }}
+              >
+                {category.voName}
+              </PublicForumRouteLink>
+            );
+          })
         )}
       </div>
 
@@ -488,6 +500,7 @@ export const PublicForumList = ({
             description={t('forum.public.categoryUnavailableDescription')}
             primaryAction={{
               label: t('forum.viewAllPosts'),
+              href: buildPublicForumPath(allPostsRoute),
               onClick: () => {
                 setSelectedCategoryId(null);
                 setCurrentPage(1);
@@ -505,6 +518,7 @@ export const PublicForumList = ({
             }}
             secondaryAction={{
               label: t('forum.viewAllPosts'),
+              href: buildPublicForumPath(allPostsRoute),
               onClick: () => {
                 setSelectedCategoryId(null);
                 setCurrentPage(1);
@@ -563,34 +577,13 @@ export const PublicForumList = ({
       </div>
 
       {categoryState.kind !== 'notFound' && totalPages > 1 && (
-        <div className={styles.pagination}>
-          <button
-            type="button"
-            className={styles.paginationButton}
-            onClick={() => setCurrentPage((page: number) => Math.max(1, page - 1))}
-            disabled={currentPage === 1}
-          >
-            ‹
-          </button>
-          {visiblePages.map((page) => (
-            <button
-              key={page}
-              type="button"
-              className={`${styles.paginationButton} ${page === currentPage ? styles.paginationButtonActive : ''}`}
-              onClick={() => setCurrentPage(page)}
-            >
-              {page}
-            </button>
-          ))}
-          <button
-            type="button"
-            className={styles.paginationButton}
-            onClick={() => setCurrentPage((page: number) => Math.min(totalPages, page + 1))}
-            disabled={currentPage === totalPages}
-          >
-            ›
-          </button>
-        </div>
+        <PublicForumPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          visiblePages={visiblePages}
+          buildRoute={(page) => buildListRoute(page)}
+          onPageChange={setCurrentPage}
+        />
       )}
     </section>
   );

@@ -8,21 +8,21 @@ namespace Radish.Auth.ViewModels.Account;
 public sealed class RegisterViewModel
 {
     /// <summary>
-    /// 用户名
+    /// 公开展示名
     /// </summary>
-    [Required(ErrorMessage = "用户名不能为空")]
-    [RegularExpression(@"^(?=.*[a-zA-Z])[a-zA-Z0-9]+$", ErrorMessage = "登录名只能包含字母和数字，且至少包含一个字母")]
-    public string Username { get; set; } = string.Empty;
+    [Required(ErrorMessage = "展示名不能为空")]
+    [RegularExpression(@"^[\u4e00-\u9fffa-zA-Z0-9]+$", ErrorMessage = "展示名只能包含中文、英文字母和数字")]
+    public string DisplayName { get; set; } = string.Empty;
 
     /// <summary>
-    /// 登录名最小长度
+    /// 展示名最小长度
     /// </summary>
-    public int LoginNameMinLength { get; set; } = 3;
+    public int DisplayNameMinLength { get; set; } = 2;
 
     /// <summary>
-    /// 登录名最大长度
+    /// 展示名最大长度
     /// </summary>
-    public int LoginNameMaxLength { get; set; } = 32;
+    public int DisplayNameMaxLength { get; set; } = 24;
 
     /// <summary>
     /// 密码

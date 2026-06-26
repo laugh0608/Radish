@@ -29,6 +29,7 @@ import { usePermission } from '@/hooks/usePermission';
 import type { UserListItem } from '../../types/user';
 import { getAvatarUrl } from '@/config/env';
 import { log } from '../../utils/logger';
+import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import '../adminFeature.css';
 import './UserList.css';
 
@@ -105,29 +106,30 @@ export const UserList = () => {
       key: 'user',
       width: 260,
       render: (_, record) => (
-        <div className="user-list-identity">
-          <Avatar
-            size="small"
-            src={getAvatarUrl(record.voAvatarThumbnailUrl || record.voAvatarUrl)}
-            icon={<UserOutlined />}
-          />
-          <div className="user-list-identity__content">
-            <div className="user-list-identity__name">{record.voDisplayName || record.voUserName}</div>
-            {record.voDisplayHandle && (
-              <div className="user-list-identity__email">{record.voDisplayHandle}</div>
-            )}
-            {record.voUserEmail && (
-              <div className="user-list-identity__email">{record.voUserEmail}</div>
-            )}
-          </div>
-        </div>
+        (() => {
+          const displayName = resolveVisibleUserDisplayName(record, record.uuid ? `用户 ${record.uuid}` : '未知用户');
+          const displayHandle = resolveVisibleUserHandle(record, displayName);
+
+          return (
+            <div className="user-list-identity">
+              <Avatar
+                size="small"
+                src={getAvatarUrl(record.voAvatarThumbnailUrl || record.voAvatarUrl)}
+                icon={<UserOutlined />}
+              />
+              <div className="user-list-identity__content">
+                <div className="user-list-identity__name">{displayName}</div>
+                {displayHandle && (
+                  <div className="user-list-identity__email">{displayHandle}</div>
+                )}
+                {record.voUserEmail && (
+                  <div className="user-list-identity__email">{record.voUserEmail}</div>
+                )}
+              </div>
+            </div>
+          );
+        })()
       ),
-    },
-    {
-      title: '登录名',
-      dataIndex: 'voLoginName',
-      key: 'voLoginName',
-      width: 180,
     },
     {
       title: '状态',
@@ -214,7 +216,7 @@ export const UserList = () => {
             <div className="admin-table-toolbar__filters">
               <Input
                 className="user-list-filter-input"
-                placeholder="搜索用户名或邮箱"
+                placeholder="搜索展示名、公开句柄或邮箱"
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
                 onPressEnter={handleSearch}

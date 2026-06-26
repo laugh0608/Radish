@@ -208,6 +208,7 @@ export interface TransferRequest {
   amount: number;
   remark?: string;
   paymentPassword: string;
+  idempotencyKey?: string;
 }
 
 /**

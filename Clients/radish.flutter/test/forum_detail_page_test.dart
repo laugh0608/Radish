@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:radish_flutter/core/auth/authorization_code_exchange_service.dart';
+import 'package:radish_flutter/core/auth/native_auth_controller.dart';
+import 'package:radish_flutter/core/auth/native_auth_gateway.dart';
 import 'package:radish_flutter/core/auth/session_controller.dart';
 import 'package:radish_flutter/core/auth/session_refresh_service.dart';
 import 'package:radish_flutter/core/auth/session_store.dart';
@@ -19,6 +22,24 @@ Finder _quickReplyTextField() {
 Finder _commentTextField({String hintText = '写下你的评论...'}) {
   return find.byWidgetPredicate(
     (widget) => widget is TextField && widget.decoration?.hintText == hintText,
+  );
+}
+
+Finder _answerTextField() {
+  return find.byWidgetPredicate(
+    (widget) => widget is TextField && widget.decoration?.labelText == '写下你的回答',
+  );
+}
+
+Finder _postEditTextField() {
+  return find.byWidgetPredicate(
+    (widget) => widget is TextField && widget.decoration?.labelText == '帖子正文',
+  );
+}
+
+Finder _commentEditTextField() {
+  return find.byWidgetPredicate(
+    (widget) => widget is TextField && widget.decoration?.labelText == '评论内容',
   );
 }
 
@@ -50,11 +71,11 @@ void main() {
     );
 
     expect(find.text('评论'), findsOneWidget);
-    expect(find.text('只读上下文'), findsOneWidget);
+    expect(find.text('详情上下文'), findsOneWidget);
     expect(find.text('应用内打开'), findsWidgets);
     expect(find.text('公开地址待生成'), findsWidgets);
     expect(find.text('/forum/post/post-42'), findsNothing);
-    expect(find.textContaining('支持评论发布与回复'), findsOneWidget);
+    expect(find.textContaining('支持问题回答、评论发布与回复'), findsOneWidget);
     expect(find.text('共 2 条轻回应'), findsOneWidget);
     expect(find.text('radish：学到了'), findsOneWidget);
     expect(find.text('已加载 2 / 3 条根评论'), findsWidgets);
@@ -114,7 +135,7 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('只读上下文'), findsOneWidget);
+    expect(find.text('详情上下文'), findsOneWidget);
     expect(find.text('通知回流'), findsWidgets);
     expect(find.text('公开地址待生成'), findsWidgets);
     expect(find.text('/forum/post/2042219067430928384'), findsNothing);
@@ -500,6 +521,237 @@ void main() {
     expect(find.text('radish：学到了'), findsOneWidget);
   });
 
+  testWidgets('renders question answers in detail', (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: _QuestionAnswerForumRepository(),
+          postId: 'post-42',
+          initialTitle: '问答详情',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    final scrollable = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(
+      find.text('已采纳'),
+      200,
+      scrollable: scrollable,
+    );
+
+    expect(find.text('2 个回答'), findsWidgets);
+    expect(find.text('已解决'), findsWidgets);
+    expect(find.text('已采纳'), findsOneWidget);
+    expect(find.text('Accepted answer content'), findsOneWidget);
+    expect(find.text('Second answer content'), findsOneWidget);
+    expect(find.text('登录后可以回答问题'), findsOneWidget);
+  });
+
+  testWidgets('answer sign-in returns to composer in current detail',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: const SessionRefreshService(
+        environment: AppEnvironment.development(),
+      ),
+    );
+    final authController = NativeAuthController(
+      environment: const AppEnvironment.development(),
+      sessionController: sessionController,
+      gateway: InMemoryNativeAuthGateway(),
+      exchangeService: const _UnusedAuthorizationCodeExchangeService(),
+    );
+    final signInTargets = <ForumDetailHandoffTarget>[];
+    var consumedLoginTargetCount = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: _QuestionAnswerForumRepository(),
+          postId: 'post-42',
+          initialTitle: '问答详情',
+          sessionController: sessionController,
+          authController: authController,
+          onRequestSignIn: (target) async {
+            signInTargets.add(target);
+          },
+          onConsumeActiveDetailLoginTarget: () async {
+            consumedLoginTargetCount += 1;
+          },
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    final scrollable = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(
+      find.text('登录后回答'),
+      200,
+      scrollable: scrollable,
+    );
+
+    await tester.tap(find.widgetWithText(FilledButton, '登录后回答'));
+    await tester.pumpAndSettle();
+
+    expect(signInTargets, hasLength(1));
+    expect(signInTargets.single.postId, 'post-42');
+
+    await sessionController.setSession(
+      AuthSession(
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+        userId: 'user-current',
+        expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(consumedLoginTargetCount, 1);
+    expect(find.text('已回到回答区，可以继续发布。'), findsOneWidget);
+    expect(find.text('发布回答'), findsOneWidget);
+  });
+
+  testWidgets('submits question answer when session is authenticated',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repository = _RecordingAnswerForumRepository();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: const SessionRefreshService(
+        environment: AppEnvironment.development(),
+      ),
+    );
+    await sessionController.setSession(
+      AuthSession(
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+        userId: 'user-current',
+        expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: repository,
+          postId: 'post-42',
+          initialTitle: '问答详情',
+          sessionController: sessionController,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    final scrollable = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(
+      find.text('发布回答'),
+      200,
+      scrollable: scrollable,
+    );
+
+    await tester.enterText(_answerTextField(), 'Flutter 新回答内容');
+    await tester.pump();
+    final answerButton = find.widgetWithText(FilledButton, '发布回答');
+    await tester.ensureVisible(answerButton);
+    await tester.tap(answerButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Flutter 新回答内容'), findsOneWidget);
+    expect(find.text('回答已发布，已显示在回答区。'), findsOneWidget);
+    expect(find.text('3 个回答'), findsWidgets);
+    expect(repository.answerRequests, hasLength(1));
+    expect(repository.answerRequests.single.postId, 'post-42');
+    expect(repository.answerRequests.single.content, 'Flutter 新回答内容');
+    expect(repository.answerRequests.single.accessToken, 'access-token');
+    expect(
+      repository.answerRequests.single.clientSubmissionId,
+      startsWith('forum-answer:'),
+    );
+  });
+
+  testWidgets('reuses answer submission key when retrying failed answer',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repository = _AnswerSubmitFailingForumRepository();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: const SessionRefreshService(
+        environment: AppEnvironment.development(),
+      ),
+    );
+    await sessionController.setSession(
+      AuthSession(
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+        userId: 'user-current',
+        expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: repository,
+          postId: 'post-42',
+          initialTitle: '问答详情',
+          sessionController: sessionController,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    final scrollable = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(
+      find.text('发布回答'),
+      200,
+      scrollable: scrollable,
+    );
+
+    await tester.enterText(_answerTextField(), '失败后复用回答 key');
+    await tester.pump();
+    final answerButton = find.widgetWithText(FilledButton, '发布回答');
+    await tester.ensureVisible(answerButton);
+    await tester.tap(answerButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('重试发布'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('回答发布失败'), findsOneWidget);
+    expect(find.text('回答服务暂时不可用'), findsOneWidget);
+    expect(repository.answerRequests, hasLength(2));
+    expect(
+      repository.answerRequests.first.clientSubmissionId,
+      startsWith('forum-answer:'),
+    );
+    expect(
+      repository.answerRequests.last.clientSubmissionId,
+      repository.answerRequests.first.clientSubmissionId,
+    );
+  });
+
   testWidgets('submits root comment when session is authenticated',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
@@ -557,8 +809,340 @@ void main() {
     expect(repository.createCommentRequests.single.postId, 'post-42');
     expect(repository.createCommentRequests.single.content, '正式评论内容');
     expect(repository.createCommentRequests.single.accessToken, 'access-token');
+    expect(
+      repository.createCommentRequests.single.clientSubmissionId,
+      startsWith('forum-comment:'),
+    );
     expect(repository.createCommentRequests.single.parentId, isNull);
     expect(repository.createCommentRequests.single.replyToCommentId, isNull);
+  });
+
+  testWidgets('reuses comment submission key when retrying failed comment',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repository = _CommentSubmitFailingForumRepository();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: const SessionRefreshService(
+        environment: AppEnvironment.development(),
+      ),
+    );
+    await sessionController.setSession(
+      AuthSession(
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+        userId: 'user-current',
+        expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: repository,
+          postId: 'post-42',
+          initialTitle: '论坛详情回流',
+          sessionController: sessionController,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    final scrollable = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(
+      find.text('发布评论'),
+      200,
+      scrollable: scrollable,
+    );
+
+    await tester.enterText(_commentTextField(), '失败后复用评论 key');
+    await tester.pump();
+    final commentButton = find.widgetWithText(FilledButton, '发布评论');
+    await tester.ensureVisible(commentButton);
+    await tester.tap(commentButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('重试发布'));
+    await tester.pumpAndSettle();
+
+    expect(repository.createCommentRequests, hasLength(2));
+    expect(
+      repository.createCommentRequests.first.clientSubmissionId,
+      startsWith('forum-comment:'),
+    );
+    expect(
+      repository.createCommentRequests.last.clientSubmissionId,
+      repository.createCommentRequests.first.clientSubmissionId,
+    );
+  });
+
+  testWidgets('edits own post body with post edit submission key',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repository = _RecordingForumEditRepository();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: const SessionRefreshService(
+        environment: AppEnvironment.development(),
+      ),
+    );
+    await sessionController.setSession(
+      AuthSession(
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+        userId: 'user-9',
+        expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: repository,
+          postId: 'post-42',
+          initialTitle: '论坛详情回流',
+          sessionController: sessionController,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    final scrollable = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(
+      find.text('编辑正文'),
+      200,
+      scrollable: scrollable,
+    );
+
+    await tester.tap(find.widgetWithText(OutlinedButton, '编辑正文'));
+    await tester.pumpAndSettle();
+    await tester.enterText(_postEditTextField(), '编辑后的移动端正文');
+    await tester.pump();
+    final saveButton = find.widgetWithText(FilledButton, '保存正文');
+    await tester.ensureVisible(saveButton);
+    await tester.tap(saveButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('编辑后的移动端正文'), findsOneWidget);
+    expect(find.text('帖子正文已保存。'), findsOneWidget);
+    expect(repository.updatePostRequests, hasLength(1));
+    expect(repository.updatePostRequests.single.postId, 'post-42');
+    expect(repository.updatePostRequests.single.title, '论坛详情回流');
+    expect(repository.updatePostRequests.single.content, '编辑后的移动端正文');
+    expect(repository.updatePostRequests.single.categoryId, 'category-1');
+    expect(repository.updatePostRequests.single.tagNames, ['flutter']);
+    expect(repository.updatePostRequests.single.accessToken, 'access-token');
+    expect(
+      repository.updatePostRequests.single.clientSubmissionId,
+      startsWith('forum-post-edit:'),
+    );
+  });
+
+  testWidgets('reuses post edit submission key when retrying failed edit',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repository = _PostEditFailingForumRepository();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: const SessionRefreshService(
+        environment: AppEnvironment.development(),
+      ),
+    );
+    await sessionController.setSession(
+      AuthSession(
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+        userId: 'user-9',
+        expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: repository,
+          postId: 'post-42',
+          initialTitle: '论坛详情回流',
+          sessionController: sessionController,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    final scrollable = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(
+      find.text('编辑正文'),
+      200,
+      scrollable: scrollable,
+    );
+
+    await tester.tap(find.widgetWithText(OutlinedButton, '编辑正文'));
+    await tester.pumpAndSettle();
+    await tester.enterText(_postEditTextField(), '失败后复用帖子编辑 key');
+    await tester.pump();
+    final saveButton = find.widgetWithText(FilledButton, '保存正文');
+    await tester.ensureVisible(saveButton);
+    await tester.tap(saveButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('重试保存'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('帖子编辑失败'), findsOneWidget);
+    expect(find.text('帖子编辑服务暂时不可用'), findsOneWidget);
+    expect(repository.updatePostRequests, hasLength(2));
+    expect(
+      repository.updatePostRequests.first.clientSubmissionId,
+      startsWith('forum-post-edit:'),
+    );
+    expect(
+      repository.updatePostRequests.last.clientSubmissionId,
+      repository.updatePostRequests.first.clientSubmissionId,
+    );
+  });
+
+  testWidgets('edits own root comment with comment edit submission key',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repository = _RecordingForumEditRepository();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: const SessionRefreshService(
+        environment: AppEnvironment.development(),
+      ),
+    );
+    await sessionController.setSession(
+      AuthSession(
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+        userId: 'user-1',
+        expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: repository,
+          postId: 'post-42',
+          initialTitle: '论坛详情回流',
+          sessionController: sessionController,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    final scrollable = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(
+      find.text('Root comment one'),
+      200,
+      scrollable: scrollable,
+    );
+
+    await tester.tap(find.widgetWithText(TextButton, '编辑评论'));
+    await tester.pumpAndSettle();
+    await tester.enterText(_commentEditTextField(), '编辑后的根评论');
+    await tester.pump();
+    final saveButton = find.widgetWithText(FilledButton, '保存评论');
+    await tester.ensureVisible(saveButton);
+    await tester.tap(saveButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('编辑后的根评论'), findsOneWidget);
+    expect(find.text('评论已保存。'), findsOneWidget);
+    expect(repository.updateCommentRequests, hasLength(1));
+    expect(repository.updateCommentRequests.single.commentId, 'comment-1');
+    expect(repository.updateCommentRequests.single.content, '编辑后的根评论');
+    expect(repository.updateCommentRequests.single.accessToken, 'access-token');
+    expect(
+      repository.updateCommentRequests.single.clientSubmissionId,
+      startsWith('forum-comment-edit:'),
+    );
+  });
+
+  testWidgets('reuses comment edit submission key when retrying failed edit',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repository = _CommentEditFailingForumRepository();
+    final sessionController = SessionController(
+      sessionStore: InMemorySessionStore(),
+      refreshService: const SessionRefreshService(
+        environment: AppEnvironment.development(),
+      ),
+    );
+    await sessionController.setSession(
+      AuthSession(
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+        userId: 'user-1',
+        expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ForumDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: repository,
+          postId: 'post-42',
+          initialTitle: '论坛详情回流',
+          sessionController: sessionController,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    final scrollable = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(
+      find.text('Root comment one'),
+      200,
+      scrollable: scrollable,
+    );
+
+    await tester.tap(find.widgetWithText(TextButton, '编辑评论'));
+    await tester.pumpAndSettle();
+    await tester.enterText(_commentEditTextField(), '失败后复用评论编辑 key');
+    await tester.pump();
+    final saveButton = find.widgetWithText(FilledButton, '保存评论');
+    await tester.ensureVisible(saveButton);
+    await tester.tap(saveButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('重试保存'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('评论编辑失败'), findsOneWidget);
+    expect(find.text('评论编辑服务暂时不可用'), findsOneWidget);
+    expect(repository.updateCommentRequests, hasLength(2));
+    expect(
+      repository.updateCommentRequests.first.clientSubmissionId,
+      startsWith('forum-comment-edit:'),
+    );
+    expect(
+      repository.updateCommentRequests.last.clientSubmissionId,
+      repository.updateCommentRequests.first.clientSubmissionId,
+    );
   });
 
   testWidgets('submits reply with parent and target comment context',
@@ -623,6 +1207,10 @@ void main() {
     expect(repository.createCommentRequests, hasLength(1));
     expect(repository.createCommentRequests.single.postId, 'post-42');
     expect(repository.createCommentRequests.single.content, '回复一条根评论');
+    expect(
+      repository.createCommentRequests.single.clientSubmissionId,
+      startsWith('forum-comment:'),
+    );
     expect(repository.createCommentRequests.single.parentId, 'comment-1');
     expect(
         repository.createCommentRequests.single.replyToCommentId, 'comment-1');
@@ -874,6 +1462,7 @@ abstract class _BaseForumRepository implements ForumRepository {
     required String postId,
     required String content,
     required String accessToken,
+    required String clientSubmissionId,
     String? parentId,
     String? replyToCommentId,
     String? replyToCommentSnapshot,
@@ -883,15 +1472,59 @@ abstract class _BaseForumRepository implements ForumRepository {
   }
 
   @override
+  Future<ForumQuestionDetail> answerQuestion({
+    required String postId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {
+    return ForumQuestionDetail(
+      postId: postId,
+      isSolved: false,
+      answerCount: 1,
+      answers: [
+        ForumAnswerSummary(
+          id: 'answer-created',
+          postId: postId,
+          authorId: 'user-current',
+          authorName: 'current',
+          content: content,
+          createTime: '2026-04-20T08:14:00Z',
+        ),
+      ],
+    );
+  }
+
+  @override
   Future<String> createPost({
     required String title,
     required String content,
     required String categoryId,
     required List<String> tagNames,
     required String accessToken,
+    required String clientSubmissionId,
   }) async {
     return 'post-created';
   }
+
+  @override
+  Future<void> updatePost({
+    required String postId,
+    required String title,
+    required String content,
+    required String categoryId,
+    required List<String> tagNames,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {}
+
+  @override
+  Future<void> updateComment({
+    required String commentId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {}
 }
 
 class _PagedForumRepository extends _BaseForumRepository {
@@ -1135,6 +1768,129 @@ class _QuickReplySubmitFailingForumRepository extends _PagedForumRepository {
   }
 }
 
+class _QuestionAnswerForumRepository extends _PagedForumRepository {
+  @override
+  Future<ForumPostDetail> getPostDetail({
+    required String postId,
+  }) async {
+    return ForumPostDetail(
+      id: postId,
+      title: '问答详情',
+      content: '# Question\n\nHow should Flutter answer a forum question?',
+      contentType: 'Markdown',
+      categoryId: 'category-1',
+      categoryName: 'General',
+      authorId: 'user-9',
+      authorName: 'luobo',
+      answerCount: 2,
+      isQuestion: true,
+      isSolved: true,
+      createTime: '2026-04-20T08:00:00Z',
+      question: ForumQuestionDetail(
+        postId: postId,
+        isSolved: true,
+        acceptedAnswerId: 'answer-1',
+        answerCount: 2,
+        answers: [
+          ForumAnswerSummary(
+            id: 'answer-1',
+            postId: postId,
+            authorId: 'user-1',
+            authorName: 'radish',
+            content: 'Accepted answer content',
+            isAccepted: true,
+            createTime: '2026-04-20T08:05:00Z',
+          ),
+          ForumAnswerSummary(
+            id: 'answer-2',
+            postId: postId,
+            authorId: 'user-2',
+            authorName: 'guest',
+            content: 'Second answer content',
+            createTime: '2026-04-20T08:08:00Z',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecordingAnswerForumRepository extends _QuestionAnswerForumRepository {
+  final List<_CreateAnswerRequest> answerRequests = <_CreateAnswerRequest>[];
+
+  @override
+  Future<ForumQuestionDetail> answerQuestion({
+    required String postId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {
+    answerRequests.add(
+      _CreateAnswerRequest(
+        postId: postId,
+        content: content,
+        accessToken: accessToken,
+        clientSubmissionId: clientSubmissionId,
+      ),
+    );
+
+    return ForumQuestionDetail(
+      postId: postId,
+      isSolved: true,
+      acceptedAnswerId: 'answer-1',
+      answerCount: 3,
+      answers: [
+        ForumAnswerSummary(
+          id: 'answer-1',
+          postId: postId,
+          authorId: 'user-1',
+          authorName: 'radish',
+          content: 'Accepted answer content',
+          isAccepted: true,
+          createTime: '2026-04-20T08:05:00Z',
+        ),
+        ForumAnswerSummary(
+          id: 'answer-2',
+          postId: postId,
+          authorId: 'user-2',
+          authorName: 'guest',
+          content: 'Second answer content',
+          createTime: '2026-04-20T08:08:00Z',
+        ),
+        ForumAnswerSummary(
+          id: 'answer-created',
+          postId: postId,
+          authorId: 'user-current',
+          authorName: 'current',
+          content: content,
+          createTime: '2026-04-20T08:14:00Z',
+        ),
+      ],
+    );
+  }
+}
+
+class _AnswerSubmitFailingForumRepository
+    extends _RecordingAnswerForumRepository {
+  @override
+  Future<ForumQuestionDetail> answerQuestion({
+    required String postId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {
+    answerRequests.add(
+      _CreateAnswerRequest(
+        postId: postId,
+        content: content,
+        accessToken: accessToken,
+        clientSubmissionId: clientSubmissionId,
+      ),
+    );
+    throw const RadishApiClientException('回答服务暂时不可用');
+  }
+}
+
 class _RecordingCommentForumRepository extends _PagedForumRepository {
   final List<_CreateCommentRequest> createCommentRequests =
       <_CreateCommentRequest>[];
@@ -1144,6 +1900,7 @@ class _RecordingCommentForumRepository extends _PagedForumRepository {
     required String postId,
     required String content,
     required String accessToken,
+    required String clientSubmissionId,
     String? parentId,
     String? replyToCommentId,
     String? replyToCommentSnapshot,
@@ -1154,6 +1911,7 @@ class _RecordingCommentForumRepository extends _PagedForumRepository {
         postId: postId,
         content: content,
         accessToken: accessToken,
+        clientSubmissionId: clientSubmissionId,
         parentId: parentId,
         replyToCommentId: replyToCommentId,
         replyToCommentSnapshot: replyToCommentSnapshot,
@@ -1164,11 +1922,164 @@ class _RecordingCommentForumRepository extends _PagedForumRepository {
   }
 }
 
+class _CommentSubmitFailingForumRepository
+    extends _RecordingCommentForumRepository {
+  @override
+  Future<String> createComment({
+    required String postId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
+    String? parentId,
+    String? replyToCommentId,
+    String? replyToCommentSnapshot,
+    String? replyToUserName,
+  }) async {
+    createCommentRequests.add(
+      _CreateCommentRequest(
+        postId: postId,
+        content: content,
+        accessToken: accessToken,
+        clientSubmissionId: clientSubmissionId,
+        parentId: parentId,
+        replyToCommentId: replyToCommentId,
+        replyToCommentSnapshot: replyToCommentSnapshot,
+        replyToUserName: replyToUserName,
+      ),
+    );
+    throw const RadishApiClientException('评论服务暂时不可用');
+  }
+}
+
+class _RecordingForumEditRepository extends _PagedForumRepository {
+  final List<_UpdatePostRequest> updatePostRequests = <_UpdatePostRequest>[];
+  final List<_UpdateCommentRequest> updateCommentRequests =
+      <_UpdateCommentRequest>[];
+
+  @override
+  Future<ForumPostDetail> getPostDetail({
+    required String postId,
+  }) async {
+    return ForumPostDetail(
+      id: postId,
+      title: '论坛详情回流',
+      summary: 'Tap through to the public native detail page.',
+      content: '# Native detail\n\nForum detail body.',
+      contentType: 'Markdown',
+      categoryId: 'category-1',
+      categoryName: 'General',
+      authorId: 'user-9',
+      authorName: 'luobo',
+      tagNames: const ['flutter'],
+      commentCount: 3,
+      createTime: '2026-04-20T08:00:00Z',
+      updateTime: '2026-04-20T10:30:00Z',
+    );
+  }
+
+  @override
+  Future<void> updatePost({
+    required String postId,
+    required String title,
+    required String content,
+    required String categoryId,
+    required List<String> tagNames,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {
+    updatePostRequests.add(
+      _UpdatePostRequest(
+        postId: postId,
+        title: title,
+        content: content,
+        categoryId: categoryId,
+        tagNames: tagNames,
+        accessToken: accessToken,
+        clientSubmissionId: clientSubmissionId,
+      ),
+    );
+  }
+
+  @override
+  Future<void> updateComment({
+    required String commentId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {
+    updateCommentRequests.add(
+      _UpdateCommentRequest(
+        commentId: commentId,
+        content: content,
+        accessToken: accessToken,
+        clientSubmissionId: clientSubmissionId,
+      ),
+    );
+  }
+}
+
+class _PostEditFailingForumRepository extends _RecordingForumEditRepository {
+  @override
+  Future<void> updatePost({
+    required String postId,
+    required String title,
+    required String content,
+    required String categoryId,
+    required List<String> tagNames,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {
+    await super.updatePost(
+      postId: postId,
+      title: title,
+      content: content,
+      categoryId: categoryId,
+      tagNames: tagNames,
+      accessToken: accessToken,
+      clientSubmissionId: clientSubmissionId,
+    );
+    throw const RadishApiClientException('帖子编辑服务暂时不可用');
+  }
+}
+
+class _CommentEditFailingForumRepository extends _RecordingForumEditRepository {
+  @override
+  Future<void> updateComment({
+    required String commentId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {
+    await super.updateComment(
+      commentId: commentId,
+      content: content,
+      accessToken: accessToken,
+      clientSubmissionId: clientSubmissionId,
+    );
+    throw const RadishApiClientException('评论编辑服务暂时不可用');
+  }
+}
+
+class _CreateAnswerRequest {
+  const _CreateAnswerRequest({
+    required this.postId,
+    required this.content,
+    required this.accessToken,
+    required this.clientSubmissionId,
+  });
+
+  final String postId;
+  final String content;
+  final String accessToken;
+  final String clientSubmissionId;
+}
+
 class _CreateCommentRequest {
   const _CreateCommentRequest({
     required this.postId,
     required this.content,
     required this.accessToken,
+    required this.clientSubmissionId,
     required this.parentId,
     required this.replyToCommentId,
     required this.replyToCommentSnapshot,
@@ -1178,10 +2089,45 @@ class _CreateCommentRequest {
   final String postId;
   final String content;
   final String accessToken;
+  final String clientSubmissionId;
   final String? parentId;
   final String? replyToCommentId;
   final String? replyToCommentSnapshot;
   final String? replyToUserName;
+}
+
+class _UpdatePostRequest {
+  const _UpdatePostRequest({
+    required this.postId,
+    required this.title,
+    required this.content,
+    required this.categoryId,
+    required this.tagNames,
+    required this.accessToken,
+    required this.clientSubmissionId,
+  });
+
+  final String postId;
+  final String title;
+  final String content;
+  final String categoryId;
+  final List<String> tagNames;
+  final String accessToken;
+  final String clientSubmissionId;
+}
+
+class _UpdateCommentRequest {
+  const _UpdateCommentRequest({
+    required this.commentId,
+    required this.content,
+    required this.accessToken,
+    required this.clientSubmissionId,
+  });
+
+  final String commentId;
+  final String content;
+  final String accessToken;
+  final String clientSubmissionId;
 }
 
 class _ClipboardRecorder {
@@ -1202,6 +2148,19 @@ class _ClipboardRecorder {
   void reset() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(SystemChannels.platform, null);
+  }
+}
+
+class _UnusedAuthorizationCodeExchangeService
+    implements AuthorizationCodeExchangeService {
+  const _UnusedAuthorizationCodeExchangeService();
+
+  @override
+  Future<AuthSession> redeemAuthorizationCode({
+    required String code,
+    required String redirectUri,
+  }) {
+    throw UnimplementedError();
   }
 }
 

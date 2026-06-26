@@ -1,8 +1,10 @@
 # 萝卜坑应用前端设计
 
-> 版本：v1.0 | 最后更新：2026-01-24 | 状态：设计中
+> 版本：v1.0 | 最后更新：2026-06-19 | 状态：实施后维护
 
 本文档详细描述萝卜坑应用的前端技术实现方案。
+
+> 当前实现补充：转账确认流程会在进入确认页时生成 `coin-transfer:{uuid}` 幂等键，并随 `paymentPassword` 一起提交给后端；统一使用 `log` 工具输出非敏感排障信息，不直接输出支付口令或完整请求体。
 
 ---
 
@@ -285,6 +287,7 @@ const BalanceCard: React.FC<BalanceCardProps> = ({ balance, loading, onRefresh }
 ```typescript
 // components/Transfer/index.tsx
 import React, { useState } from 'react';
+import { log } from '@/utils/logger';
 import TransferForm from './TransferForm';
 import TransferConfirm from './TransferConfirm';
 import TransferResult from './TransferResult';
@@ -298,7 +301,10 @@ const Transfer: React.FC = () => {
   const [transferResult, setTransferResult] = useState<TransferResult | null>(null);
 
   const handleFormSubmit = (data: TransferData) => {
-    setTransferData(data);
+    setTransferData({
+      ...data,
+      idempotencyKey: `coin-transfer:${crypto.randomUUID()}`
+    });
     setCurrentStep('confirm');
   };
 
@@ -314,8 +320,7 @@ const Transfer: React.FC = () => {
       setTransferResult(result);
       setCurrentStep('result');
     } catch (error) {
-      // 处理错误
-      console.error('Transfer failed:', error);
+      log.error('Transfer failed', error);
     }
   };
 
@@ -500,7 +505,7 @@ export const useTransfer = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const transfer = async (data: TransferData & { paymentPassword: string }): Promise<TransferResult> => {
+  const transfer = async (data: TransferData & { paymentPassword: string; idempotencyKey?: string }): Promise<TransferResult> => {
     try {
       setLoading(true);
       setError(null);

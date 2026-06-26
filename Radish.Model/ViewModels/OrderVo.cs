@@ -165,6 +165,10 @@ public class CreateOrderDto
     [RegularExpression(PaymentPasscodeRules.NumericPattern, ErrorMessage = PaymentPasscodeRules.FormatErrorMessage)]
     public string PaymentPassword { get; set; } = string.Empty;
 
+    /// <summary>幂等键</summary>
+    [StringLength(80, ErrorMessage = "幂等键不能超过80个字符")]
+    public string? IdempotencyKey { get; set; }
+
     /// <summary>用户备注</summary>
     public string? UserRemark { get; set; }
 }

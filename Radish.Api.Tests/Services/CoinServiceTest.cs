@@ -340,6 +340,51 @@ public class CoinServiceTest
         Assert.Equal(50, userBalance.TotalEarned);
     }
 
+    [Fact]
+    public async Task GrantCoinOnceAsync_ShouldReturnExistingTransaction_WhenRewardBusinessKeyExists()
+    {
+        const long userId = 123456;
+        const string rewardBusinessKey = "coin:post-like:author:123456:post:7001:day:20260620";
+        var existingTransaction = new CoinTransaction
+        {
+            TenantId = 0,
+            ToUserId = userId,
+            Amount = 2,
+            TransactionType = "LIKE_REWARD",
+            BusinessType = "POST_LIKE",
+            BusinessId = 7001,
+            RewardBusinessKey = rewardBusinessKey,
+            Status = "SUCCESS",
+            TransactionNo = "TXN_EXISTING_REWARD"
+        };
+
+        _coinTransactionRepositoryMock
+            .Setup(r => r.QueryFirstAsync(It.IsAny<Expression<Func<CoinTransaction, bool>>>()))
+            .ReturnsAsync((Expression<Func<CoinTransaction, bool>> expression) =>
+                expression.Compile()(existingTransaction) ? existingTransaction : null);
+
+        var service = CreateCoinService();
+
+        var result = await service.GrantCoinOnceAsync(
+            userId,
+            2,
+            "LIKE_REWARD",
+            rewardBusinessKey,
+            "POST_LIKE",
+            7001,
+            "帖子被点赞奖励");
+
+        Assert.True(result.AlreadyGranted);
+        Assert.False(result.Granted);
+        Assert.Equal("TXN_EXISTING_REWARD", result.TransactionNo);
+        _coinTransactionRepositoryMock.Verify(r => r.AddAsync(It.IsAny<CoinTransaction>()), Times.Never);
+        _userBalanceRepositoryMock.Verify(
+            r => r.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<UserBalance, UserBalance>>>(),
+                It.IsAny<Expression<Func<UserBalance, bool>>>()),
+            Times.Never);
+    }
+
     [Theory]
     [InlineData(0, "扣除金额必须大于 0")]
     [InlineData(-100, "扣除金额必须大于 0")]
@@ -621,6 +666,298 @@ public class CoinServiceTest
         paymentPasswordServiceMock.VerifyAll();
     }
 
+    [Fact]
+    public async Task TransferAsync_ShouldReplaySucceededIdempotencyRecordWithoutAssetWrite()
+    {
+        const long fromUserId = 123456;
+        const long toUserId = 654321;
+        const long amount = 100;
+        const string idempotencyKey = "coin-transfer:replay";
+        const string transactionNo = "TXN_REPLAY";
+
+        var paymentPasswordServiceMock = new Mock<IPaymentPasswordService>(MockBehavior.Strict);
+        paymentPasswordServiceMock
+            .Setup(service => service.VerifyPaymentPasswordAsync(fromUserId, It.IsAny<VerifyPaymentPasswordRequest>()))
+            .ReturnsAsync(new PaymentPasswordVerifyResult { IsSuccess = true });
+
+        var operationIdempotencyService = new Mock<IOperationIdempotencyService>(MockBehavior.Strict);
+        operationIdempotencyService
+            .Setup(service => service.NormalizeKey(idempotencyKey))
+            .Returns(idempotencyKey);
+        operationIdempotencyService
+            .Setup(service => service.CreateRequestSnapshot(It.IsAny<IReadOnlyDictionary<string, object?>>()))
+            .Returns(new OperationIdempotencyRequestSnapshot
+            {
+                RequestHash = "hash-a",
+                RequestSummary = "{}"
+            });
+        operationIdempotencyService
+            .Setup(service => service.BeginAsync(It.IsAny<OperationIdempotencyBeginRequest>()))
+            .ReturnsAsync(new OperationIdempotencyBeginResult
+            {
+                Status = OperationIdempotencyBeginStatus.Succeeded,
+                RecordId = 9002,
+                ResponsePayload = "payload"
+            });
+        operationIdempotencyService
+            .Setup(service => service.DeserializeResponse<TransactionResultVo>("payload"))
+            .Returns(new TransactionResultVo { VoTransactionNo = transactionNo });
+
+        var service = CreateCoinService(paymentPasswordServiceMock.Object, operationIdempotencyService.Object);
+
+        var result = await service.TransferAsync(
+            fromUserId,
+            toUserId,
+            amount,
+            "274958",
+            "测试转账",
+            idempotencyKey);
+
+        Assert.Equal(transactionNo, result);
+        _coinTransactionRepositoryMock.Verify(r => r.AddAsync(It.IsAny<CoinTransaction>()), Times.Never);
+        _balanceChangeLogRepositoryMock.Verify(r => r.AddAsync(It.IsAny<BalanceChangeLog>()), Times.Never);
+        paymentPasswordServiceMock.VerifyAll();
+        operationIdempotencyService.VerifyAll();
+    }
+
+    [Fact]
+    public async Task TransferAsync_ShouldReplayTerminalFailureIdempotencyRecordWithoutAssetWrite()
+    {
+        const long fromUserId = 123456;
+        const long toUserId = 654321;
+        const long amount = 100;
+        const string idempotencyKey = "coin-transfer:terminal-failure";
+        const string errorMessage = "余额不足";
+
+        var paymentPasswordServiceMock = new Mock<IPaymentPasswordService>(MockBehavior.Strict);
+        paymentPasswordServiceMock
+            .Setup(service => service.VerifyPaymentPasswordAsync(fromUserId, It.IsAny<VerifyPaymentPasswordRequest>()))
+            .ReturnsAsync(new PaymentPasswordVerifyResult { IsSuccess = true });
+
+        var operationIdempotencyService = new Mock<IOperationIdempotencyService>(MockBehavior.Strict);
+        operationIdempotencyService
+            .Setup(service => service.NormalizeKey(idempotencyKey))
+            .Returns(idempotencyKey);
+        operationIdempotencyService
+            .Setup(service => service.CreateRequestSnapshot(It.IsAny<IReadOnlyDictionary<string, object?>>()))
+            .Returns(new OperationIdempotencyRequestSnapshot
+            {
+                RequestHash = "hash-a",
+                RequestSummary = "{}"
+            });
+        operationIdempotencyService
+            .Setup(service => service.BeginAsync(It.IsAny<OperationIdempotencyBeginRequest>()))
+            .ReturnsAsync(new OperationIdempotencyBeginResult
+            {
+                Status = OperationIdempotencyBeginStatus.Succeeded,
+                RecordId = 9004,
+                ResponsePayload = "payload",
+                ErrorMessage = errorMessage
+            });
+        operationIdempotencyService
+            .Setup(service => service.DeserializeResponse<TransactionResultVo>("payload"))
+            .Returns(new TransactionResultVo());
+
+        var service = CreateCoinService(paymentPasswordServiceMock.Object, operationIdempotencyService.Object);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.TransferAsync(
+            fromUserId,
+            toUserId,
+            amount,
+            "274958",
+            "测试转账",
+            idempotencyKey));
+
+        Assert.Equal(errorMessage, exception.Message);
+        _coinTransactionRepositoryMock.Verify(r => r.AddAsync(It.IsAny<CoinTransaction>()), Times.Never);
+        _balanceChangeLogRepositoryMock.Verify(r => r.AddAsync(It.IsAny<BalanceChangeLog>()), Times.Never);
+        paymentPasswordServiceMock.VerifyAll();
+        operationIdempotencyService.VerifyAll();
+    }
+
+    [Fact]
+    public async Task TransferAsync_ShouldCompleteIdempotencyRecord_WhenTransferSucceeds()
+    {
+        const long fromUserId = 123456;
+        const long toUserId = 654321;
+        const long amount = 100;
+        const string idempotencyKey = "coin-transfer:first";
+        OperationIdempotencyCompletionRequest? completionRequest = null;
+
+        var balances = new List<UserBalance>
+        {
+            new()
+            {
+                Id = 1,
+                UserId = fromUserId,
+                Balance = 500,
+                TotalSpent = 0,
+                TotalTransferredOut = 0,
+                Version = 1
+            },
+            new()
+            {
+                Id = 2,
+                UserId = toUserId,
+                Balance = 50,
+                TotalEarned = 0,
+                TotalTransferredIn = 0,
+                Version = 1
+            }
+        };
+
+        _userBalanceRepositoryMock
+            .Setup(r => r.QueryFirstAsync(It.IsAny<Expression<Func<UserBalance, bool>>>()))
+            .ReturnsAsync((Expression<Func<UserBalance, bool>> expression) =>
+            {
+                var predicate = expression.Compile();
+                return balances.FirstOrDefault(predicate);
+            });
+        _userBalanceRepositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<UserBalance>()))
+            .ReturnsAsync(true);
+        _coinTransactionRepositoryMock
+            .Setup(r => r.AddAsync(It.IsAny<CoinTransaction>()))
+            .ReturnsAsync((CoinTransaction transaction) => transaction.Id);
+        _coinTransactionRepositoryMock
+            .Setup(r => r.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<CoinTransaction, CoinTransaction>>>(),
+                It.IsAny<Expression<Func<CoinTransaction, bool>>>()))
+            .ReturnsAsync(1);
+        _balanceChangeLogRepositoryMock
+            .Setup(r => r.AddAsync(It.IsAny<BalanceChangeLog>()))
+            .ReturnsAsync((BalanceChangeLog log) => log.Id);
+
+        var paymentPasswordServiceMock = new Mock<IPaymentPasswordService>(MockBehavior.Strict);
+        paymentPasswordServiceMock
+            .Setup(service => service.VerifyPaymentPasswordAsync(fromUserId, It.IsAny<VerifyPaymentPasswordRequest>()))
+            .ReturnsAsync(new PaymentPasswordVerifyResult { IsSuccess = true });
+
+        var operationIdempotencyService = new Mock<IOperationIdempotencyService>(MockBehavior.Strict);
+        operationIdempotencyService
+            .Setup(service => service.NormalizeKey(idempotencyKey))
+            .Returns(idempotencyKey);
+        operationIdempotencyService
+            .Setup(service => service.CreateRequestSnapshot(It.IsAny<IReadOnlyDictionary<string, object?>>()))
+            .Returns(new OperationIdempotencyRequestSnapshot
+            {
+                RequestHash = "hash-a",
+                RequestSummary = "{}"
+            });
+        operationIdempotencyService
+            .Setup(service => service.BeginAsync(It.IsAny<OperationIdempotencyBeginRequest>()))
+            .ReturnsAsync(new OperationIdempotencyBeginResult
+            {
+                Status = OperationIdempotencyBeginStatus.Started,
+                RecordId = 9003
+            });
+        operationIdempotencyService
+            .Setup(service => service.SerializeResponse(It.IsAny<TransactionResultVo>()))
+            .Returns("payload");
+        operationIdempotencyService
+            .Setup(service => service.CompleteSuccessAsync(It.IsAny<OperationIdempotencyCompletionRequest>()))
+            .Callback<OperationIdempotencyCompletionRequest>(request => completionRequest = request)
+            .Returns(Task.CompletedTask);
+
+        var service = CreateCoinService(paymentPasswordServiceMock.Object, operationIdempotencyService.Object);
+
+        var transactionNo = await service.TransferAsync(
+            fromUserId,
+            toUserId,
+            amount,
+            "274958",
+            "测试转账",
+            idempotencyKey);
+
+        Assert.False(string.IsNullOrWhiteSpace(transactionNo));
+        Assert.NotNull(completionRequest);
+        Assert.Equal(9003, completionRequest!.RecordId);
+        Assert.Equal("CoinTransaction", completionRequest.ResourceType);
+        Assert.Equal(transactionNo, completionRequest.ResourceNo);
+        Assert.Equal("payload", completionRequest.ResponsePayload);
+        _coinTransactionRepositoryMock.Verify(r => r.AddAsync(It.IsAny<CoinTransaction>()), Times.Once);
+        _balanceChangeLogRepositoryMock.Verify(r => r.AddAsync(It.IsAny<BalanceChangeLog>()), Times.Exactly(2));
+        paymentPasswordServiceMock.VerifyAll();
+        operationIdempotencyService.VerifyAll();
+    }
+
+    [Fact]
+    public async Task TransferAsync_ShouldStoreTerminalFailure_WhenAssetBoundaryWasEntered()
+    {
+        const long fromUserId = 123456;
+        const long toUserId = 654321;
+        const long amount = 100;
+        const string idempotencyKey = "coin-transfer:insufficient-balance";
+        OperationIdempotencyCompletionRequest? completionRequest = null;
+
+        var fromBalance = new UserBalance
+        {
+            Id = 1,
+            UserId = fromUserId,
+            Balance = 50,
+            Version = 1
+        };
+
+        _userBalanceRepositoryMock
+            .Setup(r => r.QueryFirstAsync(It.IsAny<Expression<Func<UserBalance, bool>>>()))
+            .ReturnsAsync((Expression<Func<UserBalance, bool>> expression) =>
+            {
+                var predicate = expression.Compile();
+                return predicate(fromBalance) ? fromBalance : null;
+            });
+
+        var paymentPasswordServiceMock = new Mock<IPaymentPasswordService>(MockBehavior.Strict);
+        paymentPasswordServiceMock
+            .Setup(service => service.VerifyPaymentPasswordAsync(fromUserId, It.IsAny<VerifyPaymentPasswordRequest>()))
+            .ReturnsAsync(new PaymentPasswordVerifyResult { IsSuccess = true });
+
+        var operationIdempotencyService = new Mock<IOperationIdempotencyService>(MockBehavior.Strict);
+        operationIdempotencyService
+            .Setup(service => service.NormalizeKey(idempotencyKey))
+            .Returns(idempotencyKey);
+        operationIdempotencyService
+            .Setup(service => service.CreateRequestSnapshot(It.IsAny<IReadOnlyDictionary<string, object?>>()))
+            .Returns(new OperationIdempotencyRequestSnapshot
+            {
+                RequestHash = "hash-b",
+                RequestSummary = "{}"
+            });
+        operationIdempotencyService
+            .Setup(service => service.BeginAsync(It.IsAny<OperationIdempotencyBeginRequest>()))
+            .ReturnsAsync(new OperationIdempotencyBeginResult
+            {
+                Status = OperationIdempotencyBeginStatus.Started,
+                RecordId = 9005
+            });
+        operationIdempotencyService
+            .Setup(service => service.SerializeResponse(It.IsAny<TransactionResultVo>()))
+            .Returns("payload");
+        operationIdempotencyService
+            .Setup(service => service.CompleteSuccessAsync(It.IsAny<OperationIdempotencyCompletionRequest>()))
+            .Callback<OperationIdempotencyCompletionRequest>(request => completionRequest = request)
+            .Returns(Task.CompletedTask);
+
+        var service = CreateCoinService(paymentPasswordServiceMock.Object, operationIdempotencyService.Object);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.TransferAsync(
+            fromUserId,
+            toUserId,
+            amount,
+            "274958",
+            "测试转账",
+            idempotencyKey));
+
+        Assert.Contains("余额不足", exception.Message, StringComparison.Ordinal);
+        Assert.NotNull(completionRequest);
+        Assert.Equal(9005, completionRequest!.RecordId);
+        Assert.Contains("余额不足", completionRequest.ErrorMessage, StringComparison.Ordinal);
+        Assert.Equal("payload", completionRequest.ResponsePayload);
+        _coinTransactionRepositoryMock.Verify(r => r.AddAsync(It.IsAny<CoinTransaction>()), Times.Never);
+        _balanceChangeLogRepositoryMock.Verify(r => r.AddAsync(It.IsAny<BalanceChangeLog>()), Times.Never);
+        paymentPasswordServiceMock.VerifyAll();
+        operationIdempotencyService.VerifyAll();
+    }
+
     #endregion
 
     #region 辅助方法
@@ -628,7 +965,9 @@ public class CoinServiceTest
     /// <summary>
     /// 创建 CoinService 实例（用于测试）
     /// </summary>
-    private CoinService CreateCoinService(IPaymentPasswordService? paymentPasswordService = null)
+    private CoinService CreateCoinService(
+        IPaymentPasswordService? paymentPasswordService = null,
+        IOperationIdempotencyService? operationIdempotencyService = null)
     {
         return new CoinService(
             _mapperMock.Object,
@@ -636,7 +975,8 @@ public class CoinServiceTest
             _userRepositoryMock.Object,
             _coinTransactionRepositoryMock.Object,
             _balanceChangeLogRepositoryMock.Object,
-            paymentPasswordService ?? new Mock<IPaymentPasswordService>().Object
+            paymentPasswordService ?? new Mock<IPaymentPasswordService>().Object,
+            operationIdempotencyService
         );
     }
 

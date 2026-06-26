@@ -22,7 +22,6 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
   final _formKey = GlobalKey<FormState>();
   final _userNameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _realNameController = TextEditingController();
   final _ageController = TextEditingController();
   final _addressController = TextEditingController();
 
@@ -42,7 +41,6 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
   void dispose() {
     _userNameController.dispose();
     _emailController.dispose();
-    _realNameController.dispose();
     _ageController.dispose();
     _addressController.dispose();
     super.dispose();
@@ -65,7 +63,6 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
       _profile = profile;
       _userNameController.text = profile.userName;
       _emailController.text = profile.userEmail;
-      _realNameController.text = profile.realName;
       _ageController.text = profile.age > 0 ? profile.age.toString() : '';
       _addressController.text = profile.address;
       setState(() {
@@ -94,7 +91,6 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
     final request = UpdateMyProfileRequest(
       userName: _userNameController.text.trim(),
       userEmail: _emailController.text.trim(),
-      realName: _emptyToNull(_realNameController.text),
       age: age,
       address: _emptyToNull(_addressController.text),
     );
@@ -160,8 +156,8 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
                             controller: _userNameController,
                             enabled: !_saving,
                             decoration: const InputDecoration(
-                              labelText: '用户名',
-                              helperText: '公开资料中显示为 @用户名。',
+                              labelText: '展示名',
+                              helperText: '公开资料、帖子、评论和艾特搜索会显示该名称。',
                             ),
                             validator: _validateUserName,
                           ),
@@ -175,17 +171,6 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
                             ),
                             keyboardType: TextInputType.emailAddress,
                             validator: _validateEmail,
-                          ),
-                          const SizedBox(height: 12),
-                          TextFormField(
-                            key: const Key('profile-edit-real-name'),
-                            controller: _realNameController,
-                            enabled: !_saving,
-                            decoration: const InputDecoration(
-                              labelText: '展示名称',
-                              helperText: '公开主页优先展示该名称。',
-                            ),
-                            validator: _validateRealName,
                           ),
                           const SizedBox(height: 12),
                           TextFormField(
@@ -297,11 +282,11 @@ class _ProfileEditError extends StatelessWidget {
 String? _validateUserName(String? value) {
   final text = value?.trim() ?? '';
   if (text.isEmpty) {
-    return '请输入用户名';
+    return '请输入展示名';
   }
 
   if (text.length < 2 || text.length > 50) {
-    return '用户名长度为 2-50 个字符';
+    return '展示名长度为 2-50 个字符';
   }
 
   return null;
@@ -319,15 +304,6 @@ String? _validateEmail(String? value) {
 
   if (text.length > 200) {
     return '邮箱长度不能超过 200 个字符';
-  }
-
-  return null;
-}
-
-String? _validateRealName(String? value) {
-  final text = value?.trim() ?? '';
-  if (text.length > 50) {
-    return '展示名称长度不能超过 50 个字符';
   }
 
   return null;

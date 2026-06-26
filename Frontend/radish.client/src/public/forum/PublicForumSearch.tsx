@@ -11,13 +11,15 @@ import { PostCard } from '@/apps/forum/components/PostCard';
 import { createForumCommentHighlightMap, getForumCommentHighlight } from '@/utils/forumCommentHighlights';
 import { log } from '@/utils/logger';
 import type {
+  PublicForumListRoute,
   PublicForumSearchRoute,
   PublicListSort,
   PublicSearchTimeRange,
 } from '../forumRouteState';
-import { buildPublicForumPath, createDefaultSearchRoute } from '../forumRouteState';
+import { buildPublicForumPath, createDefaultListRoute, createDefaultSearchRoute } from '../forumRouteState';
 import { usePublicReplaceRouteSync } from '../usePublicReplaceRouteSync';
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
+import { PublicForumPagination, PublicForumRouteLink } from './PublicForumLinks';
 import {
   buildSearchRouteKey,
   buildSearchTimeRange,
@@ -301,6 +303,23 @@ export const PublicForumSearch = ({
     setAppliedEndDate('');
     setCurrentPage(defaultRoute.page);
   };
+  const backToListRoute: PublicForumListRoute = createDefaultListRoute();
+  const defaultSearchRoute = createDefaultSearchRoute();
+  const buildSearchRoute = (
+    nextPage: number,
+    nextSortBy = sortBy,
+    nextTimeRange = timeRange,
+    nextStartDate = appliedStartDate,
+    nextEndDate = appliedEndDate
+  ): PublicForumSearchRoute => ({
+    kind: 'search',
+    keyword,
+    sortBy: nextSortBy,
+    timeRange: nextTimeRange,
+    startDate: nextTimeRange === 'custom' ? nextStartDate || undefined : undefined,
+    endDate: nextTimeRange === 'custom' ? nextEndDate || undefined : undefined,
+    page: nextPage
+  });
 
   return (
     <section className={`${styles.sectionCard} ${styles.listSectionCard}`}>
@@ -308,10 +327,14 @@ export const PublicForumSearch = ({
         <div className={styles.sectionHeading}>
           <p className={styles.kicker}>{t('forum.public.guide.label')}</p>
           <div className={styles.searchTopbar}>
-            <button type="button" className={styles.backButton} onClick={onBackToList}>
+            <PublicForumRouteLink
+              className={styles.backButton}
+              route={backToListRoute}
+              onNavigate={onBackToList}
+            >
               <Icon icon="mdi:arrow-left" size={18} />
               <span>{t('forum.backToList')}</span>
-            </button>
+            </PublicForumRouteLink>
             <span className={styles.readOnlyBadge}>{t('forum.public.readOnlyBadge')}</span>
           </div>
           <h1 className={styles.pageTitle}>{resultTitle}</h1>
@@ -355,41 +378,45 @@ export const PublicForumSearch = ({
             <button type="button" className={styles.retryButton} onClick={submitSearch}>
               {t('forum.searchSubmit')}
             </button>
-            <button type="button" className={styles.secondaryButton} onClick={resetSearch}>
+            <PublicForumRouteLink
+              className={styles.secondaryButton}
+              route={defaultSearchRoute}
+              onNavigate={resetSearch}
+            >
               {t('forum.public.searchReset')}
-            </button>
+            </PublicForumRouteLink>
           </div>
 
           <div className={styles.segmented}>
-            <button
-              type="button"
+            <PublicForumRouteLink
               className={`${styles.segmentButton} ${sortBy === 'newest' ? styles.segmentButtonActive : ''}`}
-              onClick={() => {
+              route={buildSearchRoute(1, 'newest')}
+              onNavigate={() => {
                 setSortBy('newest');
                 setCurrentPage(1);
               }}
             >
               {t('forum.sort.newest')}
-            </button>
-            <button
-              type="button"
+            </PublicForumRouteLink>
+            <PublicForumRouteLink
               className={`${styles.segmentButton} ${sortBy === 'hottest' ? styles.segmentButtonActive : ''}`}
-              onClick={() => {
+              route={buildSearchRoute(1, 'hottest')}
+              onNavigate={() => {
                 setSortBy('hottest');
                 setCurrentPage(1);
               }}
             >
               {t('forum.sort.hottest')}
-            </button>
+            </PublicForumRouteLink>
           </div>
 
           <div className={styles.segmented}>
             {(['all', '24h', '7d', '30d', 'custom'] as PublicSearchTimeRange[]).map((value) => (
-              <button
+              <PublicForumRouteLink
                 key={value}
-                type="button"
                 className={`${styles.segmentButton} ${timeRange === value ? styles.segmentButtonActive : ''}`}
-                onClick={() => {
+                route={buildSearchRoute(1, sortBy, value)}
+                onNavigate={() => {
                   setTimeRange(value);
                   setCurrentPage(1);
                   if (value !== 'custom') {
@@ -409,7 +436,7 @@ export const PublicForumSearch = ({
                       : value === '30d'
                         ? t('forum.public.searchTimeRange30dLabel')
                         : t('forum.public.searchTimeRangeCustomLabel')}
-              </button>
+              </PublicForumRouteLink>
             ))}
           </div>
 
@@ -502,34 +529,13 @@ export const PublicForumSearch = ({
       </div>
 
       {totalPages > 1 && (
-        <div className={styles.pagination}>
-          <button
-            type="button"
-            className={styles.paginationButton}
-            onClick={() => setCurrentPage((page: number) => Math.max(1, page - 1))}
-            disabled={currentPage === 1}
-          >
-            ‹
-          </button>
-          {visiblePages.map((page) => (
-            <button
-              key={page}
-              type="button"
-              className={`${styles.paginationButton} ${page === currentPage ? styles.paginationButtonActive : ''}`}
-              onClick={() => setCurrentPage(page)}
-            >
-              {page}
-            </button>
-          ))}
-          <button
-            type="button"
-            className={styles.paginationButton}
-            onClick={() => setCurrentPage((page: number) => Math.min(totalPages, page + 1))}
-            disabled={currentPage === totalPages}
-          >
-            ›
-          </button>
-        </div>
+        <PublicForumPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          visiblePages={visiblePages}
+          buildRoute={(page) => buildSearchRoute(page)}
+          onPageChange={setCurrentPage}
+        />
       )}
     </section>
   );

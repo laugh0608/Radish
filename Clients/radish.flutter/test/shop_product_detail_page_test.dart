@@ -139,13 +139,14 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+    final repository = _PurchaseInventoryShopRepository();
 
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: ShopProductDetailPage(
-          environment: AppEnvironment.development(),
-          repository: _PurchaseInventoryShopRepository(),
-          walletRepository: _OrderTransactionWalletRepository(),
+          environment: const AppEnvironment.development(),
+          repository: repository,
+          walletRepository: const _OrderTransactionWalletRepository(),
           productId: '4001',
           accessToken: 'access-token',
         ),
@@ -166,6 +167,8 @@ void main() {
     expect(find.text('返回商品详情'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, '查看背包发放'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, '查看扣款流水'), findsOneWidget);
+    expect(repository.purchaseIdempotencyKeys, hasLength(1));
+    expect(repository.purchaseIdempotencyKeys.single, startsWith('shop:'));
 
     await tester.tap(find.widgetWithText(FilledButton, '查看背包发放'));
     await tester.pumpAndSettle();
@@ -500,6 +503,38 @@ void main() {
     expect(find.text('商品详情'), findsWidgets);
   });
 
+  testWidgets('purchase retry reuses the same idempotency key after failure',
+      (tester) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final repository = _RecordingPurchaseFailingShopRepository();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ShopProductDetailPage(
+          environment: const AppEnvironment.development(),
+          repository: repository,
+          walletRepository: const EmptyWalletRepository(),
+          productId: '4001',
+          accessToken: 'access-token',
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '123456');
+    await tester.tap(find.text('确认购买 1 件'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('确认购买 1 件'));
+    await tester.pumpAndSettle();
+
+    expect(repository.idempotencyKeys, hasLength(2));
+    expect(repository.idempotencyKeys[0], startsWith('shop:'));
+    expect(repository.idempotencyKeys[1], repository.idempotencyKeys[0]);
+  });
+
   testWidgets('purchase result requires canonical order id before navigation',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
@@ -612,6 +647,7 @@ void main() {
       accessToken: 'access-token',
       productId: '4001',
       paymentPassword: '123456',
+      idempotencyKey: 'shop:test-key',
     );
 
     expect(apiClient.lastUri?.path, '/api/v1/Shop/Purchase');
@@ -620,9 +656,36 @@ void main() {
       'productId': '4001',
       'quantity': 1,
       'paymentPassword': '123456',
+      'idempotencyKey': 'shop:test-key',
     });
     expect(result.success, isTrue);
     expect(result.orderId, '9001');
+  });
+
+  test('http shop repository rejects blank purchase idempotency key', () async {
+    final apiClient = _RecordingShopApiClient();
+    final repository = HttpShopRepository(
+      apiClient: apiClient,
+      endpoints: const RadishApiEndpoints(AppEnvironment.development()),
+    );
+
+    expect(
+      () => repository.purchaseProduct(
+        accessToken: 'access-token',
+        productId: '4001',
+        paymentPassword: '123456',
+        idempotencyKey: ' ',
+      ),
+      throwsA(
+        isA<RadishApiClientException>().having(
+          (error) => error.message,
+          'message',
+          '购买请求缺少幂等键',
+        ),
+      ),
+    );
+
+    expect(apiClient.lastBody, isNull);
   });
 }
 
@@ -694,6 +757,7 @@ class _SuccessShopRepository implements ShopRepository {
     required String accessToken,
     required String productId,
     required String paymentPassword,
+    required String idempotencyKey,
     int quantity = 1,
   }) async {
     return const ShopPurchaseResult(
@@ -765,11 +829,31 @@ class _PurchaseFailingShopRepository extends _SuccessShopRepository {
     required String accessToken,
     required String productId,
     required String paymentPassword,
+    required String idempotencyKey,
     int quantity = 1,
   }) async {
     return const ShopPurchaseResult(
       success: false,
       errorMessage: '支付口令错误',
+    );
+  }
+}
+
+class _RecordingPurchaseFailingShopRepository extends _SuccessShopRepository {
+  final List<String> idempotencyKeys = [];
+
+  @override
+  Future<ShopPurchaseResult> purchaseProduct({
+    required String accessToken,
+    required String productId,
+    required String paymentPassword,
+    required String idempotencyKey,
+    int quantity = 1,
+  }) async {
+    idempotencyKeys.add(idempotencyKey);
+    return const ShopPurchaseResult(
+      success: false,
+      errorMessage: '请求处理中，请稍后查询结果或重试',
     );
   }
 }
@@ -782,6 +866,7 @@ class _NonCanonicalPurchaseResultRepository extends _SuccessShopRepository {
     required String accessToken,
     required String productId,
     required String paymentPassword,
+    required String idempotencyKey,
     int quantity = 1,
   }) async {
     return const ShopPurchaseResult(
@@ -817,7 +902,25 @@ class _RecordingShopRepository extends _SuccessShopRepository {
 }
 
 class _PurchaseInventoryShopRepository extends _SuccessShopRepository {
-  const _PurchaseInventoryShopRepository();
+  final List<String> purchaseIdempotencyKeys = [];
+
+  @override
+  Future<ShopPurchaseResult> purchaseProduct({
+    required String accessToken,
+    required String productId,
+    required String paymentPassword,
+    required String idempotencyKey,
+    int quantity = 1,
+  }) {
+    purchaseIdempotencyKeys.add(idempotencyKey);
+    return super.purchaseProduct(
+      accessToken: accessToken,
+      productId: productId,
+      paymentPassword: paymentPassword,
+      idempotencyKey: idempotencyKey,
+      quantity: quantity,
+    );
+  }
 
   @override
   Future<List<ShopUserBenefit>> getMyBenefits({
@@ -1153,6 +1256,7 @@ class _FailingShopRepository implements ShopRepository {
     required String accessToken,
     required String productId,
     required String paymentPassword,
+    required String idempotencyKey,
     int quantity = 1,
   }) {
     throw const RadishApiClientException('购买不可用');

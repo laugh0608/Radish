@@ -1,4 +1,5 @@
 using Radish.Model.DtoModels;
+using Radish.Model;
 
 namespace Radish.IRepository;
 
@@ -7,7 +8,8 @@ public interface IBootstrapRepository
     Task<bool> AdministratorExistsAsync();
 
     Task<BootstrapAdminCreationResult> TryCreateFirstAdministratorAsync(
-        string loginName,
+        string displayName,
         string passwordHash,
-        string? email);
+        string email,
+        PublicIndexReservationPolicy publicIndexReservationPolicy);
 }

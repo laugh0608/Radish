@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { getApiBaseUrl } from '@/config/env';
@@ -12,6 +12,14 @@ import styles from './UserBrowseHistoryList.module.css';
 interface UserBrowseHistoryListProps {
   displayTimeZone: string;
   onItemClick?: (item: UserBrowseHistoryItem) => void;
+  getItemHref?: (item: UserBrowseHistoryItem) => string | null;
+  onItemLinkClick?: (
+    event: MouseEvent<HTMLAnchorElement>,
+    href: string,
+    item: UserBrowseHistoryItem
+  ) => void;
+  page?: number;
+  onPageChange?: (page: number) => void;
 }
 
 const apiBaseUrl = getApiBaseUrl();
@@ -35,13 +43,18 @@ const getTypeIcon = (targetType: string): string => {
 
 export const UserBrowseHistoryList = ({
   displayTimeZone,
-  onItemClick
+  onItemClick,
+  getItemHref,
+  onItemLinkClick,
+  page: controlledPage,
+  onPageChange
 }: UserBrowseHistoryListProps) => {
   const { t } = useTranslation();
   const [items, setItems] = useState<UserBrowseHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
+  const [internalPage, setInternalPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const page = controlledPage ?? internalPage;
 
   useEffect(() => {
     const loadBrowseHistory = async () => {
@@ -62,6 +75,15 @@ export const UserBrowseHistoryList = ({
     void loadBrowseHistory();
   }, [page]);
 
+  const updatePage = (nextPage: number) => {
+    if (onPageChange) {
+      onPageChange(nextPage);
+      return;
+    }
+
+    setInternalPage(nextPage);
+  };
+
   if (loading) {
     return <div className={styles.loading}>{t('profile.browse.loading')}</div>;
   }
@@ -75,12 +97,9 @@ export const UserBrowseHistoryList = ({
       <div className={styles.list}>
         {items.map((item) => {
           const coverUrl = buildCoverUrl(item.voCoverImage);
-          return (
-            <article
-              key={String(item.voId)}
-              className={styles.card}
-              onClick={() => onItemClick?.(item)}
-            >
+          const href = getItemHref?.(item) ?? null;
+          const body = (
+            <>
               <div className={styles.cover}>
                 {coverUrl ? (
                   <img src={coverUrl} alt={item.voTitle} className={styles.coverImage} loading="lazy" />
@@ -114,6 +133,26 @@ export const UserBrowseHistoryList = ({
                   </span>
                 </div>
               </div>
+            </>
+          );
+
+          return href ? (
+            <a
+              key={String(item.voId)}
+              className={styles.card}
+              href={href}
+              onClick={(event) => onItemLinkClick?.(event, href, item)}
+            >
+              {body}
+            </a>
+          ) : (
+            <article
+              key={String(item.voId)}
+              className={styles.card}
+              onClick={() => onItemClick?.(item)}
+              style={{ cursor: onItemClick ? 'pointer' : 'default' }}
+            >
+              {body}
             </article>
           );
         })}
@@ -123,7 +162,7 @@ export const UserBrowseHistoryList = ({
         <div className={styles.pagination}>
           <button
             type="button"
-            onClick={() => setPage((current) => Math.max(1, current - 1))}
+            onClick={() => updatePage(Math.max(1, page - 1))}
             disabled={page === 1}
             className={styles.pageButton}
           >
@@ -134,7 +173,7 @@ export const UserBrowseHistoryList = ({
           </span>
           <button
             type="button"
-            onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+            onClick={() => updatePage(Math.min(totalPages, page + 1))}
             disabled={page === totalPages}
             className={styles.pageButton}
           >

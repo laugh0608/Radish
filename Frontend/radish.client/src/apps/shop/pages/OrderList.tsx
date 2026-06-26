@@ -1,3 +1,4 @@
+import type { MouseEvent } from 'react';
 import type { OrderListItem } from '@/types/shop';
 import type { LongId } from '@/api/user';
 import { useTranslation } from 'react-i18next';
@@ -10,9 +11,29 @@ interface OrderListProps {
   currentPage: number;
   totalPages: number;
   loading: boolean;
+  backHref?: string;
+  getOrderHref?: (orderId: LongId) => string;
   onOrderClick: (orderId: LongId) => void;
   onPageChange: (page: number) => void;
   onBack: () => void;
+}
+
+function shouldHandleOrderListLink(event: MouseEvent<HTMLAnchorElement>): boolean {
+  return !event.defaultPrevented
+    && event.button === 0
+    && !event.metaKey
+    && !event.ctrlKey
+    && !event.shiftKey
+    && !event.altKey;
+}
+
+function handleOrderListLinkClick(event: MouseEvent<HTMLAnchorElement>, action: () => void) {
+  if (!shouldHandleOrderListLink(event)) {
+    return;
+  }
+
+  event.preventDefault();
+  action();
 }
 
 export const OrderList = ({
@@ -20,6 +41,8 @@ export const OrderList = ({
   currentPage,
   totalPages,
   loading,
+  backHref,
+  getOrderHref,
   onOrderClick,
   onPageChange,
   onBack
@@ -29,9 +52,19 @@ export const OrderList = ({
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <button className={styles.backButton} onClick={onBack}>
-          ← {t('shop.back')}
-        </button>
+        {backHref ? (
+          <a
+            className={styles.backButton}
+            href={backHref}
+            onClick={(event) => handleOrderListLinkClick(event, onBack)}
+          >
+            ← {t('shop.back')}
+          </a>
+        ) : (
+          <button type="button" className={styles.backButton} onClick={onBack}>
+            ← {t('shop.back')}
+          </button>
+        )}
         <h1 className={styles.title}>{t('shop.orders.title')}</h1>
       </div>
 
@@ -45,13 +78,9 @@ export const OrderList = ({
           <div className={styles.orderList}>
             {orders.map((order) => {
               const productIconUrl = resolveMediaUrl(order.voProductIcon);
-
-              return (
-                <div
-                  key={order.voId}
-                  className={styles.orderCard}
-                  onClick={() => onOrderClick(order.voId)}
-                >
+              const orderHref = getOrderHref?.(order.voId);
+              const orderContent = (
+                <>
                   <div className={styles.orderHeader}>
                     <span className={styles.orderNo}>{t('shop.orders.orderNo', { orderNo: order.voOrderNo })}</span>
                     <span
@@ -84,6 +113,25 @@ export const OrderList = ({
                       {order.voCreateTime ? new Date(order.voCreateTime).toLocaleString() : ''}
                     </div>
                   </div>
+                </>
+              );
+
+              return orderHref ? (
+                <a
+                  key={order.voId}
+                  className={styles.orderCard}
+                  href={orderHref}
+                  onClick={(event) => handleOrderListLinkClick(event, () => onOrderClick(order.voId))}
+                >
+                  {orderContent}
+                </a>
+              ) : (
+                <div
+                  key={order.voId}
+                  className={styles.orderCard}
+                  onClick={() => onOrderClick(order.voId)}
+                >
+                  {orderContent}
                 </div>
               );
             })}

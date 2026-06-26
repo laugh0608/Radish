@@ -22,15 +22,18 @@ public class QuestionController : ControllerBase
     private readonly IPostService _postService;
     private readonly IContentModerationService _contentModerationService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
+    private readonly IForumContentWriteService _forumContentWriteService;
 
     public QuestionController(
         IPostService postService,
         IContentModerationService contentModerationService,
-        ICurrentUserAccessor currentUserAccessor)
+        ICurrentUserAccessor currentUserAccessor,
+        IForumContentWriteService forumContentWriteService)
     {
         _postService = postService;
         _contentModerationService = contentModerationService;
         _currentUserAccessor = currentUserAccessor;
+        _forumContentWriteService = forumContentWriteService;
     }
 
     private CurrentUser Current => _currentUserAccessor.Current;
@@ -80,19 +83,20 @@ public class QuestionController : ControllerBase
 
         try
         {
-            var question = await _postService.AddAnswerAsync(
+            var answerResult = await _forumContentWriteService.AddAnswerAsync(
                 request.PostId,
                 request.Content,
                 Current.UserId,
                 Current.UserName,
-                Current.TenantId);
+                Current.TenantId,
+                request.ClientSubmissionId);
 
             return new MessageModel
             {
                 IsSuccess = true,
                 StatusCode = (int)HttpStatusCodeEnum.Success,
-                MessageInfo = "回答成功",
-                ResponseData = question
+                MessageInfo = answerResult.Message ?? "回答成功",
+                ResponseData = answerResult.Result
             };
         }
         catch (AggregateException ex) when (TryBuildAnswerErrorResponse(ex, out var response))

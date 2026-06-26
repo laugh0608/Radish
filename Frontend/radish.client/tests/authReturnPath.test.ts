@@ -8,11 +8,26 @@ import {
   buildDesktopShopOrderReturnPath,
   buildDesktopShopPrivateViewReturnPath,
   buildDesktopShopProductReturnPath,
+  buildDocsAuthorComposeReturnPath,
+  buildDocsAuthorEditReturnPath,
+  buildDocsAuthorMineReturnPath,
+  buildDocsAuthorRevisionsReturnPath,
+  buildMeAttachmentsReturnPath,
+  buildMeAssetTransactionsReturnPath,
+  buildMeAssetsReturnPath,
+  buildMeContentReturnPath,
+  buildMeExperienceReturnPath,
+  buildMeHistoryReturnPath,
   buildMeReturnPath,
   buildMessagesReturnPath,
   buildNotificationsReturnPath,
   buildPetReturnPath,
+  buildPublicForumComposeReturnPath,
   buildPublicForumPostReturnPath,
+  buildShopInventoryReturnPath,
+  buildShopOrderReturnPath,
+  buildShopOrdersReturnPath,
+  buildShopProductPurchaseReturnPath,
   consumeAuthReturnPath,
   normalizeAuthReturnPath,
   rememberAuthReturnPath,
@@ -46,7 +61,7 @@ class MemoryStorage implements Storage {
   }
 }
 
-test('normalizeAuthReturnPath 只接受 desktop 深链、circle/me/messages/notifications/pet 私域入口和公开论坛详情参与意图', () => {
+test('normalizeAuthReturnPath 只接受受控私域入口、正式 Web 交易回流、desktop 深链和公开论坛受控意图', () => {
   assert.equal(normalizeAuthReturnPath('/desktop?app=shop&productId=2042219067430928384'), '/desktop?app=shop&productId=2042219067430928384');
   assert.equal(normalizeAuthReturnPath('/desktop?app=forum&postId=2042219067430928384'), '/desktop?app=forum&postId=2042219067430928384');
   assert.equal(normalizeAuthReturnPath('/desktop/?app=shop&view=orders'), '/desktop/?app=shop&view=orders');
@@ -62,8 +77,26 @@ test('normalizeAuthReturnPath 只接受 desktop 深链、circle/me/messages/noti
   );
   assert.equal(normalizeAuthReturnPath('/me'), '/me');
   assert.equal(normalizeAuthReturnPath('/me/'), '/me');
+  assert.equal(normalizeAuthReturnPath('/me/assets'), '/me/assets');
+  assert.equal(normalizeAuthReturnPath('/me/assets/transactions'), '/me/assets/transactions');
+  assert.equal(normalizeAuthReturnPath('/me/content'), '/me/content');
+  assert.equal(normalizeAuthReturnPath('/me/content?tab=comments&page=2'), '/me/content?tab=comments&page=2');
+  assert.equal(normalizeAuthReturnPath('/me/content?tab=posts&page=1'), '/me/content');
+  assert.equal(normalizeAuthReturnPath('/me/history?page=3'), '/me/history?page=3');
+  assert.equal(
+    normalizeAuthReturnPath('/me/attachments?businessType=Post&keyword=cover&page=2'),
+    '/me/attachments?businessType=Post&keyword=cover&page=2',
+  );
+  assert.equal(normalizeAuthReturnPath('/me/experience?page=4'), '/me/experience?page=4');
   assert.equal(normalizeAuthReturnPath('/pet'), '/pet');
   assert.equal(normalizeAuthReturnPath('/pet/'), '/pet');
+  assert.equal(
+    normalizeAuthReturnPath('/shop/product/2042219067430928384?intent=purchase'),
+    '/shop/product/2042219067430928384?intent=purchase',
+  );
+  assert.equal(normalizeAuthReturnPath('/shop/orders'), '/shop/orders');
+  assert.equal(normalizeAuthReturnPath('/shop/order/2042219067430928385'), '/shop/order/2042219067430928385');
+  assert.equal(normalizeAuthReturnPath('/shop/inventory'), '/shop/inventory');
   assert.equal(
     normalizeAuthReturnPath('/forum/post/PST_018F6B6F7C7D70008F8F8F8F8F8F8F8F?intent=comment'),
     '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=comment',
@@ -72,7 +105,28 @@ test('normalizeAuthReturnPath 只接受 desktop 深链、circle/me/messages/noti
     normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=quickReply&commentId=2042219067430928385'),
     '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?commentId=2042219067430928385&intent=quickReply',
   );
+  assert.equal(
+    normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=answer'),
+    '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=answer',
+  );
+  assert.equal(
+    normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=edit'),
+    '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=edit',
+  );
+  assert.equal(
+    normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=history'),
+    '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=history',
+  );
+  assert.equal(normalizeAuthReturnPath('/forum/compose'), '/forum/compose');
+  assert.equal(normalizeAuthReturnPath('/forum/compose?category=2042219067430928384'), '/forum/compose?category=2042219067430928384');
+  assert.equal(normalizeAuthReturnPath('/docs/mine'), '/docs/mine');
+  assert.equal(normalizeAuthReturnPath('/docs/mine/'), '/docs/mine');
+  assert.equal(normalizeAuthReturnPath('/docs/compose'), '/docs/compose');
+  assert.equal(normalizeAuthReturnPath('/docs/edit/2042219067430928384'), '/docs/edit/2042219067430928384');
+  assert.equal(normalizeAuthReturnPath('/docs/revisions/2042219067430928384'), '/docs/revisions/2042219067430928384');
   assert.equal(normalizeAuthReturnPath('/circle?tab=hot'), null);
+  assert.equal(normalizeAuthReturnPath('/circle?tab=following&tab=followers'), null);
+  assert.equal(normalizeAuthReturnPath('/circle?page=2&page=3'), null);
   assert.equal(normalizeAuthReturnPath('/circle?from=discover'), null);
   assert.equal(normalizeAuthReturnPath('/circle#feed'), null);
   assert.equal(normalizeAuthReturnPath('/notifications?filter=unread'), null);
@@ -83,12 +137,48 @@ test('normalizeAuthReturnPath 只接受 desktop 深链、circle/me/messages/noti
   assert.equal(normalizeAuthReturnPath('/messages?channelId=2042219067430928390&from=notification'), null);
   assert.equal(normalizeAuthReturnPath('/me?tab=assets'), null);
   assert.equal(normalizeAuthReturnPath('/me#growth'), null);
+  assert.equal(normalizeAuthReturnPath('/me/assets?tab=history'), null);
+  assert.equal(normalizeAuthReturnPath('/me/assets/transactions#latest'), null);
+  assert.equal(normalizeAuthReturnPath('/me/content?tab=likes'), null);
+  assert.equal(normalizeAuthReturnPath('/me/content?tab=comments&tab=posts'), null);
+  assert.equal(normalizeAuthReturnPath('/me/content?page=0'), null);
+  assert.equal(normalizeAuthReturnPath('/me/content?from=desktop'), null);
+  assert.equal(normalizeAuthReturnPath('/me/history?page=abc'), null);
+  assert.equal(normalizeAuthReturnPath('/me/history#latest'), null);
+  assert.equal(normalizeAuthReturnPath('/me/attachments?businessType=Secret'), null);
+  assert.equal(normalizeAuthReturnPath('/me/attachments?keyword=a&keyword=b'), null);
+  assert.equal(normalizeAuthReturnPath('/me/attachments?page=0'), null);
+  assert.equal(normalizeAuthReturnPath('/me/experience?page=0'), null);
+  assert.equal(normalizeAuthReturnPath('/me/experience?tab=stats'), null);
   assert.equal(normalizeAuthReturnPath('/pet?from=me'), null);
   assert.equal(normalizeAuthReturnPath('/pet#care'), null);
+  assert.equal(normalizeAuthReturnPath('/shop/product/2042219067430928384'), null);
+  assert.equal(normalizeAuthReturnPath('/shop/product/2042219067430928384?intent=read'), null);
+  assert.equal(normalizeAuthReturnPath('/shop/product/2042219067430928384?intent=purchase&from=discover'), null);
+  assert.equal(normalizeAuthReturnPath('/shop/product/2042219067430928384?intent=purchase&intent=purchase'), null);
+  assert.equal(normalizeAuthReturnPath('/shop/product/2042219067430928384?intent=purchase#confirm'), null);
+  assert.equal(normalizeAuthReturnPath('/shop/order/0'), null);
+  assert.equal(normalizeAuthReturnPath('/shop/order/02042219067430928385'), null);
+  assert.equal(normalizeAuthReturnPath('/shop/order/2042219067430928385?from=notice'), null);
+  assert.equal(normalizeAuthReturnPath('/shop/orders?page=2'), null);
+  assert.equal(normalizeAuthReturnPath('/shop/inventory?tab=benefits'), null);
   assert.equal(normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f'), null);
-  assert.equal(normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=edit'), null);
+  assert.equal(normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?commentId=2042219067430928385&intent=edit'), null);
   assert.equal(normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=comment&from=discover'), null);
   assert.equal(normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=comment#discussion'), null);
+  assert.equal(normalizeAuthReturnPath('/forum/compose?category=0'), null);
+  assert.equal(normalizeAuthReturnPath('/forum/compose?category=2042219067430928384&from=forum'), null);
+  assert.equal(normalizeAuthReturnPath('/forum/compose?category=2042219067430928384&category=2042219067430928385'), null);
+  assert.equal(normalizeAuthReturnPath('/forum/compose#draft'), null);
+  assert.equal(normalizeAuthReturnPath('/docs/mine?from=public'), null);
+  assert.equal(normalizeAuthReturnPath('/docs/compose#draft'), null);
+  assert.equal(normalizeAuthReturnPath('/docs/edit'), null);
+  assert.equal(normalizeAuthReturnPath('/docs/edit/0'), null);
+  assert.equal(normalizeAuthReturnPath('/docs/edit/02042219067430928384'), null);
+  assert.equal(normalizeAuthReturnPath('/docs/edit/2042219067430928384?mode=full'), null);
+  assert.equal(normalizeAuthReturnPath('/docs/revisions'), null);
+  assert.equal(normalizeAuthReturnPath('/docs/revisions/abc'), null);
+  assert.equal(normalizeAuthReturnPath('/docs/revisions/2042219067430928384#v1'), null);
   assert.equal(normalizeAuthReturnPath('/discover'), null);
   assert.equal(normalizeAuthReturnPath('/oidc/callback'), null);
   assert.equal(normalizeAuthReturnPath('https://radishx.com/desktop?app=shop'), null);
@@ -117,8 +207,67 @@ test('buildMeReturnPath 应构造我的状态登录回流路径', () => {
   assert.equal(buildMeReturnPath(), '/me');
 });
 
+test('资产正式 Web 返回路径应只构造受控资产入口', () => {
+  assert.equal(buildMeAssetsReturnPath(), '/me/assets');
+  assert.equal(buildMeAssetTransactionsReturnPath(), '/me/assets/transactions');
+});
+
+test('个人中心正式 Web 返回路径应只构造受控子入口', () => {
+  assert.equal(buildMeContentReturnPath(), '/me/content');
+  assert.equal(buildMeContentReturnPath({ tab: 'comments', page: 3 }), '/me/content?tab=comments&page=3');
+  assert.equal(buildMeContentReturnPath({ tab: 'quick-replies', page: '2' }), '/me/content?tab=quick-replies&page=2');
+  assert.equal(buildMeContentReturnPath({ tab: 'likes' as never }), null);
+  assert.equal(buildMeContentReturnPath({ page: '0' }), null);
+  assert.equal(buildMeHistoryReturnPath(), '/me/history');
+  assert.equal(buildMeHistoryReturnPath({ page: 2 }), '/me/history?page=2');
+  assert.equal(buildMeHistoryReturnPath({ page: 'abc' }), null);
+  assert.equal(buildMeAttachmentsReturnPath(), '/me/attachments');
+  assert.equal(
+    buildMeAttachmentsReturnPath({ businessType: 'Document', keyword: ' guide ', page: 4 }),
+    '/me/attachments?businessType=Document&keyword=guide&page=4',
+  );
+  assert.equal(buildMeAttachmentsReturnPath({ businessType: 'Secret' as never }), null);
+  assert.equal(buildMeAttachmentsReturnPath({ page: 0 }), null);
+  assert.equal(buildMeExperienceReturnPath(), '/me/experience');
+  assert.equal(buildMeExperienceReturnPath({ page: '5' }), '/me/experience?page=5');
+  assert.equal(buildMeExperienceReturnPath({ page: '0' }), null);
+});
+
 test('buildPetReturnPath 应构造电子宠物登录回流路径', () => {
   assert.equal(buildPetReturnPath(), '/pet');
+});
+
+test('商城正式 Web 返回路径应保留购买、订单和库存上下文', () => {
+  assert.equal(
+    buildShopProductPurchaseReturnPath('2042219067430928384'),
+    '/shop/product/2042219067430928384?intent=purchase',
+  );
+  assert.equal(buildShopProductPurchaseReturnPath(12), '/shop/product/12?intent=purchase');
+  assert.equal(buildShopProductPurchaseReturnPath(0), null);
+  assert.equal(buildShopProductPurchaseReturnPath('02042219067430928384'), null);
+  assert.equal(buildShopProductPurchaseReturnPath('abc'), null);
+  assert.equal(buildShopOrdersReturnPath(), '/shop/orders');
+  assert.equal(buildShopOrderReturnPath('2042219067430928385'), '/shop/order/2042219067430928385');
+  assert.equal(buildShopOrderReturnPath(15), '/shop/order/15');
+  assert.equal(buildShopOrderReturnPath('0'), null);
+  assert.equal(buildShopOrderReturnPath('02042219067430928385'), null);
+  assert.equal(buildShopOrderReturnPath('abc'), null);
+  assert.equal(buildShopInventoryReturnPath(), '/shop/inventory');
+});
+
+test('文档作者正式 Web 返回路径应保留作者台、创建、编辑和修订上下文', () => {
+  assert.equal(buildDocsAuthorMineReturnPath(), '/docs/mine');
+  assert.equal(buildDocsAuthorComposeReturnPath(), '/docs/compose');
+  assert.equal(buildDocsAuthorEditReturnPath('2042219067430928384'), '/docs/edit/2042219067430928384');
+  assert.equal(buildDocsAuthorEditReturnPath(12), '/docs/edit/12');
+  assert.equal(buildDocsAuthorEditReturnPath('0'), null);
+  assert.equal(buildDocsAuthorEditReturnPath('02042219067430928384'), null);
+  assert.equal(buildDocsAuthorEditReturnPath('abc'), null);
+  assert.equal(buildDocsAuthorRevisionsReturnPath('2042219067430928384'), '/docs/revisions/2042219067430928384');
+  assert.equal(buildDocsAuthorRevisionsReturnPath(12), '/docs/revisions/12');
+  assert.equal(buildDocsAuthorRevisionsReturnPath('0'), null);
+  assert.equal(buildDocsAuthorRevisionsReturnPath('02042219067430928384'), null);
+  assert.equal(buildDocsAuthorRevisionsReturnPath('abc'), null);
 });
 
 test('buildCircleReturnPath 应构造圈子登录回流路径并收敛默认参数', () => {
@@ -226,7 +375,14 @@ test('论坛返回路径应支持工作台首页、帖子和评论上下文', ()
   );
 });
 
-test('公开论坛详情返回路径只支持评论和轻回应登录意图', () => {
+test('公开论坛返回路径只支持受控发帖、评论和作者态登录意图', () => {
+  assert.equal(buildPublicForumComposeReturnPath(), '/forum/compose');
+  assert.equal(
+    buildPublicForumComposeReturnPath({ categoryId: '2042219067430928384' }),
+    '/forum/compose?category=2042219067430928384',
+  );
+  assert.equal(buildPublicForumComposeReturnPath({ categoryId: '0' }), null);
+  assert.equal(buildPublicForumComposeReturnPath({ categoryId: 'category-1' }), null);
   assert.equal(
     buildPublicForumPostReturnPath({
       postPublicId: 'PST_018F6B6F7C7D70008F8F8F8F8F8F8F8F',
@@ -242,6 +398,27 @@ test('公开论坛详情返回路径只支持评论和轻回应登录意图', ()
     }),
     '/forum/post/2042219067430928384?intent=quickReply',
   );
+  assert.equal(
+    buildPublicForumPostReturnPath({
+      postId: '2042219067430928384',
+      intent: 'answer',
+    }),
+    '/forum/post/2042219067430928384?intent=answer',
+  );
+  assert.equal(
+    buildPublicForumPostReturnPath({
+      postId: '2042219067430928384',
+      intent: 'edit',
+    }),
+    '/forum/post/2042219067430928384?intent=edit',
+  );
+  assert.equal(
+    buildPublicForumPostReturnPath({
+      postId: '2042219067430928384',
+      intent: 'history',
+    }),
+    '/forum/post/2042219067430928384?intent=history',
+  );
   assert.equal(buildPublicForumPostReturnPath({ postId: '0', intent: 'comment' }), null);
   assert.equal(buildPublicForumPostReturnPath({ postPublicId: 'post-42', intent: 'comment' }), null);
   assert.equal(
@@ -255,7 +432,8 @@ test('公开论坛详情返回路径只支持评论和轻回应登录意图', ()
   assert.equal(
     buildPublicForumPostReturnPath({
       postId: '2042219067430928384',
-      intent: 'edit' as never,
+      commentId: '2042219067430928385',
+      intent: 'history',
     }),
     null,
   );

@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using AutoMapper;
 using Moq;
+using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
@@ -34,7 +35,7 @@ public class UserBenefitServiceTest
         };
 
         var userBenefitRepository = CreateUserBenefitRepository(benefit);
-        var userInventoryRepository = new Mock<IBaseRepository<UserInventory>>(MockBehavior.Strict);
+        var userInventoryRepository = new Mock<IUserInventoryRepository>(MockBehavior.Strict);
         var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
         var mapper = new Mock<IMapper>(MockBehavior.Strict);
 
@@ -49,6 +50,55 @@ public class UserBenefitServiceTest
         Assert.Equal("徽章暂未开放，当前不可激活", exception.Message);
         userBenefitRepository.Verify(repository => repository.UpdateAsync(It.IsAny<UserBenefit>()), Times.Never);
         userBenefitRepository.Verify(repository => repository.QueryAsync(It.IsAny<Expression<Func<UserBenefit, bool>>?>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GrantBenefitAsync_ShouldReuseConsumableOrderGrant_WhenOrderAlreadyGranted()
+    {
+        const long userId = 9527;
+        const long productId = 7001;
+        const long orderId = 8001;
+        const long inventoryId = 9001;
+
+        var product = new Product
+        {
+            Id = productId,
+            TenantId = 0,
+            ProductType = ProductType.Consumable,
+            ConsumableType = ConsumableType.ExpCard,
+            BenefitValue = "100",
+            Name = "经验卡"
+        };
+
+        var userBenefitRepository = new Mock<IBaseRepository<UserBenefit>>(MockBehavior.Strict);
+        var userInventoryRepository = new Mock<IUserInventoryRepository>(MockBehavior.Strict);
+        var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
+        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+
+        userInventoryRepository
+            .Setup(repository => repository.GrantConsumableForOrderAsync(
+                0,
+                userId,
+                ConsumableType.ExpCard,
+                "100",
+                "经验卡",
+                null,
+                3,
+                orderId,
+                productId))
+            .ReturnsAsync(new UserInventoryGrantPersistenceResult(inventoryId, false, 0, 5));
+
+        var service = new UserBenefitService(
+            mapper.Object,
+            userBenefitRepository.Object,
+            userInventoryRepository.Object,
+            attachmentUrlResolver.Object);
+
+        var result = await service.GrantBenefitAsync(userId, product, orderId, 3);
+
+        Assert.Equal(inventoryId, result);
+        userInventoryRepository.VerifyAll();
+        userBenefitRepository.Verify(repository => repository.AddAsync(It.IsAny<UserBenefit>()), Times.Never);
     }
 
     private static Mock<IBaseRepository<UserBenefit>> CreateUserBenefitRepository(UserBenefit benefit)

@@ -41,11 +41,10 @@ public class PostServiceTest
             .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<User, bool>>?>()))
             .ReturnsAsync(
             [
-                new User(new UserInitializationOptions("luobo-login", "pwd")
+                new User(new UserInitializationOptions("luobo@example.com", "pwd")
                 {
                     UserName = "luobo",
-                    UserEmail = "luobo@example.com",
-                    UserRealName = "萝卜作者"
+                    UserEmail = "luobo@example.com"
                 })
                 {
                     Id = 2001,
@@ -89,7 +88,7 @@ public class PostServiceTest
         await service.FillPostAvatarAndInteractorsAsync(posts);
 
         Assert.Equal("/_assets/attachments/3001", posts[0].VoAuthorAvatarUrl);
-        Assert.Equal("萝卜作者", posts[0].VoAuthorName);
+        Assert.Equal("luobo", posts[0].VoAuthorName);
         attachmentService.VerifyAll();
         userRepository.VerifyAll();
     }
@@ -1498,6 +1497,122 @@ public class PostServiceTest
         postAnswerRepository.Verify(
             repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<PostAnswer, bool>>?>()),
             Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdatePostAsync_Should_Skip_EditHistory_When_Content_Category_And_Tags_Unchanged()
+    {
+        var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
+        var userPostLikeRepository = new Mock<IBaseRepository<UserPostLike>>(MockBehavior.Strict);
+        var postTagRepository = new Mock<IBaseRepository<PostTag>>(MockBehavior.Strict);
+        var categoryRepository = new Mock<IBaseRepository<Category>>(MockBehavior.Strict);
+        var tagRepository = new Mock<IBaseRepository<Tag>>(MockBehavior.Strict);
+        var postPollRepository = new Mock<IBaseRepository<PostPoll>>(MockBehavior.Strict);
+        var postPollOptionRepository = new Mock<IBaseRepository<PostPollOption>>(MockBehavior.Strict);
+        var postPollVoteRepository = new Mock<IBaseRepository<PostPollVote>>(MockBehavior.Strict);
+        var postQuestionRepository = new Mock<IBaseRepository<PostQuestion>>(MockBehavior.Strict);
+        var postAnswerRepository = new Mock<IBaseRepository<PostAnswer>>(MockBehavior.Strict);
+        var tagService = new Mock<ITagService>(MockBehavior.Strict);
+        var coinRewardService = new Mock<ICoinRewardService>(MockBehavior.Strict);
+        var notificationService = new Mock<INotificationService>(MockBehavior.Strict);
+        var dedupService = new Mock<INotificationDedupService>(MockBehavior.Strict);
+        var experienceService = new Mock<IExperienceService>(MockBehavior.Strict);
+        var postEditHistoryRepository = new Mock<IBaseRepository<PostEditHistory>>(MockBehavior.Strict);
+        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+
+        var post = new Post(new PostInitializationOptions("原问题标题", "原问题内容")
+        {
+            AuthorId = 9527,
+            AuthorName = "Owner",
+            TenantId = 9,
+            CategoryId = 101,
+            IsPublished = true
+        })
+        {
+            Id = 2001,
+            EditCount = 0
+        };
+
+        var existingTag = new Tag("问答")
+        {
+            Id = 601,
+            IsEnabled = true,
+            IsDeleted = false
+        };
+
+        postRepository
+            .Setup(repository => repository.QueryByIdAsync(2001))
+            .ReturnsAsync(post);
+        postTagRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<PostTag, bool>>?>()))
+            .ReturnsAsync(
+            [
+                new PostTag(2001, 601)
+            ]);
+        tagRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<Tag, bool>>?>()))
+            .ReturnsAsync((Expression<Func<Tag, bool>>? expression) =>
+            {
+                var tags = new List<Tag> { existingTag };
+                if (expression == null)
+                {
+                    return tags;
+                }
+
+                var predicate = expression.Compile();
+                return tags.Where(predicate).ToList();
+            });
+
+        var service = new PostService(
+            mapper.Object,
+            postRepository.Object,
+            userPostLikeRepository.Object,
+            postTagRepository.Object,
+            categoryRepository.Object,
+            tagRepository.Object,
+            postPollRepository.Object,
+            postPollOptionRepository.Object,
+            postPollVoteRepository.Object,
+            postQuestionRepository.Object,
+            postAnswerRepository.Object,
+            tagService.Object,
+            coinRewardService.Object,
+            notificationService.Object,
+            dedupService.Object,
+            experienceService.Object,
+            postEditHistoryRepository.Object,
+            Mock.Of<IAttachmentService>(),
+            Options.Create(new ForumEditHistoryOptions
+            {
+                Enable = true,
+                Post = new ForumPostEditHistoryOptions
+                {
+                    EnableHistory = true,
+                    HistorySaveEditCount = 10,
+                    MaxEditCount = 20,
+                    MaxHistoryRecords = 20
+                }
+            }),
+            CreateDefaultSystemSettingProvider());
+
+        await service.UpdatePostAsync(
+            2001,
+            " 原问题标题 ",
+            "原问题内容",
+            null,
+            ["问答"],
+            allowCreateTag: false,
+            operatorId: 9527,
+            operatorName: "Owner");
+
+        postRepository.Verify(repository => repository.UpdateAsync(It.IsAny<Post>()), Times.Never);
+        postEditHistoryRepository.Verify(
+            repository => repository.QueryCountAsync(It.IsAny<Expression<Func<PostEditHistory, bool>>?>()),
+            Times.Never);
+        postEditHistoryRepository.Verify(repository => repository.AddAsync(It.IsAny<PostEditHistory>()), Times.Never);
+        postRepository.VerifyAll();
+        postTagRepository.VerifyAll();
+        tagRepository.VerifyAll();
     }
 
     [Fact]

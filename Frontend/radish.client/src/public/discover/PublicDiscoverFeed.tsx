@@ -423,18 +423,30 @@ export function PublicDiscoverFeed({
               </div>
             </div>
             <div className={styles.streamActionRow}>
-              <button type="button" className={styles.secondaryButton} onClick={onOpenForum}>
+              <a
+                className={styles.secondaryButton}
+                href={buildPublicForumPath({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 })}
+                onClick={(event) => handleFeedLinkClick(event, onOpenForum)}
+              >
                 <Icon icon="mdi:forum-outline" size={18} />
                 <span>{t('discover.public.viewAllForum')}</span>
-              </button>
-              <button type="button" className={styles.secondaryButton} onClick={onOpenDocs}>
+              </a>
+              <a
+                className={styles.secondaryButton}
+                href={buildPublicDocsPath({ kind: 'list' })}
+                onClick={(event) => handleFeedLinkClick(event, onOpenDocs)}
+              >
                 <Icon icon="mdi:file-document-outline" size={18} />
                 <span>{t('discover.public.viewAllDocs')}</span>
-              </button>
-              <button type="button" className={styles.secondaryButton} onClick={onOpenShop}>
+              </a>
+              <a
+                className={styles.secondaryButton}
+                href={buildPublicShopPath({ kind: 'home' })}
+                onClick={(event) => handleFeedLinkClick(event, onOpenShop)}
+              >
                 <Icon icon="mdi:storefront-outline" size={18} />
                 <span>{t('discover.public.viewAllShop')}</span>
-              </button>
+              </a>
             </div>
           </div>
         </>

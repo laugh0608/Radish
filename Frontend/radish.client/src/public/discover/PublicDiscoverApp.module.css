@@ -391,6 +391,7 @@
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
   background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
   color: var(--theme-text-primary);
+  text-decoration: none;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -789,6 +790,8 @@
 }
 
 .tagChip {
+  display: inline-flex;
+  align-items: center;
   border: 1px solid color-mix(in srgb, var(--theme-border) 72%, transparent);
   background: color-mix(in srgb, var(--theme-surface-2) 90%, #fff 10%);
   color: var(--theme-text-primary);
@@ -796,6 +799,7 @@
   padding: 0 14px;
   border-radius: 999px;
   cursor: pointer;
+  text-decoration: none;
   font-size: 0.86rem;
 }
 
@@ -810,6 +814,7 @@
 
 .docsButton,
 .productButton {
+  display: block;
   width: 100%;
   border: none;
   background: transparent;
@@ -817,6 +822,7 @@
   text-align: left;
   color: inherit;
   cursor: pointer;
+  text-decoration: none;
 }
 
 .docsTitle,

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import { resolveMediaUrl } from '@/utils/media';
@@ -11,14 +11,36 @@ interface OrderDetailProps {
   orderId: LongId;
   order: Order | null;
   loading: boolean;
+  backHref?: string;
+  productHref?: string;
   onBack: () => void;
   onProductClick: (productId: LongId) => void;
   onCancelOrder: (orderId: LongId, reason?: string) => void;
 }
 
+function shouldHandleOrderDetailLink(event: MouseEvent<HTMLAnchorElement>): boolean {
+  return !event.defaultPrevented
+    && event.button === 0
+    && !event.metaKey
+    && !event.ctrlKey
+    && !event.shiftKey
+    && !event.altKey;
+}
+
+function handleOrderDetailLinkClick(event: MouseEvent<HTMLAnchorElement>, action: () => void) {
+  if (!shouldHandleOrderDetailLink(event)) {
+    return;
+  }
+
+  event.preventDefault();
+  action();
+}
+
 export const OrderDetail = ({
   order,
   loading,
+  backHref,
+  productHref,
   onBack,
   onProductClick,
   onCancelOrder
@@ -45,9 +67,19 @@ export const OrderDetail = ({
         <div className={styles.error}>
           <h2>{t('shop.notFound.orderTitle')}</h2>
           <p>{t('shop.notFound.orderDescription')}</p>
-          <button className={styles.backButton} onClick={onBack}>
-            {t('shop.backToOrders')}
-          </button>
+          {backHref ? (
+            <a
+              className={styles.backButton}
+              href={backHref}
+              onClick={(event) => handleOrderDetailLinkClick(event, onBack)}
+            >
+              {t('shop.backToOrders')}
+            </a>
+          ) : (
+            <button type="button" className={styles.backButton} onClick={onBack}>
+              {t('shop.backToOrders')}
+            </button>
+          )}
         </div>
       </div>
     );
@@ -97,9 +129,19 @@ export const OrderDetail = ({
     <div className={styles.container}>
       {/* 顶部导航 */}
       <div className={styles.header}>
-        <button className={styles.backButton} onClick={onBack}>
-          ← {t('shop.back')}
-        </button>
+        {backHref ? (
+          <a
+            className={styles.backButton}
+            href={backHref}
+            onClick={(event) => handleOrderDetailLinkClick(event, onBack)}
+          >
+            ← {t('shop.back')}
+          </a>
+        ) : (
+          <button type="button" className={styles.backButton} onClick={onBack}>
+            ← {t('shop.back')}
+          </button>
+        )}
         <h1 className={styles.title}>{t('shop.orderDetail.title')}</h1>
       </div>
 
@@ -119,13 +161,23 @@ export const OrderDetail = ({
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
             <h2 className={styles.sectionTitle}>{t('shop.orderDetail.productInfo')}</h2>
-            <button
-              type="button"
-              className={styles.productActionButton}
-              onClick={() => onProductClick(order.voProductId)}
-            >
-              {t('shop.orderDetail.viewProduct')}
-            </button>
+            {productHref ? (
+              <a
+                className={styles.productActionButton}
+                href={productHref}
+                onClick={(event) => handleOrderDetailLinkClick(event, () => onProductClick(order.voProductId))}
+              >
+                {t('shop.orderDetail.viewProduct')}
+              </a>
+            ) : (
+              <button
+                type="button"
+                className={styles.productActionButton}
+                onClick={() => onProductClick(order.voProductId)}
+              >
+                {t('shop.orderDetail.viewProduct')}
+              </button>
+            )}
           </div>
           <div className={styles.productInfo}>
             <div className={styles.productImage}>

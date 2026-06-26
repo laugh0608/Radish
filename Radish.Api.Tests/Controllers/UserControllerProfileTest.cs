@@ -1,3 +1,5 @@
+using System;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -14,7 +16,7 @@ namespace Radish.Api.Tests.Controllers;
 public class UserControllerProfileTest
 {
     [Fact]
-    public async Task UpdateMyProfile_ShouldUseSystemSettingDisplayNameLength()
+    public async Task UpdateMyProfile_ShouldDelegateDisplayNameChangeToUserService()
     {
         var userService = new Mock<IUserService>(MockBehavior.Strict);
         var currentUserAccessor = new Mock<ICurrentUserAccessor>(MockBehavior.Strict);
@@ -26,14 +28,21 @@ public class UserControllerProfileTest
                 UserId = 1001,
                 UserName = "tester"
             });
-
-        var systemSettingProvider = new Mock<ISystemSettingProvider>(MockBehavior.Strict);
-        systemSettingProvider
-            .Setup(item => item.GetInt32Async(SystemConfigDefaults.DisplayNameMinLengthKey))
-            .ReturnsAsync(4);
-        systemSettingProvider
-            .Setup(item => item.GetInt32Async(SystemConfigDefaults.DisplayNameMaxLengthKey))
-            .ReturnsAsync(int.Parse(SystemConfigDefaults.DefaultDisplayNameMaxLength));
+        userService
+            .Setup(item => item.ChangeDisplayNameAsync(
+                1001,
+                "NewName",
+                It.Is<UserDisplayNameChangeContext>(context =>
+                    context.OperatorUserId == 1001 &&
+                    context.OperatorUserName == "tester" &&
+                    context.Source == UserDisplayNameChangeSources.Profile &&
+                    context.Reason == "用户个人资料修改")))
+            .ReturnsAsync(true);
+        userService
+            .Setup(item => item.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<User, User>>>(),
+                It.IsAny<Expression<Func<User, bool>>>()))
+            .ReturnsAsync(1);
 
         var controller = new UserController(
             userService.Object,
@@ -44,21 +53,25 @@ public class UserControllerProfileTest
             Mock.Of<IUserTimePreferenceService>(),
             Mock.Of<IAttachmentService>(),
             Mock.Of<INotificationPushService>(),
-            systemSettingProvider.Object,
             Options.Create(new TimeOptions()));
 
         var result = await controller.UpdateMyProfile(new UpdateMyProfileDto
         {
-            UserName = "abc"
+            UserName = " NewName "
         });
 
-        Assert.False(result.IsSuccess);
-        Assert.Equal("显示名长度必须在 4-24 个字符之间", result.MessageInfo);
-        systemSettingProvider.Verify(
-            item => item.GetInt32Async(SystemConfigDefaults.DisplayNameMinLengthKey),
+        Assert.True(result.IsSuccess);
+        Assert.Equal("更新成功", result.MessageInfo);
+        userService.Verify(
+            item => item.ChangeDisplayNameAsync(
+                1001,
+                "NewName",
+                It.IsAny<UserDisplayNameChangeContext>()),
             Times.Once);
-        systemSettingProvider.Verify(
-            item => item.GetInt32Async(SystemConfigDefaults.DisplayNameMaxLengthKey),
+        userService.Verify(
+            item => item.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<User, User>>>(),
+                It.IsAny<Expression<Func<User, bool>>>()),
             Times.Once);
     }
 }

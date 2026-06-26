@@ -168,57 +168,10 @@ public partial class PostService
     /// </summary>
     public async Task<PostLikeResultDto> ToggleLikeAsync(long userId, long postId)
     {
-        var post = await _postRepository.QueryByIdAsync(postId);
-        if (post == null || post.IsDeleted)
-        {
-            throw new InvalidOperationException("帖子不存在或已被删除");
-        }
+        var likeResult = await (_postCustomRepository ?? throw new InvalidOperationException("帖子专属仓储未注册"))
+            .TogglePostLikeAsync(userId, postId);
 
-        var existingLikes = await _userPostLikeRepository.QueryAsync(
-            x => x.UserId == userId && x.PostId == postId && !x.IsDeleted);
-        var deletedLikes = await _userPostLikeRepository.QueryAsync(
-            x => x.UserId == userId && x.PostId == postId && x.IsDeleted);
-
-        bool isLiked;
-        int likeCountDelta;
-
-        if (existingLikes.Any())
-        {
-            await _userPostLikeRepository.UpdateColumnsAsync(
-                l => new UserPostLike { IsDeleted = true },
-                l => l.Id == existingLikes.First().Id);
-            isLiked = false;
-            likeCountDelta = -1;
-        }
-        else if (deletedLikes.Any())
-        {
-            await _userPostLikeRepository.UpdateColumnsAsync(
-                l => new UserPostLike
-                {
-                    IsDeleted = false,
-                    LikedAt = DateTime.UtcNow
-                },
-                l => l.Id == deletedLikes.First().Id);
-            isLiked = true;
-            likeCountDelta = 1;
-        }
-        else
-        {
-            var newLike = new UserPostLike
-            {
-                UserId = userId,
-                PostId = postId,
-                LikedAt = DateTime.UtcNow
-            };
-            await _userPostLikeRepository.AddAsync(newLike);
-            isLiked = true;
-            likeCountDelta = 1;
-        }
-
-        post.LikeCount = Math.Max(0, post.LikeCount + likeCountDelta);
-        await _postRepository.UpdateAsync(post);
-
-        if (isLiked)
+        if (likeResult.Delta > 0)
         {
             _ = Task.Run(async () =>
             {
@@ -226,48 +179,61 @@ public partial class PostService
                 {
                     var rewardResult = await _coinRewardService.GrantLikeRewardAsync(
                         postId,
-                        post.AuthorId,
+                        likeResult.AuthorId,
                         userId);
 
                     if (rewardResult.IsSuccess)
                     {
                         Serilog.Log.Information("帖子点赞萝卜币奖励发放成功：PostId={PostId}, 作者={AuthorId}, 点赞者={LikerId}",
-                            postId, post.AuthorId, userId);
+                            postId, likeResult.AuthorId, userId);
                     }
 
                     Serilog.Log.Information("准备发放帖子点赞经验值：PostId={PostId}, 作者={AuthorId}, 点赞者={LikerId}",
-                        postId, post.AuthorId, userId);
+                        postId, likeResult.AuthorId, userId);
 
-                    var receiverExpResult = await _experienceService.GrantExperienceAsync(
-                        userId: post.AuthorId,
+                    var rewardDateKey = DateTime.Today.ToString("yyyyMMdd");
+                    var receiverExpResult = await _experienceService.GrantExperienceOnceAsync(
+                        userId: likeResult.AuthorId,
                         amount: 2,
                         expType: "RECEIVE_LIKE",
+                        rewardBusinessKey: $"exp:receive-like:post:user:{likeResult.AuthorId}:target:{postId}:day:{rewardDateKey}",
                         businessType: "Post",
                         businessId: postId,
                         remark: "帖子被点赞");
 
-                    if (receiverExpResult)
+                    if (receiverExpResult.Granted)
                     {
                         Serilog.Log.Information("帖子被点赞经验值发放成功：PostId={PostId}, 作者={AuthorId}, Amount=2",
-                            postId, post.AuthorId);
+                            postId, likeResult.AuthorId);
+                    }
+                    else if (receiverExpResult.AlreadyGranted)
+                    {
+                        Serilog.Log.Debug("帖子被点赞经验值已发放过，跳过：PostId={PostId}, 作者={AuthorId}",
+                            postId, likeResult.AuthorId);
                     }
                     else
                     {
                         Serilog.Log.Warning("帖子被点赞经验值发放失败：PostId={PostId}, 作者={AuthorId}",
-                            postId, post.AuthorId);
+                            postId, likeResult.AuthorId);
                     }
 
-                    var giverExpResult = await _experienceService.GrantExperienceAsync(
+                    var giverExpResult = await _experienceService.GrantExperienceOnceAsync(
                         userId: userId,
                         amount: 1,
                         expType: "GIVE_LIKE",
+                        rewardBusinessKey: $"exp:give-like:post:user:{userId}:target:{postId}:day:{rewardDateKey}",
                         businessType: "Post",
                         businessId: postId,
                         remark: "点赞帖子");
 
-                    if (giverExpResult)
+                    if (giverExpResult.Granted)
                     {
                         Serilog.Log.Information("点赞帖子经验值发放成功：PostId={PostId}, 点赞者={LikerId}, Amount=1",
+                            postId, userId);
+                    }
+                    else if (giverExpResult.AlreadyGranted)
+                    {
+                        Serilog.Log.Debug("点赞帖子经验值已发放过，跳过：PostId={PostId}, 点赞者={LikerId}",
                             postId, userId);
                     }
                     else
@@ -276,10 +242,10 @@ public partial class PostService
                             postId, userId);
                     }
 
-                    if (post.AuthorId != userId)
+                    if (likeResult.AuthorId != userId)
                     {
                         var shouldDedup = await _dedupService.ShouldDedupAsync(
-                            post.AuthorId,
+                            likeResult.AuthorId,
                             NotificationType.PostLiked,
                             postId);
 
@@ -291,51 +257,51 @@ public partial class PostService
                                 {
                                     Type = NotificationType.PostLiked,
                                     Title = "帖子被点赞",
-                                    Content = $"你的帖子《{post.Title}》收到了一个赞",
+                                    Content = $"你的帖子《{likeResult.Title}》收到了一个赞",
                                     Priority = (int)NotificationPriority.Low,
                                     BusinessType = BusinessType.Post,
                                     BusinessId = postId,
                                     TriggerId = userId,
                                     TriggerName = null,
                                     TriggerAvatar = null,
-                                    ReceiverUserIds = new List<long> { post.AuthorId },
-                                    ExtData = NotificationNavigationHelper.BuildForumNavigationExtData(postId, postPublicId: post.PublicId)
+                                    ReceiverUserIds = new List<long> { likeResult.AuthorId },
+                                    ExtData = NotificationNavigationHelper.BuildForumNavigationExtData(postId, postPublicId: likeResult.PublicId)
                                 });
 
                                 await _dedupService.RecordDedupKeyAsync(
-                                    post.AuthorId,
+                                    likeResult.AuthorId,
                                     NotificationType.PostLiked,
                                     postId,
                                     windowSeconds: 300);
 
                                 Serilog.Log.Information("帖子点赞通知发送成功：PostId={PostId}, 接收者={ReceiverId}",
-                                    postId, post.AuthorId);
+                                    postId, likeResult.AuthorId);
                             }
                             catch (Exception notifyEx)
                             {
                                 Serilog.Log.Error(notifyEx, "发送帖子点赞通知失败：PostId={PostId}, 接收者={ReceiverId}",
-                                    postId, post.AuthorId);
+                                    postId, likeResult.AuthorId);
                             }
                         }
                         else
                         {
                             Serilog.Log.Debug("帖子点赞通知被去重：PostId={PostId}, 接收者={ReceiverId}",
-                                postId, post.AuthorId);
+                                postId, likeResult.AuthorId);
                         }
                     }
                 }
                 catch (Exception ex)
                 {
                     Serilog.Log.Error(ex, "发放帖子点赞奖励失败：PostId={PostId}, AuthorId={AuthorId}, LikerId={LikerId}, Message={Message}",
-                        postId, post.AuthorId, userId, ex.Message);
+                        postId, likeResult.AuthorId, userId, ex.Message);
                 }
             });
         }
 
         return new PostLikeResultDto
         {
-            IsLiked = isLiked,
-            LikeCount = post.LikeCount
+            IsLiked = likeResult.IsLiked,
+            LikeCount = likeResult.LikeCount
         };
     }
 }

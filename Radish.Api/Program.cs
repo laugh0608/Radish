@@ -505,7 +505,18 @@ builder.Services.AddHangfire(config =>
     config.UseRecommendedSerializerSettings();
 });
 
-builder.Services.AddHangfireServer();
+var configuredHangfireWorkerCount = builder.Configuration.GetValue<int?>("Hangfire:Server:WorkerCount");
+builder.Services.AddHangfireServer(options =>
+{
+    if (configuredHangfireWorkerCount is > 0)
+    {
+        options.WorkerCount = configuredHangfireWorkerCount.Value;
+    }
+    else if (hangfireDatabase.DbType == DataBaseType.Sqlite)
+    {
+        options.WorkerCount = 1;
+    }
+});
 
 // 注册 Job 类
 builder.Services.AddScoped<FileCleanupJob>();

@@ -12,13 +12,16 @@ import { createForumCommentHighlightMap, getForumCommentHighlight } from '@/util
 import { Icon } from '@radish/ui/icon';
 import { PostCard } from '@/apps/forum/components/PostCard';
 import type {
+  PublicForumListRoute,
   PublicForumRouteSort,
+  PublicForumSearchRoute,
   PublicForumTypeRoute,
 } from '../forumRouteState';
-import { buildPublicForumPath } from '../forumRouteState';
+import { buildPublicForumPath, createDefaultListRoute, createDefaultSearchRoute } from '../forumRouteState';
 import { usePublicReplaceRouteSync } from '../usePublicReplaceRouteSync';
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import { PublicStatusCard } from './PublicStatusCard';
+import { PublicForumPagination, PublicForumRouteLink } from './PublicForumLinks';
 import {
   buildTypeRouteKey,
   buildVisiblePages,
@@ -285,6 +288,13 @@ export const PublicForumTypeFeed = ({
     itemCount: posts.length,
     totalCount: totalPosts
   });
+  const backToListRoute: PublicForumListRoute = createDefaultListRoute();
+  const searchRoute: PublicForumSearchRoute = createDefaultSearchRoute();
+  const buildTypeRoute = (nextPage: number, nextSortBy = sortBy): PublicForumTypeRoute => ({
+    kind: routeState.kind,
+    sortBy: nextSortBy,
+    page: nextPage
+  });
 
   return (
     <section className={`${styles.sectionCard} ${styles.listSectionCard}`}>
@@ -292,10 +302,14 @@ export const PublicForumTypeFeed = ({
         <div className={styles.sectionHeading}>
           <p className={styles.kicker}>{t('forum.public.guide.label')}</p>
           <div className={styles.searchTopbar}>
-            <button type="button" className={styles.backButton} onClick={onBackToList}>
+            <PublicForumRouteLink
+              className={styles.backButton}
+              route={backToListRoute}
+              onNavigate={onBackToList}
+            >
               <Icon icon="mdi:arrow-left" size={18} />
               <span>{t('forum.backToList')}</span>
-            </button>
+            </PublicForumRouteLink>
             <span className={styles.readOnlyBadge}>{t('forum.public.readOnlyBadge')}</span>
           </div>
           <h1 className={styles.pageTitle}>{header.title}</h1>
@@ -309,33 +323,33 @@ export const PublicForumTypeFeed = ({
 
         <div className={styles.toolbar}>
           <div className={styles.segmented}>
-            <button
-              type="button"
+            <PublicForumRouteLink
               className={styles.segmentButton}
-              onClick={() => onOpenSearch?.()}
+              route={searchRoute}
+              onNavigate={onOpenSearch ? () => onOpenSearch() : undefined}
             >
               <Icon icon="mdi:magnify" size={16} />
               <span>{t('forum.public.searchAction')}</span>
-            </button>
-            <button
-              type="button"
+            </PublicForumRouteLink>
+            <PublicForumRouteLink
               className={styles.segmentButton}
-              onClick={onBackToList}
+              route={backToListRoute}
+              onNavigate={onBackToList}
             >
               {t('forum.allPosts')}
-            </button>
+            </PublicForumRouteLink>
             {header.sortOptions.map((option) => (
-              <button
+              <PublicForumRouteLink
                 key={`${routeState.kind}-${option.value}`}
-                type="button"
                 className={`${styles.segmentButton} ${sortBy === option.value ? styles.segmentButtonActive : ''}`}
-                onClick={() => {
+                route={buildTypeRoute(1, option.value)}
+                onNavigate={() => {
                   setSortBy(option.value);
                   setCurrentPage(1);
                 }}
               >
                 {option.label}
-              </button>
+              </PublicForumRouteLink>
             ))}
           </div>
         </div>
@@ -400,34 +414,13 @@ export const PublicForumTypeFeed = ({
       </div>
 
       {totalPages > 1 && (
-        <div className={styles.pagination}>
-          <button
-            type="button"
-            className={styles.paginationButton}
-            onClick={() => setCurrentPage((page: number) => Math.max(1, page - 1))}
-            disabled={currentPage === 1}
-          >
-            ‹
-          </button>
-          {visiblePages.map((page) => (
-            <button
-              key={page}
-              type="button"
-              className={`${styles.paginationButton} ${page === currentPage ? styles.paginationButtonActive : ''}`}
-              onClick={() => setCurrentPage(page)}
-            >
-              {page}
-            </button>
-          ))}
-          <button
-            type="button"
-            className={styles.paginationButton}
-            onClick={() => setCurrentPage((page: number) => Math.min(totalPages, page + 1))}
-            disabled={currentPage === totalPages}
-          >
-            ›
-          </button>
-        </div>
+        <PublicForumPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          visiblePages={visiblePages}
+          buildRoute={(page) => buildTypeRoute(page)}
+          onPageChange={setCurrentPage}
+        />
       )}
     </section>
   );

@@ -1,0 +1,1 @@
+export { DocumentGovernancePage } from './DocumentGovernancePage';

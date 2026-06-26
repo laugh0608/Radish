@@ -1,6 +1,6 @@
 # Console 权限覆盖矩阵
 
-> 最后更新：2026-05-12
+> 最后更新：2026-06-22
 > 适用范围：`radish.console` 当前已接入权限治理的页面与其真实依赖的后端资源
 
 本文档用于把 Console 权限治理涉及的四层对象放到同一张表里：
@@ -47,6 +47,7 @@
 | Roles | `/roles` | `console.roles.view` | `console.roles.create/edit/toggle/delete` | `Role/GetRoleList`、`GetRoleById`、`CreateRole`、`UpdateRole`、`DeleteRole`、`ToggleRoleStatus` | ✅ | 首批闭环模块 |
 | Categories | `/categories` | `console.categories.view` | `console.categories.create/edit/delete/restore/toggle/sort` | `Category/GetPage`、`Create`、`Update/.+`、`Delete/.+`、`Restore/.+`、`ToggleStatus/.+`、`UpdateSort/.+` | ✅ | 分类与标签已拆分为独立后台模块 |
 | Tags | `/tags` | `console.tags.view` | `console.tags.create/edit/delete/restore/toggle/sort` | `Tag/GetPage`、`Create`、`Update/.+`、`Delete/.+`、`Restore/.+`、`ToggleStatus/.+`、`UpdateSort/.+` | ✅ | 页面与资源映射已一致 |
+| Documents | `/documents` | `console.docs.view` | `console.docs.publish/archive/delete/restore/permissions/rollback/import/export` | `Wiki/AdminGetList`、`AdminGetTree`、`AdminGetById/\\d+`、`GetRevisionList/\\d+`、`GetRevisionDetail/\\d+`、`Publish/\\d+`、`Unpublish/\\d+`、`Archive/\\d+`、`Delete/\\d+`、`Restore/\\d+`、`UpdateAccessPolicy/\\d+`、`Rollback/\\d+`、`ImportMarkdown`、`ExportMarkdown/\\d+` | ✅ | Console 只承接文档治理；正文创建 / 编辑继续归正式 Web 作者入口，不新增 `console.docs.create/edit` |
 | Stickers Groups | `/stickers` | `console.stickers.view` | `console.stickers.create/edit/delete/toggle` | `Sticker/GetAdminGroups`、`CreateGroup`、`UpdateGroup/.+`、`DeleteGroup/.+`、`CheckGroupCode` | ✅ | 分组启停复用 `UpdateGroup` |
 | Stickers Items | `/stickers/:groupId/items` | `console.stickers.view` | `console.stickers.create/edit/delete/sort/batch-upload` | `Sticker/GetGroupStickers/.+`、`AddSticker`、`UpdateSticker/.+`、`DeleteSticker/.+`、`BatchAddStickers`、`BatchUpdateSort`、`CheckStickerCode`、`NormalizeCode` | ✅ | 上传文件仍走共享接口，但已按 `businessType` 对 Sticker 链路收口，见第 4 节 |
 | Moderation | `/moderation` | `console.moderation.view` | `console.moderation.review` | `ContentModeration/GetReviewQueue`、`Review`、`ApplyUserAction`、`GetActionLogs` | ✅ | 当前已纳管 `Post / Comment / PostQuickReply / ChatMessage / Product` 举报审核链路，并支持创建时快照、当前状态、回看与失效降级并列展示 |

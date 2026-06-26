@@ -38,6 +38,15 @@ public static class ConsolePermissions
     public const string TagsRestore = "console.tags.restore";
     public const string TagsToggle = "console.tags.toggle";
     public const string TagsSort = "console.tags.sort";
+    public const string DocsView = "console.docs.view";
+    public const string DocsPublish = "console.docs.publish";
+    public const string DocsArchive = "console.docs.archive";
+    public const string DocsDelete = "console.docs.delete";
+    public const string DocsRestore = "console.docs.restore";
+    public const string DocsPermissions = "console.docs.permissions";
+    public const string DocsRollback = "console.docs.rollback";
+    public const string DocsImport = "console.docs.import";
+    public const string DocsExport = "console.docs.export";
     public const string StickersView = "console.stickers.view";
     public const string StickersCreate = "console.stickers.create";
     public const string StickersEdit = "console.stickers.edit";
@@ -106,6 +115,20 @@ public static class ConsolePermissions
             ["/api/v1/Tag/Restore/.+"] = new[] { TagsRestore },
             ["/api/v1/Tag/ToggleStatus/.+"] = new[] { TagsToggle },
             ["/api/v1/Tag/UpdateSort/.+"] = new[] { TagsSort },
+            ["/api/v1/Wiki/AdminGetList"] = new[] { DocsView },
+            ["/api/v1/Wiki/AdminGetTree"] = new[] { DocsView },
+            ["/api/v1/Wiki/AdminGetById/\\d+"] = new[] { DocsView },
+            ["/api/v1/Wiki/GetRevisionList/\\d+"] = new[] { DocsView },
+            ["/api/v1/Wiki/GetRevisionDetail/\\d+"] = new[] { DocsView },
+            ["/api/v1/Wiki/Publish/\\d+"] = new[] { DocsPublish },
+            ["/api/v1/Wiki/Unpublish/\\d+"] = new[] { DocsPublish },
+            ["/api/v1/Wiki/Archive/\\d+"] = new[] { DocsArchive },
+            ["/api/v1/Wiki/Delete/\\d+"] = new[] { DocsDelete },
+            ["/api/v1/Wiki/Restore/\\d+"] = new[] { DocsRestore },
+            ["/api/v1/Wiki/UpdateAccessPolicy/\\d+"] = new[] { DocsPermissions },
+            ["/api/v1/Wiki/Rollback/\\d+"] = new[] { DocsRollback },
+            ["/api/v1/Wiki/ImportMarkdown"] = new[] { DocsImport },
+            ["/api/v1/Wiki/ExportMarkdown/\\d+"] = new[] { DocsExport },
             ["/api/v1/Sticker/GetAdminGroups"] = new[] { StickersView },
             ["/api/v1/Sticker/CreateGroup"] = new[] { StickersCreate },
             ["/api/v1/Sticker/UpdateGroup/.+"] = new[] { StickersEdit, StickersToggle },
@@ -187,6 +210,15 @@ public static class ConsolePermissions
         TagsRestore,
         TagsToggle,
         TagsSort,
+        DocsView,
+        DocsPublish,
+        DocsArchive,
+        DocsDelete,
+        DocsRestore,
+        DocsPermissions,
+        DocsRollback,
+        DocsImport,
+        DocsExport,
         StickersView,
         StickersCreate,
         StickersEdit,

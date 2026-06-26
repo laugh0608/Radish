@@ -12,6 +12,7 @@ namespace Radish.Model;
 [SugarIndex("idx_to_user_created", nameof(ToUserId), OrderByType.Asc, nameof(CreateTime), OrderByType.Desc)]
 [SugarIndex("idx_transaction_no", nameof(TransactionNo), OrderByType.Asc)]
 [SugarIndex("idx_created_at", nameof(CreateTime), OrderByType.Desc)]
+[SugarIndex("idx_coin_reward_business_key", nameof(TenantId), OrderByType.Asc, nameof(RewardBusinessKey), OrderByType.Asc, IsUnique = true)]
 public class CoinTransaction : RootEntityTKey<long>, ITenantEntity
 {
     /// <summary>初始化默认交易记录实例</summary>
@@ -32,6 +33,7 @@ public class CoinTransaction : RootEntityTKey<long>, ITenantEntity
         Status = "PENDING";
         BusinessType = string.Empty;
         BusinessId = null;
+        RewardBusinessKey = null;
         Remark = string.Empty;
         TenantId = 0;
         CreateTime = DateTime.Now;
@@ -119,6 +121,11 @@ public class CoinTransaction : RootEntityTKey<long>, ITenantEntity
     /// <remarks>可空（如 PostId、CommentId 等）</remarks>
     [SugarColumn(IsNullable = true, ColumnDescription = "业务ID")]
     public long? BusinessId { get; set; }
+
+    /// <summary>奖励业务去重键</summary>
+    /// <remarks>仅奖励类流水填写；非奖励交易保持 NULL，用于同一自然奖励事实的数据库级唯一保护。</remarks>
+    [SugarColumn(Length = 200, IsNullable = true, ColumnDescription = "奖励业务去重键")]
+    public string? RewardBusinessKey { get; set; }
 
     /// <summary>备注</summary>
     /// <remarks>可空，最大 500 字符</remarks>

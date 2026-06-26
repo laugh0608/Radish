@@ -23,6 +23,8 @@ export interface MarkdownStickerItem {
 
 export type MarkdownStickerMap = Record<string, MarkdownStickerItem>;
 
+export type MarkdownLinkHrefResolver = (href: string) => string | null | undefined;
+
 interface MarkdownRendererProps {
   /** Markdown 内容 */
   content: string;
@@ -32,6 +34,8 @@ interface MarkdownRendererProps {
   enableImageLightbox?: boolean;
   /** sticker:// 资源映射 */
   stickerMap?: MarkdownStickerMap;
+  /** 自定义链接地址解析，用于公开页面将业务内链转换为可分享 URL */
+  resolveLinkHref?: MarkdownLinkHrefResolver;
 }
 
 interface ParsedImageMeta {
@@ -137,7 +141,7 @@ const parseImageMeta = (src: string): ParsedImageMeta => {
   };
 };
 
-const resolveLinkHref = (href: string): string => {
+const resolveDefaultLinkHref = (href: string): string => {
   const attachmentMeta = parseAttachmentMarkdownUrl(href);
   if (attachmentMeta) {
     return buildAttachmentAssetUrl(attachmentMeta.attachmentId, 'original');
@@ -164,6 +168,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   className,
   enableImageLightbox = true,
   stickerMap,
+  resolveLinkHref,
 }) => {
   const imageCollection = useMemo(() => {
     const regex = /!\[[^\]]*\]\(([^)]+)\)/g;
@@ -208,8 +213,10 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
             a: (props) => {
               const href = props.href || '';
               const attachmentMeta = parseAttachmentMarkdownUrl(href);
-              const resolvedHref = resolveLinkHref(href);
-              const isExternal = href.startsWith('http://') || href.startsWith('https://');
+              const customResolvedHref = resolveLinkHref?.(href);
+              const resolvedHref = customResolvedHref ?? resolveDefaultLinkHref(href);
+              const externalCheckHref = customResolvedHref ?? href;
+              const isExternal = externalCheckHref.startsWith('http://') || externalCheckHref.startsWith('https://');
               const openInNewTab = isExternal || Boolean(attachmentMeta);
 
               if (openInNewTab) {

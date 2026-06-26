@@ -9,6 +9,7 @@ using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
+using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Service;
 using SqlSugar;
@@ -24,7 +25,6 @@ public class UserIdentitySemanticsServiceTest
         var harness = CreateHarness();
         var user = new User
         {
-            LoginName = "tester",
             UserName = "Tester",
             UserEmail = "tester@example.test",
             LoginPassword = "hash",
@@ -48,14 +48,121 @@ public class UserIdentitySemanticsServiceTest
     }
 
     [Fact]
-    public async Task GetEnabledUserByLoginNameAsync_ShouldMatchNormalizedLoginNameAndEmail()
+    public async Task AddAsync_ShouldSkipReservedPublicIndex()
+    {
+        var harness = CreateHarness(
+            reservedIndexes: "[1086]",
+            vanityRules: "{}");
+        var user = new User
+        {
+            UserName = "Tester",
+            UserEmail = "tester@example.test",
+            LoginPassword = "hash",
+            IsEnable = true
+        };
+
+        harness.BaseRepository
+            .Setup(repository => repository.QueryMaxAsync(
+                It.IsAny<Expression<Func<User, long?>>>(),
+                It.IsAny<Expression<Func<User, bool>>>()))
+            .ReturnsAsync(1085);
+        harness.BaseRepository
+            .Setup(repository => repository.AddAsync(It.IsAny<User>()))
+            .ReturnsAsync(20003);
+
+        await harness.Service.AddAsync(user);
+
+        Assert.Equal(1087, user.PublicIndex);
+    }
+
+    [Fact]
+    public async Task AddAsync_ShouldSkipVanityRulePublicIndex()
+    {
+        var harness = CreateHarness(
+            reservedIndexes: "[]",
+            vanityRules: "{\"repeatedDigits\":true}");
+        var user = new User
+        {
+            UserName = "Tester",
+            UserEmail = "tester@example.test",
+            LoginPassword = "hash",
+            IsEnable = true
+        };
+
+        harness.BaseRepository
+            .Setup(repository => repository.QueryMaxAsync(
+                It.IsAny<Expression<Func<User, long?>>>(),
+                It.IsAny<Expression<Func<User, bool>>>()))
+            .ReturnsAsync(1110);
+        harness.BaseRepository
+            .Setup(repository => repository.AddAsync(It.IsAny<User>()))
+            .ReturnsAsync(20003);
+
+        await harness.Service.AddAsync(user);
+
+        Assert.Equal(1112, user.PublicIndex);
+    }
+
+    [Fact]
+    public async Task AddAsync_ShouldExposeDuplicateReservedPublicIndexConfig()
+    {
+        var harness = CreateHarness(
+            reservedIndexes: "[1086,1086]",
+            vanityRules: "{}");
+        var user = new User
+        {
+            UserName = "Tester",
+            UserEmail = "tester@example.test",
+            LoginPassword = "hash",
+            IsEnable = true
+        };
+
+        harness.BaseRepository
+            .Setup(repository => repository.QueryMaxAsync(
+                It.IsAny<Expression<Func<User, long?>>>(),
+                It.IsAny<Expression<Func<User, bool>>>()))
+            .ReturnsAsync(1085);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            harness.Service.AddAsync(user));
+
+        Assert.Contains("重复值", exception.Message);
+    }
+
+    [Fact]
+    public async Task AddAsync_ShouldExposeReservedPublicIndexBelowNormalStart()
+    {
+        var harness = CreateHarness(
+            reservedIndexes: "[999]",
+            vanityRules: "{}");
+        var user = new User
+        {
+            UserName = "Tester",
+            UserEmail = "tester@example.test",
+            LoginPassword = "hash",
+            IsEnable = true
+        };
+
+        harness.BaseRepository
+            .Setup(repository => repository.QueryMaxAsync(
+                It.IsAny<Expression<Func<User, long?>>>(),
+                It.IsAny<Expression<Func<User, bool>>>()))
+            .ReturnsAsync(1085);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            harness.Service.AddAsync(user));
+
+        Assert.Contains("不能小于 1000", exception.Message);
+    }
+
+    [Fact]
+    public async Task GetEnabledUserByEmailAsync_ShouldMatchNormalizedEmailOnly()
     {
         var harness = CreateHarness();
         var capturedWheres = new List<Expression<Func<User, bool>>?>();
         var user = new User
         {
             Id = 20003,
-            LoginName = "alice",
             UserName = "Alice",
             UserEmail = "alice@example.test",
             LoginPassword = "hash",
@@ -68,26 +175,19 @@ public class UserIdentitySemanticsServiceTest
             .Callback<Expression<Func<User, bool>>?>(where => capturedWheres.Add(where))
             .ReturnsAsync(user);
 
-        var loginResult = await harness.Service.GetEnabledUserByLoginNameAsync("Alice");
-        var emailResult = await harness.Service.GetEnabledUserByLoginNameAsync("ALICE@EXAMPLE.TEST");
+        var emailResult = await harness.Service.GetEnabledUserByEmailAsync("ALICE@EXAMPLE.TEST");
 
-        Assert.NotNull(loginResult);
         Assert.NotNull(emailResult);
-        Assert.Equal(2, capturedWheres.Count);
+        Assert.Single(capturedWheres);
 
-        var loginPredicate = capturedWheres[0]!.Compile();
-        Assert.True(loginPredicate(user));
-        Assert.True(loginPredicate(CloneUser(user, loginName: "Alice")));
-        Assert.False(loginPredicate(CloneUser(user, loginName: "ignored", userEmail: "alice@example.test")));
-
-        var emailPredicate = capturedWheres[1]!.Compile();
-        Assert.True(emailPredicate(CloneUser(user, loginName: "ignored", userEmail: "ALICE@EXAMPLE.TEST")));
-        Assert.True(emailPredicate(CloneUser(user, loginName: "ignored", userEmail: "alice@example.test")));
-        Assert.False(emailPredicate(CloneUser(user, loginName: "ignored", userEmail: "ignored@example.test")));
+        var emailPredicate = capturedWheres[0]!.Compile();
+        Assert.True(emailPredicate(CloneUser(user, userEmail: "ALICE@EXAMPLE.TEST")));
+        Assert.True(emailPredicate(CloneUser(user, userEmail: "alice@example.test")));
+        Assert.False(emailPredicate(CloneUser(user, userEmail: "ignored@example.test")));
     }
 
     [Fact]
-    public async Task SearchUsersForMentionAsync_ShouldNotMatchLoginNameOrEmail()
+    public async Task SearchUsersForMentionAsync_ShouldNotMatchEmail()
     {
         var harness = CreateHarness();
         Expression<Func<User, bool>>? capturedWhere = null;
@@ -109,7 +209,6 @@ public class UserIdentitySemanticsServiceTest
         var user = new User
         {
             Id = 20003,
-            LoginName = "secret",
             UserEmail = "secret@example.test",
             UserName = "Public Alice",
             PublicId = "usr_018f6b6f7c7d70008f8f8f8f8f8f8f8f",
@@ -129,7 +228,6 @@ public class UserIdentitySemanticsServiceTest
         var alice = new User
         {
             Id = 20003,
-            LoginName = "alice-login",
             UserEmail = "alice@example.test",
             UserName = "Alice",
             PublicId = "usr_018f6b6f7c7d70008f8f8f8f8f8f8f8f",
@@ -169,7 +267,201 @@ public class UserIdentitySemanticsServiceTest
         Assert.Equal("Alice#1086", result[0].VoDisplayHandle);
     }
 
-    private static Harness CreateHarness()
+    [Fact]
+    public async Task ChangeDisplayNameAsync_ShouldUpdateUserAndAddAuditRecord()
+    {
+        var harness = CreateHarness();
+        SetupDisplayNameSettings(harness, cooldownDays: 30, windowDays: 365, windowMaxCount: 3);
+        var user = new User
+        {
+            Id = 1001,
+            UserName = "OldName",
+            TenantId = 7,
+            IsEnable = true,
+            IsDeleted = false
+        };
+        UserDisplayNameChangeRecord? capturedRecord = null;
+
+        harness.BaseRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<User, bool>>?>()))
+            .ReturnsAsync(user);
+        harness.DisplayNameChangeRecordRepository
+            .Setup(repository => repository.QueryWithOrderAsync(
+                It.IsAny<Expression<Func<UserDisplayNameChangeRecord, bool>>?>(),
+                It.IsAny<Expression<Func<UserDisplayNameChangeRecord, object>>>(),
+                OrderByType.Desc,
+                1))
+            .ReturnsAsync(new List<UserDisplayNameChangeRecord>());
+        harness.DisplayNameChangeRecordRepository
+            .Setup(repository => repository.QueryCountAsync(It.IsAny<Expression<Func<UserDisplayNameChangeRecord, bool>>?>()))
+            .ReturnsAsync(0);
+        harness.BaseRepository
+            .Setup(repository => repository.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<User, User>>>(),
+                It.IsAny<Expression<Func<User, bool>>>()))
+            .ReturnsAsync(1);
+        harness.DisplayNameChangeRecordRepository
+            .Setup(repository => repository.AddAsync(It.IsAny<UserDisplayNameChangeRecord>()))
+            .Callback<UserDisplayNameChangeRecord>(record => capturedRecord = record)
+            .ReturnsAsync(9001);
+
+        var changed = await harness.Service.ChangeDisplayNameAsync(
+            user.Id,
+            "NewName",
+            new UserDisplayNameChangeContext
+            {
+                OperatorUserId = user.Id,
+                OperatorUserName = "OldName",
+                Source = UserDisplayNameChangeSources.Profile,
+                Reason = "用户个人资料修改"
+            });
+
+        Assert.True(changed);
+        Assert.NotNull(capturedRecord);
+        Assert.Equal(user.TenantId, capturedRecord!.TenantId);
+        Assert.Equal(user.Id, capturedRecord.UserId);
+        Assert.Equal("OldName", capturedRecord.OldDisplayName);
+        Assert.Equal("NewName", capturedRecord.NewDisplayName);
+        Assert.Equal(UserDisplayNameChangeSources.Profile, capturedRecord.ChangeSource);
+    }
+
+    [Fact]
+    public async Task ChangeDisplayNameAsync_ShouldReturnFalse_WhenDisplayNameIsUnchanged()
+    {
+        var harness = CreateHarness();
+        SetupDisplayNameSettings(harness);
+        var user = new User
+        {
+            Id = 1001,
+            UserName = "SameName",
+            TenantId = 7,
+            IsEnable = true,
+            IsDeleted = false
+        };
+
+        harness.BaseRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<User, bool>>?>()))
+            .ReturnsAsync(user);
+
+        var changed = await harness.Service.ChangeDisplayNameAsync(
+            user.Id,
+            "SameName",
+            new UserDisplayNameChangeContext { OperatorUserId = user.Id, OperatorUserName = "SameName" });
+
+        Assert.False(changed);
+        harness.BaseRepository.Verify(
+            repository => repository.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<User, User>>>(),
+                It.IsAny<Expression<Func<User, bool>>>()),
+            Times.Never);
+        harness.DisplayNameChangeRecordRepository.Verify(
+            repository => repository.AddAsync(It.IsAny<UserDisplayNameChangeRecord>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task ChangeDisplayNameAsync_ShouldRejectUnsupportedCharacters()
+    {
+        var harness = CreateHarness();
+        SetupDisplayNameSettings(harness);
+
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+            harness.Service.ChangeDisplayNameAsync(
+                1001,
+                "New Name",
+                new UserDisplayNameChangeContext { OperatorUserId = 1001, OperatorUserName = "OldName" }));
+
+        Assert.Contains("展示名只能包含中文、英文字母和数字", exception.Message);
+        harness.BaseRepository.Verify(
+            repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<User, bool>>?>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task ChangeDisplayNameAsync_ShouldRejectChange_WhenCooldownIsActive()
+    {
+        var harness = CreateHarness();
+        SetupDisplayNameSettings(harness, cooldownDays: 30, windowDays: 365, windowMaxCount: 3);
+        var user = new User
+        {
+            Id = 1001,
+            UserName = "OldName",
+            TenantId = 7,
+            IsEnable = true,
+            IsDeleted = false
+        };
+
+        harness.BaseRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<User, bool>>?>()))
+            .ReturnsAsync(user);
+        harness.DisplayNameChangeRecordRepository
+            .Setup(repository => repository.QueryWithOrderAsync(
+                It.IsAny<Expression<Func<UserDisplayNameChangeRecord, bool>>?>(),
+                It.IsAny<Expression<Func<UserDisplayNameChangeRecord, object>>>(),
+                OrderByType.Desc,
+                1))
+            .ReturnsAsync(new List<UserDisplayNameChangeRecord>
+            {
+                new()
+                {
+                    TenantId = user.TenantId,
+                    UserId = user.Id,
+                    ChangeTime = DateTime.UtcNow.AddDays(-5)
+                }
+            });
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            harness.Service.ChangeDisplayNameAsync(
+                user.Id,
+                "NewName",
+                new UserDisplayNameChangeContext { OperatorUserId = user.Id, OperatorUserName = "OldName" }));
+
+        Assert.Contains("显示名修改过于频繁", exception.Message);
+        harness.BaseRepository.Verify(
+            repository => repository.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<User, User>>>(),
+                It.IsAny<Expression<Func<User, bool>>>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task ChangeDisplayNameAsync_ShouldRejectChange_WhenWindowCountExceeded()
+    {
+        var harness = CreateHarness();
+        SetupDisplayNameSettings(harness, cooldownDays: 0, windowDays: 365, windowMaxCount: 3);
+        var user = new User
+        {
+            Id = 1001,
+            UserName = "OldName",
+            TenantId = 7,
+            IsEnable = true,
+            IsDeleted = false
+        };
+
+        harness.BaseRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<User, bool>>?>()))
+            .ReturnsAsync(user);
+        harness.DisplayNameChangeRecordRepository
+            .Setup(repository => repository.QueryCountAsync(It.IsAny<Expression<Func<UserDisplayNameChangeRecord, bool>>?>()))
+            .ReturnsAsync(3);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            harness.Service.ChangeDisplayNameAsync(
+                user.Id,
+                "NewName",
+                new UserDisplayNameChangeContext { OperatorUserId = user.Id, OperatorUserName = "OldName" }));
+
+        Assert.Equal("显示名在 365 天内最多可修改 3 次", exception.Message);
+        harness.BaseRepository.Verify(
+            repository => repository.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<User, User>>>(),
+                It.IsAny<Expression<Func<User, bool>>>()),
+            Times.Never);
+    }
+
+    private static Harness CreateHarness(
+        string? reservedIndexes = null,
+        string? vanityRules = null)
     {
         var mapper = new Mock<IMapper>();
         mapper.Setup(item => item.Map<UserVo>(It.IsAny<User>()))
@@ -181,7 +473,6 @@ public class UserIdentitySemanticsServiceTest
                 VoUserName = User.NormalizeDisplayName(user.UserName, user.Id),
                 VoDisplayName = User.NormalizeDisplayName(user.UserName, user.Id),
                 VoDisplayHandle = User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id),
-                VoLoginName = user.LoginName,
                 VoUserEmail = user.UserEmail,
                 VoLoginPassword = user.LoginPassword,
                 VoTenantId = user.TenantId,
@@ -216,8 +507,11 @@ public class UserIdentitySemanticsServiceTest
         var userRepository = new Mock<IUserRepository>();
         var roleRepository = new Mock<IBaseRepository<Role>>();
         var userRoleRepository = new Mock<IBaseRepository<UserRole>>();
+        var displayNameChangeRecordRepository = new Mock<IBaseRepository<UserDisplayNameChangeRecord>>();
         var departmentService = new Mock<IDepartmentService>();
         var consoleAuthorizationService = new Mock<IConsoleAuthorizationService>();
+        var systemSettingProvider = new Mock<ISystemSettingProvider>();
+        SetupPublicIndexSettings(systemSettingProvider, reservedIndexes, vanityRules);
         var service = new UserService(
             departmentService.Object,
             mapper.Object,
@@ -225,17 +519,56 @@ public class UserIdentitySemanticsServiceTest
             userRepository.Object,
             roleRepository.Object,
             userRoleRepository.Object,
-            consoleAuthorizationService.Object);
+            displayNameChangeRecordRepository.Object,
+            consoleAuthorizationService.Object,
+            systemSettingProvider.Object);
 
-        return new Harness(service, baseRepository);
+        return new Harness(service, baseRepository, displayNameChangeRecordRepository, systemSettingProvider);
     }
 
-    private static User CloneUser(User user, string? loginName = null, string? userEmail = null)
+    private static void SetupPublicIndexSettings(
+        Mock<ISystemSettingProvider> systemSettingProvider,
+        string? reservedIndexes,
+        string? vanityRules)
+    {
+        systemSettingProvider
+            .Setup(provider => provider.GetEffectiveValueAsync(SystemConfigDefaults.PublicIndexReservedIndexesKey))
+            .ReturnsAsync(reservedIndexes ?? SystemConfigDefaults.DefaultPublicIndexReservedIndexes);
+        systemSettingProvider
+            .Setup(provider => provider.GetEffectiveValueAsync(SystemConfigDefaults.PublicIndexVanityRulesKey))
+            .ReturnsAsync(vanityRules ?? SystemConfigDefaults.DefaultPublicIndexVanityRules);
+    }
+
+    private static void SetupDisplayNameSettings(
+        Harness harness,
+        int minLength = 2,
+        int maxLength = 24,
+        int cooldownDays = 0,
+        int windowDays = 365,
+        int windowMaxCount = 3)
+    {
+        harness.SystemSettingProvider
+            .Setup(provider => provider.GetInt32Async(SystemConfigDefaults.DisplayNameMinLengthKey))
+            .ReturnsAsync(minLength);
+        harness.SystemSettingProvider
+            .Setup(provider => provider.GetInt32Async(SystemConfigDefaults.DisplayNameMaxLengthKey))
+            .ReturnsAsync(maxLength);
+        harness.SystemSettingProvider
+            .Setup(provider => provider.GetInt32Async(SystemConfigDefaults.DisplayNameChangeCooldownDaysKey))
+            .ReturnsAsync(cooldownDays);
+        harness.SystemSettingProvider
+            .Setup(provider => provider.GetInt32Async(SystemConfigDefaults.DisplayNameChangeWindowDaysKey))
+            .ReturnsAsync(windowDays);
+        harness.SystemSettingProvider
+            .Setup(provider => provider.GetInt32Async(SystemConfigDefaults.DisplayNameChangeWindowMaxCountKey))
+            .ReturnsAsync(windowMaxCount);
+    }
+
+    private static User CloneUser(User user, string? userEmail = null)
     {
         return new User
         {
             Id = user.Id,
-            LoginName = loginName ?? user.LoginName,
             UserName = user.UserName,
             UserEmail = userEmail ?? user.UserEmail,
             LoginPassword = user.LoginPassword,
@@ -249,5 +582,7 @@ public class UserIdentitySemanticsServiceTest
 
     private sealed record Harness(
         UserService Service,
-        Mock<IBaseRepository<User>> BaseRepository);
+        Mock<IBaseRepository<User>> BaseRepository,
+        Mock<IBaseRepository<UserDisplayNameChangeRecord>> DisplayNameChangeRecordRepository,
+        Mock<ISystemSettingProvider> SystemSettingProvider);
 }

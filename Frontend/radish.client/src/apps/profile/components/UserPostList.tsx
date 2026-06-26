@@ -1,35 +1,42 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { Icon } from '@radish/ui/icon';
-import type { LongId } from '@/api/user';
+import { getUserPosts, type LongId, type UserPost } from '@/api/user';
 import styles from './UserPostList.module.css';
-
-interface Post {
-  voId: LongId;
-  voPublicId?: string | null;
-  voTitle: string;
-  voContent: string;
-  voViewCount: number;
-  voLikeCount: number;
-  voCommentCount: number;
-  voCreateTime: string;
-}
 
 interface UserPostListProps {
   userId: LongId;
-  apiBaseUrl: string;
+  apiBaseUrl?: string;
   displayTimeZone: string;
   onPostClick?: (postId: LongId, postPublicId?: string | null) => void;
+  getPostHref?: (postId: LongId, postPublicId?: string | null) => string | null;
+  onPostLinkClick?: (
+    event: MouseEvent<HTMLAnchorElement>,
+    href: string,
+    postId: LongId,
+    postPublicId?: string | null
+  ) => void;
+  page?: number;
+  onPageChange?: (page: number) => void;
 }
 
-export const UserPostList = ({ userId, apiBaseUrl, displayTimeZone, onPostClick }: UserPostListProps) => {
+export const UserPostList = ({
+  userId,
+  displayTimeZone,
+  onPostClick,
+  getPostHref,
+  onPostLinkClick,
+  page: controlledPage,
+  onPageChange
+}: UserPostListProps) => {
   const { t } = useTranslation();
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [posts, setPosts] = useState<UserPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
+  const [internalPage, setInternalPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const page = controlledPage ?? internalPage;
 
   useEffect(() => {
     loadPosts();
@@ -39,19 +46,23 @@ export const UserPostList = ({ userId, apiBaseUrl, displayTimeZone, onPostClick 
   const loadPosts = async () => {
     setLoading(true);
     try {
-      const response = await fetch(
-        `${apiBaseUrl}/api/v1/Post/GetUserPosts?userId=${encodeURIComponent(String(userId))}&pageIndex=${page}&pageSize=10`
-      );
-      const json = await response.json();
-      if (json.isSuccess && json.responseData) {
-        setPosts(json.responseData.data || []);
-        setTotalPages(json.responseData.pageCount || 1);
-      }
+      const result = await getUserPosts(userId, page, 10);
+      setPosts(result.data || []);
+      setTotalPages(result.pageCount || 1);
     } catch (error) {
       log.error('加载帖子失败:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const updatePage = (nextPage: number) => {
+    if (onPageChange) {
+      onPageChange(nextPage);
+      return;
+    }
+
+    setInternalPage(nextPage);
   };
 
   if (loading) {
@@ -65,43 +76,61 @@ export const UserPostList = ({ userId, apiBaseUrl, displayTimeZone, onPostClick 
   return (
     <div className={styles.container}>
       <div className={styles.list}>
-        {posts.map(post => (
-          <div
-            key={post.voId}
-            className={styles.postItem}
-            onClick={() => onPostClick?.(post.voId, post.voPublicId)}
-            style={{ cursor: onPostClick ? 'pointer' : 'default' }}
-          >
-            <h3 className={styles.title}>{post.voTitle}</h3>
-            <p className={styles.content}>
-              {post.voContent?.substring(0, 100) ?? ''}
-              {(post.voContent?.length ?? 0) > 100 && '...'}
-            </p>
-            <div className={styles.meta}>
-              <span className={styles.metaItem}>
-                <Icon icon="mdi:eye" size={16} />
-                {post.voViewCount}
-              </span>
-              <span className={styles.metaItem}>
-                <Icon icon="mdi:heart" size={16} />
-                {post.voLikeCount}
-              </span>
-              <span className={styles.metaItem}>
-                <Icon icon="mdi:comment" size={16} />
-                {post.voCommentCount}
-              </span>
-              <span className={styles.time}>
-                {formatDateTimeByTimeZone(post.voCreateTime, displayTimeZone)}
-              </span>
+        {posts.map(post => {
+          const href = getPostHref?.(post.voId, post.voPublicId) ?? null;
+          const body = (
+            <>
+              <h3 className={styles.title}>{post.voTitle}</h3>
+              <p className={styles.content}>
+                {post.voContent?.substring(0, 100) ?? ''}
+                {(post.voContent?.length ?? 0) > 100 && '...'}
+              </p>
+              <div className={styles.meta}>
+                <span className={styles.metaItem}>
+                  <Icon icon="mdi:eye" size={16} />
+                  {post.voViewCount}
+                </span>
+                <span className={styles.metaItem}>
+                  <Icon icon="mdi:heart" size={16} />
+                  {post.voLikeCount}
+                </span>
+                <span className={styles.metaItem}>
+                  <Icon icon="mdi:comment" size={16} />
+                  {post.voCommentCount}
+                </span>
+                <span className={styles.time}>
+                  {formatDateTimeByTimeZone(post.voCreateTime, displayTimeZone)}
+                </span>
+              </div>
+            </>
+          );
+
+          return href ? (
+            <a
+              key={post.voId}
+              className={styles.postItem}
+              href={href}
+              onClick={(event) => onPostLinkClick?.(event, href, post.voId, post.voPublicId)}
+            >
+              {body}
+            </a>
+          ) : (
+            <div
+              key={post.voId}
+              className={styles.postItem}
+              onClick={() => onPostClick?.(post.voId, post.voPublicId)}
+              style={{ cursor: onPostClick ? 'pointer' : 'default' }}
+            >
+              {body}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {totalPages > 1 && (
         <div className={styles.pagination}>
           <button
-            onClick={() => setPage(p => Math.max(1, p - 1))}
+            onClick={() => updatePage(Math.max(1, page - 1))}
             disabled={page === 1}
             className={styles.pageButton}
           >
@@ -111,7 +140,7 @@ export const UserPostList = ({ userId, apiBaseUrl, displayTimeZone, onPostClick 
             {t('common.pageInfo', { current: page, total: totalPages })}
           </span>
           <button
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            onClick={() => updatePage(Math.min(totalPages, page + 1))}
             disabled={page === totalPages}
             className={styles.pageButton}
           >

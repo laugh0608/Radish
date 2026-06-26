@@ -54,4 +54,28 @@ public class WikiDocumentRepository : BaseRepository<WikiDocument>, IWikiDocumen
             return (data, totalCount.Value);
         });
     }
+
+    public async Task<List<WikiDocument>> QueryIncludingDeletedAsync(
+        Expression<Func<WikiDocument, bool>>? whereExpression,
+        Expression<Func<WikiDocument, object>>? orderByExpression,
+        OrderByType orderByType)
+    {
+        return await ExecuteDbOperationAsync(async () =>
+        {
+            var query = CreateTenantQueryableFor<WikiDocument>(includeDeleted: true);
+            if (whereExpression != null)
+            {
+                query = query.Where(whereExpression);
+            }
+
+            if (orderByExpression != null)
+            {
+                query = orderByType == OrderByType.Asc
+                    ? query.OrderBy(orderByExpression)
+                    : query.OrderByDescending(orderByExpression);
+            }
+
+            return await query.ToListAsync();
+        });
+    }
 }

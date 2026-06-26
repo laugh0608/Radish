@@ -141,6 +141,7 @@ class _SeededShopRepository implements ShopRepository {
     required String accessToken,
     required String productId,
     required String paymentPassword,
+    required String idempotencyKey,
     int quantity = 1,
   }) async {
     return const ShopPurchaseResult(
@@ -234,6 +235,7 @@ class _FailingShopRepository implements ShopRepository {
     required String accessToken,
     required String productId,
     required String paymentPassword,
+    required String idempotencyKey,
     int quantity = 1,
   }) {
     throw const RadishApiClientException('购买不可用');

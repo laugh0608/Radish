@@ -47,7 +47,8 @@ public class BootstrapController : ControllerBase
             new BootstrapAdminCreatedVo
             {
                 VoUserId = result.UserId,
-                VoLoginName = result.LoginName
+                VoDisplayName = result.DisplayName,
+                VoEmail = result.Email
             });
     }
 }

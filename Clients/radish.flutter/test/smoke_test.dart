@@ -514,7 +514,12 @@ void main() {
     await tester.tap(find.text('进入论坛'));
     await tester.pumpAndSettle();
 
-    expect(find.text('浏览公开帖子，支持最新和热门排序。当前阶段仅提供只读阅读。'), findsOneWidget);
+    expect(
+      find.text(
+        '浏览公开帖子，支持最新和热门排序。已登录用户可发布纯文本帖子，作者可在详情页编辑帖子正文和根评论。',
+      ),
+      findsOneWidget,
+    );
 
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
@@ -2015,6 +2020,10 @@ void main() {
     expect(repository.createPostRequests.single.categoryId, 'category-1');
     expect(repository.createPostRequests.single.tagNames, ['flutter', '回流']);
     expect(repository.createPostRequests.single.accessToken, isNotEmpty);
+    expect(
+      repository.createPostRequests.single.clientSubmissionId,
+      startsWith('forum-post:'),
+    );
     expect(find.text('/forum/post/post-created'), findsOneWidget);
     expect(find.text('帖子详情'), findsWidgets);
   });
@@ -2101,7 +2110,12 @@ void main() {
 
     expect(lifecycleGateway.moveTaskToBackCallCount, 0);
     expect(find.text('论坛详情回流'), findsOneWidget);
-    expect(find.text('浏览公开帖子，支持最新和热门排序。当前阶段仅提供只读阅读。'), findsOneWidget);
+    expect(
+      find.text(
+        '浏览公开帖子，支持最新和热门排序。已登录用户可发布纯文本帖子，作者可在详情页编辑帖子正文和根评论。',
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('shell forum handoff opens native detail and targets comment',
@@ -3315,6 +3329,7 @@ class _SeededShopRepository implements ShopRepository {
     required String accessToken,
     required String productId,
     required String paymentPassword,
+    required String idempotencyKey,
     int quantity = 1,
   }) async {
     return const ShopPurchaseResult(
@@ -3872,6 +3887,7 @@ class _FakeForumRepository implements ForumRepository {
     required String postId,
     required String content,
     required String accessToken,
+    required String clientSubmissionId,
     String? parentId,
     String? replyToCommentId,
     String? replyToCommentSnapshot,
@@ -3881,15 +3897,59 @@ class _FakeForumRepository implements ForumRepository {
   }
 
   @override
+  Future<ForumQuestionDetail> answerQuestion({
+    required String postId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {
+    return ForumQuestionDetail(
+      postId: postId,
+      isSolved: false,
+      answerCount: 1,
+      answers: [
+        ForumAnswerSummary(
+          id: 'answer-created',
+          postId: postId,
+          authorId: 'user-current',
+          authorName: 'current',
+          content: content,
+          createTime: '2026-04-20T08:14:00Z',
+        ),
+      ],
+    );
+  }
+
+  @override
   Future<String> createPost({
     required String title,
     required String content,
     required String categoryId,
     required List<String> tagNames,
     required String accessToken,
+    required String clientSubmissionId,
   }) async {
     return 'post-created';
   }
+
+  @override
+  Future<void> updatePost({
+    required String postId,
+    required String title,
+    required String content,
+    required String categoryId,
+    required List<String> tagNames,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {}
+
+  @override
+  Future<void> updateComment({
+    required String commentId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {}
 }
 
 class _SeededForumRepository implements ForumRepository {
@@ -4113,6 +4173,7 @@ class _SeededForumRepository implements ForumRepository {
     required String postId,
     required String content,
     required String accessToken,
+    required String clientSubmissionId,
     String? parentId,
     String? replyToCommentId,
     String? replyToCommentSnapshot,
@@ -4122,15 +4183,59 @@ class _SeededForumRepository implements ForumRepository {
   }
 
   @override
+  Future<ForumQuestionDetail> answerQuestion({
+    required String postId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {
+    return ForumQuestionDetail(
+      postId: postId,
+      isSolved: false,
+      answerCount: 1,
+      answers: [
+        ForumAnswerSummary(
+          id: 'answer-created',
+          postId: postId,
+          authorId: 'user-current',
+          authorName: 'current',
+          content: content,
+          createTime: '2026-04-20T11:31:00Z',
+        ),
+      ],
+    );
+  }
+
+  @override
   Future<String> createPost({
     required String title,
     required String content,
     required String categoryId,
     required List<String> tagNames,
     required String accessToken,
+    required String clientSubmissionId,
   }) async {
     return 'post-created';
   }
+
+  @override
+  Future<void> updatePost({
+    required String postId,
+    required String title,
+    required String content,
+    required String categoryId,
+    required List<String> tagNames,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {}
+
+  @override
+  Future<void> updateComment({
+    required String commentId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {}
 }
 
 class _RecordingPostForumRepository extends _SeededForumRepository {
@@ -4144,6 +4249,7 @@ class _RecordingPostForumRepository extends _SeededForumRepository {
     required String categoryId,
     required List<String> tagNames,
     required String accessToken,
+    required String clientSubmissionId,
   }) async {
     createPostRequests.add(
       _ForumCreatePostRequest(
@@ -4152,6 +4258,7 @@ class _RecordingPostForumRepository extends _SeededForumRepository {
         categoryId: categoryId,
         tagNames: tagNames,
         accessToken: accessToken,
+        clientSubmissionId: clientSubmissionId,
       ),
     );
     return 'post-created';
@@ -4165,6 +4272,7 @@ class _ForumCreatePostRequest {
     required this.categoryId,
     required this.tagNames,
     required this.accessToken,
+    required this.clientSubmissionId,
   });
 
   final String title;
@@ -4172,6 +4280,7 @@ class _ForumCreatePostRequest {
   final String categoryId;
   final List<String> tagNames;
   final String accessToken;
+  final String clientSubmissionId;
 }
 
 class _SeededBigIdForumRepository implements ForumRepository {
@@ -4331,6 +4440,7 @@ class _SeededBigIdForumRepository implements ForumRepository {
     required String postId,
     required String content,
     required String accessToken,
+    required String clientSubmissionId,
     String? parentId,
     String? replyToCommentId,
     String? replyToCommentSnapshot,
@@ -4340,15 +4450,59 @@ class _SeededBigIdForumRepository implements ForumRepository {
   }
 
   @override
+  Future<ForumQuestionDetail> answerQuestion({
+    required String postId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {
+    return ForumQuestionDetail(
+      postId: postId,
+      isSolved: false,
+      answerCount: 1,
+      answers: [
+        ForumAnswerSummary(
+          id: 'answer-big-created',
+          postId: postId,
+          authorId: 'current-user',
+          authorName: 'current',
+          content: content,
+          createTime: '2026-04-18T12:21:00Z',
+        ),
+      ],
+    );
+  }
+
+  @override
   Future<String> createPost({
     required String title,
     required String content,
     required String categoryId,
     required List<String> tagNames,
     required String accessToken,
+    required String clientSubmissionId,
   }) async {
     return '2042219067430928399';
   }
+
+  @override
+  Future<void> updatePost({
+    required String postId,
+    required String title,
+    required String content,
+    required String categoryId,
+    required List<String> tagNames,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {}
+
+  @override
+  Future<void> updateComment({
+    required String commentId,
+    required String content,
+    required String accessToken,
+    required String clientSubmissionId,
+  }) async {}
 }
 
 class _FakeProfileRepository implements ProfileRepository {

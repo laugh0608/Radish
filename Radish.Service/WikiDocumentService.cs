@@ -246,6 +246,163 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         return _mapper.Map<WikiDocumentDetailVo>(document);
     }
 
+    public async Task<PageModel<WikiDocumentVo>> GetGovernanceListAsync(
+        int pageIndex = 1,
+        int pageSize = 20,
+        string? keyword = null,
+        int? status = null,
+        int? visibility = null,
+        long? parentId = null,
+        string? sourceType = null,
+        bool includeDeleted = false,
+        bool deletedOnly = false)
+    {
+        if (pageIndex < 1)
+        {
+            pageIndex = 1;
+        }
+
+        if (pageSize < 1 || pageSize > 100)
+        {
+            pageSize = 20;
+        }
+
+        var whereExpression = Expressionable.Create<WikiDocument>();
+
+        if (deletedOnly)
+        {
+            includeDeleted = true;
+            whereExpression.And(document => document.IsDeleted);
+        }
+
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            var keywordValue = keyword.Trim();
+            whereExpression.And(document =>
+                document.Title.Contains(keywordValue) ||
+                document.Slug.Contains(keywordValue) ||
+                (document.Summary != null && document.Summary.Contains(keywordValue)) ||
+                (document.SourcePath != null && document.SourcePath.Contains(keywordValue)));
+        }
+
+        if (status.HasValue)
+        {
+            var statusValue = status.Value;
+            whereExpression.And(document => document.Status == statusValue);
+        }
+
+        if (visibility.HasValue)
+        {
+            var visibilityValue = visibility.Value;
+            whereExpression.And(document => document.Visibility == visibilityValue);
+        }
+
+        if (parentId.HasValue)
+        {
+            var parentIdValue = parentId.Value;
+            whereExpression.And(document => document.ParentId == parentIdValue);
+        }
+
+        var normalizedSourceType = NormalizeOptional(sourceType);
+        if (!string.IsNullOrWhiteSpace(normalizedSourceType))
+        {
+            whereExpression.And(document => document.SourceType == normalizedSourceType);
+        }
+
+        List<WikiDocumentVo> data;
+        int totalCount;
+
+        if (includeDeleted)
+        {
+            var (entityData, entityTotalCount) = await _wikiDocumentRepository.QueryPageIncludingDeletedAsync(
+                whereExpression.ToExpression(),
+                pageIndex,
+                pageSize,
+                document => document.Sort,
+                OrderByType.Asc,
+                document => document.Id,
+                OrderByType.Desc);
+            data = _mapper.Map<List<WikiDocumentVo>>(entityData);
+            totalCount = entityTotalCount;
+        }
+        else
+        {
+            var (voData, voTotalCount) = await QueryPageAsync(
+                whereExpression.ToExpression(),
+                pageIndex,
+                pageSize,
+                document => document.Sort,
+                OrderByType.Asc,
+                document => document.Id,
+                OrderByType.Desc);
+            data = voData;
+            totalCount = voTotalCount;
+        }
+
+        return new PageModel<WikiDocumentVo>
+        {
+            Page = pageIndex,
+            PageSize = pageSize,
+            DataCount = totalCount,
+            PageCount = (int)Math.Ceiling(totalCount / (double)pageSize),
+            Data = data
+        };
+    }
+
+    public async Task<List<WikiDocumentTreeNodeVo>> GetGovernanceTreeAsync(bool includeDeleted = false)
+    {
+        var documents = includeDeleted
+            ? _mapper.Map<List<WikiDocumentVo>>(await _wikiDocumentRepository.QueryIncludingDeletedAsync(
+                null,
+                document => document.Sort,
+                OrderByType.Asc))
+            : await QueryWithOrderAsync(null, document => document.Sort, OrderByType.Asc);
+
+        var allNodes = documents
+            .Select(document => new WikiDocumentTreeNodeVo
+            {
+                VoId = document.VoId,
+                VoTitle = document.VoTitle,
+                VoSlug = document.VoSlug,
+                VoParentId = document.VoParentId,
+                VoSort = document.VoSort,
+                VoStatus = document.VoStatus,
+                VoVisibility = document.VoVisibility,
+                VoChildren = new List<WikiDocumentTreeNodeVo>()
+            })
+            .ToList();
+
+        var lookup = allNodes.ToDictionary(node => node.VoId);
+        var roots = new List<WikiDocumentTreeNodeVo>();
+
+        foreach (var node in allNodes)
+        {
+            if (node.VoParentId.HasValue && lookup.TryGetValue(node.VoParentId.Value, out var parent))
+            {
+                parent.VoChildren.Add(node);
+                continue;
+            }
+
+            roots.Add(node);
+        }
+
+        return roots;
+    }
+
+    public async Task<WikiDocumentDetailVo?> GetGovernanceDetailAsync(long id, bool includeDeleted = true)
+    {
+        if (id <= 0)
+        {
+            return null;
+        }
+
+        var document = includeDeleted
+            ? await _wikiDocumentRepository.QueryByIdIncludingDeletedAsync(id)
+            : await _wikiDocumentRepository.QueryByIdAsync(id);
+
+        return document == null ? null : _mapper.Map<WikiDocumentDetailVo>(document);
+    }
+
     public async Task<long> CreateDocumentAsync(CreateWikiDocumentDto createDto, long operatorId, string operatorName, long tenantId)
     {
         if (createDto == null)
@@ -354,6 +511,51 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         }
 
         return updated;
+    }
+
+    public async Task<bool> UpdateAccessPolicyAsync(long id, UpdateWikiDocumentAccessPolicyDto updateDto, long operatorId, string operatorName)
+    {
+        if (id <= 0)
+        {
+            throw new ArgumentException("文档ID无效", nameof(id));
+        }
+
+        if (updateDto == null)
+        {
+            throw new ArgumentNullException(nameof(updateDto));
+        }
+
+        var document = await _wikiDocumentRepository.QueryByIdAsync(id);
+        if (document == null || document.IsDeleted)
+        {
+            return false;
+        }
+
+        EnsureDocumentIsEditable(document);
+        ValidateAccessPolicy(updateDto.Visibility, updateDto.AllowedRoles, updateDto.AllowedPermissions);
+
+        var normalizedVisibility = NormalizeVisibility(updateDto.Visibility);
+        var normalizedRoles = SerializeAccessList(updateDto.AllowedRoles);
+        var normalizedPermissions = SerializeAccessList(updateDto.AllowedPermissions);
+
+        var hasChanges =
+            NormalizeVisibility(document.Visibility) != normalizedVisibility ||
+            document.AllowedRoles != normalizedRoles ||
+            document.AllowedPermissions != normalizedPermissions;
+
+        if (!hasChanges)
+        {
+            return true;
+        }
+
+        document.Visibility = normalizedVisibility;
+        document.AllowedRoles = normalizedRoles;
+        document.AllowedPermissions = normalizedPermissions;
+        document.ModifyId = operatorId;
+        document.ModifyBy = ResolveOperatorName(operatorName);
+        document.ModifyTime = DateTime.Now;
+
+        return await UpdateAsync(document);
     }
 
     public async Task<bool> DeleteDocumentAsync(long id, long operatorId, string operatorName)

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { LongId } from '@/api/user';
 import type { UserBenefit, UserInventoryItem } from '@/types/shop';
@@ -13,6 +13,9 @@ interface InventoryProps {
   onDeactivateBenefit: (benefitId: LongId) => void;
   onUseItem: (inventoryId: LongId, quantity?: number, targetId?: LongId) => Promise<boolean>;
   onUseRenameCard: (inventoryId: LongId, newNickname: string) => Promise<boolean>;
+  backHref?: string;
+  getSourceOrderHref?: (orderId: LongId) => string;
+  getSourceProductHref?: (productId: LongId) => string;
   onSourceOrderClick: (orderId: LongId) => void;
   onSourceProductClick: (productId: LongId) => void;
   onBack: () => void;
@@ -122,6 +125,24 @@ const isPositiveLongId = (value?: LongId | null): value is LongId => {
 const isPurchaseSource = (benefit: UserBenefit): boolean =>
   benefit.voSourceType?.trim().toLowerCase() === 'purchase';
 
+function shouldHandleInventoryLink(event: MouseEvent<HTMLAnchorElement>): boolean {
+  return !event.defaultPrevented
+    && event.button === 0
+    && !event.metaKey
+    && !event.ctrlKey
+    && !event.shiftKey
+    && !event.altKey;
+}
+
+function handleInventoryLinkClick(event: MouseEvent<HTMLAnchorElement>, action: () => void) {
+  if (!shouldHandleInventoryLink(event)) {
+    return;
+  }
+
+  event.preventDefault();
+  action();
+}
+
 export const Inventory = ({
   benefits,
   inventory,
@@ -130,6 +151,9 @@ export const Inventory = ({
   onDeactivateBenefit,
   onUseItem,
   onUseRenameCard,
+  backHref,
+  getSourceOrderHref,
+  getSourceProductHref,
   onSourceOrderClick,
   onSourceProductClick,
   onBack
@@ -199,9 +223,19 @@ export const Inventory = ({
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <button className={styles.backButton} onClick={onBack}>
-          ← {t('shop.back')}
-        </button>
+        {backHref ? (
+          <a
+            className={styles.backButton}
+            href={backHref}
+            onClick={(event) => handleInventoryLinkClick(event, onBack)}
+          >
+            ← {t('shop.back')}
+          </a>
+        ) : (
+          <button type="button" className={styles.backButton} onClick={onBack}>
+            ← {t('shop.back')}
+          </button>
+        )}
         <h1 className={styles.title}>{t('shop.inventory.title')}</h1>
       </div>
 
@@ -238,6 +272,8 @@ export const Inventory = ({
                 const sourceProductId = isPurchaseSource(benefit) && isPositiveLongId(benefit.voSourceProductId)
                   ? benefit.voSourceProductId
                   : undefined;
+                const sourceOrderHref = sourceOrderId ? getSourceOrderHref?.(sourceOrderId) : undefined;
+                const sourceProductHref = sourceProductId ? getSourceProductHref?.(sourceProductId) : undefined;
 
                 return (
                   <div
@@ -277,22 +313,42 @@ export const Inventory = ({
                       {(sourceOrderId || sourceProductId) && (
                         <div className={styles.benefitSourceActions}>
                           {sourceOrderId && (
-                            <button
-                              type="button"
-                              className={styles.sourceButton}
-                              onClick={() => onSourceOrderClick(sourceOrderId)}
-                            >
-                              {t('shop.inventory.viewSourceOrder')}
-                            </button>
+                            sourceOrderHref ? (
+                              <a
+                                className={styles.sourceButton}
+                                href={sourceOrderHref}
+                                onClick={(event) => handleInventoryLinkClick(event, () => onSourceOrderClick(sourceOrderId))}
+                              >
+                                {t('shop.inventory.viewSourceOrder')}
+                              </a>
+                            ) : (
+                              <button
+                                type="button"
+                                className={styles.sourceButton}
+                                onClick={() => onSourceOrderClick(sourceOrderId)}
+                              >
+                                {t('shop.inventory.viewSourceOrder')}
+                              </button>
+                            )
                           )}
                           {sourceProductId && (
-                            <button
-                              type="button"
-                              className={styles.sourceButton}
-                              onClick={() => onSourceProductClick(sourceProductId)}
-                            >
-                              {t('shop.inventory.viewSourceProduct')}
-                            </button>
+                            sourceProductHref ? (
+                              <a
+                                className={styles.sourceButton}
+                                href={sourceProductHref}
+                                onClick={(event) => handleInventoryLinkClick(event, () => onSourceProductClick(sourceProductId))}
+                              >
+                                {t('shop.inventory.viewSourceProduct')}
+                              </a>
+                            ) : (
+                              <button
+                                type="button"
+                                className={styles.sourceButton}
+                                onClick={() => onSourceProductClick(sourceProductId)}
+                              >
+                                {t('shop.inventory.viewSourceProduct')}
+                              </button>
+                            )
                           )}
                         </div>
                       )}
@@ -342,6 +398,7 @@ export const Inventory = ({
                 const sourceProductId = isPositiveLongId(item.voSourceProductId)
                   ? item.voSourceProductId
                   : undefined;
+                const sourceProductHref = sourceProductId ? getSourceProductHref?.(sourceProductId) : undefined;
 
                 return (
                   <div key={item.voId} className={styles.consumableCard}>
@@ -362,13 +419,23 @@ export const Inventory = ({
                       </div>
                       {sourceProductId && (
                         <div className={styles.benefitSourceActions}>
-                          <button
-                            type="button"
-                            className={styles.sourceButton}
-                            onClick={() => onSourceProductClick(sourceProductId)}
-                          >
-                            {t('shop.inventory.viewRelatedProduct')}
-                          </button>
+                          {sourceProductHref ? (
+                            <a
+                              className={styles.sourceButton}
+                              href={sourceProductHref}
+                              onClick={(event) => handleInventoryLinkClick(event, () => onSourceProductClick(sourceProductId))}
+                            >
+                              {t('shop.inventory.viewRelatedProduct')}
+                            </a>
+                          ) : (
+                            <button
+                              type="button"
+                              className={styles.sourceButton}
+                              onClick={() => onSourceProductClick(sourceProductId)}
+                            >
+                              {t('shop.inventory.viewRelatedProduct')}
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>

@@ -9,9 +9,11 @@ import '../../../shared/widgets/public_link_copy_panel.dart';
 import '../../../shared/widgets/read_only_markdown_view.dart';
 import '../data/forum_models.dart';
 import '../data/forum_repository.dart';
+import '../data/forum_submission_key.dart';
 import 'forum_child_comment_controller.dart';
 import 'forum_comment_feed_controller.dart';
 import 'forum_detail_controller.dart';
+import 'forum_edit_panels.dart';
 import 'forum_quick_reply_controller.dart';
 
 class ForumDetailPage extends StatefulWidget {
@@ -52,6 +54,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
   late ForumQuickReplyController _quickReplyController;
   final ScrollController _scrollController = ScrollController();
   final GlobalKey _quickReplySectionKey = GlobalKey();
+  final GlobalKey _answerSectionKey = GlobalKey();
   final GlobalKey _commentSectionKey = GlobalKey();
   final Map<String, GlobalKey> _commentKeys = <String, GlobalKey>{};
   String? _targetCommentId;
@@ -65,16 +68,32 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
   bool _wasAuthenticated = false;
   bool _requestedSignInFromDetail = false;
   bool _shouldReturnToQuickReplyAfterLogin = false;
+  bool _shouldReturnToAnswerComposerAfterLogin = false;
   bool _shouldReturnToCommentComposerAfterLogin = false;
+  bool _isSubmittingAnswer = false;
   bool _isSubmittingComment = false;
   String? _quickReplyLoginReturnNotice;
+  String? _answerLoginReturnNotice;
   String? _commentLoginReturnNotice;
+  String? _answerSubmitErrorMessage;
+  String? _answerSubmitSuccessMessage;
   String? _commentSubmitErrorMessage;
   String? _commentSubmitSuccessMessage;
+  String? _postEditErrorMessage;
+  String? _postEditSuccessMessage;
+  String? _commentEditErrorMessage;
+  String? _commentEditSuccessMessage;
+  ForumSubmissionState? _answerSubmissionState;
   _ForumCommentReplyTarget? _commentReplyTarget;
+  ForumSubmissionState? _commentSubmissionState;
+  ForumSubmissionState? _postEditSubmissionState;
+  _ForumCommentEditTarget? _commentEditTarget;
+  ForumSubmissionState? _commentEditSubmissionState;
   String? _resolvedPostIdForDependentFeeds;
   String? _startedCommentNavigationSignature;
   static const int _maxPendingNavigationScrollAttempts = 12;
+  bool _isSubmittingPostEdit = false;
+  bool _isSubmittingCommentEdit = false;
 
   @override
   void initState() {
@@ -118,6 +137,21 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
       _resolvedPostIdForDependentFeeds = null;
       _startedCommentNavigationSignature = null;
       _quickReplyLoginReturnNotice = null;
+      _answerLoginReturnNotice = null;
+      _answerSubmissionState = null;
+      _answerSubmitErrorMessage = null;
+      _answerSubmitSuccessMessage = null;
+      _isSubmittingAnswer = false;
+      _commentSubmissionState = null;
+      _postEditSubmissionState = null;
+      _postEditErrorMessage = null;
+      _postEditSuccessMessage = null;
+      _isSubmittingPostEdit = false;
+      _commentEditTarget = null;
+      _commentEditSubmissionState = null;
+      _commentEditErrorMessage = null;
+      _commentEditSuccessMessage = null;
+      _isSubmittingCommentEdit = false;
       return;
     }
 
@@ -133,6 +167,21 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
       _resolvedPostIdForDependentFeeds = null;
       _startedCommentNavigationSignature = null;
       _quickReplyLoginReturnNotice = null;
+      _answerLoginReturnNotice = null;
+      _answerSubmissionState = null;
+      _answerSubmitErrorMessage = null;
+      _answerSubmitSuccessMessage = null;
+      _isSubmittingAnswer = false;
+      _commentSubmissionState = null;
+      _postEditSubmissionState = null;
+      _postEditErrorMessage = null;
+      _postEditSuccessMessage = null;
+      _isSubmittingPostEdit = false;
+      _commentEditTarget = null;
+      _commentEditSubmissionState = null;
+      _commentEditErrorMessage = null;
+      _commentEditSuccessMessage = null;
+      _isSubmittingCommentEdit = false;
     }
 
     final nextCommentId = widget.commentId?.trim();
@@ -177,6 +226,8 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
         final quickReplyState = _quickReplyController.state;
         final sessionState = widget.sessionController?.state;
         final authState = widget.authController?.state;
+        final accessToken = sessionState?.session?.accessToken;
+        final currentUserId = sessionState?.session?.userId.trim();
         final canRequestSignIn = widget.onRequestSignIn != null &&
             sessionState != null &&
             authState != null;
@@ -210,7 +261,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '阅读帖子正文、基础信息、轻回应和公开评论。已登录用户可以发表根评论或回复评论。',
+                  '阅读帖子正文、基础信息、轻回应、问题回答和公开评论。已登录用户可以发表根评论、回复评论或回答问题帖。',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 20),
@@ -219,8 +270,8 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                   items: [
                     '当前环境：${widget.environment.name}',
                     '打开来源：${widget.handoffSource.label}',
-                    '支持帖子正文、轻回应发布、根评论发布、评论回复、评论分页和原生返回',
-                    '当前不支持发帖编辑器、点赞、投票、审核治理或富文本评论',
+                    '支持帖子正文、问题帖纯文本回答、轻回应发布、根评论发布、评论回复、根评论编辑、评论分页和原生返回',
+                    '当前不支持子评论编辑、回答采纳、点赞、投票、审核治理、富文本回答或富文本评论',
                     detail == null ? '正在准备帖子详情' : '正在阅读帖子详情',
                     commentState.isIdle
                         ? '评论暂未加载'
@@ -281,10 +332,21 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                     handoffSource: widget.handoffSource,
                     detail: detail,
                     isAuthenticated: sessionState?.isAuthenticated ?? false,
-                    accessToken: sessionState?.session?.accessToken,
+                    accessToken: accessToken,
+                    currentUserId: currentUserId,
                     authState: authState,
+                    isSubmittingPostEdit: _isSubmittingPostEdit,
+                    postEditErrorMessage: _postEditErrorMessage,
+                    postEditSuccessMessage: _postEditSuccessMessage,
+                    onSubmitPostEdit: (content) => _submitPostEdit(
+                      detail: detail,
+                      content: content,
+                      accessToken: accessToken ?? '',
+                      userId: currentUserId ?? '',
+                    ),
                     quickReplyState: quickReplyState,
                     quickReplySectionKey: _quickReplySectionKey,
+                    answerSectionKey: _answerSectionKey,
                     commentSectionKey: _commentSectionKey,
                     quickReplyLoginReturnNotice: _quickReplyLoginReturnNotice,
                     onRetryQuickReplies: _quickReplyController.refresh,
@@ -293,6 +355,21 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                       content: content,
                       accessToken: sessionState?.session?.accessToken ?? '',
                     ),
+                    isSubmittingAnswer: _isSubmittingAnswer,
+                    answerSubmitErrorMessage: _answerSubmitErrorMessage,
+                    answerSubmitSuccessMessage: _answerSubmitSuccessMessage,
+                    answerLoginReturnNotice: _answerLoginReturnNotice,
+                    onSubmitAnswer: (content) => _submitAnswer(
+                      detail: detail,
+                      content: content,
+                      accessToken: sessionState?.session?.accessToken ?? '',
+                      userId: sessionState?.session?.userId ?? '',
+                    ),
+                    onRequestSignInForAnswer: canRequestSignIn
+                        ? () => _requestSignInForAnswerComposer(
+                              currentDetailTarget,
+                            )
+                        : null,
                     commentReplyTarget: _commentReplyTarget,
                     isSubmittingComment: _isSubmittingComment,
                     commentSubmitErrorMessage: _commentSubmitErrorMessage,
@@ -301,8 +378,17 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                     onSubmitComment: (content) => _submitComment(
                       detail: detail,
                       content: content,
-                      accessToken: sessionState?.session?.accessToken ?? '',
-                      userId: sessionState?.session?.userId ?? '',
+                      accessToken: accessToken ?? '',
+                      userId: currentUserId ?? '',
+                    ),
+                    commentEditTarget: _commentEditTarget,
+                    isSubmittingCommentEdit: _isSubmittingCommentEdit,
+                    commentEditErrorMessage: _commentEditErrorMessage,
+                    commentEditSuccessMessage: _commentEditSuccessMessage,
+                    onSubmitCommentEdit: (content) => _submitCommentEdit(
+                      content: content,
+                      accessToken: accessToken ?? '',
+                      userId: currentUserId ?? '',
                     ),
                     onRequestSignInForComment: canRequestSignIn
                         ? () => _requestSignInForCommentComposer(
@@ -324,6 +410,8 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                     registerCommentKey: _registerCommentKey,
                     onOpenProfileUser: widget.onOpenProfileUser,
                     onReplyComment: _startCommentReply,
+                    onStartCommentEdit: _startCommentEdit,
+                    onCancelCommentEdit: _cancelCommentEdit,
                   ),
               ],
             ),
@@ -339,7 +427,11 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
     if (!_wasAuthenticated && isAuthenticated && _requestedSignInFromDetail) {
       _requestedSignInFromDetail = false;
       final shouldReturnToQuickReply = _shouldReturnToQuickReplyAfterLogin;
+      final shouldReturnToAnswer = _shouldReturnToAnswerComposerAfterLogin;
+      final shouldReturnToComment = _shouldReturnToCommentComposerAfterLogin;
       _shouldReturnToQuickReplyAfterLogin = false;
+      _shouldReturnToAnswerComposerAfterLogin = false;
+      _shouldReturnToCommentComposerAfterLogin = false;
       final onConsume = widget.onConsumeActiveDetailLoginTarget;
       if (onConsume != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -358,8 +450,15 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
           _scrollToQuickReplySection();
         });
       }
-      if (_shouldReturnToCommentComposerAfterLogin) {
-        _shouldReturnToCommentComposerAfterLogin = false;
+      if (shouldReturnToAnswer) {
+        setState(() {
+          _answerLoginReturnNotice = '已回到回答区，可以继续发布。';
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _scrollToAnswerSection();
+        });
+      }
+      if (shouldReturnToComment) {
         setState(() {
           _commentLoginReturnNotice = '已回到评论区，可以继续发布。';
         });
@@ -379,6 +478,18 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
     if (_quickReplyLoginReturnNotice != null) {
       setState(() {
         _quickReplyLoginReturnNotice = null;
+      });
+    }
+    await _requestSignIn(target);
+  }
+
+  Future<void> _requestSignInForAnswerComposer(
+    ForumDetailHandoffTarget target,
+  ) async {
+    _shouldReturnToAnswerComposerAfterLogin = true;
+    if (_answerLoginReturnNotice != null) {
+      setState(() {
+        _answerLoginReturnNotice = null;
       });
     }
     await _requestSignIn(target);
@@ -413,6 +524,80 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
     );
   }
 
+  Future<bool> _submitAnswer({
+    required ForumPostDetail detail,
+    required String content,
+    required String accessToken,
+    required String userId,
+  }) async {
+    final normalizedContent = content.trim();
+    final normalizedAccessToken = accessToken.trim();
+    final normalizedUserId = userId.trim();
+    if (_isSubmittingAnswer ||
+        normalizedContent.isEmpty ||
+        normalizedAccessToken.isEmpty ||
+        normalizedUserId.isEmpty) {
+      return false;
+    }
+
+    setState(() {
+      _isSubmittingAnswer = true;
+      _answerSubmitErrorMessage = null;
+      _answerSubmitSuccessMessage = null;
+      _answerLoginReturnNotice = null;
+    });
+
+    try {
+      final submissionState = createForumSubmissionState(
+        current: _answerSubmissionState,
+        prefix: 'forum-answer',
+        fingerprint: buildForumSubmissionFingerprint([
+          normalizedUserId,
+          detail.id,
+          normalizedContent,
+        ]),
+      );
+      _answerSubmissionState = submissionState;
+
+      final question = await widget.repository.answerQuestion(
+        postId: detail.id,
+        content: normalizedContent,
+        accessToken: normalizedAccessToken,
+        clientSubmissionId: submissionState.clientSubmissionId,
+      );
+      if (!mounted) {
+        return false;
+      }
+
+      _controller.applyQuestionDetail(question);
+      setState(() {
+        _isSubmittingAnswer = false;
+        _answerSubmissionState = null;
+        _answerSubmitErrorMessage = null;
+        _answerSubmitSuccessMessage = '回答已发布，已显示在回答区。';
+      });
+      return true;
+    } on RadishApiClientException catch (error) {
+      _setAnswerSubmitFailure(error.message);
+    } on FormatException catch (error) {
+      _setAnswerSubmitFailure('回答返回格式异常：${error.message}');
+    }
+
+    return false;
+  }
+
+  void _setAnswerSubmitFailure(String message) {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _isSubmittingAnswer = false;
+      _answerSubmitErrorMessage = message;
+      _answerSubmitSuccessMessage = null;
+    });
+  }
+
   Future<bool> _submitComment({
     required ForumPostDetail detail,
     required String content,
@@ -438,10 +623,26 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
     });
 
     try {
+      final submissionState = createForumSubmissionState(
+        current: _commentSubmissionState,
+        prefix: 'forum-comment',
+        fingerprint: buildForumSubmissionFingerprint([
+          normalizedUserId,
+          detail.id,
+          normalizedContent,
+          replyTarget?.parentCommentId,
+          replyTarget?.targetCommentId,
+          replyTarget?.contentSnapshot,
+          replyTarget?.authorName,
+        ]),
+      );
+      _commentSubmissionState = submissionState;
+
       final commentId = await widget.repository.createComment(
         postId: detail.id,
         content: normalizedContent,
         accessToken: normalizedAccessToken,
+        clientSubmissionId: submissionState.clientSubmissionId,
         parentId: replyTarget?.parentCommentId,
         replyToCommentId: replyTarget?.targetCommentId,
         replyToCommentSnapshot: replyTarget?.contentSnapshot,
@@ -478,6 +679,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
       setState(() {
         _isSubmittingComment = false;
         _commentReplyTarget = null;
+        _commentSubmissionState = null;
         _commentSubmitErrorMessage = null;
         _commentSubmitSuccessMessage =
             replyTarget == null ? '评论已发布，已显示在评论区顶部。' : '回复已发布，已更新当前评论区。';
@@ -504,20 +706,229 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
     });
   }
 
+  Future<bool> _submitPostEdit({
+    required ForumPostDetail detail,
+    required String content,
+    required String accessToken,
+    required String userId,
+  }) async {
+    final normalizedContent = content.trim();
+    final normalizedAccessToken = accessToken.trim();
+    final normalizedUserId = userId.trim();
+    final normalizedCategoryId = detail.categoryId.trim();
+    final normalizedTags = detail.tagNames
+        .map((tag) => tag.trim())
+        .where((tag) => tag.isNotEmpty)
+        .toList(growable: false);
+    if (_isSubmittingPostEdit ||
+        normalizedContent.isEmpty ||
+        normalizedAccessToken.isEmpty ||
+        normalizedUserId.isEmpty) {
+      return false;
+    }
+
+    if (normalizedUserId != detail.authorId.trim()) {
+      _setPostEditFailure('只有作者本人可以在移动端编辑当前帖子。');
+      return false;
+    }
+
+    if (normalizedCategoryId.isEmpty || normalizedTags.isEmpty) {
+      _setPostEditFailure('当前帖子缺少分类或标签，暂不支持在移动端编辑。');
+      return false;
+    }
+
+    setState(() {
+      _isSubmittingPostEdit = true;
+      _postEditErrorMessage = null;
+      _postEditSuccessMessage = null;
+    });
+
+    try {
+      final submissionState = createForumSubmissionState(
+        current: _postEditSubmissionState,
+        prefix: 'forum-post-edit',
+        fingerprint: buildForumSubmissionFingerprint([
+          normalizedUserId,
+          detail.id,
+          detail.title,
+          normalizedContent,
+          normalizedCategoryId,
+          normalizedTags,
+        ]),
+      );
+      _postEditSubmissionState = submissionState;
+
+      await widget.repository.updatePost(
+        postId: detail.id,
+        title: detail.title,
+        content: normalizedContent,
+        categoryId: normalizedCategoryId,
+        tagNames: normalizedTags,
+        accessToken: normalizedAccessToken,
+        clientSubmissionId: submissionState.clientSubmissionId,
+      );
+      if (!mounted) {
+        return false;
+      }
+
+      _controller.applyPostEdit(
+        postId: detail.id,
+        title: detail.title,
+        content: normalizedContent,
+      );
+      setState(() {
+        _isSubmittingPostEdit = false;
+        _postEditSubmissionState = null;
+        _postEditErrorMessage = null;
+        _postEditSuccessMessage = '帖子正文已保存。';
+      });
+      return true;
+    } on RadishApiClientException catch (error) {
+      _setPostEditFailure(error.message);
+    } on FormatException catch (error) {
+      _setPostEditFailure('帖子编辑返回格式异常：${error.message}');
+    }
+
+    return false;
+  }
+
+  void _setPostEditFailure(String message) {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _isSubmittingPostEdit = false;
+      _postEditErrorMessage = message;
+      _postEditSuccessMessage = null;
+    });
+  }
+
+  Future<bool> _submitCommentEdit({
+    required String content,
+    required String accessToken,
+    required String userId,
+  }) async {
+    final target = _commentEditTarget;
+    final normalizedContent = content.trim();
+    final normalizedAccessToken = accessToken.trim();
+    final normalizedUserId = userId.trim();
+    if (_isSubmittingCommentEdit ||
+        target == null ||
+        normalizedContent.isEmpty ||
+        normalizedAccessToken.isEmpty ||
+        normalizedUserId.isEmpty) {
+      return false;
+    }
+
+    if (normalizedUserId != target.authorId.trim()) {
+      _setCommentEditFailure('只有作者本人可以在移动端编辑当前评论。');
+      return false;
+    }
+
+    setState(() {
+      _commentEditTarget = target.copyWith(initialContent: normalizedContent);
+      _isSubmittingCommentEdit = true;
+      _commentEditErrorMessage = null;
+      _commentEditSuccessMessage = null;
+    });
+
+    try {
+      final submissionState = createForumSubmissionState(
+        current: _commentEditSubmissionState,
+        prefix: 'forum-comment-edit',
+        fingerprint: buildForumSubmissionFingerprint([
+          normalizedUserId,
+          target.commentId,
+          normalizedContent,
+        ]),
+      );
+      _commentEditSubmissionState = submissionState;
+
+      await widget.repository.updateComment(
+        commentId: target.commentId,
+        content: normalizedContent,
+        accessToken: normalizedAccessToken,
+        clientSubmissionId: submissionState.clientSubmissionId,
+      );
+      if (!mounted) {
+        return false;
+      }
+
+      _commentController.updateLoadedRootComment(
+        commentId: target.commentId,
+        content: normalizedContent,
+      );
+      setState(() {
+        _isSubmittingCommentEdit = false;
+        _commentEditTarget = null;
+        _commentEditSubmissionState = null;
+        _commentEditErrorMessage = null;
+        _commentEditSuccessMessage = '评论已保存。';
+      });
+      return true;
+    } on RadishApiClientException catch (error) {
+      _setCommentEditFailure(error.message);
+    } on FormatException catch (error) {
+      _setCommentEditFailure('评论编辑返回格式异常：${error.message}');
+    }
+
+    return false;
+  }
+
+  void _setCommentEditFailure(String message) {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _isSubmittingCommentEdit = false;
+      _commentEditErrorMessage = message;
+      _commentEditSuccessMessage = null;
+    });
+  }
+
   void _startCommentReply(_ForumCommentReplyTarget target) {
     setState(() {
       _commentReplyTarget = target;
       _commentSubmitErrorMessage = null;
       _commentSubmitSuccessMessage = null;
       _commentLoginReturnNotice = null;
+      _commentSubmissionState = null;
+      _commentEditTarget = null;
+      _commentEditSubmissionState = null;
+      _commentEditErrorMessage = null;
     });
   }
 
   void _cancelCommentReply() {
     setState(() {
       _commentReplyTarget = null;
+      _commentSubmissionState = null;
       _commentSubmitErrorMessage = null;
       _commentSubmitSuccessMessage = null;
+    });
+  }
+
+  void _startCommentEdit(_ForumCommentEditTarget target) {
+    setState(() {
+      _commentEditTarget = target;
+      _commentEditSubmissionState = null;
+      _commentEditErrorMessage = null;
+      _commentEditSuccessMessage = null;
+      _commentReplyTarget = null;
+      _commentSubmissionState = null;
+      _commentSubmitErrorMessage = null;
+      _commentSubmitSuccessMessage = null;
+    });
+  }
+
+  void _cancelCommentEdit() {
+    setState(() {
+      _commentEditTarget = null;
+      _commentEditSubmissionState = null;
+      _commentEditErrorMessage = null;
+      _commentEditSuccessMessage = null;
     });
   }
 
@@ -543,6 +954,20 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
       duration: const Duration(milliseconds: 280),
       curve: Curves.easeOutCubic,
       alignment: 0.12,
+    );
+  }
+
+  void _scrollToAnswerSection() {
+    final context = _answerSectionKey.currentContext;
+    if (!mounted || context == null) {
+      return;
+    }
+
+    Scrollable.ensureVisible(
+      context,
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOutCubic,
+      alignment: 0.08,
     );
   }
 
@@ -926,19 +1351,36 @@ class _ForumDetailContent extends StatelessWidget {
     required this.detail,
     required this.isAuthenticated,
     required this.accessToken,
+    required this.currentUserId,
     required this.authState,
+    required this.isSubmittingPostEdit,
+    required this.postEditErrorMessage,
+    required this.postEditSuccessMessage,
+    required this.onSubmitPostEdit,
     required this.quickReplyState,
     required this.quickReplySectionKey,
+    required this.answerSectionKey,
     required this.commentSectionKey,
     required this.quickReplyLoginReturnNotice,
     required this.onRetryQuickReplies,
     required this.onSubmitQuickReply,
+    required this.isSubmittingAnswer,
+    required this.answerSubmitErrorMessage,
+    required this.answerSubmitSuccessMessage,
+    required this.answerLoginReturnNotice,
+    required this.onSubmitAnswer,
+    required this.onRequestSignInForAnswer,
     required this.commentReplyTarget,
     required this.isSubmittingComment,
     required this.commentSubmitErrorMessage,
     required this.commentSubmitSuccessMessage,
     required this.commentLoginReturnNotice,
     required this.onSubmitComment,
+    required this.commentEditTarget,
+    required this.isSubmittingCommentEdit,
+    required this.commentEditErrorMessage,
+    required this.commentEditSuccessMessage,
+    required this.onSubmitCommentEdit,
     required this.onRequestSignInForComment,
     required this.onCancelCommentReply,
     required this.onRequestSignIn,
@@ -951,6 +1393,8 @@ class _ForumDetailContent extends StatelessWidget {
     required this.registerCommentKey,
     required this.onOpenProfileUser,
     required this.onReplyComment,
+    required this.onStartCommentEdit,
+    required this.onCancelCommentEdit,
   });
 
   final AppEnvironment environment;
@@ -959,19 +1403,36 @@ class _ForumDetailContent extends StatelessWidget {
   final ForumPostDetail detail;
   final bool isAuthenticated;
   final String? accessToken;
+  final String? currentUserId;
   final NativeAuthState? authState;
+  final bool isSubmittingPostEdit;
+  final String? postEditErrorMessage;
+  final String? postEditSuccessMessage;
+  final Future<bool> Function(String content) onSubmitPostEdit;
   final ForumQuickReplyState quickReplyState;
   final GlobalKey quickReplySectionKey;
+  final GlobalKey answerSectionKey;
   final GlobalKey commentSectionKey;
   final String? quickReplyLoginReturnNotice;
   final VoidCallback onRetryQuickReplies;
   final Future<bool> Function(String content) onSubmitQuickReply;
+  final bool isSubmittingAnswer;
+  final String? answerSubmitErrorMessage;
+  final String? answerSubmitSuccessMessage;
+  final String? answerLoginReturnNotice;
+  final Future<bool> Function(String content) onSubmitAnswer;
+  final VoidCallback? onRequestSignInForAnswer;
   final _ForumCommentReplyTarget? commentReplyTarget;
   final bool isSubmittingComment;
   final String? commentSubmitErrorMessage;
   final String? commentSubmitSuccessMessage;
   final String? commentLoginReturnNotice;
   final Future<bool> Function(String content) onSubmitComment;
+  final _ForumCommentEditTarget? commentEditTarget;
+  final bool isSubmittingCommentEdit;
+  final String? commentEditErrorMessage;
+  final String? commentEditSuccessMessage;
+  final Future<bool> Function(String content) onSubmitCommentEdit;
   final VoidCallback? onRequestSignInForComment;
   final VoidCallback onCancelCommentReply;
   final VoidCallback? onRequestSignIn;
@@ -984,6 +1445,8 @@ class _ForumDetailContent extends StatelessWidget {
   final void Function(String commentId, GlobalKey key) registerCommentKey;
   final ValueChanged<String>? onOpenProfileUser;
   final ValueChanged<_ForumCommentReplyTarget> onReplyComment;
+  final ValueChanged<_ForumCommentEditTarget> onStartCommentEdit;
+  final VoidCallback onCancelCommentEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -1136,6 +1599,38 @@ class _ForumDetailContent extends StatelessWidget {
               content: detail.content,
               emptyText: '这篇帖子暂无公开正文。',
             ),
+            if (currentUserId != null &&
+                currentUserId!.isNotEmpty &&
+                currentUserId == detail.authorId) ...[
+              const SizedBox(height: 16),
+              ForumPostEditPanel(
+                detail: detail,
+                isSubmitting: isSubmittingPostEdit,
+                submitErrorMessage: postEditErrorMessage,
+                submitSuccessMessage: postEditSuccessMessage,
+                onSubmit: onSubmitPostEdit,
+              ),
+            ],
+            if (detail.isQuestion) ...[
+              const SizedBox(height: 24),
+              KeyedSubtree(
+                key: answerSectionKey,
+                child: _ForumQuestionAnswerSection(
+                  detail: detail,
+                  isAuthenticated: isAuthenticated,
+                  isAuthBusy: authState?.isBusy ?? false,
+                  hasAccessToken:
+                      accessToken != null && accessToken!.isNotEmpty,
+                  isSubmittingAnswer: isSubmittingAnswer,
+                  submitErrorMessage: answerSubmitErrorMessage,
+                  submitSuccessMessage: answerSubmitSuccessMessage,
+                  loginReturnNotice: answerLoginReturnNotice,
+                  onSubmitAnswer: onSubmitAnswer,
+                  onRequestSignIn: onRequestSignInForAnswer,
+                  onOpenProfileUser: onOpenProfileUser,
+                ),
+              ),
+            ],
             const SizedBox(height: 24),
             KeyedSubtree(
               key: quickReplySectionKey,
@@ -1167,14 +1662,350 @@ class _ForumDetailContent extends StatelessWidget {
                 onRetry: onRetryComments,
                 onLoadMore: onLoadMoreComments,
                 onSubmitComment: onSubmitComment,
+                currentUserId: currentUserId,
+                editTarget: commentEditTarget,
+                isSubmittingCommentEdit: isSubmittingCommentEdit,
+                commentEditErrorMessage: commentEditErrorMessage,
+                commentEditSuccessMessage: commentEditSuccessMessage,
+                onSubmitCommentEdit: onSubmitCommentEdit,
                 onRequestSignIn: onRequestSignInForComment,
                 onCancelReply: onCancelCommentReply,
+                onCancelEdit: onCancelCommentEdit,
                 targetCommentId: targetCommentId,
                 expandedRootCommentId: expandedRootCommentId,
                 expandedChildPageIndex: expandedChildPageIndex,
                 registerCommentKey: registerCommentKey,
                 onOpenProfileUser: onOpenProfileUser,
                 onReplyComment: onReplyComment,
+                onStartCommentEdit: onStartCommentEdit,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ForumQuestionAnswerSection extends StatelessWidget {
+  const _ForumQuestionAnswerSection({
+    required this.detail,
+    required this.isAuthenticated,
+    required this.isAuthBusy,
+    required this.hasAccessToken,
+    required this.isSubmittingAnswer,
+    required this.submitErrorMessage,
+    required this.submitSuccessMessage,
+    required this.loginReturnNotice,
+    required this.onSubmitAnswer,
+    required this.onRequestSignIn,
+    required this.onOpenProfileUser,
+  });
+
+  final ForumPostDetail detail;
+  final bool isAuthenticated;
+  final bool isAuthBusy;
+  final bool hasAccessToken;
+  final bool isSubmittingAnswer;
+  final String? submitErrorMessage;
+  final String? submitSuccessMessage;
+  final String? loginReturnNotice;
+  final Future<bool> Function(String content) onSubmitAnswer;
+  final VoidCallback? onRequestSignIn;
+  final ValueChanged<String>? onOpenProfileUser;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final question = detail.question;
+    final answers = question?.answers ?? const <ForumAnswerSummary>[];
+    final answerCount = question?.answerCount ?? detail.answerCount;
+    final isSolved = question?.isSolved ?? detail.isSolved;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '回答',
+          style: textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          '问题帖支持纯文本回答；当前不支持采纳回答、回答编辑、富文本回答或附件。',
+          style: textTheme.bodyMedium,
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            Chip(
+              avatar: const Icon(Icons.question_answer_outlined, size: 18),
+              label: Text('$answerCount 个回答'),
+              visualDensity: VisualDensity.compact,
+            ),
+            Chip(
+              avatar: Icon(
+                isSolved
+                    ? Icons.check_circle_outline
+                    : Icons.help_outline_outlined,
+                size: 18,
+              ),
+              label: Text(isSolved ? '已解决' : '待解决'),
+              visualDensity: VisualDensity.compact,
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (answers.isEmpty)
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                answerCount > 0 ? '回答列表暂未随详情返回，请刷新详情后查看。' : '这篇问题帖暂无公开回答。',
+              ),
+            ),
+          )
+        else ...[
+          for (final answer in answers) ...[
+            _ForumAnswerCard(
+              answer: answer,
+              onOpenProfileUser: onOpenProfileUser,
+            ),
+            const SizedBox(height: 12),
+          ],
+        ],
+        const SizedBox(height: 12),
+        _ForumAnswerComposer(
+          isAuthenticated: isAuthenticated,
+          isAuthBusy: isAuthBusy,
+          hasAccessToken: hasAccessToken,
+          isSubmitting: isSubmittingAnswer,
+          submitErrorMessage: submitErrorMessage,
+          submitSuccessMessage: submitSuccessMessage,
+          loginReturnNotice: loginReturnNotice,
+          onSubmit: onSubmitAnswer,
+          onRequestSignIn: onRequestSignIn,
+        ),
+      ],
+    );
+  }
+}
+
+class _ForumAnswerCard extends StatelessWidget {
+  const _ForumAnswerCard({
+    required this.answer,
+    required this.onOpenProfileUser,
+  });
+
+  final ForumAnswerSummary answer;
+  final ValueChanged<String>? onOpenProfileUser;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                _ForumMetaText(
+                  icon: Icons.person_outline,
+                  text: answer.authorName,
+                  onTap: onOpenProfileUser == null
+                      ? null
+                      : () => onOpenProfileUser!(answer.authorId),
+                ),
+                _ForumMetaText(
+                  icon: Icons.schedule_outlined,
+                  text: _formatDetailTime(answer.createTime),
+                ),
+                if (answer.isAccepted)
+                  const Chip(
+                    avatar: Icon(Icons.check_circle_outline, size: 18),
+                    label: Text('已采纳'),
+                    visualDensity: VisualDensity.compact,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              '回答内容',
+              style: textTheme.labelMedium,
+            ),
+            const SizedBox(height: 8),
+            ReadOnlyMarkdownView(
+              content: answer.content,
+              emptyText: '这条回答暂无公开内容。',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ForumAnswerComposer extends StatefulWidget {
+  const _ForumAnswerComposer({
+    required this.isAuthenticated,
+    required this.isAuthBusy,
+    required this.hasAccessToken,
+    required this.isSubmitting,
+    required this.submitErrorMessage,
+    required this.submitSuccessMessage,
+    required this.loginReturnNotice,
+    required this.onSubmit,
+    required this.onRequestSignIn,
+  });
+
+  final bool isAuthenticated;
+  final bool isAuthBusy;
+  final bool hasAccessToken;
+  final bool isSubmitting;
+  final String? submitErrorMessage;
+  final String? submitSuccessMessage;
+  final String? loginReturnNotice;
+  final Future<bool> Function(String content) onSubmit;
+  final VoidCallback? onRequestSignIn;
+
+  @override
+  State<_ForumAnswerComposer> createState() => _ForumAnswerComposerState();
+}
+
+class _ForumAnswerComposerState extends State<_ForumAnswerComposer> {
+  final TextEditingController _controller = TextEditingController();
+
+  bool get _canSubmit =>
+      _controller.text.trim().isNotEmpty && !widget.isSubmitting;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_handleTextChanged);
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_handleTextChanged);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleTextChanged() {
+    setState(() {});
+  }
+
+  Future<void> _submit() async {
+    final content = _controller.text.trim();
+    if (content.isEmpty || widget.isSubmitting) {
+      return;
+    }
+
+    final submitted = await widget.onSubmit(content);
+    if (!mounted || !submitted) {
+      return;
+    }
+
+    _controller.clear();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    if (!widget.isAuthenticated || !widget.hasAccessToken) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '登录后可以回答问题',
+                style: textTheme.titleSmall,
+              ),
+              const SizedBox(height: 8),
+              const Text('登录会保留当前帖子位置，完成后可继续发布回答。'),
+              if (widget.onRequestSignIn != null) ...[
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  onPressed: widget.isAuthBusy ? null : widget.onRequestSignIn,
+                  icon: Icon(
+                    widget.isAuthBusy
+                        ? Icons.hourglass_top_outlined
+                        : Icons.login_outlined,
+                  ),
+                  label: Text(widget.isAuthBusy ? '正在打开登录...' : '登录后回答'),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '发表回答',
+              style: textTheme.titleSmall,
+            ),
+            if (widget.submitErrorMessage != null &&
+                widget.submitErrorMessage!.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _ForumInlineErrorCard(
+                title: '回答发布失败',
+                message: widget.submitErrorMessage!,
+                retryLabel: '重试发布',
+                onRetry: _submit,
+              ),
+            ],
+            if (widget.submitSuccessMessage != null &&
+                widget.submitSuccessMessage!.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _ForumInlineSuccessCard(message: widget.submitSuccessMessage!),
+            ],
+            if (widget.loginReturnNotice != null &&
+                widget.loginReturnNotice!.isNotEmpty &&
+                (widget.submitSuccessMessage == null ||
+                    widget.submitSuccessMessage!.isEmpty)) ...[
+              const SizedBox(height: 12),
+              _ForumInlineSuccessCard(message: widget.loginReturnNotice!),
+            ],
+            const SizedBox(height: 12),
+            TextField(
+              controller: _controller,
+              minLines: 4,
+              maxLines: 8,
+              maxLength: 20000,
+              enabled: !widget.isSubmitting,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: '写下你的回答',
+                hintText: '聚焦解决问题的思路、依据或步骤。',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton.icon(
+                onPressed: _canSubmit ? _submit : null,
+                icon: Icon(
+                  widget.isSubmitting
+                      ? Icons.hourglass_top_outlined
+                      : Icons.send_outlined,
+                ),
+                label: Text(widget.isSubmitting ? '正在发布' : '发布回答'),
               ),
             ),
           ],
@@ -1215,7 +2046,7 @@ class _ForumDetailContextPanel extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '只读上下文',
+              '详情上下文',
               style: Theme.of(context).textTheme.titleSmall,
             ),
             const SizedBox(height: 12),
@@ -1243,7 +2074,8 @@ class _ForumDetailContextPanel extends StatelessWidget {
             const _ForumContextLine(
               icon: Icons.lock_outline,
               label: '边界',
-              value: '支持评论发布与回复，不提供发帖编辑器、点赞、投票、审核治理或富文本评论入口',
+              value:
+                  '支持问题回答、评论发布与回复、作者编辑帖子正文与根评论，不提供子评论编辑、采纳回答、点赞、投票、审核治理或富文本入口',
             ),
           ],
         ),
@@ -1548,6 +2380,28 @@ class _ForumCommentReplyTarget {
   final String contentSnapshot;
 }
 
+class _ForumCommentEditTarget {
+  const _ForumCommentEditTarget({
+    required this.commentId,
+    required this.authorId,
+    required this.initialContent,
+  });
+
+  final String commentId;
+  final String authorId;
+  final String initialContent;
+
+  _ForumCommentEditTarget copyWith({
+    String? initialContent,
+  }) {
+    return _ForumCommentEditTarget(
+      commentId: commentId,
+      authorId: authorId,
+      initialContent: initialContent ?? this.initialContent,
+    );
+  }
+}
+
 class _ForumCommentSection extends StatelessWidget {
   const _ForumCommentSection({
     required this.repository,
@@ -1563,14 +2417,22 @@ class _ForumCommentSection extends StatelessWidget {
     required this.onRetry,
     required this.onLoadMore,
     required this.onSubmitComment,
+    required this.currentUserId,
+    required this.editTarget,
+    required this.isSubmittingCommentEdit,
+    required this.commentEditErrorMessage,
+    required this.commentEditSuccessMessage,
+    required this.onSubmitCommentEdit,
     required this.onRequestSignIn,
     required this.onCancelReply,
+    required this.onCancelEdit,
     required this.targetCommentId,
     required this.expandedRootCommentId,
     required this.expandedChildPageIndex,
     required this.registerCommentKey,
     required this.onOpenProfileUser,
     required this.onReplyComment,
+    required this.onStartCommentEdit,
   });
 
   final ForumRepository repository;
@@ -1586,14 +2448,22 @@ class _ForumCommentSection extends StatelessWidget {
   final VoidCallback onRetry;
   final VoidCallback onLoadMore;
   final Future<bool> Function(String content) onSubmitComment;
+  final String? currentUserId;
+  final _ForumCommentEditTarget? editTarget;
+  final bool isSubmittingCommentEdit;
+  final String? commentEditErrorMessage;
+  final String? commentEditSuccessMessage;
+  final Future<bool> Function(String content) onSubmitCommentEdit;
   final VoidCallback? onRequestSignIn;
   final VoidCallback onCancelReply;
+  final VoidCallback onCancelEdit;
   final String? targetCommentId;
   final String? expandedRootCommentId;
   final int? expandedChildPageIndex;
   final void Function(String commentId, GlobalKey key) registerCommentKey;
   final ValueChanged<String>? onOpenProfileUser;
   final ValueChanged<_ForumCommentReplyTarget> onReplyComment;
+  final ValueChanged<_ForumCommentEditTarget> onStartCommentEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -1608,7 +2478,7 @@ class _ForumCommentSection extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          '已登录用户可以发表根评论或回复评论；当前不支持点赞、投票、编辑或审核治理。',
+          '已登录用户可以发表根评论、回复评论或编辑自己的根评论；当前不支持子评论编辑、点赞、投票或审核治理。',
           style: textTheme.bodyMedium,
         ),
         const SizedBox(height: 12),
@@ -1644,17 +2514,29 @@ class _ForumCommentSection extends StatelessWidget {
             '已加载 ${state.comments.length} / ${state.totalCount} 条根评论',
             style: textTheme.bodySmall,
           ),
+          if (commentEditSuccessMessage != null &&
+              commentEditSuccessMessage!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _ForumInlineSuccessCard(message: commentEditSuccessMessage!),
+          ],
           const SizedBox(height: 12),
           for (final comment in state.comments) ...[
             _ForumCommentCard(
               repository: repository,
               comment: comment,
+              currentUserId: currentUserId,
+              editTarget: editTarget,
+              isSubmittingCommentEdit: isSubmittingCommentEdit,
+              commentEditErrorMessage: commentEditErrorMessage,
+              onSubmitCommentEdit: onSubmitCommentEdit,
+              onCancelEdit: onCancelEdit,
               targetCommentId: targetCommentId,
               expandedRootCommentId: expandedRootCommentId,
               expandedChildPageIndex: expandedChildPageIndex,
               registerCommentKey: registerCommentKey,
               onOpenProfileUser: onOpenProfileUser,
               onReplyComment: onReplyComment,
+              onStartCommentEdit: onStartCommentEdit,
             ),
             const SizedBox(height: 12),
           ],
@@ -1963,22 +2845,36 @@ class _ForumCommentCard extends StatelessWidget {
   const _ForumCommentCard({
     required this.repository,
     required this.comment,
+    required this.currentUserId,
+    required this.editTarget,
+    required this.isSubmittingCommentEdit,
+    required this.commentEditErrorMessage,
+    required this.onSubmitCommentEdit,
+    required this.onCancelEdit,
     required this.targetCommentId,
     required this.expandedRootCommentId,
     required this.expandedChildPageIndex,
     required this.registerCommentKey,
     required this.onOpenProfileUser,
     required this.onReplyComment,
+    required this.onStartCommentEdit,
   });
 
   final ForumRepository repository;
   final ForumCommentSummary comment;
+  final String? currentUserId;
+  final _ForumCommentEditTarget? editTarget;
+  final bool isSubmittingCommentEdit;
+  final String? commentEditErrorMessage;
+  final Future<bool> Function(String content) onSubmitCommentEdit;
+  final VoidCallback onCancelEdit;
   final String? targetCommentId;
   final String? expandedRootCommentId;
   final int? expandedChildPageIndex;
   final void Function(String commentId, GlobalKey key) registerCommentKey;
   final ValueChanged<String>? onOpenProfileUser;
   final ValueChanged<_ForumCommentReplyTarget> onReplyComment;
+  final ValueChanged<_ForumCommentEditTarget> onStartCommentEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -1986,6 +2882,11 @@ class _ForumCommentCard extends StatelessWidget {
 
     final key = GlobalKey();
     registerCommentKey(comment.id, key);
+    final normalizedCurrentUserId = currentUserId?.trim();
+    final canEdit = normalizedCurrentUserId != null &&
+        normalizedCurrentUserId.isNotEmpty &&
+        normalizedCurrentUserId == comment.authorId.trim();
+    final isEditing = editTarget?.commentId == comment.id;
 
     return Card(
       key: key,
@@ -2064,15 +2965,41 @@ class _ForumCommentCard extends StatelessWidget {
               comment.content,
               style: textTheme.bodyMedium,
             ),
+            if (isEditing) ...[
+              const SizedBox(height: 12),
+              ForumCommentEditComposer(
+                initialContent: editTarget?.initialContent ?? comment.content,
+                isSubmitting: isSubmittingCommentEdit,
+                submitErrorMessage: commentEditErrorMessage,
+                onSubmit: onSubmitCommentEdit,
+                onCancel: onCancelEdit,
+              ),
+            ],
             const SizedBox(height: 12),
             Align(
               alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: () => onReplyComment(
-                  _buildRootCommentReplyTarget(comment),
-                ),
-                icon: const Icon(Icons.reply_outlined),
-                label: const Text('回复评论'),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  TextButton.icon(
+                    onPressed: () => onReplyComment(
+                      _buildRootCommentReplyTarget(comment),
+                    ),
+                    icon: const Icon(Icons.reply_outlined),
+                    label: const Text('回复评论'),
+                  ),
+                  if (canEdit)
+                    TextButton.icon(
+                      onPressed: isSubmittingCommentEdit
+                          ? null
+                          : () => onStartCommentEdit(
+                                _buildCommentEditTarget(comment),
+                              ),
+                      icon: const Icon(Icons.edit_note_outlined),
+                      label: const Text('编辑评论'),
+                    ),
+                ],
               ),
             ),
             if (comment.childrenTotal > 0) ...[
@@ -2426,6 +3353,14 @@ _ForumCommentReplyTarget _buildChildCommentReplyTarget(
     targetCommentId: comment.id,
     authorName: comment.authorName,
     contentSnapshot: _buildCommentSnapshot(comment.content),
+  );
+}
+
+_ForumCommentEditTarget _buildCommentEditTarget(ForumCommentSummary comment) {
+  return _ForumCommentEditTarget(
+    commentId: comment.id,
+    authorId: comment.authorId,
+    initialContent: comment.content,
   );
 }
 

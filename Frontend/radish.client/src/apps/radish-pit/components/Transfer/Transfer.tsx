@@ -16,6 +16,13 @@ const createTransferLogMeta = (transferData: TransferFormData) => ({
   hasNote: Boolean(transferData.note?.trim())
 });
 
+function buildTransferIdempotencyKey(): string {
+  const randomPart = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return `coin-transfer:${randomPart}`;
+}
+
 /**
  * 转账功能组件
  */
@@ -34,7 +41,10 @@ export const Transfer = ({ onNavigate }: TransferProps) => {
 
   const handleFormSubmit = (formData: TransferFormData) => {
     log.debug('Transfer', '提交转账表单', createTransferLogMeta(formData));
-    setTransferData(formData);
+    setTransferData({
+      ...formData,
+      idempotencyKey: buildTransferIdempotencyKey()
+    });
     setCurrentStep('confirm');
   };
 

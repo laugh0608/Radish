@@ -409,7 +409,6 @@ class MyProfileInfo {
     required this.userId,
     required this.userName,
     required this.userEmail,
-    required this.realName,
     required this.sex,
     required this.age,
     required this.address,
@@ -427,7 +426,6 @@ class MyProfileInfo {
       userId: _readRequiredId(map, 'voUserId'),
       userName: _readString(map['voUserName']) ?? '',
       userEmail: _readString(map['voUserEmail']) ?? '',
-      realName: _readString(map['voRealName']) ?? '',
       sex: _readInt(map['voSex']) ?? 0,
       age: _readInt(map['voAge']) ?? 0,
       birth: _readString(map['voBirth']),
@@ -442,7 +440,6 @@ class MyProfileInfo {
   final String userId;
   final String userName;
   final String userEmail;
-  final String realName;
   final int sex;
   final int age;
   final String? birth;
@@ -452,14 +449,13 @@ class MyProfileInfo {
   final String? avatarUrl;
   final String? avatarThumbnailUrl;
 
-  String get displayName => realName.trim().isEmpty ? userName : realName;
+  String get displayName => userName;
 }
 
 class UpdateMyProfileRequest {
   const UpdateMyProfileRequest({
     required this.userName,
     required this.userEmail,
-    this.realName,
     this.sex,
     this.age,
     this.birth,
@@ -468,7 +464,6 @@ class UpdateMyProfileRequest {
 
   final String userName;
   final String userEmail;
-  final String? realName;
   final int? sex;
   final int? age;
   final String? birth;
@@ -478,7 +473,6 @@ class UpdateMyProfileRequest {
     return {
       'userName': userName,
       'userEmail': userEmail,
-      'realName': realName,
       'sex': sex,
       'age': age,
       'birth': birth,

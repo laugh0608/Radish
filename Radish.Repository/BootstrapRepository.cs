@@ -27,11 +27,13 @@ public class BootstrapRepository : IBootstrapRepository
     }
 
     public async Task<BootstrapAdminCreationResult> TryCreateFirstAdministratorAsync(
-        string loginName,
+        string displayName,
         string passwordHash,
-        string? email)
+        string email,
+        PublicIndexReservationPolicy publicIndexReservationPolicy)
     {
         var db = GetMainDb();
+        publicIndexReservationPolicy ??= PublicIndexReservationPolicy.Empty;
 
         try
         {
@@ -45,14 +47,14 @@ public class BootstrapRepository : IBootstrapRepository
                     "系统已存在管理员，初始化入口已关闭");
             }
 
-            var loginNameExists = await db.Queryable<User>()
-                .AnyAsync(u => !u.IsDeleted && u.LoginName == loginName);
-            if (loginNameExists)
+            var emailExists = await db.Queryable<User>()
+                .AnyAsync(u => !u.IsDeleted && u.UserEmail == email);
+            if (emailExists)
             {
                 db.Ado.CommitTran();
                 return BootstrapAdminCreationResult.Failed(
-                    BootstrapAdminCreationStatus.LoginNameTaken,
-                    "登录账号已存在");
+                    BootstrapAdminCreationStatus.EmailTaken,
+                    "邮箱已被注册");
             }
 
             await db.Insertable(new SystemBootstrapState
@@ -67,11 +69,10 @@ public class BootstrapRepository : IBootstrapRepository
 
             var adminRoleId = await EnsureAdminRoleAsync(db);
             var initializedAt = DateTime.UtcNow;
-            var administrator = new User(new UserInitializationOptions(loginName, passwordHash)
+            var administrator = new User(new UserInitializationOptions(email, passwordHash)
             {
-                UserName = loginName,
+                UserName = displayName,
                 UserEmail = email,
-                UserRealName = string.Empty,
                 UserSex = (int)UserSexEnum.Unknown,
                 TenantId = 0,
                 DepartmentId = 0,
@@ -85,7 +86,7 @@ public class BootstrapRepository : IBootstrapRepository
                 UpdateTime = initializedAt,
                 CriticalModifyTime = initializedAt,
                 LastErrorTime = initializedAt,
-                PublicIndex = await AllocateNextPublicIndexAsync(db)
+                PublicIndex = await AllocateNextPublicIndexAsync(db, publicIndexReservationPolicy)
             };
 
             var userId = await db.Insertable(administrator).ExecuteReturnSnowflakeIdAsync();
@@ -104,14 +105,14 @@ public class BootstrapRepository : IBootstrapRepository
                 {
                     IsCompleted = true,
                     CompletedUserId = userId,
-                    CompletedLoginName = loginName,
+                    CompletedEmail = email,
                     CompletedTime = DateTime.UtcNow
                 })
                 .Where(state => state.Id == SystemBootstrapState.FirstAdminBootstrapId)
                 .ExecuteCommandAsync();
 
             db.Ado.CommitTran();
-            return BootstrapAdminCreationResult.Created(userId, loginName);
+            return BootstrapAdminCreationResult.Created(userId, displayName, email);
         }
         catch (Exception ex) when (IsUniqueConstraintViolation(ex))
         {
@@ -206,12 +207,15 @@ public class BootstrapRepository : IBootstrapRepository
         return false;
     }
 
-    private static async Task<long> AllocateNextPublicIndexAsync(ISqlSugarClient db)
+    private static async Task<long> AllocateNextPublicIndexAsync(
+        ISqlSugarClient db,
+        PublicIndexReservationPolicy publicIndexReservationPolicy)
     {
         var maxPublicIndex = await db.Queryable<User>()
             .Where(user => user.PublicIndex >= User.PublicIndexStart)
             .MaxAsync(user => user.PublicIndex);
 
-        return maxPublicIndex.GetValueOrDefault(User.PublicIndexStart - 1) + 1;
+        return publicIndexReservationPolicy.FindNextAvailableAfter(
+            maxPublicIndex.GetValueOrDefault(User.PublicIndexStart - 1));
     }
 }

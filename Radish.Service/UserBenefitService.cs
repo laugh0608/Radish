@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using AutoMapper;
 using Radish.Common;
+using Radish.Common.AttributeTool;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -17,13 +18,13 @@ namespace Radish.Service;
 public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUserBenefitService
 {
     private readonly IBaseRepository<UserBenefit> _userBenefitRepository;
-    private readonly IBaseRepository<UserInventory> _userInventoryRepository;
+    private readonly IUserInventoryRepository _userInventoryRepository;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
 
     public UserBenefitService(
         IMapper mapper,
         IBaseRepository<UserBenefit> userBenefitRepository,
-        IBaseRepository<UserInventory> userInventoryRepository,
+        IUserInventoryRepository userInventoryRepository,
         IAttachmentUrlResolver attachmentUrlResolver)
         : base(mapper, userBenefitRepository)
     {
@@ -129,6 +130,7 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
     #region 权益发放
 
     /// <summary>发放权益</summary>
+    [UseTran(Propagation = Propagation.Required)]
     public async Task<long> GrantBenefitAsync(long userId, Product product, long orderId, int quantity = 1)
     {
         try
@@ -167,8 +169,16 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
     /// <summary>发放权益类商品</summary>
     private async Task<long> GrantBenefitItemAsync(long userId, Product product, long orderId)
     {
+        var existingBenefit = await _userBenefitRepository.QueryFirstAsync(
+            benefit => benefit.SourceOrderId == orderId && !benefit.IsDeleted);
+        if (existingBenefit != null)
+        {
+            return existingBenefit.Id;
+        }
+
         var benefit = new UserBenefit
         {
+            TenantId = product.TenantId,
             UserId = userId,
             BenefitType = product.BenefitType!.Value,
             BenefitValue = product.BenefitValue ?? string.Empty,
@@ -196,7 +206,22 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
             benefit.ExpiresAt = product.ExpiresAt;
         }
 
-        var benefitId = await _userBenefitRepository.AddAsync(benefit);
+        long benefitId;
+        try
+        {
+            benefitId = await _userBenefitRepository.AddAsync(benefit);
+        }
+        catch (Exception ex) when (IsUniqueConstraintException(ex))
+        {
+            existingBenefit = await _userBenefitRepository.QueryFirstAsync(
+                storedBenefit => storedBenefit.SourceOrderId == orderId && !storedBenefit.IsDeleted);
+            if (existingBenefit != null)
+            {
+                return existingBenefit.Id;
+            }
+
+            throw;
+        }
 
         Log.Information("权益发放成功：用户={UserId}, 权益ID={BenefitId}, 类型={BenefitType}",
             userId, benefitId, product.BenefitType);
@@ -207,52 +232,27 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
     /// <summary>发放消耗品到背包</summary>
     private async Task<long> GrantConsumableItemAsync(long userId, Product product, long orderId, int quantity)
     {
-        // 检查背包中是否已有相同类型的道具
-        var existingItem = await _userInventoryRepository.QueryFirstAsync(
-            i => i.UserId == userId &&
-                 i.ConsumableType == product.ConsumableType!.Value &&
-                 i.ItemValue == product.BenefitValue &&
-                 !i.IsDeleted);
+        var grantResult = await _userInventoryRepository.GrantConsumableForOrderAsync(
+            product.TenantId,
+            userId,
+            product.ConsumableType!.Value,
+            product.BenefitValue,
+            product.Name,
+            product.IconAttachmentId,
+            quantity,
+            orderId,
+            product.Id);
 
-        if (existingItem != null)
-        {
-            // 增加数量
-            existingItem.Quantity += quantity;
-            existingItem.ItemName = product.Name;
-            existingItem.ItemIconAttachmentId = product.IconAttachmentId;
-            existingItem.SourceProductId = product.Id;
-            existingItem.ModifyTime = DateTime.Now;
-            await _userInventoryRepository.UpdateAsync(existingItem);
+        Log.Information(
+            grantResult.CreatedGrantRecord
+                ? "消耗品发放成功：用户={UserId}, 道具ID={ItemId}, 类型={ConsumableType}, 数量={Quantity}"
+                : "消耗品订单已发放，复用既有背包项：用户={UserId}, 道具ID={ItemId}, 类型={ConsumableType}, 当前数量={Quantity}",
+            userId,
+            grantResult.InventoryId,
+            product.ConsumableType,
+            grantResult.CreatedGrantRecord ? grantResult.QuantityDelta : grantResult.CurrentQuantity);
 
-            Log.Information("消耗品数量增加：用户={UserId}, 道具ID={ItemId}, 新数量={Quantity}",
-                userId, existingItem.Id, existingItem.Quantity);
-
-            return existingItem.Id;
-        }
-        else
-        {
-            // 创建新的背包项
-            var inventory = new UserInventory
-            {
-                UserId = userId,
-                ConsumableType = product.ConsumableType!.Value,
-                ItemValue = product.BenefitValue,
-                ItemName = product.Name,
-                ItemIconAttachmentId = product.IconAttachmentId,
-                Quantity = quantity,
-                SourceProductId = product.Id,
-                CreateTime = DateTime.Now,
-                CreateBy = "System",
-                CreateId = userId
-            };
-
-            var inventoryId = await _userInventoryRepository.AddAsync(inventory);
-
-            Log.Information("消耗品发放成功：用户={UserId}, 道具ID={ItemId}, 类型={ConsumableType}",
-                userId, inventoryId, product.ConsumableType);
-
-            return inventoryId;
-        }
+        return grantResult.InventoryId;
     }
 
     /// <summary>系统赠送权益</summary>
@@ -454,5 +454,19 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
         }
 
         return _attachmentUrlResolver.ResolveAttachmentUrl(attachmentId.Value);
+    }
+
+    private static bool IsUniqueConstraintException(Exception exception)
+    {
+        for (var current = exception; current != null; current = current.InnerException)
+        {
+            if (current.Message.Contains("unique", StringComparison.OrdinalIgnoreCase) ||
+                current.Message.Contains("duplicate key", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

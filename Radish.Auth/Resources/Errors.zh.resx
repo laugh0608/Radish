@@ -43,7 +43,7 @@
     <value>客户端图标</value>
   </data>
   <data name="auth.login.usernameLabel" xml:space="preserve">
-    <value>登录名或邮箱</value>
+    <value>电子邮箱</value>
   </data>
   <data name="auth.login.passwordLabel" xml:space="preserve">
     <value>密码</value>
@@ -58,7 +58,7 @@
     <value>登录</value>
   </data>
   <data name="auth.login.error.invalidCredentials" xml:space="preserve">
-    <value>用户名或密码错误，请重试。</value>
+    <value>邮箱或密码错误，请重试。</value>
   </data>
   <data name="auth.login.success.message" xml:space="preserve">
     <value>登录成功，您现在可以关闭此页面或返回调用系统。</value>
