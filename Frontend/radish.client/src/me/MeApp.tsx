@@ -15,7 +15,7 @@ import {
 import { getApiBaseUrl } from '@/config/env';
 import { PublicShellHeader } from '@/public/components/PublicShellHeader';
 import { buildPublicForumPath } from '@/public/forumRouteState';
-import { normalizePublicUserId, resolvePublicUserRouteIdentifier } from '@/public/publicId';
+import { resolvePublicUserRouteIdentifier } from '@/public/publicId';
 import { buildPublicProfilePath, type PublicProfileRoute } from '@/public/profileRouteState';
 import {
   createPublicRouteSourceState,
