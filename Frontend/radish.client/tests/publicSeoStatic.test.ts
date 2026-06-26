@@ -353,7 +353,6 @@ test('登录态私域入口生成公开链接前应复用 PublicId 校验', () =
   assert.match(circleSource, /href=\{buildCirclePath\(\{ \.\.\.route, page: route\.page \+ 1 \}\)\}/);
   assert.doesNotMatch(circleSource, /voPublicId\?\.trim\(\)/);
   assert.match(meSource, /resolvePublicUserRouteIdentifier/);
-  assert.match(meSource, /normalizePublicUserId/);
   assert.match(meSource, /href=\{buildMePath\(\{ kind: 'assets-transactions' \}\)\}/);
   assert.match(meSource, /function isPublicDocsDetailPath/);
   assert.match(meSource, /if \(isPublicDocsDetailPath\(pathname\)\) \{/);
@@ -362,6 +361,8 @@ test('登录态私域入口生成公开链接前应复用 PublicId 校验', () =
   assert.doesNotMatch(meSource, /voPublicId\?\.trim\(\)/);
   assert.match(leaderboardSource, /resolvePublicUserRouteIdentifier/);
   assert.doesNotMatch(leaderboardSource, /voUserPublicId\?\.trim\(\)/);
+  assert.match(publicIdSource, /export function resolvePublicUserRouteIdentifier\(/);
+  assert.match(publicIdSource, /const publicId = normalizePublicUserId\(user\?\.voPublicId\);/);
   assert.doesNotMatch(publicIdSource, /string \| number/);
 });
 
