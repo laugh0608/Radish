@@ -2,9 +2,9 @@
 
 > 日期：2026-06-25（Asia/Shanghai）
 >
-> 更新：2026-06-27（Asia/Shanghai）：`F01` 的 public / private header 合法变体已从 64 高小 pill 收敛为 84 高 PC 纸感横匾，PC 使用横排图标 nav rail、激活态 pill 和身份 action rail；按钮 / pill、卡片 / rail、状态槽和移动端 tab 样板已按同一响应式原则收束。
+> 更新：2026-06-27（Asia/Shanghai）：`F01` 的 public / private header 合法变体已从 64 高小 pill 收敛为 84 高 PC 纸感横匾，PC 使用横排图标 nav rail、激活态 pill 和身份 action rail；按钮 / pill、卡片 / rail、状态槽和移动端 tab 样板已按同一响应式原则收束。`F02` 已新增 client 公共壳层组件契约，覆盖 PublicShell、PrivateShell、MobileShell、StateSlot 和真实路由族。
 >
-> 状态：共享基座设计源 `F01` 已创建；当前作为跨设计源同步口径，不进入视觉代码实现
+> 状态：共享基座设计源 `F01-F02` 已创建；当前作为跨设计源同步口径，不进入视觉代码实现
 
 ## 设计源
 
@@ -17,6 +17,7 @@ Docs/frontend/design-sources/web-ui-foundation.pen
 | 画板 | 职责 |
 | --- | --- |
 | `F01 - Web UI Foundation` | 共享 token、public / private header 合法变体、按钮 / pill、卡片 / rail、状态槽、移动 shell / tab 和同步规则 |
+| `F02 - Client Shell Common Components` | client 公共壳层组件契约，覆盖 PublicShell、PrivateShell、MobileShell、StateSlot、RouteSource 和 public / private 真实路由族 |
 
 ## 目标
 
@@ -39,6 +40,7 @@ Docs/frontend/design-sources/web-ui-foundation.pen
 - PC 横排图标按钮、主按钮、次按钮、激活 pill、普通 pill 和状态 pill。
 - 内容卡片、右侧 rail、加载 / 空态 / 错误 / 权限状态槽。
 - 移动 Web shell 与图标上 / 文字下的底部 tab 样板。
+- Client 公共壳层组件契约：PublicShell、PrivateShell、MobileShell、StateSlot、RouteSource、PC header 解剖、移动端底部 tab 和 public / private / commerce / author 路由族覆盖。
 - 跨设计源同步规则。
 
 ### 业务设计源
@@ -66,6 +68,7 @@ Docs/frontend/design-sources/web-ui-foundation.pen
 - 卡片圆角、弱边框、纸色底、内容元信息、rail 信息密度和动作入口。
 - 状态槽的加载、空态、错误和权限限制表达方式，包括原因说明、重试或登录恢复入口。
 - 移动端底部 tab 的高度、胶囊形态、图标 / 文案层级。
+- Client 公共壳层的职责边界：公开页负责阅读 / 浏览 / 登录参与，私域页负责身份 / 复访 / 作者任务，移动端负责单列任务流和底部 tab，不回退为 WebOS Dock 或窗口系统。
 
 ## 允许差异
 
@@ -96,3 +99,4 @@ Docs/frontend/design-sources/web-ui-foundation.pen
 - 不创建跨文件实时组件库。
 - 不进入视觉代码实现。
 - 不借共享基座重做 public / private / console 全量画板。
+- 不把 `F02` 当作业务页面；public / private 仍需在各自业务设计源补齐具体页面族和移动任务流。
