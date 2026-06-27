@@ -13,6 +13,8 @@
 > 2026-06-27 公开 App 化重构：按用户反馈，原 `P06-P09` “Matrix” 画板更像路由覆盖图，不像完整公开 App 页面。已将公开设计源重构为 `P01-P14`：PC 端覆盖公开首页、发现流、论坛列表、帖子详情、文档列表、文档详情、商城、榜单、公开个人主页；移动端覆盖发现 / 论坛、帖子详情、文档、商城 / 榜单和公开主页任务流。论坛“神评 / 沙发”已改为评论流内 badge，不再作为帖子详情元字段或后台状态块外露。
 >
 > 2026-06-27 公开社区特色二次精修：按用户反馈继续强化 `P01 / P02 / P03 / P04 / P11`，补回论坛列表左侧标题 / 摘要 / 标签 / 分类、右侧作者 / 赞评阅 / 最近互动结构，明确神评为父评论、沙发为子回复 / 楼中楼语境，并补充轻回应、表情 reaction、引用回复和公开聊天室。新增 `P15 - Public Chat Room` 与 `P16 - Mobile Chat Reply Flow`；PC 公开页 header 已统一同步 `web-ui-foundation.pen` / `F02` 84 高纸感横匾，并新增“聊天室”公开导航项。
+>
+> 2026-06-27 reaction 与聊天方向回修：按用户截图反馈，`P03` 论坛列表已去除表情 reaction，只保留神评摘要、作者、赞 / 评 / 阅和评论入口；`P04` 帖子详情改为父评论神评卡、子回复沙发缩进和引用 chip；`P15 / P16` 聊天室改为自己消息在右、他人消息在左的 IM 气泡流。
 
 ## 背景
 
@@ -65,14 +67,14 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 
 - `P01 - Public App Home`：公开 App 首页，聚合社区脉搏、论坛热帖、神评候选、轻回应、聊天室、文档更新、商城精选、榜单和登录参与入口。
 - `P02 - Discover Content Stream`：`/discover` 公开混合内容流，展示论坛、文档、聊天室、商城和榜单的真实内容卡片、筛选和登录回流。
-- `P03 - Forum Thread List`：`/forum` 公开帖子列表，覆盖左侧标题 / 摘要 / 标签 / 分类、右侧作者 / 赞评阅 / 最近互动、轻回应预览和登录发帖入口。
-- `P04 - Forum Thread Detail`：`/forum/post/:id` 公开帖子详情，覆盖作者、正文、帖子级轻回应、登录评论、评论树、父评论神评、子回复沙发、表情 reaction 和相关帖子。
+- `P03 - Forum Thread List`：`/forum` 公开帖子列表，覆盖左侧标题 / 摘要 / 标签 / 分类 / 神评摘要、右侧作者 / 赞评阅 / 最近互动和登录发帖入口；列表页不展示表情 reaction。
+- `P04 - Forum Thread Detail`：`/forum/post/:id` 公开帖子详情，覆盖作者、正文、帖子级轻回应、登录评论、评论树、父评论神评卡、子回复沙发缩进、引用 chip、表情 reaction 和相关帖子。
 - `P05 - Docs Index and Search`：`/docs` 文档库，覆盖目录、搜索筛选、公开文档列表、继续阅读和状态槽。
 - `P06 - Docs Article Reading`：`/docs/:slug` 文档详情，覆盖正文阅读、来源返回、目录、作者入口、相关文档和下线 / 权限状态。
 - `P07 - Public Shop and Product`：`/shop` 与 `/shop/product/:id?intent=purchase`，覆盖公开商品浏览、商品详情、库存、登录购买回流和私域订单边界。
 - `P08 - Public Leaderboards`：`/leaderboard/:type` 公开榜单，覆盖贡献者、热帖、文档和商品排名，明确榜单实体跳转。
 - `P09 - Public Profile`：`/u/:id` 公开个人主页，覆盖身份展示、公开内容 tab、关注登录回流、来源返回和隐私限制状态。
-- `P15 - Public Chat Room`：`/chat` / `/chat/:room` 公开聊天室，覆盖房间列表、公开消息流、引用帖子、回复、轻回应、在线成员、房间上下文和登录发言。
+- `P15 - Public Chat Room`：`/chat` / `/chat/:room` 公开聊天室，覆盖房间列表、自己右侧 / 他人左侧 IM 气泡、引用帖子、回复、表情 reaction、在线成员、房间上下文和登录发言。
 
 ### 移动公开任务流
 
@@ -81,7 +83,7 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 - `P12 - Mobile Docs Reading`：移动文档列表 / 文档详情，覆盖目录入口、正文预览、登录收藏和文档任务流。
 - `P13 - Mobile Shop Leaderboard`：移动商城 / 榜单，覆盖商品详情、购买 intent、贡献者榜和实体跳转。
 - `P14 - Mobile Public Profile`：移动公开主页，覆盖身份头部、公开内容 tab、关注回流和来源返回。
-- `P16 - Mobile Chat Reply Flow`：移动聊天室 / 引用回复任务流，覆盖房间头部、引用帖子、消息流、快捷轻回应、输入框和聊天 tab。
+- `P16 - Mobile Chat Reply Flow`：移动聊天室 / 引用回复任务流，覆盖房间头部、引用帖子、左右消息气泡、快捷 reaction、输入框和聊天 tab。
 
 设计口径：
 
@@ -89,6 +91,8 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 - 每个公开页面族必须有自己的 dominant region、主动作和真实内容结构。
 - 论坛“神评 / 沙发”只在评论树内作为 badge 出现，不作为帖子元字段或后台状态块；神评属于父评论，沙发属于子回复 / 楼中楼首条回复语境。
 - 公开社区页必须体现赞 / 评 / 阅、轻回应、表情 reaction、评论头像、最近互动、引用回复和聊天室上下文。
+- 表情 reaction 只在帖子详情页和聊天室展示；论坛列表只展示神评摘要、赞 / 评 / 阅、作者和评论入口。
+- 聊天室使用 IM 气泡方向：自己发言在右侧，他人发言在左侧。
 - 移动端按真实任务流拆分，不把 PC 三栏压缩成单个移动示意稿。
 
 ## 验证
@@ -135,6 +139,9 @@ Pencil 侧：
 - 2026-06-27 公开社区特色二次精修后：新增 `P15 - Public Chat Room` 与 `P16 - Mobile Chat Reply Flow`，补齐公开聊天室、引用帖子、回复、轻回应、在线成员、移动聊天 tab 和登录发言状态。
 - 2026-06-27 公开社区特色二次精修后：截图抽查 `P01` 公开首页、`P02` 发现流、`P03` 论坛列表、`P04` 帖子详情、`P11` 移动帖子详情、`P15` 公开聊天室和 `P16` 移动聊天流，未发现明显裁切、坍塌或横向溢出。
 - 2026-06-27 公开社区特色二次精修后：全局 `snapshot_layout` 返回 `No layout problems.`
+- 2026-06-27 reaction 与聊天方向回修后：`P03 / P04 / P15 / P16` 局部 `snapshot_layout` 均返回 `No layout problems.`
+- 2026-06-27 reaction 与聊天方向回修后：截图抽查 `P03` 论坛列表、`P04` 帖子详情、`P15` 公开聊天室和 `P16` 移动聊天流，未发现明显裁切、坍塌或横向溢出；列表页已去除表情 reaction，聊天室已改为自己右侧 / 他人左侧气泡。
+- 2026-06-27 reaction 与聊天方向回修后：全局 `snapshot_layout` 返回 `No layout problems.`
 
 仓库侧：
 

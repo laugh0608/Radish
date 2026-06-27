@@ -2,7 +2,7 @@
 
 > 日期：2026-06-25（Asia/Shanghai）
 >
-> 更新：2026-06-27（Asia/Shanghai）：公开设计源已从路由矩阵 / 代表稿重构为真实公开 App 页面族；第二轮已强化论坛列表、帖子详情、评论树、轻回应、表情反应和公开聊天室。
+> 更新：2026-06-27（Asia/Shanghai）：公开设计源已从路由矩阵 / 代表稿重构为真实公开 App 页面族；第二轮已强化论坛列表、帖子详情、评论树、轻回应、表情反应和公开聊天室，并补充 reaction 展示边界与 IM 气泡方向。
 >
 > 状态：设计源 `P01-P16` 已补齐；当前作为实现前说明，不进入视觉代码实现
 
@@ -18,7 +18,7 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 | --- | --- |
 | `P01 - Public App Home` | 公开 App 首页，聚合社区脉搏、论坛热帖、神评候选、轻回应、聊天室、文档、商城、榜单和登录参与入口 |
 | `P02 - Discover Content Stream` | `/discover` 公开混合内容流，覆盖论坛、文档、聊天室、商城、搜索筛选和状态槽 |
-| `P03 - Forum Thread List` | `/forum` 公开帖子列表，覆盖左侧标题 / 摘要 / 标签 / 分类、右侧作者 / 赞评阅 / 最近互动和登录发帖入口 |
+| `P03 - Forum Thread List` | `/forum` 公开帖子列表，覆盖左侧标题 / 摘要 / 标签 / 分类 / 神评摘要、右侧作者 / 赞评阅 / 最近互动和登录发帖入口；列表页不展示表情 reaction |
 | `P04 - Forum Thread Detail` | `/forum/post/:id` 公开帖子详情，覆盖正文、帖子级轻回应、评论树、父评论神评、子回复沙发、表情反应和登录评论 |
 | `P05 - Docs Index and Search` | `/docs` 文档库、目录、搜索筛选、文档列表和状态槽 |
 | `P06 - Docs Article Reading` | `/docs/:slug` 文档详情、正文阅读、目录、相关文档和作者入口边界 |
@@ -30,8 +30,8 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 | `P12 - Mobile Docs Reading` | 移动端文档列表 / 详情阅读和目录入口 |
 | `P13 - Mobile Shop Leaderboard` | 移动端商城商品、购买 intent 与榜单浏览 |
 | `P14 - Mobile Public Profile` | 移动端公开主页、公开内容 tab 和关注回流 |
-| `P15 - Public Chat Room` | `/chat` / `/chat/:room` 公开聊天室，覆盖房间列表、公开消息、引用帖子、回复、轻回应、在线成员和登录发言 |
-| `P16 - Mobile Chat Reply Flow` | 移动端聊天室 / 引用回复任务流，覆盖房间头部、引用帖子、消息流、快捷轻回应、输入框和聊天 tab |
+| `P15 - Public Chat Room` | `/chat` / `/chat/:room` 公开聊天室，覆盖房间列表、左右 IM 气泡、引用帖子、回复、表情 reaction、在线成员和登录发言 |
+| `P16 - Mobile Chat Reply Flow` | 移动端聊天室 / 引用回复任务流，覆盖房间头部、引用帖子、左右消息气泡、快捷 reaction、输入框和聊天 tab |
 
 ## 目标
 
@@ -39,6 +39,7 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 - 公开页优先服务内容阅读、真实 URL、分享传播和登录后轻参与，不做营销首页。
 - 公开设计稿必须像真实 App 页面，而不是路由矩阵、字段清单或后台状态说明。
 - 公开社区页必须体现 Radish 的特色互动：赞 / 评 / 阅、轻回应、表情 reaction、神评、沙发、评论头像、最近互动和聊天室上下文。
+- 表情 reaction 的展示边界固定在帖子详情页和聊天室；论坛列表只显示神评摘要、赞 / 评 / 阅、作者与互动入口。
 - 保持正式 Web 为默认产品路径，`/desktop` 只作为 WebOS 历史入口维护。
 - 在进入视觉代码前，先固定信息架构、响应式顺序、身份展示和状态槽位。
 
@@ -71,6 +72,7 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 - 标题、作者 / 来源、更新时间、正文、登录参与和状态反馈保持固定顺序。
 - 论坛详情的“神评”“沙发”只作为评论树内的 badge / 状态，不作为帖子详情右侧元字段或后台状态块外露；神评属于父评论高亮，沙发属于子回复 / 楼中楼首条回复语境。
 - 帖子详情必须表达帖子级轻回应、评论级轻回应、表情 reaction、回复入口、引用回复和登录评论回流。
+- 评论树视觉应优先表达父子层级：父评论是完整评论卡，子回复缩进并保留引用 chip、回复、点赞和举报动作。
 - forum 作者态入口通过正式 Web 路由承接，文档作者态入口通过正式 Web 作者页承接。
 - 文档公开详情保持只读；编辑、发布、版本治理、权限策略和回滚归作者页或 Console。
 
@@ -87,6 +89,7 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 - 商城 / 榜单页面族覆盖 `/shop`、`/shop/products`、`/shop/product/:id?intent=purchase` 和 `/leaderboard/:type`。
 - 公开主页覆盖 `/u/:id`、`posts / comments` tab、分页、关注登录回流和来源返回。
 - 公开聊天室页面族覆盖 `/chat`、`/chat/:room` 和从帖子详情带引用进入聊天室的 intent；私信、系统消息和登录态消息中心仍归 `/messages` / private 工作流。
+- 公开聊天室采用常见 IM 对话方向：自己发言在右侧，他人发言在左侧；reaction、引用帖子和回复动作只在气泡上下文内展示。
 - 每个页面族必须有自己的 dominant region、主动作、真实内容列表 / 正文 / 评论 / 商品 / 排名结构；不得退化为 route rail、功能矩阵或字段覆盖图。
 
 ### 移动单列
