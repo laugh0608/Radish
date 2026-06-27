@@ -7,6 +7,8 @@
 > 结论：`public-web-unified-experience.pen` 已创建并写入 `P01-P05`，覆盖公开壳层基座、`/discover` 发现内容流、公开详情阅读、公开集合页和移动单列基线。2026-06-25 已完成公开 `P01-P05` 信息密度收口：降低桌面 `P01-P04` 的展示型字号、卡片 padding、section gap 和旧画板高度，补齐 `P01` 公开入口矩阵 / 运行态 rail，修正 `P04` 顶部双激活状态，并补齐 `P05` 移动继续探索 / 登录参与内容。已新增 [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design) 作为实现前口径；当前仍不进入视觉代码实现。
 >
 > 2026-06-27 补充：按 `web-ui-foundation.pen` 的 `F02` client 公共壳层契约，继续扩展 `public-web-unified-experience.pen` 至 `P01-P12`。新增 `P06-P09` PC 页面族矩阵，覆盖公开论坛、文档、商城 / 榜单和公开主页；新增 `P10-P12` 移动任务流，覆盖移动论坛 / 文档、商城 / 榜单和公开主页 / 来源返回。当前下一顺位转为补齐 `private-web-workflows.pen`，不进入代码实现。
+>
+> 2026-06-27 导航一致性回修：`P01-P04` 旧 64 高小标签式 PC header 已统一替换为 `F02` 84 高纸感横匾，保留品牌、公开导航、`/workbench` 和登录动作，并与 `P06-P09` 页面族矩阵保持同一 header 比例、nav pill 和 action rail。
 
 ## 背景
 
@@ -245,6 +247,7 @@ Pencil 侧：
 - `P05`：`snapshot_layout` 返回 `No layout problems.`
 - `P05`：截图目检未发现明显裁切、坍塌或横向溢出。
 - `P05`：2026-06-25 按移动单列密度收口，补齐继续探索、公开商城和登录参与内容，收住底部留白；复查无布局问题。
+- `P01-P04`：2026-06-27 按 `F02` 公共壳层契约统一 PC header 至 84 高纸感横匾；局部 `snapshot_layout` 均返回 `No layout problems.`，截图抽查 `P01 / P02 / P03` 与 `P06` header 风格一致。
 - `P06`：`snapshot_layout` 返回 `No layout problems.`
 - `P06`：截图目检未发现明显裁切、坍塌或横向溢出。
 - `P07`：`snapshot_layout` 返回 `No layout problems.`

@@ -9,236 +9,244 @@
       "name": "P01 - Public Web Shell Foundation",
       "clip": true,
       "width": 1440,
-      "height": 900,
+      "height": 968,
       "fill": "$rx-bg-app",
       "layout": "vertical",
       "children": [
         {
           "type": "frame",
-          "id": "jmpPJ",
-          "name": "Public Shell Header",
+          "id": "MqY4Y",
+          "name": "P01 Public Shell Header / F02 Sync",
           "width": "fill_container",
-          "height": 64,
+          "height": 84,
           "fill": "$rx-bg-surface",
+          "cornerRadius": 8,
           "stroke": "$rx-border-soft",
-          "strokeWidth": {
-            "bottom": 1
-          },
+          "strokeWidth": 1,
+          "strokeAlignment": "inner",
+          "gap": 16,
           "padding": [
-            0,
-            40
+            12,
+            18
           ],
           "justifyContent": "space_between",
           "alignItems": "center",
           "children": [
             {
               "type": "frame",
-              "id": "ijWhA",
-              "name": "Public Shell Brand",
+              "id": "yD33R",
+              "name": "P06 Forum Browse Matrix Brand",
+              "width": 150,
+              "height": "fill_container",
               "gap": 10,
               "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
-                  "id": "uFmc9",
-                  "name": "Public Shell Seal",
-                  "width": 30,
-                  "height": 30,
-                  "fill": "$rx-bg-muted",
-                  "cornerRadius": 8,
-                  "stroke": "$rx-brand-primary",
-                  "strokeWidth": 1,
-                  "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon",
-                      "id": "t1gorI",
-                      "name": "Public Shell Seal Icon",
-                      "width": 15,
-                      "height": 15,
-                      "icon": "sprout",
-                      "library": "lucide",
-                      "fill": "$rx-brand-primary"
-                    }
-                  ]
+                  "id": "MQ15y",
+                  "name": "P06 Forum Browse Matrix Seal",
+                  "width": 34,
+                  "height": 34,
+                  "fill": "$rx-brand-primary",
+                  "cornerRadius": 8
                 },
                 {
-                  "type": "frame",
-                  "id": "d2e2r",
-                  "name": "Public Shell Brand Copy",
-                  "layout": "vertical",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "j0JpJ",
-                      "name": "Public Shell Brand Title",
-                      "fill": "$rx-text-primary",
-                      "content": "Radish",
-                      "lineHeight": 1.15,
-                      "fontFamily": "$rx-font-heading",
-                      "fontSize": 18,
-                      "fontWeight": "700"
-                    },
-                    {
-                      "type": "text",
-                      "id": "EPg7O",
-                      "name": "Public Shell Brand Sub",
-                      "fill": "$rx-text-muted",
-                      "content": "公开 Web",
-                      "lineHeight": 1.2,
-                      "fontFamily": "$rx-font-mono",
-                      "fontSize": 11,
-                      "fontWeight": "500"
-                    }
-                  ]
+                  "type": "text",
+                  "id": "wCoC2",
+                  "name": "P06 Forum Browse Matrix Brand Text",
+                  "fill": "$rx-text-primary",
+                  "content": "Radish",
+                  "fontFamily": "$rx-font-body",
+                  "fontSize": 18,
+                  "fontWeight": "800"
                 }
               ]
             },
             {
               "type": "frame",
-              "id": "mkBCM",
-              "name": "Public Shell Header Nav",
+              "id": "gFDzY",
+              "name": "P06 Forum Browse Matrix Public Nav",
+              "width": 520,
               "gap": 8,
               "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
-                  "id": "mOcGB",
-                  "name": "Public Shell Nav - 全部",
-                  "fill": "$rx-brand-primary",
+                  "id": "riwey",
+                  "name": "P06 Forum Browse Matrix Nav 发现",
+                  "height": 34,
+                  "fill": "#ecd3db",
                   "cornerRadius": "$rx-radius-control",
-                  "stroke": "$rx-brand-primary",
-                  "strokeWidth": 1,
                   "gap": 6,
                   "padding": [
-                    6,
-                    11
+                    7,
+                    10
                   ],
                   "alignItems": "center",
                   "children": [
                     {
+                      "type": "icon",
+                      "id": "hSVJj",
+                      "name": "P06 Forum Browse Matrix Nav Icon 发现",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "layout-dashboard",
+                      "library": "lucide",
+                      "fill": "#b24057"
+                    },
+                    {
                       "type": "text",
-                      "id": "X8MgJ",
-                      "name": "Public Shell Nav - 全部 Label",
-                      "fill": "#ffffff",
-                      "content": "全部",
-                      "lineHeight": 1.35,
+                      "id": "E3X6y",
+                      "name": "P06 Forum Browse Matrix Nav Label 发现",
+                      "fill": "#b24057",
+                      "content": "发现",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "800"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "ldEQL",
-                  "name": "Public Shell Nav - 论坛",
-                  "fill": "$rx-bg-surface",
+                  "id": "UapnA",
+                  "name": "P06 Forum Browse Matrix Nav 论坛",
+                  "height": 34,
+                  "fill": "#efe7db",
                   "cornerRadius": "$rx-radius-control",
-                  "stroke": "$rx-border-soft",
-                  "strokeWidth": 1,
                   "gap": 6,
                   "padding": [
-                    6,
-                    11
+                    7,
+                    10
                   ],
                   "alignItems": "center",
                   "children": [
                     {
+                      "type": "icon",
+                      "id": "M7Dk1",
+                      "name": "P06 Forum Browse Matrix Nav Icon 论坛",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "file",
+                      "library": "lucide",
+                      "fill": "#6a5c4f"
+                    },
+                    {
                       "type": "text",
-                      "id": "QdujT",
-                      "name": "Public Shell Nav - 论坛 Label",
-                      "fill": "$rx-text-secondary",
+                      "id": "VD99x",
+                      "name": "P06 Forum Browse Matrix Nav Label 论坛",
+                      "fill": "#6a5c4f",
                       "content": "论坛",
-                      "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "800"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "lJJsR",
-                  "name": "Public Shell Nav - 文档",
-                  "fill": "$rx-bg-surface",
+                  "id": "UJcvJ",
+                  "name": "P06 Forum Browse Matrix Nav 文档",
+                  "height": 34,
+                  "fill": "#efe7db",
                   "cornerRadius": "$rx-radius-control",
-                  "stroke": "$rx-border-soft",
-                  "strokeWidth": 1,
                   "gap": 6,
                   "padding": [
-                    6,
-                    11
+                    7,
+                    10
                   ],
                   "alignItems": "center",
                   "children": [
                     {
+                      "type": "icon",
+                      "id": "Pa5SZ",
+                      "name": "P06 Forum Browse Matrix Nav Icon 文档",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "folder",
+                      "library": "lucide",
+                      "fill": "#6a5c4f"
+                    },
+                    {
                       "type": "text",
-                      "id": "w10NbE",
-                      "name": "Public Shell Nav - 文档 Label",
-                      "fill": "$rx-text-secondary",
+                      "id": "jUdWL",
+                      "name": "P06 Forum Browse Matrix Nav Label 文档",
+                      "fill": "#6a5c4f",
                       "content": "文档",
-                      "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "800"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "SLtHc",
-                  "name": "Public Shell Nav - 商品",
-                  "fill": "$rx-bg-surface",
+                  "id": "eytLZ",
+                  "name": "P06 Forum Browse Matrix Nav 商城",
+                  "height": 34,
+                  "fill": "#efe7db",
                   "cornerRadius": "$rx-radius-control",
-                  "stroke": "$rx-border-soft",
-                  "strokeWidth": 1,
                   "gap": 6,
                   "padding": [
-                    6,
-                    11
+                    7,
+                    10
                   ],
                   "alignItems": "center",
                   "children": [
                     {
+                      "type": "icon",
+                      "id": "qLmzl",
+                      "name": "P06 Forum Browse Matrix Nav Icon 商城",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "folder",
+                      "library": "lucide",
+                      "fill": "#6a5c4f"
+                    },
+                    {
                       "type": "text",
-                      "id": "o3dW7",
-                      "name": "Public Shell Nav - 商品 Label",
-                      "fill": "$rx-text-secondary",
-                      "content": "商品",
-                      "lineHeight": 1.35,
+                      "id": "doGYR",
+                      "name": "P06 Forum Browse Matrix Nav Label 商城",
+                      "fill": "#6a5c4f",
+                      "content": "商城",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "800"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "UvsNJ",
-                  "name": "Public Shell Nav - 榜单",
-                  "fill": "$rx-bg-surface",
+                  "id": "HtNOC",
+                  "name": "P06 Forum Browse Matrix Nav 榜单",
+                  "height": 34,
+                  "fill": "#efe7db",
                   "cornerRadius": "$rx-radius-control",
-                  "stroke": "$rx-border-soft",
-                  "strokeWidth": 1,
                   "gap": 6,
                   "padding": [
-                    6,
-                    11
+                    7,
+                    10
                   ],
                   "alignItems": "center",
                   "children": [
                     {
+                      "type": "icon",
+                      "id": "fvNUg",
+                      "name": "P06 Forum Browse Matrix Nav Icon 榜单",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "search",
+                      "library": "lucide",
+                      "fill": "#6a5c4f"
+                    },
+                    {
                       "type": "text",
-                      "id": "NWRzt",
-                      "name": "Public Shell Nav - 榜单 Label",
-                      "fill": "$rx-text-secondary",
+                      "id": "CYoho",
+                      "name": "P06 Forum Browse Matrix Nav Label 榜单",
+                      "fill": "#6a5c4f",
                       "content": "榜单",
-                      "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "800"
                     }
                   ]
                 }
@@ -246,64 +254,66 @@
             },
             {
               "type": "frame",
-              "id": "E7RUWJ",
-              "name": "Public Shell Actions",
-              "gap": 10,
+              "id": "xY22M",
+              "name": "P06 Forum Browse Matrix Actions",
+              "gap": 8,
               "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
-                  "id": "gKw7U",
-                  "name": "Public Shell Workbench",
+                  "id": "atURD",
+                  "name": "P06 Forum Browse Matrix Workbench",
+                  "height": 36,
                   "fill": "$rx-bg-surface",
                   "cornerRadius": "$rx-radius-control",
                   "stroke": "$rx-border-soft",
                   "strokeWidth": 1,
-                  "gap": 6,
+                  "strokeAlignment": "inner",
+                  "gap": 7,
                   "padding": [
-                    6,
-                    11
+                    7,
+                    13
                   ],
                   "alignItems": "center",
                   "children": [
                     {
                       "type": "text",
-                      "id": "KZpQC",
-                      "name": "Public Shell Workbench Label",
-                      "fill": "$rx-text-secondary",
+                      "id": "WnNS7",
+                      "name": "P06 Forum Browse Matrix Workbench Label",
+                      "fill": "$rx-text-primary",
                       "content": "工作台",
-                      "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "800"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "gHpt8",
-                  "name": "Public Shell Login",
+                  "id": "x5qcXT",
+                  "name": "P06 Forum Browse Matrix Login",
+                  "height": 36,
                   "fill": "$rx-brand-primary",
                   "cornerRadius": "$rx-radius-control",
                   "stroke": "$rx-brand-primary",
                   "strokeWidth": 1,
-                  "gap": 6,
+                  "strokeAlignment": "inner",
+                  "gap": 7,
                   "padding": [
-                    6,
-                    11
+                    7,
+                    13
                   ],
                   "alignItems": "center",
                   "children": [
                     {
                       "type": "text",
-                      "id": "sj9Jx",
-                      "name": "Public Shell Login Label",
+                      "id": "AhRoo",
+                      "name": "P06 Forum Browse Matrix Login Label",
                       "fill": "#ffffff",
                       "content": "登录",
-                      "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "800"
                     }
                   ]
                 }
@@ -1766,236 +1776,244 @@
       "name": "P02 - Discover Content Stream",
       "clip": true,
       "width": 1440,
-      "height": 1080,
+      "height": 1148,
       "fill": "$rx-bg-app",
       "layout": "vertical",
       "children": [
         {
           "type": "frame",
-          "id": "p57MQq",
-          "name": "Discover Header",
+          "id": "oxBdd",
+          "name": "P02 Discover Header / F02 Sync",
           "width": "fill_container",
-          "height": 64,
+          "height": 84,
           "fill": "$rx-bg-surface",
+          "cornerRadius": 8,
           "stroke": "$rx-border-soft",
-          "strokeWidth": {
-            "bottom": 1
-          },
+          "strokeWidth": 1,
+          "strokeAlignment": "inner",
+          "gap": 16,
           "padding": [
-            0,
-            40
+            12,
+            18
           ],
           "justifyContent": "space_between",
           "alignItems": "center",
           "children": [
             {
               "type": "frame",
-              "id": "I2srk",
-              "name": "Discover Brand",
+              "id": "nO06Q",
+              "name": "P06 Forum Browse Matrix Brand",
+              "width": 150,
+              "height": "fill_container",
               "gap": 10,
               "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
-                  "id": "y1Rp6A",
-                  "name": "Discover Seal",
-                  "width": 30,
-                  "height": 30,
-                  "fill": "$rx-bg-muted",
-                  "cornerRadius": 8,
-                  "stroke": "$rx-brand-primary",
-                  "strokeWidth": 1,
-                  "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon",
-                      "id": "tkb7h",
-                      "name": "Discover Seal Icon",
-                      "width": 15,
-                      "height": 15,
-                      "icon": "sprout",
-                      "library": "lucide",
-                      "fill": "$rx-brand-primary"
-                    }
-                  ]
+                  "id": "P54ixj",
+                  "name": "P06 Forum Browse Matrix Seal",
+                  "width": 34,
+                  "height": 34,
+                  "fill": "$rx-brand-primary",
+                  "cornerRadius": 8
                 },
                 {
-                  "type": "frame",
-                  "id": "ebFNy",
-                  "name": "Discover Brand Copy",
-                  "layout": "vertical",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "vDPVa",
-                      "name": "Discover Brand Title",
-                      "fill": "$rx-text-primary",
-                      "content": "Radish",
-                      "lineHeight": 1.15,
-                      "fontFamily": "$rx-font-heading",
-                      "fontSize": 18,
-                      "fontWeight": "700"
-                    },
-                    {
-                      "type": "text",
-                      "id": "HIYQA",
-                      "name": "Discover Brand Sub",
-                      "fill": "$rx-text-muted",
-                      "content": "公开 Web",
-                      "lineHeight": 1.2,
-                      "fontFamily": "$rx-font-mono",
-                      "fontSize": 11,
-                      "fontWeight": "500"
-                    }
-                  ]
+                  "type": "text",
+                  "id": "MoeiK",
+                  "name": "P06 Forum Browse Matrix Brand Text",
+                  "fill": "$rx-text-primary",
+                  "content": "Radish",
+                  "fontFamily": "$rx-font-body",
+                  "fontSize": 18,
+                  "fontWeight": "800"
                 }
               ]
             },
             {
               "type": "frame",
-              "id": "A8K8Eo",
-              "name": "Discover Header Nav",
+              "id": "eU5yK",
+              "name": "P06 Forum Browse Matrix Public Nav",
+              "width": 520,
               "gap": 8,
               "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
-                  "id": "f6AXY",
-                  "name": "Discover Nav - 全部",
-                  "fill": "$rx-brand-primary",
+                  "id": "BVfMr",
+                  "name": "P06 Forum Browse Matrix Nav 发现",
+                  "height": 34,
+                  "fill": "#ecd3db",
                   "cornerRadius": "$rx-radius-control",
-                  "stroke": "$rx-brand-primary",
-                  "strokeWidth": 1,
                   "gap": 6,
                   "padding": [
-                    6,
-                    11
+                    7,
+                    10
                   ],
                   "alignItems": "center",
                   "children": [
                     {
+                      "type": "icon",
+                      "id": "c2vLk",
+                      "name": "P06 Forum Browse Matrix Nav Icon 发现",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "layout-dashboard",
+                      "library": "lucide",
+                      "fill": "#b24057"
+                    },
+                    {
                       "type": "text",
-                      "id": "OXYnZ",
-                      "name": "Discover Nav - 全部 Label",
-                      "fill": "#ffffff",
-                      "content": "全部",
-                      "lineHeight": 1.35,
+                      "id": "B7W8j",
+                      "name": "P06 Forum Browse Matrix Nav Label 发现",
+                      "fill": "#b24057",
+                      "content": "发现",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "800"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "wJKdR",
-                  "name": "Discover Nav - 论坛",
-                  "fill": "$rx-bg-surface",
+                  "id": "T76Vg",
+                  "name": "P06 Forum Browse Matrix Nav 论坛",
+                  "height": 34,
+                  "fill": "#efe7db",
                   "cornerRadius": "$rx-radius-control",
-                  "stroke": "$rx-border-soft",
-                  "strokeWidth": 1,
                   "gap": 6,
                   "padding": [
-                    6,
-                    11
+                    7,
+                    10
                   ],
                   "alignItems": "center",
                   "children": [
                     {
+                      "type": "icon",
+                      "id": "T2OU5",
+                      "name": "P06 Forum Browse Matrix Nav Icon 论坛",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "file",
+                      "library": "lucide",
+                      "fill": "#6a5c4f"
+                    },
+                    {
                       "type": "text",
-                      "id": "gMaru",
-                      "name": "Discover Nav - 论坛 Label",
-                      "fill": "$rx-text-secondary",
+                      "id": "x1DpYI",
+                      "name": "P06 Forum Browse Matrix Nav Label 论坛",
+                      "fill": "#6a5c4f",
                       "content": "论坛",
-                      "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "800"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "jiXDw",
-                  "name": "Discover Nav - 文档",
-                  "fill": "$rx-bg-surface",
+                  "id": "w7TQcB",
+                  "name": "P06 Forum Browse Matrix Nav 文档",
+                  "height": 34,
+                  "fill": "#efe7db",
                   "cornerRadius": "$rx-radius-control",
-                  "stroke": "$rx-border-soft",
-                  "strokeWidth": 1,
                   "gap": 6,
                   "padding": [
-                    6,
-                    11
+                    7,
+                    10
                   ],
                   "alignItems": "center",
                   "children": [
                     {
+                      "type": "icon",
+                      "id": "DFtFr",
+                      "name": "P06 Forum Browse Matrix Nav Icon 文档",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "folder",
+                      "library": "lucide",
+                      "fill": "#6a5c4f"
+                    },
+                    {
                       "type": "text",
-                      "id": "PzQJW",
-                      "name": "Discover Nav - 文档 Label",
-                      "fill": "$rx-text-secondary",
+                      "id": "hU9ik",
+                      "name": "P06 Forum Browse Matrix Nav Label 文档",
+                      "fill": "#6a5c4f",
                       "content": "文档",
-                      "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "800"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "buPau",
-                  "name": "Discover Nav - 商品",
-                  "fill": "$rx-bg-surface",
+                  "id": "VWlHm",
+                  "name": "P06 Forum Browse Matrix Nav 商城",
+                  "height": 34,
+                  "fill": "#efe7db",
                   "cornerRadius": "$rx-radius-control",
-                  "stroke": "$rx-border-soft",
-                  "strokeWidth": 1,
                   "gap": 6,
                   "padding": [
-                    6,
-                    11
+                    7,
+                    10
                   ],
                   "alignItems": "center",
                   "children": [
                     {
+                      "type": "icon",
+                      "id": "lJIE9",
+                      "name": "P06 Forum Browse Matrix Nav Icon 商城",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "folder",
+                      "library": "lucide",
+                      "fill": "#6a5c4f"
+                    },
+                    {
                       "type": "text",
-                      "id": "j768b",
-                      "name": "Discover Nav - 商品 Label",
-                      "fill": "$rx-text-secondary",
-                      "content": "商品",
-                      "lineHeight": 1.35,
+                      "id": "dOwXH",
+                      "name": "P06 Forum Browse Matrix Nav Label 商城",
+                      "fill": "#6a5c4f",
+                      "content": "商城",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "800"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "NKdzr",
-                  "name": "Discover Nav - 榜单",
-                  "fill": "$rx-bg-surface",
+                  "id": "E6lX2a",
+                  "name": "P06 Forum Browse Matrix Nav 榜单",
+                  "height": 34,
+                  "fill": "#efe7db",
                   "cornerRadius": "$rx-radius-control",
-                  "stroke": "$rx-border-soft",
-                  "strokeWidth": 1,
                   "gap": 6,
                   "padding": [
-                    6,
-                    11
+                    7,
+                    10
                   ],
                   "alignItems": "center",
                   "children": [
                     {
+                      "type": "icon",
+                      "id": "lWCnx",
+                      "name": "P06 Forum Browse Matrix Nav Icon 榜单",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "search",
+                      "library": "lucide",
+                      "fill": "#6a5c4f"
+                    },
+                    {
                       "type": "text",
-                      "id": "b37JRY",
-                      "name": "Discover Nav - 榜单 Label",
-                      "fill": "$rx-text-secondary",
+                      "id": "T09qc",
+                      "name": "P06 Forum Browse Matrix Nav Label 榜单",
+                      "fill": "#6a5c4f",
                       "content": "榜单",
-                      "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "800"
                     }
                   ]
                 }
@@ -2003,64 +2021,66 @@
             },
             {
               "type": "frame",
-              "id": "GEh8e",
-              "name": "Discover Actions",
-              "gap": 10,
+              "id": "Lh7gh",
+              "name": "P06 Forum Browse Matrix Actions",
+              "gap": 8,
               "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
-                  "id": "t3yE2",
-                  "name": "Discover Workbench",
+                  "id": "dNvwz",
+                  "name": "P06 Forum Browse Matrix Workbench",
+                  "height": 36,
                   "fill": "$rx-bg-surface",
                   "cornerRadius": "$rx-radius-control",
                   "stroke": "$rx-border-soft",
                   "strokeWidth": 1,
-                  "gap": 6,
+                  "strokeAlignment": "inner",
+                  "gap": 7,
                   "padding": [
-                    6,
-                    11
+                    7,
+                    13
                   ],
                   "alignItems": "center",
                   "children": [
                     {
                       "type": "text",
-                      "id": "y4kVee",
-                      "name": "Discover Workbench Label",
-                      "fill": "$rx-text-secondary",
+                      "id": "NgySF",
+                      "name": "P06 Forum Browse Matrix Workbench Label",
+                      "fill": "$rx-text-primary",
                       "content": "工作台",
-                      "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "800"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "NcUoF",
-                  "name": "Discover Login",
+                  "id": "YYlJU",
+                  "name": "P06 Forum Browse Matrix Login",
+                  "height": 36,
                   "fill": "$rx-brand-primary",
                   "cornerRadius": "$rx-radius-control",
                   "stroke": "$rx-brand-primary",
                   "strokeWidth": 1,
-                  "gap": 6,
+                  "strokeAlignment": "inner",
+                  "gap": 7,
                   "padding": [
-                    6,
-                    11
+                    7,
+                    13
                   ],
                   "alignItems": "center",
                   "children": [
                     {
                       "type": "text",
-                      "id": "jjj2j",
-                      "name": "Discover Login Label",
+                      "id": "tKnfL",
+                      "name": "P06 Forum Browse Matrix Login Label",
                       "fill": "#ffffff",
                       "content": "登录",
-                      "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "800"
                     }
                   ]
                 }
@@ -3556,236 +3576,244 @@
       "name": "P03 - Public Detail Reading",
       "clip": true,
       "width": 1440,
-      "height": 1040,
+      "height": 1108,
       "fill": "$rx-bg-app",
       "layout": "vertical",
       "children": [
         {
           "type": "frame",
-          "id": "sQqOH",
-          "name": "Detail Header",
+          "id": "gQ1aI",
+          "name": "P03 Detail Header / F02 Sync",
           "width": "fill_container",
-          "height": 64,
+          "height": 84,
           "fill": "$rx-bg-surface",
+          "cornerRadius": 8,
           "stroke": "$rx-border-soft",
-          "strokeWidth": {
-            "bottom": 1
-          },
+          "strokeWidth": 1,
+          "strokeAlignment": "inner",
+          "gap": 16,
           "padding": [
-            0,
-            40
+            12,
+            18
           ],
           "justifyContent": "space_between",
           "alignItems": "center",
           "children": [
             {
               "type": "frame",
-              "id": "V2JAWR",
-              "name": "Detail Brand",
+              "id": "pJMwg",
+              "name": "P06 Forum Browse Matrix Brand",
+              "width": 150,
+              "height": "fill_container",
               "gap": 10,
               "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
-                  "id": "tWfsS",
-                  "name": "Detail Seal",
-                  "width": 30,
-                  "height": 30,
-                  "fill": "$rx-bg-muted",
-                  "cornerRadius": 8,
-                  "stroke": "$rx-brand-primary",
-                  "strokeWidth": 1,
-                  "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon",
-                      "id": "a9fTK5",
-                      "name": "Detail Seal Icon",
-                      "width": 15,
-                      "height": 15,
-                      "icon": "sprout",
-                      "library": "lucide",
-                      "fill": "$rx-brand-primary"
-                    }
-                  ]
+                  "id": "O2oICB",
+                  "name": "P06 Forum Browse Matrix Seal",
+                  "width": 34,
+                  "height": 34,
+                  "fill": "$rx-brand-primary",
+                  "cornerRadius": 8
                 },
                 {
-                  "type": "frame",
-                  "id": "mneYU",
-                  "name": "Detail Brand Copy",
-                  "layout": "vertical",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "HtJ09",
-                      "name": "Detail Brand Title",
-                      "fill": "$rx-text-primary",
-                      "content": "Radish",
-                      "lineHeight": 1.15,
-                      "fontFamily": "$rx-font-heading",
-                      "fontSize": 18,
-                      "fontWeight": "700"
-                    },
-                    {
-                      "type": "text",
-                      "id": "l23hc",
-                      "name": "Detail Brand Sub",
-                      "fill": "$rx-text-muted",
-                      "content": "公开 Web",
-                      "lineHeight": 1.2,
-                      "fontFamily": "$rx-font-mono",
-                      "fontSize": 11,
-                      "fontWeight": "500"
-                    }
-                  ]
+                  "type": "text",
+                  "id": "Q1NEfs",
+                  "name": "P06 Forum Browse Matrix Brand Text",
+                  "fill": "$rx-text-primary",
+                  "content": "Radish",
+                  "fontFamily": "$rx-font-body",
+                  "fontSize": 18,
+                  "fontWeight": "800"
                 }
               ]
             },
             {
               "type": "frame",
-              "id": "o3kNo6",
-              "name": "Detail Header Nav",
+              "id": "JkrOg",
+              "name": "P06 Forum Browse Matrix Public Nav",
+              "width": 520,
               "gap": 8,
               "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
-                  "id": "dk5aS",
-                  "name": "Detail Nav - 全部",
-                  "fill": "$rx-bg-surface",
+                  "id": "KaagV",
+                  "name": "P06 Forum Browse Matrix Nav 发现",
+                  "height": 34,
+                  "fill": "#efe7db",
                   "cornerRadius": "$rx-radius-control",
-                  "stroke": "$rx-border-soft",
-                  "strokeWidth": 1,
                   "gap": 6,
                   "padding": [
-                    6,
-                    11
+                    7,
+                    10
                   ],
                   "alignItems": "center",
                   "children": [
                     {
+                      "type": "icon",
+                      "id": "OANHR",
+                      "name": "P06 Forum Browse Matrix Nav Icon 发现",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "layout-dashboard",
+                      "library": "lucide",
+                      "fill": "#6a5c4f"
+                    },
+                    {
                       "type": "text",
-                      "id": "PEkwG",
-                      "name": "Detail Nav - 全部 Label",
-                      "fill": "$rx-text-secondary",
-                      "content": "全部",
-                      "lineHeight": 1.35,
+                      "id": "ue1TN",
+                      "name": "P06 Forum Browse Matrix Nav Label 发现",
+                      "fill": "#6a5c4f",
+                      "content": "发现",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "800"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "jzFEs",
-                  "name": "Detail Nav - 论坛",
-                  "fill": "$rx-brand-primary",
+                  "id": "PBmzz",
+                  "name": "P06 Forum Browse Matrix Nav 论坛",
+                  "height": 34,
+                  "fill": "#ecd3db",
                   "cornerRadius": "$rx-radius-control",
-                  "stroke": "$rx-brand-primary",
-                  "strokeWidth": 1,
                   "gap": 6,
                   "padding": [
-                    6,
-                    11
+                    7,
+                    10
                   ],
                   "alignItems": "center",
                   "children": [
                     {
+                      "type": "icon",
+                      "id": "LXeFX",
+                      "name": "P06 Forum Browse Matrix Nav Icon 论坛",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "file",
+                      "library": "lucide",
+                      "fill": "#b24057"
+                    },
+                    {
                       "type": "text",
-                      "id": "C05uoq",
-                      "name": "Detail Nav - 论坛 Label",
-                      "fill": "#ffffff",
+                      "id": "NU9cD",
+                      "name": "P06 Forum Browse Matrix Nav Label 论坛",
+                      "fill": "#b24057",
                       "content": "论坛",
-                      "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "800"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "V9prQp",
-                  "name": "Detail Nav - 文档",
-                  "fill": "$rx-bg-surface",
+                  "id": "w9aRp",
+                  "name": "P06 Forum Browse Matrix Nav 文档",
+                  "height": 34,
+                  "fill": "#efe7db",
                   "cornerRadius": "$rx-radius-control",
-                  "stroke": "$rx-border-soft",
-                  "strokeWidth": 1,
                   "gap": 6,
                   "padding": [
-                    6,
-                    11
+                    7,
+                    10
                   ],
                   "alignItems": "center",
                   "children": [
                     {
+                      "type": "icon",
+                      "id": "RrS5D",
+                      "name": "P06 Forum Browse Matrix Nav Icon 文档",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "folder",
+                      "library": "lucide",
+                      "fill": "#6a5c4f"
+                    },
+                    {
                       "type": "text",
-                      "id": "N9ogu",
-                      "name": "Detail Nav - 文档 Label",
-                      "fill": "$rx-text-secondary",
+                      "id": "WHULz",
+                      "name": "P06 Forum Browse Matrix Nav Label 文档",
+                      "fill": "#6a5c4f",
                       "content": "文档",
-                      "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "800"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "nRY8I",
-                  "name": "Detail Nav - 商品",
-                  "fill": "$rx-bg-surface",
+                  "id": "V28n80",
+                  "name": "P06 Forum Browse Matrix Nav 商城",
+                  "height": 34,
+                  "fill": "#efe7db",
                   "cornerRadius": "$rx-radius-control",
-                  "stroke": "$rx-border-soft",
-                  "strokeWidth": 1,
                   "gap": 6,
                   "padding": [
-                    6,
-                    11
+                    7,
+                    10
                   ],
                   "alignItems": "center",
                   "children": [
                     {
+                      "type": "icon",
+                      "id": "VplzJ",
+                      "name": "P06 Forum Browse Matrix Nav Icon 商城",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "folder",
+                      "library": "lucide",
+                      "fill": "#6a5c4f"
+                    },
+                    {
                       "type": "text",
-                      "id": "ThDlA",
-                      "name": "Detail Nav - 商品 Label",
-                      "fill": "$rx-text-secondary",
-                      "content": "商品",
-                      "lineHeight": 1.35,
+                      "id": "Q2X1z",
+                      "name": "P06 Forum Browse Matrix Nav Label 商城",
+                      "fill": "#6a5c4f",
+                      "content": "商城",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "800"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "d7DxSn",
-                  "name": "Detail Nav - 榜单",
-                  "fill": "$rx-bg-surface",
+                  "id": "s9Uin",
+                  "name": "P06 Forum Browse Matrix Nav 榜单",
+                  "height": 34,
+                  "fill": "#efe7db",
                   "cornerRadius": "$rx-radius-control",
-                  "stroke": "$rx-border-soft",
-                  "strokeWidth": 1,
                   "gap": 6,
                   "padding": [
-                    6,
-                    11
+                    7,
+                    10
                   ],
                   "alignItems": "center",
                   "children": [
                     {
+                      "type": "icon",
+                      "id": "tB2lO",
+                      "name": "P06 Forum Browse Matrix Nav Icon 榜单",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "search",
+                      "library": "lucide",
+                      "fill": "#6a5c4f"
+                    },
+                    {
                       "type": "text",
-                      "id": "r4D0y",
-                      "name": "Detail Nav - 榜单 Label",
-                      "fill": "$rx-text-secondary",
+                      "id": "KiOKp",
+                      "name": "P06 Forum Browse Matrix Nav Label 榜单",
+                      "fill": "#6a5c4f",
                       "content": "榜单",
-                      "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "800"
                     }
                   ]
                 }
@@ -3793,64 +3821,66 @@
             },
             {
               "type": "frame",
-              "id": "ckzSx",
-              "name": "Detail Actions",
-              "gap": 10,
+              "id": "XYUE0",
+              "name": "P06 Forum Browse Matrix Actions",
+              "gap": 8,
               "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
-                  "id": "NkyQU",
-                  "name": "Detail Workbench",
+                  "id": "FMTaR",
+                  "name": "P06 Forum Browse Matrix Workbench",
+                  "height": 36,
                   "fill": "$rx-bg-surface",
                   "cornerRadius": "$rx-radius-control",
                   "stroke": "$rx-border-soft",
                   "strokeWidth": 1,
-                  "gap": 6,
+                  "strokeAlignment": "inner",
+                  "gap": 7,
                   "padding": [
-                    6,
-                    11
+                    7,
+                    13
                   ],
                   "alignItems": "center",
                   "children": [
                     {
                       "type": "text",
-                      "id": "Dd0bf",
-                      "name": "Detail Workbench Label",
-                      "fill": "$rx-text-secondary",
+                      "id": "e8RbD",
+                      "name": "P06 Forum Browse Matrix Workbench Label",
+                      "fill": "$rx-text-primary",
                       "content": "工作台",
-                      "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "800"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "njO0M",
-                  "name": "Detail Login",
+                  "id": "nXzIA",
+                  "name": "P06 Forum Browse Matrix Login",
+                  "height": 36,
                   "fill": "$rx-brand-primary",
                   "cornerRadius": "$rx-radius-control",
                   "stroke": "$rx-brand-primary",
                   "strokeWidth": 1,
-                  "gap": 6,
+                  "strokeAlignment": "inner",
+                  "gap": 7,
                   "padding": [
-                    6,
-                    11
+                    7,
+                    13
                   ],
                   "alignItems": "center",
                   "children": [
                     {
                       "type": "text",
-                      "id": "BeDGv",
-                      "name": "Detail Login Label",
+                      "id": "Oos43",
+                      "name": "P06 Forum Browse Matrix Login Label",
                       "fill": "#ffffff",
                       "content": "登录",
-                      "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "800"
                     }
                   ]
                 }
@@ -5122,236 +5152,244 @@
       "name": "P04 - Public Collection Pages",
       "clip": true,
       "width": 1440,
-      "height": 1100,
+      "height": 1168,
       "fill": "$rx-bg-app",
       "layout": "vertical",
       "children": [
         {
           "type": "frame",
-          "id": "s4dSQ",
-          "name": "Collection Header",
+          "id": "MeAub",
+          "name": "P04 Collection Header / F02 Sync",
           "width": "fill_container",
-          "height": 64,
+          "height": 84,
           "fill": "$rx-bg-surface",
+          "cornerRadius": 8,
           "stroke": "$rx-border-soft",
-          "strokeWidth": {
-            "bottom": 1
-          },
+          "strokeWidth": 1,
+          "strokeAlignment": "inner",
+          "gap": 16,
           "padding": [
-            0,
-            40
+            12,
+            18
           ],
           "justifyContent": "space_between",
           "alignItems": "center",
           "children": [
             {
               "type": "frame",
-              "id": "qMo4a",
-              "name": "Collection Brand",
+              "id": "s6mRi9",
+              "name": "P06 Forum Browse Matrix Brand",
+              "width": 150,
+              "height": "fill_container",
               "gap": 10,
               "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
-                  "id": "zNrrA",
-                  "name": "Collection Seal",
-                  "width": 30,
-                  "height": 30,
-                  "fill": "$rx-bg-muted",
-                  "cornerRadius": 8,
-                  "stroke": "$rx-brand-primary",
-                  "strokeWidth": 1,
-                  "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon",
-                      "id": "bAuW2",
-                      "name": "Collection Seal Icon",
-                      "width": 15,
-                      "height": 15,
-                      "icon": "sprout",
-                      "library": "lucide",
-                      "fill": "$rx-brand-primary"
-                    }
-                  ]
+                  "id": "DAC9S",
+                  "name": "P06 Forum Browse Matrix Seal",
+                  "width": 34,
+                  "height": 34,
+                  "fill": "$rx-brand-primary",
+                  "cornerRadius": 8
                 },
                 {
-                  "type": "frame",
-                  "id": "ORMVs",
-                  "name": "Collection Brand Copy",
-                  "layout": "vertical",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "z8vqvt",
-                      "name": "Collection Brand Title",
-                      "fill": "$rx-text-primary",
-                      "content": "Radish",
-                      "lineHeight": 1.15,
-                      "fontFamily": "$rx-font-heading",
-                      "fontSize": 18,
-                      "fontWeight": "700"
-                    },
-                    {
-                      "type": "text",
-                      "id": "lcCiv",
-                      "name": "Collection Brand Sub",
-                      "fill": "$rx-text-muted",
-                      "content": "公开 Web",
-                      "lineHeight": 1.2,
-                      "fontFamily": "$rx-font-mono",
-                      "fontSize": 11,
-                      "fontWeight": "500"
-                    }
-                  ]
+                  "type": "text",
+                  "id": "ssLtQ",
+                  "name": "P06 Forum Browse Matrix Brand Text",
+                  "fill": "$rx-text-primary",
+                  "content": "Radish",
+                  "fontFamily": "$rx-font-body",
+                  "fontSize": 18,
+                  "fontWeight": "800"
                 }
               ]
             },
             {
               "type": "frame",
-              "id": "NF8yZ",
-              "name": "Collection Header Nav",
+              "id": "U7z4dC",
+              "name": "P06 Forum Browse Matrix Public Nav",
+              "width": 520,
               "gap": 8,
               "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
-                  "id": "iacQF",
-                  "name": "Collection Nav - 全部",
-                  "fill": "$rx-bg-surface",
+                  "id": "CfFAy",
+                  "name": "P06 Forum Browse Matrix Nav 发现",
+                  "height": 34,
+                  "fill": "#efe7db",
                   "cornerRadius": "$rx-radius-control",
-                  "stroke": "$rx-border-soft",
-                  "strokeWidth": 1,
                   "gap": 6,
                   "padding": [
-                    6,
-                    11
+                    7,
+                    10
                   ],
                   "alignItems": "center",
                   "children": [
                     {
+                      "type": "icon",
+                      "id": "s3qMJ",
+                      "name": "P06 Forum Browse Matrix Nav Icon 发现",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "layout-dashboard",
+                      "library": "lucide",
+                      "fill": "#6a5c4f"
+                    },
+                    {
                       "type": "text",
-                      "id": "mK7ue",
-                      "name": "Collection Nav - 全部 Label",
-                      "fill": "$rx-text-secondary",
-                      "content": "全部",
-                      "lineHeight": 1.35,
+                      "id": "WtIT6",
+                      "name": "P06 Forum Browse Matrix Nav Label 发现",
+                      "fill": "#6a5c4f",
+                      "content": "发现",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "800"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "bANq8",
-                  "name": "Collection Nav - 论坛",
-                  "fill": "$rx-bg-surface",
+                  "id": "XxVX6",
+                  "name": "P06 Forum Browse Matrix Nav 论坛",
+                  "height": 34,
+                  "fill": "#ecd3db",
                   "cornerRadius": "$rx-radius-control",
-                  "stroke": "$rx-border-soft",
-                  "strokeWidth": 1,
                   "gap": 6,
                   "padding": [
-                    6,
-                    11
+                    7,
+                    10
                   ],
                   "alignItems": "center",
                   "children": [
                     {
+                      "type": "icon",
+                      "id": "I90vg",
+                      "name": "P06 Forum Browse Matrix Nav Icon 论坛",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "file",
+                      "library": "lucide",
+                      "fill": "#b24057"
+                    },
+                    {
                       "type": "text",
-                      "id": "YwIIY",
-                      "name": "Collection Nav - 论坛 Label",
-                      "fill": "$rx-text-secondary",
+                      "id": "ytl09",
+                      "name": "P06 Forum Browse Matrix Nav Label 论坛",
+                      "fill": "#b24057",
                       "content": "论坛",
-                      "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "800"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "o2IVgj",
-                  "name": "Collection Nav - 文档",
-                  "fill": "$rx-bg-surface",
+                  "id": "ktoXe",
+                  "name": "P06 Forum Browse Matrix Nav 文档",
+                  "height": 34,
+                  "fill": "#efe7db",
                   "cornerRadius": "$rx-radius-control",
-                  "stroke": "$rx-border-soft",
-                  "strokeWidth": 1,
                   "gap": 6,
                   "padding": [
-                    6,
-                    11
+                    7,
+                    10
                   ],
                   "alignItems": "center",
                   "children": [
                     {
+                      "type": "icon",
+                      "id": "DpRJv",
+                      "name": "P06 Forum Browse Matrix Nav Icon 文档",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "folder",
+                      "library": "lucide",
+                      "fill": "#6a5c4f"
+                    },
+                    {
                       "type": "text",
-                      "id": "BODTh",
-                      "name": "Collection Nav - 文档 Label",
-                      "fill": "$rx-text-secondary",
+                      "id": "raI75",
+                      "name": "P06 Forum Browse Matrix Nav Label 文档",
+                      "fill": "#6a5c4f",
                       "content": "文档",
-                      "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "800"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "vQMl1",
-                  "name": "Collection Nav - 商品",
-                  "fill": "$rx-bg-surface",
+                  "id": "d8Y0y",
+                  "name": "P06 Forum Browse Matrix Nav 商城",
+                  "height": 34,
+                  "fill": "#efe7db",
                   "cornerRadius": "$rx-radius-control",
-                  "stroke": "$rx-border-soft",
-                  "strokeWidth": 1,
                   "gap": 6,
                   "padding": [
-                    6,
-                    11
+                    7,
+                    10
                   ],
                   "alignItems": "center",
                   "children": [
                     {
+                      "type": "icon",
+                      "id": "NYbh6",
+                      "name": "P06 Forum Browse Matrix Nav Icon 商城",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "folder",
+                      "library": "lucide",
+                      "fill": "#6a5c4f"
+                    },
+                    {
                       "type": "text",
-                      "id": "wxBTG",
-                      "name": "Collection Nav - 商品 Label",
-                      "fill": "$rx-text-secondary",
-                      "content": "商品",
-                      "lineHeight": 1.35,
+                      "id": "pkOLD",
+                      "name": "P06 Forum Browse Matrix Nav Label 商城",
+                      "fill": "#6a5c4f",
+                      "content": "商城",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "800"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "PNrdN",
-                  "name": "Collection Nav - 榜单",
-                  "fill": "$rx-brand-primary",
+                  "id": "n5fPt",
+                  "name": "P06 Forum Browse Matrix Nav 榜单",
+                  "height": 34,
+                  "fill": "#efe7db",
                   "cornerRadius": "$rx-radius-control",
-                  "stroke": "$rx-brand-primary",
-                  "strokeWidth": 1,
                   "gap": 6,
                   "padding": [
-                    6,
-                    11
+                    7,
+                    10
                   ],
                   "alignItems": "center",
                   "children": [
                     {
+                      "type": "icon",
+                      "id": "Re0PT",
+                      "name": "P06 Forum Browse Matrix Nav Icon 榜单",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "search",
+                      "library": "lucide",
+                      "fill": "#6a5c4f"
+                    },
+                    {
                       "type": "text",
-                      "id": "igLBj",
-                      "name": "Collection Nav - 榜单 Label",
-                      "fill": "#ffffff",
+                      "id": "K7Wvu4",
+                      "name": "P06 Forum Browse Matrix Nav Label 榜单",
+                      "fill": "#6a5c4f",
                       "content": "榜单",
-                      "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "800"
                     }
                   ]
                 }
@@ -5359,64 +5397,66 @@
             },
             {
               "type": "frame",
-              "id": "Vinrb",
-              "name": "Collection Actions",
-              "gap": 10,
+              "id": "h7dAK",
+              "name": "P06 Forum Browse Matrix Actions",
+              "gap": 8,
               "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
-                  "id": "qbvwR",
-                  "name": "Collection Workbench",
+                  "id": "S459u",
+                  "name": "P06 Forum Browse Matrix Workbench",
+                  "height": 36,
                   "fill": "$rx-bg-surface",
                   "cornerRadius": "$rx-radius-control",
                   "stroke": "$rx-border-soft",
                   "strokeWidth": 1,
-                  "gap": 6,
+                  "strokeAlignment": "inner",
+                  "gap": 7,
                   "padding": [
-                    6,
-                    11
+                    7,
+                    13
                   ],
                   "alignItems": "center",
                   "children": [
                     {
                       "type": "text",
-                      "id": "G8PeA",
-                      "name": "Collection Workbench Label",
-                      "fill": "$rx-text-secondary",
+                      "id": "lTpK0",
+                      "name": "P06 Forum Browse Matrix Workbench Label",
+                      "fill": "$rx-text-primary",
                       "content": "工作台",
-                      "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "800"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "EUMQ4",
-                  "name": "Collection Login",
+                  "id": "HZnd8",
+                  "name": "P06 Forum Browse Matrix Login",
+                  "height": 36,
                   "fill": "$rx-brand-primary",
                   "cornerRadius": "$rx-radius-control",
                   "stroke": "$rx-brand-primary",
                   "strokeWidth": 1,
-                  "gap": 6,
+                  "strokeAlignment": "inner",
+                  "gap": 7,
                   "padding": [
-                    6,
-                    11
+                    7,
+                    13
                   ],
                   "alignItems": "center",
                   "children": [
                     {
                       "type": "text",
-                      "id": "q682tN",
-                      "name": "Collection Login Label",
+                      "id": "X3htP",
+                      "name": "P06 Forum Browse Matrix Login Label",
                       "fill": "#ffffff",
                       "content": "登录",
-                      "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "800"
                     }
                   ]
                 }

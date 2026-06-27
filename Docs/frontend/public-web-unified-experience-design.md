@@ -39,6 +39,7 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 ### 壳层与导航
 
 - 公开头部保留品牌、公开导航、`/workbench` 工作台动作和登录动作。
+- PC 公开头部统一使用 `web-ui-foundation.pen` / `F02` 的 84 高纸感横匾：横排图标 nav rail、激活态 pill、身份 action rail 和 32px 内收，不再保留旧 64 高小标签式导航。
 - “工作台”默认进入 `/workbench`，不直接打开 `/desktop`。
 - 公开浏览页的主动作是继续阅读、筛选、搜索、分享或登录参与，不承载完整私域工作台。
 - 弱纹样只作为边缘收边和分区提示，不抢正文和操作层级。
