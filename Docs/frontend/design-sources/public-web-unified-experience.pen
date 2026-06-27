@@ -9716,7 +9716,7 @@
     },
     {
       "type": "frame",
-      "id": "Rpz6x",
+      "id": "G7Lku",
       "x": 3040,
       "y": 0,
       "name": "P03 - Forum Thread List",
@@ -9725,12 +9725,12 @@
       "height": 1080,
       "fill": "$rx-bg-app",
       "layout": "vertical",
-      "gap": 16,
+      "gap": 14,
       "padding": 32,
       "children": [
         {
           "type": "frame",
-          "id": "BpXFp",
+          "id": "wNx1p",
           "name": "F02 Public Header",
           "width": "fill_container",
           "height": 84,
@@ -9747,7 +9747,7 @@
           "children": [
             {
               "type": "frame",
-              "id": "HRzJd",
+              "id": "imnSm",
               "name": "Brand Lockup",
               "width": 300,
               "gap": 14,
@@ -9755,7 +9755,7 @@
               "children": [
                 {
                   "type": "frame",
-                  "id": "bJ0EC",
+                  "id": "tKLd4",
                   "name": "Radish Logo",
                   "width": 56,
                   "height": 56,
@@ -9766,11 +9766,11 @@
                   "children": [
                     {
                       "type": "text",
-                      "id": "CGFoO",
+                      "id": "u9oeR7",
                       "name": "Logo R",
                       "fill": "#ffffff",
                       "content": "R",
-                      "lineHeight": 1.35,
+                      "lineHeight": 1.3,
                       "fontFamily": "$rx-font-heading",
                       "fontSize": 28,
                       "fontWeight": "700"
@@ -9779,29 +9779,29 @@
                 },
                 {
                   "type": "frame",
-                  "id": "uHadr",
+                  "id": "q1IuO",
                   "name": "Brand Text",
                   "layout": "vertical",
                   "gap": 2,
                   "children": [
                     {
                       "type": "text",
-                      "id": "sozmz",
+                      "id": "cSkki",
                       "name": "Brand Name",
                       "fill": "$rx-text-primary",
                       "content": "Radish",
-                      "lineHeight": 1.35,
+                      "lineHeight": 1.3,
                       "fontFamily": "$rx-font-heading",
                       "fontSize": 30,
                       "fontWeight": "700"
                     },
                     {
                       "type": "text",
-                      "id": "BKZu6",
+                      "id": "Cj7eR",
                       "name": "Brand Sub",
                       "fill": "$rx-text-secondary",
                       "content": "公开 Web",
-                      "lineHeight": 1.35,
+                      "lineHeight": 1.3,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 14,
                       "fontWeight": "500"
@@ -9812,7 +9812,7 @@
             },
             {
               "type": "frame",
-              "id": "G6C969",
+              "id": "R537Mp",
               "name": "Public Nav Rail",
               "height": 58,
               "fill": "$rx-bg-muted",
@@ -9828,7 +9828,7 @@
               "children": [
                 {
                   "type": "frame",
-                  "id": "UkWEK",
+                  "id": "F473EC",
                   "name": "Nav 发现",
                   "height": 44,
                   "fill": "#00000000",
@@ -9844,7 +9844,7 @@
                   "children": [
                     {
                       "type": "icon",
-                      "id": "Xyhuw",
+                      "id": "s8NQu",
                       "name": "Nav Icon 发现",
                       "width": 18,
                       "height": 18,
@@ -9854,11 +9854,11 @@
                     },
                     {
                       "type": "text",
-                      "id": "M4M2k",
+                      "id": "nZO4Y",
                       "name": "Nav Label 发现",
                       "fill": "$rx-text-secondary",
                       "content": "发现",
-                      "lineHeight": 1.35,
+                      "lineHeight": 1.3,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 15,
                       "fontWeight": "700"
@@ -9867,7 +9867,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "hs9TG",
+                  "id": "fle5x",
                   "name": "Nav 论坛",
                   "height": 44,
                   "fill": "$rx-brand-soft",
@@ -9883,7 +9883,7 @@
                   "children": [
                     {
                       "type": "icon",
-                      "id": "l9v00",
+                      "id": "hOCHY",
                       "name": "Nav Icon 论坛",
                       "width": 18,
                       "height": 18,
@@ -9893,11 +9893,11 @@
                     },
                     {
                       "type": "text",
-                      "id": "COFsb",
+                      "id": "lfuo0",
                       "name": "Nav Label 论坛",
                       "fill": "$rx-brand-primary",
                       "content": "论坛",
-                      "lineHeight": 1.35,
+                      "lineHeight": 1.3,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 15,
                       "fontWeight": "700"
@@ -9906,7 +9906,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "g9W1br",
+                  "id": "m63xW1",
                   "name": "Nav 文档",
                   "height": 44,
                   "fill": "#00000000",
@@ -9922,7 +9922,7 @@
                   "children": [
                     {
                       "type": "icon",
-                      "id": "ovMdl",
+                      "id": "OeKCB",
                       "name": "Nav Icon 文档",
                       "width": 18,
                       "height": 18,
@@ -9932,11 +9932,11 @@
                     },
                     {
                       "type": "text",
-                      "id": "vNnwi",
+                      "id": "iPfud",
                       "name": "Nav Label 文档",
                       "fill": "$rx-text-secondary",
                       "content": "文档",
-                      "lineHeight": 1.35,
+                      "lineHeight": 1.3,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 15,
                       "fontWeight": "700"
@@ -9945,7 +9945,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "rEp1g",
+                  "id": "v0jrB",
                   "name": "Nav 榜单",
                   "height": 44,
                   "fill": "#00000000",
@@ -9961,7 +9961,7 @@
                   "children": [
                     {
                       "type": "icon",
-                      "id": "e8Jwci",
+                      "id": "ZSp48",
                       "name": "Nav Icon 榜单",
                       "width": 18,
                       "height": 18,
@@ -9971,11 +9971,11 @@
                     },
                     {
                       "type": "text",
-                      "id": "sj6co",
+                      "id": "H17AOr",
                       "name": "Nav Label 榜单",
                       "fill": "$rx-text-secondary",
                       "content": "榜单",
-                      "lineHeight": 1.35,
+                      "lineHeight": 1.3,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 15,
                       "fontWeight": "700"
@@ -9984,7 +9984,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "ari9J",
+                  "id": "rHFSC",
                   "name": "Nav 商城",
                   "height": 44,
                   "fill": "#00000000",
@@ -10000,7 +10000,7 @@
                   "children": [
                     {
                       "type": "icon",
-                      "id": "NFAMH",
+                      "id": "XDf1D",
                       "name": "Nav Icon 商城",
                       "width": 18,
                       "height": 18,
@@ -10010,11 +10010,11 @@
                     },
                     {
                       "type": "text",
-                      "id": "SiMpM",
+                      "id": "BAauf",
                       "name": "Nav Label 商城",
                       "fill": "$rx-text-secondary",
                       "content": "商城",
-                      "lineHeight": 1.35,
+                      "lineHeight": 1.3,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 15,
                       "fontWeight": "700"
@@ -10023,7 +10023,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "Y37kB",
+                  "id": "YrYrq",
                   "name": "Nav 聊天室",
                   "height": 44,
                   "fill": "#00000000",
@@ -10039,7 +10039,7 @@
                   "children": [
                     {
                       "type": "icon",
-                      "id": "cg5kx",
+                      "id": "uyJrq",
                       "name": "Nav Icon 聊天室",
                       "width": 18,
                       "height": 18,
@@ -10049,11 +10049,11 @@
                     },
                     {
                       "type": "text",
-                      "id": "l3Pwye",
+                      "id": "MSMG1",
                       "name": "Nav Label 聊天室",
                       "fill": "$rx-text-secondary",
                       "content": "聊天室",
-                      "lineHeight": 1.35,
+                      "lineHeight": 1.3,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 15,
                       "fontWeight": "700"
@@ -10064,14 +10064,14 @@
             },
             {
               "type": "frame",
-              "id": "S8apeA",
+              "id": "gMAvq",
               "name": "Action Rail",
               "gap": 8,
               "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
-                  "id": "abIRb",
+                  "id": "j68o9",
                   "name": "Login Button",
                   "height": 48,
                   "fill": "#fffaf3",
@@ -10087,7 +10087,7 @@
                   "children": [
                     {
                       "type": "icon",
-                      "id": "DaspP",
+                      "id": "Y7j6o",
                       "name": "Login Icon",
                       "width": 18,
                       "height": 18,
@@ -10097,11 +10097,11 @@
                     },
                     {
                       "type": "text",
-                      "id": "YFMwL",
+                      "id": "jVRB4",
                       "name": "Login Label",
                       "fill": "$rx-text-secondary",
                       "content": "登录",
-                      "lineHeight": 1.35,
+                      "lineHeight": 1.3,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 15,
                       "fontWeight": "700"
@@ -10110,7 +10110,7 @@
                 },
                 {
                   "type": "frame",
-                  "id": "GbGy9",
+                  "id": "ZhspS",
                   "name": "Workbench Button",
                   "height": 48,
                   "fill": "$rx-brand-primary",
@@ -10126,7 +10126,7 @@
                   "children": [
                     {
                       "type": "icon",
-                      "id": "N6fWJV",
+                      "id": "gtbcP",
                       "name": "Workbench Icon",
                       "width": 18,
                       "height": 18,
@@ -10136,11 +10136,11 @@
                     },
                     {
                       "type": "text",
-                      "id": "h6w1n",
+                      "id": "nnhmh",
                       "name": "Workbench Label",
                       "fill": "#ffffff",
                       "content": "工作台",
-                      "lineHeight": 1.35,
+                      "lineHeight": 1.3,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 15,
                       "fontWeight": "700"
@@ -10153,186 +10153,186 @@
         },
         {
           "type": "frame",
-          "id": "jxGbh",
-          "name": "Forum Browse Body",
+          "id": "qNXqZ",
+          "name": "Forum Body",
           "width": "fill_container",
-          "height": 916,
-          "gap": 16,
+          "height": 918,
+          "gap": 14,
           "children": [
             {
               "type": "frame",
-              "id": "QmF2W",
-              "name": "Forum Main Column",
-              "width": 970,
+              "id": "a79H6d",
+              "name": "Forum Main",
+              "width": 980,
               "height": "fill_container",
               "layout": "vertical",
-              "gap": 12,
+              "gap": 10,
               "children": [
                 {
                   "type": "frame",
-                  "id": "aWRq4",
-                  "name": "Forum Toolbar",
+                  "id": "mWXbH",
+                  "name": "Dense Toolbar",
                   "width": "fill_container",
-                  "height": 86,
+                  "height": 72,
                   "fill": "$rx-bg-surface",
-                  "cornerRadius": 16,
+                  "cornerRadius": 14,
                   "stroke": "$rx-border-soft",
                   "strokeWidth": 1,
                   "padding": [
-                    14,
-                    18
+                    10,
+                    14
                   ],
                   "justifyContent": "space_between",
                   "alignItems": "center",
                   "children": [
                     {
                       "type": "frame",
-                      "id": "g87uL",
+                      "id": "a3fUuJ",
                       "name": "Toolbar Text",
                       "layout": "vertical",
-                      "gap": 4,
+                      "gap": 3,
                       "children": [
                         {
                           "type": "text",
-                          "id": "SIv4t",
+                          "id": "FWOWR",
                           "name": "Toolbar Title",
                           "fill": "$rx-text-primary",
                           "content": "论坛 · 公开帖子",
-                          "lineHeight": 1.35,
-                          "fontFamily": "$rx-font-heading",
-                          "fontSize": 25,
+                          "lineHeight": 1.3,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 21,
                           "fontWeight": "800"
                         },
                         {
                           "type": "text",
-                          "id": "zeiMS",
+                          "id": "gVaOo",
                           "name": "Toolbar Copy",
                           "fill": "$rx-text-secondary",
                           "textGrowth": "fixed-width",
-                          "width": 640,
-                          "content": "列表页只展示帖子摘要、作者、赞评阅、神评预览和最近互动；表情 reaction 进入详情页和聊天室。",
-                          "lineHeight": 1.35,
+                          "width": 600,
+                          "content": "列表保留神评摘要、作者和赞评阅；reaction 只进详情和聊天室。",
+                          "lineHeight": 1.3,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 13,
+                          "fontSize": 12,
                           "fontWeight": "500"
                         }
                       ]
                     },
                     {
                       "type": "frame",
-                      "id": "x2OTj",
-                      "name": "Toolbar Filters",
-                      "gap": 8,
+                      "id": "f7AGuu",
+                      "name": "Filters",
+                      "gap": 7,
                       "alignItems": "center",
                       "children": [
                         {
                           "type": "frame",
-                          "id": "BRPg1",
+                          "id": "mgWkB",
                           "name": "Filter 全部",
                           "fill": "$rx-brand-soft",
                           "cornerRadius": "$rx-radius-control",
                           "stroke": "$rx-brand-primary",
                           "strokeWidth": 1,
-                          "gap": 6,
+                          "gap": 5,
                           "padding": [
-                            6,
-                            11
+                            5,
+                            9
                           ],
                           "alignItems": "center",
                           "children": [
                             {
                               "type": "text",
-                              "id": "c62vLc",
+                              "id": "bUkce",
                               "name": "Filter 全部 Label",
                               "fill": "$rx-brand-primary",
                               "content": "全部",
-                              "lineHeight": 1.35,
+                              "lineHeight": 1.3,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 13,
+                              "fontSize": 12,
                               "fontWeight": "700"
                             }
                           ]
                         },
                         {
                           "type": "frame",
-                          "id": "rest8",
+                          "id": "CFmeg",
                           "name": "Filter 生活随笔",
                           "fill": "$rx-bg-muted",
                           "cornerRadius": "$rx-radius-control",
                           "stroke": "$rx-text-secondary",
                           "strokeWidth": 1,
-                          "gap": 6,
+                          "gap": 5,
                           "padding": [
-                            6,
-                            11
+                            5,
+                            9
                           ],
                           "alignItems": "center",
                           "children": [
                             {
                               "type": "text",
-                              "id": "uPnqA",
+                              "id": "CWFRW",
                               "name": "Filter 生活随笔 Label",
                               "fill": "$rx-text-secondary",
                               "content": "生活随笔",
-                              "lineHeight": 1.35,
+                              "lineHeight": 1.3,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 13,
+                              "fontSize": 12,
                               "fontWeight": "700"
                             }
                           ]
                         },
                         {
                           "type": "frame",
-                          "id": "Q0w6oi",
+                          "id": "vnSfk",
                           "name": "Filter 神评",
                           "fill": "$rx-bg-muted",
                           "cornerRadius": "$rx-radius-control",
                           "stroke": "$rx-text-secondary",
                           "strokeWidth": 1,
-                          "gap": 6,
+                          "gap": 5,
                           "padding": [
-                            6,
-                            11
+                            5,
+                            9
                           ],
                           "alignItems": "center",
                           "children": [
                             {
                               "type": "text",
-                              "id": "Tm5jo",
+                              "id": "H8mrms",
                               "name": "Filter 神评 Label",
                               "fill": "$rx-text-secondary",
                               "content": "神评",
-                              "lineHeight": 1.35,
+                              "lineHeight": 1.3,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 13,
+                              "fontSize": 12,
                               "fontWeight": "700"
                             }
                           ]
                         },
                         {
                           "type": "frame",
-                          "id": "EXODR",
+                          "id": "OhL2f",
                           "name": "Filter 无人回答",
                           "fill": "$rx-bg-muted",
                           "cornerRadius": "$rx-radius-control",
                           "stroke": "$rx-text-secondary",
                           "strokeWidth": 1,
-                          "gap": 6,
+                          "gap": 5,
                           "padding": [
-                            6,
-                            11
+                            5,
+                            9
                           ],
                           "alignItems": "center",
                           "children": [
                             {
                               "type": "text",
-                              "id": "ai1Q8",
+                              "id": "PYxiA",
                               "name": "Filter 无人回答 Label",
                               "fill": "$rx-text-secondary",
                               "content": "无人回答",
-                              "lineHeight": 1.35,
+                              "lineHeight": 1.3,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 13,
+                              "fontSize": 12,
                               "fontWeight": "700"
                             }
                           ]
@@ -10343,109 +10343,109 @@
                 },
                 {
                   "type": "frame",
-                  "id": "K1AAFI",
-                  "name": "Thread List",
+                  "id": "xRL90",
+                  "name": "Dense Thread List",
                   "width": "fill_container",
                   "layout": "vertical",
-                  "gap": 12,
+                  "gap": 8,
                   "children": [
                     {
                       "type": "frame",
-                      "id": "mo3Az",
-                      "name": "Thread List Item - 测试一下神评",
+                      "id": "pF6Fp",
+                      "name": "Compact Thread - 神评预览如何展示在帖子列表",
                       "width": "fill_container",
-                      "height": 176,
+                      "height": 126,
                       "fill": "$rx-bg-surface",
-                      "cornerRadius": 22,
+                      "cornerRadius": 16,
                       "stroke": "$rx-border-soft",
                       "strokeWidth": 1,
-                      "gap": 18,
+                      "gap": 14,
                       "padding": [
-                        18,
-                        20
+                        12,
+                        14
                       ],
                       "alignItems": "center",
                       "children": [
                         {
                           "type": "frame",
-                          "id": "eeDVn",
-                          "name": "Thread Left Content",
-                          "width": 560,
+                          "id": "pSPlB",
+                          "name": "Thread Content",
+                          "width": 620,
                           "layout": "vertical",
-                          "gap": 12,
+                          "gap": 7,
                           "children": [
                             {
                               "type": "text",
-                              "id": "m5AR42",
+                              "id": "A15Gg",
                               "name": "Thread Title",
                               "fill": "$rx-text-primary",
                               "textGrowth": "fixed-width",
-                              "width": 540,
+                              "width": 600,
                               "content": "神评预览如何展示在帖子列表",
-                              "lineHeight": 1.35,
-                              "fontFamily": "$rx-font-heading",
-                              "fontSize": 26,
+                              "lineHeight": 1.3,
+                              "fontFamily": "$rx-font-body",
+                              "fontSize": 18,
                               "fontWeight": "800"
                             },
                             {
                               "type": "frame",
-                              "id": "xSaAE",
-                              "name": "Thread Tags",
-                              "gap": 10,
+                              "id": "nfvwS",
+                              "name": "Tags",
+                              "gap": 7,
                               "alignItems": "center",
                               "children": [
                                 {
                                   "type": "frame",
-                                  "id": "SYzvi",
+                                  "id": "M7HG66",
                                   "name": "Category",
                                   "fill": "$rx-brand-soft",
                                   "cornerRadius": "$rx-radius-control",
                                   "stroke": "$rx-brand-primary",
                                   "strokeWidth": 1,
-                                  "gap": 6,
+                                  "gap": 5,
                                   "padding": [
-                                    6,
-                                    11
+                                    5,
+                                    9
                                   ],
                                   "alignItems": "center",
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "haK8e",
+                                      "id": "URCPP",
                                       "name": "Category Label",
                                       "fill": "$rx-brand-primary",
                                       "content": "生活随笔",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 13,
+                                      "fontSize": 12,
                                       "fontWeight": "700"
                                     }
                                   ]
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "Uo2At",
+                                  "id": "HkM2v",
                                   "name": "Tag #碎碎念",
                                   "fill": "$rx-bg-muted",
                                   "cornerRadius": "$rx-radius-control",
                                   "stroke": "$rx-text-secondary",
                                   "strokeWidth": 1,
-                                  "gap": 6,
+                                  "gap": 5,
                                   "padding": [
-                                    6,
-                                    11
+                                    5,
+                                    9
                                   ],
                                   "alignItems": "center",
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "sXFAQ",
+                                      "id": "fK51m",
                                       "name": "Tag #碎碎念 Label",
                                       "fill": "$rx-text-secondary",
                                       "content": "#碎碎念",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 13,
+                                      "fontSize": 12,
                                       "fontWeight": "700"
                                     }
                                   ]
@@ -10454,60 +10454,51 @@
                             },
                             {
                               "type": "frame",
-                              "id": "WS7Gd",
-                              "name": "God Comment Preview",
-                              "width": 540,
-                              "height": 40,
-                              "fill": "#fffaf3",
-                              "cornerRadius": 12,
-                              "stroke": "$rx-border-soft",
-                              "strokeWidth": 1,
-                              "gap": 10,
-                              "padding": [
-                                0,
-                                12
-                              ],
+                              "id": "h4fBDT",
+                              "name": "Summary Area",
+                              "width": 600,
+                              "gap": 8,
                               "alignItems": "center",
                               "children": [
                                 {
                                   "type": "frame",
-                                  "id": "are5M",
+                                  "id": "bd2bY",
                                   "name": "God Badge",
                                   "fill": "#fff3dc",
                                   "cornerRadius": "$rx-radius-control",
                                   "stroke": "$rx-accent-earth",
                                   "strokeWidth": 1,
-                                  "gap": 6,
+                                  "gap": 5,
                                   "padding": [
-                                    6,
-                                    11
+                                    5,
+                                    9
                                   ],
                                   "alignItems": "center",
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "iLBe5",
+                                      "id": "bi7tD",
                                       "name": "God Badge Label",
                                       "fill": "$rx-accent-earth",
                                       "content": "神评",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 13,
+                                      "fontSize": 12,
                                       "fontWeight": "700"
                                     }
                                   ]
                                 },
                                 {
                                   "type": "text",
-                                  "id": "pixRo",
-                                  "name": "God Text",
+                                  "id": "hWvXZ",
+                                  "name": "God Summary",
                                   "fill": "$rx-text-secondary",
                                   "textGrowth": "fixed-width",
-                                  "width": 440,
+                                  "width": 520,
                                   "content": "luobo：这条父评论被选为神评，只在列表里露出摘要。",
-                                  "lineHeight": 1.35,
+                                  "lineHeight": 1.3,
                                   "fontFamily": "$rx-font-body",
-                                  "fontSize": 15,
+                                  "fontSize": 13,
                                   "fontWeight": "500"
                                 }
                               ]
@@ -10516,34 +10507,33 @@
                         },
                         {
                           "type": "rectangle",
-                          "id": "qj6So",
-                          "name": "Thread Divider",
+                          "id": "i1xYU",
+                          "name": "Divider",
                           "fill": "$rx-pattern-line",
                           "width": 1,
-                          "height": 122
+                          "height": 92
                         },
                         {
                           "type": "frame",
-                          "id": "g1eoS",
-                          "name": "Thread Author And Metrics",
-                          "width": 250,
+                          "id": "lgUNw",
+                          "name": "Author Metrics",
+                          "width": 230,
                           "layout": "vertical",
-                          "gap": 12,
+                          "gap": 7,
                           "children": [
                             {
                               "type": "frame",
-                              "id": "xSY4n",
+                              "id": "RWViS",
                               "name": "Author Row",
-                              "width": "fill_container",
-                              "gap": 12,
+                              "gap": 8,
                               "alignItems": "center",
                               "children": [
                                 {
                                   "type": "frame",
-                                  "id": "ch4jL",
+                                  "id": "a5BFj",
                                   "name": "Avatar L",
-                                  "width": 48,
-                                  "height": 48,
+                                  "width": 36,
+                                  "height": 36,
                                   "fill": "#d9f7ea",
                                   "cornerRadius": 999,
                                   "stroke": "$rx-border-soft",
@@ -10553,49 +10543,49 @@
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "AXpua",
+                                      "id": "K185Es",
                                       "name": "Avatar Text L",
                                       "fill": "$rx-text-primary",
                                       "content": "L",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 18,
+                                      "fontSize": 14,
                                       "fontWeight": "800"
                                     }
                                   ]
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "XQEyL",
+                                  "id": "MQRnD",
                                   "name": "Author Text",
                                   "width": 176,
                                   "layout": "vertical",
-                                  "gap": 3,
+                                  "gap": 1,
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "t92loZ",
-                                      "name": "Author Name",
+                                      "id": "hhFBp",
+                                      "name": "Author",
                                       "fill": "$rx-text-primary",
                                       "textGrowth": "fixed-width",
                                       "width": 176,
                                       "content": "luobo",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 17,
+                                      "fontSize": 13,
                                       "fontWeight": "800"
                                     },
                                     {
                                       "type": "text",
-                                      "id": "oaf8C",
-                                      "name": "Author Time",
+                                      "id": "Lk1nk",
+                                      "name": "Time",
                                       "fill": "$rx-text-secondary",
                                       "textGrowth": "fixed-width",
                                       "width": 176,
-                                      "content": "2026-06-27 21:34",
-                                      "lineHeight": 1.35,
+                                      "content": "06-27 21:34",
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 14,
+                                      "fontSize": 11,
                                       "fontWeight": "500"
                                     }
                                   ]
@@ -10604,118 +10594,118 @@
                             },
                             {
                               "type": "frame",
-                              "id": "vWB8y",
-                              "name": "Stats Row",
-                              "gap": 8,
+                              "id": "wKaPw",
+                              "name": "Stats",
+                              "gap": 5,
                               "alignItems": "center",
                               "children": [
                                 {
                                   "type": "frame",
-                                  "id": "k9kv1l",
+                                  "id": "lsnjJ",
                                   "name": "Stat 赞",
                                   "fill": "$rx-bg-muted",
                                   "cornerRadius": "$rx-radius-control",
                                   "gap": 3,
                                   "padding": [
-                                    5,
-                                    9
+                                    4,
+                                    7
                                   ],
                                   "alignItems": "center",
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "P3Y682",
+                                      "id": "DyQjk",
                                       "name": "Stat Label 赞",
                                       "fill": "$rx-text-muted",
                                       "content": "赞",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 12,
+                                      "fontSize": 11,
                                       "fontWeight": "600"
                                     },
                                     {
                                       "type": "text",
-                                      "id": "kXsSW",
+                                      "id": "b3Fddi",
                                       "name": "Stat Value 赞",
                                       "fill": "$rx-text-primary",
                                       "content": "0",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 14,
+                                      "fontSize": 12,
                                       "fontWeight": "800"
                                     }
                                   ]
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "ePOpk",
+                                  "id": "weZaT",
                                   "name": "Stat 评",
                                   "fill": "$rx-bg-muted",
                                   "cornerRadius": "$rx-radius-control",
                                   "gap": 3,
                                   "padding": [
-                                    5,
-                                    9
+                                    4,
+                                    7
                                   ],
                                   "alignItems": "center",
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "k6Wug",
+                                      "id": "XCNMS",
                                       "name": "Stat Label 评",
                                       "fill": "$rx-text-muted",
                                       "content": "评",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 12,
+                                      "fontSize": 11,
                                       "fontWeight": "600"
                                     },
                                     {
                                       "type": "text",
-                                      "id": "SuLQZ",
+                                      "id": "ayf5b",
                                       "name": "Stat Value 评",
                                       "fill": "$rx-text-primary",
                                       "content": "6",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 14,
+                                      "fontSize": 12,
                                       "fontWeight": "800"
                                     }
                                   ]
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "IkpuD",
+                                  "id": "Z78TkR",
                                   "name": "Stat 阅",
                                   "fill": "$rx-bg-muted",
                                   "cornerRadius": "$rx-radius-control",
                                   "gap": 3,
                                   "padding": [
-                                    5,
-                                    9
+                                    4,
+                                    7
                                   ],
                                   "alignItems": "center",
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "onRBn",
+                                      "id": "kQkzT",
                                       "name": "Stat Label 阅",
                                       "fill": "$rx-text-muted",
                                       "content": "阅",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 12,
+                                      "fontSize": 11,
                                       "fontWeight": "600"
                                     },
                                     {
                                       "type": "text",
-                                      "id": "IQ2Gd",
+                                      "id": "H1iL9c",
                                       "name": "Stat Value 阅",
                                       "fill": "$rx-text-primary",
                                       "content": "2",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 14,
+                                      "fontSize": 12,
                                       "fontWeight": "800"
                                     }
                                   ]
@@ -10724,66 +10714,48 @@
                             },
                             {
                               "type": "frame",
-                              "id": "jKJLo",
-                              "name": "Interaction Row",
+                              "id": "dpPdZ",
+                              "name": "Interaction",
                               "width": "fill_container",
                               "justifyContent": "space_between",
                               "alignItems": "center",
                               "children": [
                                 {
                                   "type": "text",
-                                  "id": "AfKKq",
+                                  "id": "L59hG",
                                   "name": "Interaction Label",
                                   "fill": "$rx-text-secondary",
                                   "content": "互动",
-                                  "lineHeight": 1.35,
+                                  "lineHeight": 1.3,
                                   "fontFamily": "$rx-font-body",
-                                  "fontSize": 15,
+                                  "fontSize": 12,
                                   "fontWeight": "600"
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "R7vHd",
+                                  "id": "UVLEo",
                                   "name": "Comment Score",
-                                  "gap": 8,
+                                  "fill": "#e5f4eb",
+                                  "cornerRadius": "$rx-radius-control",
+                                  "stroke": "$rx-accent-jade",
+                                  "strokeWidth": 1,
+                                  "gap": 5,
+                                  "padding": [
+                                    5,
+                                    9
+                                  ],
                                   "alignItems": "center",
                                   "children": [
                                     {
-                                      "type": "frame",
-                                      "id": "T3VO7K",
-                                      "name": "Comment Bubble",
-                                      "width": 38,
-                                      "height": 38,
-                                      "fill": "#dff1e4",
-                                      "cornerRadius": 999,
-                                      "stroke": "$rx-accent-jade",
-                                      "strokeWidth": 1,
-                                      "justifyContent": "center",
-                                      "alignItems": "center",
-                                      "children": [
-                                        {
-                                          "type": "text",
-                                          "id": "wdrs8",
-                                          "name": "Bubble Text",
-                                          "fill": "$rx-accent-jade",
-                                          "content": "评",
-                                          "lineHeight": 1.35,
-                                          "fontFamily": "$rx-font-body",
-                                          "fontSize": 16,
-                                          "fontWeight": "800"
-                                        }
-                                      ]
-                                    },
-                                    {
                                       "type": "text",
-                                      "id": "WszrW",
-                                      "name": "Score Text",
-                                      "fill": "$rx-text-primary",
-                                      "content": "+5",
-                                      "lineHeight": 1.35,
+                                      "id": "ATRT2",
+                                      "name": "Comment Score Label",
+                                      "fill": "$rx-accent-jade",
+                                      "content": "评 +5",
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 16,
-                                      "fontWeight": "800"
+                                      "fontSize": 12,
+                                      "fontWeight": "700"
                                     }
                                   ]
                                 }
@@ -10795,129 +10767,129 @@
                     },
                     {
                       "type": "frame",
-                      "id": "LZKE9",
-                      "name": "Thread List Item - 公开帖子列表如何保持社区信息密度",
+                      "id": "y4ZcNM",
+                      "name": "Compact Thread - 公开帖子列表如何保持社区信息密度",
                       "width": "fill_container",
-                      "height": 176,
+                      "height": 126,
                       "fill": "$rx-bg-surface",
-                      "cornerRadius": 22,
+                      "cornerRadius": 16,
                       "stroke": "$rx-border-soft",
                       "strokeWidth": 1,
-                      "gap": 18,
+                      "gap": 14,
                       "padding": [
-                        18,
-                        20
+                        12,
+                        14
                       ],
                       "alignItems": "center",
                       "children": [
                         {
                           "type": "frame",
-                          "id": "wk4NH",
-                          "name": "Thread Left Content",
-                          "width": 560,
+                          "id": "K55gCo",
+                          "name": "Thread Content",
+                          "width": 620,
                           "layout": "vertical",
-                          "gap": 12,
+                          "gap": 7,
                           "children": [
                             {
                               "type": "text",
-                              "id": "X113y",
+                              "id": "v3vOkv",
                               "name": "Thread Title",
                               "fill": "$rx-text-primary",
                               "textGrowth": "fixed-width",
-                              "width": 540,
+                              "width": 600,
                               "content": "公开帖子列表如何保持社区信息密度",
-                              "lineHeight": 1.35,
-                              "fontFamily": "$rx-font-heading",
-                              "fontSize": 26,
+                              "lineHeight": 1.3,
+                              "fontFamily": "$rx-font-body",
+                              "fontSize": 18,
                               "fontWeight": "800"
                             },
                             {
                               "type": "frame",
-                              "id": "Ge8DN",
-                              "name": "Thread Tags",
-                              "gap": 10,
+                              "id": "OYD3W",
+                              "name": "Tags",
+                              "gap": 7,
                               "alignItems": "center",
                               "children": [
                                 {
                                   "type": "frame",
-                                  "id": "jDF6R",
+                                  "id": "hcZRc",
                                   "name": "Category",
                                   "fill": "$rx-brand-soft",
                                   "cornerRadius": "$rx-radius-control",
                                   "stroke": "$rx-brand-primary",
                                   "strokeWidth": 1,
-                                  "gap": 6,
+                                  "gap": 5,
                                   "padding": [
-                                    6,
-                                    11
+                                    5,
+                                    9
                                   ],
                                   "alignItems": "center",
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "jBfFZ",
+                                      "id": "bajbJ",
                                       "name": "Category Label",
                                       "fill": "$rx-brand-primary",
                                       "content": "设计讨论",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 13,
+                                      "fontSize": 12,
                                       "fontWeight": "700"
                                     }
                                   ]
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "X8xGg",
+                                  "id": "nbh8Q",
                                   "name": "Tag #公开Web",
                                   "fill": "$rx-bg-muted",
                                   "cornerRadius": "$rx-radius-control",
                                   "stroke": "$rx-text-secondary",
                                   "strokeWidth": 1,
-                                  "gap": 6,
+                                  "gap": 5,
                                   "padding": [
-                                    6,
-                                    11
+                                    5,
+                                    9
                                   ],
                                   "alignItems": "center",
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "F8VcyK",
+                                      "id": "ggBv0",
                                       "name": "Tag #公开Web Label",
                                       "fill": "$rx-text-secondary",
                                       "content": "#公开Web",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 13,
+                                      "fontSize": 12,
                                       "fontWeight": "700"
                                     }
                                   ]
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "bEAG2",
+                                  "id": "T25Qo",
                                   "name": "Tag #论坛",
                                   "fill": "$rx-bg-muted",
                                   "cornerRadius": "$rx-radius-control",
                                   "stroke": "$rx-text-secondary",
                                   "strokeWidth": 1,
-                                  "gap": 6,
+                                  "gap": 5,
                                   "padding": [
-                                    6,
-                                    11
+                                    5,
+                                    9
                                   ],
                                   "alignItems": "center",
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "gRwDO",
+                                      "id": "t2MS6u",
                                       "name": "Tag #论坛 Label",
                                       "fill": "$rx-text-secondary",
                                       "content": "#论坛",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 13,
+                                      "fontSize": 12,
                                       "fontWeight": "700"
                                     }
                                   ]
@@ -10926,60 +10898,51 @@
                             },
                             {
                               "type": "frame",
-                              "id": "AwcMQ",
-                              "name": "God Comment Preview",
-                              "width": 540,
-                              "height": 40,
-                              "fill": "#fffaf3",
-                              "cornerRadius": 12,
-                              "stroke": "$rx-border-soft",
-                              "strokeWidth": 1,
-                              "gap": 10,
-                              "padding": [
-                                0,
-                                12
-                              ],
+                              "id": "YgtfD",
+                              "name": "Summary Area",
+                              "width": 600,
+                              "gap": 8,
                               "alignItems": "center",
                               "children": [
                                 {
                                   "type": "frame",
-                                  "id": "j8hRs",
+                                  "id": "S4mcCZ",
                                   "name": "God Badge",
                                   "fill": "#fff3dc",
                                   "cornerRadius": "$rx-radius-control",
                                   "stroke": "$rx-accent-earth",
                                   "strokeWidth": 1,
-                                  "gap": 6,
+                                  "gap": 5,
                                   "padding": [
-                                    6,
-                                    11
+                                    5,
+                                    9
                                   ],
                                   "alignItems": "center",
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "hyIzV",
+                                      "id": "B8GpX",
                                       "name": "God Badge Label",
                                       "fill": "$rx-accent-earth",
                                       "content": "神评",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 13,
+                                      "fontSize": 12,
                                       "fontWeight": "700"
                                     }
                                   ]
                                 },
                                 {
                                   "type": "text",
-                                  "id": "WIJc1",
-                                  "name": "God Text",
+                                  "id": "OjZOW",
+                                  "name": "God Summary",
                                   "fill": "$rx-text-secondary",
                                   "textGrowth": "fixed-width",
-                                  "width": 440,
-                                  "content": "阿宁：神评预览只展示评论摘要，不放表情 reaction。",
-                                  "lineHeight": 1.35,
+                                  "width": 520,
+                                  "content": "阿宁：列表页不放 reaction，优先看作者、统计和神评摘要。",
+                                  "lineHeight": 1.3,
                                   "fontFamily": "$rx-font-body",
-                                  "fontSize": 15,
+                                  "fontSize": 13,
                                   "fontWeight": "500"
                                 }
                               ]
@@ -10988,34 +10951,33 @@
                         },
                         {
                           "type": "rectangle",
-                          "id": "EWX9T",
-                          "name": "Thread Divider",
+                          "id": "oRToa",
+                          "name": "Divider",
                           "fill": "$rx-pattern-line",
                           "width": 1,
-                          "height": 122
+                          "height": 92
                         },
                         {
                           "type": "frame",
-                          "id": "ztSWJ",
-                          "name": "Thread Author And Metrics",
-                          "width": 250,
+                          "id": "mqUs9",
+                          "name": "Author Metrics",
+                          "width": 230,
                           "layout": "vertical",
-                          "gap": 12,
+                          "gap": 7,
                           "children": [
                             {
                               "type": "frame",
-                              "id": "xEVrq",
+                              "id": "xFmfT",
                               "name": "Author Row",
-                              "width": "fill_container",
-                              "gap": 12,
+                              "gap": 8,
                               "alignItems": "center",
                               "children": [
                                 {
                                   "type": "frame",
-                                  "id": "PFii2",
+                                  "id": "yjB3N",
                                   "name": "Avatar 萝",
-                                  "width": 48,
-                                  "height": 48,
+                                  "width": 36,
+                                  "height": 36,
                                   "fill": "#eef5dd",
                                   "cornerRadius": 999,
                                   "stroke": "$rx-border-soft",
@@ -11025,49 +10987,49 @@
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "cSLSJ",
+                                      "id": "Jk9E1",
                                       "name": "Avatar Text 萝",
                                       "fill": "$rx-text-primary",
                                       "content": "萝",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 18,
+                                      "fontSize": 14,
                                       "fontWeight": "800"
                                     }
                                   ]
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "ZdPCN",
+                                  "id": "KST1Q",
                                   "name": "Author Text",
                                   "width": 176,
                                   "layout": "vertical",
-                                  "gap": 3,
+                                  "gap": 1,
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "v1vhM",
-                                      "name": "Author Name",
+                                      "id": "dEUbr",
+                                      "name": "Author",
                                       "fill": "$rx-text-primary",
                                       "textGrowth": "fixed-width",
                                       "width": 176,
                                       "content": "萝卜SAMA",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 17,
+                                      "fontSize": 13,
                                       "fontWeight": "800"
                                     },
                                     {
                                       "type": "text",
-                                      "id": "sBp2m",
-                                      "name": "Author Time",
+                                      "id": "RzoKs",
+                                      "name": "Time",
                                       "fill": "$rx-text-secondary",
                                       "textGrowth": "fixed-width",
                                       "width": 176,
-                                      "content": "2026-06-27 21:18",
-                                      "lineHeight": 1.35,
+                                      "content": "06-27 21:18",
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 14,
+                                      "fontSize": 11,
                                       "fontWeight": "500"
                                     }
                                   ]
@@ -11076,118 +11038,118 @@
                             },
                             {
                               "type": "frame",
-                              "id": "iVe8W",
-                              "name": "Stats Row",
-                              "gap": 8,
+                              "id": "cgwR8",
+                              "name": "Stats",
+                              "gap": 5,
                               "alignItems": "center",
                               "children": [
                                 {
                                   "type": "frame",
-                                  "id": "izsK9",
+                                  "id": "hCCls",
                                   "name": "Stat 赞",
                                   "fill": "$rx-bg-muted",
                                   "cornerRadius": "$rx-radius-control",
                                   "gap": 3,
                                   "padding": [
-                                    5,
-                                    9
+                                    4,
+                                    7
                                   ],
                                   "alignItems": "center",
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "Y6tHc",
+                                      "id": "bHezr",
                                       "name": "Stat Label 赞",
                                       "fill": "$rx-text-muted",
                                       "content": "赞",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 12,
+                                      "fontSize": 11,
                                       "fontWeight": "600"
                                     },
                                     {
                                       "type": "text",
-                                      "id": "sUFQM",
+                                      "id": "CCqM2",
                                       "name": "Stat Value 赞",
                                       "fill": "$rx-text-primary",
                                       "content": "38",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 14,
+                                      "fontSize": 12,
                                       "fontWeight": "800"
                                     }
                                   ]
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "a1spIY",
+                                  "id": "c4ayBU",
                                   "name": "Stat 评",
                                   "fill": "$rx-bg-muted",
                                   "cornerRadius": "$rx-radius-control",
                                   "gap": 3,
                                   "padding": [
-                                    5,
-                                    9
+                                    4,
+                                    7
                                   ],
                                   "alignItems": "center",
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "ydGjK",
+                                      "id": "hfyfV",
                                       "name": "Stat Label 评",
                                       "fill": "$rx-text-muted",
                                       "content": "评",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 12,
+                                      "fontSize": 11,
                                       "fontWeight": "600"
                                     },
                                     {
                                       "type": "text",
-                                      "id": "TCbG9",
+                                      "id": "Ob1l4",
                                       "name": "Stat Value 评",
                                       "fill": "$rx-text-primary",
                                       "content": "12",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 14,
+                                      "fontSize": 12,
                                       "fontWeight": "800"
                                     }
                                   ]
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "eGA4h",
+                                  "id": "N5m6h",
                                   "name": "Stat 阅",
                                   "fill": "$rx-bg-muted",
                                   "cornerRadius": "$rx-radius-control",
                                   "gap": 3,
                                   "padding": [
-                                    5,
-                                    9
+                                    4,
+                                    7
                                   ],
                                   "alignItems": "center",
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "IWkNT",
+                                      "id": "XOTJb",
                                       "name": "Stat Label 阅",
                                       "fill": "$rx-text-muted",
                                       "content": "阅",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 12,
+                                      "fontSize": 11,
                                       "fontWeight": "600"
                                     },
                                     {
                                       "type": "text",
-                                      "id": "bKDCo",
+                                      "id": "yUl3R",
                                       "name": "Stat Value 阅",
                                       "fill": "$rx-text-primary",
                                       "content": "428",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 14,
+                                      "fontSize": 12,
                                       "fontWeight": "800"
                                     }
                                   ]
@@ -11196,66 +11158,48 @@
                             },
                             {
                               "type": "frame",
-                              "id": "Z5My7v",
-                              "name": "Interaction Row",
+                              "id": "C0NAU",
+                              "name": "Interaction",
                               "width": "fill_container",
                               "justifyContent": "space_between",
                               "alignItems": "center",
                               "children": [
                                 {
                                   "type": "text",
-                                  "id": "Lt8Wl",
+                                  "id": "fHYvS",
                                   "name": "Interaction Label",
                                   "fill": "$rx-text-secondary",
                                   "content": "互动",
-                                  "lineHeight": 1.35,
+                                  "lineHeight": 1.3,
                                   "fontFamily": "$rx-font-body",
-                                  "fontSize": 15,
+                                  "fontSize": 12,
                                   "fontWeight": "600"
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "DD0eY",
+                                  "id": "KjtVG",
                                   "name": "Comment Score",
-                                  "gap": 8,
+                                  "fill": "#e5f4eb",
+                                  "cornerRadius": "$rx-radius-control",
+                                  "stroke": "$rx-accent-jade",
+                                  "strokeWidth": 1,
+                                  "gap": 5,
+                                  "padding": [
+                                    5,
+                                    9
+                                  ],
                                   "alignItems": "center",
                                   "children": [
                                     {
-                                      "type": "frame",
-                                      "id": "fVcSk",
-                                      "name": "Comment Bubble",
-                                      "width": 38,
-                                      "height": 38,
-                                      "fill": "#dff1e4",
-                                      "cornerRadius": 999,
-                                      "stroke": "$rx-accent-jade",
-                                      "strokeWidth": 1,
-                                      "justifyContent": "center",
-                                      "alignItems": "center",
-                                      "children": [
-                                        {
-                                          "type": "text",
-                                          "id": "xzIK9",
-                                          "name": "Bubble Text",
-                                          "fill": "$rx-accent-jade",
-                                          "content": "评",
-                                          "lineHeight": 1.35,
-                                          "fontFamily": "$rx-font-body",
-                                          "fontSize": 16,
-                                          "fontWeight": "800"
-                                        }
-                                      ]
-                                    },
-                                    {
                                       "type": "text",
-                                      "id": "O5yU5",
-                                      "name": "Score Text",
-                                      "fill": "$rx-text-primary",
-                                      "content": "+9",
-                                      "lineHeight": 1.35,
+                                      "id": "BsSJZ",
+                                      "name": "Comment Score Label",
+                                      "fill": "$rx-accent-jade",
+                                      "content": "评 +9",
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 16,
-                                      "fontWeight": "800"
+                                      "fontSize": 12,
+                                      "fontWeight": "700"
                                     }
                                   ]
                                 }
@@ -11267,129 +11211,129 @@
                     },
                     {
                       "type": "frame",
-                      "id": "eWsFS",
-                      "name": "Thread List Item - 聊天室入口是否应该放进公开导航",
+                      "id": "lfQZb",
+                      "name": "Compact Thread - 聊天室入口是否应该放进公开导航",
                       "width": "fill_container",
-                      "height": 176,
+                      "height": 126,
                       "fill": "$rx-bg-surface",
-                      "cornerRadius": 22,
+                      "cornerRadius": 16,
                       "stroke": "$rx-border-soft",
                       "strokeWidth": 1,
-                      "gap": 18,
+                      "gap": 14,
                       "padding": [
-                        18,
-                        20
+                        12,
+                        14
                       ],
                       "alignItems": "center",
                       "children": [
                         {
                           "type": "frame",
-                          "id": "At8hL",
-                          "name": "Thread Left Content",
-                          "width": 560,
+                          "id": "lpinj",
+                          "name": "Thread Content",
+                          "width": 620,
                           "layout": "vertical",
-                          "gap": 12,
+                          "gap": 7,
                           "children": [
                             {
                               "type": "text",
-                              "id": "PGjd5",
+                              "id": "HGuIs",
                               "name": "Thread Title",
                               "fill": "$rx-text-primary",
                               "textGrowth": "fixed-width",
-                              "width": 540,
+                              "width": 600,
                               "content": "聊天室入口是否应该放进公开导航",
-                              "lineHeight": 1.35,
-                              "fontFamily": "$rx-font-heading",
-                              "fontSize": 26,
+                              "lineHeight": 1.3,
+                              "fontFamily": "$rx-font-body",
+                              "fontSize": 18,
                               "fontWeight": "800"
                             },
                             {
                               "type": "frame",
-                              "id": "B7ccO",
-                              "name": "Thread Tags",
-                              "gap": 10,
+                              "id": "TmuMT",
+                              "name": "Tags",
+                              "gap": 7,
                               "alignItems": "center",
                               "children": [
                                 {
                                   "type": "frame",
-                                  "id": "r7vnZ",
+                                  "id": "c73zBe",
                                   "name": "Category",
                                   "fill": "$rx-brand-soft",
                                   "cornerRadius": "$rx-radius-control",
                                   "stroke": "$rx-brand-primary",
                                   "strokeWidth": 1,
-                                  "gap": 6,
+                                  "gap": 5,
                                   "padding": [
-                                    6,
-                                    11
+                                    5,
+                                    9
                                   ],
                                   "alignItems": "center",
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "OEgIM",
+                                      "id": "A6607j",
                                       "name": "Category Label",
                                       "fill": "$rx-brand-primary",
                                       "content": "聊天室",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 13,
+                                      "fontSize": 12,
                                       "fontWeight": "700"
                                     }
                                   ]
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "Yujt0",
+                                  "id": "LmBTa",
                                   "name": "Tag #消息",
                                   "fill": "$rx-bg-muted",
                                   "cornerRadius": "$rx-radius-control",
                                   "stroke": "$rx-text-secondary",
                                   "strokeWidth": 1,
-                                  "gap": 6,
+                                  "gap": 5,
                                   "padding": [
-                                    6,
-                                    11
+                                    5,
+                                    9
                                   ],
                                   "alignItems": "center",
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "sYgy1",
+                                      "id": "TyyIm",
                                       "name": "Tag #消息 Label",
                                       "fill": "$rx-text-secondary",
                                       "content": "#消息",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 13,
+                                      "fontSize": 12,
                                       "fontWeight": "700"
                                     }
                                   ]
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "dgqFy",
+                                  "id": "INOuZ",
                                   "name": "Tag #实时",
                                   "fill": "$rx-bg-muted",
                                   "cornerRadius": "$rx-radius-control",
                                   "stroke": "$rx-text-secondary",
                                   "strokeWidth": 1,
-                                  "gap": 6,
+                                  "gap": 5,
                                   "padding": [
-                                    6,
-                                    11
+                                    5,
+                                    9
                                   ],
                                   "alignItems": "center",
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "l9Ad3E",
+                                      "id": "u1k4Qs",
                                       "name": "Tag #实时 Label",
                                       "fill": "$rx-text-secondary",
                                       "content": "#实时",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 13,
+                                      "fontSize": 12,
                                       "fontWeight": "700"
                                     }
                                   ]
@@ -11397,50 +11341,59 @@
                               ]
                             },
                             {
-                              "type": "text",
-                              "id": "W8kLj",
-                              "name": "Thread Summary",
-                              "fill": "$rx-text-secondary",
-                              "textGrowth": "fixed-width",
-                              "width": 540,
-                              "content": "公开房间适合围观和轻参与；私信、系统消息继续留在登录态消息中心。",
-                              "lineHeight": 1.35,
-                              "fontFamily": "$rx-font-body",
-                              "fontSize": 15,
-                              "fontWeight": "500"
+                              "type": "frame",
+                              "id": "J16z4E",
+                              "name": "Summary Area",
+                              "width": 600,
+                              "gap": 8,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "ttdxC",
+                                  "name": "Thread Summary",
+                                  "fill": "$rx-text-secondary",
+                                  "textGrowth": "fixed-width",
+                                  "width": 600,
+                                  "content": "公开房间适合围观和轻参与；私信继续留在登录态消息中心。",
+                                  "lineHeight": 1.3,
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 13,
+                                  "fontWeight": "500"
+                                }
+                              ]
                             }
                           ]
                         },
                         {
                           "type": "rectangle",
-                          "id": "eWjWH",
-                          "name": "Thread Divider",
+                          "id": "udAu5",
+                          "name": "Divider",
                           "fill": "$rx-pattern-line",
                           "width": 1,
-                          "height": 122
+                          "height": 92
                         },
                         {
                           "type": "frame",
-                          "id": "K3WK9x",
-                          "name": "Thread Author And Metrics",
-                          "width": 250,
+                          "id": "XA35Q",
+                          "name": "Author Metrics",
+                          "width": 230,
                           "layout": "vertical",
-                          "gap": 12,
+                          "gap": 7,
                           "children": [
                             {
                               "type": "frame",
-                              "id": "Nexpp",
+                              "id": "L2bO6",
                               "name": "Author Row",
-                              "width": "fill_container",
-                              "gap": 12,
+                              "gap": 8,
                               "alignItems": "center",
                               "children": [
                                 {
                                   "type": "frame",
-                                  "id": "j3RmdG",
+                                  "id": "BX8NM",
                                   "name": "Avatar 夏",
-                                  "width": 48,
-                                  "height": 48,
+                                  "width": 36,
+                                  "height": 36,
                                   "fill": "#e8f1f7",
                                   "cornerRadius": 999,
                                   "stroke": "$rx-border-soft",
@@ -11450,49 +11403,49 @@
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "vjIVr",
+                                      "id": "KtYSH",
                                       "name": "Avatar Text 夏",
                                       "fill": "$rx-text-primary",
                                       "content": "夏",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 18,
+                                      "fontSize": 14,
                                       "fontWeight": "800"
                                     }
                                   ]
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "Adf4N",
+                                  "id": "oMJDf",
                                   "name": "Author Text",
                                   "width": 176,
                                   "layout": "vertical",
-                                  "gap": 3,
+                                  "gap": 1,
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "wGlsg",
-                                      "name": "Author Name",
+                                      "id": "W09PG",
+                                      "name": "Author",
                                       "fill": "$rx-text-primary",
                                       "textGrowth": "fixed-width",
                                       "width": 176,
                                       "content": "小夏",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 17,
+                                      "fontSize": 13,
                                       "fontWeight": "800"
                                     },
                                     {
                                       "type": "text",
-                                      "id": "ScAzU",
-                                      "name": "Author Time",
+                                      "id": "vVYGl",
+                                      "name": "Time",
                                       "fill": "$rx-text-secondary",
                                       "textGrowth": "fixed-width",
                                       "width": 176,
-                                      "content": "2026-06-27 20:42",
-                                      "lineHeight": 1.35,
+                                      "content": "06-27 20:42",
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 14,
+                                      "fontSize": 11,
                                       "fontWeight": "500"
                                     }
                                   ]
@@ -11501,118 +11454,118 @@
                             },
                             {
                               "type": "frame",
-                              "id": "XSLHb",
-                              "name": "Stats Row",
-                              "gap": 8,
+                              "id": "nXrSu",
+                              "name": "Stats",
+                              "gap": 5,
                               "alignItems": "center",
                               "children": [
                                 {
                                   "type": "frame",
-                                  "id": "aXjFb",
+                                  "id": "eBQg2",
                                   "name": "Stat 赞",
                                   "fill": "$rx-bg-muted",
                                   "cornerRadius": "$rx-radius-control",
                                   "gap": 3,
                                   "padding": [
-                                    5,
-                                    9
+                                    4,
+                                    7
                                   ],
                                   "alignItems": "center",
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "AfrGr",
+                                      "id": "raInR",
                                       "name": "Stat Label 赞",
                                       "fill": "$rx-text-muted",
                                       "content": "赞",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 12,
+                                      "fontSize": 11,
                                       "fontWeight": "600"
                                     },
                                     {
                                       "type": "text",
-                                      "id": "j6vka",
+                                      "id": "JdmaN",
                                       "name": "Stat Value 赞",
                                       "fill": "$rx-text-primary",
                                       "content": "25",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 14,
+                                      "fontSize": 12,
                                       "fontWeight": "800"
                                     }
                                   ]
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "h4c51D",
+                                  "id": "ttcTs",
                                   "name": "Stat 评",
                                   "fill": "$rx-bg-muted",
                                   "cornerRadius": "$rx-radius-control",
                                   "gap": 3,
                                   "padding": [
-                                    5,
-                                    9
+                                    4,
+                                    7
                                   ],
                                   "alignItems": "center",
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "aSW1l",
+                                      "id": "b1y3Vf",
                                       "name": "Stat Label 评",
                                       "fill": "$rx-text-muted",
                                       "content": "评",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 12,
+                                      "fontSize": 11,
                                       "fontWeight": "600"
                                     },
                                     {
                                       "type": "text",
-                                      "id": "EnsKQ",
+                                      "id": "QM5Mf",
                                       "name": "Stat Value 评",
                                       "fill": "$rx-text-primary",
                                       "content": "19",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 14,
+                                      "fontSize": 12,
                                       "fontWeight": "800"
                                     }
                                   ]
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "k6Hwgf",
+                                  "id": "B4OwP",
                                   "name": "Stat 阅",
                                   "fill": "$rx-bg-muted",
                                   "cornerRadius": "$rx-radius-control",
                                   "gap": 3,
                                   "padding": [
-                                    5,
-                                    9
+                                    4,
+                                    7
                                   ],
                                   "alignItems": "center",
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "GT5ZG",
+                                      "id": "uJvzg",
                                       "name": "Stat Label 阅",
                                       "fill": "$rx-text-muted",
                                       "content": "阅",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 12,
+                                      "fontSize": 11,
                                       "fontWeight": "600"
                                     },
                                     {
                                       "type": "text",
-                                      "id": "C8azJ",
+                                      "id": "lCx3c",
                                       "name": "Stat Value 阅",
                                       "fill": "$rx-text-primary",
                                       "content": "366",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 14,
+                                      "fontSize": 12,
                                       "fontWeight": "800"
                                     }
                                   ]
@@ -11621,66 +11574,48 @@
                             },
                             {
                               "type": "frame",
-                              "id": "V36Ru9",
-                              "name": "Interaction Row",
+                              "id": "knLGn",
+                              "name": "Interaction",
                               "width": "fill_container",
                               "justifyContent": "space_between",
                               "alignItems": "center",
                               "children": [
                                 {
                                   "type": "text",
-                                  "id": "bGA0N",
+                                  "id": "thY1n",
                                   "name": "Interaction Label",
                                   "fill": "$rx-text-secondary",
                                   "content": "互动",
-                                  "lineHeight": 1.35,
+                                  "lineHeight": 1.3,
                                   "fontFamily": "$rx-font-body",
-                                  "fontSize": 15,
+                                  "fontSize": 12,
                                   "fontWeight": "600"
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "vnlnZ",
+                                  "id": "fr5kb",
                                   "name": "Comment Score",
-                                  "gap": 8,
+                                  "fill": "#e5f4eb",
+                                  "cornerRadius": "$rx-radius-control",
+                                  "stroke": "$rx-accent-jade",
+                                  "strokeWidth": 1,
+                                  "gap": 5,
+                                  "padding": [
+                                    5,
+                                    9
+                                  ],
                                   "alignItems": "center",
                                   "children": [
                                     {
-                                      "type": "frame",
-                                      "id": "uEMrq",
-                                      "name": "Comment Bubble",
-                                      "width": 38,
-                                      "height": 38,
-                                      "fill": "#dff1e4",
-                                      "cornerRadius": 999,
-                                      "stroke": "$rx-accent-jade",
-                                      "strokeWidth": 1,
-                                      "justifyContent": "center",
-                                      "alignItems": "center",
-                                      "children": [
-                                        {
-                                          "type": "text",
-                                          "id": "M4TgiS",
-                                          "name": "Bubble Text",
-                                          "fill": "$rx-accent-jade",
-                                          "content": "评",
-                                          "lineHeight": 1.35,
-                                          "fontFamily": "$rx-font-body",
-                                          "fontSize": 16,
-                                          "fontWeight": "800"
-                                        }
-                                      ]
-                                    },
-                                    {
                                       "type": "text",
-                                      "id": "twjQV",
-                                      "name": "Score Text",
-                                      "fill": "$rx-text-primary",
+                                      "id": "oEaxW",
+                                      "name": "Comment Score Label",
+                                      "fill": "$rx-accent-jade",
                                       "content": "评",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 16,
-                                      "fontWeight": "800"
+                                      "fontSize": 12,
+                                      "fontWeight": "700"
                                     }
                                   ]
                                 }
@@ -11692,129 +11627,129 @@
                     },
                     {
                       "type": "frame",
-                      "id": "OIoyg",
-                      "name": "Thread List Item - 神评和沙发在楼中楼里应该如何展示",
+                      "id": "hLM67",
+                      "name": "Compact Thread - 神评和沙发在楼中楼里应该如何展示",
                       "width": "fill_container",
-                      "height": 176,
+                      "height": 126,
                       "fill": "$rx-bg-surface",
-                      "cornerRadius": 22,
+                      "cornerRadius": 16,
                       "stroke": "$rx-border-soft",
                       "strokeWidth": 1,
-                      "gap": 18,
+                      "gap": 14,
                       "padding": [
-                        18,
-                        20
+                        12,
+                        14
                       ],
                       "alignItems": "center",
                       "children": [
                         {
                           "type": "frame",
-                          "id": "G5rCF",
-                          "name": "Thread Left Content",
-                          "width": 560,
+                          "id": "J21CGD",
+                          "name": "Thread Content",
+                          "width": 620,
                           "layout": "vertical",
-                          "gap": 12,
+                          "gap": 7,
                           "children": [
                             {
                               "type": "text",
-                              "id": "PweuK",
+                              "id": "kZXFa",
                               "name": "Thread Title",
                               "fill": "$rx-text-primary",
                               "textGrowth": "fixed-width",
-                              "width": 540,
+                              "width": 600,
                               "content": "神评和沙发在楼中楼里应该如何展示",
-                              "lineHeight": 1.35,
-                              "fontFamily": "$rx-font-heading",
-                              "fontSize": 26,
+                              "lineHeight": 1.3,
+                              "fontFamily": "$rx-font-body",
+                              "fontSize": 18,
                               "fontWeight": "800"
                             },
                             {
                               "type": "frame",
-                              "id": "s00UdP",
-                              "name": "Thread Tags",
-                              "gap": 10,
+                              "id": "NS5dm",
+                              "name": "Tags",
+                              "gap": 7,
                               "alignItems": "center",
                               "children": [
                                 {
                                   "type": "frame",
-                                  "id": "THTkY",
+                                  "id": "i68XWk",
                                   "name": "Category",
                                   "fill": "$rx-brand-soft",
                                   "cornerRadius": "$rx-radius-control",
                                   "stroke": "$rx-brand-primary",
                                   "strokeWidth": 1,
-                                  "gap": 6,
+                                  "gap": 5,
                                   "padding": [
-                                    6,
-                                    11
+                                    5,
+                                    9
                                   ],
                                   "alignItems": "center",
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "iUJHD",
+                                      "id": "DOTP0",
                                       "name": "Category Label",
                                       "fill": "$rx-brand-primary",
                                       "content": "评论系统",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 13,
+                                      "fontSize": 12,
                                       "fontWeight": "700"
                                     }
                                   ]
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "Teb83",
+                                  "id": "CuHtN",
                                   "name": "Tag #神评",
                                   "fill": "$rx-bg-muted",
                                   "cornerRadius": "$rx-radius-control",
                                   "stroke": "$rx-text-secondary",
                                   "strokeWidth": 1,
-                                  "gap": 6,
+                                  "gap": 5,
                                   "padding": [
-                                    6,
-                                    11
+                                    5,
+                                    9
                                   ],
                                   "alignItems": "center",
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "uLky4",
+                                      "id": "ZTR2Y",
                                       "name": "Tag #神评 Label",
                                       "fill": "$rx-text-secondary",
                                       "content": "#神评",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 13,
+                                      "fontSize": 12,
                                       "fontWeight": "700"
                                     }
                                   ]
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "NzFQq",
+                                  "id": "NpYWa",
                                   "name": "Tag #沙发",
                                   "fill": "$rx-bg-muted",
                                   "cornerRadius": "$rx-radius-control",
                                   "stroke": "$rx-text-secondary",
                                   "strokeWidth": 1,
-                                  "gap": 6,
+                                  "gap": 5,
                                   "padding": [
-                                    6,
-                                    11
+                                    5,
+                                    9
                                   ],
                                   "alignItems": "center",
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "hMxGR",
+                                      "id": "wA1sL",
                                       "name": "Tag #沙发 Label",
                                       "fill": "$rx-text-secondary",
                                       "content": "#沙发",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 13,
+                                      "fontSize": 12,
                                       "fontWeight": "700"
                                     }
                                   ]
@@ -11822,50 +11757,59 @@
                               ]
                             },
                             {
-                              "type": "text",
-                              "id": "Eag0a",
-                              "name": "Thread Summary",
-                              "fill": "$rx-text-secondary",
-                              "textGrowth": "fixed-width",
-                              "width": 540,
-                              "content": "神评属于父评论，沙发属于子回复；详情页再展示完整评论树和表情 reaction。",
-                              "lineHeight": 1.35,
-                              "fontFamily": "$rx-font-body",
-                              "fontSize": 15,
-                              "fontWeight": "500"
+                              "type": "frame",
+                              "id": "m72aKj",
+                              "name": "Summary Area",
+                              "width": 600,
+                              "gap": 8,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "BY3sN",
+                                  "name": "Thread Summary",
+                                  "fill": "$rx-text-secondary",
+                                  "textGrowth": "fixed-width",
+                                  "width": 600,
+                                  "content": "神评属于父评论，沙发属于子回复；详情页展示完整评论树。",
+                                  "lineHeight": 1.3,
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 13,
+                                  "fontWeight": "500"
+                                }
+                              ]
                             }
                           ]
                         },
                         {
                           "type": "rectangle",
-                          "id": "oWBhc",
-                          "name": "Thread Divider",
+                          "id": "xiKvn",
+                          "name": "Divider",
                           "fill": "$rx-pattern-line",
                           "width": 1,
-                          "height": 122
+                          "height": 92
                         },
                         {
                           "type": "frame",
-                          "id": "l7h0Z",
-                          "name": "Thread Author And Metrics",
-                          "width": 250,
+                          "id": "qFwuG",
+                          "name": "Author Metrics",
+                          "width": 230,
                           "layout": "vertical",
-                          "gap": 12,
+                          "gap": 7,
                           "children": [
                             {
                               "type": "frame",
-                              "id": "EEKOy",
+                              "id": "KfvmU",
                               "name": "Author Row",
-                              "width": "fill_container",
-                              "gap": 12,
+                              "gap": 8,
                               "alignItems": "center",
                               "children": [
                                 {
                                   "type": "frame",
-                                  "id": "ZTijD",
+                                  "id": "R9ibn8",
                                   "name": "Avatar A",
-                                  "width": 48,
-                                  "height": 48,
+                                  "width": 36,
+                                  "height": 36,
                                   "fill": "#f4e2e7",
                                   "cornerRadius": 999,
                                   "stroke": "$rx-border-soft",
@@ -11875,49 +11819,49 @@
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "PZl6j",
+                                      "id": "EqRAv",
                                       "name": "Avatar Text A",
                                       "fill": "$rx-text-primary",
                                       "content": "A",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 18,
+                                      "fontSize": 14,
                                       "fontWeight": "800"
                                     }
                                   ]
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "iRGDD",
+                                  "id": "QoBLu",
                                   "name": "Author Text",
                                   "width": 176,
                                   "layout": "vertical",
-                                  "gap": 3,
+                                  "gap": 1,
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "T5wVN",
-                                      "name": "Author Name",
+                                      "id": "xFcR8",
+                                      "name": "Author",
                                       "fill": "$rx-text-primary",
                                       "textGrowth": "fixed-width",
                                       "width": 176,
                                       "content": "Admin",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 17,
+                                      "fontSize": 13,
                                       "fontWeight": "800"
                                     },
                                     {
                                       "type": "text",
-                                      "id": "OjxW7",
-                                      "name": "Author Time",
+                                      "id": "ClcxA",
+                                      "name": "Time",
                                       "fill": "$rx-text-secondary",
                                       "textGrowth": "fixed-width",
                                       "width": 176,
-                                      "content": "2026-06-27 18:06",
-                                      "lineHeight": 1.35,
+                                      "content": "06-27 18:06",
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 14,
+                                      "fontSize": 11,
                                       "fontWeight": "500"
                                     }
                                   ]
@@ -11926,118 +11870,118 @@
                             },
                             {
                               "type": "frame",
-                              "id": "NuqBn",
-                              "name": "Stats Row",
-                              "gap": 8,
+                              "id": "UjkA5",
+                              "name": "Stats",
+                              "gap": 5,
                               "alignItems": "center",
                               "children": [
                                 {
                                   "type": "frame",
-                                  "id": "JLqF1",
+                                  "id": "BVdt2",
                                   "name": "Stat 赞",
                                   "fill": "$rx-bg-muted",
                                   "cornerRadius": "$rx-radius-control",
                                   "gap": 3,
                                   "padding": [
-                                    5,
-                                    9
+                                    4,
+                                    7
                                   ],
                                   "alignItems": "center",
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "uh797",
+                                      "id": "LuIUb",
                                       "name": "Stat Label 赞",
                                       "fill": "$rx-text-muted",
                                       "content": "赞",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 12,
+                                      "fontSize": 11,
                                       "fontWeight": "600"
                                     },
                                     {
                                       "type": "text",
-                                      "id": "cEYb9",
+                                      "id": "asUYD",
                                       "name": "Stat Value 赞",
                                       "fill": "$rx-text-primary",
                                       "content": "64",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 14,
+                                      "fontSize": 12,
                                       "fontWeight": "800"
                                     }
                                   ]
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "kBtA3",
+                                  "id": "e8ZLB",
                                   "name": "Stat 评",
                                   "fill": "$rx-bg-muted",
                                   "cornerRadius": "$rx-radius-control",
                                   "gap": 3,
                                   "padding": [
-                                    5,
-                                    9
+                                    4,
+                                    7
                                   ],
                                   "alignItems": "center",
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "FRsuW",
+                                      "id": "l49WBT",
                                       "name": "Stat Label 评",
                                       "fill": "$rx-text-muted",
                                       "content": "评",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 12,
+                                      "fontSize": 11,
                                       "fontWeight": "600"
                                     },
                                     {
                                       "type": "text",
-                                      "id": "mdF0N",
+                                      "id": "cZFH5",
                                       "name": "Stat Value 评",
                                       "fill": "$rx-text-primary",
                                       "content": "27",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 14,
+                                      "fontSize": 12,
                                       "fontWeight": "800"
                                     }
                                   ]
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "xVjQt",
+                                  "id": "JOLvb",
                                   "name": "Stat 阅",
                                   "fill": "$rx-bg-muted",
                                   "cornerRadius": "$rx-radius-control",
                                   "gap": 3,
                                   "padding": [
-                                    5,
-                                    9
+                                    4,
+                                    7
                                   ],
                                   "alignItems": "center",
                                   "children": [
                                     {
                                       "type": "text",
-                                      "id": "r1QSa",
+                                      "id": "NcTKe",
                                       "name": "Stat Label 阅",
                                       "fill": "$rx-text-muted",
                                       "content": "阅",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 12,
+                                      "fontSize": 11,
                                       "fontWeight": "600"
                                     },
                                     {
                                       "type": "text",
-                                      "id": "WO9fg",
+                                      "id": "SzBei",
                                       "name": "Stat Value 阅",
                                       "fill": "$rx-text-primary",
                                       "content": "891",
-                                      "lineHeight": 1.35,
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 14,
+                                      "fontSize": 12,
                                       "fontWeight": "800"
                                     }
                                   ]
@@ -12046,66 +11990,464 @@
                             },
                             {
                               "type": "frame",
-                              "id": "vMON3",
-                              "name": "Interaction Row",
+                              "id": "CcWgX",
+                              "name": "Interaction",
                               "width": "fill_container",
                               "justifyContent": "space_between",
                               "alignItems": "center",
                               "children": [
                                 {
                                   "type": "text",
-                                  "id": "LzB9h",
+                                  "id": "RYWf5",
                                   "name": "Interaction Label",
                                   "fill": "$rx-text-secondary",
                                   "content": "互动",
-                                  "lineHeight": 1.35,
+                                  "lineHeight": 1.3,
                                   "fontFamily": "$rx-font-body",
-                                  "fontSize": 15,
+                                  "fontSize": 12,
                                   "fontWeight": "600"
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "PcSR2",
+                                  "id": "vAmSd",
                                   "name": "Comment Score",
-                                  "gap": 8,
+                                  "fill": "#e5f4eb",
+                                  "cornerRadius": "$rx-radius-control",
+                                  "stroke": "$rx-accent-jade",
+                                  "strokeWidth": 1,
+                                  "gap": 5,
+                                  "padding": [
+                                    5,
+                                    9
+                                  ],
                                   "alignItems": "center",
                                   "children": [
                                     {
-                                      "type": "frame",
-                                      "id": "wYcEH",
-                                      "name": "Comment Bubble",
-                                      "width": 38,
-                                      "height": 38,
-                                      "fill": "#dff1e4",
-                                      "cornerRadius": 999,
-                                      "stroke": "$rx-accent-jade",
-                                      "strokeWidth": 1,
-                                      "justifyContent": "center",
-                                      "alignItems": "center",
-                                      "children": [
-                                        {
-                                          "type": "text",
-                                          "id": "Xz6GU",
-                                          "name": "Bubble Text",
-                                          "fill": "$rx-accent-jade",
-                                          "content": "评",
-                                          "lineHeight": 1.35,
-                                          "fontFamily": "$rx-font-body",
-                                          "fontSize": 16,
-                                          "fontWeight": "800"
-                                        }
-                                      ]
+                                      "type": "text",
+                                      "id": "KZvoE",
+                                      "name": "Comment Score Label",
+                                      "fill": "$rx-accent-jade",
+                                      "content": "评 +12",
+                                      "lineHeight": 1.3,
+                                      "fontFamily": "$rx-font-body",
+                                      "fontSize": 12,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Y2CSA",
+                      "name": "Compact Thread - 移动详情页如何承载评论输入",
+                      "width": "fill_container",
+                      "height": 126,
+                      "fill": "$rx-bg-surface",
+                      "cornerRadius": 16,
+                      "stroke": "$rx-border-soft",
+                      "strokeWidth": 1,
+                      "gap": 14,
+                      "padding": [
+                        12,
+                        14
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "omAA9",
+                          "name": "Thread Content",
+                          "width": 620,
+                          "layout": "vertical",
+                          "gap": 7,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "IRGXJ",
+                              "name": "Thread Title",
+                              "fill": "$rx-text-primary",
+                              "textGrowth": "fixed-width",
+                              "width": 600,
+                              "content": "移动详情页如何承载评论输入",
+                              "lineHeight": 1.3,
+                              "fontFamily": "$rx-font-body",
+                              "fontSize": 18,
+                              "fontWeight": "800"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "peQUf",
+                              "name": "Tags",
+                              "gap": 7,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "i7B22",
+                                  "name": "Category",
+                                  "fill": "$rx-brand-soft",
+                                  "cornerRadius": "$rx-radius-control",
+                                  "stroke": "$rx-brand-primary",
+                                  "strokeWidth": 1,
+                                  "gap": 5,
+                                  "padding": [
+                                    5,
+                                    9
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "k1tkyj",
+                                      "name": "Category Label",
+                                      "fill": "$rx-brand-primary",
+                                      "content": "移动体验",
+                                      "lineHeight": 1.3,
+                                      "fontFamily": "$rx-font-body",
+                                      "fontSize": 12,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "ftMMG",
+                                  "name": "Tag #单列",
+                                  "fill": "$rx-bg-muted",
+                                  "cornerRadius": "$rx-radius-control",
+                                  "stroke": "$rx-text-secondary",
+                                  "strokeWidth": 1,
+                                  "gap": 5,
+                                  "padding": [
+                                    5,
+                                    9
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "CIOKp",
+                                      "name": "Tag #单列 Label",
+                                      "fill": "$rx-text-secondary",
+                                      "content": "#单列",
+                                      "lineHeight": 1.3,
+                                      "fontFamily": "$rx-font-body",
+                                      "fontSize": 12,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "s00YjO",
+                                  "name": "Tag #回复",
+                                  "fill": "$rx-bg-muted",
+                                  "cornerRadius": "$rx-radius-control",
+                                  "stroke": "$rx-text-secondary",
+                                  "strokeWidth": 1,
+                                  "gap": 5,
+                                  "padding": [
+                                    5,
+                                    9
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "S1ELtH",
+                                      "name": "Tag #回复 Label",
+                                      "fill": "$rx-text-secondary",
+                                      "content": "#回复",
+                                      "lineHeight": 1.3,
+                                      "fontFamily": "$rx-font-body",
+                                      "fontSize": 12,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "xpp1U",
+                              "name": "Summary Area",
+                              "width": 600,
+                              "gap": 8,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "eUW9c",
+                                  "name": "Thread Summary",
+                                  "fill": "$rx-text-secondary",
+                                  "textGrowth": "fixed-width",
+                                  "width": 600,
+                                  "content": "移动端保留正文、父评论、子回复、输入框和底部 tab，减少大块空白。",
+                                  "lineHeight": 1.3,
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 13,
+                                  "fontWeight": "500"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "rectangle",
+                          "id": "f1ccKJ",
+                          "name": "Divider",
+                          "fill": "$rx-pattern-line",
+                          "width": 1,
+                          "height": 92
+                        },
+                        {
+                          "type": "frame",
+                          "id": "whCXu",
+                          "name": "Author Metrics",
+                          "width": 230,
+                          "layout": "vertical",
+                          "gap": 7,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "ipGNw",
+                              "name": "Author Row",
+                              "gap": 8,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "PRyng",
+                                  "name": "Avatar 宁",
+                                  "width": 36,
+                                  "height": 36,
+                                  "fill": "#f4ead9",
+                                  "cornerRadius": 999,
+                                  "stroke": "$rx-border-soft",
+                                  "strokeWidth": 1,
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "gqvnO",
+                                      "name": "Avatar Text 宁",
+                                      "fill": "$rx-text-primary",
+                                      "content": "宁",
+                                      "lineHeight": 1.3,
+                                      "fontFamily": "$rx-font-body",
+                                      "fontSize": 14,
+                                      "fontWeight": "800"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "pnyt0",
+                                  "name": "Author Text",
+                                  "width": 176,
+                                  "layout": "vertical",
+                                  "gap": 1,
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "NsRDy",
+                                      "name": "Author",
+                                      "fill": "$rx-text-primary",
+                                      "textGrowth": "fixed-width",
+                                      "width": 176,
+                                      "content": "阿宁",
+                                      "lineHeight": 1.3,
+                                      "fontFamily": "$rx-font-body",
+                                      "fontSize": 13,
+                                      "fontWeight": "800"
                                     },
                                     {
                                       "type": "text",
-                                      "id": "MGl31",
-                                      "name": "Score Text",
-                                      "fill": "$rx-text-primary",
-                                      "content": "+12",
-                                      "lineHeight": 1.35,
+                                      "id": "pBDzY",
+                                      "name": "Time",
+                                      "fill": "$rx-text-secondary",
+                                      "textGrowth": "fixed-width",
+                                      "width": 176,
+                                      "content": "06-27 17:22",
+                                      "lineHeight": 1.3,
                                       "fontFamily": "$rx-font-body",
-                                      "fontSize": 16,
+                                      "fontSize": 11,
+                                      "fontWeight": "500"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "do0gg",
+                              "name": "Stats",
+                              "gap": 5,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "YR6tZ",
+                                  "name": "Stat 赞",
+                                  "fill": "$rx-bg-muted",
+                                  "cornerRadius": "$rx-radius-control",
+                                  "gap": 3,
+                                  "padding": [
+                                    4,
+                                    7
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "cBAYO",
+                                      "name": "Stat Label 赞",
+                                      "fill": "$rx-text-muted",
+                                      "content": "赞",
+                                      "lineHeight": 1.3,
+                                      "fontFamily": "$rx-font-body",
+                                      "fontSize": 11,
+                                      "fontWeight": "600"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "YRA3l",
+                                      "name": "Stat Value 赞",
+                                      "fill": "$rx-text-primary",
+                                      "content": "18",
+                                      "lineHeight": 1.3,
+                                      "fontFamily": "$rx-font-body",
+                                      "fontSize": 12,
                                       "fontWeight": "800"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "P1tlR",
+                                  "name": "Stat 评",
+                                  "fill": "$rx-bg-muted",
+                                  "cornerRadius": "$rx-radius-control",
+                                  "gap": 3,
+                                  "padding": [
+                                    4,
+                                    7
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "y9OHxB",
+                                      "name": "Stat Label 评",
+                                      "fill": "$rx-text-muted",
+                                      "content": "评",
+                                      "lineHeight": 1.3,
+                                      "fontFamily": "$rx-font-body",
+                                      "fontSize": 11,
+                                      "fontWeight": "600"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "eIRnE",
+                                      "name": "Stat Value 评",
+                                      "fill": "$rx-text-primary",
+                                      "content": "5",
+                                      "lineHeight": 1.3,
+                                      "fontFamily": "$rx-font-body",
+                                      "fontSize": 12,
+                                      "fontWeight": "800"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "XBtZc",
+                                  "name": "Stat 阅",
+                                  "fill": "$rx-bg-muted",
+                                  "cornerRadius": "$rx-radius-control",
+                                  "gap": 3,
+                                  "padding": [
+                                    4,
+                                    7
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "fsGLG",
+                                      "name": "Stat Label 阅",
+                                      "fill": "$rx-text-muted",
+                                      "content": "阅",
+                                      "lineHeight": 1.3,
+                                      "fontFamily": "$rx-font-body",
+                                      "fontSize": 11,
+                                      "fontWeight": "600"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "BTPnR",
+                                      "name": "Stat Value 阅",
+                                      "fill": "$rx-text-primary",
+                                      "content": "188",
+                                      "lineHeight": 1.3,
+                                      "fontFamily": "$rx-font-body",
+                                      "fontSize": 12,
+                                      "fontWeight": "800"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "F7gvz3",
+                              "name": "Interaction",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "A1fgeC",
+                                  "name": "Interaction Label",
+                                  "fill": "$rx-text-secondary",
+                                  "content": "互动",
+                                  "lineHeight": 1.3,
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 12,
+                                  "fontWeight": "600"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "IUwWD",
+                                  "name": "Comment Score",
+                                  "fill": "#e5f4eb",
+                                  "cornerRadius": "$rx-radius-control",
+                                  "stroke": "$rx-accent-jade",
+                                  "strokeWidth": 1,
+                                  "gap": 5,
+                                  "padding": [
+                                    5,
+                                    9
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "bf7J7",
+                                      "name": "Comment Score Label",
+                                      "fill": "$rx-accent-jade",
+                                      "content": "评 +3",
+                                      "lineHeight": 1.3,
+                                      "fontFamily": "$rx-font-body",
+                                      "fontSize": 12,
+                                      "fontWeight": "700"
                                     }
                                   ]
                                 }
@@ -12121,160 +12463,147 @@
             },
             {
               "type": "frame",
-              "id": "F0CpYX",
-              "name": "Forum Right Rail",
-              "width": 390,
+              "id": "KUBSx",
+              "name": "Forum Rail",
+              "width": 382,
               "height": "fill_container",
               "layout": "vertical",
-              "gap": 12,
+              "gap": 10,
               "children": [
                 {
                   "type": "frame",
-                  "id": "G6RBGr",
+                  "id": "fZyYl",
                   "name": "List Rules",
                   "width": "fill_container",
                   "fill": "$rx-bg-surface",
-                  "cornerRadius": 16,
+                  "cornerRadius": 14,
                   "stroke": "$rx-border-soft",
                   "strokeWidth": 1,
                   "layout": "vertical",
-                  "gap": 12,
-                  "padding": 18,
+                  "gap": 9,
+                  "padding": 14,
                   "children": [
                     {
                       "type": "text",
-                      "id": "kf5wP",
+                      "id": "DXwWh",
                       "name": "Rules Title",
                       "fill": "$rx-text-primary",
                       "textGrowth": "fixed-width",
                       "width": 354,
-                      "content": "列表页边界",
-                      "lineHeight": 1.35,
-                      "fontFamily": "$rx-font-heading",
-                      "fontSize": 22,
+                      "content": "列表页规则",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 18,
                       "fontWeight": "800"
                     },
                     {
-                      "type": "text",
-                      "id": "K8LHrs",
-                      "name": "Rules Copy",
-                      "fill": "$rx-text-secondary",
-                      "textGrowth": "fixed-width",
-                      "width": 354,
-                      "content": "列表页展示神评摘要和评论入口，但不承载表情 reaction、楼中楼或完整回复动作。",
-                      "lineHeight": 1.35,
-                      "fontFamily": "$rx-font-body",
-                      "fontSize": 14,
-                      "fontWeight": "500"
-                    },
-                    {
                       "type": "frame",
-                      "id": "g1Knfw",
-                      "name": "Rule 神评预览：父评论摘要",
+                      "id": "FId4b",
+                      "name": "Rule 神评：一行摘要",
                       "fill": "#fffaf3",
                       "cornerRadius": "$rx-radius-control",
                       "stroke": "$rx-text-secondary",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "gap": 5,
                       "padding": [
-                        6,
-                        11
+                        5,
+                        9
                       ],
                       "alignItems": "center",
                       "children": [
                         {
                           "type": "text",
-                          "id": "G8Bul",
-                          "name": "Rule 神评预览：父评论摘要 Label",
+                          "id": "Hxylt",
+                          "name": "Rule 神评：一行摘要 Label",
                           "fill": "$rx-text-secondary",
-                          "content": "神评预览：父评论摘要",
-                          "lineHeight": 1.35,
+                          "content": "神评：一行摘要",
+                          "lineHeight": 1.3,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 13,
+                          "fontSize": 12,
                           "fontWeight": "700"
                         }
                       ]
                     },
                     {
                       "type": "frame",
-                      "id": "VIqrC",
-                      "name": "Rule 右侧统计：赞 / 评 / 阅",
+                      "id": "vPvmb",
+                      "name": "Rule reaction：不在列表出现",
                       "fill": "#fffaf3",
                       "cornerRadius": "$rx-radius-control",
                       "stroke": "$rx-text-secondary",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "gap": 5,
                       "padding": [
-                        6,
-                        11
+                        5,
+                        9
                       ],
                       "alignItems": "center",
                       "children": [
                         {
                           "type": "text",
-                          "id": "zgymo",
-                          "name": "Rule 右侧统计：赞 / 评 / 阅 Label",
+                          "id": "u7L0V",
+                          "name": "Rule reaction：不在列表出现 Label",
                           "fill": "$rx-text-secondary",
-                          "content": "右侧统计：赞 / 评 / 阅",
-                          "lineHeight": 1.35,
+                          "content": "reaction：不在列表出现",
+                          "lineHeight": 1.3,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 13,
+                          "fontSize": 12,
                           "fontWeight": "700"
                         }
                       ]
                     },
                     {
                       "type": "frame",
-                      "id": "d6mYk",
-                      "name": "Rule 互动入口：评论按钮与加分",
+                      "id": "n22kg",
+                      "name": "Rule 统计：赞 / 评 / 阅",
                       "fill": "#fffaf3",
                       "cornerRadius": "$rx-radius-control",
                       "stroke": "$rx-text-secondary",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "gap": 5,
                       "padding": [
-                        6,
-                        11
+                        5,
+                        9
                       ],
                       "alignItems": "center",
                       "children": [
                         {
                           "type": "text",
-                          "id": "kDzct",
-                          "name": "Rule 互动入口：评论按钮与加分 Label",
+                          "id": "QcZMi",
+                          "name": "Rule 统计：赞 / 评 / 阅 Label",
                           "fill": "$rx-text-secondary",
-                          "content": "互动入口：评论按钮与加分",
-                          "lineHeight": 1.35,
+                          "content": "统计：赞 / 评 / 阅",
+                          "lineHeight": 1.3,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 13,
+                          "fontSize": 12,
                           "fontWeight": "700"
                         }
                       ]
                     },
                     {
                       "type": "frame",
-                      "id": "R85sB",
-                      "name": "Rule 详情页：完整 reaction 和评论树",
+                      "id": "HWQKr",
+                      "name": "Rule 入口：评论按钮",
                       "fill": "#fffaf3",
                       "cornerRadius": "$rx-radius-control",
                       "stroke": "$rx-text-secondary",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "gap": 5,
                       "padding": [
-                        6,
-                        11
+                        5,
+                        9
                       ],
                       "alignItems": "center",
                       "children": [
                         {
                           "type": "text",
-                          "id": "LsDYw",
-                          "name": "Rule 详情页：完整 reaction 和评论树 Label",
+                          "id": "Us01f",
+                          "name": "Rule 入口：评论按钮 Label",
                           "fill": "$rx-text-secondary",
-                          "content": "详情页：完整 reaction 和评论树",
-                          "lineHeight": 1.35,
+                          "content": "入口：评论按钮",
+                          "lineHeight": 1.3,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 13,
+                          "fontSize": 12,
                           "fontWeight": "700"
                         }
                       ]
@@ -12283,110 +12612,110 @@
                 },
                 {
                   "type": "frame",
-                  "id": "wrnCq",
-                  "name": "Forum Rooms",
+                  "id": "wB4wF",
+                  "name": "Related Rooms",
                   "width": "fill_container",
                   "fill": "$rx-bg-surface",
-                  "cornerRadius": 16,
+                  "cornerRadius": 14,
                   "stroke": "$rx-border-soft",
                   "strokeWidth": 1,
                   "layout": "vertical",
-                  "gap": 10,
-                  "padding": 18,
+                  "gap": 8,
+                  "padding": 14,
                   "children": [
                     {
                       "type": "text",
-                      "id": "qfMLy",
+                      "id": "IRyI5",
                       "name": "Rooms Title",
                       "fill": "$rx-text-primary",
                       "textGrowth": "fixed-width",
                       "width": 354,
                       "content": "关联聊天室",
-                      "lineHeight": 1.35,
+                      "lineHeight": 1.3,
                       "fontFamily": "$rx-font-body",
-                      "fontSize": 20,
+                      "fontSize": 18,
                       "fontWeight": "800"
                     },
                     {
                       "type": "frame",
-                      "id": "nEsFC",
+                      "id": "Vi9Hn",
                       "name": "Room #设计室 · 42 在线",
                       "fill": "#eef3f7",
                       "cornerRadius": "$rx-radius-control",
                       "stroke": "$rx-accent-ink",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "gap": 5,
                       "padding": [
-                        6,
-                        11
+                        5,
+                        9
                       ],
                       "alignItems": "center",
                       "children": [
                         {
                           "type": "text",
-                          "id": "qOAPL",
+                          "id": "jLtYW",
                           "name": "Room #设计室 · 42 在线 Label",
                           "fill": "$rx-accent-ink",
                           "content": "#设计室 · 42 在线",
-                          "lineHeight": 1.35,
+                          "lineHeight": 1.3,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 13,
+                          "fontSize": 12,
                           "fontWeight": "700"
                         }
                       ]
                     },
                     {
                       "type": "frame",
-                      "id": "u634J",
+                      "id": "l0KVOD",
                       "name": "Room #闲聊茶馆 · 18 在线",
                       "fill": "#eef3f7",
                       "cornerRadius": "$rx-radius-control",
                       "stroke": "$rx-accent-ink",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "gap": 5,
                       "padding": [
-                        6,
-                        11
+                        5,
+                        9
                       ],
                       "alignItems": "center",
                       "children": [
                         {
                           "type": "text",
-                          "id": "tezHk",
+                          "id": "vdyzI",
                           "name": "Room #闲聊茶馆 · 18 在线 Label",
                           "fill": "$rx-accent-ink",
                           "content": "#闲聊茶馆 · 18 在线",
-                          "lineHeight": 1.35,
+                          "lineHeight": 1.3,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 13,
+                          "fontSize": 12,
                           "fontWeight": "700"
                         }
                       ]
                     },
                     {
                       "type": "frame",
-                      "id": "d54mHe",
+                      "id": "xdHXQ",
                       "name": "Room #开发问答 · 9 在线",
                       "fill": "#eef3f7",
                       "cornerRadius": "$rx-radius-control",
                       "stroke": "$rx-accent-ink",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "gap": 5,
                       "padding": [
-                        6,
-                        11
+                        5,
+                        9
                       ],
                       "alignItems": "center",
                       "children": [
                         {
                           "type": "text",
-                          "id": "U07Ia",
+                          "id": "H330h",
                           "name": "Room #开发问答 · 9 在线 Label",
                           "fill": "$rx-accent-ink",
                           "content": "#开发问答 · 9 在线",
-                          "lineHeight": 1.35,
+                          "lineHeight": 1.3,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 13,
+                          "fontSize": 12,
                           "fontWeight": "700"
                         }
                       ]
@@ -12395,41 +12724,41 @@
                 },
                 {
                   "type": "frame",
-                  "id": "WXTKD",
+                  "id": "n3gKct",
                   "name": "Login State",
                   "width": "fill_container",
                   "fill": "$rx-bg-muted",
-                  "cornerRadius": 16,
+                  "cornerRadius": 14,
                   "stroke": "$rx-border-soft",
                   "strokeWidth": 1,
                   "layout": "vertical",
-                  "gap": 10,
-                  "padding": 18,
+                  "gap": 8,
+                  "padding": 14,
                   "children": [
                     {
                       "type": "text",
-                      "id": "PwHam",
+                      "id": "Y8sc5M",
                       "name": "Login Title",
                       "fill": "$rx-text-primary",
                       "textGrowth": "fixed-width",
                       "width": 354,
                       "content": "登录后参与",
-                      "lineHeight": 1.35,
+                      "lineHeight": 1.3,
                       "fontFamily": "$rx-font-body",
-                      "fontSize": 20,
+                      "fontSize": 18,
                       "fontWeight": "800"
                     },
                     {
                       "type": "text",
-                      "id": "Q65neg",
+                      "id": "mCtDF",
                       "name": "Login Copy",
                       "fill": "$rx-text-secondary",
                       "textGrowth": "fixed-width",
                       "width": 354,
-                      "content": "发帖、评论、进入聊天室和查看个人互动都会保留当前公开来源。",
-                      "lineHeight": 1.35,
+                      "content": "发帖、评论和进入聊天室都会保留公开来源。",
+                      "lineHeight": 1.3,
                       "fontFamily": "$rx-font-body",
-                      "fontSize": 14,
+                      "fontSize": 13,
                       "fontWeight": "500"
                     }
                   ]

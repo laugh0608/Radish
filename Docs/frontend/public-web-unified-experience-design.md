@@ -2,7 +2,7 @@
 
 > 日期：2026-06-25（Asia/Shanghai）
 >
-> 更新：2026-06-27（Asia/Shanghai）：公开设计源已从路由矩阵 / 代表稿重构为真实公开 App 页面族；第二轮已强化论坛列表、帖子详情、评论树、轻回应、表情反应和公开聊天室，并补充 reaction 展示边界与 IM 气泡方向。
+> 更新：2026-06-27（Asia/Shanghai）：公开设计源已从路由矩阵 / 代表稿重构为真实公开 App 页面族；第二轮已强化论坛列表、帖子详情、评论树、轻回应、表情反应和公开聊天室，并补充 reaction 展示边界与 IM 气泡方向；第三轮已收紧论坛列表、商城、聊天室和移动任务流的信息密度。
 >
 > 状态：设计源 `P01-P16` 已补齐；当前作为实现前说明，不进入视觉代码实现
 
@@ -18,11 +18,11 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 | --- | --- |
 | `P01 - Public App Home` | 公开 App 首页，聚合社区脉搏、论坛热帖、神评候选、轻回应、聊天室、文档、商城、榜单和登录参与入口 |
 | `P02 - Discover Content Stream` | `/discover` 公开混合内容流，覆盖论坛、文档、聊天室、商城、搜索筛选和状态槽 |
-| `P03 - Forum Thread List` | `/forum` 公开帖子列表，覆盖左侧标题 / 摘要 / 标签 / 分类 / 神评摘要、右侧作者 / 赞评阅 / 最近互动和登录发帖入口；列表页不展示表情 reaction |
+| `P03 - Forum Thread List` | `/forum` 公开帖子列表，覆盖左侧标题 / 摘要 / 标签 / 分类 / 神评摘要、右侧作者 / 赞评阅 / 最近互动和登录发帖入口；列表页不展示表情 reaction，首屏按紧凑 5 条列表密度设计 |
 | `P04 - Forum Thread Detail` | `/forum/post/:id` 公开帖子详情，覆盖正文、帖子级轻回应、评论树、父评论神评、子回复沙发、表情反应和登录评论 |
 | `P05 - Docs Index and Search` | `/docs` 文档库、目录、搜索筛选、文档列表和状态槽 |
 | `P06 - Docs Article Reading` | `/docs/:slug` 文档详情、正文阅读、目录、相关文档和作者入口边界 |
-| `P07 - Public Shop and Product` | `/shop` 与 `/shop/product/:id?intent=purchase` 公开商城浏览、商品详情和登录购买回流 |
+| `P07 - Public Shop and Product` | `/shop` 与 `/shop/product/:id?intent=purchase` 公开商城浏览、商品详情和登录购买回流，首屏采用精选商品 + 多条商品行 + 状态 rail 的浏览密度 |
 | `P08 - Public Leaderboards` | `/leaderboard/:type` 公开榜单、贡献者 / 内容 / 商品排名和实体跳转 |
 | `P09 - Public Profile` | `/u/:id` 公开个人主页、公开内容 tab、关注登录回流和来源返回 |
 | `P10 - Mobile Discover Forum` | 移动端发现 / 论坛列表任务流 |
@@ -30,7 +30,7 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 | `P12 - Mobile Docs Reading` | 移动端文档列表 / 详情阅读和目录入口 |
 | `P13 - Mobile Shop Leaderboard` | 移动端商城商品、购买 intent 与榜单浏览 |
 | `P14 - Mobile Public Profile` | 移动端公开主页、公开内容 tab 和关注回流 |
-| `P15 - Public Chat Room` | `/chat` / `/chat/:room` 公开聊天室，覆盖房间列表、左右 IM 气泡、引用帖子、回复、表情 reaction、在线成员和登录发言 |
+| `P15 - Public Chat Room` | `/chat` / `/chat/:room` 公开聊天室，覆盖房间列表、左右 IM 气泡、引用帖子、回复、表情 reaction、在线成员和登录发言，首屏保持多消息可扫读 |
 | `P16 - Mobile Chat Reply Flow` | 移动端聊天室 / 引用回复任务流，覆盖房间头部、引用帖子、左右消息气泡、快捷 reaction、输入框和聊天 tab |
 
 ## 目标
@@ -111,6 +111,7 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 - 公开 Web 桌面画板按 `1920x1080` 浏览器视角判断首屏密度，不按展示型海报比例放大字号和卡片。
 - 页面标题控制在产品级层级，公开页 H1 约 `28-32`，分区标题约 `20-24`，内容卡片标题约 `16-18`。
 - 桌面端 lead 区、工具条、筛选行和卡片内边距应服务快速浏览：主要卡片 padding 约 `14-18`，列表 gap 约 `10-14`。
+- 论坛、商城、聊天室等高频浏览页首屏应优先展示 `5` 条左右真实内容 / 商品 / 消息记录，避免用大字号、大占位图或大卡片撑满首屏。
 - 右侧 rail 不用大块空面板撑满高度；优先使用紧凑状态、推荐项、来源返回摘要或登录参与入口。
 - 公开壳层、内容流和集合页首屏应展示多条真实内容项，不能主要由大标题、宽卡片和说明块占据。
 
@@ -118,6 +119,7 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 
 - 移动端保持单列阅读和稳定触控目标，不用桌面三栏或横向滚动承载主要内容。
 - 页面说明、筛选 pill、内容项、状态反馈和登录参与应连续出现，避免主体内容后出现大块空白。
+- 移动画板按任务内容收住高度，避免长海报式空白；底栏前必须能看到真实列表、评论、商品、榜单或聊天内容。
 - 底部导航只保留主要公开入口，内容区必须在底栏前提供明确的继续探索或参与动作。
 
 ## 实现顺序

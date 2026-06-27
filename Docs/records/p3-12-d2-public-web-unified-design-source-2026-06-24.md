@@ -15,6 +15,8 @@
 > 2026-06-27 公开社区特色二次精修：按用户反馈继续强化 `P01 / P02 / P03 / P04 / P11`，补回论坛列表左侧标题 / 摘要 / 标签 / 分类、右侧作者 / 赞评阅 / 最近互动结构，明确神评为父评论、沙发为子回复 / 楼中楼语境，并补充轻回应、表情 reaction、引用回复和公开聊天室。新增 `P15 - Public Chat Room` 与 `P16 - Mobile Chat Reply Flow`；PC 公开页 header 已统一同步 `web-ui-foundation.pen` / `F02` 84 高纸感横匾，并新增“聊天室”公开导航项。
 >
 > 2026-06-27 reaction 与聊天方向回修：按用户截图反馈，`P03` 论坛列表已去除表情 reaction，只保留神评摘要、作者、赞 / 评 / 阅和评论入口；`P04` 帖子详情改为父评论神评卡、子回复沙发缩进和引用 chip；`P15 / P16` 聊天室改为自己消息在右、他人消息在左的 IM 气泡流。
+>
+> 2026-06-27 信息密度回修：按用户反馈整体收口 `P03 / P07 / P15` 和移动任务流的信息密度，压缩展示型大字号、大卡片、大图占位和长海报式留白；论坛列表、商城和聊天室首屏改为可扫读的多记录结构，移动 `P10-P16` 统一收住画板高度和底栏前内容节奏。
 
 ## 背景
 
@@ -67,14 +69,14 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 
 - `P01 - Public App Home`：公开 App 首页，聚合社区脉搏、论坛热帖、神评候选、轻回应、聊天室、文档更新、商城精选、榜单和登录参与入口。
 - `P02 - Discover Content Stream`：`/discover` 公开混合内容流，展示论坛、文档、聊天室、商城和榜单的真实内容卡片、筛选和登录回流。
-- `P03 - Forum Thread List`：`/forum` 公开帖子列表，覆盖左侧标题 / 摘要 / 标签 / 分类 / 神评摘要、右侧作者 / 赞评阅 / 最近互动和登录发帖入口；列表页不展示表情 reaction。
+- `P03 - Forum Thread List`：`/forum` 公开帖子列表，覆盖左侧标题 / 摘要 / 标签 / 分类 / 神评摘要、右侧作者 / 赞评阅 / 最近互动和登录发帖入口；列表页不展示表情 reaction；本轮已收为紧凑 5 条首屏列表。
 - `P04 - Forum Thread Detail`：`/forum/post/:id` 公开帖子详情，覆盖作者、正文、帖子级轻回应、登录评论、评论树、父评论神评卡、子回复沙发缩进、引用 chip、表情 reaction 和相关帖子。
 - `P05 - Docs Index and Search`：`/docs` 文档库，覆盖目录、搜索筛选、公开文档列表、继续阅读和状态槽。
 - `P06 - Docs Article Reading`：`/docs/:slug` 文档详情，覆盖正文阅读、来源返回、目录、作者入口、相关文档和下线 / 权限状态。
-- `P07 - Public Shop and Product`：`/shop` 与 `/shop/product/:id?intent=purchase`，覆盖公开商品浏览、商品详情、库存、登录购买回流和私域订单边界。
+- `P07 - Public Shop and Product`：`/shop` 与 `/shop/product/:id?intent=purchase`，覆盖公开商品浏览、商品详情、库存、登录购买回流和私域订单边界；本轮已收为精选商品 + 5 条商品行 + 状态 rail。
 - `P08 - Public Leaderboards`：`/leaderboard/:type` 公开榜单，覆盖贡献者、热帖、文档和商品排名，明确榜单实体跳转。
 - `P09 - Public Profile`：`/u/:id` 公开个人主页，覆盖身份展示、公开内容 tab、关注登录回流、来源返回和隐私限制状态。
-- `P15 - Public Chat Room`：`/chat` / `/chat/:room` 公开聊天室，覆盖房间列表、自己右侧 / 他人左侧 IM 气泡、引用帖子、回复、表情 reaction、在线成员、房间上下文和登录发言。
+- `P15 - Public Chat Room`：`/chat` / `/chat/:room` 公开聊天室，覆盖房间列表、自己右侧 / 他人左侧 IM 气泡、引用帖子、回复、表情 reaction、在线成员、房间上下文和登录发言；本轮已收为紧凑多消息首屏。
 
 ### 移动公开任务流
 
@@ -142,6 +144,9 @@ Pencil 侧：
 - 2026-06-27 reaction 与聊天方向回修后：`P03 / P04 / P15 / P16` 局部 `snapshot_layout` 均返回 `No layout problems.`
 - 2026-06-27 reaction 与聊天方向回修后：截图抽查 `P03` 论坛列表、`P04` 帖子详情、`P15` 公开聊天室和 `P16` 移动聊天流，未发现明显裁切、坍塌或横向溢出；列表页已去除表情 reaction，聊天室已改为自己右侧 / 他人左侧气泡。
 - 2026-06-27 reaction 与聊天方向回修后：全局 `snapshot_layout` 返回 `No layout problems.`
+- 2026-06-27 信息密度回修后：`P03 / P07 / P15` 已重做为紧凑首屏，局部 `snapshot_layout` 均返回 `No layout problems.`
+- 2026-06-27 信息密度回修后：`P10-P16` 移动任务流统一压缩画板高度、内容区和底栏位置，局部及全局 `snapshot_layout` 返回 `No layout problems.`
+- 2026-06-27 信息密度回修后：截图抽查 `P03` 论坛列表、`P07` 公开商城、`P15` 公开聊天室和 `P16` 移动聊天流，未发现明显裁切、坍塌或横向溢出。
 
 仓库侧：
 
