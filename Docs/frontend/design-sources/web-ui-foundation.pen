@@ -1123,7 +1123,7 @@
           "id": "XgK5g",
           "name": "Core Components",
           "width": "fill_container",
-          "height": 286,
+          "height": 326,
           "gap": 18,
           "children": [
             {
@@ -1137,7 +1137,7 @@
               "stroke": "$rx-border-soft",
               "strokeWidth": 1,
               "layout": "vertical",
-              "gap": 14,
+              "gap": 15,
               "padding": 18,
               "children": [
                 {
@@ -1148,7 +1148,7 @@
                   "content": "按钮 / Pill",
                   "lineHeight": 1.35,
                   "fontFamily": "$rx-font-heading",
-                  "fontSize": 18,
+                  "fontSize": 19,
                   "fontWeight": "700"
                 },
                 {
@@ -1156,7 +1156,7 @@
                   "id": "hCVev",
                   "name": "Button Row",
                   "width": "fill_container",
-                  "gap": 10,
+                  "gap": 8,
                   "children": [
                     {
                       "type": "frame",
@@ -1166,22 +1166,32 @@
                       "cornerRadius": "$rx-radius-control",
                       "stroke": "$rx-brand-primary",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "gap": 8,
                       "padding": [
-                        6,
-                        10
+                        9,
+                        14
                       ],
                       "alignItems": "center",
                       "children": [
+                        {
+                          "type": "icon",
+                          "id": "piOBX",
+                          "name": "Primary Button Icon",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "send",
+                          "library": "lucide",
+                          "fill": "#ffffff"
+                        },
                         {
                           "type": "text",
                           "id": "jWKDA",
                           "name": "Primary Button Label",
                           "fill": "#ffffff",
-                          "content": "主动作",
-                          "lineHeight": 1.35,
+                          "content": "发布",
+                          "lineHeight": 1.25,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12,
+                          "fontSize": 13,
                           "fontWeight": "600"
                         }
                       ]
@@ -1194,22 +1204,32 @@
                       "cornerRadius": "$rx-radius-control",
                       "stroke": "$rx-border-soft",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "gap": 8,
                       "padding": [
-                        6,
-                        10
+                        9,
+                        14
                       ],
                       "alignItems": "center",
                       "children": [
+                        {
+                          "type": "icon",
+                          "id": "GRFYO",
+                          "name": "Secondary Button Icon",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "arrow-left",
+                          "library": "lucide",
+                          "fill": "$rx-text-secondary"
+                        },
                         {
                           "type": "text",
                           "id": "DVR9W",
                           "name": "Secondary Button Label",
                           "fill": "$rx-text-secondary",
-                          "content": "次动作",
-                          "lineHeight": 1.35,
+                          "content": "取消",
+                          "lineHeight": 1.25,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12,
+                          "fontSize": 13,
                           "fontWeight": "600"
                         }
                       ]
@@ -1222,22 +1242,32 @@
                       "cornerRadius": "$rx-radius-control",
                       "stroke": "$rx-brand-primary",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "gap": 8,
                       "padding": [
-                        6,
-                        10
+                        9,
+                        14
                       ],
                       "alignItems": "center",
                       "children": [
+                        {
+                          "type": "icon",
+                          "id": "fUl5q",
+                          "name": "Active Pill Icon",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "check",
+                          "library": "lucide",
+                          "fill": "$rx-brand-primary"
+                        },
                         {
                           "type": "text",
                           "id": "l54TvB",
                           "name": "Active Pill Label",
                           "fill": "$rx-brand-primary",
-                          "content": "激活筛选",
-                          "lineHeight": 1.35,
+                          "content": "已选",
+                          "lineHeight": 1.25,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12,
+                          "fontSize": 13,
                           "fontWeight": "600"
                         }
                       ]
@@ -1250,22 +1280,32 @@
                       "cornerRadius": "$rx-radius-control",
                       "stroke": "$rx-border-soft",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "gap": 8,
                       "padding": [
-                        6,
-                        10
+                        9,
+                        14
                       ],
                       "alignItems": "center",
                       "children": [
+                        {
+                          "type": "icon",
+                          "id": "l4GO2",
+                          "name": "Neutral Pill Icon",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "sliders-horizontal",
+                          "library": "lucide",
+                          "fill": "$rx-text-secondary"
+                        },
                         {
                           "type": "text",
                           "id": "C0weF",
                           "name": "Neutral Pill Label",
                           "fill": "$rx-text-secondary",
-                          "content": "普通筛选",
-                          "lineHeight": 1.35,
+                          "content": "筛选",
+                          "lineHeight": 1.25,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12,
+                          "fontSize": 13,
                           "fontWeight": "600"
                         }
                       ]
@@ -1277,7 +1317,7 @@
                   "id": "D1EohO",
                   "name": "State Pill Row",
                   "width": "fill_container",
-                  "gap": 10,
+                  "gap": 8,
                   "children": [
                     {
                       "type": "frame",
@@ -1287,22 +1327,32 @@
                       "cornerRadius": "$rx-radius-control",
                       "stroke": "$rx-border-soft",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "gap": 8,
                       "padding": [
-                        6,
-                        10
+                        9,
+                        14
                       ],
                       "alignItems": "center",
                       "children": [
+                        {
+                          "type": "icon",
+                          "id": "pBUir",
+                          "name": "Success Pill Icon",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "circle-check",
+                          "library": "lucide",
+                          "fill": "$rx-accent-jade"
+                        },
                         {
                           "type": "text",
                           "id": "y9xfM",
                           "name": "Success Pill Label",
                           "fill": "$rx-accent-jade",
-                          "content": "已完成",
-                          "lineHeight": 1.35,
+                          "content": "完成",
+                          "lineHeight": 1.25,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12,
+                          "fontSize": 13,
                           "fontWeight": "600"
                         }
                       ]
@@ -1315,22 +1365,32 @@
                       "cornerRadius": "$rx-radius-control",
                       "stroke": "$rx-border-soft",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "gap": 8,
                       "padding": [
-                        6,
-                        10
+                        9,
+                        14
                       ],
                       "alignItems": "center",
                       "children": [
+                        {
+                          "type": "icon",
+                          "id": "jc4p1",
+                          "name": "Info Pill Icon",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "loader",
+                          "library": "lucide",
+                          "fill": "$rx-accent-ink"
+                        },
                         {
                           "type": "text",
                           "id": "mvC41",
                           "name": "Info Pill Label",
                           "fill": "$rx-accent-ink",
-                          "content": "处理中",
-                          "lineHeight": 1.35,
+                          "content": "同步中",
+                          "lineHeight": 1.25,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12,
+                          "fontSize": 13,
                           "fontWeight": "600"
                         }
                       ]
@@ -1343,22 +1403,32 @@
                       "cornerRadius": "$rx-radius-control",
                       "stroke": "$rx-border-soft",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "gap": 8,
                       "padding": [
-                        6,
-                        10
+                        9,
+                        14
                       ],
                       "alignItems": "center",
                       "children": [
+                        {
+                          "type": "icon",
+                          "id": "L6l7ii",
+                          "name": "Warning Pill Icon",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "triangle-alert",
+                          "library": "lucide",
+                          "fill": "$rx-accent-earth"
+                        },
                         {
                           "type": "text",
                           "id": "uLArN",
                           "name": "Warning Pill Label",
                           "fill": "$rx-accent-earth",
-                          "content": "需确认",
-                          "lineHeight": 1.35,
+                          "content": "待确认",
+                          "lineHeight": 1.25,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12,
+                          "fontSize": 13,
                           "fontWeight": "600"
                         }
                       ]
@@ -1371,22 +1441,32 @@
                       "cornerRadius": "$rx-radius-control",
                       "stroke": "$rx-brand-primary",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "gap": 8,
                       "padding": [
-                        6,
-                        10
+                        9,
+                        14
                       ],
                       "alignItems": "center",
                       "children": [
+                        {
+                          "type": "icon",
+                          "id": "G9Q30m",
+                          "name": "Danger Pill Icon",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "circle-x",
+                          "library": "lucide",
+                          "fill": "$rx-brand-primary"
+                        },
                         {
                           "type": "text",
                           "id": "T5MDGi",
                           "name": "Danger Pill Label",
                           "fill": "$rx-brand-primary",
                           "content": "失败",
-                          "lineHeight": 1.35,
+                          "lineHeight": 1.25,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12,
+                          "fontSize": 13,
                           "fontWeight": "600"
                         }
                       ]
@@ -1400,10 +1480,10 @@
                   "fill": "$rx-text-secondary",
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
-                  "content": "同一 section 只保留一个主按钮；低优先级信息不要使用品牌主色。",
+                  "content": "PC 控件使用图标左、文字右；同一操作区只保留一个主动作，移动端再按宽度压缩为图标优先。",
                   "lineHeight": 1.35,
                   "fontFamily": "$rx-font-body",
-                  "fontSize": 13,
+                  "fontSize": 12,
                   "fontWeight": "normal"
                 }
               ]
@@ -1419,7 +1499,7 @@
               "stroke": "$rx-border-soft",
               "strokeWidth": 1,
               "layout": "vertical",
-              "gap": 14,
+              "gap": 15,
               "padding": 18,
               "children": [
                 {
@@ -1430,7 +1510,7 @@
                   "content": "卡片 / Rail",
                   "lineHeight": 1.35,
                   "fontFamily": "$rx-font-heading",
-                  "fontSize": 18,
+                  "fontSize": 19,
                   "fontWeight": "700"
                 },
                 {
@@ -1438,14 +1518,14 @@
                   "id": "Fn4Ah",
                   "name": "Sample Content Card",
                   "width": "fill_container",
-                  "height": 88,
-                  "fill": "$rx-bg-muted",
+                  "height": 104,
+                  "fill": "$rx-bg-surface",
                   "cornerRadius": 8,
                   "stroke": "$rx-border-soft",
                   "strokeWidth": 1,
                   "layout": "vertical",
-                  "gap": 6,
-                  "padding": 14,
+                  "gap": 8,
+                  "padding": 15,
                   "children": [
                     {
                       "type": "text",
@@ -1454,7 +1534,7 @@
                       "fill": "$rx-text-primary",
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
-                      "content": "内容卡片标题",
+                      "content": "公开内容卡片",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 15,
@@ -1467,11 +1547,43 @@
                       "fill": "$rx-text-secondary",
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
-                      "content": "卡片只用于内容项、数据摘要、状态块和必要工具面板。",
+                      "content": "卡片用于内容项、数据摘要和必要工具面板；PC 可横向并列，移动端必须回到单列。",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
                       "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "VhDLg",
+                      "name": "Sample Card Meta Row",
+                      "width": "fill_container",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "wO1ht",
+                          "name": "Sample Card Meta",
+                          "fill": "$rx-text-muted",
+                          "content": "论坛 · 12 分钟前",
+                          "lineHeight": 1.25,
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "t4uCmd",
+                          "name": "Sample Card Action",
+                          "fill": "$rx-brand-primary",
+                          "content": "查看详情",
+                          "lineHeight": 1.25,
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        }
+                      ]
                     }
                   ]
                 },
@@ -1480,22 +1592,22 @@
                   "id": "Xws42",
                   "name": "Sample Rail Item",
                   "width": "fill_container",
-                  "height": 74,
-                  "fill": "$rx-bg-muted",
+                  "height": 84,
+                  "fill": "$rx-bg-surface",
                   "cornerRadius": 8,
                   "stroke": "$rx-border-soft",
                   "strokeWidth": 1,
                   "gap": 12,
-                  "padding": 14,
+                  "padding": 15,
                   "alignItems": "center",
                   "children": [
                     {
                       "type": "icon",
                       "id": "ruoay",
                       "name": "Rail Icon",
-                      "width": 18,
-                      "height": 18,
-                      "icon": "circle-check",
+                      "width": 20,
+                      "height": 20,
+                      "icon": "sparkles",
                       "library": "lucide",
                       "fill": "$rx-accent-jade"
                     },
@@ -1514,10 +1626,10 @@
                           "fill": "$rx-text-primary",
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
-                          "content": "状态或复访提示",
+                          "content": "右侧复访 rail",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 13,
+                          "fontSize": 14,
                           "fontWeight": "700"
                         },
                         {
@@ -1527,7 +1639,7 @@
                           "fill": "$rx-text-secondary",
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
-                          "content": "右侧 rail 必须服务理解、决策或动作。",
+                          "content": "只放决策、状态或下一步动作，不复制主内容。",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
                           "fontSize": 12,
@@ -1550,7 +1662,7 @@
               "stroke": "$rx-border-soft",
               "strokeWidth": 1,
               "layout": "vertical",
-              "gap": 14,
+              "gap": 12,
               "padding": 18,
               "children": [
                 {
@@ -1561,7 +1673,7 @@
                   "content": "状态槽",
                   "lineHeight": 1.35,
                   "fontFamily": "$rx-font-heading",
-                  "fontSize": 18,
+                  "fontSize": 19,
                   "fontWeight": "700"
                 },
                 {
@@ -1569,8 +1681,16 @@
                   "id": "LPQCz",
                   "name": "State Slot 加载",
                   "width": "fill_container",
-                  "height": 38,
+                  "height": 42,
+                  "fill": "$rx-bg-muted",
+                  "cornerRadius": 8,
+                  "stroke": "$rx-border-soft",
+                  "strokeWidth": 1,
                   "gap": 10,
+                  "padding": [
+                    0,
+                    10
+                  ],
                   "alignItems": "center",
                   "children": [
                     {
@@ -1603,7 +1723,7 @@
                       "fill": "$rx-text-secondary",
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
-                      "content": "保留骨架和结构顺序",
+                      "content": "保持结构，显示骨架和当前阶段",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
@@ -1616,8 +1736,16 @@
                   "id": "M6Nfr",
                   "name": "State Slot 空态",
                   "width": "fill_container",
-                  "height": 38,
+                  "height": 42,
+                  "fill": "$rx-bg-muted",
+                  "cornerRadius": 8,
+                  "stroke": "$rx-border-soft",
+                  "strokeWidth": 1,
                   "gap": 10,
+                  "padding": [
+                    0,
+                    10
+                  ],
                   "alignItems": "center",
                   "children": [
                     {
@@ -1650,7 +1778,7 @@
                       "fill": "$rx-text-secondary",
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
-                      "content": "说明下一步入口",
+                      "content": "说明原因，并给出可继续的入口",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
@@ -1663,8 +1791,16 @@
                   "id": "orArb",
                   "name": "State Slot 错误",
                   "width": "fill_container",
-                  "height": 38,
+                  "height": 42,
+                  "fill": "$rx-bg-muted",
+                  "cornerRadius": 8,
+                  "stroke": "$rx-border-soft",
+                  "strokeWidth": 1,
                   "gap": 10,
+                  "padding": [
+                    0,
+                    10
+                  ],
                   "alignItems": "center",
                   "children": [
                     {
@@ -1697,7 +1833,7 @@
                       "fill": "$rx-text-secondary",
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
-                      "content": "展示重试和错误原因",
+                      "content": "展示错误原因、重试和人工路径",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
@@ -1710,8 +1846,16 @@
                   "id": "mYemT",
                   "name": "State Slot 权限",
                   "width": "fill_container",
-                  "height": 38,
+                  "height": 42,
+                  "fill": "$rx-bg-muted",
+                  "cornerRadius": 8,
+                  "stroke": "$rx-border-soft",
+                  "strokeWidth": 1,
                   "gap": 10,
+                  "padding": [
+                    0,
+                    10
+                  ],
                   "alignItems": "center",
                   "children": [
                     {
@@ -1744,7 +1888,7 @@
                       "fill": "$rx-text-secondary",
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
-                      "content": "登录后恢复当前路径",
+                      "content": "登录后恢复原路径，不丢失上下文",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
@@ -1934,10 +2078,10 @@
                           "fill": "$rx-text-primary",
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
-                          "content": "移动单列样板",
+                          "content": "移动单列与底部 Tab",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-heading",
-                          "fontSize": 17,
+                          "fontSize": 18,
                           "fontWeight": "700"
                         },
                         {
@@ -1947,7 +2091,7 @@
                           "fill": "$rx-text-secondary",
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
-                          "content": "内容顺序必须连续，不使用桌面三栏缩小版。",
+                          "content": "移动端横向空间紧张，tab 保留图标上、文字下；页面内容保持单列连续。",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
                           "fontSize": 12,
@@ -1960,7 +2104,7 @@
                       "id": "pSDVx",
                       "name": "Mobile Tab Bar",
                       "width": "fill_container",
-                      "height": 64,
+                      "height": 66,
                       "fill": "#fbf7f0cc",
                       "cornerRadius": 32,
                       "stroke": "$rx-border-soft",
@@ -1985,8 +2129,8 @@
                               "type": "icon",
                               "id": "PSNkZ",
                               "name": "Mobile Tab Icon 发现",
-                              "width": 18,
-                              "height": 18,
+                              "width": 19,
+                              "height": 19,
                               "icon": "layout-dashboard",
                               "library": "lucide",
                               "fill": "$rx-brand-primary"
@@ -1997,9 +2141,9 @@
                               "name": "Mobile Tab Label 发现",
                               "fill": "$rx-brand-primary",
                               "content": "发现",
-                              "lineHeight": 1.35,
+                              "lineHeight": 1.25,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 10,
+                              "fontSize": 11,
                               "fontWeight": "700"
                             }
                           ]
@@ -2021,8 +2165,8 @@
                               "type": "icon",
                               "id": "dvfQx",
                               "name": "Mobile Tab Icon 资产",
-                              "width": 18,
-                              "height": 18,
+                              "width": 19,
+                              "height": 19,
                               "icon": "wallet",
                               "library": "lucide",
                               "fill": "$rx-text-muted"
@@ -2033,9 +2177,9 @@
                               "name": "Mobile Tab Label 资产",
                               "fill": "$rx-text-muted",
                               "content": "资产",
-                              "lineHeight": 1.35,
+                              "lineHeight": 1.25,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 10,
+                              "fontSize": 11,
                               "fontWeight": "700"
                             }
                           ]
@@ -2057,8 +2201,8 @@
                               "type": "icon",
                               "id": "UzeaN",
                               "name": "Mobile Tab Icon 创作",
-                              "width": 18,
-                              "height": 18,
+                              "width": 19,
+                              "height": 19,
                               "icon": "pen-line",
                               "library": "lucide",
                               "fill": "$rx-text-muted"
@@ -2069,9 +2213,9 @@
                               "name": "Mobile Tab Label 创作",
                               "fill": "$rx-text-muted",
                               "content": "创作",
-                              "lineHeight": 1.35,
+                              "lineHeight": 1.25,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 10,
+                              "fontSize": 11,
                               "fontWeight": "700"
                             }
                           ]
@@ -2093,8 +2237,8 @@
                               "type": "icon",
                               "id": "B95wm",
                               "name": "Mobile Tab Icon 消息",
-                              "width": 18,
-                              "height": 18,
+                              "width": 19,
+                              "height": 19,
                               "icon": "message-square",
                               "library": "lucide",
                               "fill": "$rx-text-muted"
@@ -2105,9 +2249,9 @@
                               "name": "Mobile Tab Label 消息",
                               "fill": "$rx-text-muted",
                               "content": "消息",
-                              "lineHeight": 1.35,
+                              "lineHeight": 1.25,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 10,
+                              "fontSize": 11,
                               "fontWeight": "700"
                             }
                           ]
@@ -2146,7 +2290,7 @@
                 {
                   "type": "frame",
                   "id": "Rlkfd",
-                  "name": "Rule 业务设计源只复制基座样式，不重新发明 Header / Button / Card。",
+                  "name": "Rule 业务设计源只复制基座样式，不重新发明基础组件。",
                   "width": "fill_container",
                   "gap": 10,
                   "children": [
@@ -2167,7 +2311,7 @@
                       "fill": "$rx-text-secondary",
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
-                      "content": "业务设计源只复制基座样式，不重新发明 Header / Button / Card。",
+                      "content": "业务设计源只复制基座样式，不重新发明 Header / Button / Card / State。",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 13,
@@ -2178,7 +2322,7 @@
                 {
                   "type": "frame",
                   "id": "MYWof",
-                  "name": "Rule public / private 允许导航项不同，但高度、品牌区、激活态和按钮形态必须一致。",
+                  "name": "Rule PC 横排 nav，移动纵排 tab。",
                   "width": "fill_container",
                   "gap": 10,
                   "children": [
@@ -2199,7 +2343,7 @@
                       "fill": "$rx-text-secondary",
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
-                      "content": "public / private 允许导航项不同，但高度、品牌区、激活态和按钮形态必须一致。",
+                      "content": "PC header 使用图标左、文字右；移动 tab 使用图标上、文字下，不能互相照搬。",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 13,
@@ -2231,7 +2375,7 @@
                       "fill": "$rx-text-secondary",
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
-                      "content": "Console 可使用更高密度表格，但 token、边框、状态色和主次按钮规则保持一致。",
+                      "content": "Console 可提高表格密度，但 token、边框、状态色和主次按钮规则保持一致。",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 13,

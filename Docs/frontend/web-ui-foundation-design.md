@@ -2,7 +2,7 @@
 
 > 日期：2026-06-25（Asia/Shanghai）
 >
-> 更新：2026-06-27（Asia/Shanghai）：`F01` 的 public / private header 合法变体已从 64 高小 pill 收敛为 84 高 PC 纸感横匾，PC 使用横排图标 nav rail、激活态 pill 和身份 action rail；移动端 tab 继续保留图标 / 文案上下排列。
+> 更新：2026-06-27（Asia/Shanghai）：`F01` 的 public / private header 合法变体已从 64 高小 pill 收敛为 84 高 PC 纸感横匾，PC 使用横排图标 nav rail、激活态 pill 和身份 action rail；按钮 / pill、卡片 / rail、状态槽和移动端 tab 样板已按同一响应式原则收束。
 >
 > 状态：共享基座设计源 `F01` 已创建；当前作为跨设计源同步口径，不进入视觉代码实现
 
@@ -36,9 +36,9 @@ Docs/frontend/design-sources/web-ui-foundation.pen
 - Public header 合法变体。
 - Private header 合法变体。
 - 84 高 PC 纸感横匾 header、横排图标 nav rail、激活态 pill 和身份 action rail。
-- 主按钮、次按钮、激活 pill、普通 pill 和状态 pill。
-- 内容卡片、右侧 rail、状态槽。
-- 移动 Web shell 与底部 tab 样板。
+- PC 横排图标按钮、主按钮、次按钮、激活 pill、普通 pill 和状态 pill。
+- 内容卡片、右侧 rail、加载 / 空态 / 错误 / 权限状态槽。
+- 移动 Web shell 与图标上 / 文字下的底部 tab 样板。
 - 跨设计源同步规则。
 
 ### 业务设计源
@@ -62,9 +62,9 @@ Docs/frontend/design-sources/web-ui-foundation.pen
 - `rx-*` 变量名称和取值。
 - Header 高度、品牌区、Radish 标识、字体层级、nav 图标和 nav rail / pill 形态。
 - PC nav 使用图标左、文字右的横排结构；移动端 tab 使用图标上、文字下的纵排结构。
-- 主按钮 / 次按钮 / 激活态 / 普通筛选 pill 的样式规则。
-- 卡片圆角、弱边框、纸色底、低饱和状态色。
-- 状态槽的加载、空态、错误和权限限制表达方式。
+- 主按钮 / 次按钮 / 激活态 / 普通筛选 pill 的图标、尺寸、主次层级和低饱和状态色。
+- 卡片圆角、弱边框、纸色底、内容元信息、rail 信息密度和动作入口。
+- 状态槽的加载、空态、错误和权限限制表达方式，包括原因说明、重试或登录恢复入口。
 - 移动端底部 tab 的高度、胶囊形态、图标 / 文案层级。
 
 ## 允许差异
