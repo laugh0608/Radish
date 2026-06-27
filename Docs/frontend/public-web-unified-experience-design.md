@@ -2,7 +2,7 @@
 
 > 日期：2026-06-25（Asia/Shanghai）
 >
-> 状态：设计源 `P01-P05` 已补齐；当前作为实现前说明，不进入视觉代码实现
+> 状态：设计源 `P01-P12` 已补齐；当前作为实现前说明，不进入视觉代码实现
 
 ## 设计源
 
@@ -19,6 +19,13 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 | `P03 - Public Detail Reading` | forum / docs 公开详情阅读、作者身份、来源返回、登录参与和作者态边界 |
 | `P04 - Public Collection Pages` | forum 集合、docs 搜索、公开个人页、榜单和公开商城浏览的筛选 / 列表基线 |
 | `P05 - Mobile Public Single Column` | 移动端公开 Web 单列阅读、筛选摘要、来源返回、登录参与和底部导航参考 |
+| `P06 - Public Forum Browse Matrix` | forum 列表、分类、标签、搜索、问答 / 投票 / 抽奖和详情 intent 路由矩阵 |
+| `P07 - Public Docs Matrix` | docs 目录、搜索、详情、锚点、保留 slug 和作者 / 治理边界 |
+| `P08 - Public Commerce Leaderboard Matrix` | 公开商城浏览、商品详情、登录购买回流和多类型榜单 |
+| `P09 - Public Profile Source Matrix` | 公开主页、内容 tab、身份展示、关注登录回流和来源返回 |
+| `P10 - Mobile Forum Docs Flow` | 移动端论坛 / 文档筛选、列表、详情阅读和状态槽任务流 |
+| `P11 - Mobile Shop Leaderboard Flow` | 移动端商城 / 榜单浏览、商品详情、购买 intent 和榜单跳转任务流 |
+| `P12 - Mobile Profile Source Flow` | 移动端公开主页、来源返回、关注登录、分享和公开内容状态流 |
 
 ## 目标
 
@@ -62,11 +69,20 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 - 空结果、错误、加载、权限限制和登录参与必须有明确说明，不出现无解释空白页。
 - 公开商城只承载浏览、商品详情和登录购买回流；订单、背包和资产进入正式私域 Web 路由。
 
+### 公开页面族矩阵
+
+- 论坛页面族覆盖 `/forum`、`/forum/search`、`/forum/question`、`/forum/poll`、`/forum/lottery`、`/forum/tag/:slug`、`/forum/category/:id` 和 `/forum/post/:id?intent=*`。
+- 文档页面族覆盖 `/docs`、`/docs/search`、`/docs/:slug`、正文锚点和 `/__documents__/:slug` 保留 slug 场景。
+- 商城 / 榜单页面族覆盖 `/shop`、`/shop/products`、`/shop/product/:id?intent=purchase` 和 `/leaderboard/:type`。
+- 公开主页覆盖 `/u/:id`、`posts / comments` tab、分页、关注登录回流和来源返回。
+- 公开页面族可以共享壳层、筛选、卡片、分页和状态槽，但每个路由族必须有自己的 dominant region 和主动作。
+
 ### 移动单列
 
 - 移动端按单列顺序展示：状态栏 / 公开头部、页面说明、来源返回、导航分组、主体内容、状态和登录参与。
 - 筛选先展示当前条件和搜索入口，高级筛选向下展开，不依赖横向滚动。
 - 移动端不搬运 Dock、窗口系统、桌面背景、窗口几何记忆或 WebOS app 外壳。
+- 论坛 / 文档、商城 / 榜单和公开主页分别有移动任务流参考；不要把 PC 三栏直接缩进手机。
 
 ## 视觉约束
 
@@ -92,9 +108,10 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 ## 实现顺序
 
 1. 先以本说明和 `.pen` 画板确认公开 Web 视觉实现边界。
-2. 再进入 `radish.client` 公开壳层和相关页面的视觉代码实现。
-3. 实现时优先抽取共享 token、公开壳层结构、筛选 / 状态组件和移动单列节奏。
-4. 完成后执行 `radish.client` 类型检查 / 构建；准备阶段性验收时再按用户确认的前后端启动状态执行 Gateway PC / mobile smoke。
+2. 继续补齐 `private-web-workflows.pen`，让 client public / private 设计源在页面族和移动任务流上对齐。
+3. public / private 业务设计源确认后，再进入 `radish.client` 公开壳层和相关页面的视觉代码实现。
+4. 实现时优先抽取共享 token、公开壳层结构、筛选 / 状态组件和移动单列节奏。
+5. 完成后执行 `radish.client` 类型检查 / 构建；准备阶段性验收时再按用户确认的前后端启动状态执行 Gateway PC / mobile smoke。
 
 ## 当前不做
 

@@ -2,9 +2,11 @@
 
 > 日期：2026-06-24（Asia/Shanghai）
 >
-> 状态：公开 Web 设计源 `P01-P05` 已补齐；不进入视觉代码实现
+> 状态：公开 Web 设计源 `P01-P12` 已补齐；不进入视觉代码实现
 >
 > 结论：`public-web-unified-experience.pen` 已创建并写入 `P01-P05`，覆盖公开壳层基座、`/discover` 发现内容流、公开详情阅读、公开集合页和移动单列基线。2026-06-25 已完成公开 `P01-P05` 信息密度收口：降低桌面 `P01-P04` 的展示型字号、卡片 padding、section gap 和旧画板高度，补齐 `P01` 公开入口矩阵 / 运行态 rail，修正 `P04` 顶部双激活状态，并补齐 `P05` 移动继续探索 / 登录参与内容。已新增 [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design) 作为实现前口径；当前仍不进入视觉代码实现。
+>
+> 2026-06-27 补充：按 `web-ui-foundation.pen` 的 `F02` client 公共壳层契约，继续扩展 `public-web-unified-experience.pen` 至 `P01-P12`。新增 `P06-P09` PC 页面族矩阵，覆盖公开论坛、文档、商城 / 榜单和公开主页；新增 `P10-P12` 移动任务流，覆盖移动论坛 / 文档、商城 / 榜单和公开主页 / 来源返回。当前下一顺位转为补齐 `private-web-workflows.pen`，不进入代码实现。
 
 ## 背景
 
@@ -132,6 +134,95 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 - 登录参与动作放在明确状态槽内，不打断公开阅读。
 - 不搬运 Dock、窗口系统、桌面背景、窗口几何记忆或 WebOS app 外壳。
 
+### `P06 - Public Forum Browse Matrix`
+
+职责：
+
+- 覆盖 `/forum`、`/forum/search`、`/forum/question`、`/forum/poll`、`/forum/lottery`、`/forum/tag/:slug`、`/forum/category/:id` 和 `/forum/post/:id?intent=*`。
+- 固定公开论坛的路由 rail、列表 dominant region、筛选 / 搜索工具条和详情 intent 右侧 rail。
+- 约束评论定位、轻回应、问答回答、作者编辑 / 历史查看的公开阅读边界。
+
+设计口径：
+
+- 列表页负责筛选、排序、分页和真实公开 `href`。
+- 详情 intent 只承接公开阅读和登录参与，作者态动作跳正式 Web 作者路由。
+- 空列表、登录参与和错误必须使用状态槽说明原因和恢复动作。
+
+### `P07 - Public Docs Matrix`
+
+职责：
+
+- 覆盖 `/docs`、`/docs/search`、`/docs/:slug`、正文锚点和 `/__documents__/:slug` 保留 slug。
+- 固定文档目录、搜索结果、详情阅读、右侧目录 / 作者入口 / 治理边界。
+
+设计口径：
+
+- 公开文档详情保持只读，编辑、发布、版本回看进入正式 Web 作者页。
+- 权限限制、下线、未找到和加载失败必须给出明确原因。
+- 正文内链继续改写为公开 URL，新开标签和复制链接不携带来源状态。
+
+### `P08 - Public Commerce Leaderboard Matrix`
+
+职责：
+
+- 覆盖 `/shop`、`/shop/products`、`/shop/product/:id?intent=purchase` 和 `/leaderboard/:type`。
+- 固定公开商城浏览、商品状态、登录购买回流、多类型榜单和榜单实体跳转。
+
+设计口径：
+
+- 公开商城只做浏览、详情和登录购买回流；订单、背包、资产流水进入正式私域路由。
+- 商品售罄、下架、无购买资格和未登录必须有状态说明。
+- 用户榜跳 `/u/:id`，商品榜跳商品详情，普通点击可保留来源返回。
+
+### `P09 - Public Profile Source Matrix`
+
+职责：
+
+- 覆盖 `/u/:id` 公开主页、`posts / comments` tab、分页、关注登录回流和来源返回。
+- 固定公开身份展示、内容列表、来源返回和分享 / canonical 边界。
+
+设计口径：
+
+- 普通展示优先 `DisplayHandle / DisplayName`；`PublicId` 只用于 URL、分享和传参。
+- 关注动作需要登录并回到当前公开主页。
+- 复制链接和新开标签不携带来源状态，普通点击可使用 history state 保留返回语义。
+
+### `P10 - Mobile Forum Docs Flow`
+
+职责：
+
+- 移动端论坛 / 文档筛选摘要、列表卡片、详情阅读、高级筛选 sheet 和状态槽。
+
+设计口径：
+
+- 主要内容使用单列卡片，不依赖横向滚动。
+- 搜索词、分类、排序和来源返回优先显示为当前条件摘要。
+- 登录参与和空结果使用状态槽，不打断阅读。
+
+### `P11 - Mobile Shop Leaderboard Flow`
+
+职责：
+
+- 移动端商城首页、商品详情、购买 intent、榜单切换和榜单实体跳转。
+
+设计口径：
+
+- 购买 intent 回流后突出主购买动作，并解释库存、资格、余额和登录状态。
+- 榜单类型切换使用 route sheet，不把 PC 工具条缩进手机。
+- 购买成功进入私域订单路由，公开页只提示结果和去向。
+
+### `P12 - Mobile Profile Source Flow`
+
+职责：
+
+- 移动端公开主页身份头部、内容 tab、来源返回条、登录关注和分享公开链接。
+
+设计口径：
+
+- `DisplayHandle / DisplayName` 优先，PublicId 不作为普通展示名。
+- 内容 tab、分页和分享链接都应可恢复公开 URL。
+- 用户不存在、隐私限制和暂无公开内容必须有状态槽。
+
 ## 验证
 
 Pencil 侧：
@@ -154,26 +245,38 @@ Pencil 侧：
 - `P05`：`snapshot_layout` 返回 `No layout problems.`
 - `P05`：截图目检未发现明显裁切、坍塌或横向溢出。
 - `P05`：2026-06-25 按移动单列密度收口，补齐继续探索、公开商城和登录参与内容，收住底部留白；复查无布局问题。
+- `P06`：`snapshot_layout` 返回 `No layout problems.`
+- `P06`：截图目检未发现明显裁切、坍塌或横向溢出。
+- `P07`：`snapshot_layout` 返回 `No layout problems.`
+- `P08`：`snapshot_layout` 返回 `No layout problems.`
+- `P08`：截图目检未发现明显裁切、坍塌或横向溢出。
+- `P09`：`snapshot_layout` 返回 `No layout problems.`
+- `P10`：`snapshot_layout` 返回 `No layout problems.`
+- `P10`：截图目检未发现明显裁切、坍塌或横向溢出。
+- `P11`：`snapshot_layout` 返回 `No layout problems.`
+- `P12`：`snapshot_layout` 返回 `No layout problems.`
+- `P12`：截图目检未发现明显裁切、坍塌或横向溢出。
+- 全局：`public-web-unified-experience.pen` 复查 `snapshot_layout` 返回 `No layout problems.`
 
 仓库侧：
 
 ```bash
-git diff --check -- Docs/frontend/design-sources/README.md Docs/frontend/public-web-unified-experience-design.md Docs/records/p3-12-d2-public-web-unified-design-source-2026-06-24.md
+git diff --check -- Docs/frontend/design-sources/README.md Docs/frontend/public-web-unified-experience-design.md Docs/records/p3-12-d2-public-web-unified-design-source-2026-06-24.md Docs/planning/current.md
 ```
 
 结果：通过。
 
 ## 后续顺序
 
-1. 以 [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design) 和 `P01-P05` 作为公开 Web 视觉实现前口径。
-2. 创建 `private-web-workflows.pen`，承接 `/workbench`、`/me`、资产 / 订单、通知 / 消息 / 圈子 / 宠物、论坛作者态和文档作者态。
-3. 在 `console-governance-workbench.pen` 补文档治理差异画板。
-4. 私域与作者工作流、Console 文档治理画板补齐并说明文档确认后，再进入视觉代码实现与 PC / mobile 复核。
+1. 以 [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design) 和 `P01-P12` 作为公开 Web 视觉实现前口径。
+2. 下一轮切换到 `private-web-workflows.pen` 后，补齐 `/workbench`、`/me` 子页、资产 / 订单、通知 / 消息 / 圈子 / 宠物、论坛作者态、文档作者态和移动私域任务流。
+3. public / private 业务设计源和说明文档确认后，再进入 `radish.client` 视觉实现与 PC / mobile 复核。
+4. Console 公共壳层与治理工作台代码实现按 [P3-12-D6 Console 视觉代码实现前盘点](/records/p3-12-d6-console-visual-code-prep-2026-06-27) 后移承接。
 
 ## 当前不做
 
 - 不进入 `radish.client` 视觉代码实现。
 - 不修改 Console 设计源。
-- 不创建 `private-web-workflows.pen`。
+- 不修改 `private-web-workflows.pen`；下一轮由用户切换到该文件后再补。
 - 不把 `/desktop` 或 WebOS Dock / 窗口系统纳入公开 Web 视觉基线。
 - 不把公开入口改成营销首页或品牌宣传页。
