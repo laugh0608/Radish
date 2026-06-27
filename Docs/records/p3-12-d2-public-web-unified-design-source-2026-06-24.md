@@ -2,15 +2,17 @@
 
 > 日期：2026-06-24（Asia/Shanghai）
 >
-> 状态：公开 Web 设计源 `P01-P14` 已补齐；不进入视觉代码实现
+> 状态：公开 Web 设计源 `P01-P16` 已补齐；不进入视觉代码实现
 >
-> 结论：`public-web-unified-experience.pen` 当前已重构为 `P01-P14` 公开 App 页面族，覆盖公开首页、发现流、论坛列表 / 详情、文档列表 / 详情、商城、榜单、公开个人主页和移动公开任务流。已新增并更新 [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design) 作为实现前口径；当前仍不进入视觉代码实现。
+> 结论：`public-web-unified-experience.pen` 当前已重构并二次强化为 `P01-P16` 公开社区 App 页面族，覆盖公开首页、发现流、论坛列表 / 详情、评论树、轻回应、公开聊天室、文档列表 / 详情、商城、榜单、公开个人主页和移动公开任务流。已新增并更新 [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design) 作为实现前口径；当前仍不进入视觉代码实现。
 >
 > 2026-06-25 历史补充：完成首批 `P01-P05` 信息密度收口，降低桌面展示型字号、卡片 padding、section gap 和旧画板高度，修正 `P04` 顶部双激活状态，并补齐移动继续探索 / 登录参与内容。
 >
 > 2026-06-27 导航一致性回修：`P01-P04` 旧 64 高小标签式 PC header 已统一替换为 `F02` 84 高纸感横匾，保留品牌、公开导航、`/workbench` 和登录动作，并与 PC 页面族保持同一 header 比例、nav pill 和 action rail。
 >
 > 2026-06-27 公开 App 化重构：按用户反馈，原 `P06-P09` “Matrix” 画板更像路由覆盖图，不像完整公开 App 页面。已将公开设计源重构为 `P01-P14`：PC 端覆盖公开首页、发现流、论坛列表、帖子详情、文档列表、文档详情、商城、榜单、公开个人主页；移动端覆盖发现 / 论坛、帖子详情、文档、商城 / 榜单和公开主页任务流。论坛“神评 / 沙发”已改为评论流内 badge，不再作为帖子详情元字段或后台状态块外露。
+>
+> 2026-06-27 公开社区特色二次精修：按用户反馈继续强化 `P01 / P02 / P03 / P04 / P11`，补回论坛列表左侧标题 / 摘要 / 标签 / 分类、右侧作者 / 赞评阅 / 最近互动结构，明确神评为父评论、沙发为子回复 / 楼中楼语境，并补充轻回应、表情 reaction、引用回复和公开聊天室。新增 `P15 - Public Chat Room` 与 `P16 - Mobile Chat Reply Flow`；PC 公开页 header 已统一同步 `web-ui-foundation.pen` / `F02` 84 高纸感横匾，并新增“聊天室”公开导航项。
 
 ## 背景
 
@@ -61,29 +63,32 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 
 ### PC 公开 App 页面
 
-- `P01 - Public App Home`：公开 App 首页，聚合公开动态、论坛热帖、文档更新、商城精选、榜单和登录参与入口。
-- `P02 - Discover Content Stream`：`/discover` 公开内容流，展示论坛、文档、商城和榜单的真实内容卡片、筛选和登录回流。
-- `P03 - Forum Thread List`：`/forum` 公开帖子列表，覆盖分类、筛选、真实帖子卡、评论 / 阅读统计和登录发帖入口。
-- `P04 - Forum Thread Detail`：`/forum/post/:id` 公开帖子详情，覆盖作者、正文、互动、登录评论、评论流、神评 / 沙发 badge 和相关帖子。
+- `P01 - Public App Home`：公开 App 首页，聚合社区脉搏、论坛热帖、神评候选、轻回应、聊天室、文档更新、商城精选、榜单和登录参与入口。
+- `P02 - Discover Content Stream`：`/discover` 公开混合内容流，展示论坛、文档、聊天室、商城和榜单的真实内容卡片、筛选和登录回流。
+- `P03 - Forum Thread List`：`/forum` 公开帖子列表，覆盖左侧标题 / 摘要 / 标签 / 分类、右侧作者 / 赞评阅 / 最近互动、轻回应预览和登录发帖入口。
+- `P04 - Forum Thread Detail`：`/forum/post/:id` 公开帖子详情，覆盖作者、正文、帖子级轻回应、登录评论、评论树、父评论神评、子回复沙发、表情 reaction 和相关帖子。
 - `P05 - Docs Index and Search`：`/docs` 文档库，覆盖目录、搜索筛选、公开文档列表、继续阅读和状态槽。
 - `P06 - Docs Article Reading`：`/docs/:slug` 文档详情，覆盖正文阅读、来源返回、目录、作者入口、相关文档和下线 / 权限状态。
 - `P07 - Public Shop and Product`：`/shop` 与 `/shop/product/:id?intent=purchase`，覆盖公开商品浏览、商品详情、库存、登录购买回流和私域订单边界。
 - `P08 - Public Leaderboards`：`/leaderboard/:type` 公开榜单，覆盖贡献者、热帖、文档和商品排名，明确榜单实体跳转。
 - `P09 - Public Profile`：`/u/:id` 公开个人主页，覆盖身份展示、公开内容 tab、关注登录回流、来源返回和隐私限制状态。
+- `P15 - Public Chat Room`：`/chat` / `/chat/:room` 公开聊天室，覆盖房间列表、公开消息流、引用帖子、回复、轻回应、在线成员、房间上下文和登录发言。
 
 ### 移动公开任务流
 
 - `P10 - Mobile Discover Forum`：移动发现 / 论坛列表，覆盖搜索、筛选、帖子卡、文档卡和登录参与。
-- `P11 - Mobile Post Detail`：移动帖子详情，覆盖正文、评论流、神评 / 沙发 badge 和登录评论。
+- `P11 - Mobile Post Detail`：移动帖子详情，覆盖正文、轻回应、父评论神评、子回复沙发、评论输入和登录评论。
 - `P12 - Mobile Docs Reading`：移动文档列表 / 文档详情，覆盖目录入口、正文预览、登录收藏和文档任务流。
 - `P13 - Mobile Shop Leaderboard`：移动商城 / 榜单，覆盖商品详情、购买 intent、贡献者榜和实体跳转。
 - `P14 - Mobile Public Profile`：移动公开主页，覆盖身份头部、公开内容 tab、关注回流和来源返回。
+- `P16 - Mobile Chat Reply Flow`：移动聊天室 / 引用回复任务流，覆盖房间头部、引用帖子、消息流、快捷轻回应、输入框和聊天 tab。
 
 设计口径：
 
 - 公开页必须像可交付 App 页面，不再使用 route rail / Matrix 作为主要画板形态。
 - 每个公开页面族必须有自己的 dominant region、主动作和真实内容结构。
-- 论坛“神评 / 沙发”只在评论流内作为 badge 出现，不作为帖子元字段或后台状态块。
+- 论坛“神评 / 沙发”只在评论树内作为 badge 出现，不作为帖子元字段或后台状态块；神评属于父评论，沙发属于子回复 / 楼中楼首条回复语境。
+- 公开社区页必须体现赞 / 评 / 阅、轻回应、表情 reaction、评论头像、最近互动、引用回复和聊天室上下文。
 - 移动端按真实任务流拆分，不把 PC 三栏压缩成单个移动示意稿。
 
 ## 验证
@@ -125,6 +130,11 @@ Pencil 侧：
 - 2026-06-27 公开 App 化重构后：`P10-P14` 移动任务流逐页 `snapshot_layout` 均返回 `No layout problems.`
 - 2026-06-27 公开 App 化重构后：截图抽查 `P03` 论坛列表、`P04` 帖子详情、`P05` 文档列表和 `P11` 移动帖子详情，未发现明显裁切、坍塌或横向溢出；帖子详情已移除测试语义，神评 / 沙发改为评论流 badge。
 - 2026-06-27 公开 App 化重构后：全局 `snapshot_layout` 返回 `No layout problems.`
+- 2026-06-27 公开社区特色二次精修后：`P01 / P02 / P03 / P04 / P11 / P15 / P16` 局部 `snapshot_layout` 均返回 `No layout problems.`
+- 2026-06-27 公开社区特色二次精修后：PC 全部公开页 header 已同步 `F02` 84 高纸感横匾，新增“聊天室”公开导航项；修复旧页面 header 在非 flex 父级中 `fill_container` 解析为 0 宽的问题。
+- 2026-06-27 公开社区特色二次精修后：新增 `P15 - Public Chat Room` 与 `P16 - Mobile Chat Reply Flow`，补齐公开聊天室、引用帖子、回复、轻回应、在线成员、移动聊天 tab 和登录发言状态。
+- 2026-06-27 公开社区特色二次精修后：截图抽查 `P01` 公开首页、`P02` 发现流、`P03` 论坛列表、`P04` 帖子详情、`P11` 移动帖子详情、`P15` 公开聊天室和 `P16` 移动聊天流，未发现明显裁切、坍塌或横向溢出。
+- 2026-06-27 公开社区特色二次精修后：全局 `snapshot_layout` 返回 `No layout problems.`
 
 仓库侧：
 
@@ -136,7 +146,7 @@ git diff --check -- Docs/frontend/design-sources/README.md Docs/frontend/public-
 
 ## 后续顺序
 
-1. 以 [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design) 和 `P01-P14` 作为公开 Web 视觉实现前口径。
+1. 以 [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design) 和 `P01-P16` 作为公开 Web 视觉实现前口径。
 2. 下一轮切换到 `private-web-workflows.pen` 后，补齐 `/workbench`、`/me` 子页、资产 / 订单、通知 / 消息 / 圈子 / 宠物、论坛作者态、文档作者态和移动私域任务流。
 3. public / private 业务设计源和说明文档确认后，再进入 `radish.client` 视觉实现与 PC / mobile 复核。
 4. Console 公共壳层与治理工作台代码实现按 [P3-12-D6 Console 视觉代码实现前盘点](/records/p3-12-d6-console-visual-code-prep-2026-06-27) 后移承接。

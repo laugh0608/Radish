@@ -2,9 +2,9 @@
 
 > 日期：2026-06-25（Asia/Shanghai）
 >
-> 更新：2026-06-27（Asia/Shanghai）：公开设计源已从路由矩阵 / 代表稿重构为真实公开 App 页面族。
+> 更新：2026-06-27（Asia/Shanghai）：公开设计源已从路由矩阵 / 代表稿重构为真实公开 App 页面族；第二轮已强化论坛列表、帖子详情、评论树、轻回应、表情反应和公开聊天室。
 >
-> 状态：设计源 `P01-P14` 已补齐；当前作为实现前说明，不进入视觉代码实现
+> 状态：设计源 `P01-P16` 已补齐；当前作为实现前说明，不进入视觉代码实现
 
 ## 设计源
 
@@ -16,26 +16,29 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 
 | 画板 | 职责 |
 | --- | --- |
-| `P01 - Public App Home` | 公开 App 首页，聚合论坛、文档、商城、榜单和登录参与入口 |
-| `P02 - Discover Content Stream` | `/discover` 公开内容流、类型筛选、搜索排序、内容分区和状态槽 |
-| `P03 - Forum Thread List` | `/forum` 公开帖子列表、分类、筛选、真实帖子卡和登录发帖入口 |
-| `P04 - Forum Thread Detail` | `/forum/post/:id` 公开帖子详情、正文、评论流、神评 / 沙发 badge 和登录评论 |
+| `P01 - Public App Home` | 公开 App 首页，聚合社区脉搏、论坛热帖、神评候选、轻回应、聊天室、文档、商城、榜单和登录参与入口 |
+| `P02 - Discover Content Stream` | `/discover` 公开混合内容流，覆盖论坛、文档、聊天室、商城、搜索筛选和状态槽 |
+| `P03 - Forum Thread List` | `/forum` 公开帖子列表，覆盖左侧标题 / 摘要 / 标签 / 分类、右侧作者 / 赞评阅 / 最近互动和登录发帖入口 |
+| `P04 - Forum Thread Detail` | `/forum/post/:id` 公开帖子详情，覆盖正文、帖子级轻回应、评论树、父评论神评、子回复沙发、表情反应和登录评论 |
 | `P05 - Docs Index and Search` | `/docs` 文档库、目录、搜索筛选、文档列表和状态槽 |
 | `P06 - Docs Article Reading` | `/docs/:slug` 文档详情、正文阅读、目录、相关文档和作者入口边界 |
 | `P07 - Public Shop and Product` | `/shop` 与 `/shop/product/:id?intent=purchase` 公开商城浏览、商品详情和登录购买回流 |
 | `P08 - Public Leaderboards` | `/leaderboard/:type` 公开榜单、贡献者 / 内容 / 商品排名和实体跳转 |
 | `P09 - Public Profile` | `/u/:id` 公开个人主页、公开内容 tab、关注登录回流和来源返回 |
 | `P10 - Mobile Discover Forum` | 移动端发现 / 论坛列表任务流 |
-| `P11 - Mobile Post Detail` | 移动端帖子详情、正文、评论流和登录参与 |
+| `P11 - Mobile Post Detail` | 移动端帖子详情、正文、轻回应、父评论神评、子回复沙发和登录评论 |
 | `P12 - Mobile Docs Reading` | 移动端文档列表 / 详情阅读和目录入口 |
 | `P13 - Mobile Shop Leaderboard` | 移动端商城商品、购买 intent 与榜单浏览 |
 | `P14 - Mobile Public Profile` | 移动端公开主页、公开内容 tab 和关注回流 |
+| `P15 - Public Chat Room` | `/chat` / `/chat/:room` 公开聊天室，覆盖房间列表、公开消息、引用帖子、回复、轻回应、在线成员和登录发言 |
+| `P16 - Mobile Chat Reply Flow` | 移动端聊天室 / 引用回复任务流，覆盖房间头部、引用帖子、消息流、快捷轻回应、输入框和聊天 tab |
 
 ## 目标
 
 - 让公开 Web 在 PC / mobile 浏览器中形成统一、可发布的阅读和浏览体验。
 - 公开页优先服务内容阅读、真实 URL、分享传播和登录后轻参与，不做营销首页。
 - 公开设计稿必须像真实 App 页面，而不是路由矩阵、字段清单或后台状态说明。
+- 公开社区页必须体现 Radish 的特色互动：赞 / 评 / 阅、轻回应、表情 reaction、神评、沙发、评论头像、最近互动和聊天室上下文。
 - 保持正式 Web 为默认产品路径，`/desktop` 只作为 WebOS 历史入口维护。
 - 在进入视觉代码前，先固定信息架构、响应式顺序、身份展示和状态槽位。
 
@@ -44,7 +47,7 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 ### 壳层与导航
 
 - 公开头部保留品牌、公开导航、`/workbench` 工作台动作和登录动作。
-- PC 公开头部统一使用 `web-ui-foundation.pen` / `F02` 的 84 高纸感横匾：横排图标 nav rail、激活态 pill、身份 action rail 和 32px 内收，不再保留旧 64 高小标签式导航。
+- PC 公开头部统一使用 `web-ui-foundation.pen` / `F02` 的 84 高纸感横匾：横排图标 nav rail、激活态 pill、身份 action rail 和 32px 内收，不再保留旧 64 高小标签式导航；公开导航包含发现、论坛、文档、榜单、商城和聊天室。
 - “工作台”默认进入 `/workbench`，不直接打开 `/desktop`。
 - 公开浏览页的主动作是继续阅读、筛选、搜索、分享或登录参与，不承载完整私域工作台。
 - 弱纹样只作为边缘收边和分区提示，不抢正文和操作层级。
@@ -66,7 +69,8 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 
 - forum / docs 详情页以阅读主栏为 dominant region。
 - 标题、作者 / 来源、更新时间、正文、登录参与和状态反馈保持固定顺序。
-- 论坛详情的“神评”“沙发”只作为评论流内的 badge / 状态，不作为帖子详情右侧元字段或后台状态块外露。
+- 论坛详情的“神评”“沙发”只作为评论树内的 badge / 状态，不作为帖子详情右侧元字段或后台状态块外露；神评属于父评论高亮，沙发属于子回复 / 楼中楼首条回复语境。
+- 帖子详情必须表达帖子级轻回应、评论级轻回应、表情 reaction、回复入口、引用回复和登录评论回流。
 - forum 作者态入口通过正式 Web 路由承接，文档作者态入口通过正式 Web 作者页承接。
 - 文档公开详情保持只读；编辑、发布、版本治理、权限策略和回滚归作者页或 Console。
 
@@ -82,6 +86,7 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 - 文档页面族覆盖 `/docs`、`/docs/search`、`/docs/:slug`、正文锚点和 `/__documents__/:slug` 保留 slug 场景。
 - 商城 / 榜单页面族覆盖 `/shop`、`/shop/products`、`/shop/product/:id?intent=purchase` 和 `/leaderboard/:type`。
 - 公开主页覆盖 `/u/:id`、`posts / comments` tab、分页、关注登录回流和来源返回。
+- 公开聊天室页面族覆盖 `/chat`、`/chat/:room` 和从帖子详情带引用进入聊天室的 intent；私信、系统消息和登录态消息中心仍归 `/messages` / private 工作流。
 - 每个页面族必须有自己的 dominant region、主动作、真实内容列表 / 正文 / 评论 / 商品 / 排名结构；不得退化为 route rail、功能矩阵或字段覆盖图。
 
 ### 移动单列
@@ -89,7 +94,7 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 - 移动端按单列顺序展示：状态栏 / 公开头部、页面说明、来源返回、主体内容、状态和登录参与。
 - 筛选先展示当前条件和搜索入口，高级筛选向下展开，不依赖横向滚动。
 - 移动端不搬运 Dock、窗口系统、桌面背景、窗口几何记忆或 WebOS app 外壳。
-- 发现 / 论坛列表、帖子详情、文档阅读、商城 / 榜单和公开主页分别有移动任务流参考；不要把 PC 三栏直接缩进手机。
+- 发现 / 论坛列表、帖子详情、文档阅读、商城 / 榜单、公开主页和聊天室 / 引用回复分别有移动任务流参考；不要把 PC 三栏直接缩进手机。
 
 ## 视觉约束
 
