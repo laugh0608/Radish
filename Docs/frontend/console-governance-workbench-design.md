@@ -1,10 +1,14 @@
 # Console 治理工作台设计端点
 
-> 状态：`P3-8-C2` 设计实现对齐试点已覆盖首批高频历史页面，下一步进入阶段复盘与剩余页面筛查
+> 状态：`P3-12-D5` 已完成 Console 治理设计源 `P01-P08` 全量重构；当前作为后续 `radish.console` 视觉实现参考，不进入本轮代码实现
 >
-> 日期：2026-05-24（Asia/Shanghai）
+> 首次日期：2026-05-24（Asia/Shanghai）
+>
+> 最近更新：2026-06-27（Asia/Shanghai）
 >
 > 适用范围：`radish.console` 内容治理、经验治理与后续 Console 页面视觉基座。当前已完成首批治理页面结构承载，后续按设计稿编号逐步对齐，不直接重写 Console 全站。
+>
+> `2026-06-27` 更新：按 `web-ui-foundation.pen` 的共享基座口径，重构 `console-governance-workbench.pen` 全部 `P01-P08` 画板，统一 `rx-*` token、纸感底色、图标化导航、按钮层级、卡片 / 状态槽和移动端底部 tab；Console 仍保持后台工具密度，不套用公开 Web 的阅读型布局。
 
 ## 目标
 
@@ -32,14 +36,32 @@ Docs/frontend/design-sources/console-governance-workbench.pen
 
 | 编号 | 画板 | 用途 |
 | --- | --- | --- |
-| `P01` | `Console Shell Foundation - Layout System` | Console 侧栏、顶栏、页面密度和结构基座 |
-| `P02` | `Console Content Moderation - Review Desk` | 内容审核 / 证据复核工作台 |
-| `P03` | `Console Experience Governance - Ledger Desk` | 经验等级 / 台账治理工作台 |
-| `P04` | `Console Governance Overview - Dispatch Center` | 跨模块治理负载 / 调度总览页 |
-| `P05` | `Console Table CRUD - User Management` | 普通表格 CRUD 页面 |
-| `P06` | `Console Settings - Governance Policy` | 设置 / 权限 / 配置型页面 |
-| `P07` | `Mobile Content Moderation - Review Flow` | 移动端内容审核流程参考 |
-| `P08` | `Mobile Experience Governance - Ledger Flow` | 移动端经验治理流程参考 |
+| `P01` | `Console Shell Foundation - Layout System` | Console 专用纸感壳层、侧栏、84 高命令栏、指标、表格样板、动作层级和状态槽 |
+| `P02` | `Console Content Moderation - Review Desk` | 内容审核队列、目标证据、治理动作和最近留痕三栏工作台 |
+| `P03` | `Console Experience Governance - Ledger Desk` | 经验观察候选、用户摘要、趋势证据、流水定位和复核动作 |
+| `P04` | `Console Governance Overview - Dispatch Center` | 文档、内容、经验等跨模块治理负载和今日分派中心 |
+| `P05` | `Console Table CRUD - User Management` | 高频对象管理页，保留工具条、表格和选中对象摘要侧栏 |
+| `P06` | `Console Settings - Governance Policy` | 设置 / 权限 / 配置型页面，采用分组导航、设置列和影响范围侧栏 |
+| `P07` | `Mobile Content Moderation - Review Flow` | 移动端内容审核单列流程、纸感状态槽和底部 tab |
+| `P08` | `Mobile Experience Governance - Ledger Flow` | 移动端经验复核单列流程、趋势 / 流水和底部 tab |
+
+## P3-12-D5 重构口径
+
+本轮重构不是继续沿用旧 `Case Desk` 模板换色，而是把 Console 业务源对齐 Web UI 共享基座后重新确定页面类型：
+
+- `P01` 先固定 Console 专用 shell：左侧治理导航、顶部命令栏、搜索、登录态、主动作、指标、表格、动作按钮和状态槽。
+- `P04` 调度总览突出跨模块治理负载和今日行动，不再作为普通表格页。
+- `P05` 表格 CRUD 保持对象管理密度，主区域是表格，侧栏是选中对象摘要和权限 / 审计线索。
+- `P06` 设置页采用“分组导航 + 设置项 + 影响范围”，避免继续使用表格 CRUD 结构。
+- `P02 / P03` 只在治理工作台场景使用队列、证据、动作和留痕结构。
+- `P07 / P08` 移动端保持单列任务流，图标和文字上下排列的底部 tab 与共享基座一致。
+
+Console 允许比公开 Web 和私域 Web 更高信息密度，但不得自行分叉以下共享规则：
+
+- `rx-*` 语义 token、纸色底、弱边框和低饱和状态色。
+- 图标化导航、主次按钮、危险动作、状态 pill 和恢复入口。
+- 加载、空态、错误、权限限制等状态槽必须说明原因。
+- PC 端横向利用宽度，移动端纵向组织流程，不把 PC 三栏直接压进手机。
 
 ## 当前页面盘点
 
@@ -174,9 +196,9 @@ Console 治理工作台按四段组织：
 
 下一批建议：
 
-1. 复核 Console 路由表和历史页面 CSS，确认剩余页面是否仍存在未对齐的高频入口。
-2. 回看 `P02 / P03` 内容治理与经验治理页面在实际使用中的首屏密度、右侧动作区和留痕摘要是否需要细节修正。
-3. 继续保持小步迁移：一次只处理一个页面或一个已迁移页面的明确一致性问题。
+1. 先以 `P01` 和 `web-ui-foundation.pen` 对齐 `radish.console` 的 token、侧栏、顶部命令栏、按钮、状态 pill 和状态槽。
+2. 再按页面类型分批进入视觉代码实现：表格 CRUD、设置策略、调度总览、治理工作台、移动治理流程。
+3. 代码实现阶段仍保持 API、权限、表单字段和治理语义不变；只在页面进入对应批次时改动样式和结构。
 
 验证入口：
 
