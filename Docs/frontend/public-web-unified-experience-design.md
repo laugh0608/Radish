@@ -2,7 +2,9 @@
 
 > 日期：2026-06-25（Asia/Shanghai）
 >
-> 状态：设计源 `P01-P12` 已补齐；当前作为实现前说明，不进入视觉代码实现
+> 更新：2026-06-27（Asia/Shanghai）：公开设计源已从路由矩阵 / 代表稿重构为真实公开 App 页面族。
+>
+> 状态：设计源 `P01-P14` 已补齐；当前作为实现前说明，不进入视觉代码实现
 
 ## 设计源
 
@@ -14,23 +16,26 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 
 | 画板 | 职责 |
 | --- | --- |
-| `P01 - Public Web Shell Foundation` | 公开 Web 壳层、品牌头部、导航动作、来源返回和弱纹样边缘 |
+| `P01 - Public App Home` | 公开 App 首页，聚合论坛、文档、商城、榜单和登录参与入口 |
 | `P02 - Discover Content Stream` | `/discover` 公开内容流、类型筛选、搜索排序、内容分区和状态槽 |
-| `P03 - Public Detail Reading` | forum / docs 公开详情阅读、作者身份、来源返回、登录参与和作者态边界 |
-| `P04 - Public Collection Pages` | forum 集合、docs 搜索、公开个人页、榜单和公开商城浏览的筛选 / 列表基线 |
-| `P05 - Mobile Public Single Column` | 移动端公开 Web 单列阅读、筛选摘要、来源返回、登录参与和底部导航参考 |
-| `P06 - Public Forum Browse Matrix` | forum 列表、分类、标签、搜索、问答 / 投票 / 抽奖和详情 intent 路由矩阵 |
-| `P07 - Public Docs Matrix` | docs 目录、搜索、详情、锚点、保留 slug 和作者 / 治理边界 |
-| `P08 - Public Commerce Leaderboard Matrix` | 公开商城浏览、商品详情、登录购买回流和多类型榜单 |
-| `P09 - Public Profile Source Matrix` | 公开主页、内容 tab、身份展示、关注登录回流和来源返回 |
-| `P10 - Mobile Forum Docs Flow` | 移动端论坛 / 文档筛选、列表、详情阅读和状态槽任务流 |
-| `P11 - Mobile Shop Leaderboard Flow` | 移动端商城 / 榜单浏览、商品详情、购买 intent 和榜单跳转任务流 |
-| `P12 - Mobile Profile Source Flow` | 移动端公开主页、来源返回、关注登录、分享和公开内容状态流 |
+| `P03 - Forum Thread List` | `/forum` 公开帖子列表、分类、筛选、真实帖子卡和登录发帖入口 |
+| `P04 - Forum Thread Detail` | `/forum/post/:id` 公开帖子详情、正文、评论流、神评 / 沙发 badge 和登录评论 |
+| `P05 - Docs Index and Search` | `/docs` 文档库、目录、搜索筛选、文档列表和状态槽 |
+| `P06 - Docs Article Reading` | `/docs/:slug` 文档详情、正文阅读、目录、相关文档和作者入口边界 |
+| `P07 - Public Shop and Product` | `/shop` 与 `/shop/product/:id?intent=purchase` 公开商城浏览、商品详情和登录购买回流 |
+| `P08 - Public Leaderboards` | `/leaderboard/:type` 公开榜单、贡献者 / 内容 / 商品排名和实体跳转 |
+| `P09 - Public Profile` | `/u/:id` 公开个人主页、公开内容 tab、关注登录回流和来源返回 |
+| `P10 - Mobile Discover Forum` | 移动端发现 / 论坛列表任务流 |
+| `P11 - Mobile Post Detail` | 移动端帖子详情、正文、评论流和登录参与 |
+| `P12 - Mobile Docs Reading` | 移动端文档列表 / 详情阅读和目录入口 |
+| `P13 - Mobile Shop Leaderboard` | 移动端商城商品、购买 intent 与榜单浏览 |
+| `P14 - Mobile Public Profile` | 移动端公开主页、公开内容 tab 和关注回流 |
 
 ## 目标
 
 - 让公开 Web 在 PC / mobile 浏览器中形成统一、可发布的阅读和浏览体验。
 - 公开页优先服务内容阅读、真实 URL、分享传播和登录后轻参与，不做营销首页。
+- 公开设计稿必须像真实 App 页面，而不是路由矩阵、字段清单或后台状态说明。
 - 保持正式 Web 为默认产品路径，`/desktop` 只作为 WebOS 历史入口维护。
 - 在进入视觉代码前，先固定信息架构、响应式顺序、身份展示和状态槽位。
 
@@ -61,6 +66,7 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 
 - forum / docs 详情页以阅读主栏为 dominant region。
 - 标题、作者 / 来源、更新时间、正文、登录参与和状态反馈保持固定顺序。
+- 论坛详情的“神评”“沙发”只作为评论流内的 badge / 状态，不作为帖子详情右侧元字段或后台状态块外露。
 - forum 作者态入口通过正式 Web 路由承接，文档作者态入口通过正式 Web 作者页承接。
 - 文档公开详情保持只读；编辑、发布、版本治理、权限策略和回滚归作者页或 Console。
 
@@ -70,20 +76,20 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 - 空结果、错误、加载、权限限制和登录参与必须有明确说明，不出现无解释空白页。
 - 公开商城只承载浏览、商品详情和登录购买回流；订单、背包和资产进入正式私域 Web 路由。
 
-### 公开页面族矩阵
+### 公开 App 页面族
 
 - 论坛页面族覆盖 `/forum`、`/forum/search`、`/forum/question`、`/forum/poll`、`/forum/lottery`、`/forum/tag/:slug`、`/forum/category/:id` 和 `/forum/post/:id?intent=*`。
 - 文档页面族覆盖 `/docs`、`/docs/search`、`/docs/:slug`、正文锚点和 `/__documents__/:slug` 保留 slug 场景。
 - 商城 / 榜单页面族覆盖 `/shop`、`/shop/products`、`/shop/product/:id?intent=purchase` 和 `/leaderboard/:type`。
 - 公开主页覆盖 `/u/:id`、`posts / comments` tab、分页、关注登录回流和来源返回。
-- 公开页面族可以共享壳层、筛选、卡片、分页和状态槽，但每个路由族必须有自己的 dominant region 和主动作。
+- 每个页面族必须有自己的 dominant region、主动作、真实内容列表 / 正文 / 评论 / 商品 / 排名结构；不得退化为 route rail、功能矩阵或字段覆盖图。
 
 ### 移动单列
 
-- 移动端按单列顺序展示：状态栏 / 公开头部、页面说明、来源返回、导航分组、主体内容、状态和登录参与。
+- 移动端按单列顺序展示：状态栏 / 公开头部、页面说明、来源返回、主体内容、状态和登录参与。
 - 筛选先展示当前条件和搜索入口，高级筛选向下展开，不依赖横向滚动。
 - 移动端不搬运 Dock、窗口系统、桌面背景、窗口几何记忆或 WebOS app 外壳。
-- 论坛 / 文档、商城 / 榜单和公开主页分别有移动任务流参考；不要把 PC 三栏直接缩进手机。
+- 发现 / 论坛列表、帖子详情、文档阅读、商城 / 榜单和公开主页分别有移动任务流参考；不要把 PC 三栏直接缩进手机。
 
 ## 视觉约束
 

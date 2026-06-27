@@ -2,13 +2,15 @@
 
 > 日期：2026-06-24（Asia/Shanghai）
 >
-> 状态：公开 Web 设计源 `P01-P12` 已补齐；不进入视觉代码实现
+> 状态：公开 Web 设计源 `P01-P14` 已补齐；不进入视觉代码实现
 >
-> 结论：`public-web-unified-experience.pen` 已创建并写入 `P01-P05`，覆盖公开壳层基座、`/discover` 发现内容流、公开详情阅读、公开集合页和移动单列基线。2026-06-25 已完成公开 `P01-P05` 信息密度收口：降低桌面 `P01-P04` 的展示型字号、卡片 padding、section gap 和旧画板高度，补齐 `P01` 公开入口矩阵 / 运行态 rail，修正 `P04` 顶部双激活状态，并补齐 `P05` 移动继续探索 / 登录参与内容。已新增 [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design) 作为实现前口径；当前仍不进入视觉代码实现。
+> 结论：`public-web-unified-experience.pen` 当前已重构为 `P01-P14` 公开 App 页面族，覆盖公开首页、发现流、论坛列表 / 详情、文档列表 / 详情、商城、榜单、公开个人主页和移动公开任务流。已新增并更新 [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design) 作为实现前口径；当前仍不进入视觉代码实现。
 >
-> 2026-06-27 补充：按 `web-ui-foundation.pen` 的 `F02` client 公共壳层契约，继续扩展 `public-web-unified-experience.pen` 至 `P01-P12`。新增 `P06-P09` PC 页面族矩阵，覆盖公开论坛、文档、商城 / 榜单和公开主页；新增 `P10-P12` 移动任务流，覆盖移动论坛 / 文档、商城 / 榜单和公开主页 / 来源返回。当前下一顺位转为补齐 `private-web-workflows.pen`，不进入代码实现。
+> 2026-06-25 历史补充：完成首批 `P01-P05` 信息密度收口，降低桌面展示型字号、卡片 padding、section gap 和旧画板高度，修正 `P04` 顶部双激活状态，并补齐移动继续探索 / 登录参与内容。
 >
-> 2026-06-27 导航一致性回修：`P01-P04` 旧 64 高小标签式 PC header 已统一替换为 `F02` 84 高纸感横匾，保留品牌、公开导航、`/workbench` 和登录动作，并与 `P06-P09` 页面族矩阵保持同一 header 比例、nav pill 和 action rail。
+> 2026-06-27 导航一致性回修：`P01-P04` 旧 64 高小标签式 PC header 已统一替换为 `F02` 84 高纸感横匾，保留品牌、公开导航、`/workbench` 和登录动作，并与 PC 页面族保持同一 header 比例、nav pill 和 action rail。
+>
+> 2026-06-27 公开 App 化重构：按用户反馈，原 `P06-P09` “Matrix” 画板更像路由覆盖图，不像完整公开 App 页面。已将公开设计源重构为 `P01-P14`：PC 端覆盖公开首页、发现流、论坛列表、帖子详情、文档列表、文档详情、商城、榜单、公开个人主页；移动端覆盖发现 / 论坛、帖子详情、文档、商城 / 榜单和公开主页任务流。论坛“神评 / 沙发”已改为评论流内 badge，不再作为帖子详情元字段或后台状态块外露。
 
 ## 背景
 
@@ -57,173 +59,32 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 
 ## 已完成画板
 
-### `P01 - Public Web Shell Foundation`
+### PC 公开 App 页面
 
-职责：
+- `P01 - Public App Home`：公开 App 首页，聚合公开动态、论坛热帖、文档更新、商城精选、榜单和登录参与入口。
+- `P02 - Discover Content Stream`：`/discover` 公开内容流，展示论坛、文档、商城和榜单的真实内容卡片、筛选和登录回流。
+- `P03 - Forum Thread List`：`/forum` 公开帖子列表，覆盖分类、筛选、真实帖子卡、评论 / 阅读统计和登录发帖入口。
+- `P04 - Forum Thread Detail`：`/forum/post/:id` 公开帖子详情，覆盖作者、正文、互动、登录评论、评论流、神评 / 沙发 badge 和相关帖子。
+- `P05 - Docs Index and Search`：`/docs` 文档库，覆盖目录、搜索筛选、公开文档列表、继续阅读和状态槽。
+- `P06 - Docs Article Reading`：`/docs/:slug` 文档详情，覆盖正文阅读、来源返回、目录、作者入口、相关文档和下线 / 权限状态。
+- `P07 - Public Shop and Product`：`/shop` 与 `/shop/product/:id?intent=purchase`，覆盖公开商品浏览、商品详情、库存、登录购买回流和私域订单边界。
+- `P08 - Public Leaderboards`：`/leaderboard/:type` 公开榜单，覆盖贡献者、热帖、文档和商品排名，明确榜单实体跳转。
+- `P09 - Public Profile`：`/u/:id` 公开个人主页，覆盖身份展示、公开内容 tab、关注登录回流、来源返回和隐私限制状态。
 
-- 公开 Web 共享头部。
-- 品牌锁定、公开导航和登录 / 工作台动作。
-- 来源返回提示条。
-- 公开内容主区与右侧参与 / 榜单 / 边界辅助区。
-- 弱纹样边缘收边。
+### 移动公开任务流
 
-设计口径：
-
-- “工作台”进入 `/workbench`，不直接打开 `/desktop`。
-- 公开页保持内容型入口，不做营销首页。
-- `PublicId` 不作为普通身份文本展示。
-- 移动端后续降为单列连续阅读，不复刻 WebOS。
-
-### `P02 - Discover Content Stream`
-
-职责：
-
-- `/discover` 发现内容流桌面基线。
-- 内容类型筛选、搜索和排序。
-- 论坛重点内容、文档更新、商城预览和榜单预览。
-- 身份展示规则、数据状态槽、登录继续和链接返回契约。
+- `P10 - Mobile Discover Forum`：移动发现 / 论坛列表，覆盖搜索、筛选、帖子卡、文档卡和登录参与。
+- `P11 - Mobile Post Detail`：移动帖子详情，覆盖正文、评论流、神评 / 沙发 badge 和登录评论。
+- `P12 - Mobile Docs Reading`：移动文档列表 / 文档详情，覆盖目录入口、正文预览、登录收藏和文档任务流。
+- `P13 - Mobile Shop Leaderboard`：移动商城 / 榜单，覆盖商品详情、购买 intent、贡献者榜和实体跳转。
+- `P14 - Mobile Public Profile`：移动公开主页，覆盖身份头部、公开内容 tab、关注回流和来源返回。
 
 设计口径：
 
-- 公开卡片必须提供真实公开 `href`。
-- 普通点击可保留来源状态；新标签、复制链接、canonical、OpenGraph、JSON-LD 和 sitemap 不携带来源状态。
-- 作者和用户展示优先 `DisplayHandle / DisplayName`；`PublicId` 只用于 URL、分享和传参。
-- 加载、空结果和错误必须保留明确状态槽，不出现空白页。
-
-### `P03 - Public Detail Reading`
-
-职责：
-
-- forum / docs 公开详情阅读基线。
-- 详情标题、作者身份、元信息、正文、登录参与和状态槽顺序。
-- 来源返回、复制公开链接和作者态入口边界。
-- 文档公开阅读与论坛公开参与的差异点。
-
-设计口径：
-
-- 详情页以阅读主栏为主，不把作者工作台、治理台或桌面窗口能力塞进公开阅读页。
-- `DisplayHandle` 面向用户展示，`PublicId` 只用于 URL、分享和传递。
-- 新开标签和复制链接使用公开 URL，来源返回只存在于当前会话语义。
-- forum 作者态和 docs 作者态分别由正式 Web 作者入口承接。
-
-### `P04 - Public Collection Pages`
-
-职责：
-
-- forum 列表 / 搜索 / 分类、docs 搜索、公开个人页、榜单和公开商城浏览集合页基线。
-- 集合页筛选、搜索、排序、分页、真实 URL 和状态槽。
-- 移动端集合筛选折叠顺序的前置约束。
-
-设计口径：
-
-- 集合页 tab、筛选、搜索和分页需要可恢复到 URL 或明确 query 状态。
-- 每个可导航项提供真实公开 `href`，普通点击保留壳层来源语义。
-- 空结果、错误、加载、权限限制和登录参与必须有明确槽位。
-- 公开商城不承载订单、背包、资产或完整私域商城工作台。
-
-### `P05 - Mobile Public Single Column`
-
-职责：
-
-- 移动端公开 Web 单列阅读基线。
-- 状态栏 / 公开头部、页面说明、来源返回、导航分组、主体内容、状态和登录参与顺序。
-- 移动端底部导航参考和“非移动版 WebOS”边界。
-
-设计口径：
-
-- 移动端不依赖横向滚动承载主要筛选。
-- 高级筛选向下展开，当前条件和搜索入口优先可见。
-- 登录参与动作放在明确状态槽内，不打断公开阅读。
-- 不搬运 Dock、窗口系统、桌面背景、窗口几何记忆或 WebOS app 外壳。
-
-### `P06 - Public Forum Browse Matrix`
-
-职责：
-
-- 覆盖 `/forum`、`/forum/search`、`/forum/question`、`/forum/poll`、`/forum/lottery`、`/forum/tag/:slug`、`/forum/category/:id` 和 `/forum/post/:id?intent=*`。
-- 固定公开论坛的路由 rail、列表 dominant region、筛选 / 搜索工具条和详情 intent 右侧 rail。
-- 约束评论定位、轻回应、问答回答、作者编辑 / 历史查看的公开阅读边界。
-
-设计口径：
-
-- 列表页负责筛选、排序、分页和真实公开 `href`。
-- 详情 intent 只承接公开阅读和登录参与，作者态动作跳正式 Web 作者路由。
-- 空列表、登录参与和错误必须使用状态槽说明原因和恢复动作。
-
-### `P07 - Public Docs Matrix`
-
-职责：
-
-- 覆盖 `/docs`、`/docs/search`、`/docs/:slug`、正文锚点和 `/__documents__/:slug` 保留 slug。
-- 固定文档目录、搜索结果、详情阅读、右侧目录 / 作者入口 / 治理边界。
-
-设计口径：
-
-- 公开文档详情保持只读，编辑、发布、版本回看进入正式 Web 作者页。
-- 权限限制、下线、未找到和加载失败必须给出明确原因。
-- 正文内链继续改写为公开 URL，新开标签和复制链接不携带来源状态。
-
-### `P08 - Public Commerce Leaderboard Matrix`
-
-职责：
-
-- 覆盖 `/shop`、`/shop/products`、`/shop/product/:id?intent=purchase` 和 `/leaderboard/:type`。
-- 固定公开商城浏览、商品状态、登录购买回流、多类型榜单和榜单实体跳转。
-
-设计口径：
-
-- 公开商城只做浏览、详情和登录购买回流；订单、背包、资产流水进入正式私域路由。
-- 商品售罄、下架、无购买资格和未登录必须有状态说明。
-- 用户榜跳 `/u/:id`，商品榜跳商品详情，普通点击可保留来源返回。
-
-### `P09 - Public Profile Source Matrix`
-
-职责：
-
-- 覆盖 `/u/:id` 公开主页、`posts / comments` tab、分页、关注登录回流和来源返回。
-- 固定公开身份展示、内容列表、来源返回和分享 / canonical 边界。
-
-设计口径：
-
-- 普通展示优先 `DisplayHandle / DisplayName`；`PublicId` 只用于 URL、分享和传参。
-- 关注动作需要登录并回到当前公开主页。
-- 复制链接和新开标签不携带来源状态，普通点击可使用 history state 保留返回语义。
-
-### `P10 - Mobile Forum Docs Flow`
-
-职责：
-
-- 移动端论坛 / 文档筛选摘要、列表卡片、详情阅读、高级筛选 sheet 和状态槽。
-
-设计口径：
-
-- 主要内容使用单列卡片，不依赖横向滚动。
-- 搜索词、分类、排序和来源返回优先显示为当前条件摘要。
-- 登录参与和空结果使用状态槽，不打断阅读。
-
-### `P11 - Mobile Shop Leaderboard Flow`
-
-职责：
-
-- 移动端商城首页、商品详情、购买 intent、榜单切换和榜单实体跳转。
-
-设计口径：
-
-- 购买 intent 回流后突出主购买动作，并解释库存、资格、余额和登录状态。
-- 榜单类型切换使用 route sheet，不把 PC 工具条缩进手机。
-- 购买成功进入私域订单路由，公开页只提示结果和去向。
-
-### `P12 - Mobile Profile Source Flow`
-
-职责：
-
-- 移动端公开主页身份头部、内容 tab、来源返回条、登录关注和分享公开链接。
-
-设计口径：
-
-- `DisplayHandle / DisplayName` 优先，PublicId 不作为普通展示名。
-- 内容 tab、分页和分享链接都应可恢复公开 URL。
-- 用户不存在、隐私限制和暂无公开内容必须有状态槽。
+- 公开页必须像可交付 App 页面，不再使用 route rail / Matrix 作为主要画板形态。
+- 每个公开页面族必须有自己的 dominant region、主动作和真实内容结构。
+- 论坛“神评 / 沙发”只在评论流内作为 badge 出现，不作为帖子元字段或后台状态块。
+- 移动端按真实任务流拆分，不把 PC 三栏压缩成单个移动示意稿。
 
 ## 验证
 
@@ -231,7 +92,7 @@ Pencil 侧：
 
 - `P01`：`snapshot_layout` 返回 `No layout problems.`
 - `P01`：截图目检未发现明显裁切、坍塌或横向溢出。
-- `P01`：2026-06-25 按桌面壳层密度收口，压缩 header / context bar / 主卡片 / 右侧 rail，并补齐公开入口矩阵和运行态 rail；复查无布局问题。
+- `P01`：2026-06-25 按桌面壳层密度收口，压缩 header / context bar / 主卡片 / 右侧 rail，并补齐公开入口组和运行态 rail；复查无布局问题。
 - `P02`：首次生成后发现主体内容被画板高度裁切；已加高画板并复查。
 - `P02`：修正 lucide 图标名 `check-circle-2` 为 `circle-check`。
 - `P02`：复查 `snapshot_layout` 返回 `No layout problems.`
@@ -260,6 +121,10 @@ Pencil 侧：
 - `P12`：`snapshot_layout` 返回 `No layout problems.`
 - `P12`：截图目检未发现明显裁切、坍塌或横向溢出。
 - 全局：`public-web-unified-experience.pen` 复查 `snapshot_layout` 返回 `No layout problems.`
+- 2026-06-27 公开 App 化重构后：`P01-P09` PC 公开页面逐页 `snapshot_layout` 均返回 `No layout problems.`
+- 2026-06-27 公开 App 化重构后：`P10-P14` 移动任务流逐页 `snapshot_layout` 均返回 `No layout problems.`
+- 2026-06-27 公开 App 化重构后：截图抽查 `P03` 论坛列表、`P04` 帖子详情、`P05` 文档列表和 `P11` 移动帖子详情，未发现明显裁切、坍塌或横向溢出；帖子详情已移除测试语义，神评 / 沙发改为评论流 badge。
+- 2026-06-27 公开 App 化重构后：全局 `snapshot_layout` 返回 `No layout problems.`
 
 仓库侧：
 
@@ -271,7 +136,7 @@ git diff --check -- Docs/frontend/design-sources/README.md Docs/frontend/public-
 
 ## 后续顺序
 
-1. 以 [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design) 和 `P01-P12` 作为公开 Web 视觉实现前口径。
+1. 以 [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design) 和 `P01-P14` 作为公开 Web 视觉实现前口径。
 2. 下一轮切换到 `private-web-workflows.pen` 后，补齐 `/workbench`、`/me` 子页、资产 / 订单、通知 / 消息 / 圈子 / 宠物、论坛作者态、文档作者态和移动私域任务流。
 3. public / private 业务设计源和说明文档确认后，再进入 `radish.client` 视觉实现与 PC / mobile 复核。
 4. Console 公共壳层与治理工作台代码实现按 [P3-12-D6 Console 视觉代码实现前盘点](/records/p3-12-d6-console-visual-code-prep-2026-06-27) 后移承接。
