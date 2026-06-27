@@ -1,5 +1,5 @@
 {
-  "version": "2.13",
+  "version": "2.14",
   "children": [
     {
       "type": "frame",
@@ -9,7 +9,7 @@
       "name": "F01 - Web UI Foundation",
       "clip": true,
       "width": 1440,
-      "height": 1180,
+      "height": 1260,
       "fill": "$rx-bg-app",
       "layout": "vertical",
       "gap": 22,
@@ -91,7 +91,8 @@
                   "content": "只承载跨 public / private / console 的视觉样板和合法变体；业务页面继续放在各自设计源。",
                   "lineHeight": 1.35,
                   "fontFamily": "$rx-font-body",
-                  "fontSize": 14
+                  "fontSize": 14,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -196,9 +197,9 @@
           "id": "mANXh",
           "name": "Header Variants",
           "width": "fill_container",
-          "height": 228,
+          "height": 280,
           "layout": "vertical",
-          "gap": 14,
+          "gap": 16,
           "children": [
             {
               "type": "frame",
@@ -216,7 +217,7 @@
                   "content": "Header 合法变体",
                   "lineHeight": 1.35,
                   "fontFamily": "$rx-font-heading",
-                  "fontSize": 20,
+                  "fontSize": 22,
                   "fontWeight": "700"
                 },
                 {
@@ -229,8 +230,8 @@
                   "strokeWidth": 1,
                   "gap": 6,
                   "padding": [
-                    6,
-                    10
+                    8,
+                    14
                   ],
                   "alignItems": "center",
                   "children": [
@@ -239,10 +240,10 @@
                       "id": "J5Z18P",
                       "name": "Header Rule Label",
                       "fill": "$rx-text-secondary",
-                      "content": "高度 64 · 品牌区一致 · nav pill 一致",
+                      "content": "高度 84 · PC 横排 nav · 移动纵排 tab",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
-                      "fontSize": 12,
+                      "fontSize": 13,
                       "fontWeight": "600"
                     }
                   ]
@@ -253,15 +254,22 @@
               "type": "frame",
               "id": "TZp61",
               "name": "Public Header",
+              "clip": true,
               "width": "fill_container",
-              "height": 64,
+              "height": 84,
               "fill": "$rx-bg-surface",
-              "cornerRadius": 8,
+              "cornerRadius": "$rx-radius-card",
               "stroke": "$rx-border-soft",
               "strokeWidth": 1,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "enabled": false,
+                "color": "#00000000"
+              },
               "padding": [
                 0,
-                18
+                24
               ],
               "justifyContent": "space_between",
               "alignItems": "center",
@@ -270,17 +278,23 @@
                   "type": "frame",
                   "id": "wAuPM",
                   "name": "Brand Lockup",
-                  "gap": 12,
+                  "gap": 16,
                   "alignItems": "center",
                   "children": [
                     {
                       "type": "frame",
                       "id": "ZOjRK",
                       "name": "Radish Mark",
-                      "width": 36,
-                      "height": 36,
+                      "width": 44,
+                      "height": 44,
                       "fill": "$rx-brand-primary",
-                      "cornerRadius": 8,
+                      "cornerRadius": "$rx-radius-card",
+                      "effect": {
+                        "type": "shadow",
+                        "shadowType": "outer",
+                        "enabled": false,
+                        "color": "#00000000"
+                      },
                       "layout": "vertical",
                       "justifyContent": "center",
                       "alignItems": "center",
@@ -293,7 +307,7 @@
                           "content": "R",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-heading",
-                          "fontSize": 18,
+                          "fontSize": 21,
                           "fontWeight": "700"
                         }
                       ]
@@ -303,7 +317,7 @@
                       "id": "vm6bv",
                       "name": "Brand Text",
                       "layout": "vertical",
-                      "gap": 2,
+                      "gap": 1,
                       "children": [
                         {
                           "type": "text",
@@ -311,9 +325,9 @@
                           "name": "Brand Name",
                           "fill": "$rx-text-primary",
                           "content": "Radish",
-                          "lineHeight": 1.35,
+                          "lineHeight": 1.2,
                           "fontFamily": "$rx-font-heading",
-                          "fontSize": 20,
+                          "fontSize": 23,
                           "fontWeight": "700"
                         },
                         {
@@ -324,7 +338,8 @@
                           "content": "公开 Web",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -334,7 +349,15 @@
                   "type": "frame",
                   "id": "Q5MFeZ",
                   "name": "Public Header Navigation",
-                  "gap": 8,
+                  "fill": "$rx-bg-muted",
+                  "cornerRadius": 999,
+                  "stroke": "$rx-border-soft",
+                  "strokeWidth": 1,
+                  "gap": 2,
+                  "padding": [
+                    5,
+                    8
+                  ],
                   "alignItems": "center",
                   "children": [
                     {
@@ -345,23 +368,40 @@
                       "cornerRadius": "$rx-radius-control",
                       "stroke": "$rx-brand-primary",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "effect": {
+                        "type": "shadow",
+                        "shadowType": "outer",
+                        "enabled": false,
+                        "color": "#00000000"
+                      },
+                      "gap": 7,
                       "padding": [
-                        6,
-                        10
+                        9,
+                        16
                       ],
+                      "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
+                        {
+                          "type": "icon",
+                          "id": "nZj4J",
+                          "name": "Public Nav Icon 发现",
+                          "width": 16,
+                          "height": 16,
+                          "icon": "layout-grid",
+                          "library": "lucide",
+                          "fill": "$rx-brand-primary"
+                        },
                         {
                           "type": "text",
                           "id": "CMZlK",
                           "name": "Public Header Nav 发现 Label",
                           "fill": "$rx-brand-primary",
                           "content": "发现",
-                          "lineHeight": 1.35,
+                          "lineHeight": 1.25,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12,
-                          "fontWeight": "600"
+                          "fontSize": 14,
+                          "fontWeight": "700"
                         }
                       ]
                     },
@@ -371,24 +411,35 @@
                       "name": "Public Header Nav 论坛",
                       "fill": "#00000000",
                       "cornerRadius": "$rx-radius-control",
-                      "stroke": "$rx-border-soft",
+                      "stroke": "#00000000",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "gap": 7,
                       "padding": [
-                        6,
-                        10
+                        9,
+                        16
                       ],
+                      "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
+                        {
+                          "type": "icon",
+                          "id": "xK2mP",
+                          "name": "Public Nav Icon 论坛",
+                          "width": 16,
+                          "height": 16,
+                          "icon": "messages-square",
+                          "library": "lucide",
+                          "fill": "$rx-text-secondary"
+                        },
                         {
                           "type": "text",
                           "id": "Qz41W",
                           "name": "Public Header Nav 论坛 Label",
                           "fill": "$rx-text-secondary",
                           "content": "论坛",
-                          "lineHeight": 1.35,
+                          "lineHeight": 1.25,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12,
+                          "fontSize": 14,
                           "fontWeight": "600"
                         }
                       ]
@@ -399,24 +450,35 @@
                       "name": "Public Header Nav 文档",
                       "fill": "#00000000",
                       "cornerRadius": "$rx-radius-control",
-                      "stroke": "$rx-border-soft",
+                      "stroke": "#00000000",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "gap": 7,
                       "padding": [
-                        6,
-                        10
+                        9,
+                        16
                       ],
+                      "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
+                        {
+                          "type": "icon",
+                          "id": "SfPLE",
+                          "name": "Public Nav Icon 文档",
+                          "width": 16,
+                          "height": 16,
+                          "icon": "book-open",
+                          "library": "lucide",
+                          "fill": "$rx-text-secondary"
+                        },
                         {
                           "type": "text",
                           "id": "n9vGOd",
                           "name": "Public Header Nav 文档 Label",
                           "fill": "$rx-text-secondary",
                           "content": "文档",
-                          "lineHeight": 1.35,
+                          "lineHeight": 1.25,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12,
+                          "fontSize": 14,
                           "fontWeight": "600"
                         }
                       ]
@@ -427,24 +489,35 @@
                       "name": "Public Header Nav 榜单",
                       "fill": "#00000000",
                       "cornerRadius": "$rx-radius-control",
-                      "stroke": "$rx-border-soft",
+                      "stroke": "#00000000",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "gap": 7,
                       "padding": [
-                        6,
-                        10
+                        9,
+                        16
                       ],
+                      "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
+                        {
+                          "type": "icon",
+                          "id": "Vspp7",
+                          "name": "Public Nav Icon 榜单",
+                          "width": 16,
+                          "height": 16,
+                          "icon": "trophy",
+                          "library": "lucide",
+                          "fill": "$rx-text-secondary"
+                        },
                         {
                           "type": "text",
                           "id": "oFvzi",
                           "name": "Public Header Nav 榜单 Label",
                           "fill": "$rx-text-secondary",
                           "content": "榜单",
-                          "lineHeight": 1.35,
+                          "lineHeight": 1.25,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12,
+                          "fontSize": 14,
                           "fontWeight": "600"
                         }
                       ]
@@ -455,24 +528,35 @@
                       "name": "Public Header Nav 商城",
                       "fill": "#00000000",
                       "cornerRadius": "$rx-radius-control",
-                      "stroke": "$rx-border-soft",
+                      "stroke": "#00000000",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "gap": 7,
                       "padding": [
-                        6,
-                        10
+                        9,
+                        16
                       ],
+                      "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
+                        {
+                          "type": "icon",
+                          "id": "U6dhYe",
+                          "name": "Public Nav Icon 商城",
+                          "width": 16,
+                          "height": 16,
+                          "icon": "shopping-bag",
+                          "library": "lucide",
+                          "fill": "$rx-text-secondary"
+                        },
                         {
                           "type": "text",
                           "id": "P0kaG",
                           "name": "Public Header Nav 商城 Label",
                           "fill": "$rx-text-secondary",
                           "content": "商城",
-                          "lineHeight": 1.35,
+                          "lineHeight": 1.25,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12,
+                          "fontSize": 14,
                           "fontWeight": "600"
                         }
                       ]
@@ -483,24 +567,42 @@
                   "type": "frame",
                   "id": "WCkpj",
                   "name": "Public Header Right Actions",
-                  "gap": 8,
+                  "fill": "$rx-bg-muted",
+                  "cornerRadius": 999,
+                  "stroke": "$rx-border-soft",
+                  "strokeWidth": 1,
+                  "gap": 4,
+                  "padding": [
+                    5,
+                    6
+                  ],
                   "alignItems": "center",
                   "children": [
                     {
                       "type": "frame",
                       "id": "rAYTc",
                       "name": "Public Header Action 登录",
-                      "fill": "$rx-bg-muted",
+                      "fill": "$rx-bg-surface",
                       "cornerRadius": "$rx-radius-control",
                       "stroke": "$rx-border-soft",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "gap": 7,
                       "padding": [
-                        6,
-                        10
+                        8,
+                        14
                       ],
                       "alignItems": "center",
                       "children": [
+                        {
+                          "type": "icon",
+                          "id": "Bwnwo",
+                          "name": "Public Action Icon 登录",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "circle-user-round",
+                          "library": "lucide",
+                          "fill": "$rx-text-secondary"
+                        },
                         {
                           "type": "text",
                           "id": "p3Xxa",
@@ -509,7 +611,7 @@
                           "content": "登录",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12,
+                          "fontSize": 14,
                           "fontWeight": "600"
                         }
                       ]
@@ -522,13 +624,29 @@
                       "cornerRadius": "$rx-radius-control",
                       "stroke": "$rx-brand-primary",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "effect": {
+                        "type": "shadow",
+                        "shadowType": "outer",
+                        "enabled": false,
+                        "color": "#00000000"
+                      },
+                      "gap": 8,
                       "padding": [
-                        6,
-                        10
+                        8,
+                        18
                       ],
                       "alignItems": "center",
                       "children": [
+                        {
+                          "type": "icon",
+                          "id": "I497s",
+                          "name": "Public Action Icon 工作台",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "layout-dashboard",
+                          "library": "lucide",
+                          "fill": "#ffffff"
+                        },
                         {
                           "type": "text",
                           "id": "xq1gV",
@@ -537,12 +655,34 @@
                           "content": "工作台",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12,
-                          "fontWeight": "600"
+                          "fontSize": 14,
+                          "fontWeight": "700"
                         }
                       ]
                     }
                   ]
+                },
+                {
+                  "type": "rectangle",
+                  "id": "XNeRK",
+                  "layoutPosition": "absolute",
+                  "x": 24,
+                  "y": 7,
+                  "name": "Public Header Top Hairline",
+                  "fill": "$rx-pattern-line",
+                  "width": 1296,
+                  "height": 1
+                },
+                {
+                  "type": "rectangle",
+                  "id": "hJwtv",
+                  "layoutPosition": "absolute",
+                  "x": 24,
+                  "y": 76,
+                  "name": "Public Header Bottom Hairline",
+                  "fill": "$rx-pattern-line",
+                  "width": 1296,
+                  "height": 1
                 }
               ]
             },
@@ -550,15 +690,22 @@
               "type": "frame",
               "id": "t2AIjS",
               "name": "Private Header",
+              "clip": true,
               "width": "fill_container",
-              "height": 64,
+              "height": 84,
               "fill": "$rx-bg-surface",
-              "cornerRadius": 8,
+              "cornerRadius": "$rx-radius-card",
               "stroke": "$rx-border-soft",
               "strokeWidth": 1,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "enabled": false,
+                "color": "#00000000"
+              },
               "padding": [
                 0,
-                18
+                24
               ],
               "justifyContent": "space_between",
               "alignItems": "center",
@@ -567,17 +714,23 @@
                   "type": "frame",
                   "id": "WXb52",
                   "name": "Brand Lockup",
-                  "gap": 12,
+                  "gap": 16,
                   "alignItems": "center",
                   "children": [
                     {
                       "type": "frame",
                       "id": "MmL5V",
                       "name": "Radish Mark",
-                      "width": 36,
-                      "height": 36,
+                      "width": 44,
+                      "height": 44,
                       "fill": "$rx-brand-primary",
-                      "cornerRadius": 8,
+                      "cornerRadius": "$rx-radius-card",
+                      "effect": {
+                        "type": "shadow",
+                        "shadowType": "outer",
+                        "enabled": false,
+                        "color": "#00000000"
+                      },
                       "layout": "vertical",
                       "justifyContent": "center",
                       "alignItems": "center",
@@ -590,7 +743,7 @@
                           "content": "R",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-heading",
-                          "fontSize": 18,
+                          "fontSize": 21,
                           "fontWeight": "700"
                         }
                       ]
@@ -600,7 +753,7 @@
                       "id": "A9sYwp",
                       "name": "Brand Text",
                       "layout": "vertical",
-                      "gap": 2,
+                      "gap": 1,
                       "children": [
                         {
                           "type": "text",
@@ -608,9 +761,9 @@
                           "name": "Brand Name",
                           "fill": "$rx-text-primary",
                           "content": "Radish",
-                          "lineHeight": 1.35,
+                          "lineHeight": 1.2,
                           "fontFamily": "$rx-font-heading",
-                          "fontSize": 20,
+                          "fontSize": 23,
                           "fontWeight": "700"
                         },
                         {
@@ -621,7 +774,8 @@
                           "content": "正式 Web 工作台",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -631,7 +785,15 @@
                   "type": "frame",
                   "id": "SpcVo",
                   "name": "Private Header Navigation",
-                  "gap": 8,
+                  "fill": "$rx-bg-muted",
+                  "cornerRadius": 999,
+                  "stroke": "$rx-border-soft",
+                  "strokeWidth": 1,
+                  "gap": 2,
+                  "padding": [
+                    5,
+                    8
+                  ],
                   "alignItems": "center",
                   "children": [
                     {
@@ -642,23 +804,40 @@
                       "cornerRadius": "$rx-radius-control",
                       "stroke": "$rx-brand-primary",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "effect": {
+                        "type": "shadow",
+                        "shadowType": "outer",
+                        "enabled": false,
+                        "color": "#00000000"
+                      },
+                      "gap": 7,
                       "padding": [
-                        6,
-                        10
+                        9,
+                        16
                       ],
+                      "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
+                        {
+                          "type": "icon",
+                          "id": "M74mo",
+                          "name": "Private Nav Icon 工作台",
+                          "width": 16,
+                          "height": 16,
+                          "icon": "layout-dashboard",
+                          "library": "lucide",
+                          "fill": "$rx-brand-primary"
+                        },
                         {
                           "type": "text",
                           "id": "EMsEb",
                           "name": "Private Header Nav 工作台 Label",
                           "fill": "$rx-brand-primary",
                           "content": "工作台",
-                          "lineHeight": 1.35,
+                          "lineHeight": 1.25,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12,
-                          "fontWeight": "600"
+                          "fontSize": 14,
+                          "fontWeight": "700"
                         }
                       ]
                     },
@@ -668,24 +847,35 @@
                       "name": "Private Header Nav 我的状态",
                       "fill": "#00000000",
                       "cornerRadius": "$rx-radius-control",
-                      "stroke": "$rx-border-soft",
+                      "stroke": "#00000000",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "gap": 7,
                       "padding": [
-                        6,
-                        10
+                        9,
+                        16
                       ],
+                      "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
+                        {
+                          "type": "icon",
+                          "id": "PdMHf",
+                          "name": "Private Nav Icon 我的状态",
+                          "width": 16,
+                          "height": 16,
+                          "icon": "circle-user-round",
+                          "library": "lucide",
+                          "fill": "$rx-text-secondary"
+                        },
                         {
                           "type": "text",
                           "id": "s0S4IB",
                           "name": "Private Header Nav 我的状态 Label",
                           "fill": "$rx-text-secondary",
                           "content": "我的状态",
-                          "lineHeight": 1.35,
+                          "lineHeight": 1.25,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12,
+                          "fontSize": 14,
                           "fontWeight": "600"
                         }
                       ]
@@ -696,24 +886,35 @@
                       "name": "Private Header Nav 资产",
                       "fill": "#00000000",
                       "cornerRadius": "$rx-radius-control",
-                      "stroke": "$rx-border-soft",
+                      "stroke": "#00000000",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "gap": 7,
                       "padding": [
-                        6,
-                        10
+                        9,
+                        16
                       ],
+                      "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
+                        {
+                          "type": "icon",
+                          "id": "Q8hv8j",
+                          "name": "Private Nav Icon 资产",
+                          "width": 16,
+                          "height": 16,
+                          "icon": "wallet-cards",
+                          "library": "lucide",
+                          "fill": "$rx-text-secondary"
+                        },
                         {
                           "type": "text",
                           "id": "r8aG19",
                           "name": "Private Header Nav 资产 Label",
                           "fill": "$rx-text-secondary",
                           "content": "资产",
-                          "lineHeight": 1.35,
+                          "lineHeight": 1.25,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12,
+                          "fontSize": 14,
                           "fontWeight": "600"
                         }
                       ]
@@ -724,24 +925,35 @@
                       "name": "Private Header Nav 创作",
                       "fill": "#00000000",
                       "cornerRadius": "$rx-radius-control",
-                      "stroke": "$rx-border-soft",
+                      "stroke": "#00000000",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "gap": 7,
                       "padding": [
-                        6,
-                        10
+                        9,
+                        16
                       ],
+                      "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
+                        {
+                          "type": "icon",
+                          "id": "iS1AA",
+                          "name": "Private Nav Icon 创作",
+                          "width": 16,
+                          "height": 16,
+                          "icon": "pen-line",
+                          "library": "lucide",
+                          "fill": "$rx-text-secondary"
+                        },
                         {
                           "type": "text",
                           "id": "lmSMQ",
                           "name": "Private Header Nav 创作 Label",
                           "fill": "$rx-text-secondary",
                           "content": "创作",
-                          "lineHeight": 1.35,
+                          "lineHeight": 1.25,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12,
+                          "fontSize": 14,
                           "fontWeight": "600"
                         }
                       ]
@@ -752,24 +964,35 @@
                       "name": "Private Header Nav 消息",
                       "fill": "#00000000",
                       "cornerRadius": "$rx-radius-control",
-                      "stroke": "$rx-border-soft",
+                      "stroke": "#00000000",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "gap": 7,
                       "padding": [
-                        6,
-                        10
+                        9,
+                        16
                       ],
+                      "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
+                        {
+                          "type": "icon",
+                          "id": "Lep5q",
+                          "name": "Private Nav Icon 消息",
+                          "width": 16,
+                          "height": 16,
+                          "icon": "message-square",
+                          "library": "lucide",
+                          "fill": "$rx-text-secondary"
+                        },
                         {
                           "type": "text",
                           "id": "Mgrws",
                           "name": "Private Header Nav 消息 Label",
                           "fill": "$rx-text-secondary",
                           "content": "消息",
-                          "lineHeight": 1.35,
+                          "lineHeight": 1.25,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12,
+                          "fontSize": 14,
                           "fontWeight": "600"
                         }
                       ]
@@ -780,34 +1003,52 @@
                   "type": "frame",
                   "id": "mt0uv",
                   "name": "Private Header Right Actions",
-                  "gap": 8,
+                  "fill": "$rx-bg-muted",
+                  "cornerRadius": 999,
+                  "stroke": "$rx-border-soft",
+                  "strokeWidth": 1,
+                  "gap": 4,
+                  "padding": [
+                    5,
+                    6
+                  ],
                   "alignItems": "center",
                   "children": [
                     {
                       "type": "frame",
                       "id": "X09Brc",
                       "name": "Private Header Action 已登录 · 萝卜SAMA",
-                      "fill": "$rx-bg-muted",
+                      "fill": "$rx-bg-surface",
                       "cornerRadius": "$rx-radius-control",
                       "stroke": "$rx-border-soft",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "gap": 8,
                       "padding": [
-                        6,
-                        10
+                        8,
+                        14
                       ],
                       "alignItems": "center",
                       "children": [
                         {
+                          "type": "icon",
+                          "id": "KYWYz",
+                          "name": "Private Action Icon 已登录",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "badge-check",
+                          "library": "lucide",
+                          "fill": "$rx-brand-primary"
+                        },
+                        {
                           "type": "text",
                           "id": "FJ561",
                           "name": "Private Header Action 已登录 · 萝卜SAMA Label",
-                          "fill": "$rx-text-secondary",
-                          "content": "已登录 · 萝卜SAMA",
+                          "fill": "$rx-text-primary",
+                          "content": "萝卜SAMA",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12,
-                          "fontWeight": "600"
+                          "fontSize": 14,
+                          "fontWeight": "700"
                         }
                       ]
                     },
@@ -815,17 +1056,27 @@
                       "type": "frame",
                       "id": "a7kDJa",
                       "name": "Private Header Action 设置",
-                      "fill": "$rx-bg-muted",
+                      "fill": "$rx-bg-surface",
                       "cornerRadius": "$rx-radius-control",
                       "stroke": "$rx-border-soft",
                       "strokeWidth": 1,
-                      "gap": 6,
+                      "gap": 7,
                       "padding": [
-                        6,
-                        10
+                        8,
+                        14
                       ],
                       "alignItems": "center",
                       "children": [
+                        {
+                          "type": "icon",
+                          "id": "GINWs",
+                          "name": "Private Action Icon 设置",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "settings",
+                          "library": "lucide",
+                          "fill": "$rx-text-secondary"
+                        },
                         {
                           "type": "text",
                           "id": "M22WuL",
@@ -834,12 +1085,34 @@
                           "content": "设置",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12,
+                          "fontSize": 14,
                           "fontWeight": "600"
                         }
                       ]
                     }
                   ]
+                },
+                {
+                  "type": "rectangle",
+                  "id": "hO0FY",
+                  "layoutPosition": "absolute",
+                  "x": 24,
+                  "y": 7,
+                  "name": "Private Header Top Hairline",
+                  "fill": "$rx-pattern-line",
+                  "width": 1296,
+                  "height": 1
+                },
+                {
+                  "type": "rectangle",
+                  "id": "E6JMT",
+                  "layoutPosition": "absolute",
+                  "x": 24,
+                  "y": 76,
+                  "name": "Private Header Bottom Hairline",
+                  "fill": "$rx-pattern-line",
+                  "width": 1296,
+                  "height": 1
                 }
               ]
             }
@@ -1130,7 +1403,8 @@
                   "content": "同一 section 只保留一个主按钮；低优先级信息不要使用品牌主色。",
                   "lineHeight": 1.35,
                   "fontFamily": "$rx-font-body",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -1196,7 +1470,8 @@
                       "content": "卡片只用于内容项、数据摘要、状态块和必要工具面板。",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -1255,7 +1530,8 @@
                           "content": "右侧 rail 必须服务理解、决策或动作。",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -1330,7 +1606,8 @@
                       "content": "保留骨架和结构顺序",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -1376,7 +1653,8 @@
                       "content": "说明下一步入口",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -1422,7 +1700,8 @@
                       "content": "展示重试和错误原因",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -1468,7 +1747,8 @@
                       "content": "登录后恢复当前路径",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     }
                   ]
                 }
@@ -1614,7 +1894,8 @@
                                   "content": "移动 Web",
                                   "lineHeight": 1.35,
                                   "fontFamily": "$rx-font-body",
-                                  "fontSize": 12
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             }
@@ -1669,7 +1950,8 @@
                           "content": "内容顺序必须连续，不使用桌面三栏缩小版。",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -1888,7 +2170,8 @@
                       "content": "业务设计源只复制基座样式，不重新发明 Header / Button / Card。",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -1919,7 +2202,8 @@
                       "content": "public / private 允许导航项不同，但高度、品牌区、激活态和按钮形态必须一致。",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -1950,7 +2234,8 @@
                       "content": "Console 可使用更高密度表格，但 token、边框、状态色和主次按钮规则保持一致。",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -1981,7 +2266,8 @@
                       "content": "实现边界和技术停止线只写入文档，不进入真实用户 UI。",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 }
@@ -2097,5 +2383,6 @@
       "type": "color",
       "value": "#6a5c4f"
     }
-  }
+  },
+  "fileToken": "4d33f107-3436-421d-9c69-d726ed16d289"
 }

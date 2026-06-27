@@ -1,5 +1,5 @@
 {
-  "version": "2.13",
+  "version": "2.14",
   "children": [
     {
       "type": "frame",
@@ -86,7 +86,8 @@
                       "content": "正式 Web 工作台",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     }
                   ]
                 }
@@ -358,7 +359,8 @@
                   "content": "集中处理私域复访、资产、消息与创作入口",
                   "lineHeight": 1.35,
                   "fontFamily": "$rx-font-body",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -547,7 +549,8 @@
                           "content": "从上次中断的作者任务恢复，旁路处理资产、订单、消息和宠物状态。",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 14
+                          "fontSize": 14,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -610,7 +613,8 @@
                               "content": "P3-12 私域设计记录 · /docs/edit/…",
                               "lineHeight": 1.35,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 12
+                              "fontSize": 12,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -664,7 +668,8 @@
                               "content": "/shop/orders",
                               "lineHeight": 1.35,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 12
+                              "fontSize": 12,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -718,7 +723,8 @@
                               "content": "/messages",
                               "lineHeight": 1.35,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 12
+                              "fontSize": 12,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -780,7 +786,8 @@
                           "content": "可用资产",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -830,7 +837,8 @@
                           "content": "待确认收货",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -880,7 +888,8 @@
                           "content": "帖子与文档",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -930,7 +939,8 @@
                           "content": "本周 +320",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -1043,7 +1053,8 @@
                                   "content": "/me",
                                   "lineHeight": 1.35,
                                   "fontFamily": "$rx-font-body",
-                                  "fontSize": 12
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -1070,7 +1081,8 @@
                               "content": "个人摘要 / 经验 / 最近访问",
                               "lineHeight": 1.35,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 12
+                              "fontSize": 12,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -1114,7 +1126,8 @@
                                   "content": "/me/assets",
                                   "lineHeight": 1.35,
                                   "fontFamily": "$rx-font-body",
-                                  "fontSize": 12
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -1141,7 +1154,8 @@
                               "content": "余额、流水、权益入口",
                               "lineHeight": 1.35,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 12
+                              "fontSize": 12,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -1185,7 +1199,8 @@
                                   "content": "/shop/orders",
                                   "lineHeight": 1.35,
                                   "fontFamily": "$rx-font-body",
-                                  "fontSize": 12
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -1212,7 +1227,8 @@
                               "content": "订单、库存、商品回流",
                               "lineHeight": 1.35,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 12
+                              "fontSize": 12,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -1266,7 +1282,8 @@
                                   "content": "/messages",
                                   "lineHeight": 1.35,
                                   "fontFamily": "$rx-font-body",
-                                  "fontSize": 12
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -1293,7 +1310,8 @@
                               "content": "聊天通知与会话定位",
                               "lineHeight": 1.35,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 12
+                              "fontSize": 12,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -1337,7 +1355,8 @@
                                   "content": "/notifications",
                                   "lineHeight": 1.35,
                                   "fontFamily": "$rx-font-body",
-                                  "fontSize": 12
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -1364,7 +1383,8 @@
                               "content": "系统通知和内容回流",
                               "lineHeight": 1.35,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 12
+                              "fontSize": 12,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -1408,7 +1428,8 @@
                                   "content": "/circle",
                                   "lineHeight": 1.35,
                                   "fontFamily": "$rx-font-body",
-                                  "fontSize": 12
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -1435,7 +1456,8 @@
                               "content": "关注动态与关系链",
                               "lineHeight": 1.35,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 12
+                              "fontSize": 12,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -1489,7 +1511,8 @@
                                   "content": "/pet",
                                   "lineHeight": 1.35,
                                   "fontFamily": "$rx-font-body",
-                                  "fontSize": 12
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -1516,7 +1539,8 @@
                               "content": "状态照顾与流水",
                               "lineHeight": 1.35,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 12
+                              "fontSize": 12,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -1560,7 +1584,8 @@
                                   "content": "/me/content",
                                   "lineHeight": 1.35,
                                   "fontFamily": "$rx-font-body",
-                                  "fontSize": 12
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -1587,7 +1612,8 @@
                               "content": "帖子、文档、回答管理",
                               "lineHeight": 1.35,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 12
+                              "fontSize": 12,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -1631,7 +1657,8 @@
                                   "content": "/me/attachments",
                                   "lineHeight": 1.35,
                                   "fontFamily": "$rx-font-body",
-                                  "fontSize": 12
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -1658,7 +1685,8 @@
                               "content": "上传物与浏览回看",
                               "lineHeight": 1.35,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 12
+                              "fontSize": 12,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -1789,7 +1817,8 @@
                           "content": "/shop/order/…",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -1853,7 +1882,8 @@
                           "content": "/forum/compose",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -1917,7 +1947,8 @@
                           "content": "/docs/revisions/…",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -1982,7 +2013,8 @@
                       "content": "@radish-master · DisplayHandle 展示",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -2184,7 +2216,8 @@
                           "content": "/forum/post/…",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -2230,7 +2263,8 @@
                           "content": "/docs/mine",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -2276,7 +2310,8 @@
                           "content": "/messages",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -2563,7 +2598,8 @@
                           "content": "继续私域设计记录，完成后进入文档治理看板",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -2594,7 +2630,8 @@
                           "content": "订单与背包有 2 个待确认项",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -2625,7 +2662,8 @@
                           "content": "公开链接、消息回流和作者草稿状态正常",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -2721,7 +2759,8 @@
                       "content": "资产与订单",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     }
                   ]
                 }
@@ -2978,7 +3017,8 @@
                   "content": "资产流水、订单与背包只进入登录态私域",
                   "lineHeight": 1.35,
                   "fontFamily": "$rx-font-body",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -3168,7 +3208,8 @@
                           "content": "可用 12,160",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -3238,7 +3279,8 @@
                           "content": "评论与神评奖励",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -3308,7 +3350,8 @@
                           "content": "商城购买",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -3775,7 +3818,8 @@
                                   "content": "06-25 14:21",
                                   "lineHeight": 1.35,
                                   "fontFamily": "$rx-font-body",
-                                  "fontSize": 12
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -3830,7 +3874,8 @@
                                   "content": "购买「主题装扮 · 竹影」",
                                   "lineHeight": 1.35,
                                   "fontFamily": "$rx-font-body",
-                                  "fontSize": 12
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -3938,7 +3983,8 @@
                                   "content": "06-25 11:08",
                                   "lineHeight": 1.35,
                                   "fontFamily": "$rx-font-body",
-                                  "fontSize": 12
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -3993,7 +4039,8 @@
                                   "content": "帖子获神评基础奖励",
                                   "lineHeight": 1.35,
                                   "fontFamily": "$rx-font-body",
-                                  "fontSize": 12
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -4101,7 +4148,8 @@
                                   "content": "06-24 19:42",
                                   "lineHeight": 1.35,
                                   "fontFamily": "$rx-font-body",
-                                  "fontSize": 12
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -4156,7 +4204,8 @@
                                   "content": "背包道具发放成功",
                                   "lineHeight": 1.35,
                                   "fontFamily": "$rx-font-body",
-                                  "fontSize": 12
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -4264,7 +4313,8 @@
                                   "content": "06-24 08:30",
                                   "lineHeight": 1.35,
                                   "fontFamily": "$rx-font-body",
-                                  "fontSize": 12
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -4319,7 +4369,8 @@
                                   "content": "轻回应互动奖励",
                                   "lineHeight": 1.35,
                                   "fontFamily": "$rx-font-body",
-                                  "fontSize": 12
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -4427,7 +4478,8 @@
                                   "content": "06-23 22:16",
                                   "lineHeight": 1.35,
                                   "fontFamily": "$rx-font-body",
-                                  "fontSize": 12
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -4482,7 +4534,8 @@
                                   "content": "历史重复流水校准",
                                   "lineHeight": 1.35,
                                   "fontFamily": "$rx-font-body",
-                                  "fontSize": 12
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -4680,7 +4733,8 @@
                               "content": "永久权益",
                               "lineHeight": 1.35,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 12
+                              "fontSize": 12,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "frame",
@@ -4759,7 +4813,8 @@
                               "content": "消耗品",
                               "lineHeight": 1.35,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 12
+                              "fontSize": 12,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "frame",
@@ -4838,7 +4893,8 @@
                               "content": "限时权益",
                               "lineHeight": 1.35,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 12
+                              "fontSize": 12,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "frame",
@@ -4971,7 +5027,8 @@
                       "content": "购买后已完成扣款，背包发放流水已入账。下一步仅确认收货，不在本页扩退款、转账或支付口令设置。",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -5268,7 +5325,8 @@
                               "content": "06-25 14:21",
                               "lineHeight": 1.35,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 12
+                              "fontSize": 12,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -5319,7 +5377,8 @@
                               "content": "06-25 14:22",
                               "lineHeight": 1.35,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 12
+                              "fontSize": 12,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -5370,7 +5429,8 @@
                               "content": "当前状态",
                               "lineHeight": 1.35,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 12
+                              "fontSize": 12,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -5445,7 +5505,8 @@
                           "content": "骨架行保留表格结构",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -5491,7 +5552,8 @@
                           "content": "展示无流水 / 无订单说明",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -5537,7 +5599,8 @@
                           "content": "未登录回流到当前私域路由",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -5583,7 +5646,8 @@
                           "content": "保留重试和公开商城返回",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -5679,7 +5743,8 @@
                       "content": "作者工作台",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     }
                   ]
                 }
@@ -5954,7 +6019,8 @@
                   "content": "论坛写作与文档写作共用作者节奏，编辑器细节进入 P04",
                   "lineHeight": 1.35,
                   "fontFamily": "$rx-font-body",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -6148,7 +6214,8 @@
                               "content": "/forum/compose",
                               "lineHeight": 1.35,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -6207,7 +6274,8 @@
                               "content": "/docs/mine",
                               "lineHeight": 1.35,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -7088,7 +7156,8 @@
                       "content": "主任务是补齐私域与作者态设计源，发布前保留草稿、提交反馈、编辑历史和来源返回。",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
-                      "fontSize": 14
+                      "fontSize": 14,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -7298,7 +7367,8 @@
                           "content": "标题、正文、标签已填写",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -7352,7 +7422,8 @@
                           "content": "clientSubmissionId 已生成并复用",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -7406,7 +7477,8 @@
                           "content": "发布后使用 /forum/post/:id",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -7460,7 +7532,8 @@
                           "content": "编辑后写入 PostEditHistory",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -7514,7 +7587,8 @@
                           "content": "无需审核动作，失败回到草稿",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -7638,7 +7712,8 @@
                           "content": "2 篇待续写",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -7697,7 +7772,8 @@
                           "content": "进入空白草稿",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -7756,7 +7832,8 @@
                           "content": "作者本人可见",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -7815,7 +7892,8 @@
                           "content": "只读差异回看",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -7899,7 +7977,8 @@
                           "content": "草稿行内反馈",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -7945,7 +8024,8 @@
                           "content": "同步时间可见",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -7991,7 +8071,8 @@
                           "content": "进入公开详情",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -8037,7 +8118,8 @@
                           "content": "保留重试与错误原因",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -8091,7 +8173,8 @@
                       "content": "@radish-master",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -8120,7 +8203,8 @@
                           "content": "展示名和公开句柄在发布前保持可见",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -8151,7 +8235,8 @@
                           "content": "公开链接可复制，返回作者态路径清晰",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -8182,7 +8267,8 @@
                           "content": "治理入口独立，普通作者流程保持轻量",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -8249,7 +8335,8 @@
                           "content": "从草稿队列恢复最近编辑内容",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 11
+                          "fontSize": 11,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -8289,7 +8376,8 @@
                           "content": "标题、正文、标签和公开链接状态一屏确认",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 11
+                          "fontSize": 11,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -8329,7 +8417,8 @@
                           "content": "编辑前后差异可只读对比",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 11
+                          "fontSize": 11,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -8369,7 +8458,8 @@
                           "content": "发布失败保留错误原因和重试入口",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 11
+                          "fontSize": 11,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -8409,7 +8499,8 @@
                           "content": "发布成功后回到公开阅读页查看效果",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 11
+                          "fontSize": 11,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -8505,7 +8596,8 @@
                       "content": "编辑器与版本",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     }
                   ]
                 }
@@ -8780,7 +8872,8 @@
                   "content": "编辑与版本回看共屏，保存状态始终可见",
                   "lineHeight": 1.35,
                   "fontFamily": "$rx-font-body",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -9214,7 +9307,8 @@
                           "content": "私域工作台承接用户复访、资产、订单、消息和作者入口，公开分享继续回到公开 URL。",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 14
+                          "fontSize": 14,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -9226,7 +9320,8 @@
                           "content": "作者态把论坛写作与文档写作统一到正式 Web，不迁入 WebOS 窗口、Dock 或 openApp 语义。",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 14
+                          "fontSize": 14,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -9238,7 +9333,8 @@
                           "content": "编辑保存、发布、失败重试与版本回看必须在同一流程内可见，避免用户离开当前任务后丢失上下文。",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 14
+                          "fontSize": 14,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -9489,7 +9585,8 @@
                           "content": "按钮禁用，行内显示进度",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -9540,7 +9637,8 @@
                           "content": "进入公开详情并保留返回作者态",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -9591,7 +9689,8 @@
                           "content": "错误说明、重试和草稿保留",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -9724,7 +9823,8 @@
                               "content": "10 秒前 · 自动保存",
                               "lineHeight": 1.35,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -9783,7 +9883,8 @@
                               "content": "今天 11:40 · 公开可见",
                               "lineHeight": 1.35,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -9842,7 +9943,8 @@
                               "content": "昨天 22:10 · 标题调整",
                               "lineHeight": 1.35,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -9901,7 +10003,8 @@
                               "content": "06-23 19:04 · 手动保存",
                               "lineHeight": 1.35,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -10022,7 +10125,8 @@
                           "content": "补齐移动私域单列状态槽",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -10076,7 +10180,8 @@
                           "content": "将工作台入口从 /desktop 改为 /workbench",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -10130,7 +10235,8 @@
                           "content": "PublicId 仅用于 URL / 分享 / 传参",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -10184,7 +10290,8 @@
                           "content": "移除 WebOS Dock 相关入口文案",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -10242,7 +10349,8 @@
                           "content": "预览公开效果，确认标题和正文阅读节奏",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -10273,7 +10381,8 @@
                           "content": "查看版本差异，确认本次修改范围",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -10304,7 +10413,8 @@
                           "content": "发布后进入公开详情，再返回作者工作台",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -10474,7 +10584,8 @@
                               "content": "/workbench",
                               "lineHeight": 1.35,
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 12
+                              "fontSize": 12,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -10515,7 +10626,8 @@
                   "content": "工作台、资产、订单、作者任务和消息在移动端保持单列连续浏览。",
                   "lineHeight": 1.35,
                   "fontFamily": "$rx-font-body",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -10759,7 +10871,8 @@
                           "content": "/docs/edit/:id",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -10813,7 +10926,8 @@
                           "content": "/shop/orders",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -10867,7 +10981,8 @@
                           "content": "/messages",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -10998,7 +11113,8 @@
                           "content": "经验、资产摘要、最近访问",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -11070,7 +11186,8 @@
                           "content": "余额、奖励、订单扣款",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -11142,7 +11259,8 @@
                           "content": "订单详情和权益发放",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -11214,7 +11332,8 @@
                           "content": "草稿、发布、历史回看",
                           "lineHeight": 1.35,
                           "fontFamily": "$rx-font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -11326,7 +11445,8 @@
                       "content": "进入 /shop/order/:id",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -11372,7 +11492,8 @@
                       "content": "进入 /docs/mine",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -11418,7 +11539,8 @@
                       "content": "进入 /circle",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     }
                   ]
                 }
@@ -11488,7 +11610,8 @@
                       "content": "正在同步最新数据",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -11532,7 +11655,8 @@
                       "content": "暂无内容时给出继续入口",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -11576,7 +11700,8 @@
                       "content": "保留重试和返回工作台",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -11620,7 +11745,8 @@
                       "content": "登录后回到当前路径",
                       "lineHeight": 1.35,
                       "fontFamily": "$rx-font-body",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     }
                   ]
                 }
@@ -11660,7 +11786,8 @@
                   "content": "主要动作按单列排列，底部 tab 只保留高频入口。",
                   "lineHeight": 1.35,
                   "fontFamily": "$rx-font-body",
-                  "fontSize": 12
+                  "fontSize": 12,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -11933,5 +12060,6 @@
       "type": "color",
       "value": "#6a5c4f"
     }
-  }
+  },
+  "fileToken": "2bd7cd8b-fe65-45d1-9c50-d1aee56ded3f"
 }
