@@ -16,7 +16,7 @@
 - `web-ui-foundation.pen`：Web UI 共享基座设计端点，当前包含 `F01` 共享样板画板，覆盖 public / private header 合法变体、按钮 / pill、卡片 / rail、状态槽、移动 shell / tab 和跨设计源同步规则。
 - `public-web-unified-experience.pen`：公开 Web 统一体验设计端点，当前包含 `P01-P05` 编号画板，覆盖公开壳层基座、发现内容流、公开详情阅读、公开集合页与移动单列基线。
 - `private-web-workflows.pen`：私域与作者态 Web 工作流设计端点，当前包含 `P01-P05` 编号画板，覆盖私域首页、资产 / 订单 / 背包、作者工作台、编辑器 / 版本回看与移动私域单列关键画板。
-- `console-governance-workbench.pen`：Console 治理工作台与后台视觉基座设计端点，当前包含 `P01-P08` 编号画板，已按 `web-ui-foundation.pen` 共享基座重构，覆盖 Console 专用壳层、内容审核、经验台账、治理调度、表格 CRUD、设置策略和移动端治理流程参考。
+- `console-governance-workbench.pen`：Console 治理工作台与后台视觉基座设计端点，当前包含 `P00-P18` 编号画板，已按 `web-ui-foundation.pen` 共享基座重构并扩展，覆盖公共 Console 壳层、浅色图标侧栏、内容审核、经验台账、治理调度、表格 CRUD、设置策略、商业运营、文档治理、权限矩阵、运维任务和移动端 Console 任务流参考。
 
 模板文件：
 
