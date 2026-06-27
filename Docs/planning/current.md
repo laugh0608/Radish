@@ -8,7 +8,7 @@
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
 - **当前主线**：`P3-12 Web 完全化与 WebOS 收束`
-- **复核日期**：`2026-06-25`
+- **复核日期**：`2026-06-27`
 - **最近结论**：
   - `P3-1` 至 `P3-5` 已完成公开内容增长、PublicId 试点、留存回流、动态 sitemap 与详情 head snapshot 首批建设。
   - `P3-6` 公开增长部署观察已收口，本地 Gateway 与生产公开域名 `https://radishx.com` 的 public head smoke 均通过，转入维护线。
@@ -150,7 +150,7 @@
    - `P3-12-B4` 文档作者态归属裁决与 `B4-1` 正式 Web 作者入口首批代码已完成；公开 `/docs` 保持阅读态，正式 Web 承接登录态作者页，WebOS Wiki 退为历史维护入口；`B4-2` Console 文档治理首批代码与阶段运行态 smoke 已完成。
    - `P3-12-B5` Web 功能总入口首批代码与 Gateway PC / mobile smoke 已完成：`/workbench` 和公共壳层入口调整已落地，正式 Web 已迁移功能可被集中发现，`/desktop` 退为桌面版兼容入口。
    - `P3-12-B6` 身份语义二次收口设计、代码前盘点、分批方案、`B6-1` 至 `B6-6` 代码侧与启动前验证已完成；该专题触达 Auth、注册登录、公开展示、搜索 / 艾特、资产流水、Console 设置和数据库结构口径。运行态 Gateway PC / mobile 页面 smoke 待用户明确前后端已启动后补验。
-   - `P3-12-D1` 统一 UI 设计准备已启动；页面级 UI 设计与美化必须统一使用 Pencil 先做设计稿，再更新设计 / 说明文档，最后进入视觉实现。`P3-12-D2` 已将 `public-web-unified-experience.pen` 重构并二次强化为 `P01-P16` 公开社区 App 页面族，覆盖公开首页、发现内容流、论坛列表 / 详情、评论树、轻回应、公开聊天室、文档列表 / 详情、商城、榜单、公开主页和移动公开任务流。`P3-12-D3` 已补齐 `private-web-workflows.pen` 的 `P01-P05` 私域 / 作者态画板，覆盖私域首页、资产 / 订单、作者工作台、编辑器 / 版本回看和移动私域单列；`P3-12-D4` 已新增 `web-ui-foundation.pen` 共享 UI 基座，并补 `F02` client 公共壳层组件契约，用于约束跨 public / private / console 的 header、按钮、卡片、状态槽、移动 tab 和 client shell；`P3-12-D5` 已完成 `console-governance-workbench.pen` 的 `P00-P18` Console 设计源收口。当前先补齐 client private 业务设计源矩阵，再进入视觉代码实现。
+   - `P3-12-D1` 统一 UI 设计准备已启动；页面级 UI 设计与美化必须统一使用 Pencil 先做设计稿，再更新设计 / 说明文档，最后进入视觉实现。`P3-12-D2` 已将 `public-web-unified-experience.pen` 重构并强化为 `P01-P16` 公开社区 App 页面族，覆盖公开首页、发现内容流、论坛列表 / 详情、紧凑评论树、轻回应、公开聊天室、文档列表 / 详情、商城、榜单、公开主页和移动公开任务流。`P3-12-D3` 已补齐 `private-web-workflows.pen` 的 `P01-P05` 私域 / 作者态画板，覆盖私域首页、资产 / 订单、作者工作台、编辑器 / 版本回看和移动私域单列；`P3-12-D4` 已新增 `web-ui-foundation.pen` 共享 UI 基座，并补 `F02` client 公共壳层组件契约，用于约束跨 public / private / console 的 header、按钮、卡片、状态槽、移动 tab 和 client shell；`P3-12-D5` 已完成 `console-governance-workbench.pen` 的 `P00-P18` Console 设计源收口；`P3-12-D6` 已完成 Console 视觉代码实现前盘点。当前先补齐 client private 业务设计源矩阵，再进入 `radish.client` 视觉实现；Console 代码实现后移承接。
 2. **保持 P3-10 可恢复合并状态**
    - `P3-10-D` 已完成公开页整理、四批入口语义治理、合并前验证和 PR 合并判断；不再默认追加第五批链接扫尾。
    - 前端敏感日志脱敏、支付口令升级、支付 / 转账幂等、`WOG-1` 至 `WOG-6`、论坛内容发布可靠性和 Flutter 作者编辑承接已纳入完整批次范围。
@@ -170,7 +170,7 @@
   - 新增 [P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)，承接 P3-11 暂缓 PR 后的正式开发主线。
   - `P3-12-A` 已完成只读盘点，结论见 [P3-12-A WebOS 与 Web 功能资产盘点记录](/records/p3-12-a-webos-web-function-asset-inventory-2026-06-21)。
   - `P3-12-B1` 方案、路由 / 登录回流契约、商城私域正式 Web 入口、资产正式入口、公开购买动作和交易回流替换见 [P3-12-B1 账户资产与商城交易 Web 化方案](/records/p3-12-b1-account-shop-web-plan-2026-06-21)；`P3-12-C1` 首轮残留清理见 [P3-12-C1 WebOS 残留入口清理记录](/records/p3-12-c1-webos-residual-cleanup-2026-06-21)，真实 Gateway PC / mobile 复核后置到小阶段验收。
-  - `P3-12-B2` 首批代码已补 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 的路由、登录回流和正式 Web 导航语义，方案见 [P3-12-B2 完整个人中心 Web 化方案](/records/p3-12-b2-personal-center-web-plan-2026-06-21)；`P3-12-B3` 首批代码与小阶段验收已完成，见 [P3-12-B3 论坛作者态 Web 化方案](/records/p3-12-b3-forum-author-web-plan-2026-06-21)；`P3-12-B4` 归属裁决、`B4-1` 正式 Web 作者入口、`B4-2` Console 文档治理和阶段运行态 smoke 已完成，见 [P3-12-B4 文档作者态归属裁决](/records/p3-12-b4-doc-author-ownership-plan-2026-06-22)、[P3-12-B4-2 Console 文档治理设计](/records/p3-12-b4-2-console-doc-governance-design-2026-06-22) 与 [P3-12-B4 / D1 阶段运行态 Smoke 记录](/records/p3-12-b4-d1-stage-smoke-record-2026-06-22)。`P3-12-B5` `/workbench` 首批代码与 Gateway PC / mobile smoke 已完成；`P3-12-B6` 代码侧与启动前验证已完成；`P3-12-D2 / D3 / D4 / D5` 已补公开 Web、私域 / 作者态、共享 UI 基座和 Console 治理设计源及说明文档。下一步先按 `F02` 公共壳层契约补齐 private 业务设计源页面族和移动任务流，之后再进入 `radish.client` 视觉实现；Console 视觉代码实现顺位后移。
+  - `P3-12-B2` 首批代码已补 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 的路由、登录回流和正式 Web 导航语义，方案见 [P3-12-B2 完整个人中心 Web 化方案](/records/p3-12-b2-personal-center-web-plan-2026-06-21)；`P3-12-B3` 首批代码与小阶段验收已完成，见 [P3-12-B3 论坛作者态 Web 化方案](/records/p3-12-b3-forum-author-web-plan-2026-06-21)；`P3-12-B4` 归属裁决、`B4-1` 正式 Web 作者入口、`B4-2` Console 文档治理和阶段运行态 smoke 已完成，见 [P3-12-B4 文档作者态归属裁决](/records/p3-12-b4-doc-author-ownership-plan-2026-06-22)、[P3-12-B4-2 Console 文档治理设计](/records/p3-12-b4-2-console-doc-governance-design-2026-06-22) 与 [P3-12-B4 / D1 阶段运行态 Smoke 记录](/records/p3-12-b4-d1-stage-smoke-record-2026-06-22)。`P3-12-B5` `/workbench` 首批代码与 Gateway PC / mobile smoke 已完成；`P3-12-B6` 代码侧与启动前验证已完成；`P3-12-D2 / D3 / D4 / D5 / D6` 已补公开 Web、私域 / 作者态、共享 UI 基座、Console 治理设计源和 Console 视觉代码实现前盘点。下一步先按 `F02` 公共壳层契约补齐 private 业务设计源页面族和移动任务流，之后再进入 `radish.client` 视觉实现；Console 视觉代码实现顺位后移。
   - 功能迁移只迁移正式版产品能力，不迁移 WebOS Dock、窗口系统、桌面背景、窗口几何记忆或桌面 app 外壳；B1 替代路径可用后，只清理与默认产品路径直接冲突的 `/desktop` 回跳。
   - 页面迁移齐后进入 `P3-12-D` 统一 UI 设计与美化专题，并走 Pencil 设计稿 -> 设计 / 说明文档 -> 代码实现 -> PC / mobile 复核。
 - `P3-11 发布候选整备与轻量复访补齐维护线`
@@ -234,10 +234,10 @@
 
 ## 明日事项
 
-- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[P3-12-D1 统一 UI 设计准备记录](/records/p3-12-d1-unified-ui-design-prep-2026-06-22)、[P3-12-D2 公开 Web 统一体验设计源记录](/records/p3-12-d2-public-web-unified-design-source-2026-06-24)、[P3-12-D3 私域与作者态 Web 工作流设计源记录](/records/p3-12-d3-private-web-workflows-design-source-2026-06-25)、[P3-12-D4 Web UI 共享基座设计源记录](/records/p3-12-d4-web-ui-foundation-design-source-2026-06-25)、[Web UI 共享基座设计说明](/frontend/web-ui-foundation-design)、[公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design)、[私域与作者态 Web 工作流设计说明](/frontend/private-web-workflows-design) 和 [设计源文件目录](/frontend/design-sources/README)，确认 client 设计源补齐范围。
-- 第一顺位：切换到 `private-web-workflows.pen` 后，按 `F02` 公共壳层契约补 `/me` 子页、消息、通知、宠物、圈子、商城私域、文档作者态和移动私域任务流。
+- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[2026-06-27 收工回顾与明日事项](/records/daily-handoff-2026-06-27)、[P3-12-D2 公开 Web 统一体验设计源记录](/records/p3-12-d2-public-web-unified-design-source-2026-06-24)、[P3-12-D3 私域与作者态 Web 工作流设计源记录](/records/p3-12-d3-private-web-workflows-design-source-2026-06-25)、[P3-12-D4 Web UI 共享基座设计源记录](/records/p3-12-d4-web-ui-foundation-design-source-2026-06-25)、[P3-12-D5 Console 治理工作台设计源重构记录](/records/p3-12-d5-console-governance-workbench-redesign-2026-06-27)、[P3-12-D6 Console 视觉代码实现前盘点](/records/p3-12-d6-console-visual-code-prep-2026-06-27)、[Web UI 共享基座设计说明](/frontend/web-ui-foundation-design)、[公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design)、[私域与作者态 Web 工作流设计说明](/frontend/private-web-workflows-design) 和 [设计源文件目录](/frontend/design-sources/README)，确认 client 设计源补齐范围。
+- 第一顺位：切换到 `private-web-workflows.pen` 后，按 `F02` 公共壳层契约整体审阅并补齐 `/workbench`、`/me` 子页、消息、通知、宠物、圈子、商城私域、文档作者态和移动私域任务流，保证页面族完整、密度合理、移动端成组排列。
 - 第二顺位：同步更新 [私域与作者态 Web 工作流设计说明](/frontend/private-web-workflows-design)、[P3-12-D3 私域与作者态 Web 工作流设计源记录](/records/p3-12-d3-private-web-workflows-design-source-2026-06-25) 和设计源目录，并完成 Pencil `snapshot_layout` 与截图抽查。
-- 第三顺位：public / private 业务设计源确认后，再进入 `radish.client` 视觉实现；Console 公共壳层代码实现按 [P3-12-D6 Console 视觉代码实现前盘点](/records/p3-12-d6-console-visual-code-prep-2026-06-27) 后移承接。
+- 第三顺位：public / private 业务设计源确认后，再进入 `radish.client` 视觉实现，优先抽共享壳层、token、公开 / 私域页面结构和移动单列节奏；Console 公共壳层代码实现按 [P3-12-D6 Console 视觉代码实现前盘点](/records/p3-12-d6-console-visual-code-prep-2026-06-27) 后移承接。
 - B6 剩余验收项：真实 Gateway PC / mobile 页面 smoke 需要先确认前后端已启动；本地旧 SQLite 若缺少 `UserDisplayNameChangeRecord` 或 `SystemBootstrapState.CompletedEmail`，按 B6 破坏性 schema 口径删除 / 初始化或执行迁移补齐，不编写旧库兼容迁移。
 
 ## 并行维护项
