@@ -33,6 +33,7 @@ import {
   resolvePublicProfilePostForumTarget,
   resolvePublicProfileRouteIdentifier,
 } from './publicProfileNavigation';
+import { WebStateSlot, type WebStateSlotAction } from '@/components/web-shell';
 import styles from './PublicProfileApp.module.css';
 
 interface PublicProfileAppProps {
@@ -114,68 +115,59 @@ function PublicStatusCard({
   primaryAction,
   secondaryAction
 }: PublicStatusCardProps) {
-  const icon = tone === 'loading'
+  const resolvedIcon = tone === 'loading'
     ? 'mdi:progress-clock'
     : tone === 'empty'
       ? 'mdi:text-box-search-outline'
       : tone === 'notFound'
         ? 'mdi:account-search-outline'
         : 'mdi:alert-circle-outline';
+  const actions: WebStateSlotAction[] = [];
+
+  if (primaryAction) {
+    actions.push({
+      label: primaryAction.label,
+      href: primaryAction.href,
+      kind: 'primary',
+      onClick: primaryAction.href
+        ? (event) => {
+          if (!shouldHandleProfileLinkInternally(event as MouseEvent<HTMLAnchorElement>)) {
+            return;
+          }
+
+          event.preventDefault();
+          primaryAction.onClick();
+        }
+        : () => primaryAction.onClick(),
+    });
+  }
+
+  if (secondaryAction) {
+    actions.push({
+      label: secondaryAction.label,
+      href: secondaryAction.href,
+      kind: 'secondary',
+      onClick: secondaryAction.href
+        ? (event) => {
+          if (!shouldHandleProfileLinkInternally(event as MouseEvent<HTMLAnchorElement>)) {
+            return;
+          }
+
+          event.preventDefault();
+          secondaryAction.onClick();
+        }
+        : () => secondaryAction.onClick(),
+    });
+  }
 
   return (
-    <div className={styles.statusCard} data-tone={tone}>
-      <div className={styles.statusIcon}>
-        <Icon icon={icon} size={22} />
-      </div>
-      <div className={styles.statusBody}>
-        <h2 className={styles.statusTitle}>{title}</h2>
-        <p className={styles.statusDescription}>{description}</p>
-        {(primaryAction || secondaryAction) && (
-          <div className={styles.statusActions}>
-            {primaryAction && (primaryAction.href ? (
-              <a
-                className={styles.primaryButton}
-                href={primaryAction.href}
-                onClick={(event) => {
-                  if (!shouldHandleProfileLinkInternally(event)) {
-                    return;
-                  }
-
-                  event.preventDefault();
-                  primaryAction.onClick();
-                }}
-              >
-                {primaryAction.label}
-              </a>
-            ) : (
-              <button type="button" className={styles.primaryButton} onClick={primaryAction.onClick}>
-                {primaryAction.label}
-              </button>
-            ))}
-            {secondaryAction && (secondaryAction.href ? (
-              <a
-                className={styles.secondaryButton}
-                href={secondaryAction.href}
-                onClick={(event) => {
-                  if (!shouldHandleProfileLinkInternally(event)) {
-                    return;
-                  }
-
-                  event.preventDefault();
-                  secondaryAction.onClick();
-                }}
-              >
-                {secondaryAction.label}
-              </a>
-            ) : (
-              <button type="button" className={styles.secondaryButton} onClick={secondaryAction.onClick}>
-                {secondaryAction.label}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+    <WebStateSlot
+      tone={tone}
+      title={title}
+      description={description}
+      icon={resolvedIcon}
+      actions={actions}
+    />
   );
 }
 

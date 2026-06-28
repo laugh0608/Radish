@@ -27,6 +27,7 @@ import { buildPublicShopPath, createDefaultPublicShopProductsRoute } from '../sh
 import { buildPublicShareUrl } from '../publicHead';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { usePublicShareLink } from '../hooks/usePublicShareLink';
+import { WebStateSlot, type WebStateSlotAction } from '@/components/web-shell';
 import {
   buildDocumentSummary,
   buildProductSummary,
@@ -47,6 +48,12 @@ interface PublicDiscoverAppProps {
   onNavigateToShop: (route: PublicShopRoute, options?: { replace?: boolean }) => void;
 }
 
+interface SectionStatusAction {
+  label: string;
+  href?: string;
+  onClick: () => void;
+}
+
 interface SectionStatusCardProps {
   tone: 'loading' | 'error' | 'empty';
   title: string;
@@ -57,16 +64,8 @@ interface SectionStatusCardProps {
   destinationText?: string;
   boundaryLabel?: string;
   boundaryText?: string;
-  primaryAction?: {
-    label: string;
-    href?: string;
-    onClick: () => void;
-  };
-  secondaryAction?: {
-    label: string;
-    href?: string;
-    onClick: () => void;
-  };
+  primaryAction?: SectionStatusAction;
+  secondaryAction?: SectionStatusAction;
 }
 
 interface DiscoverGuideItemDefinition {
@@ -284,92 +283,81 @@ function SectionStatusCard({
   primaryAction,
   secondaryAction
 }: SectionStatusCardProps) {
-  const icon = tone === 'loading'
+  const resolvedIcon = tone === 'loading'
     ? 'mdi:progress-clock'
     : tone === 'empty'
       ? 'mdi:text-box-search-outline'
       : 'mdi:alert-circle-outline';
+  const actions: WebStateSlotAction[] = [];
+  const meta = (guideText || destinationText || boundaryText) ? (
+    <div className={styles.statusMetaList}>
+      {guideText && guideLabel && (
+        <div className={styles.statusMetaRow}>
+          <span className={styles.statusMetaLabel}>{guideLabel}</span>
+          <span className={styles.statusMetaText}>{guideText}</span>
+        </div>
+      )}
+      {destinationText && destinationLabel && (
+        <div className={styles.statusMetaRow}>
+          <span className={styles.statusMetaLabel}>{destinationLabel}</span>
+          <span className={styles.statusMetaText}>{destinationText}</span>
+        </div>
+      )}
+      {boundaryText && boundaryLabel && (
+        <div className={styles.statusMetaRow}>
+          <span className={styles.statusMetaLabel}>{boundaryLabel}</span>
+          <span className={styles.statusMetaText}>{boundaryText}</span>
+        </div>
+      )}
+    </div>
+  ) : undefined;
+
+  if (primaryAction) {
+    actions.push({
+      label: primaryAction.label,
+      href: primaryAction.href,
+      kind: 'primary',
+      onClick: primaryAction.href
+        ? (event) => {
+          if (!shouldHandlePublicDiscoverLink(event as MouseEvent<HTMLAnchorElement>)) {
+            return;
+          }
+
+          event.preventDefault();
+          primaryAction.onClick();
+        }
+        : () => primaryAction.onClick(),
+    });
+  }
+
+  if (secondaryAction) {
+    actions.push({
+      label: secondaryAction.label,
+      href: secondaryAction.href,
+      kind: 'secondary',
+      onClick: secondaryAction.href
+        ? (event) => {
+          if (!shouldHandlePublicDiscoverLink(event as MouseEvent<HTMLAnchorElement>)) {
+            return;
+          }
+
+          event.preventDefault();
+          secondaryAction.onClick();
+        }
+        : () => secondaryAction.onClick(),
+    });
+  }
 
   return (
-    <div className={styles.statusCard} data-tone={tone}>
-      <div className={styles.statusIcon}>
-        <Icon icon={icon} size={20} />
-      </div>
-      <div className={styles.statusBody}>
-        <h3 className={styles.statusTitle}>{title}</h3>
-        <p className={styles.statusDescription}>{description}</p>
-        {(guideText || destinationText || boundaryText) && (
-          <div className={styles.statusMetaList}>
-            {guideText && guideLabel && (
-              <div className={styles.statusMetaRow}>
-                <span className={styles.statusMetaLabel}>{guideLabel}</span>
-                <span className={styles.statusMetaText}>{guideText}</span>
-              </div>
-            )}
-            {destinationText && destinationLabel && (
-              <div className={styles.statusMetaRow}>
-                <span className={styles.statusMetaLabel}>{destinationLabel}</span>
-                <span className={styles.statusMetaText}>{destinationText}</span>
-              </div>
-            )}
-            {boundaryText && boundaryLabel && (
-              <div className={styles.statusMetaRow}>
-                <span className={styles.statusMetaLabel}>{boundaryLabel}</span>
-                <span className={styles.statusMetaText}>{boundaryText}</span>
-              </div>
-            )}
-          </div>
-        )}
-        {(primaryAction || secondaryAction) && (
-          <div className={styles.statusActions}>
-            {primaryAction && (
-              primaryAction.href ? (
-                <a
-                  className={styles.secondaryButton}
-                  href={primaryAction.href}
-                  onClick={(event) => {
-                    if (!shouldHandlePublicDiscoverLink(event)) {
-                      return;
-                    }
-
-                    event.preventDefault();
-                    primaryAction.onClick();
-                  }}
-                >
-                  {primaryAction.label}
-                </a>
-              ) : (
-                <button type="button" className={styles.secondaryButton} onClick={primaryAction.onClick}>
-                  {primaryAction.label}
-                </button>
-              )
-            )}
-            {secondaryAction && (
-              secondaryAction.href ? (
-                <a
-                  className={styles.secondaryButton}
-                  href={secondaryAction.href}
-                  onClick={(event) => {
-                    if (!shouldHandlePublicDiscoverLink(event)) {
-                      return;
-                    }
-
-                    event.preventDefault();
-                    secondaryAction.onClick();
-                  }}
-                >
-                  {secondaryAction.label}
-                </a>
-              ) : (
-                <button type="button" className={styles.secondaryButton} onClick={secondaryAction.onClick}>
-                  {secondaryAction.label}
-                </button>
-              )
-            )}
-          </div>
-        )}
-      </div>
-    </div>
+    <WebStateSlot
+      tone={tone}
+      title={title}
+      description={description}
+      icon={resolvedIcon}
+      compact={true}
+      meta={meta}
+      actions={actions}
+    />
   );
 }
 

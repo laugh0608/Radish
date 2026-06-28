@@ -35,6 +35,7 @@ import { buildPublicShareUrl } from '../publicHead';
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { usePublicShareLink } from '../hooks/usePublicShareLink';
+import { WebStateSlot, type WebStateSlotAction } from '@/components/web-shell';
 import { getPublicWikiDocumentBySlug, getPublicWikiList, getPublicWikiTree } from './publicDocsApi';
 import styles from './PublicDocsApp.module.css';
 
@@ -123,21 +124,19 @@ interface PublicDocsSearchState {
   error: string | null;
 }
 
+interface PublicStatusCardAction {
+  label: string;
+  href?: string;
+  onClick: () => void;
+}
+
 interface PublicStatusCardProps {
   tone: 'loading' | 'empty' | 'error' | 'notFound';
   title: string;
   description: string;
   compact?: boolean;
-  primaryAction?: {
-    label: string;
-    href?: string;
-    onClick: () => void;
-  };
-  secondaryAction?: {
-    label: string;
-    href?: string;
-    onClick: () => void;
-  };
+  primaryAction?: PublicStatusCardAction;
+  secondaryAction?: PublicStatusCardAction;
 }
 
 function flattenPublicDocsTree(nodes: WikiDocumentTreeNodeVo[], depth: number = 0): PublicDocsTreeRow[] {
@@ -361,58 +360,46 @@ function PublicStatusCard({
   primaryAction,
   secondaryAction
 }: PublicStatusCardProps) {
-  const icon = tone === 'loading'
+  const resolvedIcon = tone === 'loading'
     ? 'mdi:progress-clock'
     : tone === 'empty'
       ? 'mdi:file-document-outline'
       : tone === 'notFound'
         ? 'mdi:file-search-outline'
         : 'mdi:alert-circle-outline';
+  const actions: WebStateSlotAction[] = [];
+
+  if (primaryAction) {
+    actions.push({
+      label: primaryAction.label,
+      href: primaryAction.href,
+      kind: 'primary',
+      onClick: primaryAction.href
+        ? (event) => handlePublicDocsLinkClick(event as MouseEvent<HTMLAnchorElement>, primaryAction.onClick)
+        : () => primaryAction.onClick(),
+    });
+  }
+
+  if (secondaryAction) {
+    actions.push({
+      label: secondaryAction.label,
+      href: secondaryAction.href,
+      kind: 'secondary',
+      onClick: secondaryAction.href
+        ? (event) => handlePublicDocsLinkClick(event as MouseEvent<HTMLAnchorElement>, secondaryAction.onClick)
+        : () => secondaryAction.onClick(),
+    });
+  }
 
   return (
-    <div className={`${styles.statusCard} ${compact ? styles.statusCardCompact : ''}`} data-tone={tone}>
-      <div className={styles.statusIcon}>
-        <Icon icon={icon} size={compact ? 18 : 22} />
-      </div>
-      <div className={styles.statusBody}>
-        <h2 className={styles.statusTitle}>{title}</h2>
-        <p className={styles.statusDescription}>{description}</p>
-        {(primaryAction || secondaryAction) && (
-          <div className={styles.statusActions}>
-            {primaryAction && (
-              primaryAction.href ? (
-                <a
-                  className={styles.primaryButton}
-                  href={primaryAction.href}
-                  onClick={(event) => handlePublicDocsLinkClick(event, primaryAction.onClick)}
-                >
-                  {primaryAction.label}
-                </a>
-              ) : (
-                <button type="button" className={styles.primaryButton} onClick={primaryAction.onClick}>
-                  {primaryAction.label}
-                </button>
-              )
-            )}
-            {secondaryAction && (
-              secondaryAction.href ? (
-                <a
-                  className={styles.secondaryButton}
-                  href={secondaryAction.href}
-                  onClick={(event) => handlePublicDocsLinkClick(event, secondaryAction.onClick)}
-                >
-                  {secondaryAction.label}
-                </a>
-              ) : (
-                <button type="button" className={styles.secondaryButton} onClick={secondaryAction.onClick}>
-                  {secondaryAction.label}
-                </button>
-              )
-            )}
-          </div>
-        )}
-      </div>
-    </div>
+    <WebStateSlot
+      tone={tone}
+      title={title}
+      description={description}
+      icon={resolvedIcon}
+      compact={compact}
+      actions={actions}
+    />
   );
 }
 

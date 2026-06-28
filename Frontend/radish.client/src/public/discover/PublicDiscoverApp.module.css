@@ -13,7 +13,7 @@
 }
 
 .main {
-  width: min(1120px, calc(100% - 24px));
+  width: min(var(--rx-content-max-width), calc(100% - 24px));
   max-width: 100%;
   margin: 0 auto;
   padding: 24px 0 40px;
@@ -1170,6 +1170,10 @@
 }
 
 @media (max-width: 720px) {
+  .main {
+    padding-bottom: var(--rx-mobile-shell-offset);
+  }
+
   .main {
     width: calc(100% - 20px);
   }

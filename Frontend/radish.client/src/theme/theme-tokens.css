@@ -84,6 +84,9 @@
   --rx-radius-control: 8px;
   --rx-radius-pill: 999px;
   --rx-shell-max-width: 1180px;
+  --rx-content-max-width: 1120px;
+  --rx-content-reading-width: 1080px;
+  --rx-content-narrow-width: 1040px;
   --rx-shell-gutter: 24px;
   --rx-shell-header-height: 84px;
   --rx-mobile-tab-height: 64px;

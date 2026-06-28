@@ -5946,6 +5946,2388 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "f16lt",
+      "x": 3536,
+      "y": 0,
+      "name": "F03 - Radish WebOS Liquid Glass Navigation Concept",
+      "clip": true,
+      "width": 1920,
+      "height": 1120,
+      "fill": "#f4efe6",
+      "layout": "none",
+      "children": [
+        {
+          "type": "frame",
+          "id": "BJ7A3",
+          "x": 32,
+          "y": 64,
+          "name": "Radish WebOS Content Backdrop",
+          "clip": true,
+          "width": 1856,
+          "height": 944,
+          "fill": {
+            "type": "gradient",
+            "gradientType": "linear",
+            "enabled": true,
+            "rotation": 160,
+            "size": {
+              "height": 1
+            },
+            "colors": [
+              {
+                "color": "#fbf7f0",
+                "position": 0
+              },
+              {
+                "color": "#efe7db",
+                "position": 0.5
+              },
+              {
+                "color": "#e4ece8",
+                "position": 1
+              }
+            ]
+          },
+          "cornerRadius": 36,
+          "layout": "none",
+          "children": [
+            {
+              "type": "rectangle",
+              "cornerRadius": 30,
+              "id": "luqvk",
+              "x": 56,
+              "y": 88,
+              "name": "Discover Hero Behind Glass",
+              "fill": {
+                "type": "gradient",
+                "gradientType": "linear",
+                "enabled": true,
+                "rotation": 130,
+                "size": {
+                  "height": 1
+                },
+                "colors": [
+                  {
+                    "color": "#b24057",
+                    "position": 0
+                  },
+                  {
+                    "color": "#ecd3db",
+                    "position": 0.46
+                  },
+                  {
+                    "color": "#fbf7f0",
+                    "position": 1
+                  }
+                ]
+              },
+              "width": 760,
+              "height": 280,
+              "effect": {
+                "type": "blur",
+                "radius": 5
+              }
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 30,
+              "id": "rApAr",
+              "x": 852,
+              "y": 88,
+              "name": "Docs Card Behind Glass",
+              "fill": {
+                "type": "gradient",
+                "gradientType": "linear",
+                "enabled": true,
+                "rotation": 140,
+                "size": {
+                  "height": 1
+                },
+                "colors": [
+                  {
+                    "color": "#435c74",
+                    "position": 0
+                  },
+                  {
+                    "color": "#9ab5c8",
+                    "position": 0.52
+                  },
+                  {
+                    "color": "#fbf7f0",
+                    "position": 1
+                  }
+                ]
+              },
+              "width": 420,
+              "height": 280,
+              "effect": {
+                "type": "blur",
+                "radius": 5
+              }
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 30,
+              "id": "BELsl",
+              "x": 1308,
+              "y": 88,
+              "name": "Shop Card Behind Glass",
+              "fill": {
+                "type": "gradient",
+                "gradientType": "linear",
+                "enabled": true,
+                "rotation": 132,
+                "size": {
+                  "height": 1
+                },
+                "colors": [
+                  {
+                    "color": "#4f9c83",
+                    "position": 0
+                  },
+                  {
+                    "color": "#c8e5da",
+                    "position": 0.54
+                  },
+                  {
+                    "color": "#fbf7f0",
+                    "position": 1
+                  }
+                ]
+              },
+              "width": 420,
+              "height": 280,
+              "effect": {
+                "type": "blur",
+                "radius": 5
+              }
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 28,
+              "id": "Fa84T",
+              "x": 56,
+              "y": 428,
+              "name": "Forum Feed Surface",
+              "fill": "#fbf7f0d8",
+              "width": 760,
+              "height": 372,
+              "stroke": "#ffffffaa",
+              "strokeWidth": 1,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#3b292122",
+                "offset": {
+                  "x": 0,
+                  "y": 20
+                },
+                "blur": 50,
+                "spread": -20
+              }
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 28,
+              "id": "d0tUcc",
+              "x": 852,
+              "y": 428,
+              "name": "Workbench Panel Surface",
+              "fill": "#fbf7f0d2",
+              "width": 876,
+              "height": 372,
+              "stroke": "#ffffffaa",
+              "strokeWidth": 1,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#3b292122",
+                "offset": {
+                  "x": 0,
+                  "y": 20
+                },
+                "blur": 50,
+                "spread": -20
+              }
+            },
+            {
+              "type": "ellipse",
+              "id": "beZpg",
+              "x": 118,
+              "y": 112,
+              "name": "Radish Backdrop Color Refraction",
+              "fill": "#b2405770",
+              "width": 370,
+              "height": 210,
+              "effect": {
+                "type": "blur",
+                "radius": 30
+              }
+            },
+            {
+              "type": "ellipse",
+              "id": "qHHZ4",
+              "x": 462,
+              "y": 86,
+              "name": "Radish Backdrop Color Refraction",
+              "fill": "#ffbd5970",
+              "width": 330,
+              "height": 220,
+              "effect": {
+                "type": "blur",
+                "radius": 34
+              }
+            },
+            {
+              "type": "ellipse",
+              "id": "fodz1",
+              "x": 890,
+              "y": 94,
+              "name": "Radish Backdrop Color Refraction",
+              "fill": "#435c7470",
+              "width": 350,
+              "height": 220,
+              "effect": {
+                "type": "blur",
+                "radius": 32
+              }
+            },
+            {
+              "type": "ellipse",
+              "id": "Jz4Gz",
+              "x": 1190,
+              "y": 410,
+              "name": "Radish Backdrop Color Refraction",
+              "fill": "#4f9c8375",
+              "width": 420,
+              "height": 260,
+              "effect": {
+                "type": "blur",
+                "radius": 34
+              }
+            },
+            {
+              "type": "ellipse",
+              "id": "vs7wF",
+              "x": 1450,
+              "y": 452,
+              "name": "Radish Backdrop Color Refraction",
+              "fill": "#8469926a",
+              "width": 310,
+              "height": 220,
+              "effect": {
+                "type": "blur",
+                "radius": 36
+              }
+            },
+            {
+              "type": "ellipse",
+              "id": "Z2cbWj",
+              "x": 260,
+              "y": 580,
+              "name": "Radish Backdrop Color Refraction",
+              "fill": "#0a84ff5c",
+              "width": 420,
+              "height": 230,
+              "effect": {
+                "type": "blur",
+                "radius": 34
+              }
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "qMNlq",
+          "x": 120,
+          "y": 96,
+          "name": "Radish Liquid Glass Public Header",
+          "clip": true,
+          "width": 1680,
+          "height": 116,
+          "fill": [
+            "#53596090",
+            {
+              "type": "gradient",
+              "gradientType": "linear",
+              "enabled": true,
+              "opacity": 0.86,
+              "rotation": 135,
+              "size": {
+                "height": 1
+              },
+              "colors": [
+                {
+                  "color": "#ffffff58",
+                  "position": 0
+                },
+                {
+                  "color": "#8d929aa0",
+                  "position": 0.44
+                },
+                {
+                  "color": "#3c4047a8",
+                  "position": 1
+                }
+              ]
+            }
+          ],
+          "cornerRadius": 58,
+          "stroke": [
+            "#ffffffd8",
+            {
+              "type": "gradient",
+              "gradientType": "linear",
+              "enabled": true,
+              "opacity": 0.8,
+              "rotation": 95,
+              "size": {
+                "height": 1
+              },
+              "colors": [
+                {
+                  "color": "#ffffff",
+                  "position": 0
+                },
+                {
+                  "color": "#ffffff78",
+                  "position": 0.45
+                },
+                {
+                  "color": "#e7e8ea66",
+                  "position": 1
+                }
+              ]
+            }
+          ],
+          "strokeWidth": 2,
+          "effect": [
+            {
+              "type": "background_blur",
+              "radius": 78
+            },
+            {
+              "type": "shadow",
+              "shadowType": "outer",
+              "color": "#11111135",
+              "offset": {
+                "x": 0,
+                "y": 24
+              },
+              "blur": 54,
+              "spread": -18
+            },
+            {
+              "type": "shadow",
+              "shadowType": "outer",
+              "color": "#ffffffd6",
+              "offset": {
+                "x": 0,
+                "y": 3
+              },
+              "blur": 4
+            },
+            {
+              "type": "shadow",
+              "shadowType": "outer",
+              "color": "#555a6330",
+              "offset": {
+                "x": 0,
+                "y": -10
+              },
+              "blur": 24
+            }
+          ],
+          "layout": "none",
+          "children": [
+            {
+              "type": "ellipse",
+              "id": "OdeHX",
+              "x": 70,
+              "y": 20,
+              "name": "Header Internal Radish Refraction",
+              "fill": "#b2405758",
+              "width": 330,
+              "height": 96,
+              "effect": {
+                "type": "blur",
+                "radius": 26
+              }
+            },
+            {
+              "type": "ellipse",
+              "id": "iwIbP",
+              "x": 382,
+              "y": 6,
+              "name": "Header Internal Radish Refraction",
+              "fill": "#ffbd5964",
+              "width": 350,
+              "height": 104,
+              "effect": {
+                "type": "blur",
+                "radius": 30
+              }
+            },
+            {
+              "type": "ellipse",
+              "id": "fdw3P",
+              "x": 750,
+              "y": 20,
+              "name": "Header Internal Radish Refraction",
+              "fill": "#435c7460",
+              "width": 330,
+              "height": 96,
+              "effect": {
+                "type": "blur",
+                "radius": 28
+              }
+            },
+            {
+              "type": "ellipse",
+              "id": "OX08O",
+              "x": 1120,
+              "y": 20,
+              "name": "Header Internal Radish Refraction",
+              "fill": "#4f9c8360",
+              "width": 330,
+              "height": 96,
+              "effect": {
+                "type": "blur",
+                "radius": 30
+              }
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 2,
+              "id": "xuKgD",
+              "x": 42,
+              "y": 12,
+              "name": "Header Acrylic Highlight",
+              "fill": "#fffffff0",
+              "width": 1596,
+              "height": 3
+            },
+            {
+              "type": "frame",
+              "id": "DnYSK",
+              "x": 22,
+              "y": 18,
+              "name": "Radish Brand Glass Capsule",
+              "width": 318,
+              "height": 80,
+              "fill": [
+                "#d5d7dc72",
+                {
+                  "type": "gradient",
+                  "gradientType": "linear",
+                  "enabled": true,
+                  "opacity": 0.85,
+                  "rotation": 124,
+                  "size": {
+                    "height": 1
+                  },
+                  "colors": [
+                    {
+                      "color": "#ffffffe8",
+                      "position": 0
+                    },
+                    {
+                      "color": "#c7cad085",
+                      "position": 0.36
+                    },
+                    {
+                      "color": "#7b808778",
+                      "position": 0.78
+                    },
+                    {
+                      "color": "#ffffff66",
+                      "position": 1
+                    }
+                  ]
+                }
+              ],
+              "cornerRadius": 40,
+              "stroke": "#ffffffb0",
+              "strokeWidth": 1,
+              "effect": [
+                {
+                  "type": "background_blur",
+                  "radius": 78
+                },
+                {
+                  "type": "shadow",
+                  "shadowType": "outer",
+                  "color": "#11111135",
+                  "offset": {
+                    "x": 0,
+                    "y": 24
+                  },
+                  "blur": 54,
+                  "spread": -18
+                },
+                {
+                  "type": "shadow",
+                  "shadowType": "outer",
+                  "color": "#ffffffd6",
+                  "offset": {
+                    "x": 0,
+                    "y": 3
+                  },
+                  "blur": 4
+                },
+                {
+                  "type": "shadow",
+                  "shadowType": "outer",
+                  "color": "#555a6330",
+                  "offset": {
+                    "x": 0,
+                    "y": -10
+                  },
+                  "blur": 24
+                }
+              ],
+              "gap": 14,
+              "padding": [
+                12,
+                16
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "QgGf4",
+                  "name": "Radish White Mark Bubble",
+                  "width": 52,
+                  "height": 52,
+                  "fill": "#fffffff0",
+                  "cornerRadius": 26,
+                  "effect": {
+                    "type": "shadow",
+                    "shadowType": "outer",
+                    "color": "#00000030",
+                    "offset": {
+                      "x": 0,
+                      "y": 10
+                    },
+                    "blur": 22,
+                    "spread": -12
+                  },
+                  "layout": "vertical",
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Phhms",
+                      "name": "Radish Mark",
+                      "fill": "#b24057",
+                      "content": "萝",
+                      "fontFamily": "Inter",
+                      "fontSize": 22,
+                      "fontWeight": "900"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "e6aLh",
+                  "name": "Radish Brand Copy",
+                  "width": 210,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "hEAt0",
+                      "name": "Brand Title",
+                      "fill": "#ffffff",
+                      "content": "Radish WebOS",
+                      "fontFamily": "Inter",
+                      "fontSize": 20,
+                      "fontWeight": "900"
+                    },
+                    {
+                      "type": "text",
+                      "id": "awa4D",
+                      "name": "Brand Subline",
+                      "fill": "#ffffffd2",
+                      "content": "公开与私域统一入口",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "700"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "W0qtYF",
+              "x": 366,
+              "y": 18,
+              "name": "Public Navigation Liquid Rail",
+              "width": 770,
+              "height": 80,
+              "fill": "#8c90969a",
+              "cornerRadius": 40,
+              "stroke": "#ffffff78",
+              "strokeWidth": 1,
+              "effect": [
+                {
+                  "type": "background_blur",
+                  "radius": 64
+                },
+                {
+                  "type": "shadow",
+                  "shadowType": "outer",
+                  "color": "#ffffff92",
+                  "offset": {
+                    "x": 0,
+                    "y": 2
+                  },
+                  "blur": 3
+                }
+              ],
+              "gap": 8,
+              "padding": 6,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "gIoNU",
+                  "name": "Public Nav - 发现",
+                  "width": 142,
+                  "height": 68,
+                  "fill": [
+                    "#ffffffe0",
+                    {
+                      "type": "gradient",
+                      "gradientType": "linear",
+                      "enabled": true,
+                      "opacity": 0.78,
+                      "rotation": 128,
+                      "size": {
+                        "height": 1
+                      },
+                      "colors": [
+                        {
+                          "color": "#ffffff",
+                          "position": 0
+                        },
+                        {
+                          "color": "#d8dbe0c2",
+                          "position": 0.58
+                        },
+                        {
+                          "color": "#a8adb4a8",
+                          "position": 1
+                        }
+                      ]
+                    }
+                  ],
+                  "cornerRadius": 34,
+                  "stroke": "#ffffffe0",
+                  "strokeWidth": 1,
+                  "effect": [
+                    {
+                      "type": "background_blur",
+                      "radius": 78
+                    },
+                    {
+                      "type": "shadow",
+                      "shadowType": "outer",
+                      "color": "#11111135",
+                      "offset": {
+                        "x": 0,
+                        "y": 24
+                      },
+                      "blur": 54,
+                      "spread": -18
+                    },
+                    {
+                      "type": "shadow",
+                      "shadowType": "outer",
+                      "color": "#ffffffd6",
+                      "offset": {
+                        "x": 0,
+                        "y": 3
+                      },
+                      "blur": 4
+                    },
+                    {
+                      "type": "shadow",
+                      "shadowType": "outer",
+                      "color": "#555a6330",
+                      "offset": {
+                        "x": 0,
+                        "y": -10
+                      },
+                      "blur": 24
+                    }
+                  ],
+                  "gap": 8,
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "JB8yG",
+                      "name": "Public Nav Icon - 发现",
+                      "width": 20,
+                      "height": 20,
+                      "icon": "compass",
+                      "library": "lucide",
+                      "fill": "#b24057"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Vykob",
+                      "name": "Public Nav Label - 发现",
+                      "fill": "#2f2a25",
+                      "content": "发现",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "m3pPRL",
+                  "name": "Public Nav - 论坛",
+                  "width": 118,
+                  "height": 68,
+                  "fill": "#ffffff24",
+                  "cornerRadius": 34,
+                  "stroke": "#ffffff48",
+                  "strokeWidth": 1,
+                  "effect": [
+                    {
+                      "type": "background_blur",
+                      "radius": 42
+                    },
+                    {
+                      "type": "shadow",
+                      "shadowType": "outer",
+                      "color": "#ffffff80",
+                      "offset": {
+                        "x": 0,
+                        "y": 2
+                      },
+                      "blur": 2
+                    }
+                  ],
+                  "gap": 8,
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "PlvmS",
+                      "name": "Public Nav Icon - 论坛",
+                      "width": 20,
+                      "height": 20,
+                      "icon": "messages-square",
+                      "library": "lucide",
+                      "fill": "#ffffffdc"
+                    },
+                    {
+                      "type": "text",
+                      "id": "nHSuk",
+                      "name": "Public Nav Label - 论坛",
+                      "fill": "#ffffffdc",
+                      "content": "论坛",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "btmYj",
+                  "name": "Public Nav - 文档",
+                  "width": 118,
+                  "height": 68,
+                  "fill": "#ffffff24",
+                  "cornerRadius": 34,
+                  "stroke": "#ffffff48",
+                  "strokeWidth": 1,
+                  "effect": [
+                    {
+                      "type": "background_blur",
+                      "radius": 42
+                    },
+                    {
+                      "type": "shadow",
+                      "shadowType": "outer",
+                      "color": "#ffffff80",
+                      "offset": {
+                        "x": 0,
+                        "y": 2
+                      },
+                      "blur": 2
+                    }
+                  ],
+                  "gap": 8,
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "p5iFZW",
+                      "name": "Public Nav Icon - 文档",
+                      "width": 20,
+                      "height": 20,
+                      "icon": "file-text",
+                      "library": "lucide",
+                      "fill": "#ffffffdc"
+                    },
+                    {
+                      "type": "text",
+                      "id": "tElTW",
+                      "name": "Public Nav Label - 文档",
+                      "fill": "#ffffffdc",
+                      "content": "文档",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "jjjAq",
+                  "name": "Public Nav - 榜单",
+                  "width": 118,
+                  "height": 68,
+                  "fill": "#ffffff24",
+                  "cornerRadius": 34,
+                  "stroke": "#ffffff48",
+                  "strokeWidth": 1,
+                  "effect": [
+                    {
+                      "type": "background_blur",
+                      "radius": 42
+                    },
+                    {
+                      "type": "shadow",
+                      "shadowType": "outer",
+                      "color": "#ffffff80",
+                      "offset": {
+                        "x": 0,
+                        "y": 2
+                      },
+                      "blur": 2
+                    }
+                  ],
+                  "gap": 8,
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "DdTdW",
+                      "name": "Public Nav Icon - 榜单",
+                      "width": 20,
+                      "height": 20,
+                      "icon": "trophy",
+                      "library": "lucide",
+                      "fill": "#ffffffdc"
+                    },
+                    {
+                      "type": "text",
+                      "id": "j0qIy",
+                      "name": "Public Nav Label - 榜单",
+                      "fill": "#ffffffdc",
+                      "content": "榜单",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "PkvvR",
+                  "name": "Public Nav - 商城",
+                  "width": 118,
+                  "height": 68,
+                  "fill": "#ffffff24",
+                  "cornerRadius": 34,
+                  "stroke": "#ffffff48",
+                  "strokeWidth": 1,
+                  "effect": [
+                    {
+                      "type": "background_blur",
+                      "radius": 42
+                    },
+                    {
+                      "type": "shadow",
+                      "shadowType": "outer",
+                      "color": "#ffffff80",
+                      "offset": {
+                        "x": 0,
+                        "y": 2
+                      },
+                      "blur": 2
+                    }
+                  ],
+                  "gap": 8,
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "f5c1vs",
+                      "name": "Public Nav Icon - 商城",
+                      "width": 20,
+                      "height": 20,
+                      "icon": "shopping-bag",
+                      "library": "lucide",
+                      "fill": "#ffffffdc"
+                    },
+                    {
+                      "type": "text",
+                      "id": "LMBvv",
+                      "name": "Public Nav Label - 商城",
+                      "fill": "#ffffffdc",
+                      "content": "商城",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "800"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "DqhO2",
+              "x": 1390,
+              "y": 22,
+              "name": "Header Liquid Actions",
+              "width": 290,
+              "height": 72,
+              "gap": 10,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "x7sCc",
+                  "name": "Header Search Glass Button",
+                  "width": 64,
+                  "height": 64,
+                  "fill": [
+                    "#d5d7dc72",
+                    {
+                      "type": "gradient",
+                      "gradientType": "linear",
+                      "enabled": true,
+                      "opacity": 0.85,
+                      "rotation": 124,
+                      "size": {
+                        "height": 1
+                      },
+                      "colors": [
+                        {
+                          "color": "#ffffffe8",
+                          "position": 0
+                        },
+                        {
+                          "color": "#c7cad085",
+                          "position": 0.36
+                        },
+                        {
+                          "color": "#7b808778",
+                          "position": 0.78
+                        },
+                        {
+                          "color": "#ffffff66",
+                          "position": 1
+                        }
+                      ]
+                    }
+                  ],
+                  "cornerRadius": 32,
+                  "stroke": "#ffffff9c",
+                  "strokeWidth": 1,
+                  "effect": [
+                    {
+                      "type": "background_blur",
+                      "radius": 78
+                    },
+                    {
+                      "type": "shadow",
+                      "shadowType": "outer",
+                      "color": "#11111135",
+                      "offset": {
+                        "x": 0,
+                        "y": 24
+                      },
+                      "blur": 54,
+                      "spread": -18
+                    },
+                    {
+                      "type": "shadow",
+                      "shadowType": "outer",
+                      "color": "#ffffffd6",
+                      "offset": {
+                        "x": 0,
+                        "y": 3
+                      },
+                      "blur": 4
+                    },
+                    {
+                      "type": "shadow",
+                      "shadowType": "outer",
+                      "color": "#555a6330",
+                      "offset": {
+                        "x": 0,
+                        "y": -10
+                      },
+                      "blur": 24
+                    }
+                  ],
+                  "layout": "vertical",
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "ABg5h",
+                      "name": "Header Search Icon",
+                      "width": 22,
+                      "height": 22,
+                      "icon": "search",
+                      "library": "lucide",
+                      "fill": "#ffffff"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "azbDC",
+                  "name": "Header Messages Glass Button",
+                  "width": 64,
+                  "height": 64,
+                  "fill": [
+                    "#d5d7dc72",
+                    {
+                      "type": "gradient",
+                      "gradientType": "linear",
+                      "enabled": true,
+                      "opacity": 0.85,
+                      "rotation": 124,
+                      "size": {
+                        "height": 1
+                      },
+                      "colors": [
+                        {
+                          "color": "#ffffffe8",
+                          "position": 0
+                        },
+                        {
+                          "color": "#c7cad085",
+                          "position": 0.36
+                        },
+                        {
+                          "color": "#7b808778",
+                          "position": 0.78
+                        },
+                        {
+                          "color": "#ffffff66",
+                          "position": 1
+                        }
+                      ]
+                    }
+                  ],
+                  "cornerRadius": 32,
+                  "stroke": "#ffffff9c",
+                  "strokeWidth": 1,
+                  "effect": [
+                    {
+                      "type": "background_blur",
+                      "radius": 78
+                    },
+                    {
+                      "type": "shadow",
+                      "shadowType": "outer",
+                      "color": "#11111135",
+                      "offset": {
+                        "x": 0,
+                        "y": 24
+                      },
+                      "blur": 54,
+                      "spread": -18
+                    },
+                    {
+                      "type": "shadow",
+                      "shadowType": "outer",
+                      "color": "#ffffffd6",
+                      "offset": {
+                        "x": 0,
+                        "y": 3
+                      },
+                      "blur": 4
+                    },
+                    {
+                      "type": "shadow",
+                      "shadowType": "outer",
+                      "color": "#555a6330",
+                      "offset": {
+                        "x": 0,
+                        "y": -10
+                      },
+                      "blur": 24
+                    }
+                  ],
+                  "layout": "vertical",
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "dmPdY",
+                      "name": "Header Messages Icon",
+                      "width": 22,
+                      "height": 22,
+                      "icon": "bell",
+                      "library": "lucide",
+                      "fill": "#ffffff"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "XI9yi",
+                  "name": "Workbench Glass CTA",
+                  "width": 118,
+                  "height": 64,
+                  "fill": [
+                    "#ffffffe0",
+                    {
+                      "type": "gradient",
+                      "gradientType": "linear",
+                      "enabled": true,
+                      "opacity": 0.78,
+                      "rotation": 128,
+                      "size": {
+                        "height": 1
+                      },
+                      "colors": [
+                        {
+                          "color": "#ffffff",
+                          "position": 0
+                        },
+                        {
+                          "color": "#d8dbe0c2",
+                          "position": 0.58
+                        },
+                        {
+                          "color": "#a8adb4a8",
+                          "position": 1
+                        }
+                      ]
+                    }
+                  ],
+                  "cornerRadius": 32,
+                  "stroke": "#ffffffe0",
+                  "strokeWidth": 1,
+                  "effect": [
+                    {
+                      "type": "background_blur",
+                      "radius": 78
+                    },
+                    {
+                      "type": "shadow",
+                      "shadowType": "outer",
+                      "color": "#11111135",
+                      "offset": {
+                        "x": 0,
+                        "y": 24
+                      },
+                      "blur": 54,
+                      "spread": -18
+                    },
+                    {
+                      "type": "shadow",
+                      "shadowType": "outer",
+                      "color": "#ffffffd6",
+                      "offset": {
+                        "x": 0,
+                        "y": 3
+                      },
+                      "blur": 4
+                    },
+                    {
+                      "type": "shadow",
+                      "shadowType": "outer",
+                      "color": "#555a6330",
+                      "offset": {
+                        "x": 0,
+                        "y": -10
+                      },
+                      "blur": 24
+                    }
+                  ],
+                  "gap": 7,
+                  "padding": [
+                    0,
+                    14
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "PWoIf",
+                      "name": "Workbench CTA Icon",
+                      "width": 18,
+                      "height": 18,
+                      "icon": "layout-dashboard",
+                      "library": "lucide",
+                      "fill": "#b24057"
+                    },
+                    {
+                      "type": "text",
+                      "id": "lahxb",
+                      "name": "Workbench CTA Label",
+                      "fill": "#2f2a25",
+                      "content": "工作台",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "900"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "Zm9GQ",
+          "x": 132,
+          "y": 252,
+          "name": "Concept Label",
+          "fill": "#b24057",
+          "content": "Radish WebOS · Liquid Glass Shell",
+          "fontFamily": "Inter",
+          "fontSize": 18,
+          "fontWeight": "900"
+        },
+        {
+          "type": "text",
+          "id": "BwqMN",
+          "x": 132,
+          "y": 286,
+          "name": "Concept Title",
+          "fill": "#2f2a25",
+          "textGrowth": "fixed-width",
+          "width": 820,
+          "content": "借用液态玻璃材质，服务 Radish 的公开 / 私域导航",
+          "lineHeight": 1.12,
+          "fontFamily": "Inter",
+          "fontSize": 46,
+          "fontWeight": "900"
+        },
+        {
+          "type": "text",
+          "id": "fuFvI",
+          "x": 132,
+          "y": 402,
+          "name": "Concept Body",
+          "fill": "#6a5c4f",
+          "textGrowth": "fixed-width",
+          "width": 760,
+          "content": "不是复刻播放器结构，而是把半透明厚玻璃、内容穿透、边缘折射和强模糊用于 Radish Web 的公共壳层、私域入口和移动底栏。",
+          "lineHeight": 1.55,
+          "fontFamily": "Inter",
+          "fontSize": 18,
+          "fontWeight": "600"
+        },
+        {
+          "type": "frame",
+          "id": "rfOiL",
+          "x": 132,
+          "y": 510,
+          "name": "Radish Surface Samples Behind Header",
+          "width": 990,
+          "height": 292,
+          "gap": 18,
+          "children": [
+            {
+              "type": "frame",
+              "id": "ZXxH5",
+              "name": "Radish Content Card - 发现流",
+              "width": "fill_container",
+              "height": 292,
+              "fill": "#fbf7f0c4",
+              "cornerRadius": 30,
+              "stroke": "#ffffffcc",
+              "strokeWidth": 1,
+              "effect": [
+                {
+                  "type": "background_blur",
+                  "radius": 20
+                },
+                {
+                  "type": "shadow",
+                  "shadowType": "outer",
+                  "color": "#3b29211f",
+                  "offset": {
+                    "x": 0,
+                    "y": 20
+                  },
+                  "blur": 42,
+                  "spread": -18
+                }
+              ],
+              "layout": "none",
+              "children": [
+                {
+                  "type": "ellipse",
+                  "id": "cLjBH",
+                  "x": 148,
+                  "y": 20,
+                  "name": "Card Color Pool - 发现流",
+                  "fill": "#b2405772",
+                  "width": 150,
+                  "height": 150,
+                  "effect": {
+                    "type": "blur",
+                    "radius": 28
+                  }
+                },
+                {
+                  "type": "icon",
+                  "id": "c92Cm",
+                  "x": 28,
+                  "y": 30,
+                  "name": "Card Icon - 发现流",
+                  "width": 34,
+                  "height": 34,
+                  "icon": "compass",
+                  "library": "lucide",
+                  "fill": "#b24057"
+                },
+                {
+                  "type": "text",
+                  "id": "wMFou",
+                  "x": 28,
+                  "y": 102,
+                  "name": "Card Title - 发现流",
+                  "fill": "#2f2a25",
+                  "content": "发现流",
+                  "fontFamily": "Inter",
+                  "fontSize": 26,
+                  "fontWeight": "900"
+                },
+                {
+                  "type": "text",
+                  "id": "NOJcR",
+                  "x": 28,
+                  "y": 142,
+                  "name": "Card Body - 发现流",
+                  "fill": "#6a5c4f",
+                  "textGrowth": "fixed-width",
+                  "width": 210,
+                  "content": "公开内容入口",
+                  "lineHeight": 1.45,
+                  "fontFamily": "Inter",
+                  "fontSize": 15,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "F444Y2",
+              "name": "Radish Content Card - 文档",
+              "width": "fill_container",
+              "height": 292,
+              "fill": "#fbf7f0c4",
+              "cornerRadius": 30,
+              "stroke": "#ffffffcc",
+              "strokeWidth": 1,
+              "effect": [
+                {
+                  "type": "background_blur",
+                  "radius": 20
+                },
+                {
+                  "type": "shadow",
+                  "shadowType": "outer",
+                  "color": "#3b29211f",
+                  "offset": {
+                    "x": 0,
+                    "y": 20
+                  },
+                  "blur": 42,
+                  "spread": -18
+                }
+              ],
+              "layout": "none",
+              "children": [
+                {
+                  "type": "ellipse",
+                  "id": "T680dI",
+                  "x": 148,
+                  "y": 20,
+                  "name": "Card Color Pool - 文档",
+                  "fill": "#435c7472",
+                  "width": 150,
+                  "height": 150,
+                  "effect": {
+                    "type": "blur",
+                    "radius": 28
+                  }
+                },
+                {
+                  "type": "icon",
+                  "id": "m2GD6",
+                  "x": 28,
+                  "y": 30,
+                  "name": "Card Icon - 文档",
+                  "width": 34,
+                  "height": 34,
+                  "icon": "file-text",
+                  "library": "lucide",
+                  "fill": "#435c74"
+                },
+                {
+                  "type": "text",
+                  "id": "IfZqI",
+                  "x": 28,
+                  "y": 102,
+                  "name": "Card Title - 文档",
+                  "fill": "#2f2a25",
+                  "content": "文档",
+                  "fontFamily": "Inter",
+                  "fontSize": 26,
+                  "fontWeight": "900"
+                },
+                {
+                  "type": "text",
+                  "id": "euNNS",
+                  "x": 28,
+                  "y": 142,
+                  "name": "Card Body - 文档",
+                  "fill": "#6a5c4f",
+                  "textGrowth": "fixed-width",
+                  "width": 210,
+                  "content": "创作与阅读",
+                  "lineHeight": 1.45,
+                  "fontFamily": "Inter",
+                  "fontSize": 15,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "oh0ll",
+              "name": "Radish Content Card - 商城",
+              "width": "fill_container",
+              "height": 292,
+              "fill": "#fbf7f0c4",
+              "cornerRadius": 30,
+              "stroke": "#ffffffcc",
+              "strokeWidth": 1,
+              "effect": [
+                {
+                  "type": "background_blur",
+                  "radius": 20
+                },
+                {
+                  "type": "shadow",
+                  "shadowType": "outer",
+                  "color": "#3b29211f",
+                  "offset": {
+                    "x": 0,
+                    "y": 20
+                  },
+                  "blur": 42,
+                  "spread": -18
+                }
+              ],
+              "layout": "none",
+              "children": [
+                {
+                  "type": "ellipse",
+                  "id": "PDvUT",
+                  "x": 148,
+                  "y": 20,
+                  "name": "Card Color Pool - 商城",
+                  "fill": "#4f9c8372",
+                  "width": 150,
+                  "height": 150,
+                  "effect": {
+                    "type": "blur",
+                    "radius": 28
+                  }
+                },
+                {
+                  "type": "icon",
+                  "id": "HPKn3",
+                  "x": 28,
+                  "y": 30,
+                  "name": "Card Icon - 商城",
+                  "width": 34,
+                  "height": 34,
+                  "icon": "shopping-bag",
+                  "library": "lucide",
+                  "fill": "#4f9c83"
+                },
+                {
+                  "type": "text",
+                  "id": "hmPm3",
+                  "x": 28,
+                  "y": 102,
+                  "name": "Card Title - 商城",
+                  "fill": "#2f2a25",
+                  "content": "商城",
+                  "fontFamily": "Inter",
+                  "fontSize": 26,
+                  "fontWeight": "900"
+                },
+                {
+                  "type": "text",
+                  "id": "ESiyH",
+                  "x": 28,
+                  "y": 142,
+                  "name": "Card Body - 商城",
+                  "fill": "#6a5c4f",
+                  "textGrowth": "fixed-width",
+                  "width": 210,
+                  "content": "订单与资产回流",
+                  "lineHeight": 1.45,
+                  "fontFamily": "Inter",
+                  "fontSize": 15,
+                  "fontWeight": "700"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "yk80N",
+          "x": 1288,
+          "y": 276,
+          "name": "Radish Mobile Liquid Glass Preview",
+          "clip": true,
+          "width": 390,
+          "height": 720,
+          "fill": "#16181c",
+          "cornerRadius": 56,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#11111154",
+            "offset": {
+              "x": 0,
+              "y": 34
+            },
+            "blur": 74,
+            "spread": -22
+          },
+          "layout": "none",
+          "children": [
+            {
+              "type": "rectangle",
+              "cornerRadius": 44,
+              "id": "k42SfJ",
+              "x": 14,
+              "y": 14,
+              "name": "Mobile Screen Paper",
+              "fill": {
+                "type": "gradient",
+                "gradientType": "linear",
+                "enabled": true,
+                "rotation": 160,
+                "size": {
+                  "height": 1
+                },
+                "colors": [
+                  {
+                    "color": "#fbf7f0",
+                    "position": 0
+                  },
+                  {
+                    "color": "#efe7db",
+                    "position": 0.48
+                  },
+                  {
+                    "color": "#e6eeea",
+                    "position": 1
+                  }
+                ]
+              },
+              "width": 362,
+              "height": 692
+            },
+            {
+              "type": "ellipse",
+              "id": "boWeN",
+              "x": 18,
+              "y": 430,
+              "name": "Mobile Content Blue Refraction",
+              "fill": "#435c7472",
+              "width": 210,
+              "height": 180,
+              "effect": {
+                "type": "blur",
+                "radius": 20
+              }
+            },
+            {
+              "type": "ellipse",
+              "id": "zi0YU",
+              "x": 132,
+              "y": 450,
+              "name": "Mobile Content Red Refraction",
+              "fill": "#b2405774",
+              "width": 220,
+              "height": 180,
+              "effect": {
+                "type": "blur",
+                "radius": 20
+              }
+            },
+            {
+              "type": "ellipse",
+              "id": "wXCax",
+              "x": 224,
+              "y": 104,
+              "name": "Mobile Content Green Refraction",
+              "fill": "#4f9c8372",
+              "width": 150,
+              "height": 160,
+              "effect": {
+                "type": "blur",
+                "radius": 20
+              }
+            },
+            {
+              "type": "text",
+              "id": "J8kOm",
+              "x": 44,
+              "y": 86,
+              "name": "Mobile Preview Title",
+              "fill": "#2f2a25",
+              "textGrowth": "fixed-width",
+              "width": 260,
+              "content": "私域移动底栏",
+              "lineHeight": 1.12,
+              "fontFamily": "Inter",
+              "fontSize": 31,
+              "fontWeight": "900"
+            },
+            {
+              "type": "text",
+              "id": "LPxHz",
+              "x": 44,
+              "y": 170,
+              "name": "Mobile Preview Body",
+              "fill": "#6a5c4f",
+              "textGrowth": "fixed-width",
+              "width": 268,
+              "content": "工作台、资产、创作、消息、我的在同一套液态玻璃底栏中收束。",
+              "lineHeight": 1.45,
+              "fontFamily": "Inter",
+              "fontSize": 15,
+              "fontWeight": "700"
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 24,
+              "id": "y3olhn",
+              "x": 44,
+              "y": 286,
+              "name": "Mobile Behind Tab Content",
+              "fill": "#b24057cc",
+              "width": 270,
+              "height": 74,
+              "effect": {
+                "type": "blur",
+                "radius": 4
+              }
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 24,
+              "id": "Fixbr",
+              "x": 44,
+              "y": 376,
+              "name": "Mobile Behind Tab Content",
+              "fill": "#435c74cc",
+              "width": 270,
+              "height": 74,
+              "effect": {
+                "type": "blur",
+                "radius": 4
+              }
+            },
+            {
+              "type": "rectangle",
+              "cornerRadius": 24,
+              "id": "OEJY4",
+              "x": 44,
+              "y": 466,
+              "name": "Mobile Behind Tab Content",
+              "fill": "#4f9c83cc",
+              "width": 270,
+              "height": 74,
+              "effect": {
+                "type": "blur",
+                "radius": 4
+              }
+            },
+            {
+              "type": "frame",
+              "id": "qEPR5",
+              "x": 34,
+              "y": 604,
+              "name": "Radish Mobile Liquid Glass Tab Bar",
+              "clip": true,
+              "width": 322,
+              "height": 82,
+              "fill": [
+                "#53596090",
+                {
+                  "type": "gradient",
+                  "gradientType": "linear",
+                  "enabled": true,
+                  "opacity": 0.86,
+                  "rotation": 135,
+                  "size": {
+                    "height": 1
+                  },
+                  "colors": [
+                    {
+                      "color": "#ffffff58",
+                      "position": 0
+                    },
+                    {
+                      "color": "#8d929aa0",
+                      "position": 0.44
+                    },
+                    {
+                      "color": "#3c4047a8",
+                      "position": 1
+                    }
+                  ]
+                }
+              ],
+              "cornerRadius": 41,
+              "stroke": "#ffffffa8",
+              "strokeWidth": 2,
+              "effect": [
+                {
+                  "type": "background_blur",
+                  "radius": 78
+                },
+                {
+                  "type": "shadow",
+                  "shadowType": "outer",
+                  "color": "#11111135",
+                  "offset": {
+                    "x": 0,
+                    "y": 24
+                  },
+                  "blur": 54,
+                  "spread": -18
+                },
+                {
+                  "type": "shadow",
+                  "shadowType": "outer",
+                  "color": "#ffffffd6",
+                  "offset": {
+                    "x": 0,
+                    "y": 3
+                  },
+                  "blur": 4
+                },
+                {
+                  "type": "shadow",
+                  "shadowType": "outer",
+                  "color": "#555a6330",
+                  "offset": {
+                    "x": 0,
+                    "y": -10
+                  },
+                  "blur": 24
+                }
+              ],
+              "gap": 8,
+              "padding": [
+                9,
+                11
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "xlgFl",
+                  "name": "Mobile Tab - 桌面",
+                  "width": 86,
+                  "height": 64,
+                  "fill": [
+                    "#ffffffe0",
+                    {
+                      "type": "gradient",
+                      "gradientType": "linear",
+                      "enabled": true,
+                      "opacity": 0.78,
+                      "rotation": 128,
+                      "size": {
+                        "height": 1
+                      },
+                      "colors": [
+                        {
+                          "color": "#ffffff",
+                          "position": 0
+                        },
+                        {
+                          "color": "#d8dbe0c2",
+                          "position": 0.58
+                        },
+                        {
+                          "color": "#a8adb4a8",
+                          "position": 1
+                        }
+                      ]
+                    }
+                  ],
+                  "cornerRadius": 32,
+                  "stroke": "#ffffffe0",
+                  "strokeWidth": 1,
+                  "effect": [
+                    {
+                      "type": "background_blur",
+                      "radius": 52
+                    },
+                    {
+                      "type": "shadow",
+                      "shadowType": "outer",
+                      "color": "#ffffffd0",
+                      "offset": {
+                        "x": 0,
+                        "y": 2
+                      },
+                      "blur": 2
+                    }
+                  ],
+                  "layout": "vertical",
+                  "gap": 3,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "u5wq2z",
+                      "name": "Mobile Tab Icon - 桌面",
+                      "width": 20,
+                      "height": 20,
+                      "icon": "layout-dashboard",
+                      "library": "lucide",
+                      "fill": "#b24057"
+                    },
+                    {
+                      "type": "text",
+                      "id": "RJ3pS",
+                      "name": "Mobile Tab Label - 桌面",
+                      "fill": "#2f2a25",
+                      "content": "桌面",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ZHMoi",
+                  "name": "Mobile Tab - 资产",
+                  "width": 62,
+                  "height": 64,
+                  "fill": "#ffffff22",
+                  "cornerRadius": 32,
+                  "stroke": "#ffffff44",
+                  "strokeWidth": 1,
+                  "effect": {
+                    "type": "background_blur",
+                    "radius": 36
+                  },
+                  "layout": "vertical",
+                  "gap": 3,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "aQCH9",
+                      "name": "Mobile Tab Icon - 资产",
+                      "width": 20,
+                      "height": 20,
+                      "icon": "wallet",
+                      "library": "lucide",
+                      "fill": "#ffffffd8"
+                    },
+                    {
+                      "type": "text",
+                      "id": "hBswP",
+                      "name": "Mobile Tab Label - 资产",
+                      "fill": "#ffffffd8",
+                      "content": "资产",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "U02Dsx",
+                  "name": "Mobile Tab - 创作",
+                  "width": 62,
+                  "height": 64,
+                  "fill": "#ffffff22",
+                  "cornerRadius": 32,
+                  "stroke": "#ffffff44",
+                  "strokeWidth": 1,
+                  "effect": {
+                    "type": "background_blur",
+                    "radius": 36
+                  },
+                  "layout": "vertical",
+                  "gap": 3,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "FTj8Z",
+                      "name": "Mobile Tab Icon - 创作",
+                      "width": 20,
+                      "height": 20,
+                      "icon": "pen-line",
+                      "library": "lucide",
+                      "fill": "#ffffffd8"
+                    },
+                    {
+                      "type": "text",
+                      "id": "hVgwu",
+                      "name": "Mobile Tab Label - 创作",
+                      "fill": "#ffffffd8",
+                      "content": "创作",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "z62GMR",
+                  "name": "Mobile Tab - 我的",
+                  "width": 62,
+                  "height": 64,
+                  "fill": "#ffffff22",
+                  "cornerRadius": 32,
+                  "stroke": "#ffffff44",
+                  "strokeWidth": 1,
+                  "effect": {
+                    "type": "background_blur",
+                    "radius": 36
+                  },
+                  "layout": "vertical",
+                  "gap": 3,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "KOinY",
+                      "name": "Mobile Tab Icon - 我的",
+                      "width": 20,
+                      "height": 20,
+                      "icon": "user",
+                      "library": "lucide",
+                      "fill": "#ffffffd8"
+                    },
+                    {
+                      "type": "text",
+                      "id": "hpxQF",
+                      "name": "Mobile Tab Label - 我的",
+                      "fill": "#ffffffd8",
+                      "content": "我的",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "800"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "xPaH8",
+          "x": 132,
+          "y": 848,
+          "name": "Liquid Glass Design Notes",
+          "width": 950,
+          "height": 104,
+          "gap": 16,
+          "children": [
+            {
+              "type": "frame",
+              "id": "dqS8J",
+              "name": "Note - 可借鉴",
+              "width": "fill_container",
+              "height": 104,
+              "fill": [
+                "#d5d7dc72",
+                {
+                  "type": "gradient",
+                  "gradientType": "linear",
+                  "enabled": true,
+                  "opacity": 0.85,
+                  "rotation": 124,
+                  "size": {
+                    "height": 1
+                  },
+                  "colors": [
+                    {
+                      "color": "#ffffffe8",
+                      "position": 0
+                    },
+                    {
+                      "color": "#c7cad085",
+                      "position": 0.36
+                    },
+                    {
+                      "color": "#7b808778",
+                      "position": 0.78
+                    },
+                    {
+                      "color": "#ffffff66",
+                      "position": 1
+                    }
+                  ]
+                }
+              ],
+              "cornerRadius": 28,
+              "stroke": "#ffffffa8",
+              "strokeWidth": 1,
+              "effect": [
+                {
+                  "type": "background_blur",
+                  "radius": 78
+                },
+                {
+                  "type": "shadow",
+                  "shadowType": "outer",
+                  "color": "#11111135",
+                  "offset": {
+                    "x": 0,
+                    "y": 24
+                  },
+                  "blur": 54,
+                  "spread": -18
+                },
+                {
+                  "type": "shadow",
+                  "shadowType": "outer",
+                  "color": "#ffffffd6",
+                  "offset": {
+                    "x": 0,
+                    "y": 3
+                  },
+                  "blur": 4
+                },
+                {
+                  "type": "shadow",
+                  "shadowType": "outer",
+                  "color": "#555a6330",
+                  "offset": {
+                    "x": 0,
+                    "y": -10
+                  },
+                  "blur": 24
+                }
+              ],
+              "layout": "vertical",
+              "gap": 8,
+              "padding": 18,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "MyOnM",
+                  "name": "Note Title - 可借鉴",
+                  "fill": "#ffffff",
+                  "content": "可借鉴",
+                  "fontFamily": "Inter",
+                  "fontSize": 16,
+                  "fontWeight": "900"
+                },
+                {
+                  "type": "text",
+                  "id": "ZHVAd",
+                  "name": "Note Body - 可借鉴",
+                  "fill": "#ffffffe0",
+                  "textGrowth": "fixed-width",
+                  "width": 250,
+                  "content": "厚玻璃、折射高光、背景内容透出",
+                  "lineHeight": 1.35,
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "v8HXUe",
+              "name": "Note - 需克制",
+              "width": "fill_container",
+              "height": 104,
+              "fill": [
+                "#d5d7dc72",
+                {
+                  "type": "gradient",
+                  "gradientType": "linear",
+                  "enabled": true,
+                  "opacity": 0.85,
+                  "rotation": 124,
+                  "size": {
+                    "height": 1
+                  },
+                  "colors": [
+                    {
+                      "color": "#ffffffe8",
+                      "position": 0
+                    },
+                    {
+                      "color": "#c7cad085",
+                      "position": 0.36
+                    },
+                    {
+                      "color": "#7b808778",
+                      "position": 0.78
+                    },
+                    {
+                      "color": "#ffffff66",
+                      "position": 1
+                    }
+                  ]
+                }
+              ],
+              "cornerRadius": 28,
+              "stroke": "#ffffffa8",
+              "strokeWidth": 1,
+              "effect": [
+                {
+                  "type": "background_blur",
+                  "radius": 78
+                },
+                {
+                  "type": "shadow",
+                  "shadowType": "outer",
+                  "color": "#11111135",
+                  "offset": {
+                    "x": 0,
+                    "y": 24
+                  },
+                  "blur": 54,
+                  "spread": -18
+                },
+                {
+                  "type": "shadow",
+                  "shadowType": "outer",
+                  "color": "#ffffffd6",
+                  "offset": {
+                    "x": 0,
+                    "y": 3
+                  },
+                  "blur": 4
+                },
+                {
+                  "type": "shadow",
+                  "shadowType": "outer",
+                  "color": "#555a6330",
+                  "offset": {
+                    "x": 0,
+                    "y": -10
+                  },
+                  "blur": 24
+                }
+              ],
+              "layout": "vertical",
+              "gap": 8,
+              "padding": 18,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "JKzGQ",
+                  "name": "Note Title - 需克制",
+                  "fill": "#ffffff",
+                  "content": "需克制",
+                  "fontFamily": "Inter",
+                  "fontSize": 16,
+                  "fontWeight": "900"
+                },
+                {
+                  "type": "text",
+                  "id": "bPboH",
+                  "name": "Note Body - 需克制",
+                  "fill": "#ffffffe0",
+                  "textGrowth": "fixed-width",
+                  "width": 250,
+                  "content": "Radish 正式实现仍要保留可读性和新中式纸色",
+                  "lineHeight": 1.35,
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "g2qeQ",
+              "name": "Note - 不照搬",
+              "width": "fill_container",
+              "height": 104,
+              "fill": [
+                "#d5d7dc72",
+                {
+                  "type": "gradient",
+                  "gradientType": "linear",
+                  "enabled": true,
+                  "opacity": 0.85,
+                  "rotation": 124,
+                  "size": {
+                    "height": 1
+                  },
+                  "colors": [
+                    {
+                      "color": "#ffffffe8",
+                      "position": 0
+                    },
+                    {
+                      "color": "#c7cad085",
+                      "position": 0.36
+                    },
+                    {
+                      "color": "#7b808778",
+                      "position": 0.78
+                    },
+                    {
+                      "color": "#ffffff66",
+                      "position": 1
+                    }
+                  ]
+                }
+              ],
+              "cornerRadius": 28,
+              "stroke": "#ffffffa8",
+              "strokeWidth": 1,
+              "effect": [
+                {
+                  "type": "background_blur",
+                  "radius": 78
+                },
+                {
+                  "type": "shadow",
+                  "shadowType": "outer",
+                  "color": "#11111135",
+                  "offset": {
+                    "x": 0,
+                    "y": 24
+                  },
+                  "blur": 54,
+                  "spread": -18
+                },
+                {
+                  "type": "shadow",
+                  "shadowType": "outer",
+                  "color": "#ffffffd6",
+                  "offset": {
+                    "x": 0,
+                    "y": 3
+                  },
+                  "blur": 4
+                },
+                {
+                  "type": "shadow",
+                  "shadowType": "outer",
+                  "color": "#555a6330",
+                  "offset": {
+                    "x": 0,
+                    "y": -10
+                  },
+                  "blur": 24
+                }
+              ],
+              "layout": "vertical",
+              "gap": 8,
+              "padding": 18,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "g7XYW3",
+                  "name": "Note Title - 不照搬",
+                  "fill": "#ffffff",
+                  "content": "不照搬",
+                  "fontFamily": "Inter",
+                  "fontSize": 16,
+                  "fontWeight": "900"
+                },
+                {
+                  "type": "text",
+                  "id": "vtKA3",
+                  "name": "Note Body - 不照搬",
+                  "fill": "#ffffffe0",
+                  "textGrowth": "fixed-width",
+                  "width": 250,
+                  "content": "不采用音乐播放器结构或无关图标语义",
+                  "lineHeight": 1.35,
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "700"
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "variables": {
@@ -6052,6 +8434,42 @@
     "rx-text-secondary": {
       "type": "color",
       "value": "#6a5c4f"
+    },
+    "rx-glass-surface": {
+      "type": "color",
+      "value": "#ffffff9e"
+    },
+    "rx-glass-stroke": {
+      "type": "color",
+      "value": "#ffffffc4"
+    },
+    "rx-glass-highlight": {
+      "type": "color",
+      "value": "#fffffff0"
+    },
+    "rx-glass-shadow": {
+      "type": "color",
+      "value": "#3b292126"
+    },
+    "rx-glass-tint": {
+      "type": "color",
+      "value": "#dff7ff70"
+    },
+    "rx-liquid-glass-panel": {
+      "type": "color",
+      "value": "#8f9298a8"
+    },
+    "rx-liquid-glass-panel-dark": {
+      "type": "color",
+      "value": "#34373bb8"
+    },
+    "rx-liquid-glass-edge": {
+      "type": "color",
+      "value": "#ffffff9c"
+    },
+    "rx-liquid-glass-white": {
+      "type": "color",
+      "value": "#ffffffe8"
     }
   },
   "fileToken": "4d33f107-3436-421d-9c69-d726ed16d289"

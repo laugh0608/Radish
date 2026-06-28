@@ -44,6 +44,7 @@ import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { usePublicShareLink } from '../hooks/usePublicShareLink';
 import { usePublicReplaceRouteSync } from '../usePublicReplaceRouteSync';
+import { WebStateSlot, type WebStateSlotAction } from '@/components/web-shell';
 import styles from './PublicShopApp.module.css';
 
 interface PublicShopAppProps {
@@ -60,20 +61,18 @@ interface PublicShopAppProps {
 
 type PublicStatusTone = 'loading' | 'empty' | 'error' | 'notFound';
 
+interface PublicStatusCardAction {
+  label: string;
+  href?: string;
+  onClick: () => void;
+}
+
 interface PublicStatusCardProps {
   tone: PublicStatusTone;
   title: string;
   description: string;
-  primaryAction?: {
-    label: string;
-    href?: string;
-    onClick: () => void;
-  };
-  secondaryAction?: {
-    label: string;
-    href?: string;
-    onClick: () => void;
-  };
+  primaryAction?: PublicStatusCardAction;
+  secondaryAction?: PublicStatusCardAction;
 }
 
 interface PublicGuideItemDefinition {
@@ -106,58 +105,45 @@ function handlePublicShopLinkClick(event: MouseEvent<HTMLAnchorElement>, action:
 }
 
 function PublicStatusCard({ tone, title, description, primaryAction, secondaryAction }: PublicStatusCardProps) {
-  const icon = tone === 'loading'
+  const resolvedIcon = tone === 'loading'
     ? 'mdi:progress-clock'
     : tone === 'empty'
       ? 'mdi:store-search-outline'
       : tone === 'notFound'
         ? 'mdi:package-variant-closed-remove'
         : 'mdi:alert-circle-outline';
+  const actions: WebStateSlotAction[] = [];
+
+  if (primaryAction) {
+    actions.push({
+      label: primaryAction.label,
+      href: primaryAction.href,
+      kind: 'primary',
+      onClick: primaryAction.href
+        ? (event) => handlePublicShopLinkClick(event as MouseEvent<HTMLAnchorElement>, primaryAction.onClick)
+        : () => primaryAction.onClick(),
+    });
+  }
+
+  if (secondaryAction) {
+    actions.push({
+      label: secondaryAction.label,
+      href: secondaryAction.href,
+      kind: 'secondary',
+      onClick: secondaryAction.href
+        ? (event) => handlePublicShopLinkClick(event as MouseEvent<HTMLAnchorElement>, secondaryAction.onClick)
+        : () => secondaryAction.onClick(),
+    });
+  }
 
   return (
-    <div className={styles.statusCard} data-tone={tone}>
-      <div className={styles.statusIcon}>
-        <Icon icon={icon} size={22} />
-      </div>
-      <div className={styles.statusBody}>
-        <h2 className={styles.statusTitle}>{title}</h2>
-        <p className={styles.statusDescription}>{description}</p>
-        {(primaryAction || secondaryAction) && (
-          <div className={styles.statusActions}>
-            {primaryAction && (
-              primaryAction.href ? (
-                <a
-                  className={styles.primaryButton}
-                  href={primaryAction.href}
-                  onClick={(event) => handlePublicShopLinkClick(event, primaryAction.onClick)}
-                >
-                  {primaryAction.label}
-                </a>
-              ) : (
-                <button type="button" className={styles.primaryButton} onClick={primaryAction.onClick}>
-                  {primaryAction.label}
-                </button>
-              )
-            )}
-            {secondaryAction && (
-              secondaryAction.href ? (
-                <a
-                  className={styles.secondaryButton}
-                  href={secondaryAction.href}
-                  onClick={(event) => handlePublicShopLinkClick(event, secondaryAction.onClick)}
-                >
-                  {secondaryAction.label}
-                </a>
-              ) : (
-                <button type="button" className={styles.secondaryButton} onClick={secondaryAction.onClick}>
-                  {secondaryAction.label}
-                </button>
-              )
-            )}
-          </div>
-        )}
-      </div>
-    </div>
+    <WebStateSlot
+      tone={tone}
+      title={title}
+      description={description}
+      icon={resolvedIcon}
+      actions={actions}
+    />
   );
 }
 

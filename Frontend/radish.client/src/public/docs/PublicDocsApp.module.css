@@ -14,7 +14,7 @@
 
 .main {
   flex: 1 0 auto;
-  width: min(1080px, calc(100vw - 24px));
+  width: min(var(--rx-content-reading-width), calc(100vw - 24px));
   margin: 0 auto;
   padding: 24px 0 40px;
   display: flex;
@@ -618,6 +618,7 @@
 @media (max-width: 720px) {
   .main {
     width: calc(100vw - 20px);
+    padding-bottom: var(--rx-mobile-shell-offset);
   }
 
   .sectionHeader,

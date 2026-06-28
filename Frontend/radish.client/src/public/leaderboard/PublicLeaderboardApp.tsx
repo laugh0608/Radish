@@ -26,6 +26,7 @@ import { buildPublicProfilePath } from '../profileRouteState';
 import { buildPublicShopPath } from '../shopRouteState';
 import { resolveMediaUrl } from '@/utils/media';
 import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
+import { WebStateSlot, type WebStateSlotAction } from '@/components/web-shell';
 import styles from './PublicLeaderboardApp.module.css';
 
 interface PublicLeaderboardAppProps {
@@ -193,29 +194,27 @@ const productLeaderboardGuideFocusItems: ExperienceGuideFocusDefinition[] = [
 ];
 
 function PublicStatusCard({ tone, title, description, primaryAction }: PublicStatusCardProps) {
-  const icon = tone === 'loading'
+  const resolvedIcon = tone === 'loading'
     ? 'mdi:progress-clock'
     : tone === 'empty'
       ? 'mdi:trophy-outline'
       : 'mdi:alert-circle-outline';
+  const actions: WebStateSlotAction[] = primaryAction
+    ? [{
+      label: primaryAction.label,
+      kind: 'primary',
+      onClick: () => primaryAction.onClick(),
+    }]
+    : [];
 
   return (
-    <div className={styles.statusCard} data-tone={tone}>
-      <div className={styles.statusIcon}>
-        <Icon icon={icon} size={22} />
-      </div>
-      <div className={styles.statusBody}>
-        <h2 className={styles.statusTitle}>{title}</h2>
-        <p className={styles.statusDescription}>{description}</p>
-        {primaryAction && (
-          <div className={styles.statusActions}>
-            <button type="button" className={styles.primaryButton} onClick={primaryAction.onClick}>
-              {primaryAction.label}
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
+    <WebStateSlot
+      tone={tone}
+      title={title}
+      description={description}
+      icon={resolvedIcon}
+      actions={actions}
+    />
   );
 }
 
