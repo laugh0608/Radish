@@ -101,6 +101,70 @@ Docs/frontend/design-sources/web-ui-foundation.pen
 
 后续代码实现继续优先复用这些结构；如发现新共享变体，先回到本说明和设计源确认边界。
 
+## radish.client 组件使用口径
+
+### `WebShellHeader`
+
+位置：
+
+```text
+Frontend/radish.client/src/components/web-shell/WebShellHeader.tsx
+```
+
+职责：
+
+- 承接 public / private PC header。
+- 承接 public / private 移动底栏。
+- 保留真实 `href`，普通左键点击可由页面注入的 `onClick` 拦截为应用内导航；辅助点击、新开标签和复制链接仍依赖真实 URL。
+- 自动为页面添加 `radishWebShellWithMobileNav` body class，用于移动底栏全局留白。
+
+默认导航：
+
+| variant | PC 导航 | 移动底栏 |
+| --- | --- | --- |
+| `public` | `发现 / 论坛 / 文档 / 榜单 / 商城` | `发现 / 论坛 / 文档 / 工作台 / 我的` |
+| `private` | `工作台 / 我的状态 / 资产 / 创作 / 消息` | `工作台 / 资产 / 创作 / 消息 / 我的` |
+
+使用规则：
+
+- 页面可传 `navItems`、`actionItems`、`mobileNavItems` 调整当前业务动作，但不能另写平行 header。
+- `activeKey` 可显式传入；不传时由当前 pathname 推导。
+- Public / private 的低频入口统一由 `/workbench` 承接，不继续把移动底栏挤到 5 项以上。
+
+### `WebStateSlot`
+
+位置：
+
+```text
+Frontend/radish.client/src/components/web-shell/WebStateSlot.tsx
+```
+
+职责：
+
+- 承接加载、空态、错误、未找到、权限限制、登录恢复和普通信息状态。
+- 状态动作支持 `href` 和 `onClick`；会导航的动作优先提供真实 `href`。
+- `compact` 用于列表内或 rail 内的轻量状态，不替代完整页面状态。
+- `meta` 用于补来源、目标、边界说明等少量结构化信息，不承载长篇实现说明。
+
+允许 tone：
+
+```text
+loading / empty / error / notFound / permission / auth / info
+```
+
+### 相关 token
+
+当前公开内容宽度与移动底栏留白使用：
+
+```css
+--rx-content-max-width
+--rx-content-reading-width
+--rx-content-narrow-width
+--rx-mobile-shell-offset
+```
+
+页面级 CSS 应优先使用这些语义 token。确实需要新增宽度或壳层 token 时，先补本说明，再进入代码。
+
 ## Pencil 工作流限制
 
 - Pencil 当前活动窗口一次只打开一个 `.pen`；写入操作必须以当前活动窗口中已打开的目标文件为准。

@@ -72,6 +72,22 @@ npm run dev
 - 私域首页、资产 / 订单 / 背包、作者工作台、编辑器 / 版本回看和 mobile 私域单列以 [私域与作者态 Web 工作流设计说明](./private-web-workflows-design.md) 与 `private-web-workflows.pen` 为准。
 - Console 治理和后台工作台继续以 [Console 样式与 Token 使用说明](./console-style-guide.md)、[Console 治理工作台设计端点](./console-governance-workbench-design.md) 和 `console-governance-workbench.pen` 为准。
 
+当前 `radish.client` 已落地的共享 Web shell 代码入口：
+
+```text
+Frontend/radish.client/src/components/web-shell/
+├── WebShellHeader.tsx
+├── WebStateSlot.tsx
+└── index.ts
+```
+
+使用边界：
+
+- 这是 `radish.client` 的 public / private 壳层复用点，不属于 `@radish/ui`。
+- 公开页、私域页和作者态页需要 header、移动底栏、加载 / 空态 / 错误 / 权限状态时，先复用 `WebShellHeader` / `WebStateSlot`。
+- `@radish/ui` 继续承载跨 client / console 的基础组件；不要因为 client 需要壳层组件就把 Console 也强行迁入这套 shell。
+- 公开内容宽度优先使用 `--rx-content-max-width`、`--rx-content-reading-width`、`--rx-content-narrow-width`；移动单列底部留白优先使用 `--rx-mobile-shell-offset`。
+
 Pencil 操作注意：
 
 - `.pen` 只能通过 Pencil 修改，不用普通文本工具编辑。
@@ -102,6 +118,7 @@ npm run type-check --workspace=@radish/http
 
 - 不要在业务模块里自定义平行的 HTTP 客户端，统一走 `@radish/http`
 - 不要把共享 UI 再拆成第二套“通用组件库”，统一复用 `@radish/ui`
+- 不要在 public / private 页面里重复实现 header、移动底栏或状态卡；`radish.client` 内部优先复用 `components/web-shell`
 - 修改共享包后，优先同时检查 `radish.client` 和 `radish.console` 的使用面
 - 前端运行时配置统一通过 `env.ts` 或运行时配置入口读取，不直接散落读取 `import.meta.env`
 

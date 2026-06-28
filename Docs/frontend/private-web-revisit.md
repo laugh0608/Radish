@@ -2,7 +2,7 @@
 
 > 状态：执行中
 >
-> 最后更新：2026-06-21（Asia/Shanghai）
+> 最后更新：2026-06-28（Asia/Shanghai）
 >
 > 本文说明纯 Web 登录态私域复访入口的当前设计边界。阶段进度、验证流水和日结记录不写入本文。
 
@@ -22,6 +22,17 @@
 | `/pet` | 领取和照顾当前用户电子宠物、查看状态与最近流水 | 宠物主档、四类照顾动作、每日次数 / 冷却、最近状态流水 | 萝卜币消耗、商城物品、社区任务奖励、Console 数值配置、公开宠物名片默认展示 |
 
 这些入口是登录态页面，不进入公开 sitemap，不输出 public head / canonical / JSON-LD，也不替代 WebOS `/desktop` 的完整工作台能力。
+
+## 共享壳层与状态槽
+
+私域复访入口已开始接入 `radish.client` 共享 Web shell：
+
+- `WebShellHeader` 负责 private PC header 与移动底栏，默认导航为 `工作台 / 我的状态 / 资产 / 创作 / 消息`，移动底栏为 `工作台 / 资产 / 创作 / 消息 / 我的`。
+- `WebStateSlot` 负责加载、空态、错误、权限限制、登录恢复和普通信息状态，不再让 `/me`、`/messages`、`/notifications`、`/circle`、`/pet` 等页面分别维护不同视觉的状态卡。
+- 私域页面进入公开帖子、公开个人页或商品详情时，仍按来源转交规则保留“返回我的状态 / 消息 / 通知中心 / 我的圈子 / 电子宠物”等语义；共享壳层不改变公开 URL、canonical、分享链接或 sitemap。
+- 移动端内容区需要保留 `--rx-mobile-shell-offset` 对应的底部空间，避免 floating tab 遮挡状态槽、列表末尾或关键动作。
+
+如果后续某个私域页确实需要新的 header 或状态变体，先回到 [Web UI 共享基座设计说明](/frontend/web-ui-foundation-design) 确认适用范围，再进入代码。
 
 ## 路由与登录恢复
 
@@ -87,6 +98,8 @@ WebOS `/desktop` 继续保留聊天、通知中心、个人中心、萝卜坑、
 
 前端入口：
 
+- `Frontend/radish.client/src/components/web-shell/WebShellHeader.tsx`
+- `Frontend/radish.client/src/components/web-shell/WebStateSlot.tsx`
 - `Frontend/radish.client/src/notifications/NotificationsApp.tsx`
 - `Frontend/radish.client/src/circle/CircleApp.tsx`
 - `Frontend/radish.client/src/circle/circleRouteState.ts`

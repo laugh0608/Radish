@@ -213,6 +213,14 @@
 - `/discover`、`/forum` 详情、`/u/usr_...`、`/circle` 等真实页面截图应优先作为视觉资产来源，而不是使用抽象占位图。
 - CTA 必须出现在具体上下文中并指向真实动作，不把“进入发现 / 登录 / 文档”做成独立三按钮首屏。
 
+### 6.9 正式 Web Shell 组件
+
+- `radish.client` 的 public / private header、移动底栏和通用状态槽优先复用 `Frontend/radish.client/src/components/web-shell/`，不要在单个页面继续散写分叉样式。
+- `WebShellHeader` 负责 PC 横向 header 与移动浮动胶囊底栏；移动底栏最多 5 项，低频入口由 `/workbench` 承接。
+- `WebStateSlot` 负责加载、空态、错误、未找到、权限限制、登录恢复和普通信息状态；状态说明必须解释原因和下一步动作，不出现无解释空白页。
+- 公开内容宽度使用 `--rx-content-max-width`、`--rx-content-reading-width`、`--rx-content-narrow-width`，移动页面底部留白使用 `--rx-mobile-shell-offset`。
+- 这些组件只约束正式 Web public / private 壳层；WebOS `/desktop` 和 Console 仍按各自壳层规范维护，不直接复用 client Web shell。
+
 ## 7. 页面改造优先级
 
 ### 7.1 第一批
