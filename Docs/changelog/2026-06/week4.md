@@ -54,3 +54,12 @@
 - 公开 Web 信息密度已继续收口：P03 论坛列表、P04 帖子详情评论区、P07 商城、P15 聊天室和 P10-P16 移动任务流均减少大字、大卡片和长留白，保留可扫读的真实内容结构。
 - 相关设计 / 说明书已同步：当前规划、P3-12 主线、设计源目录、公开 Web 说明、D2 / D5 / D6 记录、记录索引和本开发日志均已对齐。
 - 今日提交回顾见 [2026-06-27 收工回顾与明日事项](/records/daily-handoff-2026-06-27)。明日第一顺位是补齐 `private-web-workflows.pen` 的 private 页面族和移动任务流，之后再进入 `radish.client` 视觉实现；Console 代码实现后移承接。
+
+## 2026-06-28
+
+- `P3-12-D7` 移动导航设计源统一完成：public / private / console / foundation 四个设计源的移动底栏统一为 5 项以内浮动胶囊样式，并按复审修正公开移动工作台、Private 移动页密度和 Console 纸色运维页。
+- `P3-12-D8` `radish.client` 视觉实现首批完成：新增共享 `WebShellHeader` / `WebStateSlot`，首批接入私域复访页、作者态页、公开 forum 状态入口和 discover / docs / leaderboard / shop / profile 公开状态槽。
+- 公开页面容器宽度已抽象为 `--rx-content-max-width`、`--rx-content-reading-width`、`--rx-content-narrow-width`，公开移动单列页面补齐底部导航留白。
+- 相关设计 / 说明书已同步：当前规划、P3-12 主线、Web UI 共享基座说明、公开 Web 说明、私域 / 作者态说明、D8 记录、记录索引和本开发日志均已对齐。
+- 今日验证：`npm run build --workspace=radish.client`、`npm run check:repo-hygiene:changed`、`git diff --check` 均通过；真实 Gateway PC / mobile smoke 未执行，因为本轮未收到前后端已启动的明确确认。
+- 今日提交回顾见 [2026-06-28 收工回顾与明日事项](/records/daily-handoff-2026-06-28)。明日第一顺位是继续 `radish.client` 第二批视觉实现，优先私域 / 作者态真实数据面、任务流和移动单列节奏；Console、Flutter、P3-10 维护线和发布流程不作为默认主线。

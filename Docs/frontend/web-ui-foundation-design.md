@@ -4,7 +4,9 @@
 >
 > 更新：2026-06-28（Asia/Shanghai）：`F01 / F02` 的移动底栏已统一为 5 项以内浮动胶囊样式；Public 使用 `发现 / 论坛 / 文档 / 工作台 / 我的`，Private 使用 `工作台 / 资产 / 创作 / 消息 / 我的`，Console 业务源同步使用 `总览 / 治理 / 资产 / 权限 / 运维`。`/workbench` 固定作为正式 Web 功能地图，承接导航无法展示的功能入口。
 >
-> 状态：共享基座设计源 `F01-F02` 已创建；当前作为跨设计源同步口径，不进入视觉代码实现
+> 更新：2026-06-28（Asia/Shanghai）：`P3-12-D8` 已完成 `radish.client` 首批代码对齐，新增共享 `WebShellHeader` / `WebStateSlot`，并把公开状态槽、公开内容宽度 token 和移动底部留白接入代码。
+>
+> 状态：共享基座设计源 `F01-F02` 已创建；`radish.client` 首批视觉实现已开始按本说明落地，Console 代码实现仍后移
 
 ## 设计源
 
@@ -87,6 +89,18 @@ Docs/frontend/design-sources/web-ui-foundation.pen
 4. 不允许只在某个业务 `.pen` 临时修改 header、按钮、卡片或状态槽样式。
 5. 如果业务端点确实需要新变体，先把它加入共享基座并说明适用范围。
 
+## 代码对齐状态
+
+`P3-12-D8` 已完成首批 `radish.client` 对齐：
+
+- 新增 `Frontend/radish.client/src/components/web-shell/WebShellHeader.tsx` 与 `WebStateSlot.tsx`。
+- 私域复访页、作者态页和公开 forum 状态入口已开始复用共享壳层 / 状态槽节奏。
+- `discover / docs / leaderboard / shop / profile` 公开状态卡已统一到 `WebStateSlot`。
+- 公开页面宽度已抽象为 `--rx-content-max-width`、`--rx-content-reading-width` 和 `--rx-content-narrow-width`。
+- 公开移动单列页面已补底部导航安全留白。
+
+后续代码实现继续优先复用这些结构；如发现新共享变体，先回到本说明和设计源确认边界。
+
 ## Pencil 工作流限制
 
 - Pencil 当前活动窗口一次只打开一个 `.pen`；写入操作必须以当前活动窗口中已打开的目标文件为准。
@@ -99,6 +113,6 @@ Docs/frontend/design-sources/web-ui-foundation.pen
 
 - 不把所有页面合并进一个巨型 `.pen`。
 - 不创建跨文件实时组件库。
-- 不进入视觉代码实现。
+- 不把 D8 首批实现扩大为 Console 或全量页面重写。
 - 不借共享基座重做 public / private / console 全量画板。
 - 不把 `F02` 当作业务页面；public / private 仍需在各自业务设计源补齐具体页面族和移动任务流。

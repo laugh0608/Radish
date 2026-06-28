@@ -4,7 +4,9 @@
 >
 > 更新：2026-06-28（Asia/Shanghai）：公开移动底栏已对齐共享基座的浮动胶囊样式，固定为 `发现 / 论坛 / 文档 / 工作台 / 我的`。商城、榜单、聊天室等无法全部展示在一级底栏的公开能力由 `/workbench` 功能地图或页面内入口承接；`P13` 已从“商城与榜单”修正为真正的移动工作台页面。
 >
-> 状态：设计源 `P01-P16` 已补齐；当前作为实现前说明，不进入视觉代码实现
+> 更新：2026-06-28（Asia/Shanghai）：`P3-12-D8` 已完成公开状态槽首批代码对齐，`discover / docs / leaderboard / shop / profile` 已统一接入 `WebStateSlot`，并补公开内容宽度 token 与移动底部导航留白。
+>
+> 状态：设计源 `P01-P16` 已补齐；公开 Web 首批视觉实现已开始按本说明落地
 
 ## 设计源
 
@@ -126,11 +128,11 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 
 ## 实现顺序
 
-1. 先以本说明和 `.pen` 画板确认公开 Web 视觉实现边界。
-2. 继续补齐 `private-web-workflows.pen`，让 client public / private 设计源在页面族和移动任务流上对齐。
-3. public / private 业务设计源确认后，再进入 `radish.client` 公开壳层和相关页面的视觉代码实现。
-4. 实现时优先抽取共享 token、公开壳层结构、筛选 / 状态组件和移动单列节奏。
-5. 完成后执行 `radish.client` 类型检查 / 构建；准备阶段性验收时再按用户确认的前后端启动状态执行 Gateway PC / mobile smoke。
+1. 已以本说明、`.pen` 画板和 `F02` 共享壳层契约确认公开 Web 首批实现边界。
+2. `P3-12-D8` 已先落地共享状态槽、公开内容宽度 token 和移动单列底部留白。
+3. 后续公开页视觉实现继续围绕真实内容密度、筛选 / 状态组件、公开详情参与反馈和移动单列节奏推进。
+4. 与私域 / 作者态共用的壳层、状态槽和 token 先回到 `web-ui-foundation` 说明确认，再进入代码。
+5. 完成代码后执行 `radish.client` 类型检查 / 构建；准备阶段性验收时再按用户确认的前后端启动状态执行 Gateway PC / mobile smoke。
 
 ## 当前不做
 
